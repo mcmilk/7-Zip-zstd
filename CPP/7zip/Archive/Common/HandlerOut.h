@@ -24,7 +24,7 @@ public:
   HRESULT SetSolidSettings(const UString &s);
   HRESULT SetSolidSettings(const PROPVARIANT &value);
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   UInt32 _numThreads;
   #endif
 
@@ -55,7 +55,7 @@ public:
   HRESULT SetParams(COneMethodInfo &oneMethodInfo, const UString &srcString);
 
   void SetCompressionMethod2(COneMethodInfo &oneMethodInfo
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       , UInt32 numThreads
       #endif
       );

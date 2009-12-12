@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2009-04-22 : Igor Pavlov : Public domain */
+2009-11-24 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -13,7 +13,7 @@
 #include "LzmaEnc.h"
 
 #include "LzFind.h"
-#ifdef COMPRESS_MF_MT
+#ifndef _7ZIP_ST
 #include "LzFindMt.h"
 #endif
 
@@ -66,7 +66,7 @@ void LzmaEncProps_Normalize(CLzmaEncProps *p)
   if (p->mc == 0)  p->mc = (16 + (p->fb >> 1)) >> (p->btMode ? 0 : 1);
   if (p->numThreads < 0)
     p->numThreads =
-      #ifdef COMPRESS_MF_MT
+      #ifndef _7ZIP_ST
       ((p->btMode && p->algo) ? 2 : 1);
       #else
       1;
@@ -172,7 +172,7 @@ typedef struct
 #define kEndPosModelIndex 14
 #define kNumPosModels (kEndPosModelIndex - kStartPosModelIndex)
 
-#define kNumFullDistances (1 << (kEndPosModelIndex / 2))
+#define kNumFullDistances (1 << (kEndPosModelIndex >> 1))
 
 #ifdef _LZMA_PROB32
 #define CLzmaProb UInt32
@@ -259,14 +259,14 @@ typedef struct
   IMatchFinder matchFinder;
   void *matchFinderObj;
 
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   Bool mtMode;
   CMatchFinderMt matchFinderMt;
   #endif
 
   CMatchFinder matchFinderBase;
 
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   Byte pad[128];
   #endif
   
@@ -428,7 +428,7 @@ SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
 
   p->writeEndMark = props.writeEndMark;
 
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   /*
   if (newMultiThread != _multiThread)
   {
@@ -1677,7 +1677,7 @@ void LzmaEnc_Construct(CLzmaEnc *p)
 {
   RangeEnc_Construct(&p->rc);
   MatchFinder_Construct(&p->matchFinderBase);
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   MatchFinderMt_Construct(&p->matchFinderMt);
   p->matchFinderMt.MatchFinder = &p->matchFinderBase;
   #endif
@@ -1716,7 +1716,7 @@ void LzmaEnc_FreeLits(CLzmaEnc *p, ISzAlloc *alloc)
 
 void LzmaEnc_Destruct(CLzmaEnc *p, ISzAlloc *alloc, ISzAlloc *allocBig)
 {
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   MatchFinderMt_Destruct(&p->matchFinderMt, allocBig);
   #endif
   MatchFinder_Free(&p->matchFinderBase, allocBig);
@@ -1901,7 +1901,7 @@ static SRes LzmaEnc_Alloc(CLzmaEnc *p, UInt32 keepWindowSize, ISzAlloc *alloc, I
   if (!RangeEnc_Alloc(&p->rc, alloc))
     return SZ_ERROR_MEM;
   btMode = (p->matchFinderBase.btMode != 0);
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   p->mtMode = (p->multiThread && !p->fastMode && btMode);
   #endif
 
@@ -1926,7 +1926,7 @@ static SRes LzmaEnc_Alloc(CLzmaEnc *p, UInt32 keepWindowSize, ISzAlloc *alloc, I
   if (beforeSize + p->dictSize < keepWindowSize)
     beforeSize = keepWindowSize - p->dictSize;
 
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   if (p->mtMode)
   {
     RINOK(MatchFinderMt_Create(&p->matchFinderMt, p->dictSize, beforeSize, p->numFastBytes, LZMA_MATCH_LEN_MAX, allocBig));
@@ -2073,7 +2073,7 @@ SRes LzmaEnc_MemPrepare(CLzmaEncHandle pp, const Byte *src, SizeT srcLen,
 
 void LzmaEnc_Finish(CLzmaEncHandle pp)
 {
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   CLzmaEnc *p = (CLzmaEnc *)pp;
   if (p->mtMode)
     MatchFinderMt_ReleaseStream(&p->matchFinderMt);
@@ -2155,7 +2155,7 @@ static SRes LzmaEnc_Encode2(CLzmaEnc *p, ICompressProgress *progress)
 {
   SRes res = SZ_OK;
 
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   Byte allocaDummy[0x300];
   int i = 0;
   for (i = 0; i < 16; i++)

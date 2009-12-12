@@ -35,16 +35,13 @@ class CAddCommon
   CMyComPtr<ICompressCoder> _copyCoder;
 
   CMyComPtr<ICompressCoder> _compressEncoder;
+  Byte _compressExtractVersion;
 
   CFilterCoder *_cryptoStreamSpec;
   CMyComPtr<ISequentialOutStream> _cryptoStream;
 
   NCrypto::NZip::CEncoder *_filterSpec;
   NCrypto::NWzAes::CEncoder *_filterAesSpec;
-
-  CMyComPtr<ICompressFilter> _zipCryptoFilter;
-  CMyComPtr<ICompressFilter> _aesFilter;
-
 
 public:
   CAddCommon(const CCompressionMethodMode &options);

@@ -1,7 +1,5 @@
 /* HuffEnc.c -- functions for Huffman encoding
-2008-08-05
-Igor Pavlov
-Public domain */
+2009-09-02 : Igor Pavlov : Public domain */
 
 #include "HuffEnc.h"
 #include "Sort.h"
@@ -67,11 +65,11 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
 
   if (num < 2)
   {
-    int minCode = 0;
-    int maxCode = 1;
+    unsigned minCode = 0;
+    unsigned maxCode = 1;
     if (num == 1)
     {
-      maxCode = (int)(p[0] & MASK);
+      maxCode = (unsigned)p[0] & MASK;
       if (maxCode == 0)
         maxCode++;
     }

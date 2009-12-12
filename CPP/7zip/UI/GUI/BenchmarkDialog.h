@@ -3,13 +3,10 @@
 #ifndef __BENCHMARK_DIALOG_H
 #define __BENCHMARK_DIALOG_H
 
-#include "Windows/Control/ComboBox.h"
 #include "Windows/Synchronization.h"
-#include "../../Compress/LZMA_Alone/LzmaBench.h"
+#include "Windows/Control/ComboBox.h"
 
-#ifdef EXTERNAL_LZMA
-#include "../Common/LoadCodecs.h"
-#endif
+#include "../Common/Bench.h"
 
 #include "../FileManager/DialogSize.h"
 
@@ -132,9 +129,7 @@ public:
 };
 
 HRESULT Benchmark(
-    #ifdef EXTERNAL_LZMA
-    CCodecs *codecs,
-    #endif
-    UInt32 dictionarySize, UInt32 numThreads, HWND hwndParent = NULL);
+    DECL_EXTERNAL_CODECS_LOC_VARS
+    UInt32 numThreads, UInt32 dictionarySize, HWND hwndParent = NULL);
 
 #endif

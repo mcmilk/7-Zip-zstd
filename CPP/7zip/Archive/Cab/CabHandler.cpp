@@ -233,17 +233,14 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   HRESULT res = S_FALSE;
   CInArchive archive;
   CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
-  {
-    CMyComPtr<IArchiveOpenCallback> openArchiveCallbackWrap = callback;
-    openArchiveCallbackWrap.QueryInterface(IID_IArchiveOpenVolumeCallback, &openVolumeCallback);
-  }
-
+  callback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
+  
   CMyComPtr<IInStream> nextStream = inStream;
   bool prevChecked = false;
   UInt64 numItems = 0;
   try
   {
-    while(nextStream != 0)
+    while (nextStream != 0)
     {
       CDatabaseEx db;
       db.Stream = nextStream;
@@ -296,6 +293,9 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         if (!otherArchive)
           break;
         const UString fullName = MultiByteToUnicodeString(otherArchive->FileName, CP_ACP);
+        if (!openVolumeCallback)
+          break;
+
         HRESULT result = openVolumeCallback->GetStream(fullName, &nextStream);
         if (result == S_OK)
           break;

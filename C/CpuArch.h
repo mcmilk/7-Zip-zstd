@@ -1,19 +1,19 @@
-/* CpuArch.h
-2009-08-11 : Igor Pavlov : Public domain */
+/* CpuArch.h -- CPU specific code
+2009-11-25: Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "Types.h"
+
+EXTERN_C_BEGIN
 
 /*
-LITTLE_ENDIAN_UNALIGN means:
-  1) CPU is LITTLE_ENDIAN
-  2) it's allowed to make unaligned memory accesses
-if LITTLE_ENDIAN_UNALIGN is not defined, it means that we don't know
-about these properties of platform.
+MY_CPU_LE means that CPU is LITTLE ENDIAN.
+If MY_CPU_LE is not defined, we don't know about that property of platform (it can be LITTLE ENDIAN).
+
+MY_CPU_LE_UNALIGN means that CPU is LITTLE ENDIAN and CPU supports unaligned memory accesses.
+If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of platform.
 */
 
 #if defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__)
@@ -28,11 +28,19 @@ about these properties of platform.
 #define MY_CPU_X86_OR_AMD64
 #endif
 
-#if defined(MY_CPU_X86_OR_AMD64)
-#define LITTLE_ENDIAN_UNALIGN
+#if defined(_WIN32) && defined(_M_ARM)
+#define MY_CPU_ARM_LE
 #endif
 
-#ifdef LITTLE_ENDIAN_UNALIGN
+#if defined(MY_CPU_X86_OR_AMD64)
+#define MY_CPU_LE_UNALIGN
+#endif
+
+#if defined(MY_CPU_X86_OR_AMD64) || defined(MY_CPU_ARM_LE)
+#define MY_CPU_LE
+#endif
+
+#ifdef MY_CPU_LE_UNALIGN
 
 #define GetUi16(p) (*(const UInt16 *)(p))
 #define GetUi32(p) (*(const UInt32 *)(p))
@@ -64,7 +72,7 @@ about these properties of platform.
 
 #endif
 
-#if defined(LITTLE_ENDIAN_UNALIGN) && defined(_WIN64) && (_MSC_VER >= 1300)
+#if defined(MY_CPU_LE_UNALIGN) && defined(_WIN64) && (_MSC_VER >= 1300)
 
 #pragma intrinsic(_byteswap_ulong)
 #pragma intrinsic(_byteswap_uint64)
@@ -85,8 +93,38 @@ about these properties of platform.
 
 #define GetBe16(p) (((UInt16)((const Byte *)(p))[0] << 8) | ((const Byte *)(p))[1])
 
-#ifdef __cplusplus
-}
+
+#ifdef MY_CPU_X86_OR_AMD64
+
+typedef struct
+{
+  UInt32 maxFunc;
+  UInt32 vendor[3];
+  UInt32 ver;
+  UInt32 b;
+  UInt32 c;
+  UInt32 d;
+} Cx86cpuid;
+
+enum
+{
+  CPU_FIRM_INTEL,
+  CPU_FIRM_AMD,
+  CPU_FIRM_VIA
+};
+
+Bool x86cpuid_CheckAndRead(Cx86cpuid *p);
+int x86cpuid_GetFirm(const Cx86cpuid *p);
+
+#define x86cpuid_GetFamily(p) (((p)->ver >> 8) & 0xFF00F)
+#define x86cpuid_GetModel(p) (((p)->ver >> 4) & 0xF00F)
+#define x86cpuid_GetStepping(p) ((p)->ver & 0xF)
+
+Bool CPU_Is_InOrder();
+Bool CPU_Is_Aes_Supported();
+
 #endif
+
+EXTERN_C_END
 
 #endif

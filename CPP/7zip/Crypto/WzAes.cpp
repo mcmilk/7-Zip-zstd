@@ -21,7 +21,7 @@ Note: you must include MyAes.cpp to project to initialize AES tables
 namespace NCrypto {
 namespace NWzAes {
 
-const unsigned int kAesKeySizeMax = 32;
+const unsigned kAesKeySizeMax = 32;
 
 static const UInt32 kNumKeyGenIterations = 1000;
 
@@ -34,36 +34,11 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
   return S_OK;
 }
 
-#define SetUi32(p, d) { UInt32 x = (d); (p)[0] = (Byte)x; (p)[1] = (Byte)(x >> 8); \
-    (p)[2] = (Byte)(x >> 16); (p)[3] = (Byte)(x >> 24); }
-
-void CBaseCoder::EncryptData(Byte *data, UInt32 size)
-{
-  unsigned int pos = _blockPos;
-  for (; size > 0; size--)
-  {
-    if (pos == AES_BLOCK_SIZE)
-    {
-      if (++_counter[0] == 0)
-        _counter[1]++;
-      UInt32 temp[4];
-      Aes_Encode32(&Aes, temp, _counter);
-      SetUi32(_buffer,      temp[0]);
-      SetUi32(_buffer + 4,  temp[1]);
-      SetUi32(_buffer + 8,  temp[2]);
-      SetUi32(_buffer + 12, temp[3]);
-      pos = 0;
-    }
-    *data++ ^= _buffer[pos++];
-  }
-  _blockPos = pos;
-}
-
 #ifndef _NO_WZAES_OPTIMIZATIONS
 
-static void BytesToBeUInt32s(const Byte *src, UInt32 *dest, int destSize)
+static void BytesToBeUInt32s(const Byte *src, UInt32 *dest, unsigned destSize)
 {
-  for (int i = 0 ; i < destSize; i++)
+  for (unsigned i = 0; i < destSize; i++)
       dest[i] =
           ((UInt32)(src[i * 4 + 0]) << 24) |
           ((UInt32)(src[i * 4 + 1]) << 16) |
@@ -79,7 +54,7 @@ STDMETHODIMP CBaseCoder::Init()
   UInt32 keysTotalSize = 2 * keySize + kPwdVerifCodeSize;
   Byte buf[2 * kAesKeySizeMax + kPwdVerifCodeSize];
   
-  // for (int ii = 0; ii < 1000; ii++)
+  // for (unsigned ii = 0; ii < 1000; ii++)
   {
     #ifdef _NO_WZAES_OPTIMIZATIONS
 
@@ -109,22 +84,11 @@ STDMETHODIMP CBaseCoder::Init()
 
   _hmac.SetKey(buf + keySize, keySize);
   memcpy(_key.PwdVerifComputed, buf + 2 * keySize, kPwdVerifCodeSize);
-  
-  _blockPos = AES_BLOCK_SIZE;
-  for (int i = 0; i < 4; i++)
-    _counter[i] = 0;
 
-  Aes_SetKeyEncode(&Aes, buf, keySize);
+  AesCtr2_Init(&_aes);
+  Aes_SetKey_Enc(_aes.aes + _aes.offset + 8, buf, keySize);
   return S_OK;
 }
-
-/*
-STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
-{
-  Byte keySizeMode = 3;
-  return outStream->Write(&keySizeMode, 1, NULL);
-}
-*/
 
 HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
 {
@@ -147,11 +111,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
   if (size != 1)
     return E_INVALIDARG;
   _key.Init();
-  Byte keySizeMode = data[0];
-  if (keySizeMode < 1 || keySizeMode > 3)
-    return E_INVALIDARG;
-  _key.KeySizeMode = keySizeMode;
-  return S_OK;
+  return SetKeyMode(data[0]) ? S_OK : E_INVALIDARG;
 }
 
 HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream)
@@ -192,9 +152,61 @@ HRESULT CDecoder::CheckMac(ISequentialInStream *inStream, bool &isOK)
   return S_OK;
 }
 
+CAesCtr2::CAesCtr2()
+{
+  offset = ((0 - (unsigned)(ptrdiff_t)aes) & 0xF) / sizeof(UInt32);
+}
+
+void AesCtr2_Init(CAesCtr2 *p)
+{
+  UInt32 *ctr = p->aes + p->offset + 4;
+  unsigned i;
+  for (i = 0; i < 4; i++)
+    ctr[i] = 0;
+  p->pos = AES_BLOCK_SIZE;
+}
+
+void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size)
+{
+  unsigned pos = p->pos;
+  UInt32 *buf32 = p->aes + p->offset;
+  if (size == 0)
+    return;
+  if (pos != AES_BLOCK_SIZE)
+  {
+    const Byte *buf = (const Byte *)buf32;
+    do
+      *data++ ^= buf[pos++];
+    while (--size != 0 && pos != AES_BLOCK_SIZE);
+  }
+  if (size >= 16)
+  {
+    SizeT size2 = size >> 4;
+    g_AesCtr_Code(buf32 + 4, data, size2);
+    size2 <<= 4;
+    data += size2;
+    size -= size2;
+    pos = AES_BLOCK_SIZE;
+  }
+  if (size != 0)
+  {
+    unsigned j;
+    const Byte *buf;
+    for (j = 0; j < 4; j++)
+      buf32[j] = 0;
+    g_AesCtr_Code(buf32 + 4, (Byte *)buf32, 1);
+    buf = (const Byte *)buf32;
+    pos = 0;
+    do
+      *data++ ^= buf[pos++];
+    while (--size != 0 && pos != AES_BLOCK_SIZE);
+  }
+  p->pos = pos;
+}
+
 STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
 {
-  EncryptData(data, size);
+  AesCtr2_Code(&_aes, data, size);
   _hmac.Update(data, size);
   return size;
 }
@@ -202,7 +214,7 @@ STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
 STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
 {
   _hmac.Update(data, size);
-  EncryptData(data, size);
+  AesCtr2_Code(&_aes, data, size);
   return size;
 }
 

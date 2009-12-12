@@ -70,7 +70,7 @@ bool CInArchive::ReadBytesAndTestSize(void *data, UInt32 size)
 {
   if (m_CryptoMode)
   {
-    const Byte *bufData = (const Byte *)m_DecryptedData;
+    const Byte *bufData = m_DecryptedDataAligned;
     UInt32 bufSize = m_DecryptedDataSize;
     UInt32 i;
     for (i = 0; i < size && m_CryptoPos < bufSize; i++)
@@ -423,13 +423,15 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
       const UInt32 kDecryptedBufferSize = (1 << 12);
       if (m_DecryptedData.GetCapacity() == 0)
       {
-        m_DecryptedData.SetCapacity(kDecryptedBufferSize);
+        const UInt32 kAlign = 16;
+        m_DecryptedData.SetCapacity(kDecryptedBufferSize + kAlign);
+        m_DecryptedDataAligned = (Byte *)((ptrdiff_t)((Byte *)m_DecryptedData + kAlign - 1) & ~(ptrdiff_t)(kAlign - 1));
       }
       RINOK(m_RarAES->Init());
       size_t decryptedDataSizeT = kDecryptedBufferSize;
-      RINOK(ReadStream(m_Stream, (Byte *)m_DecryptedData, &decryptedDataSizeT));
+      RINOK(ReadStream(m_Stream, m_DecryptedDataAligned, &decryptedDataSizeT));
       m_DecryptedDataSize = (UInt32)decryptedDataSizeT;
-      m_DecryptedDataSize = m_RarAES->Filter((Byte *)m_DecryptedData, m_DecryptedDataSize);
+      m_DecryptedDataSize = m_RarAES->Filter(m_DecryptedDataAligned, m_DecryptedDataSize);
 
       m_CryptoMode = true;
       m_CryptoPos = 0;

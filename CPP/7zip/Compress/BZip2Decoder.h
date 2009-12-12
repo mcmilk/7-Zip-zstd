@@ -5,7 +5,7 @@
 
 #include "../../Common/MyCom.h"
 
-#ifdef COMPRESS_BZIP2_MT
+#ifndef _7ZIP_ST
 #include "../../Windows/Synchronization.h"
 #include "../../Windows/Thread.h"
 #endif
@@ -31,7 +31,7 @@ struct CState
 {
   UInt32 *Counters;
 
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
 
   CDecoder *Decoder;
   NWindows::CThread Thread;
@@ -59,7 +59,7 @@ struct CState
 
 class CDecoder :
   public ICompressCoder,
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   public ICompressSetCoderMt,
   #endif
   public CMyUnknownImp
@@ -104,9 +104,9 @@ private:
 
 public:
   CBZip2CombinedCrc CombinedCrc;
-
-  #ifdef COMPRESS_BZIP2_MT
   ICompressProgressInfo *Progress;
+
+  #ifndef _7ZIP_ST
   CState *m_States;
   UInt32 m_NumThreadsPrev;
 
@@ -145,8 +145,8 @@ public:
     m_OutStream.ReleaseStream();
   }
 
-  MY_QUERYINTERFACE_BEGIN
-  #ifdef COMPRESS_BZIP2_MT
+  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
+  #ifndef _7ZIP_ST
   MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
   #endif
 
@@ -163,7 +163,7 @@ public:
   HRESULT CodeResume(ISequentialOutStream *outStream, bool &isBZ, ICompressProgressInfo *progress);
   UInt64 GetInputProcessedSize() const { return m_InStream.GetProcessedSize(); }
   
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   STDMETHOD(SetNumberOfThreads)(UInt32 numThreads);
   #endif
 };

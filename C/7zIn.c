@@ -1,5 +1,5 @@
 /* 7zIn.c -- 7z Input functions
-2009-08-17 : Igor Pavlov : Public domain */
+2009-11-24 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -1021,6 +1021,7 @@ static SRes SzReadHeader2(
         MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
         memcpy(p->FileNames.data, sd->Data, namesSize);
         RINOK(SzReadFileNames(sd->Data, namesSize >> 1, numFiles, p->FileNameOffsets))
+        RINOK(SzSkeepDataSize(sd, namesSize));
         break;
       }
       case k7zIdEmptyStream:

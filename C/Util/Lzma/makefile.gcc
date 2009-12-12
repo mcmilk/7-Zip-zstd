@@ -2,7 +2,7 @@ PROG = lzma
 CXX = g++
 LIB =
 RM = rm -f
-CFLAGS = -c -O2 -Wall
+CFLAGS = -c -O2 -Wall -D_7ZIP_ST
 
 OBJS = \
   LzmaUtil.o \

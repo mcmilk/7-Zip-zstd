@@ -76,8 +76,6 @@ class CInArchive
   
   void AddToSeekValue(UInt64 addValue);
   
-protected:
-
   CDynamicBuffer<Byte> m_FileHeaderData;
   
   NHeader::NBlock::CBlock m_BlockHeader;
@@ -94,6 +92,7 @@ protected:
   void ReadTime(Byte mask, CRarTime &rarTime);
 
   CBuffer<Byte> m_DecryptedData;
+  Byte *m_DecryptedDataAligned;
   UInt32 m_DecryptedDataSize;
 
   bool m_CryptoMode;

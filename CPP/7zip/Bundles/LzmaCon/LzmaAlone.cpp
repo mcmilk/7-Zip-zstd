@@ -2,9 +2,6 @@
 
 #include "StdAfx.h"
 
-#include "../../../Common/MyWindows.h"
-#include "../../../Common/MyInitGuid.h"
-
 #include <stdio.h>
 
 #if (defined(_WIN32) || defined(OS2) || defined(MSDOS)) && !defined(UNDER_CE)
@@ -15,27 +12,31 @@
 #define MY_SET_BINARY_MODE(file)
 #endif
 
-#include "../../../Common/CommandLineParser.h"
-#include "../../../Common/StringConvert.h"
-#include "../../../Common/StringToInt.h"
-
-#include "../../../Windows/NtCheck.h"
-
-#include "../../Common/FileStreams.h"
-#include "../../Common/StreamUtils.h"
-
-#include "../LzmaDecoder.h"
-#include "../LzmaEncoder.h"
-
-#include "LzmaBenchCon.h"
-
-#ifdef COMPRESS_MF_MT
-#include "../../../Windows/System.h"
-#endif
+// #include "../../../Common/MyWindows.h"
+#include "../../../Common/MyInitGuid.h"
 
 #include "../../../../C/7zVersion.h"
 #include "../../../../C/Alloc.h"
 #include "../../../../C/Lzma86.h"
+
+#include "../../../Windows/NtCheck.h"
+
+#ifndef _7ZIP_ST
+#include "../../../Windows/System.h"
+#endif
+
+#include "../../../Common/CommandLineParser.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/StringToInt.h"
+
+#include "../../Common/FileStreams.h"
+#include "../../Common/StreamUtils.h"
+
+#include "../../Compress/LzmaDecoder.h"
+#include "../../Compress/LzmaEncoder.h"
+
+#include "../../UI/Console/BenchCon.h"
+
 
 using namespace NCommandLineParser;
 
@@ -213,7 +214,7 @@ int main2(int numArgs, const char *args[])
 
   UInt32 numThreads = (UInt32)-1;
 
-  #ifdef COMPRESS_MF_MT
+  #ifndef _7ZIP_ST
   if (parser[NKey::kMultiThread].ThereIs)
   {
     UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();

@@ -9,7 +9,7 @@ static const int kBreakAbortThreshold = 2;
 
 namespace NConsoleClose {
 
-#ifndef UNDER_CE
+#if !defined(UNDER_CE) && defined(_WIN32)
 static BOOL WINAPI HandlerRoutine(DWORD ctrlType)
 {
   if (ctrlType == CTRL_LOGOFF_EVENT)
@@ -56,7 +56,7 @@ void CheckCtrlBreak()
 
 CCtrlHandlerSetter::CCtrlHandlerSetter()
 {
-  #ifndef UNDER_CE
+  #if !defined(UNDER_CE) && defined(_WIN32)
   if(!SetConsoleCtrlHandler(HandlerRoutine, TRUE))
     throw "SetConsoleCtrlHandler fails";
   #endif
@@ -64,7 +64,7 @@ CCtrlHandlerSetter::CCtrlHandlerSetter()
 
 CCtrlHandlerSetter::~CCtrlHandlerSetter()
 {
-  #ifndef UNDER_CE
+  #if !defined(UNDER_CE) && defined(_WIN32)
   if(!SetConsoleCtrlHandler(HandlerRoutine, FALSE))
     throw "SetConsoleCtrlHandler fails";
   #endif

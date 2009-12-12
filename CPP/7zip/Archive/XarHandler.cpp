@@ -198,25 +198,28 @@ static bool AddItem(const CXmlItem &item, CObjectVector<CFile> &files, int paren
       file.Sha1IsDefined = ParseSha1(dataItem, "extracted-checksum", file.Sha1);
       // file.packSha1IsDefined = ParseSha1(dataItem, "archived-checksum",  file.packSha1);
       int encodingIndex = dataItem.FindSubTag("encoding");
-      const CXmlItem &encodingItem = dataItem.SubItems[encodingIndex];
-      if (encodingItem.IsTag)
+      if (encodingIndex >= 0)
       {
-        AString s = encodingItem.GetPropertyValue("style");
-        if (s.Length() >= 0)
+        const CXmlItem &encodingItem = dataItem.SubItems[encodingIndex];
+        if (encodingItem.IsTag)
         {
-          AString appl = "application/";
-          if (s.Left(appl.Length()) == appl)
+          AString s = encodingItem.GetPropertyValue("style");
+          if (s.Length() >= 0)
           {
-            s = s.Mid(appl.Length());
-            AString xx = "x-";
-            if (s.Left(xx.Length()) == xx)
+            AString appl = "application/";
+            if (s.Left(appl.Length()) == appl)
             {
-              s = s.Mid(xx.Length());
-              if (s == "gzip")
-                s = METHOD_NAME_ZLIB;
+              s = s.Mid(appl.Length());
+              AString xx = "x-";
+              if (s.Left(xx.Length()) == xx)
+              {
+                s = s.Mid(xx.Length());
+                if (s == "gzip")
+                  s = METHOD_NAME_ZLIB;
+              }
             }
+            file.Method = s;
           }
-          file.Method = s;
         }
       }
     }
@@ -359,7 +362,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidMethod:
       {
         UString name;
-        if (ConvertUTF8ToUnicode(item.Method, name))
+        if (!item.Method.IsEmpty() && ConvertUTF8ToUnicode(item.Method, name))
           prop = name;
         break;
       }
@@ -521,7 +524,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         HRESULT res = S_OK;
         
         ICompressCoder *coder = NULL;
-        if (item.Method == "octet-stream")
+        if (item.Method.IsEmpty() || item.Method == "octet-stream")
           if (item.PackSize == item.Size)
             coder = copyCoder;
           else

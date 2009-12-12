@@ -502,9 +502,11 @@ void COutArchive::SkipAlign(unsigned pos, unsigned alignSize)
 }
 */
 
+static inline unsigned Bv_GetSizeInBytes(const CBoolVector &v) { return ((unsigned)v.Size() + 7) / 8; }
+
 void COutArchive::WriteAlignedBoolHeader(const CBoolVector &v, int numDefined, Byte type, unsigned itemSize)
 {
-  const UInt64 bvSize = (numDefined == v.Size()) ? 0 : (v.Size() + 7) / 8;
+  const unsigned bvSize = (numDefined == v.Size()) ? 0 : Bv_GetSizeInBytes(v);
   const UInt64 dataSize = (UInt64)numDefined * itemSize + bvSize + 2;
   SkipAlign(3 + (unsigned)bvSize + (unsigned)GetBigNumberSize(dataSize), itemSize);
 
@@ -631,7 +633,7 @@ void COutArchive::WriteHeader(
   if (numEmptyStreams > 0)
   {
     WriteByte(NID::kEmptyStream);
-    WriteNumber((emptyStreamVector.Size() + 7) / 8);
+    WriteNumber(Bv_GetSizeInBytes(emptyStreamVector));
     WriteBoolVector(emptyStreamVector);
 
     CBoolVector emptyFileVector, antiVector;
@@ -656,14 +658,14 @@ void COutArchive::WriteHeader(
     if (numEmptyFiles > 0)
     {
       WriteByte(NID::kEmptyFile);
-      WriteNumber((emptyFileVector.Size() + 7) / 8);
+      WriteNumber(Bv_GetSizeInBytes(emptyFileVector));
       WriteBoolVector(emptyFileVector);
     }
 
     if (numAntiItems > 0)
     {
       WriteByte(NID::kAnti);
-      WriteNumber((antiVector.Size() + 7) / 8);
+      WriteNumber(Bv_GetSizeInBytes(antiVector));
       WriteBoolVector(antiVector);
     }
   }

@@ -1,5 +1,5 @@
 /* 7zFile.h -- File IO
-2009-08-16 : Igor Pavlov : Public domain */
+2009-11-24 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_FILE_H
 #define __7Z_FILE_H
@@ -30,8 +30,10 @@ typedef struct
 } CSzFile;
 
 void File_Construct(CSzFile *p);
+#if !defined(UNDER_CE) || !defined(USE_WINDOWS_FILE)
 WRes InFile_Open(CSzFile *p, const char *name);
 WRes OutFile_Open(CSzFile *p, const char *name);
+#endif
 #ifdef USE_WINDOWS_FILE
 WRes InFile_OpenW(CSzFile *p, const WCHAR *name);
 WRes OutFile_OpenW(CSzFile *p, const WCHAR *name);

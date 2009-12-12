@@ -1,6 +1,13 @@
 Sources history of the 7-Zip
 ----------------------------
 
+9.09           2009-12-12
+-------------------------
+- The bug was fixed:
+   Utf16_To_Utf8 funstions in UTFConvert.cpp and 7zMain.c
+   incorrectly converted surrogate characters (the code >= 0x10000) to UTF-8.
+
+
 9.05           2009-07-05
 -------------------------
 - FileMapping.h::CFileMapping now returns WRes

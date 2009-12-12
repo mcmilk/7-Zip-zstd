@@ -14,6 +14,8 @@ static const UInt32 kBufferSize = 1 << 17;
 CFilterCoder::CFilterCoder()
 {
   _buffer = (Byte *)::MidAlloc(kBufferSize);
+  if (_buffer == 0)
+    throw 1;
 }
 
 CFilterCoder::~CFilterCoder()
@@ -34,10 +36,8 @@ HRESULT CFilterCoder::WriteWithLimit(ISequentialOutStream *outStream, UInt32 siz
   return S_OK;
 }
 
-
-STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
-      ICompressProgressInfo *progress)
+STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
   RINOK(Init());
   UInt32 bufferPos = 0;
@@ -45,7 +45,7 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
   if (_outSizeIsDefined)
     _outSize = *outSize;
 
-  while(NeedMore())
+  while (!_outSizeIsDefined || _nowPos64 < _outSize)
   {
     size_t processedSize = kBufferSize - bufferPos;
     
@@ -57,16 +57,16 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
     bufferPos = Filter->Filter(_buffer, endPos);
     if (bufferPos > endPos)
     {
-      for (; endPos< bufferPos; endPos++)
+      for (; endPos < bufferPos; endPos++)
         _buffer[endPos] = 0;
       bufferPos = Filter->Filter(_buffer, endPos);
     }
 
     if (bufferPos == 0)
     {
-      if (endPos > 0)
-        return WriteWithLimit(outStream, endPos);
-      return S_OK;
+      if (endPos == 0)
+        return S_OK;
+      return WriteWithLimit(outStream, endPos);
     }
     RINOK(WriteWithLimit(outStream, bufferPos));
     if (progress != NULL)
@@ -74,14 +74,13 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream,
       RINOK(progress->SetRatioInfo(&_nowPos64, &_nowPos64));
     }
     UInt32 i = 0;
-    while(bufferPos < endPos)
+    while (bufferPos < endPos)
       _buffer[i++] = _buffer[bufferPos++];
     bufferPos = i;
   }
   return S_OK;
 }
 
-// #ifdef _ST_MODE
 STDMETHODIMP CFilterCoder::SetOutStream(ISequentialOutStream *outStream)
 {
   _bufferPos = 0;
@@ -98,16 +97,15 @@ STDMETHODIMP CFilterCoder::ReleaseOutStream()
 
 STDMETHODIMP CFilterCoder::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 processedSizeTotal = 0;
-  while(size > 0)
+  if (processedSize != NULL)
+    *processedSize = 0;
+  while (size > 0)
   {
-    UInt32 sizeMax = kBufferSize - _bufferPos;
-    UInt32 sizeTemp = size;
-    if (sizeTemp > sizeMax)
-      sizeTemp = sizeMax;
-    memmove(_buffer + _bufferPos, data, sizeTemp);
+    UInt32 sizeTemp = MyMin(size, kBufferSize - _bufferPos);
+    memcpy(_buffer + _bufferPos, data, sizeTemp);
     size -= sizeTemp;
-    processedSizeTotal += sizeTemp;
+    if (processedSize != NULL)
+      *processedSize += sizeTemp;
     data = (const Byte *)data + sizeTemp;
     UInt32 endPos = _bufferPos + sizeTemp;
     _bufferPos = Filter->Filter(_buffer, endPos);
@@ -124,12 +122,10 @@ STDMETHODIMP CFilterCoder::Write(const void *data, UInt32 size, UInt32 *processe
     }
     RINOK(WriteWithLimit(_outStream, _bufferPos));
     UInt32 i = 0;
-    while(_bufferPos < endPos)
+    while (_bufferPos < endPos)
       _buffer[i++] = _buffer[_bufferPos++];
     _bufferPos = i;
   }
-  if (processedSize != NULL)
-    *processedSize = processedSizeTotal;
   return S_OK;
 }
 
@@ -137,6 +133,7 @@ STDMETHODIMP CFilterCoder::Flush()
 {
   if (_bufferPos != 0)
   {
+    // _buffer contains only data refused by previous Filter->Filter call.
     UInt32 endPos = Filter->Filter(_buffer, _bufferPos);
     if (endPos > _bufferPos)
     {
@@ -145,13 +142,13 @@ STDMETHODIMP CFilterCoder::Flush()
       if (Filter->Filter(_buffer, endPos) != endPos)
         return E_FAIL;
     }
-    RINOK(WriteStream(_outStream, _buffer, _bufferPos));
+    RINOK(WriteWithLimit(_outStream, _bufferPos));
     _bufferPos = 0;
   }
   CMyComPtr<IOutStreamFlush> flush;
   _outStream.QueryInterface(IID_IOutStreamFlush, &flush);
   if (flush)
-    return  flush->Flush();
+    return flush->Flush();
   return S_OK;
 }
 
@@ -171,37 +168,36 @@ STDMETHODIMP CFilterCoder::ReleaseInStream()
 
 STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 processedSizeTotal = 0;
-  while(size > 0)
+  if (processedSize != NULL)
+    *processedSize = 0;
+  while (size > 0)
   {
     if (_convertedPosBegin != _convertedPosEnd)
     {
       UInt32 sizeTemp = MyMin(size, _convertedPosEnd - _convertedPosBegin);
-      memmove(data, _buffer + _convertedPosBegin, sizeTemp);
+      memcpy(data, _buffer + _convertedPosBegin, sizeTemp);
       _convertedPosBegin += sizeTemp;
       data = (void *)((Byte *)data + sizeTemp);
       size -= sizeTemp;
-      processedSizeTotal += sizeTemp;
+      if (processedSize != NULL)
+        *processedSize += sizeTemp;
       break;
     }
-    int i;
+    UInt32 i;
     for (i = 0; _convertedPosEnd + i < _bufferPos; i++)
-      _buffer[i] = _buffer[i + _convertedPosEnd];
+      _buffer[i] = _buffer[_convertedPosEnd + i];
     _bufferPos = i;
     _convertedPosBegin = _convertedPosEnd = 0;
     size_t processedSizeTemp = kBufferSize - _bufferPos;
     RINOK(ReadStream(_inStream, _buffer + _bufferPos, &processedSizeTemp));
-    _bufferPos = _bufferPos + (UInt32)processedSizeTemp;
+    _bufferPos += (UInt32)processedSizeTemp;
     _convertedPosEnd = Filter->Filter(_buffer, _bufferPos);
     if (_convertedPosEnd == 0)
     {
       if (_bufferPos == 0)
         break;
-      else
-      {
-        _convertedPosEnd = _bufferPos; // check it
-        continue;
-      }
+      _convertedPosEnd = _bufferPos; // check it
+      continue;
     }
     if (_convertedPosEnd > _bufferPos)
     {
@@ -210,12 +206,8 @@ STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
       _convertedPosEnd = Filter->Filter(_buffer, _bufferPos);
     }
   }
-  if (processedSize != NULL)
-    *processedSize = processedSizeTotal;
   return S_OK;
 }
-
-// #endif // _ST_MODE
 
 #ifndef _NO_CRYPTO
 STDMETHODIMP CFilterCoder::CryptoSetPassword(const Byte *data, UInt32 size)

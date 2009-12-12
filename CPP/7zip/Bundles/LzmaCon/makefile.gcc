@@ -3,7 +3,7 @@ CXX = g++ -O2 -Wall
 CXX_C = gcc -O2 -Wall
 LIB = -lm
 RM = rm -f
-CFLAGS = -c
+CFLAGS = -c -D_7ZIP_ST
 
 ifdef SystemDrive
 IS_MINGW = 1
@@ -20,14 +20,16 @@ endif
 
 OBJS = \
   LzmaAlone.o \
-  LzmaBench.o \
-  LzmaBenchCon.o \
+  Bench.o \
+  BenchCon.o \
+  ConsoleClose.o \
   LzmaDecoder.o \
   LzmaEncoder.o \
+  LzmaRegister.o \
+  CreateCoder.o \
   CWrappers.o \
-  InBuffer.o \
-  OutBuffer.o \
   FileStreams.o \
+  FilterCoder.o \
   StreamUtils.o \
   $(FILE_IO).o \
   CommandLineParser.o \
@@ -38,8 +40,10 @@ OBJS = \
   StringToInt.o \
   MyVector.o \
   7zCrc.o \
+  7zCrcOpt.o \
   Alloc.o \
   Bra86.o \
+  CpuArch.o \
   LzFind.o \
   LzmaDec.o \
   LzmaEnc.o \
@@ -55,29 +59,35 @@ $(PROG): $(OBJS)
 LzmaAlone.o: LzmaAlone.cpp
 	$(CXX) $(CFLAGS) LzmaAlone.cpp
 
-LzmaBench.o: LzmaBench.cpp
-	$(CXX) $(CFLAGS) LzmaBench.cpp
+Bench.o: ../../UI/Common/Bench.cpp
+	$(CXX) $(CFLAGS) ../../UI/Common/Bench.cpp
 
-LzmaBenchCon.o: LzmaBenchCon.cpp
-	$(CXX) $(CFLAGS) LzmaBenchCon.cpp
+BenchCon.o: ../../UI/Console/BenchCon.cpp
+	$(CXX) $(CFLAGS) ../../UI/Console/BenchCon.cpp
 
-LzmaDecoder.o: ../LzmaDecoder.cpp
-	$(CXX) $(CFLAGS) ../LzmaDecoder.cpp
+ConsoleClose.o: ../../UI/Console/ConsoleClose.cpp
+	$(CXX) $(CFLAGS) ../../UI/Console/ConsoleClose.cpp
 
-LzmaEncoder.o: ../LzmaEncoder.cpp
-	$(CXX) $(CFLAGS) ../LzmaEncoder.cpp
+LzmaDecoder.o: ../../Compress/LzmaDecoder.cpp
+	$(CXX) $(CFLAGS) ../../Compress/LzmaDecoder.cpp
+
+LzmaEncoder.o: ../../Compress/LzmaEncoder.cpp
+	$(CXX) $(CFLAGS) ../../Compress/LzmaEncoder.cpp
+
+LzmaRegister.o: ../../Compress/LzmaRegister.cpp
+	$(CXX) $(CFLAGS) ../../Compress/LzmaRegister.cpp
+
+CreateCoder.o: ../../Common/CreateCoder.cpp
+	$(CXX) $(CFLAGS) ../../Common/CreateCoder.cpp
 
 CWrappers.o: ../../Common/CWrappers.cpp
 	$(CXX) $(CFLAGS) ../../Common/CWrappers.cpp
 
-InBuffer.o: ../../Common/InBuffer.cpp
-	$(CXX) $(CFLAGS) ../../Common/InBuffer.cpp
-
-OutBuffer.o: ../../Common/OutBuffer.cpp
-	$(CXX) $(CFLAGS) ../../Common/OutBuffer.cpp
-
 FileStreams.o: ../../Common/FileStreams.cpp
 	$(CXX) $(CFLAGS) ../../Common/FileStreams.cpp
+
+FilterCoder.o: ../../Common/FilterCoder.cpp
+	$(CXX) $(CFLAGS) ../../Common/FilterCoder.cpp
 
 StreamUtils.o: ../../Common/StreamUtils.cpp
 	$(CXX) $(CFLAGS) ../../Common/StreamUtils.cpp
@@ -113,11 +123,17 @@ MyVector.o: ../../../Common/MyVector.cpp
 7zCrc.o: ../../../../C/7zCrc.c
 	$(CXX_C) $(CFLAGS) ../../../../C/7zCrc.c
 
+7zCrcOpt.o: ../../../../C/7zCrcOpt.c
+	$(CXX_C) $(CFLAGS) ../../../../C/7zCrcOpt.c
+
 Alloc.o: ../../../../C/Alloc.c
 	$(CXX_C) $(CFLAGS) ../../../../C/Alloc.c
 
 Bra86.o: ../../../../C/Bra86.c
 	$(CXX_C) $(CFLAGS) ../../../../C/Bra86.c
+
+CpuArch.o: ../../../../C/CpuArch.c
+	$(CXX_C) $(CFLAGS) ../../../../C/CpuArch.c
 
 LzFind.o: ../../../../C/LzFind.c
 	$(CXX_C) $(CFLAGS) ../../../../C/LzFind.c

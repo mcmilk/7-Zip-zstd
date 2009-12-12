@@ -46,7 +46,7 @@ void CThreadInfo::Free()
   m_Block = 0;
 }
 
-#ifdef COMPRESS_BZIP2_MT
+#ifndef _7ZIP_ST
 
 static THREAD_FUNC_DECL MFThread(void *threadCoderInfo)
 {
@@ -127,14 +127,14 @@ CEncoder::CEncoder():
   m_OptimizeNumTables(false),
   m_BlockSizeMult(kBlockSizeMultMax)
 {
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   ThreadsInfo = 0;
   m_NumThreadsPrev = 0;
   NumThreads = 1;
   #endif
 }
 
-#ifdef COMPRESS_BZIP2_MT
+#ifndef _7ZIP_ST
 CEncoder::~CEncoder()
 {
   Free();
@@ -680,7 +680,7 @@ HRESULT CThreadInfo::EncodeBlock3(UInt32 blockSize)
 
   EncodeBlock2(m_Block, blockSize, Encoder->NumPasses);
 
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   if (Encoder->MtMode)
     Encoder->ThreadsInfo[m_BlockIndex].CanWriteEvent.Lock();
   #endif
@@ -688,7 +688,7 @@ HRESULT CThreadInfo::EncodeBlock3(UInt32 blockSize)
     Encoder->CombinedCrc.Update(m_CRCs[i]);
   Encoder->WriteBytes(m_TempArray, outStreamTemp.GetPos(), outStreamTemp.GetCurByte());
   HRESULT res = S_OK;
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   if (Encoder->MtMode)
   {
     UInt32 blockIndex = m_BlockIndex + 1;
@@ -719,13 +719,13 @@ void CEncoder::WriteBytes(const Byte *data, UInt32 sizeInBits, Byte lastByte)
 HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
 {
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   Progress = progress;
   RINOK(Create());
   for (UInt32 t = 0; t < NumThreads; t++)
   #endif
   {
-    #ifdef COMPRESS_BZIP2_MT
+    #ifndef _7ZIP_ST
     CThreadInfo &ti = ThreadsInfo[t];
     if (MtMode)
     {
@@ -760,7 +760,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   CFlusher flusher(this);
 
   CombinedCrc.Init();
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   NextBlockIndex = 0;
   StreamWasFinished = false;
   CloseThreads = false;
@@ -772,7 +772,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   WriteByte(kArSig2);
   WriteByte((Byte)(kArSig3 + m_BlockSizeMult));
 
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
 
   if (MtMode)
   {
@@ -795,7 +795,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     for (;;)
     {
       CThreadInfo &ti =
-      #ifdef COMPRESS_BZIP2_MT
+      #ifndef _7ZIP_ST
       ThreadsInfo[0];
       #else
       ThreadsInfo;
@@ -866,7 +866,7 @@ HRESULT CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *p
       }
       case NCoderPropID::kNumThreads:
       {
-        #ifdef COMPRESS_BZIP2_MT
+        #ifndef _7ZIP_ST
         if (prop.vt != VT_UI4)
           return E_INVALIDARG;
         NumThreads = prop.ulVal;
@@ -882,7 +882,7 @@ HRESULT CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *p
   return S_OK;
 }
 
-#ifdef COMPRESS_BZIP2_MT
+#ifndef _7ZIP_ST
 STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
 {
   NumThreads = numThreads;

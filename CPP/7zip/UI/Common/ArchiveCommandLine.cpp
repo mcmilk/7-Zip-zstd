@@ -181,6 +181,7 @@ static const int kCommandIndex = 0;
 // exception messages
 
 static const char *kUserErrorMessage  = "Incorrect command line";
+static const char *kCannotFindListFile = "Cannot find listfile";
 static const char *kIncorrectListFile = "Incorrect item in listfile.\nCheck charset encoding and -scs switch.";
 static const char *kIncorrectWildCardInListFile = "Incorrect wildcard in listfile";
 static const char *kIncorrectWildCardInCommandLine  = "Incorrect wildcard in command line";
@@ -281,6 +282,8 @@ static void AddToCensorFromListFile(NWildcard::CCensor &wildcardCensor,
     LPCWSTR fileName, bool include, NRecursedType::EEnum type, UINT codePage)
 {
   UStringVector names;
+  if (!NFind::DoesFileExist(fileName))
+    throw kCannotFindListFile;
   if (!ReadNamesFromListFile(fileName, names, codePage))
     throw kIncorrectListFile;
   for (int i = 0; i < names.Size(); i++)

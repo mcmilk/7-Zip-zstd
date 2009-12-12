@@ -297,7 +297,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   options.NumMatchFinderCycles = m_NumMatchFinderCycles;
   options.NumMatchFinderCyclesDefined = m_NumMatchFinderCyclesDefined;
   options.Algo = m_Algo;
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   options.NumThreads = _numThreads;
   #endif
   if (isLz)
@@ -357,7 +357,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
   _numThreads = numProcessors;
   #endif
@@ -467,7 +467,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     }
     else if (name.Left(2) == L"MT")
     {
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _numThreads));
       #endif
     }

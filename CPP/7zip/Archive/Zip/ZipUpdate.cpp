@@ -13,7 +13,7 @@
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/OutMemStream.h"
 #include "../../Common/ProgressUtils.h"
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 #include "../../Common/ProgressMt.h"
 #endif
 
@@ -40,7 +40,6 @@ static const Byte kMadeByHostOS = kHostOS;
 static const Byte kExtractHostOS = kHostOS;
 
 static const Byte kMethodForDirectory = NFileHeader::NCompressionMethod::kStored;
-static const Byte kExtractVersionForDirectory = NFileHeader::NCompressionMethod::kStoreExtractVersion;
 
 static HRESULT CopyBlockToArchive(ISequentialInStream *inStream,
     COutArchive &outArchive, ICompressProgressInfo *progress)
@@ -101,7 +100,7 @@ static void SetFileHeader(
   item.SetEncrypted(!isDir && options.PasswordIsDefined);
   if (isDir)
   {
-    item.ExtractVersion.Version = kExtractVersionForDirectory;
+    item.ExtractVersion.Version = NFileHeader::NCompressionMethod::kExtractVersion_Dir;
     item.CompressionMethod = kMethodForDirectory;
     item.PackSize = 0;
     item.FileCRC = 0; // test it
@@ -134,7 +133,7 @@ static void SetItemInfoFromCompressingResult(const CCompressingResult &compressi
   }
 }
 
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 
 static THREAD_FUNC_DECL CoderThread(void *threadCoderInfo);
 
@@ -525,7 +524,7 @@ static HRESULT Update2(
   
   complexity = 0;
   
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
 
   const size_t kNumMaxThreads = (1 << 10);
   UInt32 numThreads = options->NumThreads;
@@ -584,7 +583,7 @@ static HRESULT Update2(
         inputItems, updateItems, options, comment, updateCallback);
 
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
 
   CObjectVector<CItem> items;
 

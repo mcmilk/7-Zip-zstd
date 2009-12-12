@@ -415,9 +415,7 @@ struct CThreadBenchmark
 {
   CBenchmarkDialog *BenchmarkDialog;
   UInt64 _startTime;
-  #ifdef EXTERNAL_LZMA
-  CCodecs *codecs;
-  #endif
+  DECL_EXTERNAL_CODECS_VARS
   // UInt32 dictionarySize;
   // UInt32 numThreads;
 
@@ -514,9 +512,7 @@ HRESULT CThreadBenchmark::Process()
       try
       {
         result = LzmaBench(
-          #ifdef EXTERNAL_LZMA
-          codecs,
-          #endif
+          EXTERNAL_CODECS_VARS
           numThreads, dictionarySize, &callback);
       }
       catch(...)
@@ -564,14 +560,13 @@ HRESULT CThreadBenchmark::Process()
 }
 
 HRESULT Benchmark(
-    #ifdef EXTERNAL_LZMA
-    CCodecs *codecs,
-    #endif
+    DECL_EXTERNAL_CODECS_LOC_VARS
     UInt32 numThreads, UInt32 dictionarySize, HWND hwndParent)
 {
   CThreadBenchmark benchmarker;
-  #ifdef EXTERNAL_LZMA
-  benchmarker.codecs = codecs;
+  #ifdef EXTERNAL_CODECS
+  benchmarker._codecsInfo = codecsInfo;
+  benchmarker._externalCodecs = *externalCodecs;
   #endif
 
   CBenchmarkDialog benchmarkDialog;

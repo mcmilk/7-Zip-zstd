@@ -111,6 +111,7 @@ CODER_INTERFACE(ICompressFilter, 0x40)
 {
   STDMETHOD(Init)() PURE;
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size) PURE;
+  // Filter converts as most as possible bytes
   // Filter return outSize (UInt32)
   // if (outSize <= size): Filter have converted outSize bytes
   // if (outSize > size): Filter have not converted anything.

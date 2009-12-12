@@ -1,14 +1,14 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2009-05-26 : Igor Pavlov : Public domain */
+2009-11-24 : Igor Pavlov : Public domain */
 
 /* #include <stdio.h> */
 #include <string.h>
 
+/* #define _7ZIP_ST */
+
 #include "Lzma2Enc.h"
 
-/* #define COMPRESS_MT */
-
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 #include "MtCoder.h"
 #else
 #define NUM_MT_CODER_THREADS_MAX 1
@@ -195,7 +195,7 @@ typedef struct _CLzma2Enc
 
   CLzma2EncInt coders[NUM_MT_CODER_THREADS_MAX];
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   CMtCoder mtCoder;
   #endif
 
@@ -242,7 +242,7 @@ static SRes Lzma2Enc_EncodeMt1(CLzma2EncInt *p, CLzma2Enc *mainEncoder,
   return res;
 }
 
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 
 typedef struct
 {
@@ -322,7 +322,7 @@ CLzma2EncHandle Lzma2Enc_Create(ISzAlloc *alloc, ISzAlloc *allocBig)
     for (i = 0; i < NUM_MT_CODER_THREADS_MAX; i++)
       p->coders[i].enc = 0;
   }
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   MtCoder_Construct(&p->mtCoder);
   #endif
 
@@ -343,7 +343,7 @@ void Lzma2Enc_Destroy(CLzma2EncHandle pp)
     }
   }
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   MtCoder_Destruct(&p->mtCoder);
   #endif
 
@@ -363,7 +363,7 @@ void Lzma2EncProps_Normalize(CLzma2EncProps *p)
   t2 = p->numBlockThreads;
   t3 = p->numTotalThreads;
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   if (t2 > NUM_MT_CODER_THREADS_MAX)
     t2 = NUM_MT_CODER_THREADS_MAX;
   #else
@@ -455,12 +455,12 @@ SRes Lzma2Enc_Encode(CLzma2EncHandle pp,
     }
   }
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   if (p->props.numBlockThreads <= 1)
   #endif
     return Lzma2Enc_EncodeMt1(&p->coders[0], p, outStream, inStream, progress);
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
 
   {
     CMtCallbackImp mtCallback;

@@ -1,7 +1,6 @@
 DIRS = \
   UI\~ \
   Bundles\~ \
-  Compress\~ \
   
 all: $(DIRS)
 

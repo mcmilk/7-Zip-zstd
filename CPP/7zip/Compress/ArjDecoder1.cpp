@@ -246,15 +246,9 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
   if (!m_InBitStream.Create(1 << 20))
     return E_OUTOFMEMORY;
 
-  int size1 = sizeof(c_table) / sizeof(c_table[0]);
-  for (int i = 0; i < size1; i++)
-  {
-    if (i % 100 == 0)
-      c_table[i] = 0;
-
+  // check it
+  for (int i = 0; i < CTABLESIZE; i++)
     c_table[i] = 0;
-  }
-
 
   UInt64 pos = 0;
   m_OutWindowStream.SetStream(outStream);

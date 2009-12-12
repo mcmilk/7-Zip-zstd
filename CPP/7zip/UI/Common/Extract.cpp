@@ -78,7 +78,7 @@ static HRESULT DecompressArchive(
       removePathParts,
       packSize);
 
-  #ifdef COMPRESS_MT
+  #if !defined(_7ZIP_ST) && !defined(_SFX)
   RINOK(SetProperties(archive, options.Properties));
   #endif
 

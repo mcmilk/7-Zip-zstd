@@ -47,7 +47,7 @@ void CKeyInfo::CalculateDigest()
   {
     CSha256 sha;
     Sha256_Init(&sha);
-    const UInt64 numRounds = UInt64(1) << (NumCyclesPower);
+    const UInt64 numRounds = (UInt64)1 << NumCyclesPower;
     Byte temp[8] = { 0,0,0,0,0,0,0,0 };
     for (UInt64 round = 0; round < numRounds; round++)
     {
@@ -206,7 +206,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
     _key.Salt[i] = data[pos++];
   for (i = 0; i < ivSize; i++)
     _iv[i] = data[pos++];
-  return S_OK;
+  return (_key.NumCyclesPower <= 24) ? S_OK :  E_NOTIMPL;
 }
 
 STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)

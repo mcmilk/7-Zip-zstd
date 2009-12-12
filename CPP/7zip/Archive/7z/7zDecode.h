@@ -57,7 +57,7 @@ public:
       #ifndef _NO_CRYPTO
       , ICryptoGetTextPassword *getTextPasswordSpec, bool &passwordIsDefined
       #endif
-      #ifdef COMPRESS_MT
+      #if !defined(_7ZIP_ST) && !defined(_SFX)
       , bool mtMode, UInt32 numThreads
       #endif
       );

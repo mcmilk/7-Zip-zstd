@@ -16,30 +16,30 @@ namespace NQuantum {
 
 class CStreamBitDecoder
 {
-  UInt32 m_Value;
-  CInBuffer m_Stream;
+  UInt32 Value;
+  CInBuffer Stream;
 public:
-  bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
-  void SetStream(ISequentialInStream *inStream) { m_Stream.SetStream(inStream);}
-  void ReleaseStream() { m_Stream.ReleaseStream();}
+  bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
+  void SetStream(ISequentialInStream *stream) { Stream.SetStream(stream); }
+  void ReleaseStream() { Stream.ReleaseStream(); }
 
-  void Finish() { m_Value = 0x10000; }
+  void Finish() { Value = 0x10000; }
 
   void Init()
   {
-    m_Stream.Init();
-    m_Value = 0x10000;
+    Stream.Init();
+    Value = 0x10000;
   }
 
-  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize(); }
-  bool WasFinished() const { return m_Stream.WasFinished(); };
+  UInt64 GetProcessedSize() const { return Stream.GetProcessedSize(); }
+  bool WasFinished() const { return Stream.WasFinished(); }
   
   UInt32 ReadBit()
   {
-    if (m_Value >= 0x10000)
-      m_Value = 0x100 | m_Stream.ReadByte();
-    UInt32 res = (m_Value >> 7) & 1;
-    m_Value <<= 1;
+    if (Value >= 0x10000)
+      Value = 0x100 | Stream.ReadByte();
+    UInt32 res = (Value >> 7) & 1;
+    Value <<= 1;
     return res;
   }
 
@@ -48,26 +48,17 @@ public:
     UInt32 res = 0;
     do
       res = (res << 1) | ReadBit();
-    while(--numBits != 0);
+    while (--numBits != 0);
     return res;
   }
 };
 
-const int kNumLitSelectorBits = 2;
-const unsigned int kNumLitSelectors = (1 << kNumLitSelectorBits);
-const unsigned int kNumLitSymbols = 1 << (8 - kNumLitSelectorBits);
-const unsigned int kNumMatchSelectors = 3;
-const unsigned int kNumSelectors = kNumLitSelectors + kNumMatchSelectors;
-const unsigned int kNumLen3PosSymbolsMax = 24;
-const unsigned int kNumLen4PosSymbolsMax = 36;
-const unsigned int kNumLen5PosSymbolsMax = 42;
-const unsigned int kNumLenSymbols = 27;
-
-const unsigned int kNumSymbolsMax = kNumLitSymbols; // 64
-
-const unsigned int kMatchMinLen = 3;
-const unsigned int kNumSimplePosSlots = 4;
-const unsigned int kNumSimpleLenSlots = 6;
+const unsigned kNumLitSelectorBits = 2;
+const unsigned kNumLitSelectors = (1 << kNumLitSelectorBits);
+const unsigned kNumLitSymbols = 1 << (8 - kNumLitSelectorBits);
+const unsigned kNumMatchSelectors = 3;
+const unsigned kNumSelectors = kNumLitSelectors + kNumMatchSelectors;
+const unsigned kNumSymbolsMax = kNumLitSymbols; // 64
 
 namespace NRangeCoder {
 
@@ -135,16 +126,16 @@ const UInt16 kReorderCount = 50;
 
 class CModelDecoder
 {
-  unsigned int NumItems;
-  unsigned int ReorderCount;
+  unsigned NumItems;
+  unsigned ReorderCount;
   UInt16 Freqs[kNumSymbolsMax + 1];
   Byte Values[kNumSymbolsMax];
 public:
-  void Init(unsigned int numItems)
+  void Init(unsigned numItems)
   {
     NumItems = numItems;
     ReorderCount = kReorderCountStart;
-    for(unsigned int i = 0; i < numItems; i++)
+    for (unsigned i = 0; i < numItems; i++)
     {
       Freqs[i] = (UInt16)(numItems - i);
       Values[i] = (Byte)i;
@@ -152,26 +143,26 @@ public:
     Freqs[numItems] = 0;
   }
   
-  unsigned int Decode(CDecoder *rangeDecoder)
+  unsigned Decode(CDecoder *rangeDecoder)
   {
     UInt32 threshold = rangeDecoder->GetThreshold(Freqs[0]);
-    unsigned int i;
+    unsigned i;
     for (i = 1; Freqs[i] > threshold; i++);
     rangeDecoder->Decode(Freqs[i], Freqs[i - 1], Freqs[0]);
-    unsigned int res = Values[--i];
+    unsigned res = Values[--i];
     do
       Freqs[i] += kUpdateStep;
-    while(i-- != 0);
+    while (i-- != 0);
 
     if (Freqs[0] > kFreqSumMax)
     {
       if (--ReorderCount == 0)
       {
         ReorderCount = kReorderCount;
-        for(i = 0; i < NumItems; i++)
+        for (i = 0; i < NumItems; i++)
           Freqs[i] = (UInt16)(((Freqs[i] - Freqs[i + 1]) + 1) >> 1);
-        for(i = 0; i < NumItems - 1; i++)
-          for(unsigned int j = i + 1; j < NumItems; j++)
+        for (i = 0; i < NumItems - 1; i++)
+          for (unsigned j = i + 1; j < NumItems; j++)
             if (Freqs[i] < Freqs[j])
             {
               UInt16 tmpFreq = Freqs[i];
@@ -183,7 +174,7 @@ public:
             }
         do
           Freqs[i] = (UInt16)(Freqs[i] + Freqs[i + 1]);
-        while(i-- != 0);
+        while (i-- != 0);
       }
       else
       {
@@ -194,11 +185,11 @@ public:
           if (Freqs[i] <= Freqs[i + 1])
             Freqs[i] = (UInt16)(Freqs[i + 1] + 1);
         }
-        while(i-- != 0);
+        while (i-- != 0);
       }
     }
     return res;
-  };
+  }
 };
 
 }
@@ -212,23 +203,17 @@ class CDecoder:
   CLzOutWindow _outWindowStream;
   NRangeCoder::CDecoder _rangeDecoder;
 
-  ///////////////////
-  // State
   UInt64 _outSize;
-  // UInt64 _nowPos64;
   int _remainLen; // -1 means end of stream. // -2 means need Init
   UInt32 _rep0;
 
   int _numDictBits;
-  UInt32 _dictionarySize;
+  bool _keepHistory;
 
   NRangeCoder::CModelDecoder m_Selector;
   NRangeCoder::CModelDecoder m_Literals[kNumLitSelectors];
   NRangeCoder::CModelDecoder m_PosSlot[kNumMatchSelectors];
   NRangeCoder::CModelDecoder m_LenSlot;
-
-  bool _keepHistory;
-  
   void Init();
   HRESULT CodeSpec(UInt32 size);
 public:
@@ -268,16 +253,8 @@ public:
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
-  void SetParams(int numDictBits)
-  {
-    _numDictBits = numDictBits;
-    _dictionarySize = (UInt32)1 << numDictBits;
-  }
-  void SetKeepHistory(bool keepHistory)
-  {
-    _keepHistory = keepHistory;
-  }
-
+  void SetParams(int numDictBits) { _numDictBits = numDictBits; }
+  void SetKeepHistory(bool keepHistory) { _keepHistory = keepHistory; }
   CDecoder(): _keepHistory(false) {}
   virtual ~CDecoder() {}
 };

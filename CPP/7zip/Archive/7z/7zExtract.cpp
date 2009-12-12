@@ -237,7 +237,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           #ifndef _NO_CRYPTO
           , getTextPassword, passwordIsDefined
           #endif
-          #ifdef COMPRESS_MT
+          #if !defined(_7ZIP_ST) && !defined(_SFX)
           , true, _numThreads
           #endif
           );

@@ -7,10 +7,9 @@
 
 namespace NBitl {
 
-const int kNumBigValueBits = 8 * 4;
-
-const int kNumValueBytes = 3;
-const int kNumValueBits = 8  * kNumValueBytes;
+const unsigned kNumBigValueBits = 8 * 4;
+const unsigned kNumValueBytes = 3;
+const unsigned kNumValueBits = 8  * kNumValueBytes;
 
 const UInt32 kMask = (1 << kNumValueBits) - 1;
 
@@ -20,7 +19,7 @@ template<class TInByte>
 class CBaseDecoder
 {
 protected:
-  int m_BitPos;
+  unsigned m_BitPos;
   UInt32 m_Value;
   TInByte m_Stream;
 public:
@@ -51,7 +50,7 @@ public:
     }
   }
   
-  UInt32 ReadBits(int numBits)
+  UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
     UInt32 res = m_Value & ((1 << numBits) - 1);
@@ -95,19 +94,19 @@ public:
     }
   }
   
-  UInt32 GetValue(int numBits)
+  UInt32 GetValue(unsigned numBits)
   {
     Normalize();
     return ((this->m_Value >> (8 - this->m_BitPos)) & kMask) >> (kNumValueBits - numBits);
   }
 
-  void MovePos(int numBits)
+  void MovePos(unsigned numBits)
   {
     this->m_BitPos += numBits;
     m_NormalValue >>= numBits;
   }
   
-  UInt32 ReadBits(int numBits)
+  UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
     UInt32 res = m_NormalValue & ((1 << numBits) - 1);

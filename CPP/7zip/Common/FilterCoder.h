@@ -1,7 +1,7 @@
 // FilterCoder.h
 
-#ifndef __FILTERCODER_H
-#define __FILTERCODER_H
+#ifndef __FILTER_CODER_H
+#define __FILTER_CODER_H
 
 #include "../../Common/MyCom.h"
 #include "../ICoder.h"
@@ -13,13 +13,11 @@
 
 class CFilterCoder:
   public ICompressCoder,
-  // #ifdef _ST_MODE
   public ICompressSetInStream,
   public ISequentialInStream,
   public ICompressSetOutStream,
   public ISequentialOutStream,
   public IOutStreamFlush,
-  // #endif
 
   #ifndef _NO_CRYPTO
   public ICryptoSetPassword,
@@ -35,13 +33,11 @@ class CFilterCoder:
 {
 protected:
   Byte *_buffer;
-  // #ifdef _ST_MODE
   CMyComPtr<ISequentialInStream> _inStream;
   CMyComPtr<ISequentialOutStream> _outStream;
   UInt32 _bufferPos;
   UInt32 _convertedPosBegin;
   UInt32 _convertedPosEnd;
-  // #endif
   bool _outSizeIsDefined;
   UInt64 _outSize;
   UInt64 _nowPos64;
@@ -67,20 +63,14 @@ public:
   CFilterCoder();
   ~CFilterCoder();
   HRESULT WriteWithLimit(ISequentialOutStream *outStream, UInt32 size);
-  bool NeedMore() const
-    { return (!_outSizeIsDefined || (_nowPos64 < _outSize)); }
 
 public:
-  MY_QUERYINTERFACE_BEGIN
-    MY_QUERYINTERFACE_ENTRY(ICompressCoder)
-    // #ifdef _ST_MODE
+  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
     MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)
     MY_QUERYINTERFACE_ENTRY(ISequentialInStream)
-
     MY_QUERYINTERFACE_ENTRY(ICompressSetOutStream)
     MY_QUERYINTERFACE_ENTRY(ISequentialOutStream)
     MY_QUERYINTERFACE_ENTRY(IOutStreamFlush)
-    // #endif
 
     #ifndef _NO_CRYPTO
     MY_QUERYINTERFACE_ENTRY_AG(ICryptoSetPassword, Filter, _setPassword)
@@ -96,10 +86,8 @@ public:
     MY_QUERYINTERFACE_ENTRY_AG(ICompressSetDecoderProperties2, Filter, _setDecoderProperties)
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-      ICompressProgressInfo *progress);
-  // #ifdef _ST_MODE
+  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetInStream)(ISequentialInStream *inStream);
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize); \
@@ -107,7 +95,6 @@ public:
   STDMETHOD(ReleaseOutStream)();
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Flush)();
-  // #endif
 
   #ifndef _NO_CRYPTO
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
@@ -122,7 +109,6 @@ public:
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 };
 
-// #ifdef _ST_MODE
 class CInStreamReleaser
 {
 public:
@@ -138,6 +124,5 @@ public:
   COutStreamReleaser(): FilterCoder(0) {}
   ~COutStreamReleaser() { if (FilterCoder) FilterCoder->ReleaseOutStream(); }
 };
-// #endif
 
 #endif

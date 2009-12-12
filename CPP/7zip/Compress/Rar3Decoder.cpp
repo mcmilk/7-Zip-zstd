@@ -623,8 +623,7 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
     UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
     if (number < 256)
     {
-      PutByte(Byte(number));
-
+      PutByte((Byte)number);
       continue;
     }
     else if (number == kSymbolReadTable)
@@ -640,6 +639,8 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
     }
     else if (number == 258)
     {
+      if (length == 0)
+        return S_FALSE;
     }
     else if (number < kSymbolRep + 4)
     {

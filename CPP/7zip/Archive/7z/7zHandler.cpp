@@ -7,7 +7,7 @@
 #include "../../../Common/ComTry.h"
 #include "../../../Common/IntToString.h"
 
-#ifdef COMPRESS_MT
+#ifndef __7Z_SET_PROPERTIES
 #include "../../../Windows/System.h"
 #endif
 
@@ -38,7 +38,7 @@ CHandler::CHandler()
   #endif
 
   #ifdef EXTRACT_ONLY
-  #ifdef COMPRESS_MT
+  #ifdef __7Z_SET_PROPERTIES
   _numThreads = NSystem::GetNumberOfProcessors();
   #endif
   #else
@@ -190,18 +190,11 @@ static inline void AddHexToString(UString &res, Byte value)
 
 #endif
 
-static const UInt64 k_AES  = 0x06F10701;
-
 bool CHandler::IsEncrypted(UInt32 index2) const
 {
   CNum folderIndex = _db.FileIndexToFolderIndexMap[index2];
   if (folderIndex != kNumNoIndex)
-  {
-    const CFolder &folderInfo = _db.Folders[folderIndex];
-    for (int i = folderInfo.Coders.Size() - 1; i >= 0; i--)
-      if (folderInfo.Coders[i].MethodID == k_AES)
-        return true;
-  }
+    return _db.Folders[folderIndex].IsEncrypted();
   return false;
 }
 
@@ -454,10 +447,8 @@ STDMETHODIMP CHandler::Close()
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
 {
   COM_TRY_BEGIN
-  #ifdef COMPRESS_MT
   const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
   _numThreads = numProcessors;
-  #endif
 
   for (int i = 0; i < numProperties; i++)
   {
@@ -472,9 +463,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     {
       if(name.Left(2).CompareNoCase(L"MT") == 0)
       {
-        #ifdef COMPRESS_MT
         RINOK(ParseMtProp(name.Mid(2), value, numProcessors, _numThreads));
-        #endif
         continue;
       }
       else

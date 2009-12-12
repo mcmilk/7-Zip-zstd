@@ -24,12 +24,12 @@ struct CMethod
 struct CMethodsMode
 {
   CObjectVector<CMethod> Methods;
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   UInt32 NumThreads;
   #endif
 
   CMethodsMode()
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       : NumThreads(1)
       #endif
   {}

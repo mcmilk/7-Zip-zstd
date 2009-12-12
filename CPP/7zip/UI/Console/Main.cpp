@@ -28,8 +28,7 @@
 #endif
 #include "../Common/PropIDUtils.h"
 
-#include "../../Compress/LZMA_Alone/LzmaBenchCon.h"
-
+#include "BenchCon.h"
 #include "ExtractCallbackConsole.h"
 #include "List.h"
 #include "OpenCallbackConsole.h"
@@ -355,10 +354,17 @@ int Main2(
     }
     else
     {
-      HRESULT res = LzmaBenchCon(
-        #ifdef EXTERNAL_LZMA
-        codecs,
-        #endif
+      HRESULT res;
+      #ifdef EXTERNAL_CODECS
+      CObjectVector<CCodecInfoEx> externalCodecs;
+      res = LoadExternalCodecs(compressCodecsInfo, externalCodecs);
+      if (res != S_OK)
+        throw CSystemException(res);
+      #endif
+      res = LzmaBenchCon(
+          #ifdef EXTERNAL_CODECS
+          compressCodecsInfo, &externalCodecs,
+          #endif
         (FILE *)stdStream, options.NumIterations, options.NumThreads, options.DictionarySize);
       if (res != S_OK)
       {
@@ -404,7 +410,7 @@ int Main2(
       eo.OutputDir = options.OutputDir;
       eo.YesToAll = options.YesToAll;
       eo.CalcCrc = options.CalcCrc;
-      #ifdef COMPRESS_MT
+      #if !defined(_7ZIP_ST) && !defined(_SFX)
       eo.Properties = options.ExtractProperties;
       #endif
       UString errorMessage;

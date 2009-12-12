@@ -10,22 +10,13 @@ STDMETHOD_(ULONG, AddRef)() { InterlockedIncrement((LONG *)&__m_RefCount); retur
 STDMETHOD_(ULONG, Release)() { InterlockedDecrement((LONG *)&__m_RefCount); if (__m_RefCount != 0) \
   return __m_RefCount; delete this; return 0; }
 
-#define MY_UNKNOWN_IMP_SPEC_MT(i) \
+#define MY_UNKNOWN_IMP_SPEC_MT2(i1, i) \
   MY_QUERYINTERFACE_BEGIN \
-  MY_QUERYINTERFACE_ENTRY(IUnknown) \
+  MY_QUERYINTERFACE_ENTRY_UNKNOWN(i1) \
   i \
   MY_QUERYINTERFACE_END \
   MY_ADDREF_RELEASE_MT
 
-#define MY_UNKNOWN_IMP_SPEC_MT2(i1, i) \
-  MY_QUERYINTERFACE_BEGIN \
-  if (iid == IID_IUnknown) \
-      { *outObject = (void *)(IUnknown *)(i1 *)this; AddRef(); return S_OK; }  i \
-  MY_QUERYINTERFACE_END \
-  MY_ADDREF_RELEASE_MT
-
-
-#define MY_UNKNOWN_IMP_MT MY_UNKNOWN_IMP_SPEC_MT(;)
 
 #define MY_UNKNOWN_IMP1_MT(i) MY_UNKNOWN_IMP_SPEC_MT2( \
   i, \

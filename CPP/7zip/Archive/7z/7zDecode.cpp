@@ -97,7 +97,7 @@ HRESULT CDecoder::Decode(
     #ifndef _NO_CRYPTO
     , ICryptoGetTextPassword *getTextPassword, bool &passwordIsDefined
     #endif
-    #ifdef COMPRESS_MT
+    #if !defined(_7ZIP_ST) && !defined(_SFX)
     , bool mtMode, UInt32 numThreads
     #endif
     )
@@ -239,7 +239,7 @@ HRESULT CDecoder::Decode(
       }
     }
 
-    #ifdef COMPRESS_MT
+    #if !defined(_7ZIP_ST) && !defined(_SFX)
     if (mtMode)
     {
       CMyComPtr<ICompressSetCoderMt> setCoderMt;

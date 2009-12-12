@@ -31,7 +31,7 @@ struct CCompressionMethodMode
 {
   CObjectVector<CMethodFull> Methods;
   CRecordVector<CBind> Binds;
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   UInt32 NumThreads;
   #endif
   bool PasswordIsDefined;
@@ -39,7 +39,7 @@ struct CCompressionMethodMode
 
   bool IsEmpty() const { return (Methods.IsEmpty() && !PasswordIsDefined); }
   CCompressionMethodMode(): PasswordIsDefined(false)
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       , NumThreads(1)
       #endif
   {}

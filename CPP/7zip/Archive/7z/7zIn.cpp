@@ -823,7 +823,7 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(
       #ifndef _NO_CRYPTO
       , getTextPassword, passwordIsDefined
       #endif
-      #ifdef COMPRESS_MT
+      #if !defined(_7ZIP_ST) && !defined(_SFX)
       , false, 1
       #endif
       );

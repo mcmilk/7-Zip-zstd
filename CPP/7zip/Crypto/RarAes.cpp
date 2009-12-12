@@ -33,7 +33,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
     same = true;
     if (_thereIsSalt)
     {
-      for (int i = 0; i < sizeof(_salt); i++)
+      for (unsigned i = 0; i < sizeof(_salt); i++)
         if (_salt[i] != data[i])
         {
           same = false;
@@ -41,14 +41,14 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
         }
     }
   }
-  for (int i = 0; i < sizeof(_salt); i++)
+  for (unsigned i = 0; i < sizeof(_salt); i++)
     _salt[i] = data[i];
   if (!_needCalculate && !same)
     _needCalculate = true;
   return S_OK;
 }
 
-static const int kMaxPasswordLength = 127 * 2;
+static const unsigned kMaxPasswordLength = 127 * 2;
 
 STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
@@ -75,21 +75,16 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 STDMETHODIMP CDecoder::Init()
 {
   Calculate();
-  Aes_SetKeyDecode(&Aes.aes, aesKey, kRarAesKeySize);
-  AesCbc_Init(&Aes, aesInit);
+  SetKey(aesKey, kRarAesKeySize);
+  AesCbc_Init(_aes + _offset, _aesInit);
   return S_OK;
-}
-
-STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
-{
-  return (UInt32)AesCbc_Decode(&Aes, data, size);
 }
 
 void CDecoder::Calculate()
 {
   if (_needCalculate)
   {
-    const int kSaltSize = 8;
+    const unsigned kSaltSize = 8;
     
     Byte rawPassword[kMaxPasswordLength + kSaltSize];
     
@@ -106,20 +101,20 @@ void CDecoder::Calculate()
     NSha1::CContext sha;
     sha.Init();
 
-    // seems rar reverts hash for sha.
-    const int hashRounds = 0x40000;
-    int i;
-    for (i = 0; i < hashRounds; i++)
+    // rar reverts hash for sha.
+    const unsigned kNumRounds = (1 << 18);
+    unsigned i;
+    for (i = 0; i < kNumRounds; i++)
     {
       sha.Update(rawPassword, rawLength, _rar350Mode);
       Byte pswNum[3] = { (Byte)i, (Byte)(i >> 8), (Byte)(i >> 16) };
       sha.Update(pswNum, 3, _rar350Mode);
-      if (i % (hashRounds / 16) == 0)
+      if (i % (kNumRounds / 16) == 0)
       {
         NSha1::CContext shaTemp = sha;
         Byte digest[NSha1::kDigestSize];
         shaTemp.Final(digest);
-        aesInit[i / (hashRounds / 16)] = (Byte)digest[4 * 4 + 3];
+        _aesInit[i / (kNumRounds / 16)] = (Byte)digest[4 * 4 + 3];
       }
     }
     /*
@@ -130,7 +125,7 @@ void CDecoder::Calculate()
     Byte digest[20];
     sha.Final(digest);
     for (i = 0; i < 4; i++)
-      for (int j = 0; j < 4; j++)
+      for (unsigned j = 0; j < 4; j++)
         aesKey[i * 4 + j] = (digest[i * 4 + 3 - j]);
   }
   _needCalculate = false;

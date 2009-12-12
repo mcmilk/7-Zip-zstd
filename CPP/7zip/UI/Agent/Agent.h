@@ -48,8 +48,7 @@ class CAgentFolder:
 {
 public:
 
-  MY_QUERYINTERFACE_BEGIN
-    MY_QUERYINTERFACE_ENTRY(IFolderFolder)
+  MY_QUERYINTERFACE_BEGIN2(IFolderFolder)
     MY_QUERYINTERFACE_ENTRY(IFolderProperties)
     MY_QUERYINTERFACE_ENTRY(IGetFolderArchiveProperties)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolder)
@@ -142,8 +141,7 @@ class CAgent:
 {
 public:
 
-  MY_QUERYINTERFACE_BEGIN
-    MY_QUERYINTERFACE_ENTRY(IInFolderArchive)
+  MY_QUERYINTERFACE_BEGIN2(IInFolderArchive)
     MY_QUERYINTERFACE_ENTRY(IFolderArchiveProperties)
   #ifndef EXTRACT_ONLY
     MY_QUERYINTERFACE_ENTRY(IOutFolderArchive)

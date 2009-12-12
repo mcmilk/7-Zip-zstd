@@ -1,5 +1,5 @@
 /* Aes.c -- AES encryption / decryption
-2009-06-10 : Igor Pavlov : Public domain */
+2009-11-23 : Igor Pavlov : Public domain */
 
 #include "Aes.h"
 #include "CpuArch.h"
@@ -22,6 +22,18 @@ static Byte Sbox[256] = {
   0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
   0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
   0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16};
+
+void MY_FAST_CALL AesCbc_Encode(UInt32 *ivAes, Byte *data, size_t numBlocks);
+void MY_FAST_CALL AesCbc_Decode(UInt32 *ivAes, Byte *data, size_t numBlocks);
+void MY_FAST_CALL AesCtr_Code(UInt32 *ivAes, Byte *data, size_t numBlocks);
+
+void MY_FAST_CALL AesCbc_Encode_Intel(UInt32 *ivAes, Byte *data, size_t numBlocks);
+void MY_FAST_CALL AesCbc_Decode_Intel(UInt32 *ivAes, Byte *data, size_t numBlocks);
+void MY_FAST_CALL AesCtr_Code_Intel(UInt32 *ivAes, Byte *data, size_t numBlocks);
+
+AES_CODE_FUNC g_AesCbc_Encode;
+AES_CODE_FUNC g_AesCbc_Decode;
+AES_CODE_FUNC g_AesCtr_Code;
 
 static UInt32 D[256 * 4];
 static Byte InvS[256];
@@ -68,6 +80,17 @@ void AesGenTables(void)
       D[0x300 + i] = Ui32(a9, aD, aB, aE);
     }
   }
+  g_AesCbc_Encode = AesCbc_Encode;
+  g_AesCbc_Decode = AesCbc_Decode;
+  g_AesCtr_Code = AesCtr_Code;
+  #ifdef MY_CPU_X86_OR_AMD64
+  if (CPU_Is_Aes_Supported())
+  {
+    g_AesCbc_Encode = AesCbc_Encode_Intel;
+    g_AesCbc_Decode = AesCbc_Decode_Intel;
+    g_AesCtr_Code = AesCtr_Code_Intel;
+  }
+  #endif
 }
 
 #define HT(i, x, s) (T + (x << 8))[gb ## x(s[(i + x) & 3])]
@@ -102,15 +125,13 @@ void AesGenTables(void)
 #define FD(i, x) InvS[gb ## x(m[(i - x) & 3])]
 #define FD4(i) dest[i] = Ui32(FD(i, 0), FD(i, 1), FD(i, 2), FD(i, 3)) ^ w[i];
 
-void Aes_SetKeyEncode(CAes *p, const Byte *key, unsigned keySize)
+void MY_FAST_CALL Aes_SetKey_Enc(UInt32 *w, const Byte *key, unsigned keySize)
 {
   unsigned i, wSize;
-  UInt32 *w;
+  wSize = keySize + 28;
   keySize /= 4;
-  p->numRounds2 = keySize / 2 + 3;
-
-  wSize = (p->numRounds2 * 2 + 1) * 4;
-  w = p->rkey;
+  w[0] = ((UInt32)keySize / 2) + 3;
+  w += 4;
 
   for (i = 0; i < keySize; i++, key += 4)
     w[i] = GetUi32(key);
@@ -127,13 +148,12 @@ void Aes_SetKeyEncode(CAes *p, const Byte *key, unsigned keySize)
   }
 }
 
-void Aes_SetKeyDecode(CAes *p, const Byte *key, unsigned keySize)
+void MY_FAST_CALL Aes_SetKey_Dec(UInt32 *w, const Byte *key, unsigned keySize)
 {
   unsigned i, num;
-  UInt32 *w;
-  Aes_SetKeyEncode(p, key, keySize);
-  num = p->numRounds2 * 8 - 4;
-  w = p->rkey + 4;
+  Aes_SetKey_Enc(w, key, keySize);
+  num = keySize + 20;
+  w += 8;
   for (i = 0; i < num; i++)
   {
     UInt32 r = w[i];
@@ -145,10 +165,16 @@ void Aes_SetKeyDecode(CAes *p, const Byte *key, unsigned keySize)
   }
 }
 
-static void AesEncode32(UInt32 *dest, const UInt32 *src, const UInt32 *w, unsigned numRounds2)
+/* Aes_Encode and Aes_Decode functions work with little-endian words.
+  src and dest are pointers to 4 UInt32 words.
+  arc and dest can point to same block */
+
+static void Aes_Encode(const UInt32 *w, UInt32 *dest, const UInt32 *src)
 {
   UInt32 s[4];
   UInt32 m[4];
+  UInt32 numRounds2 = w[0];
+  w += 4;
   s[0] = src[0] ^ w[0];
   s[1] = src[1] ^ w[1];
   s[2] = src[2] ^ w[2];
@@ -166,11 +192,12 @@ static void AesEncode32(UInt32 *dest, const UInt32 *src, const UInt32 *w, unsign
   FT4(0); FT4(1); FT4(2); FT4(3);
 }
 
-static void AesDecode32(UInt32 *dest, const UInt32 *src, const UInt32 *w, unsigned numRounds2)
+static void Aes_Decode(const UInt32 *w, UInt32 *dest, const UInt32 *src)
 {
   UInt32 s[4];
   UInt32 m[4];
-  w += numRounds2 * 8;
+  UInt32 numRounds2 = w[0];
+  w += 4 + numRounds2 * 8;
   s[0] = src[0] ^ w[0];
   s[1] = src[1] ^ w[1];
   s[2] = src[2] ^ w[2];
@@ -186,75 +213,70 @@ static void AesDecode32(UInt32 *dest, const UInt32 *src, const UInt32 *w, unsign
   FD4(0); FD4(1); FD4(2); FD4(3);
 }
 
-void Aes_Encode32(const CAes *p, UInt32 *dest, const UInt32 *src)
-{
-  AesEncode32(dest, src, p->rkey, p->numRounds2);
-}
-
-void Aes_Decode32(const CAes *p, UInt32 *dest, const UInt32 *src)
-{
-  AesDecode32(dest, src, p->rkey, p->numRounds2);
-}
-
-void AesCbc_Init(CAesCbc *p, const Byte *iv)
+void AesCbc_Init(UInt32 *p, const Byte *iv)
 {
   unsigned i;
   for (i = 0; i < 4; i++)
-    p->prev[i] = GetUi32(iv + i * 4);
+    p[i] = GetUi32(iv + i * 4);
 }
 
-SizeT AesCbc_Encode(CAesCbc *p, Byte *data, SizeT size)
+void MY_FAST_CALL AesCbc_Encode(UInt32 *p, Byte *data, size_t numBlocks)
 {
-  SizeT i;
-  if (size == 0)
-    return 0;
-  if (size < AES_BLOCK_SIZE)
-    return AES_BLOCK_SIZE;
-  size -= AES_BLOCK_SIZE;
-  for (i = 0; i <= size; i += AES_BLOCK_SIZE, data += AES_BLOCK_SIZE)
+  for (; numBlocks != 0; numBlocks--, data += AES_BLOCK_SIZE)
   {
-    p->prev[0] ^= GetUi32(data);
-    p->prev[1] ^= GetUi32(data + 4);
-    p->prev[2] ^= GetUi32(data + 8);
-    p->prev[3] ^= GetUi32(data + 12);
+    p[0] ^= GetUi32(data);
+    p[1] ^= GetUi32(data + 4);
+    p[2] ^= GetUi32(data + 8);
+    p[3] ^= GetUi32(data + 12);
     
-    AesEncode32(p->prev, p->prev, p->aes.rkey, p->aes.numRounds2);
+    Aes_Encode(p + 4, p, p);
     
-    SetUi32(data,      p->prev[0]);
-    SetUi32(data + 4,  p->prev[1]);
-    SetUi32(data + 8,  p->prev[2]);
-    SetUi32(data + 12, p->prev[3]);
+    SetUi32(data,      p[0]);
+    SetUi32(data + 4,  p[1]);
+    SetUi32(data + 8,  p[2]);
+    SetUi32(data + 12, p[3]);
   }
-  return i;
 }
 
-SizeT AesCbc_Decode(CAesCbc *p, Byte *data, SizeT size)
+void MY_FAST_CALL AesCbc_Decode(UInt32 *p, Byte *data, size_t numBlocks)
 {
-  SizeT i;
   UInt32 in[4], out[4];
-  if (size == 0)
-    return 0;
-  if (size < AES_BLOCK_SIZE)
-    return AES_BLOCK_SIZE;
-  size -= AES_BLOCK_SIZE;
-  for (i = 0; i <= size; i += AES_BLOCK_SIZE, data += AES_BLOCK_SIZE)
+  for (; numBlocks != 0; numBlocks--, data += AES_BLOCK_SIZE)
   {
     in[0] = GetUi32(data);
     in[1] = GetUi32(data + 4);
     in[2] = GetUi32(data + 8);
     in[3] = GetUi32(data + 12);
+
+    Aes_Decode(p + 4, out, in);
+
+    SetUi32(data,      p[0] ^ out[0]);
+    SetUi32(data + 4,  p[1] ^ out[1]);
+    SetUi32(data + 8,  p[2] ^ out[2]);
+    SetUi32(data + 12, p[3] ^ out[3]);
     
-    AesDecode32(out, in, p->aes.rkey, p->aes.numRounds2);
-    
-    SetUi32(data,      p->prev[0] ^ out[0]);
-    SetUi32(data + 4,  p->prev[1] ^ out[1]);
-    SetUi32(data + 8,  p->prev[2] ^ out[2]);
-    SetUi32(data + 12, p->prev[3] ^ out[3]);
-    
-    p->prev[0] = in[0];
-    p->prev[1] = in[1];
-    p->prev[2] = in[2];
-    p->prev[3] = in[3];
+    p[0] = in[0];
+    p[1] = in[1];
+    p[2] = in[2];
+    p[3] = in[3];
   }
-  return i;
+}
+
+void MY_FAST_CALL AesCtr_Code(UInt32 *p, Byte *data, size_t numBlocks)
+{
+  for (; numBlocks != 0; numBlocks--)
+  {
+    UInt32 temp[4];
+    Byte buf[16];
+    int i;
+    if (++p[0] == 0)
+      p[1]++;
+    Aes_Encode(p + 4, temp, p);
+    SetUi32(buf,      temp[0]);
+    SetUi32(buf + 4,  temp[1]);
+    SetUi32(buf + 8,  temp[2]);
+    SetUi32(buf + 12, temp[3]);
+    for (i = 0; i < 16; i++)
+      *data++ ^= buf[i];
+  }
 }

@@ -57,11 +57,6 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
   return S_OK;
 }
 
-STDMETHODIMP CBaseCoder::Init()
-{
-  return S_OK;
-}
-
 HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 /* crc */, UInt64 /* unpackSize */)
 {
   Byte temp[4];
@@ -85,79 +80,70 @@ HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 /* crc */, UI
     return E_NOTIMPL;
   RINOK(ReadStream_FALSE(inStream, temp, 4));
   _remSize = GetUi32(temp);
-  if (_remSize > _buf.GetCapacity())
+  const UInt32 kAlign = 16;
+  if (_remSize < 16 || _remSize > (1 << 18))
+    return E_NOTIMPL;
+  if (_remSize + kAlign > _buf.GetCapacity())
   {
     _buf.Free();
-    _buf.SetCapacity(_remSize);
+    _buf.SetCapacity(_remSize + kAlign);
+    _bufAligned = (Byte *)((ptrdiff_t)((Byte *)_buf + kAlign - 1) & ~(ptrdiff_t)(kAlign - 1));
   }
-  return ReadStream_FALSE(inStream, _buf, _remSize);
+  return ReadStream_FALSE(inStream, _bufAligned, _remSize);
 }
 
 HRESULT CDecoder::CheckPassword(bool &passwOK)
 {
   passwOK = false;
-  if (_remSize < 10)
+  if (_remSize < 16)
     return E_NOTIMPL;
-  Byte *p = _buf;
+  Byte *p = _bufAligned;
   UInt16 format = GetUi16(p);
   if (format != 3)
     return E_NOTIMPL;
-  UInt16 algId  = GetUi16(p + 2);
+  UInt16 algId = GetUi16(p + 2);
   if (algId < kAES128)
     return E_NOTIMPL;
   algId -= kAES128;
   if (algId > 2)
     return E_NOTIMPL;
   UInt16 bitLen = GetUi16(p + 4);
-  UInt16 flags  = GetUi16(p + 6);
+  UInt16 flags = GetUi16(p + 6);
   if (algId * 64 + 128 != bitLen)
     return E_NOTIMPL;
   _key.KeySize = 16 + algId * 8;
   if ((flags & 1) == 0)
     return E_NOTIMPL;
   UInt32 rdSize = GetUi16(p + 8);
-  UInt32 pos = 10;
-  Byte *rd = p + pos;
-  pos += rdSize;
-  if (pos + 4 > _remSize)
+  if ((rdSize & 0xF) != 0 || rdSize + 16 > _remSize)
     return E_NOTIMPL;
-  UInt32 reserved = GetUi32(p + pos);
-  pos += 4;
-  if (reserved != 0)
+  memmove(p, p + 10, rdSize);
+  Byte *validData = p + rdSize + 16;
+  if (GetUi32(validData - 6) != 0) // reserved
     return E_NOTIMPL;
-  if (pos + 2 > _remSize)
-    return E_NOTIMPL;
-  UInt32 validSize = GetUi16(p + pos);
-  pos += 2;
-  Byte *validData = p + pos;
-  if (pos + validSize != _remSize)
+  UInt32 validSize = GetUi16(validData - 2);
+  if ((validSize & 0xF) != 0 || 16 + rdSize + validSize != _remSize)
     return E_NOTIMPL;
 
-  if (!_aesFilter)
-    _aesFilter = new CAesCbcDecoder;
 
-  CMyComPtr<ICryptoProperties> cp;
-  RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
   {
-    RINOK(cp->SetKey(_key.MasterKey, _key.KeySize));
-    RINOK(cp->SetInitVector(_iv, 16));
-    _aesFilter->Init();
-    if (_aesFilter->Filter(rd, rdSize) != rdSize)
-      return E_NOTIMPL;
+    RINOK(SetKey(_key.MasterKey, _key.KeySize));
+    RINOK(SetInitVector(_iv, 16));
+    Init();
+    Filter(p, rdSize);
   }
 
   Byte fileKey[32];
   NSha1::CContext sha;
   sha.Init();
   sha.Update(_iv, 16);
-  sha.Update(rd, rdSize - 16); // we don't use last 16 bytes (PAD bytes)
+  sha.Update(p, rdSize - 16); // we don't use last 16 bytes (PAD bytes)
   DeriveKey(sha, fileKey);
   
-  RINOK(cp->SetKey(fileKey, _key.KeySize));
-  RINOK(cp->SetInitVector(_iv, 16));
-  _aesFilter->Init();
-  if (_aesFilter->Filter(validData, validSize) != validSize)
-    return E_NOTIMPL;
+  RINOK(SetKey(fileKey, _key.KeySize));
+  RINOK(SetInitVector(_iv, 16));
+  Init();
+  Filter(validData, validSize);
 
   if (validSize < 4)
     return E_NOTIMPL;
@@ -165,13 +151,8 @@ HRESULT CDecoder::CheckPassword(bool &passwOK)
   if (GetUi32(validData + validSize) != CrcCalc(validData, validSize))
     return S_OK;
   passwOK = true;
-  _aesFilter->Init();
+  Init();
   return S_OK;
-}
-
-STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
-{
-  return _aesFilter->Filter(data, size);
 }
 
 }}

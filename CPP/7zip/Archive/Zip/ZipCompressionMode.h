@@ -1,7 +1,7 @@
 // CompressionMode.h
 
-#ifndef __ZIP_COMPRESSIONMETHOD_H
-#define __ZIP_COMPRESSIONMETHOD_H
+#ifndef __ZIP_COMPRESSION_MODE_H
+#define __ZIP_COMPRESSION_MODE_H
 
 #include "Common/MyString.h"
 
@@ -18,7 +18,7 @@ struct CCompressionMethodMode
   bool NumMatchFinderCyclesDefined;
   UInt32 NumMatchFinderCycles;
   UInt32 DicSize;
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   UInt32 NumThreads;
   #endif
   bool PasswordIsDefined;

@@ -163,9 +163,14 @@ HRESULT Benchmark()
   HRESULT result;
   MY_TRY_BEGIN
   CREATE_CODECS
+
+  #ifdef EXTERNAL_CODECS
+  CObjectVector<CCodecInfoEx> externalCodecs;
+  RINOK(LoadExternalCodecs(codecs, externalCodecs));
+  #endif
   result = Benchmark(
-      #ifdef EXTERNAL_LZMA
-      codecs,
+      #ifdef EXTERNAL_CODECS
+      codecs, &externalCodecs,
       #endif
       (UInt32)-1, (UInt32)-1, g_HWND);
   MY_TRY_FINISH

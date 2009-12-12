@@ -8,50 +8,41 @@ namespace NCrypto {
 
 struct CAesTabInit { CAesTabInit() { AesGenTables();} } g_AesTabInit;
 
-STDMETHODIMP CAesCbcEncoder::Init() { return S_OK; }
-
-STDMETHODIMP_(UInt32) CAesCbcEncoder::Filter(Byte *data, UInt32 size)
+CAesCbcCoder::CAesCbcCoder()
 {
-  return (UInt32)AesCbc_Encode(&Aes, data, size);
+  _offset = ((0 - (unsigned)(ptrdiff_t)_aes) & 0xF) / sizeof(UInt32);
 }
 
-STDMETHODIMP CAesCbcEncoder::SetKey(const Byte *data, UInt32 size)
+STDMETHODIMP CAesCbcCoder::Init() { return S_OK; }
+
+STDMETHODIMP_(UInt32) CAesCbcCoder::Filter(Byte *data, UInt32 size)
 {
-  if ((size & 0x7) != 0 || size < 16 || size > 32)
-    return E_INVALIDARG;
-  Aes_SetKeyEncode(&Aes.aes, data, size);
-  return S_OK;
+  if (size == 0)
+    return 0;
+  if (size < AES_BLOCK_SIZE)
+    return AES_BLOCK_SIZE;
+  size >>= 4;
+  _codeFunc(_aes + _offset, data, size);
+  return size << 4;
 }
 
-STDMETHODIMP CAesCbcEncoder::SetInitVector(const Byte *data, UInt32 size)
-{
-  if (size != AES_BLOCK_SIZE)
-    return E_INVALIDARG;
-  AesCbc_Init(&Aes, data);
-  return S_OK;
-}
-
-STDMETHODIMP CAesCbcDecoder::Init() { return S_OK; }
-
-STDMETHODIMP_(UInt32) CAesCbcDecoder::Filter(Byte *data, UInt32 size)
-{
-  return (UInt32)AesCbc_Decode(&Aes, data, size);
-}
-
-STDMETHODIMP CAesCbcDecoder::SetKey(const Byte *data, UInt32 size)
+STDMETHODIMP CAesCbcCoder::SetKey(const Byte *data, UInt32 size)
 {
   if ((size & 0x7) != 0 || size < 16 || size > 32)
     return E_INVALIDARG;
-  Aes_SetKeyDecode(&Aes.aes, data, size);
+  _setKeyFunc(_aes + _offset + 4, data, size);
   return S_OK;
 }
 
-STDMETHODIMP CAesCbcDecoder::SetInitVector(const Byte *data, UInt32 size)
+STDMETHODIMP CAesCbcCoder::SetInitVector(const Byte *data, UInt32 size)
 {
   if (size != AES_BLOCK_SIZE)
     return E_INVALIDARG;
-  AesCbc_Init(&Aes, data);
+  AesCbc_Init(_aes + _offset, data);
   return S_OK;
 }
+
+CAesCbcEncoder::CAesCbcEncoder() { _codeFunc = g_AesCbc_Encode; _setKeyFunc = Aes_SetKey_Enc; }
+CAesCbcDecoder::CAesCbcDecoder() { _codeFunc = g_AesCbc_Decode; _setKeyFunc = Aes_SetKey_Dec; }
 
 }

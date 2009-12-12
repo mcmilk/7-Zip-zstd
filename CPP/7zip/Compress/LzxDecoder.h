@@ -17,15 +17,15 @@ namespace NLzx {
 
 namespace NBitStream {
 
-const int kNumBigValueBits = 8 * 4;
-const int kNumValueBits = 17;
+const unsigned kNumBigValueBits = 8 * 4;
+const unsigned kNumValueBits = 17;
 const UInt32 kBitDecoderValueMask = (1 << kNumValueBits) - 1;
 
 class CDecoder
 {
   CInBuffer m_Stream;
   UInt32 m_Value;
-  int m_BitPos;
+  unsigned m_BitPos;
 public:
   CDecoder() {}
   bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
@@ -39,14 +39,13 @@ public:
     m_BitPos = kNumBigValueBits;
   }
 
-  UInt64 GetProcessedSize() const
-    { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
+  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
   
-  int GetBitPosition() const { return m_BitPos & 0xF; }
+  unsigned GetBitPosition() const { return m_BitPos & 0xF; }
 
   void Normalize()
   {
-    for (;m_BitPos >= 16; m_BitPos -= 16)
+    for (; m_BitPos >= 16; m_BitPos -= 16)
     {
       Byte b0 = m_Stream.ReadByte();
       Byte b1 = m_Stream.ReadByte();
@@ -55,29 +54,28 @@ public:
     }
   }
 
-  UInt32 GetValue(int numBits) const
+  UInt32 GetValue(unsigned numBits) const
   {
-    return ((m_Value >> ((32 - kNumValueBits) - m_BitPos)) & kBitDecoderValueMask) >>
-        (kNumValueBits - numBits);
+    return ((m_Value >> ((32 - kNumValueBits) - m_BitPos)) & kBitDecoderValueMask) >> (kNumValueBits - numBits);
   }
   
-  void MovePos(UInt32 numBits)
+  void MovePos(unsigned numBits)
   {
-    m_BitPos += (int)numBits;
+    m_BitPos += numBits;
     Normalize();
   }
 
-  UInt32 ReadBits(int numBits)
+  UInt32 ReadBits(unsigned numBits)
   {
     UInt32 res = GetValue(numBits);
     MovePos(numBits);
     return res;
   }
 
-  UInt32 ReadBitsBig(int numBits)
+  UInt32 ReadBitsBig(unsigned numBits)
   {
-    int numBits0 = numBits / 2;
-    int numBits1 = numBits - numBits0;
+    unsigned numBits0 = numBits / 2;
+    unsigned numBits1 = numBits - numBits0;
     UInt32 res = ReadBits(numBits0) << numBits1;
     return res + ReadBits(numBits1);
   }
@@ -128,7 +126,7 @@ class CDecoder :
 
   bool _wimMode;
 
-  UInt32 ReadBits(int numBits);
+  UInt32 ReadBits(unsigned numBits);
   bool ReadTable(Byte *lastLevels, Byte *newLevels, UInt32 numSymbols);
   bool ReadTables();
   void ClearPrevLevels();
@@ -152,7 +150,7 @@ public:
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
-  HRESULT SetParams(int numDictBits);
+  HRESULT SetParams(unsigned numDictBits);
   void SetKeepHistory(bool keepHistory) {  _keepHistory = keepHistory; }
 };
 

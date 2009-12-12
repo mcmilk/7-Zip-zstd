@@ -9,19 +9,23 @@
 namespace NCompress {
 namespace NQuantum {
 
-// const UInt32 kDictionarySizeMax = (1 << 21);
+static const int kLenIdNeedInit = -2;
 
-const int kLenIdNeedInit = -2;
+static const unsigned kNumLenSymbols = 27;
+static const unsigned kMatchMinLen = 3;
+static const unsigned kNumSimplePosSlots = 4;
+static const unsigned kNumSimpleLenSlots = 6;
 
 void CDecoder::Init()
 {
   m_Selector.Init(kNumSelectors);
-  for (unsigned int i = 0; i < kNumLitSelectors; i++)
+  unsigned i;
+  for (i = 0; i < kNumLitSelectors; i++)
     m_Literals[i].Init(kNumLitSymbols);
-  unsigned int numItems = _numDictBits << 1;
-  m_PosSlot[0].Init(MyMin(numItems, kNumLen3PosSymbolsMax));
-  m_PosSlot[1].Init(MyMin(numItems, kNumLen4PosSymbolsMax));
-  m_PosSlot[2].Init(MyMin(numItems, kNumLen5PosSymbolsMax));
+  unsigned numItems = (_numDictBits == 0 ? 1 : (_numDictBits << 1));
+  const unsigned kNumPosSymbolsMax[kNumMatchSelectors] = { 24, 36, 42 };
+  for (i = 0; i < kNumMatchSelectors; i++)
+    m_PosSlot[i].Init(MyMin(numItems, kNumPosSymbolsMax[i]));
   m_LenSlot.Init(kNumLenSymbols);
 }
 
@@ -31,7 +35,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
   {
     if (!_keepHistory)
     {
-      if (!_outWindowStream.Create(_dictionarySize))
+      if (!_outWindowStream.Create((UInt32)1 << _numDictBits))
         return E_OUTOFMEMORY;
       Init();
     }
@@ -43,7 +47,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
   if (curSize == 0)
     return S_OK;
 
-  while(_remainLen > 0 && curSize > 0)
+  while (_remainLen > 0 && curSize > 0)
   {
     _remainLen--;
     Byte b = _outWindowStream.GetByte(_rep0);
@@ -51,12 +55,12 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
     curSize--;
   }
 
-  while(curSize > 0)
+  while (curSize > 0)
   {
     if (_rangeDecoder.Stream.WasFinished())
       return S_FALSE;
 
-    unsigned int selector = m_Selector.Decode(&_rangeDecoder);
+    unsigned selector = m_Selector.Decode(&_rangeDecoder);
     if (selector < kNumLitSelectors)
     {
       Byte b = (Byte)((selector << (8 - kNumLitSelectorBits)) + m_Literals[selector].Decode(&_rangeDecoder));
@@ -66,10 +70,10 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
     else
     {
       selector -= kNumLitSelectors;
-      unsigned int len = selector + kMatchMinLen;
+      unsigned len = selector + kMatchMinLen;
       if (selector == 2)
       {
-        unsigned int lenSlot = m_LenSlot.Decode(&_rangeDecoder);;
+        unsigned lenSlot = m_LenSlot.Decode(&_rangeDecoder);
         if (lenSlot >= kNumSimpleLenSlots)
         {
           lenSlot -= 2;
@@ -81,15 +85,15 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
         else
           len += lenSlot;
       }
-      UInt32 rep0 = m_PosSlot[selector].Decode(&_rangeDecoder);;
+      UInt32 rep0 = m_PosSlot[selector].Decode(&_rangeDecoder);
       if (rep0 >= kNumSimplePosSlots)
       {
         int numDirectBits = (int)((rep0 >> 1) - 1);
         rep0 = ((2 | (rep0 & 1)) << numDirectBits) + _rangeDecoder.Stream.ReadBits(numDirectBits);
       }
-      unsigned int locLen = len;
+      unsigned locLen = len;
       if (len > curSize)
-        locLen = (unsigned int)curSize;
+        locLen = (unsigned)curSize;
       if (!_outWindowStream.CopyBlock(rep0, locLen))
         return S_FALSE;
       curSize -= locLen;

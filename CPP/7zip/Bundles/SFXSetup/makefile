@@ -92,10 +92,11 @@ COMPRESS_OBJS = \
 C_OBJS = \
   $O\Alloc.obj \
   $O\Bra86.obj \
+  $O\CpuArch.obj \
   $O\LzmaDec.obj \
   $O\Threads.obj \
 
-!include "../../Crc2.mak"
+!include "../../Crc.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -111,7 +112,7 @@ OBJS = \
   $(COMPRESS_OBJS) \
   $O\MyMessages.obj \
   $(C_OBJS) \
-  $(CRC_OBJS) \
+  $(ASM_OBJS) \
   $O\resource.res
 
 
@@ -146,4 +147,4 @@ $O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
 
-!include "../../Crc.mak"
+!include "../../Asm.mak"

@@ -88,6 +88,10 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\7z.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\7zBuf.c
 # End Source File
 # Begin Source File
@@ -104,11 +108,23 @@ SOURCE=..\..\7zCrc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\7zCrcOpt.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\7zDec.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\7zFile.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\7zFile.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\7zIn.c
 # End Source File
 # Begin Source File
 
@@ -129,6 +145,10 @@ SOURCE=..\..\Bra.h
 # Begin Source File
 
 SOURCE=..\..\Bra86.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\CpuArch.c
 # End Source File
 # Begin Source File
 
@@ -157,23 +177,11 @@ SOURCE=..\..\Types.h
 # End Group
 # Begin Source File
 
-SOURCE=..\..\7z.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\7zAlloc.c
 # End Source File
 # Begin Source File
 
 SOURCE=.\7zAlloc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\7zDec.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\7zIn.c
 # End Source File
 # Begin Source File
 

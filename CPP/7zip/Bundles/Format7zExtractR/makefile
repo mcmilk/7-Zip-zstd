@@ -2,7 +2,6 @@ PROG = 7zxr.dll
 DEF_FILE = ../../Archive/Archive2.def
 CFLAGS = $(CFLAGS) -I ../../../ \
   -DEXTRACT_ONLY \
-  -DCOMPRESS_MT \
   -D_NO_CRYPTO
 
 COMMON_OBJS = \
@@ -81,15 +80,17 @@ COMPRESS_OBJS = \
   $O\LzmaRegister.obj \
 
 C_OBJS = \
-  $O\7zCrc.obj \
   $O\Alloc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
+  $O\CpuArch.obj \
   $O\Delta.obj \
   $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
   $O\Threads.obj \
+
+!include "../../Crc.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -102,6 +103,7 @@ OBJS = \
   $(7Z_OBJS) \
   $(COMPRESS_OBJS) \
   $(C_OBJS) \
+  $(ASM_OBJS) \
   $O\resource.res
 
 
@@ -126,3 +128,5 @@ $(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
+
+!include "../../Asm.mak"

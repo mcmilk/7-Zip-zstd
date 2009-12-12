@@ -1,14 +1,12 @@
 /* MtCoder.h -- Multi-thread Coder
-2009-03-26 : Igor Pavlov : Public domain */
+2009-11-19 : Igor Pavlov : Public domain */
 
 #ifndef __MT_CODER_H
 #define __MT_CODER_H
 
 #include "Threads.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 typedef struct
 {
@@ -29,7 +27,7 @@ WRes LoopThread_StopAndWait(CLoopThread *p);
 WRes LoopThread_StartSubThread(CLoopThread *p);
 WRes LoopThread_WaitSubThread(CLoopThread *p);
 
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 #define NUM_MT_CODER_THREADS_MAX 32
 #else
 #define NUM_MT_CODER_THREADS_MAX 1
@@ -95,8 +93,6 @@ void MtCoder_Construct(CMtCoder* p);
 void MtCoder_Destruct(CMtCoder* p);
 SRes MtCoder_Code(CMtCoder *p);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif

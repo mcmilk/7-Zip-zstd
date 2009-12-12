@@ -46,6 +46,7 @@ static CIDLangPair kIDLangPairs[] =
   { IDC_PROGRESS_RATIO, 0x02000C06 },
   { IDC_PROGRESS_SPEED, 0x02000C04 },
   { IDC_PROGRESS_FILES, 0x02000320 },
+  { IDC_PROGRESS_ERRORS, 0x0308000A },
   { IDC_BUTTON_PROGRESS_PRIORITY, 0x02000C10 },
   { IDC_BUTTON_PAUSE, 0x02000C12 },
   { IDCANCEL, 0x02000711 },
@@ -86,6 +87,7 @@ CProgressDialog::CProgressDialog(): _timer(0), CompressingMode(true)
     _externalCloseMessageWasReceived = false;
 
     _numPostedMessages = 0;
+    _numAutoSizeMessages = 0;
     _errorsWereDisplayed = false;
     _waitCloseByCancelButton = false;
     _cancelWasPressed = false;
@@ -843,13 +845,19 @@ void CProgressDialog::AddMessage(LPCWSTR message)
   AddMessageDirect(s);
 }
 
+static unsigned GetNumDigits(UInt32 value)
+{
+  unsigned i;
+  for (i = 0; value >= 10; i++)
+    value /= 10;
+  return i;
+}
+
 void CProgressDialog::UpdateMessagesDialog()
 {
-  int numMessages;
   UStringVector messages;
   {
     NWindows::NSynchronization::CCriticalSectionLock lock(Sync._cs);
-    numMessages = _numPostedMessages;
     for (int i = _numPostedMessages; i < Sync.Messages.Size(); i++)
       messages.Add(Sync.Messages[i]);
     _numPostedMessages = Sync.Messages.Size();
@@ -858,10 +866,11 @@ void CProgressDialog::UpdateMessagesDialog()
   {
     for (int i = 0; i < messages.Size(); i++)
       AddMessage(messages[i]);
-    if (numMessages < 128)
+    if (_numAutoSizeMessages < 256 || GetNumDigits(_numPostedMessages) > GetNumDigits(_numAutoSizeMessages))
     {
       _messageList.SetColumnWidthAuto(0);
       _messageList.SetColumnWidthAuto(1);
+      _numAutoSizeMessages = _numPostedMessages;
     }
   }
 }

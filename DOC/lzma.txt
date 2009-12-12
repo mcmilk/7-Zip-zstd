@@ -1,4 +1,4 @@
-LZMA SDK 9.06
+LZMA SDK 9.09
 -------------
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
@@ -524,7 +524,8 @@ static ISzAlloc g_Alloc = { SzAlloc, SzFree };
   LzmaEnc_Destroy(enc, &g_Alloc, &g_Alloc);
 
 
-If callback function return some error code, LzmaEnc_Encode also returns that code.
+If callback function return some error code, LzmaEnc_Encode also returns that code
+or it can return the code like SZ_ERROR_READ, SZ_ERROR_WRITE or SZ_ERROR_PROGRESS.
 
 
 Single-call RAM->RAM Compression

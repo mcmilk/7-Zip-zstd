@@ -2,10 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "ZipOut.h"
-#include "Common/StringConvert.h"
 #include "../../Common/OffsetStream.h"
-#include "../../Common/StreamUtils.h"
+
+#include "ZipOut.h"
 
 namespace NArchive {
 namespace NZip {
@@ -115,7 +114,12 @@ void COutArchive::WriteLocalHeader(const CLocalItem &item)
   bool isZip64 = m_IsZip64 || item.PackSize >= 0xFFFFFFFF || item.UnPackSize >= 0xFFFFFFFF;
   
   WriteUInt32(NSignature::kLocalFileHeader);
-  WriteByte(item.ExtractVersion.Version);
+  {
+    Byte ver = item.ExtractVersion.Version;
+    if (isZip64 && ver < NFileHeader::NCompressionMethod::kExtractVersion_Zip64)
+      ver = NFileHeader::NCompressionMethod::kExtractVersion_Zip64;
+    WriteByte(ver);
+  }
   WriteByte(item.ExtractVersion.HostOS);
   WriteUInt16(item.Flags);
   WriteUInt16(item.CompressionMethod);
@@ -162,7 +166,12 @@ void COutArchive::WriteCentralHeader(const CItem &item)
   WriteUInt32(NSignature::kCentralFileHeader);
   WriteByte(item.MadeByVersion.Version);
   WriteByte(item.MadeByVersion.HostOS);
-  WriteByte(item.ExtractVersion.Version);
+  {
+    Byte ver = item.ExtractVersion.Version;
+    if (isZip64 && ver < NFileHeader::NCompressionMethod::kExtractVersion_Zip64)
+      ver = NFileHeader::NCompressionMethod::kExtractVersion_Zip64;
+    WriteByte(ver);
+  }
   WriteByte(item.ExtractVersion.HostOS);
   WriteUInt16(item.Flags);
   WriteUInt16(item.CompressionMethod);

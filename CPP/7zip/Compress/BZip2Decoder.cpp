@@ -420,7 +420,7 @@ static UInt32 NO_INLINE DecodeBlock2Rand(const UInt32 *tt, UInt32 blockSize, UIn
 
 CDecoder::CDecoder()
 {
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   m_States = 0;
   m_NumThreadsPrev = 0;
   NumThreads = 1;
@@ -428,7 +428,7 @@ CDecoder::CDecoder()
   _needInStreamInit = true;
 }
 
-#ifdef COMPRESS_BZIP2_MT
+#ifndef _7ZIP_ST
 
 CDecoder::~CDecoder()
 {
@@ -521,8 +521,8 @@ HRESULT CDecoder::ReadSignatures(bool &wasFinished, UInt32 &crc)
 
 HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
 {
-  #ifdef COMPRESS_BZIP2_MT
   Progress = progress;
+  #ifndef _7ZIP_ST
   RINOK(Create());
   for (UInt32 t = 0; t < NumThreads; t++)
   {
@@ -556,7 +556,7 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
   UInt32 dicSize = (UInt32)(s[3] - kArSig3) * kBlockSizeStep;
 
   CombinedCrc.Init();
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   if (MtMode)
   {
     NextBlockIndex = 0;
@@ -662,7 +662,7 @@ HRESULT CDecoder::CodeResume(ISequentialOutStream *outStream, bool &isBZ, ICompr
 STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream) { m_InStream.SetStream(inStream); return S_OK; }
 STDMETHODIMP CDecoder::ReleaseInStream() { m_InStream.ReleaseStream(); return S_OK; }
 
-#ifdef COMPRESS_BZIP2_MT
+#ifndef _7ZIP_ST
 
 static THREAD_FUNC_DECL MFThread(void *p) { ((CState *)p)->ThreadFunc(); return 0; }
 

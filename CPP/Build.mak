@@ -15,12 +15,12 @@ O=O
 !ENDIF
 !ENDIF
 
-!IF "$(CPU)" != "IA64"
-!IF "$(CPU)" != "AMD64"
-MY_ML = ml
+!IF "$(CPU)" == "AMD64"
+MY_ML = ml64 -Dx64
+!ELSEIF "$(CPU)" == "ARM"
+MY_ML = armasm
 !ELSE
-MY_ML = ml64
-!ENDIF
+MY_ML = ml
 !ENDIF
 
 
@@ -30,13 +30,18 @@ RFLAGS = $(RFLAGS) -dUNDER_CE
 LFLAGS = $(LFLAGS) /ENTRY:mainACRTStartup
 !ENDIF
 !ELSE
+!IFNDEF NEW_COMPILER
 LFLAGS = $(LFLAGS) -OPT:NOWIN98
+!ENDIF
 CFLAGS = $(CFLAGS) -Gr
 LIBS = $(LIBS) user32.lib advapi32.lib shell32.lib
 !ENDIF
 
-
+!IF "$(CPU)" == "ARM"
+COMPL_ASM = $(MY_ML) $** $O/$(*B).obj
+!ELSE
 COMPL_ASM = $(MY_ML) -c -Fo$O/ $**
+!ENDIF
 
 CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -WX -EHsc -Gy -GR-
 

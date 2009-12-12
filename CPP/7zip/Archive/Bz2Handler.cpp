@@ -6,7 +6,7 @@
 
 #include "Windows/PropVariant.h"
 
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 #include "../../Windows/System.h"
 #endif
 
@@ -51,7 +51,7 @@ class CHandler:
   UInt32 _level;
   UInt32 _dicSize;
   UInt32 _numPasses;
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   UInt32 _numThreads;
   #endif
 
@@ -60,7 +60,7 @@ class CHandler:
     _level = 5;
     _dicSize =
     _numPasses = 0xFFFFFFFF;
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
     #endif
   }
@@ -187,7 +187,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   decoderSpec->SetInStream(_seqStream);
 
-  #if defined( COMPRESS_MT) && defined( COMPRESS_BZIP2_MT)
+  #ifndef _7ZIP_ST
   RINOK(decoderSpec->SetNumberOfThreads(_numThreads));
   #endif
 
@@ -249,7 +249,7 @@ static HRESULT UpdateArchive(
     int indexInClient,
     UInt32 dictionary,
     UInt32 numPasses,
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     UInt32 numThreads,
     #endif
     IArchiveUpdateCallback *updateCallback)
@@ -273,7 +273,7 @@ static HRESULT UpdateArchive(
     {
       dictionary,
       numPasses
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       , numThreads
       #endif
     };
@@ -281,7 +281,7 @@ static HRESULT UpdateArchive(
     {
       NCoderPropID::kDictionarySize,
       NCoderPropID::kNumPasses
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       , NCoderPropID::kNumThreads
       #endif
     };
@@ -351,7 +351,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
     return UpdateArchive(
         size, outStream, 0, dicSize, numPasses,
-        #ifdef COMPRESS_MT
+        #ifndef _7ZIP_ST
         _numThreads,
         #endif
         updateCallback);
@@ -366,7 +366,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
 {
   InitMethodProperties();
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
   _numThreads = numProcessors;
   #endif
@@ -398,7 +398,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     }
     else if (name.Left(2) == L"MT")
     {
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _numThreads));
       #endif
     }

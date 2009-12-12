@@ -1,17 +1,14 @@
 PROG = 7zr.exe
 MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) -I ../../../ \
-  -DCOMPRESS_MT \
-  -DCOMPRESS_MF_MT \
   -D_NO_CRYPTO \
-  -DBREAK_HANDLER \
-  -DBENCH_MT \
 
 !IFNDEF UNDER_CE
 CFLAGS = $(CFLAGS) -DWIN_LONG_PATH
 !ENDIF
 
 CONSOLE_OBJS = \
+  $O\BenchCon.obj \
   $O\ConsoleClose.obj \
   $O\ExtractCallbackConsole.obj \
   $O\List.obj \
@@ -75,6 +72,7 @@ UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveOpenCallback.obj \
+  $O\Bench.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
   $O\Extract.obj \
@@ -146,16 +144,13 @@ COMPRESS_OBJS = \
   $O\LzmaEncoder.obj \
   $O\LzmaRegister.obj \
 
-LZMA_BENCH_OBJS = \
-  $O\LzmaBench.obj \
-  $O\LzmaBenchCon.obj \
-
 C_OBJS = \
   $O\7zStream.obj \
+  $O\Alloc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
-  $O\Alloc.obj \
+  $O\CpuArch.obj \
   $O\Delta.obj \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
@@ -172,7 +167,7 @@ C_OBJS = \
   $O\XzEnc.obj \
   $O\XzIn.obj \
 
-!include "../../Crc2.mak"
+!include "../../Crc.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -185,9 +180,8 @@ OBJS = \
   $(AR_COMMON_OBJS) \
   $(7Z_OBJS) \
   $(COMPRESS_OBJS) \
-  $(LZMA_BENCH_OBJS) \
   $(C_OBJS) \
-  $(CRC_OBJS) \
+  $(ASM_OBJS) \
   $O\resource.res
 
 
@@ -213,8 +207,7 @@ $(7Z_OBJS): ../../Archive/7z/$(*B).cpp
 	$(COMPL)
 $(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL_O2)
-$(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
-	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
-!include "../../Crc.mak"
+
+!include "../../Asm.mak"

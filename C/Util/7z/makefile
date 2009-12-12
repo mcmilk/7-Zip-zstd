@@ -6,12 +6,14 @@ C_OBJS = \
   $O\7zBuf.obj \
   $O\7zBuf2.obj \
   $O\7zCrc.obj \
+  $O\7zCrcOpt.obj \
   $O\7zFile.obj \
   $O\7zDec.obj \
   $O\7zIn.obj \
   $O\7zStream.obj \
   $O\Bcj2.obj \
   $O\Bra86.obj \
+  $O\CpuArch.obj \
   $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
 

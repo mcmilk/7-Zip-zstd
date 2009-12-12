@@ -6,7 +6,7 @@
 #include "../../Common/Defs.h"
 #include "../../Common/MyCom.h"
 
-#ifdef COMPRESS_BZIP2_MT
+#ifndef _7ZIP_ST
 #include "../../Windows/Synchronization.h"
 #include "../../Windows/Thread.h"
 #endif
@@ -120,7 +120,7 @@ private:
 public:
   bool m_OptimizeNumTables;
   CEncoder *Encoder;
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   NWindows::CThread Thread;
 
   NWindows::NSynchronization::CAutoResetEvent StreamWasFinishedEvent;
@@ -148,7 +148,7 @@ public:
 class CEncoder :
   public ICompressCoder,
   public ICompressSetCoderProperties,
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   public ICompressSetCoderMt,
   #endif
   public CMyUnknownImp
@@ -166,7 +166,7 @@ public:
   UInt32 NumPasses;
   CBZip2CombinedCrc CombinedCrc;
 
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   CThreadInfo *ThreadsInfo;
   NWindows::NSynchronization::CManualResetEvent CanProcessEvent;
   NWindows::NSynchronization::CCriticalSection CS;
@@ -192,14 +192,14 @@ public:
   void WriteBit(bool v);
   void WriteCrc(UInt32 v);
 
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   HRESULT Create();
   void Free();
   #endif
 
 public:
   CEncoder();
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   ~CEncoder();
   #endif
 
@@ -222,7 +222,7 @@ public:
     }
   };
 
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   MY_UNKNOWN_IMP2(ICompressSetCoderMt, ICompressSetCoderProperties)
   #else
   MY_UNKNOWN_IMP1(ICompressSetCoderProperties)
@@ -235,7 +235,7 @@ public:
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
 
-  #ifdef COMPRESS_BZIP2_MT
+  #ifndef _7ZIP_ST
   STDMETHOD(SetNumberOfThreads)(UInt32 numThreads);
   #endif
 };

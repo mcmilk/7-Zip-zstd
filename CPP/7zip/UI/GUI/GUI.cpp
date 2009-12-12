@@ -110,9 +110,16 @@ static int Main2()
  
   if (options.Command.CommandType == NCommandType::kBenchmark)
   {
-    HRESULT res = Benchmark(
-      #ifdef EXTERNAL_LZMA
-      codecs,
+    HRESULT res;
+    #ifdef EXTERNAL_CODECS
+    CObjectVector<CCodecInfoEx> externalCodecs;
+    res = LoadExternalCodecs(codecs, externalCodecs);
+    if (res != S_OK)
+      throw CSystemException(res);
+    #endif
+    res = Benchmark(
+      #ifdef EXTERNAL_CODECS
+      codecs, &externalCodecs,
       #endif
       options.NumThreads, options.DictionarySize);
     if (res != S_OK)
@@ -138,7 +145,7 @@ static int Main2()
     eo.PathMode = options.Command.GetPathMode();
     eo.TestMode = options.Command.IsTestMode();
     eo.CalcCrc = options.CalcCrc;
-    #ifdef COMPRESS_MT
+    #if !defined(_7ZIP_ST) && !defined(_SFX)
     eo.Properties = options.ExtractProperties;
     #endif
 

@@ -42,6 +42,8 @@ UInt32 CDecoder::ReadBits(int numBits) { return m_InBitStream.ReadBits(numBits);
 
 HRESULT CDecoder::CopyBlock(UInt32 distance, UInt32 len)
 {
+  if (len == 0)
+    return S_FALSE;
   m_UnpackSize -= len;
   return m_OutWindowStream.CopyBlock(distance, len) ? S_OK : S_FALSE;
 }

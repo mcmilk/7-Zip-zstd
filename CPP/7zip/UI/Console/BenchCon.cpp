@@ -1,21 +1,18 @@
-// LzmaBenchCon.cpp
+// BenchCon.cpp
 
 #include "StdAfx.h"
 
-#include <stdio.h>
-
-#include "LzmaBench.h"
-#include "LzmaBenchCon.h"
 #include "../../../Common/IntToString.h"
+#include "../../../Common/MyCom.h"
 
-#if defined(BENCH_MT) || defined(_WIN32)
+#if !defined(_7ZIP_ST) || defined(_WIN32)
 #include "../../../Windows/System.h"
 #endif
 
-#ifdef BREAK_HANDLER
-#include "../../UI/Console/ConsoleClose.h"
-#endif
-#include "../../../Common/MyCom.h"
+#include "../Common/Bench.h"
+
+#include "BenchCon.h"
+#include "ConsoleClose.h"
 
 struct CTotalBenchRes
 {
@@ -117,11 +114,8 @@ static void PrintTotals(FILE *f, const CTotalBenchRes &res)
 
 HRESULT CBenchCallback::SetEncodeResult(const CBenchInfo &info, bool final)
 {
-  #ifdef BREAK_HANDLER
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
-  #endif
-
   if (final)
   {
     UInt64 rating = GetCompressRating(dictionarySize, info.GlobalTime, info.GlobalFreq, info.UnpackSize);
@@ -135,10 +129,8 @@ static const char *kSep = "  | ";
 
 HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
 {
-  #ifdef BREAK_HANDLER
   if (NConsoleClose::TestBreakSignal())
     return E_ABORT;
-  #endif
   if (final)
   {
     UInt64 rating = GetDecompressRating(info.GlobalTime, info.GlobalFreq, info.UnpackSize, info.PackSize, info.NumIterations);
@@ -160,14 +152,12 @@ static void PrintRequirements(FILE *f, const char *sizeString, UInt64 size, cons
 }
 
 HRESULT LzmaBenchCon(
-  #ifdef EXTERNAL_LZMA
-  CCodecs *codecs,
-  #endif
+  DECL_EXTERNAL_CODECS_LOC_VARS
   FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dictionary)
 {
   if (!CrcInternalTest())
     return S_FALSE;
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   UInt64 ramSize = NWindows::NSystem::GetRamSize();  //
   UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
   PrintRequirements(f, "size: ", ramSize, "CPU hardware threads:", numCPUs);
@@ -222,9 +212,7 @@ HRESULT LzmaBenchCon(
       fprintf(f, "%2d:", pow);
       callback.dictionarySize = (UInt32)1 << pow;
       HRESULT res = LzmaBench(
-        #ifdef EXTERNAL_LZMA
-        codecs,
-        #endif
+        EXTERNAL_CODECS_LOC_VARS
         numThreads, callback.dictionarySize, &callback);
       fprintf(f, "\n");
       RINOK(res);
@@ -255,7 +243,7 @@ HRESULT CrcBenchCon(FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dic
   if (!CrcInternalTest())
     return S_FALSE;
 
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   UInt64 ramSize = NWindows::NSystem::GetRamSize();
   UInt32 numCPUs = NWindows::NSystem::GetNumberOfProcessors();
   PrintRequirements(f, "size: ", ramSize, "CPU hardware threads:", numCPUs);
@@ -288,10 +276,8 @@ HRESULT CrcBenchCon(FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dic
       UInt64 speed;
       for (UInt32 ti = 0; ti < numThreads; ti++)
       {
-        #ifdef BREAK_HANDLER
         if (NConsoleClose::TestBreakSignal())
           return E_ABORT;
-        #endif
         RINOK(CrcBench(ti + 1, bufSize, speed));
         PrintNumber(f, (speed >> 20), 5);
         speedTotals.Values[ti] += speed;

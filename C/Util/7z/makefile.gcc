@@ -4,12 +4,15 @@ LIB =
 RM = rm -f
 CFLAGS = -c -O2 -Wall
 
-OBJS = 7zAlloc.o 7zBuf.o 7zBuf2.o 7zCrc.o 7zDec.o 7zIn.o 7zMain.o LzmaDec.o Lzma2Dec.o Bra86.o Bcj2.o 7zFile.o 7zStream.o
+OBJS = 7zMain.o 7zAlloc.o 7zBuf.o 7zBuf2.o 7zCrc.o 7zCrcOpt.o 7zDec.o 7zIn.o CpuArch.o LzmaDec.o Lzma2Dec.o Bra86.o Bcj2.o 7zFile.o 7zStream.o
 
 all: $(PROG)
 
 $(PROG): $(OBJS)
 	$(CXX) -o $(PROG) $(LDFLAGS) $(OBJS) $(LIB)
+
+7zMain.o: 7zMain.c
+	$(CXX) $(CFLAGS) 7zMain.c
 
 7zAlloc.o: 7zAlloc.c
 	$(CXX) $(CFLAGS) 7zAlloc.c
@@ -23,14 +26,17 @@ $(PROG): $(OBJS)
 7zCrc.o: ../../7zCrc.c
 	$(CXX) $(CFLAGS) ../../7zCrc.c
 
+7zCrcOpt.o: ../../7zCrc.c
+	$(CXX) $(CFLAGS) ../../7zCrcOpt.c
+
 7zDec.o: ../../7zDec.c
 	$(CXX) $(CFLAGS) ../../7zDec.c
 
 7zIn.o: ../../7zIn.c
 	$(CXX) $(CFLAGS) ../../7zIn.c
 
-7zMain.o: 7zMain.c
-	$(CXX) $(CFLAGS) 7zMain.c
+CpuArch.o: ../../CpuArch.c
+	$(CXX) $(CFLAGS) ../../CpuArch.c
 
 LzmaDec.o: ../../LzmaDec.c
 	$(CXX) $(CFLAGS) ../../LzmaDec.c

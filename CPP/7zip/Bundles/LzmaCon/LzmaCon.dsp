@@ -1,26 +1,24 @@
-# Microsoft Developer Studio Project File - Name="AloneLZMA" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="LzmaCon" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
 
-CFG=AloneLZMA - Win32 DebugU
+CFG=LzmaCon - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "AloneLZMA.mak".
+!MESSAGE NMAKE /f "LzmaCon.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "AloneLZMA.mak" CFG="AloneLZMA - Win32 DebugU"
+!MESSAGE NMAKE /f "LzmaCon.mak" CFG="LzmaCon - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "AloneLZMA - Win32 Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "AloneLZMA - Win32 Debug" (based on "Win32 (x86) Console Application")
-!MESSAGE "AloneLZMA - Win32 ReleaseU" (based on "Win32 (x86) Console Application")
-!MESSAGE "AloneLZMA - Win32 DebugU" (based on "Win32 (x86) Console Application")
+!MESSAGE "LzmaCon - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "LzmaCon - Win32 Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -30,7 +28,7 @@ CFG=AloneLZMA - Win32 DebugU
 CPP=cl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "AloneLZMA - Win32 Release"
+!IF  "$(CFG)" == "LzmaCon - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -44,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MF_MT" /D "BENCH_MT" /FAcs /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -52,10 +50,9 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"c:\UTIL\lzma.exe" /opt:NOWIN98
-# SUBTRACT LINK32 /pdb:none
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\Util\lzma.exe"
 
-!ELSEIF  "$(CFG)" == "AloneLZMA - Win32 Debug"
+!ELSEIF  "$(CFG)" == "LzmaCon - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -69,7 +66,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MF_MT" /D "BENCH_MT" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -77,68 +74,14 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"c:\UTIL\lzma.exe" /pdbtype:sept
-
-!ELSEIF  "$(CFG)" == "AloneLZMA - Win32 ReleaseU"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "ReleaseU"
-# PROP BASE Intermediate_Dir "ReleaseU"
-# PROP BASE Ignore_Export_Lib 0
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir "ReleaseU"
-# PROP Intermediate_Dir "ReleaseU"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MF_MT" /D "BENCH_MT" /Yu"StdAfx.h" /FD /c
-# ADD BASE RSC /l 0x419 /d "NDEBUG"
-# ADD RSC /l 0x419 /d "NDEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"c:\UTIL\7za2.exe" /opt:NOWIN98
-# SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"c:\UTIL\lzma.exe" /opt:NOWIN98
-# SUBTRACT LINK32 /pdb:none
-
-!ELSEIF  "$(CFG)" == "AloneLZMA - Win32 DebugU"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "DebugU"
-# PROP BASE Intermediate_Dir "DebugU"
-# PROP BASE Ignore_Export_Lib 0
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 1
-# PROP Output_Dir "DebugU"
-# PROP Intermediate_Dir "DebugU"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "FORMAT_7Z" /D "FORMAT_BZIP2" /D "FORMAT_ZIP" /D "FORMAT_TAR" /D "FORMAT_GZIP" /D "COMPRESS_LZMA" /D "COMPRESS_BCJ_X86" /D "COMPRESS_BCJ2" /D "COMPRESS_COPY" /D "COMPRESS_MF_PAT" /D "COMPRESS_MF_BT" /D "COMPRESS_PPMD" /D "COMPRESS_DEFLATE" /D "COMPRESS_IMPLODE" /D "COMPRESS_BZIP2" /D "CRYPTO_ZIP" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "COMPRESS_MF_MT" /D "BENCH_MT" /Yu"StdAfx.h" /FD /GZ /c
-# ADD BASE RSC /l 0x419 /d "_DEBUG"
-# ADD RSC /l 0x419 /d "_DEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"c:\UTIL\7za2.exe" /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"c:\UTIL\lzma.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\Util\lzma.exe" /pdbtype:sept
 
 !ENDIF 
 
 # Begin Target
 
-# Name "AloneLZMA - Win32 Release"
-# Name "AloneLZMA - Win32 Debug"
-# Name "AloneLZMA - Win32 ReleaseU"
-# Name "AloneLZMA - Win32 DebugU"
+# Name "LzmaCon - Win32 Release"
+# Name "LzmaCon - Win32 Debug"
 # Begin Group "Spec"
 
 # PROP Default_Filter ""
@@ -155,26 +98,26 @@ SOURCE=.\StdAfx.h
 # Begin Group "Compress"
 
 # PROP Default_Filter ""
-# Begin Group "LZMA"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\LzmaDecoder.cpp
+SOURCE=..\..\Compress\LzmaDecoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\LzmaDecoder.h
+SOURCE=..\..\Compress\LzmaDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\LzmaEncoder.cpp
+SOURCE=..\..\Compress\LzmaEncoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\LzmaEncoder.h
+SOURCE=..\..\Compress\LzmaEncoder.h
 # End Source File
-# End Group
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaRegister.cpp
+# End Source File
 # End Group
 # Begin Group "Windows"
 
@@ -221,15 +164,15 @@ SOURCE=..\..\..\Common\CommandLineParser.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\ComTry.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\Defs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Windows\Defs.h
 # End Source File
 # Begin Source File
 
@@ -253,11 +196,19 @@ SOURCE=..\..\..\Common\MyString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyUnknown.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyVector.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyWindows.cpp
 # End Source File
 # Begin Source File
 
@@ -297,6 +248,14 @@ SOURCE=..\..\..\Common\Types.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Common\CreateCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CreateCoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\CWrappers.cpp
 # End Source File
 # Begin Source File
@@ -313,19 +272,11 @@ SOURCE=..\..\Common\FileStreams.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\InBuffer.cpp
+SOURCE=..\..\Common\FilterCoder.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\InBuffer.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\OutBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\OutBuffer.h
+SOURCE=..\..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
@@ -336,13 +287,49 @@ SOURCE=..\..\Common\StreamUtils.cpp
 SOURCE=..\..\Common\StreamUtils.h
 # End Source File
 # End Group
+# Begin Group "UI Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\UI\Common\Bench.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\Bench.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\LoadCodecs.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\LoadCodecs.h
+# End Source File
+# End Group
+# Begin Group "Console"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\UI\Console\BenchCon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\BenchCon.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\ConsoleClose.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\ConsoleClose.h
+# End Source File
+# End Group
 # Begin Group "C"
 
 # PROP Default_Filter ""
-# Begin Group "LzmaUtil"
-
-# PROP Default_Filter ""
-# End Group
 # Begin Source File
 
 SOURCE=..\..\..\..\C\7zCrc.c
@@ -351,6 +338,11 @@ SOURCE=..\..\..\..\C\7zCrc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\7zCrc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zCrcOpt.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
@@ -363,12 +355,31 @@ SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Bra.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Bra.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Bra86.c
 # SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\BraIA64.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\CpuArch.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\CpuArch.h
 # End Source File
 # Begin Source File
 
@@ -440,27 +451,7 @@ SOURCE=..\..\..\..\C\Types.h
 # End Group
 # Begin Source File
 
-SOURCE=..\..\ICoder.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\LzmaAlone.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaBench.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaBench.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaBenchCon.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LzmaBenchCon.h
 # End Source File
 # End Target
 # End Project

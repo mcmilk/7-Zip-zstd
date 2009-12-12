@@ -3,9 +3,6 @@ CFLAGS = $(CFLAGS) -I ../../../ \
   -DLANG \
   -DNEW_FOLDER_INTERFACE \
   -DEXTERNAL_CODECS \
-  -DCOMPRESS_MT \
-  -DCOMPRESS_BZIP2_MT \
-  -DCOMPRESS_MF_MT \
 
 !IFDEF UNDER_CE
 LIBS = $(LIBS) ceshell.lib Commctrl.lib
@@ -206,6 +203,7 @@ UI_COMMON_OBJS = \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveName.obj \
   $O\ArchiveOpenCallback.obj \
+  $O\Bench.obj \
   $O\CompressCall2.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
@@ -388,9 +386,6 @@ COMPRESS_OBJS = \
   $O\ZlibEncoder.obj \
   $O\ZDecoder.obj \
 
-LZMA_BENCH_OBJS = \
-  $O\LzmaBench.obj \
-
 CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
@@ -409,12 +404,12 @@ CRYPTO_OBJS = \
 C_OBJS = \
   $O\7zBuf2.obj \
   $O\7zStream.obj \
-  $O\Aes.obj \
   $O\Alloc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
   $O\BwtSort.obj \
+  $O\CpuArch.obj \
   $O\Delta.obj \
   $O\HuffEnc.obj \
   $O\LzFind.obj \
@@ -433,7 +428,8 @@ C_OBJS = \
   $O\XzEnc.obj \
   $O\XzIn.obj \
 
-!include "../../Crc2.mak"
+!include "../../Aes.mak"
+!include "../../Crc.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -461,10 +457,9 @@ OBJS = \
   $(WIM_OBJS) \
   $(ZIP_OBJS) \
   $(COMPRESS_OBJS) \
-  $(LZMA_BENCH_OBJS) \
   $(CRYPTO_OBJS) \
-  $(CRC_OBJS) \
   $(C_OBJS) \
+  $(ASM_OBJS) \
   $O\resource.res \
 
 !include "../../../Build.mak"
@@ -512,8 +507,6 @@ $(ZIP_OBJS): ../../Archive/Zip/$(*B).cpp
 
 $(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL_O2)
-$(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
-	$(COMPL)
 
 $(CRYPTO_OBJS): ../../Crypto/$(*B).cpp
 	$(COMPL_O2)
@@ -530,4 +523,4 @@ $(GUI_OBJS): ../../UI/GUI/$(*B).cpp
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
 
-!include "../../Crc.mak"
+!include "../../Asm.mak"

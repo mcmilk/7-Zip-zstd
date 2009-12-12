@@ -1,15 +1,15 @@
 /* 7zFile.c -- File IO
-2009-08-16 : Igor Pavlov : Public domain */
+2009-11-24 : Igor Pavlov : Public domain */
 
 #include "7zFile.h"
 
 #ifndef USE_WINDOWS_FILE
 
+#ifndef UNDER_CE
 #include <errno.h>
-
 #endif
 
-#ifdef USE_WINDOWS_FILE
+#else
 
 /*
    ReadFile and WriteFile functions in Windows have BUG:
@@ -34,6 +34,7 @@ void File_Construct(CSzFile *p)
   #endif
 }
 
+#if !defined(UNDER_CE) || !defined(USE_WINDOWS_FILE)
 static WRes File_Open(CSzFile *p, const char *name, int writeMode)
 {
   #ifdef USE_WINDOWS_FILE
@@ -45,12 +46,18 @@ static WRes File_Open(CSzFile *p, const char *name, int writeMode)
   return (p->handle != INVALID_HANDLE_VALUE) ? 0 : GetLastError();
   #else
   p->file = fopen(name, writeMode ? "wb+" : "rb");
-  return (p->file != 0) ? 0 : errno;
+  return (p->file != 0) ? 0 :
+    #ifdef UNDER_CE
+    2; /* ENOENT */
+    #else
+    errno;
+    #endif
   #endif
 }
 
 WRes InFile_Open(CSzFile *p, const char *name) { return File_Open(p, name, 0); }
 WRes OutFile_Open(CSzFile *p, const char *name) { return File_Open(p, name, 1); }
+#endif
 
 #ifdef USE_WINDOWS_FILE
 static WRes File_OpenW(CSzFile *p, const WCHAR *name, int writeMode)

@@ -1,5 +1,5 @@
 /* Types.h -- Basic types
-2009-08-14 : Igor Pavlov : Public domain */
+2009-11-23 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_TYPES_H
 #define __7Z_TYPES_H
@@ -95,6 +95,12 @@ typedef int Bool;
 #define False 0
 
 
+#ifdef _WIN32
+#define MY_STD_CALL __stdcall
+#else
+#define MY_STD_CALL
+#endif
+
 #ifdef _MSC_VER
 
 #if _MSC_VER >= 1300
@@ -104,13 +110,11 @@ typedef int Bool;
 #endif
 
 #define MY_CDECL __cdecl
-#define MY_STD_CALL __stdcall
-#define MY_FAST_CALL MY_NO_INLINE __fastcall
+#define MY_FAST_CALL __fastcall
 
 #else
 
 #define MY_CDECL
-#define MY_STD_CALL
 #define MY_FAST_CALL
 
 #endif

@@ -73,8 +73,7 @@ class CHandler:
   HRESULT Open2(IInStream *inStream, IArchiveOpenCallback *callback);
 
 public:
-  MY_QUERYINTERFACE_BEGIN
-  MY_QUERYINTERFACE_ENTRY(IInArchive)
+  MY_QUERYINTERFACE_BEGIN2(IInArchive)
   MY_QUERYINTERFACE_ENTRY(IArchiveOpenSeq)
   #ifndef EXTRACT_ONLY
   MY_QUERYINTERFACE_ENTRY(IOutArchive)
@@ -644,7 +643,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     {
       COneMethodInfo &m = _methods[i];
       SetCompressionMethod2(m
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       , _numThreads
       #endif
       );
@@ -658,7 +657,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
     }
 
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     lzma2Props.numTotalThreads = _numThreads;
     #endif
 

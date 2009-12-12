@@ -50,7 +50,7 @@ class CFSFolder:
 {
   UInt64 GetSizeOfItem(int anIndex) const;
 public:
-  MY_QUERYINTERFACE_BEGIN
+  MY_QUERYINTERFACE_BEGIN2(IFolderFolder)
     MY_QUERYINTERFACE_ENTRY(IFolderWasChanged)
     // MY_QUERYINTERFACE_ENTRY(IFolderOperationsDeleteToRecycleBin)
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)

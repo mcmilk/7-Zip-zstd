@@ -37,7 +37,7 @@ class CDecoder:
   void SetOutStreamSizeResume(const UInt64 *outSize);
 
 public:
-  MY_QUERYINTERFACE_BEGIN
+  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetDecoderProperties2)
   #ifndef NO_READ_FROM_CODER
   MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)

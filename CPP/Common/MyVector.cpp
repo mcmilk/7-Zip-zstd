@@ -25,12 +25,12 @@ void CBaseRecordVector::ReserveOnePosition()
 {
   if (_size != _capacity)
     return;
-  int delta = 1;
+  unsigned delta = 1;
   if (_capacity >= 64)
-    delta = _capacity / 4;
+    delta = (unsigned)_capacity / 4;
   else if (_capacity >= 8)
     delta = 8;
-  Reserve(_capacity + delta);
+  Reserve(_capacity + (int)delta);
 }
 
 void CBaseRecordVector::Reserve(int newCapacity)

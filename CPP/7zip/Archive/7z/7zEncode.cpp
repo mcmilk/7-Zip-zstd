@@ -15,7 +15,6 @@
 static const UInt64 k_Delta = 0x03;
 static const UInt64 k_BCJ = 0x03030103;
 static const UInt64 k_BCJ2 = 0x0303011B;
-static const UInt64 k_AES = 0x06F10701;
 
 namespace NArchive {
 namespace N7z {
@@ -76,7 +75,7 @@ HRESULT CEncoder::CreateMixerCoder(
 
     CMyComPtr<IUnknown> encoderCommon = encoder ? (IUnknown *)encoder : (IUnknown *)encoder2;
    
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     {
       CMyComPtr<ICompressSetCoderMt> setCoderMt;
       encoderCommon.QueryInterface(IID_ICompressSetCoderMt, &setCoderMt);

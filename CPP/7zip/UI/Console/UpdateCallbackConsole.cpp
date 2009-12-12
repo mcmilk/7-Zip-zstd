@@ -5,7 +5,7 @@
 #include "UpdateCallbackConsole.h"
 
 #include "Windows/Error.h"
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 #include "Windows/Synchronization.h"
 #endif
 
@@ -14,7 +14,7 @@
 
 using namespace NWindows;
 
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 static NSynchronization::CCriticalSection g_CriticalSection;
 #define MT_LOCK NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
 #else

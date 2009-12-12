@@ -26,18 +26,25 @@ specified in password Based File Encryption Utility:
 namespace NCrypto {
 namespace NWzAes {
 
-const unsigned int kSaltSizeMax = 16;
-const unsigned int kMacSize = 10;
+const unsigned kSaltSizeMax = 16;
+const unsigned kMacSize = 10;
 
 const UInt32 kPasswordSizeMax = 99; // 128;
 
 // Password Verification Code Size
-const unsigned int kPwdVerifCodeSize = 2;
+const unsigned kPwdVerifCodeSize = 2;
+
+enum EKeySizeMode
+{
+  kKeySizeMode_AES128 = 1,
+  kKeySizeMode_AES192 = 2,
+  kKeySizeMode_AES256 = 3
+};
 
 class CKeyInfo
 {
 public:
-  Byte KeySizeMode; // 1 - 128-bit , 2 - 192-bit , 3 - 256-bit
+  EKeySizeMode KeySizeMode;
   Byte Salt[kSaltSizeMax];
   Byte PwdVerifComputed[kPwdVerifCodeSize];
 
@@ -47,8 +54,19 @@ public:
   UInt32 GetSaltSize() const { return (4 * (KeySizeMode & 3) + 4); }
 
   CKeyInfo() { Init(); }
-  void Init() { KeySizeMode = 3; }
+  void Init() { KeySizeMode = kKeySizeMode_AES256; }
 };
+
+struct CAesCtr2
+{
+  unsigned pos;
+  unsigned offset;
+  UInt32 aes[4 + AES_NUM_IVMRK_WORDS + 3];
+  CAesCtr2();
+};
+
+void AesCtr2_Init(CAesCtr2 *p);
+void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size);
 
 class CBaseCoder:
   public ICompressFilter,
@@ -57,15 +75,9 @@ class CBaseCoder:
 {
 protected:
   CKeyInfo _key;
-  UInt32 _counter[AES_BLOCK_SIZE / 4];
-  Byte _buffer[AES_BLOCK_SIZE];
   NSha1::CHmac _hmac;
-  unsigned int _blockPos;
   Byte _pwdVerifFromArchive[kPwdVerifCodeSize];
-
-  void EncryptData(Byte *data, UInt32 size);
-
-  CAes Aes;
+  CAesCtr2 _aes;
 
 public:
   STDMETHOD(Init)();
@@ -74,26 +86,23 @@ public:
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
 
   UInt32 GetHeaderSize() const { return _key.GetSaltSize() + kPwdVerifCodeSize; }
+  bool SetKeyMode(unsigned mode)
+  {
+    if (mode < kKeySizeMode_AES128 || mode > kKeySizeMode_AES256)
+      return false;
+    _key.KeySizeMode = (EKeySizeMode)mode;
+    return true;
+  }
 };
 
 class CEncoder:
   public CBaseCoder
-  // public ICompressWriteCoderProperties
 {
 public:
   MY_UNKNOWN_IMP1(ICryptoSetPassword)
-  //  ICompressWriteCoderProperties
-  // STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
   HRESULT WriteHeader(ISequentialOutStream *outStream);
   HRESULT WriteFooter(ISequentialOutStream *outStream);
-  bool SetKeyMode(Byte mode)
-  {
-    if (mode < 1 || mode > 3)
-      return false;
-    _key.KeySizeMode = mode;
-    return true;
-  }
 };
 
 class CDecoder:

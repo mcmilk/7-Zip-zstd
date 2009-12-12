@@ -1,8 +1,8 @@
-// LzmaBench.cpp
+// Bench.cpp
 
 #include "StdAfx.h"
 
-#include "LzmaBench.h"
+#include "Bench.h"
 
 #ifndef _WIN32
 #define USE_POSIX_TIME
@@ -31,20 +31,12 @@
 #include "../../../../C/7zCrc.h"
 #include "../../../../C/Alloc.h"
 
-#include "../../../Common/MyCom.h"
-
-#ifdef BENCH_MT
+#ifndef _7ZIP_ST
 #include "../../../Windows/Synchronization.h"
 #include "../../../Windows/Thread.h"
 #endif
 
-#ifdef EXTERNAL_LZMA
 #include "../../../Windows/PropVariant.h"
-#include "../../ICoder.h"
-#else
-#include "../LzmaDecoder.h"
-#include "../LzmaEncoder.h"
-#endif
 
 static const UInt32 kUncompressMinBlockSize =
 #ifdef UNDER_CE
@@ -316,7 +308,7 @@ static UInt64 GetUserFreq()
 
 class CBenchProgressStatus
 {
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   NWindows::NSynchronization::CCriticalSection CS;
   #endif
 public:
@@ -324,14 +316,14 @@ public:
   bool EncodeMode;
   void SetResult(HRESULT res)
   {
-    #ifdef BENCH_MT
+    #ifndef _7ZIP_ST
     NWindows::NSynchronization::CCriticalSectionLock lock(CS);
     #endif
     Res = res;
   }
   HRESULT GetResult()
   {
-    #ifdef BENCH_MT
+    #ifndef _7ZIP_ST
     NWindows::NSynchronization::CCriticalSectionLock lock(CS);
     #endif
     return Res;
@@ -467,16 +459,11 @@ UInt64 GetDecompressRating(UInt64 elapsedTime, UInt64 freq, UInt64 outSize, UInt
   return MyMultDiv64(numCommands, elapsedTime, freq);
 }
 
-#ifdef EXTERNAL_LZMA
-typedef UInt32 (WINAPI * CreateObjectPointer)(const GUID *clsID,
-    const GUID *interfaceID, void **outObject);
-#endif
-
 struct CEncoderInfo;
 
 struct CEncoderInfo
 {
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   NWindows::CThread thread[2];
   #endif
   CMyComPtr<ICompressCoder> encoder;
@@ -515,7 +502,7 @@ struct CEncoderInfo
 
   CEncoderInfo(): outStreamSpec(0), callback(0), propStreamSpec(0) {}
 
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   static THREAD_FUNC_DECL EncodeThreadFunction(void *param)
   {
     CEncoderInfo *encoder = (CEncoderInfo *)param;
@@ -677,19 +664,17 @@ struct CBenchEncoders
 };
 
 HRESULT LzmaBench(
-  #ifdef EXTERNAL_LZMA
-  CCodecs *codecs,
-  #endif
+  DECL_EXTERNAL_CODECS_LOC_VARS
   UInt32 numThreads, UInt32 dictionarySize, IBenchCallback *callback)
 {
   UInt32 numEncoderThreads =
-    #ifdef BENCH_MT
+    #ifndef _7ZIP_ST
     (numThreads > 1 ? numThreads / 2 : 1);
     #else
     1;
     #endif
   UInt32 numSubDecoderThreads =
-    #ifdef BENCH_MT
+    #ifndef _7ZIP_ST
     (numThreads > 1 ? 2 : 1);
     #else
     1;
@@ -702,9 +687,6 @@ HRESULT LzmaBench(
   CBenchEncoders encodersSpec(numEncoderThreads);
   CEncoderInfo *encoders = encodersSpec.encoders;
 
-  #ifdef EXTERNAL_LZMA
-  UString name = L"LZMA";
-  #endif
 
   UInt32 i;
   for (i = 0; i < numEncoderThreads; i++)
@@ -712,18 +694,11 @@ HRESULT LzmaBench(
     CEncoderInfo &encoder = encoders[i];
     encoder.callback = (i == 0) ? callback : 0;
 
-    #ifdef EXTERNAL_LZMA
-    RINOK(codecs->CreateCoder(name, true, encoder.encoder));
-    #else
-    encoder.encoder = new NCompress::NLzma::CEncoder;
-    #endif
+    const UInt32 kLzmaId = 0x030101;
+    RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS kLzmaId, encoder.encoder, true));
     for (UInt32 j = 0; j < numSubDecoderThreads; j++)
     {
-      #ifdef EXTERNAL_LZMA
-      RINOK(codecs->CreateCoder(name, false, encoder.decoders[j]));
-      #else
-      encoder.decoders[j] = new NCompress::NLzma::CDecoder;
-      #endif
+      RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS kLzmaId, encoder.decoders[j], false));
     }
   }
 
@@ -753,7 +728,7 @@ HRESULT LzmaBench(
       SetStartTime(encoder.progressInfoSpec[0]->BenchInfo);
     }
 
-    #ifdef BENCH_MT
+    #ifndef _7ZIP_ST
     if (numEncoderThreads > 1)
     {
       #ifdef USE_ALLOCA
@@ -767,7 +742,7 @@ HRESULT LzmaBench(
       RINOK(encoder.Encode());
     }
   }
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   if (numEncoderThreads > 1)
     for (i = 0; i < numEncoderThreads; i++)
       encoders[i].thread[0].Wait();
@@ -806,7 +781,7 @@ HRESULT LzmaBench(
       SetStartTime(encoder.progressInfoSpec[0]->BenchInfo);
     }
 
-    #ifdef BENCH_MT
+    #ifndef _7ZIP_ST
     if (numDecoderThreads > 1)
     {
       for (UInt32 j = 0; j < numSubDecoderThreads; j++)
@@ -825,7 +800,7 @@ HRESULT LzmaBench(
       RINOK(encoder.Decode(0));
     }
   }
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   HRESULT res = S_OK;
   if (numDecoderThreads > 1)
     for (i = 0; i < numEncoderThreads; i++)
@@ -840,7 +815,7 @@ HRESULT LzmaBench(
   #endif
   RINOK(status.Res);
   SetFinishTime(encoders[0].progressInfoSpec[0]->BenchInfo, info);
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   #ifdef UNDER_CE
   if (numDecoderThreads > 1)
     for (i = 0; i < numEncoderThreads; i++)
@@ -901,7 +876,7 @@ static bool CrcBig(const void *data, UInt32 size, UInt32 numCycles, UInt32 crcBa
   return true;
 }
 
-#ifdef BENCH_MT
+#ifndef _7ZIP_ST
 struct CCrcInfo
 {
   NWindows::CThread Thread;
@@ -1004,7 +979,7 @@ HRESULT CrcBench(UInt32 numThreads, UInt32 bufferSize, UInt64 &speed)
   UInt32 numCycles = (kCrcBlockSize) / ((bufferSize >> 2) + 1) + 1;
 
   UInt64 timeVal;
-  #ifdef BENCH_MT
+  #ifndef _7ZIP_ST
   CCrcThreads threads;
   if (numThreads > 1)
   {
@@ -1047,4 +1022,3 @@ HRESULT CrcBench(UInt32 numThreads, UInt32 bufferSize, UInt64 &speed)
   speed = MyMultDiv64(size, timeVal, GetFreq());
   return S_OK;
 }
-

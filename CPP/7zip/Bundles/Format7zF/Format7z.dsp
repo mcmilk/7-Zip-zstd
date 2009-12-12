@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gr /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "COMPRESS_MF_MT" /D "COMPRESS_MT" /D "COMPRESS_BZIP2_MT" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "_LZMA_PROB32_" /FAcs /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /FAcs /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gr /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "COMPRESS_MF_MT" /D "COMPRESS_MT" /D "COMPRESS_BZIP2_MT" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "_LZMA_PROB32" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -1316,6 +1316,11 @@ SOURCE=..\..\..\..\C\BwtSort.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\CpuArch.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\CpuArch.h
 # End Source File
 # Begin Source File
@@ -2175,6 +2180,10 @@ SOURCE=..\..\Archive\Udf\UdfRegister.cpp
 # End Group
 # Begin Source File
 
+SOURCE=..\..\Archive\ApmHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\ArjHandler.cpp
 # End Source File
 # Begin Source File
@@ -2380,6 +2389,78 @@ SOURCE=..\..\..\Windows\Time.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Time.h
+# End Source File
+# End Group
+# Begin Group "Asm"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\Asm\x86\7zAsm.asm
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\Asm\x86\7zCrcOpt.asm
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# Begin Custom Build
+OutDir=.\Release
+InputPath=..\..\..\..\Asm\x86\7zCrcOpt.asm
+InputName=7zCrcOpt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# Begin Custom Build
+OutDir=.\Debug
+InputPath=..\..\..\..\Asm\x86\7zCrcOpt.asm
+InputName=7zCrcOpt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -omf -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\Asm\x86\AesOpt.asm
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build
+OutDir=.\Release
+InputPath=..\..\..\..\Asm\x86\AesOpt.asm
+InputName=AesOpt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build
+OutDir=.\Debug
+InputPath=..\..\..\..\Asm\x86\AesOpt.asm
+InputName=AesOpt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -omf -WX -W3 -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
 # End Source File
 # End Group
 # End Target

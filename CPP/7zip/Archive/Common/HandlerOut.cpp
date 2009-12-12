@@ -6,7 +6,7 @@
 
 #include "../../../Windows/PropVariant.h"
 
-#ifdef COMPRESS_MT
+#ifndef _7ZIP_ST
 #include "../../../Windows/System.h"
 #endif
 
@@ -190,7 +190,7 @@ static void SetMethodProp(COneMethodInfo &m, PROPID propID, const NCOM::CPropVar
 }
 
 void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     , UInt32 numThreads
     #endif
     )
@@ -224,7 +224,7 @@ void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
     SetMethodProp(oneMethodInfo, NCoderPropID::kAlgorithm, algo);
     SetMethodProp(oneMethodInfo, NCoderPropID::kNumFastBytes, fastBytes);
     SetMethodProp(oneMethodInfo, NCoderPropID::kMatchFinder, matchFinder);
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     SetMethodProp(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
     #endif
   }
@@ -262,7 +262,7 @@ void COutHandler::SetCompressionMethod2(COneMethodInfo &oneMethodInfo
     
     SetMethodProp(oneMethodInfo, NCoderPropID::kNumPasses, numPasses);
     SetMethodProp(oneMethodInfo, NCoderPropID::kDictionarySize, dicSize);
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     SetMethodProp(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
     #endif
   }
@@ -476,7 +476,7 @@ void COutHandler::Init()
   WriteATime = false;
   WriteMTime = true;
   
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   _numThreads = NSystem::GetNumberOfProcessors();
   #endif
   
@@ -490,7 +490,7 @@ void COutHandler::Init()
 void COutHandler::BeforeSetProperty()
 {
   Init();
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   numProcessors = NSystem::GetNumberOfProcessors();
   #endif
 
@@ -538,7 +538,7 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
   {
     if(name.Left(2).CompareNoCase(L"MT") == 0)
     {
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       RINOK(ParseMtProp(name.Mid(2), value, numProcessors, _numThreads));
       #endif
       return S_OK;

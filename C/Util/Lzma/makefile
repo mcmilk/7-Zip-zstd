@@ -2,7 +2,6 @@ MY_STATIC_LINK=1
 PROG = LZMAc.exe
 
 CFLAGS = $(CFLAGS) \
-  -DCOMPRESS_MF_MT \
 
 LIB_OBJS = \
   $O\LzmaUtil.obj \

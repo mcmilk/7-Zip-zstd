@@ -256,6 +256,8 @@ bool CDecoder::DecodeLz(Int32 pos)
     else if (number == kRepBothNumber)
     {
       length = m_LastLength;
+      if (length == 0)
+        return false;
       distance = m_RepDists[(m_RepDistPtr + 4 - 1) & 3];
     }
     else if (number < kLen2Number)

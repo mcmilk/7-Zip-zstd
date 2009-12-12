@@ -27,7 +27,6 @@ namespace N7z {
 static const UInt64 k_LZMA = 0x030101;
 static const UInt64 k_BCJ  = 0x03030103;
 static const UInt64 k_BCJ2 = 0x0303011B;
-static const UInt64 k_AES  = 0x06F10701;
 
 static const wchar_t *kMatchFinderForBCJ2_LZMA = L"BT2";
 static const UInt32 kDictionaryForBCJ2_LZMA = 1 << 20;
@@ -580,7 +579,7 @@ public:
   DECL_EXTERNAL_CODECS_VARS
   CDecoder Decoder;
 
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   bool MtMode;
   UInt32 NumThreads;
   #endif
@@ -588,7 +587,7 @@ public:
   CThreadDecoder():
     Decoder(true)
   {
-    #ifdef COMPRESS_MT
+    #ifndef _7ZIP_ST
     MtMode = false;
     NumThreads = 1;
     #endif
@@ -617,7 +616,7 @@ void CThreadDecoder::Execute()
       #ifndef _NO_CRYPTO
       , GetTextPassword, passwordIsDefined
       #endif
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       , MtMode, NumThreads
       #endif
       );
@@ -637,17 +636,6 @@ bool static Is86FilteredFolder(const CFolder &f)
   {
     CMethodId m = f.Coders[i].MethodID;
     if (m == k_BCJ || m == k_BCJ2)
-      return true;
-  }
-  return false;
-}
-
-bool static IsEncryptedFolder(const CFolder &f)
-{
-  for (int i = 0; i < f.Coders.Size(); i++)
-  {
-    CMethodId m = f.Coders[i].MethodID;
-    if (m == k_AES)
       return true;
   }
   return false;
@@ -760,7 +748,7 @@ HRESULT Update(
       rep.FolderIndex = i;
       rep.NumCopyFiles = numCopyItems;
       const CFolder &f = db->Folders[i];
-      bool isEncrypted = IsEncryptedFolder(f);
+      bool isEncrypted = f.IsEncrypted();
       rep.Group = GetGroupIndex(isEncrypted, Is86FilteredFolder(f));
       folderRefs.Add(rep);
       if (numCopyItems == numUnpackStreams)

@@ -1,17 +1,14 @@
 PROG = lzma.exe
 MY_CONSOLE = 1
-CFLAGS = $(CFLAGS) \
-  -DCOMPRESS_MF_MT \
-  -DBENCH_MT \
+CFLAGS = $(CFLAGS)
 
 LZMA_OBJS = \
   $O\LzmaAlone.obj \
-  $O\LzmaBench.obj \
-  $O\LzmaBenchCon.obj \
 
-LZMA_OPT_OBJS = \
+COMPRESS_OBJS = \
   $O\LzmaDecoder.obj \
   $O\LzmaEncoder.obj \
+  $O\LzmaRegister.obj \
 
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
@@ -23,18 +20,28 @@ COMMON_OBJS = \
   $O\MyVector.obj
 
 WIN_OBJS = \
+  $O\FileIO.obj \
   $O\System.obj
 
 7ZIP_COMMON_OBJS = \
   $O\CWrappers.obj \
-  $O\InBuffer.obj \
+  $O\CreateCoder.obj \
+  $O\FileStreams.obj \
+  $O\FilterCoder.obj \
   $O\OutBuffer.obj \
   $O\StreamUtils.obj \
 
+UI_COMMON_OBJS = \
+  $O\Bench.obj \
+
+CONSOLE_OBJS = \
+  $O\ConsoleClose.obj \
+  $O\BenchCon.obj \
+
 C_OBJS = \
-  $O\7zCrc.obj \
   $O\Alloc.obj \
   $O\Bra86.obj \
+  $O\CpuArch.obj \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
   $O\Lzma86Dec.obj \
@@ -43,23 +50,26 @@ C_OBJS = \
   $O\LzmaEnc.obj \
   $O\Threads.obj \
 
+!include "../../Crc.mak"
+
 OBJS = \
   $O\StdAfx.obj \
   $(LZMA_OBJS) \
-  $(LZMA_OPT_OBJS) \
+  $(COMPRESS_OBJS) \
   $(COMMON_OBJS) \
   $(WIN_OBJS) \
   $(7ZIP_COMMON_OBJS) \
+  $(UI_COMMON_OBJS) \
+  $(CONSOLE_OBJS) \
   $(C_OBJS) \
-  $O\FileStreams.obj \
-  $O\FileIO.obj \
+  $(ASM_OBJS) \
 
 !include "../../../Build.mak"
 
 
 $(LZMA_OBJS): $(*B).cpp
 	$(COMPL)
-$(LZMA_OPT_OBJS): ../$(*B).cpp
+$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL_O2)
 $(COMMON_OBJS): ../../../Common/$(*B).cpp
 	$(COMPL)
@@ -67,9 +77,11 @@ $(WIN_OBJS): ../../../Windows/$(*B).cpp
 	$(COMPL)
 $(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
 	$(COMPL)
-$O\FileStreams.obj: ../../Common/FileStreams.cpp
+$(UI_COMMON_OBJS): ../../UI/Common/$(*B).cpp
 	$(COMPL)
-$O\FileIO.obj: ../../../Windows/FileIO.cpp
+$(CONSOLE_OBJS): ../../UI/Console/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
+
+!include "../../Asm.mak"

@@ -21,7 +21,7 @@ namespace N7z {
 #ifndef __7Z_SET_PROPERTIES
 
 #ifdef EXTRACT_ONLY
-#ifdef COMPRESS_MT
+#if !defined(_7ZIP_ST) && !defined(_SFX)
 #define __7Z_SET_PROPERTIES
 #endif
 #else
@@ -80,7 +80,7 @@ private:
 
   #ifdef EXTRACT_ONLY
   
-  #ifdef COMPRESS_MT
+  #ifdef __7Z_SET_PROPERTIES
   UInt32 _numThreads;
   #endif
 
@@ -92,7 +92,7 @@ private:
 
   HRESULT SetCompressionMethod(CCompressionMethodMode &method,
       CObjectVector<COneMethodInfo> &methodsInfo
-      #ifdef COMPRESS_MT
+      #ifndef _7ZIP_ST
       , UInt32 numThreads
       #endif
       );

@@ -7,16 +7,16 @@
 
 namespace NBitm {
 
-const int kNumBigValueBits = 8 * 4;
-const int kNumValueBytes = 3;
-const int kNumValueBits = 8  * kNumValueBytes;
+const unsigned kNumBigValueBits = 8 * 4;
+const unsigned kNumValueBytes = 3;
+const unsigned kNumValueBits = 8  * kNumValueBytes;
 
 const UInt32 kMask = (1 << kNumValueBits) - 1;
 
 template<class TInByte>
 class CDecoder
 {
-  UInt32 m_BitPos;
+  unsigned m_BitPos;
   UInt32 m_Value;
 public:
   TInByte m_Stream;
@@ -39,19 +39,19 @@ public:
       m_Value = (m_Value << 8) | m_Stream.ReadByte();
   }
 
-  UInt32 GetValue(UInt32 numBits) const
+  UInt32 GetValue(unsigned numBits) const
   {
     // return (m_Value << m_BitPos) >> (kNumBigValueBits - numBits);
     return ((m_Value >> (8 - m_BitPos)) & kMask) >> (kNumValueBits - numBits);
   }
   
-  void MovePos(UInt32 numBits)
+  void MovePos(unsigned numBits)
   {
     m_BitPos += numBits;
     Normalize();
   }
   
-  UInt32 ReadBits(UInt32 numBits)
+  UInt32 ReadBits(unsigned numBits)
   {
     UInt32 res = GetValue(numBits);
     MovePos(numBits);

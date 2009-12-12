@@ -1,13 +1,9 @@
-// LzmaBench.h
+// Bench.h
 
-#ifndef __LZMABENCH_H
-#define __LZMABENCH_H
+#ifndef __7ZIP_BENCH_H
+#define __7ZIP_BENCH_H
 
-#include <stdio.h>
-#include "../../../Common/Types.h"
-#ifdef EXTERNAL_LZMA
-#include "../../UI/Common/LoadCodecs.h"
-#endif
+#include "../../Common/CreateCoder.h"
 
 struct CBenchInfo
 {
@@ -33,9 +29,7 @@ UInt64 GetCompressRating(UInt32 dictionarySize, UInt64 elapsedTime, UInt64 freq,
 UInt64 GetDecompressRating(UInt64 elapsedTime, UInt64 freq, UInt64 outSize, UInt64 inSize, UInt32 numIterations);
 
 HRESULT LzmaBench(
-  #ifdef EXTERNAL_LZMA
-  CCodecs *codecs,
-  #endif
+  DECL_EXTERNAL_CODECS_LOC_VARS
   UInt32 numThreads, UInt32 dictionarySize, IBenchCallback *callback);
 
 const int kBenchMinDicLogSize = 18;

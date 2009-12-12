@@ -1,5 +1,5 @@
 /* LzFindMt.c -- multithreaded Match finder for LZ algorithms
-2009-05-26 : Igor Pavlov : Public domain */
+2009-09-20 : Igor Pavlov : Public domain */
 
 #include "LzHash.h"
 
@@ -711,47 +711,47 @@ UInt32 MatchFinderMt_GetMatches(CMatchFinderMt *p, UInt32 *distances)
   return len;
 }
 
-#define SKIP_HEADER2  do { GET_NEXT_BLOCK_IF_REQUIRED
-#define SKIP_HEADER(n) SKIP_HEADER2 if (p->btNumAvailBytes-- >= (n)) { const Byte *cur = p->pointerToCurPos; UInt32 *hash = p->hash;
-#define SKIP_FOOTER } INCREASE_LZ_POS p->btBufPos += p->btBuf[p->btBufPos] + 1; } while (--num != 0);
+#define SKIP_HEADER2_MT  do { GET_NEXT_BLOCK_IF_REQUIRED
+#define SKIP_HEADER_MT(n) SKIP_HEADER2_MT if (p->btNumAvailBytes-- >= (n)) { const Byte *cur = p->pointerToCurPos; UInt32 *hash = p->hash;
+#define SKIP_FOOTER_MT } INCREASE_LZ_POS p->btBufPos += p->btBuf[p->btBufPos] + 1; } while (--num != 0);
 
 void MatchFinderMt0_Skip(CMatchFinderMt *p, UInt32 num)
 {
-  SKIP_HEADER2 { p->btNumAvailBytes--;
-  SKIP_FOOTER
+  SKIP_HEADER2_MT { p->btNumAvailBytes--;
+  SKIP_FOOTER_MT
 }
 
 void MatchFinderMt2_Skip(CMatchFinderMt *p, UInt32 num)
 {
-  SKIP_HEADER(2)
+  SKIP_HEADER_MT(2)
       UInt32 hash2Value;
       MT_HASH2_CALC
       hash[hash2Value] = p->lzPos;
-  SKIP_FOOTER
+  SKIP_FOOTER_MT
 }
 
 void MatchFinderMt3_Skip(CMatchFinderMt *p, UInt32 num)
 {
-  SKIP_HEADER(3)
+  SKIP_HEADER_MT(3)
       UInt32 hash2Value, hash3Value;
       MT_HASH3_CALC
       hash[kFix3HashSize + hash3Value] =
       hash[                hash2Value] =
         p->lzPos;
-  SKIP_FOOTER
+  SKIP_FOOTER_MT
 }
 
 /*
 void MatchFinderMt4_Skip(CMatchFinderMt *p, UInt32 num)
 {
-  SKIP_HEADER(4)
+  SKIP_HEADER_MT(4)
       UInt32 hash2Value, hash3Value, hash4Value;
       MT_HASH4_CALC
       hash[kFix4HashSize + hash4Value] =
       hash[kFix3HashSize + hash3Value] =
       hash[                hash2Value] =
         p->lzPos;
-  SKIP_FOOTER
+  SKIP_FOOTER_MT
 }
 */
 

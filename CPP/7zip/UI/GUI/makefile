@@ -1,10 +1,7 @@
 PROG = 7zG.exe
 CFLAGS = $(CFLAGS) -I ../../../  \
   -DLANG \
-  -DCOMPRESS_MT \
-  -DEXTERNAL_LZMA \
   -DEXTERNAL_CODECS \
-  -DBENCH_MT \
 
 !IFDEF UNDER_CE
 LIBS = $(LIBS) ceshell.lib Commctrl.lib
@@ -62,8 +59,10 @@ WIN_CTRL_OBJS = \
   $O\ListView.obj \
 
 7ZIP_COMMON_OBJS = \
+  $O\CreateCoder.obj \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
+  $O\FilterCoder.obj \
   $O\ProgressUtils.obj \
   $O\StreamUtils.obj \
 
@@ -71,6 +70,7 @@ UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveOpenCallback.obj \
+  $O\Bench.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \
   $O\Extract.obj \
@@ -91,9 +91,6 @@ UI_COMMON_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\OutStreamWithCRC.obj \
-
-LZMA_BENCH_OBJS = \
-  $O\LzmaBench.obj \
 
 FM_OBJS = \
   $O\ExtractCallback.obj \
@@ -117,9 +114,10 @@ FM_OBJS = $(FM_OBJS) \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\CpuArch.obj \
   $O\Threads.obj \
 
-!include "../../Crc2.mak"
+!include "../../Crc.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -135,7 +133,7 @@ OBJS = \
   $O\CopyCoder.obj \
   $(LZMA_BENCH_OBJS) \
   $(C_OBJS) \
-  $(CRC_OBJS) \
+  $(ASM_OBJS) \
   $O\resource.res
 
 !include "../../../Build.mak"
@@ -159,11 +157,9 @@ $(FM_OBJS): ../FileManager/$(*B).cpp
 $O\MyMessages.obj: ../Explorer/MyMessages.cpp
 	$(COMPL)
 
-
 $O\CopyCoder.obj: ../../Compress/$(*B).cpp
-	$(COMPL)
-$(LZMA_BENCH_OBJS): ../../Compress/LZMA_Alone/$(*B).cpp
 	$(COMPL)
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
-!include "../../Crc.mak"
+
+!include "../../Asm.mak"

@@ -28,7 +28,7 @@ struct CExtractOptions
   // bool ShowDialog;
   // bool PasswordEnabled;
   // UString Password;
-  #ifdef COMPRESS_MT
+  #if !defined(_7ZIP_ST) && !defined(_SFX)
   CObjectVector<CProperty> Properties;
   #endif
 

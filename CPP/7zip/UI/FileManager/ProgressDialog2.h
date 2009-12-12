@@ -237,6 +237,7 @@ private:
   bool _needClose;
 
   UInt32 _numPostedMessages;
+  UInt32 _numAutoSizeMessages;
 
   bool _errorsWereDisplayed;
 

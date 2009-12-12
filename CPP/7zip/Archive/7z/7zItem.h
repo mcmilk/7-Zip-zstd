@@ -13,6 +13,8 @@
 namespace NArchive {
 namespace N7z {
 
+const UInt64 k_AES = 0x06F10701;
+
 typedef UInt32 CNum;
 const CNum kNumMax     = 0x7FFFFFFF;
 const CNum kNumNoIndex = 0xFFFFFFFF;
@@ -81,6 +83,14 @@ struct CFolder
       if (PackStreams[i] == inStreamIndex)
         return i;
     return -1;
+  }
+
+  bool IsEncrypted() const
+  {
+    for (int i = Coders.Size() - 1; i >= 0; i--)
+      if (Coders[i].MethodID == k_AES)
+        return true;
+    return false;
   }
 
   bool CheckStructure() const;

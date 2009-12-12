@@ -172,11 +172,12 @@ AGENT_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\CpuArch.obj \
   $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \
 
-!include "../../Crc2.mak"
+!include "../../Crc.mak"
 
 OBJS = \
   $O\StdAfx.obj \
@@ -190,8 +191,8 @@ OBJS = \
   $(EXPLORER_OBJS) \
   $(AGENT_OBJS) \
   $O\CopyCoder.obj \
-  $(CRC_OBJS) \
   $(C_OBJS) \
+  $(ASM_OBJS) \
   $O\resource.res \
 
 !include "../../../Build.mak"
@@ -220,4 +221,4 @@ $O\CopyCoder.obj: ../../Compress/$(*B).cpp
 $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
 
-!include "../../Crc.mak"
+!include "../../Asm.mak"

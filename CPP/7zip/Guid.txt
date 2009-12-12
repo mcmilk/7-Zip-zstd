@@ -125,6 +125,7 @@ Handler GUIDs:
   0B lzma86
   0C xz
 
+  D4 APM
   D5 Mslz
   D6 Flv
   D7 Swf

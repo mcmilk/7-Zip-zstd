@@ -107,6 +107,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (prop.vt != VT_UI8)
         return E_INVALIDARG;
       ui.Size = prop.uhVal.QuadPart;
+      if (ui.Size >= ((UInt64)1 << 33))
+        return E_INVALIDARG;
     }
     updateItems.Add(ui);
   }

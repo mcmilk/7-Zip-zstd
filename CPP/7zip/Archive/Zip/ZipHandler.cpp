@@ -63,30 +63,7 @@ static const char *kHostOS[] =
 
 static const char *kUnknownOS = "Unknown";
 
-STATPROPSTG kProps[] =
-{
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsDir, VT_BOOL},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8},
-  { NULL, kpidMTime, VT_FILETIME},
-  { NULL, kpidCTime, VT_FILETIME},
-  { NULL, kpidATime, VT_FILETIME},
-  
-  { NULL, kpidAttrib, VT_UI4},
-
-  { NULL, kpidEncrypted, VT_BOOL},
-  { NULL, kpidComment, VT_BSTR},
-    
-  { NULL, kpidCRC, VT_UI4},
-
-  { NULL, kpidMethod, VT_BSTR},
-  { NULL, kpidHostOS, VT_BSTR}
-
-  // { NULL, kpidUnpackVer, VT_UI1},
-};
-
-const char *kMethods[] =
+static const char *kMethods[] =
 {
   "Store",
   "Shrink",
@@ -101,23 +78,20 @@ const char *kMethods[] =
   "PKImploding"
 };
 
-const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
-const char *kBZip2Method = "BZip2";
-const char *kLZMAMethod = "LZMA";
-const char *kJpegMethod = "Jpeg";
-const char *kWavPackMethod = "WavPack";
-const char *kPPMdMethod = "PPMd";
-const char *kAESMethod = "AES";
-const char *kZipCryptoMethod = "ZipCrypto";
-const char *kStrongCryptoMethod = "StrongCrypto";
+static const char *kBZip2Method = "BZip2";
+static const char *kLZMAMethod = "LZMA";
+static const char *kJpegMethod = "Jpeg";
+static const char *kWavPackMethod = "WavPack";
+static const char *kPPMdMethod = "PPMd";
+static const char *kAESMethod = "AES";
+static const char *kZipCryptoMethod = "ZipCrypto";
+static const char *kStrongCryptoMethod = "StrongCrypto";
 
-struct CStrongCryptoPair
+static struct CStrongCryptoPair
 {
   UInt16 Id;
   const char *Name;
-};
-
-CStrongCryptoPair g_StrongCryptoPairs[] =
+} g_StrongCryptoPairs[] =
 {
   { NStrongCryptoFlags::kDES, "DES" },
   { NStrongCryptoFlags::kRC2old, "RC2a" },
@@ -132,7 +106,25 @@ CStrongCryptoPair g_StrongCryptoPairs[] =
   { NStrongCryptoFlags::kRC4, "RC4" }
 };
 
-STATPROPSTG kArcProps[] =
+static STATPROPSTG kProps[] =
+{
+  { NULL, kpidPath, VT_BSTR},
+  { NULL, kpidIsDir, VT_BOOL},
+  { NULL, kpidSize, VT_UI8},
+  { NULL, kpidPackSize, VT_UI8},
+  { NULL, kpidMTime, VT_FILETIME},
+  { NULL, kpidCTime, VT_FILETIME},
+  { NULL, kpidATime, VT_FILETIME},
+  { NULL, kpidAttrib, VT_UI4},
+  { NULL, kpidEncrypted, VT_BOOL},
+  { NULL, kpidComment, VT_BSTR},
+  { NULL, kpidCRC, VT_UI4},
+  { NULL, kpidMethod, VT_BSTR},
+  { NULL, kpidHostOS, VT_BSTR},
+  { NULL, kpidUnpackVer, VT_UI4}
+};
+
+static STATPROPSTG kArcProps[] =
 {
   { NULL, kpidBit64, VT_BOOL},
   { NULL, kpidComment, VT_BSTR}
@@ -289,7 +281,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           method += ' ';
         }
       }
-      if (methodId < kNumMethods)
+      if (methodId < sizeof(kMethods) / sizeof(kMethods[0]))
         method += kMethods[methodId];
       else switch (methodId)
       {
@@ -315,6 +307,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidHostOS:
       prop = (item.MadeByVersion.HostOS < sizeof(kHostOS) / sizeof(kHostOS[0])) ?
         (kHostOS[item.MadeByVersion.HostOS]) : kUnknownOS;
+      break;
+    case kpidUnpackVer:
+      prop = (UInt32)item.ExtractVersion.Version;
       break;
   }
   prop.Detach(value);
@@ -637,7 +632,7 @@ HRESULT CZipDecoder::Decode(
     }
   }
   
-  #ifdef COMPRESS_MT
+  #ifndef _7ZIP_ST
   {
     CMyComPtr<ICompressSetCoderMt> setCoderMt;
     coder->QueryInterface(IID_ICompressSetCoderMt, (void **)&setCoderMt);

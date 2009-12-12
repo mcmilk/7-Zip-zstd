@@ -99,7 +99,7 @@ static Bool Utf16_To_Utf8(char *dest, size_t *destLen, const wchar_t *src, size_
       c2 = src[srcPos++];
       if (c2 < 0xDC00 || c2 >= 0xE000)
         break;
-      value = ((value - 0xD800) << 10) | (c2 - 0xDC00);
+      value = (((value - 0xD800) << 10) | (c2 - 0xDC00)) + 0x10000;
     }
     for (numAdds = 1; numAdds < 5; numAdds++)
       if (value < (((UInt32)1) << (numAdds * 5 + 6)))

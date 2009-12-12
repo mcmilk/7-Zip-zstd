@@ -5,7 +5,6 @@ SLIBPATH = $O\$(SLIB)
 
 DEF_FILE = LzmaLib.def
 CFLAGS = $(CFLAGS) \
-  -DCOMPRESS_MF_MT \
 
 LIB_OBJS = \
   $O\LzmaLibExports.obj \

@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 9
-!define VERSION_MINOR 07
+!define VERSION_MINOR 09
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -54,7 +54,7 @@
   ;Compressor
 !ifndef NO_COMPRESSION
   SetCompressor /solid lzma
-  SetCompressorFilter 1
+  ; SetCompressorFilter 1
 !ifdef IA64
   SetCompressorDictSize 8
 !else

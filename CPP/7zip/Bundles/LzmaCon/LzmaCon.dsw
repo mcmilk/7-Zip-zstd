@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "AloneLZMA"=.\AloneLZMA.dsp - Package Owner=<4>
+Project: "LzmaCon"=.\LzmaCon.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

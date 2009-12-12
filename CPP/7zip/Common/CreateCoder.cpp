@@ -2,10 +2,11 @@
 
 #include "StdAfx.h"
 
+#include "../../Windows/Defs.h"
+#include "../../Windows/PropVariant.h"
+
 #include "CreateCoder.h"
 
-#include "../../Windows/PropVariant.h"
-#include "../../Windows/Defs.h"
 #include "FilterCoder.h"
 #include "RegisterCodec.h"
 

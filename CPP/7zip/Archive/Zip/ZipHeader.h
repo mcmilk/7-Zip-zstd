@@ -80,10 +80,17 @@ namespace NFileHeader
     const int kNumCompressionMethods = 11;
     const Byte kMadeByProgramVersion = 20;
     
-    const Byte kDeflateExtractVersion = 20;
-    const Byte kStoreExtractVersion = 10;
+    const Byte kExtractVersion_Default = 10;
+    const Byte kExtractVersion_Dir = 20;
+    const Byte kExtractVersion_ZipCrypto = 20;
+    const Byte kExtractVersion_Deflate = 20;
+    const Byte kExtractVersion_Deflate64 = 21;
+    const Byte kExtractVersion_Zip64 = 45;
+    const Byte kExtractVersion_BZip2 = 46;
+    const Byte kExtractVersion_Aes = 51;
+    const Byte kExtractVersion_LZMA = 63;
     
-    const Byte kSupportedVersion   = 20;
+    // const Byte kSupportedVersion   = 20;
   }
 
   namespace NExtraID

@@ -1,10 +1,10 @@
 // CreateCoder.h
 
-#ifndef __CREATECODER_H
-#define __CREATECODER_H
+#ifndef __CREATE_CODER_H
+#define __CREATE_CODER_H
 
-#include "Common/MyCom.h"
-#include "Common/MyString.h"
+#include "../../Common/MyCom.h"
+#include "../../Common/MyString.h"
 #include "../ICoder.h"
 
 #include "MethodId.h"
