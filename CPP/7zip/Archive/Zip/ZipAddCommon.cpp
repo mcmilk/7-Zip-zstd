@@ -162,19 +162,15 @@ HRESULT CAddCommon::Compress(
         {
           _cryptoStreamSpec->Filter = _filterAesSpec = new NCrypto::NWzAes::CEncoder;
           _filterAesSpec->SetKeyMode(_options.AesKeyMode);
-          RINOK(_filterAesSpec->CryptoSetPassword(
-            (const Byte *)(const char *)_options.Password, _options.Password.Length()));
+          RINOK(_filterAesSpec->CryptoSetPassword((const Byte *)(const char *)_options.Password, _options.Password.Length()));
         }
         RINOK(_filterAesSpec->WriteHeader(outStream));
       }
       else
       {
         if (!_cryptoStreamSpec->Filter)
-        {
           _cryptoStreamSpec->Filter = _filterSpec = new NCrypto::NZip::CEncoder;
-          RINOK(_filterSpec->CryptoSetPassword(
-            (const Byte *)(const char *)_options.Password, _options.Password.Length()));
-        }
+        RINOK(_filterSpec->CryptoSetPassword((const Byte *)(const char *)_options.Password, _options.Password.Length()));
         UInt32 crc = 0;
         RINOK(GetStreamCRC(inStream, crc));
         RINOK(inCrcStreamSpec->Seek(0, STREAM_SEEK_SET, NULL));
