@@ -51,6 +51,18 @@ static const UInt32 kLzmaDicSizeX5 = 1 << 24;
 static const UInt32 kLzmaDicSizeX7 = 1 << 25;
 static const UInt32 kLzmaDicSizeX9 = 1 << 26;
 
+static const UInt32 kPpmdMemSizeX1 = (1 << 20);
+static const UInt32 kPpmdMemSizeX3 = (1 << 22);
+static const UInt32 kPpmdMemSizeX5 = (1 << 24);
+static const UInt32 kPpmdMemSizeX7 = (1 << 26);
+static const UInt32 kPpmdMemSizeX9 = (1 << 27);
+
+static const UInt32 kPpmdOrderX1 = 4;
+static const UInt32 kPpmdOrderX3 = 6;
+static const UInt32 kPpmdOrderX5 = 8;
+static const UInt32 kPpmdOrderX7 = 10;
+static const UInt32 kPpmdOrderX9 = 16;
+
 static const UInt32 kBZip2NumPassesX1 = 1;
 static const UInt32 kBZip2NumPassesX7 = 2;
 static const UInt32 kBZip2NumPassesX9 = 7;
@@ -290,13 +302,14 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       (mainMethod == NFileHeader::NCompressionMethod::kDeflated64);
   bool isLZMA = (mainMethod == NFileHeader::NCompressionMethod::kLZMA);
   bool isLz = (isLZMA || isDeflate);
-  bool isBZip2 = (mainMethod == NFileHeader::NCompressionMethod::kBZip2);
   options.NumPasses = m_NumPasses;
   options.DicSize = m_DicSize;
   options.NumFastBytes = m_NumFastBytes;
   options.NumMatchFinderCycles = m_NumMatchFinderCycles;
   options.NumMatchFinderCyclesDefined = m_NumMatchFinderCyclesDefined;
   options.Algo = m_Algo;
+  options.MemSize = m_MemSize;
+  options.Order = m_Order;
   #ifndef _7ZIP_ST
   options.NumThreads = _numThreads;
   #endif
@@ -336,7 +349,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         options.Algo = (level >= 5 ? kLzAlgoX5 :
                                      kLzAlgoX1);
   }
-  if (isBZip2)
+  if (mainMethod == NFileHeader::NCompressionMethod::kBZip2)
   {
     if (options.NumPasses == 0xFFFFFFFF)
       options.NumPasses = (level >= 9 ? kBZip2NumPassesX9 :
@@ -346,6 +359,26 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       options.DicSize = (level >= 5 ? kBZip2DicSizeX5 :
                         (level >= 3 ? kBZip2DicSizeX3 :
                                       kBZip2DicSizeX1));
+  }
+  if (mainMethod == NFileHeader::NCompressionMethod::kPPMd)
+  {
+    if (options.MemSize == 0xFFFFFFFF)
+      options.MemSize =
+          (level >= 9 ? kPpmdMemSizeX9 :
+          (level >= 7 ? kPpmdMemSizeX7 :
+          (level >= 5 ? kPpmdMemSizeX5 :
+          (level >= 3 ? kPpmdMemSizeX3 :
+                        kPpmdMemSizeX1))));
+
+    if (options.Order == 0xFFFFFFFF)
+      options.Order =
+          (level >= 9 ? kPpmdOrderX9 :
+          (level >= 7 ? kPpmdOrderX7 :
+          (level >= 5 ? kPpmdOrderX5 :
+          (level >= 3 ? kPpmdOrderX3 :
+                        kPpmdOrderX1))));
+
+    options.Algo = 0;
   }
 
   return Update(
@@ -389,6 +422,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         else if (m == L"DEFLATE64") m_MainMethod = NFileHeader::NCompressionMethod::kDeflated64;
         else if (m == L"BZIP2") m_MainMethod = NFileHeader::NCompressionMethod::kBZip2;
         else if (m == L"LZMA") m_MainMethod = NFileHeader::NCompressionMethod::kLZMA;
+        else if (m == L"PPMD") m_MainMethod = NFileHeader::NCompressionMethod::kPPMd;
         else return E_INVALIDARG;
       }
       else if (prop.vt == VT_UI4)
@@ -445,6 +479,18 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
       UInt32 dicSize = kBZip2DicSizeX5;
       RINOK(ParsePropDictionaryValue(name.Mid(1), prop, dicSize));
       m_DicSize = dicSize;
+    }
+    else if (name.Left(3) == L"MEM")
+    {
+      UInt32 memSize = kPpmdMemSizeX5;
+      RINOK(ParsePropDictionaryValue(name.Mid(3), prop, memSize));
+      m_MemSize = memSize;
+    }
+    else if (name[0] == L'O')
+    {
+      UInt32 order = kPpmdOrderX5;
+      RINOK(ParsePropValue(name.Mid(1), prop, order));
+      m_Order = order;
     }
     else if (name.Left(4) == L"PASS")
     {

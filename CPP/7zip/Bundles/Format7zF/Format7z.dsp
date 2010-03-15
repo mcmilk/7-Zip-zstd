@@ -349,15 +349,17 @@ SOURCE=..\..\..\Common\Wildcard.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\PpmdContext.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\PpmdDecode.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\PpmdDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -365,11 +367,17 @@ SOURCE=..\..\Compress\PpmdDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\PpmdEncode.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\PpmdEncoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -434,6 +442,16 @@ SOURCE=..\..\Compress\Rar2Decoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\Rar3Decoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -542,6 +560,14 @@ SOURCE=..\..\Compress\ImplodeHuffmanDecoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\ImplodeHuffmanDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\PpmdZip.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\PpmdZip.h
 # End Source File
 # Begin Source File
 
@@ -1487,6 +1513,114 @@ SOURCE=..\..\..\..\C\MtCoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Ppmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7Dec.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7Enc.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8Dec.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8Enc.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\RotateDefs.h
 # End Source File
 # Begin Source File
@@ -2261,6 +2395,20 @@ SOURCE=..\..\Archive\NtfsHandler.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\PeHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\PpmdHandler.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

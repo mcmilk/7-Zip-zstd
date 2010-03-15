@@ -73,6 +73,7 @@ AR_OBJS = \
   $O\MubHandler.obj \
   $O\NtfsHandler.obj \
   $O\PeHandler.obj \
+  $O\PpmdHandler.obj \
   $O\RpmHandler.obj \
   $O\SplitHandler.obj \
   $O\SwfHandler.obj \
@@ -226,6 +227,7 @@ COMPRESS_OBJS = \
   $O\PpmdDecoder.obj \
   $O\PpmdEncoder.obj \
   $O\PpmdRegister.obj \
+  $O\PpmdZip.obj \
   $O\QuantumDecoder.obj \
   $O\Rar1Decoder.obj \
   $O\Rar2Decoder.obj \
@@ -270,6 +272,12 @@ C_OBJS = \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
   $O\MtCoder.obj \
+  $O\Ppmd7.obj \
+  $O\Ppmd7Dec.obj \
+  $O\Ppmd7Enc.obj \
+  $O\Ppmd8.obj \
+  $O\Ppmd8Dec.obj \
+  $O\Ppmd8Enc.obj \
   $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \

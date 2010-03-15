@@ -15,6 +15,7 @@
 #include "../../Common/StreamUtils.h"
 
 #include "../../Compress/LzmaEncoder.h"
+#include "../../Compress/PpmdZip.h"
 
 #include "../Common/InStreamWithCRC.h"
 
@@ -169,13 +170,14 @@ HRESULT CAddCommon::Compress(
       else
       {
         if (!_cryptoStreamSpec->Filter)
+        {
           _cryptoStreamSpec->Filter = _filterSpec = new NCrypto::NZip::CEncoder;
-        RINOK(_filterSpec->CryptoSetPassword((const Byte *)(const char *)_options.Password, _options.Password.Length()));
+          _filterSpec->CryptoSetPassword((const Byte *)(const char *)_options.Password, _options.Password.Length());
+        }
         UInt32 crc = 0;
         RINOK(GetStreamCRC(inStream, crc));
         RINOK(inCrcStreamSpec->Seek(0, STREAM_SEEK_SET, NULL));
-        RINOK(_filterSpec->CryptoSetCRC(crc));
-        RINOK(_filterSpec->WriteHeader(outStream));
+        RINOK(_filterSpec->WriteHeader(outStream, crc));
       }
       RINOK(_cryptoStreamSpec->SetOutStream(outStream));
       outStreamReleaser.FilterCoder = _cryptoStreamSpec;
@@ -234,6 +236,26 @@ HRESULT CAddCommon::Compress(
             if (!_options.NumMatchFinderCyclesDefined)
               numProps--;
             RINOK(_lzmaEncoder->SetCoderProperties(propIDs, props, numProps));
+          }
+          else if (method == NFileHeader::NCompressionMethod::kPPMd)
+          {
+            _compressExtractVersion = NFileHeader::NCompressionMethod::kExtractVersion_PPMd;
+            NCompress::NPpmdZip::CEncoder *encoder = new NCompress::NPpmdZip::CEncoder();
+            _compressEncoder = encoder;
+            NWindows::NCOM::CPropVariant props[] =
+            {
+              // _options.Algo,
+              _options.MemSize,
+              _options.Order
+              
+            };
+            PROPID propIDs[] =
+            {
+              // NCoderPropID::kAlgorithm,
+              NCoderPropID::kUsedMemorySize,
+              NCoderPropID::kOrder
+            };
+            RINOK(encoder->SetCoderProperties(propIDs, props, sizeof(propIDs) / sizeof(propIDs[0])));
           }
           else
           {

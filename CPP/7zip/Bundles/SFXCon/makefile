@@ -42,6 +42,7 @@ WIN_OBJS = \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
+  $O\CWrappers.obj \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
   $O\InBuffer.obj \
@@ -108,6 +109,8 @@ C_OBJS = \
   $O\CpuArch.obj \
   $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
+  $O\Ppmd7.obj \
+  $O\Ppmd7Dec.obj \
   $O\Sha256.obj \
   $O\Threads.obj \
 

@@ -13,58 +13,43 @@ namespace NZip {
 
 const unsigned kHeaderSize = 12;
 
-class CCipher
+class CCipher:
+  public ICompressFilter,
+  public ICryptoSetPassword,
+  public CMyUnknownImp
 {
   UInt32 Keys[3];
+  UInt32 Keys2[3];
 
+protected:
   void UpdateKeys(Byte b);
   Byte DecryptByteSpec();
-public:
-  void SetPassword(const Byte *password, UInt32 passwordLen);
-  Byte DecryptByte(Byte b);
-  Byte EncryptByte(Byte b);
-  void DecryptHeader(Byte *buf);
-  void EncryptHeader(Byte *buf);
-};
+  void RestoreKeys()
+  {
+    for (int i = 0; i < 3; i++)
+      Keys[i] = Keys2[i];
+  }
 
-class CEncoder :
-  public ICompressFilter,
-  public ICryptoSetPassword,
-  public ICryptoSetCRC,
-  public CMyUnknownImp
-{
-  CCipher _cipher;
-  UInt32 _crc;
 public:
-  MY_UNKNOWN_IMP2(
-      ICryptoSetPassword,
-      ICryptoSetCRC
-  )
   STDMETHOD(Init)();
-  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
-
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
-  STDMETHOD(CryptoSetCRC)(UInt32 crc);
-  HRESULT WriteHeader(ISequentialOutStream *outStream);
 };
 
-
-class CDecoder:
-  public ICompressFilter,
-  public ICryptoSetPassword,
-  public CMyUnknownImp
+class CEncoder: public CCipher
 {
-  CCipher _cipher;
 public:
   MY_UNKNOWN_IMP1(ICryptoSetPassword)
-
-  STDMETHOD(Init)();
   STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
-  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
-
-  HRESULT ReadHeader(ISequentialInStream *inStream);
+  HRESULT WriteHeader(ISequentialOutStream *outStream, UInt32 crc);
 };
 
+class CDecoder: public CCipher
+{
+public:
+  MY_UNKNOWN_IMP1(ICryptoSetPassword)
+  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
+  HRESULT ReadHeader(ISequentialInStream *inStream);
+};
 
 }}
 

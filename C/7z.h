@@ -1,5 +1,5 @@
 /* 7z.h -- 7z interface
-2009-08-17 : Igor Pavlov : Public domain */
+2010-03-11 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_H
 #define __7Z_H
@@ -96,11 +96,13 @@ typedef struct
   CNtfsFileTime MTime;
   UInt64 Size;
   UInt32 Crc;
+  UInt32 Attrib;
   Byte HasStream;
   Byte IsDir;
   Byte IsAnti;
   Byte CrcDefined;
   Byte MTimeDefined;
+  Byte AttribDefined;
 } CSzFileItem;
 
 void SzFile_Init(CSzFileItem *p);

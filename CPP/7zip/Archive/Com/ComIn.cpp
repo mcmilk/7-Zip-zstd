@@ -174,8 +174,9 @@ bool CompoundMsiNameToFileName(const UString &name, UString &resultName)
   return true;
 }
 
-static UString ConvertName(const Byte *p)
+static UString ConvertName(const Byte *p, bool &isMsi)
 {
+  isMsi = false;
   UString s;
   for (int i = 0; i < kNameSizeMax; i += 2)
   {
@@ -186,8 +187,17 @@ static UString ConvertName(const Byte *p)
   }
   UString msiName;
   if (CompoundMsiNameToFileName(s, msiName))
+  {
+    isMsi = true;
     return msiName;
+  }
   return CompoundNameToFileName(s);
+}
+
+static UString ConvertName(const Byte *p)
+{
+  bool isMsi;
+  return ConvertName(p, isMsi);
 }
 
 UString CDatabase::GetItemPath(UInt32 index) const
@@ -207,6 +217,7 @@ UString CDatabase::GetItemPath(UInt32 index) const
 
 HRESULT CDatabase::Open(IInStream *inStream)
 {
+  MainSubfile = -1;
   static const UInt32 kHeaderSize = 512;
   Byte p[kHeaderSize];
   RINOK(ReadStream_FALSE(inStream, p, kHeaderSize));
@@ -353,7 +364,26 @@ HRESULT CDatabase::Open(IInStream *inStream)
     }
   }
 
-  return AddNode(-1, root.SonDid);
+  RINOK(AddNode(-1, root.SonDid));
+  
+  unsigned numCabs = 0;
+  for (int i = 0; i < Refs.Size(); i++)
+  {
+    const CItem &item = Items[Refs[i].Did];
+    if (item.IsDir() || numCabs > 1)
+      continue;
+    bool isMsiName;
+    UString msiName = ConvertName(item.Name, isMsiName);
+    if (isMsiName && msiName.Right(4).CompareNoCase(L".cab") == 0)
+    {
+      numCabs++;
+      MainSubfile = i;
+    }
+  }
+  if (numCabs > 1)
+    MainSubfile = -1;
+
+  return S_OK;
 }
 
 }}

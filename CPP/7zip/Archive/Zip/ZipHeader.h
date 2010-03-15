@@ -89,6 +89,7 @@ namespace NFileHeader
     const Byte kExtractVersion_BZip2 = 46;
     const Byte kExtractVersion_Aes = 51;
     const Byte kExtractVersion_LZMA = 63;
+    const Byte kExtractVersion_PPMd = 63;
     
     // const Byte kSupportedVersion   = 20;
   }

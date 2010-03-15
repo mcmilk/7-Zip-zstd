@@ -88,6 +88,8 @@ public:
   int SectorSizeBits;
   int MiniSectorSizeBits;
 
+  Int32 MainSubfile;
+
   void Clear();
   bool IsLargeStream(UInt64 size) const { return size >= LongStreamMinSize; }
   UString GetItemPath(UInt32 index) const;

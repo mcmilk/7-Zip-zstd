@@ -1,5 +1,5 @@
 /* Types.h -- Basic types
-2009-11-23 : Igor Pavlov : Public domain */
+2010-03-11 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_TYPES_H
 #define __7Z_TYPES_H
@@ -124,6 +124,16 @@ typedef int Bool;
 
 typedef struct
 {
+  Byte (*Read)(void *p); /* reads one byte, returns 0 in case of EOF or error */
+} IByteIn;
+
+typedef struct
+{
+  void (*Write)(void *p, Byte b);
+} IByteOut;
+
+typedef struct
+{
   SRes (*Read)(void *p, void *buf, size_t *size);
     /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
        (output(*size) < input(*size)) is allowed */
@@ -156,7 +166,7 @@ typedef struct
 
 typedef struct
 {
-  SRes (*Look)(void *p, void **buf, size_t *size);
+  SRes (*Look)(void *p, const void **buf, size_t *size);
     /* if (input(*size) != 0 && output(*size) == 0) means end_of_stream.
        (output(*size) > input(*size)) is not allowed
        (output(*size) < input(*size)) is allowed */

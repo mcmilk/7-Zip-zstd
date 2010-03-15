@@ -18,6 +18,9 @@ struct CCompressionMethodMode
   bool NumMatchFinderCyclesDefined;
   UInt32 NumMatchFinderCycles;
   UInt32 DicSize;
+  UInt32 MemSize;
+  UInt32 Order;
+
   #ifndef _7ZIP_ST
   UInt32 NumThreads;
   #endif

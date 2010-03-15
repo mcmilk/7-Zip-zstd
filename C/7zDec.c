@@ -1,20 +1,124 @@
 /* 7zDec.c -- Decoding from 7z folder
-2009-08-16 : Igor Pavlov : Public domain */
+2010-03-15 : Igor Pavlov : Public domain */
 
 #include <string.h>
+
+/* #define _7ZIP_PPMD_SUPPPORT */
 
 #include "7z.h"
 
 #include "Bcj2.h"
 #include "Bra.h"
+#include "CpuArch.h"
 #include "LzmaDec.h"
 #include "Lzma2Dec.h"
+#ifdef _7ZIP_PPMD_SUPPPORT
+#include "Ppmd7.h"
+#endif
 
 #define k_Copy 0
 #define k_LZMA2 0x21
 #define k_LZMA 0x30101
 #define k_BCJ 0x03030103
 #define k_BCJ2 0x0303011B
+
+#ifdef _7ZIP_PPMD_SUPPPORT
+
+#define k_PPMD 0x30401
+
+typedef struct
+{
+  IByteIn p;
+  const Byte *cur;
+  const Byte *end;
+  const Byte *begin;
+  UInt64 processed;
+  Bool extra;
+  SRes res;
+  ILookInStream *inStream;
+} CByteInToLook;
+
+static Byte ReadByte(void *pp)
+{
+  CByteInToLook *p = (CByteInToLook *)pp;
+  if (p->cur != p->end)
+    return *p->cur++;
+  if (p->res == SZ_OK)
+  {
+    size_t size = p->cur - p->begin;
+    p->processed += size;
+    p->res = p->inStream->Skip(p->inStream, size);
+    size = (1 << 25);
+    p->res = p->inStream->Look(p->inStream, (const void **)&p->begin, &size);
+    p->cur = p->begin;
+    p->end = p->begin + size;
+    if (size != 0)
+      return *p->cur++;;
+  }
+  p->extra = True;
+  return 0;
+}
+
+static SRes SzDecodePpmd(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inStream,
+    Byte *outBuffer, SizeT outSize, ISzAlloc *allocMain)
+{
+  CPpmd7 ppmd;
+  CByteInToLook s;
+  SRes res = SZ_OK;
+
+  s.p.Read = ReadByte;
+  s.inStream = inStream;
+  s.begin = s.end = s.cur = NULL;
+  s.extra = False;
+  s.res = SZ_OK;
+  s.processed = 0;
+
+  if (coder->Props.size != 5)
+    return SZ_ERROR_UNSUPPORTED;
+
+  {
+    unsigned order = coder->Props.data[0];
+    UInt32 memSize = GetUi32(coder->Props.data + 1);
+    if (order < PPMD7_MIN_ORDER ||
+        order > PPMD7_MAX_ORDER ||
+        memSize < PPMD7_MIN_MEM_SIZE ||
+        memSize > PPMD7_MAX_MEM_SIZE)
+      return SZ_ERROR_UNSUPPORTED;
+    Ppmd7_Construct(&ppmd);
+    if (!Ppmd7_Alloc(&ppmd, memSize, allocMain))
+      return SZ_ERROR_MEM;
+    Ppmd7_Init(&ppmd, order);
+  }
+  {
+    CPpmd7z_RangeDec rc;
+    Ppmd7z_RangeDec_CreateVTable(&rc);
+    rc.Stream = &s.p;
+    if (!Ppmd7z_RangeDec_Init(&rc))
+      res = SZ_ERROR_DATA;
+    else if (s.extra)
+      res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
+    else
+    {
+      SizeT i;
+      for (i = 0; i < outSize; i++)
+      {
+        int sym = Ppmd7_DecodeSymbol(&ppmd, &rc.p);
+        if (s.extra || sym < 0)
+          break;
+        outBuffer[i] = (Byte)sym;
+      }
+      if (i != outSize)
+        res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
+      else if (s.processed + (s.cur - s.begin) != inSize || !Ppmd7z_RangeDec_IsFinishedOK(&rc))
+        res = SZ_ERROR_DATA;
+    }
+  }
+  Ppmd7_Free(&ppmd, allocMain);
+  return res;
+}
+
+#endif
+
 
 static SRes SzDecodeLzma(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inStream,
     Byte *outBuffer, SizeT outSize, ISzAlloc *allocMain)
@@ -34,7 +138,7 @@ static SRes SzDecodeLzma(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inSt
     size_t lookahead = (1 << 18);
     if (lookahead > inSize)
       lookahead = (size_t)inSize;
-    res = inStream->Look((void *)inStream, (void **)&inBuf, &lookahead);
+    res = inStream->Look((void *)inStream, (const void **)&inBuf, &lookahead);
     if (res != SZ_OK)
       break;
 
@@ -84,7 +188,7 @@ static SRes SzDecodeLzma2(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inS
     size_t lookahead = (1 << 18);
     if (lookahead > inSize)
       lookahead = (size_t)inSize;
-    res = inStream->Look((void *)inStream, (void **)&inBuf, &lookahead);
+    res = inStream->Look((void *)inStream, (const void **)&inBuf, &lookahead);
     if (res != SZ_OK)
       break;
 
@@ -121,7 +225,7 @@ static SRes SzDecodeCopy(UInt64 inSize, ILookInStream *inStream, Byte *outBuffer
     size_t curSize = (1 << 18);
     if (curSize > inSize)
       curSize = (size_t)inSize;
-    RINOK(inStream->Look((void *)inStream, (void **)&inBuf, &curSize));
+    RINOK(inStream->Look((void *)inStream, (const void **)&inBuf, &curSize));
     if (curSize == 0)
       return SZ_ERROR_INPUT_EOF;
     memcpy(outBuffer, inBuf, curSize);
@@ -132,16 +236,38 @@ static SRes SzDecodeCopy(UInt64 inSize, ILookInStream *inStream, Byte *outBuffer
   return SZ_OK;
 }
 
-#define IS_UNSUPPORTED_METHOD(m) ((m) != k_Copy && (m) != k_LZMA && (m) != k_LZMA2)
-#define IS_UNSUPPORTED_CODER(c) (IS_UNSUPPORTED_METHOD(c.MethodID) || c.NumInStreams != 1 || c.NumOutStreams != 1)
-#define IS_NO_BCJ(c) (c.MethodID != k_BCJ || c.NumInStreams != 1 || c.NumOutStreams != 1)
-#define IS_NO_BCJ2(c) (c.MethodID != k_BCJ2 || c.NumInStreams != 4 || c.NumOutStreams != 1)
+static Bool IS_MAIN_METHOD(UInt32 m)
+{
+  switch(m)
+  {
+    case k_Copy:
+    case k_LZMA:
+    case k_LZMA2:
+    #ifdef _7ZIP_PPMD_SUPPPORT
+    case k_PPMD:
+    #endif
+      return True;
+  }
+  return False;
+}
+
+static Bool IS_SUPPORTED_CODER(const CSzCoderInfo *c)
+{
+  return
+      c->NumInStreams == 1 &&
+      c->NumOutStreams == 1 &&
+      c->MethodID <= (UInt32)0xFFFFFFFF &&
+      IS_MAIN_METHOD((UInt32)c->MethodID);
+}
+
+#define IS_BCJ(c) ((c)->MethodID == k_BCJ && (c)->NumInStreams == 1 && (c)->NumOutStreams == 1)
+#define IS_BCJ2(c) ((c)->MethodID == k_BCJ2 && (c)->NumInStreams == 4 && (c)->NumOutStreams == 1)
 
 static SRes CheckSupportedFolder(const CSzFolder *f)
 {
   if (f->NumCoders < 1 || f->NumCoders > 4)
     return SZ_ERROR_UNSUPPORTED;
-  if (IS_UNSUPPORTED_CODER(f->Coders[0]))
+  if (!IS_SUPPORTED_CODER(&f->Coders[0]))
     return SZ_ERROR_UNSUPPORTED;
   if (f->NumCoders == 1)
   {
@@ -151,7 +277,7 @@ static SRes CheckSupportedFolder(const CSzFolder *f)
   }
   if (f->NumCoders == 2)
   {
-    if (IS_NO_BCJ(f->Coders[1]) ||
+    if (!IS_BCJ(&f->Coders[1]) ||
         f->NumPackStreams != 1 || f->PackStreams[0] != 0 ||
         f->NumBindPairs != 1 ||
         f->BindPairs[0].InIndex != 1 || f->BindPairs[0].OutIndex != 0)
@@ -160,9 +286,9 @@ static SRes CheckSupportedFolder(const CSzFolder *f)
   }
   if (f->NumCoders == 4)
   {
-    if (IS_UNSUPPORTED_CODER(f->Coders[1]) ||
-        IS_UNSUPPORTED_CODER(f->Coders[2]) ||
-        IS_NO_BCJ2(f->Coders[3]))
+    if (!IS_SUPPORTED_CODER(&f->Coders[1]) ||
+        !IS_SUPPORTED_CODER(&f->Coders[2]) ||
+        !IS_BCJ2(&f->Coders[3]))
       return SZ_ERROR_UNSUPPORTED;
     if (f->NumPackStreams != 4 ||
         f->PackStreams[0] != 2 ||
@@ -204,7 +330,7 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
   {
     CSzCoderInfo *coder = &folder->Coders[ci];
 
-    if (coder->MethodID == k_Copy || coder->MethodID == k_LZMA || coder->MethodID == k_LZMA2)
+    if (IS_MAIN_METHOD((UInt32)coder->MethodID))
     {
       UInt32 si = 0;
       UInt64 offset;
@@ -252,9 +378,17 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
       {
         RINOK(SzDecodeLzma(coder, inSize, inStream, outBufCur, outSizeCur, allocMain));
       }
-      else
+      else if (coder->MethodID == k_LZMA2)
       {
         RINOK(SzDecodeLzma2(coder, inSize, inStream, outBufCur, outSizeCur, allocMain));
+      }
+      else
+      {
+        #ifdef _7ZIP_PPMD_SUPPPORT
+        RINOK(SzDecodePpmd(coder, inSize, inStream, outBufCur, outSizeCur, allocMain));
+        #else
+        return SZ_ERROR_UNSUPPORTED;
+        #endif
       }
     }
     else if (coder->MethodID == k_BCJ)

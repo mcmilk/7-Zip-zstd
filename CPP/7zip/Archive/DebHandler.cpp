@@ -68,10 +68,10 @@ struct CItem
 class CInArchive
 {
   CMyComPtr<IInStream> m_Stream;
-  UInt64 m_Position;
   
   HRESULT GetNextItemReal(bool &filled, CItem &itemInfo);
 public:
+  UInt64 m_Position;
   HRESULT Open(IInStream *inStream);
   HRESULT GetNextItem(bool &filled, CItem &itemInfo);
   HRESULT SkipData(UInt64 dataSize);
@@ -155,9 +155,9 @@ HRESULT CInArchive::GetNextItemReal(bool &filled, CItem &item)
   size_t processedSize = sizeof(header);
   item.HeaderPos = m_Position;
   RINOK(ReadStream(m_Stream, header, &processedSize));
-  m_Position += processedSize;
   if (processedSize != sizeof(header))
     return S_OK;
+  m_Position += processedSize;
   
   char tempString[NHeader::kNameSize + 1];
   MyStrNCpy(tempString, cur, NHeader::kNameSize);
@@ -212,14 +212,20 @@ class CHandler:
 {
   CObjectVector<CItem> _items;
   CMyComPtr<IInStream> _stream;
+  Int32 _mainSubfile;
+  UInt64 _phySize;
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
+static STATPROPSTG kArcProps[] =
+{
+  { NULL, kpidPhySize, VT_UI8}
+};
 
-STATPROPSTG kProps[] =
+static STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
@@ -227,7 +233,7 @@ STATPROPSTG kProps[] =
 };
 
 IMP_IInArchive_Props
-IMP_IInArchive_ArcProps_NO
+IMP_IInArchive_ArcProps
 
 STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
@@ -235,6 +241,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 {
   COM_TRY_BEGIN
   {
+    _mainSubfile = -1;
     CInArchive archive;
     if (archive.Open(stream) != S_OK)
       return S_FALSE;
@@ -258,6 +265,8 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
         return S_FALSE;
       if (!filled)
         break;
+      if (item.Name.Left(5) == "data.")
+        _mainSubfile = _items.Size();
       _items.Add(item);
       archive.SkipData(item.Size);
       if (openArchiveCallback != NULL)
@@ -267,6 +276,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       }
     }
     _stream = stream;
+    _phySize = archive.m_Position;
   }
   return S_OK;
   COM_TRY_END
@@ -282,6 +292,18 @@ STDMETHODIMP CHandler::Close()
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = _items.Size();
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidPhySize: prop = _phySize; break;
+    case kpidMainSubfile: if (_mainSubfile >= 0) prop = (UInt32)_mainSubfile; break;
+  }
+  prop.Detach(value);
   return S_OK;
 }
 

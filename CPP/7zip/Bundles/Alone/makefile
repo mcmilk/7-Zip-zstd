@@ -97,6 +97,7 @@ AR_OBJS = \
   $O\DeflateProps.obj \
   $O\GzHandler.obj \
   $O\LzmaHandler.obj \
+  $O\PpmdHandler.obj \
   $O\SplitHandler.obj \
   $O\XzHandler.obj \
   $O\ZHandler.obj \
@@ -195,6 +196,7 @@ COMPRESS_OBJS = \
   $O\PpmdDecoder.obj \
   $O\PpmdEncoder.obj \
   $O\PpmdRegister.obj \
+  $O\PpmdZip.obj \
   $O\QuantumDecoder.obj \
   $O\ShrinkDecoder.obj \
   $O\ZDecoder.obj \
@@ -228,6 +230,12 @@ C_OBJS = \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
   $O\MtCoder.obj \
+  $O\Ppmd7.obj \
+  $O\Ppmd7Dec.obj \
+  $O\Ppmd7Enc.obj \
+  $O\Ppmd8.obj \
+  $O\Ppmd8Dec.obj \
+  $O\Ppmd8Enc.obj \
   $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \

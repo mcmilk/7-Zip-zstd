@@ -29,6 +29,16 @@ struct CVolSeqName
   UString ChangedPart;
   CVolSeqName(): ChangedPart(L"000") {};
 
+  void SetNumDigits(UInt64 numVolumes)
+  {
+    ChangedPart = L"000";
+    while (numVolumes > 999)
+    {
+      numVolumes /= 10;
+      ChangedPart += L'0';
+    }
+  }
+
   bool ParseName(const UString &name)
   {
     if (name.Right(2) != L"01")
@@ -81,6 +91,7 @@ class CThreadSplit: public CProgressThreadVirt
 public:
   UString FilePath;
   UString VolBasePath;
+  UInt64 NumVolumes;
   CRecordVector<UInt64> VolumeSizes;
 };
 
@@ -96,6 +107,7 @@ HRESULT CThreadSplit::ProcessVirt()
   Byte *buffer = (Byte *)(void *)bufferObject;
   UInt64 curVolSize = 0;
   CVolSeqName seqName;
+  seqName.SetNumDigits(NumVolumes);
   UInt64 length;
   if (!inFile.GetLength(length))
     return GetLastError();
@@ -226,6 +238,7 @@ void CApp::Split()
 
   {
   CThreadSplit spliter;
+  spliter.NumVolumes = numVolumes;
 
   CProgressDialog &progressDialog = spliter.ProgressDialog;
 
@@ -241,7 +254,7 @@ void CApp::Split()
 
 
   spliter.FilePath = srcPath + itemName;
-  spliter.VolBasePath = path  + itemName;
+  spliter.VolBasePath = path + itemName;
   spliter.VolumeSizes = splitDialog.VolumeSizes;
   
   // if (splitDialog.VolumeSizes.Size() == 0) return;

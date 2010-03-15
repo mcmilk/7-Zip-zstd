@@ -18,6 +18,7 @@
 #include "../../Compress/CopyCoder.h"
 #include "../../Compress/LzmaDecoder.h"
 #include "../../Compress/ImplodeDecoder.h"
+#include "../../Compress/PpmdZip.h"
 #include "../../Compress/ShrinkDecoder.h"
 
 #include "../../Crypto/WzAes.h"
@@ -595,6 +596,8 @@ HRESULT CZipDecoder::Decode(
       mi.Coder = new NCompress::NImplode::NDecoder::CCoder;
     else if (methodId == NFileHeader::NCompressionMethod::kLZMA)
       mi.Coder = new CLzmaDecoder;
+    else if (methodId == NFileHeader::NCompressionMethod::kPPMd)
+      mi.Coder = new NCompress::NPpmdZip::CDecoder(true);
     else
     {
       CMethodId szMethodID;

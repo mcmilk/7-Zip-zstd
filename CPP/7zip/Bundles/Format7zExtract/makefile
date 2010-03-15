@@ -98,6 +98,8 @@ C_OBJS = \
   $O\Delta.obj \
   $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
+  $O\Ppmd7.obj \
+  $O\Ppmd7Dec.obj \
   $O\Sha256.obj \
   $O\Threads.obj \
 

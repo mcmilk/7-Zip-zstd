@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2009-11-24 : Igor Pavlov : Public domain */
+2010-03-12 : Igor Pavlov : Public domain */
 
 #include <stdio.h>
 #include <string.h>
@@ -183,21 +183,36 @@ static void PrintString(const UInt16 *s)
   }
 }
 
-
-static void ConvertNumberToString(UInt64 value, char *s)
+static void UInt64ToStr(UInt64 value, char *s)
 {
   char temp[32];
   int pos = 0;
   do
   {
-    temp[pos++] = (char)('0' + (int)(value % 10));
+    temp[pos++] = (char)('0' + (unsigned)(value % 10));
     value /= 10;
   }
   while (value != 0);
   do
     *s++ = temp[--pos];
-  while (pos > 0);
+  while (pos);
   *s = '\0';
+}
+
+static char *UIntToStr(char *s, unsigned value, int numDigits)
+{
+  char temp[16];
+  int pos = 0;
+  do
+    temp[pos++] = (char)('0' + (value % 10));
+  while (value /= 10);
+  for (numDigits -= pos; numDigits > 0; numDigits--)
+    *s++ = '0';
+  do
+    *s++ = temp[--pos];
+  while (pos);
+  *s = '\0';
+  return s;
 }
 
 #define PERIOD_4 (4 * 365 + 1)
@@ -207,40 +222,22 @@ static void ConvertNumberToString(UInt64 value, char *s)
 static void ConvertFileTimeToString(const CNtfsFileTime *ft, char *s)
 {
   unsigned year, mon, day, hour, min, sec;
-  UInt64 v64 = ft->Low | ((UInt64)ft->High << 32);
+  UInt64 v64 = (ft->Low | ((UInt64)ft->High << 32)) / 10000000;
   Byte ms[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-  unsigned temp;
+  unsigned t;
   UInt32 v;
-  v64 /= 10000000;
-  sec = (unsigned)(v64 % 60);
-  v64 /= 60;
-  min = (unsigned)(v64 % 60);
-  v64 /= 60;
-  hour = (unsigned)(v64 % 24);
-  v64 /= 24;
+  sec = (unsigned)(v64 % 60); v64 /= 60;
+  min = (unsigned)(v64 % 60); v64 /= 60;
+  hour = (unsigned)(v64 % 24); v64 /= 24;
 
   v = (UInt32)v64;
 
   year = (unsigned)(1601 + v / PERIOD_400 * 400);
   v %= PERIOD_400;
 
-  temp = (unsigned)(v / PERIOD_100);
-  if (temp == 4)
-    temp = 3;
-  year += temp * 100;
-  v -= temp * PERIOD_100;
-
-  temp = v / PERIOD_4;
-  if (temp == 25)
-    temp = 24;
-  year += temp * 4;
-  v -= temp * PERIOD_4;
-
-  temp = v / 365;
-  if (temp == 4)
-    temp = 3;
-  year += temp;
-  v -= temp * 365;
+  t = v / PERIOD_100; if (t ==  4) t =  3; year += t * 100; v -= t * PERIOD_100;
+  t = v / PERIOD_4;   if (t == 25) t = 24; year += t * 4;   v -= t * PERIOD_4;
+  t = v / 365;        if (t ==  4) t =  3; year += t;       v -= t * 365;
 
   if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0))
     ms[1] = 29;
@@ -252,13 +249,36 @@ static void ConvertFileTimeToString(const CNtfsFileTime *ft, char *s)
     v -= s;
   }
   day = (unsigned)v + 1;
-  sprintf(s, "%04d-%02d-%02d %02d:%02d:%02d", year, mon, day, hour, min, sec);
+  s = UIntToStr(s, year, 4); *s++ = '-';
+  s = UIntToStr(s, mon, 2);  *s++ = '-';
+  s = UIntToStr(s, day, 2);  *s++ = ' ';
+  s = UIntToStr(s, hour, 2); *s++ = ':';
+  s = UIntToStr(s, min, 2);  *s++ = ':';
+  s = UIntToStr(s, sec, 2);
 }
 
 void PrintError(char *sz)
 {
   printf("\nERROR: %s\n", sz);
 }
+
+#ifdef USE_WINDOWS_FILE
+#define kEmptyAttribChar '.'
+static void GetAttribString(UInt32 wa, Bool isDir, char *s)
+{
+  s[0] = (char)(((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || isDir) ? 'D' : kEmptyAttribChar);
+  s[1] = (char)(((wa & FILE_ATTRIBUTE_READONLY) != 0) ? 'R': kEmptyAttribChar);
+  s[2] = (char)(((wa & FILE_ATTRIBUTE_HIDDEN) != 0) ? 'H': kEmptyAttribChar);
+  s[3] = (char)(((wa & FILE_ATTRIBUTE_SYSTEM) != 0) ? 'S': kEmptyAttribChar);
+  s[4] = (char)(((wa & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 'A': kEmptyAttribChar);
+  s[5] = '\0';
+}
+#else
+static void GetAttribString(UInt32, Bool, char *s)
+{
+  s[0] = '\0';
+}
+#endif
 
 int MY_CDECL main(int numargs, char *args[])
 {
@@ -362,14 +382,22 @@ int MY_CDECL main(int numargs, char *args[])
         SzArEx_GetFileNameUtf16(&db, i, temp);
         if (listCommand)
         {
-          char s[32], t[32];
-          ConvertNumberToString(f->Size, s);
+          char attr[8], s[32], t[32];
+
+          GetAttribString(f->AttribDefined ? f->Attrib : 0, f->IsDir, attr);
+
+          UInt64ToStr(f->Size, s);
           if (f->MTimeDefined)
             ConvertFileTimeToString(&f->MTime, t);
           else
-            strcpy(t, "                   ");
+          {
+            size_t j;
+            for (j = 0; j < 19; j++)
+              t[j] = ' ';
+            t[j] = '\0';
+          }
           
-          printf("%s %10s  ", t, s);
+          printf("%s %s %10s  ", t, attr, s);
           PrintString(temp);
           if (f->IsDir)
             printf("/");
@@ -436,6 +464,10 @@ int MY_CDECL main(int numargs, char *args[])
             res = SZ_ERROR_FAIL;
             break;
           }
+          #ifdef USE_WINDOWS_FILE
+          if (f->AttribDefined)
+            SetFileAttributesW(destPath, f->Attrib);
+          #endif
         }
         printf("\n");
       }

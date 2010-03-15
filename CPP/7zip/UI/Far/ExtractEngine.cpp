@@ -118,6 +118,12 @@ STDMETHODIMP CExtractCallBackImp::MessageError(const wchar_t *message)
   return S_OK;
 }
 
+static void ReduceString(UString &s, int size)
+{
+  if (s.Length() > size)
+    s = s.Left(size / 2) + UString(L" ... ") + s.Right(size / 2);
+}
+
 STDMETHODIMP CExtractCallBackImp::SetOperationResult(Int32 operationResult, bool encrypted)
 {
   switch(operationResult)
@@ -145,10 +151,11 @@ STDMETHODIMP CExtractCallBackImp::SetOperationResult(Int32 operationResult, bool
         default:
           return E_FAIL;
       }
-      char buffer[512];
-      const AString s = UnicodeStringToMultiByte(m_CurrentFilePath, m_CodePage);
-      sprintf(buffer, g_StartupInfo.GetMsgString(idMessage), (const char *)s);
-      if (g_StartupInfo.ShowMessage(buffer) == -1)
+      UString name = m_CurrentFilePath;
+      ReduceString(name, 70);
+      AString s = g_StartupInfo.GetMsgString(idMessage);
+      s.Replace(" '%s'", "");
+      if (g_StartupInfo.ShowMessageLines(s + (AString)("\n") + UnicodeStringToMultiByte(name, m_CodePage)) == -1)
         return E_ABORT;
     }
   }

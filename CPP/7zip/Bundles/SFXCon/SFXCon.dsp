@@ -513,6 +513,14 @@ SOURCE=..\..\Common\CreateCoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\CWrappers.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CWrappers.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\FilePathAutoRename.cpp
 # End Source File
 # Begin Source File
@@ -767,6 +775,20 @@ SOURCE=..\..\..\..\C\LzmaDec.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\LzmaDec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7Dec.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 

@@ -1,5 +1,5 @@
 /* 7zIn.c -- 7z Input functions
-2009-11-24 : Igor Pavlov : Public domain */
+2010-03-11 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -1038,6 +1038,25 @@ static SRes SzReadHeader2(
         RINOK(SzReadBoolVector(sd, numEmptyStreams, emptyFileVector, allocTemp));
         break;
       }
+      case k7zIdWinAttributes:
+      {
+        RINOK(SzReadBoolVector2(sd, numFiles, lwtVector, allocTemp));
+        RINOK(SzReadSwitch(sd));
+        for (i = 0; i < numFiles; i++)
+        {
+          CSzFileItem *f = &files[i];
+          Byte defined = (*lwtVector)[i];
+          f->AttribDefined = defined;
+          f->Attrib = 0;
+          if (defined)
+          {
+            RINOK(SzReadUInt32(sd, &f->Attrib));
+          }
+        }
+        IAlloc_Free(allocTemp, *lwtVector);
+        *lwtVector = NULL;
+        break;
+      }
       case k7zIdMTime:
       {
         RINOK(SzReadBoolVector2(sd, numFiles, lwtVector, allocTemp));
@@ -1054,6 +1073,8 @@ static SRes SzReadHeader2(
             RINOK(SzReadUInt32(sd, &f->MTime.High));
           }
         }
+        IAlloc_Free(allocTemp, *lwtVector);
+        *lwtVector = NULL;
         break;
       }
       default:

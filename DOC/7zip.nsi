@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 9
-!define VERSION_MINOR 10
+!define VERSION_MINOR 11
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -216,6 +216,7 @@ Section
   File it.txt
   File ja.txt
   File ka.txt
+  File kk.txt
   File ko.txt
   File ku.txt
   File ku-ckb.txt
@@ -405,6 +406,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\it.txt
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ka.txt
+  Delete $INSTDIR\Lang\kk.txt
   Delete $INSTDIR\Lang\ko.txt
   Delete $INSTDIR\Lang\ku.txt
   Delete $INSTDIR\Lang\ku-ckb.txt

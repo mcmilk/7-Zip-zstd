@@ -148,6 +148,14 @@ SOURCE=..\..\UI\Console\ArError.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\Console\BenchCon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Console\BenchCon.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Console\CompressionMode.h
 # End Source File
 # Begin Source File
@@ -173,14 +181,6 @@ SOURCE=..\..\UI\Console\List.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\Console\List.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Console\BenchCon.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Console\BenchCon.h
 # End Source File
 # Begin Source File
 
@@ -1018,6 +1018,14 @@ SOURCE=..\..\Compress\PpmdSubAlloc.h
 
 SOURCE=..\..\Compress\PpmdType.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\PpmdZip.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\PpmdZip.h
+# End Source File
 # End Group
 # Begin Group "RangeCoder"
 
@@ -1637,6 +1645,14 @@ SOURCE=..\..\UI\Common\ArchiveOpenCallback.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\Common\Bench.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\Common\Bench.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\DefaultName.cpp
 # End Source File
 # Begin Source File
@@ -1674,14 +1690,6 @@ SOURCE=..\..\UI\Common\LoadCodecs.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\Common\LoadCodecs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Common\Bench.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Common\Bench.h
 # End Source File
 # Begin Source File
 
@@ -2666,6 +2674,162 @@ SOURCE=..\..\..\..\C\MtCoder.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\MtCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7Dec.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd7Enc.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8Dec.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Ppmd8Enc.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

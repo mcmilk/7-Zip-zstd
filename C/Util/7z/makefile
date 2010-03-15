@@ -1,4 +1,5 @@
 MY_STATIC_LINK=1
+CFLAGS = $(CFLAGS) -D_7ZIP_PPMD_SUPPPORT
 
 PROG = 7zDec.exe
 
@@ -16,6 +17,8 @@ C_OBJS = \
   $O\CpuArch.obj \
   $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
+  $O\Ppmd7.obj \
+  $O\Ppmd7Dec.obj \
 
 7Z_OBJS = \
   $O\7zAlloc.obj \

@@ -124,6 +124,7 @@ Handler GUIDs:
   0A lzma
   0B lzma86
   0C xz
+  0D ppmd
 
   D4 APM
   D5 Mslz

@@ -1,5 +1,5 @@
 /* CpuArch.h -- CPU specific code
-2009-11-25: Igor Pavlov : Public domain */
+2010-03-11: Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -24,8 +24,16 @@ If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of pla
 #define MY_CPU_64BIT
 #endif
 
-#if defined(_M_IX86) || defined(__i386__) || defined(MY_CPU_AMD64)
+#if defined(_M_IX86) || defined(__i386__)
+#define MY_CPU_X86
+#endif
+
+#if defined(MY_CPU_X86) || defined(MY_CPU_AMD64)
 #define MY_CPU_X86_OR_AMD64
+#endif
+
+#if defined(MY_CPU_X86) || defined(_M_ARM)
+#define MY_CPU_32BIT
 #endif
 
 #if defined(_WIN32) && defined(_M_ARM)

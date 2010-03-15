@@ -53,6 +53,9 @@ private:
   UInt32 m_NumPasses;
   UInt32 m_NumFastBytes;
   UInt32 m_NumMatchFinderCycles;
+  UInt32 m_MemSize;
+  UInt32 m_Order;
+
   bool m_NumMatchFinderCyclesDefined;
 
   bool m_ForceAesMode;
@@ -77,6 +80,8 @@ private:
     m_DicSize =
     m_NumPasses =
     m_NumFastBytes =
+    m_Order =
+    m_MemSize =
     m_NumMatchFinderCycles = 0xFFFFFFFF;
     m_NumMatchFinderCyclesDefined = false;
     m_ForceAesMode = false;

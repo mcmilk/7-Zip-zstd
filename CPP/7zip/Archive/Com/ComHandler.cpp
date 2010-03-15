@@ -44,6 +44,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   {
     case kpidClusterSize: prop = (UInt32)1 << _db.SectorSizeBits; break;
     case kpidSectorSize: prop = (UInt32)1 << _db.MiniSectorSizeBits; break;
+    case kpidMainSubfile: if (_db.MainSubfile >= 0) prop = (UInt32)_db.MainSubfile; break;
   }
   prop.Detach(value);
   return S_OK;

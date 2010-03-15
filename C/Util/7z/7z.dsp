@@ -113,6 +113,7 @@ SOURCE=..\..\7zCrcOpt.c
 # Begin Source File
 
 SOURCE=..\..\7zDec.c
+# ADD CPP /D "_7ZIP_PPMD_SUPPPORT"
 # End Source File
 # Begin Source File
 
@@ -169,6 +170,24 @@ SOURCE=..\..\LzmaDec.c
 # Begin Source File
 
 SOURCE=..\..\LzmaDec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Ppmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Ppmd7.c
+# SUBTRACT CPP /YX
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Ppmd7.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Ppmd7Dec.c
+# SUBTRACT CPP /YX
 # End Source File
 # Begin Source File
 

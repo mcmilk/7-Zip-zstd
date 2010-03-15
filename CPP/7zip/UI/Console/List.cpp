@@ -590,8 +590,13 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
     {
       if (archiveLink.VolumePaths.Size() != 0)
         arcPackSize += archiveLink.VolumesSize;
-      totalPackSize = arcPackSize;
+      totalPackSize = (numFiles == 0) ? 0 : arcPackSize;
       totalPackSizePointer = &totalPackSize;
+    }
+    if (totalUnPackSizePointer == 0 && numFiles == 0)
+    {
+      totalUnPackSize = 0;
+      totalUnPackSizePointer = &totalUnPackSize;
     }
     if (enableHeaders && !techMode)
     {

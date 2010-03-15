@@ -86,6 +86,8 @@ COMPRESS_OBJS = \
   $O\BcjRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
+  $O\Lzma2Decoder.obj \
+  $O\Lzma2Register.obj \
   $O\LzmaDecoder.obj \
   $O\LzmaRegister.obj \
 
@@ -93,6 +95,7 @@ C_OBJS = \
   $O\Alloc.obj \
   $O\Bra86.obj \
   $O\CpuArch.obj \
+  $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
   $O\Threads.obj \
 

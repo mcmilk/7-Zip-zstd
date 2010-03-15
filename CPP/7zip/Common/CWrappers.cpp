@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../C/Alloc.h"
+
 #include "CWrappers.h"
 
 #include "StreamUtils.h"
@@ -124,4 +126,101 @@ CSeekInStreamWrap::CSeekInStreamWrap(IInStream *stream)
   p.Read = InStreamWrap_Read;
   p.Seek = InStreamWrap_Seek;
   Res = S_OK;
+}
+
+
+/* ---------- CByteInBufWrap ---------- */
+
+void CByteInBufWrap::Free()
+{
+  ::MidFree(Buf);
+  Buf = 0;
+}
+
+bool CByteInBufWrap::Alloc(UInt32 size)
+{
+  if (Buf == 0 || size != Size)
+  {
+    Free();
+    Lim = Cur = Buf = (Byte *)::MidAlloc((size_t)size);
+    Size = size;
+  }
+  return (Buf != 0);
+}
+
+Byte CByteInBufWrap::ReadByteFromNewBlock()
+{
+  if (Res == S_OK)
+  {
+    UInt32 avail;
+    Processed += (Cur - Buf);
+    Res = Stream->Read(Buf, Size, &avail);
+    Cur = Buf;
+    Lim = Buf + avail;
+    if (avail != 0)
+      return *Cur++;
+  }
+  Extra = true;
+  return 0;
+}
+
+extern "C" static Byte Wrap_ReadByte(void *pp)
+{
+  CByteInBufWrap *p = (CByteInBufWrap *)pp;
+  if (p->Cur != p->Lim)
+    return *p->Cur++;
+  return p->ReadByteFromNewBlock();
+}
+
+CByteInBufWrap::CByteInBufWrap(): Buf(0)
+{
+  p.Read = Wrap_ReadByte;
+}
+
+
+/* ---------- CByteOutBufWrap ---------- */
+
+void CByteOutBufWrap::Free()
+{
+  ::MidFree(Buf);
+  Buf = 0;
+}
+
+bool CByteOutBufWrap::Alloc(size_t size)
+{
+  if (Buf == 0 || size != Size)
+  {
+    Free();
+    Buf = (Byte *)::MidAlloc(size);
+    Size = size;
+  }
+  return (Buf != 0);
+}
+
+HRESULT CByteOutBufWrap::Flush()
+{
+  if (Res == S_OK)
+  {
+    size_t size = (Cur - Buf);
+    Res = WriteStream(Stream, Buf, size);
+    if (Res == S_OK)
+      Processed += size;
+    Cur = Buf;
+  }
+  return Res;
+}
+
+extern "C" static void Wrap_WriteByte(void *pp, Byte b)
+{
+  CByteOutBufWrap *p = (CByteOutBufWrap *)pp;
+  Byte *dest = p->Cur;
+  *dest = b;
+  p->Cur = ++dest;
+  if (dest == p->Lim)
+    p->Flush();
+}
+
+CByteOutBufWrap::CByteOutBufWrap(): Buf(0)
+{
+  p.Write = Wrap_WriteByte;
 }

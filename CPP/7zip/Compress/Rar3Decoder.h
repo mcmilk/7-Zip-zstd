@@ -2,8 +2,12 @@
 // According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
+/* This code uses Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
+
 #ifndef __COMPRESS_RAR3_DECODER_H
 #define __COMPRESS_RAR3_DECODER_H
+
+#include "../../../C/Ppmd7.h"
 
 #include "../../Common/MyCom.h"
 
@@ -13,7 +17,6 @@
 
 #include "BitmDecoder.h"
 #include "HuffmanDecoder.h"
-#include "PpmdDecode.h"
 #include "Rar3Vm.h"
 
 namespace NCompress {
@@ -38,8 +41,8 @@ const UInt32 kTablesSizesSum = kMainTableSize + kDistTableSize + kAlignTableSize
 class CBitDecoder
 {
   UInt32 m_Value;
+  unsigned m_BitPos;
 public:
-  UInt32 m_BitPos;
   CInBuffer m_Stream;
   bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
   void SetStream(ISequentialInStream *inStream) { m_Stream.SetStream(inStream);}
@@ -50,26 +53,13 @@ public:
     m_Stream.Init();
     m_BitPos = 0;
     m_Value = 0;
-    // m_BitPos = kNumBigValueBits;
-    // Normalize();
   }
   
-  UInt64 GetProcessedSize() const
-    { return m_Stream.GetProcessedSize() - (m_BitPos) / 8; }
+  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() - (m_BitPos) / 8; }
   UInt32 GetBitPosition() const { return ((8 - m_BitPos) & 7); }
   
-  /*
-  void Normalize()
+  UInt32 GetValue(unsigned numBits)
   {
-    for (;m_BitPos >= 8; m_BitPos -= 8)
-      m_Value = (m_Value << 8) | m_Stream.ReadByte();
-  }
-  */
-
-  UInt32 GetValue(UInt32 numBits)
-  {
-    // return (m_Value << m_BitPos) >> (kNumBigValueBits - numBits);
-    // return ((m_Value >> (8 - m_BitPos)) & kMask) >> (kNumValueBits - numBits);
     if (m_BitPos < numBits)
     {
       m_BitPos += 8;
@@ -83,13 +73,13 @@ public:
     return m_Value >> (m_BitPos - numBits);
   }
   
-  void MovePos(UInt32 numBits)
+  void MovePos(unsigned numBits)
   {
     m_BitPos -= numBits;
     m_Value = m_Value & ((1 << m_BitPos) - 1);
   }
   
-  UInt32 ReadBits(UInt32 numBits)
+  UInt32 ReadBits(unsigned numBits)
   {
     UInt32 res = GetValue(numBits);
     MovePos(numBits);
@@ -97,66 +87,41 @@ public:
   }
 };
 
-const int kNumTopBits = 24;
-const UInt32 kTopValue = (1 << kNumTopBits);
+const UInt32 kTopValue = (1 << 24);
 const UInt32 kBot = (1 << 15);
 
-class CRangeDecoder:public NPpmd::CRangeDecoderVirt, public CBitDecoder
+struct CRangeDecoder
 {
-public:
+  IPpmd7_RangeDec s;
   UInt32 Range;
-  UInt32 Low;
   UInt32 Code;
+  UInt32 Low;
+  CBitDecoder bitDecoder;
+  SRes Res;
+
+public:
+  void InitRangeCoder()
+  {
+    Code = 0;
+    Low = 0;
+    Range = 0xFFFFFFFF;
+    for (int i = 0; i < 4; i++)
+      Code = (Code << 8) | bitDecoder.ReadBits(8);
+  }
 
   void Normalize()
   {
     while ((Low ^ (Low + Range)) < kTopValue ||
        Range < kBot && ((Range = (0 - Low) & (kBot - 1)), 1))
     {
-      Code = (Code << 8) | m_Stream.ReadByte();
+      Code = (Code << 8) | bitDecoder.m_Stream.ReadByte();
       Range <<= 8;
       Low <<= 8;
     }
   }
-  
-  void InitRangeCoder()
-  {
-    Code = 0;
-    Low = 0;
-    Range = 0xFFFFFFFF;
-    for(int i = 0; i < 4; i++)
-      Code = (Code << 8) | ReadBits(8);
-  }
 
-  virtual UInt32 GetThreshold(UInt32 total)
-  {
-    return (Code - Low) / ( Range /= total);
-  }
-
-  virtual void Decode(UInt32 start, UInt32 size)
-  {
-    Low += start * Range;
-    Range *= size;
-    Normalize();
-  }
-
-  virtual UInt32 DecodeBit(UInt32 size0, UInt32 numTotalBits)
-  {
-    if (((Code - Low) / (Range >>= numTotalBits)) < size0)
-    {
-      Decode(0, size0);
-      return 0;
-    }
-    else
-    {
-      Decode(size0, (1 << numTotalBits) - size0);
-      return 1;
-    }
-  }
-
-  // UInt64 GetProcessedSizeRangeCoder() {return Stream.GetProcessedSize(); }
+  CRangeDecoder();
 };
-
 
 struct CFilter: public NVm::CProgram
 {
@@ -219,8 +184,9 @@ class CDecoder:
 
   bool TablesRead;
 
-  NPpmd::CDecodeInfo _ppm;
+  CPpmd7 _ppmd;
   int PpmEscChar;
+  bool PpmError;
   
   HRESULT WriteDataToStream(const Byte *data, UInt32 size);
   HRESULT WriteData(const Byte *data, UInt32 size);
@@ -252,7 +218,7 @@ public:
   void ReleaseStreams()
   {
     _outStream.Release();
-    m_InBitStream.ReleaseStream();
+    m_InBitStream.bitDecoder.ReleaseStream();
   }
 
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,

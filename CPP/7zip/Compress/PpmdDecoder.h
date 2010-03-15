@@ -1,17 +1,16 @@
 // PpmdDecoder.h
-// 2009-05-30 : Igor Pavlov : Public domain
+// 2009-03-11 : Igor Pavlov : Public domain
 
 #ifndef __COMPRESS_PPMD_DECODER_H
 #define __COMPRESS_PPMD_DECODER_H
 
+#include "../../../C/Ppmd7.h"
+
 #include "../../Common/MyCom.h"
 
+#include "../Common/CWrappers.h"
+
 #include "../ICoder.h"
-
-#include "../Common/OutBuffer.h"
-
-#include "PpmdDecode.h"
-#include "RangeCoder.h"
 
 namespace NCompress {
 namespace NPpmd {
@@ -26,25 +25,23 @@ class CDecoder :
   #endif
   public CMyUnknownImp
 {
-  CRangeDecoder _rangeDecoder;
-
-  COutBuffer _outStream;
-
-  CDecodeInfo _info;
+  Byte *_outBuf;
+  CPpmd7z_RangeDec _rangeDec;
+  CByteInBufWrap _inStream;
+  CPpmd7 _ppmd;
 
   Byte _order;
-  UInt32 _usedMemorySize;
-
-  int _remainLen;
-  UInt64 _outSize;
   bool _outSizeDefined;
+  int _status;
+  UInt64 _outSize;
   UInt64 _processedSize;
 
-  HRESULT CodeSpec(UInt32 num, Byte *memStream);
+  HRESULT CodeSpec(Byte *memStream, UInt32 size);
 
 public:
 
   #ifndef NO_READ_FROM_CODER
+  CMyComPtr<ISequentialInStream> InSeqStream;
   MY_UNKNOWN_IMP4(
       ICompressSetDecoderProperties2,
       ICompressSetInStream,
@@ -55,31 +52,25 @@ public:
       ICompressSetDecoderProperties2)
   #endif
 
-  void ReleaseStreams()
-  {
-    ReleaseInStream();
-    _outStream.ReleaseStream();
-  }
-
-  HRESULT Flush() { return _outStream.Flush(); }
-
-  STDMETHOD(CodeReal)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
-
-  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
-  STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
   #ifndef NO_READ_FROM_CODER
+  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  STDMETHOD(ReleaseInStream)();
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   #endif
 
-  CDecoder(): _outSizeDefined(false) {}
+  CDecoder(): _outBuf(NULL), _outSizeDefined(false)
+  {
+    Ppmd7z_RangeDec_CreateVTable(&_rangeDec);
+    _rangeDec.Stream = &_inStream.p;
+    Ppmd7_Construct(&_ppmd);
+  }
+
+  ~CDecoder();
 };
 
 }}

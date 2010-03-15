@@ -112,7 +112,6 @@ CRYPTO_OBJS = \
   $O\Sha1.obj \
 
 C_OBJS = \
-  $O\Aes.obj \
   $O\Alloc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
@@ -128,6 +127,9 @@ C_OBJS = \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
   $O\MtCoder.obj \
+  $O\Ppmd7.obj \
+  $O\Ppmd7Dec.obj \
+  $O\Ppmd7Enc.obj \
   $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \
