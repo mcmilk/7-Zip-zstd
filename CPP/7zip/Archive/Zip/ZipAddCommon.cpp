@@ -244,14 +244,14 @@ HRESULT CAddCommon::Compress(
             _compressEncoder = encoder;
             NWindows::NCOM::CPropVariant props[] =
             {
-              // _options.Algo,
+              _options.Algo,
               _options.MemSize,
               _options.Order
               
             };
             PROPID propIDs[] =
             {
-              // NCoderPropID::kAlgorithm,
+              NCoderPropID::kAlgorithm,
               NCoderPropID::kUsedMemorySize,
               NCoderPropID::kOrder
             };

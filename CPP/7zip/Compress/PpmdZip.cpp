@@ -1,5 +1,5 @@
 // PpmdZip.cpp
-// 2010-03-11 : Igor Pavlov : Public domain
+// 2010-03-24 : Igor Pavlov : Public domain
 
 #include "StdAfx.h"
 

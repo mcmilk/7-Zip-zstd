@@ -1,5 +1,5 @@
 /* MtCoder.c -- Multi-thread Coder
-2009-03-26 : Igor Pavlov : Public domain */
+2010-03-24 : Igor Pavlov : Public domain */
 
 #include <stdio.h>
 
@@ -306,7 +306,7 @@ SRes MtCoder_Code(CMtCoder *p)
     for (i = 0; i < numThreads; i++)
     {
       CMtThread *t = &p->threads[i];
-      if (LoopThread_StartSubThread(&t->thread) != SZ_OK || i == 10)
+      if (LoopThread_StartSubThread(&t->thread) != SZ_OK)
       {
         res = SZ_ERROR_THREAD;
         p->threads[0].stopReading = True;

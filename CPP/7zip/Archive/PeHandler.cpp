@@ -450,6 +450,7 @@ struct CResItem
   bool IsIcon() const { return Type == 3; }
   bool IsString() const { return Type == 6; }
   bool IsRcData() const { return Type == 10; }
+  bool IsRcDataOrUnknown() const { return IsRcData() || Type > 64; }
 };
 
 struct CStringItem
@@ -1410,7 +1411,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
           {
             mixItem.ResourceIndex = j;
             mixItem.StringIndex = -1;
-            if (item.IsRcData())
+            if (item.IsRcDataOrUnknown())
             {
               if (item.Size >= mainSize)
               {

@@ -1,5 +1,5 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2009-11-24 : Igor Pavlov : Public domain */
+2010-03-24 : Igor Pavlov : Public domain */
 
 /* #include <stdio.h> */
 #include <string.h>
@@ -173,6 +173,65 @@ void Lzma2EncProps_Init(CLzma2EncProps *p)
   p->blockSize = 0;
 }
 
+void Lzma2EncProps_Normalize(CLzma2EncProps *p)
+{
+  int t1, t1n, t2, t3;
+  {
+    CLzmaEncProps lzmaProps = p->lzmaProps;
+    LzmaEncProps_Normalize(&lzmaProps);
+    t1n = lzmaProps.numThreads;
+  }
+
+  t1 = p->lzmaProps.numThreads;
+  t2 = p->numBlockThreads;
+  t3 = p->numTotalThreads;
+
+  if (t2 > NUM_MT_CODER_THREADS_MAX)
+    t2 = NUM_MT_CODER_THREADS_MAX;
+
+  if (t3 <= 0)
+  {
+    if (t2 <= 0)
+      t2 = 1;
+    t3 = t1n * t2;
+  }
+  else if (t2 <= 0)
+  {
+    t2 = t3 / t1n;
+    if (t2 == 0)
+    {
+      t1 = 1;
+      t2 = t3;
+    }
+    if (t2 > NUM_MT_CODER_THREADS_MAX)
+      t2 = NUM_MT_CODER_THREADS_MAX;
+  }
+  else if (t1 <= 0)
+  {
+    t1 = t3 / t2;
+    if (t1 == 0)
+      t1 = 1;
+  }
+  else
+    t3 = t1n * t2;
+
+  p->lzmaProps.numThreads = t1;
+  p->numBlockThreads = t2;
+  p->numTotalThreads = t3;
+  LzmaEncProps_Normalize(&p->lzmaProps);
+
+  if (p->blockSize == 0)
+  {
+    UInt32 dictSize = p->lzmaProps.dictSize;
+    UInt64 blockSize = (UInt64)dictSize << 2;
+    const UInt32 kMinSize = (UInt32)1 << 20;
+    const UInt32 kMaxSize = (UInt32)1 << 28;
+    if (blockSize < kMinSize) blockSize = kMinSize;
+    if (blockSize > kMaxSize) blockSize = kMaxSize;
+    if (blockSize < dictSize) blockSize = dictSize;
+    p->blockSize = (size_t)blockSize;
+  }
+}
 
 static SRes Progress(ICompressProgress *p, UInt64 inSize, UInt64 outSize)
 {
@@ -349,70 +408,6 @@ void Lzma2Enc_Destroy(CLzma2EncHandle pp)
 
   IAlloc_Free(p->alloc, p->outBuf);
   IAlloc_Free(p->alloc, pp);
-}
-
-void Lzma2EncProps_Normalize(CLzma2EncProps *p)
-{
-  int t1, t1n, t2, t3;
-  CLzmaEncProps lzmaProps = p->lzmaProps;
-  
-  LzmaEncProps_Normalize(&lzmaProps);
-
-  t1 = p->lzmaProps.numThreads;
-  t1n = lzmaProps.numThreads;
-  t2 = p->numBlockThreads;
-  t3 = p->numTotalThreads;
-
-  #ifndef _7ZIP_ST
-  if (t2 > NUM_MT_CODER_THREADS_MAX)
-    t2 = NUM_MT_CODER_THREADS_MAX;
-  #else
-  t2 = 1;
-  #endif
-
-  if (t3 <= 0)
-  {
-    if (t2 <= 0)
-      t2 = 1;
-    t3 = t1n * t2;
-  }
-  else
-  {
-    if (t2 <= 0)
-    {
-      t2 = t3 / t1n;
-      if (t2 == 0)
-      {
-        t1 = 1;
-        t2 = t3;
-      }
-    }
-    else if (t1 <= 0)
-    {
-      t1 = t3 / t2;
-      if (t1 == 0)
-        t1 = 1;
-    }
-    else
-      t3 = t1n * t2;
-  }
-
-  p->lzmaProps.numThreads = t1;
-  p->numBlockThreads = t2;
-  p->numTotalThreads = t3;
-  LzmaEncProps_Normalize(&p->lzmaProps);
-
-  if (p->blockSize == 0)
-  {
-    UInt64 blockSize = (UInt64)lzmaProps.dictSize << 2;
-    const UInt32 kMinSize = (UInt32)1 << 20;
-    const UInt32 kMaxSize = (UInt32)1 << 28;
-    if (blockSize < kMinSize) blockSize = kMinSize;
-    if (blockSize > kMaxSize) blockSize = kMaxSize;
-    if (blockSize < lzmaProps.dictSize)
-      blockSize = lzmaProps.dictSize;
-    p->blockSize = (size_t)blockSize;
-  }
 }
 
 SRes Lzma2Enc_SetProps(CLzma2EncHandle pp, const CLzma2EncProps *props)

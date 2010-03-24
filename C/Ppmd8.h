@@ -1,5 +1,5 @@
 /* Ppmd8.h -- PPMdI codec
-2010-03-12 : Igor Pavlov : Public domain
+2010-03-24 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -35,8 +35,9 @@ typedef struct CPpmd8_Context_
 
 #define Ppmd8Context_OneState(p) ((CPpmd_State *)&(p)->SummFreq)
 
-/* There is some bug in FREEZE mode (including original code,
-so we disable FREEZE mode support */
+/* The BUG in Shkarin's code for FREEZE mode was fixed, but that fixed
+   code is not compatible with original code for some files compressed
+   in FREEZE mode. So we disable FREEZE mode support. */
 
 enum
 {
