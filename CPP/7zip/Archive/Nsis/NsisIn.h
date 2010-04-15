@@ -72,7 +72,7 @@ struct CItem
   UInt32 DictionarySize;
   
   CItem(): IsUnicode(false), UseFilter(false), IsCompressed(true), SizeIsDefined(false),
-      CompressedSizeIsDefined(false), EstimatedSizeIsDefined(false), Size(0) {}
+      CompressedSizeIsDefined(false), EstimatedSizeIsDefined(false), Size(0), DictionarySize(1) {}
 
   bool IsINSTDIR() const
   {

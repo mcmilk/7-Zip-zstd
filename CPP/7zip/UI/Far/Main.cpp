@@ -365,7 +365,7 @@ static HANDLE MyOpenFilePlugin(const char *name)
   archiveHandler = new CAgent;
   CMyComBSTR archiveType;
   HRESULT result = archiveHandler->Open(NULL,
-      GetUnicodeString(fullName, CP_OEMCP), &archiveType, openArchiveCallback);
+      GetUnicodeString(fullName, CP_OEMCP), UString(), &archiveType, openArchiveCallback);
   /*
   HRESULT result = ::OpenArchive(fullName, &archiveHandler,
       archiverInfoResult, defaultName, openArchiveCallback);

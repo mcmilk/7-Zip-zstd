@@ -9,13 +9,13 @@
 namespace NWindows {
 namespace NCOM {
 
-CPropVariant::CPropVariant(const PROPVARIANT& varSrc)
+CPropVariant::CPropVariant(const PROPVARIANT &varSrc)
 {
   vt = VT_EMPTY;
   InternalCopy(&varSrc);
 }
 
-CPropVariant::CPropVariant(const CPropVariant& varSrc)
+CPropVariant::CPropVariant(const CPropVariant &varSrc)
 {
   vt = VT_EMPTY;
   InternalCopy(&varSrc);
@@ -33,12 +33,12 @@ CPropVariant::CPropVariant(LPCOLESTR lpszSrc)
   *this = lpszSrc;
 }
 
-CPropVariant& CPropVariant::operator=(const CPropVariant& varSrc)
+CPropVariant& CPropVariant::operator=(const CPropVariant &varSrc)
 {
   InternalCopy(&varSrc);
   return *this;
 }
-CPropVariant& CPropVariant::operator=(const PROPVARIANT& varSrc)
+CPropVariant& CPropVariant::operator=(const PROPVARIANT &varSrc)
 {
   InternalCopy(&varSrc);
   return *this;
@@ -96,89 +96,21 @@ CPropVariant& CPropVariant::operator=(bool bSrc)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(UInt32 value)
-{
-  if (vt != VT_UI4)
-  {
-    InternalClear();
-    vt = VT_UI4;
-  }
-  ulVal = value;
-  return *this;
-}
+#define SET_PROP_FUNC(type, id, dest) \
+  CPropVariant& CPropVariant::operator=(type value) \
+  { if (vt != id) { InternalClear(); vt = id; } \
+    dest = value; return *this; }
 
-CPropVariant& CPropVariant::operator=(UInt64 value)
-{
-  if (vt != VT_UI8)
-  {
-    InternalClear();
-    vt = VT_UI8;
-  }
-  uhVal.QuadPart = value;
-  return *this;
-}
+SET_PROP_FUNC(Byte, VT_UI1, bVal)
+SET_PROP_FUNC(Int16, VT_I2, iVal)
+SET_PROP_FUNC(Int32, VT_I4, lVal)
+SET_PROP_FUNC(UInt32, VT_UI4, ulVal)
+SET_PROP_FUNC(UInt64, VT_UI8, uhVal.QuadPart)
+SET_PROP_FUNC(const FILETIME &, VT_FILETIME, filetime)
 
-CPropVariant& CPropVariant::operator=(const FILETIME &value)
+static HRESULT MyPropVariantClear(PROPVARIANT *prop)
 {
-  if (vt != VT_FILETIME)
-  {
-    InternalClear();
-    vt = VT_FILETIME;
-  }
-  filetime = value;
-  return *this;
-}
-
-CPropVariant& CPropVariant::operator=(Int32 value)
-{
-  if (vt != VT_I4)
-  {
-    InternalClear();
-    vt = VT_I4;
-  }
-  lVal = value;
-  
-  return *this;
-}
-
-CPropVariant& CPropVariant::operator=(Byte value)
-{
-  if (vt != VT_UI1)
-  {
-    InternalClear();
-    vt = VT_UI1;
-  }
-  bVal = value;
-  return *this;
-}
-
-CPropVariant& CPropVariant::operator=(Int16 value)
-{
-  if (vt != VT_I2)
-  {
-    InternalClear();
-    vt = VT_I2;
-  }
-  iVal = value;
-  return *this;
-}
-
-/*
-CPropVariant& CPropVariant::operator=(LONG value)
-{
-  if (vt != VT_I4)
-  {
-    InternalClear();
-    vt = VT_I4;
-  }
-  lVal = value;
-  return *this;
-}
-*/
-
-static HRESULT MyPropVariantClear(PROPVARIANT *propVariant)
-{
-  switch(propVariant->vt)
+  switch(prop->vt)
   {
     case VT_UI1:
     case VT_I1:
@@ -196,11 +128,11 @@ static HRESULT MyPropVariantClear(PROPVARIANT *propVariant)
     case VT_R8:
     case VT_CY:
     case VT_DATE:
-      propVariant->vt = VT_EMPTY;
-      propVariant->wReserved1 = 0;
+      prop->vt = VT_EMPTY;
+      prop->wReserved1 = 0;
       return S_OK;
   }
-  return ::VariantClear((VARIANTARG *)propVariant);
+  return ::VariantClear((VARIANTARG *)prop);
 }
 
 HRESULT CPropVariant::Clear()
@@ -236,7 +168,7 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
 }
 
 
-HRESULT CPropVariant::Attach(PROPVARIANT* pSrc)
+HRESULT CPropVariant::Attach(PROPVARIANT *pSrc)
 {
   HRESULT hr = Clear();
   if (FAILED(hr))
@@ -246,7 +178,7 @@ HRESULT CPropVariant::Attach(PROPVARIANT* pSrc)
   return S_OK;
 }
 
-HRESULT CPropVariant::Detach(PROPVARIANT* pDest)
+HRESULT CPropVariant::Detach(PROPVARIANT *pDest)
 {
   HRESULT hr = MyPropVariantClear(pDest);
   if (FAILED(hr))
@@ -267,7 +199,7 @@ HRESULT CPropVariant::InternalClear()
   return hr;
 }
 
-void CPropVariant::InternalCopy(const PROPVARIANT* pSrc)
+void CPropVariant::InternalCopy(const PROPVARIANT *pSrc)
 {
   HRESULT hr = Copy(pSrc);
   if (FAILED(hr))
@@ -280,52 +212,25 @@ void CPropVariant::InternalCopy(const PROPVARIANT* pSrc)
 int CPropVariant::Compare(const CPropVariant &a)
 {
   if (vt != a.vt)
-    return 0; // it's mean some bug
+    return 0; // it's bug case
   switch (vt)
   {
-    case VT_EMPTY:
-      return 0;
-    
-    /*
-    case VT_I1:
-      return MyCompare(cVal, a.cVal);
-    */
-    case VT_UI1:
-      return MyCompare(bVal, a.bVal);
-
-    case VT_I2:
-      return MyCompare(iVal, a.iVal);
-    case VT_UI2:
-      return MyCompare(uiVal, a.uiVal);
-    
-    case VT_I4:
-      return MyCompare(lVal, a.lVal);
-    /*
-    case VT_INT:
-      return MyCompare(intVal, a.intVal);
-    */
-    case VT_UI4:
-      return MyCompare(ulVal, a.ulVal);
-    /*
-    case VT_UINT:
-      return MyCompare(uintVal, a.uintVal);
-    */
-    case VT_I8:
-      return MyCompare(hVal.QuadPart, a.hVal.QuadPart);
-    case VT_UI8:
-      return MyCompare(uhVal.QuadPart, a.uhVal.QuadPart);
-
-    case VT_BOOL:
-      return -MyCompare(boolVal, a.boolVal);
-
-    case VT_FILETIME:
-      return ::CompareFileTime(&filetime, &a.filetime);
+    case VT_EMPTY: return 0;
+    // case VT_I1: return MyCompare(cVal, a.cVal);
+    case VT_UI1: return MyCompare(bVal, a.bVal);
+    case VT_I2: return MyCompare(iVal, a.iVal);
+    case VT_UI2: return MyCompare(uiVal, a.uiVal);
+    case VT_I4: return MyCompare(lVal, a.lVal);
+    case VT_UI4: return MyCompare(ulVal, a.ulVal);
+    // case VT_UINT: return MyCompare(uintVal, a.uintVal);
+    case VT_I8: return MyCompare(hVal.QuadPart, a.hVal.QuadPart);
+    case VT_UI8: return MyCompare(uhVal.QuadPart, a.uhVal.QuadPart);
+    case VT_BOOL: return -MyCompare(boolVal, a.boolVal);
+    case VT_FILETIME: return ::CompareFileTime(&filetime, &a.filetime);
     case VT_BSTR:
       return 0; // Not implemented
       // return MyCompare(aPropVarint.cVal);
-
-    default:
-      return 0;
+    default: return 0;
   }
 }
 

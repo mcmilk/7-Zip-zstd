@@ -440,14 +440,6 @@ SOURCE=..\..\UI\FileManager\OptionsDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\UI\FileManager\PluginsPage.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\FileManager\PluginsPage.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\UI\FileManager\SettingsPage.cpp
 # End Source File
 # Begin Source File

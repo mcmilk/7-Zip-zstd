@@ -14,6 +14,7 @@ namespace NLzma {
 class CDecoder:
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
+  public ICompressSetBufSize,
   #ifndef NO_READ_FROM_CODER
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
@@ -31,7 +32,12 @@ class CDecoder:
   UInt64 _outSize;
   UInt64 _inSizeProcessed;
   UInt64 _outSizeProcessed;
-  
+
+  UInt32 _inBufSizeAllocated;
+  UInt32 _inBufSize;
+  UInt32 _outBufSize;
+  SizeT _wrPos;
+
   HRESULT CreateInputBuffer();
   HRESULT CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress);
   void SetOutStreamSizeResume(const UInt64 *outSize);
@@ -39,6 +45,7 @@ class CDecoder:
 public:
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetDecoderProperties2)
+  MY_QUERYINTERFACE_ENTRY(ICompressSetBufSize)
   #ifndef NO_READ_FROM_CODER
   MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)
   MY_QUERYINTERFACE_ENTRY(ICompressSetOutStreamSize)
@@ -51,6 +58,8 @@ public:
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
+  STDMETHOD(SetInBufSize)(UInt32 streamIndex, UInt32 size);
+  STDMETHOD(SetOutBufSize)(UInt32 streamIndex, UInt32 size);
 
   #ifndef NO_READ_FROM_CODER
   
@@ -68,7 +77,6 @@ public:
 
   CDecoder();
   virtual ~CDecoder();
-
 };
 
 }}

@@ -20,6 +20,7 @@ enum EEnum
   kYes,
   kNo,
   
+  kPath,
   kName,
   kExtension,
   kIsFolder,

@@ -696,9 +696,13 @@ HRESULT LzmaBench(
 
     const UInt32 kLzmaId = 0x030101;
     RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS kLzmaId, encoder.encoder, true));
+    if (!encoder.encoder)
+      return E_NOTIMPL;
     for (UInt32 j = 0; j < numSubDecoderThreads; j++)
     {
       RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS kLzmaId, encoder.decoders[j], false));
+      if (!encoder.decoders[j])
+        return E_NOTIMPL;
     }
   }
 

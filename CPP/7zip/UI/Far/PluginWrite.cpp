@@ -692,7 +692,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     // CLSID realClassID;
     CMyComBSTR archiveType;
     RINOK(agentSpec->Open(NULL,
-        GetUnicodeString(fullArchiveName, CP_OEMCP),
+        GetUnicodeString(fullArchiveName, CP_OEMCP), UString(),
         // &realClassID,
         &archiveType,
         NULL));

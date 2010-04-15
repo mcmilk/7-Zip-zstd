@@ -54,7 +54,7 @@ static void SetSizes(const UInt64 **srcSizes, CRecordVector<UInt64> &sizes,
 {
   sizes.Clear();
   sizePointers.Clear();
-  for(UInt32 i = 0; i < numItems; i++)
+  for (UInt32 i = 0; i < numItems; i++)
   {
     if (srcSizes == 0 || srcSizes[i] == NULL)
     {
@@ -83,7 +83,7 @@ HRESULT CCoderMixer2MT::SetBindInfo(const CBindInfo &bindInfo)
 {
   _bindInfo = bindInfo;
   _streamBinders.Clear();
-  for(int i = 0; i < _bindInfo.BindPairs.Size(); i++)
+  for (int i = 0; i < _bindInfo.BindPairs.Size(); i++)
   {
     _streamBinders.Add(CStreamBinder());
     RINOK(_streamBinders.Back().CreateEvents());
@@ -113,7 +113,7 @@ void CCoderMixer2MT::AddCoder2(ICompressCoder2 *coder)
 
 void CCoderMixer2MT::ReInit()
 {
-  for(int i = 0; i < _streamBinders.Size(); i++)
+  for (int i = 0; i < _streamBinders.Size(); i++)
     _streamBinders[i].ReInit();
 }
 
@@ -125,20 +125,20 @@ HRESULT CCoderMixer2MT::Init(ISequentialInStream **inStreams, ISequentialOutStre
     throw 0;
   */
   int i;
-  for(i = 0; i < _coders.Size(); i++)
+  for (i = 0; i < _coders.Size(); i++)
   {
     CCoder2 &coderInfo = _coders[i];
     const CCoderStreamsInfo &coderStreamsInfo = _bindInfo.Coders[i];
     coderInfo.InStreams.Clear();
     UInt32 j;
-    for(j = 0; j < coderStreamsInfo.NumInStreams; j++)
+    for (j = 0; j < coderStreamsInfo.NumInStreams; j++)
       coderInfo.InStreams.Add(NULL);
     coderInfo.OutStreams.Clear();
-    for(j = 0; j < coderStreamsInfo.NumOutStreams; j++)
+    for (j = 0; j < coderStreamsInfo.NumOutStreams; j++)
       coderInfo.OutStreams.Add(NULL);
   }
 
-  for(i = 0; i < _bindInfo.BindPairs.Size(); i++)
+  for (i = 0; i < _bindInfo.BindPairs.Size(); i++)
   {
     const CBindPair &bindPair = _bindInfo.BindPairs[i];
     UInt32 inCoderIndex, inCoderStreamIndex;
@@ -149,16 +149,26 @@ HRESULT CCoderMixer2MT::Init(ISequentialInStream **inStreams, ISequentialOutStre
     _streamBinders[i].CreateStreams(
         &_coders[inCoderIndex].InStreams[inCoderStreamIndex],
         &_coders[outCoderIndex].OutStreams[outCoderStreamIndex]);
+
+    CMyComPtr<ICompressSetBufSize> inSetSize, outSetSize;
+    _coders[inCoderIndex].QueryInterface(IID_ICompressSetBufSize, (void **)&inSetSize);
+    _coders[outCoderIndex].QueryInterface(IID_ICompressSetBufSize, (void **)&outSetSize);
+    if (inSetSize && outSetSize)
+    {
+      const UInt32 kBufSize = 1 << 19;
+      inSetSize->SetInBufSize(inCoderStreamIndex, kBufSize);
+      outSetSize->SetOutBufSize(outCoderStreamIndex, kBufSize);
+    }
   }
 
-  for(i = 0; i < _bindInfo.InStreams.Size(); i++)
+  for (i = 0; i < _bindInfo.InStreams.Size(); i++)
   {
     UInt32 inCoderIndex, inCoderStreamIndex;
     _bindInfo.FindInStream(_bindInfo.InStreams[i], inCoderIndex, inCoderStreamIndex);
     _coders[inCoderIndex].InStreams[inCoderStreamIndex] = inStreams[i];
   }
   
-  for(i = 0; i < _bindInfo.OutStreams.Size(); i++)
+  for (i = 0; i < _bindInfo.OutStreams.Size(); i++)
   {
     UInt32 outCoderIndex, outCoderStreamIndex;
     _bindInfo.FindOutStream(_bindInfo.OutStreams[i], outCoderIndex, outCoderStreamIndex);

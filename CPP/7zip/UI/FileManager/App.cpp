@@ -107,7 +107,8 @@ void CApp::SetShowSystemMenu()
 #define ILC_COLOR32 0x0020
 #endif
 
-HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, bool &archiveIsOpened, bool &encrypted)
+HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat,
+  bool &archiveIsOpened, bool &encrypted)
 {
   if (PanelsCreated[panelIndex])
     return S_OK;
@@ -122,7 +123,7 @@ HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, bool &arch
     path = mainPath;
   int id = 1000 + 100 * panelIndex;
   RINOK(Panels[panelIndex].Create(_window, _window,
-      id, path, &m_PanelCallbackImp[panelIndex], &AppState, archiveIsOpened, encrypted));
+      id, path, arcFormat, &m_PanelCallbackImp[panelIndex], &AppState, archiveIsOpened, encrypted));
   PanelsCreated[panelIndex] = true;
   return S_OK;
 }
@@ -269,7 +270,7 @@ void CApp::SaveToolbarChanges()
 
 void MyLoadMenu();
 
-HRESULT CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &archiveIsOpened, bool &encrypted)
+HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool &archiveIsOpened, bool &encrypted)
 {
   _window.Attach(hwnd);
   #ifdef UNDER_CE
@@ -310,7 +311,7 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &ar
       bool archiveIsOpened2 = false;
       bool encrypted2 = false;
       bool mainPanel = (i == LastFocusedPanel);
-      RINOK(CreateOnePanel(i, mainPanel ? mainPath : L"", archiveIsOpened2, encrypted2));
+      RINOK(CreateOnePanel(i, mainPanel ? mainPath : L"", arcFormat, archiveIsOpened2, encrypted2));
       if (mainPanel)
       {
         archiveIsOpened = archiveIsOpened2;
@@ -328,7 +329,7 @@ HRESULT CApp::SwitchOnOffOnePanel()
   {
     NumPanels++;
     bool archiveIsOpened, encrypted;
-    RINOK(CreateOnePanel(1 - LastFocusedPanel, UString(), archiveIsOpened, encrypted));
+    RINOK(CreateOnePanel(1 - LastFocusedPanel, UString(), UString(), archiveIsOpened, encrypted));
     Panels[1 - LastFocusedPanel].Enable(true);
     Panels[1 - LastFocusedPanel].Show(SW_SHOWNORMAL);
   }
@@ -596,8 +597,10 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       }
     #endif
 
-    if (indices.Size() > 1 || (!destPath.IsEmpty() && destPath.Back() == WCHAR_PATH_SEPARATOR) ||
-        NFind::DoesDirExist(destPath))
+    if (indices.Size() > 1 ||
+        (!destPath.IsEmpty() && destPath.Back() == WCHAR_PATH_SEPARATOR) ||
+        NFind::DoesDirExist(destPath) ||
+        srcPanel.IsArcFolder())
     {
       NDirectory::CreateComplexDirectory(destPath);
       NName::NormalizeDirPathPrefix(destPath);

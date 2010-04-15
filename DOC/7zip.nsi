@@ -2,7 +2,7 @@
 ;Defines
 
 !define VERSION_MAJOR 9
-!define VERSION_MINOR 12
+!define VERSION_MINOR 13
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
@@ -248,6 +248,7 @@ Section
   File th.txt
   File tr.txt
   File tt.txt
+  File ug.txt
   File uk.txt
   File uz.txt
   File va.txt
@@ -439,6 +440,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\th.txt
   Delete $INSTDIR\Lang\tr.txt
   Delete $INSTDIR\Lang\tt.txt
+  Delete $INSTDIR\Lang\ug.txt
   Delete $INSTDIR\Lang\uk.txt
   Delete $INSTDIR\Lang\uz.txt
   Delete $INSTDIR\Lang\va.txt

@@ -160,6 +160,14 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\BenchCon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\BenchCon.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\ConsoleClose.cpp
 # End Source File
 # Begin Source File
@@ -181,14 +189,6 @@ SOURCE=.\List.cpp
 # Begin Source File
 
 SOURCE=.\List.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\BenchCon.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\BenchCon.h
 # End Source File
 # Begin Source File
 
@@ -364,10 +364,6 @@ SOURCE=..\..\..\Common\Defs.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\Exception.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -488,7 +484,11 @@ SOURCE=..\Common\ArchiveOpenCallback.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\CompressionMode.h
+SOURCE=..\Common\Bench.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\Bench.h
 # End Source File
 # Begin Source File
 
@@ -532,10 +532,6 @@ SOURCE=..\Common\ExtractingFilePath.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\HandlerLoader.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\IFileExtractCallback.h
 # End Source File
 # Begin Source File
@@ -545,14 +541,6 @@ SOURCE=..\Common\LoadCodecs.cpp
 # Begin Source File
 
 SOURCE=..\Common\LoadCodecs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\Bench.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\Bench.h
 # End Source File
 # Begin Source File
 

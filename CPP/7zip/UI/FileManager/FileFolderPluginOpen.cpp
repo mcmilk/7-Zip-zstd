@@ -20,6 +20,7 @@ using namespace NRegistryAssociations;
 struct CThreadArchiveOpen
 {
   UString Path;
+  UString ArcFormat;
   CMyComPtr<IInStream> InStream;
   CMyComPtr<IFolderManager> FolderManager;
   CMyComPtr<IProgress> OpenCallback;
@@ -33,7 +34,7 @@ struct CThreadArchiveOpen
     try
     {
       CProgressCloser closer(OpenCallbackSpec->ProgressDialog);
-      Result = FolderManager->OpenFolderFile(InStream, Path, &Folder, OpenCallback);
+      Result = FolderManager->OpenFolderFile(InStream, Path, ArcFormat, &Folder, OpenCallback);
     }
     catch(...) { Result = E_FAIL; }
   }
@@ -58,6 +59,7 @@ static int FindPlugin(const CObjectVector<CPluginInfo> &plugins, const UString &
 HRESULT OpenFileFolderPlugin(
     IInStream *inStream,
     const UString &path,
+    const UString &arcFormat,
     HMODULE *module,
     IFolderFolder **resultFolder,
     HWND parentWindow,
@@ -128,6 +130,7 @@ HRESULT OpenFileFolderPlugin(
 
     t.InStream = inStream;
     t.Path = path;
+    t.ArcFormat = arcFormat;
 
     UString progressTitle = LangString(IDS_OPENNING, 0x03020283);
     t.OpenCallbackSpec->ProgressDialog.MainWindow = parentWindow;

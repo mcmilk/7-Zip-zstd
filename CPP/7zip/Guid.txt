@@ -11,8 +11,9 @@
   07  IFileExtractCallback.h::IFolderArchiveExtractCallback
   0A  IOutFolderArchive
   0B  IFolderArchiveUpdateCallback
-  0Ñ  Agent.h::IArchiveFolderInternal
-  0D  IInFolderArchive
+  0C  Agent.h::IArchiveFolderInternal
+  0D
+  0E  IInFolderArchive
 
 03 IStream.h
 
@@ -40,6 +41,7 @@
   32  ICompressSetOutStream
   33  ICompressSetInStreamSize
   34  ICompressSetOutStreamSize
+  35  ICompressSetBufSize
   40  ICompressFilter
   60  ICompressCodecsInfo
   61  ISetCompressCodecsInfo
@@ -88,24 +90,24 @@
   09 IFolderClone
   0A IFolderSetFlatMode
   0B IFolderOperationsExtractCallback
-  0C IFolderArchiveProperties
-  0D IGetFolderArchiveProperties
+  0C // 
+  0D // 
   0E IFolderProperties
+  0F 
+  10 IFolderArcProps
+  11 IGetFolderArcProps
 
 
 09 IFolder.h :: FOLDER_MANAGER_INTERFACE
 
-  00 - 03 // old IFolderManager
-  04 IFolderManager
+  00 - 04 // old IFolderManager
+  05 IFolderManager
 
 
-
-------------------
-
-
-{23170F69-40C1-278D-0000-000100010000} PluginInterface::IInitContextMenu
-{23170F69-40C1-278D-0000-000100020100} PluginInterface::IPluginOptionsCallback
-{23170F69-40C1-278D-0000-000100020000} PluginInterface::IPluginOptions
+// 0A PluginInterface.h
+  00 IInitContextMenu
+  01 IPluginOptionsCallback
+  02 IPluginOptions
 
 
 Handler GUIDs:

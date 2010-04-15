@@ -37,6 +37,7 @@ HINSTANCE g_hInstance;
 HWND g_HWND;
 bool g_OpenArchive = false;
 static UString g_MainPath;
+static UString g_ArcFormat;
 static bool g_Maximized = false;
 
 #ifndef UNDER_CE
@@ -443,7 +444,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   UString paramString, tailString;
   SplitStringToTwoStrings(commandsString, paramString, tailString);
   paramString.Trim();
- 
+  tailString.Trim();
+  if (tailString.Left(2) == L"-t")
+    g_ArcFormat = tailString.Mid(2);
   if (!paramString.IsEmpty())
   {
     g_MainPath = paramString;
@@ -639,7 +642,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (NFile::NFind::DoesFileExist(g_MainPath))
           needOpenFile = true;
       }
-      HRESULT res = g_App.Create(hWnd, g_MainPath, xSizes, archiveIsOpened, encrypted);
+      HRESULT res = g_App.Create(hWnd, g_MainPath, g_ArcFormat, xSizes, archiveIsOpened, encrypted);
 
       if (res == E_ABORT)
       {

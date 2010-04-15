@@ -35,6 +35,7 @@ struct CContextMenuItem
 static CContextMenuItem kMenuItems[] =
 {
   { IDS_CONTEXT_OPEN, 0x02000103, kOpen},
+  { IDS_CONTEXT_OPEN, 0x02000103, kOpenAs},
   { IDS_CONTEXT_EXTRACT, 0x02000105, kExtract},
   { IDS_CONTEXT_EXTRACT_HERE, 0x0200010B, kExtractHere },
   { IDS_CONTEXT_EXTRACT_TO, 0x0200010D, kExtractTo },
@@ -83,6 +84,8 @@ bool CMenuPage::OnInit()
     CContextMenuItem &menuItem = kMenuItems[i];
 
     UString s = LangString(menuItem.ControlID, menuItem.LangID);
+    if (menuItem.Flag == kOpenAs)
+      s += L" >";
 
     switch(menuItem.ControlID)
     {

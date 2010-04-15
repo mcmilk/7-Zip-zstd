@@ -57,13 +57,9 @@ HRESULT CEncoder::Flush()
 
 const UInt32 kDefaultLimit = (1 << 24);
 
-HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
-      const UInt64 **inSizes,
-      UInt32 numInStreams,
-      ISequentialOutStream **outStreams,
-      const UInt64 ** /* outSizes */,
-      UInt32 numOutStreams,
-      ICompressProgressInfo *progress)
+HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams, const UInt64 **inSizes, UInt32 numInStreams,
+    ISequentialOutStream **outStreams, const UInt64 ** /* outSizes */, UInt32 numOutStreams,
+    ICompressProgressInfo *progress)
 {
   if (numInStreams != 1 || numOutStreams != 4)
     return E_INVALIDARG;
@@ -81,6 +77,8 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
         sizeIsDefined = true;
     }
 
+  CCoderReleaser releaser(this);
+
   ISequentialInStream *inStream = inStreams[0];
 
   _mainStream.SetStream(outStreams[0]);
@@ -93,7 +91,6 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
   _rangeEncoder.Init();
   for (int i = 0; i < 256 + 2; i++)
     _statusEncoder[i].Init();
-  CCoderReleaser releaser(this);
 
   CMyComPtr<ICompressGetSubStreamSize> getSubStreamSize;
   {
@@ -253,18 +250,13 @@ HRESULT CEncoder::CodeReal(ISequentialInStream **inStreams,
   }
 }
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream **inStreams,
-      const UInt64 **inSizes,
-      UInt32 numInStreams,
-      ISequentialOutStream **outStreams,
-      const UInt64 **outSizes,
-      UInt32 numOutStreams,
-      ICompressProgressInfo *progress)
+STDMETHODIMP CEncoder::Code(ISequentialInStream **inStreams, const UInt64 **inSizes, UInt32 numInStreams,
+    ISequentialOutStream **outStreams, const UInt64 **outSizes, UInt32 numOutStreams,
+    ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(inStreams, inSizes, numInStreams,
-      outStreams, outSizes,numOutStreams, progress);
+    return CodeReal(inStreams, inSizes, numInStreams, outStreams, outSizes,numOutStreams, progress);
   }
   catch(const COutBufferException &e) { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
@@ -272,27 +264,38 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream **inStreams,
 
 #endif
 
-HRESULT CDecoder::CodeReal(ISequentialInStream **inStreams,
-      const UInt64 ** /* inSizes */,
-      UInt32 numInStreams,
-      ISequentialOutStream **outStreams,
-      const UInt64 ** /* outSizes */,
-      UInt32 numOutStreams,
-      ICompressProgressInfo *progress)
+
+STDMETHODIMP CDecoder::SetInBufSize(UInt32 streamIndex, UInt32 size) { _inBufSizes[streamIndex] = size; return S_OK; }
+STDMETHODIMP CDecoder::SetOutBufSize(UInt32 , UInt32 size) { _outBufSize = size; return S_OK; }
+
+CDecoder::CDecoder():
+  _outBufSize(1 << 16)
+{
+  _inBufSizes[0] = 1 << 20;
+  _inBufSizes[1] = 1 << 20;
+  _inBufSizes[2] = 1 << 20;
+  _inBufSizes[3] = 1 << 20;
+}
+
+HRESULT CDecoder::CodeReal(ISequentialInStream **inStreams, const UInt64 ** /* inSizes */, UInt32 numInStreams,
+    ISequentialOutStream **outStreams, const UInt64 ** /* outSizes */, UInt32 numOutStreams,
+    ICompressProgressInfo *progress)
 {
   if (numInStreams != 4 || numOutStreams != 1)
     return E_INVALIDARG;
 
-  if (!_mainInStream.Create(1 << 16))
+  if (!_mainInStream.Create(_inBufSizes[0]))
     return E_OUTOFMEMORY;
-  if (!_callStream.Create(1 << 20))
+  if (!_callStream.Create(_inBufSizes[1]))
     return E_OUTOFMEMORY;
-  if (!_jumpStream.Create(1 << 16))
+  if (!_jumpStream.Create(_inBufSizes[2]))
     return E_OUTOFMEMORY;
-  if (!_rangeDecoder.Create(1 << 20))
+  if (!_rangeDecoder.Create(_inBufSizes[3]))
     return E_OUTOFMEMORY;
-  if (!_outStream.Create(1 << 16))
+  if (!_outStream.Create(_outBufSize))
     return E_OUTOFMEMORY;
+
+  CCoderReleaser releaser(this);
 
   _mainInStream.SetStream(inStreams[0]);
   _callStream.SetStream(inStreams[1]);
@@ -308,8 +311,6 @@ HRESULT CDecoder::CodeReal(ISequentialInStream **inStreams,
 
   for (int i = 0; i < 256 + 2; i++)
     _statusDecoder[i].Init();
-
-  CCoderReleaser releaser(this);
 
   Byte prevByte = 0;
   UInt32 processedBytes = 0;
@@ -369,18 +370,13 @@ HRESULT CDecoder::CodeReal(ISequentialInStream **inStreams,
   }
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream **inStreams,
-      const UInt64 **inSizes,
-      UInt32 numInStreams,
-      ISequentialOutStream **outStreams,
-      const UInt64 **outSizes,
-      UInt32 numOutStreams,
-      ICompressProgressInfo *progress)
+STDMETHODIMP CDecoder::Code(ISequentialInStream **inStreams, const UInt64 **inSizes, UInt32 numInStreams,
+    ISequentialOutStream **outStreams, const UInt64 **outSizes, UInt32 numOutStreams,
+    ICompressProgressInfo *progress)
 {
   try
   {
-    return CodeReal(inStreams, inSizes, numInStreams,
-        outStreams, outSizes,numOutStreams, progress);
+    return CodeReal(inStreams, inSizes, numInStreams, outStreams, outSizes,numOutStreams, progress);
   }
   catch(const CInBufferException &e) { return e.ErrorCode; }
   catch(const COutBufferException &e) { return e.ErrorCode; }

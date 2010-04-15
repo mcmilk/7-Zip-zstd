@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/Alloc.h"
+
 #include "Common/Buffer.h"
 #include "Common/ComTry.h"
 #include "Common/Defs.h"
@@ -31,8 +33,6 @@ namespace NArchive {
 namespace NCab {
 
 // #define _CAB_DETAILS
-
-static const UInt32 kMaxTempBufSize = 1 << 20;
 
 #ifdef _CAB_DETAILS
 enum
@@ -344,9 +344,10 @@ private:
   const CMvDatabaseEx *m_Database;
   const CRecordVector<bool> *m_ExtractStatuses;
   
-  CByteBuffer TempBuf;
+  Byte *TempBuf;
+  UInt32 TempBufSize;
+  int NumIdenticalFiles;
   bool TempBufMode;
-  bool IsSupported;
   UInt32 m_BufStartFolderOffset;
 
   int m_StartIndex;
@@ -362,12 +363,21 @@ private:
   UInt64 m_FolderSize;
   UInt64 m_PosInFolder;
 
+  void FreeTempBuf()
+  {
+    ::MyFree(TempBuf);
+    TempBuf = NULL;
+  }
+
   HRESULT OpenFile();
+  HRESULT CloseFileWithResOp(Int32 resOp);
   HRESULT CloseFile();
   HRESULT Write2(const void *data, UInt32 size, UInt32 *processedSize, bool isOK);
 public:
   HRESULT WriteEmptyFiles();
 
+  CFolderOutStream(): TempBuf(NULL) {}
+  ~CFolderOutStream() { FreeTempBuf(); }
   void Init(
       const CMvDatabaseEx *database,
       const CRecordVector<bool> *extractStatuses,
@@ -403,54 +413,80 @@ void CFolderOutStream::Init(
   m_FileIsOpen = false;
   m_IsOk = true;
   TempBufMode = false;
+  NumIdenticalFiles = 0;
+}
+
+HRESULT CFolderOutStream::CloseFileWithResOp(Int32 resOp)
+{
+  m_RealOutStream.Release();
+  m_FileIsOpen = false;
+  NumIdenticalFiles--;
+  return m_ExtractCallback->SetOperationResult(resOp);
 }
 
 HRESULT CFolderOutStream::CloseFile()
 {
-  m_RealOutStream.Release();
-  HRESULT res = m_ExtractCallback->SetOperationResult(m_IsOk ?
+  return CloseFileWithResOp(m_IsOk ?
       NExtract::NOperationResult::kOK:
       NExtract::NOperationResult::kDataError);
-  m_FileIsOpen = false;
-  return res;
 }
 
 HRESULT CFolderOutStream::OpenFile()
 {
-  Int32 askMode = (*m_ExtractStatuses)[m_CurrentIndex] ? (m_TestMode ?
-      NExtract::NAskMode::kTest :
-      NExtract::NAskMode::kExtract) :
-      NExtract::NAskMode::kSkip;
-  
-  if (!TempBufMode)
+  if (NumIdenticalFiles == 0)
   {
     const CMvItem &mvItem = m_Database->Items[m_StartIndex + m_CurrentIndex];
     const CItem &item = m_Database->Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
-    int curIndex = m_CurrentIndex + 1;
-    for (; curIndex < m_ExtractStatuses->Size(); curIndex++)
-      if ((*m_ExtractStatuses)[curIndex])
-      {
-        const CMvItem &mvItem2 = m_Database->Items[m_StartIndex + curIndex];
-        const CItem &item2 = m_Database->Volumes[mvItem2.VolumeIndex].Items[mvItem2.ItemIndex];
-        if (item.Offset != item2.Offset ||
-            item.Size != item2.Size ||
-            item.Size == 0)
-          break;
-      }
-    if (curIndex > m_CurrentIndex + 1)
+    int numExtractItems = 0;
+    int curIndex;
+    for (curIndex = m_CurrentIndex; curIndex < m_ExtractStatuses->Size(); curIndex++)
     {
-      size_t oldCapacity = TempBuf.GetCapacity();
-      IsSupported = (item.Size <= kMaxTempBufSize);
-      if (item.Size > oldCapacity && IsSupported)
+      const CMvItem &mvItem2 = m_Database->Items[m_StartIndex + curIndex];
+      const CItem &item2 = m_Database->Volumes[mvItem2.VolumeIndex].Items[mvItem2.ItemIndex];
+      if (item.Offset != item2.Offset ||
+          item.Size != item2.Size ||
+          item.Size == 0)
+        break;
+      if (!m_TestMode && (*m_ExtractStatuses)[curIndex])
+        numExtractItems++;
+    }
+    NumIdenticalFiles = (curIndex - m_CurrentIndex);
+    if (NumIdenticalFiles == 0)
+      NumIdenticalFiles = 1;
+    TempBufMode = false;
+    if (numExtractItems > 1)
+    {
+      if (!TempBuf || item.Size > TempBufSize)
       {
-        TempBuf.SetCapacity(0);
-        TempBuf.SetCapacity(item.Size);
+        FreeTempBuf();
+        TempBuf = (Byte *)MyAlloc(item.Size);
+        TempBufSize = item.Size;
+        if (TempBuf == NULL)
+          return E_OUTOFMEMORY;
       }
       TempBufMode = true;
       m_BufStartFolderOffset = item.Offset;
     }
+    else if (numExtractItems == 1)
+    {
+      while (NumIdenticalFiles && !(*m_ExtractStatuses)[m_CurrentIndex])
+      {
+        CMyComPtr<ISequentialOutStream> stream;
+        RINOK(m_ExtractCallback->GetStream(m_StartIndex + m_CurrentIndex, &stream, NExtract::NAskMode::kSkip));
+        if (stream)
+          return E_FAIL;
+        RINOK(m_ExtractCallback->PrepareOperation(NExtract::NAskMode::kSkip));
+        m_CurrentIndex++;
+        m_FileIsOpen = true;
+        CloseFile();
+      }
+    }
   }
 
+  Int32 askMode = (*m_ExtractStatuses)[m_CurrentIndex] ? (m_TestMode ?
+      NExtract::NAskMode::kTest :
+      NExtract::NAskMode::kExtract) :
+      NExtract::NAskMode::kSkip;
   RINOK(m_ExtractCallback->GetStream(m_StartIndex + m_CurrentIndex, &m_RealOutStream, askMode));
   if (!m_RealOutStream && !m_TestMode)
     askMode = NExtract::NAskMode::kSkip;
@@ -499,7 +535,7 @@ HRESULT CFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *processe
           res = m_RealOutStream->Write((const Byte *)data, numBytesToWrite, &processedSizeLocal);
           numBytesToWrite = processedSizeLocal;
         }
-        if (TempBufMode && IsSupported)
+        if (TempBufMode && TempBuf)
           memcpy(TempBuf + (m_PosInFolder - m_BufStartFolderOffset), data, numBytesToWrite);
       }
       realProcessed += numBytesToWrite;
@@ -513,38 +549,27 @@ HRESULT CFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *processe
         return res;
       if (m_RemainFileSize == 0)
       {
-        m_RealOutStream.Release();
         RINOK(CloseFile());
 
-        if (TempBufMode)
+        while (NumIdenticalFiles)
         {
-          while (m_CurrentIndex < m_ExtractStatuses->Size())
+          HRESULT result = OpenFile();
+          m_FileIsOpen = true;
+          m_CurrentIndex++;
+          if (result == S_OK && m_RealOutStream && TempBuf)
+            result = WriteStream(m_RealOutStream, TempBuf, (size_t)(m_PosInFolder - m_BufStartFolderOffset));
+          
+          if (!TempBuf && TempBufMode && m_RealOutStream)
           {
-            const CMvItem &mvItem = m_Database->Items[m_StartIndex + m_CurrentIndex];
-            const CItem &item = m_Database->Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
-            if (item.Offset != m_BufStartFolderOffset)
-              break;
-            HRESULT result = OpenFile();
-            m_FileIsOpen = true;
-            m_CurrentIndex++;
-            m_IsOk = true;
-            if (result == S_OK && m_RealOutStream && IsSupported)
-              result = WriteStream(m_RealOutStream, TempBuf, item.Size);
-
-            if (IsSupported)
-            {
-              RINOK(CloseFile());
-              RINOK(result);
-            }
-            else
-            {
-              m_RealOutStream.Release();
-              RINOK(m_ExtractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
-              m_FileIsOpen = false;
-            }
+            RINOK(CloseFileWithResOp(NExtract::NOperationResult::kUnSupportedMethod));
           }
-          TempBufMode = false;
+          else
+          {
+            RINOK(CloseFile());
+          }
+          RINOK(result);
         }
+        TempBufMode = false;
       }
       if (realProcessed > 0)
         break; // with this break this function works as Write-Part

@@ -275,6 +275,7 @@ struct CPROPIDToName
 
 static CPROPIDToName kPROPIDToName[] =
 {
+  { kpidPath, NMessageID::kPath },
   { kpidName, NMessageID::kName },
   { kpidExtension, NMessageID::kExtension },
   { kpidIsDir, NMessageID::kIsFolder },
@@ -501,6 +502,32 @@ static AString PropToString2(const NCOM::CPropVariant &prop, PROPID propID)
   return s;
 }
 
+static void AddPropertyString(InfoPanelLine *lines, int &numItems, PROPID propID, const wchar_t *name,
+    const NCOM::CPropVariant &prop)
+{
+  if (prop.vt != VT_EMPTY)
+  {
+    AString val = PropToString2(prop, propID);
+    if (!val.IsEmpty())
+    {
+      InfoPanelLine &item = lines[numItems++];
+      COPY_STR_LIMITED(item.Text, GetNameOfProp2(propID, name));
+      COPY_STR_LIMITED(item.Data, val);
+    }
+  }
+}
+
+static void InsertSeparator(InfoPanelLine *lines, int &numItems)
+{
+  if (numItems < kNumInfoLinesMax)
+  {
+    InfoPanelLine &item = lines[numItems++];
+    MyStringCopy(item.Text, "");
+    MyStringCopy(item.Data, "");
+    item.Separator = TRUE;
+  }
+}
+
 void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
 {
   info->StructSize = sizeof(*info);
@@ -574,44 +601,71 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
     }
   }
 
+  /*
   if (numItems < kNumInfoLinesMax)
   {
-    InfoPanelLine &item = m_InfoLines[numItems++];
-    MyStringCopy(item.Text, "");
-    MyStringCopy(item.Data, "");
-    item.Separator = TRUE;
+    InsertSeparator(m_InfoLines, numItems);
   }
+  */
 
   {
-    CMyComPtr<IGetFolderArchiveProperties> getFolderArchiveProperties;
-    _folder.QueryInterface(IID_IGetFolderArchiveProperties, &getFolderArchiveProperties);
-    if (getFolderArchiveProperties)
+    CMyComPtr<IGetFolderArcProps> getFolderArcProps;
+    _folder.QueryInterface(IID_IGetFolderArcProps, &getFolderArcProps);
+    if (getFolderArcProps)
     {
-      CMyComPtr<IFolderArchiveProperties> getProps;
-      getFolderArchiveProperties->GetFolderArchiveProperties(&getProps);
+      CMyComPtr<IFolderArcProps> getProps;
+      getFolderArcProps->GetFolderArcProps(&getProps);
       if (getProps)
       {
-        UInt32 numProps;
-        if (getProps->GetNumberOfArchiveProperties(&numProps) == S_OK)
+        UInt32 numLevels;
+        if (getProps->GetArcNumLevels(&numLevels) != S_OK)
+          numLevels = 0;
+        for (UInt32 level2 = 0; level2 < numLevels; level2++)
         {
-          /*
-          if (numProps > 0)
-            message += kSeparator;
-          */
-          for (UInt32 i = 0; i < numProps && numItems < kNumInfoLinesMax; i++)
           {
-            CMyComBSTR name;
-            PROPID propID;
-            VARTYPE vt;
-            if (getProps->GetArchivePropertyInfo(i, &name, &propID, &vt) != S_OK)
-              continue;
-            NCOM::CPropVariant prop;
-            if (getProps->GetArchiveProperty(propID, &prop) != S_OK || prop.vt == VT_EMPTY)
-              continue;
-            InfoPanelLine &item = m_InfoLines[numItems++];
-            COPY_STR_LIMITED(item.Text, GetNameOfProp2(propID, name));
-            COPY_STR_LIMITED(item.Data, PropToString2(prop, propID));
-
+            UInt32 level = numLevels - 1 - level2;
+            UInt32 numProps;
+            if (getProps->GetArcNumProps(level, &numProps) == S_OK)
+            {
+              InsertSeparator(m_InfoLines, numItems);
+              for (Int32 i = -2; i < (Int32)numProps && numItems < kNumInfoLinesMax; i++)
+              {
+                CMyComBSTR name;
+                PROPID propID;
+                VARTYPE vt;
+                if (i == -2)
+                  propID = kpidPath;
+                else if (i == -1)
+                  propID = kpidType;
+                else if (getProps->GetArcPropInfo(level, i, &name, &propID, &vt) != S_OK)
+                  continue;
+                NCOM::CPropVariant prop;
+                if (getProps->GetArcProp(level, propID, &prop) != S_OK)
+                  continue;
+                AddPropertyString(m_InfoLines, numItems, propID, name, prop);
+              }
+            }
+          }
+          if (level2 != numLevels - 1)
+          {
+            UInt32 level = numLevels - 1 - level2;
+            UInt32 numProps;
+            if (getProps->GetArcNumProps2(level, &numProps) == S_OK)
+            {
+              InsertSeparator(m_InfoLines, numItems);
+              for (Int32 i = 0; i < (Int32)numProps && numItems < kNumInfoLinesMax; i++)
+              {
+                CMyComBSTR name;
+                PROPID propID;
+                VARTYPE vt;
+                if (getProps->GetArcPropInfo2(level, i, &name, &propID, &vt) != S_OK)
+                  continue;
+                NCOM::CPropVariant prop;
+                if (getProps->GetArcProp2(level, propID, &prop) != S_OK)
+                  continue;
+                AddPropertyString(m_InfoLines, numItems, propID, name, prop);
+              }
+            }
           }
         }
       }

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "9" ?>
-<?define VerMinor = "12" ?>
+<?define VerMinor = "13" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -290,6 +290,7 @@
               <File Id="th.txt" Name="th.txt" />
               <File Id="tr.txt" Name="tr.txt" />
               <File Id="tt.txt" Name="tt.txt" />
+              <File Id="ug.txt" Name="ug.txt" />
               <File Id="uk.txt" Name="uk.txt" />
               <File Id="uz.txt" Name="uz.txt" />
               <File Id="va.txt" Name="va.txt" />

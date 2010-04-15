@@ -1,42 +1,31 @@
 // PluginInterface.h
 
-#ifndef __PLUGININTERFACE_H
-#define __PLUGININTERFACE_H
+#ifndef __PLUGIN_INTERFACE_H
+#define __PLUGIN_INTERFACE_H
 
-#include "Common/MyString.h"
+/*
+#include "../../../Common/Types.h"
+#include "../../IDecl.h"
 
-// {23170F69-40C1-278D-0000-000100010000}
-DEFINE_GUID(IID_IInitContextMenu,
-0x23170F69, 0x40C1, 0x278D, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278D-0000-000100010000")
-IInitContextMenu: public IUnknown
+#define PLUGIN_INTERFACE(i, x) DECL_INTERFACE(i, 0x0A, x)
+
+PLUGIN_INTERFACE(IInitContextMenu, 0x00)
 {
-public:
-  STDMETHOD(InitContextMenu)(const wchar_t *aFolder, const wchar_t **aNames, UINT32 aNumFiles) PURE;
-
+  STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles) PURE;
 };
 
-// {23170F69-40C1-278D-0000-000100020100}
-DEFINE_GUID(IID_IPluginOptionsCallback,
-0x23170F69, 0x40C1, 0x278D, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278D-0000-000100020000")
-IPluginOptionsCallback: public IUnknown
+PLUGIN_INTERFACE(IPluginOptionsCallback, 0x01)
 {
-public:
   STDMETHOD(GetProgramFolderPath)(BSTR *value) PURE;
   STDMETHOD(GetProgramPath)(BSTR *value) PURE;
   STDMETHOD(GetRegistryCUPath)(BSTR *value) PURE;
 };
 
-// {23170F69-40C1-278D-0000-000100020000}
-DEFINE_GUID(IID_IPluginOptions,
-0x23170F69, 0x40C1, 0x278D, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00);
-MIDL_INTERFACE("23170F69-40C1-278D-0000-000100020000")
-IPluginOptions: public IUnknown
+PLUGIN_INTERFACE(IPluginOptions, 0x02)
 {
-public:
   STDMETHOD(PluginOptions)(HWND hWnd, IPluginOptionsCallback *callback) PURE;
   // STDMETHOD(GetFileExtensions)(BSTR *extensions) PURE;
 };
+*/
 
 #endif

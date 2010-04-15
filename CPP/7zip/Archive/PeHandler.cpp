@@ -145,7 +145,7 @@ struct COptHeader
   // UInt32 AddressOfEntryPoint;
   // UInt32 BaseOfCode;
   // UInt32 BaseOfData32;
-  // UInt64 ImageBase;
+  UInt64 ImageBase;
 
   UInt32 SectAlign;
   UInt32 FileAlign;
@@ -202,8 +202,8 @@ bool COptHeader::Parse(const Byte *p, UInt32 size)
 
   // AddressOfEntryPoint = Get32(p + 16);
   // BaseOfCode = Get32(p + 20);
-  // BaseOfData32 = Get32(p + 24);
-  // ImageBase = hdr64 ? GetUi64(p + 24) :Get32(p + 28);
+  // BaseOfData32 = hdr64 ? 0: Get32(p + 24);
+  ImageBase = hdr64 ? GetUi64(p + 24) : Get32(p + 28);
 
   SectAlign = Get32(p + 32);
   FileAlign = Get32(p + 36);
@@ -625,6 +625,10 @@ enum
   kpidStackCommit,
   kpidHeapReserve,
   kpidHeapCommit,
+  kpidImageBase
+  // kpidAddressOfEntryPoint,
+  // kpidBaseOfCode,
+  // kpidBaseOfData32,
 };
 
 STATPROPSTG kArcProps[] =
@@ -652,6 +656,10 @@ STATPROPSTG kArcProps[] =
   { L"Stack Commit", kpidStackCommit, VT_UI8},
   { L"Heap Reserve", kpidHeapReserve, VT_UI8},
   { L"Heap Commit", kpidHeapCommit, VT_UI8},
+  { L"Image Base", kpidImageBase, VT_UI8}
+  // { L"Address Of Entry Point", kpidAddressOfEntryPoint, VT_UI8},
+  // { L"Base Of Code", kpidBaseOfCode, VT_UI8},
+  // { L"Base Of Data", kpidBaseOfData32, VT_UI8},
 };
 
 STATPROPSTG kProps[] =
@@ -720,6 +728,12 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidStackCommit: prop = _optHeader.StackCommit; break;
     case kpidHeapReserve: prop = _optHeader.HeapReserve; break;
     case kpidHeapCommit: prop = _optHeader.HeapCommit; break;
+
+    case kpidImageBase: prop = _optHeader.ImageBase; break;
+    // case kpidAddressOfEntryPoint: prop = _optHeader.AddressOfEntryPoint; break;
+    // case kpidBaseOfCode: prop = _optHeader.BaseOfCode; break;
+    // case kpidBaseOfData32: if (!_optHeader.Is64Bit()) prop = _optHeader.BaseOfData32; break;
+
     case kpidMainSubfile: if (_mainSubfile >= 0) prop = (UInt32)_mainSubfile; break;
   }
   prop.Detach(value);
@@ -1393,7 +1407,8 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   _parseResources = true;
 
   UInt64 mainSize = 0, mainSize2 = 0;
-  for (int i = 0; i < _sections.Size(); i++)
+  int i;
+  for (i = 0; i < _sections.Size(); i++)
   {
     const CSection &sect = _sections[i];
     CMixItem mixItem;
@@ -1469,8 +1484,20 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
     }
     _mixItems.Add(mixItem);
   }
+  
   if (mainSize2 >= (1 << 20) && mainSize < mainSize2 * 2)
     _mainSubfile = -1;
+
+  for (i = 0; i < _mixItems.Size(); i++)
+  {
+    const CMixItem &mixItem = _mixItems[i];
+    if (mixItem.StringIndex < 0 && mixItem.ResourceIndex < 0 && _sections[mixItem.SectionIndex].Name == "_winzip_")
+    {
+      _mainSubfile = i;
+      break;
+    }
+  }
+
   return S_OK;
 }
 

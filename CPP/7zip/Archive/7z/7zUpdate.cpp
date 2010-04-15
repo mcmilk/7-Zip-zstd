@@ -382,6 +382,12 @@ static void MakeExeMethod(const CCompressionMethodMode &method,
       prop.Value = kNumFastBytesForBCJ2_LZMA;
       methodFull.Props.Add(prop);
     }
+    {
+      CProp prop;
+      prop.Id = NCoderPropID::kNumThreads;
+      prop.Value = (UInt32)1;
+      methodFull.Props.Add(prop);
+    }
 
     exeMethod.Methods.Add(methodFull);
     exeMethod.Methods.Add(methodFull);

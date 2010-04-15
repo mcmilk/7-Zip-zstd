@@ -1290,6 +1290,7 @@ HRESULT CInArchive::Open2(
   _headerIsCompressed = true;
   IsSolid = true;
   FilterFlag = false;
+  DictionarySize = 1;
 
   UInt32 compressedHeaderSize = Get32(sig);
   

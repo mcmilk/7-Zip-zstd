@@ -502,7 +502,7 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
       {
         const CArc &arc = archiveLink.Arcs[i];
         
-        g_StdOut << "----\n";
+        g_StdOut << "--\n";
         PrintPropPair(L"Path", arc.Path);
         PrintPropPair(L"Type", codecs->Formats[arc.FormatIndex].Name);
         UInt32 numProps;
@@ -524,6 +524,30 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
               PrintPropPair(GetPropName(propID, name), s);
           }
         }
+        if (i != archiveLink.Arcs.Size() - 1)
+        {
+          UInt32 numProps;
+          g_StdOut << "----\n";
+          if (archive->GetNumberOfProperties(&numProps) == S_OK)
+          {
+            UInt32 mainIndex = archiveLink.Arcs[i + 1].SubfileIndex;
+            for (UInt32 j = 0; j < numProps; j++)
+            {
+              CMyComBSTR name;
+              PROPID propID;
+              VARTYPE vt;
+              if (archive->GetPropertyInfo(j, &name, &propID, &vt) != S_OK)
+                continue;
+              NCOM::CPropVariant prop;
+              if (archive->GetProperty(mainIndex, propID, &prop) != S_OK)
+                continue;
+              UString s = ConvertPropertyToString(prop, propID);
+              if (!s.IsEmpty())
+                PrintPropPair(GetPropName(propID, name), s);
+            }
+          }
+        }
+        
       }
       g_StdOut << endl;
       if (techMode)

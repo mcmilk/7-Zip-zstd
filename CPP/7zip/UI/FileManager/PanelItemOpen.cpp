@@ -67,6 +67,7 @@ public:
 HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
     const CTempFileInfo &tempFileInfo,
     const UString &virtualFilePath,
+    const UString &arcFormat,
     bool &encrypted)
 {
   encrypted = false;
@@ -95,6 +96,7 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   UString password;
   RINOK(OpenFileFolderPlugin(inStream,
       folderLink.FilePath.IsEmpty() ? virtualFilePath : folderLink.FilePath,
+      arcFormat,
       &library, &newFolder, GetParent(), encrypted, password));
  
   folderLink.Password = password;
@@ -114,20 +116,20 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   return S_OK;
 }
 
-HRESULT CPanel::OpenItemAsArchive(const UString &name, bool &encrypted)
+HRESULT CPanel::OpenItemAsArchive(const UString &name, const UString &arcFormat, bool &encrypted)
 {
   CTempFileInfo tfi;
   tfi.ItemName = name;
   tfi.FolderPath = _currentFolderPrefix;
   tfi.FilePath = _currentFolderPrefix + name;
-  return OpenItemAsArchive(NULL, tfi, _currentFolderPrefix + name, encrypted);
+  return OpenItemAsArchive(NULL, tfi, _currentFolderPrefix + name, arcFormat, encrypted);
 }
 
 HRESULT CPanel::OpenItemAsArchive(int index)
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
   bool encrypted;
-  RINOK(OpenItemAsArchive(GetItemRelPath(index), encrypted));
+  RINOK(OpenItemAsArchive(GetItemRelPath(index), UString(), encrypted));
   RefreshListCtrl();
   return S_OK;
 }
@@ -575,7 +577,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
         if (subStream)
         {
           bool encrypted;
-          if (OpenItemAsArchive(subStream, tempFileInfo, fullVirtPath, encrypted) == S_OK)
+          if (OpenItemAsArchive(subStream, tempFileInfo, fullVirtPath, UString(), encrypted) == S_OK)
           {
             tempDirectory.DisableDeleting();
             RefreshListCtrl();
@@ -623,7 +625,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   if (tryAsArchive)
   {
     bool encrypted;
-    if (OpenItemAsArchive(NULL, tempFileInfo, fullVirtPath, encrypted) == S_OK)
+    if (OpenItemAsArchive(NULL, tempFileInfo, fullVirtPath, UString(), encrypted) == S_OK)
     {
       tempDirectory.DisableDeleting();
       RefreshListCtrl();

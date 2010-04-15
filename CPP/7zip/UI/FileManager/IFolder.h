@@ -112,32 +112,36 @@ FOLDER_INTERFACE(IFolderProperties, 0x0E)
   INTERFACE_FolderProperties(PURE)
 };
 
-#define INTERFACE_IFolderArchiveProperties(x) \
-  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) x; \
-  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProperties) x; \
-  STDMETHOD(GetArchivePropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x;
+#define INTERFACE_IFolderArcProps(x) \
+  STDMETHOD(GetArcNumLevels)(UInt32 *numLevels) x; \
+  STDMETHOD(GetArcProp)(UInt32 level, PROPID propID, PROPVARIANT *value) x; \
+  STDMETHOD(GetArcNumProps)(UInt32 level, UInt32 *numProps) x; \
+  STDMETHOD(GetArcPropInfo)(UInt32 level, UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x; \
+  STDMETHOD(GetArcProp2)(UInt32 level, PROPID propID, PROPVARIANT *value) x; \
+  STDMETHOD(GetArcNumProps2)(UInt32 level, UInt32 *numProps) x; \
+  STDMETHOD(GetArcPropInfo2)(UInt32 level, UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x; \
 
-FOLDER_INTERFACE(IFolderArchiveProperties, 0x0C)
+FOLDER_INTERFACE(IFolderArcProps, 0x10)
 {
-  INTERFACE_IFolderArchiveProperties(PURE)
+  INTERFACE_IFolderArcProps(PURE)
 };
 
-FOLDER_INTERFACE(IGetFolderArchiveProperties, 0x0D)
+FOLDER_INTERFACE(IGetFolderArcProps, 0x11)
 {
-  STDMETHOD(GetFolderArchiveProperties)(IFolderArchiveProperties **object) PURE;
+  STDMETHOD(GetFolderArcProps)(IFolderArcProps **object) PURE;
 };
 
 #define FOLDER_MANAGER_INTERFACE(i, x)  DECL_INTERFACE(i, 9, x)
 
 #define INTERFACE_IFolderManager(x) \
-  STDMETHOD(OpenFolderFile)(IInStream *inStream, const wchar_t *filePath, IFolderFolder **resultFolder, IProgress *progress) x; \
+  STDMETHOD(OpenFolderFile)(IInStream *inStream, const wchar_t *filePath, const wchar_t *arcFormat, IFolderFolder **resultFolder, IProgress *progress) x; \
   STDMETHOD(GetExtensions)(BSTR *extensions) x; \
   STDMETHOD(GetIconPath)(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex) x; \
   
   // STDMETHOD(GetTypes)(BSTR *types) PURE;
   // STDMETHOD(CreateFolderFile)(const wchar_t *type, const wchar_t *filePath, IProgress *progress) PURE;
             
-FOLDER_MANAGER_INTERFACE(IFolderManager, 0x04)
+FOLDER_MANAGER_INTERFACE(IFolderManager, 0x05)
 {
   INTERFACE_IFolderManager(PURE);
 };

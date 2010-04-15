@@ -23,20 +23,20 @@ using namespace NWindows;
 namespace NArchive {
 namespace NNsis {
 
-static const wchar_t *kBcjMethod = L"BCJ";
-static const wchar_t *kUnknownMethod = L"Unknown";
+static const char *kBcjMethod = "BCJ";
+static const char *kUnknownMethod = "Unknown";
 
-static const wchar_t *kMethods[] =
+static const char *kMethods[] =
 {
-  L"Copy",
-  L"Deflate",
-  L"BZip2",
-  L"LZMA"
+  "Copy",
+  "Deflate",
+  "BZip2",
+  "LZMA"
 };
 
 static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
 
-STATPROPSTG kProps[] =
+static STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
@@ -46,7 +46,7 @@ STATPROPSTG kProps[] =
   { NULL, kpidSolid, VT_BOOL}
 };
 
-STATPROPSTG kArcProps[] =
+static STATPROPSTG kArcProps[] =
 {
   { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidSolid, VT_BOOL}
@@ -116,50 +116,45 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-static UString ConvertUInt32ToString(UInt32 value)
+static AString UInt32ToString(UInt32 value)
 {
-  wchar_t buffer[32];
-  ConvertUInt64ToString(value, buffer);
+  char buffer[16];
+  ConvertUInt32ToString(value, buffer);
   return buffer;
 }
 
-static UString GetStringForSizeValue(UInt32 value)
+static AString GetStringForSizeValue(UInt32 value)
 {
   for (int i = 31; i >= 0; i--)
-    if ((UInt32(1) << i) == value)
-      return ConvertUInt32ToString(i);
-  UString result;
+    if (((UInt32)1 << i) == value)
+      return UInt32ToString(i);
+  char c = 'b';
   if (value % (1 << 20) == 0)
   {
-    result += ConvertUInt32ToString(value >> 20);
-    result += L"m";
+    value >>= 20;
+    c = 'm';
   }
   else if (value % (1 << 10) == 0)
   {
-    result += ConvertUInt32ToString(value >> 10);
-    result += L"k";
+    value >>= 10;
+    c = 'k';
   }
-  else
-  {
-    result += ConvertUInt32ToString(value);
-    result += L"b";
-  }
-  return result;
+  return UInt32ToString(value) + c;
 }
 
-UString CHandler::GetMethod(bool useItemFilter, UInt32 dictionary) const
+AString CHandler::GetMethod(bool useItemFilter, UInt32 dictionary) const
 {
   NMethodType::EEnum methodIndex = _archive.Method;
-  UString method;
+  AString method;
   if (_archive.IsSolid && _archive.UseFilter || !_archive.IsSolid && useItemFilter)
   {
     method += kBcjMethod;
-    method += L" ";
+    method += ' ';
   }
   method += (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
   if (methodIndex == NMethodType::kLZMA)
   {
-    method += L":";
+    method += ':';
     method += GetStringForSizeValue(_archive.IsSolid ? _archive.DictionarySize: dictionary);
   }
   return method;

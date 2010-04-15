@@ -161,8 +161,8 @@ public:
   void OnSetSameFolder(int srcPanelIndex);
   void OnSetSubFolder(int srcPanelIndex);
 
-  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, bool &archiveIsOpened, bool &encrypted);
-  HRESULT Create(HWND hwnd, const UString &mainPath, int xSizes[2], bool &archiveIsOpened, bool &encrypted);
+  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted);
+  HRESULT Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool &archiveIsOpened, bool &encrypted);
   void Read();
   void Save();
   void Release();

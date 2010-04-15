@@ -44,7 +44,7 @@ public:
   void PrepareWriteCompressedData2(UInt16 fileNameLength, UInt64 unPackSize, UInt64 packSize, bool aesEncryption);
   void WriteLocalHeader(const CLocalItem &item);
 
-  void WriteCentralDir(const CObjectVector<CItem> &items, const CByteBuffer &comment);
+  void WriteCentralDir(const CObjectVector<CItem> &items, const CByteBuffer *comment);
 
   void CreateStreamForCompressing(IOutStream **outStream);
   void CreateStreamForCopying(ISequentialOutStream **outStream);

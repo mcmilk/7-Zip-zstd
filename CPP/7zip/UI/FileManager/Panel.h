@@ -349,7 +349,7 @@ public:
   // PanelFolderChange.cpp
 
   void SetToRootFolder();
-  HRESULT BindToPath(const UString &fullPath, bool &archiveIsOpened, bool &encrypted); // can be prefix
+  HRESULT BindToPath(const UString &fullPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted); // can be prefix
   HRESULT BindToPathAndRefresh(const UString &path);
   void OpenDrivesFolder();
   
@@ -367,6 +367,7 @@ public:
   HRESULT Create(HWND mainWindow, HWND parentWindow,
       UINT id,
       const UString &currentFolderPrefix,
+      const UString &arcFormat,
       CPanelCallback *panelCallback,
       CAppState *appState, bool &archiveIsOpened, bool &encrypted);
   void SetFocusToList();
@@ -465,9 +466,11 @@ public:
   void KillSelection();
 
   UString GetFolderTypeID() const;
+  bool IsFolderTypeEqTo(const wchar_t *s) const;
   bool IsRootFolder() const;
   bool IsFSFolder() const;
   bool IsFSDrivesFolder() const;
+  bool IsArcFolder() const;
   bool IsFsOrDrivesFolder() const { return IsFSFolder() || IsFSDrivesFolder(); }
   bool IsDeviceDrivesPrefix() const { return _currentFolderPrefix == L"\\\\.\\"; }
   bool IsFsOrPureDrivesFolder() const { return IsFSFolder() || (IsFSDrivesFolder() && !IsDeviceDrivesPrefix()); }
@@ -539,8 +542,9 @@ public:
   HRESULT OpenItemAsArchive(IInStream *inStream,
       const CTempFileInfo &tempFileInfo,
       const UString &virtualFilePath,
+      const UString &arcFormat,
       bool &encrypted);
-  HRESULT OpenItemAsArchive(const UString &name, bool &encrypted);
+  HRESULT OpenItemAsArchive(const UString &name, const UString &arcFormat, bool &encrypted);
   HRESULT OpenItemAsArchive(int index);
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       bool editMode);

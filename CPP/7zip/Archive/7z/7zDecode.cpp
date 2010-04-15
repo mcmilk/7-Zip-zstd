@@ -232,7 +232,7 @@ HRESULT CDecoder::Decode(
         size_t size = props.GetCapacity();
         if (size > 0xFFFFFFFF)
           return E_NOTIMPL;
-        if (size > 0)
+        // if (size > 0)
         {
           RINOK(setDecoderProperties->SetDecoderProperties2((const Byte *)props, (UInt32)size));
         }

@@ -71,7 +71,9 @@ static LPCWSTR kClassName = L"7-Zip::Panel";
 
 
 HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
-    const UString &currentFolderPrefix, CPanelCallback *panelCallback, CAppState *appState,
+    const UString &currentFolderPrefix,
+    const UString &arcFormat,
+    CPanelCallback *panelCallback, CAppState *appState,
     bool &archiveIsOpened, bool &encrypted)
 {
   _mainWindow = mainWindow;
@@ -91,7 +93,7 @@ HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
     if (currentFolderPrefix[0] == L'.')
       if (!NFile::NDirectory::MyGetFullPathName(currentFolderPrefix, cfp))
         cfp = currentFolderPrefix;
-  RINOK(BindToPath(cfp, archiveIsOpened, encrypted));
+  RINOK(BindToPath(cfp, arcFormat, archiveIsOpened, encrypted));
 
   if (!CreateEx(0, kClassName, 0, WS_CHILD | WS_VISIBLE,
       0, 0, _xSize, 260,
@@ -715,19 +717,18 @@ UString CPanel::GetFolderTypeID() const
   return L"";
 }
 
-bool CPanel::IsRootFolder() const
+bool CPanel::IsFolderTypeEqTo(const wchar_t *s) const
 {
-  return (GetFolderTypeID() == L"RootFolder");
+  return GetFolderTypeID() == s;
 }
 
-bool CPanel::IsFSFolder() const
+bool CPanel::IsRootFolder() const { return IsFolderTypeEqTo(L"RootFolder"); }
+bool CPanel::IsFSFolder() const { return IsFolderTypeEqTo(L"FSFolder"); }
+bool CPanel::IsFSDrivesFolder() const { return IsFolderTypeEqTo(L"FSDrives"); }
+bool CPanel::IsArcFolder() const
 {
-  return (GetFolderTypeID() == L"FSFolder");
-}
-
-bool CPanel::IsFSDrivesFolder() const
-{
-  return (GetFolderTypeID() == L"FSDrives");
+  UString s = GetFolderTypeID();
+  return s.Left(5) == L"7-Zip";
 }
 
 UString CPanel::GetFsPath() const

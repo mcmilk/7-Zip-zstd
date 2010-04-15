@@ -35,7 +35,7 @@ void CPanel::SetToRootFolder()
   rootFolderSpec->Init();
 }
 
-HRESULT CPanel::BindToPath(const UString &fullPath, bool &archiveIsOpened, bool &encrypted)
+HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted)
 {
   archiveIsOpened = false;
   encrypted = false;
@@ -114,7 +114,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, bool &archiveIsOpened, bool 
       UString fileName;
       if (NDirectory::GetOnlyName(sysPath, fileName))
       {
-        HRESULT res = OpenItemAsArchive(fileName, encrypted);
+        HRESULT res = OpenItemAsArchive(fileName, arcFormat, encrypted);
         if (res != S_FALSE)
         {
           RINOK(res);
@@ -145,7 +145,7 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
   bool archiveIsOpened, encrypted;
-  RINOK(BindToPath(path, archiveIsOpened, encrypted));
+  RINOK(BindToPath(path, UString(), archiveIsOpened, encrypted));
   RefreshListCtrl(UString(), -1, true, UStringVector());
   return S_OK;
 }

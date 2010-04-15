@@ -1,5 +1,5 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2010-03-24 : Igor Pavlov : Public domain */
+2010-03-25 : Igor Pavlov : Public domain */
 
 /* #include <stdio.h> */
 #include <string.h>
@@ -240,9 +240,7 @@ static SRes Progress(ICompressProgress *p, UInt64 inSize, UInt64 outSize)
 
 /* ---------- Lzma2 ---------- */
 
-extern struct _CLzma2Enc;
-
-typedef struct _CLzma2Enc
+typedef struct
 {
   Byte propEncoded;
   CLzma2EncProps props;

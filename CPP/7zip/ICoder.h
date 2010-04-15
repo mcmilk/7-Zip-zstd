@@ -107,6 +107,12 @@ CODER_INTERFACE(ICompressSetOutStreamSize, 0x34)
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize) PURE;
 };
 
+CODER_INTERFACE(ICompressSetBufSize, 0x35)
+{
+  STDMETHOD(SetInBufSize)(UInt32 streamIndex, UInt32 size) PURE;
+  STDMETHOD(SetOutBufSize)(UInt32 streamIndex, UInt32 size) PURE;
+};
+
 CODER_INTERFACE(ICompressFilter, 0x40)
 {
   STDMETHOD(Init)() PURE;

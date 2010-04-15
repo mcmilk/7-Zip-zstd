@@ -278,15 +278,15 @@ struct CArchiveItemPropertyTemp
   VARTYPE Type;
 };
 
-STDMETHODIMP CAgentFolder::GetNumberOfProperties(UInt32 *numProperties)
+STDMETHODIMP CAgentFolder::GetNumberOfProperties(UInt32 *numProps)
 {
   COM_TRY_BEGIN
-  RINOK(_agentSpec->GetArchive()->GetNumberOfProperties(numProperties));
-  *numProperties += kNumProperties;
+  RINOK(_agentSpec->GetArchive()->GetNumberOfProperties(numProps));
+  *numProps += kNumProperties;
   if (!_flatMode)
-    (*numProperties)--;
+    (*numProps)--;
   if (!_agentSpec->_proxyArchive->ThereIsPathProp)
-    (*numProperties)++;
+    (*numProps)++;
   return S_OK;
   COM_TRY_END
 }
@@ -294,8 +294,8 @@ STDMETHODIMP CAgentFolder::GetNumberOfProperties(UInt32 *numProperties)
 STDMETHODIMP CAgentFolder::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)
 {
   COM_TRY_BEGIN
-  UInt32 numProperties;
-  _agentSpec->GetArchive()->GetNumberOfProperties(&numProperties);
+  UInt32 numProps;
+  _agentSpec->GetArchive()->GetNumberOfProperties(&numProps);
   if (!_agentSpec->_proxyArchive->ThereIsPathProp)
   {
     if (index == 0)
@@ -308,7 +308,7 @@ STDMETHODIMP CAgentFolder::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *pro
     index--;
   }
 
-  if (index < numProperties)
+  if (index < numProps)
   {
     RINOK(_agentSpec->GetArchive()->GetPropertyInfo(index, name, propID, varType));
     if (*propID == kpidPath)
@@ -316,7 +316,7 @@ STDMETHODIMP CAgentFolder::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *pro
   }
   else
   {
-    const STATPROPSTG &srcItem = kProperties[index - numProperties];
+    const STATPROPSTG &srcItem = kProperties[index - numProps];
     *propID = srcItem.propid;
     *varType = srcItem.vt;
     *name = 0;
@@ -356,9 +356,9 @@ STDMETHODIMP CAgentFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-STDMETHODIMP CAgentFolder::GetNumberOfFolderProperties(UInt32 *numProperties)
+STDMETHODIMP CAgentFolder::GetNumberOfFolderProperties(UInt32 *numProps)
 {
-  *numProperties = kNumFolderProps;
+  *numProps = kNumFolderProps;
   return S_OK;
 }
 
@@ -374,9 +374,9 @@ STDMETHODIMP CAgentFolder::GetFolderPropertyInfo(UInt32 index, BSTR *name, PROPI
   }
 }
 
-STDMETHODIMP CAgentFolder::GetFolderArchiveProperties(IFolderArchiveProperties **object)
+STDMETHODIMP CAgentFolder::GetFolderArcProps(IFolderArcProps **object)
 {
-  CMyComPtr<IFolderArchiveProperties> temp = _agentSpec;
+  CMyComPtr<IFolderArcProps> temp = _agentSpec;
   *object = temp.Detach();
   return S_OK;
 }
@@ -468,6 +468,7 @@ CAgent::~CAgent()
 STDMETHODIMP CAgent::Open(
     IInStream *inStream,
     const wchar_t *filePath,
+    const wchar_t *arcFormat,
     BSTR *archiveType,
     IArchiveOpenCallback *openArchiveCallback)
 {
@@ -488,7 +489,11 @@ STDMETHODIMP CAgent::Open(
   _compressCodecsInfo = _codecs;
   RINOK(_codecs->Load());
 
-  RINOK(_archiveLink.Open(_codecs, CIntVector(), false, inStream, _archiveFilePath, openArchiveCallback));
+  CIntVector formatIndices;
+  if (!_codecs->FindFormatForArchiveType(arcFormat, formatIndices))
+    return S_FALSE;
+
+  RINOK(_archiveLink.Open(_codecs, formatIndices, false, inStream, _archiveFilePath, openArchiveCallback));
 
   CArc &arc = _archiveLink.Arcs.Back();
   if (!inStream)
@@ -573,10 +578,10 @@ STDMETHODIMP CAgent::Extract(
   COM_TRY_END
 }
 
-STDMETHODIMP CAgent::GetNumberOfProperties(UInt32 *numProperties)
+STDMETHODIMP CAgent::GetNumberOfProperties(UInt32 *numProps)
 {
   COM_TRY_BEGIN
-  return GetArchive()->GetNumberOfProperties(numProperties);
+  return GetArchive()->GetNumberOfProperties(numProps);
   COM_TRY_END
 }
 
@@ -591,25 +596,50 @@ STDMETHODIMP CAgent::GetPropertyInfo(UInt32 index,
   COM_TRY_END
 }
 
-STDMETHODIMP CAgent::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CAgent::GetArcNumLevels(UInt32 *numLevels)
+{
+  *numLevels = _archiveLink.Arcs.Size();
+  return S_OK;
+}
+
+STDMETHODIMP CAgent::GetArcProp(UInt32 level, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  return GetArchive()->GetArchiveProperty(propID, value);
+  NWindows::NCOM::CPropVariant prop;
+  CArc &arc = _archiveLink.Arcs[level];
+  switch(propID)
+  {
+    case kpidType: prop = _codecs->Formats[arc.FormatIndex].Name; break;
+    case kpidPath: prop = arc.Path; break;
+    default: return arc.Archive->GetArchiveProperty(propID, value);
+  }
+  prop.Detach(value);
+  return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CAgent::GetNumberOfArchiveProperties(UInt32 *numProperties)
+STDMETHODIMP CAgent::GetArcNumProps(UInt32 level, UInt32 *numProps)
 {
-  COM_TRY_BEGIN
-  return GetArchive()->GetNumberOfArchiveProperties(numProperties);
-  COM_TRY_END
+  return _archiveLink.Arcs[level].Archive->GetNumberOfArchiveProperties(numProps);
 }
 
-STDMETHODIMP CAgent::GetArchivePropertyInfo(UInt32 index,
-      BSTR *name, PROPID *propID, VARTYPE *varType)
+STDMETHODIMP CAgent::GetArcPropInfo(UInt32 level, UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)
 {
-  COM_TRY_BEGIN
-  return GetArchive()->GetArchivePropertyInfo(index,
-      name, propID, varType);
-  COM_TRY_END
+  return _archiveLink.Arcs[level].Archive->GetArchivePropertyInfo(index, name, propID, varType);
+}
+
+// MainItemProperty
+STDMETHODIMP CAgent::GetArcProp2(UInt32 level, PROPID propID, PROPVARIANT *value)
+{
+  return _archiveLink.Arcs[level - 1].Archive->GetProperty(_archiveLink.Arcs[level].SubfileIndex, propID, value);
+}
+
+STDMETHODIMP CAgent::GetArcNumProps2(UInt32 level, UInt32 *numProps)
+{
+  return _archiveLink.Arcs[level - 1].Archive->GetNumberOfProperties(numProps);
+}
+
+STDMETHODIMP CAgent::GetArcPropInfo2(UInt32 level, UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)
+{
+  return _archiveLink.Arcs[level - 1].Archive->GetPropertyInfo(index, name, propID, varType);
 }

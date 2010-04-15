@@ -398,7 +398,7 @@ static HRESULT Update2St(
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
     const CCompressionMethodMode *options,
-    const CByteBuffer &comment,
+    const CByteBuffer *comment,
     IArchiveUpdateCallback *updateCallback)
 {
   CLocalProgress *lps = new CLocalProgress;
@@ -482,7 +482,7 @@ static HRESULT Update2(
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
     const CCompressionMethodMode *options,
-    const CByteBuffer &comment,
+    const CByteBuffer *comment,
     IArchiveUpdateCallback *updateCallback)
 {
   UInt64 complexity = 0;
@@ -515,8 +515,8 @@ static HRESULT Update2(
     complexity += NFileHeader::kCentralBlockSize;
   }
 
-  if (comment != 0)
-    complexity += comment.GetCapacity();
+  if (comment)
+    complexity += comment->GetCapacity();
   complexity++; // end of central
   updateCallback->SetTotal(complexity);
 
@@ -812,27 +812,27 @@ HRESULT Update(
   if (!outStream)
     return E_NOTIMPL;
 
-  CInArchiveInfo archiveInfo;
-  if(inArchive != 0)
+  if (inArchive)
   {
-    inArchive->GetArchiveInfo(archiveInfo);
-    if (archiveInfo.Base != 0 || !inArchive->IsOkHeaders)
+    if (inArchive->ArcInfo.Base != 0 ||
+        inArchive->ArcInfo.StartPosition != 0 ||
+        !inArchive->IsOkHeaders)
       return E_NOTIMPL;
   }
-  else
-    archiveInfo.StartPosition = 0;
   
   COutArchive outArchive;
   outArchive.Create(outStream);
-  if (archiveInfo.StartPosition > 0)
+  /*
+  if (inArchive && inArchive->ArcInfo.StartPosition > 0)
   {
     CMyComPtr<ISequentialInStream> inStream;
-    inStream.Attach(inArchive->CreateLimitedStream(0, archiveInfo.StartPosition));
+    inStream.Attach(inArchive->CreateLimitedStream(0, inArchive->ArcInfo.StartPosition));
     RINOK(CopyBlockToArchive(inStream, outArchive, NULL));
-    outArchive.MoveBasePosition(archiveInfo.StartPosition);
+    outArchive.MoveBasePosition(inArchive->ArcInfo.StartPosition);
   }
+  */
   CMyComPtr<IInStream> inStream;
-  if(inArchive != 0)
+  if (inArchive)
     inStream.Attach(inArchive->CreateStream());
 
   return Update2(
@@ -840,7 +840,8 @@ HRESULT Update(
       outArchive, inArchive, inStream,
       inputItems, updateItems,
       compressionMethodMode,
-      archiveInfo.Comment, updateCallback);
+      inArchive ? &inArchive->ArcInfo.Comment : NULL,
+      updateCallback);
 }
 
 }}

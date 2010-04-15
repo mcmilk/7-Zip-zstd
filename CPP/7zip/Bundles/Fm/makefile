@@ -65,7 +65,6 @@ FM_OBJS = \
   $O\MessagesDialog.obj \
   $O\OverwriteDialog.obj \
   $O\PasswordDialog.obj \
-  $O\PluginsPage.obj \
   $O\ProgressDialog2.obj \
   $O\SettingsPage.obj \
   $O\SplitDialog.obj \

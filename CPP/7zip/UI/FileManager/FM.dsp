@@ -442,14 +442,6 @@ SOURCE=.\OptionsDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\PluginsPage.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\PluginsPage.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\SettingsPage.cpp
 # End Source File
 # Begin Source File

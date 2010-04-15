@@ -4,8 +4,6 @@
 #ifndef __COMPRESS_PPMD_ZIP_H
 #define __COMPRESS_PPMD_ZIP_H
 
-#include "StdAfx.h"
-
 #include "../../../C/Alloc.h"
 #include "../../../C/Ppmd8.h"
 

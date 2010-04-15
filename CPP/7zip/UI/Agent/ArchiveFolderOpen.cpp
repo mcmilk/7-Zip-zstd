@@ -34,7 +34,8 @@ int CArchiveFolderManager::FindFormat(const UString &type)
   return -1;
 }
 
-STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream, const wchar_t *filePath,
+STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream,
+    const wchar_t *filePath, const wchar_t *arcFormat,
     IFolderFolder **resultFolder, IProgress *progress)
 {
   CMyComPtr<IArchiveOpenCallback> openArchiveCallback;
@@ -45,7 +46,7 @@ STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream, const wc
   }
   CAgent *agent = new CAgent();
   CMyComPtr<IInFolderArchive> archive = agent;
-  RINOK(agent->Open(inStream, filePath, NULL, openArchiveCallback));
+  RINOK(agent->Open(inStream, filePath, arcFormat, NULL, openArchiveCallback));
   return agent->BindToRootFolder(resultFolder);
 }
 

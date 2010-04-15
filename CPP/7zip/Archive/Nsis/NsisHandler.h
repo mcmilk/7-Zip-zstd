@@ -26,7 +26,7 @@ class CHandler:
   bool GetUncompressedSize(int index, UInt32 &size);
   bool GetCompressedSize(int index, UInt32 &size);
 
-  UString GetMethod(bool useItemFilter, UInt32 dictionary) const;
+  AString GetMethod(bool useItemFilter, UInt32 dictionary) const;
 public:
   MY_QUERYINTERFACE_BEGIN2(IInArchive)
   QUERY_ENTRY_ISetCompressCodecsInfo

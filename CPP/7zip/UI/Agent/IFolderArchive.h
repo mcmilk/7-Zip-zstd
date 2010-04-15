@@ -27,7 +27,7 @@ FOLDER_ARCHIVE_INTERFACE(IArchiveFolder, 0x05)
 };
 
 #define INTERFACE_IInFolderArchive(x) \
-  STDMETHOD(Open)(IInStream *inStream, const wchar_t *filePath, BSTR *archiveType, IArchiveOpenCallback *openArchiveCallback) x; \
+  STDMETHOD(Open)(IInStream *inStream, const wchar_t *filePath, const wchar_t *arcFormat, BSTR *archiveTypeRes, IArchiveOpenCallback *openArchiveCallback) x; \
   STDMETHOD(ReOpen)(IArchiveOpenCallback *openArchiveCallback) x; \
   STDMETHOD(Close)() x; \
   STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties) x; \
@@ -37,7 +37,7 @@ FOLDER_ARCHIVE_INTERFACE(IArchiveFolder, 0x05)
       NExtract::NOverwriteMode::EEnum overwriteMode, const wchar_t *path, \
       Int32 testMode, IFolderArchiveExtractCallback *extractCallback2) x; \
 
-FOLDER_ARCHIVE_INTERFACE(IInFolderArchive, 0x0D)
+FOLDER_ARCHIVE_INTERFACE(IInFolderArchive, 0x0E)
 {
   INTERFACE_IInFolderArchive(PURE)
 };
