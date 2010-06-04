@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2009-06-08 : Igor Pavlov : Public domain */
+2010-04-16 : Igor Pavlov : Public domain */
 
 /* #define XZ_DUMP */
 
@@ -858,6 +858,8 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
         }
         break;
       }
+      
+      case XZ_STATE_BLOCK: break; /* to disable GCC warning */
     }
   }
   /*

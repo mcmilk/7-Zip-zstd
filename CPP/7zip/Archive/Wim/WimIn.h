@@ -9,6 +9,8 @@
 #include "../../Compress/CopyCoder.h"
 #include "../../Compress/LzxDecoder.h"
 
+#include "../IArchive.h"
+
 namespace NArchive {
 namespace NWim {
 
@@ -56,7 +58,7 @@ public:
   }
 };
 
-const int kNumHuffmanBits = 16;
+const unsigned kNumHuffmanBits = 16;
 const UInt32 kMatchMinLen = 3;
 const UInt32 kNumLenSlots = 16;
 const UInt32 kNumPosSlots = 16;
@@ -85,8 +87,10 @@ public:
 
 namespace NResourceFlags
 {
-  const Byte Compressed = 4;
+  const Byte kFree = 1;
   const Byte kMetadata = 2;
+  const Byte Compressed = 4;
+  const Byte Spanned = 4;
 }
 
 struct CResource
@@ -96,9 +100,18 @@ struct CResource
   UInt64 UnpackSize;
   Byte Flags;
 
+  void Clear()
+  {
+    PackSize = 0;
+    Offset = 0;
+    UnpackSize = 0;
+    Flags = 0;
+  }
   void Parse(const Byte *p);
-  bool IsCompressed() const { return (Flags & NResourceFlags::Compressed) != 0; }
+  void WriteTo(Byte *p) const;
+  bool IsFree() const { return (Flags & NResourceFlags::kFree) != 0; }
   bool IsMetadata() const { return (Flags & NResourceFlags::kMetadata) != 0; }
+  bool IsCompressed() const { return (Flags & NResourceFlags::Compressed) != 0; }
   bool IsEmpty() const { return (UnpackSize == 0); }
 };
 
@@ -111,30 +124,37 @@ namespace NHeaderFlags
   const UInt32 kLZX = 0x40000;
 }
 
+const UInt32 kWimVersion = 0x010D00;
+const UInt32 kHeaderSizeMax = 0xD0;
+const UInt32 kSignatureSize = 8;
+extern const Byte kSignature[kSignatureSize];
+const unsigned kChunkSizeBits = 15;
+const UInt32 kChunkSize = (1 << kChunkSizeBits);
+
 struct CHeader
 {
-  UInt32 Flags;
   UInt32 Version;
-  // UInt32 ChunkSize;
+  UInt32 Flags;
+  UInt32 ChunkSize;
+  Byte Guid[16];
   UInt16 PartNumber;
   UInt16 NumParts;
   UInt32 NumImages;
-  Byte Guid[16];
   
   CResource OffsetResource;
   CResource XmlResource;
   CResource MetadataResource;
-  /*
   CResource IntegrityResource;
   UInt32 BootIndex;
-  */
 
+  void SetDefaultFields(bool useLZX);
+
+  void WriteTo(Byte *p) const;
   HRESULT Parse(const Byte *p);
   bool IsCompressed() const { return (Flags & NHeaderFlags::kCompression) != 0; }
   bool IsSupported() const { return (!IsCompressed() || (Flags & NHeaderFlags::kLZX) != 0 || (Flags & NHeaderFlags::kXPRESS) != 0 ) ; }
   bool IsLzxMode() const { return (Flags & NHeaderFlags::kLZX) != 0; }
   bool IsSpanned() const { return (!IsCompressed() || (Flags & NHeaderFlags::kSpanned) != 0); }
-
   bool IsNewVersion()const { return (Version > 0x010C00); }
 
   bool AreFromOnArchive(const CHeader &h)
@@ -152,11 +172,16 @@ struct CStreamInfo
   UInt16 PartNumber;
   UInt32 RefCount;
   BYTE Hash[kHashSize];
+
+  void WriteTo(Byte *p) const;
 };
+
+const UInt32 kDirRecordSize = 102;
 
 struct CItem
 {
   UString Name;
+  UString ShortName;
   UInt32 Attrib;
   // UInt32 SecurityId;
   BYTE Hash[kHashSize];
@@ -168,22 +193,39 @@ struct CItem
   // UInt16 NumStreams;
   // UInt16 ShortNameLen;
   int StreamIndex;
+  int Parent;
+  unsigned Order;
   bool HasMetadata;
   CItem(): HasMetadata(true), StreamIndex(-1) {}
-  bool isDir() const { return HasMetadata && ((Attrib & 0x10) != 0); }
+  bool IsDir() const { return HasMetadata && ((Attrib & 0x10) != 0); }
   bool HasStream() const
   {
-    for (int i = 0; i < kHashSize; i++)
+    for (unsigned i = 0; i < kHashSize; i++)
       if (Hash[i] != 0)
         return true;
     return false;
   }
 };
 
-struct CDatabase
+class CDatabase
 {
+  const Byte *DirData;
+  size_t DirSize;
+  size_t DirProcessed;
+  size_t DirStartOffset;
+  int Order;
+  IArchiveOpenCallback *OpenCallback;
+  
+  HRESULT ParseDirItem(size_t pos, int parent);
+  HRESULT ParseImageDirs(const CByteBuffer &buf, int parent);
+
+public:
   CRecordVector<CStreamInfo> Streams;
   CObjectVector<CItem> Items;
+  CIntVector SortedItems;
+  int NumImages;
+  bool SkipRoot;
+  bool ShowImageNumber;
 
   UInt64 GetUnpackSize() const
   {
@@ -205,12 +247,26 @@ struct CDatabase
   {
     Streams.Clear();
     Items.Clear();
+    SortedItems.Clear();
+    NumImages = 0;
+
+    SkipRoot = true;
+    ShowImageNumber = true;
   }
+
+  UString GetItemPath(int index) const;
+
+  HRESULT Open(IInStream *inStream, const CHeader &h, CByteBuffer &xml, IArchiveOpenCallback *openCallback);
+
+  void DetectPathMode()
+  {
+    ShowImageNumber = (NumImages != 1);
+  }
+
+  HRESULT Sort(bool skipRootDir);
 };
 
 HRESULT ReadHeader(IInStream *inStream, CHeader &header);
-HRESULT OpenArchive(IInStream *inStream, const CHeader &header, CByteBuffer &xml, CDatabase &database);
-HRESULT SortDatabase(CDatabase &database);
 
 class CUnpacker
 {

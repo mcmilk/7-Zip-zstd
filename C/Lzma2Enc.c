@@ -1,5 +1,5 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2010-03-25 : Igor Pavlov : Public domain */
+2010-04-16 : Igor Pavlov : Public domain */
 
 /* #include <stdio.h> */
 #include <string.h>
@@ -141,7 +141,7 @@ static SRes Lzma2EncInt_EncodeSubblock(CLzma2EncInt *p, Byte *outBuf,
 
     PRF(printf("               "));
 
-    outBuf[destPos++] = (Byte)(LZMA2_CONTROL_LZMA | (mode << 5) | (u >> 16) & 0x1F);
+    outBuf[destPos++] = (Byte)(LZMA2_CONTROL_LZMA | (mode << 5) | ((u >> 16) & 0x1F));
     outBuf[destPos++] = (Byte)(u >> 8);
     outBuf[destPos++] = (Byte)u;
     outBuf[destPos++] = (Byte)(pm >> 8);

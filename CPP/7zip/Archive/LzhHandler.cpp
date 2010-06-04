@@ -646,7 +646,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     totalUnPacked += item.Size;
     totalPacked += item.PackSize;
   }
-  extractCallback->SetTotal(totalUnPacked);
+  RINOK(extractCallback->SetTotal(totalUnPacked));
 
   UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
   UInt64 currentItemUnPacked, currentItemPacked;

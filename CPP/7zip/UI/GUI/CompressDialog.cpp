@@ -229,6 +229,12 @@ static const CFormatInfo g_Formats[] =
     (1 << 0),
     0, 0,
     false, false, false, false, false, false
+  },
+  {
+    L"wim",
+    (1 << 0),
+    0, 0,
+    false, false, false, false, false, false
   }
 };
 
@@ -1032,7 +1038,7 @@ void CCompressDialog::SetDictionary()
           if (i == 20 && j > 0)
             continue;
           UInt32 dictionary = (1 << i) + (j << (i - 1));
-          if (dictionary >= (1 << 31))
+          if (dictionary > (1 << 30))
             continue;
           AddDictionarySize(dictionary);
           UInt64 decomprSize;

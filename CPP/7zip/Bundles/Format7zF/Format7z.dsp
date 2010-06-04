@@ -2229,6 +2229,10 @@ SOURCE=..\..\Archive\Wim\WimHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Wim\WimHandlerOut.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Wim\WimIn.cpp
 # End Source File
 # Begin Source File

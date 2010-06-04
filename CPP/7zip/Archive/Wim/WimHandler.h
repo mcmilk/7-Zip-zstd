@@ -6,7 +6,6 @@
 #include "Common/MyCom.h"
 #include "Common/MyXml.h"
 
-#include "../IArchive.h"
 #include "WimIn.h"
 
 namespace NArchive {
@@ -40,25 +39,35 @@ struct CXml
 {
   CByteBuffer Data;
   UInt16 VolIndex;
-
   CObjectVector<CImageInfo> Images;
 
+  void ToUnicode(UString &s);
   void Parse();
 };
+
 
 class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {
+  CDatabase _db;
+  CObjectVector<CVolume> _volumes;
+  CObjectVector<CXml> _xmls;
+  int _nameLenForStreams;
+  bool _xmlInComments;
+
 public:
   MY_UNKNOWN_IMP1(IInArchive)
   INTERFACE_IInArchive(;)
+};
 
-private:
-  CDatabase m_Database;
-  CObjectVector<CVolume> m_Volumes;
-  CObjectVector<CXml> m_Xmls;
-  int m_NameLenForStreams;
+class COutHandler:
+  public IOutArchive,
+  public CMyUnknownImp
+{
+public:
+  MY_UNKNOWN_IMP1(IOutArchive)
+  INTERFACE_IOutArchive(;)
 };
 
 }}

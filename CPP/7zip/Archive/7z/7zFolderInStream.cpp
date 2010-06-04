@@ -32,7 +32,6 @@ HRESULT CFolderInStream::OpenStream()
   _filePos = 0;
   while (_fileIndex < _numFiles)
   {
-    _currentSizeIsDefined = false;
     CMyComPtr<ISequentialInStream> stream;
     HRESULT result = _updateCallback->GetStream(_fileIndices[_fileIndex], &stream);
     if (result != S_OK && result != S_FALSE)
@@ -40,26 +39,22 @@ HRESULT CFolderInStream::OpenStream()
     _fileIndex++;
     _inStreamWithHashSpec->SetStream(stream);
     _inStreamWithHashSpec->Init();
-    if (!stream)
+    if (stream)
     {
-      RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
-      Sizes.Add(0);
-      Processed.Add(result == S_OK);
-      AddDigest();
-      continue;
-    }
-    CMyComPtr<IStreamGetSize> streamGetSize;
-    if (stream.QueryInterface(IID_IStreamGetSize, &streamGetSize) == S_OK)
-    {
-      if(streamGetSize)
+      _fileIsOpen = true;
+      CMyComPtr<IStreamGetSize> streamGetSize;
+      stream.QueryInterface(IID_IStreamGetSize, &streamGetSize);
+      if (streamGetSize)
       {
-        _currentSizeIsDefined = true;
         RINOK(streamGetSize->GetSize(&_currentSize));
+        _currentSizeIsDefined = true;
       }
+      return S_OK;
     }
-
-    _fileIsOpen = true;
-    return S_OK;
+    RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
+    Sizes.Add(0);
+    Processed.Add(result == S_OK);
+    AddDigest();
   }
   return S_OK;
 }
@@ -74,6 +69,7 @@ HRESULT CFolderInStream::CloseStream()
   RINOK(_updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
   _inStreamWithHashSpec->ReleaseStream();
   _fileIsOpen = false;
+  _currentSizeIsDefined = false;
   Processed.Add(true);
   Sizes.Add(_filePos);
   AddDigest();
@@ -82,43 +78,40 @@ HRESULT CFolderInStream::CloseStream()
 
 STDMETHODIMP CFolderInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize = 0;
-  while ((_fileIndex < _numFiles || _fileIsOpen) && size > 0)
+  if (processedSize != 0)
+    *processedSize = 0;
+  while (size > 0)
   {
     if (_fileIsOpen)
     {
-      UInt32 localProcessedSize;
-      RINOK(_inStreamWithHash->Read(
-          ((Byte *)data) + realProcessedSize, size, &localProcessedSize));
-      if (localProcessedSize == 0)
+      UInt32 processed2;
+      RINOK(_inStreamWithHash->Read(data, size, &processed2));
+      if (processed2 == 0)
       {
         RINOK(CloseStream());
         continue;
       }
-      realProcessedSize += localProcessedSize;
-      _filePos += localProcessedSize;
-      size -= localProcessedSize;
+      if (processedSize != 0)
+        *processedSize = processed2;
+      _filePos += processed2;
       break;
     }
-    else
-    {
-      RINOK(OpenStream());
-    }
+    if (_fileIndex >= _numFiles)
+      break;
+    RINOK(OpenStream());
   }
-  if (processedSize != 0)
-    *processedSize = realProcessedSize;
   return S_OK;
 }
 
 STDMETHODIMP CFolderInStream::GetSubStreamSize(UInt64 subStream, UInt64 *value)
 {
   *value = 0;
-  int subStreamIndex = (int)subStream;
-  if (subStreamIndex < 0 || subStream > Sizes.Size())
+  int index2 = (int)subStream;
+  if (index2 < 0 || subStream > Sizes.Size())
     return E_FAIL;
-  if (subStreamIndex < Sizes.Size())
+  if (index2 < Sizes.Size())
   {
-    *value= Sizes[subStreamIndex];
+    *value = Sizes[index2];
     return S_OK;
   }
   if (!_currentSizeIsDefined)

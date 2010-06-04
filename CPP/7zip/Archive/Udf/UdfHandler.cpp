@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "Common/ComTry.h"
-#include "Common/NewHandler.h"
 
 #include "Windows/PropVariant.h"
 #include "Windows/Time.h"
@@ -34,7 +33,7 @@ void UdfTimeToFileTime(const CTime &t, NWindows::NCOM::CPropVariant &prop)
   prop = ft;
 }
 
-STATPROPSTG kProps[] =
+static STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
@@ -44,7 +43,7 @@ STATPROPSTG kProps[] =
   { NULL, kpidATime, VT_FILETIME}
 };
 
-STATPROPSTG kArcProps[] =
+static STATPROPSTG kArcProps[] =
 {
   { NULL, kpidComment, VT_BSTR},
   { NULL, kpidClusterSize, VT_UI4},

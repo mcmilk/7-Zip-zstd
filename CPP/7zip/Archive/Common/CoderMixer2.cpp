@@ -87,7 +87,7 @@ CCoderInfo2::CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams):
 {
   InSizes.Reserve(NumInStreams);
   InSizePointers.Reserve(NumInStreams);
-  OutSizePointers.Reserve(NumOutStreams);
+  OutSizes.Reserve(NumOutStreams);
   OutSizePointers.Reserve(NumOutStreams);
 }
 

@@ -49,19 +49,19 @@ private:
   CMyComPtr<IInStream> _stream;
   UInt64 _size;
   UInt32 _crc;
-  bool _wasFinished;
+  // bool _wasFinished;
 public:
   void SetStream(IInStream *stream) { _stream = stream;  }
   void Init()
   {
     _size = 0;
-    _wasFinished = false;
+    // _wasFinished = false;
     _crc = CRC_INIT_VAL;
   }
   void ReleaseStream() { _stream.Release(); }
   UInt32 GetCRC() const { return CRC_GET_DIGEST(_crc); }
   UInt64 GetSize() const { return _size; }
-  bool WasFinished() const { return _wasFinished; }
+  // bool WasFinished() const { return _wasFinished; }
 };
 
 #endif

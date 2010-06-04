@@ -14,13 +14,13 @@ CFolderOutStream::CFolderOutStream()
 }
 
 HRESULT CFolderOutStream::Init(
-    const CArchiveDatabaseEx *archiveDatabase,
+    const CArchiveDatabaseEx *db,
     UInt32 ref2Offset, UInt32 startIndex,
     const CBoolVector *extractStatuses,
     IArchiveExtractCallback *extractCallback,
     bool testMode, bool checkCrc)
 {
-  _db = archiveDatabase;
+  _db = db;
   _ref2Offset = ref2Offset;
   _startIndex = startIndex;
 
@@ -118,6 +118,15 @@ STDMETHODIMP CFolderOutStream::Write(const void *data, UInt32 size, UInt32 *proc
       RINOK(OpenFile());
     }
   }
+  return S_OK;
+}
+
+STDMETHODIMP CFolderOutStream::GetSubStreamSize(UInt64 subStream, UInt64 *value)
+{
+  *value = 0;
+  if ((int)subStream >= _extractStatuses->Size())
+    return S_FALSE;
+  *value = _db->Files[_startIndex + (int)subStream].Size;
   return S_OK;
 }
 

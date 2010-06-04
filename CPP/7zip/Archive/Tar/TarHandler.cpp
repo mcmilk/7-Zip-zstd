@@ -3,8 +3,6 @@
 #include "StdAfx.h"
 
 #include "Common/ComTry.h"
-#include "Common/Defs.h"
-#include "Common/NewHandler.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/PropVariant.h"
@@ -23,7 +21,7 @@ using namespace NWindows;
 namespace NArchive {
 namespace NTar {
 
-STATPROPSTG kProps[] =
+static STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},

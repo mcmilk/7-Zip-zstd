@@ -2,18 +2,17 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
-#include "Common/Defs.h"
+#include "../../../../C/CpuArch.h"
+
 #include "Common/ComTry.h"
+#include "Common/IntToString.h"
 #include "Common/StringToInt.h"
 #include "Common/UTFConvert.h"
 
 #include "Windows/PropVariant.h"
 
-#include "../../Common/StreamUtils.h"
 #include "../../Common/ProgressUtils.h"
-
-#include "../../../../C/CpuArch.h"
+#include "../../Common/StreamUtils.h"
 
 #include "WimHandler.h"
 
@@ -28,17 +27,18 @@ namespace NWim {
 
 #define WIM_DETAILS
 
-STATPROPSTG kProps[] =
+static STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackSize, VT_UI8},
-  { NULL, kpidAttrib, VT_UI4},
-  { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidCTime, VT_FILETIME},
-  { NULL, kpidATime, VT_FILETIME}
+  { NULL, kpidATime, VT_FILETIME},
+  { NULL, kpidAttrib, VT_UI4},
+  { NULL, kpidMethod, VT_BSTR},
+  { NULL, kpidShortName, VT_BSTR}
   
   #ifdef WIM_DETAILS
   , { NULL, kpidVolume, VT_UI4}
@@ -47,14 +47,14 @@ STATPROPSTG kProps[] =
   #endif
 };
 
-STATPROPSTG kArcProps[] =
+static STATPROPSTG kArcProps[] =
 {
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackSize, VT_UI8},
   { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidMTime, VT_FILETIME},
-  { NULL, kpidComment, VT_FILETIME},
+  { NULL, kpidComment, VT_BSTR},
   { NULL, kpidIsVolume, VT_BOOL},
   { NULL, kpidVolume, VT_UI4},
   { NULL, kpidNumVolumes, VT_UI4}
@@ -87,49 +87,51 @@ static bool ParseNumber32(const AString &s, UInt32 &res)
   return true;
 }
 
-void ParseTime(const CXmlItem &item, bool &defined, FILETIME &ft, const AString &s)
+bool ParseTime(const CXmlItem &item, FILETIME &ft, const char *tag)
 {
-  defined = false;
-  int cTimeIndex = item.FindSubTag(s);
-  if (cTimeIndex >= 0)
+  int index = item.FindSubTag(tag);
+  if (index >= 0)
   {
-    const CXmlItem &timeItem = item.SubItems[cTimeIndex];
-    UInt32 high = 0, low = 0;
-    if (ParseNumber32(timeItem.GetSubStringForTag("HIGHPART"), high) &&
-      ParseNumber32(timeItem.GetSubStringForTag("LOWPART"), low))
+    const CXmlItem &timeItem = item.SubItems[index];
+    UInt32 low = 0, high = 0;
+    if (ParseNumber32(timeItem.GetSubStringForTag("LOWPART"), low) &&
+        ParseNumber32(timeItem.GetSubStringForTag("HIGHPART"), high))
     {
-      defined = true;
-      ft.dwHighDateTime = high;
       ft.dwLowDateTime = low;
+      ft.dwHighDateTime = high;
+      return true;
     }
   }
+  return false;
 }
 
 void CImageInfo::Parse(const CXmlItem &item)
 {
-  ParseTime(item, CTimeDefined, CTime, "CREATIONTIME");
-  ParseTime(item, MTimeDefined, MTime, "LASTMODIFICATIONTIME");
+  CTimeDefined = ParseTime(item, CTime, "CREATIONTIME");
+  MTimeDefined = ParseTime(item, MTime, "LASTMODIFICATIONTIME");
   NameDefined = ConvertUTF8ToUnicode(item.GetSubStringForTag("NAME"), Name);
   // IndexDefined = ParseNumber32(item.GetPropertyValue("INDEX"), Index);
 }
 
-void CXml::Parse()
+void CXml::ToUnicode(UString &s)
 {
   size_t size = Data.GetCapacity();
-  if (size < 2 || (size & 1) != 0 || (size > 1 << 24))
+  if (size < 2 || (size & 1) != 0 || size > (1 << 24))
     return;
   const Byte *p = Data;
   if (Get16(p) != 0xFEFF)
     return;
-  UString s;
-  {
-    wchar_t *chars = s.GetBuffer((int)size / 2 + 1);
-    for (size_t i = 2; i < size; i += 2)
-      *chars++ = (wchar_t)Get16(p + i);
-    *chars = 0;
-    s.ReleaseBuffer();
-  }
+  wchar_t *chars = s.GetBuffer((int)size / 2);
+  for (size_t i = 2; i < size; i += 2)
+    *chars++ = (wchar_t)Get16(p + i);
+  *chars = 0;
+  s.ReleaseBuffer();
+}
 
+void CXml::Parse()
+{
+  UString s;
+  ToUnicode(s);
   AString utf;
   if (!ConvertUnicodeToUTF8(s, utf))
     return;
@@ -151,10 +153,9 @@ void CXml::Parse()
   }
 }
 
-static const wchar_t *kStreamsNamePrefix = L"Files" WSTRING_PATH_SEPARATOR;
-static const wchar_t *kMethodLZX = L"LZX";
-static const wchar_t *kMethodXpress = L"XPress";
-static const wchar_t *kMethodCopy = L"Copy";
+static const char *kMethodLZX = "LZX";
+static const char *kMethodXpress = "XPress";
+static const char *kMethodCopy = "Copy";
 
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
@@ -165,22 +166,22 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   NWindows::NCOM::CPropVariant prop;
 
   const CImageInfo *image = NULL;
-  if (m_Xmls.Size() == 1)
+  if (_xmls.Size() == 1)
   {
-    const CXml &xml = m_Xmls[0];
+    const CXml &xml = _xmls[0];
     if (xml.Images.Size() == 1)
       image = &xml.Images[0];
   }
 
   switch(propID)
   {
-    case kpidSize: prop = m_Database.GetUnpackSize(); break;
-    case kpidPackSize: prop = m_Database.GetPackSize(); break;
+    case kpidSize: prop = _db.GetUnpackSize(); break;
+    case kpidPackSize: prop = _db.GetPackSize(); break;
     
     case kpidCTime:
-      if (m_Xmls.Size() == 1)
+      if (_xmls.Size() == 1)
       {
-        const CXml &xml = m_Xmls[0];
+        const CXml &xml = _xmls[0];
         int index = -1;
         for (int i = 0; i < xml.Images.Size(); i++)
         {
@@ -195,9 +196,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       break;
 
     case kpidMTime:
-      if (m_Xmls.Size() == 1)
+      if (_xmls.Size() == 1)
       {
-        const CXml &xml = m_Xmls[0];
+        const CXml &xml = _xmls[0];
         int index = -1;
         for (int i = 0; i < xml.Images.Size(); i++)
         {
@@ -211,32 +212,43 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       }
       break;
 
-    case kpidComment: if (image != NULL && image->NameDefined) prop = image->Name; break;
+    case kpidComment:
+      if (image != NULL)
+      {
+        if (_xmlInComments)
+        {
+          UString s;
+          _xmls[0].ToUnicode(s);
+          prop = s;
+        }
+        else if (image->NameDefined)
+          prop = image->Name;
+      }
+      break;
 
     case kpidIsVolume:
-      if (m_Xmls.Size() > 0)
+      if (_xmls.Size() > 0)
       {
-        UInt16 volIndex = m_Xmls[0].VolIndex;
-        if (volIndex < m_Volumes.Size())
-          prop = (m_Volumes[volIndex].Header.NumParts > 1);
+        UInt16 volIndex = _xmls[0].VolIndex;
+        if (volIndex < _volumes.Size())
+          prop = (_volumes[volIndex].Header.NumParts > 1);
       }
       break;
     case kpidVolume:
-      if (m_Xmls.Size() > 0)
+      if (_xmls.Size() > 0)
       {
-        UInt16 volIndex = m_Xmls[0].VolIndex;
-        if (volIndex < m_Volumes.Size())
-          prop = (UInt32)m_Volumes[volIndex].Header.PartNumber;
+        UInt16 volIndex = _xmls[0].VolIndex;
+        if (volIndex < _volumes.Size())
+          prop = (UInt32)_volumes[volIndex].Header.PartNumber;
       }
       break;
-    case kpidNumVolumes: if (m_Volumes.Size() > 0) prop = (UInt32)(m_Volumes.Size() - 1); break;
+    case kpidNumVolumes: if (_volumes.Size() > 0) prop = (UInt32)(_volumes.Size() - 1); break;
     case kpidMethod:
     {
       bool lzx = false, xpress = false, copy = false;
-      for (int i = 0; i < m_Xmls.Size(); i++)
+      for (int i = 0; i < _xmls.Size(); i++)
       {
-        const CVolume &vol = m_Volumes[m_Xmls[i].VolIndex];
-        const CHeader &header = vol.Header;
+        const CHeader &header = _volumes[_xmls[i].VolIndex].Header;
         if (header.IsCompressed())
           if (header.IsLzxMode())
             lzx = true;
@@ -245,19 +257,19 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         else
           copy = true;
       }
-      UString res;
+      AString res;
       if (lzx)
         res = kMethodLZX;
       if (xpress)
       {
         if (!res.IsEmpty())
-          res += L' ';
+          res += ' ';
         res += kMethodXpress;
       }
       if (copy)
       {
         if (!res.IsEmpty())
-          res += L' ';
+          res += ' ';
         res += kMethodCopy;
       }
       prop = res;
@@ -272,35 +284,41 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
-  if (index < (UInt32)m_Database.Items.Size())
+  if (index < (UInt32)_db.SortedItems.Size())
   {
-    const CItem &item = m_Database.Items[index];
+    int realIndex = _db.SortedItems[index];
+    const CItem &item = _db.Items[realIndex];
     const CStreamInfo *si = NULL;
     const CVolume *vol = NULL;
     if (item.StreamIndex >= 0)
     {
-      si = &m_Database.Streams[item.StreamIndex];
-      vol = &m_Volumes[si->PartNumber];
+      si = &_db.Streams[item.StreamIndex];
+      vol = &_volumes[si->PartNumber];
     }
 
     switch(propID)
     {
       case kpidPath:
         if (item.HasMetadata)
-          prop = item.Name;
+          prop = _db.GetItemPath(realIndex);
         else
         {
-          wchar_t sz[32];
+          char sz[32];
           ConvertUInt64ToString(item.StreamIndex, sz);
-          UString s = sz;
-          while (s.Length() < m_NameLenForStreams)
-            s = L'0' + s;
-          s = UString(kStreamsNamePrefix) + s;
+          AString s = sz;
+          while (s.Length() < _nameLenForStreams)
+            s = '0' + s;
+          /*
+          if (si->Resource.IsFree())
+            prefix = "[Free]";
+          */
+          s = "[Files]" STRING_PATH_SEPARATOR + s;
           prop = s;
-          break;
         }
         break;
-      case kpidIsDir: prop = item.isDir(); break;
+      case kpidShortName: if (item.HasMetadata) prop = item.ShortName; break;
+
+      case kpidIsDir: prop = item.IsDir(); break;
       case kpidAttrib: if (item.HasMetadata) prop = item.Attrib; break;
       case kpidCTime: if (item.HasMetadata) prop = item.CTime; break;
       case kpidATime: if (item.HasMetadata) prop = item.ATime; break;
@@ -318,22 +336,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   }
   else
   {
-    index -= m_Database.Items.Size();
+    index -= _db.SortedItems.Size();
     {
       switch(propID)
       {
         case kpidPath:
         {
-          wchar_t sz[32];
-          ConvertUInt64ToString(m_Xmls[index].VolIndex, sz);
-          UString s = (UString)sz + L".xml";
-          prop = s;
+          char sz[32];
+          ConvertUInt64ToString(_xmls[index].VolIndex, sz);
+          prop = (AString)"[" + (AString)sz + "].xml";
           break;
         }
         case kpidIsDir: prop = false; break;
         case kpidPackSize:
-        case kpidSize: prop = (UInt64)m_Xmls[index].Data.GetCapacity(); break;
-        case kpidMethod: prop = L"Copy"; break;
+        case kpidSize: prop = (UInt64)_xmls[index].Data.GetCapacity(); break;
+        case kpidMethod: prop = kMethodCopy; break;
       }
     }
   }
@@ -411,13 +428,13 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         return res;
       }
       if (firstVolumeIndex >= 0)
-        if (!header.AreFromOnArchive(m_Volumes[firstVolumeIndex].Header))
+        if (!header.AreFromOnArchive(_volumes[firstVolumeIndex].Header))
           break;
-      if (m_Volumes.Size() > header.PartNumber && m_Volumes[header.PartNumber].Stream)
+      if (_volumes.Size() > header.PartNumber && _volumes[header.PartNumber].Stream)
         break;
       CXml xml;
       xml.VolIndex = header.PartNumber;
-      res = OpenArchive(curStream, header, xml.Data, m_Database);
+      res = _db.Open(curStream, header, xml.Data, openArchiveCallback);
       if (res != S_OK)
       {
         if (i == 1)
@@ -427,22 +444,22 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         return res;
       }
       
-      while (m_Volumes.Size() <= header.PartNumber)
-        m_Volumes.Add(CVolume());
-      CVolume &volume = m_Volumes[header.PartNumber];
+      while (_volumes.Size() <= header.PartNumber)
+        _volumes.Add(CVolume());
+      CVolume &volume = _volumes[header.PartNumber];
       volume.Header = header;
       volume.Stream = curStream;
       
       firstVolumeIndex = header.PartNumber;
       
       bool needAddXml = true;
-      if (m_Xmls.Size() != 0)
-        if (xml.Data == m_Xmls[0].Data)
+      if (_xmls.Size() != 0)
+        if (xml.Data == _xmls[0].Data)
           needAddXml = false;
       if (needAddXml)
       {
         xml.Parse();
-        m_Xmls.Add(xml);
+        _xmls.Add(xml);
       }
       
       if (i == 1)
@@ -462,11 +479,14 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       }
     }
 
-    RINOK(SortDatabase(m_Database));
+    _db.DetectPathMode();
+    RINOK(_db.Sort(_db.SkipRoot));
 
     wchar_t sz[32];
-    ConvertUInt64ToString(m_Database.Streams.Size(), sz);
-    m_NameLenForStreams = MyStringLen(sz);
+    ConvertUInt64ToString(_db.Streams.Size(), sz);
+    _nameLenForStreams = MyStringLen(sz);
+
+    _xmlInComments = (_xmls.Size() == 1 && !_db.ShowImageNumber);
   }
   catch(...)
   {
@@ -478,10 +498,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 
 STDMETHODIMP CHandler::Close()
 {
-  m_Database.Clear();
-  m_Volumes.Clear();
-  m_Xmls.Clear();
-  m_NameLenForStreams = 0;
+  _db.Clear();
+  _volumes.Clear();
+  _xmls.Clear();
+  _nameLenForStreams = 0;
   return S_OK;
 }
 
@@ -492,7 +512,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   bool allFilesMode = (numItems == (UInt32)-1);
 
   if (allFilesMode)
-    numItems = m_Database.Items.Size() + m_Xmls.Size();
+    numItems = _db.SortedItems.Size() + _xmls.Size();
   if (numItems == 0)
     return S_OK;
 
@@ -501,17 +521,17 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     UInt32 index = allFilesMode ? i : indices[i];
-    if (index < (UInt32)m_Database.Items.Size())
+    if (index < (UInt32)_db.SortedItems.Size())
     {
-      int streamIndex = m_Database.Items[index].StreamIndex;
+      int streamIndex = _db.Items[_db.SortedItems[index]].StreamIndex;
       if (streamIndex >= 0)
       {
-        const CStreamInfo &si = m_Database.Streams[streamIndex];
+        const CStreamInfo &si = _db.Streams[streamIndex];
         totalSize += si.Resource.UnpackSize;
       }
     }
     else
-      totalSize += m_Xmls[index - (UInt32)m_Database.Items.Size()].Data.GetCapacity();
+      totalSize += _xmls[index - (UInt32)_db.SortedItems.Size()].Data.GetCapacity();
   }
 
   RINOK(extractCallback->SetTotal(totalSize));
@@ -546,12 +566,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     CMyComPtr<ISequentialOutStream> realOutStream;
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
-    if (index >= (UInt32)m_Database.Items.Size())
+    if (index >= (UInt32)_db.SortedItems.Size())
     {
       if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
-      const CByteBuffer &data = m_Xmls[index - (UInt32)m_Database.Items.Size()].Data;
+      const CByteBuffer &data = _xmls[index - (UInt32)_db.SortedItems.Size()].Data;
       currentItemUnPacked = data.GetCapacity();
       if (realOutStream)
       {
@@ -562,7 +582,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       continue;
     }
 
-    const CItem &item = m_Database.Items[index];
+    const CItem &item = _db.Items[_db.SortedItems[index]];
     int streamIndex = item.StreamIndex;
     if (streamIndex < 0)
     {
@@ -576,7 +596,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       continue;
     }
 
-    const CStreamInfo &si = m_Database.Streams[streamIndex];
+    const CStreamInfo &si = _db.Streams[streamIndex];
     currentItemUnPacked = si.Resource.UnpackSize;
     currentItemPacked = si.Resource.PackSize;
 
@@ -587,7 +607,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (streamIndex != prevSuccessStreamIndex || realOutStream)
     {
       Byte digest[20];
-      const CVolume &vol = m_Volumes[si.PartNumber];
+      const CVolume &vol = _volumes[si.PartNumber];
       HRESULT res = unpacker.Unpack(vol.Stream, si.Resource, vol.Header.IsLzxMode(),
           realOutStream, progress, digest);
       if (res == S_OK)
@@ -611,7 +631,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
-  *numItems = m_Database.Items.Size() + m_Xmls.Size();
+  *numItems = _db.SortedItems.Size();
+  if (!_xmlInComments)
+    *numItems += _xmls.Size();
   return S_OK;
 }
 

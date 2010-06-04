@@ -6,7 +6,6 @@
 
 #include "Common/ComTry.h"
 #include "Common/IntToString.h"
-#include "Common/NewHandler.h"
 
 #include "Windows/PropVariant.h"
 

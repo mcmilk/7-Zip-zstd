@@ -97,7 +97,6 @@ AR_OBJS = \
   $O\DeflateProps.obj \
   $O\GzHandler.obj \
   $O\LzmaHandler.obj \
-  $O\PpmdHandler.obj \
   $O\SplitHandler.obj \
   $O\XzHandler.obj \
   $O\ZHandler.obj \

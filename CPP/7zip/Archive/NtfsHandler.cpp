@@ -1283,9 +1283,11 @@ HRESULT CDatabase::Open()
   {
     if (OpenCallback)
     {
-      // Sleep(0);
       UInt64 numFiles = Recs.Size();
-      RINOK(OpenCallback->SetCompleted(&numFiles, &pos64));
+      if ((numFiles & 0x3FF) == 0)
+      {
+        RINOK(OpenCallback->SetCompleted(&numFiles, &pos64));
+      }
     }
     UInt32 readSize = kBufSize;
     UInt64 rem = mftSize - pos64;

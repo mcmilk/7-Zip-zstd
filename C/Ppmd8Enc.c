@@ -1,5 +1,5 @@
 /* Ppmd8Enc.c -- PPMdI Encoder
-2010-03-12 : Igor Pavlov : Public domain
+2010-04-16 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -19,7 +19,7 @@ void Ppmd8_RangeEnc_FlushData(CPpmd8 *p)
 static void RangeEnc_Normalize(CPpmd8 *p)
 {
   while ((p->Low ^ (p->Low + p->Range)) < kTop ||
-      p->Range < kBot && ((p->Range = (0 - p->Low) & (kBot - 1)), 1))
+      (p->Range < kBot && ((p->Range = (0 - p->Low) & (kBot - 1)), 1)))
   {
     p->Stream.Out->Write(p->Stream.Out, (Byte)(p->Low >> 24));
     p->Range <<= 8;

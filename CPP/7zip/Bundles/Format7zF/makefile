@@ -173,6 +173,7 @@ UDF_OBJS = \
 
 WIM_OBJS = \
   $O\WimHandler.obj \
+  $O\WimHandlerOut.obj \
   $O\WimIn.obj \
   $O\WimRegister.obj \
 

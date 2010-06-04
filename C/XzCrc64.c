@@ -1,9 +1,9 @@
 /* XzCrc64.c -- CRC64 calculation
-2009-04-15 : Igor Pavlov : Public domain */
+2010-04-16 : Igor Pavlov : Public domain */
 
 #include "XzCrc64.h"
 
-#define kCrc64Poly 0xC96C5795D7870F42
+#define kCrc64Poly UINT64_CONST(0xC96C5795D7870F42)
 UInt64 g_Crc64Table[256];
 
 void MY_FAST_CALL Crc64GenerateTable(void)

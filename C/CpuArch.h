@@ -1,5 +1,5 @@
 /* CpuArch.h -- CPU specific code
-2010-03-11: Igor Pavlov : Public domain */
+2010-05-20: Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -55,6 +55,7 @@ If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of pla
 #define GetUi64(p) (*(const UInt64 *)(p))
 #define SetUi16(p, d) *(UInt16 *)(p) = (d);
 #define SetUi32(p, d) *(UInt32 *)(p) = (d);
+#define SetUi64(p, d) *(UInt64 *)(p) = (d);
 
 #else
 
@@ -77,6 +78,10 @@ If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of pla
     ((Byte *)(p))[1] = (Byte)(_x_ >> 8); \
     ((Byte *)(p))[2] = (Byte)(_x_ >> 16); \
     ((Byte *)(p))[3] = (Byte)(_x_ >> 24); }
+
+#define SetUi64(p, d) { UInt64 _x64_ = (d); \
+    SetUi32(p, (UInt32)_x64_); \
+    SetUi32(((Byte *)(p)) + 4, (UInt32)(_x64_ >> 32)); }
 
 #endif
 

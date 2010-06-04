@@ -24,6 +24,27 @@ void ConvertUInt32ToHex(UInt32 value, wchar_t *s)
   s[8] = L'\0';
 }
 
+static const char g_WinAttrib[17] = "RHS8DAdNTsrCOnE_";
+/*
+0 READONLY
+1 HIDDEN
+3 SYSTEM
+
+4 DIRECTORY
+5 ARCHIVE
+6 DEVICE
+7 NORMAL
+8 TEMPORARY
+9 SPARSE_FILE
+10 REPARSE_POINT
+11 COMPRESSED
+12 OFFLINE
+13 NOT_CONTENT_INDEXED
+14 ENCRYPTED
+
+16 VIRTUAL
+*/
+
 #define MY_ATTR_CHAR(a, n, c) ((a )& (1 << (n))) ? c : L'-';
 
 UString ConvertPropertyToString(const PROPVARIANT &prop, PROPID propID, bool full)
@@ -55,16 +76,14 @@ UString ConvertPropertyToString(const PROPVARIANT &prop, PROPID propID, bool ful
     {
       if (prop.vt != VT_UI4)
         break;
-      UString res;
       UInt32 a = prop.ulVal;
-      if (NFile::NFind::NAttributes::IsReadOnly(a)) res += L'R';
-      if (NFile::NFind::NAttributes::IsHidden(a)) res += L'H';
-      if (NFile::NFind::NAttributes::IsSystem(a)) res += L'S';
-      if (NFile::NFind::NAttributes::IsDir(a)) res += L'D';
-      if (NFile::NFind::NAttributes::IsArchived(a)) res += L'A';
-      if (NFile::NFind::NAttributes::IsCompressed(a)) res += L'C';
-      if (NFile::NFind::NAttributes::IsEncrypted(a)) res += L'E';
-      return res;
+      wchar_t sz[32];
+      int pos = 0;
+      for (int i = 0; i < 16; i++)
+        if (a & (1 << i) && i != 7)
+          sz[pos++] = g_WinAttrib[i];
+      sz[pos] = '\0';
+      return sz;
     }
     case kpidPosixAttrib:
     {

@@ -26,6 +26,7 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
   for (;;)
   {
     (*outStream) << kHelpQuestionMessage;
+    outStream->Flush();
     AString scannedString = g_StdIn.ScanStringUntilNewLine();
     scannedString.Trim();
     if (!scannedString.IsEmpty())

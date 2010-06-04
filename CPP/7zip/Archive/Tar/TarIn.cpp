@@ -69,11 +69,20 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
 
   filled = false;
 
-  processedSize = NFileHeader::kRecordSize;
-  RINOK(ReadStream(stream, buf, &processedSize));
-  if (processedSize == 0 || (processedSize == NFileHeader::kRecordSize && IsRecordLast(buf)))
-    return S_OK;
-  if (processedSize < NFileHeader::kRecordSize)
+  bool thereAreEmptyRecords = false;
+  for (;;)
+  {
+    processedSize = NFileHeader::kRecordSize;
+    RINOK(ReadStream(stream, buf, &processedSize));
+    if (processedSize == 0)
+      return S_OK;
+    if (processedSize != NFileHeader::kRecordSize)
+      return S_FALSE;
+    if (!IsRecordLast(buf))
+      break;
+    thereAreEmptyRecords = true;
+  }
+  if (thereAreEmptyRecords)
     return S_FALSE;
   
   ReadString(p, NFileHeader::kNameSize, item.Name); p += NFileHeader::kNameSize;

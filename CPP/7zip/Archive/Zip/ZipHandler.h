@@ -63,8 +63,8 @@ private:
   Byte m_AesKeyMode;
 
   bool m_WriteNtfsTimeExtra;
-  bool m_ForseLocal;
-  bool m_ForseUtf8;
+  bool m_ForceLocal;
+  bool m_ForceUtf8;
 
   #ifndef _7ZIP_ST
   UInt32 _numThreads;
@@ -88,8 +88,8 @@ private:
     m_IsAesMode = false;
     m_AesKeyMode = 3; // aes-256
     m_WriteNtfsTimeExtra = true;
-    m_ForseLocal = false;
-    m_ForseUtf8 = false;
+    m_ForceLocal = false;
+    m_ForceUtf8 = false;
     #ifndef _7ZIP_ST
     _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
     #endif

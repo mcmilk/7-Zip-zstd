@@ -138,7 +138,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     }
   }
 
-  extractCallback->SetTotal(importantTotalUnpacked);
+  RINOK(extractCallback->SetTotal(importantTotalUnpacked));
 
   CDecoder decoder(
     #ifdef _ST_MODE

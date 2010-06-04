@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2009-11-24 : Igor Pavlov : Public domain */
+2010-04-16 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -395,7 +395,7 @@ SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
   LzmaEncProps_Normalize(&props);
 
   if (props.lc > LZMA_LC_MAX || props.lp > LZMA_LP_MAX || props.pb > LZMA_PB_MAX ||
-      props.dictSize > (1 << kDicLogSizeMaxCompress) || props.dictSize > (1 << 30))
+      props.dictSize > ((UInt32)1 << kDicLogSizeMaxCompress) || props.dictSize > ((UInt32)1 << 30))
     return SZ_ERROR_PARAM;
   p->dictSize = props.dictSize;
   p->matchFinderCycles = props.mc;

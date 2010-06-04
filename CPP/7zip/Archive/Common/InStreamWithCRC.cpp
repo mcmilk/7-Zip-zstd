@@ -21,8 +21,10 @@ STDMETHODIMP CInStreamWithCRC::Read(void *data, UInt32 size, UInt32 *processedSi
 {
   UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
+  /*
   if (size > 0 && realProcessedSize == 0)
     _wasFinished = true;
+  */
   _size += realProcessedSize;
   _crc = CrcUpdate(_crc, data, realProcessedSize);
   if(processedSize != NULL)
