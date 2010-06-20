@@ -391,7 +391,6 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 {
   COM_TRY_BEGIN
   Close();
-  try
   {
     CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
     
@@ -487,10 +486,6 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
     _nameLenForStreams = MyStringLen(sz);
 
     _xmlInComments = (_xmls.Size() == 1 && !_db.ShowImageNumber);
-  }
-  catch(...)
-  {
-    return S_FALSE;
   }
   return S_OK;
   COM_TRY_END

@@ -55,7 +55,7 @@ static int GetColumnAlign(PROPID propID, VARTYPE varType)
   }
 }
 
-void CPanel::InitColumns()
+HRESULT CPanel::InitColumns()
 {
   if (_needSaveInfo)
     SaveListViewInfo();
@@ -88,8 +88,7 @@ void CPanel::InitColumns()
     PROPID propID;
     VARTYPE varType;
 
-    if (_folder->GetPropertyInfo(i, &name, &propID, &varType) != S_OK)
-      throw 1;
+    RINOK(_folder->GetPropertyInfo(i, &name, &propID, &varType));
 
     if (propID == kpidIsDir)
       continue;
@@ -110,7 +109,7 @@ void CPanel::InitColumns()
       break;
 
   int order = 0;
-  for(i = 0; i < _listViewInfo.Columns.Size(); i++)
+  for (i = 0; i < _listViewInfo.Columns.Size(); i++)
   {
     const CColumnInfo &columnInfo = _listViewInfo.Columns[i];
     int index = _properties.FindItemWithID(columnInfo.PropID);
@@ -124,7 +123,7 @@ void CPanel::InitColumns()
       continue;
     }
   }
-  for(i = 0; i < _properties.Size(); i++)
+  for (i = 0; i < _properties.Size(); i++)
   {
     CItemProperty &item = _properties[i];
     if (item.Order < 0)
@@ -155,6 +154,7 @@ void CPanel::InitColumns()
   {
     InsertColumn(i);
   }
+  return S_OK;
 }
 
 void CPanel::InsertColumn(int index)
@@ -170,9 +170,9 @@ void CPanel::InsertColumn(int index)
   _listView.InsertColumn(index, &column);
 }
 
-void CPanel::RefreshListCtrl()
+HRESULT CPanel::RefreshListCtrl()
 {
-  RefreshListCtrl(UString(), -1, true, UStringVector());
+  return RefreshListCtrl(UString(), -1, true, UStringVector());
 }
 
 int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData);
@@ -239,19 +239,19 @@ void CPanel::SaveSelectedState(CSelectedState &s)
   GetSelectedNames(s.SelectedNames);
 }
 
-void CPanel::RefreshListCtrl(const CSelectedState &s)
+HRESULT CPanel::RefreshListCtrl(const CSelectedState &s)
 {
   bool selectFocused = s.SelectFocused;
   if (_mySelectMode)
     selectFocused = true;
-  RefreshListCtrl(s.FocusedName, s.FocusedItem, selectFocused, s.SelectedNames);
+  return RefreshListCtrl(s.FocusedName, s.FocusedItem, selectFocused, s.SelectedNames);
 }
 
-void CPanel::RefreshListCtrlSaveFocused()
+HRESULT CPanel::RefreshListCtrlSaveFocused()
 {
   CSelectedState state;
   SaveSelectedState(state);
-  RefreshListCtrl(state);
+  return RefreshListCtrl(state);
 }
 
 void CPanel::SetFocusedSelectedItem(int index, bool select)
@@ -268,7 +268,7 @@ void CPanel::SetFocusedSelectedItem(int index, bool select)
   }
 }
 
-void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
+HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
     const UStringVector &selectedNames)
 {
   _dontShowMode = false;
@@ -309,11 +309,8 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
   if (folderSetFlatMode)
     folderSetFlatMode->SetFlatMode(BoolToInt(_flatMode));
 
-  if (_folder->LoadItems() != S_OK)
-    return;
-
-  InitColumns();
-
+  RINOK(_folder->LoadItems());
+  RINOK(InitColumns());
 
   // OutputDebugString(TEXT("Start Dir\n"));
   UInt32 numItems;
@@ -345,13 +342,13 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
     item.iImage = _extToIconMap.GetIconIndex(attrib, itemName);
     if (item.iImage < 0)
       item.iImage = 0;
-    if(_listView.InsertItem(&item) == -1)
-      return;
+    if (_listView.InsertItem(&item) == -1)
+      return E_FAIL;
   }
   
   // OutputDebugStringA("S1\n");
 
-  for(UInt32 i = 0; i < numItems; i++)
+  for (UInt32 i = 0; i < numItems; i++)
   {
     UString itemName = GetItemName(i);
     const UString relPath = GetItemRelPath(i);
@@ -400,7 +397,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
       item.pszText = (wchar_t *)(const wchar_t *)itemName;
 
     NCOM::CPropVariant prop;
-    _folder->GetProperty(i, kpidAttrib, &prop);
+    RINOK(_folder->GetProperty(i, kpidAttrib, &prop));
     UInt32 attrib = 0;
     if (prop.vt == VT_UI4)
       attrib = prop.ulVal;
@@ -430,12 +427,12 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
     if (item.iImage < 0)
       item.iImage = 0;
 
-    if(_listView.InsertItem(&item) == -1)
-      return; // error
+    if (_listView.InsertItem(&item) == -1)
+      return E_FAIL; // error
   }
   // OutputDebugStringA("End2\n");
 
-  if(_listView.GetItemCount() > 0 && cursorIndex >= 0)
+  if (_listView.GetItemCount() > 0 && cursorIndex >= 0)
     SetFocusedSelectedItem(cursorIndex, selectFocused);
   _listView.SortItems(CompareItems, (LPARAM)this);
   if (cursorIndex < 0 && _listView.GetItemCount() > 0)
@@ -452,6 +449,7 @@ void CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool se
   /*
   _listView.UpdateWindow();
   */
+  return S_OK;
 }
 
 void CPanel::GetSelectedItemsIndices(CRecordVector<UInt32> &indices) const
@@ -482,7 +480,7 @@ void CPanel::GetOperatedItemIndices(CRecordVector<UInt32> &indices) const
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem >= 0)
   {
-    if(_listView.GetItemState(focusedItem, LVIS_SELECTED) == LVIS_SELECTED)
+    if (_listView.GetItemState(focusedItem, LVIS_SELECTED) == LVIS_SELECTED)
     {
       int realIndex = GetRealItemIndex(focusedItem);
       if (realIndex != kParentIndex)
@@ -572,7 +570,7 @@ void CPanel::OpenSelectedItems(bool tryInternal)
   }
 
   bool dirIsStarted = false;
-  for(int i = 0; i < indices.Size(); i++)
+  for (int i = 0; i < indices.Size(); i++)
   {
     UInt32 index = indices[i];
     // CFileInfo &aFile = m_Files[index];
@@ -666,7 +664,7 @@ void CPanel::ReadListViewInfo()
 void CPanel::SaveListViewInfo()
 {
   int i;
-  for(i = 0; i < _visibleProperties.Size(); i++)
+  for (i = 0; i < _visibleProperties.Size(); i++)
   {
     CItemProperty &prop = _visibleProperties[i];
     LVCOLUMN winColumnInfo;
@@ -683,7 +681,7 @@ void CPanel::SaveListViewInfo()
   PROPID sortPropID = _sortID;
   
   _visibleProperties.Sort();
-  for(i = 0; i < _visibleProperties.Size(); i++)
+  for (i = 0; i < _visibleProperties.Size(); i++)
   {
     const CItemProperty &prop = _visibleProperties[i];
     CColumnInfo columnInfo;
@@ -692,7 +690,7 @@ void CPanel::SaveListViewInfo()
     columnInfo.Width = prop.Width;
     viewInfo.Columns.Add(columnInfo);
   }
-  for(i = 0; i < _properties.Size(); i++)
+  for (i = 0; i < _properties.Size(); i++)
   {
     const CItemProperty &prop = _properties[i];
     if (!prop.IsVisible)
@@ -719,7 +717,7 @@ void CPanel::SaveListViewInfo()
 
 bool CPanel::OnRightClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActiveate, LRESULT &result)
 {
-  if(itemActiveate->hdr.hwndFrom == HWND(_listView))
+  if (itemActiveate->hdr.hwndFrom == HWND(_listView))
     return false;
   POINT point;
   ::GetCursorPos(&point);
@@ -737,7 +735,7 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
   menu.CreatePopup();
 
   const int kCommandStart = 100;
-  for(int i = 0; i < _properties.Size(); i++)
+  for (int i = 0; i < _properties.Size(); i++)
   {
     const CItemProperty &prop = _properties[i];
     UINT flags =  MF_STRING;
@@ -785,7 +783,9 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
 
 void CPanel::OnReload()
 {
-  RefreshListCtrlSaveFocused();
+  HRESULT res = RefreshListCtrlSaveFocused();
+  if (res != S_OK)
+    MessageBoxError(res);
   OnRefreshStatusBar();
 }
 

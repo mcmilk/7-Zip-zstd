@@ -2,15 +2,14 @@
 
 #include "StdAfx.h"
 
-#include "7zHandler.h"
-#include "7zFolderOutStream.h"
+#include "../../../Common/ComTry.h"
+
+#include "../../Common/ProgressUtils.h"
+
 #include "7zDecode.h"
 // #include "7z1Decode.h"
-
-#include "../../../Common/ComTry.h"
-#include "../../Common/StreamObjects.h"
-#include "../../Common/ProgressUtils.h"
-#include "../../Common/LimitedStreams.h"
+#include "7zFolderOutStream.h"
+#include "7zHandler.h"
 
 namespace NArchive {
 namespace N7z {
@@ -73,13 +72,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   */
   
   CObjectVector<CExtractFolderInfo> extractFolderInfoVector;
-  for(UInt32 ii = 0; ii < numItems; ii++)
+  for (UInt32 ii = 0; ii < numItems; ii++)
   {
     // UInt32 fileIndex = allFilesMode ? indexIndex : indices[indexIndex];
     UInt32 ref2Index = allFilesMode ? ii : indices[ii];
     // const CRef2 &ref2 = _refs[ref2Index];
 
-    // for(UInt32 ri = 0; ri < ref2.Refs.Size(); ri++)
+    // for (UInt32 ri = 0; ri < ref2.Refs.Size(); ri++)
     {
       #ifdef _7Z_VOL
       // const CRef &ref = ref2.Refs[ri];
@@ -149,27 +148,26 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     );
   // CDecoder1 decoder;
 
-  UInt64 currentTotalPacked = 0;
-  UInt64 currentTotalUnpacked = 0;
-  UInt64 totalFolderUnpacked;
-  UInt64 totalFolderPacked;
+  UInt64 totalPacked = 0;
+  UInt64 totalUnpacked = 0;
+  UInt64 curPacked, curUnpacked;
 
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
 
-  for(int i = 0; i < extractFolderInfoVector.Size(); i++,
-      currentTotalUnpacked += totalFolderUnpacked,
-      currentTotalPacked += totalFolderPacked)
+  for (int i = 0;; i++, totalUnpacked += curUnpacked, totalPacked += curPacked)
   {
-    lps->OutSize = currentTotalUnpacked;
-    lps->InSize = currentTotalPacked;
+    lps->OutSize = totalUnpacked;
+    lps->InSize = totalPacked;
     RINOK(lps->SetCur());
+
+    if (i >= extractFolderInfoVector.Size())
+      break;
     
     const CExtractFolderInfo &efi = extractFolderInfoVector[i];
-    totalFolderUnpacked = efi.UnpackSize;
-
-    totalFolderPacked = 0;
+    curUnpacked = efi.UnpackSize;
+    curPacked = 0;
 
     CFolderOutStream *folderOutStream = new CFolderOutStream;
     CMyComPtr<ISequentialOutStream> outStream(folderOutStream);
@@ -186,7 +184,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       startIndex = efi.FileIndex;
     else
       startIndex = db.FolderStartFileIndex[efi.FolderIndex];
-
 
     HRESULT result = folderOutStream->Init(&db,
         #ifdef _7Z_VOL
@@ -205,7 +202,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     CNum folderIndex = efi.FolderIndex;
     const CFolder &folderInfo = db.Folders[folderIndex];
 
-    totalFolderPacked = _db.GetFolderFullPackSize(folderIndex);
+    curPacked = _db.GetFolderFullPackSize(folderIndex);
 
     CNum packStreamIndex = db.FolderStartPackStreamIndex[folderIndex];
     UInt64 folderStartPackPos = db.GetFolderStreamPos(folderIndex, 0);

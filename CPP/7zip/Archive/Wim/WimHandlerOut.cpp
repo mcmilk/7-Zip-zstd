@@ -258,7 +258,7 @@ static size_t WriteItem(const CUpdateItem &item, Byte *p, const Byte *hash)
   return totalLen;
 }
 
-void WriteTree(const CDir &tree, CRecordVector<CSha1Hash> &digests,
+static void WriteTree(const CDir &tree, CRecordVector<CSha1Hash> &digests,
     CUpdateItem &defaultDirItem,
     CObjectVector<CUpdateItem> &updateItems, Byte *dest, size_t &pos)
 {
@@ -488,11 +488,15 @@ static HRESULT UpdateArchive(ISequentialOutStream *seqOutStream,
   const UInt32 kSecuritySize = 8;
   size_t pos = kSecuritySize;
   WriteTree(rootFolder, hashes.Digests, ri, updateItems, NULL, pos);
+  
   CByteBuffer meta;
   meta.SetCapacity(pos);
-  // memset(meta, 0, kSecuritySize);
-  Set32((Byte *)meta, 0); // only if there is no security data, we can use 0 here.
+  
+  // we can write 0 here only if there is no security data, imageX does it,
+  // but some programs expect size = 8
+  Set32((Byte *)meta, 8); // size of security data
   Set32((Byte *)meta + 4, 0); // num security entries
+  
   pos = kSecuritySize;
   WriteTree(rootFolder, hashes.Digests, ri, updateItems, (Byte *)meta, pos);
 

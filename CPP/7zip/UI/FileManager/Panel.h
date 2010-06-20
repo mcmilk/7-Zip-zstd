@@ -236,12 +236,12 @@ private:
 
   void ChangeWindowSize(int xSize, int ySize);
  
-  void InitColumns();
+  HRESULT InitColumns();
   // void InitColumns2(PROPID sortID);
   void InsertColumn(int index);
 
   void SetFocusedSelectedItem(int index, bool select);
-  void RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
+  HRESULT RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
       const UStringVector &selectedNames);
 
   void OnShiftSelectMessage();
@@ -335,8 +335,8 @@ public:
 
   void GetSelectedNames(UStringVector &selectedNames);
   void SaveSelectedState(CSelectedState &s);
-  void RefreshListCtrl(const CSelectedState &s);
-  void RefreshListCtrlSaveFocused();
+  HRESULT RefreshListCtrl(const CSelectedState &s);
+  HRESULT RefreshListCtrlSaveFocused();
 
   UString GetItemName(int itemIndex) const;
   UString GetItemPrefix(int itemIndex) const;
@@ -517,7 +517,7 @@ public:
   // bool _passwordIsDefined;
   // UString _password;
 
-  void RefreshListCtrl();
+  HRESULT RefreshListCtrl();
 
   void MessageBoxInfo(LPCWSTR message, LPCWSTR caption);
   void MessageBox(LPCWSTR message);

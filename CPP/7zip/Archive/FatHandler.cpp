@@ -578,8 +578,12 @@ HRESULT CDatabase::Open()
       return S_FALSE;
     UInt64 fileSize;
     RINOK(InStream->Seek(0, STREAM_SEEK_END, &fileSize));
+
+    /* we comment that check to support truncated images */
+    /*
     if (fileSize < Header.GetPhySize())
       return S_FALSE;
+    */
 
     if (Header.IsFat32())
     {

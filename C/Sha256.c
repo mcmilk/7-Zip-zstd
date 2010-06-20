@@ -1,9 +1,9 @@
-/* Crypto/Sha256.c -- SHA-256 Hash function
-2008-11-06 : Igor Pavlov : Public domain
+/* Crypto/Sha256.c -- SHA-256 Hash
+2010-06-11 : Igor Pavlov : Public domain
 This code is based on public domain code from Wei Dai's Crypto++ library. */
 
-#include "Sha256.h"
 #include "RotateDefs.h"
+#include "Sha256.h"
 
 /* define it for speed optimization */
 /* #define _SHA256_UNROLL */
@@ -71,7 +71,7 @@ void Sha256_Init(CSha256 *p)
 
 #endif
 
-const UInt32 K[64] = {
+static const UInt32 K[64] = {
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
   0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
   0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,

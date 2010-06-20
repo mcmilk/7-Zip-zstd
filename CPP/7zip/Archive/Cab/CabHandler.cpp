@@ -41,7 +41,7 @@ enum
 };
 #endif
 
-STATPROPSTG kProps[] =
+static STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
@@ -57,18 +57,18 @@ STATPROPSTG kProps[] =
   #endif
 };
 
-static const wchar_t *kMethods[] =
+static const char *kMethods[] =
 {
-  L"None",
-  L"MSZip",
-  L"Quantum",
-  L"LZX"
+  "None",
+  "MSZip",
+  "Quantum",
+  "LZX"
 };
 
 static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
-static const wchar_t *kUnknownMethod = L"Unknown";
+static const char *kUnknownMethod = "Unknown";
 
-STATPROPSTG kArcProps[] =
+static STATPROPSTG kArcProps[] =
 {
   { NULL, kpidMethod, VT_BSTR},
   // { NULL, kpidSolid, VT_BOOL},
@@ -87,7 +87,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   {
     case kpidMethod:
     {
-      UString resString;
+      AString resString;
       CRecordVector<Byte> ids;
       int i;
       for (int v = 0; v < m_Database.Volumes.Size(); v++)
@@ -99,9 +99,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       for (i = 0; i < ids.Size(); i++)
       {
         Byte id = ids[i];
-        UString method = (id < kNumMethods) ? kMethods[id] : kUnknownMethod;
+        AString method = (id < kNumMethods) ? kMethods[id] : kUnknownMethod;
         if (!resString.IsEmpty())
-          resString += L' ';
+          resString += ' ';
         resString += method;
       }
       prop = resString;
@@ -171,12 +171,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       UInt32 realFolderIndex = item.GetFolderIndex(db.Folders.Size());
       const CFolder &folder = db.Folders[realFolderIndex];
       int methodIndex = folder.GetCompressionMethod();
-      UString method = (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
+      AString method = (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
       if (methodIndex == NHeader::NCompressionMethodMajor::kLZX ||
         methodIndex == NHeader::NCompressionMethodMajor::kQuantum)
       {
-        method += L":";
-        wchar_t temp[32];
+        method += ':';
+        char temp[32];
         ConvertUInt64ToString(folder.CompressionTypeMinor, temp);
         method += temp;
       }

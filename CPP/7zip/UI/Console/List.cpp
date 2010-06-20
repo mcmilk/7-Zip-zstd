@@ -514,11 +514,9 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
             CMyComBSTR name;
             PROPID propID;
             VARTYPE vt;
-            if (archive->GetArchivePropertyInfo(j, &name, &propID, &vt) != S_OK)
-              continue;
+            RINOK(archive->GetArchivePropertyInfo(j, &name, &propID, &vt));
             NCOM::CPropVariant prop;
-            if (archive->GetArchiveProperty(propID, &prop) != S_OK)
-              continue;
+            RINOK(archive->GetArchiveProperty(propID, &prop));
             UString s = ConvertPropertyToString(prop, propID);
             if (!s.IsEmpty())
               PrintPropPair(GetPropName(propID, name), s);
@@ -536,11 +534,9 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
               CMyComBSTR name;
               PROPID propID;
               VARTYPE vt;
-              if (archive->GetPropertyInfo(j, &name, &propID, &vt) != S_OK)
-                continue;
+              RINOK(archive->GetPropertyInfo(j, &name, &propID, &vt));
               NCOM::CPropVariant prop;
-              if (archive->GetProperty(mainIndex, propID, &prop) != S_OK)
-                continue;
+              RINOK(archive->GetProperty(mainIndex, propID, &prop));
               UString s = ConvertPropertyToString(prop, propID);
               if (!s.IsEmpty())
                 PrintPropPair(GetPropName(propID, name), s);

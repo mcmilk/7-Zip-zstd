@@ -21,6 +21,6 @@ CAPTION "About 7-Zip"
   ICON   IDI_LOGO, -1, m, m, 32, 32, SS_REALSIZEIMAGE
   LTEXT  MY_7ZIP_VERSION, -1, m, 54, xc, 8
   LTEXT  MY_COPYRIGHT, -1, m, 67, xc, 8
-  LTEXT  "7-Zip is free software. However, you can support development of 7-Zip by registering.",
+  LTEXT  "7-Zip is free software",
          IDC_ABOUT_STATIC_REGISTER_INFO, m, y, xc, (by - y - 1)
 }

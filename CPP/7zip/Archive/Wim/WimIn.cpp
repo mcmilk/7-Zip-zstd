@@ -384,7 +384,12 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
         return S_FALSE;
 
       UInt32 fileNameLen = Get16(p + 0x24);
-      if ((fileNameLen & 1) != 0 || ((0x26 + fileNameLen + 6) & ~7) != len)
+      if ((fileNameLen & 1) != 0)
+        return S_FALSE;
+      /* Probably different versions of ImageX can use different number of 
+         additional ZEROs. So we don't use exact check. */
+      UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
+      if (((0x26 + fileNameLen2 + 6) & ~7) > len)
         return S_FALSE;
       
       UString name;

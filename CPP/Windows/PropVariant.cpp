@@ -50,6 +50,8 @@ CPropVariant& CPropVariant::operator=(BSTR bstrSrc)
   return *this;
 }
 
+static const char *kMemException = "out of memory";
+
 CPropVariant& CPropVariant::operator=(LPCOLESTR lpszSrc)
 {
   InternalClear();
@@ -58,8 +60,9 @@ CPropVariant& CPropVariant::operator=(LPCOLESTR lpszSrc)
   bstrVal = ::SysAllocString(lpszSrc);
   if (bstrVal == NULL && lpszSrc != NULL)
   {
-    vt = VT_ERROR;
-    scode = E_OUTOFMEMORY;
+    throw kMemException;
+    // vt = VT_ERROR;
+    // scode = E_OUTOFMEMORY;
   }
   return *this;
 }
@@ -74,8 +77,9 @@ CPropVariant& CPropVariant::operator=(const char *s)
   bstrVal = ::SysAllocStringByteLen(0, (UINT)len * sizeof(OLECHAR));
   if (bstrVal == NULL)
   {
-    vt = VT_ERROR;
-    scode = E_OUTOFMEMORY;
+    throw kMemException;
+    // vt = VT_ERROR;
+    // scode = E_OUTOFMEMORY;
   }
   else
   {
@@ -204,6 +208,8 @@ void CPropVariant::InternalCopy(const PROPVARIANT *pSrc)
   HRESULT hr = Copy(pSrc);
   if (FAILED(hr))
   {
+    if (hr == E_OUTOFMEMORY)
+      throw kMemException;
     vt = VT_ERROR;
     scode = hr;
   }

@@ -149,9 +149,10 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (needRead)
   */
 
-  if (_folder->GetProperty(realIndex, propID, &prop) != S_OK)
-      throw 2723407;
-
+  HRESULT res = _folder->GetProperty(realIndex, propID, &prop);
+  if (res != S_OK)
+    s = UString(L"Error: ") + HResultToMessage(res);
+  else
   if ((prop.vt == VT_UI8 || prop.vt == VT_UI4) && (
       propID == kpidSize ||
       propID == kpidPackSize ||

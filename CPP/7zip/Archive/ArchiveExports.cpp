@@ -85,6 +85,7 @@ STDAPI CreateArchiver(const GUID *clsid, const GUID *iid, void **outObject)
 
 STDAPI GetHandlerProperty2(UInt32 formatIndex, PROPID propID, PROPVARIANT *value)
 {
+  COM_TRY_BEGIN
   if (formatIndex >= g_NumArcs)
     return E_INVALIDARG;
   const CArcInfo &arc = *g_Arcs[formatIndex];
@@ -119,6 +120,7 @@ STDAPI GetHandlerProperty2(UInt32 formatIndex, PROPID propID, PROPVARIANT *value
   }
   prop.Detach(value);
   return S_OK;
+  COM_TRY_END
 }
 
 STDAPI GetHandlerProperty(PROPID propID, PROPVARIANT *value)
