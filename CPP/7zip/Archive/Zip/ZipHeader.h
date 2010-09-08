@@ -78,7 +78,7 @@ namespace NFileHeader
       kWzAES = 0x63
     };
     const int kNumCompressionMethods = 11;
-    const Byte kMadeByProgramVersion = 20;
+    const Byte kMadeByProgramVersion = 63;
     
     const Byte kExtractVersion_Default = 10;
     const Byte kExtractVersion_Dir = 20;

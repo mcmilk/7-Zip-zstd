@@ -155,6 +155,7 @@ struct CHeader
   bool IsSupported() const { return (!IsCompressed() || (Flags & NHeaderFlags::kLZX) != 0 || (Flags & NHeaderFlags::kXPRESS) != 0 ) ; }
   bool IsLzxMode() const { return (Flags & NHeaderFlags::kLZX) != 0; }
   bool IsSpanned() const { return (!IsCompressed() || (Flags & NHeaderFlags::kSpanned) != 0); }
+  bool IsOldVersion() const { return (Version == 0x010A00); }
   bool IsNewVersion()const { return (Version > 0x010C00); }
 
   bool AreFromOnArchive(const CHeader &h)

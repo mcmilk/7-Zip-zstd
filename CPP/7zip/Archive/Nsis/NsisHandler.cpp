@@ -87,7 +87,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * maxCheckStartPosit
   COM_TRY_BEGIN
   Close();
   {
-    if(_archive.Open(
+    if (_archive.Open(
         EXTERNAL_CODECS_VARS
         stream, maxCheckStartPosition) != S_OK)
       return S_FALSE;
@@ -264,12 +264,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     GetNumberOfItems(&numItems);
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
   UInt64 totalSize = 0;
 
   UInt32 i;
-  for(i = 0; i < numItems; i++)
+  for (i = 0; i < numItems; i++)
   {
     UInt32 index = (allFilesMode ? i : indices[i]);
     #ifdef NSIS_SCRIPT
@@ -313,6 +313,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   byteBuf.SetCapacity(kBufferLength);
   Byte *buffer = byteBuf;
 
+  CByteBuffer tempBuf;
+
   bool dataError = false;
   for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
@@ -330,7 +332,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (index >= (UInt32)_archive.Items.Size())
     {
       currentItemSize = _archive.Script.Length();
-      if(!testMode && !realOutStream)
+      if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       if (!testMode)
@@ -346,7 +348,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       else
         GetCompressedSize(index, currentItemSize);
       
-      if(!testMode && !realOutStream)
+      if (!testMode && !realOutStream)
         continue;
       
       RINOK(extractCallback->PrepareOperation(askMode));
@@ -357,10 +359,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         bool sizeIsKnown = false;
         UInt32 fullSize = 0;
 
+        bool writeToTemp = false;
+        bool readFromTemp = false;
+
         if (_archive.IsSolid)
         {
           UInt64 pos = _archive.GetPosOfSolidItem(index);
-          while(streamPos < pos)
+          while (streamPos < pos)
           {
             size_t processedSize = (UInt32)MyMin(pos - streamPos, (UInt64)kBufferLength);
             HRESULT res = _archive.Decoder.Read(buffer, &processedSize);
@@ -389,7 +394,20 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             fullSize = Get32(buffer2);
             sizeIsKnown = true;
             needDecompress = true;
+
+            if (!testMode && i + 1 < numItems)
+            {
+              UInt64 nextPos = _archive.GetPosOfSolidItem(allFilesMode ? i : indices[i + 1]);
+              if (nextPos < streamPos + fullSize)
+              {
+                tempBuf.Free();
+                tempBuf.SetCapacity(fullSize);
+                writeToTemp = true;
+              }
+            }
           }
+          else
+            readFromTemp = true;
         }
         else
         {
@@ -413,7 +431,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           if (needDecompress)
           {
             UInt64 offset = 0;
-            while(!sizeIsKnown || fullSize > 0)
+            while (!sizeIsKnown || fullSize > 0)
             {
               UInt32 curSize = kBufferLength;
               if (sizeIsKnown && curSize > fullSize)
@@ -433,6 +451,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
                   dataError = true;
                 break;
               }
+
+              if (writeToTemp)
+                memcpy((Byte *)tempBuf + (size_t)offset, buffer, processedSize);
               
               fullSize -= (UInt32)processedSize;
               streamPos += processedSize;
@@ -450,7 +471,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           }
           else
           {
-            while(fullSize > 0)
+            if (readFromTemp)
+            {
+              if (!testMode)
+                RINOK(WriteStream(realOutStream, tempBuf, tempBuf.GetCapacity()));
+            }
+            else
+            while (fullSize > 0)
             {
               UInt32 curSize = MyMin(fullSize, kBufferLength);
               UInt32 processedSize;

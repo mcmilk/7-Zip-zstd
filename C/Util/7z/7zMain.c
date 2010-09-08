@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2010-03-12 : Igor Pavlov : Public domain */
+2010-07-13 : Igor Pavlov : Public domain */
 
 #include <stdio.h>
 #include <string.h>
@@ -104,7 +104,7 @@ static SRes Utf16_To_Utf8Buf(CBuf *dest, const UInt16 *src, size_t srcLen)
 }
 #endif
 
-static WRes Utf16_To_Char(CBuf *buf, const UInt16 *s, int fileMode)
+static SRes Utf16_To_Char(CBuf *buf, const UInt16 *s, int fileMode)
 {
   int len = 0;
   for (len = 0; s[len] != '\0'; len++);
@@ -172,15 +172,16 @@ static WRes OutFile_OpenUtf16(CSzFile *p, const UInt16 *name)
   #endif
 }
 
-static void PrintString(const UInt16 *s)
+static SRes PrintString(const UInt16 *s)
 {
   CBuf buf;
+  SRes res;
   Buf_Init(&buf);
-  if (Utf16_To_Char(&buf, s, 0) == 0)
-  {
+  res = Utf16_To_Char(&buf, s, 0);
+  if (res == SZ_OK)
     printf("%s", buf.data);
-    Buf_Free(&buf, &g_Alloc);
-  }
+  Buf_Free(&buf, &g_Alloc);
+  return res;
 }
 
 static void UInt64ToStr(UInt64 value, char *s)
@@ -398,7 +399,9 @@ int MY_CDECL main(int numargs, char *args[])
           }
           
           printf("%s %s %10s  ", t, attr, s);
-          PrintString(temp);
+          res = PrintString(temp);
+          if (res != SZ_OK)
+            break;
           if (f->IsDir)
             printf("/");
           printf("\n");
@@ -407,7 +410,9 @@ int MY_CDECL main(int numargs, char *args[])
         printf(testCommand ?
             "Testing    ":
             "Extracting ");
-        PrintString(temp);
+        res = PrintString(temp);
+        if (res != SZ_OK)
+          break;
         if (f->IsDir)
           printf("/");
         else

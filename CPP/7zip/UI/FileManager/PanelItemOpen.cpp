@@ -169,7 +169,7 @@ static const char *kStartExtensions =
   #endif
   " exe bat com"
   " chm"
-  " msi doc xls ppt pps wps wpt wks xlr wdb"
+  " msi doc xls ppt pps wps wpt wks xlr wdb vsd"
 
   " docx docm dotx dotm xlsx xlsm xltx xltm xlsb"
   " xlam pptx pptm potx potm ppam ppsx ppsm xsn"

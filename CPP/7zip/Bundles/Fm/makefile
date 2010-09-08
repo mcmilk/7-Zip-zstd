@@ -358,7 +358,6 @@ COMPRESS_OBJS = \
   $O\Deflate64Register.obj \
   $O\DeflateDecoder.obj \
   $O\DeflateEncoder.obj \
-  $O\DeflateNsisRegister.obj \
   $O\DeflateRegister.obj \
   $O\DeltaFilter.obj \
   $O\ImplodeDecoder.obj \

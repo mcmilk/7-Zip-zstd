@@ -258,12 +258,23 @@ void CResource::Parse(const Byte *p)
 
 #define GetResource(p, res) res.Parse(p)
 
-static void GetStream(const Byte *p, CStreamInfo &s)
+static void GetStream(bool oldVersion, const Byte *p, CStreamInfo &s)
 {
   s.Resource.Parse(p);
-  s.PartNumber = Get16(p + 24);
-  s.RefCount = Get32(p + 26);
-  memcpy(s.Hash, p + 30, kHashSize);
+  if (oldVersion)
+  {
+    s.PartNumber = 1;
+    s.RefCount = 1;
+    // UInt32 id = Get32(p + 24);
+    // UInt32 unknown = Get32(p + 28);
+    memcpy(s.Hash, p + 32, kHashSize);
+  }
+  else
+  {
+    s.PartNumber = Get16(p + 24);
+    s.RefCount = Get32(p + 26);
+    memcpy(s.Hash, p + 30, kHashSize);
+  }
 }
 
 static const wchar_t *kLongPath = L"[LongPath]";
@@ -386,7 +397,7 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
       UInt32 fileNameLen = Get16(p + 0x24);
       if ((fileNameLen & 1) != 0)
         return S_FALSE;
-      /* Probably different versions of ImageX can use different number of 
+      /* Probably different versions of ImageX can use different number of
          additional ZEROs. So we don't use exact check. */
       UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
       if (((0x26 + fileNameLen2 + 6) & ~7) > len)
@@ -527,9 +538,7 @@ HRESULT CDatabase::ParseImageDirs(const CByteBuffer &buf, int parent)
 
 HRESULT CHeader::Parse(const Byte *p)
 {
-  UInt32 haderSize = Get32(p + 8);
-  if (haderSize < 0x74)
-    return S_FALSE;
+  UInt32 headerSize = Get32(p + 8);
   Version = Get32(p + 0x0C);
   Flags = Get32(p + 0x10);
   if (!IsSupported())
@@ -537,25 +546,42 @@ HRESULT CHeader::Parse(const Byte *p)
   ChunkSize = Get32(p + 0x14);
   if (ChunkSize != kChunkSize && ChunkSize != 0)
     return S_FALSE;
-  memcpy(Guid, p + 0x18, 16);
-  PartNumber = Get16(p + 0x28);
-  NumParts = Get16(p + 0x2A);
-  int offset = 0x2C;
-  if (IsNewVersion())
+  int offset;
+  if (IsOldVersion())
   {
-    NumImages = Get32(p + offset);
-    offset += 4;
+    if (headerSize != 0x60)
+      return S_FALSE;
+    memset(Guid, 0, 16);
+    offset = 0x18;
+    PartNumber = 1;
+    NumParts = 1;
+  }
+  else
+  {
+    if (headerSize < 0x74)
+      return S_FALSE;
+    memcpy(Guid, p + 0x18, 16);
+    PartNumber = Get16(p + 0x28);
+    NumParts = Get16(p + 0x2A);
+    offset = 0x2C;
+    if (IsNewVersion())
+    {
+      NumImages = Get32(p + offset);
+      offset += 4;
+    }
   }
   GetResource(p + offset, OffsetResource);
   GetResource(p + offset + 0x18, XmlResource);
   GetResource(p + offset + 0x30, MetadataResource);
   if (IsNewVersion())
   {
-    if (haderSize < 0xD0)
+    if (headerSize < 0xD0)
       return S_FALSE;
     BootIndex = Get32(p + 0x48);
     IntegrityResource.Parse(p + offset + 0x4C);
   }
+  if (IsOldVersion())
+    return S_FALSE;
   return S_OK;
 }
 
@@ -570,15 +596,16 @@ HRESULT ReadHeader(IInStream *inStream, CHeader &h)
   return h.Parse(p);
 }
 
-static HRESULT ReadStreams(IInStream *inStream, const CHeader &h, CDatabase &db)
+static HRESULT ReadStreams(bool oldVersion, IInStream *inStream, const CHeader &h, CDatabase &db)
 {
   CByteBuffer offsetBuf;
   RINOK(UnpackData(inStream, h.OffsetResource, h.IsLzxMode(), offsetBuf, NULL));
   size_t i;
-  for (i = 0; offsetBuf.GetCapacity() - i >= kStreamInfoSize; i += kStreamInfoSize)
+  size_t streamInfoSize = oldVersion ? kStreamInfoSize + 2 : kStreamInfoSize;
+  for (i = 0; offsetBuf.GetCapacity() - i >= streamInfoSize; i += streamInfoSize)
   {
     CStreamInfo s;
-    GetStream((const Byte *)offsetBuf + i, s);
+    GetStream(oldVersion, (const Byte *)offsetBuf + i, s);
     if (s.PartNumber == h.PartNumber)
       db.Streams.Add(s);
   }
@@ -589,7 +616,7 @@ HRESULT CDatabase::Open(IInStream *inStream, const CHeader &h, CByteBuffer &xml,
 {
   OpenCallback = openCallback;
   RINOK(UnpackData(inStream, h.XmlResource, h.IsLzxMode(), xml, NULL));
-  RINOK(ReadStreams(inStream, h, *this));
+  RINOK(ReadStreams(h.IsOldVersion(), inStream, h, *this));
   bool needBootMetadata = !h.MetadataResource.IsEmpty();
   Order = 0;
   if (h.PartNumber == 1)

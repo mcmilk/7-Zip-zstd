@@ -7,15 +7,14 @@
 #include "../../Common/StreamUtils.h"
 
 #include "../../Common/MethodId.h"
-#include "../../Common/CreateCoder.h"
+
+#include "../../Compress/BZip2Decoder.h"
+#include "../../Compress/DeflateDecoder.h"
+#include "../../Compress/LzmaDecoder.h"
 
 namespace NArchive {
 namespace NNsis {
 
-static const CMethodId k_Copy    = 0x0;
-static const CMethodId k_Deflate = 0x040901;
-static const CMethodId k_BZip2   = 0x040902;
-static const CMethodId k_LZMA    = 0x030101;
 static const CMethodId k_BCJ_X86 = 0x03030103;
 
 HRESULT CDecoder::Init(
@@ -31,24 +30,14 @@ HRESULT CDecoder::Init(
   _method = method;
   if (!_codecInStream)
   {
-    CMethodId methodID;
     switch (method)
     {
-      case NMethodType::kCopy: methodID = k_Copy; break;
-      case NMethodType::kDeflate: methodID = k_Deflate; break;
-      case NMethodType::kBZip2: methodID = k_BZip2; break;
-      case NMethodType::kLZMA: methodID = k_LZMA; break;
+      // case NMethodType::kCopy: return E_NOTIMPL;
+      case NMethodType::kDeflate: _codecInStream = new NCompress::NDeflate::NDecoder::CNsisCOMCoder(); break;
+      case NMethodType::kBZip2: _codecInStream = new NCompress::NBZip2::CNsisDecoder(); break;
+      case NMethodType::kLZMA: _codecInStream = new NCompress::NLzma::CDecoder(); break;
       default: return E_NOTIMPL;
     }
-    CMyComPtr<ICompressCoder> coder;
-    RINOK(CreateCoder(
-        EXTERNAL_CODECS_LOC_VARS
-        methodID, coder, false));
-    if (!coder)
-      return E_NOTIMPL;
-    coder.QueryInterface(IID_ISequentialInStream, &_codecInStream);
-    if (!_codecInStream)
-      return E_NOTIMPL;
   }
 
   if (thereIsFilterFlag)

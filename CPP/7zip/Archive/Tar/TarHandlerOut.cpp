@@ -107,8 +107,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (prop.vt != VT_UI8)
         return E_INVALIDARG;
       ui.Size = prop.uhVal.QuadPart;
+      /*
+      // now we support GNU extension for big files
       if (ui.Size >= ((UInt64)1 << 33))
         return E_INVALIDARG;
+      */
     }
     updateItems.Add(ui);
   }

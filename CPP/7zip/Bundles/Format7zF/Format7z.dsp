@@ -539,10 +539,6 @@ SOURCE=..\..\Compress\DeflateEncoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\DeflateNsisRegister.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\DeflateRegister.cpp
 # End Source File
 # Begin Source File

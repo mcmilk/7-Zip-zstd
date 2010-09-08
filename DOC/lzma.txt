@@ -1,4 +1,4 @@
-LZMA SDK 9.15
+LZMA SDK 9.16
 -------------
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
@@ -37,7 +37,7 @@ LZMA SDK includes:
 UNIX/Linux version 
 ------------------
 To compile C++ version of file->file LZMA encoding, go to directory
-C++/7zip/Compress/LZMA_Alone 
+CPP/7zip/Bundles/LzmaCon
 and call make to recompile it:
   make -f makefile.gcc clean all
 
@@ -91,8 +91,6 @@ CPP/ -- CPP files
 
     Compress - files related to compression/decompression
 
-      LZMA_Alone   - file->file LZMA compression/decompression
-
     Archive - files related to archiving
 
       Common   - common files for archive handling
@@ -101,6 +99,7 @@ CPP/ -- CPP files
     Bundles    - Modules that are bundles of other modules
   
       Alone7z           - 7zr.exe: Standalone version of 7z.exe that supports only 7z/LZMA/BCJ/BCJ2
+      LzmaCon           - lzma.exe: LZMA compression/decompression
       Format7zR         - 7zr.dll: Reduced version of 7za.dll: extracting/compressing to 7z/LZMA/BCJ/BCJ2
       Format7zExtractR  - 7zxr.dll: Reduced version of 7zxa.dll: extracting from 7z/LZMA/BCJ/BCJ2.
 

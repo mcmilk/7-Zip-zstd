@@ -627,7 +627,6 @@ public:
   CCoderReleaser(CDecoder *coder): m_Coder(coder) {}
   ~CCoderReleaser()
   {
-    // m_Coder->m_OutWindowStream.Flush();
     m_Coder->ReleaseStreams();
   }
 };
@@ -821,7 +820,7 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
       return S_OK;
   }
 
-  for(;;)
+  for (;;)
   {
     bool keepDecompressing;
     if (_lzMode)
@@ -838,9 +837,10 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
       break;
   }
   RINOK(WriteBuf());
+  UInt64 packSize = m_InBitStream.bitDecoder.GetProcessedSize();
+  RINOK(progress->SetRatioInfo(&packSize, &_writtenFileSize));
   if (_writtenFileSize < _unpackSize)
     return S_FALSE;
-  // return m_OutWindowStream.Flush();
   return S_OK;
 }
 

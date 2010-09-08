@@ -76,11 +76,10 @@ private:
 
   bool _needInStreamInit;
 
-  UInt32 ReadBits(int numBits);
+  UInt32 ReadBits(unsigned numBits);
   Byte ReadByte();
   bool ReadBit();
   UInt32 ReadCrc();
-  HRESULT PrepareBlock(CState &state);
   HRESULT DecodeFile(bool &isBZ, ICompressProgressInfo *progress);
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       bool &isBZ, ICompressProgressInfo *progress);
@@ -166,6 +165,39 @@ public:
   #ifndef _7ZIP_ST
   STDMETHOD(SetNumberOfThreads)(UInt32 numThreads);
   #endif
+};
+
+
+class CNsisDecoder :
+  public ISequentialInStream,
+  public ICompressSetInStream,
+  public ICompressSetOutStreamSize,
+  public CMyUnknownImp
+{
+  NBitm::CDecoder<CInBuffer> m_InStream;
+  Byte m_Selectors[kNumSelectorsMax];
+  CHuffmanDecoder m_HuffmanDecoders[kNumTablesMax];
+  CState m_State;
+  
+  int _nsisState;
+  UInt32 _tPos;
+  unsigned _prevByte;
+  unsigned _repRem;
+  unsigned _numReps;
+  UInt32 _blockSize;
+
+public:
+
+  MY_QUERYINTERFACE_BEGIN2(ISequentialInStream)
+  MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)
+  MY_QUERYINTERFACE_ENTRY(ICompressSetOutStreamSize)
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
+
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  STDMETHOD(ReleaseInStream)();
+  STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 };
 
 }}

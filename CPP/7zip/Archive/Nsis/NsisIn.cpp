@@ -1151,16 +1151,25 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       bool sameName = IsUnicode ?
         (Items[i].NameU == Items[i + 1].NameU) :
         (Items[i].NameA == Items[i + 1].NameA);
-      if (Items[i].Pos == Items[i + 1].Pos && (IsSolid || sameName))
+      if (Items[i].Pos == Items[i + 1].Pos && sameName)
         Items.Delete(i + 1);
       else
         i++;
     }
-    for (i = 0; i + 1 < Items.Size(); i++)
+    for (i = 0; i < Items.Size(); i++)
     {
       CItem &item = Items[i];
-      item.EstimatedSizeIsDefined = true;
-      item.EstimatedSize = Items[i + 1].Pos - item.Pos - 4;
+      UInt32 curPos = item.Pos + 4;
+      for (int nextIndex = i + 1; nextIndex < Items.Size(); nextIndex++)
+      {
+        UInt32 nextPos = Items[nextIndex].Pos;
+        if (curPos <= nextPos)
+        {
+          item.EstimatedSizeIsDefined = true;
+          item.EstimatedSize = nextPos - curPos;
+          break;
+        }
+      }
     }
     if (!IsSolid)
     {
@@ -1275,6 +1284,11 @@ static bool IsLZMA(const Byte *p, UInt32 &dictionary, bool &thereIsFlag)
   return false;
 }
 
+static bool IsBZip2(const Byte *p)
+{
+  return (p[0] == 0x31 && p[1] < 14);
+}
+
 HRESULT CInArchive::Open2(
       DECL_EXTERNAL_CODECS_LOC_VARS2
       )
@@ -1312,7 +1326,14 @@ HRESULT CInArchive::Open2(
   else if (sig[3] == 0x80)
   {
     IsSolid = false;
-    Method = NMethodType::kDeflate;
+    if (IsBZip2(sig + 4))
+      Method = NMethodType::kBZip2;
+    else
+      Method = NMethodType::kDeflate;
+  }
+  else if (IsBZip2(sig))
+  {
+    Method = NMethodType::kBZip2;
   }
   else
   {

@@ -114,6 +114,12 @@ HRESULT CDecoder::CheckPassword(bool &passwOK)
   _key.KeySize = 16 + algId * 8;
   if ((flags & 1) == 0)
     return E_NOTIMPL;
+  if ((flags & 0x4000) != 0)
+  {
+    // Use 3DES
+    return E_NOTIMPL;
+  }
+
   UInt32 rdSize = GetUi16(p + 8);
   if ((rdSize & 0xF) != 0 || rdSize + 16 > _remSize)
     return E_NOTIMPL;

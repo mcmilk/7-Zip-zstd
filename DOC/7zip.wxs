@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "9" ?>
-<?define VerMinor = "15" ?>
+<?define VerMinor = "16" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -248,7 +248,9 @@
               <File Id="fur.txt" Name="fur.txt" />
               <File Id="fy.txt" Name="fy.txt" />
               <File Id="gl.txt" Name="gl.txt" />
+              <File Id="gu.txt" Name="gu.txt" />
               <File Id="he.txt" Name="he.txt" />
+              <File Id="hi.txt" Name="hi.txt" />
               <File Id="hr.txt" Name="hr.txt" />
               <File Id="hu.txt" Name="hu.txt" />
               <File Id="hy.txt" Name="hy.txt" />
@@ -279,6 +281,7 @@
               <File Id="pt_br.txt" Name="pt-br.txt" />
               <File Id="ro.txt" Name="ro.txt" />
               <File Id="ru.txt" Name="ru.txt" />
+              <File Id="sa.txt" Name="sa.txt" />
               <File Id="si.txt" Name="si.txt" />
               <File Id="sk.txt" Name="sk.txt" />
               <File Id="sl.txt" Name="sl.txt" />

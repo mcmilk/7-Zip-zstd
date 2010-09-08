@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/CpuArch.h"
+
 #include "Common/StringToInt.h"
 
 #include "../../Common/StreamUtils.h"
@@ -92,7 +94,16 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   if (!OctalToNumber32(p, 8, item.UID)) item.UID = 0; p += 8;
   if (!OctalToNumber32(p, 8, item.GID)) item.GID = 0; p += 8;
 
-  RIF(OctalToNumber(p, 12, item.Size)); p += 12;
+  if (GetBe32(p) == (UInt32)1 << 31)
+  {
+    // GNU extension
+    item.Size = GetBe64(p + 4);
+  }
+  else
+  {
+    RIF(OctalToNumber(p, 12, item.Size));
+  }
+  p += 12;
   RIF(OctalToNumber32(p, 12, item.MTime)); p += 12;
   
   UInt32 checkSum;
