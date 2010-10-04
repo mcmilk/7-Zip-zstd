@@ -8,7 +8,7 @@
 
 #ifndef _UNICODE
 extern bool g_IsNT;
-#endif _UNICODE
+#endif
 
 namespace NWindows {
 

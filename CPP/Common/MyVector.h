@@ -166,7 +166,7 @@ class CObjectVector: public CPointerVector
 public:
   CObjectVector() {};
   ~CObjectVector() { Clear(); };
-  CObjectVector(const CObjectVector &v) { *this = v; }
+  CObjectVector(const CObjectVector &v): CPointerVector() { *this = v; }
   CObjectVector& operator=(const CObjectVector &v)
   {
     Clear();

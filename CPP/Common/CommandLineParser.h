@@ -59,7 +59,7 @@ public:
 
 struct CCommandForm
 {
-  wchar_t *IDString;
+  const wchar_t *IDString;
   bool PostStringMode;
 };
 

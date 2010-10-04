@@ -920,7 +920,7 @@ HRESULT CThreadTest::ProcessVirt()
     OkMessage = s;
   }
   return S_OK;
-};
+}
 
 /*
 static void AddSizePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)

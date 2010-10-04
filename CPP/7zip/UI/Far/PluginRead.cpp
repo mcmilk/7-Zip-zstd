@@ -76,23 +76,25 @@ HRESULT CPlugin::ExtractFiles(
 }
 
 NFileOperationReturnCode::EEnum CPlugin::GetFiles(struct PluginPanelItem *panelItems,
-    int itemsNumber, int move, char *_aDestPath, int opMode)
+    int itemsNumber, int move, char *destPath, int opMode)
 {
   return GetFilesReal(panelItems, itemsNumber, move,
-      _aDestPath, opMode, (opMode & OPM_SILENT) == 0);
+      destPath, opMode, (opMode & OPM_SILENT) == 0);
 }
 
 NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *panelItems,
-    int itemsNumber, int move, const char *_aDestPath, int opMode, bool showBox)
+    int itemsNumber, int move, const char *destPathLoc, int opMode, bool showBox)
 {
-  if(move != 0)
+  if (move != 0)
   {
     g_StartupInfo.ShowMessage(NMessageID::kMoveIsNotSupported);
     return NFileOperationReturnCode::kError;
   }
 
-  CSysString destPath = _aDestPath;
-  NFile::NName::NormalizeDirPathPrefix(destPath);
+  AString destPath = destPathLoc;
+  UString destPathU = GetUnicodeString(destPath, CP_OEMCP);
+  NFile::NName::NormalizeDirPathPrefix(destPathU);
+  destPath = UnicodeStringToMultiByte(destPathU, CP_OEMCP);
 
   bool extractSelectedFiles = true;
   
@@ -185,17 +187,22 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       if (askCode != kOkButtonIndex)
         return NFileOperationReturnCode::kInterruptedByUser;
       destPath = dialogItems[kPathIndex].Data;
-      destPath.Trim();
-      if (destPath.IsEmpty())
+      destPathU = GetUnicodeString(destPath, CP_OEMCP);
+      destPathU.Trim();
+      if (destPathU.IsEmpty())
       {
-        if(!NFile::NDirectory::MyGetCurrentDirectory(destPath))
+        #ifdef UNDER_CE
+        destPathU = L"\\";
+        #else
+        if (!NFile::NDirectory::MyGetCurrentDirectory(destPathU))
           throw 318016;
-        NFile::NName::NormalizeDirPathPrefix(destPath);
+        NFile::NName::NormalizeDirPathPrefix(destPathU);
+        #endif
         break;
       }
       else
       {
-        if(destPath[destPath.Length() - 1] == kDirDelimiter)
+        if (destPathU.Back() == kDirDelimiter)
           break;
       }
       g_StartupInfo.ShowMessage("You must specify directory path");
@@ -244,7 +251,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     passwordIsDefined = !password.IsEmpty();
   }
 
-  NFile::NDirectory::CreateComplexDirectory(destPath);
+  NFile::NDirectory::CreateComplexDirectory(destPathU);
 
   /*
   vector<int> realIndices;
@@ -254,11 +261,11 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   CRecordVector<UINT32> indices;
   indices.Reserve(itemsNumber);
   for (int i = 0; i < itemsNumber; i++)
-    indices.Add(panelItems[i].UserData);
+    indices.Add((UINT32)panelItems[i].UserData);
 
   HRESULT result = ExtractFiles(decompressAllItems, &indices.Front(), itemsNumber,
       !showBox, extractionInfo.PathMode, extractionInfo.OverwriteMode,
-      MultiByteToUnicodeString(destPath, CP_OEMCP),
+      destPathU,
       passwordIsDefined, password);
   // HRESULT result = ExtractFiles(decompressAllItems, realIndices, !showBox,
   //     extractionInfo, destPath, passwordIsDefined, password);
@@ -270,9 +277,9 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     return NFileOperationReturnCode::kError;
   }
 
-  // if(move != 0)
+  // if (move != 0)
   // {
-  //   if(DeleteFiles(panelItems, itemsNumber, opMode) == FALSE)
+  //   if (DeleteFiles(panelItems, itemsNumber, opMode) == FALSE)
   //     return NFileOperationReturnCode::kError;
   // }
   return NFileOperationReturnCode::kSuccess;

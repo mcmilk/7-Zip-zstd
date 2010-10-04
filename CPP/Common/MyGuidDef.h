@@ -38,7 +38,7 @@ inline int operator!=(REFGUID g1, REFGUID g2) { return !(g1 == g2); }
   #define MY_EXTERN_C extern
 #endif
 
-#endif // GUID_DEFINED
+#endif
 
 
 #ifdef DEFINE_GUID

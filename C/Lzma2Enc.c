@@ -1,5 +1,5 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2010-04-16 : Igor Pavlov : Public domain */
+2010-09-24 : Igor Pavlov : Public domain */
 
 /* #include <stdio.h> */
 #include <string.h>
@@ -269,7 +269,7 @@ static SRes Lzma2Enc_EncodeMt1(CLzma2EncInt *p, CLzma2Enc *mainEncoder,
 
   if (mainEncoder->outBuf == 0)
   {
-    mainEncoder->outBuf = IAlloc_Alloc(mainEncoder->alloc, LZMA2_CHUNK_SIZE_COMPRESSED_MAX);
+    mainEncoder->outBuf = (Byte *)IAlloc_Alloc(mainEncoder->alloc, LZMA2_CHUNK_SIZE_COMPRESSED_MAX);
     if (mainEncoder->outBuf == 0)
       return SZ_ERROR_MEM;
   }

@@ -544,7 +544,17 @@ HRESULT CInArchive::FindCd(CCdInfo &cdInfo)
         UInt64 curPos = endPosition - bufSize + i;
         UInt64 cdEnd = cdInfo.Size + cdInfo.Offset;
         if (curPos != cdEnd)
-          ArcInfo.Base = curPos - cdEnd;
+        {
+          /*
+          if (cdInfo.Offset <= 16 && cdInfo.Size != 0)
+          {
+            // here we support some rare ZIP files with Central directory at the start
+            ArcInfo.Base = 0;
+          }
+          else
+          */
+            ArcInfo.Base = curPos - cdEnd;
+        }
         return S_OK;
       }
     }

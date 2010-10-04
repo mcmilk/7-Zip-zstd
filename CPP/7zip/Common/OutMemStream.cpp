@@ -129,7 +129,7 @@ STDMETHODIMP COutMemStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPos
   return S_OK;
 }
 
-STDMETHODIMP COutMemStream::SetSize(Int64 newSize)
+STDMETHODIMP COutMemStream::SetSize(UInt64 newSize)
 {
   if (_realStreamMode)
   {

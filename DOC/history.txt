@@ -1,6 +1,14 @@
 Sources history of the 7-Zip
 ----------------------------
 
+9.17           2010-10-04
+-------------------------
+- IStream.h::IOutStream::
+    STDMETHOD(SetSize)(Int64 newSize) PURE;
+  was changed to
+    STDMETHOD(SetSize)(UInt64 newSize) PURE;
+
+
 9.09           2009-12-12
 -------------------------
 - The bug was fixed:

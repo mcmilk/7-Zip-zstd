@@ -4,6 +4,7 @@
 #define OVERWRITEDIALOG_H
 
 #include "Common/MyString.h"
+#include "Common/Types.h"
 
 namespace NOverwriteDialog {
 
@@ -11,10 +12,11 @@ struct CFileInfo
 {
   bool SizeIsDefined;
   bool TimeIsDefined;
-  UINT64 Size;
+  UInt64 Size;
   FILETIME Time;
-  CSysString Name;
+  UString Name;
 };
+
 namespace NResult
 {
   enum EEnum
@@ -24,10 +26,11 @@ namespace NResult
     kNo,
     kNoToAll,
     kAutoRename,
-    kCancel,
+    kCancel
   };
 }
-NResult::EEnum Execute(const CFileInfo &anOldFileInfo, const CFileInfo &aNewFileInfo);
+
+NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInfo);
 
 }
 

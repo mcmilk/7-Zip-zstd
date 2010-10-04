@@ -1,11 +1,13 @@
 PROG = 7-ZipFar.dll
 DEF_FILE = Far.def
 CFLAGS = $(CFLAGS) -I ../../../ \
-  -DWIN_LONG_PATH \
   -DEXTERNAL_CODECS
 
+!IFNDEF UNDER_CE
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH
+!ENDIF
+
 FAR_OBJS = \
-  $O\CLSIDConst.obj \
   $O\ExtractEngine.obj \
   $O\FarUtils.obj \
   $O\Main.obj \

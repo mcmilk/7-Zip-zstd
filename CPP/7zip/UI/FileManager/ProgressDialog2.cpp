@@ -941,7 +941,7 @@ void CProgressDialog::ProcessWasFinished()
     PostMessage(kCloseMessage);
   else
     _needClose = true;
-};
+}
 
 
 HRESULT CProgressThreadVirt::Create(const UString &title, HWND parentWindow)

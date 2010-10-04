@@ -156,7 +156,7 @@ struct CMftRef
 #define ATNAME(n) ATTR_TYPE_ ## n
 #define DEF_ATTR_TYPE(v, n) ATNAME(n) = v
 
-typedef enum
+enum
 {
   DEF_ATTR_TYPE(0x00, UNUSED),
   DEF_ATTR_TYPE(0x10, STANDARD_INFO),
@@ -873,7 +873,7 @@ STDMETHODIMP CByteBufStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
   return S_OK;
 }
 
-HRESULT DataParseExtents(int clusterSizeLog, const CObjectVector<CAttr> attrs,
+static HRESULT DataParseExtents(int clusterSizeLog, const CObjectVector<CAttr> &attrs,
     int attrIndex, int attrIndexLim, UInt64 numPhysClusters, CRecordVector<CExtent> &Extents)
 {
   CExtent e;
@@ -969,6 +969,7 @@ struct CMftRec
   void ParseDataNames();
   HRESULT GetStream(IInStream *mainStream, int dataIndex,
       int clusterSizeLog, UInt64 numPhysClusters, IInStream **stream) const;
+  int GetNumExtents(int dataIndex, int clusterSizeLog, UInt64 numPhysClusters) const;
 
   UInt64 GetSize(int dataIndex) const { return DataAttrs[DataRefs[dataIndex].Start].GetSize(); }
 
@@ -1034,6 +1035,35 @@ HRESULT CMftRec::GetStream(IInStream *mainStream, int dataIndex,
   streamSpec->Init();
   *destStream = streamTemp.Detach();
   return S_OK;
+}
+
+int CMftRec::GetNumExtents(int dataIndex, int clusterSizeLog, UInt64 numPhysClusters) const
+{
+  if (dataIndex < 0)
+    return 0;
+  {
+    const CDataRef &ref = DataRefs[dataIndex];
+    int numNonResident = 0;
+    int i;
+    for (i = ref.Start; i < ref.Start + ref.Num; i++)
+      if (DataAttrs[i].NonResident)
+        numNonResident++;
+
+    const CAttr &attr0 = DataAttrs[ref.Start];
+      
+    if (numNonResident != 0 || ref.Num != 1)
+    {
+      if (numNonResident != ref.Num || !attr0.IsCompressionUnitSupported())
+        return 0; // error;
+      CRecordVector<CExtent> extents;
+      if (DataParseExtents(clusterSizeLog, DataAttrs, ref.Start, ref.Start + ref.Num, numPhysClusters, extents) != S_OK)
+        return 0; // error;
+      return extents.Size() - 1;
+    }
+    // if (attr0.Data.GetCapacity() != 0)
+    //   return 1;
+    return 0;
+  }
 }
 
 bool CMftRec::Parse(Byte *p, int sectorSizeLog, UInt32 numSectors, UInt32 recNumber,
@@ -1425,7 +1455,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
@@ -1435,10 +1465,11 @@ STATPROPSTG kProps[] =
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidATime, VT_FILETIME},
   { NULL, kpidAttrib, VT_UI4},
-  { NULL, kpidLinks, VT_UI4}
+  { NULL, kpidLinks, VT_UI4},
+  { NULL, kpidNumBlocks, VT_UI4}
 };
 
-STATPROPSTG kArcProps[] =
+static const STATPROPSTG kArcProps[] =
 {
   { NULL, kpidVolumeName, VT_BSTR},
   { NULL, kpidFileSystem, VT_BSTR},
@@ -1582,6 +1613,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidLinks: prop = rec.MyNumNameLinks; break;
     case kpidSize: if (data) prop = data->GetSize(); break;
     case kpidPackSize: if (data) prop = data->GetPackSize(); break;
+    case kpidNumBlocks: if (data) prop = (UInt32)rec.GetNumExtents(item.DataIndex, Header.ClusterSizeLog, Header.NumClusters); break;
   }
   prop.Detach(value);
   return S_OK;

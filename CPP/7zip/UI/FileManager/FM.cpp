@@ -384,7 +384,7 @@ static const int kNumSwitches = 1;
 namespace NKey {
 enum Enum
 {
-  kOpenArachive = 0,
+  kOpenArachive = 0
 };
 
 }

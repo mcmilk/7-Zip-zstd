@@ -92,7 +92,7 @@ STDMETHODIMP CFilterCoder::ReleaseOutStream()
 {
   _outStream.Release();
   return S_OK;
-};
+}
 
 
 STDMETHODIMP CFilterCoder::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -164,7 +164,7 @@ STDMETHODIMP CFilterCoder::ReleaseInStream()
 {
   _inStream.Release();
   return S_OK;
-};
+}
 
 STDMETHODIMP CFilterCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 {

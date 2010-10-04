@@ -72,7 +72,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
   if (prop.vt != VT_BSTR)
     throw 272340;
 
-  CSysString oemString = UnicodeStringToMultiByte(prop.bstrVal, CP_OEMCP);
+  AString oemString = UnicodeStringToMultiByte(prop.bstrVal, CP_OEMCP);
   if (oemString == "..")
     oemString = kDotsReplaceString;
 
@@ -133,9 +133,9 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
   panelItem.CustomColumnData = NULL;
   panelItem.CustomColumnNumber = 0;
 
+  panelItem.CRC32 = 0;
   panelItem.Reserved[0] = 0;
   panelItem.Reserved[1] = 0;
-  panelItem.Reserved[2] = 0;
 }
 
 int CPlugin::GetFindData(PluginPanelItem **panelItems, int *itemsNumber, int opMode)
@@ -466,7 +466,7 @@ static AString PropToString(const NCOM::CPropVariant &prop, PROPID propID)
   AString s;
 
   if (prop.vt == VT_BSTR)
-    s = GetSystemString(prop.bstrVal, CP_OEMCP);
+    s = UnicodeStringToMultiByte(prop.bstrVal, CP_OEMCP);
   else if (prop.vt == VT_BOOL)
   {
     int messageID = VARIANT_BOOLToBool(prop.boolVal) ?
@@ -733,7 +733,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   if (strcmp(pluginPanelItem.FindData.cFileName, "..") == 0 &&
         NFile::NFind::NAttributes::IsDir(pluginPanelItem.FindData.dwFileAttributes))
     return S_FALSE;
-  int itemIndex = pluginPanelItem.UserData;
+  int itemIndex = (int)pluginPanelItem.UserData;
 
   CObjectVector<CArchiveItemProperty> properties;
   UInt32 numProps;
@@ -781,7 +781,7 @@ HRESULT CPlugin::ShowAttributesWindow()
     
     NCOM::CPropVariant prop;
     RINOK(_folder->GetProperty(itemIndex, property.ID, &prop));
-    CSysString s = PropToString(prop, property.ID);
+    AString s = PropToString(prop, property.ID);
     values.Add(s);
     
     {

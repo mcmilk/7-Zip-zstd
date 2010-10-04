@@ -264,9 +264,8 @@ static void GetStream(bool oldVersion, const Byte *p, CStreamInfo &s)
   if (oldVersion)
   {
     s.PartNumber = 1;
-    s.RefCount = 1;
-    // UInt32 id = Get32(p + 24);
-    // UInt32 unknown = Get32(p + 28);
+    s.Id = Get32(p + 24);
+    s.RefCount = Get32(p + 28);
     memcpy(s.Hash, p + 32, kHashSize);
   }
   else
@@ -384,31 +383,48 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
       DirProcessed += 8;
       return S_OK;
     }
-    if ((len & 7) != 0 || len < 0x28 || rem < len)
+    if ((len & 7) != 0 || rem < len)
       return S_FALSE;
+    if (!IsOldVersion)
+      if (len < 0x28)
+        return S_FALSE;
     DirProcessed += (size_t)len;
     if (DirProcessed > DirSize)
       return S_FALSE;
-    if (Get64(p + 8) == 0)
+    int extraOffset = 0;
+    if (IsOldVersion)
+    {
+      if (len < 0x40 || (/* Get32(p + 12) == 0 && */ Get32(p + 0x14) != 0))
+      {
+        extraOffset = 0x10;
+      }
+    }
+    else if (Get64(p + 8) == 0)
+      extraOffset = 0x24;
+    if (extraOffset)
     {
       if (prevIndex == -1)
         return S_FALSE;
-
-      UInt32 fileNameLen = Get16(p + 0x24);
+      UInt32 fileNameLen = Get16(p + extraOffset);
       if ((fileNameLen & 1) != 0)
         return S_FALSE;
       /* Probably different versions of ImageX can use different number of
          additional ZEROs. So we don't use exact check. */
       UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
-      if (((0x26 + fileNameLen2 + 6) & ~7) > len)
+      if (((extraOffset + 2 + fileNameLen2 + 6) & ~7) > len)
         return S_FALSE;
       
       UString name;
-      RINOK(ReadName(p + 0x26, fileNameLen, name));
+      RINOK(ReadName(p + extraOffset + 2, fileNameLen, name));
 
       CItem &prevItem = Items[prevIndex];
       if (name.IsEmpty() && !prevItem.HasStream())
-        memcpy(prevItem.Hash, p + 0x10, kHashSize);
+      {
+        if (IsOldVersion)
+          prevItem.Id = Get32(p + 8);
+        else
+          memcpy(prevItem.Hash, p + 0x10, kHashSize);
+      }
       else
       {
         CItem item;
@@ -416,7 +432,13 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
         item.CTime = prevItem.CTime;
         item.ATime = prevItem.ATime;
         item.MTime = prevItem.MTime;
-        memcpy(item.Hash, p + 0x10, kHashSize);
+        if (IsOldVersion)
+        {
+          item.Id = Get32(p + 8);
+          memset(item.Hash, 0, kHashSize);
+        }
+        else
+          memcpy(item.Hash, p + 0x10, kHashSize);
         item.Attrib = 0;
         item.Order = Order++;
         item.Parent = parent;
@@ -425,30 +447,41 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
       pos += (size_t)len;
       continue;
     }
-    if (len < kDirRecordSize)
+
+    UInt32 dirRecordSize = IsOldVersion ? kDirRecordSizeOld : kDirRecordSize;
+    if (len < dirRecordSize)
       return S_FALSE;
 
     CItem item;
     item.Attrib = Get32(p + 8);
     // item.SecurityId = Get32(p + 0xC);
     UInt64 subdirOffset = Get64(p + 0x10);
-    GetFileTimeFromMem(p + 0x28, &item.CTime);
-    GetFileTimeFromMem(p + 0x30, &item.ATime);
-    GetFileTimeFromMem(p + 0x38, &item.MTime);
-    memcpy(item.Hash, p + 0x40, kHashSize);
+    UInt32 timeOffset = IsOldVersion ? 0x18: 0x28;
+    GetFileTimeFromMem(p + timeOffset,      &item.CTime);
+    GetFileTimeFromMem(p + timeOffset + 8,  &item.ATime);
+    GetFileTimeFromMem(p + timeOffset + 16, &item.MTime);
+    if (IsOldVersion)
+    {
+      item.Id = Get32(p + 0x10);
+      memset(item.Hash, 0, kHashSize);
+    }
+    else
+    {
+      memcpy(item.Hash, p + 0x40, kHashSize);
+    }
+    // UInt32 numStreams = Get16(p + dirRecordSize - 6);
+    UInt32 shortNameLen = Get16(p + dirRecordSize - 4);
+    UInt32 fileNameLen = Get16(p + dirRecordSize - 2);
 
-    UInt32 shortNameLen = Get16(p + 98);
-    UInt32 fileNameLen = Get16(p + 100);
     if ((shortNameLen & 1) != 0 || (fileNameLen & 1) != 0)
       return S_FALSE;
 
     UInt32 shortNameLen2 = (shortNameLen == 0 ? shortNameLen : shortNameLen + 2);
     UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
 
-    if (((kDirRecordSize + fileNameLen2 + shortNameLen2 + 6) & ~7) > len)
+    if (((dirRecordSize + fileNameLen2 + shortNameLen2 + 6) & ~7) > len)
       return S_FALSE;
-    
-    p += kDirRecordSize;
+    p += dirRecordSize;
     
     RINOK(ReadName(p, fileNameLen, item.Name));
     RINOK(ReadName(p + fileNameLen2, shortNameLen, item.ShortName));
@@ -458,9 +491,9 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
 
     /*
     // there are some extra data for some files.
-    p -= kDirRecordSize;
-    p += ((kDirRecordSize + fileNameLen2 + shortNameLen2 + 6) & ~7);
-    if (((kDirRecordSize + fileNameLen2 + shortNameLen2 + 6) & ~7) != len)
+    p -= dirRecordSize;
+    p += ((dirRecordSize + fileNameLen2 + shortNameLen2 + 6) & ~7);
+    if (((dirRecordSize + fileNameLen2 + shortNameLen2 + 6) & ~7) != len)
       p = p;
     */
 
@@ -496,6 +529,29 @@ HRESULT CDatabase::ParseImageDirs(const CByteBuffer &buf, int parent)
     return S_FALSE;
   const Byte *p = DirData;
   UInt32 totalLength = Get32(p);
+  if (IsOldVersion)
+  {
+    for (pos = 4;; pos += 8)
+    {
+      if (pos + 4 > DirSize)
+        return S_FALSE;
+      UInt32 n = Get32(p + pos);
+      if (n == 0)
+        break;
+      if (pos + 8 > DirSize)
+        return S_FALSE;
+      totalLength += Get32(p + pos + 4);
+      if (totalLength > DirSize)
+        return S_FALSE;
+    }
+    pos += totalLength + 4;
+    pos = (pos + 7) & ~(size_t)7;
+    if (pos > DirSize)
+      return S_FALSE;
+  }
+  else
+  {
+
   // UInt32 numEntries = Get32(p + 4);
   pos += 8;
   {
@@ -511,7 +567,7 @@ HRESULT CDatabase::ParseImageDirs(const CByteBuffer &buf, int parent)
       sum += len;
       pos += 8;
     }
-    pos += sum; // skip security descriptors
+    pos += (size_t)sum; // skip security descriptors
     while ((pos & 7) != 0)
       pos++;
     if (pos != totalLength)
@@ -523,6 +579,7 @@ HRESULT CDatabase::ParseImageDirs(const CByteBuffer &buf, int parent)
       return S_FALSE;
     else
       pos = totalLength;
+  }
   }
   DirStartOffset = DirProcessed = pos;
   RINOK(ParseDirItem(pos, parent));
@@ -580,8 +637,6 @@ HRESULT CHeader::Parse(const Byte *p)
     BootIndex = Get32(p + 0x48);
     IntegrityResource.Parse(p + offset + 0x4C);
   }
-  if (IsOldVersion())
-    return S_FALSE;
   return S_OK;
 }
 
@@ -612,9 +667,18 @@ static HRESULT ReadStreams(bool oldVersion, IInStream *inStream, const CHeader &
   return (i == offsetBuf.GetCapacity()) ? S_OK : S_FALSE;
 }
 
+static bool IsEmptySha(const Byte *data)
+{
+  for (int i = 0; i < kHashSize; i++)
+    if (data[i] != 0)
+      return false;
+  return true;
+}
+
 HRESULT CDatabase::Open(IInStream *inStream, const CHeader &h, CByteBuffer &xml, IArchiveOpenCallback *openCallback)
 {
   OpenCallback = openCallback;
+  IsOldVersion = h.IsOldVersion();
   RINOK(UnpackData(inStream, h.XmlResource, h.IsLzxMode(), xml, NULL));
   RINOK(ReadStreams(h.IsOldVersion(), inStream, h, *this));
   bool needBootMetadata = !h.MetadataResource.IsEmpty();
@@ -631,7 +695,8 @@ HRESULT CDatabase::Open(IInStream *inStream, const CHeader &h, CByteBuffer &xml,
       Byte hash[kHashSize];
       CByteBuffer metadata;
       RINOK(UnpackData(inStream, si.Resource, h.IsLzxMode(), metadata, hash));
-      if (memcmp(hash, si.Hash, kHashSize) != 0)
+      if (memcmp(hash, si.Hash, kHashSize) != 0 &&
+          !(h.IsOldVersion() && IsEmptySha(si.Hash)))
         return S_FALSE;
       NumImages++;
       RINOK(ParseImageDirs(metadata, -(int)(++imageIndex)));
@@ -660,10 +725,35 @@ static int CompareStreamsByPos(const CStreamInfo *p1, const CStreamInfo *p2, voi
   return MyCompare(p1->Resource.Offset, p2->Resource.Offset);
 }
 
+static int CompareIDs(const int *p1, const int *p2, void *param)
+{
+  const CRecordVector<CStreamInfo> &streams = *(const CRecordVector<CStreamInfo> *)param;
+  return MyCompare(streams[*p1].Id, streams[*p2].Id);
+}
+
 static int CompareHashRefs(const int *p1, const int *p2, void *param)
 {
   const CRecordVector<CStreamInfo> &streams = *(const CRecordVector<CStreamInfo> *)param;
   return memcmp(streams[*p1].Hash, streams[*p2].Hash, kHashSize);
+}
+
+static int FindId(const CRecordVector<CStreamInfo> &streams,
+    const CIntVector &sortedByHash, UInt32 id)
+{
+  int left = 0, right = streams.Size();
+  while (left != right)
+  {
+    int mid = (left + right) / 2;
+    int streamIndex = sortedByHash[mid];
+    UInt32 id2 = streams[streamIndex].Id;
+    if (id == id2)
+      return streamIndex;
+    if (id < id2)
+      right = mid;
+    else
+      left = mid + 1;
+  }
+  return -1;
 }
 
 static int FindHash(const CRecordVector<CStreamInfo> &streams,
@@ -712,7 +802,10 @@ HRESULT CDatabase::Sort(bool skipRootDir)
     {
       for (int i = 0; i < Streams.Size(); i++)
         sortedByHash.Add(i);
-      sortedByHash.Sort(CompareHashRefs, &Streams);
+      if (IsOldVersion)
+        sortedByHash.Sort(CompareIDs, &Streams);
+      else
+        sortedByHash.Sort(CompareHashRefs, &Streams);
     }
     
     for (int i = 0; i < Items.Size(); i++)
@@ -720,7 +813,10 @@ HRESULT CDatabase::Sort(bool skipRootDir)
       CItem &item = Items[i];
       item.StreamIndex = -1;
       if (item.HasStream())
-        item.StreamIndex = FindHash(Streams, sortedByHash, item.Hash);
+        if (IsOldVersion)
+          item.StreamIndex = FindId(Streams, sortedByHash, item.Id);
+        else
+          item.StreamIndex = FindHash(Streams, sortedByHash, item.Hash);
     }
   }
 

@@ -51,8 +51,8 @@ public:
 class CContext: public CContextBase2
 {
 public:
-  void Update(Byte *data, size_t size, bool rar350Mode = false);
-  void Update(const Byte *data, size_t size) { Update((Byte *)data, size, false); }
+  void Update(const Byte *data, size_t size);
+  void UpdateRar(Byte *data, size_t size, bool rar350Mode);
   void Final(Byte *digest);
 };
 

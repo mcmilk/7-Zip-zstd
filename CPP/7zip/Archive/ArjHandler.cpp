@@ -264,7 +264,7 @@ struct CInArchiveException
   {
     kUnexpectedEndOfArchive = 0,
     kCRCError,
-    kIncorrectArchive,
+    kIncorrectArchive
   }
   Cause;
   CInArchiveException(CCauseType cause): Cause(cause) {};

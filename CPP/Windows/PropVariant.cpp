@@ -168,7 +168,7 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
       memmove((PROPVARIANT*)this, pSrc, sizeof(PROPVARIANT));
       return S_OK;
   }
-  return ::VariantCopy((tagVARIANT *)this, (tagVARIANT *)(pSrc));
+  return ::VariantCopy((tagVARIANT *)this, (tagVARIANT *)const_cast<PROPVARIANT *>(pSrc));
 }
 
 

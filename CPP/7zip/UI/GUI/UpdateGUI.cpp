@@ -57,7 +57,7 @@ HRESULT CThreadUpdating::ProcessVirt()
   if (ei.SystemError != S_OK && ei.SystemError != E_FAIL && ei.SystemError != E_ABORT)
     return ei.SystemError;
   return res;
-};
+}
 
 static void AddProp(CObjectVector<CProperty> &properties, const UString &name, const UString &value)
 {

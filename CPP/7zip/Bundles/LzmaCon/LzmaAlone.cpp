@@ -88,7 +88,7 @@ static const int kNumSwitches = sizeof(kSwitchForms) / sizeof(kSwitchForms[0]);
 
 static void PrintMessage(const char *s)
 {
-  fprintf(stderr, s);
+  fputs(s, stderr);
 }
 
 static void PrintHelp()
@@ -425,7 +425,7 @@ int main2(int numArgs, const char *args[])
     props[5].ulVal = (UInt32)fb;
 
     props[6].vt = VT_BSTR;
-    props[6].bstrVal = (BSTR)(const wchar_t *)mf;
+    props[6].bstrVal = const_cast<BSTR>((const wchar_t *)mf);
 
     props[7].vt = VT_BOOL;
     props[7].boolVal = eos ? VARIANT_TRUE : VARIANT_FALSE;

@@ -172,7 +172,7 @@ HRESULT CUpdateCallbackGUI::CloseProgress()
 {
   ProgressDialog->MyClose();
   return S_OK;
-};
+}
 */
 
 

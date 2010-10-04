@@ -111,5 +111,4 @@ struct CAppState
   }
 };
 
-
 #endif

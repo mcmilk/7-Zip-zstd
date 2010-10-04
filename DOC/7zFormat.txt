@@ -399,7 +399,7 @@ FilesInfo
           UINT64 DataIndex
         []
         for(Definded Items)
-          UINT32 Time
+          UINT64 Time
         []
       
       kNames:     (0x11)

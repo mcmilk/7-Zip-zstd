@@ -106,9 +106,9 @@ void CDecoder::Calculate()
     unsigned i;
     for (i = 0; i < kNumRounds; i++)
     {
-      sha.Update(rawPassword, rawLength, _rar350Mode);
+      sha.UpdateRar(rawPassword, rawLength, _rar350Mode);
       Byte pswNum[3] = { (Byte)i, (Byte)(i >> 8), (Byte)(i >> 16) };
-      sha.Update(pswNum, 3, _rar350Mode);
+      sha.UpdateRar(pswNum, 3, _rar350Mode);
       if (i % (kNumRounds / 16) == 0)
       {
         NSha1::CContext shaTemp = sha;

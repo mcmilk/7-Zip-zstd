@@ -57,20 +57,21 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
     Int32 *answer)
 {
   NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
-  oldFileInfo.Time = *existTime;
+  oldFileInfo.TimeIsDefined = (existTime != 0);
+  if (oldFileInfo.TimeIsDefined)
+    oldFileInfo.Time = *existTime;
   oldFileInfo.SizeIsDefined = (existSize != NULL);
   if (oldFileInfo.SizeIsDefined)
     oldFileInfo.Size = *existSize;
-  oldFileInfo.Name = GetSystemString(existName, m_CodePage);
+  oldFileInfo.Name = existName;
 
   newFileInfo.TimeIsDefined = (newTime != 0);
   if (newFileInfo.TimeIsDefined)
     newFileInfo.Time = *newTime;
-  
   newFileInfo.SizeIsDefined = (newSize != NULL);
   if (newFileInfo.SizeIsDefined)
     newFileInfo.Size = *newSize;
-  newFileInfo.Name = GetSystemString(newName, m_CodePage);
+  newFileInfo.Name = newName;
   
   NOverwriteDialog::NResult::EEnum result =
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);

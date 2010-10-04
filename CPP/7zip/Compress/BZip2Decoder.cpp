@@ -10,8 +10,9 @@
 namespace NCompress {
 namespace NBZip2 {
 
-#define NO_INLINE MY_FAST_CALL
-
+#undef NO_INLINE
+#define NO_INLINE
+  
 static const UInt32 kNumThreadsMax = 4;
 
 static const UInt32 kBufferSize = (1 << 17);
@@ -422,7 +423,7 @@ CDecoder::CDecoder()
   m_States = 0;
   m_NumThreadsPrev = 0;
   NumThreads = 1;
-  #endif;
+  #endif
   _needInStreamInit = true;
 }
 

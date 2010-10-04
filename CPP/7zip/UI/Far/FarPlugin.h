@@ -1,18 +1,37 @@
 // FarPlugin.h
 
-#ifndef __FARPLUGIN_H
-#define __FARPLUGIN_H
+// #include "plugin.hpp"
 
+const int kInfoPanelLineSize = 80;
+
+// #define __FAR_PLUGIN_H
+
+#ifdef UNDER_CE
+typedef struct _CHAR_INFO {
+    union {
+        WCHAR UnicodeChar;
+        CHAR   AsciiChar;
+    } Char;
+    WORD Attributes;
+} CHAR_INFO, *PCHAR_INFO;
+#endif
+
+#ifndef __FAR_PLUGIN_H
+#define __FAR_PLUGIN_H
+
+#ifndef _WIN64
 #if defined(__BORLANDC__) && (__BORLANDC <= 0x520)
   #pragma option -a1
 #elif defined(__GNUC__) || (defined(__WATCOMC__) && (__WATCOMC__ < 1100))
   #pragma pack(1)
 #else
   #pragma pack(push,1)
+#endif
+#endif
+
   #if _MSC_VER
     #define _export
   #endif
-#endif
 
 #define NM 260
 
@@ -41,8 +60,9 @@ struct PluginPanelItem
   char *Owner;
   char **CustomColumnData;
   int CustomColumnNumber;
-  DWORD UserData;
-  DWORD Reserved[3];
+  DWORD_PTR UserData;
+	DWORD CRC32;
+  DWORD_PTR Reserved[2];
 };
 
 #define PPIF_PROCESSDESCR 0x80000000
@@ -58,7 +78,7 @@ enum {
 
 
 typedef int (WINAPI *FARAPIMENU)(
-  int PluginNumber,
+  INT_PTR PluginNumber,
   int X,
   int Y,
   int MaxHeight,
@@ -73,7 +93,7 @@ typedef int (WINAPI *FARAPIMENU)(
 );
 
 typedef int (WINAPI *FARAPIDIALOG)(
-  int PluginNumber,
+  INT_PTR PluginNumber,
   int X1,
   int Y1,
   int X2,
@@ -92,7 +112,7 @@ enum {
 };
 
 typedef int (WINAPI *FARAPIMESSAGE)(
-  int PluginNumber,
+  INT_PTR PluginNumber,
   unsigned int Flags,
   char *HelpTopic,
   char **Items,
@@ -101,7 +121,7 @@ typedef int (WINAPI *FARAPIMESSAGE)(
 );
 
 typedef char* (WINAPI *FARAPIGETMSG)(
-  int PluginNumber,
+  INT_PTR PluginNumber,
   int MsgId
 );
 
@@ -194,7 +214,8 @@ struct PanelInfo
   char CurDir[NM];
   int ShortNames;
   int SortMode;
-  DWORD Reserved[2];
+  DWORD Flags;
+  DWORD Reserved;
 };
 
 
@@ -222,7 +243,7 @@ typedef int (WINAPI *FARAPIGETDIRLIST)(
 );
 
 typedef int (WINAPI *FARAPIGETPLUGINDIRLIST)(
-  int PluginNumber,
+  INT_PTR PluginNumber,
   HANDLE hPlugin,
   char *Dir,
   struct PluginPanelItem **pPanelItem,
@@ -294,126 +315,11 @@ typedef int (WINAPI *FARAPIEDITORCONTROL)(
   void *Param
 );
 
-
-enum EDITOR_EVENTS {
-  EE_READ,EE_SAVE,EE_REDRAW,EE_CLOSE
-};
-
-enum EDITOR_CONTROL_COMMANDS {
-  ECTL_GETSTRING,ECTL_SETSTRING,ECTL_INSERTSTRING,ECTL_DELETESTRING,
-  ECTL_DELETECHAR,ECTL_INSERTTEXT,ECTL_GETINFO,ECTL_SETPOSITION,
-  ECTL_SELECT,ECTL_REDRAW,ECTL_EDITORTOOEM,ECTL_OEMTOEDITOR,
-  ECTL_TABTOREAL,ECTL_REALTOTAB,ECTL_EXPANDTABS,ECTL_SETTITLE,
-  ECTL_READINPUT,ECTL_PROCESSINPUT,ECTL_ADDCOLOR,ECTL_GETCOLOR
-};
-
-
-struct EditorGetString
-{
-  int StringNumber;
-  char *StringText;
-  char *StringEOL;
-  int StringLength;
-  int SelStart;
-  int SelEnd;
-};
-
-
-struct EditorSetString
-{
-  int StringNumber;
-  char *StringText;
-  char *StringEOL;
-  int StringLength;
-};
-
-
-enum EDITOR_OPTIONS {
-  EOPT_EXPANDTABS=1,EOPT_PERSISTENTBLOCKS=2,EOPT_DELREMOVESBLOCKS=4,
-  EOPT_AUTOINDENT=8,EOPT_SAVEFILEPOSITION=16,EOPT_AUTODETECTTABLE=32,
-  EOPT_CURSORBEYONDEOL=64
-};
-
-
-enum EDITOR_BLOCK_TYPES {
-  BTYPE_NONE,BTYPE_STREAM,BTYPE_COLUMN
-};
-
-
-struct EditorInfo
-{
-  int EditorID;
-  char *FileName;
-  int WindowSizeX;
-  int WindowSizeY;
-  int TotalLines;
-  int CurLine;
-  int CurPos;
-  int CurTabPos;
-  int TopScreenLine;
-  int LeftPos;
-  int Overtype;
-  int BlockType;
-  int BlockStartLine;
-  int AnsiMode;
-  int TableNum;
-  DWORD Options;
-  int TabSize;
-  DWORD Reserved[8];
-};
-
-
-struct EditorSetPosition
-{
-  int CurLine;
-  int CurPos;
-  int CurTabPos;
-  int TopScreenLine;
-  int LeftPos;
-  int Overtype;
-};
-
-
-struct EditorSelect
-{
-  int BlockType;
-  int BlockStartLine;
-  int BlockStartPos;
-  int BlockWidth;
-  int BlockHeight;
-};
-
-
-struct EditorConvertText
-{
-  char *Text;
-  int TextLength;
-};
-
-
-struct EditorConvertPos
-{
-  int StringNumber;
-  int SrcPos;
-  int DestPos;
-};
-
-
-struct EditorColor
-{
-  int StringNumber;
-  int ColorItem;
-  int StartPos;
-  int EndPos;
-  int Color;
-};
-
-
 struct PluginStartupInfo
 {
   int StructSize;
   char ModuleName[NM];
-  int ModuleNumber;
+  INT_PTR ModuleNumber;
   char *RootKey;
   FARAPIMENU Menu;
   FARAPIDIALOG Dialog;
@@ -455,8 +361,6 @@ struct PluginInfo
   int PluginConfigStringsNumber;
   char *CommandPrefix;
 };
-
-const int kInfoPanelLineSize = 80;
 
 struct InfoPanelLine
 {
@@ -567,6 +471,7 @@ enum OPERATION_MODES {
   OPM_DESCR=32
 };
 
+#ifndef _WIN64
 #if defined(__BORLANDC__) && (__BORLANDC <= 0x520)
   #pragma option -a.
 #elif defined(__GNUC__) || (defined(__WATCOMC__) && (__WATCOMC__ < 1100))
@@ -574,5 +479,41 @@ enum OPERATION_MODES {
 #else
   #pragma pack(pop)
 #endif
+#endif
+
+/*
+EXTERN_C_BEGIN
+
+	void   WINAPI _export ClosePluginW(HANDLE hPlugin);
+	int    WINAPI _export CompareW(HANDLE hPlugin,const struct PluginPanelItem *Item1,const struct PluginPanelItem *Item2,unsigned int Mode);
+	int    WINAPI _export ConfigureW(int ItemNumber);
+	int    WINAPI _export DeleteFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
+	void   WINAPI _export ExitFARW(void);
+	void   WINAPI _export FreeFindDataW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber);
+	void   WINAPI _export FreeVirtualFindDataW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber);
+	int    WINAPI _export GetFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,const wchar_t **DestPath,int OpMode);
+	int    WINAPI _export GetFindDataW(HANDLE hPlugin,struct PluginPanelItem **pPanelItem,int *pItemsNumber,int OpMode);
+	int    WINAPI _export GetMinFarVersionW(void);
+	void   WINAPI _export GetOpenPluginInfoW(HANDLE hPlugin,struct OpenPluginInfo *Info);
+	void   WINAPI _export GetPluginInfoW(struct PluginInfo *Info);
+	int    WINAPI _export GetVirtualFindDataW(HANDLE hPlugin,struct PluginPanelItem **pPanelItem,int *pItemsNumber,const wchar_t *Path);
+	int    WINAPI _export MakeDirectoryW(HANDLE hPlugin,const wchar_t **Name,int OpMode);
+	HANDLE WINAPI _export OpenFilePluginW(const wchar_t *Name,const unsigned char *Data,int DataSize,int OpMode);
+	HANDLE WINAPI _export OpenPluginW(int OpenFrom,INT_PTR Item);
+	int    WINAPI _export ProcessDialogEventW(int Event,void *Param);
+	int    WINAPI _export ProcessEditorEventW(int Event,void *Param);
+	int    WINAPI _export ProcessEditorInputW(const INPUT_RECORD *Rec);
+	int    WINAPI _export ProcessEventW(HANDLE hPlugin,int Event,void *Param);
+	int    WINAPI _export ProcessHostFileW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
+	int    WINAPI _export ProcessKeyW(HANDLE hPlugin,int Key,unsigned int ControlState);
+	int    WINAPI _export ProcessSynchroEventW(int Event,void *Param);
+	int    WINAPI _export ProcessViewerEventW(int Event,void *Param);
+	int    WINAPI _export PutFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,const wchar_t *SrcPath,int OpMode);
+	int    WINAPI _export SetDirectoryW(HANDLE hPlugin,const wchar_t *Dir,int OpMode);
+	int    WINAPI _export SetFindListW(HANDLE hPlugin,const struct PluginPanelItem *PanelItem,int ItemsNumber);
+	void   WINAPI _export SetStartupInfoW(const struct PluginStartupInfo *Info);
+
+EXTERN_C_END
+*/
 
 #endif

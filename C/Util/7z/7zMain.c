@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2010-07-13 : Igor Pavlov : Public domain */
+2010-09-20 : Igor Pavlov : Public domain */
 
 #include <stdio.h>
 #include <string.h>
@@ -179,7 +179,7 @@ static SRes PrintString(const UInt16 *s)
   Buf_Init(&buf);
   res = Utf16_To_Char(&buf, s, 0);
   if (res == SZ_OK)
-    printf("%s", buf.data);
+    fputs((const char *)buf.data, stdout);
   Buf_Free(&buf, &g_Alloc);
   return res;
 }
@@ -407,9 +407,10 @@ int MY_CDECL main(int numargs, char *args[])
           printf("\n");
           continue;
         }
-        printf(testCommand ?
+        fputs(testCommand ?
             "Testing    ":
-            "Extracting ");
+            "Extracting ",
+            stdout);
         res = PrintString(temp);
         if (res != SZ_OK)
           break;

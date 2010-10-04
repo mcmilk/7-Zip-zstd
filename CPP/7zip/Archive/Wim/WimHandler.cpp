@@ -55,6 +55,7 @@ static STATPROPSTG kArcProps[] =
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidComment, VT_BSTR},
+  { NULL, kpidUnpackVer, VT_BSTR},
   { NULL, kpidIsVolume, VT_BOOL},
   { NULL, kpidVolume, VT_UI4},
   { NULL, kpidNumVolumes, VT_UI4}
@@ -226,6 +227,28 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       }
       break;
 
+    case kpidUnpackVer:
+    {
+      UInt32 ver1 = _version >> 16;
+      UInt32 ver2 = (_version >> 8) & 0xFF;
+      UInt32 ver3 = (_version) & 0xFF;
+
+      char s[16];
+      ConvertUInt32ToString(ver1, s);
+      AString res = s;
+      res += '.';
+      ConvertUInt32ToString(ver2, s);
+      res += s;
+      if (ver3 != 0)
+      {
+        res += '.';
+        ConvertUInt32ToString(ver3, s);
+        res += s;
+      }
+      prop = res;
+      break;
+    }
+
     case kpidIsVolume:
       if (_xmls.Size() > 0)
       {
@@ -303,8 +326,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           prop = _db.GetItemPath(realIndex);
         else
         {
-          char sz[32];
-          ConvertUInt64ToString(item.StreamIndex, sz);
+          char sz[16];
+          ConvertUInt32ToString(item.StreamIndex, sz);
           AString s = sz;
           while (s.Length() < _nameLenForStreams)
             s = '0' + s;
@@ -342,8 +365,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       {
         case kpidPath:
         {
-          char sz[32];
-          ConvertUInt64ToString(_xmls[index].VolIndex, sz);
+          char sz[16];
+          ConvertUInt32ToString(_xmls[index].VolIndex, sz);
           prop = (AString)"[" + (AString)sz + "].xml";
           break;
         }
@@ -379,8 +402,8 @@ public:
 
   UString GetNextName(UInt32 index)
   {
-    wchar_t s[32];
-    ConvertUInt64ToString((index), s);
+    wchar_t s[16];
+    ConvertUInt32ToString(index, s);
     return _before + (UString)s + _after;
   }
 };
@@ -426,6 +449,8 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
           continue;
         return res;
       }
+      _version = header.Version;
+      _isOldVersion = header.IsOldVersion();
       if (firstVolumeIndex >= 0)
         if (!header.AreFromOnArchive(_volumes[firstVolumeIndex].Header))
           break;
@@ -481,8 +506,8 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
     _db.DetectPathMode();
     RINOK(_db.Sort(_db.SkipRoot));
 
-    wchar_t sz[32];
-    ConvertUInt64ToString(_db.Streams.Size(), sz);
+    wchar_t sz[16];
+    ConvertUInt32ToString(_db.Streams.Size(), sz);
     _nameLenForStreams = MyStringLen(sz);
 
     _xmlInComments = (_xmls.Size() == 1 && !_db.ShowImageNumber);

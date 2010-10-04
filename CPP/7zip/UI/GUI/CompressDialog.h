@@ -22,7 +22,7 @@ namespace NCompressDialog
       kAdd,
       kUpdate,
       kFresh,
-      kSynchronize,
+      kSynchronize
     };
   }
   struct CInfo

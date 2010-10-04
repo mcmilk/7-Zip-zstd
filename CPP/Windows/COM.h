@@ -53,7 +53,7 @@ AString GUIDToStringA(REFGUID guid);
   #define GUIDToString GUIDToStringW
 #else
   #define GUIDToString GUIDToStringA
-#endif // !UNICODE
+#endif
 
 HRESULT StringToGUIDW(const wchar_t *string, GUID &classID);
 HRESULT StringToGUIDA(const char *string, GUID &classID);
@@ -61,7 +61,7 @@ HRESULT StringToGUIDA(const char *string, GUID &classID);
   #define StringToGUID StringToGUIDW
 #else
   #define StringToGUID StringToGUIDA
-#endif // !UNICODE
+#endif
 
   
 }}

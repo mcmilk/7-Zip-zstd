@@ -778,13 +778,13 @@ struct StandardFilterSignature
 }
 kStdFilters[]=
 {
-   53, 0xad576887, SF_E8,
-   57, 0x3cd7e57e, SF_E8E9,
-  120, 0x3769893f, SF_ITANIUM,
-   29, 0x0e06077d, SF_DELTA,
-  149, 0x1c2c5dc8, SF_RGB,
-  216, 0xbc85e701, SF_AUDIO,
-   40, 0x46b9c560, SF_UPCASE
+  {  53, 0xad576887, SF_E8 },
+  {  57, 0x3cd7e57e, SF_E8E9 },
+  { 120, 0x3769893f, SF_ITANIUM },
+  {  29, 0x0e06077d, SF_DELTA },
+  { 149, 0x1c2c5dc8, SF_RGB },
+  { 216, 0xbc85e701, SF_AUDIO },
+  {  40, 0x46b9c560, SF_UPCASE }
 };
 
 static int FindStandardFilter(const Byte *code, UInt32 codeSize)

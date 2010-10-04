@@ -72,7 +72,7 @@ void CRootFolder::Init()
   _names[ROOT_INDEX_VOLUMES] = kVolPrefix;
   _iconIndices[ROOT_INDEX_VOLUMES] = GetIconIndexForCSIDL(CSIDL_DRIVES);
   #endif
-};
+}
 
 STDMETHODIMP CRootFolder::LoadItems()
 {

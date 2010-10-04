@@ -120,7 +120,7 @@ public:
     kUnsupportedVersion = 0,
     kUnsupported,
     kIncorrect,
-    kEndOfData,
+    kEndOfData
   } Cause;
   CInArchiveException(CCauseType cause): Cause(cause) {};
 };

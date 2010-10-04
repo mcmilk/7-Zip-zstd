@@ -166,7 +166,7 @@ void CPanel::InsertColumn(int index)
   column.fmt = GetColumnAlign(prop.ID, prop.Type);
   column.iOrder = prop.Order;
   column.iSubItem = index;
-  column.pszText = (wchar_t *)(const wchar_t *)prop.Name;
+  column.pszText = const_cast<wchar_t *>((const wchar_t *)prop.Name);
   _listView.InsertColumn(index, &column);
 }
 
@@ -337,7 +337,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
     int subItem = 0;
     item.iSubItem = subItem++;
     item.lParam = kParentIndex;
-    item.pszText = (wchar_t *)(const wchar_t *)itemName;
+    item.pszText = const_cast<wchar_t *>((const wchar_t *)itemName);
     UInt32 attrib = FILE_ATTRIBUTE_DIRECTORY;
     item.iImage = _extToIconMap.GetIconIndex(attrib, itemName);
     if (item.iImage < 0)
@@ -391,10 +391,10 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
         pos = posNew;
         while (itemName[++pos] == ' ');
       }
-      item.pszText = (wchar_t *)(const wchar_t *)correctedName;
+      item.pszText = const_cast<wchar_t *>((const wchar_t *)correctedName);
     }
     else
-      item.pszText = (wchar_t *)(const wchar_t *)itemName;
+      item.pszText = const_cast<wchar_t *>((const wchar_t *)itemName);
 
     NCOM::CPropVariant prop;
     RINOK(_folder->GetProperty(i, kpidAttrib, &prop));

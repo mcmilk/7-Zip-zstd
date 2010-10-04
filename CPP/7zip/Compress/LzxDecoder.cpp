@@ -164,7 +164,7 @@ void CDecoder::ClearPrevLevels()
     m_LastMainLevels[i] = 0;
   for (i = 0; i < kNumLenSymbols; i++)
     m_LastLenLevels[i] = 0;
-};
+}
 
 
 HRESULT CDecoder::CodeSpec(UInt32 curSize)

@@ -29,7 +29,7 @@ STDMETHODIMP COffsetOutStream::Seek(Int64 offset, UInt32 seekOrigin,
   return result;
 }
 
-STDMETHODIMP COffsetOutStream::SetSize(Int64 newSize)
+STDMETHODIMP COffsetOutStream::SetSize(UInt64 newSize)
 {
   return _stream->SetSize(_offset + newSize);
 }

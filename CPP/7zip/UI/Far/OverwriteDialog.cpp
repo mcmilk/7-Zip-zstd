@@ -22,8 +22,8 @@ namespace NOverwriteDialog {
 
 struct CFileInfoStrings
 {
-  CSysString Size;
-  CSysString Time;
+  AString Size;
+  AString Time;
 };
 
 void SetFileInfoStrings(const CFileInfo &fileInfo,
@@ -51,7 +51,7 @@ void SetFileInfoStrings(const CFileInfo &fileInfo,
     UString timeString = ConvertFileTimeToString(localFileTime);
     fileInfoStrings.Time = g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn);
     fileInfoStrings.Time += " ";
-    fileInfoStrings.Time += GetSystemString(timeString, CP_OEMCP);
+    fileInfoStrings.Time += UnicodeStringToMultiByte(timeString, CP_OEMCP);
   }
 }
 
@@ -66,7 +66,10 @@ NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInf
   SetFileInfoStrings(oldFileInfo, oldFileInfoStrings);
   SetFileInfoStrings(newFileInfo, newFileInfoStrings);
 
-  struct CInitDialogItem anInitItems[]={
+  AString oldName = UnicodeStringToMultiByte(oldFileInfo.Name, CP_OEMCP);
+  AString newName = UnicodeStringToMultiByte(newFileInfo.Name, CP_OEMCP);
+
+  struct CInitDialogItem initItems[]={
     { DI_DOUBLEBOX, 3, 1, kXSize - 4, kYSize - 2, false, false, 0, false, NMessageID::kOverwriteTitle, NULL, NULL },
     { DI_TEXT, 5, 2, 0, 0, false, false, 0, false, NMessageID::kOverwriteMessage1, NULL, NULL },
     
@@ -74,13 +77,13 @@ NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInf
     
     { DI_TEXT, 5, 4, 0, 0, false, false, 0, false, NMessageID::kOverwriteMessageWouldYouLike, NULL, NULL },
 
-    { DI_TEXT, 7, 6, 0, 0, false, false, 0, false,  -1, oldFileInfo.Name, NULL },
+    { DI_TEXT, 7, 6, 0, 0, false, false, 0, false,  -1, oldName, NULL },
     { DI_TEXT, 7, 7, 0, 0, false, false, 0, false,  -1, oldFileInfoStrings.Size, NULL },
     { DI_TEXT, 7, 8, 0, 0, false, false, 0, false,  -1, oldFileInfoStrings.Time, NULL },
 
     { DI_TEXT, 5, 10, 0, 0, false, false, 0, false, NMessageID::kOverwriteMessageWithtTisOne, NULL, NULL },
     
-    { DI_TEXT, 7, 12, 0, 0, false, false, 0, false,  -1, newFileInfo.Name, NULL },
+    { DI_TEXT, 7, 12, 0, 0, false, false, 0, false,  -1, newName, NULL },
     { DI_TEXT, 7, 13, 0, 0, false, false, 0, false,  -1, newFileInfoStrings.Size, NULL },
     { DI_TEXT, 7, 14, 0, 0, false, false, 0, false,  -1, newFileInfoStrings.Time, NULL },
 
@@ -94,9 +97,9 @@ NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInf
     { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kOverwriteCancel, NULL, NULL  }
   };
   
-  const int kNumDialogItems = sizeof(anInitItems) / sizeof(anInitItems[0]);
+  const int kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
   FarDialogItem aDialogItems[kNumDialogItems];
-  g_StartupInfo.InitDialogItems(anInitItems, aDialogItems, kNumDialogItems);
+  g_StartupInfo.InitDialogItems(initItems, aDialogItems, kNumDialogItems);
   int anAskCode = g_StartupInfo.ShowDialog(kXSize, kYSize,
       NULL, aDialogItems, kNumDialogItems);
   const int kButtonStartPos = kNumDialogItems - 6;

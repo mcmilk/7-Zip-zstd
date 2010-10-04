@@ -51,6 +51,8 @@ class CHandler:
   public CMyUnknownImp
 {
   CDatabase _db;
+  UInt32 _version;
+  bool _isOldVersion;
   CObjectVector<CVolume> _volumes;
   CObjectVector<CXml> _xmls;
   int _nameLenForStreams;

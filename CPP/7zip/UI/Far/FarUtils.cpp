@@ -4,7 +4,10 @@
 
 #include "Common/StringConvert.h"
 
+#ifndef UNDER_CE
 #include "Windows/Console.h"
+#endif
+#include "Windows/Defs.h"
 #include "Windows/Error.h"
 
 #include "FarUtils.h"
@@ -417,6 +420,9 @@ void PrintErrorMessage(const char *message, const wchar_t *text)
 
 bool WasEscPressed()
 {
+  #ifdef UNDER_CE
+  return false;
+  #else
   NConsole::CIn inConsole;
   HANDLE handle = ::GetStdHandle(STD_INPUT_HANDLE);
   if(handle == INVALID_HANDLE_VALUE)
@@ -438,16 +444,16 @@ bool WasEscPressed()
         event.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
       return true;
   }
+  #endif
 }
 
 void ShowErrorMessage(DWORD errorCode)
 {
-  CSysString message;
+  UString message;
   NError::MyFormatMessage(errorCode, message);
-  message.Replace(TEXT("\x0D"), TEXT(""));
-  message.Replace(TEXT("\x0A"), TEXT(" "));
-  g_StartupInfo.ShowMessage(SystemStringToOemString(message));
-
+  message.Replace(L"\x0D", L"");
+  message.Replace(L"\x0A", L" ");
+  g_StartupInfo.ShowMessage(UnicodeStringToMultiByte(message, CP_OEMCP));
 }
 
 void ShowLastErrorMessage()

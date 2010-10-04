@@ -50,7 +50,7 @@ public:
   
   HRESULT Result;
 
-  CThreadFolderOperations(EFolderOpType opType): OpType(opType), Result(E_FAIL) {};
+  CThreadFolderOperations(EFolderOpType opType): OpType(opType), Result(E_FAIL) {}
   HRESULT DoOperation(CPanel &panel, const UString &progressTitle, const UString &titleError);
 };
   
@@ -72,7 +72,7 @@ HRESULT CThreadFolderOperations::ProcessVirt()
       Result = E_FAIL;
   }
   return Result;
-};
+}
 
 
 HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progressTitle, const UString &titleError)

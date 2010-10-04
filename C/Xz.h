@@ -1,14 +1,12 @@
 /* Xz.h - Xz interface
-2009-04-15 : Igor Pavlov : Public domain */
+2010-09-17 : Igor Pavlov : Public domain */
 
 #ifndef __XZ_H
 #define __XZ_H
 
 #include "Sha256.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 #define XZ_ID_Subblock 1
 #define XZ_ID_Delta 3
@@ -140,7 +138,7 @@ typedef enum
   CODER_STATUS_NOT_SPECIFIED,               /* use main error code instead */
   CODER_STATUS_FINISHED_WITH_MARK,          /* stream was finished with end mark. */
   CODER_STATUS_NOT_FINISHED,                /* stream was not finished */
-  CODER_STATUS_NEEDS_MORE_INPUT,            /* you must provide more input bytes */
+  CODER_STATUS_NEEDS_MORE_INPUT             /* you must provide more input bytes */
 } ECoderStatus;
 
 typedef enum
@@ -249,8 +247,6 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
 
 Bool XzUnpacker_IsStreamWasFinished(CXzUnpacker *p);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif

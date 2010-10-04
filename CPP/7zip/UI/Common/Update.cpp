@@ -82,7 +82,7 @@ public:
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
-  STDMETHOD(SetSize)(Int64 newSize);
+  STDMETHOD(SetSize)(UInt64 newSize);
 };
 
 // static NSynchronization::CCriticalSection g_TempPathsCS;
@@ -204,7 +204,7 @@ STDMETHODIMP COutMultiVolStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *n
   return S_OK;
 }
 
-STDMETHODIMP COutMultiVolStream::SetSize(Int64 newSize)
+STDMETHODIMP COutMultiVolStream::SetSize(UInt64 newSize)
 {
   if (newSize < 0)
     return E_INVALIDARG;
@@ -905,4 +905,3 @@ HRESULT UpdateArchive(
   #endif
   return S_OK;
 }
-

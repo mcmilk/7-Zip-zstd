@@ -42,7 +42,7 @@ STREAM_INTERFACE_SUB(IInStream, ISequentialInStream, 0x03)
 STREAM_INTERFACE_SUB(IOutStream, ISequentialOutStream, 0x04)
 {
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) PURE;
-  STDMETHOD(SetSize)(Int64 newSize) PURE;
+  STDMETHOD(SetSize)(UInt64 newSize) PURE;
 };
 
 STREAM_INTERFACE(IStreamGetSize, 0x06)

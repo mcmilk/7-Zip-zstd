@@ -1,5 +1,5 @@
 /* LzmaUtil.c -- Test application for LZMA compression
-2009-08-14 : Igor Pavlov : Public domain */
+2010-09-20 : Igor Pavlov : Public domain */
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -249,6 +249,6 @@ int MY_CDECL main(int numArgs, const char *args[])
 {
   char rs[800] = { 0 };
   int res = main2(numArgs, args, rs);
-  printf(rs);
+  fputs(rs, stdout);
   return res;
 }

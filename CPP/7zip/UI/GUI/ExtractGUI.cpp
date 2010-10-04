@@ -106,7 +106,7 @@ HRESULT CThreadExtracting::ProcessVirt()
   }
   #endif
   return res;
-};
+}
 
 HRESULT ExtractGUI(
     CCodecs *codecs,

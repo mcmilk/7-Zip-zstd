@@ -86,7 +86,7 @@ enum Enum
   kTechMode,
   kShareForWrite,
   kCaseSensitive,
-  kCalcCrc,
+  kCalcCrc
 };
 
 }
@@ -191,12 +191,12 @@ static const char *kSameTerminalError = "I won't write data and program's messag
 static void ThrowException(const char *errorMessage)
 {
   throw CArchiveCommandLineException(errorMessage);
-};
+}
 
 static void ThrowUserErrorException()
 {
   ThrowException(kUserErrorMessage);
-};
+}
 
 // ---------------------------
 

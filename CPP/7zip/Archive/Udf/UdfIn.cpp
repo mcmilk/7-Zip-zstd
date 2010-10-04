@@ -202,7 +202,7 @@ enum EDescriptorType
   DESC_TYPE_UnallocatedSpace = 263,
   DESC_TYPE_SpaceBitmap = 264,
   DESC_TYPE_PartitionIntegrity = 265,
-  DESC_TYPE_ExtendedFile = 266,
+  DESC_TYPE_ExtendedFile = 266
 };
 
 

@@ -155,8 +155,8 @@ struct CHeader
   bool IsSupported() const { return (!IsCompressed() || (Flags & NHeaderFlags::kLZX) != 0 || (Flags & NHeaderFlags::kXPRESS) != 0 ) ; }
   bool IsLzxMode() const { return (Flags & NHeaderFlags::kLZX) != 0; }
   bool IsSpanned() const { return (!IsCompressed() || (Flags & NHeaderFlags::kSpanned) != 0); }
-  bool IsOldVersion() const { return (Version == 0x010A00); }
-  bool IsNewVersion()const { return (Version > 0x010C00); }
+  bool IsOldVersion() const { return (Version <= 0x010A00); }
+  bool IsNewVersion() const { return (Version > 0x010C00); }
 
   bool AreFromOnArchive(const CHeader &h)
   {
@@ -172,11 +172,13 @@ struct CStreamInfo
   CResource Resource;
   UInt16 PartNumber;
   UInt32 RefCount;
+  UInt32 Id;
   BYTE Hash[kHashSize];
 
   void WriteTo(Byte *p) const;
 };
 
+const UInt32 kDirRecordSizeOld = 62;
 const UInt32 kDirRecordSize = 102;
 
 struct CItem
@@ -186,25 +188,25 @@ struct CItem
   UInt32 Attrib;
   // UInt32 SecurityId;
   BYTE Hash[kHashSize];
+  UInt32 Id;
   FILETIME CTime;
   FILETIME ATime;
   FILETIME MTime;
   // UInt32 ReparseTag;
   // UInt64 HardLink;
   // UInt16 NumStreams;
-  // UInt16 ShortNameLen;
   int StreamIndex;
   int Parent;
   unsigned Order;
   bool HasMetadata;
-  CItem(): HasMetadata(true), StreamIndex(-1) {}
+  CItem(): HasMetadata(true), StreamIndex(-1), Id(0) {}
   bool IsDir() const { return HasMetadata && ((Attrib & 0x10) != 0); }
   bool HasStream() const
   {
     for (unsigned i = 0; i < kHashSize; i++)
       if (Hash[i] != 0)
         return true;
-    return false;
+    return Id != 0;
   }
 };
 
@@ -227,6 +229,8 @@ public:
   int NumImages;
   bool SkipRoot;
   bool ShowImageNumber;
+
+  bool IsOldVersion;
 
   UInt64 GetUnpackSize() const
   {
@@ -253,6 +257,7 @@ public:
 
     SkipRoot = true;
     ShowImageNumber = true;
+    IsOldVersion = false;
   }
 
   UString GetItemPath(int index) const;

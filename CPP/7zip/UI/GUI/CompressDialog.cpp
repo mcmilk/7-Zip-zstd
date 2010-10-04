@@ -115,7 +115,7 @@ enum EMethodID
   kBZip2,
   kDeflate,
   kDeflate64,
-  kPPMdZip,
+  kPPMdZip
 };
 
 static const LPCWSTR kMethodsNames[] =
@@ -244,7 +244,7 @@ static bool IsMethodSupportedBySfx(int methodID)
     if (methodID == g_7zSfxMethods[i])
       return true;
   return false;
-};
+}
 
 static UInt64 GetMaxRamSizeForProgram()
 {

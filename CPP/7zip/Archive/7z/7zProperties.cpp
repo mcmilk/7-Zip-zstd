@@ -19,32 +19,33 @@ struct CPropMap
 
 CPropMap kPropMap[] =
 {
-  { NID::kName, NULL, kpidPath, VT_BSTR},
-  { NID::kSize, NULL, kpidSize, VT_UI8},
-  { NID::kPackInfo, NULL, kpidPackSize, VT_UI8},
+  { NID::kName, { NULL, kpidPath, VT_BSTR } },
+  { NID::kSize, { NULL, kpidSize, VT_UI8 } },
+  { NID::kPackInfo, { NULL, kpidPackSize, VT_UI8 } },
   
   #ifdef _MULTI_PACK
-  { 100, L"Pack0", kpidPackedSize0, VT_UI8},
-  { 101, L"Pack1", kpidPackedSize1, VT_UI8},
-  { 102, L"Pack2", kpidPackedSize2, VT_UI8},
-  { 103, L"Pack3", kpidPackedSize3, VT_UI8},
-  { 104, L"Pack4", kpidPackedSize4, VT_UI8},
+  { 100, { L"Pack0", kpidPackedSize0, VT_UI8 } },
+  { 101, { L"Pack1", kpidPackedSize1, VT_UI8 } },
+  { 102, { L"Pack2", kpidPackedSize2, VT_UI8 } },
+  { 103, { L"Pack3", kpidPackedSize3, VT_UI8 } },
+  { 104, { L"Pack4", kpidPackedSize4, VT_UI8 } },
   #endif
 
-  { NID::kCTime, NULL, kpidCTime, VT_FILETIME},
-  { NID::kMTime, NULL, kpidMTime, VT_FILETIME},
-  { NID::kATime, NULL, kpidATime, VT_FILETIME},
-  { NID::kWinAttributes, NULL, kpidAttrib, VT_UI4},
-  { NID::kStartPos, NULL, kpidPosition, VT_UI4},
+  { NID::kCTime, { NULL, kpidCTime, VT_FILETIME } },
+  { NID::kMTime, { NULL, kpidMTime, VT_FILETIME } },
+  { NID::kATime, { NULL, kpidATime, VT_FILETIME } },
+  { NID::kWinAttributes, { NULL, kpidAttrib, VT_UI4 } },
+  { NID::kStartPos, { NULL, kpidPosition, VT_UI4 } },
 
-  { NID::kCRC, NULL, kpidCRC, VT_UI4},
+  { NID::kCRC, { NULL, kpidCRC, VT_UI4 } },
   
-  { NID::kAnti, NULL, kpidIsAnti, VT_BOOL},
+  { NID::kAnti, { NULL, kpidIsAnti, VT_BOOL } }
 
   #ifndef _SFX
-  { 97, NULL, kpidEncrypted, VT_BOOL},
-  { 98, NULL, kpidMethod, VT_BSTR},
-  { 99, NULL, kpidBlock, VT_UI4}
+  ,
+  { 97, { NULL,kpidEncrypted, VT_BOOL } },
+  { 98, { NULL,kpidMethod, VT_BSTR } },
+  { 99, { NULL,kpidBlock, VT_UI4 } }
   #endif
 };
 

@@ -378,7 +378,7 @@ static const char *GetOS(Byte osId)
     if (g_OsPairs[i].Id == osId)
       return g_OsPairs[i].Name;
   return kUnknownOS;
-};
+}
 
 static STATPROPSTG kProps[] =
 {
@@ -400,7 +400,7 @@ public:
   static UInt16 Table[256];
   static void InitTable();
   
-  CCRC():  _value(0){};
+  CCRC(): _value(0) {}
   void Init() { _value = 0; }
   void Update(const void *data, size_t size);
   UInt16 GetDigest() const { return _value; }
@@ -460,7 +460,6 @@ public:
   void ReleaseStream() { _stream.Release(); }
   UInt32 GetCRC() const { return _crc.GetDigest(); }
   void InitCRC() { _crc.Init(); }
-
 };
 
 STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *processedSize)

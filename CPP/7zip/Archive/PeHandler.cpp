@@ -98,7 +98,7 @@ void CDirLink::Parse(const Byte *p)
 {
   Va = Get32(p);
   Size = Get32(p + 4);
-};
+}
 
 enum
 {
@@ -991,7 +991,7 @@ bool CBitmapInfoHeader::Parse(const Byte *p, size_t size)
   Compression = Get32(p + 16);
   SizeImage = Get32(p + 20);
   return true;
-};
+}
 
 static UInt32 GetImageSize(UInt32 xSize, UInt32 ySize, UInt32 bitCount)
 {

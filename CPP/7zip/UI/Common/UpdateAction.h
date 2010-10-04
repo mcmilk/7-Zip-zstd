@@ -19,6 +19,7 @@ namespace NUpdateArchive {
       kUnknowNewerFiles
     };
   }
+ 
   namespace NPairAction
   {
     enum EEnum
@@ -29,6 +30,7 @@ namespace NUpdateArchive {
       kCompressAsAnti
     };
   }
+  
   struct CActionSet
   {
     NPairAction::EEnum StateActions[NPairState::kNumValues];
@@ -44,14 +46,12 @@ namespace NUpdateArchive {
       return false;
     }
   };
+  
   extern const CActionSet kAddActionSet;
   extern const CActionSet kUpdateActionSet;
   extern const CActionSet kFreshActionSet;
   extern const CActionSet kSynchronizeActionSet;
   extern const CActionSet kDeleteActionSet;
-};
-
+}
 
 #endif
-
-

@@ -440,7 +440,7 @@ HRESULT CThreadCopyFrom::ProcessVirt()
   fileNames.Add(Name);
   fileNamePointers.Add(fileNames[0]);
   return FolderOperations->CopyFrom(PathPrefix, &fileNamePointers.Front(), fileNamePointers.Size(), UpdateCallback);
-};
+}
       
 HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName,
     bool usePassword, const UString &password)

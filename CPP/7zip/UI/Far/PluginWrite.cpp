@@ -412,16 +412,17 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   for(i = 0; i < pluginPanelItems.Size(); i++)
   {
     const PluginPanelItem &panelItem = pluginPanelItems[i];
-    CSysString fullName;
+    UString fullName;
     if (strcmp(panelItem.FindData.cFileName, "..") == 0 &&
         NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
       return E_FAIL;
     if (strcmp(panelItem.FindData.cFileName, ".") == 0 &&
         NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
       return E_FAIL;
-    if (!MyGetFullPathName(panelItem.FindData.cFileName, fullName))
+    UString fileNameUnicode = MultiByteToUnicodeString(panelItem.FindData.cFileName, CP_OEMCP);
+    if (!MyGetFullPathName(fileNameUnicode, fullName))
       return E_FAIL;
-    fileNames.Add(MultiByteToUnicodeString(fullName, CP_OEMCP));
+    fileNames.Add(fullName);
   }
 
   NCompression::CInfo compressionInfo;
@@ -496,7 +497,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
 
     char updateAddToArchiveString[512];
-    const AString s = GetSystemString(arcInfo.Name, CP_OEMCP);
+    const AString s = UnicodeStringToMultiByte(arcInfo.Name, CP_OEMCP);
 
     sprintf(updateAddToArchiveString,
         g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), (const char *)s);
@@ -777,4 +778,3 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   
   return S_OK;
 }
-

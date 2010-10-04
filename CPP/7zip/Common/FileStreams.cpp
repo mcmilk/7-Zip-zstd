@@ -353,7 +353,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
   #endif
 }
 
-STDMETHODIMP COutFileStream::SetSize(Int64 newSize)
+STDMETHODIMP COutFileStream::SetSize(UInt64 newSize)
 {
   #ifdef USE_WIN_FILE
   UInt64 currentPos;
@@ -418,4 +418,5 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   return S_OK;
   #endif
 }
+
 #endif

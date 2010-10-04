@@ -332,7 +332,7 @@ enum
 {
   kpidPrimary = kpidUserDefined,
   kpidBegChs,
-  kpidEndChs,
+  kpidEndChs
 };
 
 STATPROPSTG kProps[] =
