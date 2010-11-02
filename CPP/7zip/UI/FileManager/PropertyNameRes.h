@@ -50,3 +50,4 @@
 #define IDS_PROP_SECTOR_SIZE        52
 #define IDS_PROP_POSIX_ATTRIB       53
 #define IDS_PROP_LINK               54
+#define IDS_PROP_ERROR              55

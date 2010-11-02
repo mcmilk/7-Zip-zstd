@@ -32,6 +32,7 @@ private:
   CObjectVector<CItemEx> _items;
   CObjectVector<CInArchive> _archives;
   NArchive::NRar::CInArchiveInfo _archiveInfo;
+  AString _errorMessage;
 
   DECL_EXTERNAL_CODECS_VARS
 

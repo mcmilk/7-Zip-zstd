@@ -1,7 +1,6 @@
-MY_STATIC_LINK=1
-CFLAGS = $(CFLAGS) -D_7ZIP_PPMD_SUPPPORT
-
-PROG = 7zDec.exe
+PROG = 7zS2.sfx
+LIBS = $(LIBS) 
+CFLAGS = $(CFLAGS) -DUNICODE -D_UNICODE
 
 C_OBJS = \
   $O\7zAlloc.obj \
@@ -19,19 +18,18 @@ C_OBJS = \
   $O\CpuArch.obj \
   $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
-  $O\Ppmd7.obj \
-  $O\Ppmd7Dec.obj \
 
 7Z_OBJS = \
-  $O\7zMain.obj \
+  $O\SfxSetup.obj \
 
 OBJS = \
   $(7Z_OBJS) \
   $(C_OBJS) \
+  $O\resource.res
 
 !include "../../../CPP/Build.mak"
 
 $(7Z_OBJS): $(*B).c
 	$(COMPL_O1)
 $(C_OBJS): ../../$(*B).c
-	$(COMPL_O2)
+	$(COMPL_O1)

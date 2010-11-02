@@ -372,14 +372,14 @@ void CInArchive::AddToSeekValue(UInt64 addValue)
   m_Position += addValue;
 }
 
-HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword, bool &decryptionError)
+HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword, bool &decryptionError, AString &errorMessage)
 {
   decryptionError = false;
   if (m_SeekOnArchiveComment)
     SkipArchiveComment();
   for (;;)
   {
-    if(!SeekInArchive(m_Position))
+    if (!SeekInArchive(m_Position))
       return S_FALSE;
     if (!m_CryptoMode && (m_ArchiveHeader.Flags &
         NHeader::NArchive::kBlockHeadersAreEncrypted) != 0)
@@ -438,8 +438,11 @@ HRESULT CInArchive::GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPa
     }
 
     m_FileHeaderData.EnsureCapacity(7);
-    if(!ReadBytesAndTestSize((Byte *)m_FileHeaderData, 7))
+    if (!ReadBytesAndTestSize((Byte *)m_FileHeaderData, 7))
+    {
+      errorMessage = "Unexpected end of archive";
       return S_FALSE;
+    }
 
     m_CurData = (Byte *)m_FileHeaderData;
     m_CurPos = 0;

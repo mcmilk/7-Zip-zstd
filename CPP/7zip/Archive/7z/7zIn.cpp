@@ -280,28 +280,46 @@ void CInByte2::ReadString(UString &s)
   _pos += rem + 2;
 }
 
-static inline bool TestSignatureCandidate(const Byte *p)
+static inline bool TestSignature(const Byte *p)
 {
   for (int i = 0; i < kSignatureSize; i++)
     if (p[i] != kSignature[i])
       return false;
-  return (p[0x1A] == 0 && p[0x1B] == 0);
+  return CrcCalc(p + 12, 20) == GetUi32(p + 8);
 }
+
+#ifdef FORMAT_7Z_RECOVERY
+static inline bool TestSignature2(const Byte *p)
+{
+  int i;
+  for (i = 0; i < kSignatureSize; i++)
+    if (p[i] != kSignature[i])
+      return false;
+  if (CrcCalc(p + 12, 20) == GetUi32(p + 8))
+    return true;
+  for (i = 8; i < kHeaderSize; i++)
+    if (p[i] != 0)
+      return false;
+  return (p[6] != 0 || p[7] != 0);
+}
+#else
+#define TestSignature2(p) TestSignature(p)
+#endif
 
 HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
 {
   RINOK(ReadStream_FALSE(stream, _header, kHeaderSize));
 
-  if (TestSignatureCandidate(_header))
+  if (TestSignature2(_header))
     return S_OK;
 
   CByteBuffer byteBuffer;
   const UInt32 kBufferSize = (1 << 16);
   byteBuffer.SetCapacity(kBufferSize);
   Byte *buffer = byteBuffer;
-  UInt32 numPrevBytes = kHeaderSize - 1;
-  memcpy(buffer, _header + 1, numPrevBytes);
-  UInt64 curTestPos = _arhiveBeginStreamPosition + 1;
+  UInt32 numPrevBytes = kHeaderSize;
+  memcpy(buffer, _header, kHeaderSize);
+  UInt64 curTestPos = _arhiveBeginStreamPosition;
   for (;;)
   {
     if (searchHeaderSizeLimit != NULL)
@@ -316,14 +334,14 @@ HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *search
       if (processedSize == 0)
         return S_FALSE;
     }
-    while (numPrevBytes < kHeaderSize);
-    UInt32 numTests = numPrevBytes - kHeaderSize + 1;
+    while (numPrevBytes <= kHeaderSize);
+    UInt32 numTests = numPrevBytes - kHeaderSize;
     for (UInt32 pos = 0; pos < numTests; pos++)
     {
       for (; buffer[pos] != '7' && pos < numTests; pos++);
       if (pos == numTests)
         break;
-      if (TestSignatureCandidate(buffer + pos))
+      if (TestSignature(buffer + pos))
       {
         memcpy(_header, buffer + pos, kHeaderSize);
         curTestPos += pos;
@@ -812,7 +830,7 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(
       ThrowUnsupported();
     data.SetCapacity(unpackSize);
     
-    CSequentialOutStreamImp2 *outStreamSpec = new CSequentialOutStreamImp2;
+    CBufPtrSeqOutStream *outStreamSpec = new CBufPtrSeqOutStream;
     CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
     outStreamSpec->Init(data, unpackSize);
     
@@ -1164,21 +1182,22 @@ HRESULT CInArchive::ReadDatabase2(
     nextHeaderCRC = CrcCalc(buf + i, (size_t)nextHeaderSize);
     RINOK(_stream->Seek(cur, STREAM_SEEK_SET, NULL));
   }
+  else
   #endif
-
-  #ifdef FORMAT_7Z_RECOVERY
-  crcFromArchive = crc;
-  #endif
+  {
+    if (crc != crcFromArchive)
+      ThrowIncorrect();
+  }
 
   db.ArchiveInfo.StartPositionAfterHeader = _arhiveBeginStreamPosition + kHeaderSize;
-
-  if (crc != crcFromArchive)
-    ThrowIncorrect();
 
   if (nextHeaderSize == 0)
     return S_OK;
 
   if (nextHeaderSize > (UInt64)0xFFFFFFFF)
+    return S_FALSE;
+
+  if ((Int64)nextHeaderOffset < 0)
     return S_FALSE;
 
   RINOK(_stream->Seek(nextHeaderOffset, STREAM_SEEK_CUR, NULL));

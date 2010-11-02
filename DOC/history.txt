@@ -1,6 +1,11 @@
 Sources history of the 7-Zip
 ----------------------------
 
+9.18           2010-11-02
+-------------------------	
+- New small SFX module for installers (C/Util/SfxSetup).
+
+
 9.17           2010-10-04
 -------------------------
 - IStream.h::IOutStream::

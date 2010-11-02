@@ -45,6 +45,7 @@ static const char g_WinAttrib[17] = "RHS8DAdNTsrCOnE_";
 16 VIRTUAL
 */
 
+static const char kPosixTypes[16] = { '0', 'p', 'c', '3', 'd', '5', 'b', '7', '-', '9', 'l', 'B', 's', 'D', 'E', 'F' };
 #define MY_ATTR_CHAR(a, n, c) ((a )& (1 << (n))) ? c : L'-';
 
 UString ConvertPropertyToString(const PROPVARIANT &prop, PROPID propID, bool full)
@@ -92,17 +93,21 @@ UString ConvertPropertyToString(const PROPVARIANT &prop, PROPID propID, bool ful
       UString res;
       UInt32 a = prop.ulVal;
       wchar_t temp[16];
-      temp[0] = MY_ATTR_CHAR(a, 14, L'd');
+
+      temp[0] = kPosixTypes[(a >> 12) & 0xF];
       for (int i = 6; i >= 0; i -= 3)
       {
         temp[7 - i] = MY_ATTR_CHAR(a, i + 2, L'r');
         temp[8 - i] = MY_ATTR_CHAR(a, i + 1, L'w');
         temp[9 - i] = MY_ATTR_CHAR(a, i + 0, L'x');
       }
+      if ((a & 0x800) != 0) temp[3] = ((a & (1 << 6)) ? 's' : 'S');
+      if ((a & 0x400) != 0) temp[6] = ((a & (1 << 3)) ? 's' : 'S');
+      if ((a & 0x200) != 0) temp[9] = ((a & (1 << 0)) ? 't' : 'T');
       temp[10] = 0;
       res = temp;
-      a &= ~0x1FF;
-      a &= ~0xC000;
+
+      a &= ~(UInt32)0xFFFF;
       if (a != 0)
       {
         ConvertUInt32ToHex(a, temp);

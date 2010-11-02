@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../C/Types.h"
+
 #include "Wildcard.h"
 
 bool g_CaseSensitive =

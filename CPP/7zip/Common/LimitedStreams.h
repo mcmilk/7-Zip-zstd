@@ -17,6 +17,7 @@ class CLimitedSequentialInStream:
   bool _wasFinished;
 public:
   void SetStream(ISequentialInStream *stream) { _stream = stream; }
+  void ReleaseStream() { _stream.Release(); }
   void Init(UInt64 streamSize)
   {
     _size = streamSize;

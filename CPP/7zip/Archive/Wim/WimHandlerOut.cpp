@@ -323,25 +323,13 @@ static void AddTagUInt64(AString &s, const char *name, UInt64 value)
   AddTag(s, name, temp);
 }
 
-static void ConvertUInt32ToHex(UInt32 value, char *s)
-{
-  for (int i = 0; i < 8; i++)
-  {
-    int t = value & 0xF;
-    value >>= 4;
-    s[7 - i] = (char)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
-  }
-  s[8] = '\0';
-}
-
-
 static AString TimeToXml(FILETIME &ft)
 {
   AString res;
   char temp[16] = { '0', 'x' };
-  ConvertUInt32ToHex(ft.dwHighDateTime, temp + 2);
+  ConvertUInt32ToHexWithZeros(ft.dwHighDateTime, temp + 2);
   AddTag(res, "HIGHPART", temp);
-  ConvertUInt32ToHex(ft.dwLowDateTime, temp + 2);
+  ConvertUInt32ToHexWithZeros(ft.dwLowDateTime, temp + 2);
   AddTag(res, "LOWPART", temp);
   return res;
 }

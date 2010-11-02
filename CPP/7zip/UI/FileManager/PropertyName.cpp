@@ -75,6 +75,7 @@ static CPropertyIDNamePair kPropertyIDNamePairs[] =
   { kpidSectorSize, IDS_PROP_SECTOR_SIZE, 0x02000234 },
   { kpidPosixAttrib, IDS_PROP_POSIX_ATTRIB, 0x02000235 },
   { kpidLink, IDS_PROP_LINK, 0x02000236 },
+  { kpidError, IDS_PROP_ERROR, 0x02000605 },
  
   { kpidTotalSize, IDS_PROP_TOTAL_SIZE, 0x03031100 },
   { kpidFreeSpace, IDS_PROP_FREE_SPACE, 0x03031101 },

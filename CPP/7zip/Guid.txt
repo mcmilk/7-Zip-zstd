@@ -128,6 +128,8 @@ Handler GUIDs:
   0C xz
   0D ppmd
 
+  D2 SquashFS
+  D3 CramFS
   D4 APM
   D5 Mslz
   D6 Flv

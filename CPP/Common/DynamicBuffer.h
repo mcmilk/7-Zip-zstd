@@ -1,7 +1,7 @@
 // Common/DynamicBuffer.h
 
-#ifndef __COMMON_DYNAMICBUFFER_H
-#define __COMMON_DYNAMICBUFFER_H
+#ifndef __COMMON_DYNAMIC_BUFFER_H
+#define __COMMON_DYNAMIC_BUFFER_H
 
 #include "Buffer.h"
 
@@ -17,7 +17,10 @@ template <class T> class CDynamicBuffer: public CBuffer<T>
     else
       delta = 4;
     delta = MyMax(delta, size);
-    SetCapacity(this->_capacity + delta);
+    size_t newCap = this->_capacity + delta;
+    if (newCap < delta)
+      newCap = this->_capacity + size;
+    SetCapacity(newCap);
   }
 public:
   CDynamicBuffer(): CBuffer<T>() {};

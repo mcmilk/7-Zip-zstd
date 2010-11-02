@@ -193,11 +193,9 @@ HRESULT CEncoder::Encode(
   // UInt64 outStreamStartPos;
   // RINOK(stream->Seek(0, STREAM_SEEK_CUR, &outStreamStartPos));
   
-  CSequentialInStreamSizeCount2 *inStreamSizeCountSpec =
-      new CSequentialInStreamSizeCount2;
+  CSequentialInStreamSizeCount2 *inStreamSizeCountSpec = new CSequentialInStreamSizeCount2;
   CMyComPtr<ISequentialInStream> inStreamSizeCount = inStreamSizeCountSpec;
-  CSequentialOutStreamSizeCount *outStreamSizeCountSpec =
-      new CSequentialOutStreamSizeCount;
+  CSequentialOutStreamSizeCount *outStreamSizeCountSpec = new CSequentialOutStreamSizeCount;
   CMyComPtr<ISequentialOutStream> outStreamSizeCount = outStreamSizeCountSpec;
 
   inStreamSizeCountSpec->Init(inStream);
@@ -226,13 +224,11 @@ HRESULT CEncoder::Encode(
     _mixerCoderSpec->_coders[i].QueryInterface(IID_ICompressWriteCoderProperties, (void **)&writeCoderProperties);
     if (writeCoderProperties != NULL)
     {
-      CSequentialOutStreamImp *outStreamSpec = new CSequentialOutStreamImp;
+      CDynBufSeqOutStream *outStreamSpec = new CDynBufSeqOutStream;
       CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
       outStreamSpec->Init();
       writeCoderProperties->WriteCoderProperties(outStream);
-      size_t size = outStreamSpec->GetSize();
-      encodingInfo.Props.SetCapacity(size);
-      memmove(encodingInfo.Props, outStreamSpec->GetBuffer(), size);
+      outStreamSpec->CopyToBuffer(encodingInfo.Props);
     }
   }
 
@@ -250,8 +246,7 @@ HRESULT CEncoder::Encode(
   RINOK(_mixerCoder->Code(&inStreamPointers.Front(), NULL, 1,
     &outStreamPointers.Front(), NULL, outStreamPointers.Size(), compressProgress));
   
-  ConvertBindInfoToFolderItemInfo(_decompressBindInfo, _decompressionMethods,
-      folderItem);
+  ConvertBindInfoToFolderItemInfo(_decompressBindInfo, _decompressionMethods, folderItem);
   
   packSizes.Add(outStreamSizeCountSpec->GetSize());
   

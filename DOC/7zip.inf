@@ -10,8 +10,8 @@ AppName = "7-Zip"
 InstallDir = %CE1%\%AppName%
 
 [Strings]
-AppVer = "9.17"
-AppDate = "2010-10-04"
+AppVer = "9.18"
+AppDate = "2010-11-02"
 
 [CEDevice]
 ; ProcessorType = 2577 ; ARM
@@ -32,6 +32,7 @@ CEShortcuts = Shortcuts
 [SourceDisksFiles]
 7zFM.exe = 1
 7z.sfx = 1
+7zS2.sfx = 1
 ru.txt = 2
 
 [DestinationDirs]
@@ -43,6 +44,7 @@ Shortcuts = ,%CE11%
 [CopyFilesSection]
 7zFM.exe
 7z.sfx
+7zS2.sfx
 
 [CopyFilesSection.Lang]
 ru.txt

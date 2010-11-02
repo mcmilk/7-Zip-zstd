@@ -277,9 +277,9 @@ static const CUInt32PCharPair g_AbiOS[] =
 
 static const CUInt32PCharPair g_SegmentFlags[] =
 {
-  { 1 << 0, "Execute" },
-  { 1 << 1, "Write" },
-  { 1 << 2, "Read" }
+  { 0, "Execute" },
+  { 1, "Write" },
+  { 2, "Read" }
 };
 
 static const char *g_Types[] =

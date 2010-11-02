@@ -60,6 +60,7 @@ enum
   kpidSectorSize,
   kpidPosixAttrib,
   kpidLink,
+  kpidError,
 
   kpidTotalSize = 0x1100,
   kpidFreeSpace,

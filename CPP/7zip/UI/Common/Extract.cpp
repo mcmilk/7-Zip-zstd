@@ -228,6 +228,15 @@ HRESULT DecompressArchives(
     }
     #endif
 
+    for (int v = 0; v < archiveLink.Arcs.Size(); v++)
+    {
+      const UString &s = archiveLink.Arcs[v].ErrorMessage;
+      if (!s.IsEmpty())
+      {
+        RINOK(extractCallback->MessageError(s));
+      }
+    }
+
     CArc &arc = archiveLink.Arcs.Back();
     arc.MTimeDefined = (!options.StdInMode && !fi.IsDevice);
     arc.MTime = fi.MTime;

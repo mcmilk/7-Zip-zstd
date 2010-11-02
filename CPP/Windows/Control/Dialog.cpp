@@ -103,7 +103,7 @@ bool IsDialogSizeOK(int xSize, int ySize)
 void CDialog::NormalizeSize(bool fullNormalize)
 {
   RECT workRect;
-	GetWorkAreaRect(&workRect);
+  GetWorkAreaRect(&workRect);
   int xSize = RECT_SIZE_X(workRect);
   int ySize = RECT_SIZE_Y(workRect);
   RECT rect;
@@ -135,7 +135,7 @@ void CDialog::NormalizeSize(bool fullNormalize)
 void CDialog::NormalizePosition()
 {
   RECT workRect, rect;
-	GetWorkAreaRect(&workRect);
+  GetWorkAreaRect(&workRect);
   GetWindowRect(&rect);
   if (rect.bottom > workRect.bottom && rect.top > workRect.top)
     Move(rect.left, workRect.top, RECT_SIZE_X(rect), RECT_SIZE_Y(rect), true);

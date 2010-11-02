@@ -46,7 +46,7 @@ static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
 static const wchar_t *kUnknownOS = L"Unknown";
 
-STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
@@ -68,7 +68,7 @@ STATPROPSTG kProps[] =
   { NULL, kpidUnpackVer, VT_UI1}
 };
 
-STATPROPSTG kArcProps[] =
+static const STATPROPSTG kArcProps[] =
 {
   { NULL, kpidSolid, VT_BOOL},
   { NULL, kpidNumBlocks, VT_UI4},
@@ -93,7 +93,7 @@ UInt64 CHandler::GetPackSize(int refIndex) const
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
-  // COM_TRY_BEGIN
+  COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
@@ -112,10 +112,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       prop = (UInt32)numBlocks;
       break;
     }
+    case kpidError: if (!_errorMessage.IsEmpty()) prop = _errorMessage; break;
   }
   prop.Detach(value);
   return S_OK;
-  // COM_TRY_END
+  COM_TRY_END
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
@@ -396,7 +397,14 @@ HRESULT CHandler::Open2(IInStream *stream,
       for (;;)
       {
         bool decryptionError;
-        HRESULT result = archive.GetNextItem(item, getTextPassword, decryptionError);
+        AString errorMessageLoc;
+        HRESULT result = archive.GetNextItem(item, getTextPassword, decryptionError, errorMessageLoc);
+        if (errorMessageLoc)
+        {
+          if (!_errorMessage.IsEmpty())
+            _errorMessage += '\n';
+          _errorMessage += errorMessageLoc;
+        }
         if (result == S_FALSE)
         {
           if (decryptionError && _items.IsEmpty())
@@ -461,6 +469,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 STDMETHODIMP CHandler::Close()
 {
   COM_TRY_BEGIN
+  _errorMessage.Empty();
   _refItems.Clear();
   _items.Clear();
   _archives.Clear();

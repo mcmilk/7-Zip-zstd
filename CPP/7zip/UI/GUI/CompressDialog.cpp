@@ -1038,7 +1038,13 @@ void CCompressDialog::SetDictionary()
           if (i == 20 && j > 0)
             continue;
           UInt32 dictionary = (1 << i) + (j << (i - 1));
-          if (dictionary > (1 << 30))
+          if (dictionary >
+            #ifdef _WIN64
+              (1 << 30)
+            #else
+              (1 << 29)
+            #endif
+            )
             continue;
           AddDictionarySize(dictionary);
           UInt64 decomprSize;

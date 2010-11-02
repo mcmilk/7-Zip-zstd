@@ -9,6 +9,7 @@
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/Process.h"
+#include "Windows/PropVariant.h"
 #include "Windows/Thread.h"
 
 #include "../Common/ExtractingFilePath.h"
@@ -112,6 +113,46 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   _library.Attach(library.Detach());
 
   _flatMode = _flatModeForArc;
+
+  CMyComPtr<IGetFolderArcProps> getFolderArcProps;
+  _folder.QueryInterface(IID_IGetFolderArcProps, &getFolderArcProps);
+  if (getFolderArcProps)
+  {
+    CMyComPtr<IFolderArcProps> arcProps;
+    getFolderArcProps->GetFolderArcProps(&arcProps);
+    if (arcProps)
+    {
+      UString s;
+      UInt32 numLevels;
+      if (arcProps->GetArcNumLevels(&numLevels) != S_OK)
+        numLevels = 0;
+      for (UInt32 level2 = 0; level2 < numLevels; level2++)
+      {
+        UInt32 level = numLevels - 1 - level2;
+        PROPID propIDs[] = { kpidError, kpidPath, kpidType } ;
+        UString values[3];
+        for (Int32 i = 0; i < 3; i++)
+        {
+          CMyComBSTR name;
+          NCOM::CPropVariant prop;
+          if (arcProps->GetArcProp(level, propIDs[i], &prop) != S_OK)
+            continue;
+          if (prop.vt != VT_EMPTY)
+            values[i] = (prop.vt == VT_BSTR) ? prop.bstrVal : L"?";
+        }
+        if (!values[0].IsEmpty())
+        {
+          if (!s.IsEmpty())
+            s += L"--------------------\n";
+          s += values[0]; s += L"\n\n[";
+          s += values[2]; s += L"] ";
+          s += values[1]; s += L"\n";
+        }
+      }
+      if (!s.IsEmpty())
+        MessageBox(s);
+    }
+  }
 
   return S_OK;
 }

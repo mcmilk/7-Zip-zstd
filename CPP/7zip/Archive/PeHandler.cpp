@@ -300,53 +300,53 @@ void CSection::Parse(const Byte *p)
 
 static const CUInt32PCharPair g_HeaderCharacts[] =
 {
-  { 1 << 1, "Executable" },
-  { 1 << 13, "DLL" },
-  { 1 << 8, "32-bit" },
-  { 1 << 5, "LargeAddress" },
-  { 1 << 0, "NoRelocs" },
-  { 1 << 2, "NoLineNums" },
-  { 1 << 3, "NoLocalSyms" },
-  { 1 << 4, "AggressiveWsTrim" },
-  { 1 << 9, "NoDebugInfo" },
-  { 1 << 10, "RemovableRun" },
-  { 1 << 11, "NetRun" },
-  { 1 << 12, "System" },
-  { 1 << 14, "UniCPU" },
-  { 1 << 7, "Little-Endian" },
-  { 1 << 15, "Big-Endian" }
+  {  1, "Executable" },
+  { 13, "DLL" },
+  {  8, "32-bit" },
+  {  5, "LargeAddress" },
+  {  0, "NoRelocs" },
+  {  2, "NoLineNums" },
+  {  3, "NoLocalSyms" },
+  {  4, "AggressiveWsTrim" },
+  {  9, "NoDebugInfo" },
+  { 10, "RemovableRun" },
+  { 11, "NetRun" },
+  { 12, "System" },
+  { 14, "UniCPU" },
+  {  7, "Little-Endian" },
+  { 15, "Big-Endian" }
 };
 
 static const CUInt32PCharPair g_DllCharacts[] =
 {
-  { 1 << 6, "Relocated" },
-  { 1 << 7, "Integrity" },
-  { 1 << 8, "NX-Compatible" },
-  { 1 << 9, "NoIsolation" },
-  { 1 << 10, "NoSEH" },
-  { 1 << 11, "NoBind" },
-  { 1 << 13, "WDM" },
-  { 1 << 15, "TerminalServerAware" }
+  {  6, "Relocated" },
+  {  7, "Integrity" },
+  {  8, "NX-Compatible" },
+  {  9, "NoIsolation" },
+  { 10, "NoSEH" },
+  { 11, "NoBind" },
+  { 13, "WDM" },
+  { 15, "TerminalServerAware" }
 };
 
 static const CUInt32PCharPair g_SectFlags[] =
 {
-  { 1 << 3, "NoPad" },
-  { 1 << 5, "Code" },
-  { 1 << 6, "InitializedData" },
-  { 1 << 7, "UninitializedData" },
-  { 1 << 9, "Comments" },
-  { 1 << 11, "Remove" },
-  { 1 << 12, "COMDAT" },
-  { 1 << 15, "GP" },
-  { 1 << 24, "ExtendedRelocations" },
-  { 1 << 25, "Discardable" },
-  { 1 << 26, "NotCached" },
-  { 1 << 27, "NotPaged" },
-  { 1 << 28, "Shared" },
-  { 1 << 29, "Execute" },
-  { 1 << 30, "Read" },
-  { (UInt32)1 << 31, "Write" }
+  {  3, "NoPad" },
+  {  5, "Code" },
+  {  6, "InitializedData" },
+  {  7, "UninitializedData" },
+  {  9, "Comments" },
+  { 11, "Remove" },
+  { 12, "COMDAT" },
+  { 15, "GP" },
+  { 24, "ExtendedRelocations" },
+  { 25, "Discardable" },
+  { 26, "NotCached" },
+  { 27, "NotPaged" },
+  { 28, "Shared" },
+  { 29, "Execute" },
+  { 30, "Read" },
+  { 31, "Write" }
 };
 
 static const CUInt32PCharPair g_MachinePairs[] =
@@ -1723,6 +1723,14 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     size_t offset = item.Offset - sect.Va;
     if (!CheckItem(sect, item, offset))
       return S_FALSE;
+    if (item.HeaderSize == 0)
+    {
+      CBufInStream *streamSpec = new CBufInStream;
+      CMyComPtr<IInStream> streamTemp2 = streamSpec;
+      streamSpec->Init(_buf + offset, item.Size, (IInArchive *)this);
+      *stream = streamTemp2.Detach();
+      return S_OK;
+    }
     referenceBuf->Buf.SetCapacity(item.HeaderSize + item.Size);
     memcpy(referenceBuf->Buf, item.Header, item.HeaderSize);
     memcpy(referenceBuf->Buf + item.HeaderSize, _buf + offset, item.Size);

@@ -53,18 +53,17 @@ HRESULT CLzmaEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIAN
     EncoderSpec = new NCompress::NLzma::CEncoder;
     Encoder = EncoderSpec;
   }
-  CSequentialOutStreamImp *outStreamSpec = new CSequentialOutStreamImp;
+  CBufPtrSeqOutStream *outStreamSpec = new CBufPtrSeqOutStream;
   CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-  outStreamSpec->Init();
+  outStreamSpec->Init(Header + 4, kLzmaPropsSize);
   RINOK(EncoderSpec->SetCoderProperties(propIDs, props, numProps));
   RINOK(EncoderSpec->WriteCoderProperties(outStream));
-  if (outStreamSpec->GetSize() != kLzmaPropsSize)
+  if (outStreamSpec->GetPos() != kLzmaPropsSize)
     return E_FAIL;
   Header[0] = MY_VER_MAJOR;
   Header[1] = MY_VER_MINOR;
   Header[2] = kLzmaPropsSize;
   Header[3] = 0;
-  memcpy(Header + 4, outStreamSpec->GetBuffer(), kLzmaPropsSize);
   return S_OK;
 }
 

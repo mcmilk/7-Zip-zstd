@@ -110,7 +110,7 @@ class CInArchive
 public:
   HRESULT Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit);
   void Close();
-  HRESULT GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword, bool &decryptionError);
+  HRESULT GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword, bool &decryptionError, AString &errorMessage);
   
   void SkipArchiveComment();
   

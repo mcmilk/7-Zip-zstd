@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/Types.h"
+
 #include "Common/Wildcard.h"
 
 #include "ExtractingFilePath.h"

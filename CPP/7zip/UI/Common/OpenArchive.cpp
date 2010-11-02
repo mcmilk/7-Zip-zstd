@@ -111,6 +111,7 @@ HRESULT CArc::OpenStream(
     IArchiveOpenCallback *callback)
 {
   Archive.Release();
+  ErrorMessage.Empty();
   const UString fileName = ExtractFileNameFromPath(Path);
   UString extension;
   {
@@ -298,6 +299,13 @@ HRESULT CArc::OpenStream(
     if (result == S_FALSE)
       continue;
     RINOK(result);
+
+    {
+      NCOM::CPropVariant prop;
+      archive->GetArchiveProperty(kpidError, &prop);
+      if (prop.vt != VT_EMPTY)
+        ErrorMessage = (prop.vt == VT_BSTR) ? prop.bstrVal : L"Unknown error";
+    }
     
     Archive = archive;
     const CArcInfoEx &format = codecs->Formats[FormatIndex];

@@ -1,5 +1,5 @@
 /* 7zIn.c -- 7z Input functions
-2010-03-11 : Igor Pavlov : Public domain */
+2010-10-29 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -1218,11 +1218,15 @@ static SRes SzArEx_Open2(
     ISzAlloc *allocTemp)
 {
   Byte header[k7zStartHeaderSize];
+  Int64 startArcPos;
   UInt64 nextHeaderOffset, nextHeaderSize;
   size_t nextHeaderSizeT;
   UInt32 nextHeaderCRC;
   CBuf buffer;
   SRes res;
+
+  startArcPos = 0;
+  RINOK(inStream->Seek(inStream, &startArcPos, SZ_SEEK_CUR));
 
   RINOK(LookInStream_Read2(inStream, header, k7zStartHeaderSize, SZ_ERROR_NO_ARCHIVE));
 
@@ -1235,7 +1239,7 @@ static SRes SzArEx_Open2(
   nextHeaderSize = GetUi64(header + 20);
   nextHeaderCRC = GetUi32(header + 28);
 
-  p->startPosAfterHeader = k7zStartHeaderSize;
+  p->startPosAfterHeader = startArcPos + k7zStartHeaderSize;
   
   if (CrcCalc(header + 12, 20) != GetUi32(header + 8))
     return SZ_ERROR_CRC;
@@ -1252,13 +1256,13 @@ static SRes SzArEx_Open2(
   {
     Int64 pos = 0;
     RINOK(inStream->Seek(inStream, &pos, SZ_SEEK_END));
-    if ((UInt64)pos < nextHeaderOffset ||
-        (UInt64)pos < k7zStartHeaderSize + nextHeaderOffset ||
-        (UInt64)pos < k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
+    if ((UInt64)pos < startArcPos + nextHeaderOffset ||
+        (UInt64)pos < startArcPos + k7zStartHeaderSize + nextHeaderOffset ||
+        (UInt64)pos < startArcPos + k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
       return SZ_ERROR_INPUT_EOF;
   }
 
-  RINOK(LookInStream_SeekTo(inStream, k7zStartHeaderSize + nextHeaderOffset));
+  RINOK(LookInStream_SeekTo(inStream, startArcPos + k7zStartHeaderSize + nextHeaderOffset));
 
   if (!Buf_Create(&buffer, nextHeaderSizeT, allocTemp))
     return SZ_ERROR_MEM;

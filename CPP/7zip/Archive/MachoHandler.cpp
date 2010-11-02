@@ -77,16 +77,16 @@ static const char *g_FileTypes[] =
 
 static const CUInt32PCharPair g_Flags[] =
 {
-  { (UInt32)1 << 31, "PURE_INSTRUCTIONS" },
-  { 1 << 30, "NO_TOC" },
-  { 1 << 29, "STRIP_STATIC_SYMS" },
-  { 1 << 28, "NO_DEAD_STRIP" },
-  { 1 << 27, "LIVE_SUPPORT" },
-  { 1 << 26, "SELF_MODIFYING_CODE" },
-  { 1 << 25, "DEBUG" },
-  { 1 << 10, "SOME_INSTRUCTIONS" },
-  { 1 <<  9, "EXT_RELOC" },
-  { 1 <<  8, "LOC_RELOC" }
+  { 31, "PURE_INSTRUCTIONS" },
+  { 30, "NO_TOC" },
+  { 29, "STRIP_STATIC_SYMS" },
+  { 28, "NO_DEAD_STRIP" },
+  { 27, "LIVE_SUPPORT" },
+  { 26, "SELF_MODIFYING_CODE" },
+  { 25, "DEBUG" },
+  { 10, "SOME_INSTRUCTIONS" },
+  {  9, "EXT_RELOC" },
+  {  8, "LOC_RELOC" }
 };
 
 static const CUInt32PCharPair g_MachinePairs[] =

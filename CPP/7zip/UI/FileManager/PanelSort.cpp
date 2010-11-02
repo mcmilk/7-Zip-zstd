@@ -61,17 +61,19 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
   // PROPID propID = panel->_properties[panel->_sortIndex].ID;
   PROPID propID = panel->_sortID;
 
-  NCOM::CPropVariant propVariant1, propVariant2;
+  NCOM::CPropVariant prop1, prop2;
   // Name must be first property
-  panel->_folder->GetProperty((UINT32)lParam1, propID, &propVariant1);
-  panel->_folder->GetProperty((UINT32)lParam2, propID, &propVariant2);
-  if (propVariant1.vt != propVariant2.vt)
-    return 0; // It means some BUG
-  if (propVariant1.vt == VT_BSTR)
+  panel->_folder->GetProperty((UINT32)lParam1, propID, &prop1);
+  panel->_folder->GetProperty((UINT32)lParam2, propID, &prop2);
+  if (prop1.vt != prop2.vt)
   {
-    return _wcsicmp(propVariant1.bstrVal, propVariant2.bstrVal);
+    return MyCompare(prop1.vt, prop2.vt);
   }
-  return propVariant1.Compare(propVariant2);
+  if (prop1.vt == VT_BSTR)
+  {
+    return _wcsicmp(prop1.bstrVal, prop2.bstrVal);
+  }
+  return prop1.Compare(prop2);
   // return 0;
 }
 

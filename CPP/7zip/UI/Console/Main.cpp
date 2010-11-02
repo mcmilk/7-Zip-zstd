@@ -26,7 +26,6 @@
 #ifdef EXTERNAL_CODECS
 #include "../Common/LoadCodecs.h"
 #endif
-#include "../Common/PropIDUtils.h"
 
 #include "BenchCon.h"
 #include "ExtractCallbackConsole.h"
@@ -457,8 +456,8 @@ int Main2(
            << "Compressed: " << stat.PackSize << endl;
       if (options.CalcCrc)
       {
-        wchar_t s[16];
-        ConvertUInt32ToHex(stat.CrcSum, s);
+        char s[16];
+        ConvertUInt32ToHexWithZeros(stat.CrcSum, s);
         stdStream << "CRC: " << s << endl;
       }
     }

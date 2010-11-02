@@ -79,7 +79,7 @@ static HRESULT RedSigHeaderSig(IInStream *inStream, CSigHeaderSig &h)
   char dat[kCSigHeaderSigSize];
   char *cur = dat;
   RINOK(ReadStream_FALSE(inStream, dat, kCSigHeaderSigSize));
-  memmove(h.Magic, cur, 4);
+  memcpy(h.Magic, cur, 4);
   cur += 4;
   cur += 4;
   h.IndexLen = Get32(cur);
@@ -95,7 +95,7 @@ HRESULT OpenArchive(IInStream *inStream)
   char *cur = leadData;
   CLead lead;
   RINOK(ReadStream_FALSE(inStream, leadData, kLeadSize));
-  memmove(lead.Magic, cur, 4);
+  memcpy(lead.Magic, cur, 4);
   cur += 4;
   lead.Major = *cur++;
   lead.Minor = *cur++;
@@ -103,7 +103,7 @@ HRESULT OpenArchive(IInStream *inStream)
   cur += 2;
   lead.ArchNum = Get16(cur);
   cur += 2;
-  memmove(lead.Name, cur, sizeof(lead.Name));
+  memcpy(lead.Name, cur, sizeof(lead.Name));
   cur += sizeof(lead.Name);
   lead.OSNum = Get16(cur);
   cur += 2;

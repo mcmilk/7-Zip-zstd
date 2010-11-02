@@ -18,16 +18,16 @@ namespace NBlockType
 {
   enum EBlockType
   {
-    kMarker        = 0x72,
-    kArchiveHeader = 0x73,
-    kFileHeader    = 0x74,
-    kCommentHeader = 0x75,
-    kOldAuthenticity = 0x76,
-    kSubBlock       = 0x77,
-    kRecoveryRecord = 0x78,
-    kAuthenticity   = 0x79,
-
-    kEndOfArchive   = 0x7B // Is not safe
+    kMarker = 0x72,
+    kArchiveHeader,
+    kFileHeader,
+    kCommentHeader,
+    kOldAuthenticity,
+    kOldSubBlock,
+    kRecoveryRecord,
+    kAuthenticity,
+    kSubBlock,
+    kEndOfArchive
   };
 }
 

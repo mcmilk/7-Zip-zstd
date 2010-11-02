@@ -37,7 +37,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     IArchiveUpdateCallback *callback)
 {
   COM_TRY_BEGIN
-  if ((_stream && !_isGood) || _seqStream)
+  if ((_stream && !_errorMessage.IsEmpty()) || _seqStream)
     return E_NOTIMPL;
   CObjectVector<CUpdateItem> updateItems;
   for (UInt32 i = 0; i < numItems; i++)

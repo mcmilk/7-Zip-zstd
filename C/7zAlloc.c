@@ -1,7 +1,6 @@
 /* 7zAlloc.c -- Allocation functions
-2008-10-04 : Igor Pavlov : Public domain */
+2010-10-29 : Igor Pavlov : Public domain */
 
-#include <stdlib.h>
 #include "7zAlloc.h"
 
 /* #define _SZ_ALLOC_DEBUG */

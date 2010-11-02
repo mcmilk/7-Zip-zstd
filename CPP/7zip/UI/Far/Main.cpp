@@ -366,7 +366,8 @@ static HANDLE MyOpenFilePluginW(const wchar_t *name)
   
   // ::OutputDebugStringA("before OpenArchive\n");
   
-  archiveHandler = new CAgent;
+  CAgent *agent = new CAgent;
+  archiveHandler = agent;
   CMyComBSTR archiveType;
   HRESULT result = archiveHandler->Open(NULL,
       GetUnicodeString(fullName, CP_OEMCP), UString(), &archiveType, openArchiveCallback);
@@ -380,6 +381,10 @@ static HANDLE MyOpenFilePluginW(const wchar_t *name)
       return (HANDLE)-2;
     return INVALID_HANDLE_VALUE;
   }
+
+  UString errorMessage = agent->GetErrorMessage();
+  if (!errorMessage.IsEmpty())
+    PrintErrorMessage("7-Zip", UnicodeStringToMultiByte(errorMessage, CP_OEMCP));
 
   // ::OutputDebugStringA("after OpenArchive\n");
 

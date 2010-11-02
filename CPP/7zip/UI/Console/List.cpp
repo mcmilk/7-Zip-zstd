@@ -29,7 +29,7 @@ struct CPropIdToName
   const wchar_t *Name;
 };
 
-static CPropIdToName kPropIdToName[] =
+static const CPropIdToName kPropIdToName[] =
 {
   { kpidPath, L"Path" },
   { kpidName, L"Name" },
@@ -82,6 +82,7 @@ static CPropIdToName kPropIdToName[] =
   { kpidSectorSize, L"Sector Size" },
   { kpidPosixAttrib, L"Mode" },
   { kpidLink, L"Link" },
+  { kpidError, L"Error" },
 
   { kpidTotalSize, L"Total Size" },
   { kpidFreeSpace, L"Free Space" },
@@ -505,6 +506,8 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
         g_StdOut << "--\n";
         PrintPropPair(L"Path", arc.Path);
         PrintPropPair(L"Type", codecs->Formats[arc.FormatIndex].Name);
+        if (!arc.ErrorMessage.IsEmpty())
+          PrintPropPair(L"Error", arc.ErrorMessage);
         UInt32 numProps;
         IInArchive *archive = arc.Archive;
         if (archive->GetNumberOfArchiveProperties(&numProps) == S_OK)

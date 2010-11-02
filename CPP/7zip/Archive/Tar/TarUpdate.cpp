@@ -111,25 +111,25 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     }
     else
     {
-      const CItemEx &existItemInfo = inputItems[ui.IndexInArchive];
+      const CItemEx &existItem = inputItems[ui.IndexInArchive];
       UInt64 size;
       if (ui.NewProps)
       {
         RINOK(outArchive.WriteHeader(item));
-        RINOK(inStream->Seek(existItemInfo.GetDataPosition(), STREAM_SEEK_SET, NULL));
-        size = existItemInfo.Size;
+        RINOK(inStream->Seek(existItem.GetDataPosition(), STREAM_SEEK_SET, NULL));
+        size = existItem.Size;
       }
       else
       {
-        RINOK(inStream->Seek(existItemInfo.HeaderPosition, STREAM_SEEK_SET, NULL));
-        size = existItemInfo.GetFullSize();
+        RINOK(inStream->Seek(existItem.HeaderPos, STREAM_SEEK_SET, NULL));
+        size = existItem.GetFullSize();
       }
       streamSpec->Init(size);
 
       RINOK(copyCoder->Code(inStreamLimited, outStream, NULL, NULL, progress));
       if (copyCoderSpec->TotalSize != size)
         return E_FAIL;
-      RINOK(outArchive.FillDataResidual(existItemInfo.Size));
+      RINOK(outArchive.FillDataResidual(existItem.Size));
       complexity += size;
     }
   }

@@ -31,6 +31,9 @@ struct CItem
   bool DeviceMajorDefined;
   bool DeviceMinorDefined;
 
+  bool IsLink() const { return LinkFlag == NFileHeader::NLinkFlag::kSymbolicLink && (Size == 0); }
+  UInt64 GetUnpackSize() const { return IsLink() ? LinkName.Length() : Size; }
+
   bool IsDir() const
   {
     switch(LinkFlag)
@@ -58,10 +61,10 @@ struct CItem
 
 struct CItemEx: public CItem
 {
-  UInt64 HeaderPosition;
-  unsigned LongLinkSize;
-  UInt64 GetDataPosition() const { return HeaderPosition + LongLinkSize + NFileHeader::kRecordSize; }
-  UInt64 GetFullSize() const { return LongLinkSize + NFileHeader::kRecordSize + Size; }
+  UInt64 HeaderPos;
+  unsigned HeaderSize;
+  UInt64 GetDataPosition() const { return HeaderPos + HeaderSize; }
+  UInt64 GetFullSize() const { return HeaderSize + Size; }
 };
 
 }}

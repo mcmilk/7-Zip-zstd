@@ -1,15 +1,14 @@
 /* 7zMain.c - Test application for 7z Decoder
-2010-09-20 : Igor Pavlov : Public domain */
+2010-10-28 : Igor Pavlov : Public domain */
 
 #include <stdio.h>
 #include <string.h>
 
 #include "../../7z.h"
+#include "../../7zAlloc.h"
 #include "../../7zCrc.h"
 #include "../../7zFile.h"
 #include "../../7zVersion.h"
-
-#include "7zAlloc.h"
 
 #ifndef USE_WINDOWS_FILE
 /* for mkdir */
@@ -19,12 +18,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 #endif
-#endif
-
-#ifdef _WIN32
-#define CHAR_PATH_SEPARATOR '\\'
-#else
-#define CHAR_PATH_SEPARATOR '/'
 #endif
 
 static ISzAlloc g_Alloc = { SzAlloc, SzFree };
@@ -117,7 +110,14 @@ static SRes Utf16_To_Char(CBuf *buf, const UInt16 *s, int fileMode)
     {
       char defaultChar = '_';
       BOOL defUsed;
-      int numChars = WideCharToMultiByte(fileMode ? (AreFileApisANSI() ? CP_ACP : CP_OEMCP) : CP_OEMCP,
+      int numChars = WideCharToMultiByte(fileMode ?
+          (
+          #ifdef UNDER_CE
+          CP_ACP
+          #else
+          AreFileApisANSI() ? CP_ACP : CP_OEMCP
+          #endif
+          ) : CP_OEMCP,
           0, s, len, (char *)buf->data, size, &defaultChar, &defUsed);
       if (numChars == 0 || numChars >= size)
         return SZ_ERROR_FAIL;

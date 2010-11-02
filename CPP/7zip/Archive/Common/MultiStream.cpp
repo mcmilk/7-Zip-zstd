@@ -6,72 +6,61 @@
 
 STDMETHODIMP CMultiStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  if(processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
-  while(_streamIndex < Streams.Size() && size > 0)
+  if (size == 0)
+    return S_OK;
+  if (_pos >= _totalLength)
+    return (_pos == _totalLength) ? S_OK : E_FAIL;
+
   {
-    CSubStreamInfo &s = Streams[_streamIndex];
-    if (_pos == s.Size)
+    int left = 0, mid = _streamIndex, right = Streams.Size();
+    for (;;)
     {
-      _streamIndex++;
-      _pos = 0;
-      continue;
+      CSubStreamInfo &m = Streams[mid];
+      if (_pos < m.GlobalOffset)
+        right = mid;
+      else if (_pos >= m.GlobalOffset + m.Size)
+        left = mid + 1;
+      else
+      {
+        _streamIndex = mid;
+        break;
+      }
+      mid = (left + right) / 2;
     }
-    RINOK(s.Stream->Seek(s.Pos + _pos, STREAM_SEEK_SET, 0));
-    UInt32 sizeToRead = UInt32(MyMin((UInt64)size, s.Size - _pos));
-    UInt32 realProcessed;
-    HRESULT result = s.Stream->Read(data, sizeToRead, &realProcessed);
-    data = (void *)((Byte *)data + realProcessed);
-    size -= realProcessed;
-    if(processedSize != NULL)
-      *processedSize += realProcessed;
-    _pos += realProcessed;
-    _seekPos += realProcessed;
-    RINOK(result);
-    break;
+    _streamIndex = mid;
   }
-  return S_OK;
+  
+  CSubStreamInfo &s = Streams[_streamIndex];
+  UInt64 localPos = _pos - s.GlobalOffset;
+  if (localPos != s.LocalPos)
+  {
+    RINOK(s.Stream->Seek(localPos, STREAM_SEEK_SET, &s.LocalPos));
+  }
+  UInt64 rem = s.Size - localPos;
+  if (size > rem)
+    size = (UInt32)rem;
+  HRESULT result = s.Stream->Read(data, size, &size);
+  _pos += size;
+  s.LocalPos += size;
+  if (processedSize)
+    *processedSize = size;
+  return result;
 }
   
-STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin,
-    UInt64 *newPosition)
+STDMETHODIMP CMultiStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
 {
-  UInt64 newPos;
   switch(seekOrigin)
   {
-    case STREAM_SEEK_SET:
-      newPos = offset;
-      break;
-    case STREAM_SEEK_CUR:
-      newPos = _seekPos + offset;
-      break;
-    case STREAM_SEEK_END:
-      newPos = _totalLength + offset;
-      break;
-    default:
-      return STG_E_INVALIDFUNCTION;
+    case STREAM_SEEK_SET: _pos = offset; break;
+    case STREAM_SEEK_CUR: _pos = _pos + offset; break;
+    case STREAM_SEEK_END: _pos = _totalLength + offset; break;
+    default: return STG_E_INVALIDFUNCTION;
   }
-  _seekPos = 0;
-  for (_streamIndex = 0; _streamIndex < Streams.Size(); _streamIndex++)
-  {
-    UInt64 size = Streams[_streamIndex].Size;
-    if (newPos < _seekPos + size)
-    {
-      _pos = newPos - _seekPos;
-      _seekPos += _pos;
-      if (newPosition != 0)
-        *newPosition = newPos;
-      return S_OK;
-    }
-    _seekPos += size;
-  }
-  if (newPos == _seekPos)
-  {
-    if (newPosition != 0)
-      *newPosition = newPos;
-    return S_OK;
-  }
-  return E_FAIL;
+  if (newPosition != 0)
+    *newPosition = _pos;
+  return S_OK;
 }
 
 

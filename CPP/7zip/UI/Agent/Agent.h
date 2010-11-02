@@ -206,6 +206,27 @@ public:
   const CArc &GetArc() { return _archiveLink.Arcs.Back(); }
   IInArchive *GetArchive() { if ( _archiveLink.Arcs.IsEmpty()) return 0; return GetArc().Archive; }
   bool CanUpdate() const { return _archiveLink.Arcs.Size() <= 1; }
+
+  UString GetTypeOfArc(const CArc &arc) const { return  _codecs->Formats[arc.FormatIndex].Name; }
+  UString GetErrorMessage() const
+  {
+    UString s;
+    for (int i = _archiveLink.Arcs.Size() - 1; i >= 0; i--)
+    {
+      const CArc &arc = _archiveLink.Arcs[i];
+      if (arc.ErrorMessage.IsEmpty())
+        continue;
+      if (!s.IsEmpty())
+        s += L"--------------------\n";
+      s += arc.ErrorMessage;
+      s += L"\n\n[";
+      s += GetTypeOfArc(arc);
+      s += L"] ";
+      s += arc.Path;
+      s += L"\n";
+    }
+    return s;
+  }
 };
 
 #ifdef NEW_FOLDER_INTERFACE

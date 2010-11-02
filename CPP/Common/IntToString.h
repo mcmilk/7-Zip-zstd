@@ -14,4 +14,6 @@ void ConvertInt64ToString(Int64 value, wchar_t *s);
 void ConvertUInt32ToString(UInt32 value, char *s);
 void ConvertUInt32ToString(UInt32 value, wchar_t *s);
 
+void ConvertUInt32ToHexWithZeros(UInt32 value, char *s);
+
 #endif

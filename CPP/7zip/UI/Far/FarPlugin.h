@@ -61,7 +61,7 @@ struct PluginPanelItem
   char **CustomColumnData;
   int CustomColumnNumber;
   DWORD_PTR UserData;
-	DWORD CRC32;
+  DWORD CRC32;
   DWORD_PTR Reserved[2];
 };
 
@@ -484,34 +484,34 @@ enum OPERATION_MODES {
 /*
 EXTERN_C_BEGIN
 
-	void   WINAPI _export ClosePluginW(HANDLE hPlugin);
-	int    WINAPI _export CompareW(HANDLE hPlugin,const struct PluginPanelItem *Item1,const struct PluginPanelItem *Item2,unsigned int Mode);
-	int    WINAPI _export ConfigureW(int ItemNumber);
-	int    WINAPI _export DeleteFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
-	void   WINAPI _export ExitFARW(void);
-	void   WINAPI _export FreeFindDataW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber);
-	void   WINAPI _export FreeVirtualFindDataW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber);
-	int    WINAPI _export GetFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,const wchar_t **DestPath,int OpMode);
-	int    WINAPI _export GetFindDataW(HANDLE hPlugin,struct PluginPanelItem **pPanelItem,int *pItemsNumber,int OpMode);
-	int    WINAPI _export GetMinFarVersionW(void);
-	void   WINAPI _export GetOpenPluginInfoW(HANDLE hPlugin,struct OpenPluginInfo *Info);
-	void   WINAPI _export GetPluginInfoW(struct PluginInfo *Info);
-	int    WINAPI _export GetVirtualFindDataW(HANDLE hPlugin,struct PluginPanelItem **pPanelItem,int *pItemsNumber,const wchar_t *Path);
-	int    WINAPI _export MakeDirectoryW(HANDLE hPlugin,const wchar_t **Name,int OpMode);
-	HANDLE WINAPI _export OpenFilePluginW(const wchar_t *Name,const unsigned char *Data,int DataSize,int OpMode);
-	HANDLE WINAPI _export OpenPluginW(int OpenFrom,INT_PTR Item);
-	int    WINAPI _export ProcessDialogEventW(int Event,void *Param);
-	int    WINAPI _export ProcessEditorEventW(int Event,void *Param);
-	int    WINAPI _export ProcessEditorInputW(const INPUT_RECORD *Rec);
-	int    WINAPI _export ProcessEventW(HANDLE hPlugin,int Event,void *Param);
-	int    WINAPI _export ProcessHostFileW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
-	int    WINAPI _export ProcessKeyW(HANDLE hPlugin,int Key,unsigned int ControlState);
-	int    WINAPI _export ProcessSynchroEventW(int Event,void *Param);
-	int    WINAPI _export ProcessViewerEventW(int Event,void *Param);
-	int    WINAPI _export PutFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,const wchar_t *SrcPath,int OpMode);
-	int    WINAPI _export SetDirectoryW(HANDLE hPlugin,const wchar_t *Dir,int OpMode);
-	int    WINAPI _export SetFindListW(HANDLE hPlugin,const struct PluginPanelItem *PanelItem,int ItemsNumber);
-	void   WINAPI _export SetStartupInfoW(const struct PluginStartupInfo *Info);
+  void   WINAPI _export ClosePluginW(HANDLE hPlugin);
+  int    WINAPI _export CompareW(HANDLE hPlugin,const struct PluginPanelItem *Item1,const struct PluginPanelItem *Item2,unsigned int Mode);
+  int    WINAPI _export ConfigureW(int ItemNumber);
+  int    WINAPI _export DeleteFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
+  void   WINAPI _export ExitFARW(void);
+  void   WINAPI _export FreeFindDataW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber);
+  void   WINAPI _export FreeVirtualFindDataW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber);
+  int    WINAPI _export GetFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,const wchar_t **DestPath,int OpMode);
+  int    WINAPI _export GetFindDataW(HANDLE hPlugin,struct PluginPanelItem **pPanelItem,int *pItemsNumber,int OpMode);
+  int    WINAPI _export GetMinFarVersionW(void);
+  void   WINAPI _export GetOpenPluginInfoW(HANDLE hPlugin,struct OpenPluginInfo *Info);
+  void   WINAPI _export GetPluginInfoW(struct PluginInfo *Info);
+  int    WINAPI _export GetVirtualFindDataW(HANDLE hPlugin,struct PluginPanelItem **pPanelItem,int *pItemsNumber,const wchar_t *Path);
+  int    WINAPI _export MakeDirectoryW(HANDLE hPlugin,const wchar_t **Name,int OpMode);
+  HANDLE WINAPI _export OpenFilePluginW(const wchar_t *Name,const unsigned char *Data,int DataSize,int OpMode);
+  HANDLE WINAPI _export OpenPluginW(int OpenFrom,INT_PTR Item);
+  int    WINAPI _export ProcessDialogEventW(int Event,void *Param);
+  int    WINAPI _export ProcessEditorEventW(int Event,void *Param);
+  int    WINAPI _export ProcessEditorInputW(const INPUT_RECORD *Rec);
+  int    WINAPI _export ProcessEventW(HANDLE hPlugin,int Event,void *Param);
+  int    WINAPI _export ProcessHostFileW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
+  int    WINAPI _export ProcessKeyW(HANDLE hPlugin,int Key,unsigned int ControlState);
+  int    WINAPI _export ProcessSynchroEventW(int Event,void *Param);
+  int    WINAPI _export ProcessViewerEventW(int Event,void *Param);
+  int    WINAPI _export PutFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,const wchar_t *SrcPath,int OpMode);
+  int    WINAPI _export SetDirectoryW(HANDLE hPlugin,const wchar_t *Dir,int OpMode);
+  int    WINAPI _export SetFindListW(HANDLE hPlugin,const struct PluginPanelItem *PanelItem,int ItemsNumber);
+  void   WINAPI _export SetStartupInfoW(const struct PluginStartupInfo *Info);
 
 EXTERN_C_END
 */

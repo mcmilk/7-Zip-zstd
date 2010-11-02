@@ -23,18 +23,20 @@ class CHandler:
   CObjectVector<CItemEx> _items;
   CMyComPtr<IInStream> _stream;
   CMyComPtr<ISequentialInStream> _seqStream;
-  bool _isGood;
   
   UInt32 _curIndex;
   bool _latestIsRead;
   CItemEx _latestItem;
 
   UInt64 _phySize;
+  UInt64 _headersSize;
   bool _phySizeDefined;
+  AString _errorMessage;
 
   NCompress::CCopyCoder *copyCoderSpec;
   CMyComPtr<ICompressCoder> copyCoder;
 
+  HRESULT ReadItem2(ISequentialInStream *stream, bool &filled, CItemEx &itemInfo);
   HRESULT Open2(IInStream *stream, IArchiveOpenCallback *callback);
   HRESULT SkipTo(UInt32 index);
 

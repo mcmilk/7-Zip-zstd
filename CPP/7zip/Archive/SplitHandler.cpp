@@ -347,7 +347,6 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   {
     CMultiStream::CSubStreamInfo subStreamInfo;
     subStreamInfo.Stream = _streams[i];
-    subStreamInfo.Pos = 0;
     subStreamInfo.Size = _sizes[i];
     streamSpec->Streams.Add(subStreamInfo);
   }

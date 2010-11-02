@@ -64,3 +64,14 @@ void ConvertInt64ToString(Int64 value, wchar_t *s)
   }
   ConvertUInt64ToString(value, s);
 }
+
+void ConvertUInt32ToHexWithZeros(UInt32 value, char *s)
+{
+  for (int i = 0; i < 8; i++)
+  {
+    int t = value & 0xF;
+    value >>= 4;
+    s[7 - i] = (char)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
+  }
+  s[8] = '\0';
+}

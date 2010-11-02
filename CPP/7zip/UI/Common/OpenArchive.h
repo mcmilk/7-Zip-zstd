@@ -24,6 +24,7 @@ struct CArc
   int SubfileIndex;
   FILETIME MTime;
   bool MTimeDefined;
+  UString ErrorMessage;
 
   CArc(): MTimeDefined(false) {}
 

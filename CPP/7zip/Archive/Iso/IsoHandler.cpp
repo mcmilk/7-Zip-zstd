@@ -24,7 +24,7 @@ using namespace NTime;
 namespace NArchive {
 namespace NIso {
 
-static STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
@@ -33,8 +33,17 @@ static STATPROPSTG kProps[] =
   { NULL, kpidMTime, VT_FILETIME}
 };
 
+static const STATPROPSTG kArcProps[] =
+{
+  { NULL, kpidComment, VT_BSTR},
+  { NULL, kpidCTime, VT_FILETIME},
+  { NULL, kpidMTime, VT_FILETIME}
+  // { NULL, kpidPhySize, VT_UI8},
+  // { NULL, kpidHeadersSize, VT_UI8}
+};
+
 IMP_IInArchive_Props
-IMP_IInArchive_ArcProps_NO
+IMP_IInArchive_ArcProps
 
 STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
@@ -66,6 +75,58 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
+static void AddString(AString &s, const char *name, const Byte *p, int size)
+{
+  int i;
+  for (i = 0; i < size && p[i]; i++);
+  for (; i > 0 && p[i - 1] == ' '; i--);
+  if (i != 0)
+  {
+    AString d;
+    memcpy(d.GetBuffer(i), p, i);
+    d.ReleaseBuffer(i);
+    s += '\n';
+    s += name;
+    s += ": ";
+    s += d;
+  }
+}
+
+#define ADD_STRING(n, v) AddString(s, n, vol. ## v, sizeof(vol. ## v))
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  COM_TRY_BEGIN
+  NWindows::NCOM::CPropVariant prop;
+  const CVolumeDescriptor &vol = _archive.VolDescs[_archive.MainVolDescIndex];
+  switch(propID)
+  {
+    case kpidComment:
+    {
+      AString s;
+      ADD_STRING("System", SystemId);
+      ADD_STRING("Volume", VolumeId);
+      ADD_STRING("VolumeSet", VolumeSetId);
+      ADD_STRING("Publisher", PublisherId);
+      ADD_STRING("Preparer", DataPreparerId);
+      ADD_STRING("Application", ApplicationId);
+      ADD_STRING("Copyright", CopyrightFileId);
+      ADD_STRING("Abstract", AbstractFileId);
+      ADD_STRING("Bib", BibFileId);
+      prop = s;
+      break;
+    }
+    case kpidCTime: { FILETIME utc; if (vol.CTime.GetFileTime(utc)) prop = utc; break; }
+    case kpidMTime: { FILETIME utc; if (vol.MTime.GetFileTime(utc)) prop = utc; break; }
+    // case kpidPhySize: break;
+    // case kpidHeadersSize: break;
+    case kpidError: if (_archive.IncorrectBigEndian) prop = "Incorrect big-endian headers"; break;
+  }
+  prop.Detach(value);
+  return S_OK;
+  COM_TRY_END
+}
+
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
@@ -87,9 +148,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         prop = (const wchar_t *)s;
         break;
       }
-      case kpidIsDir:
-        prop = false;
-        break;
+      case kpidIsDir: prop = false; break;
       case kpidSize:
       case kpidPackSize:
         prop = (UInt64)_archive.GetBootItemSize(index);
@@ -121,9 +180,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           prop = (const wchar_t *)NItemName::GetOSName2(s);
         }
         break;
-      case kpidIsDir:
-        prop = item.IsDir();
-        break;
+      case kpidIsDir: prop = item.IsDir(); break;
       case kpidSize:
       case kpidPackSize:
         if (!item.IsDir())
@@ -131,16 +188,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         break;
       case kpidMTime:
       {
-        FILETIME utcFileTime;
-        if (item.DateTime.GetFileTime(utcFileTime))
-          prop = utcFileTime;
-        /*
-        else
-        {
-          utcFileTime.dwLowDateTime = 0;
-          utcFileTime.dwHighDateTime = 0;
-        }
-        */
+        FILETIME utc;
+        if (item.DateTime.GetFileTime(utc))
+          prop = utc;
         break;
       }
     }

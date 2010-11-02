@@ -53,13 +53,14 @@ AString FlagsToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags)
   for (unsigned i = 0; i < num; i++)
   {
     const CUInt32PCharPair &p = pairs[i];
-    if ((flags & p.Value) != 0)
+    UInt32 flag = (UInt32)1 << (unsigned)p.Value;
+    if ((flags & flag) != 0)
     {
       if (!s.IsEmpty())
         s += ' ';
       s += p.Name;
     }
-    flags &= ~p.Value;
+    flags &= ~flag;
   }
   if (flags != 0)
   {

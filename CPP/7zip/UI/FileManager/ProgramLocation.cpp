@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/Types.h"
+
 #include "ProgramLocation.h"
 
 #include "Windows/DLL.h"
@@ -20,4 +22,3 @@ bool GetProgramFolderPath(UString &folder)
   folder = folder.Left(pos + 1);
   return true;
 }
-

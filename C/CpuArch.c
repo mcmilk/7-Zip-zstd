@@ -1,5 +1,5 @@
 /* CpuArch.c -- CPU specific code
-2009-12-12: Igor Pavlov : Public domain */
+2010-10-26: Igor Pavlov : Public domain */
 
 #include "CpuArch.h"
 
@@ -72,13 +72,13 @@ static void MyCPUID(UInt32 function, UInt32 *a, UInt32 *b, UInt32 *c, UInt32 *d)
 
   #else
 
- 	__asm__ __volatile__ (
- 		"cpuid"
- 		: "=a" (*a) ,
- 		  "=b" (*b) ,
- 		  "=c" (*c) ,
- 		  "=d" (*d)
-		: "0" (function)) ;
+  __asm__ __volatile__ (
+    "cpuid"
+    : "=a" (*a) ,
+      "=b" (*b) ,
+      "=c" (*c) ,
+      "=d" (*d)
+    : "0" (function)) ;
 
   #endif
   

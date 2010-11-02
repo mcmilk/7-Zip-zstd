@@ -266,7 +266,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
     return (startHeader[0] == 0) ? S_OK: S_FALSE;
 
   const Byte *p = header;
-  memmove(item.Method, p, kMethodIdSize);
+  memcpy(item.Method, p, kMethodIdSize);
   if (!item.IsValidMethod())
     return S_OK;
   p += kMethodIdSize;

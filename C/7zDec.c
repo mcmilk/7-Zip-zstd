@@ -1,5 +1,5 @@
 /* 7zDec.c -- Decoding from 7z folder
-2010-03-15 : Igor Pavlov : Public domain */
+2010-11-02 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -18,9 +18,13 @@
 
 #define k_Copy 0
 #define k_LZMA2 0x21
-#define k_LZMA 0x30101
-#define k_BCJ 0x03030103
-#define k_BCJ2 0x0303011B
+#define k_LZMA  0x30101
+#define k_BCJ   0x03030103
+#define k_PPC   0x03030205
+#define k_ARM   0x03030501
+#define k_ARMT  0x03030701
+#define k_SPARC 0x03030805
+#define k_BCJ2  0x0303011B
 
 #ifdef _7ZIP_PPMD_SUPPPORT
 
@@ -260,7 +264,6 @@ static Bool IS_SUPPORTED_CODER(const CSzCoderInfo *c)
       IS_MAIN_METHOD((UInt32)c->MethodID);
 }
 
-#define IS_BCJ(c) ((c)->MethodID == k_BCJ && (c)->NumInStreams == 1 && (c)->NumOutStreams == 1)
 #define IS_BCJ2(c) ((c)->MethodID == k_BCJ2 && (c)->NumInStreams == 4 && (c)->NumOutStreams == 1)
 
 static SRes CheckSupportedFolder(const CSzFolder *f)
@@ -277,11 +280,24 @@ static SRes CheckSupportedFolder(const CSzFolder *f)
   }
   if (f->NumCoders == 2)
   {
-    if (!IS_BCJ(&f->Coders[1]) ||
-        f->NumPackStreams != 1 || f->PackStreams[0] != 0 ||
+    CSzCoderInfo *c = &f->Coders[1];
+    if (c->MethodID > (UInt32)0xFFFFFFFF ||
+        c->NumInStreams != 1 ||
+        c->NumOutStreams != 1 ||
+        f->NumPackStreams != 1 ||
+        f->PackStreams[0] != 0 ||
         f->NumBindPairs != 1 ||
-        f->BindPairs[0].InIndex != 1 || f->BindPairs[0].OutIndex != 0)
+        f->BindPairs[0].InIndex != 1 ||
+        f->BindPairs[0].OutIndex != 0)
       return SZ_ERROR_UNSUPPORTED;
+    switch ((UInt32)c->MethodID)
+    {
+      case k_BCJ:
+      case k_ARM:
+        break;
+      default:
+        return SZ_ERROR_UNSUPPORTED;
+    }
     return SZ_OK;
   }
   if (f->NumCoders == 4)
@@ -313,6 +329,8 @@ static UInt64 GetSum(const UInt64 *values, UInt32 index)
     sum += values[i];
   return sum;
 }
+
+#define CASE_BRA_CONV(isa) case k_ ## isa: isa ## _Convert(outBuffer, outSize, 0, 0); break;
 
 static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *inStream, UInt64 startPos,
@@ -391,14 +409,6 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
         #endif
       }
     }
-    else if (coder->MethodID == k_BCJ)
-    {
-      UInt32 state;
-      if (ci != 1)
-        return SZ_ERROR_UNSUPPORTED;
-      x86_Convert_Init(state);
-      x86_Convert(outBuffer, outSize, 0, &state, 0);
-    }
     else if (coder->MethodID == k_BCJ2)
     {
       UInt64 offset = GetSum(packSizes, 1);
@@ -425,7 +435,23 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
       RINOK(res)
     }
     else
-      return SZ_ERROR_UNSUPPORTED;
+    {
+      if (ci != 1)
+        return SZ_ERROR_UNSUPPORTED;
+      switch(coder->MethodID)
+      {
+        case k_BCJ:
+        {
+          UInt32 state;
+          x86_Convert_Init(state);
+          x86_Convert(outBuffer, outSize, 0, &state, 0);
+          break;
+        }
+        CASE_BRA_CONV(ARM)
+        default:
+          return SZ_ERROR_UNSUPPORTED;
+      }
+    }
   }
   return SZ_OK;
 }

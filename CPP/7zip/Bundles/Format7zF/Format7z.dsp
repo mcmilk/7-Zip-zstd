@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gr /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /FAcs /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /FAs /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -161,6 +161,10 @@ SOURCE=..\..\Archive\Icons\rpm.ico
 # Begin Source File
 
 SOURCE=..\..\Archive\Icons\split.ico
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\squashfs.ico
 # End Source File
 # Begin Source File
 
@@ -2330,6 +2334,10 @@ SOURCE=..\..\Archive\CpioHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\CramfsHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\DebHandler.cpp
 # End Source File
 # Begin Source File
@@ -2417,6 +2425,10 @@ SOURCE=..\..\Archive\RpmHandler.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\SplitHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\SquashfsHandler.cpp
 # End Source File
 # Begin Source File
 

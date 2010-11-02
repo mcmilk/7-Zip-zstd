@@ -609,7 +609,7 @@ STDMETHODIMP CAgent::GetArcProp(UInt32 level, PROPID propID, PROPVARIANT *value)
   CArc &arc = _archiveLink.Arcs[level];
   switch(propID)
   {
-    case kpidType: prop = _codecs->Formats[arc.FormatIndex].Name; break;
+    case kpidType: prop = GetTypeOfArc(arc); break;
     case kpidPath: prop = arc.Path; break;
     default: return arc.Archive->GetArchiveProperty(propID, value);
   }

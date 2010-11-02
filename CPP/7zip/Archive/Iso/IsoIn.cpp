@@ -65,7 +65,7 @@ UInt16 CInArchive::ReadUInt16()
   for (int i = 0; i < 2; i++)
   {
     if (b[i] != b[3 - i])
-      throw 1;
+      IncorrectBigEndian = true;
     value |= ((UInt16)(b[i]) << (8 * i));
   }
   return (UInt16)value;
@@ -440,6 +440,7 @@ HRESULT CInArchive::Open(IInStream *inStream)
 
 void CInArchive::Clear()
 {
+  IncorrectBigEndian = false;
   Refs.Clear();
   _rootDir.Clear();
   VolDescs.Clear();

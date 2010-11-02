@@ -111,6 +111,20 @@ struct CDateTime
   signed char GmtOffset; // min intervals from -48 (West) to +52 (East) recorded.
   bool NotSpecified() const { return Year == 0 && Month == 0 && Day == 0 &&
       Hour == 0 && Minute == 0 && Second == 0 && GmtOffset == 0; }
+
+  bool GetFileTime(FILETIME &ft) const
+  {
+    UInt64 value;
+    bool res = NWindows::NTime::GetSecondsSince1601(Year, Month, Day, Hour, Minute, Second, value);
+    if (res)
+    {
+      value -= (UInt64)((Int64)GmtOffset * 15 * 60);
+      value *= 10000000;
+    }
+    ft.dwLowDateTime = (DWORD)value;
+    ft.dwHighDateTime = (DWORD)(value >> 32);
+    return res;
+  }
 };
 
 struct CBootRecordDescriptor
@@ -268,6 +282,7 @@ public:
   int MainVolDescIndex;
   UInt32 BlockSize;
   CObjectVector<CBootInitialEntry> BootEntries;
+  bool IncorrectBigEndian;
 
 
   bool IsJoliet() const { return VolDescs[MainVolDescIndex].IsJoliet(); }

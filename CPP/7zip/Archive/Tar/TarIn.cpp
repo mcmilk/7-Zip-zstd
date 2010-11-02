@@ -63,29 +63,40 @@ static void ReadString(const char *s, int size, AString &result)
   result = temp;
 }
 
-static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemEx &item, size_t &processedSize)
+static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemEx &item, AString &error)
 {
-  item.LongLinkSize = 0;
   char buf[NFileHeader::kRecordSize];
   char *p = buf;
 
+  error.Empty();
   filled = false;
 
   bool thereAreEmptyRecords = false;
   for (;;)
   {
-    processedSize = NFileHeader::kRecordSize;
+    size_t processedSize = NFileHeader::kRecordSize;
     RINOK(ReadStream(stream, buf, &processedSize));
     if (processedSize == 0)
+    {
+      if (!thereAreEmptyRecords )
+        error = "There are no trailing zero-filled records";
       return S_OK;
+    }
     if (processedSize != NFileHeader::kRecordSize)
-      return S_FALSE;
+    {
+      error = "There is no correct record at the end of archive";
+      return S_OK;
+    }
+    item.HeaderSize += NFileHeader::kRecordSize;
     if (!IsRecordLast(buf))
       break;
     thereAreEmptyRecords = true;
   }
   if (thereAreEmptyRecords)
-    return S_FALSE;
+  {
+    error = "There are data after end of archive";
+    return S_OK;
+  }
   
   ReadString(p, NFileHeader::kNameSize, item.Name); p += NFileHeader::kNameSize;
 
@@ -143,59 +154,54 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   return S_OK;
 }
 
-HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item)
+HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, AString &error)
 {
-  size_t processedSize;
-  RINOK(GetNextItemReal(stream, filled, item, processedSize));
-  if (!filled)
-    return S_OK;
-  // GNUtar extension
-  if (item.LinkFlag == 'L' || // NEXT file has a long name
-      item.LinkFlag == 'K') // NEXT file has a long linkname
+  item.HeaderSize = 0;
+  bool flagL = false;
+  bool flagK = false;
+  AString nameL;
+  AString nameK;
+  for (;;)
   {
-    if (item.Name.Compare(NFileHeader::kLongLink) != 0)
-      if (item.Name.Compare(NFileHeader::kLongLink2) != 0)
+    RINOK(GetNextItemReal(stream, filled, item, error));
+    if (!filled)
+      return S_OK;
+    if (item.LinkFlag == 'L' || // NEXT file has a long name
+        item.LinkFlag == 'K') // NEXT file has a long linkname
+    {
+      AString *name;
+      if (item.LinkFlag == 'L')
+        { if (flagL) return S_FALSE; flagL = true; name = &nameL; }
+      else
+        { if (flagK) return S_FALSE; flagK = true; name = &nameK; }
+
+      if (item.Name.Compare(NFileHeader::kLongLink) != 0 &&
+          item.Name.Compare(NFileHeader::kLongLink2) != 0)
         return S_FALSE;
-
-    AString fullName;
-    if (item.Size > (1 << 15))
+      if (item.Size > (1 << 14))
+        return S_FALSE;
+      int packSize = (int)item.GetPackSize();
+      char *buf = name->GetBuffer(packSize);
+      RINOK(ReadStream_FALSE(stream, buf, packSize));
+      item.HeaderSize += packSize;
+      buf[(size_t)item.Size] = '\0';
+      name->ReleaseBuffer();
+      continue;
+    }
+    if (item.LinkFlag == 'g' || item.LinkFlag == 'x' || item.LinkFlag == 'X')
+    {
+      // pax Extended Header
+    }
+    else if (item.LinkFlag == NFileHeader::NLinkFlag::kDumpDir)
+    {
+      // GNU Extensions to the Archive Format
+    }
+    else if (item.LinkFlag > '7' || (item.LinkFlag < '0' && item.LinkFlag != 0))
       return S_FALSE;
-    int packSize = (int)item.GetPackSize();
-    char *buffer = fullName.GetBuffer(packSize + 1);
-
-    RINOK(ReadStream_FALSE(stream, buffer, packSize));
-    processedSize += packSize;
-    buffer[item.Size] = '\0';
-    fullName.ReleaseBuffer();
-
-    UInt64 headerPosition = item.HeaderPosition;
-    if (item.LinkFlag == 'L')
-    {
-      size_t processedSize2;
-      RINOK(GetNextItemReal(stream, filled, item, processedSize2));
-      item.LongLinkSize = (unsigned)processedSize;
-    }
-    else
-    {
-      item.LongLinkSize = (unsigned)processedSize - NFileHeader::kRecordSize;
-      item.Size = 0;
-    }
-    item.Name = fullName;
-    item.HeaderPosition = headerPosition;
-  }
-  else if (item.LinkFlag == 'g' || item.LinkFlag == 'x' || item.LinkFlag == 'X')
-  {
-    // pax Extended Header
+    if (flagL) item.Name = nameL;
+    if (flagK) item.LinkName = nameK;
     return S_OK;
   }
-  else if (item.LinkFlag == NFileHeader::NLinkFlag::kDumpDir)
-  {
-    // GNU Extensions to the Archive Format
-    return S_OK;
-  }
-  else if (item.LinkFlag > '7' || (item.LinkFlag < '0' && item.LinkFlag != 0))
-    return S_FALSE;
-  return S_OK;
 }
 
 }}

@@ -268,7 +268,7 @@ HRESULT CHandler::Open2(IInStream *stream)
   inStreamLimSpec->SetStream(stream);
   inStreamLimSpec->Init(packSize);
 
-  CSequentialOutStreamImp2 *outStreamLimSpec = new CSequentialOutStreamImp2;
+  CBufPtrSeqOutStream *outStreamLimSpec = new CBufPtrSeqOutStream;
   CMyComPtr<ISequentialOutStream> outStreamLim(outStreamLimSpec);
   outStreamLimSpec->Init((Byte *)ss, (size_t)unpackSize);
 

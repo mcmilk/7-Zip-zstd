@@ -240,7 +240,7 @@ static HRESULT UnpackData(IInStream *inStream, const CResource &resource, bool l
   buf.Free();
   buf.SetCapacity(size);
 
-  CSequentialOutStreamImp2 *outStreamSpec = new CSequentialOutStreamImp2();
+  CBufPtrSeqOutStream *outStreamSpec = new CBufPtrSeqOutStream();
   CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
   outStreamSpec->Init((Byte *)buf, size);
 
