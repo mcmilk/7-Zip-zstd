@@ -7,6 +7,7 @@
 #include "Common/StringConvert.h"
 
 #include "Windows/PropVariant.h"
+#include "Windows/PropVariantUtils.h"
 #include "Windows/Time.h"
 
 #include "../../IPassword.h"
@@ -46,6 +47,20 @@ static const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
 
 static const wchar_t *kUnknownOS = L"Unknown";
 
+static const CUInt32PCharPair k_Flags[] =
+{
+  { 0, "Volume" },
+  { 1, "Comment" },
+  { 2, "Lock" },
+  { 3, "Solid" },
+  { 4, "NewVolName" }, // pack_comment in old versuons
+  { 5, "Authenticity" },
+  { 6, "Recovery" },
+  { 7, "BlockEncryption" },
+  { 8, "FirstVolume" },
+  { 9, "EncryptVer" }
+};
+
 static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
@@ -70,6 +85,7 @@ static const STATPROPSTG kProps[] =
 
 static const STATPROPSTG kArcProps[] =
 {
+  { NULL, kpidCharacts, VT_BSTR},
   { NULL, kpidSolid, VT_BOOL},
   { NULL, kpidNumBlocks, VT_UI4},
   // { NULL, kpidEncrypted, VT_BOOL},
@@ -98,6 +114,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   switch(propID)
   {
     case kpidSolid: prop = _archiveInfo.IsSolid(); break;
+    case kpidCharacts: FLAGS_TO_PROP(k_Flags, _archiveInfo.Flags, prop); break;
     // case kpidEncrypted: prop = _archiveInfo.IsEncrypted(); break; // it's for encrypted names.
     case kpidIsVolume: prop = _archiveInfo.IsVolume(); break;
     case kpidNumVolumes: prop = (UInt32)_archives.Size(); break;
@@ -325,19 +342,19 @@ public:
 
 HRESULT CHandler::Open2(IInStream *stream,
     const UInt64 *maxCheckStartPosition,
-    IArchiveOpenCallback *openArchiveCallback)
+    IArchiveOpenCallback *openCallback)
 {
   {
     CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
     CMyComPtr<ICryptoGetTextPassword> getTextPassword;
-    CMyComPtr<IArchiveOpenCallback> openArchiveCallbackWrap = openArchiveCallback;
+    CMyComPtr<IArchiveOpenCallback> openArchiveCallbackWrap = openCallback;
     
     CVolumeName seqName;
 
     UInt64 totalBytes = 0;
     UInt64 curBytes = 0;
 
-    if (openArchiveCallback != NULL)
+    if (openCallback)
     {
       openArchiveCallbackWrap.QueryInterface(IID_IArchiveOpenVolumeCallback, &openVolumeCallback);
       openArchiveCallbackWrap.QueryInterface(IID_ICryptoGetTextPassword, &getTextPassword);
@@ -379,12 +396,12 @@ HRESULT CHandler::Open2(IInStream *stream,
         inStream = stream;
 
       UInt64 endPos = 0;
-      if (openArchiveCallback != NULL)
+      RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
+      RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+      if (openCallback)
       {
-        RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
-        RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
         totalBytes += endPos;
-        RINOK(openArchiveCallback->SetTotal(NULL, &totalBytes));
+        RINOK(openCallback->SetTotal(NULL, &totalBytes));
       }
       
       NArchive::NRar::CInArchive archive;
@@ -396,15 +413,16 @@ HRESULT CHandler::Open2(IInStream *stream,
       CItemEx item;
       for (;;)
       {
+        if (archive.m_Position > endPos)
+        {
+          AddErrorMessage("Unexpected end of archive");
+          break;
+        }
         bool decryptionError;
         AString errorMessageLoc;
         HRESULT result = archive.GetNextItem(item, getTextPassword, decryptionError, errorMessageLoc);
         if (errorMessageLoc)
-        {
-          if (!_errorMessage.IsEmpty())
-            _errorMessage += '\n';
-          _errorMessage += errorMessageLoc;
-        }
+          AddErrorMessage(errorMessageLoc);
         if (result == S_FALSE)
         {
           if (decryptionError && _items.IsEmpty())
@@ -434,11 +452,11 @@ HRESULT CHandler::Open2(IInStream *stream,
           _refItems.Add(refItem);
         }
         _items.Add(item);
-        if (openArchiveCallback != NULL && _items.Size() % 100 == 0)
+        if (openCallback && _items.Size() % 100 == 0)
         {
           UInt64 numFiles = _items.Size();
           UInt64 numBytes = curBytes + item.Position;
-          RINOK(openArchiveCallback->SetCompleted(&numFiles, &numBytes));
+          RINOK(openCallback->SetCompleted(&numFiles, &numBytes));
         }
       }
       curBytes += endPos;
@@ -450,13 +468,13 @@ HRESULT CHandler::Open2(IInStream *stream,
 
 STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 *maxCheckStartPosition,
-    IArchiveOpenCallback *openArchiveCallback)
+    IArchiveOpenCallback *openCallback)
 {
   COM_TRY_BEGIN
   Close();
   try
   {
-    HRESULT res = Open2(stream, maxCheckStartPosition, openArchiveCallback);
+    HRESULT res = Open2(stream, maxCheckStartPosition, openCallback);
     if (res != S_OK)
       Close();
     return res;

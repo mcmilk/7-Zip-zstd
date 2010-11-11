@@ -33,18 +33,20 @@ public:
   CInArchiveException(CCauseType cause) :   Cause(cause) {}
 };
 
-class CInArchiveInfo
+
+struct CInArchiveInfo
 {
-public:
+  UInt32 Flags;
+  Byte EncryptVersion;
   UInt64 StartPosition;
-  UInt16 Flags;
-  UInt64 CommentPosition;
-  UInt16 CommentSize;
+  
   bool IsSolid() const { return (Flags & NHeader::NArchive::kSolid) != 0; }
   bool IsCommented() const {  return (Flags & NHeader::NArchive::kComment) != 0; }
   bool IsVolume() const {  return (Flags & NHeader::NArchive::kVolume) != 0; }
   bool HaveNewVolumeName() const {  return (Flags & NHeader::NArchive::kNewVolName) != 0; }
   bool IsEncrypted() const { return (Flags & NHeader::NArchive::kBlockEncryption) != 0; }
+  bool IsThereEncryptVer() const { return (Flags & NHeader::NArchive::kEncryptVer) != 0; }
+  bool IsEncryptOld() const { return (!IsThereEncryptVer() || EncryptVersion < 36); }
 };
 
 class CInArchive
@@ -52,23 +54,19 @@ class CInArchive
   CMyComPtr<IInStream> m_Stream;
   
   UInt64 m_StreamStartPosition;
-  UInt64 m_Position;
-  UInt64 m_ArchiveStartPosition;
   
-  NHeader::NArchive::CHeader360 m_ArchiveHeader;
+  CInArchiveInfo _header;
   CDynamicBuffer<char> m_NameBuffer;
   CDynamicBuffer<wchar_t> _unicodeNameBuffer;
-  bool m_SeekOnArchiveComment;
-  UInt64 m_ArchiveCommentPosition;
+
+  CByteBuffer _comment;
   
   void ReadName(CItemEx &item, int nameSize);
   void ReadHeaderReal(CItemEx &item);
   
-  HRESULT ReadBytes(void *data, UInt32 size, UInt32 *aProcessedSize);
+  HRESULT ReadBytesSpec(void *data, size_t *size);
   bool ReadBytesAndTestSize(void *data, UInt32 size);
-  void ReadBytesAndTestResult(void *data, UInt32 size);
   
-  HRESULT FindAndReadMarker(IInStream *stream, const UInt64 *searchHeaderSizeLimit);
   HRESULT Open2(IInStream *stream, const UInt64 *searchHeaderSizeLimit);
 
   void ThrowExceptionWithCode(CInArchiveException::CCauseType cause);
@@ -108,15 +106,15 @@ class CInArchive
   }
 
 public:
+  UInt64 m_Position;
+
   HRESULT Open(IInStream *inStream, const UInt64 *searchHeaderSizeLimit);
   void Close();
   HRESULT GetNextItem(CItemEx &item, ICryptoGetTextPassword *getTextPassword, bool &decryptionError, AString &errorMessage);
   
-  void SkipArchiveComment();
-  
   void GetArchiveInfo(CInArchiveInfo &archiveInfo) const;
   
-  bool SeekInArchive(UInt64 position);
+  void SeekInArchive(UInt64 position);
   ISequentialInStream *CreateLimitedStream(UInt64 position, UInt64 size);
 };
   

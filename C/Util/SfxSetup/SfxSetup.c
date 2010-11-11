@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2010-11-02 : Igor Pavlov : Public domain */
+2010-11-11 : Igor Pavlov : Public domain */
 
 #ifndef UNICODE
 #define UNICODE
@@ -530,10 +530,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
           #ifndef UNDER_CE
           | SEE_MASK_FLAG_DDEWAIT
           #endif
+          /* | SEE_MASK_NO_CONSOLE */
           ;
       if (wcslen(cmdLineParams) != 0)
         ei.lpParameters = cmdLineParams;
-      ei.nShow = SW_SHOWNORMAL;
+      ei.nShow = SW_SHOWNORMAL; /* SW_HIDE; */
       success = ShellExecuteEx(&ei);
       executeRes = (UINT32)(UINT_PTR)ei.hInstApp;
       if (!success || (executeRes <= 32 && executeRes != 0))  /* executeRes = 0 in Windows CE */

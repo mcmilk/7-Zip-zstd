@@ -474,7 +474,7 @@ bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath, int &fileNamePartS
 {
   resultPath = fileName;
   // change it
-  fileNamePartStartIndex = resultPath.ReverseFind('\\');
+  fileNamePartStartIndex = resultPath.ReverseFind(WCHAR_PATH_SEPARATOR);
   fileNamePartStartIndex++;
   return true;
 }
@@ -487,6 +487,38 @@ bool MyGetShortPathName(LPCTSTR longPath, CSysString &shortPath)
   shortPath.ReleaseBuffer();
   return (needLength > 0 && needLength < MAX_PATH);
 }
+
+#ifdef WIN_LONG_PATH
+
+static UString GetLastPart(LPCWSTR path)
+{
+  int i = (int)wcslen(path);
+  for (; i > 0; i--)
+  {
+    WCHAR c = path[i - 1];
+    if (c == WCHAR_PATH_SEPARATOR || c == '/')
+      break;
+  }
+  return path + i;
+}
+
+static void AddTrailingDots(LPCWSTR oldPath, UString &newPath)
+{
+  int len = (int)wcslen(oldPath);
+  int i;
+  for (i = len; i > 0 && oldPath[i - 1] == '.'; i--);
+  if (i == 0 || i == len)
+    return;
+  UString oldName = GetLastPart(oldPath);
+  UString newName = GetLastPart(newPath);
+  int nonDotsLen = oldName.Length() - (len - i);
+  if (nonDotsLen == 0 || newName.CompareNoCase(oldName.Left(nonDotsLen)) != 0)
+    return;
+  for (; i != len; i++)
+    newPath += '.';
+}
+
+#endif
 
 bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, int &fileNamePartStartIndex)
 {
@@ -512,6 +544,11 @@ bool MyGetFullPathName(LPCTSTR fileName, CSysString &resultPath, int &fileNamePa
     fileNamePartStartIndex = lstrlen(fileName);
   else
     fileNamePartStartIndex = (int)(fileNamePointer - buffer);
+  #ifdef _UNICODE
+  #ifdef WIN_LONG_PATH
+  AddTrailingDots(fileName, resultPath);
+  #endif
+  #endif
   return true;
 }
 
@@ -542,6 +579,9 @@ bool MyGetFullPathName(LPCWSTR fileName, UString &resultPath, int &fileNamePartS
       fileNamePartStartIndex = MyStringLen(fileName);
     else
       fileNamePartStartIndex = (int)(fileNamePointer - buffer);
+    #ifdef WIN_LONG_PATH
+    AddTrailingDots(fileName, resultPath);
+    #endif
   }
   else
   {

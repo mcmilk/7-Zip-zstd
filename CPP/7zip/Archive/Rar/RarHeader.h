@@ -5,9 +5,9 @@
 
 #include "Common/Types.h"
 
-namespace NArchive{
-namespace NRar{
-namespace NHeader{
+namespace NArchive {
+namespace NRar {
+namespace NHeader {
 
 const int kMarkerSize = 7;
 extern Byte kMarker[kMarkerSize];
@@ -43,32 +43,13 @@ namespace NArchive
   const UInt16 kBlockEncryption  = 0x80;
   const UInt16 kFirstVolume = 0x100; // (set only by RAR 3.0 and later)
   const UInt16 kEncryptVer = 0x200; // RAR 3.6 there is EncryptVer Byte in End of MainHeader
-  
-  const int kHeaderSizeMin = 7;
 
-  struct CBlock
-  {
-    UInt16 CRC;
-    Byte Type;
-    UInt16 Flags;
-    UInt16 Size;
-    UInt16 Reserved1;
-    UInt32 Reserved2;
-    // UInt16 GetRealCRC() const;
-  };
+  const int kHeaderSizeMin = 7;
   
   const int kArchiveHeaderSize = 13;
 
   const int kBlockHeadersAreEncrypted = 0x80;
 
-  struct CHeader360: public CBlock
-  {
-    Byte EncryptVersion;
-    bool IsEncrypted() const { return (Flags & NHeader::NArchive::kBlockEncryption) != 0; }
-    bool IsThereEncryptVer() const { return (Flags & NHeader::NArchive::kEncryptVer) != 0; }
-    bool IsEncryptOld() const { return (!IsThereEncryptVer() || EncryptVersion < 36); }
-    UInt32 GetBaseSize() const { return kArchiveHeaderSize + (IsEncryptOld() ? 0 : 1); }
-  };
 }
 
 namespace NFile

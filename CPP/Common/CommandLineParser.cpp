@@ -6,7 +6,7 @@
 
 namespace NCommandLineParser {
 
-void SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
+bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
 {
   dest1.Empty();
   dest2.Empty();
@@ -15,17 +15,17 @@ void SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
   for (i = 0; i < src.Length(); i++)
   {
     wchar_t c = src[i];
+    if (c == L' ' && !quoteMode)
+    {
+      dest2 = src.Mid(i + 1);
+      return i != 0;
+    }
     if (c == L'\"')
       quoteMode = !quoteMode;
-    else if (c == L' ' && !quoteMode)
-    {
-      i++;
-      break;
-    }
     else
       dest1 += c;
   }
-  dest2 = src.Mid(i);
+  return i != 0;
 }
 
 void SplitCommandLine(const UString &s, UStringVector &parts)
@@ -36,10 +36,7 @@ void SplitCommandLine(const UString &s, UStringVector &parts)
   for (;;)
   {
     UString s1, s2;
-    SplitCommandLine(sTemp, s1, s2);
-    // s1.Trim();
-    // s2.Trim();
-    if (!s1.IsEmpty())
+    if (SplitCommandLine(sTemp, s1, s2))
       parts.Add(s1);
     if (s2.IsEmpty())
       break;

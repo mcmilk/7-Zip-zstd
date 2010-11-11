@@ -4,10 +4,11 @@
 #define __RAR_HANDLER_H
 
 #include "../IArchive.h"
-#include "RarIn.h"
-#include "RarVolumeInStream.h"
 
 #include "../../Common/CreateCoder.h"
+
+#include "RarIn.h"
+#include "RarVolumeInStream.h"
 
 namespace NArchive {
 namespace NRar {
@@ -17,17 +18,6 @@ class CHandler:
   PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
 {
-public:
-  MY_QUERYINTERFACE_BEGIN2(IInArchive)
-  QUERY_ENTRY_ISetCompressCodecsInfo
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
-  
-  INTERFACE_IInArchive(;)
-
-  DECL_ISetCompressCodecsInfo
-
-private:
   CRecordVector<CRefItem> _refItems;
   CObjectVector<CItemEx> _items;
   CObjectVector<CInArchive> _archives;
@@ -37,7 +27,6 @@ private:
   DECL_EXTERNAL_CODECS_VARS
 
   UInt64 GetPackSize(int refIndex) const;
-  // NArchive::NRar::CInArchive _archive;
 
   bool IsSolid(int refIndex)
   {
@@ -50,10 +39,26 @@ private:
     }
     return item.IsSolid();
   }
+  void AddErrorMessage(const AString &s)
+  {
+    if (!_errorMessage.IsEmpty())
+      _errorMessage += '\n';
+    _errorMessage += s;
+  }
 
   HRESULT Open2(IInStream *stream,
       const UInt64 *maxCheckStartPosition,
-      IArchiveOpenCallback *openArchiveCallback);
+      IArchiveOpenCallback *openCallback);
+
+public:
+  MY_QUERYINTERFACE_BEGIN2(IInArchive)
+  QUERY_ENTRY_ISetCompressCodecsInfo
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
+  
+  INTERFACE_IInArchive(;)
+
+  DECL_ISetCompressCodecsInfo
 };
 
 }}

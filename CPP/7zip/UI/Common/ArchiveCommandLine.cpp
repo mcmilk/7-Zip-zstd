@@ -187,6 +187,7 @@ static const char *kIncorrectWildCardInListFile = "Incorrect wildcard in listfil
 static const char *kIncorrectWildCardInCommandLine  = "Incorrect wildcard in command line";
 static const char *kTerminalOutError = "I won't write compressed data to a terminal";
 static const char *kSameTerminalError = "I won't write data and program's messages to same terminal";
+static const char *kEmptyFilePath = "Empty file path";
 
 static void ThrowException(const char *errorMessage)
 {
@@ -301,6 +302,8 @@ static void AddToCensorFromNonSwitchesStrings(
   for (int i = startIndex; i < nonSwitchStrings.Size(); i++)
   {
     const UString &s = nonSwitchStrings[i];
+    if (s.IsEmpty())
+      throw kEmptyFilePath;
     if (s[0] == kFileListID)
       AddToCensorFromListFile(wildcardCensor, s.Mid(1), true, type, codePage);
     else
@@ -861,6 +864,8 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     if (curCommandIndex >= numNonSwitchStrings)
       ThrowUserErrorException();
     options.ArchiveName = nonSwitchStrings[curCommandIndex++];
+    if (options.ArchiveName.IsEmpty())
+      ThrowUserErrorException();
   }
 
   AddToCensorFromNonSwitchesStrings(

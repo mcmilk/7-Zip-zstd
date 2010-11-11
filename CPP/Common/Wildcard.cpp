@@ -374,6 +374,8 @@ int CCensor::FindPrefix(const UString &prefix) const
 void CCensor::AddItem(bool include, const UString &path, bool recursive)
 {
   UStringVector pathParts;
+  if (path.IsEmpty())
+    throw "Empty file path";
   SplitPathToParts(path, pathParts);
   bool forFile = true;
   if (pathParts.Back().IsEmpty())

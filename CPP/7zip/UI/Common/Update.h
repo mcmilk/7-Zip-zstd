@@ -1,20 +1,20 @@
 // Update.h
 
-#ifndef __UPDATE_H
-#define __UPDATE_H
+#ifndef __COMMON_UPDATE_H
+#define __COMMON_UPDATE_H
 
 #include "Common/Wildcard.h"
-#include "Windows/FileFind.h"
-#include "../../Archive/IArchive.h"
 
-#include "UpdateAction.h"
 #include "ArchiveOpenCallback.h"
-#include "UpdateCallback.h"
-#include "Property.h"
 #include "LoadCodecs.h"
+#include "Property.h"
+#include "UpdateAction.h"
+#include "UpdateCallback.h"
 
 struct CArchivePath
 {
+  UString OriginalPath;
+
   UString Prefix;   // path(folder) prefix including slash
   UString Name; // base name
   UString BaseExtension; // archive type extension or "exe" extension
@@ -28,11 +28,11 @@ struct CArchivePath
   
   void ParseFromPath(const UString &path)
   {
+    OriginalPath = path;
+
     SplitPathToParts(path, Prefix, Name);
-    if (Name.IsEmpty())
-      return;
     int dotPos = Name.ReverseFind(L'.');
-    if (dotPos <= 0)
+    if (dotPos < 0)
       return;
     if (dotPos == Name.Length() - 1)
     {

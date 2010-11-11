@@ -1,13 +1,13 @@
 // Common/CommandLineParser.h
 
-#ifndef __COMMON_COMMANDLINEPARSER_H
-#define __COMMON_COMMANDLINEPARSER_H
+#ifndef __COMMON_COMMAND_LINE_PARSER_H
+#define __COMMON_COMMAND_LINE_PARSER_H
 
 #include "MyString.h"
 
 namespace NCommandLineParser {
 
-void SplitCommandLine(const UString &src, UString &dest1, UString &dest2);
+bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2);
 void SplitCommandLine(const UString &s, UStringVector &parts);
 
 namespace NSwitchType {

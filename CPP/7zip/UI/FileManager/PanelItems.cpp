@@ -439,6 +439,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
   {
     if (focusedPos >= _listView.GetItemCount())
       focusedPos = _listView.GetItemCount() - 1;
+    // we select item only in showDots mode.
     SetFocusedSelectedItem(focusedPos, showDots);
   }
   // m_RedrawEnabled = true;
@@ -484,7 +485,7 @@ void CPanel::GetOperatedItemIndices(CRecordVector<UInt32> &indices) const
     {
       int realIndex = GetRealItemIndex(focusedItem);
       if (realIndex != kParentIndex)
-      indices.Add(realIndex);
+        indices.Add(realIndex);
     }
   }
 }

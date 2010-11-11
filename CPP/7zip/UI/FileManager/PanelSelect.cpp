@@ -245,7 +245,14 @@ void CPanel::KillSelection()
   {
     int focused = _listView.GetFocusedItem();
     if (focused >= 0)
+    {
+      // CPanel::OnItemChanged notify for LVIS_SELECTED change doesn't work here. Why?
+      // so we change _selectedStatusVector[realIndex] here.
+      int realIndex = GetRealItemIndex(focused);
+      if (realIndex != kParentIndex)
+        _selectedStatusVector[realIndex] = true;
       _listView.SetItemState(focused, LVIS_SELECTED, LVIS_SELECTED);
+    }
   }
 }
 
@@ -297,4 +304,3 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
   }
   return;
 }
-

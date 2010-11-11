@@ -53,9 +53,33 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
   }
 }
 
+#ifdef _WIN32
+#ifndef UNDER_CE
+#define MY_DISABLE_ECHO
+#endif
+#endif
+
 UString GetPassword(CStdOutStream *outStream)
 {
-  (*outStream) << "\nEnter password:";
+  (*outStream) << "\nEnter password"
+      #ifdef MY_DISABLE_ECHO
+      " (will not be echoed)"
+      #endif
+      ":";
   outStream->Flush();
+
+  #ifdef MY_DISABLE_ECHO
+  HANDLE console = GetStdHandle(STD_INPUT_HANDLE);
+  bool wasChanged = false;
+  DWORD mode = 0;
+  if (console != INVALID_HANDLE_VALUE && console != 0)
+    if (GetConsoleMode(console, &mode))
+      wasChanged = (SetConsoleMode(console, mode & ~ENABLE_ECHO_INPUT) != 0);
+  UString res = g_StdIn.ScanUStringUntilNewLine();
+  if (wasChanged)
+    SetConsoleMode(console, mode);
+  return res;
+  #else
   return g_StdIn.ScanUStringUntilNewLine();
+  #endif
 }
