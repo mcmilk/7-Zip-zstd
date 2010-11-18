@@ -78,6 +78,8 @@ UString GetPassword(CStdOutStream *outStream)
   UString res = g_StdIn.ScanUStringUntilNewLine();
   if (wasChanged)
     SetConsoleMode(console, mode);
+  (*outStream) << "\n";
+  outStream->Flush();
   return res;
   #else
   return g_StdIn.ScanUStringUntilNewLine();

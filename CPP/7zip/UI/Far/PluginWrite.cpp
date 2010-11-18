@@ -234,7 +234,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
-  updateCallbackSpec->Init(/* m_ArchiveHandler, */ &progressBox);
+  updateCallbackSpec->Init(/* m_ArchiveHandler, */ progressBoxPointer);
 
   if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
     return NFileOperationReturnCode::kError;
@@ -742,7 +742,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
-  updateCallbackSpec->Init(/* archiveHandler, */ &progressBox);
+  updateCallbackSpec->Init(/* archiveHandler, */ progressBoxPointer);
 
 
   RINOK(SetOutProperties(outArchive, compressionInfo.Level));

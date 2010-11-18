@@ -859,6 +859,8 @@ class CHandler:
 
   NCompress::NZlib::CDecoder *_zlibDecoderSpec;
   CMyComPtr<ICompressCoder> _zlibDecoder;
+  
+  CByteBuffer _inputBuffer;
 
   CDynBufSeqOutStream *_dynOutStreamSpec;
   CMyComPtr<ISequentialOutStream> _dynOutStream;
@@ -870,7 +872,8 @@ class CHandler:
     _cachedUnpackBlockSize = 0;
   }
 
-  HRESULT Decompress(ISequentialOutStream *outStream, UInt32 inSize, UInt32 outSizeMax);
+  HRESULT Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool *outBufWasWritten, UInt32 *outBufWasWrittenSize,
+      UInt32 inSize, UInt32 outSizeMax);
   HRESULT ReadMetadataBlock(UInt32 &packSize);
   HRESULT ReadData(CData &data, UInt64 start, UInt64 end);
 
@@ -932,8 +935,166 @@ static const STATPROPSTG kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-HRESULT CHandler::Decompress(ISequentialOutStream *outStream, UInt32 inSize, UInt32 outSizeMax)
+static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen)
 {
+  SizeT destRem = *destLen;
+  SizeT srcRem = *srcLen;
+  *destLen = 0;
+  *srcLen = 0;
+  const Byte *destStart = dest;
+  const Byte *srcStart = src;
+  unsigned mode = 2;
+
+  {
+    if (srcRem == 0)
+      return S_FALSE;
+    UInt32 b = *src;
+    if (b > 17)
+    {
+      src++;
+      srcRem--;
+      b -= 17;
+      mode = (b < 4 ? 0 : 1);
+      if (b > srcRem || b > destRem)
+        return S_FALSE;
+      srcRem -= b;
+      destRem -= b;
+      do
+        *dest++ = *src++;
+      while (--b);
+    }
+  }
+
+  for (;;)
+  {
+    if (srcRem < 3)
+      return S_FALSE;
+    UInt32 b = *src++;
+    srcRem--;
+    UInt32 len, back;
+    if (b >= 64)
+    {
+      srcRem--;
+      back = ((b >> 2) & 7) + ((UInt32)*src++ << 3);
+      len = (b >> 5) + 1;
+    }
+    else if (b < 16)
+    {
+      if (mode == 2)
+      {
+        if (b == 0)
+        {
+          for (b = 15;; b += 255)
+          {
+            if (srcRem == 0)
+              return S_FALSE;
+            UInt32 b2 = *src++;
+            srcRem--;
+            if (b2 != 0)
+            {
+              b += b2;
+              break;
+            }
+          }
+        }
+        b += 3;
+        if (b > srcRem || b > destRem)
+          return S_FALSE;
+        srcRem -= b;
+        destRem -= b;
+        mode = 1;
+        do
+          *dest++ = *src++;
+        while (--b);
+        continue;
+      }
+      srcRem--;
+      back = (b >> 2) + (*src++ << 2);
+      len = 2;
+      if (mode == 1)
+      {
+        back += (1 << 11);
+        len = 3;
+      }
+    }
+    else
+    {
+      UInt32 bOld = b;
+      b = (b < 32 ? 7 : 31);
+      len = bOld & b;
+      if (len == 0)
+      {
+        for (len = b;; len += 255)
+        {
+          if (srcRem == 0)
+            return S_FALSE;
+          UInt32 b2 = *src++;
+          srcRem--;
+          if (b2 != 0)
+          {
+            len += b2;
+            break;
+          }
+        }
+      }
+      len += 2;
+      if (srcRem < 2)
+        return S_FALSE;
+      b = *src;
+      back = (b >> 2) + ((UInt32)src[1] << 6);
+      src += 2;
+      srcRem -= 2;
+      if (bOld < 32)
+      {
+        if (back == 0)
+        {
+          *destLen = dest - destStart;
+          *srcLen = src - srcStart;
+          return S_OK;
+        }
+        back += ((bOld & 8) << 11) + (1 << 14) - 1;
+      }
+    }
+    back++;
+    if (len > destRem || (size_t)(dest - destStart) < back)
+      return S_FALSE;
+    destRem -= len;
+    Byte *destTemp = dest - back;
+    dest += len;
+    do
+    {
+      *(destTemp + back) = *destTemp;
+      destTemp++;
+    }
+    while (--len);
+    b &= 3;
+    if (b == 0)
+    {
+      mode = 2;
+      continue;
+    }
+    if (b > srcRem || b > destRem)
+      return S_FALSE;
+    srcRem -= b;
+    destRem -= b;
+    mode = 0;
+    *dest++ = *src++;
+    if (b > 1)
+    {
+      *dest++ = *src++;
+      if (b > 2)
+        *dest++ = *src++;
+    }
+  }
+}
+
+HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool *outBufWasWritten, UInt32 *outBufWasWrittenSize, UInt32 inSize, UInt32 outSizeMax)
+{
+  if (outBuf)
+  {
+    *outBufWasWritten = false;
+    *outBufWasWrittenSize = 0;
+  }
   UInt32 method = _h.Method;
   if (_h.SeveralMethods)
   {
@@ -943,11 +1104,40 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, UInt32 inSize, UIn
     RINOK(_stream->Seek(-1, STREAM_SEEK_CUR, NULL));
   }
 
-  if (method == kMethod_LZMA)
+  if (method == kMethod_LZO)
+  {
+    if (_inputBuffer.GetCapacity() < inSize)
+    {
+      _inputBuffer.Free();
+      _inputBuffer.SetCapacity(inSize);
+    }
+    RINOK(ReadStream_FALSE(_stream, _inputBuffer, inSize));
+
+    Byte *dest = outBuf;
+    if (!outBuf)
+    {
+      dest = _dynOutStreamSpec->GetBufPtrForWriting(outSizeMax);
+      if (!dest)
+        return E_OUTOFMEMORY;
+    }
+    SizeT destLen = outSizeMax, srcLen = inSize;
+    RINOK(LzoDecode(dest, &destLen, _inputBuffer, &srcLen));
+    if (inSize != srcLen)
+      return S_FALSE;
+    if (outBuf)
+    {
+      *outBufWasWritten = true;
+      *outBufWasWrittenSize = (UInt32)destLen;
+    }
+    else
+      _dynOutStreamSpec->UpdateSize(destLen);
+  }
+  else if (method == kMethod_LZMA)
   {
     if (!_lzmaDecoder)
     {
       _lzmaDecoderSpec = new NCompress::NLzma::CDecoder();
+      _lzmaDecoderSpec->FinishStream = true;
       _lzmaDecoder = _lzmaDecoderSpec;
     }
     const UInt32 kPropsSize = 5 + 8;
@@ -995,7 +1185,7 @@ HRESULT CHandler::ReadMetadataBlock(UInt32 &packSize)
   if (isCompressed)
   {
     _limitedInStreamSpec->Init(size);
-    RINOK(Decompress(_dynOutStream, size, kMetadataBlockSize));
+    RINOK(Decompress(_dynOutStream, NULL, NULL, NULL, size, kMetadataBlockSize));
   }
   else
   {
@@ -1227,6 +1417,7 @@ HRESULT CHandler::Open2(IInStream *inStream)
     {
       case kMethod_ZLIB:
       case kMethod_LZMA:
+      case kMethod_LZO:
         break;
       default:
         return E_NOTIMPL;
@@ -1779,8 +1970,13 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
     if (compressed)
     {
       _outStreamSpec->Init((Byte *)_cachedBlock, _h.BlockSize);
-      HRESULT res = Decompress(_outStream, packBlockSize, _h.BlockSize);
-      _cachedUnpackBlockSize = (UInt32)_outStreamSpec->GetPos();
+      bool outBufWasWritten;
+      UInt32 outBufWasWrittenSize;
+      HRESULT res = Decompress(_outStream, _cachedBlock, &outBufWasWritten, &outBufWasWrittenSize, packBlockSize, _h.BlockSize);
+      if (outBufWasWritten)
+        _cachedUnpackBlockSize = outBufWasWrittenSize;
+      else
+        _cachedUnpackBlockSize = (UInt32)_outStreamSpec->GetPos();
       RINOK(res);
     }
     else

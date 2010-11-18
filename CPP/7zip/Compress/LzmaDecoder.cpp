@@ -108,7 +108,7 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *
     if (_outSizeDefined)
     {
       const UInt64 rem = _outSize - _outSizeProcessed;
-      if (rem < curSize)
+      if (rem <= curSize)
       {
         curSize = (SizeT)rem;
         if (FinishStream)

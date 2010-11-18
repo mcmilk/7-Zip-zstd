@@ -212,7 +212,7 @@ static const char *kStartExtensions =
   " chm"
   " msi doc xls ppt pps wps wpt wks xlr wdb vsd pub"
 
-  " docx docm dotx dotm xlsx xlsm xltx xltm xlsb"
+  " docx docm dotx dotm xlsx xlsm xltx xltm xlsb xps"
   " xlam pptx pptm potx potm ppam ppsx ppsm xsn"
   " mpp"
   " msg"
