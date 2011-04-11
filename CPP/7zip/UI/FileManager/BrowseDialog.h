@@ -4,6 +4,10 @@
 #define __BROWSE_DIALOG_H
 
 #ifdef UNDER_CE
+#define USE_MY_BROWSE_DIALOG
+#endif
+
+#ifdef USE_MY_BROWSE_DIALOG
 
 #include "Windows/FileFind.h"
 
@@ -16,7 +20,7 @@
 class CBrowseDialog: public NWindows::NControl::CModalDialog
 {
   NWindows::NControl::CListView _list;
-  CObjectVector<NWindows::NFile::NFind::CFileInfoW> _files;
+  CObjectVector<NWindows::NFile::NFind::CFileInfo> _files;
   CExtToIconMap _extToIconMap;
   int _sortIndex;
   bool _ascending;

@@ -10,8 +10,8 @@
 
 struct CDriveInfo
 {
-  UString Name;
-  UString FullSystemName;
+  FString Name;
+  FString FullSystemName;
   bool KnownSizes;
   UInt64 DriveSize;
   UInt64 FreeSpace;
@@ -21,7 +21,7 @@ struct CDriveInfo
   UString FileSystemName;
   UINT DriveType;
 
-  UString GetDeviceFileIoName() const;
+  FString GetDeviceFileIoName() const;
 };
 
 class CFSDrives:
@@ -33,7 +33,7 @@ class CFSDrives:
   CObjectVector<CDriveInfo> _drives;
   bool _volumeMode;
 
-  HRESULT BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder);
+  HRESULT BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder);
   UString GetExt(int index) const;
   HRESULT GetLength(int index, UInt64 &length) const;
 public:

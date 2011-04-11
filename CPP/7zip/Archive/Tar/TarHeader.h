@@ -84,6 +84,7 @@ namespace NFileHeader
         Each file name is terminated by a null + an additional null after
         the last file name. */
 
+    const char kSparse = 'S';
   }
   // Further link types may be defined later.
 

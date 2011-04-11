@@ -79,6 +79,7 @@ HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
   _mainWindow = mainWindow;
   _processTimer = true;
   _processNotify = true;
+  _processStatusBar = true;
 
   _panelCallback = panelCallback;
   _appState = appState;
@@ -91,8 +92,11 @@ HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
 
   if (!currentFolderPrefix.IsEmpty())
     if (currentFolderPrefix[0] == L'.')
-      if (!NFile::NDirectory::MyGetFullPathName(currentFolderPrefix, cfp))
-        cfp = currentFolderPrefix;
+    {
+      FString cfpF;
+      if (NFile::NDirectory::MyGetFullPathName(us2fs(currentFolderPrefix), cfpF))
+        cfp = fs2us(cfpF);
+    }
   RINOK(BindToPath(cfp, arcFormat, archiveIsOpened, encrypted));
 
   if (!CreateEx(0, kClassName, 0, WS_CHILD | WS_VISIBLE,
@@ -104,7 +108,7 @@ HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
 
 LRESULT CPanel::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
-  switch(message)
+  switch (message)
   {
     case kShiftSelectMessage:
       OnShiftSelectMessage();
@@ -117,12 +121,15 @@ LRESULT CPanel::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
       return 0;
     case kOpenItemChanged:
       return OnOpenItemChanged(lParam);
-    case kRefreshStatusBar:
-      OnRefreshStatusBar();
+    case kRefresh_StatusBar:
+      if (_processStatusBar)
+        Refresh_StatusBar();
       return 0;
-    case kRefreshHeaderComboBox:
+    #ifdef UNDER_CE
+    case kRefresh_HeaderComboBox:
       LoadFullPathAndShow();
       return 0;
+    #endif
     case WM_TIMER:
       OnTimer();
       return 0;
@@ -137,15 +144,6 @@ LRESULT CPanel::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     */
   }
   return CWindow2::OnMessage(message, wParam, lParam);
-}
-
-static LRESULT APIENTRY ListViewSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-  CWindow tempDialog(hwnd);
-  CMyListView *w = (CMyListView *)(tempDialog.GetUserDataLongPtr());
-  if (w == NULL)
-    return 0;
-  return w->OnMessage(message, wParam, lParam);
 }
 
 LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
@@ -187,7 +185,7 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
     // bool RightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
     bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
-    switch(wParam)
+    switch (wParam)
     {
       /*
       case VK_RETURN:
@@ -233,12 +231,7 @@ LRESULT CMyListView::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     _panel->_lastFocusedIsList = true;
     _panel->_panelCallback->PanelWasFocused();
   }
-  #ifndef _UNICODE
-  if (g_IsNT)
-    return CallWindowProcW(_origWindowProc, *this, message, wParam, lParam);
-  else
-  #endif
-    return CallWindowProc(_origWindowProc, *this, message, wParam, lParam);
+  return CListView2::OnMessage(message, wParam, lParam);
 }
 
 /*
@@ -365,21 +358,9 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
       HWND(*this), (HMENU)(UINT_PTR)(_baseID + 1), g_hInstance, NULL))
     return false;
 
-  #ifndef UNDER_CE
-  _listView.SetUnicodeFormat(true);
-  #endif
-
-  _listView.SetUserDataLongPtr(LONG_PTR(&_listView));
+  _listView.SetUnicodeFormat();
   _listView._panel = this;
-
-   #ifndef _UNICODE
-   if(g_IsNT)
-     _listView._origWindowProc =
-      (WNDPROC)_listView.SetLongPtrW(GWLP_WNDPROC, LONG_PTR(ListViewSubclassProc));
-   else
-   #endif
-     _listView._origWindowProc =
-      (WNDPROC)_listView.SetLongPtr(GWLP_WNDPROC, LONG_PTR(ListViewSubclassProc));
+  _listView.SetWindowProc();
 
   _listView.SetImageList(GetSysImageList(true), LVSIL_SMALL);
   _listView.SetImageList(GetSysImageList(false), LVSIL_NORMAL);
@@ -552,7 +533,6 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
 
   // InitListCtrl();
   RefreshListCtrl();
-  RefreshStatusBar();
   
   return true;
 }
@@ -614,7 +594,7 @@ bool CPanel::OnSize(WPARAM /* wParam */, int xSize, int ySize)
 
 bool CPanel::OnNotifyReBar(LPNMHDR header, LRESULT & /* result */)
 {
-  switch(header->code)
+  switch (header->code)
   {
     case RBN_HEIGHTCHANGE:
     {
@@ -790,9 +770,10 @@ void CPanel::ChangeFlatMode()
 }
 
 
-void CPanel::RefreshStatusBar()
+void CPanel::Post_Refresh_StatusBar()
 {
-  PostMessage(kRefreshStatusBar);
+  if (_processStatusBar)
+    PostMessage(kRefresh_StatusBar);
 }
 
 void CPanel::AddToArchive()
@@ -953,6 +934,12 @@ void CPanel::TestArchives()
     extracter.ExtractCallbackSpec = new CExtractCallbackImp;
     extracter.ExtractCallback = extracter.ExtractCallbackSpec;
     extracter.ExtractCallbackSpec->ProgressDialog = &extracter.ProgressDialog;
+    if (!_parentFolders.IsEmpty())
+    {
+      const CFolderLink &fl = _parentFolders.Back();
+      extracter.ExtractCallbackSpec->PasswordIsDefined = fl.UsePassword;
+      extracter.ExtractCallbackSpec->Password = fl.Password;
+    }
 
     if (indices.IsEmpty())
       return;

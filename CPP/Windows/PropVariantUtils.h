@@ -13,6 +13,7 @@ struct CUInt32PCharPair
 };
 
 void StringToProp(const AString &s, NWindows::NCOM::CPropVariant &prop);
+AString TypePairToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 value);
 void PairToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 value, NWindows::NCOM::CPropVariant &prop);
 
 AString FlagsToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags);

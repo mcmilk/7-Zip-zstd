@@ -416,7 +416,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
       if (_currentFolderPrefix.IsEmpty())
       {
         int iconIndexTemp;
-        GetRealIconIndex(itemName + WCHAR_PATH_SEPARATOR, attrib, iconIndexTemp);
+        GetRealIconIndex(us2fs(itemName) + FCHAR_PATH_SEPARATOR, attrib, iconIndexTemp);
         item.iImage = iconIndexTemp;
       }
       else
@@ -450,6 +450,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
   /*
   _listView.UpdateWindow();
   */
+  Refresh_StatusBar();
   return S_OK;
 }
 
@@ -458,7 +459,7 @@ void CPanel::GetSelectedItemsIndices(CRecordVector<UInt32> &indices) const
   indices.Clear();
   /*
   int itemIndex = -1;
-  while ((itemIndex = _listView.GetNextItem(itemIndex, LVNI_SELECTED)) != -1)
+  while ((itemIndex = _listView.GetNextSelectedItem(itemIndex)) != -1)
   {
     LPARAM param;
     if (_listView.GetItemParam(itemIndex, param))
@@ -481,7 +482,7 @@ void CPanel::GetOperatedItemIndices(CRecordVector<UInt32> &indices) const
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem >= 0)
   {
-    if (_listView.GetItemState(focusedItem, LVIS_SELECTED) == LVIS_SELECTED)
+    if (_listView.IsItemSelected(focusedItem))
     {
       int realIndex = GetRealItemIndex(focusedItem);
       if (realIndex != kParentIndex)
@@ -565,8 +566,7 @@ void CPanel::OpenSelectedItems(bool tryInternal)
   if (focusedItem >= 0)
   {
     int realIndex = GetRealItemIndex(focusedItem);
-    if (realIndex == kParentIndex && (tryInternal || indices.Size() == 0) &&
-        _listView.GetItemState(focusedItem, LVIS_SELECTED) == LVIS_SELECTED)
+    if (realIndex == kParentIndex && (tryInternal || indices.Size() == 0) && _listView.IsItemSelected(focusedItem))
       indices.Insert(0, realIndex);
   }
 
@@ -787,7 +787,6 @@ void CPanel::OnReload()
   HRESULT res = RefreshListCtrlSaveFocused();
   if (res != S_OK)
     MessageBoxError(res);
-  OnRefreshStatusBar();
 }
 
 void CPanel::OnTimer()

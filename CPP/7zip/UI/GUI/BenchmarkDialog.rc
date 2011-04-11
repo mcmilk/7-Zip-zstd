@@ -41,6 +41,12 @@
 #define g3xs 36
 #define g3x (m + g2xs)
 
+#undef GROUP_Y_SIZE
+#ifdef UNDER_CE
+#define GROUP_Y_SIZE 8
+#else
+#define GROUP_Y_SIZE 40
+#endif
 
 IDD_DIALOG_BENCHMARK DIALOG 0, 0, xs, ys MY_MODAL_DIALOG_STYLE | WS_MINIMIZEBOX
 CAPTION "Benchmark"
@@ -66,7 +72,7 @@ BEGIN
   RTEXT     "Rating / Usage", IDC_BENCHMARK_RPU_LABEL,          xRpu,  54, sRpu,    8
   RTEXT     "Rating", IDC_BENCHMARK_RATING_LABEL,            xRating,  54, sRating, 8
   
-  GROUPBOX  "Compressing", IDC_BENCHMARK_COMPRESSING,              m,  64, xc, 40
+  GROUPBOX  "Compressing", IDC_BENCHMARK_COMPRESSING,              m,  64, xc, GROUP_Y_SIZE
  
   LTEXT     "Current", IDC_BENCHMARK_CURRENT,                    g4x,  76, sLabel,  8
   RTEXT     "100%", IDC_BENCHMARK_COMPRESSING_USAGE,          xUsage,  76, sUsage,  8
@@ -80,7 +86,7 @@ BEGIN
   RTEXT     "0", IDC_BENCHMARK_COMPRESSING_RPU2,                xRpu,  89, sRpu,    8
   RTEXT     "0", IDC_BENCHMARK_COMPRESSING_RATING2,          xRating,  89, sRating, 8
   
-  GROUPBOX  "Decompressing", IDC_BENCHMARK_DECOMPRESSING,          m, 111, xc, 40
+  GROUPBOX  "Decompressing", IDC_BENCHMARK_DECOMPRESSING,          m, 111, xc, GROUP_Y_SIZE
 
   LTEXT     "Current", IDC_BENCHMARK_CURRENT2,                   g4x, 123,  sLabel, 8
   RTEXT     "100%", IDC_BENCHMARK_DECOMPRESSING_USAGE,        xUsage, 123,  sUsage, 8
@@ -94,7 +100,7 @@ BEGIN
   RTEXT     "0", IDC_BENCHMARK_DECOMPRESSING_RPU2,              xRpu, 136,    sRpu, 8
   RTEXT     "0", IDC_BENCHMARK_DECOMPRESSING_RATING2,        xRating, 136, sRating, 8
   
-  GROUPBOX  "Total Rating", IDC_BENCHMARK_TOTAL_RATING, xTotalRating, 163, sTotalRating, 38
+  GROUPBOX  "Total Rating", IDC_BENCHMARK_TOTAL_RATING, xTotalRating, 163, sTotalRating, GROUP_Y_SIZE
   RTEXT     "0", IDC_BENCHMARK_TOTAL_USAGE_VALUE,             xUsage, 181,  sUsage, 8
   RTEXT     "0", IDC_BENCHMARK_TOTAL_RPU_VALUE,                 xRpu, 181,    sRpu, 8
   RTEXT     "0", IDC_BENCHMARK_TOTAL_RATING_VALUE,           xRating, 181, sRating, 8
@@ -225,3 +231,18 @@ BEGIN
 END
 
 #endif
+
+#include "../../GuiCommon.rc"
+
+#define xc 360
+#define yc 260
+
+IDD_DIALOG_BENCHMARK_TOTAL  MY_RESIZE_DIALOG
+CAPTION "Benchmark"
+{
+  LTEXT     "Elapsed time:", IDC_BENCHMARK_ELAPSED,    m, m, 58, 8
+  RTEXT     "00:00:00", IDC_BENCHMARK_ELAPSED_VALUE, m + 58, m, 38, 8
+  EDITTEXT    IDC_BENCHMARK2_EDIT, m, m + 14, xc, yc - bys - m - 14, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_HSCROLL
+  PUSHBUTTON  "&Help",    IDHELP,             bx2, by, bxs, bys
+  PUSHBUTTON  "Cancel",   IDCANCEL,           bx1, by, bxs, bys
+}

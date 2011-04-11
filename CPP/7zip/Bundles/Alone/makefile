@@ -90,7 +90,6 @@ UI_COMMON_OBJS = \
   $O\UpdateCallback.obj \
   $O\UpdatePair.obj \
   $O\UpdateProduce.obj \
-  $O\WorkDir.obj \
 
 AR_OBJS = \
   $O\Bz2Handler.obj \

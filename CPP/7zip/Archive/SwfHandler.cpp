@@ -21,8 +21,7 @@
 #include "../Compress/ZlibEncoder.h"
 
 #include "Common/DummyOutStream.h"
-
-#include "DeflateProps.h"
+#include "Common/HandlerOut.h"
 
 using namespace NWindows;
 
@@ -69,7 +68,7 @@ class CHandler:
   CMyComPtr<ISequentialInStream> _seqStream;
   CMyComPtr<IInStream> _stream;
 
-  CDeflateProps _method;
+  CSingleMethodProps _props;
 
 public:
   MY_UNKNOWN_IMP4(IInArchive, IArchiveOpenSeq, IOutArchive, ISetProperties)
@@ -206,7 +205,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 }
 
 static HRESULT UpdateArchive(ISequentialOutStream *outStream,
-    UInt64 size, CDeflateProps &deflateProps,
+    UInt64 size, const CSingleMethodProps &props,
     IArchiveUpdateCallback *updateCallback)
 {
   UInt64 complexity = 0;
@@ -234,7 +233,7 @@ static HRESULT UpdateArchive(ISequentialOutStream *outStream,
   NCompress::NZlib::CEncoder *encoderSpec = new NCompress::NZlib::CEncoder;
   CMyComPtr<ICompressCoder> encoder = encoderSpec;
   encoderSpec->Create();
-  RINOK(deflateProps.SetCoderProperties(encoderSpec->DeflateEncoderSpec));
+  RINOK(props.SetCoderProps(encoderSpec->DeflateEncoderSpec, NULL));
   RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, progress));
   if (encoderSpec->GetInputProcessedSize() + kHeaderSize != size)
     return E_INVALIDARG;
@@ -284,7 +283,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         return E_INVALIDARG;
       size = prop.uhVal.QuadPart;
     }
-    return UpdateArchive(outStream, size, _method, updateCallback);
+    return UpdateArchive(outStream, size, _props, updateCallback);
   }
     
   if (indexInArchive != 0)
@@ -304,7 +303,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
 {
-  return _method.SetProperties(names, values, numProps);
+  return _props.SetProperties(names, values, numProps);
 }
 
 static IInArchive *CreateArc() { return new CHandler; }

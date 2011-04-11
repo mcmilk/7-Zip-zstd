@@ -28,37 +28,6 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
-static const UInt32 kLzAlgoX1 = 0;
-static const UInt32 kLzAlgoX5 = 1;
-
-static const UInt32 kDeflateNumPassesX1  = 1;
-static const UInt32 kDeflateNumPassesX7  = 3;
-static const UInt32 kDeflateNumPassesX9  = 10;
-
-static const UInt32 kDeflateNumFastBytesX1 = 32;
-static const UInt32 kDeflateNumFastBytesX7 = 64;
-static const UInt32 kDeflateNumFastBytesX9 = 128;
-
-static const wchar_t *kLzmaMatchFinderX1 = L"HC4";
-static const wchar_t *kLzmaMatchFinderX5 = L"BT4";
-
-static const UInt32 kLzmaNumFastBytesX1 = 32;
-static const UInt32 kLzmaNumFastBytesX7 = 64;
-
-static const UInt32 kLzmaDicSizeX1 = 1 << 16;
-static const UInt32 kLzmaDicSizeX3 = 1 << 20;
-static const UInt32 kLzmaDicSizeX5 = 1 << 24;
-static const UInt32 kLzmaDicSizeX7 = 1 << 25;
-static const UInt32 kLzmaDicSizeX9 = 1 << 26;
-
-static const UInt32 kBZip2NumPassesX1 = 1;
-static const UInt32 kBZip2NumPassesX7 = 2;
-static const UInt32 kBZip2NumPassesX9 = 7;
-
-static const UInt32 kBZip2DicSizeX1 = 100000;
-static const UInt32 kBZip2DicSizeX3 = 500000;
-static const UInt32 kBZip2DicSizeX5 = 900000;
-
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
   *timeType = NFileTimeType::kDOS;
@@ -99,6 +68,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   COM_TRY_BEGIN2
   CObjectVector<CUpdateItem> updateItems;
   bool thereAreAesUpdates = false;
+  UInt64 largestSize = 0;
+  bool largestSizeDefined = false;
   for (UInt32 i = 0; i < numItems; i++)
   {
     CUpdateItem ui;
@@ -178,7 +149,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       const wchar_t kSlash = L'/';
       if (!name.IsEmpty())
       {
-        if (name[name.Length() - 1] == kSlash)
+        if (name.Back() == kSlash)
         {
           if (!ui.IsDir)
             return E_INVALIDARG;
@@ -235,6 +206,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         if (prop.vt != VT_UI8)
           return E_INVALIDARG;
         size = prop.uhVal.QuadPart;
+        if (largestSize < size)
+          largestSize = size;
+        largestSizeDefined = true;
       }
       ui.Size = size;
     }
@@ -247,6 +221,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     udateCallBack2.QueryInterface(IID_ICryptoGetTextPassword2, &getTextPassword);
   }
   CCompressionMethodMode options;
+  (CBaseProps &)options = _props;
+  options._dataSizeReduce = largestSize;
+  options._dataSizeReduceDefined = largestSizeDefined;
 
   if (getTextPassword)
   {
@@ -256,8 +233,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     options.PasswordIsDefined = IntToBool(passwordIsDefined);
     if (options.PasswordIsDefined)
     {
-      options.IsAesMode = (m_ForceAesMode ? m_IsAesMode : thereAreAesUpdates);
-      options.AesKeyMode = m_AesKeyMode;
+      if (!m_ForceAesMode)
+        options.IsAesMode = thereAreAesUpdates;
 
       if (!IsAsciiString((const wchar_t *)password))
         return E_INVALIDARG;
@@ -272,13 +249,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   else
     options.PasswordIsDefined = false;
 
-  int level = m_Level;
-  if (level < 0)
-    level = 5;
-  
   Byte mainMethod;
   if (m_MainMethod < 0)
-    mainMethod = (Byte)(((level == 0) ?
+    mainMethod = (Byte)(((_props.Level == 0) ?
         NFileHeader::NCompressionMethod::kStored :
         NFileHeader::NCompressionMethod::kDeflated));
   else
@@ -286,83 +259,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   options.MethodSequence.Add(mainMethod);
   if (mainMethod != NFileHeader::NCompressionMethod::kStored)
     options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
-  bool isDeflate = (mainMethod == NFileHeader::NCompressionMethod::kDeflated) ||
-      (mainMethod == NFileHeader::NCompressionMethod::kDeflated64);
-  bool isLZMA = (mainMethod == NFileHeader::NCompressionMethod::kLZMA);
-  bool isLz = (isLZMA || isDeflate);
-  options.NumPasses = m_NumPasses;
-  options.DicSize = m_DicSize;
-  options.NumFastBytes = m_NumFastBytes;
-  options.NumMatchFinderCycles = m_NumMatchFinderCycles;
-  options.NumMatchFinderCyclesDefined = m_NumMatchFinderCyclesDefined;
-  options.Algo = m_Algo;
-  options.MemSize = m_MemSize;
-  options.Order = m_Order;
-  #ifndef _7ZIP_ST
-  options.NumThreads = _numThreads;
-  #endif
-  if (isLz)
-  {
-    if (isDeflate)
-    {
-      if (options.NumPasses == 0xFFFFFFFF)
-        options.NumPasses = (level >= 9 ? kDeflateNumPassesX9 :
-                            (level >= 7 ? kDeflateNumPassesX7 :
-                                          kDeflateNumPassesX1));
-      if (options.NumFastBytes == 0xFFFFFFFF)
-        options.NumFastBytes = (level >= 9 ? kDeflateNumFastBytesX9 :
-                               (level >= 7 ? kDeflateNumFastBytesX7 :
-                                             kDeflateNumFastBytesX1));
-    }
-    else if (isLZMA)
-    {
-      if (options.DicSize == 0xFFFFFFFF)
-        options.DicSize =
-          (level >= 9 ? kLzmaDicSizeX9 :
-          (level >= 7 ? kLzmaDicSizeX7 :
-          (level >= 5 ? kLzmaDicSizeX5 :
-          (level >= 3 ? kLzmaDicSizeX3 :
-                        kLzmaDicSizeX1))));
-
-      if (options.NumFastBytes == 0xFFFFFFFF)
-        options.NumFastBytes = (level >= 7 ? kLzmaNumFastBytesX7 :
-                                             kLzmaNumFastBytesX1);
-
-      options.MatchFinder =
-        (level >= 5 ? kLzmaMatchFinderX5 :
-                      kLzmaMatchFinderX1);
-    }
-
-    if (options.Algo == 0xFFFFFFFF)
-        options.Algo = (level >= 5 ? kLzAlgoX5 :
-                                     kLzAlgoX1);
-  }
-  if (mainMethod == NFileHeader::NCompressionMethod::kBZip2)
-  {
-    if (options.NumPasses == 0xFFFFFFFF)
-      options.NumPasses = (level >= 9 ? kBZip2NumPassesX9 :
-                          (level >= 7 ? kBZip2NumPassesX7 :
-                                        kBZip2NumPassesX1));
-    if (options.DicSize == 0xFFFFFFFF)
-      options.DicSize = (level >= 5 ? kBZip2DicSizeX5 :
-                        (level >= 3 ? kBZip2DicSizeX3 :
-                                      kBZip2DicSizeX1));
-  }
-  if (mainMethod == NFileHeader::NCompressionMethod::kPPMd)
-  {
-    int level2 = level;
-    if (level2 < 1) level2 = 1;
-    if (level2 > 9) level2 = 9;
-
-    if (options.MemSize == 0xFFFFFFFF)
-      options.MemSize = (1 << (19 + (level2 > 8 ? 8 : level2)));
-
-    if (options.Order == 0xFFFFFFFF)
-      options.Order = 3 + level2;
-
-    if (options.Algo == 0xFFFFFFFF)
-      options.Algo = (level2 >= 7 ? 1 : 0);
-  }
 
   return Update(
       EXTERNAL_CODECS_VARS
@@ -371,16 +267,34 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   COM_TRY_END2
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
+struct CMethodIndexToName
 {
+  unsigned Method;
+  const wchar_t *Name;
+};
+
+static const CMethodIndexToName k_SupportedMethods[] =
+{
+  { NFileHeader::NCompressionMethod::kStored, L"COPY" },
+  { NFileHeader::NCompressionMethod::kDeflated, L"DEFLATE" },
+  { NFileHeader::NCompressionMethod::kDeflated64, L"DEFLATE64" },
+  { NFileHeader::NCompressionMethod::kBZip2, L"BZIP2" },
+  { NFileHeader::NCompressionMethod::kLZMA, L"LZMA" },
+  { NFileHeader::NCompressionMethod::kPPMd, L"PPMD" }
+};
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
+STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
+{
+  InitMethodProps();
   #ifndef _7ZIP_ST
-  const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
-  _numThreads = numProcessors;
+  const UInt32 numProcessors = _props.NumThreads;
   #endif
-  InitMethodProperties();
-  for (int i = 0; i < numProperties; i++)
+  
+  for (int i = 0; i < numProps; i++)
   {
-    UString name = UString(names[i]);
+    UString name = names[i];
     name.MakeUpper();
     if (name.IsEmpty())
       return E_INVALIDARG;
@@ -390,140 +304,112 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
     if (name[0] == L'X')
     {
       UInt32 level = 9;
-      RINOK(ParsePropValue(name.Mid(1), prop, level));
-      m_Level = level;
-      continue;
+      RINOK(ParsePropToUInt32(name.Mid(1), prop, level));
+      _props.Level = level;
+      _props.MethodInfo.AddLevelProp(level);
     }
     else if (name == L"M")
     {
       if (prop.vt == VT_BSTR)
       {
-        UString m = prop.bstrVal;
+        UString m = prop.bstrVal, m2;
         m.MakeUpper();
-        if (m == L"COPY") m_MainMethod = NFileHeader::NCompressionMethod::kStored;
-        else if (m == L"DEFLATE") m_MainMethod = NFileHeader::NCompressionMethod::kDeflated;
-        else if (m == L"DEFLATE64") m_MainMethod = NFileHeader::NCompressionMethod::kDeflated64;
-        else if (m == L"BZIP2") m_MainMethod = NFileHeader::NCompressionMethod::kBZip2;
-        else if (m == L"LZMA") m_MainMethod = NFileHeader::NCompressionMethod::kLZMA;
-        else if (m == L"PPMD") m_MainMethod = NFileHeader::NCompressionMethod::kPPMd;
-        else return E_INVALIDARG;
+        int colonPos = m.Find(L':');
+        if (colonPos >= 0)
+        {
+          m2 = m.Mid(colonPos + 1);
+          m = m.Left(colonPos);
+        }
+        int k;
+        for (k = 0; k < ARRAY_SIZE(k_SupportedMethods); k++)
+        {
+          const CMethodIndexToName &pair = k_SupportedMethods[k];
+          if (m == pair.Name)
+          {
+            if (!m2.IsEmpty())
+            {
+              RINOK(_props.MethodInfo.ParseParamsFromString(m2));
+            }
+            m_MainMethod = pair.Method;
+            break;
+          }
+        }
+        if (k == ARRAY_SIZE(k_SupportedMethods))
+          return E_INVALIDARG;
       }
       else if (prop.vt == VT_UI4)
       {
-        switch(prop.ulVal)
+        int k;
+        for (k = 0; k < ARRAY_SIZE(k_SupportedMethods); k++)
         {
-          case NFileHeader::NCompressionMethod::kStored:
-          case NFileHeader::NCompressionMethod::kDeflated:
-          case NFileHeader::NCompressionMethod::kDeflated64:
-          case NFileHeader::NCompressionMethod::kBZip2:
-          case NFileHeader::NCompressionMethod::kLZMA:
-            m_MainMethod = (Byte)prop.ulVal;
+          unsigned method = k_SupportedMethods[k].Method;
+          if (prop.ulVal == method)
+          {
+            m_MainMethod = method;
             break;
-          default:
-            return E_INVALIDARG;
+          }
         }
+        if (k == ARRAY_SIZE(k_SupportedMethods))
+          return E_INVALIDARG;
       }
       else
         return E_INVALIDARG;
     }
     else if (name.Left(2) == L"EM")
     {
-      if (prop.vt == VT_BSTR)
+      if (prop.vt != VT_BSTR)
+        return E_INVALIDARG;
       {
-        UString valueString = prop.bstrVal;
-        valueString.MakeUpper();
-        if (valueString.Left(3) == L"AES")
+        UString m = prop.bstrVal;
+        m.MakeUpper();
+        if (m.Left(3) == L"AES")
         {
-          valueString = valueString.Mid(3);
-          if (valueString == L"128")
-            m_AesKeyMode = 1;
-          else if (valueString == L"192")
-            m_AesKeyMode = 2;
-          else if (valueString == L"256" || valueString.IsEmpty())
-            m_AesKeyMode = 3;
+          m = m.Mid(3);
+          if (m == L"128")
+            _props.AesKeyMode = 1;
+          else if (m == L"192")
+            _props.AesKeyMode = 2;
+          else if (m == L"256" || m.IsEmpty())
+            _props.AesKeyMode = 3;
           else
             return E_INVALIDARG;
-          m_IsAesMode = true;
+          _props.IsAesMode = true;
           m_ForceAesMode = true;
         }
-        else if (valueString == L"ZIPCRYPTO")
+        else if (m == L"ZIPCRYPTO")
         {
-          m_IsAesMode = false;
+          _props.IsAesMode = false;
           m_ForceAesMode = true;
         }
         else
           return E_INVALIDARG;
       }
-      else
-        return E_INVALIDARG;
-    }
-    else if (name[0] == L'D')
-    {
-      UInt32 dicSize = kBZip2DicSizeX5;
-      RINOK(ParsePropDictionaryValue(name.Mid(1), prop, dicSize));
-      m_DicSize = dicSize;
-    }
-    else if (name.Left(3) == L"MEM")
-    {
-      UInt32 memSize = 1 << 24;
-      RINOK(ParsePropDictionaryValue(name.Mid(3), prop, memSize));
-      m_MemSize = memSize;
-    }
-    else if (name[0] == L'O')
-    {
-      UInt32 order = 8;
-      RINOK(ParsePropValue(name.Mid(1), prop, order));
-      m_Order = order;
-    }
-    else if (name.Left(4) == L"PASS")
-    {
-      UInt32 num = kDeflateNumPassesX9;
-      RINOK(ParsePropValue(name.Mid(4), prop, num));
-      m_NumPasses = num;
-    }
-    else if (name.Left(2) == L"FB")
-    {
-      UInt32 num = kDeflateNumFastBytesX9;
-      RINOK(ParsePropValue(name.Mid(2), prop, num));
-      m_NumFastBytes = num;
-    }
-    else if (name.Left(2) == L"MC")
-    {
-      UInt32 num = 0xFFFFFFFF;
-      RINOK(ParsePropValue(name.Mid(2), prop, num));
-      m_NumMatchFinderCycles = num;
-      m_NumMatchFinderCyclesDefined = true;
     }
     else if (name.Left(2) == L"MT")
     {
       #ifndef _7ZIP_ST
-      RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _numThreads));
+      RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _props.NumThreads));
+      _props.NumThreadsWasChanged = true;
       #endif
-    }
-    else if (name.Left(1) == L"A")
-    {
-      UInt32 num = kLzAlgoX5;
-      RINOK(ParsePropValue(name.Mid(1), prop, num));
-      m_Algo = num;
     }
     else if (name.CompareNoCase(L"TC") == 0)
     {
-      RINOK(SetBoolProperty(m_WriteNtfsTimeExtra, prop));
+      RINOK(PROPVARIANT_to_bool(prop, m_WriteNtfsTimeExtra));
     }
     else if (name.CompareNoCase(L"CL") == 0)
     {
-      RINOK(SetBoolProperty(m_ForceLocal, prop));
+      RINOK(PROPVARIANT_to_bool(prop, m_ForceLocal));
       if (m_ForceLocal)
         m_ForceUtf8 = false;
     }
     else if (name.CompareNoCase(L"CU") == 0)
     {
-      RINOK(SetBoolProperty(m_ForceUtf8, prop));
+      RINOK(PROPVARIANT_to_bool(prop, m_ForceUtf8));
       if (m_ForceUtf8)
         m_ForceLocal = false;
     }
     else
-      return E_INVALIDARG;
+      return _props.MethodInfo.ParseParamsFromPROPVARIANT(name, prop);
   }
   return S_OK;
 }

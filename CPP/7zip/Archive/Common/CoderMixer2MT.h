@@ -19,6 +19,7 @@ struct CCoder2: public CCoderInfo2, public CVirtThread
   CRecordVector<ISequentialOutStream*> OutStreamPointers;
 
   CCoder2(UInt32 numInStreams, UInt32 numOutStreams);
+  ~CCoder2() { CVirtThread::WaitThreadFinish(); }
   void SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes);
   virtual void Execute();
   void Code(ICompressProgressInfo *progress);

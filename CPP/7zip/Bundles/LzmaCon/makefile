@@ -21,6 +21,7 @@ COMMON_OBJS = \
 
 WIN_OBJS = \
   $O\FileIO.obj \
+  $O\PropVariant.obj \
   $O\System.obj
 
 7ZIP_COMMON_OBJS = \
@@ -28,6 +29,7 @@ WIN_OBJS = \
   $O\CreateCoder.obj \
   $O\FileStreams.obj \
   $O\FilterCoder.obj \
+  $O\MethodProps.obj \
   $O\OutBuffer.obj \
   $O\StreamUtils.obj \
 

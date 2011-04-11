@@ -2436,6 +2436,10 @@ SOURCE=..\..\Archive\SwfHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\UefiHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\VhdHandler.cpp
 # End Source File
 # Begin Source File

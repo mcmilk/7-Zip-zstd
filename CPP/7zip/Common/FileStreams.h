@@ -1,11 +1,13 @@
 // FileStreams.h
 
-#ifndef __FILESTREAMS_H
-#define __FILESTREAMS_H
+#ifndef __FILE_STREAMS_H
+#define __FILE_STREAMS_H
 
 #ifdef _WIN32
 #define USE_WIN_FILE
 #endif
+
+#include "../../Common/MyString.h"
 
 #ifdef USE_WIN_FILE
 #include "../../Windows/FileIO.h"
@@ -41,19 +43,15 @@ public:
   CInFileStream();
   #endif
   
-  bool Open(LPCTSTR fileName);
-  #ifdef USE_WIN_FILE
-  #ifndef _UNICODE
-  bool Open(LPCWSTR fileName);
-  #endif
-  #endif
-
-  bool OpenShared(LPCTSTR fileName, bool shareForWrite);
-  #ifdef USE_WIN_FILE
-  #ifndef _UNICODE
-  bool OpenShared(LPCWSTR fileName, bool shareForWrite);
-  #endif
-  #endif
+  bool Open(CFSTR fileName)
+  {
+    return File.Open(fileName);
+  }
+  
+  bool OpenShared(CFSTR fileName, bool shareForWrite)
+  {
+    return File.OpenShared(fileName, shareForWrite);
+  }
 
   MY_UNKNOWN_IMP2(IInStream, IStreamGetSize)
 
@@ -78,37 +76,23 @@ class COutFileStream:
   public IOutStream,
   public CMyUnknownImp
 {
+public:
   #ifdef USE_WIN_FILE
   NWindows::NFile::NIO::COutFile File;
   #else
   NC::NFile::NIO::COutFile File;
   #endif
-public:
   virtual ~COutFileStream() {}
-  bool Create(LPCTSTR fileName, bool createAlways)
+  bool Create(CFSTR fileName, bool createAlways)
   {
     ProcessedSize = 0;
     return File.Create(fileName, createAlways);
   }
-  bool Open(LPCTSTR fileName, DWORD creationDisposition)
+  bool Open(CFSTR fileName, DWORD creationDisposition)
   {
     ProcessedSize = 0;
     return File.Open(fileName, creationDisposition);
   }
-  #ifdef USE_WIN_FILE
-  #ifndef _UNICODE
-  bool Create(LPCWSTR fileName, bool createAlways)
-  {
-    ProcessedSize = 0;
-    return File.Create(fileName, createAlways);
-  }
-  bool Open(LPCWSTR fileName, DWORD creationDisposition)
-  {
-    ProcessedSize = 0;
-    return File.Open(fileName, creationDisposition);
-  }
-  #endif
-  #endif
 
   HRESULT Close();
   

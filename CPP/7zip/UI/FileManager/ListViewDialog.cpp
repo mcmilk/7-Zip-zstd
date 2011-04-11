@@ -125,17 +125,12 @@ bool CListViewDialog::OnNotify(UINT /* controlID */, LPNMHDR header)
         }
         case 'A':
         {
-          // probably that code is unused ?
-          /*
           bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
           if (ctrl)
           {
-            int numItems = _listView.GetItemCount();
-            for (int i = 0; i < numItems; i++)
-              _listView.SetItemState(i, LVIS_SELECTED, LVIS_SELECTED);
+            _listView.SelectAll();
             return true;
           }
-          */
         }
       }
     }

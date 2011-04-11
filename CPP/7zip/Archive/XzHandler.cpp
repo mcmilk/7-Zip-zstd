@@ -8,6 +8,7 @@
 
 #include "../../Common/ComTry.h"
 #include "../../Common/IntToString.h"
+#include "../../Common/StringConvert.h"
 
 #include "../ICoder.h"
 
@@ -40,13 +41,15 @@ namespace NXz {
 
 struct CCrc64Gen { CCrc64Gen() { Crc64GenerateTable(); } } g_Crc64TableInit;
 
+static const wchar_t *k_LZMA2_Name = L"LZMA2";
+
 class CHandler:
   public IInArchive,
   public IArchiveOpenSeq,
   #ifndef EXTRACT_ONLY
   public IOutArchive,
   public ISetProperties,
-  public COutHandler,
+  public CMultiMethodProps,
   #endif
   public CMyUnknownImp
 {
@@ -62,12 +65,12 @@ class CHandler:
   CMyComPtr<IInStream> _stream;
   CMyComPtr<ISequentialInStream> _seqStream;
 
-  UInt32 _crcSize;
+  UInt32 _filterId;
 
   void Init()
   {
-    _crcSize = 4;
-    COutHandler::Init();
+    _filterId = 0;
+    CMultiMethodProps::Init();
   }
 
   HRESULT Open2(IInStream *inStream, IArchiveOpenCallback *callback);
@@ -98,14 +101,14 @@ CHandler::CHandler()
   Init();
 }
 
-STATPROPSTG kProps[] =
+static STATPROPSTG const kProps[] =
 {
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackSize, VT_UI8},
   { NULL, kpidMethod, VT_BSTR}
 };
 
-STATPROPSTG kArcProps[] =
+static STATPROPSTG const kArcProps[] =
 {
   { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidNumBlocks, VT_UI4}
@@ -160,11 +163,11 @@ struct CMethodNamePair
   const char *Name;
 };
 
-static CMethodNamePair g_NamePairs[] =
+static const CMethodNamePair g_NamePairs[] =
 {
   { XZ_ID_Subblock, "SB" },
   { XZ_ID_Delta, "Delta" },
-  { XZ_ID_X86, "x86" },
+  { XZ_ID_X86, "BCJ" },
   { XZ_ID_PPC, "PPC" },
   { XZ_ID_IA64, "IA64" },
   { XZ_ID_ARM, "ARM" },
@@ -439,7 +442,10 @@ struct CXzUnpackerCPP
   Byte *InBuf;
   Byte *OutBuf;
   CXzUnpacker p;
-  CXzUnpackerCPP(): InBuf(0), OutBuf(0) {}
+  CXzUnpackerCPP(): InBuf(0), OutBuf(0)
+  {
+    XzUnpacker_Construct(&p, &g_Alloc);
+  }
   ~CXzUnpackerCPP()
   {
     XzUnpacker_Free(&p);
@@ -483,7 +489,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   CCompressProgressWrap progressWrap(progress);
 
-  SRes res;
+  SRes res = S_OK;
 
   const UInt32 kInBufSize = 1 << 15;
   const UInt32 kOutBufSize = 1 << 21;
@@ -492,8 +498,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   UInt32 inSize = 0;
   UInt32 outPos = 0;
   CXzUnpackerCPP xzu;
-  res = XzUnpacker_Create(&xzu.p, &g_Alloc);
-  if (res == SZ_OK)
+  XzUnpacker_Init(&xzu.p);
   {
     xzu.InBuf = (Byte *)MyAlloc(kInBufSize);
     xzu.OutBuf = (Byte *)MyAlloc(kOutBufSize);
@@ -534,6 +539,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       }
       outPos = 0;
     }
+    RINOK(lps->SetCur());
     if (finished)
     {
       _packSize = lps->InSize;
@@ -553,7 +559,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       }
       break;
     }
-    RINOK(lps->SetCur());
   }
 
   Int32 opRes;
@@ -573,8 +578,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       return SResToHRESULT(res);
   }
   realOutStream.Release();
-  RINOK(extractCallback->SetOperationResult(opRes));
-  return S_OK;
+  return extractCallback->SetOperationResult(opRes);
   COM_TRY_END
 }
 
@@ -619,8 +623,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   if (IntToBool(newData))
   {
+    UInt64 size;
     {
-      UInt64 size;
       NCOM::CPropVariant prop;
       RINOK(updateCallback->GetProperty(0, kpidSize, &prop));
       if (prop.vt != VT_UI8)
@@ -632,22 +636,26 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     CLzma2EncProps lzma2Props;
     Lzma2EncProps_Init(&lzma2Props);
 
-    lzma2Props.lzmaProps.level = _level;
+    lzma2Props.lzmaProps.level = GetLevel();
 
     CMyComPtr<ISequentialInStream> fileInStream;
     RINOK(updateCallback->GetStream(0, &fileInStream));
 
     CSeqInStreamWrap seqInStream(fileInStream);
 
+    {
+      NCOM::CPropVariant prop = (UInt64)size;
+      RINOK(NCompress::NLzma2::SetLzma2Prop(NCoderPropID::kReduceSize, prop, lzma2Props));
+    }
+
     for (int i = 0; i < _methods.Size(); i++)
     {
       COneMethodInfo &m = _methods[i];
-      SetCompressionMethod2(m
+      SetGlobalLevelAndThreads(m
       #ifndef _7ZIP_ST
       , _numThreads
       #endif
       );
-      if (m.IsLzma())
       {
         for (int j = 0; j < m.Props.Size(); j++)
         {
@@ -666,7 +674,40 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     lps->Init(updateCallback, true);
 
     CCompressProgressWrap progressWrap(progress);
-    SRes res = Xz_Encode(&seqOutStream.p, &seqInStream.p, &lzma2Props, False, &progressWrap.p);
+    CXzProps xzProps;
+    CXzFilterProps filter;
+    XzProps_Init(&xzProps);
+    XzFilterProps_Init(&filter);
+    xzProps.lzma2Props = &lzma2Props;
+    xzProps.filterProps = (_filterId != 0 ? &filter : NULL);
+    switch (_crcSize)
+    {
+      case  0: xzProps.checkId = XZ_CHECK_NO; break;
+      case  4: xzProps.checkId = XZ_CHECK_CRC32; break;
+      case  8: xzProps.checkId = XZ_CHECK_CRC64; break;
+      case 32: xzProps.checkId = XZ_CHECK_SHA256; break;
+      default: return E_INVALIDARG;
+    }
+    filter.id = _filterId;
+    if (_filterId == XZ_ID_Delta)
+    {
+      bool deltaDefined = false;
+      for (int j = 0; j < _filterMethod.Props.Size(); j++)
+      {
+        const CProp &prop = _filterMethod.Props[j];
+        if (prop.Id == NCoderPropID::kDefaultProp && prop.Value.vt == VT_UI4)
+        {
+          UInt32 delta = (UInt32)prop.Value.ulVal;
+          if (delta < 1 || delta > 256)
+            return E_INVALIDARG;
+          filter.delta = delta;
+          deltaDefined = true;
+        }
+      }
+      if (!deltaDefined)
+        return E_INVALIDARG;
+    }
+    SRes res = Xz_Encode(&seqOutStream.p, &seqInStream.p, &xzProps, &progressWrap.p);
     if (res == SZ_OK)
       return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
     return SResToHRESULT(res);
@@ -678,13 +719,45 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   return NCompress::CopyStream(_stream, outStream, 0);
 }
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
 {
   COM_TRY_BEGIN
-  BeforeSetProperty();
+  Init();
   for (int i = 0; i < numProps; i++)
   {
     RINOK(SetProperty(names[i], values[i]));
+  }
+
+  if (!_filterMethod.MethodName.IsEmpty())
+  {
+    int k;
+    for (k = 0; k < ARRAY_SIZE(g_NamePairs); k++)
+    {
+      const CMethodNamePair &pair = g_NamePairs[k];
+      UString m = GetUnicodeString(pair.Name);
+      if (_filterMethod.MethodName.CompareNoCase(m) == 0)
+      {
+        _filterId = pair.Id;
+        break;
+      }
+    }
+    if (k == ARRAY_SIZE(g_NamePairs))
+      return E_INVALIDARG;
+  }
+
+  int numEmptyMethods = GetNumEmptyMethods();
+  _methods.Delete(0, numEmptyMethods);
+  if (_methods.Size() > 1)
+    return E_INVALIDARG;
+  if (_methods.Size() == 1)
+  {
+    UString &methodName = _methods[0].MethodName;
+    if (methodName.IsEmpty())
+      methodName = k_LZMA2_Name;
+    else if (methodName.CompareNoCase(k_LZMA2_Name) != 0)
+      return E_INVALIDARG;
   }
   return S_OK;
   COM_TRY_END

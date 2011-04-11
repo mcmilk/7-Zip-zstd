@@ -49,13 +49,13 @@ HRESULT SetProperties(IUnknown *unknown, const CObjectVector<CProperty> &propert
       {
         if (!name.IsEmpty())
         {
-          wchar_t c = name[name.Length() - 1];
+          wchar_t c = name.Back();
           if (c == L'-')
             propVariant = false;
           else if (c == L'+')
             propVariant = true;
           if (propVariant.vt != VT_EMPTY)
-            name = name.Left(name.Length() - 1);
+            name.DeleteBack();
         }
       }
       else

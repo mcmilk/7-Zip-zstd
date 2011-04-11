@@ -2,15 +2,13 @@
 
 #include "StdAfx.h"
 
-#ifndef _UNICODE
-#include "../Common/StringConvert.h"
-#endif
-
 #include "DLL.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
 #endif
+
+extern HINSTANCE g_hInstance;
 
 namespace NWindows {
 namespace NDLL {
@@ -19,92 +17,91 @@ bool CLibrary::Free()
 {
   if (_module == 0)
     return true;
-  // MessageBox(0, TEXT(""), TEXT("Free"), 0);
-  // Sleep(5000);
   if (!::FreeLibrary(_module))
     return false;
   _module = 0;
   return true;
 }
 
-bool CLibrary::LoadOperations(HMODULE newModule)
+bool CLibrary::LoadEx(CFSTR path, DWORD flags)
 {
-  if (newModule == NULL)
-    return false;
   if (!Free())
     return false;
-  _module = newModule;
-  return true;
-}
-
-bool CLibrary::LoadEx(LPCTSTR fileName, DWORD flags)
-{
-  // MessageBox(0, fileName, TEXT("LoadEx"), 0);
-  return LoadOperations(::LoadLibraryEx(fileName, NULL, flags));
-}
-
-bool CLibrary::Load(LPCTSTR fileName)
-{
-  // MessageBox(0, fileName, TEXT("Load"), 0);
-  // Sleep(5000);
-  // OutputDebugString(fileName);
-  // OutputDebugString(TEXT("\n"));
-  return LoadOperations(::LoadLibrary(fileName));
-}
-
-#ifndef _UNICODE
-static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-CSysString GetSysPath(LPCWSTR sysPath)
-  { return UnicodeStringToMultiByte(sysPath, GetCurrentCodePage()); }
-
-bool CLibrary::LoadEx(LPCWSTR fileName, DWORD flags)
-{
-  if (g_IsNT)
-    return LoadOperations(::LoadLibraryExW(fileName, NULL, flags));
-  return LoadEx(GetSysPath(fileName), flags);
-}
-bool CLibrary::Load(LPCWSTR fileName)
-{
-  if (g_IsNT)
-    return LoadOperations(::LoadLibraryW(fileName));
-  return Load(GetSysPath(fileName));
-}
-#endif
-
-bool MyGetModuleFileName(HMODULE hModule, CSysString &result)
-{
-  result.Empty();
-  TCHAR fullPath[MAX_PATH + 2];
-  DWORD size = ::GetModuleFileName(hModule, fullPath, MAX_PATH + 1);
-  if (size <= MAX_PATH && size != 0)
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
-    result = fullPath;
-    return true;
+    _module = ::LoadLibraryEx(fs2fas(path), NULL, flags);
+  }
+  else
+  #endif
+  {
+    _module = ::LoadLibraryExW(fs2us(path), NULL, flags);
+  }
+  return (_module != NULL);
+}
+
+bool CLibrary::Load(CFSTR path)
+{
+  if (!Free())
+    return false;
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    _module = ::LoadLibrary(fs2fas(path));
+  }
+  else
+  #endif
+  {
+    _module = ::LoadLibraryW(fs2us(path));
+  }
+  return (_module != NULL);
+}
+
+bool MyGetModuleFileName(FString &path)
+{
+  HMODULE hModule = g_hInstance;
+  path.Empty();
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    TCHAR s[MAX_PATH + 2];
+    s[0] = 0;
+    DWORD size = ::GetModuleFileName(hModule, s, MAX_PATH + 1);
+    if (size <= MAX_PATH && size != 0)
+    {
+      path = fas2fs(s);
+      return true;
+    }
+  }
+  else
+  #endif
+  {
+    WCHAR s[MAX_PATH + 2];
+    s[0] = 0;
+    DWORD size = ::GetModuleFileNameW(hModule, s, MAX_PATH + 1);
+    if (size <= MAX_PATH && size != 0)
+    {
+      path = us2fs(s);
+      return true;
+    }
   }
   return false;
 }
 
-#ifndef _UNICODE
-bool MyGetModuleFileName(HMODULE hModule, UString &result)
+#ifndef _SFX
+
+FString GetModuleDirPrefix()
 {
-  result.Empty();
-  if (g_IsNT)
+  FString s;
+  if (NDLL::MyGetModuleFileName(s))
   {
-    wchar_t fullPath[MAX_PATH + 2];
-    DWORD size = ::GetModuleFileNameW(hModule, fullPath, MAX_PATH + 1);
-    if (size <= MAX_PATH && size != 0)
-    {
-      result = fullPath;
-      return true;
-    }
-    return false;
+    int pos = s.ReverseFind(FCHAR_PATH_SEPARATOR);
+    if (pos >= 0)
+      return s.Left(pos + 1);
   }
-  CSysString resultSys;
-  if (!MyGetModuleFileName(hModule, resultSys))
-    return false;
-  result = MultiByteToUnicodeString(resultSys, GetCurrentCodePage());
-  return true;
+  return FTEXT(".") FSTRING_PATH_SEPARATOR;
 }
+
 #endif
 
 }}

@@ -214,7 +214,7 @@ STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
 
   for (i = 0; i < _coders.Size(); i++)
     if (i != _progressCoderIndex)
-      _coders[i].WaitFinish();
+      _coders[i].WaitExecuteFinish();
 
   RINOK(ReturnIfError(E_ABORT));
   RINOK(ReturnIfError(E_OUTOFMEMORY));

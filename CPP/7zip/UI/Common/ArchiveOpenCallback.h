@@ -77,8 +77,8 @@ public:
   }
 
 private:
-  UString _folderPrefix;
-  NWindows::NFile::NFind::CFileInfoW _fileInfo;
+  FString _folderPrefix;
+  NWindows::NFile::NFind::CFileInfo _fileInfo;
   bool _subArchiveMode;
   UString _subArchiveName;
 public:
@@ -88,7 +88,7 @@ public:
   UInt64 TotalSize;
 
   COpenCallbackImp(): Callback(NULL) {}
-  void Init(const UString &folderPrefix, const UString &fileName)
+  void Init(const FString &folderPrefix, const FString &fileName)
   {
     _folderPrefix = folderPrefix;
     if (!_fileInfo.Find(_folderPrefix + fileName))

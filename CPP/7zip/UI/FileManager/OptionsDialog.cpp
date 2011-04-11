@@ -24,7 +24,6 @@
 #include "App.h"
 #include "LangUtils.h"
 #include "MyLoadMenu.h"
-#include "ProgramLocation.h"
 
 #include "resource.h"
 
@@ -42,11 +41,10 @@ static void ShowMenuErrorMessage(const wchar_t *m)
 
 static int DllRegisterServer2(const char *name)
 {
-  NWindows::NDLL::CLibrary lib;
+  NDLL::CLibrary lib;
 
-  UString prefix;
-  GetProgramFolderPath(prefix);
-  if (!lib.Load(prefix + L"7-zip.dll"))
+  FString prefix = NDLL::GetModuleDirPrefix();
+  if (!lib.Load(prefix + FTEXT("7-zip.dll")))
   {
     ShowMenuErrorMessage(L"7-Zip cannot load 7-zip.dll");
     return E_FAIL;
@@ -94,7 +92,7 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE /* hInstance */)
   CFoldersPage foldersPage;
 
   CObjectVector<NControl::CPageInfo> pages;
-  UINT32 langIDs[] = { 0x03010300,
+  const UInt32 langIDs[] = { 0x03010300,
     // 0x03010100,
     0xFFFFFFFF,
     0x01000200, 0x03010200, 0x03010400, 0x01000400};

@@ -27,8 +27,8 @@ class COpenArchiveCallback:
   public ICryptoGetTextPassword,
   public CMyUnknownImp
 {
-  UString _folderPrefix;
-  NWindows::NFile::NFind::CFileInfoW _fileInfo;
+  FString _folderPrefix;
+  NWindows::NFile::NFind::CFileInfo _fileInfo;
   NWindows::NSynchronization::CCriticalSection _criticalSection;
   bool _subArchiveMode;
   UString _subArchiveName;
@@ -75,7 +75,7 @@ public:
     _subArchiveMode = false;
   }
   */
-  void LoadFileInfo(const UString &folderPrefix, const UString &fileName)
+  void LoadFileInfo(const FString &folderPrefix, const FString &fileName)
   {
     _folderPrefix = folderPrefix;
     if (!_fileInfo.Find(_folderPrefix + fileName))

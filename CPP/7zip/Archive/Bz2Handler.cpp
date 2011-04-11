@@ -4,13 +4,6 @@
 
 #include "Common/ComTry.h"
 
-#include "Windows/PropVariant.h"
-
-#ifndef _7ZIP_ST
-#include "../../Windows/System.h"
-#endif
-
-#include "../Common/CreateCoder.h"
 #include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
@@ -20,20 +13,12 @@
 #include "../Compress/CopyCoder.h"
 
 #include "Common/DummyOutStream.h"
-#include "Common/ParseProperties.h"
+#include "Common/HandlerOut.h"
 
 using namespace NWindows;
 
 namespace NArchive {
 namespace NBz2 {
-
-static const UInt32 kNumPassesX1 = 1;
-static const UInt32 kNumPassesX7 = 2;
-static const UInt32 kNumPassesX9 = 7;
-
-static const UInt32 kDicSizeX1 = 100000;
-static const UInt32 kDicSizeX3 = 500000;
-static const UInt32 kDicSizeX5 = 900000;
 
 class CHandler:
   public IInArchive,
@@ -48,22 +33,7 @@ class CHandler:
   UInt64 _startPosition;
   bool _packSizeDefined;
 
-  UInt32 _level;
-  UInt32 _dicSize;
-  UInt32 _numPasses;
-  #ifndef _7ZIP_ST
-  UInt32 _numThreads;
-  #endif
-
-  void InitMethodProperties()
-  {
-    _level = 5;
-    _dicSize =
-    _numPasses = 0xFFFFFFFF;
-    #ifndef _7ZIP_ST
-    _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
-    #endif
-  }
+  CSingleMethodProps _props;
 
 public:
   MY_UNKNOWN_IMP4(IInArchive, IArchiveOpenSeq, IOutArchive, ISetProperties)
@@ -73,10 +43,10 @@ public:
   STDMETHOD(OpenSeq)(ISequentialInStream *stream);
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProps);
 
-  CHandler() { InitMethodProperties(); }
+  CHandler() { }
 };
 
-STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPackSize, VT_UI8}
 };
@@ -87,7 +57,7 @@ IMP_IInArchive_ArcProps_NO_Table
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidPhySize: if (_packSizeDefined) prop = _packSize; break;
   }
@@ -104,7 +74,7 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIANT *value)
 {
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidPackSize: if (_packSizeDefined) prop = _packSize; break;
   }
@@ -188,7 +158,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   decoderSpec->SetInStream(_seqStream);
 
   #ifndef _7ZIP_ST
-  RINOK(decoderSpec->SetNumberOfThreads(_numThreads));
+  RINOK(decoderSpec->SetNumberOfThreads(_props._numThreads));
   #endif
 
   CDummyOutStream *outStreamSpec = new CDummyOutStream;
@@ -246,50 +216,19 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 static HRESULT UpdateArchive(
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
-    int indexInClient,
-    UInt32 dictionary,
-    UInt32 numPasses,
-    #ifndef _7ZIP_ST
-    UInt32 numThreads,
-    #endif
+    const CProps &props,
     IArchiveUpdateCallback *updateCallback)
 {
   RINOK(updateCallback->SetTotal(unpackSize));
-  UInt64 complexity = 0;
-  RINOK(updateCallback->SetCompleted(&complexity));
-
   CMyComPtr<ISequentialInStream> fileInStream;
-
-  RINOK(updateCallback->GetStream(indexInClient, &fileInStream));
-
+  RINOK(updateCallback->GetStream(0, &fileInStream));
   CLocalProgress *localProgressSpec = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
   localProgressSpec->Init(updateCallback, true);
-  
   NCompress::NBZip2::CEncoder *encoderSpec = new NCompress::NBZip2::CEncoder;
   CMyComPtr<ICompressCoder> encoder = encoderSpec;
-  {
-    NWindows::NCOM::CPropVariant properties[] =
-    {
-      dictionary,
-      numPasses
-      #ifndef _7ZIP_ST
-      , numThreads
-      #endif
-    };
-    PROPID propIDs[] =
-    {
-      NCoderPropID::kDictionarySize,
-      NCoderPropID::kNumPasses
-      #ifndef _7ZIP_ST
-      , NCoderPropID::kNumThreads
-      #endif
-    };
-    RINOK(encoderSpec->SetCoderProperties(propIDs, properties, sizeof(propIDs) / sizeof(propIDs[0])));
-  }
-  
+  RINOK(props.SetCoderProps(encoderSpec, NULL));
   RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));
-  
   return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
 }
 
@@ -336,25 +275,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         return E_INVALIDARG;
       size = prop.uhVal.QuadPart;
     }
-  
-    UInt32 dicSize = _dicSize;
-    if (dicSize == 0xFFFFFFFF)
-      dicSize = (_level >= 5 ? kDicSizeX5 :
-                (_level >= 3 ? kDicSizeX3 :
-                               kDicSizeX1));
-
-    UInt32 numPasses = _numPasses;
-    if (numPasses == 0xFFFFFFFF)
-      numPasses = (_level >= 9 ? kNumPassesX9 :
-                  (_level >= 7 ? kNumPassesX7 :
-                                 kNumPassesX1));
-
-    return UpdateArchive(
-        size, outStream, 0, dicSize, numPasses,
-        #ifndef _7ZIP_ST
-        _numThreads,
-        #endif
-        updateCallback);
+    return UpdateArchive(size, outStream, _props, updateCallback);
   }
   if (indexInArchive != 0)
     return E_INVALIDARG;
@@ -365,47 +286,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
 {
-  InitMethodProperties();
-  #ifndef _7ZIP_ST
-  const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
-  _numThreads = numProcessors;
-  #endif
-
-  for (int i = 0; i < numProps; i++)
-  {
-    UString name = names[i];
-    name.MakeUpper();
-    if (name.IsEmpty())
-      return E_INVALIDARG;
-    const PROPVARIANT &prop = values[i];
-    if (name[0] == L'X')
-    {
-      UInt32 level = 9;
-      RINOK(ParsePropValue(name.Mid(1), prop, level));
-      _level = level;
-    }
-    else if (name[0] == L'D')
-    {
-      UInt32 dicSize = kDicSizeX5;
-      RINOK(ParsePropDictionaryValue(name.Mid(1), prop, dicSize));
-      _dicSize = dicSize;
-    }
-    else if (name.Left(4) == L"PASS")
-    {
-      UInt32 num = kNumPassesX9;
-      RINOK(ParsePropValue(name.Mid(4), prop, num));
-      _numPasses = num;
-    }
-    else if (name.Left(2) == L"MT")
-    {
-      #ifndef _7ZIP_ST
-      RINOK(ParseMtProp(name.Mid(2), prop, numProcessors, _numThreads));
-      #endif
-    }
-    else
-      return E_INVALIDARG;
-  }
-  return S_OK;
+  return _props.SetProperties(names, values, numProps);
 }
 
 static IInArchive *CreateArc() { return new CHandler; }

@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2010-04-16 : Igor Pavlov : Public domain */
+2011-01-27 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -46,6 +46,7 @@ void LzmaEncProps_Init(CLzmaEncProps *p)
 {
   p->level = 5;
   p->dictSize = p->mc = 0;
+  p->reduceSize = (UInt32)(Int32)-1;
   p->lc = p->lp = p->pb = p->algo = p->fb = p->btMode = p->numHashBytes = p->numThreads = -1;
   p->writeEndMark = 0;
 }
@@ -56,6 +57,15 @@ void LzmaEncProps_Normalize(CLzmaEncProps *p)
   if (level < 0) level = 5;
   p->level = level;
   if (p->dictSize == 0) p->dictSize = (level <= 5 ? (1 << (level * 2 + 14)) : (level == 6 ? (1 << 25) : (1 << 26)));
+  if (p->dictSize > p->reduceSize)
+  {
+    unsigned i;
+    for (i = 15; i <= 30; i++)
+    {
+      if (p->reduceSize <= ((UInt32)2 << i)) { p->dictSize = ((UInt32)2 << i); break; }
+      if (p->reduceSize <= ((UInt32)3 << i)) { p->dictSize = ((UInt32)3 << i); break; }
+    }
+  }
   if (p->lc < 0) p->lc = 3;
   if (p->lp < 0) p->lp = 0;
   if (p->pb < 0) p->pb = 2;
@@ -329,7 +339,6 @@ typedef struct
 
   SRes result;
   UInt32 dictSize;
-  UInt32 matchFinderCycles;
 
   int needInit;
 
@@ -398,7 +407,6 @@ SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
       props.dictSize > ((UInt32)1 << kDicLogSizeMaxCompress) || props.dictSize > ((UInt32)1 << 30))
     return SZ_ERROR_PARAM;
   p->dictSize = props.dictSize;
-  p->matchFinderCycles = props.mc;
   {
     unsigned fb = props.fb;
     if (fb < 5)

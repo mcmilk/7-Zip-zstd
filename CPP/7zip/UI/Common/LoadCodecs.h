@@ -1,9 +1,8 @@
 // LoadCodecs.h
 
-#ifndef __LOADCODECS_H
-#define __LOADCODECS_H
+#ifndef __LOAD_CODECS_H
+#define __LOAD_CODECS_H
 
-#include "../../../Common/Types.h"
 #include "../../../Common/MyCom.h"
 #include "../../../Common/MyString.h"
 #include "../../../Common/Buffer.h"
@@ -58,19 +57,16 @@ struct CArcInfoEx
   #endif
   #endif
   bool KeepName;
+  
   UString GetMainExt() const
   {
     if (Exts.IsEmpty())
       return UString();
     return Exts[0].Ext;
   }
-  int FindExtension(const UString &ext) const
-  {
-    for (int i = 0; i < Exts.Size(); i++)
-      if (ext.CompareNoCase(Exts[i].Ext) == 0)
-        return i;
-    return -1;
-  }
+  int FindExtension(const UString &ext) const;
+  
+  /*
   UString GetAllExtensions() const
   {
     UString s;
@@ -82,6 +78,7 @@ struct CArcInfoEx
     }
     return s;
   }
+  */
 
   void AddExts(const wchar_t* ext, const wchar_t* addExt);
 
@@ -125,7 +122,7 @@ struct CCodecLib
   GetMethodPropertyFunc GetMethodProperty;
   CreateObjectFunc CreateObject;
   #ifdef NEW_FOLDER_INTERFACE
-  CSysString Path;
+  FString Path;
   void LoadIcons() { CCodecIcons::LoadIcons((HMODULE)Lib); }
   #endif
   CCodecLib(): GetMethodProperty(0) {}
@@ -151,8 +148,8 @@ public:
 
   HRESULT LoadCodecs();
   HRESULT LoadFormats();
-  HRESULT LoadDll(const CSysString &path, bool needCheckDll);
-  HRESULT LoadDllsFromFolder(const CSysString &folderPrefix);
+  HRESULT LoadDll(const FString &path, bool needCheckDll);
+  HRESULT LoadDllsFromFolder(const FString &folderPrefix);
 
   HRESULT CreateArchiveHandler(const CArcInfoEx &ai, void **archive, bool outHandler) const
   {

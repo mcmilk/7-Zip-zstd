@@ -4,13 +4,6 @@
 
 #include "FileIO.h"
 
-#if defined(WIN_LONG_PATH) || defined(SUPPORT_DEVICE_FILE)
-#include "../Common/MyString.h"
-#endif
-#ifndef _UNICODE
-#include "../Common/StringConvert.h"
-#endif
-
 #ifndef _UNICODE
 extern bool g_IsNT;
 #endif
@@ -19,11 +12,12 @@ namespace NWindows {
 namespace NFile {
 
 #ifdef SUPPORT_DEVICE_FILE
-bool IsDeviceName(LPCTSTR n)
+
+bool IsDeviceName(CFSTR n)
 {
   #ifdef UNDER_CE
   int len = (int)MyStringLen(n);
-  if (len < 5 || len > 5 || memcmp(n, TEXT("DSK"), 3 * sizeof(TCHAR)) != 0)
+  if (len < 5 || len > 5 || memcmp(n, FTEXT("DSK"), 3 * sizeof(FCHAR)) != 0)
     return false;
   if (n[4] != ':')
     return false;
@@ -34,7 +28,7 @@ bool IsDeviceName(LPCTSTR n)
   int len = (int)MyStringLen(n);
   if (len == 6 && n[5] == ':')
     return true;
-  if (len < 18 || len > 22 || memcmp(n + 4, TEXT("PhysicalDrive"), 13 * sizeof(TCHAR)) != 0)
+  if (len < 18 || len > 22 || memcmp(n + 4, FTEXT("PhysicalDrive"), 13 * sizeof(FCHAR)) != 0)
     return false;
   for (int i = 17; i < len; i++)
     if (n[i] < '0' || n[i] > '9')
@@ -43,22 +37,6 @@ bool IsDeviceName(LPCTSTR n)
   return true;
 }
 
-#ifndef _UNICODE
-bool IsDeviceName(LPCWSTR n)
-{
-  if (n[0] != '\\' || n[1] != '\\' || n[2] != '.' ||  n[3] != '\\')
-    return false;
-  int len = (int)wcslen(n);
-  if (len == 6 && n[5] == ':')
-    return true;
-  if (len < 18 || len > 22 || wcsncmp(n + 4, L"PhysicalDrive", 13) != 0)
-    return false;
-  for (int i = 17; i < len; i++)
-    if (n[i] < '0' || n[i] > '9')
-      return false;
-  return true;
-}
-#endif
 #endif
 
 #if defined(WIN_LONG_PATH) && defined(_UNICODE)
@@ -66,32 +44,34 @@ bool IsDeviceName(LPCWSTR n)
 #endif
 
 #ifdef WIN_LONG_PATH
-bool GetLongPathBase(LPCWSTR s, UString &res)
+bool GetLongPathBase(CFSTR s, UString &res)
 {
   res.Empty();
   int len = MyStringLen(s);
-  wchar_t c = s[0];
-  if (len < 1 || c == L'\\' || c == L'.' && (len == 1 || len == 2 && s[1] == L'.'))
+  FChar c = s[0];
+  if (len < 1 || c == '\\' || c == '.' && (len == 1 || len == 2 && s[1] == '.'))
     return true;
   UString curDir;
   bool isAbs = false;
   if (len > 3)
-    isAbs = (s[1] == L':' && s[2] == L'\\' && (c >= L'a' && c <= L'z' || c >= L'A' && c <= L'Z'));
+    isAbs = (s[1] == ':' && s[2] == '\\' && (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'));
 
   if (!isAbs)
-    {
-      DWORD needLength = ::GetCurrentDirectoryW(MAX_PATH + 1, curDir.GetBuffer(MAX_PATH + 1));
-      curDir.ReleaseBuffer();
-      if (needLength == 0 || needLength > MAX_PATH)
-        return false;
-      if (curDir[curDir.Length() - 1] != L'\\')
-        curDir += L'\\';
-    }
-  res = UString(L"\\\\?\\") + curDir + s;
+  {
+    WCHAR temp[MAX_PATH + 2];
+    temp[0] = 0;
+    DWORD needLength = ::GetCurrentDirectoryW(MAX_PATH + 1, temp);
+    if (needLength == 0 || needLength > MAX_PATH)
+      return false;
+    curDir = temp;
+    if (curDir.Back() != L'\\')
+      curDir += L'\\';
+  }
+  res = UString(L"\\\\?\\") + curDir + fs2us(s);
   return true;
 }
 
-bool GetLongPath(LPCWSTR path, UString &longPath)
+bool GetLongPath(CFSTR path, UString &longPath)
 {
   if (GetLongPathBase(path, longPath))
     return !longPath.IsEmpty();
@@ -103,58 +83,39 @@ namespace NIO {
 
 CFileBase::~CFileBase() { Close(); }
 
-bool CFileBase::Create(LPCTSTR fileName, DWORD desiredAccess,
+bool CFileBase::Create(CFSTR fileName, DWORD desiredAccess,
     DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
 {
   if (!Close())
     return false;
-  _handle = ::CreateFile(fileName, desiredAccess, shareMode,
-      (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
-      flagsAndAttributes, (HANDLE)NULL);
-  #ifdef WIN_LONG_PATH2
-  if (_handle == INVALID_HANDLE_VALUE)
-  {
-    UString longPath;
-    if (GetLongPath(fileName, longPath))
-      _handle = ::CreateFileW(longPath, desiredAccess, shareMode,
-        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
-        flagsAndAttributes, (HANDLE)NULL);
-  }
-  #endif
-  #ifdef SUPPORT_DEVICE_FILE
-  IsDeviceFile = false;
-  #endif
-  return (_handle != INVALID_HANDLE_VALUE);
-}
 
-#ifndef _UNICODE
-bool CFileBase::Create(LPCWSTR fileName, DWORD desiredAccess,
-    DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
-{
-  if (!g_IsNT)
-    return Create(UnicodeStringToMultiByte(fileName, ::AreFileApisANSI() ? CP_ACP : CP_OEMCP),
-      desiredAccess, shareMode, creationDisposition, flagsAndAttributes);
-  if (!Close())
-    return false;
-  _handle = ::CreateFileW(fileName, desiredAccess, shareMode,
-    (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
-    flagsAndAttributes, (HANDLE)NULL);
-  #ifdef WIN_LONG_PATH
-  if (_handle == INVALID_HANDLE_VALUE)
-  {
-    UString longPath;
-    if (GetLongPath(fileName, longPath))
-      _handle = ::CreateFileW(longPath, desiredAccess, shareMode,
-        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition,
-        flagsAndAttributes, (HANDLE)NULL);
-  }
-  #endif
   #ifdef SUPPORT_DEVICE_FILE
   IsDeviceFile = false;
   #endif
+
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    _handle = ::CreateFile(fs2fas(fileName), desiredAccess, shareMode,
+        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, flagsAndAttributes, (HANDLE)NULL);
+  }
+  else
+  #endif
+  {
+    _handle = ::CreateFileW(fs2us(fileName), desiredAccess, shareMode,
+        (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, flagsAndAttributes, (HANDLE)NULL);
+    #ifdef WIN_LONG_PATH
+    if (_handle == INVALID_HANDLE_VALUE)
+    {
+      UString longPath;
+      if (GetLongPath(fileName, longPath))
+        _handle = ::CreateFileW(longPath, desiredAccess, shareMode,
+            (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, flagsAndAttributes, (HANDLE)NULL);
+    }
+    #endif
+  }
   return (_handle != INVALID_HANDLE_VALUE);
 }
-#endif
 
 bool CFileBase::Close()
 {
@@ -226,21 +187,23 @@ bool CFileBase::SeekToEnd(UInt64 &newPosition)
   return Seek(0, FILE_END, newPosition);
 }
 
-bool CFileBase::GetFileInformation(CByHandleFileInfo &fileInfo) const
+/*
+bool CFileBase::GetFileInformation(CByHandleFileInfo &fi) const
 {
-  BY_HANDLE_FILE_INFORMATION winFileInfo;
-  if (!::GetFileInformationByHandle(_handle, &winFileInfo))
+  BY_HANDLE_FILE_INFORMATION wfi;
+  if (!::GetFileInformationByHandle(_handle, &wfi))
     return false;
-  fileInfo.Attrib = winFileInfo.dwFileAttributes;
-  fileInfo.CTime = winFileInfo.ftCreationTime;
-  fileInfo.ATime = winFileInfo.ftLastAccessTime;
-  fileInfo.MTime = winFileInfo.ftLastWriteTime;
-  fileInfo.VolumeSerialNumber = winFileInfo.dwFileAttributes;
-  fileInfo.Size = (((UInt64)winFileInfo.nFileSizeHigh) << 32) +  winFileInfo.nFileSizeLow;
-  fileInfo.NumberOfLinks = winFileInfo.nNumberOfLinks;
-  fileInfo.FileIndex = (((UInt64)winFileInfo.nFileIndexHigh) << 32) + winFileInfo.nFileIndexLow;
+  fi.Attrib = wfi.dwFileAttributes;
+  fi.CTime = wfi.ftCreationTime;
+  fi.ATime = wfi.ftLastAccessTime;
+  fi.MTime = wfi.ftLastWriteTime;
+  fi.Size = (((UInt64)wfi.nFileSizeHigh) << 32) + wfi.nFileSizeLow;
+  fi.VolumeSerialNumber = wfi.dwVolumeSerialNumber;
+  fi.NumLinks = wfi.nNumberOfLinks;
+  fi.FileIndex = (((UInt64)wfi.nFileIndexHigh) << 32) + wfi.nFileIndexLow;
   return true;
 }
+*/
 
 /////////////////////////
 // CInFile
@@ -284,33 +247,18 @@ void CInFile::GetDeviceLength()
 #define MY_DEVICE_EXTRA_CODE
 #endif
 
-bool CInFile::Open(LPCTSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
+bool CInFile::Open(CFSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
 {
   bool res = Create(fileName, GENERIC_READ, shareMode, creationDisposition, flagsAndAttributes);
   MY_DEVICE_EXTRA_CODE
   return res;
 }
 
-bool CInFile::OpenShared(LPCTSTR fileName, bool shareForWrite)
+bool CInFile::OpenShared(CFSTR fileName, bool shareForWrite)
 { return Open(fileName, FILE_SHARE_READ | (shareForWrite ? FILE_SHARE_WRITE : 0), OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL); }
 
-bool CInFile::Open(LPCTSTR fileName)
+bool CInFile::Open(CFSTR fileName)
   { return OpenShared(fileName, false); }
-
-#ifndef _UNICODE
-bool CInFile::Open(LPCWSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
-{
-  bool res = Create(fileName, GENERIC_READ, shareMode, creationDisposition, flagsAndAttributes);
-  MY_DEVICE_EXTRA_CODE
-  return res;
-}
-
-bool CInFile::OpenShared(LPCWSTR fileName, bool shareForWrite)
-{ return Open(fileName, FILE_SHARE_READ | (shareForWrite ? FILE_SHARE_WRITE : 0), OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL); }
-
-bool CInFile::Open(LPCWSTR fileName)
-  { return OpenShared(fileName, false); }
-#endif
 
 // ReadFile and WriteFile functions in Windows have BUG:
 // If you Read or Write 64MB or more (probably min_failure_size = 64MB - 32KB + 1)
@@ -360,30 +308,17 @@ bool CInFile::Read(void *data, UInt32 size, UInt32 &processedSize)
 /////////////////////////
 // COutFile
 
-bool COutFile::Open(LPCTSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
-  { return CFileBase::Create(fileName, GENERIC_WRITE, shareMode, creationDisposition, flagsAndAttributes); }
-
 static inline DWORD GetCreationDisposition(bool createAlways)
   { return createAlways? CREATE_ALWAYS: CREATE_NEW; }
 
-bool COutFile::Open(LPCTSTR fileName, DWORD creationDisposition)
-  { return Open(fileName, FILE_SHARE_READ, creationDisposition, FILE_ATTRIBUTE_NORMAL); }
-
-bool COutFile::Create(LPCTSTR fileName, bool createAlways)
-  { return Open(fileName, GetCreationDisposition(createAlways)); }
-
-#ifndef _UNICODE
-
-bool COutFile::Open(LPCWSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
+bool COutFile::Open(CFSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
   { return CFileBase::Create(fileName, GENERIC_WRITE, shareMode, creationDisposition, flagsAndAttributes); }
 
-bool COutFile::Open(LPCWSTR fileName, DWORD creationDisposition)
+bool COutFile::Open(CFSTR fileName, DWORD creationDisposition)
   { return Open(fileName, FILE_SHARE_READ, creationDisposition, FILE_ATTRIBUTE_NORMAL); }
 
-bool COutFile::Create(LPCWSTR fileName, bool createAlways)
+bool COutFile::Create(CFSTR fileName, bool createAlways)
   { return Open(fileName, GetCreationDisposition(createAlways)); }
-
-#endif
 
 bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime)
   { return BOOLToBool(::SetFileTime(_handle, cTime, aTime, mTime)); }

@@ -4,7 +4,7 @@
 
 #include "CoderMixer2ST.h"
 
-namespace NCoderMixer2 {
+namespace NCoderMixer {
 
 CCoderMixer2ST::CCoderMixer2ST() {}
 
@@ -42,7 +42,7 @@ HRESULT CCoderMixer2ST::GetInStream(
 {
   CMyComPtr<ISequentialInStream> seqInStream;
   int i;
-  for(i = 0; i < _bindInfo.InStreams.Size(); i++)
+  for (i = 0; i < _bindInfo.InStreams.Size(); i++)
     if (_bindInfo.InStreams[i] == streamIndex)
     {
       seqInStream = inStreams[i];
@@ -57,7 +57,7 @@ HRESULT CCoderMixer2ST::GetInStream(
   _bindInfo.FindOutStream(_bindInfo.BindPairs[binderIndex].OutIndex,
       coderIndex, coderStreamIndex);
 
-  CCoderInfo &coder = _coders[coderIndex];
+  CCoderInfo2 &coder = _coders[coderIndex];
   if (!coder.Coder)
     return E_NOTIMPL;
   coder.Coder.QueryInterface(IID_ISequentialInStream, &seqInStream);
@@ -91,7 +91,7 @@ HRESULT CCoderMixer2ST::GetOutStream(
 {
   CMyComPtr<ISequentialOutStream> seqOutStream;
   int i;
-  for(i = 0; i < _bindInfo.OutStreams.Size(); i++)
+  for (i = 0; i < _bindInfo.OutStreams.Size(); i++)
     if (_bindInfo.OutStreams[i] == streamIndex)
     {
       seqOutStream = outStreams[i];
@@ -106,7 +106,7 @@ HRESULT CCoderMixer2ST::GetOutStream(
   _bindInfo.FindInStream(_bindInfo.BindPairs[binderIndex].InIndex,
       coderIndex, coderStreamIndex);
 
-  CCoderInfo &coder = _coders[coderIndex];
+  CCoderInfo2 &coder = _coders[coderIndex];
   if (!coder.Coder)
     return E_NOTIMPL;
   coder.Coder.QueryInterface(IID_ISequentialOutStream, &seqOutStream);
@@ -169,7 +169,7 @@ STDMETHODIMP CCoderMixer2ST::Code(ISequentialInStream **inStreams,
  
   // _mainCoderIndex = 0;
   // _mainCoderIndex = _coders.Size() - 1;
-  CCoderInfo &mainCoder = _coders[_mainCoderIndex];
+  CCoderInfo2 &mainCoder = _coders[_mainCoderIndex];
 
   CObjectVector< CMyComPtr<ISequentialInStream> > seqInStreams;
   CObjectVector< CMyComPtr<ISequentialOutStream> > seqOutStreams;
@@ -198,7 +198,7 @@ STDMETHODIMP CCoderMixer2ST::Code(ISequentialInStream **inStreams,
   {
     if (i == _mainCoderIndex)
       continue;
-    CCoderInfo &coder = _coders[i];
+    CCoderInfo2 &coder = _coders[i];
     CMyComPtr<ICompressSetOutStreamSize> setOutStreamSize;
     coder.Coder.QueryInterface(IID_ICompressSetOutStreamSize, &setOutStreamSize);
     if (setOutStreamSize)

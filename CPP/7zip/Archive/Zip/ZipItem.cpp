@@ -51,7 +51,7 @@ bool CExtraSubBlock::ExtractNtfsTime(int index, FILETIME &ft) const
   return false;
 }
 
-bool CExtraSubBlock::ExtractUnixTime(int index, UInt32 &res) const
+bool CExtraSubBlock::ExtractUnixTime(bool isCentral, int index, UInt32 &res) const
 {
   res = 0;
   UInt32 size = (UInt32)Data.GetCapacity();
@@ -60,6 +60,15 @@ bool CExtraSubBlock::ExtractUnixTime(int index, UInt32 &res) const
   const Byte *p = (const Byte *)Data;
   Byte flags = *p++;
   size--;
+  if (isCentral)
+  {
+    if (index != NFileHeader::NUnixTime::kMTime ||
+        (flags & (1 << NFileHeader::NUnixTime::kMTime)) == 0 ||
+        size < 4)
+      return false;
+    res = GetUi32(p);
+    return true;
+  }
   for (int i = 0; i < 3; i++)
     if ((flags & (1 << i)) != 0)
     {
@@ -88,7 +97,7 @@ bool CItem::IsDir() const
   if (!FromCentral)
     return false;
   WORD highAttributes = WORD((ExternalAttributes >> 16 ) & 0xFFFF);
-  switch(MadeByVersion.HostOS)
+  switch (MadeByVersion.HostOS)
   {
     case NFileHeader::NHostOS::kAMIGA:
       switch (highAttributes & NFileHeader::NAmigaAttribute::kIFMT)
@@ -109,44 +118,41 @@ bool CItem::IsDir() const
     case NFileHeader::NHostOS::kAcorn:
     case NFileHeader::NHostOS::kMVS:
       return false; // change it throw kUnknownAttributes;
+    case NFileHeader::NHostOS::kUnix:
+      return (highAttributes & NFileHeader::NUnixAttribute::kIFDIR) != 0;
     default:
-      /*
-      switch (highAttributes & NFileHeader::NUnixAttribute::kIFMT)
-      {
-        case NFileHeader::NUnixAttribute::kIFDIR:
-          return true;
-        default:
-          return false;
-      }
-      */
       return false;
   }
 }
 
-UInt32 CLocalItem::GetWinAttributes() const
+UInt32 CItem::GetWinAttrib() const
 {
-  DWORD winAttributes = 0;
-  if (IsDir())
-    winAttributes |= FILE_ATTRIBUTE_DIRECTORY;
-  return winAttributes;
-}
-
-UInt32 CItem::GetWinAttributes() const
-{
-  DWORD winAttributes = 0;
-  switch(MadeByVersion.HostOS)
+  DWORD winAttrib = 0;
+  switch (MadeByVersion.HostOS)
   {
     case NFileHeader::NHostOS::kFAT:
     case NFileHeader::NHostOS::kNTFS:
       if (FromCentral)
-        winAttributes = ExternalAttributes;
+        winAttrib = ExternalAttributes;
       break;
-    default:
-      winAttributes = 0; // must be converted from unix value;
   }
-  if (IsDir())       // test it;
-    winAttributes |= FILE_ATTRIBUTE_DIRECTORY;
-  return winAttributes;
+  if (IsDir()) // test it;
+    winAttrib |= FILE_ATTRIBUTE_DIRECTORY;
+  return winAttrib;
+}
+
+bool CItem::GetPosixAttrib(UInt32 &attrib) const
+{
+  // some archivers can store PosixAttrib in high 16 bits even with HostOS=FAT.
+  if (FromCentral && MadeByVersion.HostOS == NFileHeader::NHostOS::kUnix)
+  {
+    attrib = ExternalAttributes >> 16;
+    return (attrib != 0);
+  }
+  attrib = 0;
+  if (IsDir())
+    attrib = NFileHeader::NUnixAttribute::kIFDIR;
+  return false;
 }
 
 void CLocalItem::SetFlagBits(int startBitNumber, int numBits, int value)

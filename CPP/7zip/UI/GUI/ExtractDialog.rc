@@ -18,6 +18,13 @@
 #define g2xs (xc - g1xs - gSpace)
 #define g2xs2 (g2xs - m - m)
 
+#undef GROUP_Y_SIZE
+#ifdef UNDER_CE
+#define GROUP_Y_SIZE 8
+#else
+#define GROUP_Y_SIZE 56
+#endif
+
 IDD_DIALOG_EXTRACT MY_DIALOG
 CAPTION "Extract"
 BEGIN
@@ -31,11 +38,7 @@ BEGIN
   LTEXT      "Overwrite mode:", IDC_EXTRACT_OVERWRITE_MODE, m, m + 68, g1xs, 8
   COMBOBOX   IDC_EXTRACT_COMBO_OVERWRITE_MODE, m, m + 80, g1xs, 140, MY_COMBO
 
-  #ifdef UNDER_CE
-  LTEXT "Password", IDC_EXTRACT_PASSWORD, g2x, m + 36, g2xs, 8
-  #else
-  GROUPBOX "Password", IDC_EXTRACT_PASSWORD, g2x, m + 36, g2xs, 56
-  #endif
+  GROUPBOX "Password", IDC_EXTRACT_PASSWORD, g2x, m + 36, g2xs, GROUP_Y_SIZE
   EDITTEXT IDC_EXTRACT_EDIT_PASSWORD, g2x2, m + 50, g2xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL
   CONTROL "Show Password", IDC_EXTRACT_CHECK_SHOW_PASSWORD, MY_CHECKBOX, g2x2, m + 72, g2xs2, 10
   

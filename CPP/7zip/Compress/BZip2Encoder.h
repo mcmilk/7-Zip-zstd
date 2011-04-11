@@ -145,6 +145,20 @@ public:
   HRESULT EncodeBlock3(UInt32 blockSize);
 };
 
+struct CEncProps
+{
+  UInt32 BlockSizeMult;
+  UInt32 NumPasses;
+  
+  CEncProps()
+  {
+    BlockSizeMult = (UInt32)(Int32)-1;
+    NumPasses = (UInt32)(Int32)-1;
+  }
+  void Normalize(int level);
+  bool DoOptimizeNumTables() const { return NumPasses > 1; }
+};
+
 class CEncoder :
   public ICompressCoder,
   public ICompressSetCoderProperties,
@@ -153,17 +167,12 @@ class CEncoder :
   #endif
   public CMyUnknownImp
 {
-  UInt32 m_BlockSizeMult;
-  bool m_OptimizeNumTables;
-
-  UInt32 m_NumPassesPrev;
-
   UInt32 m_NumThreadsPrev;
 public:
   CInBuffer m_InStream;
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
   CBitmEncoder<COutBuffer> m_OutStream;
-  UInt32 NumPasses;
+  CEncProps _props;
   CBZip2CombinedCrc CombinedCrc;
 
   #ifndef _7ZIP_ST

@@ -3,7 +3,6 @@
 #ifndef __ARCHIVE_ZIP_ITEM_H
 #define __ARCHIVE_ZIP_ITEM_H
 
-#include "Common/Types.h"
 #include "Common/MyString.h"
 #include "Common/Buffer.h"
 #include "Common/UTFConvert.h"
@@ -28,7 +27,7 @@ struct CExtraSubBlock
   UInt16 ID;
   CByteBuffer Data;
   bool ExtractNtfsTime(int index, FILETIME &ft) const;
-  bool ExtractUnixTime(int index, UInt32 &res) const;
+  bool ExtractUnixTime(bool isCentral, int index, UInt32 &res) const;
 };
 
 struct CWzAesExtraField
@@ -152,13 +151,13 @@ struct CExtraBlock
     return false;
   }
 
-  bool GetUnixTime(int index, UInt32 &res) const
+  bool GetUnixTime(bool isCentral, int index, UInt32 &res) const
   {
     for (int i = 0; i < SubBlocks.Size(); i++)
     {
       const CExtraSubBlock &sb = SubBlocks[i];
       if (sb.ID == NFileHeader::NExtraID::kUnixTime)
-        return sb.ExtractUnixTime(index, res);
+        return sb.ExtractUnixTime(isCentral, index, res);
     }
     return false;
   }
@@ -205,7 +204,6 @@ public:
   
   bool IsDir() const;
   bool IgnoreItem() const { return false; }
-  UInt32 GetWinAttributes() const;
   
   bool HasDescriptor() const  { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
 
@@ -252,7 +250,8 @@ public:
   bool NtfsTimeIsDefined;
   
   bool IsDir() const;
-  UInt32 GetWinAttributes() const;
+  UInt32 GetWinAttrib() const;
+  bool GetPosixAttrib(UInt32 &attrib) const;
 
   bool IsThereCrc() const
   {
@@ -277,5 +276,3 @@ public:
 }}
 
 #endif
-
-

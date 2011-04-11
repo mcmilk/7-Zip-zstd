@@ -87,7 +87,7 @@ struct CItem
     else
       s = MultiByteToUnicodeString(PrefixA);
     if (s.Length() > 0)
-      if (s[s.Length() - 1] != L'\\')
+      if (s.Back() != L'\\')
         s += L'\\';
     if (unicode)
       s += NameU;

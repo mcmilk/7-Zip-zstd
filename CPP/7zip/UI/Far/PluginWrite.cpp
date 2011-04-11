@@ -7,15 +7,10 @@
 #include "Common/Wildcard.h"
 #include "Common/StringConvert.h"
 
-#include "Windows/FileDir.h"
 #include "Windows/FileName.h"
 #include "Windows/FileFind.h"
-#include "Windows/Defs.h"
-#include "Windows/PropVariant.h"
 
 #include "../Common/ZipRegistry.h"
-#include "../Common/WorkDir.h"
-#include "../Common/OpenArchive.h"
 
 #include "../Agent/Agent.h"
 
@@ -30,13 +25,11 @@ using namespace NFar;
 
 using namespace NUpdateArchive;
 
-static const char *kHelpTopic =  "Update";
-
-static LPCWSTR kTempArcivePrefix = L"7zA";
+static const char *kHelpTopic = "Update";
 
 static const char *kArchiveHistoryKeyName = "7-ZipArcName";
 
-static UINT32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 };
+static const UINT32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 };
 
 static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
 {
@@ -47,9 +40,30 @@ static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
     realNames.Add(UString(L"x"));
     NCOM::CPropVariant value = (UInt32)method;
     CRecordVector<const wchar_t *> names;
-    for(int i = 0; i < realNames.Size(); i++)
+    for (int i = 0; i < realNames.Size(); i++)
       names.Add(realNames[i]);
     RINOK(setProperties->SetProperties(&names.Front(), &value, names.Size()));
+  }
+  return S_OK;
+}
+
+HRESULT CPlugin::AfterUpdate(CWorkDirTempFile &tempFile, const UStringVector &pathVector)
+{
+  _folder.Release();
+  m_ArchiveHandler->Close();
+  
+  RINOK(tempFile.MoveToOriginal(true));
+  
+  RINOK(m_ArchiveHandler->ReOpen(NULL)); // check it
+
+  m_ArchiveHandler->BindToRootFolder(&_folder);
+  for (int i = 0; i < pathVector.Size(); i++)
+  {
+    CMyComPtr<IFolderFolder> newFolder;
+    _folder->BindToFolder(pathVector[i], &newFolder);
+    if (!newFolder)
+      break;
+    _folder = newFolder;
   }
   return S_OK;
 }
@@ -58,7 +72,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   struct PluginPanelItem *panelItems, int numItems,
   int moveMode, int opMode)
 {
-  if(moveMode != 0)
+  if (moveMode != 0)
   {
     g_StartupInfo.ShowMessage(NMessageID::kMoveIsNotSupported);
     return NFileOperationReturnCode::kError;
@@ -153,20 +167,14 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
 
   compressionInfo.Save();
 
-  NWorkDir::CInfo workDirInfo;
-  workDirInfo.Load();
-  UString workDir = GetWorkDir(workDirInfo, m_FileName);
-  CreateComplexDirectory(workDir);
-
-  CTempFileW tempFile;
-  UString tempFileName;
-  if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
+  CWorkDirTempFile tempFile;;
+  if (tempFile.CreateTempFile(m_FileName) != S_OK)
     return NFileOperationReturnCode::kError;
 
 
   /*
   CSysStringVector fileNames;
-  for(int i = 0; i < numItems; i++)
+  for (int i = 0; i < numItems; i++)
   {
     const PluginPanelItem &panelItem = panelItems[i];
     CSysString fullName;
@@ -189,44 +197,28 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
         g_StartupInfo.GetMsgString(NMessageID::kUpdating), 48);
   }
  
-  ////////////////////////////
-  // Save FolderItem;
-  UStringVector aPathVector;
-  GetPathParts(aPathVector);
+  UStringVector pathVector;
+  GetPathParts(pathVector);
   
-  /*
-  UString anArchivePrefix;
-  for(i = aPathVector.Size() - 1; i >= 0; i--)
-  {
-    anArchivePrefix += aPathVector[i];
-    anArchivePrefix += wchar_t(NName::kDirDelimiter);
-  }
-  /////////////////////////////////
-  */
-
   UStringVector fileNames;
   fileNames.Reserve(numItems);
-  for(i = 0; i < numItems; i++)
+  for (i = 0; i < numItems; i++)
     fileNames.Add(MultiByteToUnicodeString(panelItems[i].FindData.cFileName, CP_OEMCP));
   CRecordVector<const wchar_t *> fileNamePointers;
   fileNamePointers.Reserve(numItems);
-  for(i = 0; i < numItems; i++)
+  for (i = 0; i < numItems; i++)
     fileNamePointers.Add(fileNames[i]);
 
   CMyComPtr<IOutFolderArchive> outArchive;
   HRESULT result = m_ArchiveHandler.QueryInterface(IID_IOutFolderArchive, &outArchive);
-  if(result != S_OK)
+  if (result != S_OK)
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return NFileOperationReturnCode::kError;
   }
   outArchive->SetFolder(_folder);
 
-  // CSysString aCurrentFolder;
-  // MyGetCurrentDirectory(aCurrentFolder);
-  // outArchive->SetFiles(MultiByteToUnicodeString(aCurrentFolder, CP_OEMCP),
-  outArchive->SetFiles(L"",
-      &fileNamePointers.Front(), fileNamePointers.Size());
+  outArchive->SetFiles(L"", &fileNamePointers.Front(), fileNamePointers.Size());
   BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSetByte[i] = (BYTE)actionSet->StateActions[i];
@@ -239,42 +231,14 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
     return NFileOperationReturnCode::kError;
 
-  result = outArchive->DoOperation2(tempFileName, actionSetByte, NULL, updateCallback);
+  result = outArchive->DoOperation2(tempFile.OutStream, actionSetByte, NULL, updateCallback);
   updateCallback.Release();
   outArchive.Release();
 
-  /*
-  HRESULT result = Compress(fileNames, anArchivePrefix, *actionSet,
-      m_ProxyHandler.get(),
-      m_ArchiverInfo.ClassID, compressionInfo.Method == 0,
-      compressionInfo.Method == 2, tempFileName, progressBoxPointer);
-  */
-
-  if (result != S_OK)
+  if (result == S_OK)
   {
-    ShowErrorMessage(result);
-    return NFileOperationReturnCode::kError;
+    result = AfterUpdate(tempFile, pathVector);
   }
-
-  _folder.Release();
-  m_ArchiveHandler->Close();
-  
-  // m_FolderItem = NULL;
-  
-  if (!DeleteFileAlways(m_FileName))
-  {
-    ShowLastErrorMessage();
-    return NFileOperationReturnCode::kError;
-  }
-
-  tempFile.DisableDeleting();
-  if (!MyMoveFile(tempFileName, m_FileName))
-  {
-    ShowLastErrorMessage();
-    return NFileOperationReturnCode::kError;
-  }
-  
-  m_ArchiveHandler->ReOpen(NULL);
   if (result != S_OK)
   {
     ShowErrorMessage(result);
@@ -282,37 +246,17 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   }
 
   /*
-  if(m_ProxyHandler->ReInit(NULL) != S_OK)
-    return NFileOperationReturnCode::kError;
-  */
-  
-  ////////////////////////////
-  // Restore FolderItem;
-
-  m_ArchiveHandler->BindToRootFolder(&_folder);
-  for (i = 0; i < aPathVector.Size(); i++)
+  if (moveMode != 0)
   {
-    CMyComPtr<IFolderFolder> newFolder;
-    _folder->BindToFolder(aPathVector[i], &newFolder);
-    if(!newFolder  )
-      break;
-    _folder = newFolder;
-  }
-
-  /*
-  if(moveMode != 0)
-  {
-    for(int i = 0; i < numItems; i++)
+    for (int i = 0; i < numItems; i++)
     {
-      const PluginPanelItem &aPluginPanelItem = panelItems[i];
+      const PluginPanelItem &pluginPanelItem = panelItems[i];
       bool result;
-      if(NFile::NFind::NAttributes::IsDir(aPluginPanelItem.FindData.dwFileAttributes))
-        result = NFile::NDirectory::RemoveDirectoryWithSubItems(
-           aPluginPanelItem.FindData.cFileName);
+      if (NFile::NFind::NAttributes::IsDir(pluginPanelItem.FindData.dwFileAttributes))
+        result = NFile::NDirectory::RemoveDirectoryWithSubItems(pluginPanelItem.FindData.cFileName);
       else
-        result = NFile::NDirectory::DeleteFileAlways(
-           aPluginPanelItem.FindData.cFileName);
-      if(!result)
+        result = NFile::NDirectory::DeleteFileAlways(pluginPanelItem.FindData.cFileName);
+      if (!result)
         return NFileOperationReturnCode::kError;
     }
   }
@@ -361,11 +305,11 @@ void CParsedPath::ParsePath(const UString &path)
     case NPathType::kLocal:
     {
       int posDiskDelimiter = path.Find(kDiskDelimiter);
-      if(posDiskDelimiter >= 0)
+      if (posDiskDelimiter >= 0)
       {
         curPos = posDiskDelimiter + 1;
         if (path.Length() > curPos)
-          if(path[curPos] == kDirDelimiter)
+          if (path[curPos] == kDirDelimiter)
             curPos++;
       }
       break;
@@ -373,7 +317,7 @@ void CParsedPath::ParsePath(const UString &path)
     case NPathType::kUNC:
     {
       int curPos = path.Find(kDirDelimiter, 2);
-      if(curPos < 0)
+      if (curPos < 0)
         curPos = path.Length();
       else
         curPos++;
@@ -386,7 +330,7 @@ void CParsedPath::ParsePath(const UString &path)
 UString CParsedPath::MergePath() const
 {
   UString result = Prefix;
-  for(int i = 0; i < PathParts.Size(); i++)
+  for (int i = 0; i < PathParts.Size(); i++)
   {
     if (i != 0)
       result += kDirDelimiter;
@@ -409,20 +353,20 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   UStringVector fileNames;
   int i;
-  for(i = 0; i < pluginPanelItems.Size(); i++)
+  for (i = 0; i < pluginPanelItems.Size(); i++)
   {
     const PluginPanelItem &panelItem = pluginPanelItems[i];
-    UString fullName;
     if (strcmp(panelItem.FindData.cFileName, "..") == 0 &&
         NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
       return E_FAIL;
     if (strcmp(panelItem.FindData.cFileName, ".") == 0 &&
         NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
       return E_FAIL;
-    UString fileNameUnicode = MultiByteToUnicodeString(panelItem.FindData.cFileName, CP_OEMCP);
-    if (!MyGetFullPathName(fileNameUnicode, fullName))
+    FString fullPath;
+    FString fileNameUnicode = us2fs(MultiByteToUnicodeString(panelItem.FindData.cFileName, CP_OEMCP));
+    if (!MyGetFullPathName(fileNameUnicode, fullPath))
       return E_FAIL;
-    fileNames.Add(fullName);
+    fileNames.Add(fs2us(fullPath));
   }
 
   NCompression::CInfo compressionInfo;
@@ -453,7 +397,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   {
     CParsedPath parsedPath;
     parsedPath.ParsePath(fileNames.Front());
-    if(parsedPath.PathParts.Size() == 0)
+    if (parsedPath.PathParts.Size() == 0)
       return E_FAIL;
     if (fileNames.Size() == 1 || parsedPath.PathParts.Size() == 1)
     {
@@ -589,7 +533,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     {
       CIntVector indices;
       CSysStringVector archiverNames;
-      for(int i = 0; i < codecs->Formats.Size(); i++)
+      for (int i = 0; i < codecs->Formats.Size(); i++)
       {
         const CArcInfoEx &arc = codecs->Formats[i];
         if (arc.UpdateEnabled)
@@ -602,7 +546,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       int index = g_StartupInfo.Menu(FMENU_AUTOHIGHLIGHT,
           g_StartupInfo.GetMsgString(NMessageID::kUpdateSelectArchiverMenuTitle),
           NULL, archiverNames, archiverIndex);
-      if(index >= 0)
+      if (index >= 0)
       {
         const CArcInfoEx &prevArchiverInfo = codecs->Formats[prevFormat];
         if (prevArchiverInfo.KeepName)
@@ -653,18 +597,12 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   NWorkDir::CInfo workDirInfo;
   workDirInfo.Load();
 
-  UString fullArchiveName;
-  if (!MyGetFullPathName(archiveName, fullArchiveName))
+  FString fullArchiveName;
+  if (!MyGetFullPathName(us2fs(archiveName), fullArchiveName))
     return E_FAIL;
    
-  UString workDir = GetWorkDir(workDirInfo, fullArchiveName);
-  CreateComplexDirectory(workDir);
-
-  CTempFileW tempFile;
-  UString tempFileName;
-  if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
-    return E_FAIL;
-
+  CWorkDirTempFile tempFile;
+  RINOK(tempFile.CreateTempFile(fullArchiveName));
 
   CScreenRestorer screenRestorer;
   CProgressBox progressBox;
@@ -678,12 +616,12 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       g_StartupInfo.GetMsgString(NMessageID::kUpdating), 48);
 
 
-  NFind::CFileInfoW fileInfo;
+  NFind::CFileInfo fileInfo;
 
   CMyComPtr<IOutFolderArchive> outArchive;
 
   CMyComPtr<IInFolderArchive> archiveHandler;
-  if(fileInfo.Find(fullArchiveName))
+  if (fileInfo.Find(fullArchiveName))
   {
     if (fileInfo.IsDir())
       throw "There is Directory with such name";
@@ -702,7 +640,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       throw "Type of existing archive differs from specified type";
     HRESULT result = archiveHandler.QueryInterface(
         IID_IOutFolderArchive, &outArchive);
-    if(result != S_OK)
+    if (result != S_OK)
     {
       g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
       return E_FAIL;
@@ -726,15 +664,11 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   CRecordVector<const wchar_t *> fileNamePointers;
   fileNamePointers.Reserve(fileNames.Size());
-  for(i = 0; i < fileNames.Size(); i++)
+  for (i = 0; i < fileNames.Size(); i++)
     fileNamePointers.Add(fileNames[i]);
 
   outArchive->SetFolder(NULL);
-  // CSysString aCurrentFolder;
-  // MyGetCurrentDirectory(aCurrentFolder);
-  // outArchive->SetFiles(MultiByteToUnicodeString(aCurrentFolder, CP_OEMCP),
-  outArchive->SetFiles(L"",
-    &fileNamePointers.Front(), fileNamePointers.Size());
+  outArchive->SetFiles(L"", &fileNamePointers.Front(), fileNamePointers.Size());
   BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSetByte[i] = (BYTE)actionSet->StateActions[i];
@@ -749,7 +683,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   HRESULT result = outArchive->DoOperation(
       codecs, archiverIndex,
-      tempFileName, actionSetByte,
+      tempFile.OutStream, actionSetByte,
       NULL, updateCallback);
   updateCallback.Release();
   outArchive.Release();
@@ -760,21 +694,14 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     return result;
   }
  
-  if(archiveHandler)
+  if (archiveHandler)
   {
     archiveHandler->Close();
-    if (!DeleteFileAlways(fullArchiveName))
-    {
-      ShowLastErrorMessage();
-      return NFileOperationReturnCode::kError;
-    }
   }
-  tempFile.DisableDeleting();
-  if (!MyMoveFile(tempFileName, fullArchiveName))
+  if (!tempFile.MoveToOriginal(archiveHandler != NULL))
   {
     ShowLastErrorMessage();
     return E_FAIL;
   }
-  
   return S_OK;
 }

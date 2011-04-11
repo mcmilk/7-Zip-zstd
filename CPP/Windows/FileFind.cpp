@@ -16,41 +16,23 @@ namespace NWindows {
 namespace NFile {
 
 #ifdef SUPPORT_DEVICE_FILE
-bool IsDeviceName(LPCTSTR n);
-#ifndef _UNICODE
-bool IsDeviceName(LPCWSTR n);
-#endif
+bool IsDeviceName(CFSTR n);
 #endif
 
-#if defined(WIN_LONG_PATH) && defined(_UNICODE)
-#define WIN_LONG_PATH2
+#if defined(WIN_LONG_PATH)
+bool GetLongPath(CFSTR fileName, UString &res);
 #endif
-
-bool GetLongPath(LPCWSTR fileName, UString &res);
 
 namespace NFind {
-
-static const TCHAR kDot = TEXT('.');
 
 bool CFileInfo::IsDots() const
 {
   if (!IsDir() || Name.IsEmpty())
     return false;
-  if (Name[0] != kDot)
+  if (Name[0] != FTEXT('.'))
     return false;
-  return Name.Length() == 1 || (Name[1] == kDot && Name.Length() == 2);
+  return Name.Length() == 1 || (Name.Length() == 2 && Name[1] == FTEXT('.'));
 }
-
-#ifndef _UNICODE
-bool CFileInfoW::IsDots() const
-{
-  if (!IsDir() || Name.IsEmpty())
-    return false;
-  if (Name[0] != kDot)
-    return false;
-  return Name.Length() == 1 || (Name[1] == kDot && Name.Length() == 2);
-}
-#endif
 
 #define WIN_FD_TO_MY_FI(fi, fd) \
   fi.Attrib = fd.dwFileAttributes; \
@@ -68,26 +50,20 @@ bool CFileInfoW::IsDots() const
   #endif
   */
 
-static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfo &fi)
+static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATAW &fd, CFileInfo &fi)
 {
   WIN_FD_TO_MY_FI(fi, fd);
-  fi.Name = fd.cFileName;
+  fi.Name = us2fs(fd.cFileName);
 }
 
 #ifndef _UNICODE
 
 static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
 
-static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATAW &fd, CFileInfoW &fi)
+static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfo &fi)
 {
   WIN_FD_TO_MY_FI(fi, fd);
-  fi.Name = fd.cFileName;
-}
-
-static void ConvertWIN32_FIND_DATA_To_FileInfo(const WIN32_FIND_DATA &fd, CFileInfoW &fi)
-{
-  WIN_FD_TO_MY_FI(fi, fd);
-  fi.Name = GetUnicodeString(fd.cFileName, GetCurrentCodePage());
+  fi.Name = fas2fs(fd.cFileName);
 }
 #endif
   
@@ -104,36 +80,24 @@ bool CFindFile::Close()
   return true;
 }
 
-          
-bool CFindFile::FindFirst(LPCTSTR wildcard, CFileInfo &fi)
+bool CFindFile::FindFirst(CFSTR wildcard, CFileInfo &fi)
 {
   if (!Close())
     return false;
-  WIN32_FIND_DATA fd;
-  _handle = ::FindFirstFile(wildcard, &fd);
-  #ifdef WIN_LONG_PATH2
-  if (_handle == INVALID_HANDLE_VALUE)
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
-    UString longPath;
-    if (GetLongPath(wildcard, longPath))
-      _handle = ::FindFirstFileW(longPath, &fd);
+    WIN32_FIND_DATAA fd;
+    _handle = ::FindFirstFileA(fs2fas(wildcard), &fd);
+    if (_handle == INVALID_HANDLE_VALUE)
+      return false;
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   }
+  else
   #endif
-  if (_handle == INVALID_HANDLE_VALUE)
-    return false;
-  ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
-  return true;
-}
-
-#ifndef _UNICODE
-bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fi)
-{
-  if (!Close())
-    return false;
-  if (g_IsNT)
   {
     WIN32_FIND_DATAW fd;
-    _handle = ::FindFirstFileW(wildcard, &fd);
+    _handle = ::FindFirstFileW(fs2us(wildcard), &fd);
     #ifdef WIN_LONG_PATH
     if (_handle == INVALID_HANDLE_VALUE)
     {
@@ -142,50 +106,33 @@ bool CFindFile::FindFirst(LPCWSTR wildcard, CFileInfoW &fi)
         _handle = ::FindFirstFileW(longPath, &fd);
     }
     #endif
-    if (_handle != INVALID_HANDLE_VALUE)
-      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
-  }
-  else
-  {
-    WIN32_FIND_DATAA fd;
-    _handle = ::FindFirstFileA(UnicodeStringToMultiByte(wildcard,
-        GetCurrentCodePage()), &fd);
-    if (_handle != INVALID_HANDLE_VALUE)
-      ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
-  }
-  return (_handle != INVALID_HANDLE_VALUE);
-}
-#endif
-
-bool CFindFile::FindNext(CFileInfo &fi)
-{
-  WIN32_FIND_DATA fd;
-  bool result = BOOLToBool(::FindNextFile(_handle, &fd));
-  if (result)
-    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
-  return result;
-}
-
-#ifndef _UNICODE
-bool CFindFile::FindNext(CFileInfoW &fi)
-{
-  if (g_IsNT)
-  {
-    WIN32_FIND_DATAW fd;
-    if (!::FindNextFileW(_handle, &fd))
+    if (_handle == INVALID_HANDLE_VALUE)
       return false;
     ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   }
-  else
+  return true;
+}
+
+bool CFindFile::FindNext(CFileInfo &fi)
+{
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
     WIN32_FIND_DATAA fd;
     if (!::FindNextFileA(_handle, &fd))
       return false;
     ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
   }
+  else
+  #endif
+  {
+    WIN32_FIND_DATAW fd;
+    if (!::FindNextFileW(_handle, &fd))
+      return false;
+    ConvertWIN32_FIND_DATA_To_FileInfo(fd, fi);
+  }
   return true;
 }
-#endif
 
 #define MY_CLEAR_FILETIME(ft) ft.dwLowDateTime = ft.dwHighDateTime = 0;
 
@@ -198,7 +145,7 @@ void CFileInfoBase::Clear()
   Attrib = 0;
 }
   
-bool CFileInfo::Find(LPCTSTR wildcard)
+bool CFileInfo::Find(CFSTR wildcard)
 {
   #ifdef SUPPORT_DEVICE_FILE
   if (IsDeviceName(wildcard))
@@ -215,71 +162,65 @@ bool CFileInfo::Find(LPCTSTR wildcard)
   }
   #endif
   CFindFile finder;
-  return finder.FindFirst(wildcard, *this);
-}
-
-
-#ifndef _UNICODE
-bool CFileInfoW::Find(LPCWSTR wildcard)
-{
-  #ifdef SUPPORT_DEVICE_FILE
-  if (IsDeviceName(wildcard))
-  {
-    Clear();
-    IsDevice = true;
-    NIO::CInFile inFile;
-    if (!inFile.Open(wildcard))
-      return false;
-    Name = wildcard + 4;
-    if (inFile.LengthDefined)
-      Size = inFile.Length;
+  if (finder.FindFirst(wildcard, *this))
     return true;
+  #ifdef _WIN32
+  {
+    DWORD lastError = GetLastError();
+    if (lastError == ERROR_BAD_NETPATH || lastError == ERROR_FILE_NOT_FOUND)
+    {
+      int len = MyStringLen(wildcard);
+      if (len > 2 && wildcard[0] == '\\' && wildcard[1] == '\\')
+      {
+        int pos = FindCharPosInString(wildcard + 2, FTEXT('\\'));
+        if (pos >= 0)
+        {
+          pos += 2 + 1;
+          len -= pos;
+          CFSTR remString = wildcard + pos;
+          int pos2 = FindCharPosInString(remString, FTEXT('\\'));
+          FString s = wildcard;
+          if (pos2 < 0 || pos2 == len - 1)
+          {
+            FString s = wildcard;
+            if (pos2 < 0)
+            {
+              pos2 = len;
+              s += FTEXT('\\');
+            }
+            s += FCHAR_ANY_MASK;
+            if (finder.FindFirst(s, *this))
+              if (Name == FTEXT("."))
+              {
+                Name = s.Mid(pos, pos2);
+                return true;
+              }
+            ::SetLastError(lastError);
+          }
+        }
+      }
+    }
   }
   #endif
-  CFindFile finder;
-  return finder.FindFirst(wildcard, *this);
+  return false;
 }
-#endif
 
-bool DoesFileExist(LPCTSTR name)
+bool DoesFileExist(CFSTR name)
 {
   CFileInfo fi;
   return fi.Find(name) && !fi.IsDir();
 }
 
-bool DoesDirExist(LPCTSTR name)
+bool DoesDirExist(CFSTR name)
 {
   CFileInfo fi;
   return fi.Find(name) && fi.IsDir();
 }
-
-bool DoesFileOrDirExist(LPCTSTR name)
+bool DoesFileOrDirExist(CFSTR name)
 {
   CFileInfo fi;
   return fi.Find(name);
 }
-
-#ifndef _UNICODE
-bool DoesFileExist(LPCWSTR name)
-{
-  CFileInfoW fi;
-  return fi.Find(name) && !fi.IsDir();
-}
-
-bool DoesDirExist(LPCWSTR name)
-{
-  CFileInfoW fi;
-  return fi.Find(name) && fi.IsDir();
-}
-bool DoesFileOrDirExist(LPCWSTR name)
-{
-  CFileInfoW fi;
-  return fi.Find(name);
-}
-#endif
-
-/////////////////////////////////////
-// CEnumerator
 
 bool CEnumerator::NextAny(CFileInfo &fi)
 {
@@ -311,39 +252,6 @@ bool CEnumerator::Next(CFileInfo &fi, bool &found)
   return (::GetLastError() == ERROR_NO_MORE_FILES);
 }
 
-#ifndef _UNICODE
-bool CEnumeratorW::NextAny(CFileInfoW &fi)
-{
-  if (_findFile.IsHandleAllocated())
-    return _findFile.FindNext(fi);
-  else
-    return _findFile.FindFirst(_wildcard, fi);
-}
-
-bool CEnumeratorW::Next(CFileInfoW &fi)
-{
-  for (;;)
-  {
-    if (!NextAny(fi))
-      return false;
-    if (!fi.IsDots())
-      return true;
-  }
-}
-
-bool CEnumeratorW::Next(CFileInfoW &fi, bool &found)
-{
-  if (Next(fi))
-  {
-    found = true;
-    return true;
-  }
-  found = false;
-  return (::GetLastError() == ERROR_NO_MORE_FILES);
-}
-
-#endif
-
 ////////////////////////////////
 // CFindChangeNotification
 // FindFirstChangeNotification can return 0. MSDN doesn't tell about it.
@@ -358,104 +266,82 @@ bool CFindChangeNotification::Close()
   return true;
 }
            
-HANDLE CFindChangeNotification::FindFirst(LPCTSTR pathName, bool watchSubtree, DWORD notifyFilter)
+HANDLE CFindChangeNotification::FindFirst(CFSTR pathName, bool watchSubtree, DWORD notifyFilter)
 {
-  _handle = ::FindFirstChangeNotification(pathName, BoolToBOOL(watchSubtree), notifyFilter);
-  #ifdef WIN_LONG_PATH2
-  if (!IsHandleAllocated())
-  {
-    UString longPath;
-    if (GetLongPath(pathName, longPath))
-      _handle = ::FindFirstChangeNotificationW(longPath, BoolToBOOL(watchSubtree), notifyFilter);
-  }
-  #endif
-  return _handle;
-}
-
-#ifndef _UNICODE
-HANDLE CFindChangeNotification::FindFirst(LPCWSTR pathName, bool watchSubtree, DWORD notifyFilter)
-{
+  #ifndef _UNICODE
   if (!g_IsNT)
-    return FindFirst(UnicodeStringToMultiByte(pathName, GetCurrentCodePage()), watchSubtree, notifyFilter);
-  _handle = ::FindFirstChangeNotificationW(pathName, BoolToBOOL(watchSubtree), notifyFilter);
-  #ifdef WIN_LONG_PATH
-  if (!IsHandleAllocated())
-  {
-    UString longPath;
-    if (GetLongPath(pathName, longPath))
-      _handle = ::FindFirstChangeNotificationW(longPath, BoolToBOOL(watchSubtree), notifyFilter);
-  }
+    _handle = ::FindFirstChangeNotification(fs2fas(pathName), BoolToBOOL(watchSubtree), notifyFilter);
+  else
   #endif
+  {
+    _handle = ::FindFirstChangeNotificationW(fs2us(pathName), BoolToBOOL(watchSubtree), notifyFilter);
+    #ifdef WIN_LONG_PATH
+    if (!IsHandleAllocated())
+    {
+      UString longPath;
+      if (GetLongPath(pathName, longPath))
+        _handle = ::FindFirstChangeNotificationW(longPath, BoolToBOOL(watchSubtree), notifyFilter);
+    }
+    #endif
+  }
   return _handle;
 }
-#endif
 
 #ifndef UNDER_CE
-bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings)
-{
-  driveStrings.Clear();
-  UINT32 size = GetLogicalDriveStrings(0, NULL);
-  if (size == 0)
-    return false;
-  CSysString buffer;
-  UINT32 newSize = GetLogicalDriveStrings(size, buffer.GetBuffer(size));
-  if (newSize == 0)
-    return false;
-  if (newSize > size)
-    return false;
-  CSysString string;
-  for (UINT32 i = 0; i < newSize; i++)
-  {
-    TCHAR c = buffer[i];
-    if (c == TEXT('\0'))
-    {
-      driveStrings.Add(string);
-      string.Empty();
-    }
-    else
-      string += c;
-  }
-  if (!string.IsEmpty())
-    return false;
-  return true;
-}
 
-#ifndef _UNICODE
-bool MyGetLogicalDriveStrings(UStringVector &driveStrings)
+bool MyGetLogicalDriveStrings(CObjectVector<FString> &driveStrings)
 {
   driveStrings.Clear();
-  if (g_IsNT)
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    driveStrings.Clear();
+    UINT32 size = GetLogicalDriveStrings(0, NULL);
+    if (size == 0)
+      return false;
+    AString buf;
+    UINT32 newSize = GetLogicalDriveStrings(size, buf.GetBuffer(size));
+    if (newSize == 0 || newSize > size)
+      return false;
+    AString s;
+    for (UINT32 i = 0; i < newSize; i++)
+    {
+      char c = buf[i];
+      if (c == '\0')
+      {
+        driveStrings.Add(fas2fs(s));
+        s.Empty();
+      }
+      else
+        s += c;
+    }
+    return s.IsEmpty();
+  }
+  else
+  #endif
   {
     UINT32 size = GetLogicalDriveStringsW(0, NULL);
     if (size == 0)
       return false;
-    UString buffer;
-    UINT32 newSize = GetLogicalDriveStringsW(size, buffer.GetBuffer(size));
-    if (newSize == 0)
+    UString buf;
+    UINT32 newSize = GetLogicalDriveStringsW(size, buf.GetBuffer(size));
+    if (newSize == 0 || newSize > size)
       return false;
-    if (newSize > size)
-      return false;
-    UString string;
+    UString s;
     for (UINT32 i = 0; i < newSize; i++)
     {
-      WCHAR c = buffer[i];
+      WCHAR c = buf[i];
       if (c == L'\0')
       {
-        driveStrings.Add(string);
-        string.Empty();
+        driveStrings.Add(us2fs(s));
+        s.Empty();
       }
       else
-        string += c;
+        s += c;
     }
-    return string.IsEmpty();
+    return s.IsEmpty();
   }
-  CSysStringVector driveStringsA;
-  bool res = MyGetLogicalDriveStrings(driveStringsA);
-  for (int i = 0; i < driveStringsA.Size(); i++)
-    driveStrings.Add(GetUnicodeString(driveStringsA[i]));
-  return res;
 }
-#endif
 
 #endif
 

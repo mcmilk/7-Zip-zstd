@@ -109,7 +109,6 @@ CRYPTO_OBJS = \
   $O\7zAesRegister.obj \
   $O\MyAes.obj \
   $O\RandGen.obj \
-  $O\Sha1.obj \
 
 C_OBJS = \
   $O\Alloc.obj \

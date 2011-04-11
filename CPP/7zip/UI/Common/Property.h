@@ -1,9 +1,9 @@
 // Property.h
 
-#ifndef __PROPERTY_H
-#define __PROPERTY_H
+#ifndef __7Z_PROPERTY_H
+#define __7Z_PROPERTY_H
 
-#include "Common/MyString.h"
+#include "../../../Common/MyString.h"
 
 struct CProperty
 {

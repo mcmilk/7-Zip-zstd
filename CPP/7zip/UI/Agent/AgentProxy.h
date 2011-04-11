@@ -3,8 +3,6 @@
 #ifndef __AGENT_PROXY_H
 #define __AGENT_PROXY_H
 
-#include "Common/MyString.h"
-
 #include "../Common/OpenArchive.h"
 
 struct CProxyFile
@@ -13,8 +11,11 @@ struct CProxyFile
   UString Name;
 };
 
-struct CProxyFolder: public CProxyFile
+class CProxyFolder: public CProxyFile
 {
+  int FindDirSubItemIndex(const UString &name, int &insertPos) const;
+  void AddRealIndices(CUIntVector &realIndices) const;
+public:
   CProxyFolder *Parent;
   CObjectVector<CProxyFolder> Folders;
   CObjectVector<CProxyFile> Files;
@@ -28,7 +29,6 @@ struct CProxyFolder: public CProxyFile
   UInt32 NumSubFiles;
 
   CProxyFolder(): Parent(NULL) {};
-  int FindDirSubItemIndex(const UString &name, int &insertPos) const;
   int FindDirSubItemIndex(const UString &name) const;
   CProxyFolder* AddDirSubItem(UInt32 index, bool leaf, const UString &name);
   void AddFileSubItem(UInt32 index, const UString &name);
@@ -36,8 +36,6 @@ struct CProxyFolder: public CProxyFile
 
   void GetPathParts(UStringVector &pathParts) const;
   UString GetFullPathPrefix() const;
-  UString GetItemName(UInt32 index) const;
-  void AddRealIndices(CUIntVector &realIndices) const;
   void GetRealIndices(const UInt32 *indices, UInt32 numItems, CUIntVector &realIndices) const;
   void CalculateSizes(IInArchive *archive);
 };

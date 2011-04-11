@@ -7,8 +7,6 @@
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
 
-#include "../Common/OpenArchive.h"
-
 #include "AgentProxy.h"
 
 using namespace NWindows;
@@ -79,11 +77,10 @@ void CProxyFolder::Clear()
 void CProxyFolder::GetPathParts(UStringVector &pathParts) const
 {
   pathParts.Clear();
-  UString result;
   const CProxyFolder *current = this;
   while (current->Parent != NULL)
   {
-    pathParts.Insert(0, (const wchar_t *)current->Name);
+    pathParts.Insert(0, current->Name);
     current = current->Parent;
   }
 }
@@ -98,13 +95,6 @@ UString CProxyFolder::GetFullPathPrefix() const
     current = current->Parent;
   }
   return result;
-}
-
-UString CProxyFolder::GetItemName(UInt32 index) const
-{
-  if (index < (UInt32)Folders.Size())
-    return Folders[index].Name;
-  return Files[index - Folders.Size()].Name;
 }
 
 void CProxyFolder::AddRealIndices(CUIntVector &realIndices) const

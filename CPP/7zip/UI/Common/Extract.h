@@ -23,7 +23,7 @@ struct CExtractOptions
   bool CalcCrc;
   NExtract::NPathMode::EEnum PathMode;
   NExtract::NOverwriteMode::EEnum OverwriteMode;
-  UString OutputDir;
+  FString OutputDir;
   
   // bool ShowDialog;
   // bool PasswordEnabled;

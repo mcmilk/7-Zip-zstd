@@ -7,10 +7,7 @@
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 
-#ifdef _WIN32
 #include "Windows/DLL.h"
-#endif
-
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileName.h"
@@ -40,7 +37,7 @@ using namespace NCOM;
 using namespace NFile;
 using namespace NName;
 
-static const wchar_t *kTempFolderPrefix = L"7zE";
+static CFSTR kTempFolderPrefix = FTEXT("7zE");
 
 using namespace NUpdateArchive;
 
@@ -57,7 +54,7 @@ class COutMultiVolStream:
   {
     COutFileStream *StreamSpec;
     CMyComPtr<IOutStream> Stream;
-    UString Name;
+    FString Name;
     UInt64 Pos;
     UInt64 RealSize;
   };
@@ -65,7 +62,7 @@ class COutMultiVolStream:
 public:
   // CMyComPtr<IArchiveUpdateCallback2> VolumeCallback;
   CRecordVector<UInt64> Sizes;
-  UString Prefix;
+  FString Prefix;
   CTempFiles *TempFiles;
 
   void Init()
@@ -107,18 +104,18 @@ STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *pr
 {
   if (processedSize != NULL)
     *processedSize = 0;
-  while(size > 0)
+  while (size > 0)
   {
     if (_streamIndex >= Streams.Size())
     {
       CSubStreamInfo subStream;
 
-      wchar_t temp[16];
+      FChar temp[16];
       ConvertUInt32ToString(_streamIndex + 1, temp);
-      UString res = temp;
+      FString res = temp;
       while (res.Length() < 3)
-        res = UString(L'0') + res;
-      UString name = Prefix + res;
+        res = FString(FTEXT('0')) + res;
+      FString name = Prefix + res;
       subStream.StreamSpec = new COutFileStream;
       subStream.Stream = subStream.StreamSpec;
       if (!subStream.StreamSpec->Create(name, false))
@@ -311,7 +308,7 @@ static HRESULT Compress(
     bool stdOutMode,
     const CDirItems &dirItems,
     bool sfxMode,
-    const UString &sfxModule,
+    const FString &sfxModule,
     const CRecordVector<UInt64> &volumesSizes,
     CTempFiles &tempFiles,
     CUpdateErrorInfo &errorInfo,
@@ -389,11 +386,10 @@ static HRESULT Compress(
 
   if (!stdOutMode)
   {
-    UString resultPath;
-    int pos;
-    if (!NFile::NDirectory::MyGetFullPathName(archivePath.GetFinalPath(), resultPath, pos))
+    FString dirPrefix;
+    if (!NFile::NDirectory::GetOnlyDirPrefix(us2fs(archivePath.GetFinalPath()), dirPrefix))
       throw 1417161;
-    NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
+    NFile::NDirectory::CreateComplexDirectory(dirPrefix);
   }
 
   COutFileStream *outStreamSpec = NULL;
@@ -408,21 +404,21 @@ static HRESULT Compress(
       outStreamSpec = new COutFileStream;
       outStream = outStreamSpec;
       bool isOK = false;
-      UString realPath;
+      FString realPath;
       for (int i = 0; i < (1 << 16); i++)
       {
         if (archivePath.Temp)
         {
           if (i > 0)
           {
-            wchar_t s[16];
+            FChar s[16];
             ConvertUInt32ToString(i, s);
             archivePath.TempPostfix = s;
           }
           realPath = archivePath.GetTempPath();
         }
         else
-          realPath = archivePath.GetFinalPath();
+          realPath = us2fs(archivePath.GetFinalPath());
         if (outStreamSpec->Create(realPath, false))
         {
           tempFiles.Paths.Add(realPath);
@@ -450,7 +446,7 @@ static HRESULT Compress(
     volStreamSpec = new COutMultiVolStream;
     outStream = volStreamSpec;
     volStreamSpec->Sizes = volumesSizes;
-    volStreamSpec->Prefix = archivePath.GetFinalPath() + UString(L".");
+    volStreamSpec->Prefix = us2fs(archivePath.GetFinalPath() + L".");
     volStreamSpec->TempFiles = &tempFiles;
     volStreamSpec->Init();
 
@@ -484,7 +480,7 @@ static HRESULT Compress(
     {
       outStreamSpec = new COutFileStream;
       sfxOutStream = outStreamSpec;
-      UString realPath = archivePath.GetFinalPath();
+      FString realPath = us2fs(archivePath.GetFinalPath());
       if (!outStreamSpec->Create(realPath, false))
       {
         errorInfo.SystemError = ::GetLastError();
@@ -527,14 +523,7 @@ HRESULT EnumerateInArchiveItems(const NWildcard::CCensor &censor,
     RINOK(IsArchiveItemFolder(archive, i, ai.IsDir));
     ai.Censored = censor.CheckPath(ai.Name, !ai.IsDir);
     RINOK(arc.GetItemMTime(i, ai.MTime, ai.MTimeDefined));
-
-    {
-      CPropVariant prop;
-      RINOK(archive->GetProperty(i, kpidSize, &prop));
-      ai.SizeDefined = (prop.vt != VT_EMPTY);
-      if (ai.SizeDefined)
-        ai.Size = ConvertPropVariantToUInt64(prop);
-    }
+    RINOK(arc.GetItemSize(i, ai.Size, ai.SizeDefined));
 
     {
       CPropVariant prop;
@@ -608,11 +597,11 @@ static HRESULT UpdateWithItemLists(
 #if defined(_WIN32) && !defined(UNDER_CE)
 class CCurrentDirRestorer
 {
-  UString _path;
+  FString _path;
 public:
   CCurrentDirRestorer() { NFile::NDirectory::MyGetCurrentDirectory(_path); }
   ~CCurrentDirRestorer() { RestoreDirectory();}
-  bool RestoreDirectory() { return BOOLToBool(NFile::NDirectory::MySetCurrentDirectory(_path)); }
+  bool RestoreDirectory() const { return BOOLToBool(NFile::NDirectory::MySetCurrentDirectory(_path)); }
 };
 #endif
 
@@ -661,17 +650,25 @@ HRESULT UpdateArchive(
       errorInfo.Message = L"SFX file is not specified";
       return E_FAIL;
     }
-    UString name = options.SfxModule;
-    #ifdef UNDER_CE
-    if (!NFind::DoesFileExist(name))
-    #else
-    if (!NDirectory::MySearchPath(NULL, name, NULL, options.SfxModule))
-    #endif
+    bool found = false;
+    if (options.SfxModule.Find(FCHAR_PATH_SEPARATOR) < 0)
     {
-      errorInfo.SystemError = ::GetLastError();
-      errorInfo.Message = L"7-Zip cannot find specified SFX module";
-      errorInfo.FileName = name;
-      return E_FAIL;
+      const FString fullName = NDLL::GetModuleDirPrefix() + options.SfxModule;
+      if (NFind::DoesFileExist(fullName))
+      {
+        options.SfxModule = fullName;
+        found = true;
+      }
+    }
+    if (!found)
+    {
+      if (!NFind::DoesFileExist(options.SfxModule))
+      {
+        errorInfo.SystemError = ::GetLastError();
+        errorInfo.Message = L"7-Zip cannot find specified SFX module";
+        errorInfo.FileName = options.SfxModule;
+        return E_FAIL;
+      }
     }
   }
 
@@ -681,8 +678,8 @@ HRESULT UpdateArchive(
 
   if (!options.ArchivePath.OriginalPath.IsEmpty())
   {
-    NFind::CFileInfoW fi;
-    if (fi.Find(arcPath))
+    NFind::CFileInfo fi;
+    if (fi.Find(us2fs(arcPath)))
     {
       if (fi.IsDir())
         throw "there is no such archive";
@@ -738,12 +735,12 @@ HRESULT UpdateArchive(
       CEnumDirItemUpdateCallback enumCallback;
       enumCallback.Callback = callback;
       RINOK(callback->StartScanning());
-      UStringVector errorPaths;
+      FStringVector errorPaths;
       CRecordVector<DWORD> errorCodes;
       HRESULT res = EnumerateItems(censor, dirItems, &enumCallback, errorPaths, errorCodes);
       for (int i = 0; i < errorPaths.Size(); i++)
       {
-        RINOK(callback->CanNotFindError(errorPaths[i], errorCodes[i]));
+        RINOK(callback->CanNotFindError(fs2us(errorPaths[i]), errorCodes[i]));
       }
       if (res != S_OK)
       {
@@ -755,11 +752,11 @@ HRESULT UpdateArchive(
     }
   }
 
-  UString tempDirPrefix;
+  FString tempDirPrefix;
   bool usesTempDir = false;
   
   #ifdef _WIN32
-  NDirectory::CTempDirectoryW tempDirectory;
+  NDirectory::CTempDir tempDirectory;
   if (options.EMailMode && options.EMailRemoveAfter)
   {
     tempDirectory.Create(kTempFolderPrefix);
@@ -792,20 +789,20 @@ HRESULT UpdateArchive(
     }
   }
 
-  for(int i = 0; i < options.Commands.Size(); i++)
+  for (int i = 0; i < options.Commands.Size(); i++)
   {
     CArchivePath &ap = options.Commands[i].ArchivePath;
     if (usesTempDir)
     {
       // Check it
-      ap.Prefix = tempDirPrefix;
+      ap.Prefix = fs2us(tempDirPrefix);
       // ap.Temp = true;
       // ap.TempPrefix = tempDirPrefix;
     }
     if (!options.StdOutMode &&
         (i > 0 || !createTempFile))
     {
-      const UString &path = ap.GetFinalPath();
+      const FString path = us2fs(ap.GetFinalPath());
       if (NFind::DoesFileOrDirExist(path))
       {
         errorInfo.SystemError = 0;
@@ -839,21 +836,21 @@ HRESULT UpdateArchive(
     try
     {
       CArchivePath &ap = options.Commands[0].ArchivePath;
-      const UString &tempPath = ap.GetTempPath();
+      const FString &tempPath = ap.GetTempPath();
       if (thereIsInArchive)
-        if (!NDirectory::DeleteFileAlways(arcPath))
+        if (!NDirectory::DeleteFileAlways(us2fs(arcPath)))
         {
           errorInfo.SystemError = ::GetLastError();
           errorInfo.Message = L"7-Zip cannot delete the file";
-          errorInfo.FileName = arcPath;
+          errorInfo.FileName = us2fs(arcPath);
           return E_FAIL;
         }
-      if (!NDirectory::MyMoveFile(tempPath, arcPath))
+      if (!NDirectory::MyMoveFile(tempPath, us2fs(arcPath)))
       {
         errorInfo.SystemError = ::GetLastError();
         errorInfo.Message = L"7-Zip cannot move the file";
         errorInfo.FileName = tempPath;
-        errorInfo.FileName2 = arcPath;
+        errorInfo.FileName2 = us2fs(arcPath);
         return E_FAIL;
       }
     }
@@ -867,7 +864,7 @@ HRESULT UpdateArchive(
   if (options.EMailMode)
   {
     NDLL::CLibrary mapiLib;
-    if (!mapiLib.Load(TEXT("Mapi32.dll")))
+    if (!mapiLib.Load(FTEXT("Mapi32.dll")))
     {
       errorInfo.SystemError = ::GetLastError();
       errorInfo.Message = L"7-Zip cannot load Mapi32.dll";
@@ -880,13 +877,13 @@ HRESULT UpdateArchive(
       errorInfo.Message = L"7-Zip cannot find MAPISendDocuments function";
       return E_FAIL;
     }
-    UStringVector fullPaths;
+    FStringVector fullPaths;
     int i;
-    for(i = 0; i < options.Commands.Size(); i++)
+    for (i = 0; i < options.Commands.Size(); i++)
     {
       CArchivePath &ap = options.Commands[i].ArchivePath;
-      UString arcPath;
-      if (!NFile::NDirectory::MyGetFullPathName(ap.GetFinalPath(), arcPath))
+      FString arcPath;
+      if (!NFile::NDirectory::MyGetFullPathName(us2fs(ap.GetFinalPath()), arcPath))
       {
         errorInfo.SystemError = ::GetLastError();
         errorInfo.Message = L"GetFullPathName error";
@@ -895,9 +892,9 @@ HRESULT UpdateArchive(
       fullPaths.Add(arcPath);
     }
     CCurrentDirRestorer curDirRestorer;
-    for(i = 0; i < fullPaths.Size(); i++)
+    for (i = 0; i < fullPaths.Size(); i++)
     {
-      UString arcPath = fullPaths[i];
+      UString arcPath = fs2us(fullPaths[i]);
       UString fileName = ExtractFileNameFromPath(arcPath);
       AString path = GetAnsiString(arcPath);
       AString name = GetAnsiString(fileName);

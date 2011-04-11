@@ -54,6 +54,7 @@ WIN_OBJS = \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
   $O\FilterCoder.obj \
+  $O\MethodProps.obj \
   $O\ProgressUtils.obj \
   $O\StreamUtils.obj \
 
@@ -77,7 +78,6 @@ UI_COMMON_OBJS = \
   $O\UpdateCallback.obj \
   $O\UpdatePair.obj \
   $O\UpdateProduce.obj \
-  $O\WorkDir.obj \
 
 AR_COMMON_OBJS = \
   $O\OutStreamWithCRC.obj \

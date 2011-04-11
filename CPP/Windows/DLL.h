@@ -9,15 +9,13 @@ namespace NWindows {
 namespace NDLL {
 
 #ifdef UNDER_CE
-#define My_GetProcAddress(module, proceName) GetProcAddressA(module, proceName)
+#define My_GetProcAddress(module, procName) ::GetProcAddressA(module, procName)
 #else
-#define My_GetProcAddress(module, proceName) ::GetProcAddress(module, proceName)
+#define My_GetProcAddress(module, procName) ::GetProcAddress(module, procName)
 #endif
  
 class CLibrary
 {
-  bool LoadOperations(HMODULE newModule);
-protected:
   HMODULE _module;
 public:
   CLibrary(): _module(NULL) {};
@@ -40,19 +38,14 @@ public:
   }
 
   bool Free();
-  bool LoadEx(LPCTSTR fileName, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
-  bool Load(LPCTSTR fileName);
-  #ifndef _UNICODE
-  bool LoadEx(LPCWSTR fileName, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
-  bool Load(LPCWSTR fileName);
-  #endif
+  bool LoadEx(CFSTR path, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
+  bool Load(CFSTR path);
   FARPROC GetProc(LPCSTR procName) const { return My_GetProcAddress(_module, procName); }
 };
 
-bool MyGetModuleFileName(HMODULE hModule, CSysString &result);
-#ifndef _UNICODE
-bool MyGetModuleFileName(HMODULE hModule, UString &result);
-#endif
+bool MyGetModuleFileName(FString &path);
+
+FString GetModuleDirPrefix();
 
 }}
 

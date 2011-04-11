@@ -342,9 +342,9 @@ void CCensorNode::AddItem2(bool include, const UString &path, bool recursive)
   bool forFile = true;
   bool forFolder = true;
   UString path2 = path;
-  if (IsCharDirLimiter(path[path.Length() - 1]))
+  if (IsCharDirLimiter(path.Back()))
   {
-    path2.Delete(path.Length() - 1);
+    path2.DeleteBack();
     forFile = false;
   }
   AddItem(include, path2, recursive, forFile, forFolder);

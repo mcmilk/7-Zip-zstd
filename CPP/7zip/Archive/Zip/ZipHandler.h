@@ -12,10 +12,6 @@
 #include "ZipIn.h"
 #include "ZipCompressionMode.h"
 
-#ifndef _7ZIP_ST
-#include "../../../Windows/System.h"
-#endif
-
 namespace NArchive {
 namespace NZip {
 
@@ -46,53 +42,24 @@ private:
   CObjectVector<CItemEx> m_Items;
   CInArchive m_Archive;
 
-  int m_Level;
+  CBaseProps _props;
+
   int m_MainMethod;
-  UInt32 m_DicSize;
-  UInt32 m_Algo;
-  UInt32 m_NumPasses;
-  UInt32 m_NumFastBytes;
-  UInt32 m_NumMatchFinderCycles;
-  UInt32 m_MemSize;
-  UInt32 m_Order;
-
-  bool m_NumMatchFinderCyclesDefined;
-
   bool m_ForceAesMode;
-  bool m_IsAesMode;
-  Byte m_AesKeyMode;
-
   bool m_WriteNtfsTimeExtra;
   bool m_ForceLocal;
   bool m_ForceUtf8;
 
-  #ifndef _7ZIP_ST
-  UInt32 _numThreads;
-  #endif
-
   DECL_EXTERNAL_CODECS_VARS
 
-  void InitMethodProperties()
+  void InitMethodProps()
   {
-    m_Level = -1;
+    _props.Init();
     m_MainMethod = -1;
-    m_Algo =
-    m_DicSize =
-    m_NumPasses =
-    m_NumFastBytes =
-    m_Order =
-    m_MemSize =
-    m_NumMatchFinderCycles = 0xFFFFFFFF;
-    m_NumMatchFinderCyclesDefined = false;
     m_ForceAesMode = false;
-    m_IsAesMode = false;
-    m_AesKeyMode = 3; // aes-256
     m_WriteNtfsTimeExtra = true;
     m_ForceLocal = false;
     m_ForceUtf8 = false;
-    #ifndef _7ZIP_ST
-    _numThreads = NWindows::NSystem::GetNumberOfProcessors();;
-    #endif
   }
 };
 

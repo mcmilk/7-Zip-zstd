@@ -4,6 +4,7 @@
 
 #include "Common/IntToString.h"
 #include "Common/MyException.h"
+#include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
 #include "Windows/System.h"
@@ -85,6 +86,25 @@ bool CBenchmarkDialog::OnInit()
 
   Sync.Init();
 
+  if (TotalMode)
+  {
+    _consoleEdit.Attach(GetItem(IDC_BENCHMARK2_EDIT));
+    LOGFONT f;
+    memset(&f, 0, sizeof(f));
+    f.lfHeight = 14;
+    f.lfWidth = 0;
+    f.lfWeight = FW_DONTCARE;
+    f.lfCharSet = DEFAULT_CHARSET;
+    f.lfOutPrecision = OUT_DEFAULT_PRECIS;
+    f.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+    f.lfQuality = DEFAULT_QUALITY;
+
+    f.lfPitchAndFamily = FIXED_PITCH;
+    MyStringCopy(f.lfFaceName, TEXT(""));
+    _font.Create(&f);
+    if (_font._font)
+      _consoleEdit.SendMessage(WM_SETFONT, (WPARAM)_font._font, TRUE);
+  }
 
   UInt32 numCPUs = NSystem::GetNumberOfProcessors();
   if (numCPUs < 1)
@@ -101,8 +121,8 @@ bool CBenchmarkDialog::OnInit()
   int cur = 0;
   for (UInt32 num = 1; num <= numCPUs * 2;)
   {
-    TCHAR s[40];
-    ConvertUInt64ToString(num, s);
+    TCHAR s[16];
+    ConvertUInt32ToString(num, s);
     int index = (int)m_NumThreads.AddString(s);
     m_NumThreads.SetItemData(index, num);
     if (num <= Sync.NumThreads)
@@ -143,8 +163,8 @@ bool CBenchmarkDialog::OnInit()
       UInt32 dictionary = (1 << i) + (j << (i - 1));
       if (dictionary > kMaxDicSize)
         continue;
-      TCHAR s[40];
-      ConvertUInt64ToString((dictionary >> 20), s);
+      TCHAR s[16];
+      ConvertUInt32ToString((dictionary >> 20), s);
       lstrcat(s, kMB);
       int index = (int)m_Dictionary.AddString(s);
       m_Dictionary.SetItemData(index, dictionary);
@@ -158,8 +178,45 @@ bool CBenchmarkDialog::OnInit()
   Sync._startEvent.Set();
   _timer = SetTimer(kTimerID, kTimerElapse);
 
-  NormalizePosition();
+  if (TotalMode)
+    NormalizeSize(true);
+  else
+    NormalizePosition();
   return CModalDialog::OnInit();
+}
+
+bool CBenchmarkDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
+{
+  if (!TotalMode)
+    return false;
+  int mx, my;
+  GetMargins(8, mx, my);
+  int bx1, bx2, by;
+  GetItemSizes(IDCANCEL, bx1, by);
+  GetItemSizes(IDHELP, bx2, by);
+  int y = ySize - my - by;
+  int x = xSize - mx - bx1;
+
+  InvalidateRect(NULL);
+
+  MoveItem(IDCANCEL, x, y, bx1, by);
+  MoveItem(IDHELP, x - mx - bx2, y, bx2, by);
+  if (_consoleEdit)
+  {
+    int yPos = ySize - my - by;
+    RECT rect;
+    GetClientRectOfItem(IDC_BENCHMARK2_EDIT, rect);
+    int y = rect.top;
+    int ySize2 = yPos - my - y;
+    const int kMinYSize = 20;
+    int xx = xSize - mx * 2;
+    if (ySize2 < kMinYSize)
+    {
+      ySize2 = kMinYSize;
+    }
+    _consoleEdit.Move(mx, y, xx, ySize2);
+  }
+  return false;
 }
 
 UInt32 CBenchmarkDialog::GetNumberOfThreads()
@@ -209,7 +266,7 @@ void CBenchmarkDialog::OnChangeSettings()
   EnableItem(IDC_BUTTON_STOP, true);
   UInt32 dictionary = OnChangeDictionary();
   TCHAR s[40] = { TEXT('/'), TEXT(' '), 0 };
-  ConvertUInt64ToString(NSystem::GetNumberOfProcessors(), s + 2);
+  ConvertUInt32ToString(NSystem::GetNumberOfProcessors(), s + 2);
   SetItemText(IDC_BENCHMARK_HARDWARE_THREADS, s);
   for (int i = 0; i < sizeof(g_IDs) / sizeof(g_IDs[0]); i++)
     SetItemText(g_IDs[i], kProcessingString);
@@ -305,14 +362,31 @@ void CBenchmarkDialog::PrintResults(
     rating = GetCompressRating(dictionarySize, info.GlobalTime, info.GlobalFreq, size * info.NumIterations);
 
   PrintRating(rating, ratingID);
-  PrintRating(GetRatingPerUsage(info, rating), rpuID);
-  PrintUsage(GetUsage(info), usageID);
+  PrintRating(info.GetRatingPerUsage(rating), rpuID);
+  PrintUsage(info.GetUsage(), usageID);
 }
 
 bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 {
-  PrintTime();
+  bool printTime = true;
+  if (TotalMode)
+  {
+    if (Sync.WasStopped())
+      printTime = false;
+  }
+  if (printTime)
+    PrintTime();
   NWindows::NSynchronization::CCriticalSectionLock lock(Sync.CS);
+
+  if (TotalMode)
+  {
+    if (Sync.TextWasChanged)
+    {
+      _consoleEdit.SetText(GetSystemString(Sync.Text));
+      Sync.TextWasChanged = false;
+    }
+    return true;
+  }
 
   TCHAR s[40];
   ConvertUInt64ToString((Sync.ProcessedSize >> 20), s);
@@ -377,9 +451,11 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
           Sync.DecompressingInfo.PackSize, 1);
       PrintRating((comprRating + decomprRating) / 2, IDC_BENCHMARK_TOTAL_RATING_VALUE);
       PrintRating((
-          GetRatingPerUsage(Sync.CompressingInfo, comprRating) +
-          GetRatingPerUsage(Sync.DecompressingInfo, decomprRating)) / 2, IDC_BENCHMARK_TOTAL_RPU_VALUE);
-      PrintUsage((GetUsage(Sync.CompressingInfo) + GetUsage(Sync.DecompressingInfo)) / 2, IDC_BENCHMARK_TOTAL_USAGE_VALUE);
+          Sync.CompressingInfo.GetRatingPerUsage(comprRating) +
+          Sync.DecompressingInfo.GetRatingPerUsage(decomprRating)) / 2, IDC_BENCHMARK_TOTAL_RPU_VALUE);
+      PrintUsage(
+        (Sync.CompressingInfo.GetUsage() +
+         Sync.DecompressingInfo.GetUsage()) / 2, IDC_BENCHMARK_TOTAL_USAGE_VALUE);
     }
   }
   return true;
@@ -414,7 +490,6 @@ bool CBenchmarkDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 struct CThreadBenchmark
 {
   CBenchmarkDialog *BenchmarkDialog;
-  UInt64 _startTime;
   DECL_EXTERNAL_CODECS_VARS
   // UInt32 dictionarySize;
   // UInt32 numThreads;
@@ -478,6 +553,35 @@ HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
   return S_OK;
 }
 
+struct CBenchCallback2: public IBenchPrintCallback
+{
+  CProgressSyncInfo *Sync;
+
+  void Print(const char *s);
+  void NewLine();
+  HRESULT CheckBreak();
+};
+
+void CBenchCallback2::Print(const char *s)
+{
+  NSynchronization::CCriticalSectionLock lock(Sync->CS);
+  Sync->Text += s;
+  Sync->TextWasChanged = true;
+}
+
+void CBenchCallback2::NewLine()
+{
+  Print("\xD\n");
+}
+
+HRESULT CBenchCallback2::CheckBreak()
+{
+  if (Sync->Changed || Sync->Paused || Sync->Stopped)
+    return E_ABORT;
+  return S_OK;
+}
+
+
 HRESULT CThreadBenchmark::Process()
 {
   CProgressSyncInfo &sync = BenchmarkDialog->Sync;
@@ -508,12 +612,44 @@ HRESULT CThreadBenchmark::Process()
       CBenchCallback callback;
       callback.dictionarySize = dictionarySize;
       callback.Sync = &sync;
+      CBenchCallback2 callback2;
+      callback2.Sync = &sync;
       HRESULT result;
       try
       {
-        result = LzmaBench(
-          EXTERNAL_CODECS_VARS
-          numThreads, dictionarySize, &callback);
+        CObjectVector<CProperty> props;
+        if (BenchmarkDialog->TotalMode)
+        {
+          props = BenchmarkDialog->Props;
+        }
+        else
+        {
+          {
+            CProperty prop;
+            prop.Name = L"mt";
+            wchar_t s[16];
+            ConvertUInt32ToString(numThreads, s);
+            prop.Value = s;
+            props.Add(prop);
+          }
+          {
+            CProperty prop;
+            prop.Name = L"d";
+            wchar_t s[16];
+            ConvertUInt32ToString(dictionarySize, s);
+            prop.Name += s;
+            prop.Name += 'b';
+            props.Add(prop);
+          }
+        }
+        result = Bench(EXTERNAL_CODECS_VARS
+            BenchmarkDialog->TotalMode ? &callback2 : NULL,
+            BenchmarkDialog->TotalMode ? NULL : &callback,
+            props, 1, false);
+        if (BenchmarkDialog->TotalMode)
+        {
+          sync.Stop();
+        }
       }
       catch(...)
       {
@@ -561,7 +697,7 @@ HRESULT CThreadBenchmark::Process()
 
 HRESULT Benchmark(
     DECL_EXTERNAL_CODECS_LOC_VARS
-    UInt32 numThreads, UInt32 dictionarySize, HWND hwndParent)
+    const CObjectVector<CProperty> props, HWND hwndParent)
 {
   CThreadBenchmark benchmarker;
   #ifdef EXTERNAL_CODECS
@@ -569,13 +705,21 @@ HRESULT Benchmark(
   benchmarker._externalCodecs = *externalCodecs;
   #endif
 
-  CBenchmarkDialog benchmarkDialog;
-  benchmarkDialog.Sync.DictionarySize = dictionarySize;
-  benchmarkDialog.Sync.NumThreads = numThreads;
+  CBenchmarkDialog bd;
+  bd.Props = props;
+  bd.TotalMode = false;
+  for (int i = 0; i < props.Size(); i++)
+  {
+    const CProperty &prop = props[i];
+    if (prop.Name.CompareNoCase(L"m") == 0 && prop.Value == L"*")
+      bd.TotalMode = true;
+  }
+  bd.Sync.DictionarySize = (UInt32)-1;
+  bd.Sync.NumThreads = (UInt32)-1;
+  benchmarker.BenchmarkDialog = &bd;
 
-  benchmarker.BenchmarkDialog = &benchmarkDialog;
   NWindows::CThread thread;
   RINOK(thread.Create(CThreadBenchmark::MyThreadFunction, &benchmarker));
-  benchmarkDialog.Create(hwndParent);
+  bd.Create(hwndParent);
   return thread.Wait();
 }

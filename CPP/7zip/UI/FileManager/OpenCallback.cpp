@@ -8,6 +8,8 @@
 
 #include "../../Common/FileStreams.h"
 
+#include "../Common/ZipRegistry.h"
+
 #include "OpenCallback.h"
 #include "PasswordDialog.h"
 
@@ -82,16 +84,15 @@ STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value
   return S_OK;
 }
 
-STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name,
-    IInStream **inStream)
+STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **inStream)
 {
   *inStream = NULL;
   if (_subArchiveMode)
     return S_FALSE;
 
-  NFile::NFind::CFileInfoW fileInfo;
+  NFile::NFind::CFileInfo fileInfo;
 
-  UString fullPath = _folderPrefix + name;
+  FString fullPath = _folderPrefix + us2fs(name);
   if (!fileInfo.Find(fullPath))
     return S_FALSE;
   _fileInfo = fileInfo;
@@ -111,6 +112,8 @@ STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
   if (!PasswordIsDefined)
   {
     CPasswordDialog dialog;
+    bool showPassword = NExtract::Read_ShowPassword();
+    dialog.ShowPassword = showPassword;
    
     ProgressDialog.WaitCreating();
     if (dialog.Create(ProgressDialog) == IDCANCEL)
@@ -118,6 +121,8 @@ STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
 
     Password = dialog.Password;
     PasswordIsDefined = true;
+    if (dialog.ShowPassword != showPassword)
+      NExtract::Save_ShowPassword(dialog.ShowPassword);
   }
   return StringToBstr(Password, password);
 }

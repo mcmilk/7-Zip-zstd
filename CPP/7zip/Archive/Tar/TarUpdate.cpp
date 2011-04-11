@@ -48,7 +48,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
 
   complexity = 0;
 
-  for(i = 0; i < updateItems.Size(); i++)
+  for (i = 0; i < updateItems.Size(); i++)
   {
     lps->InSize = lps->OutSize = complexity;
     RINOK(lps->SetCur());
@@ -64,14 +64,14 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       if (ui.IsDir)
       {
         item.LinkFlag = NFileHeader::NLinkFlag::kDirectory;
-        item.Size = 0;
+        item.PackSize = 0;
       }
       else
       {
         item.LinkFlag = NFileHeader::NLinkFlag::kNormal;
-        item.Size = ui.Size;
+        item.PackSize = ui.Size;
       }
-      item.MTime = ui.Time;
+      item.MTime = ui.MTime;
       item.DeviceMajorDefined = false;
       item.DeviceMinorDefined = false;
       item.UID = 0;
@@ -83,12 +83,12 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
 
     if (ui.NewData)
     {
-      item.Size = ui.Size;
-      if (item.Size == (UInt64)(Int64)-1)
+      item.PackSize = ui.Size;
+      if (ui.Size == (UInt64)(Int64)-1)
         return E_INVALIDARG;
     }
     else
-      item.Size = inputItems[ui.IndexInArchive].Size;
+      item.PackSize = inputItems[ui.IndexInArchive].PackSize;
   
     if (ui.NewData)
     {
@@ -101,9 +101,9 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
         if (!ui.IsDir)
         {
           RINOK(copyCoder->Code(fileInStream, outStream, NULL, NULL, progress));
-          if (copyCoderSpec->TotalSize != item.Size)
+          if (copyCoderSpec->TotalSize != item.PackSize)
             return E_FAIL;
-          RINOK(outArchive.FillDataResidual(item.Size));
+          RINOK(outArchive.FillDataResidual(item.PackSize));
         }
       }
       complexity += ui.Size;
@@ -117,7 +117,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       {
         RINOK(outArchive.WriteHeader(item));
         RINOK(inStream->Seek(existItem.GetDataPosition(), STREAM_SEEK_SET, NULL));
-        size = existItem.Size;
+        size = existItem.PackSize;
       }
       else
       {
@@ -129,10 +129,12 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       RINOK(copyCoder->Code(inStreamLimited, outStream, NULL, NULL, progress));
       if (copyCoderSpec->TotalSize != size)
         return E_FAIL;
-      RINOK(outArchive.FillDataResidual(existItem.Size));
+      RINOK(outArchive.FillDataResidual(existItem.PackSize));
       complexity += size;
     }
   }
+  lps->InSize = lps->OutSize = complexity;
+  RINOK(lps->SetCur());
   return outArchive.WriteFinishHeader();
 }
 

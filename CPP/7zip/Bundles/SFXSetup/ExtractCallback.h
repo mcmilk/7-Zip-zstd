@@ -31,9 +31,9 @@ public:
 
 private:
   CMyComPtr<IInArchive> _archiveHandler;
-  UString _directoryPath;
+  FString _directoryPath;
   UString _filePath;
-  UString _diskFilePath;
+  FString _diskFilePath;
 
   bool _extractMode;
   struct CProcessedFileInfo
@@ -60,7 +60,7 @@ public:
   UString _message;
 
   void Init(IInArchive *archiveHandler,
-    const UString &directoryPath,
+    const FString &directoryPath,
     const UString &itemDefaultName,
     const FILETIME &defaultMTime,
     UInt32 defaultAttributes);

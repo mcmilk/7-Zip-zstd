@@ -6,11 +6,9 @@
 #include <stdio.h>
 
 #include "../../Common/CreateCoder.h"
+#include "../../UI/Common/Property.h"
 
-HRESULT LzmaBenchCon(
-    DECL_EXTERNAL_CODECS_LOC_VARS
-    FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dictionary);
-
-HRESULT CrcBenchCon(FILE *f, UInt32 numIterations, UInt32 numThreads, UInt32 dictionary);
+HRESULT BenchCon(DECL_EXTERNAL_CODECS_LOC_VARS
+    const CObjectVector<CProperty> props, UInt32 numIterations, FILE *f);
 
 #endif

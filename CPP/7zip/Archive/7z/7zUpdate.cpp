@@ -24,15 +24,6 @@
 namespace NArchive {
 namespace N7z {
 
-static const UInt64 k_LZMA = 0x030101;
-static const UInt64 k_BCJ  = 0x03030103;
-static const UInt64 k_BCJ2 = 0x0303011B;
-
-static const wchar_t *kMatchFinderForBCJ2_LZMA = L"BT2";
-static const UInt32 kDictionaryForBCJ2_LZMA = 1 << 20;
-static const UInt32 kAlgorithmForBCJ2_LZMA = 1;
-static const UInt32 kNumFastBytesForBCJ2_LZMA = 64;
-
 #ifdef MY_CPU_X86_OR_AMD64
 #define USE_86_FILTER
 #endif
@@ -339,90 +330,74 @@ static bool IsExeExt(const UString &ext)
   return false;
 }
 
-#ifdef USE_86_FILTER
 
-static inline void GetMethodFull(UInt64 methodID, UInt32 numInStreams, CMethodFull &methodResult)
+static inline void GetMethodFull(UInt64 methodID, UInt32 numInStreams, CMethodFull &m)
 {
-  methodResult.Id = methodID;
-  methodResult.NumInStreams = numInStreams;
-  methodResult.NumOutStreams = 1;
+  m.Id = methodID;
+  m.NumInStreams = numInStreams;
+  m.NumOutStreams = 1;
 }
 
-static void MakeExeMethod(const CCompressionMethodMode &method,
-    bool bcj2Filter, CCompressionMethodMode &exeMethod)
+static void AddBcj2Methods(CCompressionMethodMode &mode)
 {
-  exeMethod = method;
+  CMethodFull m;
+  GetMethodFull(k_LZMA, 1, m);
+  
+  m.AddProp32(NCoderPropID::kDictionarySize, 1 << 20);
+  m.AddProp32(NCoderPropID::kNumFastBytes, 128);
+  m.AddProp32(NCoderPropID::kNumThreads, 1);
+  m.AddProp32(NCoderPropID::kLitPosBits, 2);
+  m.AddProp32(NCoderPropID::kLitContextBits, 0);
+  // m.AddPropString(NCoderPropID::kMatchFinder, L"BT2");
+
+  mode.Methods.Add(m);
+  mode.Methods.Add(m);
+  
+  CBind bind;
+  bind.OutCoder = 0;
+  bind.InStream = 0;
+  bind.InCoder = 1;  bind.OutStream = 0;  mode.Binds.Add(bind);
+  bind.InCoder = 2;  bind.OutStream = 1;  mode.Binds.Add(bind);
+  bind.InCoder = 3;  bind.OutStream = 2;  mode.Binds.Add(bind);
+}
+
+static void MakeExeMethod(CCompressionMethodMode &mode,
+    bool useFilters, bool addFilter, bool bcj2Filter)
+{
+  if (!mode.Binds.IsEmpty() || !useFilters || mode.Methods.Size() > 2)
+    return;
+  if (mode.Methods.Size() == 2)
+  {
+    if (mode.Methods[0].Id == k_BCJ2)
+      AddBcj2Methods(mode);
+    return;
+  }
+  if (!addFilter)
+    return;
+  bcj2Filter = bcj2Filter;
+  #ifdef USE_86_FILTER
   if (bcj2Filter)
   {
-    CMethodFull methodFull;
-    GetMethodFull(k_BCJ2, 4, methodFull);
-    exeMethod.Methods.Insert(0, methodFull);
-    GetMethodFull(k_LZMA, 1, methodFull);
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kAlgorithm;
-      prop.Value = kAlgorithmForBCJ2_LZMA;
-      methodFull.Props.Add(prop);
-    }
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kMatchFinder;
-      prop.Value = kMatchFinderForBCJ2_LZMA;
-      methodFull.Props.Add(prop);
-    }
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kDictionarySize;
-      prop.Value = kDictionaryForBCJ2_LZMA;
-      methodFull.Props.Add(prop);
-    }
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kNumFastBytes;
-      prop.Value = kNumFastBytesForBCJ2_LZMA;
-      methodFull.Props.Add(prop);
-    }
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kNumThreads;
-      prop.Value = (UInt32)1;
-      methodFull.Props.Add(prop);
-    }
-
-    exeMethod.Methods.Add(methodFull);
-    exeMethod.Methods.Add(methodFull);
-    CBind bind;
-
-    bind.OutCoder = 0;
-    bind.InStream = 0;
-
-    bind.InCoder = 1;
-    bind.OutStream = 0;
-    exeMethod.Binds.Add(bind);
-
-    bind.InCoder = 2;
-    bind.OutStream = 1;
-    exeMethod.Binds.Add(bind);
-
-    bind.InCoder = 3;
-    bind.OutStream = 2;
-    exeMethod.Binds.Add(bind);
+    CMethodFull m;
+    GetMethodFull(k_BCJ2, 4, m);
+    mode.Methods.Insert(0, m);
+    AddBcj2Methods(mode);
   }
   else
   {
-    CMethodFull methodFull;
-    GetMethodFull(k_BCJ, 1, methodFull);
-    exeMethod.Methods.Insert(0, methodFull);
+    CMethodFull m;
+    GetMethodFull(k_BCJ, 1, m);
+    mode.Methods.Insert(0, m);
     CBind bind;
     bind.OutCoder = 0;
     bind.InStream = 0;
     bind.InCoder = 1;
     bind.OutStream = 0;
-    exeMethod.Binds.Add(bind);
+    mode.Binds.Add(bind);
   }
+  #endif
 }
 
-#endif
 
 static void FromUpdateItemToFileItem(const CUpdateItem &ui,
     CFileItem &file, CFileItem2 &file2)
@@ -601,6 +576,7 @@ public:
     Fos = FosSpec;
     Result = E_FAIL;
   }
+  ~CThreadDecoder() { CVirtThread::WaitThreadFinish(); }
   virtual void Execute();
 };
 
@@ -669,9 +645,7 @@ STDMETHODIMP CCryptoGetTextPassword::CryptoGetTextPassword(BSTR *password)
 
 static const int kNumGroupsMax = 4;
 
-#ifdef USE_86_FILTER
 static bool Is86Group(int group) { return (group & 1) != 0; }
-#endif
 static bool IsEncryptedGroup(int group) { return (group & 2) != 0; }
 static int GetGroupIndex(bool encrypted, int bcjFiltered)
   { return (encrypted ? 2 : 0) + (bcjFiltered ? 1 : 0); }
@@ -789,15 +763,14 @@ HRESULT Update(
   if (inSizeForReduce2 > inSizeForReduce)
     inSizeForReduce = inSizeForReduce2;
 
-  const UInt32 kMinReduceSize = (1 << 16);
-  if (inSizeForReduce < kMinReduceSize)
-    inSizeForReduce = kMinReduceSize;
-
   RINOK(updateCallback->SetTotal(complexity));
 
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(updateCallback, true);
+
+  CStreamBinder sb;
+  RINOK(sb.CreateEvents());
 
   CThreadDecoder threadDecoder;
   if (!folderRefs.IsEmpty())
@@ -870,13 +843,8 @@ HRESULT Update(
   {
     const CSolidGroup &group = groups[groupIndex];
 
-    CCompressionMethodMode method;
-    #ifdef USE_86_FILTER
-    if (Is86Group(groupIndex))
-      MakeExeMethod(*options.Method, options.MaxFilter, method);
-    else
-    #endif
-      method = *options.Method;
+    CCompressionMethodMode method = *options.Method;
+    MakeExeMethod(method, options.UseFilters, Is86Group(groupIndex), options.MaxFilter);
 
     if (IsEncryptedGroup(groupIndex))
     {
@@ -923,11 +891,6 @@ HRESULT Update(
       }
       else
       {
-        CStreamBinder sb;
-        RINOK(sb.CreateEvents());
-        CMyComPtr<ISequentialOutStream> sbOutStream;
-        CMyComPtr<ISequentialInStream> sbInStream;
-        sb.CreateStreams(&sbInStream, &sbOutStream);
         CBoolVector extractStatuses;
         
         CNum numUnpackStreams = db->NumUnpackStreamsVector[folderIndex];
@@ -946,24 +909,31 @@ HRESULT Update(
           extractStatuses.Add(needExtract);
         }
 
-        RINOK(threadDecoder.FosSpec->Init(db, db->FolderStartFileIndex[folderIndex], &extractStatuses, sbOutStream));
-        sbOutStream.Release();
-        
-        threadDecoder.InStream = inStream;
-        threadDecoder.Folder = &db->Folders[folderIndex];
-        threadDecoder.StartPos = db->GetFolderStreamPos(folderIndex, 0);
-        threadDecoder.PackSizes = &db->PackSizes[db->FolderStartPackStreamIndex[folderIndex]];
-        
-        threadDecoder.Start();
-        
         int startPackIndex = newDatabase.PackSizes.Size();
         CFolder newFolder;
-        RINOK(encoder.Encode(
-          EXTERNAL_CODECS_LOC_VARS
-          sbInStream, NULL, &inSizeForReduce, newFolder,
-          archive.SeqStream, newDatabase.PackSizes, progress));
-        
-        threadDecoder.WaitFinish();
+        {
+          CMyComPtr<ISequentialInStream> sbInStream;
+          {
+            CMyComPtr<ISequentialOutStream> sbOutStream;
+            sb.CreateStreams(&sbInStream, &sbOutStream);
+            sb.ReInit();
+            RINOK(threadDecoder.FosSpec->Init(db, db->FolderStartFileIndex[folderIndex], &extractStatuses, sbOutStream));
+          }
+          
+          threadDecoder.InStream = inStream;
+          threadDecoder.Folder = &db->Folders[folderIndex];
+          threadDecoder.StartPos = db->GetFolderStreamPos(folderIndex, 0);
+          threadDecoder.PackSizes = &db->PackSizes[db->FolderStartPackStreamIndex[folderIndex]];
+          
+          threadDecoder.Start();
+          
+          RINOK(encoder.Encode(
+            EXTERNAL_CODECS_LOC_VARS
+            sbInStream, NULL, &inSizeForReduce, newFolder,
+            archive.SeqStream, newDatabase.PackSizes, progress));
+          
+          threadDecoder.WaitExecuteFinish();
+        }
 
         RINOK(threadDecoder.Result);
 
@@ -1134,6 +1104,8 @@ HRESULT Update(
   if (folderRefIndex != folderRefs.Size())
     return E_FAIL;
 
+  RINOK(lps->SetCur());
+
   /*
   folderRefs.ClearAndFree();
   fileIndexToUpdateIndexMap.ClearAndFree();
@@ -1169,7 +1141,7 @@ HRESULT Update(
       newDatabase.AddFile(file, file2);
     }
   }
-    
+
   newDatabase.ReserveDown();
   return S_OK;
 }

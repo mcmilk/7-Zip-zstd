@@ -2,12 +2,15 @@
 
 #include "StdAfx.h"
 
+#include <tlhelp32.h>
+
 #include "Common/AutoPtr.h"
 #include "Common/StringConvert.h"
 
 #include "Windows/Error.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileName.h"
 #include "Windows/Process.h"
 #include "Windows/PropVariant.h"
 #include "Windows/Thread.h"
@@ -33,8 +36,122 @@ using namespace NDirectory;
 extern bool g_IsNT;
 #endif
 
-static wchar_t *kTempDirPrefix = L"7zO";
+static CFSTR kTempDirPrefix = FTEXT("7zO");
 
+#ifndef UNDER_CE
+
+class CProcessSnapshot
+{
+  HANDLE _handle;
+public:
+  CProcessSnapshot(): _handle(INVALID_HANDLE_VALUE) {};
+  ~CProcessSnapshot() { Close(); }
+
+  bool Close()
+  {
+    if (_handle == INVALID_HANDLE_VALUE)
+      return true;
+    if (!::CloseHandle(_handle))
+      return false;
+    _handle = INVALID_HANDLE_VALUE;
+    return true;
+  }
+
+  bool Create()
+  {
+    _handle = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    return (_handle != INVALID_HANDLE_VALUE);
+  }
+
+  bool GetFirstProcess(PROCESSENTRY32 *pe) { return BOOLToBool(Process32First(_handle, pe)); }
+  bool GetNextProcess(PROCESSENTRY32 *pe) { return BOOLToBool(Process32Next(_handle, pe)); }
+};
+
+#endif
+
+typedef DWORD (WINAPI *GetProcessIdFunc)(HANDLE process);
+
+class CChildProcesses
+{
+  #ifndef UNDER_CE
+  CRecordVector<DWORD> _ids;
+  #endif
+public:
+  CRecordVector<HANDLE> Handles;
+  CRecordVector<bool> NeedWait;
+
+  ~CChildProcesses() { CloseAll(); }
+  void DisableWait(int index) { NeedWait[index] = false; }
+  
+  void CloseAll()
+  {
+    for (int i = 0; i < Handles.Size(); i++)
+    {
+      HANDLE h = Handles[i];
+      if (h != NULL)
+        CloseHandle(h);
+    }
+    Handles.Clear();
+    NeedWait.Clear();
+  }
+
+  void AddProcess(HANDLE h)
+  {
+    #ifndef UNDER_CE
+    GetProcessIdFunc func = (GetProcessIdFunc)::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "GetProcessId");
+    if (func)
+      _ids.AddToUniqueSorted(func(h));
+    #endif
+    Handles.Add(h);
+    NeedWait.Add(true);
+  }
+
+  void Update()
+  {
+    #ifndef UNDER_CE
+    CRecordVector<DWORD> ids, parents;
+    {
+      CProcessSnapshot snapshot;
+      if (snapshot.Create())
+      {
+        PROCESSENTRY32 pe;
+        memset(&pe, 0, sizeof(pe));
+        pe.dwSize = sizeof(pe);
+        BOOL res = snapshot.GetFirstProcess(&pe);
+        while (res)
+        {
+          ids.Add(pe.th32ProcessID);
+          parents.Add(pe.th32ParentProcessID);
+          res = snapshot.GetNextProcess(&pe);
+        }
+      }
+    }
+
+    for (;;)
+    {
+      int i;
+      for (i = 0; i < ids.Size(); i++)
+      {
+        DWORD id = ids[i];
+        if (_ids.FindInSorted(parents[i]) >= 0 &&
+            _ids.FindInSorted(id) < 0)
+        {
+          HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, id);
+          if (hProcess)
+          {
+            _ids.AddToUniqueSorted(id);
+            Handles.Add(hProcess);
+            NeedWait.Add(true);
+            break;
+          }
+        }
+      }
+      if (i == ids.Size())
+        break;
+    }
+    #endif
+  }
+};
 
 static bool IsNameVirus(const UString &name)
 {
@@ -43,11 +160,12 @@ static bool IsNameVirus(const UString &name)
 
 struct CTmpProcessInfo: public CTempFileInfo
 {
-  HANDLE ProcessHandle;
+  CChildProcesses Processes;
   HWND Window;
   UString FullPathFolderPrefix;
   bool UsePassword;
   UString Password;
+
   CTmpProcessInfo(): UsePassword(false) {}
 };
 
@@ -56,8 +174,8 @@ class CTmpProcessInfoRelease
   CTmpProcessInfo *_tmpProcessInfo;
 public:
   bool _needDelete;
-  CTmpProcessInfoRelease(CTmpProcessInfo &tmpProcessInfo):
-      _tmpProcessInfo(&tmpProcessInfo), _needDelete(true) {}
+  CTmpProcessInfoRelease(CTmpProcessInfo &tpi):
+      _tmpProcessInfo(&tpi), _needDelete(true) {}
   ~CTmpProcessInfoRelease()
   {
     if (_needDelete)
@@ -96,7 +214,7 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
 
   UString password;
   RINOK(OpenFileFolderPlugin(inStream,
-      folderLink.FilePath.IsEmpty() ? virtualFilePath : folderLink.FilePath,
+      folderLink.FilePath.IsEmpty() ? us2fs(virtualFilePath) : folderLink.FilePath,
       arcFormat,
       &library, &newFolder, GetParent(), encrypted, password));
  
@@ -157,13 +275,14 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   return S_OK;
 }
 
-HRESULT CPanel::OpenItemAsArchive(const UString &name, const UString &arcFormat, bool &encrypted)
+HRESULT CPanel::OpenItemAsArchive(const UString &relPath, const UString &arcFormat, bool &encrypted)
 {
   CTempFileInfo tfi;
-  tfi.ItemName = name;
-  tfi.FolderPath = _currentFolderPrefix;
-  tfi.FilePath = _currentFolderPrefix + name;
-  return OpenItemAsArchive(NULL, tfi, _currentFolderPrefix + name, arcFormat, encrypted);
+  tfi.RelPath = relPath;
+  tfi.FolderPath = us2fs(_currentFolderPrefix);
+  const UString fullPath = _currentFolderPrefix + relPath;
+  tfi.FilePath = us2fs(fullPath);
+  return OpenItemAsArchive(NULL, tfi, fullPath, arcFormat, encrypted);
 }
 
 HRESULT CPanel::OpenItemAsArchive(int index)
@@ -180,21 +299,21 @@ HRESULT CPanel::OpenParentArchiveFolder()
   CDisableTimerProcessing disableTimerProcessing1(*this);
   if (_parentFolders.Size() < 2)
     return S_OK;
+  const CFolderLink &folderLinkPrev = _parentFolders[_parentFolders.Size() - 2];
   const CFolderLink &folderLink = _parentFolders.Back();
-  NFind::CFileInfoW newFileInfo;
+  NFind::CFileInfo newFileInfo;
   if (newFileInfo.Find(folderLink.FilePath))
   {
     if (folderLink.WasChanged(newFileInfo))
     {
-      UString message = MyFormatNew(IDS_WANT_UPDATE_MODIFIED_FILE,
-          0x03020280, folderLink.ItemName);
+      UString message = MyFormatNew(IDS_WANT_UPDATE_MODIFIED_FILE, 0x03020280, folderLink.RelPath);
       if (::MessageBoxW(HWND(*this), message, L"7-Zip", MB_OKCANCEL | MB_ICONQUESTION) == IDOK)
       {
-        if (OnOpenItemChanged(folderLink.FolderPath, folderLink.ItemName,
-            folderLink.UsePassword, folderLink.Password) != S_OK)
+        if (OnOpenItemChanged(folderLink.FileIndex, folderLink.FilePath,
+            folderLinkPrev.UsePassword, folderLinkPrev.Password) != S_OK)
         {
           ::MessageBoxW(HWND(*this), MyFormatNew(IDS_CANNOT_UPDATE_FILE,
-              0x03020281, folderLink.FilePath), L"7-Zip", MB_OK | MB_ICONSTOP);
+              0x03020281, fs2us(folderLink.FilePath)), L"7-Zip", MB_OK | MB_ICONSTOP);
           return S_OK;
         }
       }
@@ -263,9 +382,11 @@ static HRESULT StartEditApplication(const UString &path, HWND window, CProcess &
     #ifdef UNDER_CE
     command = L"\\Windows\\";
     #else
-    if (!MyGetWindowsDirectory(command))
+    FString winDir;
+    if (!MyGetWindowsDirectory(winDir))
       return 0;
-    NFile::NName::NormalizeDirPathPrefix(command);
+    NFile::NName::NormalizeDirPathPrefix(winDir);
+    command = fs2us(winDir);
     #endif
     command += L"notepad.exe";
   }
@@ -466,8 +587,8 @@ class CThreadCopyFrom: public CProgressThreadVirt
 {
   HRESULT ProcessVirt();
 public:
-  UString PathPrefix;
-  UString Name;
+  UString FullPath;
+  UInt32 ItemIndex;
 
   CMyComPtr<IFolderOperations> FolderOperations;
   CMyComPtr<IProgress> UpdateCallback;
@@ -476,14 +597,10 @@ public:
   
 HRESULT CThreadCopyFrom::ProcessVirt()
 {
-  UStringVector fileNames;
-  CRecordVector<const wchar_t *> fileNamePointers;
-  fileNames.Add(Name);
-  fileNamePointers.Add(fileNames[0]);
-  return FolderOperations->CopyFrom(PathPrefix, &fileNamePointers.Front(), fileNamePointers.Size(), UpdateCallback);
+  return FolderOperations->CopyFromFile(ItemIndex, FullPath, UpdateCallback);
 }
       
-HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &itemName,
+HRESULT CPanel::OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath,
     bool usePassword, const UString &password)
 {
   CMyComPtr<IFolderOperations> folderOperations;
@@ -497,40 +614,47 @@ HRESULT CPanel::OnOpenItemChanged(const UString &folderPath, const UString &item
   t.UpdateCallbackSpec = new CUpdateCallback100Imp;
   t.UpdateCallback = t.UpdateCallbackSpec;
   t.UpdateCallbackSpec->ProgressDialog = &t.ProgressDialog;
-  t.Name = itemName;
-  t.PathPrefix = folderPath;
-  NName::NormalizeDirPathPrefix(t.PathPrefix);
+  t.ItemIndex = index;
+  t.FullPath = fullFilePath;
   t.FolderOperations = folderOperations;
   t.UpdateCallbackSpec->Init(usePassword, password);
-  RINOK(t.Create(itemName, (HWND)*this));
+  RINOK(t.Create(GetItemName(index), (HWND)*this));
   return t.Result;
 }
 
 LRESULT CPanel::OnOpenItemChanged(LPARAM lParam)
 {
-  CTmpProcessInfo &tmpProcessInfo = *(CTmpProcessInfo *)lParam;
-  // LoadCurrentPath()
-  if (tmpProcessInfo.FullPathFolderPrefix != _currentFolderPrefix)
+  CTmpProcessInfo &tpi = *(CTmpProcessInfo *)lParam;
+  if (tpi.FullPathFolderPrefix != _currentFolderPrefix)
     return 0;
+  UInt32 fileIndex = tpi.FileIndex;
+  UInt32 numItems;
+  _folder->GetNumberOfItems(&numItems);
+  
+  // This code is not 100% OK for cases when there are several files with
+  // tpi.RelPath name and there are changes in archive before update.
+  // So tpi.FileIndex can point to another file.
+ 
+  if (fileIndex >= numItems || GetItemRelPath(fileIndex) != tpi.RelPath)
+  {
+    UInt32 i;
+    for (i = 0; i < numItems; i++)
+      if (GetItemRelPath(i) == tpi.RelPath)
+        break;
+    if (i == numItems)
+      return 0;
+    fileIndex = i;
+  }
 
   CSelectedState state;
   SaveSelectedState(state);
 
-  HRESULT result = OnOpenItemChanged(tmpProcessInfo.FolderPath, tmpProcessInfo.ItemName,
-      tmpProcessInfo.UsePassword, tmpProcessInfo.Password);
+  HRESULT result = OnOpenItemChanged(fileIndex, tpi.FilePath, tpi.UsePassword, tpi.Password);
   if (result != S_OK)
     return 0;
   RefreshListCtrl(state);
   return 1;
 }
-
-/*
-class CTmpProcessInfoList
-{
-public:
-  CObjectVector<CTmpProcessInfo> _items;
-} g_TmpProcessInfoList;
-*/
 
 class CExitEventLauncher
 {
@@ -547,42 +671,64 @@ public:
 static THREAD_FUNC_DECL MyThreadFunction(void *param)
 {
   CMyAutoPtr<CTmpProcessInfo> tmpProcessInfoPtr((CTmpProcessInfo *)param);
-  const CTmpProcessInfo *tmpProcessInfo = tmpProcessInfoPtr.get();
+  CTmpProcessInfo *tpi = tmpProcessInfoPtr.get();
+  CChildProcesses &processes = tpi->Processes;
 
-  HANDLE hProcess = tmpProcessInfo->ProcessHandle;
-  HANDLE events[2] = { g_ExitEventLauncher._exitEvent, hProcess};
-  DWORD waitResult = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
-  ::CloseHandle(hProcess);
-  if (waitResult == WAIT_OBJECT_0 + 0)
-    return 0;
-  if (waitResult != WAIT_OBJECT_0 + 1)
-    return 1;
-  Sleep(200);
-  NFind::CFileInfoW newFileInfo;
-  if (newFileInfo.Find(tmpProcessInfo->FilePath))
+  for (;;)
   {
-    if (tmpProcessInfo->WasChanged(newFileInfo))
+    CRecordVector<HANDLE> handles;
+    CRecordVector<int> indices;
+    for (int i = 0; i < processes.Handles.Size(); i++)
+    {
+      if (processes.NeedWait[i])
+      {
+        handles.Add(processes.Handles[i]);
+        indices.Add(i);
+      }
+    }
+    if (handles.IsEmpty())
+      break;
+
+    handles.Add(g_ExitEventLauncher._exitEvent);
+
+    DWORD waitResult = ::WaitForMultipleObjects(handles.Size(), &handles.Front(), FALSE, INFINITE);
+
+    if (waitResult >= (DWORD)handles.Size() - 1)
+    {
+      processes.CloseAll();
+      return waitResult >= (DWORD)handles.Size() ? 1 : 0;
+    }
+    processes.Update();
+    processes.DisableWait(indices[waitResult]);
+  }
+
+  NFind::CFileInfo newFileInfo;
+  if (newFileInfo.Find(tpi->FilePath))
+  {
+    if (tpi->WasChanged(newFileInfo))
     {
       UString message = MyFormatNew(IDS_WANT_UPDATE_MODIFIED_FILE,
-          0x03020280, tmpProcessInfo->ItemName);
+          0x03020280, tpi->RelPath);
       if (::MessageBoxW(g_HWND, message, L"7-Zip", MB_OKCANCEL | MB_ICONQUESTION) == IDOK)
       {
-        if (SendMessage(tmpProcessInfo->Window, kOpenItemChanged, 0, (LONG_PTR)tmpProcessInfo) != 1)
+        if (SendMessage(tpi->Window, kOpenItemChanged, 0, (LONG_PTR)tpi) != 1)
         {
           ::MessageBoxW(g_HWND, MyFormatNew(IDS_CANNOT_UPDATE_FILE,
-              0x03020281, tmpProcessInfo->FilePath), L"7-Zip", MB_OK | MB_ICONSTOP);
+              0x03020281, fs2us(tpi->FilePath)), L"7-Zip", MB_OK | MB_ICONSTOP);
           return 0;
         }
       }
     }
   }
-  tmpProcessInfo->DeleteDirAndFile();
+  tpi->DeleteDirAndFile();
   return 0;
 }
 
 void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bool editMode)
 {
   const UString name = GetItemName(index);
+  const UString relPath = GetItemRelPath(index);
+  
   if (IsNameVirus(name))
   {
     MessageBoxErrorLang(IDS_VIRUS, 0x03020284);
@@ -598,18 +744,22 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
 
   bool tryAsArchive = tryInternal && (!tryExternal || !DoItemAlwaysStart(name));
 
-  UString fullVirtPath = _currentFolderPrefix + name;
+  UString fullVirtPath = _currentFolderPrefix + relPath;
 
-  NFile::NDirectory::CTempDirectoryW tempDirectory;
-  tempDirectory.Create(kTempDirPrefix);
-  UString tempDir = tempDirectory.GetPath();
-  UString tempDirNorm = tempDir;
+  NFile::NDirectory::CTempDir tempDirectory;
+  if (!tempDirectory.Create(kTempDirPrefix))
+  {
+    MessageBoxLastError();
+    return;
+  }
+  FString tempDir = tempDirectory.GetPath();
+  FString tempDirNorm = tempDir;
   NFile::NName::NormalizeDirPathPrefix(tempDirNorm);
-
-  UString tempFilePath = tempDirNorm + GetCorrectFsPath(name);
+  FString tempFilePath = tempDirNorm + us2fs(GetCorrectFsPath(name));
 
   CTempFileInfo tempFileInfo;
-  tempFileInfo.ItemName = name;
+  tempFileInfo.FileIndex = index;
+  tempFileInfo.RelPath = relPath;
   tempFileInfo.FolderPath = tempDir;
   tempFileInfo.FilePath = tempFilePath;
   tempFileInfo.NeedDelete = true;
@@ -655,7 +805,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     password = fl.Password;
   }
 
-  HRESULT result = CopyTo(indices, tempDirNorm, false, true, &messages, usePassword, password);
+  HRESULT result = CopyTo(indices, fs2us(tempDirNorm), false, true, &messages, usePassword, password);
 
   if (_parentFolders.Size() > 0)
   {
@@ -686,17 +836,17 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   }
 
   CMyAutoPtr<CTmpProcessInfo> tmpProcessInfoPtr(new CTmpProcessInfo());
-  CTmpProcessInfo *tmpProcessInfo = tmpProcessInfoPtr.get();
-  tmpProcessInfo->FolderPath = tempDir;
-  tmpProcessInfo->FilePath = tempFilePath;
-  tmpProcessInfo->NeedDelete = true;
-  tmpProcessInfo->UsePassword = usePassword;
-  tmpProcessInfo->Password = password;
+  CTmpProcessInfo *tpi = tmpProcessInfoPtr.get();
+  tpi->FolderPath = tempDir;
+  tpi->FilePath = tempFilePath;
+  tpi->NeedDelete = true;
+  tpi->UsePassword = usePassword;
+  tpi->Password = password;
 
-  if (!tmpProcessInfo->FileInfo.Find(tempFilePath))
+  if (!tpi->FileInfo.Find(tempFilePath))
     return;
 
-  CTmpProcessInfoRelease tmpProcessInfoRelease(*tmpProcessInfo);
+  CTmpProcessInfoRelease tmpProcessInfoRelease(*tpi);
 
   if (!tryExternal)
     return;
@@ -704,20 +854,21 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   CProcess process;
   HRESULT res;
   if (editMode)
-    res = StartEditApplication(tempFilePath, (HWND)*this, process);
+    res = StartEditApplication(fs2us(tempFilePath), (HWND)*this, process);
   else
-    res = StartApplication(tempDirNorm, tempFilePath, (HWND)*this, process);
+    res = StartApplication(fs2us(tempDirNorm), fs2us(tempFilePath), (HWND)*this, process);
 
   if ((HANDLE)process == 0)
     return;
 
-  tmpProcessInfo->Window = (HWND)(*this);
-  tmpProcessInfo->FullPathFolderPrefix = _currentFolderPrefix;
-  tmpProcessInfo->ItemName = name;
-  tmpProcessInfo->ProcessHandle = process.Detach();
+  tpi->Window = (HWND)(*this);
+  tpi->FullPathFolderPrefix = _currentFolderPrefix;
+  tpi->FileIndex = index;
+  tpi->RelPath = relPath;
+  tpi->Processes.AddProcess(process.Detach());
 
   NWindows::CThread thread;
-  if (thread.Create(MyThreadFunction, tmpProcessInfo) != S_OK)
+  if (thread.Create(MyThreadFunction, tpi) != S_OK)
     throw 271824;
   tempDirectory.DisableDeleting();
   tmpProcessInfoPtr.release();
@@ -744,7 +895,7 @@ void DeleteOldTempFiles()
   UString searchWildCard = tempPath + kTempDirPrefix + L"*.tmp";
   searchWildCard += WCHAR(NName::kAnyStringWildcard);
   NFind::CEnumeratorW enumerator(searchWildCard);
-  NFind::CFileInfoW fileInfo;
+  NFind::CFileInfo fileInfo;
   while(enumerator.Next(fileInfo))
   {
     if (!fileInfo.IsDir())

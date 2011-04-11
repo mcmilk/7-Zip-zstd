@@ -47,7 +47,7 @@ static bool MakeOctalString8(char *s, UInt32 value)
   if (tempString.Length() >= kMaxSize)
     return false;
   int numSpaces = kMaxSize - (tempString.Length() + 1);
-  for(int i = 0; i < numSpaces; i++)
+  for (int i = 0; i < numSpaces; i++)
     s[i] = ' ';
   MyStringCopy(s + numSpaces, (const char *)tempString);
   return true;
@@ -55,7 +55,7 @@ static bool MakeOctalString8(char *s, UInt32 value)
 
 static void MakeOctalString12(char *s, UInt64 value)
 {
-  AString tempString  = MakeOctalString(value);
+  AString tempString = MakeOctalString(value);
   const int kMaxSize = 12;
   if (tempString.Length() > kMaxSize)
   {
@@ -67,9 +67,21 @@ static void MakeOctalString12(char *s, UInt64 value)
     return;
   }
   int numSpaces = kMaxSize - tempString.Length();
-  for(int i = 0; i < numSpaces; i++)
+  for (int i = 0; i < numSpaces; i++)
     s[i] = ' ';
   memmove(s + numSpaces, (const char *)tempString, tempString.Length());
+}
+
+static void MakeOctalString12_From_Int64(char *s, Int64 value)
+{
+  if (value >= 0)
+  {
+    MakeOctalString12(s, value);
+    return;
+  }
+  s[0] = s[1] = s[2] = s[3] = (char)(Byte)0xFF;
+  for (int i = 0; i < 8; i++, value <<= 8)
+    s[4 + i] = (char)(value >> 56);
 }
 
 static bool CopyString(char *dest, const AString &src, int maxSize)
@@ -100,8 +112,8 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item)
   RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.UID)); cur += 8;
   RETURN_IF_NOT_TRUE(MakeOctalString8(cur, item.GID)); cur += 8;
 
-  MakeOctalString12(cur, item.Size); cur += 12;
-  MakeOctalString12(cur, item.MTime); cur += 12;
+  MakeOctalString12(cur, item.PackSize); cur += 12;
+  MakeOctalString12_From_Int64(cur, item.MTime); cur += 12;
   
   memmove(cur, NFileHeader::kCheckSumBlanks, 8);
   cur += 8;
@@ -130,7 +142,7 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item)
 
 
   UInt32 checkSumReal = 0;
-  for(i = 0; i < NFileHeader::kRecordSize; i++)
+  for (i = 0; i < NFileHeader::kRecordSize; i++)
     checkSumReal += Byte(record[i]);
 
   RETURN_IF_NOT_TRUE(MakeOctalString8(record + 148, checkSumReal));
@@ -146,7 +158,7 @@ HRESULT COutArchive::WriteHeader(const CItem &item)
 
   CItem modifiedItem = item;
   int nameStreamSize = nameSize + 1;
-  modifiedItem.Size = nameStreamSize;
+  modifiedItem.PackSize = nameStreamSize;
   modifiedItem.LinkFlag = 'L';
   modifiedItem.Name = NFileHeader::kLongLink;
   modifiedItem.LinkName.Empty();

@@ -22,7 +22,8 @@ CArchiveUpdateCallback::CArchiveUpdateCallback():
   DirItems(0),
   ArcItems(0),
   UpdatePairs(0),
-  NewNames(0)
+  NewNames(0),
+  KeepOriginalItemNames(0)
   {}
 
 
@@ -120,7 +121,22 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
     const CDirItem &di = DirItems->Items[up.DirIndex];
     switch(propID)
     {
-      case kpidPath:  prop = DirItems->GetLogPath(up.DirIndex); break;
+      case kpidPath:
+        {
+          if (KeepOriginalItemNames)
+          {
+            if (up.ExistInArchive() && Archive)
+            {
+              UInt32 indexInArchive;
+              if (ArcItems == 0)
+                indexInArchive = up.ArcIndex;
+              else
+                indexInArchive = (*ArcItems)[up.ArcIndex].IndexInServer;
+              return Archive->GetProperty(indexInArchive, propID, value);
+            }
+          }
+          prop = DirItems->GetLogPath(up.DirIndex); break;
+        }
       case kpidIsDir:  prop = di.IsDir(); break;
       case kpidSize:  prop = di.Size; break;
       case kpidAttrib:  prop = di.Attrib; break;
@@ -186,7 +202,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream
     CInFileStream *inStreamSpec = new CInFileStream;
     CMyComPtr<ISequentialInStream> inStreamLoc(inStreamSpec);
     const UString path = DirItems->GetPhyPath(up.DirIndex);
-    if (!inStreamSpec->OpenShared(path, ShareForWrite))
+    if (!inStreamSpec->OpenShared(us2fs(path), ShareForWrite))
     {
       return Callback->OpenFileError(path, ::GetLastError());
     }
@@ -216,12 +232,12 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64 *size)
 STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOutStream **volumeStream)
 {
   COM_TRY_BEGIN
-  wchar_t temp[16];
+  FChar temp[16];
   ConvertUInt32ToString(index + 1, temp);
-  UString res = temp;
+  FString res = temp;
   while (res.Length() < 2)
-    res = UString(L'0') + res;
-  UString fileName = VolName;
+    res = FString(FTEXT('0')) + res;
+  FString fileName = VolName;
   fileName += L'.';
   fileName += res;
   fileName += VolExt;

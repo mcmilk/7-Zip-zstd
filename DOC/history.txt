@@ -1,6 +1,12 @@
 Sources history of the 7-Zip
 ----------------------------
 
+9.21           2011-04-11
+-------------------------	
+- New class FString for file names at file systems.
+- Speed optimization in CRC code for big-endian CPUs.
+
+
 9.18           2010-11-02
 -------------------------	
 - New small SFX module for installers (C/Util/SfxSetup).

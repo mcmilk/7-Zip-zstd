@@ -29,13 +29,13 @@ static const UInt32 kBufSize = (1 << 15);
 struct CDirEnumerator
 {
   bool FlatMode;
-  UString BasePrefix;
-  UStringVector FileNames;
+  FString BasePrefix;
+  FStringVector FileNames;
 
-  CObjectVector<NFind::CEnumeratorW> Enumerators;
-  UStringVector Prefixes;
+  CObjectVector<NFind::CEnumerator> Enumerators;
+  FStringVector Prefixes;
   int Index;
-  HRESULT GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UString &fullPath);
+  HRESULT GetNextFile(NFind::CFileInfo &fileInfo, bool &filled, FString &fullPath);
   void Init();
   
   CDirEnumerator(): FlatMode(false) {};
@@ -54,7 +54,7 @@ static HRESULT GetNormalizedError()
   return (errorCode == 0) ? E_FAIL : errorCode;
 }
 
-HRESULT CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, UString &resPath)
+HRESULT CDirEnumerator::GetNextFile(NFind::CFileInfo &fileInfo, bool &filled, FString &resPath)
 {
   filled = false;
   for (;;)
@@ -63,8 +63,8 @@ HRESULT CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, U
     {
       if (Index >= FileNames.Size())
         return S_OK;
-      const UString &path = FileNames[Index];
-      int pos = path.ReverseFind(WCHAR_PATH_SEPARATOR);
+      const FString &path = FileNames[Index];
+      int pos = path.ReverseFind(FCHAR_PATH_SEPARATOR);
       resPath.Empty();
       if (pos >= 0)
         resPath = path.Left(pos + 1);
@@ -106,8 +106,8 @@ HRESULT CDirEnumerator::GetNextFile(NFind::CFileInfoW &fileInfo, bool &filled, U
   resPath += fileInfo.Name;
   if (!FlatMode && fileInfo.IsDir())
   {
-    UString prefix = resPath + WCHAR_PATH_SEPARATOR;
-    Enumerators.Add(NFind::CEnumeratorW(BasePrefix + prefix + (UString)(wchar_t)NName::kAnyStringWildcard));
+    FString prefix = resPath + FCHAR_PATH_SEPARATOR;
+    Enumerators.Add(NFind::CEnumerator(BasePrefix + prefix + FCHAR_ANY_MASK));
     Prefixes.Add(prefix);
   }
   filled = true;
@@ -212,13 +212,13 @@ HRESULT CThreadCrc::ProcessVirt()
 
   for (;;)
   {
-    NFind::CFileInfoW fileInfo;
+    NFind::CFileInfo fileInfo;
     bool filled;
-    UString resPath;
+    FString resPath;
     HRESULT errorCode = Enumerator.GetNextFile(fileInfo, filled, resPath);
     if (errorCode != 0)
     {
-      ErrorPath1 = resPath;
+      SetErrorPath1(resPath);
       return errorCode;
     }
     if (!filled)
@@ -228,7 +228,7 @@ HRESULT CThreadCrc::ProcessVirt()
       totalSize += fileInfo.Size;
       NumFilesScan++;
     }
-    sync.SetCurrentFileName(scanningStr + resPath);
+    sync.SetCurrentFileName(scanningStr + fs2us(resPath));
     sync.SetProgress(totalSize, 0);
     RINOK(sync.SetPosAndCheckPaused(0));
   }
@@ -239,13 +239,13 @@ HRESULT CThreadCrc::ProcessVirt()
   
   for (;;)
   {
-    NFind::CFileInfoW fileInfo;
+    NFind::CFileInfo fileInfo;
     bool filled;
-    UString resPath;
+    FString resPath;
     HRESULT errorCode = Enumerator.GetNextFile(fileInfo, filled, resPath);
     if (errorCode != 0)
     {
-      ErrorPath1 = resPath;
+      SetErrorPath1(resPath);
       return errorCode;
     }
     if (!filled)
@@ -263,10 +263,10 @@ HRESULT CThreadCrc::ProcessVirt()
       if (!inFile.Open(Enumerator.BasePrefix + resPath))
       {
         errorCode = GetNormalizedError();
-        ErrorPath1 = resPath;
+        SetErrorPath1(resPath);
         return errorCode;
       }
-      sync.SetCurrentFileName(resPath);
+      sync.SetCurrentFileName(fs2us(resPath));
       sync.SetNumFilesCur(NumFiles);
       NumFiles++;
       for (;;)
@@ -275,7 +275,7 @@ HRESULT CThreadCrc::ProcessVirt()
         if (!inFile.Read(buffer, kBufSize, processedSize))
         {
           errorCode = GetNormalizedError();
-          ErrorPath1 = resPath;
+          SetErrorPath1(resPath);
           return errorCode;
         }
         if (processedSize == 0)
@@ -323,8 +323,8 @@ void CApp::CalculateCrc()
   {
   CThreadCrc t;
   for (int i = 0; i < indices.Size(); i++)
-    t.Enumerator.FileNames.Add(srcPanel.GetItemRelPath(indices[i]));
-  t.Enumerator.BasePrefix = srcPanel.GetFsPath();
+    t.Enumerator.FileNames.Add(us2fs(srcPanel.GetItemRelPath(indices[i])));
+  t.Enumerator.BasePrefix = us2fs(srcPanel.GetFsPath());
   t.Enumerator.FlatMode = GetFlatMode();
 
   t.ProgressDialog.ShowCompressionInfo = false;

@@ -52,8 +52,8 @@ static HRESULT DecompressArchive(
 
   UStringVector removePathParts;
 
-  UString outDir = options.OutputDir;
-  outDir.Replace(L"*", GetCorrectFsPath(arc.DefaultName));
+  FString outDir = options.OutputDir;
+  outDir.Replace(FSTRING_ANY_MASK, us2fs(GetCorrectFsPath(arc.DefaultName)));
   #ifdef _WIN32
   // GetCorrectFullFsPath doesn't like "..".
   // outDir.TrimRight();
@@ -66,7 +66,7 @@ static HRESULT DecompressArchive(
       HRESULT res = ::GetLastError();
       if (res == S_OK)
         res = E_FAIL;
-      errorMessage = ((UString)L"Can not create output directory ") + outDir;
+      errorMessage = ((UString)L"Can not create output directory ") + fs2us(outDir);
       return res;
     }
 
@@ -118,11 +118,11 @@ HRESULT DecompressArchives(
 
   for (i = 0; i < numArcs; i++)
   {
-    NFile::NFind::CFileInfoW fi;
+    NFile::NFind::CFileInfo fi;
     fi.Size = 0;
     if (!options.StdInMode)
     {
-      const UString &arcPath = arcPaths[i];
+      const FString &arcPath = us2fs(arcPaths[i]);
       if (!fi.Find(arcPath))
         throw "there is no such archive";
       if (fi.IsDir())
@@ -142,7 +142,7 @@ HRESULT DecompressArchives(
   for (i = 0; i < numArcs; i++)
   {
     const UString &arcPath = arcPaths[i];
-    NFile::NFind::CFileInfoW fi;
+    NFile::NFind::CFileInfo fi;
     if (options.StdInMode)
     {
       fi.Size = 0;
@@ -150,7 +150,7 @@ HRESULT DecompressArchives(
     }
     else
     {
-      if (!fi.Find(arcPath) || fi.IsDir())
+      if (!fi.Find(us2fs(arcPath)) || fi.IsDir())
         throw "there is no such archive";
     }
 

@@ -11,10 +11,10 @@
 
 using namespace NWindows;
 
-static bool MakeAutoName(const UString &name,
-    const UString &extension, unsigned value, UString &path)
+static bool MakeAutoName(const FString &name,
+    const FString &extension, unsigned value, FString &path)
 {
-  wchar_t number[16];
+  FChar number[16];
   ConvertUInt32ToString(value, number);
   path = name;
   path += number;
@@ -22,18 +22,18 @@ static bool MakeAutoName(const UString &name,
   return NFile::NFind::DoesFileOrDirExist(path);
 }
 
-bool AutoRenamePath(UString &fullProcessedPath)
+bool AutoRenamePath(FString &fullProcessedPath)
 {
-  UString path;
-  int dotPos = fullProcessedPath.ReverseFind(L'.');
+  FString path;
+  int dotPos = fullProcessedPath.ReverseFind(FTEXT('.'));
 
-  int slashPos = fullProcessedPath.ReverseFind(L'/');
+  int slashPos = fullProcessedPath.ReverseFind(FTEXT('/'));
   #ifdef _WIN32
-  int slash1Pos = fullProcessedPath.ReverseFind(L'\\');
+  int slash1Pos = fullProcessedPath.ReverseFind(FTEXT('\\'));
   slashPos = MyMax(slashPos, slash1Pos);
   #endif
 
-  UString name, extension;
+  FString name, extension;
   if (dotPos > slashPos && dotPos > 0)
   {
     name = fullProcessedPath.Left(dotPos);

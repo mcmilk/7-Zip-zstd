@@ -1,11 +1,11 @@
 // ExtractEngine.h
 
-#ifndef __EXTRACTENGINE_H
-#define __EXTRACTENGINE_H
+#ifndef __EXTRACT_ENGINE_H
+#define __EXTRACT_ENGINE_H
 
 #include "../../UI/Common/LoadCodecs.h"
 
-HRESULT ExtractArchive(CCodecs *codecs, const UString &fileName, const UString &destFolder,
-    bool showProgress, bool &isCorrupt,  UString &errorMessage);
+HRESULT ExtractArchive(CCodecs *codecs, const FString &fileName, const FString &destFolder,
+    bool showProgress, bool &isCorrupt, UString &errorMessage);
 
 #endif

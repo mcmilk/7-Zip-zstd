@@ -2,10 +2,10 @@
 
 #include "StdAfx.h"
 
-#ifndef _UNICODE
-#include "Common/StringConvert.h"
-#endif
 #include "Windows/Control/Dialog.h"
+#ifndef _UNICODE
+#include "../../Common/StringConvert.h"
+#endif
 
 extern HINSTANCE g_hInstance;
 #ifndef _UNICODE
@@ -17,17 +17,16 @@ namespace NControl {
 
 static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message, WPARAM wParam, LPARAM lParam)
 {
-  CWindow dialogTmp(dialogHWND);
+  CWindow tempDialog(dialogHWND);
   if (message == WM_INITDIALOG)
-    dialogTmp.SetUserDataLongPtr(lParam);
-  CDialog *dialog = (CDialog *)(dialogTmp.GetUserDataLongPtr());
+    tempDialog.SetUserDataLongPtr(lParam);
+  CDialog *dialog = (CDialog *)(tempDialog.GetUserDataLongPtr());
   if (dialog == NULL)
     return FALSE;
   if (message == WM_INITDIALOG)
     dialog->Attach(dialogHWND);
-
   try { return BoolToBOOL(dialog->OnMessage(message, wParam, lParam)); }
-  catch(...) { return true; }
+  catch(...) { return TRUE; }
 }
 
 bool CDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
@@ -68,7 +67,7 @@ bool CDialog::OnCommand(int code, int itemID, LPARAM lParam)
 
 bool CDialog::OnButtonClicked(int buttonID, HWND /* buttonHWND */)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDOK: OnOK(); break;
     case IDCANCEL: OnCancel(); break;

@@ -323,10 +323,10 @@ public:
 
 class CProgressThreadVirt
 {
+  FString ErrorPath1;
+  FString ErrorPath2;
 protected:
   UString ErrorMessage;
-  UString ErrorPath1;
-  UString ErrorPath2;
   UString OkMessage;
   UString OkMessageTitle;
 
@@ -349,6 +349,9 @@ public:
     catch (...) { p->Result = E_FAIL; }
     return 0;
   }
+
+  void SetErrorPath1(const FString &path) { ErrorPath1 = path; }
+  void SetErrorPath2(const FString &path) { ErrorPath2 = path; }
 
   HRESULT Create(const UString &title, HWND parentWindow = 0);
   CProgressThreadVirt(): Result(E_FAIL), ThreadFinishedOK(false) {}

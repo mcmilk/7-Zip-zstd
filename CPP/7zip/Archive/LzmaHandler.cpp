@@ -296,7 +296,8 @@ STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCal
   RINOK(inStream->Seek(0, STREAM_SEEK_END, &endPos));
   _packSize = endPos - _startPosition;
   _packSizeDefined = true;
-  
+  if (_packSize >= 24 && _header.Size == 0 && _header.FilterID == 0 && _header.LzmaProps[0] == 0)
+    return S_FALSE;
   _stream = inStream;
   _seqStream = inStream;
   return S_OK;

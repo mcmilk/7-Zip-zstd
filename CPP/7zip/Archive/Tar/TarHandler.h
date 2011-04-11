@@ -32,6 +32,7 @@ class CHandler:
   UInt64 _headersSize;
   bool _phySizeDefined;
   AString _errorMessage;
+  bool _isSparse;
 
   NCompress::CCopyCoder *copyCoderSpec;
   CMyComPtr<ICompressCoder> copyCoder;

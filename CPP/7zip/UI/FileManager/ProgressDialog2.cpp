@@ -146,6 +146,7 @@ bool CProgressDialog::OnInit()
 
   m_ProgressBar.Attach(GetItem(IDC_PROGRESS1));
   _messageList.Attach(GetItem(IDC_PROGRESS_LIST));
+  _messageList.SetUnicodeFormat();
 
   _wasCreated = true;
   _dialogCreatedEvent.Set();
@@ -153,7 +154,6 @@ bool CProgressDialog::OnInit()
   #ifdef LANG
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
-
 
   CWindow window(GetItem(IDC_BUTTON_PROGRESS_PRIORITY));
   window.GetText(backgroundString);
@@ -170,11 +170,6 @@ bool CProgressDialog::OnInit()
   SetText(_title);
   SetPauseText();
   SetPriorityText();
-
-
-  #ifndef UNDER_CE
-  _messageList.SetUnicodeFormat(true);
-  #endif
 
   _messageList.InsertColumn(0, L"", 30);
 
@@ -957,10 +952,8 @@ UString HResultToMessage(HRESULT errorCode)
   UString message;
   if (errorCode == E_OUTOFMEMORY)
     message = LangStringSpec(IDS_MEM_ERROR, 0x0200060B);
-  else if (!NError::MyFormatMessage(errorCode, message))
-    message.Empty();
-  if (message.IsEmpty())
-    message = L"Error";
+  else
+    message = NError::MyFormatMessageW(errorCode);
   return message;
 }
 
@@ -989,8 +982,8 @@ void CProgressThreadVirt::Process()
       m = HResultToMessage(Result);
   }
   AddMessageToString(m, ErrorMessage);
-  AddMessageToString(m, ErrorPath1);
-  AddMessageToString(m, ErrorPath2);
+  AddMessageToString(m, fs2us(ErrorPath1));
+  AddMessageToString(m, fs2us(ErrorPath2));
 
   if (m.IsEmpty())
   {

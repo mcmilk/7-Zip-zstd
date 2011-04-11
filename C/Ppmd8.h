@@ -1,5 +1,5 @@
 /* Ppmd8.h -- PPMdI codec
-2010-03-24 : Igor Pavlov : Public domain
+2011-01-27 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -24,6 +24,8 @@ typedef
   #endif
   CPpmd8_Context_Ref;
 
+#pragma pack(push, 1)
+
 typedef struct CPpmd8_Context_
 {
   Byte NumStats;
@@ -32,6 +34,8 @@ typedef struct CPpmd8_Context_
   CPpmd_State_Ref Stats;
   CPpmd8_Context_Ref Suffix;
 } CPpmd8_Context;
+
+#pragma pack(pop)
 
 #define Ppmd8Context_OneState(p) ((CPpmd_State *)&(p)->SummFreq)
 

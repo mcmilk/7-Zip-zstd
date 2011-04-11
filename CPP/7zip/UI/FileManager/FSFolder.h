@@ -1,7 +1,7 @@
 // FSFolder.h
 
-#ifndef __FSFOLDER_H
-#define __FSFOLDER_H
+#ifndef __FS_FOLDER_H
+#define __FS_FOLDER_H
 
 #include "Common/MyCom.h"
 
@@ -14,7 +14,7 @@ namespace NFsFolder {
 
 class CFSFolder;
 
-struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfoW
+struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfo
 {
   #ifndef UNDER_CE
   bool CompressedSizeIsDefined;
@@ -74,7 +74,7 @@ public:
   STDMETHOD(GetSystemIconIndex)(UInt32 index, Int32 *iconIndex);
 
 private:
-  UString _path;
+  FString _path;
   CDirItem _root;
   CRecordVector<CDirItem *> _refs;
 
@@ -90,24 +90,24 @@ private:
   HRESULT GetItemsFullSize(const UInt32 *indices, UInt32 numItems,
       UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress);
   HRESULT GetItemFullSize(int index, UInt64 &size, IProgress *progress);
-  HRESULT GetComplexName(const wchar_t *name, UString &resultPath);
-  HRESULT BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder);
+  HRESULT GetComplexName(CFSTR name, FString &resultPath);
+  HRESULT BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder);
 
   bool LoadComments();
   bool SaveComments();
-  HRESULT LoadSubItems(CDirItem &dirItem, const UString &path);
+  HRESULT LoadSubItems(CDirItem &dirItem, const FString &path);
   void AddRefs(CDirItem &dirItem);
 public:
-  HRESULT Init(const UString &path, IFolderFolder *parentFolder);
+  HRESULT Init(const FString &path, IFolderFolder *parentFolder);
   #ifdef UNDER_CE
-  HRESULT InitToRoot() { return Init(L"\\", NULL); }
+  HRESULT InitToRoot() { return Init(FTEXT("\\"), NULL); }
   #endif
 
   CFSFolder() : _flatMode(false) {}
 
-  UString GetPrefix(const CDirItem &item) const;
-  UString GetRelPath(const CDirItem &item) const;
-  UString GetRelPath(UInt32 index) const { return GetRelPath(*_refs[index]); }
+  FString GetPrefix(const CDirItem &item) const;
+  FString GetRelPath(const CDirItem &item) const;
+  FString GetRelPath(UInt32 index) const { return GetRelPath(*_refs[index]); }
 
   void Clear()
   {
@@ -115,8 +115,6 @@ public:
     _refs.Clear();
   }
 };
-
-HRESULT GetFolderSize(const UString &path, UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress);
 
 }
 

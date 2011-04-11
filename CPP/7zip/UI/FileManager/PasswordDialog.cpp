@@ -18,6 +18,17 @@ static CIDLangPair kIDLangPairs[] =
 };
 #endif
 
+void CPasswordDialog::ReadControls()
+{
+  _passwordControl.GetText(Password);
+  ShowPassword = IsButtonCheckedBool(IDC_CHECK_PASSWORD_SHOW);
+}
+
+void CPasswordDialog::SetTextSpec()
+{
+  _passwordControl.SetPasswordChar(ShowPassword ? 0: TEXT('*'));
+  _passwordControl.SetText(Password);
+}
 
 bool CPasswordDialog::OnInit()
 {
@@ -26,8 +37,8 @@ bool CPasswordDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _passwordControl.Attach(GetItem(IDC_EDIT_PASSWORD));
-  _passwordControl.SetText(Password);
-  _passwordControl.SetPasswordChar(TEXT('*'));
+  CheckButton(IDC_CHECK_PASSWORD_SHOW, ShowPassword);
+  SetTextSpec();
   return CModalDialog::OnInit();
 }
 
@@ -35,10 +46,8 @@ bool CPasswordDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   if (buttonID == IDC_CHECK_PASSWORD_SHOW)
   {
-    _passwordControl.SetPasswordChar(IsButtonCheckedBool(IDC_CHECK_PASSWORD_SHOW) ? 0: TEXT('*'));
-    UString password;
-    _passwordControl.GetText(password);
-    _passwordControl.SetText(password);
+    ReadControls();
+    SetTextSpec();
     return true;
   }
   return CDialog::OnButtonClicked(buttonID, buttonHWND);
@@ -46,6 +55,6 @@ bool CPasswordDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 void CPasswordDialog::OnOK()
 {
-  _passwordControl.GetText(Password);
+  ReadControls();
   CModalDialog::OnOK();
 }

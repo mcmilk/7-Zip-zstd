@@ -6,7 +6,7 @@ CFLAGS = $(CFLAGS) -I ../../../  \
 !IFDEF UNDER_CE
 LIBS = $(LIBS) ceshell.lib Commctrl.lib
 !ELSE
-LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib
+LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib gdi32.lib
 CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES
 !ENDIF
 
@@ -63,6 +63,7 @@ WIN_CTRL_OBJS = \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
   $O\FilterCoder.obj \
+  $O\MethodProps.obj \
   $O\ProgressUtils.obj \
   $O\StreamUtils.obj \
 

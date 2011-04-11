@@ -39,7 +39,9 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NCommandLineParser;
 
+#ifdef _WIN32
 HINSTANCE g_hInstance = 0;
+#endif
 extern CStdOutStream *g_StdStream;
 
 static const char *kCopyrightString = "\n7-Zip"
@@ -111,7 +113,7 @@ static const char *kUserErrorMessage = "Incorrect command line";
 static const char *kNoFormats = "7-Zip cannot find the code that works with archives.";
 static const char *kUnsupportedArcTypeMessage = "Unsupported archive type";
 
-static const wchar_t *kDefaultSfxModule = L"7zCon.sfx";
+static CFSTR kDefaultSfxModule = FTEXT("7zCon.sfx");
 
 static void ShowMessageAndThrowException(CStdOutStream &s, LPCSTR message, NExitCode::EEnum code)
 {
@@ -338,20 +340,6 @@ int Main2(
   }
   else if (options.Command.CommandType == NCommandType::kBenchmark)
   {
-    if (options.Method.CompareNoCase(L"CRC") == 0)
-    {
-      HRESULT res = CrcBenchCon((FILE *)stdStream, options.NumIterations, options.NumThreads, options.DictionarySize);
-      if (res != S_OK)
-      {
-        if (res == S_FALSE)
-        {
-          stdStream << "\nCRC Error\n";
-          return NExitCode::kFatalError;
-        }
-        throw CSystemException(res);
-      }
-    }
-    else
     {
       HRESULT res;
       #ifdef EXTERNAL_CODECS
@@ -360,11 +348,11 @@ int Main2(
       if (res != S_OK)
         throw CSystemException(res);
       #endif
-      res = LzmaBenchCon(
+      res = BenchCon(
           #ifdef EXTERNAL_CODECS
           compressCodecsInfo, &externalCodecs,
           #endif
-        (FILE *)stdStream, options.NumIterations, options.NumThreads, options.DictionarySize);
+          options.Properties, options.NumIterations, (FILE *)stdStream);
       if (res != S_OK)
       {
         if (res == S_FALSE)
@@ -410,7 +398,7 @@ int Main2(
       eo.YesToAll = options.YesToAll;
       eo.CalcCrc = options.CalcCrc;
       #if !defined(_7ZIP_ST) && !defined(_SFX)
-      eo.Properties = options.ExtractProperties;
+      eo.Properties = options.Properties;
       #endif
       UString errorMessage;
       CDecompressStat stat;
@@ -480,7 +468,7 @@ int Main2(
           numErrors);
       if (numErrors > 0)
       {
-        g_StdOut << endl << "Errors: " << numErrors;
+        g_StdOut << endl << "Errors: " << numErrors << endl;
         return NExitCode::kFatalError;
       }
       if (result != S_OK)
@@ -551,12 +539,12 @@ int Main2(
       }
       if (!errorInfo.FileName.IsEmpty())
       {
-        message += errorInfo.FileName;
+        message += fs2us(errorInfo.FileName);
         message += L"\n";
       }
       if (!errorInfo.FileName2.IsEmpty())
       {
-        message += errorInfo.FileName2;
+        message += fs2us(errorInfo.FileName2);
         message += L"\n";
       }
       if (errorInfo.SystemError != 0)

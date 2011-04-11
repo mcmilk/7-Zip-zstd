@@ -756,6 +756,7 @@ void CEcd64::Parse(const Byte *p)
 
 HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *progress)
 {
+  IsOkHeaders = true;
   // m_Signature must be kLocalFileHeaderSignature or
   // kEndOfCentralDirSignature
   // m_Position points to next byte after signature
@@ -852,6 +853,8 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
 
   if (ecd64.thisDiskNumber != 0 || ecd64.startCDDiskNumber != 0)
     throw CInArchiveException(CInArchiveException::kMultiVolumeArchiveAreNotSupported);
+  if (numCdItems != items.Size())
+    IsOkHeaders = false;
   if ((UInt16)ecd64.numEntriesInCDOnThisDisk != ((UInt16)numCdItems) ||
       (UInt16)ecd64.numEntriesInCD != ((UInt16)numCdItems) ||
       (UInt32)ecd64.cdSize != (UInt32)cdSize ||
@@ -861,7 +864,6 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items, CProgressVirt *pr
   
   _inBufMode = false;
   _inBuffer.Free();
-  IsOkHeaders = (numCdItems == items.Size());
   ArcInfo.FinishPosition = m_Position;
   return S_OK;
 }

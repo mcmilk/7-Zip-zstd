@@ -49,6 +49,15 @@ static void ConvertBindInfoToFolderItemInfo(const NCoderMixer::CBindInfo &bindIn
     folder.PackStreams.Add(bindInfo.InStreams[i]);
 }
 
+static HRESULT SetCoderProps2(const CProps &props, const UInt64 *dataSizeReduce, IUnknown *coder)
+{
+  CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
+  coder->QueryInterface(IID_ICompressSetCoderProperties, (void **)&setCoderProperties);
+  if (setCoderProperties)
+    return props.SetCoderProps(setCoderProperties, dataSizeReduce);
+  return props.AreThereNonOptionalProps() ? E_INVALIDARG : S_OK;
+}
+
 HRESULT CEncoder::CreateMixerCoder(
     DECL_EXTERNAL_CODECS_LOC_VARS
     const UInt64 *inSizeForReduce)
@@ -86,8 +95,7 @@ HRESULT CEncoder::CreateMixerCoder(
     }
     #endif
         
-
-    RINOK(SetMethodProperties(methodFull, inSizeForReduce, encoderCommon));
+    RINOK(SetCoderProps2(methodFull, inSizeForReduce, encoderCommon));
 
     /*
     CMyComPtr<ICryptoResetSalt> resetSalt;

@@ -66,7 +66,7 @@ HRESULT CUpdateCallbackAgent::OpenFileError(const wchar_t *name, DWORD systemErr
         UString(L"WARNING: ") +
         NError::MyFormatMessageW(systemError) +
         UString(L": ") +
-        UString(name)));
+        name));
       return S_FALSE;
     }
   }

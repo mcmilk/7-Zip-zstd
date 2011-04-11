@@ -5,6 +5,7 @@
 
 #include <string.h>
 
+#include "Types.h"
 #include "MyVector.h"
 
 template <class T>
@@ -16,12 +17,13 @@ inline int MyStringLen(const T *s)
 }
 
 template <class T>
-inline T * MyStringCopy(T *dest, const T *src)
+inline void MyStringCopy(T *dest, const T *src)
 {
-  T *destStart = dest;
   while ((*dest++ = *src++) != 0);
-  return destStart;
 }
+
+int FindCharPosInString(const char *s, char c);
+int FindCharPosInString(const wchar_t *s, wchar_t c);
 
 inline wchar_t* MyStringGetNextCharPointer(wchar_t *p)
   { return (p + 1); }
@@ -32,77 +34,25 @@ inline wchar_t* MyStringGetPrevCharPointer(const wchar_t *, wchar_t *p)
 inline const wchar_t* MyStringGetPrevCharPointer(const wchar_t *, const wchar_t *p)
   { return (p - 1); }
 
-#ifdef _WIN32
-
-inline const char* MyStringGetNextCharPointer(const char *p)
-{
-  #ifdef UNDER_CE
-  return p + 1;
-  #else
-  return CharNextA(p);
-  #endif
-}
-
-inline const char* MyStringGetPrevCharPointer(const char *base, const char *p)
-  { return CharPrevA(base, p); }
-
-inline char MyCharUpper(char c)
-  { return (char)(unsigned int)(UINT_PTR)CharUpperA((LPSTR)(UINT_PTR)(unsigned int)(unsigned char)c); }
-#ifdef _UNICODE
-inline wchar_t MyCharUpper(wchar_t c)
-  { return (wchar_t)(unsigned int)(UINT_PTR)CharUpperW((LPWSTR)(UINT_PTR)(unsigned int)c); }
-#else
 wchar_t MyCharUpper(wchar_t c);
-#endif
+// wchar_t MyCharLower(wchar_t c);
 
-#ifdef _UNICODE
-inline wchar_t MyCharLower(wchar_t c)
-  { return (wchar_t)(unsigned int)(UINT_PTR)CharLowerW((LPWSTR)(UINT_PTR)(unsigned int)c); }
-#else
-wchar_t MyCharLower(wchar_t c);
-#endif
+char *MyStringUpper(char *s);
+char *MyStringLower(char *s);
 
-inline char MyCharLower(char c)
-#ifdef UNDER_CE
-  { return (char)MyCharLower((wchar_t)c); }
-#else
-  { return (char)(unsigned int)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(unsigned int)(unsigned char)c); }
-#endif
+wchar_t *MyStringUpper(wchar_t *s);
+wchar_t *MyStringLower(wchar_t *s);
 
-inline char * MyStringUpper(char *s) { return CharUpperA(s); }
-#ifdef _UNICODE
-inline wchar_t * MyStringUpper(wchar_t *s) { return CharUpperW(s); }
-#else
-wchar_t * MyStringUpper(wchar_t *s);
-#endif
-
-inline char * MyStringLower(char *s) { return CharLowerA(s); }
-#ifdef _UNICODE
-inline wchar_t * MyStringLower(wchar_t *s) { return CharLowerW(s); }
-#else
-wchar_t * MyStringLower(wchar_t *s);
-#endif
-
-#else // Standard-C
-wchar_t MyCharUpper(wchar_t c);
-#endif
+const char* MyStringGetNextCharPointer(const char *p);
+const char* MyStringGetPrevCharPointer(const char *base, const char *p);
 
 //////////////////////////////////////
 // Compare
 
-/*
-#ifndef UNDER_CE
-int MyStringCollate(const char *s1, const char *s2);
-int MyStringCollateNoCase(const char *s1, const char *s2);
-#endif
-int MyStringCollate(const wchar_t *s1, const wchar_t *s2);
-int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2);
-*/
-
 int MyStringCompare(const char *s1, const char  *s2);
 int MyStringCompare(const wchar_t *s1, const wchar_t *s2);
 
-// int MyStringCompareNoCase(const char *s1, const char  *s2);
+int MyStringCompareNoCase(const char *s1, const char  *s2);
 int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2);
 
 template <class T>
@@ -338,10 +288,8 @@ public:
     return Mid(_length - count, count);
   }
 
-  void MakeUpper()
-    { MyStringUpper(_chars); }
-  void MakeLower()
-    { MyStringLower(_chars); }
+  void MakeUpper() { MyStringUpper(_chars); }
+  void MakeLower() { MyStringLower(_chars); }
 
   int Compare(const CStringBase& s) const
     { return MyStringCompare(_chars, s._chars); }
@@ -362,18 +310,11 @@ public:
     { return MyStringCollateNoCase(_chars, s._chars); }
   */
 
-  int Find(T c) const { return Find(c, 0); }
+  int Find(T c) const { return FindCharPosInString(_chars, c); }
   int Find(T c, int startIndex) const
   {
-    const T *p = _chars + startIndex;
-    for (;;)
-    {
-      if (*p == c)
-        return (int)(p - _chars);
-      if (*p == 0)
-        return -1;
-      p = GetNextCharPointer(p);
-    }
+    int pos = FindCharPosInString(_chars + startIndex, c);
+    return pos < 0 ? -1 : pos + startIndex;
   }
   int Find(const CStringBase &s) const { return Find(s, 0); }
   int Find(const CStringBase &s, int startIndex) const
@@ -621,5 +562,48 @@ typedef CObjectVector<UString> UStringVector;
 #endif
 
 typedef CObjectVector<CSysString> CSysStringVector;
+
+
+// ---------- FString ----------
+
+#ifdef _WIN32
+  #define USE_UNICODE_FSTRING
+#endif
+
+#ifdef USE_UNICODE_FSTRING
+
+  #define __FTEXT(quote) L##quote
+
+  typedef wchar_t FChar;
+  typedef UString FString;
+
+  #define fs2us(_x_) (_x_)
+  #define us2fs(_x_) (_x_)
+  FString fas2fs(const AString &s);
+  AString fs2fas(const FChar *s);
+
+#else
+
+  #define __FTEXT(quote) quote
+
+  typedef char FChar;
+  typedef AString FString;
+
+  UString fs2us(const FString &s);
+  FString us2fs(const wchar_t *s);
+  #define fas2fs(_x_) (_x_)
+  #define fs2fas(_x_) (_x_)
+
+#endif
+
+#define FTEXT(quote) __FTEXT(quote)
+
+#define FCHAR_PATH_SEPARATOR FTEXT(CHAR_PATH_SEPARATOR)
+#define FSTRING_PATH_SEPARATOR FTEXT(STRING_PATH_SEPARATOR)
+#define FCHAR_ANY_MASK FTEXT('*')
+#define FSTRING_ANY_MASK FTEXT("*")
+typedef const FChar *CFSTR;
+
+typedef CObjectVector<FString> FStringVector;
 
 #endif

@@ -14,6 +14,8 @@
 
 #include "CompressCall.h"
 
+extern HWND g_HWND;
+
 #define MY_TRY_BEGIN try {
 #define MY_TRY_FINISH } \
   catch(CSystemException &e) { result = e.ErrorCode; } \
@@ -110,7 +112,7 @@ static HRESULT ExtractGroupCommand(const UStringVector &arcPaths,
   CREATE_CODECS
 
   CExtractOptions eo;
-  eo.OutputDir = outFolder;
+  eo.OutputDir = us2fs(outFolder);
   eo.TestMode = testMode;
 
   CExtractCallbackImp *ecs = new CExtractCallbackImp;
@@ -158,7 +160,7 @@ HRESULT TestArchives(const UStringVector &arcPaths)
   return ExtractGroupCommand(arcPaths, true, UString(), true);
 }
 
-HRESULT Benchmark()
+HRESULT Benchmark(bool totalMode)
 {
   HRESULT result;
   MY_TRY_BEGIN
@@ -168,11 +170,19 @@ HRESULT Benchmark()
   CObjectVector<CCodecInfoEx> externalCodecs;
   RINOK(LoadExternalCodecs(codecs, externalCodecs));
   #endif
+  CObjectVector<CProperty> props;
+  if (totalMode)
+  {
+    CProperty prop;
+    prop.Name = L"m";
+    prop.Value = L"*";
+    props.Add(prop);
+  }
   result = Benchmark(
       #ifdef EXTERNAL_CODECS
       codecs, &externalCodecs,
       #endif
-      (UInt32)-1, (UInt32)-1, g_HWND);
+      props, g_HWND);
   MY_TRY_FINISH
   return result;
 }

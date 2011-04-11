@@ -6,6 +6,7 @@
 
 #include "Windows/FileDir.h"
 
+#include "../../Common/FileStreams.h"
 #include "../Common/WorkDir.h"
 
 #include "Agent.h"
@@ -14,32 +15,20 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDirectory;
 
-static LPCWSTR kTempArcivePrefix = L"7zA";
-
 void CAgentFolder::GetPathParts(UStringVector &pathParts)
 {
   _proxyFolderItem->GetPathParts(pathParts);
 }
 
 HRESULT CAgentFolder::CommonUpdateOperation(
-    bool deleteOperation,
-    bool createFolderOperation,
-    bool renameOperation,
+    AGENT_OP operation,
     const wchar_t *newItemName,
     const NUpdateArchive::CActionSet *actionSet,
     const UINT32 *indices, UINT32 numItems,
     IFolderArchiveUpdateCallback *updateCallback100)
 {
-  NWorkDir::CInfo workDirInfo;
-  workDirInfo.Load();
-  UString archiveFilePath  = _agentSpec->_archiveFilePath;
-  UString workDir = GetWorkDir(workDirInfo, archiveFilePath);
-  CreateComplexDirectory(workDir);
-
-  CTempFileW tempFile;
-  UString tempFileName;
-  if (tempFile.Create(workDir, kTempArcivePrefix, tempFileName) == 0)
-    return E_FAIL;
+  CWorkDirTempFile tempFile;
+  RINOK(tempFile.CreateTempFile(us2fs(_agentSpec->_archiveFilePath)));
 
   /*
   if (SetOutProperties(anOutArchive, aCompressionInfo.Method) != S_OK)
@@ -53,44 +42,39 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   GetPathParts(pathParts);
 
   HRESULT result;
-  if (deleteOperation)
-    result = _agentSpec->DeleteItems(tempFileName,
-        indices, numItems, updateCallback100);
-  else if (createFolderOperation)
+  switch (operation)
   {
-    result = _agentSpec->CreateFolder(tempFileName,
-        newItemName, updateCallback100);
-  }
-  else if (renameOperation)
-  {
-    result = _agentSpec->RenameItem(
-        tempFileName,
-        indices, numItems,
-        newItemName,
-        updateCallback100);
-  }
-  else
-  {
-    Byte actionSetByte[NUpdateArchive::NPairState::kNumValues];
-    for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
-      actionSetByte[i] = (Byte)actionSet->StateActions[i];
-    result = _agentSpec->DoOperation2(tempFileName, actionSetByte, NULL, updateCallback100);
+    case AGENT_OP_Delete:
+      result = _agentSpec->DeleteItems(tempFile.OutStream, indices, numItems, updateCallback100);
+      break;
+    case AGENT_OP_CreateFolder:
+      result = _agentSpec->CreateFolder(tempFile.OutStream, newItemName, updateCallback100);
+      break;
+    case AGENT_OP_Rename:
+      result = _agentSpec->RenameItem(tempFile.OutStream, indices, numItems, newItemName, updateCallback100);
+      break;
+    case AGENT_OP_CopyFromFile:
+      result = _agentSpec->UpdateOneFile(tempFile.OutStream, indices, numItems, newItemName, updateCallback100);
+      break;
+    case AGENT_OP_Uni:
+    {
+      Byte actionSetByte[NUpdateArchive::NPairState::kNumValues];
+      for (int i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
+        actionSetByte[i] = (Byte)actionSet->StateActions[i];
+      result = _agentSpec->DoOperation2(tempFile.OutStream, actionSetByte, NULL, updateCallback100);
+      break;
+    }
+    default:
+      return E_FAIL;
   }
   
-  if (result != S_OK)
-    return result;
+  RINOK(result);
 
   _agentSpec->Close();
   
   // m_FolderItem = NULL;
   
-  if (NFind::DoesFileExist(archiveFilePath))
-    if (!DeleteFileAlways(archiveFilePath))
-      return GetLastError();
-
-  tempFile.DisableDeleting();
-  if (!MyMoveFile(tempFileName, archiveFilePath))
-    return GetLastError();
+  RINOK(tempFile.MoveToOriginal(true));
 
   {
     CMyComPtr<IArchiveOpenCallback> openCallback;
@@ -134,7 +118,7 @@ STDMETHODIMP CAgentFolder::CopyFrom(
 {
   COM_TRY_BEGIN
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress != 0)
+  if (progress)
   {
     RINOK(progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&updateCallback100));
   }
@@ -142,8 +126,33 @@ STDMETHODIMP CAgentFolder::CopyFrom(
   {
     RINOK(_agentSpec->SetFiles(fromFolderPath, itemsPaths, numItems));
     RINOK(_agentSpec->SetFolder(this));
-    return CommonUpdateOperation(false, false, false, NULL,
+    return CommonUpdateOperation(AGENT_OP_Uni, NULL,
       &NUpdateArchive::kAddActionSet, 0, 0, updateCallback100);
+  }
+  catch(const UString &s)
+  {
+    RINOK(updateCallback100->UpdateErrorMessage(UString(L"Error: ") + s));
+    return E_FAIL;
+  }
+  COM_TRY_END
+}
+
+STDMETHODIMP CAgentFolder::CopyFromFile(UInt32 destIndex, const wchar_t *itemPath, IProgress * progress)
+{
+  COM_TRY_BEGIN
+  CUIntVector indices;
+  indices.Add(destIndex);
+  CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
+  if (progress)
+  {
+    RINOK(progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&updateCallback100));
+  }
+  try
+  {
+    RINOK(_agentSpec->SetFolder(this));
+    return CommonUpdateOperation(AGENT_OP_CopyFromFile, itemPath,
+        &NUpdateArchive::kAddActionSet,
+        &indices.Front(), indices.Size(), updateCallback100);
   }
   catch(const UString &s)
   {
@@ -158,13 +167,13 @@ STDMETHODIMP CAgentFolder::Delete(const UINT32 *indices, UINT32 numItems, IProgr
   COM_TRY_BEGIN
   RINOK(_agentSpec->SetFolder(this));
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress != 0)
+  if (progress)
   {
     CMyComPtr<IProgress> progressWrapper = progress;
     RINOK(progressWrapper.QueryInterface(
         IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
-  return CommonUpdateOperation(true, false, false, NULL,
+  return CommonUpdateOperation(AGENT_OP_Delete, NULL,
     &NUpdateArchive::kDeleteActionSet, indices, numItems, updateCallback100);
   COM_TRY_END
 }
@@ -176,12 +185,12 @@ STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress
     return ERROR_ALREADY_EXISTS;
   RINOK(_agentSpec->SetFolder(this));
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress != 0)
+  if (progress)
   {
     CMyComPtr<IProgress> progressWrapper = progress;
     RINOK(progressWrapper.QueryInterface(IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
-  return CommonUpdateOperation(false, true, false, name, NULL, NULL, 0, updateCallback100);
+  return CommonUpdateOperation(AGENT_OP_CreateFolder, name, NULL, NULL, 0, updateCallback100);
   COM_TRY_END
 }
 
@@ -192,12 +201,12 @@ STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgres
   indices.Add(index);
   RINOK(_agentSpec->SetFolder(this));
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress != 0)
+  if (progress)
   {
     CMyComPtr<IProgress> progressWrapper = progress;
     RINOK(progressWrapper.QueryInterface(IID_IFolderArchiveUpdateCallback, &updateCallback100));
   }
-  return CommonUpdateOperation(false, false, true, newName, NULL, &indices.Front(),
+  return CommonUpdateOperation(AGENT_OP_Rename, newName, NULL, &indices.Front(),
       indices.Size(), updateCallback100);
   COM_TRY_END
 }

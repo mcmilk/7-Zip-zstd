@@ -27,11 +27,20 @@ DECL_INTERFACE(IArchiveFolderInternal, 0x01, 0xC)
 
 struct CProxyItem
 {
-  CProxyFolder *Folder;
+  const CProxyFolder *Folder;
   UInt32 Index;
 };
 
 class CAgent;
+
+enum AGENT_OP
+{
+  AGENT_OP_Uni,
+  AGENT_OP_Delete,
+  AGENT_OP_CreateFolder,
+  AGENT_OP_Rename,
+  AGENT_OP_CopyFromFile
+};
 
 class CAgentFolder:
   public IFolderFolder,
@@ -46,6 +55,7 @@ class CAgentFolder:
 #endif
   public CMyUnknownImp
 {
+  void LoadFolder(const CProxyFolder *folder);
 public:
 
   MY_QUERYINTERFACE_BEGIN2(IFolderFolder)
@@ -61,8 +71,7 @@ public:
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
-  void LoadFolder(CProxyFolder *folder);
-  HRESULT BindToFolder(CProxyFolder *folder, IFolderFolder **resultFolder);
+  HRESULT BindToFolder(const CProxyFolder *folder, IFolderFolder **resultFolder);
   void GetRealIndices(const UINT32 *indices, UINT32 numItems, CUIntVector &realIndices) const;
 
   INTERFACE_FolderFolder(;)
@@ -90,8 +99,8 @@ public:
 
   CAgentFolder(): _proxyFolderItem(NULL), _flatMode(0) {}
 
-  void Init(CProxyArchive *proxyHandler,
-      CProxyFolder *proxyFolderItem,
+  void Init(const CProxyArchive *proxyHandler,
+      const CProxyFolder *proxyFolderItem,
       IFolderFolder *parentFolder,
       CAgent *agent)
   {
@@ -104,9 +113,7 @@ public:
 
   void GetPathParts(UStringVector &pathParts);
   HRESULT CommonUpdateOperation(
-      bool deleteOperation,
-      bool createFolderOperation,
-      bool renameOperation,
+      AGENT_OP operation,
       const wchar_t *newItemName,
       const NUpdateArchive::CActionSet *actionSet,
       const UINT32 *indices, UINT32 numItems,
@@ -116,11 +123,10 @@ public:
   UString GetPrefix(UInt32 index) const;
   UString GetName(UInt32 index) const;
   UString GetFullPathPrefixPlusPrefix(UInt32 index) const;
-  void GetPrefixIfAny(UInt32 index, NWindows::NCOM::CPropVariant &propVariant) const;
 
 public:
-  CProxyArchive *_proxyArchive;
-  CProxyFolder *_proxyFolderItem;
+  const CProxyArchive *_proxyArchive;
+  const CProxyFolder *_proxyFolderItem;
   CMyComPtr<IFolderFolder> _parentFolder;
   CMyComPtr<IInFolderArchive> _agent;
   CAgent *_agentSpec;
@@ -156,21 +162,19 @@ public:
   #ifndef EXTRACT_ONLY
   INTERFACE_IOutFolderArchive(;)
 
-  HRESULT CommonUpdate(
-      const wchar_t *newArchiveName,
-      int numUpdateItems,
-      IArchiveUpdateCallback *updateCallback);
+  HRESULT CommonUpdate(ISequentialOutStream *outArchiveStream,
+      int numUpdateItems, IArchiveUpdateCallback *updateCallback);
   
-  HRESULT CreateFolder(
-    const wchar_t *newArchiveName,
-    const wchar_t *folderName,
-    IFolderArchiveUpdateCallback *updateCallback100);
+  HRESULT CreateFolder(ISequentialOutStream *outArchiveStream,
+      const wchar_t *folderName, IFolderArchiveUpdateCallback *updateCallback100);
 
-  HRESULT RenameItem(
-    const wchar_t *newArchiveName,
-    const UINT32 *indices, UINT32 numItems,
-    const wchar_t *newItemName,
-    IFolderArchiveUpdateCallback *updateCallback100);
+  HRESULT RenameItem(ISequentialOutStream *outArchiveStream,
+      const UInt32 *indices, UInt32 numItems, const wchar_t *newItemName,
+      IFolderArchiveUpdateCallback *updateCallback100);
+
+  HRESULT UpdateOneFile(ISequentialOutStream *outArchiveStream,
+      const UInt32 *indices, UInt32 numItems, const wchar_t *diskFilePath,
+      IFolderArchiveUpdateCallback *updateCallback100);
 
   // ISetProperties
   STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
@@ -190,8 +194,8 @@ public:
 
   UString ArchiveType;
 
-  UStringVector _names;
-  UString _folderPrefix;
+  FStringVector _names;
+  FString _folderPrefix;
 
   UString _archiveNamePrefix;
   CAgentFolder *_agentFolder;
@@ -203,8 +207,8 @@ public:
   CObjectVector<NWindows::NCOM::CPropVariant> m_PropValues;
   #endif
 
-  const CArc &GetArc() { return _archiveLink.Arcs.Back(); }
-  IInArchive *GetArchive() { if ( _archiveLink.Arcs.IsEmpty()) return 0; return GetArc().Archive; }
+  const CArc &GetArc() const { return _archiveLink.Arcs.Back(); }
+  IInArchive *GetArchive() const { if ( _archiveLink.Arcs.IsEmpty()) return 0; return GetArc().Archive; }
   bool CanUpdate() const { return _archiveLink.Arcs.Size() <= 1; }
 
   UString GetTypeOfArc(const CArc &arc) const { return  _codecs->Formats[arc.FormatIndex].Name; }

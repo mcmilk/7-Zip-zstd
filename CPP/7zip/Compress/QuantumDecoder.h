@@ -253,7 +253,7 @@ public:
   STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
-  void SetParams(int numDictBits) { _numDictBits = numDictBits; }
+  HRESULT SetParams(int numDictBits);
   void SetKeepHistory(bool keepHistory) { _keepHistory = keepHistory; }
   CDecoder(): _keepHistory(false) {}
   virtual ~CDecoder() {}

@@ -1,46 +1,31 @@
 // RegistryAssociations.h
 
-#ifndef __REGISTRYASSOCIATIONS_H
-#define __REGISTRYASSOCIATIONS_H
+#ifndef __REGISTRY_ASSOCIATIONS_H
+#define __REGISTRY_ASSOCIATIONS_H
 
 #include "Common/MyString.h"
 
-namespace NRegistryAssociations {
+namespace NRegistryAssoc {
 
-  /*
-  struct CExtInfo
+  struct CShellExtInfo
   {
-    UString Ext;
-    UStringVector Plugins;
-    // bool Enabled;
+    CSysString ProgramKey;
+    UString IconPath;
+    int IconIndex;
+
+    bool ReadFromRegistry(HKEY hkey, const CSysString &ext);
+    bool IsIt7Zip() const;
   };
-  bool ReadInternalAssociation(const wchar_t *ext, CExtInfo &extInfo);
-  void ReadInternalAssociations(CObjectVector<CExtInfo> &items);
-  void WriteInternalAssociations(const CObjectVector<CExtInfo> &items);
-  */
 
-  bool CheckShellExtensionInfo(const CSysString &extension, UString &iconPath, int &iconIndex);
+  LONG DeleteShellExtensionInfo(HKEY hkey, const CSysString &ext);
 
-  // void ReadCompressionInfo(NZipSettings::NCompression::CInfo &anInfo,
-  void DeleteShellExtensionInfo(const CSysString &extension);
-
-  void AddShellExtensionInfo(const CSysString &extension,
+  LONG AddShellExtensionInfo(HKEY hkey,
+      const CSysString &ext,
       const UString &programTitle,
       const UString &programOpenCommand,
-      const UString &iconPath, int iconIndex,
-      const void *shellNewData, int shellNewDataSize);
-
-
-  ///////////////////////////
-  // ContextMenu
-  /*
-  bool CheckContextMenuHandler();
-  void AddContextMenuHandler();
-  void DeleteContextMenuHandler();
-  */
-
+      const UString &iconPath, int iconIndex
+      // , const void *shellNewData, int shellNewDataSize
+      );
 }
-
-// bool GetProgramDirPrefix(CSysString &aFolder);
 
 #endif

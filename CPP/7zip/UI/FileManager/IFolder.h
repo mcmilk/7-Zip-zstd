@@ -70,8 +70,9 @@ FOLDER_INTERFACE_SUB(IFolderOperationsExtractCallback, IProgress, 0x0B)
   STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath, \
       const wchar_t **itemsPaths, UInt32 numItems, IProgress *progress) x; \
   STDMETHOD(SetProperty)(UInt32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) x; \
+  STDMETHOD(CopyFromFile)(UInt32 index, const wchar_t *fullFilePath, IProgress *progress) x; \
 
-FOLDER_INTERFACE(IFolderOperations, 0x06)
+FOLDER_INTERFACE(IFolderOperations, 0x12)
 {
   INTERFACE_FolderOperations(PURE)
 };

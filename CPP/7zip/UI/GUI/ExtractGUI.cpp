@@ -8,6 +8,7 @@
 #include "Windows/Error.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileName.h"
 #include "Windows/Thread.h"
 
 #include "../FileManager/ExtractCallback.h"
@@ -128,7 +129,7 @@ HRESULT ExtractGUI(
 
   if (!options.TestMode)
   {
-    UString outputDir = options.OutputDir;
+    FString outputDir = options.OutputDir;
     #ifndef UNDER_CE
     if (outputDir.IsEmpty())
       NFile::NDirectory::MyGetCurrentDirectory(outputDir);
@@ -136,20 +137,22 @@ HRESULT ExtractGUI(
     if (showDialog)
     {
       CExtractDialog dialog;
-      if (!NFile::NDirectory::MyGetFullPathName(outputDir, dialog.DirectoryPath))
+      FString outputDirFull;
+      if (!NFile::NDirectory::MyGetFullPathName(outputDir, outputDirFull))
       {
         ShowErrorMessage(kIncorrectOutDir);
         messageWasDisplayed = true;
         return E_FAIL;
       }
-      NFile::NName::NormalizeDirPathPrefix(dialog.DirectoryPath);
+      NFile::NName::NormalizeDirPathPrefix(outputDirFull);
+      dialog.DirectoryPath = fs2us(outputDirFull);
 
       // dialog.OverwriteMode = options.OverwriteMode;
       // dialog.PathMode = options.PathMode;
 
       if (dialog.Create(hwndParent) != IDOK)
         return E_ABORT;
-      outputDir = dialog.DirectoryPath;
+      outputDir = us2fs(dialog.DirectoryPath);
       options.OverwriteMode = dialog.OverwriteMode;
       options.PathMode = dialog.PathMode;
       #ifndef _SFX

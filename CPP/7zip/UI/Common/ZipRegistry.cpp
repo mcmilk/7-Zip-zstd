@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "Common/IntToString.h"
-#include "Common/StringConvert.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/Registry.h"
@@ -53,6 +52,13 @@ void CInfo::Save() const
   key.SetValue_Strings(kPathHistory, Paths);
 }
 
+void Save_ShowPassword(bool showPassword)
+{
+  CS_LOCK
+  CKey key;
+  CreateMainKey(key, kKeyName);
+  key.SetValue(kShowPassword, showPassword);
+}
 
 void CInfo::Load()
 {
@@ -73,6 +79,17 @@ void CInfo::Load()
   if (key.QueryValue(kOverwriteMode, v) == ERROR_SUCCESS && v <= NOverwriteMode::kAutoRenameExisting)
     OverwriteMode = (NOverwriteMode::EEnum)v;
   key.GetValue_IfOk(kShowPassword, ShowPassword);
+}
+
+bool Read_ShowPassword()
+{
+  CS_LOCK
+  CKey key;
+  bool showPassword = false;
+  if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
+    return showPassword;
+  key.GetValue_IfOk(kShowPassword, showPassword);
+  return showPassword;
 }
 
 }
@@ -234,7 +251,7 @@ void CInfo::Save()const
   CKey key;
   CreateMainKey(key, kOptionsInfoKeyName);
   key.SetValue(kWorkDirType, (UInt32)Mode);
-  key.SetValue(kWorkDirPath, Path);
+  key.SetValue(kWorkDirPath, fs2us(Path));
   key.SetValue(kTempRemovableOnly, ForRemovableOnly);
 }
 
@@ -257,7 +274,10 @@ void CInfo::Load()
     case NMode::kSpecified:
       Mode = (NMode::EEnum)dirType;
   }
-  if (key.QueryValue(kWorkDirPath, Path) != ERROR_SUCCESS)
+  UString pathU;
+  if (key.QueryValue(kWorkDirPath, pathU) == ERROR_SUCCESS)
+    Path = us2fs(pathU);
+  else
   {
     Path.Empty();
     if (Mode == NMode::kSpecified)

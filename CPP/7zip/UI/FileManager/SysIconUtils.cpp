@@ -24,7 +24,7 @@ int GetIconIndexForCSIDL(int csidl)
       SHGFI_PIDL | SHGFI_SYSICONINDEX);
     IMalloc  *pMalloc;
     SHGetMalloc(&pMalloc);
-    if(pMalloc)
+    if (pMalloc)
     {
       pMalloc->Free(pidl);
       pMalloc->Release();
@@ -33,16 +33,6 @@ int GetIconIndexForCSIDL(int csidl)
   }
   return 0;
 }
-
-DWORD_PTR GetRealIconIndex(LPCTSTR path, DWORD attrib, int &iconIndex)
-{
-  SHFILEINFO shellInfo;
-  DWORD_PTR res = ::SHGetFileInfo(path, FILE_ATTRIBUTE_NORMAL | attrib, &shellInfo,
-      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
-  iconIndex = shellInfo.iIcon;
-  return res;
-}
-
 
 #ifndef _UNICODE
 typedef int (WINAPI * SHGetFileInfoWP)(LPCWSTR pszPath, DWORD attrib, SHFILEINFOW *psfi, UINT cbFileInfo, UINT uFlags);
@@ -70,28 +60,32 @@ static DWORD_PTR MySHGetFileInfoW(LPCWSTR pszPath, DWORD attrib, SHFILEINFOW *ps
   pszPath, attrib, psfi, cbFileInfo, uFlags);
 }
 
-#ifndef _UNICODE
-// static inline UINT GetCurrentCodePage() { return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP; }
-DWORD_PTR GetRealIconIndex(LPCWSTR path, DWORD attrib, int &iconIndex)
+DWORD_PTR GetRealIconIndex(CFSTR path, DWORD attrib, int &iconIndex)
 {
-  if(g_IsNT)
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
-    SHFILEINFOW shellInfo;
-    DWORD_PTR res = ::MySHGetFileInfoW(path, FILE_ATTRIBUTE_NORMAL | attrib, &shellInfo,
+    SHFILEINFO shellInfo;
+    DWORD_PTR res = ::SHGetFileInfo(fs2fas(path), FILE_ATTRIBUTE_NORMAL | attrib, &shellInfo,
       sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
     iconIndex = shellInfo.iIcon;
     return res;
   }
   else
-    return GetRealIconIndex(UnicodeStringToMultiByte(path), attrib, iconIndex);
+  #endif
+  {
+    SHFILEINFOW shellInfo;
+    DWORD_PTR res = ::MySHGetFileInfoW(fs2us(path), FILE_ATTRIBUTE_NORMAL | attrib, &shellInfo,
+      sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
+    iconIndex = shellInfo.iIcon;
+    return res;
+  }
 }
-#endif
 
-DWORD_PTR GetRealIconIndex(const UString &fileName, DWORD attrib,
-    int &iconIndex, UString &typeName)
+DWORD_PTR GetRealIconIndex(const UString &fileName, DWORD attrib, int &iconIndex, UString &typeName)
 {
   #ifndef _UNICODE
-  if(!g_IsNT)
+  if (!g_IsNT)
   {
     SHFILEINFO shellInfo;
     shellInfo.szTypeName[0] = 0;

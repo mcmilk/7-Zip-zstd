@@ -4,6 +4,10 @@
 
 #include "Windows/Control/ListView.h"
 
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
+
 namespace NWindows {
 namespace NControl {
 
@@ -93,4 +97,59 @@ int CListView::SetSubItem(int index, int subIndex, LPCWSTR text)
 
 #endif
 
+static LRESULT APIENTRY ListViewSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+  CWindow window(hwnd);
+  CListView2 *w = (CListView2 *)(window.GetUserDataLongPtr());
+  if (w == NULL)
+    return 0;
+  return w->OnMessage(message, wParam, lParam);
+}
+
+LRESULT CListView2::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  #ifndef _UNICODE
+  if (g_IsNT)
+    return CallWindowProcW(_origWindowProc, *this, message, wParam, lParam);
+  else
+  #endif
+    return CallWindowProc(_origWindowProc, *this, message, wParam, lParam);
+}
+
+void CListView2::SetWindowProc()
+{
+  SetUserDataLongPtr((LONG_PTR)this);
+  #ifndef _UNICODE
+  if (g_IsNT)
+    _origWindowProc = (WNDPROC)SetLongPtrW(GWLP_WNDPROC, (LONG_PTR)ListViewSubclassProc);
+  else
+  #endif
+    _origWindowProc = (WNDPROC)SetLongPtr(GWLP_WNDPROC, (LONG_PTR)ListViewSubclassProc);
+}
+
+/*
+LRESULT CListView3::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  LRESULT res = CListView2::OnMessage(message, wParam, lParam);
+  if (message == WM_GETDLGCODE)
+  {
+    // when user presses RETURN, windows sends default (first) button command to parent dialog.
+    // we disable this:
+    MSG *msg = (MSG *)lParam;
+    WPARAM key = wParam;
+    bool change = false;
+    if (msg)
+    {
+      if (msg->message == WM_KEYDOWN && msg->wParam == VK_RETURN)
+        change = true;
+    }
+    else if (wParam == VK_RETURN)
+      change = true;
+    if (change)
+      res |= DLGC_WANTALLKEYS;
+  }
+  return res;
+}
+*/
+  
 }}

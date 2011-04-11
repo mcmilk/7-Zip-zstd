@@ -24,25 +24,20 @@
 
 using namespace NWindows;
 
-extern UString ConvertMethodIdToString(UInt64 id);
-
 namespace NArchive {
 namespace N7z {
 
 CHandler::CHandler()
 {
-  _crcSize = 4;
-
   #ifndef _NO_CRYPTO
   _passwordIsDefined = false;
   #endif
 
   #ifdef EXTRACT_ONLY
+  _crcSize = 4;
   #ifdef __7Z_SET_PROPERTIES
   _numThreads = NSystem::GetNumberOfProcessors();
   #endif
-  #else
-  Init();
   #endif
 }
 
@@ -70,7 +65,7 @@ STDMETHODIMP CHandler::GetPropertyInfo(UInt32 /* index */,
 
 #else
 
-STATPROPSTG kArcProps[] =
+static const STATPROPSTG kArcProps[] =
 {
   { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidSolid, VT_BOOL},
@@ -79,6 +74,25 @@ STATPROPSTG kArcProps[] =
   { NULL, kpidHeadersSize, VT_UI8},
   { NULL, kpidOffset, VT_UI8}
 };
+
+static inline wchar_t GetHex(Byte value)
+{
+  return (wchar_t)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
+}
+
+static UString ConvertMethodIdToString(UInt64 id)
+{
+  wchar_t s[32];
+  int len = 32;
+  s[--len] = 0;
+  do
+  {
+    s[--len] = GetHex((Byte)id & 0xF); id >>= 4;
+    s[--len] = GetHex((Byte)id & 0xF); id >>= 4;
+  }
+  while (id != 0);
+  return s + len;
+}
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
@@ -172,22 +186,18 @@ static UString GetStringForSizeValue(UInt32 value)
   return result;
 }
 
-static const UInt64 k_Copy = 0x0;
-static const UInt64 k_Delta = 3;
-static const UInt64 k_LZMA2 = 0x21;
-static const UInt64 k_LZMA  = 0x030101;
-static const UInt64 k_PPMD  = 0x030401;
-
-static wchar_t GetHex(Byte value)
-{
-  return (wchar_t)((value < 10) ? (L'0' + value) : (L'A' + (value - 10)));
-}
 static inline void AddHexToString(UString &res, Byte value)
 {
   res += GetHex((Byte)(value >> 4));
   res += GetHex((Byte)(value & 0xF));
 }
 
+static void AddProp32(UString &s, const wchar_t *name, UInt32 v)
+{
+  s += name;
+  s += ConvertUInt32ToString(v);
+}
+ 
 #endif
 
 bool CHandler::IsEncrypted(UInt32 index2) const
@@ -283,6 +293,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
               {
                 UInt32 dicSize = GetUi32((const Byte *)coder.Props + 1);
                 propsString = GetStringForSizeValue(dicSize);
+                UInt32 d = coder.Props[0];
+                UInt32 lc = d % 9;
+                d /= 9;
+                UInt32 pb = d / 5;
+                UInt32 lp = d % 5;
+                if (lc != 3) AddProp32(propsString, L":lc", lc);
+                if (lp != 0) AddProp32(propsString, L":lp", lp);
+                if (pb != 2) AddProp32(propsString, L":pb", pb);
               }
               else if (coder.MethodID == k_LZMA2 && coder.Props.GetCapacity() == 1)
               {

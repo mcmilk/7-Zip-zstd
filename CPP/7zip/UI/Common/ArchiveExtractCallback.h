@@ -31,11 +31,11 @@ class CArchiveExtractCallback:
   CMyComPtr<IFolderArchiveExtractCallback> _extractCallback2;
   CMyComPtr<ICompressProgressInfo> _compressProgress;
   CMyComPtr<ICryptoGetTextPassword> _cryptoGetTextPassword;
-  UString _directoryPath;
+  FString _directoryPath;
   NExtract::NPathMode::EEnum _pathMode;
   NExtract::NOverwriteMode::EEnum _overwriteMode;
 
-  UString _diskFilePath;
+  FString _diskFilePath;
   UString _filePath;
   UInt64 _position;
   bool _isSplit;
@@ -83,9 +83,11 @@ class CArchiveExtractCallback:
   UInt64 _packTotal;
   UInt64 _unpTotal;
 
-  void CreateComplexDirectory(const UStringVector &dirPathParts, UString &fullPath);
+  void CreateComplexDirectory(const UStringVector &dirPathParts, FString &fullPath);
   HRESULT GetTime(int index, PROPID propID, FILETIME &filetime, bool &filetimeIsDefined);
   HRESULT GetUnpackSize();
+
+  HRESULT SendMessageError(const char *message, const FString &path);
 
 public:
 
@@ -134,7 +136,7 @@ public:
       const CArc *arc,
       IFolderArchiveExtractCallback *extractCallback2,
       bool stdOutMode, bool testMode, bool crcMode,
-      const UString &directoryPath,
+      const FString &directoryPath,
       const UStringVector &removePathParts,
       UInt64 packSize);
 

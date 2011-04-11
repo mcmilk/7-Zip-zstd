@@ -18,10 +18,9 @@
 #include "../Compress/DeflateDecoder.h"
 #include "../Compress/DeflateEncoder.h"
 
+#include "Common/HandlerOut.h"
 #include "Common/InStreamWithCRC.h"
 #include "Common/OutStreamWithCRC.h"
-
-#include "DeflateProps.h"
 
 #define Get32(p) GetUi32(p)
 
@@ -305,7 +304,7 @@ class CHandler:
   CMyComPtr<ICompressCoder> _decoder;
   NCompress::NDeflate::NDecoder::CCOMCoder *_decoderSpec;
 
-  CDeflateProps _method;
+  CSingleMethodProps _props;
 
 public:
   MY_UNKNOWN_IMP4(IInArchive, IArchiveOpenSeq, IOutArchive, ISetProperties)
@@ -321,7 +320,7 @@ public:
   }
 };
 
-STATPROPSTG kProps[] =
+static STATPROPSTG const kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
@@ -545,7 +544,7 @@ static HRESULT UpdateArchive(
     ISequentialOutStream *outStream,
     UInt64 unpackSize,
     const CItem &newItem,
-    CDeflateProps &deflateProps,
+    const CSingleMethodProps &props,
     IArchiveUpdateCallback *updateCallback)
 {
   UInt64 complexity = 0;
@@ -567,7 +566,7 @@ static HRESULT UpdateArchive(
   
   CItem item = newItem;
   item.Method = NHeader::NCompressionMethod::kDeflate;
-  item.ExtraFlags = deflateProps.IsMaximum() ?
+  item.ExtraFlags = props.GetLevel() >= 7 ?
       NHeader::NExtraFlags::kMaximum :
       NHeader::NExtraFlags::kFastest;
 
@@ -577,7 +576,7 @@ static HRESULT UpdateArchive(
 
   NCompress::NDeflate::NEncoder::CCOMCoder *deflateEncoderSpec = new NCompress::NDeflate::NEncoder::CCOMCoder;
   CMyComPtr<ICompressCoder> deflateEncoder = deflateEncoderSpec;
-  RINOK(deflateProps.SetCoderProperties(deflateEncoderSpec));
+  RINOK(props.SetCoderProps(deflateEncoderSpec, NULL));
   RINOK(deflateEncoder->Code(crcStream, outStream, NULL, NULL, progress));
 
   item.Crc = inStreamSpec->GetCRC();
@@ -616,8 +615,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (prop.vt != VT_FILETIME)
         return E_INVALIDARG;
       utcTime = prop.filetime;
-      if (!NTime::FileTimeToUnixTime(utcTime, newItem.Time))
-        return E_INVALIDARG;
+      NTime::FileTimeToUnixTime(utcTime, newItem.Time);
     }
     {
       NCOM::CPropVariant prop;
@@ -658,8 +656,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         return E_INVALIDARG;
       size = prop.uhVal.QuadPart;
     }
-
-    return UpdateArchive(outStream, size, newItem, _method, updateCallback);
+    return UpdateArchive(outStream, size, newItem, _props, updateCallback);
   }
     
   if (indexInArchive != 0)
@@ -680,7 +677,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
 {
-  return _method.SetProperties(names, values, numProps);
+  return _props.SetProperties(names, values, numProps);
 }
 
 static IInArchive *CreateArc() { return new CHandler; }

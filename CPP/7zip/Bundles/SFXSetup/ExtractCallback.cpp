@@ -6,6 +6,7 @@
 
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileName.h"
 #include "Windows/PropVariant.h"
 
 #include "ExtractCallback.h"
@@ -18,7 +19,7 @@ static LPCWSTR kCantOpenFile = L"Can not open output file";
 static LPCWSTR kUnsupportedMethod = L"Unsupported Method";
 
 void CExtractCallbackImp::Init(IInArchive *archiveHandler,
-    const UString &directoryPath,
+    const FString &directoryPath,
     const UString &itemDefaultName,
     const FILETIME &defaultMTime,
     UInt32 defaultAttributes)
@@ -76,12 +77,12 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 
 void CExtractCallbackImp::CreateComplexDirectory(const UStringVector &dirPathParts)
 {
-  UString fullPath = _directoryPath;
-  for(int i = 0; i < dirPathParts.Size(); i++)
+  FString fullPath = _directoryPath;
+  for (int i = 0; i < dirPathParts.Size(); i++)
   {
-    fullPath += dirPathParts[i];
+    fullPath += us2fs(dirPathParts[i]);
     NDirectory::MyCreateDirectory(fullPath);
-    fullPath += NName::kDirDelimiter;
+    fullPath += FCHAR_PATH_SEPARATOR;
   }
 }
 
@@ -153,7 +154,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
         CreateComplexDirectory(pathParts);
     }
 
-    UString fullProcessedPath = _directoryPath + processedPath;
+    FString fullProcessedPath = _directoryPath + us2fs(processedPath);
 
     if (_processedFileInfo.IsDir)
     {
@@ -166,7 +167,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
       return S_OK;
     }
 
-    NFind::CFileInfoW fileInfo;
+    NFind::CFileInfo fileInfo;
     if (fileInfo.Find(fullProcessedPath))
     {
       if (!NDirectory::DeleteFileAlways(fullProcessedPath))

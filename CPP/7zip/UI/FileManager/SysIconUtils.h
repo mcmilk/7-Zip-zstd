@@ -39,10 +39,7 @@ public:
   int GetIconIndex(DWORD attrib, const UString &fileName);
 };
 
-DWORD_PTR GetRealIconIndex(LPCTSTR path, DWORD attrib, int &iconIndex);
-#ifndef _UNICODE
-DWORD_PTR GetRealIconIndex(LPCWSTR path, DWORD attrib, int &iconIndex);
-#endif
+DWORD_PTR GetRealIconIndex(CFSTR path, DWORD attrib, int &iconIndex);
 int GetIconIndexForCSIDL(int csidl);
 
 inline HIMAGELIST GetSysImageList(bool smallIcons)

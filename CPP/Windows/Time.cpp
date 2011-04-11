@@ -13,8 +13,9 @@ static const UInt32 kNumTimeQuantumsInSecond = 10000000;
 static const UInt32 kFileTimeStartYear = 1601;
 static const UInt32 kDosTimeStartYear = 1980;
 static const UInt32 kUnixTimeStartYear = 1970;
-static const UInt64 kUnixTimeStartValue = ((UInt64)kNumTimeQuantumsInSecond) *
-    60 * 60 * 24 * (89 + 365 * (kUnixTimeStartYear - kFileTimeStartYear));
+static const UInt64 kUnixTimeOffset =
+    (UInt64)60 * 60 * 24 * (89 + 365 * (kUnixTimeStartYear - kFileTimeStartYear));
+static const UInt64 kNumSecondsInFileTime = (UInt64)(Int64)-1 / kNumTimeQuantumsInSecond;
 
 bool DosTimeToFileTime(UInt32 dosTime, FILETIME &ft)
 {
@@ -117,20 +118,52 @@ bool FileTimeToDosTime(const FILETIME &ft, UInt32 &dosTime)
 
 void UnixTimeToFileTime(UInt32 unixTime, FILETIME &ft)
 {
-  UInt64 v = kUnixTimeStartValue + ((UInt64)unixTime) * kNumTimeQuantumsInSecond;
+  UInt64 v = (kUnixTimeOffset + (UInt64)unixTime) * kNumTimeQuantumsInSecond;
   ft.dwLowDateTime = (DWORD)v;
   ft.dwHighDateTime = (DWORD)(v >> 32);
+}
+
+bool UnixTime64ToFileTime(Int64 unixTime, FILETIME &ft)
+{
+  Int64 v = (Int64)kUnixTimeOffset + unixTime;
+  if (unixTime < 0)
+  {
+    if (v < 0)
+    {
+      ft.dwLowDateTime = ft.dwHighDateTime = 0;
+      return false;
+    }
+  }
+  else
+  {
+    if (v < unixTime || v > kNumSecondsInFileTime)
+    {
+      ft.dwLowDateTime = ft.dwHighDateTime = (UInt32)(Int32)-1;
+      return false;
+    }
+  }
+  UInt64 v2 = (UInt64)v * kNumTimeQuantumsInSecond;
+  ft.dwLowDateTime = (DWORD)v2;
+  ft.dwHighDateTime = (DWORD)(v2 >> 32);
+  return true;
+}
+
+Int64 FileTimeToUnixTime64(const FILETIME &ft)
+{
+  UInt64 winTime = (((UInt64)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
+  return (Int64)(winTime / kNumTimeQuantumsInSecond) - kUnixTimeOffset;
 }
 
 bool FileTimeToUnixTime(const FILETIME &ft, UInt32 &unixTime)
 {
   UInt64 winTime = (((UInt64)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
-  if (winTime < kUnixTimeStartValue)
+  winTime /= kNumTimeQuantumsInSecond;
+  if (winTime < kUnixTimeOffset)
   {
     unixTime = 0;
     return false;
   }
-  winTime = (winTime - kUnixTimeStartValue) / kNumTimeQuantumsInSecond;
+  winTime -= kUnixTimeOffset;
   if (winTime > 0xFFFFFFFF)
   {
     unixTime = 0xFFFFFFFF;

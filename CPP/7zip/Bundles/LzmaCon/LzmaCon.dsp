@@ -132,6 +132,14 @@ SOURCE=..\..\..\Windows\FileIO.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\PropVariant.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariant.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Synchronization.cpp
 # End Source File
 # Begin Source File
@@ -277,6 +285,14 @@ SOURCE=..\..\Common\FilterCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\FilterCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.h
 # End Source File
 # Begin Source File
 

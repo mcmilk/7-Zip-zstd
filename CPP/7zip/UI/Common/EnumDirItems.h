@@ -8,7 +8,7 @@
 #include "DirItem.h"
 
 void AddDirFileInfo(int phyParent, int logParent,
-    const NWindows::NFile::NFind::CFileInfoW &fi, CObjectVector<CDirItem> &dirItems);
+    const NWindows::NFile::NFind::CFileInfo &fi, CObjectVector<CDirItem> &dirItems);
 
 struct IEnumDirItemCallback
 {
@@ -19,7 +19,7 @@ HRESULT EnumerateItems(
     const NWildcard::CCensor &censor,
     CDirItems &dirItems,
     IEnumDirItemCallback *callback,
-    UStringVector &errorPaths,
+    FStringVector &errorPaths,
     CRecordVector<DWORD> &errorCodes);
 
 #endif

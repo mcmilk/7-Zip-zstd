@@ -30,15 +30,18 @@ OBJS = \
   CWrappers.o \
   FileStreams.o \
   FilterCoder.o \
+  MethodProps.o \
   StreamUtils.o \
   $(FILE_IO).o \
   CommandLineParser.o \
   CRC.o \
   IntToString.o \
   MyString.o \
+  MyVector.o \
+  MyWindows.o \
   StringConvert.o \
   StringToInt.o \
-  MyVector.o \
+  PropVariant.o \
   7zCrc.o \
   7zCrcOpt.o \
   Alloc.o \
@@ -89,6 +92,9 @@ FileStreams.o: ../../Common/FileStreams.cpp
 FilterCoder.o: ../../Common/FilterCoder.cpp
 	$(CXX) $(CFLAGS) ../../Common/FilterCoder.cpp
 
+MethodProps.o: ../../Common/MethodProps.cpp
+	$(CXX) $(CFLAGS) ../../Common/MethodProps.cpp
+
 StreamUtils.o: ../../Common/StreamUtils.cpp
 	$(CXX) $(CFLAGS) ../../Common/StreamUtils.cpp
 
@@ -102,14 +108,17 @@ CommandLineParser.o: ../../../Common/CommandLineParser.cpp
 CRC.o: ../../../Common/CRC.cpp
 	$(CXX) $(CFLAGS) ../../../Common/CRC.cpp
 
-MyWindows.o: ../../../Common/MyWindows.cpp
-	$(CXX) $(CFLAGS) ../../../Common/MyWindows.cpp
-
 IntToString.o: ../../../Common/IntToString.cpp
 	$(CXX) $(CFLAGS) ../../../Common/IntToString.cpp
 
 MyString.o: ../../../Common/MyString.cpp
 	$(CXX) $(CFLAGS) ../../../Common/MyString.cpp
+
+MyVector.o: ../../../Common/MyVector.cpp
+	$(CXX) $(CFLAGS) ../../../Common/MyVector.cpp
+
+MyWindows.o: ../../../Common/MyWindows.cpp
+	$(CXX) $(CFLAGS) ../../../Common/MyWindows.cpp
 
 StringConvert.o: ../../../Common/StringConvert.cpp
 	$(CXX) $(CFLAGS) ../../../Common/StringConvert.cpp
@@ -117,8 +126,8 @@ StringConvert.o: ../../../Common/StringConvert.cpp
 StringToInt.o: ../../../Common/StringToInt.cpp
 	$(CXX) $(CFLAGS) ../../../Common/StringToInt.cpp
 
-MyVector.o: ../../../Common/MyVector.cpp
-	$(CXX) $(CFLAGS) ../../../Common/MyVector.cpp
+PropVariant.o: ../../../Windows/PropVariant.cpp
+	$(CXX) $(CFLAGS) ../../../Windows/PropVariant.cpp
 
 7zCrc.o: ../../../../C/7zCrc.c
 	$(CXX_C) $(CFLAGS) ../../../../C/7zCrc.c

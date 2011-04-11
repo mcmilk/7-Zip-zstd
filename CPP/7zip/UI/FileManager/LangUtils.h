@@ -1,7 +1,7 @@
 // LangUtils.h
 
-#ifndef __LANGUTILS_H
-#define __LANGUTILS_H
+#ifndef __LANG_UTILS_H
+#define __LANG_UTILS_H
 
 #include "Common/Lang.h"
 #include "Windows/ResourceString.h"
@@ -26,7 +26,7 @@ struct CLangEx
 
 void LoadLangs(CObjectVector<CLangEx> &langs);
 
-void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems);
+void LangSetDlgItemsText(HWND dialogWindow, const CIDLangPair *idLangPairs, int numItems);
 void LangSetWindowText(HWND window, UInt32 langID);
 
 UString LangString(UInt32 langID);

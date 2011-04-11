@@ -351,7 +351,10 @@ namespace NCompressDialog
     #ifndef UNDER_CE
     NDirectory::MySetCurrentDirectory(CurrentDirPrefix);
     #endif
-    return MyGetFullPathName(ArchiveName, result);
+    FString resultF;
+    bool res = MyGetFullPathName(us2fs(ArchiveName), resultF);
+    result = fs2us(resultF);
+    return res;
   }
 }
 
@@ -1236,6 +1239,7 @@ bool CCompressDialog::GetOrderMode()
   switch (GetMethodID())
   {
     case kPPMd:
+    case kPPMdZip:
       return true;
   }
   return false;

@@ -10,6 +10,7 @@
 
 #include "Windows/Memory.h"
 #include "Windows/FileDir.h"
+#include "Windows/FileName.h"
 #include "Windows/Shell.h"
 
 #include "../Common/ArchiveName.h"
@@ -26,7 +27,7 @@ using namespace NWindows;
 extern bool g_IsNT;
 #endif
 
-static wchar_t *kTempDirPrefix = L"7zE";
+static CFSTR kTempDirPrefix = FTEXT("7zE");
 static LPCTSTR kSvenZipSetFolderFormat = TEXT("7-Zip::SetTargetFolder");
 
 ////////////////////////////////////////////////////////
@@ -304,12 +305,12 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
   // CSelectedState selState;
   // SaveSelectedState(selState);
 
-  UString dirPrefix;
-  NFile::NDirectory::CTempDirectoryW tempDirectory;
+  FString dirPrefix;
+  NFile::NDirectory::CTempDir tempDirectory;
 
   bool isFSFolder = IsFSFolder();
   if (isFSFolder)
-    dirPrefix = _currentFolderPrefix;
+    dirPrefix = us2fs(_currentFolderPrefix);
   else
   {
     tempDirectory.Create(kTempDirPrefix);
@@ -330,7 +331,7 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
         s = GetItemRelPath(index);
       else
         s = GetItemName(index);
-      names.Add(dirPrefix + s);
+      names.Add(fs2us(dirPrefix) + s);
     }
     if (!CopyNamesToHGlobal(dataObjectSpec->hGlobal, names))
       return;
@@ -341,7 +342,7 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
   dropSourceSpec->NeedExtract = !isFSFolder;
   dropSourceSpec->Panel = this;
   dropSourceSpec->Indices = indices;
-  dropSourceSpec->Folder = dirPrefix;
+  dropSourceSpec->Folder = fs2us(dirPrefix);
   dropSourceSpec->DataObjectSpec = dataObjectSpec;
   dropSourceSpec->DataObject = dataObjectSpec;
 
@@ -748,9 +749,9 @@ void CPanel::CompressDropFiles(HDROP dr)
 }
 */
 
-static bool IsFolderInTemp(const UString &path)
+static bool IsFolderInTemp(const FString &path)
 {
-  UString tempPath;
+  FString tempPath;
   if (!NFile::NDirectory::MyGetTempPath(tempPath))
     return false;
   if (tempPath.IsEmpty())
@@ -760,9 +761,10 @@ static bool IsFolderInTemp(const UString &path)
 
 static bool AreThereNamesFromTemp(const UStringVector &fileNames)
 {
-  UString tempPath;
-  if (!NFile::NDirectory::MyGetTempPath(tempPath))
+  FString tempPathF;
+  if (!NFile::NDirectory::MyGetTempPath(tempPathF))
     return false;
+  UString tempPath = fs2us(tempPathF);
   if (tempPath.IsEmpty())
     return false;
   for (int i = 0; i < fileNames.Size(); i++)
@@ -784,8 +786,10 @@ void CPanel::CompressDropFiles(const UStringVector &fileNames, const UString &fo
     UString folderPath2 = folderPath;
     if (folderPath2.IsEmpty())
     {
-      NFile::NDirectory::GetOnlyDirPrefix(fileNames.Front(), folderPath2);
-      if (IsFolderInTemp(folderPath2))
+      FString folderPath2F;
+      NFile::NDirectory::GetOnlyDirPrefix(us2fs(fileNames.Front()), folderPath2F);
+      folderPath2 = fs2us(folderPath2F);
+      if (IsFolderInTemp(folderPath2F))
         folderPath2 = ROOT_FS_FOLDER;
     }
     const UString archiveName = CreateArchiveName(fileNames.Front(), (fileNames.Size() > 1), false);

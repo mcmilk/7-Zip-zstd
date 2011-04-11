@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
 #include "Windows/Synchronization.h"
+
 #include "RandGen.h"
 
 #ifndef _WIN32
@@ -25,29 +25,31 @@
 // Other generated data blocks depend from previous state
 // Maybe it's possible to restore original timer value from generated value.
 
+#define HASH_UPD(x) Sha256_Update(&hash, (const Byte *)&x, sizeof(x));
+
 void CRandomGenerator::Init()
 {
-  NCrypto::NSha1::CContext hash;
-  hash.Init();
+  CSha256 hash;
+  Sha256_Init(&hash);
 
   #ifdef _WIN32
   DWORD w = ::GetCurrentProcessId();
-  hash.Update((const Byte *)&w, sizeof(w));
+  HASH_UPD(w);
   w = ::GetCurrentThreadId();
-  hash.Update((const Byte *)&w, sizeof(w));
+  HASH_UPD(w);
   #else
   pid_t pid = getpid();
-  hash.Update((const Byte *)&pid, sizeof(pid));
+  HASH_UPD(pid);
   pid = getppid();
-  hash.Update((const Byte *)&pid, sizeof(pid));
+  HASH_UPD(pid);
   #endif
 
-  for (int i = 0; i < 1000; i++)
+  for (unsigned i = 0; i < 1000; i++)
   {
     #ifdef _WIN32
     LARGE_INTEGER v;
     if (::QueryPerformanceCounter(&v))
-      hash.Update((const Byte *)&v.QuadPart, sizeof(v.QuadPart));
+      HASH_UPD(v.QuadPart);
     #endif
 
     #ifdef USE_POSIX_TIME
@@ -55,50 +57,50 @@ void CRandomGenerator::Init()
     timeval v;
     if (gettimeofday(&v, 0) == 0)
     {
-      hash.Update((const Byte *)&v.tv_sec, sizeof(v.tv_sec));
-      hash.Update((const Byte *)&v.tv_usec, sizeof(v.tv_usec));
+      HASH_UPD(v.tv_sec);
+      HASH_UPD(v.tv_usec);
     }
     #endif
     time_t v2 = time(NULL);
-    hash.Update((const Byte *)&v2, sizeof(v2));
+    HASH_UPD(v2);
     #endif
 
     DWORD tickCount = ::GetTickCount();
-    hash.Update((const Byte *)&tickCount, sizeof(tickCount));
+    HASH_UPD(tickCount);
     
-    for (int j = 0; j < 100; j++)
+    for (unsigned j = 0; j < 100; j++)
     {
-      hash.Final(_buff);
-      hash.Init();
-      hash.Update(_buff, NCrypto::NSha1::kDigestSize);
+      Sha256_Final(&hash, _buff);
+      Sha256_Init(&hash);
+      Sha256_Update(&hash, _buff, SHA256_DIGEST_SIZE);
     }
   }
-  hash.Final(_buff);
+  Sha256_Final(&hash, _buff);
   _needInit = false;
 }
 
 static NWindows::NSynchronization::CCriticalSection g_CriticalSection;
 
-void CRandomGenerator::Generate(Byte *data, unsigned int size)
+void CRandomGenerator::Generate(Byte *data, unsigned size)
 {
   g_CriticalSection.Enter();
   if (_needInit)
     Init();
   while (size > 0)
   {
-    NCrypto::NSha1::CContext hash;
+    CSha256 hash;
     
-    hash.Init();
-    hash.Update(_buff, NCrypto::NSha1::kDigestSize);
-    hash.Final(_buff);
+    Sha256_Init(&hash);
+    Sha256_Update(&hash, _buff, SHA256_DIGEST_SIZE);
+    Sha256_Final(&hash, _buff);
     
-    hash.Init();
+    Sha256_Init(&hash);
     UInt32 salt = 0xF672ABD1;
-    hash.Update((const Byte *)&salt, sizeof(salt));
-    hash.Update(_buff, NCrypto::NSha1::kDigestSize);
-    Byte buff[NCrypto::NSha1::kDigestSize];
-    hash.Final(buff);
-    for (unsigned int i = 0; i < NCrypto::NSha1::kDigestSize && size > 0; i++, size--)
+    HASH_UPD(salt);
+    Sha256_Update(&hash, _buff, SHA256_DIGEST_SIZE);
+    Byte buff[SHA256_DIGEST_SIZE];
+    Sha256_Final(&hash, buff);
+    for (unsigned i = 0; i < SHA256_DIGEST_SIZE && size > 0; i++, size--)
       *data++ = buff[i];
   }
   g_CriticalSection.Leave();

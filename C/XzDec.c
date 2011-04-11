@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2010-04-16 : Igor Pavlov : Public domain */
+2011-02-07 : Igor Pavlov : Public domain */
 
 /* #define XZ_DUMP */
 
@@ -18,7 +18,8 @@
 #include "Lzma2Dec.h"
 
 #ifdef USE_SUBBLOCK
-#include "SbDec.h"
+#include "Bcj3Dec.c"
+#include "SbDec.c"
 #endif
 
 #include "Xz.h"
@@ -72,7 +73,6 @@ SRes BraState_SetProps(void *pp, const Byte *props, size_t propSize, ISzAlloc *a
 {
   CBraState *p = ((CBraState *)pp);
   alloc = alloc;
-  p->encodeMode = 0;
   p->ip = 0;
   if (p->methodId == XZ_ID_Delta)
   {
@@ -195,7 +195,7 @@ static SRes BraState_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *src,
   return SZ_OK;
 }
 
-SRes BraState_SetFromMethod(IStateCoder *p, UInt64 id, ISzAlloc *alloc)
+SRes BraState_SetFromMethod(IStateCoder *p, UInt64 id, int encodeMode, ISzAlloc *alloc)
 {
   CBraState *decoder;
   if (id != XZ_ID_Delta &&
@@ -211,6 +211,7 @@ SRes BraState_SetFromMethod(IStateCoder *p, UInt64 id, ISzAlloc *alloc)
   if (decoder == 0)
     return SZ_ERROR_MEM;
   decoder->methodId = (UInt32)id;
+  decoder->encodeMode = encodeMode;
   p->p = decoder;
   p->Free = BraState_Free;
   p->SetProps = BraState_SetProps;
@@ -225,8 +226,8 @@ SRes BraState_SetFromMethod(IStateCoder *p, UInt64 id, ISzAlloc *alloc)
 
 static void SbState_Free(void *pp, ISzAlloc *alloc)
 {
-  CSubblockDec *p = (CSubblockDec *)pp;
-  SubblockDec_Free(p, alloc);
+  CSbDec *p = (CSbDec *)pp;
+  SbDec_Free(p);
   alloc->Free(alloc, pp);
 }
 
@@ -240,24 +241,32 @@ static SRes SbState_SetProps(void *pp, const Byte *props, size_t propSize, ISzAl
 
 static void SbState_Init(void *pp)
 {
-  SubblockDec_Init((CSubblockDec *)pp);
+  SbDec_Init((CSbDec *)pp);
 }
 
 static SRes SbState_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
     int srcWasFinished, ECoderFinishMode finishMode, int *wasFinished)
 {
-  ECoderStatus status;
-  SRes res = SubblockDec_Decode((CSubblockDec *)pp, dest, destLen, src, srcLen, finishMode, &status);
+  CSbDec *p = (CSbDec *)pp;
+  SRes res;
   srcWasFinished = srcWasFinished;
-  *wasFinished = (status == LZMA_STATUS_FINISHED_WITH_MARK);
+  p->dest = dest;
+  p->destLen = *destLen;
+  p->src = src;
+  p->srcLen = *srcLen;
+  p->finish = finishMode; /* change it */
+  res = SbDec_Decode((CSbDec *)pp);
+  *destLen -= p->destLen;
+  *srcLen -= p->srcLen;
+  *wasFinished = (*destLen == 0 && *srcLen == 0); /* change it */
   return res;
 }
 
 SRes SbState_SetFromMethod(IStateCoder *p, ISzAlloc *alloc)
 {
-  CSubblockDec *decoder;
+  CSbDec *decoder;
   p->p = 0;
-  decoder = alloc->Alloc(alloc, sizeof(CSubblockDec));
+  decoder = alloc->Alloc(alloc, sizeof(CSbDec));
   if (decoder == 0)
     return SZ_ERROR_MEM;
   p->p = decoder;
@@ -265,7 +274,8 @@ SRes SbState_SetFromMethod(IStateCoder *p, ISzAlloc *alloc)
   p->SetProps = SbState_SetProps;
   p->Init = SbState_Init;
   p->Code = SbState_Code;
-  SubblockDec_Construct(decoder);
+  SbDec_Construct(decoder);
+  SbDec_SetAlloc(decoder, alloc);
   return SZ_OK;
 }
 #endif
@@ -369,7 +379,7 @@ SRes MixCoder_SetFromMethod(CMixCoder *p, int coderIndex, UInt64 methodId)
   }
   if (coderIndex == 0)
     return SZ_ERROR_UNSUPPORTED;
-  return BraState_SetFromMethod(sc, methodId, p->alloc);
+  return BraState_SetFromMethod(sc, methodId, 0, p->alloc);
 }
 
 SRes MixCoder_Code(CMixCoder *p, Byte *dest, SizeT *destLen,
@@ -587,13 +597,17 @@ SRes XzDec_Init(CMixCoder *p, const CXzBlock *block)
   return SZ_OK;
 }
 
-SRes XzUnpacker_Create(CXzUnpacker *p, ISzAlloc *alloc)
+void XzUnpacker_Init(CXzUnpacker *p)
 {
-  MixCoder_Construct(&p->decoder, alloc);
   p->state = XZ_STATE_STREAM_HEADER;
   p->pos = 0;
   p->numStreams = 0;
-  return SZ_OK;
+}
+
+void XzUnpacker_Construct(CXzUnpacker *p, ISzAlloc *alloc)
+{
+  MixCoder_Construct(&p->decoder, alloc);
+  XzUnpacker_Init(p);
 }
 
 void XzUnpacker_Free(CXzUnpacker *p)

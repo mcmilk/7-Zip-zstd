@@ -122,11 +122,24 @@ DWORD CThreadInfo::ThreadFunc()
 
 #endif
 
-CEncoder::CEncoder():
-  NumPasses(1),
-  m_OptimizeNumTables(false),
-  m_BlockSizeMult(kBlockSizeMultMax)
+void CEncProps::Normalize(int level)
 {
+  if (level < 0) level = 5;
+  if (level > 9) level = 9;
+  if (NumPasses == (UInt32)(Int32)-1)
+    NumPasses = (level >= 9 ? 7 : (level >= 7 ? 2 : 1));
+  if (NumPasses < kBlockSizeMultMin) NumPasses = kBlockSizeMultMin;
+  if (NumPasses > kBlockSizeMultMax) NumPasses = kBlockSizeMultMax;
+  if (BlockSizeMult == (UInt32)(Int32)-1)
+    BlockSizeMult = (level >= 5 ? 9 : (level >= 1 ? level * 2 - 1: 1));
+  if (BlockSizeMult == 0) BlockSizeMult = 1;
+  if (BlockSizeMult > kNumPassesMax) BlockSizeMult = kNumPassesMax;
+}
+
+CEncoder::CEncoder()
+{
+  _props.Normalize(-1);
+
   #ifndef _7ZIP_ST
   ThreadsInfo = 0;
   m_NumThreadsPrev = 0;
@@ -198,7 +211,7 @@ UInt32 CEncoder::ReadRleBlock(Byte *buffer)
   Byte prevByte;
   if (m_InStream.ReadByte(prevByte))
   {
-    UInt32 blockSize = m_BlockSizeMult * kBlockSizeStep - 1;
+    UInt32 blockSize = _props.BlockSizeMult * kBlockSizeStep - 1;
     int numReps = 1;
     buffer[i++] = prevByte;
     while (i < blockSize) // "- 1" to support RLE
@@ -678,7 +691,7 @@ HRESULT CThreadInfo::EncodeBlock3(UInt32 blockSize)
 
   m_NumCrcs = 0;
 
-  EncodeBlock2(m_Block, blockSize, Encoder->NumPasses);
+  EncodeBlock2(m_Block, blockSize, Encoder->_props.NumPasses);
 
   #ifndef _7ZIP_ST
   if (Encoder->MtMode)
@@ -738,7 +751,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     ti.Encoder = this;
     #endif
 
-    ti.m_OptimizeNumTables = m_OptimizeNumTables;
+    ti.m_OptimizeNumTables = _props.DoOptimizeNumTables();
 
     if (!ti.Alloc())
       return E_OUTOFMEMORY;
@@ -770,7 +783,7 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   WriteByte(kArSig0);
   WriteByte(kArSig1);
   WriteByte(kArSig2);
-  WriteByte((Byte)(kArSig3 + m_BlockSizeMult));
+  WriteByte((Byte)(kArSig3 + _props.BlockSizeMult));
 
   #ifndef _7ZIP_ST
 
@@ -832,62 +845,46 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   catch(...) { return S_FALSE; }
 }
 
-HRESULT CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps)
+HRESULT CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *coderProps, UInt32 numProps)
 {
-  for(UInt32 i = 0; i < numProps; i++)
+  int level = -1;
+  CEncProps props;
+  for (UInt32 i = 0; i < numProps; i++)
   {
-    const PROPVARIANT &prop = props[i];
-    switch(propIDs[i])
+    const PROPVARIANT &prop = coderProps[i];
+    PROPID propID = propIDs[i];
+    if (propID >= NCoderPropID::kReduceSize)
+      continue;
+    if (prop.vt != VT_UI4)
+      return E_INVALIDARG;
+    UInt32 v = (UInt32)prop.ulVal;
+    switch (propID)
     {
-      case NCoderPropID::kNumPasses:
-      {
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-        UInt32 numPasses = prop.ulVal;
-        if (numPasses == 0)
-          numPasses = 1;
-        if (numPasses > kNumPassesMax)
-          numPasses = kNumPassesMax;
-        NumPasses = numPasses;
-        m_OptimizeNumTables = (NumPasses > 1);
-        break;
-      }
-      case NCoderPropID::kDictionarySize:
-      {
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-        UInt32 dictionary = prop.ulVal / kBlockSizeStep;
-        if (dictionary < kBlockSizeMultMin)
-          dictionary = kBlockSizeMultMin;
-        else if (dictionary > kBlockSizeMultMax)
-          dictionary = kBlockSizeMultMax;
-        m_BlockSizeMult = dictionary;
-        break;
-      }
+      case NCoderPropID::kNumPasses: props.NumPasses = v; break;
+      case NCoderPropID::kDictionarySize: props.BlockSizeMult = v / kBlockSizeStep; break;
+      case NCoderPropID::kLevel: level = v; break;
       case NCoderPropID::kNumThreads:
       {
         #ifndef _7ZIP_ST
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-        NumThreads = prop.ulVal;
-        if (NumThreads < 1)
-          NumThreads = 1;
+        SetNumberOfThreads(v);
         #endif
         break;
       }
-      default:
-        return E_INVALIDARG;
+      default: return E_INVALIDARG;
     }
   }
+  props.Normalize(level);
+  _props = props;
   return S_OK;
 }
 
 #ifndef _7ZIP_ST
 STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
 {
+  const UInt32 kNumThreadsMax = 64;
+  if (numThreads < 1) numThreads = 1;
+  if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   NumThreads = numThreads;
-  if (NumThreads < 1)
-    NumThreads = 1;
   return S_OK;
 }
 #endif

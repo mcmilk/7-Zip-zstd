@@ -107,7 +107,7 @@ static struct CStrongCryptoPair
   { NStrongCryptoFlags::kRC4, "RC4" }
 };
 
-static STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
@@ -117,6 +117,7 @@ static STATPROPSTG kProps[] =
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidATime, VT_FILETIME},
   { NULL, kpidAttrib, VT_UI4},
+  // { NULL, kpidPosixAttrib, VT_UI4},
   { NULL, kpidEncrypted, VT_BOOL},
   { NULL, kpidComment, VT_BSTR},
   { NULL, kpidCRC, VT_UI4},
@@ -125,7 +126,7 @@ static STATPROPSTG kProps[] =
   { NULL, kpidUnpackVer, VT_UI4}
 };
 
-static STATPROPSTG kArcProps[] =
+static const STATPROPSTG kArcProps[] =
 {
   { NULL, kpidBit64, VT_BOOL},
   { NULL, kpidComment, VT_BSTR},
@@ -135,7 +136,7 @@ static STATPROPSTG kArcProps[] =
 
 CHandler::CHandler()
 {
-  InitMethodProperties();
+  InitMethodProps();
 }
 
 static AString BytesToString(const CByteBuffer &data)
@@ -165,6 +166,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidComment:  prop = MultiByteToUnicodeString(BytesToString(m_Archive.ArcInfo.Comment), CP_ACP); break;
     case kpidPhySize:  prop = m_Archive.ArcInfo.GetPhySize(); break;
     case kpidOffset:  if (m_Archive.ArcInfo.StartPosition != 0) prop = m_Archive.ArcInfo.StartPosition; break;
+    case kpidError: if (!m_Archive.IsOkHeaders) prop = "Incorrect headers"; break;
   }
   prop.Detach(value);
   COM_TRY_END
@@ -194,7 +196,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       UInt32 unixTime;
       if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, ft))
         prop = (UInt32)NFileTimeType::kWindows;
-      else if (item.CentralExtra.GetUnixTime(NFileHeader::NUnixTime::kMTime, unixTime))
+      else if (item.CentralExtra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
         prop = (UInt32)NFileTimeType::kUnix;
       else
         prop = (UInt32)NFileTimeType::kDOS;
@@ -220,7 +222,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       if (!item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, utc))
       {
         UInt32 unixTime;
-        if (item.CentralExtra.GetUnixTime(NFileHeader::NUnixTime::kMTime, unixTime))
+        if (item.CentralExtra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
           NTime::UnixTimeToFileTime(unixTime, utc);
         else
         {
@@ -233,7 +235,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       prop = utc;
       break;
     }
-    case kpidAttrib:  prop = item.GetWinAttributes(); break;
+    case kpidAttrib:  prop = item.GetWinAttrib(); break;
+    case kpidPosixAttrib:
+    {
+      UInt32 attrib;
+      if (item.GetPosixAttrib(attrib))
+        prop = attrib;
+      break;
+    }
     case kpidEncrypted:  prop = item.IsEncrypted(); break;
     case kpidComment:  prop = item.GetUnicodeString(BytesToString(item.Comment)); break;
     case kpidCRC:  if (item.IsThereCrc()) prop = item.FileCRC; break;
@@ -435,7 +444,10 @@ public:
     ISequentialOutStream *realOutStream,
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
-    UInt32 numThreads, Int32 &res);
+    #ifndef _7ZIP_ST
+    UInt32 numThreads,
+    #endif
+    Int32 &res);
 };
 
 HRESULT CZipDecoder::Decode(
@@ -444,7 +456,10 @@ HRESULT CZipDecoder::Decode(
     ISequentialOutStream *realOutStream,
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
-    UInt32 numThreads, Int32 &res)
+    #ifndef _7ZIP_ST
+    UInt32 numThreads,
+    #endif
+    Int32 &res)
 {
   res = NExtract::NOperationResult::kDataError;
   CInStreamReleaser inStreamReleaser;
@@ -805,15 +820,22 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     RINOK(extractCallback->PrepareOperation(askMode));
 
     Int32 res;
-    RINOK(myDecoder.Decode(
+    HRESULT hres = myDecoder.Decode(
         EXTERNAL_CODECS_VARS
         m_Archive, item, realOutStream, extractCallback,
-        progress, _numThreads, res));
+        progress,
+        #ifndef _7ZIP_ST
+        _props.NumThreads,
+        #endif
+        res);
+    RINOK(hres);
     realOutStream.Release();
     
     RINOK(extractCallback->SetOperationResult(res))
   }
-  return S_OK;
+  lps->InSize = currentTotalPacked;
+  lps->OutSize = currentTotalUnPacked;
+  return lps->SetCur();
   COM_TRY_END
 }
 

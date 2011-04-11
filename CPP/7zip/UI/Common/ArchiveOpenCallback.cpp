@@ -2,7 +2,6 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
 #include "Common/ComTry.h"
 
 #include "Windows/PropVariant.h"
@@ -94,7 +93,7 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
     RINOK(Callback->Open_CheckBreak());
   }
   *inStream = NULL;
-  UString fullPath = _folderPrefix + name;
+  FString fullPath = _folderPrefix + us2fs(name);
   if (!_fileInfo.Find(fullPath))
     return S_FALSE;
   if (_fileInfo.IsDir())
@@ -130,4 +129,3 @@ STDMETHODIMP COpenCallbackImp::CryptoGetTextPassword(BSTR *password)
   COM_TRY_END
 }
 #endif
-  

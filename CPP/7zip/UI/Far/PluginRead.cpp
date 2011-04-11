@@ -194,9 +194,11 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
         #ifdef UNDER_CE
         destPathU = L"\\";
         #else
-        if (!NFile::NDirectory::MyGetCurrentDirectory(destPathU))
+        FString destPathF = us2fs(destPathU);
+        if (!NFile::NDirectory::MyGetCurrentDirectory(destPathF))
           throw 318016;
-        NFile::NName::NormalizeDirPathPrefix(destPathU);
+        NFile::NName::NormalizeDirPathPrefix(destPathF);
+        destPathU = fs2us(destPathF);
         #endif
         break;
       }
@@ -251,7 +253,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     passwordIsDefined = !password.IsEmpty();
   }
 
-  NFile::NDirectory::CreateComplexDirectory(destPathU);
+  NFile::NDirectory::CreateComplexDirectory(us2fs(destPathU));
 
   /*
   vector<int> realIndices;

@@ -22,6 +22,7 @@ static const UINT kIconTypesResId = 100;
 #endif
 
 #ifdef _WIN32
+#include "Windows/FileName.h"
 #include "Windows/Registry.h"
 #endif
 
@@ -32,53 +33,52 @@ using namespace NFile;
 extern HINSTANCE g_hInstance;
 #endif
 
-static CSysString GetLibraryFolderPrefix()
-{
-  #ifdef _WIN32
-  TCHAR fullPath[MAX_PATH + 1];
-  ::GetModuleFileName(g_hInstance, fullPath, MAX_PATH);
-  CSysString path = fullPath;
-  int pos = path.ReverseFind(TEXT(CHAR_PATH_SEPARATOR));
-  return path.Left(pos + 1);
-  #else
-  return CSysString(); // FIX IT
-  #endif
-}
-
-#define kCodecsFolderName TEXT("Codecs")
-#define kFormatsFolderName TEXT("Formats")
-static const TCHAR *kMainDll = TEXT("7z.dll");
+#define kCodecsFolderName FTEXT("Codecs")
+#define kFormatsFolderName FTEXT("Formats")
+static CFSTR kMainDll = FTEXT("7z.dll");
 
 #ifdef _WIN32
+
 static LPCTSTR kRegistryPath = TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-zip");
-static LPCTSTR kProgramPathValue = TEXT("Path");
-static bool ReadPathFromRegistry(HKEY baseKey, CSysString &path)
+static LPCWSTR kProgramPathValue = L"Path";
+static LPCWSTR kProgramPath2Value = L"Path"
+  #ifdef _WIN64
+  L"64";
+  #else
+  L"32";
+  #endif
+
+static bool ReadPathFromRegistry(HKEY baseKey, LPCWSTR value, FString &path)
 {
   NRegistry::CKey key;
-  if(key.Open(baseKey, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
-    if (key.QueryValue(kProgramPathValue, path) == ERROR_SUCCESS)
+  if (key.Open(baseKey, kRegistryPath, KEY_READ) == ERROR_SUCCESS)
+  {
+    UString pathU;
+    if (key.QueryValue(value, pathU) == ERROR_SUCCESS)
     {
+      path = us2fs(pathU);
       NName::NormalizeDirPathPrefix(path);
-      return true;
+      return NFind::DoesFileExist(path + kMainDll);
     }
+  }
   return false;
 }
 
 #endif
 
-CSysString GetBaseFolderPrefixFromRegistry()
+static FString GetBaseFolderPrefixFromRegistry()
 {
-  CSysString moduleFolderPrefix = GetLibraryFolderPrefix();
+  FString moduleFolderPrefix = NDLL::GetModuleDirPrefix();
   #ifdef _WIN32
   if (!NFind::DoesFileExist(moduleFolderPrefix + kMainDll) &&
       !NFind::DoesDirExist(moduleFolderPrefix + kCodecsFolderName) &&
       !NFind::DoesDirExist(moduleFolderPrefix + kFormatsFolderName))
   {
-    CSysString path;
-    if (ReadPathFromRegistry(HKEY_CURRENT_USER, path))
-      return path;
-    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, path))
-      return path;
+    FString path;
+    if (ReadPathFromRegistry(HKEY_CURRENT_USER,  kProgramPath2Value, path)) return path;
+    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, kProgramPath2Value, path)) return path;
+    if (ReadPathFromRegistry(HKEY_CURRENT_USER,  kProgramPathValue,  path)) return path;
+    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, kProgramPathValue,  path)) return path;
   }
   #endif
   return moduleFolderPrefix;
@@ -208,6 +208,14 @@ static void SplitString(const UString &srcString, UStringVector &destStrings)
   }
   if (!s.IsEmpty())
     destStrings.Add(s);
+}
+
+int CArcInfoEx::FindExtension(const UString &ext) const
+{
+  for (int i = 0; i < Exts.Size(); i++)
+    if (ext.CompareNoCase(Exts[i].Ext) == 0)
+      return i;
+  return -1;
 }
 
 void CArcInfoEx::AddExts(const wchar_t *ext, const wchar_t *addExt)
@@ -344,7 +352,7 @@ extern "C"
 }
 #endif
 
-HRESULT CCodecs::LoadDll(const CSysString &dllPath, bool needCheckDll)
+HRESULT CCodecs::LoadDll(const FString &dllPath, bool needCheckDll)
 {
   if (needCheckDll)
   {
@@ -393,9 +401,9 @@ HRESULT CCodecs::LoadDll(const CSysString &dllPath, bool needCheckDll)
   return res;
 }
 
-HRESULT CCodecs::LoadDllsFromFolder(const CSysString &folderPrefix)
+HRESULT CCodecs::LoadDllsFromFolder(const FString &folderPrefix)
 {
-  NFile::NFind::CEnumerator enumerator(folderPrefix + CSysString(TEXT("*")));
+  NFile::NFind::CEnumerator enumerator(folderPrefix + FCHAR_ANY_MASK);
   NFile::NFind::CFileInfo fi;
   while (enumerator.Next(fi))
   {
@@ -443,10 +451,10 @@ HRESULT CCodecs::Load()
     Formats.Add(item);
   }
   #ifdef EXTERNAL_CODECS
-  const CSysString baseFolder = GetBaseFolderPrefixFromRegistry();
+  const FString baseFolder = GetBaseFolderPrefixFromRegistry();
   RINOK(LoadDll(baseFolder + kMainDll, false));
-  RINOK(LoadDllsFromFolder(baseFolder + kCodecsFolderName TEXT(STRING_PATH_SEPARATOR)));
-  RINOK(LoadDllsFromFolder(baseFolder + kFormatsFolderName TEXT(STRING_PATH_SEPARATOR)));
+  RINOK(LoadDllsFromFolder(baseFolder + kCodecsFolderName FSTRING_PATH_SEPARATOR));
+  RINOK(LoadDllsFromFolder(baseFolder + kFormatsFolderName FSTRING_PATH_SEPARATOR));
   #endif
   return S_OK;
 }
@@ -455,12 +463,11 @@ HRESULT CCodecs::Load()
 
 int CCodecs::FindFormatForArchiveName(const UString &arcPath) const
 {
-  int slashPos1 = arcPath.ReverseFind(WCHAR_PATH_SEPARATOR);
-  int slashPos2 = arcPath.ReverseFind(L'.');
+  int slashPos = arcPath.ReverseFind(WCHAR_PATH_SEPARATOR);
   int dotPos = arcPath.ReverseFind(L'.');
-  if (dotPos < 0 || dotPos < slashPos1 || dotPos < slashPos2)
+  if (dotPos < 0 || dotPos < slashPos)
     return -1;
-  UString ext = arcPath.Mid(dotPos + 1);
+  const UString ext = arcPath.Mid(dotPos + 1);
   for (int i = 0; i < Formats.Size(); i++)
   {
     const CArcInfoEx &arc = Formats[i];

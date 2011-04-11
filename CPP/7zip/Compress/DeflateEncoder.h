@@ -52,6 +52,25 @@ typedef struct _CSeqInStream
   CMyComPtr<ISequentialInStream> RealStream;
 } CSeqInStream;
 
+struct CEncProps
+{
+  int Level;
+  int algo;
+  int fb;
+  int btMode;
+  UInt32 mc;
+  UInt32 numPasses;
+
+  CEncProps()
+  {
+    Level = -1;
+    mc = 0;
+    algo = fb = btMode = -1;
+    numPasses = (UInt32)(Int32)-1;
+  }
+  void Normalize();
+};
+
 class CCoder
 {
   CMatchFinder _lzInWindow;
@@ -116,7 +135,6 @@ public:
   COptimal m_Optimum[kNumOpts];
 
   UInt32 m_MatchFinderCycles;
-  // IMatchFinderSetNumPasses *m_SetMfPasses;
 
   void GetMatches();
   void MovePos(UInt32 num);
@@ -164,6 +182,7 @@ public:
   UInt32 GetBlockPrice(int tableIndex, int numDivPasses);
   void CodeBlock(int tableIndex, bool finalBlock);
 
+  void SetProps(const CEncProps *props2);
 public:
   CCoder(bool deflate64Mode = false);
   ~CCoder();

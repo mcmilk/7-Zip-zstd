@@ -33,7 +33,9 @@ using namespace NFind;
 
 #define MENU_HEIGHT 26
 
+#ifdef _WIN32
 HINSTANCE g_hInstance;
+#endif
 HWND g_HWND;
 bool g_OpenArchive = false;
 static UString g_MainPath;
@@ -114,7 +116,7 @@ public:
 };
 
 static bool g_CanChangeSplitter = false;
-static UINT32 g_SplitterPos = 0;
+static UInt32 g_SplitterPos = 0;
 static CSplitterPos g_Splitter;
 static bool g_PanelsInfoDefined = false;
 
@@ -208,7 +210,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     ySize = rect.bottom - rect.top;
   }
 
-  UINT32 numPanels, currentPanel;
+  UInt32 numPanels, currentPanel;
   g_PanelsInfoDefined = ReadPanelsInfo(numPanels, currentPanel, g_SplitterPos);
   if (g_PanelsInfoDefined)
   {
@@ -408,6 +410,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     /* lpCmdLine */, int nCmdShow)
 {
   #ifdef _WIN32
+
+  /*
+  #ifndef _WIN64
+  #ifndef UNDER_CE
+  {
+    HMODULE hMod = GetModuleHandle("Kernel32.dll");
+    if (hMod)
+    {
+      typedef BOOL (WINAPI *PSETDEP)(DWORD);
+      #define MY_PROCESS_DEP_ENABLE 1
+      PSETDEP procSet = (PSETDEP)GetProcAddress(hMod,"SetProcessDEPPolicy");
+      if (procSet)
+        procSet(MY_PROCESS_DEP_ENABLE);
+
+      typedef BOOL (WINAPI *HSI)(HANDLE, HEAP_INFORMATION_CLASS ,PVOID, SIZE_T);
+      HSI hsi = (HSI)GetProcAddress(hMod, "HeapSetInformation");
+      #define MY_HeapEnableTerminationOnCorruption ((HEAP_INFORMATION_CLASS)1)
+      if (hsi)
+        hsi(NULL, MY_HeapEnableTerminationOnCorruption, NULL, 0);
+    }
+  }
+  #endif
+  #endif
+  */
 
   NT_CHECK
   SetLargePageSize();
@@ -639,7 +665,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       bool needOpenFile = false;
       if (!g_MainPath.IsEmpty() /* && g_OpenArchive */)
       {
-        if (NFile::NFind::DoesFileExist(g_MainPath))
+        if (NFile::NFind::DoesFileExist(us2fs(g_MainPath)))
           needOpenFile = true;
       }
       HRESULT res = g_App.Create(hWnd, g_MainPath, g_ArcFormat, xSizes, archiveIsOpened, encrypted);
@@ -665,8 +691,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (res == E_OUTOFMEMORY)
               message = LangString(IDS_MEM_ERROR, 0x0200060B);
             else
-              if (!NError::MyFormatMessage(res, message))
-                message = L"Error";
+              message = NError::MyFormatMessageW(res);
           }
         }
         MessageBoxW(0, message, L"7-zip", MB_ICONERROR);

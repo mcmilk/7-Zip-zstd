@@ -30,7 +30,7 @@ static const STATPROPSTG kProps[] =
 UString RootFolder_GetName_Computer(int &iconIndex)
 {
   #ifdef UNDER_CE
-  GetRealIconIndex(L"\\", FILE_ATTRIBUTE_DIRECTORY, iconIndex);
+  GetRealIconIndex(FTEXT("\\"), FILE_ATTRIBUTE_DIRECTORY, iconIndex);
   #else
   iconIndex = GetIconIndexForCSIDL(CSIDL_DRIVES);
   #endif
@@ -123,7 +123,7 @@ UString GetMyDocsPath()
       us = GetUnicodeString(s2);
   }
   #endif
-  if (us.Length() > 0 && us[us.Length() - 1] != WCHAR_PATH_SEPARATOR)
+  if (us.Length() > 0 && us.Back() != WCHAR_PATH_SEPARATOR)
     us += WCHAR_PATH_SEPARATOR;
   return us;
 }
@@ -159,7 +159,7 @@ STDMETHODIMP CRootFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolde
     {
       NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
       subFolder = fsFolderSpec;
-      RINOK(fsFolderSpec->Init(s, NULL));
+      RINOK(fsFolderSpec->Init(us2fs(s), NULL));
     }
   }
   #endif
@@ -227,7 +227,7 @@ STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
       name2 += WCHAR_PATH_SEPARATOR;
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
     subFolder = fsFolderSpec;
-    if (fsFolderSpec->Init(name2, 0) != S_OK)
+    if (fsFolderSpec->Init(us2fs(name2), 0) != S_OK)
     {
       #ifndef UNDER_CE
       if (name2[0] == WCHAR_PATH_SEPARATOR)

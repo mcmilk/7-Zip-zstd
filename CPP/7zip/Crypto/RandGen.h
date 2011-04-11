@@ -3,11 +3,11 @@
 #ifndef __CRYPTO_RAND_GEN_H
 #define __CRYPTO_RAND_GEN_H
 
-#include "Sha1.h"
+#include "../../../C/Sha256.h"
 
 class CRandomGenerator
 {
-  Byte _buff[NCrypto::NSha1::kDigestSize];
+  Byte _buff[SHA256_DIGEST_SIZE];
   bool _needInit;
 
   void Init();

@@ -473,6 +473,9 @@ static HRESULT Update2St(
     items.Add(item);
     lps->ProgressOffset += NFileHeader::kLocalBlockSize;
   }
+  lps->InSize = unpackSizeTotal;
+  lps->OutSize = packSizeTotal;
+  RINOK(lps->SetCur());
   archive.WriteCentralDir(items, comment);
   return S_OK;
 }
@@ -493,7 +496,7 @@ static HRESULT Update2(
   UInt64 numBytesToCompress = 0;
  
   int i;
-  for(i = 0; i < updateItems.Size(); i++)
+  for (i = 0; i < updateItems.Size(); i++)
   {
     const CUpdateItem &ui = updateItems[i];
     if (ui.NewData)
@@ -527,6 +530,10 @@ static HRESULT Update2(
   
   complexity = 0;
   
+  CCompressionMethodMode options2;
+  if (options != 0)
+    options2 = *options;
+
   #ifndef _7ZIP_ST
 
   const size_t kNumMaxThreads = (1 << 10);
@@ -537,53 +544,58 @@ static HRESULT Update2(
   const size_t kMemPerThread = (1 << 25);
   const size_t kBlockSize = 1 << 16;
 
-  CCompressionMethodMode options2;
-  if (options != 0)
-    options2 = *options;
-
   bool mtMode = ((options != 0) && (numThreads > 1));
 
   if (numFilesToCompress <= 1)
     mtMode = false;
 
-  if (mtMode)
+  if (!mtMode)
+  {
+    if (numThreads < 2)
+      if (options2.MethodInfo.FindProp(NCoderPropID::kNumThreads) < 0 &&
+          options2.NumThreadsWasChanged)
+        options2.MethodInfo.AddNumThreadsProp(1);
+  }
+  else
   {
     Byte method = options->MethodSequence.Front();
     if (method == NFileHeader::NCompressionMethod::kStored && !options->PasswordIsDefined)
-      mtMode = false;
+      numThreads = 1;
     if (method == NFileHeader::NCompressionMethod::kBZip2)
     {
-      UInt64 averageSize = numBytesToCompress / numFilesToCompress;
-      UInt32 blockSize = options->DicSize;
-      if (blockSize == 0)
-        blockSize = 1;
-      UInt64 averageNumberOfBlocks = averageSize / blockSize;
-      UInt32 numBZip2Threads = 32;
-      if (averageNumberOfBlocks < numBZip2Threads)
-        numBZip2Threads = (UInt32)averageNumberOfBlocks;
-      if (numBZip2Threads < 1)
-        numBZip2Threads = 1;
-      numThreads = numThreads / numBZip2Threads;
-      options2.NumThreads = numBZip2Threads;
-      if (numThreads <= 1)
-        mtMode = false;
+      bool fixedNumber;
+      UInt32 numBZip2Threads = options2.MethodInfo.Get_BZip2_NumThreads(fixedNumber);
+      if (!fixedNumber)
+      {
+        UInt64 averageSize = numBytesToCompress / numFilesToCompress;
+        UInt32 blockSize = options2.MethodInfo.Get_BZip2_BlockSize();
+        UInt64 averageNumberOfBlocks = averageSize / blockSize + 1;
+        numBZip2Threads = 32;
+        if (averageNumberOfBlocks < numBZip2Threads)
+          numBZip2Threads = (UInt32)averageNumberOfBlocks;
+        options2.MethodInfo.AddNumThreadsProp(numBZip2Threads);
+      }
+      numThreads /= numBZip2Threads;
     }
     if (method == NFileHeader::NCompressionMethod::kLZMA)
     {
-      UInt32 numLZMAThreads = (options->Algo > 0 ? 2 : 1);
+      bool fixedNumber;
+      // we suppose that default LZMA is 2 thread. So we don't change it
+      UInt32 numLZMAThreads = options2.MethodInfo.Get_Lzma_NumThreads(fixedNumber);
       numThreads /= numLZMAThreads;
-      options2.NumThreads = numLZMAThreads;
-      if (numThreads <= 1)
-        mtMode = false;
     }
+    if (numThreads > numFilesToCompress)
+      numThreads = (UInt32)numFilesToCompress;
+    if (numThreads <= 1)
+      mtMode = false;
   }
 
   if (!mtMode)
   #endif
     return Update2St(
         EXTERNAL_CODECS_LOC_VARS
-        archive, inArchive,inStream,
-        inputItems, updateItems, options, comment, updateCallback);
+        archive, inArchive, inStream,
+        inputItems, updateItems, &options2, comment, updateCallback);
 
 
   #ifndef _7ZIP_ST
@@ -606,7 +618,7 @@ static HRESULT Update2(
 
   {
     RINOK(memManager.AllocateSpaceAlways((size_t)numThreads * (kMemPerThread / kBlockSize)));
-    for(i = 0; i < updateItems.Size(); i++)
+    for (i = 0; i < updateItems.Size(); i++)
       refs.Refs.Add(CMemBlocks2());
 
     UInt32 i;
@@ -796,6 +808,7 @@ static HRESULT Update2(
     mtProgressMixerSpec->Mixer2->SetProgressOffset(complexity);
     itemIndex++;
   }
+  RINOK(mtCompressProgressMixer.SetRatioInfo(0, NULL, NULL));
   archive.WriteCentralDir(items, comment);
   return S_OK;
   #endif

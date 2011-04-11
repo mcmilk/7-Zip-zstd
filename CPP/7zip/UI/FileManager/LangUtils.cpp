@@ -2,14 +2,16 @@
 
 #include "StdAfx.h"
 
-#include "LangUtils.h"
 #include "Common/StringConvert.h"
 #include "Common/StringToInt.h"
+
+#include "Windows/DLL.h"
+#include "Windows/FileFind.h"
 #include "Windows/Synchronization.h"
 #include "Windows/Window.h"
-#include "Windows/FileFind.h"
+
+#include "LangUtils.h"
 #include "RegistryUtils.h"
-#include "ProgramLocation.h"
 
 using namespace NWindows;
 
@@ -20,20 +22,23 @@ UString g_LangID;
 extern bool g_IsNT;
 #endif
 
+static FString GetLangDirPrefix()
+{
+  return NDLL::GetModuleDirPrefix() + FString(FTEXT("Lang") FSTRING_PATH_SEPARATOR);
+}
+
 void ReloadLang()
 {
   ReadRegLang(g_LangID);
   g_Lang.Clear();
   if (!g_LangID.IsEmpty() && g_LangID != L"-")
   {
-    UString langPath = g_LangID;
+    FString langPath = us2fs(g_LangID);
     if (langPath.Find(WCHAR_PATH_SEPARATOR) < 0)
     {
-      if (langPath.Find(L'.') < 0)
-        langPath += L".txt";
-      UString folderPath;
-      if (GetProgramFolderPath(folderPath))
-        langPath = folderPath + UString(L"Lang" WSTRING_PATH_SEPARATOR) + langPath;
+      if (langPath.Find(FTEXT('.')) < 0)
+        langPath += FTEXT(".txt");
+      langPath = GetLangDirPrefix() + langPath;
     }
     g_Lang.Open(langPath);
   }
@@ -51,7 +56,7 @@ void LoadLangOneTime()
   ReloadLang();
 }
 
-void LangSetDlgItemsText(HWND dialogWindow, CIDLangPair *idLangPairs, int numItems)
+void LangSetDlgItemsText(HWND dialogWindow, const CIDLangPair *idLangPairs, int numItems)
 {
   for (int i = 0; i < numItems; i++)
   {
@@ -85,30 +90,26 @@ UString LangString(UINT resourceID, UInt32 langID)
   UString message;
   if (g_Lang.GetMessage(langID, message))
     return message;
-  return NWindows::MyLoadStringW(resourceID);
+  return MyLoadStringW(resourceID);
 }
 
 void LoadLangs(CObjectVector<CLangEx> &langs)
 {
   langs.Clear();
-  UString folderPath;
-  if (!::GetProgramFolderPath(folderPath))
-    return;
-  folderPath += L"Lang" WSTRING_PATH_SEPARATOR;
-  NWindows::NFile::NFind::CEnumeratorW enumerator(folderPath + L"*.txt");
-  NWindows::NFile::NFind::CFileInfoW fileInfo;
-  while (enumerator.Next(fileInfo))
+  const FString dirPrefix = GetLangDirPrefix();
+  NFile::NFind::CEnumerator enumerator(dirPrefix + FTEXT("*.txt"));
+  NFile::NFind::CFileInfo fi;
+  while (enumerator.Next(fi))
   {
-    if (fileInfo.IsDir())
+    if (fi.IsDir())
+      continue;
+    const int kExtSize = 4;
+    const FString ext = fi.Name.Right(kExtSize);
+    if (ext.CompareNoCase(FTEXT(".txt")) != 0)
       continue;
     CLangEx lang;
-    UString filePath = folderPath + fileInfo.Name;
-    const int kExtSize = 4;
-    const UString ext = fileInfo.Name.Right(kExtSize);
-    if (ext.CompareNoCase(L".txt") != 0)
-      continue;
-    lang.ShortName = fileInfo.Name.Left(fileInfo.Name.Length() - kExtSize);
-    if (lang.Lang.Open(filePath))
+    lang.ShortName = fs2us(fi.Name.Left(fi.Name.Length() - kExtSize));
+    if (lang.Lang.Open(dirPrefix + fi.Name))
       langs.Add(lang);
   }
 }

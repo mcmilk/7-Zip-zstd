@@ -449,8 +449,7 @@ bool WasEscPressed()
 
 void ShowErrorMessage(DWORD errorCode)
 {
-  UString message;
-  NError::MyFormatMessage(errorCode, message);
+  UString message = NError::MyFormatMessageW(errorCode);
   message.Replace(L"\x0D", L"");
   message.Replace(L"\x0A", L" ");
   g_StartupInfo.ShowMessage(UnicodeStringToMultiByte(message, CP_OEMCP));

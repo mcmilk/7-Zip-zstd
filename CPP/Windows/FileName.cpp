@@ -2,49 +2,28 @@
 
 #include "StdAfx.h"
 
-#include "Windows/FileName.h"
-#include "Common/Wildcard.h"
+#include "FileName.h"
 
 namespace NWindows {
 namespace NFile {
 namespace NName {
 
-void NormalizeDirPathPrefix(CSysString &dirPath)
+void NormalizeDirPathPrefix(FString &dirPath)
 {
   if (dirPath.IsEmpty())
     return;
-  if (dirPath.ReverseFind(kDirDelimiter) != dirPath.Length() - 1)
-    dirPath += kDirDelimiter;
+  if (dirPath.ReverseFind(FCHAR_PATH_SEPARATOR) != dirPath.Length() - 1)
+    dirPath += FCHAR_PATH_SEPARATOR;
 }
 
-#ifndef _UNICODE
+#ifndef USE_UNICODE_FSTRING
 void NormalizeDirPathPrefix(UString &dirPath)
 {
   if (dirPath.IsEmpty())
     return;
-  if (dirPath.ReverseFind(wchar_t(kDirDelimiter)) != dirPath.Length() - 1)
-    dirPath += wchar_t(kDirDelimiter);
+  if (dirPath.ReverseFind(WCHAR_PATH_SEPARATOR) != dirPath.Length() - 1)
+    dirPath += WCHAR_PATH_SEPARATOR;
 }
 #endif
-
-const wchar_t kExtensionDelimiter = L'.';
-
-void SplitNameToPureNameAndExtension(const UString &fullName,
-    UString &pureName, UString &extensionDelimiter, UString &extension)
-{
-  int index = fullName.ReverseFind(kExtensionDelimiter);
-  if (index < 0)
-  {
-    pureName = fullName;
-    extensionDelimiter.Empty();
-    extension.Empty();
-  }
-  else
-  {
-    pureName = fullName.Left(index);
-    extensionDelimiter = kExtensionDelimiter;
-    extension = fullName.Mid(index + 1);
-  }
-}
 
 }}}

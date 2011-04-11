@@ -5,6 +5,7 @@
 #include "../../../C/7zCrc.h"
 #include "../../../C/Alloc.h"
 #include "../../../C/CpuArch.h"
+#include "../../../C/Xz.h"
 
 #include "Common/ComTry.h"
 #include "Common/IntToString.h"
@@ -13,6 +14,7 @@
 #include "Windows/PropVariantUtils.h"
 #include "Windows/Time.h"
 
+#include "../Common/CWrappers.h"
 #include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
@@ -25,6 +27,10 @@
 
 namespace NArchive {
 namespace NSquashfs {
+
+static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
+static void SzFree(void *p, void *address) { p = p; MyFree(address); }
+static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 static const UInt32 kNumFilesMax = (1 << 28);
 static const unsigned kNumDirLevelsMax = (1 << 10);
@@ -62,13 +68,15 @@ static const UInt32 kSignature32_LZ = 0x71736873;
 #define kMethod_ZLIB 1
 #define kMethod_LZMA 2
 #define kMethod_LZO  3
+#define kMethod_XZ   4
 
 static const char *k_Methods[] =
 {
   "Unknown",
   "ZLIB",
   "LZMA",
-  "LZO"
+  "LZO",
+  "XZ"
 };
 
 static const UInt32 kMetadataBlockSizeLog = 13;
@@ -860,6 +868,8 @@ class CHandler:
   NCompress::NZlib::CDecoder *_zlibDecoderSpec;
   CMyComPtr<ICompressCoder> _zlibDecoder;
   
+  CXzUnpacker _xz;
+
   CByteBuffer _inputBuffer;
 
   CDynBufSeqOutStream *_dynOutStreamSpec;
@@ -886,6 +896,11 @@ class CHandler:
 
 public:
   CHandler();
+  ~CHandler()
+  {
+    XzUnpacker_Free(&_xz);
+  }
+
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
@@ -895,6 +910,8 @@ public:
 
 CHandler::CHandler()
 {
+  XzUnpacker_Construct(&_xz, &g_Alloc);
+
   _limitedInStreamSpec = new CLimitedSequentialInStream;
   _limitedInStream = _limitedInStreamSpec;
 
@@ -1104,33 +1121,16 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
     RINOK(_stream->Seek(-1, STREAM_SEEK_CUR, NULL));
   }
 
-  if (method == kMethod_LZO)
+  if (method == kMethod_ZLIB)
   {
-    if (_inputBuffer.GetCapacity() < inSize)
+    if (!_zlibDecoder)
     {
-      _inputBuffer.Free();
-      _inputBuffer.SetCapacity(inSize);
+      _zlibDecoderSpec = new NCompress::NZlib::CDecoder();
+      _zlibDecoder = _zlibDecoderSpec;
     }
-    RINOK(ReadStream_FALSE(_stream, _inputBuffer, inSize));
-
-    Byte *dest = outBuf;
-    if (!outBuf)
-    {
-      dest = _dynOutStreamSpec->GetBufPtrForWriting(outSizeMax);
-      if (!dest)
-        return E_OUTOFMEMORY;
-    }
-    SizeT destLen = outSizeMax, srcLen = inSize;
-    RINOK(LzoDecode(dest, &destLen, _inputBuffer, &srcLen));
-    if (inSize != srcLen)
+    RINOK(_zlibDecoder->Code(_limitedInStream, outStream, NULL, NULL, NULL));
+    if (inSize != _zlibDecoderSpec->GetInputProcessedSize())
       return S_FALSE;
-    if (outBuf)
-    {
-      *outBufWasWritten = true;
-      *outBufWasWrittenSize = (UInt32)destLen;
-    }
-    else
-      _dynOutStreamSpec->UpdateSize(destLen);
   }
   else if (method == kMethod_LZMA)
   {
@@ -1153,14 +1153,44 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
   }
   else
   {
-    if (!_zlibDecoder)
+    if (_inputBuffer.GetCapacity() < inSize)
     {
-      _zlibDecoderSpec = new NCompress::NZlib::CDecoder();
-      _zlibDecoder = _zlibDecoderSpec;
+      _inputBuffer.Free();
+      _inputBuffer.SetCapacity(inSize);
     }
-    RINOK(_zlibDecoder->Code(_limitedInStream, outStream, NULL, NULL, NULL));
-    if (inSize != _zlibDecoderSpec->GetInputProcessedSize())
+    RINOK(ReadStream_FALSE(_stream, _inputBuffer, inSize));
+
+    Byte *dest = outBuf;
+    if (!outBuf)
+    {
+      dest = _dynOutStreamSpec->GetBufPtrForWriting(outSizeMax);
+      if (!dest)
+        return E_OUTOFMEMORY;
+    }
+    SizeT destLen = outSizeMax, srcLen = inSize;
+    if (method == kMethod_LZO)
+    {
+      RINOK(LzoDecode(dest, &destLen, _inputBuffer, &srcLen));
+    }
+    else
+    {
+      ECoderStatus status;
+      XzUnpacker_Init(&_xz);
+      SRes res = XzUnpacker_Code(&_xz, dest, &destLen, _inputBuffer, &srcLen, LZMA_FINISH_END, &status);
+      if (res != 0)
+        return SResToHRESULT(res);
+      if (status != CODER_STATUS_NEEDS_MORE_INPUT || !XzUnpacker_IsStreamWasFinished(&_xz))
+        return S_FALSE;
+    }
+    if (inSize != srcLen)
       return S_FALSE;
+    if (outBuf)
+    {
+      *outBufWasWritten = true;
+      *outBufWasWrittenSize = (UInt32)destLen;
+    }
+    else
+      _dynOutStreamSpec->UpdateSize(destLen);
   }
   return S_OK;
 }
@@ -1418,6 +1448,7 @@ HRESULT CHandler::Open2(IInStream *inStream)
       case kMethod_ZLIB:
       case kMethod_LZMA:
       case kMethod_LZO:
+      case kMethod_XZ:
         break;
       default:
         return E_NOTIMPL;
@@ -2072,15 +2103,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         if (inStream)
         {
           HRESULT hres = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
-          if (hres != S_OK &&  hres != S_FALSE)
+          if (hres == S_OK)
+          {
+            if (copyCoderSpec->TotalSize == unpackSize)
+              res = NExtract::NOperationResult::kOK;
+          }
+          else if (hres == E_NOTIMPL)
+          {
+            res = NExtract::NOperationResult::kUnSupportedMethod;
+          }
+          else if(hres != S_FALSE)
           {
             RINOK(hres);
-          }
-          if (copyCoderSpec->TotalSize == unpackSize && hres == S_OK)
-            res = NExtract::NOperationResult::kOK;
-          else
-          {
-            res = res;
           }
         }
       }

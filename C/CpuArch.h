@@ -1,5 +1,5 @@
 /* CpuArch.h -- CPU specific code
-2010-10-26: Igor Pavlov : Public domain */
+2010-12-01: Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -52,7 +52,7 @@ If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of pla
 #define MY_CPU_LE
 #endif
 
-#if defined(__BIG_ENDIAN__)
+#if defined(__BIG_ENDIAN__) || defined(__m68k__) ||  defined(__ARMEB__) || defined(__MIPSEB__)
 #define MY_CPU_BE
 #endif
 

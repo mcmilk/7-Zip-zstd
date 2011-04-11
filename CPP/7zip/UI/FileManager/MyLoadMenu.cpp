@@ -513,6 +513,13 @@ bool ExecuteFileCommand(int id)
   return true;
 }
 
+static void MyBenchmark(bool totalMode)
+{
+  CPanel::CDisableTimerProcessing disableTimerProcessing1(g_App.Panels[0]);
+  CPanel::CDisableTimerProcessing disableTimerProcessing2(g_App.Panels[1]);
+  Benchmark(totalMode);
+}
+
 bool OnMenuCommand(HWND hWnd, int id)
 {
   if (ExecuteFileCommand(id))
@@ -538,31 +545,31 @@ bool OnMenuCommand(HWND hWnd, int id)
       break;
     case IDM_SELECT_ALL:
       g_App.SelectAll(true);
-      g_App.RefreshStatusBar();
+      g_App.Refresh_StatusBar();
       break;
     case IDM_DESELECT_ALL:
       g_App.SelectAll(false);
-      g_App.RefreshStatusBar();
+      g_App.Refresh_StatusBar();
       break;
     case IDM_INVERT_SELECTION:
       g_App.InvertSelection();
-      g_App.RefreshStatusBar();
+      g_App.Refresh_StatusBar();
       break;
     case IDM_SELECT:
       g_App.SelectSpec(true);
-      g_App.RefreshStatusBar();
+      g_App.Refresh_StatusBar();
       break;
     case IDM_DESELECT:
       g_App.SelectSpec(false);
-      g_App.RefreshStatusBar();
+      g_App.Refresh_StatusBar();
       break;
     case IDM_SELECT_BY_TYPE:
       g_App.SelectByType(true);
-      g_App.RefreshStatusBar();
+      g_App.Refresh_StatusBar();
       break;
     case IDM_DESELECT_BY_TYPE:
       g_App.SelectByType(false);
-      g_App.RefreshStatusBar();
+      g_App.Refresh_StatusBar();
       break;
 
     //View
@@ -646,13 +653,9 @@ bool OnMenuCommand(HWND hWnd, int id)
       OptionsDialog(hWnd, g_hInstance);
       break;
           
-    case IDM_BENCHMARK:
-    {
-      CPanel::CDisableTimerProcessing disableTimerProcessing1(g_App.Panels[0]);
-      CPanel::CDisableTimerProcessing disableTimerProcessing2(g_App.Panels[1]);
-      Benchmark();
-      break;
-    }
+    case IDM_BENCHMARK: MyBenchmark(false); break;
+    case IDM_BENCHMARK2: MyBenchmark(true); break;
+
     // Help
     case IDM_HELP_CONTENTS:
       ShowHelpWindow(NULL, kFMHelpTopic);

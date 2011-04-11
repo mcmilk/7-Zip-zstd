@@ -9,7 +9,13 @@
 #include "../Common/RegisterCodec.h"
 
 extern "C"
-BOOL WINAPI DllMain(HINSTANCE /* hInstance */, DWORD /* dwReason */, LPVOID /*lpReserved*/)
+BOOL WINAPI DllMain(
+  #ifdef UNDER_CE
+  HANDLE
+  #else
+  HINSTANCE
+  #endif
+  /* hInstance */, DWORD /* dwReason */, LPVOID /*lpReserved*/)
 {
   return TRUE;
 }
@@ -25,4 +31,3 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 {
   return CreateCoder(clsid, iid, outObject);
 }
-

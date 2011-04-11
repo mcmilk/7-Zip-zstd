@@ -1,9 +1,13 @@
-// Common/C_FileIO.h
+// Common/C_FileIO.cpp
 
 #include "C_FileIO.h"
 
 #include <fcntl.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 namespace NC {
 namespace NFile {

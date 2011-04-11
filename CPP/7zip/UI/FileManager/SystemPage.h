@@ -3,39 +3,117 @@
 #ifndef __SYSTEM_PAGE_H
 #define __SYSTEM_PAGE_H
 
-#include "Windows/Control/PropertyPage.h"
+#include "Windows/Control/ImageList.h"
 #include "Windows/Control/ListView.h"
+#include "Windows/Control/PropertyPage.h"
 
 #include "FilePlugins.h"
+#include "RegistryAssociations.h"
+
+enum EExtState
+{
+  kExtState_Clear = 0,
+  kExtState_Other,
+  kExtState_7Zip
+};
+
+struct CModifiedExtInfo: public NRegistryAssoc::CShellExtInfo
+{
+  int OldState;
+  int State;
+  int ImageIndex;
+  bool Other;
+  bool Other7Zip;
+
+  CModifiedExtInfo(): ImageIndex(-1) {}
+
+  CSysString GetString() const;
+
+  void SetState(const UString &iconPath)
+  {
+    State = kExtState_Clear;
+    Other = false;
+    Other7Zip = false;
+    if (!ProgramKey.IsEmpty())
+    {
+      State = kExtState_Other;
+      Other = true;
+      if (IsIt7Zip())
+      {
+        Other7Zip = (iconPath.CompareNoCase(IconPath) != 0);
+        if (!Other7Zip)
+        {
+          State = kExtState_7Zip;
+          Other = false;
+        }
+      }
+    }
+    OldState = State;
+  };
+};
+
+struct CAssoc
+{
+  CModifiedExtInfo Pair[2];
+  int SevenZipImageIndex;
+
+  int GetIconIndex() const
+  {
+    for (int i = 0; i < 2; i++)
+    {
+      const CModifiedExtInfo &pair = Pair[i];
+      if (pair.State == kExtState_Clear)
+        continue;
+      if (pair.State == kExtState_7Zip)
+        return SevenZipImageIndex;
+      if (pair.ImageIndex != -1)
+        return pair.ImageIndex;
+    }
+    return -1;
+  }
+};
+
+#ifdef UNDER_CE
+  #define NUM_EXT_GROUPS 1
+#else
+  #define NUM_EXT_GROUPS 2
+#endif
 
 class CSystemPage: public NWindows::NControl::CPropertyPage
 {
-  bool _initMode;
-  CExtDatabase _extDatabase;
+  CExtDatabase _extDB;
+  CObjectVector<CAssoc> _items;
 
-  NWindows::NControl::CListView _listViewExt;
-  NWindows::NControl::CListView _listViewPlugins;
+  int _numIcons;
+  NWindows::NControl::CImageList _imageList;
+  NWindows::NControl::CListView _listView;
 
-  void SetMainPluginText(int itemIndex, int indexInDatabase);
+  const HKEY GetHKey(int group) const
+  {
+    #if NUM_EXT_GROUPS == 1
+      return HKEY_CLASSES_ROOT;
+    #else
+      return group == 0 ? HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE;
+    #endif
+  }
 
-  int GetSelectedExtIndex();
-  void RefreshPluginsList(int selectIndex);
-  void MovePlugin(bool upDirection);
-  void UpdateDatabase();
-  void SelectAll();
+  int AddIcon(const UString &path, int iconIndex);
+  int GetRealIndex(int listIndex) const { return listIndex; }
+  void RefreshListItem(int group, int listIndex);
+  void ChangeState(int group, const CIntVector &indices);
+  void ChangeState(int group);
 
+  bool OnListKeyDown(LPNMLVKEYDOWN keyDownInfo);
+  
 public:
   bool WasChanged;
   CSystemPage(): WasChanged(false) {}
-  virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
+
   virtual bool OnInit();
   virtual void OnNotifyHelp();
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam);
-  virtual bool OnItemChanged(const NMLISTVIEW *info);
-
   virtual LONG OnApply();
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
-  bool OnPluginsKeyDown(LPNMLVKEYDOWN keyDownInfo);
 };
 
 #endif

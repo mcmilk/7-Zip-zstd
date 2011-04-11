@@ -574,34 +574,33 @@ HRESULT CInArchive::Open2()
 {
   Clear();
 
+  // Some UDFs contain additional pad zeros (2 KB).
+  // Seek to STREAM_SEEK_END for direct DVD reading can return 8 KB more, so we check last 16 KB.
+  // And when we read last block, result read size can be smaller than required size.
+
   UInt64 fileSize;
   RINOK(_stream->Seek(0, STREAM_SEEK_END, &fileSize));
-
-  // Some UDFs contain additional 2 KB of zeros, so we also check 12, corrected to 11.
-  const int kSecLogSizeMax = 12;
-  Byte buf[1 << kSecLogSizeMax];
-  Byte kSizesLog[] = { 11, 8, 12 };
-
-  for (int i = 0;; i++)
+  const size_t kBufSize = 1 << 14;
+  Byte buf[kBufSize];
+  size_t readSize = (fileSize < kBufSize) ? (size_t)fileSize : kBufSize;
+  RINOK(_stream->Seek(fileSize - readSize, STREAM_SEEK_SET, NULL));
+  RINOK(ReadStream(_stream, buf, &readSize));
+  size_t i = readSize;
+  for (;;)
   {
-    if (i == sizeof(kSizesLog) / sizeof(kSizesLog[0]))
+    const size_t kSecSizeMin = 1 << 8;
+    if (i < kSecSizeMin)
       return S_FALSE;
-    SecLogSize = kSizesLog[i];
-    Int32 bufSize = 1 << SecLogSize;
-    if (bufSize > fileSize)
-      return S_FALSE;
-    RINOK(_stream->Seek(-bufSize, STREAM_SEEK_END, NULL));
-    RINOK(ReadStream_FALSE(_stream, buf, bufSize));
+    i -= kSecSizeMin;
+    SecLogSize = (readSize - i < ((size_t)1 << 11)) ? 8 : 11;
     CTag tag;
-    if (tag.Parse(buf, bufSize) == S_OK)
+    if (tag.Parse(buf + i, (1 << SecLogSize)) == S_OK)
       if (tag.Id == DESC_TYPE_AnchorVolPtr)
         break;
   }
-  if (SecLogSize == 12)
-    SecLogSize = 11;
 
   CExtent extentVDS;
-  extentVDS.Parse(buf + 16);
+  extentVDS.Parse(buf + i + 16);
 
   for (UInt32 location = extentVDS.Pos; ; location++)
   {

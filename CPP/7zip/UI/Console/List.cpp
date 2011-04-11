@@ -437,8 +437,8 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
     UInt64 arcPackSize = 0;
     if (!stdInMode)
     {
-      NFile::NFind::CFileInfoW fi;
-      if (!fi.Find(archiveName) || fi.IsDir())
+      NFile::NFind::CFileInfo fi;
+      if (!fi.Find(us2fs(archiveName)) || fi.IsDir())
       {
         g_StdOut << endl << "Error: " << archiveName << " is not file" << endl;
         numErrors++;
@@ -477,7 +477,7 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
       else if (result == E_OUTOFMEMORY)
         g_StdOut << "Can't allocate required memory";
       else
-        g_StdOut << NError::MyFormatMessage(result);
+        g_StdOut << NError::MyFormatMessageW(result);
       g_StdOut << endl;
       numErrors++;
       continue;

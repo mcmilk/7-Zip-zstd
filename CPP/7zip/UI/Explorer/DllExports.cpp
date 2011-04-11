@@ -35,16 +35,6 @@ using namespace NWindows;
 HINSTANCE g_hInstance = 0;
 HWND g_HWND = 0;
 
-UString HResultToMessage(HRESULT errorCode)
-{
-  UString message;
-  if (!NError::MyFormatMessage(errorCode, message))
-    message.Empty();
-  if (message.IsEmpty())
-    message = L"Error";
-  return message;
-}
-
 LONG g_DllRefCount = 0; // Reference count of this DLL.
 
 static LPCWSTR kShellExtName = L"7-Zip Shell Extension";
@@ -191,14 +181,15 @@ static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
   if (!GetStringFromIID(clsid, clsidString, MAX_PATH))
     return FALSE;
   
-  UString modulePath;
-  if (!NDLL::MyGetModuleFileName(g_hInstance, modulePath))
+  FString modulePath;
+  if (!NDLL::MyGetModuleFileName(modulePath))
     return FALSE;
+  UString modulePathU = fs2us(modulePath);
   
   CRegItem clsidEntries[] =
   {
     HKEY_CLASSES_ROOT, kClsidMask,        NULL,              title,
-    HKEY_CLASSES_ROOT, kClsidInprocMask,  NULL,              modulePath,
+    HKEY_CLASSES_ROOT, kClsidInprocMask,  NULL,              modulePathU,
     HKEY_CLASSES_ROOT, kClsidInprocMask,  L"ThreadingModel", L"Apartment",
     NULL,              NULL,              NULL,              NULL
   };

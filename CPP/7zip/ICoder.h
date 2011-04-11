@@ -44,7 +44,9 @@ namespace NCoderPropID
     kNumPasses,
     kAlgorithm,
     kNumThreads,
-    kEndMarker
+    kEndMarker,
+    kLevel,
+    kReduceSize // estimated size of data that will be compressed. Encoder can use this value to reduce dictionary size.
   };
 }
 

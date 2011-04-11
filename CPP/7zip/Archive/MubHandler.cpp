@@ -15,7 +15,7 @@
 
 #include "../Compress/CopyCoder.h"
 
-#define Get32(p) GetBe32(p)
+static UInt32 Get32(const Byte *p, int be) { if (be) return GetBe32(p); return GetUi32(p); }
 
 namespace NArchive {
 namespace NMub {
@@ -116,8 +116,16 @@ HRESULT CHandler::Open2(IInStream *stream)
   RINOK(ReadStream(stream, buf, &processed));
   if (processed < kHeaderSize)
     return S_FALSE;
-  UInt32 num = Get32(buf + 4);
-  if (Get32(buf) != 0xCAFEBABE || num > kNumFilesMax || processed < kHeaderSize + num * kRecordSize)
+  
+  bool be;
+  switch (GetBe32(buf))
+  {
+    case 0xCAFEBABE: be = true; break;
+    case 0xB9FAF10E: be = false; break;
+    default: return S_FALSE;
+  }
+  UInt32 num = Get32(buf + 4, be);
+  if (num > kNumFilesMax || processed < kHeaderSize + num * kRecordSize)
     return S_FALSE;
   UInt64 endPosMax = kHeaderSize;
   for (UInt32 i = 0; i < num; i++)
@@ -125,11 +133,11 @@ HRESULT CHandler::Open2(IInStream *stream)
     const Byte *p = buf + kHeaderSize + i * kRecordSize;
     CItem &sb = _items[i];
     sb.IsTail = false;
-    sb.Type = Get32(p);
-    sb.SubType = Get32(p + 4);
-    sb.Offset = Get32(p + 8);
-    sb.Size = Get32(p + 12);
-    sb.Align = Get32(p + 16);
+    sb.Type = Get32(p, be);
+    sb.SubType = Get32(p + 4, be);
+    sb.Offset = Get32(p + 8, be);
+    sb.Size = Get32(p + 12, be);
+    sb.Align = Get32(p + 16, be);
 
     if ((sb.Type & ~MACH_TYPE_ABI64) >= 0x100 ||
         (sb.SubType & ~MACH_SUBTYPE_ABI64) >= 0x100 ||

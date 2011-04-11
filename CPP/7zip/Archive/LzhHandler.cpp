@@ -177,47 +177,6 @@ struct CItem
   }
 };
 
-struct CItemEx: public CItem
-{
-  UInt64 DataPosition;
-};
-
-class CInArchive
-{
-  CMyComPtr<IInStream> m_Stream;
-  UInt64 m_Position;
-  
-  HRESULT ReadBytes(void *data, UInt32 size, UInt32 &processedSize);
-  HRESULT CheckReadBytes(void *data, UInt32 size);
-public:
-  HRESULT Open(IInStream *inStream);
-  HRESULT GetNextItem(bool &filled, CItemEx &itemInfo);
-  HRESULT Skip(UInt64 numBytes);
-};
-
-HRESULT CInArchive::ReadBytes(void *data, UInt32 size, UInt32 &processedSize)
-{
-  size_t realProcessedSize = size;
-  RINOK(ReadStream(m_Stream, data, &realProcessedSize));
-  processedSize = (UInt32)realProcessedSize;
-  m_Position += processedSize;
-  return S_OK;
-}
-
-HRESULT CInArchive::CheckReadBytes(void *data, UInt32 size)
-{
-  UInt32 processedSize;
-  RINOK(ReadBytes(data, size, processedSize));
-  return (processedSize == size) ? S_OK: S_FALSE;
-}
-
-HRESULT CInArchive::Open(IInStream *inStream)
-{
-  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &m_Position));
-  m_Stream = inStream;
-  return S_OK;
-}
-
 static const Byte *ReadUInt16(const Byte *p, UInt16 &v)
 {
   v = Get16(p);
@@ -245,13 +204,13 @@ static Byte CalcSum(const Byte *data, size_t size)
   return sum;
 }
 
-HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
+static HRESULT GetNextItem(ISequentialInStream *stream, bool &filled, CItem &item)
 {
   filled = false;
 
-  UInt32 processedSize;
+  size_t processedSize = 2;
   Byte startHeader[2];
-  RINOK(ReadBytes(startHeader, 2, processedSize))
+  RINOK(ReadStream(stream, startHeader, &processedSize))
   if (processedSize == 0)
     return S_OK;
   if (processedSize == 1)
@@ -261,7 +220,8 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
 
   Byte header[256];
   const UInt32 kBasicPartSize = 22;
-  RINOK(ReadBytes(header, kBasicPartSize, processedSize));
+  processedSize = kBasicPartSize;
+  RINOK(ReadStream(stream, header, &processedSize));
   if (processedSize != kBasicPartSize)
     return (startHeader[0] == 0) ? S_OK: S_FALSE;
 
@@ -284,8 +244,7 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
     headerSize = startHeader[0];
     if (headerSize < kBasicPartSize)
       return S_FALSE;
-    UInt32 remain = headerSize - kBasicPartSize;
-    RINOK(CheckReadBytes(header + kBasicPartSize, remain));
+    RINOK(ReadStream_FALSE(stream, header + kBasicPartSize, headerSize - kBasicPartSize));
     if (startHeader[1] != CalcSum(header, headerSize))
       return S_FALSE;
     size_t nameLength = *p++;
@@ -294,13 +253,13 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
     p = ReadString(p, nameLength, item.Name);
   }
   else
-   headerSize = startHeader[0] | ((UInt32)startHeader[1] << 8);
+    headerSize = startHeader[0] | ((UInt32)startHeader[1] << 8);
   p = ReadUInt16(p, item.CRC);
   if (item.Level != 0)
   {
     if (item.Level == 2)
     {
-      RINOK(CheckReadBytes(header + kBasicPartSize, 2));
+      RINOK(ReadStream_FALSE(stream, header + kBasicPartSize, 2));
     }
     if ((size_t)(p - header) + 3 > headerSize)
       return S_FALSE;
@@ -317,29 +276,20 @@ HRESULT CInArchive::GetNextItem(bool &filled, CItemEx &item)
           return S_FALSE;
         item.PackSize -= nextSize;
       }
+      if (item.Extensions.Size() >= (1 << 8))
+        return S_FALSE;
       CExtension ext;
-      RINOK(CheckReadBytes(&ext.Type, 1))
+      RINOK(ReadStream_FALSE(stream, &ext.Type, 1))
       nextSize -= 3;
       ext.Data.SetCapacity(nextSize);
-      RINOK(CheckReadBytes((Byte *)ext.Data, nextSize))
+      RINOK(ReadStream_FALSE(stream, (Byte *)ext.Data, nextSize))
       item.Extensions.Add(ext);
       Byte hdr2[2];
-      RINOK(CheckReadBytes(hdr2, 2));
+      RINOK(ReadStream_FALSE(stream, hdr2, 2));
       ReadUInt16(hdr2, nextSize);
     }
   }
-  item.DataPosition = m_Position;
   filled = true;
-  return S_OK;
-}
-
-HRESULT CInArchive::Skip(UInt64 numBytes)
-{
-  UInt64 newPostion;
-  RINOK(m_Stream->Seek(numBytes, STREAM_SEEK_CUR, &newPostion));
-  m_Position += numBytes;
-  if (m_Position != newPostion)
-    return E_FAIL;
   return S_OK;
 }
 
@@ -349,7 +299,7 @@ struct COsPair
   const char *Name;
 };
 
-static COsPair g_OsPairs[] =
+static const COsPair g_OsPairs[] =
 {
   {   0, "MS-DOS" },
   { 'M', "MS-DOS" },
@@ -380,7 +330,7 @@ static const char *GetOS(Byte osId)
   return kUnknownOS;
 }
 
-static STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},
@@ -391,6 +341,11 @@ static STATPROPSTG kProps[] =
   { NULL, kpidCRC, VT_UI4},
   { NULL, kpidMethod, VT_BSTR},
   { NULL, kpidHostOS, VT_BSTR}
+};
+
+static const STATPROPSTG kArcProps[] =
+{
+  { NULL, kpidPhySize, VT_UI8}
 };
 
 class CCRC
@@ -479,12 +434,19 @@ STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *pro
   return result;
 }
 
+struct CItemEx: public CItem
+{
+  UInt64 DataPosition;
+};
+
 class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {
   CObjectVector<CItemEx> _items;
   CMyComPtr<IInStream> _stream;
+  UInt64 _phySize;
+  AString _errorMessage;
 public:
   MY_UNKNOWN_IMP1(IInArchive)
   INTERFACE_IInArchive(;)
@@ -492,13 +454,25 @@ public:
 };
 
 IMP_IInArchive_Props
-IMP_IInArchive_ArcProps_NO
+IMP_IInArchive_ArcProps
 
 CHandler::CHandler() {}
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = _items.Size();
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidPhySize: prop = _phySize; break;
+    case kpidError: if (!_errorMessage.IsEmpty()) prop = _errorMessage; break;
+  }
+  prop.Detach(value);
   return S_OK;
 }
 
@@ -514,8 +488,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       UString s = NItemName::WinNameToOSName(MultiByteToUnicodeString(item.GetName(), CP_OEMCP));
       if (!s.IsEmpty())
       {
-        if (s[s.Length() - 1] == WCHAR_PATH_SEPARATOR)
-           s.Delete(s.Length() - 1);
+        if (s.Back() == WCHAR_PATH_SEPARATOR)
+          s.DeleteBack();
         prop = s;
       }
       break;
@@ -567,32 +541,43 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   try
   {
     _items.Clear();
-    CInArchive archive;
 
     UInt64 endPos = 0;
     bool needSetTotal = true;
 
-    if (callback != NULL)
-    {
-      RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
-      RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
-    }
+    RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
+    RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
 
-    RINOK(archive.Open(stream));
+    _phySize = 0;
     for (;;)
     {
       CItemEx item;
       bool filled;
-      HRESULT result = archive.GetNextItem(filled, item);
+      HRESULT result = GetNextItem(stream, filled, item);
+      RINOK(stream->Seek(0, STREAM_SEEK_CUR, &item.DataPosition));
       if (result == S_FALSE)
-        return S_FALSE;
+      {
+        _errorMessage = "Incorrect header";
+        break;
+      }
+
       if (result != S_OK)
         return S_FALSE;
+      _phySize = item.DataPosition;
       if (!filled)
         break;
       _items.Add(item);
-      archive.Skip(item.PackSize);
-      if (callback != NULL)
+
+      UInt64 newPostion;
+      RINOK(stream->Seek(item.PackSize, STREAM_SEEK_CUR, &newPostion));
+      if (newPostion > endPos)
+      {
+        _phySize = endPos;
+        _errorMessage = "Unexpected end of archive";
+        break;
+      }
+      _phySize = newPostion;
+      if (callback)
       {
         if (needSetTotal)
         {
@@ -622,6 +607,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 
 STDMETHODIMP CHandler::Close()
 {
+  _errorMessage.Empty();
   _items.Clear();
   _stream.Release();
   return S_OK;

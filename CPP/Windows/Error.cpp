@@ -14,37 +14,47 @@ extern bool g_IsNT;
 namespace NWindows {
 namespace NError {
 
-bool MyFormatMessage(DWORD messageID, CSysString &message)
+static bool MyFormatMessage(DWORD errorCode, UString &message)
 {
   LPVOID msgBuf;
-  if (::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,messageID, 0, (LPTSTR) &msgBuf,0, NULL) == 0)
-    return false;
-  message = (LPCTSTR)msgBuf;
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    if (::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, errorCode, 0, (LPTSTR) &msgBuf, 0, NULL) == 0)
+      return false;
+    message = GetUnicodeString((LPCTSTR)msgBuf);
+  }
+  else
+  #endif
+  {
+    if (::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, errorCode, 0, (LPWSTR) &msgBuf, 0, NULL) == 0)
+      return false;
+    message = (LPCWSTR)msgBuf;
+  }
   ::LocalFree(msgBuf);
   return true;
 }
 
-#ifndef _UNICODE
-bool MyFormatMessage(DWORD messageID, UString &message)
+UString MyFormatMessageW(DWORD errorCode)
 {
-  if (g_IsNT)
+  UString message;
+  if (!MyFormatMessage(errorCode, message))
   {
-    LPVOID msgBuf;
-    if (::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL, messageID, 0, (LPWSTR) &msgBuf, 0, NULL) == 0)
-      return false;
-    message = (LPCWSTR)msgBuf;
-    ::LocalFree(msgBuf);
-    return true;
+    wchar_t s[16];
+    for (int i = 0; i < 8; i++)
+    {
+      int t = errorCode & 0xF;
+      errorCode >>= 4;
+      s[7 - i] = (wchar_t)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
+    }
+    s[8] = '\0';
+    message = (UString)L"Error #" + s;
   }
-  CSysString messageSys;
-  bool result = MyFormatMessage(messageID, messageSys);
-  message = GetUnicodeString(messageSys);
-  return result;
+  return message;
 }
-#endif
 
 }}

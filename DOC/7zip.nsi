@@ -2,8 +2,8 @@
 ;Defines
 
 !define VERSION_MAJOR 9
-!define VERSION_MINOR 20
-!define VERSION_POSTFIX_FULL ""
+!define VERSION_MINOR 21
+!define VERSION_POSTFIX_FULL "beta"
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
@@ -49,7 +49,7 @@
   InstallDir "$PROGRAMFILES\7-Zip"
   
   ;Get install folder from registry if available
-  InstallDirRegKey HKLM "Software\7-Zip" "Path"
+  InstallDirRegKey HKCU "Software\7-Zip" "Path32"
 
   ;Compressor
 !ifndef NO_COMPRESSION
@@ -190,6 +190,7 @@ Section
   File bn.txt
   File br.txt
   File ca.txt
+  File co.txt
   File cs.txt
   File cy.txt
   File da.txt
@@ -222,6 +223,8 @@ Section
   File ko.txt
   File ku.txt
   File ku-ckb.txt
+  File ky.txt
+  File lij.txt
   File lt.txt
   File lv.txt
   File mk.txt
@@ -293,8 +296,10 @@ Section
   noScErrors:
 
   # store install folder
-  WriteRegStr HKLM "Software\7-Zip" "Path" $INSTDIR
-  WriteRegStr HKCU "Software\7-Zip" "Path" $INSTDIR
+  WriteRegStr HKLM "Software\7-Zip" "Path32" $INSTDIR
+  WriteRegStr HKLM "Software\7-Zip" "Path"   $INSTDIR
+  WriteRegStr HKCU "Software\7-Zip" "Path32" $INSTDIR
+  WriteRegStr HKCU "Software\7-Zip" "Path"   $INSTDIR
 
   # write reg entries
   WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}" "" "7-Zip Shell Extension"
@@ -384,6 +389,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\bn.txt
   Delete $INSTDIR\Lang\br.txt
   Delete $INSTDIR\Lang\ca.txt
+  Delete $INSTDIR\Lang\co.txt
   Delete $INSTDIR\Lang\cs.txt
   Delete $INSTDIR\Lang\cy.txt
   Delete $INSTDIR\Lang\da.txt
@@ -416,6 +422,8 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\ko.txt
   Delete $INSTDIR\Lang\ku.txt
   Delete $INSTDIR\Lang\ku-ckb.txt
+  Delete $INSTDIR\Lang\ky.txt
+  Delete $INSTDIR\Lang\lij.txt
   Delete $INSTDIR\Lang\lt.txt
   Delete $INSTDIR\Lang\lv.txt
   Delete $INSTDIR\Lang\mk.txt
@@ -496,6 +504,7 @@ Section "Uninstall"
   DeleteRegKey HKCR "Directory\shellex\ContextMenuHandlers\7-Zip"
   DeleteRegKey HKCR "Folder\shellex\ContextMenuHandlers\7-Zip"
 
+  DeleteRegKey HKCR "Drive\shellex\DragDropHandlers\7-Zip"
   DeleteRegKey HKCR "Directory\shellex\DragDropHandlers\7-Zip"
   DeleteRegKey HKCR "Folder\shellex\DragDropHandlers\7-Zip"
 
@@ -512,6 +521,7 @@ Section "Uninstall"
   DeleteRegKey HKCR "7-Zip.cpio"
   DeleteRegKey HKCR "7-Zip.deb"
   DeleteRegKey HKCR "7-Zip.dmg"
+  DeleteRegKey HKCR "7-Zip.fat"
   DeleteRegKey HKCR "7-Zip.gz"
   DeleteRegKey HKCR "7-Zip.gzip"
   DeleteRegKey HKCR "7-Zip.hfs"
@@ -519,16 +529,21 @@ Section "Uninstall"
   DeleteRegKey HKCR "7-Zip.lha"
   DeleteRegKey HKCR "7-Zip.lzh"
   DeleteRegKey HKCR "7-Zip.lzma"
+  DeleteRegKey HKCR "7-Zip.ntfs"
   DeleteRegKey HKCR "7-Zip.rar"
   DeleteRegKey HKCR "7-Zip.rpm"
   DeleteRegKey HKCR "7-Zip.split"
+  DeleteRegKey HKCR "7-Zip.squashfs"
   DeleteRegKey HKCR "7-Zip.swm"
   DeleteRegKey HKCR "7-Zip.tar"
   DeleteRegKey HKCR "7-Zip.taz"
   DeleteRegKey HKCR "7-Zip.tgz"
   DeleteRegKey HKCR "7-Zip.tpz"
+  DeleteRegKey HKCR "7-Zip.txz"
+  DeleteRegKey HKCR "7-Zip.vhd"
   DeleteRegKey HKCR "7-Zip.wim"
   DeleteRegKey HKCR "7-Zip.xar"
+  DeleteRegKey HKCR "7-Zip.xz"
   DeleteRegKey HKCR "7-Zip.z"
   DeleteRegKey HKCR "7-Zip.zip"
 

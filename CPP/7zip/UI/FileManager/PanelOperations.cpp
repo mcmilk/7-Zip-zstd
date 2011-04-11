@@ -284,6 +284,24 @@ BOOL CPanel::OnBeginLabelEdit(LV_DISPINFOW * lpnmh)
   return FALSE;
 }
 
+static UString GetLastPart(const UString name)
+{
+  int slashPos = name.ReverseFind(L'/');
+  #ifdef _WIN32
+  int slash1Pos = name.ReverseFind(L'\\');
+  slashPos = MyMax(slashPos, slash1Pos);
+  #endif
+  return name.Mid(slashPos + 1);
+}
+
+bool IsCorrectFsName(const UString name)
+{
+  const UString lastPart = GetLastPart(name);
+  return
+      lastPart != L"." &&
+      lastPart != L"..";
+}
+
 BOOL CPanel::OnEndLabelEdit(LV_DISPINFOW * lpnmh)
 {
   if (lpnmh->item.pszText == NULL)
@@ -295,6 +313,11 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFOW * lpnmh)
     return FALSE;
   }
   const UString newName = lpnmh->item.pszText;
+  if (!IsCorrectFsName(newName))
+  {
+    MessageBoxError(E_INVALIDARG);
+    return FALSE;
+  }
   CPanel::CDisableTimerProcessing disableTimerProcessing2(*this);
 
   SaveSelectedState(_selectedState);
@@ -353,6 +376,11 @@ void CPanel::CreateFolder()
     return;
   
   UString newName = comboDialog.Value;
+  if (!IsCorrectFsName(newName))
+  {
+    MessageBoxError(E_INVALIDARG);
+    return;
+  }
   
   {
     CThreadFolderOperations op(FOLDER_TYPE_CREATE_FOLDER);

@@ -3,10 +3,12 @@
 #include "StdAfx.h"
 
 #include "Common/ComTry.h"
+#include "Common/StringConvert.h"
 #include "Common/Wildcard.h"
 
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileName.h"
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
 
@@ -18,16 +20,16 @@
 
 using namespace NWindows;
 
-static const wchar_t *kCantAutoRename = L"ERROR: Can not create file with auto name";
-static const wchar_t *kCantRenameFile = L"ERROR: Can not rename existing file ";
-static const wchar_t *kCantDeleteOutputFile = L"ERROR: Can not delete output file ";
+static const char *kCantAutoRename = "ERROR: Can not create file with auto name";
+static const char *kCantRenameFile = "ERROR: Can not rename existing file ";
+static const char *kCantDeleteOutputFile = "ERROR: Can not delete output file ";
 
 void CArchiveExtractCallback::Init(
     const NWildcard::CCensorNode *wildcardCensor,
     const CArc *arc,
     IFolderArchiveExtractCallback *extractCallback2,
     bool stdOutMode, bool testMode, bool crcMode,
-    const UString &directoryPath,
+    const FString &directoryPath,
     const UStringVector &removePathParts,
     UInt64 packSize)
 {
@@ -107,14 +109,14 @@ STDMETHODIMP CArchiveExtractCallback::SetRatioInfo(const UInt64 *inSize, const U
   COM_TRY_END
 }
 
-void CArchiveExtractCallback::CreateComplexDirectory(const UStringVector &dirPathParts, UString &fullPath)
+void CArchiveExtractCallback::CreateComplexDirectory(const UStringVector &dirPathParts, FString &fullPath)
 {
   fullPath = _directoryPath;
   for (int i = 0; i < dirPathParts.Size(); i++)
   {
     if (i > 0)
-      fullPath += wchar_t(NFile::NName::kDirDelimiter);
-    fullPath += dirPathParts[i];
+      fullPath += FCHAR_PATH_SEPARATOR;
+    fullPath += us2fs(dirPathParts[i]);
     NFile::NDirectory::MyCreateDirectory(fullPath);
   }
 }
@@ -136,12 +138,12 @@ HRESULT CArchiveExtractCallback::GetTime(int index, PROPID propID, FILETIME &fil
 
 HRESULT CArchiveExtractCallback::GetUnpackSize()
 {
-  NCOM::CPropVariant prop;
-  RINOK(_arc->Archive->GetProperty(_index, kpidSize, &prop));
-  _curSizeDefined = (prop.vt != VT_EMPTY);
-  if (_curSizeDefined)
-    _curSize = ConvertPropVariantToUInt64(prop);
-  return S_OK;
+  return _arc->GetItemSize(_index, _curSize, _curSizeDefined);
+}
+
+HRESULT CArchiveExtractCallback::SendMessageError(const char *message, const FString &path)
+{
+  return _extractCallback2->MessageError(GetUnicodeString(message) + fs2us(path));
 }
 
 STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode)
@@ -256,7 +258,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     
       if (!pathParts.IsEmpty())
       {
-        UString fullPathNew;
+        FString fullPathNew;
         CreateComplexDirectory(pathParts, fullPathNew);
         if (_fi.IsDir)
           NFile::NDirectory::SetDirTime(fullPathNew,
@@ -267,7 +269,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     }
 
 
-    UString fullProcessedPath = _directoryPath + processedPath;
+    FString fullProcessedPath = _directoryPath + us2fs(processedPath);
 
     if (_fi.IsDir)
     {
@@ -279,7 +281,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
 
     if (!_isSplit)
     {
-    NFile::NFind::CFileInfoW fileInfo;
+    NFile::NFind::CFileInfo fileInfo;
     if (fileInfo.Find(fullProcessedPath))
     {
       switch(_overwriteMode)
@@ -290,7 +292,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
         {
           Int32 overwiteResult;
           RINOK(_extractCallback2->AskOverwrite(
-              fullProcessedPath, &fileInfo.MTime, &fileInfo.Size, fullPath,
+              fs2us(fullProcessedPath), &fileInfo.MTime, &fileInfo.Size, fullPath,
               _fi.MTimeDefined ? &_fi.MTime : NULL,
               _curSizeDefined ? &_curSize : NULL,
               &overwiteResult))
@@ -321,32 +323,28 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
       {
         if (!AutoRenamePath(fullProcessedPath))
         {
-          UString message = UString(kCantAutoRename) + fullProcessedPath;
-          RINOK(_extractCallback2->MessageError(message));
+          RINOK(SendMessageError(kCantAutoRename, fullProcessedPath));
           return E_FAIL;
         }
       }
       else if (_overwriteMode == NExtract::NOverwriteMode::kAutoRenameExisting)
       {
-        UString existPath = fullProcessedPath;
+        FString existPath = fullProcessedPath;
         if (!AutoRenamePath(existPath))
         {
-          UString message = kCantAutoRename + fullProcessedPath;
-          RINOK(_extractCallback2->MessageError(message));
+          RINOK(SendMessageError(kCantAutoRename, fullProcessedPath));
           return E_FAIL;
         }
         if (!NFile::NDirectory::MyMoveFile(fullProcessedPath, existPath))
         {
-          UString message = UString(kCantRenameFile) + fullProcessedPath;
-          RINOK(_extractCallback2->MessageError(message));
+          RINOK(SendMessageError(kCantRenameFile, fullProcessedPath));
           return E_FAIL;
         }
       }
       else
         if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
         {
-          UString message = UString(kCantDeleteOutputFile) +  fullProcessedPath;
-          RINOK(_extractCallback2->MessageError(message));
+          RINOK(SendMessageError(kCantDeleteOutputFile, fullProcessedPath));
           return S_OK;
           // return E_FAIL;
         }
@@ -360,8 +358,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
       {
         // if (::GetLastError() != ERROR_FILE_EXISTS || !isSplit)
         {
-          UString message = L"can not open output file " + fullProcessedPath;
-          RINOK(_extractCallback2->MessageError(message));
+          RINOK(SendMessageError("can not open output file ", fullProcessedPath));
           return S_OK;
         }
       }
@@ -485,4 +482,3 @@ STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
   return _cryptoGetTextPassword->CryptoGetTextPassword(password);
   COM_TRY_END
 }
-

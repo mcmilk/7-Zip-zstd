@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <stdlib.h>
+
 #include "../../../C/Alloc.h"
 
 #include "StreamObjects.h"
@@ -78,7 +80,7 @@ Byte *CDynBufSeqOutStream::GetBufPtrForWriting(size_t addSize)
 void CDynBufSeqOutStream::CopyToBuffer(CByteBuffer &dest) const
 {
   dest.SetCapacity(_size);
-  memcpy(dest, _buffer, _size);
+  memcpy(dest, (const Byte *)_buffer, _size);
 }
 
 STDMETHODIMP CDynBufSeqOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)

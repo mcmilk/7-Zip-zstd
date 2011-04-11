@@ -172,11 +172,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
           int pos = s.ReverseFind(L';');
           if (pos >= 0 && pos == s.Length() - 2)
-              if (s[s.Length() - 1] == L'1')
+              if (s.Back() == L'1')
                 s = s.Left(pos);
           if (!s.IsEmpty())
-            if (s[s.Length() - 1] == L'.')
-              s = s.Left(s.Length() - 1);
+            if (s.Back() == L'.')
+              s.DeleteBack();
           prop = (const wchar_t *)NItemName::GetOSName2(s);
         }
         break;
@@ -211,19 +211,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     return S_OK;
   UInt64 totalSize = 0;
   UInt32 i;
-  for(i = 0; i < numItems; i++)
+  for (i = 0; i < numItems; i++)
   {
     UInt32 index = (allFilesMode ? i : indices[i]);
     if (index < (UInt32)_archive.Refs.Size())
     {
       const CRef &ref = _archive.Refs[index];
       const CDir &item = ref.Dir->_subItems[ref.Index];
-      totalSize += item.DataLength;
+      if (!item.IsDir())
+        totalSize += item.DataLength;
     }
     else
-    {
       totalSize += _archive.GetBootItemSize(index - _archive.Refs.Size());
-    }
   }
   extractCallback->SetTotal(totalSize);
 

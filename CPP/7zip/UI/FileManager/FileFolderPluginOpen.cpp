@@ -4,6 +4,7 @@
 
 #include "resource.h"
 
+#include "Windows/FileName.h"
 #include "Windows/Thread.h"
 
 #include "../Agent/Agent.h"
@@ -11,11 +12,9 @@
 #include "LangUtils.h"
 #include "OpenCallback.h"
 #include "PluginLoader.h"
-#include "RegistryAssociations.h"
 #include "RegistryPlugins.h"
 
 using namespace NWindows;
-using namespace NRegistryAssociations;
 
 struct CThreadArchiveOpen
 {
@@ -56,9 +55,29 @@ static int FindPlugin(const CObjectVector<CPluginInfo> &plugins, const UString &
 }
 */
 
+static const FChar kExtensionDelimiter = FTEXT('.');
+
+static void SplitNameToPureNameAndExtension(const FString &fullName,
+    FString &pureName, FString &extensionDelimiter, FString &extension)
+{
+  int index = fullName.ReverseFind(kExtensionDelimiter);
+  if (index < 0)
+  {
+    pureName = fullName;
+    extensionDelimiter.Empty();
+    extension.Empty();
+  }
+  else
+  {
+    pureName = fullName.Left(index);
+    extensionDelimiter = kExtensionDelimiter;
+    extension = fullName.Mid(index + 1);
+  }
+}
+
 HRESULT OpenFileFolderPlugin(
     IInStream *inStream,
-    const UString &path,
+    const FString &path,
     const UString &arcFormat,
     HMODULE *module,
     IFolderFolder **resultFolder,
@@ -68,11 +87,11 @@ HRESULT OpenFileFolderPlugin(
   CObjectVector<CPluginInfo> plugins;
   ReadFileFolderPluginInfoList(plugins);
 
-  UString extension, name, pureName, dot;
+  FString extension, name, pureName, dot;
 
-  int slashPos = path.ReverseFind(WCHAR_PATH_SEPARATOR);
-  UString dirPrefix;
-  UString fileName;
+  int slashPos = path.ReverseFind(FCHAR_PATH_SEPARATOR);
+  FString dirPrefix;
+  FString fileName;
   if (slashPos >= 0)
   {
     dirPrefix = path.Left(slashPos + 1);
@@ -81,7 +100,7 @@ HRESULT OpenFileFolderPlugin(
   else
     fileName = path;
 
-  NFile::NName::SplitNameToPureNameAndExtension(fileName, pureName, dot, extension);
+  SplitNameToPureNameAndExtension(fileName, pureName, dot, extension);
 
   /*
   if (!extension.IsEmpty())
@@ -124,12 +143,12 @@ HRESULT OpenFileFolderPlugin(
     t.OpenCallbackSpec->ParentWindow = parentWindow;
 
     if (inStream)
-      t.OpenCallbackSpec->SetSubArchiveName(fileName);
+      t.OpenCallbackSpec->SetSubArchiveName(fs2us(fileName));
     else
       t.OpenCallbackSpec->LoadFileInfo(dirPrefix, fileName);
 
     t.InStream = inStream;
-    t.Path = path;
+    t.Path = fs2us(path);
     t.ArcFormat = arcFormat;
 
     UString progressTitle = LangString(IDS_OPENNING, 0x03020283);

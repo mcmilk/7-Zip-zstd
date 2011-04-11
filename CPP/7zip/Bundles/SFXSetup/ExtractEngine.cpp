@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "Windows/FileDir.h"
+#include "Windows/FileName.h"
 #include "Windows/Thread.h"
 
 #include "../../UI/Common/OpenArchive.h"
@@ -20,8 +21,8 @@ static LPCWSTR kCantOpenArchive = L"Can not open the file as archive";
 struct CThreadExtracting
 {
   CCodecs *Codecs;
-  UString FileName;
-  UString DestFolder;
+  FString FileName;
+  FString DestFolder;
 
   CExtractCallbackImp *ExtractCallbackSpec;
   CMyComPtr<IArchiveExtractCallback> ExtractCallback;
@@ -32,7 +33,7 @@ struct CThreadExtracting
 
   void Process2()
   {
-    NFile::NFind::CFileInfoW fi;
+    NFile::NFind::CFileInfo fi;
     if (!fi.Find(FileName))
     {
       ErrorMessage = kCantFindArchive;
@@ -40,7 +41,7 @@ struct CThreadExtracting
       return;
     }
     
-    Result = ArchiveLink.Open2(Codecs, CIntVector(), false, NULL, FileName, ExtractCallbackSpec);
+    Result = ArchiveLink.Open2(Codecs, CIntVector(), false, NULL, fs2us(FileName), ExtractCallbackSpec);
     if (Result != S_OK)
     {
       if (Result != S_OK)
@@ -48,7 +49,7 @@ struct CThreadExtracting
       return;
     }
 
-    UString dirPath = DestFolder;
+    FString dirPath = DestFolder;
     NFile::NName::NormalizeDirPathPrefix(dirPath);
     
     if (!NFile::NDirectory::CreateComplexDirectory(dirPath))
@@ -57,7 +58,7 @@ struct CThreadExtracting
         #ifdef LANG
         0x02000603,
         #endif
-        dirPath);
+        fs2us(dirPath));
       Result = E_FAIL;
       return;
     }
@@ -86,7 +87,7 @@ struct CThreadExtracting
   }
 };
 
-HRESULT ExtractArchive(CCodecs *codecs,const UString &fileName, const UString &destFolder,
+HRESULT ExtractArchive(CCodecs *codecs, const FString &fileName, const FString &destFolder,
     bool showProgress, bool &isCorrupt, UString &errorMessage)
 {
   isCorrupt = false;

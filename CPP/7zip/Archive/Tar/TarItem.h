@@ -10,15 +10,22 @@
 namespace NArchive {
 namespace NTar {
 
+struct CSparseBlock
+{
+  UInt64 Offset;
+  UInt64 Size;
+};
+
 struct CItem
 {
   AString Name;
+  UInt64 PackSize;
   UInt64 Size;
+  Int64 MTime;
 
   UInt32 Mode;
   UInt32 UID;
   UInt32 GID;
-  UInt32 MTime;
   UInt32 DeviceMajor;
   UInt32 DeviceMinor;
 
@@ -31,7 +38,10 @@ struct CItem
   bool DeviceMajorDefined;
   bool DeviceMinorDefined;
 
+  CRecordVector<CSparseBlock> SparseBlocks;
+
   bool IsLink() const { return LinkFlag == NFileHeader::NLinkFlag::kSymbolicLink && (Size == 0); }
+  bool IsSparse() const { return LinkFlag == NFileHeader::NLinkFlag::kSparse; }
   UInt64 GetUnpackSize() const { return IsLink() ? LinkName.Length() : Size; }
 
   bool IsDir() const
@@ -56,15 +66,16 @@ struct CItem
     return true;
   }
 
-  UInt64 GetPackSize() const { return (Size + 0x1FF) & (~((UInt64)0x1FF)); }
+  UInt64 GetPackSizeAligned() const { return (PackSize + 0x1FF) & (~((UInt64)0x1FF)); }
 };
 
 struct CItemEx: public CItem
 {
   UInt64 HeaderPos;
   unsigned HeaderSize;
+
   UInt64 GetDataPosition() const { return HeaderPos + HeaderSize; }
-  UInt64 GetFullSize() const { return HeaderSize + Size; }
+  UInt64 GetFullSize() const { return HeaderSize + PackSize; }
 };
 
 }}

@@ -7,8 +7,10 @@
 #include "Common/StringConvert.h"
 
 #include "Windows/COM.h"
+#include "Windows/DLL.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileName.h"
 #include "Windows/Memory.h"
 #include "Windows/Menu.h"
 #include "Windows/Process.h"
@@ -20,7 +22,6 @@
 #include "../Common/ZipRegistry.h"
 
 #include "../FileManager/FormatUtils.h"
-#include "../FileManager/ProgramLocation.h"
 
 #ifdef LANG
 #include "../FileManager/LangUtils.h"
@@ -338,8 +339,9 @@ static const char *kExtractExludeExtensions =
 static const char *kNoOpenAsExtensions =
   " 7z arj bz2 cab chm cpio dmg flv gz lha lzh lzma rar swm tar tbz2 tgz wim xar xz z zip ";
 
-static bool FindExt(const char *p, const UString &name)
+static bool FindExt(const char *p, const FString &nameF)
 {
+  const UString name = fs2us(nameF);
   int extPos = name.ReverseFind('.');
   if (extPos < 0)
     return false;
@@ -357,7 +359,7 @@ static bool FindExt(const char *p, const UString &name)
   return false;
 }
 
-static bool DoNeedExtract(const UString &name)
+static bool DoNeedExtract(const FString &name)
 {
   return !FindExt(kExtractExludeExtensions, name);
 }
@@ -408,11 +410,8 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   if (_fileNames.Size() == 1 && currentCommandID + 6 <= commandIDLast)
   {
     const UString &fileName = _fileNames.Front();
-    UString folderPrefix;
-    NFile::NDirectory::GetOnlyDirPrefix(fileName, folderPrefix);
-   
-    NFile::NFind::CFileInfoW fileInfo;
-    if (!fileInfo.Find(fileName))
+    NFile::NFind::CFileInfo fileInfo;
+    if (!fileInfo.Find(us2fs(fileName)))
       return E_FAIL;
     if (!fileInfo.IsDir() && DoNeedExtract(fileInfo.Name))
     {
@@ -473,10 +472,10 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   if (_fileNames.Size() > 0 && currentCommandID + 10 <= commandIDLast)
   {
     bool needExtract = false;
-    for(int i = 0; i < _fileNames.Size(); i++)
+    for (int i = 0; i < _fileNames.Size(); i++)
     {
-      NFile::NFind::CFileInfoW fileInfo;
-      if (!fileInfo.Find(_fileNames[i]))
+      NFile::NFind::CFileInfo fileInfo;
+      if (!fileInfo.Find(us2fs(_fileNames[i])))
         return E_FAIL;
       if (!fileInfo.IsDir() && DoNeedExtract(fileInfo.Name))
         needExtract = true;
@@ -484,10 +483,10 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     const UString &fileName = _fileNames.Front();
     if (needExtract)
     {
-      UString folderPrefix;
-      NFile::NDirectory::GetOnlyDirPrefix(fileName, folderPrefix);
-      NFile::NFind::CFileInfoW fileInfo;
-      if (!fileInfo.Find(fileName))
+      FString folderPrefix;
+      NFile::NDirectory::GetOnlyDirPrefix(us2fs(fileName), folderPrefix);
+      NFile::NFind::CFileInfo fileInfo;
+      if (!fileInfo.Find(us2fs(fileName)))
         return E_FAIL;
       // Extract
       if ((contextMenuFlags & NContextMenuFlags::kExtract) != 0)
@@ -497,8 +496,8 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         if (_dropMode)
           commandMapItem.Folder = _dropPath;
         else
-          commandMapItem.Folder = folderPrefix;
-        commandMapItem.Folder += GetSubFolderNameForExtract(fileInfo.Name) + UString(WCHAR_PATH_SEPARATOR);
+          commandMapItem.Folder = fs2us(folderPrefix);
+        commandMapItem.Folder += GetSubFolderNameForExtract(fs2us(fileInfo.Name)) + UString(WCHAR_PATH_SEPARATOR);
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString);
         _commandMap.Add(commandMapItem);
       }
@@ -512,7 +511,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         if (_dropMode)
           commandMapItem.Folder = _dropPath;
         else
-          commandMapItem.Folder = folderPrefix;
+          commandMapItem.Folder = fs2us(folderPrefix);
         _commandMap.Add(commandMapItem);
       }
 
@@ -524,13 +523,13 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         FillCommand(kExtractTo, s, commandMapItem);
         UString folder;
         if (_fileNames.Size() == 1)
-          folder = GetSubFolderNameForExtract(fileInfo.Name);
+          folder = GetSubFolderNameForExtract(fs2us(fileInfo.Name));
         else
           folder = L'*';
         if (_dropMode)
           commandMapItem.Folder = _dropPath;
         else
-          commandMapItem.Folder = folderPrefix;
+          commandMapItem.Folder = fs2us(folderPrefix);
         commandMapItem.Folder += folder;
         s = MyFormatNew(s, GetQuotedReducedString(folder + UString(WCHAR_PATH_SEPARATOR)));
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s);
@@ -548,8 +547,8 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     UString archiveName = CreateArchiveName(fileName, _fileNames.Size() > 1, false);
     UString archiveName7z = archiveName + L".7z";
     UString archiveNameZip = archiveName + L".zip";
-    UString archivePathPrefix;
-    NFile::NDirectory::GetOnlyDirPrefix(fileName, archivePathPrefix);
+    FString archivePathPrefix;
+    NFile::NDirectory::GetOnlyDirPrefix(us2fs(fileName), archivePathPrefix);
 
     // Compress
     if ((contextMenuFlags & NContextMenuFlags::kCompress) != 0)
@@ -558,7 +557,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       if (_dropMode)
         commandMapItem.Folder = _dropPath;
       else
-        commandMapItem.Folder = archivePathPrefix;
+        commandMapItem.Folder = fs2us(archivePathPrefix);
       commandMapItem.ArcName = archiveName;
       FillCommand(kCompress, mainString, commandMapItem);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString);
@@ -586,7 +585,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       if (_dropMode)
         commandMapItem.Folder = _dropPath;
       else
-        commandMapItem.Folder = archivePathPrefix;
+        commandMapItem.Folder = fs2us(archivePathPrefix);
       commandMapItem.ArcName = archiveName7z;
       commandMapItem.ArcType = L"7z";
       s = MyFormatNew(s, GetQuotedReducedString(archiveName7z));
@@ -618,7 +617,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       if (_dropMode)
         commandMapItem.Folder = _dropPath;
       else
-        commandMapItem.Folder = archivePathPrefix;
+        commandMapItem.Folder = fs2us(archivePathPrefix);
       commandMapItem.ArcName = archiveNameZip;
       commandMapItem.ArcType = L"zip";
       s = MyFormatNew(s, GetQuotedReducedString(archiveNameZip));
@@ -675,9 +674,7 @@ int CZipContextMenu::FindVerb(const UString &verb)
 
 static UString Get7zFmPath()
 {
-  UString path;
-  GetProgramFolderPath(path);
-  return path + L"7zFM.exe";
+  return fs2us(NWindows::NDLL::GetModuleDirPrefix()) + L"7zFM.exe";
 }
 
 STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)

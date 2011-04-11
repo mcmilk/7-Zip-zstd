@@ -26,10 +26,13 @@ BSTR SysAllocStringByteLen(LPCSTR psz, UINT len)
     return 0;
   *(UINT *)p = len;
   BSTR bstr = (BSTR)((UINT *)p + 1);
-  memmove(bstr, psz, len);
-  Byte *pb = ((Byte *)bstr) + len;
-  for (int i = 0; i < sizeof(OLECHAR) * 2; i++)
-    pb[i] = 0;
+  if (psz)
+  {
+    memmove(bstr, psz, len);
+    Byte *pb = ((Byte *)bstr) + len;
+    for (unsigned i = 0; i < sizeof(OLECHAR) * 2; i++)
+      pb[i] = 0;
+  }
   return bstr;
 }
 

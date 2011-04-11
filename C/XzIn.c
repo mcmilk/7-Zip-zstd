@@ -1,5 +1,5 @@
 /* XzIn.c - Xz input
-2009-06-19 : Igor Pavlov : Public domain */
+2011-02-01 : Igor Pavlov : Public domain */
 
 #include <string.h>
 
@@ -152,39 +152,38 @@ static SRes Xz_ReadBackward(CXzStream *p, ILookInStream *stream, Int64 *startOff
   
   if (memcmp(buf + 10, XZ_FOOTER_SIG, XZ_FOOTER_SIG_SIZE) != 0)
   {
-    Int64 i = 0;
+    UInt32 total = 0;
     *startOffset += XZ_STREAM_FOOTER_SIZE;
     for (;;)
     {
-      int j;
-      size_t processedSize;
+      size_t i;
       #define TEMP_BUF_SIZE (1 << 10)
       Byte tempBuf[TEMP_BUF_SIZE];
-      if (*startOffset < XZ_STREAM_FOOTER_SIZE || i > (1 << 16))
+      if (*startOffset < XZ_STREAM_FOOTER_SIZE || total > (1 << 16))
         return SZ_ERROR_NO_ARCHIVE;
-      processedSize = (*startOffset > TEMP_BUF_SIZE) ? TEMP_BUF_SIZE : (size_t)*startOffset;
-      i += processedSize;
-      *startOffset = -(Int64)processedSize;
+      i = (*startOffset > TEMP_BUF_SIZE) ? TEMP_BUF_SIZE : (size_t)*startOffset;
+      total += (UInt32)i;
+      *startOffset = -(Int64)i;
       RINOK(SeekFromCur(stream, startOffset));
-      RINOK(LookInStream_Read2(stream, tempBuf, processedSize, SZ_ERROR_NO_ARCHIVE));
-      for (j = (int)processedSize; j >= 0; j--)
-        if (tempBuf[j -1] != 0)
+      RINOK(LookInStream_Read2(stream, tempBuf, i, SZ_ERROR_NO_ARCHIVE));
+      for (; i != 0; i--)
+        if (tempBuf[i - 1] != 0)
           break;
-      if (j != 0)
+      if (i != 0)
       {
-        if ((j & 3) != 0)
+        if ((i & 3) != 0)
           return SZ_ERROR_NO_ARCHIVE;
-        *startOffset += j;
-        if (*startOffset < XZ_STREAM_FOOTER_SIZE)
-          return SZ_ERROR_NO_ARCHIVE;
-        *startOffset -= XZ_STREAM_FOOTER_SIZE;
-        RINOK(stream->Seek(stream, startOffset, SZ_SEEK_SET));
-        RINOK(LookInStream_Read2(stream, buf, XZ_STREAM_FOOTER_SIZE, SZ_ERROR_NO_ARCHIVE));
-        if (memcmp(buf + 10, XZ_FOOTER_SIG, XZ_FOOTER_SIG_SIZE) != 0)
-          return SZ_ERROR_NO_ARCHIVE;
+        *startOffset += i;
         break;
       }
     }
+    if (*startOffset < XZ_STREAM_FOOTER_SIZE)
+      return SZ_ERROR_NO_ARCHIVE;
+    *startOffset -= XZ_STREAM_FOOTER_SIZE;
+    RINOK(stream->Seek(stream, startOffset, SZ_SEEK_SET));
+    RINOK(LookInStream_Read2(stream, buf, XZ_STREAM_FOOTER_SIZE, SZ_ERROR_NO_ARCHIVE));
+    if (memcmp(buf + 10, XZ_FOOTER_SIG, XZ_FOOTER_SIG_SIZE) != 0)
+      return SZ_ERROR_NO_ARCHIVE;
   }
   
   p->flags = (CXzStreamFlags)GetBe16(buf + 8);

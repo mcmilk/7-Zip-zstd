@@ -136,8 +136,8 @@ STDMETHODIMP CNetFolder::LoadItems()
       resource.RemoteName = _path + resource.Name;
 
       NFile::NFind::CFindFile findFile;
-      NFile::NFind::CFileInfoW fileInfo;
-      if (!findFile.FindFirst(resource.RemoteName + UString(WCHAR_PATH_SEPARATOR) + UString(L"*"), fileInfo))
+      NFile::NFind::CFileInfo fileInfo;
+      if (!findFile.FindFirst(us2fs(resource.RemoteName) + FString(FCHAR_PATH_SEPARATOR) + FCHAR_ANY_MASK, fileInfo))
         continue;
       resource.Usage = RESOURCEUSAGE_CONNECTABLE;
       resource.LocalNameIsDefined = false;
@@ -185,7 +185,7 @@ STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder
   {
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
     CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-    RINOK(fsFolderSpec->Init(resource.RemoteName + WCHAR_PATH_SEPARATOR, this));
+    RINOK(fsFolderSpec->Init(us2fs(resource.RemoteName + WCHAR_PATH_SEPARATOR), this));
     *resultFolder = subFolder.Detach();
   }
   else
@@ -253,7 +253,7 @@ STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
   if (resource.DisplayType == RESOURCEDISPLAYTYPE_SERVER ||
       resource.Usage == RESOURCEUSAGE_CONNECTABLE)
   {
-    if (GetRealIconIndex(resource.RemoteName, 0, iconIndexTemp))
+    if (GetRealIconIndex(us2fs(resource.RemoteName), 0, iconIndexTemp))
     {
       *iconIndex = iconIndexTemp;
       return S_OK;
@@ -261,7 +261,7 @@ STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
   }
   else
   {
-    if (GetRealIconIndex(TEXT(""), FILE_ATTRIBUTE_DIRECTORY, iconIndexTemp))
+    if (GetRealIconIndex(FTEXT(""), FILE_ATTRIBUTE_DIRECTORY, iconIndexTemp))
     {
       *iconIndex = iconIndexTemp;
       return S_OK;

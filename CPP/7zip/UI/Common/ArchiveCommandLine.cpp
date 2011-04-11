@@ -283,9 +283,9 @@ static void AddToCensorFromListFile(NWildcard::CCensor &wildcardCensor,
     LPCWSTR fileName, bool include, NRecursedType::EEnum type, UINT codePage)
 {
   UStringVector names;
-  if (!NFind::DoesFileExist(fileName))
+  if (!NFind::DoesFileExist(us2fs(fileName)))
     throw kCannotFindListFile;
-  if (!ReadNamesFromListFile(fileName, names, codePage))
+  if (!ReadNamesFromListFile(us2fs(fileName), names, codePage))
     throw kIncorrectListFile;
   for (int i = 0; i < names.Size(); i++)
     AddNameToCensor(wildcardCensor, names[i], include, type);
@@ -420,9 +420,9 @@ static void ConvertToLongName(const UString &prefix, UString &name)
 {
   if (name.IsEmpty() || DoesNameContainWildCard(name))
     return;
-  NFind::CFileInfoW fi;
-  if (fi.Find(prefix + name))
-    name = fi.Name;
+  NFind::CFileInfo fi;
+  if (fi.Find(us2fs(prefix + name)))
+    name = fs2us(fi.Name);
 }
 
 static void ConvertToLongNames(const UString &prefix, CObjectVector<NWildcard::CItem> &items)
@@ -463,7 +463,7 @@ static void ConvertToLongNames(const UString &prefix, NWildcard::CCensorNode &no
   for (i = 0; i < node.SubNodes.Size(); i++)
   {
     NWildcard::CCensorNode &nextNode = node.SubNodes[i];
-    ConvertToLongNames(prefix + nextNode.Name + wchar_t(NFile::NName::kDirDelimiter), nextNode);
+    ConvertToLongNames(prefix + nextNode.Name + WCHAR_PATH_SEPARATOR, nextNode);
   }
 }
 
@@ -647,11 +647,11 @@ static void SetAddCommandOptions(
     if (postString.IsEmpty())
       NDirectory::MyGetTempPath(options.WorkingDir);
     else
-      options.WorkingDir = postString;
+      options.WorkingDir = us2fs(postString);
   }
   options.SfxMode = parser[NKey::kSfx].ThereIs;
   if (options.SfxMode)
-    options.SfxModule = parser[NKey::kSfx].PostStrings[0];
+    options.SfxModule = us2fs(parser[NKey::kSfx].PostStrings[0]);
 
   if (parser[NKey::kVolume].ThereIs)
   {
@@ -670,7 +670,6 @@ static void SetMethodOptions(const CParser &parser, CObjectVector<CProperty> &pr
 {
   if (parser[NKey::kProperty].ThereIs)
   {
-    // options.MethodMode.Properties.Clear();
     for (int i = 0; i < parser[NKey::kProperty].PostStrings.Size(); i++)
     {
       CProperty property;
@@ -774,7 +773,7 @@ void EnumerateDirItemsAndSort(NWildcard::CCensor &wildcardCensor,
   {
     CDirItems dirItems;
     {
-      UStringVector errorPaths;
+      FStringVector errorPaths;
       CRecordVector<DWORD> errorCodes;
       HRESULT res = EnumerateItems(wildcardCensor, dirItems, NULL, errorPaths, errorCodes);
       if (res != S_OK || errorPaths.Size() > 0)
@@ -796,9 +795,9 @@ void EnumerateDirItemsAndSort(NWildcard::CCensor &wildcardCensor,
   int i;
   for (i = 0; i < paths.Size(); i++)
   {
-    UString fullPath;
-    NFile::NDirectory::MyGetFullPathName(paths[i], fullPath);
-    fullPaths.Add(fullPath);
+    FString fullPath;
+    NFile::NDirectory::MyGetFullPathName(us2fs(paths[i]), fullPath);
+    fullPaths.Add(fs2us(fullPath));
   }
   CIntVector indices;
   SortFileNames(fullPaths, indices);
@@ -886,6 +885,8 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
   if (parser[NKey::kArchiveType].ThereIs)
     options.ArcType = parser[NKey::kArchiveType].PostStrings[0];
 
+  SetMethodOptions(parser, options.Properties);
+
   if (isExtractOrList)
   {
     if (!options.WildcardCensor.AllAreRelative())
@@ -924,12 +925,11 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
     
     if (isExtractGroupCommand)
     {
-      SetMethodOptions(parser, options.ExtractProperties);
       if (options.StdOutMode && options.IsStdOutTerminal && options.IsStdErrTerminal)
         throw kSameTerminalError;
       if (parser[NKey::kOutputDir].ThereIs)
       {
-        options.OutputDir = parser[NKey::kOutputDir].PostStrings[0];
+        options.OutputDir = us2fs(parser[NKey::kOutputDir].PostStrings[0]);
         NFile::NName::NormalizeDirPathPrefix(options.OutputDir);
       }
 
@@ -946,7 +946,7 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
 
     SetAddCommandOptions(options.Command.CommandType, parser, updateOptions);
     
-    SetMethodOptions(parser, updateOptions.MethodMode.Properties);
+    updateOptions.MethodMode.Properties = options.Properties;
 
     if (parser[NKey::kShareForWrite].ThereIs)
       updateOptions.OpenShareForWrite = true;
@@ -988,48 +988,10 @@ void CArchiveCommandLineParser::Parse2(CArchiveCommandLineOptions &options)
   }
   else if (options.Command.CommandType == NCommandType::kBenchmark)
   {
-    options.NumThreads = (UInt32)-1;
-    options.DictionarySize = (UInt32)-1;
     options.NumIterations = 1;
     if (curCommandIndex < numNonSwitchStrings)
     {
       if (!ConvertStringToUInt32(nonSwitchStrings[curCommandIndex++], options.NumIterations))
-        ThrowUserErrorException();
-    }
-    for (int i = 0; i < parser[NKey::kProperty].PostStrings.Size(); i++)
-    {
-      UString postString = parser[NKey::kProperty].PostStrings[i];
-      postString.MakeUpper();
-      if (postString.Length() < 2)
-        ThrowUserErrorException();
-      if (postString[0] == 'D')
-      {
-        int pos = 1;
-        if (postString[pos] == '=')
-          pos++;
-        UInt32 logSize;
-        if (!ConvertStringToUInt32((const wchar_t *)postString + pos, logSize))
-          ThrowUserErrorException();
-        if (logSize > 31)
-          ThrowUserErrorException();
-        options.DictionarySize = 1 << logSize;
-      }
-      else if (postString[0] == 'M' && postString[1] == 'T' )
-      {
-        int pos = 2;
-        if (postString[pos] == '=')
-          pos++;
-        if (postString[pos] != 0)
-          if (!ConvertStringToUInt32((const wchar_t *)postString + pos, options.NumThreads))
-            ThrowUserErrorException();
-      }
-      else if (postString[0] == 'M' && postString[1] == '=' )
-      {
-        int pos = 2;
-        if (postString[pos] != 0)
-          options.Method = postString.Mid(2);
-      }
-      else
         ThrowUserErrorException();
     }
   }

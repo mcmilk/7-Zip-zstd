@@ -95,6 +95,9 @@ BEGIN
   BEGIN
     MENUITEM "&Options...",                 IDM_OPTIONS
     MENUITEM "&Benchmark",                  IDM_BENCHMARK
+  #ifdef UNDER_CE
+    MENUITEM "&Benchmark2",                 IDM_BENCHMARK2
+  #endif
   #ifndef UNDER_CE
   END
   POPUP "&Help"

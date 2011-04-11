@@ -1771,14 +1771,6 @@ SOURCE=..\..\UI\Common\UpdateProduce.cpp
 
 SOURCE=..\..\UI\Common\UpdateProduce.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Common\WorkDir.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\Common\WorkDir.h
-# End Source File
 # End Group
 # Begin Group "Crypto"
 

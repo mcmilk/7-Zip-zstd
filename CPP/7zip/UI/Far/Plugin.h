@@ -9,6 +9,8 @@
 #include "Windows/FileFind.h"
 #include "Windows/PropVariant.h"
 
+#include "../Common/WorkDir.h"
+
 #include "../Agent/IFolderArchive.h"
 
 #include "FarUtils.h"
@@ -36,9 +38,10 @@ class CPlugin
   void EnterToDirectory(const UString &dirName);
   void GetPathParts(UStringVector &pathParts);
   void GetCurrentDir();
+  HRESULT AfterUpdate(CWorkDirTempFile &tempFile, const UStringVector &pathVector);
 public:
-  UString m_FileName;
-  NWindows::NFile::NFind::CFileInfoW m_FileInfo;
+  FString m_FileName;
+  NWindows::NFile::NFind::CFileInfo m_FileInfo;
 
   CMyComPtr<IInFolderArchive> m_ArchiveHandler;
   CMyComPtr<IFolderFolder> _folder;
@@ -48,7 +51,7 @@ public:
   bool PasswordIsDefined;
   UString Password;
 
-  CPlugin(const UString &fileName, IInFolderArchive *archiveHandler, UString archiveTypeName);
+  CPlugin(const FString &fileName, IInFolderArchive *archiveHandler, UString archiveTypeName);
   ~CPlugin();
 
   void ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex);

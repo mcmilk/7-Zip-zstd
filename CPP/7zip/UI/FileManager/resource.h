@@ -52,6 +52,7 @@
 #define IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT 463
 #define IDM_OPTIONS                     510
 #define IDM_BENCHMARK                   511
+#define IDM_BENCHMARK2                  512
 #define IDM_HELP_CONTENTS               610
 #define IDM_ABOUT                       620
 #define IDS_BOOKMARK                    720

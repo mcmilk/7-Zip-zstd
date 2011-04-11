@@ -1,10 +1,10 @@
 // PpmdZip.cpp
-// 2010-03-24 : Igor Pavlov : Public domain
 
 #include "StdAfx.h"
 
 #include "../../../C/CpuArch.h"
 
+#include "../Common/RegisterCodec.h"
 #include "../Common/StreamUtils.h"
 
 #include "PpmdZip.h"
@@ -128,69 +128,109 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 
 // ---------- Encoder ----------
 
+void CEncProps::Normalize(int level)
+{
+  if (level < 0) level = 5;
+  if (level == 0) level = 1;
+  if (level > 9) level = 9;
+  if (MemSizeMB == (UInt32)(Int32)-1)
+    MemSizeMB = (1 << ((level > 8 ? 8 : level) - 1));
+  const unsigned kMult = 16;
+  if ((MemSizeMB << 20) / kMult > ReduceSize)
+  {
+    for (UInt32 m = (1 << 20); m <= (1 << 28); m <<= 1)
+    {
+      if (ReduceSize <= m / kMult)
+      {
+        m >>= 20;
+        if (MemSizeMB > m)
+          MemSizeMB = m;
+        break;
+      }
+    }
+  }
+  if (Order == -1) Order = 3 + level;
+  if (Restor == -1)
+    Restor = level < 7 ?
+      PPMD8_RESTORE_METHOD_RESTART :
+      PPMD8_RESTORE_METHOD_CUT_OFF;
+}
+
 CEncoder::~CEncoder()
 {
   Ppmd8_Free(&_ppmd, &g_BigAlloc);
 }
 
-HRESULT CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps)
+STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *coderProps, UInt32 numProps)
 {
+  int level = -1;
+  CEncProps props;
   for (UInt32 i = 0; i < numProps; i++)
   {
-    const PROPVARIANT &prop = props[i];
+    const PROPVARIANT &prop = coderProps[i];
+    PROPID propID = propIDs[i];
+    if (propID > NCoderPropID::kReduceSize)
+      continue;
+    if (propID == NCoderPropID::kReduceSize)
+    {
+      if (prop.vt == VT_UI8 && prop.uhVal.QuadPart < (UInt32)(Int32)-1)
+        props.ReduceSize = (UInt32)prop.uhVal.QuadPart;
+      continue;
+    }
     if (prop.vt != VT_UI4)
       return E_INVALIDARG;
     UInt32 v = (UInt32)prop.ulVal;
-    switch(propIDs[i])
+    switch (propID)
     {
-      case NCoderPropID::kAlgorithm:
-        if (v > 1)
-          return E_INVALIDARG;
-        _restor = v;
-        break;
       case NCoderPropID::kUsedMemorySize:
         if (v < (1 << 20) || v > (1 << 28))
           return E_INVALIDARG;
-        _usedMemInMB = v >> 20;
+        props.MemSizeMB = v >> 20;
         break;
       case NCoderPropID::kOrder:
         if (v < PPMD8_MIN_ORDER || v > PPMD8_MAX_ORDER)
           return E_INVALIDARG;
-        _order = (Byte)v;
+        props.Order = (Byte)v;
         break;
-      default:
-        return E_INVALIDARG;
+      case NCoderPropID::kNumThreads: break;
+      case NCoderPropID::kLevel: level = (int)v; break;
+      case NCoderPropID::kAlgorithm:
+        if (v > 1)
+          return E_INVALIDARG;
+        props.Restor = v;
+        break;
+      default: return E_INVALIDARG;
     }
   }
+  props.Normalize(level);
+  _props = props;
   return S_OK;
 }
 
-CEncoder::CEncoder():
-  _usedMemInMB(16),
-  _order(6),
-  _restor(PPMD8_RESTORE_METHOD_RESTART)
+CEncoder::CEncoder()
 {
+  _props.Normalize(-1);
   _ppmd.Stream.Out = &_outStream.p;
   Ppmd8_Construct(&_ppmd);
 }
 
-HRESULT CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
 {
   if (!_inStream.Alloc())
     return E_OUTOFMEMORY;
   if (!_outStream.Alloc(1 << 20))
     return E_OUTOFMEMORY;
-  if (!Ppmd8_Alloc(&_ppmd, _usedMemInMB << 20, &g_BigAlloc))
+  if (!Ppmd8_Alloc(&_ppmd, _props.MemSizeMB << 20, &g_BigAlloc))
     return E_OUTOFMEMORY;
 
   _outStream.Stream = outStream;
   _outStream.Init();
 
   Ppmd8_RangeEnc_Init(&_ppmd);
-  Ppmd8_Init(&_ppmd, _order, _restor);
+  Ppmd8_Init(&_ppmd, _props.Order, _props.Restor);
 
-  UInt32 val = (UInt32)((_order - 1) + ((_usedMemInMB - 1) << 4) + (_restor << 12));
+  UInt32 val = (UInt32)((_props.Order - 1) + ((_props.MemSizeMB - 1) << 4) + (_props.Restor << 12));
   _outStream.WriteByte((Byte)(val & 0xFF));
   _outStream.WriteByte((Byte)(val >> 8));
   RINOK(_outStream.Res);
@@ -219,5 +259,15 @@ HRESULT CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outS
     }
   }
 }
+
+/*
+static void *CreateCodec() { return (void *)(ICompressCoder *)(new CDecoder(false)); }
+static void *CreateCodecOut() { return (void *)(ICompressCoder *)(new CEncoder);  }
+
+static CCodecInfo g_CodecInfo =
+  { CreateCodec, CreateCodecOut, 0x040162, L"PPMdZIP", 1, false };
+
+REGISTER_CODEC(PPMdZIP)
+*/
 
 }}

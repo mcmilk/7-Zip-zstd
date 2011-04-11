@@ -7,12 +7,13 @@
 #include "Common/Random.h"
 #include "Common/StringConvert.h"
 
+#include "Windows/DLL.h"
+#include "Windows/Error.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileMapping.h"
 #include "Windows/Process.h"
 #include "Windows/Synchronization.h"
 
-#include "../FileManager/ProgramLocation.h"
 #include "../FileManager/RegistryUtils.h"
 
 #include "CompressCall.h"
@@ -31,10 +32,13 @@ static LPCWSTR kArcIncludeSwitches = L" -an -ai";
 static LPCWSTR kStopSwitchParsing = L" --";
 static LPCWSTR kLargePagesDisable = L" -slp-";
 
+extern HWND g_HWND;
+
 UString GetQuotedString(const UString &s)
 {
   return UString(L'\"') + s + UString(L'\"');
 }
+
 static void ErrorMessage(LPCWSTR message)
 {
   MessageBoxW(g_HWND, message, L"7-Zip", MB_ICONERROR | MB_OK);
@@ -42,7 +46,7 @@ static void ErrorMessage(LPCWSTR message)
 
 static void ErrorMessageHRESULT(HRESULT res, LPCWSTR s = NULL)
 {
-  UString s2 = HResultToMessage(res);
+  UString s2 = NError::MyFormatMessageW(res);
   if (s)
   {
     s2 += L'\n';
@@ -80,9 +84,7 @@ static void AddLagePagesSwitch(UString &params)
 
 static UString Get7zGuiPath()
 {
-  UString path;
-  GetProgramFolderPath(path);
-  return path + L"7zG.exe";
+  return fs2us(NWindows::NDLL::GetModuleDirPrefix()) + L"7zG.exe";
 }
 
 class CRandNameGenerator
@@ -238,9 +240,9 @@ HRESULT TestArchives(const UStringVector &arcPaths)
   MY_TRY_FINISH
 }
 
-HRESULT Benchmark()
+HRESULT Benchmark(bool totalMode)
 {
   MY_TRY_BEGIN
-  return MyCreateProcess(Get7zGuiPath(), L'b', 0, false, NULL);
+  return MyCreateProcess(Get7zGuiPath(), totalMode ? L"b -mm=*" : L"b", 0, false, NULL);
   MY_TRY_FINISH
 }

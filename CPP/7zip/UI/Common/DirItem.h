@@ -39,14 +39,14 @@ public:
   int AddPrefix(int phyParent, int logParent, const UString &prefix);
   void DeleteLastPrefix();
 
-  void EnumerateDirectory(int phyParent, int logParent, const UString &phyPrefix,
-    UStringVector &errorPaths, CRecordVector<DWORD> &errorCodes);
+  void EnumerateDirectory(int phyParent, int logParent, const FString &phyPrefix,
+    FStringVector &errorPaths, CRecordVector<DWORD> &errorCodes);
 
   void EnumerateDirItems2(
-    const UString &phyPrefix,
+    const FString &phyPrefix,
     const UString &logPrefix,
-    const UStringVector &filePaths,
-    UStringVector &errorPaths, CRecordVector<DWORD> &errorCodes);
+    const FStringVector &filePaths,
+    FStringVector &errorPaths, CRecordVector<DWORD> &errorCodes);
 
   void ReserveDown();
 };

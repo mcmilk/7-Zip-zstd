@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#ifndef _UNICODE
+#include "Common/StringConvert.h"
+#endif
+
 #include "FileSystem.h"
 #include "Defs.h"
 
@@ -14,113 +18,94 @@ namespace NFile {
 namespace NSystem {
 
 bool MyGetVolumeInformation(
-    LPCTSTR rootPathName,
-    CSysString &volumeName,
-    LPDWORD volumeSerialNumber,
-    LPDWORD maximumComponentLength,
-    LPDWORD fileSystemFlags,
-    CSysString &fileSystemName)
-{
-  bool result = BOOLToBool(GetVolumeInformation(
-      rootPathName,
-      volumeName.GetBuffer(MAX_PATH), MAX_PATH,
-      volumeSerialNumber,
-      maximumComponentLength,
-      fileSystemFlags,
-      fileSystemName.GetBuffer(MAX_PATH), MAX_PATH));
-  volumeName.ReleaseBuffer();
-  fileSystemName.ReleaseBuffer();
-  return result;
-}
-
-
-#ifndef _UNICODE
-bool MyGetVolumeInformation(
-    LPCWSTR rootPathName,
+    CFSTR rootPath,
     UString &volumeName,
     LPDWORD volumeSerialNumber,
     LPDWORD maximumComponentLength,
     LPDWORD fileSystemFlags,
     UString &fileSystemName)
 {
-  if (g_IsNT)
+  BOOL res;
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
-    bool result = BOOLToBool(GetVolumeInformationW(
-      rootPathName,
-      volumeName.GetBuffer(MAX_PATH), MAX_PATH,
-      volumeSerialNumber,
-      maximumComponentLength,
-      fileSystemFlags,
-      fileSystemName.GetBuffer(MAX_PATH), MAX_PATH));
-    volumeName.ReleaseBuffer();
-    fileSystemName.ReleaseBuffer();
-    return result;
+    TCHAR v[MAX_PATH + 2]; v[0] = 0;
+    TCHAR f[MAX_PATH + 2]; f[0] = 0;
+    res = GetVolumeInformation(fs2fas(rootPath),
+        v, MAX_PATH,
+        volumeSerialNumber, maximumComponentLength, fileSystemFlags,
+        f, MAX_PATH);
+    volumeName = MultiByteToUnicodeString(v);
+    fileSystemName = MultiByteToUnicodeString(f);
   }
-  AString volumeNameA, fileSystemNameA;
-  bool result = MyGetVolumeInformation(GetSystemString(rootPathName), volumeNameA,
-      volumeSerialNumber, maximumComponentLength, fileSystemFlags,fileSystemNameA);
-  if (result)
+  else
+  #endif
   {
-    volumeName = GetUnicodeString(volumeNameA);
-    fileSystemName = GetUnicodeString(fileSystemNameA);
+    WCHAR v[MAX_PATH + 2]; v[0] = 0;
+    WCHAR f[MAX_PATH + 2]; f[0] = 0;
+    res = GetVolumeInformationW(fs2us(rootPath),
+        v, MAX_PATH,
+        volumeSerialNumber, maximumComponentLength, fileSystemFlags,
+        f, MAX_PATH);
+    volumeName = v;
+    fileSystemName = f;
   }
-  return result;
+  return BOOLToBool(res);
 }
-#endif
 
-typedef BOOL (WINAPI * GetDiskFreeSpaceExPointer)(
-  LPCTSTR lpDirectoryName,                 // directory name
+UINT MyGetDriveType(CFSTR pathName)
+{
+  #ifndef _UNICODE
+  if (!g_IsNT)
+  {
+    return GetDriveType(fs2fas(pathName));
+  }
+  else
+  #endif
+  {
+    return GetDriveTypeW(fs2us(pathName));
+  }
+}
+
+typedef BOOL (WINAPI * GetDiskFreeSpaceExW_Pointer)(
+  LPCWSTR lpDirectoryName,                 // directory name
   PULARGE_INTEGER lpFreeBytesAvailable,    // bytes available to caller
   PULARGE_INTEGER lpTotalNumberOfBytes,    // bytes on disk
   PULARGE_INTEGER lpTotalNumberOfFreeBytes // free bytes on disk
 );
 
-bool MyGetDiskFreeSpace(LPCTSTR rootPathName,
-    UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize)
+bool MyGetDiskFreeSpace(CFSTR rootPath, UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize)
 {
-  GetDiskFreeSpaceExPointer pGetDiskFreeSpaceEx =
-      (GetDiskFreeSpaceExPointer)GetProcAddress(
-      GetModuleHandle(TEXT("kernel32.dll")), "GetDiskFreeSpaceExA");
-
+  DWORD numSectorsPerCluster, bytesPerSector, numFreeClusters, numClusters;
   bool sizeIsDetected = false;
-  if (pGetDiskFreeSpaceEx)
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
-    ULARGE_INTEGER i64FreeBytesToCaller, totalSize2, freeSize2;
-    sizeIsDetected = BOOLToBool(pGetDiskFreeSpaceEx(rootPathName,
-                &i64FreeBytesToCaller,
-                &totalSize2,
-                &freeSize2));
-    totalSize = totalSize2.QuadPart;
-    freeSize = freeSize2.QuadPart;
+    if (!::GetDiskFreeSpace(fs2fas(rootPath), &numSectorsPerCluster, &bytesPerSector, &numFreeClusters, &numClusters))
+      return false;
   }
-
-  DWORD numSectorsPerCluster;
-  DWORD bytesPerSector;
-  DWORD numberOfFreeClusters;
-  DWORD totalNumberOfClusters;
-
-  if (!::GetDiskFreeSpace(rootPathName,
-      &numSectorsPerCluster,
-      &bytesPerSector,
-      &numberOfFreeClusters,
-      &totalNumberOfClusters))
-    return false;
-
+  else
+  #endif
+  {
+    GetDiskFreeSpaceExW_Pointer pGetDiskFreeSpaceEx = (GetDiskFreeSpaceExW_Pointer)GetProcAddress(
+        GetModuleHandle(TEXT("kernel32.dll")), "GetDiskFreeSpaceExW");
+    if (pGetDiskFreeSpaceEx)
+    {
+      ULARGE_INTEGER freeBytesToCaller2, totalSize2, freeSize2;
+      sizeIsDetected = BOOLToBool(pGetDiskFreeSpaceEx(fs2us(rootPath), &freeBytesToCaller2, &totalSize2, &freeSize2));
+      totalSize = totalSize2.QuadPart;
+      freeSize = freeSize2.QuadPart;
+    }
+    if (!::GetDiskFreeSpaceW(fs2us(rootPath), &numSectorsPerCluster, &bytesPerSector, &numFreeClusters, &numClusters))
+      return false;
+  }
   clusterSize = (UInt64)bytesPerSector * (UInt64)numSectorsPerCluster;
   if (!sizeIsDetected)
   {
-    totalSize =  clusterSize * (UInt64)totalNumberOfClusters;
-    freeSize =  clusterSize * (UInt64)numberOfFreeClusters;
+    totalSize = clusterSize * (UInt64)numClusters;
+    freeSize = clusterSize * (UInt64)numFreeClusters;
   }
   return true;
 }
-
-#ifndef _UNICODE
-bool MyGetDiskFreeSpace(LPCWSTR rootPathName,
-    UInt64 &clusterSize, UInt64 &totalSize, UInt64 &freeSize)
-{
-  return MyGetDiskFreeSpace(GetSystemString(rootPathName), clusterSize, totalSize, freeSize);
-}
-#endif
 
 }}}

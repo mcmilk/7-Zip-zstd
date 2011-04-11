@@ -33,14 +33,6 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
 {
   if (_remainLen == kLenIdNeedInit)
   {
-    if (!_keepHistory)
-    {
-      if (!_outWindowStream.Create((UInt32)1 << _numDictBits))
-        return E_OUTOFMEMORY;
-      Init();
-    }
-    if (!_rangeDecoder.Create(1 << 20))
-      return E_OUTOFMEMORY;
     _rangeDecoder.Init();
     _remainLen = 0;
   }
@@ -169,6 +161,20 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
     return E_FAIL;
   _remainLen = kLenIdNeedInit;
   _outWindowStream.Init(_keepHistory);
+  if (!_keepHistory)
+    Init();
+  return S_OK;
+}
+
+HRESULT CDecoder::SetParams(int numDictBits)
+{
+  if (numDictBits > 21)
+    return E_INVALIDARG;
+  _numDictBits = numDictBits;
+  if (!_outWindowStream.Create((UInt32)1 << _numDictBits))
+    return E_OUTOFMEMORY;
+  if (!_rangeDecoder.Create(1 << 20))
+    return E_OUTOFMEMORY;
   return S_OK;
 }
 

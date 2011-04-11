@@ -2,7 +2,9 @@
 
 #include "StdAfx.h"
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <ctype.h>
 #endif
 
@@ -12,10 +14,75 @@
 
 #include "MyString.h"
 
+const char* MyStringGetNextCharPointer(const char *p)
+{
+  #if defined(_WIN32) && !defined(UNDER_CE)
+  return CharNextA(p);
+  #else
+  return p + 1;
+  #endif
+}
+
+int FindCharPosInString(const char *s, char c)
+{
+  for (const char *p = s;;)
+  {
+    if (*p == c)
+      return (int)(p - s);
+    if (*p == 0)
+      return -1;
+    p = MyStringGetNextCharPointer(p);
+  }
+}
+
+int FindCharPosInString(const wchar_t *s, wchar_t c)
+{
+  for (const wchar_t *p = s;; p++)
+  {
+    if (*p == c)
+      return (int)(p - s);
+    if (*p == 0)
+      return -1;
+  }
+}
 
 #ifdef _WIN32
 
-#ifndef _UNICODE
+#ifdef _UNICODE
+
+wchar_t MyCharUpper(wchar_t c)
+{
+  return (wchar_t)(unsigned int)(UINT_PTR)CharUpperW((LPWSTR)(UINT_PTR)(unsigned int)c);
+}
+
+/*
+wchar_t MyCharLower(wchar_t c)
+{
+  return (wchar_t)(unsigned int)(UINT_PTR)CharLowerW((LPWSTR)(UINT_PTR)(unsigned int)c);
+}
+
+char MyCharLower(char c)
+#ifdef UNDER_CE
+  { return (char)MyCharLower((wchar_t)c); }
+#else
+  { return (char)(unsigned int)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(unsigned int)(unsigned char)c); }
+#endif
+*/
+
+wchar_t * MyStringUpper(wchar_t *s) { return CharUpperW(s); }
+wchar_t * MyStringLower(wchar_t *s) { return CharLowerW(s); }
+
+// for WinCE - FString - char
+const char *MyStringGetPrevCharPointer(const char * /* base */, const char *p)
+{
+  return p - 1;
+}
+
+#else
+
+const char * MyStringGetPrevCharPointer(const char *base, const char *p) { return CharPrevA(base, p); }
+char * MyStringUpper(char *s) { return CharUpperA(s); }
+char * MyStringLower(char *s) { return CharLowerA(s); }
 
 wchar_t MyCharUpper(wchar_t c)
 {
@@ -62,7 +129,8 @@ wchar_t * MyStringUpper(wchar_t *s)
     return res;
   AString a = UnicodeStringToMultiByte(s);
   a.MakeUpper();
-  return MyStringCopy(s, (const wchar_t *)MultiByteToUnicodeString(a));
+  MyStringCopy(s, (const wchar_t *)MultiByteToUnicodeString(a));
+  return s;
 }
 
 wchar_t * MyStringLower(wchar_t *s)
@@ -74,62 +142,26 @@ wchar_t * MyStringLower(wchar_t *s)
     return res;
   AString a = UnicodeStringToMultiByte(s);
   a.MakeLower();
-  return MyStringCopy(s, (const wchar_t *)MultiByteToUnicodeString(a));
+  MyStringCopy(s, (const wchar_t *)MultiByteToUnicodeString(a));
+  return s;
 }
 
 #endif
-
-/*
-inline int ConvertCompareResult(int r) { return r - 2; }
-
-int MyStringCollate(const wchar_t *s1, const wchar_t *s2)
-{
-  int res = CompareStringW(
-        LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1);
-  #ifdef _UNICODE
-  return ConvertCompareResult(res);
-  #else
-  if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return ConvertCompareResult(res);
-  return MyStringCollate(UnicodeStringToMultiByte(s1),
-        UnicodeStringToMultiByte(s2));
-  #endif
-}
-
-#ifndef UNDER_CE
-int MyStringCollate(const char *s1, const char *s2)
-{
-  return ConvertCompareResult(CompareStringA(
-    LOCALE_USER_DEFAULT, SORT_STRINGSORT, s1, -1, s2, -1));
-}
-
-int MyStringCollateNoCase(const char *s1, const char *s2)
-{
-  return ConvertCompareResult(CompareStringA(
-    LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1));
-}
-#endif
-
-int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2)
-{
-  int res = CompareStringW(
-        LOCALE_USER_DEFAULT, NORM_IGNORECASE | SORT_STRINGSORT, s1, -1, s2, -1);
-  #ifdef _UNICODE
-  return ConvertCompareResult(res);
-  #else
-  if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
-    return ConvertCompareResult(res);
-  return MyStringCollateNoCase(UnicodeStringToMultiByte(s1),
-      UnicodeStringToMultiByte(s2));
-  #endif
-}
-*/
 
 #else
 
 wchar_t MyCharUpper(wchar_t c)
 {
   return toupper(c);
+}
+
+wchar_t * MyStringUpper(wchar_t *s)
+{
+  if (s == 0)
+    return 0;
+  for (wchar_t *p = s; *p != 0; p++)
+    *p = MyCharUpper(*p);
+  return s;
 }
 
 /*
@@ -192,9 +224,45 @@ int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
   }
 }
 
-/*
+UString MultiByteToUnicodeString(const AString &srcString, UINT codePage);
+AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage);
+
 int MyStringCompareNoCase(const char *s1, const char *s2)
 {
-  return MyStringCompareNoCase(MultiByteToUnicodeString(s1), MultiByteToUnicodeString(s2));
+  return MyStringCompareNoCase(MultiByteToUnicodeString(s1, CP_ACP), MultiByteToUnicodeString(s2, CP_ACP));
 }
-*/
+
+static inline UINT GetCurrentCodePage()
+{
+  #if defined(UNDER_CE) || !defined(defined)
+  return CP_ACP;
+  #else
+  return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+  #endif
+}
+
+#ifdef USE_UNICODE_FSTRING
+
+AString fs2fas(CFSTR s)
+{
+  return UnicodeStringToMultiByte(s, GetCurrentCodePage());
+}
+
+FString fas2fs(const AString &s)
+{
+  return MultiByteToUnicodeString(s, GetCurrentCodePage());
+}
+
+#else
+
+UString fs2us(const FString &s)
+{
+  return MultiByteToUnicodeString((AString)s, GetCurrentCodePage());
+}
+
+FString us2fs(const wchar_t *s)
+{
+  return UnicodeStringToMultiByte(s, GetCurrentCodePage());
+}
+
+#endif

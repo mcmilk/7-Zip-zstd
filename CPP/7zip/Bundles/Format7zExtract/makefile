@@ -26,6 +26,7 @@ WIN_OBJS = \
   $O\LimitedStreams.obj \
   $O\LockedStream.obj \
   $O\MethodId.obj \
+  $O\MethodProps.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
   $O\StreamBinder.obj \

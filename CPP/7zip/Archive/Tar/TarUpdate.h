@@ -13,15 +13,15 @@ struct CUpdateItem
 {
   int IndexInArchive;
   int IndexInClient;
-  UInt32 Time;
-  UInt32 Mode;
+  Int64 MTime;
   UInt64 Size;
-  AString Name;
-  AString User;
-  AString Group;
+  UInt32 Mode;
   bool NewData;
   bool NewProps;
   bool IsDir;
+  AString Name;
+  AString User;
+  AString Group;
 };
 
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,

@@ -63,8 +63,8 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 
   NCOM::CPropVariant prop1, prop2;
   // Name must be first property
-  panel->_folder->GetProperty((UINT32)lParam1, propID, &prop1);
-  panel->_folder->GetProperty((UINT32)lParam2, propID, &prop2);
+  panel->_folder->GetProperty((UInt32)lParam1, propID, &prop1);
+  panel->_folder->GetProperty((UInt32)lParam2, propID, &prop2);
   if (prop1.vt != prop2.vt)
   {
     return MyCompare(prop1.vt, prop2.vt);

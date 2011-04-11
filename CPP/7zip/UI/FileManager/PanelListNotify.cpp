@@ -77,7 +77,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (_dontShowMode)
     return 0;
 
-  UINT32 realIndex = GetRealIndex(item);
+  UInt32 realIndex = GetRealIndex(item);
   /*
   if ((item.mask & LVIF_IMAGE) != 0)
   {
@@ -113,7 +113,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (realIndex == kParentIndex)
     return 0;
   UString s;
-  UINT32 subItemIndex = item.iSubItem;
+  UInt32 subItemIndex = item.iSubItem;
   PROPID propID = _visibleProperties[subItemIndex].ID;
   /*
   {
@@ -222,7 +222,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       {
         if (!_mySelectMode)
           OnItemChanged((LPNMLISTVIEW)header);
-        RefreshStatusBar();
+        Post_Refresh_StatusBar();
       }
       return false;
     }
@@ -248,7 +248,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case LVN_KEYDOWN:
     {
       bool boolResult = OnKeyDown(LPNMLVKEYDOWN(header), result);
-      RefreshStatusBar();
+      Post_Refresh_StatusBar();
       return boolResult;
     }
 
@@ -273,7 +273,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       break;
 
     case NM_RCLICK:
-      RefreshStatusBar();
+      Post_Refresh_StatusBar();
       break;
 
     /*
@@ -301,7 +301,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     {
       // we need SetFocusToList, if we drag-select items from other panel.
       SetFocusToList();
-      RefreshStatusBar();
+      Post_Refresh_StatusBar();
       if (_mySelectMode)
         #ifndef UNDER_CE
         if (g_ComCtl32Version >= MAKELONG(71, 4))
@@ -325,7 +325,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     case LVN_BEGINDRAG:
     {
       OnDrag((LPNMLISTVIEW)header);
-      RefreshStatusBar();
+      Post_Refresh_StatusBar();
       break;
     }
     // case LVN_BEGINRDRAG:
@@ -390,9 +390,9 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
   return false;
 }
 
-void CPanel::OnRefreshStatusBar()
+void CPanel::Refresh_StatusBar()
 {
-  CRecordVector<UINT32> indices;
+  CRecordVector<UInt32> indices;
   GetOperatedItemIndices(indices);
 
   _statusBar.SetText(0, MyFormatNew(IDS_N_SELECTED_ITEMS, 0x02000301, NumberToString(indices.Size())));

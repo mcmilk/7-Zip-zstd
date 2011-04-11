@@ -37,6 +37,7 @@ SRes HRESULT_To_SRes(HRESULT res, SRes defaultRes)
     case E_INVALIDARG: return SZ_ERROR_PARAM;
     case E_ABORT: return SZ_ERROR_PROGRESS;
     case S_FALSE: return SZ_ERROR_DATA;
+    case E_NOTIMPL: return SZ_ERROR_UNSUPPORTED;
   }
   return defaultRes;
 }
@@ -90,6 +91,7 @@ HRESULT SResToHRESULT(SRes res)
     case SZ_ERROR_PARAM: return E_INVALIDARG;
     case SZ_ERROR_PROGRESS: return E_ABORT;
     case SZ_ERROR_DATA: return S_FALSE;
+    case SZ_ERROR_UNSUPPORTED: return E_NOTIMPL;
   }
   return E_FAIL;
 }

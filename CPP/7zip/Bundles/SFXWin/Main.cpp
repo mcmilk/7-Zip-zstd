@@ -41,7 +41,7 @@ int APIENTRY WinMain2()
   UString password;
   bool assumeYes = false;
   bool outputFolderDefined = false;
-  UString outputFolder;
+  FString outputFolder;
   UStringVector commandStrings;
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
 
@@ -57,7 +57,7 @@ int APIENTRY WinMain2()
       assumeYes = true;
     else if (s.Left(2).CompareNoCase(L"-o") == 0)
     {
-      outputFolder = s.Mid(2);
+      outputFolder = us2fs(s.Mid(2));
       NWindows::NFile::NName::NormalizeDirPathPrefix(outputFolder);
       outputFolderDefined = !outputFolder.IsEmpty();
     }
@@ -67,12 +67,11 @@ int APIENTRY WinMain2()
     }
   }
 
-  UString path;
-  NWindows::NDLL::MyGetModuleFileName(g_hInstance, path);
+  FString path;
+  NWindows::NDLL::MyGetModuleFileName(path);
 
-  UString fullPath;
-  int fileNamePartStartIndex;
-  if (!NWindows::NFile::NDirectory::MyGetFullPathName(path, fullPath, fileNamePartStartIndex))
+  FString fullPath;
+  if (!NWindows::NFile::NDirectory::MyGetFullPathName(path, fullPath))
   {
     ShowErrorMessage(L"Error 1329484");
     return 1;
@@ -102,8 +101,15 @@ int APIENTRY WinMain2()
   #endif
 
   CExtractOptions eo;
-  eo.OutputDir = outputFolderDefined ? outputFolder :
-      fullPath.Left(fileNamePartStartIndex);
+
+  FString dirPrefix;
+  if (!NWindows::NFile::NDirectory::GetOnlyDirPrefix(path, dirPrefix))
+  {
+    ShowErrorMessage(L"Error 1329485");
+    return 1;
+  }
+
+  eo.OutputDir = outputFolderDefined ? outputFolder : dirPrefix;
   eo.YesToAll = assumeYes;
   eo.OverwriteMode = assumeYes ?
       NExtract::NOverwriteMode::kWithoutPrompt :
@@ -112,8 +118,8 @@ int APIENTRY WinMain2()
   eo.TestMode = false;
   
   UStringVector v1, v2;
-  v1.Add(fullPath);
-  v2.Add(fullPath);
+  v1.Add(fs2us(fullPath));
+  v2.Add(fs2us(fullPath));
   NWildcard::CCensorNode wildcardCensor;
   wildcardCensor.AddItem(true, L"*", true, true, true);
 
@@ -170,4 +176,3 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     return NExitCode::kFatalError;
   }
 }
-

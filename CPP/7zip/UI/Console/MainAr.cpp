@@ -79,9 +79,8 @@ int MY_CDECL main
       (*g_StdStream) << endl << kUserBreak;
       return (NExitCode::kUserBreak);
     }
-    UString message;
-    NError::MyFormatMessage(systemError.ErrorCode, message);
-    (*g_StdStream) << endl << endl << "System error:" << endl << message << endl;
+    (*g_StdStream) << endl << endl << "System error:" << endl <<
+        NError::MyFormatMessageW(systemError.ErrorCode) << endl;
     return (NExitCode::kFatalError);
   }
   catch(NExitCode::EEnum &exitCode)

@@ -88,3 +88,10 @@ Int64 ConvertStringToInt64(const char *s, const char **end)
     return -(Int64)ConvertStringToUInt64(s + 1, end);
   return ConvertStringToUInt64(s, end);
 }
+
+Int64 ConvertStringToInt64(const wchar_t *s, const wchar_t **end)
+{
+  if (*s == L'-')
+    return -(Int64)ConvertStringToUInt64(s + 1, end);
+  return ConvertStringToUInt64(s, end);
+}

@@ -37,7 +37,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     IArchiveUpdateCallback *callback)
 {
   COM_TRY_BEGIN
-  if ((_stream && !_errorMessage.IsEmpty()) || _seqStream)
+  if ((_stream && (!_errorMessage.IsEmpty() || _isSparse)) || _seqStream)
     return E_NOTIMPL;
   CObjectVector<CUpdateItem> updateItems;
   for (UInt32 i = 0; i < numItems; i++)
@@ -81,11 +81,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         NCOM::CPropVariant prop;
         RINOK(callback->GetProperty(i, kpidMTime, &prop));
         if (prop.vt == VT_EMPTY)
-          ui.Time = 0;
+          ui.MTime = 0;
         else if (prop.vt != VT_FILETIME)
           return E_INVALIDARG;
-        else if (!NTime::FileTimeToUnixTime(prop.filetime, ui.Time))
-          ui.Time = 0;
+        else
+          ui.MTime = NTime::FileTimeToUnixTime64(prop.filetime);
       }
       {
         NCOM::CPropVariant prop;

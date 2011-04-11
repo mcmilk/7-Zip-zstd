@@ -18,7 +18,7 @@
 using namespace NWindows;
 using namespace NFar;
 
-CPlugin::CPlugin(const UString &fileName, IInFolderArchive *archiveHandler, UString archiveTypeName):
+CPlugin::CPlugin(const FString &fileName, IInFolderArchive *archiveHandler, UString archiveTypeName):
     m_ArchiveHandler(archiveHandler),
     m_FileName(fileName),
     _archiveTypeName(archiveTypeName)
@@ -532,10 +532,10 @@ static void InsertSeparator(InfoPanelLine *lines, int &numItems)
 void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
 {
   info->StructSize = sizeof(*info);
-  info->Flags = OPIF_USEFILTER | OPIF_USESORTGROUPS| OPIF_USEHIGHLIGHTING|
+  info->Flags = OPIF_USEFILTER | OPIF_USESORTGROUPS | OPIF_USEHIGHLIGHTING |
               OPIF_ADDDOTS | OPIF_COMPAREFATTIME;
 
-  COPY_STR_LIMITED(m_FileNameBuffer, UnicodeStringToMultiByte(m_FileName, CP_OEMCP));
+  COPY_STR_LIMITED(m_FileNameBuffer, UnicodeStringToMultiByte(fs2us(m_FileName), CP_OEMCP));
   info->HostFile = m_FileNameBuffer; // test it it is not static
   
   COPY_STR_LIMITED(m_CurrentDirBuffer, UnicodeStringToMultiByte(m_CurrentDir, CP_OEMCP));
@@ -545,10 +545,9 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
 
   UString name;
   {
-    UString fullName;
-    int index;
-    NFile::NDirectory::MyGetFullPathName(m_FileName, fullName, index);
-    name = fullName.Mid(index);
+    FString dirPrefix, fileName;
+    NFile::NDirectory::GetFullPathAndSplit(m_FileName, dirPrefix, fileName);
+    name = fs2us(fileName);
   }
 
   m_PannelTitle =
@@ -852,14 +851,14 @@ int CPlugin::ProcessKey(int key, unsigned int controlState)
   }
   if ((controlState & PKF_ALT) != 0 && key == VK_F6)
   {
-    UString folderPath;
+    FString folderPath;
     if (!NFile::NDirectory::GetOnlyDirPrefix(m_FileName, folderPath))
       return FALSE;
     PanelInfo panelInfo;
     g_StartupInfo.ControlGetActivePanelInfo(panelInfo);
     GetFilesReal(panelInfo.SelectedItems,
         panelInfo.SelectedItemsNumber, FALSE,
-        UnicodeStringToMultiByte(folderPath, CP_OEMCP), OPM_SILENT, true);
+        UnicodeStringToMultiByte(fs2us(folderPath), CP_OEMCP), OPM_SILENT, true);
     g_StartupInfo.Control(this, FCTL_UPDATEPANEL, NULL);
     g_StartupInfo.Control(this, FCTL_REDRAWPANEL, NULL);
     g_StartupInfo.Control(this, FCTL_UPDATEANOTHERPANEL, NULL);

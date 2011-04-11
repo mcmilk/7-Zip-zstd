@@ -75,11 +75,11 @@ struct CArchiveCommandLineOptions
   // Extract
   bool CalcCrc;
   bool AppendName;
-  UString OutputDir;
+  FString OutputDir;
   NExtract::NOverwriteMode::EEnum OverwriteMode;
   UStringVector ArchivePathsSorted;
   UStringVector ArchivePathsFullSorted;
-  CObjectVector<CProperty> ExtractProperties;
+  CObjectVector<CProperty> Properties;
 
   CUpdateOptions UpdateOptions;
   UString ArcType;
@@ -87,10 +87,6 @@ struct CArchiveCommandLineOptions
 
   // Benchmark
   UInt32 NumIterations;
-  UInt32 NumThreads;
-  UInt32 DictionarySize;
-  UString Method;
-
 
   CArchiveCommandLineOptions(): StdInMode(false), StdOutMode(false) {};
 };

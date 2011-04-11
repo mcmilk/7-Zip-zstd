@@ -29,34 +29,6 @@ static inline HRESULT ConvertBoolToHRESULT(bool result)
   #endif
 }
 
-bool CInFileStream::Open(LPCTSTR fileName)
-{
-  return File.Open(fileName);
-}
-
-#ifdef USE_WIN_FILE
-#ifndef _UNICODE
-bool CInFileStream::Open(LPCWSTR fileName)
-{
-  return File.Open(fileName);
-}
-#endif
-#endif
-
-bool CInFileStream::OpenShared(LPCTSTR fileName, bool shareForWrite)
-{
-  return File.OpenShared(fileName, shareForWrite);
-}
-
-#ifdef USE_WIN_FILE
-#ifndef _UNICODE
-bool CInFileStream::OpenShared(LPCWSTR fileName, bool shareForWrite)
-{
-  return File.OpenShared(fileName, shareForWrite);
-}
-#endif
-#endif
-
 #ifdef SUPPORT_DEVICE_FILE
 
 static const UInt32 kClusterSize = 1 << 18;
@@ -279,7 +251,7 @@ STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin,
   
   #else
   
-  off_t res = File.Seek(offset, seekOrigin);
+  off_t res = File.Seek((off_t)offset, seekOrigin);
   if (res == -1)
     return E_FAIL;
   if (newPosition != NULL)
@@ -343,7 +315,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
   
   #else
   
-  off_t res = File.Seek(offset, seekOrigin);
+  off_t res = File.Seek((off_t)offset, seekOrigin);
   if (res == -1)
     return E_FAIL;
   if (newPosition != NULL)

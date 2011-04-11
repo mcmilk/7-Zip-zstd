@@ -360,6 +360,9 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {
   if (outSize == NULL)
     return E_FAIL;
+  // flush calls m_x86ConvertOutStreamSpec->flush, so we must init x86Convert.
+  if (!_keepHistory)
+    m_x86ConvertOutStreamSpec->Init(false, 0);
   _remainLen = kLenIdNeedInit;
   m_OutWindowStream.Init(_keepHistory);
   return S_OK;

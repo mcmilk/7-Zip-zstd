@@ -1,7 +1,7 @@
 // MyWindows.h
 
-#ifndef __MYWINDOWS_H
-#define __MYWINDOWS_H
+#ifndef __MY_WINDOWS_H
+#define __MY_WINDOWS_H
 
 #ifdef _WIN32
 
@@ -40,8 +40,8 @@ typedef UINT32 DWORD;
 typedef Int64 LONGLONG;
 typedef UInt64 ULONGLONG;
 
-typedef struct LARGE_INTEGER { LONGLONG QuadPart; }LARGE_INTEGER;
-typedef struct _ULARGE_INTEGER { ULONGLONG QuadPart;} ULARGE_INTEGER;
+typedef struct _LARGE_INTEGER { LONGLONG QuadPart; } LARGE_INTEGER;
+typedef struct _ULARGE_INTEGER { ULONGLONG QuadPart; } ULARGE_INTEGER;
 
 typedef const CHAR *LPCSTR;
 typedef CHAR TCHAR;
@@ -57,7 +57,7 @@ typedef struct _FILETIME
 {
   DWORD dwLowDateTime;
   DWORD dwHighDateTime;
-}FILETIME;
+} FILETIME;
 
 #define HRESULT LONG
 #define FAILED(Status) ((HRESULT)(Status)<0)
@@ -178,6 +178,13 @@ typedef VARIANT VARIANTARG;
 
 MY_EXTERN_C HRESULT VariantClear(VARIANTARG *prop);
 MY_EXTERN_C HRESULT VariantCopy(VARIANTARG *dest, VARIANTARG *src);
+
+typedef struct tagSTATPROPSTG
+{
+  LPOLESTR lpwstrName;
+  PROPID propid;
+  VARTYPE vt;
+} STATPROPSTG;
 
 #endif
 

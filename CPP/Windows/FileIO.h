@@ -1,9 +1,10 @@
 // Windows/FileIO.h
 
-#ifndef __WINDOWS_FILEIO_H
-#define __WINDOWS_FILEIO_H
+#ifndef __WINDOWS_FILE_IO_H
+#define __WINDOWS_FILE_IO_H
 
 #include "../Common/Types.h"
+#include "../Common/MyString.h"
 
 #include "Defs.h"
 
@@ -11,29 +12,27 @@ namespace NWindows {
 namespace NFile {
 namespace NIO {
 
+/*
 struct CByHandleFileInfo
 {
-  DWORD Attrib;
+  UInt64 Size;
   FILETIME CTime;
   FILETIME ATime;
   FILETIME MTime;
+  DWORD Attrib;
   DWORD VolumeSerialNumber;
-  UInt64 Size;
-  DWORD NumberOfLinks;
+  DWORD NumLinks;
   UInt64 FileIndex;
 };
+*/
 
 class CFileBase
 {
 protected:
   HANDLE _handle;
   
-  bool Create(LPCTSTR fileName, DWORD desiredAccess,
+  bool Create(CFSTR fileName, DWORD desiredAccess,
       DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
-  #ifndef _UNICODE
-  bool Create(LPCWSTR fileName, DWORD desiredAccess,
-      DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
-  #endif
 
 public:
   #ifdef SUPPORT_DEVICE_FILE
@@ -55,7 +54,7 @@ public:
   bool SeekToBegin();
   bool SeekToEnd(UInt64 &newPosition);
   
-  bool GetFileInformation(CByHandleFileInfo &fileInfo) const;
+  // bool GetFileInformation(CByHandleFileInfo &fileInfo) const;
 };
 
 #define IOCTL_CDROM_BASE  FILE_DEVICE_CD_ROM
@@ -97,14 +96,10 @@ class CInFile: public CFileBase
   #endif
 
 public:
-  bool Open(LPCTSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
-  bool OpenShared(LPCTSTR fileName, bool shareForWrite);
-  bool Open(LPCTSTR fileName);
-  #ifndef _UNICODE
-  bool Open(LPCWSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
-  bool OpenShared(LPCWSTR fileName, bool shareForWrite);
-  bool Open(LPCWSTR fileName);
-  #endif
+  bool Open(CFSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
+  bool OpenShared(CFSTR fileName, bool shareForWrite);
+  bool Open(CFSTR fileName);
+
   bool Read1(void *data, UInt32 size, UInt32 &processedSize);
   bool ReadPart(void *data, UInt32 size, UInt32 &processedSize);
   bool Read(void *data, UInt32 size, UInt32 &processedSize);
@@ -113,15 +108,9 @@ public:
 class COutFile: public CFileBase
 {
 public:
-  bool Open(LPCTSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
-  bool Open(LPCTSTR fileName, DWORD creationDisposition);
-  bool Create(LPCTSTR fileName, bool createAlways);
-
-  #ifndef _UNICODE
-  bool Open(LPCWSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
-  bool Open(LPCWSTR fileName, DWORD creationDisposition);
-  bool Create(LPCWSTR fileName, bool createAlways);
-  #endif
+  bool Open(CFSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes);
+  bool Open(CFSTR fileName, DWORD creationDisposition);
+  bool Create(CFSTR fileName, bool createAlways);
 
   bool SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime);
   bool SetMTime(const FILETIME *mTime);

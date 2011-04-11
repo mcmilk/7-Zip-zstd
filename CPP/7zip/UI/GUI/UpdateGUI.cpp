@@ -10,6 +10,7 @@
 
 #include "Windows/Error.h"
 #include "Windows/FileDir.h"
+#include "Windows/FileName.h"
 #include "Windows/Thread.h"
 
 #include "../Common/WorkDir.h"
@@ -17,7 +18,6 @@
 #include "../Explorer/MyMessages.h"
 
 #include "../FileManager/LangUtils.h"
-#include "../FileManager/ProgramLocation.h"
 #include "../FileManager/StringUtils.h"
 #include "../FileManager/resourceGui.h"
 
@@ -29,7 +29,7 @@
 using namespace NWindows;
 using namespace NFile;
 
-static const wchar_t *kDefaultSfxModule = L"7z.sfx";
+static CFSTR kDefaultSfxModule = FTEXT("7z.sfx");
 static const wchar_t *kSFXExtension = L"exe";
 
 extern void AddMessageToString(UString &dest, const UString &src);
@@ -52,8 +52,8 @@ HRESULT CThreadUpdating::ProcessVirt()
   HRESULT res = UpdateArchive(codecs, *WildcardCensor, *Options,
      ei, UpdateCallbackGUI, UpdateCallbackGUI);
   ErrorMessage = ei.Message;
-  ErrorPath1 = ei.FileName;
-  ErrorPath2 = ei.FileName2;
+  SetErrorPath1(ei.FileName);
+  SetErrorPath2(ei.FileName2);
   if (ei.SystemError != S_OK && ei.SystemError != E_FAIL && ei.SystemError != E_ABORT)
     return ei.SystemError;
   return res;
@@ -197,7 +197,7 @@ static HRESULT ShowDialog(
 {
   if (options.Commands.Size() != 1)
     throw "It must be one command";
-  UString currentDirPrefix;
+  FString currentDirPrefix;
   #ifndef UNDER_CE
   {
     if (!NDirectory::MyGetCurrentDirectory(currentDirPrefix))
@@ -207,7 +207,7 @@ static HRESULT ShowDialog(
   #endif
 
   bool oneFile = false;
-  NFind::CFileInfoW fileInfo;
+  NFind::CFileInfo fileInfo;
   UString name;
   if (censor.Pairs.Size() > 0)
   {
@@ -224,7 +224,7 @@ static HRESULT ShowDialog(
             name += WCHAR_PATH_SEPARATOR;
           name += item.PathParts[i];
         }
-        if (fileInfo.Find(name))
+        if (fileInfo.Find(us2fs(name)))
         {
           if (censor.Pairs.Size() == 1 && pair.Head.IncludeItems.Size() == 1)
             oneFile = !fileInfo.IsDir();
@@ -253,7 +253,7 @@ static HRESULT ShowDialog(
 
   // di.ArchiveName = options.ArchivePath.GetFinalPath();
   di.ArchiveName = options.ArchivePath.GetPathWithoutExt();
-  dialog.OriginalFileName = options.ArchivePath.Prefix + fileInfo.Name;
+  dialog.OriginalFileName = options.ArchivePath.Prefix + fs2us(fileInfo.Name);
     
   di.CurrentDirPrefix = currentDirPrefix;
   di.SFXMode = options.SfxMode;
@@ -338,9 +338,10 @@ static HRESULT ShowDialog(
   options.WorkingDir.Empty();
   if (workDirInfo.Mode != NWorkDir::NMode::kCurrent)
   {
-    UString fullPath;
-    NDirectory::MyGetFullPathName(di.ArchiveName, fullPath);
-    options.WorkingDir = GetWorkDir(workDirInfo, fullPath);
+    FString fullPath;
+    NDirectory::MyGetFullPathName(us2fs(di.ArchiveName), fullPath);
+    FString namePart;
+    options.WorkingDir = GetWorkDir(workDirInfo, fullPath, namePart);
     NDirectory::CreateComplexDirectory(options.WorkingDir);
   }
   return S_OK;
@@ -362,9 +363,7 @@ HRESULT UpdateGUI(
   }
   if (options.SfxMode && options.SfxModule.IsEmpty())
   {
-    UString folder;
-    if (!GetProgramFolderPath(folder))
-      folder.Empty();
+    FString folder = NWindows::NDLL::GetModuleDirPrefix();
     options.SfxModule = folder + kDefaultSfxModule;
   }
 

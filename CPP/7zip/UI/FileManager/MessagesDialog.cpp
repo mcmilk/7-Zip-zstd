@@ -51,10 +51,7 @@ bool CMessagesDialog::OnInit()
   LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
   #endif
   _messageList.Attach(GetItem(IDC_MESSAGE_LIST));
-
-  #ifndef UNDER_CE
-  _messageList.SetUnicodeFormat(true);
-  #endif
+  _messageList.SetUnicodeFormat();
 
   _messageList.InsertColumn(0, L"", 30);
 

@@ -21,8 +21,8 @@ struct CArchivePath
   UString VolExtension;  // archive type extension for volumes
 
   bool Temp;
-  UString TempPrefix;  // path(folder) for temp location
-  UString TempPostfix;
+  FString TempPrefix;  // path(folder) for temp location
+  FString TempPostfix;
 
   CArchivePath(): Temp(false) {};
   
@@ -63,12 +63,12 @@ struct CArchivePath
   }
 
   
-  UString GetTempPath() const
+  FString GetTempPath() const
   {
-    UString path = TempPrefix + Name;
+    FString path = TempPrefix + us2fs(Name);
     if (!BaseExtension.IsEmpty())
-      path += UString(L'.') + BaseExtension;
-    path += L".tmp";
+      path += FString(FTEXT('.')) + us2fs(BaseExtension);
+    path += FTEXT(".tmp");
     path += TempPostfix;
     return path;
   }
@@ -97,7 +97,7 @@ struct CUpdateOptions
   CArchivePath ArchivePath;
   
   bool SfxMode;
-  UString SfxModule;
+  FString SfxModule;
   
   bool OpenShareForWrite;
 
@@ -109,7 +109,7 @@ struct CUpdateOptions
   bool EMailRemoveAfter;
   UString EMailAddress;
 
-  UString WorkingDir;
+  FString WorkingDir;
 
   bool Init(const CCodecs *codecs, const CIntVector &formatIndices, const UString &arcPath);
 
@@ -137,8 +137,8 @@ struct CUpdateOptions
 struct CErrorInfo
 {
   DWORD SystemError;
-  UString FileName;
-  UString FileName2;
+  FString FileName;
+  FString FileName2;
   UString Message;
   // UStringVector ErrorPaths;
   // CRecordVector<DWORD> ErrorCodes;

@@ -465,7 +465,8 @@ static HRESULT UpdateArchive(ISequentialOutStream *seqOutStream,
       RINOK(callback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
     }
   }
-
+  lps->InSize = lps->OutSize = complexity;
+  RINOK(lps->SetCur());
 
   CUpdateItem ri;
   FILETIME ft;

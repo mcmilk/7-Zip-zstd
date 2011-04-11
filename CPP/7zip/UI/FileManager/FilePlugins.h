@@ -1,54 +1,33 @@
 // FilePlugins.h
 
-#ifndef __FILEPLUGINS_H
-#define __FILEPLUGINS_H
+#ifndef __FILE_PLUGINS_H
+#define __FILE_PLUGINS_H
 
 #include "RegistryPlugins.h"
-#include "RegistryAssociations.h"
 
-struct CPluginEnabledPair
+struct CPluginToIcon
 {
-  int Index;
-  bool Enabled;
-  CPluginEnabledPair(int index, bool enabled): Index(index),Enabled(enabled) {}
+  int PluginIndex;
+  UString IconPath;
+  int IconIndex;
+  
+  CPluginToIcon(): IconIndex(-1) {}
 };
 
-struct CExtInfoBig
+struct CExtPlugins
 {
   UString Ext;
-  bool Associated;
-  CRecordVector<CPluginEnabledPair> PluginsPairs;
-  int FindPlugin(int pluginIndex)
-  {
-    for (int i = 0; i < PluginsPairs.Size(); i++)
-      if (PluginsPairs[i].Index == pluginIndex)
-        return i;
-    return -1;
-  }
+  CObjectVector<CPluginToIcon> Plugins;
 };
 
 class CExtDatabase
 {
+  int FindExt(const UString &ext);
 public:
-  CObjectVector<CExtInfoBig> ExtBigItems;
+  CObjectVector<CExtPlugins> Exts;
   CObjectVector<CPluginInfo> Plugins;
-  int FindExtInfoBig(const UString &ext);
-  int FindPlugin(const UString &plugin);
-
-  UString GetMainPluginNameForExtItem(int extIndex) const
-  {
-    const CExtInfoBig &extInfo = ExtBigItems[extIndex];
-    if (extInfo.PluginsPairs.IsEmpty())
-      return UString();
-    else
-      return Plugins[extInfo.PluginsPairs.Front().Index].Name;
-  }
-
+  
   void Read();
-  void Save();
 };
 
-
 #endif
-
-

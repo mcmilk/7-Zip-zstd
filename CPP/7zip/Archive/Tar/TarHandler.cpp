@@ -64,6 +64,8 @@ HRESULT CHandler::ReadItem2(ISequentialInStream *stream, bool &filled, CItemEx &
 {
   item.HeaderPos = _phySize;
   RINOK(ReadItem(stream, filled, item, _errorMessage));
+  if (filled && item.IsSparse())
+    _isSparse = true;
   _phySize += item.HeaderSize;
   _headersSize += item.HeaderSize;
   return S_OK;
@@ -87,7 +89,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       break;
     _items.Add(item);
     
-    RINOK(stream->Seek(item.GetPackSize(), STREAM_SEEK_CUR, &_phySize));
+    RINOK(stream->Seek(item.GetPackSizeAligned(), STREAM_SEEK_CUR, &_phySize));
     if (_phySize > endPos)
     {
       _errorMessage = kUnexpectedEnd;
@@ -162,6 +164,7 @@ STDMETHODIMP CHandler::Close()
   _headersSize = 0;
   _curIndex = 0;
   _latestIsRead = false;
+  _isSparse = false;
   _items.Clear();
   _seqStream.Release();
   _stream.Release();
@@ -186,7 +189,7 @@ HRESULT CHandler::SkipTo(UInt32 index)
   {
     if (_latestIsRead)
     {
-      UInt64 packSize = _latestItem.GetPackSize();
+      UInt64 packSize = _latestItem.GetPackSizeAligned();
       RINOK(copyCoderSpec->Code(_seqStream, NULL, &packSize, &packSize, NULL));
       _phySize += copyCoderSpec->TotalSize;
       if (copyCoderSpec->TotalSize != packSize)
@@ -241,13 +244,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPath: prop = NItemName::GetOSName2(TarStringToUnicode(item->Name)); break;
     case kpidIsDir: prop = item->IsDir(); break;
     case kpidSize: prop = item->GetUnpackSize(); break;
-    case kpidPackSize: prop = item->GetPackSize(); break;
+    case kpidPackSize: prop = item->GetPackSizeAligned(); break;
     case kpidMTime:
       if (item->MTime != 0)
       {
         FILETIME ft;
-        NTime::UnixTimeToFileTime(item->MTime, ft);
-        prop = ft;
+        if (NTime::UnixTime64ToFileTime(item->MTime, ft))
+          prop = ft;
       }
       break;
     case kpidPosixAttrib: prop = item->Mode; break;
@@ -319,7 +322,7 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
     UInt64 unpackSize = item->GetUnpackSize();
     totalSize += unpackSize;
-    totalPackSize += item->GetPackSize();
+    totalPackSize += item->GetPackSizeAligned();
     if (item->IsDir())
     {
       RINOK(extractCallback->PrepareOperation(askMode));
@@ -340,18 +343,26 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     realOutStream.Release();
     outStreamSpec->Init(skipMode ? 0 : unpackSize, true);
 
-    if (item->IsLink())
-    {
-      RINOK(WriteStream(outStreamSpec, (const char *)item->LinkName, item->LinkName.Length()));
-    }
+    Int32 opRes = NExtract::NOperationResult::kOK;
+    if (item->IsSparse())
+      opRes = NExtract::NOperationResult::kUnSupportedMethod;
     else
     {
-      if (!seqMode)
+      if (item->IsLink())
       {
-        RINOK(_stream->Seek(item->GetDataPosition(), STREAM_SEEK_SET, NULL));
+        RINOK(WriteStream(outStreamSpec, (const char *)item->LinkName, item->LinkName.Length()));
       }
-      streamSpec->Init(item->GetPackSize());
-      RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+      else
+      {
+        if (!seqMode)
+        {
+          RINOK(_stream->Seek(item->GetDataPosition(), STREAM_SEEK_SET, NULL));
+        }
+        streamSpec->Init(item->GetPackSizeAligned());
+        RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+      }
+      if (outStreamSpec->GetRem() != 0)
+        opRes = NExtract::NOperationResult::kDataError;
     }
     if (seqMode)
     {
@@ -359,9 +370,7 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       _curIndex++;
     }
     outStreamSpec->ReleaseStream();
-    RINOK(extractCallback->SetOperationResult(outStreamSpec->GetRem() == 0 ?
-        NExtract::NOperationResult::kOK:
-        NExtract::NOperationResult::kDataError));
+    RINOK(extractCallback->SetOperationResult(opRes));
   }
   return S_OK;
   COM_TRY_END
@@ -371,6 +380,8 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 {
   COM_TRY_BEGIN
   const CItemEx &item = _items[index];
+  if (item.IsSparse())
+    return E_NOTIMPL;
   if (item.IsLink())
   {
     CBufInStream *streamSpec = new CBufInStream;
@@ -379,7 +390,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     *stream = streamTemp.Detach();
     return S_OK;
   }
-  return CreateLimitedInStream(_stream, item.GetDataPosition(), item.Size, stream);
+  return CreateLimitedInStream(_stream, item.GetDataPosition(), item.PackSize, stream);
   COM_TRY_END
 }
 

@@ -317,7 +317,6 @@ HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *search
   const UInt32 kBufferSize = (1 << 16);
   byteBuffer.SetCapacity(kBufferSize);
   Byte *buffer = byteBuffer;
-  UInt32 numPrevBytes = kHeaderSize;
   memcpy(buffer, _header, kHeaderSize);
   UInt64 curTestPos = _arhiveBeginStreamPosition;
   for (;;)
@@ -325,21 +324,14 @@ HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *search
     if (searchHeaderSizeLimit != NULL)
       if (curTestPos - _arhiveBeginStreamPosition > *searchHeaderSizeLimit)
         break;
-    do
+    UInt32 processedSize;
+    RINOK(stream->Read(buffer + kHeaderSize, kBufferSize - kHeaderSize, &processedSize));
+    if (processedSize == 0)
+      return S_FALSE;
+    for (UInt32 pos = 1; pos <= processedSize; pos++)
     {
-      UInt32 numReadBytes = kBufferSize - numPrevBytes;
-      UInt32 processedSize;
-      RINOK(stream->Read(buffer + numPrevBytes, numReadBytes, &processedSize));
-      numPrevBytes += processedSize;
-      if (processedSize == 0)
-        return S_FALSE;
-    }
-    while (numPrevBytes <= kHeaderSize);
-    UInt32 numTests = numPrevBytes - kHeaderSize;
-    for (UInt32 pos = 0; pos < numTests; pos++)
-    {
-      for (; buffer[pos] != '7' && pos < numTests; pos++);
-      if (pos == numTests)
+      for (; buffer[pos] != '7' && pos <= processedSize; pos++);
+      if (pos > processedSize)
         break;
       if (TestSignature(buffer + pos))
       {
@@ -349,9 +341,8 @@ HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *search
         return stream->Seek(curTestPos + kHeaderSize, STREAM_SEEK_SET, NULL);
       }
     }
-    curTestPos += numTests;
-    numPrevBytes -= numTests;
-    memmove(buffer, buffer + numTests, numPrevBytes);
+    curTestPos += processedSize;
+    memmove(buffer, buffer + processedSize, kHeaderSize);
   }
   return S_FALSE;
 }
@@ -362,6 +353,8 @@ HRESULT CInArchive::Open(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
   HeadersSize = 0;
   Close();
   RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_arhiveBeginStreamPosition))
+  RINOK(stream->Seek(0, STREAM_SEEK_END, &_fileEndPosition))
+  RINOK(stream->Seek(_arhiveBeginStreamPosition, STREAM_SEEK_SET, NULL))
   RINOK(FindAndReadSignature(stream, searchHeaderSizeLimit));
   _stream = stream;
   return S_OK;
@@ -1194,12 +1187,14 @@ HRESULT CInArchive::ReadDatabase2(
   if (nextHeaderSize == 0)
     return S_OK;
 
-  if (nextHeaderSize > (UInt64)0xFFFFFFFF)
+  if (nextHeaderSize > (UInt64)(UInt32)0xFFFFFFFF)
     return S_FALSE;
 
   if ((Int64)nextHeaderOffset < 0)
     return S_FALSE;
 
+  if (db.ArchiveInfo.StartPositionAfterHeader + nextHeaderOffset > _fileEndPosition)
+    return S_FALSE;
   RINOK(_stream->Seek(nextHeaderOffset, STREAM_SEEK_CUR, NULL));
 
   CByteBuffer buffer2;

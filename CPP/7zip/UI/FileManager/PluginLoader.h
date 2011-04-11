@@ -5,6 +5,8 @@
 
 #include "Windows/DLL.h"
 
+#include "IFolder.h"
+
 typedef UINT32 (WINAPI * CreateObjectPointer)(const GUID *clsID, const GUID *interfaceID, void **outObject);
 
 class CPluginLibrary: public NWindows::NDLL::CLibrary
@@ -17,7 +19,7 @@ public:
       return GetLastError();
     return createObject(&clsID, &IID_IFolderManager, (void **)manager);
   }
-  HRESULT LoadAndCreateManager(LPCWSTR filePath, REFGUID clsID, IFolderManager **manager)
+  HRESULT LoadAndCreateManager(CFSTR filePath, REFGUID clsID, IFolderManager **manager)
   {
     if (!Load(filePath))
       return GetLastError();

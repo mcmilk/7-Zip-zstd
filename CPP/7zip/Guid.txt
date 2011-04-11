@@ -84,7 +84,7 @@
   03 IFolderGetPath
   04 IFolderWasChanged
   05 // IFolderReload
-  06 IFolderOperations
+  06 // IFolderOperations old
   07 IFolderGetSystemIconIndex
   08 IFolderGetItemFullSize
   09 IFolderClone
@@ -96,6 +96,7 @@
   0F 
   10 IFolderArcProps
   11 IGetFolderArcProps
+  12 IFolderOperations
 
 
 09 IFolder.h :: FOLDER_MANAGER_INTERFACE
@@ -128,6 +129,9 @@ Handler GUIDs:
   0C xz
   0D ppmd
 
+  CF TE
+  D0 UEFIc
+  D1 UEFIs
   D2 SquashFS
   D3 CramFS
   D4 APM
@@ -150,7 +154,7 @@ Handler GUIDs:
   E5 Compound
   E6 Wim
   E7 Iso
-  E8 Bkf
+  E8 
   E9 Chm
   EA Split
   EB Rpm

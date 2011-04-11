@@ -20,7 +20,7 @@ void StringToProp(const AString &s, NCOM::CPropVariant &prop)
   prop = MultiByteToUnicodeString(s);
 }
 
-void PairToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 value, NCOM::CPropVariant &prop)
+AString TypePairToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 value)
 {
   AString s;
   for (unsigned i = 0; i < num; i++)
@@ -31,7 +31,13 @@ void PairToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 value, NCOM:
   }
   if (s.IsEmpty())
     s = GetHex(value);
-  StringToProp(s, prop);
+  return s;
+}
+
+
+void PairToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 value, NCOM::CPropVariant &prop)
+{
+  StringToProp(TypePairToString(pairs, num, value), prop);
 }
 
 AString TypeToString(const char *table[], unsigned num, UInt32 value)
@@ -56,9 +62,12 @@ AString FlagsToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags)
     UInt32 flag = (UInt32)1 << (unsigned)p.Value;
     if ((flags & flag) != 0)
     {
-      if (!s.IsEmpty())
-        s += ' ';
-      s += p.Name;
+      if (p.Name[0] != 0)
+      {
+        if (!s.IsEmpty())
+          s += ' ';
+        s += p.Name;
+      }
     }
     flags &= ~flag;
   }
@@ -75,4 +84,3 @@ void FlagsToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags, NCOM
 {
   StringToProp(FlagsToString(pairs, num, flags), prop);
 }
-

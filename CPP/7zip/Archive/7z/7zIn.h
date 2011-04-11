@@ -133,6 +133,7 @@ class CInArchive
   CInByte2 *_inByteBack;
  
   UInt64 _arhiveBeginStreamPosition;
+  UInt64 _fileEndPosition;
 
   Byte _header[kHeaderSize];
 

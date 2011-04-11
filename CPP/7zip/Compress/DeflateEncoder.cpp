@@ -21,12 +21,12 @@ namespace NCompress {
 namespace NDeflate {
 namespace NEncoder {
 
-const int kNumDivPassesMax = 10; // [0, 16); ratio/speed/ram tradeoff; use big value for better compression ratio.
-const UInt32 kNumTables = (1 << kNumDivPassesMax);
+static const int kNumDivPassesMax = 10; // [0, 16); ratio/speed/ram tradeoff; use big value for better compression ratio.
+static const UInt32 kNumTables = (1 << kNumDivPassesMax);
 
-static UInt32 kFixedHuffmanCodeBlockSizeMax = (1 << 8); // [0, (1 << 32)); ratio/speed tradeoff; use big value for better compression ratio.
-static UInt32 kDivideCodeBlockSizeMin = (1 << 7); // [1, (1 << 32)); ratio/speed tradeoff; use small value for better compression ratio.
-static UInt32 kDivideBlockSizeMin = (1 << 6); // [1, (1 << 32)); ratio/speed tradeoff; use small value for better compression ratio.
+static const UInt32 kFixedHuffmanCodeBlockSizeMax = (1 << 8); // [0, (1 << 32)); ratio/speed tradeoff; use big value for better compression ratio.
+static const UInt32 kDivideCodeBlockSizeMin = (1 << 7); // [1, (1 << 32)); ratio/speed tradeoff; use small value for better compression ratio.
+static const UInt32 kDivideBlockSizeMin = (1 << 6); // [1, (1 << 32)); ratio/speed tradeoff; use small value for better compression ratio.
 
 static const UInt32 kMaxUncompressedBlockSize = ((1 << 16) - 1) * 1; // [1, (1 << 32))
 static const UInt32 kMatchArraySize = kMaxUncompressedBlockSize * 10; // [kMatchMaxLen * 2, (1 << 32))
@@ -37,9 +37,9 @@ static const UInt32 kBlockUncompressedSizeThreshold = kMaxUncompressedBlockSize 
 static const int kMaxCodeBitLength = 11;
 static const int kMaxLevelBitLength = 7;
 
-static Byte kNoLiteralStatPrice = 11;
-static Byte kNoLenStatPrice = 11;
-static Byte kNoPosStatPrice = 6;
+static const Byte kNoLiteralStatPrice = 11;
+static const Byte kNoLenStatPrice = 11;
+static const Byte kNoPosStatPrice = 6;
 
 static Byte g_LenSlots[kNumLenSymbolsMax];
 static Byte g_FastPos[1 << 9];
@@ -83,21 +83,61 @@ static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
 static void SzFree(void *p, void *address) { p = p; MyFree(address); }
 static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
+void CEncProps::Normalize()
+{
+  int level = Level;
+  if (level < 0) level = 5;
+  Level = level;
+  if (algo < 0) algo = (level < 5 ? 0 : 1);
+  if (fb < 0) fb = (level < 7 ? 32 : (level < 9 ? 64 : 128));
+  if (btMode < 0) btMode = (algo == 0 ? 0 : 1);
+  if (mc == 0) mc = (16 + (fb >> 1));
+  if (numPasses == (UInt32)(Int32)-1) numPasses = (level < 7 ? 1 : (level < 9 ? 3 : 10));
+}
+
+void CCoder::SetProps(const CEncProps *props2)
+{
+  CEncProps props = *props2;
+  props.Normalize();
+
+  m_MatchFinderCycles = props.mc;
+  {
+    unsigned fb = props.fb;
+    if (fb < kMatchMinLen)
+      fb = kMatchMinLen;
+    if (fb > m_MatchMaxLen)
+      fb = m_MatchMaxLen;
+    m_NumFastBytes = fb;
+  }
+  _fastMode = (props.algo == 0);
+  _btMode = (props.btMode != 0);
+
+  m_NumDivPasses = props.numPasses;
+  if (m_NumDivPasses == 0)
+    m_NumDivPasses = 1;
+  if (m_NumDivPasses == 1)
+    m_NumPasses = 1;
+  else if (m_NumDivPasses <= kNumDivPassesMax)
+    m_NumPasses = 2;
+  else
+  {
+    m_NumPasses = 2 + (m_NumDivPasses - kNumDivPassesMax);
+    m_NumDivPasses = kNumDivPassesMax;
+  }
+}
+
 CCoder::CCoder(bool deflate64Mode):
   m_Deflate64Mode(deflate64Mode),
-  m_NumPasses(1),
-  m_NumDivPasses(1),
-  m_NumFastBytes(32),
-  _fastMode(false),
-  _btMode(true),
   m_OnePosMatchesMemory(0),
   m_DistanceMemory(0),
   m_Created(false),
   m_Values(0),
-  m_Tables(0),
-  m_MatchFinderCycles(0)
-  // m_SetMfPasses(0)
+  m_Tables(0)
 {
+  {
+    CEncProps props;
+    SetProps(&props);
+  }
   m_MatchMaxLen = deflate64Mode ? kMatchMaxLen64 : kMatchMaxLen32;
   m_NumLenCombinations = deflate64Mode ? kNumLenSymbols64 : kNumLenSymbols32;
   m_LenStart = deflate64Mode ? kLenStart64 : kLenStart32;
@@ -160,56 +200,30 @@ HRESULT CCoder::Create()
   COM_TRY_END
 }
 
-HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps)
+HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs, const PROPVARIANT *coderProps, UInt32 numProps)
 {
+  CEncProps props;
   for (UInt32 i = 0; i < numProps; i++)
   {
-    const PROPVARIANT &prop = props[i];
-    switch(propIDs[i])
+    const PROPVARIANT &prop = coderProps[i];
+    PROPID propID = propIDs[i];
+    if (propID >= NCoderPropID::kReduceSize)
+      continue;
+    if (prop.vt != VT_UI4)
+      return E_INVALIDARG;
+    UInt32 v = (UInt32)prop.ulVal;
+    switch (propID)
     {
-      case NCoderPropID::kNumPasses:
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-        m_NumDivPasses = prop.ulVal;
-        if (m_NumDivPasses == 0)
-          m_NumDivPasses = 1;
-        if (m_NumDivPasses == 1)
-          m_NumPasses = 1;
-        else if (m_NumDivPasses <= kNumDivPassesMax)
-          m_NumPasses = 2;
-        else
-        {
-          m_NumPasses = 2 + (m_NumDivPasses - kNumDivPassesMax);
-          m_NumDivPasses = kNumDivPassesMax;
-        }
-        break;
-      case NCoderPropID::kNumFastBytes:
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-        m_NumFastBytes = prop.ulVal;
-        if(m_NumFastBytes < kMatchMinLen || m_NumFastBytes > m_MatchMaxLen)
-          return E_INVALIDARG;
-        break;
-      case NCoderPropID::kMatchFinderCycles:
-      {
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-        m_MatchFinderCycles = prop.ulVal;
-        break;
-      }
-      case NCoderPropID::kAlgorithm:
-      {
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-        UInt32 maximize = prop.ulVal;
-        _fastMode = (maximize == 0);
-        _btMode = !_fastMode;
-        break;
-      }
-      default:
-        return E_INVALIDARG;
+      case NCoderPropID::kNumPasses: props.numPasses = v; break;
+      case NCoderPropID::kNumFastBytes: props.fb = v; break;
+      case NCoderPropID::kMatchFinderCycles: props.mc = v; break;
+      case NCoderPropID::kAlgorithm: props.algo = v; break;
+      case NCoderPropID::kLevel: props.Level = v; break;
+      case NCoderPropID::kNumThreads: break;
+      default: return E_INVALIDARG;
     }
   }
+  SetProps(&props);
   return S_OK;
 }
   

@@ -9,15 +9,16 @@
 #include "StringConvert.h"
 #include "UTFConvert.h"
 
-static const char kQuoteChar     = '\"';
+static const char kQuoteChar = '\"';
+
 static void RemoveQuote(UString &s)
 {
   if (s.Length() >= 2)
-    if (s[0] == kQuoteChar && s[s.Length() - 1] == kQuoteChar)
+    if (s[0] == kQuoteChar && s.Back() == kQuoteChar)
       s = s.Mid(1, s.Length() - 2);
 }
 
-bool ReadNamesFromListFile(LPCWSTR fileName, UStringVector &resultStrings, UINT codePage)
+bool ReadNamesFromListFile(CFSTR fileName, UStringVector &resultStrings, UINT codePage)
 {
   NWindows::NFile::NIO::CInFile file;
   if (!file.Open(fileName))

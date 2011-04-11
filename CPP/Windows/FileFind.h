@@ -1,12 +1,11 @@
 // Windows/FileFind.h
 
-#ifndef __WINDOWS_FILEFIND_H
-#define __WINDOWS_FILEFIND_H
+#ifndef __WINDOWS_FILE_FIND_H
+#define __WINDOWS_FILE_FIND_H
 
 #include "../Common/MyString.h"
 #include "../Common/Types.h"
 #include "Defs.h"
-#include "FileName.h"
 
 namespace NWindows {
 namespace NFile {
@@ -60,23 +59,11 @@ public:
 
 struct CFileInfo: public CFileInfoBase
 {
-  CSysString Name;
+  FString Name;
 
   bool IsDots() const;
-  bool Find(LPCTSTR wildcard);
+  bool Find(CFSTR wildcard);
 };
-
-#ifdef _UNICODE
-typedef CFileInfo CFileInfoW;
-#else
-struct CFileInfoW: public CFileInfoBase
-{
-  UString Name;
-
-  bool IsDots() const;
-  bool Find(LPCWSTR wildcard);
-};
-#endif
 
 class CFindFile
 {
@@ -85,52 +72,27 @@ class CFindFile
 public:
   bool IsHandleAllocated() const { return _handle != INVALID_HANDLE_VALUE; }
   CFindFile(): _handle(INVALID_HANDLE_VALUE) {}
-  ~CFindFile() {  Close(); }
-  bool FindFirst(LPCTSTR wildcard, CFileInfo &fileInfo);
+  ~CFindFile() { Close(); }
+  bool FindFirst(CFSTR wildcard, CFileInfo &fileInfo);
   bool FindNext(CFileInfo &fileInfo);
-  #ifndef _UNICODE
-  bool FindFirst(LPCWSTR wildcard, CFileInfoW &fileInfo);
-  bool FindNext(CFileInfoW &fileInfo);
-  #endif
   bool Close();
 };
 
-bool DoesFileExist(LPCTSTR name);
-bool DoesDirExist(LPCTSTR name);
-bool DoesFileOrDirExist(LPCTSTR name);
-#ifndef _UNICODE
-bool DoesFileExist(LPCWSTR name);
-bool DoesDirExist(LPCWSTR name);
-bool DoesFileOrDirExist(LPCWSTR name);
-#endif
+bool DoesFileExist(CFSTR name);
+bool DoesDirExist(CFSTR name);
+bool DoesFileOrDirExist(CFSTR name);
 
 class CEnumerator
 {
   CFindFile _findFile;
-  CSysString _wildcard;
+  FString _wildcard;
+
   bool NextAny(CFileInfo &fileInfo);
 public:
-  CEnumerator(): _wildcard(NName::kAnyStringWildcard) {}
-  CEnumerator(const CSysString &wildcard): _wildcard(wildcard) {}
+  CEnumerator(const FString &wildcard): _wildcard(wildcard) {}
   bool Next(CFileInfo &fileInfo);
   bool Next(CFileInfo &fileInfo, bool &found);
 };
-
-#ifdef _UNICODE
-typedef CEnumerator CEnumeratorW;
-#else
-class CEnumeratorW
-{
-  CFindFile _findFile;
-  UString _wildcard;
-  bool NextAny(CFileInfoW &fileInfo);
-public:
-  CEnumeratorW(): _wildcard(NName::kAnyStringWildcard) {}
-  CEnumeratorW(const UString &wildcard): _wildcard(wildcard) {}
-  bool Next(CFileInfoW &fileInfo);
-  bool Next(CFileInfoW &fileInfo, bool &found);
-};
-#endif
 
 class CFindChangeNotification
 {
@@ -141,21 +103,14 @@ public:
   CFindChangeNotification(): _handle(INVALID_HANDLE_VALUE) {}
   ~CFindChangeNotification() { Close(); }
   bool Close();
-  HANDLE FindFirst(LPCTSTR pathName, bool watchSubtree, DWORD notifyFilter);
-  #ifndef _UNICODE
-  HANDLE FindFirst(LPCWSTR pathName, bool watchSubtree, DWORD notifyFilter);
-  #endif
+  HANDLE FindFirst(CFSTR pathName, bool watchSubtree, DWORD notifyFilter);
   bool FindNext() { return BOOLToBool(::FindNextChangeNotification(_handle)); }
 };
 
 #ifndef UNDER_CE
-bool MyGetLogicalDriveStrings(CSysStringVector &driveStrings);
-#ifndef _UNICODE
-bool MyGetLogicalDriveStrings(UStringVector &driveStrings);
-#endif
+bool MyGetLogicalDriveStrings(CObjectVector<FString> &driveStrings);
 #endif
 
 }}}
 
 #endif
-

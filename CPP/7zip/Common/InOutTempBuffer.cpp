@@ -13,7 +13,7 @@ using namespace NDirectory;
 
 static const UInt32 kTempBufSize = (1 << 20);
 
-static LPCTSTR kTempFilePrefixString = TEXT("7zt");
+static CFSTR kTempFilePrefixString = FTEXT("7zt");
 
 CInOutTempBuffer::CInOutTempBuffer(): _buf(NULL) { }
 
@@ -42,12 +42,7 @@ bool CInOutTempBuffer::WriteToFile(const void *data, UInt32 size)
     return true;
   if (!_tempFileCreated)
   {
-    CSysString tempDirPath;
-    if (!MyGetTempPath(tempDirPath))
-      return false;
-    if (_tempFile.Create(tempDirPath, kTempFilePrefixString, _tempFileName) == 0)
-      return false;
-    if (!_outFile.Create(_tempFileName, true))
+    if (!_tempFile.CreateRandomInTempFolder(kTempFilePrefixString, &_outFile))
       return false;
     _tempFileCreated = true;
   }
@@ -91,7 +86,7 @@ HRESULT CInOutTempBuffer::WriteToStream(ISequentialOutStream *stream)
   if (_tempFileCreated)
   {
     NIO::CInFile inFile;
-    if (!inFile.Open(_tempFileName))
+    if (!inFile.Open(_tempFile.GetPath()))
       return E_FAIL;
     while (size < _size)
     {

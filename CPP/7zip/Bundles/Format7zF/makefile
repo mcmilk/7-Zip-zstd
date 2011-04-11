@@ -79,6 +79,7 @@ AR_OBJS = \
   $O\SplitHandler.obj \
   $O\SwfHandler.obj \
   $O\SquashfsHandler.obj \
+  $O\UefiHandler.obj \
   $O\VhdHandler.obj \
   $O\XarHandler.obj \
   $O\XzHandler.obj \

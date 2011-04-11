@@ -7,6 +7,7 @@
 #include "Windows/Error.h"
 #include "Windows/FileIO.h"
 #include "Windows/FileFind.h"
+#include "Windows/FileName.h"
 
 #include "../GUI/ExtractRes.h"
 
@@ -89,8 +90,8 @@ class CThreadSplit: public CProgressThreadVirt
 {
   HRESULT ProcessVirt();
 public:
-  UString FilePath;
-  UString VolBasePath;
+  FString FilePath;
+  FString VolBasePath;
   UInt64 NumVolumes;
   CRecordVector<UInt64> VolumeSizes;
 };
@@ -136,15 +137,15 @@ HRESULT CThreadSplit::ProcessVirt()
     needSize = processedSize;
     if (curVolSize == 0)
     {
-      UString name = VolBasePath;
-      name += L'.';
-      name += seqName.GetNextName();
-      sync.SetCurrentFileName(name);
+      FString name = VolBasePath;
+      name += FTEXT('.');
+      name += us2fs(seqName.GetNextName());
+      sync.SetCurrentFileName(fs2us(name));
       sync.SetNumFilesCur(numFiles++);
       if (!outFile.Create(name, false))
       {
         HRESULT res = GetLastError();
-        ErrorPath1 = name;
+        SetErrorPath1(name);
         return res;
       }
     }
@@ -206,8 +207,8 @@ void CApp::Split()
   if (splitDialog.Create(srcPanel.GetParent()) == IDCANCEL)
     return;
 
-  NFile::NFind::CFileInfoW fileInfo;
-  if (!fileInfo.Find(srcPath + itemName))
+  NFile::NFind::CFileInfo fileInfo;
+  if (!fileInfo.Find(us2fs(srcPath + itemName)))
   {
     srcPanel.MessageBoxMyError(L"Can not find file");
     return;
@@ -230,7 +231,7 @@ void CApp::Split()
 
   path = splitDialog.Path;
   NFile::NName::NormalizeDirPathPrefix(path);
-  if (!NFile::NDirectory::CreateComplexDirectory(path))
+  if (!NFile::NDirectory::CreateComplexDirectory(us2fs(path)))
   {
     srcPanel.MessageBoxMyError(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 0x02000603, path));
     return;
@@ -253,8 +254,8 @@ void CApp::Split()
   progressDialog.Sync.SetTitleFileName(itemName);
 
 
-  spliter.FilePath = srcPath + itemName;
-  spliter.VolBasePath = path + itemName;
+  spliter.FilePath = us2fs(srcPath + itemName);
+  spliter.VolBasePath = us2fs(path + itemName);
   spliter.VolumeSizes = splitDialog.VolumeSizes;
   
   // if (splitDialog.VolumeSizes.Size() == 0) return;
@@ -279,9 +280,9 @@ class CThreadCombine: public CProgressThreadVirt
 {
   HRESULT ProcessVirt();
 public:
-  UString InputDirPrefix;
-  UStringVector Names;
-  UString OutputPath;
+  FString InputDirPrefix;
+  FStringVector Names;
+  FString OutputPath;
   UInt64 TotalSize;
 };
 
@@ -291,7 +292,7 @@ HRESULT CThreadCombine::ProcessVirt()
   if (!outFile.Create(OutputPath, false))
   {
     HRESULT res = GetLastError();
-    ErrorPath1 = OutputPath;
+    SetErrorPath1(OutputPath);
     return res;
   }
   
@@ -306,21 +307,21 @@ HRESULT CThreadCombine::ProcessVirt()
   for (int i = 0; i < Names.Size(); i++)
   {
     NFile::NIO::CInFile inFile;
-    const UString nextName = InputDirPrefix + Names[i];
+    const FString nextName = InputDirPrefix + Names[i];
     if (!inFile.Open(nextName))
     {
       HRESULT res = GetLastError();
-      ErrorPath1 = nextName;
+      SetErrorPath1(nextName);
       return res;
     }
-    sync.SetCurrentFileName(nextName);
+    sync.SetCurrentFileName(fs2us(nextName));
     for (;;)
     {
       UInt32 processedSize;
       if (!inFile.Read(buffer, kBufSize, processedSize))
       {
         HRESULT res = GetLastError();
-        ErrorPath1 = nextName;
+        SetErrorPath1(nextName);
         return res;
       }
       if (processedSize == 0)
@@ -329,7 +330,7 @@ HRESULT CThreadCombine::ProcessVirt()
       if (!outFile.Write(buffer, needSize, processedSize))
       {
         HRESULT res = GetLastError();
-        ErrorPath1 = OutputPath;
+        SetErrorPath1(OutputPath);
         return res;
       }
       if (needSize != processedSize)
@@ -392,10 +393,10 @@ void CApp::Combine()
   combiner.TotalSize = 0;
   for (;;)
   {
-    NFile::NFind::CFileInfoW fileInfo;
-    if (!fileInfo.Find(srcPath + nextName) || fileInfo.IsDir())
+    NFile::NFind::CFileInfo fileInfo;
+    if (!fileInfo.Find(us2fs(srcPath + nextName)) || fileInfo.IsDir())
       break;
-    combiner.Names.Add(nextName);
+    combiner.Names.Add(us2fs(nextName));
     combiner.TotalSize += fileInfo.Size;
     nextName = volSeqName.GetNextName();
   }
@@ -419,12 +420,12 @@ void CApp::Combine()
   
   int i;
   for (i = 0; i < combiner.Names.Size() && i < 2; i++)
-    AddInfoFileName(combiner.Names[i], info);
+    AddInfoFileName(fs2us(combiner.Names[i]), info);
   if (i != combiner.Names.Size())
   {
     if (i + 1 != combiner.Names.Size())
       AddInfoFileName(L"...", info);
-    AddInfoFileName(combiner.Names.Back(), info);
+    AddInfoFileName(fs2us(combiner.Names.Back()), info);
   }
   
   {
@@ -441,7 +442,7 @@ void CApp::Combine()
   }
 
   NFile::NName::NormalizeDirPathPrefix(path);
-  if (!NFile::NDirectory::CreateComplexDirectory(path))
+  if (!NFile::NDirectory::CreateComplexDirectory(us2fs(path)))
   {
     srcPanel.MessageBoxMyError(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 0x02000603, path));
     return;
@@ -450,18 +451,17 @@ void CApp::Combine()
   UString outName = volSeqName.UnchangedPart;
   while (!outName.IsEmpty())
   {
-    int lastIndex = outName.Length() - 1;
-    if (outName[lastIndex] != L'.')
+    if (outName.Back() != L'.')
       break;
-    outName.Delete(lastIndex);
+    outName.DeleteBack();
   }
   if (outName.IsEmpty())
     outName = L"file";
   
-  NFile::NFind::CFileInfoW fileInfo;
+  NFile::NFind::CFileInfo fileInfo;
   UString destFilePath = path + outName;
-  combiner.OutputPath = destFilePath;
-  if (fileInfo.Find(destFilePath))
+  combiner.OutputPath = us2fs(destFilePath);
+  if (fileInfo.Find(combiner.OutputPath))
   {
     srcPanel.MessageBoxMyError(MyFormatNew(IDS_FILE_EXIST, 0x03020A04, destFilePath));
     return;
@@ -477,7 +477,7 @@ void CApp::Combine()
     progressDialog.MainTitle = progressWindowTitle;
     progressDialog.MainAddTitle = title + UString(L" ");
     
-    combiner.InputDirPrefix = srcPath;
+    combiner.InputDirPrefix = us2fs(srcPath);
     
     // CPanel::CDisableTimerProcessing disableTimerProcessing1(srcPanel);
     // CPanel::CDisableTimerProcessing disableTimerProcessing2(destPanel);

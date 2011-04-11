@@ -20,8 +20,8 @@ static UString ReplaceIncorrectChars(const UString &s)
     res += c;
   }
   res.TrimRight();
-  while (!res.IsEmpty() && res[res.Length() - 1] == '.')
-    res.Delete(res.Length() - 1);
+  while (!res.IsEmpty() && res.Back() == '.')
+    res.DeleteBack();
   return res;
   #else
   return s;
@@ -132,8 +132,8 @@ UString GetCorrectFullFsPath(const UString &path)
   {
     UString &s = parts[i];
     #ifdef _WIN32
-    while (!s.IsEmpty() && s[s.Length() - 1] == '.')
-      s.Delete(s.Length() - 1);
+    while (!s.IsEmpty() && s.Back() == '.')
+      s.DeleteBack();
     if (!IsSupportedName(s))
       s = (UString)L"_" + s;
     #endif

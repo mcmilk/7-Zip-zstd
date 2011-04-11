@@ -20,6 +20,8 @@ namespace NExtract
     void Save() const;
     void Load();
   };
+  void Save_ShowPassword(bool showPassword);
+  bool Read_ShowPassword();
 }
 
 namespace NCompression
@@ -76,7 +78,7 @@ namespace NWorkDir
   struct CInfo
   {
     NMode::EEnum Mode;
-    UString Path;
+    FString Path;
     bool ForRemovableOnly;
 
     void SetForRemovableOnlyDefault() { ForRemovableOnly = true; }

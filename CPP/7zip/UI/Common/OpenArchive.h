@@ -29,6 +29,7 @@ struct CArc
   CArc(): MTimeDefined(false) {}
 
   HRESULT GetItemPath(UInt32 index, UString &result) const;
+  HRESULT GetItemSize(UInt32 index, UInt64 &size, bool &defined) const;
   HRESULT GetItemMTime(UInt32 index, FILETIME &ft, bool &defined) const;
   HRESULT IsItemAnti(UInt32 index, bool &result) const
     { return GetArchiveItemBoolProp(Archive, index, kpidIsAnti, result); }

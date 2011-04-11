@@ -36,6 +36,16 @@
 #define yOpt 72
 #define yPsw 128
 
+#undef GROUP_Y_SIZE
+#undef GROUP_Y_SIZE_ENCRYPT
+#ifdef UNDER_CE
+#define GROUP_Y_SIZE 8
+#define GROUP_Y_SIZE_ENCRYPT 8
+#else
+#define GROUP_Y_SIZE 48
+#define GROUP_Y_SIZE_ENCRYPT 128
+#endif
+
 IDD_DIALOG_COMPRESS MY_DIALOG
 CAPTION "Add to Archive"
 BEGIN
@@ -82,13 +92,13 @@ BEGIN
   LTEXT     "&Update mode:",IDC_STATIC_COMPRESS_UPDATE_MODE, g4x, 39, g4xs, 8
   COMBOBOX  IDC_COMPRESS_COMBO_UPDATE_MODE, g4x, 51, g4xs, 80, MY_COMBO
 
-  GROUPBOX  "Options",IDC_STATIC_COMPRESS_OPTIONS, g4x, yOpt, g4xs, 48
+  GROUPBOX  "Options",IDC_STATIC_COMPRESS_OPTIONS, g4x, yOpt, g4xs, GROUP_Y_SIZE
   CONTROL   "Create SF&X archive",IDC_COMPRESS_SFX, MY_CHECKBOX,
             g4x2, yOpt + 14, g4xs2, 10
   CONTROL   "Compress shared files",IDC_COMPRESS_SHARED, MY_CHECKBOX,
             g4x2, yOpt + 30, g4xs2, 10
   
-  GROUPBOX  "Encryption",IDC_COMPRESS_ENCRYPTION, g4x, yPsw, g4xs, 127
+  GROUPBOX  "Encryption", IDC_COMPRESS_ENCRYPTION, g4x, yPsw, g4xs, GROUP_Y_SIZE_ENCRYPT
 
   LTEXT     "Enter password:",IDC_STATIC_COMPRESS_PASSWORD1, g4x2, yPsw + 14, g4xs2, 8
   EDITTEXT  IDC_COMPRESS_EDIT_PASSWORD1, g4x2, yPsw + 26, g4xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL

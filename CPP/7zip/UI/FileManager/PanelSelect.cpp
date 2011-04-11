@@ -78,7 +78,7 @@ void CPanel::OnInsert()
   UINT state = (_listView.GetItemState(focusedItem, LVIS_CUT) == 0) ?
       LVIS_CUT : 0;
   _listView.SetItemState(focusedItem, state, LVIS_CUT);
-  // _listView.SetItemState(focusedItem, LVIS_SELECTED, LVIS_SELECTED);
+  // _listView.SetItemState_Selected(focusedItem);
 
   */
   int focusedItem = _listView.GetFocusedItem();
@@ -90,7 +90,7 @@ void CPanel::OnInsert()
     _selectedStatusVector[realIndex] = isSelected;
   
   if (!_mySelectMode)
-    _listView.SetItemState(focusedItem, isSelected ? LVIS_SELECTED: 0, LVIS_SELECTED);
+    _listView.SetItemState_Selected(focusedItem, isSelected);
 
   _listView.RedrawItem(focusedItem);
 
@@ -135,11 +135,7 @@ void CPanel::UpdateSelection()
     {
       int realIndex = GetRealItemIndex(i);
       if (realIndex != kParentIndex)
-      {
-        UINT value = 0;
-        value = _selectedStatusVector[realIndex] ? LVIS_SELECTED: 0;
-        _listView.SetItemState(i, value, LVIS_SELECTED);
-      }
+        _listView.SetItemState_Selected(i, _selectedStatusVector[realIndex]);
     }
     _enableItemChangeNotify = enableTemp;
   }
@@ -174,7 +170,7 @@ void CPanel::SelectByType(bool selectMode)
   bool isItemFolder = IsItemFolder(realIndex);
 
   /*
-  UINT32 numItems;
+  UInt32 numItems;
   _folder->GetNumberOfItems(&numItems);
   if ((UInt32)_selectedStatusVector.Size() != numItems)
     throw 11111;
@@ -251,7 +247,7 @@ void CPanel::KillSelection()
       int realIndex = GetRealItemIndex(focused);
       if (realIndex != kParentIndex)
         _selectedStatusVector[realIndex] = true;
-      _listView.SetItemState(focused, LVIS_SELECTED, LVIS_SELECTED);
+      _listView.SetItemState_Selected(focused);
     }
   }
 }

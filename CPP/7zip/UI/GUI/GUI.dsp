@@ -585,6 +585,14 @@ SOURCE=..\..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MethodProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\ProgressUtils.cpp
 # End Source File
 # Begin Source File

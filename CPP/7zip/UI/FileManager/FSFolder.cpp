@@ -24,7 +24,7 @@
 namespace NWindows {
 namespace NFile {
 
-bool GetLongPath(LPCWSTR path, UString &longPath);
+bool GetLongPath(CFSTR path, UString &longPath);
 
 }}
 
@@ -47,7 +47,7 @@ static STATPROPSTG kProps[] =
   { NULL, kpidPrefix, VT_BSTR}
 };
 
-HRESULT CFSFolder::Init(const UString &path, IFolderFolder *parentFolder)
+HRESULT CFSFolder::Init(const FString &path, IFolderFolder *parentFolder)
 {
   _parentFolder = parentFolder;
   _path = path;
@@ -65,25 +65,25 @@ HRESULT CFSFolder::Init(const UString &path, IFolderFolder *parentFolder)
   {
     DWORD lastError = GetLastError();
     CFindFile findFile;
-    CFileInfoW fi;
-    if (!findFile.FindFirst(_path + UString(L"*"), fi))
+    CFileInfo fi;
+    if (!findFile.FindFirst(_path + FCHAR_ANY_MASK, fi))
       return lastError;
   }
   return S_OK;
 }
 
-HRESULT GetFolderSize(const UString &path, UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress)
+static HRESULT GetFolderSize(const FString &path, UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress)
 {
   RINOK(progress->SetCompleted(NULL));
   numFiles = numFolders = size = 0;
-  CEnumeratorW enumerator(path + UString(WSTRING_PATH_SEPARATOR L"*"));
-  CFileInfoW fi;
+  CEnumerator enumerator(path + FSTRING_PATH_SEPARATOR FSTRING_ANY_MASK);
+  CFileInfo fi;
   while (enumerator.Next(fi))
   {
     if (fi.IsDir())
     {
       UInt64 subFolders, subFiles, subSize;
-      RINOK(GetFolderSize(path + UString(WCHAR_PATH_SEPARATOR) + fi.Name, subFolders, subFiles, subSize, progress));
+      RINOK(GetFolderSize(path + FCHAR_PATH_SEPARATOR + fi.Name, subFolders, subFiles, subSize, progress));
       numFolders += subFolders;
       numFolders++;
       numFiles += subFiles;
@@ -98,10 +98,10 @@ HRESULT GetFolderSize(const UString &path, UInt64 &numFolders, UInt64 &numFiles,
   return S_OK;
 }
 
-HRESULT CFSFolder::LoadSubItems(CDirItem &dirItem, const UString &path)
+HRESULT CFSFolder::LoadSubItems(CDirItem &dirItem, const FString &path)
 {
   {
-    CEnumeratorW enumerator(path + L"*");
+    CEnumerator enumerator(path + FCHAR_ANY_MASK);
     CDirItem fi;
     while (enumerator.Next(fi))
     {
@@ -128,7 +128,7 @@ HRESULT CFSFolder::LoadSubItems(CDirItem &dirItem, const UString &path)
   {
     CDirItem &item = dirItem.Files[i];
     if (item.IsDir())
-      LoadSubItems(item, path + item.Name + WCHAR_PATH_SEPARATOR);
+      LoadSubItems(item, path + item.Name + FCHAR_PATH_SEPARATOR);
   }
   return S_OK;
 }
@@ -166,7 +166,7 @@ STDMETHODIMP CFSFolder::LoadItems()
   return S_OK;
 }
 
-static const wchar_t *kDescriptionFileName = L"descript.ion";
+static CFSTR kDescriptionFileName = FTEXT("descript.ion");
 
 bool CFSFolder::LoadComments()
 {
@@ -244,10 +244,10 @@ STDMETHODIMP CFSFolder::GetNumberOfSubFolders(UInt32 *numSubFolders)
 */
 
 #ifndef UNDER_CE
-static bool MyGetCompressedFileSizeW(LPCWSTR fileName, UInt64 &size)
+static bool MyGetCompressedFileSizeW(CFSTR fileName, UInt64 &size)
 {
   DWORD highPart;
-  DWORD lowPart = ::GetCompressedFileSizeW(fileName, &highPart);
+  DWORD lowPart = ::GetCompressedFileSizeW(fs2us(fileName), &highPart);
   if (lowPart == INVALID_FILE_SIZE && ::GetLastError() != NO_ERROR)
   {
     #ifdef WIN_LONG_PATH
@@ -274,7 +274,7 @@ STDMETHODIMP CFSFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT
   switch(propID)
   {
     case kpidIsDir: prop = fi.IsDir(); break;
-    case kpidName: prop = fi.Name; break;
+    case kpidName: prop = fs2us(fi.Name); break;
     case kpidSize: if (!fi.IsDir()) prop = fi.Size; break;
     case kpidPackSize:
       #ifdef UNDER_CE
@@ -298,7 +298,7 @@ STDMETHODIMP CFSFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT
     {
       LoadComments();
       UString comment;
-      if (_comments.GetValue(GetRelPath(fi), comment))
+      if (_comments.GetValue(fs2us(GetRelPath(fi)), comment))
         prop = comment;
       break;
     }
@@ -313,29 +313,29 @@ STDMETHODIMP CFSFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT
   return S_OK;
 }
 
-HRESULT CFSFolder::BindToFolderSpec(const wchar_t *name, IFolderFolder **resultFolder)
+HRESULT CFSFolder::BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder)
 {
   *resultFolder = 0;
   CFSFolder *folderSpec = new CFSFolder;
   CMyComPtr<IFolderFolder> subFolder = folderSpec;
-  RINOK(folderSpec->Init(_path + name + UString(WCHAR_PATH_SEPARATOR), 0));
+  RINOK(folderSpec->Init(_path + name + FCHAR_PATH_SEPARATOR, 0));
   *resultFolder = subFolder.Detach();
   return S_OK;
 }
 
-UString CFSFolder::GetPrefix(const CDirItem &item) const
+FString CFSFolder::GetPrefix(const CDirItem &item) const
 {
-  UString path;
+  FString path;
   CDirItem *cur = item.Parent;
   while (cur->Parent != 0)
   {
-    path = cur->Name + UString(WCHAR_PATH_SEPARATOR) + path;
+    path = cur->Name + FCHAR_PATH_SEPARATOR + path;
     cur = cur->Parent;
   }
   return path;
 }
 
-UString CFSFolder::GetRelPath(const CDirItem &item) const
+FString CFSFolder::GetRelPath(const CDirItem &item) const
 {
   return GetPrefix(item) + item.Name;
 }
@@ -351,7 +351,7 @@ STDMETHODIMP CFSFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
 
 STDMETHODIMP CFSFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
 {
-  return BindToFolderSpec(name, resultFolder);
+  return BindToFolderSpec(us2fs(name), resultFolder);
 }
 
 STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
@@ -365,11 +365,11 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   }
   if (_path.IsEmpty())
     return E_INVALIDARG;
-  int pos = _path.ReverseFind(WCHAR_PATH_SEPARATOR);
+  int pos = _path.ReverseFind(FCHAR_PATH_SEPARATOR);
   if (pos < 0 || pos != _path.Length() - 1)
     return E_FAIL;
-  UString parentPath = _path.Left(pos);
-  pos = parentPath.ReverseFind(WCHAR_PATH_SEPARATOR);
+  FString parentPath = _path.Left(pos);
+  pos = parentPath.ReverseFind(FCHAR_PATH_SEPARATOR);
   if (pos < 0)
   {
     #ifdef UNDER_CE
@@ -382,17 +382,17 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
     #endif
     return S_OK;
   }
-  UString parentPathReduced = parentPath.Left(pos);
+  FString parentPathReduced = parentPath.Left(pos);
   parentPath = parentPath.Left(pos + 1);
   #ifndef UNDER_CE
-  pos = parentPathReduced.ReverseFind(WCHAR_PATH_SEPARATOR);
+  pos = parentPathReduced.ReverseFind(FCHAR_PATH_SEPARATOR);
   if (pos == 1)
   {
-    if (parentPath[0] != WCHAR_PATH_SEPARATOR)
+    if (parentPath[0] != FCHAR_PATH_SEPARATOR)
       return E_FAIL;
     CNetFolder *netFolderSpec = new CNetFolder;
     CMyComPtr<IFolderFolder> netFolder = netFolderSpec;
-    netFolderSpec->Init(parentPath);
+    netFolderSpec->Init(fs2us(parentPath));
     *resultFolder = netFolder.Detach();
     return S_OK;
   }
@@ -421,7 +421,7 @@ STDMETHODIMP CFSFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   switch(propID)
   {
     case kpidType: prop = L"FSFolder"; break;
-    case kpidPath: prop = _path; break;
+    case kpidPath: prop = fs2us(_path); break;
   }
   prop.Detach(value);
   return S_OK;
@@ -532,13 +532,13 @@ STDMETHODIMP CFSFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgr
   return result;
 }
 
-HRESULT CFSFolder::GetComplexName(const wchar_t *name, UString &resultPath)
+HRESULT CFSFolder::GetComplexName(CFSTR name, FString &resultPath)
 {
-  UString newName = name;
+  FString newName = name;
   resultPath = _path + newName;
   if (newName.Length() < 1)
     return S_OK;
-  if (newName[0] == WCHAR_PATH_SEPARATOR)
+  if (newName[0] == FCHAR_PATH_SEPARATOR)
   {
     resultPath = newName;
     return S_OK;
@@ -552,11 +552,11 @@ HRESULT CFSFolder::GetComplexName(const wchar_t *name, UString &resultPath)
 
 STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress * /* progress */)
 {
-  UString processedName;
-  RINOK(GetComplexName(name, processedName));
-  if(NDirectory::MyCreateDirectory(processedName))
+  FString processedName;
+  RINOK(GetComplexName(us2fs(name), processedName));
+  if (NDirectory::MyCreateDirectory(processedName))
     return S_OK;
-  if(::GetLastError() == ERROR_ALREADY_EXISTS)
+  if (::GetLastError() == ERROR_ALREADY_EXISTS)
     return ::GetLastError();
   if (!NDirectory::CreateComplexDirectory(processedName))
     return ::GetLastError();
@@ -565,8 +565,8 @@ STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress * /* progres
 
 STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress * /* progress */)
 {
-  UString processedName;
-  RINOK(GetComplexName(name, processedName));
+  FString processedName;
+  RINOK(GetComplexName(us2fs(name), processedName));
   NIO::COutFile outFile;
   if (!outFile.Create(processedName, false))
     return ::GetLastError();
@@ -576,8 +576,8 @@ STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress * /* progress 
 STDMETHODIMP CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress * /* progress */)
 {
   const CDirItem &fi = *_refs[index];
-  const UString fullPrefix = _path + GetPrefix(fi);
-  if (!NDirectory::MyMoveFile(fullPrefix + fi.Name, fullPrefix + newName))
+  const FString fullPrefix = _path + GetPrefix(fi);
+  if (!NDirectory::MyMoveFile(fullPrefix + fi.Name, fullPrefix + us2fs(newName)))
     return GetLastError();
   return S_OK;
 }
@@ -588,7 +588,7 @@ STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress 
   for (UInt32 i = 0; i < numItems; i++)
   {
     const CDirItem &fi = *_refs[indices[i]];
-    const UString fullPath = _path + GetRelPath(fi);
+    const FString fullPath = _path + GetRelPath(fi);
     bool result;
     if (fi.IsDir())
       result = NDirectory::RemoveDirectoryWithSubItems(fullPath);
@@ -614,7 +614,7 @@ STDMETHODIMP CFSFolder::SetProperty(UInt32 index, PROPID propID,
   {
     case kpidComment:
     {
-      UString filename = fi.Name;
+      UString filename = fs2us(fi.Name);
       filename.Trim();
       if (value->vt == VT_EMPTY)
         _comments.DeletePair(filename);

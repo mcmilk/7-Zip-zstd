@@ -202,7 +202,7 @@ public:
   void SelectSpec(bool selectMode) { GetFocusedPanel().SelectSpec(selectMode); }
   void SelectByType(bool selectMode) { GetFocusedPanel().SelectByType(selectMode); }
 
-  void RefreshStatusBar() { GetFocusedPanel().RefreshStatusBar(); }
+  void Refresh_StatusBar() { GetFocusedPanel().Refresh_StatusBar(); }
 
   void SetListViewMode(UInt32 index) { GetFocusedPanel().SetListViewMode(index); }
   UInt32 GetListViewMode() { return GetFocusedPanel().GetListViewMode(); }

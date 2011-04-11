@@ -1,21 +1,8 @@
-// Zip/ArchiveFolder.cpp
+// Agent/ArchiveFolderOpen.cpp
 
 #include "StdAfx.h"
 
 #include "Agent.h"
-
-#include "Common/StringConvert.h"
-
-extern HINSTANCE g_hInstance;
-
-static inline UINT GetCurrentFileCodePage()
-{
-  #ifdef UNDER_CE
-  return CP_ACP;
-  #else
-  return AreFileApisANSI() ? CP_ACP : CP_OEMCP;
-  #endif
-}
 
 void CArchiveFolderManager::LoadFormats()
 {
@@ -39,7 +26,7 @@ STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream,
     IFolderFolder **resultFolder, IProgress *progress)
 {
   CMyComPtr<IArchiveOpenCallback> openArchiveCallback;
-  if (progress != 0)
+  if (progress)
   {
     CMyComPtr<IProgress> progressWrapper = progress;
     progressWrapper.QueryInterface(IID_IArchiveOpenCallback, &openArchiveCallback);
@@ -104,16 +91,18 @@ STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPa
     if (lib.FindIconIndex(ext, ii))
     {
       *iconIndex = ii;
-      return StringToBstr(GetUnicodeString(lib.Path, GetCurrentFileCodePage()), iconPath);
+      return StringToBstr(fs2us(lib.Path), iconPath);
     }
   }
   int ii;
   if (_codecs->InternalIcons.FindIconIndex(ext, ii))
   {
-    *iconIndex = ii;
-    UString path;
-    NWindows::NDLL::MyGetModuleFileName(g_hInstance, path);
-    return StringToBstr(path, iconPath);
+    FString path;
+    if (NWindows::NDLL::MyGetModuleFileName(path))
+    {
+      *iconIndex = ii;
+      return StringToBstr(fs2us(path), iconPath);
+    }
   }
   return S_OK;
 }

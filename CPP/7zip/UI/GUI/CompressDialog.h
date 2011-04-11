@@ -49,7 +49,7 @@ namespace NCompressDialog
 
     
     UString ArchiveName; // in: Relative for ; out: abs
-    UString CurrentDirPrefix;
+    FString CurrentDirPrefix;
     bool KeepName;
 
     bool GetFullPathName(UString &result) const;

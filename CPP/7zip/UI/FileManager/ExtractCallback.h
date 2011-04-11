@@ -35,6 +35,7 @@ class CExtractCallbackImp:
   #endif
   public CMyUnknownImp
 {
+  HRESULT MessageError(const char *message, const FString &path);
 public:
   MY_QUERYINTERFACE_BEGIN2(IFolderOperationsExtractCallback)
   MY_QUERYINTERFACE_ENTRY(IFolderArchiveExtractCallback)

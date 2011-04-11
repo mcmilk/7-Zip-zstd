@@ -11,6 +11,8 @@
 #include "Windows/COM.h"
 #include "Windows/Error.h"
 #include "Windows/FileDir.h"
+#include "Windows/FileName.h"
+
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConversions.h"
 #include "Windows/Thread.h"
@@ -31,7 +33,7 @@ using namespace NFind;
 extern DWORD g_ComCtl32Version;
 extern HINSTANCE g_hInstance;
 
-static LPCWSTR kTempDirPrefix = L"7zE";
+static CFSTR kTempDirPrefix = FTEXT("7zE");
 
 void CPanelCallbackImp::OnTab()
 {
@@ -374,7 +376,7 @@ static void ReducePathToRealFileSystemPath(UString &path)
 {
   while (!path.IsEmpty())
   {
-    if (NFind::DoesDirExist(path))
+    if (NFind::DoesDirExist(us2fs(path)))
     {
       NName::NormalizeDirPathPrefix(path);
       break;
@@ -510,6 +512,8 @@ UString CPanel::GetItemsInfoString(const CRecordVector<UInt32> &indices)
   return info;
 }
 
+bool IsCorrectFsName(const UString name);
+
 void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 {
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
@@ -599,10 +603,10 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 
     if (indices.Size() > 1 ||
         (!destPath.IsEmpty() && destPath.Back() == WCHAR_PATH_SEPARATOR) ||
-        NFind::DoesDirExist(destPath) ||
+        NFind::DoesDirExist(us2fs(destPath)) ||
         srcPanel.IsArcFolder())
     {
-      NDirectory::CreateComplexDirectory(destPath);
+      NDirectory::CreateComplexDirectory(us2fs(destPath));
       NName::NormalizeDirPathPrefix(destPath);
       if (!CheckFolderPath(destPath))
       {
@@ -616,11 +620,16 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     }
     else
     {
+      if (!IsCorrectFsName(destPath))
+      {
+        srcPanel.MessageBoxError(E_INVALIDARG);
+        return;
+      }
       int pos = destPath.ReverseFind(WCHAR_PATH_SEPARATOR);
       if (pos >= 0)
       {
         UString prefix = destPath.Left(pos + 1);
-        NDirectory::CreateComplexDirectory(prefix);
+        NDirectory::CreateComplexDirectory(us2fs(prefix));
         if (!CheckFolderPath(prefix))
         {
           srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
@@ -645,8 +654,8 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 
   bool useSrcPanel = (!useDestPanel || !srcPanel.IsFsOrDrivesFolder() || destPanel.IsFSFolder());
   bool useTemp = useSrcPanel && useDestPanel;
-  NFile::NDirectory::CTempDirectoryW tempDirectory;
-  UString tempDirPrefix;
+  NFile::NDirectory::CTempDir tempDirectory;
+  FString tempDirPrefix;
   if (useTemp)
   {
     tempDirectory.Create(kTempDirPrefix);
@@ -662,7 +671,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   HRESULT result;
   if (useSrcPanel)
   {
-    UString folder = useTemp ? tempDirPrefix : destPath;
+    UString folder = useTemp ? fs2us(tempDirPrefix) : destPath;
     result = srcPanel.CopyTo(indices, folder, move, true, 0);
     if (result != S_OK)
     {
@@ -681,7 +690,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     UStringVector filePaths;
     UString folderPrefix;
     if (useTemp)
-      folderPrefix = tempDirPrefix;
+      folderPrefix = fs2us(tempDirPrefix);
     else
       folderPrefix = srcPanel._currentFolderPrefix;
     filePaths.Reserve(indices.Size());

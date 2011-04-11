@@ -33,6 +33,7 @@ static const UInt32 kLzmaHeaderSize = 4 + kLzmaPropsSize;
 
 class CLzmaEncoder:
   public ICompressCoder,
+  public ICompressSetCoderProperties,
   public CMyUnknownImp
 {
   NCompress::NLzma::CEncoder *EncoderSpec;
@@ -41,12 +42,12 @@ class CLzmaEncoder:
 public:
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  HRESULT SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
+  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
 
-  MY_UNKNOWN_IMP
+  MY_UNKNOWN_IMP1(ICompressSetCoderProperties)
 };
 
-HRESULT CLzmaEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps)
+STDMETHODIMP CLzmaEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps)
 {
   if (!Encoder)
   {
@@ -67,7 +68,7 @@ HRESULT CLzmaEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIAN
   return S_OK;
 }
 
-HRESULT CLzmaEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+STDMETHODIMP CLzmaEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
   RINOK(WriteStream(outStream, Header, kLzmaHeaderSize));
@@ -210,52 +211,12 @@ HRESULT CAddCommon::Compress(
             _compressExtractVersion = NFileHeader::NCompressionMethod::kExtractVersion_LZMA;
             CLzmaEncoder *_lzmaEncoder = new CLzmaEncoder();
             _compressEncoder = _lzmaEncoder;
-            NWindows::NCOM::CPropVariant props[] =
-            {
-              #ifndef _7ZIP_ST
-              _options.NumThreads,
-              #endif
-              _options.Algo,
-              _options.DicSize,
-              _options.NumFastBytes,
-              const_cast<BSTR>((const wchar_t *)_options.MatchFinder),
-              _options.NumMatchFinderCycles
-            };
-            PROPID propIDs[] =
-            {
-              #ifndef _7ZIP_ST
-              NCoderPropID::kNumThreads,
-              #endif
-              NCoderPropID::kAlgorithm,
-              NCoderPropID::kDictionarySize,
-              NCoderPropID::kNumFastBytes,
-              NCoderPropID::kMatchFinder,
-              NCoderPropID::kMatchFinderCycles
-            };
-            int numProps = sizeof(propIDs) / sizeof(propIDs[0]);
-            if (!_options.NumMatchFinderCyclesDefined)
-              numProps--;
-            RINOK(_lzmaEncoder->SetCoderProperties(propIDs, props, numProps));
           }
           else if (method == NFileHeader::NCompressionMethod::kPPMd)
           {
             _compressExtractVersion = NFileHeader::NCompressionMethod::kExtractVersion_PPMd;
             NCompress::NPpmdZip::CEncoder *encoder = new NCompress::NPpmdZip::CEncoder();
             _compressEncoder = encoder;
-            NWindows::NCOM::CPropVariant props[] =
-            {
-              _options.Algo,
-              _options.MemSize,
-              _options.Order
-              
-            };
-            PROPID propIDs[] =
-            {
-              NCoderPropID::kAlgorithm,
-              NCoderPropID::kUsedMemorySize,
-              NCoderPropID::kOrder
-            };
-            RINOK(encoder->SetCoderProperties(propIDs, props, sizeof(propIDs) / sizeof(propIDs[0])));
           }
           else
           {
@@ -282,55 +243,19 @@ HRESULT CAddCommon::Compress(
           if (method == NFileHeader::NCompressionMethod::kDeflated ||
               method == NFileHeader::NCompressionMethod::kDeflated64)
           {
-            NWindows::NCOM::CPropVariant props[] =
-            {
-              _options.Algo,
-              _options.NumPasses,
-              _options.NumFastBytes,
-              _options.NumMatchFinderCycles
-            };
-            PROPID propIDs[] =
-            {
-              NCoderPropID::kAlgorithm,
-              NCoderPropID::kNumPasses,
-              NCoderPropID::kNumFastBytes,
-              NCoderPropID::kMatchFinderCycles
-            };
-            int numProps = sizeof(propIDs) / sizeof(propIDs[0]);
-            if (!_options.NumMatchFinderCyclesDefined)
-              numProps--;
-            CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-            _compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties);
-            if (setCoderProperties)
-            {
-              RINOK(setCoderProperties->SetCoderProperties(propIDs, props, numProps));
-            }
           }
           else if (method == NFileHeader::NCompressionMethod::kBZip2)
           {
-            NWindows::NCOM::CPropVariant props[] =
-            {
-              _options.DicSize,
-              _options.NumPasses
-              #ifndef _7ZIP_ST
-              , _options.NumThreads
-              #endif
-            };
-            PROPID propIDs[] =
-            {
-              NCoderPropID::kDictionarySize,
-              NCoderPropID::kNumPasses
-              #ifndef _7ZIP_ST
-              , NCoderPropID::kNumThreads
-              #endif
-            };
-            CMyComPtr<ICompressSetCoderProperties> setCoderProperties;
-            _compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProperties);
-            if (setCoderProperties)
-            {
-              RINOK(setCoderProperties->SetCoderProperties(propIDs, props, sizeof(propIDs) / sizeof(propIDs[0])));
-            }
           }
+          }
+          {
+            CMyComPtr<ICompressSetCoderProperties> setCoderProps;
+            _compressEncoder.QueryInterface(IID_ICompressSetCoderProperties, &setCoderProps);
+            if (setCoderProps)
+            {
+              RINOK(_options.MethodInfo.SetCoderProps(setCoderProps,
+                  _options._dataSizeReduceDefined ? &_options._dataSizeReduce : NULL));
+            }
           }
         }
         CMyComPtr<ISequentialOutStream> outStreamNew;

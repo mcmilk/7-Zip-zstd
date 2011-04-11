@@ -121,7 +121,7 @@ static int Main2()
       #ifdef EXTERNAL_CODECS
       codecs, &externalCodecs,
       #endif
-      options.NumThreads, options.DictionarySize);
+      options.Properties);
     if (res != S_OK)
       throw CSystemException(res);
   }
@@ -146,7 +146,7 @@ static int Main2()
     eo.TestMode = options.Command.IsTestMode();
     eo.CalcCrc = options.CalcCrc;
     #if !defined(_7ZIP_ST) && !defined(_SFX)
-    eo.Properties = options.ExtractProperties;
+    eo.Properties = options.Properties;
     #endif
 
     bool messageWasDisplayed = false;
@@ -280,4 +280,3 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
     return NExitCode::kFatalError;
   }
 }
-

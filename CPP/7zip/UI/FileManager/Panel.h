@@ -85,13 +85,14 @@ public:
 
 struct CTempFileInfo
 {
-  UString ItemName;
-  UString FolderPath;
-  UString FilePath;
-  NWindows::NFile::NFind::CFileInfoW FileInfo;
+  UInt32 FileIndex;  // index of file in folder
+  UString RelPath;   // Relative path of file from Folder
+  FString FolderPath;
+  FString FilePath;
+  NWindows::NFile::NFind::CFileInfo FileInfo;
   bool NeedDelete;
 
-  CTempFileInfo(): NeedDelete(false) {}
+  CTempFileInfo(): FileIndex((UInt32)(Int32)-1), NeedDelete(false) {}
   void DeleteDirAndFile() const
   {
     if (NeedDelete)
@@ -100,7 +101,7 @@ struct CTempFileInfo
       NWindows::NFile::NDirectory::MyRemoveDirectory(FolderPath);
     }
   }
-  bool WasChanged(const NWindows::NFile::NFind::CFileInfoW &newFileInfo) const
+  bool WasChanged(const NWindows::NFile::NFind::CFileInfo &newFileInfo) const
   {
     return newFileInfo.Size != FileInfo.Size ||
         CompareFileTime(&newFileInfo.MTime, &FileInfo.MTime) != 0;
@@ -118,7 +119,7 @@ struct CFolderLink: public CTempFileInfo
   UString VirtualPath;
   CFolderLink(): UsePassword(false), IsVirtual(false) {}
 
-  bool WasChanged(const NWindows::NFile::NFind::CFileInfoW &newFileInfo) const
+  bool WasChanged(const NWindows::NFile::NFind::CFileInfo &newFileInfo) const
   {
     return IsVirtual || CTempFileInfo::WasChanged(newFileInfo);
   }
@@ -131,18 +132,19 @@ enum MyMessages
   kReLoadMessage,
   kSetFocusToListView,
   kOpenItemChanged,
-  kRefreshStatusBar,
-  kRefreshHeaderComboBox
+  kRefresh_StatusBar
+  #ifdef UNDER_CE
+  , kRefresh_HeaderComboBox
+  #endif
 };
 
 UString GetFolderPath(IFolderFolder * folder);
 
 class CPanel;
 
-class CMyListView: public NWindows::NControl::CListView
+class CMyListView: public NWindows::NControl::CListView2
 {
 public:
-  WNDPROC _origWindowProc;
   CPanel *_panel;
   LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
 };
@@ -482,34 +484,33 @@ public:
 
   bool _processTimer;
   bool _processNotify;
+  bool _processStatusBar;
 
   class CDisableTimerProcessing
   {
     bool _processTimerMem;
     bool _processNotifyMem;
+    bool _processStatusBarMem;
 
     CPanel &_panel;
     public:
 
-    CDisableTimerProcessing(CPanel &panel): _panel(panel)
-    {
-      Disable();
-    }
+    CDisableTimerProcessing(CPanel &panel): _panel(panel) { Disable(); }
+    ~CDisableTimerProcessing() { Restore(); }
     void Disable()
     {
       _processTimerMem = _panel._processTimer;
       _processNotifyMem = _panel._processNotify;
+      _processStatusBarMem = _panel._processStatusBar;
       _panel._processTimer = false;
       _panel._processNotify = false;
+      _panel._processStatusBar = false;
     }
     void Restore()
     {
       _panel._processTimer = _processTimerMem;
       _panel._processNotify = _processNotifyMem;
-    }
-    ~CDisableTimerProcessing()
-    {
-      Restore();
+      _panel._processStatusBar = _processStatusBarMem;
     }
     CDisableTimerProcessing& operator=(const CDisableTimerProcessing &) {; }
   };
@@ -544,11 +545,11 @@ public:
       const UString &virtualFilePath,
       const UString &arcFormat,
       bool &encrypted);
-  HRESULT OpenItemAsArchive(const UString &name, const UString &arcFormat, bool &encrypted);
+  HRESULT OpenItemAsArchive(const UString &relPath, const UString &arcFormat, bool &encrypted);
   HRESULT OpenItemAsArchive(int index);
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       bool editMode);
-  HRESULT OnOpenItemChanged(const UString &folderPath, const UString &itemName, bool usePassword, const UString &password);
+  HRESULT OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath, bool usePassword, const UString &password);
   LRESULT OnOpenItemChanged(LPARAM lParam);
 
   void OpenItem(int index, bool tryInternal, bool tryExternal);
@@ -565,8 +566,8 @@ public:
   void ChangeFlatMode();
   bool GetFlatMode() const { return _flatMode; }
 
-  void RefreshStatusBar();
-  void OnRefreshStatusBar();
+  void Post_Refresh_StatusBar();
+  void Refresh_StatusBar();
 
   void AddToArchive();
 

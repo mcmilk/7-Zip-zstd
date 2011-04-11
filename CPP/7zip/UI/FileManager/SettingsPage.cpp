@@ -10,7 +10,6 @@
 
 #include "HelpUtils.h"
 #include "LangUtils.h"
-#include "ProgramLocation.h"
 #include "RegistryUtils.h"
 #include "SettingsPage.h"
 

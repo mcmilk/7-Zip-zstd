@@ -2,22 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
-
 #include "Windows/FileDir.h"
-#include "Windows/PropVariant.h"
-#include "Windows/PropVariantConversions.h"
+#include "Windows/FileName.h"
 #include "Windows/Time.h"
 
 #include "../../Compress/CopyCoder.h"
 
 #include "../../Common/FileStreams.h"
-
-#include "../Common/EnumDirItems.h"
-#include "../Common/OpenArchive.h"
-#include "../Common/UpdateCallback.h"
-#include "../Common/UpdatePair.h"
 
 #include "Agent.h"
 #include "UpdateCallbackAgent.h"
@@ -33,7 +24,7 @@ STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
     _agentFolder = NULL;
     return S_OK;
   }
-  else
+
   {
     CMyComPtr<IFolderFolder> archiveFolder = folder;
     CMyComPtr<IArchiveFolderInternal> archiveFolderInternal;
@@ -41,40 +32,18 @@ STDMETHODIMP CAgent::SetFolder(IFolderFolder *folder)
     RINOK(archiveFolderInternal->GetAgentFolder(&_agentFolder));
   }
 
-  UStringVector pathParts;
-  pathParts.Clear();
-  CMyComPtr<IFolderFolder> folderItem = folder;
-  if (folderItem != NULL)
-    for (;;)
-    {
-      CMyComPtr<IFolderFolder> newFolder;
-      folderItem->BindToParentFolder(&newFolder);
-      if (newFolder == NULL)
-        break;
-
-      NCOM::CPropVariant prop;
-      if (folderItem->GetFolderProperty(kpidName, &prop) == S_OK)
-        if (prop.vt == VT_BSTR)
-          pathParts.Insert(0, (const wchar_t *)prop.bstrVal);
-      folderItem = newFolder;
-    }
-
-  for (int i = 0; i < pathParts.Size(); i++)
-  {
-    _archiveNamePrefix += pathParts[i];
-    _archiveNamePrefix += WCHAR_PATH_SEPARATOR;
-  }
+  _archiveNamePrefix = _agentFolder->_proxyFolderItem->GetFullPathPrefix();
   return S_OK;
 }
 
 STDMETHODIMP CAgent::SetFiles(const wchar_t *folderPrefix,
     const wchar_t **names, UInt32 numNames)
 {
-  _folderPrefix = folderPrefix;
+  _folderPrefix = us2fs(folderPrefix);
   _names.Clear();
   _names.Reserve(numNames);
   for (UInt32 i = 0; i < numNames; i++)
-    _names.Add(names[i]);
+    _names.Add(us2fs(names[i]));
   return S_OK;
 }
 
@@ -89,12 +58,7 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
     const CProxyFile &fileItem = item.Files[i];
     CArcItem ai;
     RINOK(agent->GetArc().GetItemMTime(fileItem.Index, ai.MTime, ai.MTimeDefined));
-
-    CPropVariant property;
-    agent->GetArchive()->GetProperty(fileItem.Index, kpidSize, &property);
-    ai.SizeDefined = (property.vt != VT_EMPTY);
-    if (ai.SizeDefined)
-      ai.Size = ConvertPropVariantToUInt64(property);
+    RINOK(agent->GetArc().GetItemSize(fileItem.Index, ai.Size, ai.SizeDefined));
     ai.IsDir = false;
     ai.Name = prefix + fileItem.Name;
     ai.Censored = true; // test it
@@ -139,7 +103,7 @@ HRESULT CAgUpCallbackImp::ShowDeleteFile(int arcIndex)
 STDMETHODIMP CAgent::DoOperation(
     CCodecs *codecs,
     int formatIndex,
-    const wchar_t *newArchiveName,
+    ISequentialOutStream *outArchiveStream,
     const Byte *stateActions,
     const wchar_t *sfxModule,
     IFolderArchiveUpdateCallback *updateCallback100)
@@ -154,9 +118,9 @@ STDMETHODIMP CAgent::DoOperation(
   CDirItems dirItems;
 
   {
-    UString folderPrefix = _folderPrefix;
+    FString folderPrefix = _folderPrefix;
     NFile::NName::NormalizeDirPathPrefix(folderPrefix);
-    UStringVector errorPaths;
+    FStringVector errorPaths;
     CRecordVector<DWORD> errorCodes;
     dirItems.EnumerateDirItems2(folderPrefix, _archiveNamePrefix, _names, errorPaths, errorCodes);
     if (errorCodes.Size() > 0)
@@ -239,22 +203,6 @@ STDMETHODIMP CAgent::DoOperation(
   updateCallbackSpec->Archive = GetArchive();
   updateCallbackSpec->Callback = &updateCallbackAgent;
 
-  COutFileStream *outStreamSpec = new COutFileStream;
-  CMyComPtr<IOutStream> outStream(outStreamSpec);
-  UString archiveName = newArchiveName;
-  {
-    UString resultPath;
-    int pos;
-    if (!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
-      return E_FAIL;
-    NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
-  }
-  if (!outStreamSpec->Create(archiveName, true))
-  {
-    // ShowLastErrorMessage();
-    return E_FAIL;
-  }
-  
   CMyComPtr<ISetProperties> setProperties;
   if (outArchive->QueryInterface(IID_ISetProperties, (void **)&setProperties) == S_OK)
   {
@@ -268,7 +216,7 @@ STDMETHODIMP CAgent::DoOperation(
       for(i = 0; i < m_PropNames.Size(); i++)
         names.Add((const wchar_t *)m_PropNames[i]);
 
-      NWindows::NCOM::CPropVariant *propValues = new NWindows::NCOM::CPropVariant[m_PropValues.Size()];
+      CPropVariant *propValues = new CPropVariant[m_PropValues.Size()];
       try
       {
         for (int i = 0; i < m_PropValues.Size(); i++)
@@ -290,88 +238,38 @@ STDMETHODIMP CAgent::DoOperation(
   {
     CInFileStream *sfxStreamSpec = new CInFileStream;
     CMyComPtr<IInStream> sfxStream(sfxStreamSpec);
-    if (!sfxStreamSpec->Open(sfxModule))
+    if (!sfxStreamSpec->Open(us2fs(sfxModule)))
       return E_FAIL;
       // throw "Can't open sfx module";
-    RINOK(NCompress::CopyStream(sfxStream, outStream, NULL));
+    RINOK(NCompress::CopyStream(sfxStream, outArchiveStream, NULL));
   }
 
-  RINOK(outArchive->UpdateItems(outStream, updatePairs2.Size(),updateCallback));
-  return outStreamSpec->Close();
+  return outArchive->UpdateItems(outArchiveStream, updatePairs2.Size(),updateCallback);
 }
 
-STDMETHODIMP CAgent::DoOperation2(
-    const wchar_t *newArchiveName,
-    const Byte *stateActions,
-    const wchar_t *sfxModule,
-    IFolderArchiveUpdateCallback *updateCallback100)
+STDMETHODIMP CAgent::DoOperation2(ISequentialOutStream *outArchiveStream,
+    const Byte *stateActions, const wchar_t *sfxModule, IFolderArchiveUpdateCallback *updateCallback100)
 {
-  return DoOperation(_codecs, -1, newArchiveName,
-    stateActions, sfxModule, updateCallback100);
+  return DoOperation(_codecs, -1, outArchiveStream, stateActions, sfxModule, updateCallback100);
 }
 
-HRESULT CAgent::CommonUpdate(
-    const wchar_t *newArchiveName,
-    int numUpdateItems,
-    IArchiveUpdateCallback *updateCallback)
+HRESULT CAgent::CommonUpdate(ISequentialOutStream *outArchiveStream,
+    int numUpdateItems, IArchiveUpdateCallback *updateCallback)
 {
   if (!CanUpdate())
     return E_NOTIMPL;
   CMyComPtr<IOutArchive> outArchive;
   RINOK(GetArchive()->QueryInterface(IID_IOutArchive, (void **)&outArchive));
-
-  COutFileStream *outStreamSpec = new COutFileStream;
-  CMyComPtr<IOutStream> outStream(outStreamSpec);
-
-  UString archiveName = newArchiveName;
-  {
-    UString resultPath;
-    int pos;
-    if (!NFile::NDirectory::MyGetFullPathName(archiveName, resultPath, pos))
-      throw 141716;
-    NFile::NDirectory::CreateComplexDirectory(resultPath.Left(pos));
-  }
-
-  /*
-  bool isOK = false;
-  for (int i = 0; i < (1 << 16); i++)
-  {
-    resultName = newArchiveName;
-    if (i > 0)
-    {
-      wchar_t s[16];
-      ConvertUInt32ToString(i, s);
-      resultName += s;
-    }
-    if (outStreamSpec->Open(realPath))
-    {
-      isOK = true;
-      break;
-    }
-    if (::GetLastError() != ERROR_FILE_EXISTS)
-      return ::GetLastError();
-  }
-  if (!isOK)
-    return ::GetLastError();
-  */
-  if (!outStreamSpec->Create(archiveName, true))
-  {
-    // ShowLastErrorMessage();
-    return E_FAIL;
-  }
-  
-  RINOK(outArchive->UpdateItems(outStream, numUpdateItems, updateCallback));
-  return outStreamSpec->Close();
+  return outArchive->UpdateItems(outArchiveStream, numUpdateItems, updateCallback);
 }
 
-
-STDMETHODIMP CAgent::DeleteItems(
-    const wchar_t *newArchiveName,
+STDMETHODIMP CAgent::DeleteItems(ISequentialOutStream *outArchiveStream,
     const UInt32 *indices, UInt32 numItems,
     IFolderArchiveUpdateCallback *updateCallback100)
 {
   if (!CanUpdate())
     return E_NOTIMPL;
+  CRecordVector<CUpdatePair2> updatePairs;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
@@ -379,7 +277,6 @@ STDMETHODIMP CAgent::DeleteItems(
   
   CUIntVector realIndices;
   _agentFolder->GetRealIndices(indices, numItems, realIndices);
-  CRecordVector<CUpdatePair2> updatePairs;
   int curIndex = 0;
   UInt32 numItemsInArchive;
   RINOK(GetArchive()->GetNumberOfItems(&numItemsInArchive));
@@ -400,22 +297,21 @@ STDMETHODIMP CAgent::DeleteItems(
   updateCallbackSpec->UpdatePairs = &updatePairs;
   updateCallbackSpec->Archive = GetArchive();
   updateCallbackSpec->Callback = &updateCallbackAgent;
-  return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
+  return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
 
-HRESULT CAgent::CreateFolder(
-    const wchar_t *newArchiveName,
-    const wchar_t *folderName,
-    IFolderArchiveUpdateCallback *updateCallback100)
+HRESULT CAgent::CreateFolder(ISequentialOutStream *outArchiveStream,
+    const wchar_t *folderName, IFolderArchiveUpdateCallback *updateCallback100)
 {
   if (!CanUpdate())
     return E_NOTIMPL;
+  CRecordVector<CUpdatePair2> updatePairs;
+  CDirItems dirItems;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
 
-  CRecordVector<CUpdatePair2> updatePairs;
   UInt32 numItemsInArchive;
   RINOK(GetArchive()->GetNumberOfItems(&numItemsInArchive));
   for (UInt32 i = 0; i < numItemsInArchive; i++)
@@ -435,7 +331,6 @@ HRESULT CAgent::CreateFolder(
 
   updatePairs.ReserveDown();
 
-  CDirItems dirItems;
   CDirItem di;
 
   di.Attrib = FILE_ATTRIBUTE_DIRECTORY;
@@ -452,20 +347,19 @@ HRESULT CAgent::CreateFolder(
   updateCallbackSpec->DirItems = &dirItems;
   updateCallbackSpec->UpdatePairs = &updatePairs;
   updateCallbackSpec->Archive = GetArchive();
-  return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
+  return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
 
 
-HRESULT CAgent::RenameItem(
-    const wchar_t *newArchiveName,
-    const UInt32 *indices, UInt32 numItems,
-    const wchar_t *newItemName,
+HRESULT CAgent::RenameItem(ISequentialOutStream *outArchiveStream,
+    const UInt32 *indices, UInt32 numItems, const wchar_t *newItemName,
     IFolderArchiveUpdateCallback *updateCallback100)
 {
   if (!CanUpdate())
     return E_NOTIMPL;
   if (numItems != 1)
     return E_INVALIDARG;
+  CRecordVector<CUpdatePair2> updatePairs;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
@@ -478,7 +372,6 @@ HRESULT CAgent::RenameItem(
   UString oldItemPath = fullPrefix + _agentFolder->GetName(indices[0]);
   UString newItemPath = fullPrefix + newItemName;
 
-  CRecordVector<CUpdatePair2> updatePairs;
   UStringVector newNames;
 
   int curIndex = 0;
@@ -516,7 +409,64 @@ HRESULT CAgent::RenameItem(
   updateCallbackSpec->UpdatePairs = &updatePairs;
   updateCallbackSpec->NewNames = &newNames;
   updateCallbackSpec->Archive = GetArchive();
-  return CommonUpdate(newArchiveName, updatePairs.Size(), updateCallback);
+  return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
+}
+
+HRESULT CAgent::UpdateOneFile(ISequentialOutStream *outArchiveStream,
+    const UInt32 *indices, UInt32 numItems, const wchar_t *diskFilePath,
+    IFolderArchiveUpdateCallback *updateCallback100)
+{
+  if (!CanUpdate())
+    return E_NOTIMPL;
+  CRecordVector<CUpdatePair2> updatePairs;
+  CDirItems dirItems;
+  CUpdateCallbackAgent updateCallbackAgent;
+  updateCallbackAgent.SetCallback(updateCallback100);
+  CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
+  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
+  
+  UInt32 realIndex;
+  {
+    CUIntVector realIndices;
+    _agentFolder->GetRealIndices(indices, numItems, realIndices);
+    if (realIndices.Size() != 1)
+      return E_FAIL;
+    realIndex = realIndices[0];
+  }
+
+  {
+    FStringVector filePaths;
+    filePaths.Add(us2fs(diskFilePath));
+    FStringVector errorPaths;
+    CRecordVector<DWORD> errorCodes;
+    dirItems.EnumerateDirItems2(FString(), UString(), filePaths, errorPaths, errorCodes);
+    if (dirItems.Items.Size() != 1)
+      return E_FAIL;
+  }
+
+  UInt32 numItemsInArchive;
+  RINOK(GetArchive()->GetNumberOfItems(&numItemsInArchive));
+  for (UInt32 i = 0; i < numItemsInArchive; i++)
+  {
+    CUpdatePair2 up2;
+    up2.ArcIndex = i;
+    up2.IsAnti = false;
+    up2.NewData = false;
+    up2.NewProps = false;
+    if (realIndex == i)
+    {
+      up2.DirIndex = 0;
+      up2.NewData = true;
+      up2.NewProps = true;
+    }
+    updatePairs.Add(up2);
+  }
+  updateCallbackSpec->DirItems = &dirItems;
+  updateCallbackSpec->Callback = &updateCallbackAgent;
+  updateCallbackSpec->UpdatePairs = &updatePairs;
+  updateCallbackSpec->Archive = GetArchive();
+  updateCallbackSpec->KeepOriginalItemNames = true;
+  return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
 
 STDMETHODIMP CAgent::SetProperties(const wchar_t **names,

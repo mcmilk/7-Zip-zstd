@@ -63,6 +63,25 @@ HRESULT CArc::GetItemPath(UInt32 index, UString &result) const
   return S_OK;
 }
 
+HRESULT CArc::GetItemSize(UInt32 index, UInt64 &size, bool &defined) const
+{
+  NCOM::CPropVariant prop;
+  defined = false;
+  size = 0;
+  RINOK(Archive->GetProperty(index, kpidSize, &prop));
+  switch (prop.vt)
+  {
+    case VT_UI1: size = prop.bVal; break;
+    case VT_UI2: size = prop.uiVal; break;
+    case VT_UI4: size = prop.ulVal; break;
+    case VT_UI8: size = (UInt64)prop.uhVal.QuadPart; break;
+    case VT_EMPTY: return S_OK;
+    default: return E_FAIL;
+  }
+  defined = true;
+  return S_OK;
+}
+
 HRESULT CArc::GetItemMTime(UInt32 index, FILETIME &ft, bool &defined) const
 {
   NCOM::CPropVariant prop;
@@ -339,7 +358,7 @@ HRESULT CArc::OpenStreamOrFile(
   {
     CInFileStream *fileStreamSpec = new CInFileStream;
     fileStream = fileStreamSpec;
-    if (!fileStreamSpec->Open(Path))
+    if (!fileStreamSpec->Open(us2fs(Path)))
       return GetLastError();
     stream = fileStream;
   }
@@ -461,7 +480,7 @@ HRESULT CArchiveLink::Open(
   return S_OK;
 }
 
-static void SetCallback(const UString &filePath,
+static void SetCallback(const FString &filePath,
     IOpenCallbackUI *callbackUI,
     IArchiveOpenCallback *reOpenCallback,
     CMyComPtr<IArchiveOpenCallback> &callback)
@@ -471,12 +490,9 @@ static void SetCallback(const UString &filePath,
   openCallbackSpec->Callback = callbackUI;
   openCallbackSpec->ReOpenCallback = reOpenCallback;
 
-  UString fullName;
-  int fileNamePartStartIndex;
-  NFile::NDirectory::MyGetFullPathName(filePath, fullName, fileNamePartStartIndex);
-  openCallbackSpec->Init(
-      fullName.Left(fileNamePartStartIndex),
-      fullName.Mid(fileNamePartStartIndex));
+  FString dirPrefix, fileName;
+  NFile::NDirectory::GetFullPathAndSplit(filePath, dirPrefix, fileName);
+  openCallbackSpec->Init(dirPrefix, fileName);
 }
 
 HRESULT CArchiveLink::Open2(CCodecs *codecs,
@@ -491,14 +507,10 @@ HRESULT CArchiveLink::Open2(CCodecs *codecs,
   CMyComPtr<IArchiveOpenCallback> callback = openCallbackSpec;
   openCallbackSpec->Callback = callbackUI;
 
-  UString fullName, prefix, name;
+  FString prefix, name;
   if (!stream && !stdInMode)
   {
-    int fileNamePartStartIndex;
-    if (!NFile::NDirectory::MyGetFullPathName(filePath, fullName, fileNamePartStartIndex))
-      return GetLastError();
-    prefix = fullName.Left(fileNamePartStartIndex);
-    name = fullName.Mid(fileNamePartStartIndex);
+    NFile::NDirectory::GetFullPathAndSplit(us2fs(filePath), prefix, name);
     openCallbackSpec->Init(prefix, name);
   }
   else
@@ -507,9 +519,9 @@ HRESULT CArchiveLink::Open2(CCodecs *codecs,
   }
 
   RINOK(Open(codecs, formatIndices, stdInMode, stream, filePath, callback));
-  VolumePaths.Add(prefix + name);
+  VolumePaths.Add(fs2us(prefix + name));
   for (int i = 0; i < openCallbackSpec->FileNames.Size(); i++)
-    VolumePaths.Add(prefix + openCallbackSpec->FileNames[i]);
+    VolumePaths.Add(fs2us(prefix) + openCallbackSpec->FileNames[i]);
   VolumesSize = openCallbackSpec->TotalSize;
   return S_OK;
 }
@@ -524,11 +536,11 @@ HRESULT CArchiveLink::ReOpen(CCodecs *codecs, const UString &filePath,
     return Open2(codecs, CIntVector(), false, NULL, filePath, 0);
 
   CMyComPtr<IArchiveOpenCallback> openCallbackNew;
-  SetCallback(filePath, NULL, callback, openCallbackNew);
+  SetCallback(us2fs(filePath), NULL, callback, openCallbackNew);
 
   CInFileStream *fileStreamSpec = new CInFileStream;
   CMyComPtr<IInStream> stream(fileStreamSpec);
-  if (!fileStreamSpec->Open(filePath))
+  if (!fileStreamSpec->Open(us2fs(filePath)))
     return GetLastError();
   HRESULT res = GetArchive()->Open(stream, &kMaxCheckStartPosition, callback);
   IsOpen = (res == S_OK);

@@ -628,14 +628,6 @@ SOURCE=..\Common\UpdateProduce.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\WorkDir.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\WorkDir.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\ZipRegistry.h
 # End Source File
 # End Group
@@ -673,6 +665,14 @@ SOURCE=..\..\Common\FilterCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\FilterCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.h
 # End Source File
 # Begin Source File
 

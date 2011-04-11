@@ -11,6 +11,7 @@
 #include "Windows/DLL.h"
 #include "Windows/FileDir.h"
 #endif
+#include "Windows/FileName.h"
 
 #include "../../UI/Common/ExitCode.h"
 #include "../../UI/Common/Extract.h"
@@ -25,6 +26,9 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NCommandLineParser;
 
+#ifdef _WIN32
+HINSTANCE g_hInstance = 0;
+#endif
 int g_CodePage = -1;
 extern CStdOutStream *g_StdStream;
 
@@ -261,12 +265,11 @@ int Main2(
 
   #ifdef _WIN32
   
-  UString arcPath;
+  FString arcPath;
   {
-    UString path;
-    NDLL::MyGetModuleFileName(NULL, path);
-    int fileNamePartStartIndex;
-    if (!NDirectory::MyGetFullPathName(path, arcPath, fileNamePartStartIndex))
+    FString path;
+    NDLL::MyGetModuleFileName(path);
+    if (!NDirectory::MyGetFullPathName(path, arcPath))
     {
       g_StdOut << "GetFullPathName Error";
       return NExitCode::kFatalError;
@@ -291,7 +294,7 @@ int Main2(
     PrintHelpAndExit();
   }
 
-  if(parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs)
+  if (parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs)
   {
     PrintHelp();
     return 0;
@@ -330,23 +333,23 @@ int Main2(
   bool passwordEnabled = parser[NKey::kPassword].ThereIs;
 
   UString password;
-  if(passwordEnabled)
+  if (passwordEnabled)
     password = parser[NKey::kPassword].PostStrings[0];
 
   if (!NFind::DoesFileExist(arcPath))
     throw kCantFindSFX;
   
-  UString outputDir;
+  FString outputDir;
   if (parser[NKey::kOutputDir].ThereIs)
   {
-    outputDir = parser[NKey::kOutputDir].PostStrings[0];
+    outputDir = us2fs(parser[NKey::kOutputDir].PostStrings[0]);
     NName::NormalizeDirPathPrefix(outputDir);
   }
 
   {
     UStringVector v1, v2;
-    v1.Add(arcPath);
-    v2.Add(arcPath);
+    v1.Add(fs2us(arcPath));
+    v2.Add(fs2us(arcPath));
     const NWildcard::CCensorNode &wildcardCensorHead =
       wildcardCensor.Pairs.Front().Head;
 
@@ -362,7 +365,7 @@ int Main2(
     if (result != S_OK)
       throw CSystemException(result);
 
-    if(command.CommandType != NCommandType::kList)
+    if (command.CommandType != NCommandType::kList)
     {
       CExtractCallbackConsole *ecs = new CExtractCallbackConsole;
       CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;

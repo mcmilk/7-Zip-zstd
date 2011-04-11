@@ -1,172 +1,266 @@
 // SystemPage.cpp
 
 #include "StdAfx.h"
-#include "SystemPageRes.h"
-#include "SystemPage.h"
 
 #include "Common/StringConvert.h"
-#include "Common/MyCom.h"
 
-#include "Windows/Defs.h"
-#include "Windows/Control/ListView.h"
-#include "Windows/FileFind.h"
+#include "Windows/DLL.h"
+#include "Windows/Error.h"
 
-#include "IFolder.h"
 #include "HelpUtils.h"
+#include "IFolder.h"
 #include "LangUtils.h"
-#include "PluginLoader.h"
-#include "ProgramLocation.h"
-#include "StringUtils.h"
-
 #include "PropertyNameRes.h"
-#include "../Agent/Agent.h"
+#include "SystemPage.h"
+#include "SystemPageRes.h"
 
-using namespace NRegistryAssociations;
-
-const int kRefreshpluginsListMessage  = WM_USER + 1;
-const int kUpdateDatabase = kRefreshpluginsListMessage  + 1;
-
-static CIDLangPair kIDLangPairs[] =
+static const CIDLangPair kIDLangPairs[] =
 {
-  { IDC_SYSTEM_STATIC_ASSOCIATE,  0x03010302},
-  { IDC_SYSTEM_SELECT_ALL,        0x03000330}
+  { IDC_SYSTEM_STATIC_ASSOCIATE,  0x03010302}
+  // { IDC_SYSTEM_SELECT_ALL,        0x03000330}
 };
 
 static LPCWSTR kSystemTopic = L"FM/options.htm#system";
 
+CSysString CModifiedExtInfo::GetString() const
+{
+  if (State == kExtState_7Zip)
+    return TEXT("7-Zip");
+  if (State == kExtState_Clear)
+    return TEXT("");
+  if (Other7Zip)
+    return TEXT("[7-Zip]");
+  return ProgramKey;
+};
+
+int CSystemPage::AddIcon(const UString &iconPath, int iconIndex)
+{
+  if (iconPath.IsEmpty())
+    return -1;
+  if (iconIndex == -1)
+    iconIndex = 0;
+  HICON hicon;
+  #ifdef UNDER_CE
+  ExtractIconExW(iconPath, iconIndex, NULL, &hicon, 1);
+  if (!hicon)
+  #else
+  // we expand path from REG_EXPAND_SZ registry item.
+  UString path;
+  DWORD size = MAX_PATH + 10;
+  DWORD needLen = ::ExpandEnvironmentStringsW(iconPath, path.GetBuffer((int)size + 1), size);
+  path.ReleaseBuffer();
+  if (needLen == 0 || needLen >= size)
+    path = iconPath;
+  int num = ExtractIconExW(path, iconIndex, NULL, &hicon, 1);
+  if (num != 1 || !hicon)
+  #endif
+    return -1;
+  _imageList.AddIcon(hicon);
+  DestroyIcon(hicon);
+  return _numIcons++;
+}
+
+void CSystemPage::RefreshListItem(int group, int listIndex)
+{
+  const CAssoc &assoc = _items[GetRealIndex(listIndex)];
+  _listView.SetSubItem(listIndex, group + 1, assoc.Pair[group].GetString());
+  LVITEMW newItem;
+  memset(&newItem, 0, sizeof(newItem));
+  newItem.iItem = listIndex;
+  newItem.mask = LVIF_IMAGE;
+  newItem.iImage = assoc.GetIconIndex();
+  _listView.SetItem(&newItem);
+}
+
+void CSystemPage::ChangeState(int group, const CIntVector &indices)
+{
+  if (indices.IsEmpty())
+    return;
+
+  bool thereAreClearItems = false;
+  int counters[3] = { 0, 0, 0 };
+  
+  int i;
+  for (i = 0; i < indices.Size(); i++)
+  {
+    const CModifiedExtInfo &mi = _items[GetRealIndex(indices[i])].Pair[group];
+    int state = kExtState_7Zip;
+    if (mi.State == kExtState_7Zip)
+      state = kExtState_Clear;
+    else if (mi.State == kExtState_Clear)
+    {
+      thereAreClearItems = true;
+      if (mi.Other)
+        state = kExtState_Other;
+    }
+    counters[state]++;
+  }
+
+  int state = kExtState_Clear;
+  if (counters[kExtState_Other] != 0)
+    state = kExtState_Other;
+  else if (counters[kExtState_7Zip] != 0)
+    state = kExtState_7Zip;
+  
+  for (i = 0; i < indices.Size(); i++)
+  {
+    int listIndex = indices[i];
+    CAssoc &assoc = _items[GetRealIndex(listIndex)];
+    CModifiedExtInfo &mi = assoc.Pair[group];
+    bool change = false;
+    switch (state)
+    {
+      case kExtState_Clear: change = true; break;
+      case kExtState_Other: change = mi.Other; break;
+      default: change = !(mi.Other && thereAreClearItems); break;
+    }
+    if (change)
+    {
+      mi.State = state;
+      RefreshListItem(group, listIndex);
+    }
+  }
+  Changed();
+}
 
 bool CSystemPage::OnInit()
 {
-  _initMode = true;
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItemsText((HWND)*this, kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
 
-  _listViewExt.Attach(GetItem(IDC_SYSTEM_LIST_ASSOCIATE));
-  _listViewPlugins.Attach(GetItem(IDC_SYSTEM_LIST_PLUGINS));
+  _listView.Attach(GetItem(IDC_SYSTEM_LIST_ASSOCIATE));
+  _listView.SetUnicodeFormat();
+  DWORD newFlags = LVS_EX_FULLROWSELECT;
+  _listView.SetExtendedListViewStyle(newFlags, newFlags);
 
-  /*
-  CheckButton(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU,
-      NRegistryAssociations::CheckContextMenuHandler());
-  */
+  _numIcons = 0;
+  _imageList.Create(16, 16, ILC_MASK | ILC_COLOR32, 0, 0);
 
-  UINT32 newFlags = LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT;
-  _listViewExt.SetExtendedListViewStyle(newFlags, newFlags);
-  _listViewPlugins.SetExtendedListViewStyle(newFlags, newFlags);
+  _listView.SetImageList(_imageList, LVSIL_SMALL);
 
-  _listViewExt.InsertColumn(0, LangString(IDS_PROP_EXTENSION, 0x02000205), 40);
-  const UString s = LangString(IDS_PLUGIN, 0x03010310);
-  _listViewExt.InsertColumn(1, s, 40);
+  _listView.InsertColumn(0, LangString(IDS_PROP_FILE_TYPE, 0x02000214), 72);
 
-  _listViewPlugins.InsertColumn(0, s, 40);
+  CSysString s;
 
-  _extDatabase.Read();
+  #if NUM_EXT_GROUPS == 1
+    s = TEXT("Program");
+  #else
+    #ifndef UNDER_CE
+      DWORD size = 256;
+      BOOL res = GetUserName(s.GetBuffer(size), &size);
+      s.ReleaseBuffer();
+      if (!res)
+    #endif
+        s = TEXT("Current User");
+  #endif
 
-  for (int i = 0; i < _extDatabase.ExtBigItems.Size(); i++)
+  LVCOLUMN ci;
+  ci.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_SUBITEM;
+  ci.cx = 100;
+  ci.pszText = (TCHAR *)(const TCHAR *)s;
+  ci.iSubItem = 1;
+  ci.fmt = LVCFMT_CENTER;
+  _listView.InsertColumn(1, &ci);
+
+  #if NUM_EXT_GROUPS > 1
   {
-    CExtInfoBig &extInfo = _extDatabase.ExtBigItems[i];
-
-    int itemIndex = _listViewExt.InsertItem(i, (LPCWSTR)extInfo.Ext);
-
-    UString iconPath;
-    int iconIndex;
-    extInfo.Associated = NRegistryAssociations::CheckShellExtensionInfo(GetSystemString(extInfo.Ext), iconPath, iconIndex);
-    if (extInfo.Associated && !NWindows::NFile::NFind::DoesFileExist(iconPath))
-      extInfo.Associated = false;
-    _listViewExt.SetCheckState(itemIndex, extInfo.Associated);
-
-    SetMainPluginText(itemIndex, i);
+    ci.iSubItem = 2;
+    ci.pszText = TEXT("All Users");
+    _listView.InsertColumn(2, &ci);
   }
-  // _listViewExt.SortItems();
+  #endif
+
+  _extDB.Read();
+  _items.Clear();
+
+  for (int i = 0; i < _extDB.Exts.Size(); i++)
+  {
+    const CExtPlugins &extInfo = _extDB.Exts[i];
+
+    LVITEMW item;
+    item.iItem = i;
+    item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
+    item.lParam = i;
+    item.iSubItem = 0;
+    // ListView always uses internal iImage that is 0 by default?
+    // so we always use LVIF_IMAGE.
+    item.iImage = -1;
+    item.pszText = (wchar_t *)(const wchar_t *)(LPCWSTR)extInfo.Ext;
+
+    CAssoc assoc;
+    const CPluginToIcon &plug = extInfo.Plugins[0];
+    assoc.SevenZipImageIndex = AddIcon(plug.IconPath, plug.IconIndex);
+
+    CSysString texts[NUM_EXT_GROUPS];
+    int g;
+    for (g = 0; g < NUM_EXT_GROUPS; g++)
+    {
+      CModifiedExtInfo &mi = assoc.Pair[g];
+      mi.ReadFromRegistry(GetHKey(g), GetSystemString(extInfo.Ext));
+      mi.SetState(plug.IconPath);
+      mi.ImageIndex = AddIcon(mi.IconPath, mi.IconIndex);
+      texts[g] = mi.GetString();
+    }
+    item.iImage = assoc.GetIconIndex();
+    int itemIndex = _listView.InsertItem(&item);
+    for (g = 0; g < NUM_EXT_GROUPS; g++)
+      _listView.SetSubItem(itemIndex, 1 + g, texts[g]);
+    _items.Add(assoc);
+  }
   
-  if (_listViewExt.GetItemCount() > 0)
-    _listViewExt.SetItemState_FocusedSelected(0);
-  RefreshPluginsList(-1);
-  _initMode = false;
+  if (_listView.GetItemCount() > 0)
+    _listView.SetItemState(0, LVIS_FOCUSED, LVIS_FOCUSED);
 
   return CPropertyPage::OnInit();
 }
 
-void CSystemPage::SetMainPluginText(int itemIndex, int indexInDatabase)
-{
-  _listViewExt.SetSubItem(itemIndex, 1, _extDatabase.GetMainPluginNameForExtItem(indexInDatabase));
-}
-
 static UString GetProgramCommand()
 {
-  UString path = L"\"";
-  UString folder;
-  if (GetProgramFolderPath(folder))
-    path += folder;
-  path += L"7zFM.exe\" \"%1\"";
-  return path;
-}
-
-static UString GetIconPath(const UString &filePath,
-    const CLSID &clsID, const UString &extension, Int32 &iconIndex)
-{
-  CPluginLibrary library;
-  CMyComPtr<IFolderManager> folderManager;
-  CMyComPtr<IFolderFolder> folder;
-  if (filePath.IsEmpty())
-    folderManager = new CArchiveFolderManager;
-  else if (library.LoadAndCreateManager(filePath, clsID, &folderManager) != S_OK)
-    return UString();
-  CMyComBSTR extBSTR;
-  if (folderManager->GetExtensions(&extBSTR) != S_OK)
-    return UString();
-  const UString ext2 = (const wchar_t *)extBSTR;
-  UStringVector exts;
-  SplitString(ext2, exts);
-  for (int i = 0; i < exts.Size(); i++)
-  {
-    const UString &plugExt = exts[i];
-    if (extension.CompareNoCase((const wchar_t *)plugExt) == 0)
-    {
-      CMyComBSTR iconPathTemp;
-      if (folderManager->GetIconPath(plugExt, &iconPathTemp, &iconIndex) != S_OK)
-        break;
-      if (iconPathTemp != 0)
-        return (const wchar_t *)iconPathTemp;
-    }
-  }
-  return UString();
+  return L"\"" + fs2us(NWindows::NDLL::GetModuleDirPrefix()) + L"7zFM.exe\" \"%1\"";
 }
 
 LONG CSystemPage::OnApply()
 {
-  UpdateDatabase();
-  _extDatabase.Save();
-  UString command = GetProgramCommand();
+  const UString command = GetProgramCommand();
   
-  for (int i = 0; i < _extDatabase.ExtBigItems.Size(); i++)
+  LONG res = 0;
+
+  for (int listIndex = 0; listIndex < _extDB.Exts.Size(); listIndex++)
   {
-    const CExtInfoBig &extInfo = _extDatabase.ExtBigItems[i];
-    if (extInfo.Associated)
+    int realIndex = GetRealIndex(listIndex);
+    const CExtPlugins &extInfo = _extDB.Exts[realIndex];
+    CAssoc &assoc = _items[realIndex];
+
+    for (int g = 0; g < NUM_EXT_GROUPS; g++)
     {
-      UString title = extInfo.Ext + UString(L" Archive");
-      UString command = GetProgramCommand();
-      UString iconPath;
-      Int32 iconIndex = -1;
-      if (!extInfo.PluginsPairs.IsEmpty())
+      CModifiedExtInfo &mi = assoc.Pair[g];
+      HKEY key = GetHKey(g);
+      if (mi.OldState != mi.State)
       {
-        const CPluginInfo &plugin = _extDatabase.Plugins[extInfo.PluginsPairs[0].Index];
-        iconPath = GetIconPath(plugin.FilePath, plugin.ClassID, extInfo.Ext, iconIndex);
+        LONG res2 = 0;
+        if (mi.State == kExtState_7Zip)
+        {
+          UString title = extInfo.Ext + UString(L" Archive");
+          const CPluginToIcon &plug = extInfo.Plugins[0];
+          res2 = NRegistryAssoc::AddShellExtensionInfo(key, GetSystemString(extInfo.Ext),
+              title, command, plug.IconPath, plug.IconIndex);
+        }
+        else if (mi.State == kExtState_Clear)
+          res2 = NRegistryAssoc::DeleteShellExtensionInfo(key, GetSystemString(extInfo.Ext));
+        if (res == 0)
+          res = res2;
+        if (res2 == 0)
+          mi.OldState = mi.State;
+        mi.State = mi.OldState;
+        RefreshListItem(g, listIndex);
       }
-      NRegistryAssociations::AddShellExtensionInfo(GetSystemString(extInfo.Ext),
-            title, command, iconPath, iconIndex, NULL, 0);
     }
-    else
-      NRegistryAssociations::DeleteShellExtensionInfo(GetSystemString(extInfo.Ext));
   }
-  /*
-  if (IsButtonCheckedBool(IDC_SYSTEM_INTEGRATE_TO_CONTEXT_MENU))
-    NRegistryAssociations::AddContextMenuHandler();
-  else
-    NRegistryAssociations::DeleteContextMenuHandler();
-  */
   #ifndef UNDER_CE
   SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
   WasChanged = true;
   #endif
+  if (res != 0)
+    MessageBoxW(*this, NWindows::NError::MyFormatMessageW(res), L"7-Zip", MB_ICONERROR);
   return PSNRET_NOERROR;
 }
 
@@ -175,228 +269,119 @@ void CSystemPage::OnNotifyHelp()
   ShowHelpWindow(NULL, kSystemTopic);
 }
 
-void CSystemPage::SelectAll()
-{
-  int count = _listViewExt.GetItemCount();
-  for (int i = 0; i < count; i++)
-    _listViewExt.SetCheckState(i, true);
-  UpdateDatabase();
-}
-
 bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
+    /*
     case IDC_SYSTEM_SELECT_ALL:
-    {
-      SelectAll();
-      Changed();
+      _listView.SelectAll();
       return true;
-    }
+    */
+    case IDC_SYSTEM_BUTTON_CURRENT:
+    case IDC_SYSTEM_BUTTON_ALL:
+      ChangeState(buttonID == IDC_SYSTEM_BUTTON_CURRENT ? 0 : 1);
+      return true;
   }
   return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 }
 
 bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
 {
-  if (lParam->hwndFrom == HWND(_listViewExt))
+  if (lParam->hwndFrom == HWND(_listView))
   {
-    switch(lParam->code)
+    switch (lParam->code)
     {
-      case (LVN_ITEMCHANGED):
-        return OnItemChanged((const NMLISTVIEW *)lParam);
-      case NM_RCLICK:
-      case NM_DBLCLK:
-      case LVN_KEYDOWN:
-      case NM_CLICK:
-      case LVN_BEGINRDRAG:
-        PostMessage(kRefreshpluginsListMessage, 0);
-        PostMessage(kUpdateDatabase, 0);
-        break;
-    }
-  }
-  else if (lParam->hwndFrom == HWND(_listViewPlugins))
-  {
-    switch(lParam->code)
-    {
-      case NM_RCLICK:
-      case NM_DBLCLK:
-      // case LVN_KEYDOWN:
-      case NM_CLICK:
-      case LVN_BEGINRDRAG:
-        PostMessage(kUpdateDatabase, 0);
-        break;
-
-      case (LVN_ITEMCHANGED):
+      case NM_RETURN:
       {
-        OnItemChanged((const NMLISTVIEW *)lParam);
-        PostMessage(kUpdateDatabase, 0);
+        ChangeState(0);
+        return true;
+      }
+      break;
+      case NM_CLICK:
+      {
+        #ifdef UNDER_CE
+        NMLISTVIEW *item = (NMLISTVIEW *)lParam;
+        #else
+        NMITEMACTIVATE *item = (NMITEMACTIVATE *)lParam;
+        if (item->uKeyFlags == 0)
+        #endif
+        {
+          int realIndex = GetRealIndex(item->iItem);
+          if (realIndex >= 0)
+          {
+            if (item->iSubItem >= 1 && item->iSubItem <= 2)
+            {
+              CIntVector indices;
+              indices.Add(item->iItem);
+              ChangeState(item->iSubItem < 2 ? 0 : 1, indices);
+            }
+          }
+        }
         break;
       }
       case LVN_KEYDOWN:
       {
-        OnPluginsKeyDown((LPNMLVKEYDOWN)lParam);
-        PostMessage(kUpdateDatabase, 0);
+        if (OnListKeyDown(LPNMLVKEYDOWN(lParam)))
+          return true;
         break;
       }
+      /*
+      case NM_RCLICK:
+      case NM_DBLCLK:
+      case LVN_BEGINRDRAG:
+        // PostMessage(kRefreshpluginsListMessage, 0);
+        PostMessage(kUpdateDatabase, 0);
+        break;
+      */
     }
   }
   return CPropertyPage::OnNotify(controlID, lParam);
 }
 
-bool CSystemPage::OnPluginsKeyDown(LPNMLVKEYDOWN keyDownInfo)
+void CSystemPage::ChangeState(int group)
 {
+  CIntVector indices;
+  int itemIndex = -1;
+  while ((itemIndex = _listView.GetNextSelectedItem(itemIndex)) != -1)
+    indices.Add(itemIndex);
+  if (indices.IsEmpty())
+    for (int i = 0; i < _items.Size(); i++)
+      indices.Add(i);
+  ChangeState(group, indices);
+}
+
+bool CSystemPage::OnListKeyDown(LPNMLVKEYDOWN keyDownInfo)
+{
+  bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
   bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
-  // bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-  switch(keyDownInfo->wVKey)
+
+  if (alt)
+    return false;
+
+  if ((ctrl && keyDownInfo->wVKey == 'A') ||
+      (!ctrl && keyDownInfo->wVKey == VK_MULTIPLY))
   {
-    case VK_UP:
-    {
-      if (alt)
-        MovePlugin(true);
-      return true;
-    }
-    case VK_DOWN:
-    {
-      if (alt)
-        MovePlugin(false);
-      return true;
-    }
+    _listView.SelectAll();
+    return true;
+  }
+
+  switch (keyDownInfo->wVKey)
+  {
+    case VK_SPACE:
+    case VK_ADD:
+    case VK_SUBTRACT:
+    case VK_SEPARATOR:
+    case VK_DIVIDE:
+    #ifndef UNDER_CE
+    case VK_OEM_PLUS:
+    case VK_OEM_MINUS:
+    #endif
+      if (!ctrl)
+      {
+        ChangeState(keyDownInfo->wVKey == VK_SPACE ? 0 : 1);
+        return true;
+      }
   }
   return false;
 }
-
-void CSystemPage::MovePlugin(bool upDirection)
-{
-  int selectedPlugin = _listViewPlugins.GetSelectionMark();
-  if (selectedPlugin < 0)
-    return;
-  int newIndex = selectedPlugin + (upDirection ? -1: 1);
-  if (newIndex < 0 || newIndex >= _listViewPlugins.GetItemCount())
-    return;
-  int selectedExtIndex = GetSelectedExtIndex();
-  if (selectedExtIndex < 0)
-    return;
-  CExtInfoBig &extInfo = _extDatabase.ExtBigItems[selectedExtIndex];
-  CPluginEnabledPair pluginPairTemp = extInfo.PluginsPairs[newIndex];
-  extInfo.PluginsPairs[newIndex] = extInfo.PluginsPairs[selectedPlugin];
-  extInfo.PluginsPairs[selectedPlugin] = pluginPairTemp;
-
-  SetMainPluginText(_listViewExt.GetSelectionMark(), selectedExtIndex);
-  RefreshPluginsList(newIndex);
-
-  Changed();
-}
-
-bool CSystemPage::OnItemChanged(const NMLISTVIEW *info)
-{
-  if (_initMode)
-    return true;
-  if ((info->uChanged & LVIF_STATE) != 0)
-  {
-    UINT oldState = info->uOldState & LVIS_STATEIMAGEMASK;
-    UINT newState = info->uNewState & LVIS_STATEIMAGEMASK;
-    if (oldState != newState)
-      Changed();
-  }
-  // PostMessage(kRefreshpluginsListMessage, 0);
-  // RefreshPluginsList();
-  return true;
-}
-
-bool CSystemPage::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
-{
-  switch(message)
-  {
-    case kRefreshpluginsListMessage:
-      RefreshPluginsList(-1);
-      return true;
-    case kUpdateDatabase:
-      UpdateDatabase();
-      return true;
-  }
-  return CPropertyPage::OnMessage(message, wParam, lParam);
-}
-
-void CSystemPage::UpdateDatabase()
-{
-  int i;
-  for (i = 0; i < _listViewExt.GetItemCount(); i++)
-  {
-    LPARAM param;
-    if (!_listViewExt.GetItemParam(i, param))
-      return;
-    CExtInfoBig &extInfo = _extDatabase.ExtBigItems[(int)param];
-    extInfo.Associated = _listViewExt.GetCheckState(i);
-  }
-
-  int selectedExtIndex = GetSelectedExtIndex();
-  if (selectedExtIndex < 0)
-    return;
-
-  CExtInfoBig &extInfo = _extDatabase.ExtBigItems[selectedExtIndex];
-  for (i = 0; i < _listViewPlugins.GetItemCount(); i++)
-  {
-    extInfo.PluginsPairs[i].Enabled = _listViewPlugins.GetCheckState(i);
-  }
-}
-
-
-
-int CSystemPage::GetSelectedExtIndex()
-{
-  int selectedIndex = _listViewExt.GetSelectionMark();
-  if (selectedIndex < 0)
-    return -1;
-  LPARAM param;
-  if (!_listViewExt.GetItemParam(selectedIndex, param))
-    return -1;
-  return (int)param;
-}
-
-
-void CSystemPage::RefreshPluginsList(int selectIndex)
-{
-  _listViewPlugins.DeleteAllItems();
-  int selectedExtIndex = GetSelectedExtIndex();
-  if (selectedExtIndex < 0)
-    return;
-  const CExtInfoBig &extInfo = _extDatabase.ExtBigItems[selectedExtIndex];
-
-  _initMode = true;
-  for (int i = 0; i < extInfo.PluginsPairs.Size(); i++)
-  {
-    CPluginEnabledPair pluginPair = extInfo.PluginsPairs[i];
-    int itemIndex = _listViewPlugins.InsertItem(i, _extDatabase.Plugins[pluginPair.Index].Name);
-    _listViewPlugins.SetCheckState(itemIndex, pluginPair.Enabled);
-  }
-  if (_listViewPlugins.GetItemCount() > 0)
-  {
-    if (selectIndex < 0)
-      selectIndex = 0;
-    _listViewPlugins.SetItemState_FocusedSelected(selectIndex);
-  }
-  _initMode = false;
-}
-
-
-
-/*
-static BYTE kZipShellNewData[] =
-  { 0x50-1, 0x4B, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0 };
-
-static BYTE kRarShellNewData[] =
-  { 0x52-1, 0x61, 0x72, 0x21, 0x1A, 7, 0, 0xCF, 0x90, 0x73, 0, 0, 0x0D, 0, 0, 0, 0, 0, 0, 0};
-
-class CSignatureMaker
-{
-public:
-  CSignatureMaker()
-  {
-    kZipShellNewData[0]++;
-    kRarShellNewData[0]++;
-  };
-};
-
-static CSignatureMaker g_SignatureMaker;
-*/

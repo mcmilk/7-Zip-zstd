@@ -7,7 +7,7 @@
 #include "../../../Common/MyCom.h"
 #include "../../ICoder.h"
 
-namespace NCoderMixer2 {
+namespace NCoderMixer {
 
 //  SetBindInfo()
 //  for each coder
@@ -26,11 +26,11 @@ namespace NCoderMixer2 {
 //    Code
 //  }
 
-struct CSTCoderInfo: public CCoderInfo
+struct CSTCoderInfo: public CCoderInfo2
 {
   bool IsMain;
   CSTCoderInfo(UInt32 numInStreams, UInt32 numOutStreams, bool isMain):
-    CCoderInfo(numInStreams, numOutStreams),IsMain(isMain) {}
+    CCoderInfo2(numInStreams, numOutStreams), IsMain(isMain) {}
 };
 
 class CCoderMixer2ST:
@@ -84,5 +84,5 @@ public:
 };
 
 }
-#endif
 
+#endif

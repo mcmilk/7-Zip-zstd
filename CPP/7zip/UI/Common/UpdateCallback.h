@@ -55,8 +55,8 @@ public:
 
 public:
   CRecordVector<UInt64> VolumesSizes;
-  UString VolName;
-  UString VolExt;
+  FString VolName;
+  FString VolExt;
 
   IUpdateCallbackUI *Callback;
 
@@ -67,6 +67,7 @@ public:
   const CRecordVector<CUpdatePair2> *UpdatePairs;
   const UStringVector *NewNames;
   CMyComPtr<IInArchive> Archive;
+  bool KeepOriginalItemNames;
 
   CArchiveUpdateCallback();
 };

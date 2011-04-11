@@ -87,12 +87,12 @@ class COpenArchiveCallback:
 
   DWORD m_PrevTickCount;
 
-  NWindows::NFile::NFind::CFileInfoW _fileInfo;
+  NWindows::NFile::NFind::CFileInfo _fileInfo;
 public:
   bool PasswordIsDefined;
   UString Password;
 
-  UString _folderPrefix;
+  FString _folderPrefix;
 
 public:
   MY_UNKNOWN_IMP3(
@@ -130,7 +130,7 @@ public:
   }
   void ShowMessage();
 
-  void LoadFileInfo(const UString &folderPrefix, const UString &fileName)
+  void LoadFileInfo(const FString &folderPrefix, const FString &fileName)
   {
     _folderPrefix = folderPrefix;
     if (!_fileInfo.Find(_folderPrefix + fileName))
@@ -251,7 +251,7 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **in
   if (WasEscPressed())
     return E_ABORT;
   *inStream = NULL;
-  UString fullPath = _folderPrefix + name;
+  FString fullPath = _folderPrefix + us2fs(name);
   if (!_fileInfo.Find(fullPath))
     return S_FALSE;
   if (_fileInfo.IsDir())
@@ -333,16 +333,15 @@ HRESULT OpenArchive(const CSysString &fileName,
 
 static HANDLE MyOpenFilePluginW(const wchar_t *name)
 {
-  UString normalizedName = name;
+  FString normalizedName = us2fs(name);
   normalizedName.Trim();
-  UString fullName;
-  int fileNamePartStartIndex;
-  NFile::NDirectory::MyGetFullPathName(normalizedName, fullName, fileNamePartStartIndex);
-  NFile::NFind::CFileInfoW fileInfo;
+  FString fullName;
+  NFile::NDirectory::MyGetFullPathName(normalizedName, fullName);
+  NFile::NFind::CFileInfo fileInfo;
   if (!fileInfo.Find(fullName))
     return INVALID_HANDLE_VALUE;
   if (fileInfo.IsDir())
-     return INVALID_HANDLE_VALUE;
+    return INVALID_HANDLE_VALUE;
 
 
   CMyComPtr<IInFolderArchive> archiveHandler;
@@ -360,9 +359,11 @@ static HANDLE MyOpenFilePluginW(const wchar_t *name)
 
   // if ((opMode & OPM_SILENT) == 0 && (opMode & OPM_FIND ) == 0)
   openArchiveCallbackSpec->Init();
-  openArchiveCallbackSpec->LoadFileInfo(
-      fullName.Left(fileNamePartStartIndex),
-      fullName.Mid(fileNamePartStartIndex));
+  {
+    FString dirPrefix, fileName;
+    NFile::NDirectory::GetFullPathAndSplit(fullName, dirPrefix, fileName);
+    openArchiveCallbackSpec->LoadFileInfo(dirPrefix, fileName);
+  }
   
   // ::OutputDebugStringA("before OpenArchive\n");
   
@@ -449,7 +450,7 @@ EXTERN_C HANDLE WINAPI OpenPlugin(int openFrom, INT_PTR item)
     if(fileName.IsEmpty())
       return INVALID_HANDLE_VALUE;
     if (fileName.Length() >= 2 &&
-        fileName[0] == '\"' && fileName[fileName.Length() - 1] == '\"')
+        fileName[0] == '\"' && fileName.Back() == '\"')
       fileName = fileName.Mid(1, fileName.Length() - 2);
 
     return MyOpenFilePlugin(fileName);

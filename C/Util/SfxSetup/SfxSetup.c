@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2010-11-11 : Igor Pavlov : Public domain */
+2010-12-13 : Igor Pavlov : Public domain */
 
 #ifndef UNICODE
 #define UNICODE
@@ -128,26 +128,21 @@ static Bool FindSignature(CSzFile *stream, UInt64 *resPos)
   *resPos = 0;
   for (;;)
   {
-    size_t numTests, pos;
+    size_t processed, pos;
     if (*resPos > kSignatureSearchLimit)
       return False;
-    
-    do
+    processed = kBufferSize - numPrevBytes;
+    if (File_Read(stream, buf + numPrevBytes, &processed) != 0)
+      return False;
+    processed += numPrevBytes;
+    if (processed < k7zStartHeaderSize ||
+        (processed == k7zStartHeaderSize && numPrevBytes != 0))
+      return False;
+    processed -= k7zStartHeaderSize;
+    for (pos = 0; pos <= processed; pos++)
     {
-      size_t processed = kBufferSize - numPrevBytes;
-      if (File_Read(stream, buf + numPrevBytes, &processed) != 0)
-        return False;
-      if (processed == 0)
-        return False;
-      numPrevBytes += processed;
-    }
-    while (numPrevBytes <= k7zStartHeaderSize);
-    
-    numTests = numPrevBytes - k7zStartHeaderSize;
-    for (pos = 0; pos < numTests; pos++)
-    {
-      for (; buf[pos] != '7' && pos < numTests; pos++);
-      if (pos == numTests)
+      for (; buf[pos] != '7' && pos <= processed; pos++);
+      if (pos > processed)
         break;
       if (memcmp(buf + pos, k7zSignature, k7zSignatureSize) == 0)
         if (CrcCalc(buf + pos + 12, 20) == GetUi32(buf + pos + 8))
@@ -156,9 +151,9 @@ static Bool FindSignature(CSzFile *stream, UInt64 *resPos)
           return True;
         }
     }
-    *resPos += numTests;
-    numPrevBytes -= numTests;
-    memmove(buf, buf + numTests, numPrevBytes);
+    *resPos += processed;
+    numPrevBytes = k7zStartHeaderSize;
+    memmove(buf, buf + processed, k7zStartHeaderSize);
   }
 }
 

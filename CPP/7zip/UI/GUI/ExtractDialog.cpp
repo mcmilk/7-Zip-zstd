@@ -352,4 +352,3 @@ void CExtractDialog::OnHelp()
   CModalDialog::OnHelp();
 }
 #endif
-

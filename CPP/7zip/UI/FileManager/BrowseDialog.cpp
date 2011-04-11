@@ -2,13 +2,14 @@
  
 #include "StdAfx.h"
 
-#ifdef UNDER_CE
+#include "BrowseDialog.h"
+
+#ifdef USE_MY_BROWSE_DIALOG
 
 #include "Common/IntToString.h"
 
 #include "Windows/PropVariantConversions.h"
 
-#include "BrowseDialog.h"
 #include "LangUtils.h"
 #include "PropertyNameRes.h"
 
@@ -60,7 +61,7 @@ bool CBrowseDialog::OnInit()
   _list.Attach(GetItem(IDC_BROWSE_LIST));
 
   #ifndef UNDER_CE
-  _list.SetUnicodeFormat(true);
+  _list.SetUnicodeFormat();
   #endif
 
   #ifndef _SFX
@@ -191,8 +192,8 @@ int CBrowseDialog::CompareItems(LPARAM lParam1, LPARAM lParam2)
 {
   if (lParam1 == kParentIndex) return -1;
   if (lParam2 == kParentIndex) return 1;
-  const CFileInfoW &f1 = _files[(int)lParam1];
-  const CFileInfoW &f2 = _files[(int)lParam2];
+  const CFileInfo &f1 = _files[(int)lParam1];
+  const CFileInfo &f2 = _files[(int)lParam2];
 
   bool isDir1 = f1.IsDir();
   bool isDir2 = f2.IsDir();
@@ -225,12 +226,12 @@ static HRESULT GetNormalizedError()
 
 HRESULT CBrowseDialog::Reload(const UString &pathPrefix, const UString &selectedName)
 {
-  CEnumeratorW enumerator(pathPrefix + L'*');
-  CObjectVector<CFileInfoW> files;
+  CEnumerator enumerator(us2fs(pathPrefix + L'*'));
+  CObjectVector<CFileInfo> files;
   for (;;)
   {
     bool found;
-    CFileInfoW fi;
+    CFileInfo fi;
     if (!enumerator.Next(fi, found))
       return GetNormalizedError();
     if (!found)
@@ -278,16 +279,17 @@ HRESULT CBrowseDialog::Reload(const UString &pathPrefix, const UString &selected
 
   for (int i = 0; i < _files.Size(); i++)
   {
-    const CFileInfoW &fi = _files[i];
+    const CFileInfo &fi = _files[i];
     item.iItem = index;
-    if (fi.Name.CompareNoCase(selectedName) == 0)
+    const UString name = fs2us(fi.Name);
+    if (name.CompareNoCase(selectedName) == 0)
       cursorIndex = item.iItem;
     item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
     int subItem = 0;
     item.iSubItem = subItem++;
     item.lParam = i;
-    item.pszText = (wchar_t *)(const wchar_t *)fi.Name;
-    item.iImage = _extToIconMap.GetIconIndex(fi.Attrib, Path + fi.Name);
+    item.pszText = (wchar_t *)(const wchar_t *)name;
+    item.iImage = _extToIconMap.GetIconIndex(fi.Attrib, Path + name);
     if (item.iImage < 0)
       item.iImage = 0;
     _list.InsertItem(&item);
@@ -325,7 +327,7 @@ HRESULT CBrowseDialog::Reload()
   {
     int fileIndex = GetRealItemIndex(index);
     if (fileIndex != kParentIndex)
-      selectedCur = _files[fileIndex].Name;
+      selectedCur = fs2us(_files[fileIndex].Name);
   }
   return Reload(Path, selectedCur);
 }
@@ -443,13 +445,13 @@ void CBrowseDialog::FinishOnOK()
       OpenParentFolder();
       return;
     }
-    const CFileInfoW &file = _files[fileIndex];
+    const CFileInfo &file = _files[fileIndex];
     if (file.IsDir() != FolderMode)
     {
       ShowSelectError();
       return;
     }
-    Path += file.Name;
+    Path += fs2us(file.Name);
   }
   End(IDOK);
 }
@@ -464,7 +466,7 @@ void CBrowseDialog::OnItemEnter()
     OpenParentFolder();
   else
   {
-    const CFileInfoW &file = _files[fileIndex];
+    const CFileInfo &file = _files[fileIndex];
     if (!file.IsDir())
     {
       if (!FolderMode)
@@ -473,7 +475,7 @@ void CBrowseDialog::OnItemEnter()
         ShowSelectError();
       return;
     }
-    HRESULT res = Reload(Path + file.Name + WCHAR_PATH_SEPARATOR, L"");
+    HRESULT res = Reload(Path + fs2us(file.Name) + WCHAR_PATH_SEPARATOR, L"");
     if (res != S_OK)
       ShowError(HResultToMessage(res));
   }
@@ -481,6 +483,8 @@ void CBrowseDialog::OnItemEnter()
 
 void CBrowseDialog::OnOK()
 {
+  // When we press "Enter" in listview, windows sends message to first Button.
+  // We check that message was from listview;
   if (GetFocus() == _list)
   {
     OnItemEnter();

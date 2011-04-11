@@ -631,7 +631,7 @@ enum
   // kpidBaseOfData32,
 };
 
-STATPROPSTG kArcProps[] =
+static const STATPROPSTG kArcProps[] =
 {
   { NULL, kpidCpu, VT_BSTR},
   { NULL, kpidBit64, VT_BOOL},
@@ -662,7 +662,7 @@ STATPROPSTG kArcProps[] =
   // { L"Base Of Data", kpidBaseOfData32, VT_UI8},
 };
 
-STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
@@ -1749,4 +1749,335 @@ static CArcInfo g_ArcInfo =
 
 REGISTER_ARC(Pe)
 
-}}
+}
+
+
+
+
+namespace NTe {
+
+// Terse Executable (TE) image
+
+/*
+struct CDataDir
+{
+  UInt32 Va;
+  UInt32 Size;
+};
+*/
+
+static const UInt32 kHeaderSize = 40;
+
+static bool FindValue(const CUInt32PCharPair *pairs, unsigned num, UInt32 value)
+{
+  for (unsigned i = 0; i < num; i++)
+    if (pairs[i].Value == value)
+      return true;
+  return false;
+}
+
+#define MY_FIND_VALUE(pairs, value) FindValue(pairs, sizeof(pairs) / sizeof(pairs[0]), value)
+ 
+struct CHeader
+{
+  UInt16 Machine;
+  Byte NumSections;
+  Byte SubSystem;
+  UInt16 StrippedSize;
+  /*
+  UInt32 AddressOfEntryPoint;
+  UInt32 BaseOfCode;
+  UInt64 ImageBase;
+  CDataDir DataDir[2]; // base relocation and debug directory
+  */
+
+  UInt32 ConvertPa(UInt32 pa) const { return pa - StrippedSize + kHeaderSize; }
+
+  bool Parse(const Byte *p)
+  {
+    if (p[0] != 'V' || p[1] != 'Z')
+      return false;
+    Machine = Get16(p + 2);
+    NumSections = p[4];
+    SubSystem = p[5];
+    StrippedSize = Get16(p + 6);
+    /*
+    AddressOfEntryPoint = Get32(p + 8);
+    BaseOfCode = Get32(p + 12);
+    ImageBase = Get64(p + 16);
+    for (int i = 0; i < 2; i++)
+    {
+      const Byte *p2 = p + 24 + i * 8;
+      DataDir[i].Va = Get32(p2);
+      DataDir[i].Size = Get32(p2 + 4);
+    }
+    */
+    return NumSections <= 64 &&
+      MY_FIND_VALUE(NPe::g_MachinePairs, Machine) &&
+      MY_FIND_VALUE(NPe::g_SubSystems, SubSystem);
+  }
+};
+
+struct CSection
+{
+  Byte Name[8];
+
+  // UInt32 VSize;
+  UInt32 Va;
+  UInt32 PSize;
+  UInt32 Pa;
+  UInt32 Flags;
+  // UInt16 NumRelocs;
+
+  void Parse(const Byte *p)
+  {
+    memcpy(Name, p, 8);
+    // VSize = Get32(p + 8);
+    Va = Get32(p + 12);
+    PSize = Get32(p + 16);
+    Pa = Get32(p + 20);
+    // NumRelocs = Get16(p + 32);
+    Flags = Get32(p + 36);
+  }
+
+  bool Check() const { return (PSize + Pa > Pa); }
+
+  void UpdateTotalSize(UInt32 &totalSize)
+  {
+    UInt32 t = Pa + PSize;
+    if (t > totalSize)
+      totalSize = t;
+  }
+};
+
+class CHandler:
+  public IInArchive,
+  public IInArchiveGetStream,
+  public CMyUnknownImp
+{
+  UInt32 _totalSize;
+  CMyComPtr<IInStream> _stream;
+  CObjectVector<CSection> _items;
+  CHeader _h;
+  UInt64 _fileSize;
+  
+  HRESULT Open2(IInStream *stream);
+public:
+  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
+  INTERFACE_IInArchive(;)
+  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
+};
+
+static const STATPROPSTG kProps[] =
+{
+  { NULL, kpidPath, VT_BSTR},
+  { NULL, kpidSize, VT_UI4},
+  { NULL, kpidPackSize, VT_UI4},
+  { NULL, kpidCharacts, VT_BSTR},
+  { NULL, kpidOffset, VT_UI4},
+  { NULL, kpidVa, VT_UI8}
+};
+
+enum
+{
+  kpidSubSystem
+  // , kpidImageBase
+};
+
+static const STATPROPSTG kArcProps[] =
+{
+  { NULL, kpidPhySize, VT_UI4},
+  // { NULL, kpidHeadersSize, VT_UI4},
+  { NULL, kpidCpu, VT_BSTR},
+  { L"Subsystem", kpidSubSystem, VT_BSTR},
+  // { L"Image Base", kpidImageBase, VT_UI8}
+};
+
+IMP_IInArchive_Props
+IMP_IInArchive_ArcProps_WITH_NAME
+
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+{
+  COM_TRY_BEGIN
+  NCOM::CPropVariant prop;
+  switch(propID)
+  {
+    case kpidPhySize: prop = _totalSize; break;
+    case kpidCpu: PAIR_TO_PROP(NPe::g_MachinePairs, _h.Machine, prop); break;
+    case kpidSubSystem: PAIR_TO_PROP(NPe::g_SubSystems, _h.SubSystem, prop); break;
+    /*
+    case kpidImageBase: prop = _h.ImageBase; break;
+    case kpidAddressOfEntryPoint: prop = _h.AddressOfEntryPoint; break;
+    case kpidBaseOfCode: prop = _h.BaseOfCode; break;
+    */
+  }
+  prop.Detach(value);
+  return S_OK;
+  COM_TRY_END
+}
+
+STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+{
+  COM_TRY_BEGIN
+  NCOM::CPropVariant prop;
+  {
+    const CSection &item = _items[index];
+    switch(propID)
+    {
+      case kpidPath: StringToProp(NPe::GetName(item.Name), prop); break;
+      case kpidSize:
+      case kpidPackSize: prop = (UInt64)item.PSize; break;
+      case kpidOffset: prop = item.Pa; break;
+      case kpidVa: prop = item.Va; break;
+      case kpidCharacts: FLAGS_TO_PROP(NPe::g_SectFlags, item.Flags, prop); break;
+    }
+  }
+  prop.Detach(value);
+  return S_OK;
+  COM_TRY_END
+}
+
+HRESULT CHandler::Open2(IInStream *stream)
+{
+  Byte h[kHeaderSize];
+  RINOK(ReadStream_FALSE(stream, h, kHeaderSize));
+  if (!_h.Parse(h))
+    return S_FALSE;
+
+  CByteBuffer buf;
+  UInt32 headerSize = NPe::kSectionSize * _h.NumSections;
+  buf.SetCapacity(headerSize);
+  RINOK(ReadStream_FALSE(stream, buf, headerSize));
+
+  _totalSize = kHeaderSize + headerSize;
+  
+  for (UInt32 i = 0; i < headerSize; i += NPe::kSectionSize)
+  {
+    CSection sect;
+    sect.Parse(buf + i);
+    sect.Pa = _h.ConvertPa(sect.Pa);
+    _items.Add(sect);
+    sect.UpdateTotalSize(_totalSize);
+    if (!sect.Check())
+      return S_FALSE;
+  }
+
+  return stream->Seek(0, STREAM_SEEK_END, &_fileSize);
+}
+
+STDMETHODIMP CHandler::Open(IInStream *inStream,
+    const UInt64 * /* maxCheckStartPosition */,
+    IArchiveOpenCallback * /* openArchiveCallback */)
+{
+  COM_TRY_BEGIN
+  Close();
+  try
+  {
+    if (Open2(inStream) != S_OK)
+      return S_FALSE;
+    _stream = inStream;
+  }
+  catch(...) { return S_FALSE; }
+  return S_OK;
+  COM_TRY_END
+}
+
+STDMETHODIMP CHandler::Close()
+{
+  _stream.Release();
+  _items.Clear();
+  _totalSize = 0;
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+{
+  *numItems = _items.Size();
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback)
+{
+  COM_TRY_BEGIN
+  bool allFilesMode = (numItems == (UInt32)-1);
+  if (allFilesMode)
+    numItems = _items.Size();
+  if (numItems == 0)
+    return S_OK;
+  UInt64 totalSize = 0;
+  UInt32 i;
+  for (i = 0; i < numItems; i++)
+    totalSize += _items[allFilesMode ? i : indices[i]].PSize;
+  extractCallback->SetTotal(totalSize);
+
+  UInt64 currentTotalSize = 0;
+  
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, false);
+
+  CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
+  CMyComPtr<ISequentialInStream> inStream(streamSpec);
+  streamSpec->SetStream(_stream);
+
+  for (i = 0; i < numItems; i++)
+  {
+    lps->InSize = lps->OutSize = currentTotalSize;
+    RINOK(lps->SetCur());
+    CMyComPtr<ISequentialOutStream> realOutStream;
+    Int32 askMode = testMode ?
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
+    UInt32 index = allFilesMode ? i : indices[i];
+    const CSection &item = _items[index];
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    currentTotalSize += item.PSize;
+    
+    if (!testMode && !realOutStream)
+      continue;
+    RINOK(extractCallback->PrepareOperation(askMode));
+    int res = NExtract::NOperationResult::kDataError;
+    if (item.Pa <= _fileSize)
+    {
+      if (testMode)
+      {
+        if (item.Pa + item.PSize <= _fileSize)
+          res = NExtract::NOperationResult::kOK;
+      }
+      else
+      {
+        RINOK(_stream->Seek(item.Pa, STREAM_SEEK_SET, NULL));
+        streamSpec->Init(item.PSize);
+        RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+        if (copyCoderSpec->TotalSize == item.PSize)
+          res = NExtract::NOperationResult::kOK;
+      }
+    }
+    realOutStream.Release();
+    RINOK(extractCallback->SetOperationResult(res));
+  }
+  return S_OK;
+  COM_TRY_END
+}
+
+STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+{
+  COM_TRY_BEGIN
+  const CSection &item = _items[index];
+  return CreateLimitedInStream(_stream, item.Pa, item.PSize, stream);
+  COM_TRY_END
+}
+
+static IInArchive *CreateArc() { return new CHandler; }
+
+static CArcInfo g_ArcInfo =
+  { L"TE", L"te", 0, 0xCF, { 'V', 'Z' }, 2, false, CreateArc, 0 };
+
+REGISTER_ARC(TE)
+
+}
+}

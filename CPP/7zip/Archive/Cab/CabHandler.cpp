@@ -4,9 +4,7 @@
 
 #include "../../../../C/Alloc.h"
 
-#include "Common/Buffer.h"
 #include "Common/ComTry.h"
-#include "Common/Defs.h"
 #include "Common/IntToString.h"
 #include "Common/StringConvert.h"
 #include "Common/UTFConvert.h"
@@ -654,7 +652,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   bool allFilesMode = (numItems == (UInt32)-1);
   if (allFilesMode)
     numItems = m_Database.Items.Size();
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
   bool testMode = (testModeSpec != 0);
   UInt64 totalUnPacked = 0;
@@ -780,12 +778,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         curUnpack, extractCallback, testMode);
 
     cabBlockInStreamSpec->MsZip = false;
+    HRESULT res = S_OK;
     switch(folder.GetCompressionMethod())
     {
       case NHeader::NCompressionMethodMajor::kNone:
         break;
       case NHeader::NCompressionMethodMajor::kMSZip:
-        if(deflateDecoderSpec == NULL)
+        if (!deflateDecoder)
         {
           deflateDecoderSpec = new NCompress::NDeflate::NDecoder::CCOMCoder;
           deflateDecoder = deflateDecoderSpec;
@@ -793,33 +792,35 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         cabBlockInStreamSpec->MsZip = true;
         break;
       case NHeader::NCompressionMethodMajor::kLZX:
-        if(lzxDecoderSpec == NULL)
+        if (!lzxDecoder)
         {
           lzxDecoderSpec = new NCompress::NLzx::CDecoder;
           lzxDecoder = lzxDecoderSpec;
         }
-        RINOK(lzxDecoderSpec->SetParams(folder.CompressionTypeMinor));
+        res = lzxDecoderSpec->SetParams(folder.CompressionTypeMinor);
         break;
       case NHeader::NCompressionMethodMajor::kQuantum:
-        if(quantumDecoderSpec == NULL)
+        if (!quantumDecoder)
         {
           quantumDecoderSpec = new NCompress::NQuantum::CDecoder;
           quantumDecoder = quantumDecoderSpec;
         }
-        quantumDecoderSpec->SetParams(folder.CompressionTypeMinor);
+        res = quantumDecoderSpec->SetParams(folder.CompressionTypeMinor);
         break;
       default:
-      {
-        RINOK(cabFolderOutStream->Unsupported());
-        totalUnPacked += curUnpack;
-        continue;
-      }
+        res = E_INVALIDARG;
+        break;
     }
 
+    if (res == E_INVALIDARG)
+    {
+      RINOK(cabFolderOutStream->Unsupported());
+      totalUnPacked += curUnpack;
+      continue;
+    }
+    RINOK(res);
+
     cabBlockInStreamSpec->InitForNewFolder();
-
-    HRESULT res = S_OK;
-
     {
       int volIndex = mvItem.VolumeIndex;
       int locFolderIndex = item.GetFolderIndex(db.Folders.Size());

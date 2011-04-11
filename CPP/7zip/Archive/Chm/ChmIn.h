@@ -39,7 +39,7 @@ struct CItem
   {
     if (Name.Length() == 0)
       return false;
-    return (Name[Name.Length() - 1] == '/');
+    return (Name.Back() == '/');
   }
 };
 

@@ -3,12 +3,11 @@
 #include "StdAfx.h"
 
 #include "Windows/DLL.h"
-#include "Windows/PropVariant.h"
 #include "Windows/FileFind.h"
+#include "Windows/PropVariant.h"
 
-#include "ProgramLocation.h"
-#include "RegistryPlugins.h"
 #include "IFolder.h"
+#include "RegistryPlugins.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -91,23 +90,20 @@ static bool ReadPluginInfo(CPluginInfo &pluginInfo, bool needCheckDll)
   return true;
 }
 
-UString GetProgramFolderPrefix();
-
 void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
 {
   plugins.Clear();
 
-  UString baseFolderPrefix;
-  GetProgramFolderPath(baseFolderPrefix);
+  FString baseFolderPrefix = NDLL::GetModuleDirPrefix();
   {
     CPluginInfo pluginInfo;
-    pluginInfo.FilePath = baseFolderPrefix + L"7-zip.dll";
+    pluginInfo.FilePath = baseFolderPrefix + FTEXT("7-zip.dll");
     if (::ReadPluginInfo(pluginInfo, false))
       plugins.Add(pluginInfo);
   }
-  UString folderPath = baseFolderPrefix + L"Plugins" WSTRING_PATH_SEPARATOR;
-  NFind::CEnumeratorW enumerator(folderPath + L"*");
-  NFind::CFileInfoW fileInfo;
+  FString folderPath = baseFolderPrefix + FTEXT("Plugins") FSTRING_PATH_SEPARATOR;
+  NFind::CEnumerator enumerator(folderPath + FCHAR_ANY_MASK);
+  NFind::CFileInfo fileInfo;
   while (enumerator.Next(fileInfo))
   {
     if (fileInfo.IsDir())

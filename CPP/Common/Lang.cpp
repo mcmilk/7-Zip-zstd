@@ -48,7 +48,7 @@ static int CompareLangItems(void *const *elem1, void *const *elem2, void *)
   return MyCompare(langPair1.Value, langPair2.Value);
 }
 
-bool CLang::Open(LPCWSTR fileName)
+bool CLang::Open(CFSTR fileName)
 {
   _langPairs.Clear();
   NWindows::NFile::NIO::CInFile file;

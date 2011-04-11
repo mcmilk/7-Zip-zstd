@@ -49,6 +49,8 @@ enum Enum
 {
   kHelp1 = 0,
   kHelp2,
+  kMethod,
+  kLevel,
   kAlgo,
   kDict,
   kFb,
@@ -69,6 +71,8 @@ static const CSwitchForm kSwitchForms[] =
 {
   { L"?",  NSwitchType::kSimple, false },
   { L"H",  NSwitchType::kSimple, false },
+  { L"MM", NSwitchType::kUnLimitedPostString, false, 1 },
+  { L"X", NSwitchType::kUnLimitedPostString, false, 1 },
   { L"A", NSwitchType::kUnLimitedPostString, false, 1 },
   { L"D", NSwitchType::kUnLimitedPostString, false, 1 },
   { L"FB", NSwitchType::kUnLimitedPostString, false, 1 },
@@ -186,7 +190,7 @@ int main2(int numArgs, const char *args[])
     IncorrectCommand();
   }
 
-  if(parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs)
+  if (parser[NKey::kHelp1].ThereIs || parser[NKey::kHelp2].ThereIs)
   {
     PrintHelp();
     return 0;
@@ -198,21 +202,38 @@ int main2(int numArgs, const char *args[])
     IncorrectCommand();
   const UString &command = nonSwitchStrings[paramIndex++];
 
+  CObjectVector<CProperty> props;
   bool dictDefined = false;
-  UInt32 dict = (UInt32)-1;
-  if(parser[NKey::kDict].ThereIs)
+  UInt32 dict = (UInt32)(Int32)-1;
+  if (parser[NKey::kDict].ThereIs)
   {
     UInt32 dicLog;
-    if (!GetNumber(parser[NKey::kDict].PostStrings[0], dicLog))
+    const UString &s = parser[NKey::kDict].PostStrings[0];
+    if (!GetNumber(s, dicLog))
       IncorrectCommand();
     dict = 1 << dicLog;
     dictDefined = true;
+    CProperty prop;
+    prop.Name = L"d";
+    prop.Value = s;
+    props.Add(prop);
+  }
+  if (parser[NKey::kLevel].ThereIs)
+  {
+    UInt32 level = 5;
+    const UString &s = parser[NKey::kLevel].PostStrings[0];
+    if (!GetNumber(s, level))
+      IncorrectCommand();
+    CProperty prop;
+    prop.Name = L"x";
+    prop.Value = s;
+    props.Add(prop);
   }
   UString mf = L"BT4";
   if (parser[NKey::kMatchFinder].ThereIs)
     mf = parser[NKey::kMatchFinder].PostStrings[0];
 
-  UInt32 numThreads = (UInt32)-1;
+  UInt32 numThreads = (UInt32)(Int32)-1;
 
   #ifndef _7ZIP_ST
   if (parser[NKey::kMultiThread].ThereIs)
@@ -224,8 +245,23 @@ int main2(int numArgs, const char *args[])
     else
       if (!GetNumber(s, numThreads))
         IncorrectCommand();
+    CProperty prop;
+    prop.Name = L"mt";
+    prop.Value = s;
+    props.Add(prop);
   }
   #endif
+
+  if (parser[NKey::kMethod].ThereIs)
+  {
+    UString s = parser[NKey::kMethod].PostStrings[0];
+    if (s.IsEmpty() || s[0] != '=')
+      IncorrectCommand();
+    CProperty prop;
+    prop.Name = L"m";
+    prop.Value = s.Mid(1);
+    props.Add(prop);
+  }
 
   if (command.CompareNoCase(L"b") == 0)
   {
@@ -236,10 +272,19 @@ int main2(int numArgs, const char *args[])
         if (!GetNumber(nonSwitchStrings[paramIndex++], numIterations))
           numIterations = kNumDefaultItereations;
     }
-    return LzmaBenchCon(stderr, numIterations, numThreads, dict);
+    HRESULT res = BenchCon(props, numIterations, stderr);
+    if (res != S_OK)
+    {
+      if (res != E_ABORT)
+      {
+        PrintMessage("Benchmark Error");
+        return 1;
+      }
+    }
+    return 0;
   }
 
-  if (numThreads == (UInt32)-1)
+  if (numThreads == (UInt32)(Int32)-1)
     numThreads = 1;
 
   bool encodeMode = false;
@@ -267,7 +312,7 @@ int main2(int numArgs, const char *args[])
     const UString &inputName = nonSwitchStrings[paramIndex++];
     inStreamSpec = new CInFileStream;
     inStream = inStreamSpec;
-    if (!inStreamSpec->Open(GetSystemString(inputName)))
+    if (!inStreamSpec->Open(us2fs(inputName)))
     {
       fprintf(stderr, "\nError: can not open input file %s\n",
           (const char *)GetOemString(inputName));
@@ -289,7 +334,7 @@ int main2(int numArgs, const char *args[])
     const UString &outputName = nonSwitchStrings[paramIndex++];
     outStreamSpec = new COutFileStream;
     outStream = outStreamSpec;
-    if (!outStreamSpec->Create(GetSystemString(outputName), true))
+    if (!outStreamSpec->Create(us2fs(outputName), true))
     {
       fprintf(stderr, "\nError: can not open output file %s\n",
         (const char *)GetOemString(outputName));
@@ -398,7 +443,7 @@ int main2(int numArgs, const char *args[])
       if (!GetNumber(parser[NKey::kMc].PostStrings[0], mc))
         IncorrectCommand();
     
-    PROPID propIDs[] =
+    const PROPID propIDs[] =
     {
       NCoderPropID::kDictionarySize,
       NCoderPropID::kPosStateBits,
@@ -512,7 +557,7 @@ int main2(int numArgs, const char *args[])
 int MY_CDECL main(int numArgs, const char *args[])
 {
   try { return main2(numArgs, args); }
-  catch(const char *s)
+  catch (const char *s)
   {
     fprintf(stderr, "\nError: %s\n", s);
     return 1;

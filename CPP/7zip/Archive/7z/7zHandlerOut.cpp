@@ -2,12 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "../../../Windows/PropVariant.h"
-
 #include "../../../Common/ComTry.h"
 #include "../../../Common/StringToInt.h"
-
-#include "../../ICoder.h"
 
 #include "../Common/ItemNameUtils.h"
 #include "../Common/ParseProperties.h"
@@ -21,24 +17,19 @@ using namespace NWindows;
 namespace NArchive {
 namespace N7z {
 
-static const wchar_t *kLZMAMethodName = L"LZMA";
-static const wchar_t *kCopyMethod = L"Copy";
-static const wchar_t *kDefaultMethodName = kLZMAMethodName;
+static const wchar_t *k_LZMA_Name = L"LZMA";
+static const wchar_t *kDefaultMethodName = k_LZMA_Name;
+static const wchar_t *k_Copy_Name = L"Copy";
 
-static const UInt32 kLzmaAlgorithmX5 = 1;
-static const wchar_t *kLzmaMatchFinderForHeaders = L"BT2";
-static const UInt32 kDictionaryForHeaders =
+static const wchar_t *k_MatchFinder_ForHeaders = L"BT2";
+static const UInt32 k_NumFastBytes_ForHeaders = 273;
+static const UInt32 k_Level_ForHeaders = 5;
+static const UInt32 k_Dictionary_ForHeaders =
   #ifdef UNDER_CE
-  1 << 18
+  1 << 18;
   #else
-  1 << 20
+  1 << 20;
   #endif
-;
-static const UInt32 kNumFastBytesForHeaders = 273;
-static const UInt32 kAlgorithmForHeaders = kLzmaAlgorithmX5;
-
-static inline bool IsCopyMethod(const UString &methodName)
-  { return (methodName.CompareNoCase(kCopyMethod) == 0); }
 
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 {
@@ -46,123 +37,105 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
   return S_OK;
 }
 
-HRESULT CHandler::SetCompressionMethod(
-    CCompressionMethodMode &methodMode,
-    CCompressionMethodMode &headerMethod)
+HRESULT CHandler::PropsMethod_To_FullMethod(CMethodFull &dest, const COneMethodInfo &m)
 {
-  HRESULT res = SetCompressionMethod(methodMode, _methods
-  #ifndef _7ZIP_ST
-  , _numThreads
-  #endif
-  );
-  RINOK(res);
-  methodMode.Binds = _binds;
-
-  if (_compressHeaders)
-  {
-    // headerMethod.Methods.Add(methodMode.Methods.Back());
-
-    CObjectVector<COneMethodInfo> headerMethodInfoVector;
-    COneMethodInfo oneMethodInfo;
-    oneMethodInfo.MethodName = kLZMAMethodName;
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kMatchFinder;
-      prop.Value = kLzmaMatchFinderForHeaders;
-      oneMethodInfo.Props.Add(prop);
-    }
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kAlgorithm;
-      prop.Value = kAlgorithmForHeaders;
-      oneMethodInfo.Props.Add(prop);
-    }
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kNumFastBytes;
-      prop.Value = (UInt32)kNumFastBytesForHeaders;
-      oneMethodInfo.Props.Add(prop);
-    }
-    {
-      CProp prop;
-      prop.Id = NCoderPropID::kDictionarySize;
-      prop.Value = (UInt32)kDictionaryForHeaders;
-      oneMethodInfo.Props.Add(prop);
-    }
-    headerMethodInfoVector.Add(oneMethodInfo);
-    HRESULT res = SetCompressionMethod(headerMethod, headerMethodInfoVector
-      #ifndef _7ZIP_ST
-      , 1
-      #endif
-    );
-    RINOK(res);
-  }
+  if (!FindMethod(
+      EXTERNAL_CODECS_VARS
+      m.MethodName, dest.Id, dest.NumInStreams, dest.NumOutStreams))
+    return E_INVALIDARG;
+  (CProps &)dest = (CProps &)m;
   return S_OK;
 }
 
-HRESULT CHandler::SetCompressionMethod(
+HRESULT CHandler::SetHeaderMethod(CCompressionMethodMode &headerMethod)
+{
+  if (!_compressHeaders)
+    return S_OK;
+  COneMethodInfo m;
+  m.MethodName = k_LZMA_Name;
+  m.AddPropString(NCoderPropID::kMatchFinder, k_MatchFinder_ForHeaders);
+  m.AddProp32(NCoderPropID::kLevel, k_Level_ForHeaders);
+  m.AddProp32(NCoderPropID::kNumFastBytes, k_NumFastBytes_ForHeaders);
+  m.AddProp32(NCoderPropID::kDictionarySize, k_Dictionary_ForHeaders);
+  m.AddNumThreadsProp(1);
+
+  CMethodFull methodFull;
+  RINOK(PropsMethod_To_FullMethod(methodFull, m));
+  headerMethod.Methods.Add(methodFull);
+  return S_OK;
+}
+
+void CHandler::AddDefaultMethod()
+{
+  for (int i = 0; i < _methods.Size(); i++)
+  {
+    UString &methodName = _methods[0].MethodName;
+    if (methodName.IsEmpty())
+      methodName = kDefaultMethodName;
+  }
+  if (_methods.IsEmpty())
+  {
+    COneMethodInfo m;
+    m.MethodName = (GetLevel() == 0 ? k_Copy_Name : kDefaultMethodName);
+    _methods.Add(m);
+  }
+}
+
+HRESULT CHandler::SetMainMethod(
     CCompressionMethodMode &methodMode,
-    CObjectVector<COneMethodInfo> &methodsInfo
+    CObjectVector<COneMethodInfo> &methods
     #ifndef _7ZIP_ST
     , UInt32 numThreads
     #endif
     )
 {
-  UInt32 level = _level;
-  
-  if (methodsInfo.IsEmpty())
-  {
-    COneMethodInfo oneMethodInfo;
-    oneMethodInfo.MethodName = ((level == 0) ? kCopyMethod : kDefaultMethodName);
-    methodsInfo.Add(oneMethodInfo);
-  }
+  AddDefaultMethod();
+
+  const UInt64 kSolidBytes_Min = (1 << 24);
+  const UInt64 kSolidBytes_Max = ((UInt64)1 << 32) - 1;
 
   bool needSolid = false;
-  for(int i = 0; i < methodsInfo.Size(); i++)
+  for (int i = 0; i < methods.Size(); i++)
   {
-    COneMethodInfo &oneMethodInfo = methodsInfo[i];
-    SetCompressionMethod2(oneMethodInfo
+    COneMethodInfo &oneMethodInfo = methods[i];
+    SetGlobalLevelAndThreads(oneMethodInfo
       #ifndef _7ZIP_ST
       , numThreads
       #endif
       );
 
-    if (!IsCopyMethod(oneMethodInfo.MethodName))
-      needSolid = true;
-
     CMethodFull methodFull;
-
-    if (!FindMethod(
-        EXTERNAL_CODECS_VARS
-        oneMethodInfo.MethodName, methodFull.Id, methodFull.NumInStreams, methodFull.NumOutStreams))
-      return E_INVALIDARG;
-    methodFull.Props = oneMethodInfo.Props;
+    RINOK(PropsMethod_To_FullMethod(methodFull, oneMethodInfo));
     methodMode.Methods.Add(methodFull);
 
-    if (!_numSolidBytesDefined)
+    if (methodFull.Id != k_Copy)
+      needSolid = true;
+
+    if (_numSolidBytesDefined)
+      continue;
+
+    UInt32 dicSize;
+    switch (methodFull.Id)
     {
-      for (int j = 0; j < methodFull.Props.Size(); j++)
-      {
-        const CProp &prop = methodFull.Props[j];
-        if ((prop.Id == NCoderPropID::kDictionarySize ||
-             prop.Id == NCoderPropID::kUsedMemorySize) && prop.Value.vt == VT_UI4)
-        {
-          _numSolidBytes = ((UInt64)prop.Value.ulVal) << 7;
-          const UInt64 kMinSize = (1 << 24);
-          if (_numSolidBytes < kMinSize)
-            _numSolidBytes = kMinSize;
-          _numSolidBytesDefined = true;
-          break;
-        }
-      }
+      case k_LZMA:
+      case k_LZMA2: dicSize = oneMethodInfo.Get_Lzma_DicSize(); break;
+      case k_PPMD: dicSize = oneMethodInfo.Get_Ppmd_MemSize(); break;
+      case k_Deflate: dicSize = (UInt32)1 << 15; break;
+      case k_BZip2: dicSize = oneMethodInfo.Get_BZip2_BlockSize(); break;
+      default: continue;
     }
+    _numSolidBytes = (UInt64)dicSize << 7;
+    if (_numSolidBytes < kSolidBytes_Min) _numSolidBytes = kSolidBytes_Min;
+    if (_numSolidBytes > kSolidBytes_Max) _numSolidBytes = kSolidBytes_Max;
+    _numSolidBytesDefined = true;
   }
 
-  if (!needSolid && !_numSolidBytesDefined)
-  {
-    _numSolidBytesDefined = true;
-    _numSolidBytes  = 0;
-  }
+  if (!_numSolidBytesDefined)
+    if (needSolid)
+      _numSolidBytes = kSolidBytes_Max;
+    else
+      _numSolidBytes = 0;
+  _numSolidBytesDefined = true;
   return S_OK;
 }
 
@@ -326,7 +299,16 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   }
 
   CCompressionMethodMode methodMode, headerMethod;
-  RINOK(SetCompressionMethod(methodMode, headerMethod));
+
+  HRESULT res = SetMainMethod(methodMode, _methods
+    #ifndef _7ZIP_ST
+    , _numThreads
+    #endif
+    );
+  RINOK(res);
+  methodMode.Binds = _binds;
+
+  RINOK(SetHeaderMethod(headerMethod));
   #ifndef _7ZIP_ST
   methodMode.NumThreads = _numThreads;
   headerMethod.NumThreads = 1;
@@ -373,8 +355,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   CUpdateOptions options;
   options.Method = &methodMode;
   options.HeaderMethod = (_compressHeaders || encryptHeaders) ? &headerMethod : 0;
-  options.UseFilters = _level != 0 && _autoFilter;
-  options.MaxFilter = _level >= 8;
+  int level = GetLevel();
+  options.UseFilters = level != 0 && _autoFilter;
+  options.MaxFilter = level >= 8;
 
   options.HeaderOptions.CompressMainHeader = compressMainHeader;
   options.HeaderOptions.WriteCTime = WriteCTime;
@@ -393,7 +376,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   CMyComPtr<ICryptoGetTextPassword> getPassword;
   updateCallback->QueryInterface(IID_ICryptoGetTextPassword, (void **)&getPassword);
   
-  HRESULT res = Update(
+  res = Update(
       EXTERNAL_CODECS_VARS
       #ifdef _7Z_VOL
       volume ? volume->Stream: 0,
@@ -437,25 +420,138 @@ static HRESULT GetBindInfoPart(UString &srcString, UInt32 &coder, UInt32 &stream
   return S_OK;
 }
 
-static HRESULT GetBindInfo(UString &srcString, CBind &bind)
+void COutHandler::InitProps()
 {
-  RINOK(GetBindInfoPart(srcString, bind.OutCoder, bind.OutStream));
-  if (srcString[0] != ':')
-    return E_INVALIDARG;
-  srcString.Delete(0);
-  RINOK(GetBindInfoPart(srcString, bind.InCoder, bind.InStream));
-  if (!srcString.IsEmpty())
-    return E_INVALIDARG;
+  CMultiMethodProps::Init();
+
+  _removeSfxBlock = false;
+  _compressHeaders = true;
+  _encryptHeadersSpecified = false;
+  _encryptHeaders = false;
+  
+  WriteCTime = false;
+  WriteATime = false;
+  WriteMTime = true;
+  
+  _volumeMode = false;
+  InitSolid();
+}
+
+HRESULT COutHandler::SetSolidFromString(const UString &s)
+{
+  UString s2 = s;
+  s2.MakeUpper();
+  for (int i = 0; i < s2.Length();)
+  {
+    const wchar_t *start = ((const wchar_t *)s2) + i;
+    const wchar_t *end;
+    UInt64 v = ConvertStringToUInt64(start, &end);
+    if (start == end)
+    {
+      if (s2[i++] != 'E')
+        return E_INVALIDARG;
+      _solidExtension = true;
+      continue;
+    }
+    i += (int)(end - start);
+    if (i == s2.Length())
+      return E_INVALIDARG;
+    wchar_t c = s2[i++];
+    if (c == 'F')
+    {
+      if (v < 1)
+        v = 1;
+      _numSolidFiles = v;
+    }
+    else
+    {
+      unsigned numBits;
+      switch (c)
+      {
+        case 'B': numBits =  0; break;
+        case 'K': numBits = 10; break;
+        case 'M': numBits = 20; break;
+        case 'G': numBits = 30; break;
+        default: return E_INVALIDARG;
+      }
+      _numSolidBytes = (v << numBits);
+      _numSolidBytesDefined = true;
+    }
+  }
   return S_OK;
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties)
+HRESULT COutHandler::SetSolidFromPROPVARIANT(const PROPVARIANT &value)
+{
+  bool isSolid;
+  switch (value.vt)
+  {
+    case VT_EMPTY: isSolid = true; break;
+    case VT_BOOL: isSolid = (value.boolVal != VARIANT_FALSE); break;
+    case VT_BSTR:
+      if (StringToBool(value.bstrVal, isSolid))
+        break;
+      return SetSolidFromString(value.bstrVal);
+    default: return E_INVALIDARG;
+  }
+  if (isSolid)
+    InitSolid();
+  else
+    _numSolidFiles = 1;
+  return S_OK;
+}
+
+HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &value)
+{
+  UString name = nameSpec;
+  name.MakeUpper();
+  if (name.IsEmpty())
+    return E_INVALIDARG;
+  
+  if (name[0] == L'S')
+  {
+    name.Delete(0);
+    if (name.IsEmpty())
+      return SetSolidFromPROPVARIANT(value);
+    if (value.vt != VT_EMPTY)
+      return E_INVALIDARG;
+    return SetSolidFromString(name);
+  }
+  
+  UInt32 number;
+  int index = ParseStringToUInt32(name, number);
+  UString realName = name.Mid(index);
+  if (index == 0)
+  {
+    if (name.CompareNoCase(L"RSFX") == 0) return PROPVARIANT_to_bool(value, _removeSfxBlock);
+    if (name.CompareNoCase(L"HC") == 0) return PROPVARIANT_to_bool(value, _compressHeaders);
+    if (name.CompareNoCase(L"HCF") == 0)
+    {
+      bool compressHeadersFull = true;
+      RINOK(PROPVARIANT_to_bool(value, compressHeadersFull));
+      return compressHeadersFull ? S_OK: E_INVALIDARG;
+    }
+    if (name.CompareNoCase(L"HE") == 0)
+    {
+      RINOK(PROPVARIANT_to_bool(value, _encryptHeaders));
+      _encryptHeadersSpecified = true;
+      return S_OK;
+    }
+    if (name.CompareNoCase(L"TC") == 0) return PROPVARIANT_to_bool(value, WriteCTime);
+    if (name.CompareNoCase(L"TA") == 0) return PROPVARIANT_to_bool(value, WriteATime);
+    if (name.CompareNoCase(L"TM") == 0) return PROPVARIANT_to_bool(value, WriteMTime);
+    if (name.CompareNoCase(L"V") == 0) return PROPVARIANT_to_bool(value, _volumeMode);
+  }
+  return CMultiMethodProps::SetProperty(name, value);
+}
+
+STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, Int32 numProps)
 {
   COM_TRY_BEGIN
   _binds.Clear();
-  BeforeSetProperty();
+  InitProps();
 
-  for (int i = 0; i < numProperties; i++)
+  for (int i = 0; i < numProps; i++)
   {
     UString name = names[i];
     name.MakeUpper();
@@ -466,14 +562,63 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
 
     if (name[0] == 'B')
     {
+      if (value.vt != VT_EMPTY)
+        return E_INVALIDARG;
       name.Delete(0);
       CBind bind;
-      RINOK(GetBindInfo(name, bind));
+      RINOK(GetBindInfoPart(name, bind.OutCoder, bind.OutStream));
+      if (name[0] != ':')
+        return E_INVALIDARG;
+      name.Delete(0);
+      RINOK(GetBindInfoPart(name, bind.InCoder, bind.InStream));
+      if (!name.IsEmpty())
+        return E_INVALIDARG;
       _binds.Add(bind);
       continue;
     }
 
     RINOK(SetProperty(name, value));
+  }
+
+  int numEmptyMethods = GetNumEmptyMethods();
+  if (numEmptyMethods > 0)
+  {
+    int k;
+    for (k = 0; k < _binds.Size(); k++)
+    {
+      const CBind &bind = _binds[k];
+      if (bind.InCoder < (UInt32)numEmptyMethods ||
+          bind.OutCoder < (UInt32)numEmptyMethods)
+        return E_INVALIDARG;
+    }
+    for (k = 0; k < _binds.Size(); k++)
+    {
+      CBind &bind = _binds[k];
+      bind.InCoder -= (UInt32)numEmptyMethods;
+      bind.OutCoder -= (UInt32)numEmptyMethods;
+    }
+    _methods.Delete(0, numEmptyMethods);
+  }
+  
+  AddDefaultMethod();
+
+  if (!_filterMethod.MethodName.IsEmpty())
+  {
+    for (int k = 0; k < _binds.Size(); k++)
+    {
+      CBind &bind = _binds[k];
+      bind.InCoder++;
+      bind.OutCoder++;
+    }
+    _methods.Insert(0, _filterMethod);
+  }
+
+  for (int k = 0; k < _binds.Size(); k++)
+  {
+    const CBind &bind = _binds[k];
+    if (bind.InCoder >= (UInt32)_methods.Size() ||
+        bind.OutCoder >= (UInt32)_methods.Size())
+      return E_INVALIDARG;
   }
 
   return S_OK;

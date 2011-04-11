@@ -42,7 +42,7 @@ bool CFoldersPage::OnInit()
   m_WorkPath.Init(*this, IDC_FOLDERS_WORK_EDIT_PATH);
   m_ButtonSetWorkPath.Init(*this, IDC_FOLDERS_WORK_BUTTON_PATH);
 
-  m_WorkPath.SetText(m_WorkDirInfo.Path);
+  m_WorkPath.SetText(fs2us(m_WorkDirInfo.Path));
 
   MyEnableControls();
   
@@ -66,7 +66,9 @@ void CFoldersPage::MyEnableControls()
 
 void CFoldersPage::GetWorkDir(NWorkDir::CInfo &workDirInfo)
 {
-  m_WorkPath.GetText(workDirInfo.Path);
+  UString s;
+  m_WorkPath.GetText(s);
+  workDirInfo.Path = us2fs(s);
   workDirInfo.ForRemovableOnly = IsButtonCheckedBool(IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE);
   workDirInfo.Mode = NWorkDir::NMode::EEnum(GetWorkMode());
 }
@@ -143,7 +145,7 @@ LONG CFoldersPage::OnApply()
   return PSNRET_NOERROR;
 }
 
-static LPCWSTR kFoldersTopic = L"fm/plugins/7-zip/options.htm#folders";
+static LPCWSTR kFoldersTopic = L"fm/options.htm#folders";
 
 void CFoldersPage::OnNotifyHelp()
 {

@@ -73,6 +73,8 @@ static int ParseMatchFinder(const wchar_t *s, int *btMode, int *numHashBytes)
   return 1;
 }
 
+#define SET_PROP_32(_id_, _dest_) case NCoderPropID::_id_: ep._dest_ = v; break;
+
 HRESULT SetLzmaProp(PROPID propID, const PROPVARIANT &prop, CLzmaEncProps &ep)
 {
   if (propID == NCoderPropID::kMatchFinder)
@@ -81,18 +83,29 @@ HRESULT SetLzmaProp(PROPID propID, const PROPVARIANT &prop, CLzmaEncProps &ep)
       return E_INVALIDARG;
     return ParseMatchFinder(prop.bstrVal, &ep.btMode, &ep.numHashBytes) ? S_OK : E_INVALIDARG;
   }
+  if (propID > NCoderPropID::kReduceSize)
+    return S_OK;
+  if (propID == NCoderPropID::kReduceSize)
+  {
+    if (prop.vt == VT_UI8 && prop.uhVal.QuadPart < (UInt32)(Int32)-1)
+      ep.reduceSize = (UInt32)prop.uhVal.QuadPart;
+    return S_OK;
+  }
   if (prop.vt != VT_UI4)
     return E_INVALIDARG;
   UInt32 v = prop.ulVal;
   switch (propID)
   {
-    case NCoderPropID::kNumFastBytes: ep.fb = v; break;
-    case NCoderPropID::kMatchFinderCycles: ep.mc = v; break;
-    case NCoderPropID::kAlgorithm: ep.algo = v; break;
-    case NCoderPropID::kDictionarySize: ep.dictSize = v; break;
-    case NCoderPropID::kPosStateBits: ep.pb = v; break;
-    case NCoderPropID::kLitPosBits: ep.lp = v; break;
-    case NCoderPropID::kLitContextBits: ep.lc = v; break;
+    case NCoderPropID::kDefaultProp: if (v > 31) return E_INVALIDARG; ep.dictSize = (UInt32)1 << (unsigned)v; break;
+    SET_PROP_32(kLevel, level)
+    SET_PROP_32(kNumFastBytes, fb)
+    SET_PROP_32(kMatchFinderCycles, mc)
+    SET_PROP_32(kAlgorithm, algo)
+    SET_PROP_32(kDictionarySize, dictSize)
+    SET_PROP_32(kPosStateBits, pb)
+    SET_PROP_32(kLitPosBits, lp)
+    SET_PROP_32(kLitContextBits, lc)
+    SET_PROP_32(kNumThreads, numThreads)
     default: return E_INVALIDARG;
   }
   return S_OK;
@@ -112,8 +125,6 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
     {
       case NCoderPropID::kEndMarker:
         if (prop.vt != VT_BOOL) return E_INVALIDARG; props.writeEndMark = (prop.boolVal == VARIANT_TRUE); break;
-      case NCoderPropID::kNumThreads:
-        if (prop.vt != VT_UI4) return E_INVALIDARG; props.numThreads = prop.ulVal; break;
       default:
         RINOK(SetLzmaProp(propID, prop, props));
     }

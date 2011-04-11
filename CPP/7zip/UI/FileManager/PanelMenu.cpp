@@ -564,6 +564,7 @@ bool CPanel::InvokePluginCommand(int id,
   CMINVOKECOMMANDINFOEX
   #endif
     commandInfo;
+  memset(&commandInfo, 0, sizeof(commandInfo));
   commandInfo.cbSize = sizeof(commandInfo);
   commandInfo.fMask = 0
   #ifndef UNDER_CE
@@ -576,8 +577,8 @@ bool CPanel::InvokePluginCommand(int id,
   CSysString currentFolderSys = GetSystemString(_currentFolderPrefix);
   commandInfo.lpDirectory = (LPCSTR)(LPCTSTR)(currentFolderSys);
   commandInfo.nShow = SW_SHOW;
-  commandInfo.lpParameters = NULL;
   #ifndef UNDER_CE
+  commandInfo.lpParametersW = NULL;
   commandInfo.lpTitle = "";
   commandInfo.lpVerbW = (LPCWSTR)(MAKEINTRESOURCEW(offset));
   UString currentFolderUnicode = _currentFolderPrefix;

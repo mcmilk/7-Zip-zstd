@@ -2,11 +2,17 @@
 
 #include "StdAfx.h"
 
+#include "Common/StringConvert.h"
+
 #include "Windows/Error.h"
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 
 #include "../../Common/FilePathAutoRename.h"
+
+#ifndef _SFX
+#include "../Common/ZipRegistry.h"
+#endif
 
 #include "../GUI/ExtractRes.h"
 
@@ -177,6 +183,11 @@ STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *message)
   return S_OK;
 }
 
+HRESULT CExtractCallbackImp::MessageError(const char *message, const FString &path)
+{
+  return MessageError(GetUnicodeString(message) + fs2us(path));
+}
+
 STDMETHODIMP CExtractCallbackImp::ShowMessage(const wchar_t *message)
 {
   AddErrorMessage(message);
@@ -296,7 +307,7 @@ HRESULT CExtractCallbackImp::OpenResult(const wchar_t *name, HRESULT result, boo
         MyLoadStringW(IDS_MEM_ERROR);
         #endif
       else
-        NError::MyFormatMessage(result, message2);
+        message2 = NError::MyFormatMessageW(result);
       message += message2;
     }
     MessageError(message);
@@ -339,11 +350,19 @@ STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
   if (!PasswordIsDefined)
   {
     CPasswordDialog dialog;
+    #ifndef _SFX
+    bool showPassword = NExtract::Read_ShowPassword();
+    dialog.ShowPassword = showPassword;
+    #endif
     ProgressDialog->WaitCreating();
     if (dialog.Create(*ProgressDialog) == IDCANCEL)
       return E_ABORT;
     Password = dialog.Password;
     PasswordIsDefined = true;
+    #ifndef _SFX
+    if (dialog.ShowPassword != showPassword)
+      NExtract::Save_ShowPassword(dialog.ShowPassword);
+    #endif
   }
   return StringToBstr(Password, password);
 }
@@ -366,19 +385,16 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   *writeAnswer = BoolToInt(false);
 
   UString destPathSpec = destPath;
-  UString destPathSys = destPathSpec;
+  FString destPathSys = us2fs(destPath);
   bool srcIsFolderSpec = IntToBool(srcIsFolder);
-  CFileInfoW destFileInfo;
+  CFileInfo destFileInfo;
   if (destFileInfo.Find(destPathSys))
   {
     if (srcIsFolderSpec)
     {
       if (!destFileInfo.IsDir())
       {
-        UString message = UString(L"can not replace file \'")
-          + destPathSpec +
-          UString(L"\' with folder with same name");
-        RINOK(MessageError(message));
+        RINOK(MessageError("can not replace file with folder with same name: ", destPathSys));
         return E_ABORT;
       }
       *writeAnswer = BoolToInt(false);
@@ -386,10 +402,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
     }
     if (destFileInfo.IsDir())
     {
-      UString message = UString(L"can not replace folder \'")
-          + destPathSpec +
-          UString(L"\' with file with same name");
-      RINOK(MessageError(message));
+      RINOK(MessageError("can not replace folder with file with same name: ", destPathSys));
       return E_FAIL;
     }
 
@@ -432,19 +445,15 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
     {
       if (!AutoRenamePath(destPathSys))
       {
-        UString message = UString(L"can not create name of file ")
-            + destPathSys;
-        RINOK(MessageError(message));
+        RINOK(MessageError("can not create name for file: ", destPathSys));
         return E_ABORT;
       }
-      destPathResultTemp = destPathSys;
+      destPathResultTemp = fs2us(destPathSys);
     }
     else
       if (!NFile::NDirectory::DeleteFileAlways(destPathSys))
       {
-        UString message = UString(L"can not delete output file ")
-            + destPathSys;
-        RINOK(MessageError(message));
+        RINOK(MessageError("can not delete output file: ", destPathSys));
         return E_ABORT;
       }
   }

@@ -12,6 +12,7 @@
 #include "Windows/FileDir.h"
 #include "Windows/FileFind.h"
 #include "Windows/FileIO.h"
+#include "Windows/FileName.h"
 #include "Windows/NtCheck.h"
 #include "Windows/ResourceString.h"
 
@@ -25,11 +26,11 @@ using namespace NWindows;
 
 HINSTANCE g_hInstance;
 
-static LPCTSTR kTempDirPrefix = TEXT("7zS");
+static CFSTR kTempDirPrefix = FTEXT("7zS");
 
 #define _SHELL_EXECUTE
 
-static bool ReadDataString(LPCWSTR fileName, LPCSTR startID,
+static bool ReadDataString(CFSTR fileName, LPCSTR startID,
     LPCSTR endID, AString &stringResult)
 {
   stringResult.Empty();
@@ -107,11 +108,11 @@ public:
 #ifndef UNDER_CE
 class CCurrentDirRestorer
 {
-  CSysString m_CurrentDirectory;
+  FString m_CurrentDirectory;
 public:
   CCurrentDirRestorer() { NFile::NDirectory::MyGetCurrentDirectory(m_CurrentDirectory); }
   ~CCurrentDirRestorer() { RestoreDirectory();}
-  bool RestoreDirectory() { return BOOLToBool(::SetCurrentDirectory(m_CurrentDirectory)); }
+  bool RestoreDirectory() const { return NFile::NDirectory::MySetCurrentDirectory(m_CurrentDirectory); }
 };
 #endif
 
@@ -137,8 +138,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   #endif
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), archiveName, switches);
 
-  UString fullPath;
-  NDLL::MyGetModuleFileName(g_hInstance, fullPath);
+  FString fullPath;
+  NDLL::MyGetModuleFileName(fullPath);
 
   switches.Trim();
   bool assumeYes = false;
@@ -191,7 +192,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     #endif
   }
 
-  NFile::NDirectory::CTempDirectory tempDir;
+  NFile::NDirectory::CTempDir tempDir;
   if (!tempDir.Create(kTempDirPrefix))
   {
     if (!assumeYes)
@@ -208,7 +209,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     return 1;
   }
 
-  UString tempDirPath = GetUnicodeString(tempDir.GetPath());
+  FString tempDirPath = tempDir.GetPath();
   {
     bool isCorrupt = false;
     UString errorMessage;
@@ -233,7 +234,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
   #ifndef UNDER_CE
   CCurrentDirRestorer currentDirRestorer;
-  if (!SetCurrentDirectory(tempDir.GetPath()))
+  if (!NFile::NDirectory::MySetCurrentDirectory(tempDir.GetPath()))
     return 1;
   #endif
   
@@ -281,7 +282,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     if (appLaunched.IsEmpty())
     {
       appLaunched = L"setup.exe";
-      if (!NFile::NFind::DoesFileExist(GetSystemString(appLaunched)))
+      if (!NFile::NFind::DoesFileExist(us2fs(appLaunched)))
       {
         if (!assumeYes)
           ShowErrorMessage(L"Can not find setup.exe");
@@ -290,12 +291,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     }
     
     {
-      UString s2 = tempDirPath;
+      FString s2 = tempDirPath;
       NFile::NName::NormalizeDirPathPrefix(s2);
-      appLaunched.Replace(L"%%T" WSTRING_PATH_SEPARATOR, s2);
+      appLaunched.Replace(L"%%T" WSTRING_PATH_SEPARATOR, fs2us(s2));
     }
     
-    appLaunched.Replace(L"%%T", tempDirPath);
+    appLaunched.Replace(L"%%T", fs2us(tempDirPath));
 
     if (!switches.IsEmpty())
     {

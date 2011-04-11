@@ -182,7 +182,7 @@ HRESULT CExtractCallbackConsole::OpenResult(const wchar_t * /* name */, HRESULT 
       if (result == E_OUTOFMEMORY)
         (*OutStream) << "Can't allocate required memory";
       else
-        (*OutStream) << NError::MyFormatMessage(result);
+        (*OutStream) << NError::MyFormatMessageW(result);
     }
     (*OutStream) << endl;
     NumArchiveErrors++;
@@ -218,11 +218,7 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
   if (result == E_OUTOFMEMORY)
     (*OutStream) << kMemoryExceptionMessage;
   else
-  {
-    UString message;
-    NError::MyFormatMessage(result, message);
-    (*OutStream) << message;
-  }
+    (*OutStream) << NError::MyFormatMessageW(result);
   (*OutStream) << endl;
   return S_OK;
 }
