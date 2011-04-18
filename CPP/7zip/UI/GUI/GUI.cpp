@@ -20,6 +20,7 @@
 #include "../Common/ExitCode.h"
 
 #include "../FileManager/StringUtils.h"
+#include "../FileManager/MyWindowsNew.h"
 
 #include "BenchmarkDialog.h"
 #include "ExtractGUI.h"
@@ -231,6 +232,11 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   #endif
 
   InitCommonControls();
+
+  // OleInitialize is required for ProgressBar in TaskBar.
+  #ifndef UNDER_CE
+  OleInitialize(NULL);
+  #endif
 
   ReloadLang();
 

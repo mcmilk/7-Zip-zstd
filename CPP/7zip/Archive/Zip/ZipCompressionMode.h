@@ -48,6 +48,8 @@ struct CCompressionMethodMode: public CBaseProps
   UInt64 _dataSizeReduce;
   bool _dataSizeReduceDefined;
   
+  bool IsRealAesMode() const { return PasswordIsDefined && IsAesMode; }
+
   CCompressionMethodMode(): PasswordIsDefined(false)
   {
     _dataSizeReduceDefined = false;

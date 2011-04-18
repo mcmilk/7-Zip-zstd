@@ -389,7 +389,7 @@ static void WriteDirHeader(COutArchive &archive, const CCompressionMethodMode *o
     const CUpdateItem &ui, CItemEx &item)
 {
   SetFileHeader(archive, *options, ui, item);
-  archive.PrepareWriteCompressedData((UInt16)item.Name.Length(), ui.Size, options->IsAesMode);
+  archive.PrepareWriteCompressedData((UInt16)item.Name.Length(), ui.Size, options->IsRealAesMode());
   archive.WriteLocalHeader(item);
 }
 
@@ -448,14 +448,14 @@ static HRESULT Update2St(
 
         // file Size can be 64-bit !!!
         SetFileHeader(archive, *options, ui, item);
-        archive.PrepareWriteCompressedData((UInt16)item.Name.Length(), ui.Size, options->IsAesMode);
+        archive.PrepareWriteCompressedData((UInt16)item.Name.Length(), ui.Size, options->IsRealAesMode());
         CCompressingResult compressingResult;
         CMyComPtr<IOutStream> outStream;
         archive.CreateStreamForCompressing(&outStream);
         RINOK(compressor.Compress(
             EXTERNAL_CODECS_LOC_VARS
             fileInStream, outStream, progress, compressingResult));
-        SetItemInfoFromCompressingResult(compressingResult, options->IsAesMode, options->AesKeyMode, item);
+        SetItemInfoFromCompressingResult(compressingResult, options->IsRealAesMode(), options->AesKeyMode, item);
         archive.WriteLocalHeader(item);
         RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
         unpackSizeTotal += item.UnPackSize;
@@ -741,7 +741,7 @@ static HRESULT Update2(
           lastRealStreamItemIndex = itemIndex;
           SetFileHeader(archive, *options, ui, item);
           // file Size can be 64-bit !!!
-          archive.PrepareWriteCompressedData((UInt16)item.Name.Length(), ui.Size, options->IsAesMode);
+          archive.PrepareWriteCompressedData((UInt16)item.Name.Length(), ui.Size, options->IsRealAesMode());
         }
 
         CMemBlocks2 &memRef = refs.Refs[itemIndex];
@@ -751,7 +751,7 @@ static HRESULT Update2(
           archive.CreateStreamForCompressing(&outStream);
           memRef.WriteToStream(memManager.GetBlockSize(), outStream);
           SetItemInfoFromCompressingResult(memRef.CompressingResult,
-              options->IsAesMode, options->AesKeyMode, item);
+              options->IsRealAesMode(), options->AesKeyMode, item);
           SetFileHeader(archive, *options, ui, item);
           archive.WriteLocalHeader(item);
           // RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
@@ -784,7 +784,7 @@ static HRESULT Update2(
             RINOK(threadInfo.OutStreamSpec->WriteToRealStream());
             threadInfo.OutStreamSpec->ReleaseOutStream();
             SetItemInfoFromCompressingResult(threadInfo.CompressingResult,
-                options->IsAesMode, options->AesKeyMode, item);
+                options->IsRealAesMode(), options->AesKeyMode, item);
             SetFileHeader(archive, *options, ui, item);
             archive.WriteLocalHeader(item);
           }

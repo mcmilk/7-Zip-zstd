@@ -33,7 +33,15 @@
 #include "OpenCallbackConsole.h"
 #include "UpdateCallbackConsole.h"
 
+#if !defined(EXTERNAL_CODECS) && defined(_NO_CRYPTO)
+#define IT_IS_REDUCED_VERSION
+#endif
+
+#ifdef IT_IS_REDUCED_VERSION
+#include "../../../../C/7zVersion.h"
+#else
 #include "../../MyVersion.h"
+#endif
 
 using namespace NWindows;
 using namespace NFile;
@@ -46,7 +54,11 @@ extern CStdOutStream *g_StdStream;
 
 static const char *kCopyrightString = "\n7-Zip"
 #ifndef EXTERNAL_CODECS
-" (A)"
+#ifdef IT_IS_REDUCED_VERSION
+" (r)"
+#else
+" (a)"
+#endif
 #endif
 
 #ifdef _WIN64
@@ -57,10 +69,10 @@ static const char *kCopyrightString = "\n7-Zip"
 
 static const char *kHelpString =
     "\nUsage: 7z"
-#ifdef _NO_CRYPTO
+#ifndef EXTERNAL_CODECS
+#ifdef IT_IS_REDUCED_VERSION
     "r"
 #else
-#ifndef EXTERNAL_CODECS
     "a"
 #endif
 #endif

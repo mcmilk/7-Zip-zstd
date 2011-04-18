@@ -89,7 +89,7 @@ bool CLang::Open(CFSTR fileName)
   if (!GetTextConfig(s.Mid(pos), pairs))
     return false;
 
-  _langPairs.Reserve(_langPairs.Size());
+  _langPairs.Reserve(pairs.Size());
   for (int i = 0; i < pairs.Size(); i++)
   {
     CTextConfigPair textConfigPair = pairs[i];

@@ -24,6 +24,7 @@
 static const char *kExts[] =
 {
   "bat",
+  "cmd",
   "exe",
   "inf",
   "msi",

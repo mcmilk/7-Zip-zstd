@@ -3,12 +3,16 @@
 #ifndef __PROGRESS_DIALOG2_H
 #define __PROGRESS_DIALOG2_H
 
+#include "Common/MyCom.h"
+
 #include "Windows/Synchronization.h"
 #include "Windows/Thread.h"
 
 #include "Windows/Control/Dialog.h"
 #include "Windows/Control/ListView.h"
 #include "Windows/Control/ProgressBar.h"
+
+#include "MyWindowsNew.h"
 
 class CProgressSync
 {
@@ -201,7 +205,7 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
 {
   UString _prevFileName;
   UString _prevTitleName;
-private:
+
   UString backgroundString;
   UString backgroundedString;
   UString foregroundString;
@@ -220,6 +224,9 @@ private:
   UInt64 _range;
   NWindows::NControl::CProgressBar m_ProgressBar;
   NWindows::NControl::CListView _messageList;
+
+  CMyComPtr<ITaskbarList3> _taskbarList;
+  HWND _hwndForTaskbar;
 
   UInt32 _prevPercentValue;
   UInt32 _prevTime;
@@ -246,6 +253,14 @@ private:
   
   bool _inCancelMessageBox;
   bool _externalCloseMessageWasReceived;
+
+
+  void SetTaskbarProgressState(TBPFLAG tbpFlags)
+  {
+    if (_taskbarList && _hwndForTaskbar)
+      _taskbarList->SetProgressState(_hwndForTaskbar, tbpFlags);
+  }
+  void SetTaskbarProgressState();
 
   void UpdateStatInfo(bool showAll);
   bool OnTimer(WPARAM timerID, LPARAM callback);
@@ -289,8 +304,8 @@ public:
   bool MessagesDisplayed; // = true if user pressed OK on all messages or there are no messages.
   int IconID;
 
-  #ifndef _SFX
   HWND MainWindow;
+  #ifndef _SFX
   UString MainTitle;
   UString MainAddTitle;
   ~CProgressDialog();

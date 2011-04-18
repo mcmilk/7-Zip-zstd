@@ -74,34 +74,35 @@ HRESULT CProgressSync::SetPosAndCheckPaused(UInt64 completed)
 }
 
 
-CProgressDialog::CProgressDialog(): _timer(0), CompressingMode(true)
-    #ifndef _SFX
-    , MainWindow(0)
-    #endif
-  {
-    IconID = -1;
-    MessagesDisplayed = false;
-    _wasCreated = false;
-    _needClose = false;
-    _inCancelMessageBox = false;
-    _externalCloseMessageWasReceived = false;
-
-    _numPostedMessages = 0;
-    _numAutoSizeMessages = 0;
-    _errorsWereDisplayed = false;
-    _waitCloseByCancelButton = false;
-    _cancelWasPressed = false;
-    ShowCompressionInfo = true;
-    WaitMode = false;
-    if (_dialogCreatedEvent.Create() != S_OK)
-      throw 1334987;
-    if (_createDialogEvent.Create() != S_OK)
-      throw 1334987;
-  }
+CProgressDialog::CProgressDialog(): _timer(0), CompressingMode(true), MainWindow(0)
+{
+  IconID = -1;
+  MessagesDisplayed = false;
+  _wasCreated = false;
+  _needClose = false;
+  _inCancelMessageBox = false;
+  _externalCloseMessageWasReceived = false;
+  
+  _numPostedMessages = 0;
+  _numAutoSizeMessages = 0;
+  _errorsWereDisplayed = false;
+  _waitCloseByCancelButton = false;
+  _cancelWasPressed = false;
+  ShowCompressionInfo = true;
+  WaitMode = false;
+  if (_dialogCreatedEvent.Create() != S_OK)
+    throw 1334987;
+  if (_createDialogEvent.Create() != S_OK)
+    throw 1334987;
+  CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (void**)&_taskbarList);
+  if (_taskbarList)
+    _taskbarList->HrInit();
+}
 
 #ifndef _SFX
 CProgressDialog::~CProgressDialog()
 {
+  SetTaskbarProgressState(TBPF_NOPROGRESS);
   AddToTitle(L"");
 }
 void CProgressDialog::AddToTitle(LPCWSTR s)
@@ -114,6 +115,20 @@ void CProgressDialog::AddToTitle(LPCWSTR s)
 }
 
 #endif
+
+
+void CProgressDialog::SetTaskbarProgressState()
+{
+  if (_taskbarList && _hwndForTaskbar)
+  {
+    TBPFLAG tbpFlags;
+    if (Sync.GetPaused())
+      tbpFlags = TBPF_PAUSED;
+    else
+      tbpFlags = _errorsWereDisplayed ? TBPF_ERROR: TBPF_NORMAL;
+    SetTaskbarProgressState(tbpFlags);
+  }
+}
 
 static const int kTitleFileNameSizeLimit = 36;
 static const int kCurrentFileNameSizeLimit = 82;
@@ -134,6 +149,12 @@ void CProgressDialog::EnableErrorsControls(bool enable)
 
 bool CProgressDialog::OnInit()
 {
+  _hwndForTaskbar = MainWindow;
+  if (!_hwndForTaskbar)
+    _hwndForTaskbar = GetParent();
+  if (!_hwndForTaskbar)
+    _hwndForTaskbar = (HWND)*this;
+
   _range = (UInt64)(Int64)-1;
   _prevPercentValue = (UInt32)-1;
   _prevElapsedSec = (UInt32)-1;
@@ -207,6 +228,8 @@ bool CProgressDialog::OnInit()
   #endif
 
   CheckNeedClose();
+
+  SetTaskbarProgressState();
 
   return CModalDialog::OnInit();
 }
@@ -382,9 +405,11 @@ void CProgressDialog::SetPos(UInt64 pos)
     if (pos - _previousPos < (_range >> 10))
       redraw = false;
   }
-  if(redraw)
+  if (redraw)
   {
     m_ProgressBar.SetPos(_converter.Count(pos)); // Test it for 100%
+    if (_taskbarList && _hwndForTaskbar)
+      _taskbarList->SetProgressValue(_hwndForTaskbar, pos, _range);
     _previousPos = pos;
   }
 }
@@ -466,6 +491,7 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
         {
           _errorsWereDisplayed = true;
           EnableErrorsControls(true);
+          SetTaskbarProgressState();
         }
       }
     }
@@ -670,6 +696,11 @@ INT_PTR CProgressDialog::Create(const UString &title, NWindows::CThread &thread,
 
 bool CProgressDialog::OnExternalCloseMessage()
 {
+  // it doesn't work if there is MessageBox.
+  SetTaskbarProgressState(TBPF_NOPROGRESS);
+  // AddToTitle(L"Finished ");
+  // SetText(L"Finished2 ");
+
   UpdateStatInfo(true);
   
   HideItem(IDC_BUTTON_PROGRESS_PRIORITY);
@@ -795,6 +826,7 @@ void CProgressDialog::OnPauseButton()
   UInt32 curTime = ::GetTickCount();
   if (paused)
     _elapsedTime += (curTime - _prevTime);
+  SetTaskbarProgressState();
   _prevTime = curTime;
   SetPauseText();
 }

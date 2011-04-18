@@ -292,7 +292,7 @@ HRESULT CAddCommon::Compress(
     else if (opRes.PackSize < opRes.UnpackSize)
       break;
   }
-  if (_options.IsAesMode)
+  if (_options.PasswordIsDefined && _options.IsAesMode)
   {
     RINOK(_filterAesSpec->WriteFooter(outStream));
     RINOK(outStream->Seek(0, STREAM_SEEK_CUR, &opRes.PackSize));

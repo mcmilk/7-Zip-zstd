@@ -409,7 +409,9 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
         m_ForceLocal = false;
     }
     else
-      return _props.MethodInfo.ParseParamsFromPROPVARIANT(name, prop);
+    {
+      RINOK(_props.MethodInfo.ParseParamsFromPROPVARIANT(name, prop));
+    }
   }
   return S_OK;
 }

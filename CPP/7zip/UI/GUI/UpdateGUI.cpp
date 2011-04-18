@@ -392,7 +392,6 @@ HRESULT UpdateGUI(
 
   RINOK(tu.Create(title, hwndParent));
 
-  messageWasDisplayed = tu.ThreadFinishedOK &
-      tu.ProgressDialog.MessagesDisplayed;
+  messageWasDisplayed = tu.ThreadFinishedOK && tu.ProgressDialog.MessagesDisplayed;
   return tu.Result;
 }

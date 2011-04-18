@@ -184,6 +184,10 @@ SOURCE=.\Move.bmp
 # End Source File
 # Begin Source File
 
+SOURCE=.\MyWindowsNew.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Parent.bmp
 # End Source File
 # Begin Source File

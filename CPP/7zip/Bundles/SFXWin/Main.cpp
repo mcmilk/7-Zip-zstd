@@ -20,6 +20,7 @@
 #include "../../UI/Common/Extract.h"
 #include "../../UI/Common/ExitCode.h"
 #include "../../UI/Explorer/MyMessages.h"
+#include "../../UI/FileManager/MyWindowsNew.h"
 #include "../../UI/GUI/ExtractGUI.h"
 #include "../../UI/GUI/ExtractRes.h"
 
@@ -38,6 +39,11 @@ void ErrorMessageForHRESULT(HRESULT res)
 
 int APIENTRY WinMain2()
 {
+  // OleInitialize is required for ProgressBar in TaskBar.
+  #ifndef UNDER_CE
+  OleInitialize(NULL);
+  #endif
+  
   UString password;
   bool assumeYes = false;
   bool outputFolderDefined = false;
