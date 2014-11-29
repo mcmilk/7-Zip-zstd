@@ -17,7 +17,7 @@ struct CPropMap
   STATPROPSTG StatPROPSTG;
 };
 
-CPropMap kPropMap[] =
+static const CPropMap kPropMap[] =
 {
   { NID::kName, { NULL, kpidPath, VT_BSTR } },
   { NID::kSize, { NULL, kpidSize, VT_UI8 } },
@@ -34,11 +34,12 @@ CPropMap kPropMap[] =
   { NID::kCTime, { NULL, kpidCTime, VT_FILETIME } },
   { NID::kMTime, { NULL, kpidMTime, VT_FILETIME } },
   { NID::kATime, { NULL, kpidATime, VT_FILETIME } },
-  { NID::kWinAttributes, { NULL, kpidAttrib, VT_UI4 } },
+  { NID::kWinAttrib, { NULL, kpidAttrib, VT_UI4 } },
   { NID::kStartPos, { NULL, kpidPosition, VT_UI4 } },
 
   { NID::kCRC, { NULL, kpidCRC, VT_UI4 } },
   
+//  { NID::kIsAux, { NULL, kpidIsAux, VT_BOOL } },
   { NID::kAnti, { NULL, kpidIsAnti, VT_BOOL } }
 
   #ifndef _SFX
@@ -49,11 +50,9 @@ CPropMap kPropMap[] =
   #endif
 };
 
-static const int kPropMapSize = sizeof(kPropMap) / sizeof(kPropMap[0]);
-
 static int FindPropInMap(UInt64 filePropID)
 {
-  for (int i = 0; i < kPropMapSize; i++)
+  for (int i = 0; i < ARRAY_SIZE(kPropMap); i++)
     if (kPropMap[i].FilePropID == filePropID)
       return i;
   return -1;
@@ -62,7 +61,7 @@ static int FindPropInMap(UInt64 filePropID)
 static void CopyOneItem(CRecordVector<UInt64> &src,
     CRecordVector<UInt64> &dest, UInt32 item)
 {
-  for (int i = 0; i < src.Size(); i++)
+  FOR_VECTOR (i, src)
     if (src[i] == item)
     {
       dest.Add(item);
@@ -73,7 +72,7 @@ static void CopyOneItem(CRecordVector<UInt64> &src,
 
 static void RemoveOneItem(CRecordVector<UInt64> &src, UInt32 item)
 {
-  for (int i = 0; i < src.Size(); i++)
+  FOR_VECTOR (i, src)
     if (src[i] == item)
     {
       src.Delete(i);
@@ -83,7 +82,7 @@ static void RemoveOneItem(CRecordVector<UInt64> &src, UInt32 item)
 
 static void InsertToHead(CRecordVector<UInt64> &dest, UInt32 item)
 {
-  for (int i = 0; i < dest.Size(); i++)
+  FOR_VECTOR (i, dest)
     if (dest[i] == item)
     {
       dest.Delete(i);
@@ -91,6 +90,8 @@ static void InsertToHead(CRecordVector<UInt64> &dest, UInt32 item)
     }
   dest.Insert(0, item);
 }
+
+#define COPY_ONE_ITEM(id) CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::id);
 
 void CHandler::FillPopIDs()
 {
@@ -103,21 +104,26 @@ void CHandler::FillPopIDs()
   const CArchiveDatabaseEx &_db = volume.Database;
   #endif
 
-  CRecordVector<UInt64> fileInfoPopIDs = _db.ArchiveInfo.FileInfoPopIDs;
+  CRecordVector<UInt64> fileInfoPopIDs = _db.ArcInfo.FileInfoPopIDs;
 
   RemoveOneItem(fileInfoPopIDs, NID::kEmptyStream);
   RemoveOneItem(fileInfoPopIDs, NID::kEmptyFile);
+  /*
+  RemoveOneItem(fileInfoPopIDs, NID::kParent);
+  RemoveOneItem(fileInfoPopIDs, NID::kNtSecure);
+  */
 
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kName);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kAnti);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kSize);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kPackInfo);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kCTime);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kMTime);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kATime);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kWinAttributes);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kCRC);
-  CopyOneItem(fileInfoPopIDs, _fileInfoPopIDs, NID::kComment);
+  COPY_ONE_ITEM(kName);
+  COPY_ONE_ITEM(kAnti);
+  COPY_ONE_ITEM(kSize);
+  COPY_ONE_ITEM(kPackInfo);
+  COPY_ONE_ITEM(kCTime);
+  COPY_ONE_ITEM(kMTime);
+  COPY_ONE_ITEM(kATime);
+  COPY_ONE_ITEM(kWinAttrib);
+  COPY_ONE_ITEM(kCRC);
+  COPY_ONE_ITEM(kComment);
+
   _fileInfoPopIDs += fileInfoPopIDs;
  
   #ifndef _SFX
@@ -141,9 +147,9 @@ void CHandler::FillPopIDs()
   #endif
 }
 
-STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProperties)
+STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProps)
 {
-  *numProperties = _fileInfoPopIDs.Size();
+  *numProps = _fileInfoPopIDs.Size();
   return S_OK;
 }
 

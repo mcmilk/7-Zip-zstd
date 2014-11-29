@@ -2,10 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/Defs.h"
-#include "Common/IntToString.h"
+#include "../../Common/Defs.h"
+#include "../../Common/IntToString.h"
 
-#include "Windows/FileFind.h"
+#include "../../Windows/FileFind.h"
 
 #include "FilePathAutoRename.h"
 
@@ -36,8 +36,8 @@ bool AutoRenamePath(FString &fullProcessedPath)
   FString name, extension;
   if (dotPos > slashPos && dotPos > 0)
   {
-    name = fullProcessedPath.Left(dotPos);
-    extension = fullProcessedPath.Mid(dotPos);
+    name.SetFrom(fullProcessedPath, dotPos);
+    extension = fullProcessedPath.Ptr(dotPos);
   }
   else
     name = fullProcessedPath;

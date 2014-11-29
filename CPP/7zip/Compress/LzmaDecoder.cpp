@@ -27,7 +27,8 @@ namespace NLzma {
 CDecoder::CDecoder(): _inBuf(0), _propsWereSet(false), _outSizeDefined(false),
   _inBufSize(1 << 20),
   _outBufSize(1 << 22),
-  FinishStream(false)
+  FinishStream(false),
+  NeedMoreInput(false)
 {
   _inSizeProcessed = 0;
   _inPos = _inSize = 0;
@@ -81,6 +82,7 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {
   _inSizeProcessed = 0;
   _inPos = _inSize = 0;
+  NeedMoreInput = false;
   SetOutStreamSizeResume(outSize);
   return S_OK;
 }
@@ -144,9 +146,21 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *
         return S_FALSE;
       RINOK(res2);
       if (stopDecoding)
+      {
+        if (status == LZMA_STATUS_NEEDS_MORE_INPUT)
+          NeedMoreInput = true;
+        if (FinishStream &&
+              status != LZMA_STATUS_FINISHED_WITH_MARK &&
+              status != LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK)
+          return S_FALSE;
         return S_OK;
+      }
       if (finished)
+      {
+        if (status == LZMA_STATUS_NEEDS_MORE_INPUT)
+          NeedMoreInput = true;
         return (status == LZMA_STATUS_FINISHED_WITH_MARK ? S_OK : S_FALSE);
+      }
     }
     if (progress)
     {

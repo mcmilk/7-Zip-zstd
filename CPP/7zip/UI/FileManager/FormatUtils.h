@@ -1,18 +1,14 @@
 // FormatUtils.h
 
-#ifndef __FORMATUTILS_H
-#define __FORMATUTILS_H
+#ifndef __FORMAT_UTILS_H
+#define __FORMAT_UTILS_H
 
-#include "Common/Types.h"
-#include "Common/MyString.h"
+#include "../../../Common/MyTypes.h"
+#include "../../../Common/MyString.h"
 
 UString NumberToString(UInt64 number);
 
 UString MyFormatNew(const UString &format, const UString &argument);
-UString MyFormatNew(UINT resourceID,
-    #ifdef LANG
-    UInt32 langID,
-    #endif
-    const UString &argument);
+UString MyFormatNew(UINT resourceID, const UString &argument);
 
 #endif

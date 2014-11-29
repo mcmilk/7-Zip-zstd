@@ -106,8 +106,8 @@ STDMETHODIMP CFolderInStream::Read(void *data, UInt32 size, UInt32 *processedSiz
 STDMETHODIMP CFolderInStream::GetSubStreamSize(UInt64 subStream, UInt64 *value)
 {
   *value = 0;
-  int index2 = (int)subStream;
-  if (index2 < 0 || subStream > Sizes.Size())
+  unsigned index2 = (unsigned)subStream;
+  if (subStream > Sizes.Size())
     return E_FAIL;
   if (index2 < Sizes.Size())
   {

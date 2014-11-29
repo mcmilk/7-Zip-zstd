@@ -15,8 +15,8 @@ void CArchiveFolderManager::LoadFormats()
 
 int CArchiveFolderManager::FindFormat(const UString &type)
 {
-  for (int i = 0; i < _codecs->Formats.Size(); i++)
-    if (type.CompareNoCase(_codecs->Formats[i].Name) == 0)
+  FOR_VECTOR (i, _codecs->Formats)
+    if (type.IsEqualToNoCase(_codecs->Formats[i].Name))
       return i;
   return -1;
 }
@@ -60,11 +60,11 @@ STDMETHODIMP CArchiveFolderManager::GetExtensions(const wchar_t *type, BSTR *ext
 
 static void AddIconExt(const CCodecIcons &lib, UString &dest)
 {
-  for (int j = 0; j < lib.IconPairs.Size(); j++)
+  FOR_VECTOR (i, lib.IconPairs)
   {
     if (!dest.IsEmpty())
       dest += L' ';
-    dest += lib.IconPairs[j].Ext;
+    dest += lib.IconPairs[i].Ext;
   }
 }
 
@@ -73,7 +73,7 @@ STDMETHODIMP CArchiveFolderManager::GetExtensions(BSTR *extensions)
   LoadFormats();
   *extensions = 0;
   UString res;
-  for (int i = 0; i < _codecs->Libs.Size(); i++)
+  FOR_VECTOR (i, _codecs->Libs)
     AddIconExt(_codecs->Libs[i], res);
   AddIconExt(_codecs->InternalIcons, res);
   return StringToBstr(res, extensions);
@@ -84,7 +84,7 @@ STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPa
   LoadFormats();
   *iconPath = 0;
   *iconIndex = 0;
-  for (int i = 0; i < _codecs->Libs.Size(); i++)
+  FOR_VECTOR (i, _codecs->Libs)
   {
     const CCodecLib &lib = _codecs->Libs[i];
     int ii;
@@ -112,7 +112,7 @@ STDMETHODIMP CArchiveFolderManager::GetTypes(BSTR *types)
 {
   LoadFormats();
   UString typesStrings;
-  for(int i = 0; i < _codecs.Formats.Size(); i++)
+  FOR_VECTOR(i, _codecs.Formats)
   {
     const CArcInfoEx &ai = _codecs.Formats[i];
     if (ai.AssociateExts.Size() == 0)

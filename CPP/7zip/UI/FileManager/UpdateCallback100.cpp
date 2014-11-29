@@ -7,51 +7,48 @@
 
 STDMETHODIMP CUpdateCallback100Imp::SetNumFiles(UInt64 numFiles)
 {
-  ProgressDialog->Sync.SetNumFilesTotal(numFiles);
+  ProgressDialog->Sync.Set_NumFilesTotal(numFiles);
   return S_OK;
 }
 
 STDMETHODIMP CUpdateCallback100Imp::SetTotal(UInt64 size)
 {
-  ProgressDialog->Sync.SetProgress(size, 0);
+  ProgressDialog->Sync.Set_NumBytesTotal(size);
   return S_OK;
 }
 
-STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 *completeValue)
+STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 *completed)
 {
-  RINOK(ProgressDialog->Sync.ProcessStopAndPause());
-  if (completeValue != NULL)
-    ProgressDialog->Sync.SetPos(*completeValue);
-  return S_OK;
+  return ProgressDialog->Sync.Set_NumBytesCur(completed);
 }
 
 STDMETHODIMP CUpdateCallback100Imp::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
 {
-  ProgressDialog->Sync.SetRatioInfo(inSize, outSize);
+  ProgressDialog->Sync.Set_Ratio(inSize, outSize);
   return S_OK;
 }
 
 STDMETHODIMP CUpdateCallback100Imp::CompressOperation(const wchar_t *name)
 {
-  ProgressDialog->Sync.SetCurrentFileName(name);
+  ProgressDialog->Sync.Set_FilePath(name);
   return S_OK;
 }
 
 STDMETHODIMP CUpdateCallback100Imp::DeleteOperation(const wchar_t *name)
 {
-  ProgressDialog->Sync.SetCurrentFileName(name);
+  ProgressDialog->Sync.Set_FilePath(name);
   return S_OK;
 }
 
 STDMETHODIMP CUpdateCallback100Imp::OperationResult(Int32 /* operationResult */)
 {
-  ProgressDialog->Sync.SetNumFilesCur(++_numFiles);
+  ProgressDialog->Sync.Set_NumFilesCur(++_numFiles);
   return S_OK;
 }
 
 STDMETHODIMP CUpdateCallback100Imp::UpdateErrorMessage(const wchar_t *message)
 {
-  ProgressDialog->Sync.AddErrorMessage(message);
+  ProgressDialog->Sync.AddError_Message(message);
   return S_OK;
 }
 
@@ -71,7 +68,7 @@ STDMETHODIMP CUpdateCallback100Imp::SetTotal(const UInt64 * /* files */, const U
 
 STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 * /* files */, const UInt64 * /* bytes */)
 {
-  return ProgressDialog->Sync.ProcessStopAndPause();
+  return ProgressDialog->Sync.CheckStop();
 }
 
 STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password)
@@ -81,7 +78,7 @@ STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password)
   {
     CPasswordDialog dialog;
     ProgressDialog->WaitCreating();
-    if (dialog.Create(*ProgressDialog) == IDCANCEL)
+    if (dialog.Create(*ProgressDialog) != IDOK)
       return E_ABORT;
     _password = dialog.Password;
     _passwordIsDefined = true;

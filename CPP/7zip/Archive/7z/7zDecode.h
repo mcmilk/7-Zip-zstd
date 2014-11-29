@@ -14,7 +14,7 @@
 
 #include "../../Common/CreateCoder.h"
 
-#include "7zItem.h"
+#include "7zIn.h"
 
 namespace NArchive {
 namespace N7z {
@@ -50,13 +50,10 @@ public:
       DECL_EXTERNAL_CODECS_LOC_VARS
       IInStream *inStream,
       UInt64 startPos,
-      const UInt64 *packSizes,
-      const CFolder &folder,
+      const CFolders &folders, int folderIndex,
       ISequentialOutStream *outStream,
       ICompressProgressInfo *compressProgress
-      #ifndef _NO_CRYPTO
-      , ICryptoGetTextPassword *getTextPasswordSpec, bool &passwordIsDefined
-      #endif
+      _7Z_DECODER_CRYPRO_VARS_DECL
       #if !defined(_7ZIP_ST) && !defined(_SFX)
       , bool mtMode, UInt32 numThreads
       #endif

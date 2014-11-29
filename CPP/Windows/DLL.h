@@ -37,9 +37,9 @@ public:
     return m;
   }
 
-  bool Free();
-  bool LoadEx(CFSTR path, DWORD flags = LOAD_LIBRARY_AS_DATAFILE);
-  bool Load(CFSTR path);
+  bool Free() throw();
+  bool LoadEx(CFSTR path, DWORD flags = LOAD_LIBRARY_AS_DATAFILE) throw();
+  bool Load(CFSTR path) throw();
   FARPROC GetProc(LPCSTR procName) const { return My_GetProcAddress(_module, procName); }
 };
 

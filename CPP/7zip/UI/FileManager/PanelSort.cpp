@@ -2,7 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "Windows/PropVariant.h"
+#include "../../../../C/CpuArch.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "../../PropID.h"
 
@@ -10,13 +11,89 @@
 
 using namespace NWindows;
 
-static UString GetExtension(const UString &name)
+int CompareFileNames_ForFolderList(const wchar_t *s1, const wchar_t *s2)
+{
+  for (;;)
+  {
+    wchar_t c1 = *s1;
+    wchar_t c2 = *s2;
+    if ((c1 >= '0' && c1 <= '9') &&
+        (c2 >= '0' && c2 <= '9'))
+    {
+      for (; *s1 == '0'; s1++);
+      for (; *s2 == '0'; s2++);
+      size_t len1 = 0;
+      size_t len2 = 0;
+      for (; (s1[len1] >= '0' && s1[len1] <= '9'); len1++);
+      for (; (s2[len2] >= '0' && s2[len2] <= '9'); len2++);
+      if (len1 < len2) return -1;
+      if (len1 > len2) return 1;
+      for (; len1 > 0; s1++, s2++, len1--)
+      {
+        if (*s1 == *s2) continue;
+        return (*s1 < *s2) ? -1 : 1;
+      }
+      c1 = *s1;
+      c2 = *s2;
+    }
+    s1++;
+    s2++;
+    if (c1 != c2)
+    {
+      // Probably we need to change the order for special characters like in Explorer.
+      wchar_t u1 = MyCharUpper(c1);
+      wchar_t u2 = MyCharUpper(c2);
+      if (u1 < u2) return -1;
+      if (u1 > u2) return 1;
+    }
+    if (c1 == 0) return 0;
+  }
+}
+
+static int CompareFileNames_Le16(const Byte *s1, unsigned size1, const Byte *s2, unsigned size2)
+{
+  size1 &= ~1;
+  size2 &= ~1;
+  for (unsigned i = 0;; i += 2)
+  {
+    if (i >= size1)
+      return (i >= size2) ? 0 : -1;
+    if (i >= size2)
+      return 1;
+    UInt16 c1 = GetUi16(s1 + i);
+    UInt16 c2 = GetUi16(s2 + i);
+    if (c1 == c2)
+    {
+      if (c1 == 0)
+        return 0;
+      continue;
+    }
+    if (c1 < c2)
+      return -1;
+    return 1;
+  }
+}
+
+static inline const wchar_t *GetExtensionPtr(const UString &name)
 {
   int dotPos = name.ReverseFind(L'.');
-  if (dotPos < 0)
-    return UString();
-  return name.Mid(dotPos);
+  return name.Ptr((dotPos < 0) ? name.Len() : dotPos);
 }
+
+void CPanel::SetSortRawStatus()
+{
+  _isRawSortProp = false;
+  FOR_VECTOR (i, _properties)
+  {
+    const CItemProperty &prop = _properties[i];
+    if (prop.ID == _sortID)
+    {
+      _isRawSortProp = prop.IsRawProp ? 1 : 0;
+      return;
+    }
+  }
+}
+
 
 int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
@@ -24,32 +101,66 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
     return 0;
   CPanel *panel = (CPanel*)lpData;
   
-  switch(panel->_sortID)
+
+  PROPID propID = panel->_sortID;
+
+  if (propID == kpidNoProperty)
+    return MyCompare(lParam1, lParam2);
+
+  if (panel->_isRawSortProp)
+  {
+    // Sha1, NtSecurity, NtReparse
+    const void *data1;
+    const void *data2;
+    UInt32 dataSize1;
+    UInt32 dataSize2;
+    UInt32 propType1;
+    UInt32 propType2;
+    if (panel->_folderRawProps->GetRawProp((UInt32)lParam1, propID, &data1, &dataSize1, &propType1) != 0) return 0;
+    if (panel->_folderRawProps->GetRawProp((UInt32)lParam2, propID, &data2, &dataSize2, &propType2) != 0) return 0;
+    if (dataSize1 == 0)
+      return (dataSize2 == 0) ? 0 : -1;
+    if (dataSize2 == 0)
+      return 1;
+    if (propType1 != NPropDataType::kRaw) return 0;
+    if (propType2 != NPropDataType::kRaw) return 0;
+    if (propID == kpidNtReparse)
+    {
+      NFile::CReparseShortInfo r1; r1.Parse((const Byte *)data1, dataSize1);
+      NFile::CReparseShortInfo r2; r2.Parse((const Byte *)data2, dataSize2);
+      return CompareFileNames_Le16(
+          (const Byte *)data1 + r1.Offset, r1.Size,
+          (const Byte *)data2 + r2.Offset, r2.Size);
+    }
+  }
+
+  if (panel->_folderCompare)
+    return panel->_folderCompare->CompareItems((UInt32)lParam1, (UInt32)lParam2, propID, panel->_isRawSortProp);
+  
+  switch (propID)
   {
     // if (panel->_sortIndex == 0)
     case kpidName:
     {
       const UString name1 = panel->GetItemName((int)lParam1);
       const UString name2 = panel->GetItemName((int)lParam2);
-      int res = name1.CompareNoCase(name2);
+      int res = CompareFileNames_ForFolderList(name1, name2);
       /*
       if (res != 0 || !panel->_flatMode)
         return res;
       const UString prefix1 = panel->GetItemPrefix(lParam1);
       const UString prefix2 = panel->GetItemPrefix(lParam2);
-      return res = prefix1.CompareNoCase(prefix2);
+      return res = CompareFileNames_ForFolderList(prefix1, prefix2);
       */
       return res;
     }
-    case kpidNoProperty:
-    {
-      return MyCompare(lParam1, lParam2);
-    }
     case kpidExtension:
     {
-      const UString ext1 = GetExtension(panel->GetItemName((int)lParam1));
-      const UString ext2 = GetExtension(panel->GetItemName((int)lParam2));
-      return ext1.CompareNoCase(ext2);
+      const UString name1 = panel->GetItemName((int)lParam1);
+      const UString name2 = panel->GetItemName((int)lParam2);
+      return CompareFileNames_ForFolderList(
+          GetExtensionPtr(name1),
+          GetExtensionPtr(name2));
     }
   }
   /*
@@ -59,7 +170,6 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
   */
 
   // PROPID propID = panel->_properties[panel->_sortIndex].ID;
-  PROPID propID = panel->_sortID;
 
   NCOM::CPropVariant prop1, prop2;
   // Name must be first property
@@ -85,8 +195,8 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 
   CPanel *panel = (CPanel*)lpData;
 
-  bool isDir1 = panel->IsItemFolder((int)lParam1);
-  bool isDir2 = panel->IsItemFolder((int)lParam2);
+  bool isDir1 = panel->IsItem_Folder((int)lParam1);
+  bool isDir2 = panel->IsItem_Folder((int)lParam2);
   
   if (isDir1 && !isDir2) return -1;
   if (isDir2 && !isDir1) return 1;
@@ -145,6 +255,7 @@ void CPanel::SortItemsWithPropID(PROPID propID)
       break;
     }
   }
+  SetSortRawStatus();
   _listView.SortItems(CompareItems, (LPARAM)this);
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
 }

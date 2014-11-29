@@ -7,176 +7,175 @@
 #endif
 
 #ifndef _UNICODE
-#include "Common/StringConvert.h"
+#include "../Common/StringConvert.h"
 #endif
-#include "Common/MyCom.h"
-
-#include "Windows/Defs.h"
 
 #include "CommonDialog.h"
+#include "Defs.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
 #endif
 
-namespace NWindows{
+namespace NWindows {
 
 #ifndef _UNICODE
+
 class CDoubleZeroStringListA
 {
-  CRecordVector<int> m_Indexes;
-  AString m_String;
+  LPTSTR Buf;
+  unsigned Size;
 public:
-  void Add(LPCSTR s);
-  void SetForBuffer(LPSTR buffer);
+  CDoubleZeroStringListA(LPSTR buf, unsigned size): Buf(buf), Size(size) {}
+  bool Add(LPCSTR s) throw();
+  void Finish() { *Buf = 0; }
 };
 
-void CDoubleZeroStringListA::Add(LPCSTR s)
+bool CDoubleZeroStringListA::Add(LPCSTR s)
 {
-  m_String += s;
-  m_Indexes.Add(m_String.Length());
-  m_String += ' ';
+  unsigned len = MyStringLen(s) + 1;
+  if (len >= Size)
+    return false;
+  MyStringCopy(Buf, s);
+  Buf += len;
+  Size -= len;
+  return true;
 }
 
-void CDoubleZeroStringListA::SetForBuffer(LPSTR buffer)
-{
-  MyStringCopy(buffer, (const char *)m_String);
-  for (int i = 0; i < m_Indexes.Size(); i++)
-    buffer[m_Indexes[i]] = '\0';
-}
 #endif
 
 class CDoubleZeroStringListW
 {
-  CRecordVector<int> m_Indexes;
-  UString m_String;
+  LPWSTR Buf;
+  unsigned Size;
 public:
-  void Add(LPCWSTR s);
-  void SetForBuffer(LPWSTR buffer);
+  CDoubleZeroStringListW(LPWSTR buf, unsigned size): Buf(buf), Size(size) {}
+  bool Add(LPCWSTR s) throw();
+  void Finish() { *Buf = 0; }
 };
 
-void CDoubleZeroStringListW::Add(LPCWSTR s)
+bool CDoubleZeroStringListW::Add(LPCWSTR s)
 {
-  m_String += s;
-  m_Indexes.Add(m_String.Length());
-  m_String += L' ';
+  unsigned len = MyStringLen(s) + 1;
+  if (len >= Size)
+    return false;
+  MyStringCopy(Buf, s);
+  Buf += len;
+  Size -= len;
+  return true;
 }
 
-void CDoubleZeroStringListW::SetForBuffer(LPWSTR buffer)
-{
-  MyStringCopy(buffer, (const wchar_t *)m_String);
-  for (int i = 0; i < m_Indexes.Size(); i++)
-    buffer[m_Indexes[i]] = L'\0';
-}
+#define MY__OFN_PROJECT  0x00400000
+#define MY__OFN_SHOW_ALL 0x01000000
 
-#define MY_OFN_PROJECT 0x00400000
-#define MY_OFN_SHOW_ALL 0x01000000
+/* if (lpstrFilter == NULL && nFilterIndex == 0)
+  MSDN : "the system doesn't show any files",
+  but WinXP-64 shows all files. Why ??? */
 
-bool MyGetOpenFileName(HWND hwnd, LPCWSTR title, LPCWSTR fullFileName,
-    LPCWSTR s, UString &resPath
+/*
+structures
+  OPENFILENAMEW
+  OPENFILENAMEA
+contain additional members:
+#if (_WIN32_WINNT >= 0x0500)
+  void *pvReserved;
+  DWORD dwReserved;
+  DWORD FlagsEx;
+#endif
+
+If we compile the source code with (_WIN32_WINNT >= 0x0500), some functions
+will not work at NT 4.0, if we use sizeof(OPENFILENAME*).
+So we use size of old version of structure. */
+
+#if defined(UNDER_CE) || defined(_WIN64) || (_WIN32_WINNT < 0x0500)
+// || !defined(WINVER)
+  #define my_compatib_OPENFILENAMEA_size sizeof(OPENFILENAMEA)
+  #define my_compatib_OPENFILENAMEW_size sizeof(OPENFILENAMEW)
+#else
+  #define my_compatib_OPENFILENAMEA_size OPENFILENAME_SIZE_VERSION_400A
+  #define my_compatib_OPENFILENAMEW_size OPENFILENAME_SIZE_VERSION_400W
+#endif
+
+#define CONV_U_To_A(dest, src, temp) AString temp; if (src) { temp = GetSystemString(src); dest = temp; }
+
+bool MyGetOpenFileName(HWND hwnd, LPCWSTR title,
+    LPCWSTR initialDir,
+    LPCWSTR filePath,
+    LPCWSTR filterDescription,
+    LPCWSTR filter,
+    UString &resPath
     #ifdef UNDER_CE
     , bool openFolder
     #endif
     )
 {
-  const int kBufferSize = MAX_PATH * 2;
+  const unsigned kBufSize = MAX_PATH * 2;
+  const unsigned kFilterBufSize = MAX_PATH;
+  if (!filter)
+    filter = L"*.*";
   #ifndef _UNICODE
   if (!g_IsNT)
   {
-    CHAR buffer[kBufferSize];
-    MyStringCopy(buffer, (const char *)GetSystemString(fullFileName));
-    OPENFILENAME info;
-    info.lStructSize = sizeof(info);
-    info.hwndOwner = hwnd;
-    info.hInstance = 0;
-    const int kFilterBufferSize = MAX_PATH;
-    CHAR filterBuffer[kFilterBufferSize];
-    CDoubleZeroStringListA doubleZeroStringList;
-    doubleZeroStringList.Add(GetSystemString(s));
-    doubleZeroStringList.Add("*.*");
-    doubleZeroStringList.SetForBuffer(filterBuffer);
-    info.lpstrFilter = filterBuffer;
-    
-    info.lpstrCustomFilter = NULL;
-    info.nMaxCustFilter = 0;
-    info.nFilterIndex = 0;
-    
-    info.lpstrFile = buffer;
-    info.nMaxFile = kBufferSize;
-    
-    info.lpstrFileTitle = NULL;
-    info.nMaxFileTitle = 0;
-    
-    info.lpstrInitialDir= NULL;
-
-    info.lpstrTitle = 0;
-    AString titleA;
-    if (title != 0)
+    CHAR buf[kBufSize];
+    MyStringCopy(buf, (const char *)GetSystemString(filePath));
+    // OPENFILENAME_NT4A
+    OPENFILENAMEA p;
+    memset(&p, 0, sizeof(p));
+    p.lStructSize = my_compatib_OPENFILENAMEA_size;
+    p.hwndOwner = hwnd;
+    CHAR filterBuf[kFilterBufSize];
     {
-      titleA = GetSystemString(title);
-      info.lpstrTitle = titleA;
+      CDoubleZeroStringListA dz(filterBuf, kFilterBufSize);
+      dz.Add(GetSystemString(filterDescription ? filterDescription : filter));
+      dz.Add(GetSystemString(filter));
+      dz.Finish();
+      p.lpstrFilter = filterBuf;
+      p.nFilterIndex = 1;
     }
     
-    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY;
-    info.nFileOffset = 0;
-    info.nFileExtension = 0;
-    info.lpstrDefExt = NULL;
-    
-    info.lCustData = 0;
-    info.lpfnHook = NULL;
-    info.lpTemplateName = NULL;
-    
-    bool res = BOOLToBool(::GetOpenFileNameA(&info));
-    resPath = GetUnicodeString(buffer);
+    p.lpstrFile = buf;
+    p.nMaxFile = kBufSize;
+    CONV_U_To_A(p.lpstrInitialDir, initialDir, initialDirA);
+    CONV_U_To_A(p.lpstrTitle, title, titleA);
+    p.Flags = OFN_EXPLORER | OFN_HIDEREADONLY;
+
+    bool res = BOOLToBool(::GetOpenFileNameA(&p));
+    resPath = GetUnicodeString(buf);
     return res;
   }
   else
   #endif
   {
-    WCHAR buffer[kBufferSize];
-    MyStringCopy(buffer, fullFileName);
-    OPENFILENAMEW info;
-    info.lStructSize = sizeof(info);
-    info.hwndOwner = hwnd;
-    info.hInstance = 0;
-    const int kFilterBufferSize = MAX_PATH;
-    WCHAR filterBuffer[kFilterBufferSize];
-    CDoubleZeroStringListW doubleZeroStringList;
-    doubleZeroStringList.Add(s);
-    doubleZeroStringList.Add(L"*.*");
-    doubleZeroStringList.SetForBuffer(filterBuffer);
-    info.lpstrFilter = filterBuffer;
+    WCHAR buf[kBufSize];
+    MyStringCopy(buf, filePath);
+    // OPENFILENAME_NT4W
+    OPENFILENAMEW p;
+    memset(&p, 0, sizeof(p));
+    p.lStructSize = my_compatib_OPENFILENAMEW_size;
+    p.hwndOwner = hwnd;
+    
+    WCHAR filterBuf[kFilterBufSize];
+    {
+      CDoubleZeroStringListW dz(filterBuf, kFilterBufSize);
+      dz.Add(filterDescription ? filterDescription : filter);
+      dz.Add(filter);
+      dz.Finish();
+      p.lpstrFilter = filterBuf;
+      p.nFilterIndex = 1;
+    }
         
-    info.lpstrCustomFilter = NULL;
-    info.nMaxCustFilter = 0;
-    info.nFilterIndex = 0;
-    
-    info.lpstrFile = buffer;
-    info.nMaxFile = kBufferSize;
-    
-    info.lpstrFileTitle = NULL;
-    info.nMaxFileTitle = 0;
-    
-    info.lpstrInitialDir= NULL;
-       
-    info.lpstrTitle = title;
-    
-    info.Flags = OFN_EXPLORER | OFN_HIDEREADONLY
+    p.lpstrFile = buf;
+    p.nMaxFile = kBufSize;
+    p.lpstrInitialDir = initialDir;
+    p.lpstrTitle = title;
+    p.Flags = OFN_EXPLORER | OFN_HIDEREADONLY
         #ifdef UNDER_CE
-        | (openFolder ? (MY_OFN_PROJECT | MY_OFN_SHOW_ALL) : 0)
+        | (openFolder ? (MY__OFN_PROJECT | MY__OFN_SHOW_ALL) : 0)
         #endif
-    ;
+        ;
 
-    info.nFileOffset = 0;
-    info.nFileExtension = 0;
-    info.lpstrDefExt = NULL;
-    
-    info.lCustData = 0;
-    info.lpfnHook = NULL;
-    info.lpTemplateName = NULL;
-    
-    bool res = BOOLToBool(::GetOpenFileNameW(&info));
-    resPath = buffer;
+    bool res = BOOLToBool(::GetOpenFileNameW(&p));
+    resPath = buf;
     return res;
   }
 }

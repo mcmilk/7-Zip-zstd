@@ -7,51 +7,50 @@
 
 class CBitlEncoder
 {
-  COutBuffer m_Stream;
-  unsigned m_BitPos;
-  Byte m_CurByte;
+  COutBuffer _stream;
+  unsigned _bitPos;
+  Byte _curByte;
 public:
-  bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
-  void SetStream(ISequentialOutStream *outStream) { m_Stream.SetStream(outStream); }
-  void ReleaseStream() { m_Stream.ReleaseStream(); }
-  UInt32 GetBitPosition() const { return (8 - m_BitPos); }
-  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() + (8 - m_BitPos + 7) /8; }
+  bool Create(UInt32 bufSize) { return _stream.Create(bufSize); }
+  void SetStream(ISequentialOutStream *outStream) { _stream.SetStream(outStream); }
+  // unsigned GetBitPosition() const { return (8 - _bitPos); }
+  UInt64 GetProcessedSize() const { return _stream.GetProcessedSize() + ((8 - _bitPos + 7) >> 3); }
   void Init()
   {
-    m_Stream.Init();
-    m_BitPos = 8;
-    m_CurByte = 0;
+    _stream.Init();
+    _bitPos = 8;
+    _curByte = 0;
   }
   HRESULT Flush()
   {
     FlushByte();
-    return m_Stream.Flush();
+    return _stream.Flush();
   }
   void FlushByte()
   {
-    if (m_BitPos < 8)
-      m_Stream.WriteByte(m_CurByte);
-    m_BitPos = 8;
-    m_CurByte = 0;
+    if (_bitPos < 8)
+      _stream.WriteByte(_curByte);
+    _bitPos = 8;
+    _curByte = 0;
   }
   void WriteBits(UInt32 value, unsigned numBits)
   {
     while (numBits > 0)
     {
-      if (numBits < m_BitPos)
+      if (numBits < _bitPos)
       {
-        m_CurByte |= (value & ((1 << numBits) - 1)) << (8 - m_BitPos);
-        m_BitPos -= numBits;
+        _curByte |= (value & ((1 << numBits) - 1)) << (8 - _bitPos);
+        _bitPos -= numBits;
         return;
       }
-      numBits -= m_BitPos;
-      m_Stream.WriteByte((Byte)(m_CurByte | (value << (8 - m_BitPos))));
-      value >>= m_BitPos;
-      m_BitPos = 8;
-      m_CurByte = 0;
+      numBits -= _bitPos;
+      _stream.WriteByte((Byte)(_curByte | (value << (8 - _bitPos))));
+      value >>= _bitPos;
+      _bitPos = 8;
+      _curByte = 0;
     }
   }
-  void WriteByte(Byte b) { m_Stream.WriteByte(b);}
+  void WriteByte(Byte b) { _stream.WriteByte(b);}
 };
 
 #endif

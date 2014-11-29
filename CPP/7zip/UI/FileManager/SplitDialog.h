@@ -3,8 +3,8 @@
 #ifndef __SPLIT_DIALOG_H
 #define __SPLIT_DIALOG_H
 
-#include "Windows/Control/Dialog.h"
-#include "Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/Dialog.h"
+#include "../../../Windows/Control/ComboBox.h"
 
 #include "SplitDialogRes.h"
 
@@ -22,7 +22,7 @@ public:
   UString Path;
   CRecordVector<UInt64> VolumeSizes;
   INT_PTR Create(HWND parentWindow = 0)
-    { return CModalDialog::Create(IDD_DIALOG_SPLIT, parentWindow); }
+    { return CModalDialog::Create(IDD_SPLIT, parentWindow); }
 };
 
 #endif

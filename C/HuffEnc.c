@@ -1,6 +1,8 @@
 /* HuffEnc.c -- functions for Huffman encoding
 2009-09-02 : Igor Pavlov : Public domain */
 
+#include "Precomp.h"
+
 #include "HuffEnc.h"
 #include "Sort.h"
 

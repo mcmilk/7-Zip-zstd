@@ -27,6 +27,7 @@ struct CUpdateItem
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
+    UINT codePage,
     IArchiveUpdateCallback *updateCallback);
 
 }}

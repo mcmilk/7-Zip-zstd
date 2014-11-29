@@ -4,9 +4,10 @@
 
 #include <stdio.h>
 
-#include "ProgressBox.h"
-#include "Common/IntToString.h"
+#include "../../../Common/IntToString.h"
+
 #include "FarUtils.h"
+#include "ProgressBox.h"
 
 static void CopySpaces(char *dest, int numSpaces)
 {
@@ -106,7 +107,7 @@ void CProgressBox::Progress(const UInt64 *total, const UInt64 *completed, const 
     _prevMessage = message;
     _prevPercentMessage = percentMessage;
     const char *strings[] = { message, percentMessage };
-    ShowMessages(strings, sizeof(strings) / sizeof(strings[0]));
+    ShowMessages(strings, ARRAY_SIZE(strings));
     _wasShown = true;
   }
 }

@@ -19,27 +19,43 @@ struct CCodecInfoEx
   UInt32 NumOutStreams;
   bool EncoderIsAssigned;
   bool DecoderIsAssigned;
+  
   bool IsSimpleCodec() const { return NumOutStreams == 1 && NumInStreams == 1; }
   CCodecInfoEx(): EncoderIsAssigned(false), DecoderIsAssigned(false) {}
 };
 
-HRESULT LoadExternalCodecs(ICompressCodecsInfo *codecsInfo, CObjectVector<CCodecInfoEx> &externalCodecs);
+struct CHasherInfoEx
+{
+  UString Name;
+  CMethodId Id;
+};
 
 #define PUBLIC_ISetCompressCodecsInfo public ISetCompressCodecsInfo,
 #define QUERY_ENTRY_ISetCompressCodecsInfo MY_QUERYINTERFACE_ENTRY(ISetCompressCodecsInfo)
 #define DECL_ISetCompressCodecsInfo STDMETHOD(SetCompressCodecsInfo)(ICompressCodecsInfo *compressCodecsInfo);
 #define IMPL_ISetCompressCodecsInfo2(x) \
 STDMETHODIMP x::SetCompressCodecsInfo(ICompressCodecsInfo *compressCodecsInfo) { \
-  COM_TRY_BEGIN _codecsInfo = compressCodecsInfo;  return LoadExternalCodecs(_codecsInfo, _externalCodecs); COM_TRY_END }
+  COM_TRY_BEGIN __externalCodecs.GetCodecs = compressCodecsInfo;  return __externalCodecs.LoadCodecs(); COM_TRY_END }
 #define IMPL_ISetCompressCodecsInfo IMPL_ISetCompressCodecsInfo2(CHandler)
 
-#define EXTERNAL_CODECS_VARS2 _codecsInfo, &_externalCodecs
+struct CExternalCodecs
+{
+  CMyComPtr<ICompressCodecsInfo> GetCodecs;
+  CMyComPtr<IHashers> GetHashers;
 
-#define DECL_EXTERNAL_CODECS_VARS CMyComPtr<ICompressCodecsInfo> _codecsInfo; CObjectVector<CCodecInfoEx> _externalCodecs;
+  CObjectVector<CCodecInfoEx> Codecs;
+  CObjectVector<CHasherInfoEx> Hashers;
+
+  HRESULT LoadCodecs();
+};
+
+#define EXTERNAL_CODECS_VARS2 &__externalCodecs
+
+#define DECL_EXTERNAL_CODECS_VARS CExternalCodecs __externalCodecs;
 #define EXTERNAL_CODECS_VARS EXTERNAL_CODECS_VARS2,
 
-#define DECL_EXTERNAL_CODECS_LOC_VARS2 ICompressCodecsInfo *codecsInfo, const CObjectVector<CCodecInfoEx> *externalCodecs
-#define EXTERNAL_CODECS_LOC_VARS2 codecsInfo, externalCodecs
+#define DECL_EXTERNAL_CODECS_LOC_VARS2 const CExternalCodecs *__externalCodecs
+#define EXTERNAL_CODECS_LOC_VARS2 __externalCodecs
 
 #define DECL_EXTERNAL_CODECS_LOC_VARS DECL_EXTERNAL_CODECS_LOC_VARS2,
 #define EXTERNAL_CODECS_LOC_VARS EXTERNAL_CODECS_LOC_VARS2,
@@ -68,6 +84,13 @@ bool FindMethod(
   DECL_EXTERNAL_CODECS_LOC_VARS
   CMethodId methodId, UString &name);
 
+bool FindHashMethod(
+  DECL_EXTERNAL_CODECS_LOC_VARS
+  const UString &name, CMethodId &methodId);
+
+void GetHashMethods(
+  DECL_EXTERNAL_CODECS_LOC_VARS
+  CRecordVector<CMethodId> &methods);
 
 HRESULT CreateCoder(
   DECL_EXTERNAL_CODECS_LOC_VARS
@@ -94,5 +117,11 @@ HRESULT CreateFilter(
   CMethodId methodId,
   CMyComPtr<ICompressFilter> &filter,
   bool encode);
+
+HRESULT CreateHasher(
+  DECL_EXTERNAL_CODECS_LOC_VARS
+  CMethodId methodId,
+  UString &name,
+  CMyComPtr<IHasher> &hacher);
 
 #endif

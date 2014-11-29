@@ -1,14 +1,12 @@
 /* Lzma2Dec.h -- LZMA2 Decoder
-2009-05-03 : Igor Pavlov : Public domain */
+2013-01-18 : Igor Pavlov : Public domain */
 
 #ifndef __LZMA2_DEC_H
 #define __LZMA2_DEC_H
 
 #include "LzmaDec.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* ---------- State Interface ---------- */
 
@@ -77,8 +75,6 @@ Returns:
 SRes Lzma2Decode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
     Byte prop, ELzmaFinishMode finishMode, ELzmaStatus *status, ISzAlloc *alloc);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif

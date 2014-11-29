@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_CONTROL_DIALOG_H
 #define __WINDOWS_CONTROL_DIALOG_H
 
-#include "Windows/Window.h"
+#include "../Window.h"
 
 namespace NWindows {
 namespace NControl {
@@ -11,7 +11,7 @@ namespace NControl {
 class CDialog: public CWindow
 {
 public:
-  CDialog(HWND wndow = NULL): CWindow(wndow){};
+  CDialog(HWND wnd = NULL): CWindow(wnd){};
   virtual ~CDialog() {};
 
   HWND GetItem(int itemID) const
@@ -22,6 +22,9 @@ public:
 
   bool ShowItem(int itemID, int cmdShow) const
     { return BOOLToBool(::ShowWindow(GetItem(itemID), cmdShow)); }
+
+  bool ShowItem_Bool(int itemID, bool show) const
+    { return ShowItem(itemID, show ? SW_SHOW: SW_HIDE); }
 
   bool HideItem(int itemID) const { return ShowItem(itemID, SW_HIDE); }
 
@@ -110,52 +113,11 @@ public:
   LONG_PTR GetMsgResult() const
     { return GetLongPtr(DWLP_MSGRESULT); }
 
-
-  bool GetMargins(int margin, int &x, int &y)
-  {
-    RECT rect;
-    rect.left = 0;
-    rect.top = 0;
-    rect.right = margin;
-    rect.bottom = margin;
-    if (!MapRect(&rect))
-      return false;
-    x = rect.right - rect.left;
-    y = rect.bottom - rect.top;
-    return true;
-  }
-
-  int Units_To_Pixels_X(int units)
-  {
-    RECT rect;
-    rect.left = 0;
-    rect.top = 0;
-    rect.right = units;
-    rect.bottom = units;
-    if (!MapRect(&rect))
-      return units * 3 / 2;
-    return rect.right - rect.left;
-  }
-
-  bool GetItemSizes(int id, int &x, int &y)
-  {
-    RECT rect;
-    if (!::GetWindowRect(GetItem(id), &rect))
-      return false;
-    x = rect.right - rect.left;
-    y = rect.bottom - rect.top;
-    return true;
-  }
-
-  void GetClientRectOfItem(int id, RECT &rect)
-  {
-    ::GetWindowRect(GetItem(id), &rect);
-    ScreenToClient(&rect);
-  }
-
-  
-  bool MoveItem(int id, int x, int y, int width, int height, bool repaint = true)
-    { return BOOLToBool(::MoveWindow(GetItem(id), x, y, width, height, BoolToBOOL(repaint))); }
+  bool GetMargins(int margin, int &x, int &y);
+  int Units_To_Pixels_X(int units);
+  bool GetItemSizes(int id, int &x, int &y);
+  void GetClientRectOfItem(int id, RECT &rect);
+  bool MoveItem(int id, int x, int y, int width, int height, bool repaint = true);
 
   void NormalizeSize(bool fullNormalize = false);
   void NormalizePosition();

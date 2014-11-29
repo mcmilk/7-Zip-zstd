@@ -7,19 +7,16 @@
 
 #ifdef LANG
 #include "LangUtils.h"
-static CIDLangPair kIDLangPairs[] =
-{
-  { IDOK, 0x02000702 },
-  { IDCANCEL, 0x02000710 }
-};
 #endif
+
+using namespace NWindows;
 
 bool CListViewDialog::OnInit()
 {
   #ifdef LANG
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, NULL, 0);
   #endif
-  _listView.Attach(GetItem(IDC_LISTVIEW_LIST));
+  _listView.Attach(GetItem(IDL_LISTVIEW));
 
   if (ReadSingleClick())
     _listView.SetExtendedListViewStyle(LVS_EX_ONECLICKACTIVATE | LVS_EX_TRACKSELECT);
@@ -34,7 +31,7 @@ bool CListViewDialog::OnInit()
 
   _listView.InsertColumn(0, &columnInfo);
 
-  for (int i = 0; i < Strings.Size(); i++)
+  FOR_VECTOR (i, Strings)
     _listView.InsertItem(i, Strings[i]);
 
   if (Strings.Size() > 0)
@@ -125,8 +122,7 @@ bool CListViewDialog::OnNotify(UINT /* controlID */, LPNMHDR header)
         }
         case 'A':
         {
-          bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-          if (ctrl)
+          if (IsKeyDown(VK_CONTROL))
           {
             _listView.SelectAll();
             return true;

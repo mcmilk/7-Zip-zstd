@@ -3,7 +3,7 @@
 #ifndef __CONTEXT_MENU_H
 #define __CONTEXT_MENU_H
 
-#include "Common/MyString.h"
+#include "../../../Common/MyString.h"
 
 #include "../FileManager/MyCom2.h"
 
@@ -27,7 +27,12 @@ public:
     kCompressTo7z,
     kCompressTo7zEmail,
     kCompressToZip,
-    kCompressToZipEmail
+    kCompressToZipEmail,
+    kHash_CRC32,
+    kHash_CRC64,
+    kHash_SHA1,
+    kHash_SHA256,
+    kHash_All
   };
   
   MY_UNKNOWN_IMP2_MT(IContextMenu, IShellExtInit)
@@ -40,7 +45,7 @@ public:
   STDMETHOD(InvokeCommand)(LPCMINVOKECOMMANDINFO lpici);
   STDMETHOD(GetCommandString)(UINT_PTR idCmd, UINT uType, UINT *pwReserved, LPSTR pszName, UINT cchMax);
 
-  HRESULT InitContextMenu(const wchar_t *folder, const wchar_t **names, UINT32 numFiles);
+  HRESULT InitContextMenu(const wchar_t *folder, const wchar_t **names, unsigned numFiles);
 
   CZipContextMenu();
   ~CZipContextMenu();
@@ -57,14 +62,18 @@ private:
     UString ArcType;
   };
 
+  bool _isMenuForFM;
   UStringVector _fileNames;
   bool _dropMode;
   UString _dropPath;
   CObjectVector<CCommandMapItem> _commandMap;
 
+  HBITMAP _bitmap;
+
   HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
   int FindVerb(const UString &verb);
-  void FillCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &commandMapItem);
+  bool FillCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &commandMapItem);
+  void AddMapItem_ForSubMenu(const wchar_t *ver);
 };
 
 #endif

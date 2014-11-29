@@ -6,7 +6,7 @@
 
 static const unsigned kNumBitsMax = sizeof(UInt32) * 8;
 
-static UInt32 GetSubBits(UInt32 value, unsigned startPos, unsigned numBits)
+static UInt32 GetSubBits(UInt32 value, unsigned startPos, unsigned numBits) throw()
 {
   if (startPos == sizeof(value) * 8)
     return 0;
@@ -33,7 +33,7 @@ bool CMap32::Find(UInt32 key, UInt32 &valueRes) const
     }
   }
 
-  int cur = 0;
+  unsigned cur = 0;
   unsigned bitPos = kNumBitsMax;
   for (;;)
   {
@@ -47,7 +47,7 @@ bool CMap32::Find(UInt32 key, UInt32 &valueRes) const
       valueRes = n.Values[bit];
       return (key == n.Keys[bit]);
     }
-    cur = (int)n.Keys[bit];
+    cur = (unsigned)n.Keys[bit];
   }
 }
 
@@ -74,7 +74,7 @@ bool CMap32::Set(UInt32 key, UInt32 value)
         return true;
       }
       unsigned i = kNumBitsMax - 1;
-      for (;GetSubBit(key, i) == GetSubBit(n.Key, i); i--);
+      for (; GetSubBit(key, i) == GetSubBit(n.Key, i); i--);
       n.Len = (UInt16)(kNumBitsMax - (1 + i));
       unsigned newBit = GetSubBit(key, i);
       n.Values[newBit] = value;
@@ -83,7 +83,7 @@ bool CMap32::Set(UInt32 key, UInt32 value)
     }
   }
 
-  int cur = 0;
+  unsigned cur = 0;
   unsigned bitPos = kNumBitsMax;
   for (;;)
   {
@@ -117,7 +117,7 @@ bool CMap32::Set(UInt32 key, UInt32 value)
         return true;
       }
       unsigned i = bitPos - 1;
-      for (;GetSubBit(key, i) == GetSubBit(n.Keys[bit], i); i--);
+      for (; GetSubBit(key, i) == GetSubBit(n.Keys[bit], i); i--);
      
       CNode e2;
       
@@ -135,6 +135,6 @@ bool CMap32::Set(UInt32 key, UInt32 value)
       Nodes.Add(e2);
       return false;
     }
-    cur = (int)n.Keys[bit];
+    cur = (unsigned)n.Keys[bit];
   }
 }

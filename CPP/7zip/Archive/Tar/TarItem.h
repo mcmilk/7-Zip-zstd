@@ -40,28 +40,41 @@ struct CItem
 
   CRecordVector<CSparseBlock> SparseBlocks;
 
-  bool IsLink() const { return LinkFlag == NFileHeader::NLinkFlag::kSymbolicLink && (Size == 0); }
+  bool IsSymLink() const { return LinkFlag == NFileHeader::NLinkFlag::kSymLink && (Size == 0); }
+  bool IsHardLink() const { return LinkFlag == NFileHeader::NLinkFlag::kHardLink; }
   bool IsSparse() const { return LinkFlag == NFileHeader::NLinkFlag::kSparse; }
-  UInt64 GetUnpackSize() const { return IsLink() ? LinkName.Length() : Size; }
+  UInt64 GetUnpackSize() const { return IsSymLink() ? LinkName.Len() : Size; }
+  bool IsPaxExtendedHeader() const
+  {
+    switch (LinkFlag)
+    {
+      case 'g':
+      case 'x':
+      case 'X':  // Check it
+        return true;
+    }
+    return false;
+  }
 
   bool IsDir() const
   {
-    switch(LinkFlag)
+    switch (LinkFlag)
     {
       case NFileHeader::NLinkFlag::kDirectory:
       case NFileHeader::NLinkFlag::kDumpDir:
         return true;
       case NFileHeader::NLinkFlag::kOldNormal:
       case NFileHeader::NLinkFlag::kNormal:
+      case NFileHeader::NLinkFlag::kSymLink:
         return NItemName::HasTailSlash(Name, CP_OEMCP);
     }
     return false;
   }
 
-  bool IsMagic() const
+  bool IsUstarMagic() const
   {
     for (int i = 0; i < 5; i++)
-      if (Magic[i] != NFileHeader::NMagic::kUsTar[i])
+      if (Magic[i] != NFileHeader::NMagic::kUsTar_00[i])
         return false;
     return true;
   }

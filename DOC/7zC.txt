@@ -1,4 +1,4 @@
-7z ANSI-C Decoder 4.62
+7z ANSI-C Decoder 9.24
 ----------------------
 
 7z ANSI-C provides 7z/LZMA decoding.
@@ -112,14 +112,9 @@ SzArEx_Open function allocates and frees temporary structures by "allocTemp" fun
 
   Listing code:
   ~~~~~~~~~~~~~
-    {
-      UInt32 i;
-      for (i = 0; i < db.db.NumFiles; i++)
-      {
-        CFileItem *f = db.db.Files + i;
-        printf("%10d  %s\n", (int)f->Size, f->Name);
-      }
-    }
+
+    Use SzArEx_GetFileNameUtf16 function. Look example code in C\Util\7z\7zMain.c file. 
+    
 
   Extracting code:
   ~~~~~~~~~~~~~~~~

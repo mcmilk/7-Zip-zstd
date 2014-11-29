@@ -2,7 +2,7 @@
 #include "../../GuiCommon.rc"
 
 #undef DIALOG_ID
-#define DIALOG_ID  IDD_DIALOG_PROGRESS
+#define DIALOG_ID  IDD_PROGRESS
 #define xc 360
 #define k 11
 #define z1s 16
@@ -19,7 +19,7 @@
 #undef k
 #undef z1s
 
-#define DIALOG_ID  IDD_DIALOG_PROGRESS_2
+#define DIALOG_ID  IDD_PROGRESS_2
 #define m 4
 #define k 8
 #define z1s 12
@@ -34,8 +34,7 @@ STRINGTABLE DISCARDABLE
 {
   IDS_PROGRESS_PAUSED     "Paused"
   IDS_PROGRESS_FOREGROUND "&Foreground"
-  IDS_PROGRESS_CONTINUE   "&Continue"
+  IDS_CONTINUE            "&Continue"
   IDS_PROGRESS_ASK_CANCEL "Are you sure you want to cancel?"
   IDS_CLOSE "&Close"
-  IDS_MESSAGES_DIALOG_MESSAGE_COLUMN "Message"
 }

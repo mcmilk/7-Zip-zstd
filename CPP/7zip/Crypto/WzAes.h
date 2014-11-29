@@ -14,9 +14,8 @@ specified in password Based File Encryption Utility:
 
 #include "../../../C/Aes.h"
 
-#include "Common/Buffer.h"
-#include "Common/MyCom.h"
-#include "Common/MyVector.h"
+#include "../../Common/MyBuffer.h"
+#include "../../Common/MyCom.h"
 
 #include "../ICoder.h"
 #include "../IPassword.h"

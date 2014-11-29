@@ -55,12 +55,6 @@ class CCoder :
   UInt32 c_table[CTABLESIZE];
   UInt32 pt_table[PTABLESIZE];
   
-  void ReleaseStreams()
-  {
-    m_OutWindowStream.ReleaseStream();
-    m_InBitStream.ReleaseStream();
-  }
-
   class CCoderReleaser
   {
     CCoder *m_Coder;
@@ -71,7 +65,6 @@ class CCoder :
     {
       if (NeedFlush)
         m_Coder->m_OutWindowStream.Flush();
-      m_Coder->ReleaseStreams();
     }
   };
   friend class CCoderReleaser;

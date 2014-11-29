@@ -2,31 +2,41 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/CpuArch.h"
+
+#include "../../MyVersion.h"
+
 #include "AboutDialog.h"
+#include "PropertyNameRes.h"
+
 #include "HelpUtils.h"
 #include "LangUtils.h"
 
-static CIDLangPair kIDLangPairs[] =
+static const UInt32 kLangIDs[] =
 {
-  { IDC_ABOUT_STATIC_REGISTER_INFO, 0x01000103 },
-  { IDC_ABOUT_BUTTON_SUPPORT, 0x01000104 },
-  { IDC_ABOUT_BUTTON_REGISTER, 0x01000105 },
-  { IDOK, 0x02000702 }
+  IDT_ABOUT_INFO
 };
 
-#define MY_HOME_PAGE TEXT("http://www.7-zip.org/")
-
-static LPCTSTR kHomePageURL     = MY_HOME_PAGE;
-/*
-static LPCTSTR kRegisterPageURL = MY_HOME_PAGE TEXT("register.html");
-static LPCTSTR kSupportPageURL  = MY_HOME_PAGE TEXT("support.html");
-*/
+static LPCTSTR kHomePageURL = TEXT("http://www.7-zip.org/");
 static LPCWSTR kHelpTopic = L"start.htm";
+
+#define LLL_(quote) L##quote
+#define LLL(quote) LLL_(quote)
 
 bool CAboutDialog::OnInit()
 {
-  LangSetWindowText(HWND(*this), 0x01000100);
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+  UString s = L"7-Zip " LLL(MY_VERSION);
+  #ifdef MY_CPU_64BIT
+  s += L" [";
+  s += LangString(IDS_PROP_BIT64);
+  s += L']';
+  #endif
+
+  SetItemText(IDT_ABOUT_VERSION, s);
+  SetItemText(IDT_ABOUT_DATE, LLL(MY_DATE));
+  
+  LangSetWindowText(*this, IDD_ABOUT);
   NormalizePosition();
   return CModalDialog::OnInit();
 }
@@ -39,13 +49,9 @@ void CAboutDialog::OnHelp()
 bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   LPCTSTR url;
-  switch(buttonID)
+  switch (buttonID)
   {
-    case IDC_ABOUT_BUTTON_HOMEPAGE: url = kHomePageURL; break;
-    /*
-    case IDC_ABOUT_BUTTON_REGISTER: url = kRegisterPageURL; break;
-    case IDC_ABOUT_BUTTON_SUPPORT: url = kSupportPageURL; break;
-    */
+    case IDB_ABOUT_HOMEPAGE: url = kHomePageURL; break;
     default:
       return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
   }

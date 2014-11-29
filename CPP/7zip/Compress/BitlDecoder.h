@@ -9,130 +9,127 @@ namespace NBitl {
 
 const unsigned kNumBigValueBits = 8 * 4;
 const unsigned kNumValueBytes = 3;
-const unsigned kNumValueBits = 8  * kNumValueBytes;
+const unsigned kNumValueBits = 8 * kNumValueBytes;
 
 const UInt32 kMask = (1 << kNumValueBits) - 1;
 
 extern Byte kInvertTable[256];
 
+/* TInByte must support "Extra Bytes" (bytes that can be read after the end of stream
+   TInByte::ReadByte() returns 0xFF after the end of stream
+   TInByte::NumExtraBytes contains the number "Extra Bytes"
+       
+   Bitl decoder can read up to 4 bytes ahead to internal buffer. */
+
 template<class TInByte>
 class CBaseDecoder
 {
 protected:
-  unsigned m_BitPos;
-  UInt32 m_Value;
-  TInByte m_Stream;
+  unsigned _bitPos;
+  UInt32 _value;
+  TInByte _stream;
 public:
-  UInt32 NumExtraBytes;
-  bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
-  void SetStream(ISequentialInStream *inStream) { m_Stream.SetStream(inStream); }
-  void ReleaseStream() { m_Stream.ReleaseStream(); }
+  bool Create(UInt32 bufSize) { return _stream.Create(bufSize); }
+  void SetStream(ISequentialInStream *inStream) { _stream.SetStream(inStream); }
   void Init()
   {
-    m_Stream.Init();
-    m_BitPos = kNumBigValueBits;
-    m_Value = 0;
-    NumExtraBytes = 0;
+    _stream.Init();
+    _bitPos = kNumBigValueBits;
+    _value = 0;
   }
-  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() + NumExtraBytes - (kNumBigValueBits - m_BitPos) / 8; }
+
+  UInt64 GetStreamSize() const { return _stream.GetStreamSize(); }
+  UInt64 GetProcessedSize() const { return _stream.GetProcessedSize() - ((kNumBigValueBits - _bitPos) >> 3); }
+
+  bool ThereAreDataInBitsBuffer() const { return this->_bitPos != kNumBigValueBits; }
 
   void Normalize()
   {
-    for (; m_BitPos >= 8; m_BitPos -= 8)
-    {
-      Byte b = 0;
-      if (!m_Stream.ReadByte(b))
-      {
-        b = 0xFF; // check it
-        NumExtraBytes++;
-      }
-      m_Value = (b << (kNumBigValueBits - m_BitPos)) | m_Value;
-    }
+    for (; _bitPos >= 8; _bitPos -= 8)
+      _value = ((UInt32)_stream.ReadByte() << (kNumBigValueBits - _bitPos)) | _value;
   }
   
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
-    UInt32 res = m_Value & ((1 << numBits) - 1);
-    m_BitPos += numBits;
-    m_Value >>= numBits;
+    UInt32 res = _value & ((1 << numBits) - 1);
+    _bitPos += numBits;
+    _value >>= numBits;
     return res;
   }
 
   bool ExtraBitsWereRead() const
   {
-    if (NumExtraBytes == 0)
-      return false;
-    return ((UInt32)(kNumBigValueBits - m_BitPos) < (NumExtraBytes << 3));
+    return (_stream.NumExtraBytes > 4 || kNumBigValueBits - _bitPos < (_stream.NumExtraBytes << 3));
   }
+  
+  bool ExtraBitsWereRead_Fast() const
+  {
+    // full version is not inlined in vc6.
+    // return _stream.NumExtraBytes != 0 && (_stream.NumExtraBytes > 4 || kNumBigValueBits - _bitPos < (_stream.NumExtraBytes << 3));
+    
+    // (_stream.NumExtraBytes > 4) is fast overread detection. It's possible that
+    // it doesn't return true, if small number of extra bits were read.
+    return (_stream.NumExtraBytes > 4);
+  }
+
+  // it must be fixed !!! with extra bits
+  // UInt32 GetNumExtraBytes() const { return _stream.NumExtraBytes; }
 };
 
 template<class TInByte>
 class CDecoder: public CBaseDecoder<TInByte>
 {
-  UInt32 m_NormalValue;
+  UInt32 _normalValue;
 
 public:
   void Init()
   {
     CBaseDecoder<TInByte>::Init();
-    m_NormalValue = 0;
+    _normalValue = 0;
   }
 
   void Normalize()
   {
-    for (; this->m_BitPos >= 8; this->m_BitPos -= 8)
+    for (; this->_bitPos >= 8; this->_bitPos -= 8)
     {
-      Byte b = 0;
-      if (!this->m_Stream.ReadByte(b))
-      {
-        b = 0xFF; // check it
-        this->NumExtraBytes++;
-      }
-      m_NormalValue = (b << (kNumBigValueBits - this->m_BitPos)) | m_NormalValue;
-      this->m_Value = (this->m_Value << 8) | kInvertTable[b];
+      Byte b = this->_stream.ReadByte();
+      _normalValue = ((UInt32)b << (kNumBigValueBits - this->_bitPos)) | _normalValue;
+      this->_value = (this->_value << 8) | kInvertTable[b];
     }
   }
   
   UInt32 GetValue(unsigned numBits)
   {
     Normalize();
-    return ((this->m_Value >> (8 - this->m_BitPos)) & kMask) >> (kNumValueBits - numBits);
+    return ((this->_value >> (8 - this->_bitPos)) & kMask) >> (kNumValueBits - numBits);
   }
 
   void MovePos(unsigned numBits)
   {
-    this->m_BitPos += numBits;
-    m_NormalValue >>= numBits;
+    this->_bitPos += numBits;
+    _normalValue >>= numBits;
   }
   
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
-    UInt32 res = m_NormalValue & ((1 << numBits) - 1);
+    UInt32 res = _normalValue & ((1 << numBits) - 1);
     MovePos(numBits);
     return res;
   }
 
-  void AlignToByte() { MovePos((32 - this->m_BitPos) & 7); }
+  void AlignToByte() { MovePos((32 - this->_bitPos) & 7); }
 
-  Byte ReadByte()
+  Byte ReadDirectByte() { return _stream.ReadByte(); }
+
+  Byte ReadAlignedByte()
   {
-    if (this->m_BitPos == kNumBigValueBits)
-    {
-      Byte b = 0;
-      if (!this->m_Stream.ReadByte(b))
-      {
-        b = 0xFF;
-        this->NumExtraBytes++;
-      }
-      return b;
-    }
-    {
-      Byte b = (Byte)(m_NormalValue & 0xFF);
-      MovePos(8);
-      return b;
-    }
+    if (this->_bitPos == kNumBigValueBits)
+      return _stream.ReadByte();
+    Byte b = (Byte)(_normalValue & 0xFF);
+    MovePos(8);
+    return b;
   }
 };
 

@@ -3,8 +3,27 @@
 #ifndef __WINDOWS_WINDOW_H
 #define __WINDOWS_WINDOW_H
 
+#include "../Common/MyString.h"
+
 #include "Defs.h"
-#include "Common/MyString.h"
+
+#ifndef UNDER_CE
+
+#define MY__WM_CHANGEUISTATE  0x0127
+#define MY__WM_UPDATEUISTATE  0x0128
+#define MY__WM_QUERYUISTATE   0x0129
+
+// LOWORD(wParam) values in WM_*UISTATE
+#define MY__UIS_SET         1
+#define MY__UIS_CLEAR       2
+#define MY__UIS_INITIALIZE  3
+
+// HIWORD(wParam) values in WM_*UISTATE
+#define MY__UISF_HIDEFOCUS  0x1
+#define MY__UISF_HIDEACCEL  0x2
+#define MY__UISF_ACTIVE     0x4
+
+#endif
 
 namespace NWindows {
 
@@ -142,6 +161,8 @@ public:
 
   bool GetClientRect(LPRECT rect) { return BOOLToBool(::GetClientRect(_window, rect)); }
   bool Show(int cmdShow) { return BOOLToBool(::ShowWindow(_window, cmdShow)); }
+  bool Show_Bool(bool show) { return Show(show ? SW_SHOW: SW_HIDE); }
+
   #ifndef UNDER_CE
   bool SetPlacement(CONST WINDOWPLACEMENT *placement) { return BOOLToBool(::SetWindowPlacement(_window, placement)); }
   bool GetPlacement(WINDOWPLACEMENT *placement) { return BOOLToBool(::GetWindowPlacement(_window, placement)); }
@@ -255,7 +276,8 @@ public:
 #define RECT_SIZE_X(r) ((r).right - (r).left)
 #define RECT_SIZE_Y(r) ((r).bottom - (r).top)
 
+inline bool IsKeyDown(int virtKey) { return (::GetKeyState(virtKey) & 0x8000) != 0; }
+
 }
 
 #endif
-

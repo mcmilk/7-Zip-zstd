@@ -1,9 +1,9 @@
 // PropertyName.h
 
-#ifndef __PROPERTYNAME_H
-#define __PROPERTYNAME_H
+#ifndef __PROPERTY_NAME_H
+#define __PROPERTY_NAME_H
 
-#include "Common/MyString.h"
+#include "../../../Common/MyString.h"
 
 UString GetNameOfProperty(PROPID propID, const wchar_t *name);
 

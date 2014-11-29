@@ -4,12 +4,14 @@
 
 #include "../../../C/7zCrc.h"
 
+#include "../../Common/Defs.h"
+
 #include "InOutTempBuffer.h"
 #include "StreamUtils.h"
 
 using namespace NWindows;
 using namespace NFile;
-using namespace NDirectory;
+using namespace NDir;
 
 static const UInt32 kTempBufSize = (1 << 20);
 

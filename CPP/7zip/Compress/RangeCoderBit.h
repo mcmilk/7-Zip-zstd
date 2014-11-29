@@ -1,5 +1,5 @@
 // Compress/RangeCoderBit.h
-// 2009-05-30 : Igor Pavlov : Public domain
+// 2013-01-10 : Igor Pavlov : Public domain
 
 #ifndef __COMPRESS_RANGE_CODER_BIT_H
 #define __COMPRESS_RANGE_CODER_BIT_H
@@ -9,17 +9,17 @@
 namespace NCompress {
 namespace NRangeCoder {
 
-const int kNumBitModelTotalBits  = 11;
+const unsigned kNumBitModelTotalBits = 11;
 const UInt32 kBitModelTotal = (1 << kNumBitModelTotalBits);
 
-const int kNumMoveReducingBits = 4;
+const unsigned kNumMoveReducingBits = 4;
 
-const int kNumBitPriceShiftBits = 4;
+const unsigned kNumBitPriceShiftBits = 4;
 const UInt32 kBitPrice = 1 << kNumBitPriceShiftBits;
 
 extern UInt32 ProbPrices[kBitModelTotal >> kNumMoveReducingBits];
 
-template <int numMoveBits>
+template <unsigned numMoveBits>
 class CBitModel
 {
 public:
@@ -39,7 +39,7 @@ public:
   void Init() { Prob = kBitModelTotal / 2; }
 };
 
-template <int numMoveBits>
+template <unsigned numMoveBits>
 class CBitEncoder: public CBitModel<numMoveBits>
 {
 public:
@@ -69,14 +69,14 @@ public:
   }
   UInt32 GetPrice(UInt32 symbol) const
   {
-    return ProbPrices[(this->Prob ^ ((-(int)symbol)) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
+    return ProbPrices[(this->Prob ^ ((-(int)(Int32)symbol)) & (kBitModelTotal - 1)) >> kNumMoveReducingBits];
   }
   UInt32 GetPrice0() const { return ProbPrices[this->Prob >> kNumMoveReducingBits]; }
   UInt32 GetPrice1() const { return ProbPrices[(this->Prob ^ (kBitModelTotal - 1)) >> kNumMoveReducingBits]; }
 };
 
 
-template <int numMoveBits>
+template <unsigned numMoveBits>
 class CBitDecoder: public CBitModel<numMoveBits>
 {
 public:

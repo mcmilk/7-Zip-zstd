@@ -2,13 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "Common/MyCom.h"
+#include "../Common/MyCom.h"
 #ifndef _UNICODE
-#include "Common/StringConvert.h"
+#include "../Common/StringConvert.h"
 #endif
 
-#include "Windows/COM.h"
-#include "Windows/Shell.h"
+#include "COM.h"
+#include "Shell.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -111,11 +111,10 @@ UString CDrop::QueryFileName(UINT fileIndex)
 
 void CDrop::QueryFileNames(UStringVector &fileNames)
 {
-  fileNames.Clear();
   UINT numFiles = QueryCountOfFiles();
-  fileNames.Reserve(numFiles);
+  fileNames.ClearAndReserve(numFiles);
   for (UINT i = 0; i < numFiles; i++)
-    fileNames.Add(QueryFileName(i));
+    fileNames.AddInReserved(QueryFileName(i));
 }
 
 
@@ -140,8 +139,8 @@ bool BrowseForFolder(HWND, LPCTSTR, UINT, LPCTSTR, CSysString &)
   return false;
 }
 
-bool BrowseForFolder(HWND owner, LPCTSTR title,
-    LPCTSTR initialFolder, CSysString &resultPath)
+bool BrowseForFolder(HWND /* owner */, LPCTSTR /* title */,
+    LPCTSTR /* initialFolder */, CSysString & /* resultPath */)
 {
   /*
   // SHBrowseForFolder doesn't work before CE 6.0 ?

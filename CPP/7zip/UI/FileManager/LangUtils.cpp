@@ -2,50 +2,36 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
-#include "Common/StringToInt.h"
+#include "../../../Common/Lang.h"
 
-#include "Windows/DLL.h"
-#include "Windows/FileFind.h"
-#include "Windows/Synchronization.h"
-#include "Windows/Window.h"
+#include "../../../Windows/DLL.h"
+#include "../../../Windows/Synchronization.h"
+#include "../../../Windows/Window.h"
 
 #include "LangUtils.h"
 #include "RegistryUtils.h"
 
 using namespace NWindows;
 
-static CLang g_Lang;
-UString g_LangID;
-
 #ifndef _UNICODE
 extern bool g_IsNT;
 #endif
 
-static FString GetLangDirPrefix()
-{
-  return NDLL::GetModuleDirPrefix() + FString(FTEXT("Lang") FSTRING_PATH_SEPARATOR);
-}
+UString g_LangID;
 
-void ReloadLang()
-{
-  ReadRegLang(g_LangID);
-  g_Lang.Clear();
-  if (!g_LangID.IsEmpty() && g_LangID != L"-")
-  {
-    FString langPath = us2fs(g_LangID);
-    if (langPath.Find(WCHAR_PATH_SEPARATOR) < 0)
-    {
-      if (langPath.Find(FTEXT('.')) < 0)
-        langPath += FTEXT(".txt");
-      langPath = GetLangDirPrefix() + langPath;
-    }
-    g_Lang.Open(langPath);
-  }
-}
-
+static CLang g_Lang;
 static bool g_Loaded = false;
 static NSynchronization::CCriticalSection g_CriticalSection;
+
+bool LangOpen(CLang &lang, CFSTR fileName)
+{
+  return lang.Open(fileName, L"7-Zip");
+}
+
+FString GetLangDirPrefix()
+{
+  return NDLL::GetModuleDirPrefix() + FTEXT("Lang") FSTRING_PATH_SEPARATOR;
+}
 
 void LoadLangOneTime()
 {
@@ -56,154 +42,210 @@ void LoadLangOneTime()
   ReloadLang();
 }
 
-void LangSetDlgItemsText(HWND dialogWindow, const CIDLangPair *idLangPairs, int numItems)
+void LangSetDlgItemText(HWND dialog, UInt32 controlID, UInt32 langID)
 {
-  for (int i = 0; i < numItems; i++)
+  const wchar_t *s = g_Lang.Get(langID);
+  if (s)
   {
-    const CIDLangPair &idLangPair = idLangPairs[i];
-    UString message;
-    if (g_Lang.GetMessage(idLangPair.LangID, message))
+    CWindow window(GetDlgItem(dialog, controlID));
+    window.SetText(s);
+  }
+}
+
+static const CIDLangPair kLangPairs[] =
+{
+  { IDOK,     401 },
+  { IDCANCEL, 402 },
+  { IDYES,    406 },
+  { IDNO,     407 },
+  { IDHELP,   409 }
+};
+
+
+void LangSetDlgItems(HWND dialog, const UInt32 *ids, unsigned numItems)
+{
+  unsigned i;
+  for (i = 0; i < ARRAY_SIZE(kLangPairs); i++)
+  {
+    const CIDLangPair &pair = kLangPairs[i];
+    CWindow window(GetDlgItem(dialog, pair.ControlID));
+    if (window)
     {
-      NWindows::CWindow window(GetDlgItem(dialogWindow, idLangPair.ControlID));
-      window.SetText(message);
+      const wchar_t *s = g_Lang.Get(pair.LangID);
+      if (s)
+        window.SetText(s);
+    }
+  }
+
+  for (i = 0; i < numItems; i++)
+  {
+    UInt32 id = ids[i];
+    LangSetDlgItemText(dialog, id, id);
+  }
+}
+
+void LangSetDlgItems_Colon(HWND dialog, const UInt32 *ids, unsigned numItems)
+{
+  for (unsigned i = 0; i < numItems; i++)
+  {
+    UInt32 id = ids[i];
+    const wchar_t *s = g_Lang.Get(id);
+    if (s)
+    {
+      CWindow window(GetDlgItem(dialog, id));
+      UString s2 = s;
+      s2 += L':';
+      window.SetText(s2);
     }
   }
 }
 
 void LangSetWindowText(HWND window, UInt32 langID)
 {
-  UString message;
-  if (g_Lang.GetMessage(langID, message))
-    MySetWindowText(window, message);
+  const wchar_t *s = g_Lang.Get(langID);
+  if (s)
+    MySetWindowText(window, s);
 }
 
 UString LangString(UInt32 langID)
 {
-  UString message;
-  if (g_Lang.GetMessage(langID, message))
-    return message;
-  return UString();
+  const wchar_t *s = g_Lang.Get(langID);
+  if (s)
+    return s;
+  return MyLoadString(langID);
 }
 
-UString LangString(UINT resourceID, UInt32 langID)
+void LangString(UInt32 langID, UString &dest)
 {
-  UString message;
-  if (g_Lang.GetMessage(langID, message))
-    return message;
-  return MyLoadStringW(resourceID);
-}
-
-void LoadLangs(CObjectVector<CLangEx> &langs)
-{
-  langs.Clear();
-  const FString dirPrefix = GetLangDirPrefix();
-  NFile::NFind::CEnumerator enumerator(dirPrefix + FTEXT("*.txt"));
-  NFile::NFind::CFileInfo fi;
-  while (enumerator.Next(fi))
+  const wchar_t *s = g_Lang.Get(langID);
+  if (s)
   {
-    if (fi.IsDir())
-      continue;
-    const int kExtSize = 4;
-    const FString ext = fi.Name.Right(kExtSize);
-    if (ext.CompareNoCase(FTEXT(".txt")) != 0)
-      continue;
-    CLangEx lang;
-    lang.ShortName = fs2us(fi.Name.Left(fi.Name.Length() - kExtSize));
-    if (lang.Lang.Open(dirPrefix + fi.Name))
-      langs.Add(lang);
+    dest = s;
+    return;
+  }
+  MyLoadString(langID, dest);
+}
+
+void LangString_OnlyFromLangFile(UInt32 langID, UString &dest)
+{
+  dest.Empty();
+  const wchar_t *s = g_Lang.Get(langID);
+  if (s)
+    dest = s;
+}
+
+static const char *kLangs =
+"ar.bg.ca.zh.-tw.-cn.cs.da.de.el.en.es.fi.fr.he.hu.is.it.ja.ko.nl.no.=nb.=nn."
+"pl.pt.-br.rm.ro.ru.sr.=hr.-spl.-spc.sk.sq.sv.th.tr.ur.id.uk.be.sl.et.lv.lt.tg."
+"fa.vi.hy.az.eu.hsb.mk...tn..xh.zu.af.ka.fo.hi.mt.se.ga."
+".ms.kk.ky.sw.tk.uz.tt.bn.pa.-in.gu.or.ta.te.kn.ml.as.mr.sa.mn.=mn.=mng"
+"bo.cy.kh.lo..gl.kok..sd.syr.si..iu.am.tzm.ks.ne.fy.ps.fil."
+"dv...ha..yo.quz.nso.ba.lb.kl.ig...ti.....ii."
+".arn..moh..br..ug.mi.oc.co.gsw.sah.qut.rw.wo....prs.";
+
+static void FindShortNames(UInt32 primeLang, UStringVector &names)
+{
+  UInt32 index = 0;
+  for (const char *p = kLangs; *p != 0;)
+  {
+    const char *p2 = p;
+    for (; *p2 != '.'; p2++);
+    bool isSub = (p[0] == '-' || p[0] == '=');
+    if (!isSub)
+      index++;
+    if (index > primeLang)
+      break;
+    if (index == primeLang)
+    {
+      UString s;
+      if (isSub)
+      {
+        if (p[0] == '-')
+          s = names[0];
+        else
+          p++;
+      }
+      while (p != p2)
+        s += (wchar_t)*p++;
+      names.Add(s);
+    }
+    p = p2 + 1;
   }
 }
 
-bool SplidID(const UString &id, WORD &primID, WORD &subID)
+// typedef LANGID (WINAPI *GetUserDefaultUILanguageP)();
+
+static void OpenDefaultLang()
 {
-  primID = 0;
-  subID = 0;
-  const wchar_t *start = id;
-  const wchar_t *end;
-  UInt64 value = ConvertStringToUInt64(start, &end);
-  if (start == end)
-    return false;
-  primID = (WORD)value;
-  if (*end == 0)
-    return true;
-  if (*end != L'-')
-    return false;
-  start = end + 1;
-  value = ConvertStringToUInt64(start, &end);
-  if (start == end)
-    return false;
-  subID = (WORD)value;
-  return (*end == 0);
-}
+  LANGID sysLang = GetSystemDefaultLangID(); // "Language for non-Unicode programs" in XP64
+  LANGID userLang = GetUserDefaultLangID(); // "Standards and formats" language in XP64
 
-typedef LANGID (WINAPI *GetUserDefaultUILanguageP)();
-
-void FindMatchLang(UString &shortName)
-{
-  shortName.Empty();
-
-  LANGID SystemDefaultLangID = GetSystemDefaultLangID(); // Lang for non-Unicode in XP64
-  LANGID UserDefaultLangID = GetUserDefaultLangID(); // Standarts and formats in XP64
-
-  if (SystemDefaultLangID != UserDefaultLangID)
+  if (sysLang != userLang)
     return;
-  LANGID langID = UserDefaultLangID;
+  LANGID langID = userLang;
+  
   /*
-  LANGID SystemDefaultUILanguage; // english  in XP64
-  LANGID UserDefaultUILanguage; // english  in XP64
+  LANGID sysUILang; // english  in XP64
+  LANGID userUILang; // english  in XP64
 
   GetUserDefaultUILanguageP fn = (GetUserDefaultUILanguageP)GetProcAddress(
       GetModuleHandle("kernel32"), "GetUserDefaultUILanguage");
-  if (fn != NULL)
-    UserDefaultUILanguage = fn();
+  if (fn)
+    userUILang = fn();
   fn = (GetUserDefaultUILanguageP)GetProcAddress(
       GetModuleHandle("kernel32"), "GetSystemDefaultUILanguage");
-  if (fn != NULL)
-    SystemDefaultUILanguage = fn();
+  if (fn)
+    sysUILang = fn();
   */
 
   WORD primLang = (WORD)(PRIMARYLANGID(langID));
   WORD subLang = (WORD)(SUBLANGID(langID));
-  CObjectVector<CLangEx> langs;
-  LoadLangs(langs);
-  for (int i = 0; i < langs.Size(); i++)
   {
-    const CLangEx &lang = langs[i];
-    UString id;
-    if (lang.Lang.GetMessage(0x00000002, id))
+    UStringVector names;
+    FindShortNames(primLang, names);
+    const FString dirPrefix = GetLangDirPrefix();
+    for (unsigned i = 0; i < 2; i++)
     {
-      WORD primID;
-      WORD subID;
-      if (SplidID(id, primID, subID))
-        if (primID == primLang)
+      unsigned index = (i == 0 ? subLang : 0);
+      if (index < names.Size())
+      {
+        const UString &name = names[index];
+        if (!name.IsEmpty())
         {
-          if (subID == 0)
-            shortName = lang.ShortName;
-          if (subLang == subID)
+          if (LangOpen(g_Lang, dirPrefix + us2fs(name) + FTEXT(".txt")))
           {
-            shortName = lang.ShortName;
+            g_LangID = name;
             return;
           }
         }
+      }
     }
   }
 }
 
-void ReloadLangSmart()
+void ReloadLang()
 {
+  g_Lang.Clear();
+  ReadRegLang(g_LangID);
   #ifndef _UNICODE
   if (g_IsNT)
   #endif
   {
-    ReadRegLang(g_LangID);
     if (g_LangID.IsEmpty())
     {
-      UString shortName;
-      FindMatchLang(shortName);
-      if (shortName.IsEmpty())
-        shortName = L"-";
-      SaveRegLang(shortName);
+      OpenDefaultLang();
+      return;
     }
   }
-  ReloadLang();
+  if (g_LangID.Len() > 1 || g_LangID[0] != L'-')
+  {
+    FString s = us2fs(g_LangID);
+    if (s.Find(FCHAR_PATH_SEPARATOR) < 0)
+    {
+      if (s.Find(FTEXT('.')) < 0)
+        s += FTEXT(".txt");
+      s.Insert(0, GetLangDirPrefix());
+    }
+    LangOpen(g_Lang, s);
+  }
 }

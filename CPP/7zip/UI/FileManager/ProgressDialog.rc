@@ -4,7 +4,7 @@
 #define xc 172
 #define yc 44
 
-IDD_DIALOG_PROGRESS  MY_DIALOG
+IDD_PROGRESS  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "Progress"
 BEGIN
   PUSHBUTTON  "Cancel", IDCANCEL, bx, by, bxs, bys

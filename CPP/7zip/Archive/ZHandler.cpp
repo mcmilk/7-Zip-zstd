@@ -2,9 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "Common/ComTry.h"
+#include "../../Common/ComTry.h"
 
-#include "Windows/PropVariant.h"
+#include "../../Windows/PropVariant.h"
 
 #include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
@@ -22,21 +22,21 @@ class CHandler:
   public CMyUnknownImp
 {
   CMyComPtr<IInStream> _stream;
-  UInt64 _streamStartPosition;
   UInt64 _packSize;
-  Byte _properties;
+  // UInt64 _unpackSize;
+  // bool _unpackSize_Defined;
 public:
   MY_UNKNOWN_IMP1(IInArchive)
   INTERFACE_IInArchive(;)
 };
 
-STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPackSize, VT_UI8}
+  kpidPackSize
 };
 
 IMP_IInArchive_Props
-IMP_IInArchive_ArcProps_NO
+IMP_IInArchive_ArcProps_NO_Table
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -44,36 +44,110 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIANT *value)
+STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
+    case kpidPhySizeCantBeDetected: prop = true; break;
+  }
+  prop.Detach(value);
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+{
+  NWindows::NCOM::CPropVariant prop;
+  switch (propID)
+  {
+    // case kpidSize: if (_unpackSize_Defined) prop = _unpackSize; break;
     case kpidPackSize: prop = _packSize; break;
   }
   prop.Detach(value);
   return S_OK;
 }
 
-static const int kSignatureSize = 3;
+/*
+class CCompressProgressInfoImp:
+  public ICompressProgressInfo,
+  public CMyUnknownImp
+{
+  CMyComPtr<IArchiveOpenCallback> Callback;
+public:
+  MY_UNKNOWN_IMP1(ICompressProgressInfo)
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
+  void Init(IArchiveOpenCallback *callback) { Callback = callback; }
+};
+
+STDMETHODIMP CCompressProgressInfoImp::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+{
+  if (Callback)
+  {
+    UInt64 files = 1;
+    return Callback->SetCompleted(&files, inSize);
+  }
+  return S_OK;
+}
+*/
+
+API_FUNC_static_IsArc IsArc_Z(const Byte *p, size_t size)
+{
+  if (size < 3)
+    return k_IsArc_Res_NEED_MORE;
+  if (size > NCompress::NZ::kRecommendedCheckSize)
+    size = NCompress::NZ::kRecommendedCheckSize;
+  if (!NCompress::NZ::CheckStream(p, size))
+    return k_IsArc_Res_NO;
+  return k_IsArc_Res_YES;
+}
 
 STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback * /* openArchiveCallback */)
+    IArchiveOpenCallback * /* openCallback */)
 {
   COM_TRY_BEGIN
   {
-    RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_streamStartPosition));
-    Byte buffer[kSignatureSize];
-    RINOK(ReadStream_FALSE(stream, buffer, kSignatureSize));
-    if (buffer[0] != 0x1F || buffer[1] != 0x9D)
+    // RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_streamStartPosition));
+    Byte buffer[NCompress::NZ::kRecommendedCheckSize];
+    // Byte buffer[1500];
+    size_t size = NCompress::NZ::kRecommendedCheckSize;
+    // size = 700;
+    RINOK(ReadStream(stream, buffer, &size));
+    if (!NCompress::NZ::CheckStream(buffer, size))
       return S_FALSE;
-    _properties = buffer[2];
 
-    UInt64 endPosition;
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &endPosition));
-    _packSize = endPosition - _streamStartPosition - kSignatureSize;
-    
+    UInt64 endPos;
+    RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
+    _packSize = endPos;
+  
+    /*
+    bool fullCheck = false;
+    if (fullCheck)
+    {
+      CCompressProgressInfoImp *compressProgressSpec = new CCompressProgressInfoImp;
+      CMyComPtr<ICompressProgressInfo> compressProgress = compressProgressSpec;
+      compressProgressSpec->Init(openCallback);
+
+      NCompress::NZ::CDecoder *decoderSpec = new NCompress::NZ::CDecoder;
+      CMyComPtr<ICompressCoder> decoder = decoderSpec;
+
+      CDummyOutStream *outStreamSpec = new CDummyOutStream;
+      CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
+      outStreamSpec->SetStream(NULL);
+      outStreamSpec->Init();
+      decoderSpec->SetProp(_prop);
+      if (openCallback)
+      {
+        UInt64 files = 1;
+        RINOK(openCallback->SetTotal(&files, &endPos));
+      }
+      RINOK(stream->Seek(_streamStartPosition + kSignatureSize, STREAM_SEEK_SET, NULL));
+      HRESULT res = decoder->Code(stream, outStream, NULL, NULL, openCallback ? compressProgress : NULL);
+      if (res != S_OK)
+        return S_FALSE;
+      _packSize = decoderSpec->PackSize;
+    }
+    */
     _stream = stream;
   }
   return S_OK;
@@ -82,6 +156,8 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 
 STDMETHODIMP CHandler::Close()
 {
+  _packSize = 0;
+  // _unpackSize_Defined = false;
   _stream.Release();
   return S_OK;
 }
@@ -93,7 +169,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_BEGIN
   if (numItems == 0)
     return S_OK;
-  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
+  if (numItems != (UInt32)(Int32)-1 && (numItems != 1 || indices[0] != 0))
     return E_INVALIDARG;
 
   extractCallback->SetTotal(_packSize);
@@ -124,37 +200,37 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, true);
   
-  RINOK(_stream->Seek(_streamStartPosition + kSignatureSize, STREAM_SEEK_SET, NULL));
+  RINOK(_stream->Seek(0, STREAM_SEEK_SET, NULL));
 
-  CMyComPtr<ICompressCoder> decoder;
   NCompress::NZ::CDecoder *decoderSpec = new NCompress::NZ::CDecoder;
-  decoder = decoderSpec;
+  CMyComPtr<ICompressCoder> decoder = decoderSpec;
 
-  HRESULT result = decoderSpec->SetDecoderProperties2(&_properties, 1);
-
-  int opResult;
-  if (result != S_OK)
-    opResult = NExtract::NOperationResult::kUnSupportedMethod;
-  else
+  int opRes;
   {
-    result = decoder->Code(_stream, outStream, NULL, NULL, progress);
+    HRESULT result = decoder->Code(_stream, outStream, NULL, NULL, progress);
     if (result == S_FALSE)
-      opResult = NExtract::NOperationResult::kDataError;
+      opRes = NExtract::NOperationResult::kDataError;
     else
     {
       RINOK(result);
-      opResult = NExtract::NOperationResult::kOK;
+      opRes = NExtract::NOperationResult::kOK;
     }
   }
+  // _unpackSize = outStreamSpec->GetSize();
+  // _unpackSize_Defined = true;
   outStream.Release();
-  return extractCallback->SetOperationResult(opResult);
+  return extractCallback->SetOperationResult(opRes);
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler; }
+IMP_CreateArcIn
 
 static CArcInfo g_ArcInfo =
-  { L"Z", L"z taz", L"* .tar", 5, { 0x1F, 0x9D }, 2, false, CreateArc, 0 };
+  { "Z", "z taz", "* .tar", 5,
+  2, { 0x1F, 0x9D },
+  0,
+  0,
+  CreateArc, NULL, IsArc_Z };
 
 REGISTER_ARC(Z)
 

@@ -1,9 +1,9 @@
 // StringUtils.h
 
-#ifndef __STRINGUTILS_H
-#define __STRINGUTILS_H
+#ifndef __STRING_UTILS_H
+#define __STRING_UTILS_H
 
-#include "Common/MyString.h"
+#include "../../../Common/MyString.h"
 
 void SplitStringToTwoStrings(const UString &src, UString &dest1, UString &dest2);
 

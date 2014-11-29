@@ -2,16 +2,14 @@
 
 #include "StdAfx.h"
 
-#include "UpdateGUI.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/StringToInt.h"
 
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
-#include "Common/StringToInt.h"
-
-#include "Windows/Error.h"
-#include "Windows/FileDir.h"
-#include "Windows/FileName.h"
-#include "Windows/Thread.h"
+// #include "../../../Windows/Error.h"
+#include "../../../Windows/FileDir.h"
+#include "../../../Windows/FileName.h"
+#include "../../../Windows/Thread.h"
 
 #include "../Common/WorkDir.h"
 
@@ -28,6 +26,7 @@
 
 using namespace NWindows;
 using namespace NFile;
+using namespace NDir;
 
 static CFSTR kDefaultSfxModule = FTEXT("7z.sfx");
 static const wchar_t *kSFXExtension = L"exe";
@@ -41,17 +40,21 @@ class CThreadUpdating: public CProgressThreadVirt
   HRESULT ProcessVirt();
 public:
   CCodecs *codecs;
+  const CObjectVector<COpenType> *formatIndices;
+  const UString *cmdArcPath;
   CUpdateCallbackGUI *UpdateCallbackGUI;
-  const NWildcard::CCensor *WildcardCensor;
+  NWildcard::CCensor *WildcardCensor;
   CUpdateOptions *Options;
+  bool needSetPath;
 };
  
 HRESULT CThreadUpdating::ProcessVirt()
 {
   CUpdateErrorInfo ei;
-  HRESULT res = UpdateArchive(codecs, *WildcardCensor, *Options,
-     ei, UpdateCallbackGUI, UpdateCallbackGUI);
-  ErrorMessage = ei.Message;
+  HRESULT res = UpdateArchive(codecs, *formatIndices, *cmdArcPath,
+      *WildcardCensor, *Options,
+      ei, UpdateCallbackGUI, UpdateCallbackGUI, needSetPath);
+  FinalMessage.ErrorMessage.Message = ei.Message;
   SetErrorPath1(ei.FileName);
   SetErrorPath2(ei.FileName2);
   if (ei.SystemError != S_OK && ei.SystemError != E_FAIL && ei.SystemError != E_ABORT)
@@ -83,7 +86,7 @@ static bool IsThereMethodOverride(bool is7z, const UString &propertiesString)
 {
   UStringVector strings;
   SplitString(propertiesString, strings);
-  for (int i = 0; i < strings.Size(); i++)
+  FOR_VECTOR (i, strings)
   {
     const UString &s = strings[i];
     if (is7z)
@@ -95,7 +98,7 @@ static bool IsThereMethodOverride(bool is7z, const UString &propertiesString)
     }
     else
     {
-      if (s.Length() > 0)
+      if (s.Len() > 0)
         if (s[0] == L'm' && s[1] == L'=')
           return true;
     }
@@ -108,7 +111,7 @@ static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
 {
   UStringVector strings;
   SplitString(propertiesString, strings);
-  for (int i = 0; i < strings.Size(); i++)
+  FOR_VECTOR (i, strings)
   {
     const UString &s = strings[i];
     CProperty property;
@@ -117,8 +120,8 @@ static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
       property.Name = s;
     else
     {
-      property.Name = s.Left(index);
-      property.Value = s.Mid(index + 1);
+      property.Name.SetFrom(s, index);
+      property.Value = s.Ptr(index + 1);
     }
     properties.Add(property);
   }
@@ -190,25 +193,61 @@ static void SetOutProperties(
     AddProp(properties, L"mt", numThreads);
 }
 
+struct C_UpdateMode_ToAction_Pair
+{
+  NCompressDialog::NUpdateMode::EEnum UpdateMode;
+  const NUpdateArchive::CActionSet *ActionSet;
+};
+
+static const C_UpdateMode_ToAction_Pair g_UpdateMode_Pairs[] =
+{
+  { NCompressDialog::NUpdateMode::kAdd,    &NUpdateArchive::k_ActionSet_Add },
+  { NCompressDialog::NUpdateMode::kUpdate, &NUpdateArchive::k_ActionSet_Update },
+  { NCompressDialog::NUpdateMode::kFresh,  &NUpdateArchive::k_ActionSet_Fresh },
+  { NCompressDialog::NUpdateMode::kSync,   &NUpdateArchive::k_ActionSet_Sync }
+};
+
+static int FindActionSet(const NUpdateArchive::CActionSet &actionSet)
+{
+  for (unsigned i = 0; i < ARRAY_SIZE(g_UpdateMode_Pairs); i++)
+    if (actionSet.IsEqualTo(*g_UpdateMode_Pairs[i].ActionSet))
+      return i;
+  return -1;
+}
+
+static int FindUpdateMode(NCompressDialog::NUpdateMode::EEnum mode)
+{
+  for (unsigned i = 0; i < ARRAY_SIZE(g_UpdateMode_Pairs); i++)
+    if (mode == g_UpdateMode_Pairs[i].UpdateMode)
+      return i;
+  return -1;
+}
+
+
 static HRESULT ShowDialog(
     CCodecs *codecs,
-    const NWildcard::CCensor &censor,
-    CUpdateOptions &options, CUpdateCallbackGUI *callback, HWND hwndParent)
+    const CObjectVector<NWildcard::CCensorPath> &censor,
+    CUpdateOptions &options,
+    CUpdateCallbackGUI *callback, HWND hwndParent)
 {
   if (options.Commands.Size() != 1)
     throw "It must be one command";
+  /*
   FString currentDirPrefix;
   #ifndef UNDER_CE
   {
-    if (!NDirectory::MyGetCurrentDirectory(currentDirPrefix))
+    if (!MyGetCurrentDirectory(currentDirPrefix))
       return E_FAIL;
     NName::NormalizeDirPathPrefix(currentDirPrefix);
   }
   #endif
+  */
 
   bool oneFile = false;
   NFind::CFileInfo fileInfo;
   UString name;
+  
+  /*
   if (censor.Pairs.Size() > 0)
   {
     const NWildcard::CPair &pair = censor.Pairs[0];
@@ -218,7 +257,7 @@ static HRESULT ShowDialog(
       if (item.ForFile)
       {
         name = pair.Prefix;
-        for (int i = 0; i < item.PathParts.Size(); i++)
+        FOR_VECTOR (i, item.PathParts)
         {
           if (i > 0)
             name += WCHAR_PATH_SEPARATOR;
@@ -232,41 +271,96 @@ static HRESULT ShowDialog(
       }
     }
   }
-    
+  */
+  if (censor.Size() > 0)
+  {
+    const NWildcard::CCensorPath &cp = censor[0];
+    if (cp.Include)
+    {
+      {
+        if (fileInfo.Find(us2fs(cp.Path)))
+        {
+          if (censor.Size() == 1)
+            oneFile = !fileInfo.IsDir();
+        }
+      }
+    }
+  }
+
+  
+  #if defined(_WIN32) && !defined(UNDER_CE)
+  CCurrentDirRestorer curDirRestorer;
+  #endif
   CCompressDialog dialog;
   NCompressDialog::CInfo &di = dialog.Info;
   dialog.ArcFormats = &codecs->Formats;
-  for (int i = 0; i < codecs->Formats.Size(); i++)
+
+  if (options.MethodMode.Type_Defined)
+    di.FormatIndex = options.MethodMode.Type.FormatIndex;
+  
+  FOR_VECTOR (i, codecs->Formats)
   {
     const CArcInfoEx &ai = codecs->Formats[i];
-    if (ai.Name.CompareNoCase(L"swfc") == 0)
-      if (!oneFile || name.Right(4).CompareNoCase(L".swf") != 0)
-        continue;
-    if (ai.UpdateEnabled && (oneFile || !ai.KeepName))
-      dialog.ArcIndices.Add(i);
+    if (!ai.UpdateEnabled)
+      continue;
+    if (!oneFile && ai.Flags_KeepName())
+      continue;
+    if ((int)i != di.FormatIndex)
+      if (ai.Name.IsEqualToNoCase(L"swfc"))
+        if (!oneFile || name.Len() < 4 || !StringsAreEqualNoCase(name.RightPtr(4), L".swf"))
+          continue;
+    dialog.ArcIndices.Add(i);
   }
-  if (dialog.ArcIndices.Size() == 0)
+  if (dialog.ArcIndices.IsEmpty())
   {
     ShowErrorMessage(L"No Update Engines");
     return E_FAIL;
   }
 
   // di.ArchiveName = options.ArchivePath.GetFinalPath();
-  di.ArchiveName = options.ArchivePath.GetPathWithoutExt();
-  dialog.OriginalFileName = options.ArchivePath.Prefix + fs2us(fileInfo.Name);
+  di.ArcPath = options.ArchivePath.GetPathWithoutExt();
+  dialog.OriginalFileName = fs2us(fileInfo.Name);
+
+  di.PathMode = options.PathMode;
     
-  di.CurrentDirPrefix = currentDirPrefix;
+  // di.CurrentDirPrefix = currentDirPrefix;
   di.SFXMode = options.SfxMode;
   di.OpenShareForWrite = options.OpenShareForWrite;
+  di.DeleteAfterCompressing = options.DeleteAfterCompressing;
+
+  di.SymLinks = options.SymLinks;
+  di.HardLinks = options.HardLinks;
+  di.AltStreams = options.AltStreams;
+  di.NtSecurity = options.NtSecurity;
   
   if (callback->PasswordIsDefined)
     di.Password = callback->Password;
     
   di.KeepName = !oneFile;
-    
+
+  NUpdateArchive::CActionSet &actionSet = options.Commands.Front().ActionSet;
+ 
+  {
+    int index = FindActionSet(actionSet);
+    if (index < 0)
+      return E_NOTIMPL;
+    di.UpdateMode = g_UpdateMode_Pairs[index].UpdateMode;
+  }
+
   if (dialog.Create(hwndParent) != IDOK)
     return E_ABORT;
-    
+
+  options.DeleteAfterCompressing = di.DeleteAfterCompressing;
+
+  options.SymLinks = di.SymLinks;
+  options.HardLinks = di.HardLinks;
+  options.AltStreams = di.AltStreams;
+  options.NtSecurity = di.NtSecurity;
+ 
+  #if defined(_WIN32) && !defined(UNDER_CE)
+  curDirRestorer.NeedRestore = dialog.CurrentDirWasChanged;
+  #endif
+  
   options.VolumesSizes = di.VolumeSizes;
   /*
   if (di.VolumeSizeIsDefined)
@@ -275,26 +369,17 @@ static HRESULT ShowDialog(
     return E_FAIL;
   }
   */
-  
-  NUpdateArchive::CActionSet &actionSet = options.Commands.Front().ActionSet;
-  
-  switch(di.UpdateMode)
+
+ 
   {
-    case NCompressDialog::NUpdateMode::kAdd:
-      actionSet = NUpdateArchive::kAddActionSet;
-      break;
-    case NCompressDialog::NUpdateMode::kUpdate:
-      actionSet = NUpdateArchive::kUpdateActionSet;
-      break;
-    case NCompressDialog::NUpdateMode::kFresh:
-      actionSet = NUpdateArchive::kFreshActionSet;
-      break;
-    case NCompressDialog::NUpdateMode::kSynchronize:
-      actionSet = NUpdateArchive::kSynchronizeActionSet;
-      break;
-    default:
-      throw 1091756;
+    int index = FindUpdateMode(di.UpdateMode);
+    if (index < 0)
+      return E_FAIL;
+    actionSet = *g_UpdateMode_Pairs[index].ActionSet;
   }
+
+  options.PathMode = di.PathMode;
+
   const CArcInfoEx &archiverInfo = codecs->Formats[di.FormatIndex];
   callback->PasswordIsDefined = (!di.Password.IsEmpty());
   if (callback->PasswordIsDefined)
@@ -302,7 +387,7 @@ static HRESULT ShowDialog(
 
   options.MethodMode.Properties.Clear();
 
-  bool is7z = archiverInfo.Name.CompareNoCase(L"7z") == 0;
+  bool is7z = archiverInfo.Name.IsEqualToNoCase(L"7z");
   bool methodOverride = IsThereMethodOverride(is7z, di.Options);
 
   SetOutProperties(
@@ -324,14 +409,16 @@ static HRESULT ShowDialog(
 
   if (di.SFXMode)
     options.SfxMode = true;
-  options.MethodMode.FormatIndex = di.FormatIndex;
+  options.MethodMode.Type = COpenType();
+  options.MethodMode.Type_Defined = true;
+  options.MethodMode.Type.FormatIndex = di.FormatIndex;
 
   options.ArchivePath.VolExtension = archiverInfo.GetMainExt();
   if (di.SFXMode)
     options.ArchivePath.BaseExtension = kSFXExtension;
   else
     options.ArchivePath.BaseExtension = options.ArchivePath.VolExtension;
-  options.ArchivePath.ParseFromPath(di.ArchiveName);
+  options.ArchivePath.ParseFromPath(di.ArcPath, k_ArcNameMode_Smart);
 
   NWorkDir::CInfo workDirInfo;
   workDirInfo.Load();
@@ -339,17 +426,19 @@ static HRESULT ShowDialog(
   if (workDirInfo.Mode != NWorkDir::NMode::kCurrent)
   {
     FString fullPath;
-    NDirectory::MyGetFullPathName(us2fs(di.ArchiveName), fullPath);
+    MyGetFullPathName(us2fs(di.ArcPath), fullPath);
     FString namePart;
     options.WorkingDir = GetWorkDir(workDirInfo, fullPath, namePart);
-    NDirectory::CreateComplexDirectory(options.WorkingDir);
+    CreateComplexDir(options.WorkingDir);
   }
   return S_OK;
 }
 
 HRESULT UpdateGUI(
     CCodecs *codecs,
-    const NWildcard::CCensor &censor,
+    const CObjectVector<COpenType> &formatIndices,
+    const UString &cmdArcPath,
+    NWildcard::CCensor &censor,
     CUpdateOptions &options,
     bool showDialog,
     bool &messageWasDisplayed,
@@ -357,9 +446,11 @@ HRESULT UpdateGUI(
     HWND hwndParent)
 {
   messageWasDisplayed = false;
+  bool needSetPath  = true;
   if (showDialog)
   {
-    RINOK(ShowDialog(codecs, censor, options, callback, hwndParent));
+    RINOK(ShowDialog(codecs, censor.CensorPaths, options, callback, hwndParent));
+    needSetPath = false;
   }
   if (options.SfxMode && options.SfxModule.IsEmpty())
   {
@@ -369,20 +460,24 @@ HRESULT UpdateGUI(
 
   CThreadUpdating tu;
 
+  tu.needSetPath = needSetPath;
+
   tu.codecs = codecs;
+  tu.formatIndices = &formatIndices;
+  tu.cmdArcPath = &cmdArcPath;
 
   tu.UpdateCallbackGUI = callback;
   tu.UpdateCallbackGUI->ProgressDialog = &tu.ProgressDialog;
   tu.UpdateCallbackGUI->Init();
 
-  UString title = LangString(IDS_PROGRESS_COMPRESSING, 0x02000DC0);
+  UString title = LangString(IDS_PROGRESS_COMPRESSING);
 
   /*
   if (hwndParent != 0)
   {
     tu.ProgressDialog.MainWindow = hwndParent;
     // tu.ProgressDialog.MainTitle = fileName;
-    tu.ProgressDialog.MainAddTitle = title + L" ";
+    tu.ProgressDialog.MainAddTitle = title + L' ';
   }
   */
 

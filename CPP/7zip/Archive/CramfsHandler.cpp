@@ -3,13 +3,14 @@
 #include "StdAfx.h"
 
 #include "../../../C/7zCrc.h"
-#include "../../../C/CpuArch.h"
 #include "../../../C/Alloc.h"
+#include "../../../C/CpuArch.h"
+#include "../../../C/LzmaDec.h"
 
-#include "Common/ComTry.h"
-#include "Common/StringConvert.h"
+#include "../../Common/ComTry.h"
+#include "../../Common/StringConvert.h"
 
-#include "Windows/PropVariantUtils.h"
+#include "../../Windows/PropVariantUtils.h"
 
 #include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
@@ -38,6 +39,30 @@ static const UInt32 kNodeSize = 12;
 
 static const UInt32 kFlag_FsVer2 = (1 << 0);
 
+static const unsigned k_Flags_BlockSize_Shift = 11;
+static const unsigned k_Flags_BlockSize_Mask = 7;
+static const unsigned k_Flags_Method_Shift = 14;
+static const unsigned k_Flags_Method_Mask = 3;
+
+/*
+  There is possible collision in flags:
+    - Original CramFS writes 0 in method field. But it uses ZLIB.
+    - Modified CramFS writes 0 in method field for "NONE" compression?
+  How to solve that collision?
+*/
+
+#define k_Flags_Method_NONE 0
+#define k_Flags_Method_ZLIB 1
+#define k_Flags_Method_LZMA 2
+
+static const char *k_Methods[] =
+{
+    "Copy"
+  , "ZLIB"
+  , "LZMA"
+  , "Unknown"
+};
+
 static const CUInt32PCharPair k_Flags[] =
 {
   { 0, "Ver2" },
@@ -48,7 +73,6 @@ static const CUInt32PCharPair k_Flags[] =
 };
 
 static const unsigned kBlockSizeLog = 12;
-static const UInt32 kBlockSize = 1 << kBlockSizeLog;
 
 /*
 struct CNode
@@ -141,6 +165,8 @@ struct CHeader
   }
 
   bool IsVer2() const { return (Flags & kFlag_FsVer2) != 0; }
+  unsigned GetBlockSizeShift() const { return (unsigned)(Flags >> k_Flags_BlockSize_Shift) & k_Flags_BlockSize_Mask; }
+  unsigned GetMethod() const { return (unsigned)(Flags >> k_Flags_Method_Shift) & k_Flags_Method_Mask; }
 };
 
 class CHandler:
@@ -153,14 +179,21 @@ class CHandler:
   Byte *_data;
   UInt32 _size;
   UInt32 _headersSize;
-  AString _errorMessage;
+
+  UInt32 _errorFlags;
+  bool _isArc;
+
   CHeader _h;
+  UInt32 _phySize;
+
+  unsigned _method;
+  unsigned _blockSizeLog;
 
   // Current file
 
   NCompress::NZlib::CDecoder *_zlibDecoderSpec;
   CMyComPtr<ICompressCoder> _zlibDecoder;
-  
+
   CBufInStream *_inStreamSpec;
   CMyComPtr<ISequentialInStream> _inStream;
 
@@ -175,6 +208,18 @@ class CHandler:
   AString GetPath(int index) const;
   bool GetPackSize(int index, UInt32 &res) const;
   void Free();
+
+  UInt32 GetNumBlocks(UInt32 size) const
+  {
+    return (size + ((UInt32)1 << _blockSizeLog) - 1) >> _blockSizeLog;
+  }
+
+  void UpdatePhySize(UInt32 s)
+  {
+    if (_phySize < s)
+      _phySize = s;
+  }
+
 public:
   CHandler(): _data(0) {}
   ~CHandler() { Free(); }
@@ -184,25 +229,26 @@ public:
   HRESULT ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize);
 };
 
-static const STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsDir, VT_BOOL},
-  { NULL, kpidSize, VT_UI4},
-  { NULL, kpidPackSize, VT_UI4},
-  { NULL, kpidPosixAttrib, VT_UI4}
-  // { NULL, kpidOffset, VT_UI4}
+  kpidPath,
+  kpidIsDir,
+  kpidSize,
+  kpidPackSize,
+  kpidPosixAttrib
+  // kpidOffset
 };
 
-static const STATPROPSTG kArcProps[] =
+static const Byte kArcProps[] =
 {
-  { NULL, kpidName, VT_BSTR},
-  { NULL, kpidBigEndian, VT_BOOL},
-  { NULL, kpidCharacts, VT_BSTR},
-  { NULL, kpidPhySize, VT_UI4},
-  { NULL, kpidHeadersSize, VT_UI4},
-  { NULL, kpidNumSubFiles, VT_UI4},
-  { NULL, kpidNumBlocks, VT_UI4}
+  kpidVolumeName,
+  kpidBigEndian,
+  kpidCharacts,
+  kpidClusterSize,
+  kpidMethod,
+  kpidHeadersSize,
+  kpidNumSubFiles,
+  kpidNumBlocks
 };
 
 IMP_IInArchive_Props
@@ -221,10 +267,11 @@ HRESULT CHandler::OpenDir(int parent, UInt32 baseOffset, unsigned level)
   UInt32 end = offset + size;
   if (offset < kHeaderSize || end > _size || level > kNumDirLevelsMax)
     return S_FALSE;
+  UpdatePhySize(end);
   if (end > _headersSize)
     _headersSize = end;
 
-  int startIndex = _items.Size();
+  unsigned startIndex = _items.Size();
   
   while (size != 0)
   {
@@ -241,8 +288,8 @@ HRESULT CHandler::OpenDir(int parent, UInt32 baseOffset, unsigned level)
     size -= nodeLen;
   }
 
-  int endIndex = _items.Size();
-  for (int i = startIndex; i < endIndex; i++)
+  unsigned endIndex = _items.Size();
+  for (unsigned i = startIndex; i < endIndex; i++)
   {
     RINOK(OpenDir(i, _items[i].Offset, level + 1));
   }
@@ -255,17 +302,26 @@ HRESULT CHandler::Open2(IInStream *inStream)
   RINOK(ReadStream_FALSE(inStream, buf, kHeaderSize));
   if (!_h.Parse(buf))
     return S_FALSE;
+  _method = k_Flags_Method_ZLIB;
+  _blockSizeLog = kBlockSizeLog;
+  _phySize = kHeaderSize;
   if (_h.IsVer2())
   {
+    _method = _h.GetMethod();
+    // FIT IT. Now we don't know correct way to work with collision in method field.
+    if (_method == k_Flags_Method_NONE)
+      _method = k_Flags_Method_ZLIB;
+    _blockSizeLog = kBlockSizeLog + _h.GetBlockSizeShift();
     if (_h.Size < kHeaderSize || _h.Size > kArcSizeMax || _h.NumFiles > kNumFilesMax)
       return S_FALSE;
+    _phySize = _h.Size;
   }
   else
   {
     UInt64 size;
     RINOK(inStream->Seek(0, STREAM_SEEK_END, &size));
     if (size > kArcSizeMax)
-      return S_FALSE;
+      size = kArcSizeMax;
     _h.Size = (UInt32)size;
     RINOK(inStream->Seek(kHeaderSize, STREAM_SEEK_SET, NULL));
   }
@@ -278,18 +334,59 @@ HRESULT CHandler::Open2(IInStream *inStream)
   if (processed < kNodeSize)
     return S_FALSE;
   _size = kHeaderSize + (UInt32)processed;
-  if (_size != _h.Size)
-    _errorMessage = "Unexpected end of archive";
-  else
-  {
-    SetUi32(_data + 0x20, 0);
-    if (_h.IsVer2())
-      if (CrcCalc(_data, _h.Size) != _h.Crc)
-        _errorMessage = "CRC error";
-  }
   if (_h.IsVer2())
-    _items.Reserve(_h.NumFiles - 1);
-  return OpenDir(-1, kHeaderSize, 0);
+  {
+    if (_size != _h.Size)
+      _errorFlags = kpv_ErrorFlags_UnexpectedEnd;
+    else
+    {
+      SetUi32(_data + 0x20, 0);
+      if (CrcCalc(_data, _h.Size) != _h.Crc)
+      {
+        _errorFlags = kpv_ErrorFlags_HeadersError;
+        // _errorMessage = "CRC error";
+      }
+    }
+    if (_h.NumFiles >= 1)
+      _items.ClearAndReserve(_h.NumFiles - 1);
+  }
+  
+  RINOK(OpenDir(-1, kHeaderSize, 0));
+  
+  if (!_h.IsVer2())
+  {
+    FOR_VECTOR(i, _items)
+    {
+      const CItem &item = _items[i];
+      const Byte *p = _data + item.Offset;
+      bool be = _h.be;
+      if (IsDir(p, be))
+        continue;
+      UInt32 offset = GetOffset(p, be);
+      if (offset < kHeaderSize)
+        continue;
+      UInt32 numBlocks = GetNumBlocks(GetSize(p, be));
+      if (numBlocks == 0)
+        continue;
+      UInt32 start = offset + numBlocks * 4;
+      if (start > _size)
+        continue;
+      UInt32 end = Get32(_data + start - 4);
+      if (end >= start)
+        UpdatePhySize(end);
+    }
+
+    // Read tailing zeros. Most cramfs archives use 4096-bytes aligned zeros
+    const UInt32 kTailSize_MAX = 1 << 12;
+    UInt32 endPos = (_phySize + kTailSize_MAX - 1) & ~(kTailSize_MAX - 1);
+    if (endPos > _size)
+      endPos = _size;
+    UInt32 pos;
+    for (pos = _phySize; pos < endPos && _data[pos] == 0; pos++);
+    if (pos == endPos)
+      _phySize = endPos;
+  }
+  return S_OK;
 }
 
 AString CHandler::GetPath(int index) const
@@ -334,13 +431,16 @@ AString CHandler::GetPath(int index) const
 
 bool CHandler::GetPackSize(int index, UInt32 &res) const
 {
+  res = 0;
   const CItem &item = _items[index];
   const Byte *p = _data + item.Offset;
   bool be = _h.be;
   UInt32 offset = GetOffset(p, be);
   if (offset < kHeaderSize)
     return false;
-  UInt32 numBlocks = (GetSize(p, be) + kBlockSize - 1) >> kBlockSizeLog;
+  UInt32 numBlocks = GetNumBlocks(GetSize(p, be));
+  if (numBlocks == 0)
+    return true;
   UInt32 start = offset + numBlocks * 4;
   if (start > _size)
     return false;
@@ -357,6 +457,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
   {
     Close();
     RINOK(Open2(stream));
+    _isArc = true;
     _stream = stream;
   }
   return S_OK;
@@ -371,10 +472,12 @@ void CHandler::Free()
 
 STDMETHODIMP CHandler::Close()
 {
+  _isArc = false;
+  _phySize = 0;
+  _errorFlags = 0;
   _headersSize = 0;
   _items.Clear();
   _stream.Release();
-  _errorMessage.Empty();
   Free();
   return S_OK;
 }
@@ -389,9 +492,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
-    case kpidName:
+    case kpidVolumeName:
     {
       char dest[kHeaderNameSize + 4];
       memcpy(dest, _h.Name, kHeaderNameSize);
@@ -401,11 +504,20 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     }
     case kpidBigEndian: prop = _h.be; break;
     case kpidCharacts: FLAGS_TO_PROP(k_Flags, _h.Flags, prop); break;
+    case kpidMethod: prop = k_Methods[_method]; break;
+    case kpidClusterSize: prop = (UInt32)1 << _blockSizeLog; break;
     case kpidNumBlocks: if (_h.IsVer2()) prop = _h.NumBlocks; break;
     case kpidNumSubFiles: if (_h.IsVer2()) prop = _h.NumFiles; break;
-    case kpidPhySize: if (_h.IsVer2()) prop = _h.Size; break;
+    case kpidPhySize: prop = _phySize; break;
     case kpidHeadersSize: prop = _headersSize; break;
-    case kpidError: if (!_errorMessage.IsEmpty()) prop = _errorMessage; break;
+    case kpidErrorFlags:
+    {
+      UInt32 v = _errorFlags;
+      if (!_isArc)
+        v |= kpv_ErrorFlags_IsNotArc;
+      prop = v;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;
@@ -453,13 +565,60 @@ HRESULT CCramfsInStream::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSi
   return Handler->ReadBlock(blockIndex, dest, blockSize);
 }
 
+static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
+static void SzFree(void *p, void *address) { p = p; MyFree(address); }
+static ISzAlloc g_Alloc = { SzAlloc, SzFree };
+
 HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
 {
-  if (!_zlibDecoder)
+  if (_method == k_Flags_Method_ZLIB)
   {
-    _zlibDecoderSpec = new NCompress::NZlib::CDecoder();
-    _zlibDecoder = _zlibDecoderSpec;
+    if (!_zlibDecoder)
+    {
+      _zlibDecoderSpec = new NCompress::NZlib::CDecoder();
+      _zlibDecoder = _zlibDecoderSpec;
+    }
   }
+  else
+  {
+    if (_method != k_Flags_Method_LZMA)
+    {
+      // probably we must support no-compression archives here.
+      return E_NOTIMPL;
+    }
+  }
+
+  bool be = _h.be;
+  const Byte *p = _data + (_curBlocksOffset + (UInt32)blockIndex * 4);
+  UInt32 start = (blockIndex == 0 ? _curBlocksOffset + _curNumBlocks * 4: Get32(p - 4));
+  UInt32 end = Get32(p);
+  if (end < start || end > _size)
+    return S_FALSE;
+  UInt32 inSize = end - start;
+
+  if (_method == k_Flags_Method_LZMA)
+  {
+    const unsigned kLzmaHeaderSize = LZMA_PROPS_SIZE + 4;
+    if (inSize < kLzmaHeaderSize)
+      return S_FALSE;
+    const Byte *p = _data + start;
+    UInt32 destSize32 = GetUi32(p + LZMA_PROPS_SIZE);
+    if (destSize32 > blockSize)
+      return S_FALSE;
+    SizeT destLen = destSize32;
+    SizeT srcLen = inSize - kLzmaHeaderSize;
+    ELzmaStatus status;
+    SRes res = LzmaDecode(dest, &destLen, p + kLzmaHeaderSize, &srcLen,
+        p, LZMA_PROPS_SIZE, LZMA_FINISH_END, &status, &g_Alloc);
+    if (res != SZ_OK
+        || (status != LZMA_STATUS_FINISHED_WITH_MARK &&
+            status != LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK)
+        || destLen != destSize32
+        || srcLen != inSize - kLzmaHeaderSize)
+      return S_FALSE;
+    return S_OK;
+  }
+
   if (!_inStream)
   {
     _inStreamSpec = new CBufInStream();
@@ -470,17 +629,10 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
     _outStreamSpec = new CBufPtrSeqOutStream();
     _outStream = _outStreamSpec;
   }
-  bool be = _h.be;
-  const Byte *p = _data + (_curBlocksOffset + (UInt32)blockIndex * 4);
-  UInt32 start = (blockIndex == 0 ? _curBlocksOffset + _curNumBlocks * 4: Get32(p - 4));
-  UInt32 end = Get32(p);
-  if (end < start || end > _size)
-    return S_FALSE;
-  UInt32 inSize = end - start;
   _inStreamSpec->Init(_data + start, inSize);
   _outStreamSpec->Init(dest, blockSize);
   RINOK(_zlibDecoder->Code(_inStream, _outStream, NULL, NULL, NULL));
-  return (_zlibDecoderSpec->GetInputProcessedSize() == inSize &&
+  return (inSize == _zlibDecoderSpec->GetInputProcessedSize() &&
       _outStreamSpec->GetPos() == blockSize) ? S_OK : S_FALSE;
 }
 
@@ -488,7 +640,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -562,19 +714,22 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       if (hres == E_OUTOFMEMORY)
         return E_OUTOFMEMORY;
       if (hres == S_FALSE || !inStream)
-        res = NExtract::NOperationResult::kUnSupportedMethod;
+        res = NExtract::NOperationResult::kUnsupportedMethod;
       else
       {
         RINOK(hres);
         if (inStream)
         {
           HRESULT hres = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
-          if (hres != S_OK && hres != S_FALSE)
+          if (hres == S_OK)
           {
-            RINOK(hres);
+            if (copyCoderSpec->TotalSize == curSize)
+              res = NExtract::NOperationResult::kOK;
           }
-          if (copyCoderSpec->TotalSize == curSize && hres == S_OK)
-            res = NExtract::NOperationResult::kOK;
+          else if (hres == E_NOTIMPL)
+            res = NExtract::NOperationResult::kUnsupportedMethod;
+          else if (hres != S_FALSE)
+            return hres;
         }
       }
     }
@@ -596,7 +751,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     return E_FAIL;
 
   UInt32 size = GetSize(p, be);
-  UInt32 numBlocks = (size + kBlockSize - 1) >> kBlockSizeLog;
+  UInt32 numBlocks = GetNumBlocks(size);
   UInt32 offset = GetOffset(p, be);
   if (offset < kHeaderSize)
   {
@@ -625,7 +780,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   _curNumBlocks = numBlocks;
   _curBlocksOffset = offset;
   streamSpec->Handler = this;
-  if (!streamSpec->Alloc(kBlockSizeLog, 21 - kBlockSizeLog))
+  if (!streamSpec->Alloc(_blockSizeLog, 21 - _blockSizeLog))
     return E_OUTOFMEMORY;
   streamSpec->Init(size);
   *stream = streamTemp.Detach();
@@ -634,10 +789,14 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new NArchive::NCramfs::CHandler; }
+IMP_CreateArcIn
 
 static CArcInfo g_ArcInfo =
-  { L"CramFS", L"cramfs", 0, 0xD3, SIGNATURE, kSignatureSize, false, CreateArc, 0 };
+  { "CramFS", "cramfs", 0, 0xD3,
+  kSignatureSize, SIGNATURE,
+  16,
+  0,
+  CreateArc };
 
 REGISTER_ARC(Cramfs)
 

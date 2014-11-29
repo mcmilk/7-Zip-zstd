@@ -3,11 +3,10 @@
 #ifndef __ARCHIVE_ISO_ITEM_H
 #define __ARCHIVE_ISO_ITEM_H
 
-#include "Common/Types.h"
-#include "Common/MyString.h"
-#include "Common/Buffer.h"
+#include "../../../Common/MyString.h"
+#include "../../../Common/MyBuffer.h"
 
-#include "Windows/Time.h"
+#include "../../../Windows/TimeUtils.h"
 
 #include "IsoHeader.h"
 
@@ -41,62 +40,77 @@ struct CRecordingDateTime
 
 struct CDirRecord
 {
-  Byte ExtendedAttributeRecordLen;
   UInt32 ExtentLocation;
-  UInt32 DataLength;
+  UInt32 Size;
   CRecordingDateTime DateTime;
   Byte FileFlags;
   Byte FileUnitSize;
   Byte InterleaveGapSize;
+  Byte ExtendedAttributeRecordLen;
   UInt16 VolSequenceNumber;
   CByteBuffer FileId;
   CByteBuffer SystemUse;
 
-  bool IsDir() const { return  (FileFlags & NFileFlags::kDirectory) != 0; }
+  bool AreMultiPartEqualWith(const CDirRecord &a) const
+  {
+    return FileId == a.FileId
+        && (FileFlags & (~NFileFlags::kNonFinalExtent)) ==
+        (a.FileFlags & (~NFileFlags::kNonFinalExtent));
+  }
+
+  bool IsDir() const { return (FileFlags & NFileFlags::kDirectory) != 0; }
+  bool IsNonFinalExtent() const { return (FileFlags & NFileFlags::kNonFinalExtent) != 0; }
+
   bool IsSystemItem() const
   {
-    if (FileId.GetCapacity() != 1)
+    if (FileId.Size() != 1)
       return false;
     Byte b = *(const Byte *)FileId;
     return (b == 0 || b == 1);
   }
 
-  const Byte* FindSuspName(int skipSize, int &lenRes) const
+  const Byte* FindSuspName(unsigned skipSize, unsigned &lenRes) const
   {
     lenRes = 0;
+    if (SystemUse.Size() < skipSize)
+      return 0;
     const Byte *p = (const Byte *)SystemUse + skipSize;
-    int length = (int)(SystemUse.GetCapacity() - skipSize);
-    while (length >= 5)
+    unsigned rem = (unsigned)(SystemUse.Size() - skipSize);
+    while (rem >= 5)
     {
-      int len = p[2];
+      unsigned len = p[2];
+      if (len > rem)
+        return 0;
       if (p[0] == 'N' && p[1] == 'M' && p[3] == 1)
       {
+        if (len < 5)
+          return 0; // Check it
         lenRes = len - 5;
         return p + 5;
       }
       p += len;
-      length -= len;
+      rem -= len;
     }
     return 0;
   }
 
-  int GetLengthCur(bool checkSusp, int skipSize) const
+  unsigned GetLenCur(bool checkSusp, int skipSize) const
   {
     if (checkSusp)
     {
-      int len;
+      unsigned len;
       const Byte *res = FindSuspName(skipSize, len);
       if (res != 0)
         return len;
     }
-    return (int)FileId.GetCapacity();
+    return (unsigned)FileId.Size();
   }
 
   const Byte* GetNameCur(bool checkSusp, int skipSize) const
   {
     if (checkSusp)
     {
-      int len;
+      unsigned len;
       const Byte *res = FindSuspName(skipSize, len);
       if (res != 0)
         return res;
@@ -105,7 +119,7 @@ struct CDirRecord
   }
 
 
-  bool CheckSusp(const Byte *p, int &startPos) const
+  bool CheckSusp(const Byte *p, unsigned &startPos) const
   {
     if (p[0] == 'S' &&
         p[1] == 'P' &&
@@ -120,17 +134,17 @@ struct CDirRecord
     return false;
   }
 
-  bool CheckSusp(int &startPos) const
+  bool CheckSusp(unsigned &startPos) const
   {
     const Byte *p = (const Byte *)SystemUse;
-    int length = (int)SystemUse.GetCapacity();
-    const int kMinLen = 7;
-    if (length < kMinLen)
+    unsigned len = (int)SystemUse.Size();
+    const unsigned kMinLen = 7;
+    if (len < kMinLen)
       return false;
     if (CheckSusp(p, startPos))
       return true;
-    const int kOffset2 = 14;
-    if (length < kOffset2 + kMinLen)
+    const unsigned kOffset2 = 14;
+    if (len < kOffset2 + kMinLen)
       return false;
     return CheckSusp(p + kOffset2, startPos);
   }

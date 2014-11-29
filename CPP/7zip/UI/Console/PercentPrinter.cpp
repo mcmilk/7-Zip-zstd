@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
-#include "Common/MyString.h"
+#include "../../../Common/Defs.h"
+#include "../../../Common/IntToString.h"
 
 #include "PercentPrinter.h"
 

@@ -1,4 +1,4 @@
-// FileStreams.cpp
+/ FileStreams.cpp
 
 #include "StdAfx.h"
 
@@ -35,8 +35,9 @@ static const UInt32 kClusterSize = 1 << 18;
 CInFileStream::CInFileStream():
   VirtPos(0),
   PhyPos(0),
-  Buffer(0),
-  BufferSize(0)
+  Buf(0),
+  BufSize(0),
+  SupportHardLinks(false)
 {
 }
 
@@ -45,7 +46,7 @@ CInFileStream::CInFileStream():
 CInFileStream::~CInFileStream()
 {
   #ifdef SUPPORT_DEVICE_FILE
-  MidFree(Buffer);
+  MidFree(Buf);
   #endif
 }
 
@@ -54,41 +55,41 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   #ifdef USE_WIN_FILE
   
   #ifdef SUPPORT_DEVICE_FILE
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
   if (size == 0)
     return S_OK;
   if (File.IsDeviceFile)
   {
-    if (File.LengthDefined)
+    if (File.SizeDefined)
     {
-      if (VirtPos >= File.Length)
-        return VirtPos == File.Length ? S_OK : E_FAIL;
-      UInt64 rem = File.Length - VirtPos;
+      if (VirtPos >= File.Size)
+        return VirtPos == File.Size ? S_OK : E_FAIL;
+      UInt64 rem = File.Size - VirtPos;
       if (size > rem)
         size = (UInt32)rem;
     }
     for (;;)
     {
       const UInt32 mask = kClusterSize - 1;
-      UInt64 mask2 = ~(UInt64)mask;
+      const UInt64 mask2 = ~(UInt64)mask;
       UInt64 alignedPos = VirtPos & mask2;
-      if (BufferSize > 0 && BufferStartPos == alignedPos)
+      if (BufSize > 0 && BufStartPos == alignedPos)
       {
         UInt32 pos = (UInt32)VirtPos & mask;
-        if (pos >= BufferSize)
+        if (pos >= BufSize)
           return S_OK;
-        UInt32 rem = MyMin(BufferSize - pos, size);
-        memcpy(data, Buffer + pos, rem);
+        UInt32 rem = MyMin(BufSize - pos, size);
+        memcpy(data, Buf + pos, rem);
         VirtPos += rem;
-        if (processedSize != NULL)
+        if (processedSize)
           *processedSize += rem;
         return S_OK;
       }
       
-      bool useBuffer = false;
+      bool useBuf = false;
       if ((VirtPos & mask) != 0 || ((ptrdiff_t)data & mask) != 0 )
-        useBuffer = true;
+        useBuf = true;
       else
       {
         UInt64 end = VirtPos + size;
@@ -96,12 +97,12 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
         {
           end &= mask2;
           if (end <= VirtPos)
-            useBuffer = true;
+            useBuf = true;
           else
             size = (UInt32)(end - VirtPos);
         }
       }
-      if (!useBuffer)
+      if (!useBuf)
         break;
       if (alignedPos != PhyPos)
       {
@@ -112,24 +113,24 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
         PhyPos = realNewPosition;
       }
 
-      BufferStartPos = alignedPos;
+      BufStartPos = alignedPos;
       UInt32 readSize = kClusterSize;
-      if (File.LengthDefined)
-        readSize = (UInt32)MyMin(File.Length - PhyPos, (UInt64)kClusterSize);
+      if (File.SizeDefined)
+        readSize = (UInt32)MyMin(File.Size - PhyPos, (UInt64)kClusterSize);
 
-      if (Buffer == 0)
+      if (!Buf)
       {
-        Buffer = (Byte *)MidAlloc(kClusterSize);
-        if (Buffer == 0)
+        Buf = (Byte *)MidAlloc(kClusterSize);
+        if (!Buf)
           return E_OUTOFMEMORY;
       }
-      bool result = File.Read1(Buffer, readSize, BufferSize);
+      bool result = File.Read1(Buf, readSize, BufSize);
       if (!result)
         return ConvertBoolToHRESULT(result);
 
-      if (BufferSize == 0)
+      if (BufSize == 0)
         return S_OK;
-      PhyPos += BufferSize;
+      PhyPos += BufSize;
     }
 
     if (VirtPos != PhyPos)
@@ -145,7 +146,7 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 
   UInt32 realProcessedSize;
   bool result = File.ReadPart(data, size, realProcessedSize);
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = realProcessedSize;
   #ifdef SUPPORT_DEVICE_FILE
   VirtPos += realProcessedSize;
@@ -155,12 +156,12 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   
   #else
   
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
   ssize_t res = File.Read(data, (size_t)size);
   if (res == -1)
     return E_FAIL;
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = (UInt32)res;
   return S_OK;
 
@@ -170,10 +171,13 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 #ifdef UNDER_CE
 STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  size_t s2 = fread(data, 1, size, stdout);
-  if (processedSize != 0)
+  size_t s2 = fread(data, 1, size, stdin);
+  int error = ferror(stdin);
+  if (processedSize)
     *processedSize = s2;
-  return (s2 = size) ? S_OK : E_FAIL;
+  if (s2 <= size && error == 0)
+    return S_OK;
+  return E_FAIL;
 }
 #else
 STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
@@ -185,7 +189,7 @@ STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSi
   if (sizeTemp > size)
     sizeTemp = size;
   BOOL res = ::ReadFile(GetStdHandle(STD_INPUT_HANDLE), data, sizeTemp, &realProcessedSize, NULL);
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = realProcessedSize;
   if (res == FALSE && GetLastError() == ERROR_BROKEN_PIPE)
     return S_OK;
@@ -193,7 +197,7 @@ STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSi
   
   #else
 
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
   ssize_t res;
   do
@@ -203,7 +207,7 @@ STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSi
   while (res < 0 && (errno == EINTR));
   if (res == -1)
     return E_FAIL;
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = (UInt32)res;
   return S_OK;
   
@@ -212,8 +216,7 @@ STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSi
   
 #endif
 
-STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin,
-    UInt64 *newPosition)
+STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
 {
   if (seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
@@ -221,19 +224,20 @@ STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin,
   #ifdef USE_WIN_FILE
 
   #ifdef SUPPORT_DEVICE_FILE
-  if (File.IsDeviceFile)
+  if (File.IsDeviceFile && (File.SizeDefined || seekOrigin != STREAM_SEEK_END))
   {
-    UInt64 newVirtPos = offset;
-    switch(seekOrigin)
+    switch (seekOrigin)
     {
       case STREAM_SEEK_SET: break;
-      case STREAM_SEEK_CUR: newVirtPos += VirtPos; break;
-      case STREAM_SEEK_END: newVirtPos += File.Length; break;
+      case STREAM_SEEK_CUR: offset += VirtPos; break;
+      case STREAM_SEEK_END: offset += File.Size; break;
       default: return STG_E_INVALIDFUNCTION;
     }
-    VirtPos = newVirtPos;
+    if (offset < 0)
+      return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
+    VirtPos = offset;
     if (newPosition)
-      *newPosition = newVirtPos;
+      *newPosition = offset;
     return S_OK;
   }
   #endif
@@ -245,7 +249,7 @@ STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin,
   PhyPos = VirtPos = realNewPosition;
   #endif
 
-  if (newPosition != NULL)
+  if (newPosition)
     *newPosition = realNewPosition;
   return ConvertBoolToHRESULT(result);
   
@@ -254,7 +258,7 @@ STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin,
   off_t res = File.Seek((off_t)offset, seekOrigin);
   if (res == -1)
     return E_FAIL;
-  if (newPosition != NULL)
+  if (newPosition)
     *newPosition = (UInt64)res;
   return S_OK;
   
@@ -266,6 +270,43 @@ STDMETHODIMP CInFileStream::GetSize(UInt64 *size)
   return ConvertBoolToHRESULT(File.GetLength(*size));
 }
 
+#ifdef USE_WIN_FILE
+
+STDMETHODIMP CInFileStream::GetProps(UInt64 *size, FILETIME *cTime, FILETIME *aTime, FILETIME *mTime, UInt32 *attrib)
+{
+  BY_HANDLE_FILE_INFORMATION info;
+  if (File.GetFileInformation(&info))
+  {
+    if (size) *size = (((UInt64)info.nFileSizeHigh) << 32) + info.nFileSizeLow;
+    if (cTime) *cTime = info.ftCreationTime;
+    if (aTime) *aTime = info.ftLastAccessTime;
+    if (mTime) *mTime = info.ftLastWriteTime;
+    if (attrib) *attrib = info.dwFileAttributes;
+    return S_OK;
+  }
+  return GetLastError();
+}
+
+STDMETHODIMP CInFileStream::GetProps2(CStreamFileProps *props)
+{
+  BY_HANDLE_FILE_INFORMATION info;
+  if (File.GetFileInformation(&info))
+  {
+    props->Size = (((UInt64)info.nFileSizeHigh) << 32) + info.nFileSizeLow;
+    props->VolID = info.dwVolumeSerialNumber;
+    props->FileID_Low = (((UInt64)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
+    props->FileID_High = 0;
+    props->NumLinks = SupportHardLinks ? info.nNumberOfLinks : 1;
+    props->Attrib = info.dwFileAttributes;
+    props->CTime = info.ftCreationTime;
+    props->ATime = info.ftLastAccessTime;
+    props->MTime = info.ftLastWriteTime;
+    return S_OK;
+  }
+  return GetLastError();
+}
+
+#endif
 
 //////////////////////////
 // COutFileStream
@@ -282,18 +323,18 @@ STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *proces
   UInt32 realProcessedSize;
   bool result = File.WritePart(data, size, realProcessedSize);
   ProcessedSize += realProcessedSize;
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = realProcessedSize;
   return ConvertBoolToHRESULT(result);
   
   #else
   
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
   ssize_t res = File.Write(data, (size_t)size);
   if (res == -1)
     return E_FAIL;
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = (UInt32)res;
   ProcessedSize += res;
   return S_OK;
@@ -309,7 +350,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
 
   UInt64 realNewPosition;
   bool result = File.Seek(offset, seekOrigin, realNewPosition);
-  if (newPosition != NULL)
+  if (newPosition)
     *newPosition = realNewPosition;
   return ConvertBoolToHRESULT(result);
   
@@ -318,7 +359,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
   off_t res = File.Seek((off_t)offset, seekOrigin);
   if (res == -1)
     return E_FAIL;
-  if (newPosition != NULL)
+  if (newPosition)
     *newPosition = (UInt64)res;
   return S_OK;
   
@@ -344,14 +385,14 @@ STDMETHODIMP COutFileStream::SetSize(UInt64 newSize)
 STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   size_t s2 = fwrite(data, 1, size, stdout);
-  if (processedSize != 0)
+  if (processedSize)
     *processedSize = s2;
-  return (s2 = size) ? S_OK : E_FAIL;
+  return (s2 == size) ? S_OK : E_FAIL;
 }
 #else
 STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
 
   #ifdef _WIN32
@@ -368,7 +409,7 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
         data, sizeTemp, (DWORD *)&realProcessedSize, NULL);
     size -= realProcessedSize;
     data = (const void *)((const Byte *)data + realProcessedSize);
-    if (processedSize != NULL)
+    if (processedSize)
       *processedSize += realProcessedSize;
   }
   return ConvertBoolToHRESULT(res != FALSE);
@@ -383,7 +424,7 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   while (res < 0 && (errno == EINTR));
   if (res == -1)
     return E_FAIL;
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = (UInt32)res;
   return S_OK;
   

@@ -2,11 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
-#include "Common/StringToInt.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/StringToInt.h"
 
-#include "Windows/Registry.h"
+#include "../../../Windows/Registry.h"
 
 #include "RegistryAssociations.h"
 
@@ -69,11 +69,13 @@ bool CShellExtInfo::ReadFromRegistry(HKEY hkey, const CSysString &ext)
         if (pos >= 0)
         {
           const wchar_t *end;
-          Int64 index = ConvertStringToInt64((const wchar_t *)value + pos + 1, &end);
+          Int32 index = ConvertStringToInt32((const wchar_t *)value + pos + 1, &end);
           if (*end == 0)
           {
-            IconIndex = (int)index;
-            IconPath = value.Left(pos);
+            // 9.31: if there is no icon index, we use -1. Is it OK?
+            if (pos != (int)value.Len() - 1)
+              IconIndex = (int)index;
+            IconPath.SetFrom(value, pos);
           }
         }
       }
@@ -85,7 +87,7 @@ bool CShellExtInfo::ReadFromRegistry(HKEY hkey, const CSysString &ext)
 bool CShellExtInfo::IsIt7Zip() const
 {
   UString s = GetUnicodeString(k7zipPrefix);
-  return (s.CompareNoCase(GetUnicodeString(ProgramKey.Left(s.Length()))) == 0);
+  return MyStringCompareNoCase_N(GetUnicodeString(ProgramKey), s, s.Len()) == 0;
 }
 
 LONG DeleteShellExtensionInfo(HKEY hkey, const CSysString &ext)
@@ -143,7 +145,7 @@ LONG AddShellExtensionInfo(HKEY hkey,
     {
       iconPathFull += L',';
       wchar_t s[16];
-      ConvertInt64ToString(iconIndex, s);
+      ConvertUInt32ToString((UInt32)iconIndex, s);
       iconPathFull += s;
     }
     iconKey.Create(programKey, kDefaultIconKeyName);

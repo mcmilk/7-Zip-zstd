@@ -1,9 +1,13 @@
-// SevenZip/ Messages.h
+// Far/Messages.h
 
-#ifndef __SEVENZIP_MESSAGES_H
-#define __SEVENZIP_MESSAGES_H
+#ifndef __7ZIP_FAR_MESSAGES_H
+#define __7ZIP_FAR_MESSAGES_H
+
+#include "../../PropID.h"
 
 namespace NMessageID {
+
+const UINT k_Last_PropId_supported_by_plugin = kpidStreamId;
 
 enum EEnum
 {
@@ -20,63 +24,6 @@ enum EEnum
   kYes,
   kNo,
   
-  kPath,
-  kName,
-  kExtension,
-  kIsFolder,
-  kSize,
-  kPackSize,
-  kAttributes,
-  kCTime,
-  kATime,
-  kMTime,
-  kSolid,
-  kCommented,
-  kEncrypted,
-  kSplitBefore,
-  kSplitAfter,
-  kDictionarySize,
-  kCRC,
-  kType,
-  kAnti,
-  kMethod,
-  kHostOS,
-  kFileSystem,
-  kUser,
-  kGroup,
-  kBlock,
-  kComment,
-  kPosition,
-  kNumSubFolders,
-  kNumSubFiles,
-  kUnpackVer,
-  kVolume,
-  kIsVolume,
-  kOffset,
-  kLinks,
-  kNumBlocks,
-  kNumVolumes,
-
-  kBit64,
-  kBigEndian,
-  kCpu,
-  kPhySize,
-  kHeadersSize,
-  kChecksum,
-  kCharacts,
-  kVa,
-  kId,
-  kShortName,
-  kCreatorApp,
-  kSectorSize,
-  kPosixAttrib,
-  kLink,
-
-  kTotalSize,
-  kFreeSpace,
-  kClusterSize,
-  kLabel,
-
   kGetPasswordTitle,
   kEnterPasswordForFile,
 
@@ -140,18 +87,18 @@ enum EEnum
   kUpdateAddToArchive,
 
   kUpdateMethod,
-  kUpdateMethodStore,
-  kUpdateMethodFastest,
-  kUpdateMethodFast,
-  kUpdateMethodNormal,
-  kUpdateMethodMaximum,
-  kUpdateMethodUltra,
+  kUpdateMethod_Store,
+  kUpdateMethod_Fastest,
+  kUpdateMethod_Fast,
+  kUpdateMethod_Normal,
+  kUpdateMethod_Maximum,
+  kUpdateMethod_Ultra,
 
   kUpdateMode,
-  kUpdateModeAdd,
-  kUpdateModeUpdate,
-  kUpdateModeFreshen,
-  kUpdateModeSynchronize,
+  kUpdateMode_Add,
+  kUpdateMode_Update,
+  kUpdateMode_Fresh,
+  kUpdateMode_Sync,
 
   kUpdateAdd,
   kUpdateSelectArchiver,
@@ -176,7 +123,12 @@ enum EEnum
 
   kConfigTitle,
   
-  kConfigPluginEnabled
+  kConfigPluginEnabled,
+
+  // ---------- IDs for Properies (kpid*) ----------
+  kNoProperty,
+  k_Last_MessageID_for_Property = kNoProperty + k_Last_PropId_supported_by_plugin
+  // ----------
 };
 
 }

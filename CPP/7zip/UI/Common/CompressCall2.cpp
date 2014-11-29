@@ -2,13 +2,14 @@
 
 #include "StdAfx.h"
 
-#include "Common/MyException.h"
+#include "../../../Common/MyException.h"
 
 #include "../../UI/common/ArchiveCommandLine.h"
 
 #include "../../UI/GUI/BenchmarkDialog.h"
 #include "../../UI/GUI/ExtractGUI.h"
 #include "../../UI/GUI/UpdateGUI.h"
+#include "../../UI/GUI/HashGUI.h"
 
 #include "../../UI/GUI/ExtractRes.h"
 
@@ -16,20 +17,38 @@
 
 extern HWND g_HWND;
 
-#define MY_TRY_BEGIN try {
+#define MY_TRY_BEGIN  HRESULT result; try {
 #define MY_TRY_FINISH } \
   catch(CSystemException &e) { result = e.ErrorCode; } \
   catch(...) { result = E_FAIL; } \
   if (result != S_OK && result != E_ABORT) \
     ErrorMessageHRESULT(result);
 
+static void ThrowException_if_Error(HRESULT res)
+{
+  if (res != S_OK)
+    throw CSystemException(res);
+}
+
 #define CREATE_CODECS \
   CCodecs *codecs = new CCodecs; \
-  CMyComPtr<IUnknown> compressCodecsInfo = codecs; \
-  result = codecs->Load(); \
-  if (result != S_OK) \
-    throw CSystemException(result);
+  CMyComPtr<ICompressCodecsInfo> compressCodecsInfo = codecs; \
+  ThrowException_if_Error(codecs->Load());
 
+#ifdef EXTERNAL_CODECS
+
+#define LOAD_EXTERNAL_CODECS \
+    CExternalCodecs __externalCodecs; \
+    __externalCodecs.GetCodecs = codecs; \
+    __externalCodecs.GetHashers = codecs; \
+    ThrowException_if_Error(__externalCodecs.LoadCodecs());
+
+#else
+
+LOAD_EXTERNAL_CODECS
+
+#endif
+ 
 UString GetQuotedString(const UString &s)
 {
   return UString(L'\"') + s + UString(L'\"');
@@ -45,19 +64,19 @@ static void ErrorMessageHRESULT(HRESULT res)
   ErrorMessage(HResultToMessage(res));
 }
 
-static void ErrorLangMessage(UINT resourceID, UInt32 langID)
+static void ErrorLangMessage(UINT resourceID)
 {
-  ErrorMessage(LangString(resourceID, langID));
+  ErrorMessage(LangString(resourceID));
 }
 
 HRESULT CompressFiles(
     const UString &arcPathPrefix,
     const UString &arcName,
     const UString &arcType,
+    bool addExtension,
     const UStringVector &names,
     bool email, bool showDialog, bool /* waitFinish */)
 {
-  HRESULT result;
   MY_TRY_BEGIN
   CREATE_CODECS
 
@@ -67,26 +86,35 @@ HRESULT CompressFiles(
 
   CUpdateOptions uo;
   uo.EMailMode = email;
-  uo.SetAddActionCommand();
+  uo.SetActionCommand_Add();
 
-  CIntVector formatIndices;
-  if (!codecs->FindFormatForArchiveType(arcType, formatIndices))
+  uo.ArcNameMode = (addExtension ? k_ArcNameMode_Add : k_ArcNameMode_Exact);
+
+  CObjectVector<COpenType> formatIndices;
+  if (!ParseOpenTypes(*codecs, arcType, formatIndices))
   {
-    ErrorLangMessage(IDS_UNSUPPORTED_ARCHIVE_TYPE, 0x0200060D);
+    ErrorLangMessage(IDS_UNSUPPORTED_ARCHIVE_TYPE);
     return E_FAIL;
   }
-  if (!uo.Init(codecs, formatIndices, arcPathPrefix + arcName))
+  const UString arcPath = arcPathPrefix + arcName;
+  if (!uo.InitFormatIndex(codecs, formatIndices, arcPath) ||
+      !uo.SetArcPath(codecs, arcPath))
   {
-    ErrorLangMessage(IDS_UPDATE_NOT_SUPPORTED, 0x02000601);
+    ErrorLangMessage(IDS_UPDATE_NOT_SUPPORTED);
     return E_FAIL;
   }
 
   NWildcard::CCensor censor;
-  for (int i = 0; i < names.Size(); i++)
-    censor.AddItem(true, names[i], false);
+  FOR_VECTOR (i, names)
+  {
+    censor.AddPreItem(names[i]);
+  }
 
   bool messageWasDisplayed = false;
-  result = UpdateGUI(codecs, censor, uo, showDialog, messageWasDisplayed, &callback, g_HWND);
+
+  result = UpdateGUI(codecs,
+      formatIndices, arcPath,
+      censor, uo, showDialog, messageWasDisplayed, &callback, g_HWND);
   
   if (result != S_OK)
   {
@@ -105,15 +133,16 @@ HRESULT CompressFiles(
 }
 
 static HRESULT ExtractGroupCommand(const UStringVector &arcPaths,
-    bool showDialog, const UString &outFolder, bool testMode)
+    bool showDialog, const UString &outFolder, bool testMode, bool elimDup = false)
 {
-  HRESULT result;
   MY_TRY_BEGIN
   CREATE_CODECS
 
   CExtractOptions eo;
   eo.OutputDir = us2fs(outFolder);
   eo.TestMode = testMode;
+  eo.ElimDup.Val = elimDup;
+  eo.ElimDup.Def = elimDup;
 
   CExtractCallbackImp *ecs = new CExtractCallbackImp;
   CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
@@ -125,20 +154,29 @@ static HRESULT ExtractGroupCommand(const UStringVector &arcPaths,
   UStringVector arcPathsSorted;
   UStringVector arcFullPathsSorted;
   {
-    NWildcard::CCensor acrCensor;
-    for (int i = 0; i < arcPaths.Size(); i++)
-      acrCensor.AddItem(true, arcPaths[i], false);
-    EnumerateDirItemsAndSort(acrCensor, arcPathsSorted, arcFullPathsSorted);
+    NWildcard::CCensor arcCensor;
+    FOR_VECTOR (i, arcPaths)
+    {
+      arcCensor.AddPreItem(arcPaths[i]);
+    }
+    arcCensor.AddPathsToCensor(NWildcard::k_RelatPath);
+    EnumerateDirItemsAndSort(false, arcCensor, NWildcard::k_RelatPath, UString(), arcPathsSorted, arcFullPathsSorted);
   }
   
-  CIntVector formatIndices;
-
-  NWildcard::CCensor censor;
-  censor.AddItem(true, L"*", false);
+  CObjectVector<COpenType> formatIndices;
   
+  NWildcard::CCensor censor;
+  {
+    censor.AddPreItem_Wildcard();
+  }
+  
+  censor.AddPathsToCensor(NWildcard::k_RelatPath);
+
   bool messageWasDisplayed = false;
-  result = ExtractGUI(codecs, formatIndices, arcPathsSorted, arcFullPathsSorted,
-      censor.Pairs.Front().Head, eo, showDialog, messageWasDisplayed, ecs, g_HWND);
+  result = ExtractGUI(codecs,
+      formatIndices, CIntVector(),
+      arcPathsSorted, arcFullPathsSorted,
+      censor.Pairs.Front().Head, eo, NULL, showDialog, messageWasDisplayed, ecs, g_HWND);
   if (result != S_OK)
   {
     if (result != E_ABORT && messageWasDisplayed)
@@ -150,26 +188,51 @@ static HRESULT ExtractGroupCommand(const UStringVector &arcPaths,
   return result;
 }
 
-HRESULT ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bool showDialog)
+void ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bool showDialog, bool elimDup)
 {
-  return ExtractGroupCommand(arcPaths, showDialog, outFolder, false);
+  ExtractGroupCommand(arcPaths, showDialog, outFolder, false, elimDup);
 }
 
-HRESULT TestArchives(const UStringVector &arcPaths)
+void TestArchives(const UStringVector &arcPaths)
 {
-  return ExtractGroupCommand(arcPaths, true, UString(), true);
+  ExtractGroupCommand(arcPaths, true, UString(), true);
 }
 
-HRESULT Benchmark(bool totalMode)
+void CalcChecksum(const UStringVector &paths, const UString &methodName)
 {
-  HRESULT result;
   MY_TRY_BEGIN
   CREATE_CODECS
+  LOAD_EXTERNAL_CODECS
 
-  #ifdef EXTERNAL_CODECS
-  CObjectVector<CCodecInfoEx> externalCodecs;
-  RINOK(LoadExternalCodecs(codecs, externalCodecs));
-  #endif
+  NWildcard::CCensor censor;
+  FOR_VECTOR (i, paths)
+  {
+    censor.AddPreItem(paths[i]);
+  }
+
+  censor.AddPathsToCensor(NWildcard::k_RelatPath);
+  bool messageWasDisplayed = false;
+
+  CHashOptions options;
+  options.Methods.Add(methodName);
+
+  result = HashCalcGUI(EXTERNAL_CODECS_VARS censor, options, messageWasDisplayed);
+  if (result != S_OK)
+  {
+    if (result != E_ABORT && messageWasDisplayed)
+      return; //  E_FAIL;
+    throw CSystemException(result);
+  }
+  MY_TRY_FINISH
+  return; //  result;
+}
+
+void Benchmark(bool totalMode)
+{
+  MY_TRY_BEGIN
+  CREATE_CODECS
+  LOAD_EXTERNAL_CODECS
+  
   CObjectVector<CProperty> props;
   if (totalMode)
   {
@@ -178,11 +241,6 @@ HRESULT Benchmark(bool totalMode)
     prop.Value = L"*";
     props.Add(prop);
   }
-  result = Benchmark(
-      #ifdef EXTERNAL_CODECS
-      codecs, &externalCodecs,
-      #endif
-      props, g_HWND);
+  result = Benchmark(EXTERNAL_CODECS_VARS props, g_HWND);
   MY_TRY_FINISH
-  return result;
 }

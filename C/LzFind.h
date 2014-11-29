@@ -1,14 +1,12 @@
 /* LzFind.h -- Match finder for LZ algorithms
-2009-04-22 : Igor Pavlov : Public domain */
+2013-01-18 : Igor Pavlov : Public domain */
 
 #ifndef __LZ_FIND_H
 #define __LZ_FIND_H
 
-#include "Types.h"
+#include "7zTypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 typedef UInt32 CLzRef;
 
@@ -108,8 +106,6 @@ UInt32 Hc3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances);
 void Bt3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num);
 void Hc3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif

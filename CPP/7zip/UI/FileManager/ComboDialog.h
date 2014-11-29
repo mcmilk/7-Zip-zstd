@@ -3,8 +3,8 @@
 #ifndef __COMBO_DIALOG_H
 #define __COMBO_DIALOG_H
 
-#include "Windows/Control/ComboBox.h"
-#include "Windows/Control/Dialog.h"
+#include "../../../Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/Dialog.h"
 
 #include "ComboDialogRes.h"
 
@@ -20,8 +20,9 @@ public:
   UString Static;
   UString Value;
   UStringVector Strings;
+  
   // CComboDialog(): Sorted(false) {};
-  INT_PTR Create(HWND parentWindow = 0) { return CModalDialog::Create(IDD_DIALOG_COMBO, parentWindow); }
+  INT_PTR Create(HWND parentWindow = 0) { return CModalDialog::Create(IDD_COMBO, parentWindow); }
 };
 
 #endif

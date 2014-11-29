@@ -2,11 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Common/ComTry.h"
-#include "Common/IntToString.h"
+#include "../../../Common/ComTry.h"
+#include "../../../Common/IntToString.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/Time.h"
+#include "../../../Windows/PropVariant.h"
+#include "../../../Windows/TimeUtils.h"
 
 #include "../../IPassword.h"
 
@@ -40,98 +40,112 @@ static const CMethodId kMethodId_BZip2 = 0x040202;
 
 static const char *kHostOS[] =
 {
-  "FAT",
-  "AMIGA",
-  "VMS",
-  "Unix",
-  "VM/CMS",
-  "Atari",
-  "HPFS",
-  "Macintosh",
-  "Z-System",
-  "CP/M",
-  "TOPS-20",
-  "NTFS",
-  "SMS/QDOS",
-  "Acorn",
-  "VFAT",
-  "MVS",
-  "BeOS",
-  "Tandem",
-  "OS/400",
-  "OS/X"
+    "FAT"
+  , "AMIGA"
+  , "VMS"
+  , "Unix"
+  , "VM/CMS"
+  , "Atari"
+  , "HPFS"
+  , "Macintosh"
+  , "Z-System"
+  , "CP/M"
+  , "TOPS-20"
+  , "NTFS"
+  , "SMS/QDOS"
+  , "Acorn"
+  , "VFAT"
+  , "MVS"
+  , "BeOS"
+  , "Tandem"
+  , "OS/400"
+  , "OS/X"
 };
-
-static const char *kUnknownOS = "Unknown";
 
 static const char *kMethods[] =
 {
-  "Store",
-  "Shrink",
-  "Reduced1",
-  "Reduced2",
-  "Reduced3",
-  "Reduced4",
-  "Implode",
-  "Tokenizing",
-  "Deflate",
-  "Deflate64",
-  "PKImploding"
+    "Store"
+  , "Shrink"
+  , "Reduced1"
+  , "Reduced2"
+  , "Reduced3"
+  , "Reduced4"
+  , "Implode"
+  , "Tokenizing"
+  , "Deflate"
+  , "Deflate64"
+  , "PKImploding"
 };
 
-static const char *kBZip2Method = "BZip2";
-static const char *kLZMAMethod = "LZMA";
-static const char *kJpegMethod = "Jpeg";
-static const char *kWavPackMethod = "WavPack";
-static const char *kPPMdMethod = "PPMd";
-static const char *kAESMethod = "AES";
-static const char *kZipCryptoMethod = "ZipCrypto";
-static const char *kStrongCryptoMethod = "StrongCrypto";
+static const char *kMethod_AES = "AES";
+static const char *kMethod_ZipCrypto = "ZipCrypto";
+static const char *kMethod_StrongCrypto = "StrongCrypto";
 
-static struct CStrongCryptoPair
+struct CIdToNamePair
 {
-  UInt16 Id;
+  unsigned Id;
   const char *Name;
-} g_StrongCryptoPairs[] =
-{
-  { NStrongCryptoFlags::kDES, "DES" },
-  { NStrongCryptoFlags::kRC2old, "RC2a" },
-  { NStrongCryptoFlags::k3DES168, "3DES-168" },
-  { NStrongCryptoFlags::k3DES112, "3DES-112" },
-  { NStrongCryptoFlags::kAES128, "pkAES-128" },
-  { NStrongCryptoFlags::kAES192, "pkAES-192" },
-  { NStrongCryptoFlags::kAES256, "pkAES-256" },
-  { NStrongCryptoFlags::kRC2, "RC2" },
-  { NStrongCryptoFlags::kBlowfish, "Blowfish" },
-  { NStrongCryptoFlags::kTwofish, "Twofish" },
-  { NStrongCryptoFlags::kRC4, "RC4" }
 };
 
-static const STATPROPSTG kProps[] =
+static const CIdToNamePair k_MethodIdNamePairs[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsDir, VT_BOOL},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8},
-  { NULL, kpidMTime, VT_FILETIME},
-  { NULL, kpidCTime, VT_FILETIME},
-  { NULL, kpidATime, VT_FILETIME},
-  { NULL, kpidAttrib, VT_UI4},
-  // { NULL, kpidPosixAttrib, VT_UI4},
-  { NULL, kpidEncrypted, VT_BOOL},
-  { NULL, kpidComment, VT_BSTR},
-  { NULL, kpidCRC, VT_UI4},
-  { NULL, kpidMethod, VT_BSTR},
-  { NULL, kpidHostOS, VT_BSTR},
-  { NULL, kpidUnpackVer, VT_UI4}
+  { NFileHeader::NCompressionMethod::kBZip2, "BZip2" },
+  { NFileHeader::NCompressionMethod::kLZMA, "LZMA" },
+  { NFileHeader::NCompressionMethod::kJpeg, "Jpeg" },
+  { NFileHeader::NCompressionMethod::kWavPack, "WavPack" },
+  { NFileHeader::NCompressionMethod::kPPMd, "PPMd" }
 };
 
-static const STATPROPSTG kArcProps[] =
+static const CIdToNamePair k_StrongCryptoPairs[] =
 {
-  { NULL, kpidBit64, VT_BOOL},
-  { NULL, kpidComment, VT_BSTR},
-  { NULL, kpidPhySize, VT_UI8},
-  { NULL, kpidOffset, VT_UI8}
+  { NStrongCrypto_AlgId::kDES, "DES" },
+  { NStrongCrypto_AlgId::kRC2old, "RC2a" },
+  { NStrongCrypto_AlgId::k3DES168, "3DES-168" },
+  { NStrongCrypto_AlgId::k3DES112, "3DES-112" },
+  { NStrongCrypto_AlgId::kAES128, "pkAES-128" },
+  { NStrongCrypto_AlgId::kAES192, "pkAES-192" },
+  { NStrongCrypto_AlgId::kAES256, "pkAES-256" },
+  { NStrongCrypto_AlgId::kRC2, "RC2" },
+  { NStrongCrypto_AlgId::kBlowfish, "Blowfish" },
+  { NStrongCrypto_AlgId::kTwofish, "Twofish" },
+  { NStrongCrypto_AlgId::kRC4, "RC4" }
+};
+
+const char *FindNameForId(const CIdToNamePair *pairs, unsigned num, unsigned id)
+{
+  for (unsigned i = 0; i < num; i++)
+  {
+    const CIdToNamePair &pair = pairs[i];
+    if (id == pair.Id)
+      return pair.Name;
+  }
+  return NULL;
+}
+
+static const Byte kProps[] =
+{
+  kpidPath,
+  kpidIsDir,
+  kpidSize,
+  kpidPackSize,
+  kpidMTime,
+  kpidCTime,
+  kpidATime,
+  kpidAttrib,
+  // kpidPosixAttrib,
+  kpidEncrypted,
+  kpidComment,
+  kpidCRC,
+  kpidMethod,
+  kpidHostOS,
+  kpidUnpackVer
+};
+
+static const Byte kArcProps[] =
+{
+  kpidEmbeddedStubSize,
+  kpidBit64,
+  kpidComment
 };
 
 CHandler::CHandler()
@@ -142,12 +156,12 @@ CHandler::CHandler()
 static AString BytesToString(const CByteBuffer &data)
 {
   AString s;
-  int size = (int)data.GetCapacity();
+  unsigned size = (unsigned)data.Size();
   if (size > 0)
   {
-    char *p = s.GetBuffer(size + 1);
+    char *p = s.GetBuffer(size);
     memcpy(p, (const Byte *)data, size);
-    p[size] = '\0';
+    p[size] = 0;
     s.ReleaseBuffer();
   }
   return s;
@@ -160,13 +174,52 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidBit64:  if (m_Archive.IsZip64) prop = m_Archive.IsZip64; break;
-    case kpidComment:  prop = MultiByteToUnicodeString(BytesToString(m_Archive.ArcInfo.Comment), CP_ACP); break;
+    case kpidComment:  if (m_Archive.ArcInfo.Comment.Size() != 0) prop = MultiByteToUnicodeString(BytesToString(m_Archive.ArcInfo.Comment), CP_ACP); break;
     case kpidPhySize:  prop = m_Archive.ArcInfo.GetPhySize(); break;
-    case kpidOffset:  if (m_Archive.ArcInfo.StartPosition != 0) prop = m_Archive.ArcInfo.StartPosition; break;
-    case kpidError: if (!m_Archive.IsOkHeaders) prop = "Incorrect headers"; break;
+    case kpidOffset:  /* if (m_Archive.ArcInfo.Base != 0) */
+        prop = m_Archive.ArcInfo.Base; break;
+
+    case kpidEmbeddedStubSize:
+    {
+      UInt64 stubSize = m_Archive.ArcInfo.GetEmbeddedStubSize();
+      if (stubSize != 0)
+        prop = stubSize;
+      break;
+    }
+
+    case kpidWarningFlags:
+    {
+      UInt32 v = 0;
+      // if (m_Archive.ExtraMinorError) v |= kpv_ErrorFlags_HeadersError;
+      if (m_Archive.HeadersWarning) v |= kpv_ErrorFlags_HeadersError;
+      if (v != 0)
+        prop = v;
+      break;
+    }
+
+    case kpidErrorFlags:
+    {
+      UInt32 v = 0;
+      if (!m_Archive.IsArc) v |= kpv_ErrorFlags_IsNotArc;
+      if (m_Archive.HeadersError) v |= kpv_ErrorFlags_HeadersError;
+      if (m_Archive.UnexpectedEnd) v |= kpv_ErrorFlags_UnexpectedEnd;
+      if (m_Archive.ArcInfo.Base < 0)
+      {
+        /* We try to support case when we have sfx-zip with embedded stub,
+           but the stream has access only to zip part.
+           In that case we ignore UnavailableStart error.
+           maybe we must show warning in that case. */
+        UInt64 stubSize = m_Archive.ArcInfo.GetEmbeddedStubSize();
+        if (stubSize < (UInt64)-m_Archive.ArcInfo.Base)
+          v |= kpv_ErrorFlags_UnavailableStart;
+      }
+      if (m_Archive.NoCentralDir) v |= kpv_ErrorFlags_UnconfirmedStart;
+      prop = v;
+      break;
+    }
   }
   prop.Detach(value);
   COM_TRY_END
@@ -184,24 +237,36 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
   const CItemEx &item = m_Items[index];
-  switch(propID)
+  switch (propID)
   {
-    case kpidPath:  prop = NItemName::GetOSName2(item.GetUnicodeString(item.Name)); break;
+    case kpidPath:
+    {
+      UString res;
+      item.GetUnicodeString(item.Name, res, _forceCodePage, _specifiedCodePage);
+      NItemName::ConvertToOSName2(res);
+      prop = res;
+      break;
+    }
+    
     case kpidIsDir:  prop = item.IsDir(); break;
-    case kpidSize:  prop = item.UnPackSize; break;
+    case kpidSize:  prop = item.Size; break;
     case kpidPackSize:  prop = item.PackSize; break;
+    
     case kpidTimeType:
     {
       FILETIME ft;
       UInt32 unixTime;
+      UInt32 type;
       if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, ft))
-        prop = (UInt32)NFileTimeType::kWindows;
+        type = NFileTimeType::kWindows;
       else if (item.CentralExtra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
-        prop = (UInt32)NFileTimeType::kUnix;
+        type = NFileTimeType::kUnix;
       else
-        prop = (UInt32)NFileTimeType::kDOS;
+        type = NFileTimeType::kDOS;
+      prop = type;
       break;
     }
+    
     case kpidCTime:
     {
       FILETIME ft;
@@ -209,6 +274,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         prop = ft;
       break;
     }
+    
     case kpidATime:
     {
       FILETIME ft;
@@ -216,26 +282,33 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         prop = ft;
       break;
     }
+    
     case kpidMTime:
     {
       FILETIME utc;
+      bool defined = true;
       if (!item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, utc))
       {
-        UInt32 unixTime;
+        UInt32 unixTime = 0;
         if (item.CentralExtra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
           NTime::UnixTimeToFileTime(unixTime, utc);
         else
         {
           FILETIME localFileTime;
-          if (!NTime::DosTimeToFileTime(item.Time, localFileTime) ||
+          if (item.Time == 0)
+            defined = false;
+          else if (!NTime::DosTimeToFileTime(item.Time, localFileTime) ||
               !LocalFileTimeToFileTime(&localFileTime, &utc))
             utc.dwHighDateTime = utc.dwLowDateTime = 0;
         }
       }
-      prop = utc;
+      if (defined)
+        prop = utc;
       break;
     }
+    
     case kpidAttrib:  prop = item.GetWinAttrib(); break;
+    
     case kpidPosixAttrib:
     {
       UInt32 attrib;
@@ -243,83 +316,107 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         prop = attrib;
       break;
     }
+    
     case kpidEncrypted:  prop = item.IsEncrypted(); break;
-    case kpidComment:  prop = item.GetUnicodeString(BytesToString(item.Comment)); break;
-    case kpidCRC:  if (item.IsThereCrc()) prop = item.FileCRC; break;
+    
+    case kpidComment:
+    {
+      if (item.Comment.Size() != 0)
+      {
+        UString res;
+        item.GetUnicodeString(BytesToString(item.Comment), res, _forceCodePage, _specifiedCodePage);
+        prop = res;
+      }
+      break;
+    }
+    
+    case kpidCRC:  if (item.IsThereCrc()) prop = item.Crc; break;
+    
     case kpidMethod:
     {
-      UInt16 methodId = item.CompressionMethod;
-      AString method;
+      UInt16 methodId = item.Method;
+      AString m;
+      
       if (item.IsEncrypted())
       {
         if (methodId == NFileHeader::NCompressionMethod::kWzAES)
         {
-          method = kAESMethod;
-          CWzAesExtraField aesField;
-          if (item.CentralExtra.GetWzAesField(aesField))
+          m += kMethod_AES;
+          CWzAesExtra aesField;
+          if (item.CentralExtra.GetWzAes(aesField))
           {
-            method += '-';
-            char s[32];
-            ConvertUInt64ToString((aesField.Strength + 1) * 64 , s);
-            method += s;
-            method += ' ';
+            char s[16];
+            s[0] = '-';
+            ConvertUInt32ToString(((unsigned)aesField.Strength + 1) * 64 , s + 1);
+            m += s;
             methodId = aesField.Method;
           }
         }
-        else
+        else if (item.IsStrongEncrypted())
         {
-          if (item.IsStrongEncrypted())
+          CStrongCryptoExtra f;
+          f.AlgId = 0;
+          if (item.CentralExtra.GetStrongCrypto(f))
           {
-            CStrongCryptoField f;
-            bool finded = false;
-            if (item.CentralExtra.GetStrongCryptoField(f))
+            const char *s = FindNameForId(k_StrongCryptoPairs, ARRAY_SIZE(k_StrongCryptoPairs), f.AlgId);
+            if (s)
+              m += s;
+            else
             {
-              for (int i = 0; i < sizeof(g_StrongCryptoPairs) / sizeof(g_StrongCryptoPairs[0]); i++)
-              {
-                const CStrongCryptoPair &pair = g_StrongCryptoPairs[i];
-                if (f.AlgId == pair.Id)
-                {
-                  method += pair.Name;
-                  finded = true;
-                  break;
-                }
-              }
+              m += kMethod_StrongCrypto;
+              char temp[16];
+              temp[0] = ':';
+              ConvertUInt32ToString(f.AlgId, temp + 1);
+              m += temp;
             }
-            if (!finded)
-              method += kStrongCryptoMethod;
           }
           else
-            method += kZipCryptoMethod;
-          method += ' ';
+            m += kMethod_StrongCrypto;
         }
+        else
+          m += kMethod_ZipCrypto;
+        m += ' ';
       }
-      if (methodId < sizeof(kMethods) / sizeof(kMethods[0]))
-        method += kMethods[methodId];
-      else switch (methodId)
+      
       {
-        case NFileHeader::NCompressionMethod::kLZMA:
-          method += kLZMAMethod;
-          if (item.IsLzmaEOS())
-            method += ":EOS";
-          break;
-        case NFileHeader::NCompressionMethod::kBZip2: method += kBZip2Method; break;
-        case NFileHeader::NCompressionMethod::kJpeg: method += kJpegMethod; break;
-        case NFileHeader::NCompressionMethod::kWavPack: method += kWavPackMethod; break;
-        case NFileHeader::NCompressionMethod::kPPMd: method += kPPMdMethod; break;
-        default:
+        char temp[16];
+        const char *s = NULL;
+        if (methodId < ARRAY_SIZE(kMethods))
+          s = kMethods[methodId];
+        else
         {
-          char s[32];
-          ConvertUInt64ToString(methodId, s);
-          method += s;
+          s = FindNameForId(k_MethodIdNamePairs, ARRAY_SIZE(k_MethodIdNamePairs), methodId);
+          if (!s)
+          {
+            ConvertUInt32ToString(methodId, temp);
+            s = temp;
+          }
         }
+        m += s;
+        if (methodId == NFileHeader::NCompressionMethod::kLZMA && item.IsLzmaEOS())
+          m += ":EOS";
       }
-      prop = method;
+      
+      prop = m;
       break;
     }
+
     case kpidHostOS:
-      prop = (item.MadeByVersion.HostOS < sizeof(kHostOS) / sizeof(kHostOS[0])) ?
-        (kHostOS[item.MadeByVersion.HostOS]) : kUnknownOS;
+    {
+      Byte hostOS = item.GetHostOS();
+      char temp[16];
+      const char *s = NULL;
+      if (hostOS < ARRAY_SIZE(kHostOS))
+        s = kHostOS[hostOS];
+      else
+      {
+        ConvertUInt32ToString(hostOS, temp);
+        s = temp;
+      }
+      prop = s;
       break;
+    }
+    
     case kpidUnpackVer:
       prop = (UInt32)item.ExtractVersion.Version;
       break;
@@ -333,23 +430,25 @@ class CProgressImp: public CProgressVirt
 {
   CMyComPtr<IArchiveOpenCallback> _callback;
 public:
-  STDMETHOD(SetTotal)(UInt64 numFiles);
-  STDMETHOD(SetCompleted)(UInt64 numFiles);
+  virtual HRESULT SetCompletedLocal(UInt64 numFiles, UInt64 numBytes);
+  virtual HRESULT SetTotalCD(UInt64 numFiles);
+  virtual HRESULT SetCompletedCD(UInt64 numFiles);
   CProgressImp(IArchiveOpenCallback *callback): _callback(callback) {}
 };
 
-STDMETHODIMP CProgressImp::SetTotal(UInt64 numFiles)
+HRESULT CProgressImp::SetCompletedLocal(UInt64 numFiles, UInt64 numBytes)
 {
-  if (_callback)
-    return _callback->SetTotal(&numFiles, NULL);
-  return S_OK;
+  return _callback->SetCompleted(&numFiles, &numBytes);
 }
 
-STDMETHODIMP CProgressImp::SetCompleted(UInt64 numFiles)
+HRESULT CProgressImp::SetTotalCD(UInt64 numFiles)
 {
-  if (_callback)
-    return _callback->SetCompleted(&numFiles, NULL);
-  return S_OK;
+  return _callback->SetTotal(&numFiles, NULL);
+}
+
+HRESULT CProgressImp::SetCompletedCD(UInt64 numFiles)
+{
+  return _callback->SetCompleted(&numFiles, NULL);
 }
 
 STDMETHODIMP CHandler::Open(IInStream *inStream,
@@ -359,12 +458,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   try
   {
     Close();
-    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
     RINOK(m_Archive.Open(inStream, maxCheckStartPosition));
     CProgressImp progressImp(callback);
-    return m_Archive.ReadHeaders(m_Items, &progressImp);
+    return m_Archive.ReadHeaders(m_Items, callback ? &progressImp : NULL);
   }
-  catch(const CInArchiveException &) { Close(); return S_FALSE; }
   catch(...) { Close(); throw; }
   COM_TRY_END
 }
@@ -467,26 +564,26 @@ HRESULT CZipDecoder::Decode(
   bool needCRC = true;
   bool wzAesMode = false;
   bool pkAesMode = false;
-  UInt16 methodId = item.CompressionMethod;
+  UInt16 methodId = item.Method;
   if (item.IsEncrypted())
   {
     if (item.IsStrongEncrypted())
     {
-      CStrongCryptoField f;
-      if (item.CentralExtra.GetStrongCryptoField(f))
+      CStrongCryptoExtra f;
+      if (item.CentralExtra.GetStrongCrypto(f))
       {
         pkAesMode = true;
       }
       if (!pkAesMode)
       {
-        res = NExtract::NOperationResult::kUnSupportedMethod;
+        res = NExtract::NOperationResult::kUnsupportedMethod;
         return S_OK;
       }
     }
-    if (methodId == NFileHeader::NCompressionMethod::kWzAES)
+    if (!pkAesMode && methodId == NFileHeader::NCompressionMethod::kWzAES)
     {
-      CWzAesExtraField aesField;
-      if (item.CentralExtra.GetWzAesField(aesField))
+      CWzAesExtra aesField;
+      if (item.CentralExtra.GetWzAes(aesField))
       {
         wzAesMode = true;
         needCRC = aesField.NeedCrc();
@@ -520,8 +617,8 @@ HRESULT CZipDecoder::Decode(
   {
     if (wzAesMode)
     {
-      CWzAesExtraField aesField;
-      if (!item.CentralExtra.GetWzAesField(aesField))
+      CWzAesExtra aesField;
+      if (!item.CentralExtra.GetWzAes(aesField))
         return S_OK;
       methodId = aesField.Method;
       if (!_wzAesDecoder)
@@ -562,31 +659,35 @@ HRESULT CZipDecoder::Decode(
       CMyComBSTR password;
       RINOK(getTextPassword->CryptoGetTextPassword(&password));
       AString charPassword;
-      if (wzAesMode || pkAesMode)
+      if (password)
       {
-        charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_ACP);
-        /*
-        for (int i = 0;; i++)
+        if (wzAesMode || pkAesMode)
         {
-          wchar_t c = password[i];
-          if (c == 0)
-            break;
-          if (c >= 0x80)
+          charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_ACP);
+          /*
+          for (unsigned i = 0;; i++)
           {
-            res = NExtract::NOperationResult::kDataError;
-            return S_OK;
+            wchar_t c = password[i];
+            if (c == 0)
+              break;
+            if (c >= 0x80)
+            {
+              res = NExtract::NOperationResult::kDataError;
+              return S_OK;
+            }
+            charPassword += (char)c;
           }
-          charPassword += (char)c;
+          */
         }
-        */
-      }
-      else
-      {
-        // we use OEM. WinZip/Windows probably use ANSI for some files
-        charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_OEMCP);
+        else
+        {
+          /* pkzip25 / WinZip / Windows probably use ANSI for some files
+             We use OEM for compatibility with previous versions of 7-Zip? */
+          charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_OEMCP);
+        }
       }
       HRESULT result = cryptoSetPassword->CryptoSetPassword(
-        (const Byte *)(const char *)charPassword, charPassword.Length());
+        (const Byte *)(const char *)charPassword, charPassword.Len());
       if (result != S_OK)
         return S_OK;
     }
@@ -596,7 +697,7 @@ HRESULT CZipDecoder::Decode(
     }
   }
   
-  int m;
+  unsigned m;
   for (m = 0; m < methodItems.Size(); m++)
     if (methodItems[m].ZipMethod == methodId)
       break;
@@ -624,7 +725,7 @@ HRESULT CZipDecoder::Decode(
       {
         if (methodId > 0xFF)
         {
-          res = NExtract::NOperationResult::kUnSupportedMethod;
+          res = NExtract::NOperationResult::kUnsupportedMethod;
           return S_OK;
         }
         szMethodID = kMethodId_ZipBase + (Byte)methodId;
@@ -634,7 +735,7 @@ HRESULT CZipDecoder::Decode(
 
       if (mi.Coder == 0)
       {
-        res = NExtract::NOperationResult::kUnSupportedMethod;
+        res = NExtract::NOperationResult::kUnsupportedMethod;
         return S_OK;
       }
     }
@@ -680,7 +781,7 @@ HRESULT CZipDecoder::Decode(
       }
       else if (pkAesMode)
       {
-        result =_pkAesDecoderSpec->ReadHeader(inStream, item.FileCRC, item.UnPackSize);
+        result =_pkAesDecoderSpec->ReadHeader(inStream, item.Crc, item.Size);
         if (result == S_OK)
         {
           bool passwOK;
@@ -696,7 +797,16 @@ HRESULT CZipDecoder::Decode(
 
       if (result == S_OK)
       {
-        RINOK(filterStreamSpec->SetInStream(inStream));
+        if (pkAesMode)
+        {
+          /* 9.31: The BUG in 9.24-9.30 was fixed. pkAes archives didn't work.
+             We don't need to call CAesCbcCoder::Init() to reset IV for data. */
+          filterStreamSpec->SetInStream_NoSubFilterInit(inStream);
+        }
+        else
+        {
+          RINOK(filterStreamSpec->SetInStream(inStream));
+        }
         inStreamReleaser.FilterCoder = filterStreamSpec;
         inStreamNew = filterStream;
         if (wzAesMode)
@@ -709,12 +819,12 @@ HRESULT CZipDecoder::Decode(
     else
       inStreamNew = inStream;
     if (result == S_OK)
-      result = coder->Code(inStreamNew, outStream, NULL, &item.UnPackSize, compressProgress);
+      result = coder->Code(inStreamNew, outStream, NULL, &item.Size, compressProgress);
     if (result == S_FALSE)
       return S_OK;
     if (result == E_NOTIMPL)
     {
-      res = NExtract::NOperationResult::kUnSupportedMethod;
+      res = NExtract::NOperationResult::kUnsupportedMethod;
       return S_OK;
     }
 
@@ -723,7 +833,7 @@ HRESULT CZipDecoder::Decode(
   bool crcOK = true;
   bool authOk = true;
   if (needCRC)
-    crcOK = (outStreamSpec->GetCRC() == item.FileCRC);
+    crcOK = (outStreamSpec->GetCRC() == item.Crc);
   if (wzAesMode)
   {
     inStream.Attach(archive.CreateLimitedStream(authenticationPos, NCrypto::NWzAes::kMacSize));
@@ -744,7 +854,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_BEGIN
   CZipDecoder myDecoder;
   UInt64 totalUnPacked = 0, totalPacked = 0;
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = m_Items.Size();
   if(numItems == 0)
@@ -753,7 +863,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     const CItemEx &item = m_Items[allFilesMode ? i : indices[i]];
-    totalUnPacked += item.UnPackSize;
+    totalUnPacked += item.Size;
     totalPacked += item.PackSize;
   }
   RINOK(extractCallback->SetTotal(totalUnPacked));
@@ -765,7 +875,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
 
-  for (i = 0; i < numItems; i++, currentTotalUnPacked += currentItemUnPacked,
+  for (i = 0; i < numItems; i++,
+      currentTotalUnPacked += currentItemUnPacked,
       currentTotalPacked += currentItemPacked)
   {
     currentItemUnPacked = 0;
@@ -779,11 +890,26 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    Int32 index = allFilesMode ? i : indices[i];
+    UInt32 index = allFilesMode ? i : indices[i];
+
+    CItemEx item = m_Items[index];
+    bool isLocalOffsetOK = m_Archive.IsLocalOffsetOK(item);
+    bool skip = !isLocalOffsetOK && !item.IsDir();
+    if (skip)
+      askMode = NExtract::NAskMode::kSkip;
+
+    currentItemUnPacked = item.Size;
+    currentItemPacked = item.PackSize;
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
-    CItemEx item = m_Items[index];
+    if (!isLocalOffsetOK)
+    {
+      RINOK(extractCallback->PrepareOperation(askMode));
+      realOutStream.Release();
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnavailable));
+      continue;
+    }
     if (!item.FromLocal)
     {
       HRESULT res = m_Archive.ReadLocalItemAfterCdItem(item);
@@ -793,14 +919,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         {
           RINOK(extractCallback->PrepareOperation(askMode));
           realOutStream.Release();
-          RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
+          RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kHeadersError));
         }
         continue;
       }
       RINOK(res);
     }
 
-    if (item.IsDir() || item.IgnoreItem())
+    if (item.IsDir())
     {
       // if (!testMode)
       {
@@ -810,9 +936,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       }
       continue;
     }
-
-    currentItemUnPacked = item.UnPackSize;
-    currentItemPacked = item.PackSize;
 
     if (!testMode && !realOutStream)
       continue;

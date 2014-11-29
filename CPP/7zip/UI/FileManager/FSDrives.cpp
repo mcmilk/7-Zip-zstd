@@ -4,14 +4,15 @@
 
 #include "../../../../C/Alloc.h"
 
-#include "Common/ComTry.h"
-#include "Common/StringConvert.h"
+#include "../../../Common/ComTry.h"
+#include "../../../Common/Defs.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
 
-#include "Windows/Defs.h"
-#include "Windows/FileDir.h"
-#include "Windows/FileIO.h"
-#include "Windows/FileSystem.h"
-#include "Windows/PropVariant.h"
+#include "../../../Windows/FileDir.h"
+#include "../../../Windows/FileIO.h"
+#include "../../../Windows/FileSystem.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "../../PropID.h"
 
@@ -26,7 +27,8 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
-static CFSTR kVolPrefix = FTEXT("\\\\.\\");
+static CFSTR kVolPrefix  = FTEXT("\\\\.\\");
+static CFSTR kLongPrefix = FTEXT("\\\\?\\");
 
 FString CDriveInfo::GetDeviceFileIoName() const
 {
@@ -43,7 +45,7 @@ struct CPhysTempBuffer
 static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt64 fileSize,
     UInt32 bufferSize, UInt64 progressStart, IProgress *progress)
 {
-  NFile::NIO::CInFile inFile;
+  NIO::CInFile inFile;
   if (!inFile.Open(fromPath))
     return GetLastError();
   if (fileSize == (UInt64)(Int64)-1)
@@ -51,7 +53,7 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
     if (!inFile.GetLength(fileSize))
       ::GetLastError();
   }
-  NFile::NIO::COutFile outFile;
+  NIO::COutFile outFile;
   if (writeToDisk)
   {
     if (!outFile.Open(toPath, FILE_SHARE_WRITE, OPEN_EXISTING, 0))
@@ -62,7 +64,7 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
       return GetLastError();
   CPhysTempBuffer tempBuffer;
   tempBuffer.buffer = MidAlloc(bufferSize);
-  if (tempBuffer.buffer == 0)
+  if (!tempBuffer.buffer)
     return E_OUTOFMEMORY;
  
   for (UInt64 pos = 0; pos < fileSize;)
@@ -94,26 +96,26 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
   return S_OK;
 }
 
-static const STATPROPSTG kProps[] =
+static const PROPID kProps[] =
 {
-  { NULL, kpidName, VT_BSTR},
-  { NULL, kpidTotalSize, VT_UI8},
-  { NULL, kpidFreeSpace, VT_UI8},
-  { NULL, kpidType, VT_BSTR},
-  { NULL, kpidVolumeName, VT_BSTR},
-  { NULL, kpidFileSystem, VT_BSTR},
-  { NULL, kpidClusterSize, VT_UI8}
+  kpidName,
+  kpidTotalSize,
+  kpidFreeSpace,
+  kpidType,
+  kpidVolumeName,
+  kpidFileSystem,
+  kpidClusterSize
 };
 
 static const char *kDriveTypes[] =
 {
-  "Unknown",
-  "No Root Dir",
-  "Removable",
-  "Fixed",
-  "Remote",
-  "CD-ROM",
-  "RAM disk"
+    "Unknown"
+  , "No Root Dir"
+  , "Removable"
+  , "Fixed"
+  , "Remote"
+  , "CD-ROM"
+  , "RAM disk"
 };
 
 STDMETHODIMP CFSDrives::LoadItems()
@@ -122,7 +124,8 @@ STDMETHODIMP CFSDrives::LoadItems()
 
   FStringVector driveStrings;
   MyGetLogicalDriveStrings(driveStrings);
-  for (int i = 0; i < driveStrings.Size(); i++)
+  
+  FOR_VECTOR (i, driveStrings)
   {
     CDriveInfo di;
 
@@ -130,12 +133,13 @@ STDMETHODIMP CFSDrives::LoadItems()
 
     di.FullSystemName = driveName;
     if (!driveName.IsEmpty())
-      di.Name = driveName.Left(driveName.Length() - 1);
+      di.Name.SetFrom(driveName, driveName.Len() - 1);
     di.ClusterSize = 0;
     di.DriveSize = 0;
     di.FreeSpace = 0;
-    di.DriveType = NFile::NSystem::MyGetDriveType(driveName);
+    di.DriveType = NSystem::MyGetDriveType(driveName);
     bool needRead = true;
+
     if (di.DriveType == DRIVE_CDROM || di.DriveType == DRIVE_REMOVABLE)
     {
       /*
@@ -143,25 +147,59 @@ STDMETHODIMP CFSDrives::LoadItems()
       if (!::GetVolumeInformation(di.FullSystemName,
           NULL, 0, &dwSerialNumber, NULL, NULL, NULL, 0))
       */
-      di.KnownSizes = false;
       {
         needRead = false;
       }
     }
+    
     if (needRead)
     {
       DWORD volumeSerialNumber, maximumComponentLength, fileSystemFlags;
-      NFile::NSystem::MyGetVolumeInformation(driveName,
+      NSystem::MyGetVolumeInformation(driveName,
           di.VolumeName,
           &volumeSerialNumber, &maximumComponentLength, &fileSystemFlags,
           di.FileSystemName);
 
-      NFile::NSystem::MyGetDiskFreeSpace(driveName,
+      NSystem::MyGetDiskFreeSpace(driveName,
           di.ClusterSize, di.DriveSize, di.FreeSpace);
       di.KnownSizes = true;
+      di.KnownSize = true;
     }
+    
     _drives.Add(di);
   }
+
+  if (_volumeMode)
+  {
+    // we must use IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS
+    for (unsigned n = 0; n < 16; n++) // why 16 ?
+    {
+      FChar temp[16];
+      ConvertUInt32ToString(n, temp);
+      FString name = FTEXT("PhysicalDrive");
+      name += temp;
+      FString fullPath = kVolPrefix;
+      fullPath += name;
+
+      CFileInfo fi;
+      if (!fi.Find(fullPath))
+        continue;
+
+      CDriveInfo di;
+      di.Name = name;
+      di.FullSystemName = fullPath;
+      di.ClusterSize = 0;
+      di.DriveSize = fi.Size;
+      di.FreeSpace = 0;
+      di.DriveType = 0;
+
+      di.IsPhysicalDrive = true;
+      di.KnownSize = true;
+      
+      _drives.Add(di);
+    }
+  }
+
   return S_OK;
 }
 
@@ -177,15 +215,15 @@ STDMETHODIMP CFSDrives::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT
     return E_INVALIDARG;
   NCOM::CPropVariant prop;
   const CDriveInfo &di = _drives[itemIndex];
-  switch(propID)
+  switch (propID)
   {
     case kpidIsDir:  prop = !_volumeMode; break;
     case kpidName:  prop = di.Name; break;
-    case kpidTotalSize:   if (di.KnownSizes) prop = di.DriveSize; break;
+    case kpidTotalSize:   if (di.KnownSize) prop = di.DriveSize; break;
     case kpidFreeSpace:   if (di.KnownSizes) prop = di.FreeSpace; break;
     case kpidClusterSize: if (di.KnownSizes) prop = di.ClusterSize; break;
     case kpidType:
-      if (di.DriveType < sizeof(kDriveTypes) / sizeof(kDriveTypes[0]))
+      if (di.DriveType < ARRAY_SIZE(kDriveTypes))
         prop = kDriveTypes[di.DriveType];
       break;
     case kpidVolumeName:  prop = di.VolumeName; break;
@@ -202,7 +240,14 @@ HRESULT CFSDrives::BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder)
     return S_OK;
   NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
   CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-  RINOK(fsFolderSpec->Init(name, 0));
+  if (_longMode)
+  {
+    RINOK(fsFolderSpec->Init((FString)kLongPrefix + name, 0));
+  }
+  else
+  {
+    RINOK(fsFolderSpec->Init(name, 0));
+  }
   *resultFolder = subFolder.Detach();
   return S_OK;
 }
@@ -243,15 +288,17 @@ IMP_IFolderFolder_Props(CFSDrives)
 STDMETHODIMP CFSDrives::GetFolderProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  NCOM::CPropVariant prop;
+  switch (propID)
   {
-    case kpidType: prop = L"FSDrives"; break;
+    case kpidType: prop = "FSDrives"; break;
     case kpidPath:
       if (_volumeMode)
-        prop = fs2us(kVolPrefix);
+        prop = kVolPrefix;
+      else if (_longMode)
+        prop = kLongPrefix;
       else
-        prop = LangString(IDS_COMPUTER, 0x03020300) + UString(WCHAR_PATH_SEPARATOR);
+        prop = (UString)LangString(IDS_COMPUTER) + WCHAR_PATH_SEPARATOR;
       break;
   }
   prop.Detach(value);
@@ -264,6 +311,8 @@ STDMETHODIMP CFSDrives::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
 {
   *iconIndex = 0;
   const CDriveInfo &di = _drives[index];
+  if (di.IsPhysicalDrive)
+    return S_OK;
   int iconIndexTemp;
   if (GetRealIconIndex(di.FullSystemName, 0, iconIndexTemp) != 0)
   {
@@ -273,10 +322,10 @@ STDMETHODIMP CFSDrives::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
   return GetLastError();
 }
 
-UString CFSDrives::GetExt(int index) const
+const wchar_t *CFSDrives::GetExt(unsigned index) const
 {
   const CDriveInfo &di = _drives[index];
-  const wchar_t *ext = NULL;
+  const wchar_t *ext;
   if (di.DriveType == DRIVE_CDROM)
     ext = L"iso";
   else if (di.FileSystemName.Find(L"NTFS") >= 0)
@@ -285,23 +334,27 @@ UString CFSDrives::GetExt(int index) const
     ext = L"fat";
   else
     ext = L"img";
-  return (UString)L'.' + ext;
+  return ext;
 }
 
-HRESULT CFSDrives::GetLength(int index, UInt64 &length) const
+HRESULT CFSDrives::GetFileSize(unsigned index, UInt64 &fileSize) const
 {
-  NFile::NIO::CInFile inFile;
+  NIO::CInFile inFile;
   if (!inFile.Open(_drives[index].GetDeviceFileIoName()))
     return GetLastError();
-  if (!inFile.LengthDefined)
+  if (!inFile.SizeDefined)
     return E_FAIL;
-  length = inFile.Length;
+  fileSize = inFile.Size;
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::CopyTo(const UInt32 *indices, UInt32 numItems,
+STDMETHODIMP CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 numItems,
+    Int32 /* includeAltStreams */, Int32 /* replaceAltStreamColon */,
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
+  if (moveMode)
+    return E_NOTIMPL;
+
   if (numItems == 0)
     return S_OK;
   
@@ -313,7 +366,7 @@ STDMETHODIMP CFSDrives::CopyTo(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     const CDriveInfo &di = _drives[indices[i]];
-    if (di.KnownSizes)
+    if (di.KnownSize)
       totalSize += di.DriveSize;
   }
   RINOK(callback->SetTotal(totalSize));
@@ -331,9 +384,10 @@ STDMETHODIMP CFSDrives::CopyTo(const UInt32 *indices, UInt32 numItems,
 
   UInt64 completedSize = 0;
   RINOK(callback->SetCompleted(&completedSize));
+  
   for (i = 0; i < numItems; i++)
   {
-    int index = indices[i];
+    unsigned index = indices[i];
     const CDriveInfo &di = _drives[index];
     UString destPath2 = destPath;
     UString name = fs2us(di.Name);
@@ -343,6 +397,7 @@ STDMETHODIMP CFSDrives::CopyTo(const UInt32 *indices, UInt32 numItems,
       if (!destName.IsEmpty() && destName.Back() == L':')
       {
         destName.DeleteBack();
+        destName += L'.';
         destName += GetExt(index);
       }
       destPath2 += destName;
@@ -350,11 +405,11 @@ STDMETHODIMP CFSDrives::CopyTo(const UInt32 *indices, UInt32 numItems,
     FString srcPath = di.GetDeviceFileIoName();
 
     UInt64 fileSize = 0;
-    if (GetLength(index, fileSize) != S_OK)
+    if (GetFileSize(index, fileSize) != S_OK)
     {
       return E_FAIL;
     }
-    if (!di.KnownSizes)
+    if (!di.KnownSize)
       totalSize += fileSize;
     RINOK(callback->SetTotal(totalSize));
     
@@ -375,16 +430,7 @@ STDMETHODIMP CFSDrives::CopyTo(const UInt32 *indices, UInt32 numItems,
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::MoveTo(
-    const UInt32 * /* indices */,
-    UInt32 /* numItems */,
-    const wchar_t * /* path */,
-    IFolderOperationsExtractCallback * /* callback */)
-{
-  return E_NOTIMPL;
-}
-
-STDMETHODIMP CFSDrives::CopyFrom(const wchar_t * /* fromFolderPath */,
+STDMETHODIMP CFSDrives::CopyFrom(Int32 /* moveMode */, const wchar_t * /* fromFolderPath */,
     const wchar_t ** /* itemsPaths */, UInt32 /* numItems */, IProgress * /* progress */)
 {
   return E_NOTIMPL;

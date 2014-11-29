@@ -23,12 +23,6 @@ class CCoder :
   CLzOutWindow m_OutWindowStream;
   NBitm::CDecoder<CInBuffer> m_InBitStream;
   
-  void ReleaseStreams()
-  {
-    m_OutWindowStream.ReleaseStream();
-    m_InBitStream.ReleaseStream();
-  }
-
   class CCoderReleaser
   {
     CCoder *m_Coder;
@@ -39,7 +33,6 @@ class CCoder :
     {
       if (NeedFlush)
         m_Coder->m_OutWindowStream.Flush();
-      m_Coder->ReleaseStreams();
     }
   };
   friend class CCoderReleaser;

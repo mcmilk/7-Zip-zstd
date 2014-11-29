@@ -5,14 +5,23 @@
 #include "../../Common/RegisterArc.h"
 
 #include "WimHandler.h"
-static IInArchive *CreateArc() { return new NArchive::NWim::CHandler; }
-#ifndef EXTRACT_ONLY
-static IOutArchive *CreateArcOut() { return new NArchive::NWim::COutHandler; }
-#else
-#define CreateArcOut 0
-#endif
+
+namespace NArchive {
+namespace NWim {
+
+IMP_CreateArcIn
+IMP_CreateArcOut
 
 static CArcInfo g_ArcInfo =
-  { L"wim", L"wim swm", 0, 0xE6, { 'M', 'S', 'W', 'I', 'M', 0, 0, 0 }, 8, false, CreateArc, CreateArcOut };
+  { "wim", "wim swm", 0, 0xE6,
+  8, { 'M', 'S', 'W', 'I', 'M', 0, 0, 0 },
+  0,
+  NArcInfoFlags::kAltStreams |
+  NArcInfoFlags::kNtSecure |
+  NArcInfoFlags::kSymLinks |
+  NArcInfoFlags::kHardLinks
+  , REF_CreateArc_Pair };
 
 REGISTER_ARC(Wim)
+
+}}

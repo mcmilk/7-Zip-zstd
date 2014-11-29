@@ -3,8 +3,10 @@
 #include "StdAfx.h"
 
 #ifndef _UNICODE
-#include "Common/StringConvert.h"
+#include "../../../Common/StringConvert.h"
 #endif
+
+#include "../../../Windows/FileDir.h"
 
 #include "SysIconUtils.h"
 
@@ -51,13 +53,13 @@ struct CSHGetFileInfoInit
 static DWORD_PTR MySHGetFileInfoW(LPCWSTR pszPath, DWORD attrib, SHFILEINFOW *psfi, UINT cbFileInfo, UINT uFlags)
 {
   #ifdef _UNICODE
-  return SHGetFileInfo(
+  return SHGetFileInfo
   #else
   if (g_SHGetFileInfoInit.shGetFileInfoW == 0)
     return 0;
-  return g_SHGetFileInfoInit.shGetFileInfoW(
+  return g_SHGetFileInfoInit.shGetFileInfoW
   #endif
-  pszPath, attrib, psfi, cbFileInfo, uFlags);
+  (pszPath, attrib, psfi, cbFileInfo, uFlags);
 }
 
 DWORD_PTR GetRealIconIndex(CFSTR path, DWORD attrib, int &iconIndex)
@@ -82,7 +84,8 @@ DWORD_PTR GetRealIconIndex(CFSTR path, DWORD attrib, int &iconIndex)
   }
 }
 
-DWORD_PTR GetRealIconIndex(const UString &fileName, DWORD attrib, int &iconIndex, UString &typeName)
+/*
+DWORD_PTR GetRealIconIndex(const UString &fileName, DWORD attrib, int &iconIndex, UString *typeName)
 {
   #ifndef _UNICODE
   if (!g_IsNT)
@@ -91,7 +94,8 @@ DWORD_PTR GetRealIconIndex(const UString &fileName, DWORD attrib, int &iconIndex
     shellInfo.szTypeName[0] = 0;
     DWORD_PTR res = ::SHGetFileInfoA(GetSystemString(fileName), FILE_ATTRIBUTE_NORMAL | attrib, &shellInfo,
         sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX | SHGFI_TYPENAME);
-    typeName = GetUnicodeString(shellInfo.szTypeName);
+    if (typeName)
+      *typeName = GetUnicodeString(shellInfo.szTypeName);
     iconIndex = shellInfo.iIcon;
     return res;
   }
@@ -102,52 +106,148 @@ DWORD_PTR GetRealIconIndex(const UString &fileName, DWORD attrib, int &iconIndex
     shellInfo.szTypeName[0] = 0;
     DWORD_PTR res = ::MySHGetFileInfoW(fileName, FILE_ATTRIBUTE_NORMAL | attrib, &shellInfo,
         sizeof(shellInfo), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX | SHGFI_TYPENAME);
-    typeName = shellInfo.szTypeName;
+    if (typeName)
+      *typeName = shellInfo.szTypeName;
     iconIndex = shellInfo.iIcon;
     return res;
   }
 }
+*/
 
-int CExtToIconMap::GetIconIndex(DWORD attrib, const UString &fileName, UString &typeName)
+static int FindInSorted_Attrib(const CRecordVector<CAttribIconPair> &vect, DWORD attrib, int &insertPos)
 {
-  int dotPos = fileName.ReverseFind(L'.');
+  unsigned left = 0, right = vect.Size();
+  while (left != right)
+  {
+    unsigned mid = (left + right) / 2;
+    DWORD midAttrib = vect[mid].Attrib;
+    if (attrib == midAttrib)
+      return mid;
+    if (attrib < midAttrib)
+      right = mid;
+    else
+      left = mid + 1;
+  }
+  insertPos = left;
+  return -1;
+}
+
+static int FindInSorted_Ext(const CObjectVector<CExtIconPair> &vect, const wchar_t *ext, int &insertPos)
+{
+  unsigned left = 0, right = vect.Size();
+  while (left != right)
+  {
+    unsigned mid = (left + right) / 2;
+    int compare = MyStringCompareNoCase(ext, vect[mid].Ext);
+    if (compare == 0)
+      return mid;
+    if (compare < 0)
+      right = mid;
+    else
+      left = mid + 1;
+  }
+  insertPos = left;
+  return -1;
+}
+
+int CExtToIconMap::GetIconIndex(DWORD attrib, const wchar_t *fileName /*, UString *typeName */)
+{
+  int dotPos = -1;
+  unsigned i;
+  for (i = 0;; i++)
+  {
+    wchar_t c = fileName[i];
+    if (c == 0)
+      break;
+    if (c == '.')
+      dotPos = i;
+  }
+
+  /*
+  if (MyStringCompareNoCase(fileName, L"$Recycle.Bin") == 0)
+  {
+    char s[256];
+    sprintf(s, "SPEC i = %3d, attr = %7x", _attribMap.Size(), attrib);
+    OutputDebugStringA(s);
+    OutputDebugStringW(fileName);
+  }
+  */
+
   if ((attrib & FILE_ATTRIBUTE_DIRECTORY) != 0 || dotPos < 0)
   {
-    CAttribIconPair pair;
-    pair.Attrib = attrib;
-    int index = _attribMap.FindInSorted(pair);
+    int insertPos = 0;
+    int index = FindInSorted_Attrib(_attribMap, attrib, insertPos);
     if (index >= 0)
     {
-      typeName = _attribMap[index].TypeName;
+      // if (typeName) *typeName = _attribMap[index].TypeName;
       return _attribMap[index].IconIndex;
     }
+    CAttribIconPair pair;
     GetRealIconIndex(
         #ifdef UNDER_CE
-        L"\\"
+        FTEXT("\\")
         #endif
-        L"__File__"
-        , attrib, pair.IconIndex, pair.TypeName);
-    _attribMap.AddToSorted(pair);
-    typeName = pair.TypeName;
+        FTEXT("__DIR__")
+        , attrib, pair.IconIndex
+        // , pair.TypeName
+        );
+
+    /*
+    char s[256];
+    sprintf(s, "i = %3d, attr = %7x", _attribMap.Size(), attrib);
+    OutputDebugStringA(s);
+    */
+
+    pair.Attrib = attrib;
+    _attribMap.Insert(insertPos, pair);
+    // if (typeName) *typeName = pair.TypeName;
     return pair.IconIndex;
   }
 
-  CExtIconPair pair;
-  pair.Ext = fileName.Mid(dotPos + 1);
-  int index = _extMap.FindInSorted(pair);
+  const wchar_t *ext = fileName + dotPos + 1;
+  int insertPos = 0;
+  int index = FindInSorted_Ext(_extMap, ext, insertPos);
   if (index >= 0)
   {
-    typeName = _extMap[index].TypeName;
-    return _extMap[index].IconIndex;
+    const CExtIconPair &pa = _extMap[index];
+    // if (typeName) *typeName = pa.TypeName;
+    return pa.IconIndex;
   }
-  GetRealIconIndex(fileName.Mid(dotPos), attrib, pair.IconIndex, pair.TypeName);
-  _extMap.AddToSorted(pair);
-  typeName = pair.TypeName;
+
+  for (i = 0;; i++)
+  {
+    wchar_t c = ext[i];
+    if (c == 0)
+      break;
+    if (c < L'0' || c > L'9')
+      break;
+  }
+  if (i != 0 && ext[i] == 0)
+  {
+    // GetRealIconIndex is too slow for big number of split extensions: .001, .002, .003
+    if (!SplitIconIndex_Defined)
+    {
+      GetRealIconIndex(
+          #ifdef UNDER_CE
+          FTEXT("\\")
+          #endif
+          FTEXT("__FILE__.001"), 0, SplitIconIndex);
+      SplitIconIndex_Defined = true;
+    }
+    return SplitIconIndex;
+  }
+
+  CExtIconPair pair;
+  pair.Ext = ext;
+  GetRealIconIndex(us2fs(fileName + dotPos), attrib, pair.IconIndex);
+  _extMap.Insert(insertPos, pair);
+  // if (typeName) *typeName = pair.TypeName;
   return pair.IconIndex;
 }
 
+/*
 int CExtToIconMap::GetIconIndex(DWORD attrib, const UString &fileName)
 {
-  UString typeName;
-  return GetIconIndex(attrib, fileName, typeName);
+  return GetIconIndex(attrib, fileName, NULL);
 }
+*/

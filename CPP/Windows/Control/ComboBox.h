@@ -32,6 +32,8 @@ public:
   LRESULT SetItemData(int index, LPARAM lParam) { return SendMessage(CB_SETITEMDATA, index, lParam); }
   LRESULT GetItemData(int index) { return SendMessage(CB_GETITEMDATA, index, 0); }
 
+  LRESULT GetItemData_of_CurSel() { return GetItemData(GetCurSel()); }
+
   void ShowDropDown(bool show = true) { SendMessage(CB_SHOWDROPDOWN, show ? TRUE : FALSE, 0);  }
 };
 

@@ -1,28 +1,30 @@
 /* Sort.c -- Sort functions
-2010-09-17 : Igor Pavlov : Public domain */
+2014-04-05 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include "Sort.h"
 
 #define HeapSortDown(p, k, size, temp) \
   { for (;;) { \
-    UInt32 s = (k << 1); \
+    size_t s = (k << 1); \
     if (s > size) break; \
     if (s < size && p[s + 1] > p[s]) s++; \
     if (temp >= p[s]) break; \
     p[k] = p[s]; k = s; \
   } p[k] = temp; }
 
-void HeapSort(UInt32 *p, UInt32 size)
+void HeapSort(UInt32 *p, size_t size)
 {
   if (size <= 1)
     return;
   p--;
   {
-    UInt32 i = size / 2;
+    size_t i = size / 2;
     do
     {
       UInt32 temp = p[i];
-      UInt32 k = i;
+      size_t k = i;
       HeapSortDown(p, k, size, temp)
     }
     while (--i != 0);
@@ -30,7 +32,7 @@ void HeapSort(UInt32 *p, UInt32 size)
   /*
   do
   {
-    UInt32 k = 1;
+    size_t k = 1;
     UInt32 temp = p[size];
     p[size--] = p[1];
     HeapSortDown(p, k, size, temp)
@@ -40,7 +42,7 @@ void HeapSort(UInt32 *p, UInt32 size)
   while (size > 3)
   {
     UInt32 temp = p[size];
-    UInt32 k = (p[3] > p[2]) ? 3 : 2;
+    size_t k = (p[3] > p[2]) ? 3 : 2;
     p[size--] = p[1];
     p[1] = p[k];
     HeapSortDown(p, k, size, temp)
@@ -58,23 +60,69 @@ void HeapSort(UInt32 *p, UInt32 size)
   }
 }
 
+void HeapSort64(UInt64 *p, size_t size)
+{
+  if (size <= 1)
+    return;
+  p--;
+  {
+    size_t i = size / 2;
+    do
+    {
+      UInt64 temp = p[i];
+      size_t k = i;
+      HeapSortDown(p, k, size, temp)
+    }
+    while (--i != 0);
+  }
+  /*
+  do
+  {
+    size_t k = 1;
+    UInt64 temp = p[size];
+    p[size--] = p[1];
+    HeapSortDown(p, k, size, temp)
+  }
+  while (size > 1);
+  */
+  while (size > 3)
+  {
+    UInt64 temp = p[size];
+    size_t k = (p[3] > p[2]) ? 3 : 2;
+    p[size--] = p[1];
+    p[1] = p[k];
+    HeapSortDown(p, k, size, temp)
+  }
+  {
+    UInt64 temp = p[size];
+    p[size] = p[1];
+    if (size > 2 && p[2] < temp)
+    {
+      p[1] = p[2];
+      p[2] = temp;
+    }
+    else
+      p[1] = temp;
+  }
+}
+
 /*
 #define HeapSortRefDown(p, vals, n, size, temp) \
-  { UInt32 k = n; UInt32 val = vals[temp]; for (;;) { \
-    UInt32 s = (k << 1); \
+  { size_t k = n; UInt32 val = vals[temp]; for (;;) { \
+    size_t s = (k << 1); \
     if (s > size) break; \
     if (s < size && vals[p[s + 1]] > vals[p[s]]) s++; \
     if (val >= vals[p[s]]) break; \
     p[k] = p[s]; k = s; \
   } p[k] = temp; }
 
-void HeapSortRef(UInt32 *p, UInt32 *vals, UInt32 size)
+void HeapSortRef(UInt32 *p, UInt32 *vals, size_t size)
 {
   if (size <= 1)
     return;
   p--;
   {
-    UInt32 i = size / 2;
+    size_t i = size / 2;
     do
     {
       UInt32 temp = p[i];

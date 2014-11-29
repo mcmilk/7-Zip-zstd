@@ -2,13 +2,15 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "Plugin.h"
 
-#include "Common/Wildcard.h"
-#include "Common/StringConvert.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/Wildcard.h"
 
-#include "Windows/FileName.h"
-#include "Windows/FileFind.h"
+#include "../../../Windows/FileName.h"
+#include "../../../Windows/FileFind.h"
 
 #include "../Common/ZipRegistry.h"
 
@@ -16,11 +18,11 @@
 
 #include "ProgressBox.h"
 #include "Messages.h"
-#include "UpdateCallback100.h"
+#include "UpdateCallbackFar.h"
 
 using namespace NWindows;
 using namespace NFile;
-using namespace NDirectory;
+using namespace NDir;
 using namespace NFar;
 
 using namespace NUpdateArchive;
@@ -29,9 +31,9 @@ static const char *kHelpTopic = "Update";
 
 static const char *kArchiveHistoryKeyName = "7-ZipArcName";
 
-static const UINT32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 };
+static const UInt32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 };
 
-static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
+static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UInt32 method)
 {
   CMyComPtr<ISetProperties> setProperties;
   if (outArchive->QueryInterface(IID_ISetProperties, (void **)&setProperties) == S_OK)
@@ -40,7 +42,7 @@ static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UINT32 method)
     realNames.Add(UString(L"x"));
     NCOM::CPropVariant value = (UInt32)method;
     CRecordVector<const wchar_t *> names;
-    for (int i = 0; i < realNames.Size(); i++)
+    FOR_VECTOR (i, realNames)
       names.Add(realNames[i]);
     RINOK(setProperties->SetProperties(&names.Front(), &value, names.Size()));
   }
@@ -57,7 +59,7 @@ HRESULT CPlugin::AfterUpdate(CWorkDirTempFile &tempFile, const UStringVector &pa
   RINOK(m_ArchiveHandler->ReOpen(NULL)); // check it
 
   m_ArchiveHandler->BindToRootFolder(&_folder);
-  for (int i = 0; i < pathVector.Size(); i++)
+  FOR_VECTOR (i, pathVector)
   {
     CMyComPtr<IFolderFolder> newFolder;
     _folder->BindToFolder(pathVector[i], &newFolder);
@@ -96,7 +98,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
 
   int methodIndex = 0;
   int i;
-  for (i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
+  for (i = ARRAY_SIZE(g_MethodMap) - 1; i >= 0; i--)
     if (compressionInfo.Level >= g_MethodMap[i])
     {
       methodIndex = i;
@@ -108,29 +110,22 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
 
   struct CInitDialogItem initItems[]={
     { DI_DOUBLEBOX, 3, 1, 72, kYSize - 2, false, false, 0, false, NMessageID::kUpdateTitle, NULL, NULL },
+    
     { DI_SINGLEBOX, 4, 2, kXMid - 2, 2 + 7, false, false, 0, false, NMessageID::kUpdateMethod, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 3, 0, 0, methodIndex == 0, methodIndex == 0,
-        DIF_GROUP, false, NMessageID::kUpdateMethodStore, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 4, 0, 0, methodIndex == 1, methodIndex == 1,
-        0, false, NMessageID::kUpdateMethodFastest, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 5, 0, 0, methodIndex == 2, methodIndex == 2,
-        0, false, NMessageID::kUpdateMethodFast, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 6, 0, 0, methodIndex == 3, methodIndex == 3,
-        0, false, NMessageID::kUpdateMethodNormal, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 7, 0, 0, methodIndex == 4, methodIndex == 4,
-        0, false, NMessageID::kUpdateMethodMaximum, NULL, NULL },
-    { DI_RADIOBUTTON, 6, 8, 0, 0, methodIndex == 5, methodIndex == 5,
-        0, false, NMessageID::kUpdateMethodUltra, NULL, NULL },
+    
+    { DI_RADIOBUTTON, 6, 3, 0, 0, methodIndex == 0, methodIndex == 0, DIF_GROUP, false, NMessageID::kUpdateMethod_Store, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 4, 0, 0, methodIndex == 1, methodIndex == 1, 0, false, NMessageID::kUpdateMethod_Fastest, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 5, 0, 0, methodIndex == 2, methodIndex == 2, 0, false, NMessageID::kUpdateMethod_Fast, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 6, 0, 0, methodIndex == 3, methodIndex == 3, 0, false, NMessageID::kUpdateMethod_Normal, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 7, 0, 0, methodIndex == 4, methodIndex == 4, 0, false, NMessageID::kUpdateMethod_Maximum, NULL, NULL },
+    { DI_RADIOBUTTON, 6, 8, 0, 0, methodIndex == 5, methodIndex == 5, 0, false, NMessageID::kUpdateMethod_Ultra, NULL, NULL },
     
     { DI_SINGLEBOX, kXMid, 2, 70, 2 + 5, false, false, 0, false, NMessageID::kUpdateMode, NULL, NULL },
-    { DI_RADIOBUTTON, kXMid + 2, 3, 0, 0, false, true,
-        DIF_GROUP, false, NMessageID::kUpdateModeAdd, NULL, NULL },
-    { DI_RADIOBUTTON, kXMid + 2, 4, 0, 0, false, false,
-        0, false, NMessageID::kUpdateModeUpdate, NULL, NULL },
-    { DI_RADIOBUTTON, kXMid + 2, 5, 0, 0, false, false,
-        0, false, NMessageID::kUpdateModeFreshen, NULL, NULL },
-    { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false, false,
-        0, false, NMessageID::kUpdateModeSynchronize, NULL, NULL },
+    
+    { DI_RADIOBUTTON, kXMid + 2, 3, 0, 0, false, true, DIF_GROUP, false, NMessageID::kUpdateMode_Add, NULL, NULL },
+    { DI_RADIOBUTTON, kXMid + 2, 4, 0, 0, false, false,        0, false, NMessageID::kUpdateMode_Update, NULL, NULL },
+    { DI_RADIOBUTTON, kXMid + 2, 5, 0, 0, false, false,        0, false, NMessageID::kUpdateMode_Fresh, NULL, NULL },
+    { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false, false,        0, false, NMessageID::kUpdateMode_Sync, NULL, NULL },
   
     { DI_TEXT, 3, kYSize - 4, 0, 0, false, false, DIF_BOXCOLOR|DIF_SEPARATOR, false, -1, "", NULL  },
     
@@ -138,7 +133,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
     { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kCancel, NULL, NULL  }
   };
   
-  const int kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
+  const int kNumDialogItems = ARRAY_SIZE(initItems);
   const int kOkButtonIndex = kNumDialogItems - 2;
   FarDialogItem dialogItems[kNumDialogItems];
   g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);
@@ -148,22 +143,17 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
     return NFileOperationReturnCode::kInterruptedByUser;
 
   compressionInfo.Level = g_MethodMap[0];
-  for (i = 0; i < sizeof(g_MethodMap)/ sizeof(g_MethodMap[0]); i++)
+  for (i = 0; i < ARRAY_SIZE(g_MethodMap); i++)
     if (dialogItems[kMethodRadioIndex + i].Selected)
       compressionInfo.Level = g_MethodMap[i];
 
   const CActionSet *actionSet;
 
-  if (dialogItems[kModeRadioIndex].Selected)
-    actionSet = &kAddActionSet;
-  else if (dialogItems[kModeRadioIndex + 1].Selected)
-    actionSet = &kUpdateActionSet;
-  else if (dialogItems[kModeRadioIndex + 2].Selected)
-    actionSet = &kFreshActionSet;
-  else if (dialogItems[kModeRadioIndex + 3].Selected)
-    actionSet = &kSynchronizeActionSet;
-  else
-    throw 51751;
+       if (dialogItems[kModeRadioIndex    ].Selected) actionSet = &k_ActionSet_Add;
+  else if (dialogItems[kModeRadioIndex + 1].Selected) actionSet = &k_ActionSet_Update;
+  else if (dialogItems[kModeRadioIndex + 2].Selected) actionSet = &k_ActionSet_Fresh;
+  else if (dialogItems[kModeRadioIndex + 3].Selected) actionSet = &k_ActionSet_Sync;
+  else throw 51751;
 
   compressionInfo.Save();
 
@@ -201,13 +191,12 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   GetPathParts(pathVector);
   
   UStringVector fileNames;
-  fileNames.Reserve(numItems);
+  fileNames.ClearAndReserve(numItems);
   for (i = 0; i < numItems; i++)
-    fileNames.Add(MultiByteToUnicodeString(panelItems[i].FindData.cFileName, CP_OEMCP));
-  CRecordVector<const wchar_t *> fileNamePointers;
-  fileNamePointers.Reserve(numItems);
+    fileNames.AddInReserved(MultiByteToUnicodeString(panelItems[i].FindData.cFileName, CP_OEMCP));
+  CObjArray<const wchar_t *> fileNamePointers(numItems);
   for (i = 0; i < numItems; i++)
-    fileNamePointers.Add(fileNames[i]);
+    fileNamePointers[i] = fileNames[i];
 
   CMyComPtr<IOutFolderArchive> outArchive;
   HRESULT result = m_ArchiveHandler.QueryInterface(IID_IOutFolderArchive, &outArchive);
@@ -218,7 +207,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   }
   outArchive->SetFolder(_folder);
 
-  outArchive->SetFiles(L"", &fileNamePointers.Front(), fileNamePointers.Size());
+  outArchive->SetFiles(L"", fileNamePointers, numItems);
   BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSetByte[i] = (BYTE)actionSet->StateActions[i];
@@ -231,7 +220,12 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
     return NFileOperationReturnCode::kError;
 
-  result = outArchive->DoOperation2(tempFile.OutStream, actionSetByte, NULL, updateCallback);
+  // FStringVector requestedPaths;
+  // FStringVector processedPaths;
+  result = outArchive->DoOperation2(
+      // &requestedPaths, &processedPaths,
+      NULL, NULL,
+      tempFile.OutStream, actionSetByte, NULL, updateCallback);
   updateCallback.Release();
   outArchive.Release();
 
@@ -289,7 +283,7 @@ namespace NPathType
 {
   EEnum GetPathType(const UString &path)
   {
-    if (path.Length() <= 2)
+    if (path.Len() <= 2)
       return kLocal;
     if (path[0] == kDirDelimiter && path[1] == kDirDelimiter)
       return kUNC;
@@ -308,7 +302,7 @@ void CParsedPath::ParsePath(const UString &path)
       if (posDiskDelimiter >= 0)
       {
         curPos = posDiskDelimiter + 1;
-        if (path.Length() > curPos)
+        if ((int)path.Len() > curPos)
           if (path[curPos] == kDirDelimiter)
             curPos++;
       }
@@ -316,21 +310,22 @@ void CParsedPath::ParsePath(const UString &path)
     }
     case NPathType::kUNC:
     {
-      int curPos = path.Find(kDirDelimiter, 2);
+      // the bug was fixed:
+      curPos = path.Find(kDirDelimiter, 2);
       if (curPos < 0)
-        curPos = path.Length();
+        curPos = path.Len();
       else
         curPos++;
     }
   }
   Prefix = path.Left(curPos);
-  SplitPathToParts(path.Mid(curPos), PathParts);
+  SplitPathToParts(path.Ptr(curPos), PathParts);
 }
 
 UString CParsedPath::MergePath() const
 {
   UString result = Prefix;
-  for (int i = 0; i < PathParts.Size(); i++)
+  FOR_VECTOR (i, PathParts)
   {
     if (i != 0)
       result += kDirDelimiter;
@@ -352,21 +347,22 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     return E_FAIL;
 
   UStringVector fileNames;
-  int i;
-  for (i = 0; i < pluginPanelItems.Size(); i++)
   {
-    const PluginPanelItem &panelItem = pluginPanelItems[i];
-    if (strcmp(panelItem.FindData.cFileName, "..") == 0 &&
-        NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
-      return E_FAIL;
-    if (strcmp(panelItem.FindData.cFileName, ".") == 0 &&
-        NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
-      return E_FAIL;
-    FString fullPath;
-    FString fileNameUnicode = us2fs(MultiByteToUnicodeString(panelItem.FindData.cFileName, CP_OEMCP));
-    if (!MyGetFullPathName(fileNameUnicode, fullPath))
-      return E_FAIL;
-    fileNames.Add(fs2us(fullPath));
+    FOR_VECTOR (i, pluginPanelItems)
+    {
+      const PluginPanelItem &panelItem = pluginPanelItems[i];
+      if (strcmp(panelItem.FindData.cFileName, "..") == 0 &&
+          NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
+        return E_FAIL;
+      if (strcmp(panelItem.FindData.cFileName, ".") == 0 &&
+          NFind::NAttributes::IsDir(panelItem.FindData.dwFileAttributes))
+        return E_FAIL;
+      FString fullPath;
+      FString fileNameUnicode = us2fs(MultiByteToUnicodeString(panelItem.FindData.cFileName, CP_OEMCP));
+      if (!MyGetFullPathName(fileNameUnicode, fullPath))
+        return E_FAIL;
+      fileNames.Add(fs2us(fullPath));
+    }
   }
 
   NCompression::CInfo compressionInfo;
@@ -379,14 +375,14 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   if (codecs->Load() != S_OK)
     throw "Can't load 7-Zip codecs";
   {
-    for (int i = 0; i < codecs->Formats.Size(); i++)
+    FOR_VECTOR (i, codecs->Formats)
     {
       const CArcInfoEx &arcInfo = codecs->Formats[i];
       if (arcInfo.UpdateEnabled)
       {
         if (archiverIndex == -1)
           archiverIndex = i;
-        if (arcInfo.Name.CompareNoCase(compressionInfo.ArcType) == 0)
+        if (MyStringCompareNoCase(arcInfo.Name, compressionInfo.ArcType) == 0)
           archiverIndex = i;
       }
     }
@@ -416,7 +412,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
   int prevFormat = archiverIndex;
  
-  if (!arcInfo.KeepName)
+  if (!arcInfo.Flags_KeepName())
   {
     int dotPos = archiveName.ReverseFind('.');
     int slashPos = MyMax(archiveName.ReverseFind('\\'), archiveName.ReverseFind('/'));
@@ -426,7 +422,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   archiveName += L'.';
   archiveName += arcInfo.GetMainExt();
   
-  const CActionSet *actionSet = &kAddActionSet;
+  const CActionSet *actionSet = &k_ActionSet_Add;
 
   for (;;)
   {
@@ -448,7 +444,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
     int methodIndex = 0;
     int i;
-    for (i = sizeof(g_MethodMap) / sizeof(g_MethodMap[0]) - 1; i >= 0; i--)
+    for (i = ARRAY_SIZE(g_MethodMap) - 1; i >= 0; i--)
       if (compressionInfo.Level >= g_MethodMap[i])
       {
         methodIndex = i;
@@ -465,32 +461,20 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       // { DI_EDIT, 5, 3, 70, 3, true, false, 0, false, -1, archiveName, NULL},
       
       { DI_SINGLEBOX, 4, 4, kXMid - 2, 4 + 7, false, false, 0, false, NMessageID::kUpdateMethod, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 5, 0, 0, false, methodIndex == 0,
-          DIF_GROUP, false, NMessageID::kUpdateMethodStore, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 6, 0, 0, false, methodIndex == 1,
-          0, false, NMessageID::kUpdateMethodFastest, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 7, 0, 0, false, methodIndex == 2,
-          0, false, NMessageID::kUpdateMethodFast, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 8, 0, 0, false, methodIndex == 3,
-          0, false, NMessageID::kUpdateMethodNormal, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 9, 0, 0, false, methodIndex == 4,
-          false, 0, NMessageID::kUpdateMethodMaximum, NULL, NULL },
-      { DI_RADIOBUTTON, 6, 10, 0, 0, false, methodIndex == 5,
-          false, 0, NMessageID::kUpdateMethodUltra, NULL, NULL },
+      
+      { DI_RADIOBUTTON, 6, 5, 0, 0, false, methodIndex == 0, DIF_GROUP, false, NMessageID::kUpdateMethod_Store, NULL, NULL },
+      { DI_RADIOBUTTON, 6, 6, 0, 0, false, methodIndex == 1, 0, false, NMessageID::kUpdateMethod_Fastest, NULL, NULL },
+      { DI_RADIOBUTTON, 6, 7, 0, 0, false, methodIndex == 2, 0, false, NMessageID::kUpdateMethod_Fast, NULL, NULL },
+      { DI_RADIOBUTTON, 6, 8, 0, 0, false, methodIndex == 3, 0, false, NMessageID::kUpdateMethod_Normal, NULL, NULL },
+      { DI_RADIOBUTTON, 6, 9, 0, 0, false, methodIndex == 4, 0, false, NMessageID::kUpdateMethod_Maximum, NULL, NULL },
+      { DI_RADIOBUTTON, 6,10, 0, 0, false, methodIndex == 5, 0, false, NMessageID::kUpdateMethod_Ultra, NULL, NULL },
       
       { DI_SINGLEBOX, kXMid, 4, 70, 4 + 5, false, false, 0, false, NMessageID::kUpdateMode, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 5, 0, 0, false,
-          actionSet == &kAddActionSet,
-          DIF_GROUP, false, NMessageID::kUpdateModeAdd, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false,
-          actionSet == &kUpdateActionSet,
-          0, false, NMessageID::kUpdateModeUpdate, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 7, 0, 0, false,
-          actionSet == &kFreshActionSet,
-          0, false, NMessageID::kUpdateModeFreshen, NULL, NULL },
-      { DI_RADIOBUTTON, kXMid + 2, 8, 0, 0, false,
-          actionSet == &kSynchronizeActionSet,
-          0, false, NMessageID::kUpdateModeSynchronize, NULL, NULL },
+      
+      { DI_RADIOBUTTON, kXMid + 2, 5, 0, 0, false, actionSet == &k_ActionSet_Add, DIF_GROUP, false, NMessageID::kUpdateMode_Add, NULL, NULL },
+      { DI_RADIOBUTTON, kXMid + 2, 6, 0, 0, false, actionSet == &k_ActionSet_Update,      0, false, NMessageID::kUpdateMode_Update, NULL, NULL },
+      { DI_RADIOBUTTON, kXMid + 2, 7, 0, 0, false, actionSet == &k_ActionSet_Fresh,       0, false, NMessageID::kUpdateMode_Fresh, NULL, NULL },
+      { DI_RADIOBUTTON, kXMid + 2, 8, 0, 0, false, actionSet == &k_ActionSet_Sync,        0, false, NMessageID::kUpdateMode_Sync, NULL, NULL },
       
       { DI_TEXT, 3, kYSize - 4, 0, 0, false, false, DIF_BOXCOLOR|DIF_SEPARATOR, false, -1, "", NULL  },
       
@@ -499,7 +483,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kCancel, NULL, NULL  }
     };
 
-    const int kNumDialogItems = sizeof(initItems) / sizeof(initItems[0]);
+    const int kNumDialogItems = ARRAY_SIZE(initItems);
     
     const int kOkButtonIndex = kNumDialogItems - 3;
     const int kSelectarchiverButtonIndex = kNumDialogItems - 2;
@@ -514,26 +498,21 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     archiveName = MultiByteToUnicodeString(archiveNameA, CP_OEMCP);
 
     compressionInfo.Level = g_MethodMap[0];
-    for (i = 0; i < sizeof(g_MethodMap)/ sizeof(g_MethodMap[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(g_MethodMap); i++)
       if (dialogItems[kMethodRadioIndex + i].Selected)
         compressionInfo.Level = g_MethodMap[i];
 
-    if (dialogItems[kModeRadioIndex].Selected)
-      actionSet = &kAddActionSet;
-    else if (dialogItems[kModeRadioIndex + 1].Selected)
-      actionSet = &kUpdateActionSet;
-    else if (dialogItems[kModeRadioIndex + 2].Selected)
-      actionSet = &kFreshActionSet;
-    else if (dialogItems[kModeRadioIndex + 3].Selected)
-      actionSet = &kSynchronizeActionSet;
-    else
-      throw 51751;
+         if (dialogItems[kModeRadioIndex    ].Selected) actionSet = &k_ActionSet_Add;
+    else if (dialogItems[kModeRadioIndex + 1].Selected) actionSet = &k_ActionSet_Update;
+    else if (dialogItems[kModeRadioIndex + 2].Selected) actionSet = &k_ActionSet_Fresh;
+    else if (dialogItems[kModeRadioIndex + 3].Selected) actionSet = &k_ActionSet_Sync;
+    else throw 51751;
 
     if (askCode == kSelectarchiverButtonIndex)
     {
       CIntVector indices;
       CSysStringVector archiverNames;
-      for (int i = 0; i < codecs->Formats.Size(); i++)
+      FOR_VECTOR (i, codecs->Formats)
       {
         const CArcInfoEx &arc = codecs->Formats[i];
         if (arc.UpdateEnabled)
@@ -549,13 +528,14 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
       if (index >= 0)
       {
         const CArcInfoEx &prevArchiverInfo = codecs->Formats[prevFormat];
-        if (prevArchiverInfo.KeepName)
+        if (prevArchiverInfo.Flags_KeepName())
         {
           const UString &prevExtension = prevArchiverInfo.GetMainExt();
-          const int prevExtensionLen = prevExtension.Length();
-          if (archiveName.Right(prevExtensionLen).CompareNoCase(prevExtension) == 0)
+          const unsigned prevExtensionLen = prevExtension.Len();
+          if (archiveName.Len() >= prevExtensionLen &&
+              MyStringCompareNoCase(archiveName.RightPtr(prevExtensionLen), prevExtension) == 0)
           {
-            int pos = archiveName.Length() - prevExtensionLen;
+            int pos = archiveName.Len() - prevExtensionLen;
             if (pos > 1)
             {
               int dotPos = archiveName.ReverseFind('.');
@@ -569,7 +549,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
         const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
         prevFormat = archiverIndex;
         
-        if (arcInfo.KeepName)
+        if (arcInfo.Flags_KeepName())
           archiveName = archiveNameSrc;
         else
         {
@@ -636,7 +616,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
         &archiveType,
         NULL));
 
-    if (archiverInfoFinal.Name.CompareNoCase((const wchar_t *)archiveType) != 0)
+    if (MyStringCompareNoCase(archiverInfoFinal.Name, (const wchar_t *)archiveType) != 0)
       throw "Type of existing archive differs from specified type";
     HRESULT result = archiveHandler.QueryInterface(
         IID_IOutFolderArchive, &outArchive);
@@ -662,13 +642,14 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     */
   }
 
-  CRecordVector<const wchar_t *> fileNamePointers;
-  fileNamePointers.Reserve(fileNames.Size());
+  CObjArray<const wchar_t *> fileNamePointers(fileNames.Size());
+  
+  unsigned i;
   for (i = 0; i < fileNames.Size(); i++)
-    fileNamePointers.Add(fileNames[i]);
+    fileNamePointers[i] = fileNames[i];
 
   outArchive->SetFolder(NULL);
-  outArchive->SetFiles(L"", &fileNamePointers.Front(), fileNamePointers.Size());
+  outArchive->SetFiles(L"", fileNamePointers, fileNames.Size());
   BYTE actionSetByte[NUpdateArchive::NPairState::kNumValues];
   for (i = 0; i < NUpdateArchive::NPairState::kNumValues; i++)
     actionSetByte[i] = (BYTE)actionSet->StateActions[i];
@@ -681,7 +662,11 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   RINOK(SetOutProperties(outArchive, compressionInfo.Level));
 
+  // FStringVector requestedPaths;
+  // FStringVector processedPaths;
   HRESULT result = outArchive->DoOperation(
+      // &requestedPaths, &processedPaths,
+      NULL, NULL,
       codecs, archiverIndex,
       tempFile.OutStream, actionSetByte,
       NULL, updateCallback);
@@ -698,10 +683,12 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   {
     archiveHandler->Close();
   }
-  if (!tempFile.MoveToOriginal(archiveHandler != NULL))
+
+  result = tempFile.MoveToOriginal(archiveHandler != NULL);
+  if (result != S_OK)
   {
-    ShowLastErrorMessage();
-    return E_FAIL;
+    ShowErrorMessage(result);
+    return result;
   }
   return S_OK;
 }

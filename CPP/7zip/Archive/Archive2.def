@@ -3,7 +3,9 @@ EXPORTS
   GetHandlerProperty PRIVATE
   GetNumberOfFormats PRIVATE
   GetHandlerProperty2 PRIVATE
-  CreateObject PRIVATE
   GetNumberOfMethods PRIVATE
   GetMethodProperty PRIVATE
+  GetHashers PRIVATE
   SetLargePageMode PRIVATE
+  SetCaseSensitive PRIVATE
+  GetIsArc PRIVATE

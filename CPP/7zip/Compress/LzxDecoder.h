@@ -23,45 +23,44 @@ const UInt32 kBitDecoderValueMask = (1 << kNumValueBits) - 1;
 
 class CDecoder
 {
-  CInBuffer m_Stream;
-  UInt32 m_Value;
-  unsigned m_BitPos;
+  CInBuffer _stream;
+  UInt32 _value;
+  unsigned _bitPos;
 public:
   CDecoder() {}
-  bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
+  bool Create(UInt32 bufSize) { return _stream.Create(bufSize); }
 
-  void SetStream(ISequentialInStream *s) { m_Stream.SetStream(s); }
-  void ReleaseStream() { m_Stream.ReleaseStream(); }
+  void SetStream(ISequentialInStream *s) { _stream.SetStream(s); }
 
   void Init()
   {
-    m_Stream.Init();
-    m_BitPos = kNumBigValueBits;
+    _stream.Init();
+    _bitPos = kNumBigValueBits;
   }
 
-  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() - (kNumBigValueBits - m_BitPos) / 8; }
+  UInt64 GetProcessedSize() const { return _stream.GetProcessedSize() - ((kNumBigValueBits - _bitPos) >> 3); }
   
-  unsigned GetBitPosition() const { return m_BitPos & 0xF; }
+  unsigned GetBitPosition() const { return _bitPos & 0xF; }
 
   void Normalize()
   {
-    for (; m_BitPos >= 16; m_BitPos -= 16)
+    for (; _bitPos >= 16; _bitPos -= 16)
     {
-      Byte b0 = m_Stream.ReadByte();
-      Byte b1 = m_Stream.ReadByte();
-      m_Value = (m_Value << 8) | b1;
-      m_Value = (m_Value << 8) | b0;
+      Byte b0 = _stream.ReadByte();
+      Byte b1 = _stream.ReadByte();
+      _value = (_value << 8) | b1;
+      _value = (_value << 8) | b0;
     }
   }
 
   UInt32 GetValue(unsigned numBits) const
   {
-    return ((m_Value >> ((32 - kNumValueBits) - m_BitPos)) & kBitDecoderValueMask) >> (kNumValueBits - numBits);
+    return ((_value >> ((32 - kNumValueBits) - _bitPos)) & kBitDecoderValueMask) >> (kNumValueBits - numBits);
   }
   
   void MovePos(unsigned numBits)
   {
-    m_BitPos += numBits;
+    _bitPos += numBits;
     Normalize();
   }
 
@@ -82,14 +81,14 @@ public:
 
   bool ReadUInt32(UInt32 &v)
   {
-    if (m_BitPos != 0)
+    if (_bitPos != 0)
       return false;
-    v = ((m_Value >> 16) & 0xFFFF) | ((m_Value << 16) & 0xFFFF0000);
-    m_BitPos = kNumBigValueBits;
+    v = ((_value >> 16) & 0xFFFF) | ((_value << 16) & 0xFFFF0000);
+    _bitPos = kNumBigValueBits;
     return true;
   }
 
-  Byte DirectReadByte() { return m_Stream.ReadByte(); }
+  Byte DirectReadByte() { return _stream.ReadByte(); }
 
 };
 }
@@ -98,6 +97,7 @@ class CDecoder :
   public ICompressCoder,
   public CMyUnknownImp
 {
+  // CMyComPtr<ISequentialInStream> m_InStreamRef;
   NBitStream::CDecoder m_InBitStream;
   CLzOutWindow m_OutWindowStream;
 
@@ -140,14 +140,14 @@ public:
 
   MY_UNKNOWN_IMP
 
-  void ReleaseStreams();
+  // void ReleaseStreams();
   STDMETHOD(Flush)();
 
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 
-  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
-  STDMETHOD(ReleaseInStream)();
+  // STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  // STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
   HRESULT SetParams(unsigned numDictBits);

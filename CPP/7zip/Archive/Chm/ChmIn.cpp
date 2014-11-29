@@ -2,8 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
-#include "Common/UTFConvert.h"
+// #include <stdio.h>
+
+#include "../../../Common/IntToString.h"
+#include "../../../Common/UTFConvert.h"
 
 #include "../../Common/LimitedStreams.h"
 
@@ -11,6 +13,21 @@
 
 namespace NArchive {
 namespace NChm {
+
+static const UInt32 kSignature_ITSP = 0x50535449;
+static const UInt32 kSignature_PMGL = 0x4C474D50;
+static const UInt32 kSignature_LZXC = 0x43585A4C;
+
+static const UInt32 kSignature_IFCM = 0x4D434649;
+static const UInt32 kSignature_AOLL = 0x4C4C4F41;
+static const UInt32 kSignature_CAOL = 0x4C4F4143;
+
+static const UInt32 kSignature_ITSF = 0x46535449;
+static const UInt32 kSignature_ITOL = 0x4C4F5449;
+static const UInt32 kSignature_ITLS = 0x534C5449;
+
+struct CEnexpectedEndException {};
+struct CHeaderErrorException {};
 
 // define CHM_LOW, if you want to see low level items
 // #define CHM_LOW
@@ -31,9 +48,9 @@ static bool AreGuidsEqual(REFGUID g1, REFGUID g2)
   return true;
 }
 
-static char GetHex(Byte value)
+static char GetHex(unsigned v)
 {
-  return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
+  return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10)));
 }
 
 static void PrintByte(Byte b, AString &s)
@@ -103,10 +120,10 @@ UString CMethodInfo::GetName() const
     else
     {
       s2 = GetGuidString();
-      if (ControlData.GetCapacity() > 0)
+      if (ControlData.Size() > 0)
       {
         s2 += ':';
-        for (size_t i = 0; i < ControlData.GetCapacity(); i++)
+        for (size_t i = 0; i < ControlData.Size(); i++)
           PrintByte(ControlData[i], s2);
       }
     }
@@ -132,7 +149,7 @@ UString CSectionInfo::GetMethodName() const
       s += temp;
     s += L": ";
   }
-  for (int i = 0; i < Methods.Size(); i++)
+  FOR_VECTOR (i, Methods)
   {
     if (i != 0)
       s += L' ';
@@ -145,7 +162,7 @@ Byte CInArchive::ReadByte()
 {
   Byte b;
   if (!_inBuffer.ReadByte(b))
-    throw 1;
+    throw CEnexpectedEndException();
   return b;
 }
 
@@ -163,32 +180,32 @@ void CInArchive::ReadBytes(Byte *data, UInt32 size)
 
 UInt16 CInArchive::ReadUInt16()
 {
-  UInt16 value = 0;
+  UInt16 val = 0;
   for (int i = 0; i < 2; i++)
-    value |= ((UInt16)(ReadByte()) << (8 * i));
-  return value;
+    val |= ((UInt16)(ReadByte()) << (8 * i));
+  return val;
 }
 
 UInt32 CInArchive::ReadUInt32()
 {
-  UInt32 value = 0;
+  UInt32 val = 0;
   for (int i = 0; i < 4; i++)
-    value |= ((UInt32)(ReadByte()) << (8 * i));
-  return value;
+    val |= ((UInt32)(ReadByte()) << (8 * i));
+  return val;
 }
 
 UInt64 CInArchive::ReadUInt64()
 {
-  UInt64 value = 0;
+  UInt64 val = 0;
   for (int i = 0; i < 8; i++)
-    value |= ((UInt64)(ReadByte()) << (8 * i));
-  return value;
+    val |= ((UInt64)(ReadByte()) << (8 * i));
+  return val;
 }
 
 UInt64 CInArchive::ReadEncInt()
 {
-  UInt64 val = 0;;
-  for (int i = 0; i < 10; i++)
+  UInt64 val = 0;
+  for (int i = 0; i < 9; i++)
   {
     Byte b = ReadByte();
     val |= (b & 0x7F);
@@ -196,7 +213,7 @@ UInt64 CInArchive::ReadEncInt()
       return val;
     val <<= 7;
   }
-  throw 1;
+  throw CHeaderErrorException();
 }
 
 void CInArchive::ReadGUID(GUID &g)
@@ -207,10 +224,10 @@ void CInArchive::ReadGUID(GUID &g)
   ReadBytes(g.Data4, 8);
 }
 
-void CInArchive::ReadString(int size, AString &s)
+void CInArchive::ReadString(unsigned size, AString &s)
 {
   s.Empty();
-  while(size-- != 0)
+  while (size-- != 0)
   {
     char c = (char)ReadByte();
     if (c == 0)
@@ -222,10 +239,10 @@ void CInArchive::ReadString(int size, AString &s)
   }
 }
 
-void CInArchive::ReadUString(int size, UString &s)
+void CInArchive::ReadUString(unsigned size, UString &s)
 {
   s.Empty();
-  while(size-- != 0)
+  while (size-- != 0)
   {
     wchar_t c = ReadUInt16();
     if (c == 0)
@@ -244,6 +261,7 @@ HRESULT CInArchive::ReadChunk(IInStream *inStream, UInt64 pos, UInt64 size)
   CMyComPtr<ISequentialInStream> limitedStream(streamSpec);
   streamSpec->SetStream(inStream);
   streamSpec->Init(size);
+  m_InStreamRef = limitedStream;
   _inBuffer.SetStream(limitedStream);
   _inBuffer.Init();
   return S_OK;
@@ -252,10 +270,10 @@ HRESULT CInArchive::ReadChunk(IInStream *inStream, UInt64 pos, UInt64 size)
 HRESULT CInArchive::ReadDirEntry(CDatabase &database)
 {
   CItem item;
-  UInt64 nameLength = ReadEncInt();
-  if (nameLength == 0 || nameLength >= 0x10000000)
+  UInt64 nameLen = ReadEncInt();
+  if (nameLen == 0 || nameLen > (1 << 13))
     return S_FALSE;
-  ReadString((int)nameLength, item.Name);
+  ReadString((unsigned)nameLen, item.Name);
   item.Section = ReadEncInt();
   item.Offset = ReadEncInt();
   item.Size = ReadEncInt();
@@ -268,9 +286,14 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
   UInt32 headerSize = ReadUInt32();
   if (headerSize != 0x60)
     return S_FALSE;
+  database.PhySize = headerSize;
+
   UInt32 unknown1 = ReadUInt32();
   if (unknown1 != 0 && unknown1 != 1) // it's 0 in one .sll file
     return S_FALSE;
+
+  IsArc = true;
+
   /* UInt32 timeStamp = */ ReadUInt32();
       // Considered as a big-endian DWORD, it appears to contain seconds (MSB) and
       // fractional seconds (second byte).
@@ -280,37 +303,39 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
   GUID g;
   ReadGUID(g); // {7C01FD10-7BAA-11D0-9E0C-00A0-C922-E6EC}
   ReadGUID(g); // {7C01FD11-7BAA-11D0-9E0C-00A0-C922-E6EC}
-  const int kNumSections = 2;
+  const unsigned kNumSections = 2;
   UInt64 sectionOffsets[kNumSections];
   UInt64 sectionSizes[kNumSections];
-  int i;
+  unsigned i;
   for (i = 0; i < kNumSections; i++)
   {
     sectionOffsets[i] = ReadUInt64();
     sectionSizes[i] = ReadUInt64();
+    UInt64 end = sectionOffsets[i] + sectionSizes[i];
+    database.UpdatePhySize(end);
   }
   // if (chmVersion == 3)
     database.ContentOffset = ReadUInt64();
   /*
   else
-    database.ContentOffset = _startPosition + 0x58
+    database.ContentOffset = database.StartPosition + 0x58
   */
 
-  /*
   // Section 0
   ReadChunk(inStream, sectionOffsets[0], sectionSizes[0]);
-  if (sectionSizes[0] != 0x18)
+  if (sectionSizes[0] < 0x18)
     return S_FALSE;
-  ReadUInt32(); // unknown:  01FE
+  if (ReadUInt32() != 0x01FE)
+    return S_FALSE;
   ReadUInt32(); // unknown:  0
   UInt64 fileSize = ReadUInt64();
+  database.UpdatePhySize(fileSize);
   ReadUInt32(); // unknown:  0
   ReadUInt32(); // unknown:  0
-  */
 
   // Section 1: The Directory Listing
   ReadChunk(inStream, sectionOffsets[1], sectionSizes[1]);
-  if (ReadUInt32() != NHeader::kItspSignature)
+  if (ReadUInt32() != kSignature_ITSP)
     return S_FALSE;
   if (ReadUInt32() != 1) // version
     return S_FALSE;
@@ -340,13 +365,13 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
   for (UInt32 ci = 0; ci < numDirChunks; ci++)
   {
     UInt64 chunkPos = _inBuffer.GetProcessedSize();
-    if (ReadUInt32() == NHeader::kPmglSignature)
+    if (ReadUInt32() == kSignature_PMGL)
     {
       // The quickref area is written backwards from the end of the chunk.
       // One quickref entry exists for every n entries in the file, where n
       // is calculated as 1 + (1 << quickref density). So for density = 2, n = 5.
 
-      UInt32 quickrefLength = ReadUInt32(); // Length of free space and/or quickref area at end of directory chunk
+      UInt32 quickrefLength = ReadUInt32(); // Len of free space and/or quickref area at end of directory chunk
       if (quickrefLength > dirChunkSize || quickrefLength < 2)
         return S_FALSE;
       ReadUInt32(); // Always 0
@@ -354,7 +379,7 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
                     // directory in sequence (-1 if this is the first listing chunk)
       ReadUInt32(); // Chunk number of next  listing chunk when reading
                     // directory in sequence (-1 if this is the last listing chunk)
-      int numItems = 0;
+      unsigned numItems = 0;
       for (;;)
       {
         UInt64 offset = _inBuffer.GetProcessedSize() - chunkPos;
@@ -383,10 +408,13 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
   if (ReadUInt32() != 0x28) // Location of header section table
     return S_FALSE;
   UInt32 numHeaderSections = ReadUInt32();
-  const int kNumHeaderSectionsMax = 5;
+  const unsigned kNumHeaderSectionsMax = 5;
   if (numHeaderSections != kNumHeaderSectionsMax)
     return S_FALSE;
-  ReadUInt32(); // Length of post-header table
+
+  IsArc = true;
+
+  ReadUInt32(); // Len of post-header table
   GUID g;
   ReadGUID(g);  // {0A9007C1-4076-11D3-8789-0000F8105754}
 
@@ -398,6 +426,8 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
   {
     sectionOffsets[i] = ReadUInt64();
     sectionSizes[i] = ReadUInt64();
+    UInt64 end = sectionOffsets[i] + sectionSizes[i];
+    database.UpdatePhySize(end);
   }
   
   // Post-Header
@@ -436,11 +466,11 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
   ReadUInt32(); // $20000 (Same as field following chunk size in directory index)
 
   ReadUInt64(); // 0 (unknown)
-  if (ReadUInt32() != NHeader::kCaolSignature)
+  if (ReadUInt32() != kSignature_CAOL)
     return S_FALSE;
   if (ReadUInt32() != 2) // (Most likely a version number)
     return S_FALSE;
-  UInt32 caolLength = ReadUInt32(); // $50 (Length of the CAOL section, which includes the ITSF section)
+  UInt32 caolLength = ReadUInt32(); // $50 (Len of the CAOL section, which includes the ITSF section)
   if (caolLength >= 0x2C)
   {
     /* UInt32 c7 = */ ReadUInt16(); // Unknown.  Remains the same when identical files are built.
@@ -458,13 +488,15 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
     ReadUInt32(); // 0 (Unknown)
     if (caolLength == 0x2C)
     {
-      database.ContentOffset = 0;
+      // fprintf(stdout, "\n !!!NewFormat\n");
+      // fflush(stdout);
+      database.ContentOffset = 0; // maybe we must add database.StartPosition here?
       database.NewFormat = true;
     }
     else if (caolLength == 0x50)
     {
       ReadUInt32(); // 0 (Unknown)
-      if (ReadUInt32() != NHeader::kItsfSignature)
+      if (ReadUInt32() != kSignature_ITSF)
         return S_FALSE;
       if (ReadUInt32() != 4) // $4 (Version number -- CHM uses 3)
         return S_FALSE;
@@ -473,7 +505,7 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
       UInt32 unknown = ReadUInt32();
       if (unknown != 0 && unknown != 1) // = 0 for some HxW files, 1 in other cases;
         return S_FALSE;
-      database.ContentOffset = _startPosition + ReadUInt64();
+      database.ContentOffset = database.StartPosition + ReadUInt64();
       /* UInt32 timeStamp = */ ReadUInt32();
           // A timestamp of some sort.
           // Considered as a big-endian DWORD, it appears to contain
@@ -486,21 +518,21 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
       return S_FALSE;
   }
 
-  /*
   // Section 0
-  ReadChunk(inStream, _startPosition + sectionOffsets[0], sectionSizes[0]);
-  if (sectionSizes[0] != 0x18)
+  ReadChunk(inStream, database.StartPosition + sectionOffsets[0], sectionSizes[0]);
+  if (sectionSizes[0] < 0x18)
     return S_FALSE;
-  ReadUInt32(); // unknown:  01FE
+  if (ReadUInt32() != 0x01FE)
+    return S_FALSE;
   ReadUInt32(); // unknown:  0
   UInt64 fileSize = ReadUInt64();
+  database.UpdatePhySize(fileSize);
   ReadUInt32(); // unknown:  0
   ReadUInt32(); // unknown:  0
-  */
 
   // Section 1: The Directory Listing
-  ReadChunk(inStream, _startPosition + sectionOffsets[1], sectionSizes[1]);
-  if (ReadUInt32() != NHeader::kIfcmSignature)
+  ReadChunk(inStream, database.StartPosition + sectionOffsets[1], sectionSizes[1]);
+  if (ReadUInt32() != kSignature_IFCM)
     return S_FALSE;
   if (ReadUInt32() != 1) // (probably a version number)
     return S_FALSE;
@@ -516,9 +548,9 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
   for (UInt32 ci = 0; ci < numDirChunks; ci++)
   {
     UInt64 chunkPos = _inBuffer.GetProcessedSize();
-    if (ReadUInt32() == NHeader::kAollSignature)
+    if (ReadUInt32() == kSignature_AOLL)
     {
-      UInt32 quickrefLength = ReadUInt32(); // Length of quickref area at end of directory chunk
+      UInt32 quickrefLength = ReadUInt32(); // Len of quickref area at end of directory chunk
       if (quickrefLength > dirChunkSize || quickrefLength < 2)
         return S_FALSE;
       ReadUInt64(); // Directory chunk number
@@ -533,7 +565,7 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
       ReadUInt32(); // 1 (unknown -- other values have also been seen here)
       ReadUInt32(); // 0 (unknown)
       
-      int numItems = 0;
+      unsigned numItems = 0;
       for (;;)
       {
         UInt64 offset = _inBuffer.GetProcessedSize() - chunkPos;
@@ -544,11 +576,11 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
           break;
         if (database.NewFormat)
         {
-          UInt16 nameLength = ReadUInt16();
-          if (nameLength == 0)
+          UInt16 nameLen = ReadUInt16();
+          if (nameLen == 0)
             return S_FALSE;
           UString name;
-          ReadUString((int)nameLength, name);
+          ReadUString((unsigned)nameLen, name);
           AString s;
           ConvertUnicodeToUTF8(name, s);
           Byte b = ReadByte();
@@ -637,10 +669,10 @@ static int CompareFiles(const int *p1, const int *p2, void *param)
 
 void CFilesDatabase::SetIndices()
 {
-  for (int i = 0; i < Items.Size(); i++)
+  FOR_VECTOR (i, Items)
   {
     const CItem &item = Items[i];
-    if (item.IsUserItem() && item.Name.Length() != 1)
+    if (item.IsUserItem() && item.Name.Len() != 1)
       Indices.Add(i);
   }
 }
@@ -654,7 +686,7 @@ bool CFilesDatabase::Check()
 {
   UInt64 maxPos = 0;
   UInt64 prevSection = 0;
-  for(int i = 0; i < Indices.Size(); i++)
+  FOR_VECTOR (i, Indices)
   {
     const CItem &item = Items[Indices[i]];
     if (item.Section == 0 || item.IsDir())
@@ -684,9 +716,9 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     for (int i = 0; i < numSections; i++)
     {
       CSectionInfo section;
-      UInt16 nameLength  = ReadUInt16();
+      UInt16 nameLen = ReadUInt16();
       UString name;
-      ReadUString(nameLength, name);
+      ReadUString(nameLen, name);
       if (ReadUInt16() != 0)
         return S_FALSE;
       if (!ConvertUnicodeToUTF8(name, section.Name))
@@ -695,7 +727,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     }
   }
 
-  int i;
+  unsigned i;
   for (i = 1; i < database.Sections.Size(); i++)
   {
     CSectionInfo &section = database.Sections[i];
@@ -736,7 +768,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     {
       // Control Data
       RINOK(DecompressStream(inStream, database, sectionPrefix + kControlData));
-      for (int mi = 0; mi < section.Methods.Size(); mi++)
+      FOR_VECTOR (mi, section.Methods)
       {
         CMethodInfo &method = section.Methods[mi];
         UInt32 numDWORDS = ReadUInt32();
@@ -744,7 +776,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
         {
           if (numDWORDS < 5)
             return S_FALSE;
-          if (ReadUInt32() != NHeader::kLzxcSignature)
+          if (ReadUInt32() != kSignature_LZXC)
             return S_FALSE;
           CLzxInfo &li = method.LzxInfo;
           li.Version = ReadUInt32();
@@ -778,7 +810,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
         else
         {
           UInt32 numBytes = numDWORDS * 4;
-          method.ControlData.SetCapacity(numBytes);
+          method.ControlData.Alloc(numBytes);
           ReadBytes(method.ControlData, numBytes);
         }
       }
@@ -791,7 +823,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     }
 
     // read ResetTable for LZX
-    for (int mi = 0; mi < section.Methods.Size(); mi++)
+    FOR_VECTOR (mi, section.Methods)
     {
       CMethodInfo &method = section.Methods[mi];
       if (method.IsLzx())
@@ -819,16 +851,16 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
           UInt32 numEntries = ReadUInt32();
           if (ReadUInt32() != 8) // Size of table entry (bytes)
             return S_FALSE;
-          if (ReadUInt32() != 0x28) // Length of table header
+          if (ReadUInt32() != 0x28) // Len of table header
             return S_FALSE;
           rt.UncompressedSize = ReadUInt64();
           rt.CompressedSize = ReadUInt64();
           rt.BlockSize = ReadUInt64(); //  0x8000 block size for locations below
           if (rt.BlockSize != 0x8000)
             return S_FALSE;
-          rt.ResetOffsets.Reserve(numEntries);
+          rt.ResetOffsets.ClearAndReserve(numEntries);
           for (UInt32 i = 0; i < numEntries; i++)
-            rt.ResetOffsets.Add(ReadUInt64());
+            rt.ResetOffsets.AddInReserved(ReadUInt64());
         }
       }
     }
@@ -843,77 +875,91 @@ HRESULT CInArchive::Open2(IInStream *inStream,
     const UInt64 *searchHeaderSizeLimit,
     CFilesDatabase &database)
 {
+  IsArc = false;
+  HeadersError = false;
+  UnexpectedEnd = false;
+  UnsupportedFeature = false;
+
   database.Clear();
-
-  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &_startPosition));
-
-  database.Help2Format = false;
+  database.Help2Format = _help2;
   const UInt32 chmVersion = 3;
+
+  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &database.StartPosition));
+
+  if (!_inBuffer.Create(1 << 14))
+    return E_OUTOFMEMORY;
+  _inBuffer.SetStream(inStream);
+  _inBuffer.Init();
+  
+  if (_help2)
   {
-    if (!_inBuffer.Create(1 << 14))
-      return E_OUTOFMEMORY;
-    _inBuffer.SetStream(inStream);
-    _inBuffer.Init();
-    UInt64 value = 0;
     const int kSignatureSize = 8;
-    UInt64 hxsSignature = NHeader::GetHxsSignature();
-    UInt64 chmSignature = ((UInt64)chmVersion << 32)| NHeader::kItsfSignature;
+    UInt64 signature = ((UInt64)kSignature_ITLS << 32)| kSignature_ITOL;
     UInt64 limit = 1 << 18;
     if (searchHeaderSizeLimit)
       if (limit > *searchHeaderSizeLimit)
         limit = *searchHeaderSizeLimit;
 
+    UInt64 val = 0;
     for (;;)
     {
       Byte b;
       if (!_inBuffer.ReadByte(b))
         return S_FALSE;
-      value >>= 8;
-      value |= ((UInt64)b) << ((kSignatureSize - 1) * 8);
+      val >>= 8;
+      val |= ((UInt64)b) << ((kSignatureSize - 1) * 8);
       if (_inBuffer.GetProcessedSize() >= kSignatureSize)
       {
-        if (value == chmSignature)
+        if (val == signature)
           break;
-        if (value == hxsSignature)
-        {
-          database.Help2Format = true;
-          break;
-        }
         if (_inBuffer.GetProcessedSize() > limit)
           return S_FALSE;
       }
     }
-    _startPosition += _inBuffer.GetProcessedSize() - kSignatureSize;
-  }
-
-  if (database.Help2Format)
-  {
+    database.StartPosition += _inBuffer.GetProcessedSize() - kSignatureSize;
     RINOK(OpenHelp2(inStream, database));
     if (database.NewFormat)
       return S_OK;
   }
   else
   {
+    if (ReadUInt32() != kSignature_ITSF)
+      return S_FALSE;
+    if (ReadUInt32() != chmVersion)
+      return S_FALSE;
     RINOK(OpenChm(inStream, database));
   }
 
+
   #ifndef CHM_LOW
+  
   try
   {
-    HRESULT res = OpenHighLevel(inStream, database);
-    if (res == S_FALSE)
+    try
+    {
+      HRESULT res = OpenHighLevel(inStream, database);
+      if (res == S_FALSE)
+      {
+        UnsupportedFeature = true;
+        database.HighLevelClear();
+        return S_OK;
+      }
+      RINOK(res);
+      database.LowLevel = false;
+    }
+    catch(...)
     {
       database.HighLevelClear();
-      return S_OK;
+      throw;
     }
-    RINOK(res);
-    database.LowLevel = false;
   }
-  catch(...)
-  {
-    return S_OK;
-  }
+  // catch(const CInBufferException &e) { return e.ErrorCode; }
+  catch(CEnexpectedEndException &) { UnexpectedEnd = true; }
+  catch(CHeaderErrorException &) { HeadersError = true; }
+  catch(...) { throw; }
+
   #endif
+
   return S_OK;
 }
 
@@ -923,15 +969,22 @@ HRESULT CInArchive::Open(IInStream *inStream,
 {
   try
   {
-    HRESULT res = Open2(inStream, searchHeaderSizeLimit, database);
-    _inBuffer.ReleaseStream();
-    return res;
+    try
+    {
+      HRESULT res = Open2(inStream, searchHeaderSizeLimit, database);
+      m_InStreamRef.Release();
+      return res;
+    }
+    catch(...)
+    {
+      m_InStreamRef.Release();
+      throw;
+    }
   }
-  catch(...)
-  {
-    _inBuffer.ReleaseStream();
-    throw;
-  }
+  catch(const CInBufferException &e) { return e.ErrorCode; }
+  catch(CEnexpectedEndException &) { UnexpectedEnd = true; }
+  catch(CHeaderErrorException &) { HeadersError = true; }
+  return S_FALSE;
 }
 
 }}

@@ -1,5 +1,5 @@
 PROG = 7z.sfx
-CFLAGS = $(CFLAGS) -I ../../../ \
+CFLAGS = $(CFLAGS) \
   -DNO_REGISTRY \
   -DEXTRACT_ONLY \
   -DNO_READ_FROM_CODER \
@@ -11,8 +11,8 @@ LIBS = $(LIBS) ceshell.lib Commctrl.lib
 LIBS = $(LIBS) comctl32.lib comdlg32.lib
 !ENDIF
 
-SFX_WIN_OBJS = \
-  $O\Main.obj \
+CURRENT_OBJS = \
+  $O\SfxWin.obj \
 
 GUI_OBJS = \
   $O\ExtractDialog.obj \
@@ -29,20 +29,22 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
+  $O\CommonDialog.obj \
   $O\DLL.obj \
-  $O\Error.obj \
+  $O\ErrorMsg.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
   $O\PropVariant.obj \
-  $O\PropVariantConversions.obj \
+  $O\PropVariantConv.obj \
   $O\ResourceString.obj \
   $O\Shell.obj \
   $O\Synchronization.obj \
   $O\Window.obj \
 
 WIN_CTRL_OBJS = \
+  $O\ComboBox.obj \
   $O\Dialog.obj \
   $O\ListView.obj \
 
@@ -57,6 +59,7 @@ WIN_CTRL_OBJS = \
   $O\LockedStream.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\PropId.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
@@ -71,24 +74,28 @@ UI_COMMON_OBJS = \
   $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
 
+EXPLORER_OBJS = \
+  $O\MyMessages.obj \
+
 FM_OBJS = \
+  $O\BrowseDialog.obj \
+  $O\ComboDialog.obj \
   $O\ExtractCallback.obj \
   $O\FormatUtils.obj \
   $O\OverwriteDialog.obj \
   $O\PasswordDialog.obj \
   $O\ProgressDialog2.obj \
-
-!IFDEF UNDER_CE
-FM_OBJS = $(FM_OBJS) \
-  $O\BrowseDialog.obj \
   $O\SysIconUtils.obj \
-!ENDIF
+
+AR_OBJS = \
+  $O\SplitHandler.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
   $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\ItemNameUtils.obj \
+  $O\MultiStream.obj \
   $O\OutStreamWithCRC.obj \
 
 7Z_OBJS = \
@@ -96,7 +103,6 @@ AR_COMMON_OBJS = \
   $O\7zExtract.obj \
   $O\7zFolderOutStream.obj \
   $O\7zHandler.obj \
-  $O\7zHeader.obj \
   $O\7zIn.obj \
   $O\7zRegister.obj \
 
@@ -134,58 +140,4 @@ C_OBJS = \
 !include "../../Aes.mak"
 !include "../../Crc.mak"
 
-OBJS = \
-  $O\StdAfx.obj \
-  $(SFX_WIN_OBJS) \
-  $(GUI_OBJS) \
-  $(COMMON_OBJS) \
-  $(WIN_OBJS) \
-  $(WIN_CTRL_OBJS) \
-  $(7ZIP_COMMON_OBJS) \
-  $(UI_COMMON_OBJS) \
-  $(FM_OBJS)\
-  $(AR_COMMON_OBJS) \
-  $(7Z_OBJS) \
-  $(COMPRESS_OBJS) \
-  $(CRYPTO_OBJS) \
-  $O\MyMessages.obj \
-  $(C_OBJS) \
-  $(ASM_OBJS) \
-  $O\resource.res
-
-
-!include "../../../Build.mak"
-
-$(SFX_WIN_OBJS): $(*B).cpp
-	$(COMPL)
-
-$(GUI_OBJS): ../../UI/GUI/$(*B).cpp
-	$(COMPL)
-$(COMMON_OBJS): ../../../Common/$(*B).cpp
-	$(COMPL)
-$(WIN_OBJS): ../../../Windows/$(*B).cpp
-	$(COMPL)
-$(WIN_CTRL_OBJS): ../../../Windows/Control/$(*B).cpp
-	$(COMPL)
-$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
-	$(COMPL)
-$(UI_COMMON_OBJS): ../../UI/Common/$(*B).cpp
-	$(COMPL)
-$(FM_OBJS): ../../UI/FileManager/$(*B).cpp
-	$(COMPL)
-$(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
-	$(COMPL)
-
-$(7Z_OBJS): ../../Archive/7z/$(*B).cpp
-	$(COMPL)
-$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
-	$(COMPL)
-$(CRYPTO_OBJS): ../../Crypto/$(*B).cpp
-	$(COMPL)
-
-$O\MyMessages.obj: ../../UI/Explorer/MyMessages.cpp
-	$(COMPL)
-$(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-
-!include "../../Asm.mak"
+!include "../../7zip.mak"

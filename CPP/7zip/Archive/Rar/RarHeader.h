@@ -3,16 +3,15 @@
 #ifndef __ARCHIVE_RAR_HEADER_H
 #define __ARCHIVE_RAR_HEADER_H
 
-#include "Common/Types.h"
+#include "../../../Common/MyTypes.h"
 
 namespace NArchive {
 namespace NRar {
 namespace NHeader {
 
-const int kMarkerSize = 7;
-extern Byte kMarker[kMarkerSize];
+const unsigned kMarkerSize = 7;
   
-const int kArchiveSolid = 0x1;
+const unsigned kArchiveSolid = 0x1;
 
 namespace NBlockType
 {
@@ -44,36 +43,40 @@ namespace NArchive
   const UInt16 kFirstVolume = 0x100; // (set only by RAR 3.0 and later)
   const UInt16 kEncryptVer = 0x200; // RAR 3.6 there is EncryptVer Byte in End of MainHeader
 
-  const int kHeaderSizeMin = 7;
+  const UInt16 kEndOfArc_Flags_NextVol   = 1;
+  const UInt16 kEndOfArc_Flags_DataCRC   = 2;
+  const UInt16 kEndOfArc_Flags_RevSpace  = 4;
+  const UInt16 kEndOfArc_Flags_VolNumber = 8;
+
+  const unsigned kHeaderSizeMin = 7;
   
-  const int kArchiveHeaderSize = 13;
+  const unsigned kArchiveHeaderSize = 13;
 
-  const int kBlockHeadersAreEncrypted = 0x80;
-
+  const unsigned kBlockHeadersAreEncrypted = 0x80;
 }
 
 namespace NFile
 {
-  const int kSplitBefore = 1 << 0;
-  const int kSplitAfter  = 1 << 1;
-  const int kEncrypted   = 1 << 2;
-  const int kComment     = 1 << 3;
-  const int kSolid       = 1 << 4;
+  const unsigned kSplitBefore = 1 << 0;
+  const unsigned kSplitAfter  = 1 << 1;
+  const unsigned kEncrypted   = 1 << 2;
+  const unsigned kComment     = 1 << 3;
+  const unsigned kSolid       = 1 << 4;
   
-  const int kDictBitStart     = 5;
-  const int kNumDictBits  = 3;
-  const int kDictMask         = (1 << kNumDictBits) - 1;
-  const int kDictDirectoryValue  = 0x7;
+  const unsigned kDictBitStart     = 5;
+  const unsigned kNumDictBits  = 3;
+  const unsigned kDictMask         = (1 << kNumDictBits) - 1;
+  const unsigned kDictDirectoryValue  = 0x7;
   
-  const int kSize64Bits    = 1 << 8;
-  const int kUnicodeName   = 1 << 9;
-  const int kSalt          = 1 << 10;
-  const int kOldVersion    = 1 << 11;
-  const int kExtTime       = 1 << 12;
-  // const int kExtFlags      = 1 << 13;
-  // const int kSkipIfUnknown = 1 << 14;
+  const unsigned kSize64Bits    = 1 << 8;
+  const unsigned kUnicodeName   = 1 << 9;
+  const unsigned kSalt          = 1 << 10;
+  const unsigned kOldVersion    = 1 << 11;
+  const unsigned kExtTime       = 1 << 12;
+  // const unsigned kExtFlags      = 1 << 13;
+  // const unsigned kSkipIfUnknown = 1 << 14;
 
-  const int kLongBlock    = 1 << 15;
+  const unsigned kLongBlock    = 1 << 15;
   
   /*
   struct CBlock
@@ -134,17 +137,17 @@ namespace NFile
   };
   */
   
-  const int kLabelFileAttribute            = 0x08;
-  const int kWinFileDirectoryAttributeMask = 0x10;
+  const unsigned kLabelFileAttribute            = 0x08;
+  const unsigned kWinFileDirectoryAttributeMask = 0x10;
   
   enum CHostOS
   {
     kHostMSDOS = 0,
-      kHostOS2   = 1,
-      kHostWin32 = 2,
-      kHostUnix  = 3,
-      kHostMacOS = 4,
-      kHostBeOS = 5
+    kHostOS2   = 1,
+    kHostWin32 = 2,
+    kHostUnix  = 3,
+    kHostMacOS = 4,
+    kHostBeOS  = 5
   };
 }
 

@@ -8,12 +8,6 @@
 #include "StringConvert.h"
 #include "UTFConvert.h"
 
-#ifdef _MSC_VER
-// "was declared deprecated" disabling
-#pragma warning(disable : 4996 )
-#endif
-
-static const char kIllegalChar = '\0';
 static const char kNewLineChar = '\n';
 
 static const char *kEOFMessage = "Unexpected end of input stream";
@@ -42,11 +36,6 @@ bool CStdInStream::Close()
   return !_streamIsOpen;
 }
 
-CStdInStream::~CStdInStream()
-{
-  Close();
-}
-
 AString CStdInStream::ScanStringUntilNewLine(bool allowEOF)
 {
   AString s;
@@ -59,8 +48,8 @@ AString CStdInStream::ScanStringUntilNewLine(bool allowEOF)
         break;
       throw kEOFMessage;
     }
-    char c = char(intChar);
-    if (c == kIllegalChar)
+    char c = (char)intChar;
+    if (c == 0)
       throw kIllegalCharMessage;
     if (c == kNewLineChar)
       break;
@@ -88,7 +77,7 @@ void CStdInStream::ReadToString(AString &resultString)
   resultString.Empty();
   int c;
   while ((c = GetChar()) != EOF)
-    resultString += char(c);
+    resultString += (char)c;
 }
 
 bool CStdInStream::Eof()
@@ -103,5 +92,3 @@ int CStdInStream::GetChar()
     throw kReadErrorMessage;
   return c;
 }
-
-

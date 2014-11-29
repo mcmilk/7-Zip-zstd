@@ -260,7 +260,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
 
   UInt32 blockSize = 0;
 
-  while(pos < *outSize)
+  while (pos < *outSize)
   {
     if (blockSize == 0)
     {

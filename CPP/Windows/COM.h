@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_COM_H
 #define __WINDOWS_COM_H
 
-#include "Common/MyString.h"
+#include "../Common/MyString.h"
 
 namespace NWindows {
 namespace NCOM {
@@ -63,7 +63,6 @@ HRESULT StringToGUIDA(const char *string, GUID &classID);
   #define StringToGUID StringToGUIDA
 #endif
 
-  
 }}
 
 #endif

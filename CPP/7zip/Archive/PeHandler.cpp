@@ -2,15 +2,17 @@
 
 #include "StdAfx.h"
 
+// #include <stdio.h>
+
 #include "../../../C/CpuArch.h"
 
-#include "Common/DynamicBuffer.h"
-#include "Common/ComTry.h"
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
+#include "../../Common/DynamicBuffer.h"
+#include "../../Common/ComTry.h"
+#include "../../Common/IntToString.h"
+#include "../../Common/StringConvert.h"
 
-#include "Windows/PropVariantUtils.h"
-#include "Windows/Time.h"
+#include "../../Windows/PropVariantUtils.h"
+#include "../../Windows/TimeUtils.h"
 
 #include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
@@ -24,21 +26,69 @@
 #define Get32(p) GetUi32(p)
 #define Get64(p) GetUi64(p)
 
+#define G16(offs, v) v = Get16(p + (offs))
+#define G32(offs, v) v = Get32(p + (offs))
+#define G64(offs, v) v = Get64(p + (offs))
+
+#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
+
 using namespace NWindows;
 
 namespace NArchive {
 namespace NPe {
 
-#define NUM_SCAN_SECTIONS_MAX (1 << 6)
+static const UInt32 k_Signature = 0x00004550;
 
-#define PE_SIG 0x00004550
-#define PE_OptHeader_Magic_32 0x10B
-#define PE_OptHeader_Magic_64 0x20B
+static HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 excludePos, UInt32 &res)
+{
+  const UInt32 kBufSizeMax = (UInt32)1 << 16;
+  UInt32 bufSize = MyMin(kBufSizeMax, size);
+  bufSize += (bufSize & 1);
+  CByteBuffer buffer(bufSize);
+  Byte *buf = buffer;
+  UInt32 sum = 0;
+  UInt32 pos = 0;
+  for (;;)
+  {
+    UInt32 rem = size - pos;
+    if (rem > bufSize)
+      rem = bufSize;
+    if (rem == 0)
+      break;
+    size_t processed = rem;
+    RINOK(ReadStream(stream, buf, &processed));
+    
+    if ((processed & 1) != 0)
+      buf[processed] = 0;
+
+    for (unsigned j = 0; j < 4; j++)
+    {
+      UInt32 e = excludePos + j;
+      if (pos <= e)
+      {
+        e -= pos;
+        if (e < processed)
+          buf[e] = 0;
+      }
+    }
+
+    for (size_t i = 0; i < processed; i += 2)
+    {
+      sum += Get16(buf + i);
+      sum = (sum + (sum >> 16)) & 0xFFFF;
+    }
+    pos += (UInt32)processed;
+    if (rem != processed)
+      break;
+  }
+  res = sum + pos;
+  return S_OK;
+}
 
 static AString GetDecString(UInt32 v)
 {
-  char sz[32];
-  ConvertUInt64ToString(v, sz);
+  char sz[16];
+  ConvertUInt32ToString(v, sz);
   return sz;
 }
 
@@ -47,64 +97,79 @@ struct CVersion
   UInt16 Major;
   UInt16 Minor;
 
-  void Parse(const Byte *buf);
-  AString GetString() const { return GetDecString(Major) + '.' + GetDecString(Minor); }
+  void Parse(const Byte *p)
+  {
+    G16(0, Major);
+    G16(2, Minor);
+  }
+  void ToProp(NCOM::CPropVariant &prop);
 };
 
-void CVersion::Parse(const Byte *p)
+void CVersion::ToProp(NCOM::CPropVariant &prop)
 {
-  Major = Get16(p);
-  Minor = Get16(p + 2);
+  char sz[32];
+  ConvertUInt32ToString(Major, sz);
+  unsigned len = MyStringLen(sz);
+  sz[len] = '.';
+  ConvertUInt32ToString(Minor, sz + len + 1);
+  prop = sz;
 }
 
-static const UInt32 kHeaderSize =  4 + 20;
+static const unsigned kHeaderSize = 4 + 20;
+static const unsigned k_OptHeader32_Size_MIN = 96;
+static const unsigned k_OptHeader64_Size_MIN = 112;
+
+static const UInt32 PE_IMAGE_FILE_DLL  = (1 << 13);
 
 struct CHeader
 {
+  UInt16 Machine;
   UInt16 NumSections;
   UInt32 Time;
   UInt32 PointerToSymbolTable;
   UInt32 NumSymbols;
   UInt16 OptHeaderSize;
   UInt16 Flags;
-  UInt16 Machine;
 
-  bool Parse(const Byte *buf);
+  bool Parse(const Byte *p);
+  bool IsDll() const { return (Flags & PE_IMAGE_FILE_DLL) != 0; }
 };
 
 bool CHeader::Parse(const Byte *p)
 {
-  if (Get32(p) != PE_SIG)
+  if (Get32(p) != k_Signature)
     return false;
   p += 4;
-  Machine = Get16(p + 0);
-  NumSections = Get16(p + 2);
-  Time = Get32(p + 4);
-  PointerToSymbolTable = Get32(p + 8);
-  NumSymbols = Get32(p + 12);
-  OptHeaderSize = Get16(p + 16);
-  Flags = Get16(p + 18);
-  return true;
+  G16( 0, Machine);
+  G16( 2, NumSections);
+  G32( 4, Time);
+  G32( 8, PointerToSymbolTable);
+  G32(12, NumSymbols);
+  G16(16, OptHeaderSize);
+  G16(18, Flags);
+  return OptHeaderSize >= k_OptHeader32_Size_MIN;
 }
 
 struct CDirLink
 {
   UInt32 Va;
   UInt32 Size;
-  void Parse(const Byte *p);
+  
+  CDirLink(): Va(0), Size(0) {}
+  void Parse(const Byte *p)
+  {
+    G32(0, Va);
+    G32(4, Size);
+  }
 };
-
-void CDirLink::Parse(const Byte *p)
-{
-  Va = Get32(p);
-  Size = Get32(p + 4);
-}
 
 enum
 {
   kDirLink_Certificate = 4,
   kDirLink_Debug = 6
 };
+
+static const UInt32 kNumDirItemsMax = 16;
 
 struct CDebugEntry
 {
@@ -116,21 +181,25 @@ struct CDebugEntry
   UInt32 Va;
   UInt32 Pa;
   
-  void Parse(const Byte *p);
+  void Parse(const Byte *p)
+  {
+    G32(0, Flags);
+    G32(4, Time);
+    Ver.Parse(p + 8);
+    G32(12, Type);
+    G32(16, Size);
+    G32(20, Va);
+    G32(24, Pa);
+  }
 };
 
-void CDebugEntry::Parse(const Byte *p)
-{
-  Flags = Get32(p);
-  Time = Get32(p + 4);
-  Ver.Parse(p + 8);
-  Type = Get32(p + 12);
-  Size = Get32(p + 16);
-  Va = Get32(p + 20);
-  Pa = Get32(p + 24);
-}
+static const UInt32 k_CheckSum_Field_Offset = 64;
 
-static const UInt32 kNumDirItemsMax = 16;
+static const UInt32 PE_OptHeader_Magic_32 = 0x10B;
+static const UInt32 PE_OptHeader_Magic_64 = 0x20B;
+
+static const UInt32 k_SubSystems_EFI_First = 10;
+static const UInt32 k_SubSystems_EFI_Last = 13;
 
 struct COptHeader
 {
@@ -178,10 +247,19 @@ struct COptHeader
         return i;
     return -1;
   }
+
+  bool IsSybSystem_EFI() const
+  {
+    return
+        SubSystem >= k_SubSystems_EFI_First &&
+        SubSystem <= k_SubSystems_EFI_Last;
+  }
 };
 
 bool COptHeader::Parse(const Byte *p, UInt32 size)
 {
+  if (size < k_OptHeader32_Size_MIN)
+    return false;
   Magic = Get16(p);
   switch (Magic)
   {
@@ -194,19 +272,14 @@ bool COptHeader::Parse(const Byte *p, UInt32 size)
   LinkerVerMajor = p[2];
   LinkerVerMinor = p[3];
   
-  bool hdr64 = Is64Bit();
+  G32( 4, CodeSize);
+  G32( 8, InitDataSize);
+  G32(12, UninitDataSize);
+  // G32(16, AddressOfEntryPoint);
+  // G32(20, BaseOfCode);
   
-  CodeSize = Get32(p + 4);
-  InitDataSize = Get32(p + 8);
-  UninitDataSize = Get32(p + 12);
-
-  // AddressOfEntryPoint = Get32(p + 16);
-  // BaseOfCode = Get32(p + 20);
-  // BaseOfData32 = hdr64 ? 0: Get32(p + 24);
-  ImageBase = hdr64 ? GetUi64(p + 24) : Get32(p + 28);
-
-  SectAlign = Get32(p + 32);
-  FileAlign = Get32(p + 36);
+  G32(32, SectAlign);
+  G32(36, FileAlign);
 
   OsVer.Parse(p + 40);
   ImageVer.Parse(p + 44);
@@ -214,28 +287,39 @@ bool COptHeader::Parse(const Byte *p, UInt32 size)
 
   // reserved = Get32(p + 52);
 
-  ImageSize = Get32(p + 56);
-  HeadersSize = Get32(p + 60);
-  CheckSum = Get32(p + 64);
-  SubSystem = Get16(p + 68);
-  DllCharacts = Get16(p + 70);
+  G32(56, ImageSize);
+  G32(60, HeadersSize);
+  G32(64, CheckSum);
+  G16(68, SubSystem);
+  G16(70, DllCharacts);
 
-  if (hdr64)
+  UInt32 pos;
+  if (Is64Bit())
   {
-    StackReserve = Get64(p + 72);
-    StackCommit = Get64(p + 80);
-    HeapReserve = Get64(p + 88);
-    HeapCommit = Get64(p + 96);
+    if (size < k_OptHeader64_Size_MIN)
+      return false;
+    // BaseOfData32 = 0;
+    G64(24, ImageBase);
+    G64(72, StackReserve);
+    G64(80, StackCommit);
+    G64(88, HeapReserve);
+    G64(96, HeapCommit);
+    pos = 108;
   }
   else
   {
-    StackReserve = Get32(p + 72);
-    StackCommit = Get32(p + 76);
-    HeapReserve = Get32(p + 80);
-    HeapCommit = Get32(p + 84);
+    // G32(24, BaseOfData32);
+    G32(28, ImageBase);
+    G32(72, StackReserve);
+    G32(76, StackCommit);
+    G32(80, HeapReserve);
+    G32(84, HeapCommit);
+    pos = 92;
   }
-  UInt32 pos = (hdr64 ? 108 : 92);
-  NumDirItems = Get32(p + pos);
+
+  G32(pos, NumDirItems);
+  if (NumDirItems > (1 << 16))
+    return false;
   pos += 4;
   if (pos + 8 * NumDirItems != size)
     return false;
@@ -257,28 +341,31 @@ struct CSection
   UInt32 Flags;
   UInt32 Time;
   // UInt16 NumRelocs;
-  bool IsDebug;
   bool IsRealSect;
+  bool IsDebug;
   bool IsAdditionalSection;
 
   CSection(): IsRealSect(false), IsDebug(false), IsAdditionalSection(false) {}
-  UInt64 GetPackSize() const { return PSize; }
 
-  void UpdateTotalSize(UInt32 &totalSize)
+  void UpdateTotalSize(UInt32 &totalSize) const
   {
     UInt32 t = Pa + PSize;
-    if (t > totalSize)
+    if (totalSize < t)
       totalSize = t;
   }
   void Parse(const Byte *p);
+
+  int Compare(const CSection &s) const
+  {
+    RINOZ(MyCompare(Pa, s.Pa));
+    return MyCompare(PSize, s.PSize);
+  }
 };
 
-static bool operator <(const CSection &a1, const CSection &a2) { return (a1.Pa < a2.Pa) || ((a1.Pa == a2.Pa) && (a1.PSize < a2.PSize)) ; }
-static bool operator ==(const CSection &a1, const CSection &a2) { return (a1.Pa == a2.Pa) && (a1.PSize == a2.PSize); }
+static const unsigned kNameSize = 8;
 
 static AString GetName(const Byte *name)
 {
-  const int kNameSize = 8;
   AString res;
   char *p = res.GetBuffer(kNameSize);
   memcpy(p, name, kNameSize);
@@ -290,12 +377,12 @@ static AString GetName(const Byte *name)
 void CSection::Parse(const Byte *p)
 {
   Name = GetName(p);
-  VSize = Get32(p + 8);
-  Va = Get32(p + 12);
-  PSize = Get32(p + 16);
-  Pa = Get32(p + 20);
-  // NumRelocs = Get16(p + 32);
-  Flags = Get32(p + 36);
+  G32( 8, VSize);
+  G32(12, Va);
+  G32(16, PSize);
+  G32(20, Pa);
+  // G16(32, NumRelocs);
+  G32(36, Flags);
 }
 
 static const CUInt32PCharPair g_HeaderCharacts[] =
@@ -352,6 +439,7 @@ static const CUInt32PCharPair g_SectFlags[] =
 static const CUInt32PCharPair g_MachinePairs[] =
 {
   { 0x014C, "x86" },
+  { 0x014D, "I860" },
   { 0x0162, "MIPS-R3000" },
   { 0x0166, "MIPS-R4000" },
   { 0x0168, "MIPS-R10000" },
@@ -364,24 +452,31 @@ static const CUInt32PCharPair g_MachinePairs[] =
   { 0x01A8, "SH5" },
   { 0x01C0, "ARM" },
   { 0x01C2, "ARM-Thumb" },
+  { 0x01C4, "ARM-NT" },
+  { 0x01D3, "AM33" },
   { 0x01F0, "PPC" },
   { 0x01F1, "PPC-FP" },
   { 0x0200, "IA-64" },
+  { 0x0266, "MIPS-16" },
   { 0x0284, "Alpha-64" },
-  { 0x0200, "IA-64" },
-  { 0x0366, "MIPSFPU" },
+  { 0x0366, "MIPS-FPU" },
+  { 0x0466, "MIPS-FPU16" },
+  { 0x0520, "TriCore" },
+  { 0x0CEF, "CEF" },
+  { 0x0EBC, "EFI" },
   { 0x8664, "x64" },
-  { 0x0EBC, "EFI" }
+  { 0x9041, "M32R" },
+  { 0xC0EE, "CEE" }
 };
 
 static const CUInt32PCharPair g_SubSystems[] =
 {
-  { 0, "Unknown" },
-  { 1, "Native" },
-  { 2, "Windows GUI" },
-  { 3, "Windows CUI" },
-  { 7, "Posix" },
-  { 9, "Windows CE" },
+  {  0, "Unknown" },
+  {  1, "Native" },
+  {  2, "Windows GUI" },
+  {  3, "Windows CUI" },
+  {  7, "Posix" },
+  {  9, "Windows CE" },
   { 10, "EFI" },
   { 11, "EFI Boot" },
   { 12, "EFI Runtime" },
@@ -391,35 +486,35 @@ static const CUInt32PCharPair g_SubSystems[] =
 
 static const wchar_t *g_ResTypes[] =
 {
-  NULL,
-  L"CURSOR",
-  L"BITMAP",
-  L"ICON",
-  L"MENU",
-  L"DIALOG",
-  L"STRING",
-  L"FONTDIR",
-  L"FONT",
-  L"ACCELERATOR",
-  L"RCDATA",
-  L"MESSAGETABLE",
-  L"GROUP_CURSOR",
-  NULL,
-  L"GROUP_ICON",
-  NULL,
-  L"VERSION",
-  L"DLGINCLUDE",
-  NULL,
-  L"PLUGPLAY",
-  L"VXD",
-  L"ANICURSOR",
-  L"ANIICON",
-  L"HTML",
-  L"MANIFEST"
+    NULL
+  , L"CURSOR"
+  , L"BITMAP"
+  , L"ICON"
+  , L"MENU"
+  , L"DIALOG"
+  , L"STRING"
+  , L"FONTDIR"
+  , L"FONT"
+  , L"ACCELERATOR"
+  , L"RCDATA"
+  , L"MESSAGETABLE"
+  , L"GROUP_CURSOR"
+  , NULL
+  , L"GROUP_ICON"
+  , NULL
+  , L"VERSION"
+  , L"DLGINCLUDE"
+  , NULL
+  , L"PLUGPLAY"
+  , L"VXD"
+  , L"ANICURSOR"
+  , L"ANIICON"
+  , L"HTML"
+  , L"MANIFEST"
 };
 
-const UInt32 kFlag = (UInt32)1 << 31;
-const UInt32 kMask = ~kFlag;
+static const UInt32 kFlag = (UInt32)1 << 31;
+static const UInt32 kMask = ~kFlag;
 
 struct CTableItem
 {
@@ -428,8 +523,8 @@ struct CTableItem
 };
 
 
-const UInt32 kBmpHeaderSize = 14;
-const UInt32 kIconHeaderSize = 22;
+static const UInt32 kBmpHeaderSize = 14;
+static const UInt32 kIconHeaderSize = 22;
 
 struct CResItem
 {
@@ -450,45 +545,110 @@ struct CResItem
   bool IsIcon() const { return Type == 3; }
   bool IsString() const { return Type == 6; }
   bool IsRcData() const { return Type == 10; }
+  bool IsVersion() const { return Type == 16; }
   bool IsRcDataOrUnknown() const { return IsRcData() || Type > 64; }
 };
 
-struct CStringItem
+struct CTextFile
 {
-  UInt32 Lang;
-  UInt32 Size;
   CByteDynamicBuffer Buf;
+
+  size_t FinalSize() const { return Buf.GetPos(); }
 
   void AddChar(Byte c);
   void AddWChar(UInt16 c);
+  void AddWChar_Smart(UInt16 c);
+  void NewLine();
+  void AddString(const char *s);
+  void AddSpaces(int num);
+  void AddBytes(const Byte *p, size_t len);
+  
+  void OpenBlock(int num)
+  {
+    AddSpaces(num);
+    AddChar('{');
+    NewLine();
+  }
+  void CloseBlock(int num)
+  {
+    AddSpaces(num);
+    AddChar('}');
+    NewLine();
+  }
 };
 
-void CStringItem::AddChar(Byte c)
+void CTextFile::AddChar(Byte c)
 {
-  Buf.EnsureCapacity(Size + 2);
-  Buf[Size++] = c;
-  Buf[Size++] = 0;
+  Byte *p = Buf.GetCurPtrAndGrow(2);
+  p[0] = c;
+  p[1] = 0;
 }
 
-void CStringItem::AddWChar(UInt16 c)
+void CTextFile::AddWChar(UInt16 c)
+{
+  Byte *p = Buf.GetCurPtrAndGrow(2);
+  SetUi16(p, c);
+}
+
+void CTextFile::AddWChar_Smart(UInt16 c)
 {
   if (c == '\n')
   {
     AddChar('\\');
     c = 'n';
   }
-  Buf.EnsureCapacity(Size + 2);
-  SetUi16(Buf + Size, c);
-  Size += 2;
+  AddWChar(c);
 }
+
+void CTextFile::NewLine()
+{
+  AddChar(0x0D);
+  AddChar(0x0A);
+}
+
+void CTextFile::AddString(const char *s)
+{
+  for (;; s++)
+  {
+    char c = *s;
+    if (c == 0)
+      return;
+    AddChar(c);
+  }
+}
+
+void CTextFile::AddSpaces(int num)
+{
+  for (int i = 0; i < num; i++)
+    AddChar(' ');
+}
+
+void CTextFile::AddBytes(const Byte *data, size_t size)
+{
+  Byte *p = Buf.GetCurPtrAndGrow(size);
+  memcpy(p, data, size);
+}
+
+struct CStringItem: public CTextFile
+{
+  UInt32 Lang;
+};
+
+struct CByteBuffer_WithLang: public CByteBuffer
+{
+  UInt32 Lang;
+};
+
 
 struct CMixItem
 {
   int SectionIndex;
   int ResourceIndex;
   int StringIndex;
+  int VersionIndex;
 
-  bool IsSectionItem() const { return ResourceIndex < 0 && StringIndex < 0; };
+  CMixItem(): SectionIndex(-1), ResourceIndex(-1), StringIndex(-1), VersionIndex(-1) {}
+  bool IsSectionItem() const { return ResourceIndex < 0 && StringIndex < 0 && VersionIndex < 0; };
 };
 
 struct CUsedBitmap
@@ -498,113 +658,95 @@ public:
   void Alloc(size_t size)
   {
     size = (size + 7) / 8;
-    Buf.SetCapacity(size);
+    Buf.Alloc(size);
     memset(Buf, 0, size);
   }
+  
   void Free()
   {
-    Buf.SetCapacity(0);
+    Buf.Free();
   }
-  bool SetRange(size_t from, int size)
+  
+  bool SetRange(size_t from, unsigned size)
   {
-    for (int i = 0; i < size; i++)
+    for (unsigned i = 0; i < size; i++)
     {
       size_t pos = (from + i) >> 3;
       Byte mask = (Byte)(1 << ((from + i) & 7));
       Byte b = Buf[pos];
       if ((b & mask) != 0)
         return false;
-      Buf[pos] = b | mask;
+      Buf[pos] = (Byte)(b | mask);
     }
     return true;
   }
 };
  
+struct CStringKeyValue
+{
+  UString Key;
+  UString Value;
+};
 
 class CHandler:
   public IInArchive,
   public IInArchiveGetStream,
+  public IArchiveAllowTail,
   public CMyUnknownImp
 {
   CMyComPtr<IInStream> _stream;
   CObjectVector<CSection> _sections;
   UInt32 _peOffset;
   CHeader _header;
-  COptHeader _optHeader;
   UInt32 _totalSize;
-  UInt32 _totalSizeLimited;
   Int32 _mainSubfile;
 
+  CRecordVector<CMixItem> _mixItems;
   CRecordVector<CResItem> _items;
   CObjectVector<CStringItem> _strings;
+  CObjectVector<CByteBuffer_WithLang> _versionFiles;
+  UString _versionFullString;
+  UString _versionShortString;
+  UString _originalFilename;
+  CObjectVector<CStringKeyValue> _versionKeys;
 
   CByteBuffer _buf;
   bool _oneLang;
-  UString _resourceFileName;
+  UString _resourcesPrefix;
   CUsedBitmap _usedRes;
   bool _parseResources;
+  bool _checksumError;
 
-  CRecordVector<CMixItem> _mixItems;
+  COptHeader _optHeader;
+
+  bool _allowTail;
 
   HRESULT LoadDebugSections(IInStream *stream, bool &thereIsSection);
   HRESULT Open2(IInStream *stream, IArchiveOpenCallback *callback);
-  bool Parse(const Byte *buf, UInt32 size);
 
   void AddResNameToString(UString &s, UInt32 id) const;
-  UString GetLangPrefix(UInt32 lang);
+  void AddLangPrefix(UString &s, UInt32 lang) const;
   HRESULT ReadString(UInt32 offset, UString &dest) const;
   HRESULT ReadTable(UInt32 offset, CRecordVector<CTableItem> &items);
   bool ParseStringRes(UInt32 id, UInt32 lang, const Byte *src, UInt32 size);
-  HRESULT OpenResources(int sectIndex, IInStream *stream, IArchiveOpenCallback *callback);
+  HRESULT OpenResources(unsigned sectIndex, IInStream *stream, IArchiveOpenCallback *callback);
   void CloseResources();
 
 
   bool CheckItem(const CSection &sect, const CResItem &item, size_t offset) const
   {
-    return item.Offset >= sect.Va && offset <= _buf.GetCapacity() && _buf.GetCapacity() - offset >= item.Size;
+    return item.Offset >= sect.Va && offset <= _buf.Size() && _buf.Size() - offset >= item.Size;
   }
 
 public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
+  CHandler(): _allowTail(false) {}
+
+  MY_UNKNOWN_IMP3(IInArchive, IInArchiveGetStream, IArchiveAllowTail)
   INTERFACE_IInArchive(;)
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
+  STDMETHOD(AllowTail)(Int32 allowTail);
 };
 
-bool CHandler::Parse(const Byte *buf, UInt32 size)
-{
-  UInt32 i;
-  if (size < 512)
-    return false;
-  _peOffset = Get32(buf + 0x3C);
-  if (_peOffset >= 0x1000 || _peOffset + 512 > size || (_peOffset & 7) != 0)
-    return false;
-
-  UInt32 pos = _peOffset;
-  if (!_header.Parse(buf + pos))
-    return false;
-  if (_header.OptHeaderSize > 512 || _header.NumSections > NUM_SCAN_SECTIONS_MAX)
-    return false;
-  pos += kHeaderSize;
-
-  if (!_optHeader.Parse(buf + pos, _header.OptHeaderSize))
-    return false;
-
-  pos += _header.OptHeaderSize;
-  _totalSize = pos;
-
-  for (i = 0; i < _header.NumSections; i++, pos += kSectionSize)
-  {
-    CSection sect;
-    if (pos + kSectionSize > size)
-      return false;
-    sect.Parse(buf + pos);
-    sect.IsRealSect = true;
-    sect.UpdateTotalSize(_totalSize);
-    _sections.Add(sect);
-  }
-
-  return true;
-}
 
 enum
 {
@@ -633,13 +775,15 @@ enum
 
 static const STATPROPSTG kArcProps[] =
 {
+  // { NULL, kpidWarning, VT_BSTR},
   { NULL, kpidCpu, VT_BSTR},
   { NULL, kpidBit64, VT_BOOL},
   { NULL, kpidCharacts, VT_BSTR},
   { NULL, kpidCTime, VT_FILETIME},
-  { NULL, kpidPhySize, VT_UI4},
   { NULL, kpidHeadersSize, VT_UI4},
   { NULL, kpidChecksum, VT_UI4},
+  { NULL, kpidName, VT_BSTR},
+
   { L"Image Size", kpidImageSize, VT_UI4},
   { L"Section Alignment", kpidSectAlign, VT_UI4},
   { L"File Alignment", kpidFileAlign, VT_UI4},
@@ -656,31 +800,28 @@ static const STATPROPSTG kArcProps[] =
   { L"Stack Commit", kpidStackCommit, VT_UI8},
   { L"Heap Reserve", kpidHeapReserve, VT_UI8},
   { L"Heap Commit", kpidHeapCommit, VT_UI8},
-  { L"Image Base", kpidImageBase, VT_UI8}
+  { L"Image Base", kpidImageBase, VT_UI8},
+  { NULL, kpidComment, VT_BSTR},
   // { L"Address Of Entry Point", kpidAddressOfEntryPoint, VT_UI8},
   // { L"Base Of Code", kpidBaseOfCode, VT_UI8},
   // { L"Base Of Data", kpidBaseOfData32, VT_UI8},
 };
 
-static const STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8},
-  { NULL, kpidCharacts, VT_BSTR},
-  { NULL, kpidOffset, VT_UI8},
-  { NULL, kpidVa, VT_UI8}
+  kpidPath,
+  kpidSize,
+  kpidPackSize,
+  kpidVirtualSize,
+  kpidCharacts,
+  kpidOffset,
+  kpidVa,
 };
 
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_WITH_NAME
 
-static void VerToProp(const CVersion &v, NCOM::CPropVariant &prop)
-{
-  StringToProp(v.GetString(), prop);
-}
-
-void TimeToProp(UInt32 unixTime, NCOM::CPropVariant &prop)
+static void TimeToProp(UInt32 unixTime, NCOM::CPropVariant &prop)
 {
   if (unixTime != 0)
   {
@@ -694,20 +835,20 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidSectAlign: prop = _optHeader.SectAlign; break;
     case kpidFileAlign: prop = _optHeader.FileAlign; break;
     case kpidLinkerVer:
     {
       CVersion v = { _optHeader.LinkerVerMajor, _optHeader.LinkerVerMinor };
-      VerToProp(v, prop);
+      v.ToProp(prop);
       break;
     }
   
-    case kpidOsVer: VerToProp(_optHeader.OsVer, prop); break;
-    case kpidImageVer: VerToProp(_optHeader.ImageVer, prop); break;
-    case kpidSubsysVer: VerToProp(_optHeader.SubsysVer, prop); break;
+    case kpidOsVer: _optHeader.OsVer.ToProp(prop); break;
+    case kpidImageVer: _optHeader.ImageVer.ToProp(prop); break;
+    case kpidSubsysVer: _optHeader.SubsysVer.ToProp(prop); break;
     case kpidCodeSize: prop = _optHeader.CodeSize; break;
     case kpidInitDataSize: prop = _optHeader.InitDataSize; break;
     case kpidUnInitDataSize: prop = _optHeader.UninitDataSize; break;
@@ -715,7 +856,27 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidPhySize: prop = _totalSize; break;
     case kpidHeadersSize: prop = _optHeader.HeadersSize; break;
     case kpidChecksum: prop = _optHeader.CheckSum; break;
+    case kpidComment: if (!_versionFullString.IsEmpty()) prop = _versionFullString; break;
+    case kpidShortComment:
+      if (!_versionShortString.IsEmpty())
+        prop = _versionShortString;
+      else
+      {
+        PAIR_TO_PROP(g_MachinePairs, _header.Machine, prop);
+      }
+      break;
+
+    case kpidName: if (!_originalFilename.IsEmpty()) prop = _originalFilename; break;
+    case kpidExtension:
+      if (_header.IsDll())
+        prop = _optHeader.IsSybSystem_EFI() ? "efi" : "dll";
+      break;
       
+    // case kpidIsSelfExe: prop = !_header.IsDll(); break;
+
+    // case kpidError:
+    case kpidWarning: if (_checksumError) prop = "Checksum error"; break;
+
     case kpidCpu: PAIR_TO_PROP(g_MachinePairs, _header.Machine, prop); break;
     case kpidBit64: if (_optHeader.Is64Bit()) prop = true; break;
     case kpidSubSystem: PAIR_TO_PROP(g_SubSystems, _optHeader.SubSystem, prop); break;
@@ -741,6 +902,32 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
+HRESULT CHandler::ReadString(UInt32 offset, UString &dest) const
+{
+  if ((offset & 1) != 0 || offset >= _buf.Size())
+    return S_FALSE;
+  size_t rem = _buf.Size() - offset;
+  if (rem < 2)
+    return S_FALSE;
+  unsigned len = Get16(_buf + offset);
+  if ((rem - 2) / 2 < len)
+    return S_FALSE;
+  dest.Empty();
+  wchar_t *destBuf = dest.GetBuffer(len);
+  offset += 2;
+  const Byte *src = _buf + offset;
+  unsigned i;
+  for (i = 0; i < len; i++)
+  {
+    wchar_t c = (wchar_t)Get16(src + i * 2);
+    if (c == 0)
+      break;
+    destBuf[i] = c;
+  }
+  dest.ReleaseBuffer(i);
+  return S_OK;
+}
+
 void CHandler::AddResNameToString(UString &s, UInt32 id) const
 {
   if ((id & kFlag) != 0)
@@ -748,32 +935,33 @@ void CHandler::AddResNameToString(UString &s, UInt32 id) const
     UString name;
     if (ReadString(id & kMask, name) == S_OK)
     {
-      if (name.IsEmpty())
-        s += L"[]";
-      else
+      const wchar_t *str = L"[]";
+      if (name.Len() > 1 && name[0] == '"' && name.Back() == '"')
       {
-        if (name.Length() > 1 && name[0] == '"' && name.Back() == '"')
-          name = name.Mid(1, name.Length() - 2);
-        s += name;
+        if (name.Len() != 2)
+        {
+          name.DeleteBack();
+          str = name.Ptr(1);
+        }
       }
+      else if (!name.IsEmpty())
+        str = name;
+      s += str;
       return;
     }
   }
-  wchar_t sz[32];
+  wchar_t sz[16];
   ConvertUInt32ToString(id, sz);
   s += sz;
 }
 
-UString CHandler::GetLangPrefix(UInt32 lang)
+void CHandler::AddLangPrefix(UString &s, UInt32 lang) const
 {
-  UString s = _resourceFileName;
-  s += WCHAR_PATH_SEPARATOR;
   if (!_oneLang)
   {
     AddResNameToString(s, lang);
     s += WCHAR_PATH_SEPARATOR;
   }
-  return s;
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
@@ -784,43 +972,53 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   if (mixItem.StringIndex >= 0)
   {
     const CStringItem &item = _strings[mixItem.StringIndex];
-    switch(propID)
-    {
-      case kpidPath: prop = GetLangPrefix(item.Lang) + L"string.txt"; break;
-      case kpidSize:
-      case kpidPackSize:
-        prop = (UInt64)item.Size; break;
-    }
-  }
-  else if (mixItem.ResourceIndex < 0)
-  {
-    const CSection &item = _sections[mixItem.SectionIndex];
-    switch(propID)
-    {
-      case kpidPath: StringToProp(item.Name, prop); break;
-      case kpidSize: prop = (UInt64)item.VSize; break;
-      case kpidPackSize: prop = (UInt64)item.GetPackSize(); break;
-      case kpidOffset: prop = item.Pa; break;
-      case kpidVa: if (item.IsRealSect) prop = item.Va; break;
-      case kpidMTime:
-      case kpidCTime:
-        TimeToProp(item.IsDebug ? item.Time : _header.Time, prop); break;
-      case kpidCharacts: if (item.IsRealSect) FLAGS_TO_PROP(g_SectFlags, item.Flags, prop); break;
-    }
-  }
-  else
-  {
-    const CResItem &item = _items[mixItem.ResourceIndex];
-    switch(propID)
+    switch (propID)
     {
       case kpidPath:
       {
-        UString s = GetLangPrefix(item.Lang);
+        UString s = _resourcesPrefix;
+        AddLangPrefix(s, item.Lang);
+        s += L"string.txt";
+        prop = s;
+        break;
+      }
+      case kpidSize:
+      case kpidPackSize:
+        prop = (UInt64)item.FinalSize(); break;
+    }
+  }
+  else if (mixItem.VersionIndex >= 0)
+  {
+    const CByteBuffer_WithLang &item = _versionFiles[mixItem.VersionIndex];
+    switch (propID)
+    {
+      case kpidPath:
+      {
+        UString s = _resourcesPrefix;
+        AddLangPrefix(s, item.Lang);
+        s += L"version.txt";
+        prop = s;
+        break;
+      }
+      case kpidSize:
+      case kpidPackSize:
+        prop = (UInt64)item.Size(); break;
+    }
+  }
+  else if (mixItem.ResourceIndex >= 0)
+  {
+    const CResItem &item = _items[mixItem.ResourceIndex];
+    switch (propID)
+    {
+      case kpidPath:
+      {
+        UString s = _resourcesPrefix;
+        AddLangPrefix(s, item.Lang);
         {
           const wchar_t *p = NULL;
-          if (item.Type < sizeof(g_ResTypes) / sizeof(g_ResTypes[0]))
+          if (item.Type < ARRAY_SIZE(g_ResTypes))
             p = g_ResTypes[item.Type];
-          if (p != 0)
+          if (p)
             s += p;
           else
             AddResNameToString(s, item.Type);
@@ -841,6 +1039,24 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidPackSize: prop = (UInt64)item.Size; break;
     }
   }
+  else
+  {
+    const CSection &item = _sections[mixItem.SectionIndex];
+    switch (propID)
+    {
+      case kpidPath: prop = MultiByteToUnicodeString(item.Name); break;
+      case kpidSize: prop = (UInt64)MyMin(item.PSize, item.VSize); break;
+      case kpidPackSize: prop = (UInt64)item.PSize; break;
+      case kpidVirtualSize: prop = (UInt64)item.VSize; break;
+      case kpidOffset: prop = item.Pa; break;
+      case kpidVa: if (item.IsRealSect) prop = item.Va; break;
+      case kpidMTime:
+      case kpidCTime:
+        TimeToProp(item.IsDebug ? item.Time : _header.Time, prop); break;
+      case kpidCharacts: if (item.IsRealSect) FLAGS_TO_PROP(g_SectFlags, item.Flags, prop); break;
+      case kpidZerosTailIsAllowed: if (!item.IsRealSect) prop = true; break;
+    }
+  }
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
@@ -858,11 +1074,11 @@ HRESULT CHandler::LoadDebugSections(IInStream *stream, bool &thereIsSection)
     return S_FALSE;
   
   UInt64 pa = 0;
-  int i;
+  unsigned i;
   for (i = 0; i < _sections.Size(); i++)
   {
     const CSection &sect = _sections[i];
-    if (sect.Va < debugLink.Va && debugLink.Va + debugLink.Size <= sect.Va + sect.PSize)
+    if (sect.Va <= debugLink.Va && debugLink.Va + debugLink.Size <= sect.Va + sect.PSize)
     {
       pa = sect.Pa + (debugLink.Va - sect.Va);
       break;
@@ -870,19 +1086,18 @@ HRESULT CHandler::LoadDebugSections(IInStream *stream, bool &thereIsSection)
   }
   if (i == _sections.Size())
   {
-    return S_OK;
     // Exe for ARM requires S_OK
     // return S_FALSE;
+    return S_OK;
   }
   
-  CByteBuffer buffer;
-  buffer.SetCapacity(debugLink.Size);
+  CByteBuffer buffer(debugLink.Size);
   Byte *buf = buffer;
   
   RINOK(stream->Seek(pa, STREAM_SEEK_SET, NULL));
   RINOK(ReadStream_FALSE(stream, buf, debugLink.Size));
 
-  for (i = 0; i < (int)numItems; i++)
+  for (i = 0; i < numItems; i++)
   {
     CDebugEntry de;
     de.Parse(buf);
@@ -890,20 +1105,19 @@ HRESULT CHandler::LoadDebugSections(IInStream *stream, bool &thereIsSection)
     if (de.Size == 0)
       continue;
     
-    CSection sect;
-    sect.Name = ".debug" + GetDecString(i);
-    
-    sect.IsDebug = true;
-    sect.Time = de.Time;
-    sect.Va = de.Va;
-    sect.Pa = de.Pa;
-    sect.PSize = sect.VSize = de.Size;
-    UInt32 totalSize = sect.Pa + sect.PSize;
+    UInt32 totalSize = de.Pa + de.Size;
     if (totalSize > _totalSize)
     {
       _totalSize = totalSize;
-      _sections.Add(sect);
       thereIsSection = true;
+
+      CSection &sect = _sections.AddNew();
+      sect.Name = ".debug" + GetDecString(i);
+      sect.IsDebug = true;
+      sect.Time = de.Time;
+      sect.Va = de.Va;
+      sect.Pa = de.Pa;
+      sect.PSize = sect.VSize = de.Size;
     }
     buf += kEntrySize;
   }
@@ -911,31 +1125,13 @@ HRESULT CHandler::LoadDebugSections(IInStream *stream, bool &thereIsSection)
   return S_OK;
 }
 
-HRESULT CHandler::ReadString(UInt32 offset, UString &dest) const
-{
-  if ((offset & 1) != 0 || offset >= _buf.GetCapacity())
-    return S_FALSE;
-  size_t rem = _buf.GetCapacity() - offset;
-  if (rem < 2)
-    return S_FALSE;
-  unsigned length = Get16(_buf + offset);
-  if ((rem - 2) / 2 < length)
-    return S_FALSE;
-  dest.Empty();
-  offset += 2;
-  for (unsigned i = 0; i < length; i++)
-    dest += (wchar_t)Get16(_buf + offset + i * 2);
-  return S_OK;
-}
-
 HRESULT CHandler::ReadTable(UInt32 offset, CRecordVector<CTableItem> &items)
 {
-  if ((offset & 3) != 0 || offset >= _buf.GetCapacity())
+  if ((offset & 3) != 0 || offset >= _buf.Size())
     return S_FALSE;
-  size_t rem = _buf.GetCapacity() - offset;
+  size_t rem = _buf.Size() - offset;
   if (rem < 16)
     return S_FALSE;
-  items.Clear();
   unsigned numNameItems = Get16(_buf + offset + 12);
   unsigned numIdItems = Get16(_buf + offset + 14);
   unsigned numItems = numNameItems + numIdItems;
@@ -944,25 +1140,23 @@ HRESULT CHandler::ReadTable(UInt32 offset, CRecordVector<CTableItem> &items)
   if (!_usedRes.SetRange(offset, 16 + numItems * 8))
     return S_FALSE;
   offset += 16;
-  _oneLang = true;
-  unsigned i;
-  for (i = 0; i < numItems; i++)
+  items.ClearAndReserve(numItems);
+  for (unsigned i = 0; i < numItems; i++, offset += 8)
   {
-    CTableItem item;
     const Byte *buf = _buf + offset;
-    offset += 8;
+    CTableItem item;
     item.ID = Get32(buf + 0);
-    if (((item.ID & kFlag) != 0) != (i < numNameItems))
+    if ((bool)((item.ID & kFlag) != 0) != (bool)(i < numNameItems))
       return S_FALSE;
     item.Offset = Get32(buf + 4);
-    items.Add(item);
+    items.AddInReserved(item);
   }
   return S_OK;
 }
 
 static const UInt32 kFileSizeMax = (UInt32)1 << 30;
-static const int kNumResItemsMax = (UInt32)1 << 23;
-static const int kNumStringLangsMax = 128;
+static const unsigned kNumResItemsMax = (unsigned)1 << 23;
+static const unsigned kNumStringLangsMax = 256;
 
 // BITMAPINFOHEADER
 struct CBitmapInfoHeader
@@ -984,12 +1178,12 @@ bool CBitmapInfoHeader::Parse(const Byte *p, size_t size)
 {
   if (size < kBitmapInfoHeader_Size || Get32(p) != kBitmapInfoHeader_Size)
     return false;
-  XSize = Get32(p + 4);
-  YSize = (Int32)Get32(p + 8);
-  Planes = Get16(p + 12);
-  BitCount = Get16(p + 14);
-  Compression = Get32(p + 16);
-  SizeImage = Get32(p + 20);
+  G32( 4, XSize);
+  G32( 8, YSize);
+  G16(12, Planes);
+  G16(14, BitCount);
+  G32(16, Compression);
+  G32(20, SizeImage);
   return true;
 }
 
@@ -1089,7 +1283,7 @@ bool CHandler::ParseStringRes(UInt32 id, UInt32 lang, const Byte *src, UInt32 si
   if ((size & 1) != 0)
     return false;
 
-  int i;
+  unsigned i;
   for (i = 0; i < _strings.Size(); i++)
     if (_strings[i].Lang == lang)
       break;
@@ -1097,10 +1291,8 @@ bool CHandler::ParseStringRes(UInt32 id, UInt32 lang, const Byte *src, UInt32 si
   {
     if (_strings.Size() >= kNumStringLangsMax)
       return false;
-    CStringItem item;
-    item.Size = 0;
+    CStringItem &item = _strings.AddNew();
     item.Lang = lang;
-    i = _strings.Add(item);
   }
   
   CStringItem &item = _strings[i];
@@ -1117,22 +1309,584 @@ bool CHandler::ParseStringRes(UInt32 id, UInt32 lang, const Byte *src, UInt32 si
       if (size - pos < len * 2)
         return false;
       char temp[32];
-      ConvertUInt32ToString(id  + i, temp);
+      ConvertUInt32ToString(id + i, temp);
       size_t tempLen = strlen(temp);
       size_t j;
       for (j = 0; j < tempLen; j++)
         item.AddChar(temp[j]);
       item.AddChar('\t');
       for (j = 0; j < len; j++, pos += 2)
-        item.AddWChar(Get16(src + pos));
-      item.AddChar(0x0D);
-      item.AddChar(0x0A);
+        item.AddWChar_Smart(Get16(src + pos));
+      item.NewLine();
     }
   }
-  return (size == pos);
+  if (size == pos)
+    return true;
+  
+  // Some rare case files have additional ZERO.
+  if (size == pos + 2 && Get16(src + pos) == 0)
+    return true;
+  
+  return false;
 }
 
-HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpenCallback *callback)
+
+// ---------- VERSION ----------
+
+static const UInt32 kMy_VS_FFI_SIGNATURE = 0xFEEF04BD;
+
+struct CMy_VS_FIXEDFILEINFO
+{
+  // UInt32 Signature;
+  // UInt32 StrucVersion;
+  UInt32 VersionMS;
+  UInt32 VersionLS;
+  UInt32 ProductVersionMS;
+  UInt32 ProductVersionLS;
+  UInt32 FlagsMask;
+  UInt32 Flags;
+  UInt32 OS;
+  UInt32 Type;
+  UInt32 Subtype;
+  UInt32 DateMS;
+  UInt32 DateLS;
+
+  bool Parse(const Byte *p);
+  void PrintToTextFile(CTextFile &f, CObjectVector<CStringKeyValue> &keys);
+};
+
+bool CMy_VS_FIXEDFILEINFO::Parse(const Byte *p)
+{
+  if (Get32(p) != kMy_VS_FFI_SIGNATURE) // signature;
+    return false;
+  // G32(0x04, StrucVersion);
+  G32(0x08, VersionMS);
+  G32(0x0C, VersionLS);
+  G32(0x10, ProductVersionMS);
+  G32(0x14, ProductVersionLS);
+  G32(0x18, FlagsMask);
+  G32(0x1C, Flags);
+  G32(0x20, OS);
+  G32(0x24, Type);
+  G32(0x28, Subtype);
+  G32(0x2C, DateMS);
+  G32(0x40, DateLS);
+  return true;
+}
+
+static void PrintUInt32(CTextFile &f, UInt32 v)
+{
+  char s[16];
+  ConvertUInt32ToString(v, s);
+  f.AddString(s);
+}
+
+static void PrintUInt32(UString &dest, UInt32 v)
+{
+  wchar_t s[16];
+  ConvertUInt32ToString(v, s);
+  dest += s;
+}
+
+static void PrintHex(CTextFile &f, UInt32 val)
+{
+  char temp[16];
+  temp[0] = '0';
+  temp[1] = 'x';
+  ConvertUInt32ToHex(val, temp + 2);
+  f.AddString(temp);
+}
+
+static void PrintVersion(CTextFile &f, UInt32 ms, UInt32 ls)
+{
+  PrintUInt32(f, HIWORD(ms));  f.AddChar(',');
+  PrintUInt32(f, LOWORD(ms));  f.AddChar(',');
+  PrintUInt32(f, HIWORD(ls));  f.AddChar(',');
+  PrintUInt32(f, LOWORD(ls));
+}
+
+static void PrintVersion(UString &s, UInt32 ms, UInt32 ls)
+{
+  PrintUInt32(s, HIWORD(ms));  s += L'.';
+  PrintUInt32(s, LOWORD(ms));  s += L'.';
+  PrintUInt32(s, HIWORD(ls));  s += L'.';
+  PrintUInt32(s, LOWORD(ls));
+}
+
+static const char *k_VS_FileFlags[] =
+{
+    "DEBUG"
+  , "PRERELEASE"
+  , "PATCHED"
+  , "PRIVATEBUILD"
+  , "INFOINFERRED"
+  , "SPECIALBUILD"
+};
+
+static const CUInt32PCharPair k_VS_FileOS[] =
+{
+  {  0x10001, "VOS_DOS_WINDOWS16" },
+  {  0x10004, "VOS_DOS_WINDOWS32" },
+  {  0x20002, "VOS_OS216_PM16" },
+  {  0x30003, "VOS_OS232_PM32" },
+  {  0x40004, "VOS_NT_WINDOWS32" }
+};
+
+static const char *k_VS_FileOS_High[] =
+{
+    "VOS_UNKNOWN"
+  , "VOS_DOS"
+  , "VOS_OS216"
+  , "VOS_OS232"
+  , "VOS_NT"
+  , "VOS_WINCE"
+};
+
+static const UInt32 kMY_VFT_DRV  = 3;
+static const UInt32 kMY_VFT_FONT = 4;
+
+static const char *k_VS_FileOS_Low[] =
+{
+    "VOS__BASE"
+  , "VOS__WINDOWS16"
+  , "VOS__PM16"
+  , "VOS__PM32"
+  , "VOS__WINDOWS32"
+};
+
+static const char *k_VS_FileType[] =
+{
+    "VFT_UNKNOWN"
+  , "VFT_APP"
+  , "VFT_DLL"
+  , "VFT_DRV"
+  , "VFT_FONT"
+  , "VFT_VXD"
+  , "0x6"
+  , "VFT_STATIC_LIB"
+};
+
+// Subtype for VFT_DRV Type
+static const char *k_VS_FileSubType_DRV[] =
+{
+    "0"
+  , "PRINTER"
+  , "KEYBOARD"
+  , "LANGUAGE"
+  , "DISPLAY"
+  , "MOUSE"
+  , "NETWORK"
+  , "SYSTEM"
+  , "INSTALLABLE"
+  , "SOUND"
+  , "COMM"
+  , "INPUTMETHOD"
+  , "VERSIONED_PRINTER"
+};
+
+// Subtype for VFT_FONT Type
+static const char *k_VS_FileSubType_FONT[] =
+{
+    "0"
+  , "VFT2_FONT_RASTER"
+  , "VFT2_FONT_VECTOR"
+  , "VFT2_FONT_TRUETYPE"
+};
+
+static int FindKey(CObjectVector<CStringKeyValue> &v, const UString &key)
+{
+  FOR_VECTOR (i, v)
+    if (v[i].Key == key)
+      return i;
+  return -1;
+}
+
+static void AddToUniqueUStringVector(CObjectVector<CStringKeyValue> &v, const UString &key, const UString &value)
+{
+  bool needInsert = false;
+  unsigned i;
+  for (i = 0; i < v.Size(); i++)
+  {
+    if (v[i].Key == key)
+    {
+      if (v[i].Value == value)
+        return;
+      needInsert = true;
+    }
+    else if (needInsert)
+      break;
+  }
+  CStringKeyValue &pair = v.InsertNew(i);
+  pair.Key = key;
+  pair.Value = value;
+}
+
+void CMy_VS_FIXEDFILEINFO::PrintToTextFile(CTextFile &f, CObjectVector<CStringKeyValue> &keys)
+{
+  f.AddString("FILEVERSION    ");
+  PrintVersion(f, VersionMS, VersionLS);
+  f.NewLine();
+
+  f.AddString("PRODUCTVERSION ");
+  PrintVersion(f, ProductVersionMS, ProductVersionLS);
+  f.NewLine();
+
+  {
+    UString s;
+    PrintVersion(s, VersionMS, VersionLS);
+    AddToUniqueUStringVector(keys, L"FileVersion", s);
+  }
+  {
+    UString s;
+    PrintVersion(s, ProductVersionMS, ProductVersionLS);
+    AddToUniqueUStringVector(keys, L"ProductVersion", s);
+  }
+ 
+  f.AddString("FILEFLAGSMASK  ");
+  PrintHex(f, FlagsMask);
+  f.NewLine();
+
+  f.AddString("FILEFLAGS      ");
+  {
+    bool wasPrinted = false;
+    for (unsigned i = 0; i < ARRAY_SIZE(k_VS_FileFlags); i++)
+    {
+      if ((Flags & ((UInt32)1 << i)) != 0)
+      {
+        if (wasPrinted)
+          f.AddString(" | ");
+        f.AddString("VS_FF_");
+        f.AddString(k_VS_FileFlags[i]);
+        wasPrinted = true;
+      }
+    }
+    UInt32 v = Flags & ~(((UInt32)1 << ARRAY_SIZE(k_VS_FileFlags)) - 1);
+    if (v != 0 || !wasPrinted)
+    {
+      if (wasPrinted)
+        f.AddString(" | ");
+      PrintHex(f, v);
+    }
+  }
+  f.NewLine();
+
+  // OS = 0x111230;
+  f.AddString("FILEOS         ");
+  unsigned i;
+  for (i = 0; i < ARRAY_SIZE(k_VS_FileOS); i++)
+  {
+    const CUInt32PCharPair &pair = k_VS_FileOS[i];
+    if (OS == pair.Value)
+    {
+      // continue;
+      // f.AddString("VOS_");
+      f.AddString(pair.Name);
+      break;
+    }
+  }
+  if (i == ARRAY_SIZE(k_VS_FileOS))
+  {
+    UInt32 high = OS >> 16;
+    if (high < ARRAY_SIZE(k_VS_FileOS_High))
+      f.AddString(k_VS_FileOS_High[high]);
+    else
+      PrintHex(f, high << 16);
+    UInt32 low = OS & 0xFFFF;
+    if (low != 0)
+    {
+      f.AddString(" | ");
+      if (low < ARRAY_SIZE(k_VS_FileOS_Low))
+        f.AddString(k_VS_FileOS_Low[low]);
+      else
+        PrintHex(f, low);
+    }
+  }
+  f.NewLine();
+
+  f.AddString("FILETYPE       ");
+  if (Type < ARRAY_SIZE(k_VS_FileType))
+    f.AddString(k_VS_FileType[Type]);
+  else
+    PrintHex(f, Type);
+  f.NewLine();
+
+  f.AddString("FILESUBTYPE    ");
+  bool needPrintSubType = true;
+  if (Type == kMY_VFT_DRV)
+  {
+    if (Subtype != 0 && Subtype < ARRAY_SIZE(k_VS_FileSubType_DRV))
+    {
+      f.AddString("VFT2_DRV_");
+      f.AddString(k_VS_FileSubType_DRV[Subtype]);
+      needPrintSubType = false;
+    }
+  }
+  else if (Type == kMY_VFT_FONT)
+  {
+    if (Subtype != 0 && Subtype < ARRAY_SIZE(k_VS_FileSubType_FONT))
+    {
+      f.AddString(k_VS_FileSubType_FONT[Subtype]);
+      needPrintSubType = false;
+    }
+  }
+  if (needPrintSubType)
+    PrintHex(f, Subtype);
+  f.NewLine();
+}
+
+static void CopyToUString(const Byte *p, UString &s)
+{
+  for (;;)
+  {
+    wchar_t c = (wchar_t)Get16(p);
+    p += 2;
+    if (c == 0)
+      return;
+    s += c;
+  }
+}
+
+static bool CompareWStrStrings(const Byte *p, const char *s)
+{
+  unsigned pos = 0;
+  for (;;)
+  {
+    Byte c = *s++;
+    if (Get16(p + pos) != c)
+      return false;
+    pos += 2;
+    if (c == 0)
+      return true;
+  }
+}
+
+struct CVersionBlock
+{
+  UInt32 TotalLen;
+  UInt32 ValueLen;
+  bool IsTextValue;
+  int StrSize;
+
+  bool Parse(const Byte *p, UInt32 size);
+};
+
+static int Get_Utf16Str_Len_InBytes(const Byte *p, size_t size)
+{
+  unsigned pos = 0;
+  for (;;)
+  {
+    if (pos + 1 >= size)
+      return -1;
+    if (Get16(p + pos) == 0)
+      return pos;
+    pos += 2;
+  }
+}
+
+static const unsigned k_ResoureBlockHeader_Size = 6;
+
+bool CVersionBlock::Parse(const Byte *p, UInt32 size)
+{
+  if (size < k_ResoureBlockHeader_Size)
+    return false;
+  TotalLen = Get16(p);
+  ValueLen = Get16(p + 2);
+  if (TotalLen > size)
+    return false;
+  switch (Get16(p + 4))
+  {
+    case 0: IsTextValue = false; break;
+    case 1: IsTextValue = true; break;
+    default: return false;
+  }
+  StrSize = Get_Utf16Str_Len_InBytes(p + k_ResoureBlockHeader_Size, TotalLen - k_ResoureBlockHeader_Size);
+  return StrSize >= 0;
+}
+
+static void AddParamString(CTextFile &f, const Byte *p, size_t sLen)
+{
+  f.AddChar(' ');
+  f.AddChar('\"');
+  f.AddBytes(p, sLen);
+  f.AddChar('\"');
+}
+
+static bool ParseVersion(const Byte *p, UInt32 size, CTextFile &f, CObjectVector<CStringKeyValue> &keys)
+{
+  UInt32 pos;
+  {
+    const unsigned k_sizeof_VS_FIXEDFILEINFO = 13 * 4;
+
+    CVersionBlock vb;
+    if (!vb.Parse(p, size))
+      return false;
+    if (vb.ValueLen != k_sizeof_VS_FIXEDFILEINFO) // maybe 0 is allowed here?
+      return false;
+    if (vb.IsTextValue)
+      return false;
+    pos = k_ResoureBlockHeader_Size;
+    if (!CompareWStrStrings(p + pos, "VS_VERSION_INFO"))
+      return false;
+    pos += vb.StrSize + 2;
+    pos += (4 - pos) & 3;
+    if (pos + vb.ValueLen > vb.TotalLen)
+      return false;
+    /* sometimes resource contains zeros in remainder.
+       So we don't check that size != vb.TotalLen
+    // if (size != vb.TotalLen) return false;
+    */
+    if (size > vb.TotalLen)
+      size = vb.TotalLen;
+    CMy_VS_FIXEDFILEINFO FixedFileInfo;
+    if (!FixedFileInfo.Parse(p + pos))
+      return false;
+    FixedFileInfo.PrintToTextFile(f, keys);
+    pos += vb.ValueLen;
+  }
+  
+  f.OpenBlock(0);
+  
+  for (;;)
+  {
+    pos += (4 - pos) & 3;
+    if (pos >= size)
+      break;
+    
+    CVersionBlock vb;
+    if (!vb.Parse(p + pos, size - pos))
+      return false;
+    if (vb.ValueLen != 0)
+      return false;
+    UInt32 endPos = pos + vb.TotalLen;
+    pos += k_ResoureBlockHeader_Size;
+    
+    f.AddSpaces(2);
+    f.AddString("BLOCK");
+    AddParamString(f, p + pos, vb.StrSize);
+    
+    f.NewLine();
+    f.OpenBlock(2);
+    
+    if (CompareWStrStrings(p + pos, "VarFileInfo"))
+    {
+      pos += vb.StrSize + 2;
+      for (;;)
+      {
+        pos += (4 - pos) & 3;
+        if (pos >= endPos)
+          break;
+        CVersionBlock vb2;
+        if (!vb2.Parse(p + pos, endPos - pos))
+          return false;
+        UInt32 endPos2 = pos + vb2.TotalLen;
+        if (vb2.IsTextValue)
+          return false;
+        pos += k_ResoureBlockHeader_Size;
+        f.AddSpaces(4);
+        f.AddString("VALUE");
+        AddParamString(f, p + pos, vb2.StrSize);
+        if (!CompareWStrStrings(p + pos, "Translation"))
+          return false;
+        pos += vb2.StrSize + 2;
+        pos += (4 - pos) & 3;
+        if (pos + vb2.ValueLen != endPos2)
+          return false;
+        if ((vb2.ValueLen & 3) != 0)
+          return false;
+        UInt32 num = (vb2.ValueLen >> 2);
+        for (; num != 0; num--, pos += 4)
+        {
+          UInt32 dw = Get32(p + pos);
+          UInt32 lang = LOWORD(dw);
+          UInt32 codePage = HIWORD(dw);
+
+          f.AddString(", ");
+          PrintHex(f, lang);
+          f.AddString(", ");
+          PrintUInt32(f, codePage);
+        }
+        f.NewLine();
+      }
+    }
+    else
+    {
+      if (!CompareWStrStrings(p + pos, "StringFileInfo"))
+        return false;
+      pos += vb.StrSize + 2;
+  
+      for (;;)
+      {
+        pos += (4 - pos) & 3;
+        if (pos >= endPos)
+          break;
+        CVersionBlock vb2;
+        if (!vb2.Parse(p + pos, endPos - pos))
+          return false;
+        UInt32 endPos2 = pos + vb2.TotalLen;
+        if (vb2.ValueLen != 0)
+          return false;
+        pos += k_ResoureBlockHeader_Size;
+
+        f.AddSpaces(4);
+        f.AddString("BLOCK");
+        AddParamString(f, p + pos, vb2.StrSize);
+        pos += vb2.StrSize + 2;
+
+        f.NewLine();
+        f.OpenBlock(4);
+
+        for (;;)
+        {
+          pos += (4 - pos) & 3;
+          if (pos >= endPos2)
+            break;
+
+          CVersionBlock vb3;
+          if (!vb3.Parse(p + pos, endPos2 - pos))
+            return false;
+          // ValueLen sometimes is a number of characters (not bytes)?
+          // So we don't use it.
+          UInt32 endPos3 = pos + vb3.TotalLen;
+          pos += k_ResoureBlockHeader_Size;
+
+          // we don't write string if it's not text
+          if (vb3.IsTextValue)
+          {
+            f.AddSpaces(6);
+            f.AddString("VALUE");
+            AddParamString(f, p + pos, vb3.StrSize);
+            UString key;
+            UString value;
+            CopyToUString(p + pos, key);
+            pos += vb3.StrSize + 2;
+
+            pos += (4 - pos) & 3;
+            if (vb3.ValueLen > 0 && pos + 2 <= endPos3)
+            {
+              f.AddChar(',');
+              f.AddSpaces((34 - (int)vb3.StrSize) / 2);
+              int sLen = Get_Utf16Str_Len_InBytes(p + pos, endPos3 - pos);
+              if (sLen < 0)
+                return false;
+              AddParamString(f, p + pos, sLen);
+              CopyToUString(p + pos, value);
+              pos += sLen + 2;
+            }
+            AddToUniqueUStringVector(keys, key, value);
+          }
+          pos = endPos3;
+          f.NewLine();
+        }
+        f.CloseBlock(4);
+      }
+    }
+    f.CloseBlock(2);
+  }
+  f.CloseBlock(0);
+  return true;
+}
+
+HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchiveOpenCallback *callback)
 {
   const CSection &sect = _sections[sectionIndex];
   size_t fileSize = sect.PSize; // Maybe we need sect.VSize here !!!
@@ -1143,13 +1897,13 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
     if (callback)
       RINOK(callback->SetTotal(NULL, &fileSize64));
     RINOK(stream->Seek(sect.Pa, STREAM_SEEK_SET, NULL));
-    _buf.SetCapacity(fileSize);
+    _buf.Alloc(fileSize);
     for (size_t pos = 0; pos < fileSize;)
     {
       UInt64 offset64 = pos;
       if (callback)
         RINOK(callback->SetCompleted(NULL, &offset64))
-      size_t rem = MyMin(fileSize - pos, (size_t)(1 << 20));
+      size_t rem = MyMin(fileSize - pos, (size_t)(1 << 22));
       RINOK(ReadStream_FALSE(stream, _buf + pos, rem));
       pos += rem;
     }
@@ -1162,7 +1916,7 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
   _oneLang = true;
   bool stringsOk = true;
   size_t maxOffset = 0;
-  for (int i = 0; i < specItems.Size(); i++)
+  FOR_VECTOR (i, specItems)
   {
     const CTableItem &item1 = specItems[i];
     if ((item1.Offset & kFlag) == 0)
@@ -1171,7 +1925,7 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
     CRecordVector<CTableItem> specItems2;
     RINOK(ReadTable(item1.Offset & kMask, specItems2));
 
-    for (int j = 0; j < specItems2.Size(); j++)
+    FOR_VECTOR (j, specItems2)
     {
       const CTableItem &item2 = specItems2[j];
       if ((item2.Offset & kFlag) == 0)
@@ -1184,14 +1938,14 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
       item.Type = item1.ID;
       item.ID = item2.ID;
       
-      for (int k = 0; k < specItems3.Size(); k++)
+      FOR_VECTOR (k, specItems3)
       {
         if (_items.Size() >= kNumResItemsMax)
           return S_FALSE;
         const CTableItem &item3 = specItems3[k];
         if ((item3.Offset & kFlag) != 0)
           return S_FALSE;
-        if (item3.Offset >= _buf.GetCapacity() || _buf.GetCapacity() - item3.Offset < 16)
+        if (item3.Offset >= _buf.Size() || _buf.Size() - item3.Offset < 16)
           return S_FALSE;
         const Byte *buf = _buf + item3.Offset;
         item.Lang = item3.ID;
@@ -1225,6 +1979,24 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
           }
         }
 
+        if (item.IsVersion())
+        {
+          if (offset > _buf.Size() || _buf.Size() - offset < item.Size)
+            continue;
+          CTextFile f;
+          if (ParseVersion((const Byte *)_buf + offset, item.Size, f, _versionKeys))
+          {
+            CMixItem mixItem;
+            mixItem.VersionIndex = _versionFiles.Size();
+            mixItem.SectionIndex = sectionIndex; // check it !!!!
+            CByteBuffer_WithLang &vf = _versionFiles.AddNew();
+            vf.Lang = item.Lang;
+            vf.CopyFrom(f.Buf, f.Buf.GetPos());
+            _mixItems.Add(mixItem);
+            continue;
+          }
+          // PrintError("ver.Parse error");
+        }
         item.Enabled = true;
         _items.Add(item);
       }
@@ -1233,7 +2005,7 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
   
   if (stringsOk && !_strings.IsEmpty())
   {
-    int i;
+    unsigned i;
     for (i = 0; i < _items.Size(); i++)
     {
       CResItem &item = _items[i];
@@ -1242,10 +2014,9 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
     }
     for (i = 0; i < _strings.Size(); i++)
     {
-      if (_strings[i].Size == 0)
+      if (_strings[i].FinalSize() == 0)
         continue;
       CMixItem mixItem;
-      mixItem.ResourceIndex = -1;
       mixItem.StringIndex = i;
       mixItem.SectionIndex = sectionIndex;
       _mixItems.Add(mixItem);
@@ -1259,7 +2030,8 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
   {
     UInt32 mask = (1 << numBits) - 1;
     size_t end = ((maxOffset + mask) & ~mask);
-    if (end < sect.VSize && end <= sect.PSize)
+    // 9.29: we use only PSize. PSize can be larger than VSize
+    if (/* end < sect.VSize && */ end <= sect.PSize)
     {
       CSection sect2;
       sect2.Flags = 0;
@@ -1274,72 +2046,158 @@ HRESULT CHandler::OpenResources(int sectionIndex, IInStream *stream, IArchiveOpe
       
       sect2.Pa = sect.Pa + (UInt32)maxOffset;
       sect2.Va = sect.Va + (UInt32)maxOffset;
-      sect2.PSize = sect.VSize - (UInt32)maxOffset;
-      sect2.VSize = sect2.PSize;
-      sect2.Name = ".rsrc_1";
-      sect2.Time = 0;
-      sect2.IsAdditionalSection = true;
-      _sections.Add(sect2);
+
+      // 9.29: we use sect.PSize instead of sect.VSize to support some CAB-SFX
+      // the code for .rsrc_2 is commented.
+      sect2.PSize = sect.PSize - (UInt32)maxOffset;
+      if (sect2.PSize != 0)
+      {
+        sect2.VSize = sect2.PSize;
+        sect2.Name = ".rsrc_1";
+        sect2.Time = 0;
+        sect2.IsAdditionalSection = true;
+        _sections.Add(sect2);
+      }
     }
   }
 
   return S_OK;
 }
 
+static inline bool CheckPeOffset(UInt32 pe)
+{
+  return (pe >= 0x40 && pe <= 0x1000 && (pe & 7) == 0);
+}
+
+static const unsigned kStartSize = 0x40;
+
+API_FUNC_static_IsArc IsArc_Pe(const Byte *p, size_t size)
+{
+  if (size < 2)
+    return k_IsArc_Res_NEED_MORE;
+  if (p[0] != 'M' || p[1] != 'Z')
+    return k_IsArc_Res_NO;
+  if (size < kStartSize)
+    return k_IsArc_Res_NEED_MORE;
+  UInt32 pe = Get32(p + 0x3C);
+  if (!CheckPeOffset(pe))
+    return k_IsArc_Res_NO;
+  if (pe + kHeaderSize > size)
+    return k_IsArc_Res_NEED_MORE;
+  CHeader header;
+  if (!header.Parse(p + pe))
+    return k_IsArc_Res_NO;
+  return k_IsArc_Res_YES;
+}
+
 HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 {
-  const UInt32 kBufSize = 1 << 18;
-  const UInt32 kSigSize = 2;
+  {
+    Byte h[kStartSize];
+    _mainSubfile = -1;
+    RINOK(ReadStream_FALSE(stream, h, kStartSize));
+    if (h[0] != 'M' || h[1] != 'Z')
+      return S_FALSE;
+    /* most of PE files contain 0x0090 at offset 2.
+       But some rare PE files contain another values. So we don't use that check.
+       if (Get16(h + 2) != 0x90) return false; */
+    _peOffset = Get32(h + 0x3C);
+    if (!CheckPeOffset(_peOffset))
+      return S_FALSE;
+  }
+  {
+    Byte h[kHeaderSize];
+    RINOK(stream->Seek(_peOffset, STREAM_SEEK_SET, NULL));
+    RINOK(ReadStream_FALSE(stream, h, kHeaderSize));
+    if (!_header.Parse(h))
+      return S_FALSE;
+  }
 
-  _mainSubfile = -1;
+  UInt32 bufSize = _header.OptHeaderSize + (UInt32)_header.NumSections * kSectionSize;
+  _totalSize = _peOffset + kHeaderSize + bufSize;
+  CByteBuffer buffer(bufSize);
 
-  CByteBuffer buffer;
-  buffer.SetCapacity(kBufSize);
-  Byte *buf = buffer;
-
-  size_t processed = kSigSize;
-  RINOK(ReadStream_FALSE(stream, buf, processed));
-  if (buf[0] != 'M' || buf[1] != 'Z')
+  RINOK(ReadStream_FALSE(stream, buffer, bufSize));
+  if (!_optHeader.Parse(buffer, _header.OptHeaderSize))
     return S_FALSE;
-  processed = kBufSize - kSigSize;
-  RINOK(ReadStream(stream, buf + kSigSize, &processed));
-  processed += kSigSize;
-  if (!Parse(buf, (UInt32)processed))
-    return S_FALSE;
+
+  UInt32 pos = _header.OptHeaderSize;
+  unsigned i;
+  for (i = 0; i < _header.NumSections; i++, pos += kSectionSize)
+  {
+    CSection &sect = _sections.AddNew();
+    sect.Parse(buffer + pos);
+    sect.IsRealSect = true;
+    
+    /* PE pre-file in .hxs file has errors:
+       PSize of resource is larger tnan real size.
+       So it overlaps next ".its" section.
+       We correct it. */
+
+    if (i > 0)
+    {
+      CSection &prev = _sections[i - 1];
+      if (prev.Pa < sect.Pa &&
+          prev.Pa + prev.PSize > sect.Pa &&
+          sect.PSize > 0)
+      {
+        // printf("\n !!!! Section correction: %s\n ", prev.Name);
+        // fflush(stdout);
+        prev.PSize = sect.Pa - prev.Pa;
+      }
+    }
+    /* last ".its" section in hxs file has incorrect sect.PSize.
+       So we reduce it to real sect.VSize */
+    if (sect.VSize == 24 && sect.PSize == 512 && i == (unsigned)_header.NumSections - 1)
+      sect.PSize = sect.VSize;
+  }
+
+  for (i = 0; i < _sections.Size(); i++)
+    _sections[i].UpdateTotalSize(_totalSize);
+
   bool thereISDebug;
   RINOK(LoadDebugSections(stream, thereISDebug));
 
   const CDirLink &certLink = _optHeader.DirItems[kDirLink_Certificate];
   if (certLink.Size != 0)
   {
-    CSection sect;
+    CSection &sect = _sections.AddNew();
     sect.Name = "CERTIFICATE";
     sect.Va = 0;
     sect.Pa = certLink.Va;
     sect.PSize = sect.VSize = certLink.Size;
     sect.UpdateTotalSize(_totalSize);
-    _sections.Add(sect);
   }
 
   if (thereISDebug)
   {
+    /* sometime there is some data after debug section.
+       We don't see any reference in exe file to that data.
+       But we suppose that it's part of EXE file */
+
     const UInt32 kAlign = 1 << 12;
     UInt32 alignPos = _totalSize & (kAlign - 1);
     if (alignPos != 0)
     {
       UInt32 size = kAlign - alignPos;
       RINOK(stream->Seek(_totalSize, STREAM_SEEK_SET, NULL));
-      buffer.Free();
-      buffer.SetCapacity(kAlign);
+      buffer.Alloc(kAlign);
       Byte *buf = buffer;
       size_t processed = size;
       RINOK(ReadStream(stream, buf, &processed));
+
+      /*
+      if (processed != 0)
+      {
+        printf("\ndata after debug %d, %d \n", (int)size, (int)processed);
+        fflush(stdout);
+      }
+      */
+
       size_t i;
       for (i = 0; i < processed; i++)
-      {
         if (buf[i] != 0)
           break;
-      }
       if (processed < size && processed < 100)
         _totalSize += (UInt32)processed;
       else if (((_totalSize + i) & 0x1FF) == 0 || processed < size)
@@ -1351,8 +2209,6 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   {
     if (_header.NumSymbols >= (1 << 24))
       return S_FALSE;
-    CSection sect;
-    sect.Name = "COFF_SYMBOLS";
     UInt32 size = _header.NumSymbols * 18;
     RINOK(stream->Seek((UInt64)_header.PointerToSymbolTable + size, STREAM_SEEK_SET, NULL));
     Byte buf[4];
@@ -1362,38 +2218,31 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       return S_FALSE;
     size += size2;
 
+    CSection &sect = _sections.AddNew();
+    sect.Name = "COFF_SYMBOLS";
     sect.Va = 0;
     sect.Pa = _header.PointerToSymbolTable;
     sect.PSize = sect.VSize = size;
     sect.UpdateTotalSize(_totalSize);
-    _sections.Add(sect);
   }
-
-  UInt64 fileSize;
-  RINOK(stream->Seek(0, STREAM_SEEK_END, &fileSize));
-  if (fileSize > _totalSize)
-    return S_FALSE;
-  _totalSizeLimited = (_totalSize < fileSize) ? _totalSize : (UInt32)fileSize;
 
   {
     CObjectVector<CSection> sections = _sections;
     sections.Sort();
     UInt32 limit = (1 << 12);
-    int num = 0;
-    int numSections = sections.Size();
-    for (int i = 0; i < numSections; i++)
+    unsigned num = 0;
+    FOR_VECTOR(i, sections)
     {
       const CSection &s = sections[i];
       if (s.Pa > limit)
       {
-        CSection s2;
+        CSection &s2 = _sections.AddNew();
         s2.Pa = s2.Va = limit;
         s2.PSize = s2.VSize = s.Pa - limit;
         s2.IsAdditionalSection = true;
         s2.Name = '[';
         s2.Name += GetDecString(num++);
         s2.Name += ']';
-        _sections.Add(s2);
         limit = s.Pa;
       }
       UInt32 next = s.Pa + s.PSize;
@@ -1404,10 +2253,28 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
     }
   }
 
+
+  if (_optHeader.CheckSum != 0)
+  {
+    RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+    UInt32 checkSum = 0;
+    RINOK(CalcCheckSum(stream, _totalSize, _peOffset + kHeaderSize + k_CheckSum_Field_Offset, checkSum));
+    _checksumError = (checkSum != _optHeader.CheckSum);
+  }
+
+
+  if (!_allowTail)
+  {
+    UInt64 fileSize;
+    RINOK(stream->Seek(0, STREAM_SEEK_END, &fileSize));
+    if (fileSize > _totalSize)
+      return S_FALSE;
+  }
+
   _parseResources = true;
+  // _parseResources = false;
 
   UInt64 mainSize = 0, mainSize2 = 0;
-  int i;
   for (i = 0; i < _sections.Size(); i++)
   {
     const CSection &sect = _sections[i];
@@ -1418,14 +2285,14 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       HRESULT res = OpenResources(i, stream, callback);
       if (res == S_OK)
       {
-        _resourceFileName = GetUnicodeString(sect.Name);
-        for (int j = 0; j < _items.Size(); j++)
+        _resourcesPrefix.SetFromAscii(sect.Name);
+        _resourcesPrefix += WCHAR_PATH_SEPARATOR;
+        FOR_VECTOR (j, _items)
         {
           const CResItem &item = _items[j];
           if (item.Enabled)
           {
             mixItem.ResourceIndex = j;
-            mixItem.StringIndex = -1;
             if (item.IsRcDataOrUnknown())
             {
               if (item.Size >= mainSize)
@@ -1440,6 +2307,9 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
             _mixItems.Add(mixItem);
           }
         }
+        // 9.29: .rsrc_2 code was commented.
+        // .rsrc_1 now must include that .rsrc_2 block.
+        /*
         if (sect.PSize > sect.VSize)
         {
           int numBits = _optHeader.GetNumFileAlignBits();
@@ -1450,7 +2320,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 
             if (sect.PSize > end)
             {
-              CSection sect2;
+              CSection &sect2 = _sections.AddNew();
               sect2.Flags = 0;
               sect2.Pa = sect.Pa + end;
               sect2.Va = sect.Va + end;
@@ -1459,18 +2329,16 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
               sect2.Name = ".rsrc_2";
               sect2.Time = 0;
               sect2.IsAdditionalSection = true;
-              _sections.Add(sect2);
             }
           }
         }
+        */
         continue;
       }
       if (res != S_FALSE)
         return res;
       CloseResources();
     }
-    mixItem.StringIndex = -1;
-    mixItem.ResourceIndex = -1;
     if (sect.IsAdditionalSection)
     {
       if (sect.PSize >= mainSize)
@@ -1498,55 +2366,35 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
     }
   }
 
-  return S_OK;
-}
-
-HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 excludePos, UInt32 &res)
-{
-  // size &= ~1;
-  const UInt32 kBufSize = 1 << 23;
-  CByteBuffer buffer;
-  buffer.SetCapacity(kBufSize);
-  Byte *buf = buffer;
-
-  UInt32 sum = 0;
-  UInt32 pos = 0;
-  for (;;)
+  for (i = 0; i < _versionKeys.Size(); i++)
   {
-    UInt32 rem = size - pos;
-    if (rem > kBufSize)
-      rem = kBufSize;
-    if (rem == 0)
-      break;
-    size_t processed = rem;
-    RINOK(ReadStream(stream, buf, &processed));
-    
-    /*
-    for (; processed < rem; processed++)
-      buf[processed] = 0;
-    */
-
-    if ((processed & 1) != 0)
-      buf[processed] = 0;
-
-    for (int j = 0; j < 4; j++)
-    {
-      UInt32 p = excludePos + j;
-      if (pos <= p && p < pos + processed)
-        buf[p - pos] = 0;
-    }
-
-    for (size_t i = 0; i < processed; i += 2)
-    {
-      sum += Get16(buf + i);
-      sum = (sum + (sum >> 16)) & 0xFFFF;
-    }
-    pos += (UInt32)processed;
-    if (rem != processed)
-      break;
+    if (i != 0)
+      _versionFullString += L'\n';
+    const CStringKeyValue &k = _versionKeys[i];
+    _versionFullString += k.Key;
+    _versionFullString += L": ";
+    _versionFullString += k.Value;
   }
-  sum += pos;
-  res = sum;
+
+  {
+    int keyIndex = FindKey(_versionKeys, L"OriginalFilename");
+    if (keyIndex >= 0)
+      _originalFilename = _versionKeys[keyIndex].Value;
+  }
+  {
+    int keyIndex = FindKey(_versionKeys, L"FileDescription");
+    if (keyIndex >= 0)
+      _versionShortString = _versionKeys[keyIndex].Value;
+  }
+  {
+    int keyIndex = FindKey(_versionKeys, L"FileVersion");
+    if (keyIndex >= 0)
+    {
+      _versionShortString += L' ';
+      _versionShortString += _versionKeys[keyIndex].Value;
+    }
+  }
+
   return S_OK;
 }
 
@@ -1565,11 +2413,18 @@ void CHandler::CloseResources()
   _usedRes.Free();
   _items.Clear();
   _strings.Clear();
-  _buf.SetCapacity(0);
+  _versionFiles.Clear();
+  _buf.Free();
+  _versionFullString.Empty();
+  _versionShortString.Empty();
+  _originalFilename.Empty();
+  _versionKeys.Clear();
 }
 
 STDMETHODIMP CHandler::Close()
 {
+  _totalSize = 0;
+  _checksumError = false;
   _stream.Release();
   _sections.Clear();
   _mixItems.Clear();
@@ -1587,7 +2442,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _mixItems.Size();
   if (numItems == 0)
@@ -1597,12 +2452,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     const CMixItem &mixItem = _mixItems[allFilesMode ? i : indices[i]];
+    UInt64 size;
     if (mixItem.StringIndex >= 0)
-      totalSize += _strings[mixItem.StringIndex].Size;
-    else if (mixItem.ResourceIndex < 0)
-      totalSize += _sections[mixItem.SectionIndex].GetPackSize();
+      size = _strings[mixItem.StringIndex].FinalSize();
+    else if (mixItem.VersionIndex >= 0)
+      size = _versionFiles[mixItem.VersionIndex].Size();
+    else if (mixItem.ResourceIndex >= 0)
+      size = _items[mixItem.ResourceIndex].GetSize();
     else
-      totalSize += _items[mixItem.ResourceIndex].GetSize();
+      size = _sections[mixItem.SectionIndex].PSize;
+    totalSize += size;
   }
   extractCallback->SetTotal(totalSize);
 
@@ -1615,15 +2474,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
-
-  bool checkSumOK = true;
-  if (_optHeader.CheckSum != 0 && (int)numItems == _mixItems.Size())
-  {
-    UInt32 checkSum = 0;
-    RINOK(_stream->Seek(0, STREAM_SEEK_SET, NULL));
-    CalcCheckSum(_stream, _totalSizeLimited, _peOffset + kHeaderSize + 64, checkSum);
-    checkSumOK = (checkSum == _optHeader.CheckSum);
-  }
 
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<ISequentialInStream> inStream(streamSpec);
@@ -1647,27 +2497,26 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (mixItem.StringIndex >= 0)
     {
       const CStringItem &item = _strings[mixItem.StringIndex];
-      currentItemSize = item.Size;
+      currentItemSize = item.FinalSize();
       if (!testMode && !outStream)
         continue;
 
       RINOK(extractCallback->PrepareOperation(askMode));
       if (outStream)
-        RINOK(WriteStream(outStream, item.Buf, item.Size));
+        RINOK(WriteStream(outStream, item.Buf, item.FinalSize()));
     }
-    else if (mixItem.ResourceIndex < 0)
+    else if (mixItem.VersionIndex >= 0)
     {
-      currentItemSize = sect.GetPackSize();
+      const CByteBuffer &item = _versionFiles[mixItem.VersionIndex];
+      currentItemSize = item.Size();
       if (!testMode && !outStream)
         continue;
-      
+
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(_stream->Seek(sect.Pa, STREAM_SEEK_SET, NULL));
-      streamSpec->Init(currentItemSize);
-      RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
-      isOk = (copyCoderSpec->TotalSize == currentItemSize);
+      if (outStream)
+        RINOK(WriteStream(outStream, item, item.Size()));
     }
-    else
+    else if (mixItem.ResourceIndex >= 0)
     {
       const CResItem &item = _items[mixItem.ResourceIndex];
       currentItemSize = item.GetSize();
@@ -1685,12 +2534,22 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         RINOK(WriteStream(outStream, _buf + offset, item.Size));
       }
     }
+    else
+    {
+      currentItemSize = sect.PSize;
+      if (!testMode && !outStream)
+        continue;
+      
+      RINOK(extractCallback->PrepareOperation(askMode));
+      RINOK(_stream->Seek(sect.Pa, STREAM_SEEK_SET, NULL));
+      streamSpec->Init(currentItemSize);
+      RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+      isOk = (copyCoderSpec->TotalSize == currentItemSize);
+    }
     
     outStream.Release();
     RINOK(extractCallback->SetOperationResult(isOk ?
-      checkSumOK ?
-        NExtract::NOperationResult::kOK:
-        NExtract::NOperationResult::kCRCError:
+        NExtract::NOperationResult::kOK :
         NExtract::NOperationResult::kDataError));
   }
   return S_OK;
@@ -1714,8 +2573,12 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   if (mixItem.StringIndex >= 0)
   {
     const CStringItem &item = _strings[mixItem.StringIndex];
-    referenceBuf->Buf.SetCapacity(item.Size);
-    memcpy(referenceBuf->Buf, item.Buf, item.Size);
+    referenceBuf->Buf.CopyFrom(item.Buf, item.FinalSize());
+  }
+  else if (mixItem.VersionIndex >= 0)
+  {
+    const CByteBuffer &item = _versionFiles[mixItem.VersionIndex];
+    referenceBuf->Buf.CopyFrom(item, item.Size());
   }
   else
   {
@@ -1731,7 +2594,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
       *stream = streamTemp2.Detach();
       return S_OK;
     }
-    referenceBuf->Buf.SetCapacity(item.HeaderSize + item.Size);
+    referenceBuf->Buf.Alloc(item.HeaderSize + item.Size);
     memcpy(referenceBuf->Buf, item.Header, item.HeaderSize);
     memcpy(referenceBuf->Buf + item.HeaderSize, _buf + offset, item.Size);
   }
@@ -1742,10 +2605,20 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler; }
+STDMETHODIMP CHandler::AllowTail(Int32 allowTail)
+{
+  _allowTail = IntToBool(allowTail);
+  return S_OK;
+}
+
+IMP_CreateArcIn
 
 static CArcInfo g_ArcInfo =
-  { L"PE", L"exe dll sys", 0, 0xDD, { 'P', 'E', 0, 0 }, 4, false, CreateArc, 0 };
+  { "PE", "exe dll sys", 0, 0xDD,
+  2, { 'M', 'Z' },
+  0,
+  NArcInfoFlags::kPreArc,
+  CreateArc, NULL, IsArc_Pe };
 
 REGISTER_ARC(Pe)
 
@@ -1758,13 +2631,17 @@ namespace NTe {
 
 // Terse Executable (TE) image
 
-/*
 struct CDataDir
 {
   UInt32 Va;
   UInt32 Size;
+
+  void Parse(const Byte *p)
+  {
+    G32(0, Va);
+    G32(4, Size);
+  }
 };
-*/
 
 static const UInt32 kHeaderSize = 40;
 
@@ -1776,8 +2653,10 @@ static bool FindValue(const CUInt32PCharPair *pairs, unsigned num, UInt32 value)
   return false;
 }
 
-#define MY_FIND_VALUE(pairs, value) FindValue(pairs, sizeof(pairs) / sizeof(pairs[0]), value)
+#define MY_FIND_VALUE(pairs, value) FindValue(pairs, ARRAY_SIZE(pairs), value)
  
+static const UInt32 kNumSection_MAX = 32;
+
 struct CHeader
 {
   UInt16 Machine;
@@ -1788,41 +2667,65 @@ struct CHeader
   UInt32 AddressOfEntryPoint;
   UInt32 BaseOfCode;
   UInt64 ImageBase;
-  CDataDir DataDir[2]; // base relocation and debug directory
   */
+  CDataDir DataDir[2]; // base relocation and debug directory
 
-  UInt32 ConvertPa(UInt32 pa) const { return pa - StrippedSize + kHeaderSize; }
-
-  bool Parse(const Byte *p)
+  bool ConvertPa(UInt32 &pa) const
   {
-    if (p[0] != 'V' || p[1] != 'Z')
+    if (pa < StrippedSize)
       return false;
-    Machine = Get16(p + 2);
-    NumSections = p[4];
-    SubSystem = p[5];
-    StrippedSize = Get16(p + 6);
-    /*
-    AddressOfEntryPoint = Get32(p + 8);
-    BaseOfCode = Get32(p + 12);
-    ImageBase = Get64(p + 16);
-    for (int i = 0; i < 2; i++)
-    {
-      const Byte *p2 = p + 24 + i * 8;
-      DataDir[i].Va = Get32(p2);
-      DataDir[i].Size = Get32(p2 + 4);
-    }
-    */
-    return NumSections <= 64 &&
+    pa = pa - StrippedSize + kHeaderSize;
+    return true;
+  }
+  bool Parse(const Byte *p);
+};
+
+bool CHeader::Parse(const Byte *p)
+{
+  NumSections = p[4];
+  if (NumSections > kNumSection_MAX)
+    return false;
+  SubSystem = p[5];
+  G16(2, Machine);
+  G16(6, StrippedSize);
+  /*
+  G32(8, AddressOfEntryPoint);
+  G32(12, BaseOfCode);
+  G64(16, ImageBase);
+  */
+  for (int i = 0; i < 2; i++)
+  {
+    CDataDir &dd = DataDir[i];
+    dd.Parse(p + 24 + i * 8);
+    if (dd.Size >= ((UInt32)1 << 28))
+      return false;
+  }
+  return
       MY_FIND_VALUE(NPe::g_MachinePairs, Machine) &&
       MY_FIND_VALUE(NPe::g_SubSystems, SubSystem);
-  }
-};
+}
+
+API_FUNC_static_IsArc IsArc_Te(const Byte *p, size_t size)
+{
+  if (size < 2)
+    return k_IsArc_Res_NEED_MORE;
+  if (p[0] != 'V' || p[1] != 'Z')
+    return k_IsArc_Res_NO;
+  if (size < kHeaderSize)
+    return k_IsArc_Res_NEED_MORE;
+  
+  CHeader h;
+  if (!h.Parse(p))
+    return k_IsArc_Res_NO;
+  return k_IsArc_Res_YES;
+}
+
 
 struct CSection
 {
-  Byte Name[8];
+  Byte Name[NPe::kNameSize];
 
-  // UInt32 VSize;
+  UInt32 VSize;
   UInt32 Va;
   UInt32 PSize;
   UInt32 Pa;
@@ -1831,16 +2734,21 @@ struct CSection
 
   void Parse(const Byte *p)
   {
-    memcpy(Name, p, 8);
-    // VSize = Get32(p + 8);
-    Va = Get32(p + 12);
-    PSize = Get32(p + 16);
-    Pa = Get32(p + 20);
-    // NumRelocs = Get16(p + 32);
-    Flags = Get32(p + 36);
+    memcpy(Name, p, NPe::kNameSize);
+    G32(8, VSize);
+    G32(12, Va);
+    G32(16, PSize);
+    G32(20, Pa);
+    // G32(p + 32, NumRelocs);
+    G32(36, Flags);
   }
 
-  bool Check() const { return (PSize + Pa > Pa); }
+  bool Check() const
+  {
+    return
+        Pa <= ((UInt32)1 << 30) &&
+        PSize <= ((UInt32)1 << 30);
+  }
 
   void UpdateTotalSize(UInt32 &totalSize)
   {
@@ -1853,44 +2761,46 @@ struct CSection
 class CHandler:
   public IInArchive,
   public IInArchiveGetStream,
+  public IArchiveAllowTail,
   public CMyUnknownImp
 {
-  UInt32 _totalSize;
+  CRecordVector<CSection> _items;
   CMyComPtr<IInStream> _stream;
-  CObjectVector<CSection> _items;
+  UInt32 _totalSize;
+  bool _allowTail;
   CHeader _h;
-  UInt64 _fileSize;
   
   HRESULT Open2(IInStream *stream);
 public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
+  MY_UNKNOWN_IMP3(IInArchive, IInArchiveGetStream, IArchiveAllowTail)
   INTERFACE_IInArchive(;)
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
+  STDMETHOD(AllowTail)(Int32 allowTail);
+  CHandler(): _allowTail(false) {}
 };
 
-static const STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidSize, VT_UI4},
-  { NULL, kpidPackSize, VT_UI4},
-  { NULL, kpidCharacts, VT_BSTR},
-  { NULL, kpidOffset, VT_UI4},
-  { NULL, kpidVa, VT_UI8}
+  kpidPath,
+  kpidSize,
+  kpidVirtualSize,
+  kpidCharacts,
+  kpidOffset,
+  kpidVa
 };
 
 enum
 {
-  kpidSubSystem
+  kpidSubSystem = kpidUserDefined,
   // , kpidImageBase
 };
 
 static const STATPROPSTG kArcProps[] =
 {
-  { NULL, kpidPhySize, VT_UI4},
-  // { NULL, kpidHeadersSize, VT_UI4},
+  // { NULL, kpidHeadersSize, VT_UI4 },
   { NULL, kpidCpu, VT_BSTR},
-  { L"Subsystem", kpidSubSystem, VT_BSTR},
-  // { L"Image Base", kpidImageBase, VT_UI8}
+  { L"Subsystem", kpidSubSystem, VT_BSTR },
+  // { L"Image Base", kpidImageBase, VT_UI8 }
 };
 
 IMP_IInArchive_Props
@@ -1900,7 +2810,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidPhySize: prop = _totalSize; break;
     case kpidCpu: PAIR_TO_PROP(NPe::g_MachinePairs, _h.Machine, prop); break;
@@ -1922,11 +2832,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   NCOM::CPropVariant prop;
   {
     const CSection &item = _items[index];
-    switch(propID)
+    switch (propID)
     {
-      case kpidPath: StringToProp(NPe::GetName(item.Name), prop); break;
+      case kpidPath: prop = MultiByteToUnicodeString(NPe::GetName(item.Name)); break;
       case kpidSize:
       case kpidPackSize: prop = (UInt64)item.PSize; break;
+      case kpidVirtualSize: prop = (UInt64)item.VSize; break;
       case kpidOffset: prop = item.Pa; break;
       case kpidVa: prop = item.Va; break;
       case kpidCharacts: FLAGS_TO_PROP(NPe::g_SectFlags, item.Flags, prop); break;
@@ -1941,28 +2852,41 @@ HRESULT CHandler::Open2(IInStream *stream)
 {
   Byte h[kHeaderSize];
   RINOK(ReadStream_FALSE(stream, h, kHeaderSize));
+  if (h[0] != 'V' || h[1] != 'Z')
+    return S_FALSE;
   if (!_h.Parse(h))
     return S_FALSE;
 
-  CByteBuffer buf;
-  UInt32 headerSize = NPe::kSectionSize * _h.NumSections;
-  buf.SetCapacity(headerSize);
+  UInt32 headerSize = NPe::kSectionSize * (UInt32)_h.NumSections;
+  CByteArr buf(headerSize);
   RINOK(ReadStream_FALSE(stream, buf, headerSize));
+  headerSize += kHeaderSize;
 
-  _totalSize = kHeaderSize + headerSize;
-  
-  for (UInt32 i = 0; i < headerSize; i += NPe::kSectionSize)
+  _totalSize = headerSize;
+  _items.ClearAndReserve(_h.NumSections);
+  for (UInt32 i = 0; i < _h.NumSections; i++)
   {
     CSection sect;
-    sect.Parse(buf + i);
-    sect.Pa = _h.ConvertPa(sect.Pa);
-    _items.Add(sect);
-    sect.UpdateTotalSize(_totalSize);
+    sect.Parse(buf + i * NPe::kSectionSize);
+    if (!_h.ConvertPa(sect.Pa))
+      return S_FALSE;
+    if (sect.Pa < headerSize)
+      return S_FALSE;
     if (!sect.Check())
       return S_FALSE;
+    _items.AddInReserved(sect);
+    sect.UpdateTotalSize(_totalSize);
   }
 
-  return stream->Seek(0, STREAM_SEEK_END, &_fileSize);
+  if (!_allowTail)
+  {
+    UInt64 fileSize;
+    RINOK(stream->Seek(0, STREAM_SEEK_END, &fileSize));
+    if (fileSize > _totalSize)
+      return S_FALSE;
+  }
+  
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::Open(IInStream *inStream,
@@ -1984,9 +2908,9 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 
 STDMETHODIMP CHandler::Close()
 {
+  _totalSize = 0;
   _stream.Release();
   _items.Clear();
-  _totalSize = 0;
   return S_OK;
 }
 
@@ -2000,7 +2924,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -2041,22 +2965,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
     int res = NExtract::NOperationResult::kDataError;
-    if (item.Pa <= _fileSize)
-    {
-      if (testMode)
-      {
-        if (item.Pa + item.PSize <= _fileSize)
-          res = NExtract::NOperationResult::kOK;
-      }
-      else
-      {
-        RINOK(_stream->Seek(item.Pa, STREAM_SEEK_SET, NULL));
-        streamSpec->Init(item.PSize);
-        RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
-        if (copyCoderSpec->TotalSize == item.PSize)
-          res = NExtract::NOperationResult::kOK;
-      }
-    }
+
+    RINOK(_stream->Seek(item.Pa, STREAM_SEEK_SET, NULL));
+    streamSpec->Init(item.PSize);
+    RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+    if (copyCoderSpec->TotalSize == item.PSize)
+      res = NExtract::NOperationResult::kOK;
+
     realOutStream.Release();
     RINOK(extractCallback->SetOperationResult(res));
   }
@@ -2072,10 +2987,20 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler; }
+STDMETHODIMP CHandler::AllowTail(Int32 allowTail)
+{
+  _allowTail = IntToBool(allowTail);
+  return S_OK;
+}
+
+IMP_CreateArcIn
 
 static CArcInfo g_ArcInfo =
-  { L"TE", L"te", 0, 0xCF, { 'V', 'Z' }, 2, false, CreateArc, 0 };
+  { "TE", "te", 0, 0xCF,
+  2, { 'V', 'Z' },
+  0,
+  NArcInfoFlags::kPreArc,
+  CreateArc, NULL, IsArc_Te };
 
 REGISTER_ARC(TE)
 

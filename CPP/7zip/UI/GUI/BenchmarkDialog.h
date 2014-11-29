@@ -3,9 +3,10 @@
 #ifndef __BENCHMARK_DIALOG_H
 #define __BENCHMARK_DIALOG_H
 
-#include "Windows/Synchronization.h"
-#include "Windows/Control/ComboBox.h"
-#include "Windows/Control/Edit.h"
+#include "../../../Windows/Synchronization.h"
+
+#include "../../../Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/Edit.h"
 
 #include "../Common/Bench.h"
 
@@ -16,6 +17,16 @@
 struct CBenchInfo2 : public CBenchInfo
 {
   void Init()  { GlobalTime = UserTime = 0; }
+
+  UInt64 GetCompressRating(UInt32 dictSize) const
+  {
+    return ::GetCompressRating(dictSize, GlobalTime, GlobalFreq, UnpackSize * NumIterations);
+  }
+
+  UInt64 GetDecompressRating() const
+  {
+    return ::GetDecompressRating(GlobalTime, GlobalFreq, UnpackSize, PackSize, NumIterations);
+  }
 };
 
 class CProgressSyncInfo
@@ -27,7 +38,6 @@ public:
   UInt32 DictionarySize;
   UInt32 NumThreads;
   UInt64 NumPasses;
-  // UInt64 NumErrors;
   NWindows::NSynchronization::CManualResetEvent _startEvent;
   NWindows::NSynchronization::CCriticalSection CS;
 
@@ -59,7 +69,6 @@ public:
     DecompressingInfo.Init();
 
     NumPasses = 0;
-    // NumErrors = 0;
 
     Text.Empty();
     TextWasChanged = true;
@@ -115,7 +124,7 @@ class CBenchmarkDialog:
   NWindows::NControl::CComboBox m_NumThreads;
   NWindows::NControl::CEdit _consoleEdit;
   UINT_PTR _timer;
-  UINT32 _startTime;
+  UInt32 _startTime;
   CMyFont _font;
 
   bool OnSize(WPARAM /* wParam */, int xSize, int ySize);
@@ -132,7 +141,7 @@ class CBenchmarkDialog:
   void PrintRating(UInt64 rating, UINT controlID);
   void PrintUsage(UInt64 usage, UINT controlID);
   void PrintResults(
-      UINT32 dictionarySize,
+      UInt32 dictionarySize,
       const CBenchInfo2 &info, UINT usageID, UINT speedID, UINT rpuID, UINT ratingID,
       bool decompressMode = false);
 
@@ -148,7 +157,7 @@ public:
   INT_PTR Create(HWND wndParent = 0)
   {
     BIG_DIALOG_SIZE(332, 228);
-    return CModalDialog::Create(TotalMode ? IDD_DIALOG_BENCHMARK_TOTAL : SIZED_DIALOG(IDD_DIALOG_BENCHMARK), wndParent);
+    return CModalDialog::Create(TotalMode ? IDD_BENCH_TOTAL : SIZED_DIALOG(IDD_BENCH), wndParent);
   }
   void MessageBoxError(LPCWSTR message)
   {

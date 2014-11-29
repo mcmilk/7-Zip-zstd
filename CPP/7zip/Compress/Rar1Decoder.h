@@ -70,11 +70,13 @@ public:
 
   MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
 
+  /*
   void ReleaseStreams()
   {
     m_OutWindowStream.ReleaseStream();
     m_InBitStream.ReleaseStream();
   }
+  */
 
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);

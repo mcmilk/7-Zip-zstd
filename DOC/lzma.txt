@@ -1,4 +1,4 @@
-LZMA SDK 9.22
+LZMA SDK 9.31
 -------------
 
 LZMA SDK provides the documentation, samples, header files, libraries, 
@@ -451,8 +451,16 @@ For full code example, look at C/LzmaUtil/LzmaUtil.c code.
 How To compress data
 --------------------
 
-Compile files: LzmaEnc.h + LzmaEnc.c + Types.h +
-LzFind.c + LzFind.h + LzFindMt.c + LzFindMt.h + LzHash.h
+Compile files: 
+  Types.h
+  Threads.h	
+  LzmaEnc.h
+  LzmaEnc.c
+  LzFind.h
+  LzFind.c
+  LzFindMt.h
+  LzFindMt.c
+  LzHash.h
 
 Memory Requirements:
   - (dictSize * 11.5 + 6 MB) + state_size
@@ -472,7 +480,7 @@ Single-call Compression with callbacks
 
 Check C/LzmaUtil/LzmaUtil.c as example, 
 
-When to use: file->file decompressing 
+When to use: file->file compressing 
 
 1) you must implement callback structures for interfaces:
 ISeqInStream
@@ -543,8 +551,8 @@ Single-call RAM->RAM Compression
 Single-call RAM->RAM Compression is similar to Compression with callbacks,
 but you provide pointers to buffers instead of pointers to stream callbacks:
 
-HRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
-    CLzmaEncProps *props, Byte *propsEncoded, SizeT *propsSize, int writeEndMark, 
+SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
+    const CLzmaEncProps *props, Byte *propsEncoded, SizeT *propsSize, int writeEndMark, 
     ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
 
 Return code:

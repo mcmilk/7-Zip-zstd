@@ -1,5 +1,5 @@
 PROG = 7zG.exe
-CFLAGS = $(CFLAGS) -I ../../../  \
+CFLAGS = $(CFLAGS) \
   -DLANG \
   -DEXTERNAL_CODECS \
 
@@ -16,6 +16,7 @@ GUI_OBJS = \
   $O\ExtractDialog.obj \
   $O\ExtractGUI.obj \
   $O\GUI.obj \
+  $O\HashGUI.obj \
   $O\UpdateCallbackGUI.obj \
   $O\UpdateGUI.obj \
 
@@ -30,27 +31,28 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\TextConfig.obj \
   $O\UTFConvert.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
   $O\CommonDialog.obj \
   $O\DLL.obj \
-  $O\Error.obj \
+  $O\ErrorMsg.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
+  $O\FileLink.obj \
   $O\FileName.obj \
+  $O\FileSystem.obj \
   $O\MemoryLock.obj \
   $O\PropVariant.obj \
-  $O\PropVariantConversions.obj \
+  $O\PropVariantConv.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
   $O\Shell.obj \
   $O\Synchronization.obj \
   $O\System.obj \
-  $O\Time.obj \
+  $O\TimeUtils.obj \
   $O\Window.obj \
 
 WIN_CTRL_OBJS = \
@@ -63,9 +65,13 @@ WIN_CTRL_OBJS = \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
   $O\FilterCoder.obj \
+  $O\LimitedStreams.obj \
   $O\MethodProps.obj \
   $O\ProgressUtils.obj \
+  $O\PropId.obj \
+  $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\UniqBlocks.obj \
 
 UI_COMMON_OBJS = \
   $O\ArchiveCommandLine.obj \
@@ -76,6 +82,7 @@ UI_COMMON_OBJS = \
   $O\EnumDirItems.obj \
   $O\Extract.obj \
   $O\ExtractingFilePath.obj \
+  $O\HashCalc.obj \
   $O\LoadCodecs.obj \
   $O\OpenArchive.obj \
   $O\PropIDUtils.obj \
@@ -107,60 +114,24 @@ FM_OBJS = \
   $O\PasswordDialog.obj \
   $O\ProgressDialog2.obj \
 
-!IFDEF UNDER_CE
 FM_OBJS = $(FM_OBJS) \
   $O\BrowseDialog.obj \
+  $O\ComboDialog.obj \
   $O\SysIconUtils.obj \
-!ENDIF
+
+EXPLORER_OBJS = \
+  $O\MyMessages.obj \
+
+COMPRESS_OBJS = \
+  $O\CopyCoder.obj \
 
 C_OBJS = \
   $O\Alloc.obj \
   $O\CpuArch.obj \
+  $O\Sort.obj \
   $O\Threads.obj \
 
 !include "../../Crc.mak"
 
-OBJS = \
-  $O\StdAfx.obj \
-  $(GUI_OBJS) \
-  $(COMMON_OBJS) \
-  $(WIN_OBJS) \
-  $(WIN_CTRL_OBJS) \
-  $(7ZIP_COMMON_OBJS) \
-  $(UI_COMMON_OBJS) \
-  $(AR_COMMON_OBJS) \
-  $(FM_OBJS)\
-  $O\MyMessages.obj \
-  $O\CopyCoder.obj \
-  $(LZMA_BENCH_OBJS) \
-  $(C_OBJS) \
-  $(ASM_OBJS) \
-  $O\resource.res
 
-!include "../../../Build.mak"
-
-$(GUI_OBJS): $(*B).cpp
-	$(COMPL)
-$(COMMON_OBJS): ../../../Common/$(*B).cpp
-	$(COMPL)
-$(WIN_OBJS): ../../../Windows/$(*B).cpp
-	$(COMPL)
-$(WIN_CTRL_OBJS): ../../../Windows/Control/$(*B).cpp
-	$(COMPL)
-$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
-	$(COMPL)
-$(UI_COMMON_OBJS): ../Common/$(*B).cpp
-	$(COMPL)
-$(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
-	$(COMPL)
-$(FM_OBJS): ../FileManager/$(*B).cpp
-	$(COMPL)
-$O\MyMessages.obj: ../Explorer/MyMessages.cpp
-	$(COMPL)
-
-$O\CopyCoder.obj: ../../Compress/$(*B).cpp
-	$(COMPL)
-$(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-
-!include "../../Asm.mak"
+!include "../../7zip.mak"

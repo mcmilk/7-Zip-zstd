@@ -1,4 +1,4 @@
-// DLLExports.cpp
+// DLLExports2.cpp
 
 #include "StdAfx.h"
 
@@ -45,23 +45,23 @@ DEFINE_GUID(CLSID_CArchiveHandler,
 static const UInt16 kDecodeId = 0x2790;
 
 DEFINE_GUID(CLSID_CCodec,
-0x23170F69, 0x40C1, kDecodeId, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+0x23170F69, 0x40C1, kDecodeId, 0, 0, 0, 0, 0, 0, 0, 0);
 
 STDAPI CreateCoder(const GUID *clsid, const GUID *iid, void **outObject);
+STDAPI CreateHasher(const GUID *clsid, IHasher **hasher);
 STDAPI CreateArchiver(const GUID *classID, const GUID *iid, void **outObject);
 
 STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 {
   // COM_TRY_BEGIN
   *outObject = 0;
-  if (*iid == IID_ICompressCoder || *iid == IID_ICompressCoder2 || *iid == IID_ICompressFilter)
-  {
+  if (*iid == IID_ICompressCoder ||
+      *iid == IID_ICompressCoder2 ||
+      *iid == IID_ICompressFilter)
     return CreateCoder(clsid, iid, outObject);
-  }
-  else
-  {
-    return CreateArchiver(clsid, iid, outObject);
-  }
+  if (*iid == IID_IHasher)
+    return CreateHasher(clsid, (IHasher **)outObject);
+  return CreateArchiver(clsid, iid, outObject);
   // COM_TRY_END
 }
 
@@ -70,5 +70,13 @@ STDAPI SetLargePageMode()
   #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
   SetLargePageSize();
   #endif
+  return S_OK;
+}
+
+extern bool g_CaseSensitive;
+
+STDAPI SetCaseSensitive(Int32 caseSensitive)
+{
+  g_CaseSensitive = (caseSensitive != 0);
   return S_OK;
 }

@@ -1,9 +1,8 @@
 // Common/TextConfig.h
 
-#ifndef __COMMON_TEXTCONFIG_H
-#define __COMMON_TEXTCONFIG_H
+#ifndef __COMMON_TEXT_CONFIG_H
+#define __COMMON_TEXT_CONFIG_H
 
-#include "MyVector.h"
 #include "MyString.h"
 
 struct CTextConfigPair
@@ -14,7 +13,7 @@ struct CTextConfigPair
 
 bool GetTextConfig(const AString &text, CObjectVector<CTextConfigPair> &pairs);
 
-int FindTextConfigItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id);
+int FindTextConfigItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id) throw();
 UString GetTextConfigValue(const CObjectVector<CTextConfigPair> &pairs, const UString &id);
 
 #endif

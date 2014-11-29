@@ -1,10 +1,15 @@
-#define IDD_EDIT                 542
-#define IDD_EDIT_2               642
+#define IDD_EDIT     2103
+#define IDD_EDIT_2  12103
 
-#define IDC_EDIT_STATIC_EDITOR  1000
-#define IDC_EDIT_EDIT_EDITOR    1001
-#define IDC_EDIT_BUTTON_EDITOR  1002
+#define IDT_EDIT_VIEWER    543
+#define IDT_EDIT_EDITOR   2104
+#define IDT_EDIT_DIFF     2105
 
-#define IDC_EDIT_STATIC_DIFF    1010
-#define IDC_EDIT_EDIT_DIFF      1011
-#define IDC_EDIT_BUTTON_DIFF    1012
+#define IDE_EDIT_VIEWER    100
+#define IDB_EDIT_VIEWER    101
+
+#define IDE_EDIT_EDITOR    102
+#define IDB_EDIT_EDITOR    103
+
+#define IDE_EDIT_DIFF      104
+#define IDB_EDIT_DIFF      105

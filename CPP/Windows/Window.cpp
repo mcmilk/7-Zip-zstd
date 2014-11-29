@@ -3,9 +3,9 @@
 #include "StdAfx.h"
 
 #ifndef _UNICODE
-#include "Common/StringConvert.h"
+#include "../Common/StringConvert.h"
 #endif
-#include "Windows/Window.h"
+#include "Window.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;

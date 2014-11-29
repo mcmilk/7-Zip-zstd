@@ -3,30 +3,24 @@
 #ifndef __VIEW_SETTINGS_H
 #define __VIEW_SETTINGS_H
 
-#include "Common/MyString.h"
-#include "Common/Types.h"
+#include "../../../Common/MyTypes.h"
+#include "../../../Common/MyString.h"
 
 struct CColumnInfo
 {
   PROPID PropID;
   bool IsVisible;
   UInt32 Width;
+
+  bool IsEqual(const CColumnInfo &a) const
+  {
+    return PropID == a.PropID && IsVisible == a.IsVisible && Width == a.Width;
+  }
 };
-
-inline bool operator==(const CColumnInfo &a1, const CColumnInfo &a2)
-{
-  return (a1.PropID == a2.PropID) &&
-    (a1.IsVisible == a2.IsVisible) && (a1.Width == a2.Width);
-}
-
-inline bool operator!=(const CColumnInfo &a1, const CColumnInfo &a2)
-{
-  return !(a1 == a2);
-}
 
 struct CListViewInfo
 {
-  CObjectVector<CColumnInfo> Columns;
+  CRecordVector<CColumnInfo> Columns;
   PROPID SortID;
   bool Ascending;
 
@@ -37,52 +31,67 @@ struct CListViewInfo
     Columns.Clear();
   }
 
+  /*
   int FindColumnWithID(PROPID propID) const
   {
-    for (int i = 0; i < Columns.Size(); i++)
+    FOR_VECTOR (i, Columns)
       if (Columns[i].PropID == propID)
         return i;
     return -1;
   }
+  */
 
   bool IsEqual(const CListViewInfo &info) const
   {
     if (Columns.Size() != info.Columns.Size() ||
-        // SortIndex != info.SortIndex ||
         SortID != info.SortID ||
         Ascending != info.Ascending)
       return false;
-    for (int i = 0; i < Columns.Size(); i++)
-      if (Columns[i] != info.Columns[i])
+    FOR_VECTOR (i, Columns)
+      if (!Columns[i].IsEqual(info.Columns[i]))
         return false;
     return true;
   }
+
+  void Save(const UString &id) const;
+  void Read(const UString &id);
 };
 
-void SaveListViewInfo(const UString &id, const CListViewInfo &viewInfo);
-void ReadListViewInfo(const UString &id, CListViewInfo &viewInfo);
 
-void SaveWindowSize(const RECT &rect, bool maximized);
-bool ReadWindowSize(RECT &rect, bool &maximized);
+struct CWindowInfo
+{
+  RECT rect;
+  bool maximized;
 
-void SavePanelsInfo(UInt32 numPanels, UInt32 currentPanel, UInt32 splitterPos);
-bool ReadPanelsInfo(UInt32 &numPanels, UInt32 &currentPanel, UInt32 &splitterPos);
+  UInt32 numPanels;
+  UInt32 currentPanel;
+  UInt32 splitterPos;
+
+  void Save() const;
+  void Read(bool &windowPosDefined, bool &panelInfoDefined);
+};
 
 void SaveToolbarsMask(UInt32 toolbarMask);
 UInt32 ReadToolbarsMask();
 
-void SavePanelPath(UInt32 panel, const UString &path);
-bool ReadPanelPath(UInt32 panel, UString &path);
+const UInt32 kListMode_Report = 3;
 
 struct CListMode
 {
   UInt32 Panels[2];
-  void Init() { Panels[0] = Panels[1] = 3; }
+  
+  void Init() { Panels[0] = Panels[1] = kListMode_Report; }
   CListMode() { Init(); }
+  
+  void Save() const ;
+  void Read();
 };
 
-void SaveListMode(const CListMode &listMode);
-void ReadListMode(CListMode &listMode);
+
+
+void SavePanelPath(UInt32 panel, const UString &path);
+bool ReadPanelPath(UInt32 panel, UString &path);
+
 
 void SaveFolderHistory(const UStringVector &folders);
 void ReadFolderHistory(UStringVector &folders);

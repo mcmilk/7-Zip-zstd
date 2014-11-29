@@ -3,8 +3,8 @@
 #ifndef __COMMON_MYMAP_H
 #define __COMMON_MYMAP_H
 
+#include "MyTypes.h"
 #include "MyVector.h"
-#include "Types.h"
 
 class CMap32
 {
@@ -21,7 +21,7 @@ class CMap32
 public:
 
   void Clear() { Nodes.Clear(); }
-  bool Find(UInt32 key, UInt32 &valueRes) const;
+  bool Find(UInt32 key, UInt32 &valueRes) const throw();
   bool Set(UInt32 key, UInt32 value); // returns true, if there is such key already
 };
 

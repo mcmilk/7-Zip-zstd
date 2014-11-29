@@ -3,9 +3,9 @@
 #ifndef __SYSTEM_PAGE_H
 #define __SYSTEM_PAGE_H
 
-#include "Windows/Control/ImageList.h"
-#include "Windows/Control/ListView.h"
-#include "Windows/Control/PropertyPage.h"
+#include "../../../Windows/Control/ImageList.h"
+#include "../../../Windows/Control/ListView.h"
+#include "../../../Windows/Control/PropertyPage.h"
 
 #include "FilePlugins.h"
 #include "RegistryAssociations.h"
@@ -40,7 +40,7 @@ struct CModifiedExtInfo: public NRegistryAssoc::CShellExtInfo
       Other = true;
       if (IsIt7Zip())
       {
-        Other7Zip = (iconPath.CompareNoCase(IconPath) != 0);
+        Other7Zip = !iconPath.IsEqualToNoCase(IconPath);
         if (!Other7Zip)
         {
           State = kExtState_7Zip;
@@ -88,7 +88,11 @@ class CSystemPage: public NWindows::NControl::CPropertyPage
   NWindows::NControl::CImageList _imageList;
   NWindows::NControl::CListView _listView;
 
-  const HKEY GetHKey(int group) const
+  const HKEY GetHKey(int
+      #if NUM_EXT_GROUPS != 1
+        group
+      #endif
+      ) const
   {
     #if NUM_EXT_GROUPS == 1
       return HKEY_CLASSES_ROOT;

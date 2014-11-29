@@ -2,11 +2,24 @@
 
 #include "StdAfx.h"
 
+// #define SHOW_DEBUG_INFO
+
+#ifdef SHOW_DEBUG_INFO
+#include <stdio.h>
+#endif
+
 #include "../../../../C/CpuArch.h"
 
+#include "../../Common/RegisterArc.h"
 #include "../../Common/StreamUtils.h"
 
 #include "UdfIn.h"
+
+#ifdef SHOW_DEBUG_INFO
+#define PRF(x) x
+#else
+#define PRF(x)
+#endif
 
 #define Get16(p) GetUi16(p)
 #define Get32(p) GetUi32(p)
@@ -15,24 +28,22 @@
 namespace NArchive {
 namespace NUdf {
 
-const int kNumPartitionsMax = 64;
-const int kNumLogVolumesMax = 64;
-const int kNumRecureseLevelsMax = 1 << 10;
-const int kNumItemsMax = 1 << 27;
-const int kNumFilesMax = 1 << 28;
-const int kNumRefsMax = 1 << 28;
-const UInt32 kNumExtentsMax = (UInt32)1 << 30;
-const UInt64 kFileNameLengthTotalMax = (UInt64)1 << 33;
-const UInt64 kInlineExtentsSizeMax = (UInt64)1 << 33;
-
-void MY_FAST_CALL Crc16GenerateTable(void);
+static const unsigned kNumPartitionsMax = 64;
+static const unsigned kNumLogVolumesMax = 64;
+static const unsigned kNumRecursionLevelsMax = 1 << 10;
+static const unsigned kNumItemsMax = 1 << 27;
+static const unsigned kNumFilesMax = 1 << 28;
+static const unsigned kNumRefsMax = 1 << 28;
+static const UInt32 kNumExtentsMax = (UInt32)1 << 30;
+static const UInt64 kFileNameLengthTotalMax = (UInt64)1 << 33;
+static const UInt64 kInlineExtentsSizeMax = (UInt64)1 << 33;
 
 #define CRC16_INIT_VAL 0
 #define CRC16_GET_DIGEST(crc) (crc)
-#define CRC16_UPDATE_BYTE(crc, b) (g_Crc16Table[(((crc) >> 8) ^ (b)) & 0xFF] ^ ((crc) << 8))
+#define CRC16_UPDATE_BYTE(crc, b) ((UInt16)(g_Crc16Table[(((crc) >> 8) ^ (b)) & 0xFF] ^ ((crc) << 8)))
 
 #define kCrc16Poly 0x1021
-UInt16 g_Crc16Table[256];
+static UInt16 g_Crc16Table[256];
 
 void MY_FAST_CALL Crc16GenerateTable(void)
 {
@@ -61,15 +72,14 @@ UInt16 MY_FAST_CALL Crc16Calc(const void *data, size_t size)
 
 struct CCrc16TableInit { CCrc16TableInit() { Crc16GenerateTable(); } } g_Crc16TableInit;
 
-void CDString128::Parse(const Byte *buf) { memcpy(Data, buf, sizeof(Data)); }
+
 
 void CDString::Parse(const Byte *p, unsigned size)
 {
-  Data.SetCapacity(size);
-  memcpy(Data, p, size);
+  Data.CopyFrom(p, size);
 }
 
-static UString ParseDString(const Byte *data, int size)
+static UString ParseDString(const Byte *data, unsigned size)
 {
   UString res;
   wchar_t *p;
@@ -78,8 +88,8 @@ static UString ParseDString(const Byte *data, int size)
     Byte type = data[0];
     if (type == 8)
     {
-      p = res.GetBuffer((int)size + 1);
-      for (int i = 1; i < size; i++)
+      p = res.GetBuffer(size);
+      for (unsigned i = 1; i < size; i++)
       {
         wchar_t c = data[i];
         if (c == 0)
@@ -89,10 +99,10 @@ static UString ParseDString(const Byte *data, int size)
     }
     else if (type == 16)
     {
-      p = res.GetBuffer((int)size / 2 + 1);
-      for (int i = 1; i + 2 <= size; i += 2)
+      p = res.GetBuffer(size / 2);
+      for (unsigned i = 1; i + 2 <= size; i += 2)
       {
-        wchar_t c = ((wchar_t)data[i] << 8) | data[i + 1];
+        wchar_t c = GetBe16(data + i);
         if (c == 0)
           break;
         *p++ = c;
@@ -106,12 +116,13 @@ static UString ParseDString(const Byte *data, int size)
   return res;
 }
 
-UString CDString::   GetString() const { return ParseDString(Data, (int)Data.GetCapacity()); }
 UString CDString128::GetString() const
 {
-  int size = Data[sizeof(Data) - 1];
-  return ParseDString(Data, MyMin(size, (int)(sizeof(Data) - 1)));
+  unsigned size = Data[sizeof(Data) - 1];
+  return ParseDString(Data, MyMin(size, (unsigned)(sizeof(Data) - 1)));
 }
+
+UString CDString::GetString() const { return ParseDString(Data, (unsigned)Data.Size()); }
 
 void CTime::Parse(const Byte *buf) { memcpy(Data, buf, sizeof(Data)); }
 
@@ -161,8 +172,8 @@ HRESULT CTag::Parse(const Byte *buf, size_t size)
     return S_FALSE;
   Byte sum = 0;
   int i;
-  for (i = 0; i <  4; i++) sum = sum + buf[i];
-  for (i = 5; i < 16; i++) sum = sum + buf[i];
+  for (i = 0; i <  4; i++) sum = (Byte)(sum + buf[i]);
+  for (i = 5; i < 16; i++) sum = (Byte)(sum + buf[i]);
   if (sum != buf[4] || buf[5] != 0) return S_FALSE;
 
   Id = Get16(buf);
@@ -182,27 +193,27 @@ HRESULT CTag::Parse(const Byte *buf, size_t size)
 
 enum EDescriptorType
 {
-  DESC_TYPE_SpoaringTable = 0, // UDF
-  DESC_TYPE_PrimVol = 1,
-  DESC_TYPE_AnchorVolPtr = 2,
-  DESC_TYPE_VolPtr = 3,
-  DESC_TYPE_ImplUseVol = 4,
-  DESC_TYPE_Partition = 5,
-  DESC_TYPE_LogicalVol = 6,
-  DESC_TYPE_UnallocSpace = 7,
-  DESC_TYPE_Terminating = 8,
+  DESC_TYPE_SpoaringTable       = 0, // UDF
+  DESC_TYPE_PrimVol             = 1,
+  DESC_TYPE_AnchorVolPtr        = 2,
+  DESC_TYPE_VolPtr              = 3,
+  DESC_TYPE_ImplUseVol          = 4,
+  DESC_TYPE_Partition           = 5,
+  DESC_TYPE_LogicalVol          = 6,
+  DESC_TYPE_UnallocSpace        = 7,
+  DESC_TYPE_Terminating         = 8,
   DESC_TYPE_LogicalVolIntegrity = 9,
-  DESC_TYPE_FileSet = 256,
-  DESC_TYPE_FileId  = 257,
-  DESC_TYPE_AllocationExtent = 258,
-  DESC_TYPE_Indirect = 259,
-  DESC_TYPE_Terminal = 260,
-  DESC_TYPE_File = 261,
-  DESC_TYPE_ExtendedAttrHeader = 262,
-  DESC_TYPE_UnallocatedSpace = 263,
-  DESC_TYPE_SpaceBitmap = 264,
-  DESC_TYPE_PartitionIntegrity = 265,
-  DESC_TYPE_ExtendedFile = 266
+  DESC_TYPE_FileSet             = 256,
+  DESC_TYPE_FileId              = 257,
+  DESC_TYPE_AllocationExtent    = 258,
+  DESC_TYPE_Indirect            = 259,
+  DESC_TYPE_Terminal            = 260,
+  DESC_TYPE_File                = 261,
+  DESC_TYPE_ExtendedAttrHeader  = 262,
+  DESC_TYPE_UnallocatedSpace    = 263,
+  DESC_TYPE_SpaceBitmap         = 264,
+  DESC_TYPE_PartitionIntegrity  = 265,
+  DESC_TYPE_ExtendedFile        = 266
 };
 
 
@@ -237,6 +248,8 @@ void CLongAllocDesc::Parse(const Byte *buf)
 bool CInArchive::CheckExtent(int volIndex, int partitionRef, UInt32 blockPos, UInt32 len) const
 {
   const CLogVol &vol = LogVols[volIndex];
+  if (partitionRef >= (int)vol.PartitionMaps.Size())
+    return false;
   const CPartition &partition = Partitions[vol.PartitionMaps[partitionRef].PartitionIndex];
   UInt64 offset = ((UInt64)partition.Pos << SecLogSize) + (UInt64)blockPos * vol.BlockSize;
   return (offset + len) <= (((UInt64)partition.Pos + partition.Len) << SecLogSize);
@@ -244,7 +257,7 @@ bool CInArchive::CheckExtent(int volIndex, int partitionRef, UInt32 blockPos, UI
 
 bool CInArchive::CheckItemExtents(int volIndex, const CItem &item) const
 {
-  for (int i = 0; i < item.Extents.Size(); i++)
+  FOR_VECTOR (i, item.Extents)
   {
     const CMyExtent &e = item.Extents[i];
     if (!CheckExtent(volIndex, e.PartitionRef, e.Pos, e.GetLen()))
@@ -259,9 +272,14 @@ HRESULT CInArchive::Read(int volIndex, int partitionRef, UInt32 blockPos, UInt32
     return S_FALSE;
   const CLogVol &vol = LogVols[volIndex];
   const CPartition &partition = Partitions[vol.PartitionMaps[partitionRef].PartitionIndex];
-  RINOK(_stream->Seek(((UInt64)partition.Pos << SecLogSize) +
-      (UInt64)blockPos * vol.BlockSize, STREAM_SEEK_SET, NULL));
-  return ReadStream_FALSE(_stream, buf, len);
+  UInt64 offset = ((UInt64)partition.Pos << SecLogSize) + (UInt64)blockPos * vol.BlockSize;
+  RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
+  HRESULT res = ReadStream_FALSE(_stream, buf, len);
+  if (res == S_FALSE && offset + len > FileSize)
+    UnexpectedEnd = true;
+  RINOK(res);
+  UpdatePhySize(offset + len);
+  return S_OK;
 }
 
 HRESULT CInArchive::Read(int volIndex, const CLongAllocDesc &lad, Byte *buf)
@@ -278,9 +296,9 @@ HRESULT CInArchive::ReadFromFile(int volIndex, const CItem &item, CByteBuffer &b
     buf = item.InlineData;
     return S_OK;
   }
-  buf.SetCapacity((size_t)item.Size);
+  buf.Alloc((size_t)item.Size);
   size_t pos = 0;
-  for (int i = 0; i < item.Extents.Size(); i++)
+  FOR_VECTOR (i, item.Extents)
   {
     const CMyExtent &e = item.Extents[i];
     UInt32 len = e.GetLen();
@@ -407,9 +425,8 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
   if (lad.GetLen() != vol.BlockSize)
     return S_FALSE;
 
-  CByteBuffer buf;
   size_t size = lad.GetLen();
-  buf.SetCapacity(size);
+  CByteBuffer buf(size);
   RINOK(Read(volIndex, lad, buf));
 
   CTag tag;
@@ -456,8 +473,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
   if (desctType == ICB_DESC_TYPE_INLINE)
   {
     item.IsInline = true;
-    item.InlineData.SetCapacity(allocDescriptorsLen);
-    memcpy(item.InlineData, p + pos, allocDescriptorsLen);
+    item.InlineData.CopyFrom(p + pos, allocDescriptorsLen);
   }
   else
   {
@@ -504,7 +520,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
     item.InlineData.Free();
 
     const Byte *p = buf;
-    size = buf.GetCapacity();
+    size = buf.Size();
     size_t processedTotal = 0;
     for (; processedTotal < size;)
     {
@@ -519,7 +535,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
         // file.ImplUse = fileId.ImplUse;
         file.Id = fileId.Id;
         
-        _fileNameLengthTotal += file.Id.Data.GetCapacity();
+        _fileNameLengthTotal += file.Id.Data.Size();
         if (_fileNameLengthTotal > kFileNameLengthTotalMax)
           return S_FALSE;
         
@@ -538,9 +554,9 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
       return S_FALSE;
     _numExtents += item.Extents.Size();
 
-    if (item.InlineData.GetCapacity() > kInlineExtentsSizeMax - _inlineExtentsSize)
+    if (item.InlineData.Size() > kInlineExtentsSizeMax - _inlineExtentsSize)
       return S_FALSE;
-    _inlineExtentsSize += item.InlineData.GetCapacity();
+    _inlineExtentsSize += item.InlineData.Size();
   }
 
   return S_OK;
@@ -548,7 +564,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
 
 HRESULT CInArchive::FillRefs(CFileSet &fs, int fileIndex, int parent, int numRecurseAllowed)
 {
-  if (_numRefs % 10000 == 0)
+  if ((_numRefs & 0xFFF) == 0)
   {
     RINOK(_progress->SetCompleted());
   }
@@ -563,23 +579,47 @@ HRESULT CInArchive::FillRefs(CFileSet &fs, int fileIndex, int parent, int numRec
   parent = fs.Refs.Size();
   fs.Refs.Add(ref);
   const CItem &item = Items[Files[fileIndex].ItemIndex];
-  for (int i = 0; i < item.SubFiles.Size(); i++)
+  FOR_VECTOR (i, item.SubFiles)
   {
     RINOK(FillRefs(fs, item.SubFiles[i], parent, numRecurseAllowed));
   }
   return S_OK;
 }
 
+API_FUNC_IsArc IsArc_Udf(const Byte *p, size_t size)
+{
+  UInt32 res = k_IsArc_Res_NO;
+  unsigned SecLogSize;
+  for (SecLogSize = 11;; SecLogSize -= 3)
+  {
+    if (SecLogSize < 8)
+      return res;
+    UInt32 offset = (UInt32)256 << SecLogSize;
+    size_t bufSize = 1 << SecLogSize;
+    if (offset + bufSize > size)
+      res = k_IsArc_Res_NEED_MORE;
+    else
+    {
+      CTag tag;
+      if (tag.Parse(p + offset, bufSize) == S_OK)
+        if (tag.Id == DESC_TYPE_AnchorVolPtr)
+          return k_IsArc_Res_YES;
+    }
+  }
+}
+
 HRESULT CInArchive::Open2()
 {
   Clear();
+  UInt64 fileSize;
+  RINOK(_stream->Seek(0, STREAM_SEEK_END, &fileSize));
+  FileSize = fileSize;
 
   // Some UDFs contain additional pad zeros (2 KB).
   // Seek to STREAM_SEEK_END for direct DVD reading can return 8 KB more, so we check last 16 KB.
   // And when we read last block, result read size can be smaller than required size.
 
-  UInt64 fileSize;
-  RINOK(_stream->Seek(0, STREAM_SEEK_END, &fileSize));
+  /*
   const size_t kBufSize = 1 << 14;
   Byte buf[kBufSize];
   size_t readSize = (fileSize < kBufSize) ? (size_t)fileSize : kBufSize;
@@ -598,22 +638,69 @@ HRESULT CInArchive::Open2()
       if (tag.Id == DESC_TYPE_AnchorVolPtr)
         break;
   }
-
+  PhySize = fileSize;
   CExtent extentVDS;
   extentVDS.Parse(buf + i + 16);
+  */
+  const size_t kBufSize = 1 << 11;
+  Byte buf[kBufSize];
+  for (SecLogSize = 11;; SecLogSize -= 3)
+  {
+    if (SecLogSize < 8)
+      return S_FALSE;
+    UInt32 offset = (UInt32)256 << SecLogSize;
+    if (offset >= fileSize)
+      continue;
+    RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
+    size_t bufSize = 1 << SecLogSize;
+    size_t readSize = bufSize;
+    RINOK(ReadStream(_stream, buf, &readSize));
+    if (readSize == bufSize)
+    {
+      CTag tag;
+      if (tag.Parse(buf, readSize) == S_OK)
+        if (tag.Id == DESC_TYPE_AnchorVolPtr)
+          break;
+    }
+  }
+  PhySize = (UInt32)(256 + 1) << SecLogSize;
+  IsArc = true;
 
-  for (UInt32 location = extentVDS.Pos; ; location++)
+  CExtent extentVDS;
+  extentVDS.Parse(buf + 16);
+  {
+    CExtent extentVDS2;
+    extentVDS2.Parse(buf + 24);
+    UpdatePhySize(((UInt64)extentVDS.Pos << SecLogSize) + extentVDS.Len);
+    UpdatePhySize(((UInt64)extentVDS2.Pos << SecLogSize) + extentVDS2.Len);
+  }
+
+  for (UInt32 location = 0; ; location++)
   {
     size_t bufSize = 1 << SecLogSize;
     size_t pos = 0;
-    RINOK(_stream->Seek((UInt64)location << SecLogSize, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream_FALSE(_stream, buf, bufSize));
+    if (((UInt64)(location + 1) << SecLogSize) > extentVDS.Len)
+      return S_FALSE;
+
+    UInt64 offs = (UInt64)(extentVDS.Pos + location) << SecLogSize;
+    RINOK(_stream->Seek(offs, STREAM_SEEK_SET, NULL));
+    HRESULT res = ReadStream_FALSE(_stream, buf, bufSize);
+    if (res == S_FALSE && offs + bufSize > FileSize)
+      UnexpectedEnd = true;
+    RINOK(res);
+
+
     CTag tag;
     RINOK(tag.Parse(buf + pos, bufSize - pos));
     if (tag.Id == DESC_TYPE_Terminating)
       break;
+    
     if (tag.Id == DESC_TYPE_Partition)
     {
+      // Partition Descriptor
+      // ECMA 167 3/10.5
+      // UDF / 2.2.14
+
       if (Partitions.Size() >= kNumPartitionsMax)
         return S_FALSE;
       CPartition partition;
@@ -631,10 +718,15 @@ HRESULT CInArchive::Open2()
       // partition.ImplId.Parse(buf + 196);
       // memcpy(partition.ImplUse, buf + 228, sizeof(partition.ImplUse));
 
+      PRF(printf("\nPartition number = %2d   pos = %d   len = %d", partition.Number, partition.Pos, partition.Len));
       Partitions.Add(partition);
     }
     else if (tag.Id == DESC_TYPE_LogicalVol)
     {
+      /* Logical Volume Descriptor
+          ECMA 3/10.6
+          UDF 2.60 2.2.4 */
+
       if (LogVols.Size() >= kNumLogVolumesMax)
         return S_FALSE;
       CLogVol vol;
@@ -647,6 +739,8 @@ HRESULT CInArchive::Open2()
       
       // memcpy(vol.ContentsUse, buf + 248, sizeof(vol.ContentsUse));
       vol.FileSetLocation.Parse(buf + 248);
+      /* the extent in which the first File Set Descriptor Sequence
+         of the logical volume is recorded */
 
       // UInt32 mapTableLength = Get32(buf + 264);
       UInt32 numPartitionMaps = Get32(buf + 268);
@@ -654,6 +748,8 @@ HRESULT CInArchive::Open2()
         return S_FALSE;
       // vol.ImplId.Parse(buf + 272);
       // memcpy(vol.ImplUse, buf + 128, sizeof(vol.ImplUse));
+
+      PRF(printf("\nLogicalVol numPartitionMaps = %2d", numPartitionMaps));
       size_t pos = 440;
       for (UInt32 i = 0; i < numPartitionMaps; i++)
       {
@@ -670,10 +766,33 @@ HRESULT CInArchive::Open2()
         // memcpy(pm.Data, buf + pos + 2, pm.Length - 2);
         if (pm.Type == 1)
         {
-          if (pos + 6 > bufSize)
+          if (len != 6) // < 6
             return S_FALSE;
           // pm.VolSeqNumber = Get16(buf + pos + 2);
           pm.PartitionNumber = Get16(buf + pos + 4);
+          PRF(printf("\nPartitionMap type 1 PartitionNumber = %2d", pm.PartitionNumber));
+        }
+        else if (pm.Type == 2)
+        {
+          if (len != 64)
+            return S_FALSE;
+          /* ECMA 10.7.3 / Type 2 Partition Map
+             62 bytes: Partition Identifier. */
+
+          /* UDF 2.6
+             2.2.8 Virtual Partition Map
+             This is an extension of ECMA 167 to expand its scope to include
+             sequentially written media (eg. CD-R).  This extension is for a
+             Partition Map entry to describe a virtual space.   */
+
+          // It's not implemented still.
+          if (Get16(buf + pos + 2) != 0)
+            return S_FALSE;
+          // pm.VolSeqNumber = Get16(buf + pos + 36);
+          pm.PartitionNumber = Get16(buf + pos + 38);
+          PRF(printf("\nPartitionMap type 2 PartitionNumber = %2d", pm.PartitionNumber));
+          // Unsupported = true;
+          return S_FALSE;
         }
         else
           return S_FALSE;
@@ -686,21 +805,26 @@ HRESULT CInArchive::Open2()
 
   UInt64 totalSize = 0;
 
-  int volIndex;
+  unsigned volIndex;
   for (volIndex = 0; volIndex < LogVols.Size(); volIndex++)
   {
     CLogVol &vol = LogVols[volIndex];
-    for (int pmIndex = 0; pmIndex < vol.PartitionMaps.Size(); pmIndex++)
+    FOR_VECTOR (pmIndex, vol.PartitionMaps)
     {
       CPartitionMap &pm = vol.PartitionMaps[pmIndex];
-      int i;
+      unsigned i;
       for (i = 0; i < Partitions.Size(); i++)
       {
         CPartition &part = Partitions[i];
         if (part.Number == pm.PartitionNumber)
         {
           if (part.VolIndex >= 0)
-            return S_FALSE;
+          {
+            // it's for 2.60. Fix it
+            if (part.VolIndex != (int)volIndex)
+              return S_FALSE;
+            // return S_FALSE;
+          }
           pm.PartitionIndex = i;
           part.VolIndex = volIndex;
 
@@ -715,9 +839,13 @@ HRESULT CInArchive::Open2()
 
   RINOK(_progress->SetTotal(totalSize));
 
+  PRF(printf("\n Read files"));
+
   for (volIndex = 0; volIndex < LogVols.Size(); volIndex++)
   {
     CLogVol &vol = LogVols[volIndex];
+
+    PRF(printf("\nLogVol %2d", volIndex));
 
     CLongAllocDesc nextExtent = vol.FileSetLocation;
     // while (nextExtent.ExtentLen != 0)
@@ -725,17 +853,25 @@ HRESULT CInArchive::Open2()
     {
       if (nextExtent.GetLen() < 512)
         return S_FALSE;
-      CByteBuffer buf;
-      buf.SetCapacity(nextExtent.GetLen());
+      CByteBuffer buf(nextExtent.GetLen());
       RINOK(Read(volIndex, nextExtent, buf));
       const Byte *p = buf;
       size_t size = nextExtent.GetLen();
 
       CTag tag;
       RINOK(tag.Parse(p, size));
+
+      if (tag.Id == DESC_TYPE_ExtendedFile)
+      {
+        // ECMA 4 / 14.17
+        // 2.60 ??
+        return S_FALSE;
+      }
+
       if (tag.Id != DESC_TYPE_FileSet)
         return S_FALSE;
       
+      PRF(printf("\n FileSet", volIndex));
       CFileSet fs;
       fs.RecodringTime.Parse(p + 16);
       // fs.InterchangeLevel = Get16(p + 18);
@@ -757,16 +893,76 @@ HRESULT CInArchive::Open2()
       // nextExtent.Parse(p + 448);
     }
 
-    for (int fsIndex = 0; fsIndex < vol.FileSets.Size(); fsIndex++)
+    FOR_VECTOR (fsIndex, vol.FileSets)
     {
       CFileSet &fs = vol.FileSets[fsIndex];
-      int fileIndex = Files.Size();
-      Files.Add(CFile());
-      RINOK(ReadFileItem(volIndex, fsIndex, fs.RootDirICB, kNumRecureseLevelsMax));
-      RINOK(FillRefs(fs, fileIndex, -1, kNumRecureseLevelsMax));
+      unsigned fileIndex = Files.Size();
+      Files.AddNew();
+      RINOK(ReadFileItem(volIndex, fsIndex, fs.RootDirICB, kNumRecursionLevelsMax));
+      RINOK(FillRefs(fs, fileIndex, -1, kNumRecursionLevelsMax));
     }
   }
 
+
+  for (volIndex = 0; volIndex < LogVols.Size(); volIndex++)
+  {
+    const CLogVol &vol = LogVols[volIndex];
+    // bool showFileSetName = (vol.FileSets.Size() > 1);
+    FOR_VECTOR (fsIndex, vol.FileSets)
+    {
+      const CFileSet &fs = vol.FileSets[fsIndex];
+      for (unsigned i =
+          // ((showVolName || showFileSetName) ? 0 : 1)
+            0; i < fs.Refs.Size(); i++)
+      {
+        const CRef &ref = vol.FileSets[fsIndex].Refs[i];
+        const CFile &file = Files[ref.FileIndex];
+        const CItem &item = Items[file.ItemIndex];
+        UInt64 size = item.Size;
+
+        if (!item.IsRecAndAlloc() || !item.CheckChunkSizes() || !CheckItemExtents(volIndex, item))
+          continue;
+
+        FOR_VECTOR (extentIndex, item.Extents)
+        {
+          const CMyExtent &extent = item.Extents[extentIndex];
+          UInt32 len = extent.GetLen();
+          if (len == 0)
+            continue;
+          if (size < len)
+            break;
+          
+          int partitionIndex = vol.PartitionMaps[extent.PartitionRef].PartitionIndex;
+          UInt32 logBlockNumber = extent.Pos;
+          const CPartition &partition = Partitions[partitionIndex];
+          UInt64 offset = ((UInt64)partition.Pos << SecLogSize) +
+              (UInt64)logBlockNumber * vol.BlockSize;
+          UpdatePhySize(offset + len);
+        }
+      }
+    }
+  }
+
+  {
+    UInt32 secMask = ((UInt32)1 << SecLogSize) - 1;
+    PhySize = (PhySize + secMask) & ~(UInt64)secMask;
+  }
+  if (PhySize < fileSize)
+  {
+    RINOK(_stream->Seek(PhySize, STREAM_SEEK_SET, NULL));
+    size_t bufSize = 1 << SecLogSize;
+    size_t readSize = bufSize;
+    RINOK(ReadStream(_stream, buf, &readSize));
+    if (readSize == bufSize)
+    {
+      CTag tag;
+      if (tag.Parse(buf, readSize) == S_OK)
+        if (tag.Id == DESC_TYPE_AnchorVolPtr)
+        {
+          PhySize += bufSize;
+        }
+    }
+  }
   return S_OK;
 }
 
@@ -774,15 +970,38 @@ HRESULT CInArchive::Open(IInStream *inStream, CProgressVirt *progress)
 {
   _progress = progress;
   _stream = inStream;
+  HRESULT res = Open2();
+  if (res == S_FALSE && IsArc && !UnexpectedEnd)
+    Unsupported = true;
+  return res;
+
+  /*
   HRESULT res;
-  try { res = Open2(); }
-  catch(...) { Clear(); res = S_FALSE; }
+  try
+  {
+    res = Open2();
+  }
+  catch(...)
+  {
+    // Clear();
+    // res = S_FALSE;
+    _stream.Release();
+    throw;
+  }
   _stream.Release();
   return res;
+  */
 }
 
 void CInArchive::Clear()
 {
+  IsArc = false;
+  Unsupported = false;
+  UnexpectedEnd = false;
+
+  PhySize = 0;
+  FileSize = 0;
+
   Partitions.Clear();
   LogVols.Clear();
   Items.Clear();
@@ -797,7 +1016,7 @@ void CInArchive::Clear()
 UString CInArchive::GetComment() const
 {
   UString res;
-  for (int i = 0; i < LogVols.Size(); i++)
+  FOR_VECTOR (i, LogVols)
   {
     if (i > 0)
       res += L" ";
@@ -827,7 +1046,7 @@ static void UpdateWithName(UString &res, const UString &addString)
   if (res.IsEmpty())
     res = addString;
   else
-    res = addString + WCHAR_PATH_SEPARATOR + res;
+    res.Insert(0, addString + WCHAR_PATH_SEPARATOR);
 }
 
 UString CInArchive::GetItemPath(int volIndex, int fsIndex, int refIndex,
@@ -851,7 +1070,7 @@ UString CInArchive::GetItemPath(int volIndex, int fsIndex, int refIndex,
   if (showFsName)
   {
     wchar_t s[32];
-    ConvertUInt64ToString(fsIndex, s);
+    ConvertUInt32ToString(fsIndex, s);
     UString newName = L"File Set ";
     newName += s;
     UpdateWithName(name, newName);
@@ -860,7 +1079,7 @@ UString CInArchive::GetItemPath(int volIndex, int fsIndex, int refIndex,
   if (showVolName)
   {
     wchar_t s[32];
-    ConvertUInt64ToString(volIndex, s);
+    ConvertUInt32ToString(volIndex, s);
     UString newName = s;
     UString newName2 = vol.GetName();
     if (newName2.IsEmpty())

@@ -3,79 +3,19 @@
 #ifndef __BROWSE_DIALOG_H
 #define __BROWSE_DIALOG_H
 
-#ifdef UNDER_CE
-#define USE_MY_BROWSE_DIALOG
-#endif
+#include "../../../Common/MyString.h"
 
-#ifdef USE_MY_BROWSE_DIALOG
+bool MyBrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR path, UString &resultPath);
+bool MyBrowseForFile(HWND owner, LPCWSTR title, LPCWSTR path, LPCWSTR filterDescription, LPCWSTR filter, UString &resultPath);
 
-#include "Windows/FileFind.h"
+/* CorrectFsPath removes undesirable characters in names (dots and spaces at the end of file)
+   But it doesn't change "bad" name in any of the following caes:
+     - path is Super Path (with \\?\ prefix)
+     - path is relative and relBase is Super Path
+     - there is file or dir in filesystem with specified "bad" name */
 
-#include "Windows/Control/Dialog.h"
-#include "Windows/Control/ListView.h"
+bool CorrectFsPath(const UString &relBase, const UString &path, UString &result);
 
-#include "BrowseDialogRes.h"
-#include "SysIconUtils.h"
-
-class CBrowseDialog: public NWindows::NControl::CModalDialog
-{
-  NWindows::NControl::CListView _list;
-  CObjectVector<NWindows::NFile::NFind::CFileInfo> _files;
-  CExtToIconMap _extToIconMap;
-  int _sortIndex;
-  bool _ascending;
-  bool _showDots;
-
-  virtual bool OnInit();
-  virtual bool OnSize(WPARAM wParam, int xSize, int ySize);
-  virtual bool OnNotify(UINT controlID, LPNMHDR header);
-  virtual void OnOK();
-
-  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
-  virtual bool OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result);
-
-  void FinishOnOK();
-  HRESULT Reload(const UString &pathPrefix, const UString &selectedName);
-  HRESULT Reload();
-  void OpenParentFolder();
-
-  void OnItemEnter();
-
-  int GetRealItemIndex(int indexInListView) const
-  {
-    LPARAM param;
-    if (!_list.GetItemParam(indexInListView, param))
-      return (int)-1;
-    return (int)param;
-  }
-
-  void ShowError(LPCWSTR s);
-  void ShowSelectError();
-public:
-  UString Title;
-  UString Path;
-  bool FolderMode;
-
-  CBrowseDialog(): FolderMode(true), _showDots(false) {}
-
-  INT_PTR Create(HWND parent = 0) { return CModalDialog::Create(IDD_DIALOG_BROWSE, parent); }
-  int CompareItems(LPARAM lParam1, LPARAM lParam2);
-};
-
-bool MyBrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR initialFolder, UString &resultPath);
-bool MyBrowseForFile(HWND owner, LPCWSTR title, LPCWSTR initialFolder, LPCWSTR s, UString &resultPath);
-
-#else
-
-#include "Windows/CommonDialog.h"
-#include "Windows/Shell.h"
-
-#define MyBrowseForFolder(h, title, initialFolder, resultPath) \
-  NShell::BrowseForFolder(h, title, initialFolder, resultPath)
-
-#define MyBrowseForFile(h, title, initialFolder, s, resultPath) \
-  MyGetOpenFileName(h, title, initialFolder, s, resultPath)
-
-#endif
+bool Dlg_CreateFolder(HWND wnd, UString &destName);
 
 #endif

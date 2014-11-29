@@ -1,14 +1,16 @@
 PROG = 7za.dll
 DEF_FILE = ../../Archive/Archive2.def
-CFLAGS = $(CFLAGS) -I ../../../ \
+CFLAGS = $(CFLAGS) \
   -DDEFLATE_EXTRACT_ONLY \
   -DBZIP2_EXTRACT_ONLY \
 
 COMMON_OBJS = \
   $O\CRC.obj \
+  $O\CrcReg.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
   $O\MyString.obj \
+  $O\Sha256Reg.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\MyVector.obj \
@@ -18,6 +20,7 @@ WIN_OBJS = \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
+  $O\FileName.obj \
   $O\PropVariant.obj \
   $O\Synchronization.obj \
   $O\System.obj \
@@ -34,9 +37,11 @@ WIN_OBJS = \
   $O\MethodProps.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\PropId.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\UniqBlocks.obj \
   $O\VirtThread.obj \
 
 AR_OBJS = \
@@ -85,12 +90,10 @@ COMPRESS_OBJS = \
   $O\ByteSwap.obj \
   $O\BZip2Crc.obj \
   $O\BZip2Decoder.obj \
-  $O\BZip2Encoder.obj \
   $O\BZip2Register.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
   $O\DeflateDecoder.obj \
-  $O\DeflateEncoder.obj \
   $O\DeflateRegister.obj \
   $O\DeltaFilter.obj \
   $O\Lzma2Decoder.obj \
@@ -108,6 +111,7 @@ CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
   $O\MyAes.obj \
+  $O\MyAesReg.obj \
   $O\RandGen.obj \
 
 C_OBJS = \
@@ -136,45 +140,4 @@ C_OBJS = \
 !include "../../Aes.mak"
 !include "../../Crc.mak"
 
-OBJS = \
-  $O\StdAfx.obj \
-  $(CONSOLE_OBJS) \
-  $(COMMON_OBJS) \
-  $(WIN_OBJS) \
-  $(7ZIP_COMMON_OBJS) \
-  $(AR_OBJS) \
-  $(AR_COMMON_OBJS) \
-  $(7Z_OBJS) \
-  $(COMPRESS_OBJS) \
-  $(CRYPTO_OBJS) \
-  $(C_OBJS) \
-  $(ASM_OBJS) \
-  $O\resource.res
-
-
-!include "../../../Build.mak"
-
-$(COMMON_OBJS): ../../../Common/$(*B).cpp
-	$(COMPL)
-$(WIN_OBJS): ../../../Windows/$(*B).cpp
-	$(COMPL)
-$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
-	$(COMPL)
-$(AR_OBJS): ../../Archive/$(*B).cpp
-	$(COMPL)
-$(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
-	$(COMPL)
-
-$(7Z_OBJS): ../../Archive/7z/$(*B).cpp
-	$(COMPL)
-
-$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
-	$(COMPL_O2)
-
-$(CRYPTO_OBJS): ../../Crypto/$(*B).cpp
-	$(COMPL_O2)
-
-$(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-
-!include "../../Asm.mak"
+!include "../../7zip.mak"

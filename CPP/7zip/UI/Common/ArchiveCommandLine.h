@@ -3,15 +3,16 @@
 #ifndef __ARCHIVE_COMMAND_LINE_H
 #define __ARCHIVE_COMMAND_LINE_H
 
-#include "Common/CommandLineParser.h"
-#include "Common/Wildcard.h"
+#include "../../../Common/CommandLineParser.h"
+#include "../../../Common/Wildcard.h"
 
 #include "Extract.h"
+#include "HashCalc.h"
 #include "Update.h"
 
-struct CArchiveCommandLineException: public AString
+struct CArcCmdLineException: public UString
 {
-  CArchiveCommandLineException(const char *errorMessage): AString(errorMessage) {}
+  CArcCmdLineException(const char *a, const wchar_t *u = NULL);
 };
 
 namespace NCommandType { enum EEnum
@@ -21,35 +22,33 @@ namespace NCommandType { enum EEnum
   kDelete,
   kTest,
   kExtract,
-  kFullExtract,
+  kExtractFull,
   kList,
   kBenchmark,
-  kInfo
+  kInfo,
+  kHash,
+  kRename
 };}
 
-namespace NRecursedType { enum EEnum
-{
-  kRecursed,
-  kWildCardOnlyRecursed,
-  kNonRecursed
-};}
-
-struct CArchiveCommand
+struct CArcCommand
 {
   NCommandType::EEnum CommandType;
+
   bool IsFromExtractGroup() const;
   bool IsFromUpdateGroup() const;
-  bool IsTestMode() const { return CommandType == NCommandType::kTest; }
+  bool IsTestCommand() const { return CommandType == NCommandType::kTest; }
   NExtract::NPathMode::EEnum GetPathMode() const;
 };
 
-struct CArchiveCommandLineOptions
+struct CArcCmdLineOptions
 {
   bool HelpMode;
 
   #ifdef _WIN32
   bool LargePages;
   #endif
+  bool CaseSensitiveChange;
+  bool CaseSensitive;
 
   bool IsInTerminal;
   bool IsStdOutTerminal;
@@ -60,10 +59,9 @@ struct CArchiveCommandLineOptions
 
   bool YesToAll;
   bool ShowDialog;
-  // NWildcard::CCensor ArchiveWildcardCensor;
-  NWildcard::CCensor WildcardCensor;
+  NWildcard::CCensor Censor;
 
-  CArchiveCommand Command;
+  CArcCommand Command;
   UString ArchiveName;
 
   #ifndef _NO_CRYPTO
@@ -72,35 +70,52 @@ struct CArchiveCommandLineOptions
   #endif
 
   bool TechMode;
-  // Extract
-  bool CalcCrc;
+  
+  UStringVector HashMethods;
+
   bool AppendName;
-  FString OutputDir;
-  NExtract::NOverwriteMode::EEnum OverwriteMode;
   UStringVector ArchivePathsSorted;
   UStringVector ArchivePathsFullSorted;
   CObjectVector<CProperty> Properties;
 
+  CExtractOptionsBase ExtractOptions;
+
+  CBoolPair NtSecurity;
+  CBoolPair AltStreams;
+  CBoolPair HardLinks;
+  CBoolPair SymLinks;
+
   CUpdateOptions UpdateOptions;
+  CHashOptions HashOptions;
   UString ArcType;
+  UStringVector ExcludedArcTypes;
   bool EnablePercents;
 
   // Benchmark
   UInt32 NumIterations;
 
-  CArchiveCommandLineOptions(): StdInMode(false), StdOutMode(false) {};
+  CArcCmdLineOptions():
+      StdInMode(false),
+      StdOutMode(false),
+      CaseSensitiveChange(false),
+      CaseSensitive(false)
+      {};
 };
 
-class CArchiveCommandLineParser
+class CArcCmdLineParser
 {
   NCommandLineParser::CParser parser;
 public:
-  CArchiveCommandLineParser();
-  void Parse1(const UStringVector &commandStrings, CArchiveCommandLineOptions &options);
-  void Parse2(CArchiveCommandLineOptions &options);
+  CArcCmdLineParser();
+  void Parse1(const UStringVector &commandStrings, CArcCmdLineOptions &options);
+  void Parse2(CArcCmdLineOptions &options);
 };
 
-void EnumerateDirItemsAndSort(NWildcard::CCensor &wildcardCensor,
+void EnumerateDirItemsAndSort(
+    bool storeAltStreams,
+    NWildcard::CCensor &censor,
+    NWildcard::ECensorPathMode pathMode,
+    const UString &addPathPrefix,
     UStringVector &sortedPaths,
     UStringVector &sortedFullPaths);
 

@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /FAs /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /FAs /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -52,7 +52,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\UTIL\7z.exe" /OPT:NOWIN98
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\UTIL\7z.exe" /OPT:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "Console - Win32 Debug"
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -77,7 +77,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\UTIL\7z.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\UTIL\7z.exe" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "Console - Win32 ReleaseU"
 
@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -102,7 +102,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\UTIL\7z.exe"
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\UTIL\7zn.exe" /OPT:NOWIN98
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386 /out:"C:\UTIL\7zn.exe" /OPT:NOWIN98
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "Console - Win32 DebugU"
@@ -120,7 +120,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "../../../" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "../../../" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -128,7 +128,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\UTIL\7z.exe" /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\UTIL\7z.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\UTIL\7z.exe" /pdbtype:sept
 
 !ENDIF 
 
@@ -181,6 +181,14 @@ SOURCE=.\ExtractCallbackConsole.cpp
 # Begin Source File
 
 SOURCE=.\ExtractCallbackConsole.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\HashCon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\HashCon.h
 # End Source File
 # Begin Source File
 
@@ -244,11 +252,11 @@ SOURCE=..\..\..\Windows\DLL.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Error.cpp
+SOURCE=..\..\..\Windows\ErrorMsg.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Error.h
+SOURCE=..\..\..\Windows\ErrorMsg.h
 # End Source File
 # Begin Source File
 
@@ -276,11 +284,27 @@ SOURCE=..\..\..\Windows\FileIO.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\FileLink.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileMapping.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\FileName.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Windows\FileName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileSystem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileSystem.h
 # End Source File
 # Begin Source File
 
@@ -304,11 +328,11 @@ SOURCE=..\..\..\Windows\PropVariant.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\PropVariantConversions.cpp
+SOURCE=..\..\..\Windows\PropVariantConv.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\PropVariantConversions.h
+SOURCE=..\..\..\Windows\PropVariantConv.h
 # End Source File
 # Begin Source File
 
@@ -320,6 +344,10 @@ SOURCE=..\..\..\Windows\Registry.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Synchronization.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\System.cpp
 # End Source File
 # Begin Source File
@@ -328,20 +356,20 @@ SOURCE=..\..\..\Windows\System.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Time.cpp
+SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Time.h
+SOURCE=..\..\..\Windows\TimeUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\TimeUtils.h
 # End Source File
 # End Group
 # Begin Group "Common"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\Common\Buffer.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.cpp
@@ -380,6 +408,10 @@ SOURCE=..\..\..\Common\ListFileUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyBuffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File
@@ -389,6 +421,10 @@ SOURCE=..\..\..\Common\MyString.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyTypes.h
 # End Source File
 # Begin Source File
 
@@ -532,6 +568,18 @@ SOURCE=..\Common\ExtractingFilePath.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\ExtractMode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\HashCalc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\HashCalc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\IFileExtractCallback.h
 # End Source File
 # Begin Source File
@@ -668,6 +716,14 @@ SOURCE=..\..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\LimitedStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\LimitedStreams.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\MethodProps.cpp
 # End Source File
 # Begin Source File
@@ -684,7 +740,19 @@ SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\PropId.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\RegisterArc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.h
 # End Source File
 # Begin Source File
 
@@ -693,6 +761,14 @@ SOURCE=..\..\Common\StreamUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\UniqBlocks.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\UniqBlocks.h
 # End Source File
 # End Group
 # Begin Group "Compress"
@@ -740,6 +816,10 @@ SOURCE=..\..\..\..\C\7zCrc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zTypes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Alloc.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -755,6 +835,15 @@ SOURCE=..\..\..\..\C\CpuArch.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\CpuArch.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sort.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sort.h
 # End Source File
 # Begin Source File
 
@@ -839,6 +928,38 @@ InputName=7zCrcOpt
 
 !ENDIF 
 
+# End Source File
+# End Group
+# Begin Group "Interface"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\IArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IDecl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IPassword.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IProgress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\PropID.h
 # End Source File
 # End Group
 # End Target

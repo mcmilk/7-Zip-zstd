@@ -3,13 +3,13 @@
 #ifndef __WINDOWS_CONTROL_TRACKBAR_H
 #define __WINDOWS_CONTROL_TRACKBAR_H
 
-#include "Windows/Window.h"
-#include "Windows/Defs.h"
+#include "../Window.h"
+#include "../Defs.h"
 
 namespace NWindows {
 namespace NControl {
 
-class CTrackbar: public CWindow
+class CTrackbar1: public CWindow
 {
 public:
   void SetRange(int minimum, int maximum, bool redraw = true)

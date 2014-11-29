@@ -27,7 +27,7 @@ static INT_PTR OptionsDialog(HWND hwndOwner)
   UINT pageIDs[] = { SIZED_DIALOG(IDD_MENU), SIZED_DIALOG(IDD_FOLDERS) };
   NControl::CPropertyPage *pagePinters[] = { &systemPage, &foldersPage };
   CObjectVector<NControl::CPageInfo> pages;
-  const int kNumPages = sizeof(langIDs) / sizeof(langIDs[0]);
+  const int kNumPages = ARRAY_SIZE(langIDs);
   for (int i = 0; i < kNumPages; i++)
   {
     NControl::CPageInfo page;

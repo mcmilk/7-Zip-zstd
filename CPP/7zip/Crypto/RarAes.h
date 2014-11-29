@@ -5,7 +5,7 @@
 
 #include "../../../C/Aes.h"
 
-#include "Common/Buffer.h"
+#include "../../Common/MyBuffer.h"
 
 #include "../IPassword.h"
 

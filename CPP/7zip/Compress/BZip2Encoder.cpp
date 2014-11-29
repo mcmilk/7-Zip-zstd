@@ -53,7 +53,7 @@ static THREAD_FUNC_DECL MFThread(void *threadCoderInfo)
   return ((CThreadInfo *)threadCoderInfo)->ThreadFunc();
 }
 
-#define RINOK_THREAD(x) { WRes __result_ = (x); if(__result_ != 0) return __result_; }
+#define RINOK_THREAD(x) { WRes __result_ = (x); if (__result_ != 0) return __result_; }
 
 HRESULT CThreadInfo::Create()
 {
@@ -244,9 +244,8 @@ UInt32 CEncoder::ReadRleBlock(Byte *buffer)
   return i;
 }
 
-void CThreadInfo::WriteBits2(UInt32 value, UInt32 numBits)
-  { m_OutStreamCurrent->WriteBits(value, numBits); }
-void CThreadInfo::WriteByte2(Byte b) { WriteBits2(b , 8); }
+void CThreadInfo::WriteBits2(UInt32 value, unsigned numBits) { m_OutStreamCurrent->WriteBits(value, numBits); }
+void CThreadInfo::WriteByte2(Byte b) { WriteBits2(b, 8); }
 void CThreadInfo::WriteBit2(bool v) { WriteBits2((v ? 1 : 0), 1); }
 void CThreadInfo::WriteCrc2(UInt32 v)
 {
@@ -254,9 +253,8 @@ void CThreadInfo::WriteCrc2(UInt32 v)
     WriteByte2(((Byte)(v >> (24 - i * 8))));
 }
 
-void CEncoder::WriteBits(UInt32 value, UInt32 numBits)
-  { m_OutStream.WriteBits(value, numBits); }
-void CEncoder::WriteByte(Byte b) { WriteBits(b , 8); }
+void CEncoder::WriteBits(UInt32 value, unsigned numBits) { m_OutStream.WriteBits(value, numBits); }
+void CEncoder::WriteByte(Byte b) { WriteBits(b, 8); }
 void CEncoder::WriteBit(bool v) { WriteBits((v ? 1 : 0), 1); }
 void CEncoder::WriteCrc(UInt32 v)
 {
@@ -318,7 +316,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     block--;
     do
     {
-      int pos = mtf.FindAndMove(block[bsIndex[i]]);
+      unsigned pos = mtf.FindAndMove(block[bsIndex[i]]);
       if (pos == 0)
         rleSize++;
       else
@@ -374,7 +372,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
   {
     int numTables;
 
-    if(m_OptimizeNumTables)
+    if (m_OptimizeNumTables)
     {
       m_OutStreamCurrent->SetPos(startPos);
       m_OutStreamCurrent->SetCurState((startPos & 7), startCurByte);
@@ -415,12 +413,12 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         Byte *lens = Lens[t - 1];
         int i = 0;
         do
-          lens[i] = (i >= gs && i < ge) ? 0 : 1;
+          lens[i] = (Byte)((i >= gs && i < ge) ? 0 : 1);
         while (++i < alphaSize);
         gs = ge;
         remFreq -= aFreq;
       }
-      while(--t != 0);
+      while (--t != 0);
     }
     
     
@@ -430,7 +428,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         int t = 0;
         do
           memset(Freqs[t], 0, sizeof(Freqs[t]));
-        while(++t < numTables);
+        while (++t < numTables);
       }
       
       {
@@ -465,7 +463,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
               bestPrice = price;
             }
           }
-          while(++t < numTables);
+          while (++t < numTables);
           UInt32 *freqs = Freqs[m_Selectors[g++]];
           int j = 0;
           do
@@ -483,10 +481,10 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         do
           if (freqs[i] == 0)
             freqs[i] = 1;
-        while(++i < alphaSize);
+        while (++i < alphaSize);
         Huffman_Generate(freqs, Codes[t], Lens[t], kMaxAlphaSize, kMaxHuffmanLenForEncoding);
       }
-      while(++t < numTables);
+      while (++t < numTables);
     }
     
     {
@@ -495,7 +493,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         int t = 0;
         do
           mtfSel[t] = (Byte)t;
-        while(++t < numTables);
+        while (++t < numTables);
       }
       
       UInt32 i = 0;
@@ -510,7 +508,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
           mtfSel[pos] = mtfSel[pos - 1];
         mtfSel[0] = sel;
       }
-      while(++i < numSelectors);
+      while (++i < numSelectors);
     }
     
     {
@@ -542,7 +540,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         }
         while (++i < alphaSize);
       }
-      while(++t < numTables);
+      while (++t < numTables);
     }
     
     {
@@ -722,7 +720,7 @@ HRESULT CThreadInfo::EncodeBlock3(UInt32 blockSize)
 
 void CEncoder::WriteBytes(const Byte *data, UInt32 sizeInBits, Byte lastByte)
 {
-  UInt32 bytesSize = (sizeInBits / 8);
+  UInt32 bytesSize = (sizeInBits >> 3);
   for (UInt32 i = 0; i < bytesSize; i++)
     m_OutStream.WriteBits(data[i], 8);
   WriteBits(lastByte, (sizeInBits & 7));
@@ -769,8 +767,6 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
 
   m_OutStream.SetStream(outStream);
   m_OutStream.Init();
-
-  CFlusher flusher(this);
 
   CombinedCrc.Init();
   #ifndef _7ZIP_ST

@@ -2,9 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "Windows/DLL.h"
-#include "Windows/FileFind.h"
-#include "Windows/PropVariant.h"
+#include "../../../Windows/DLL.h"
+#include "../../../Windows/FileFind.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "IFolder.h"
 #include "RegistryPlugins.h"
@@ -118,7 +118,7 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
 void ReadFileFolderPluginInfoList(CObjectVector<CPluginInfo> &plugins)
 {
   ReadPluginInfoList(plugins);
-  for (int i = 0; i < plugins.Size();)
+  for (unsigned i = 0; i < plugins.Size();)
     if (plugins[i].Type != kPluginTypeFF)
       plugins.Delete(i);
     else

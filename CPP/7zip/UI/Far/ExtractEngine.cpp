@@ -2,12 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
 
 #include "ExtractEngine.h"
 #include "FarUtils.h"
 #include "Messages.h"
-#include "OverwriteDialog.h"
+#include "OverwriteDialogFar.h"
 
 using namespace NWindows;
 using namespace NFar;
@@ -119,44 +120,68 @@ STDMETHODIMP CExtractCallBackImp::MessageError(const wchar_t *message)
   return S_OK;
 }
 
-static void ReduceString(UString &s, int size)
+static void ReduceString(UString &s, unsigned size)
 {
-  if (s.Length() > size)
-    s = s.Left(size / 2) + UString(L" ... ") + s.Right(size / 2);
+  if (s.Len() > size)
+  {
+    s.Delete(size / 2, s.Len() - size);
+    s.Insert(size / 2, L" ... ");
+  }
 }
 
 STDMETHODIMP CExtractCallBackImp::SetOperationResult(Int32 operationResult, bool encrypted)
 {
-  switch(operationResult)
+  switch (operationResult)
   {
     case NArchive::NExtract::NOperationResult::kOK:
       break;
     default:
     {
-      UINT idMessage;
-      switch(operationResult)
+      UINT messageID = 0;
+      switch (operationResult)
       {
-        case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
-          idMessage = NMessageID::kExtractUnsupportedMethod;
+        case NArchive::NExtract::NOperationResult::kUnsupportedMethod:
+          messageID = NMessageID::kExtractUnsupportedMethod;
           break;
         case NArchive::NExtract::NOperationResult::kCRCError:
-          idMessage = encrypted ?
+          messageID = encrypted ?
             NMessageID::kExtractCRCFailedEncrypted :
             NMessageID::kExtractCRCFailed;
           break;
         case NArchive::NExtract::NOperationResult::kDataError:
-          idMessage = encrypted ?
+          messageID = encrypted ?
             NMessageID::kExtractDataErrorEncrypted :
             NMessageID::kExtractDataError;
           break;
-        default:
-          return E_FAIL;
       }
       UString name = m_CurrentFilePath;
       ReduceString(name, 70);
-      AString s = g_StartupInfo.GetMsgString(idMessage);
-      s.Replace(" '%s'", "");
-      if (g_StartupInfo.ShowMessageLines(s + (AString)("\n") + UnicodeStringToMultiByte(name, m_CodePage)) == -1)
+      AString s;
+      if (messageID != 0)
+      {
+        s = g_StartupInfo.GetMsgString(messageID);
+        s.Replace(" '%s'", "");
+      }
+      else if (operationResult == NArchive::NExtract::NOperationResult::kUnavailable)
+        s = "Unavailable data";
+      else if (operationResult == NArchive::NExtract::NOperationResult::kUnexpectedEnd)
+        s = "Unexpected end of data";
+      else if (operationResult == NArchive::NExtract::NOperationResult::kDataAfterEnd)
+        s = "There are some data after the end of the payload data";
+      else if (operationResult == NArchive::NExtract::NOperationResult::kIsNotArc)
+        s = "Is not archive";
+      else if (operationResult == NArchive::NExtract::NOperationResult::kHeadersError)
+        s = "kHeaders Error";
+      else
+      {
+        char temp[16];
+        ConvertUInt32ToString(operationResult, temp);
+        s = "Error #";
+        s += temp;
+      }
+      s += "\n";
+      s += UnicodeStringToMultiByte(name, m_CodePage);
+      if (g_StartupInfo.ShowMessageLines(s) == -1)
         return E_ABORT;
     }
   }

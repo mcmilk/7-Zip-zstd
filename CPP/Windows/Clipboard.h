@@ -3,7 +3,7 @@
 #ifndef __CLIPBOARD_H
 #define __CLIPBOARD_H
 
-#include "Common/MyString.h"
+#include "../Common/MyString.h"
 
 namespace NWindows {
 
@@ -12,9 +12,9 @@ class CClipboard
   bool m_Open;
 public:
   CClipboard(): m_Open(false) {};
-  ~CClipboard();
-  bool Open(HWND wndNewOwner);
-  bool Close();
+  ~CClipboard() { Close(); }
+  bool Open(HWND wndNewOwner) throw();
+  bool Close() throw();
 };
 
 bool ClipboardIsFormatAvailableHDROP();

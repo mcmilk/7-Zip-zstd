@@ -1,10 +1,11 @@
 // FarUtils.h
 
-#ifndef __FARUTILS_H
-#define __FARUTILS_H
+#ifndef __FAR_UTILS_H
+#define __FAR_UTILS_H
 
 #include "FarPlugin.h"
-#include "Windows/Registry.h"
+
+#include "../../../Windows/Registry.h"
 
 namespace NFar {
 
@@ -79,15 +80,15 @@ public:
   void SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
       const LPCTSTR valueName, LPCTSTR value) const;
   void SetRegKeyValue(HKEY hRoot, const CSysString &keyName,
-      const LPCTSTR valueName, UINT32 value) const;
+      const LPCTSTR valueName, UInt32 value) const;
   void SetRegKeyValue(HKEY hRoot, const CSysString &keyName,
       const LPCTSTR valueName, bool value) const;
 
   CSysString QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
       LPCTSTR valueName, const CSysString &valueDefault) const;
 
-  UINT32 QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
-      LPCTSTR valueName, UINT32 valueDefault) const;
+  UInt32 QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+      LPCTSTR valueName, UInt32 valueDefault) const;
 
   bool QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
       LPCTSTR valueName, bool valueDefault) const;

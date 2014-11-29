@@ -56,11 +56,12 @@ class CCoder :
   CHuffmanDecoder<kNumDistanceSymbols> m_PHuffmanDecoder;
   CHuffmanDecoder<kNumCSymbols> m_CHuffmanDecoder;
 
+  /*
   void ReleaseStreams()
   {
     m_OutWindowStream.ReleaseStream();
-    m_InBitStream.ReleaseStream();
   }
+  */
 
   class CCoderReleaser
   {
@@ -72,7 +73,7 @@ class CCoder :
     {
       if (NeedFlush)
         m_Coder->m_OutWindowStream.Flush();
-      m_Coder->ReleaseStreams();
+      // m_Coder->ReleaseStreams();
     }
   };
   friend class CCoderReleaser;

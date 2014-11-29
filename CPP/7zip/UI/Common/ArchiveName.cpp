@@ -2,12 +2,28 @@
 
 #include "StdAfx.h"
 
-#include "Windows/FileDir.h"
-#include "Windows/FileFind.h"
+#include "../../../Windows/FileDir.h"
 
 #include "ExtractingFilePath.h"
+#include "ArchiveName.h"
 
 using namespace NWindows;
+
+UString CreateArchiveName(const NFile::NFind::CFileInfo fileInfo, bool keepName)
+{
+  FString resultName = fileInfo.Name;
+  if (!fileInfo.IsDir() && !keepName)
+  {
+    int dotPos = resultName.ReverseFind(FTEXT('.'));
+    if (dotPos > 0)
+    {
+      FString archiveName2 = resultName.Left(dotPos);
+      if (archiveName2.ReverseFind(FTEXT('.')) < 0)
+        resultName = archiveName2;
+    }
+  }
+  return GetCorrectFsPath(fs2us(resultName));
+}
 
 static FString CreateArchiveName2(const FString &srcName, bool fromPrev, bool keepName)
 {
@@ -15,9 +31,9 @@ static FString CreateArchiveName2(const FString &srcName, bool fromPrev, bool ke
   if (fromPrev)
   {
     FString dirPrefix;
-    if (NFile::NDirectory::GetOnlyDirPrefix(srcName, dirPrefix))
+    if (NFile::NDir::GetOnlyDirPrefix(srcName, dirPrefix))
     {
-      if (dirPrefix.Length() > 0)
+      if (dirPrefix.Len() > 0)
         if (dirPrefix.Back() == FCHAR_PATH_SEPARATOR)
         {
           dirPrefix.DeleteBack();

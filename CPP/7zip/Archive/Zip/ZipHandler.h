@@ -3,7 +3,7 @@
 #ifndef __ZIP_HANDLER_H
 #define __ZIP_HANDLER_H
 
-#include "Common/DynamicBuffer.h"
+#include "../../../Common/DynamicBuffer.h"
 #include "../../ICoder.h"
 #include "../IArchive.h"
 
@@ -33,7 +33,7 @@ public:
   INTERFACE_IInArchive(;)
   INTERFACE_IOutArchive(;)
 
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
 
   DECL_ISetCompressCodecsInfo
 
@@ -47,8 +47,11 @@ private:
   int m_MainMethod;
   bool m_ForceAesMode;
   bool m_WriteNtfsTimeExtra;
+  bool _removeSfxBlock;
   bool m_ForceLocal;
   bool m_ForceUtf8;
+  bool _forceCodePage;
+  UInt32 _specifiedCodePage;
 
   DECL_EXTERNAL_CODECS_VARS
 
@@ -58,8 +61,11 @@ private:
     m_MainMethod = -1;
     m_ForceAesMode = false;
     m_WriteNtfsTimeExtra = true;
+    _removeSfxBlock = false;
     m_ForceLocal = false;
     m_ForceUtf8 = false;
+    _forceCodePage = false;
+    _specifiedCodePage = CP_OEMCP;
   }
 };
 

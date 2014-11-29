@@ -2,8 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Error.h"
-#include "Common/IntToString.h"
+#include "../../../Common/IntToString.h"
+
+#include "../../../Windows/ErrorMsg.h"
 
 #include "UpdateCallbackAgent.h"
 
@@ -62,11 +63,11 @@ HRESULT CUpdateCallbackAgent::OpenFileError(const wchar_t *name, DWORD systemErr
   {
     if (Callback)
     {
-      RINOK(Callback->UpdateErrorMessage(
-        UString(L"WARNING: ") +
-        NError::MyFormatMessageW(systemError) +
-        UString(L": ") +
-        name));
+      UString s = L"WARNING: ";
+      s += NError::MyFormatMessage(systemError);
+      s += L": ";
+      s += name;
+      RINOK(Callback->UpdateErrorMessage(s));
       return S_FALSE;
     }
   }

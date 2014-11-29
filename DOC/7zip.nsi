@@ -2,8 +2,8 @@
 ;Defines
 
 !define VERSION_MAJOR 9
-!define VERSION_MINOR 22
-!define VERSION_POSTFIX_FULL "beta"
+!define VERSION_MINOR 34
+!define VERSION_POSTFIX_FULL " alpha"
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
@@ -108,6 +108,7 @@ Section
   !endif
 
   # delete old unwanted files
+
   Delete $INSTDIR\7zFMn.exe
   Delete $INSTDIR\7zgn.exe
   Delete $INSTDIR\7zn.exe
@@ -116,6 +117,8 @@ Section
   Delete $INSTDIR\7-zipn.dll
   Delete $INSTDIR\7zipDoc.txt
   Delete $INSTDIR\file_id.diz
+  Delete $INSTDIR\7zip_pad.xml
+  Delete $INSTDIR\copying.txt
 
   Delete $INSTDIR\Codecs\7zAES.dll
   Delete $INSTDIR\Codecs\AES.dll
@@ -154,33 +157,29 @@ Section
   Delete $INSTDIR\Lang\no.txt
 
   # install files
-  SetOutPath "$INSTDIR"
+
+  SetOutPath $INSTDIR
 
   File descript.ion
   File History.txt
   File License.txt
   File readme.txt
-
-  # File 7-zip.dll
-  # File 7-zipn.dll
-  File 7zFM.exe
-  File 7z.exe
-  !ifdef WIN64
-  File 7za.exe
-  !endif
-  File 7zg.exe
-
-  File 7z.sfx
-  File 7zCon.sfx
-
   File 7-zip.chm
 
+  # File 7-zip.dll
+
   File 7z.dll
+  File 7zFM.exe
+  File 7zG.exe
+  File 7z.exe
+  File 7z.sfx
+  File 7zCon.sfx
 
   SetOutPath $INSTDIR\Lang
 
   File en.ttt
   File af.txt
+  File an.txt
   File ar.txt
   File ast.txt
   File az.txt
@@ -206,6 +205,7 @@ Section
   File fr.txt
   File fur.txt
   File fy.txt
+  File ga.txt
   File gl.txt
   File gu.txt
   File he.txt
@@ -219,6 +219,7 @@ Section
   File it.txt
   File ja.txt
   File ka.txt
+  File kaa.txt
   File kk.txt
   File ko.txt
   File ku.txt
@@ -229,6 +230,8 @@ Section
   File lv.txt
   File mk.txt
   File mn.txt
+  File mng.txt
+  File mng2.txt
   File mr.txt
   File ms.txt
   File ne.txt
@@ -268,7 +271,7 @@ Section
 
   Delete "$SMPROGRAMS\7-Zip\${FM_LINK}"
   Delete "$SMPROGRAMS\7-Zip\${HELP_LINK}"
-  RMDir  "$SMPROGRAMS\7-Zip"
+  RMDir $SMPROGRAMS\7-Zip
 
   # set "all users" mode
 
@@ -279,54 +282,57 @@ Section
   ClearErrors
 
   # create start menu icons
-  SetOutPath $INSTDIR # working directory
-  CreateDirectory $SMPROGRAMS\7-Zip
 
-  CreateShortcut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM.exe
-  CreateShortcut "$SMPROGRAMS\7-Zip\${HELP_LINK}" $INSTDIR\7-zip.chm
+  SetOutPath $INSTDIR
+
+  CreateDirectory $SMPROGRAMS\7-Zip
+  CreateShortCut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM.exe
+  CreateShortCut "$SMPROGRAMS\7-Zip\${HELP_LINK}" $INSTDIR\7-zip.chm
 
   IfErrors 0 noScErrors
 
   SetShellVarContext current
 
   CreateDirectory $SMPROGRAMS\7-Zip
-  CreateShortcut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM.exe
-  CreateShortcut "$SMPROGRAMS\7-Zip\${HELP_LINK}" $INSTDIR\7-zip.chm
+  CreateShortCut "$SMPROGRAMS\7-Zip\${FM_LINK}" $INSTDIR\7zFM.exe
+  CreateShortCut "$SMPROGRAMS\7-Zip\${HELP_LINK}" $INSTDIR\7-zip.chm
 
-  noScErrors:
+noScErrors:
 
   # store install folder
-  WriteRegStr HKLM "Software\7-Zip" "Path32" $INSTDIR
-  WriteRegStr HKLM "Software\7-Zip" "Path"   $INSTDIR
-  WriteRegStr HKCU "Software\7-Zip" "Path32" $INSTDIR
-  WriteRegStr HKCU "Software\7-Zip" "Path"   $INSTDIR
+
+  WriteRegStr HKLM Software\7-Zip Path32 $INSTDIR
+  WriteRegStr HKLM Software\7-Zip Path   $INSTDIR
+  WriteRegStr HKCU Software\7-Zip Path32 $INSTDIR
+  WriteRegStr HKCU Software\7-Zip Path   $INSTDIR
 
   # write reg entries
-  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}" "" "7-Zip Shell Extension"
-  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "" "$INSTDIR\7-zip.dll"
-  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "ThreadingModel" "Apartment"
 
+  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}" "" "7-Zip Shell Extension"
+  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "" $INSTDIR\7-zip.dll
+  WriteRegStr HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" ThreadingModel Apartment
+  DeleteRegValue HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "InprocServer32"
 
   WriteRegStr HKCR "*\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
   WriteRegStr HKCR "Directory\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
-;  WriteRegStr HKCR "Folder\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
+  ;  WriteRegStr HKCR "Folder\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
 
   WriteRegStr HKCR "Directory\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
   WriteRegStr HKCR "Drive\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
 
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" "${CLSID_CONTEXT_MENU}" "7-Zip Shell Extension"
   
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "" "$INSTDIR\7zFM.exe"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "Path" "$INSTDIR"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" "" $INSTDIR\7zFM.exe
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe" Path $INSTDIR
 
   # create uninstaller
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "DisplayName" "${NAME_FULL}"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "UninstallString" '"$INSTDIR\Uninstall.exe"'
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "NoModify" 1
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" "NoRepair" 1
-  WriteUninstaller $INSTDIR\Uninstall.exe
 
-  DeleteRegValue HKCR "CLSID\${CLSID_CONTEXT_MENU}\InprocServer32" "InprocServer32"
+  WriteRegStr HKLM Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip DisplayName "${NAME_FULL}"
+  WriteRegStr HKLM Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip UninstallString '"$INSTDIR\Uninstall.exe"'
+  WriteRegDWORD HKLM Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip NoModify 1
+  WriteRegDWORD HKLM Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip NoRepair 1
+
+  WriteUninstaller $INSTDIR\Uninstall.exe
 
   !ifdef WIN64
   ExecWait 'regsvr32 /s "$INSTDIR\7-zip.dll"'
@@ -346,10 +352,13 @@ Function .onInit
 FunctionEnd
 */
 
+
+
+
 ;--------------------------------
 ;Uninstaller Section
 
-Section "Uninstall"
+Section Uninstall
 
   ExecWait 'regsvr32 /u /s "$INSTDIR\7-zip.dll"'
 
@@ -358,28 +367,19 @@ Section "Uninstall"
   Delete $INSTDIR\descript.ion
   Delete $INSTDIR\History.txt
   Delete $INSTDIR\License.txt
-  Delete $INSTDIR\copying.txt
   Delete $INSTDIR\readme.txt
-  Delete $INSTDIR\7zip_pad.xml
-
-  Delete /REBOOTOK $INSTDIR\7-zip.dll
-  Delete $INSTDIR\7zFM.exe
-  Delete $INSTDIR\7z.exe
-  !ifdef WIN64
-  Delete $INSTDIR\7za.exe
-  !endif
-  Delete $INSTDIR\7zg.exe
-
-  Delete $INSTDIR\7z.sfx
-  Delete $INSTDIR\7zCon.sfx
-  Delete $INSTDIR\7zC.sfx
-
   Delete $INSTDIR\7-zip.chm
 
   Delete $INSTDIR\7z.dll
+  Delete $INSTDIR\7zFM.exe
+  Delete $INSTDIR\7zG.exe
+  Delete $INSTDIR\7z.exe
+  Delete $INSTDIR\7z.sfx
+  Delete $INSTDIR\7zCon.sfx
 
   Delete $INSTDIR\Lang\en.ttt
   Delete $INSTDIR\Lang\af.txt
+  Delete $INSTDIR\Lang\an.txt
   Delete $INSTDIR\Lang\ar.txt
   Delete $INSTDIR\Lang\ast.txt
   Delete $INSTDIR\Lang\az.txt
@@ -405,6 +405,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\fr.txt
   Delete $INSTDIR\Lang\fur.txt
   Delete $INSTDIR\Lang\fy.txt
+  Delete $INSTDIR\Lang\ga.txt
   Delete $INSTDIR\Lang\gl.txt
   Delete $INSTDIR\Lang\gu.txt
   Delete $INSTDIR\Lang\he.txt
@@ -418,6 +419,7 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\it.txt
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ka.txt
+  Delete $INSTDIR\Lang\kaa.txt
   Delete $INSTDIR\Lang\kk.txt
   Delete $INSTDIR\Lang\ko.txt
   Delete $INSTDIR\Lang\ku.txt
@@ -428,6 +430,8 @@ Section "Uninstall"
   Delete $INSTDIR\Lang\lv.txt
   Delete $INSTDIR\Lang\mk.txt
   Delete $INSTDIR\Lang\mn.txt
+  Delete $INSTDIR\Lang\mng.txt
+  Delete $INSTDIR\Lang\mng2.txt
   Delete $INSTDIR\Lang\mr.txt
   Delete $INSTDIR\Lang\ms.txt
   Delete $INSTDIR\Lang\ne.txt
@@ -465,6 +469,7 @@ Section "Uninstall"
 
   RMDir $INSTDIR\Lang
 
+  Delete /REBOOTOK $INSTDIR\7-zip.dll
   Delete $INSTDIR\Uninstall.exe
 
   RMDir $INSTDIR
@@ -477,7 +482,7 @@ Section "Uninstall"
 
   Delete "$SMPROGRAMS\7-Zip\${FM_LINK}"
   Delete "$SMPROGRAMS\7-Zip\${HELP_LINK}"
-  RMDir  "$SMPROGRAMS\7-Zip"
+  RMDir $SMPROGRAMS\7-Zip
 
   # IfErrors 0 noScErrors
 
@@ -485,66 +490,66 @@ Section "Uninstall"
 
   Delete "$SMPROGRAMS\7-Zip\${FM_LINK}"
   Delete "$SMPROGRAMS\7-Zip\${HELP_LINK}"
-  RMDir  "$SMPROGRAMS\7-Zip"
+  RMDir $SMPROGRAMS\7-Zip
 
   # noScErrors:
 
 
   # delete registry entries
 
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip"
+  DeleteRegKey HKLM Software\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe"
 
-  DeleteRegKey HKLM "Software\7-Zip"
-  DeleteRegKey HKCU "Software\7-Zip"
+  DeleteRegKey HKLM Software\7-Zip
+  DeleteRegKey HKCU Software\7-Zip
 
-  DeleteRegKey HKCR "CLSID\${CLSID_CONTEXT_MENU}"
+  DeleteRegKey HKCR CLSID\${CLSID_CONTEXT_MENU}
 
-  DeleteRegKey HKCR "*\shellex\ContextMenuHandlers\7-Zip"
-  DeleteRegKey HKCR "Directory\shellex\ContextMenuHandlers\7-Zip"
-  DeleteRegKey HKCR "Folder\shellex\ContextMenuHandlers\7-Zip"
+  DeleteRegKey HKCR *\shellex\ContextMenuHandlers\7-Zip
+  DeleteRegKey HKCR Directory\shellex\ContextMenuHandlers\7-Zip
+  DeleteRegKey HKCR Folder\shellex\ContextMenuHandlers\7-Zip
 
-  DeleteRegKey HKCR "Drive\shellex\DragDropHandlers\7-Zip"
-  DeleteRegKey HKCR "Directory\shellex\DragDropHandlers\7-Zip"
-  DeleteRegKey HKCR "Folder\shellex\DragDropHandlers\7-Zip"
+  DeleteRegKey HKCR Drive\shellex\DragDropHandlers\7-Zip
+  DeleteRegKey HKCR Directory\shellex\DragDropHandlers\7-Zip
+  DeleteRegKey HKCR Folder\shellex\DragDropHandlers\7-Zip
 
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" "${CLSID_CONTEXT_MENU}"
 
-  DeleteRegKey HKCR "7-Zip.001"
-  DeleteRegKey HKCR "7-Zip.7z"
-  DeleteRegKey HKCR "7-Zip.arj"
-  DeleteRegKey HKCR "7-Zip.bz2"
-  DeleteRegKey HKCR "7-Zip.bzip2"
-  DeleteRegKey HKCR "7-Zip.tbz"
-  DeleteRegKey HKCR "7-Zip.tbz2"
-  DeleteRegKey HKCR "7-Zip.cab"
-  DeleteRegKey HKCR "7-Zip.cpio"
-  DeleteRegKey HKCR "7-Zip.deb"
-  DeleteRegKey HKCR "7-Zip.dmg"
-  DeleteRegKey HKCR "7-Zip.fat"
-  DeleteRegKey HKCR "7-Zip.gz"
-  DeleteRegKey HKCR "7-Zip.gzip"
-  DeleteRegKey HKCR "7-Zip.hfs"
-  DeleteRegKey HKCR "7-Zip.iso"
-  DeleteRegKey HKCR "7-Zip.lha"
-  DeleteRegKey HKCR "7-Zip.lzh"
-  DeleteRegKey HKCR "7-Zip.lzma"
-  DeleteRegKey HKCR "7-Zip.ntfs"
-  DeleteRegKey HKCR "7-Zip.rar"
-  DeleteRegKey HKCR "7-Zip.rpm"
-  DeleteRegKey HKCR "7-Zip.split"
-  DeleteRegKey HKCR "7-Zip.squashfs"
-  DeleteRegKey HKCR "7-Zip.swm"
-  DeleteRegKey HKCR "7-Zip.tar"
-  DeleteRegKey HKCR "7-Zip.taz"
-  DeleteRegKey HKCR "7-Zip.tgz"
-  DeleteRegKey HKCR "7-Zip.tpz"
-  DeleteRegKey HKCR "7-Zip.txz"
-  DeleteRegKey HKCR "7-Zip.vhd"
-  DeleteRegKey HKCR "7-Zip.wim"
-  DeleteRegKey HKCR "7-Zip.xar"
-  DeleteRegKey HKCR "7-Zip.xz"
-  DeleteRegKey HKCR "7-Zip.z"
-  DeleteRegKey HKCR "7-Zip.zip"
+  DeleteRegKey HKCR 7-Zip.001
+  DeleteRegKey HKCR 7-Zip.7z
+  DeleteRegKey HKCR 7-Zip.arj
+  DeleteRegKey HKCR 7-Zip.bz2
+  DeleteRegKey HKCR 7-Zip.bzip2
+  DeleteRegKey HKCR 7-Zip.tbz
+  DeleteRegKey HKCR 7-Zip.tbz2
+  DeleteRegKey HKCR 7-Zip.cab
+  DeleteRegKey HKCR 7-Zip.cpio
+  DeleteRegKey HKCR 7-Zip.deb
+  DeleteRegKey HKCR 7-Zip.dmg
+  DeleteRegKey HKCR 7-Zip.fat
+  DeleteRegKey HKCR 7-Zip.gz
+  DeleteRegKey HKCR 7-Zip.gzip
+  DeleteRegKey HKCR 7-Zip.hfs
+  DeleteRegKey HKCR 7-Zip.iso
+  DeleteRegKey HKCR 7-Zip.lha
+  DeleteRegKey HKCR 7-Zip.lzh
+  DeleteRegKey HKCR 7-Zip.lzma
+  DeleteRegKey HKCR 7-Zip.ntfs
+  DeleteRegKey HKCR 7-Zip.rar
+  DeleteRegKey HKCR 7-Zip.rpm
+  DeleteRegKey HKCR 7-Zip.split
+  DeleteRegKey HKCR 7-Zip.squashfs
+  DeleteRegKey HKCR 7-Zip.swm
+  DeleteRegKey HKCR 7-Zip.tar
+  DeleteRegKey HKCR 7-Zip.taz
+  DeleteRegKey HKCR 7-Zip.tgz
+  DeleteRegKey HKCR 7-Zip.tpz
+  DeleteRegKey HKCR 7-Zip.txz
+  DeleteRegKey HKCR 7-Zip.vhd
+  DeleteRegKey HKCR 7-Zip.wim
+  DeleteRegKey HKCR 7-Zip.xar
+  DeleteRegKey HKCR 7-Zip.xz
+  DeleteRegKey HKCR 7-Zip.z
+  DeleteRegKey HKCR 7-Zip.zip
 
 SectionEnd

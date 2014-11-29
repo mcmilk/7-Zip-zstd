@@ -6,32 +6,16 @@
 
 #include "BranchMisc.h"
 
-UInt32 CBC_ARM_Encoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::ARM_Convert(data, size, _bufferPos, 1); }
+#define SUB_FILTER_IMP2(name, coderStr, coderNum) \
+  UInt32 CBC_ ## name ## coderStr::SubFilter(Byte *data, UInt32 size) \
+  { return (UInt32)::name ## Convert(data, size, _bufferPos, coderNum); }
 
-UInt32 CBC_ARM_Decoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::ARM_Convert(data, size, _bufferPos, 0); }
+#define SUB_FILTER_IMP(name) \
+  SUB_FILTER_IMP2(name, Encoder, 1) \
+  SUB_FILTER_IMP2(name, Decoder, 0) \
 
-UInt32 CBC_ARMT_Encoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::ARMT_Convert(data, size, _bufferPos, 1); }
-
-UInt32 CBC_ARMT_Decoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::ARMT_Convert(data, size, _bufferPos, 0); }
-
-UInt32 CBC_PPC_Encoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::PPC_Convert(data, size, _bufferPos, 1); }
-
-UInt32 CBC_PPC_Decoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::PPC_Convert(data, size, _bufferPos, 0); }
-
-UInt32 CBC_SPARC_Encoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::SPARC_Convert(data, size, _bufferPos, 1); }
-
-UInt32 CBC_SPARC_Decoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::SPARC_Convert(data, size, _bufferPos, 0); }
-
-UInt32 CBC_IA64_Encoder::SubFilter(Byte *data, UInt32 size)
-  { return (UInt32)::IA64_Convert(data, size, _bufferPos, 1); }
-
-UInt32 CBC_IA64_Decoder::SubFilter(Byte *data, UInt32 size)
-  {  return (UInt32)::IA64_Convert(data, size, _bufferPos, 0); }
+SUB_FILTER_IMP(ARM_)
+SUB_FILTER_IMP(ARMT_)
+SUB_FILTER_IMP(PPC_)
+SUB_FILTER_IMP(SPARC_)
+SUB_FILTER_IMP(IA64_)

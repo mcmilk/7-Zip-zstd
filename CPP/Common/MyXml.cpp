@@ -18,52 +18,19 @@ static bool IsSpaceChar(char c)
   return (c == ' ' || c == '\t' || c == 0x0D || c == 0x0A);
 }
 
-#define SKIP_SPACES(s, pos) while (IsSpaceChar(s[pos])) pos++;
+#define SKIP_SPACES(s) while (IsSpaceChar(*s)) s++;
 
-static bool ReadProperty(const AString &s, int &pos, CXmlProp &prop)
+int CXmlItem::FindProp(const AString &propName) const
 {
-  prop.Name.Empty();
-  prop.Value.Empty();
-  for (; pos < s.Length(); pos++)
-  {
-    char c = s[pos];
-    if (!IsValidChar(c))
-      break;
-    prop.Name += c;
-  }
-  
-  if (prop.Name.IsEmpty())
-    return false;
-
-  SKIP_SPACES(s, pos);
-  if (s[pos++] != '=')
-    return false;
-
-  SKIP_SPACES(s, pos);
-  if (s[pos++] != '\"')
-    return false;
-  
-  while (pos < s.Length())
-  {
-    char c = s[pos++];
-    if (c == '\"')
-      return true;
-    prop.Value += c;
-  }
-  return false;
-}
-
-int CXmlItem::FindProperty(const AString &propName) const
-{
-  for (int i = 0; i < Props.Size(); i++)
+  FOR_VECTOR (i, Props)
     if (Props[i].Name == propName)
       return i;
   return -1;
 }
 
-AString CXmlItem::GetPropertyValue(const AString &propName) const
+AString CXmlItem::GetPropVal(const AString &propName) const
 {
-  int index = FindProperty(propName);
+  int index = FindProp(propName);
   if (index >= 0)
     return Props[index].Value;
   return AString();
@@ -76,7 +43,7 @@ bool CXmlItem::IsTagged(const AString &tag) const
 
 int CXmlItem::FindSubTag(const AString &tag) const
 {
-  for (int i = 0; i < SubItems.Size(); i++)
+  FOR_VECTOR (i, SubItems)
     if (SubItems[i].IsTagged(tag))
       return i;
   return -1;
@@ -93,6 +60,17 @@ AString CXmlItem::GetSubString() const
   return AString();
 }
 
+const AString * CXmlItem::GetSubStringPtr() const
+{
+  if (SubItems.Size() == 1)
+  {
+    const CXmlItem &item = SubItems[0];
+    if (!item.IsTag)
+      return &item.Name;
+  }
+  return NULL;
+}
+
 AString CXmlItem::GetSubStringForTag(const AString &tag) const
 {
   int index = FindSubTag(tag);
@@ -101,98 +79,167 @@ AString CXmlItem::GetSubStringForTag(const AString &tag) const
   return AString();
 }
 
-bool CXmlItem::ParseItems(const AString &s, int &pos, int numAllowedLevels)
+const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
 {
-  if (numAllowedLevels == 0)
-    return false;
-  SubItems.Clear();
-  AString finishString = "</";
+  SKIP_SPACES(s);
+
+  const char *beg = s;
   for (;;)
   {
-    SKIP_SPACES(s, pos);
-
-    if (s.Mid(pos, finishString.Length()) == finishString)
-      return true;
-      
-    CXmlItem item;
-    if (!item.ParseItem(s, pos, numAllowedLevels - 1))
-      return false;
-    SubItems.Add(item);
+    char c;
+    c = *s; if (c == 0 || c == '<') break; s++;
+    c = *s; if (c == 0 || c == '<') break; s++;
   }
-}
-
-bool CXmlItem::ParseItem(const AString &s, int &pos, int numAllowedLevels)
-{
-  SKIP_SPACES(s, pos);
-
-  int pos2 = s.Find('<', pos);
-  if (pos2 < 0)
-    return false;
-  if (pos2 != pos)
+  if (*s == 0)
+    return NULL;
+  if (s != beg)
   {
     IsTag = false;
-    Name += s.Mid(pos, pos2 - pos);
-    pos = pos2;
-    return true;
+    Name.SetFrom(beg, (unsigned)(s - beg));
+    return s;
   }
+  
   IsTag = true;
 
-  pos++;
-  SKIP_SPACES(s, pos);
+  s++;
+  SKIP_SPACES(s);
 
-  for (; pos < s.Length(); pos++)
-  {
-    char c = s[pos];
-    if (!IsValidChar(c))
+  beg = s;
+  for (;; s++)
+    if (!IsValidChar(*s))
       break;
-    Name += c;
-  }
-  if (Name.IsEmpty() || pos == s.Length())
-    return false;
+  if (s == beg || *s == 0)
+    return NULL;
+  Name.SetFrom(beg, (unsigned)(s - beg));
 
-  int posTemp = pos;
   for (;;)
   {
-    SKIP_SPACES(s, pos);
-    if (s[pos] == '/')
+    beg = s;
+    SKIP_SPACES(s);
+    if (*s == '/')
     {
-      pos++;
-      // SKIP_SPACES(s, pos);
-      return (s[pos++] == '>');
+      s++;
+      // SKIP_SPACES(s);
+      if (*s != '>')
+        return NULL;
+      return s + 1;
     }
-    if (s[pos] == '>')
+    if (*s == '>')
     {
-      if (!ParseItems(s, ++pos, numAllowedLevels))
-        return false;
-      AString finishString = AString("</") + Name + AString(">");
-      if (s.Mid(pos, finishString.Length()) != finishString)
-        return false;
-      pos += finishString.Length();
-      return true;
-    }
-    if (posTemp == pos)
-      return false;
+      s++;
+      if (numAllowedLevels == 0)
+        return NULL;
+      SubItems.Clear();
+      for (;;)
+      {
+        SKIP_SPACES(s);
+        if (s[0] == '<' && s[1] == '/')
+          break;
+        CXmlItem &item = SubItems.AddNew();
+        s = item.ParseItem(s, numAllowedLevels - 1);
+        if (!s)
+          return NULL;
+      }
 
-    CXmlProp prop;
-    if (!ReadProperty(s, pos, prop))
-      return false;
-    Props.Add(prop);
-    posTemp = pos;
+      s += 2;
+      unsigned len = Name.Len();
+      for (unsigned i = 0; i < len; i++)
+        if (s[i] != Name[i])
+          return NULL;
+      s += len;
+      if (s[0] != '>')
+        return NULL;
+      return s + 1;
+    }
+    if (beg == s)
+      return NULL;
+
+    // ReadProperty
+    CXmlProp &prop = Props.AddNew();
+
+    beg = s;
+    for (;; s++)
+    {
+      char c = *s;
+      if (!IsValidChar(c))
+        break;
+    }
+    if (s == beg)
+      return NULL;
+    prop.Name.SetFrom(beg, (unsigned)(s - beg));
+    
+    SKIP_SPACES(s);
+    if (*s != '=')
+      return NULL;
+    s++;
+    SKIP_SPACES(s);
+    if (*s != '\"')
+      return NULL;
+    s++;
+    
+    beg = s;
+    for (;;)
+    {
+      char c = *s;
+      if (c == 0)
+        return NULL;
+      if (c == '\"')
+        break;
+      s++;
+    }
+    prop.Value.SetFrom(beg, (unsigned)(s - beg));
+    s++;
   }
 }
 
-static bool SkipHeader(const AString &s, int &pos, const AString &startString, const AString &endString)
+static bool SkipHeader(const AString &s, int &pos, const char *startString, const char *endString)
 {
-  SKIP_SPACES(s, pos);
-  if (s.Mid(pos, startString.Length()) == startString)
+  while (IsSpaceChar(s[pos]))
+    pos++;
+  if (IsString1PrefixedByString2(s.Ptr(pos), startString))
   {
-    pos = s.Find(endString, pos);
+    const AString es = endString;
+    pos = s.Find(es, pos);
     if (pos < 0)
       return false;
-    pos += endString.Length();
-    SKIP_SPACES(s, pos);
+    pos += es.Len();
   }
   return true;
+}
+
+void CXmlItem::AppendTo(AString &s) const
+{
+  if (IsTag)
+    s += '<';
+  s += Name;
+  if (IsTag)
+  {
+    FOR_VECTOR (i, Props)
+    {
+      const CXmlProp &prop = Props[i];
+      s += ' ';
+      s += prop.Name;
+      s += '=';
+      s += '\"';
+      s += prop.Value;
+      s += '\"';
+    }
+    s += '>';
+  }
+  FOR_VECTOR (i, SubItems)
+  {
+    const CXmlItem &item = SubItems[i];
+    if (i != 0 && !SubItems[i - 1].IsTag)
+      s += ' ';
+    item.AppendTo(s);
+  }
+  if (IsTag)
+  {
+    s += '<';
+    s += '/';
+    s += Name;
+    s += '>';
+  }
 }
 
 bool CXml::Parse(const AString &s)
@@ -202,8 +249,14 @@ bool CXml::Parse(const AString &s)
     return false;
   if (!SkipHeader(s, pos, "<!DOCTYPE", ">"))
     return false;
-  if (!Root.ParseItem(s, pos, 1000))
+  const char *ptr = Root.ParseItem(s.Ptr(pos), 1000);
+  if (!ptr || !Root.IsTag)
     return false;
-  SKIP_SPACES(s, pos);
-  return (pos == s.Length() && Root.IsTag);
+  SKIP_SPACES(ptr);
+  return *ptr == 0;
+}
+
+void CXml::AppendTo(AString &s) const
+{
+  Root.AppendTo(s);
 }

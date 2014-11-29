@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_SYSTEM_H
 #define __WINDOWS_SYSTEM_H
 
-#include "../Common/Types.h"
+#include "../Common/MyTypes.h"
 
 namespace NWindows {
 namespace NSystem {

@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Registry.h"
-#include "Windows/Synchronization.h"
+#include "../../../Windows/Registry.h"
+#include "../../../Windows/Synchronization.h"
 
 #include "RegistryContextMenu.h"
 
@@ -41,8 +41,7 @@ static bool CheckHandlerCommon(const CSysString &keyName)
   CSysString value;
   if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
     return false;
-  value.MakeUpper();
-  return (value.Compare(kExtensionCLSID) == 0);
+  return StringsAreEqualNoCase_Ascii(value, kExtensionCLSID);
 }
 
 bool CheckContextMenuHandler()

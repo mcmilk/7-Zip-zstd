@@ -58,10 +58,11 @@ public:
   bool _compressHeaders;
   bool _encryptHeadersSpecified;
   bool _encryptHeaders;
+  // bool _useParents; 9.26
 
-  bool WriteCTime;
-  bool WriteATime;
-  bool WriteMTime;
+  CBoolPair Write_CTime;
+  CBoolPair Write_ATime;
+  CBoolPair Write_MTime;
 
   bool _volumeMode;
 
@@ -85,10 +86,8 @@ public:
 #endif
 
 class CHandler:
-  #ifndef EXTRACT_ONLY
-  public COutHandler,
-  #endif
   public IInArchive,
+  public IArchiveGetRawProps,
   #ifdef __7Z_SET_PROPERTIES
   public ISetProperties,
   #endif
@@ -97,9 +96,13 @@ class CHandler:
   #endif
   PUBLIC_ISetCompressCodecsInfo
   public CMyUnknownImp
+  #ifndef EXTRACT_ONLY
+  , public COutHandler
+  #endif
 {
 public:
   MY_QUERYINTERFACE_BEGIN2(IInArchive)
+  // MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
   #ifdef __7Z_SET_PROPERTIES
   MY_QUERYINTERFACE_ENTRY(ISetProperties)
   #endif
@@ -111,9 +114,10 @@ public:
   MY_ADDREF_RELEASE
 
   INTERFACE_IInArchive(;)
+  INTERFACE_IArchiveGetRawProps(;)
 
   #ifdef __7Z_SET_PROPERTIES
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
   #endif
 
   #ifndef EXTRACT_ONLY
@@ -126,8 +130,9 @@ public:
 
 private:
   CMyComPtr<IInStream> _inStream;
-  NArchive::N7z::CArchiveDatabaseEx _db;
+  NArchive::N7z::CDbEx _db;
   #ifndef _NO_CRYPTO
+  bool _isEncrypted;
   bool _passwordIsDefined;
   #endif
 
@@ -156,11 +161,13 @@ private:
 
   #endif
 
-  bool IsEncrypted(UInt32 index2) const;
+  bool IsFolderEncrypted(CNum folderIndex) const;
   #ifndef _SFX
 
   CRecordVector<UInt64> _fileInfoPopIDs;
   void FillPopIDs();
+  void AddMethodName(AString &s, UInt64 id);
+  HRESULT SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const;
 
   #endif
 

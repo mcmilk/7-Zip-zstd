@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_CONTROL_IMAGELIST_H
 #define __WINDOWS_CONTROL_IMAGELIST_H
 
-#include "Windows/Defs.h"
+#include "../Defs.h"
 
 namespace NWindows {
 namespace NControl {

@@ -3,72 +3,75 @@
 #ifndef __ARCHIVE_WIM_HANDLER_H
 #define __ARCHIVE_WIM_HANDLER_H
 
-#include "Common/MyCom.h"
-#include "Common/MyXml.h"
+#include "../../../Common/MyCom.h"
 
 #include "WimIn.h"
 
 namespace NArchive {
 namespace NWim {
 
-struct CVolume
-{
-  CHeader Header;
-  CMyComPtr<IInStream> Stream;
-};
-
-struct CImageInfo
-{
-  bool CTimeDefined;
-  bool MTimeDefined;
-  bool NameDefined;
-  // bool IndexDefined;
-  
-  FILETIME CTime;
-  FILETIME MTime;
-  UString Name;
-  // UInt32 Index;
-  
-  CImageInfo(): CTimeDefined(false), MTimeDefined(false), NameDefined(false)
-      // , IndexDefined(false)
-      {}
-  void Parse(const CXmlItem &item);
-};
-
-struct CXml
-{
-  CByteBuffer Data;
-  UInt16 VolIndex;
-  CObjectVector<CImageInfo> Images;
-
-  void ToUnicode(UString &s);
-  void Parse();
-};
-
-
 class CHandler:
   public IInArchive,
+  public IArchiveGetRawProps,
+  public IArchiveGetRootProps,
+  public IArchiveKeepModeForNextOpen,
+  public ISetProperties,
+  public IOutArchive,
   public CMyUnknownImp
 {
   CDatabase _db;
   UInt32 _version;
   bool _isOldVersion;
+  UInt32 _bootIndex;
+
   CObjectVector<CVolume> _volumes;
-  CObjectVector<CXml> _xmls;
-  int _nameLenForStreams;
+  CObjectVector<CWimXml> _xmls;
+  // unsigned _nameLenForStreams;
   bool _xmlInComments;
+  
+  unsigned _numXmlItems;
+  unsigned _numIgnoreItems;
 
+  bool _xmlError;
+  bool _isArc;
+
+  bool _set_use_ShowImageNumber;
+  bool _set_showImageNumber;
+  int _defaultImageNumber;
+
+  bool _showImageNumber;
+
+  bool _keepMode_ShowImageNumber;
+
+  UInt64 _phySize;
+  int _firstVolumeIndex;
+
+  void InitDefaults()
+  {
+    _set_use_ShowImageNumber = false;
+    _set_showImageNumber = false;
+    _defaultImageNumber = -1;
+  }
+
+  bool ThereIsError() const { return _xmlError || _db.ThereIsError(); }
+  HRESULT GetSecurity(UInt32 realIndex, const void **data, UInt32 *dataSize, UInt32 *propType);
+
+  HRESULT GetOutProperty(IArchiveUpdateCallback *callback, UInt32 callbackIndex, Int32 arcIndex, PROPID propID, PROPVARIANT *value);
+  HRESULT        GetTime(IArchiveUpdateCallback *callback, UInt32 callbackIndex, Int32 arcIndex, PROPID propID, FILETIME &ft);
 public:
-  MY_UNKNOWN_IMP1(IInArchive)
+  CHandler();
+  MY_UNKNOWN_IMP6(
+      IInArchive,
+      IArchiveGetRawProps,
+      IArchiveGetRootProps,
+      IArchiveKeepModeForNextOpen,
+      ISetProperties,
+      IOutArchive)
   INTERFACE_IInArchive(;)
-};
-
-class COutHandler:
-  public IOutArchive,
-  public CMyUnknownImp
-{
-public:
-  MY_UNKNOWN_IMP1(IOutArchive)
+  INTERFACE_IArchiveGetRawProps(;)
+  INTERFACE_IArchiveGetRootProps(;)
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
+  STDMETHOD(KeepModeForNextOpen)();
   INTERFACE_IOutArchive(;)
 };
 

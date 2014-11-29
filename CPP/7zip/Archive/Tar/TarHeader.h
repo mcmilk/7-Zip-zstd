@@ -1,20 +1,22 @@
-// Archive/Tar/Header.h
+// Archive/TarHeader.h
 
 #ifndef __ARCHIVE_TAR_HEADER_H
 #define __ARCHIVE_TAR_HEADER_H
 
-#include "Common/Types.h"
+#include "../../../Common/MyTypes.h"
 
 namespace NArchive {
 namespace NTar {
 
 namespace NFileHeader
 {
-  const int kRecordSize = 512;
-  const int kNameSize = 100;
-  const int kUserNameSize = 32;
-  const int kGroupNameSize = 32;
-  const int kPrefixSize = 155;
+  const unsigned kRecordSize = 512;
+  const unsigned kNameSize = 100;
+  const unsigned kUserNameSize = 32;
+  const unsigned kGroupNameSize = 32;
+  const unsigned kPrefixSize = 155;
+
+  const unsigned kUstarMagic_Offset = 257;
 
   /*
   struct CHeader
@@ -42,66 +44,39 @@ namespace NFileHeader
   };
   */
 
-  namespace NMode
-  {
-    const int kSetUID   = 04000;  // Set UID on execution
-    const int kSetGID   = 02000;  // Set GID on execution
-    const int kSaveText = 01000;  // Save text (sticky bit)
-  }
-
-  namespace NFilePermissions
-  {
-    const int kUserRead     = 00400;  // read by owner
-    const int kUserWrite    = 00200;  // write by owner
-    const int kUserExecute  = 00100;  // execute/search by owner
-    const int kGroupRead    = 00040;  // read by group
-    const int kGroupWrite   = 00020;  // write by group
-    const int kGroupExecute = 00010;  // execute/search by group
-    const int kOtherRead    = 00004;  // read by other
-    const int kOtherWrite   = 00002;  // write by other
-    const int kOtherExecute = 00001;  // execute/search by other
-  }
-
-
-  // The linkflag defines the type of file
   namespace NLinkFlag
   {
-    const char kOldNormal    = '\0'; // Normal disk file, Unix compatible
+    const char kOldNormal    = 0;   // Normal disk file, Unix compatible
     const char kNormal       = '0'; // Normal disk file
-    const char kLink         = '1'; // Link to previously dumped file
-    const char kSymbolicLink = '2'; // Symbolic link
+    const char kHardLink     = '1'; // Link to previously dumped file
+    const char kSymLink      = '2'; // Symbolic link
     const char kCharacter    = '3'; // Character special file
     const char kBlock        = '4'; // Block special file
     const char kDirectory    = '5'; // Directory
     const char kFIFO         = '6'; // FIFO special file
     const char kContiguous   = '7'; // Contiguous file
-
-    const char kDumpDir       = 'D'; /* GNUTYPE_DUMPDIR.
+    const char kGnu_LongLink = 'K';
+    const char kGnu_LongName = 'L';
+    const char kSparse       = 'S';
+    const char kDumpDir      = 'D'; /* GNUTYPE_DUMPDIR.
       data: list of files created by the --incremental (-G) option
       Each file name is preceded by either
         - 'Y' (file should be in this archive)
         - 'N' (file is a directory, or is not stored in the archive.)
         Each file name is terminated by a null + an additional null after
         the last file name. */
-
-    const char kSparse = 'S';
   }
-  // Further link types may be defined later.
-
-  // The checksum field is filled with this while the checksum is computed.
-  extern const char *kCheckSumBlanks;//   = "        ";   // 8 blanks, no null
 
   extern const char *kLongLink;  //   = "././@LongLink";
   extern const char *kLongLink2; //   = "@LongLink";
 
-  // The magic field is filled with this if uname and gname are valid.
   namespace NMagic
   {
-    extern const char *kUsTar; //   = "ustar"; // 5 chars
-    extern const char *kGNUTar; //  = "GNUtar "; // 7 chars and a null
-    extern const char *kEmpty; //  = "GNUtar "; // 7 chars and a null
+    // extern const char *kUsTar;  //  = "ustar"; // 5 chars
+    // extern const char *kGNUTar; //  = "GNUtar "; // 7 chars and a null
+    // extern const char *kEmpty;  //  = "\0\0\0\0\0\0\0\0"
+    extern const char kUsTar_00[];
   }
-
 }
 
 }}

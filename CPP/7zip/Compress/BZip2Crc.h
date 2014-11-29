@@ -3,7 +3,7 @@
 #ifndef __BZIP2_CRC_H
 #define __BZIP2_CRC_H
 
-#include "Common/Types.h"
+#include "../../Common/MyTypes.h"
 
 class CBZip2Crc
 {

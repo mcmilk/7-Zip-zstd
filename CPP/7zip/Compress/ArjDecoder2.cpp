@@ -27,9 +27,10 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
   m_OutWindowStream.Init(false);
   m_InBitStream.SetStream(inStream);
   m_InBitStream.Init();
+  
   CCoderReleaser coderReleaser(this);
 
-  while(pos < *outSize)
+  while (pos < *outSize)
   {
     const UInt32 kStartWidth = 0;
     const UInt32 kStopWidth = 7;

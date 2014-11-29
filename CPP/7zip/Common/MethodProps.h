@@ -11,7 +11,7 @@
 
 bool StringToBool(const UString &s, bool &res);
 HRESULT PROPVARIANT_to_bool(const PROPVARIANT &prop, bool &dest);
-int ParseStringToUInt32(const UString &srcString, UInt32 &number);
+unsigned ParseStringToUInt32(const UString &srcString, UInt32 &number);
 HRESULT ParsePropToUInt32(const UString &name, const PROPVARIANT &prop, UInt32 &resValue);
 
 HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 defaultNumThreads, UInt32 &numThreads);
@@ -32,7 +32,7 @@ struct CProps
 
   bool AreThereNonOptionalProps() const
   {
-    for (int i = 0; i < Props.Size(); i++)
+    FOR_VECTOR (i, Props)
       if (!Props[i].IsOptional)
         return true;
     return false;
@@ -179,6 +179,7 @@ public:
   }
   bool IsEmpty() const { return MethodName.IsEmpty() && Props.IsEmpty(); }
   HRESULT ParseMethodFromPROPVARIANT(const UString &realName, const PROPVARIANT &value);
+  HRESULT ParseMethodFromString(const UString &s);
 };
 
 #endif

@@ -3,11 +3,11 @@
 #ifndef __PROGRESS_DIALOG_H
 #define __PROGRESS_DIALOG_H
 
-#include "Windows/Synchronization.h"
-#include "Windows/Thread.h"
+#include "../../../Windows/Synchronization.h"
+#include "../../../Windows/Thread.h"
 
-#include "Windows/Control/Dialog.h"
-#include "Windows/Control/ProgressBar.h"
+#include "../../../Windows/Control/Dialog.h"
+#include "../../../Windows/Control/ProgressBar.h"
 
 #include "ProgressDialogRes.h"
 
@@ -136,14 +136,14 @@ public:
   INT_PTR Create(const UString &title, NWindows::CThread &thread, HWND wndParent = 0)
   {
     _title = title;
-    INT_PTR res = CModalDialog::Create(IDD_DIALOG_PROGRESS, wndParent);
+    INT_PTR res = CModalDialog::Create(IDD_PROGRESS, wndParent);
     thread.Wait();
     return res;
   }
 
   enum
   {
-    kCloseMessage = WM_USER + 1
+    kCloseMessage = WM_APP + 1
   };
 
   virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);

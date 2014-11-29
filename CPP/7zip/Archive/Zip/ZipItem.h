@@ -3,10 +3,12 @@
 #ifndef __ARCHIVE_ZIP_ITEM_H
 #define __ARCHIVE_ZIP_ITEM_H
 
-#include "Common/MyString.h"
-#include "Common/Buffer.h"
-#include "Common/UTFConvert.h"
-#include "Common/StringConvert.h"
+#include "../../../../C/CpuArch.h"
+
+#include "../../../Common/MyBuffer.h"
+#include "../../../Common/MyString.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/UTFConvert.h"
 
 #include "ZipHeader.h"
 
@@ -19,25 +21,25 @@ struct CVersion
   Byte HostOS;
 };
 
-bool operator==(const CVersion &v1, const CVersion &v2);
-bool operator!=(const CVersion &v1, const CVersion &v2);
-
 struct CExtraSubBlock
 {
   UInt16 ID;
   CByteBuffer Data;
-  bool ExtractNtfsTime(int index, FILETIME &ft) const;
-  bool ExtractUnixTime(bool isCentral, int index, UInt32 &res) const;
+
+  bool ExtractNtfsTime(unsigned index, FILETIME &ft) const;
+  bool ExtractUnixTime(bool isCentral, unsigned index, UInt32 &res) const;
 };
 
-struct CWzAesExtraField
+const unsigned k_WzAesExtra_Size = 7;
+
+struct CWzAesExtra
 {
-  UInt16 VendorVersion; // 0x0001 - AE-1, 0x0002 - AE-2,
-  // UInt16 VendorId; // "AE"
-  Byte Strength; // 1 - 128-bit , 2 - 192-bit , 3 - 256-bit
+  UInt16 VendorVersion; // 1: AE-1, 2: AE-2,
+  // UInt16 VendorId; // 'A' 'E'
+  Byte Strength; // 1: 128-bit, 2: 192-bit, 3: 256-bit
   UInt16 Method;
 
-  CWzAesExtraField(): VendorVersion(2), Strength(3), Method(0) {}
+  CWzAesExtra(): VendorVersion(2), Strength(3), Method(0) {}
 
   bool NeedCrc() const { return (VendorVersion == 1); }
 
@@ -45,19 +47,21 @@ struct CWzAesExtraField
   {
     if (sb.ID != NFileHeader::NExtraID::kWzAES)
       return false;
-    if (sb.Data.GetCapacity() < 7)
+    if (sb.Data.Size() < k_WzAesExtra_Size)
       return false;
     const Byte *p = (const Byte *)sb.Data;
-    VendorVersion = (((UInt16)p[1]) << 8) | p[0];
+    VendorVersion = GetUi16(p);
     if (p[2] != 'A' || p[3] != 'E')
       return false;
     Strength = p[4];
-    Method = (((UInt16)p[6]) << 16) | p[5];
+    // 9.31: The BUG was fixed:
+    Method = GetUi16(p + 5);
     return true;
   }
+  
   void SetSubBlock(CExtraSubBlock &sb) const
   {
-    sb.Data.SetCapacity(7);
+    sb.Data.Alloc(k_WzAesExtra_Size);
     sb.ID = NFileHeader::NExtraID::kWzAES;
     Byte *p = (Byte *)sb.Data;
     p[0] = (Byte)VendorVersion;
@@ -70,7 +74,7 @@ struct CWzAesExtraField
   }
 };
 
-namespace NStrongCryptoFlags
+namespace NStrongCrypto_AlgId
 {
   const UInt16 kDES = 0x6601;
   const UInt16 kRC2old = 0x6602;
@@ -85,7 +89,7 @@ namespace NStrongCryptoFlags
   const UInt16 kRC4 = 0x6801;
 }
 
-struct CStrongCryptoField
+struct CStrongCryptoExtra
 {
   UInt16 Format;
   UInt16 AlgId;
@@ -97,12 +101,12 @@ struct CStrongCryptoField
     if (sb.ID != NFileHeader::NExtraID::kStrongEncrypt)
       return false;
     const Byte *p = (const Byte *)sb.Data;
-    if (sb.Data.GetCapacity() < 8)
+    if (sb.Data.Size() < 8)
       return false;
-    Format = (((UInt16)p[1]) << 8) | p[0];
-    AlgId  = (((UInt16)p[3]) << 8) | p[2];
-    BitLen = (((UInt16)p[5]) << 8) | p[4];
-    Flags  = (((UInt16)p[7]) << 8) | p[6];
+    Format = GetUi16(p + 0);
+    AlgId  = GetUi16(p + 2);
+    BitLen = GetUi16(p + 4);
+    Flags  = GetUi16(p + 6);
     return (Format == 2);
   }
 };
@@ -110,39 +114,50 @@ struct CStrongCryptoField
 struct CExtraBlock
 {
   CObjectVector<CExtraSubBlock> SubBlocks;
+  
   void Clear() { SubBlocks.Clear(); }
+  
   size_t GetSize() const
   {
     size_t res = 0;
-    for (int i = 0; i < SubBlocks.Size(); i++)
-      res += SubBlocks[i].Data.GetCapacity() + 2 + 2;
+    FOR_VECTOR (i, SubBlocks)
+      res += SubBlocks[i].Data.Size() + 2 + 2;
     return res;
   }
-  bool GetWzAesField(CWzAesExtraField &aesField) const
+  
+  bool GetWzAes(CWzAesExtra &e) const
   {
-    for (int i = 0; i < SubBlocks.Size(); i++)
-      if (aesField.ParseFromSubBlock(SubBlocks[i]))
+    FOR_VECTOR (i, SubBlocks)
+      if (e.ParseFromSubBlock(SubBlocks[i]))
         return true;
     return false;
   }
 
-  bool GetStrongCryptoField(CStrongCryptoField &f) const
+  bool HasWzAes() const
   {
-    for (int i = 0; i < SubBlocks.Size(); i++)
-      if (f.ParseFromSubBlock(SubBlocks[i]))
+    CWzAesExtra e;
+    return GetWzAes(e);
+  }
+
+  bool GetStrongCrypto(CStrongCryptoExtra &e) const
+  {
+    FOR_VECTOR (i, SubBlocks)
+      if (e.ParseFromSubBlock(SubBlocks[i]))
         return true;
     return false;
   }
 
-  bool HasWzAesField() const
+  /*
+  bool HasStrongCrypto() const
   {
-    CWzAesExtraField aesField;
-    return GetWzAesField(aesField);
+    CStrongCryptoExtra e;
+    return GetStrongCrypto(e);
   }
+  */
 
-  bool GetNtfsTime(int index, FILETIME &ft) const
+  bool GetNtfsTime(unsigned index, FILETIME &ft) const
   {
-    for (int i = 0; i < SubBlocks.Size(); i++)
+    FOR_VECTOR (i, SubBlocks)
     {
       const CExtraSubBlock &sb = SubBlocks[i];
       if (sb.ID == NFileHeader::NExtraID::kNTFS)
@@ -151,9 +166,9 @@ struct CExtraBlock
     return false;
   }
 
-  bool GetUnixTime(bool isCentral, int index, UInt32 &res) const
+  bool GetUnixTime(bool isCentral, unsigned index, UInt32 &res) const
   {
-    for (int i = 0; i < SubBlocks.Size(); i++)
+    FOR_VECTOR (i, SubBlocks)
     {
       const CExtraSubBlock &sb = SubBlocks[i];
       if (sb.ID == NFileHeader::NExtraID::kUnixTime)
@@ -161,14 +176,6 @@ struct CExtraBlock
     }
     return false;
   }
-
-  /*
-  bool HasStrongCryptoField() const
-  {
-    CStrongCryptoField f;
-    return GetStrongCryptoField(f);
-  }
-  */
 
   void RemoveUnknownSubBlocks()
   {
@@ -182,95 +189,134 @@ struct CExtraBlock
 class CLocalItem
 {
 public:
-  CVersion ExtractVersion;
   UInt16 Flags;
-  UInt16 CompressionMethod;
-  UInt32 Time;
-  UInt32 FileCRC;
+  UInt16 Method;
+  CVersion ExtractVersion;
+
+  UInt64 Size;
   UInt64 PackSize;
-  UInt64 UnPackSize;
+  UInt32 Time;
+  UInt32 Crc;
   
   AString Name;
 
   CExtraBlock LocalExtra;
 
   bool IsUtf8() const { return (Flags & NFileHeader::NFlags::kUtf8) != 0; }
-  
   bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kEncrypted) != 0; }
   bool IsStrongEncrypted() const { return IsEncrypted() && (Flags & NFileHeader::NFlags::kStrongEncrypted) != 0; };
-  bool IsAesEncrypted() const { return IsEncrypted() && (IsStrongEncrypted() || CompressionMethod == NFileHeader::NCompressionMethod::kWzAES); };
-  
+  bool IsAesEncrypted() const { return IsEncrypted() && (IsStrongEncrypted() || Method == NFileHeader::NCompressionMethod::kWzAES); };
   bool IsLzmaEOS() const { return (Flags & NFileHeader::NFlags::kLzmaEOS) != 0; }
+  bool HasDescriptor() const { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
   
   bool IsDir() const;
-  bool IgnoreItem() const { return false; }
-  
-  bool HasDescriptor() const  { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
 
-  UString GetUnicodeString(const AString &s) const
+  /*
+  void GetUnicodeString(const AString &s, UString &res) const
   {
-    UString res;
-    if (IsUtf8())
-      if (!ConvertUTF8ToUnicode(s, res))
-        res.Empty();
-    if (res.IsEmpty())
-      res = MultiByteToUnicodeString(s, GetCodePage());
-    return res;
+    bool isUtf8 = IsUtf8();
+    if (isUtf8)
+      if (ConvertUTF8ToUnicode(s, res))
+        return;
+    MultiByteToUnicodeString2(res, s, GetCodePage());
   }
-  
-private:
-  void SetFlagBits(int startBitNumber, int numBits, int value);
-  void SetBitMask(int bitMask, bool enable);
-public:
-  void ClearFlags() { Flags = 0; }
-  void SetEncrypted(bool encrypted);
-  void SetUtf8(bool isUtf8);
+  */
 
-  WORD GetCodePage() const { return  CP_OEMCP; }
+private:
+
+  void SetFlag(unsigned bitMask, bool enable)
+  {
+    if (enable)
+      Flags |= bitMask;
+    else
+      Flags &= ~bitMask;
+  }
+
+public:
+
+  void ClearFlags() { Flags = 0; }
+  void SetEncrypted(bool encrypted) { SetFlag(NFileHeader::NFlags::kEncrypted, encrypted); }
+  void SetUtf8(bool isUtf8) { SetFlag(NFileHeader::NFlags::kUtf8, isUtf8); }
+
+  UINT GetCodePage() const { return CP_OEMCP; }
 };
+
 
 class CItem: public CLocalItem
 {
 public:
   CVersion MadeByVersion;
-  UInt16 InternalAttributes;
-  UInt32 ExternalAttributes;
+  UInt16 InternalAttrib;
+  UInt32 ExternalAttrib;
   
-  UInt64 LocalHeaderPosition;
+  UInt64 LocalHeaderPos;
   
-  FILETIME NtfsMTime;
-  FILETIME NtfsATime;
-  FILETIME NtfsCTime;
-
   CExtraBlock CentralExtra;
   CByteBuffer Comment;
 
   bool FromLocal;
   bool FromCentral;
-  bool NtfsTimeIsDefined;
   
+  // CItem can be used as CLocalItem. So we must clear unused fields
+  CItem():
+      InternalAttrib(0),
+      ExternalAttrib(0),
+      FromLocal(false),
+      FromCentral(false)
+  {
+    MadeByVersion.Version = 0;
+    MadeByVersion.HostOS = 0;
+  }
+
   bool IsDir() const;
   UInt32 GetWinAttrib() const;
   bool GetPosixAttrib(UInt32 &attrib) const;
 
+  Byte GetHostOS() const { return FromCentral ? MadeByVersion.HostOS : ExtractVersion.HostOS; }
+
+  void GetUnicodeString(const AString &s, UString &res, bool useSpecifiedCodePage, UINT codePage) const
+  {
+    bool isUtf8 = IsUtf8();
+
+    #ifdef _WIN32
+    if (!isUtf8)
+    {
+      if (useSpecifiedCodePage)
+        isUtf8 = (codePage == CP_UTF8);
+      else if (GetHostOS() == NFileHeader::NHostOS::kUnix)
+      {
+        /* Some ZIP archives in Unix use UTF-8 encoding without Utf8 flag in header.
+           We try to get name as UTF-8.
+          Do we need to do it in POSIX version also? */
+        isUtf8 = true;
+      }
+    }
+    #endif
+
+    if (isUtf8)
+      if (ConvertUTF8ToUnicode(s, res))
+        return;
+    MultiByteToUnicodeString2(res, s, useSpecifiedCodePage ? codePage : GetCodePage());
+  }
+
   bool IsThereCrc() const
   {
-    if (CompressionMethod == NFileHeader::NCompressionMethod::kWzAES)
+    if (Method == NFileHeader::NCompressionMethod::kWzAES)
     {
-      CWzAesExtraField aesField;
-      if (CentralExtra.GetWzAesField(aesField))
+      CWzAesExtra aesField;
+      if (CentralExtra.GetWzAes(aesField))
         return aesField.NeedCrc();
     }
-    return (FileCRC != 0 || !IsDir());
+    return (Crc != 0 || !IsDir());
   }
   
-  WORD GetCodePage() const
+  UINT GetCodePage() const
   {
-    return (WORD)((MadeByVersion.HostOS == NFileHeader::NHostOS::kFAT
-        || MadeByVersion.HostOS == NFileHeader::NHostOS::kNTFS
-        ) ? CP_OEMCP : CP_ACP);
+    Byte hostOS = GetHostOS();
+    return (UINT)((
+        hostOS == NFileHeader::NHostOS::kFAT ||
+        hostOS == NFileHeader::NHostOS::kNTFS) ? CP_OEMCP : CP_ACP);
   }
-  CItem() : FromLocal(false), FromCentral(false), NtfsTimeIsDefined(false) {}
 };
 
 }}

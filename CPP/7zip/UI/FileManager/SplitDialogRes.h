@@ -1,7 +1,8 @@
-#define IDD_DIALOG_SPLIT                504
-#define IDC_STATIC_SPLIT_PATH           1000
-#define IDC_COMBO_SPLIT_PATH            1001
-#define IDC_BUTTON_SPLIT_PATH           1002
-#define IDC_STATIC_SPLIT_VOLUME         1010
-#define IDC_COMBO_SPLIT_VOLUME          1011
+#define IDD_SPLIT  7300
 
+#define IDT_SPLIT_PATH    7301
+#define IDT_SPLIT_VOLUME  7302
+
+#define IDC_SPLIT_PATH     100
+#define IDB_SPLIT_PATH     101
+#define IDC_SPLIT_VOLUME   102

@@ -1,12 +1,11 @@
 // OpenCallback.h
 
-#ifndef __OPENCALLBACK_H
-#define __OPENCALLBACK_H
+#ifndef __OPEN_CALLBACK_H
+#define __OPEN_CALLBACK_H
 
-#include "Common/MyCom.h"
-#include "Common/MyString.h"
+#include "../../../Common/MyCom.h"
 
-#include "Windows/FileFind.h"
+#include "../../../Windows/FileFind.h"
 
 #include "../../IPassword.h"
 
@@ -29,7 +28,7 @@ class COpenArchiveCallback:
 {
   FString _folderPrefix;
   NWindows::NFile::NFind::CFileInfo _fileInfo;
-  NWindows::NSynchronization::CCriticalSection _criticalSection;
+  // NWindows::NSynchronization::CCriticalSection _criticalSection;
   bool _subArchiveMode;
   UString _subArchiveName;
 
@@ -58,7 +57,7 @@ public:
   {
     _subArchiveMode = true;
     _subArchiveName = name;
-    return  S_OK;
+    return S_OK;
   }
 
   COpenArchiveCallback():

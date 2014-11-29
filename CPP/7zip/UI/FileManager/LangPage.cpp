@@ -2,9 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
+#include "../../../Common/Lang.h"
 
-#include "Windows/ResourceString.h"
+#include "../../../Windows/FileFind.h"
+#include "../../../Windows/ResourceString.h"
 
 #include "HelpUtils.h"
 #include "LangPage.h"
@@ -12,55 +13,85 @@
 #include "LangUtils.h"
 #include "RegistryUtils.h"
 
-static CIDLangPair kIDLangPairs[] =
+using namespace NWindows;
+
+static const UInt32 kLangIDs[] =
 {
-  { IDC_LANG_STATIC_LANG, 0x01000401}
+  IDT_LANG_LANG
 };
 
 static LPCWSTR kLangTopic = L"fm/options.htm#language";
 
-static UString NativeLangString(const UString &s)
+static void NativeLangString(UString &dest, const wchar_t *s)
 {
-  return L" (" + s + L')';
+  dest += L" (";
+  dest += s;
+  dest += L')';
 }
+
+bool LangOpen(CLang &lang, CFSTR fileName);
 
 bool CLangPage::OnInit()
 {
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
 
-  _langCombo.Attach(GetItem(IDC_LANG_COMBO_LANG));
+  _langCombo.Attach(GetItem(IDC_LANG_LANG));
 
-  UString s = NWindows::MyLoadStringW(IDS_LANG_ENGLISH) +
-      NativeLangString(NWindows::MyLoadStringW(IDS_LANG_NATIVE));
-  int index = (int)_langCombo.AddString(s);
+  UString temp = MyLoadString(IDS_LANG_ENGLISH);
+  NativeLangString(temp, MyLoadString(IDS_LANG_NATIVE));
+  int index = (int)_langCombo.AddString(temp);
   _langCombo.SetItemData(index, _paths.Size());
   _paths.Add(L"-");
   _langCombo.SetCurSel(0);
 
-  CObjectVector<CLangEx> langs;
-  LoadLangs(langs);
-  for (int i = 0; i < langs.Size(); i++)
+  const FString dirPrefix = GetLangDirPrefix();
+  NFile::NFind::CEnumerator enumerator(dirPrefix + FTEXT("*.txt"));
+  NFile::NFind::CFileInfo fi;
+  CLang lang;
+  UString error;
+  
+  while (enumerator.Next(fi))
   {
-    const CLangEx &lang = langs[i];
-    UString name, nationalName;
-    if (!lang.Lang.GetMessage(0, name))
-      name = lang.ShortName;
-    if (lang.Lang.GetMessage(1, nationalName) && !nationalName.IsEmpty())
-      name += NativeLangString(nationalName);
+    if (fi.IsDir())
+      continue;
+    const int kExtSize = 4;
+    if (fi.Name.Len() < kExtSize)
+      continue;
+    unsigned pos = fi.Name.Len() - kExtSize;
+    if (!StringsAreEqualNoCase_Ascii(fi.Name.Ptr(pos), ".txt"))
+      continue;
 
-    index = (int)_langCombo.AddString(name);
+    if (!LangOpen(lang, dirPrefix + fi.Name))
+    {
+      if (!error.IsEmpty())
+        error += L' ';
+      error += fs2us(fi.Name);
+      continue;
+    }
+    
+    const UString shortName = fs2us(fi.Name.Left(pos));
+    UString s = shortName;
+    const wchar_t *eng = lang.Get(IDS_LANG_ENGLISH);
+    if (eng)
+      s = eng;
+    const wchar_t *native = lang.Get(IDS_LANG_NATIVE);
+    if (native)
+      NativeLangString(s, native);
+    index = (int)_langCombo.AddString(s);
     _langCombo.SetItemData(index, _paths.Size());
-    _paths.Add(lang.ShortName);
-    if (g_LangID.CompareNoCase(lang.ShortName) == 0)
+    _paths.Add(shortName);
+    if (g_LangID.IsEqualToNoCase(shortName))
       _langCombo.SetCurSel(index);
   }
+  
+  if (!error.IsEmpty())
+    MessageBoxW(0, error, L"Error in Lang file", MB_OK | MB_ICONSTOP);
   return CPropertyPage::OnInit();
 }
 
 LONG CLangPage::OnApply()
 {
-  int selectedIndex = _langCombo.GetCurSel();
-  int pathIndex = (int)_langCombo.GetItemData(selectedIndex);
+  int pathIndex = (int)_langCombo.GetItemData_of_CurSel();
   SaveRegLang(_paths[pathIndex]);
   ReloadLang();
   LangWasChanged = true;
@@ -74,7 +105,7 @@ void CLangPage::OnNotifyHelp()
 
 bool CLangPage::OnCommand(int code, int itemID, LPARAM param)
 {
-  if (code == CBN_SELCHANGE && itemID == IDC_LANG_COMBO_LANG)
+  if (code == CBN_SELCHANGE && itemID == IDC_LANG_LANG)
   {
     Changed();
     return true;

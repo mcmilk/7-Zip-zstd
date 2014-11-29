@@ -8,6 +8,8 @@
 #include "../../PropID.h"
 #include "App.h"
 
+using namespace NWindows;
+
 // static LPCWSTR kHelpTopic = L"FM/index.htm";
 
 struct CVKeyPropIDPair
@@ -27,7 +29,7 @@ static CVKeyPropIDPair g_VKeyPropIDPairs[] =
 
 static int FindVKeyPropIDPair(WORD vKey)
 {
-  for (int i = 0; i < sizeof(g_VKeyPropIDPairs) / sizeof(g_VKeyPropIDPairs[0]); i++)
+  for (int i = 0; i < ARRAY_SIZE(g_VKeyPropIDPairs); i++)
     if (g_VKeyPropIDPairs[i].VKey == vKey)
       return i;
   return -1;
@@ -41,11 +43,11 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     _panelCallback->OnTab();
     return false;
   }
-  bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
-  bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-  // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
-  bool rightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
-  bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+  bool alt = IsKeyDown(VK_MENU);
+  bool ctrl = IsKeyDown(VK_CONTROL);
+  // bool leftCtrl = IsKeyDown(VK_LCONTROL);
+  bool rightCtrl = IsKeyDown(VK_RCONTROL);
+  bool shift = IsKeyDown(VK_SHIFT);
   result = 0;
 
   if (keyDownInfo->wVKey >= '0' && keyDownInfo->wVKey <= '9' &&
@@ -107,11 +109,20 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
       }
       break;
     }
+    case VK_F3:
+    {
+      if (!alt && !ctrl && !shift)
+      {
+        EditItem(false);
+        return true;
+      }
+      break;
+    }
     case VK_F4:
     {
       if (!alt && !ctrl && !shift)
       {
-        EditItem();
+        EditItem(true);
         return true;
       }
       if (!alt && !ctrl && shift)
@@ -139,17 +150,18 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
       }
       break;
     }
-    /*
     case VK_F7:
     {
       if (!alt && !ctrl && !shift)
       {
+        /* we can process F7 via menu ACCELERATOR.
+          But menu loading can be slow in case of UNC paths and system menu.
+          So we use don't use ACCELERATOR */
         CreateFolder();
         return true;
       }
       break;
     }
-    */
     case VK_DELETE:
     {
       DeleteItems(!shift);

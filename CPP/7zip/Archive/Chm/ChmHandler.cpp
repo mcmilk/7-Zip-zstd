@@ -2,17 +2,17 @@
 
 #include "StdAfx.h"
 
-#include "Common/ComTry.h"
-#include "Common/Defs.h"
-#include "Common/StringConvert.h"
-#include "Common/UTFConvert.h"
+#include "../../../Common/ComTry.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/UTFConvert.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/Time.h"
+#include "../../../Windows/PropVariant.h"
+#include "../../../Windows/TimeUtils.h"
 
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamUtils.h"
+#include "../../Common/RegisterArc.h"
 
 #include "../../Compress/CopyCoder.h"
 #include "../../Compress/LzxDecoder.h"
@@ -38,44 +38,45 @@ enum
 
 #endif
 
-STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidMethod, VT_BSTR},
-  { NULL, kpidBlock, VT_UI4}
+  kpidPath,
+  kpidSize,
+  kpidMethod,
+  kpidBlock
   
   #ifdef _CHM_DETAILS
   ,
-  { L"Section", kpidSection, VT_UI4},
-  { NULL, kpidOffset, VT_UI4}
+  L"Section", kpidSection,
+  kpidOffset
   #endif
 };
 
-STATPROPSTG kArcProps[] =
+/*
+static const Byte kArcProps[] =
 {
-  { NULL, kpidNumBlocks, VT_UI8}
+  // kpidNumBlocks,
 };
+*/
 
 IMP_IInArchive_Props
 
-IMP_IInArchive_ArcProps_NO
-/*
-IMP_IInArchive_ArcProps
+IMP_IInArchive_ArcProps_NO_Table
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
-  COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  // COM_TRY_BEGIN
+  NCOM::CPropVariant prop;
+  switch (propID)
   {
+    /*
     case kpidNumBlocks:
     {
       UInt64 numBlocks = 0;
-      for (int i = 0; i < m_Database.Sections.Size(); i++)
+      FOR_VECTOR(i, m_Database.Sections)
       {
         const CSectionInfo &s = m_Database.Sections[i];
-        for (int j = 0; j < s.Methods.Size(); j++)
+        FOR_VECTOR(j, s.Methods)
         {
           const CMethodInfo &m = s.Methods[j];
           if (m.IsLzx())
@@ -85,23 +86,27 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       prop = numBlocks;
       break;
     }
+    */
+    case kpidOffset: prop = m_Database.StartPosition; break;
+    case kpidPhySize: prop = m_Database.PhySize; break;
+
+    case kpidErrorFlags: prop = m_ErrorFlags; break;
   }
   prop.Detach(value);
   return S_OK;
-  COM_TRY_END
+  // COM_TRY_END
 }
-*/
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
   if (m_Database.NewFormat)
   {
     switch(propID)
     {
       case kpidSize:
-        prop = (UInt64)m_Database.NewFormatString.Length();
+        prop = (UInt64)m_Database.NewFormatString.Len();
       break;
     }
     prop.Detach(value);
@@ -113,7 +118,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   else
     entryIndex = m_Database.Indices[index];
   const CItem &item = m_Database.Items[entryIndex];
-  switch(propID)
+  switch (propID)
   {
     case kpidPath:
     {
@@ -122,7 +127,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       {
         if (!m_Database.LowLevel)
         {
-          if (us.Length() > 1)
+          if (us.Len() > 1)
             if (us[0] == L'/')
               us.Delete(0);
         }
@@ -160,6 +165,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
   COM_TRY_END
 }
 
+/*
 class CProgressImp: public CProgressVirt
 {
   CMyComPtr<IArchiveOpenCallback> _callback;
@@ -182,18 +188,25 @@ STDMETHODIMP CProgressImp::SetCompleted(const UInt64 *numFiles)
     return _callback->SetCompleted(numFiles, NULL);
   return S_OK;
 }
+*/
 
 STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 *maxCheckStartPosition,
     IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
-  m_Stream.Release();
+  Close();
   try
   {
-    CInArchive archive;
+    CInArchive archive(_help2);
     // CProgressImp progressImp(openArchiveCallback);
-    RINOK(archive.Open(inStream, maxCheckStartPosition, m_Database));
+    HRESULT res = archive.Open(inStream, maxCheckStartPosition, m_Database);
+    if (!archive.IsArc) m_ErrorFlags |= kpv_ErrorFlags_IsNotArc;
+    if (archive.HeadersError) m_ErrorFlags |= kpv_ErrorFlags_HeadersError;
+    if (archive.UnexpectedEnd)  m_ErrorFlags |= kpv_ErrorFlags_UnexpectedEnd;
+    if (archive.UnsupportedFeature)  m_ErrorFlags |= kpv_ErrorFlags_UnsupportedFeature;
+    
+    RINOK(res);
     /*
     if (m_Database.LowLevel)
       return S_FALSE;
@@ -210,6 +223,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 
 STDMETHODIMP CHandler::Close()
 {
+  m_ErrorFlags = 0;
   m_Database.Clear();
   m_Stream.Release();
   return S_OK;
@@ -402,7 +416,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testModeSpec, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
 
   if (allFilesMode)
     numItems = m_Database.NewFormat ? 1:
@@ -432,7 +446,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     UInt64 currentItemSize = 0;
     UInt64 totalSize = 0;
     if (m_Database.NewFormat)
-      totalSize = m_Database.NewFormatString.Length();
+      totalSize = m_Database.NewFormatString.Len();
     else
       for (i = 0; i < numItems; i++)
         totalSize += m_Database.Items[allFilesMode ? i : indices[i]].Size;
@@ -460,7 +474,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           continue;
         if (!testMode)
         {
-          UInt32 size = m_Database.NewFormatString.Length();
+          UInt32 size = m_Database.NewFormatString.Len();
           RINOK(WriteStream(realOutStream, (const char *)m_Database.NewFormatString, size));
         }
         RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
@@ -475,7 +489,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       RINOK(extractCallback->PrepareOperation(askMode));
       if (item.Section != 0)
       {
-        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnsupportedMethod));
         continue;
       }
 
@@ -589,7 +603,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnSupportedMethod));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnsupportedMethod));
       continue;
     }
 
@@ -716,6 +730,34 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
       m_Database.Items.Size():
       m_Database.Indices.Size());
   return S_OK;
+}
+
+namespace NChm {
+
+IMP_CreateArcIn_2(CHandler(false))
+
+static CArcInfo g_ArcInfo =
+  { "Chm", "chm chi chq chw", 0, 0xE9,
+  12, { 'I', 'T', 'S', 'F', 3, 0, 0, 0, 0x60, 0,  0, 0 },
+  0,
+  0,
+  CreateArc };
+
+REGISTER_ARC(Chm)
+}
+
+namespace NHxs {
+
+IMP_CreateArcIn_2(CHandler(true))
+
+static CArcInfo g_ArcInfo =
+  { "Hxs", "hxs hxi hxr hxq hxw lit", 0, 0xCE,
+  16, { 'I', 'T', 'O', 'L', 'I', 'T', 'L', 'S', 1, 0, 0, 0, 0x28, 0, 0, 0 },
+  0,
+  NArcInfoFlags::kFindSignature,
+  CreateArc };
+
+REGISTER_ARC(Hxs)
 }
 
 }}

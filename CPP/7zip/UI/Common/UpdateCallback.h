@@ -1,10 +1,9 @@
 // UpdateCallback.h
 
-#ifndef __UPDATECALLBACK_H
-#define __UPDATECALLBACK_H
+#ifndef __UPDATE_CALLBACK_H
+#define __UPDATE_CALLBACK_H
 
-#include "Common/MyCom.h"
-#include "Common/MyString.h"
+#include "../../../Common/MyCom.h"
 
 #include "../../IPassword.h"
 #include "../../ICoder.h"
@@ -32,16 +31,43 @@ struct IUpdateCallbackUI
   INTERFACE_IUpdateCallbackUI(=0)
 };
 
+struct CKeyKeyValPair
+{
+  UInt64 Key1;
+  UInt64 Key2;
+  unsigned Value;
+
+  int Compare(const CKeyKeyValPair &a) const
+  {
+    if (Key1 < a.Key1) return -1;
+    if (Key1 > a.Key1) return 1;
+    return MyCompare(Key2, a.Key2);
+  }
+};
+
+
 class CArchiveUpdateCallback:
   public IArchiveUpdateCallback2,
+  public IArchiveGetRawProps,
+  public IArchiveGetRootProps,
   public ICryptoGetTextPassword2,
   public ICryptoGetTextPassword,
   public ICompressProgressInfo,
   public CMyUnknownImp
 {
+  #if defined(_WIN32) && !defined(UNDER_CE)
+  bool _saclEnabled;
+  #endif
+  CRecordVector<CKeyKeyValPair> _map;
+
+  UInt32 _hardIndex_From;
+  UInt32 _hardIndex_To;
+
 public:
-  MY_UNKNOWN_IMP4(
+  MY_UNKNOWN_IMP6(
       IArchiveUpdateCallback2,
+      IArchiveGetRawProps,
+      IArchiveGetRootProps,
       ICryptoGetTextPassword2,
       ICryptoGetTextPassword,
       ICompressProgressInfo)
@@ -49,11 +75,12 @@ public:
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 
   INTERFACE_IArchiveUpdateCallback2(;)
+  INTERFACE_IArchiveGetRawProps(;)
+  INTERFACE_IArchiveGetRootProps(;)
 
   STDMETHOD(CryptoGetTextPassword2)(Int32 *passwordIsDefined, BSTR *password);
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
-public:
   CRecordVector<UInt64> VolumesSizes;
   FString VolName;
   FString VolExt;
@@ -62,14 +89,34 @@ public:
 
   bool ShareForWrite;
   bool StdInMode;
+  
   const CDirItems *DirItems;
+  const CDirItem *ParentDirItem;
+  
   const CObjectVector<CArcItem> *ArcItems;
   const CRecordVector<CUpdatePair2> *UpdatePairs;
   const UStringVector *NewNames;
   CMyComPtr<IInArchive> Archive;
+  CMyComPtr<IArchiveGetRawProps> GetRawProps;
+  CMyComPtr<IArchiveGetRootProps> GetRootProps;
+
   bool KeepOriginalItemNames;
+  bool StoreNtSecurity;
+  bool StoreHardLinks;
+  bool StoreSymLinks;
+
+  Byte *ProcessedItemsStatuses;
 
   CArchiveUpdateCallback();
+
+  bool IsDir(const CUpdatePair2 &up) const
+  {
+    if (up.DirIndex >= 0)
+      return DirItems->Items[up.DirIndex].IsDir();
+    else if (up.ArcIndex >= 0)
+      return (*ArcItems)[up.ArcIndex].IsDir;
+    return false;
+  }
 };
 
 #endif

@@ -4,30 +4,49 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 STRINGTABLE DISCARDABLE
 BEGIN
-  IDS_UPDATE_NOT_SUPPORTED "Update operations are not supported for this archive."
-  IDS_CANNOT_CREATE_FOLDER "Cannot create folder '{0}'"
-  IDS_OPEN_IS_NOT_SUPORTED_ARCHIVE "File is not supported archive."
-  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC "CRC failed in '{0}'. File is broken."
-  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR  "Data error in '{0}'. File is broken"
-  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CRC_ENCRYPTED "CRC failed in encrypted file '{0}'. Wrong password?"
-  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED  "Data error in encrypted file '{0}'. Wrong password?"
-  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_UNSUPPORTED_METHOD  "Unsupported compression method for '{0}'."
-  IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
-  IDS_MESSAGES_DIALOG_EXTRACT_MESSAGE_CANNOT_OPEN_FILE  "Can not open output file '{0}'."
-  IDS_PROGRESS_EXTRACTING "Extracting"
-  IDS_CANT_OPEN_ARCHIVE   "Can not open file '{0}' as archive"
-  IDS_CANT_OPEN_ENCRYPTED_ARCHIVE   "Can not open encrypted archive '{0}'. Wrong password?"
   IDS_MEM_ERROR  "The system cannot allocate the required amount of memory"
-  IDS_UNKNOWN_ERROR  "Unknown Error"
+  IDS_CANNOT_CREATE_FOLDER  "Cannot create folder '{0}'"
+  IDS_UPDATE_NOT_SUPPORTED  "Update operations are not supported for this archive."
+  IDS_CANT_OPEN_ARCHIVE  "Can not open file '{0}' as archive"
+  IDS_CANT_OPEN_ENCRYPTED_ARCHIVE  "Can not open encrypted archive '{0}'. Wrong password?"
   IDS_UNSUPPORTED_ARCHIVE_TYPE  "Unsupported archive type"
 
-  IDC_EXTRACT_RADIO_FULL_PATHNAMES "Full pathnames"
-  IDC_EXTRACT_RADIO_CURRENT_PATHNAMES "Current pathnames"
-  IDC_EXTRACT_RADIO_NO_PATHNAMES "No pathnames"
+  IDS_PROGRESS_EXTRACTING "Extracting"
 
-  IDC_EXTRACT_RADIO_ASK_BEFORE_OVERWRITE "Ask before overwrite"
-  IDC_EXTRACT_RADIO_OVERWRITE_WITHOUT_PROMPT "Overwrite without prompt"
-  IDC_EXTRACT_RADIO_SKIP_EXISTING_FILES "Skip existing files"
-  IDC_EXTRACT_RADIO_AUTO_RENAME "Auto rename"
-  IDC_EXTRACT_RADIO_AUTO_RENAME_EXISTING "Auto rename existing files"
+  IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
+
+  IDS_EXTRACT_PATHS_FULL    "Full pathnames"
+  IDS_EXTRACT_PATHS_NO      "No pathnames"
+  IDS_EXTRACT_PATHS_ABS     "Absolute pathnames"
+  IDS_PATH_MODE_RELAT       "Relative pathnames"
+
+  IDS_EXTRACT_OVERWRITE_ASK             "Ask before overwrite"
+  IDS_EXTRACT_OVERWRITE_WITHOUT_PROMPT  "Overwrite without prompt"
+  IDS_EXTRACT_OVERWRITE_SKIP_EXISTING   "Skip existing files"
+  IDS_EXTRACT_OVERWRITE_RENAME          "Auto rename"
+  IDS_EXTRACT_OVERWRITE_RENAME_EXISTING "Auto rename existing files"
+
+  IDS_EXTRACT_MESSAGE_UNSUPPORTED_METHOD   "Unsupported compression method for '{0}'."
+  IDS_EXTRACT_MESSAGE_DATA_ERROR           "Data error in '{0}'. File is broken"
+  IDS_EXTRACT_MESSAGE_CRC_ERROR            "CRC failed in '{0}'. File is broken."
+  IDS_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED "Data error in encrypted file '{0}'. Wrong password?"
+  IDS_EXTRACT_MESSAGE_CRC_ERROR_ENCRYPTED  "CRC failed in encrypted file '{0}'. Wrong password?"
+
+  IDS_EXTRACT_MSG_WRONG_PSW            "Wrong password?"
+  // IDS_EXTRACT_MSG_ENCRYPTED            "Encrypted file"
+
+  IDS_EXTRACT_MSG_UNSUPPORTED_METHOD   "Unsupported compression method"
+  IDS_EXTRACT_MSG_DATA_ERROR           "Data error"
+  IDS_EXTRACT_MSG_CRC_ERROR            "CRC failed"
+  IDS_EXTRACT_MSG_UNAVAILABLE_DATA     "Unavailable data"
+  IDS_EXTRACT_MSG_UEXPECTED_END        "Unexpected end of data";
+  IDS_EXTRACT_MSG_DATA_AFTER_END       "There are some data after the end of the payload data"  
+  IDS_EXTRACT_MSG_IS_NOT_ARC           "Is not archive"  
+  IDS_EXTRACT_MSG_HEADERS_ERROR        "Headers Error"
+
+  IDS_OPEN_MSG_UNAVAILABLE_START  "Unavailable start of archive"
+  IDS_OPEN_MSG_UNCONFIRMED_START  "Unconfirmed start of archive"
+  // IDS_OPEN_MSG_ERROR_FLAGS + 5  "Unexpected end of archive"
+  // IDS_OPEN_MSG_ERROR_FLAGS + 6  "There are data after the end of archive"
+  IDS_OPEN_MSG_UNSUPPORTED_FEATURE  "Unsupported feature"
 END

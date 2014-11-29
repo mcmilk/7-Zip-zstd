@@ -5,7 +5,8 @@
 #define __CRYPTO_PBKDF2_HMAC_SHA1_H
 
 #include <stddef.h>
-#include "../../Common/Types.h"
+
+#include "../../Common/MyTypes.h"
 
 namespace NCrypto {
 namespace NSha1 {

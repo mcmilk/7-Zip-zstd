@@ -2,15 +2,14 @@
 
 #include "StdAfx.h"
 
-#include "UpdateCallbackConsole.h"
-
-#include "Windows/Error.h"
+#include "../../../Windows/ErrorMsg.h"
 #ifndef _7ZIP_ST
-#include "Windows/Synchronization.h"
+#include "../../../Windows/Synchronization.h"
 #endif
 
 #include "ConsoleClose.h"
 #include "UserInputUtils.h"
+#include "UpdateCallbackConsole.h"
 
 using namespace NWindows;
 
@@ -28,11 +27,18 @@ static const char *kUpdatingArchiveMessage = "Updating archive ";
 static const char *kScanningMessage = "Scanning";
 
 
-HRESULT CUpdateCallbackConsole::OpenResult(const wchar_t *name, HRESULT result)
+HRESULT CUpdateCallbackConsole::OpenResult(const wchar_t *name, HRESULT result, const wchar_t *errorArcType)
 {
   (*OutStream) << endl;
   if (result != S_OK)
-    (*OutStream) << "Error: " << name << " is not supported archive" << endl;
+  {
+    (*OutStream) << "Error: " << name;
+    if (errorArcType)
+      (*OutStream) << " : can not open the file as [" << errorArcType << "] archive";
+    else
+      (*OutStream) << " is not supported archive";
+    (*OutStream) << endl;
+  }
   return S_OK;
 }
 
@@ -42,12 +48,12 @@ HRESULT CUpdateCallbackConsole::StartScanning()
   return S_OK;
 }
 
-HRESULT CUpdateCallbackConsole::ScanProgress(UInt64 /* numFolders */, UInt64 /* numFiles */, const wchar_t * /* path */)
+HRESULT CUpdateCallbackConsole::ScanProgress(UInt64 /* numFolders */, UInt64 /* numFiles */, UInt64 /* totalSize */, const wchar_t * /* path */, bool /* isDir */)
 {
   return CheckBreak();
 }
 
-HRESULT CUpdateCallbackConsole::CanNotFindError(const wchar_t *name, DWORD systemError)
+HRESULT CCallbackConsoleBase::CanNotFindError_Base(const wchar_t *name, DWORD systemError)
 {
   CantFindFiles.Add(name);
   CantFindCodes.Add(systemError);
@@ -60,9 +66,14 @@ HRESULT CUpdateCallbackConsole::CanNotFindError(const wchar_t *name, DWORD syste
   }
   m_PercentPrinter.PrintString(name);
   m_PercentPrinter.PrintString(":  WARNING: ");
-  m_PercentPrinter.PrintString(NError::MyFormatMessageW(systemError));
+  m_PercentPrinter.PrintString(NError::MyFormatMessage(systemError));
   m_PercentPrinter.PrintNewLine();
   return S_OK;
+}
+
+HRESULT CUpdateCallbackConsole::CanNotFindError(const wchar_t *name, DWORD systemError)
+{
+  return CanNotFindError_Base(name, systemError);
 }
 
 HRESULT CUpdateCallbackConsole::FinishScanning()
@@ -176,15 +187,19 @@ HRESULT CUpdateCallbackConsole::OpenFileError(const wchar_t *name, DWORD systemE
   MT_LOCK
   FailedCodes.Add(systemError);
   FailedFiles.Add(name);
-  // if (systemError == ERROR_SHARING_VIOLATION)
+  /*
+  if (systemError == ERROR_SHARING_VIOLATION)
   {
+  */
     m_PercentPrinter.ClosePrint();
     m_PercentPrinter.PrintNewLine();
     m_PercentPrinter.PrintString("WARNING: ");
-    m_PercentPrinter.PrintString(NError::MyFormatMessageW(systemError));
+    m_PercentPrinter.PrintString(NError::MyFormatMessage(systemError));
     return S_FALSE;
+  /*
   }
-  // return systemError;
+  return systemError;
+  */
 }
 
 HRESULT CUpdateCallbackConsole::SetOperationResult(Int32 )

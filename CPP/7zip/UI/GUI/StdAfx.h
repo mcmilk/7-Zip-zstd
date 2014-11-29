@@ -3,11 +3,17 @@
 #ifndef __STDAFX_H
 #define __STDAFX_H
 
-#include <windows.h>
-#include <commctrl.h>
-#include <shlobj.h>
-#include <stdio.h>
+// #define _WIN32_WINNT 0x0400
+#define _WIN32_WINNT 0x0500
+#define WINVER _WIN32_WINNT
 
-#include "Common/NewHandler.h"
+#include "../../../Common/Common.h"
+
+// #include <commctrl.h>
+#include <ShlObj.h>
+#include <shlwapi.h>
+
+// #define printf(x) NO_PRINTF_(x)
+// #define sprintf(x) NO_SPRINTF_(x)
 
 #endif

@@ -1,6 +1,6 @@
 PROG = 7z.dll
-DEF_FILE = ../Archive.def
-CFLAGS = $(CFLAGS) -I ../../../  \
+DEF_FILE = ../../Archive/Archive2.def
+CFLAGS = $(CFLAGS) \
   -DEXTERNAL_CODECS \
 
 AR_OBJS = \
@@ -32,12 +32,14 @@ COMMON_OBJS = \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\MyVector.obj \
+  $O\Wildcard.obj \
 
 WIN_OBJS = \
   $O\DLL.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
+  $O\FileName.obj \
   $O\PropVariant.obj \
   $O\Synchronization.obj \
   $O\System.obj \
@@ -52,6 +54,7 @@ WIN_OBJS = \
   $O\MethodProps.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\PropId.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
@@ -73,38 +76,4 @@ C_OBJS = \
   $O\CpuArch.obj \
   $O\Threads.obj \
 
-!include "../../Crc.mak"
-
-OBJS = \
-  $O\StdAfx.obj \
-  $(AR_OBJS) \
-  $(7Z_OBJS) \
-  $(COMMON_OBJS) \
-  $(WIN_OBJS) \
-  $(7ZIP_COMMON_OBJS) \
-  $(AR_COMMON_OBJS) \
-  $O\CopyCoder.obj \
-  $(C_OBJS) \
-  $(ASM_OBJS) \
-  $O\resource.res
-
-!include "../../../Build.mak"
-
-$(AR_OBJS): ../$(*B).cpp
-	$(COMPL)
-$(7Z_OBJS): $(*B).cpp
-	$(COMPL)
-$(COMMON_OBJS): ../../../Common/$(*B).cpp
-	$(COMPL)
-$(WIN_OBJS): ../../../Windows/$(*B).cpp
-	$(COMPL)
-$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
-	$(COMPL)
-$(AR_COMMON_OBJS): ../Common/$(*B).cpp
-	$(COMPL)
-$O\CopyCoder.obj: ../../Compress/$(*B).cpp
-	$(COMPL)
-$(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-
-!include "../../Asm.mak"
+!include "../../7zip.mak"

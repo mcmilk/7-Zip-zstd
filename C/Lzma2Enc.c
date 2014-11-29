@@ -1,5 +1,7 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2010-09-24 : Igor Pavlov : Public domain */
+2012-06-19 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 /* #include <stdio.h> */
 #include <string.h>
@@ -216,8 +218,7 @@ void Lzma2EncProps_Normalize(CLzma2EncProps *p)
     t3 = t1n * t2;
 
   p->lzmaProps.numThreads = t1;
-  p->numBlockThreads = t2;
-  p->numTotalThreads = t3;
+
   LzmaEncProps_Normalize(&p->lzmaProps);
 
   if (p->blockSize == 0)
@@ -231,6 +232,21 @@ void Lzma2EncProps_Normalize(CLzma2EncProps *p)
     if (blockSize < dictSize) blockSize = dictSize;
     p->blockSize = (size_t)blockSize;
   }
+  if (t2 > 1)
+  {
+    UInt64 temp = p->lzmaProps.reduceSize + p->blockSize - 1;
+    if (temp > p->lzmaProps.reduceSize)
+    {
+      UInt64 numBlocks = temp / p->blockSize;
+      if (numBlocks < t2)
+      {
+        t2 = (UInt32)numBlocks;
+        t3 = t1 * t2;
+      }
+    }
+  }
+  p->numBlockThreads = t2;
+  p->numTotalThreads = t3;
 }
 
 static SRes Progress(ICompressProgress *p, UInt64 inSize, UInt64 outSize)

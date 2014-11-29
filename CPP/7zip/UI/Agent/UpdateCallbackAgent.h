@@ -1,9 +1,10 @@
 // UpdateCallbackAgent.h
 
-#ifndef __UPDATECALLBACKAGENT_H
-#define __UPDATECALLBACKAGENT_H
+#ifndef __UPDATE_CALLBACK_AGENT_H
+#define __UPDATE_CALLBACK_AGENT_H
 
 #include "../Common/UpdateCallback.h"
+
 #include "IFolderArchive.h"
 
 class CUpdateCallbackAgent: public IUpdateCallbackUI

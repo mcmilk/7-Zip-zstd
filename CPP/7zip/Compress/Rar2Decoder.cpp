@@ -85,7 +85,7 @@ CDecoder::CDecoder():
 void CDecoder::InitStructures()
 {
   m_MmFilter.Init();
-  for(int i = 0; i < kNumRepDists; i++)
+  for (int i = 0; i < kNumRepDists; i++)
     m_RepDists[i] = 0;
   m_RepDistPtr = 0;
   m_LastLength = 0;
@@ -191,6 +191,7 @@ bool CDecoder::ReadLastTables()
   return true;
 }
 
+/*
 class CCoderReleaser
 {
   CDecoder *m_Coder;
@@ -201,6 +202,7 @@ public:
     m_Coder->ReleaseStreams();
   }
 };
+*/
 
 bool CDecoder::DecodeMm(UInt32 pos)
 {
@@ -319,7 +321,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   m_InBitStream.SetStream(inStream);
   m_InBitStream.Init();
 
-  CCoderReleaser coderReleaser(this);
+  // CCoderReleaser coderReleaser(this);
   if (!m_IsSolid)
   {
     InitStructures();
@@ -335,7 +337,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   }
 
   UInt64 startPos = m_OutWindowStream.GetProcessedSize();
-  while(pos < unPackSize)
+  while (pos < unPackSize)
   {
     UInt32 blockSize = 1 << 20;
     if (blockSize > unPackSize - pos)

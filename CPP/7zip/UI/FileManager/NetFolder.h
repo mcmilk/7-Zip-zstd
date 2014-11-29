@@ -3,9 +3,9 @@
 #ifndef __NET_FOLDER_H
 #define __NET_FOLDER_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
 
-#include "Windows/Net.h"
+#include "../../../Windows/Net.h"
 
 #include "IFolder.h"
 

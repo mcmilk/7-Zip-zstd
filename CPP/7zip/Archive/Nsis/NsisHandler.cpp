@@ -4,11 +4,12 @@
 
 #include "../../../../C/CpuArch.h"
 
-#include "Common/ComTry.h"
-#include "Common/IntToString.h"
+#include "../../../Common/ComTry.h"
+#include "../../../Common/IntToString.h"
 
-#include "Windows/PropVariant.h"
+#include "../../../Windows/PropVariant.h"
 
+#include "../../Common/ProgressUtils.h"
 #include "../../Common/StreamUtils.h"
 
 #include "../Common/ItemNameUtils.h"
@@ -27,54 +28,160 @@ static const char *kUnknownMethod = "Unknown";
 
 static const char *kMethods[] =
 {
-  "Copy",
-  "Deflate",
-  "BZip2",
-  "LZMA"
+    "Copy"
+  , "Deflate"
+  , "BZip2"
+  , "LZMA"
 };
 
-static const int kNumMethods = sizeof(kMethods) / sizeof(kMethods[0]);
-
-static STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8},
-  { NULL, kpidMTime, VT_FILETIME},
-  { NULL, kpidMethod, VT_BSTR},
-  { NULL, kpidSolid, VT_BOOL}
+  kpidPath,
+  kpidSize,
+  kpidPackSize,
+  kpidMTime,
+  kpidAttrib,
+  kpidMethod,
+  kpidSolid,
+  kpidOffset
 };
 
-static STATPROPSTG kArcProps[] =
+static const Byte kArcProps[] =
 {
-  { NULL, kpidMethod, VT_BSTR},
-  { NULL, kpidSolid, VT_BOOL}
+  kpidMethod,
+  kpidSolid,
+  kpidHeadersSize,
+  kpidEmbeddedStubSize,
+  kpidSubType
+  // kpidCodePage
 };
 
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
+
+static AString UInt32ToString(UInt32 val)
+{
+  char s[16];
+  ConvertUInt32ToString(val, s);
+  return s;
+}
+
+static AString GetStringForSizeValue(UInt32 val)
+{
+  for (int i = 31; i >= 0; i--)
+    if (((UInt32)1 << i) == val)
+      return UInt32ToString(i);
+  char c = 'b';
+  if      ((val & ((1 << 20) - 1)) == 0) { val >>= 20; c = 'm'; }
+  else if ((val & ((1 << 10) - 1)) == 0) { val >>= 10; c = 'k'; }
+  return UInt32ToString(val) + c;
+}
+
+static AString GetMethod(bool useFilter, NMethodType::EEnum method, UInt32 dict)
+{
+  AString s;
+  if (useFilter)
+  {
+    s += kBcjMethod;
+    s += ' ';
+  }
+  s += (method < ARRAY_SIZE(kMethods)) ? kMethods[method] : kUnknownMethod;
+  if (method == NMethodType::kLZMA)
+  {
+    s += ':';
+    s += GetStringForSizeValue(dict);
+  }
+  return s;
+}
+
+/*
+AString CHandler::GetMethod(NMethodType::EEnum method, bool useItemFilter, UInt32 dictionary) const
+{
+  AString s;
+  if (_archive.IsSolid && _archive.UseFilter || !_archive.IsSolid && useItemFilter)
+  {
+    s += kBcjMethod;
+    s += ' ';
+  }
+  s += (method < ARRAY_SIZE(kMethods)) ? kMethods[method] : kUnknownMethod;
+  if (method == NMethodType::kLZMA)
+  {
+    s += ':';
+    s += GetStringForSizeValue(_archive.IsSolid ? _archive.DictionarySize: dictionary);
+  }
+  return s;
+}
+*/
+
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  NCOM::CPropVariant prop;
+  switch (propID)
   {
-    case kpidMethod:
+    // case kpidCodePage: if (_archive.IsUnicode) prop = "UTF-16"; break;
+    case kpidSubType:
     {
-      UInt32 dict = 1;
-      bool filter = false;
-      for (int i = 0; i < _archive.Items.Size(); i++)
+      AString s = _archive.GetFormatDescription();
+      if (!_archive.IsInstaller)
       {
-        const CItem &item = _archive.Items[i];
-        filter |= item.UseFilter;
-        if (item.DictionarySize > dict)
-          dict = item.DictionarySize;
+        if (!s.IsEmpty())
+          s += ' ';
+        s += "(Uninstall)";
       }
-      prop = GetMethod(filter, dict);
+      if (!s.IsEmpty())
+        prop = s;
       break;
     }
+
+    case kpidMethod: prop = _methodString; break;
     case kpidSolid: prop = _archive.IsSolid; break;
+    case kpidOffset: prop = _archive.StartOffset; break;
+    case kpidPhySize: prop = _archive.ExeStub.Size() + _archive.FirstHeader.ArcSize; break;
+    case kpidEmbeddedStubSize: prop = _archive.ExeStub.Size(); break;
+    case kpidHeadersSize: prop = _archive.FirstHeader.HeaderSize; break;
+    
+    case kpidErrorFlags:
+    {
+      UInt32 v = 0;
+      if (!_archive.IsArc) v |= kpv_ErrorFlags_IsNotArc;
+      if (_archive.IsTruncated()) v |= kpv_ErrorFlags_UnexpectedEnd;
+      prop = v;
+      break;
+    }
+    
+    case kpidName:
+    {
+      AString s;
+      
+      #ifdef NSIS_SCRIPT
+        if (!_archive.Name.IsEmpty())
+          s = _archive.Name;
+        if (!_archive.IsInstaller)
+        {
+          if (!s.IsEmpty())
+            s += '.';
+          s += "Uninstall";
+        }
+      #endif
+
+      if (s.IsEmpty())
+        s = _archive.IsInstaller ? "Install" : "Uninstall";
+      s += (_archive.ExeStub.Size() == 0) ? ".nsis" : ".exe";
+
+      prop = _archive.ConvertToUnicode(s);
+      break;
+    }
+    
+    #ifdef NSIS_SCRIPT
+    case kpidShortComment:
+    {
+      if (!_archive.BrandingText.IsEmpty())
+        prop = _archive.ConvertToUnicode(_archive.BrandingText);
+      break;
+    }
+    #endif
   }
   prop.Detach(value);
   return S_OK;
@@ -82,16 +189,26 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
+STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
 {
   COM_TRY_BEGIN
   Close();
   {
-    if (_archive.Open(
-        EXTERNAL_CODECS_VARS
-        stream, maxCheckStartPosition) != S_OK)
+    if (_archive.Open(stream, maxCheckStartPosition) != S_OK)
       return S_FALSE;
-    _inStream = stream;
+    {
+      UInt32 dict = _archive.DictionarySize;
+      if (!_archive.IsSolid)
+      {
+        FOR_VECTOR (i, _archive.Items)
+        {
+          const CItem &item = _archive.Items[i];
+          if (item.DictionarySize > dict)
+            dict = item.DictionarySize;
+        }
+      }
+      _methodString = GetMethod(_archive.UseFilter, _archive.Method, dict);
+    }
   }
   return S_OK;
   COM_TRY_END
@@ -101,7 +218,6 @@ STDMETHODIMP CHandler::Close()
 {
   _archive.Clear();
   _archive.Release();
-  _inStream.Release();
   return S_OK;
 }
 
@@ -109,74 +225,30 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = _archive.Items.Size()
   #ifdef NSIS_SCRIPT
-    + 1
+    + 1 + _archive.LicenseFiles.Size();
   #endif
   ;
   return S_OK;
 }
 
-static AString UInt32ToString(UInt32 value)
-{
-  char buffer[16];
-  ConvertUInt32ToString(value, buffer);
-  return buffer;
-}
-
-static AString GetStringForSizeValue(UInt32 value)
-{
-  for (int i = 31; i >= 0; i--)
-    if (((UInt32)1 << i) == value)
-      return UInt32ToString(i);
-  char c = 'b';
-  if (value % (1 << 20) == 0)
-  {
-    value >>= 20;
-    c = 'm';
-  }
-  else if (value % (1 << 10) == 0)
-  {
-    value >>= 10;
-    c = 'k';
-  }
-  return UInt32ToString(value) + c;
-}
-
-AString CHandler::GetMethod(bool useItemFilter, UInt32 dictionary) const
-{
-  NMethodType::EEnum methodIndex = _archive.Method;
-  AString method;
-  if (_archive.IsSolid && _archive.UseFilter || !_archive.IsSolid && useItemFilter)
-  {
-    method += kBcjMethod;
-    method += ' ';
-  }
-  method += (methodIndex < kNumMethods) ? kMethods[methodIndex] : kUnknownMethod;
-  if (methodIndex == NMethodType::kLZMA)
-  {
-    method += ':';
-    method += GetStringForSizeValue(_archive.IsSolid ? _archive.DictionarySize: dictionary);
-  }
-  return method;
-}
-
-bool CHandler::GetUncompressedSize(int index, UInt32 &size)
+bool CHandler::GetUncompressedSize(unsigned index, UInt32 &size) const
 {
   size = 0;
   const CItem &item = _archive.Items[index];
-  if (item.SizeIsDefined)
-     size = item.Size;
-  else if (_archive.IsSolid && item.EstimatedSizeIsDefined)
-     size  = item.EstimatedSize;
+  if (item.Size_Defined)
+    size = item.Size;
+  else if (_archive.IsSolid && item.EstimatedSize_Defined)
+    size = item.EstimatedSize;
   else
     return false;
   return true;
 }
 
-bool CHandler::GetCompressedSize(int index, UInt32 &size)
+bool CHandler::GetCompressedSize(unsigned index, UInt32 &size) const
 {
   size = 0;
   const CItem &item = _archive.Items[index];
-  if (item.CompressedSizeIsDefined)
+  if (item.CompressedSize_Defined)
     size = item.CompressedSize;
   else
   {
@@ -202,27 +274,42 @@ bool CHandler::GetCompressedSize(int index, UInt32 &size)
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
   #ifdef NSIS_SCRIPT
   if (index >= (UInt32)_archive.Items.Size())
   {
-    switch(propID)
+    if (index == (UInt32)_archive.Items.Size())
     {
-      case kpidPath:  prop = L"[NSIS].nsi"; break;
-      case kpidSize:
-      case kpidPackSize:  prop = (UInt64)_archive.Script.Length(); break;
-      case kpidSolid:  prop = false; break;
+      switch (propID)
+      {
+        case kpidPath: prop = "[NSIS].nsi"; break;
+        case kpidSize:
+        case kpidPackSize: prop = (UInt64)_archive.Script.Len(); break;
+        case kpidSolid: prop = false; break;
+      }
+    }
+    else
+    {
+      const CLicenseFile &lic = _archive.LicenseFiles[index - (_archive.Items.Size() + 1)];
+      switch (propID)
+      {
+        case kpidPath: prop = lic.Name; break;
+        case kpidSize:
+        case kpidPackSize: prop = (UInt64)lic.Size; break;
+        case kpidSolid: prop = false; break;
+      }
     }
   }
   else
   #endif
   {
     const CItem &item = _archive.Items[index];
-    switch(propID)
+    switch (propID)
     {
+      case kpidOffset: prop = item.Pos; break;
       case kpidPath:
       {
-        UString s = NItemName::WinNameToOSName(item.GetReducedName(_archive.IsUnicode));
+        UString s = NItemName::WinNameToOSName(_archive.GetReducedName(index));
         if (!s.IsEmpty())
           prop = (const wchar_t *)s;
         break;
@@ -248,7 +335,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           prop = item.MTime;
         break;
       }
-      case kpidMethod:  prop = GetMethod(item.UseFilter, item.DictionarySize); break;
+      case kpidAttrib:
+      {
+        if (item.Attrib_Defined)
+          prop = item.Attrib;
+        break;
+      }
+      
+      case kpidMethod:
+        if (_archive.IsSolid)
+          prop = _methodString;
+        else
+          prop = GetMethod(_archive.UseFilter, item.IsCompressed ? _archive.Method :
+              NMethodType::kCopy, item.DictionarySize);
+        break;
+      
       case kpidSolid:  prop = _archive.IsSolid; break;
     }
   }
@@ -257,24 +358,56 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
+
+static bool UninstallerPatch(const Byte *p, size_t size, CByteBuffer &dest)
+{
+  for (;;)
+  {
+    if (size < 4)
+      return false;
+    UInt32 len = Get32(p);
+    if (len == 0)
+      return size == 4;
+    if (size < 8)
+      return false;
+    UInt32 offs = Get32(p + 4);
+    p += 8;
+    size -= 8;
+    if (size < len || offs > dest.Size() || len > dest.Size() - offs)
+      return false;
+    memcpy(dest + offs, p, len);
+    p += len;
+    size -= len;
+  }
+}
+
+
 STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     GetNumberOfItems(&numItems);
   if (numItems == 0)
     return S_OK;
+  
   UInt64 totalSize = 0;
+  UInt64 solidPosMax = 0;
 
   UInt32 i;
   for (i = 0; i < numItems; i++)
   {
     UInt32 index = (allFilesMode ? i : indices[i]);
+    
     #ifdef NSIS_SCRIPT
-    if (index >= (UInt32)_archive.Items.Size())
-      totalSize += _archive.Script.Length();
+    if (index >= _archive.Items.Size())
+    {
+      if (index == _archive.Items.Size())
+        totalSize += _archive.Script.Len();
+      else
+        totalSize += _archive.LicenseFiles[index - (_archive.Items.Size() + 1)].Size;
+    }
     else
     #endif
     {
@@ -282,9 +415,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       if (_archive.IsSolid)
       {
         GetUncompressedSize(index, size);
-        UInt64 pos = _archive.GetPosOfSolidItem(index);
-        if (pos > totalSize)
-          totalSize = pos + size;
+        UInt64 pos = (UInt64)_archive.GetPosOfSolidItem(index) + size;
+        if (solidPosMax < pos)
+          solidPosMax = pos;
       }
       else
       {
@@ -293,33 +426,58 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       }
     }
   }
-  extractCallback->SetTotal(totalSize);
 
-  UInt64 currentTotalSize = 0;
-  UInt32 currentItemSize = 0;
+  extractCallback->SetTotal(totalSize + solidPosMax);
 
-  UInt64 streamPos = 0;
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(extractCallback, !_archive.IsSolid);
+
   if (_archive.IsSolid)
   {
-    RINOK(_inStream->Seek(_archive.StreamOffset, STREAM_SEEK_SET, NULL));
-    bool useFilter;
-    RINOK(_archive.Decoder.Init(
-        EXTERNAL_CODECS_VARS
-        _inStream, _archive.Method, _archive.FilterFlag, useFilter));
+    RINOK(_archive.SeekTo_DataStreamOffset());
+    RINOK(_archive.InitDecoder());
+    _archive.Decoder.StreamPos = 0;
   }
 
-  CByteBuffer byteBuf;
-  const UInt32 kBufferLength = 1 << 16;
-  byteBuf.SetCapacity(kBufferLength);
-  Byte *buffer = byteBuf;
+  /* We use tempBuf for solid archives, if there is duplicate item.
+     We don't know uncompressed size for non-solid archives, so we can't
+     allocate exact buffer.
+     We use tempBuf also for first part (EXE stub) of unistall.exe
+     and tempBuf2 is used for second part (NSIS script). */
 
   CByteBuffer tempBuf;
+  CByteBuffer tempBuf2;
+  
+  /* tempPos is pos in uncompressed stream of previous item for solid archive, that
+     was written to tempBuf  */
+  UInt64 tempPos = (UInt64)(Int64)-1;
+  
+  /* prevPos is pos in uncompressed stream of previous item for solid archive.
+     It's used for test mode (where we don't need to test same file second time */
+  UInt64 prevPos =  (UInt64)(Int64)-1;
+  
+  // if there is error in solid archive, we show error for all subsequent files
+  bool solidDataError = false;
 
-  bool dataError = false;
-  for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
+  UInt64 curTotalPacked = 0, curTotalUnpacked = 0;
+  UInt32 curPacked = 0;
+  UInt64 curUnpacked = 0;
+
+  for (i = 0; i < numItems; i++,
+      curTotalPacked += curPacked,
+      curTotalUnpacked += curUnpacked)
   {
-    currentItemSize = 0;
-    RINOK(extractCallback->SetCompleted(&currentTotalSize));
+    lps->InSize = curTotalPacked;
+    lps->OutSize = curTotalUnpacked;
+    if (_archive.IsSolid)
+      lps->OutSize += _archive.Decoder.StreamPos;
+
+    curPacked = 0;
+    curUnpacked = 0;
+    RINOK(lps->SetCur());
+
+    // RINOK(extractCallback->SetCompleted(&currentTotalSize));
     CMyComPtr<ISequentialOutStream> realOutStream;
     Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
@@ -328,169 +486,184 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
+    bool dataError = false;
+
     #ifdef NSIS_SCRIPT
     if (index >= (UInt32)_archive.Items.Size())
     {
-      currentItemSize = _archive.Script.Length();
+      const void *data;
+      size_t size;
+      if (index == (UInt32)_archive.Items.Size())
+      {
+        data = (const Byte *)_archive.Script;
+        size = _archive.Script.Len();
+      }
+      else
+      {
+        CLicenseFile &lic = _archive.LicenseFiles[index - (_archive.Items.Size() + 1)];
+        if (lic.Text.Size() != 0)
+          data = lic.Text;
+        else
+          data = _archive._data + lic.Offset;
+        size = lic.Size;
+      }
+      curUnpacked = size;
       if (!testMode && !realOutStream)
         continue;
       RINOK(extractCallback->PrepareOperation(askMode));
-      if (!testMode)
-        RINOK(WriteStream(realOutStream, (const char *)_archive.Script, (UInt32)_archive.Script.Length()));
+      if (realOutStream)
+        RINOK(WriteStream(realOutStream, data, size));
     }
     else
     #endif
     {
       const CItem &item = _archive.Items[index];
       
-      if (_archive.IsSolid)
-        GetUncompressedSize(index, currentItemSize);
-      else
-        GetCompressedSize(index, currentItemSize);
+      if (!_archive.IsSolid)
+        GetCompressedSize(index, curPacked);
       
       if (!testMode && !realOutStream)
         continue;
       
       RINOK(extractCallback->PrepareOperation(askMode));
       
-      if (!dataError)
-      {
-        bool needDecompress = false;
-        bool sizeIsKnown = false;
-        UInt32 fullSize = 0;
+      dataError = solidDataError;
 
+      bool needDecompress = !solidDataError;
+      if (needDecompress)
+      {
+        if (testMode && _archive.IsSolid && _archive.GetPosOfSolidItem(index) == prevPos)
+          needDecompress = false;
+      }
+
+      if (needDecompress)
+      {
         bool writeToTemp = false;
         bool readFromTemp = false;
 
-        if (_archive.IsSolid)
+        if (!_archive.IsSolid)
+        {
+          RINOK(_archive.SeekToNonSolidItem(index));
+        }
+        else
         {
           UInt64 pos = _archive.GetPosOfSolidItem(index);
-          while (streamPos < pos)
+          if (pos < _archive.Decoder.StreamPos)
           {
-            size_t processedSize = (UInt32)MyMin(pos - streamPos, (UInt64)kBufferLength);
-            HRESULT res = _archive.Decoder.Read(buffer, &processedSize);
+            if (pos != tempPos)
+              solidDataError = dataError = true;
+            readFromTemp = true;
+          }
+          else
+          {
+            HRESULT res = _archive.Decoder.SetToPos(pos, progress);
+            if (res != S_OK)
+            {
+              if (res != S_FALSE)
+                return res;
+              solidDataError = dataError = true;
+            }
+            else if (!testMode && i + 1 < numItems)
+            {
+              UInt32 next = allFilesMode ? i + 1 : indices[i + 1];
+              if (next < _archive.Items.Size())
+              {
+                UInt64 nextPos = _archive.GetPosOfSolidItem(next);
+                if (nextPos == pos)
+                {
+                  writeToTemp = true;
+                  tempPos = pos;
+                }
+              }
+            }
+          }
+          prevPos = pos;
+        }
+
+        if (!dataError)
+        {
+          UInt32 unpackSize = 0;
+          bool unpackSize_Defined = false;
+          bool writeToTemp1 = writeToTemp;
+          if (item.IsUninstaller)
+          {
+            unpackSize = item.PatchSize;
+            unpackSize_Defined = true;
+            if (!readFromTemp)
+              writeToTemp = true;
+            writeToTemp1 = writeToTemp;
+            if (_archive.ExeStub.Size() == 0)
+            {
+              if (writeToTemp1 && !readFromTemp)
+                tempBuf.Free();
+              writeToTemp1 = false;
+            }
+          }
+
+          if (readFromTemp)
+          {
+            if (realOutStream && !item.IsUninstaller)
+              RINOK(WriteStream(realOutStream, tempBuf, tempBuf.Size()));
+          }
+          else
+          {
+            UInt32 curUnpacked32 = 0;
+            HRESULT res = _archive.Decoder.Decode(
+                writeToTemp1 ? &tempBuf : NULL,
+                item.IsUninstaller, item.PatchSize,
+                item.IsUninstaller ? NULL : realOutStream,
+                progress,
+                curPacked, curUnpacked32);
+            curUnpacked = curUnpacked32;
+            if (_archive.IsSolid)
+              curUnpacked = 0;
             if (res != S_OK)
             {
               if (res != S_FALSE)
                 return res;
               dataError = true;
-              break;
-            }
-            if (processedSize == 0)
-            {
-              dataError = true;
-              break;
-            }
-            streamPos += processedSize;
-          }
-          if (streamPos == pos)
-          {
-            Byte buffer2[4];
-            size_t processedSize = 4;
-            RINOK(_archive.Decoder.Read(buffer2, &processedSize));
-            if (processedSize != 4)
-              return E_FAIL;
-            streamPos += processedSize;
-            fullSize = Get32(buffer2);
-            sizeIsKnown = true;
-            needDecompress = true;
-
-            if (!testMode && i + 1 < numItems)
-            {
-              UInt64 nextPos = _archive.GetPosOfSolidItem(allFilesMode ? i : indices[i + 1]);
-              if (nextPos < streamPos + fullSize)
-              {
-                tempBuf.Free();
-                tempBuf.SetCapacity(fullSize);
-                writeToTemp = true;
-              }
-            }
-          }
-          else
-            readFromTemp = true;
-        }
-        else
-        {
-          RINOK(_inStream->Seek(_archive.GetPosOfNonSolidItem(index) + 4, STREAM_SEEK_SET, NULL));
-          if (item.IsCompressed)
-          {
-            needDecompress = true;
-            bool useFilter;
-            RINOK(_archive.Decoder.Init(
-                EXTERNAL_CODECS_VARS
-                _inStream, _archive.Method, _archive.FilterFlag, useFilter));
-            // fullSize = Get32(buffer); // It's bug !!!
-            // Test it: what is exact fullSize?
-            fullSize =  0xFFFFFFFF;
-          }
-          else
-            fullSize = item.Size;
-        }
-        if (!dataError)
-        {
-          if (needDecompress)
-          {
-            UInt64 offset = 0;
-            while (!sizeIsKnown || fullSize > 0)
-            {
-              UInt32 curSize = kBufferLength;
-              if (sizeIsKnown && curSize > fullSize)
-                curSize = fullSize;
-              size_t processedSize = curSize;
-              HRESULT res = _archive.Decoder.Read(buffer, &processedSize);
-              if (res != S_OK)
-              {
-                if (res != S_FALSE)
-                  return res;
-                dataError = true;
-                break;
-              }
-              if (processedSize == 0)
-              {
-                if (sizeIsKnown)
-                  dataError = true;
-                break;
-              }
-
-              if (writeToTemp)
-                memcpy((Byte *)tempBuf + (size_t)offset, buffer, processedSize);
-              
-              fullSize -= (UInt32)processedSize;
-              streamPos += processedSize;
-              offset += processedSize;
-              
-              UInt64 completed;
               if (_archive.IsSolid)
-                completed = currentTotalSize + offset;
-              else
-                completed = streamPos;
-              RINOK(extractCallback->SetCompleted(&completed));
-              if (!testMode)
-                RINOK(WriteStream(realOutStream, buffer, processedSize));
+                solidDataError = true;
             }
+          }
+        }
+        
+        if (!dataError && item.IsUninstaller)
+        {
+          if (_archive.ExeStub.Size() != 0)
+          {
+            CByteBuffer destBuf = _archive.ExeStub;
+            dataError = !UninstallerPatch(tempBuf, tempBuf.Size(), destBuf);
+           
+            if (realOutStream)
+              RINOK(WriteStream(realOutStream, destBuf, destBuf.Size()));
+          }
+          
+          if (readFromTemp)
+          {
+            if (realOutStream)
+              RINOK(WriteStream(realOutStream, tempBuf2, tempBuf2.Size()));
           }
           else
           {
-            if (readFromTemp)
+            UInt32 curPacked2 = 0;
+            UInt32 curUnpacked2 = 0;
+            HRESULT res = _archive.Decoder.Decode(
+                writeToTemp ? &tempBuf2 : NULL,
+                false, 0,
+                realOutStream,
+                progress,
+                curPacked2, curUnpacked2);
+            curPacked += curPacked2;
+            if (!_archive.IsSolid)
+              curUnpacked += curUnpacked2;
+            if (res != S_OK)
             {
-              if (!testMode)
-                RINOK(WriteStream(realOutStream, tempBuf, tempBuf.GetCapacity()));
-            }
-            else
-            while (fullSize > 0)
-            {
-              UInt32 curSize = MyMin(fullSize, kBufferLength);
-              UInt32 processedSize;
-              RINOK(_inStream->Read(buffer, curSize, &processedSize));
-              if (processedSize == 0)
-              {
-                dataError = true;
-                break;
-              }
-              fullSize -= processedSize;
-              streamPos += processedSize;
-              if (!testMode)
-                RINOK(WriteStream(realOutStream, buffer, processedSize));
+              if (res != S_FALSE)
+                return res;
+              dataError = true;
+              if (_archive.IsSolid)
+                solidDataError = true;
             }
           }
         }
@@ -504,7 +677,5 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   return S_OK;
   COM_TRY_END
 }
-
-IMPL_ISetCompressCodecsInfo
 
 }}

@@ -13,19 +13,19 @@
 #include "ProgramLocation.h"
 #include "PluginInterface.h"
 
-static CIDLangPair kIDLangPairs[] =
+static const UInt32 kLangIDs[] =
 {
-  { IDC_PLUGINS_STATIC_PLUGINS, 0x03010101},
-  { IDC_PLUGINS_BUTTON_OPTIONS, 0x03010110}
+  IDT_PLUGINS_PLUGINS,
+  IDB_PLUGINS_OPTIONS
 };
 
 static LPCWSTR kPluginsTopic = L"FM/options.htm#plugins";
 
 bool CPluginsPage::OnInit()
 {
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
 
-  _listView.Attach(GetItem(IDC_PLUGINS_LIST));
+  _listView.Attach(GetItem(IDL_PLUGINS));
 
   UINT32 newFlags = /* LVS_EX_CHECKBOXES | */ LVS_EX_FULLROWSELECT;
   _listView.SetExtendedListViewStyle(newFlags, newFlags);
@@ -83,7 +83,7 @@ bool CPluginsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   switch(buttonID)
   {
-    case IDC_PLUGINS_BUTTON_OPTIONS:
+    case IDB_PLUGINS_OPTIONS:
       OnButtonOptions();
       break;
     default:
@@ -148,32 +148,32 @@ void CPluginsPage::OnButtonOptions()
   CPluginInfo pluginInfo = _plugins[index];
   if (!pluginInfo.OptionsClassIDDefined)
   {
-    MessageBoxW(HWND(*this), L"There are no options", L"7-Zip", 0);
+    MessageBoxW(*this, L"There are no options", L"7-Zip", 0);
     return;
   }
   NWindows::NDLL::CLibrary lib;
   CMyComPtr<IPluginOptions> pluginOptions;
   if (!lib.Load(pluginInfo.FilePath))
   {
-    MessageBoxW(HWND(*this), L"Can't load plugin", L"7-Zip", 0);
+    MessageBoxW(*this, L"Can't load plugin", L"7-Zip", 0);
     return;
   }
   typedef UINT32 (WINAPI * CreateObjectPointer)(const GUID *clsID, const GUID *interfaceID, void **outObject);
   CreateObjectPointer createObject = (CreateObjectPointer)lib.GetProc("CreateObject");
   if (createObject == NULL)
   {
-    MessageBoxW(HWND(*this), L"Incorrect plugin", L"7-Zip", 0);
+    MessageBoxW(*this, L"Incorrect plugin", L"7-Zip", 0);
     return;
   }
   if (createObject(&pluginInfo.OptionsClassID, &IID_IPluginOptions, (void **)&pluginOptions) != S_OK)
   {
-    MessageBoxW(HWND(*this), L"There are no options", L"7-Zip", 0);
+    MessageBoxW(*this, L"There are no options", L"7-Zip", 0);
     return;
   }
   CPluginOptionsCallback *callbackSpec = new CPluginOptionsCallback;
   CMyComPtr<IPluginOptionsCallback> callback(callbackSpec);
   callbackSpec->Init(pluginInfo.Name);
-  pluginOptions->PluginOptions(HWND(*this), callback);
+  pluginOptions->PluginOptions(*this, callback);
 }
 
 bool CPluginsPage::OnNotify(UINT controlID, LPNMHDR lParam)

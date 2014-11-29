@@ -3,8 +3,8 @@
 #ifndef __ARCHIVE_ISO_IN_H
 #define __ARCHIVE_ISO_IN_H
 
-#include "Common/IntToString.h"
-#include "Common/MyCom.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/MyCom.h"
 
 #include "../../IStream.h"
 
@@ -25,37 +25,37 @@ struct CDir: public CDirRecord
     _subItems.Clear();
   }
   
-  int GetLength(bool checkSusp, int skipSize) const
+  unsigned GetLen(bool checkSusp, unsigned skipSize) const
   {
-    int len = GetLengthCur(checkSusp, skipSize);
+    unsigned len = GetLenCur(checkSusp, skipSize);
     if (Parent != 0)
       if (Parent->Parent != 0)
-        len += 1 + Parent->GetLength(checkSusp, skipSize);
+        len += 1 + Parent->GetLen(checkSusp, skipSize);
     return len;
   }
 
-  int GetLengthU() const
+  unsigned GetLenU() const
   {
-    int len = (int)(FileId.GetCapacity() / 2);
+    unsigned len = (unsigned)(FileId.Size() / 2);
     if (Parent != 0)
       if (Parent->Parent != 0)
-        len += 1 + Parent->GetLengthU();
+        len += 1 + Parent->GetLenU();
     return len;
   }
   
-  AString GetPath(bool checkSusp, int skipSize) const
+  AString GetPath(bool checkSusp, unsigned skipSize) const
   {
     AString s;
-    int len = GetLength(checkSusp, skipSize);
-    char *p = s.GetBuffer(len +  1);
+    unsigned len = GetLen(checkSusp, skipSize);
+    char *p = s.GetBuffer(len);
     p += len;
     *p = 0;
     const CDir *cur = this;
     for (;;)
     {
-      int curLen = cur->GetLengthCur(checkSusp, skipSize);
+      unsigned curLen = cur->GetLenCur(checkSusp, skipSize);
       p -= curLen;
-      memmove(p, (const char *)(const Byte *)cur->GetNameCur(checkSusp, skipSize), curLen);
+      memcpy(p, (const char *)(const Byte *)cur->GetNameCur(checkSusp, skipSize), curLen);
       cur = cur->Parent;
       if (cur == 0)
         break;
@@ -71,16 +71,16 @@ struct CDir: public CDirRecord
   UString GetPathU() const
   {
     UString s;
-    int len = GetLengthU();
-    wchar_t *p = s.GetBuffer(len +  1);
+    unsigned len = GetLenU();
+    wchar_t *p = s.GetBuffer(len);
     p += len;
     *p = 0;
     const CDir *cur = this;
     for (;;)
     {
-      int curLen = (int)(cur->FileId.GetCapacity() / 2);
+      unsigned curLen = (unsigned)(cur->FileId.Size() / 2);
       p -= curLen;
-      for (int i = 0; i < curLen; i++)
+      for (unsigned i = 0; i < curLen; i++)
       {
         Byte b0 = ((const Byte *)cur->FileId)[i * 2];
         Byte b1 = ((const Byte *)cur->FileId)[i * 2 + 1];
@@ -163,23 +163,19 @@ struct CBootInitialEntry
     return SectorCount * 512;
   }
 
-  UString GetName() const
+  AString GetName() const
   {
-    UString s;
-    if (Bootable)
-      s += L"Bootable";
+    AString s = (Bootable ? "Bootable" : "NotBootable");
+    s += '_';
+    if (BootMediaType < kNumBootMediaTypes)
+      s += kMediaTypes[BootMediaType];
     else
-      s += L"NotBootable";
-    s += L"_";
-    if (BootMediaType >= kNumBootMediaTypes)
     {
-      wchar_t name[16];
+      char name[16];
       ConvertUInt32ToString(BootMediaType, name);
       s += name;
     }
-    else
-      s += kMediaTypes[BootMediaType];
-    s += L".img";
+    s += ".img";
     return s;
   }
 };
@@ -228,18 +224,19 @@ struct CVolumeDescriptor
 
 struct CRef
 {
-  CDir *Dir;
+  const CDir *Dir;
   UInt32 Index;
+  UInt32 NumExtents;
+  UInt64 TotalSize;
 };
 
 const UInt32 kBlockSize = 1 << 11;
 
 class CInArchive
 {
-  CMyComPtr<IInStream> _stream;
+  IInStream *_stream;
   UInt64 _position;
 
-  Byte m_Buffer[kBlockSize];
   UInt32 m_BufferPos;
   
   CDir _rootDir;
@@ -275,15 +272,32 @@ public:
   HRESULT Open(IInStream *inStream);
   void Clear();
 
-  UInt64 _archiveSize;
+  UInt64 _fileSize;
+  UInt64 PhySize;
 
   CRecordVector<CRef> Refs;
   CObjectVector<CVolumeDescriptor> VolDescs;
   int MainVolDescIndex;
   UInt32 BlockSize;
   CObjectVector<CBootInitialEntry> BootEntries;
-  bool IncorrectBigEndian;
 
+  bool IsArc;
+  bool UnexpectedEnd;
+  bool HeadersError;
+  bool IncorrectBigEndian;
+  bool TooDeepDirs;
+  bool SelfLinkedDirs;
+  CRecordVector<UInt32> UniqStartLocations;
+
+  Byte m_Buffer[kBlockSize];
+
+  void UpdatePhySize(UInt32 blockIndex, UInt64 size)
+  {
+    UInt64 alignedSize = (size + BlockSize - 1) & ~((UInt64)BlockSize - 1);
+    UInt64 end = blockIndex * BlockSize + alignedSize;
+    if (PhySize < end)
+      PhySize = end;
+  }
 
   bool IsJoliet() const { return VolDescs[MainVolDescIndex].IsJoliet(); }
 
@@ -297,17 +311,17 @@ public:
       size = (1440 << 10);
     else if (be.BootMediaType == NBootMediaType::k2d88Floppy)
       size = (2880 << 10);
-    UInt64 startPos = be.LoadRBA * BlockSize;
-    if (startPos < _archiveSize)
+    UInt64 startPos = (UInt64)be.LoadRBA * BlockSize;
+    if (startPos < _fileSize)
     {
-      if (_archiveSize - startPos < size)
-        size = _archiveSize - startPos;
+      if (_fileSize - startPos < size)
+        size = _fileSize - startPos;
     }
     return size;
   }
 
   bool IsSusp;
-  int SuspSkipSize;
+  unsigned SuspSkipSize;
 };
   
 }}

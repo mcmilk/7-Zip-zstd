@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_CONTROL_LISTVIEW_H
 #define __WINDOWS_CONTROL_LISTVIEW_H
 
-#include "Windows/Window.h"
+#include "../Window.h"
 
 #include <commctrl.h>
 

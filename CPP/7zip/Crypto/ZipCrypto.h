@@ -3,7 +3,7 @@
 #ifndef __CRYPTO_ZIP_CRYPTO_H
 #define __CRYPTO_ZIP_CRYPTO_H
 
-#include "Common/MyCom.h"
+#include "../../Common/MyCom.h"
 
 #include "../ICoder.h"
 #include "../IPassword.h"

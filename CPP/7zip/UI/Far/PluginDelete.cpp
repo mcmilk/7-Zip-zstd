@@ -2,9 +2,11 @@
 
 #include "StdAfx.h"
 
+#include <stdio.h>
+
 #include "Messages.h"
 #include "Plugin.h"
-#include "UpdateCallback100.h"
+#include "UpdateCallbackFar.h"
 
 using namespace NFar;
 
@@ -36,12 +38,10 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
     }
     else if (numItems > 1)
     {
-      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles),
-          numItems);
+      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles), numItems);
       msgItems[1] = msg;
     }
-    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems,
-        sizeof(msgItems) / sizeof(msgItems[0]), 2) != 0)
+    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems, ARRAY_SIZE(msgItems), 2) != 0)
       return (FALSE);
   }
 
@@ -62,11 +62,10 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
   if (tempFile.CreateTempFile(m_FileName) != S_OK)
     return FALSE;
 
-  CRecordVector<UINT32> indices;
-  indices.Reserve(numItems);
+  CObjArray<UInt32> indices(numItems);
   int i;
   for (i = 0; i < numItems; i++)
-    indices.Add((UINT32)panelItems[i].UserData);
+    indices[i] = (UInt32)panelItems[i].UserData;
 
   ////////////////////////////
   // Save _folder;
@@ -88,7 +87,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
   
   updateCallbackSpec->Init(/* m_ArchiveHandler, */ progressBoxPointer);
 
-  result = outArchive->DeleteItems(tempFile.OutStream, &indices.Front(), indices.Size(), updateCallback);
+  result = outArchive->DeleteItems(tempFile.OutStream, indices, numItems, updateCallback);
   updateCallback.Release();
   outArchive.Release();
 
@@ -101,6 +100,6 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
     ShowErrorMessage(result);
     return FALSE;
   }
-  GetCurrentDir();
+  SetCurrentDirVar();
   return TRUE;
 }

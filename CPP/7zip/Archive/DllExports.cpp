@@ -3,8 +3,8 @@
 #include "StdAfx.h"
 
 #include "../../Common/MyInitGuid.h"
+
 #include "../../Common/ComTry.h"
-#include "../../Common/Types.h"
 
 #include "../../Windows/NtCheck.h"
 #include "../../Windows/PropVariant.h"

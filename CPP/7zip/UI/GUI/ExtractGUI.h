@@ -21,11 +21,15 @@
 
 HRESULT ExtractGUI(
     CCodecs *codecs,
-    const CIntVector &formatIndices,
+    const CObjectVector<COpenType> &formatIndices,
+    const CIntVector &excludedFormatIndices,
     UStringVector &archivePaths,
     UStringVector &archivePathsFull,
     const NWildcard::CCensorNode &wildcardCensor,
     CExtractOptions &options,
+    #ifndef _SFX
+    CHashBundle *hb,
+    #endif
     bool showDialog,
     bool &messageWasDisplayed,
     CExtractCallbackImp *extractCallback,

@@ -178,7 +178,7 @@ HRESULT CInMemStreamMt::ReadSubStream(int subStreamIndex, void *data, UInt32 siz
     if (curSize > size)
       curSize = size;
     void *p = blocks.Blocks[blocks.CurBlockIndex];
-    memmove(data, (const Byte *)p + curPos, curSize);
+    memcpy(data, (const Byte *)p + curPos, curSize);
     data = (void *)((Byte *)data + curSize);
     size -= curSize;
     if (processedSize != NULL)

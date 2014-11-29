@@ -15,18 +15,20 @@ Note:
 #include "../../../C/7zCrc.h"
 #include "../../../C/Alloc.h"
 
+#include "../../Common/Defs.h"
+
 #include "Rar3Vm.h"
 
 namespace NCompress {
 namespace NRar3 {
 
-UInt32 CMemBitDecoder::ReadBits(int numBits)
+UInt32 CMemBitDecoder::ReadBits(unsigned numBits)
 {
   UInt32 res = 0;
   for (;;)
   {
-    Byte b = _bitPos < _bitSize ? _data[_bitPos >> 3] : 0;
-    int avail = (int)(8 - (_bitPos & 7));
+    unsigned b = _bitPos < _bitSize ? (unsigned)_data[_bitPos >> 3] : 0;
+    unsigned avail = (unsigned)(8 - (_bitPos & 7));
     if (numBits <= avail)
     {
       _bitPos += numBits;
@@ -39,6 +41,15 @@ UInt32 CMemBitDecoder::ReadBits(int numBits)
 }
 
 UInt32 CMemBitDecoder::ReadBit() { return ReadBits(1); }
+
+UInt32 CMemBitDecoder::ReadEncodedUInt32()
+{
+  unsigned v = (unsigned)ReadBits(2);
+  UInt32 res = ReadBits(4 << v);
+  if (v == 1 && res < 16)
+    res = 0xFFFFFF00 | (res << 4) | ReadBits(4);
+  return res;
+}
 
 namespace NVm {
 
@@ -58,7 +69,7 @@ static const Byte CF_PROC = 16;
 static const Byte CF_USEFLAGS = 32;
 static const Byte CF_CHFLAGS = 64;
 
-static Byte kCmdFlags[]=
+static const Byte kCmdFlags[]=
 {
   /* CMD_MOV   */ CF_OP2 | CF_BYTEMODE,
   /* CMD_CMP   */ CF_OP2 | CF_BYTEMODE | CF_CHFLAGS,
@@ -142,7 +153,11 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
   {
     res = ExecuteCode(prg);
     if (!res)
-      prg->Commands[0].OpCode = CMD_RET;
+    {
+      prg->Commands.Clear();
+      prg->Commands.Add(CCommand());
+      prg->Commands.Back().OpCode = CMD_RET;
+    }
   }
   UInt32 newBlockPos = GetFixedGlobalValue32(NGlobalOffset::kBlockPos) & kSpaceMask;
   UInt32 newBlockSize = GetFixedGlobalValue32(NGlobalOffset::kBlockSize) & kSpaceMask;
@@ -157,9 +172,8 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
   if (dataSize != 0)
   {
     dataSize += kFixedGlobalSize;
-    outGlobalData.Reserve(dataSize);
-    for (UInt32 i = 0; i < dataSize; i++)
-      outGlobalData.Add(Mem[kGlobalOffset + i]);
+    outGlobalData.ClearAndSetSize(dataSize);
+    memcpy(&outGlobalData[0], Mem + kGlobalOffset, dataSize);
   }
   return res;
 }
@@ -234,6 +248,9 @@ bool CVm::ExecuteCode(const CProgram *prg)
   const CCommand *commands = &prg->Commands[0];
   const CCommand *cmd = commands;
   UInt32 numCommands = prg->Commands.Size();
+  if (numCommands == 0)
+    return false;
+
   for (;;)
   {
     switch(cmd->OpCode)
@@ -256,8 +273,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
       case CMD_CMPB:
         {
           Byte v1 = GetOperand8(&cmd->Op1);
-          Byte res = v1 - GetOperand8(&cmd->Op2);
-          res &= 0xFF;
+          Byte res = (Byte)((v1 - GetOperand8(&cmd->Op2)) & 0xFF);
           Flags = res == 0 ? FLAG_Z : (res > v1) | GET_FLAG_S_B(res);
         }
         break;
@@ -272,8 +288,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
       case CMD_ADDB:
         {
           Byte v1 = GetOperand8(&cmd->Op1);
-          Byte res = v1 + GetOperand8(&cmd->Op2);
-          res &= 0xFF;
+          Byte res = (Byte)((v1 + GetOperand8(&cmd->Op2)) & 0xFF);
           SetOperand8(&cmd->Op1, (Byte)res);
           Flags = (res < v1) | (res == 0 ? FLAG_Z : GET_FLAG_S_B(res));
         }
@@ -326,7 +341,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_INCB:
         {
-          Byte res = GetOperand8(&cmd->Op1) + 1;
+          Byte res = (Byte)(GetOperand8(&cmd->Op1) + 1);
           SetOperand8(&cmd->Op1, res);;
           FLAGS_UPDATE_SZ_B;
         }
@@ -340,7 +355,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_DECB:
         {
-          Byte res = GetOperand8(&cmd->Op1) - 1;
+          Byte res = (Byte)(GetOperand8(&cmd->Op1) - 1);
           SetOperand8(&cmd->Op1, res);;
           FLAGS_UPDATE_SZ_B;
         }
@@ -354,7 +369,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_XORB:
         {
-          Byte res = GetOperand8(&cmd->Op1) ^ GetOperand8(&cmd->Op2);
+          Byte res = (Byte)(GetOperand8(&cmd->Op1) ^ GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
@@ -368,7 +383,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_ANDB:
         {
-          Byte res = GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2);
+          Byte res = (Byte)(GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
@@ -382,7 +397,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_ORB:
         {
-          Byte res = GetOperand8(&cmd->Op1) | GetOperand8(&cmd->Op2);
+          Byte res = (Byte)(GetOperand8(&cmd->Op1) | GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
@@ -395,7 +410,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_TESTB:
         {
-          Byte res = GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2);
+          Byte res = (Byte)(GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2));
           FLAGS_UPDATE_SZ_B;
         }
         break;
@@ -589,7 +604,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_MULB:
         {
-          Byte res = GetOperand8(&cmd->Op1) * GetOperand8(&cmd->Op2);
+          Byte res = (Byte)(GetOperand8(&cmd->Op1) * GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
         }
         break;
@@ -627,28 +642,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
 //////////////////////////////////////////////////////
 // Read program
 
-UInt32 ReadEncodedUInt32(CMemBitDecoder &inp)
-{
-  switch(inp.ReadBits(2))
-  {
-    case 0:
-      return inp.ReadBits(4);
-    case 1:
-    {
-      UInt32 v = inp.ReadBits(4);
-      if (v == 0)
-        return 0xFFFFFF00 | inp.ReadBits(8);
-      else
-        return (v << 4) | inp.ReadBits(4);
-    }
-    case 2:
-      return inp.ReadBits(16);
-    default:
-      return inp.ReadBits(32);
-  }
-}
-
-void CVm::DecodeArg(CMemBitDecoder &inp, COperand &op, bool byteMode)
+static void DecodeArg(CMemBitDecoder &inp, COperand &op, bool byteMode)
 {
   if (inp.ReadBit())
   {
@@ -661,7 +655,7 @@ void CVm::DecodeArg(CMemBitDecoder &inp, COperand &op, bool byteMode)
     if (byteMode)
       op.Data = inp.ReadBits(8);
     else
-      op.Data = ReadEncodedUInt32(inp);
+      op.Data = inp.ReadEncodedUInt32();
   }
   else
   {
@@ -677,27 +671,27 @@ void CVm::DecodeArg(CMemBitDecoder &inp, COperand &op, bool byteMode)
         op.Data = inp.ReadBits(kNumRegBits);
       else
         op.Data = kNumRegs;
-      op.Base = ReadEncodedUInt32(inp);
+      op.Base = inp.ReadEncodedUInt32();
     }
   }
 }
 
-void CVm::ReadVmProgram(const Byte *code, UInt32 codeSize, CProgram *prg)
+void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
 {
   CMemBitDecoder inp;
   inp.Init(code, codeSize);
 
-  prg->StaticData.Clear();
+  StaticData.Clear();
   if (inp.ReadBit())
   {
-    UInt32 dataSize = ReadEncodedUInt32(inp) + 1;
+    UInt32 dataSize = inp.ReadEncodedUInt32() + 1;
     for (UInt32 i = 0; inp.Avail() && i < dataSize; i++)
-      prg->StaticData.Add((Byte)inp.ReadBits(8));
+      StaticData.Add((Byte)inp.ReadBits(8));
   }
   while (inp.Avail())
   {
-    prg->Commands.Add(CCommand());
-    CCommand *cmd = &prg->Commands.Back();
+    Commands.Add(CCommand());
+    CCommand *cmd = &Commands.Back();
     if (inp.ReadBit() == 0)
       cmd->OpCode = (ECommand)inp.ReadBits(3);
     else
@@ -716,20 +710,20 @@ void CVm::ReadVmProgram(const Byte *code, UInt32 codeSize, CProgram *prg)
       {
         if (cmd->Op1.Type == OP_TYPE_INT && (kCmdFlags[cmd->OpCode] & (CF_JUMP | CF_PROC)))
         {
-          int Distance = cmd->Op1.Data;
-          if (Distance >= 256)
-            Distance -= 256;
+          int dist = cmd->Op1.Data;
+          if (dist >= 256)
+            dist -= 256;
           else
           {
-            if (Distance >= 136)
-              Distance -= 264;
-            else if (Distance >= 16)
-              Distance -= 8;
-            else if (Distance >= 8)
-              Distance -= 16;
-            Distance += prg->Commands.Size() - 1;
+            if (dist >= 136)
+              dist -= 264;
+            else if (dist >= 16)
+              dist -= 8;
+            else if (dist >= 8)
+              dist -= 16;
+            dist += Commands.Size() - 1;
           }
-          cmd->Op1.Data = Distance;
+          cmd->Op1.Data = dist;
         }
       }
     }
@@ -770,7 +764,7 @@ enum EStandardFilter
   SF_UPCASE
 };
 
-struct StandardFilterSignature
+static const struct CStandardFilterSignature
 {
   UInt32 Length;
   UInt32 CRC;
@@ -792,7 +786,7 @@ static int FindStandardFilter(const Byte *code, UInt32 codeSize)
   UInt32 crc = CrcCalc(code, codeSize);
   for (int i = 0; i < sizeof(kStdFilters) / sizeof(kStdFilters[0]); i++)
   {
-    StandardFilterSignature &sfs = kStdFilters[i];
+    const CStandardFilterSignature &sfs = kStdFilters[i];
     if (sfs.CRC == crc && sfs.Length == codeSize)
       return i;
   }
@@ -801,30 +795,28 @@ static int FindStandardFilter(const Byte *code, UInt32 codeSize)
 
 #endif
 
-void CVm::PrepareProgram(const Byte *code, UInt32 codeSize, CProgram *prg)
+void CProgram::PrepareProgram(const Byte *code, UInt32 codeSize)
 {
   Byte xorSum = 0;
   for (UInt32 i = 1; i < codeSize; i++)
     xorSum ^= code[i];
 
-  prg->Commands.Clear();
+  Commands.Clear();
   #ifdef RARVM_STANDARD_FILTERS
-  prg->StandardFilterIndex = -1;
+  StandardFilterIndex = -1;
   #endif
 
   if (xorSum == code[0] && codeSize > 0)
   {
     #ifdef RARVM_STANDARD_FILTERS
-    prg->StandardFilterIndex = FindStandardFilter(code, codeSize);
-    if (prg->StandardFilterIndex >= 0)
+    StandardFilterIndex = FindStandardFilter(code, codeSize);
+    if (StandardFilterIndex >= 0)
       return;
     #endif
-    // 1 byte for checksum
-    ReadVmProgram(code + 1, codeSize - 1, prg);
+    ReadProgram(code + 1, codeSize - 1);
   }
-  prg->Commands.Add(CCommand());
-  CCommand *cmd = &prg->Commands.Back();
-  cmd->OpCode = CMD_RET;
+  Commands.Add(CCommand());
+  Commands.Back().OpCode = CMD_RET;
 }
 
 void CVm::SetMemory(UInt32 pos, const Byte *data, UInt32 dataSize)
@@ -841,7 +833,7 @@ static void E8E9Decode(Byte *data, UInt32 dataSize, UInt32 fileOffset, bool e9)
     return;
   dataSize -= 4;
   const UInt32 kFileSize = 0x1000000;
-  Byte cmpByte2 = (e9 ? 0xE9 : 0xE8);
+  Byte cmpByte2 = (Byte)(e9 ? 0xE9 : 0xE8);
   for (UInt32 curPos = 0; curPos < dataSize;)
   {
     Byte curByte = *(data++);
@@ -886,7 +878,7 @@ static void ItaniumDecode(Byte *data, UInt32 dataSize, UInt32 fileOffset)
             {
               const UInt32 kMask = 0xFFFFF;
               Byte *p = data + ((unsigned int)startPos >> 3);
-              UInt32 bitField =  ((UInt32)p[0]) | ((UInt32)p[1] <<  8) | ((UInt32)p[2] << 16);
+              UInt32 bitField = ((UInt32)p[0]) | ((UInt32)p[1] <<  8) | ((UInt32)p[2] << 16);
               int inBit = (startPos & 7);
               UInt32 offset = (bitField >> inBit) & kMask;
               UInt32 andMask = ~(kMask << inBit);
@@ -915,7 +907,7 @@ static void DeltaDecode(Byte *data, UInt32 dataSize, UInt32 numChannels)
   {
     Byte prevByte = 0;
     for (UInt32 destPos = dataSize + curChannel; destPos < border; destPos += numChannels)
-      data[destPos] = (prevByte = prevByte - data[srcPos++]);
+      data[destPos] = (prevByte = (Byte)(prevByte - data[srcPos++]));
   }
 }
 
@@ -956,8 +948,8 @@ static void RgbDecode(Byte *srcData, UInt32 dataSize, UInt32 width, UInt32 posR)
   for (UInt32 i = posR, border = dataSize - 2; i < border; i += 3)
   {
     Byte g = destData[i + 1];
-    destData[i] = destData[i] + g;
-    destData[i + 2] = destData[i + 2] + g;
+    destData[i    ] = (Byte)(destData[i    ] + g);
+    destData[i + 2] = (Byte)(destData[i + 2] + g);
   }
 }
 

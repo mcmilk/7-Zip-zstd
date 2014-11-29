@@ -3,8 +3,8 @@
 #ifndef __MENU_PAGE_H
 #define __MENU_PAGE_H
 
-#include "Windows/Control/PropertyPage.h"
-#include "Windows/Control/ListView.h"
+#include "../../../Windows/Control/PropertyPage.h"
+#include "../../../Windows/Control/ListView.h"
 
 #include "../Common/LoadCodecs.h"
 

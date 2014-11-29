@@ -1,10 +1,10 @@
 // ExtractEngine.h
 
-#ifndef __EXTRACTENGINE_H
-#define __EXTRACTENGINE_H
+#ifndef __EXTRACT_ENGINE_H
+#define __EXTRACT_ENGINE_H
 
-#include "Common/MyCom.h"
-#include "Common/MyString.h"
+#include "../../../Common/MyCom.h"
+#include "../../../Common/MyString.h"
 
 #include "../../IPassword.h"
 #include "../Agent/IFolderArchive.h"

@@ -16,10 +16,10 @@ static bool IsSeparatorChar(wchar_t c)
 
 static void RemoveCr(UString &s)
 {
-  s.Replace(L"\x0D", L"");
+  s.RemoveChar(L'\x0D');
 }
 
-static UString GetIDString(const wchar_t *srcString, int &finishPos)
+static UString GetIDString(const wchar_t *srcString, unsigned &finishPos)
 {
   UString result;
   bool quotes = false;
@@ -43,7 +43,7 @@ static UString GetIDString(const wchar_t *srcString, int &finishPos)
   return result;
 }
 
-static UString GetValueString(const wchar_t *srcString, int &finishPos)
+static UString GetValueString(const wchar_t *srcString, unsigned &finishPos)
 {
   UString result;
   for (finishPos = 0;;)
@@ -64,16 +64,16 @@ static UString GetValueString(const wchar_t *srcString, int &finishPos)
 static bool GetTextPairs(const UString &srcString, CObjectVector<CTextPair> &pairs)
 {
   pairs.Clear();
-  int pos = 0;
+  unsigned pos = 0;
   
-  if (srcString.Length() > 0)
+  if (srcString.Len() > 0)
   {
     if (srcString[0] == kBOM)
       pos++;
   }
-  while (pos < srcString.Length())
+  while (pos < srcString.Len())
   {
-    int finishPos;
+    unsigned finishPos;
     UString id = GetIDString((const wchar_t *)srcString + pos, finishPos);
     pos += finishPos;
     if (id.IsEmpty())
@@ -92,7 +92,8 @@ static bool GetTextPairs(const UString &srcString, CObjectVector<CTextPair> &pai
 }
 
 static int ComparePairIDs(const UString &s1, const UString &s2)
-  { return s1.CompareNoCase(s2); }
+  { return MyStringCompareNoCase(s1, s2); }
+
 static int ComparePairItems(const CTextPair &p1, const CTextPair &p2)
   { return ComparePairIDs(p1.ID, p2.ID); }
 
@@ -101,7 +102,7 @@ static int ComparePairItems(void *const *a1, void *const *a2, void * /* param */
 
 void CPairsStorage::Sort() { Pairs.Sort(ComparePairItems, 0); }
 
-int CPairsStorage::FindID(const UString &id, int &insertPos)
+int CPairsStorage::FindID(const UString &id, int &insertPos) const
 {
   int left = 0, right = Pairs.Size();
   while (left != right)
@@ -119,7 +120,7 @@ int CPairsStorage::FindID(const UString &id, int &insertPos)
   return -1;
 }
 
-int CPairsStorage::FindID(const UString &id)
+int CPairsStorage::FindID(const UString &id) const
 {
   int pos;
   return FindID(id, pos);
@@ -142,7 +143,7 @@ void CPairsStorage::DeletePair(const UString &id)
     Pairs.Delete(pos);
 }
 
-bool CPairsStorage::GetValue(const UString &id, UString &value)
+bool CPairsStorage::GetValue(const UString &id, UString &value) const
 {
   value.Empty();
   int pos = FindID(id);
@@ -152,7 +153,7 @@ bool CPairsStorage::GetValue(const UString &id, UString &value)
   return true;
 }
 
-UString CPairsStorage::GetValue(const UString &id)
+UString CPairsStorage::GetValue(const UString &id) const
 {
   int pos = FindID(id);
   if (pos < 0)
@@ -170,9 +171,9 @@ bool CPairsStorage::ReadFromString(const UString &text)
   return result;
 }
 
-void CPairsStorage::SaveToString(UString &text)
+void CPairsStorage::SaveToString(UString &text) const
 {
-  for (int i = 0; i < Pairs.Size(); i++)
+  FOR_VECTOR (i, Pairs)
   {
     const CTextPair &pair = Pairs[i];
     bool multiWord = (pair.ID.Find(L' ') >= 0);

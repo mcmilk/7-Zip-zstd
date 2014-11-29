@@ -1,7 +1,7 @@
 /* LzmaUtil.c -- Test application for LZMA compression
-2010-09-20 : Igor Pavlov : Public domain */
+2014-06-17 : Igor Pavlov : Public domain */
 
-#define _CRT_SECURE_NO_WARNINGS
+#include "../../Precomp.h"
 
 #include <stdio.h>
 #include <stdlib.h>

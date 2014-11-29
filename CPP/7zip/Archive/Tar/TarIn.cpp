@@ -4,18 +4,20 @@
 
 #include "../../../../C/CpuArch.h"
 
-#include "Common/StringToInt.h"
+#include "../../../Common/StringToInt.h"
 
 #include "../../Common/StreamUtils.h"
+
+#include "../IArchive.h"
 
 #include "TarIn.h"
 
 namespace NArchive {
 namespace NTar {
  
-static void MyStrNCpy(char *dest, const char *src, int size)
+static void MyStrNCpy(char *dest, const char *src, unsigned size)
 {
-  for (int i = 0; i < size; i++)
+  for (unsigned i = 0; i < size; i++)
   {
     char c = src[i];
     dest[i] = c;
@@ -24,19 +26,21 @@ static void MyStrNCpy(char *dest, const char *src, int size)
   }
 }
 
-static bool OctalToNumber(const char *srcString, int size, UInt64 &res)
+static bool OctalToNumber(const char *srcString, unsigned size, UInt64 &res)
 {
   char sz[32];
   MyStrNCpy(sz, srcString, size);
   sz[size] = 0;
   const char *end;
-  int i;
+  unsigned i;
   for (i = 0; sz[i] == ' '; i++);
   res = ConvertOctStringToUInt64(sz + i, &end);
+  if (end == sz + i)
+    return false;
   return (*end == ' ' || *end == 0);
 }
 
-static bool OctalToNumber32(const char *srcString, int size, UInt32 &res)
+static bool OctalToNumber32(const char *srcString, unsigned size, UInt32 &res)
 {
   UInt64 res64;
   if (!OctalToNumber(srcString, size, res64))
@@ -45,17 +49,27 @@ static bool OctalToNumber32(const char *srcString, int size, UInt32 &res)
   return (res64 <= 0xFFFFFFFF);
 }
 
-#define RIF(x) { if (!(x)) return S_FALSE; }
+#define RIF(x) { if (!(x)) return S_OK; }
+
+/*
+static bool IsEmptyData(const char *buf, size_t size)
+{
+  for (unsigned i = 0; i < size; i++)
+    if (buf[i] != 0)
+      return false;
+  return true;
+}
+*/
 
 static bool IsRecordLast(const char *buf)
 {
-  for (int i = 0; i < NFileHeader::kRecordSize; i++)
+  for (unsigned i = 0; i < NFileHeader::kRecordSize; i++)
     if (buf[i] != 0)
       return false;
   return true;
 }
 
-static void ReadString(const char *s, int size, AString &result)
+static void ReadString(const char *s, unsigned size, AString &result)
 {
   char temp[NFileHeader::kRecordSize + 1];
   MyStrNCpy(temp, s, size);
@@ -88,12 +102,39 @@ static bool ParseSize(const char *p, UInt64 &val)
   return OctalToNumber(p, 12, val);
 }
 
-static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemEx &item, AString &error)
+#define CHECK(x) { if (!(x)) return k_IsArc_Res_NO; }
+
+API_FUNC_IsArc IsArc_Tar(const Byte *p2, size_t size)
+{
+  if (size < NFileHeader::kRecordSize)
+    return k_IsArc_Res_NEED_MORE;
+
+  const char *p = (const char *)p2;
+  p += NFileHeader::kNameSize;
+
+  UInt32 mode;
+  CHECK(OctalToNumber32(p, 8, mode)); p += 8;
+
+  // if (!OctalToNumber32(p, 8, item.UID)) item.UID = 0;
+  p += 8;
+  // if (!OctalToNumber32(p, 8, item.GID)) item.GID = 0;
+  p += 8;
+
+  UInt64 packSize;
+  Int64 time;
+  UInt32 checkSum;
+  CHECK(ParseSize(p, packSize)); p += 12;
+  CHECK(ParseInt64(p, time)); p += 12;
+  CHECK(OctalToNumber32(p, 8, checkSum));
+  return k_IsArc_Res_YES;
+}
+
+static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemEx &item, EErrorType &error)
 {
   char buf[NFileHeader::kRecordSize];
   char *p = buf;
 
-  error.Empty();
+  error = k_ErrorType_OK;
   filled = false;
 
   bool thereAreEmptyRecords = false;
@@ -103,26 +144,41 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
     RINOK(ReadStream(stream, buf, &processedSize));
     if (processedSize == 0)
     {
-      if (!thereAreEmptyRecords )
-        error = "There are no trailing zero-filled records";
+      if (!thereAreEmptyRecords)
+        error = k_ErrorType_UnexpectedEnd; // "There are no trailing zero-filled records";
       return S_OK;
     }
     if (processedSize != NFileHeader::kRecordSize)
     {
-      error = "There is no correct record at the end of archive";
+      if (!thereAreEmptyRecords)
+        error = k_ErrorType_UnexpectedEnd; // error = "There is no correct record at the end of archive";
+      else
+      {
+        /*
+        if (IsEmptyData(buf, processedSize))
+          error = k_ErrorType_UnexpectedEnd;
+        else
+        {
+          // extraReadSize = processedSize;
+          // error = k_ErrorType_Corrupted; // some data after the end tail zeros
+        }
+        */
+      }
+
       return S_OK;
     }
-    item.HeaderSize += NFileHeader::kRecordSize;
     if (!IsRecordLast(buf))
       break;
+    item.HeaderSize += NFileHeader::kRecordSize;
     thereAreEmptyRecords = true;
   }
   if (thereAreEmptyRecords)
   {
-    error = "There are data after end of archive";
+    // error = "There are data after end of archive";
     return S_OK;
   }
   
+  error = k_ErrorType_Corrupted;
   ReadString(p, NFileHeader::kNameSize, item.Name); p += NFileHeader::kNameSize;
 
   RIF(OctalToNumber32(p, 8, item.Mode)); p += 8;
@@ -137,7 +193,7 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   
   UInt32 checkSum;
   RIF(OctalToNumber32(p, 8, checkSum));
-  memcpy(p, NFileHeader::kCheckSumBlanks, 8); p += 8;
+  memset(p, ' ', 8); p += 8;
 
   item.LinkFlag = *p++;
 
@@ -148,93 +204,170 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   ReadString(p, NFileHeader::kUserNameSize, item.User); p += NFileHeader::kUserNameSize;
   ReadString(p, NFileHeader::kGroupNameSize, item.Group); p += NFileHeader::kGroupNameSize;
 
-  item.DeviceMajorDefined = (p[0] != 0); RIF(OctalToNumber32(p, 8, item.DeviceMajor)); p += 8;
-  item.DeviceMinorDefined = (p[0] != 0); RIF(OctalToNumber32(p, 8, item.DeviceMinor)); p += 8;
+  item.DeviceMajorDefined = (p[0] != 0); if (item.DeviceMajorDefined) { RIF(OctalToNumber32(p, 8, item.DeviceMajor)); } p += 8;
+  item.DeviceMinorDefined = (p[0] != 0); if (item.DeviceMinorDefined) { RIF(OctalToNumber32(p, 8, item.DeviceMinor)); } p += 8;
 
   AString prefix;
   ReadString(p, NFileHeader::kPrefixSize, prefix);
   p += NFileHeader::kPrefixSize;
-  if (!prefix.IsEmpty() && item.IsMagic() &&
+  if (!prefix.IsEmpty() && item.IsUstarMagic() &&
       (item.LinkFlag != 'L' /* || prefix != "00000000000" */ ))
     item.Name = prefix + AString('/') + item.Name;
 
-  if (item.LinkFlag == NFileHeader::NLinkFlag::kLink)
+  if (item.LinkFlag == NFileHeader::NLinkFlag::kHardLink)
   {
     item.PackSize = 0;
     item.Size = 0;
   }
-  else if (item.LinkFlag == NFileHeader::NLinkFlag::kSparse)
+  /*
+    TAR standard requires sum of unsigned byte values.
+    But some TAR programs use sum of signed byte values.
+    So we check both values.
+  */
+  UInt32 checkSumReal = 0;
+  Int32 checkSumReal_Signed = 0;
+  for (unsigned i = 0; i < NFileHeader::kRecordSize; i++)
   {
-    if (buf[482] != 0)
-      return S_FALSE;
+    char c = buf[i];
+    checkSumReal_Signed += (signed char)c;
+    checkSumReal += (Byte)buf[i];
+  }
+  
+  if (checkSumReal != checkSum)
+  {
+    if ((UInt32)checkSumReal_Signed != checkSum)
+      return S_OK;
+  }
+
+  item.HeaderSize += NFileHeader::kRecordSize;
+
+  if (item.LinkFlag == NFileHeader::NLinkFlag::kSparse)
+  {
+    Byte isExtended = buf[482];
+    if (isExtended != 0 && isExtended != 1)
+      return S_OK;
     RIF(ParseSize(buf + 483, item.Size));
-    p = buf + 386;
     UInt64 min = 0;
-    for (int i = 0; i < 4; i++, p += 24)
+    for (unsigned i = 0; i < 4; i++)
     {
+      p = buf + 386 + 24 * i;
       if (GetBe32(p) == 0)
+      {
+        if (isExtended != 0)
+          return S_OK;
         break;
+      }
       CSparseBlock sb;
       RIF(ParseSize(p, sb.Offset));
       RIF(ParseSize(p + 12, sb.Size));
       item.SparseBlocks.Add(sb);
       if (sb.Offset < min || sb.Offset > item.Size)
-        return S_FALSE;
+        return S_OK;
       if ((sb.Offset & 0x1FF) != 0 || (sb.Size & 0x1FF) != 0)
-        return S_FALSE;
+        return S_OK;
       min = sb.Offset + sb.Size;
       if (min < sb.Offset)
-        return S_FALSE;
+        return S_OK;
     }
     if (min > item.Size)
-      return S_FALSE;
+      return S_OK;
+
+    while (isExtended != 0)
+    {
+      size_t processedSize = NFileHeader::kRecordSize;
+      RINOK(ReadStream(stream, buf, &processedSize));
+      if (processedSize != NFileHeader::kRecordSize)
+      {
+        error = k_ErrorType_UnexpectedEnd;
+        return S_OK;
+      }
+
+      item.HeaderSize += NFileHeader::kRecordSize;
+      isExtended = buf[21 * 24];
+      if (isExtended != 0 && isExtended != 1)
+        return S_OK;
+      for (unsigned i = 0; i < 21; i++)
+      {
+        p = buf + 24 * i;
+        if (GetBe32(p) == 0)
+        {
+          if (isExtended != 0)
+            return S_OK;
+          break;
+        }
+        CSparseBlock sb;
+        RIF(ParseSize(p, sb.Offset));
+        RIF(ParseSize(p + 12, sb.Size));
+        item.SparseBlocks.Add(sb);
+        if (sb.Offset < min || sb.Offset > item.Size)
+          return S_OK;
+        if ((sb.Offset & 0x1FF) != 0 || (sb.Size & 0x1FF) != 0)
+          return S_OK;
+        min = sb.Offset + sb.Size;
+        if (min < sb.Offset)
+          return S_OK;
+      }
+    }
+    if (min > item.Size)
+      return S_OK;
   }
  
-  UInt32 checkSumReal = 0;
-  for (int i = 0; i < NFileHeader::kRecordSize; i++)
-    checkSumReal += (Byte)buf[i];
-  
-  if (checkSumReal != checkSum)
-    return S_FALSE;
-
   filled = true;
+  error = k_ErrorType_OK;
   return S_OK;
 }
 
-HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, AString &error)
+HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, EErrorType &error)
 {
   item.HeaderSize = 0;
   bool flagL = false;
   bool flagK = false;
   AString nameL;
   AString nameK;
+  
   for (;;)
   {
     RINOK(GetNextItemReal(stream, filled, item, error));
     if (!filled)
+    {
+      if (error == k_ErrorType_OK && (flagL || flagK))
+        error = k_ErrorType_Corrupted;
       return S_OK;
-    if (item.LinkFlag == 'L' || // NEXT file has a long name
-        item.LinkFlag == 'K') // NEXT file has a long linkname
+    }
+    
+    if (error != k_ErrorType_OK)
+      return S_OK;
+    
+    if (item.LinkFlag == NFileHeader::NLinkFlag::kGnu_LongName || // file contains a long name
+        item.LinkFlag == NFileHeader::NLinkFlag::kGnu_LongLink)   // file contains a long linkname
     {
       AString *name;
-      if (item.LinkFlag == 'L')
-        { if (flagL) return S_FALSE; flagL = true; name = &nameL; }
+      if (item.LinkFlag == NFileHeader::NLinkFlag::kGnu_LongName)
+        { if (flagL) return S_OK; flagL = true; name = &nameL; }
       else
-        { if (flagK) return S_FALSE; flagK = true; name = &nameK; }
+        { if (flagK) return S_OK; flagK = true; name = &nameK; }
 
-      if (item.Name.Compare(NFileHeader::kLongLink) != 0 &&
-          item.Name.Compare(NFileHeader::kLongLink2) != 0)
-        return S_FALSE;
+      if (item.Name != NFileHeader::kLongLink &&
+          item.Name != NFileHeader::kLongLink2)
+        return S_OK;
       if (item.PackSize > (1 << 14))
-        return S_FALSE;
-      int packSize = (int)item.GetPackSizeAligned();
+        return S_OK;
+      unsigned packSize = (unsigned)item.GetPackSizeAligned();
       char *buf = name->GetBuffer(packSize);
-      RINOK(ReadStream_FALSE(stream, buf, packSize));
-      item.HeaderSize += packSize;
-      buf[(size_t)item.PackSize] = '\0';
+      size_t processedSize = packSize;
+      HRESULT res = ReadStream(stream, buf, &processedSize);
+      item.HeaderSize += (unsigned)processedSize;
+      buf[(size_t)item.PackSize] = 0;
       name->ReleaseBuffer();
+      RINOK(res);
+      if (processedSize != packSize)
+      {
+        error = k_ErrorType_UnexpectedEnd;
+        return S_OK;
+      }
       continue;
     }
+
     switch (item.LinkFlag)
     {
       case 'g':
@@ -256,10 +389,12 @@ HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, AStri
       }
       default:
         if (item.LinkFlag > '7' || (item.LinkFlag < '0' && item.LinkFlag != 0))
-          return S_FALSE;
+          return S_OK;
     }
+    
     if (flagL) item.Name = nameL;
     if (flagK) item.LinkName = nameK;
+    error = k_ErrorType_OK;
     return S_OK;
   }
 }

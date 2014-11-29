@@ -3,7 +3,8 @@
 #ifndef __ISO_HANDLER_H
 #define __ISO_HANDLER_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
+
 #include "../IArchive.h"
 
 #include "IsoIn.h"

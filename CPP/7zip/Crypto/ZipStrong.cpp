@@ -65,11 +65,16 @@ HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 /* crc */, UI
   if (_ivSize == 0)
   {
     return E_NOTIMPL;
+
+    /* we don't know how to decode that case:
+    From Appnote: If IVSize is 0,then IV = CRC32 + Uncompressed File Size (as a 64 bit little-endian, unsigned integer value).
+    But it doesn't work. If you know solution, please write about it to 7-Zip developers. */
+    
     /*
-    SetUi32(_iv, crc);
-    for (int i = 0; i < 8; i++)
-     _iv[4 + i] = (Byte)(unpackSize >> (8 * i));
-    SetUi32(_iv + 12, 0);
+    memset(_iv, 0, 16);
+    // unpackSize += crc;
+    SetUi32(_iv + 0, crc);
+    SetUi64(_iv + 4, unpackSize);
     */
   }
   else if (_ivSize == 16)
@@ -83,10 +88,9 @@ HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 /* crc */, UI
   const UInt32 kAlign = 16;
   if (_remSize < 16 || _remSize > (1 << 18))
     return E_NOTIMPL;
-  if (_remSize + kAlign > _buf.GetCapacity())
+  if (_remSize + kAlign > _buf.Size())
   {
-    _buf.Free();
-    _buf.SetCapacity(_remSize + kAlign);
+    _buf.Alloc(_remSize + kAlign);
     _bufAligned = (Byte *)((ptrdiff_t)((Byte *)_buf + kAlign - 1) & ~(ptrdiff_t)(kAlign - 1));
   }
   return ReadStream_FALSE(inStream, _bufAligned, _remSize);
@@ -135,7 +139,7 @@ HRESULT CDecoder::CheckPassword(bool &passwOK)
   {
     RINOK(SetKey(_key.MasterKey, _key.KeySize));
     RINOK(SetInitVector(_iv, 16));
-    Init();
+    RINOK(Init());
     Filter(p, rdSize);
   }
 
@@ -157,7 +161,8 @@ HRESULT CDecoder::CheckPassword(bool &passwOK)
   if (GetUi32(validData + validSize) != CrcCalc(validData, validSize))
     return S_OK;
   passwOK = true;
-  Init();
+  /* 9.31: The BUG in 9.24-9.30 was fixed.
+     We don't need to call CAesCbcCoder::Init() to reset IV for data. */
   return S_OK;
 }
 

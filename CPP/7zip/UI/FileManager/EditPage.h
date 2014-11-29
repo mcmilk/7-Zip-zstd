@@ -3,11 +3,12 @@
 #ifndef __EDIT_PAGE_H
 #define __EDIT_PAGE_H
 
-#include "Windows/Control/PropertyPage.h"
-#include "Windows/Control/Edit.h"
+#include "../../../Windows/Control/PropertyPage.h"
+#include "../../../Windows/Control/Edit.h"
 
 class CEditPage: public NWindows::NControl::CPropertyPage
 {
+  NWindows::NControl::CEdit _viewer;
   NWindows::NControl::CEdit _editor;
   NWindows::NControl::CEdit _diff;
 public:

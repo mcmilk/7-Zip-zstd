@@ -2,10 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Control/PropertyPage.h"
 #ifndef _UNICODE
 #include "../../Common/StringConvert.h"
 #endif
+
+#include "PropertyPage.h"
 
 extern HINSTANCE g_hInstance;
 #ifndef _UNICODE
@@ -53,7 +54,7 @@ INT_PTR MyPropertySheet(const CObjectVector<CPageInfo> &pagesInfo, HWND hwndPare
   #endif
   CRecordVector<PROPSHEETPAGEW> pagesW;
 
-  int i;
+  unsigned i;
   #ifndef _UNICODE
   for (i = 0; i < pagesInfo.Size(); i++)
     titles.Add(GetSystemString(pagesInfo[i].Title));

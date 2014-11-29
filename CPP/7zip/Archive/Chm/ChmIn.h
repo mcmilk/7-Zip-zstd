@@ -3,13 +3,12 @@
 #ifndef __ARCHIVE_CHM_IN_H
 #define __ARCHIVE_CHM_IN_H
 
-#include "Common/Buffer.h"
-#include "Common/MyString.h"
+#include "../../../Common/MyBuffer.h"
+#include "../../../Common/MyString.h"
 
 #include "../../IStream.h"
-#include "../../Common/InBuffer.h"
 
-#include "ChmHeader.h"
+#include "../../Common/InBuffer.h"
 
 namespace NArchive {
 namespace NChm {
@@ -23,21 +22,21 @@ struct CItem
 
   bool IsFormatRelatedItem() const
   {
-    if (Name.Length() < 2)
+    if (Name.Len() < 2)
       return false;
     return Name[0] == ':' && Name[1] == ':';
   }
   
   bool IsUserItem() const
   {
-    if (Name.Length() < 2)
+    if (Name.Len() < 2)
       return false;
     return Name[0] == '/';
   }
   
   bool IsDir() const
   {
-    if (Name.Length() == 0)
+    if (Name.Len() == 0)
       return false;
     return (Name.Back() == '/');
   }
@@ -45,15 +44,19 @@ struct CItem
 
 struct CDatabase
 {
+  UInt64 StartPosition;
   UInt64 ContentOffset;
   CObjectVector<CItem> Items;
   AString NewFormatString;
   bool Help2Format;
   bool NewFormat;
+  UInt64 PhySize;
+
+  void UpdatePhySize(UInt64 v) { if (PhySize < v) PhySize = v; }
 
   int FindItem(const AString &name) const
   {
-    for (int i = 0; i < Items.Size(); i++)
+    FOR_VECTOR (i, Items)
       if (Items[i].Name == name)
         return i;
     return -1;
@@ -65,6 +68,8 @@ struct CDatabase
     NewFormatString.Empty();
     Help2Format = false;
     Items.Clear();
+    StartPosition = 0;
+    PhySize = 0;
   }
 };
 
@@ -74,15 +79,16 @@ struct CResetTable
   UInt64 CompressedSize;
   UInt64 BlockSize;
   CRecordVector<UInt64> ResetOffsets;
+  
   bool GetCompressedSizeOfBlocks(UInt64 blockIndex, UInt32 numBlocks, UInt64 &size) const
   {
     if (blockIndex >= ResetOffsets.Size())
       return false;
-    UInt64 startPos = ResetOffsets[(int)blockIndex];
+    UInt64 startPos = ResetOffsets[(unsigned)blockIndex];
     if (blockIndex + numBlocks >= ResetOffsets.Size())
       size = CompressedSize - startPos;
     else
-      size = ResetOffsets[(int)(blockIndex + numBlocks)] - startPos;
+      size = ResetOffsets[(unsigned)(blockIndex + numBlocks)] - startPos;
     return true;
   }
   bool GetCompressedSizeOfBlock(UInt64 blockIndex, UInt64 &size) const
@@ -107,7 +113,7 @@ struct CLzxInfo
   {
     if (Version == 2 || Version == 3)
     {
-      for (int i = 0; i <= 31; i++)
+      for (unsigned i = 0; i <= 31; i++)
         if (((UInt32)1 << i) >= WindowSize)
           return 15 + i;
     }
@@ -123,7 +129,7 @@ struct CLzxInfo
     UInt64 blockIndex = GetBlockIndexFromFolderIndex(folderIndex);
     if (blockIndex >= ResetTable.ResetOffsets.Size())
       return false;
-    offset = ResetTable.ResetOffsets[(int)blockIndex];
+    offset = ResetTable.ResetOffsets[(unsigned)blockIndex];
     return true;
   }
   bool GetCompressedSizeOfFolder(UInt64 folderIndex, UInt64 &size) const
@@ -202,18 +208,21 @@ public:
   bool Check();
 };
 
+/*
 class CProgressVirt
 {
 public:
   STDMETHOD(SetTotal)(const UInt64 *numFiles) PURE;
   STDMETHOD(SetCompleted)(const UInt64 *numFiles) PURE;
 };
+*/
 
 class CInArchive
 {
-  UInt64 _startPosition;
+  CMyComPtr<ISequentialInStream> m_InStreamRef;
   ::CInBuffer _inBuffer;
   UInt64 _chunkSize;
+  bool _help2;
 
   Byte ReadByte();
   void ReadBytes(Byte *data, UInt32 size);
@@ -222,8 +231,8 @@ class CInArchive
   UInt32 ReadUInt32();
   UInt64 ReadUInt64();
   UInt64 ReadEncInt();
-  void ReadString(int size, AString &s);
-  void ReadUString(int size, UString &s);
+  void ReadString(unsigned size, AString &s);
+  void ReadUString(unsigned size, UString &s);
   void ReadGUID(GUID &g);
 
   HRESULT ReadChunk(IInStream *inStream, UInt64 pos, UInt64 size);
@@ -232,6 +241,13 @@ class CInArchive
   HRESULT DecompressStream(IInStream *inStream, const CDatabase &database, const AString &name);
 
 public:
+  bool IsArc;
+  bool HeadersError;
+  bool UnexpectedEnd;
+  bool UnsupportedFeature;
+
+  CInArchive(bool help2) { _help2 = help2; }
+
   HRESULT OpenChm(IInStream *inStream, CDatabase &database);
   HRESULT OpenHelp2(IInStream *inStream, CDatabase &database);
   HRESULT OpenHighLevel(IInStream *inStream, CFilesDatabase &database);

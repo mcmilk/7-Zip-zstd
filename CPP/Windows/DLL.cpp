@@ -93,11 +93,14 @@ bool MyGetModuleFileName(FString &path)
 FString GetModuleDirPrefix()
 {
   FString s;
-  if (NDLL::MyGetModuleFileName(s))
+  if (MyGetModuleFileName(s))
   {
     int pos = s.ReverseFind(FCHAR_PATH_SEPARATOR);
     if (pos >= 0)
-      return s.Left(pos + 1);
+    {
+      s.DeleteFrom(pos + 1);
+      return s;
+    }
   }
   return FTEXT(".") FSTRING_PATH_SEPARATOR;
 }

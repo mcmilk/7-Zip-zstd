@@ -38,10 +38,10 @@ HRESULT COpenCallbackConsole::Open_CryptoGetTextPassword(BSTR *password)
   return StringToBstr(Password, password);
 }
 
-HRESULT COpenCallbackConsole::Open_GetPasswordIfAny(UString &password)
+HRESULT COpenCallbackConsole::Open_GetPasswordIfAny(bool &passwordIsDefined, UString &password)
 {
-  if (PasswordIsDefined)
-    password = Password;
+  passwordIsDefined = PasswordIsDefined;
+  password = Password;
   return S_OK;
 }
 

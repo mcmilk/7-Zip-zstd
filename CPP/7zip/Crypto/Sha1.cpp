@@ -117,7 +117,7 @@ void CContext::Update(const Byte *data, size_t size)
   unsigned curBufferPos = _count2;
   while (size--)
   {
-    int pos = (int)(curBufferPos & 3);
+    unsigned pos = (curBufferPos & 3);
     if (pos == 0)
       _buffer[curBufferPos >> 2] = 0;
     _buffer[curBufferPos >> 2] |= ((UInt32)*data++) << (8 * (3 - pos));
@@ -136,7 +136,7 @@ void CContext::UpdateRar(Byte *data, size_t size, bool rar350Mode)
   unsigned curBufferPos = _count2;
   while (size--)
   {
-    int pos = (int)(curBufferPos & 3);
+    unsigned pos = (curBufferPos & 3);
     if (pos == 0)
       _buffer[curBufferPos >> 2] = 0;
     _buffer[curBufferPos >> 2] |= ((UInt32)*data++) << (8 * (3 - pos));
@@ -145,13 +145,13 @@ void CContext::UpdateRar(Byte *data, size_t size, bool rar350Mode)
       curBufferPos = 0;
       CContextBase::UpdateBlock(_buffer, returnRes);
       if (returnRes)
-        for (int i = 0; i < kBlockSizeInWords; i++)
+        for (unsigned i = 0; i < kBlockSizeInWords; i++)
         {
           UInt32 d = _buffer[i];
-          data[i * 4 + 0 - kBlockSize] = (Byte)(d);
-          data[i * 4 + 1 - kBlockSize] = (Byte)(d >>  8);
-          data[i * 4 + 2 - kBlockSize] = (Byte)(d >> 16);
-          data[i * 4 + 3 - kBlockSize] = (Byte)(d >> 24);
+          data[(int)i * 4 + 0 - (int)kBlockSize] = (Byte)(d);
+          data[(int)i * 4 + 1 - (int)kBlockSize] = (Byte)(d >>  8);
+          data[(int)i * 4 + 2 - (int)kBlockSize] = (Byte)(d >> 16);
+          data[(int)i * 4 + 3 - (int)kBlockSize] = (Byte)(d >> 24);
         }
       returnRes = rar350Mode;
     }
@@ -163,7 +163,7 @@ void CContext::Final(Byte *digest)
 {
   const UInt64 lenInBits = (_count << 9) + ((UInt64)_count2 << 3);
   unsigned curBufferPos = _count2;
-  int pos = (int)(curBufferPos & 3);
+  unsigned pos = (curBufferPos & 3);
   curBufferPos >>= 2;
   if (pos == 0)
     _buffer[curBufferPos] = 0;
@@ -180,7 +180,7 @@ void CContext::Final(Byte *digest)
   _buffer[curBufferPos++] = (UInt32)(lenInBits);
   UpdateBlock();
 
-  int i;
+  unsigned i;
   for (i = 0; i < kDigestSizeInWords; i++)
   {
     UInt32 state = _state[i] & 0xFFFFFFFF;

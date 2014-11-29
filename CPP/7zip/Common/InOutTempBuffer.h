@@ -10,7 +10,7 @@
 
 class CInOutTempBuffer
 {
-  NWindows::NFile::NDirectory::CTempFile _tempFile;
+  NWindows::NFile::NDir::CTempFile _tempFile;
   NWindows::NFile::NIO::COutFile _outFile;
   Byte *_buf;
   UInt32 _bufPos;

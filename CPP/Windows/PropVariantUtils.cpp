@@ -2,22 +2,19 @@
 
 #include "StdAfx.h"
 
+#include "../Common/IntToString.h"
+
 #include "PropVariantUtils.h"
-#include "Common/StringConvert.h"
-#include "Common/IntToString.h"
 
 using namespace NWindows;
 
 static AString GetHex(UInt32 v)
 {
-  char sz[32] = { '0', 'x' };
-  ConvertUInt64ToString(v, sz + 2, 16);
+  char sz[16];
+  sz[0] = '0';
+  sz[1] = 'x';
+  ConvertUInt32ToHex(v, sz + 2);
   return sz;
-}
-
-void StringToProp(const AString &s, NCOM::CPropVariant &prop)
-{
-  prop = MultiByteToUnicodeString(s);
 }
 
 AString TypePairToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 value)
@@ -34,11 +31,11 @@ AString TypePairToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 val
   return s;
 }
 
-
 void PairToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 value, NCOM::CPropVariant &prop)
 {
-  StringToProp(TypePairToString(pairs, num, value), prop);
+  prop = TypePairToString(pairs, num, value);
 }
+
 
 AString TypeToString(const char *table[], unsigned num, UInt32 value)
 {
@@ -49,9 +46,36 @@ AString TypeToString(const char *table[], unsigned num, UInt32 value)
 
 void TypeToProp(const char *table[], unsigned num, UInt32 value, NCOM::CPropVariant &prop)
 {
-  StringToProp(TypeToString(table, num, value), prop);
+  prop = TypeToString(table, num, value);
 }
 
+
+AString FlagsToString(const char **names, unsigned num, UInt32 flags)
+{
+  AString s;
+  for (unsigned i = 0; i < num; i++)
+  {
+    UInt32 flag = (UInt32)1 << i;
+    if ((flags & flag) != 0)
+    {
+      const char *name = names[i];
+      if (name != 0 && name[0] != 0)
+      {
+        if (!s.IsEmpty())
+          s += ' ';
+        s += name;
+        flags &= ~flag;
+      }
+    }
+  }
+  if (flags != 0)
+  {
+    if (!s.IsEmpty())
+      s += ' ';
+    s += GetHex(flags);
+  }
+  return s;
+}
 
 AString FlagsToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags)
 {
@@ -82,5 +106,5 @@ AString FlagsToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags)
 
 void FlagsToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags, NCOM::CPropVariant &prop)
 {
-  StringToProp(FlagsToString(pairs, num, flags), prop);
+  prop = FlagsToString(pairs, num, flags);
 }

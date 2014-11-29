@@ -4,8 +4,10 @@
 
 #include <HtmlHelp.h>
 
-#include "Common/StringConvert.h"
-#include "Windows/DLL.h"
+#include "../../../Common/StringConvert.h"
+
+#include "../../../Windows/DLL.h"
+
 #include "HelpUtils.h"
 
 static LPCWSTR kHelpFileName = L"7-zip.chm::/";

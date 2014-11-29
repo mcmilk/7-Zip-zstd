@@ -5,14 +5,21 @@
 #include "../../Common/RegisterArc.h"
 
 #include "7zHandler.h"
-static IInArchive *CreateArc() { return new NArchive::N7z::CHandler; }
-#ifndef EXTRACT_ONLY
-static IOutArchive *CreateArcOut() { return new NArchive::N7z::CHandler; }
-#else
-#define CreateArcOut 0
-#endif
+
+namespace NArchive {
+namespace N7z {
+
+IMP_CreateArcIn
+IMP_CreateArcOut
 
 static CArcInfo g_ArcInfo =
-  { L"7z", L"7z", 0, 7, {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C}, 6, false, CreateArc, CreateArcOut };
+  { "7z", "7z", 0, 7,
+  6, {'7' + 1, 'z', 0xBC, 0xAF, 0x27, 0x1C},
+  0,
+  NArcInfoFlags::kFindSignature,
+  REF_CreateArc_Pair };
 
-REGISTER_ARC(7z)
+REGISTER_ARC_DEC_SIG(7z)
+// REGISTER_ARC(7z)
+
+}}

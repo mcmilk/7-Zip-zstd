@@ -1,9 +1,9 @@
-7-Zip 9.22 Sources
+7-Zip 9.32 Sources
 ------------------
 
 7-Zip is a file archiver for Windows. 
 
-7-Zip Copyright (C) 1999-2010 Igor Pavlov.
+7-Zip Copyright (C) 1999-2013 Igor Pavlov.
 
 
 License Info

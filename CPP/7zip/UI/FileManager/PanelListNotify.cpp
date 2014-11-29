@@ -4,62 +4,28 @@
 
 #include "resource.h"
 
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/PropVariantConversions.h"
+#include "../../../Windows/PropVariant.h"
+#include "../../../Windows/PropVariantConv.h"
 
 #include "../Common/PropIDUtils.h"
 #include "../../PropID.h"
 
+#include "App.h"
 #include "Panel.h"
 #include "FormatUtils.h"
 
 using namespace NWindows;
 
-/*
-static UString ConvertSizeToStringShort(UInt64 value)
+static void ConvertSizeToString(UInt64 value, wchar_t *dest)
 {
-  wchar_t s[32];
-  wchar_t c, c2 = L'B';
-  if (value < (UInt64)10000)
-  {
-    c = L'B';
-    c2 = L'\0';
-  }
-  else if (value < ((UInt64)10000 << 10))
-  {
-    value >>= 10;
-    c = L'K';
-  }
-  else if (value < ((UInt64)10000 << 20))
-  {
-    value >>= 20;
-    c = L'M';
-  }
-  else
-  {
-    value >>= 30;
-    c = L'G';
-  }
+  char s[32];
   ConvertUInt64ToString(value, s);
-  int p = MyStringLen(s);
-  s[p++] = L' ';
-  s[p++] = c;
-  s[p++] = c2;
-  s[p++] = L'\0';
-  return s;
-}
-*/
-
-UString ConvertSizeToString(UInt64 value)
-{
-  wchar_t s[32];
-  ConvertUInt64ToString(value, s);
-  int i = MyStringLen(s);
-  int pos = sizeof(s) / sizeof(s[0]);
-  s[--pos] = L'\0';
+  unsigned i = MyStringLen(s);
+  unsigned pos = ARRAY_SIZE(s);
+  s[--pos] = 0;
   while (i > 3)
   {
     s[--pos] = s[--i];
@@ -69,14 +35,45 @@ UString ConvertSizeToString(UInt64 value)
   }
   while (i > 0)
     s[--pos] = s[--i];
-  return s + pos;
+
+  for (;;)
+  {
+    char c = s[pos++];
+    *dest++ = (unsigned char)c;
+    if (c == 0)
+      break;
+  }
+}
+
+UString ConvertSizeToString(UInt64 value)
+{
+  wchar_t s[32];
+  ConvertSizeToString(value, s);
+  return s;
+}
+
+static inline char GetHex(Byte value)
+{
+  return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
+}
+
+void HexToString(char *dest, const Byte *data, UInt32 size)
+{
+  for (UInt32 i = 0; i < size; i++)
+  {
+    Byte b = data[i];
+    dest[0] = GetHex((Byte)((b >> 4) & 0xF));
+    dest[1] = GetHex((Byte)(b & 0xF));
+    dest += 2;
+  }
+  *dest = 0;
 }
 
 LRESULT CPanel::SetItemText(LVITEMW &item)
 {
+
   if (_dontShowMode)
     return 0;
-
   UInt32 realIndex = GetRealIndex(item);
   /*
   if ((item.mask & LVIF_IMAGE) != 0)
@@ -112,23 +109,106 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
 
   if (realIndex == kParentIndex)
     return 0;
-  UString s;
-  UInt32 subItemIndex = item.iSubItem;
-  PROPID propID = _visibleProperties[subItemIndex].ID;
+  const CItemProperty &property = _visibleProperties[item.iSubItem];
+  PROPID propID = property.ID;
+ 
+  if (property.IsRawProp)
+  {
+    const void *data;
+    UInt32 dataSize;
+    UInt32 propType;
+    RINOK(_folderRawProps->GetRawProp(realIndex, propID, &data, &dataSize, &propType));
+    int limit = item.cchTextMax - 1;
+    if (dataSize == 0)
+    {
+      item.pszText[0] = 0;
+      return 0;
+    }
+    
+    if (propID == kpidNtReparse)
+    {
+      UString s;
+      ConvertNtReparseToString((const Byte *)data, dataSize, s);
+      if (!s.IsEmpty())
+      {
+        int i;
+        for (i = 0; i < limit; i++)
+        {
+          wchar_t c = s[i];
+          if (c == 0)
+            break;
+          item.pszText[i] = c;
+        }
+        item.pszText[i] = 0;
+        return 0;
+      }
+    }
+    else if (propID == kpidNtSecure)
+    {
+      AString s;
+      ConvertNtSecureToString((const Byte *)data, dataSize, s);
+      if (!s.IsEmpty())
+      {
+        int i;
+        for (i = 0; i < limit; i++)
+        {
+          wchar_t c = s[i];
+          if (c == 0)
+            break;
+          item.pszText[i] = c;
+        }
+        item.pszText[i] = 0;
+        return 0;
+      }
+    }
+    {
+      const UInt32 kMaxDataSize = 64;
+      if (dataSize > kMaxDataSize)
+      {
+        char temp[64];
+        MyStringCopy(temp, "data:");
+        ConvertUInt32ToString(dataSize, temp + 5);
+        int i;
+        for (i = 0; i < limit; i++)
+        {
+          wchar_t c = temp[i];
+          if (c == 0)
+            break;
+          item.pszText[i] = c;
+        }
+        item.pszText[i] = 0;
+      }
+      else
+      {
+        if ((int)dataSize > limit)
+          dataSize = limit;
+        WCHAR *dest = item.pszText;
+        for (UInt32 i = 0; i < dataSize; i++)
+        {
+          Byte b = ((const Byte *)data)[i];
+          dest[0] = GetHex((Byte)((b >> 4) & 0xF));
+          dest[1] = GetHex((Byte)(b & 0xF));
+          dest += 2;
+        }
+        *dest = 0;
+      }
+    }
+    return 0;
+  }
   /*
   {
-    NCOM::CPropVariant property;
+    NCOM::CPropVariant prop;
     if (propID == kpidType)
       string = GetFileType(index);
     else
     {
-      HRESULT result = m_ArchiveFolder->GetProperty(index, propID, &property);
+      HRESULT result = m_ArchiveFolder->GetProperty(index, propID, &prop);
       if (result != S_OK)
       {
         // PrintMessage("GetPropertyValue error");
         return 0;
       }
-      string = ConvertPropertyToString(property, propID, false);
+      string = ConvertPropertyToString(prop, propID, false);
     }
   }
   */
@@ -149,11 +229,81 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (needRead)
   */
 
+  if (item.cchTextMax < 32)
+  {
+    if (item.cchTextMax > 0)
+      item.pszText[0] = 0;
+    return 0;
+  }
+
+  if (propID == kpidName)
+  {
+    if (_folderGetItemName)
+    {
+      const wchar_t *name = NULL;
+      unsigned nameLen = 0;
+      _folderGetItemName->GetItemName(realIndex, &name, &nameLen);
+      if (name)
+      {
+        int dest = 0;
+        int limit = item.cchTextMax - 1;
+        for (int i = 0; dest < limit;)
+        {
+          wchar_t c = name[i++];
+          if (c == 0)
+            break;
+          item.pszText[dest++] = c;
+          if (c != ' ')
+            continue;
+          if (name[i + 1] != ' ')
+            continue;
+          
+          int t = 2;
+          for (; name[i + t] == ' '; t++);
+          if (t >= 4 && dest + 4 <= limit)
+          {
+            item.pszText[dest++] = '.';
+            item.pszText[dest++] = '.';
+            item.pszText[dest++] = '.';
+            item.pszText[dest++] = ' ';
+            i += t;
+          }
+        }
+        item.pszText[dest] = 0;
+        return 0;
+      }
+    }
+  }
+  if (propID == kpidPrefix)
+  {
+    if (_folderGetItemName)
+    {
+      const wchar_t *name = NULL;
+      unsigned nameLen = 0;
+      _folderGetItemName->GetItemPrefix(realIndex, &name, &nameLen);
+      if (name)
+      {
+        int dest = 0;
+        int limit = item.cchTextMax - 1;
+        for (int i = 0; dest < limit;)
+        {
+          wchar_t c = name[i++];
+          if (c == 0)
+            break;
+          item.pszText[dest++] = c;
+        }
+        item.pszText[dest] = 0;
+        return 0;
+      }
+    }
+  }
   HRESULT res = _folder->GetProperty(realIndex, propID, &prop);
   if (res != S_OK)
-    s = UString(L"Error: ") + HResultToMessage(res);
-  else
-  if ((prop.vt == VT_UI8 || prop.vt == VT_UI4) && (
+  {
+    MyStringCopy(item.pszText, L"Error: ");
+    // s = UString(L"Error: ") + HResultToMessage(res);
+  }
+  else if ((prop.vt == VT_UI8 || prop.vt == VT_UI4 || prop.vt == VT_UI2) && (
       propID == kpidSize ||
       propID == kpidPackSize ||
       propID == kpidNumSubDirs ||
@@ -162,21 +312,43 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
       propID == kpidNumBlocks ||
       propID == kpidClusterSize ||
       propID == kpidTotalSize ||
-      propID == kpidFreeSpace
+      propID == kpidFreeSpace ||
+      propID == kpidUnpackSize
       ))
-    s = ConvertSizeToString(ConvertPropVariantToUInt64(prop));
+  {
+    UInt64 v = 0;
+    ConvertPropVariantToUInt64(prop, v);
+    ConvertSizeToString(v, item.pszText);
+  }
+  else if (prop.vt == VT_BSTR)
+  {
+    int limit = item.cchTextMax - 1;
+    const wchar_t *src = prop.bstrVal;
+    int i;
+    for (i = 0; i < limit; i++)
+    {
+      wchar_t c = src[i];
+      if (c == 0) break;
+      if (c == 0xA) c = ' ';
+      if (c == 0xD) c = ' ';
+      item.pszText[i] = c;
+    }
+    item.pszText[i] = 0;
+  }
   else
   {
-    s = ConvertPropertyToString(prop, propID, false);
-    s.Replace(wchar_t(0xA), L' ');
-    s.Replace(wchar_t(0xD), L' ');
-  }
-  int size = item.cchTextMax;
-  if (size > 0)
-  {
-    if (s.Length() + 1 > size)
-      s = s.Left(size - 1);
-    MyStringCopy(item.pszText, (const wchar_t *)s);
+    char temp[64];
+    ConvertPropertyToShortString(temp, prop, propID, false);
+    int i;
+    int limit = item.cchTextMax - 1;
+    for (i = 0; i < limit; i++)
+    {
+      wchar_t c = temp[i];
+      if (c == 0)
+        break;
+      item.pszText[i] = c;
+    }
+    item.pszText[i] = 0;
   }
   return 0;
 }
@@ -201,11 +373,9 @@ extern bool g_LVN_ITEMACTIVATE_Support;
 
 void CPanel::OnNotifyActivateItems()
 {
-  // bool leftCtrl = (::GetKeyState(VK_LCONTROL) & 0x8000) != 0;
-  // bool rightCtrl = (::GetKeyState(VK_RCONTROL) & 0x8000) != 0;
-  bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
-  bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-  bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+  bool alt = IsKeyDown(VK_MENU);
+  bool ctrl = IsKeyDown(VK_CONTROL);
+  bool shift = IsKeyDown(VK_SHIFT);
   if (!shift && alt && !ctrl)
     Properties();
   else
@@ -222,7 +392,14 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
       {
         if (!_mySelectMode)
           OnItemChanged((LPNMLISTVIEW)header);
-        Post_Refresh_StatusBar();
+        
+        // Post_Refresh_StatusBar();
+        /* 9.26: we don't call Post_Refresh_StatusBar.
+           it was very slow if we select big number of files
+           and then clead slection by selecting just new file.
+           probably it called slow Refresh_StatusBar for each item deselection.
+           I hope Refresh_StatusBar still will be called for each key / mouse action.
+        */
       }
       return false;
     }
@@ -247,8 +424,17 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     }
     case LVN_KEYDOWN:
     {
-      bool boolResult = OnKeyDown(LPNMLVKEYDOWN(header), result);
-      Post_Refresh_StatusBar();
+      LPNMLVKEYDOWN keyDownInfo = LPNMLVKEYDOWN(header);
+      bool boolResult = OnKeyDown(keyDownInfo, result);
+      switch(keyDownInfo->wVKey)
+      {
+        case VK_CONTROL:
+        case VK_SHIFT:
+        case VK_MENU:
+          break;
+        default:
+          Post_Refresh_StatusBar();
+      }
       return boolResult;
     }
 
@@ -318,7 +504,7 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
 
     case NM_CUSTOMDRAW:
     {
-      if (_mySelectMode)
+      if (_mySelectMode || (_markDeletedItems && _thereAreDeletedItems))
         return OnCustomDraw((LPNMLVCUSTOMDRAW)header, result);
       break;
     }
@@ -352,14 +538,18 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
     lplvcd->nmcd.lItemlParam);
     */
     int realIndex = (int)lplvcd->nmcd.lItemlParam;
-    bool selected = false;
-    if (realIndex != kParentIndex)
-      selected = _selectedStatusVector[realIndex];
-    if (selected)
-      lplvcd->clrTextBk = RGB(255, 192, 192);
-    // lplvcd->clrText = RGB(255, 0, 128);
-    else
-      lplvcd->clrTextBk = _listView.GetBkColor();
+    lplvcd->clrTextBk = _listView.GetBkColor();
+    if (_mySelectMode)
+    {
+      if (realIndex != kParentIndex && _selectedStatusVector[realIndex])
+       lplvcd->clrTextBk = RGB(255, 192, 192);
+    }
+
+    if (_markDeletedItems && _thereAreDeletedItems)
+    {
+      if (IsItem_Deleted(realIndex))
+        lplvcd->clrText = RGB(255, 0, 0);
+    }
     // lplvcd->clrText = RGB(0, 0, 0);
     // result = CDRF_NEWFONT;
     result = CDRF_NOTIFYITEMDRAW;
@@ -392,38 +582,75 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
 
 void CPanel::Refresh_StatusBar()
 {
+  /*
+  g_name_cnt++;
+  char s[256];
+  sprintf(s, "g_name_cnt = %8d", g_name_cnt);
+  OutputDebugStringA(s);
+  */
+  // DWORD dw = GetTickCount();
+
   CRecordVector<UInt32> indices;
   GetOperatedItemIndices(indices);
 
-  _statusBar.SetText(0, MyFormatNew(IDS_N_SELECTED_ITEMS, 0x02000301, NumberToString(indices.Size())));
+  wchar_t temp[32];
+  ConvertUInt32ToString(indices.Size(), temp);
 
-  UString selectSizeString;
+  // UString s1 = MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, NumberToString(indices.Size()));
+  // UString s1 = MyFormatNew(IDS_N_SELECTED_ITEMS, NumberToString(indices.Size()));
+  _statusBar.SetText(0, MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, temp));
+  // _statusBar.SetText(0, MyFormatNew(IDS_N_SELECTED_ITEMS, NumberToString(indices.Size())));
+
+  wchar_t selectSizeString[32];
+  selectSizeString[0] = 0;
 
   if (indices.Size() > 0)
   {
+    // for (int ttt = 0; ttt < 1000; ttt++) {
     UInt64 totalSize = 0;
-    for (int i = 0; i < indices.Size(); i++)
+    FOR_VECTOR (i, indices)
       totalSize += GetItemSize(indices[i]);
-    selectSizeString = ConvertSizeToString(totalSize);
+    ConvertSizeToString(totalSize, selectSizeString);
+    // }
   }
   _statusBar.SetText(1, selectSizeString);
 
   int focusedItem = _listView.GetFocusedItem();
-  UString sizeString;
-  UString dateString;
+  wchar_t sizeString[32];
+  sizeString[0] = 0;
+  wchar_t dateString[32];
+  dateString[0] = 0;
   if (focusedItem >= 0 && _listView.GetSelectedCount() > 0)
   {
     int realIndex = GetRealItemIndex(focusedItem);
     if (realIndex != kParentIndex)
     {
-      sizeString = ConvertSizeToString(GetItemSize(realIndex));
+      ConvertSizeToString(GetItemSize(realIndex), sizeString);
       NCOM::CPropVariant prop;
       if (_folder->GetProperty(realIndex, kpidMTime, &prop) == S_OK)
-        dateString = ConvertPropertyToString(prop, kpidMTime, false);
+      {
+        char dateString2[32];
+        dateString2[0] = 0;
+        ConvertPropertyToShortString(dateString2, prop, kpidMTime, false);
+        for (int i = 0;; i++)
+        {
+          char c = dateString2[i];
+          dateString[i] = c;
+          if (c == 0)
+            break;
+        }
+      }
     }
   }
   _statusBar.SetText(2, sizeString);
   _statusBar.SetText(3, dateString);
+  
   // _statusBar.SetText(4, nameString);
   // _statusBar2.SetText(1, MyFormatNew(L"{0} bytes", NumberToStringW(totalSize)));
+  // }
+  /*
+  dw = GetTickCount() - dw;
+  sprintf(s, "status = %8d ms", dw);
+  OutputDebugStringA(s);
+  */
 }

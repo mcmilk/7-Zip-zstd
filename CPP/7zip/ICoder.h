@@ -181,8 +181,31 @@ namespace NMethodPropID
     kOutStreams,
     kDescription,
     kDecoderIsAssigned,
-    kEncoderIsAssigned
+    kEncoderIsAssigned,
+    kDigestSize
   };
+}
+
+CODER_INTERFACE(IHasher, 0xC0)
+{
+  STDMETHOD_(void, Init)() PURE;
+  STDMETHOD_(void, Update)(const void *data, UInt32 size) PURE;
+  STDMETHOD_(void, Final)(Byte *digest) PURE;
+  STDMETHOD_(UInt32, GetDigestSize)() PURE;
+};
+
+CODER_INTERFACE(IHashers, 0xC1)
+{
+  STDMETHOD_(UInt32, GetNumHashers)() PURE;
+  STDMETHOD(GetHasherProp)(UInt32 index, PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(CreateHasher)(UInt32 index, IHasher **hasher) PURE;
+};
+
+extern "C"
+{
+  typedef HRESULT (WINAPI *Func_GetNumberOfMethods)(UInt32 *numMethods);
+  typedef HRESULT (WINAPI *Func_GetMethodProperty)(UInt32 index, PROPID propID, PROPVARIANT *value);
+  typedef HRESULT (WINAPI *Func_GetHashers)(IHashers **hashers);
 }
 
 #endif

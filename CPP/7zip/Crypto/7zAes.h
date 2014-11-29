@@ -3,9 +3,9 @@
 #ifndef __CRYPTO_7Z_AES_H
 #define __CRYPTO_7Z_AES_H
 
-#include "Common/Buffer.h"
-#include "Common/MyCom.h"
-#include "Common/MyVector.h"
+#include "../../Common/MyBuffer.h"
+#include "../../Common/MyCom.h"
+#include "../../Common/MyVector.h"
 
 #include "../ICoder.h"
 #include "../IPassword.h"
@@ -39,10 +39,10 @@ public:
 
 class CKeyInfoCache
 {
-  int Size;
+  unsigned Size;
   CObjectVector<CKeyInfo> Keys;
 public:
-  CKeyInfoCache(int size): Size(size) {}
+  CKeyInfoCache(unsigned size): Size(size) {}
   bool Find(CKeyInfo &key);
   // HRESULT Calculate(CKeyInfo &key);
   void Add(CKeyInfo &key);

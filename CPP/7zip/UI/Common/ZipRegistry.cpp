@@ -2,11 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
+#include "../../../Common/IntToString.h"
 
-#include "Windows/FileDir.h"
-#include "Windows/Registry.h"
-#include "Windows/Synchronization.h"
+#include "../../../Windows/FileDir.h"
+#include "../../../Windows/Registry.h"
+#include "../../../Windows/Synchronization.h"
 
 #include "ZipRegistry.h"
 
@@ -30,6 +30,18 @@ static LONG CreateMainKey(CKey &key, LPCTSTR keyName)
   return key.Create(HKEY_CURRENT_USER, GetKeyPath(keyName));
 }
 
+static void Key_Set_BoolPair(CKey &key, LPCTSTR name, const CBoolPair &b)
+{
+  if (b.Def)
+    key.SetValue(name, b.Val);
+}
+
+static void Key_Get_BoolPair(CKey &key, LPCTSTR name, CBoolPair &b)
+{
+  b.Val = false;
+  b.Def = (key.GetValue_IfOk(name, b.Val) == ERROR_SUCCESS);
+}
+
 namespace NExtract
 {
 
@@ -39,15 +51,28 @@ static const TCHAR *kExtractMode = TEXT("ExtractMode");
 static const TCHAR *kOverwriteMode = TEXT("OverwriteMode");
 static const TCHAR *kShowPassword = TEXT("ShowPassword");
 static const TCHAR *kPathHistory = TEXT("PathHistory");
+static const TCHAR *kSplitDest = TEXT("SplitDest");
+static const TCHAR *kElimDup = TEXT("ElimDup");
+// static const TCHAR *kAltStreams = TEXT("AltStreams");
+static const TCHAR *kNtSecur = TEXT("Security");
 
 void CInfo::Save() const
 {
   CS_LOCK
   CKey key;
   CreateMainKey(key, kKeyName);
-  key.SetValue(kExtractMode, (UInt32)PathMode);
-  key.SetValue(kOverwriteMode, (UInt32)OverwriteMode);
-  key.SetValue(kShowPassword, ShowPassword);
+
+  if (PathMode_Force)
+    key.SetValue(kExtractMode, (UInt32)PathMode);
+  if (OverwriteMode_Force)
+    key.SetValue(kOverwriteMode, (UInt32)OverwriteMode);
+
+  Key_Set_BoolPair(key, kSplitDest, SplitDest);
+  Key_Set_BoolPair(key, kElimDup, ElimDup);
+  // Key_Set_BoolPair(key, kAltStreams, AltStreams);
+  Key_Set_BoolPair(key, kNtSecur, NtSecurity);
+  Key_Set_BoolPair(key, kShowPassword, ShowPassword);
+
   key.RecurseDeleteKey(kPathHistory);
   key.SetValue_Strings(kPathHistory, Paths);
 }
@@ -62,9 +87,11 @@ void Save_ShowPassword(bool showPassword)
 
 void CInfo::Load()
 {
-  PathMode = NPathMode::kCurrentPathnames;
-  OverwriteMode = NOverwriteMode::kAskBefore;
-  ShowPassword = false;
+  PathMode = NPathMode::kCurPaths;
+  PathMode_Force = false;
+  OverwriteMode = NOverwriteMode::kAsk;
+  OverwriteMode_Force = false;
+  
   Paths.Clear();
 
   CS_LOCK
@@ -74,11 +101,24 @@ void CInfo::Load()
   
   key.GetValue_Strings(kPathHistory, Paths);
   UInt32 v;
-  if (key.QueryValue(kExtractMode, v) == ERROR_SUCCESS && v <= NPathMode::kNoPathnames)
+  if (key.QueryValue(kExtractMode, v) == ERROR_SUCCESS && v <= NPathMode::kAbsPaths)
+  {
     PathMode = (NPathMode::EEnum)v;
-  if (key.QueryValue(kOverwriteMode, v) == ERROR_SUCCESS && v <= NOverwriteMode::kAutoRenameExisting)
+    PathMode_Force = true;
+  }
+  if (key.QueryValue(kOverwriteMode, v) == ERROR_SUCCESS && v <= NOverwriteMode::kRenameExisting)
+  {
     OverwriteMode = (NOverwriteMode::EEnum)v;
-  key.GetValue_IfOk(kShowPassword, ShowPassword);
+    OverwriteMode_Force = true;
+  }
+
+  Key_Get_BoolPair(key, kSplitDest, SplitDest);
+  if (!SplitDest.Def)
+    SplitDest.Val = true;
+  Key_Get_BoolPair(key, kElimDup, ElimDup);
+  // Key_Get_BoolPair(key, kAltStreams, AltStreams);
+  Key_Get_BoolPair(key, kNtSecur, NtSecurity);
+  Key_Get_BoolPair(key, kShowPassword, ShowPassword);
 }
 
 bool Read_ShowPassword()
@@ -115,6 +155,11 @@ static const WCHAR *kMethod = L"Method";
 static const WCHAR *kOptions = L"Options";
 static const WCHAR *kEncryptionMethod = L"EncryptionMethod";
 
+static const TCHAR *kNtSecur = TEXT("Security");
+static const TCHAR *kAltStreams = TEXT("AltStreams");
+static const TCHAR *kHardLinks = TEXT("HardLinks");
+static const TCHAR *kSymLinks = TEXT("SymLinks");
+
 static void SetRegString(CKey &key, const WCHAR *name, const UString &value)
 {
   if (value.IsEmpty())
@@ -125,7 +170,7 @@ static void SetRegString(CKey &key, const WCHAR *name, const UString &value)
 
 static void SetRegUInt32(CKey &key, const TCHAR *name, UInt32 value)
 {
-  if (value == (UInt32)-1)
+  if (value == (UInt32)(Int32)-1)
     key.DeleteValue(name);
   else
     key.SetValue(name, value);
@@ -140,7 +185,7 @@ static void GetRegString(CKey &key, const WCHAR *name, UString &value)
 static void GetRegUInt32(CKey &key, const TCHAR *name, UInt32 &value)
 {
   if (key.QueryValue(name, value) != ERROR_SUCCESS)
-    value = (UInt32)-1;
+    value = (UInt32)(Int32)-1;
 }
 
 void CInfo::Save() const
@@ -149,6 +194,13 @@ void CInfo::Save() const
 
   CKey key;
   CreateMainKey(key, kKeyName);
+
+  Key_Set_BoolPair(key, kNtSecur, NtSecurity);
+  Key_Set_BoolPair(key, kAltStreams, AltStreams);
+  Key_Set_BoolPair(key, kHardLinks, HardLinks);
+  Key_Set_BoolPair(key, kSymLinks, SymLinks);
+  
+  key.SetValue(kShowPassword, ShowPassword);
   key.SetValue(kLevel, (UInt32)Level);
   key.SetValue(kArchiver, ArcType);
   key.SetValue(kShowPassword, ShowPassword);
@@ -160,7 +212,7 @@ void CInfo::Save() const
   {
     CKey optionsKey;
     optionsKey.Create(key, kOptionsKeyName);
-    for (int i = 0; i < Formats.Size(); i++)
+    FOR_VECTOR (i, Formats)
     {
       const CFormatOptions &fo = Formats[i];
       CKey fk;
@@ -195,6 +247,11 @@ void CInfo::Load()
   if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
     return;
 
+  Key_Get_BoolPair(key, kNtSecur, NtSecurity);
+  Key_Get_BoolPair(key, kAltStreams, AltStreams);
+  Key_Get_BoolPair(key, kHardLinks, HardLinks);
+  Key_Get_BoolPair(key, kSymLinks, SymLinks);
+
   key.GetValue_Strings(kArcHistory, ArcPaths);
   
   {
@@ -203,7 +260,7 @@ void CInfo::Load()
     {
       CSysStringVector formatIDs;
       optionsKey.EnumKeys(formatIDs);
-      for (int i = 0; i < formatIDs.Size(); i++)
+      FOR_VECTOR (i, formatIDs)
       {
         CKey fk;
         CFormatOptions fo;
@@ -290,6 +347,7 @@ void CInfo::Load()
 
 static const TCHAR *kCascadedMenu = TEXT("CascadedMenu");
 static const TCHAR *kContextMenu = TEXT("ContextMenu");
+static const TCHAR *kMenuIcons = TEXT("MenuIcons");
 
 void CContextMenuInfo::Save() const
 {
@@ -297,17 +355,20 @@ void CContextMenuInfo::Save() const
   CKey key;
   CreateMainKey(key, kOptionsInfoKeyName);
   key.SetValue(kCascadedMenu, Cascaded);
+  key.SetValue(kMenuIcons, MenuIcons);
   key.SetValue(kContextMenu, Flags);
 }
 
 void CContextMenuInfo::Load()
 {
+  MenuIcons = false;
   Cascaded = true;
-  Flags = (UInt32)-1;
+  Flags = (UInt32)(Int32)-1;
   CS_LOCK
   CKey key;
   if (OpenMainKey(key, kOptionsInfoKeyName) != ERROR_SUCCESS)
     return;
   key.GetValue_IfOk(kCascadedMenu, Cascaded);
+  key.GetValue_IfOk(kMenuIcons, MenuIcons);
   key.GetValue_IfOk(kContextMenu, Flags);
 }

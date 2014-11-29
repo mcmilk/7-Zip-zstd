@@ -3,6 +3,8 @@
 
 /* #define SHOW_DEBUG_INFO */
 
+#include "Precomp.h"
+
 #ifdef SHOW_DEBUG_INFO
 #include <stdio.h>
 #endif

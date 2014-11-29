@@ -45,6 +45,8 @@ public:
       ISequentialInStream *inStream,
       const UInt64 *inStreamSize, const UInt64 *inSizeForReduce,
       CFolder &folderItem,
+      CRecordVector<UInt64> &coderUnpackSizes,
+      UInt64 &unpackSize,
       ISequentialOutStream *outStream,
       CRecordVector<UInt64> &packSizes,
       ICompressProgressInfo *compressProgress);

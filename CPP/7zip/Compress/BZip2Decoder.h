@@ -23,6 +23,9 @@
 namespace NCompress {
 namespace NBZip2 {
 
+bool IsEndSig(const Byte *p) throw();
+bool IsBlockSig(const Byte *p) throw();
+
 typedef NCompress::NHuffman::CDecoder<kMaxHuffmanLen, kMaxAlphaSize> CHuffmanDecoder;
 
 class CDecoder;
@@ -57,6 +60,40 @@ struct CState
   void Free();
 };
 
+struct CBlockProps
+{
+  UInt32 blockSize;
+  UInt32 origPtr;
+  bool randMode;
+  
+  CBlockProps(): blockSize(0), origPtr(0), randMode(false) {}
+};
+
+struct CBase
+{
+  CMyComPtr<ISequentialInStream> InStreamRef;
+  NBitm::CDecoder<CInBuffer> BitDecoder;
+
+private:
+  Byte m_Selectors[kNumSelectorsMax];
+  CHuffmanDecoder m_HuffmanDecoders[kNumTablesMax];
+
+public:
+  UInt64 NumBlocks;
+
+  CBase(): NumBlocks(0) {}
+  UInt32 ReadBits(unsigned numBits);
+  unsigned ReadBit();
+  void InitNumBlocks() { NumBlocks = 0; }
+
+  /*
+    ReadBlock() props->randMode:
+      in: need read randMode bit,
+      out: randMode status
+  */
+  HRESULT ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps *props);
+};
+
 class CDecoder :
   public ICompressCoder,
   #ifndef _7ZIP_ST
@@ -67,37 +104,30 @@ class CDecoder :
 public:
   COutBuffer m_OutStream;
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
-  NBitm::CDecoder<CInBuffer> m_InStream;
-  Byte m_Selectors[kNumSelectorsMax];
-  CHuffmanDecoder m_HuffmanDecoders[kNumTablesMax];
+
+  CBase Base;
+
   UInt64 _inStart;
 
 private:
 
   bool _needInStreamInit;
 
-  UInt32 ReadBits(unsigned numBits);
   Byte ReadByte();
-  bool ReadBit();
-  UInt32 ReadCrc();
-  HRESULT DecodeFile(bool &isBZ, ICompressProgressInfo *progress);
-  HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      bool &isBZ, ICompressProgressInfo *progress);
+
+  HRESULT DecodeFile(ICompressProgressInfo *progress);
+  HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress);
+  
   class CDecoderFlusher
   {
     CDecoder *_decoder;
   public:
     bool NeedFlush;
-    bool ReleaseInStream;
-    CDecoderFlusher(CDecoder *decoder, bool releaseInStream):
-      _decoder(decoder),
-      ReleaseInStream(releaseInStream),
-      NeedFlush(true) {}
+    CDecoderFlusher(CDecoder *decoder): _decoder(decoder), NeedFlush(true) {}
     ~CDecoderFlusher()
     {
       if (NeedFlush)
         _decoder->Flush();
-      _decoder->ReleaseStreams(ReleaseInStream);
     }
   };
 
@@ -123,6 +153,11 @@ public:
   HRESULT Result2;
 
   UInt32 BlockSizeMax;
+
+  bool IsBz;
+  bool BzWasFinished; // bzip stream was finished with end signature
+  bool CrcError; // it can CRC error of block or CRC error of whole stream.
+
   ~CDecoder();
   HRESULT Create();
   void Free();
@@ -134,15 +169,9 @@ public:
   CDecoder();
 
   HRESULT SetRatioProgress(UInt64 packSize);
-  HRESULT ReadSignatures(bool &wasFinished, UInt32 &crc);
+  HRESULT ReadSignature(UInt32 &crc);
 
   HRESULT Flush() { return m_OutStream.Flush(); }
-  void ReleaseStreams(bool releaseInStream)
-  {
-    if (releaseInStream)
-      m_InStream.ReleaseStream();
-    m_OutStream.ReleaseStream();
-  }
 
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   #ifndef _7ZIP_ST
@@ -159,8 +188,13 @@ public:
   STDMETHOD(SetInStream)(ISequentialInStream *inStream);
   STDMETHOD(ReleaseInStream)();
 
-  HRESULT CodeResume(ISequentialOutStream *outStream, bool &isBZ, ICompressProgressInfo *progress);
-  UInt64 GetInputProcessedSize() const { return m_InStream.GetProcessedSize(); }
+  HRESULT CodeResume(ISequentialOutStream *outStream, ICompressProgressInfo *progress);
+
+  UInt64 GetStreamSize() const { return Base.BitDecoder.GetStreamSize(); }
+  UInt64 GetInputProcessedSize() const { return Base.BitDecoder.GetProcessedSize(); }
+
+  void InitNumBlocks() { Base.InitNumBlocks(); }
+  UInt64 GetNumBlocks() const { return Base.NumBlocks; }
   
   #ifndef _7ZIP_ST
   STDMETHOD(SetNumberOfThreads)(UInt32 numThreads);
@@ -174,9 +208,8 @@ class CNsisDecoder :
   public ICompressSetOutStreamSize,
   public CMyUnknownImp
 {
-  NBitm::CDecoder<CInBuffer> m_InStream;
-  Byte m_Selectors[kNumSelectorsMax];
-  CHuffmanDecoder m_HuffmanDecoders[kNumTablesMax];
+  CBase Base;
+
   CState m_State;
   
   int _nsisState;

@@ -48,7 +48,7 @@ const Byte kLenDirectBits32[kFixedLenTableSize] =
 const Byte kLenDirectBits64[kFixedLenTableSize] =
   {0,0,0,0,0,0,0,0,1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5, 16, 0, 0};
 
-const UInt32 kDistStart[kDistTableSize64]  =
+const UInt32 kDistStart[kDistTableSize64] =
   {0,1,2,3,4,6,8,12,16,24,32,48,64,96,128,192,256,384,512,768,
   1024,1536,2048,3072,4096,6144,8192,12288,16384,24576,32768,49152};
 const Byte kDistDirectBits[kDistTableSize64] =
@@ -106,24 +106,21 @@ struct CLevels
   void SubClear()
   {
     UInt32 i;
-    for(i = kNumLitLenCodesMin; i < kFixedMainTableSize; i++)
+    for (i = kNumLitLenCodesMin; i < kFixedMainTableSize; i++)
       litLenLevels[i] = 0;
-    for(i = 0; i < kFixedDistTableSize; i++)
+    for (i = 0; i < kFixedDistTableSize; i++)
       distLevels[i] = 0;
   }
 
   void SetFixedLevels()
   {
-    int i;
+    int i = 0;
     
-    for (i = 0; i < 144; i++)
-      litLenLevels[i] = 8;
-    for (; i < 256; i++)
-      litLenLevels[i] = 9;
-    for (; i < 280; i++)
-      litLenLevels[i] = 7;
-    for (; i < 288; i++)
-      litLenLevels[i] = 8;
+    for (; i < 144; i++) litLenLevels[i] = 8;
+    for (; i < 256; i++) litLenLevels[i] = 9;
+    for (; i < 280; i++) litLenLevels[i] = 7;
+    for (; i < 288; i++) litLenLevels[i] = 8;
+    
     for (i = 0; i < kFixedDistTableSize; i++)  // test it: InfoZip only uses kDistTableSize
       distLevels[i] = 5;
   }

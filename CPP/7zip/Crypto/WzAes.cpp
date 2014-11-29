@@ -27,10 +27,9 @@ static const UInt32 kNumKeyGenIterations = 1000;
 
 STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
-  if(size > kPasswordSizeMax)
+  if (size > kPasswordSizeMax)
     return E_INVALIDARG;
-  _key.Password.SetCapacity(size);
-  memcpy(_key.Password, data, size);
+  _key.Password.CopyFrom(data, (size_t)size);
   return S_OK;
 }
 
@@ -59,7 +58,7 @@ STDMETHODIMP CBaseCoder::Init()
     #ifdef _NO_WZAES_OPTIMIZATIONS
 
     NSha1::Pbkdf2Hmac(
-      _key.Password, _key.Password.GetCapacity(),
+      _key.Password, _key.Password.Size(),
       _key.Salt, _key.GetSaltSize(),
       kNumKeyGenIterations,
       buf, keysTotalSize);
@@ -72,7 +71,7 @@ STDMETHODIMP CBaseCoder::Init()
     UInt32 saltSizeInWords = _key.GetSaltSize() / 4;
     BytesToBeUInt32s(_key.Salt, salt, saltSizeInWords);
     NSha1::Pbkdf2Hmac32(
-      _key.Password, _key.Password.GetCapacity(),
+      _key.Password, _key.Password.Size(),
       salt, saltSizeInWords,
       kNumKeyGenIterations,
       buf32, key32SizeTotal);
@@ -85,8 +84,8 @@ STDMETHODIMP CBaseCoder::Init()
   _hmac.SetKey(buf + keySize, keySize);
   memcpy(_key.PwdVerifComputed, buf + 2 * keySize, kPwdVerifCodeSize);
 
-  AesCtr2_Init(&_aes);
   Aes_SetKey_Enc(_aes.aes + _aes.offset + 8, buf, keySize);
+  AesCtr2_Init(&_aes);
   return S_OK;
 }
 
@@ -199,7 +198,7 @@ void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size)
     pos = 0;
     do
       *data++ ^= buf[pos++];
-    while (--size != 0 && pos != AES_BLOCK_SIZE);
+    while (--size != 0);
   }
   p->pos = pos;
 }

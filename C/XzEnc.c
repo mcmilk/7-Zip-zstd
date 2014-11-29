@@ -1,5 +1,7 @@
 /* XzEnc.c -- Xz Encode
-2011-02-07 : Igor Pavlov : Public domain */
+2013-11-12 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -218,7 +220,7 @@ static SRes SeqInFilter_Read(void *pp, void *data, size_t *size)
   CSeqInFilter *p = (CSeqInFilter *)pp;
   size_t sizeOriginal = *size;
   if (sizeOriginal == 0)
-    return S_OK;
+    return SZ_OK;
   *size = 0;
   for (;;)
   {
@@ -274,7 +276,7 @@ static SRes SeqInFilter_Init(CSeqInFilter *p, const CXzFilter *props)
   RINOK(BraState_SetFromMethod(&p->StateCoder, props->id, 1, &g_Alloc));
   RINOK(p->StateCoder.SetProps(p->StateCoder.p, props->props, props->propsSize, &g_Alloc));
   p->StateCoder.Init(p->StateCoder.p);
-  return S_OK;
+  return SZ_OK;
 }
 
 /* ---------- CSbEncInStream ---------- */

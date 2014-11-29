@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Synchronization.h"
+#include "../../Windows/Synchronization.h"
 
 #include "RandGen.h"
 
@@ -44,7 +44,13 @@ void CRandomGenerator::Init()
   HASH_UPD(pid);
   #endif
 
-  for (unsigned i = 0; i < 1000; i++)
+  for (unsigned i = 0; i <
+    #ifdef _DEBUG
+    2;
+    #else
+    1000;
+    #endif
+    i++)
   {
     #ifdef _WIN32
     LARGE_INTEGER v;

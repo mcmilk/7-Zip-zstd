@@ -165,7 +165,7 @@ struct FarDialogItem
     const char *History;
     const char *Mask;
     struct FarList *ListItems;
-    int  ListPos;
+    int ListPos;
     CHAR_INFO *VBuf;
   };
   unsigned int Flags;

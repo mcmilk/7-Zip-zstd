@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -99,7 +99,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -127,7 +127,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -156,11 +156,11 @@ SOURCE=.\7zG.exe.manifest
 # End Source File
 # Begin Source File
 
-SOURCE=.\FM.ico
+SOURCE=.\ExtractRes.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=.\FM.ico
 # End Source File
 # Begin Source File
 
@@ -257,7 +257,11 @@ SOURCE=..\Common\ExtractMode.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\HandlerLoader.h
+SOURCE=..\Common\HashCalc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\HashCalc.h
 # End Source File
 # Begin Source File
 
@@ -397,6 +401,22 @@ SOURCE=.\BenchmarkDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\FileManager\BrowseDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\BrowseDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\ComboDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\ComboDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\CompressDialog.cpp
 # End Source File
 # Begin Source File
@@ -515,6 +535,14 @@ SOURCE=..\FileManager\StringUtils.cpp
 
 SOURCE=..\FileManager\StringUtils.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\SysIconUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\SysIconUtils.h
+# End Source File
 # End Group
 # Begin Group "Engine"
 
@@ -530,6 +558,14 @@ SOURCE=.\ExtractGUI.h
 # Begin Source File
 
 SOURCE=.\GUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\HashGUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\HashGUI.h
 # End Source File
 # Begin Source File
 
@@ -585,6 +621,14 @@ SOURCE=..\..\Common\FilterCoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\LimitedStreams.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\LimitedStreams.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\MethodProps.cpp
 # End Source File
 # Begin Source File
@@ -601,11 +645,31 @@ SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\PropId.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\StreamUtils.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\UniqBlocks.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\UniqBlocks.h
 # End Source File
 # End Group
 # Begin Group "Compress"
@@ -714,6 +778,34 @@ SOURCE=..\..\..\..\C\CpuArch.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Sort.c
+
+!IF  "$(CFG)" == "GUI - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "GUI - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "GUI - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "GUI - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sort.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Threads.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -725,6 +817,10 @@ SOURCE=..\..\..\..\C\Threads.h
 # Begin Group "Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\Common\Buffer.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.cpp
@@ -800,14 +896,6 @@ SOURCE=..\..\..\Common\StringToInt.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\StringToInt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\TextConfig.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\TextConfig.h
 # End Source File
 # Begin Source File
 
@@ -891,11 +979,11 @@ SOURCE=..\..\..\Windows\DLL.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Error.cpp
+SOURCE=..\..\..\Windows\ErrorMsg.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Error.h
+SOURCE=..\..\..\Windows\ErrorMsg.h
 # End Source File
 # Begin Source File
 
@@ -923,6 +1011,10 @@ SOURCE=..\..\..\Windows\FileIO.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\FileLink.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\FileMapping.h
 # End Source File
 # Begin Source File
@@ -932,6 +1024,14 @@ SOURCE=..\..\..\Windows\FileName.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\FileName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileSystem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileSystem.h
 # End Source File
 # Begin Source File
 
@@ -951,11 +1051,11 @@ SOURCE=..\..\..\Windows\PropVariant.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\PropVariantConversions.cpp
+SOURCE=..\..\..\Windows\PropVariantConv.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\PropVariantConversions.h
+SOURCE=..\..\..\Windows\PropVariantConv.h
 # End Source File
 # Begin Source File
 
@@ -999,7 +1099,11 @@ SOURCE=..\..\..\Windows\System.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Time.cpp
+SOURCE=..\..\..\Windows\TimeUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\TimeUtils.h
 # End Source File
 # Begin Source File
 

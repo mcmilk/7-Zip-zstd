@@ -3,8 +3,10 @@
 #ifndef __COMPRESS_DIALOG_H
 #define __COMPRESS_DIALOG_H
 
-#include "Windows/Control/ComboBox.h"
-#include "Windows/Control/Edit.h"
+#include "../../../Common/Wildcard.h"
+
+#include "../../../Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/Edit.h"
 
 #include "../Common/LoadCodecs.h"
 #include "../Common/ZipRegistry.h"
@@ -22,12 +24,15 @@ namespace NCompressDialog
       kAdd,
       kUpdate,
       kFresh,
-      kSynchronize
+      kSync
     };
   }
+  
   struct CInfo
   {
     NUpdateMode::EEnum UpdateMode;
+    NWildcard::ECensorPathMode PathMode;
+
     bool SolidIsSpecified;
     bool MultiThreadIsAllowed;
     UInt64 SolidBlockSize;
@@ -46,10 +51,16 @@ namespace NCompressDialog
 
     bool SFXMode;
     bool OpenShareForWrite;
-
+    bool DeleteAfterCompressing;
     
-    UString ArchiveName; // in: Relative for ; out: abs
-    FString CurrentDirPrefix;
+    CBoolPair SymLinks;
+    CBoolPair HardLinks;
+    CBoolPair AltStreams;
+    CBoolPair NtSecurity;
+    
+    UString ArcPath; // in: Relative or abs ; out: Relative or abs
+    
+    // FString CurrentDirPrefix;
     bool KeepName;
 
     bool GetFullPathName(UString &result) const;
@@ -60,17 +71,19 @@ namespace NCompressDialog
     bool EncryptHeadersIsAllowed;
     bool EncryptHeaders;
 
-    void Init()
+    CInfo():
+        UpdateMode(NCompressDialog::NUpdateMode::kAdd),
+        PathMode(NWildcard::k_RelatPath),
+        SFXMode(false),
+        OpenShareForWrite(false),
+        DeleteAfterCompressing(false),
+        FormatIndex(-1)
     {
       Level = Dictionary = Order = UInt32(-1);
       OrderMode = false;
       Method.Empty();
       Options.Empty();
       EncryptionMethod.Empty();
-    }
-    CInfo()
-    {
-      Init();
     }
   };
 }
@@ -85,7 +98,10 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CComboBox m_Order;
   NWindows::NControl::CComboBox m_Solid;
   NWindows::NControl::CComboBox m_NumThreads;
+
   NWindows::NControl::CComboBox m_UpdateMode;
+  NWindows::NControl::CComboBox m_PathMode;
+  
   NWindows::NControl::CComboBox m_Volume;
   NWindows::NControl::CDialogChildControl m_Params;
 
@@ -96,6 +112,12 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   NCompression::CInfo m_RegistryInfo;
 
   int m_PrevFormat;
+  UString DirPrefix;
+  UString StartDirPrefix;
+
+  void CheckButton_TwoBools(UINT id, const CBoolPair &b1, const CBoolPair &b2);
+  void GetButton_Bools(UINT id, CBoolPair &b1, CBoolPair &b2);
+
   void SetArchiveName(const UString &name);
   int FindRegistryFormat(const UString &name);
   int FindRegistryFormatAlways(const UString &name);
@@ -118,8 +140,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 
   void SetEncryptionMethod();
 
-  int AddDictionarySize(UInt32 size, bool kilo, bool maga);
-  int AddDictionarySize(UInt32 size);
+  void AddDictionarySize(UInt32 size);
   
   void SetDictionary();
 
@@ -151,27 +172,32 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SaveOptionsInMem();
 
   void UpdatePasswordControl();
-  bool IsShowPasswordChecked() const
-    { return IsButtonChecked(IDC_COMPRESS_CHECK_SHOW_PASSWORD) == BST_CHECKED; }
+  bool IsShowPasswordChecked() const { return IsButtonCheckedBool(IDX_PASSWORD_SHOW); }
 
-  int GetFormatIndex();
+  unsigned GetFormatIndex();
+  bool SetArcPathFields(const UString &path, UString &name, bool always);
+  bool GetFinalPath_Smart(UString &resPath);
+
 public:
   CObjectVector<CArcInfoEx> *ArcFormats;
-  CRecordVector<int> ArcIndices;
+  CUIntVector ArcIndices; // can not be empty, must contain Info.FormatIndex, if Info.FormatIndex >= 0
 
   NCompressDialog::CInfo Info;
   UString OriginalFileName; // for bzip2, gzip2
+  bool CurrentDirWasChanged;
 
   INT_PTR Create(HWND wndParent = 0)
   {
     BIG_DIALOG_SIZE(400, 304);
-    return CModalDialog::Create(SIZED_DIALOG(IDD_DIALOG_COMPRESS), wndParent);
+    return CModalDialog::Create(SIZED_DIALOG(IDD_COMPRESS), wndParent);
   }
+
+  CCompressDialog(): CurrentDirWasChanged(false) {};
 
 protected:
 
   void CheckSFXControlsEnable();
-  void CheckVolumeEnable();
+  // void CheckVolumeEnable();
   void CheckControlsEnable();
 
   void OnButtonSetArchive();

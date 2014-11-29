@@ -1,10 +1,10 @@
 // ProgressBox.h
 
-#ifndef __PROGRESSBOX_H
-#define __PROGRESSBOX_H
+#ifndef __PROGRESS_BOX_H
+#define __PROGRESS_BOX_H
 
-#include "Common/MyString.h"
-#include "Common/Types.h"
+#include "../../../Common/MyString.h"
+#include "../../../Common/MyTypes.h"
 
 void ConvertUInt64ToStringAligned(UInt64 value, char *s, int alignSize);
 

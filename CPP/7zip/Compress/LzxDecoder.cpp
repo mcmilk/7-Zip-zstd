@@ -20,12 +20,14 @@ CDecoder::CDecoder(bool wimMode):
   m_x86ConvertOutStream = m_x86ConvertOutStreamSpec;
 }
 
+/*
 void CDecoder::ReleaseStreams()
 {
   m_OutWindowStream.ReleaseStream();
   m_InBitStream.ReleaseStream();
   m_x86ConvertOutStreamSpec->ReleaseStream();
 }
+*/
 
 STDMETHODIMP CDecoder::Flush()
 {
@@ -152,7 +154,7 @@ public:
   {
     if (NeedFlush)
       m_Decoder->Flush();
-    m_Decoder->ReleaseStreams();
+    // m_Decoder->ReleaseStreams();
   }
 };
 
@@ -308,7 +310,8 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     return E_INVALIDARG;
   UInt64 size = *outSize;
 
-  RINOK(SetInStream(inStream));
+  // RINOK(SetInStream(inStream));
+  m_InBitStream.SetStream(inStream);
   m_x86ConvertOutStreamSpec->SetStream(outStream);
   m_OutWindowStream.SetStream(m_x86ConvertOutStream);
   RINOK(SetOutStreamSize(outSize));
@@ -344,17 +347,20 @@ HRESULT CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outS
   catch(...) { return S_FALSE; }
 }
 
+/*
 STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream)
 {
+  m_InStreamRef = inStream;
   m_InBitStream.SetStream(inStream);
   return S_OK;
 }
 
 STDMETHODIMP CDecoder::ReleaseInStream()
 {
-  m_InBitStream.ReleaseStream();
+  m_InStreamRef.Release();
   return S_OK;
 }
+*/
 
 STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {

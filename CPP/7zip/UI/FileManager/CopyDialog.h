@@ -3,8 +3,8 @@
 #ifndef __COPY_DIALOG_H
 #define __COPY_DIALOG_H
 
-#include "Windows/Control/ComboBox.h"
-#include "Windows/Control/Dialog.h"
+#include "../../../Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/Dialog.h"
 
 #include "CopyDialogRes.h"
 
@@ -25,7 +25,7 @@ public:
   UString Info;
   UStringVector Strings;
 
-  INT_PTR Create(HWND parentWindow = 0) { return CModalDialog::Create(IDD_DIALOG_COPY, parentWindow); }
+  INT_PTR Create(HWND parentWindow = 0) { return CModalDialog::Create(IDD_COPY, parentWindow); }
 };
 
 #endif

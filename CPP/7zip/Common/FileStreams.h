@@ -22,21 +22,30 @@
 class CInFileStream:
   public IInStream,
   public IStreamGetSize,
+  #ifdef USE_WIN_FILE
+  public IStreamGetProps,
+  public IStreamGetProps2,
+  #endif
   public CMyUnknownImp
 {
 public:
   #ifdef USE_WIN_FILE
   NWindows::NFile::NIO::CInFile File;
+  
   #ifdef SUPPORT_DEVICE_FILE
   UInt64 VirtPos;
   UInt64 PhyPos;
-  UInt64 BufferStartPos;
-  Byte *Buffer;
-  UInt32 BufferSize;
+  UInt64 BufStartPos;
+  Byte *Buf;
+  UInt32 BufSize;
   #endif
+
   #else
   NC::NFile::NIO::CInFile File;
   #endif
+
+  bool SupportHardLinks;
+  
   virtual ~CInFileStream();
 
   #ifdef SUPPORT_DEVICE_FILE
@@ -53,12 +62,23 @@ public:
     return File.OpenShared(fileName, shareForWrite);
   }
 
-  MY_UNKNOWN_IMP2(IInStream, IStreamGetSize)
+  MY_QUERYINTERFACE_BEGIN2(IInStream)
+  MY_QUERYINTERFACE_ENTRY(IStreamGetSize)
+  #ifdef USE_WIN_FILE
+  MY_QUERYINTERFACE_ENTRY(IStreamGetProps)
+  MY_QUERYINTERFACE_ENTRY(IStreamGetProps2)
+  #endif
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
 
   STDMETHOD(GetSize)(UInt64 *size);
+  #ifdef USE_WIN_FILE
+  STDMETHOD(GetProps)(UInt64 *size, FILETIME *cTime, FILETIME *aTime, FILETIME *mTime, UInt32 *attrib);
+  STDMETHOD(GetProps2)(CStreamFileProps *props);
+  #endif
 };
 
 class CStdInFileStream:

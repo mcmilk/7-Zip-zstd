@@ -3,9 +3,7 @@
 #ifndef __OVERWRITE_DIALOG_H
 #define __OVERWRITE_DIALOG_H
 
-#include "Common/Types.h"
-
-#include "Windows/Control/Dialog.h"
+#include "../../../Windows/Control/Dialog.h"
 
 #include "DialogSize.h"
 #include "OverwriteDialogRes.h"
@@ -61,7 +59,7 @@ public:
     #else
     _isBig = true;
     #endif
-    return CModalDialog::Create(SIZED_DIALOG(IDD_DIALOG_OVERWRITE), parent);
+    return CModalDialog::Create(SIZED_DIALOG(IDD_OVERWRITE), parent);
   }
 
   NOverwriteDialog::CFileInfo OldFileInfo;

@@ -1,8 +1,8 @@
 #include "ExtractDialogRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 280
-#define yc 128
+#define xc 336
+#define yc 168
 
 #undef g1xs
 #undef g2x
@@ -10,9 +10,9 @@
 #undef g2xs
 #undef g2xs2
 
-#define g1xs 128
+#define g1xs 160
 
-#define gSpace 24
+#define gSpace 20
 #define g2x (m + g1xs + gSpace)
 #define g2x2 (g2x + m)
 #define g2xs (xc - g1xs - gSpace)
@@ -25,26 +25,38 @@
 #define GROUP_Y_SIZE 56
 #endif
 
-IDD_DIALOG_EXTRACT MY_DIALOG
+IDD_EXTRACT  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "Extract"
 BEGIN
-  LTEXT      "E&xtract to:", IDC_STATIC_EXTRACT_EXTRACT_TO, m, m, xc, 8
-  COMBOBOX   IDC_EXTRACT_COMBO_PATH, m, m + 12, xc - bxsDots - 12, 100, MY_COMBO_WITH_EDIT
-  PUSHBUTTON "...", IDC_EXTRACT_BUTTON_SET_PATH, xs - m - bxsDots, m + 12 - 2, bxsDots, bys, WS_GROUP
+  LTEXT     "E&xtract to:", IDT_EXTRACT_EXTRACT_TO, m, m, xc, 8
+  COMBOBOX  IDC_EXTRACT_PATH, m, m + 12, xc - bxsDots - 12, 100, MY_COMBO_WITH_EDIT
+  PUSHBUTTON  "...", IDB_EXTRACT_SET_PATH, xs - m - bxsDots, m + 12 - 2, bxsDots, bys, WS_GROUP
 
-  LTEXT      "Path mode:", IDC_EXTRACT_PATH_MODE, m, m + 36, g1xs, 8
-  COMBOBOX   IDC_EXTRACT_COMBO_PATH_MODE, m, m + 48, g1xs, 140, MY_COMBO
+  CONTROL   "", IDX_EXTRACT_NAME_ENABLE, MY_CHECKBOX, m, m + 34, 12, 10
+  EDITTEXT  IDE_EXTRACT_NAME, m + 12 + 2, m + 32, g1xs - 12 - 2, 14, ES_AUTOHSCROLL
 
-  LTEXT      "Overwrite mode:", IDC_EXTRACT_OVERWRITE_MODE, m, m + 68, g1xs, 8
-  COMBOBOX   IDC_EXTRACT_COMBO_OVERWRITE_MODE, m, m + 80, g1xs, 140, MY_COMBO
+  LTEXT     "Path mode:", IDT_EXTRACT_PATH_MODE, m, m + 52, g1xs, 8
+  COMBOBOX  IDC_EXTRACT_PATH_MODE, m, m + 64, g1xs, 140, MY_COMBO
 
-  GROUPBOX "Password", IDC_EXTRACT_PASSWORD, g2x, m + 36, g2xs, GROUP_Y_SIZE
-  EDITTEXT IDC_EXTRACT_EDIT_PASSWORD, g2x2, m + 50, g2xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL
-  CONTROL "Show Password", IDC_EXTRACT_CHECK_SHOW_PASSWORD, MY_CHECKBOX, g2x2, m + 72, g2xs2, 10
+  CONTROL   "Eliminate duplication of root folder", IDX_EXTRACT_ELIM_DUP, MY_CHECKBOX,
+            m, m + 84, g1xs, 10
+
+  LTEXT     "Overwrite mode:", IDT_EXTRACT_OVERWRITE_MODE, m, m + 104, g1xs, 8
+  COMBOBOX  IDC_EXTRACT_OVERWRITE_MODE, m, m + 116, g1xs, 140, MY_COMBO
+
+
+  GROUPBOX  "Password", IDG_PASSWORD, g2x, m + 36, g2xs, GROUP_Y_SIZE
+  EDITTEXT  IDE_EXTRACT_PASSWORD, g2x2, m + 50, g2xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  CONTROL   "Show Password", IDX_PASSWORD_SHOW, MY_CHECKBOX, g2x2, m + 72, g2xs2, 10
+
+//  CONTROL   "Restore alternate data streams", IDX_EXTRACT_ALT_STREAMS, MY_CHECKBOX,
+//            g2x, m + 104, g2xs, 10
+  CONTROL   "Restore file security", IDX_EXTRACT_NT_SECUR, MY_CHECKBOX,
+            g2x, m + 104, g2xs, 10
   
-  DEFPUSHBUTTON  "OK",         IDOK, bx3, by, bxs, bys, WS_GROUP
+  DEFPUSHBUTTON  "OK",     IDOK,     bx3, by, bxs, bys, WS_GROUP
   PUSHBUTTON     "Cancel", IDCANCEL, bx2, by, bxs, bys
-  PUSHBUTTON     "Help",     IDHELP, bx1, by, bxs, bys
+  PUSHBUTTON     "Help",   IDHELP,   bx1, by, bxs, bys
 END
 
 
@@ -63,22 +75,22 @@ END
 
 #define g1xs 64
 
-IDD_DIALOG_EXTRACT_2 MY_DIALOG
+IDD_EXTRACT_2  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "Extract"
 BEGIN
-  LTEXT    "E&xtract to:", IDC_STATIC_EXTRACT_EXTRACT_TO, m, m, xc - bxsDots - 8, 8
-  COMBOBOX   IDC_EXTRACT_COMBO_PATH, m, m + 12, xc - bxsDots - 8, 100, MY_COMBO_WITH_EDIT
-  PUSHBUTTON "...", IDC_EXTRACT_BUTTON_SET_PATH, xs - m - bxsDots, m + 12 - 3, bxsDots, bys, WS_GROUP
+  LTEXT     "E&xtract to:", IDT_EXTRACT_EXTRACT_TO, m, m, xc - bxsDots - 8, 8
+  COMBOBOX  IDC_EXTRACT_PATH, m, m + 12, xc - bxsDots - 8, 100, MY_COMBO_WITH_EDIT
+  PUSHBUTTON  "...", IDB_EXTRACT_SET_PATH, xs - m - bxsDots, m + 12 - 3, bxsDots, bys, WS_GROUP
 
-  LTEXT     "Path mode:", IDC_EXTRACT_PATH_MODE, m, m + 36, g1xs, 8
-  COMBOBOX  IDC_EXTRACT_COMBO_PATH_MODE, m + g1xs, m + 36, xc - g1xs, 100, MY_COMBO
+  LTEXT     "Path mode:", IDT_EXTRACT_PATH_MODE, m, m + 36, g1xs, 8
+  COMBOBOX  IDC_EXTRACT_PATH_MODE, m + g1xs, m + 36, xc - g1xs, 100, MY_COMBO
 
-  LTEXT     "Overwrite mode:", IDC_EXTRACT_OVERWRITE_MODE, m, m + 56, g1xs, 8
-  COMBOBOX  IDC_EXTRACT_COMBO_OVERWRITE_MODE, m + g1xs, m + 56, xc - g1xs, 100, MY_COMBO
+  LTEXT     "Overwrite mode:", IDT_EXTRACT_OVERWRITE_MODE, m, m + 56, g1xs, 8
+  COMBOBOX  IDC_EXTRACT_OVERWRITE_MODE, m + g1xs, m + 56, xc - g1xs, 100, MY_COMBO
 
-  LTEXT "Password", IDC_EXTRACT_PASSWORD, m, m + 76, g1xs, 8
-  EDITTEXT IDC_EXTRACT_EDIT_PASSWORD, m + g1xs, m + 76, xc - g1xs, 14, ES_PASSWORD | ES_AUTOHSCROLL
-  CONTROL  "Show Password", IDC_EXTRACT_CHECK_SHOW_PASSWORD, MY_CHECKBOX, m, m + 92, xc, 10
+  LTEXT     "Password", IDG_PASSWORD, m, m + 76, g1xs, 8
+  EDITTEXT  IDE_EXTRACT_PASSWORD, m + g1xs, m + 76, xc - g1xs, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  CONTROL   "Show Password", IDX_PASSWORD_SHOW, MY_CHECKBOX, m, m + 92, xc, 10
   
   OK_CANCEL
 END

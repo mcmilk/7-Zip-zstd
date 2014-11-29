@@ -5,19 +5,17 @@
 
 #include "../../../C/CpuArch.h"
 
-#include "../../Common/Types.h"
-
 namespace NCompress {
 
 struct CMtf8Encoder
 {
   Byte Buf[256];
 
-  int FindAndMove(Byte v)
+  unsigned FindAndMove(Byte v)
   {
-    int pos;
+    unsigned pos;
     for (pos = 0; Buf[pos] != v; pos++);
-    int resPos = pos;
+    unsigned resPos = pos;
     for (; pos >= 8; pos -= 8)
     {
       Buf[pos] = Buf[pos - 1];
@@ -29,7 +27,7 @@ struct CMtf8Encoder
       Buf[pos - 6] = Buf[pos - 7];
       Buf[pos - 7] = Buf[pos - 8];
     }
-    for (; pos > 0; pos--)
+    for (; pos != 0; pos--)
       Buf[pos] = Buf[pos - 1];
     Buf[0] = v;
     return resPos;
@@ -81,9 +79,9 @@ struct CMtf8Decoder
   CMtfVar Buf[256 >> MTF_MOVS];
 
   void StartInit() { memset(Buf, 0, sizeof(Buf)); }
-  void Add(unsigned int pos, Byte val) { Buf[pos >> MTF_MOVS] |= ((CMtfVar)val << ((pos & MTF_MASK) << 3));  }
+  void Add(unsigned pos, Byte val) { Buf[pos >> MTF_MOVS] |= ((CMtfVar)val << ((pos & MTF_MASK) << 3));  }
   Byte GetHead() const { return (Byte)Buf[0]; }
-  Byte GetAndMove(unsigned int pos)
+  Byte GetAndMove(unsigned pos)
   {
     UInt32 lim = ((UInt32)pos >> MTF_MOVS);
     pos = (pos & MTF_MASK) << 3;
@@ -164,7 +162,7 @@ public:
         for (int t = Counts[g] - 1; t >= 0; t--, i--)
           Buf[i] = Buf[offset + t];
       }
-      while(g != 0);
+      while (g != 0);
       
       for (i = kSmallSize - 1; i >= 0; i--)
         Buf[i] = SmallBuffer[i];

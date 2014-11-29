@@ -1,5 +1,7 @@
 /* 7zCrcOpt.c -- CRC32 calculation
-2010-12-01 : Igor Pavlov : Public domain */
+2013-11-12 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include "CpuArch.h"
 

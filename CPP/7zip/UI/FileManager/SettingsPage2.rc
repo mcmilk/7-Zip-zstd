@@ -1,24 +1,11 @@
 CAPTION "Settings"
-BEGIN
-  CONTROL  "Show "".."" item", IDC_SETTINGS_SHOW_DOTS, MY_CHECKBOX,
-           m,  8, xc, 10
-  CONTROL  "Show real file &icons", IDC_SETTINGS_SHOW_REAL_FILE_ICONS, MY_CHECKBOX,
-           m, 22, xc, 10
-  CONTROL  "Show system &menu", IDC_SETTINGS_SHOW_SYSTEM_MENU, MY_CHECKBOX,
-           m, 36, xc, 10
-  CONTROL  "&Full row select", IDC_SETTINGS_FULL_ROW, MY_CHECKBOX,
-           m, 50, xc, 10
-  CONTROL  "Show &grid lines", IDC_SETTINGS_SHOW_GRID, MY_CHECKBOX,
-           m, 64, xc, 10
-  CONTROL  "&Single-click to open an item", IDC_SETTINGS_SINGLE_CLICK, MY_CHECKBOX,
-           m, 78, xc, 10
-  /*
-  CONTROL  "&Underline current name", IDC_SETTINGS_UNDERLINE, "Button", BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP,
-           m + 12, 92, xc - 12, 10
-  */
-
-  CONTROL  "&Alternative selection mode", IDC_SETTINGS_ALTERNATIVE_SELECTION, MY_CHECKBOX,
-           m, 92, xc, 10
-  CONTROL  "Use &large memory pages", IDC_SETTINGS_LARGE_PAGES, MY_CHECKBOX,
-           m, 106, xc, 10
+BEGIN 
+  CONTROL  "Show "".."" item",      IDX_SETTINGS_SHOW_DOTS,            MY_CHECKBOX, m,  8, xc, 10
+  CONTROL  "Show real file &icons", IDX_SETTINGS_SHOW_REAL_FILE_ICONS, MY_CHECKBOX, m, 22, xc, 10
+  CONTROL  "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     MY_CHECKBOX, m, 36, xc, 10
+  CONTROL  "&Full row select",      IDX_SETTINGS_FULL_ROW,             MY_CHECKBOX, m, 50, xc, 10
+  CONTROL  "Show &grid lines",      IDX_SETTINGS_SHOW_GRID,            MY_CHECKBOX, m, 64, xc, 10
+  CONTROL  "&Single-click to open an item", IDX_SETTINGS_SINGLE_CLICK, MY_CHECKBOX, m, 78, xc, 10
+  CONTROL  "&Alternative selection mode", IDX_SETTINGS_ALTERNATIVE_SELECTION, MY_CHECKBOX, m, 92, xc, 10
+  CONTROL  "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        MY_CHECKBOX, m, 106, xc, 10
 END

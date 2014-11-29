@@ -1,9 +1,9 @@
-// CabBlockInStream.cpp
+// CabBlockInStream.h
 
-#ifndef __CABBLOCKINSTREAM_H
-#define __CABBLOCKINSTREAM_H
+#ifndef __CAB_BLOCK_IN_STREAM_H
+#define __CAB_BLOCK_IN_STREAM_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
 #include "../../IStream.h"
 
 namespace NArchive {
@@ -13,30 +13,23 @@ class CCabBlockInStream:
   public ISequentialInStream,
   public CMyUnknownImp
 {
-  CMyComPtr<ISequentialInStream> _stream;
-  Byte *_buffer;
-  UInt32 _pos;
+  Byte *_buf;
   UInt32 _size;
+  UInt32 _pos;
 
 public:
-  UInt32 TotalPackSize;
-  UInt32 ReservedSize;
-  bool DataError;
+  UInt32 ReservedSize; // < 256
   bool MsZip;
-
-  CCabBlockInStream(): _buffer(0), ReservedSize(0), MsZip(false), DataError(false), TotalPackSize(0) {}
-  ~CCabBlockInStream();
-  bool Create();
-  void SetStream(ISequentialInStream *stream) {  _stream = stream; }
-
-  void InitForNewFolder() { TotalPackSize = 0; }
-  void InitForNewBlock() { _size = 0; }
 
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  CCabBlockInStream(): _buf(0), ReservedSize(0), MsZip(false) {}
+  ~CCabBlockInStream();
+  bool Create();
+  void InitForNewBlock() { _size = 0; _pos = 0; }
+  HRESULT PreRead(ISequentialInStream *stream, UInt32 &packSize, UInt32 &unpackSize);
 
-  HRESULT PreRead(UInt32 &packSize, UInt32 &unpackSize);
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 }}

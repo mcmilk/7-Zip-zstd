@@ -1,28 +1,16 @@
 // MyMessages.h
 
-#ifndef __MYMESSAGES_H
-#define __MYMESSAGES_H
+#ifndef __MY_MESSAGES_H
+#define __MY_MESSAGES_H
 
-#include "Common/MyString.h"
-#include "Common/Types.h"
+#include "../../../Common/MyString.h"
 
 void ShowErrorMessage(HWND window, LPCWSTR message);
 inline void ShowErrorMessage(LPCWSTR message) { ShowErrorMessage(0, message); }
 
-void ShowErrorMessageHwndRes(HWND window, UINT resID
-    #ifdef LANG
-    , UInt32 langID
-    #endif
-    );
+void ShowErrorMessageHwndRes(HWND window, UInt32 langID);
+void ShowErrorMessageRes(UInt32 langID);
 
-void ShowErrorMessageRes(UINT resID
-    #ifdef LANG
-    , UInt32 langID
-    #endif
-    );
-
-// void ShowErrorMessageDWORD(HWND window, DWORD errorCode);
-// inline void ErrorMessageDWORD(DWORD errorCode) { ShowErrorMessageDWORD(0, errorCode); }
 void ShowLastErrorMessage(HWND window = 0);
 
 #endif

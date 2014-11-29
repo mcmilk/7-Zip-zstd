@@ -1,8 +1,8 @@
-#define IDD_DIALOG_COPY                506
+#define IDD_COPY  96
 
-#define IDC_COPY_STATIC                1000
-#define IDC_COPY_COMBO                 1001
-#define IDC_COPY_SET_PATH              1002
-#define IDC_COPY_INFO                  1003
+#define IDT_COPY           100
+#define IDC_COPY           101
+#define IDB_COPY_SET_PATH  102
+#define IDT_COPY_INFO      103
 
-#define IDS_SET_FOLDER  210
+#define IDS_SET_FOLDER    6007

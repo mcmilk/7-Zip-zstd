@@ -24,7 +24,7 @@ bool CDecoder::SetCodeLengths(const Byte *codeLengths)
   // int lenCounts[kNumBitsInLongestCode + 1], tmpPositions[kNumBitsInLongestCode + 1];
   int lenCounts[kNumBitsInLongestCode + 2], tmpPositions[kNumBitsInLongestCode + 1];
   int i;
-  for(i = 0; i <= kNumBitsInLongestCode; i++)
+  for (i = 0; i <= kNumBitsInLongestCode; i++)
     lenCounts[i] = 0;
   UInt32 symbolIndex;
   for (symbolIndex = 0; symbolIndex < m_NumSymbols; symbolIndex++)
@@ -34,7 +34,7 @@ bool CDecoder::SetCodeLengths(const Byte *codeLengths)
   // tmpPositions[0] = m_Positions[0] = m_Limitits[0] = 0;
   m_Limitits[kNumBitsInLongestCode + 1] = 0;
   m_Positions[kNumBitsInLongestCode + 1] = 0;
-  lenCounts[kNumBitsInLongestCode + 1] =  0;
+  lenCounts[kNumBitsInLongestCode + 1] = 0;
 
 
   UInt32 startPos = 0;
@@ -68,7 +68,7 @@ UInt32 CDecoder::DecodeSymbol(CInBit *inStream)
   UInt32 numBits = 0;
   UInt32 value = inStream->GetValue(kNumBitsInLongestCode);
   int i;
-  for(i = kNumBitsInLongestCode; i > 0; i--)
+  for (i = kNumBitsInLongestCode; i > 0; i--)
   {
     if (value < m_Limitits[i])
     {

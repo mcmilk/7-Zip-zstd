@@ -38,9 +38,12 @@ UInt32 Adler32_Update(UInt32 adler, const Byte *buf, size_t size)
 
 STDMETHODIMP COutStreamWithAdler::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  HRESULT result = _stream->Write(data, size, &size);
+  HRESULT result = S_OK;
+  if (_stream)
+    result = _stream->Write(data, size, &size);
   _adler = Adler32_Update(_adler, (const Byte *)data, size);
-  if (processedSize != NULL)
+  _size += size;
+  if (processedSize)
     *processedSize = size;
   return result;
 }
@@ -58,21 +61,21 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     DeflateDecoder = DeflateDecoderSpec;
   }
 
+  if (inSize && *inSize < 2)
+    return S_FALSE;
   Byte buf[2];
   RINOK(ReadStream_FALSE(inStream, buf, 2));
-  int method = buf[0] & 0xF;
-  if (method != 8)
+  if (!IsZlib(buf))
     return S_FALSE;
-  // int dicSize = buf[0] >> 4;
-  if ((((UInt32)buf[0] << 8) + buf[1]) % 31 != 0)
-    return S_FALSE;
-  if ((buf[1] & 0x20) != 0) // dictPresent
-    return S_FALSE;
-  // int level = (buf[1] >> 6);
 
   AdlerSpec->SetStream(outStream);
   AdlerSpec->Init();
-  HRESULT res = DeflateDecoder->Code(inStream, AdlerStream, inSize, outSize, progress);
+  
+  UInt64 inSize2 = 0;
+  if (inSize)
+    inSize2 = *inSize - 2;
+
+  HRESULT res = DeflateDecoder->Code(inStream, AdlerStream, inSize ? &inSize2 : NULL, outSize, progress);
   AdlerSpec->ReleaseStream();
 
   if (res == S_OK)

@@ -1,14 +1,12 @@
 /* Bcj2.h -- Converter for x86 code (BCJ2)
-2009-02-07 : Igor Pavlov : Public domain */
+2013-01-18 : Igor Pavlov : Public domain */
 
 #ifndef __BCJ2_H
 #define __BCJ2_H
 
-#include "Types.h"
+#include "7zTypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /*
 Conditions:
@@ -31,8 +29,6 @@ int Bcj2_Decode(
     const Byte *buf3, SizeT size3,
     Byte *outBuf, SizeT outSize);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif

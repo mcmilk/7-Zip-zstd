@@ -10,8 +10,8 @@
 
 int CExtDatabase::FindExt(const UString &ext)
 {
-  for (int i = 0; i < Exts.Size(); i++)
-    if (Exts[i].Ext.CompareNoCase(ext) == 0)
+  FOR_VECTOR (i, Exts)
+    if (Exts[i].Ext.IsEqualToNoCase(ext))
       return i;
   return -1;
 }
@@ -19,7 +19,7 @@ int CExtDatabase::FindExt(const UString &ext)
 void CExtDatabase::Read()
 {
   ReadFileFolderPluginInfoList(Plugins);
-  for (int pluginIndex = 0; pluginIndex < Plugins.Size(); pluginIndex++)
+  FOR_VECTOR (pluginIndex, Plugins)
   {
     const CPluginInfo &plugin = Plugins[pluginIndex];
 
@@ -35,7 +35,7 @@ void CExtDatabase::Read()
       return;
     UStringVector exts;
     SplitString((const wchar_t *)extBSTR, exts);
-    for (int i = 0; i < exts.Size(); i++)
+    FOR_VECTOR (i, exts)
     {
       const UString &ext = exts[i];
       #ifdef UNDER_CE

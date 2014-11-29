@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Menu.h"
-#include "Windows/Control/Dialog.h"
+#include "../../../Windows/Menu.h"
+#include "../../../Windows/Control/Dialog.h"
 
 #include "../../PropID.h"
 
@@ -19,8 +19,8 @@
 
 using namespace NWindows;
 
-static const UINT kOpenBookmarkMenuID = 730;
-static const UINT kSetBookmarkMenuID = 740;
+static const UINT kOpenBookmarkMenuID = 830;
+static const UINT kSetBookmarkMenuID = 810;
 
 extern HINSTANCE g_hInstance;
 
@@ -36,102 +36,36 @@ enum
   kMenuIndex_Bookmarks
 };
 
-static const UInt32 kTopMenuLangIDs[] =
-{
-  0x03000102,
-  0x03000103,
-  0x03000104,
-  0x03000107,
-  0x03000105,
-  0x03000106
-};
+static const UInt32 kTopMenuLangIDs[] = { 500, 501, 502, 503, 504, 505 };
 
-static const UInt32 kAddToFavoritesLangID = 0x03000710;
-static const UInt32 kToolbarsLangID = 0x03000451;
+static const UInt32 kAddToFavoritesLangID = 800;
+static const UInt32 kToolbarsLangID = 733;
 
 static const CIDLangPair kIDLangPairs[] =
 {
-  // File
-  { IDM_FILE_OPEN, 0x03000210 },
-  { IDM_FILE_OPEN_INSIDE, 0x03000211 },
-  { IDM_FILE_OPEN_OUTSIDE, 0x03000212 },
-  { IDM_FILE_VIEW, 0x03000220 },
-  { IDM_FILE_EDIT, 0x03000221 },
-  { IDM_RENAME, 0x03000230 },
-  { IDM_COPY_TO, 0x03000231 },
-  { IDM_MOVE_TO, 0x03000232 },
-  { IDM_DELETE, 0x03000233 },
-  { IDM_FILE_PROPERTIES, 0x03000240 },
-  { IDM_FILE_COMMENT, 0x03000241 },
-  { IDM_FILE_CRC, 0x03000242 },
-  { IDM_FILE_DIFF, 0x03000243 },
-  { IDM_FILE_SPLIT, 0x03000270 },
-  { IDM_FILE_COMBINE, 0x03000271 },
-  { IDM_CREATE_FOLDER, 0x03000250 },
-  { IDM_CREATE_FILE, 0x03000251 },
-  { IDCLOSE, 0x03000260 },
-
-  // Edit
-  { IDM_EDIT_CUT, 0x03000320 },
-  { IDM_EDIT_COPY, 0x03000321 },
-  { IDM_EDIT_PASTE, 0x03000322 },
-
-  { IDM_SELECT_ALL, 0x03000330 },
-  { IDM_DESELECT_ALL, 0x03000331 },
-  { IDM_INVERT_SELECTION, 0x03000332 },
-  { IDM_SELECT, 0x03000333 },
-  { IDM_DESELECT, 0x03000334 },
-  { IDM_SELECT_BY_TYPE, 0x03000335 },
-  { IDM_DESELECT_BY_TYPE, 0x03000336 },
-
-  { IDM_VIEW_LARGE_ICONS, 0x03000410 },
-  { IDM_VIEW_SMALL_ICONS, 0x03000411 },
-  { IDM_VIEW_LIST, 0x03000412 },
-  { IDM_VIEW_DETAILS, 0x03000413 },
-
-  { IDM_VIEW_ARANGE_BY_NAME, 0x02000204 },
-  { IDM_VIEW_ARANGE_BY_TYPE, 0x02000214 },
-  { IDM_VIEW_ARANGE_BY_DATE, 0x0200020C },
-  { IDM_VIEW_ARANGE_BY_SIZE, 0x02000207 },
-  { IDM_VIEW_ARANGE_NO_SORT, 0x03000420 },
-
-  { IDM_OPEN_ROOT_FOLDER, 0x03000430 },
-  { IDM_OPEN_PARENT_FOLDER, 0x03000431 },
-  { IDM_FOLDERS_HISTORY, 0x03000432 },
-
-  { IDM_VIEW_REFRESH, 0x03000440 },
-  
-  { IDM_VIEW_FLAT_VIEW, 0x03000449 },
-  { IDM_VIEW_TWO_PANELS, 0x03000450 },
-  { IDM_VIEW_ARCHIVE_TOOLBAR, 0x03000460 },
-  { IDM_VIEW_STANDARD_TOOLBAR, 0x03000461 },
-  { IDM_VIEW_TOOLBARS_LARGE_BUTTONS, 0x03000462 },
-  { IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT, 0x03000463 },
-
-  { IDM_OPTIONS, 0x03000510 },
-  { IDM_BENCHMARK, 0x03000511 },
-  
-  { IDM_HELP_CONTENTS, 0x03000610 },
-  { IDM_ABOUT, 0x03000620 }
+  { IDCLOSE, 557 },
+  { IDM_VIEW_ARANGE_BY_NAME, 1004 },
+  { IDM_VIEW_ARANGE_BY_TYPE, 1020 },
+  { IDM_VIEW_ARANGE_BY_DATE, 1012 },
+  { IDM_VIEW_ARANGE_BY_SIZE, 1007 }
 };
 
-
-static int FindLangItem(int ControlID)
+static int FindLangItem(unsigned controlID)
 {
-  for (int i = 0; i < sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]); i++)
-    if (kIDLangPairs[i].ControlID == ControlID)
+  for (unsigned i = 0; i < ARRAY_SIZE(kIDLangPairs); i++)
+    if (kIDLangPairs[i].ControlID == controlID)
       return i;
   return -1;
 }
 
 static int GetSortControlID(PROPID propID)
 {
-  switch(propID)
+  switch (propID)
   {
-    case kpidName: return IDM_VIEW_ARANGE_BY_NAME;
-    case kpidExtension: return IDM_VIEW_ARANGE_BY_TYPE;
-    case kpidMTime: return IDM_VIEW_ARANGE_BY_DATE;
-    case kpidSize: return IDM_VIEW_ARANGE_BY_SIZE;
+    case kpidName:       return IDM_VIEW_ARANGE_BY_NAME;
+    case kpidExtension:  return IDM_VIEW_ARANGE_BY_TYPE;
+    case kpidMTime:      return IDM_VIEW_ARANGE_BY_DATE;
+    case kpidSize:       return IDM_VIEW_ARANGE_BY_SIZE;
     case kpidNoProperty: return IDM_VIEW_ARANGE_NO_SORT;
   }
   return -1;
@@ -203,27 +137,30 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
           MyChangeMenu(item.hSubMenu, level + 1, i);
           if (level == 1 && menuIndex == kMenuIndex_View)
             langID = kToolbarsLangID;
-          else if (level == 0 && i < sizeof(kTopMenuLangIDs) / sizeof(kTopMenuLangIDs[0]))
+          else if (level == 0 && i < ARRAY_SIZE(kTopMenuLangIDs))
             langID = kTopMenuLangIDs[i];
           else
             continue;
         }
-        newString = LangString(langID);
+        LangString_OnlyFromLangFile(langID, newString);
         if (newString.IsEmpty())
           continue;
       }
       else
       {
-        int langPos = FindLangItem(item.wID);
-        if (langPos < 0)
+        if (item.IsSeparator())
           continue;
-        newString = LangString(kIDLangPairs[langPos].LangID);
+        int langPos = FindLangItem(item.wID);
+
+        // we don't need lang change for CRC items!!!
+        LangString_OnlyFromLangFile(langPos >= 0 ? kIDLangPairs[langPos].LangID : item.wID, newString);
         if (newString.IsEmpty())
           continue;
+
         UString shorcutString = item.StringValue;
         int tabPos = shorcutString.ReverseFind(wchar_t('\t'));
         if (tabPos >= 0)
-          newString += shorcutString.Mid(tabPos);
+          newString += shorcutString.Ptr(tabPos);
       }
       {
         item.StringValue = newString;
@@ -243,6 +180,19 @@ struct CFileMenuDestroyer
 } g_FileMenuDestroyer;
 
 
+static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec);
+
+static void CopyPopMenu_IfRequired(CMenuItem &item)
+{
+  if (item.hSubMenu)
+  {
+    CMenu popup;
+    popup.CreatePopup();
+    CopyMenu(item.hSubMenu, popup);
+    item.hSubMenu = popup;
+  }
+}
+
 static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
 {
   CMenu srcMenu;
@@ -253,15 +203,15 @@ static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
   for (int i = 0;; i++)
   {
     CMenuItem item;
-    item.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
+    item.fMask = MIIM_SUBMENU | MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
     item.fType = MFT_STRING;
-    if (srcMenu.GetItem(i, true, item))
-    {
-      if (destMenu.InsertItem(startPos, true, item))
-        startPos++;
-    }
-    else
+
+    if (!srcMenu.GetItem(i, true, item))
       break;
+
+    CopyPopMenu_IfRequired(item);
+    if (destMenu.InsertItem(startPos, true, item))
+      startPos++;
   }
 }
 
@@ -274,7 +224,7 @@ void MyLoadMenu()
   HMENU oldMenu = g_App._commandBar.GetMenu(0);
   if (oldMenu)
     ::DestroyMenu(oldMenu);
-  BOOL b = g_App._commandBar.InsertMenubar(g_hInstance, IDM_MENU, 0);
+  /* BOOL b = */ g_App._commandBar.InsertMenubar(g_hInstance, IDM_MENU, 0);
   baseMenu = g_App._commandBar.GetMenu(0);
   if (!g_LangID.IsEmpty())
     MyChangeMenu(baseMenu, 0, 0);
@@ -344,6 +294,9 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     menu.CheckItemByID(IDM_VIEW_STANDARD_TOOLBAR, g_App.ShowStandardToolbar);
     menu.CheckItemByID(IDM_VIEW_TOOLBARS_LARGE_BUTTONS, g_App.LargeButtons);
     menu.CheckItemByID(IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT, g_App.ShowButtonsLables);
+    menu.CheckItemByID(IDM_VIEW_AUTO_REFRESH, g_App.Get_AutoRefresh_Mode());
+    // menu.CheckItemByID(IDM_VIEW_SHOW_STREAMS, g_App.Get_ShowNtfsStrems_Mode());
+    // menu.CheckItemByID(IDM_VIEW_SHOW_DELETED, g_App.ShowDeletedFiles);
   }
   else if (position == kMenuIndex_Bookmarks)
   {
@@ -356,8 +309,8 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     int i;
     for (i = 0; i < 10; i++)
     {
-      UString s = LangString(IDS_BOOKMARK, 0x03000720);
-      s += L" ";
+      UString s = LangString(IDS_BOOKMARK);
+      s += L' ';
       wchar_t c = (wchar_t)(L'0' + i);
       s += c;
       s += L"\tAlt+Shift+";
@@ -369,17 +322,16 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
 
     for (i = 0; i < 10; i++)
     {
-      UString path = g_App.AppState.FastFolders.GetString(i);
+      UString s = g_App.AppState.FastFolders.GetString(i);
       const int kMaxSize = 100;
       const int kFirstPartSize = kMaxSize / 2;
-      if (path.Length() > kMaxSize)
+      if (s.Len() > kMaxSize)
       {
-        path = path.Left(kFirstPartSize) + UString(L" ... ") +
-          path.Right(kMaxSize - kFirstPartSize);
+        s.Delete(kFirstPartSize, s.Len() - kMaxSize);
+        s.Insert(kFirstPartSize, L" ... ");
       }
-      UString s = path;
       if (s.IsEmpty())
-        s = L"-";
+        s = L'-';
       s += L"\tAlt+";
       s += (wchar_t)(L'0' + i);
       menu.AppendItem(MF_STRING, kOpenBookmarkMenuID + i, s);
@@ -410,7 +362,7 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
   {
     CMenuItem item;
 
-    item.fMask = MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
+    item.fMask = MIIM_SUBMENU | MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
     item.fType = MFT_STRING;
     if (!g_FileMenu.GetItem(i, true, item))
       break;
@@ -418,20 +370,24 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
       if (!programMenu && item.wID == IDCLOSE)
         continue;
 
-      if (item.wID == IDM_FILE_DIFF && diffPath.IsEmpty())
+      if (item.wID == IDM_DIFF && diffPath.IsEmpty())
         continue;
 
       bool isOneFsFile = (isFsFolder && numItems == 1 && allAreFiles);
-      bool disable = ((item.wID == IDM_FILE_SPLIT || item.wID == IDM_FILE_COMBINE) && !isOneFsFile);
+      bool disable = (!isOneFsFile && (item.wID == IDM_SPLIT || item.wID == IDM_COMBINE));
 
       bool isBigScreen = NControl::IsDialogSizeOK(40, 200);
 
       if (!isBigScreen && (disable || item.IsSeparator()))
         continue;
+
+      CopyPopMenu_IfRequired(item);
       if (destMenu.InsertItem(startPos, true, item))
+      {
+        if (disable)
+          destMenu.EnableItem(startPos, MF_BYPOSITION | MF_GRAYED);
         startPos++;
-      if (disable)
-        destMenu.EnableItem(startPos - 1, MF_BYPOSITION | MF_GRAYED);
+      }
 
       if (!item.IsSeparator())
         numRealItems = startPos;
@@ -442,7 +398,7 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
 
 bool ExecuteFileCommand(int id)
 {
-  if (id >= kPluginMenuStartID)
+  if (id >= kMenuCmdID_Plugin_Start)
   {
     g_App.GetFocusedPanel().InvokePluginCommand(id);
     g_App.GetFocusedPanel()._sevenZipContextMenu.Release();
@@ -453,62 +409,33 @@ bool ExecuteFileCommand(int id)
   switch (id)
   {
     // File
-    case IDM_FILE_OPEN:
-      g_App.OpenItem();
-      break;
-    case IDM_FILE_OPEN_INSIDE:
-      g_App.OpenItemInside();
-      break;
-    case IDM_FILE_OPEN_OUTSIDE:
-      g_App.OpenItemOutside();
-      break;
-    case IDM_FILE_VIEW:
-      break;
-    case IDM_FILE_EDIT:
-      g_App.EditItem();
-      break;
-    case IDM_RENAME:
-      g_App.Rename();
-      break;
-    case IDM_COPY_TO:
-      g_App.CopyTo();
-      break;
-    case IDM_MOVE_TO:
-      g_App.MoveTo();
-      break;
-    case IDM_DELETE:
-    {
-      bool shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
-      g_App.Delete(!shift);
-      break;
-    }
-    case IDM_FILE_CRC:
-      g_App.CalculateCrc();
-      break;
-    case IDM_FILE_DIFF:
-      g_App.DiffFiles();
-      break;
-    case IDM_FILE_SPLIT:
-      g_App.Split();
-      break;
-    case IDM_FILE_COMBINE:
-      g_App.Combine();
-      break;
-    case IDM_FILE_PROPERTIES:
-      g_App.Properties();
-      break;
-    case IDM_FILE_COMMENT:
-      g_App.Comment();
-      break;
-
-    case IDM_CREATE_FOLDER:
-      g_App.CreateFolder();
-      break;
-    case IDM_CREATE_FILE:
-      g_App.CreateFile();
-      break;
-    default:
-      return false;
+    case IDM_OPEN: g_App.OpenItem(); break;
+    case IDM_OPEN_INSIDE: g_App.OpenItemInside(); break;
+    case IDM_OPEN_OUTSIDE: g_App.OpenItemOutside(); break;
+    case IDM_FILE_VIEW: g_App.EditItem(false); break;
+    case IDM_FILE_EDIT: g_App.EditItem(true); break;
+    case IDM_RENAME: g_App.Rename(); break;
+    case IDM_COPY_TO: g_App.CopyTo(); break;
+    case IDM_MOVE_TO: g_App.MoveTo(); break;
+    case IDM_DELETE: g_App.Delete(!IsKeyDown(VK_SHIFT)); break;
+    
+    case IDM_HASH_ALL: g_App.CalculateCrc(L"*"); break;
+    case IDM_CRC32: g_App.CalculateCrc(L"CRC32"); break;
+    case IDM_CRC64: g_App.CalculateCrc(L"CRC64"); break;
+    case IDM_SHA1: g_App.CalculateCrc(L"SHA1"); break;
+    case IDM_SHA256: g_App.CalculateCrc(L"SHA256"); break;
+    
+    case IDM_DIFF: g_App.DiffFiles(); break;
+    case IDM_SPLIT: g_App.Split(); break;
+    case IDM_COMBINE: g_App.Combine(); break;
+    case IDM_PROPERTIES: g_App.Properties(); break;
+    case IDM_COMMENT: g_App.Comment(); break;
+    case IDM_CREATE_FOLDER: g_App.CreateFolder(); break;
+    case IDM_CREATE_FILE: g_App.CreateFile(); break;
+    #ifndef UNDER_CE
+    case IDM_LINK: g_App.Link(); break;
+    #endif
+    default: return false;
   }
   return true;
 }
@@ -534,6 +461,7 @@ bool OnMenuCommand(HWND hWnd, int id)
       break;
     
     // Edit
+    /*
     case IDM_EDIT_CUT:
       g_App.EditCut();
       break;
@@ -543,6 +471,7 @@ bool OnMenuCommand(HWND hWnd, int id)
     case IDM_EDIT_PASTE:
       g_App.EditPaste();
       break;
+    */
     case IDM_SELECT_ALL:
       g_App.SelectAll(true);
       g_App.Refresh_StatusBar();
@@ -591,67 +520,38 @@ bool OnMenuCommand(HWND hWnd, int id)
       }
       break;
     }
-    case IDM_VIEW_ARANGE_BY_NAME:
-    {
-      g_App.SortItemsWithPropID(kpidName);
-      break;
-    }
-    case IDM_VIEW_ARANGE_BY_TYPE:
-    {
-      g_App.SortItemsWithPropID(kpidExtension);
-      break;
-    }
-    case IDM_VIEW_ARANGE_BY_DATE:
-    {
-      g_App.SortItemsWithPropID(kpidMTime);
-      break;
-    }
-    case IDM_VIEW_ARANGE_BY_SIZE:
-    {
-      g_App.SortItemsWithPropID(kpidSize);
-      break;
-    }
-    case IDM_VIEW_ARANGE_NO_SORT:
-    {
-      g_App.SortItemsWithPropID(kpidNoProperty);
-      break;
-    }
+    case IDM_VIEW_ARANGE_BY_NAME: g_App.SortItemsWithPropID(kpidName); break;
+    case IDM_VIEW_ARANGE_BY_TYPE: g_App.SortItemsWithPropID(kpidExtension); break;
+    case IDM_VIEW_ARANGE_BY_DATE: g_App.SortItemsWithPropID(kpidMTime); break;
+    case IDM_VIEW_ARANGE_BY_SIZE: g_App.SortItemsWithPropID(kpidSize); break;
+    case IDM_VIEW_ARANGE_NO_SORT: g_App.SortItemsWithPropID(kpidNoProperty); break;
 
-    case IDM_OPEN_ROOT_FOLDER:
-      g_App.OpenRootFolder();
-      break;
-    case IDM_OPEN_PARENT_FOLDER:
-      g_App.OpenParentFolder();
-      break;
-    case IDM_FOLDERS_HISTORY:
-      g_App.FoldersHistory();
-      break;
-    case IDM_VIEW_REFRESH:
-      g_App.RefreshView();
-      break;
-    case IDM_VIEW_FLAT_VIEW:
-      g_App.ChangeFlatMode();
-      break;
-    case IDM_VIEW_TWO_PANELS:
-      g_App.SwitchOnOffOnePanel();
-      break;
-    case IDM_VIEW_STANDARD_TOOLBAR:
-      g_App.SwitchStandardToolbar();
-      break;
-    case IDM_VIEW_ARCHIVE_TOOLBAR:
-      g_App.SwitchArchiveToolbar();
-      break;
-    case IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT:
-      g_App.SwitchButtonsLables();
-      break;
-    case IDM_VIEW_TOOLBARS_LARGE_BUTTONS:
-      g_App.SwitchLargeButtons();
-      break;
+    case IDM_OPEN_ROOT_FOLDER:    g_App.OpenRootFolder(); break;
+    case IDM_OPEN_PARENT_FOLDER:  g_App.OpenParentFolder(); break;
+    case IDM_FOLDERS_HISTORY:     g_App.FoldersHistory(); break;
+    case IDM_VIEW_FLAT_VIEW:      g_App.ChangeFlatMode(); break;
+    case IDM_VIEW_REFRESH:        g_App.RefreshView(); break;
+    case IDM_VIEW_AUTO_REFRESH:   g_App.Change_AutoRefresh_Mode(); break;
+
+    // case IDM_VIEW_SHOW_STREAMS:     g_App.Change_ShowNtfsStrems_Mode(); break;
+    /*
+    case IDM_VIEW_SHOW_DELETED:
+    {
+      g_App.Change_ShowDeleted();
+      bool isChecked = g_App.ShowDeletedFiles;
+      Save_ShowDeleted(isChecked);
+    }
+    */
+    
+    case IDM_VIEW_TWO_PANELS:       g_App.SwitchOnOffOnePanel(); break;
+    case IDM_VIEW_STANDARD_TOOLBAR: g_App.SwitchStandardToolbar(); break;
+    case IDM_VIEW_ARCHIVE_TOOLBAR:  g_App.SwitchArchiveToolbar(); break;
+
+    case IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT: g_App.SwitchButtonsLables(); break;
+    case IDM_VIEW_TOOLBARS_LARGE_BUTTONS:     g_App.SwitchLargeButtons(); break;
 
     // Tools
-    case IDM_OPTIONS:
-      OptionsDialog(hWnd, g_hInstance);
-      break;
+    case IDM_OPTIONS: OptionsDialog(hWnd, g_hInstance); break;
           
     case IDM_BENCHMARK: MyBenchmark(false); break;
     case IDM_BENCHMARK2: MyBenchmark(true); break;

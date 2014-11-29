@@ -1,5 +1,7 @@
 /* 7zCrc.c -- CRC32 init
-2010-12-01 : Igor Pavlov : Public domain */
+2013-11-12 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include "7zCrc.h"
 #include "CpuArch.h"
@@ -23,7 +25,7 @@
 
 typedef UInt32 (MY_FAST_CALL *CRC_FUNC)(UInt32 v, const void *data, size_t size, const UInt32 *table);
 
-static CRC_FUNC g_CrcUpdate;
+CRC_FUNC g_CrcUpdate;
 UInt32 g_CrcTable[256 * CRC_NUM_TABLES];
 
 UInt32 MY_FAST_CALL CrcUpdate(UInt32 v, const void *data, size_t size)

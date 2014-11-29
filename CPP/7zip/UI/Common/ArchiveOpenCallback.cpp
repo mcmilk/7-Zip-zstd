@@ -2,9 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/ComTry.h"
+#include "../../../Common/ComTry.h"
 
-#include "Windows/PropVariant.h"
+#include "../../../Windows/FileName.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "../../Common/FileStreams.h"
 
@@ -59,41 +60,32 @@ STDMETHODIMP COpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-int COpenCallbackImp::FindName(const UString &name)
-{
-  for (int i = 0; i < FileNames.Size(); i++)
-    if (name.CompareNoCase(FileNames[i]) == 0)
-      return i;
-  return -1;
-}
-
 struct CInFileStreamVol: public CInFileStream
 {
-  UString Name;
+  int FileNameIndex;
   COpenCallbackImp *OpenCallbackImp;
   CMyComPtr<IArchiveOpenCallback> OpenCallbackRef;
+ 
   ~CInFileStreamVol()
   {
     if (OpenCallbackRef)
-    {
-      int index = OpenCallbackImp->FindName(Name);
-      if (index >= 0)
-        OpenCallbackImp->FileNames.Delete(index);
-    }
+      OpenCallbackImp->FileNames_WasUsed[FileNameIndex] = false;
   }
 };
 
 STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStream)
 {
   COM_TRY_BEGIN
+  *inStream = NULL;
   if (_subArchiveMode)
     return S_FALSE;
   if (Callback)
   {
     RINOK(Callback->Open_CheckBreak());
   }
-  *inStream = NULL;
-  FString fullPath = _folderPrefix + us2fs(name);
+  FString fullPath;
+  if (!NFile::NName::GetFullPath(_folderPrefix, us2fs(name), fullPath))
+    return S_FALSE;
   if (!_fileInfo.Find(fullPath))
     return S_FALSE;
   if (_fileInfo.IsDir())
@@ -102,12 +94,14 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
   CMyComPtr<IInStream> inStreamTemp = inFile;
   if (!inFile->Open(fullPath))
     return ::GetLastError();
-  *inStream = inStreamTemp.Detach();
-  inFile->Name = name;
+
+  FileSizes.Add(_fileInfo.Size);
+  FileNames.Add(name);
+  inFile->FileNameIndex = FileNames_WasUsed.Add(true);
   inFile->OpenCallbackImp = this;
   inFile->OpenCallbackRef = this;
-  FileNames.Add(name);
-  TotalSize += _fileInfo.Size;
+  // TotalSize += _fileInfo.Size;
+  *inStream = inStreamTemp.Detach();
   return S_OK;
   COM_TRY_END
 }

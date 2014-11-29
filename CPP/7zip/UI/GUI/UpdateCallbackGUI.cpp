@@ -2,13 +2,17 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
 
-#include "Windows/Error.h"
-#include "Windows/PropVariant.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "../FileManager/PasswordDialog.h"
+#include "../FileManager/LangUtils.h"
+
+#include "../FileManager/resourceGUI.h"
+
+#include "resource2.h"
 
 #include "UpdateCallbackGUI.h"
 
@@ -22,67 +26,68 @@ void CUpdateCallbackGUI::Init()
   NumFiles = 0;
 }
 
-void CUpdateCallbackGUI::AddErrorMessage(LPCWSTR message)
-{
-  ProgressDialog->Sync.AddErrorMessage(message);
-}
-
-void CUpdateCallbackGUI::AddErrorMessage(const wchar_t *name, DWORD systemError)
-{
-  AddErrorMessage(
-      UString(L"WARNING: ") +
-      NError::MyFormatMessageW(systemError) +
-      UString(L": ") +
-      UString(name));
-}
-
-HRESULT CUpdateCallbackGUI::OpenResult(const wchar_t *name, HRESULT result)
+HRESULT CUpdateCallbackGUI::OpenResult(const wchar_t *name, HRESULT result, const wchar_t *errorArcType)
 {
   if (result != S_OK)
   {
-    AddErrorMessage (UString(L"Error: ") + name + UString(L" is not supported archive"));
+    UString s;
+    if (errorArcType)
+    {
+      s += L"Can not open the file as [";
+      s += errorArcType;
+      s += L"] archive";
+    }
+    else
+      s += L"The file is not supported archive";
+    ProgressDialog->Sync.AddError_Message_Name(s, name);
   }
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::StartScanning()
 {
+  CProgressSync &sync = ProgressDialog->Sync;
+  sync.Set_Status(LangString(IDS_SCANNING));
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::CanNotFindError(const wchar_t *name, DWORD systemError)
 {
   FailedFiles.Add(name);
-  AddErrorMessage(name, systemError);
+  ProgressDialog->Sync.AddError_Code_Name(systemError, name);
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::FinishScanning()
 {
+  CProgressSync &sync = ProgressDialog->Sync;
+  sync.Set_Status(L"");
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::StartArchive(const wchar_t *name, bool /* updating */)
 {
-  ProgressDialog->Sync.SetTitleFileName(name);
+  CProgressSync &sync = ProgressDialog->Sync;
+  sync.Set_Status(LangString(IDS_PROGRESS_COMPRESSING));
+  sync.Set_TitleFileName(name);
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::FinishArchive()
 {
+  CProgressSync &sync = ProgressDialog->Sync;
+  sync.Set_Status(L"");
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::CheckBreak()
 {
-  return ProgressDialog->Sync.ProcessStopAndPause();
+  return ProgressDialog->Sync.CheckStop();
 }
 
-HRESULT CUpdateCallbackGUI::ScanProgress(UInt64 /* numFolders */, UInt64 numFiles, const wchar_t *path)
+HRESULT CUpdateCallbackGUI::ScanProgress(UInt64 /* numFolders */, UInt64 numFiles, UInt64 totalSize, const wchar_t *path, bool isDir)
 {
-  ProgressDialog->Sync.SetCurrentFileName(path);
-  ProgressDialog->Sync.SetNumFilesTotal(numFiles);
-  return ProgressDialog->Sync.ProcessStopAndPause();
+  return ProgressDialog->Sync.ScanProgress(numFiles, totalSize, path, isDir);
 }
 
 HRESULT CUpdateCallbackGUI::Finilize()
@@ -92,34 +97,30 @@ HRESULT CUpdateCallbackGUI::Finilize()
 
 HRESULT CUpdateCallbackGUI::SetNumFiles(UInt64 numFiles)
 {
-  ProgressDialog->Sync.SetNumFilesTotal(numFiles);
+  ProgressDialog->Sync.Set_NumFilesTotal(numFiles);
   return S_OK;
 }
 
 HRESULT CUpdateCallbackGUI::SetTotal(UInt64 total)
 {
-  ProgressDialog->Sync.SetProgress(total, 0);
+  ProgressDialog->Sync.Set_NumBytesTotal(total);
   return S_OK;
 }
 
-HRESULT CUpdateCallbackGUI::SetCompleted(const UInt64 *completeValue)
+HRESULT CUpdateCallbackGUI::SetCompleted(const UInt64 *completed)
 {
-  RINOK(CheckBreak());
-  if (completeValue != NULL)
-    ProgressDialog->Sync.SetPos(*completeValue);
-  return S_OK;
+  return ProgressDialog->Sync.Set_NumBytesCur(completed);
 }
 
 HRESULT CUpdateCallbackGUI::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
 {
-  RINOK(CheckBreak());
-  ProgressDialog->Sync.SetRatioInfo(inSize, outSize);
-  return S_OK;
+  ProgressDialog->Sync.Set_Ratio(inSize, outSize);
+  return CheckBreak();
 }
 
 HRESULT CUpdateCallbackGUI::GetStream(const wchar_t *name, bool /* isAnti */)
 {
-  ProgressDialog->Sync.SetCurrentFileName(name);
+  ProgressDialog->Sync.Set_FilePath(name);
   return S_OK;
 }
 
@@ -128,7 +129,7 @@ HRESULT CUpdateCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError
   FailedFiles.Add(name);
   // if (systemError == ERROR_SHARING_VIOLATION)
   {
-    AddErrorMessage(name, systemError);
+    ProgressDialog->Sync.AddError_Code_Name(systemError, name);
     return S_FALSE;
   }
   // return systemError;
@@ -137,7 +138,7 @@ HRESULT CUpdateCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError
 HRESULT CUpdateCallbackGUI::SetOperationResult(Int32 /* operationResult */)
 {
   NumFiles++;
-  ProgressDialog->Sync.SetNumFilesCur(NumFiles);
+  ProgressDialog->Sync.Set_NumFilesCur(NumFiles);
   return S_OK;
 }
 
@@ -150,7 +151,7 @@ HRESULT CUpdateCallbackGUI::CryptoGetTextPassword2(Int32 *passwordIsDefined, BST
     {
       CPasswordDialog dialog;
       ProgressDialog->WaitCreating();
-      if (dialog.Create(*ProgressDialog) == IDCANCEL)
+      if (dialog.Create(*ProgressDialog) != IDOK)
         return E_ABORT;
       Password = dialog.Password;
       PasswordIsDefined = true;
@@ -178,7 +179,7 @@ HRESULT CUpdateCallbackGUI::CloseProgress()
 
 HRESULT CUpdateCallbackGUI::Open_CheckBreak()
 {
-  return ProgressDialog->Sync.ProcessStopAndPause();
+  return ProgressDialog->Sync.CheckStop();
 }
 
 HRESULT CUpdateCallbackGUI::Open_SetTotal(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
@@ -189,7 +190,7 @@ HRESULT CUpdateCallbackGUI::Open_SetTotal(const UInt64 * /* numFiles */, const U
 
 HRESULT CUpdateCallbackGUI::Open_SetCompleted(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
 {
-  return ProgressDialog->Sync.ProcessStopAndPause();
+  return ProgressDialog->Sync.CheckStop();
 }
 
 #ifndef _NO_CRYPTO
@@ -200,10 +201,10 @@ HRESULT CUpdateCallbackGUI::Open_CryptoGetTextPassword(BSTR *password)
   return CryptoGetTextPassword2(NULL, password);
 }
 
-HRESULT CUpdateCallbackGUI::Open_GetPasswordIfAny(UString &password)
+HRESULT CUpdateCallbackGUI::Open_GetPasswordIfAny(bool &passwordIsDefined, UString &password)
 {
-  if (PasswordIsDefined)
-    password = Password;
+  passwordIsDefined = PasswordIsDefined;
+  password = Password;
   return S_OK;
 }
 

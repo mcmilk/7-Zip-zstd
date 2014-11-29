@@ -4,14 +4,12 @@
 
 #include "resource.h"
 
-#include "Common/StringConvert.h"
-#include "Common/Wildcard.h"
-
-#include "Panel.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/Wildcard.h"
 
 #include "ComboDialog.h"
-
 #include "LangUtils.h"
+#include "Panel.h"
 
 void CPanel::OnShiftSelectMessage()
 {
@@ -145,17 +143,15 @@ void CPanel::UpdateSelection()
 
 void CPanel::SelectSpec(bool selectMode)
 {
-  CComboDialog comboDialog;
-  comboDialog.Title = selectMode ?
-      LangString(IDS_SELECT, 0x03020250):
-      LangString(IDS_DESELECT, 0x03020251);
-  comboDialog.Static = LangString(IDS_SELECT_MASK, 0x03020252);
-  comboDialog.Value = L"*";
-  if (comboDialog.Create(GetParent()) == IDCANCEL)
+  CComboDialog dlg;
+  LangString(selectMode ? IDS_SELECT : IDS_DESELECT, dlg.Title );
+  LangString(IDS_SELECT_MASK, dlg.Static);
+  dlg.Value = L'*';
+  if (dlg.Create(GetParent()) != IDOK)
     return;
-  const UString &mask = comboDialog.Value;
-  for (int i = 0; i < _selectedStatusVector.Size(); i++)
-    if (CompareWildCardWithName(mask, GetItemName(i)))
+  const UString &mask = dlg.Value;
+  FOR_VECTOR (i, _selectedStatusVector)
+    if (DoesWildcardMatchName(mask, GetItemName(i)))
        _selectedStatusVector[i] = selectMode;
   UpdateSelection();
 }
@@ -167,7 +163,7 @@ void CPanel::SelectByType(bool selectMode)
     return;
   int realIndex = GetRealItemIndex(focusedItem);
   UString name = GetItemName(realIndex);
-  bool isItemFolder = IsItemFolder(realIndex);
+  bool isItemFolder = IsItem_Folder(realIndex);
 
   /*
   UInt32 numItems;
@@ -178,8 +174,8 @@ void CPanel::SelectByType(bool selectMode)
 
   if (isItemFolder)
   {
-    for (int i = 0; i < _selectedStatusVector.Size(); i++)
-      if (IsItemFolder(i) == isItemFolder)
+    FOR_VECTOR (i, _selectedStatusVector)
+      if (IsItem_Folder(i) == isItemFolder)
         _selectedStatusVector[i] = selectMode;
   }
   else
@@ -187,15 +183,16 @@ void CPanel::SelectByType(bool selectMode)
     int pos = name.ReverseFind(L'.');
     if (pos < 0)
     {
-      for (int i = 0; i < _selectedStatusVector.Size(); i++)
-        if (IsItemFolder(i) == isItemFolder && GetItemName(i).ReverseFind(L'.') < 0)
+      FOR_VECTOR (i, _selectedStatusVector)
+        if (IsItem_Folder(i) == isItemFolder && GetItemName(i).ReverseFind(L'.') < 0)
           _selectedStatusVector[i] = selectMode;
     }
     else
     {
-      UString mask = UString(L'*') + name.Mid(pos);
-      for (int i = 0; i < _selectedStatusVector.Size(); i++)
-        if (IsItemFolder(i) == isItemFolder && CompareWildCardWithName(mask, GetItemName(i)))
+      UString mask = L'*';
+      mask += name.Ptr(pos);
+      FOR_VECTOR (i, _selectedStatusVector)
+        if (IsItem_Folder(i) == isItemFolder && DoesWildcardMatchName(mask, GetItemName(i)))
           _selectedStatusVector[i] = selectMode;
     }
   }
@@ -204,7 +201,7 @@ void CPanel::SelectByType(bool selectMode)
 
 void CPanel::SelectAll(bool selectMode)
 {
-  for (int i = 0; i < _selectedStatusVector.Size(); i++)
+  FOR_VECTOR (i, _selectedStatusVector)
     _selectedStatusVector[i] = selectMode;
   UpdateSelection();
 }
@@ -213,8 +210,8 @@ void CPanel::InvertSelection()
 {
   if (!_mySelectMode)
   {
-    int numSelected = 0;
-    for (int i = 0; i < _selectedStatusVector.Size(); i++)
+    unsigned numSelected = 0;
+    FOR_VECTOR (i, _selectedStatusVector)
       if (_selectedStatusVector[i])
         numSelected++;
     if (numSelected == 1)
@@ -229,7 +226,7 @@ void CPanel::InvertSelection()
       }
     }
   }
-  for (int i = 0; i < _selectedStatusVector.Size(); i++)
+  FOR_VECTOR (i, _selectedStatusVector)
     _selectedStatusVector[i] = !_selectedStatusVector[i];
   UpdateSelection();
 }
@@ -267,9 +264,9 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
     int focusedIndex = _startGroupSelect;
     if (focusedIndex < 0)
       return;
-    int startItem = MyMin(focusedIndex, indexInList);
-    int finishItem = MyMax(focusedIndex, indexInList);
-    for (int i = 0; i < _selectedStatusVector.Size(); i++)
+    unsigned startItem = MyMin((unsigned)focusedIndex, (unsigned)indexInList);
+    unsigned finishItem = MyMax((unsigned)focusedIndex, (unsigned)indexInList);
+    FOR_VECTOR (i, _selectedStatusVector)
     {
       int realIndex = GetRealItemIndex(i);
       if (realIndex == kParentIndex)

@@ -1,9 +1,10 @@
 // OutMemStream.h
 
-#ifndef __OUTMEMSTREAM_H
-#define __OUTMEMSTREAM_H
+#ifndef __OUT_MEM_STREAM_H
+#define __OUT_MEM_STREAM_H
 
-#include "Common/MyCom.h"
+#include "../../Common/MyCom.h"
+
 #include "MemBlocks.h"
 
 class COutMemStream:
@@ -11,7 +12,7 @@ class COutMemStream:
   public CMyUnknownImp
 {
   CMemBlockManagerMt *_memManager;
-  size_t _curBlockIndex;
+  unsigned _curBlockIndex;
   size_t _curBlockPos;
   bool _realStreamMode;
 

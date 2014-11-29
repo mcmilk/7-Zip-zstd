@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../Windows/TimeUtils.h"
+
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
 
@@ -13,18 +15,26 @@
 namespace NArchive {
 namespace NTar {
 
+HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID propId,
+    AString &res, UINT codePage, bool convertSlash = false);
+
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     const CObjectVector<NArchive::NTar::CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
+    UINT codePage,
     IArchiveUpdateCallback *updateCallback)
 {
   COutArchive outArchive;
   outArchive.Create(outStream);
+  outArchive.Pos = 0;
+
+  CMyComPtr<IOutStream> outSeekStream;
+  outStream->QueryInterface(IID_IOutStream, (void **)&outSeekStream);
 
   UInt64 complexity = 0;
 
-  int i;
-  for(i = 0; i < updateItems.Size(); i++)
+  unsigned i;
+  for (i = 0; i < updateItems.Size(); i++)
   {
     const CUpdateItem &ui = updateItems[i];
     if (ui.NewData)
@@ -76,37 +86,101 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       item.DeviceMinorDefined = false;
       item.UID = 0;
       item.GID = 0;
-      memmove(item.Magic, NFileHeader::NMagic::kEmpty, 8);
+      memcpy(item.Magic, NFileHeader::NMagic::kUsTar_00, 8);
     }
     else
       item = inputItems[ui.IndexInArchive];
 
+    AString symLink;
+    if (ui.NewData || ui.NewProps)
+    {
+      RINOK(GetPropString(updateCallback, ui.IndexInClient, kpidSymLink, symLink, codePage, true));
+      if (!symLink.IsEmpty())
+      {
+        item.LinkFlag = NFileHeader::NLinkFlag::kSymLink;
+        item.LinkName = symLink;
+      }
+    }
+
     if (ui.NewData)
     {
+      item.SparseBlocks.Clear();
       item.PackSize = ui.Size;
+      item.Size = ui.Size;
       if (ui.Size == (UInt64)(Int64)-1)
         return E_INVALIDARG;
-    }
-    else
-      item.PackSize = inputItems[ui.IndexInArchive].PackSize;
-  
-    if (ui.NewData)
-    {
+
       CMyComPtr<ISequentialInStream> fileInStream;
-      HRESULT res = updateCallback->GetStream(ui.IndexInClient, &fileInStream);
-      if (res != S_FALSE)
+
+      bool needWrite = true;
+      if (!symLink.IsEmpty())
       {
-        RINOK(res);
+        item.PackSize = 0;
+        item.Size = 0;
+      }
+      else
+      {
+        HRESULT res = updateCallback->GetStream(ui.IndexInClient, &fileInStream);
+        if (res == S_FALSE)
+          needWrite = false;
+        else
+        {
+          RINOK(res);
+          
+          if (fileInStream)
+          {
+            CMyComPtr<IStreamGetProps> getProps;
+            fileInStream->QueryInterface(IID_IStreamGetProps, (void **)&getProps);
+            if (getProps)
+            {
+              FILETIME mTime;
+              UInt64 size2;
+              if (getProps->GetProps(&size2, NULL, NULL, &mTime, NULL) == S_OK)
+              {
+                item.PackSize = size2;
+                item.MTime = NWindows::NTime::FileTimeToUnixTime64(mTime);;
+              }
+            }
+          }
+          {
+            AString hardLink;
+            RINOK(GetPropString(updateCallback, ui.IndexInClient, kpidHardLink, hardLink, codePage, true));
+            if (!hardLink.IsEmpty())
+            {
+              item.LinkFlag = NFileHeader::NLinkFlag::kHardLink;
+              item.LinkName = hardLink;
+              item.PackSize = 0;
+              item.Size = 0;
+              fileInStream.Release();
+            }
+          }
+        }
+      }
+
+      if (needWrite)
+      {
+        UInt64 fileHeaderStartPos = outArchive.Pos;
         RINOK(outArchive.WriteHeader(item));
-        if (!ui.IsDir)
+        if (fileInStream)
         {
           RINOK(copyCoder->Code(fileInStream, outStream, NULL, NULL, progress));
+          outArchive.Pos += copyCoderSpec->TotalSize;
           if (copyCoderSpec->TotalSize != item.PackSize)
-            return E_FAIL;
+          {
+            if (!outSeekStream)
+              return E_FAIL;
+            UInt64 backOffset = outArchive.Pos - fileHeaderStartPos;
+            RINOK(outSeekStream->Seek(-(Int64)backOffset, STREAM_SEEK_CUR, NULL));
+            outArchive.Pos = fileHeaderStartPos;
+            item.PackSize = copyCoderSpec->TotalSize;
+            RINOK(outArchive.WriteHeader(item));
+            RINOK(outSeekStream->Seek(item.PackSize, STREAM_SEEK_CUR, NULL));
+            outArchive.Pos += item.PackSize;
+          }
           RINOK(outArchive.FillDataResidual(item.PackSize));
         }
       }
-      complexity += ui.Size;
+      complexity += item.PackSize;
       RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
     }
     else
@@ -115,6 +189,30 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       UInt64 size;
       if (ui.NewProps)
       {
+        // memcpy(item.Magic, NFileHeader::NMagic::kEmpty, 8);
+        
+        if (!symLink.IsEmpty())
+        {
+          item.PackSize = 0;
+          item.Size = 0;
+        }
+        else
+        {
+          if (ui.IsDir == existItem.IsDir())
+            item.LinkFlag = existItem.LinkFlag;
+        
+          item.SparseBlocks = existItem.SparseBlocks;
+          item.Size = existItem.Size;
+          item.PackSize = existItem.PackSize;
+        }
+        
+        item.DeviceMajorDefined = existItem.DeviceMajorDefined;
+        item.DeviceMinorDefined = existItem.DeviceMinorDefined;
+        item.DeviceMajor = existItem.DeviceMajor;
+        item.DeviceMinor = existItem.DeviceMinor;
+        item.UID = existItem.UID;
+        item.GID = existItem.GID;
+        
         RINOK(outArchive.WriteHeader(item));
         RINOK(inStream->Seek(existItem.GetDataPosition(), STREAM_SEEK_SET, NULL));
         size = existItem.PackSize;
@@ -129,6 +227,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       RINOK(copyCoder->Code(inStreamLimited, outStream, NULL, NULL, progress));
       if (copyCoderSpec->TotalSize != size)
         return E_FAIL;
+      outArchive.Pos += size;
       RINOK(outArchive.FillDataResidual(existItem.PackSize));
       complexity += size;
     }

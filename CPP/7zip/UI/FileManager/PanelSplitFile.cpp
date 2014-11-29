@@ -2,12 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
+#include "../../../Common/IntToString.h"
 
-#include "Windows/Error.h"
-#include "Windows/FileIO.h"
-#include "Windows/FileFind.h"
-#include "Windows/FileName.h"
+#include "../../../Windows/ErrorMsg.h"
+#include "../../../Windows/FileName.h"
 
 #include "../GUI/ExtractRes.h"
 
@@ -20,7 +18,11 @@
 #include "SplitDialog.h"
 #include "SplitUtils.h"
 
+#include "PropertyNameRes.h"
+
 using namespace NWindows;
+using namespace NFile;
+using namespace NDir;
 
 static const wchar_t *g_Message_FileWriteError = L"File write error";
 
@@ -42,47 +44,38 @@ struct CVolSeqName
 
   bool ParseName(const UString &name)
   {
-    if (name.Right(2) != L"01")
+    if (name.Len() < 2)
       return false;
-    int numLetters = 2;
-    while (numLetters < name.Length())
-    {
-      if (name[name.Length() - numLetters - 1] != '0')
-        break;
-      numLetters++;
-    }
-    UnchangedPart = name.Left(name.Length() - numLetters);
-    ChangedPart = name.Right(numLetters);
+    if (name.Back() != L'1' || name[name.Len() - 2] != L'0')
+      return false;
+
+    unsigned pos = name.Len() - 2;
+    for (; pos > 0 && name[pos - 1] == '0'; pos--);
+    UnchangedPart.SetFrom(name, pos);
+    ChangedPart = name.Ptr(pos);
     return true;
   }
 
-  UString GetNextName()
+  UString GetNextName();
+};
+
+
+UString CVolSeqName::GetNextName()
+{
+  for (int i = (int)ChangedPart.Len() - 1; i >= 0; i--)
   {
-    UString newName;
-    int i;
-    int numLetters = ChangedPart.Length();
-    for (i = numLetters - 1; i >= 0; i--)
+    wchar_t c = ChangedPart[i];
+    if (c != L'9')
     {
-      wchar_t c = ChangedPart[i];
-      if (c == L'9')
-      {
-        c = L'0';
-        newName = c + newName;
-        if (i == 0)
-          newName = UString(L'1') + newName;
-        continue;
-      }
-      c++;
-      newName = c + newName;
-      i--;
-      for (; i >= 0; i--)
-        newName = ChangedPart[i] + newName;
+      ChangedPart.ReplaceOneCharAtPos(i, (wchar_t)(c + 1));
       break;
     }
-    ChangedPart = newName;
-    return UnchangedPart + ChangedPart;
+    ChangedPart.ReplaceOneCharAtPos(i, L'0');
+    if (i == 0)
+      ChangedPart.InsertAtFront(L'1');
   }
-};
+  return UnchangedPart + ChangedPart;
+}
 
 static const UInt32 kBufSize = (1 << 20);
 
@@ -98,10 +91,10 @@ public:
 
 HRESULT CThreadSplit::ProcessVirt()
 {
-  NFile::NIO::CInFile inFile;
+  NIO::CInFile inFile;
   if (!inFile.Open(FilePath))
     return GetLastError();
-  NFile::NIO::COutFile outFile;
+  NIO::COutFile outFile;
   CMyBuffer bufferObject;
   if (!bufferObject.Allocate(kBufSize))
     return E_OUTOFMEMORY;
@@ -114,11 +107,11 @@ HRESULT CThreadSplit::ProcessVirt()
     return GetLastError();
   
   CProgressSync &sync = ProgressDialog.Sync;
-  sync.SetProgress(length, 0);
+  sync.Set_NumBytesTotal(length);
   UInt64 pos = 0;
   
   UInt64 numFiles = 0;
-  int volIndex = 0;
+  unsigned volIndex = 0;
   
   for (;;)
   {
@@ -140,8 +133,8 @@ HRESULT CThreadSplit::ProcessVirt()
       FString name = VolBasePath;
       name += FTEXT('.');
       name += us2fs(seqName.GetNextName());
-      sync.SetCurrentFileName(fs2us(name));
-      sync.SetNumFilesCur(numFiles++);
+      sync.Set_FilePath(fs2us(name));
+      sync.Set_NumFilesCur(numFiles++);
       if (!outFile.Create(name, false))
       {
         HRESULT res = GetLastError();
@@ -162,9 +155,9 @@ HRESULT CThreadSplit::ProcessVirt()
       curVolSize = 0;
     }
     pos += processedSize;
-    RINOK(sync.SetPosAndCheckPaused(pos));
+    RINOK(sync.Set_NumBytesCur(pos));
   }
-  sync.SetNumFilesCur(numFiles);
+  sync.Set_NumFilesCur(numFiles);
   return S_OK;
 }
 
@@ -174,7 +167,7 @@ void CApp::Split()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
+    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
     return;
   }
   CRecordVector<UInt32> indices;
@@ -183,13 +176,13 @@ void CApp::Split()
     return;
   if (indices.Size() != 1)
   {
-    srcPanel.MessageBoxErrorLang(IDS_SELECT_ONE_FILE, 0x03020A02);
+    srcPanel.MessageBoxErrorLang(IDS_SELECT_ONE_FILE);
     return;
   }
   int index = indices[0];
-  if (srcPanel.IsItemFolder(index))
+  if (srcPanel.IsItem_Folder(index))
   {
-    srcPanel.MessageBoxErrorLang(IDS_SELECT_ONE_FILE, 0x03020A02);
+    srcPanel.MessageBoxErrorLang(IDS_SELECT_ONE_FILE);
     return;
   }
   const UString itemName = srcPanel.GetItemName(index);
@@ -204,10 +197,10 @@ void CApp::Split()
   CSplitDialog splitDialog;
   splitDialog.FilePath = srcPanel.GetItemRelPath(index);
   splitDialog.Path = path;
-  if (splitDialog.Create(srcPanel.GetParent()) == IDCANCEL)
+  if (splitDialog.Create(srcPanel.GetParent()) != IDOK)
     return;
 
-  NFile::NFind::CFileInfo fileInfo;
+  NFind::CFileInfo fileInfo;
   if (!fileInfo.Find(us2fs(srcPath + itemName)))
   {
     srcPanel.MessageBoxMyError(L"Can not find file");
@@ -215,7 +208,7 @@ void CApp::Split()
   }
   if (fileInfo.Size <= splitDialog.VolumeSizes.Front())
   {
-    srcPanel.MessageBoxErrorLang(IDS_SPLIT_VOL_MUST_BE_SMALLER, 0x03020522);
+    srcPanel.MessageBoxErrorLang(IDS_SPLIT_VOL_MUST_BE_SMALLER);
     return;
   }
   const UInt64 numVolumes = GetNumberOfVolumes(fileInfo.Size, splitDialog.VolumeSizes);
@@ -223,17 +216,17 @@ void CApp::Split()
   {
     wchar_t s[32];
     ConvertUInt64ToString(numVolumes, s);
-    if (::MessageBoxW(srcPanel, MyFormatNew(IDS_SPLIT_CONFIRM_MESSAGE, 0x03020521, s),
-        LangString(IDS_SPLIT_CONFIRM_TITLE, 0x03020520),
+    if (::MessageBoxW(srcPanel, MyFormatNew(IDS_SPLIT_CONFIRM_MESSAGE, s),
+        LangString(IDS_SPLIT_CONFIRM_TITLE),
         MB_YESNOCANCEL | MB_ICONQUESTION) != IDYES)
       return;
   }
 
   path = splitDialog.Path;
-  NFile::NName::NormalizeDirPathPrefix(path);
-  if (!NFile::NDirectory::CreateComplexDirectory(us2fs(path)))
+  NName::NormalizeDirPathPrefix(path);
+  if (!CreateComplexDir(us2fs(path)))
   {
-    srcPanel.MessageBoxMyError(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 0x02000603, path));
+    srcPanel.MessageBoxError2Lines(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, path), ::GetLastError());
     return;
   }
 
@@ -243,15 +236,15 @@ void CApp::Split()
 
   CProgressDialog &progressDialog = spliter.ProgressDialog;
 
-  UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
-  UString title = LangString(IDS_SPLITTING, 0x03020510);
+  UString progressWindowTitle = L"7-Zip"; // LangString(IDS_APP_TITLE, 0x03000000);
+  UString title = LangString(IDS_SPLITTING);
 
   progressDialog.ShowCompressionInfo = false;
 
   progressDialog.MainWindow = _window;
   progressDialog.MainTitle = progressWindowTitle;
-  progressDialog.MainAddTitle = title + UString(L" ");
-  progressDialog.Sync.SetTitleFileName(itemName);
+  progressDialog.MainAddTitle = title + L' ';
+  progressDialog.Sync.Set_TitleFileName(itemName);
 
 
   spliter.FilePath = us2fs(srcPath + itemName);
@@ -269,8 +262,8 @@ void CApp::Split()
   RefreshTitleAlways();
 
 
-  // disableTimerProcessing1.Restore();
-  // disableTimerProcessing2.Restore();
+  // disableNotify.Restore();
+  // disableNotify.Restore();
   // srcPanel.SetFocusToList();
   // srcPanel.RefreshListCtrlSaveFocused();
 }
@@ -288,7 +281,7 @@ public:
 
 HRESULT CThreadCombine::ProcessVirt()
 {
-  NFile::NIO::COutFile outFile;
+  NIO::COutFile outFile;
   if (!outFile.Create(OutputPath, false))
   {
     HRESULT res = GetLastError();
@@ -297,16 +290,16 @@ HRESULT CThreadCombine::ProcessVirt()
   }
   
   CProgressSync &sync = ProgressDialog.Sync;
-  sync.SetProgress(TotalSize, 0);
+  sync.Set_NumBytesTotal(TotalSize);
   
   CMyBuffer bufferObject;
   if (!bufferObject.Allocate(kBufSize))
     return E_OUTOFMEMORY;
   Byte *buffer = (Byte *)(void *)bufferObject;
   UInt64 pos = 0;
-  for (int i = 0; i < Names.Size(); i++)
+  FOR_VECTOR (i, Names)
   {
-    NFile::NIO::CInFile inFile;
+    NIO::CInFile inFile;
     const FString nextName = InputDirPrefix + Names[i];
     if (!inFile.Open(nextName))
     {
@@ -314,7 +307,7 @@ HRESULT CThreadCombine::ProcessVirt()
       SetErrorPath1(nextName);
       return res;
     }
-    sync.SetCurrentFileName(fs2us(nextName));
+    sync.Set_FilePath(fs2us(nextName));
     for (;;)
     {
       UInt32 processedSize;
@@ -336,15 +329,15 @@ HRESULT CThreadCombine::ProcessVirt()
       if (needSize != processedSize)
         throw g_Message_FileWriteError;
       pos += processedSize;
-      RINOK(sync.SetPosAndCheckPaused(pos));
+      RINOK(sync.Set_NumBytesCur(pos));
     }
   }
   return S_OK;
 }
 
-extern void AddValuePair2(UINT resourceID, UInt32 langID, UInt64 num, UInt64 size, UString &s);
+extern void AddValuePair2(UString &s, UINT resourceID, UInt64 num, UInt64 size);
 
-static void AddInfoFileName(const UString &name, UString &dest)
+static void AddInfoFileName(UString &dest, const UString &name)
 {
   dest += L"\n  ";
   dest += name;
@@ -356,7 +349,7 @@ void CApp::Combine()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED, 0x03020208);
+    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
     return;
   }
   CRecordVector<UInt32> indices;
@@ -364,9 +357,9 @@ void CApp::Combine()
   if (indices.IsEmpty())
     return;
   int index = indices[0];
-  if (indices.Size() != 1 || srcPanel.IsItemFolder(index))
+  if (indices.Size() != 1 || srcPanel.IsItem_Folder(index))
   {
-    srcPanel.MessageBoxErrorLang(IDS_COMBINE_SELECT_ONE_FILE, 0x03020620);
+    srcPanel.MessageBoxErrorLang(IDS_COMBINE_SELECT_ONE_FILE);
     return;
   }
   const UString itemName = srcPanel.GetItemName(index);
@@ -382,7 +375,7 @@ void CApp::Combine()
   CVolSeqName volSeqName;
   if (!volSeqName.ParseName(itemName))
   {
-    srcPanel.MessageBoxErrorLang(IDS_COMBINE_CANT_DETECT_SPLIT_FILE, 0x03020621);
+    srcPanel.MessageBoxErrorLang(IDS_COMBINE_CANT_DETECT_SPLIT_FILE);
     return;
   }
   
@@ -393,7 +386,7 @@ void CApp::Combine()
   combiner.TotalSize = 0;
   for (;;)
   {
-    NFile::NFind::CFileInfo fileInfo;
+    NFind::CFileInfo fileInfo;
     if (!fileInfo.Find(us2fs(srcPath + nextName)) || fileInfo.IsDir())
       break;
     combiner.Names.Add(us2fs(nextName));
@@ -402,7 +395,7 @@ void CApp::Combine()
   }
   if (combiner.Names.Size() == 1)
   {
-    srcPanel.MessageBoxErrorLang(IDS_COMBINE_CANT_FIND_MORE_THAN_ONE_PART, 0x03020622);
+    srcPanel.MessageBoxErrorLang(IDS_COMBINE_CANT_FIND_MORE_THAN_ONE_PART);
     return;
   }
   
@@ -413,38 +406,38 @@ void CApp::Combine()
   }
   
   UString info;
-  AddValuePair2(IDS_FILES_COLON, 0x02000320, combiner.Names.Size(), combiner.TotalSize, info);
+  AddValuePair2(info, IDS_PROP_FILES, combiner.Names.Size(), combiner.TotalSize);
   
   info += L"\n";
   info += srcPath;
   
-  int i;
+  unsigned i;
   for (i = 0; i < combiner.Names.Size() && i < 2; i++)
-    AddInfoFileName(fs2us(combiner.Names[i]), info);
+    AddInfoFileName(info, fs2us(combiner.Names[i]));
   if (i != combiner.Names.Size())
   {
     if (i + 1 != combiner.Names.Size())
-      AddInfoFileName(L"...", info);
-    AddInfoFileName(fs2us(combiner.Names.Back()), info);
+      AddInfoFileName(info, L"...");
+    AddInfoFileName(info, fs2us(combiner.Names.Back()));
   }
   
   {
     CCopyDialog copyDialog;
     copyDialog.Value = path;
-    copyDialog.Title = LangString(IDS_COMBINE, 0x03020600);
+    LangString(IDS_COMBINE, copyDialog.Title);
     copyDialog.Title += ' ';
     copyDialog.Title += srcPanel.GetItemRelPath(index);
-    copyDialog.Static = LangString(IDS_COMBINE_TO, 0x03020601);
+    LangString(IDS_COMBINE_TO, copyDialog.Static);
     copyDialog.Info = info;
-    if (copyDialog.Create(srcPanel.GetParent()) == IDCANCEL)
+    if (copyDialog.Create(srcPanel.GetParent()) != IDOK)
       return;
     path = copyDialog.Value;
   }
 
-  NFile::NName::NormalizeDirPathPrefix(path);
-  if (!NFile::NDirectory::CreateComplexDirectory(us2fs(path)))
+  NName::NormalizeDirPathPrefix(path);
+  if (!CreateComplexDir(us2fs(path)))
   {
-    srcPanel.MessageBoxMyError(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, 0x02000603, path));
+    srcPanel.MessageBoxError2Lines(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, path), ::GetLastError());
     return;
   }
   
@@ -458,24 +451,24 @@ void CApp::Combine()
   if (outName.IsEmpty())
     outName = L"file";
   
-  NFile::NFind::CFileInfo fileInfo;
+  NFind::CFileInfo fileInfo;
   UString destFilePath = path + outName;
   combiner.OutputPath = us2fs(destFilePath);
   if (fileInfo.Find(combiner.OutputPath))
   {
-    srcPanel.MessageBoxMyError(MyFormatNew(IDS_FILE_EXIST, 0x03020A04, destFilePath));
+    srcPanel.MessageBoxMyError(MyFormatNew(IDS_FILE_EXIST, destFilePath));
     return;
   }
   
     CProgressDialog &progressDialog = combiner.ProgressDialog;
     progressDialog.ShowCompressionInfo = false;
   
-    UString progressWindowTitle = LangString(IDS_APP_TITLE, 0x03000000);
-    UString title = LangString(IDS_COMBINING, 0x03020610);
+    UString progressWindowTitle = L"7-Zip"; // LangString(IDS_APP_TITLE, 0x03000000);
+    UString title = LangString(IDS_COMBINING);
     
     progressDialog.MainWindow = _window;
     progressDialog.MainTitle = progressWindowTitle;
-    progressDialog.MainAddTitle = title + UString(L" ");
+    progressDialog.MainAddTitle = title + L' ';
     
     combiner.InputDirPrefix = us2fs(srcPath);
     
@@ -487,8 +480,8 @@ void CApp::Combine()
   }
   RefreshTitleAlways();
 
-  // disableTimerProcessing1.Restore();
-  // disableTimerProcessing2.Restore();
+  // disableNotify.Restore();
+  // disableNotify.Restore();
   // srcPanel.SetFocusToList();
   // srcPanel.RefreshListCtrlSaveFocused();
 }

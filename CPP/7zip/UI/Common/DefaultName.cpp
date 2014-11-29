@@ -7,13 +7,13 @@
 static UString GetDefaultName3(const UString &fileName,
     const UString &extension, const UString &addSubExtension)
 {
-  int extLength = extension.Length();
-  int fileNameLength = fileName.Length();
+  int extLength = extension.Len();
+  int fileNameLength = fileName.Len();
   if (fileNameLength > extLength + 1)
   {
     int dotPos = fileNameLength - (extLength + 1);
     if (fileName[dotPos] == '.')
-      if (extension.CompareNoCase(fileName.Mid(dotPos + 1)) == 0)
+      if (extension.IsEqualToNoCase(fileName.Ptr(dotPos + 1)))
         return fileName.Left(dotPos) + addSubExtension;
   }
   int dotPos = fileName.ReverseFind(L'.');

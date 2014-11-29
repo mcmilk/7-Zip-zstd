@@ -2,13 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "FormatUtils.h"
-#include "Common/IntToString.h"
-#include "Windows/ResourceString.h"
+#include "../../../Common/IntToString.h"
 
-#ifdef LANG
+#include "FormatUtils.h"
+
 #include "LangUtils.h"
-#endif
 
 UString NumberToString(UInt64 number)
 {
@@ -24,17 +22,7 @@ UString MyFormatNew(const UString &format, const UString &argument)
   return result;
 }
 
-UString MyFormatNew(UINT resourceID,
-    #ifdef LANG
-    UInt32 langID,
-    #endif
-    const UString &argument)
+UString MyFormatNew(UINT resourceID, const UString &argument)
 {
-  return MyFormatNew(
-    #ifdef LANG
-    LangString(resourceID, langID),
-    #else
-    NWindows::MyLoadStringW(resourceID),
-    #endif
-    argument);
+  return MyFormatNew(LangString(resourceID), argument);
 }

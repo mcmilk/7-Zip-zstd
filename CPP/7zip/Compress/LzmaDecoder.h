@@ -73,10 +73,14 @@ public:
 
   #endif
 
-  bool FinishStream;
+  bool FinishStream; // set it before decoding, if you need to decode full LZMA stream
+  
+  bool NeedMoreInput; // it's set by decoder, if it needs more input data to decode stream
 
   CDecoder();
   virtual ~CDecoder();
+
+  UInt64 GetOutputProcessedSize() const { return _outSizeProcessed; }
 };
 
 }}

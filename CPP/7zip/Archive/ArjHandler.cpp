@@ -4,11 +4,12 @@
 
 #include "../../../C/CpuArch.h"
 
-#include "Common/ComTry.h"
-#include "Common/StringConvert.h"
+#include "../../Common/ComTry.h"
+#include "../../Common/IntToString.h"
+#include "../../Common/StringConvert.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/Time.h"
+#include "../../Windows/PropVariant.h"
+#include "../../Windows/TimeUtils.h"
 
 #include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
@@ -31,74 +32,85 @@ using namespace NWindows;
 namespace NArchive {
 namespace NArj {
 
-const int kBlockSizeMin = 30;
-const int kBlockSizeMax = 2600;
+static const unsigned kBlockSizeMin = 30;
+static const unsigned kBlockSizeMax = 2600;
 
-namespace NSignature
+static const Byte kSig0 = 0x60;
+static const Byte kSig1 = 0xEA;
+
+namespace NCompressionMethod
 {
-  const Byte kSig0 = 0x60;
-  const Byte kSig1 = 0xEA;
+  enum
+  {
+    kStored = 0,
+    kCompressed1a = 1,
+    kCompressed1b = 2,
+    kCompressed1c = 3,
+    kCompressed2 = 4,
+    kNoDataNoCRC = 8,
+    kNoData = 9
+  };
 }
 
-namespace NFileHeader
+namespace NFileType
 {
-  namespace NCompressionMethod
+  enum
   {
-    enum
-    {
-      kStored = 0,
-      kCompressed1a = 1,
-      kCompressed1b = 2,
-      kCompressed1c = 3,
-      kCompressed2 = 4,
-      kNoDataNoCRC = 8,
-      kNoData = 9
-    };
-  }
-
-  namespace NFileType
-  {
-    enum
-    {
-      kBinary = 0,
-      k7BitText = 1,
-      kArchiveHeader = 2,
-      kDirectory = 3,
-      kVolumeLablel = 4,
-      kChapterLabel = 5
-    };
-  }
-  
-  namespace NFlags
-  {
-    const Byte kGarbled = 1;
-    const Byte kVolume = 4;
-    const Byte kExtFile = 8;
-    const Byte kPathSym = 0x10;
-    const Byte kBackup = 0x20;
-  }
-
-  namespace NHostOS
-  {
-    enum EEnum
-    {
-      kMSDOS = 0,  // filesystem used by MS-DOS, OS/2, Win32
-          // pkarj 2.50 (FAT / VFAT / FAT32 file systems)
-      kPRIMOS,
-      kUnix,
-      kAMIGA,
-      kMac,
-      kOS_2,
-      kAPPLE_GS,
-      kAtari_ST,
-      kNext,
-      kVAX_VMS,
-      kWIN95
-    };
-  }
+    kBinary = 0,
+    k7BitText,
+    kArchiveHeader,
+    kDirectory,
+    kVolumeLablel,
+    kChapterLabel
+  };
 }
 
-struct CArchiveHeader
+namespace NFlags
+{
+  const Byte kGarbled  = 1 << 0;
+  const Byte kAnsiPage = 1 << 1; // or (OLD_SECURED_FLAG) obsolete
+  const Byte kVolume   = 1 << 2;
+  const Byte kExtFile  = 1 << 3;
+  const Byte kPathSym  = 1 << 4;
+  const Byte kBackup   = 1 << 5; // obsolete
+  const Byte kSecured  = 1 << 6;
+  const Byte kDualName = 1 << 7;
+}
+
+namespace NHostOS
+{
+  enum EEnum
+  {
+    kMSDOS = 0,  // MS-DOS, OS/2, Win32, pkarj 2.50 (FAT / VFAT / FAT32)
+    kPRIMOS,
+    kUnix,
+    kAMIGA,
+    kMac,
+    kOS_2,
+    kAPPLE_GS,
+    kAtari_ST,
+    kNext,
+    kVAX_VMS,
+    kWIN95
+  };
+}
+
+static const char *kHostOS[] =
+{
+    "MSDOS"
+  , "PRIMOS"
+  , "UNIX"
+  , "AMIGA"
+  , "MAC"
+  , "OS/2"
+  , "APPLE GS"
+  , "ATARI ST"
+  , "NEXT"
+  , "VAX VMS"
+  , "WIN95"
+};
+
+struct CArcHeader
 {
   // Byte ArchiverVersion;
   // Byte ExtractVersion;
@@ -110,9 +122,9 @@ struct CArchiveHeader
   UInt32 CTime;
   UInt32 MTime;
   UInt32 ArchiveSize;
-  // UInt32 SecurityEnvelopeFilePosition;
-  // UInt16 FilespecPositionInFilename;
-  // UInt16 LengthOfSecurityEnvelopeSata;
+  // UInt32 SecurPos;
+  // UInt16 FilespecPosInFilename;
+  UInt16 SecurSize;
   // Byte EncryptionVersion;
   // Byte LastChapter;
   AString Name;
@@ -121,47 +133,71 @@ struct CArchiveHeader
   HRESULT Parse(const Byte *p, unsigned size);
 };
 
+API_FUNC_static_IsArc IsArc_Arj(const Byte *p, size_t size)
+{
+  if (size < kBlockSizeMin + 4)
+    return k_IsArc_Res_NEED_MORE;
+  if (p[0] != kSig0 || p[1] != kSig1)
+    return k_IsArc_Res_NO;
+  UInt32 blockSize = Get16(p + 2);
+  if (blockSize < kBlockSizeMin ||
+      blockSize > kBlockSizeMax)
+    return k_IsArc_Res_NO;
+
+  p += 4;
+  size -= 4;
+
+  Byte headerSize = p[0];
+  if (headerSize < kBlockSizeMin ||
+      headerSize > blockSize ||
+      p[6] != NFileType::kArchiveHeader ||
+      p[28] > 8) // EncryptionVersion
+    return k_IsArc_Res_NO;
+
+  if (blockSize + 4 <= size)
+    if (Get32(p + blockSize) != CrcCalc(p, blockSize))
+      return k_IsArc_Res_NO;
+
+  return k_IsArc_Res_YES;
+}
+
 static HRESULT ReadString(const Byte *p, unsigned &size, AString &res)
 {
-  AString s;
   for (unsigned i = 0; i < size;)
   {
     char c = (char)p[i++];
     if (c == 0)
     {
       size = i;
-      res = s;
+      res = (const char *)p;
       return S_OK;
     }
-    s += c;
   }
   return S_FALSE;
 }
 
-HRESULT CArchiveHeader::Parse(const Byte *p, unsigned size)
+HRESULT CArcHeader::Parse(const Byte *p, unsigned size)
 {
-  if (size < kBlockSizeMin)
-    return S_FALSE;
-  Byte firstHeaderSize = p[0];
-  if (firstHeaderSize > size)
+  Byte headerSize = p[0];
+  if (headerSize < kBlockSizeMin || headerSize > size)
     return S_FALSE;
   // ArchiverVersion = p[1];
   // ExtractVersion = p[2];
   HostOS = p[3];
   // Flags = p[4];
   // SecuryVersion = p[5];
-  if (p[6] != NFileHeader::NFileType::kArchiveHeader)
+  if (p[6] != NFileType::kArchiveHeader)
     return S_FALSE;
   // Reserved = p[7];
   CTime = Get32(p + 8);
   MTime = Get32(p + 12);
-  ArchiveSize = Get32(p + 16);
-  // SecurityEnvelopeFilePosition = Get32(p + 20);
+  ArchiveSize = Get32(p + 16); // it can be zero. (currently used only for secured archives)
+  // SecurPos = Get32(p + 20);
   // UInt16 filespecPositionInFilename = Get16(p + 24);
-  // LengthOfSecurityEnvelopeSata = Get16(p + 26);
+  SecurSize = Get16(p + 26);
   // EncryptionVersion = p[28];
   // LastChapter = p[29];
-  unsigned pos = firstHeaderSize;
+  unsigned pos = headerSize;
   unsigned size1 = size - pos;
   RINOK(ReadString(p + pos, size1, Name));
   pos += size1;
@@ -189,32 +225,30 @@ struct CItem
   Byte Method;
   Byte FileType;
 
-  // UInt16 FilespecPositionInFilename;
+  // UInt16 FilespecPosInFilename;
   UInt16 FileAccessMode;
   // Byte FirstChapter;
   // Byte LastChapter;
   
   UInt64 DataPosition;
   
-  bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kGarbled) != 0; }
-  bool IsDir() const { return (FileType == NFileHeader::NFileType::kDirectory); }
-  bool IsSplitAfter() const { return (Flags & NFileHeader::NFlags::kVolume) != 0; }
-  bool IsSplitBefore() const { return (Flags & NFileHeader::NFlags::kExtFile) != 0; }
-  UInt32 GetWinAttributes() const
+  bool IsEncrypted() const { return (Flags & NFlags::kGarbled) != 0; }
+  bool IsDir() const { return (FileType == NFileType::kDirectory); }
+  bool IsSplitAfter() const { return (Flags & NFlags::kVolume) != 0; }
+  bool IsSplitBefore() const { return (Flags & NFlags::kExtFile) != 0; }
+  UInt32 GetWinAttrib() const
   {
-    UInt32 winAtrributes;
-    switch(HostOS)
+    UInt32 atrrib = 0;
+    switch (HostOS)
     {
-      case NFileHeader::NHostOS::kMSDOS:
-      case NFileHeader::NHostOS::kWIN95:
-        winAtrributes = FileAccessMode;
+      case NHostOS::kMSDOS:
+      case NHostOS::kWIN95:
+        atrrib = FileAccessMode;
         break;
-      default:
-        winAtrributes = 0;
     }
     if (IsDir())
-      winAtrributes |= FILE_ATTRIBUTE_DIRECTORY;
-    return winAtrributes;
+      atrrib |= FILE_ATTRIBUTE_DIRECTORY;
+    return atrrib;
   }
 
   HRESULT Parse(const Byte *p, unsigned size);
@@ -222,11 +256,9 @@ struct CItem
 
 HRESULT CItem::Parse(const Byte *p, unsigned size)
 {
-  if (size < kBlockSizeMin)
+  Byte headerSize = p[0];
+  if (headerSize < kBlockSizeMin || headerSize > size)
     return S_FALSE;
-
-  Byte firstHeaderSize = p[0];
-
   Version = p[1];
   ExtractVersion = p[2];
   HostOS = p[3];
@@ -238,16 +270,16 @@ HRESULT CItem::Parse(const Byte *p, unsigned size)
   PackSize = Get32(p + 12);
   Size = Get32(p + 16);
   FileCRC = Get32(p + 20);
-  // FilespecPositionInFilename = Get16(p + 24);
+  // FilespecPosInFilename = Get16(p + 24);
   FileAccessMode = Get16(p + 26);
   // FirstChapter = p[28];
   // FirstChapter = p[29];
 
   SplitPos = 0;
-  if (IsSplitBefore() && firstHeaderSize >= 34)
+  if (IsSplitBefore() && headerSize >= 34)
     SplitPos = Get32(p + 30);
 
-  unsigned pos = firstHeaderSize;
+  unsigned pos = headerSize;
   unsigned size1 = size - pos;
   RINOK(ReadString(p + pos, size1, Name));
   pos += size1;
@@ -258,180 +290,121 @@ HRESULT CItem::Parse(const Byte *p, unsigned size)
   return S_OK;
 }
 
-struct CInArchiveException
+enum EErrorType
 {
-  enum CCauseType
-  {
-    kUnexpectedEndOfArchive = 0,
-    kCRCError,
-    kIncorrectArchive
-  }
-  Cause;
-  CInArchiveException(CCauseType cause): Cause(cause) {};
+  k_ErrorType_OK,
+  k_ErrorType_Corrupted,
+  k_ErrorType_UnexpectedEnd,
 };
 
-class CInArchive
+class CArc
 {
-  UInt32 _blockSize;
-  Byte _block[kBlockSizeMax + 4];
-  
-  HRESULT ReadBlock(bool &filled);
-  HRESULT ReadSignatureAndBlock(bool &filled);
-  HRESULT SkipExtendedHeaders();
-
-  HRESULT SafeReadBytes(void *data, UInt32 size);
-    
 public:
-  CArchiveHeader Header;
-
+  UInt64 Processed;
+  EErrorType Error;
+  bool IsArc;
   IInStream *Stream;
   IArchiveOpenCallback *Callback;
   UInt64 NumFiles;
-  UInt64 NumBytes;
+  CArcHeader Header;
 
-  HRESULT Open(const UInt64 *searchHeaderSizeLimit);
-  HRESULT GetNextItem(bool &filled, CItem &item);
+  HRESULT Open();
+  HRESULT GetNextItem(CItem &item, bool &filled);
+  void Close()
+  {
+    IsArc = false;
+    Error = k_ErrorType_OK;
+  }
+private:
+  UInt32 _blockSize;
+  Byte _block[kBlockSizeMax + 4];
+
+  HRESULT ReadBlock(bool &filled, bool readSignature);
+  HRESULT SkipExtendedHeaders();
+  HRESULT Read(void *data, size_t *size);
 };
 
-static inline bool TestMarkerCandidate(const Byte *p, unsigned maxSize)
+HRESULT CArc::Read(void *data, size_t *size)
 {
-  if (p[0] != NSignature::kSig0 || p[1] != NSignature::kSig1)
-    return false;
-  UInt32 blockSize = Get16(p + 2);
-  p += 4;
-  if (p[6] != NFileHeader::NFileType::kArchiveHeader ||
-      p[0] > blockSize ||
-      maxSize < 2 + 2 + blockSize + 4 ||
-      blockSize < kBlockSizeMin || blockSize > kBlockSizeMax ||
-      p[28] > 8) // EncryptionVersion
-    return false;
-  // return (Get32(p + blockSize) == CrcCalc(p, blockSize));
-  return true;
+  HRESULT res = ReadStream(Stream, data, size);
+  Processed += *size;
+  return res;
 }
 
-static HRESULT FindAndReadMarker(ISequentialInStream *stream, const UInt64 *searchHeaderSizeLimit, UInt64 &position)
+#define READ_STREAM(_dest_, _size_) \
+  { size_t _processed_ = (_size_); RINOK(Read(_dest_, &_processed_)); \
+  if (_processed_ != (_size_)) { Error = k_ErrorType_UnexpectedEnd; return S_OK; } }
+
+HRESULT CArc::ReadBlock(bool &filled, bool readSignature)
 {
-  position = 0;
-
-  const int kMarkerSizeMin = 2 + 2 + kBlockSizeMin + 4;
-  const int kMarkerSizeMax = 2 + 2 + kBlockSizeMax + 4;
-
-  CByteBuffer byteBuffer;
-  const UInt32 kBufSize = 1 << 16;
-  byteBuffer.SetCapacity(kBufSize);
-  Byte *buf = byteBuffer;
-
-  size_t processedSize = kMarkerSizeMax;
-  RINOK(ReadStream(stream, buf, &processedSize));
-  if (processedSize < kMarkerSizeMin)
-    return S_FALSE;
-  if (TestMarkerCandidate(buf, (unsigned)processedSize))
-    return S_OK;
-
-  UInt32 numBytesPrev = (UInt32)processedSize - 1;
-  memmove(buf, buf + 1, numBytesPrev);
-  UInt64 curTestPos = 1;
-  for (;;)
-  {
-    if (searchHeaderSizeLimit != NULL)
-      if (curTestPos > *searchHeaderSizeLimit)
-        return S_FALSE;
-    processedSize = kBufSize - numBytesPrev;
-    RINOK(ReadStream(stream, buf + numBytesPrev, &processedSize));
-    UInt32 numBytesInBuffer = numBytesPrev + (UInt32)processedSize;
-    if (numBytesInBuffer < kMarkerSizeMin)
-      return S_FALSE;
-    UInt32 numTests = numBytesInBuffer - kMarkerSizeMin + 1;
-    UInt32 pos;
-    for (pos = 0; pos < numTests; pos++)
-    {
-      for (; buf[pos] != NSignature::kSig0 && pos < numTests; pos++);
-      if (pos == numTests)
-        break;
-      if (TestMarkerCandidate(buf + pos, numBytesInBuffer - pos))
-      {
-        position = curTestPos + pos;
-        return S_OK;
-      }
-    }
-    curTestPos += pos;
-    numBytesPrev = numBytesInBuffer - numTests;
-    memmove(buf, buf + numTests, numBytesPrev);
-  }
-}
-
-HRESULT CInArchive::SafeReadBytes(void *data, UInt32 size)
-{
-  size_t processed = size;
-  RINOK(ReadStream(Stream, data, &processed));
-  if (processed != size)
-    throw CInArchiveException(CInArchiveException::kUnexpectedEndOfArchive);
-  return S_OK;
-}
-
-HRESULT CInArchive::ReadBlock(bool &filled)
-{
+  Error = k_ErrorType_OK;
   filled = false;
-  Byte buf[2];
-  RINOK(SafeReadBytes(buf, 2));
-  _blockSize = Get16(buf);
-  if (_blockSize == 0)
+  Byte buf[4];
+  unsigned signSize = readSignature ? 2 : 0;
+  READ_STREAM(buf, signSize + 2)
+  if (readSignature)
+    if (buf[0] != kSig0 || buf[1] != kSig1)
+    {
+      Error = k_ErrorType_Corrupted;
+      return S_OK;
+    }
+  _blockSize = Get16(buf + signSize);
+  if (_blockSize == 0) // end of archive
     return S_OK;
-  if (_blockSize > kBlockSizeMax)
-    throw CInArchiveException(CInArchiveException::kIncorrectArchive);
-  RINOK(SafeReadBytes(_block, _blockSize + 4));
-  NumBytes += _blockSize + 6;
+  if (_blockSize < kBlockSizeMin ||
+      _blockSize > kBlockSizeMax)
+  {
+    Error = k_ErrorType_Corrupted;
+    return S_OK;
+  }
+  READ_STREAM(_block, _blockSize + 4);
   if (Get32(_block + _blockSize) != CrcCalc(_block, _blockSize))
-    throw CInArchiveException(CInArchiveException::kCRCError);
+  {
+    Error = k_ErrorType_Corrupted;
+    return S_OK;
+  }
   filled = true;
   return S_OK;
 }
 
-HRESULT CInArchive::ReadSignatureAndBlock(bool &filled)
-{
-  Byte id[2];
-  RINOK(SafeReadBytes(id, 2));
-  if (id[0] != NSignature::kSig0 || id[1] != NSignature::kSig1)
-    throw CInArchiveException(CInArchiveException::kIncorrectArchive);
-  return ReadBlock(filled);
-}
-
-HRESULT CInArchive::SkipExtendedHeaders()
+HRESULT CArc::SkipExtendedHeaders()
 {
   for (UInt32 i = 0;; i++)
   {
     bool filled;
-    RINOK(ReadBlock(filled));
+    RINOK(ReadBlock(filled, false));
     if (!filled)
       return S_OK;
     if (Callback && (i & 0xFF) == 0)
-      RINOK(Callback->SetCompleted(&NumFiles, &NumBytes));
+      RINOK(Callback->SetCompleted(&NumFiles, &Processed));
   }
 }
 
-HRESULT CInArchive::Open(const UInt64 *searchHeaderSizeLimit)
+HRESULT CArc::Open()
 {
-  UInt64 position = 0;
-  RINOK(FindAndReadMarker(Stream, searchHeaderSizeLimit, position));
-  RINOK(Stream->Seek(position, STREAM_SEEK_SET, NULL));
   bool filled;
-  RINOK(ReadSignatureAndBlock(filled));
+  RINOK(ReadBlock(filled, true));
   if (!filled)
     return S_FALSE;
   RINOK(Header.Parse(_block, _blockSize));
+  IsArc = true;
   return SkipExtendedHeaders();
 }
 
-HRESULT CInArchive::GetNextItem(bool &filled, CItem &item)
+HRESULT CArc::GetNextItem(CItem &item, bool &filled)
 {
-  RINOK(ReadSignatureAndBlock(filled));
+  RINOK(ReadBlock(filled, true));
   if (!filled)
     return S_OK;
   filled = false;
-  RINOK(item.Parse(_block, _blockSize));
+  if (item.Parse(_block, _blockSize) != S_OK)
+  {
+    Error = k_ErrorType_Corrupted;
+    return S_OK;
+  }
   /*
   UInt32 extraData;
-  if ((header.Flags & NFileHeader::NFlags::kExtFile) != 0)
+  if ((header.Flags & NFlags::kExtFile) != 0)
     extraData = GetUi32(_block + pos);
   */
 
@@ -444,67 +417,47 @@ class CHandler:
   public IInArchive,
   public CMyUnknownImp
 {
+  CObjectVector<CItem> _items;
+  CMyComPtr<IInStream> _stream;
+  UInt64 _phySize;
+  CArc _arc;
 public:
   MY_UNKNOWN_IMP1(IInArchive)
 
   INTERFACE_IInArchive(;)
 
-  HRESULT Open2(IInStream *inStream, const UInt64 *maxCheckStartPosition,
-      IArchiveOpenCallback *callback);
-private:
-  CInArchive _archive;
-  CObjectVector<CItem> _items;
-  CMyComPtr<IInStream> _stream;
+  HRESULT Open2(IInStream *inStream, IArchiveOpenCallback *callback);
 };
 
-const wchar_t *kHostOS[] =
+static const Byte kArcProps[] =
 {
-  L"MSDOS",
-  L"PRIMOS",
-  L"UNIX",
-  L"AMIGA",
-  L"MAC",
-  L"OS/2",
-  L"APPLE GS",
-  L"ATARI ST",
-  L"NEXT",
-  L"VAX VMS",
-  L"WIN95"
+  kpidName,
+  kpidCTime,
+  kpidMTime,
+  kpidHostOS,
+  kpidComment
 };
 
-const wchar_t *kUnknownOS = L"Unknown";
-
-const int kNumHostOSes = sizeof(kHostOS) / sizeof(kHostOS[0]);
-
-STATPROPSTG kArcProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidName, VT_BSTR},
-  { NULL, kpidCTime, VT_BSTR},
-  { NULL, kpidMTime, VT_BSTR},
-  { NULL, kpidHostOS, VT_BSTR},
-  { NULL, kpidComment, VT_BSTR}
-};
-
-STATPROPSTG kProps[] =
-{
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsDir, VT_BOOL},
-  { NULL, kpidSize, VT_UI4},
-  { NULL, kpidPosition, VT_UI8},
-  { NULL, kpidPackSize, VT_UI4},
-  { NULL, kpidMTime, VT_FILETIME},
-  { NULL, kpidAttrib, VT_UI4},
-  { NULL, kpidEncrypted, VT_BOOL},
-  { NULL, kpidCRC, VT_UI4},
-  { NULL, kpidMethod, VT_UI1},
-  { NULL, kpidHostOS, VT_BSTR},
-  { NULL, kpidComment, VT_BSTR}
+  kpidPath,
+  kpidIsDir,
+  kpidSize,
+  kpidPosition,
+  kpidPackSize,
+  kpidMTime,
+  kpidAttrib,
+  kpidEncrypted,
+  kpidCRC,
+  kpidMethod,
+  kpidHostOS,
+  kpidComment
 };
 
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-static void SetTime(UInt32 dosTime, NWindows::NCOM::CPropVariant &prop)
+static void SetTime(UInt32 dosTime, NCOM::CPropVariant &prop)
 {
   if (dosTime == 0)
     return;
@@ -519,12 +472,21 @@ static void SetTime(UInt32 dosTime, NWindows::NCOM::CPropVariant &prop)
   prop = utc;
 }
 
-static void SetHostOS(Byte hostOS, NWindows::NCOM::CPropVariant &prop)
+static void SetHostOS(Byte hostOS, NCOM::CPropVariant &prop)
 {
-  prop = hostOS < kNumHostOSes ? kHostOS[hostOS] : kUnknownOS;
+  char temp[16];
+  const char *s = NULL;
+  if (hostOS < ARRAY_SIZE(kHostOS))
+    s = kHostOS[hostOS];
+  else
+  {
+    ConvertUInt32ToString(hostOS, temp);
+    s = temp;
+  }
+  prop = s;
 }
 
-static void SetUnicodeString(const AString &s, NWindows::NCOM::CPropVariant &prop)
+static void SetUnicodeString(const AString &s, NCOM::CPropVariant &prop)
 {
   if (!s.IsEmpty())
     prop = MultiByteToUnicodeString(s, CP_OEMCP);
@@ -533,14 +495,27 @@ static void SetUnicodeString(const AString &s, NWindows::NCOM::CPropVariant &pro
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  NCOM::CPropVariant prop;
+  switch (propID)
   {
-    case kpidName:  SetUnicodeString(_archive.Header.Name, prop); break;
-    case kpidCTime:  SetTime(_archive.Header.CTime, prop); break;
-    case kpidMTime:  SetTime(_archive.Header.MTime, prop); break;
-    case kpidHostOS:  SetHostOS(_archive.Header.HostOS, prop); break;
-    case kpidComment:  SetUnicodeString(_archive.Header.Comment, prop); break;
+    case kpidPhySize: prop = _phySize; break;
+    case kpidName: SetUnicodeString(_arc.Header.Name, prop); break;
+    case kpidCTime: SetTime(_arc.Header.CTime, prop); break;
+    case kpidMTime: SetTime(_arc.Header.MTime, prop); break;
+    case kpidHostOS: SetHostOS(_arc.Header.HostOS, prop); break;
+    case kpidComment: SetUnicodeString(_arc.Header.Comment, prop); break;
+    case kpidErrorFlags:
+    {
+      UInt32 v = 0;
+      if (!_arc.IsArc) v |= kpv_ErrorFlags_IsNotArc;
+      switch (_arc.Error)
+      {
+        case k_ErrorType_UnexpectedEnd: v |= kpv_ErrorFlags_UnexpectedEnd; break;
+        case k_ErrorType_Corrupted: v |= kpv_ErrorFlags_HeadersError; break;
+      }
+      prop = v;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;
@@ -556,16 +531,16 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
   const CItem &item = _items[index];
-  switch(propID)
+  switch (propID)
   {
     case kpidPath:  prop = NItemName::GetOSName(MultiByteToUnicodeString(item.Name, CP_OEMCP)); break;
     case kpidIsDir:  prop = item.IsDir(); break;
     case kpidSize:  prop = item.Size; break;
     case kpidPackSize:  prop = item.PackSize; break;
     case kpidPosition:  if (item.IsSplitBefore() || item.IsSplitAfter()) prop = (UInt64)item.SplitPos; break;
-    case kpidAttrib:  prop = item.GetWinAttributes(); break;
+    case kpidAttrib:  prop = item.GetWinAttrib(); break;
     case kpidEncrypted:  prop = item.IsEncrypted(); break;
     case kpidCRC:  prop = item.FileCRC; break;
     case kpidMethod:  prop = item.Method; break;
@@ -578,75 +553,88 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-HRESULT CHandler::Open2(IInStream *inStream, const UInt64 *maxCheckStartPosition,
-      IArchiveOpenCallback *callback)
+HRESULT CHandler::Open2(IInStream *inStream, IArchiveOpenCallback *callback)
 {
   Close();
   
   UInt64 endPos = 0;
-  if (callback != NULL)
-  {
-    RINOK(inStream->Seek(0, STREAM_SEEK_END, &endPos));
-    RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
-  }
+  RINOK(inStream->Seek(0, STREAM_SEEK_END, &endPos));
+  RINOK(inStream->Seek(0, STREAM_SEEK_SET, NULL));
   
-  _archive.Stream = inStream;
-  _archive.Callback = callback;
-  _archive.NumFiles = _archive.NumBytes = 0;
+  _arc.Stream = inStream;
+  _arc.Callback = callback;
+  _arc.NumFiles = 0;
+  _arc.Processed = 0;
 
-  RINOK(_archive.Open(maxCheckStartPosition));
-  if (callback != NULL)
-    RINOK(callback->SetTotal(NULL, &endPos));
+  RINOK(_arc.Open());
+
+  _phySize = _arc.Processed;
+  if (_arc.Header.ArchiveSize != 0)
+    _phySize = (UInt64)_arc.Header.ArchiveSize + _arc.Header.SecurSize;
+
   for (;;)
   {
     CItem item;
     bool filled;
 
+    _arc.Error = k_ErrorType_OK;
+    RINOK(_arc.GetNextItem(item, filled));
 
-    RINOK(_archive.GetNextItem(filled, item));
-    
-    RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &item.DataPosition));
+    if (_arc.Error != k_ErrorType_OK)
+      break;
     
     if (!filled)
+    {
+      if (_arc.Error == k_ErrorType_OK)
+        if (_arc.Header.ArchiveSize == 0)
+          _phySize = _arc.Processed;
       break;
+    }
+    item.DataPosition = _arc.Processed;
     _items.Add(item);
     
-    if (inStream->Seek(item.PackSize, STREAM_SEEK_CUR, NULL) != S_OK)
-      throw CInArchiveException(CInArchiveException::kUnexpectedEndOfArchive);
-
-    _archive.NumFiles = _items.Size();
-    _archive.NumBytes = item.DataPosition;
-    
-    if (callback != NULL && _items.Size() % 100 == 0)
+    UInt64 pos = item.DataPosition + item.PackSize;
+    if (_arc.Header.ArchiveSize == 0)
+      _phySize = pos;
+    if (pos > endPos)
     {
-      RINOK(callback->SetCompleted(&_archive.NumFiles, &_archive.NumBytes));
+      _arc.Error = k_ErrorType_UnexpectedEnd;
+      break;
+    }
+
+    RINOK(inStream->Seek(pos, STREAM_SEEK_SET, NULL));
+    _arc.NumFiles = _items.Size();
+    _arc.Processed = pos;
+    
+    if (callback && (_items.Size() & 0xFF) == 0)
+    {
+      RINOK(callback->SetCompleted(&_arc.NumFiles, &_arc.Processed));
     }
   }
   return S_OK;
 }
 
 STDMETHODIMP CHandler::Open(IInStream *inStream,
-    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback)
+    const UInt64 * /* maxCheckStartPosition */, IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
   HRESULT res;
-  try
   {
-    res = Open2(inStream, maxCheckStartPosition, callback);
+    res = Open2(inStream, callback);
     if (res == S_OK)
     {
       _stream = inStream;
       return S_OK;
     }
   }
-  catch(const CInArchiveException &) { res = S_FALSE; }
-  Close();
   return res;
   COM_TRY_END
 }
 
 STDMETHODIMP CHandler::Close()
 {
+  _arc.Close();
+  _phySize = 0;
   _items.Clear();
   _stream.Release();
   return S_OK;
@@ -657,7 +645,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 {
   COM_TRY_BEGIN
   UInt64 totalUnpacked = 0, totalPacked = 0;
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -736,28 +724,28 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       Int32 opRes = NExtract::NOperationResult::kOK;
 
       if (item.IsEncrypted())
-        opRes = NExtract::NOperationResult::kUnSupportedMethod;
+        opRes = NExtract::NOperationResult::kUnsupportedMethod;
       else
       {
-        switch(item.Method)
+        switch (item.Method)
         {
-          case NFileHeader::NCompressionMethod::kStored:
+          case NCompressionMethod::kStored:
           {
             result = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
             if (result == S_OK && copyCoderSpec->TotalSize != item.PackSize)
               result = S_FALSE;
             break;
           }
-          case NFileHeader::NCompressionMethod::kCompressed1a:
-          case NFileHeader::NCompressionMethod::kCompressed1b:
-          case NFileHeader::NCompressionMethod::kCompressed1c:
+          case NCompressionMethod::kCompressed1a:
+          case NCompressionMethod::kCompressed1b:
+          case NCompressionMethod::kCompressed1c:
           {
             if (!arj1Decoder)
               arj1Decoder = new NCompress::NArj::NDecoder1::CCoder;
             result = arj1Decoder->Code(inStream, outStream, NULL, &curUnpacked, progress);
             break;
           }
-          case NFileHeader::NCompressionMethod::kCompressed2:
+          case NCompressionMethod::kCompressed2:
           {
             if (!arj2Decoder)
               arj2Decoder = new NCompress::NArj::NDecoder2::CCoder;
@@ -765,7 +753,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             break;
           }
           default:
-            opRes = NExtract::NOperationResult::kUnSupportedMethod;
+            opRes = NExtract::NOperationResult::kUnsupportedMethod;
         }
       }
       if (opRes == NExtract::NOperationResult::kOK)
@@ -788,10 +776,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler; }
+IMP_CreateArcIn
 
 static CArcInfo g_ArcInfo =
-  { L"Arj", L"arj", 0, 4, { 0x60, 0xEA }, 2, false, CreateArc, 0 };
+  { "Arj", "arj", 0, 4,
+  2, { kSig0, kSig1 },
+  0,
+  0,
+  CreateArc, NULL, IsArc_Arj };
 
 REGISTER_ARC(Arj)
 

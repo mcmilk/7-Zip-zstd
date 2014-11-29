@@ -63,16 +63,15 @@ FOLDER_INTERFACE_SUB(IFolderOperationsExtractCallback, IProgress, 0x0B)
   STDMETHOD(CreateFile)(const wchar_t *name, IProgress *progress) x; \
   STDMETHOD(Rename)(UInt32 index, const wchar_t *newName, IProgress *progress) x; \
   STDMETHOD(Delete)(const UInt32 *indices, UInt32 numItems, IProgress *progress) x; \
-  STDMETHOD(CopyTo)(const UInt32 *indices, UInt32 numItems, \
+  STDMETHOD(CopyTo)(Int32 moveMode, const UInt32 *indices, UInt32 numItems, \
+      Int32 includeAltStreams, Int32 replaceAltStreamCharsMode, \
       const wchar_t *path, IFolderOperationsExtractCallback *callback) x; \
-  STDMETHOD(MoveTo)(const UInt32 *indices, UInt32 numItems, \
-      const wchar_t *path, IFolderOperationsExtractCallback *callback) x; \
-  STDMETHOD(CopyFrom)(const wchar_t *fromFolderPath, \
+  STDMETHOD(CopyFrom)(Int32 moveMode, const wchar_t *fromFolderPath, \
       const wchar_t **itemsPaths, UInt32 numItems, IProgress *progress) x; \
   STDMETHOD(SetProperty)(UInt32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) x; \
   STDMETHOD(CopyFromFile)(UInt32 index, const wchar_t *fullFilePath, IProgress *progress) x; \
 
-FOLDER_INTERFACE(IFolderOperations, 0x12)
+FOLDER_INTERFACE(IFolderOperations, 0x13)
 {
   INTERFACE_FolderOperations(PURE)
 };
@@ -94,6 +93,11 @@ FOLDER_INTERFACE(IFolderGetItemFullSize, 0x08)
   STDMETHOD(GetItemFullSize)(UInt32 index, PROPVARIANT *value, IProgress *progress) PURE;
 };
 
+FOLDER_INTERFACE(IFolderCalcItemFullSize, 0x14)
+{
+  STDMETHOD(CalcItemFullSize)(UInt32 index, IProgress *progress) PURE;
+};
+
 FOLDER_INTERFACE(IFolderClone, 0x09)
 {
   STDMETHOD(Clone)(IFolderFolder **resultFolder) PURE;
@@ -103,6 +107,13 @@ FOLDER_INTERFACE(IFolderSetFlatMode, 0x0A)
 {
   STDMETHOD(SetFlatMode)(Int32 flatMode) PURE;
 };
+
+/*
+FOLDER_INTERFACE(IFolderSetShowNtfsStreamsMode, 0xFA)
+{
+  STDMETHOD(SetShowNtfsStreamsMode)(Int32 showStreamsMode) PURE;
+};
+*/
 
 #define INTERFACE_FolderProperties(x) \
   STDMETHOD(GetNumberOfFolderProperties)(UInt32 *numProperties) x; \
@@ -132,6 +143,21 @@ FOLDER_INTERFACE(IGetFolderArcProps, 0x11)
   STDMETHOD(GetFolderArcProps)(IFolderArcProps **object) PURE;
 };
 
+FOLDER_INTERFACE(IFolderCompare, 0x15)
+{
+  STDMETHOD_(Int32, CompareItems)(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw) PURE;
+};
+
+#define INTERFACE_IFolderGetItemName(x) \
+  STDMETHOD(GetItemName)(UInt32 index, const wchar_t **name, unsigned *len) x; \
+  STDMETHOD(GetItemPrefix)(UInt32 index, const wchar_t **name, unsigned *len) x; \
+  STDMETHOD_(UInt64, GetItemSize)(UInt32 index) x; \
+
+FOLDER_INTERFACE(IFolderGetItemName, 0x16)
+{
+  INTERFACE_IFolderGetItemName(PURE)
+};
+
 #define FOLDER_MANAGER_INTERFACE(i, x)  DECL_INTERFACE(i, 9, x)
 
 #define INTERFACE_IFolderManager(x) \
@@ -147,16 +173,31 @@ FOLDER_MANAGER_INTERFACE(IFolderManager, 0x05)
   INTERFACE_IFolderManager(PURE);
 };
 
-
+/*
 #define IMP_IFolderFolder_GetProp(k) \
   (UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) \
-    { if(index >= sizeof(k) / sizeof(k[0])) return E_INVALIDARG; \
-    const STATPROPSTG &srcItem = k[index]; \
+    { if (index >= ARRAY_SIZE(k)) return E_INVALIDARG; \
+    const CMy_STATPROPSTG_2 &srcItem = k[index]; \
     *propID = srcItem.propid; *varType = srcItem.vt; *name = 0; return S_OK; } \
 
 #define IMP_IFolderFolder_Props(c) \
   STDMETHODIMP c::GetNumberOfProperties(UInt32 *numProperties) \
-    { *numProperties = sizeof(kProps) / sizeof(kProps[0]); return S_OK; } \
+    { *numProperties = ARRAY_SIZE(kProps); return S_OK; } \
   STDMETHODIMP c::GetPropertyInfo IMP_IFolderFolder_GetProp(kProps)
+*/
+
+#define IMP_IFolderFolder_GetProp(k) \
+  (UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) \
+    { if (index >= ARRAY_SIZE(k)) return E_INVALIDARG; \
+    *propID = k[index]; *varType = k7z_PROPID_To_VARTYPE[(unsigned)*propID]; *name = 0; return S_OK; } \
+
+#define IMP_IFolderFolder_Props(c) \
+  STDMETHODIMP c::GetNumberOfProperties(UInt32 *numProperties) \
+    { *numProperties = ARRAY_SIZE(kProps); return S_OK; } \
+  STDMETHODIMP c::GetPropertyInfo IMP_IFolderFolder_GetProp(kProps)
+
+
+int CompareFileNames_ForFolderList(const wchar_t *s1, const wchar_t *s2);
+// int CompareFileNames_ForFolderList(const FChar *s1, const FChar *s2);
 
 #endif

@@ -11,12 +11,12 @@ This code is based on:
 #include "../../../C/Ppmd7.h"
 #include "../../../C/Ppmd8.h"
 
-#include "Common/ComTry.h"
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
+#include "../../Common/ComTry.h"
+#include "../../Common/IntToString.h"
+#include "../../Common/StringConvert.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/Time.h"
+#include "../../Windows/PropVariant.h"
+#include "../../Windows/TimeUtils.h"
 
 #include "../Common/CWrappers.h"
 #include "../Common/ProgressUtils.h"
@@ -75,11 +75,12 @@ HRESULT CItem::ReadHeader(ISequentialInStream *s, UInt32 &headerSize)
     return S_FALSE;
   Attrib = GetUi32(h + 4);
   Time = GetUi32(h + 12);
-  
   unsigned info = GetUi16(h + 8);
   Order = (info & 0xF) + 1;
   MemInMB = ((info >> 4) & 0xFF) + 1;
   Ver = info >> 12;
+
+  if (Ver < 6 || Ver > 11) return S_FALSE;
  
   UInt32 nameLen = GetUi16(h + 10);
   Restor = nameLen >> 14;
@@ -104,8 +105,8 @@ class CHandler:
 {
   CItem _item;
   UInt32 _headerSize;
+  bool _packSize_Defined;
   UInt64 _packSize;
-  bool _packSizeDefined;
   CMyComPtr<ISequentialInStream> _stream;
 
 public:
@@ -114,12 +115,12 @@ public:
   STDMETHOD(OpenSeq)(ISequentialInStream *stream);
 };
 
-STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidMTime, VT_FILETIME},
-  { NULL, kpidAttrib, VT_UI4},
-  { NULL, kpidMethod, VT_BSTR}
+  kpidPath,
+  kpidMTime,
+  kpidAttrib,
+  kpidMethod
 };
 
 IMP_IInArchive_Props
@@ -128,9 +129,9 @@ IMP_IInArchive_ArcProps_NO_Table
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
-    case kpidPhySize: if (_packSizeDefined) prop = _packSize; break;
+    case kpidPhySize: if (_packSize_Defined) prop = _packSize; break;
   }
   prop.Detach(value);
   return S_OK;
@@ -151,22 +152,23 @@ static void UIntToString(AString &s, const char *prefix, unsigned value)
   s += temp;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  NCOM::CPropVariant prop;
+  switch (propID)
   {
     case kpidPath: prop = MultiByteToUnicodeString(_item.Name, CP_ACP); break;
     case kpidMTime:
     {
+      // time can be in Unix format ???
       FILETIME utc;
       if (NTime::DosTimeToFileTime(_item.Time, utc))
         prop = utc;
       break;
     }
     case kpidAttrib: prop = _item.Attrib; break;
-    case kpidPackSize: if (_packSizeDefined) prop = _packSize; break;
+    case kpidPackSize: if (_packSize_Defined) prop = _packSize; break;
     case kpidMethod:
     {
       AString s = "PPMd";
@@ -209,7 +211,8 @@ STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
 
 STDMETHODIMP CHandler::Close()
 {
-  _packSizeDefined = false;
+  _packSize = 0;
+  _packSize_Defined = false;
   _stream.Release();
   return S_OK;
 }
@@ -356,7 +359,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 {
   if (numItems == 0)
     return S_OK;
-  if (numItems != (UInt32)-1 && (numItems != 1 || indices[0] != 0))
+  if (numItems != (UInt32)(Int32)-1 && (numItems != 1 || indices[0] != 0))
     return E_INVALIDARG;
 
   // extractCallback->SetTotal(_packSize);
@@ -388,7 +391,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CPpmdCpp ppmd(_item.Ver);
   if (!ppmd.Alloc(_item.MemInMB))
     return E_OUTOFMEMORY;
-  Int32 opRes = NExtract::NOperationResult::kUnSupportedMethod;
+  Int32 opRes = NExtract::NOperationResult::kUnsupportedMethod;
   if (_item.IsSupported())
   {
     opRes = NExtract::NOperationResult::kDataError;
@@ -428,7 +431,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
       outSize += i;
       _packSize = _headerSize + inBuf.GetProcessed();
-      _packSizeDefined = true;
+      _packSize_Defined = true;
       if (realOutStream)
       {
         RINOK(WriteStream(realOutStream, outBuf.Buf, i));
@@ -446,10 +449,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   return extractCallback->SetOperationResult(opRes);
 }
 
-static IInArchive *CreateArc() { return new CHandler; }
+IMP_CreateArcIn
 
 static CArcInfo g_ArcInfo =
-  { L"Ppmd", L"pmd", 0, 0xD, { 0x8F, 0xAF, 0xAC, 0x84 }, 4, false, CreateArc, 0 };
+  { "Ppmd", "pmd", 0, 0xD,
+  4, { 0x8F, 0xAF, 0xAC, 0x84 },
+  0,
+  0,
+  CreateArc };
 
 REGISTER_ARC(Ppmd)
 

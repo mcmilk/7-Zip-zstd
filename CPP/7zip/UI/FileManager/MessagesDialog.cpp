@@ -2,32 +2,25 @@
  
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
+#include "../../../Common/IntToString.h"
 
-#include "Windows/ResourceString.h"
+#include "../../../Windows/ResourceString.h"
 
 #include "MessagesDialog.h"
 
-#ifdef LANG
 #include "LangUtils.h"
-#endif
+
+#include "ProgressDialog2Res.h"
 
 using namespace NWindows;
 
-#ifdef LANG
-static CIDLangPair kIDLangPairs[] =
-{
-  { IDOK, 0x02000713 }
-};
-#endif
-
 void CMessagesDialog::AddMessageDirect(LPCWSTR message)
 {
-  int itemIndex = _messageList.GetItemCount();
-  wchar_t sz[32];
-  ConvertInt64ToString(itemIndex, sz);
-  _messageList.InsertItem(itemIndex, sz);
-  _messageList.SetSubItem(itemIndex, 1, message);
+  int i = _messageList.GetItemCount();
+  wchar_t sz[16];
+  ConvertUInt32ToString((UInt32)i, sz);
+  _messageList.InsertItem(i, sz);
+  _messageList.SetSubItem(i, 1, message);
 }
 
 void CMessagesDialog::AddMessage(LPCWSTR message)
@@ -39,7 +32,7 @@ void CMessagesDialog::AddMessage(LPCWSTR message)
     if (pos < 0)
       break;
     AddMessageDirect(s.Left(pos));
-    s.Delete(0, pos + 1);
+    s.DeleteFrontal(pos + 1);
   }
   AddMessageDirect(s);
 }
@@ -47,24 +40,17 @@ void CMessagesDialog::AddMessage(LPCWSTR message)
 bool CMessagesDialog::OnInit()
 {
   #ifdef LANG
-  LangSetWindowText(HWND(*this), 0x02000A00);
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetWindowText(*this, IDD_MESSAGES);
+  LangSetDlgItems(*this, NULL, 0);
+  SetItemText(IDOK, LangString(IDS_CLOSE));
   #endif
-  _messageList.Attach(GetItem(IDC_MESSAGE_LIST));
+  _messageList.Attach(GetItem(IDL_MESSAGE));
   _messageList.SetUnicodeFormat();
 
   _messageList.InsertColumn(0, L"", 30);
+  _messageList.InsertColumn(1, LangString(IDS_MESSAGE), 600);
 
-  const UString s =
-    #ifdef LANG
-    LangString(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN, 0x02000A80);
-    #else
-    MyLoadStringW(IDS_MESSAGES_DIALOG_MESSAGE_COLUMN);
-    #endif
-
-  _messageList.InsertColumn(1, s, 600);
-
-  for (int i = 0; i < Messages->Size(); i++)
+  FOR_VECTOR (i, *Messages)
     AddMessage((*Messages)[i]);
 
   _messageList.SetColumnWidthAuto(0);

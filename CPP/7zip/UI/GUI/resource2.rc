@@ -5,7 +5,6 @@
 
 STRINGTABLE
 BEGIN
-    IDS_COMPRESSED_COLON    "Compressed size:"
-    IDS_ARCHIVES_COLON      "Archives:"
-    IDS_PROGRESS_COMPRESSING "Compressing"
+    IDS_PROGRESS_COMPRESSING  "Compressing"
+    IDS_ARCHIVES_COLON  "Archives:"
 END

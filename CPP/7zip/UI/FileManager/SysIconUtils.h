@@ -3,40 +3,44 @@
 #ifndef __SYS_ICON_UTILS_H
 #define __SYS_ICON_UTILS_H
 
-#include "Common/MyString.h"
+#include "../../../Common/MyString.h"
 
 struct CExtIconPair
 {
   UString Ext;
   int IconIndex;
-  UString TypeName;
+  // UString TypeName;
+
+  // int Compare(const CExtIconPair &a) const { return MyStringCompareNoCase(Ext, a.Ext); }
 };
 
 struct CAttribIconPair
 {
   DWORD Attrib;
   int IconIndex;
-  UString TypeName;
+  // UString TypeName;
+
+  // int Compare(const CAttribIconPair &a) const { return Ext.Compare(a.Ext); }
 };
-
-inline bool operator==(const CExtIconPair &a1, const CExtIconPair &a2) { return a1.Ext == a2.Ext; }
-inline bool operator< (const CExtIconPair &a1, const CExtIconPair &a2) { return a1.Ext < a2.Ext; }
-
-inline bool operator==(const CAttribIconPair &a1, const CAttribIconPair &a2) { return a1.Attrib == a2.Attrib; }
-inline bool operator< (const CAttribIconPair &a1, const CAttribIconPair &a2) { return a1.Attrib < a2.Attrib; }
 
 class CExtToIconMap
 {
-  CObjectVector<CExtIconPair> _extMap;
-  CObjectVector<CAttribIconPair> _attribMap;
 public:
+  CRecordVector<CAttribIconPair> _attribMap;
+  CObjectVector<CExtIconPair> _extMap;
+  int SplitIconIndex;
+  int SplitIconIndex_Defined;
+  
+  CExtToIconMap(): SplitIconIndex_Defined(false) {}
+
   void Clear()
   {
+    SplitIconIndex_Defined = false;
     _extMap.Clear();
     _attribMap.Clear();
   }
-  int GetIconIndex(DWORD attrib, const UString &fileName, UString &typeName);
-  int GetIconIndex(DWORD attrib, const UString &fileName);
+  int GetIconIndex(DWORD attrib, const wchar_t *fileName /* , UString *typeName */);
+  // int GetIconIndex(DWORD attrib, const UString &fileName);
 };
 
 DWORD_PTR GetRealIconIndex(CFSTR path, DWORD attrib, int &iconIndex);

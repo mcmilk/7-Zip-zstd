@@ -2,10 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
+#include "../../../Common/StringConvert.h"
 
-#include "Windows/DLL.h"
-#include "Windows/PropVariant.h"
+#include "../../../Windows/DLL.h"
+#include "../../../Windows/FileName.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "../../PropID.h"
 
@@ -22,9 +23,9 @@
 
 using namespace NWindows;
 
-static const STATPROPSTG kProps[] =
+static const PROPID kProps[] =
 {
-  { NULL, kpidName, VT_BSTR}
+  kpidName
 };
 
 UString RootFolder_GetName_Computer(int &iconIndex)
@@ -34,19 +35,19 @@ UString RootFolder_GetName_Computer(int &iconIndex)
   #else
   iconIndex = GetIconIndexForCSIDL(CSIDL_DRIVES);
   #endif
-  return LangString(IDS_COMPUTER, 0x03020300);
+  return LangString(IDS_COMPUTER);
 }
 
 UString RootFolder_GetName_Network(int &iconIndex)
 {
   iconIndex = GetIconIndexForCSIDL(CSIDL_NETWORK);
-  return LangString(IDS_NETWORK, 0x03020301);
+  return LangString(IDS_NETWORK);
 }
 
 UString RootFolder_GetName_Documents(int &iconIndex)
 {
   iconIndex = GetIconIndexForCSIDL(CSIDL_PERSONAL);
-  return LangString(IDS_DOCUMENTS, 0x03020302); ;
+  return LangString(IDS_DOCUMENTS);
 }
 
 enum
@@ -123,7 +124,7 @@ UString GetMyDocsPath()
       us = GetUnicodeString(s2);
   }
   #endif
-  if (us.Length() > 0 && us.Back() != WCHAR_PATH_SEPARATOR)
+  if (us.Len() > 0 && us.Back() != WCHAR_PATH_SEPARATOR)
     us += WCHAR_PATH_SEPARATOR;
   return us;
 }
@@ -169,9 +170,14 @@ STDMETHODIMP CRootFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolde
   return S_OK;
 }
 
-static bool AreEqualNames(const UString &name1, const UString &name2)
+static bool AreEqualNames(const UString &path, const wchar_t *name)
 {
-  return (name1 == name2 || name1 == (name2 + UString(WCHAR_PATH_SEPARATOR)));
+  unsigned len = MyStringLen(name);
+  if (len > path.Len() || len + 1 < path.Len())
+    return false;
+  if (len + 1 == path.Len() && path[len] != WCHAR_PATH_SEPARATOR)
+    return false;
+  return path.IsPrefixedBy(name);
 }
 
 STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
@@ -208,22 +214,28 @@ STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
     return S_OK;
   }
 
-  if (name2.Length () < 2)
+  if (name2.Len() < 2)
     return E_INVALIDARG;
 
   CMyComPtr<IFolderFolder> subFolder;
   
   #ifndef UNDER_CE
-  if (name2.Left(4) == kVolPrefix)
+  if (name2.IsPrefixedBy(kVolPrefix))
   {
     CFSDrives *folderSpec = new CFSDrives;
     subFolder = folderSpec;
     folderSpec->Init(true);
   }
+  else if (name2 == NFile::NName::kSuperPathPrefix)
+  {
+    CFSDrives *folderSpec = new CFSDrives;
+    subFolder = folderSpec;
+    folderSpec->Init(false, true);
+  }
   else
   #endif
   {
-    if (name2[name2.Length () - 1] != WCHAR_PATH_SEPARATOR)
+    if (name2[name2.Len() - 1] != WCHAR_PATH_SEPARATOR)
       name2 += WCHAR_PATH_SEPARATOR;
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
     subFolder = fsFolderSpec;

@@ -3,9 +3,9 @@
 #ifndef __CODER_MIXER2_H
 #define __CODER_MIXER2_H
 
-#include "../../../Common/MyVector.h"
-#include "../../../Common/Types.h"
 #include "../../../Common/MyCom.h"
+#include "../../../Common/MyVector.h"
+
 #include "../../ICoder.h"
 
 namespace NCoderMixer {
@@ -52,7 +52,7 @@ struct CBindInfo
   {
     numInStreams = 0;
     numOutStreams = 0;
-    for (int i = 0; i < Coders.Size(); i++)
+    FOR_VECTOR (i, Coders)
     {
       const CCoderStreamsInfo &coderStreamsInfo = Coders[i];
       numInStreams += coderStreamsInfo.NumInStreams;
@@ -62,14 +62,14 @@ struct CBindInfo
 
   int FindBinderForInStream(UInt32 inStream) const
   {
-    for (int i = 0; i < BindPairs.Size(); i++)
+    FOR_VECTOR (i, BindPairs)
       if (BindPairs[i].InIndex == inStream)
         return i;
     return -1;
   }
   int FindBinderForOutStream(UInt32 outStream) const
   {
-    for (int i = 0; i < BindPairs.Size(); i++)
+    FOR_VECTOR (i, BindPairs)
       if (BindPairs[i].OutIndex == outStream)
         return i;
     return -1;
@@ -139,6 +139,9 @@ public:
   void CreateReverseBindInfo(NCoderMixer::CBindInfo &destBindInfo);
 };
 
+void SetSizes(const UInt64 **srcSizes, CRecordVector<UInt64> &sizes,
+    CRecordVector<const UInt64 *> &sizePointers, UInt32 numItems);
+
 struct CCoderInfo2
 {
   CMyComPtr<ICompressCoder> Coder;
@@ -151,7 +154,9 @@ struct CCoderInfo2
   CRecordVector<const UInt64 *> InSizePointers;
   CRecordVector<const UInt64 *> OutSizePointers;
 
-  CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams);
+  CCoderInfo2(UInt32 numInStreams, UInt32 numOutStreams):
+      NumInStreams(numInStreams),
+      NumOutStreams(numOutStreams) {}
   void SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes);
 
   HRESULT QueryInterface(REFGUID iid, void** pp) const
@@ -170,5 +175,5 @@ public:
 };
 
 }
-#endif
 
+#endif

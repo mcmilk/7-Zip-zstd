@@ -2,18 +2,53 @@
 
 #include "StdAfx.h"
 
+#include "MyTypes.h"
 #include "UTFConvert.h"
-#include "Types.h"
 
 static const Byte kUtf8Limits[5] = { 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 
-static Bool Utf8_To_Utf16(wchar_t *dest, size_t *destLen, const char *src, size_t srcLen)
+bool CheckUTF8(const char *src)
+{
+  for (;;)
+  {
+    Byte c;
+    unsigned numAdds;
+    c = *src++;
+    if (c == 0)
+      return true;
+
+    if (c < 0x80)
+      continue;
+    if (c < 0xC0)
+      return false;
+    for (numAdds = 1; numAdds < 5; numAdds++)
+      if (c < kUtf8Limits[numAdds])
+        break;
+    UInt32 value = (c - kUtf8Limits[numAdds - 1]);
+
+    do
+    {
+      Byte c2 = *src++;
+      if (c2 < 0x80 || c2 >= 0xC0)
+        return false;
+      value <<= 6;
+      value |= (c2 - 0x80);
+    }
+    while (--numAdds);
+    
+    if (value >= 0x110000)
+      return false;
+  }
+}
+
+
+static Bool Utf8_To_Utf16(wchar_t *dest, size_t *destLen, const char *src, size_t srcLen) throw()
 {
   size_t destPos = 0, srcPos = 0;
   for (;;)
   {
     Byte c;
-    int numAdds;
+    unsigned numAdds;
     if (srcPos == srcLen)
     {
       *destLen = destPos;
@@ -46,7 +81,7 @@ static Bool Utf8_To_Utf16(wchar_t *dest, size_t *destLen, const char *src, size_
       value <<= 6;
       value |= (c2 - 0x80);
     }
-    while (--numAdds != 0);
+    while (--numAdds);
     
     if (value < 0x10000)
     {
@@ -124,11 +159,9 @@ bool ConvertUTF8ToUnicode(const AString &src, UString &dest)
 {
   dest.Empty();
   size_t destLen = 0;
-  Utf8_To_Utf16(NULL, &destLen, src, src.Length());
-  wchar_t *p = dest.GetBuffer((int)destLen);
-  Bool res = Utf8_To_Utf16(p, &destLen, src, src.Length());
-  p[destLen] = 0;
-  dest.ReleaseBuffer();
+  Utf8_To_Utf16(NULL, &destLen, src, src.Len());
+  Bool res = Utf8_To_Utf16(dest.GetBuffer((unsigned)destLen), &destLen, src, src.Len());
+  dest.ReleaseBuffer((unsigned)destLen);
   return res ? true : false;
 }
 
@@ -136,10 +169,8 @@ bool ConvertUnicodeToUTF8(const UString &src, AString &dest)
 {
   dest.Empty();
   size_t destLen = 0;
-  Utf16_To_Utf8(NULL, &destLen, src, src.Length());
-  char *p = dest.GetBuffer((int)destLen);
-  Bool res = Utf16_To_Utf8(p, &destLen, src, src.Length());
-  p[destLen] = 0;
-  dest.ReleaseBuffer();
+  Utf16_To_Utf8(NULL, &destLen, src, src.Len());
+  Bool res = Utf16_To_Utf8(dest.GetBuffer((unsigned)destLen), &destLen, src, src.Len());
+  dest.ReleaseBuffer((unsigned)destLen);
   return res ? true : false;
 }

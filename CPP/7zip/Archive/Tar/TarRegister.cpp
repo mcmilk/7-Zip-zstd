@@ -5,14 +5,22 @@
 #include "../../Common/RegisterArc.h"
 
 #include "TarHandler.h"
-static IInArchive *CreateArc() { return new NArchive::NTar::CHandler; }
-#ifndef EXTRACT_ONLY
-static IOutArchive *CreateArcOut() { return new NArchive::NTar::CHandler; }
-#else
-#define CreateArcOut 0
-#endif
+
+namespace NArchive {
+namespace NTar {
+
+IMP_CreateArcIn
+IMP_CreateArcOut
 
 static CArcInfo g_ArcInfo =
-{ L"tar", L"tar", 0, 0xEE, { 'u', 's', 't', 'a', 'r' }, 5, false, CreateArc, CreateArcOut };
+  { "tar", "tar", 0, 0xEE,
+  5, { 'u', 's', 't', 'a', 'r' },
+  NFileHeader::kUstarMagic_Offset,
+  NArcInfoFlags::kStartOpen |
+  NArcInfoFlags::kSymLinks |
+  NArcInfoFlags::kHardLinks,
+  REF_CreateArc_Pair, IsArc_Tar };
 
 REGISTER_ARC(Tar)
+
+}}

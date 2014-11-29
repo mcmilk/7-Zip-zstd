@@ -1,6 +1,11 @@
-#include <winnt.h>
-#include <WinUser.h>
+#include <windows.h>
+
+// #include <winnt.h>
+// #include <WinUser.h>
+
+// for Windows CE:
 #include <CommCtrl.h>
+
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
@@ -25,6 +30,10 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #undef gSize
 #undef marg2
 #undef marg3
+
+#undef MY_DIALOG
+#undef MY_RESIZE_DIALOG
+#undef MY_PAGE
 
 #define m 8
 #define bxs 64
@@ -54,8 +63,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 #define SMALL_PAGE_SIZE_X 120
 
-#define MY_DIALOG         DIALOG 0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
-#define MY_RESIZE_DIALOG  DIALOG 0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
+// #define MY_DIALOG         DIALOG 0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
+// #define MY_RESIZE_DIALOG  DIALOG 0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
 #define MY_PAGE           DIALOG 0, 0, xs, ys  MY_PAGE_STYLE  MY_FONT
 
 #define OK_CANCEL \
@@ -68,3 +77,5 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #define MY_COMBO_WITH_EDIT  CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP 
 
 #define MY_CHECKBOX "Button", BS_AUTOCHECKBOX | WS_TABSTOP
+
+#define MY_TEXT_NOPREFIX 8, SS_NOPREFIX

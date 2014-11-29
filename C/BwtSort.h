@@ -1,14 +1,12 @@
 /* BwtSort.h -- BWT block sorting
-2009-02-07 : Igor Pavlov : Public domain */
+2013-01-18 : Igor Pavlov : Public domain */
 
 #ifndef __BWT_SORT_H
 #define __BWT_SORT_H
 
-#include "Types.h"
+#include "7zTypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* use BLOCK_SORT_EXTERNAL_FLAGS if blockSize can be > 1M */
 /* #define BLOCK_SORT_EXTERNAL_FLAGS */
@@ -23,8 +21,6 @@ extern "C" {
 
 UInt32 BlockSort(UInt32 *indices, const Byte *data, UInt32 blockSize);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif

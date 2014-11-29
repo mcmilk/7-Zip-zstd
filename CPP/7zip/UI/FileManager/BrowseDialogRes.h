@@ -1,4 +1,9 @@
-#define IDD_DIALOG_BROWSE             509
-#define IDC_BROWSE_LIST               1000
-#define IDC_BROWSE_PATH               1001
-#define IDC_BROWSE_PARENT             1002
+#define IDD_BROWSE  95
+
+#define IDL_BROWSE         100
+#define IDT_BROWSE_FOLDER  101
+#define IDE_BROWSE_PATH    102
+#define IDC_BROWSE_FILTER  103
+
+#define IDB_BROWSE_PARENT     110
+#define IDB_BROWSE_CREATE_DIR 112

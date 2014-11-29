@@ -1,9 +1,10 @@
-// Udf/Handler.h
+// UdfHandler.h
 
 #ifndef __UDF_HANDLER_H
 #define __UDF_HANDLER_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
+
 #include "../IArchive.h"
 
 #include "UdfIn.h"
@@ -13,9 +14,9 @@ namespace NUdf {
 
 struct CRef2
 {
-  int Vol;
-  int Fs;
-  int Ref;
+  unsigned Vol;
+  unsigned Fs;
+  unsigned Ref;
 };
 
 class CHandler:

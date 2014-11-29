@@ -1,10 +1,11 @@
 PROG = 7zra.dll
 DEF_FILE = ../../Archive/Archive2.def
-CFLAGS = $(CFLAGS) -I ../../../ \
+CFLAGS = $(CFLAGS) \
   -D_NO_CRYPTO
 
 COMMON_OBJS = \
   $O\CRC.obj \
+  $O\CrcReg.obj \
   $O\IntToString.obj \
   $O\NewHandler.obj \
   $O\MyString.obj \
@@ -17,6 +18,7 @@ WIN_OBJS = \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
+  $O\FileName.obj \
   $O\PropVariant.obj \
   $O\Synchronization.obj \
   $O\System.obj \
@@ -33,9 +35,11 @@ WIN_OBJS = \
   $O\MethodProps.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
+  $O\PropId.obj \
   $O\StreamBinder.obj \
   $O\StreamObjects.obj \
   $O\StreamUtils.obj \
+  $O\UniqBlocks.obj \
   $O\VirtThread.obj \
 
 AR_OBJS = \
@@ -109,41 +113,4 @@ C_OBJS = \
 
 !include "../../Crc.mak"
 
-OBJS = \
-  $O\StdAfx.obj \
-  $(CONSOLE_OBJS) \
-  $(COMMON_OBJS) \
-  $(WIN_OBJS) \
-  $(7ZIP_COMMON_OBJS) \
-  $(AR_OBJS) \
-  $(AR_COMMON_OBJS) \
-  $(7Z_OBJS) \
-  $(COMPRESS_OBJS) \
-  $(C_OBJS) \
-  $(ASM_OBJS) \
-  $O\resource.res
-
-
-!include "../../../Build.mak"
-
-$(COMMON_OBJS): ../../../Common/$(*B).cpp
-	$(COMPL)
-$(WIN_OBJS): ../../../Windows/$(*B).cpp
-	$(COMPL)
-$(7ZIP_COMMON_OBJS): ../../Common/$(*B).cpp
-	$(COMPL)
-$(AR_OBJS): ../../Archive/$(*B).cpp
-	$(COMPL)
-$(AR_COMMON_OBJS): ../../Archive/Common/$(*B).cpp
-	$(COMPL)
-
-$(7Z_OBJS): ../../Archive/7z/$(*B).cpp
-	$(COMPL)
-
-$(COMPRESS_OBJS): ../../Compress/$(*B).cpp
-	$(COMPL_O2)
-
-$(C_OBJS): ../../../../C/$(*B).c
-	$(COMPL_O2)
-
-!include "../../Asm.mak"
+!include "../../7zip.mak"

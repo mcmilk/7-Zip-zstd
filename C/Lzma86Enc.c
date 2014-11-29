@@ -99,7 +99,7 @@ int Lzma86_Encode(Byte *dest, size_t *destLen, const Byte *src, size_t srcLen,
         }
       }
     }
-    dest[0] = (bestIsFiltered ? 1 : 0);
+    dest[0] = (Byte)(bestIsFiltered ? 1 : 0);
     *destLen = LZMA86_HEADER_SIZE + minSize;
   }
   if (useFilter)

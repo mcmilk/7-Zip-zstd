@@ -1,6 +1,8 @@
 /* Xz.c - Xz
 2009-04-15 : Igor Pavlov : Public domain */
 
+#include "Precomp.h"
+
 #include "7zCrc.h"
 #include "CpuArch.h"
 #include "Xz.h"

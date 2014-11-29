@@ -3,13 +3,12 @@
 #ifndef __ARCHIVE_RAR_ITEM_H
 #define __ARCHIVE_RAR_ITEM_H
 
-#include "Common/Types.h"
-#include "Common/MyString.h"
+#include "../../../Common/StringConvert.h"
 
 #include "RarHeader.h"
 
-namespace NArchive{
-namespace NRar{
+namespace NArchive {
+namespace NRar {
 
 struct CRarTime
 {
@@ -56,18 +55,35 @@ struct CItem
   UInt32 GetDictSize() const { return (Flags >> NHeader::NFile::kDictBitStart) & NHeader::NFile::kDictMask; }
   bool IsDir() const;
   bool IgnoreItem() const;
-  UInt32 GetWinAttributes() const;
-  
-  CItem(): CTimeDefined(false), ATimeDefined(false) {}
-};
+  UInt32 GetWinAttrib() const;
 
-class CItemEx: public CItem
-{
-public:
   UInt64 Position;
-  UInt16 MainPartSize;
+  unsigned MainPartSize;
   UInt16 CommentSize;
   UInt16 AlignSize;
+
+  // int BaseFileIndex;
+  // bool IsAltStream;
+
+  UString GetName() const
+  {
+    if (( /* IsAltStream || */ HasUnicodeName()) && !UnicodeName.IsEmpty())
+      return UnicodeName;
+    return MultiByteToUnicodeString(Name, CP_OEMCP);
+  }
+
+  void Clear()
+  {
+    CTimeDefined = false;
+    ATimeDefined = false;
+    Name.Empty();
+    UnicodeName.Empty();
+    // IsAltStream = false;
+    // BaseFileIndex = -1;
+  }
+
+  CItem() { Clear(); }
+
   UInt64 GetFullSize()  const { return MainPartSize + CommentSize + AlignSize + PackSize; };
   //  DWORD GetHeaderWithCommentSize()  const { return MainPartSize + CommentSize; };
   UInt64 GetCommentPosition() const { return Position + MainPartSize; };

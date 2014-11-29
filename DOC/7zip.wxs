@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "9" ?>
-<?define VerMinor = "22" ?>
+<?define VerMinor = "34" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -206,16 +206,16 @@
                Value="Apartment" />
           </Component>
 
-          <Component Id="CmdLine" Guid="$(var.CompCmdLine)" DiskId="1" Win64="$(var.Is64)">
-            <File Id="_7z.exe" Name="7z.exe" />
-          </Component>
-
           <Component Id="Gui" Guid="$(var.CompGui)" DiskId="1" Win64="$(var.Is64)">
             <File Id="_7zG.exe" Name="7zG.exe" />
           </Component>
 
           <Component Id="Formats" Guid="$(var.CompFormats)" DiskId="1" Win64="$(var.Is64)">
               <File Id="_7z.dll" Name="7z.dll" />
+          </Component>
+
+          <Component Id="CmdLine" Guid="$(var.CompCmdLine)" DiskId="1" Win64="$(var.Is64)">
+            <File Id="_7z.exe" Name="7z.exe" />
           </Component>
 
           <Component Id="GuiSfx" Guid="$(var.CompGuiSfx)" DiskId="1" Win64="$(var.Is64)">
@@ -244,6 +244,7 @@
             <Component Id="Lang" Guid="$(var.CompLang)" DiskId="1" Win64="$(var.Is64)">
               <File Id="en.ttt" Name="en.ttt" />
               <File Id="af.txt" Name="af.txt" />
+              <File Id="an.txt" Name="an.txt" />
               <File Id="ar.txt" Name="ar.txt" />
               <File Id="ast.txt" Name="ast.txt" />
               <File Id="az.txt" Name="az.txt" />
@@ -269,6 +270,7 @@
               <File Id="fr.txt" Name="fr.txt" />
               <File Id="fur.txt" Name="fur.txt" />
               <File Id="fy.txt" Name="fy.txt" />
+              <File Id="ga.txt" Name="ga.txt" />
               <File Id="gl.txt" Name="gl.txt" />
               <File Id="gu.txt" Name="gu.txt" />
               <File Id="he.txt" Name="he.txt" />
@@ -282,6 +284,7 @@
               <File Id="it.txt" Name="it.txt" />
               <File Id="ja.txt" Name="ja.txt" />
               <File Id="ka.txt" Name="ka.txt" />
+              <File Id="kaa.txt" Name="kaa.txt" />
               <File Id="kk.txt" Name="kk.txt" />
               <File Id="ko.txt" Name="ko.txt" />
               <File Id="ku.txt" Name="ku.txt" />
@@ -292,6 +295,8 @@
               <File Id="lv.txt" Name="lv.txt" />
               <File Id="mk.txt" Name="mk.txt" />
               <File Id="mn.txt" Name="mn.txt" />
+              <File Id="mng.txt" Name="mng.txt" />
+              <File Id="mng2.txt" Name="mng2.txt" />
               <File Id="mr.txt" Name="mr.txt" />
               <File Id="ms.txt" Name="ms.txt" />
               <File Id="ne.txt" Name="ne.txt" />

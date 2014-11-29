@@ -10,12 +10,12 @@ using namespace NWindows;
 
 bool StringToBool(const UString &s, bool &res)
 {
-  if (s.IsEmpty() || s.CompareNoCase(L"ON") == 0 || s.Compare(L"+") == 0)
+  if (s.IsEmpty() || s == L"+" || StringsAreEqualNoCase_Ascii(s, "ON"))
   {
     res = true;
     return true;
   }
-  if (s.CompareNoCase(L"OFF") == 0 || s.Compare(L"-") == 0)
+  if (s == L"-" || StringsAreEqualNoCase_Ascii(s, "OFF"))
   {
     res = false;
     return true;
@@ -34,18 +34,12 @@ HRESULT PROPVARIANT_to_bool(const PROPVARIANT &prop, bool &dest)
   return E_INVALIDARG;
 }
 
-int ParseStringToUInt32(const UString &srcString, UInt32 &number)
+unsigned ParseStringToUInt32(const UString &srcString, UInt32 &number)
 {
   const wchar_t *start = srcString;
   const wchar_t *end;
-  UInt64 number64 = ConvertStringToUInt64(start, &end);
-  if (number64 > (UInt32)0xFFFFFFFF)
-  {
-    number = 0;
-    return 0;
-  }
-  number = (UInt32)number64;
-  return (int)(end - start);
+  number = ConvertStringToUInt32(start, &end);
+  return (unsigned)(end - start);
 }
 
 HRESULT ParsePropToUInt32(const UString &name, const PROPVARIANT &prop, UInt32 &resValue)
@@ -66,7 +60,7 @@ HRESULT ParsePropToUInt32(const UString &name, const PROPVARIANT &prop, UInt32 &
   if (name.IsEmpty())
     return S_OK;
   UInt32 v;
-  if (ParseStringToUInt32(name, v) != name.Length())
+  if (ParseStringToUInt32(name, v) != name.Len())
     return E_INVALIDARG;
   resValue = v;
   return S_OK;
@@ -96,36 +90,33 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 default
   return ParsePropToUInt32(name, prop, numThreads);
 }
 
-static HRESULT StringToDictSize(const UString &srcStringSpec, UInt32 &dicSize)
+static HRESULT StringToDictSize(const UString &s, UInt32 &dicSize)
 {
-  UString srcString = srcStringSpec;
-  srcString.MakeUpper();
-  const wchar_t *start = srcString;
   const wchar_t *end;
-  UInt64 number = ConvertStringToUInt64(start, &end);
-  int numDigits = (int)(end - start);
-  if (numDigits == 0 || srcString.Length() > numDigits + 1)
+  UInt32 number = ConvertStringToUInt32(s, &end);
+  unsigned numDigits = (unsigned)(end - s);
+  if (numDigits == 0 || s.Len() > numDigits + 1)
     return E_INVALIDARG;
   const unsigned kLogDictSizeLimit = 32;
-  if (srcString.Length() == numDigits)
+  if (s.Len() == numDigits)
   {
     if (number >= kLogDictSizeLimit)
       return E_INVALIDARG;
-    dicSize = (UInt32)1 << (int)number;
+    dicSize = (UInt32)1 << (unsigned)number;
     return S_OK;
   }
   unsigned numBits;
-  switch (srcString[numDigits])
+  switch (MyCharLower_Ascii(s[numDigits]))
   {
-    case 'B': numBits =  0; break;
-    case 'K': numBits = 10; break;
-    case 'M': numBits = 20; break;
-    case 'G': numBits = 30; break;
+    case 'b': dicSize = number; return S_OK;
+    case 'k': numBits = 10; break;
+    case 'm': numBits = 20; break;
+    case 'g': numBits = 30; break;
     default: return E_INVALIDARG;
   }
-  if (number >= ((UInt64)1 << (kLogDictSizeLimit - numBits)))
+  if (number >= ((UInt32)1 << (kLogDictSizeLimit - numBits)))
     return E_INVALIDARG;
-  dicSize = (UInt32)number << numBits;
+  dicSize = number << numBits;
   return S_OK;
 }
 
@@ -191,7 +182,7 @@ void CCoderProps::AddProp(const CProp &prop)
 HRESULT CProps::SetCoderProps(ICompressSetCoderProperties *scp, const UInt64 *dataSizeReduce) const
 {
   CCoderProps coderProps(Props.Size() + (dataSizeReduce ? 1 : 0));
-  for (int i = 0; i < Props.Size(); i++)
+  FOR_VECTOR (i, Props)
     coderProps.AddProp(Props[i]);
   if (dataSizeReduce)
   {
@@ -226,34 +217,34 @@ int CMethodProps::GetLevel() const
 struct CNameToPropID
 {
   VARTYPE VarType;
-  const wchar_t *Name;
+  const char *Name;
 };
 
 static const CNameToPropID g_NameToPropID[] =
 {
-  { VT_UI4, L"" },
-  { VT_UI4, L"d" },
-  { VT_UI4, L"mem" },
-  { VT_UI4, L"o" },
-  { VT_UI4, L"c" },
-  { VT_UI4, L"pb" },
-  { VT_UI4, L"lc" },
-  { VT_UI4, L"lp" },
-  { VT_UI4, L"fb" },
-  { VT_BSTR, L"mf" },
-  { VT_UI4, L"mc" },
-  { VT_UI4, L"pass" },
-  { VT_UI4, L"a" },
-  { VT_UI4, L"mt" },
-  { VT_BOOL, L"eos" },
-  { VT_UI4, L"x" },
-  { VT_UI4, L"reduceSize" }
+  { VT_UI4, "" },
+  { VT_UI4, "d" },
+  { VT_UI4, "mem" },
+  { VT_UI4, "o" },
+  { VT_UI4, "c" },
+  { VT_UI4, "pb" },
+  { VT_UI4, "lc" },
+  { VT_UI4, "lp" },
+  { VT_UI4, "fb" },
+  { VT_BSTR, "mf" },
+  { VT_UI4, "mc" },
+  { VT_UI4, "pass" },
+  { VT_UI4, "a" },
+  { VT_UI4, "mt" },
+  { VT_BOOL, "eos" },
+  { VT_UI4, "x" },
+  { VT_UI4, "reduceSize" }
 };
 
 static int FindPropIdExact(const UString &name)
 {
-  for (unsigned i = 0; i < sizeof(g_NameToPropID) / sizeof(g_NameToPropID[0]); i++)
-    if (name.CompareNoCase(g_NameToPropID[i].Name) == 0)
+  for (unsigned i = 0; i < ARRAY_SIZE(g_NameToPropID); i++)
+    if (StringsAreEqualNoCase_Ascii(name, g_NameToPropID[i].Name))
       return i;
   return -1;
 }
@@ -285,7 +276,7 @@ static void SplitParams(const UString &srcString, UStringVector &subStrings)
 {
   subStrings.Clear();
   UString s;
-  int len = srcString.Length();
+  int len = srcString.Len();
   if (len == 0)
     return;
   for (int i = 0; i < len; i++)
@@ -307,19 +298,19 @@ static void SplitParam(const UString &param, UString &name, UString &value)
   int eqPos = param.Find(L'=');
   if (eqPos >= 0)
   {
-    name = param.Left(eqPos);
-    value = param.Mid(eqPos + 1);
+    name.SetFrom(param, eqPos);
+    value = param.Ptr(eqPos + 1);
     return;
   }
-  int i;
-  for (i = 0; i < param.Length(); i++)
+  unsigned i;
+  for (i = 0; i < param.Len(); i++)
   {
     wchar_t c = param[i];
     if (c >= L'0' && c <= L'9')
       break;
   }
-  name = param.Left(i);
-  value = param.Mid(i);
+  name.SetFrom(param, i);
+  value = param.Ptr(i);
 }
 
 static bool IsLogSizeProp(PROPID propid)
@@ -365,7 +356,7 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
     else if (!value.IsEmpty())
     {
       UInt32 number;
-      if (ParseStringToUInt32(value, number) == value.Length())
+      if (ParseStringToUInt32(value, number) == value.Len())
         propValue = number;
       else
         propValue = value;
@@ -381,7 +372,7 @@ HRESULT CMethodProps::ParseParamsFromString(const UString &srcString)
 {
   UStringVector params;
   SplitParams(srcString, params);
-  for (int i = 0; i < params.Size(); i++)
+  FOR_VECTOR (i, params)
   {
     const UString &param = params[i];
     UString name, value;
@@ -393,7 +384,7 @@ HRESULT CMethodProps::ParseParamsFromString(const UString &srcString)
 
 HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const PROPVARIANT &value)
 {
-  if (realName.Length() == 0)
+  if (realName.Len() == 0)
   {
     // [empty]=method
     return E_INVALIDARG;
@@ -429,20 +420,22 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
   return S_OK;
 }
 
+HRESULT COneMethodInfo::ParseMethodFromString(const UString &s)
+{
+  int splitPos = s.Find(':');
+  MethodName = s;
+  if (splitPos < 0)
+    return S_OK;
+  MethodName.DeleteFrom(splitPos);
+  return ParseParamsFromString(s.Ptr(splitPos + 1));
+}
+
 HRESULT COneMethodInfo::ParseMethodFromPROPVARIANT(const UString &realName, const PROPVARIANT &value)
 {
-  if (!realName.IsEmpty() && realName.CompareNoCase(L"m") != 0)
+  if (!realName.IsEmpty() && !StringsAreEqualNoCase_Ascii(realName, "m"))
     return ParseParamsFromPROPVARIANT(realName, value);
   // -m{N}=method
   if (value.vt != VT_BSTR)
     return E_INVALIDARG;
-  const UString s = value.bstrVal;
-  int splitPos = s.Find(':');
-  if (splitPos < 0)
-  {
-    MethodName = s;
-    return S_OK;
-  }
-  MethodName = s.Left(splitPos);
-  return ParseParamsFromString(s.Mid(splitPos + 1));
+  return ParseMethodFromString(value.bstrVal);
 }

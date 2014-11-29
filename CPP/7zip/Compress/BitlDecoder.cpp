@@ -12,9 +12,9 @@ struct CInverterTableInitializer
 {
   CInverterTableInitializer()
   {
-    for (int i = 0; i < 256; i++)
+    for (unsigned i = 0; i < 256; i++)
     {
-      int x = ((i & 0x55) << 1) | ((i & 0xAA) >> 1);
+      unsigned x = ((i & 0x55) << 1) | ((i & 0xAA) >> 1);
       x = ((x & 0x33) << 2) | ((x & 0xCC) >> 2);
       kInvertTable[i] = (Byte)(((x & 0x0F) << 4) | ((x & 0xF0) >> 4));
     }

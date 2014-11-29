@@ -1,4 +1,4 @@
-// Zip/Update.h
+// ZipUpdate.h
 
 #ifndef __ZIP_UPDATE_H
 #define __ZIP_UPDATE_H
@@ -18,28 +18,29 @@ struct CUpdateRange
 {
   UInt64 Position;
   UInt64 Size;
-  CUpdateRange() {};
+  
+  // CUpdateRange() {};
   CUpdateRange(UInt64 position, UInt64 size): Position(position), Size(size) {};
 };
 
 struct CUpdateItem
 {
   bool NewData;
-  bool NewProperties;
+  bool NewProps;
   bool IsDir;
   bool NtfsTimeIsDefined;
   bool IsUtf8;
-  int IndexInArchive;
+  int IndexInArc;
   int IndexInClient;
-  UInt32 Attributes;
+  UInt32 Attrib;
   UInt32 Time;
   UInt64 Size;
   AString Name;
   // bool Commented;
   // CUpdateRange CommentRange;
-  FILETIME NtfsMTime;
-  FILETIME NtfsATime;
-  FILETIME NtfsCTime;
+  FILETIME Ntfs_MTime;
+  FILETIME Ntfs_ATime;
+  FILETIME Ntfs_CTime;
 
   CUpdateItem(): NtfsTimeIsDefined(false), IsUtf8(false), Size(0) {}
 };
@@ -49,7 +50,7 @@ HRESULT Update(
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
     ISequentialOutStream *seqOutStream,
-    CInArchive *inArchive,
+    CInArchive *inArchive, bool removeSfx,
     CCompressionMethodMode *compressionMethodMode,
     IArchiveUpdateCallback *updateCallback);
 

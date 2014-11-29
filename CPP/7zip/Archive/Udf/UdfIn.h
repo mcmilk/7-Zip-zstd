@@ -3,11 +3,11 @@
 #ifndef __ARCHIVE_UDF_IN_H
 #define __ARCHIVE_UDF_IN_H
 
-#include "Common/MyCom.h"
-#include "Common/IntToString.h"
-#include "Common/Buffer.h"
-#include "Common/MyString.h"
-#include "Common/MyMap.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/MyBuffer.h"
+#include "../../../Common/MyCom.h"
+#include "../../../Common/MyMap.h"
+#include "../../../Common/MyString.h"
 
 #include "../../IStream.h"
 
@@ -22,6 +22,7 @@ namespace NUdf {
 struct CDString32
 {
   Byte Data[32];
+  
   void Parse(const Byte *buf);
   // UString GetString() const;
 };
@@ -30,13 +31,15 @@ struct CDString32
 struct CDString128
 {
   Byte Data[128];
-  void Parse(const Byte *buf);
+  
+  void Parse(const Byte *buf) { memcpy(Data, buf, sizeof(Data)); }
   UString GetString() const;
 };
 
 struct CDString
 {
   CByteBuffer Data;
+  
   void Parse(const Byte *p, unsigned size);
   UString GetString() const;
 };
@@ -52,12 +55,12 @@ struct CTime
   bool IsLocal() const { return GetType() == 1; }
   int GetMinutesOffset() const
   {
-    int t = (Data[0] | ((UInt16)Data[1] << 8)) & 0xFFF;
+    int t = (Data[0] | ((unsigned)Data[1] << 8)) & 0xFFF;
     if ((t >> 11) != 0)
       t -= (1 << 12);
     return (t > (60 * 24) || t < -(60 * 24)) ? 0 : t;
   }
-  unsigned GetYear() const { return (Data[2] | ((UInt16)Data[3] << 8)); }
+  unsigned GetYear() const { return (Data[2] | ((unsigned)Data[3] << 8)); }
   void Parse(const Byte *buf);
 };
 
@@ -208,8 +211,9 @@ struct CFile
   // CByteBuffer ImplUse;
   CDString Id;
 
-  CFile(): /* FileVersion(0), FileCharacteristics(0), */ ItemIndex(-1) {}
   int ItemIndex;
+
+  CFile(): /* FileVersion(0), FileCharacteristics(0), */ ItemIndex(-1) {}
   UString GetName() const { return Id.GetString(); }
 };
 
@@ -217,7 +221,7 @@ struct CMyExtent
 {
   UInt32 Pos;
   UInt32 Len;
-  int PartitionRef;
+  unsigned PartitionRef;
   
   UInt32 GetLen() const { return Len & 0x3FFFFFFF; }
   UInt32 GetType() const { return Len >> 30; }
@@ -254,7 +258,7 @@ struct CItem
 
   bool IsRecAndAlloc() const
   {
-    for (int i = 0; i < Extents.Size(); i++)
+    FOR_VECTOR (i, Extents)
       if (!Extents[i].IsRecAndAlloc())
         return false;
     return true;
@@ -263,9 +267,9 @@ struct CItem
   UInt64 GetChunksSumSize() const
   {
     if (IsInline)
-      return InlineData.GetCapacity();
+      return InlineData.Size();
     UInt64 size = 0;
-    for (int i = 0; i < Extents.Size(); i++)
+    FOR_VECTOR (i, Extents)
       size += Extents[i].GetLen();
     return size;
   }
@@ -331,7 +335,7 @@ struct CProgressVirt
 
 class CInArchive
 {
-  CMyComPtr<IInStream> _stream;
+  IInStream *_stream;
   CProgressVirt *_progress;
 
   HRESULT Read(int volIndex, int partitionRef, UInt32 blockPos, UInt32 len, Byte *buf);
@@ -351,17 +355,29 @@ class CInArchive
   UInt32 _numExtents;
   UInt64 _inlineExtentsSize;
   bool CheckExtent(int volIndex, int partitionRef, UInt32 blockPos, UInt32 len) const;
-public:
-  HRESULT Open(IInStream *inStream, CProgressVirt *progress);
-  void Clear();
 
+public:
   CObjectVector<CPartition> Partitions;
   CObjectVector<CLogVol> LogVols;
 
   CObjectVector<CItem> Items;
   CObjectVector<CFile> Files;
 
-  int SecLogSize;
+  unsigned SecLogSize;
+  UInt64 PhySize;
+  UInt64 FileSize;
+
+  bool IsArc;
+  bool Unsupported;
+  bool UnexpectedEnd;
+
+  void UpdatePhySize(UInt64 val)
+  {
+    if (PhySize < val)
+      PhySize = val;
+  }
+  HRESULT Open(IInStream *inStream, CProgressVirt *progress);
+  void Clear();
 
   UString GetComment() const;
   UString GetItemPath(int volIndex, int fsIndex, int refIndex,
@@ -369,6 +385,8 @@ public:
 
   bool CheckItemExtents(int volIndex, const CItem &item) const;
 };
+
+API_FUNC_IsArc IsArc_Udf(const Byte *p, size_t size);
 
 }}
   

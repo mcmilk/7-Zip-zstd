@@ -47,7 +47,7 @@ HRESULT CCoderMixer2ST::GetInStream(
     {
       seqInStream = inStreams[i];
       *inStreamRes = seqInStream.Detach();
-      return  S_OK;
+      return S_OK;
     }
   int binderIndex = _bindInfo.FindBinderForInStream(streamIndex);
   if (binderIndex < 0)
@@ -96,7 +96,7 @@ HRESULT CCoderMixer2ST::GetOutStream(
     {
       seqOutStream = outStreams[i];
       *outStreamRes = seqOutStream.Detach();
-      return  S_OK;
+      return S_OK;
     }
   int binderIndex = _bindInfo.FindBinderForOutStream(streamIndex);
   if (binderIndex < 0)

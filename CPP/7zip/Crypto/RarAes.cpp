@@ -10,6 +10,7 @@ namespace NCrypto {
 namespace NRar29 {
 
 CDecoder::CDecoder():
+  CAesCbcDecoder(kRarAesKeySize),
   _thereIsSalt(false),
   _needCalculate(true),
   _rar350Mode(false)
@@ -55,7 +56,7 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
   if (size > kMaxPasswordLength)
     size = kMaxPasswordLength;
   bool same = false;
-  if (size == buffer.GetCapacity())
+  if (size == buffer.Size())
   {
     same = true;
     for (UInt32 i = 0; i < size; i++)
@@ -67,17 +68,16 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
   }
   if (!_needCalculate && !same)
     _needCalculate = true;
-  buffer.SetCapacity(size);
-  memcpy(buffer, data, size);
+  buffer.CopyFrom(data, (size_t)size);
   return S_OK;
 }
 
 STDMETHODIMP CDecoder::Init()
 {
   Calculate();
-  SetKey(aesKey, kRarAesKeySize);
-  AesCbc_Init(_aes + _offset, _aesInit);
-  return S_OK;
+  RINOK(SetKey(aesKey, kRarAesKeySize));
+  RINOK(SetInitVector(_aesInit, AES_BLOCK_SIZE));
+  return CAesCbcCoder::Init();
 }
 
 void CDecoder::Calculate()
@@ -88,9 +88,9 @@ void CDecoder::Calculate()
     
     Byte rawPassword[kMaxPasswordLength + kSaltSize];
     
-    memcpy(rawPassword, buffer, buffer.GetCapacity());
+    memcpy(rawPassword, buffer, buffer.Size());
     
-    size_t rawLength = buffer.GetCapacity();
+    size_t rawLength = buffer.Size();
     
     if (_thereIsSalt)
     {

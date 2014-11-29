@@ -1,3 +1,3 @@
-#define IDD_DIALOG_PROGRESS          500
+#define IDD_PROGRESS  97
 
-#define IDC_PROGRESS1                1000
+#define IDC_PROGRESS1  100

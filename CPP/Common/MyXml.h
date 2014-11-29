@@ -1,7 +1,7 @@
 // MyXml.h
 
-#ifndef __MYXML_H
-#define __MYXML_H
+#ifndef __MY_XML_H
+#define __MY_XML_H
 
 #include "MyString.h"
 
@@ -13,28 +13,31 @@ struct CXmlProp
 
 class CXmlItem
 {
-  bool ParseItems(const AString &s, int &pos, int numAllowedLevels);
-
 public:
   AString Name;
   bool IsTag;
   CObjectVector<CXmlProp> Props;
   CObjectVector<CXmlItem> SubItems;
-
-  bool ParseItem(const AString &s, int &pos, int numAllowedLevels);
   
-  bool IsTagged(const AString &tag) const;
-  int FindProperty(const AString &propName) const;
-  AString GetPropertyValue(const AString &propName) const;
+  const char * ParseItem(const char *s, int numAllowedLevels);
+
+  bool IsTagged(const AString &tag) const throw();
+  int FindProp(const AString &propName) const throw();
+  AString GetPropVal(const AString &propName) const;
   AString GetSubString() const;
-  int FindSubTag(const AString &tag) const;
+  const AString * GetSubStringPtr() const throw();
+  int FindSubTag(const AString &tag) const throw();
   AString GetSubStringForTag(const AString &tag) const;
+
+  void AppendTo(AString &s) const;
 };
 
 struct CXml
 {
   CXmlItem Root;
+
   bool Parse(const AString &s);
+  void AppendTo(AString &s) const;
 };
 
 #endif

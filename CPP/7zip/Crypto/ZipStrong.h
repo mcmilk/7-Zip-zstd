@@ -3,7 +3,7 @@
 #ifndef __CRYPTO_ZIP_STRONG_H
 #define __CRYPTO_ZIP_STRONG_H
 
-#include "Common/Buffer.h"
+#include "../../Common/MyBuffer.h"
 
 #include "../IPassword.h"
 

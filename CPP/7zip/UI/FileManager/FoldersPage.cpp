@@ -11,36 +11,36 @@
 
 using namespace NWindows;
 
-static CIDLangPair kIDLangPairs[] =
+static const UInt32 kLangIDs[] =
 {
-  { IDC_FOLDERS_STATIC_WORKING_FOLDER,    0x01000210 },
-  { IDC_FOLDERS_WORK_RADIO_SYSTEM,        0x01000211 },
-  { IDC_FOLDERS_WORK_RADIO_CURRENT,       0x01000212 },
-  { IDC_FOLDERS_WORK_RADIO_SPECIFIED,     0x01000213 },
-  { IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE, 0x01000214 }
+  IDT_FOLDERS_WORKING_FOLDER,
+  IDR_FOLDERS_WORK_SYSTEM,
+  IDR_FOLDERS_WORK_CURRENT,
+  IDR_FOLDERS_WORK_SPECIFIED,
+  IDX_FOLDERS_WORK_FOR_REMOVABLE
 };
 
 static const int kWorkModeButtons[] =
 {
-  IDC_FOLDERS_WORK_RADIO_SYSTEM,
-  IDC_FOLDERS_WORK_RADIO_CURRENT,
-  IDC_FOLDERS_WORK_RADIO_SPECIFIED
+  IDR_FOLDERS_WORK_SYSTEM,
+  IDR_FOLDERS_WORK_CURRENT,
+  IDR_FOLDERS_WORK_SPECIFIED
 };
 
-static const int kNumWorkModeButtons = sizeof(kWorkModeButtons) / sizeof(kWorkModeButtons[0]);
+static const int kNumWorkModeButtons = ARRAY_SIZE(kWorkModeButtons);
  
 bool CFoldersPage::OnInit()
 {
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
   m_WorkDirInfo.Load();
 
-  CheckButton(IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE, m_WorkDirInfo.ForRemovableOnly);
+  CheckButton(IDX_FOLDERS_WORK_FOR_REMOVABLE, m_WorkDirInfo.ForRemovableOnly);
   
   CheckRadioButton(kWorkModeButtons[0], kWorkModeButtons[kNumWorkModeButtons - 1],
       kWorkModeButtons[m_WorkDirInfo.Mode]);
 
-  m_WorkPath.Init(*this, IDC_FOLDERS_WORK_EDIT_PATH);
-  m_ButtonSetWorkPath.Init(*this, IDC_FOLDERS_WORK_BUTTON_PATH);
+  m_WorkPath.Init(*this, IDE_FOLDERS_WORK_PATH);
+  m_ButtonSetWorkPath.Init(*this, IDB_FOLDERS_WORK_PATH);
 
   m_WorkPath.SetText(fs2us(m_WorkDirInfo.Path));
 
@@ -69,7 +69,7 @@ void CFoldersPage::GetWorkDir(NWorkDir::CInfo &workDirInfo)
   UString s;
   m_WorkPath.GetText(s);
   workDirInfo.Path = us2fs(s);
-  workDirInfo.ForRemovableOnly = IsButtonCheckedBool(IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE);
+  workDirInfo.ForRemovableOnly = IsButtonCheckedBool(IDX_FOLDERS_WORK_FOR_REMOVABLE);
   workDirInfo.Mode = NWorkDir::NMode::EEnum(GetWorkMode());
 }
 
@@ -106,10 +106,10 @@ bool CFoldersPage::OnButtonClicked(int buttonID, HWND buttonHWND)
     }
   switch(buttonID)
   {
-    case IDC_FOLDERS_WORK_BUTTON_PATH:
+    case IDB_FOLDERS_WORK_PATH:
       OnFoldersWorkButtonPath();
       break;
-    case IDC_FOLDERS_WORK_CHECK_FOR_REMOVABLE:
+    case IDX_FOLDERS_WORK_FOR_REMOVABLE:
       break;
     default:
       return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
@@ -120,7 +120,7 @@ bool CFoldersPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 bool CFoldersPage::OnCommand(int code, int itemID, LPARAM lParam)
 {
-  if (code == EN_CHANGE && itemID == IDC_FOLDERS_WORK_EDIT_PATH)
+  if (code == EN_CHANGE && itemID == IDE_FOLDERS_WORK_PATH)
   {
     ModifiedEvent();
     return true;
@@ -132,9 +132,9 @@ void CFoldersPage::OnFoldersWorkButtonPath()
 {
   UString currentPath;
   m_WorkPath.GetText(currentPath);
-  UString title = LangString(IDS_FOLDERS_SET_WORK_PATH_TITLE, 0x01000281);
+  UString title = LangString(IDS_FOLDERS_SET_WORK_PATH_TITLE);
   UString resultPath;
-  if (MyBrowseForFolder(HWND(*this), title, currentPath, resultPath))
+  if (MyBrowseForFolder(*this, title, currentPath, resultPath))
     m_WorkPath.SetText(resultPath);
 }
 

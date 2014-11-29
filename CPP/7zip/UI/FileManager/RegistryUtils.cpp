@@ -2,9 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "Common/IntToString.h"
+#include "../../../Common/IntToString.h"
 
-#include "Windows/Registry.h"
+#include "../../../Windows/Registry.h"
 
 #include "RegistryUtils.h"
 
@@ -18,6 +18,7 @@ static const TCHAR *kCU_FMPath = REG_PATH_7Z TEXT(STRING_PATH_SEPARATOR) TEXT("F
 // static const TCHAR *kLM_Path = REG_PATH_7Z TEXT(STRING_PATH_SEPARATOR) TEXT("FM");
 
 static const WCHAR *kLangValueName = L"Lang";
+static const WCHAR *kViewer = L"Viewer";
 static const WCHAR *kEditor = L"Editor";
 static const WCHAR *kDiff = L"Diff";
 static const TCHAR *kShowDots = TEXT("ShowDots");
@@ -33,6 +34,7 @@ static const TCHAR *kSingleClick = TEXT("SingleClick");
 // static const TCHAR *kUnderline = TEXT("Underline");
 
 static const TCHAR *kFlatViewName = TEXT("FlatViewArc");
+// static const TCHAR *kShowDeletedFiles = TEXT("ShowDeleted");
 
 static void SaveCuString(LPCTSTR keyPath, LPCWSTR valuePath, LPCWSTR value)
 {
@@ -52,8 +54,8 @@ static void ReadCuString(LPCTSTR keyPath, LPCWSTR valuePath, UString &res)
 void SaveRegLang(const UString &path) { SaveCuString(kCUBasePath, kLangValueName, path); }
 void ReadRegLang(UString &path) { ReadCuString(kCUBasePath, kLangValueName, path); }
 
-void SaveRegEditor(const UString &path) { SaveCuString(kCU_FMPath, kEditor, path); }
-void ReadRegEditor(UString &path) { ReadCuString(kCU_FMPath, kEditor, path); }
+void SaveRegEditor(bool useEditor, const UString &path) { SaveCuString(kCU_FMPath, useEditor ? kEditor : kViewer, path); }
+void ReadRegEditor(bool useEditor, UString &path) { ReadCuString(kCU_FMPath, useEditor ? kEditor : kViewer, path); }
 
 void SaveRegDiff(const UString &path) { SaveCuString(kCU_FMPath, kDiff, path); }
 void ReadRegDiff(UString &path) { ReadCuString(kCU_FMPath, kDiff, path); }
@@ -123,8 +125,8 @@ bool ReadShowDots() { return ReadOption(kShowDots, false); }
 void SaveShowRealFileIcons(bool show)  { SaveOption(kShowRealFileIcons, show); }
 bool ReadShowRealFileIcons() { return ReadOption(kShowRealFileIcons, false); }
 
-void SaveShowSystemMenu(bool show) { SaveOption(kShowSystemMenu, show); }
-bool ReadShowSystemMenu(){ return ReadOption(kShowSystemMenu, false); }
+void Save_ShowSystemMenu(bool show) { SaveOption(kShowSystemMenu, show); }
+bool Read_ShowSystemMenu(){ return ReadOption(kShowSystemMenu, false); }
 
 void SaveFullRow(bool enable) { SaveOption(kFullRow, enable); }
 bool ReadFullRow() { return ReadOption(kFullRow, false); }
@@ -158,3 +160,8 @@ static CSysString GetFlatViewName(UInt32 panelIndex)
 
 void SaveFlatView(UInt32 panelIndex, bool enable) { SaveOption(GetFlatViewName(panelIndex), enable); }
 bool ReadFlatView(UInt32 panelIndex) { return ReadOption(GetFlatViewName(panelIndex), false); }
+
+/*
+void Save_ShowDeleted(bool enable) { SaveOption(kShowDeletedFiles, enable); }
+bool Read_ShowDeleted() { return ReadOption(kShowDeletedFiles, false); }
+*/

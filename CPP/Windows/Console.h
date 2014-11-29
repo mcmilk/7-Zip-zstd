@@ -3,44 +3,44 @@
 #ifndef __WINDOWS_CONSOLE_H
 #define __WINDOWS_CONSOLE_H
 
-#include "Windows/Defs.h"
+#include "Defs.h"
 
-namespace NWindows{
-namespace NConsole{
+namespace NWindows {
+namespace NConsole {
 
 class CBase
 {
 protected:
   HANDLE m_Object;
 public:
-  void Attach(HANDLE aHandle) { m_Object = aHandle; };
-  bool GetMode(DWORD &aMode)
-    { return BOOLToBool(::GetConsoleMode(m_Object, &aMode)); }
-  bool SetMode(DWORD aMode)
-    { return BOOLToBool(::SetConsoleMode(m_Object, aMode)); }
+  void Attach(HANDLE handle) { m_Object = handle; };
+  bool GetMode(DWORD &mode)
+    { return BOOLToBool(::GetConsoleMode(m_Object, &mode)); }
+  bool SetMode(DWORD mode)
+    { return BOOLToBool(::SetConsoleMode(m_Object, mode)); }
 };
 
 class CIn: public CBase
 {
 public:
-  bool PeekEvents(PINPUT_RECORD anEvents, DWORD aNumEvents, DWORD &aNumEventsRead)
-    {  return BOOLToBool(::PeekConsoleInput(m_Object, anEvents, aNumEvents, &aNumEventsRead)); }
-  bool PeekEvent(INPUT_RECORD &anEvent, DWORD &aNumEventsRead)
-    {  return PeekEvents(&anEvent, 1, aNumEventsRead); }
-  bool ReadEvents(PINPUT_RECORD anEvents, DWORD aNumEvents, DWORD &aNumEventsRead)
-    {  return BOOLToBool(::ReadConsoleInput(m_Object, anEvents, aNumEvents, &aNumEventsRead)); }
-  bool ReadEvent(INPUT_RECORD &anEvent, DWORD &aNumEventsRead)
-    {  return ReadEvents(&anEvent, 1, aNumEventsRead); }
-  bool GetNumberOfEvents(DWORD &aNumberOfEvents)
-    {  return BOOLToBool(::GetNumberOfConsoleInputEvents(m_Object, &aNumberOfEvents)); }
+  bool PeekEvents(PINPUT_RECORD events, DWORD numEvents, DWORD &numEventsRead)
+    {  return BOOLToBool(::PeekConsoleInput(m_Object, events, numEvents, &numEventsRead)); }
+  bool PeekEvent(INPUT_RECORD &event, DWORD &numEventsRead)
+    {  return PeekEvents(&event, 1, numEventsRead); }
+  bool ReadEvents(PINPUT_RECORD events, DWORD numEvents, DWORD &numEventsRead)
+    {  return BOOLToBool(::ReadConsoleInput(m_Object, events, numEvents, &numEventsRead)); }
+  bool ReadEvent(INPUT_RECORD &event, DWORD &numEventsRead)
+    {  return ReadEvents(&event, 1, numEventsRead); }
+  bool GetNumberOfEvents(DWORD &numEvents)
+    {  return BOOLToBool(::GetNumberOfConsoleInputEvents(m_Object, &numEvents)); }
 
-  bool WriteEvents(const INPUT_RECORD *anEvents, DWORD aNumEvents, DWORD &aNumEventsWritten)
-    {  return BOOLToBool(::WriteConsoleInput(m_Object, anEvents, aNumEvents, &aNumEventsWritten)); }
-  bool WriteEvent(const INPUT_RECORD &anEvent, DWORD &aNumEventsWritten)
-    {  return WriteEvents(&anEvent, 1, aNumEventsWritten); }
+  bool WriteEvents(const INPUT_RECORD *events, DWORD numEvents, DWORD &numEventsWritten)
+    {  return BOOLToBool(::WriteConsoleInput(m_Object, events, numEvents, &numEventsWritten)); }
+  bool WriteEvent(const INPUT_RECORD &event, DWORD &numEventsWritten)
+    {  return WriteEvents(&event, 1, numEventsWritten); }
   
-  bool Read(LPVOID aBuffer, DWORD aNumberOfCharsToRead, DWORD &aNumberOfCharsRead)
-    {  return BOOLToBool(::ReadConsole(m_Object, aBuffer, aNumberOfCharsToRead, &aNumberOfCharsRead, NULL)); }
+  bool Read(LPVOID buffer, DWORD numChars, DWORD &numCharsRead)
+    {  return BOOLToBool(::ReadConsole(m_Object, buffer, numChars, &numCharsRead, NULL)); }
 
   bool Flush()
     {  return BOOLToBool(::FlushConsoleInputBuffer(m_Object)); }

@@ -4,24 +4,20 @@
 #define __COMMON_LANG_H
 
 #include "MyString.h"
-#include "Types.h"
-
-struct CLangPair
-{
-  UInt32 Value;
-  UString String;
-};
 
 class CLang
 {
-  CObjectVector<CLangPair> _langPairs;
+  wchar_t *_text;
+  CRecordVector<UInt32> _ids;
+  CRecordVector<UInt32> _offsets;
+
+  bool OpenFromString(const AString &s);
 public:
-  bool Open(CFSTR fileName);
-  void Clear() { _langPairs.Clear(); }
-  int FindItem(UInt32 value) const;
-  bool GetMessage(UInt32 value, UString &message) const;
+  CLang(): _text(0) {}
+  ~CLang() { Clear(); };
+  bool Open(CFSTR fileName, const wchar_t *id);
+  void Clear() throw();
+  const wchar_t *Get(UInt32 id) const throw();
 };
 
 #endif
-
-

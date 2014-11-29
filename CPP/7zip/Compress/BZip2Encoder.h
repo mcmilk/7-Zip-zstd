@@ -25,61 +25,61 @@ namespace NBZip2 {
 
 class CMsbfEncoderTemp
 {
-  UInt32 m_Pos;
-  int m_BitPos;
-  Byte m_CurByte;
-  Byte *Buffer;
+  UInt32 _pos;
+  unsigned _bitPos;
+  Byte _curByte;
+  Byte *_buf;
 public:
-  void SetStream(Byte *buffer) { Buffer = buffer;  }
-  Byte *GetStream() const { return Buffer; }
+  void SetStream(Byte *buf) { _buf = buf;  }
+  Byte *GetStream() const { return _buf; }
 
   void Init()
   {
-    m_Pos = 0;
-    m_BitPos = 8;
-    m_CurByte = 0;
+    _pos = 0;
+    _bitPos = 8;
+    _curByte = 0;
   }
 
   void Flush()
   {
-    if (m_BitPos < 8)
-      WriteBits(0, m_BitPos);
+    if (_bitPos < 8)
+      WriteBits(0, _bitPos);
   }
 
-  void WriteBits(UInt32 value, int numBits)
+  void WriteBits(UInt32 value, unsigned numBits)
   {
     while (numBits > 0)
     {
-      int numNewBits = MyMin(numBits, m_BitPos);
+      unsigned numNewBits = MyMin(numBits, _bitPos);
       numBits -= numNewBits;
       
-      m_CurByte <<= numNewBits;
+      _curByte <<= numNewBits;
       UInt32 newBits = value >> numBits;
-      m_CurByte |= Byte(newBits);
+      _curByte |= Byte(newBits);
       value -= (newBits << numBits);
       
-      m_BitPos -= numNewBits;
+      _bitPos -= numNewBits;
       
-      if (m_BitPos == 0)
+      if (_bitPos == 0)
       {
-       Buffer[m_Pos++] = m_CurByte;
-        m_BitPos = 8;
+       _buf[_pos++] = _curByte;
+        _bitPos = 8;
       }
     }
   }
   
-  UInt32 GetBytePos() const { return m_Pos ; }
-  UInt32 GetPos() const { return m_Pos * 8 + (8 - m_BitPos); }
-  Byte GetCurByte() const { return m_CurByte; }
+  UInt32 GetBytePos() const { return _pos ; }
+  UInt32 GetPos() const { return _pos * 8 + (8 - _bitPos); }
+  Byte GetCurByte() const { return _curByte; }
   void SetPos(UInt32 bitPos)
   {
-    m_Pos = bitPos / 8;
-    m_BitPos = 8 - ((int)bitPos & 7);
+    _pos = bitPos >> 3;
+    _bitPos = 8 - ((unsigned)bitPos & 7);
   }
-  void SetCurState(int bitPos, Byte curByte)
+  void SetCurState(unsigned bitPos, Byte curByte)
   {
-    m_BitPos = 8 - bitPos;
-    m_CurByte = curByte;
+    _bitPos = 8 - bitPos;
+    _curByte = curByte;
   }
 };
 
@@ -109,7 +109,7 @@ private:
 
   UInt32 m_BlockIndex;
 
-  void WriteBits2(UInt32 value, UInt32 numBits);
+  void WriteBits2(UInt32 value, unsigned numBits);
   void WriteByte2(Byte b);
   void WriteBit2(bool v);
   void WriteCrc2(UInt32 v);
@@ -193,10 +193,10 @@ public:
   CThreadInfo ThreadsInfo;
   #endif
 
-  UInt32 ReadRleBlock(Byte *buffer);
+  UInt32 ReadRleBlock(Byte *buf);
   void WriteBytes(const Byte *data, UInt32 sizeInBits, Byte lastByte);
 
-  void WriteBits(UInt32 value, UInt32 numBits);
+  void WriteBits(UInt32 value, unsigned numBits);
   void WriteByte(Byte b);
   void WriteBit(bool v);
   void WriteCrc(UInt32 v);
@@ -214,23 +214,6 @@ public:
 
   HRESULT Flush() { return m_OutStream.Flush(); }
   
-  void ReleaseStreams()
-  {
-    m_InStream.ReleaseStream();
-    m_OutStream.ReleaseStream();
-  }
-
-  class CFlusher
-  {
-    CEncoder *_coder;
-  public:
-    CFlusher(CEncoder *coder): _coder(coder) {}
-    ~CFlusher()
-    {
-      _coder->ReleaseStreams();
-    }
-  };
-
   #ifndef _7ZIP_ST
   MY_UNKNOWN_IMP2(ICompressSetCoderMt, ICompressSetCoderProperties)
   #else

@@ -85,41 +85,21 @@ void CState::Free()
   Counters = 0;
 }
 
-UInt32 CDecoder::ReadBits(unsigned numBits) { return m_InStream.ReadBits(numBits); }
-Byte CDecoder::ReadByte() {return (Byte)ReadBits(8); }
-bool CDecoder::ReadBit() { return ReadBits(1) != 0; }
+Byte CDecoder::ReadByte() { return (Byte)Base.ReadBits(8); }
 
-UInt32 CDecoder::ReadCrc()
-{
-  UInt32 crc = 0;
-  for (int i = 0; i < 4; i++)
-  {
-    crc <<= 8;
-    crc |= ReadByte();
-  }
-  return crc;
-}
+UInt32 CBase::ReadBits(unsigned numBits) { return BitDecoder.ReadBits(numBits); }
+unsigned CBase::ReadBit() { return (unsigned)BitDecoder.ReadBits(1); }
 
-static UInt32 NO_INLINE ReadBits(NBitm::CDecoder<CInBuffer> *m_InStream, unsigned num)
+HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps *props)
 {
-  return m_InStream->ReadBits(num);
-}
+  NumBlocks++;
 
-static UInt32 NO_INLINE ReadBit(NBitm::CDecoder<CInBuffer> *m_InStream)
-{
-  return m_InStream->ReadBits(1);
-}
-
-static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
-    UInt32 *CharCounters, UInt32 blockSizeMax, Byte *m_Selectors, CHuffmanDecoder *m_HuffmanDecoders,
-    UInt32 *blockSizeRes, UInt32 *origPtrRes, bool *randRes)
-{
-  if (randRes)
-    *randRes = ReadBit(m_InStream) ? true : false;
-  *origPtrRes = ReadBits(m_InStream, kNumOrigBits);
+  if (props->randMode)
+    props->randMode = ReadBit() ? true : false;
+  props->origPtr = ReadBits(kNumOrigBits);
   
   // in original code it compares OrigPtr to (UInt32)(10 + blockSizeMax)) : why ?
-  if (*origPtrRes >= blockSizeMax)
+  if (props->origPtr >= blockSizeMax)
     return S_FALSE;
 
   CMtf8Decoder mtf;
@@ -130,11 +110,11 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
     Byte inUse16[16];
     int i;
     for (i = 0; i < 16; i++)
-      inUse16[i] = (Byte)ReadBit(m_InStream);
+      inUse16[i] = (Byte)ReadBit();
     for (i = 0; i < 256; i++)
       if (inUse16[i >> 4])
       {
-        if (ReadBit(m_InStream))
+        if (ReadBit())
           mtf.Add(numInUse++, (Byte)i);
       }
     if (numInUse == 0)
@@ -143,11 +123,11 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
   }
   int alphaSize = numInUse + 2;
 
-  int numTables = ReadBits(m_InStream, kNumTablesBits);
+  int numTables = ReadBits(kNumTablesBits);
   if (numTables < kNumTablesMin || numTables > kNumTablesMax)
     return S_FALSE;
   
-  UInt32 numSelectors = ReadBits(m_InStream, kNumSelectorsBits);
+  UInt32 numSelectors = ReadBits(kNumSelectorsBits);
   if (numSelectors < 1 || numSelectors > kNumSelectorsMax)
     return S_FALSE;
 
@@ -156,12 +136,12 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
     int t = 0;
     do
       mtfPos[t] = (Byte)t;
-    while(++t < numTables);
+    while (++t < numTables);
     UInt32 i = 0;
     do
     {
       int j = 0;
-      while (ReadBit(m_InStream))
+      while (ReadBit())
         if (++j >= numTables)
           return S_FALSE;
       Byte tmp = mtfPos[j];
@@ -169,14 +149,14 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
         mtfPos[j] = mtfPos[j - 1];
       m_Selectors[i] = mtfPos[0] = tmp;
     }
-    while(++i < numSelectors);
+    while (++i < numSelectors);
   }
 
   int t = 0;
   do
   {
     Byte lens[kMaxAlphaSize];
-    int len = (int)ReadBits(m_InStream, kNumLevelsBits);
+    int len = (int)ReadBits(kNumLevelsBits);
     int i;
     for (i = 0; i < alphaSize; i++)
     {
@@ -184,22 +164,22 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
       {
         if (len < 1 || len > kMaxHuffmanLen)
           return S_FALSE;
-        if (!ReadBit(m_InStream))
+        if (!ReadBit())
           break;
-        len += 1 - (int)(ReadBit(m_InStream) << 1);
+        len += 1 - (int)(ReadBit() << 1);
       }
       lens[i] = (Byte)len;
     }
     for (; i < kMaxAlphaSize; i++)
       lens[i] = 0;
-    if(!m_HuffmanDecoders[t].SetCodeLengths(lens))
+    if (!m_HuffmanDecoders[t].SetCodeLengths(lens))
       return S_FALSE;
   }
-  while(++t < numTables);
+  while (++t < numTables);
 
   {
     for (int i = 0; i < 256; i++)
-      CharCounters[i] = 0;
+      charCounters[i] = 0;
   }
   
   UInt32 blockSize = 0;
@@ -221,7 +201,10 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
       }
       groupSize--;
         
-      UInt32 nextSym = huffmanDecoder->DecodeSymbol(m_InStream);
+      if (BitDecoder.ExtraBitsWereRead_Fast())
+        break;
+
+      UInt32 nextSym = huffmanDecoder->DecodeSymbol(&BitDecoder);
       
       if (nextSym < 2)
       {
@@ -233,10 +216,10 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
       if (runCounter != 0)
       {
         UInt32 b = (UInt32)mtf.GetHead();
-        CharCounters[b] += runCounter;
+        charCounters[b] += runCounter;
         do
-          CharCounters[256 + blockSize++] = b;
-        while(--runCounter != 0);
+          charCounters[256 + blockSize++] = b;
+        while (--runCounter != 0);
         runPower = 0;
       }
       if (nextSym <= (UInt32)numInUse)
@@ -244,17 +227,20 @@ static HRESULT NO_INLINE ReadBlock(NBitm::CDecoder<CInBuffer> *m_InStream,
         UInt32 b = (UInt32)mtf.GetAndMove((int)nextSym - 1);
         if (blockSize >= blockSizeMax)
           return S_FALSE;
-        CharCounters[b]++;
-        CharCounters[256 + blockSize++] = b;
+        charCounters[b]++;
+        charCounters[256 + blockSize++] = b;
       }
       else if (nextSym == (UInt32)numInUse + 1)
         break;
       else
         return S_FALSE;
     }
+
+    if (BitDecoder.ExtraBitsWereRead())
+      return S_FALSE;
   }
-  *blockSizeRes = blockSize;
-  return (*origPtrRes < blockSize) ? S_OK : S_FALSE;
+  props->blockSize = blockSize;
+  return (props->origPtr < props->blockSize) ? S_OK : S_FALSE;
 }
 
 static void NO_INLINE DecodeBlock1(UInt32 *charCounters, UInt32 blockSize)
@@ -273,7 +259,7 @@ static void NO_INLINE DecodeBlock1(UInt32 *charCounters, UInt32 blockSize)
   UInt32 i = 0;
   do
     tt[charCounters[tt[i] & 0xFF]++] |= (i << 8);
-  while(++i < blockSize);
+  while (++i < blockSize);
 }
 
 static UInt32 NO_INLINE DecodeBlock2(const UInt32 *tt, UInt32 blockSize, UInt32 OrigPtr, COutBuffer &m_OutStream)
@@ -363,7 +349,7 @@ static UInt32 NO_INLINE DecodeBlock2(const UInt32 *tt, UInt32 blockSize, UInt32 
     }
     */
   }
-  while(--blockSize != 0);
+  while (--blockSize != 0);
   return crc.GetDigest();
 }
 
@@ -412,10 +398,17 @@ static UInt32 NO_INLINE DecodeBlock2Rand(const UInt32 *tt, UInt32 blockSize, UIn
     crc.UpdateByte(b);
     m_OutStream.WriteByte((Byte)b);
   }
-  while(--blockSize != 0);
+  while (--blockSize != 0);
   return crc.GetDigest();
 }
 
+static UInt32 NO_INLINE DecodeBlock(const CBlockProps &props, UInt32 *tt, COutBuffer &m_OutStream)
+{
+  if (props.randMode)
+    return DecodeBlock2Rand(tt, props.blockSize, props.origPtr, m_OutStream);
+  else
+    return DecodeBlock2    (tt, props.blockSize, props.origPtr, m_OutStream);
+}
 
 CDecoder::CDecoder()
 {
@@ -434,7 +427,7 @@ CDecoder::~CDecoder()
   Free();
 }
 
-#define RINOK_THREAD(x) { WRes __result_ = (x); if(__result_ != 0) return __result_; }
+#define RINOK_THREAD(x) { WRes __result_ = (x); if (__result_ != 0) return __result_; }
 
 HRESULT CDecoder::Create()
 {
@@ -489,37 +482,71 @@ void CDecoder::Free()
 
 #endif
 
-HRESULT CDecoder::ReadSignatures(bool &wasFinished, UInt32 &crc)
+bool IsEndSig(const Byte *p) throw()
 {
-  wasFinished = false;
-  Byte s[6];
-  for (int i = 0; i < 6; i++)
+  return
+    p[0] == kFinSig0 &&
+    p[1] == kFinSig1 &&
+    p[2] == kFinSig2 &&
+    p[3] == kFinSig3 &&
+    p[4] == kFinSig4 &&
+    p[5] == kFinSig5;
+}
+
+bool IsBlockSig(const Byte *p) throw()
+{
+  return
+    p[0] == kBlockSig0 &&
+    p[1] == kBlockSig1 &&
+    p[2] == kBlockSig2 &&
+    p[3] == kBlockSig3 &&
+    p[4] == kBlockSig4 &&
+    p[5] == kBlockSig5;
+}
+
+HRESULT CDecoder::ReadSignature(UInt32 &crc)
+{
+  BzWasFinished = false;
+  crc = 0;
+
+  Byte s[10];
+  int i;
+  for (i = 0; i < 10; i++)
     s[i] = ReadByte();
-  crc = ReadCrc();
-  if (s[0] == kFinSig0)
-  {
-    if (s[1] != kFinSig1 ||
-        s[2] != kFinSig2 ||
-        s[3] != kFinSig3 ||
-        s[4] != kFinSig4 ||
-        s[5] != kFinSig5)
-      return S_FALSE;
-    
-    wasFinished = true;
-    return (crc == CombinedCrc.GetDigest()) ? S_OK : S_FALSE;
-  }
-  if (s[0] != kBlockSig0 ||
-      s[1] != kBlockSig1 ||
-      s[2] != kBlockSig2 ||
-      s[3] != kBlockSig3 ||
-      s[4] != kBlockSig4 ||
-      s[5] != kBlockSig5)
+
+  if (Base.BitDecoder.ExtraBitsWereRead())
     return S_FALSE;
-  CombinedCrc.Update(crc);
+
+  UInt32 v = 0;
+  for (i = 0; i < 4; i++)
+  {
+    v <<= 8;
+    v |= s[6 + i];
+  }
+
+  crc = v;
+
+  if (IsBlockSig(s))
+  {
+    IsBz = true;
+    CombinedCrc.Update(crc);
+    return S_OK;
+  }
+
+  if (!IsEndSig(s))
+    return S_FALSE;
+
+  IsBz = true;
+  BzWasFinished = true;
+  if (crc != CombinedCrc.GetDigest())
+  {
+    CrcError = true;
+    return S_FALSE;
+  }
   return S_OK;
 }
 
-HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
+HRESULT CDecoder::DecodeFile(ICompressProgressInfo *progress)
 {
   Progress = progress;
   #ifndef _7ZIP_ST
@@ -541,18 +568,27 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
     return E_OUTOFMEMORY;
   #endif
 
-  isBZ = false;
-  Byte s[6];
+  IsBz = false;
+
+  /*
+  if (Base.BitDecoder.ExtraBitsWereRead())
+    return E_FAIL;
+  */
+
+  Byte s[4];
   int i;
   for (i = 0; i < 4; i++)
     s[i] = ReadByte();
+  if (Base.BitDecoder.ExtraBitsWereRead())
+    return S_FALSE;
+
   if (s[0] != kArSig0 ||
       s[1] != kArSig1 ||
       s[2] != kArSig2 ||
       s[3] <= kArSig3 ||
       s[3] > kArSig3 + kBlockSizeMultMax)
-    return S_OK;
-  isBZ = true;
+    return S_FALSE;
+
   UInt32 dicSize = (UInt32)(s[3] - kArSig3) * kBlockSizeStep;
 
   CombinedCrc.Init();
@@ -584,58 +620,59 @@ HRESULT CDecoder::DecodeFile(bool &isBZ, ICompressProgressInfo *progress)
     CState &state = m_States[0];
     for (;;)
     {
-      RINOK(SetRatioProgress(m_InStream.GetProcessedSize()));
-      bool wasFinished;
+      RINOK(SetRatioProgress(Base.BitDecoder.GetProcessedSize()));
       UInt32 crc;
-      RINOK(ReadSignatures(wasFinished, crc));
-      if (wasFinished)
+      RINOK(ReadSignature(crc));
+      if (BzWasFinished)
         return S_OK;
 
-      UInt32 blockSize, origPtr;
-      bool randMode;
-      RINOK(ReadBlock(&m_InStream, state.Counters, dicSize,
-        m_Selectors, m_HuffmanDecoders,
-        &blockSize, &origPtr, &randMode));
-      DecodeBlock1(state.Counters, blockSize);
-      if ((randMode ?
-          DecodeBlock2Rand(state.Counters + 256, blockSize, origPtr, m_OutStream) :
-          DecodeBlock2(state.Counters + 256, blockSize, origPtr, m_OutStream)) != crc)
+      CBlockProps props;
+      props.randMode = true;
+      RINOK(Base.ReadBlock(state.Counters, dicSize, &props));
+      DecodeBlock1(state.Counters, props.blockSize);
+      if (DecodeBlock(props, state.Counters + 256, m_OutStream) != crc)
+      {
+        CrcError = true;
         return S_FALSE;
+      }
     }
   }
-  return SetRatioProgress(m_InStream.GetProcessedSize());
+  return SetRatioProgress(Base.BitDecoder.GetProcessedSize());
 }
 
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    bool &isBZ, ICompressProgressInfo *progress)
+    ICompressProgressInfo *progress)
 {
-  isBZ = false;
+  IsBz = false;
+  BzWasFinished = false;
+  CrcError = false;
+
   try
   {
 
-  if (!m_InStream.Create(kBufferSize))
+  if (!Base.BitDecoder.Create(kBufferSize))
     return E_OUTOFMEMORY;
   if (!m_OutStream.Create(kBufferSize))
     return E_OUTOFMEMORY;
 
   if (inStream)
-    m_InStream.SetStream(inStream);
+    Base.BitDecoder.SetStream(inStream);
 
-  CDecoderFlusher flusher(this, inStream != NULL);
+  CDecoderFlusher flusher(this);
 
   if (_needInStreamInit)
   {
-    m_InStream.Init();
+    Base.BitDecoder.Init();
     _needInStreamInit = false;
   }
-  _inStart = m_InStream.GetProcessedSize();
+  _inStart = Base.BitDecoder.GetProcessedSize();
 
-  m_InStream.AlignToByte();
+  Base.BitDecoder.AlignToByte();
 
   m_OutStream.SetStream(outStream);
   m_OutStream.Init();
 
-  RINOK(DecodeFile(isBZ, progress));
+  RINOK(DecodeFile(progress));
   flusher.NeedFlush = false;
   return Flush();
 
@@ -649,18 +686,26 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
 {
   _needInStreamInit = true;
-  bool isBZ;
-  RINOK(CodeReal(inStream, outStream, isBZ, progress));
-  return isBZ ? S_OK : S_FALSE;
+  return CodeReal(inStream, outStream, progress);
 }
 
-HRESULT CDecoder::CodeResume(ISequentialOutStream *outStream, bool &isBZ, ICompressProgressInfo *progress)
+HRESULT CDecoder::CodeResume(ISequentialOutStream *outStream, ICompressProgressInfo *progress)
 {
-  return CodeReal(NULL, outStream, isBZ, progress);
+  return CodeReal(NULL, outStream, progress);
 }
 
-STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream) { m_InStream.SetStream(inStream); return S_OK; }
-STDMETHODIMP CDecoder::ReleaseInStream() { m_InStream.ReleaseStream(); return S_OK; }
+STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream)
+{
+  Base.InStreamRef = inStream;
+  Base.BitDecoder.SetStream(inStream);
+  return S_OK;
+}
+
+STDMETHODIMP CDecoder::ReleaseInStream()
+{
+  Base.InStreamRef.Release();
+  return S_OK;
+}
 
 #ifndef _7ZIP_ST
 
@@ -709,36 +754,33 @@ void CState::ThreadFunc()
     Decoder->NextBlockIndex = nextBlockIndex;
     UInt32 crc;
     UInt64 packSize = 0;
-    UInt32 blockSize = 0, origPtr = 0;
-    bool randMode = false;
+    CBlockProps props;
 
     try
     {
-      bool wasFinished;
-      res = Decoder->ReadSignatures(wasFinished, crc);
+      res = Decoder->ReadSignature(crc);
       if (res != S_OK)
       {
         Decoder->Result1 = res;
         FinishStream();
         continue;
       }
-      if (wasFinished)
+      if (Decoder->BzWasFinished)
       {
         Decoder->Result1 = res;
         FinishStream();
         continue;
       }
 
-      res = ReadBlock(&Decoder->m_InStream, Counters, Decoder->BlockSizeMax,
-          Decoder->m_Selectors, Decoder->m_HuffmanDecoders,
-          &blockSize, &origPtr, &randMode);
+      props.randMode = true;
+      res = Decoder->Base.ReadBlock(Counters, Decoder->BlockSizeMax, &props);
       if (res != S_OK)
       {
         Decoder->Result1 = res;
         FinishStream();
         continue;
       }
-      packSize = Decoder->m_InStream.GetProcessedSize();
+      packSize = Decoder->Base.BitDecoder.GetProcessedSize();
     }
     catch(const CInBufferException &e) { res = e.ErrorCode;  if (res != S_OK) res = E_FAIL; }
     catch(...) { res = E_FAIL; }
@@ -751,7 +793,7 @@ void CState::ThreadFunc()
 
     Decoder->CS.Leave();
 
-    DecodeBlock1(Counters, blockSize);
+    DecodeBlock1(Counters, props.blockSize);
 
     bool needFinish = true;
     try
@@ -760,9 +802,7 @@ void CState::ThreadFunc()
       needFinish = Decoder->StreamWasFinished2;
       if (!needFinish)
       {
-        if ((randMode ?
-            DecodeBlock2Rand(Counters + 256, blockSize, origPtr, Decoder->m_OutStream) :
-            DecodeBlock2(Counters + 256, blockSize, origPtr, Decoder->m_OutStream)) == crc)
+        if (DecodeBlock(props, Counters + 256, Decoder->m_OutStream) == crc)
           res = Decoder->SetRatioProgress(packSize);
         else
           res = S_FALSE;
@@ -818,8 +858,17 @@ enum
   NSIS_STATE_ERROR
 };
 
-STDMETHODIMP CNsisDecoder::SetInStream(ISequentialInStream *inStream) { m_InStream.SetStream(inStream); return S_OK; }
-STDMETHODIMP CNsisDecoder::ReleaseInStream() { m_InStream.ReleaseStream(); return S_OK; }
+STDMETHODIMP CNsisDecoder::SetInStream(ISequentialInStream *inStream)
+{
+  Base.InStreamRef = inStream;
+  Base.BitDecoder.SetStream(inStream);
+  return S_OK;
+}
+STDMETHODIMP CNsisDecoder::ReleaseInStream()
+{
+  Base.InStreamRef.Release();
+  return S_OK;
+}
 
 STDMETHODIMP CNsisDecoder::SetOutStreamSize(const UInt64 * /* outSize */)
 {
@@ -843,17 +892,17 @@ STDMETHODIMP CNsisDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 
   if (_nsisState == NSIS_STATE_INIT)
   {
-    if (!m_InStream.Create(kBufferSize))
+    if (!Base.BitDecoder.Create(kBufferSize))
       return E_OUTOFMEMORY;
     if (!state.Alloc())
       return E_OUTOFMEMORY;
-    m_InStream.Init();
+    Base.BitDecoder.Init();
     _nsisState = NSIS_STATE_NEW_BLOCK;
   }
 
   if (_nsisState == NSIS_STATE_NEW_BLOCK)
   {
-    Byte b = (Byte)m_InStream.ReadBits(8);
+    Byte b = (Byte)Base.ReadBits(8);
     if (b == kFinSig0)
     {
       _nsisState = NSIS_STATE_FINISHED;
@@ -864,12 +913,13 @@ STDMETHODIMP CNsisDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
       _nsisState = NSIS_STATE_ERROR;
       return S_FALSE;
     }
-    UInt32 origPtr;
-    RINOK(ReadBlock(&m_InStream, state.Counters, 9 * kBlockSizeStep,
-        m_Selectors, m_HuffmanDecoders, &_blockSize, &origPtr, NULL));
-    DecodeBlock1(state.Counters, _blockSize);
+    CBlockProps props;
+    props.randMode = false;
+    RINOK(Base.ReadBlock(state.Counters, 9 * kBlockSizeStep, &props));
+    _blockSize = props.blockSize;
+    DecodeBlock1(state.Counters, props.blockSize);
     const UInt32 *tt = state.Counters + 256;
-    _tPos = tt[tt[origPtr] >> 8];
+    _tPos = tt[tt[props.origPtr] >> 8];
     _prevByte = (unsigned)(_tPos & 0xFF);
     _numReps = 0;
     _repRem = 0;

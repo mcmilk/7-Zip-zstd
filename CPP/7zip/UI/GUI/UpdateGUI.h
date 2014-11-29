@@ -21,7 +21,9 @@
 
 HRESULT UpdateGUI(
     CCodecs *codecs,
-    const NWildcard::CCensor &censor,
+    const CObjectVector<COpenType> &formatIndices,
+    const UString &cmdArcPath2,
+    NWildcard::CCensor &censor,
     CUpdateOptions &options,
     bool showDialog,
     bool &messageWasDisplayed,

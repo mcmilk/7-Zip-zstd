@@ -1,5 +1,7 @@
 /* LzmaEnc.c -- LZMA Encoder
-2011-01-27 : Igor Pavlov : Public domain */
+2012-11-20 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include <string.h>
 
@@ -46,7 +48,7 @@ void LzmaEncProps_Init(CLzmaEncProps *p)
 {
   p->level = 5;
   p->dictSize = p->mc = 0;
-  p->reduceSize = (UInt32)(Int32)-1;
+  p->reduceSize = (UInt64)(Int64)-1;
   p->lc = p->lp = p->pb = p->algo = p->fb = p->btMode = p->numHashBytes = p->numThreads = -1;
   p->writeEndMark = 0;
 }
@@ -60,10 +62,10 @@ void LzmaEncProps_Normalize(CLzmaEncProps *p)
   if (p->dictSize > p->reduceSize)
   {
     unsigned i;
-    for (i = 15; i <= 30; i++)
+    for (i = 11; i <= 30; i++)
     {
-      if (p->reduceSize <= ((UInt32)2 << i)) { p->dictSize = ((UInt32)2 << i); break; }
-      if (p->reduceSize <= ((UInt32)3 << i)) { p->dictSize = ((UInt32)3 << i); break; }
+      if ((UInt32)p->reduceSize <= ((UInt32)2 << i)) { p->dictSize = ((UInt32)2 << i); break; }
+      if ((UInt32)p->reduceSize <= ((UInt32)3 << i)) { p->dictSize = ((UInt32)3 << i); break; }
     }
   }
   if (p->lc < 0) p->lc = 3;

@@ -5,7 +5,7 @@
 
 #include "../../../C/LzFind.h"
 
-#include "Common/MyCom.h"
+#include "../../Common/MyCom.h"
 
 #include "../ICoder.h"
 
@@ -49,7 +49,7 @@ struct CTables: public CLevels
 typedef struct _CSeqInStream
 {
   ISeqInStream SeqInStream;
-  CMyComPtr<ISequentialInStream> RealStream;
+  ISequentialInStream *RealStream;
 } CSeqInStream;
 
 struct CEncProps
@@ -164,20 +164,6 @@ public:
   void WriteTables(bool writeMode, bool finalBlock);
   
   void WriteBlockData(bool writeMode, bool finalBlock);
-
-  void ReleaseStreams()
-  {
-    _seqInStream.RealStream.Release();
-    m_OutStream.ReleaseStream();
-  }
-  class CCoderReleaser
-  {
-    CCoder *m_Coder;
-  public:
-    CCoderReleaser(CCoder *coder): m_Coder(coder) {}
-    ~CCoderReleaser() { m_Coder->ReleaseStreams(); }
-  };
-  friend class CCoderReleaser;
 
   UInt32 GetBlockPrice(int tableIndex, int numDivPasses);
   void CodeBlock(int tableIndex, bool finalBlock);

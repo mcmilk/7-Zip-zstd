@@ -3,10 +3,10 @@
 #include "StdAfx.h"
 
 #ifndef _UNICODE
-#include "Common/StringConvert.h"
+#include "../../Common/StringConvert.h"
 #endif
 
-#include "Windows/Control/ComboBox.h"
+#include "ComboBox.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -51,7 +51,7 @@ LRESULT CComboBox::GetLBText(int index, UString &s)
   if (len == CB_ERR)
     return len;
   s = GetUnicodeString(sa);
-  return s.Length();
+  return s.Len();
 }
 #endif
 

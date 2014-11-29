@@ -1,7 +1,10 @@
 /* 7zBuf2.c -- Byte Buffer
-2008-10-04 : Igor Pavlov : Public domain */
+2013-11-12 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include <string.h>
+
 #include "7zBuf.h"
 
 void DynBuf_Construct(CDynBuf *p)

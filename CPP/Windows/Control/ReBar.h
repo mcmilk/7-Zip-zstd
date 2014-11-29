@@ -3,8 +3,7 @@
 #ifndef __WINDOWS_CONTROL_REBAR_H
 #define __WINDOWS_CONTROL_REBAR_H
 
-#include "Windows/Window.h"
-#include "Windows/Defs.h"
+#include "../Window.h"
 
 namespace NWindows {
 namespace NControl {
@@ -16,9 +15,9 @@ public:
     { return LRESULTToBool(SendMessage(RB_SETBARINFO, 0, (LPARAM)barInfo)); }
   bool InsertBand(int index, LPREBARBANDINFO bandInfo)
     { return LRESULTToBool(SendMessage(RB_INSERTBAND, index, (LPARAM)bandInfo)); }
-  bool SetBandInfo(int index, LPREBARBANDINFO bandInfo)
+  bool SetBandInfo(unsigned index, LPREBARBANDINFO bandInfo)
     { return LRESULTToBool(SendMessage(RB_SETBANDINFO, index, (LPARAM)bandInfo)); }
-  void MaximizeBand(int index, bool ideal)
+  void MaximizeBand(unsigned index, bool ideal)
     { SendMessage(RB_MAXIMIZEBAND, index, BoolToBOOL(ideal)); }
   bool SizeToRect(LPRECT rect)
     { return LRESULTToBool(SendMessage(RB_SIZETORECT, 0, (LPARAM)rect)); }

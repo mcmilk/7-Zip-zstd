@@ -1,5 +1,5 @@
 // Compress/RangeCoder.h
-// 2009-05-30 : Igor Pavlov : Public domain
+// 2013-01-10 : Igor Pavlov : Public domain
 
 #ifndef __COMPRESS_RANGE_CODER_H
 #define __COMPRESS_RANGE_CODER_H
@@ -10,7 +10,7 @@
 namespace NCompress {
 namespace NRangeCoder {
 
-const int kNumTopBits = 24;
+const unsigned kNumTopBits = 24;
 const UInt32 kTopValue = (1 << kNumTopBits);
 
 class CEncoder
@@ -21,7 +21,7 @@ public:
   UInt64 Low;
   UInt32 Range;
   COutBuffer Stream;
-  bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
+  bool Create(UInt32 bufSize) { return Stream.Create(bufSize); }
 
   void SetStream(ISequentialOutStream *stream) { Stream.SetStream(stream); }
   void Init()
@@ -36,13 +36,11 @@ public:
   void FlushData()
   {
     // Low += 1;
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
       ShiftLow();
   }
 
   HRESULT FlushStream() { return Stream.Flush();  }
-
-  void ReleaseStream() { Stream.ReleaseStream(); }
 
   void Encode(UInt32 start, UInt32 size, UInt32 total)
   {
@@ -57,7 +55,7 @@ public:
 
   void ShiftLow()
   {
-    if ((UInt32)Low < (UInt32)0xFF000000 || (int)(Low >> 32) != 0)
+    if ((UInt32)Low < (UInt32)0xFF000000 || (unsigned)(Low >> 32) != 0)
     {
       Byte temp = _cache;
       do
@@ -65,7 +63,7 @@ public:
         Stream.WriteByte((Byte)(temp + (Byte)(Low >> 32)));
         temp = 0xFF;
       }
-      while(--_cacheSize != 0);
+      while (--_cacheSize != 0);
       _cache = (Byte)((UInt32)Low >> 24);
     }
     _cacheSize++;
@@ -103,7 +101,7 @@ public:
     }
   }
 
-  UInt64 GetProcessedSize() {  return Stream.GetProcessedSize() + _cacheSize + 4; }
+  UInt64 GetProcessedSize() { return Stream.GetProcessedSize() + _cacheSize + 4; }
 };
 
 class CDecoder
@@ -112,7 +110,7 @@ public:
   CInBuffer Stream;
   UInt32 Range;
   UInt32 Code;
-  bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
+  bool Create(UInt32 bufSize) { return Stream.Create(bufSize); }
 
   void Normalize()
   {
@@ -129,15 +127,13 @@ public:
     Stream.Init();
     Code = 0;
     Range = 0xFFFFFFFF;
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
       Code = (Code << 8) | Stream.ReadByte();
   }
 
-  void ReleaseStream() { Stream.ReleaseStream(); }
-
   UInt32 GetThreshold(UInt32 total)
   {
-    return (Code) / ( Range /= total);
+    return (Code) / (Range /= total);
   }
 
   void Decode(UInt32 start, UInt32 size)
@@ -197,7 +193,7 @@ public:
     return symbol;
   }
 
-  UInt64 GetProcessedSize() {return Stream.GetProcessedSize(); }
+  UInt64 GetProcessedSize() { return Stream.GetProcessedSize(); }
 };
 
 }}

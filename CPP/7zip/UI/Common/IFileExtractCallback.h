@@ -1,9 +1,10 @@
 // IFileExtractCallback.h
 
-#ifndef __IFILEEXTRACTCALLBACK_H
-#define __IFILEEXTRACTCALLBACK_H
+#ifndef __I_FILE_EXTRACT_CALLBACK_H
+#define __I_FILE_EXTRACT_CALLBACK_H
 
-#include "Common/MyString.h"
+#include "../../../Common/MyString.h"
+
 #include "../../IDecl.h"
 
 namespace NOverwriteAnswer
@@ -35,12 +36,37 @@ struct IExtractCallbackUI: IFolderArchiveExtractCallback
 {
   virtual HRESULT BeforeOpen(const wchar_t *name) = 0;
   virtual HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted) = 0;
+  virtual HRESULT SetError(int level, const wchar_t *name,
+      UInt32 errorFlags, const wchar_t *errors,
+      UInt32 warningFlags, const wchar_t *warnings) = 0;
   virtual HRESULT ThereAreNoFiles() = 0;
   virtual HRESULT ExtractResult(HRESULT result) = 0;
+  virtual HRESULT OpenTypeWarning(const wchar_t *name, const wchar_t *okType, const wchar_t *errorType) = 0;
 
   #ifndef _NO_CRYPTO
   virtual HRESULT SetPassword(const UString &password) = 0;
   #endif
 };
+
+
+#define INTERFACE_IGetProp(x) \
+  STDMETHOD(GetProp)(PROPID propID, PROPVARIANT *value) x; \
+
+DECL_INTERFACE_SUB(IGetProp, IUnknown, 0x01, 0x20)
+{
+  INTERFACE_IGetProp(PURE)
+};
+
+#define INTERFACE_IFolderExtractToStreamCallback(x) \
+  STDMETHOD(UseExtractToStream)(Int32 *res) x; \
+  STDMETHOD(GetStream7)(const wchar_t *name, Int32 isDir, ISequentialOutStream **outStream, Int32 askExtractMode, IGetProp *getProp) x; \
+  STDMETHOD(PrepareOperation7)(Int32 askExtractMode) x; \
+  STDMETHOD(SetOperationResult7)(Int32 resultEOperationResult, bool encrypted) x; \
+
+DECL_INTERFACE_SUB(IFolderExtractToStreamCallback, IUnknown, 0x01, 0x30)
+{
+  INTERFACE_IFolderExtractToStreamCallback(PURE)
+};
+
 
 #endif

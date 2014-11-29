@@ -1,9 +1,10 @@
-// Implode/Decoder.cpp
+// ImplodeDecoder.cpp
 
 #include "StdAfx.h"
 
+#include "../../Common/Defs.h"
+
 #include "ImplodeDecoder.h"
-#include "Common/Defs.h"
 
 namespace NCompress {
 namespace NImplode {
@@ -67,11 +68,13 @@ CCoder::CCoder():
 {
 }
 
+/*
 void CCoder::ReleaseStreams()
 {
   m_OutWindowStream.ReleaseStream();
   m_InBitStream.ReleaseStream();
 }
+*/
 
 bool CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder,
     Byte *levels, int numLevelItems)
@@ -79,7 +82,7 @@ bool CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder,
   int numCodedStructures = m_InBitStream.ReadBits(kNumBitsInByte) +
       kLevelStructuresNumberAdditionalValue;
   int currentIndex = 0;
-  for(int i = 0; i < numCodedStructures; i++)
+  for (int i = 0; i < numCodedStructures; i++)
   {
     int level = m_InBitStream.ReadBits(kNumLevelStructureLevelBits) +
       kLevelStructureLevelAdditionalValue;
@@ -87,7 +90,7 @@ bool CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder,
       kLevelStructureRepNumberAdditionalValue;
     if (currentIndex + rep > numLevelItems)
       throw CException(CException::kData);
-    for(int j = 0; j < rep; j++)
+    for (int j = 0; j < rep; j++)
       levels[currentIndex++] = (Byte)level;
   }
   if (currentIndex != numLevelItems)
@@ -113,6 +116,7 @@ bool CCoder::ReadTables(void)
   return ReadLevelItems(m_DistanceDecoder, distanceLevels, kDistanceTableSize);
 }
 
+/*
 class CCoderReleaser
 {
   CCoder *m_Coder;
@@ -120,6 +124,7 @@ public:
   CCoderReleaser(CCoder *coder): m_Coder(coder) {}
   ~CCoderReleaser() { m_Coder->ReleaseStreams(); }
 };
+*/
 
 HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
@@ -136,19 +141,19 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
   m_OutWindowStream.Init(false);
   m_InBitStream.SetStream(inStream);
   m_InBitStream.Init();
-  CCoderReleaser coderReleaser(this);
+  // CCoderReleaser coderReleaser(this);
 
   if (!ReadTables())
     return S_FALSE;
   
-  while(pos < unPackSize)
+  while (pos < unPackSize)
   {
     if (progress != NULL && pos % (1 << 16) == 0)
     {
       UInt64 packSize = m_InBitStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&packSize, &pos));
     }
-    if(m_InBitStream.ReadBits(1) == kMatchId) // match
+    if (m_InBitStream.ReadBits(1) == kMatchId) // match
     {
       UInt32 lowDistBits = m_InBitStream.ReadBits(m_NumDistanceLowDirectBits);
       UInt32 distance = m_DistanceDecoder.DecodeSymbol(&m_InBitStream);
@@ -159,9 +164,9 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
       if (lengthSymbol >= kLengthTableSize)
         return S_FALSE;
       UInt32 length = lengthSymbol + m_MinMatchLength;
-      if (lengthSymbol == kLengthTableSize - 1) // special symbol  = 63
+      if (lengthSymbol == kLengthTableSize - 1) // special symbol = 63
         length += m_InBitStream.ReadBits(kNumAdditionalLengthBits);
-      while(distance >= pos && length > 0)
+      while (distance >= pos && length > 0)
       {
         m_OutWindowStream.PutByte(0);
         pos++;

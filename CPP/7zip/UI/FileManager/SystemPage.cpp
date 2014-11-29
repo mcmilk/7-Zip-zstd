@@ -2,10 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
+#include "../../../Common/StringConvert.h"
 
-#include "Windows/DLL.h"
-#include "Windows/Error.h"
+#include "../../../Windows/DLL.h"
+#include "../../../Windows/ErrorMsg.h"
 
 #include "HelpUtils.h"
 #include "IFolder.h"
@@ -14,10 +14,11 @@
 #include "SystemPage.h"
 #include "SystemPageRes.h"
 
-static const CIDLangPair kIDLangPairs[] =
+using namespace NWindows;
+
+static const UInt32 kLangIDs[] =
 {
-  { IDC_SYSTEM_STATIC_ASSOCIATE,  0x03010302}
-  // { IDC_SYSTEM_SELECT_ALL,        0x03000330}
+  IDT_SYSTEM_ASSOCIATE
 };
 
 static LPCWSTR kSystemTopic = L"FM/options.htm#system";
@@ -80,7 +81,7 @@ void CSystemPage::ChangeState(int group, const CIntVector &indices)
   bool thereAreClearItems = false;
   int counters[3] = { 0, 0, 0 };
   
-  int i;
+  unsigned i;
   for (i = 0; i < indices.Size(); i++)
   {
     const CModifiedExtInfo &mi = _items[GetRealIndex(indices[i])].Pair[group];
@@ -125,9 +126,9 @@ void CSystemPage::ChangeState(int group, const CIntVector &indices)
 
 bool CSystemPage::OnInit()
 {
-  LangSetDlgItemsText((HWND)*this, kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
 
-  _listView.Attach(GetItem(IDC_SYSTEM_LIST_ASSOCIATE));
+  _listView.Attach(GetItem(IDL_SYSTEM_ASSOCIATE));
   _listView.SetUnicodeFormat();
   DWORD newFlags = LVS_EX_FULLROWSELECT;
   _listView.SetExtendedListViewStyle(newFlags, newFlags);
@@ -137,7 +138,7 @@ bool CSystemPage::OnInit()
 
   _listView.SetImageList(_imageList, LVSIL_SMALL);
 
-  _listView.InsertColumn(0, LangString(IDS_PROP_FILE_TYPE, 0x02000214), 72);
+  _listView.InsertColumn(0, LangString(IDS_PROP_FILE_TYPE), 72);
 
   CSysString s;
 
@@ -172,7 +173,7 @@ bool CSystemPage::OnInit()
   _extDB.Read();
   _items.Clear();
 
-  for (int i = 0; i < _extDB.Exts.Size(); i++)
+  FOR_VECTOR (i, _extDB.Exts)
   {
     const CExtPlugins &extInfo = _extDB.Exts[i];
 
@@ -215,7 +216,7 @@ bool CSystemPage::OnInit()
 
 static UString GetProgramCommand()
 {
-  return L"\"" + fs2us(NWindows::NDLL::GetModuleDirPrefix()) + L"7zFM.exe\" \"%1\"";
+  return L"\"" + fs2us(NDLL::GetModuleDirPrefix()) + L"7zFM.exe\" \"%1\"";
 }
 
 LONG CSystemPage::OnApply()
@@ -224,7 +225,7 @@ LONG CSystemPage::OnApply()
   
   LONG res = 0;
 
-  for (int listIndex = 0; listIndex < _extDB.Exts.Size(); listIndex++)
+  FOR_VECTOR (listIndex, _extDB.Exts)
   {
     int realIndex = GetRealIndex(listIndex);
     const CExtPlugins &extInfo = _extDB.Exts[realIndex];
@@ -260,7 +261,7 @@ LONG CSystemPage::OnApply()
   WasChanged = true;
   #endif
   if (res != 0)
-    MessageBoxW(*this, NWindows::NError::MyFormatMessageW(res), L"7-Zip", MB_ICONERROR);
+    MessageBoxW(*this, NError::MyFormatMessage(res), L"7-Zip", MB_ICONERROR);
   return PSNRET_NOERROR;
 }
 
@@ -278,9 +279,9 @@ bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
       _listView.SelectAll();
       return true;
     */
-    case IDC_SYSTEM_BUTTON_CURRENT:
-    case IDC_SYSTEM_BUTTON_ALL:
-      ChangeState(buttonID == IDC_SYSTEM_BUTTON_CURRENT ? 0 : 1);
+    case IDB_SYSTEM_CURRENT:
+    case IDB_SYSTEM_ALL:
+      ChangeState(buttonID == IDB_SYSTEM_CURRENT ? 0 : 1);
       return true;
   }
   return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
@@ -346,15 +347,15 @@ void CSystemPage::ChangeState(int group)
   while ((itemIndex = _listView.GetNextSelectedItem(itemIndex)) != -1)
     indices.Add(itemIndex);
   if (indices.IsEmpty())
-    for (int i = 0; i < _items.Size(); i++)
+    FOR_VECTOR (i, _items)
       indices.Add(i);
   ChangeState(group, indices);
 }
 
 bool CSystemPage::OnListKeyDown(LPNMLVKEYDOWN keyDownInfo)
 {
-  bool ctrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-  bool alt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+  bool ctrl = IsKeyDown(VK_CONTROL);
+  bool alt = IsKeyDown(VK_MENU);
 
   if (alt)
     return false;

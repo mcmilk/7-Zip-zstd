@@ -1,6 +1,8 @@
 /* Bcj2.c -- Converter for x86 code (BCJ2)
 2008-10-04 : Igor Pavlov : Public domain */
 
+#include "Precomp.h"
+
 #include "Bcj2.h"
 
 #ifdef _LZMA_PROB32

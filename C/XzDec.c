@@ -1,5 +1,7 @@
 /* XzDec.c -- Xz Decode
-2011-02-07 : Igor Pavlov : Public domain */
+2014-05-09 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 /* #define XZ_DUMP */
 
@@ -305,7 +307,7 @@ static SRes Lzma2State_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *sr
 {
   ELzmaStatus status;
   /* ELzmaFinishMode fm = (finishMode == LZMA_FINISH_ANY) ? LZMA_FINISH_ANY : LZMA_FINISH_END; */
-  SRes res = Lzma2Dec_DecodeToBuf((CLzma2Dec *)pp, dest, destLen, src, srcLen, finishMode, &status);
+  SRes res = Lzma2Dec_DecodeToBuf((CLzma2Dec *)pp, dest, destLen, src, srcLen, (ELzmaFinishMode)finishMode, &status);
   srcWasFinished = srcWasFinished;
   *wasFinished = (status == LZMA_STATUS_FINISHED_WITH_MARK);
   return res;
@@ -347,7 +349,10 @@ void MixCoder_Free(CMixCoder *p)
   }
   p->numCoders = 0;
   if (p->buf)
+  {
     p->alloc->Free(p->alloc, p->buf);
+    p->buf = 0; /* 9.31: the BUG was fixed */
+  }
 }
 
 void MixCoder_Init(CMixCoder *p)
@@ -601,7 +606,10 @@ void XzUnpacker_Init(CXzUnpacker *p)
 {
   p->state = XZ_STATE_STREAM_HEADER;
   p->pos = 0;
-  p->numStreams = 0;
+  p->numStartedStreams = 0;
+  p->numFinishedStreams = 0;
+  p->numTotalBlocks = 0;
+  p->padSize = 0;
 }
 
 void XzUnpacker_Construct(CXzUnpacker *p, ISzAlloc *alloc)
@@ -676,7 +684,7 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
       return SZ_OK;
     }
 
-    switch(p->state)
+    switch (p->state)
     {
       case XZ_STATE_STREAM_HEADER:
       {
@@ -690,6 +698,7 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
         else
         {
           RINOK(Xz_ParseHeader(&p->streamFlags, p->buf));
+          p->numStartedStreams++;
           p->state = XZ_STATE_BLOCK_HEADER;
           Sha256_Init(&p->sha);
           p->indexSize = 0;
@@ -730,6 +739,7 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
         else
         {
           RINOK(XzBlock_Parse(&p->block, p->buf));
+          p->numTotalBlocks++;
           p->state = XZ_STATE_BLOCK;
           p->packSize = 0;
           p->unpackSize = 0;
@@ -847,7 +857,7 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
         if (p->pos == XZ_STREAM_FOOTER_SIZE)
         {
           p->state = XZ_STATE_STREAM_PADDING;
-          p->numStreams++;
+          p->numFinishedStreams++;
           p->padSize = 0;
           if (!Xz_CheckFooter(p->streamFlags, p->indexSize, p->buf))
             return SZ_ERROR_CRC;
@@ -886,4 +896,14 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
 Bool XzUnpacker_IsStreamWasFinished(CXzUnpacker *p)
 {
   return (p->state == XZ_STATE_STREAM_PADDING) && (((UInt32)p->padSize & 3) == 0);
+}
+
+UInt64 XzUnpacker_GetExtraSize(CXzUnpacker *p)
+{
+  UInt64 num = 0;
+  if (p->state == XZ_STATE_STREAM_PADDING)
+    num += p->padSize;
+  else if (p->state == XZ_STATE_STREAM_HEADER)
+    num += p->padSize + p->pos;
+  return num;
 }

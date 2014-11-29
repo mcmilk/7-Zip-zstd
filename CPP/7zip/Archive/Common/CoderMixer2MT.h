@@ -12,15 +12,17 @@ namespace NCoderMixer {
 
 struct CCoder2: public CCoderInfo2, public CVirtThread
 {
-  HRESULT Result;
-  CObjectVector< CMyComPtr<ISequentialInStream> > InStreams;
-  CObjectVector< CMyComPtr<ISequentialOutStream> > OutStreams;
   CRecordVector<ISequentialInStream*> InStreamPointers;
   CRecordVector<ISequentialOutStream*> OutStreamPointers;
 
+public:
+  HRESULT Result;
+  CObjectVector< CMyComPtr<ISequentialInStream> > InStreams;
+  CObjectVector< CMyComPtr<ISequentialOutStream> > OutStreams;
+
   CCoder2(UInt32 numInStreams, UInt32 numOutStreams);
   ~CCoder2() { CVirtThread::WaitThreadFinish(); }
-  void SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes);
+  // void SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes);
   virtual void Execute();
   void Code(ICompressProgressInfo *progress);
 };
@@ -48,7 +50,7 @@ class CCoderMixer2MT:
 {
   CBindInfo _bindInfo;
   CObjectVector<CStreamBinder> _streamBinders;
-  int _progressCoderIndex;
+  unsigned _progressCoderIndex;
 
   void AddCoderCommon();
   HRESULT Init(ISequentialInStream **inStreams, ISequentialOutStream **outStreams);
@@ -68,7 +70,7 @@ public:
   HRESULT SetBindInfo(const CBindInfo &bindInfo);
   void AddCoder(ICompressCoder *coder);
   void AddCoder2(ICompressCoder2 *coder);
-  void SetProgressCoderIndex(int coderIndex) {  _progressCoderIndex = coderIndex; }
+  void SetProgressCoderIndex(unsigned coderIndex) {  _progressCoderIndex = coderIndex; }
 
   void ReInit();
   void SetCoderInfo(UInt32 coderIndex, const UInt64 **inSizes, const UInt64 **outSizes)

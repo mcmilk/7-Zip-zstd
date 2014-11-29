@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "NO_REGISTRY" /D "_SFX" /D "_NO_CRYPTO" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MT /W4 /WX /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "NO_REGISTRY" /D "_SFX" /D "_NO_CRYPTO" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "NO_REGISTRY" /D "_SFX" /D "_NO_CRYPTO" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MTd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "NO_REGISTRY" /D "_SFX" /D "_NO_CRYPTO" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -98,7 +98,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "_SFX" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "NO_REGISTRY" /D "_SFX" /D "_NO_CRYPTO" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "EXTRACT_ONLY" /D "NO_REGISTRY" /D "_SFX" /D "_NO_CRYPTO" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -170,10 +170,6 @@ SOURCE=..\..\Archive\7z\7zHandler.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\7z\7zHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zHeader.cpp
 # End Source File
 # Begin Source File
 
@@ -401,11 +397,11 @@ SOURCE=..\..\..\Windows\DLL.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Error.cpp
+SOURCE=..\..\..\Windows\ErrorMsg.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Error.h
+SOURCE=..\..\..\Windows\ErrorMsg.h
 # End Source File
 # Begin Source File
 
@@ -541,6 +537,10 @@ SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\PropId.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\StreamBinder.cpp
 # End Source File
 # Begin Source File
@@ -641,6 +641,10 @@ SOURCE=..\..\UI\FileManager\FormatUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\FileManager\LangUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\FileManager\ProgressDialog.cpp
 # End Source File
 # Begin Source File
@@ -722,11 +726,11 @@ SOURCE=..\..\..\..\C\Threads.h
 # End Group
 # Begin Source File
 
-SOURCE=.\ExtractCallback.cpp
+SOURCE=.\ExtractCallbackSfx.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\ExtractCallback.h
+SOURCE=.\ExtractCallbackSfx.h
 # End Source File
 # Begin Source File
 
@@ -738,11 +742,11 @@ SOURCE=.\ExtractEngine.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Main.cpp
+SOURCE=.\setup.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\setup.ico
+SOURCE=.\SfxSetup.cpp
 # End Source File
 # End Target
 # End Project

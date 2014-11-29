@@ -3,8 +3,8 @@
 #ifndef __LANG_PAGE_H
 #define __LANG_PAGE_H
 
-#include "Windows/Control/PropertyPage.h"
-#include "Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/PropertyPage.h"
+#include "../../../Windows/Control/ComboBox.h"
 
 class CLangPage: public NWindows::NControl::CPropertyPage
 {
@@ -12,6 +12,7 @@ class CLangPage: public NWindows::NControl::CPropertyPage
   UStringVector _paths;
 public:
   bool LangWasChanged;
+  
   CLangPage() { LangWasChanged =  false; }
   virtual bool OnInit();
   virtual void OnNotifyHelp();

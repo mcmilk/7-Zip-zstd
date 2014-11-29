@@ -3,9 +3,9 @@
 #include "StdAfx.h"
 
 #ifndef _UNICODE
-#include "Common/StringConvert.h"
+#include "../Common/StringConvert.h"
 #endif
-#include "Windows/Menu.h"
+#include "Menu.h"
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -13,10 +13,31 @@ extern bool g_IsNT;
 
 namespace NWindows {
 
+/*
+structures
+  MENUITEMINFOA
+  MENUITEMINFOW
+contain additional member:
+  #if (WINVER >= 0x0500)
+    HBITMAP hbmpItem;
+  #endif
+If we compile the source code with (WINVER >= 0x0500), some functions
+will not work at NT 4.0, if cbSize is set as sizeof(MENUITEMINFO*).
+So we use size of old version of structure. */
+
+#if defined(UNDER_CE) || defined(_WIN64) || (WINVER < 0x0500)
+  #define my_compatib_MENUITEMINFOA_size  sizeof(MENUITEMINFOA)
+  #define my_compatib_MENUITEMINFOW_size  sizeof(MENUITEMINFOW)
+#else
+  #define MY_STRUCT_SIZE_BEFORE(structname, member) ((UINT)(UINT_PTR)((LPBYTE)(&((structname*)0)->member) - (LPBYTE)(structname*)0))
+  #define my_compatib_MENUITEMINFOA_size MY_STRUCT_SIZE_BEFORE(MENUITEMINFOA, hbmpItem)
+  #define my_compatib_MENUITEMINFOW_size MY_STRUCT_SIZE_BEFORE(MENUITEMINFOW, hbmpItem)
+#endif
+
 static void ConvertItemToSysForm(const CMenuItem &item, MENUITEMINFOW &si)
 {
   ZeroMemory(&si, sizeof(si));
-  si.cbSize = sizeof(si);
+  si.cbSize = my_compatib_MENUITEMINFOW_size; // sizeof(si);
   si.fMask = item.fMask;
   si.fType = item.fType;
   si.fState = item.fState;
@@ -31,7 +52,7 @@ static void ConvertItemToSysForm(const CMenuItem &item, MENUITEMINFOW &si)
 static void ConvertItemToSysForm(const CMenuItem &item, MENUITEMINFOA &si)
 {
   ZeroMemory(&si, sizeof(si));
-  si.cbSize = sizeof(si);
+  si.cbSize = my_compatib_MENUITEMINFOA_size; // sizeof(si);
   si.fMask = item.fMask;
   si.fType = item.fType;
   si.fState = item.fState;

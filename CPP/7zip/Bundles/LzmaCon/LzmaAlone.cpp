@@ -69,26 +69,24 @@ enum Enum
 
 static const CSwitchForm kSwitchForms[] =
 {
-  { L"?",  NSwitchType::kSimple, false },
-  { L"H",  NSwitchType::kSimple, false },
-  { L"MM", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"X", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"A", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"D", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"FB", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"MC", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"LC", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"LP", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"PB", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"MF", NSwitchType::kUnLimitedPostString, false, 1 },
-  { L"MT", NSwitchType::kUnLimitedPostString, false, 0 },
-  { L"EOS", NSwitchType::kSimple, false },
-  { L"SI",  NSwitchType::kSimple, false },
-  { L"SO",  NSwitchType::kSimple, false },
-  { L"F86",  NSwitchType::kPostChar, false, 0, 0, L"+" }
+  { "?",  NSwitchType::kSimple, false },
+  { "H",  NSwitchType::kSimple, false },
+  { "MM", NSwitchType::kString, false, 1 },
+  { "X", NSwitchType::kString, false, 1 },
+  { "A", NSwitchType::kString, false, 1 },
+  { "D", NSwitchType::kString, false, 1 },
+  { "FB", NSwitchType::kString, false, 1 },
+  { "MC", NSwitchType::kString, false, 1 },
+  { "LC", NSwitchType::kString, false, 1 },
+  { "LP", NSwitchType::kString, false, 1 },
+  { "PB", NSwitchType::kString, false, 1 },
+  { "MF", NSwitchType::kString, false, 1 },
+  { "MT", NSwitchType::kString, false, 0 },
+  { "EOS", NSwitchType::kSimple, false },
+  { "SI",  NSwitchType::kSimple, false },
+  { "SO",  NSwitchType::kSimple, false },
+  { "F86",  NSwitchType::kChar, false, 0, "+" }
 };
-
-static const int kNumSwitches = sizeof(kSwitchForms) / sizeof(kSwitchForms[0]);
 
 static void PrintMessage(const char *s)
 {
@@ -138,19 +136,14 @@ static void WriteArgumentsToStringList(int numArgs, const char *args[], UStringV
 static bool GetNumber(const wchar_t *s, UInt32 &value)
 {
   value = 0;
-  if (MyStringLen(s) == 0)
+  if (*s == 0)
     return false;
   const wchar_t *end;
-  UInt64 res = ConvertStringToUInt64(s, &end);
-  if (*end != L'\0')
-    return false;
-  if (res > 0xFFFFFFFF)
-    return false;
-  value = UInt32(res);
-  return true;
+  value = ConvertStringToUInt32(s, &end);
+  return *end == 0;
 }
 
-static void ParseUInt32(const CParser &parser, int index, UInt32 &res)
+static void ParseUInt32(const CParser &parser, unsigned index, UInt32 &res)
 {
   if (parser[index].ThereIs)
     if (!GetNumber(parser[index].PostStrings[0], res))
@@ -180,7 +173,8 @@ int main2(int numArgs, const char *args[])
 
   UStringVector commandStrings;
   WriteArgumentsToStringList(numArgs, args, commandStrings);
-  CParser parser(kNumSwitches);
+  
+  CParser parser(ARRAY_SIZE(kSwitchForms));
   try
   {
     parser.ParseStrings(kSwitchForms, commandStrings);
@@ -197,7 +191,7 @@ int main2(int numArgs, const char *args[])
   }
   const UStringVector &nonSwitchStrings = parser.NonSwitchStrings;
 
-  int paramIndex = 0;
+  unsigned paramIndex = 0;
   if (paramIndex >= nonSwitchStrings.Size())
     IncorrectCommand();
   const UString &command = nonSwitchStrings[paramIndex++];
@@ -259,11 +253,11 @@ int main2(int numArgs, const char *args[])
       IncorrectCommand();
     CProperty prop;
     prop.Name = L"m";
-    prop.Value = s.Mid(1);
+    prop.Value = s.Ptr(1);
     props.Add(prop);
   }
 
-  if (command.CompareNoCase(L"b") == 0)
+  if (MyStringCompareNoCase(command, L"b") == 0)
   {
     const UInt32 kNumDefaultItereations = 1;
     UInt32 numIterations = kNumDefaultItereations;
@@ -288,9 +282,9 @@ int main2(int numArgs, const char *args[])
     numThreads = 1;
 
   bool encodeMode = false;
-  if (command.CompareNoCase(L"e") == 0)
+  if (MyStringCompareNoCase(command, L"e") == 0)
     encodeMode = true;
-  else if (command.CompareNoCase(L"d") == 0)
+  else if (MyStringCompareNoCase(command, L"d") == 0)
     encodeMode = false;
   else
     IncorrectCommand();
@@ -456,7 +450,7 @@ int main2(int numArgs, const char *args[])
       NCoderPropID::kNumThreads,
       NCoderPropID::kMatchFinderCycles,
     };
-    const int kNumPropsMax = sizeof(propIDs) / sizeof(propIDs[0]);
+    const unsigned kNumPropsMax = ARRAY_SIZE(propIDs);
 
     PROPVARIANT props[kNumPropsMax];
     for (int p = 0; p < 6; p++)
@@ -482,7 +476,7 @@ int main2(int numArgs, const char *args[])
     props[9].vt = VT_UI4;
     props[9].ulVal = (UInt32)mc;
 
-    int numProps = kNumPropsMax;
+    unsigned numProps = kNumPropsMax;
     if (!mcDefined)
       numProps--;
 
@@ -512,7 +506,7 @@ int main2(int numArgs, const char *args[])
     }
     else if (result != S_OK)
     {
-      fprintf(stderr, "\nEncoder error = %X\n", (unsigned int)result);
+      fprintf(stderr, "\nEncoder error = %X\n", (unsigned)result);
       return 1;
     }
   }
@@ -537,9 +531,16 @@ int main2(int numArgs, const char *args[])
     for (int i = 0; i < 8; i++)
       fileSize |= ((UInt64)header[kPropertiesSize + i]) << (8 * i);
 
-    if (decoder->Code(inStream, outStream, 0, (fileSize == (UInt64)(Int64)-1) ? 0 : &fileSize, 0) != S_OK)
+    bool isSizeDefined = (fileSize != (UInt64)(Int64)-1);
+    HRESULT res = decoder->Code(inStream, outStream, 0, isSizeDefined ? &fileSize : NULL, 0) != S_OK;
+    if (res != S_OK)
     {
       PrintMessage("Decoder error");
+      return 1;
+    }
+    if (isSizeDefined && decoderSpec->GetOutputProcessedSize() != fileSize)
+    {
+      PrintMessage("Error: incorrect uncompressed size in header");
       return 1;
     }
   }

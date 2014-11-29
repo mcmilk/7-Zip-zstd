@@ -2,15 +2,26 @@
 
 #include "StdAfx.h"
 
-#include "Common/ComTry.h"
+#include "../../../Common/ComTry.h"
 
 #include "../Common/ArchiveExtractCallback.h"
 
 #include "Agent.h"
 
-STDMETHODIMP CAgentFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
+/*
+STDMETHODIMP CAgentFolder::SetReplaceAltStreamCharsMode(Int32 replaceAltStreamCharsMode)
+{
+  _replaceAltStreamCharsMode = replaceAltStreamCharsMode;
+  return S_OK;
+}
+*/
+
+STDMETHODIMP CAgentFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 numItems,
+    Int32 includeAltStreams, Int32 replaceAltStreamCharsMode,
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
+  if (moveMode)
+    return E_NOTIMPL;
   COM_TRY_BEGIN
   CMyComPtr<IFolderArchiveExtractCallback> extractCallback2;
   {
@@ -18,15 +29,11 @@ STDMETHODIMP CAgentFolder::CopyTo(const UInt32 *indices, UInt32 numItems,
     RINOK(callbackWrap.QueryInterface(IID_IFolderArchiveExtractCallback, &extractCallback2));
   }
   NExtract::NPathMode::EEnum pathMode = _flatMode ?
-      NExtract::NPathMode::kNoPathnames :
-      NExtract::NPathMode::kCurrentPathnames;
-  return Extract(indices,numItems, pathMode, NExtract::NOverwriteMode::kAskBefore,
+      NExtract::NPathMode::kNoPaths :
+      NExtract::NPathMode::kCurPaths;
+  return Extract(indices, numItems,
+      includeAltStreams, replaceAltStreamCharsMode,
+      pathMode, NExtract::NOverwriteMode::kAsk,
       path, BoolToInt(false), extractCallback2);
   COM_TRY_END
-}
-
-STDMETHODIMP CAgentFolder::MoveTo(const UInt32 * /* indices */, UInt32 /* numItems */,
-    const wchar_t * /* path */, IFolderOperationsExtractCallback * /* callback */)
-{
-  return E_NOTIMPL;
 }

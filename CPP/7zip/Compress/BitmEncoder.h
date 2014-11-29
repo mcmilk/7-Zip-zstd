@@ -8,41 +8,40 @@
 template<class TOutByte>
 class CBitmEncoder
 {
-  TOutByte m_Stream;
-  unsigned m_BitPos;
-  Byte m_CurByte;
+  unsigned _bitPos;
+  Byte _curByte;
+  TOutByte _stream;
 public:
-  bool Create(UInt32 bufferSize) { return m_Stream.Create(bufferSize); }
-  void SetStream(ISequentialOutStream *outStream) { m_Stream.SetStream(outStream);}
-  void ReleaseStream() { m_Stream.ReleaseStream(); }
-  UInt64 GetProcessedSize() const { return m_Stream.GetProcessedSize() + (8 - m_BitPos + 7) / 8; }
+  bool Create(UInt32 bufferSize) { return _stream.Create(bufferSize); }
+  void SetStream(ISequentialOutStream *outStream) { _stream.SetStream(outStream);}
+  UInt64 GetProcessedSize() const { return _stream.GetProcessedSize() + ((8 - _bitPos + 7) >> 3); }
   void Init()
   {
-    m_Stream.Init();
-    m_BitPos = 8;
-    m_CurByte = 0;
+    _stream.Init();
+    _bitPos = 8;
+    _curByte = 0;
   }
   HRESULT Flush()
   {
-    if (m_BitPos < 8)
-      WriteBits(0, m_BitPos);
-    return m_Stream.Flush();
+    if (_bitPos < 8)
+      WriteBits(0, _bitPos);
+    return _stream.Flush();
   }
   void WriteBits(UInt32 value, unsigned numBits)
   {
     while (numBits > 0)
     {
-      if (numBits < m_BitPos)
+      if (numBits < _bitPos)
       {
-        m_CurByte |= ((Byte)value << (m_BitPos -= numBits));
+        _curByte |= ((Byte)value << (_bitPos -= numBits));
         return;
       }
-      numBits -= m_BitPos;
+      numBits -= _bitPos;
       UInt32 newBits = (value >> numBits);
       value -= (newBits << numBits);
-      m_Stream.WriteByte((Byte)(m_CurByte | newBits));
-      m_BitPos = 8;
-      m_CurByte = 0;
+      _stream.WriteByte((Byte)(_curByte | newBits));
+      _bitPos = 8;
+      _curByte = 0;
     }
   }
 };

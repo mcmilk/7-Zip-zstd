@@ -7,8 +7,8 @@
 
 #include "../../../C/CpuArch.h"
 
-#include "Common/MyVector.h"
-#include "Common/Types.h"
+#include "../../Common/MyTypes.h"
+#include "../../Common/MyVector.h"
 
 #define RARVM_STANDARD_FILTERS
 
@@ -27,17 +27,17 @@ public:
     _bitSize = (byteSize << 3);
     _bitPos = 0;
   }
-  UInt32 ReadBits(int numBits);
+  UInt32 ReadBits(unsigned numBits);
   UInt32 ReadBit();
   bool Avail() const { return (_bitPos < _bitSize); }
+
+  UInt32 ReadEncodedUInt32();
 };
 
 namespace NVm {
 
 inline UInt32 GetValue32(const void *addr) { return GetUi32(addr); }
 inline void SetValue32(void *addr, UInt32 value) { SetUi32(addr, value); }
-
-UInt32 ReadEncodedUInt32(CMemBitDecoder &inp);
 
 const int kNumRegBits = 3;
 const UInt32 kNumRegs = 1 << kNumRegBits;
@@ -95,13 +95,19 @@ struct CBlockRef
   UInt32 Size;
 };
 
-struct CProgram
+class CProgram
 {
+public:
   CRecordVector<CCommand> Commands;
   #ifdef RARVM_STANDARD_FILTERS
   int StandardFilterIndex;
   #endif
   CRecordVector<Byte> StaticData;
+
+private:
+  void ReadProgram(const Byte *code, UInt32 codeSize);
+public:
+  void PrepareProgram(const Byte *code, UInt32 codeSize);
 };
 
 struct CProgramInitState
@@ -111,10 +117,8 @@ struct CProgramInitState
 
   void AllocateEmptyFixedGlobal()
   {
-    GlobalData.Clear();
-    GlobalData.Reserve(NVm::kFixedGlobalSize);
-    for (UInt32 i = 0; i < NVm::kFixedGlobalSize; i++)
-      GlobalData.Add(0);
+    GlobalData.ClearAndSetSize(NVm::kFixedGlobalSize);
+    memset(&GlobalData[0], 0, NVm::kFixedGlobalSize);
   }
 };
 
@@ -150,8 +154,6 @@ private:
   UInt32 GetOperand(bool byteMode, const COperand *op) const;
   void SetOperand(bool byteMode, const COperand *op, UInt32 val);
 
-  void DecodeArg(CMemBitDecoder &inp, COperand &op, bool byteMode);
-  
   bool ExecuteCode(const CProgram *prg);
   
   #ifdef RARVM_STANDARD_FILTERS
@@ -161,12 +163,10 @@ private:
   Byte *Mem;
   UInt32 R[kNumRegs + 1]; // R[kNumRegs] = 0 always (speed optimization)
   UInt32 Flags;
-  void ReadVmProgram(const Byte *code, UInt32 codeSize, CProgram *prg);
 public:
   CVm();
   ~CVm();
   bool Create();
-  void PrepareProgram(const Byte *code, UInt32 codeSize, CProgram *prg);
   void SetMemory(UInt32 pos, const Byte *data, UInt32 dataSize);
   bool Execute(CProgram *prg, const CProgramInitState *initState,
       CBlockRef &outBlockRef, CRecordVector<Byte> &outGlobalData);

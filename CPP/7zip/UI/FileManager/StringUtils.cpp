@@ -9,8 +9,8 @@ void SplitStringToTwoStrings(const UString &src, UString &dest1, UString &dest2)
   dest1.Empty();
   dest2.Empty();
   bool quoteMode = false;
-  int i;
-  for (i = 0; i < src.Length(); i++)
+  unsigned i;
+  for (i = 0; i < src.Len(); i++)
   {
     wchar_t c = src[i];
     if (c == L'\"')
@@ -26,43 +26,42 @@ void SplitStringToTwoStrings(const UString &src, UString &dest1, UString &dest2)
     else
       dest1 += c;
   }
-  dest2 = src.Mid(i);
+  dest2 = src.Ptr(i);
 }
 
 void SplitString(const UString &srcString, UStringVector &destStrings)
 {
   destStrings.Clear();
-  UString string;
-  int len = srcString.Length();
+  unsigned len = srcString.Len();
   if (len == 0)
     return;
-  for (int i = 0; i < len; i++)
+  UString s;
+  for (unsigned i = 0; i < len; i++)
   {
     wchar_t c = srcString[i];
     if (c == L' ')
     {
-      if (!string.IsEmpty())
+      if (!s.IsEmpty())
       {
-        destStrings.Add(string);
-        string.Empty();
+        destStrings.Add(s);
+        s.Empty();
       }
     }
     else
-      string += c;
+      s += c;
   }
-  if (!string.IsEmpty())
-    destStrings.Add(string);
+  if (!s.IsEmpty())
+    destStrings.Add(s);
 }
 
 UString JoinStrings(const UStringVector &srcStrings)
 {
-  UString destString;
-  for (int i = 0; i < srcStrings.Size(); i++)
+  UString s;
+  FOR_VECTOR (i, srcStrings)
   {
     if (i != 0)
-      destString += L' ';
-    destString += srcStrings[i];
+      s += L' ';
+    s += srcStrings[i];
   }
-  return destString;
+  return s;
 }
-

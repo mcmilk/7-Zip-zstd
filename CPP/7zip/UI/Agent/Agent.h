@@ -3,9 +3,9 @@
 #ifndef __AGENT_AGENT_H
 #define __AGENT_AGENT_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
 
-#include "Windows/PropVariant.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "../Common/OpenArchive.h"
 #include "../Common/UpdateAction.h"
@@ -27,8 +27,8 @@ DECL_INTERFACE(IArchiveFolderInternal, 0x01, 0xC)
 
 struct CProxyItem
 {
-  const CProxyFolder *Folder;
-  UInt32 Index;
+  unsigned ProxyFolderIndex;
+  unsigned Index;
 };
 
 class CAgent;
@@ -45,25 +45,33 @@ enum AGENT_OP
 class CAgentFolder:
   public IFolderFolder,
   public IFolderProperties,
+  public IArchiveGetRawProps,
   public IGetFolderArcProps,
+  public IFolderCompare,
+  public IFolderGetItemName,
   public IArchiveFolder,
   public IArchiveFolderInternal,
   public IInArchiveGetStream,
+  // public IFolderSetReplaceAltStreamCharsMode,
 #ifdef NEW_FOLDER_INTERFACE
   public IFolderOperations,
   public IFolderSetFlatMode,
 #endif
   public CMyUnknownImp
 {
-  void LoadFolder(const CProxyFolder *folder);
+  void LoadFolder(unsigned proxyFolderIndex);
 public:
 
   MY_QUERYINTERFACE_BEGIN2(IFolderFolder)
     MY_QUERYINTERFACE_ENTRY(IFolderProperties)
+    MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
     MY_QUERYINTERFACE_ENTRY(IGetFolderArcProps)
+    MY_QUERYINTERFACE_ENTRY(IFolderCompare)
+    MY_QUERYINTERFACE_ENTRY(IFolderGetItemName)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolder)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolderInternal)
     MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
+    // MY_QUERYINTERFACE_ENTRY(IFolderSetReplaceAltStreamCharsMode)
   #ifdef NEW_FOLDER_INTERFACE
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)
     MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
@@ -71,21 +79,24 @@ public:
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
-  HRESULT BindToFolder(const CProxyFolder *folder, IFolderFolder **resultFolder);
-  void GetRealIndices(const UINT32 *indices, UINT32 numItems, CUIntVector &realIndices) const;
+  HRESULT BindToFolder_Internal(unsigned proxyFolderIndex, IFolderFolder **resultFolder);
+  int GetRealIndex(unsigned index) const;
+  void GetRealIndices(const UInt32 *indices, UInt32 numItems,
+      bool includeAltStreams, bool includeFolderSubItemsInFlatMode, CUIntVector &realIndices) const;
+
+  // INTERFACE_FolderSetReplaceAltStreamCharsMode(;)
 
   INTERFACE_FolderFolder(;)
   INTERFACE_FolderProperties(;)
+  INTERFACE_IArchiveGetRawProps(;)
+  INTERFACE_IFolderGetItemName(;)
 
   STDMETHOD(GetFolderArcProps)(IFolderArcProps **object);
+  STDMETHOD_(Int32, CompareItems)(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw);
+  int CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw);
 
   // IArchiveFolder
-  STDMETHOD(Extract)(const UINT32 *indices, UINT32 numItems,
-      NExtract::NPathMode::EEnum pathMode,
-      NExtract::NOverwriteMode::EEnum overwriteMode,
-      const wchar_t *path,
-      Int32 testMode,
-      IFolderArchiveExtractCallback *extractCallback);
+  INTERFACE_IArchiveFolder(;)
   
   STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder);
 
@@ -97,14 +108,15 @@ public:
   STDMETHOD(SetFlatMode)(Int32 flatMode);
   #endif
 
-  CAgentFolder(): _proxyFolderItem(NULL), _flatMode(0) {}
+  CAgentFolder(): _proxyFolderItem(0), _flatMode(0) /* , _replaceAltStreamCharsMode(0) */ {}
 
-  void Init(const CProxyArchive *proxyHandler,
-      const CProxyFolder *proxyFolderItem,
+  void Init(const CProxyArchive *proxyArc, const CProxyArchive2 *proxyArc2,
+      unsigned proxyFolderItem,
       IFolderFolder *parentFolder,
       CAgent *agent)
   {
-    _proxyArchive = proxyHandler;
+    _proxyArchive = proxyArc;
+    _proxyArchive2 = proxyArc2;
     _proxyFolderItem = proxyFolderItem;
     _parentFolder = parentFolder;
     _agent = (IInFolderArchive *)agent;
@@ -114,25 +126,29 @@ public:
   void GetPathParts(UStringVector &pathParts);
   HRESULT CommonUpdateOperation(
       AGENT_OP operation,
+      bool moveMode,
       const wchar_t *newItemName,
       const NUpdateArchive::CActionSet *actionSet,
-      const UINT32 *indices, UINT32 numItems,
+      const UInt32 *indices, UInt32 numItems,
       IFolderArchiveUpdateCallback *updateCallback100);
 
 
-  UString GetPrefix(UInt32 index) const;
+  void GetPrefix(UInt32 index, UString &prefix) const;
   UString GetName(UInt32 index) const;
   UString GetFullPathPrefixPlusPrefix(UInt32 index) const;
 
 public:
   const CProxyArchive *_proxyArchive;
-  const CProxyFolder *_proxyFolderItem;
+  const CProxyArchive2 *_proxyArchive2;
+  // const CProxyFolder *_proxyFolderItem;
+  unsigned _proxyFolderItem;
   CMyComPtr<IFolderFolder> _parentFolder;
   CMyComPtr<IInFolderArchive> _agent;
   CAgent *_agentSpec;
 
   CRecordVector<CProxyItem> _items;
   bool _flatMode;
+  // Int32 _replaceAltStreamCharsMode;
 private:
 };
 
@@ -163,7 +179,7 @@ public:
   INTERFACE_IOutFolderArchive(;)
 
   HRESULT CommonUpdate(ISequentialOutStream *outArchiveStream,
-      int numUpdateItems, IArchiveUpdateCallback *updateCallback);
+      unsigned numUpdateItems, IArchiveUpdateCallback *updateCallback);
   
   HRESULT CreateFolder(ISequentialOutStream *outArchiveStream,
       const wchar_t *folderName, IFolderArchiveUpdateCallback *updateCallback100);
@@ -177,7 +193,7 @@ public:
       IFolderArchiveUpdateCallback *updateCallback100);
 
   // ISetProperties
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, Int32 numProperties);
+  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
   #endif
 
   CCodecs *_codecs;
@@ -189,8 +205,10 @@ private:
   HRESULT ReadItems();
 public:
   CProxyArchive *_proxyArchive;
+  CProxyArchive2 *_proxyArchive2;
   CArchiveLink _archiveLink;
 
+  bool ThereIsPathProp;
 
   UString ArchiveType;
 
@@ -201,6 +219,7 @@ public:
   CAgentFolder *_agentFolder;
 
   UString _archiveFilePath;
+  bool _isDeviceFile;
 
   #ifndef EXTRACT_ONLY
   CObjectVector<UString> m_PropNames;
@@ -209,28 +228,50 @@ public:
 
   const CArc &GetArc() const { return _archiveLink.Arcs.Back(); }
   IInArchive *GetArchive() const { if ( _archiveLink.Arcs.IsEmpty()) return 0; return GetArc().Archive; }
-  bool CanUpdate() const { return _archiveLink.Arcs.Size() <= 1; }
+  bool CanUpdate() const;
 
-  UString GetTypeOfArc(const CArc &arc) const { return  _codecs->Formats[arc.FormatIndex].Name; }
+  UString GetTypeOfArc(const CArc &arc) const
+  {
+    if (arc.FormatIndex < 0)
+      return L"Parser";
+    return _codecs->GetFormatNamePtr(arc.FormatIndex);
+  }
+
   UString GetErrorMessage() const
   {
     UString s;
     for (int i = _archiveLink.Arcs.Size() - 1; i >= 0; i--)
     {
       const CArc &arc = _archiveLink.Arcs[i];
-      if (arc.ErrorMessage.IsEmpty())
-        continue;
-      if (!s.IsEmpty())
-        s += L"--------------------\n";
-      s += arc.ErrorMessage;
-      s += L"\n\n[";
-      s += GetTypeOfArc(arc);
-      s += L"] ";
-      s += arc.Path;
-      s += L"\n";
+
+      UString s2;
+      if (arc.ErrorInfo.ErrorFormatIndex >= 0)
+        s2 = L"Can not open the file as [" + _codecs->Formats[arc.ErrorInfo.ErrorFormatIndex].Name + L"] archive";
+
+      if (!arc.ErrorInfo.ErrorMessage.IsEmpty())
+      {
+        if (!s2.IsEmpty())
+          s2 += L"\n";
+        s2 += L"\n[";
+        s2 += GetTypeOfArc(arc);
+        s2 += L"]: ";
+        s2 += arc.ErrorInfo.ErrorMessage;
+      }
+      if (!s2.IsEmpty())
+      {
+        if (!s.IsEmpty())
+          s += L"--------------------\n";
+        s += arc.Path;
+        s += L"\n";
+        s += s2;
+        s += L"\n";
+      }
     }
     return s;
   }
+
+  void KeepModeForNextOpen() { _archiveLink.KeepModeForNextOpen(); }
+
 };
 
 #ifdef NEW_FOLDER_INTERFACE

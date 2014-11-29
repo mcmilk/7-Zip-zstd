@@ -2,12 +2,12 @@
 
 #include "StdAfx.h"
 
-#include "Common/ComTry.h"
-#include "Common/IntToString.h"
-#include "Common/StringConvert.h"
+#include "../../../Common/ComTry.h"
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/Time.h"
+#include "../../../Windows/PropVariant.h"
+#include "../../../Windows/TimeUtils.h"
 
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
@@ -24,22 +24,21 @@ using namespace NTime;
 namespace NArchive {
 namespace NIso {
 
-static const STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsDir, VT_BOOL},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8},
-  { NULL, kpidMTime, VT_FILETIME}
+  kpidPath,
+  kpidIsDir,
+  kpidSize,
+  kpidPackSize,
+  kpidMTime
 };
 
-static const STATPROPSTG kArcProps[] =
+static const Byte kArcProps[] =
 {
-  { NULL, kpidComment, VT_BSTR},
-  { NULL, kpidCTime, VT_FILETIME},
-  { NULL, kpidMTime, VT_FILETIME}
-  // { NULL, kpidPhySize, VT_UI8},
-  // { NULL, kpidHeadersSize, VT_UI8}
+  kpidComment,
+  kpidCTime,
+  kpidMTime,
+  // kpidHeadersSize
 };
 
 IMP_IInArchive_Props
@@ -51,13 +50,10 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 {
   COM_TRY_BEGIN
   Close();
-  // try
   {
-    if (_archive.Open(stream) != S_OK)
-      return S_FALSE;
+    RINOK(_archive.Open(stream));
     _stream = stream;
   }
-  // catch(...) { return S_FALSE; }
   return S_OK;
   COM_TRY_END
 }
@@ -75,9 +71,9 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-static void AddString(AString &s, const char *name, const Byte *p, int size)
+static void AddString(AString &s, const char *name, const Byte *p, unsigned size)
 {
-  int i;
+  unsigned i;
   for (i = 0; i < size && p[i]; i++);
   for (; i > 0 && p[i - 1] == ' '; i--);
   if (i != 0)
@@ -94,12 +90,21 @@ static void AddString(AString &s, const char *name, const Byte *p, int size)
 
 #define ADD_STRING(n, v) AddString(s, n, vol. ## v, sizeof(vol. ## v))
 
+static void AddErrorMessage(AString &s, const char *message)
+{
+  if (!s.IsEmpty())
+    s += ". ";
+  s += message;
+}
+
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
+  if (_stream)
+  {
   const CVolumeDescriptor &vol = _archive.VolDescs[_archive.MainVolDescIndex];
-  switch(propID)
+  switch (propID)
   {
     case kpidComment:
     {
@@ -118,9 +123,35 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     }
     case kpidCTime: { FILETIME utc; if (vol.CTime.GetFileTime(utc)) prop = utc; break; }
     case kpidMTime: { FILETIME utc; if (vol.MTime.GetFileTime(utc)) prop = utc; break; }
-    // case kpidPhySize: break;
-    // case kpidHeadersSize: break;
-    case kpidError: if (_archive.IncorrectBigEndian) prop = "Incorrect big-endian headers"; break;
+  }
+  }
+
+  switch (propID)
+  {
+    case kpidPhySize: prop = _archive.PhySize; break;
+    case kpidErrorFlags:
+    {
+      UInt32 v = 0;
+      if (!_archive.IsArc) v |= kpv_ErrorFlags_IsNotArc;
+      if (_archive.UnexpectedEnd) v |= kpv_ErrorFlags_UnexpectedEnd;
+      if (_archive.HeadersError) v |= kpv_ErrorFlags_HeadersError;
+      prop = v;
+      break;
+    }
+    
+    case kpidError:
+    {
+      AString s;
+      if (_archive.IncorrectBigEndian)
+        AddErrorMessage(s, "Incorrect big-endian headers");
+      if (_archive.SelfLinkedDirs)
+        AddErrorMessage(s, "Self-linked directory");
+      if (_archive.TooDeepDirs)
+        AddErrorMessage(s, "Too deep directory levels");
+      if (!s.IsEmpty())
+        prop = s;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;
@@ -130,22 +161,22 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
   if (index >= (UInt32)_archive.Refs.Size())
   {
     index -= _archive.Refs.Size();
     const CBootInitialEntry &be = _archive.BootEntries[index];
-    switch(propID)
+    switch (propID)
     {
       case kpidPath:
       {
-        // wchar_t name[32];
-        // ConvertUInt64ToString(index + 1, name);
-        UString s = L"[BOOT]" WSTRING_PATH_SEPARATOR;
+        // char name[16];
+        // ConvertUInt32ToString(index + 1, name);
+        AString s = "[BOOT]" STRING_PATH_SEPARATOR;
         // s += name;
-        // s += L"-";
+        // s += '-';
         s += be.GetName();
-        prop = (const wchar_t *)s;
+        prop = s;
         break;
       }
       case kpidIsDir: prop = false; break;
@@ -159,7 +190,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   {
     const CRef &ref = _archive.Refs[index];
     const CDir &item = ref.Dir->_subItems[ref.Index];
-    switch(propID)
+    switch (propID)
     {
       case kpidPath:
         // if (item.FileId.GetCapacity() >= 0)
@@ -171,9 +202,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
             s = MultiByteToUnicodeString(item.GetPath(_archive.IsSusp, _archive.SuspSkipSize), CP_OEMCP);
 
           int pos = s.ReverseFind(L';');
-          if (pos >= 0 && pos == s.Length() - 2)
+          if (pos >= 0 && pos == (int)s.Len() - 2)
               if (s.Back() == L'1')
-                s = s.Left(pos);
+                s.DeleteFrom(pos);
           if (!s.IsEmpty())
             if (s.Back() == L'.')
               s.DeleteBack();
@@ -184,7 +215,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidSize:
       case kpidPackSize:
         if (!item.IsDir())
-          prop = (UInt64)item.DataLength;
+          prop = (UInt64)ref.TotalSize;
         break;
       case kpidMTime:
       {
@@ -204,7 +235,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _archive.Refs.Size();
   if (numItems == 0)
@@ -219,7 +250,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       const CRef &ref = _archive.Refs[index];
       const CDir &item = ref.Dir->_subItems[ref.Index];
       if (!item.IsDir())
-        totalSize += item.DataLength;
+        totalSize += ref.TotalSize;
     }
     else
       totalSize += _archive.GetBootItemSize(index - _archive.Refs.Size());
@@ -239,9 +270,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<ISequentialInStream> inStream(streamSpec);
   streamSpec->SetStream(_stream);
-
-  CLimitedSequentialOutStream *outStreamSpec = new CLimitedSequentialOutStream;
-  CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
 
   for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
@@ -267,28 +295,54 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
         continue;
       }
-      currentItemSize = item.DataLength;
+      currentItemSize = ref.TotalSize;
       blockIndex = item.ExtentLocation;
     }
     else
     {
-      int bootIndex = index - _archive.Refs.Size();
+      unsigned bootIndex = index - _archive.Refs.Size();
       const CBootInitialEntry &be = _archive.BootEntries[bootIndex];
       currentItemSize = _archive.GetBootItemSize(bootIndex);
       blockIndex = be.LoadRBA;
     }
    
+
     if (!testMode && !realOutStream)
       continue;
+
     RINOK(extractCallback->PrepareOperation(askMode));
-    outStreamSpec->SetStream(realOutStream);
+
+    bool isOK = true;
+    if (index < (UInt32)_archive.Refs.Size())
+    {
+      const CRef &ref = _archive.Refs[index];
+      UInt64 offset = 0;
+      for (UInt32 e = 0; e < ref.NumExtents; e++)
+      {
+        if (e != 0)
+          lps->InSize = lps->OutSize = currentTotalSize + offset;
+        const CDir &item2 = ref.Dir->_subItems[ref.Index + e];
+        RINOK(_stream->Seek(item2.ExtentLocation * _archive.BlockSize, STREAM_SEEK_SET, NULL));
+        streamSpec->Init(item2.Size);
+        RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+        if (copyCoderSpec->TotalSize != item2.Size)
+        {
+          isOK = false;
+          break;
+        }
+        offset += item2.Size;
+      }
+    }
+    else
+    {
+      RINOK(_stream->Seek(blockIndex * _archive.BlockSize, STREAM_SEEK_SET, NULL));
+      streamSpec->Init(currentItemSize);
+      RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+      if (copyCoderSpec->TotalSize != currentItemSize)
+        isOK = false;
+    }
     realOutStream.Release();
-    outStreamSpec->Init(currentItemSize);
-    RINOK(_stream->Seek(blockIndex * _archive.BlockSize, STREAM_SEEK_SET, NULL));
-    streamSpec->Init(currentItemSize);
-    RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
-    outStreamSpec->ReleaseStream();
-    RINOK(extractCallback->SetOperationResult(outStreamSpec->IsFinishedOK() ?
+    RINOK(extractCallback->SetOperationResult(isOK ?
         NExtract::NOperationResult::kOK:
         NExtract::NOperationResult::kDataError));
   }
@@ -308,12 +362,42 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     const CDir &item = ref.Dir->_subItems[ref.Index];
     if (item.IsDir())
       return S_FALSE;
-    currentItemSize = item.DataLength;
+
+    if (ref.NumExtents > 1)
+    {
+      CExtentsStream *extentStreamSpec = new CExtentsStream();
+      CMyComPtr<ISequentialInStream> extentStream = extentStreamSpec;
+      
+      extentStreamSpec->Stream = _stream;
+      
+      UInt64 virtOffset = 0;
+      for (UInt32 i = 0; i < ref.NumExtents; i++)
+      {
+        const CDir &item = ref.Dir->_subItems[ref.Index + i];
+        if (item.Size == 0)
+          continue;
+        CSeekExtent se;
+        se.Phy = (UInt64)item.ExtentLocation * _archive.BlockSize;
+        se.Virt = virtOffset;
+        extentStreamSpec->Extents.Add(se);
+        virtOffset += item.Size;
+      }
+      if (virtOffset != ref.TotalSize)
+        return S_FALSE;
+      CSeekExtent se;
+      se.Phy = 0;
+      se.Virt = virtOffset;
+      extentStreamSpec->Extents.Add(se);
+      extentStreamSpec->Init();
+      *stream = extentStream.Detach();
+      return S_OK;
+    }
+    currentItemSize = item.Size;
     blockIndex = item.ExtentLocation;
   }
   else
   {
-    int bootIndex = index - _archive.Refs.Size();
+    unsigned bootIndex = index - _archive.Refs.Size();
     const CBootInitialEntry &be = _archive.BootEntries[bootIndex];
     currentItemSize = _archive.GetBootItemSize(bootIndex);
     blockIndex = be.LoadRBA;

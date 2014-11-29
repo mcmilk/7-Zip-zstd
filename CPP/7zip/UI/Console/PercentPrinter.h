@@ -3,7 +3,7 @@
 #ifndef __PERCENT_PRINTER_H
 #define __PERCENT_PRINTER_H
 
-#include "Common/StdOutStream.h"
+#include "../../../Common/StdOutStream.h"
 
 class CPercentPrinter
 {

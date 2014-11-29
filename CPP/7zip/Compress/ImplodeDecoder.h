@@ -40,9 +40,8 @@ public:
 
   MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
 
-  void ReleaseStreams();
-  HRESULT Flush() { return m_OutWindowStream.Flush(); }
-
+  // void ReleaseStreams();
+  
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 

@@ -4,7 +4,7 @@
 #define __WINDOWS_FILE_SYSTEM_H
 
 #include "../Common/MyString.h"
-#include "../Common/Types.h"
+#include "../Common/MyTypes.h"
 
 namespace NWindows {
 namespace NFile {

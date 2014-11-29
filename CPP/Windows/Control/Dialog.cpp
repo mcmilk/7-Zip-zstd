@@ -2,10 +2,11 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Control/Dialog.h"
 #ifndef _UNICODE
 #include "../../Common/StringConvert.h"
 #endif
+
+#include "Dialog.h"
 
 extern HINSTANCE g_hInstance;
 #ifndef _UNICODE
@@ -97,6 +98,55 @@ bool IsDialogSizeOK(int xSize, int ySize)
   return
     xSize / 4 * x <= wx &&
     ySize / 8 * y <= wy;
+}
+
+bool CDialog::GetMargins(int margin, int &x, int &y)
+{
+  x = margin;
+  y = margin;
+  RECT rect;
+  rect.left = 0;
+  rect.top = 0;
+  rect.right = margin;
+  rect.bottom = margin;
+  if (!MapRect(&rect))
+    return false;
+  x = rect.right - rect.left;
+  y = rect.bottom - rect.top;
+  return true;
+}
+
+int CDialog::Units_To_Pixels_X(int units)
+{
+  RECT rect;
+  rect.left = 0;
+  rect.top = 0;
+  rect.right = units;
+  rect.bottom = units;
+  if (!MapRect(&rect))
+    return units * 3 / 2;
+  return rect.right - rect.left;
+}
+
+bool CDialog::GetItemSizes(int id, int &x, int &y)
+{
+  RECT rect;
+  if (!::GetWindowRect(GetItem(id), &rect))
+    return false;
+  x = RECT_SIZE_X(rect);
+  y = RECT_SIZE_Y(rect);
+  return true;
+}
+
+void CDialog::GetClientRectOfItem(int id, RECT &rect)
+{
+  ::GetWindowRect(GetItem(id), &rect);
+  ScreenToClient(&rect);
+}
+
+bool CDialog::MoveItem(int id, int x, int y, int width, int height, bool repaint)
+{
+  return BOOLToBool(::MoveWindow(GetItem(id), x, y, width, height, BoolToBOOL(repaint)));
 }
 
 void CDialog::NormalizeSize(bool fullNormalize)

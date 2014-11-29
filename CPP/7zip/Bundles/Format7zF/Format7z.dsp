@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Gr /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /FAs /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MT /W4 /WX /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /FAs /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gr /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /I "..\..\..\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MTd /W4 /WX /Gm /GX /ZI /Od /I "..\..\..\..\SDK" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY7Z_EXPORTS" /D "NO_REGISTRY" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -230,7 +230,7 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\Common\Buffer.h
+SOURCE=..\..\..\Common\Common.h
 # End Source File
 # Begin Source File
 
@@ -238,7 +238,19 @@ SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\CrcReg.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\DynamicBuffer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\DynLimBuf.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\DynLimBuf.h
 # End Source File
 # Begin Source File
 
@@ -247,6 +259,10 @@ SOURCE=..\..\..\Common\IntToString.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\IntToString.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyBuffer.h
 # End Source File
 # Begin Source File
 
@@ -278,6 +294,10 @@ SOURCE=..\..\..\Common\MyString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyTypes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyUnknown.h
 # End Source File
 # Begin Source File
@@ -287,6 +307,10 @@ SOURCE=..\..\..\Common\MyVector.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyWindows.cpp
 # End Source File
 # Begin Source File
 
@@ -310,6 +334,10 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Sha256Reg.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File
@@ -326,10 +354,6 @@ SOURCE=..\..\..\Common\StringToInt.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\Types.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\UTFConvert.cpp
 # End Source File
 # Begin Source File
@@ -343,6 +367,10 @@ SOURCE=..\..\..\Common\Wildcard.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\Wildcard.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\XzCrc64Reg.cpp
 # End Source File
 # End Group
 # Begin Group "Compress"
@@ -830,6 +858,10 @@ SOURCE=..\..\Crypto\MyAes.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Crypto\MyAesReg.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Crypto\Pbkdf2HmacSha1.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
@@ -907,6 +939,10 @@ SOURCE=..\..\Crypto\Sha1.cpp
 # Begin Source File
 
 SOURCE=..\..\Crypto\Sha1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Sha1Reg.cpp
 # End Source File
 # Begin Source File
 
@@ -1078,6 +1114,10 @@ SOURCE=..\..\Common\ProgressUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\PropId.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\RegisterArc.h
 # End Source File
 # Begin Source File
@@ -1107,6 +1147,14 @@ SOURCE=..\..\Common\StreamUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\StreamUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\UniqBlocks.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\UniqBlocks.h
 # End Source File
 # Begin Source File
 
@@ -1164,6 +1212,22 @@ SOURCE=..\..\..\..\C\XzCrc64.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\XzCrc64.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\XzCrc64Opt.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1238,6 +1302,10 @@ SOURCE=..\..\..\..\C\7zCrc.h
 
 SOURCE=..\..\..\..\C\7zStream.c
 # SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zTypes.h
 # End Source File
 # Begin Source File
 
@@ -1339,6 +1407,10 @@ SOURCE=..\..\..\..\C\BwtSort.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\BwtSort.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compiler.h
 # End Source File
 # Begin Source File
 
@@ -1621,6 +1693,10 @@ SOURCE=..\..\..\..\C\Ppmd8Enc.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Precomp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\RotateDefs.h
 # End Source File
 # Begin Source File
@@ -1665,16 +1741,16 @@ SOURCE=..\..\..\..\C\Sort.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\StdAfx.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Threads.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Threads.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Types.h
 # End Source File
 # End Group
 # Begin Group "Archive"
@@ -1813,39 +1889,11 @@ SOURCE=..\..\Archive\Rar\RarHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Rar\RarHeader.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Rar\RarHeader.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Rar\RarIn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Rar\RarIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Rar\RarItem.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Rar\RarItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Rar\RarRegister.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Rar\RarVolumeInStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Rar\RarVolumeInStream.h
 # End Source File
 # End Group
 # Begin Group "Cab"
@@ -1905,23 +1953,11 @@ SOURCE=..\..\Archive\Chm\ChmHandler.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Chm\ChmHeader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Chm\ChmHeader.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Chm\ChmIn.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Chm\ChmIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Chm\ChmRegister.cpp
 # End Source File
 # End Group
 # Begin Group "Archive common"
@@ -2169,10 +2205,6 @@ SOURCE=..\..\Archive\Zip\ZipHandlerOut.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Zip\ZipHeader.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Zip\ZipHeader.h
 # End Source File
 # Begin Source File
@@ -2190,10 +2222,6 @@ SOURCE=..\..\Archive\Zip\ZipItem.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Zip\ZipItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Zip\ZipItemEx.h
 # End Source File
 # Begin Source File
 
@@ -2244,54 +2272,6 @@ SOURCE=..\..\Archive\Wim\WimIn.h
 SOURCE=..\..\Archive\Wim\WimRegister.cpp
 # End Source File
 # End Group
-# Begin Group "Com"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Com\ComHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Com\ComHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Com\ComIn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Com\ComIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Com\ComRegister.cpp
-# End Source File
-# End Group
-# Begin Group "Hfs"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\Hfs\HfsHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Hfs\HfsHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Hfs\HfsIn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Hfs\HfsIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Hfs\HfsRegister.cpp
-# End Source File
-# End Group
 # Begin Group "Udf"
 
 # PROP Default_Filter ""
@@ -2311,14 +2291,14 @@ SOURCE=..\..\Archive\Udf\UdfIn.cpp
 
 SOURCE=..\..\Archive\Udf\UdfIn.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Udf\UdfRegister.cpp
-# End Source File
 # End Group
 # Begin Source File
 
 SOURCE=..\..\Archive\ApmHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\ArHandler.cpp
 # End Source File
 # Begin Source File
 
@@ -2330,15 +2310,15 @@ SOURCE=..\..\Archive\Bz2Handler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\ComHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\CpioHandler.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\CramfsHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\DebHandler.cpp
 # End Source File
 # Begin Source File
 
@@ -2370,7 +2350,15 @@ SOURCE=..\..\Archive\GzHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\HfsHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\IArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\IhexHandler.cpp
 # End Source File
 # Begin Source File
 
@@ -2488,6 +2476,10 @@ SOURCE=..\..\PropID.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Defs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\FileDir.cpp
 # End Source File
 # Begin Source File
@@ -2509,6 +2501,14 @@ SOURCE=..\..\..\Windows\FileIO.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\FileIO.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileName.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\FileName.h
 # End Source File
 # Begin Source File
 
@@ -2548,11 +2548,11 @@ SOURCE=..\..\..\Windows\Thread.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Time.cpp
+SOURCE=..\..\..\Windows\TimeUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Windows\Time.h
+SOURCE=..\..\..\Windows\TimeUtils.h
 # End Source File
 # End Group
 # Begin Group "Asm"

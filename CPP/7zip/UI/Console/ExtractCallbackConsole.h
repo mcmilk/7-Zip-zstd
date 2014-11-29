@@ -3,11 +3,15 @@
 #ifndef __EXTRACTCALLBACKCONSOLE_H
 #define __EXTRACTCALLBACKCONSOLE_H
 
-#include "Common/MyString.h"
-#include "Common/StdOutStream.h"
+#include "../../../Common/MyString.h"
+#include "../../../Common/StdOutStream.h"
+
 #include "../../Common/FileStreams.h"
+
 #include "../../IPassword.h"
+
 #include "../../Archive/IArchive.h"
+
 #include "../Common/ArchiveExtractCallback.h"
 
 class CExtractCallbackConsole:
@@ -40,8 +44,13 @@ public:
 
   HRESULT BeforeOpen(const wchar_t *name);
   HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted);
+  HRESULT SetError(int level, const wchar_t *name,
+        UInt32 errorFlags, const wchar_t *errors,
+        UInt32 warningFlags, const wchar_t *warnings);
+
   HRESULT ThereAreNoFiles();
   HRESULT ExtractResult(HRESULT result);
+  HRESULT OpenTypeWarning(const wchar_t *name, const wchar_t *okType, const wchar_t *errorType);
 
  
   #ifndef _NO_CRYPTO
@@ -53,19 +62,36 @@ public:
 
   #endif
   
-  UInt64 NumArchives;
-  UInt64 NumArchiveErrors;
+  UInt64 NumTryArcs;
+  bool ThereIsErrorInCurrent;
+  bool ThereIsWarningInCurrent;
+
+  UInt64 NumCantOpenArcs;
+  UInt64 NumOkArcs;
+  UInt64 NumArcsWithError;
+  UInt64 NumArcsWithWarnings;
+
+  UInt64 NumProblemArcsLevs;
+  UInt64 NumOpenArcErrors;
+  UInt64 NumOpenArcWarnings;
+  
   UInt64 NumFileErrors;
-  UInt64 NumFileErrorsInCurrentArchive;
+  UInt64 NumFileErrorsInCurrent;
 
   CStdOutStream *OutStream;
 
   void Init()
   {
-    NumArchives = 0;
-    NumArchiveErrors = 0;
+    NumTryArcs = 0;
+    NumOkArcs = 0;
+    NumCantOpenArcs = 0;
+    NumArcsWithError = 0;
+    NumArcsWithWarnings = 0;
+
+    NumOpenArcErrors = 0;
+    NumOpenArcWarnings = 0;
     NumFileErrors = 0;
-    NumFileErrorsInCurrentArchive = 0;
+    NumFileErrorsInCurrent = 0;
   }
 
 };

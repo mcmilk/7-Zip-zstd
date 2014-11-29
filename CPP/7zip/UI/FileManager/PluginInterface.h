@@ -11,7 +11,7 @@
 
 PLUGIN_INTERFACE(IInitContextMenu, 0x00)
 {
-  STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UINT32 numFiles) PURE;
+  STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t **names, UInt32 numFiles) PURE;
 };
 
 PLUGIN_INTERFACE(IPluginOptionsCallback, 0x01)

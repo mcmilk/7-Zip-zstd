@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+// #include <stdio.h>
+
 #include "../../../C/Alloc.h"
 
 #include "../Common/InBuffer.h"
@@ -15,8 +17,8 @@ namespace NZ {
 static const UInt32 kBufferSize = (1 << 20);
 static const Byte kNumBitsMask = 0x1F;
 static const Byte kBlockModeMask = 0x80;
-static const int kNumMinBits = 9;
-static const int kNumMaxBits = 16;
+static const unsigned kNumMinBits = 9;
+static const unsigned kNumMaxBits = 16;
 
 void CDecoder::Free()
 {
@@ -33,6 +35,8 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   CInBuffer inBuffer;
   COutBuffer outBuffer;
 
+  PackSize = 0;
+  
   if (!inBuffer.Create(kBufferSize))
     return E_OUTOFMEMORY;
   inBuffer.SetStream(inStream);
@@ -43,11 +47,22 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   outBuffer.SetStream(outStream);
   outBuffer.Init();
 
-  int maxbits = _properties & kNumBitsMask;
+  Byte buf[kNumMaxBits + 4];
+  {
+    if (inBuffer.ReadBytes(buf, 3) < 3)
+      return S_FALSE;
+    if (buf[0] != 0x1F || buf[1] != 0x9D)
+      return S_FALSE;;
+  }
+  Byte prop = buf[2];
+
+  if ((prop & 0x60) != 0)
+    return S_FALSE;
+  unsigned maxbits = prop & kNumBitsMask;
   if (maxbits < kNumMinBits || maxbits > kNumMaxBits)
     return S_FALSE;
   UInt32 numItems = 1 << maxbits;
-  bool blockMode = ((_properties & kBlockModeMask) != 0);
+  // Speed optimization: blockSymbol can contain unused velue.
 
   if (maxbits != _numMaxBits || _parents == 0 || _suffixes == 0 || _stack == 0)
   {
@@ -59,18 +74,16 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   }
 
   UInt64 prevPos = 0;
-  int numBits = kNumMinBits;
-  UInt32 head = blockMode ? 257 : 256;
-
+  UInt32 blockSymbol = ((prop & kBlockModeMask) != 0) ? 256 : ((UInt32)1 << kNumMaxBits);
+  unsigned numBits = kNumMinBits;
+  UInt32 head = (blockSymbol == 256) ? 257 : 256;
   bool needPrev = false;
-
   unsigned bitPos = 0;
   unsigned numBufBits = 0;
 
-  Byte buf[kNumMaxBits + 4];
-
   _parents[256] = 0; // virus protection
   _suffixes[256] = 0;
+  HRESULT res = S_OK;
 
   for (;;)
   {
@@ -79,7 +92,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       numBufBits = (unsigned)inBuffer.ReadBytes(buf, numBits) * 8;
       bitPos = 0;
       UInt64 nowPos = outBuffer.GetProcessedSize();
-      if (progress != NULL && nowPos - prevPos >= (1 << 18))
+      if (progress && nowPos - prevPos >= (1 << 13))
       {
         prevPos = nowPos;
         UInt64 packSize = inBuffer.GetProcessedSize();
@@ -94,8 +107,11 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     if (bitPos > numBufBits)
       break;
     if (symbol >= head)
-      return S_FALSE;
-    if (blockMode && symbol == 256)
+    {
+      res = S_FALSE;
+      break;
+    }
+    if (symbol == blockSymbol)
     {
       numBufBits = bitPos = 0;
       numBits = kNumMinBits;
@@ -104,7 +120,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       continue;
     }
     UInt32 cur = symbol;
-    int i = 0;
+    unsigned i = 0;
     while (cur >= 256)
     {
       _stack[i++] = _suffixes[cur];
@@ -136,7 +152,9 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     else
       needPrev = false;
   }
-  return outBuffer.Flush();
+  PackSize = inBuffer.GetProcessedSize();
+  HRESULT res2 = outBuffer.Flush();
+  return (res == S_OK) ? res2 : res;
 }
 
 STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
@@ -148,12 +166,72 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   catch(...) { return S_FALSE; }
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
+bool CheckStream(const Byte *data, size_t size)
 {
-  if (size < 1)
-    return E_INVALIDARG;
-  _properties = data[0];
-  return S_OK;
+  if (size < 3)
+    return false;
+  if (data[0] != 0x1F || data[1] != 0x9D)
+    return false;
+  Byte prop = data[2];
+  if ((prop & 0x60) != 0)
+    return false;
+  unsigned maxbits = prop & kNumBitsMask;
+  if (maxbits < kNumMinBits || maxbits > kNumMaxBits)
+    return false;
+  UInt32 numItems = 1 << maxbits;
+  UInt32 blockSymbol = ((prop & kBlockModeMask) != 0) ? 256 : ((UInt32)1 << kNumMaxBits);
+  unsigned numBits = kNumMinBits;
+  UInt32 head = (blockSymbol == 256) ? 257 : 256;
+  unsigned bitPos = 0;
+  unsigned numBufBits = 0;
+  Byte buf[kNumMaxBits + 4];
+  data += 3;
+  size -= 3;
+  // printf("\n\n");
+  for (;;)
+  {
+    if (numBufBits == bitPos)
+    {
+      unsigned num = (numBits < size) ? numBits : (unsigned)size;
+      memcpy(buf, data, num);
+      data += num;
+      size -= num;
+      numBufBits = num * 8;
+      bitPos = 0;
+    }
+    unsigned bytePos = bitPos >> 3;
+    UInt32 symbol = buf[bytePos] | ((UInt32)buf[bytePos + 1] << 8) | ((UInt32)buf[bytePos + 2] << 16);
+    symbol >>= (bitPos & 7);
+    symbol &= (1 << numBits) - 1;
+    bitPos += numBits;
+    if (bitPos > numBufBits)
+    {
+      // printf("  OK", symbol);
+      return true;
+    }
+    // printf("%3X ", symbol);
+    if (symbol >= head)
+      return false;
+    if (symbol == blockSymbol)
+    {
+      numBufBits = bitPos = 0;
+      numBits = kNumMinBits;
+      head = 257;
+      continue;
+    }
+    if (head < numItems)
+    {
+      head++;
+      if (head > ((UInt32)1 << numBits))
+      {
+        if (numBits < maxbits)
+        {
+          numBufBits = bitPos = 0;
+          numBits++;
+        }
+      }
+    }
+  }
 }
 
 }}

@@ -33,9 +33,6 @@ public:
   UStringVector FailedFiles;
 
   CProgressDialog *ProgressDialog;
-
-  void AddErrorMessage(LPCWSTR message);
-  void AddErrorMessage(const wchar_t *name, DWORD systemError);
 };
 
 #endif

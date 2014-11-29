@@ -2,18 +2,27 @@
 
 #include "StdAfx.h"
 
-#include "LoadCodecs.h"
+#include "../../../../C/7zVersion.h"
 
 #include "../../../Common/MyCom.h"
+#include "../../../Common/StringToInt.h"
+#include "../../../Common/StringConvert.h"
+
+#include "../../../Windows/PropVariant.h"
+
+#include "LoadCodecs.h"
+
+using namespace NWindows;
+
 #ifdef NEW_FOLDER_INTERFACE
 #include "../../../Common/StringToInt.h"
 #endif
-#include "../../../Windows/PropVariant.h"
 
 #include "../../ICoder.h"
 #include "../../Common/RegisterArc.h"
 
 #ifdef EXTERNAL_CODECS
+
 #include "../../../Windows/FileFind.h"
 #include "../../../Windows/DLL.h"
 #ifdef NEW_FOLDER_INTERFACE
@@ -22,11 +31,10 @@ static const UINT kIconTypesResId = 100;
 #endif
 
 #ifdef _WIN32
-#include "Windows/FileName.h"
-#include "Windows/Registry.h"
+#include "../../../Windows/FileName.h"
+#include "../../../Windows/Registry.h"
 #endif
 
-using namespace NWindows;
 using namespace NFile;
 
 #ifdef _WIN32
@@ -64,135 +72,32 @@ static bool ReadPathFromRegistry(HKEY baseKey, LPCWSTR value, FString &path)
   return false;
 }
 
-#endif
+#endif // _WIN32
 
-static FString GetBaseFolderPrefixFromRegistry()
-{
-  FString moduleFolderPrefix = NDLL::GetModuleDirPrefix();
-  #ifdef _WIN32
-  if (!NFind::DoesFileExist(moduleFolderPrefix + kMainDll) &&
-      !NFind::DoesDirExist(moduleFolderPrefix + kCodecsFolderName) &&
-      !NFind::DoesDirExist(moduleFolderPrefix + kFormatsFolderName))
-  {
-    FString path;
-    if (ReadPathFromRegistry(HKEY_CURRENT_USER,  kProgramPath2Value, path)) return path;
-    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, kProgramPath2Value, path)) return path;
-    if (ReadPathFromRegistry(HKEY_CURRENT_USER,  kProgramPathValue,  path)) return path;
-    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, kProgramPathValue,  path)) return path;
-  }
-  #endif
-  return moduleFolderPrefix;
-}
-
-typedef UInt32 (WINAPI *GetNumberOfMethodsFunc)(UInt32 *numMethods);
-typedef UInt32 (WINAPI *GetNumberOfFormatsFunc)(UInt32 *numFormats);
-typedef UInt32 (WINAPI *GetHandlerPropertyFunc)(PROPID propID, PROPVARIANT *value);
-typedef UInt32 (WINAPI *GetHandlerPropertyFunc2)(UInt32 index, PROPID propID, PROPVARIANT *value);
-typedef UInt32 (WINAPI *CreateObjectFunc)(const GUID *clsID, const GUID *iid, void **outObject);
-typedef UInt32 (WINAPI *SetLargePageModeFunc)();
+#endif // EXTERNAL_CODECS
 
 
-static HRESULT GetCoderClass(GetMethodPropertyFunc getMethodProperty, UInt32 index,
-    PROPID propId, CLSID &clsId, bool &isAssigned)
-{
-  NWindows::NCOM::CPropVariant prop;
-  isAssigned = false;
-  RINOK(getMethodProperty(index, propId, &prop));
-  if (prop.vt == VT_BSTR)
-  {
-    isAssigned = true;
-    clsId = *(const GUID *)prop.bstrVal;
-  }
-  else if (prop.vt != VT_EMPTY)
-    return E_FAIL;
-  return S_OK;
-}
-
-HRESULT CCodecs::LoadCodecs()
-{
-  CCodecLib &lib = Libs.Back();
-  lib.GetMethodProperty = (GetMethodPropertyFunc)lib.Lib.GetProc("GetMethodProperty");
-  if (lib.GetMethodProperty == NULL)
-    return S_OK;
-
-  UInt32 numMethods = 1;
-  GetNumberOfMethodsFunc getNumberOfMethodsFunc = (GetNumberOfMethodsFunc)lib.Lib.GetProc("GetNumberOfMethods");
-  if (getNumberOfMethodsFunc != NULL)
-  {
-    RINOK(getNumberOfMethodsFunc(&numMethods));
-  }
-
-  for(UInt32 i = 0; i < numMethods; i++)
-  {
-    CDllCodecInfo info;
-    info.LibIndex = Libs.Size() - 1;
-    info.CodecIndex = i;
-
-    RINOK(GetCoderClass(lib.GetMethodProperty, i, NMethodPropID::kEncoder, info.Encoder, info.EncoderIsAssigned));
-    RINOK(GetCoderClass(lib.GetMethodProperty, i, NMethodPropID::kDecoder, info.Decoder, info.DecoderIsAssigned));
-
-    Codecs.Add(info);
-  }
-  return S_OK;
-}
-
-static HRESULT ReadProp(
-    GetHandlerPropertyFunc getProp,
-    GetHandlerPropertyFunc2 getProp2,
-    UInt32 index, PROPID propID, NCOM::CPropVariant &prop)
-{
-  if (getProp2)
-    return getProp2(index, propID, &prop);;
-  return getProp(propID, &prop);
-}
-
-static HRESULT ReadBoolProp(
-    GetHandlerPropertyFunc getProp,
-    GetHandlerPropertyFunc2 getProp2,
-    UInt32 index, PROPID propID, bool &res)
-{
-  NCOM::CPropVariant prop;
-  RINOK(ReadProp(getProp, getProp2, index, propID, prop));
-  if (prop.vt == VT_BOOL)
-    res = VARIANT_BOOLToBool(prop.boolVal);
-  else if (prop.vt != VT_EMPTY)
-    return E_FAIL;
-  return S_OK;
-}
-
-static HRESULT ReadStringProp(
-    GetHandlerPropertyFunc getProp,
-    GetHandlerPropertyFunc2 getProp2,
-    UInt32 index, PROPID propID, UString &res)
-{
-  NCOM::CPropVariant prop;
-  RINOK(ReadProp(getProp, getProp2, index, propID, prop));
-  if (prop.vt == VT_BSTR)
-    res = prop.bstrVal;
-  else if (prop.vt != VT_EMPTY)
-    return E_FAIL;
-  return S_OK;
-}
-
-#endif
-
-static const unsigned int kNumArcsMax = 48;
-static unsigned int g_NumArcs = 0;
+static const unsigned kNumArcsMax = 48;
+static unsigned g_NumArcs = 0;
 static const CArcInfo *g_Arcs[kNumArcsMax];
+
 void RegisterArc(const CArcInfo *arcInfo)
 {
   if (g_NumArcs < kNumArcsMax)
-    g_Arcs[g_NumArcs++] = arcInfo;
+  {
+    g_Arcs[g_NumArcs] = arcInfo;
+    g_NumArcs++;
+  }
 }
 
 static void SplitString(const UString &srcString, UStringVector &destStrings)
 {
   destStrings.Clear();
   UString s;
-  int len = srcString.Length();
+  unsigned len = srcString.Len();
   if (len == 0)
     return;
-  for (int i = 0; i < len; i++)
+  for (unsigned i = 0; i < len; i++)
   {
     wchar_t c = srcString[i];
     if (c == L' ')
@@ -212,20 +117,18 @@ static void SplitString(const UString &srcString, UStringVector &destStrings)
 
 int CArcInfoEx::FindExtension(const UString &ext) const
 {
-  for (int i = 0; i < Exts.Size(); i++)
-    if (ext.CompareNoCase(Exts[i].Ext) == 0)
+  FOR_VECTOR (i, Exts)
+    if (ext.IsEqualToNoCase(Exts[i].Ext))
       return i;
   return -1;
 }
 
-void CArcInfoEx::AddExts(const wchar_t *ext, const wchar_t *addExt)
+void CArcInfoEx::AddExts(const UString &ext, const UString &addExt)
 {
   UStringVector exts, addExts;
-  if (ext != 0)
-    SplitString(ext, exts);
-  if (addExt != 0)
-    SplitString(addExt, addExts);
-  for (int i = 0; i < exts.Size(); i++)
+  SplitString(ext, exts);
+  SplitString(addExt, addExts);
+  FOR_VECTOR (i, exts)
   {
     CArcExtInfo extInfo;
     extInfo.Ext = exts[i];
@@ -239,61 +142,275 @@ void CArcInfoEx::AddExts(const wchar_t *ext, const wchar_t *addExt)
   }
 }
 
+#ifndef _SFX
+
+static bool ParseSignatures(const Byte *data, unsigned size, CObjectVector<CByteBuffer> &signatures)
+{
+  signatures.Clear();
+  while (size > 0)
+  {
+    unsigned len = *data++;
+    size--;
+    if (len > size)
+      return false;
+    signatures.AddNew().CopyFrom(data, len);
+    data += len;
+    size -= len;
+  }
+  return true;
+}
+
+#endif // _SFX
+
 #ifdef EXTERNAL_CODECS
+
+static FString GetBaseFolderPrefixFromRegistry()
+{
+  FString moduleFolderPrefix = NDLL::GetModuleDirPrefix();
+  #ifdef _WIN32
+  if (!NFind::DoesFileExist(moduleFolderPrefix + kMainDll) &&
+      !NFind::DoesDirExist(moduleFolderPrefix + kCodecsFolderName) &&
+      !NFind::DoesDirExist(moduleFolderPrefix + kFormatsFolderName))
+  {
+    FString path;
+    if (ReadPathFromRegistry(HKEY_CURRENT_USER,  kProgramPath2Value, path)) return path;
+    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, kProgramPath2Value, path)) return path;
+    if (ReadPathFromRegistry(HKEY_CURRENT_USER,  kProgramPathValue,  path)) return path;
+    if (ReadPathFromRegistry(HKEY_LOCAL_MACHINE, kProgramPathValue,  path)) return path;
+  }
+  #endif
+  return moduleFolderPrefix;
+}
+
+static HRESULT GetCoderClass(Func_GetMethodProperty getMethodProperty, UInt32 index,
+    PROPID propId, CLSID &clsId, bool &isAssigned)
+{
+  NCOM::CPropVariant prop;
+  isAssigned = false;
+  RINOK(getMethodProperty(index, propId, &prop));
+  if (prop.vt == VT_BSTR)
+  {
+    if (::SysStringByteLen(prop.bstrVal) != sizeof(GUID))
+      return E_FAIL;
+    isAssigned = true;
+    clsId = *(const GUID *)prop.bstrVal;
+  }
+  else if (prop.vt != VT_EMPTY)
+    return E_FAIL;
+  return S_OK;
+}
+
+HRESULT CCodecs::LoadCodecs()
+{
+  CCodecLib &lib = Libs.Back();
+  lib.GetMethodProperty = (Func_GetMethodProperty)lib.Lib.GetProc("GetMethodProperty");
+  if (lib.GetMethodProperty)
+  {
+    UInt32 numMethods = 1;
+    Func_GetNumberOfMethods getNumberOfMethodsFunc = (Func_GetNumberOfMethods)lib.Lib.GetProc("GetNumberOfMethods");
+    if (getNumberOfMethodsFunc)
+    {
+      RINOK(getNumberOfMethodsFunc(&numMethods));
+    }
+    for (UInt32 i = 0; i < numMethods; i++)
+    {
+      CDllCodecInfo info;
+      info.LibIndex = Libs.Size() - 1;
+      info.CodecIndex = i;
+      RINOK(GetCoderClass(lib.GetMethodProperty, i, NMethodPropID::kEncoder, info.Encoder, info.EncoderIsAssigned));
+      RINOK(GetCoderClass(lib.GetMethodProperty, i, NMethodPropID::kDecoder, info.Decoder, info.DecoderIsAssigned));
+      Codecs.Add(info);
+    }
+  }
+
+  Func_GetHashers getHashers = (Func_GetHashers)lib.Lib.GetProc("GetHashers");
+  if (getHashers)
+  {
+    RINOK(getHashers(&lib.Hashers));
+    if (lib.Hashers)
+    {
+      UInt32 numMethods = lib.Hashers->GetNumHashers();
+      for (UInt32 i = 0; i < numMethods; i++)
+      {
+        CDllHasherInfo info;
+        info.LibIndex = Libs.Size() - 1;
+        info.HasherIndex = i;
+        Hashers.Add(info);
+      }
+    }
+  }
+  return S_OK;
+}
+
+static HRESULT GetProp(
+    Func_GetHandlerProperty getProp,
+    Func_GetHandlerProperty2 getProp2,
+    UInt32 index, PROPID propID, NCOM::CPropVariant &prop)
+{
+  if (getProp2)
+    return getProp2(index, propID, &prop);;
+  return getProp(propID, &prop);
+}
+
+static HRESULT GetProp_Bool(
+    Func_GetHandlerProperty getProp,
+    Func_GetHandlerProperty2 getProp2,
+    UInt32 index, PROPID propID, bool &res)
+{
+  res = false;
+  NCOM::CPropVariant prop;
+  RINOK(GetProp(getProp, getProp2, index, propID, prop));
+  if (prop.vt == VT_BOOL)
+    res = VARIANT_BOOLToBool(prop.boolVal);
+  else if (prop.vt != VT_EMPTY)
+    return E_FAIL;
+  return S_OK;
+}
+
+static HRESULT GetProp_UInt32(
+    Func_GetHandlerProperty getProp,
+    Func_GetHandlerProperty2 getProp2,
+    UInt32 index, PROPID propID, UInt32 &res, bool &defined)
+{
+  res = 0;
+  defined = false;
+  NCOM::CPropVariant prop;
+  RINOK(GetProp(getProp, getProp2, index, propID, prop));
+  if (prop.vt == VT_UI4)
+  {
+    res = prop.ulVal;
+    defined = true;
+  }
+  else if (prop.vt != VT_EMPTY)
+    return E_FAIL;
+  return S_OK;
+}
+
+static HRESULT GetProp_String(
+    Func_GetHandlerProperty getProp,
+    Func_GetHandlerProperty2 getProp2,
+    UInt32 index, PROPID propID, UString &res)
+{
+  res.Empty();
+  NCOM::CPropVariant prop;
+  RINOK(GetProp(getProp, getProp2, index, propID, prop));
+  if (prop.vt == VT_BSTR)
+    res = prop.bstrVal;
+  else if (prop.vt != VT_EMPTY)
+    return E_FAIL;
+  return S_OK;
+}
+
+static HRESULT GetProp_RawData(
+    Func_GetHandlerProperty getProp,
+    Func_GetHandlerProperty2 getProp2,
+    UInt32 index, PROPID propID, CByteBuffer &bb)
+{
+  bb.Free();
+  NCOM::CPropVariant prop;
+  RINOK(GetProp(getProp, getProp2, index, propID, prop));
+  if (prop.vt == VT_BSTR)
+  {
+    UINT len = ::SysStringByteLen(prop.bstrVal);
+    bb.CopyFrom((const Byte *)prop.bstrVal, len);
+  }
+  else if (prop.vt != VT_EMPTY)
+    return E_FAIL;
+  return S_OK;
+}
+
+static const UInt32 kArcFlagsPars[] =
+{
+  NArchive::NHandlerPropID::kKeepName, NArcInfoFlags::kKeepName,
+  NArchive::NHandlerPropID::kAltStreams, NArcInfoFlags::kAltStreams,
+  NArchive::NHandlerPropID::kNtSecure, NArcInfoFlags::kNtSecure
+};
 
 HRESULT CCodecs::LoadFormats()
 {
   const NDLL::CLibrary &lib = Libs.Back().Lib;
-  GetHandlerPropertyFunc getProp = 0;
-  GetHandlerPropertyFunc2 getProp2 = (GetHandlerPropertyFunc2)lib.GetProc("GetHandlerProperty2");
-  if (getProp2 == NULL)
+  
+  Func_GetHandlerProperty getProp = NULL;
+  Func_GetHandlerProperty2 getProp2 = (Func_GetHandlerProperty2)lib.GetProc("GetHandlerProperty2");
+  Func_GetIsArc getIsArc = (Func_GetIsArc)lib.GetProc("GetIsArc");
+  
+  UInt32 numFormats = 1;
+
+  if (getProp2)
   {
-    getProp = (GetHandlerPropertyFunc)lib.GetProc("GetHandlerProperty");
-    if (getProp == NULL)
+    Func_GetNumberOfFormats getNumberOfFormats = (Func_GetNumberOfFormats)lib.GetProc("GetNumberOfFormats");
+    if (getNumberOfFormats)
+    {
+      RINOK(getNumberOfFormats(&numFormats));
+    }
+  }
+  else
+  {
+    getProp = (Func_GetHandlerProperty)lib.GetProc("GetHandlerProperty");
+    if (!getProp)
       return S_OK;
   }
-
-  UInt32 numFormats = 1;
-  GetNumberOfFormatsFunc getNumberOfFormats = (GetNumberOfFormatsFunc)lib.GetProc("GetNumberOfFormats");
-  if (getNumberOfFormats != NULL)
-  {
-    RINOK(getNumberOfFormats(&numFormats));
-  }
-  if (getProp2 == NULL)
-    numFormats = 1;
-
-  for(UInt32 i = 0; i < numFormats; i++)
+  
+  for (UInt32 i = 0; i < numFormats; i++)
   {
     CArcInfoEx item;
     item.LibIndex = Libs.Size() - 1;
     item.FormatIndex = i;
 
-    RINOK(ReadStringProp(getProp, getProp2, i, NArchive::kName, item.Name));
+    RINOK(GetProp_String(getProp, getProp2, i, NArchive::NHandlerPropID::kName, item.Name));
 
-    NCOM::CPropVariant prop;
-    if (ReadProp(getProp, getProp2, i, NArchive::kClassID, prop) != S_OK)
-      continue;
-    if (prop.vt != VT_BSTR)
-      continue;
-    item.ClassID = *(const GUID *)prop.bstrVal;
-    prop.Clear();
+    {
+      NCOM::CPropVariant prop;
+      if (GetProp(getProp, getProp2, i, NArchive::NHandlerPropID::kClassID, prop) != S_OK)
+        continue;
+      if (prop.vt != VT_BSTR)
+        continue;
+      if (::SysStringByteLen(prop.bstrVal) != sizeof(GUID))
+        return E_FAIL;
+      item.ClassID = *(const GUID *)prop.bstrVal;
+      prop.Clear();
+    }
 
     UString ext, addExt;
-    RINOK(ReadStringProp(getProp, getProp2, i, NArchive::kExtension, ext));
-    RINOK(ReadStringProp(getProp, getProp2, i, NArchive::kAddExtension, addExt));
+    RINOK(GetProp_String(getProp, getProp2, i, NArchive::NHandlerPropID::kExtension, ext));
+    RINOK(GetProp_String(getProp, getProp2, i, NArchive::NHandlerPropID::kAddExtension, addExt));
     item.AddExts(ext, addExt);
 
-    ReadBoolProp(getProp, getProp2, i, NArchive::kUpdate, item.UpdateEnabled);
-    if (item.UpdateEnabled)
-      ReadBoolProp(getProp, getProp2, i, NArchive::kKeepName, item.KeepName);
-    
-    if (ReadProp(getProp, getProp2, i, NArchive::kStartSignature, prop) == S_OK)
-      if (prop.vt == VT_BSTR)
+    GetProp_Bool(getProp, getProp2, i, NArchive::NHandlerPropID::kUpdate, item.UpdateEnabled);
+    bool flags_Defined = false;
+    RINOK(GetProp_UInt32(getProp, getProp2, i, NArchive::NHandlerPropID::kFlags, item.Flags, flags_Defined));
+    item.NewInterface = flags_Defined;
+    if (!flags_Defined) // && item.UpdateEnabled
+    {
+      // support for DLL version before 9.31:
+      for (unsigned j = 0; j < ARRAY_SIZE(kArcFlagsPars); j += 2)
       {
-        UINT len = ::SysStringByteLen(prop.bstrVal);
-        item.StartSignature.SetCapacity(len);
-        memmove(item.StartSignature, prop.bstrVal, len);
+        bool val = false;
+        GetProp_Bool(getProp, getProp2, i, kArcFlagsPars[j], val);
+        if (val)
+          item.Flags |= kArcFlagsPars[j + 1];
       }
+    }
+    
+    CByteBuffer sig;
+    RINOK(GetProp_RawData(getProp, getProp2, i, NArchive::NHandlerPropID::kSignature, sig));
+    if (sig.Size() != 0)
+      item.Signatures.Add(sig);
+    else
+    {
+      RINOK(GetProp_RawData(getProp, getProp2, i, NArchive::NHandlerPropID::kMultiSignature, sig));
+      ParseSignatures(sig, (unsigned)sig.Size(), item.Signatures);
+    }
+
+    bool signatureOffset_Defined;
+    RINOK(GetProp_UInt32(getProp, getProp2, i, NArchive::NHandlerPropID::kSignatureOffset, item.SignatureOffset, signatureOffset_Defined));
+    
+    // bool version_Defined;
+    // RINOK(GetProp_UInt32(getProp, getProp2, i, NArchive::NHandlerPropID::kVersion, item.Version, version_Defined));
+
+    if (getIsArc)
+      getIsArc(i, &item.IsArcFunc);
+
     Formats.Add(item);
   }
   return S_OK;
@@ -302,25 +419,26 @@ HRESULT CCodecs::LoadFormats()
 #ifdef NEW_FOLDER_INTERFACE
 void CCodecIcons::LoadIcons(HMODULE m)
 {
-  UString iconTypes = MyLoadStringW(m, kIconTypesResId);
+  UString iconTypes;
+  MyLoadString(m, kIconTypesResId, iconTypes);
   UStringVector pairs;
   SplitString(iconTypes, pairs);
-  for (int i = 0; i < pairs.Size(); i++)
+  FOR_VECTOR (i, pairs)
   {
     const UString &s = pairs[i];
     int pos = s.Find(L':');
     CIconPair iconPair;
     iconPair.IconIndex = -1;
     if (pos < 0)
-      pos = s.Length();
+      pos = s.Len();
     else
     {
-      UString num = s.Mid(pos + 1);
+      UString num = s.Ptr(pos + 1);
       if (!num.IsEmpty())
       {
         const wchar_t *end;
-        iconPair.IconIndex = (UInt32)ConvertStringToUInt64(num, &end);
-        if (*end != L'\0')
+        iconPair.IconIndex = ConvertStringToUInt32(num, &end);
+        if (*end != 0)
           continue;
       }
     }
@@ -332,10 +450,10 @@ void CCodecIcons::LoadIcons(HMODULE m)
 bool CCodecIcons::FindIconIndex(const UString &ext, int &iconIndex) const
 {
   iconIndex = -1;
-  for (int i = 0; i < IconPairs.Size(); i++)
+  FOR_VECTOR (i, IconPairs)
   {
     const CIconPair &pair = IconPairs[i];
-    if (ext.CompareNoCase(pair.Ext) == 0)
+    if (ext.IsEqualToNoCase(pair.Ext))
     {
       iconIndex = pair.IconIndex;
       return true;
@@ -343,7 +461,8 @@ bool CCodecIcons::FindIconIndex(const UString &ext, int &iconIndex) const
   }
   return false;
 }
-#endif
+
+#endif // EXTERNAL_CODECS
 
 #ifdef _7ZIP_LARGE_PAGES
 extern "C"
@@ -362,9 +481,7 @@ HRESULT CCodecs::LoadDll(const FString &dllPath, bool needCheckDll)
   }
   Libs.Add(CCodecLib());
   CCodecLib &lib = Libs.Back();
-  #ifdef NEW_FOLDER_INTERFACE
   lib.Path = dllPath;
-  #endif
   bool used = false;
   HRESULT res = S_OK;
   if (lib.Lib.Load(dllPath))
@@ -376,23 +493,31 @@ HRESULT CCodecs::LoadDll(const FString &dllPath, bool needCheckDll)
     #ifdef _7ZIP_LARGE_PAGES
     if (g_LargePageSize != 0)
     {
-      SetLargePageModeFunc setLargePageMode = (SetLargePageModeFunc)lib.Lib.GetProc("SetLargePageMode");
-      if (setLargePageMode != 0)
+      Func_SetLargePageMode setLargePageMode = (Func_SetLargePageMode)lib.Lib.GetProc("SetLargePageMode");
+      if (setLargePageMode)
         setLargePageMode();
     }
     #endif
 
-    lib.CreateObject = (CreateObjectFunc)lib.Lib.GetProc("CreateObject");
-    if (lib.CreateObject != 0)
+    if (CaseSensitiveChange)
     {
-      int startSize = Codecs.Size();
+      Func_SetCaseSensitive setCaseSensitive = (Func_SetCaseSensitive)lib.Lib.GetProc("SetCaseSensitive");
+      if (setCaseSensitive)
+        setCaseSensitive(CaseSensitive ? 1 : 0);
+    }
+
+    lib.CreateObject = (Func_CreateObject)lib.Lib.GetProc("CreateObject");
+    if (lib.CreateObject)
+    {
+      unsigned startSize = Codecs.Size() + Hashers.Size();
       res = LoadCodecs();
-      used = (Codecs.Size() != startSize);
+      used = (startSize != Codecs.Size() + Hashers.Size());
       if (res == S_OK)
       {
         startSize = Formats.Size();
         res = LoadFormats();
-        used = used || (Formats.Size() != startSize);
+        if (startSize != Formats.Size())
+          used = true;
       }
     }
   }
@@ -416,46 +541,63 @@ HRESULT CCodecs::LoadDllsFromFolder(const FString &folderPrefix)
 
 #endif
 
-#ifndef _SFX
-static inline void SetBuffer(CByteBuffer &bb, const Byte *data, int size)
-{
-  bb.SetCapacity(size);
-  memmove((Byte *)bb, data, size);
-}
-#endif
-
 HRESULT CCodecs::Load()
 {
   #ifdef NEW_FOLDER_INTERFACE
-  InternalIcons.LoadIcons(g_hInstance);
+    InternalIcons.LoadIcons(g_hInstance);
   #endif
 
   Formats.Clear();
+  
   #ifdef EXTERNAL_CODECS
-  Codecs.Clear();
+    Codecs.Clear();
+    Hashers.Clear();
   #endif
+  
   for (UInt32 i = 0; i < g_NumArcs; i++)
   {
     const CArcInfo &arc = *g_Arcs[i];
     CArcInfoEx item;
-    item.Name = arc.Name;
+    
+    item.Name.SetFromAscii(arc.Name);
     item.CreateInArchive = arc.CreateInArchive;
-    item.CreateOutArchive = arc.CreateOutArchive;
-    item.AddExts(arc.Ext, arc.AddExt);
-    item.UpdateEnabled = (arc.CreateOutArchive != 0);
-    item.KeepName = arc.KeepName;
+    item.IsArcFunc = arc.IsArc;
+    item.Flags = arc.Flags;
+  
+    {
+      UString e, ae;
+      if (arc.Ext)
+        e.SetFromAscii(arc.Ext);
+      if (arc.AddExt)
+        ae.SetFromAscii(arc.AddExt);
+      item.AddExts(e, ae);
+    }
 
     #ifndef _SFX
-    SetBuffer(item.StartSignature, arc.Signature, arc.SignatureSize);
+
+    item.CreateOutArchive = arc.CreateOutArchive;
+    item.UpdateEnabled = (arc.CreateOutArchive != NULL);
+    item.SignatureOffset = arc.SignatureOffset;
+    // item.Version = MY_VER_MIX;
+    item.NewInterface = true;
+    
+    if (arc.IsMultiSignature())
+      ParseSignatures(arc.Signature, arc.SignatureSize, item.Signatures);
+    else
+      item.Signatures.AddNew().CopyFrom(arc.Signature, arc.SignatureSize);
+    
     #endif
+
     Formats.Add(item);
   }
+  
   #ifdef EXTERNAL_CODECS
-  const FString baseFolder = GetBaseFolderPrefixFromRegistry();
-  RINOK(LoadDll(baseFolder + kMainDll, false));
-  RINOK(LoadDllsFromFolder(baseFolder + kCodecsFolderName FSTRING_PATH_SEPARATOR));
-  RINOK(LoadDllsFromFolder(baseFolder + kFormatsFolderName FSTRING_PATH_SEPARATOR));
+    const FString baseFolder = GetBaseFolderPrefixFromRegistry();
+    RINOK(LoadDll(baseFolder + kMainDll, false));
+    RINOK(LoadDllsFromFolder(baseFolder + kCodecsFolderName FSTRING_PATH_SEPARATOR));
+    RINOK(LoadDllsFromFolder(baseFolder + kFormatsFolderName FSTRING_PATH_SEPARATOR));
   #endif
+  
   return S_OK;
 }
 
@@ -467,12 +609,18 @@ int CCodecs::FindFormatForArchiveName(const UString &arcPath) const
   int dotPos = arcPath.ReverseFind(L'.');
   if (dotPos < 0 || dotPos < slashPos)
     return -1;
-  const UString ext = arcPath.Mid(dotPos + 1);
-  for (int i = 0; i < Formats.Size(); i++)
+  const UString ext = arcPath.Ptr(dotPos + 1);
+  if (ext.IsEmpty())
+    return -1;
+  if (ext.IsEqualToNoCase(L"exe"))
+    return -1;
+  FOR_VECTOR (i, Formats)
   {
     const CArcInfoEx &arc = Formats[i];
+    /*
     if (!arc.UpdateEnabled)
       continue;
+    */
     if (arc.FindExtension(ext) >= 0)
       return i;
   }
@@ -483,7 +631,7 @@ int CCodecs::FindFormatForExtension(const UString &ext) const
 {
   if (ext.IsEmpty())
     return -1;
-  for (int i = 0; i < Formats.Size(); i++)
+  FOR_VECTOR (i, Formats)
     if (Formats[i].FindExtension(ext) >= 0)
       return i;
   return -1;
@@ -491,8 +639,8 @@ int CCodecs::FindFormatForExtension(const UString &ext) const
 
 int CCodecs::FindFormatForArchiveType(const UString &arcType) const
 {
-  for (int i = 0; i < Formats.Size(); i++)
-    if (Formats[i].Name.CompareNoCase(arcType) == 0)
+  FOR_VECTOR (i, Formats)
+    if (Formats[i].Name.IsEqualToNoCase(arcType))
       return i;
   return -1;
 }
@@ -500,12 +648,14 @@ int CCodecs::FindFormatForArchiveType(const UString &arcType) const
 bool CCodecs::FindFormatForArchiveType(const UString &arcType, CIntVector &formatIndices) const
 {
   formatIndices.Clear();
-  for (int pos = 0; pos < arcType.Length();)
+  for (unsigned pos = 0; pos < arcType.Len();)
   {
     int pos2 = arcType.Find('.', pos);
     if (pos2 < 0)
-      pos2 = arcType.Length();
+      pos2 = arcType.Len();
     const UString name = arcType.Mid(pos, pos2 - pos);
+    if (name.IsEmpty())
+      return false;
     int index = FindFormatForArchiveType(name);
     if (index < 0 && name != L"*")
     {
@@ -518,24 +668,39 @@ bool CCodecs::FindFormatForArchiveType(const UString &arcType, CIntVector &forma
   return true;
 }
 
-#endif
+#endif // _SFX
+
 
 #ifdef EXTERNAL_CODECS
 
+// #define EXPORT_CODECS
+
 #ifdef EXPORT_CODECS
-extern unsigned int g_NumCodecs;
+
+extern unsigned g_NumCodecs;
 STDAPI CreateCoder2(bool encode, UInt32 index, const GUID *iid, void **outObject);
 STDAPI GetMethodProperty(UInt32 codecIndex, PROPID propID, PROPVARIANT *value);
-// STDAPI GetNumberOfMethods(UInt32 *numCodecs);
-#endif
+#define NUM_EXPORT_CODECS g_NumCodecs
+
+extern unsigned g_NumHashers;
+STDAPI CreateHasher(UInt32 index, IHasher **hasher);
+STDAPI GetHasherProp(UInt32 codecIndex, PROPID propID, PROPVARIANT *value);
+#define NUM_EXPORT_HASHERS g_NumHashers
+
+#else // EXPORT_CODECS
+
+#define NUM_EXPORT_CODECS 0
+#define NUM_EXPORT_HASHERS 0
+
+#endif // EXPORT_CODECS
 
 STDMETHODIMP CCodecs::GetNumberOfMethods(UInt32 *numMethods)
 {
-  *numMethods =
-      #ifdef EXPORT_CODECS
-      g_NumCodecs +
-      #endif
-      Codecs.Size();
+  *numMethods = NUM_EXPORT_CODECS
+    #ifdef EXTERNAL_CODECS
+    + Codecs.Size()
+    #endif
+    ;
   return S_OK;
 }
 
@@ -546,27 +711,23 @@ STDMETHODIMP CCodecs::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *valu
     return GetMethodProperty(index, propID, value);
   #endif
 
-  const CDllCodecInfo &ci = Codecs[index
-      #ifdef EXPORT_CODECS
-      - g_NumCodecs
-      #endif
-      ];
+  #ifdef EXTERNAL_CODECS
+  const CDllCodecInfo &ci = Codecs[index - NUM_EXPORT_CODECS];
 
-  if (propID == NMethodPropID::kDecoderIsAssigned)
+  if (propID == NMethodPropID::kDecoderIsAssigned ||
+      propID == NMethodPropID::kEncoderIsAssigned)
   {
-    NWindows::NCOM::CPropVariant propVariant;
-    propVariant = ci.DecoderIsAssigned;
-    propVariant.Detach(value);
-    return S_OK;
-  }
-  if (propID == NMethodPropID::kEncoderIsAssigned)
-  {
-    NWindows::NCOM::CPropVariant propVariant;
-    propVariant = ci.EncoderIsAssigned;
-    propVariant.Detach(value);
+    NCOM::CPropVariant prop;
+    prop = (propID == NMethodPropID::kDecoderIsAssigned) ?
+        ci.DecoderIsAssigned :
+        ci.EncoderIsAssigned;
+    prop.Detach(value);
     return S_OK;
   }
   return Libs[ci.LibIndex].GetMethodProperty(ci.CodecIndex, propID, value);
+  #else
+  return E_FAIL;
+  #endif
 }
 
 STDMETHODIMP CCodecs::CreateDecoder(UInt32 index, const GUID *iid, void **coder)
@@ -575,14 +736,14 @@ STDMETHODIMP CCodecs::CreateDecoder(UInt32 index, const GUID *iid, void **coder)
   if (index < g_NumCodecs)
     return CreateCoder2(false, index, iid, coder);
   #endif
-  const CDllCodecInfo &ci = Codecs[index
-      #ifdef EXPORT_CODECS
-      - g_NumCodecs
-      #endif
-      ];
+  #ifdef EXTERNAL_CODECS
+  const CDllCodecInfo &ci = Codecs[index - NUM_EXPORT_CODECS];
   if (ci.DecoderIsAssigned)
     return Libs[ci.LibIndex].CreateObject(&ci.Decoder, iid, (void **)coder);
   return S_OK;
+  #else
+  return E_FAIL;
+  #endif
 }
 
 STDMETHODIMP CCodecs::CreateEncoder(UInt32 index, const GUID *iid, void **coder)
@@ -591,35 +752,53 @@ STDMETHODIMP CCodecs::CreateEncoder(UInt32 index, const GUID *iid, void **coder)
   if (index < g_NumCodecs)
     return CreateCoder2(true, index, iid, coder);
   #endif
-  const CDllCodecInfo &ci = Codecs[index
-      #ifdef EXPORT_CODECS
-      - g_NumCodecs
-      #endif
-      ];
+  #ifdef EXTERNAL_CODECS
+  const CDllCodecInfo &ci = Codecs[index - NUM_EXPORT_CODECS];
   if (ci.EncoderIsAssigned)
     return Libs[ci.LibIndex].CreateObject(&ci.Encoder, iid, (void **)coder);
   return S_OK;
+  #else
+  return E_FAIL;
+  #endif
 }
 
-HRESULT CCodecs::CreateCoder(const UString &name, bool encode, CMyComPtr<ICompressCoder> &coder) const
+
+STDMETHODIMP_(UInt32) CCodecs::GetNumHashers()
 {
-  for (int i = 0; i < Codecs.Size(); i++)
-  {
-    const CDllCodecInfo &codec = Codecs[i];
-    if (encode && !codec.EncoderIsAssigned || !encode && !codec.DecoderIsAssigned)
-      continue;
-    const CCodecLib &lib = Libs[codec.LibIndex];
-    UString res;
-    NWindows::NCOM::CPropVariant prop;
-    RINOK(lib.GetMethodProperty(codec.CodecIndex, NMethodPropID::kName, &prop));
-    if (prop.vt == VT_BSTR)
-      res = prop.bstrVal;
-    else if (prop.vt != VT_EMPTY)
-      continue;
-    if (name.CompareNoCase(res) == 0)
-      return lib.CreateObject(encode ? &codec.Encoder : &codec.Decoder, &IID_ICompressCoder, (void **)&coder);
-  }
-  return CLASS_E_CLASSNOTAVAILABLE;
+  return NUM_EXPORT_HASHERS
+    #ifdef EXTERNAL_CODECS
+    + Hashers.Size()
+    #endif
+    ;
+}
+
+STDMETHODIMP CCodecs::GetHasherProp(UInt32 index, PROPID propID, PROPVARIANT *value)
+{
+  #ifdef EXPORT_CODECS
+  if (index < g_NumHashers)
+    return ::GetHasherProp(index, propID, value);
+  #endif
+
+  #ifdef EXTERNAL_CODECS
+  const CDllHasherInfo &ci = Hashers[index - NUM_EXPORT_HASHERS];
+  return Libs[ci.LibIndex].Hashers->GetHasherProp(ci.HasherIndex, propID, value);
+  #else
+  return E_FAIL;
+  #endif
+}
+
+STDMETHODIMP CCodecs::CreateHasher(UInt32 index, IHasher **hasher)
+{
+  #ifdef EXPORT_CODECS
+  if (index < g_NumHashers)
+    return CreateHasher(index, hasher);
+  #endif
+  #ifdef EXTERNAL_CODECS
+  const CDllHasherInfo &ci = Hashers[index - NUM_EXPORT_HASHERS];
+  return Libs[ci.LibIndex].Hashers->CreateHasher(ci.HasherIndex, hasher);
+  #else
+  return E_FAIL;
+  #endif
 }
 
 int CCodecs::GetCodecLibIndex(UInt32 index)
@@ -629,11 +808,21 @@ int CCodecs::GetCodecLibIndex(UInt32 index)
     return -1;
   #endif
   #ifdef EXTERNAL_CODECS
-  const CDllCodecInfo &ci = Codecs[index
-      #ifdef EXPORT_CODECS
-      - g_NumCodecs
-      #endif
-      ];
+  const CDllCodecInfo &ci = Codecs[index - NUM_EXPORT_CODECS];
+  return ci.LibIndex;
+  #else
+  return -1;
+  #endif
+}
+
+int CCodecs::GetHasherLibIndex(UInt32 index)
+{
+  #ifdef EXPORT_CODECS
+  if (index < g_NumHashers)
+    return -1;
+  #endif
+  #ifdef EXTERNAL_CODECS
+  const CDllHasherInfo &ci = Hashers[index - NUM_EXPORT_HASHERS];
   return ci.LibIndex;
   #else
   return -1;
@@ -645,7 +834,7 @@ bool CCodecs::GetCodecEncoderIsAssigned(UInt32 index)
   #ifdef EXPORT_CODECS
   if (index < g_NumCodecs)
   {
-    NWindows::NCOM::CPropVariant prop;
+    NCOM::CPropVariant prop;
     if (GetProperty(index, NMethodPropID::kEncoder, &prop) == S_OK)
       if (prop.vt != VT_EMPTY)
         return true;
@@ -653,11 +842,7 @@ bool CCodecs::GetCodecEncoderIsAssigned(UInt32 index)
   }
   #endif
   #ifdef EXTERNAL_CODECS
-  const CDllCodecInfo &ci = Codecs[index
-      #ifdef EXPORT_CODECS
-      - g_NumCodecs
-      #endif
-      ];
+  const CDllCodecInfo &ci = Codecs[index - NUM_EXPORT_CODECS];
   return ci.EncoderIsAssigned;
   #else
   return false;
@@ -666,8 +851,7 @@ bool CCodecs::GetCodecEncoderIsAssigned(UInt32 index)
 
 HRESULT CCodecs::GetCodecId(UInt32 index, UInt64 &id)
 {
-  UString s;
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
   RINOK(GetProperty(index, NMethodPropID::kID, &prop));
   if (prop.vt != VT_UI8)
     return E_INVALIDARG;
@@ -678,11 +862,39 @@ HRESULT CCodecs::GetCodecId(UInt32 index, UInt64 &id)
 UString CCodecs::GetCodecName(UInt32 index)
 {
   UString s;
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
   if (GetProperty(index, NMethodPropID::kName, &prop) == S_OK)
     if (prop.vt == VT_BSTR)
       s = prop.bstrVal;
   return s;
 }
 
-#endif
+UInt64 CCodecs::GetHasherId(UInt32 index)
+{
+  NCOM::CPropVariant prop;
+  RINOK(GetHasherProp(index, NMethodPropID::kID, &prop));
+  if (prop.vt != VT_UI8)
+    return 0;
+  return prop.uhVal.QuadPart;
+}
+
+UString CCodecs::GetHasherName(UInt32 index)
+{
+  UString s;
+  NCOM::CPropVariant prop;
+  if (GetHasherProp(index, NMethodPropID::kName, &prop) == S_OK)
+    if (prop.vt == VT_BSTR)
+      s = prop.bstrVal;
+  return s;
+}
+
+UInt32 CCodecs::GetHasherDigestSize(UInt32 index)
+{
+  NCOM::CPropVariant prop;
+  RINOK(GetHasherProp(index, NMethodPropID::kDigestSize, &prop));
+  if (prop.vt != VT_UI4)
+    return 0;
+  return prop.ulVal;
+}
+
+#endif // EXTERNAL_CODECS

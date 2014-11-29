@@ -4,7 +4,7 @@
 
 #include "../../../C/Sha256.h"
 
-#include "Windows/Synchronization.h"
+#include "../../Windows/Synchronization.h"
 
 #include "../Common/StreamObjects.h"
 #include "../Common/StreamUtils.h"
@@ -38,7 +38,7 @@ void CKeyInfo::CalculateDigest()
     UInt32 pos;
     for (pos = 0; pos < SaltSize; pos++)
       Key[pos] = Salt[pos];
-    for (UInt32 i = 0; i < Password.GetCapacity() && pos < kKeySize; i++)
+    for (UInt32 i = 0; i < Password.Size() && pos < kKeySize; i++)
       Key[pos++] = Password[i];
     for (; pos < kKeySize; pos++)
       Key[pos] = 0;
@@ -52,7 +52,7 @@ void CKeyInfo::CalculateDigest()
     for (UInt64 round = 0; round < numRounds; round++)
     {
       Sha256_Update(&sha, Salt, (size_t)SaltSize);
-      Sha256_Update(&sha, Password, Password.GetCapacity());
+      Sha256_Update(&sha, Password, Password.Size());
       Sha256_Update(&sha, temp, 8);
       for (int i = 0; i < 8; i++)
         if (++(temp[i]) != 0)
@@ -64,7 +64,7 @@ void CKeyInfo::CalculateDigest()
 
 bool CKeyInfoCache::Find(CKeyInfo &key)
 {
-  for (int i = 0; i < Keys.Size(); i++)
+  FOR_VECTOR (i, Keys)
   {
     const CKeyInfo &cached = Keys[i];
     if (key.IsEqualTo(cached))
@@ -72,10 +72,7 @@ bool CKeyInfoCache::Find(CKeyInfo &key)
       for (int j = 0; j < kKeySize; j++)
         key.Key[j] = cached.Key[j];
       if (i != 0)
-      {
-        Keys.Insert(0, cached);
-        Keys.Delete(i+1);
-      }
+        Keys.MoveToFront(i);
       return true;
     }
   }
@@ -170,7 +167,7 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 
 HRESULT CEncoder::CreateFilter()
 {
-  _aesFilter = new CAesCbcEncoder;
+  _aesFilter = new CAesCbcEncoder(kKeySize);
   return S_OK;
 }
 
@@ -211,8 +208,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 
 STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
-  _key.Password.SetCapacity((size_t)size);
-  memcpy(_key.Password, data, (size_t)size);
+  _key.Password.CopyFrom(data, (size_t)size);
   return S_OK;
 }
 
@@ -227,7 +223,7 @@ STDMETHODIMP CBaseCoder::Init()
   RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
   RINOK(cp->SetKey(_key.Key, sizeof(_key.Key)));
   RINOK(cp->SetInitVector(_iv, sizeof(_iv)));
-  return S_OK;
+  return _aesFilter->Init();
 }
 
 STDMETHODIMP_(UInt32) CBaseCoder::Filter(Byte *data, UInt32 size)
@@ -237,7 +233,7 @@ STDMETHODIMP_(UInt32) CBaseCoder::Filter(Byte *data, UInt32 size)
 
 HRESULT CDecoder::CreateFilter()
 {
-  _aesFilter = new CAesCbcDecoder;
+  _aesFilter = new CAesCbcDecoder(kKeySize);
   return S_OK;
 }
 

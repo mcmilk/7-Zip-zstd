@@ -70,7 +70,7 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
         {
           lenSlot -= 2;
           int numDirectBits = (int)(lenSlot >> 2);
-          len +=  ((4 | (lenSlot & 3)) << numDirectBits) - 2;
+          len += ((4 | (lenSlot & 3)) << numDirectBits) - 2;
           if (numDirectBits < 6)
             len += _rangeDecoder.Stream.ReadBits(numDirectBits);
         }
@@ -108,7 +108,9 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     return E_INVALIDARG;
   UInt64 size = *outSize;
 
-  SetInStream(inStream);
+  // SetInStream(inStream);
+  _rangeDecoder.SetStream(inStream);
+
   _outWindowStream.SetStream(outStream);
   SetOutStreamSize(outSize);
   CDecoderFlusher flusher(this);
@@ -143,17 +145,20 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   catch(...) { return S_FALSE; }
 }
 
+/*
 STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream)
 {
+  m_InStreamRef = inStream;
   _rangeDecoder.SetStream(inStream);
   return S_OK;
 }
 
 STDMETHODIMP CDecoder::ReleaseInStream()
 {
-  _rangeDecoder.ReleaseStream();
+  m_InStreamRef.Release();
   return S_OK;
 }
+*/
 
 STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {

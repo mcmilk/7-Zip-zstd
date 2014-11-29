@@ -1,4 +1,4 @@
-#define IDD_DIALOG_COMBO                505
+#define IDD_COMBO   98
 
-#define IDC_COMBO_STATIC                1000
-#define IDC_COMBO_COMBO                 1001
+#define IDT_COMBO  100
+#define IDC_COMBO  101

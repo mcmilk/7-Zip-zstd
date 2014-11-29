@@ -19,12 +19,12 @@ class CFolderOutStream:
 {
   COutStreamWithCRC *_crcStreamSpec;
   CMyComPtr<ISequentialOutStream> _crcStream;
-  const CArchiveDatabaseEx *_db;
+  const CDbEx *_db;
   const CBoolVector *_extractStatuses;
   CMyComPtr<IArchiveExtractCallback> _extractCallback;
   UInt32 _ref2Offset;
   UInt32 _startIndex;
-  int _currentIndex;
+  unsigned _currentIndex;
   bool _testMode;
   bool _checkCrc;
   bool _fileIsOpen;
@@ -43,7 +43,7 @@ public:
   STDMETHOD(GetSubStreamSize)(UInt64 subStream, UInt64 *value);
 
   HRESULT Init(
-      const CArchiveDatabaseEx *db,
+      const CDbEx *db,
       UInt32 ref2Offset, UInt32 startIndex,
       const CBoolVector *extractStatuses,
       IArchiveExtractCallback *extractCallback,

@@ -1,11 +1,14 @@
 /* 7zMain.c - Test application for 7z Decoder
-2010-10-28 : Igor Pavlov : Public domain */
+2014-06-17 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #include "../../7z.h"
 #include "../../7zAlloc.h"
+#include "../../7zBuf.h"
 #include "../../7zCrc.h"
 #include "../../7zFile.h"
 #include "../../7zVersion.h"
@@ -95,41 +98,51 @@ static SRes Utf16_To_Utf8Buf(CBuf *dest, const UInt16 *src, size_t srcLen)
   dest->data[destLen] = 0;
   return res ? SZ_OK : SZ_ERROR_FAIL;
 }
+
 #endif
 
-static SRes Utf16_To_Char(CBuf *buf, const UInt16 *s, int fileMode)
+static SRes Utf16_To_Char(CBuf *buf, const UInt16 *s
+    #ifdef _WIN32
+    , UINT codePage
+    #endif
+    )
 {
-  int len = 0;
-  for (len = 0; s[len] != '\0'; len++);
+  unsigned len = 0;
+  for (len = 0; s[len] != 0; len++);
 
   #ifdef _WIN32
   {
-    int size = len * 3 + 100;
+    unsigned size = len * 3 + 100;
     if (!Buf_EnsureSize(buf, size))
       return SZ_ERROR_MEM;
     {
-      char defaultChar = '_';
-      BOOL defUsed;
-      int numChars = WideCharToMultiByte(fileMode ?
-          (
-          #ifdef UNDER_CE
-          CP_ACP
-          #else
-          AreFileApisANSI() ? CP_ACP : CP_OEMCP
-          #endif
-          ) : CP_OEMCP,
-          0, s, len, (char *)buf->data, size, &defaultChar, &defUsed);
-      if (numChars == 0 || numChars >= size)
-        return SZ_ERROR_FAIL;
-      buf->data[numChars] = 0;
+      buf->data[0] = 0;
+      if (len != 0)
+      {
+        char defaultChar = '_';
+        BOOL defUsed;
+        unsigned numChars = 0;
+        numChars = WideCharToMultiByte(codePage, 0, s, len, (char *)buf->data, size, &defaultChar, &defUsed);
+        if (numChars == 0 || numChars >= size)
+          return SZ_ERROR_FAIL;
+        buf->data[numChars] = 0;
+      }
       return SZ_OK;
     }
   }
   #else
-  fileMode = fileMode;
   return Utf16_To_Utf8Buf(buf, s, len);
   #endif
 }
+
+#ifdef _WIN32
+  #ifndef USE_WINDOWS_FILE
+    static UINT g_FileCodePage = CP_ACP;
+  #endif
+  #define MY_FILE_CODE_PAGE_PARAM ,g_FileCodePage
+#else
+  #define MY_FILE_CODE_PAGE_PARAM
+#endif
 
 static WRes MyCreateDir(const UInt16 *name)
 {
@@ -142,7 +155,7 @@ static WRes MyCreateDir(const UInt16 *name)
   CBuf buf;
   WRes res;
   Buf_Init(&buf);
-  RINOK(Utf16_To_Char(&buf, name, 1));
+  RINOK(Utf16_To_Char(&buf, name MY_FILE_CODE_PAGE_PARAM));
 
   res =
   #ifdef _WIN32
@@ -165,7 +178,7 @@ static WRes OutFile_OpenUtf16(CSzFile *p, const UInt16 *name)
   CBuf buf;
   WRes res;
   Buf_Init(&buf);
-  RINOK(Utf16_To_Char(&buf, name, 1));
+  RINOK(Utf16_To_Char(&buf, name MY_FILE_CODE_PAGE_PARAM));
   res = OutFile_Open(p, (const char *)buf.data);
   Buf_Free(&buf, &g_Alloc);
   return res;
@@ -177,7 +190,11 @@ static SRes PrintString(const UInt16 *s)
   CBuf buf;
   SRes res;
   Buf_Init(&buf);
-  res = Utf16_To_Char(&buf, s, 0);
+  res = Utf16_To_Char(&buf, s
+      #ifdef _WIN32
+      , CP_OEMCP
+      #endif
+      );
   if (res == SZ_OK)
     fputs((const char *)buf.data, stdout);
   Buf_Free(&buf, &g_Alloc);
@@ -216,17 +233,24 @@ static char *UIntToStr(char *s, unsigned value, int numDigits)
   return s;
 }
 
+static void UIntToStr_2(char *s, unsigned value)
+{
+  s[0] = (char)('0' + (value / 10));
+  s[1] = (char)('0' + (value % 10));
+}
+
 #define PERIOD_4 (4 * 365 + 1)
 #define PERIOD_100 (PERIOD_4 * 25 - 1)
 #define PERIOD_400 (PERIOD_100 * 4 + 1)
 
-static void ConvertFileTimeToString(const CNtfsFileTime *ft, char *s)
+static void ConvertFileTimeToString(const CNtfsFileTime *nt, char *s)
 {
-  unsigned year, mon, day, hour, min, sec;
-  UInt64 v64 = (ft->Low | ((UInt64)ft->High << 32)) / 10000000;
+  unsigned year, mon, hour, min, sec;
   Byte ms[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
   unsigned t;
   UInt32 v;
+  UInt64 v64 = nt->Low | ((UInt64)nt->High << 32);
+  v64 /= 10000000;
   sec = (unsigned)(v64 % 60); v64 /= 60;
   min = (unsigned)(v64 % 60); v64 /= 60;
   hour = (unsigned)(v64 % 24); v64 /= 24;
@@ -242,20 +266,19 @@ static void ConvertFileTimeToString(const CNtfsFileTime *ft, char *s)
 
   if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0))
     ms[1] = 29;
-  for (mon = 1; mon <= 12; mon++)
+  for (mon = 0;; mon++)
   {
-    unsigned s = ms[mon - 1];
+    unsigned s = ms[mon];
     if (v < s)
       break;
     v -= s;
   }
-  day = (unsigned)v + 1;
   s = UIntToStr(s, year, 4); *s++ = '-';
-  s = UIntToStr(s, mon, 2);  *s++ = '-';
-  s = UIntToStr(s, day, 2);  *s++ = ' ';
-  s = UIntToStr(s, hour, 2); *s++ = ':';
-  s = UIntToStr(s, min, 2);  *s++ = ':';
-  s = UIntToStr(s, sec, 2);
+  UIntToStr_2(s, mon + 1); s[2] = '-'; s += 3;
+  UIntToStr_2(s, (unsigned)v + 1); s[2] = ' '; s += 3;
+  UIntToStr_2(s, hour); s[2] = ':'; s += 3;
+  UIntToStr_2(s, min); s[2] = ':'; s += 3;
+  UIntToStr_2(s, sec); s[2] = 0;
 }
 
 void PrintError(char *sz)
@@ -264,14 +287,13 @@ void PrintError(char *sz)
 }
 
 #ifdef USE_WINDOWS_FILE
-#define kEmptyAttribChar '.'
 static void GetAttribString(UInt32 wa, Bool isDir, char *s)
 {
-  s[0] = (char)(((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || isDir) ? 'D' : kEmptyAttribChar);
-  s[1] = (char)(((wa & FILE_ATTRIBUTE_READONLY) != 0) ? 'R': kEmptyAttribChar);
-  s[2] = (char)(((wa & FILE_ATTRIBUTE_HIDDEN) != 0) ? 'H': kEmptyAttribChar);
-  s[3] = (char)(((wa & FILE_ATTRIBUTE_SYSTEM) != 0) ? 'S': kEmptyAttribChar);
-  s[4] = (char)(((wa & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 'A': kEmptyAttribChar);
+  s[0] = (char)(((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || isDir) ? 'D' : '.');
+  s[1] = (char)(((wa & FILE_ATTRIBUTE_READONLY ) != 0) ? 'R': '.');
+  s[2] = (char)(((wa & FILE_ATTRIBUTE_HIDDEN   ) != 0) ? 'H': '.');
+  s[3] = (char)(((wa & FILE_ATTRIBUTE_SYSTEM   ) != 0) ? 'S': '.');
+  s[4] = (char)(((wa & FILE_ATTRIBUTE_ARCHIVE  ) != 0) ? 'A': '.');
   s[5] = '\0';
 }
 #else
@@ -280,6 +302,8 @@ static void GetAttribString(UInt32, Bool, char *s)
   s[0] = '\0';
 }
 #endif
+
+// #define NUM_PARENTS_MAX 128
 
 int MY_CDECL main(int numargs, char *args[])
 {
@@ -291,6 +315,7 @@ int MY_CDECL main(int numargs, char *args[])
   ISzAlloc allocTempImp;
   UInt16 *temp = NULL;
   size_t tempSize = 0;
+  // UInt32 parents[NUM_PARENTS_MAX];
 
   printf("\n7z ANSI-C Decoder " MY_VERSION_COPYRIGHT_DATE "\n\n");
   if (numargs == 1)
@@ -310,13 +335,21 @@ int MY_CDECL main(int numargs, char *args[])
     return 1;
   }
 
+  #if defined(_WIN32) && !defined(USE_WINDOWS_FILE) && !defined(UNDER_CE)
+  g_FileCodePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+  #endif
+
   allocImp.Alloc = SzAlloc;
   allocImp.Free = SzFree;
 
   allocTempImp.Alloc = SzAllocTemp;
   allocTempImp.Free = SzFreeTemp;
 
+  #ifdef UNDER_CE
+  if (InFile_OpenW(&archiveStream.file, L"\test.7z"))
+  #else
   if (InFile_Open(&archiveStream.file, args[2]))
+  #endif
   {
     PrintError("can not open input file");
     return 1;
@@ -358,22 +391,24 @@ int MY_CDECL main(int numargs, char *args[])
       Byte *outBuffer = 0; /* it must be 0 before first call for each new archive. */
       size_t outBufferSize = 0;  /* it can have any value before first call (if outBuffer = 0) */
 
-      for (i = 0; i < db.db.NumFiles; i++)
+      for (i = 0; i < db.NumFiles; i++)
       {
         size_t offset = 0;
         size_t outSizeProcessed = 0;
-        const CSzFileItem *f = db.db.Files + i;
+        // const CSzFileItem *f = db.Files + i;
         size_t len;
-        if (listCommand == 0 && f->IsDir && !fullPaths)
+        int isDir = SzArEx_IsDir(&db, i);
+        if (listCommand == 0 && isDir && !fullPaths)
           continue;
         len = SzArEx_GetFileNameUtf16(&db, i, NULL);
+        // len = SzArEx_GetFullNameLen(&db, i);
 
         if (len > tempSize)
         {
           SzFree(NULL, temp);
           tempSize = len;
           temp = (UInt16 *)SzAlloc(NULL, tempSize * sizeof(temp[0]));
-          if (temp == 0)
+          if (!temp)
           {
             res = SZ_ERROR_MEM;
             break;
@@ -381,15 +416,25 @@ int MY_CDECL main(int numargs, char *args[])
         }
 
         SzArEx_GetFileNameUtf16(&db, i, temp);
+        /*
+        if (SzArEx_GetFullNameUtf16_Back(&db, i, temp + len) != temp)
+        {
+          res = SZ_ERROR_FAIL;
+          break;
+        }
+        */
+
         if (listCommand)
         {
           char attr[8], s[32], t[32];
+          UInt64 fileSize;
 
-          GetAttribString(f->AttribDefined ? f->Attrib : 0, f->IsDir, attr);
+          GetAttribString(SzBitWithVals_Check(&db.Attribs, i) ? db.Attribs.Vals[i] : 0, isDir, attr);
 
-          UInt64ToStr(f->Size, s);
-          if (f->MTimeDefined)
-            ConvertFileTimeToString(&f->MTime, t);
+          fileSize = SzArEx_GetFileSize(&db, i);
+          UInt64ToStr(fileSize, s);
+          if (SzBitWithVals_Check(&db.MTime, i))
+            ConvertFileTimeToString(&db.MTime.Vals[i], t);
           else
           {
             size_t j;
@@ -402,7 +447,7 @@ int MY_CDECL main(int numargs, char *args[])
           res = PrintString(temp);
           if (res != SZ_OK)
             break;
-          if (f->IsDir)
+          if (isDir)
             printf("/");
           printf("\n");
           continue;
@@ -414,7 +459,7 @@ int MY_CDECL main(int numargs, char *args[])
         res = PrintString(temp);
         if (res != SZ_OK)
           break;
-        if (f->IsDir)
+        if (isDir)
           printf("/");
         else
         {
@@ -445,7 +490,7 @@ int MY_CDECL main(int numargs, char *args[])
                 destPath = name + j + 1;
             }
     
-          if (f->IsDir)
+          if (isDir)
           {
             MyCreateDir(destPath);
             printf("\n");
@@ -471,8 +516,8 @@ int MY_CDECL main(int numargs, char *args[])
             break;
           }
           #ifdef USE_WINDOWS_FILE
-          if (f->AttribDefined)
-            SetFileAttributesW(destPath, f->Attrib);
+          if (SzBitWithVals_Check(&db.Attribs, i))
+            SetFileAttributesW(destPath, db.Attribs.Vals[i]);
           #endif
         }
         printf("\n");

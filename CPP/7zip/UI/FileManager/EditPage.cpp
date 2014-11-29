@@ -12,24 +12,36 @@
 
 using namespace NWindows;
 
-static CIDLangPair kIDLangPairs[] =
+static const UInt32 kLangIDs[] =
 {
-  { IDC_EDIT_STATIC_EDITOR, 0x03010201},
-  { IDC_EDIT_STATIC_DIFF, 0x03010202}
+  IDT_EDIT_EDITOR,
+  IDT_EDIT_DIFF
+};
+
+static const UInt32 kLangIDs_Colon[] =
+{
+  IDT_EDIT_VIEWER
 };
 
 static LPCWSTR kEditTopic = L"FM/options.htm#editor";
 
 bool CEditPage::OnInit()
 {
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+  LangSetDlgItems_Colon(*this, kLangIDs_Colon, ARRAY_SIZE(kLangIDs_Colon));
 
-  _editor.Attach(GetItem(IDC_EDIT_EDIT_EDITOR));
-  _diff.Attach(GetItem(IDC_EDIT_EDIT_DIFF));
+  _viewer.Attach(GetItem(IDE_EDIT_VIEWER));
+  _editor.Attach(GetItem(IDE_EDIT_EDITOR));
+  _diff.Attach(GetItem(IDE_EDIT_DIFF));
   
   {
     UString path;
-    ReadRegEditor(path);
+    ReadRegEditor(false, path);
+    _viewer.SetText(path);
+  }
+  {
+    UString path;
+    ReadRegEditor(true, path);
     _editor.SetText(path);
   }
   {
@@ -44,8 +56,13 @@ LONG CEditPage::OnApply()
 {
   {
     UString path;
+    _viewer.GetText(path);
+    SaveRegEditor(false, path);
+  }
+  {
+    UString path;
     _editor.GetText(path);
-    SaveRegEditor(path);
+    SaveRegEditor(true, path);
   }
   {
     UString path;
@@ -65,7 +82,7 @@ static void Edit_BrowseForFile(NWindows::NControl::CEdit &edit, HWND hwnd)
   UString path;
   edit.GetText(path);
   UString resPath;
-  if (MyBrowseForFile(hwnd, 0, path, L"*.exe", resPath))
+  if (MyBrowseForFile(hwnd, 0, path, NULL, L"*.exe", resPath))
   {
     edit.SetText(resPath);
     // Changed();
@@ -76,21 +93,19 @@ bool CEditPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {
-    case IDC_EDIT_BUTTON_EDITOR:
-      Edit_BrowseForFile(_editor, *this);
-      return true;
-    case IDC_EDIT_BUTTON_DIFF:
-      Edit_BrowseForFile(_diff, *this);
-      return true;
+    case IDB_EDIT_VIEWER: Edit_BrowseForFile(_viewer, *this); return true;
+    case IDB_EDIT_EDITOR: Edit_BrowseForFile(_editor, *this); return true;
+    case IDB_EDIT_DIFF:   Edit_BrowseForFile(_diff, *this); return true;
   }
   return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 }
 
 bool CEditPage::OnCommand(int code, int itemID, LPARAM param)
 {
-  if (code == EN_CHANGE &&
-      (itemID == IDC_EDIT_EDIT_EDITOR ||
-      itemID == IDC_EDIT_EDIT_DIFF))
+  if (code == EN_CHANGE && (
+      itemID == IDE_EDIT_VIEWER ||
+      itemID == IDE_EDIT_EDITOR ||
+      itemID == IDE_EDIT_DIFF))
   {
     Changed();
     return true;

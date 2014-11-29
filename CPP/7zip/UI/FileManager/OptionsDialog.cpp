@@ -2,8 +2,8 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Control/Dialog.h"
-#include "Windows/Control/PropertyPage.h"
+#include "../../../Windows/Control/Dialog.h"
+#include "../../../Windows/Control/PropertyPage.h"
 
 #include "DialogSize.h"
 #include "EditPage.h"
@@ -92,41 +92,36 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE /* hInstance */)
   CFoldersPage foldersPage;
 
   CObjectVector<NControl::CPageInfo> pages;
-  const UInt32 langIDs[] = { 0x03010300,
-    // 0x03010100,
-    0xFFFFFFFF,
-    0x01000200, 0x03010200, 0x03010400, 0x01000400};
-  
   BIG_DIALOG_SIZE(200, 200);
 
   UINT pageIDs[] = {
       SIZED_DIALOG(IDD_SYSTEM),
-      // IDD_PLUGINS,
       SIZED_DIALOG(IDD_MENU),
       SIZED_DIALOG(IDD_FOLDERS),
       SIZED_DIALOG(IDD_EDIT),
       SIZED_DIALOG(IDD_SETTINGS),
       SIZED_DIALOG(IDD_LANG) };
   NControl::CPropertyPage *pagePinters[] = { &systemPage,  &menuPage, &foldersPage, &editPage, &settingsPage, &langPage };
-  const int kNumPages = sizeof(langIDs) / sizeof(langIDs[0]);
+  const int kNumPages = ARRAY_SIZE(pageIDs);
   for (int i = 0; i < kNumPages; i++)
   {
     NControl::CPageInfo page;
-    page.Title = LangString(langIDs[i]);
     page.ID = pageIDs[i];
+    LangString_OnlyFromLangFile(page.ID, page.Title);
     page.Page = pagePinters[i];
     pages.Add(page);
   }
 
-  INT_PTR res = NControl::MyPropertySheet(pages, hwndOwner, LangString(IDS_OPTIONS, 0x03010000));
+  INT_PTR res = NControl::MyPropertySheet(pages, hwndOwner, LangString(IDS_OPTIONS));
   if (res != -1 && res != 0)
   {
     if (langPage.LangWasChanged)
     {
-      g_App._window.SetText(LangString(IDS_APP_TITLE, 0x03000000));
+      // g_App._window.SetText(LangString(IDS_APP_TITLE, 0x03000000));
       MyLoadMenu();
       g_App.ReloadToolbars();
       g_App.MoveSubWindows();
+      g_App.ReloadLang();
     }
     /*
     if (systemPage.WasChanged)

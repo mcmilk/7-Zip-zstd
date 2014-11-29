@@ -25,7 +25,7 @@ static const UInt32 kSymbolReadTable = 256;
 static const UInt32 kSymbolRep = 259;
 static const UInt32 kSymbolLen2 = kSymbolRep + kNumReps;
 
-static const Byte kLenStart[kLenTableSize]      = {0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224};
+static const Byte kLenStart     [kLenTableSize] = {0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224};
 static const Byte kLenDirectBits[kLenTableSize] = {0,0,0,0,0,0,0,0,1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5};
 
 static const Byte kDistDirectBits[kDistTableSize] =
@@ -153,7 +153,7 @@ HRESULT CDecoder::WriteBuf()
 {
   UInt32 writtenBorder = _wrPtr;
   UInt32 writeSize = (_winPos - writtenBorder) & kWindowMask;
-  for (int i = 0; i < _tempFilters.Size(); i++)
+  FOR_VECTOR (i, _tempFilters)
   {
     CTempFilter *filter = _tempFilters[i];
     if (filter == NULL)
@@ -202,7 +202,7 @@ HRESULT CDecoder::WriteBuf()
       }
       else
       {
-        for (int j = i; j < _tempFilters.Size(); j++)
+        for (unsigned j = i; j < _tempFilters.Size(); j++)
         {
           CTempFilter *filter = _tempFilters[j];
           if (filter != NULL && filter->NextWindow)
@@ -221,7 +221,7 @@ HRESULT CDecoder::WriteBuf()
 void CDecoder::InitFilters()
 {
   _lastFilter = 0;
-  int i;
+  unsigned i;
   for (i = 0; i < _tempFilters.Size(); i++)
     delete _tempFilters[i];
   _tempFilters.Clear();
@@ -238,7 +238,7 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
   UInt32 filterIndex;
   if (firstByte & 0x80)
   {
-    filterIndex = NVm::ReadEncodedUInt32(inp);
+    filterIndex = inp.ReadEncodedUInt32();
     if (filterIndex == 0)
       InitFilters();
     else
@@ -267,7 +267,7 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
   }
 
   int numEmptyItems = 0;
-  int i;
+  unsigned i;
   for (i = 0; i < _tempFilters.Size(); i++)
   {
     _tempFilters[i - numEmptyItems] = _tempFilters[i];
@@ -284,62 +284,56 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
   CTempFilter *tempFilter = new CTempFilter;
   _tempFilters[_tempFilters.Size() - numEmptyItems] = tempFilter;
   tempFilter->FilterIndex = filterIndex;
-  tempFilter->ExecCount = filter->ExecCount;
  
-  UInt32 blockStart = NVm::ReadEncodedUInt32(inp);
+  UInt32 blockStart = inp.ReadEncodedUInt32();
   if (firstByte & 0x40)
     blockStart += 258;
   tempFilter->BlockStart = (blockStart + _winPos) & kWindowMask;
   if (firstByte & 0x20)
-    filter->BlockSize = NVm::ReadEncodedUInt32(inp);
+    filter->BlockSize = inp.ReadEncodedUInt32();
   tempFilter->BlockSize = filter->BlockSize;
   tempFilter->NextWindow = _wrPtr != _winPos && ((_wrPtr - _winPos) & kWindowMask) <= blockStart;
 
   memset(tempFilter->InitR, 0, sizeof(tempFilter->InitR));
   tempFilter->InitR[3] = NVm::kGlobalOffset;
   tempFilter->InitR[4] = tempFilter->BlockSize;
-  tempFilter->InitR[5] = tempFilter->ExecCount;
+  tempFilter->InitR[5] = filter->ExecCount;
   if (firstByte & 0x10)
   {
     UInt32 initMask = inp.ReadBits(NVm::kNumGpRegs);
     for (int i = 0; i < NVm::kNumGpRegs; i++)
       if (initMask & (1 << i))
-        tempFilter->InitR[i] = NVm::ReadEncodedUInt32(inp);
+        tempFilter->InitR[i] = inp.ReadEncodedUInt32();
   }
   if (newFilter)
   {
-    UInt32 vmCodeSize = NVm::ReadEncodedUInt32(inp);
+    UInt32 vmCodeSize = inp.ReadEncodedUInt32();
     if (vmCodeSize >= kVmCodeSizeMax || vmCodeSize == 0)
       return false;
     for (UInt32 i = 0; i < vmCodeSize; i++)
       _vmCode[i] = (Byte)inp.ReadBits(8);
-    _vm.PrepareProgram(_vmCode, vmCodeSize, filter);
+    filter->PrepareProgram(_vmCode, vmCodeSize);
   }
-
-  tempFilter->AllocateEmptyFixedGlobal();
 
   Byte *globalData = &tempFilter->GlobalData[0];
   for (i = 0; i < NVm::kNumGpRegs; i++)
     NVm::SetValue32(&globalData[i * 4], tempFilter->InitR[i]);
   NVm::SetValue32(&globalData[NVm::NGlobalOffset::kBlockSize], tempFilter->BlockSize);
   NVm::SetValue32(&globalData[NVm::NGlobalOffset::kBlockPos], 0); // It was commented. why?
-  NVm::SetValue32(&globalData[NVm::NGlobalOffset::kExecCount], tempFilter->ExecCount);
+  NVm::SetValue32(&globalData[NVm::NGlobalOffset::kExecCount], filter->ExecCount);
 
   if (firstByte & 8)
   {
-    UInt32 dataSize = NVm::ReadEncodedUInt32(inp);
+    UInt32 dataSize = inp.ReadEncodedUInt32();
     if (dataSize > NVm::kGlobalSize - NVm::kFixedGlobalSize)
       return false;
     CRecordVector<Byte> &globalData = tempFilter->GlobalData;
-    int requredSize = (int)(dataSize + NVm::kFixedGlobalSize);
-    if (globalData.Size() < requredSize)
-    {
-      globalData.Reserve(requredSize);
-      for (; globalData.Size() < requredSize; i++)
-        globalData.Add(0);
-    }
+    unsigned requiredSize = (unsigned)(dataSize + NVm::kFixedGlobalSize);
+    if (globalData.Size() < requiredSize)
+      globalData.ChangeSize_KeepData(requiredSize);
+    Byte *dest = &globalData[NVm::kFixedGlobalSize];
     for (UInt32 i = 0; i < dataSize; i++)
-      globalData[NVm::kFixedGlobalSize + i] = (Byte)inp.ReadBits(8);
+      dest[i] = (Byte)inp.ReadBits(8);
   }
   return true;
 }
@@ -384,6 +378,8 @@ bool CDecoder::ReadVmCodePPM()
   }
   if (length > kVmDataSizeMax)
     return false;
+  if (InputEofError_Fast())
+    return false;
   for (UInt32 i = 0; i < length; i++)
   {
     int b = DecodePpmSymbol();
@@ -396,14 +392,13 @@ bool CDecoder::ReadVmCodePPM()
 
 #define RIF(x) { if (!(x)) return S_FALSE; }
 
-UInt32 CDecoder::ReadBits(int numBits) { return m_InBitStream.bitDecoder.ReadBits(numBits); }
+UInt32 CDecoder::ReadBits(int numBits) { return m_InBitStream.BitDecoder.ReadBits(numBits); }
 
-/////////////////////////////////////////////////
-// PPM
+// ---------- PPM ----------
 
 HRESULT CDecoder::InitPPM()
 {
-  Byte maxOrder = (Byte)ReadBits(7);
+  unsigned maxOrder = (unsigned)ReadBits(7);
 
   bool reset = ((maxOrder & 0x20) != 0);
   int maxMB = 0;
@@ -458,6 +453,8 @@ HRESULT CDecoder::DecodePPM(Int32 num, bool &keepDecompressing)
         return S_OK;
       }
     }
+    if (InputEofError_Fast())
+      return false;
     int c = DecodePpmSymbol();
     if (c < 0)
     {
@@ -526,13 +523,12 @@ HRESULT CDecoder::DecodePPM(Int32 num, bool &keepDecompressing)
   return S_OK;
 }
 
-/////////////////////////////////////////////////
-// LZ
+// ---------- LZ ----------
 
 HRESULT CDecoder::ReadTables(bool &keepDecompressing)
 {
   keepDecompressing = true;
-  ReadBits((8 - m_InBitStream.bitDecoder.GetBitPosition()) & 7);
+  m_InBitStream.BitDecoder.AlignToByte();
   if (ReadBits(1) != 0)
   {
     _lzMode = false;
@@ -571,7 +567,7 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
   i = 0;
   while (i < kTablesSizesSum)
   {
-    UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream.bitDecoder);
+    UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
     if (number < 16)
     {
       newLevels[i] = Byte((number + m_LastLevels[i]) & 15);
@@ -620,6 +616,7 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
   return S_OK;
 }
 
+/*
 class CCoderReleaser
 {
   CDecoder *m_Coder;
@@ -630,6 +627,7 @@ public:
     m_Coder->ReleaseStreams();
   }
 };
+*/
 
 HRESULT CDecoder::ReadEndOfBlock(bool &keepDecompressing)
 {
@@ -680,7 +678,11 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
         return S_OK;
       }
     }
-    UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream.bitDecoder);
+    
+    if (InputEofError_Fast())
+      return S_FALSE;
+
+    UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
     if (number < 256)
     {
       PutByte((Byte)number);
@@ -724,10 +726,10 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
         rep0 = distance;
       }
 
-      UInt32 number = m_LenDecoder.DecodeSymbol(&m_InBitStream.bitDecoder);
+      UInt32 number = m_LenDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
       if (number >= kLenTableSize)
         return S_FALSE;
-      length = 2 + kLenStart[number] + m_InBitStream.bitDecoder.ReadBits(kLenDirectBits[number]);
+      length = 2 + kLenStart[number] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[number]);
     }
     else
     {
@@ -737,14 +739,14 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
       if (number < 271)
       {
         number -= 263;
-        rep0 = kLen2DistStarts[number] + m_InBitStream.bitDecoder.ReadBits(kLen2DistDirectBits[number]);
+        rep0 = kLen2DistStarts[number] + m_InBitStream.BitDecoder.ReadBits(kLen2DistDirectBits[number]);
         length = 2;
       }
       else if (number < 299)
       {
         number -= 271;
-        length = kNormalMatchMinLen + (UInt32)kLenStart[number] + m_InBitStream.bitDecoder.ReadBits(kLenDirectBits[number]);
-        UInt32 number = m_DistDecoder.DecodeSymbol(&m_InBitStream.bitDecoder);
+        length = kNormalMatchMinLen + (UInt32)kLenStart[number] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[number]);
+        UInt32 number = m_DistDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
         if (number >= kDistTableSize)
           return S_FALSE;
         rep0 = kDistStart[number];
@@ -752,7 +754,7 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
         if (number >= (kNumAlignBits * 2) + 2)
         {
           if (numBits > kNumAlignBits)
-            rep0 += (m_InBitStream.bitDecoder.ReadBits(numBits - kNumAlignBits) << kNumAlignBits);
+            rep0 += (m_InBitStream.BitDecoder.ReadBits(numBits - kNumAlignBits) << kNumAlignBits);
           if (PrevAlignCount > 0)
           {
             PrevAlignCount--;
@@ -760,13 +762,13 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
           }
           else
           {
-            UInt32 number = m_AlignDecoder.DecodeSymbol(&m_InBitStream.bitDecoder);
+            UInt32 number = m_AlignDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
             if (number < (1 << kNumAlignBits))
             {
               rep0 += number;
               PrevAlignBits = number;
             }
-            else if (number  == (1 << kNumAlignBits))
+            else if (number == (1 << kNumAlignBits))
             {
               PrevAlignCount = kNumAlignReps;
               rep0 += PrevAlignBits;
@@ -776,7 +778,7 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
           }
         }
         else
-          rep0 += m_InBitStream.bitDecoder.ReadBits(numBits);
+          rep0 += m_InBitStream.BitDecoder.ReadBits(numBits);
         length += ((kDistLimit4 - rep0) >> 31) + ((kDistLimit3 - rep0) >> 31);
       }
       else
@@ -831,13 +833,17 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
     {
       RINOK(DecodePPM(1 << 18, keepDecompressing))
     }
-    UInt64 packSize = m_InBitStream.bitDecoder.GetProcessedSize();
+
+    if (InputEofError())
+      return S_FALSE;
+
+    UInt64 packSize = m_InBitStream.BitDecoder.GetProcessedSize();
     RINOK(progress->SetRatioInfo(&packSize, &_writtenFileSize));
     if (!keepDecompressing)
       break;
   }
   RINOK(WriteBuf());
-  UInt64 packSize = m_InBitStream.bitDecoder.GetProcessedSize();
+  UInt64 packSize = m_InBitStream.BitDecoder.GetProcessedSize();
   RINOK(progress->SetRatioInfo(&packSize, &_writtenFileSize));
   if (_writtenFileSize < _unpackSize)
     return S_FALSE;
@@ -866,17 +872,17 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
       if (_window == 0)
         return E_OUTOFMEMORY;
     }
-    if (!m_InBitStream.bitDecoder.Create(1 << 20))
+    if (!m_InBitStream.BitDecoder.Create(1 << 20))
       return E_OUTOFMEMORY;
     if (!_vm.Create())
       return E_OUTOFMEMORY;
 
     
-    m_InBitStream.bitDecoder.SetStream(inStream);
-    m_InBitStream.bitDecoder.Init();
+    m_InBitStream.BitDecoder.SetStream(inStream);
+    m_InBitStream.BitDecoder.Init();
     _outStream = outStream;
    
-    CCoderReleaser coderReleaser(this);
+    // CCoderReleaser coderReleaser(this);
     _unpackSize = *outSize;
     return CodeReal(progress);
   }

@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#include "Types.h"
+#include "MyTypes.h"
 #include "MyWindows.h"
 
 #ifdef _WIN32

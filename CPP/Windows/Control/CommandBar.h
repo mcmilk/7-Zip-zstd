@@ -5,7 +5,7 @@
 
 #ifdef UNDER_CE
 
-#include "Windows/Window.h"
+#include "../Window.h"
 
 namespace NWindows {
 namespace NControl {
@@ -21,7 +21,7 @@ public:
   
   // Macros
   // void Destroy() { CommandBar_Destroy(_window); }
-  bool AddButtons(int iButton, UINT numButtons, LPTBBUTTON buttons) { return BOOLToBool(SendMessage(TB_ADDBUTTONS, (WPARAM)numButtons, (LPARAM)buttons)); }
+  // bool AddButtons(UINT numButtons, LPTBBUTTON buttons) { return BOOLToBool(SendMessage(TB_ADDBUTTONS, (WPARAM)numButtons, (LPARAM)buttons)); }
   bool InsertButton(int iButton, LPTBBUTTON button) { return BOOLToBool(SendMessage(TB_INSERTBUTTON, (WPARAM)iButton, (LPARAM)button)); }
   BOOL AddToolTips(UINT numToolTips, LPTSTR toolTips) { return BOOLToBool(SendMessage(TB_SETTOOLTIPS, (WPARAM)numToolTips, (LPARAM)toolTips)); }
   void AutoSize() { SendMessage(TB_AUTOSIZE, 0, 0); }

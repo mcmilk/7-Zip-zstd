@@ -2,27 +2,25 @@
 
 #include "StdAfx.h"
 
-#include "Common/Buffer.h"
-
-#include "FindSignature.h"
+#include "../../../Common/MyBuffer.h"
 
 #include "../../Common/StreamUtils.h"
+
+#include "FindSignature.h"
 
 HRESULT FindSignatureInStream(ISequentialInStream *stream,
     const Byte *signature, unsigned signatureSize,
     const UInt64 *limit, UInt64 &resPos)
 {
   resPos = 0;
-  CByteBuffer byteBuffer2;
-  byteBuffer2.SetCapacity(signatureSize);
+  CByteBuffer byteBuffer2(signatureSize);
   RINOK(ReadStream_FALSE(stream, byteBuffer2, signatureSize));
 
   if (memcmp(byteBuffer2, signature, signatureSize) == 0)
     return S_OK;
 
   const UInt32 kBufferSize = (1 << 16);
-  CByteBuffer byteBuffer;
-  byteBuffer.SetCapacity(kBufferSize);
+  CByteBuffer byteBuffer(kBufferSize);
   Byte *buffer = byteBuffer;
   UInt32 numPrevBytes = signatureSize - 1;
   memcpy(buffer, (const Byte *)byteBuffer2 + 1, numPrevBytes);

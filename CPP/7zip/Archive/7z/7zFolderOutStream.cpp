@@ -14,7 +14,7 @@ CFolderOutStream::CFolderOutStream()
 }
 
 HRESULT CFolderOutStream::Init(
-    const CArchiveDatabaseEx *db,
+    const CDbEx *db,
     UInt32 ref2Offset, UInt32 startIndex,
     const CBoolVector *extractStatuses,
     IArchiveExtractCallback *extractCallback,

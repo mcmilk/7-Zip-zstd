@@ -10,29 +10,28 @@
 namespace NCompress {
 namespace NLzx {
 
-const int kUncompressedBlockSize = 1 << 15;
+const unsigned kUncompressedBlockSize = (unsigned)1 << 15;
 
 class Cx86ConvertOutStream:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
-  CMyComPtr<ISequentialOutStream> m_Stream;
-  UInt32 m_ProcessedSize;
-  UInt32 m_Pos;
-  UInt32 m_TranslationSize;
-  bool m_TranslationMode;
-  Byte m_Buffer[kUncompressedBlockSize];
+  ISequentialOutStream *_stream;
+  UInt32 _processedSize;
+  UInt32 _pos;
+  UInt32 _translationSize;
+  bool _translationMode;
+  Byte _buf[kUncompressedBlockSize];
 
   void MakeTranslation();
 public:
-  void SetStream(ISequentialOutStream *outStream) { m_Stream = outStream; }
-  void ReleaseStream() { m_Stream.Release(); }
+  void SetStream(ISequentialOutStream *outStream) { _stream = outStream; }
   void Init(bool translationMode, UInt32 translationSize)
   {
-    m_TranslationMode = translationMode;
-    m_TranslationSize = translationSize;
-    m_ProcessedSize = 0;
-    m_Pos = 0;
+    _translationMode = translationMode;
+    _translationSize = translationSize;
+    _processedSize = 0;
+    _pos = 0;
   }
   HRESULT Flush();
 

@@ -4,8 +4,6 @@
 
 #include "LzhDecoder.h"
 
-#include "Windows/Defs.h"
-
 namespace NCompress{
 namespace NLzh {
 namespace NDecoder {
@@ -16,7 +14,7 @@ static const int kBlockSizeBits = 16;
 static const int kNumCBits = 9;
 static const int kNumLevelBits = 5; // smallest integer such that (1 << kNumLevelBits) > kNumLevelSymbols/
 
-UInt32 CCoder::ReadBits(int numBits) {  return m_InBitStream.ReadBits(numBits); }
+UInt32 CCoder::ReadBits(int numBits) { return m_InBitStream.ReadBits(numBits); }
 
 HRESULT CCoder::ReadLevelTable()
 {
@@ -163,7 +161,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
 
   UInt32 blockSize = 0;
 
-  while(pos < *outSize)
+  while (pos < *outSize)
   {
     // for (i = 0; i < dictSize; i++) dtext[i] = 0x20;
     
@@ -191,7 +189,7 @@ STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
     else
     {
       // offset = (interface->method == LARC_METHOD_NUM) ? 0x100 - 2 : 0x100 - 3;
-      UInt32 len  = c - 256 + kMinMatch;
+      UInt32 len = c - 256 + kMinMatch;
       UInt32 distance = m_PHuffmanDecoder.Decode(&m_InBitStream);
       if (distance != 0)
         distance = (1 << (distance - 1)) + ReadBits(distance - 1);

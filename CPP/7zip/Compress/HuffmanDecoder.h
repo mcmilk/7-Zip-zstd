@@ -3,7 +3,7 @@
 #ifndef __COMPRESS_HUFFMAN_DECODER_H
 #define __COMPRESS_HUFFMAN_DECODER_H
 
-#include "../../Common/Types.h"
+#include "../../Common/MyTypes.h"
 
 namespace NCompress {
 namespace NHuffman {
@@ -25,7 +25,7 @@ public:
     int lenCounts[kNumBitsMax + 1];
     UInt32 tmpPositions[kNumBitsMax + 1];
     int i;
-    for(i = 1; i <= kNumBitsMax; i++)
+    for (i = 1; i <= kNumBitsMax; i++)
       lenCounts[i] = 0;
     UInt32 symbol;
     for (symbol = 0; symbol < m_NumSymbols; symbol++)
@@ -49,7 +49,7 @@ public:
       m_Limits[i] = (i == kNumBitsMax) ? kMaxValue : startPos;
       m_Positions[i] = m_Positions[i - 1] + lenCounts[i - 1];
       tmpPositions[i] = m_Positions[i];
-      if(i <= kNumTableBits)
+      if (i <= kNumTableBits)
       {
         UInt32 limit = (m_Limits[i] >> (kNumBitsMax - kNumTableBits));
         for (; index < limit; index++)

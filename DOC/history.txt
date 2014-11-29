@@ -1,6 +1,18 @@
 Sources history of the 7-Zip
 ----------------------------
 
+9.31           2012-10-31
+-------------------------
+- InBuffer.h : CInBuffer  uses ISequentialInStream  *_stream; instead of CMyComPtr<ISequentialInStream> 
+  OutBuffer.h: COutBuffer uses ISequentialOutStream *_stream; instead of CMyComPtr<ISequentialOutStream> 
+	
+
+9.26           2011-04-11
+-------------------------
+- The BUG was fixed: multi-threaded ZIP stored file size that was at scan stage,
+  So if the file was changed after scan, the Unpack Size field was incorrect
+	
+
 9.21           2011-04-11
 -------------------------	
 - New class FString for file names at file systems.

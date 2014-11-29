@@ -2,13 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "Common/StringConvert.h"
+#include "../../../Common/StringConvert.h"
 
 #ifndef UNDER_CE
-#include "Windows/Console.h"
+#include "../../../Windows/Console.h"
 #endif
-#include "Windows/Defs.h"
-#include "Windows/Error.h"
+#include "../../../Windows/Defs.h"
+#include "../../../Windows/ErrorMsg.h"
 
 #include "FarUtils.h"
 
@@ -53,17 +53,17 @@ namespace NMessageID
 int CStartupInfo::ShowMessage(const char *message)
 {
   const char *items[]= { GetMsgString(NMessageID::kError), message, GetMsgString(NMessageID::kOk) };
-  return ShowMessage(FMSG_WARNING, NULL, items, sizeof(items) / sizeof(items[0]), 1);
+  return ShowMessage(FMSG_WARNING, NULL, items, ARRAY_SIZE(items), 1);
 }
 
 static void SplitString(const AString &srcString, AStringVector &destStrings)
 {
   destStrings.Clear();
   AString string;
-  int len = srcString.Length();
+  unsigned len = srcString.Len();
   if (len == 0)
     return;
-  for (int i = 0; i < len; i++)
+  for (unsigned i = 0; i < len; i++)
   {
     char c = srcString[i];
     if (c == '\n')
@@ -85,10 +85,10 @@ int CStartupInfo::ShowMessageLines(const char *message)
 {
   AStringVector strings;
   SplitString(message, strings);
-  const int kNumStringsMax = 20;
+  const unsigned kNumStringsMax = 20;
   const char *items[kNumStringsMax + 1] = { GetMsgString(NMessageID::kError) };
-  int pos = 1;
-  for (int i = 0; i < strings.Size() && pos < kNumStringsMax; i++)
+  unsigned pos = 1;
+  for (unsigned i = 0; i < strings.Size() && pos < kNumStringsMax; i++)
     items[pos++] = strings[i];
   items[pos++] = GetMsgString(NMessageID::kOk);
 
@@ -197,7 +197,7 @@ void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
 }
 
 void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
-    LPCTSTR valueName, UINT32 value) const
+    LPCTSTR valueName, UInt32 value) const
 {
   NRegistry::CKey regKey;
   CreateRegKey(parentKey, keyName, regKey);
@@ -226,14 +226,14 @@ CSysString CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyN
   return value;
 }
 
-UINT32 CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
-    LPCTSTR valueName, UINT32 valueDefault) const
+UInt32 CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+    LPCTSTR valueName, UInt32 valueDefault) const
 {
   NRegistry::CKey regKey;
   if (OpenRegKey(parentKey, keyName, regKey) != ERROR_SUCCESS)
     return valueDefault;
   
-  UINT32 value;
+  UInt32 value;
   if(regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
     return valueDefault;
   
@@ -352,13 +352,13 @@ int CStartupInfo::Menu(
     int selectedItem)
 {
   CRecordVector<FarMenuItem> farMenuItems;
-  for(int i = 0; i < items.Size(); i++)
+  FOR_VECTOR (i, items)
   {
     FarMenuItem item;
     item.Checked = 0;
     item.Separator = 0;
-    item.Selected = (i == selectedItem);
-    CSysString reducedString = items[i].Left(sizeof(item.Text) / sizeof(item.Text[0]) - 1);
+    item.Selected = ((int)i == selectedItem);
+    CSysString reducedString = items[i].Left(ARRAY_SIZE(item.Text) - 1);
     MyStringCopy(item.Text, (const char *)GetOemString(reducedString));
     farMenuItems.Add(item);
   }
@@ -449,9 +449,9 @@ bool WasEscPressed()
 
 void ShowErrorMessage(DWORD errorCode)
 {
-  UString message = NError::MyFormatMessageW(errorCode);
-  message.Replace(L"\x0D", L"");
-  message.Replace(L"\x0A", L" ");
+  UString message = NError::MyFormatMessage(errorCode);
+  message.RemoveChar(L'\x0D');
+  message.Replace(L'\x0A', L' ');
   g_StartupInfo.ShowMessage(UnicodeStringToMultiByte(message, CP_OEMCP));
 }
 

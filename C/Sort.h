@@ -1,20 +1,18 @@
 /* Sort.h -- Sort functions
-2009-02-07 : Igor Pavlov : Public domain */
+2014-04-05 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_SORT_H
 #define __7Z_SORT_H
 
-#include "Types.h"
+#include "7zTypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
-void HeapSort(UInt32 *p, UInt32 size);
-/* void HeapSortRef(UInt32 *p, UInt32 *vals, UInt32 size); */
+void HeapSort(UInt32 *p, size_t size);
+void HeapSort64(UInt64 *p, size_t size);
 
-#ifdef __cplusplus
-}
-#endif
+/* void HeapSortRef(UInt32 *p, UInt32 *vals, size_t size); */
+
+EXTERN_C_END
 
 #endif

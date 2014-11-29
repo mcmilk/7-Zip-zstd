@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 #include "ComboDialog.h"
 
-#include "Windows/Control/Static.h"
+#include "../../../Windows/Control/Static.h"
 
 #ifdef LANG
 #include "LangUtils.h"
@@ -11,20 +11,12 @@
 
 using namespace NWindows;
 
-#ifdef LANG
-static CIDLangPair kIDLangPairs[] =
-{
-  { IDOK, 0x02000702 },
-  { IDCANCEL, 0x02000710 }
-};
-#endif
-
 bool CComboDialog::OnInit()
 {
   #ifdef LANG
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, NULL, 0);
   #endif
-  _comboBox.Attach(GetItem(IDC_COMBO_COMBO));
+  _comboBox.Attach(GetItem(IDC_COMBO));
 
   /*
   // why it doesn't work ?
@@ -38,10 +30,10 @@ bool CComboDialog::OnInit()
   SetText(Title);
   
   NControl::CStatic staticContol;
-  staticContol.Attach(GetItem(IDC_COMBO_STATIC));
+  staticContol.Attach(GetItem(IDT_COMBO));
   staticContol.SetText(Static);
   _comboBox.SetText(Value);
-  for(int i = 0; i < Strings.Size(); i++)
+  FOR_VECTOR (i, Strings)
     _comboBox.AddString(Strings[i]);
   NormalizeSize();
   return CModalDialog::OnInit();

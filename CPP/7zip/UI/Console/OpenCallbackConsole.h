@@ -1,9 +1,10 @@
 // OpenCallbackConsole.h
 
-#ifndef __OPENCALLBACKCONSOLE_H
-#define __OPENCALLBACKCONSOLE_H
+#ifndef __OPEN_CALLBACK_CONSOLE_H
+#define __OPEN_CALLBACK_CONSOLE_H
 
-#include "Common/StdOutStream.h"
+#include "../../../Common/StdOutStream.h"
+
 #include "../Common/ArchiveOpenCallback.h"
 
 class COpenCallbackConsole: public IOpenCallbackUI

@@ -5,22 +5,27 @@
 
 #include "../../../../C/Alloc.h"
 
-#include "Common/MyCom.h"
+#include "../../../Common/Defs.h"
+#include "../../../Common/MyCom.h"
 
-#include "Windows/DLL.h"
-#include "Windows/FileDir.h"
-#include "Windows/FileFind.h"
-#include "Windows/Handle.h"
-#include "Windows/Synchronization.h"
+#include "../../../Windows/DLL.h"
+#include "../../../Windows/FileDir.h"
+#include "../../../Windows/FileFind.h"
+#include "../../../Windows/Handle.h"
+#include "../../../Windows/Synchronization.h"
 
-#include "Windows/Control/ComboBox.h"
-#include "Windows/Control/Edit.h"
-#include "Windows/Control/ListView.h"
-#include "Windows/Control/ReBar.h"
-#include "Windows/Control/Static.h"
-#include "Windows/Control/StatusBar.h"
-#include "Windows/Control/ToolBar.h"
-#include "Windows/Control/Window2.h"
+#include "../../../Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/Edit.h"
+#include "../../../Windows/Control/ListView.h"
+#include "../../../Windows/Control/ReBar.h"
+#include "../../../Windows/Control/Static.h"
+#include "../../../Windows/Control/StatusBar.h"
+#include "../../../Windows/Control/ToolBar.h"
+#include "../../../Windows/Control/Window2.h"
+
+#include "../../Archive/IArchive.h"
+
+#include "ExtractCallback.h"
 
 #include "AppState.h"
 #include "IFolder.h"
@@ -28,9 +33,13 @@
 #include "ProgressDialog2.h"
 #include "SysIconUtils.h"
 
+#ifdef UNDER_CE
+#define NON_CE_VAR(_v_)
+#else
+#define NON_CE_VAR(_v_) _v_
+#endif
+
 const int kParentFolderID = 100;
-const int kPluginMenuStartID = 1000;
-const int kToolbarStartID = 2000;
 
 const int kParentIndex = -1;
 
@@ -62,21 +71,18 @@ struct CItemProperty
   VARTYPE Type;
   int Order;
   bool IsVisible;
+  bool IsRawProp;
   UInt32 Width;
+
+  int Compare(const CItemProperty &a) const { return MyCompare(Order, a.Order); }
 };
-
-inline bool operator<(const CItemProperty &a1, const CItemProperty &a2)
-  { return (a1.Order < a2.Order); }
-
-inline bool operator==(const CItemProperty &a1, const CItemProperty &a2)
-  { return (a1.Order == a2.Order); }
 
 class CItemProperties: public CObjectVector<CItemProperty>
 {
 public:
   int FindItemWithID(PROPID id)
   {
-    for (int i = 0; i < Size(); i++)
+    FOR_VECTOR (i, (*this))
       if ((*this)[i].ID == id)
         return i;
     return -1;
@@ -97,8 +103,8 @@ struct CTempFileInfo
   {
     if (NeedDelete)
     {
-      NWindows::NFile::NDirectory::DeleteFileAlways(FilePath);
-      NWindows::NFile::NDirectory::MyRemoveDirectory(FolderPath);
+      NWindows::NFile::NDir::DeleteFileAlways(FilePath);
+      NWindows::NFile::NDir::RemoveDir(FolderPath);
     }
   }
   bool WasChanged(const NWindows::NFile::NFind::CFileInfo &newFileInfo) const
@@ -128,6 +134,8 @@ struct CFolderLink: public CTempFileInfo
 
 enum MyMessages
 {
+  // we can use WM_USER, since we have defined new window class.
+  // so we don't need WM_APP.
   kShiftSelectMessage = WM_USER + 1,
   kReLoadMessage,
   kSetFocusToListView,
@@ -181,6 +189,35 @@ struct CSelectedState
 #define MY_NMLISTVIEW_NMITEMACTIVATE NMITEMACTIVATE
 #endif
 
+struct CCopyToOptions
+{
+  bool streamMode;
+  bool moveMode;
+  bool testMode;
+  bool includeAltStreams;
+  bool replaceAltStreamChars;
+  bool showErrorMessages;
+
+  UString folder;
+
+  UStringVector hashMethods;
+
+  CVirtFileSystem *VirtFileSystemSpec;
+  ISequentialOutStream *VirtFileSystem;
+  
+  CCopyToOptions():
+      streamMode(false),
+      moveMode(false),
+      testMode(false),
+      includeAltStreams(true),
+      replaceAltStreamChars(false),
+      showErrorMessages(false),
+      VirtFileSystemSpec(NULL),
+      VirtFileSystem(NULL)
+      {}
+};
+  
+
 class CPanel: public NWindows::NControl::CWindow2
 {
   CExtToIconMap _extToIconMap;
@@ -223,6 +260,7 @@ class CPanel: public NWindows::NControl::CWindow2
   void OnColumnClick(LPNMLISTVIEW info);
   bool OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result);
 
+
 public:
   HWND _mainWindow;
   CPanelCallback *_panelCallback;
@@ -230,9 +268,10 @@ public:
   void SysIconsWereChanged() { _extToIconMap.Clear(); }
 
   void DeleteItems(bool toRecycleBin);
-  void DeleteItemsInternal(CRecordVector<UInt32> &indices);
   void CreateFolder();
   void CreateFile();
+  bool CorrectFsPath(const UString &path, UString &result);
+  // bool IsPathForPlugin(const UString &path);
 
 private:
 
@@ -293,6 +332,8 @@ public:
   CBoolVector _selectedStatusVector;
 
   CSelectedState _selectedState;
+  bool _thereAreDeletedItems;
+  bool _markDeletedItems;
 
   HWND GetParent();
 
@@ -323,6 +364,10 @@ public:
   bool _flatModeForDisk;
   bool _flatModeForArc;
 
+  // bool _showNtfsStrems_Mode;
+  // bool _showNtfsStrems_ModeForDisk;
+  // bool _showNtfsStrems_ModeForArc;
+
   bool _dontShowMode;
 
 
@@ -330,7 +375,33 @@ public:
   
   CObjectVector<CFolderLink> _parentFolders;
   NWindows::NDLL::CLibrary _library;
+  
   CMyComPtr<IFolderFolder> _folder;
+  CMyComPtr<IFolderCompare> _folderCompare;
+  CMyComPtr<IFolderGetItemName> _folderGetItemName;
+  CMyComPtr<IArchiveGetRawProps> _folderRawProps;
+
+  void ReleaseFolder()
+  {
+    _folderCompare.Release();
+    _folderGetItemName.Release();
+    _folderRawProps.Release();
+    _folder.Release();
+    _thereAreDeletedItems = false;
+  }
+
+  void SetNewFolder(IFolderFolder *newFolder)
+  {
+    ReleaseFolder();
+    _folder = newFolder;
+    if (_folder)
+    {
+      _folder.QueryInterface(IID_IFolderCompare, &_folderCompare);
+      _folder.QueryInterface(IID_IFolderGetItemName, &_folderGetItemName);
+      _folder.QueryInterface(IID_IArchiveGetRawProps, &_folderRawProps);
+    }
+  }
+
   // CMyComPtr<IFolderGetSystemIconIndex> _folderGetSystemIconIndex;
 
   UStringVector _fastFolders;
@@ -340,11 +411,16 @@ public:
   HRESULT RefreshListCtrl(const CSelectedState &s);
   HRESULT RefreshListCtrlSaveFocused();
 
+  bool GetItem_BoolProp(UInt32 itemIndex, PROPID propID) const;
+  bool IsItem_Deleted(int itemIndex) const;
+  bool IsItem_Folder(int itemIndex) const;
+  bool IsItem_AltStream(int itemIndex) const;
+
   UString GetItemName(int itemIndex) const;
+  void GetItemNameFast(int itemIndex, UString &s) const;
   UString GetItemPrefix(int itemIndex) const;
   UString GetItemRelPath(int itemIndex) const;
   UString GetItemFullPath(int itemIndex) const;
-  bool IsItemFolder(int itemIndex) const;
   UInt64 GetItemSize(int itemIndex) const;
 
   ////////////////////////
@@ -391,8 +467,15 @@ public:
       _flatMode(false),
       _flatModeForDisk(false),
       _flatModeForArc(false),
+
+      // _showNtfsStrems_Mode(false),
+      // _showNtfsStrems_ModeForDisk(false),
+      // _showNtfsStrems_ModeForArc(false),
+
       _xSize(300),
       _mySelectMode(false),
+      _thereAreDeletedItems(false),
+      _markDeletedItems(true),
       _enableItemChangeNotify(true),
       _dontShowMode(false)
   {}
@@ -413,6 +496,9 @@ public:
   PROPID _sortID;
   // int _sortIndex;
   bool _ascending;
+  Int32 _isRawSortProp;
+
+  void SetSortRawStatus();
 
   void Release();
   ~CPanel();
@@ -489,8 +575,6 @@ public:
   class CDisableTimerProcessing
   {
     bool _processTimerMem;
-    bool _processNotifyMem;
-    bool _processStatusBarMem;
 
     CPanel &_panel;
     public:
@@ -500,38 +584,66 @@ public:
     void Disable()
     {
       _processTimerMem = _panel._processTimer;
-      _processNotifyMem = _panel._processNotify;
-      _processStatusBarMem = _panel._processStatusBar;
       _panel._processTimer = false;
-      _panel._processNotify = false;
-      _panel._processStatusBar = false;
     }
     void Restore()
     {
       _panel._processTimer = _processTimerMem;
+    }
+    CDisableTimerProcessing& operator=(const CDisableTimerProcessing &) {; }
+  };
+
+  class CDisableNotify
+  {
+    bool _processNotifyMem;
+    bool _processStatusBarMem;
+
+    CPanel &_panel;
+    public:
+
+    CDisableNotify(CPanel &panel): _panel(panel) { Disable(); }
+    ~CDisableNotify() { Restore(); }
+    void Disable()
+    {
+      _processNotifyMem = _panel._processNotify;
+      _processStatusBarMem = _panel._processStatusBar;
+      _panel._processNotify = false;
+      _panel._processStatusBar = false;
+    }
+    void SetMemMode_Enable()
+    {
+      _processNotifyMem  = true;
+      _processStatusBarMem = true;
+    }
+    void Restore()
+    {
       _panel._processNotify = _processNotifyMem;
       _panel._processStatusBar = _processStatusBarMem;
     }
-    CDisableTimerProcessing& operator=(const CDisableTimerProcessing &) {; }
+    CDisableNotify& operator=(const CDisableNotify &) {; }
   };
 
   // bool _passwordIsDefined;
   // UString _password;
 
+  void InvalidateList() { _listView.InvalidateRect(NULL, true); }
+
   HRESULT RefreshListCtrl();
 
   void MessageBoxInfo(LPCWSTR message, LPCWSTR caption);
   void MessageBox(LPCWSTR message);
+  void MessageBoxWarning(LPCWSTR message);
   void MessageBox(LPCWSTR message, LPCWSTR caption);
   void MessageBoxMyError(LPCWSTR message);
   void MessageBoxError(HRESULT errorCode, LPCWSTR caption);
   void MessageBoxError(HRESULT errorCode);
+  void MessageBoxError2Lines(LPCWSTR message, HRESULT errorCode);
   void MessageBoxLastError(LPCWSTR caption);
   void MessageBoxLastError();
 
-  void MessageBoxErrorForUpdate(HRESULT errorCode, UINT resourceID, UInt32 langID);
+  void MessageBoxErrorForUpdate(HRESULT errorCode, UINT resourceID);
 
-  void MessageBoxErrorLang(UINT resourceID, UInt32 langID);
+  void MessageBoxErrorLang(UINT resourceID);
 
   void OpenFocusedItemAsInternal();
   void OpenSelectedItems(bool internal);
@@ -548,13 +660,13 @@ public:
   HRESULT OpenItemAsArchive(const UString &relPath, const UString &arcFormat, bool &encrypted);
   HRESULT OpenItemAsArchive(int index);
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
-      bool editMode);
+      bool editMode, bool useEditor);
   HRESULT OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath, bool usePassword, const UString &password);
   LRESULT OnOpenItemChanged(LPARAM lParam);
 
   void OpenItem(int index, bool tryInternal, bool tryExternal);
-  void EditItem();
-  void EditItem(int index);
+  void EditItem(bool useEditor);
+  void EditItem(int index, bool useEditor);
 
   void RenameFile();
   void ChangeComment();
@@ -564,23 +676,31 @@ public:
   PROPID GetSortID() const { return _sortID; }
 
   void ChangeFlatMode();
+  void Change_ShowNtfsStrems_Mode();
   bool GetFlatMode() const { return _flatMode; }
+  // bool Get_ShowNtfsStrems_Mode() const { return _showNtfsStrems_Mode; }
 
+  bool AutoRefresh_Mode;
+  void Set_AutoRefresh_Mode(bool mode)
+  {
+    AutoRefresh_Mode = mode;
+  }
+  
   void Post_Refresh_StatusBar();
   void Refresh_StatusBar();
 
   void AddToArchive();
 
-  void GetFilePaths(const CRecordVector<UInt32> &indices, UStringVector &paths);
+  void GetFilePaths(const CRecordVector<UInt32> &indices, UStringVector &paths, bool allowFolders = false);
   void ExtractArchives();
   void TestArchives();
 
-  HRESULT CopyTo(const CRecordVector<UInt32> &indices, const UString &folder,
-      bool moveMode, bool showErrorMessages, UStringVector *messages,
+  HRESULT CopyTo(CCopyToOptions &options,
+      const CRecordVector<UInt32> &indices,
+      UStringVector *messages,
       bool &usePassword, UString &password);
 
-  HRESULT CopyTo(const CRecordVector<UInt32> &indices, const UString &folder,
-      bool moveMode, bool showErrorMessages, UStringVector *messages)
+  HRESULT CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &indices, UStringVector *messages)
   {
     bool usePassword = false;
     UString password;
@@ -590,10 +710,10 @@ public:
       usePassword = fl.UsePassword;
       password = fl.Password;
     }
-    return CopyTo(indices, folder, moveMode, showErrorMessages, messages, usePassword, password);
+    return CopyTo(options, indices, messages, usePassword, password);
   }
 
-  HRESULT CopyFrom(const UString &folderPrefix, const UStringVector &filePaths,
+  HRESULT CopyFrom(bool moveMode, const UString &folderPrefix, const UStringVector &filePaths,
       bool showErrorMessages, UStringVector *messages);
 
   void CopyFromNoAsk(const UStringVector &filePaths);

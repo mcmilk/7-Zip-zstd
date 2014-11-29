@@ -3,8 +3,8 @@
 #ifndef __LISTVIEW_DIALOG_H
 #define __LISTVIEW_DIALOG_H
 
-#include "Windows/Control/Dialog.h"
-#include "Windows/Control/ListView.h"
+#include "../../../Windows/Control/Dialog.h"
+#include "../../../Windows/Control/ListView.h"
 
 #include "ListViewDialogRes.h"
 
@@ -22,7 +22,7 @@ public:
   UStringVector Strings;
   int FocusedItemIndex;
 
-  INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_DIALOG_LISTVIEW, wndParent); }
+  INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_LISTVIEW, wndParent); }
 
   CListViewDialog(): DeleteIsAllowed(false) {}
 };

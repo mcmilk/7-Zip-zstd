@@ -14,8 +14,8 @@ STDMETHODIMP CBufInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     *processedSize = 0;
   if (size == 0)
     return S_OK;
-  if (_pos > _size)
-    return E_FAIL;
+  if (_pos >= _size)
+    return S_OK;
   size_t rem = _size - (size_t)_pos;
   if (rem > size)
     rem = (size_t)size;
@@ -28,16 +28,41 @@ STDMETHODIMP CBufInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 
 STDMETHODIMP CBufInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
 {
-  switch(seekOrigin)
+  switch (seekOrigin)
   {
-    case STREAM_SEEK_SET: _pos = offset; break;
-    case STREAM_SEEK_CUR: _pos += offset; break;
-    case STREAM_SEEK_END: _pos = _size + offset; break;
+    case STREAM_SEEK_SET: break;
+    case STREAM_SEEK_CUR: offset += _pos; break;
+    case STREAM_SEEK_END: offset += _size; break;
     default: return STG_E_INVALIDFUNCTION;
   }
+  if (offset < 0)
+    return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
+  _pos = offset;
   if (newPosition)
-    *newPosition = _pos;
+    *newPosition = offset;
   return S_OK;
+}
+
+/*
+void Create_BufInStream_WithReference(const void *data, size_t size, ISequentialInStream **stream)
+{
+  CBufInStream *inStreamSpec = new CBufInStream;
+  CMyComPtr<ISequentialInStream> streamTemp = inStreamSpec;
+  inStreamSpec->Init((const Byte *)data, size);
+  *stream = streamTemp.Detach();
+}
+*/
+
+void Create_BufInStream_WithNewBuf(const void *data, size_t size, ISequentialInStream **stream)
+{
+  CReferenceBuf *referenceBuf = new CReferenceBuf;
+  CMyComPtr<IUnknown> ref = referenceBuf;
+  referenceBuf->Buf.CopyFrom((const Byte *)data, size);
+
+  CBufInStream *inStreamSpec = new CBufInStream;
+  CMyComPtr<ISequentialInStream> streamTemp = inStreamSpec;
+  inStreamSpec->Init(referenceBuf);
+  *stream = streamTemp.Detach();
 }
 
 void CByteDynBuffer::Free()
@@ -79,8 +104,7 @@ Byte *CDynBufSeqOutStream::GetBufPtrForWriting(size_t addSize)
 
 void CDynBufSeqOutStream::CopyToBuffer(CByteBuffer &dest) const
 {
-  dest.SetCapacity(_size);
-  memcpy(dest, (const Byte *)_buffer, _size);
+  dest.CopyFrom((const Byte *)_buffer, _size);
 }
 
 STDMETHODIMP CDynBufSeqOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
@@ -172,8 +196,8 @@ STDMETHODIMP CCachedInStream::Read(void *data, UInt32 size, UInt32 *processedSiz
     *processedSize = 0;
   if (size == 0)
     return S_OK;
-  if (_pos > _size)
-    return E_FAIL;
+  if (_pos >= _size)
+    return S_OK;
 
   {
     UInt64 rem = _size - _pos;
@@ -210,14 +234,17 @@ STDMETHODIMP CCachedInStream::Read(void *data, UInt32 size, UInt32 *processedSiz
  
 STDMETHODIMP CCachedInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
 {
-  switch(seekOrigin)
+  switch (seekOrigin)
   {
-    case STREAM_SEEK_SET: _pos = offset; break;
-    case STREAM_SEEK_CUR: _pos = _pos + offset; break;
-    case STREAM_SEEK_END: _pos = _size + offset; break;
+    case STREAM_SEEK_SET: break;
+    case STREAM_SEEK_CUR: offset += _pos; break;
+    case STREAM_SEEK_END: offset += _size; break;
     default: return STG_E_INVALIDFUNCTION;
   }
-  if (newPosition != 0)
-    *newPosition = _pos;
+  if (offset < 0)
+    return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
+  _pos = offset;
+  if (newPosition)
+    *newPosition = offset;
   return S_OK;
 }

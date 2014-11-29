@@ -19,6 +19,7 @@ static UInt32 PosHf4[]={0,0,0,0,0,0,0,0,0,255, 257,0,0};
 
 static const UInt32 kHistorySize = (1 << 16);
 
+/*
 class CCoderReleaser
 {
   CDecoder *m_Coder;
@@ -26,12 +27,13 @@ public:
   CCoderReleaser(CDecoder *coder): m_Coder(coder) {}
   ~CCoderReleaser() { m_Coder->ReleaseStreams(); }
 };
+*/
 
 CDecoder::CDecoder(): m_IsSolid(false) { }
 
 void CDecoder::InitStructures()
 {
-  for(int i = 0; i < kNumRepDists; i++)
+  for (int i = 0; i < kNumRepDists; i++)
     m_RepDists[i] = 0;
   m_RepDistPtr = 0;
   LastLength = 0;
@@ -65,9 +67,9 @@ UInt32 CDecoder::DecodeNum(const UInt32 *posTab)
   return((num >> (12 - startPos)) + posTab[startPos]);
 }
 
-static Byte kShortLen1[]  = {1,3,4,4,5,6,7,8,8,4,4,5,6,6 };
+static Byte kShortLen1 [] = {1,3,4,4,5,6,7,8,8,4,4,5,6,6 };
 static Byte kShortLen1a[] = {1,4,4,4,5,6,7,8,8,4,4,5,6,6,4 };
-static Byte kShortLen2[]  = {2,3,3,3,4,4,5,6,6,4,4,5,6,6 };
+static Byte kShortLen2 [] = {2,3,3,3,4,4,5,6,6,4,4,5,6,6 };
 static Byte kShortLen2a[] = {2,3,3,4,4,4,5,6,6,4,4,5,6,6,4 };
 static UInt32 kShortXor1[] = {0,0xa0,0xd0,0xe0,0xf0,0xf8,0xfc,0xfe,0xff,0xc0,0x80,0x90,0x98,0x9c,0xb0};
 static UInt32 kShortXor2[] = {0,0x40,0x60,0xa0,0xd0,0xe0,0xf0,0xf8,0xfc,0xc0,0x80,0x90,0x98,0x9c,0xb0};
@@ -389,7 +391,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   m_InBitStream.SetStream(inStream);
   m_InBitStream.Init();
 
-  CCoderReleaser coderReleaser(this);
+  // CCoderReleaser coderReleaser(this);
   InitData();
   if (!m_IsSolid)
   {

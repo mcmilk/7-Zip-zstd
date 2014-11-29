@@ -3,14 +3,14 @@
 #ifndef __REGISTRY_UTILS_H
 #define __REGISTRY_UTILS_H
 
-#include "Common/MyString.h"
-#include "Common/Types.h"
+#include "../../../Common/MyTypes.h"
+#include "../../../Common/MyString.h"
 
 void SaveRegLang(const UString &path);
 void ReadRegLang(UString &path);
 
-void SaveRegEditor(const UString &path);
-void ReadRegEditor(UString &path);
+void SaveRegEditor(bool useEditor, const UString &path);
+void ReadRegEditor(bool useEditor, UString &path);
 
 void SaveRegDiff(const UString &path);
 void ReadRegDiff(UString &path);
@@ -21,8 +21,8 @@ bool ReadShowDots();
 void SaveShowRealFileIcons(bool show);
 bool ReadShowRealFileIcons();
 
-void SaveShowSystemMenu(bool showSystemMenu);
-bool ReadShowSystemMenu();
+void Save_ShowSystemMenu(bool showSystemMenu);
+bool Read_ShowSystemMenu();
 
 void SaveFullRow(bool enable);
 bool ReadFullRow();
@@ -49,5 +49,10 @@ bool ReadUnderline();
 
 void SaveFlatView(UInt32 panelIndex, bool enable);
 bool ReadFlatView(UInt32 panelIndex);
+
+/*
+void Save_ShowDeleted(bool enable);
+bool Read_ShowDeleted();
+*/
 
 #endif

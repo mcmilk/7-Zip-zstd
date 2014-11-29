@@ -2,13 +2,14 @@
 
 #include "StdAfx.h"
 
-#include "Common/ComTry.h"
+#include "../../../Common/ComTry.h"
 
-#include "Windows/PropVariant.h"
-#include "Windows/Time.h"
+#include "../../../Windows/PropVariant.h"
+#include "../../../Windows/TimeUtils.h"
 
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
+#include "../../Common/RegisterArc.h"
 #include "../../Common/StreamObjects.h"
 
 #include "../../Compress/CopyCoder.h"
@@ -18,7 +19,7 @@
 namespace NArchive {
 namespace NUdf {
 
-void UdfTimeToFileTime(const CTime &t, NWindows::NCOM::CPropVariant &prop)
+static void UdfTimeToFileTime(const CTime &t, NWindows::NCOM::CPropVariant &prop)
 {
   UInt64 numSecs;
   const Byte *d = t.Data;
@@ -33,21 +34,21 @@ void UdfTimeToFileTime(const CTime &t, NWindows::NCOM::CPropVariant &prop)
   prop = ft;
 }
 
-static STATPROPSTG kProps[] =
+static const Byte kProps[] =
 {
-  { NULL, kpidPath, VT_BSTR},
-  { NULL, kpidIsDir, VT_BOOL},
-  { NULL, kpidSize, VT_UI8},
-  { NULL, kpidPackSize, VT_UI8},
-  { NULL, kpidMTime, VT_FILETIME},
-  { NULL, kpidATime, VT_FILETIME}
+  kpidPath,
+  kpidIsDir,
+  kpidSize,
+  kpidPackSize,
+  kpidMTime,
+  kpidATime
 };
 
-static STATPROPSTG kArcProps[] =
+static const Byte kArcProps[] =
 {
-  { NULL, kpidComment, VT_BSTR},
-  { NULL, kpidClusterSize, VT_UI4},
-  { NULL, kpidCTime, VT_FILETIME}
+  kpidComment,
+  kpidClusterSize,
+  kpidCTime
 };
 
 IMP_IInArchive_Props
@@ -59,6 +60,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
+    case kpidPhySize: prop = _archive.PhySize; break;
+
     case kpidComment:
     {
       UString comment = _archive.GetComment();
@@ -71,7 +74,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       if (_archive.LogVols.Size() > 0)
       {
         UInt32 blockSize = _archive.LogVols[0].BlockSize;
-        int i;
+        unsigned i;
         for (i = 1; i < _archive.LogVols.Size(); i++)
           if (_archive.LogVols[i].BlockSize != blockSize)
             break;
@@ -88,6 +91,16 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           UdfTimeToFileTime(vol.FileSets[0].RecodringTime, prop);
       }
       break;
+
+    case kpidErrorFlags:
+    {
+      UInt32 v = 0;
+      if (!_archive.IsArc) v |= kpv_ErrorFlags_IsNotArc;
+      if (_archive.Unsupported) v |= kpv_ErrorFlags_UnsupportedFeature;
+      if (_archive.UnexpectedEnd) v |= kpv_ErrorFlags_UnexpectedEnd;
+      prop = v;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;
@@ -127,9 +140,7 @@ HRESULT CProgressImp::SetCompleted()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream,
-    const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback *callback)
+STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *callback)
 {
   COM_TRY_BEGIN
   {
@@ -137,14 +148,14 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     CProgressImp progressImp(callback);
     RINOK(_archive.Open(stream, &progressImp));
     bool showVolName = (_archive.LogVols.Size() > 1);
-    for (int volIndex = 0; volIndex < _archive.LogVols.Size(); volIndex++)
+    FOR_VECTOR (volIndex, _archive.LogVols)
     {
       const CLogVol &vol = _archive.LogVols[volIndex];
       bool showFileSetName = (vol.FileSets.Size() > 1);
-      for (int fsIndex = 0; fsIndex < vol.FileSets.Size(); fsIndex++)
+      FOR_VECTOR (fsIndex, vol.FileSets)
       {
         const CFileSet &fs = vol.FileSets[fsIndex];
-        for (int i = ((showVolName || showFileSetName) ? 0 : 1); i < fs.Refs.Size(); i++)
+        for (unsigned i = ((showVolName || showFileSetName) ? 0 : 1); i < fs.Refs.Size(); i++)
         {
           CRef2 ref2;
           ref2.Vol = volIndex;
@@ -184,7 +195,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     const CRef &ref = vol.FileSets[ref2.Fs].Refs[ref2.Ref];
     const CFile &file = _archive.Files[ref.FileIndex];
     const CItem &item = _archive.Items[file.ItemIndex];
-    switch(propID)
+    switch (propID)
     {
       case kpidPath:  prop = _archive.GetItemPath(ref2.Vol, ref2.Fs, ref2.Ref,
             _archive.LogVols.Size() > 1, vol.FileSets.Size() > 1); break;
@@ -198,99 +209,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
-}
-
-struct CSeekExtent
-{
-  UInt64 Phy;
-  UInt64 Virt;
-};
-
-class CExtentsStream:
-  public IInStream,
-  public CMyUnknownImp
-{
-  UInt64 _phyPos;
-  UInt64 _virtPos;
-  bool _needStartSeek;
-
-  HRESULT SeekToPhys() { return Stream->Seek(_phyPos, STREAM_SEEK_SET, NULL); }
-
-public:
-  CMyComPtr<IInStream> Stream;
-  CRecordVector<CSeekExtent> Extents;
-
-  MY_UNKNOWN_IMP1(IInStream)
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
-  void ReleaseStream() { Stream.Release(); }
-
-  void Init()
-  {
-    _virtPos = 0;
-    _phyPos = 0;
-    _needStartSeek = true;
-  }
-
-};
-
-
-STDMETHODIMP CExtentsStream::Read(void *data, UInt32 size, UInt32 *processedSize)
-{
-  if (processedSize)
-    *processedSize = 0;
-  if (size > 0)
-  {
-    UInt64 totalSize = Extents.Back().Virt;
-    if (_virtPos >= totalSize)
-      return (_virtPos == totalSize) ? S_OK : E_FAIL;
-    int left = 0, right = Extents.Size() - 1;
-    for (;;)
-    {
-      int mid = (left + right) / 2;
-      if (mid == left)
-        break;
-      if (_virtPos < Extents[mid].Virt)
-        right = mid;
-      else
-        left = mid;
-    }
-    
-    const CSeekExtent &extent = Extents[left];
-    UInt64 phyPos = extent.Phy + (_virtPos - extent.Virt);
-    if (_needStartSeek || _phyPos != phyPos)
-    {
-      _needStartSeek = false;
-      _phyPos = phyPos;
-      RINOK(SeekToPhys());
-    }
-
-    UInt64 rem = Extents[left + 1].Virt - _virtPos;
-    if (size > rem)
-      size = (UInt32)rem;
- 
-    HRESULT res = Stream->Read(data, size, &size);
-    _phyPos += size;
-    _virtPos += size;
-    if (processedSize)
-      *processedSize = size;
-    return res;
-  }
-  return S_OK;
-}
-
-STDMETHODIMP CExtentsStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
-{
-  switch(seekOrigin)
-  {
-    case STREAM_SEEK_SET: _virtPos = offset; break;
-    case STREAM_SEEK_CUR: _virtPos += offset; break;
-    case STREAM_SEEK_END: _virtPos = Extents.Back().Virt + offset; break;
-    default: return STG_E_INVALIDFUNCTION;
-  }
-  if (newPosition)
-    *newPosition = _virtPos;
-  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
@@ -325,7 +243,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   extentStreamSpec->Stream = _inStream;
 
   UInt64 virtOffset = 0;
-  for (int extentIndex = 0; extentIndex < item.Extents.Size(); extentIndex++)
+  FOR_VECTOR (extentIndex, item.Extents)
   {
     const CMyExtent &extent = item.Extents[extentIndex];
     UInt32 len = extent.GetLen();
@@ -363,7 +281,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _refs2.Size();
   if (numItems == 0)
@@ -431,7 +349,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     CMyComPtr<ISequentialInStream> udfInStream;
     HRESULT res = GetStream(index, &udfInStream);
     if (res == E_NOTIMPL)
-      opRes = NExtract::NOperationResult::kUnSupportedMethod;
+      opRes = NExtract::NOperationResult::kUnsupportedMethod;
     else if (res != S_OK)
       opRes = NExtract::NOperationResult::kDataError;
     else
@@ -447,5 +365,19 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   return S_OK;
   COM_TRY_END
 }
+
+IMP_CreateArcIn
+
+static const UInt32 kIsoStartPos = 0x8000;
+
+static CArcInfo g_ArcInfo =
+  { "Udf", "udf iso img", 0, 0xE0,
+  //  5, { 0, 'N', 'S', 'R', '0' },
+  6, { 1, 'C', 'D', '0', '0', '1' },
+  kIsoStartPos,
+  NArcInfoFlags::kStartOpen,
+  CreateArc, NULL, IsArc_Udf };
+
+REGISTER_ARC(Udf)
 
 }}

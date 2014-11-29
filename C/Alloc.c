@@ -1,7 +1,7 @@
 /* Alloc.c -- Memory allocation functions
-2008-09-24
-Igor Pavlov
-Public domain */
+2013-11-12 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #ifdef _WIN32
 #include <windows.h>

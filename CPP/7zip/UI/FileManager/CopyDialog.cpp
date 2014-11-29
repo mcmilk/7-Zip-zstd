@@ -2,9 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "Windows/FileName.h"
+#include "../../../Windows/FileName.h"
 
-#include "Windows/Control/Static.h"
+#include "../../../Windows/Control/Static.h"
 
 #include "BrowseDialog.h"
 #include "CopyDialog.h"
@@ -15,33 +15,25 @@
 
 using namespace NWindows;
 
-#ifdef LANG
-static CIDLangPair kIDLangPairs[] =
-{
-  { IDOK, 0x02000702 },
-  { IDCANCEL, 0x02000710 }
-};
-#endif
-
 bool CCopyDialog::OnInit()
 {
   #ifdef LANG
-  LangSetDlgItemsText(HWND(*this), kIDLangPairs, sizeof(kIDLangPairs) / sizeof(kIDLangPairs[0]));
+  LangSetDlgItems(*this, NULL, 0);
   #endif
-  _path.Attach(GetItem(IDC_COPY_COMBO));
+  _path.Attach(GetItem(IDC_COPY));
   SetText(Title);
 
   NControl::CStatic staticContol;
-  staticContol.Attach(GetItem(IDC_COPY_STATIC));
+  staticContol.Attach(GetItem(IDT_COPY));
   staticContol.SetText(Static);
   #ifdef UNDER_CE
   // we do it, since WinCE selects Value\something instead of Value !!!!
   _path.AddString(Value);
   #endif
-  for (int i = 0; i < Strings.Size(); i++)
+  FOR_VECTOR (i, Strings)
     _path.AddString(Strings[i]);
   _path.SetText(Value);
-  SetItemText(IDC_COPY_INFO, Info);
+  SetItemText(IDT_COPY_INFO, Info);
   NormalizeSize(true);
   return CModalDialog::OnInit();
 }
@@ -59,19 +51,19 @@ bool CCopyDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   InvalidateRect(NULL);
 
   {
-    RECT rect;
-    GetClientRectOfItem(IDC_COPY_SET_PATH, rect);
-    int bx = rect.right - rect.left;
-    MoveItem(IDC_COPY_SET_PATH, xSize - mx - bx, rect.top, bx, rect.bottom - rect.top);
+    RECT r;
+    GetClientRectOfItem(IDB_COPY_SET_PATH, r);
+    int bx = RECT_SIZE_X(r);
+    MoveItem(IDB_COPY_SET_PATH, xSize - mx - bx, r.top, bx, RECT_SIZE_Y(r));
     ChangeSubWindowSizeX(_path, xSize - mx - mx - bx - mx);
   }
 
   {
-    RECT rect;
-    GetClientRectOfItem(IDC_COPY_INFO, rect);
+    RECT r;
+    GetClientRectOfItem(IDT_COPY_INFO, r);
     NControl::CStatic staticContol;
-    staticContol.Attach(GetItem(IDC_COPY_INFO));
-    int yPos = rect.top;
+    staticContol.Attach(GetItem(IDT_COPY_INFO));
+    int yPos = r.top;
     staticContol.Move(mx, yPos, xSize - mx * 2, y - 2 - yPos);
   }
 
@@ -85,7 +77,7 @@ bool CCopyDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
   switch(buttonID)
   {
-    case IDC_COPY_SET_PATH:
+    case IDB_COPY_SET_PATH:
       OnButtonSetPath();
       return true;
   }
@@ -97,10 +89,10 @@ void CCopyDialog::OnButtonSetPath()
   UString currentPath;
   _path.GetText(currentPath);
 
-  UString title = LangStringSpec(IDS_SET_FOLDER, 0x03020209);
+  const UString title = LangString(IDS_SET_FOLDER);
 
   UString resultPath;
-  if (!MyBrowseForFolder(HWND(*this), title, currentPath, resultPath))
+  if (!MyBrowseForFolder(*this, title, currentPath, resultPath))
     return;
   NFile::NName::NormalizeDirPathPrefix(resultPath);
   _path.SetCurSel(-1);

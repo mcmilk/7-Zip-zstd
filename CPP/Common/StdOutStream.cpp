@@ -9,19 +9,14 @@
 #include "StringConvert.h"
 #include "UTFConvert.h"
 
-#ifdef _MSC_VER
-// "was declared deprecated" disabling
-#pragma warning(disable : 4996 )
-#endif
-
 static const char kNewLineChar =  '\n';
 
 static const char *kFileOpenMode = "wt";
 
 extern int g_CodePage;
 
-CStdOutStream  g_StdOut(stdout);
-CStdOutStream  g_StdErr(stderr);
+CStdOutStream g_StdOut(stdout);
+CStdOutStream g_StdErr(stderr);
 
 bool CStdOutStream::Open(const char *fileName)
 {
@@ -47,14 +42,9 @@ bool CStdOutStream::Flush()
   return (fflush(_stream) == 0);
 }
 
-CStdOutStream::~CStdOutStream ()
+CStdOutStream & CStdOutStream::operator<<(CStdOutStream & (*func)(CStdOutStream &))
 {
-  Close();
-}
-
-CStdOutStream & CStdOutStream::operator<<(CStdOutStream & (*aFunction)(CStdOutStream  &))
-{
-  (*aFunction)(*this);
+  (*func)(*this);
   return *this;
 }
 
@@ -83,22 +73,48 @@ CStdOutStream & CStdOutStream::operator<<(const wchar_t *s)
   return *this;
 }
 
+void CStdOutStream::PrintUString(const UString &s, AString &temp)
+{
+  int codePage = g_CodePage;
+  if (codePage == -1)
+    codePage = CP_OEMCP;
+  if (codePage == CP_UTF8)
+    ConvertUnicodeToUTF8(s, temp);
+  else
+    UnicodeStringToMultiByte2(temp, s, (UINT)codePage);
+  *this << (const char *)temp;
+}
+
 CStdOutStream & CStdOutStream::operator<<(char c)
 {
   fputc(c, _stream);
   return *this;
 }
 
-CStdOutStream & CStdOutStream::operator<<(int number)
+CStdOutStream & CStdOutStream::operator<<(Int32 number)
 {
-  char textString[32];
-  ConvertInt64ToString(number, textString);
-  return operator<<(textString);
+  char s[32];
+  ConvertInt64ToString(number, s);
+  return operator<<(s);
+}
+
+CStdOutStream & CStdOutStream::operator<<(Int64 number)
+{
+  char s[32];
+  ConvertInt64ToString(number, s);
+  return operator<<(s);
+}
+
+CStdOutStream & CStdOutStream::operator<<(UInt32 number)
+{
+  char s[16];
+  ConvertUInt32ToString(number, s);
+  return operator<<(s);
 }
 
 CStdOutStream & CStdOutStream::operator<<(UInt64 number)
 {
-  char textString[32];
-  ConvertUInt64ToString(number, textString);
-  return operator<<(textString);
+  char s[32];
+  ConvertUInt64ToString(number, s);
+  return operator<<(s);
 }

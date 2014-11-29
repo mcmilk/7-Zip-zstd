@@ -35,6 +35,7 @@ OBJS = \
   $(FILE_IO).o \
   CommandLineParser.o \
   CRC.o \
+  CrcReg.o \
   IntToString.o \
   MyString.o \
   MyVector.o \
@@ -107,6 +108,9 @@ CommandLineParser.o: ../../../Common/CommandLineParser.cpp
 
 CRC.o: ../../../Common/CRC.cpp
 	$(CXX) $(CFLAGS) ../../../Common/CRC.cpp
+
+CrcReg.o: ../../../Common/CrcReg.cpp
+	$(CXX) $(CFLAGS) ../../../Common/CrcReg.cpp
 
 IntToString.o: ../../../Common/IntToString.cpp
 	$(CXX) $(CFLAGS) ../../../Common/IntToString.cpp

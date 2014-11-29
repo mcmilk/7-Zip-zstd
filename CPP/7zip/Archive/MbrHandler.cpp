@@ -10,12 +10,12 @@
 
 #include "../../../C/CpuArch.h"
 
-#include "Common/Buffer.h"
-#include "Common/ComTry.h"
-#include "Common/IntToString.h"
-#include "Common/MyString.h"
+#include "../../Common/ComTry.h"
+#include "../../Common/IntToString.h"
+#include "../../Common/MyBuffer.h"
+#include "../../Common/MyString.h"
 
-#include "Windows/PropVariant.h"
+#include "../../Windows/PropVariant.h"
 
 #include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
@@ -169,7 +169,7 @@ static const CPartType kPartTypes[] =
 
 static int FindPartType(UInt32 type)
 {
-  for (int i = 0; i < sizeof(kPartTypes) / sizeof(kPartTypes[0]); i++)
+  for (int i = 0; i < ARRAY_SIZE(kPartTypes); i++)
     if (kPartTypes[i].Id == type)
       return i;
   return -1;
@@ -210,7 +210,7 @@ HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, int 
 
   {
     const UInt32 kSectorSize = 512;
-    _buffer.SetCapacity(kSectorSize);
+    _buffer.Alloc(kSectorSize);
     Byte *buf = _buffer;
     UInt64 newPos = (UInt64)lba << 9;
     if (newPos + 512 > _totalSize)
@@ -243,7 +243,7 @@ HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, int 
     part.Print();
     #endif
     
-    int numItems = _items.Size();
+    unsigned numItems = _items.Size();
     UInt32 newLba = lba + part.Lba;
     
     if (part.IsExtended())
@@ -323,6 +323,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 
 STDMETHODIMP CHandler::Close()
 {
+  _totalSize = 0;
   _items.Clear();
   _stream.Release();
   return S_OK;
@@ -335,7 +336,7 @@ enum
   kpidEndChs
 };
 
-STATPROPSTG kProps[] =
+static const STATPROPSTG kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
@@ -352,12 +353,12 @@ IMP_IInArchive_ArcProps_NO_Table
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidMainSubfile:
     {
       int mainIndex = -1;
-      for (int i = 0; i < _items.Size(); i++)
+      FOR_VECTOR (i, _items)
         if (_items[i].IsReal)
         {
           if (mainIndex >= 0)
@@ -371,6 +372,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         prop = (UInt32)mainIndex;
       break;
     }
+    case kpidPhySize: prop = _totalSize; break;
   }
   prop.Detach(value);
   return S_OK;
@@ -435,7 +437,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)-1);
+  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -497,10 +499,16 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-static IInArchive *CreateArc() { return new CHandler; }
+IMP_CreateArcIn
 
 static CArcInfo g_ArcInfo =
-  { L"MBR", L"mbr", 0, 0xDB, { 1, 1, 0 }, 3, false, CreateArc, 0 };
+  { "MBR", "mbr", 0, 0xDB,
+  // 3, { 1, 1, 0 },
+  // 2, { 0x55, 0x1FF },
+  0, { 0 },
+  0,
+  NArcInfoFlags::kPureStartOpen,
+  CreateArc };
 
 REGISTER_ARC(Mbr)
 

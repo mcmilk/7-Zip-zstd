@@ -2,8 +2,10 @@
 
 #include "StdAfx.h"
 
+#ifndef UNDER_CE
+
 #ifndef _UNICODE
-#include "Common/StringConvert.h"
+#include "../Common/StringConvert.h"
 #endif
 
 #include "FileSystem.h"
@@ -67,6 +69,13 @@ UINT MyGetDriveType(CFSTR pathName)
   }
 }
 
+typedef BOOL (WINAPI * GetDiskFreeSpaceExA_Pointer)(
+  LPCSTR lpDirectoryName,                  // directory name
+  PULARGE_INTEGER lpFreeBytesAvailable,    // bytes available to caller
+  PULARGE_INTEGER lpTotalNumberOfBytes,    // bytes on disk
+  PULARGE_INTEGER lpTotalNumberOfFreeBytes // free bytes on disk
+);
+
 typedef BOOL (WINAPI * GetDiskFreeSpaceExW_Pointer)(
   LPCWSTR lpDirectoryName,                 // directory name
   PULARGE_INTEGER lpFreeBytesAvailable,    // bytes available to caller
@@ -81,6 +90,15 @@ bool MyGetDiskFreeSpace(CFSTR rootPath, UInt64 &clusterSize, UInt64 &totalSize, 
   #ifndef _UNICODE
   if (!g_IsNT)
   {
+    GetDiskFreeSpaceExA_Pointer pGetDiskFreeSpaceEx = (GetDiskFreeSpaceExA_Pointer)GetProcAddress(
+        GetModuleHandle(TEXT("kernel32.dll")), "GetDiskFreeSpaceExA");
+    if (pGetDiskFreeSpaceEx)
+    {
+      ULARGE_INTEGER freeBytesToCaller2, totalSize2, freeSize2;
+      sizeIsDetected = BOOLToBool(pGetDiskFreeSpaceEx(fs2fas(rootPath), &freeBytesToCaller2, &totalSize2, &freeSize2));
+      totalSize = totalSize2.QuadPart;
+      freeSize = freeSize2.QuadPart;
+    }
     if (!::GetDiskFreeSpace(fs2fas(rootPath), &numSectorsPerCluster, &bytesPerSector, &numFreeClusters, &numClusters))
       return false;
   }
@@ -109,3 +127,5 @@ bool MyGetDiskFreeSpace(CFSTR rootPath, UInt64 &clusterSize, UInt64 &totalSize, 
 }
 
 }}}
+
+#endif

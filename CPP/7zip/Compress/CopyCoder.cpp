@@ -22,10 +22,10 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
     const UInt64 * /* inSize */, const UInt64 *outSize,
     ICompressProgressInfo *progress)
 {
-  if (_buffer == 0)
+  if (!_buffer)
   {
     _buffer = (Byte *)::MidAlloc(kBufferSize);
-    if (_buffer == 0)
+    if (!_buffer)
       return E_OUTOFMEMORY;
   }
 
@@ -33,9 +33,8 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
   for (;;)
   {
     UInt32 size = kBufferSize;
-    if (outSize != 0)
-      if (size > *outSize - TotalSize)
-        size = (UInt32)(*outSize - TotalSize);
+    if (outSize && size > *outSize - TotalSize)
+      size = (UInt32)(*outSize - TotalSize);
     RINOK(inStream->Read(_buffer, size, &size));
     if (size == 0)
       break;
@@ -44,7 +43,7 @@ STDMETHODIMP CCopyCoder::Code(ISequentialInStream *inStream,
       RINOK(WriteStream(outStream, _buffer, size));
     }
     TotalSize += size;
-    if (progress != NULL)
+    if (progress)
     {
       RINOK(progress->SetRatioInfo(&TotalSize, &TotalSize));
     }
@@ -60,8 +59,16 @@ STDMETHODIMP CCopyCoder::GetInStreamProcessedSize(UInt64 *value)
 
 HRESULT CopyStream(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress)
 {
-  CMyComPtr<ICompressCoder> copyCoder = new NCompress::CCopyCoder;
+  CMyComPtr<ICompressCoder> copyCoder = new CCopyCoder;
   return copyCoder->Code(inStream, outStream, NULL, NULL, progress);
+}
+
+HRESULT CopyStream_ExactSize(ISequentialInStream *inStream, ISequentialOutStream *outStream, UInt64 size, ICompressProgressInfo *progress)
+{
+  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder;
+  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
+  RINOK(copyCoder->Code(inStream, outStream, NULL, &size, progress));
+  return copyCoderSpec->TotalSize == size ? S_OK : E_FAIL;
 }
 
 }

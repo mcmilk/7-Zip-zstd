@@ -3,11 +3,11 @@
 #ifndef __7ZIP_FAR_PLUGIN_H
 #define __7ZIP_FAR_PLUGIN_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
 
-#include "Windows/COM.h"
-#include "Windows/FileFind.h"
-#include "Windows/PropVariant.h"
+#include "../../../Windows/COM.h"
+#include "../../../Windows/FileFind.h"
+#include "../../../Windows/PropVariant.h"
 
 #include "../Common/WorkDir.h"
 
@@ -37,7 +37,7 @@ class CPlugin
 
   void EnterToDirectory(const UString &dirName);
   void GetPathParts(UStringVector &pathParts);
-  void GetCurrentDir();
+  void SetCurrentDirVar();
   HRESULT AfterUpdate(CWorkDirTempFile &tempFile, const UStringVector &pathVector);
 public:
   FString m_FileName;

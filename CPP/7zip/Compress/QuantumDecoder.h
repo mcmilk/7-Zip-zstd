@@ -21,7 +21,7 @@ class CStreamBitDecoder
 public:
   bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
   void SetStream(ISequentialInStream *stream) { Stream.SetStream(stream); }
-  void ReleaseStream() { Stream.ReleaseStream(); }
+  // void ReleaseStream() { Stream.ReleaseStream(); }
 
   void Finish() { Value = 0x10000; }
 
@@ -71,7 +71,7 @@ public:
   CStreamBitDecoder Stream;
   bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
   void SetStream(ISequentialInStream *stream) { Stream.SetStream(stream); }
-  void ReleaseStream() { Stream.ReleaseStream(); }
+  // void ReleaseStream() { Stream.ReleaseStream(); }
 
   void Init()
   {
@@ -196,11 +196,12 @@ public:
 
 class CDecoder:
   public ICompressCoder,
-  public ICompressSetInStream,
-  public ICompressSetOutStreamSize,
+  // public ICompressSetInStream,
+  // public ICompressSetOutStreamSize,
   public CMyUnknownImp
 {
   CLzOutWindow _outWindowStream;
+  // CMyComPtr<ISequentialInStream> m_InStreamRef;
   NRangeCoder::CDecoder _rangeDecoder;
 
   UInt64 _outSize;
@@ -217,15 +218,19 @@ class CDecoder:
   void Init();
   HRESULT CodeSpec(UInt32 size);
 public:
+
+  MY_UNKNOWN_IMP
+
+  /*
   MY_UNKNOWN_IMP2(
       ICompressSetInStream,
       ICompressSetOutStreamSize)
-
   void ReleaseStreams()
   {
     _outWindowStream.ReleaseStream();
     ReleaseInStream();
   }
+  */
 
   class CDecoderFlusher
   {
@@ -237,11 +242,11 @@ public:
     {
       if (NeedFlush)
         _decoder->Flush();
-      _decoder->ReleaseStreams();
+      // _decoder->ReleaseStreams();
     }
   };
 
-  HRESULT Flush() {  return _outWindowStream.Flush(); }
+  HRESULT Flush() { return _outWindowStream.Flush(); }
 
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
@@ -249,8 +254,8 @@ public:
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 
-  STDMETHOD(SetInStream)(ISequentialInStream *inStream);
-  STDMETHOD(ReleaseInStream)();
+  // STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  // STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
 
   HRESULT SetParams(int numDictBits);

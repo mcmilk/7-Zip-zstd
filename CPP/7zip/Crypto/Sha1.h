@@ -6,7 +6,8 @@
 #define __CRYPTO_SHA1_H
 
 #include <stddef.h>
-#include "../../Common/Types.h"
+
+#include "../../Common/MyTypes.h"
 
 // Sha1 implementation in RAR before version 3.60 has bug:
 // it changes data bytes in some cases.

@@ -3,116 +3,188 @@
 #ifndef __FS_FOLDER_H
 #define __FS_FOLDER_H
 
-#include "Common/MyCom.h"
+#include "../../../Common/MyCom.h"
+#include "../../../Common/MyBuffer.h"
 
-#include "Windows/FileFind.h"
+#include "../../../Windows/FileFind.h"
 
 #include "IFolder.h"
 #include "TextPairs.h"
+#include "..\..\Archive\IArchive.h"
 
 namespace NFsFolder {
 
 class CFSFolder;
 
-struct CFileInfoEx: public NWindows::NFile::NFind::CFileInfo
+#define FS_SHOW_LINKS_INFO
+
+struct CDirItem: public NWindows::NFile::NFind::CFileInfo
 {
   #ifndef UNDER_CE
-  bool CompressedSizeIsDefined;
-  UInt64 CompressedSize;
+  UInt64 PackSize;
   #endif
+
+  #ifdef FS_SHOW_LINKS_INFO
+  UInt64 FileIndex;
+  UInt32 NumLinks;
+  bool FileInfo_Defined;
+  bool FileInfo_WasRequested;
+  #endif
+
+  #ifndef UNDER_CE
+  bool PackSize_Defined;
+  #endif
+
+  bool FolderStat_Defined;
+
+  #ifndef UNDER_CE
+  CByteBuffer Reparse;
+  #endif
+  
+  UInt64 NumFolders;
+  UInt64 NumFiles;
+  
+  int Parent;
 };
 
-struct CDirItem;
-
-struct CDirItem: public CFileInfoEx
+/*
+struct CAltStream
 {
-  CDirItem *Parent;
-  CObjectVector<CDirItem> Files;
+  UInt64 Size;
+  UInt64 PackSize;
+  bool PackSize_Defined;
+  int Parent;
+  UString Name;
+};
+*/
 
-  CDirItem(): Parent(0) {}
-  void Clear()
-  {
-    Files.Clear();
-    Parent = 0;
-  }
+struct CFsFolderStat
+{
+  UInt64 NumFolders;
+  UInt64 NumFiles;
+  UInt64 Size;
+  IProgress *Progress;
+  FString Path;
+
+  CFsFolderStat(): NumFolders(0), NumFiles(0), Size(0), Progress(NULL) {}
+  CFsFolderStat(const FString &path, IProgress *progress = NULL):
+      NumFolders(0), NumFiles(0), Size(0), Progress(progress), Path(path) {}
+
+  HRESULT Enumerate();
 };
 
 class CFSFolder:
   public IFolderFolder,
+  public IArchiveGetRawProps,
+  public IFolderCompare,
+  #ifdef USE_UNICODE_FSTRING
+  public IFolderGetItemName,
+  #endif
   public IFolderWasChanged,
   public IFolderOperations,
   // public IFolderOperationsDeleteToRecycleBin,
-  public IFolderGetItemFullSize,
+  public IFolderCalcItemFullSize,
   public IFolderClone,
   public IFolderGetSystemIconIndex,
   public IFolderSetFlatMode,
+  // public IFolderSetShowNtfsStreamsMode,
   public CMyUnknownImp
 {
-  UInt64 GetSizeOfItem(int anIndex) const;
 public:
   MY_QUERYINTERFACE_BEGIN2(IFolderFolder)
+    MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
+    MY_QUERYINTERFACE_ENTRY(IFolderCompare)
+    #ifdef USE_UNICODE_FSTRING
+    MY_QUERYINTERFACE_ENTRY(IFolderGetItemName)
+    #endif
     MY_QUERYINTERFACE_ENTRY(IFolderWasChanged)
     // MY_QUERYINTERFACE_ENTRY(IFolderOperationsDeleteToRecycleBin)
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)
-    MY_QUERYINTERFACE_ENTRY(IFolderGetItemFullSize)
+    MY_QUERYINTERFACE_ENTRY(IFolderCalcItemFullSize)
     MY_QUERYINTERFACE_ENTRY(IFolderClone)
     MY_QUERYINTERFACE_ENTRY(IFolderGetSystemIconIndex)
     MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
+    // MY_QUERYINTERFACE_ENTRY(IFolderSetShowNtfsStreamsMode)
   MY_QUERYINTERFACE_END
   MY_ADDREF_RELEASE
 
 
   INTERFACE_FolderFolder(;)
+  INTERFACE_IArchiveGetRawProps(;)
   INTERFACE_FolderOperations(;)
 
+  STDMETHOD_(Int32, CompareItems)(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw);
+
+  #ifdef USE_UNICODE_FSTRING
+  INTERFACE_IFolderGetItemName(;)
+  #endif
   STDMETHOD(WasChanged)(Int32 *wasChanged);
   STDMETHOD(Clone)(IFolderFolder **resultFolder);
-  STDMETHOD(GetItemFullSize)(UInt32 index, PROPVARIANT *value, IProgress *progress);
+  STDMETHOD(CalcItemFullSize)(UInt32 index, IProgress *progress);
 
   STDMETHOD(SetFlatMode)(Int32 flatMode);
+  // STDMETHOD(SetShowNtfsStreamsMode)(Int32 showStreamsMode);
 
   STDMETHOD(GetSystemIconIndex)(UInt32 index, Int32 *iconIndex);
 
 private:
   FString _path;
-  CDirItem _root;
-  CRecordVector<CDirItem *> _refs;
-
+  
+  CObjectVector<CDirItem> Files;
+  FStringVector Folders;
+  // CObjectVector<CAltStream> Streams;
   CMyComPtr<IFolderFolder> _parentFolder;
 
   bool _commentsAreLoaded;
   CPairsStorage _comments;
 
+  // bool _scanAltStreams;
   bool _flatMode;
 
   NWindows::NFile::NFind::CFindChangeNotification _findChangeNotification;
 
-  HRESULT GetItemsFullSize(const UInt32 *indices, UInt32 numItems,
-      UInt64 &numFolders, UInt64 &numFiles, UInt64 &size, IProgress *progress);
-  HRESULT GetItemFullSize(int index, UInt64 &size, IProgress *progress);
-  HRESULT GetComplexName(CFSTR name, FString &resultPath);
+  HRESULT GetItemsFullSize(const UInt32 *indices, UInt32 numItems, CFsFolderStat &stat);
+
+  HRESULT GetItemFullSize(unsigned index, UInt64 &size, IProgress *progress);
+  void GetAbsPath(const wchar_t *name, FString &absPath);
   HRESULT BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder);
 
   bool LoadComments();
   bool SaveComments();
-  HRESULT LoadSubItems(CDirItem &dirItem, const FString &path);
-  void AddRefs(CDirItem &dirItem);
+  HRESULT LoadSubItems(int dirItem, const FString &path);
+  
+  #ifdef FS_SHOW_LINKS_INFO
+  bool ReadFileInfo(CDirItem &di);
+  #endif
+
 public:
   HRESULT Init(const FString &path, IFolderFolder *parentFolder);
   #ifdef UNDER_CE
   HRESULT InitToRoot() { return Init(FTEXT("\\"), NULL); }
   #endif
 
-  CFSFolder() : _flatMode(false) {}
+  CFSFolder() : _flatMode(false)
+    // , _scanAltStreams(false)
+  {}
 
-  FString GetPrefix(const CDirItem &item) const;
+  void GetFullPath(const CDirItem &item, FString &path) const
+  {
+    // FString prefix;
+    // GetPrefix(item, prefix);
+    path = _path;
+    if (item.Parent >= 0)
+      path += Folders[item.Parent];
+    path += item.Name;
+  }
+
+  // void GetPrefix(const CDirItem &item, FString &prefix) const;
   FString GetRelPath(const CDirItem &item) const;
-  FString GetRelPath(UInt32 index) const { return GetRelPath(*_refs[index]); }
 
   void Clear()
   {
-    _root.Clear();
-    _refs.Clear();
+    Files.Clear();
+    Folders.Clear();
+    // Streams.Clear();
   }
 };
 
