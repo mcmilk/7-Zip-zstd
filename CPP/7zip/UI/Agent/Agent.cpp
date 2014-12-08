@@ -195,6 +195,8 @@ STDMETHODIMP_(UInt64) CAgentFolder::GetItemSize(UInt32 index)
       const CProxyFolder &item = _proxyArchive->Folders[folder->Folders[realIndex]];
       if (!_flatMode)
         return item.Size;
+      if (!item.IsLeaf)
+        return 0;
       arcIndex = item.Index;
     }
     else

@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2014-06-15 : Igor Pavlov : Public domain */
+2014-12-07 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -21,28 +21,28 @@
 #include "../../7zFile.h"
 #include "../../CpuArch.h"
 
-#define k_EXE_ExtIndex 1
+#define k_EXE_ExtIndex 2
 
 static const char *kExts[] =
 {
-  "bat",
-  "cmd",
-  "exe",
-  "inf",
-  "msi",
+    "bat"
+  , "cmd"
+  , "exe"
+  , "inf"
+  , "msi"
   #ifdef UNDER_CE
-  "cab",
+  , "cab"
   #endif
-  "html",
-  "htm"
+  , "html"
+  , "htm"
 };
 
 static const char *kNames[] =
 {
-  "setup",
-  "install",
-  "run",
-  "start"
+    "setup"
+  , "install"
+  , "run"
+  , "start"
 };
 
 static unsigned FindExt(const wchar_t *s, unsigned *extLen)
@@ -190,7 +190,7 @@ static WRes RemoveDirWithSubItems(WCHAR *path)
       wcscpy(path + len, fd.cFileName);
       if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
       {
-        wcscat(path, L"\\");
+        wcscat(path, WSTRING_PATH_SEPARATOR);
         res = RemoveDirWithSubItems(path);
       }
       else
@@ -324,7 +324,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         continue;
       if (CreateDirectoryW(path, NULL))
       {
-        wcscat(path, L"\\");
+        wcscat(path, WSTRING_PATH_SEPARATOR);
         pathLen = wcslen(path);
         break;
       }

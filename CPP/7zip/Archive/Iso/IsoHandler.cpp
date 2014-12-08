@@ -322,7 +322,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         if (e != 0)
           lps->InSize = lps->OutSize = currentTotalSize + offset;
         const CDir &item2 = ref.Dir->_subItems[ref.Index + e];
-        RINOK(_stream->Seek(item2.ExtentLocation * _archive.BlockSize, STREAM_SEEK_SET, NULL));
+        RINOK(_stream->Seek((UInt64)item2.ExtentLocation * _archive.BlockSize, STREAM_SEEK_SET, NULL));
         streamSpec->Init(item2.Size);
         RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
         if (copyCoderSpec->TotalSize != item2.Size)

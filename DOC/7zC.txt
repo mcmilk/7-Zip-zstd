@@ -1,4 +1,4 @@
-7z ANSI-C Decoder 9.24
+7z ANSI-C Decoder 9.35
 ----------------------
 
 7z ANSI-C provides 7z/LZMA decoding.
@@ -29,11 +29,9 @@ Files
 How To Use
 ----------
 
-You must download 7-Zip program from www.7-zip.org.
+You can create .7z archive with 7z.exe, 7za.exe or 7zr.exe:
 
-You can create .7z archive with 7z.exe or 7za.exe:
-
-  7za.exe a archive.7z *.htm -r -mx -m0fb=255
+  7z.exe a archive.7z *.htm -r -mx -m0fb=255
 
 If you have big number of files in archive, and you need fast extracting, 
 you can use partly-solid archives:

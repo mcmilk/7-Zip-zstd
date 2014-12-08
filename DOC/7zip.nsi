@@ -2,8 +2,8 @@
 ;Defines
 
 !define VERSION_MAJOR 9
-!define VERSION_MINOR 34
-!define VERSION_POSTFIX_FULL " alpha"
+!define VERSION_MINOR 35
+!define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
@@ -315,7 +315,7 @@ noScErrors:
 
   WriteRegStr HKCR "*\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
   WriteRegStr HKCR "Directory\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
-  ;  WriteRegStr HKCR "Folder\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
+  WriteRegStr HKCR "Folder\shellex\ContextMenuHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
 
   WriteRegStr HKCR "Directory\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"
   WriteRegStr HKCR "Drive\shellex\DragDropHandlers\7-Zip" "" "${CLSID_CONTEXT_MENU}"

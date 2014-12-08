@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "9" ?>
-<?define VerMinor = "34" ?>
+<?define VerMinor = "35" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
@@ -67,6 +67,7 @@
 <?define CompInstallRegDriveDD    = "$(var.CompId)85" ?>
 <?define CompInstallRegApproved   = "$(var.CompId)86" ?>
 <?define CompInstallRegAppPath    = "$(var.CompId)87" ?>
+<?define CompInstallRegFolder     = "$(var.CompId)88" ?>
 
 
 <?define Manufacturer = "Igor Pavlov" ?>
@@ -141,6 +142,12 @@
           <Component Id="InstallRegDirectory" Guid="$(var.CompInstallRegDirectory)" DiskId="1" Win64="$(var.Is64)">
             <Registry Id="MyInstallRegDirectory" Action="write" Type="string"
                Root="HKCR" Key="Directory\shellex\ContextMenuHandlers\7-Zip"
+               Value="$(var.ShellExtId)" />
+          </Component>
+
+          <Component Id="InstallRegFolder" Guid="$(var.CompInstallRegFolder)" DiskId="1" Win64="$(var.Is64)">
+            <Registry Id="MyInstallRegFolder" Action="write" Type="string"
+               Root="HKCR" Key="Folder\shellex\ContextMenuHandlers\7-Zip"
                Value="$(var.ShellExtId)" />
           </Component>
 
@@ -366,6 +373,7 @@
         <ComponentRef Id="InstallRegDriveDD" />
         <ComponentRef Id="InstallRegApproved" />
         <ComponentRef Id="InstallRegAppPath" />
+        <ComponentRef Id="InstallRegFolder" />
 
       </Feature>
       <Feature Id="LanguageFiles" Title="Localization files" Description="Localization files for 71 languages."

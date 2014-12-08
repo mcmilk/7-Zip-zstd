@@ -321,11 +321,16 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
   if (/* _db.IsTree && propID == kpidName ||
       !_db.IsTree && */ propID == kpidPath)
   {
-    *data = (void *)_db.GetName(index);
-    if (*data)
+    const wchar_t *name = _db.GetName(index);
+    if (name)
     {
-      *dataSize = (UInt32)((_db.NameOffsets[index + 1] - _db.NameOffsets[index]) * 2);
-      *propType = NPropDataType::kUtf16z;
+      size_t size = (_db.NameOffsets[index + 1] - _db.NameOffsets[index]) * 2;
+      if (size < ((UInt32)1 << 31))
+      {
+        *data = (void *)name;
+        *dataSize = (UInt32)size;
+        *propType = NPropDataType::kUtf16z;
+      }
     }
     return S_OK;
   }
@@ -382,6 +387,13 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
     for (unsigned j = 0; j < idSize; j++)
       id64 = ((id64 << 8) | longID[j]);
     inByte.SkipDataNoCheck(idSize);
+
+    if ((mainByte & 0x10) != 0)
+    {
+      inByte.ReadNum(); // NumInStreams
+      inByte.ReadNum(); // NumOutStreams
+    }
+  
     CNum propsSize = 0;
     const Byte *props = NULL;
     if ((mainByte & 0x20) != 0)

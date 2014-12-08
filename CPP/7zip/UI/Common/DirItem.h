@@ -24,7 +24,7 @@ struct CDirItem
   CByteBuffer ReparseData;
   CByteBuffer ReparseData2; // fixed (reduced) absolute links
 
-  bool AreReparseData() const { return ReparseData.Size() != 0 || !ReparseData2.Size() != 0; }
+  bool AreReparseData() const { return ReparseData.Size() != 0 || ReparseData2.Size() != 0; }
   #endif
   
   UInt32 Attrib;

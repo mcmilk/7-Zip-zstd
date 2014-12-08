@@ -1,9 +1,9 @@
-7-Zip 9.32 Sources
+7-Zip 9.35 Sources
 ------------------
 
 7-Zip is a file archiver for Windows. 
 
-7-Zip Copyright (C) 1999-2013 Igor Pavlov.
+7-Zip Copyright (C) 1999-2014 Igor Pavlov.
 
 
 License Info
@@ -36,11 +36,10 @@ In brief it means:
 LZMA SDK
 --------
 
-Also this package contains files from LZMA SDK
-you can download LZMA SDK from this page:
-http://www.7-zip.org/sdk.html
-read about addtional licenses for LZMA SDK in file
-DOC/lzma.txt
+This package also contains some files from LZMA SDK
+You can download LZMA SDK from:
+  http://www.7-zip.org/sdk.html
+LZMA SDK is written and placed in the public domain by Igor Pavlov.
 
 
 How to compile
@@ -98,82 +97,60 @@ DOC                Documentation
   7zFormat.txt   - 7z format description
   copying.txt    - GNU LGPL license
   unRarLicense.txt - License for unRAR part of source code
-  history.txt    - Sources history
+  src-history.txt  - Sources history
   Methods.txt    - Compression method IDs
   readme.txt     - Readme file
-  lzma.txt       - LZMA SDK description
+  lzma.txt       - LZMA compression description
   7zip.nsi       - installer script for NSIS
+  7zip.wix       - installer script for WIX
 
+
+Asm - Source code in Assembler (optimized code for CRC calculation and Intel-AES encryption)
 
 C   - Source code in C
-CPP - Source code in CPP
 
-Common            Common modules
-Windows           Win32 wrappers
+CPP - Source code in C++
+
+Common            common files for C++ projects
+
+Windows           common files for Windows related code
 
 7zip
--------
+
   Common          Common modules for 7-zip
 
-  Archive         7-Zip Archive Format Plugins 
-  --------
-    Common
-    7z
-    Arj
-    BZip2
-    Cab
-    Cpio
-    GZip
-    Rar
-    Rpm            
-    Split
-    Tar
-    Zip
+  Archive         files related to archiving
 
-  Bundle          Modules that are bundles of other modules
-  ------
-    Alone         7za.exe: Standalone version of 7z
-    Alone7z       7zr.exe: Standalone version of 7z that supports only 7z/LZMA/BCJ/BCJ2
+  Bundle          Modules that are bundles of other modules (files)
+
+    Alone         7za.exe: Standalone version of 7-Zip console that supports only 7z/xz/cab/zip/gzip/bzip2/tar.
+    Alone7z       7zr.exe: Standalone version of 7-Zip console that supports only 7z (reduced version)
+    Fm            Standalone version of 7-Zip File Manager
+    Format7z            7za.dll:  .7z support
+    Format7zExtract     7zxa.dll: .7z support, extracting only
+    Format7zR           7zr.dll:  .7z support, reduced version
+    Format7zExtractR    7zxr.dll: .7z support, reduced version, extracting only
+    Format7zF           7z.dll:   all formats
+    LzmaCon       lzma.exe: LZMA compression/decompression
     SFXCon        7zCon.sfx: Console 7z SFX module
     SFXWin        7z.sfx: Windows 7z SFX module
     SFXSetup      7zS.sfx: Windows 7z SFX module for Installers
-    Format7z            7za.dll:  .7z support
-    Format7zExtract     7zxa.dll: .7z support, extracting only
-    Format7zR           7zr.dll:  .7z support, LZMA/BCJ* only
-    Format7zExtractR    7zxr.dll: .7z support, LZMA/BCJ* only, extracting only
-    Format7zF           7z.dll:   all formats
+
+  Compress        files for compression/decompression
+
+  Crypto          files for encryption / decompression
 
   UI
-  --
+
     Agent         Intermediary modules for FAR plugin and Explorer plugin
-    Console       7z.exe Console version
-    Explorer      Explorer plugin
-    Resource      Resources
-    Far           FAR plugin  
     Client7z      Test application for 7za.dll 
+    Common        Common UI files
+    Console       7z.exe : Console version
+    Explorer      7-zip.dll: 7-Zip Shell extension
+    Far           plugin for Far Manager
+    FileManager   7zFM.exe: 7-Zip File Manager
+    GUI           7zG.exe: 7-Zip GUI version
 
-  Compress
-  --------
-    BZip2        BZip2 compressor
-    Branch       Branch converter
-    ByteSwap     Byte Swap converter
-    Copy         Copy coder
-    Deflate       
-    Implode
-    Arj
-    LZMA
-    PPMd          Dmitry Shkarin's PPMdH with small changes.
-    LZ            Lempel - Ziv
-
-  Crypto          Crypto modules
-  ------
-    7zAES         Cipher for 7z
-    AES           AES Cipher
-    Rar20         Cipher for Rar 2.0
-    RarAES        Cipher for Rar 3.0
-    Zip           Cipher for Zip
-
-  FileManager       File Manager
 
 
 ---

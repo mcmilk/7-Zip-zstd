@@ -43,11 +43,7 @@
 
 #include "HashCon.h"
 
-#if !defined(EXTERNAL_CODECS) && defined(_NO_CRYPTO)
-#define IT_IS_REDUCED_VERSION
-#endif
-
-#ifdef IT_IS_REDUCED_VERSION
+#ifdef PROG_VARIANT_R
 #include "../../../../C/7zVersion.h"
 #else
 #include "../../MyVersion.h"
@@ -64,7 +60,7 @@ extern CStdOutStream *g_StdStream;
 
 static const char *kCopyrightString = "\n7-Zip"
 #ifndef EXTERNAL_CODECS
-#ifdef IT_IS_REDUCED_VERSION
+#ifdef PROG_VARIANT_R
 " (r)"
 #else
 " (a)"
@@ -80,7 +76,7 @@ static const char *kCopyrightString = "\n7-Zip"
 static const char *kHelpString =
     "\nUsage: 7z"
 #ifndef EXTERNAL_CODECS
-#ifdef IT_IS_REDUCED_VERSION
+#ifdef PROG_VARIANT_R
     "r"
 #else
     "a"

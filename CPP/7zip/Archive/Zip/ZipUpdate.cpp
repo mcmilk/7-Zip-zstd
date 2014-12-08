@@ -534,13 +534,14 @@ static HRESULT Update2(
 
   #ifndef _7ZIP_ST
 
-  const size_t kNumMaxThreads = (1 << 10);
   UInt32 numThreads = options->NumThreads;
+  const UInt32 kNumMaxThreads = 64;
   if (numThreads > kNumMaxThreads)
     numThreads = kNumMaxThreads;
+  if (numThreads > MAXIMUM_WAIT_OBJECTS) // is 64 in Windows (is it 64 in all versions?)
+    numThreads = MAXIMUM_WAIT_OBJECTS;
   if (numThreads < 1)
     numThreads = 1;
-
   
   const size_t kMemPerThread = (1 << 25);
   const size_t kBlockSize = 1 << 16;
