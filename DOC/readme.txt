@@ -1,4 +1,4 @@
-7-Zip 9.35 Sources
+7-Zip 9.36 Sources
 ------------------
 
 7-Zip is a file archiver for Windows. 

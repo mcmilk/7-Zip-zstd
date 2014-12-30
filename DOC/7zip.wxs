@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "9" ?>
-<?define VerMinor = "35" ?>
+<?define VerMinor = "36" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>

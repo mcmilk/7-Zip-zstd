@@ -337,7 +337,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
         break;
       if (items.Size() >= kNumChunksMax)
         return S_FALSE;
-      Byte firstByte = buf[kTagHeaderSize];
+      Byte firstByte = item.Data[kTagHeaderSize];
       Byte subType, props;
       if (item.Type == kType_Audio)
       {

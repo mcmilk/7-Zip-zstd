@@ -1216,10 +1216,10 @@ HRESULT UpdateArchive(
       createTempFile = true;
       ap.Temp = true;
       if (!options.WorkingDir.IsEmpty())
-      {
         ap.TempPrefix = options.WorkingDir;
-        NormalizeDirPathPrefix(ap.TempPrefix);
-      }
+      else
+        ap.TempPrefix = us2fs(ap.Prefix);
+      NormalizeDirPathPrefix(ap.TempPrefix);
     }
   }
 

@@ -9,9 +9,9 @@ STDMETHODIMP CSequentialInStreamWithCRC::Read(void *data, UInt32 size, UInt32 *p
   UInt32 realProcessed = 0;
   HRESULT result = S_OK;
   if (_stream)
-    _stream->Read(data, size, &realProcessed);
+    result = _stream->Read(data, size, &realProcessed);
   _size += realProcessed;
-  if (size > 0 && realProcessed == 0)
+  if (size != 0 && realProcessed == 0)
     _wasFinished = true;
   _crc = CrcUpdate(_crc, data, realProcessed);
   if (processedSize)
@@ -27,7 +27,7 @@ STDMETHODIMP CInStreamWithCRC::Read(void *data, UInt32 size, UInt32 *processedSi
     result = _stream->Read(data, size, &realProcessed);
   _size += realProcessed;
   /*
-  if (size > 0 && realProcessed == 0)
+  if (size != 0 && realProcessed == 0)
     _wasFinished = true;
   */
   _crc = CrcUpdate(_crc, data, realProcessed);

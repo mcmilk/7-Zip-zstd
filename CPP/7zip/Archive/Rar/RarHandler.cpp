@@ -964,22 +964,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidUnpackVer: prop = item.UnPackVersion; break;
     case kpidMethod:
     {
-      char temp[16];
-      char *s = temp;
-      if (item.Method >= (Byte)'0' && item.Method <= (Byte)'5')
+      char s[16];
+      Byte m = item.Method;
+      if (m < (Byte)'0' || m > (Byte)'5')
+        ConvertUInt32ToString(m, s);
+      else
       {
-        *s++ = 'm';
-        *s++ = (char)item.Method;
+        s[0] = 'm';
+        s[1] = (char)m;
+        s[2] = 0;
         if (!item.IsDir())
         {
-          *s++ = ':';
-          ConvertUInt32ToString(16 + item.GetDictSize(), s);
+          s[2] = ':';
+          ConvertUInt32ToString(16 + item.GetDictSize(), &s[3]);
         }
       }
-      else
-        ConvertUInt32ToString(item.Method, s);
-      s += MyStringLen(s);
-      *s = 0;
       prop = s;
       break;
     }
