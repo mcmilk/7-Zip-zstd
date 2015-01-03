@@ -1,6 +1,24 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+9.37 beta      2015-01-03
+-------------------------	
+- The BUG in 9.26-9.36 was fixed:
+  Some code in CPP\7zip\Archive\7z\ worked correctly only under Windows.
+
+
+9.36 beta      2014-12-26
+-------------------------	
+- The BUG in command line version was fixed:
+  7-Zip created temporary archive in current folder during update archive
+  operation, if -w{Path} switch was not specified. 
+  The fixed 7-Zip creates temporary archive in folder that contains updated archive.
+- The BUG in 9.33-9.35 was fixed:
+  7-Zip silently ignored file reading errors during 7z or gz archive creation,
+  and the created archive contained only part of file that was read before error.
+  The fixed 7-Zip stops archive creation and it reports about error.
+
+
 9.31           2012-10-31
 -------------------------
 - InBuffer.h : CInBuffer  uses ISequentialInStream  *_stream; instead of CMyComPtr<ISequentialInStream> 

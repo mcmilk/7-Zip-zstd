@@ -81,7 +81,7 @@ bool CDialog::OnButtonClicked(int buttonID, HWND /* buttonHWND */)
 static bool GetWorkAreaRect(RECT *rect)
 {
   // use another function for multi-monitor.
-  return BOOLToBool(::SystemParametersInfo(SPI_GETWORKAREA, NULL, rect, NULL));
+  return BOOLToBool(::SystemParametersInfo(SPI_GETWORKAREA, 0, rect, 0));
 }
 
 bool IsDialogSizeOK(int xSize, int ySize)

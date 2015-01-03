@@ -169,7 +169,7 @@ static HRESULT DecompressArchive(
   }
   else
     result = archive->Extract(&realIndices.Front(), realIndices.Size(), testMode, ecs);
-  if (result == S_OK)
+  if (result == S_OK && !options.StdInMode)
     result = ecs->SetDirsTimes();
   return callback->ExtractResult(result);
 }

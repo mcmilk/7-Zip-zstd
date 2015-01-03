@@ -2,10 +2,9 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Control/ImageList.h"
+#include "ImageList.h"
 
 namespace NWindows {
 namespace NControl {
 
 }}
-

@@ -1,5 +1,5 @@
 /* LzmaDec.c -- LZMA Decoder
-2011-09-03 : Igor Pavlov : Public domain */
+2015-01-01 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -195,7 +195,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
       }
       else
       {
-        unsigned matchByte = p->dic[(dicPos - rep0) + ((dicPos < rep0) ? dicBufSize : 0)];
+        unsigned matchByte = dic[(dicPos - rep0) + ((dicPos < rep0) ? dicBufSize : 0)];
         unsigned offs = 0x100;
         state -= (state < 10) ? 3 : 6;
         symbol = 1;

@@ -69,8 +69,6 @@ Byte CFilter::Decode(int &channelDelta, Byte deltaByte)
 }
 }
 
-static const char *kNumberErrorMessage = "Number error";
-
 static const UInt32 kHistorySize = 1 << 20;
 
 static const int kNumStats = 11;

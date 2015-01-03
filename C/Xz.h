@@ -1,5 +1,5 @@
 /* Xz.h - Xz interface
-2013-11-19 : Igor Pavlov : Public domain */
+2014-12-30 : Igor Pavlov : Public domain */
 
 #ifndef __XZ_H
 #define __XZ_H
@@ -229,8 +229,8 @@ void XzUnpacker_Free(CXzUnpacker *p);
 /*
 finishMode:
   It has meaning only if the decoding reaches output limit (*destLen).
-  LZMA_FINISH_ANY - use smallest number of input bytes
-  LZMA_FINISH_END - read EndOfStream marker after decoding
+  CODER_FINISH_ANY - use smallest number of input bytes
+  CODER_FINISH_END - read EndOfStream marker after decoding
 
 Returns:
   SZ_OK
@@ -255,7 +255,7 @@ Returns:
 
 
 SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
-    const Byte *src, SizeT *srcLen, /* int srcWasFinished, */ int finishMode,
+    const Byte *src, SizeT *srcLen, ECoderFinishMode finishMode,
     ECoderStatus *status);
 
 Bool XzUnpacker_IsStreamWasFinished(CXzUnpacker *p);

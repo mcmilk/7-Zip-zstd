@@ -1,5 +1,5 @@
 /* LzmaUtil.c -- Test application for LZMA compression
-2014-06-17 : Igor Pavlov : Public domain */
+2014-12-31 : Igor Pavlov : Public domain */
 
 #include "../../Precomp.h"
 
@@ -92,7 +92,7 @@ static SRes Decode2(CLzmaDec *state, ISeqOutStream *outStream, ISeqInStream *inS
         
       outPos = 0;
       
-      if (res != SZ_OK || thereIsSize && unpackSize == 0)
+      if (res != SZ_OK || (thereIsSize && unpackSize == 0))
         return res;
       
       if (inProcessed == 0 && outProcessed == 0)

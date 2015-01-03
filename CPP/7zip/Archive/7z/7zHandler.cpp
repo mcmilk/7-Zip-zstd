@@ -321,13 +321,13 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
   if (/* _db.IsTree && propID == kpidName ||
       !_db.IsTree && */ propID == kpidPath)
   {
-    const wchar_t *name = _db.GetName(index);
-    if (name)
+    if (_db.NameOffsets && _db.NamesBuf)
     {
-      size_t size = (_db.NameOffsets[index + 1] - _db.NameOffsets[index]) * 2;
+      size_t offset = _db.NameOffsets[index];
+      size_t size = (_db.NameOffsets[index + 1] - offset) * 2;
       if (size < ((UInt32)1 << 31))
       {
-        *data = (void *)name;
+        *data = (const void *)(_db.NamesBuf + offset * 2);
         *dataSize = (UInt32)size;
         *propType = NPropDataType::kUtf16z;
       }
@@ -607,7 +607,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
     */
 
-    case kpidPath: return _db.GetPath(index, value);
+    case kpidPath: return _db.GetPath_Prop(index, value);
     #ifndef _SFX
     case kpidMethod: return SetMethodToProp(_db.FileIndexToFolderIndexMap[index2], value);
     case kpidBlock:

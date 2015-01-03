@@ -226,6 +226,7 @@ STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
 {
   Close();
   _seqStream = stream;
+  _isArc = true;
   return S_OK;
 }
 

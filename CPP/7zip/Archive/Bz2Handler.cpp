@@ -131,6 +131,7 @@ API_FUNC_static_IsArc IsArc_BZip2(const Byte *p, size_t size)
     return k_IsArc_Res_YES;
   return k_IsArc_Res_NO;
 }
+}
 
 STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *)
 {

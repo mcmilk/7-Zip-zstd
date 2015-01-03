@@ -15,13 +15,13 @@
 
 namespace NWindows {
 
-bool CClipboard::Open(HWND wndNewOwner)
+bool CClipboard::Open(HWND wndNewOwner) throw()
 {
   m_Open = BOOLToBool(::OpenClipboard(wndNewOwner));
   return m_Open;
 }
 
-bool CClipboard::Close()
+bool CClipboard::Close() throw()
 {
   if (!m_Open)
     return true;
@@ -96,7 +96,7 @@ static bool ClipboardSetData(UINT uFormat, const void *data, size_t size) throw(
   {
     NMemory::CGlobalLock globalLock(global);
     LPVOID p = globalLock.GetPointer();
-    if (p == NULL)
+    if (!p)
       return false;
     memcpy(p, data, size);
   }
@@ -117,11 +117,12 @@ bool ClipboardSetText(HWND owner, const UString &s)
   bool res;
   res = ClipboardSetData(CF_UNICODETEXT, (const wchar_t *)s, (s.Len() + 1) * sizeof(wchar_t));
   #ifndef _UNICODE
-  AString a;
-  a = UnicodeStringToMultiByte(s, CP_ACP);
-  res |= ClipboardSetData(CF_TEXT, (const char *)a, (a.Len() + 1) * sizeof(char));
+  AString a = UnicodeStringToMultiByte(s, CP_ACP);
+  if (ClipboardSetData(CF_TEXT, (const char *)a, (a.Len() + 1) * sizeof(char)))
+    res = true;
   a = UnicodeStringToMultiByte(s, CP_OEMCP);
-  res |= ClipboardSetData(CF_OEMTEXT, (const char *)a, (a.Len() + 1) * sizeof(char));
+  if (ClipboardSetData(CF_OEMTEXT, (const char *)a, (a.Len() + 1) * sizeof(char)))
+    res = true;
   #endif
   return res;
 }

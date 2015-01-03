@@ -4,7 +4,7 @@
 
 #include "LzOutWindow.h"
 
-void CLzOutWindow::Init(bool solid)
+void CLzOutWindow::Init(bool solid) throw()
 {
   if (!solid)
     COutBuffer::Init();

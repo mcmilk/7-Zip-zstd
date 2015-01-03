@@ -1018,7 +1018,7 @@ HRESULT Update(
       else
       {
         GetFile(*db, ui.IndexInArchive, file, file2);
-        name = db->GetName(ui.IndexInArchive);
+        db->GetPath(ui.IndexInArchive, name);
       }
       
       /*
@@ -1152,7 +1152,8 @@ HRESULT Update(
         CFileItem file;
         CFileItem2 file2;
         GetFile(*db, fi, file, file2);
-        UString name = db->GetName(fi);
+        UString name;
+        db->GetPath(fi, name);
         if (file.HasStream)
         {
           indexInFolder++;
@@ -1278,7 +1279,7 @@ HRESULT Update(
         else
         {
           GetFile(*db, ui.IndexInArchive, file, file2);
-          name = db->GetName(ui.IndexInArchive);
+          db->GetPath(ui.IndexInArchive, name);
         }
         if (file2.IsAnti || file.IsDir)
           return E_FAIL;

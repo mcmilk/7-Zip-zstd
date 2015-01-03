@@ -3,6 +3,8 @@
 #ifndef __MY_WINDOWS_NEW_H
 #define __MY_WINDOWS_NEW_H
 
+#ifdef _MSC_VER
+
 #include <ShObjIdl.h>
 
 #ifndef __ITaskbarList3_INTERFACE_DEFINED__
@@ -66,6 +68,8 @@ struct ITaskbarList3: public ITaskbarList2
   STDMETHOD(SetThumbnailTooltip)(HWND hwnd, LPCWSTR pszTip) = 0;
   STDMETHOD(SetThumbnailClip)(HWND hwnd, RECT *prcClip) = 0;
 };
+
+#endif
 
 #endif
 

@@ -446,7 +446,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 
 #endif
 
-HRESULT Archive_GetItemBoolProp(IInArchive *arc, UInt32 index, PROPID propID, bool &result)
+HRESULT Archive_GetItemBoolProp(IInArchive *arc, UInt32 index, PROPID propID, bool &result) throw()
 {
   NCOM::CPropVariant prop;
   result = false;
@@ -458,22 +458,22 @@ HRESULT Archive_GetItemBoolProp(IInArchive *arc, UInt32 index, PROPID propID, bo
   return S_OK;
 }
 
-HRESULT Archive_IsItem_Folder(IInArchive *arc, UInt32 index, bool &result)
+HRESULT Archive_IsItem_Folder(IInArchive *arc, UInt32 index, bool &result) throw()
 {
   return Archive_GetItemBoolProp(arc, index, kpidIsDir, result);
 }
 
-HRESULT Archive_IsItem_Aux(IInArchive *arc, UInt32 index, bool &result)
+HRESULT Archive_IsItem_Aux(IInArchive *arc, UInt32 index, bool &result) throw()
 {
   return Archive_GetItemBoolProp(arc, index, kpidIsAux, result);
 }
 
-HRESULT Archive_IsItem_AltStream(IInArchive *arc, UInt32 index, bool &result)
+HRESULT Archive_IsItem_AltStream(IInArchive *arc, UInt32 index, bool &result) throw()
 {
   return Archive_GetItemBoolProp(arc, index, kpidIsAltStream, result);
 }
 
-HRESULT Archive_IsItem_Deleted(IInArchive *arc, UInt32 index, bool &result)
+HRESULT Archive_IsItem_Deleted(IInArchive *arc, UInt32 index, bool &result) throw()
 {
   return Archive_GetItemBoolProp(arc, index, kpidIsDeleted, result);
 }
@@ -2633,12 +2633,16 @@ HRESULT CArc::OpenStream(const COpenOptions &op)
   return S_OK;
 }
 
+#ifdef _SFX
+
 #ifdef _WIN32
   static const wchar_t *k_ExeExt = L".exe";
   static const unsigned k_ExeExt_Len = 4;
 #else
   static const wchar_t *k_ExeExt = L"";
   static const unsigned k_ExeExt_Len = 0;
+#endif
+
 #endif
 
 HRESULT CArc::OpenStreamOrFile(COpenOptions &op)

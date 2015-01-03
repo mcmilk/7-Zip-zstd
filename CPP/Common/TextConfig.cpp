@@ -107,7 +107,7 @@ bool GetTextConfig(const AString &s, CObjectVector<CTextConfigPair> &pairs)
   return true;
 }
 
-int FindTextConfigItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id)
+int FindTextConfigItem(const CObjectVector<CTextConfigPair> &pairs, const UString &id) throw()
 {
   FOR_VECTOR (i, pairs)
     if (pairs[i].ID == id)

@@ -5,10 +5,11 @@
 #include "StringToInt.h"
 
 static const UInt32 k_UInt32_max = 0xFFFFFFFF;
-static const UInt64 k_UInt64_max = 0xFFFFFFFFFFFFFFFF;
+static const UInt64 k_UInt64_max = UINT64_CONST(0xFFFFFFFFFFFFFFFF);
+// static const UInt64 k_UInt64_max = (UInt64)(Int64)-1;
 
 #define CONVERT_STRING_TO_UINT_FUNC(uintType, charType) \
-  uintType ConvertStringTo ## uintType(const charType *s, const charType **end) { \
+  uintType ConvertStringTo ## uintType(const charType *s, const charType **end) throw() { \
     if (end) *end = s; \
     uintType res = 0; \
     for (;; s++) { \
@@ -25,7 +26,7 @@ CONVERT_STRING_TO_UINT_FUNC(UInt32, wchar_t)
 CONVERT_STRING_TO_UINT_FUNC(UInt64, char)
 CONVERT_STRING_TO_UINT_FUNC(UInt64, wchar_t)
 
-Int32 ConvertStringToInt32(const wchar_t *s, const wchar_t **end)
+Int32 ConvertStringToInt32(const wchar_t *s, const wchar_t **end) throw()
 {
   if (end)
     *end = s;
@@ -50,7 +51,7 @@ Int32 ConvertStringToInt32(const wchar_t *s, const wchar_t **end)
   return (Int32)res;
 }
 
-UInt32 ConvertOctStringToUInt32(const char *s, const char **end)
+UInt32 ConvertOctStringToUInt32(const char *s, const char **end) throw()
 {
   if (end)
     *end = s;
@@ -71,7 +72,7 @@ UInt32 ConvertOctStringToUInt32(const char *s, const char **end)
   }
 }
 
-UInt64 ConvertOctStringToUInt64(const char *s, const char **end)
+UInt64 ConvertOctStringToUInt64(const char *s, const char **end) throw()
 {
   if (end)
     *end = s;
@@ -92,7 +93,7 @@ UInt64 ConvertOctStringToUInt64(const char *s, const char **end)
   }
 }
 
-UInt32 ConvertHexStringToUInt32(const char *s, const char **end)
+UInt32 ConvertHexStringToUInt32(const char *s, const char **end) throw()
 {
   if (end)
     *end = s;
@@ -117,7 +118,7 @@ UInt32 ConvertHexStringToUInt32(const char *s, const char **end)
   }
 }
 
-UInt64 ConvertHexStringToUInt64(const char *s, const char **end)
+UInt64 ConvertHexStringToUInt64(const char *s, const char **end) throw()
 {
   if (end)
     *end = s;

@@ -238,7 +238,7 @@ public:
 
   bool SetText(LPCTSTR s) { return BOOLToBool(::SetWindowText(_window, s)); }
   #ifndef _UNICODE
-  bool CWindow::SetText(LPCWSTR s) { return MySetWindowText(_window, s); }
+  bool SetText(LPCWSTR s) { return MySetWindowText(_window, s); }
   #endif
 
   int GetTextLength() const

@@ -370,7 +370,7 @@ STDMETHODIMP CGetProp::GetProp(PROPID propID, PROPVARIANT *value)
   if (propID == kpidName)
   {
     COM_TRY_BEGIN
-    NCOM::CPropVariant prop = Name;
+    NCOM::CPropVariant prop = Name.Ptr();
     prop.Detach(value);
     return S_OK;
     COM_TRY_END
@@ -1059,7 +1059,7 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 operationResult)
         SECURITY_INFORMATION securInfo = DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION;
         if (_saclEnabled)
           securInfo |= SACL_SECURITY_INFORMATION;
-        ::SetFileSecurityW(fs2us(_diskFilePath), securInfo, (void *)data);
+        ::SetFileSecurityW(fs2us(_diskFilePath), securInfo, (PSECURITY_DESCRIPTOR)(void *)data);
       }
     }
   }

@@ -25,7 +25,6 @@ COMMON_OBJS = \
   $O\Random.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\TextConfig.obj \
   $O\UTFConvert.obj \
   $O\Wildcard.obj \
 

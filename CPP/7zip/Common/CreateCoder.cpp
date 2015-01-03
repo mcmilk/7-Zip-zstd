@@ -90,7 +90,7 @@ HRESULT CExternalCodecs::LoadCodecs()
   }
   if (GetHashers)
   {
-    UInt32 num = num = GetHashers->GetNumHashers();
+    UInt32 num = GetHashers->GetNumHashers();
     for (UInt32 i = 0; i < num; i++)
     {
       CHasherInfoEx info;
@@ -226,7 +226,6 @@ HRESULT CreateCoder(
   CMyComPtr<ICompressCoder2> &coder2,
   bool encode, bool onlyCoder)
 {
-  bool created = false;
   UInt32 i;
   for (i = 0; i < g_NumCodecs; i++)
   {
@@ -241,7 +240,6 @@ HRESULT CreateCoder(
           if (codec.IsFilter) filter = (ICompressFilter *)p;
           else if (codec.NumInStreams == 1) coder = (ICompressCoder *)p;
           else coder2 = (ICompressCoder2 *)p;
-          created = (p != 0);
           break;
         }
       }
@@ -252,14 +250,13 @@ HRESULT CreateCoder(
           if (codec.IsFilter) filter = (ICompressFilter *)p;
           else if (codec.NumInStreams == 1) coder = (ICompressCoder *)p;
           else coder2 = (ICompressCoder2 *)p;
-          created = (p != 0);
           break;
         }
     }
   }
 
   #ifdef EXTERNAL_CODECS
-  if (!created && __externalCodecs)
+  if (!filter && !coder && !coder2 && __externalCodecs)
     for (i = 0; i < (UInt32)__externalCodecs->Codecs.Size(); i++)
     {
       const CCodecInfoEx &codec = __externalCodecs->Codecs[i];

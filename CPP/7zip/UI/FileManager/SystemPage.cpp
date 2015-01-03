@@ -165,7 +165,7 @@ bool CSystemPage::OnInit()
   #if NUM_EXT_GROUPS > 1
   {
     ci.iSubItem = 2;
-    ci.pszText = TEXT("All Users");
+    ci.pszText = (LPTSTR)TEXT("All Users");
     _listView.InsertColumn(2, &ci);
   }
   #endif

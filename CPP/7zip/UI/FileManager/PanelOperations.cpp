@@ -194,15 +194,15 @@ void CPanel::DeleteItems(bool NON_CE_VAR(toRecycleBin))
         fo.fAnyOperationsAborted = FALSE;
         fo.hNameMappings = 0;
         fo.lpszProgressTitle = 0;
-        int res;
+        // int res;
         #ifdef _UNICODE
-        res = ::SHFileOperationW(&fo);
+        /* res = */ ::SHFileOperationW(&fo);
         #else
         SHFileOperationWP shFileOperationW = (SHFileOperationWP)
           ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "SHFileOperationW");
         if (shFileOperationW == 0)
           return;
-        res = shFileOperationW(&fo);
+        /* res = */ shFileOperationW(&fo);
         #endif
       }
     }
@@ -529,7 +529,7 @@ void CPanel::ChangeComment()
   LangString(IDS_COMMENT2, dlg.Static);
   if (dlg.Create(GetParent()) != IDOK)
     return;
-  NCOM::CPropVariant propVariant = dlg.Value;
+  NCOM::CPropVariant propVariant = (const wchar_t *)dlg.Value;
 
   CDisableNotify disableNotify(*this);
   HRESULT result = folderOperations->SetProperty(realIndex, kpidComment, &propVariant, NULL);

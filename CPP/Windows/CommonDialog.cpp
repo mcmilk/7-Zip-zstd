@@ -31,7 +31,7 @@ public:
   void Finish() { *Buf = 0; }
 };
 
-bool CDoubleZeroStringListA::Add(LPCSTR s)
+bool CDoubleZeroStringListA::Add(LPCSTR s) throw()
 {
   unsigned len = MyStringLen(s) + 1;
   if (len >= Size)
@@ -54,7 +54,7 @@ public:
   void Finish() { *Buf = 0; }
 };
 
-bool CDoubleZeroStringListW::Add(LPCWSTR s)
+bool CDoubleZeroStringListW::Add(LPCWSTR s) throw()
 {
   unsigned len = MyStringLen(s) + 1;
   if (len >= Size)

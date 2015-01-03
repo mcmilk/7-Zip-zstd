@@ -118,6 +118,7 @@ API_FUNC_static_IsArc IsArc_Fat(const Byte *p, size_t size)
   CHeader h;
   return h.Parse(p) ? k_IsArc_Res_YES : k_IsArc_Res_NO;
 }
+}
 
 bool CHeader::Parse(const Byte *p)
 {
@@ -801,12 +802,12 @@ static const STATPROPSTG kArcProps[] =
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidVolumeName, VT_BSTR},
 
-  { L"FATs", kpidNumFats, VT_UI4},
+  { (LPOLESTR)L"FATs", kpidNumFats, VT_UI4},
   { NULL, kpidSectorSize, VT_UI4},
   { NULL, kpidId, VT_UI4},
-  // { L"OEM Name", kpidOemName, VT_BSTR},
-  // { L"Volume Name", kpidVolName, VT_BSTR},
-  // { L"File System Type", kpidFileSysType, VT_BSTR}
+  // { (LPOLESTR)L"OEM Name", kpidOemName, VT_BSTR},
+  // { (LPOLESTR)L"Volume Name", kpidVolName, VT_BSTR},
+  // { (LPOLESTR)L"File System Type", kpidFileSysType, VT_BSTR}
   // { NULL, kpidSectorsPerTrack, VT_UI4},
   // { NULL, kpidNumHeads, VT_UI4},
   // { NULL, kpidHiddenSectors, VT_UI4}

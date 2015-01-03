@@ -18,7 +18,7 @@ static UInt32 GetSubBits(UInt32 value, unsigned startPos, unsigned numBits) thro
 
 static inline unsigned GetSubBit(UInt32 v, unsigned n) { return (unsigned)(v >> n) & 1; }
 
-bool CMap32::Find(UInt32 key, UInt32 &valueRes) const
+bool CMap32::Find(UInt32 key, UInt32 &valueRes) const throw()
 {
   valueRes = (UInt32)(Int32)-1;
   if (Nodes.Size() == 0)

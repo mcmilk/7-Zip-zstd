@@ -318,6 +318,7 @@ API_FUNC_static_IsArc IsArc_Gz(const Byte *p, size_t size)
 
   return Is_Deflate(p, size);
 }
+}
 
 HRESULT CItem::ReadHeader(NDecoder::CCOMCoder *stream)
 {

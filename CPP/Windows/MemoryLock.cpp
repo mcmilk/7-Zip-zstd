@@ -8,7 +8,7 @@ namespace NSecurity {
 #ifndef UNDER_CE
 
 #ifdef _UNICODE
-#define MY_FUNC_SELECT(f) :: ## f
+#define MY_FUNC_SELECT(f) :: f
 #else
 #define MY_FUNC_SELECT(f) my_ ## f
 extern "C" {

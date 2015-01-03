@@ -7,7 +7,7 @@
 namespace NWindows {
 namespace NMemory {
 
-bool CGlobal::Alloc(UINT flags, SIZE_T size)
+bool CGlobal::Alloc(UINT flags, SIZE_T size) throw()
 {
   HGLOBAL newBlock = ::GlobalAlloc(flags, size);
   if (newBlock == NULL)
@@ -16,7 +16,7 @@ bool CGlobal::Alloc(UINT flags, SIZE_T size)
   return true;
 }
 
-bool CGlobal::Free()
+bool CGlobal::Free() throw()
 {
   if (_global == NULL)
     return true;
@@ -24,7 +24,7 @@ bool CGlobal::Free()
   return (_global == NULL);
 }
 
-bool CGlobal::ReAlloc(SIZE_T size)
+bool CGlobal::ReAlloc(SIZE_T size) throw()
 {
   HGLOBAL newBlock = ::GlobalReAlloc(_global, size, GMEM_MOVEABLE);
   if (newBlock == NULL)

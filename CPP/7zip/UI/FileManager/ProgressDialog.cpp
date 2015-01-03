@@ -54,7 +54,7 @@ bool CProgressDialog::OnInit()
   _dialogCreatedEvent.Set();
 
   #ifdef LANG
-  LangSetDlgItemsText(*this, NULL, 0);
+  LangSetDlgItems(*this, NULL, 0);
   #endif
 
   m_ProgressBar.Attach(GetItem(IDC_PROGRESS1));

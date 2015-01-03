@@ -19,7 +19,7 @@ static SRes CompressProgress(void *pp, UInt64 inSize, UInt64 outSize) throw()
   return (SRes)p->Res;
 }
 
-CCompressProgressWrap::CCompressProgressWrap(ICompressProgressInfo *progress)
+CCompressProgressWrap::CCompressProgressWrap(ICompressProgressInfo *progress) throw()
 {
   p.Progress = CompressProgress;
   Progress = progress;
@@ -69,14 +69,14 @@ static size_t MyWrite(void *object, const void *data, size_t size) throw()
   return size;
 }
 
-CSeqInStreamWrap::CSeqInStreamWrap(ISequentialInStream *stream)
+CSeqInStreamWrap::CSeqInStreamWrap(ISequentialInStream *stream) throw()
 {
   p.Read = MyRead;
   Stream = stream;
   Processed = 0;
 }
 
-CSeqOutStreamWrap::CSeqOutStreamWrap(ISequentialOutStream *stream)
+CSeqOutStreamWrap::CSeqOutStreamWrap(ISequentialOutStream *stream) throw()
 {
   p.Write = MyWrite;
   Stream = stream;
@@ -84,7 +84,7 @@ CSeqOutStreamWrap::CSeqOutStreamWrap(ISequentialOutStream *stream)
   Processed = 0;
 }
 
-HRESULT SResToHRESULT(SRes res)
+HRESULT SResToHRESULT(SRes res) throw()
 {
   switch(res)
   {
@@ -124,7 +124,7 @@ static SRes InStreamWrap_Seek(void *pp, Int64 *offset, ESzSeek origin) throw()
   return (p->Res == S_OK) ? SZ_OK : SZ_ERROR_READ;
 }
 
-CSeekInStreamWrap::CSeekInStreamWrap(IInStream *stream)
+CSeekInStreamWrap::CSeekInStreamWrap(IInStream *stream) throw()
 {
   Stream = stream;
   p.Read = InStreamWrap_Read;
@@ -135,13 +135,13 @@ CSeekInStreamWrap::CSeekInStreamWrap(IInStream *stream)
 
 /* ---------- CByteInBufWrap ---------- */
 
-void CByteInBufWrap::Free()
+void CByteInBufWrap::Free() throw()
 {
   ::MidFree(Buf);
   Buf = 0;
 }
 
-bool CByteInBufWrap::Alloc(UInt32 size)
+bool CByteInBufWrap::Alloc(UInt32 size) throw()
 {
   if (Buf == 0 || size != Size)
   {
@@ -152,7 +152,7 @@ bool CByteInBufWrap::Alloc(UInt32 size)
   return (Buf != 0);
 }
 
-Byte CByteInBufWrap::ReadByteFromNewBlock()
+Byte CByteInBufWrap::ReadByteFromNewBlock() throw()
 {
   if (Res == S_OK)
   {
@@ -184,13 +184,13 @@ CByteInBufWrap::CByteInBufWrap(): Buf(0)
 
 /* ---------- CByteOutBufWrap ---------- */
 
-void CByteOutBufWrap::Free()
+void CByteOutBufWrap::Free() throw()
 {
   ::MidFree(Buf);
   Buf = 0;
 }
 
-bool CByteOutBufWrap::Alloc(size_t size)
+bool CByteOutBufWrap::Alloc(size_t size) throw()
 {
   if (Buf == 0 || size != Size)
   {
@@ -201,7 +201,7 @@ bool CByteOutBufWrap::Alloc(size_t size)
   return (Buf != 0);
 }
 
-HRESULT CByteOutBufWrap::Flush()
+HRESULT CByteOutBufWrap::Flush() throw()
 {
   if (Res == S_OK)
   {
@@ -224,7 +224,7 @@ static void Wrap_WriteByte(void *pp, Byte b) throw()
     p->Flush();
 }
 
-CByteOutBufWrap::CByteOutBufWrap(): Buf(0)
+CByteOutBufWrap::CByteOutBufWrap() throw(): Buf(0)
 {
   p.Write = Wrap_WriteByte;
 }

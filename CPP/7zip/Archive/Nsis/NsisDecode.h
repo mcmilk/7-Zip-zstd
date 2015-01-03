@@ -63,7 +63,7 @@ public:
   }
 
 
-  HRESULT CDecoder::SetToPos(UInt64 pos, ICompressProgressInfo *progress); // for solid
+  HRESULT SetToPos(UInt64 pos, ICompressProgressInfo *progress); // for solid
   HRESULT Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unpackSize,
       ISequentialOutStream *realOutStream, ICompressProgressInfo *progress,
       UInt32 &packSizeRes, UInt32 &unpackSizeRes);

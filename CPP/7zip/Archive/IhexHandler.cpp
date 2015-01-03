@@ -219,6 +219,7 @@ API_FUNC_static_IsArc IsArc_Ihex(const Byte *p, size_t size)
   
   return k_IsArc_Res_YES;
 }
+}
 
 STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *)
 {

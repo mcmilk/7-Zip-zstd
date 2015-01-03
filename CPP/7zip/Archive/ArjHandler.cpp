@@ -160,6 +160,7 @@ API_FUNC_static_IsArc IsArc_Arj(const Byte *p, size_t size)
 
   return k_IsArc_Res_YES;
 }
+}
 
 static HRESULT ReadString(const Byte *p, unsigned &size, AString &res)
 {

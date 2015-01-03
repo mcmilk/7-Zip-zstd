@@ -9,7 +9,7 @@
 namespace NWindows {
 namespace NCOM {
 
-HRESULT PropVarEm_Alloc_Bstr(PROPVARIANT *p, unsigned numChars)
+HRESULT PropVarEm_Alloc_Bstr(PROPVARIANT *p, unsigned numChars) throw()
 {
   p->bstrVal = ::SysAllocStringLen(0, numChars);
   if (!p->bstrVal)
@@ -22,10 +22,10 @@ HRESULT PropVarEm_Alloc_Bstr(PROPVARIANT *p, unsigned numChars)
   return S_OK;
 }
 
-HRESULT PropVarEm_Set_Str(PROPVARIANT *p, const char *s)
+HRESULT PropVarEm_Set_Str(PROPVARIANT *p, const char *s) throw()
 {
   UINT len = (UINT)strlen(s);
-  p->bstrVal = ::SysAllocStringByteLen(0, (UINT)len * sizeof(OLECHAR));
+  p->bstrVal = ::SysAllocStringLen(0, len);
   if (!p->bstrVal)
   {
     p->vt = VT_ERROR;
@@ -88,7 +88,7 @@ CPropVariant& CPropVariant::operator=(LPCOLESTR lpszSrc)
   vt = VT_BSTR;
   wReserved1 = 0;
   bstrVal = ::SysAllocString(lpszSrc);
-  if (bstrVal == NULL && lpszSrc != NULL)
+  if (!bstrVal && lpszSrc)
   {
     throw kMemException;
     // vt = VT_ERROR;
@@ -103,8 +103,8 @@ CPropVariant& CPropVariant::operator=(const char *s)
   vt = VT_BSTR;
   wReserved1 = 0;
   UINT len = (UINT)strlen(s);
-  bstrVal = ::SysAllocStringByteLen(0, (UINT)len * sizeof(OLECHAR));
-  if (bstrVal == NULL)
+  bstrVal = ::SysAllocStringLen(0, len);
+  if (!bstrVal)
   {
     throw kMemException;
     // vt = VT_ERROR;
@@ -118,7 +118,7 @@ CPropVariant& CPropVariant::operator=(const char *s)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(bool bSrc)
+CPropVariant& CPropVariant::operator=(bool bSrc) throw()
 {
   if (vt != VT_BOOL)
   {
@@ -136,7 +136,7 @@ BSTR CPropVariant::AllocBstr(unsigned numChars)
   vt = VT_BSTR;
   wReserved1 = 0;
   bstrVal = ::SysAllocStringLen(0, numChars);
-  if (bstrVal == NULL)
+  if (!bstrVal)
   {
     throw kMemException;
     // vt = VT_ERROR;
@@ -146,7 +146,7 @@ BSTR CPropVariant::AllocBstr(unsigned numChars)
 }
 
 #define SET_PROP_FUNC(type, id, dest) \
-  CPropVariant& CPropVariant::operator=(type value) \
+  CPropVariant& CPropVariant::operator=(type value) throw() \
   { if (vt != id) { InternalClear(); vt = id; } \
     dest = value; return *this; }
 
@@ -191,14 +191,14 @@ HRESULT PropVariant_Clear(PROPVARIANT *prop) throw()
   // PropVariantClear can clear VT_BLOB.
 }
 
-HRESULT CPropVariant::Clear()
+HRESULT CPropVariant::Clear() throw()
 {
   if (vt == VT_EMPTY)
     return S_OK;
   return PropVariant_Clear(this);
 }
 
-HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
+HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc) throw()
 {
   ::VariantClear((tagVARIANT *)this);
   switch(pSrc->vt)
@@ -226,7 +226,7 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
 }
 
 
-HRESULT CPropVariant::Attach(PROPVARIANT *pSrc)
+HRESULT CPropVariant::Attach(PROPVARIANT *pSrc) throw()
 {
   HRESULT hr = Clear();
   if (FAILED(hr))
@@ -236,7 +236,7 @@ HRESULT CPropVariant::Attach(PROPVARIANT *pSrc)
   return S_OK;
 }
 
-HRESULT CPropVariant::Detach(PROPVARIANT *pDest)
+HRESULT CPropVariant::Detach(PROPVARIANT *pDest) throw()
 {
   if (pDest->vt != VT_EMPTY)
   {
@@ -249,7 +249,7 @@ HRESULT CPropVariant::Detach(PROPVARIANT *pDest)
   return S_OK;
 }
 
-HRESULT CPropVariant::InternalClear()
+HRESULT CPropVariant::InternalClear() throw()
 {
   if (vt == VT_EMPTY)
     return S_OK;
@@ -274,7 +274,7 @@ void CPropVariant::InternalCopy(const PROPVARIANT *pSrc)
   }
 }
 
-int CPropVariant::Compare(const CPropVariant &a)
+int CPropVariant::Compare(const CPropVariant &a) throw()
 {
   if (vt != a.vt)
     return MyCompare(vt, a.vt);

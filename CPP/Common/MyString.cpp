@@ -29,7 +29,7 @@ inline const char* MyStringGetNextCharPointer(const char *p) throw()
 }
 */
 
-int FindCharPosInString(const char *s, char c)
+int FindCharPosInString(const char *s, char c) throw()
 {
   for (const char *p = s;; p++)
   {
@@ -41,7 +41,7 @@ int FindCharPosInString(const char *s, char c)
   }
 }
 
-int FindCharPosInString(const wchar_t *s, wchar_t c)
+int FindCharPosInString(const wchar_t *s, wchar_t c) throw()
 {
   for (const wchar_t *p = s;; p++)
   {
@@ -65,7 +65,7 @@ void MyStringUpper_Ascii(wchar_t *s)
 }
 */
 
-void MyStringLower_Ascii(wchar_t *s)
+void MyStringLower_Ascii(wchar_t *s) throw()
 {
   for (;;)
   {
@@ -91,7 +91,7 @@ void MyStringLower_Ascii(wchar_t *s)
 // char * MyStringUpper(char *s) { return CharUpperA(s); }
 // char * MyStringLower(char *s) { return CharLowerA(s); }
 
-wchar_t MyCharUpper_WIN(wchar_t c)
+wchar_t MyCharUpper_WIN(wchar_t c) throw()
 {
   wchar_t *res = CharUpperW((LPWSTR)(UINT_PTR)(unsigned)c);
   if (res != 0 || ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
@@ -159,7 +159,7 @@ wchar_t * MyStringLower(wchar_t *s)
 
 #endif
 
-bool IsString1PrefixedByString2(const char *s1, const char *s2)
+bool IsString1PrefixedByString2(const char *s1, const char *s2) throw()
 {
   for (;;)
   {
@@ -168,7 +168,7 @@ bool IsString1PrefixedByString2(const char *s1, const char *s2)
   }
 }
 
-bool StringsAreEqualNoCase(const wchar_t *s1, const wchar_t *s2)
+bool StringsAreEqualNoCase(const wchar_t *s1, const wchar_t *s2) throw()
 {
   for (;;)
   {
@@ -181,7 +181,7 @@ bool StringsAreEqualNoCase(const wchar_t *s1, const wchar_t *s2)
 
 // ---------- ASCII ----------
 
-bool AString::IsPrefixedBy_Ascii_NoCase(const char *s) const
+bool AString::IsPrefixedBy_Ascii_NoCase(const char *s) const throw()
 {
   const char *s1 = _chars;
   for (;;)
@@ -196,7 +196,7 @@ bool AString::IsPrefixedBy_Ascii_NoCase(const char *s) const
   }
 }
 
-bool UString::IsPrefixedBy_Ascii_NoCase(const char *s) const
+bool UString::IsPrefixedBy_Ascii_NoCase(const char *s) const throw()
 {
   const wchar_t *s1 = _chars;
   for (;;)
@@ -205,13 +205,12 @@ bool UString::IsPrefixedBy_Ascii_NoCase(const char *s) const
     if (c2 == 0)
       return true;
     wchar_t c1 = *s1++;
-    if (MyCharLower_Ascii(c1) !=
-        MyCharLower_Ascii(c2))
+    if (MyCharLower_Ascii(c1) != (unsigned char)MyCharLower_Ascii(c2))
       return false;
   }
 }
 
-bool StringsAreEqual_Ascii(const wchar_t *u, const char *a)
+bool StringsAreEqual_Ascii(const wchar_t *u, const char *a) throw()
 {
   for (;;)
   {
@@ -225,7 +224,7 @@ bool StringsAreEqual_Ascii(const wchar_t *u, const char *a)
   }
 }
 
-bool StringsAreEqualNoCase_Ascii(const char *s1, const char *s2)
+bool StringsAreEqualNoCase_Ascii(const char *s1, const char *s2) throw()
 {
   for (;;)
   {
@@ -238,7 +237,7 @@ bool StringsAreEqualNoCase_Ascii(const char *s1, const char *s2)
   }
 }
 
-bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const wchar_t *s2)
+bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const wchar_t *s2) throw()
 {
   for (;;)
   {
@@ -251,20 +250,20 @@ bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const wchar_t *s2)
   }
 }
 
-bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const char *s2)
+bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const char *s2) throw()
 {
   for (;;)
   {
     wchar_t c1 = *s1++;
     char c2 = *s2++;
-    if (c1 != c2 && (c1 > 0x7F || MyCharLower_Ascii(c1) != MyCharLower_Ascii(c2)))
+    if (c1 != (unsigned char)c2 && (c1 > 0x7F || MyCharLower_Ascii(c1) != (unsigned char)MyCharLower_Ascii(c2)))
       return false;
     if (c1 == 0)
       return true;
   }
 }
 
-bool IsString1PrefixedByString2(const wchar_t *s1, const wchar_t *s2)
+bool IsString1PrefixedByString2(const wchar_t *s1, const wchar_t *s2) throw()
 {
   for (;;)
   {
@@ -274,7 +273,7 @@ bool IsString1PrefixedByString2(const wchar_t *s1, const wchar_t *s2)
 }
 
 // NTFS order: uses upper case
-int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
+int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2) throw()
 {
   for (;;)
   {
@@ -291,7 +290,7 @@ int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2)
   }
 }
 
-int MyStringCompareNoCase_N(const wchar_t *s1, const wchar_t *s2, unsigned num)
+int MyStringCompareNoCase_N(const wchar_t *s1, const wchar_t *s2, unsigned num) throw()
 {
   for (; num != 0; num--)
   {
@@ -509,7 +508,7 @@ void AString::SetFrom(const char *s, unsigned len) // no check
   _len = len;
 }
 
-int AString::Find(const AString &s, unsigned startIndex) const
+int AString::Find(const AString &s, unsigned startIndex) const throw()
 {
   if (s.IsEmpty())
     return startIndex;
@@ -525,7 +524,7 @@ int AString::Find(const AString &s, unsigned startIndex) const
   return -1;
 }
 
-int AString::ReverseFind(char c) const
+int AString::ReverseFind(char c) const throw()
 {
   if (_len == 0)
     return -1;
@@ -540,7 +539,7 @@ int AString::ReverseFind(char c) const
   }
 }
 
-void AString::TrimLeft()
+void AString::TrimLeft() throw()
 {
   const char *p = _chars;
   for (;; p++)
@@ -557,7 +556,7 @@ void AString::TrimLeft()
   }
 }
 
-void AString::TrimRight()
+void AString::TrimRight() throw()
 {
   const char *p = _chars;
   int i;
@@ -615,7 +614,7 @@ void AString::Insert(unsigned index, const AString &s)
   }
 }
 
-void AString::RemoveChar(char ch)
+void AString::RemoveChar(char ch) throw()
 {
   int pos = Find(ch);
   if (pos < 0)
@@ -635,7 +634,7 @@ void AString::RemoveChar(char ch)
 }
 
 // !!!!!!!!!!!!!!! test it if newChar = '\0'
-void AString::Replace(char oldChar, char newChar)
+void AString::Replace(char oldChar, char newChar) throw()
 {
   if (oldChar == newChar)
     return; // 0;
@@ -656,7 +655,7 @@ void AString::Replace(char oldChar, char newChar)
 void AString::Replace(const AString &oldString, const AString &newString)
 {
   if (oldString.IsEmpty())
-    return;  //  0;
+    return; // 0;
   if (oldString == newString)
     return; // 0;
   unsigned oldLen = oldString.Len();
@@ -676,13 +675,13 @@ void AString::Replace(const AString &oldString, const AString &newString)
   // return number;
 }
 
-void AString::Delete(unsigned index)
+void AString::Delete(unsigned index) throw()
 {
   MoveItems(index, index + 1);
   _len--;
 }
 
-void AString::Delete(unsigned index, unsigned count)
+void AString::Delete(unsigned index, unsigned count) throw()
 {
   if (index + count > _len)
     count = _len - index;
@@ -693,7 +692,7 @@ void AString::Delete(unsigned index, unsigned count)
   }
 }
 
-void AString::DeleteFrontal(unsigned num)
+void AString::DeleteFrontal(unsigned num) throw()
 {
   if (num != 0)
   {
@@ -973,7 +972,7 @@ void UString::AddAsciiStr(const char *s)
 
 
 
-int UString::Find(const UString &s, unsigned startIndex) const
+int UString::Find(const UString &s, unsigned startIndex) const throw()
 {
   if (s.IsEmpty())
     return startIndex;
@@ -989,7 +988,7 @@ int UString::Find(const UString &s, unsigned startIndex) const
   return -1;
 }
 
-int UString::ReverseFind(wchar_t c) const
+int UString::ReverseFind(wchar_t c) const throw()
 {
   if (_len == 0)
     return -1;
@@ -1004,7 +1003,7 @@ int UString::ReverseFind(wchar_t c) const
   }
 }
 
-void UString::TrimLeft()
+void UString::TrimLeft() throw()
 {
   const wchar_t *p = _chars;
   for (;; p++)
@@ -1021,7 +1020,7 @@ void UString::TrimLeft()
   }
 }
 
-void UString::TrimRight()
+void UString::TrimRight() throw()
 {
   const wchar_t *p = _chars;
   int i;
@@ -1079,7 +1078,7 @@ void UString::Insert(unsigned index, const UString &s)
   }
 }
 
-void UString::RemoveChar(wchar_t ch)
+void UString::RemoveChar(wchar_t ch) throw()
 {
   int pos = Find(ch);
   if (pos < 0)
@@ -1099,7 +1098,7 @@ void UString::RemoveChar(wchar_t ch)
 }
 
 // !!!!!!!!!!!!!!! test it if newChar = '\0'
-void UString::Replace(wchar_t oldChar, wchar_t newChar)
+void UString::Replace(wchar_t oldChar, wchar_t newChar) throw()
 {
   if (oldChar == newChar)
     return; // 0;
@@ -1120,7 +1119,7 @@ void UString::Replace(wchar_t oldChar, wchar_t newChar)
 void UString::Replace(const UString &oldString, const UString &newString)
 {
   if (oldString.IsEmpty())
-    return;  //  0;
+    return; // 0;
   if (oldString == newString)
     return; // 0;
   unsigned oldLen = oldString.Len();
@@ -1140,13 +1139,13 @@ void UString::Replace(const UString &oldString, const UString &newString)
   // return number;
 }
 
-void UString::Delete(unsigned index)
+void UString::Delete(unsigned index) throw()
 {
   MoveItems(index, index + 1);
   _len--;
 }
 
-void UString::Delete(unsigned index, unsigned count)
+void UString::Delete(unsigned index, unsigned count) throw()
 {
   if (index + count > _len)
     count = _len - index;
@@ -1157,7 +1156,7 @@ void UString::Delete(unsigned index, unsigned count)
   }
 }
 
-void UString::DeleteFrontal(unsigned num)
+void UString::DeleteFrontal(unsigned num) throw()
 {
   if (num != 0)
   {

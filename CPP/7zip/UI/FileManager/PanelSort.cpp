@@ -97,7 +97,7 @@ void CPanel::SetSortRawStatus()
 
 int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
-  if (lpData == NULL)
+  if (lpData == 0)
     return 0;
   CPanel *panel = (CPanel*)lpData;
   
@@ -189,7 +189,7 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 
 int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
-  if (lpData == NULL) return 0;
+  if (lpData == 0) return 0;
   if (lParam1 == kParentIndex) return -1;
   if (lParam2 == kParentIndex) return 1;
 

@@ -152,7 +152,9 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
   
   int _numMessages;
 
+  #ifdef __ITaskbarList3_INTERFACE_DEFINED__
   CMyComPtr<ITaskbarList3> _taskbarList;
+  #endif
   HWND _hwndForTaskbar;
 
   UInt32 _prevTime;
@@ -190,11 +192,13 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
   bool _externalCloseMessageWasReceived;
 
 
+  #ifdef __ITaskbarList3_INTERFACE_DEFINED__
   void SetTaskbarProgressState(TBPFLAG tbpFlags)
   {
     if (_taskbarList && _hwndForTaskbar)
       _taskbarList->SetProgressState(_hwndForTaskbar, tbpFlags);
   }
+  #endif
   void SetTaskbarProgressState();
 
   void UpdateStatInfo(bool showAll);

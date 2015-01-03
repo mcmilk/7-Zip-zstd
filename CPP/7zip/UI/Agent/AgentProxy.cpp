@@ -492,8 +492,8 @@ HRESULT CProxyArchive2::Load(const CArc &arc, IProgress *progress)
     {
       file.Name = (const wchar_t *)p;
       file.NameSize = 0;
-      if (size >= 2)
-        file.NameSize = size / 2 - 1;
+      if (size >= sizeof(wchar_t))
+        file.NameSize = size / sizeof(wchar_t) - 1;
     }
     else
     #endif

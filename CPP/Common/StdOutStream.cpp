@@ -18,7 +18,7 @@ extern int g_CodePage;
 CStdOutStream g_StdOut(stdout);
 CStdOutStream g_StdErr(stderr);
 
-bool CStdOutStream::Open(const char *fileName)
+bool CStdOutStream::Open(const char *fileName) throw()
 {
   Close();
   _stream = fopen(fileName, kFileOpenMode);
@@ -26,7 +26,7 @@ bool CStdOutStream::Open(const char *fileName)
   return _streamIsOpen;
 }
 
-bool CStdOutStream::Close()
+bool CStdOutStream::Close() throw()
 {
   if (!_streamIsOpen)
     return true;
@@ -37,26 +37,14 @@ bool CStdOutStream::Close()
   return true;
 }
 
-bool CStdOutStream::Flush()
+bool CStdOutStream::Flush() throw()
 {
   return (fflush(_stream) == 0);
 }
 
-CStdOutStream & CStdOutStream::operator<<(CStdOutStream & (*func)(CStdOutStream &))
-{
-  (*func)(*this);
-  return *this;
-}
-
-CStdOutStream & endl(CStdOutStream & outStream)
+CStdOutStream & endl(CStdOutStream & outStream) throw()
 {
   return outStream << kNewLineChar;
-}
-
-CStdOutStream & CStdOutStream::operator<<(const char *s)
-{
-  fputs(s, _stream);
-  return *this;
 }
 
 CStdOutStream & CStdOutStream::operator<<(const wchar_t *s)
@@ -68,12 +56,11 @@ CStdOutStream & CStdOutStream::operator<<(const wchar_t *s)
   if (codePage == CP_UTF8)
     ConvertUnicodeToUTF8(s, dest);
   else
-    dest = UnicodeStringToMultiByte(s, (UINT)codePage);
-  *this << (const char *)dest;
-  return *this;
+    UnicodeStringToMultiByte2(dest, s, (UINT)codePage);
+  return operator<<((const char *)dest);
 }
 
-void CStdOutStream::PrintUString(const UString &s, AString &temp)
+void StdOut_Convert_UString_to_AString(const UString &s, AString &temp)
 {
   int codePage = g_CodePage;
   if (codePage == -1)
@@ -82,37 +69,36 @@ void CStdOutStream::PrintUString(const UString &s, AString &temp)
     ConvertUnicodeToUTF8(s, temp);
   else
     UnicodeStringToMultiByte2(temp, s, (UINT)codePage);
+}
+
+void CStdOutStream::PrintUString(const UString &s, AString &temp)
+{
+  StdOut_Convert_UString_to_AString(s, temp);
   *this << (const char *)temp;
 }
 
-CStdOutStream & CStdOutStream::operator<<(char c)
-{
-  fputc(c, _stream);
-  return *this;
-}
-
-CStdOutStream & CStdOutStream::operator<<(Int32 number)
+CStdOutStream & CStdOutStream::operator<<(Int32 number) throw()
 {
   char s[32];
   ConvertInt64ToString(number, s);
   return operator<<(s);
 }
 
-CStdOutStream & CStdOutStream::operator<<(Int64 number)
+CStdOutStream & CStdOutStream::operator<<(Int64 number) throw()
 {
   char s[32];
   ConvertInt64ToString(number, s);
   return operator<<(s);
 }
 
-CStdOutStream & CStdOutStream::operator<<(UInt32 number)
+CStdOutStream & CStdOutStream::operator<<(UInt32 number) throw()
 {
   char s[16];
   ConvertUInt32ToString(number, s);
   return operator<<(s);
 }
 
-CStdOutStream & CStdOutStream::operator<<(UInt64 number)
+CStdOutStream & CStdOutStream::operator<<(UInt64 number) throw()
 {
   char s[32];
   ConvertUInt64ToString(number, s);

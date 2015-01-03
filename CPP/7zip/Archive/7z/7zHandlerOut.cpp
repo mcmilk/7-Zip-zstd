@@ -301,10 +301,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       const CFileItem &fi = db->Files[ui.IndexInArchive];
       if (!ui.NewProps)
       {
-        NCOM::CPropVariant prop;
-        RINOK(_db.GetPath(ui.IndexInArchive, &prop));
-        if (prop.vt == VT_BSTR)
-          name = prop.bstrVal;
+        _db.GetPath(ui.IndexInArchive, name);
       }
       ui.IsDir = fi.IsDir;
       ui.Size = fi.Size;

@@ -342,9 +342,9 @@ static const STATPROPSTG kProps[] =
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidFileSystem, VT_BSTR},
   { NULL, kpidOffset, VT_UI8},
-  { L"Primary", kpidPrimary, VT_BOOL},
-  { L"Begin CHS", kpidBegChs, VT_BSTR},
-  { L"End CHS", kpidEndChs, VT_BSTR}
+  { (LPOLESTR)L"Primary", kpidPrimary, VT_BOOL},
+  { (LPOLESTR)L"Begin CHS", kpidBegChs, VT_BSTR},
+  { (LPOLESTR)L"End CHS", kpidEndChs, VT_BSTR}
 };
 
 IMP_IInArchive_Props_WITH_NAME

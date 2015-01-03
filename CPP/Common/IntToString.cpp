@@ -11,12 +11,12 @@
   while (i != 0) { i--; *s++ = temp[i]; } \
   *s = 0;
 
-void ConvertUInt32ToString(UInt32 val, char *s)
+void ConvertUInt32ToString(UInt32 val, char *s) throw()
 {
   CONVERT_INT_TO_STR(char, 16);
 }
 
-void ConvertUInt64ToString(UInt64 val, char *s)
+void ConvertUInt64ToString(UInt64 val, char *s) throw()
 {
   if (val <= (UInt32)0xFFFFFFFF)
   {
@@ -26,7 +26,7 @@ void ConvertUInt64ToString(UInt64 val, char *s)
   CONVERT_INT_TO_STR(char, 24);
 }
 
-void ConvertUInt64ToOct(UInt64 val, char *s)
+void ConvertUInt64ToOct(UInt64 val, char *s) throw()
 {
   UInt64 v = val;
   unsigned i;
@@ -46,7 +46,7 @@ void ConvertUInt64ToOct(UInt64 val, char *s)
   while (i);
 }
 
-void ConvertUInt32ToHex(UInt32 val, char *s)
+void ConvertUInt32ToHex(UInt32 val, char *s) throw()
 {
   UInt32 v = val;
   unsigned i;
@@ -66,7 +66,7 @@ void ConvertUInt32ToHex(UInt32 val, char *s)
   while (i);
 }
 
-void ConvertUInt64ToHex(UInt64 val, char *s)
+void ConvertUInt64ToHex(UInt64 val, char *s) throw()
 {
   UInt64 v = val;
   unsigned i;
@@ -86,7 +86,7 @@ void ConvertUInt64ToHex(UInt64 val, char *s)
   while (i);
 }
 
-void ConvertUInt32ToHex8Digits(UInt32 val, char *s)
+void ConvertUInt32ToHex8Digits(UInt32 val, char *s) throw()
 {
   s[8] = 0;
   for (int i = 7; i >= 0; i--)
@@ -110,12 +110,12 @@ void ConvertUInt32ToHex8Digits(UInt32 val, wchar_t *s)
 }
 */
 
-void ConvertUInt32ToString(UInt32 val, wchar_t *s)
+void ConvertUInt32ToString(UInt32 val, wchar_t *s) throw()
 {
   CONVERT_INT_TO_STR(wchar_t, 16);
 }
 
-void ConvertUInt64ToString(UInt64 val, wchar_t *s)
+void ConvertUInt64ToString(UInt64 val, wchar_t *s) throw()
 {
   if (val <= (UInt32)0xFFFFFFFF)
   {
@@ -125,7 +125,7 @@ void ConvertUInt64ToString(UInt64 val, wchar_t *s)
   CONVERT_INT_TO_STR(wchar_t, 24);
 }
 
-void ConvertInt64ToString(Int64 val, char *s)
+void ConvertInt64ToString(Int64 val, char *s) throw()
 {
   if (val < 0)
   {
@@ -135,7 +135,7 @@ void ConvertInt64ToString(Int64 val, char *s)
   ConvertUInt64ToString(val, s);
 }
 
-void ConvertInt64ToString(Int64 val, wchar_t *s)
+void ConvertInt64ToString(Int64 val, wchar_t *s) throw()
 {
   if (val < 0)
   {

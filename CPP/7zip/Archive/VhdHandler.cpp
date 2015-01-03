@@ -612,10 +612,10 @@ static const STATPROPSTG kArcProps[] =
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidClusterSize, VT_UI8},
   { NULL, kpidMethod, VT_BSTR},
-  { L"Parent", kpidParent, VT_BSTR},
+  { (LPOLESTR)L"Parent", kpidParent, VT_BSTR},
   { NULL, kpidCreatorApp, VT_BSTR},
   { NULL, kpidHostOS, VT_BSTR},
-  { L"Saved State", kpidSavedState, VT_BOOL},
+  { (LPOLESTR)L"Saved State", kpidSavedState, VT_BOOL},
   { NULL, kpidId, VT_BSTR}
  };
 

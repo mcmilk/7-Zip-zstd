@@ -11,7 +11,7 @@
 static const unsigned kNumCodecsMax = 48;
 unsigned g_NumCodecs = 0;
 const CCodecInfo *g_Codecs[kNumCodecsMax];
-void RegisterCodec(const CCodecInfo *codecInfo)
+void RegisterCodec(const CCodecInfo *codecInfo) throw()
 {
   if (g_NumCodecs < kNumCodecsMax)
     g_Codecs[g_NumCodecs++] = codecInfo;

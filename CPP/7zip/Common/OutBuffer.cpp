@@ -6,7 +6,7 @@
 
 #include "OutBuffer.h"
 
-bool COutBuffer::Create(UInt32 bufSize)
+bool COutBuffer::Create(UInt32 bufSize) throw()
 {
   const UInt32 kMinBlockSize = 1;
   if (bufSize < kMinBlockSize)
@@ -19,13 +19,13 @@ bool COutBuffer::Create(UInt32 bufSize)
   return (_buf != 0);
 }
 
-void COutBuffer::Free()
+void COutBuffer::Free() throw()
 {
   ::MidFree(_buf);
   _buf = 0;
 }
 
-void COutBuffer::Init()
+void COutBuffer::Init() throw()
 {
   _streamPos = 0;
   _limitPos = _bufSize;
@@ -37,7 +37,7 @@ void COutBuffer::Init()
   #endif
 }
 
-UInt64 COutBuffer::GetProcessedSize() const
+UInt64 COutBuffer::GetProcessedSize() const throw()
 {
   UInt64 res = _processedSize + _pos - _streamPos;
   if (_streamPos > _pos)
@@ -46,7 +46,7 @@ UInt64 COutBuffer::GetProcessedSize() const
 }
 
 
-HRESULT COutBuffer::FlushPart()
+HRESULT COutBuffer::FlushPart() throw()
 {
   // _streamPos < _bufSize
   UInt32 size = (_streamPos >= _pos) ? (_bufSize - _streamPos) : (_pos - _streamPos);
@@ -83,7 +83,7 @@ HRESULT COutBuffer::FlushPart()
   return result;
 }
 
-HRESULT COutBuffer::Flush()
+HRESULT COutBuffer::Flush() throw()
 {
   #ifdef _NO_EXCEPTIONS
   if (ErrorCode != S_OK)

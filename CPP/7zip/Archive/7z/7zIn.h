@@ -111,7 +111,7 @@ struct CDatabase: public CFolders
   */
 
   CByteBuffer NamesBuf;
-  CObjArray<size_t> NameOffsets; // numFiles + 1, conatins offsets of UINt16 symbols.
+  CObjArray<size_t> NameOffsets; // numFiles + 1, offsets of utf-16 symbols
 
   /*
   void ClearSecure()
@@ -148,14 +148,15 @@ struct CDatabase: public CFolders
   bool IsItemAnti(unsigned index) const { return (index < IsAnti.Size() && IsAnti[index]); }
   // bool IsItemAux(unsigned index) const { return (index < IsAux.Size() && IsAux[index]); }
 
-  const wchar_t * GetName(unsigned index) const
+  const void * GetName(unsigned index) const
   {
     if (!NameOffsets || !NamesBuf)
       return NULL;
-    return (const wchar_t *)(const Byte *)NamesBuf + NameOffsets[index];
+    return (const void *)((const Byte *)NamesBuf + NameOffsets[index] * 2);
   };
 
-  HRESULT GetPath(unsigned index, PROPVARIANT *path) const;
+  void GetPath(unsigned index, UString &path) const;
+  HRESULT GetPath_Prop(unsigned index, PROPVARIANT *path) const throw();
 };
 
 struct CInArchiveInfo

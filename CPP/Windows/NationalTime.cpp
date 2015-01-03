@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include "Windows/NationalTime.h"
+#include "NationalTime.h"
 
 namespace NWindows {
 namespace NNational {

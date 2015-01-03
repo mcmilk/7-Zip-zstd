@@ -120,10 +120,10 @@ struct CItem
   UInt64 HeaderPos;
 
   bool IsBin() const { return Type == k_Type_BinLe || Type == k_Type_BinBe; }
-  bool IsCrcFormat() const { return Type == k_Type_HexCrc; };
+  bool IsCrcFormat() const { return Type == k_Type_HexCrc; }
   bool IsDir() const { return (Mode & 0170000) == 0040000; }
   bool IsTrailer() const { return strcmp(Name, kName_TRAILER) == 0; }
-  UInt64 GetDataPosition() const { return HeaderPos + HeaderSize; };
+  UInt64 GetDataPosition() const { return HeaderPos + HeaderSize; }
 };
 
 enum EErrorType
@@ -272,6 +272,7 @@ API_FUNC_static_IsArc IsArc_Cpio(const Byte *p, size_t size)
   if (nameSize == 0 || nameSize > kNameSizeMax)
     return k_IsArc_Res_NO;
   return k_IsArc_Res_YES;
+}
 }
 
 #define READ_STREAM(_dest_, _size_) \

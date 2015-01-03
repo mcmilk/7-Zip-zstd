@@ -65,14 +65,14 @@ void Create_BufInStream_WithNewBuf(const void *data, size_t size, ISequentialInS
   *stream = streamTemp.Detach();
 }
 
-void CByteDynBuffer::Free()
+void CByteDynBuffer::Free() throw()
 {
   free(_buf);
   _buf = 0;
   _capacity = 0;
 }
 
-bool CByteDynBuffer::EnsureCapacity(size_t cap)
+bool CByteDynBuffer::EnsureCapacity(size_t cap) throw()
 {
   if (cap <= _capacity)
     return true;
@@ -147,7 +147,7 @@ STDMETHODIMP CSequentialOutStreamSizeCount::Write(const void *data, UInt32 size,
 
 static const UInt64 kEmptyTag = (UInt64)(Int64)-1;
 
-void CCachedInStream::Free()
+void CCachedInStream::Free() throw()
 {
   MyFree(_tags);
   _tags = 0;
@@ -155,7 +155,7 @@ void CCachedInStream::Free()
   _data = 0;
 }
 
-bool CCachedInStream::Alloc(unsigned blockSizeLog, unsigned numBlocksLog)
+bool CCachedInStream::Alloc(unsigned blockSizeLog, unsigned numBlocksLog) throw()
 {
   unsigned sizeLog = blockSizeLog + numBlocksLog;
   if (sizeLog >= sizeof(size_t) * 8)
@@ -181,7 +181,7 @@ bool CCachedInStream::Alloc(unsigned blockSizeLog, unsigned numBlocksLog)
   return true;
 }
 
-void CCachedInStream::Init(UInt64 size)
+void CCachedInStream::Init(UInt64 size) throw()
 {
   _size = size;
   _pos = 0;

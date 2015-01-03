@@ -30,7 +30,7 @@ public:
   #endif
   bool SetPriorityClass(DWORD dwPriorityClass) { return BOOLToBool(::SetPriorityClass(_handle, dwPriorityClass)); }
   DWORD GetPriorityClass() { return ::GetPriorityClass(_handle); }
-  bool GetIoCounters(PIO_COUNTERS lpIoCounters ) { return BOOLToBool(::GetProcessIoCounters(_handle, lpIoCounters )); }
+  // bool GetIoCounters(PIO_COUNTERS lpIoCounters ) { return BOOLToBool(::GetProcessIoCounters(_handle, lpIoCounters )); }
 
   bool GetTimes(LPFILETIME creationTime, LPFILETIME exitTime, LPFILETIME kernelTime, LPFILETIME userTime)
     { return BOOLToBool(::GetProcessTimes(_handle, creationTime, exitTime, kernelTime, userTime)); }

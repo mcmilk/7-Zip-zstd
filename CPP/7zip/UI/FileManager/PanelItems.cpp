@@ -91,12 +91,12 @@ HRESULT CPanel::InitColumns()
 
   ReadListViewInfo();
 
-  PROPID sortID;
+  // PROPID sortID;
   /*
   if (_listViewInfo.SortIndex >= 0)
     sortID = _listViewInfo.Columns[_listViewInfo.SortIndex].PropID;
   */
-  sortID = _listViewInfo.SortID;
+  // sortID = _listViewInfo.SortID;
 
   _ascending = _listViewInfo.Ascending;
 

@@ -279,12 +279,12 @@ bool CReparseShortInfo::Parse(const Byte *p, size_t size)
   len -= 8;
   p += 8;
 
-  UInt32 Flags = 0;
+  // UInt32 Flags = 0;
   if (Tag == _my_IO_REPARSE_TAG_SYMLINK)
   {
     if (len < 4)
       return false;
-    Flags = Get32(p);
+    // Flags = Get32(p);
     len -= 4;
     p += 4;
   }

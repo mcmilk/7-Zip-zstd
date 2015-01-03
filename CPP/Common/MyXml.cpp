@@ -20,7 +20,7 @@ static bool IsSpaceChar(char c)
 
 #define SKIP_SPACES(s) while (IsSpaceChar(*s)) s++;
 
-int CXmlItem::FindProp(const AString &propName) const
+int CXmlItem::FindProp(const AString &propName) const throw()
 {
   FOR_VECTOR (i, Props)
     if (Props[i].Name == propName)
@@ -36,12 +36,12 @@ AString CXmlItem::GetPropVal(const AString &propName) const
   return AString();
 }
 
-bool CXmlItem::IsTagged(const AString &tag) const
+bool CXmlItem::IsTagged(const AString &tag) const throw()
 {
   return (IsTag && Name == tag);
 }
 
-int CXmlItem::FindSubTag(const AString &tag) const
+int CXmlItem::FindSubTag(const AString &tag) const throw()
 {
   FOR_VECTOR (i, SubItems)
     if (SubItems[i].IsTagged(tag))
@@ -60,7 +60,7 @@ AString CXmlItem::GetSubString() const
   return AString();
 }
 
-const AString * CXmlItem::GetSubStringPtr() const
+const AString * CXmlItem::GetSubStringPtr() const throw()
 {
   if (SubItems.Size() == 1)
   {
@@ -192,19 +192,17 @@ const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
   }
 }
 
-static bool SkipHeader(const AString &s, int &pos, const char *startString, const char *endString)
+static const char * SkipHeader(const char *s, const char *startString, const char *endString)
 {
-  while (IsSpaceChar(s[pos]))
-    pos++;
-  if (IsString1PrefixedByString2(s.Ptr(pos), startString))
+  SKIP_SPACES(s);
+  if (IsString1PrefixedByString2(s, startString))
   {
-    const AString es = endString;
-    pos = s.Find(es, pos);
-    if (pos < 0)
-      return false;
-    pos += es.Len();
+    s = strstr(s, endString);
+    if (!s)
+      return NULL;
+    s += strlen(endString);
   }
-  return true;
+  return s;
 }
 
 void CXmlItem::AppendTo(AString &s) const
@@ -242,21 +240,21 @@ void CXmlItem::AppendTo(AString &s) const
   }
 }
 
-bool CXml::Parse(const AString &s)
+bool CXml::Parse(const char *s)
 {
-  int pos = 0;
-  if (!SkipHeader(s, pos, "<?xml", "?>"))
+  s = SkipHeader(s, "<?xml",    "?>"); if (!s) return false;
+  s = SkipHeader(s, "<!DOCTYPE", ">"); if (!s) return false;
+
+  s = Root.ParseItem(s, 1000);
+  if (!s || !Root.IsTag)
     return false;
-  if (!SkipHeader(s, pos, "<!DOCTYPE", ">"))
-    return false;
-  const char *ptr = Root.ParseItem(s.Ptr(pos), 1000);
-  if (!ptr || !Root.IsTag)
-    return false;
-  SKIP_SPACES(ptr);
-  return *ptr == 0;
+  SKIP_SPACES(s);
+  return *s == 0;
 }
 
+/*
 void CXml::AppendTo(AString &s) const
 {
   Root.AppendTo(s);
 }
+*/

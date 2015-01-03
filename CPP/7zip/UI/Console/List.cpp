@@ -187,7 +187,7 @@ static const CFieldInfoInit kStandardFieldTable[] =
 };
 
 const int kNumSpacesMax = 32; // it must be larger than max CFieldInfoInit.Width
-static char *g_Spaces =
+static const char *g_Spaces =
 "                                " ;
 
 static void PrintSpaces(int numSpaces)

@@ -582,13 +582,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
         if (!dataError)
         {
-          UInt32 unpackSize = 0;
-          bool unpackSize_Defined = false;
+          // UInt32 unpackSize = 0;
+          // bool unpackSize_Defined = false;
           bool writeToTemp1 = writeToTemp;
           if (item.IsUninstaller)
           {
-            unpackSize = item.PatchSize;
-            unpackSize_Defined = true;
+            // unpackSize = item.PatchSize;
+            // unpackSize_Defined = true;
             if (!readFromTemp)
               writeToTemp = true;
             writeToTemp1 = writeToTemp;

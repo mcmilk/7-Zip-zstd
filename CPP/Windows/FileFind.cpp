@@ -54,7 +54,7 @@ bool MyGetDiskFreeSpace(CFSTR rootPath, UInt64 &clusterSize, UInt64 &totalSize, 
 
 namespace NFind {
 
-bool CFileInfo::IsDots() const
+bool CFileInfo::IsDots() const throw()
 {
   if (!IsDir() || Name.IsEmpty())
     return false;
@@ -104,7 +104,7 @@ static void Convert_WIN32_FIND_DATA_to_FileInfo(const WIN32_FIND_DATA &fd, CFile
 ////////////////////////////////
 // CFindFile
 
-bool CFindFileBase::Close()
+bool CFindFileBase::Close() throw()
 {
   if (_handle == INVALID_HANDLE_VALUE)
     return true;
@@ -187,7 +187,7 @@ struct CFindStreamLoader
   }
 } g_FindStreamLoader;
 
-bool CStreamInfo::IsMainStream() const
+bool CStreamInfo::IsMainStream() const throw()
 {
   return Name == L"::$DATA";
 };
@@ -278,7 +278,7 @@ bool CStreamEnumerator::Next(CStreamInfo &si, bool &found)
 
 #define MY_CLEAR_FILETIME(ft) ft.dwLowDateTime = ft.dwHighDateTime = 0;
 
-void CFileInfoBase::Clear()
+void CFileInfoBase::Clear() throw()
 {
   Size = 0;
   MY_CLEAR_FILETIME(CTime);
@@ -486,7 +486,7 @@ bool CEnumerator::Next(CFileInfo &fi, bool &found)
 // CFindChangeNotification
 // FindFirstChangeNotification can return 0. MSDN doesn't tell about it.
 
-bool CFindChangeNotification::Close()
+bool CFindChangeNotification::Close() throw()
 {
   if (!IsHandleAllocated())
     return true;

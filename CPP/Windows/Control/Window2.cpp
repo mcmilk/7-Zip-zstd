@@ -56,8 +56,8 @@ bool CWindow2::CreateEx(DWORD exStyle, LPCTSTR className, LPCTSTR windowName,
     // wc.style          = CS_HREDRAW | CS_VREDRAW;
     wc.style          = 0;
     wc.lpfnWndProc    = WindowProcedure;
-    wc.cbClsExtra     = NULL;
-    wc.cbWndExtra     = NULL;
+    wc.cbClsExtra     = 0;
+    wc.cbWndExtra     = 0;
     wc.hInstance      = instance;
     wc.hIcon          = NULL;
     wc.hCursor        = LoadCursor(NULL, IDC_ARROW);
@@ -103,8 +103,8 @@ bool CWindow2::CreateEx(DWORD exStyle, LPCWSTR className, LPCWSTR windowName,
     // wc.style          = CS_HREDRAW | CS_VREDRAW;
     wc.style          = 0;
     wc.lpfnWndProc    = WindowProcedure;
-    wc.cbClsExtra     = NULL;
-    wc.cbWndExtra     = NULL;
+    wc.cbClsExtra     = 0;
+    wc.cbWndExtra     = 0;
     wc.hInstance      = instance;
     wc.hIcon          = NULL;
     wc.hCursor        = LoadCursor(NULL, IDC_ARROW);

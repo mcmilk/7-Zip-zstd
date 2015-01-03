@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2014-05-09 : Igor Pavlov : Public domain */
+2014-12-30 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -209,7 +209,7 @@ SRes BraState_SetFromMethod(IStateCoder *p, UInt64 id, int encodeMode, ISzAlloc 
       id != XZ_ID_SPARC)
     return SZ_ERROR_UNSUPPORTED;
   p->p = 0;
-  decoder = alloc->Alloc(alloc, sizeof(CBraState));
+  decoder = (CBraState *)alloc->Alloc(alloc, sizeof(CBraState));
   if (decoder == 0)
     return SZ_ERROR_MEM;
   decoder->methodId = (UInt32)id;
@@ -315,7 +315,7 @@ static SRes Lzma2State_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *sr
 
 static SRes Lzma2State_SetFromMethod(IStateCoder *p, ISzAlloc *alloc)
 {
-  CLzma2Dec *decoder = alloc->Alloc(alloc, sizeof(CLzma2Dec));
+  CLzma2Dec *decoder = (CLzma2Dec *)alloc->Alloc(alloc, sizeof(CLzma2Dec));
   p->p = decoder;
   if (decoder == 0)
     return SZ_ERROR_MEM;
@@ -400,7 +400,7 @@ SRes MixCoder_Code(CMixCoder *p, Byte *dest, SizeT *destLen,
 
   if (p->buf == 0)
   {
-    p->buf = p->alloc->Alloc(p->alloc, CODER_BUF_SIZE * (MIXCODER_NUM_FILTERS_MAX - 1));
+    p->buf = (Byte *)p->alloc->Alloc(p->alloc, CODER_BUF_SIZE * (MIXCODER_NUM_FILTERS_MAX - 1));
     if (p->buf == 0)
       return SZ_ERROR_MEM;
   }
@@ -624,7 +624,7 @@ void XzUnpacker_Free(CXzUnpacker *p)
 }
 
 SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
-    const Byte *src, SizeT *srcLen, int finishMode, ECoderStatus *status)
+    const Byte *src, SizeT *srcLen, ECoderFinishMode finishMode, ECoderStatus *status)
 {
   SizeT destLenOrig = *destLen;
   SizeT srcLenOrig = *srcLen;

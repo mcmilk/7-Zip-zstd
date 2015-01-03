@@ -367,14 +367,6 @@ SOURCE=..\..\..\Common\StringToInt.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\Common\TextConfig.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\TextConfig.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\Common\Types.h
 # End Source File
 # Begin Source File

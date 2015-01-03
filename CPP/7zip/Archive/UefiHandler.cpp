@@ -556,7 +556,7 @@ struct CCapsuleHeader
   UInt32 OffsetToLongDescription;
   UInt32 OffsetToApplicableDevices;
 
-  void Clear() { memset(this, 0, sizeof(this)); }
+  void Clear() { memset(this, 0, sizeof(*this)); }
 
   void Parse(const Byte *p)
   {

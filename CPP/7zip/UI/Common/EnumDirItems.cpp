@@ -124,7 +124,7 @@ void CDirItems::AddSecurityItem(const FString &path, int &secureIndex)
 
   DWORD errorCode = 0;
   DWORD secureSize;
-  BOOL res = ::GetFileSecurityW(fs2us(path), securInfo, TempSecureBuf, (DWORD)TempSecureBuf.Size(), &secureSize);
+  BOOL res = ::GetFileSecurityW(fs2us(path), securInfo, (PSECURITY_DESCRIPTOR)(Byte *)TempSecureBuf, (DWORD)TempSecureBuf.Size(), &secureSize);
   if (res)
   {
     if (secureSize == 0)
@@ -142,7 +142,7 @@ void CDirItems::AddSecurityItem(const FString &path, int &secureIndex)
       else
       {
         TempSecureBuf.Alloc(secureSize);
-        res = ::GetFileSecurityW(fs2us(path), securInfo, TempSecureBuf, (DWORD)TempSecureBuf.Size(), &secureSize);
+        res = ::GetFileSecurityW(fs2us(path), securInfo, (PSECURITY_DESCRIPTOR)(Byte *)TempSecureBuf, (DWORD)TempSecureBuf.Size(), &secureSize);
         if (res)
         {
           if (secureSize != TempSecureBuf.Size())

@@ -2,6 +2,12 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
+#include <wchar.h>
+#else
+#include <ctype.h>
+#endif
+
 #include "../../../../C/7zCrc.h"
 #include "../../../../C/CpuArch.h"
 
@@ -496,26 +502,87 @@ void CFolders::ParseFolderInfo(unsigned folderIndex, CFolder &folder) const
 }
 
 
-HRESULT CDatabase::GetPath(unsigned index, PROPVARIANT *path) const
+void CDatabase::GetPath(unsigned index, UString &path) const
+{
+  path.Empty();
+  if (!NameOffsets || !NamesBuf)
+    return;
+
+  size_t offset = NameOffsets[index];
+  size_t size = NameOffsets[index + 1] - offset - 1;
+
+  if (size >= (1 << 20))
+    return;
+
+  wchar_t *s = path.GetBuffer((unsigned)size);
+
+  const Byte *p = ((const Byte *)NamesBuf + offset * 2);
+
+  #if defined(_WIN32) && defined(MY_CPU_LE)
+  
+  wmemcpy(s, (const wchar_t *)p, size);
+  
+  #else
+
+  for (size_t i = 0; i < size; i++)
+  {
+    *s = Get16(p);
+    p += 2;
+    s++;
+  }
+
+  #endif
+
+  path.ReleaseBuffer((unsigned)size);
+}
+
+HRESULT CDatabase::GetPath_Prop(unsigned index, PROPVARIANT *path) const throw()
 {
   PropVariant_Clear(path);
   if (!NameOffsets || !NamesBuf)
     return S_OK;
 
+  size_t offset = NameOffsets[index];
+  size_t size = NameOffsets[index + 1] - offset;
+
+  if (size >= (1 << 14))
+    return S_OK;
+
+  RINOK(PropVarEm_Alloc_Bstr(path, (unsigned)size - 1));
+  wchar_t *s = path->bstrVal;
+
+  const Byte *p = ((const Byte *)NamesBuf + offset * 2);
+
+  #if defined(_WIN32) && defined(MY_CPU_LE)
+  
+  wmemcpy(s, (const wchar_t *)p, size);
+  
+  #else
+
+  for (size_t i = 0; i < size; i++)
+  {
+    *s = Get16(p);
+    p += 2;
+    s++;
+  }
+
+  #endif
+
+  return S_OK;
+
+  /*
   unsigned cur = index;
   unsigned size = 0;
   
-  // for (int i = 0;; i++)
+  for (int i = 0;; i++)
   {
     size_t len = NameOffsets[cur + 1] - NameOffsets[cur];
     size += (unsigned)len;
-    if (/* i > 256 || */ len > (1 << 12) || size > (1 << 14))
+    if (i > 256 || len > (1 << 14) || size > (1 << 14))
       return PropVarEm_Set_Str(path, "[TOO-LONG]");
-    /*
     cur = Files[cur].Parent;
     if (cur < 0)
       break;
-    */
   }
   size--;
 
@@ -539,16 +606,13 @@ HRESULT CDatabase::GetPath(unsigned index, PROPVARIANT *path) const
       *s = c;
     }
     while (--len);
-    /*
     const CFileItem &file = Files[cur];
     cur = file.Parent;
     if (cur < 0)
-    */
       return S_OK;
-    /*
     *(--s) = (file.IsAltStream ? ':' : WCHAR_PATH_SEPARATOR);
-    */
   }
+  */
 }
 
 void CInArchive::WaitId(UInt64 id)

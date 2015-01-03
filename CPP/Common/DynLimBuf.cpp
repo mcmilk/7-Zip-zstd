@@ -2,17 +2,10 @@
 
 #include "StdAfx.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#include <wchar.h>
-#else
-#include <ctype.h>
-#endif
-
 #include "DynLimBuf.h"
 #include "MyString.h"
 
-CDynLimBuf::CDynLimBuf(size_t limit)
+CDynLimBuf::CDynLimBuf(size_t limit) throw()
 {
   _chars = 0;
   _pos = 0;
@@ -30,7 +23,7 @@ CDynLimBuf::CDynLimBuf(size_t limit)
   }
 }
 
-CDynLimBuf & CDynLimBuf::operator+=(char c)
+CDynLimBuf & CDynLimBuf::operator+=(char c) throw()
 {
   if (_error)
     return *this;
@@ -62,7 +55,7 @@ CDynLimBuf & CDynLimBuf::operator+=(char c)
   return *this;
 }
 
-CDynLimBuf &CDynLimBuf::operator+=(const char *s)
+CDynLimBuf &CDynLimBuf::operator+=(const char *s) throw()
 {
   if (_error)
     return *this;

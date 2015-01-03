@@ -36,8 +36,8 @@ struct CXml
 {
   CXmlItem Root;
 
-  bool Parse(const AString &s);
-  void AppendTo(AString &s) const;
+  bool Parse(const char *s);
+  // void AppendTo(AString &s) const;
 };
 
 #endif

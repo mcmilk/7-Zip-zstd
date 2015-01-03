@@ -47,7 +47,7 @@ static const wchar_t *kSuperUncPrefix = L"\\\\?\\UNC\\";
   ((s)[2] == 'C' || (s)[2] == 'c') && \
    (s)[3] == '\\')
 
-bool IsDevicePath(CFSTR s)
+bool IsDevicePath(CFSTR s) throw()
 {
   #ifdef UNDER_CE
 
@@ -80,20 +80,20 @@ bool IsDevicePath(CFSTR s)
   #endif
 }
 
-bool IsSuperUncPath(CFSTR s) { return (IS_SUPER_PREFIX(s) && IS_UNC_WITH_SLASH(s + kSuperPathPrefixSize)); }
+bool IsSuperUncPath(CFSTR s) throw() { return (IS_SUPER_PREFIX(s) && IS_UNC_WITH_SLASH(s + kSuperPathPrefixSize)); }
 
-bool IsDrivePath(const wchar_t *s) { return IS_LETTER_CHAR(s[0]) && s[1] == ':' && s[2] == '\\'; }
-bool IsSuperPath(const wchar_t *s) { return IS_SUPER_PREFIX(s); }
-bool IsSuperOrDevicePath(const wchar_t *s) { return IS_SUPER_OR_DEVICE_PATH(s); }
+bool IsDrivePath(const wchar_t *s) throw() { return IS_LETTER_CHAR(s[0]) && s[1] == ':' && s[2] == '\\'; }
+bool IsSuperPath(const wchar_t *s) throw() { return IS_SUPER_PREFIX(s); }
+bool IsSuperOrDevicePath(const wchar_t *s) throw() { return IS_SUPER_OR_DEVICE_PATH(s); }
 // bool IsSuperUncPath(const wchar_t *s) { return (IS_SUPER_PREFIX(s) && IS_UNC_WITH_SLASH(s + kSuperPathPrefixSize)); }
 
 #ifndef USE_UNICODE_FSTRING
-bool IsDrivePath(CFSTR s) { return IS_LETTER_CHAR(s[0]) && s[1] == ':' && s[2] == '\\'; }
-bool IsSuperPath(CFSTR s) { return IS_SUPER_PREFIX(s); }
-bool IsSuperOrDevicePath(CFSTR s) { return IS_SUPER_OR_DEVICE_PATH(s); }
+bool IsDrivePath(CFSTR s) throw() { return IS_LETTER_CHAR(s[0]) && s[1] == ':' && s[2] == '\\'; }
+bool IsSuperPath(CFSTR s) throw() { return IS_SUPER_PREFIX(s); }
+bool IsSuperOrDevicePath(CFSTR s) throw() { return IS_SUPER_OR_DEVICE_PATH(s); }
 #endif // USE_UNICODE_FSTRING
 
-bool IsAbsolutePath(const wchar_t *s)
+bool IsAbsolutePath(const wchar_t *s) throw()
 {
   return s[0] == WCHAR_PATH_SEPARATOR || IsDrivePath(s);
 }
@@ -102,7 +102,7 @@ static const unsigned kDrivePrefixSize = 3; /* c:\ */
 
 #ifndef USE_UNICODE_FSTRING
 
-static unsigned GetRootPrefixSize_Of_NetworkPath(CFSTR s)
+static unsigned GetRootPrefixSize_Of_NetworkPath(CFSTR s) throw()
 {
   // Network path: we look "server\path\" as root prefix
   int pos = FindCharPosInString(s, '\\');
@@ -114,7 +114,7 @@ static unsigned GetRootPrefixSize_Of_NetworkPath(CFSTR s)
   return pos + pos2 + 2;
 }
 
-static unsigned GetRootPrefixSize_Of_SimplePath(CFSTR s)
+static unsigned GetRootPrefixSize_Of_SimplePath(CFSTR s) throw()
 {
   if (IsDrivePath(s))
     return kDrivePrefixSize;
@@ -124,7 +124,7 @@ static unsigned GetRootPrefixSize_Of_SimplePath(CFSTR s)
   return (size == 0) ? 0 : 2 + size;
 }
 
-static unsigned GetRootPrefixSize_Of_SuperPath(CFSTR s)
+static unsigned GetRootPrefixSize_Of_SuperPath(CFSTR s) throw()
 {
   if (IS_UNC_WITH_SLASH(s + kSuperPathPrefixSize))
   {
@@ -138,7 +138,7 @@ static unsigned GetRootPrefixSize_Of_SuperPath(CFSTR s)
   return kSuperPathPrefixSize + pos + 1;
 }
 
-unsigned GetRootPrefixSize(CFSTR s)
+unsigned GetRootPrefixSize(CFSTR s) throw()
 {
   if (IS_DEVICE_PATH(s))
     return kDevicePathPrefixSize;
@@ -149,7 +149,7 @@ unsigned GetRootPrefixSize(CFSTR s)
 
 #endif // USE_UNICODE_FSTRING
 
-static unsigned GetRootPrefixSize_Of_NetworkPath(const wchar_t *s)
+static unsigned GetRootPrefixSize_Of_NetworkPath(const wchar_t *s) throw()
 {
   // Network path: we look "server\path\" as root prefix
   int pos = FindCharPosInString(s, L'\\');
@@ -161,7 +161,7 @@ static unsigned GetRootPrefixSize_Of_NetworkPath(const wchar_t *s)
   return pos + pos2 + 2;
 }
 
-static unsigned GetRootPrefixSize_Of_SimplePath(const wchar_t *s)
+static unsigned GetRootPrefixSize_Of_SimplePath(const wchar_t *s) throw()
 {
   if (IsDrivePath(s))
     return kDrivePrefixSize;
@@ -171,7 +171,7 @@ static unsigned GetRootPrefixSize_Of_SimplePath(const wchar_t *s)
   return (size == 0) ? 0 : 2 + size;
 }
 
-static unsigned GetRootPrefixSize_Of_SuperPath(const wchar_t *s)
+static unsigned GetRootPrefixSize_Of_SuperPath(const wchar_t *s) throw()
 {
   if (IS_UNC_WITH_SLASH(s + kSuperPathPrefixSize))
   {
@@ -185,7 +185,7 @@ static unsigned GetRootPrefixSize_Of_SuperPath(const wchar_t *s)
   return kSuperPathPrefixSize + pos + 1;
 }
 
-unsigned GetRootPrefixSize(const wchar_t *s)
+unsigned GetRootPrefixSize(const wchar_t *s) throw()
 {
   if (IS_DEVICE_PATH(s))
     return kDevicePathPrefixSize;
@@ -196,12 +196,12 @@ unsigned GetRootPrefixSize(const wchar_t *s)
 
 #else // _WIN32
 
-bool IsAbsolutePath(const wchar_t *s) { return s[0] == WCHAR_PATH_SEPARATOR }
+bool IsAbsolutePath(const wchar_t *s) throw() { return s[0] == WCHAR_PATH_SEPARATOR }
 
 #ifndef USE_UNICODE_FSTRING
-unsigned GetRootPrefixSize(CFSTR s) { return s[0] == CHAR_PATH_SEPRATOR ? 1 : 0; }
+unsigned GetRootPrefixSize(CFSTR s) throw() { return s[0] == CHAR_PATH_SEPRATOR ? 1 : 0; }
 #endif
-unsigned GetRootPrefixSize(const wchar_t *s) { return s[0] == CHAR_PATH_SEPRATOR ? 1 : 0; }
+unsigned GetRootPrefixSize(const wchar_t *s) throw() { return s[0] == CHAR_PATH_SEPRATOR ? 1 : 0; }
 
 #endif // _WIN32
 
@@ -340,7 +340,7 @@ There are 3 cases:
     kSuperPathType_UseMainAndSuper : not Super, Good Path
 */
 
-int GetUseSuperPathType(CFSTR s)
+int GetUseSuperPathType(CFSTR s) throw()
 {
   if (IsSuperOrDevicePath(s))
   {

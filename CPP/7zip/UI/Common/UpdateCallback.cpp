@@ -328,7 +328,6 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
         const CDirItem &di = DirItems->Items[up.DirIndex];
         // if (di.IsDir())
         {
-          di.ReparseData;
           CReparseAttr attr;
           if (attr.Parse(di.ReparseData, di.ReparseData.Size()))
           {

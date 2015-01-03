@@ -81,7 +81,7 @@ static const unsigned kNumArcsMax = 48;
 static unsigned g_NumArcs = 0;
 static const CArcInfo *g_Arcs[kNumArcsMax];
 
-void RegisterArc(const CArcInfo *arcInfo)
+void RegisterArc(const CArcInfo *arcInfo) throw()
 {
   if (g_NumArcs < kNumArcsMax)
   {

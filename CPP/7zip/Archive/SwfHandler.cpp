@@ -61,6 +61,7 @@ API_FUNC_static_IsArc IsArc_Swf(const Byte *p, size_t size)
     return k_IsArc_Res_NO;
   return k_IsArc_Res_YES;
 }
+}
 
 API_FUNC_static_IsArc IsArc_Swfc(const Byte *p, size_t size)
 {
@@ -99,6 +100,7 @@ API_FUNC_static_IsArc IsArc_Swfc(const Byte *p, size_t size)
   }
 
   return k_IsArc_Res_YES;
+}
 }
 
 struct CItem

@@ -16,7 +16,7 @@ static const UInt64 kUnixTimeOffset =
     (UInt64)60 * 60 * 24 * (89 + 365 * (kUnixTimeStartYear - kFileTimeStartYear));
 static const UInt64 kNumSecondsInFileTime = (UInt64)(Int64)-1 / kNumTimeQuantumsInSecond;
 
-bool DosTimeToFileTime(UInt32 dosTime, FILETIME &ft)
+bool DosTimeToFileTime(UInt32 dosTime, FILETIME &ft) throw()
 {
   #if defined(_WIN32) && !defined(UNDER_CE)
   return BOOLToBool(::DosDateTimeToFileTime((UInt16)(dosTime >> 16), (UInt16)(dosTime & 0xFFFF), &ft));
@@ -41,7 +41,7 @@ static const UInt32 kLowDosTime = 0x210000;
 #define PERIOD_100 (PERIOD_4 * 25 - 1)
 #define PERIOD_400 (PERIOD_100 * 4 + 1)
 
-bool FileTimeToDosTime(const FILETIME &ft, UInt32 &dosTime)
+bool FileTimeToDosTime(const FILETIME &ft, UInt32 &dosTime) throw()
 {
   #if defined(_WIN32) && !defined(UNDER_CE)
 
@@ -115,31 +115,25 @@ bool FileTimeToDosTime(const FILETIME &ft, UInt32 &dosTime)
   return true;
 }
 
-void UnixTimeToFileTime(UInt32 unixTime, FILETIME &ft)
+void UnixTimeToFileTime(UInt32 unixTime, FILETIME &ft) throw()
 {
   UInt64 v = (kUnixTimeOffset + (UInt64)unixTime) * kNumTimeQuantumsInSecond;
   ft.dwLowDateTime = (DWORD)v;
   ft.dwHighDateTime = (DWORD)(v >> 32);
 }
 
-bool UnixTime64ToFileTime(Int64 unixTime, FILETIME &ft)
+bool UnixTime64ToFileTime(Int64 unixTime, FILETIME &ft) throw()
 {
-  Int64 v = (Int64)kUnixTimeOffset + unixTime;
-  if (unixTime < 0)
+  if (unixTime > kNumSecondsInFileTime - kUnixTimeOffset)
   {
-    if (v < 0)
-    {
-      ft.dwLowDateTime = ft.dwHighDateTime = 0;
-      return false;
-    }
+    ft.dwLowDateTime = ft.dwHighDateTime = (UInt32)(Int32)-1;
+    return false;
   }
-  else
+  Int64 v = (Int64)kUnixTimeOffset + unixTime;
+  if (v < 0)
   {
-    if (v < unixTime || v > kNumSecondsInFileTime)
-    {
-      ft.dwLowDateTime = ft.dwHighDateTime = (UInt32)(Int32)-1;
-      return false;
-    }
+    ft.dwLowDateTime = ft.dwHighDateTime = 0;
+    return false;
   }
   UInt64 v2 = (UInt64)v * kNumTimeQuantumsInSecond;
   ft.dwLowDateTime = (DWORD)v2;
@@ -147,13 +141,13 @@ bool UnixTime64ToFileTime(Int64 unixTime, FILETIME &ft)
   return true;
 }
 
-Int64 FileTimeToUnixTime64(const FILETIME &ft)
+Int64 FileTimeToUnixTime64(const FILETIME &ft) throw()
 {
   UInt64 winTime = (((UInt64)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
   return (Int64)(winTime / kNumTimeQuantumsInSecond) - kUnixTimeOffset;
 }
 
-bool FileTimeToUnixTime(const FILETIME &ft, UInt32 &unixTime)
+bool FileTimeToUnixTime(const FILETIME &ft, UInt32 &unixTime) throw()
 {
   UInt64 winTime = (((UInt64)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
   winTime /= kNumTimeQuantumsInSecond;
@@ -173,7 +167,7 @@ bool FileTimeToUnixTime(const FILETIME &ft, UInt32 &unixTime)
 }
 
 bool GetSecondsSince1601(unsigned year, unsigned month, unsigned day,
-  unsigned hour, unsigned min, unsigned sec, UInt64 &resSeconds)
+  unsigned hour, unsigned min, unsigned sec, UInt64 &resSeconds) throw()
 {
   resSeconds = 0;
   if (year < kFileTimeStartYear || year >= 10000 || month < 1 || month > 12 ||
@@ -192,7 +186,7 @@ bool GetSecondsSince1601(unsigned year, unsigned month, unsigned day,
   return true;
 }
 
-void GetCurUtcFileTime(FILETIME &ft)
+void GetCurUtcFileTime(FILETIME &ft) throw()
 {
   // Both variants provide same low resolution on WinXP: about 15 ms.
   // But GetSystemTimeAsFileTime is much faster.

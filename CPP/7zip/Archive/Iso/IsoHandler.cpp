@@ -88,7 +88,7 @@ static void AddString(AString &s, const char *name, const Byte *p, unsigned size
   }
 }
 
-#define ADD_STRING(n, v) AddString(s, n, vol. ## v, sizeof(vol. ## v))
+#define ADD_STRING(n, v) AddString(s, n, vol. v, sizeof(vol. v))
 
 static void AddErrorMessage(AString &s, const char *message)
 {

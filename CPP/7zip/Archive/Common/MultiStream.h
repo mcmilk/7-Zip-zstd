@@ -15,14 +15,19 @@ class CMultiStream:
   UInt64 _pos;
   UInt64 _totalLength;
   unsigned _streamIndex;
+
 public:
+
   struct CSubStreamInfo
   {
     CMyComPtr<IInStream> Stream;
     UInt64 Size;
     UInt64 GlobalOffset;
     UInt64 LocalPos;
+
+    CSubStreamInfo(): Size(0), GlobalOffset(0), LocalPos(0) {}
   };
+  
   CObjectVector<CSubStreamInfo> Streams;
   
   HRESULT Init()

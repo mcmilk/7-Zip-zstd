@@ -1004,7 +1004,7 @@ STDMETHODIMP CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *
 STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress *progress)
 {
   RINOK(progress->SetTotal(numItems));
-  int prevDeletedFileIndex = -1;
+  // int prevDeletedFileIndex = -1;
   for (UInt32 i = 0; i < numItems; i++)
   {
     // Sleep(200);
@@ -1025,7 +1025,7 @@ STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress 
     {
       const CDirItem &fi = Files[index];
       const FString fullPath = _path + GetRelPath(fi);
-      prevDeletedFileIndex = index;
+      // prevDeletedFileIndex = index;
       if (fi.IsDir())
         result = RemoveDirWithSubItems(fullPath);
       else

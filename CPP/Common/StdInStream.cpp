@@ -20,7 +20,7 @@ extern int g_CodePage;
 
 CStdInStream g_StdIn(stdin);
 
-bool CStdInStream::Open(LPCTSTR fileName)
+bool CStdInStream::Open(LPCTSTR fileName) throw()
 {
   Close();
   _stream = _tfopen(fileName, kFileOpenMode);
@@ -28,7 +28,7 @@ bool CStdInStream::Open(LPCTSTR fileName)
   return _streamIsOpen;
 }
 
-bool CStdInStream::Close()
+bool CStdInStream::Close() throw()
 {
   if (!_streamIsOpen)
     return true;
@@ -80,7 +80,7 @@ void CStdInStream::ReadToString(AString &resultString)
     resultString += (char)c;
 }
 
-bool CStdInStream::Eof()
+bool CStdInStream::Eof() throw()
 {
   return (feof(_stream) != 0);
 }

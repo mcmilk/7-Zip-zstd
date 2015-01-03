@@ -1137,11 +1137,11 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     return;
 
   CProcess process;
-  HRESULT res;
+  /* HRESULT res; */
   if (editMode)
-    res = StartEditApplication(fs2us(tempFilePath), useEditor, (HWND)*this, process);
+    /* res = */ StartEditApplication(fs2us(tempFilePath), useEditor, (HWND)*this, process);
   else
-    res = StartApplication(fs2us(tempDirNorm), fs2us(tempFilePath), (HWND)*this, process);
+    /* res = */ StartApplication(fs2us(tempDirNorm), fs2us(tempFilePath), (HWND)*this, process);
 
   if ((HANDLE)process == 0)
     return;

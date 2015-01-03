@@ -332,6 +332,7 @@ API_FUNC_static_IsArc IsArc_Lzma(const Byte *p, size_t size)
     return k_IsArc_Res_NO;
   return k_IsArc_Res_YES;
 }
+}
 
 API_FUNC_static_IsArc IsArc_Lzma86(const Byte *p, size_t size)
 {
@@ -341,6 +342,7 @@ API_FUNC_static_IsArc IsArc_Lzma86(const Byte *p, size_t size)
   if (filterID != 0 && filterID != 1)
     return k_IsArc_Res_NO;
   return IsArc_Lzma(p + 1, size - 1);
+}
 }
 
 STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCallback *)

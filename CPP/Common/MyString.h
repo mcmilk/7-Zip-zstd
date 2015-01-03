@@ -29,7 +29,7 @@ inline char *MyStpCpy(char *dest, const char *src)
 {
   for (;;)
   {
-    Byte c = *src;
+    char c = *src;
     *dest = c;
     if (c == 0)
       return dest;
@@ -248,7 +248,7 @@ public:
   // int CompareNoCase(const char *s) const { return MyStringCompareNoCase(_chars, s); }
   // int CompareNoCase(const AString &s) const { return MyStringCompareNoCase(_chars, s._chars); }
   bool IsPrefixedBy(const char *s) const { return IsString1PrefixedByString2(_chars, s); }
-  bool IsPrefixedBy_Ascii_NoCase(const char *s) const;
+  bool IsPrefixedBy_Ascii_NoCase(const char *s) const throw();
  
   int Find(char c) const { return FindCharPosInString(_chars, c); }
   int Find(char c, unsigned startIndex) const
@@ -413,7 +413,7 @@ public:
   // int CompareNoCase(const wchar_t *s) const { return MyStringCompareNoCase(_chars, s); }
   // int CompareNoCase(const UString &s) const { return MyStringCompareNoCase(_chars, s._chars); }
   bool IsPrefixedBy(const wchar_t *s) const { return IsString1PrefixedByString2(_chars, s); };
-  bool IsPrefixedBy_Ascii_NoCase(const char *s) const;
+  bool IsPrefixedBy_Ascii_NoCase(const char *s) const throw();
 
   int Find(wchar_t c) const { return FindCharPosInString(_chars, c); }
   int Find(wchar_t c, unsigned startIndex) const

@@ -1316,9 +1316,8 @@ UInt32 g_BenchCpuFreqTemp = 1;
 #define YY7 YY5 YY5 YY5 YY5
 static const UInt32 kNumFreqCommands = 128;
 
-static UInt32 CountCpuFreq(UInt32 num, UInt32 val)
+static UInt32 CountCpuFreq(UInt32 sum, UInt32 num, UInt32 val)
 {
-  UInt32 sum = 0;
   for (UInt32 i = 0; i < num; i++)
   {
     YY7
@@ -1354,7 +1353,7 @@ static THREAD_FUNC_DECL FreqThreadFunction(void *param)
     p->CallbackRes = p->Callback->CheckBreak();
     if (p->CallbackRes != S_OK)
       return 0;
-    sum = CountCpuFreq(p->Size, sum);
+    sum = CountCpuFreq(sum, p->Size, g_BenchCpuFreqTemp);
   }
   p->ValRes = sum;
   return 0;
@@ -1653,7 +1652,7 @@ static void PrintRequirements(IBenchPrintCallback &f, const char *sizeString, UI
 {
   f.Print("RAM ");
   f.Print(sizeString);
-  PrintNumber(f, (size >> 20), 5);
+  PrintNumber(f, (size >> 20), 6);
   f.Print(" MB,  # ");
   f.Print(threadsString);
   PrintNumber(f, numThreads, 3);
@@ -1858,7 +1857,7 @@ static HRESULT FreqBench(
     for (UInt64 k = numIterations; k > 0; k--)
     {
       RINOK(_file->CheckBreak());
-      sum = CountCpuFreq(bufferSize, sum);
+      sum = CountCpuFreq(sum, bufferSize, g_BenchCpuFreqTemp);
     }
     res += sum;
   }
@@ -2164,17 +2163,17 @@ HRESULT Bench(
     {
       UInt64 start = ::GetTimeCount();
       UInt32 sum = (UInt32)start;
-      sum += CountCpuFreq((UInt32)(numMilCommands * 1000000 / kNumFreqCommands), g_BenchCpuFreqTemp);
+      sum = CountCpuFreq(sum, (UInt32)(numMilCommands * 1000000 / kNumFreqCommands), g_BenchCpuFreqTemp);
       start = ::GetTimeCount() - start;
       if (start == 0)
         start = 1;
       UInt64 freq = GetFreq();
-      UInt64 mips = numMilCommands * freq / start;
+      UInt64 mipsVal = numMilCommands * freq / start;
       if (printCallback)
-        PrintNumber(*printCallback, mips, 5 + ((sum >> 31) & 1));
+        PrintNumber(*printCallback, mipsVal, 5 + ((sum >> 31) & 1));
       if (jj >= 3)
       {
-        SetComplexCommands(testTime, mips * 1000000, complexInCommands);
+        SetComplexCommands(testTime, mipsVal * 1000000, complexInCommands);
         if (jj >= 8 || start >= freq)
           break;
         // break; // change it

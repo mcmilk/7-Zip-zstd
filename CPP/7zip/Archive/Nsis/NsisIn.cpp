@@ -3777,7 +3777,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 
                       for (UInt32 j = i - 1; j >= kkk + 3; j--)
                       {
-                        const Byte *pCmd = p - kCmdSize * (kkk - j);
+                        const Byte *pCmd = p + kCmdSize * (j - kkk);
                         AddParam(GET_CMD_PARAM(pCmd, 0));
                       }
                       NewLine();

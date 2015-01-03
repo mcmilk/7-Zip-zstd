@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include "Windows/Console.h"
+#include "Console.h"
 
 namespace NWindows{
 namespace NConsole{

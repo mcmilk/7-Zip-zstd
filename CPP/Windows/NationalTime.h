@@ -1,9 +1,9 @@
 // Windows/NationalTime.h
 
-#ifndef __WINDOWS_NATIONALTIME_H
-#define __WINDOWS_NATIONALTIME_H
+#ifndef __WINDOWS_NATIONAL_TIME_H
+#define __WINDOWS_NATIONAL_TIME_H
 
-#include "Common/String.h"
+#include "../Common/MyString.h"
 
 namespace NWindows {
 namespace NNational {

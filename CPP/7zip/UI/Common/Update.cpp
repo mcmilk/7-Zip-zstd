@@ -1103,10 +1103,12 @@ HRESULT UpdateArchive(
   CDirItem parentDirItem;
   CDirItem *parentDirItem_Ptr = NULL;
   
+  /*
   FStringVector requestedPaths;
   FStringVector *requestedPaths_Ptr = NULL;
   if (options.DeleteAfterCompressing)
     requestedPaths_Ptr = &requestedPaths;
+  */
 
   if (options.StdInMode)
   {
@@ -1421,7 +1423,7 @@ HRESULT UpdateArchive(
         m.lpRecips = &rec;
       }
       
-      sendMail(NULL, 0, &m, MAPI_DIALOG, 0);
+      sendMail((LHANDLE)0, 0, &m, MAPI_DIALOG, 0);
     }
   }
   #endif

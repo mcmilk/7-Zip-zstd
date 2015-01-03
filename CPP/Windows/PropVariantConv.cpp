@@ -9,7 +9,7 @@
 
 #define UINT_TO_STR_2(c, val) { s[0] = (c); s[1] = (char)('0' + (val) / 10); s[2] = (char)('0' + (val) % 10); s += 3; }
 
-bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool includeSeconds)
+bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool includeSeconds) throw()
 {
   SYSTEMTIME st;
   if (!BOOLToBool(FileTimeToSystemTime(&ft, &st)))
@@ -43,7 +43,7 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
   return true;
 }
 
-void ConvertFileTimeToString(const FILETIME &ft, wchar_t *dest, bool includeTime, bool includeSeconds)
+void ConvertFileTimeToString(const FILETIME &ft, wchar_t *dest, bool includeTime, bool includeSeconds) throw()
 {
   char s[32];
   ConvertFileTimeToString(ft, s, includeTime, includeSeconds);
@@ -56,7 +56,7 @@ void ConvertFileTimeToString(const FILETIME &ft, wchar_t *dest, bool includeTime
   }
 }
 
-void ConvertPropVariantToShortString(const PROPVARIANT &prop, char *dest)
+void ConvertPropVariantToShortString(const PROPVARIANT &prop, char *dest) throw()
 {
   *dest = 0;
   switch (prop.vt)
@@ -77,7 +77,7 @@ void ConvertPropVariantToShortString(const PROPVARIANT &prop, char *dest)
   }
 }
 
-void ConvertPropVariantToShortString(const PROPVARIANT &prop, wchar_t *dest)
+void ConvertPropVariantToShortString(const PROPVARIANT &prop, wchar_t *dest) throw()
 {
   *dest = 0;
   switch (prop.vt)

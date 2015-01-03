@@ -820,7 +820,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
 
   // It's fix for bug: crashing in XP. See example in MSDN: "Creating Context Menu Handlers".
 
-  #ifndef UNDER_CE
+  #if !defined(UNDER_CE) && defined(_MSC_VER)
   if (commandInfo->cbSize == sizeof(CMINVOKECOMMANDINFOEX) &&
       (commandInfo->fMask & CMIC_MASK_UNICODE) != 0)
   {

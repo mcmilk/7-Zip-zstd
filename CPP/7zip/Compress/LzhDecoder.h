@@ -39,7 +39,7 @@ public:
   {
     if (Symbol >= 0)
       return (UInt32)Symbol;
-    return DecodeSymbol(bitStream);
+    return this->DecodeSymbol(bitStream);
   }
 };
 

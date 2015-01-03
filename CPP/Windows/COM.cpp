@@ -2,8 +2,10 @@
 
 #include "StdAfx.h"
 
-#include "Windows/COM.h"
-#include "Common/StringConvert.h"
+/*
+
+#include "COM.h"
+#include "../Common/StringConvert.h"
 
 namespace NWindows {
 namespace NCOM {
@@ -35,3 +37,5 @@ HRESULT StringToGUIDA(const char *string, GUID &classID)
 }
 
 }}
+
+*/

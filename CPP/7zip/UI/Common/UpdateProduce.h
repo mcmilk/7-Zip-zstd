@@ -29,7 +29,16 @@ struct CUpdatePair2
   bool ExistOnDisk() const { return DirIndex != -1; }
   bool ExistInArchive() const { return ArcIndex != -1; }
 
-  CUpdatePair2(): IsAnti(false), UseArcProps(false), DirIndex(-1), ArcIndex(-1), NewNameIndex(-1) {}
+  CUpdatePair2():
+      NewData(false),
+      NewProps(false),
+      UseArcProps(false),
+      IsAnti(false),
+      DirIndex(-1),
+      ArcIndex(-1),
+      NewNameIndex(-1),
+      IsMainRenameItem(false)
+      {}
 };
 
 struct IUpdateProduceCallback

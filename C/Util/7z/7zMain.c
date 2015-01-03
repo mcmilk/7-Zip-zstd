@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2014-06-17 : Igor Pavlov : Public domain */
+2015-01-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -281,7 +281,7 @@ static void ConvertFileTimeToString(const CNtfsFileTime *nt, char *s)
   UIntToStr_2(s, sec); s[2] = 0;
 }
 
-void PrintError(char *sz)
+void PrintError(const char *sz)
 {
   printf("\nERROR: %s\n", sz);
 }
@@ -368,11 +368,11 @@ int MY_CDECL main(int numargs, char *args[])
   if (res == SZ_OK)
   {
     char *command = args[1];
-    int listCommand = 0, testCommand = 0, extractCommand = 0, fullPaths = 0;
+    int listCommand = 0, testCommand = 0, fullPaths = 0;
     if (strcmp(command, "l") == 0) listCommand = 1;
     else if (strcmp(command, "t") == 0) testCommand = 1;
-    else if (strcmp(command, "e") == 0) extractCommand = 1;
-    else if (strcmp(command, "x") == 0) { extractCommand = 1; fullPaths = 1; }
+    else if (strcmp(command, "e") == 0) { }
+    else if (strcmp(command, "x") == 0) { fullPaths = 1; }
     else
     {
       PrintError("incorrect command");

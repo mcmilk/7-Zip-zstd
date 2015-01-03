@@ -801,6 +801,8 @@ struct CItem
   int Node;
   int Parent;
   UInt32 Ptr;
+
+  CItem(): Node(-1), Parent(-1), Ptr(0) {}
 };
 
 struct CData
@@ -1198,7 +1200,7 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
     {
       ECoderStatus status;
       XzUnpacker_Init(&_xz);
-      SRes res = XzUnpacker_Code(&_xz, dest, &destLen, _inputBuffer, &srcLen, LZMA_FINISH_END, &status);
+      SRes res = XzUnpacker_Code(&_xz, dest, &destLen, _inputBuffer, &srcLen, CODER_FINISH_END, &status);
       if (res != 0)
         return SResToHRESULT(res);
       if (status != CODER_STATUS_NEEDS_MORE_INPUT || !XzUnpacker_IsStreamWasFinished(&_xz))

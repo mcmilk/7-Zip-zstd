@@ -4,7 +4,7 @@
 
 #include "../../Common/MyInitGuid.h"
 
-#if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
+#if defined(_7ZIP_LARGE_PAGES)
 #include "../../../C/Alloc.h"
 #endif
 
@@ -67,7 +67,7 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 
 STDAPI SetLargePageMode()
 {
-  #if defined(_WIN32) && defined(_7ZIP_LARGE_PAGES)
+  #if defined(_7ZIP_LARGE_PAGES)
   SetLargePageSize();
   #endif
   return S_OK;

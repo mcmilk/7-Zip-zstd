@@ -6,7 +6,7 @@
 
 #include "InBuffer.h"
 
-CInBufferBase::CInBufferBase():
+CInBufferBase::CInBufferBase() throw():
   _buf(0),
   _bufLim(0),
   _bufBase(0),
@@ -17,7 +17,7 @@ CInBufferBase::CInBufferBase():
   NumExtraBytes(0)
 {}
 
-bool CInBuffer::Create(size_t bufSize)
+bool CInBuffer::Create(size_t bufSize) throw()
 {
   const unsigned kMinBlockSize = 1;
   if (bufSize < kMinBlockSize)
@@ -30,13 +30,13 @@ bool CInBuffer::Create(size_t bufSize)
   return (_bufBase != 0);
 }
 
-void CInBuffer::Free()
+void CInBuffer::Free() throw()
 {
   ::MidFree(_bufBase);
   _bufBase = 0;
 }
 
-void CInBufferBase::Init()
+void CInBufferBase::Init() throw()
 {
   _processedSize = 0;
   _buf = _bufBase;

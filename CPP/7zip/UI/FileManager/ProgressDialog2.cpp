@@ -238,16 +238,20 @@ CProgressDialog::CProgressDialog(): _timer(0), CompressingMode(true), MainWindow
     throw 1334987;
   if (_createDialogEvent.Create() != S_OK)
     throw 1334987;
+  #ifdef __ITaskbarList3_INTERFACE_DEFINED__
   CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (void**)&_taskbarList);
   if (_taskbarList)
     _taskbarList->HrInit();
+  #endif
 }
 
 #ifndef _SFX
 
 CProgressDialog::~CProgressDialog()
 {
+  #ifdef __ITaskbarList3_INTERFACE_DEFINED__
   SetTaskbarProgressState(TBPF_NOPROGRESS);
+  #endif
   AddToTitle(L"");
 }
 void CProgressDialog::AddToTitle(LPCWSTR s)
@@ -264,6 +268,7 @@ void CProgressDialog::AddToTitle(LPCWSTR s)
 
 void CProgressDialog::SetTaskbarProgressState()
 {
+  #ifdef __ITaskbarList3_INTERFACE_DEFINED__
   if (_taskbarList && _hwndForTaskbar)
   {
     TBPFLAG tbpFlags;
@@ -273,6 +278,7 @@ void CProgressDialog::SetTaskbarProgressState()
       tbpFlags = _errorsWereDisplayed ? TBPF_ERROR: TBPF_NORMAL;
     SetTaskbarProgressState(tbpFlags);
   }
+  #endif
 }
 
 static const unsigned kTitleFileNameSizeLimit = 36;
@@ -543,8 +549,10 @@ void CProgressDialog::SetProgressPos(UInt64 pos)
       pos - _progressBar_Pos >= (_progressBar_Range >> 10))
   {
     m_ProgressBar.SetPos(_progressConv.Count(pos));
+    #ifdef __ITaskbarList3_INTERFACE_DEFINED__
     if (_taskbarList && _hwndForTaskbar)
       _taskbarList->SetProgressValue(_hwndForTaskbar, pos, _progressBar_Range);
+    #endif
     _progressBar_Pos = pos;
   }
 }
@@ -935,7 +943,9 @@ INT_PTR CProgressDialog::Create(const UString &title, NWindows::CThread &thread,
 bool CProgressDialog::OnExternalCloseMessage()
 {
   // it doesn't work if there is MessageBox.
+  #ifdef __ITaskbarList3_INTERFACE_DEFINED__
   SetTaskbarProgressState(TBPF_NOPROGRESS);
+  #endif
   // AddToTitle(L"Finished ");
   // SetText(L"Finished2 ");
 

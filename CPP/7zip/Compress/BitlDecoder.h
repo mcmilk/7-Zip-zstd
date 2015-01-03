@@ -121,12 +121,12 @@ public:
 
   void AlignToByte() { MovePos((32 - this->_bitPos) & 7); }
 
-  Byte ReadDirectByte() { return _stream.ReadByte(); }
+  Byte ReadDirectByte() { return this->_stream.ReadByte(); }
 
   Byte ReadAlignedByte()
   {
     if (this->_bitPos == kNumBigValueBits)
-      return _stream.ReadByte();
+      return this->_stream.ReadByte();
     Byte b = (Byte)(_normalValue & 0xFF);
     MovePos(8);
     return b;

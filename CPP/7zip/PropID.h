@@ -106,7 +106,7 @@ enum
   kpidUserDefined = 0x10000
 };
 
-Byte k7z_PROPID_To_VARTYPE[]; // VARTYPE
+extern Byte k7z_PROPID_To_VARTYPE[kpid_NUM_DEFINED]; // VARTYPE
 
 const UInt32 kpv_ErrorFlags_IsNotArc              = 1 << 0;
 const UInt32 kpv_ErrorFlags_HeadersError          = 1 << 1;

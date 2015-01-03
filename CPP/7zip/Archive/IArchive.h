@@ -183,17 +183,26 @@ Notes:
   Some IInArchive handlers will work incorrectly in that case.
 */
 
+/* MSVC allows the code where there is throw() in declaration of function,
+   but there is no throw() in definition of function. */
+
+#ifdef _MSC_VER
+  #define MY_NO_THROW_DECL_ONLY throw()
+#else
+  #define MY_NO_THROW_DECL_ONLY
+#endif
+
 #define INTERFACE_IInArchive(x) \
-  STDMETHOD(Open)(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *openCallback) throw() x; \
-  STDMETHOD(Close)() throw() x; \
-  STDMETHOD(GetNumberOfItems)(UInt32 *numItems) throw() x; \
-  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) throw() x; \
-  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, Int32 testMode, IArchiveExtractCallback *extractCallback) throw() x; \
-  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) throw() x; \
-  STDMETHOD(GetNumberOfProperties)(UInt32 *numProps) throw() x; \
-  STDMETHOD(GetPropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) throw() x; \
-  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProps) throw() x; \
-  STDMETHOD(GetArchivePropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) throw() x;
+  STDMETHOD(Open)(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *openCallback) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(Close)() MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(GetNumberOfItems)(UInt32 *numItems) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, Int32 testMode, IArchiveExtractCallback *extractCallback) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(GetNumberOfProperties)(UInt32 *numProps) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(GetPropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(GetNumberOfArchiveProperties)(UInt32 *numProps) MY_NO_THROW_DECL_ONLY x; \
+  STDMETHOD(GetArchivePropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) MY_NO_THROW_DECL_ONLY x;
 
 ARCHIVE_INTERFACE(IInArchive, 0x60)
 {
@@ -444,7 +453,7 @@ ARCHIVE_INTERFACE(IArchiveAllowTail, 0x05)
 // #define k_IsArc_Res_YES_LOW_PROB 3
 
 #define API_FUNC_IsArc EXTERN_C UInt32 WINAPI
-#define API_FUNC_static_IsArc EXTERN_C static UInt32 WINAPI
+#define API_FUNC_static_IsArc extern "C" { static UInt32 WINAPI
 
 extern "C"
 {

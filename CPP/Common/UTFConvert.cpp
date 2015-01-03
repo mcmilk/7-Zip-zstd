@@ -7,7 +7,7 @@
 
 static const Byte kUtf8Limits[5] = { 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 
-bool CheckUTF8(const char *src)
+bool CheckUTF8(const char *src) throw()
 {
   for (;;)
   {

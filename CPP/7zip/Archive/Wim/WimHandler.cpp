@@ -63,8 +63,8 @@ static const STATPROPSTG kArcProps[] =
   { NULL, kpidIsVolume, VT_BOOL},
   { NULL, kpidVolume, VT_UI4},
   { NULL, kpidNumVolumes, VT_UI4},
-  { L"Images", kpidNumImages, VT_UI4},
-  { L"Boot Image", kpidBootImage, VT_UI4}
+  { (LPOLESTR)L"Images", kpidNumImages, VT_UI4},
+  { (LPOLESTR)L"Boot Image", kpidBootImage, VT_UI4}
 };
 
 static const char *kMethodLZX = "LZX";

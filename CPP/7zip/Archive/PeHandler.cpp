@@ -784,27 +784,27 @@ static const STATPROPSTG kArcProps[] =
   { NULL, kpidChecksum, VT_UI4},
   { NULL, kpidName, VT_BSTR},
 
-  { L"Image Size", kpidImageSize, VT_UI4},
-  { L"Section Alignment", kpidSectAlign, VT_UI4},
-  { L"File Alignment", kpidFileAlign, VT_UI4},
-  { L"Code Size", kpidCodeSize, VT_UI4},
-  { L"Initialized Data Size", kpidInitDataSize, VT_UI4},
-  { L"Uninitialized Data Size", kpidUnInitDataSize, VT_UI4},
-  { L"Linker Version", kpidLinkerVer, VT_BSTR},
-  { L"OS Version", kpidOsVer, VT_BSTR},
-  { L"Image Version", kpidImageVer, VT_BSTR},
-  { L"Subsystem Version", kpidSubsysVer, VT_BSTR},
-  { L"Subsystem", kpidSubSystem, VT_BSTR},
-  { L"DLL Characteristics", kpidDllCharacts, VT_BSTR},
-  { L"Stack Reserve", kpidStackReserve, VT_UI8},
-  { L"Stack Commit", kpidStackCommit, VT_UI8},
-  { L"Heap Reserve", kpidHeapReserve, VT_UI8},
-  { L"Heap Commit", kpidHeapCommit, VT_UI8},
-  { L"Image Base", kpidImageBase, VT_UI8},
+  { (LPOLESTR)L"Image Size", kpidImageSize, VT_UI4},
+  { (LPOLESTR)L"Section Alignment", kpidSectAlign, VT_UI4},
+  { (LPOLESTR)L"File Alignment", kpidFileAlign, VT_UI4},
+  { (LPOLESTR)L"Code Size", kpidCodeSize, VT_UI4},
+  { (LPOLESTR)L"Initialized Data Size", kpidInitDataSize, VT_UI4},
+  { (LPOLESTR)L"Uninitialized Data Size", kpidUnInitDataSize, VT_UI4},
+  { (LPOLESTR)L"Linker Version", kpidLinkerVer, VT_BSTR},
+  { (LPOLESTR)L"OS Version", kpidOsVer, VT_BSTR},
+  { (LPOLESTR)L"Image Version", kpidImageVer, VT_BSTR},
+  { (LPOLESTR)L"Subsystem Version", kpidSubsysVer, VT_BSTR},
+  { (LPOLESTR)L"Subsystem", kpidSubSystem, VT_BSTR},
+  { (LPOLESTR)L"DLL Characteristics", kpidDllCharacts, VT_BSTR},
+  { (LPOLESTR)L"Stack Reserve", kpidStackReserve, VT_UI8},
+  { (LPOLESTR)L"Stack Commit", kpidStackCommit, VT_UI8},
+  { (LPOLESTR)L"Heap Reserve", kpidHeapReserve, VT_UI8},
+  { (LPOLESTR)L"Heap Commit", kpidHeapCommit, VT_UI8},
+  { (LPOLESTR)L"Image Base", kpidImageBase, VT_UI8},
   { NULL, kpidComment, VT_BSTR},
-  // { L"Address Of Entry Point", kpidAddressOfEntryPoint, VT_UI8},
-  // { L"Base Of Code", kpidBaseOfCode, VT_UI8},
-  // { L"Base Of Data", kpidBaseOfData32, VT_UI8},
+  // { (LPOLESTR)L"Address Of Entry Point", kpidAddressOfEntryPoint, VT_UI8},
+  // { (LPOLESTR)L"Base Of Code", kpidBaseOfCode, VT_UI8},
+  // { (LPOLESTR)L"Base Of Data", kpidBaseOfData32, VT_UI8},
 };
 
 static const Byte kProps[] =
@@ -2089,6 +2089,7 @@ API_FUNC_static_IsArc IsArc_Pe(const Byte *p, size_t size)
     return k_IsArc_Res_NO;
   return k_IsArc_Res_YES;
 }
+}
 
 HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 {
@@ -2719,6 +2720,7 @@ API_FUNC_static_IsArc IsArc_Te(const Byte *p, size_t size)
     return k_IsArc_Res_NO;
   return k_IsArc_Res_YES;
 }
+}
 
 
 struct CSection
@@ -2799,8 +2801,8 @@ static const STATPROPSTG kArcProps[] =
 {
   // { NULL, kpidHeadersSize, VT_UI4 },
   { NULL, kpidCpu, VT_BSTR},
-  { L"Subsystem", kpidSubSystem, VT_BSTR },
-  // { L"Image Base", kpidImageBase, VT_UI8 }
+  { (LPOLESTR)L"Subsystem", kpidSubSystem, VT_BSTR },
+  // { (LPOLESTR)L"Image Base", kpidImageBase, VT_UI8 }
 };
 
 IMP_IInArchive_Props

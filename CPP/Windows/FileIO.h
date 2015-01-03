@@ -3,6 +3,10 @@
 #ifndef __WINDOWS_FILE_IO_H
 #define __WINDOWS_FILE_IO_H
 
+#if defined(_WIN32) && !defined(UNDER_CE)
+#include <winioctl.h>
+#endif
+
 #include "../Common/MyString.h"
 #include "../Common/MyBuffer.h"
 
@@ -19,7 +23,9 @@
 namespace NWindows {
 namespace NFile {
 
+#if defined(_WIN32) && !defined(UNDER_CE)
 bool FillLinkData(CByteBuffer &dest, const wchar_t *path, bool isSymLink);
+#endif
 
 struct CReparseShortInfo
 {

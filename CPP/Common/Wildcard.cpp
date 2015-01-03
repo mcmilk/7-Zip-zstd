@@ -33,7 +33,7 @@ bool IsPath1PrefixedByPath2(const wchar_t *s1, const wchar_t *s2)
   }
 }
 
-int CompareFileNames(const wchar_t *s1, const wchar_t *s2)
+int CompareFileNames(const wchar_t *s1, const wchar_t *s2) STRING_UNICODE_THROW
 {
   if (g_CaseSensitive)
     return wcscmp(s1, s2);

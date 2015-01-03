@@ -8,7 +8,7 @@
 
 #include "../Windows/FileIO.h"
 
-void CLang::Clear()
+void CLang::Clear() throw()
 {
   delete []_text;
   _text = 0;
@@ -149,7 +149,7 @@ bool CLang::Open(CFSTR fileName, const wchar_t *id)
   return false;
 }
 
-const wchar_t *CLang::Get(UInt32 id) const
+const wchar_t *CLang::Get(UInt32 id) const throw()
 {
   int index = _ids.FindInSorted(id);
   if (index < 0)

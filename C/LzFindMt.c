@@ -1,5 +1,5 @@
 /* LzFindMt.c -- multithreaded Match finder for LZ algorithms
-2013-11-12 : Igor Pavlov : Public domain */
+2014-12-29 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -457,9 +457,8 @@ static THREAD_FUNC_RET_TYPE THREAD_FUNC_CALL_TYPE HashThreadFunc2(void *p) { Has
 static THREAD_FUNC_RET_TYPE THREAD_FUNC_CALL_TYPE BtThreadFunc2(void *p)
 {
   Byte allocaDummy[0x180];
-  int i = 0;
-  for (i = 0; i < 16; i++)
-    allocaDummy[i] = (Byte)i;
+  allocaDummy[0] = 0;
+  allocaDummy[1] = allocaDummy[0];
   BtThreadFunc((CMatchFinderMt *)p);
   return 0;
 }

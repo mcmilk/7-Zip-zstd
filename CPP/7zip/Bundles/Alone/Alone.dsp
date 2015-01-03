@@ -462,6 +462,10 @@ SOURCE=..\..\..\Windows\FileIO.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\FileLink.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\FileName.cpp
 # End Source File
 # Begin Source File

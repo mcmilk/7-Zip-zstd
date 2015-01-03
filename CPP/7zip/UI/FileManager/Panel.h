@@ -577,6 +577,10 @@ public:
     bool _processTimerMem;
 
     CPanel &_panel;
+
+    CDisableTimerProcessing(const CDisableTimerProcessing &);
+    CDisableTimerProcessing& operator=(const CDisableTimerProcessing &);
+
     public:
 
     CDisableTimerProcessing(CPanel &panel): _panel(panel) { Disable(); }
@@ -590,7 +594,6 @@ public:
     {
       _panel._processTimer = _processTimerMem;
     }
-    CDisableTimerProcessing& operator=(const CDisableTimerProcessing &) {; }
   };
 
   class CDisableNotify
@@ -599,6 +602,10 @@ public:
     bool _processStatusBarMem;
 
     CPanel &_panel;
+
+    CDisableNotify(const CDisableNotify &);
+    CDisableNotify& operator=(const CDisableNotify &);
+
     public:
 
     CDisableNotify(CPanel &panel): _panel(panel) { Disable(); }
@@ -620,7 +627,6 @@ public:
       _panel._processNotify = _processNotifyMem;
       _panel._processStatusBar = _processStatusBarMem;
     }
-    CDisableNotify& operator=(const CDisableNotify &) {; }
   };
 
   // bool _passwordIsDefined;

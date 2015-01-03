@@ -97,11 +97,11 @@ bool CHeader::Parse(const Byte *p)
   if (p[0x1FE] != 0x55 || p[0x1FF] != 0xAA)
     return false;
 
-  int codeOffset = 0;
+  // int codeOffset = 0;
   switch (p[0])
   {
-    case 0xE9: codeOffset = 3 + (Int16)Get16(p + 1); break;
-    case 0xEB: if (p[2] != 0x90) return false; codeOffset = 2 + (int)(signed char)p[1]; break;
+    case 0xE9: /* codeOffset = 3 + (Int16)Get16(p + 1); */ break;
+    case 0xEB: if (p[2] != 0x90) return false; /* codeOffset = 2 + (int)(signed char)p[1]; */ break;
     default: return false;
   }
   unsigned sectorsPerClusterLog;
@@ -2175,20 +2175,20 @@ static const STATPROPSTG kProps[] =
 
   // { NULL, kpidLink, VT_BSTR},
   
-  // { L"Link 2", kpidLink2, VT_BSTR},
-  // { L"Link Type", kpidLinkType, VT_UI2},
+  // { (LPOLESTR)L"Link 2", kpidLink2, VT_BSTR},
+  // { (LPOLESTR)L"Link Type", kpidLinkType, VT_UI2},
   { NULL, kpidINode, VT_UI8},
  
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidATime, VT_FILETIME},
   
-  // { L"Record Modified", kpidRecMTime, VT_FILETIME},
+  // { (LPOLESTR)L"Record Modified", kpidRecMTime, VT_FILETIME},
 
-  // { L"Modified 2", kpidMTime2, VT_FILETIME},
-  // { L"Created 2", kpidCTime2, VT_FILETIME},
-  // { L"Accessed 2", kpidATime2, VT_FILETIME},
-  // { L"Record Modified 2", kpidRecMTime2, VT_FILETIME},
+  // { (LPOLESTR)L"Modified 2", kpidMTime2, VT_FILETIME},
+  // { (LPOLESTR)L"Created 2", kpidCTime2, VT_FILETIME},
+  // { (LPOLESTR)L"Accessed 2", kpidATime2, VT_FILETIME},
+  // { (LPOLESTR)L"Record Modified 2", kpidRecMTime2, VT_FILETIME},
 
   { NULL, kpidAttrib, VT_UI4},
   { NULL, kpidNumBlocks, VT_UI4},
@@ -2223,7 +2223,7 @@ static const STATPROPSTG kArcProps[] =
   { NULL, kpidFileSystem, VT_BSTR},
   { NULL, kpidClusterSize, VT_UI4},
   { NULL, kpidSectorSize, VT_UI4},
-  { L"Record Size", kpidRecordSize, VT_UI4},
+  { (LPOLESTR)L"Record Size", kpidRecordSize, VT_UI4},
   { NULL, kpidHeadersSize, VT_UI8},
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidId, VT_UI8},

@@ -30,6 +30,22 @@ bool MyGetDiskFreeSpace(CFSTR rootPath, UInt64 &clusterSize, UInt64 &totalSize, 
 
 namespace NIO {
 
+/*
+WinXP-64 CreateFile():
+  ""             -  ERROR_PATH_NOT_FOUND
+  :stream        -  OK
+  .:stream       -  ERROR_PATH_NOT_FOUND
+  .\:stream      -  OK
+  
+  folder\:stream -  ERROR_INVALID_NAME
+  folder:stream  -  OK
+
+  c:\:stream     -  OK
+
+  c::stream      -  ERROR_INVALID_NAME, if current dir is NOT ROOT ( c:\dir1 )
+  c::stream      -  OK,                 if current dir is ROOT     ( c:\ )
+*/
+
 bool CFileBase::Create(CFSTR path, DWORD desiredAccess,
     DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
 {
@@ -55,9 +71,9 @@ bool CFileBase::Create(CFSTR path, DWORD desiredAccess,
     #ifdef WIN_LONG_PATH
     if (_handle == INVALID_HANDLE_VALUE && USE_SUPER_PATH)
     {
-      UString longPath;
-      if (GetSuperPath(path, longPath, USE_MAIN_PATH))
-        _handle = ::CreateFileW(longPath, desiredAccess, shareMode,
+      UString superPath;
+      if (GetSuperPath(path, superPath, USE_MAIN_PATH))
+        _handle = ::CreateFileW(superPath, desiredAccess, shareMode,
             (LPSECURITY_ATTRIBUTES)NULL, creationDisposition, flagsAndAttributes, (HANDLE)NULL);
     }
     #endif
@@ -65,7 +81,7 @@ bool CFileBase::Create(CFSTR path, DWORD desiredAccess,
   return (_handle != INVALID_HANDLE_VALUE);
 }
 
-bool CFileBase::Close()
+bool CFileBase::Close() throw()
 {
   if (_handle == INVALID_HANDLE_VALUE)
     return true;
@@ -75,12 +91,12 @@ bool CFileBase::Close()
   return true;
 }
 
-bool CFileBase::GetPosition(UInt64 &position) const
+bool CFileBase::GetPosition(UInt64 &position) const throw()
 {
   return Seek(0, FILE_CURRENT, position);
 }
 
-bool CFileBase::GetLength(UInt64 &length) const
+bool CFileBase::GetLength(UInt64 &length) const throw()
 {
   #ifdef SUPPORT_DEVICE_FILE
   if (IsDeviceFile && SizeDefined)
@@ -99,7 +115,7 @@ bool CFileBase::GetLength(UInt64 &length) const
   return true;
 }
 
-bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition) const
+bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition) const throw()
 {
   #ifdef SUPPORT_DEVICE_FILE
   if (IsDeviceFile && SizeDefined && moveMethod == FILE_END)
@@ -118,18 +134,18 @@ bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition
   return true;
 }
 
-bool CFileBase::Seek(UInt64 position, UInt64 &newPosition) const
+bool CFileBase::Seek(UInt64 position, UInt64 &newPosition) const throw()
 {
   return Seek(position, FILE_BEGIN, newPosition);
 }
 
-bool CFileBase::SeekToBegin() const
+bool CFileBase::SeekToBegin() const throw()
 {
   UInt64 newPosition;
   return Seek(0, newPosition);
 }
 
-bool CFileBase::SeekToEnd(UInt64 &newPosition) const
+bool CFileBase::SeekToEnd(UInt64 &newPosition) const throw()
 {
   return Seek(0, FILE_END, newPosition);
 }
@@ -316,7 +332,7 @@ bool CInFile::Open(CFSTR fileName)
 
 static UInt32 kChunkSizeMax = (1 << 22);
 
-bool CInFile::Read1(void *data, UInt32 size, UInt32 &processedSize)
+bool CInFile::Read1(void *data, UInt32 size, UInt32 &processedSize) throw()
 {
   DWORD processedLoc = 0;
   bool res = BOOLToBool(::ReadFile(_handle, data, size, &processedLoc, NULL));
@@ -324,14 +340,14 @@ bool CInFile::Read1(void *data, UInt32 size, UInt32 &processedSize)
   return res;
 }
 
-bool CInFile::ReadPart(void *data, UInt32 size, UInt32 &processedSize)
+bool CInFile::ReadPart(void *data, UInt32 size, UInt32 &processedSize) throw()
 {
   if (size > kChunkSizeMax)
     size = kChunkSizeMax;
   return Read1(data, size, processedSize);
 }
 
-bool CInFile::Read(void *data, UInt32 size, UInt32 &processedSize)
+bool CInFile::Read(void *data, UInt32 size, UInt32 &processedSize) throw()
 {
   processedSize = 0;
   do
@@ -367,12 +383,12 @@ bool COutFile::Create(CFSTR fileName, bool createAlways)
 bool COutFile::CreateAlways(CFSTR fileName, DWORD flagsAndAttributes)
   { return Open(fileName, FILE_SHARE_READ, GetCreationDisposition(true), flagsAndAttributes); }
 
-bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime)
+bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime) throw()
   { return BOOLToBool(::SetFileTime(_handle, cTime, aTime, mTime)); }
 
-bool COutFile::SetMTime(const FILETIME *mTime) {  return SetTime(NULL, NULL, mTime); }
+bool COutFile::SetMTime(const FILETIME *mTime) throw() {  return SetTime(NULL, NULL, mTime); }
 
-bool COutFile::WritePart(const void *data, UInt32 size, UInt32 &processedSize)
+bool COutFile::WritePart(const void *data, UInt32 size, UInt32 &processedSize) throw()
 {
   if (size > kChunkSizeMax)
     size = kChunkSizeMax;
@@ -382,7 +398,7 @@ bool COutFile::WritePart(const void *data, UInt32 size, UInt32 &processedSize)
   return res;
 }
 
-bool COutFile::Write(const void *data, UInt32 size, UInt32 &processedSize)
+bool COutFile::Write(const void *data, UInt32 size, UInt32 &processedSize) throw()
 {
   processedSize = 0;
   do
@@ -401,9 +417,9 @@ bool COutFile::Write(const void *data, UInt32 size, UInt32 &processedSize)
   return true;
 }
 
-bool COutFile::SetEndOfFile() { return BOOLToBool(::SetEndOfFile(_handle)); }
+bool COutFile::SetEndOfFile() throw() { return BOOLToBool(::SetEndOfFile(_handle)); }
 
-bool COutFile::SetLength(UInt64 length)
+bool COutFile::SetLength(UInt64 length) throw()
 {
   UInt64 newPosition;
   if (!Seek(length, newPosition))

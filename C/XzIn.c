@@ -1,5 +1,5 @@
 /* XzIn.c - Xz input
-2013-11-12 : Igor Pavlov : Public domain */
+2014-12-30 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -72,7 +72,7 @@ SRes XzBlock_ReadFooter(CXzBlock *p, CXzStreamFlags f, ISeqInStream *inStream)
 
 static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *alloc)
 {
-  size_t i, numBlocks, crcStartPos, pos = 1;
+  size_t i, numBlocks, pos = 1;
   UInt32 crc;
 
   if (size < 5 || buf[0] != 0)
@@ -91,7 +91,6 @@ static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *
       return SZ_ERROR_ARCHIVE;
   }
   
-  crcStartPos = pos;
   Xz_Free(p, alloc);
   if (numBlocks != 0)
   {
@@ -292,7 +291,8 @@ SRes Xzs_ReadBackward(CXzs *p, ILookInStream *stream, Int64 *startOffset, ICompr
       if (data == 0)
         return SZ_ERROR_MEM;
       p->numAllocated = newNum;
-      memcpy(data, p->streams, p->num * sizeof(CXzStream));
+      if (p->num != 0)
+        memcpy(data, p->streams, p->num * sizeof(CXzStream));
       alloc->Free(alloc, p->streams);
       p->streams = (CXzStream *)data;
     }

@@ -640,6 +640,10 @@ bool CPanel::InvokePluginCommand(int id)
   return InvokePluginCommand(id, _sevenZipContextMenu, _systemContextMenu);
 }
 
+#if defined(_MSC_VER) && !defined(UNDER_CE)
+#define use_CMINVOKECOMMANDINFOEX
+#endif
+
 bool CPanel::InvokePluginCommand(int id,
     IContextMenu *sevenZipContextMenu, IContextMenu *systemContextMenu)
 {
@@ -650,7 +654,7 @@ bool CPanel::InvokePluginCommand(int id,
   else
     offset = id  - kSevenZipStartMenuID;
 
-  #ifdef UNDER_CE
+  #ifndef use_CMINVOKECOMMANDINFOEXR
   CMINVOKECOMMANDINFO
   #else
   CMINVOKECOMMANDINFOEX
@@ -659,7 +663,7 @@ bool CPanel::InvokePluginCommand(int id,
   memset(&commandInfo, 0, sizeof(commandInfo));
   commandInfo.cbSize = sizeof(commandInfo);
   commandInfo.fMask = 0
-  #ifndef UNDER_CE
+  #ifdef use_CMINVOKECOMMANDINFOEXR
   | CMIC_MASK_UNICODE
   #endif
   ;
@@ -669,7 +673,7 @@ bool CPanel::InvokePluginCommand(int id,
   CSysString currentFolderSys = GetSystemString(_currentFolderPrefix);
   commandInfo.lpDirectory = (LPCSTR)(LPCTSTR)(currentFolderSys);
   commandInfo.nShow = SW_SHOW;
-  #ifndef UNDER_CE
+  #ifdef use_CMINVOKECOMMANDINFOEXR
   commandInfo.lpParametersW = NULL;
   commandInfo.lpTitle = "";
   commandInfo.lpVerbW = (LPCWSTR)(MAKEINTRESOURCEW(offset));

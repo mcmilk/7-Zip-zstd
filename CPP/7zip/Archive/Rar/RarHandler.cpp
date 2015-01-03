@@ -359,7 +359,7 @@ static int ReadTime(const Byte *p, unsigned size, Byte mask, CRarTime &rarTime)
 #define READ_TIME_2(_mask_, _def_, _ttt_) \
     _def_ = ((_mask_ & 8) != 0); if (_def_) \
     { if (size < 4) return false; \
-      _ttt_ ## .DosTime = Get32(p); p += 4; size -= 4; \
+      _ttt_ .DosTime = Get32(p); p += 4; size -= 4; \
       READ_TIME(_mask_, _ttt_); } \
 
 bool CInArchive::ReadHeaderReal(const Byte *p, unsigned size, CItem &item)

@@ -260,7 +260,7 @@ static HRESULT FsCopyFile(
       &writeAskResult));
   if (IntToBool(writeAskResult))
   {
-    FString destPathNew = us2fs(destPathResult);
+    FString destPathNew = us2fs((const wchar_t *)(BSTR)destPathResult);
     RINOK(callback->SetCurrentFilePath(fs2us(srcPath)));
     if (!FsCopyFile(srcPath, destPathNew, callback, completedSize))
     {
@@ -351,7 +351,7 @@ static HRESULT FsMoveFile(
       &writeAskResult));
   if (IntToBool(writeAskResult))
   {
-    FString destPathNew = us2fs(destPathResult);
+    FString destPathNew = us2fs((const wchar_t *)(BSTR)destPathResult);
     RINOK(callback->SetCurrentFilePath(fs2us(srcPath)));
     if (!FsMoveFile(srcPath, destPathNew, callback, completedSize))
     {

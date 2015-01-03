@@ -18,7 +18,7 @@ namespace NRegistry {
 
 LONG CKey::Create(HKEY parentKey, LPCTSTR keyName,
     LPTSTR keyClass, DWORD options, REGSAM accessMask,
-    LPSECURITY_ATTRIBUTES securityAttributes, LPDWORD disposition)
+    LPSECURITY_ATTRIBUTES securityAttributes, LPDWORD disposition) throw()
 {
   MYASSERT(parentKey != NULL);
   DWORD dispositionReal;
@@ -35,7 +35,7 @@ LONG CKey::Create(HKEY parentKey, LPCTSTR keyName,
   return res;
 }
 
-LONG CKey::Open(HKEY parentKey, LPCTSTR keyName, REGSAM accessMask)
+LONG CKey::Open(HKEY parentKey, LPCTSTR keyName, REGSAM accessMask) throw()
 {
   MYASSERT(parentKey != NULL);
   HKEY key = NULL;
@@ -49,7 +49,7 @@ LONG CKey::Open(HKEY parentKey, LPCTSTR keyName, REGSAM accessMask)
   return res;
 }
 
-LONG CKey::Close()
+LONG CKey::Close() throw()
 {
   LONG res = ERROR_SUCCESS;
   if (_object != NULL)
@@ -62,13 +62,13 @@ LONG CKey::Close()
 
 // win95, win98: deletes sunkey and all its subkeys
 // winNT to be deleted must not have subkeys
-LONG CKey::DeleteSubKey(LPCTSTR subKeyName)
+LONG CKey::DeleteSubKey(LPCTSTR subKeyName) throw()
 {
   MYASSERT(_object != NULL);
   return RegDeleteKey(_object, subKeyName);
 }
 
-LONG CKey::RecurseDeleteKey(LPCTSTR subKeyName)
+LONG CKey::RecurseDeleteKey(LPCTSTR subKeyName) throw()
 {
   CKey key;
   LONG res = key.Open(_object, subKeyName, KEY_READ | KEY_WRITE);
@@ -97,7 +97,7 @@ static inline UInt32 BoolToUINT32(bool value) {  return (value ? 1: 0); }
 static inline bool UINT32ToBool(UInt32 value) {  return (value != 0); }
 
 
-LONG CKey::DeleteValue(LPCTSTR name)
+LONG CKey::DeleteValue(LPCTSTR name) throw()
 {
   MYASSERT(_object != NULL);
   return ::RegDeleteValue(_object, name);
@@ -113,23 +113,23 @@ LONG CKey::DeleteValue(LPCWSTR name)
 }
 #endif
 
-LONG CKey::SetValue(LPCTSTR name, UInt32 value)
+LONG CKey::SetValue(LPCTSTR name, UInt32 value) throw()
 {
   MYASSERT(_object != NULL);
-  return RegSetValueEx(_object, name, NULL, REG_DWORD,
+  return RegSetValueEx(_object, name, 0, REG_DWORD,
       (BYTE * const)&value, sizeof(UInt32));
 }
 
-LONG CKey::SetValue(LPCTSTR name, bool value)
+LONG CKey::SetValue(LPCTSTR name, bool value) throw()
 {
   return SetValue(name, BoolToUINT32(value));
 }
 
-LONG CKey::SetValue(LPCTSTR name, LPCTSTR value)
+LONG CKey::SetValue(LPCTSTR name, LPCTSTR value) throw()
 {
   MYASSERT(value != NULL);
   MYASSERT(_object != NULL);
-  return RegSetValueEx(_object, name, NULL, REG_SZ,
+  return RegSetValueEx(_object, name, 0, REG_SZ,
       (const BYTE * )value, (lstrlen(value) + 1) * sizeof(TCHAR));
 }
 
@@ -159,11 +159,11 @@ LONG CKey::SetValue(LPCWSTR name, LPCWSTR value)
 #endif
 
 
-LONG CKey::SetValue(LPCTSTR name, const void *value, UInt32 size)
+LONG CKey::SetValue(LPCTSTR name, const void *value, UInt32 size) throw()
 {
   MYASSERT(value != NULL);
   MYASSERT(_object != NULL);
-  return RegSetValueEx(_object, name, NULL, REG_BINARY,
+  return RegSetValueEx(_object, name, 0, REG_BINARY,
       (const BYTE *)value, size);
 }
 
@@ -177,7 +177,7 @@ LONG SetValue(HKEY parentKey, LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value)
   return res;
 }
 
-LONG CKey::SetKeyValue(LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value)
+LONG CKey::SetKeyValue(LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value) throw()
 {
   MYASSERT(value != NULL);
   CKey key;
@@ -187,9 +187,9 @@ LONG CKey::SetKeyValue(LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value)
   return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR name, UInt32 &value)
+LONG CKey::QueryValue(LPCTSTR name, UInt32 &value) throw()
 {
-  DWORD type = NULL;
+  DWORD type = 0;
   DWORD count = sizeof(DWORD);
   LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type,
     (LPBYTE)&value, &count);
@@ -198,7 +198,7 @@ LONG CKey::QueryValue(LPCTSTR name, UInt32 &value)
   return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR name, bool &value)
+LONG CKey::QueryValue(LPCTSTR name, bool &value) throw()
 {
   UInt32 uintValue = BoolToUINT32(value);
   LONG res = QueryValue(name, uintValue);
@@ -206,7 +206,7 @@ LONG CKey::QueryValue(LPCTSTR name, bool &value)
   return res;
 }
 
-LONG CKey::GetValue_IfOk(LPCTSTR name, UInt32 &value)
+LONG CKey::GetValue_IfOk(LPCTSTR name, UInt32 &value) throw()
 {
   UInt32 newVal;
   LONG res = QueryValue(name, newVal);
@@ -215,7 +215,7 @@ LONG CKey::GetValue_IfOk(LPCTSTR name, UInt32 &value)
   return res;
 }
 
-LONG CKey::GetValue_IfOk(LPCTSTR name, bool &value)
+LONG CKey::GetValue_IfOk(LPCTSTR name, bool &value) throw()
 {
   bool newVal;
   LONG res = QueryValue(name, newVal);
@@ -224,10 +224,10 @@ LONG CKey::GetValue_IfOk(LPCTSTR name, bool &value)
   return res;
 }
 
-LONG CKey::QueryValue(LPCTSTR name, LPTSTR value, UInt32 &count)
+LONG CKey::QueryValue(LPCTSTR name, LPTSTR value, UInt32 &count) throw()
 {
   MYASSERT(count != NULL);
-  DWORD type = NULL;
+  DWORD type = 0;
   LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type, (LPBYTE)value, (DWORD *)&count);
   MYASSERT((res != ERROR_SUCCESS) || (type == REG_SZ) || (type == REG_MULTI_SZ) || (type == REG_EXPAND_SZ));
   return res;
@@ -236,7 +236,7 @@ LONG CKey::QueryValue(LPCTSTR name, LPTSTR value, UInt32 &count)
 LONG CKey::QueryValue(LPCTSTR name, CSysString &value)
 {
   value.Empty();
-  DWORD type = NULL;
+  DWORD type = 0;
   UInt32 currentSize = 0;
   LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type, NULL, (DWORD *)&currentSize);
   if (res != ERROR_SUCCESS && res != ERROR_MORE_DATA)
@@ -250,7 +250,7 @@ LONG CKey::QueryValue(LPCTSTR name, CSysString &value)
 LONG CKey::QueryValue(LPCWSTR name, LPWSTR value, UInt32 &count)
 {
   MYASSERT(count != NULL);
-  DWORD type = NULL;
+  DWORD type = 0;
   LONG res = RegQueryValueExW(_object, name, NULL, &type, (LPBYTE)value, (DWORD *)&count);
   MYASSERT((res != ERROR_SUCCESS) || (type == REG_SZ) || (type == REG_MULTI_SZ) || (type == REG_EXPAND_SZ));
   return res;
@@ -258,7 +258,7 @@ LONG CKey::QueryValue(LPCWSTR name, LPWSTR value, UInt32 &count)
 LONG CKey::QueryValue(LPCWSTR name, UString &value)
 {
   value.Empty();
-  DWORD type = NULL;
+  DWORD type = 0;
   UInt32 currentSize = 0;
 
   LONG res;
@@ -280,9 +280,9 @@ LONG CKey::QueryValue(LPCWSTR name, UString &value)
 }
 #endif
 
-LONG CKey::QueryValue(LPCTSTR name, void *value, UInt32 &count)
+LONG CKey::QueryValue(LPCTSTR name, void *value, UInt32 &count) throw()
 {
-  DWORD type = NULL;
+  DWORD type = 0;
   LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type, (LPBYTE)value, (DWORD *)&count);
   MYASSERT((res != ERROR_SUCCESS) || (type == REG_BINARY));
   return res;
@@ -291,7 +291,7 @@ LONG CKey::QueryValue(LPCTSTR name, void *value, UInt32 &count)
 
 LONG CKey::QueryValue(LPCTSTR name, CByteBuffer &value, UInt32 &dataSize)
 {
-  DWORD type = NULL;
+  DWORD type = 0;
   dataSize = 0;
   LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type, NULL, (DWORD *)&dataSize);
   if (res != ERROR_SUCCESS && res != ERROR_MORE_DATA)
@@ -321,7 +321,7 @@ LONG CKey::EnumKeys(CSysStringVector &keyNames)
   return ERROR_SUCCESS;
 }
 
-LONG CKey::SetValue_Strings(LPCTSTR valueName, const UStringVector &strings)
+LONG CKey::SetValue_Strings(LPCTSTR valueName, const UStringVector &strings) throw()
 {
   UInt32 numChars = 0;
   unsigned i;
