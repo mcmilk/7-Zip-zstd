@@ -282,8 +282,6 @@ bool CCompressDialog::OnInit()
 
   OnButtonSFX();
 
-
-
   return CModalDialog::OnInit();
 }
 
@@ -335,6 +333,28 @@ static bool IsMultiProcessor()
   return systemInfo.dwNumberOfProcessors > 1;
 }
 
+void CCompressDialog::CheckSFXControlsEnable()
+{
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  bool enable = fi.SFX;
+  if (enable)
+  {
+    switch(GetMethodID())
+    {
+      case -1:
+      case kLZMA:
+      case kPPMd:
+      case kCopy:
+        break;
+      default:
+        enable = false;
+    }
+  }
+  if (!enable)
+    CheckButton(IDC_COMPRESS_SFX, false);
+  EnableItem(IDC_COMPRESS_SFX, enable);
+}
+
 void CCompressDialog::CheckControlsEnable()
 {
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
@@ -345,7 +365,7 @@ void CCompressDialog::CheckControlsEnable()
   
   EnableItem(IDC_COMPRESS_SOLID, fi.Solid);
   EnableItem(IDC_COMPRESS_MULTI_THREAD, multiThreadEnable);
-  EnableItem(IDC_COMPRESS_SFX, fi.SFX);
+  CheckSFXControlsEnable();
   
   // EnableItem(IDC_STATIC_COMPRESS_VOLUME, enable);
   // EnableItem(IDC_COMPRESS_COMBO_VOLUME, enable);
@@ -356,20 +376,21 @@ void CCompressDialog::CheckControlsEnable()
   EnableItem(IDC_COMPRESS_CHECK_SHOW_PASSWORD, fi.Encrypt);
 }
 
-void CCompressDialog::OnButtonSFX()
+bool CCompressDialog::IsSFX()
 {
   CWindow sfxButton = GetItem(IDC_COMPRESS_SFX);
-  bool sfxMode = sfxButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
+  return sfxButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
+}
+
+void CCompressDialog::OnButtonSFX()
+{
   UString fileName;
   m_ArchivePath.GetText(fileName);
   int dotPos = fileName.ReverseFind(L'.');
   int slashPos = fileName.ReverseFind(L'\\');
-  if (dotPos >= 0 && dotPos > slashPos)
-  {
-  }
-  else
+  if (dotPos < 0 || dotPos <= slashPos)
     dotPos = -1;
-  if (sfxMode)
+  if (IsSFX())
   {
     if (dotPos >= 0)
       fileName = fileName.Left(dotPos);
@@ -387,7 +408,7 @@ void CCompressDialog::OnButtonSFX()
         m_ArchivePath.SetText(fileName);
       }
     }
-    OnChangeFormat();
+    SetArchiveName2(false); // it's for OnInit
   }
 }
 
@@ -527,7 +548,7 @@ void CCompressDialog::OnOK()
 
   m_Info.ArchiverInfoIndex = m_Format.GetCurSel();
 
-  m_Info.SFXMode = IsButtonCheckedBool(IDC_COMPRESS_SFX);
+  m_Info.SFXMode = IsSFX();
   m_RegistryInfo.Solid = m_Info.Solid = IsButtonCheckedBool(IDC_COMPRESS_SOLID);
   m_RegistryInfo.MultiThread = m_Info.MultiThread = IsButtonCheckedBool(IDC_COMPRESS_MULTI_THREAD);
   m_RegistryInfo.EncryptHeaders = EncryptHeaders = IsButtonCheckedBool(IDC_COMPRESS_CHECK_ENCRYPT_FILE_NAMES);
@@ -587,16 +608,18 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
       case IDC_COMPRESS_COMBO_LEVEL:
       {
         const CArchiverInfo &ai = m_ArchiverInfoList[m_Format.GetCurSel()];
-        int index = FindRegistryFormat(ai.Name);
+        int index = FindRegistryFormatAlways(ai.Name);
         NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
         fo.Init();
         SetMethod();
+        CheckSFXNameChange();
         return true;
       }
       case IDC_COMPRESS_COMBO_METHOD:
       {
         SetDictionary();
         SetOrder();
+        CheckSFXNameChange();
         return true;
       }
       case IDC_COMPRESS_COMBO_DICTIONARY:
@@ -610,18 +633,23 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
   return CModalDialog::OnCommand(code, itemID, lParam);
 }
 
-void CCompressDialog::OnChangeFormat() 
+void CCompressDialog::CheckSFXNameChange() 
 {
-  SaveOptionsInMem();
+  bool isSFX = IsSFX();
+  CheckSFXControlsEnable();
+  if (isSFX != IsSFX())
+    SetArchiveName2(isSFX);
+}
+
+void CCompressDialog::SetArchiveName2(bool prevWasSFX) 
+{
   UString fileName;
   m_ArchivePath.GetText(fileName);
-
   const CArchiverInfo &prevArchiverInfo = m_ArchiverInfoList[m_PrevFormat];
   if (prevArchiverInfo.KeepName || m_Info.KeepName)
   {
     UString prevExtension = prevArchiverInfo.GetMainExtension();
-    if (IsButtonCheckedBool(IDC_COMPRESS_SFX) && 
-        prevArchiverInfo.Name == k7zFormat)
+    if (prevWasSFX)
       prevExtension = kExeExt;
     else
       prevExtension = UString('.') + prevExtension;
@@ -631,14 +659,16 @@ void CCompressDialog::OnChangeFormat()
         fileName = fileName.Left(fileName.Length() - prevExtensionLen);
   }
   SetArchiveName(fileName);
+}
+
+void CCompressDialog::OnChangeFormat() 
+{
+  bool isSFX = IsSFX();
+  SaveOptionsInMem();
   SetLevel();
   SetParams();
-
   CheckControlsEnable();
-  CWindow sfxButton = GetItem(IDC_COMPRESS_SFX);
-  bool sfxMode = sfxButton.IsEnabled() && IsButtonCheckedBool(IDC_COMPRESS_SFX);
-  if (sfxMode)
-    OnButtonSFX();
+  SetArchiveName2(isSFX);
 }
 
 void CCompressDialog::SetArchiveName(const UString &name)
@@ -661,8 +691,14 @@ void CCompressDialog::SetArchiveName(const UString &name)
         fileName = fileName.Left(dotPos);
     }
   }
-  fileName += L'.';
-  fileName += ai.GetMainExtension();
+
+  if (IsSFX())
+    fileName += kExeExt;
+  else
+  {
+    fileName += L'.';
+    fileName += ai.GetMainExtension();
+  }
   m_ArchivePath.SetText(fileName);
 }
 
@@ -675,6 +711,18 @@ int CCompressDialog::FindRegistryFormat(const UString &name)
       return i;
   }
   return -1;
+}
+
+int CCompressDialog::FindRegistryFormatAlways(const UString &name)
+{
+  int index = FindRegistryFormat(name);
+  if (index < 0)
+  {
+    NCompression::CFormatOptions fo;
+    fo.FormatID = GetSystemString(name);
+    index = m_RegistryInfo.FormatOptionsVector.Add(fo);
+  }
+  return index;
 }
 
 int CCompressDialog::GetStaticFormatIndex()
@@ -1173,14 +1221,9 @@ void CCompressDialog::SetParams()
 void CCompressDialog::SaveOptionsInMem()
 {
   const CArchiverInfo &ai = m_ArchiverInfoList[m_Info.ArchiverInfoIndex];
-  int index = FindRegistryFormat(ai.Name);
+  int index = FindRegistryFormatAlways(ai.Name);
   m_Params.GetText(m_Info.Options);
-  if (index < 0)
-  {
-    NCompression::CFormatOptions fo;
-    fo.FormatID = GetSystemString(ai.Name);
-    index = m_RegistryInfo.FormatOptionsVector.Add(fo);
-  }
+  m_Info.Options.Trim();
   NCompression::CFormatOptions &fo = m_RegistryInfo.FormatOptionsVector[index];
   fo.Options = m_Info.Options;
   fo.Level = GetLevelSpec();

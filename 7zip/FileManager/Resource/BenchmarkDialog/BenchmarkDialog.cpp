@@ -410,7 +410,7 @@ bool CBenchmarkDialog::OnTimer(WPARAM timerID, LPARAM callback)
       IDC_BENCHMARK_COMPRESSING_RATING);
   }
 
-  if (_syncInfo.CompressingIsDefined && _syncInfo.CompressingInfo.Time >= 1)
+  if (_syncInfo.CompressingInfo.Time >= 1)
   {
     PrintResults(
       _syncInfo.DictionarySize, 
@@ -420,40 +420,37 @@ bool CBenchmarkDialog::OnTimer(WPARAM timerID, LPARAM callback)
       IDC_BENCHMARK_COMPRESSING_RATING2);
   }
 
-  if (_syncInfo.DecompressingIsDefined)
+  if (_syncInfo.DecompressingInfoTemp.Time >= 1)
   {
-    if (_syncInfo.DecompressingInfoTemp.Time >= 1)
+    PrintResults(
+      _syncInfo.DictionarySize, 
+      _syncInfo.DecompressingInfoTemp.Time, 
+      _syncInfo.DecompressingInfoTemp.OutSize, 
+      IDC_BENCHMARK_DECOMPRESSING_SPEED,
+      IDC_BENCHMARK_DECOMPRESSING_RATING,
+      true,
+      _syncInfo.DecompressingInfoTemp.InSize);
+  }
+  if (_syncInfo.DecompressingInfo.Time >= 1)
+  {
+    PrintResults(
+      _syncInfo.DictionarySize, 
+      _syncInfo.DecompressingInfo.Time, 
+      _syncInfo.DecompressingInfo.OutSize, 
+      IDC_BENCHMARK_DECOMPRESSING_SPEED2,
+      IDC_BENCHMARK_DECOMPRESSING_RATING2,
+      true,
+      _syncInfo.DecompressingInfo.InSize);
+    if (_syncInfo.CompressingInfo.Time >= 1)
     {
-      PrintResults(
+      PrintRating(GetTotalRating(
         _syncInfo.DictionarySize, 
-        _syncInfo.DecompressingInfoTemp.Time, 
-        _syncInfo.DecompressingInfoTemp.OutSize, 
-        IDC_BENCHMARK_DECOMPRESSING_SPEED,
-        IDC_BENCHMARK_DECOMPRESSING_RATING,
-        true,
-        _syncInfo.DecompressingInfoTemp.InSize);
-    }
-    if (_syncInfo.DecompressingInfo.Time >= 1)
-    {
-      PrintResults(
-        _syncInfo.DictionarySize, 
-        _syncInfo.DecompressingInfo.Time, 
+        _syncInfo.CompressingInfo.Time, 
+        _syncInfo.CompressingInfo.InSize, 
+        _syncInfo.DecompressingInfo.Time,
         _syncInfo.DecompressingInfo.OutSize, 
-        IDC_BENCHMARK_DECOMPRESSING_SPEED2,
-        IDC_BENCHMARK_DECOMPRESSING_RATING2,
-        true,
-        _syncInfo.DecompressingInfo.InSize);
-      if (_syncInfo.CompressingIsDefined && _syncInfo.CompressingInfo.Time >= 1)
-      {
-        PrintRating(GetTotalRating(
-            _syncInfo.DictionarySize, 
-            _syncInfo.CompressingInfo.Time, 
-            _syncInfo.CompressingInfo.InSize, 
-            _syncInfo.DecompressingInfo.Time,
-            _syncInfo.DecompressingInfo.OutSize, 
-            _syncInfo.DecompressingInfo.InSize), 
-            IDC_BENCHMARK_TOTAL_RATING_VALUE);
-      }
+        _syncInfo.DecompressingInfo.InSize), 
+        IDC_BENCHMARK_TOTAL_RATING_VALUE);
     }
   }
   return true;
@@ -747,11 +744,8 @@ DWORD CThreadBenchmark::Process()
           SyncInfo->CompressingInfoTemp.InSize = kBufferSize - SyncInfo->ApprovedInfo.InSize;
           SyncInfo->CompressingInfoTemp.OutSize = compressedSize - SyncInfo->ApprovedInfo.OutSize;
           SyncInfo->CompressingInfoTemp.Time = tickCount - SyncInfo->ApprovedInfo.Time;
-          if (!SyncInfo->CompressingIsDefined)
-          {
-            SyncInfo->CompressingIsDefined = true;
+          if (SyncInfo->CompressingInfo.Time == 0)
             SyncInfo->CompressingInfo = SyncInfo->CompressingInfoTemp;
-          }
         }
       }
       SyncInfo->ApprovedInfo.Init();
@@ -773,43 +767,49 @@ DWORD CThreadBenchmark::Process()
     ///////////////////////
     // Decompressing
 
-    inStreamSpec->Init(outStreamSpec->Buffer, compressedSize);
 
     CCompareOutStream *outCompareStreamSpec = new CCompareOutStream;
-    outCompareStreamSpec->Init();
     CMyComPtr<ISequentialOutStream> outCompareStream = outCompareStreamSpec;
 
-    if (compressSetDecoderProperties)
+    for (int i = 0; i < 2; i++)
     {
-      propDecoderStreamSpec->Init(
-          propStreamSpec->GetBuffer(), propStreamSpec->GetSize());
-      RINOK(compressSetDecoderProperties->SetDecoderProperties(propDecoderStream));
-    }
+      inStreamSpec->Init(outStreamSpec->Buffer, compressedSize);
+      outCompareStreamSpec->Init();
 
-    UINT64 outSize = kBufferSize;
-    UINT64 startTime = ::GetTimeCount();
-    result = Decoder->Code(inStream, outCompareStream, 0, &outSize, decoderProgress);
-    tickCount = ::GetTimeCount() - startTime;
-    {
-      NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
-      if (result == S_OK)
+      if (compressSetDecoderProperties)
       {
-        SyncInfo->DecompressingInfoTemp.InSize = compressedSize;
-        SyncInfo->DecompressingInfoTemp.OutSize = kBufferSize;
-        SyncInfo->DecompressingInfoTemp.Time = tickCount;
-        if (!SyncInfo->DecompressingIsDefined)
-        {
-          SyncInfo->DecompressingIsDefined = true;
-          SyncInfo->DecompressingInfo = SyncInfo->DecompressingInfoTemp;
-        }
-        if (outCompareStreamSpec->CRC.GetDigest() != crc.GetDigest())
-          SyncInfo->NumErrors++;
+        propDecoderStreamSpec->Init(
+          propStreamSpec->GetBuffer(), propStreamSpec->GetSize());
+        RINOK(compressSetDecoderProperties->SetDecoderProperties(propDecoderStream));
       }
-      else
+      
+      UINT64 outSize = kBufferSize;
+      UINT64 startTime = ::GetTimeCount();
+      result = Decoder->Code(inStream, outCompareStream, 0, &outSize, decoderProgress);
+      tickCount = ::GetTimeCount() - startTime;
       {
-        if(result != E_ABORT)
-          SyncInfo->NumErrors++;
-        continue;
+        NSynchronization::CCriticalSectionLock lock(SyncInfo->CS);
+        if (result == S_OK)
+        {
+          SyncInfo->DecompressingInfoTemp.InSize = compressedSize;
+          SyncInfo->DecompressingInfoTemp.OutSize = kBufferSize;
+          SyncInfo->DecompressingInfoTemp.Time = tickCount;
+          if (SyncInfo->DecompressingInfo.Time == 0 && i >= 1)
+            SyncInfo->DecompressingInfo = SyncInfo->DecompressingInfoTemp;
+          if (outCompareStreamSpec->CRC.GetDigest() != crc.GetDigest())
+          {
+            SyncInfo->NumErrors++;
+            break;
+          }
+        }
+        else
+        {
+          if(result != E_ABORT)
+          {
+            SyncInfo->NumErrors++;
+            break;
+          }
+        }
       }
     }
   }

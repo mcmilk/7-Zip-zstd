@@ -351,6 +351,7 @@ void CPanel::OpenRootFolder()
 
 void CPanel::OpenDrivesFolder()
 {
+  CloseOpenFolders();
   CFSDrives *fsFolderSpec = new CFSDrives;
   _folder = fsFolderSpec;
   fsFolderSpec->Init();

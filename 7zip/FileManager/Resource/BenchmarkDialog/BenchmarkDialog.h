@@ -24,7 +24,7 @@ struct CProgressInfo
   {
     InSize = 0;
     OutSize = 0;
-    // Time = GetTickCount();
+    Time = 0;
   }
 };
 
@@ -41,28 +41,24 @@ public:
   NWindows::NSynchronization::CManualResetEvent _startEvent;
   NWindows::NSynchronization::CCriticalSection CS;
 
-  bool CompressingIsDefined;
   CProgressInfo ApprovedInfo;
   CProgressInfo CompressingInfoPrev;
   CProgressInfo CompressingInfoTemp;
   CProgressInfo CompressingInfo;
   UINT64 ProcessedSize;
 
-  bool DecompressingIsDefined;
   CProgressInfo DecompressingInfoTemp;
   CProgressInfo DecompressingInfo;
 
   void Init()
   {
     Changed = false;
-    CompressingIsDefined = false;
     ApprovedInfo.Init();
     CompressingInfoPrev.Init();
     CompressingInfoTemp.Init();
     CompressingInfo.Init();
     ProcessedSize = 0;
     
-    DecompressingIsDefined = false;
     DecompressingInfoTemp.Init();
     DecompressingInfo.Init();
 

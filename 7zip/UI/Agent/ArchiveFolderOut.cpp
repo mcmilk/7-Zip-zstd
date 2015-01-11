@@ -4,6 +4,7 @@
 #include "Agent.h"
 
 #include "Common/StringConvert.h"
+#include "Common/ComTry.h"
 #include "Windows/FileDir.h"
 
 // #include "../Common/CompressEngineCommon.h"
@@ -138,6 +139,7 @@ STDMETHODIMP CAgentFolder::CopyFrom(
     UINT32 numItems,
     IProgress *progress)
 {
+  COM_TRY_BEGIN
   RINOK(_agentSpec->SetFiles(fromFolderPath, itemsPaths, numItems));
   RINOK(_agentSpec->SetFolder(this));
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
@@ -149,10 +151,12 @@ STDMETHODIMP CAgentFolder::CopyFrom(
   }
   return CommonUpdateOperation(false, false, false, NULL, 
     &NUpdateArchive::kAddActionSet, 0, 0, updateCallback100);
+  COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::Delete(const UINT32 *indices, UINT32 numItems, IProgress *progress)
 {
+  COM_TRY_BEGIN
   RINOK(_agentSpec->SetFolder(this));
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
   if (progress != 0)
@@ -163,10 +167,12 @@ STDMETHODIMP CAgentFolder::Delete(const UINT32 *indices, UINT32 numItems, IProgr
   }
   return CommonUpdateOperation(true, false, false, NULL, 
     &NUpdateArchive::kDeleteActionSet, indices, numItems, updateCallback100);
+  COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress)
 {
+  COM_TRY_BEGIN
   if (_proxyFolderItem->FindDirSubItemIndex(name) >= 0)
     return ERROR_ALREADY_EXISTS;
   RINOK(_agentSpec->SetFolder(this));
@@ -179,10 +185,12 @@ STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress
   }
   return CommonUpdateOperation(false, true, false, name, NULL, NULL, 
       0, updateCallback100);
+  COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgress *progress)
 {
+  COM_TRY_BEGIN
   CUIntVector realIndices;
   CUIntVector indices;
   indices.Add(index);
@@ -196,7 +204,7 @@ STDMETHODIMP CAgentFolder::Rename(UINT32 index, const wchar_t *newName, IProgres
   }
   return CommonUpdateOperation(false, false, true, newName, NULL, &indices.Front(), 
       indices.Size(), updateCallback100);
-  return E_NOTIMPL;
+  COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::CreateFile(const wchar_t *name, IProgress *progress)

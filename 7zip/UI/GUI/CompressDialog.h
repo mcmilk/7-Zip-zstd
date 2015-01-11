@@ -88,8 +88,11 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   int m_PrevFormat;
   void SetArchiveName(const UString &name);
   int FindRegistryFormat(const UString &name);
+  int FindRegistryFormatAlways(const UString &name);
   
   void OnChangeFormat();
+  void CheckSFXNameChange();
+  void SetArchiveName2(bool prevWasSFX);
   
   int GetStaticFormatIndex();
 
@@ -140,9 +143,11 @@ public:
 
 protected:
 
+  void CheckSFXControlsEnable();
   void CheckControlsEnable();
 
 	void OnButtonSetArchive();
+  bool IsSFX();
   void OnButtonSFX();
 
   virtual bool OnInit();

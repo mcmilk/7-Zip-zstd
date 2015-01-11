@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 
+#include "Common/ComTry.h"
 #include "Common/StringConvert.h"
 #include "Windows/Defs.h"
 #include "Windows/PropVariant.h"
@@ -21,6 +22,7 @@ using namespace NCOM;
 STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems, 
     const wchar_t *path, IFolderOperationsExtractCallback *callback)
 {
+  COM_TRY_BEGIN
   CArchiveExtractCallback *extractCallbackSpec = new 
       CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
@@ -54,6 +56,7 @@ STDMETHODIMP CAgentFolder::CopyTo(const UINT32 *indices, UINT32 numItems,
   _proxyFolderItem->GetRealIndices(indices, numItems, realIndices);
   return _agentSpec->_archive->Extract(&realIndices.Front(), 
       realIndices.Size(), BoolToInt(false), extractCallback);
+  COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::MoveTo(const UINT32 *indices, UINT32 numItems, 
