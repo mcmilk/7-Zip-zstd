@@ -39,7 +39,7 @@ public:
 
   CStdOutStream & operator<<(char c) throw()
   {
-    fputc(c, _stream);
+    fputc((unsigned char)c, _stream);
     return *this;
   }
 

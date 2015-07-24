@@ -219,6 +219,14 @@ SOURCE=.\Test.bmp
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\AltStreamsFolder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\AltStreamsFolder.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\FSDrives.cpp
 # End Source File
 # Begin Source File
@@ -1026,6 +1034,10 @@ SOURCE=..\..\..\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\Common.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\ComTry.h
 # End Source File
 # Begin Source File
@@ -1398,6 +1410,14 @@ SOURCE=..\GUI\HashGUI.cpp
 # Begin Source File
 
 SOURCE=..\GUI\HashGUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\GUI\UpdateCallbackGUI2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\GUI\UpdateCallbackGUI2.h
 # End Source File
 # End Group
 # End Group

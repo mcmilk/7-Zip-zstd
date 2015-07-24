@@ -10,9 +10,9 @@ STDMETHODIMP COutStreamWithSha1::Write(const void *data, UInt32 size, UInt32 *pr
   if (_stream)
     result = _stream->Write(data, size, &size);
   if (_calculate)
-    _sha.Update((const Byte *)data, size);
+    Sha1_Update(&_sha, (const Byte *)data, size);
   _size += size;
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = size;
   return result;
 }

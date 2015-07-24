@@ -42,7 +42,7 @@ namespace NMacho {
 
 #define CPU_SUBTYPE_POWERPC_970	100
 
-static const char *k_PowerPc_SubTypes[] =
+static const char * const k_PowerPc_SubTypes[] =
 {
   NULL
   , "601"
@@ -297,7 +297,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           ConvertUInt32ToString(t, temp);
           n = temp;
         }
-        s += ' ';
+        s.Add_Space();
         s += n;
       }
       prop = s;
@@ -310,7 +310,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       AString s = FlagsToString(g_ArcFlags, ARRAY_SIZE(g_ArcFlags), _flags);
       if (!s.IsEmpty())
       {
-        res += ' ';
+        res.Add_Space();
         res += s;
       }
       prop = res;
@@ -354,7 +354,7 @@ static AString SectFlagsToString(UInt32 flags)
   AString s = FlagsToString(g_Flags, ARRAY_SIZE(g_Flags), flags & SECT_ATTR_MASK);
   if (!s.IsEmpty())
   {
-    res += ' ';
+    res.Add_Space();
     res += s;
   }
   return res;
@@ -643,22 +643,18 @@ STDMETHODIMP CHandler::AllowTail(Int32 allowTail)
   return S_OK;
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = {
+  4, 0xCE, 0xFA, 0xED, 0xFE,
+  4, 0xCF, 0xFA, 0xED, 0xFE,
+  4, 0xFE, 0xED, 0xFA, 0xCE,
+  4, 0xFE, 0xED, 0xFA, 0xCF };
 
-#define k_Signature { \
-  4, 0xCE, 0xFA, 0xED, 0xFE, \
-  4, 0xCF, 0xFA, 0xED, 0xFE, \
-  4, 0xFE, 0xED, 0xFA, 0xCE, \
-  4, 0xFE, 0xED, 0xFA, 0xCF }
-
-static CArcInfo g_ArcInfo =
-  { "MachO", "macho", 0, 0xDF,
-  4 * 5, k_Signature,
+REGISTER_ARC_I(
+  "MachO", "macho", 0, 0xDF,
+  k_Signature,
   0,
   NArcInfoFlags::kMultiSignature |
   NArcInfoFlags::kPreArc,
-  CreateArc };
-
-REGISTER_ARC(Macho)
+  NULL)
 
 }}

@@ -9,16 +9,12 @@
 namespace NArchive {
 namespace NNsis {
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "Nsis", "nsis", 0, 0x9,
-  NArchive::NNsis::kSignatureSize, NSIS_SIGNATURE,
+REGISTER_ARC_I(
+  "Nsis", "nsis", 0, 0x9,
+  kSignature,
   4,
   NArcInfoFlags::kFindSignature |
   NArcInfoFlags::kUseGlobalOffset,
-  CreateArc };
-
-REGISTER_ARC(Nsis)
+  NULL)
 
 }}

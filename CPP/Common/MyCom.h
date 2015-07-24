@@ -76,19 +76,28 @@ public:
 inline HRESULT StringToBstr(LPCOLESTR src, BSTR *bstr)
 {
   *bstr = ::SysAllocString(src);
-  return (*bstr != NULL) ? S_OK : E_OUTOFMEMORY;
+  return (*bstr) ? S_OK : E_OUTOFMEMORY;
 }
 
 class CMyComBSTR
 {
   BSTR m_str;
+
 public:
-  
   CMyComBSTR(): m_str(NULL) {}
+  ~CMyComBSTR() { ::SysFreeString(m_str); }
+  BSTR* operator&() { return &m_str; }
+  operator LPCOLESTR() const { return m_str; }
+  // operator bool() const { return m_str != NULL; }
+  // bool operator!() const { return m_str == NULL; }
+private:
+  // operator BSTR() const { return m_str; }
+
   CMyComBSTR(LPCOLESTR src) { m_str = ::SysAllocString(src); }
   // CMyComBSTR(int nSize) { m_str = ::SysAllocStringLen(NULL, nSize); }
   // CMyComBSTR(int nSize, LPCOLESTR sz) { m_str = ::SysAllocStringLen(sz, nSize);  }
   CMyComBSTR(const CMyComBSTR& src) { m_str = src.MyCopy(); }
+  
   /*
   CMyComBSTR(REFGUID src)
   {
@@ -98,7 +107,7 @@ public:
     CoTaskMemFree(szGuid);
   }
   */
-  ~CMyComBSTR() { ::SysFreeString(m_str); }
+  
   CMyComBSTR& operator=(const CMyComBSTR& src)
   {
     if (m_str != src.m_str)
@@ -109,22 +118,29 @@ public:
     }
     return *this;
   }
+  
   CMyComBSTR& operator=(LPCOLESTR src)
   {
     ::SysFreeString(m_str);
     m_str = ::SysAllocString(src);
     return *this;
   }
-  // unsigned Len() const { return ::SysStringLen(m_str); }
-  operator BSTR() const { return m_str; }
-  BSTR* operator&() { return &m_str; }
+  
+  unsigned Len() const { return ::SysStringLen(m_str); }
+
   BSTR MyCopy() const
   {
-    int byteLen = ::SysStringByteLen(m_str);
+    // We don't support Byte BSTRs here
+    return ::SysAllocStringLen(m_str, ::SysStringLen(m_str));
+    /*
+    UINT byteLen = ::SysStringByteLen(m_str);
     BSTR res = ::SysAllocStringByteLen(NULL, byteLen);
-    memcpy(res, m_str, byteLen);
+    if (res && byteLen != 0 && m_str)
+      memcpy(res, m_str, byteLen);
     return res;
+    */
   }
+  
   /*
   void Attach(BSTR src) { m_str = src; }
   BSTR Detach()
@@ -134,12 +150,12 @@ public:
     return s;
   }
   */
+
   void Empty()
   {
     ::SysFreeString(m_str);
     m_str = NULL;
   }
-  bool operator!() const { return (m_str == NULL); }
 };
 
 //////////////////////////////////////////////////////////
@@ -149,6 +165,8 @@ class CMyUnknownImp
 public:
   ULONG __m_RefCount;
   CMyUnknownImp(): __m_RefCount(0) {}
+
+  // virtual ~CMyUnknownImp() {};
 };
 
 #define MY_QUERYINTERFACE_BEGIN STDMETHOD(QueryInterface) \
@@ -164,7 +182,7 @@ public:
     MY_QUERYINTERFACE_ENTRY_UNKNOWN(i) \
     MY_QUERYINTERFACE_ENTRY(i)
 
-#define MY_QUERYINTERFACE_END else return E_NOINTERFACE; AddRef(); return S_OK; }
+#define MY_QUERYINTERFACE_END else return E_NOINTERFACE; ++__m_RefCount; /* AddRef(); */ return S_OK; }
 
 #define MY_ADDREF_RELEASE \
 STDMETHOD_(ULONG, AddRef)() throw() { return ++__m_RefCount; } \
@@ -238,5 +256,7 @@ STDMETHOD_(ULONG, Release)() { if (--__m_RefCount != 0)  \
   MY_QUERYINTERFACE_ENTRY(i6) \
   MY_QUERYINTERFACE_ENTRY(i7) \
   )
+
+const HRESULT k_My_HRESULT_WritingWasCut = 0x20000010;
 
 #endif

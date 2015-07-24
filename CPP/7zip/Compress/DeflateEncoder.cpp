@@ -21,7 +21,7 @@ namespace NCompress {
 namespace NDeflate {
 namespace NEncoder {
 
-static const int kNumDivPassesMax = 10; // [0, 16); ratio/speed/ram tradeoff; use big value for better compression ratio.
+static const unsigned kNumDivPassesMax = 10; // [0, 16); ratio/speed/ram tradeoff; use big value for better compression ratio.
 static const UInt32 kNumTables = (1 << kNumDivPassesMax);
 
 static const UInt32 kFixedHuffmanCodeBlockSizeMax = (1 << 8); // [0, (1 << 32)); ratio/speed tradeoff; use big value for better compression ratio.
@@ -34,8 +34,8 @@ static const UInt32 kMatchArrayLimit = kMatchArraySize - kMatchMaxLen * 4 * size
 static const UInt32 kBlockUncompressedSizeThreshold = kMaxUncompressedBlockSize -
     kMatchMaxLen - kNumOpts;
 
-static const int kMaxCodeBitLength = 11;
-static const int kMaxLevelBitLength = 7;
+static const unsigned kMaxCodeBitLength = 11;
+static const unsigned kMaxLevelBitLength = 7;
 
 static const Byte kNoLiteralStatPrice = 11;
 static const Byte kNoLenStatPrice = 11;
@@ -49,17 +49,17 @@ class CFastPosInit
 public:
   CFastPosInit()
   {
-    int i;
+    unsigned i;
     for (i = 0; i < kNumLenSlots; i++)
     {
-      int c = kLenStart32[i];
-      int j = 1 << kLenDirectBits32[i];
-      for (int k = 0; k < j; k++, c++)
+      unsigned c = kLenStart32[i];
+      unsigned j = 1 << kLenDirectBits32[i];
+      for (unsigned k = 0; k < j; k++, c++)
         g_LenSlots[c] = (Byte)i;
     }
     
-    const int kFastSlots = 18;
-    int c = 0;
+    const unsigned kFastSlots = 18;
+    unsigned c = 0;
     for (Byte slotFast = 0; slotFast < kFastSlots; slotFast++)
     {
       UInt32 k = (1 << kDistDirectBits[slotFast]);
@@ -78,10 +78,6 @@ inline UInt32 GetPosSlot(UInt32 pos)
     return g_FastPos[pos];
   return g_FastPos[pos >> 8] + 16;
 }
-
-static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
-static void SzFree(void *p, void *address) { p = p; MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 void CEncProps::Normalize()
 {
@@ -183,7 +179,7 @@ HRESULT CCoder::Create()
 
   if (!m_Created)
   {
-    _lzInWindow.btMode = _btMode ? 1 : 0;
+    _lzInWindow.btMode = (Byte)(_btMode ? 1 : 0);
     _lzInWindow.numHashBytes = 3;
     if (!MatchFinder_Create(&_lzInWindow,
         m_Deflate64Mode ? kHistorySize64 : kHistorySize32,
@@ -348,7 +344,7 @@ NO_INLINE UInt32 CCoder::GetOptimal(UInt32 &backRes)
     MovePos(lenMain - 1);
     return lenMain;
   }
-  m_Optimum[1].Price = m_LiteralPrices[Inline_MatchFinder_GetIndexByte(&_lzInWindow, 0 - m_AdditionalOffset)];
+  m_Optimum[1].Price = m_LiteralPrices[*(Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) - m_AdditionalOffset)];
   m_Optimum[1].PosPrev = 0;
 
   m_Optimum[2].Price = kIfinityPrice;
@@ -392,7 +388,7 @@ NO_INLINE UInt32 CCoder::GetOptimal(UInt32 &backRes)
       }
     }
     UInt32 curPrice = m_Optimum[cur].Price;
-    UInt32 curAnd1Price = curPrice + m_LiteralPrices[Inline_MatchFinder_GetIndexByte(&_lzInWindow, cur - m_AdditionalOffset)];
+    UInt32 curAnd1Price = curPrice + m_LiteralPrices[*(Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) + cur - m_AdditionalOffset)];
     COptimal &optimum = m_Optimum[cur + 1];
     if (curAnd1Price < optimum.Price)
     {
@@ -453,21 +449,23 @@ void CTables::InitStructures()
     distLevels[i] = 5;
 }
 
-NO_INLINE void CCoder::LevelTableDummy(const Byte *levels, int numLevels, UInt32 *freqs)
+NO_INLINE void CCoder::LevelTableDummy(const Byte *levels, unsigned numLevels, UInt32 *freqs)
 {
-  int prevLen = 0xFF;
-  int nextLen = levels[0];
-  int count = 0;
-  int maxCount = 7;
-  int minCount = 4;
+  unsigned prevLen = 0xFF;
+  unsigned nextLen = levels[0];
+  unsigned count = 0;
+  unsigned maxCount = 7;
+  unsigned minCount = 4;
+  
   if (nextLen == 0)
   {
     maxCount = 138;
     minCount = 3;
   }
-  for (int n = 0; n < numLevels; n++)
+  
+  for (unsigned n = 0; n < numLevels; n++)
   {
-    int curLen = nextLen;
+    unsigned curLen = nextLen;
     nextLen = (n < numLevels - 1) ? levels[n + 1] : 0xFF;
     count++;
     if (count < maxCount && curLen == nextLen)
@@ -510,7 +508,7 @@ NO_INLINE void CCoder::LevelTableDummy(const Byte *levels, int numLevels, UInt32
   }
 }
 
-NO_INLINE void CCoder::WriteBits(UInt32 value, int numBits)
+NO_INLINE void CCoder::WriteBits(UInt32 value, unsigned numBits)
 {
   m_OutStream.WriteBits(value, numBits);
 }
@@ -518,28 +516,30 @@ NO_INLINE void CCoder::WriteBits(UInt32 value, int numBits)
 #define WRITE_HF2(codes, lens, i) m_OutStream.WriteBits(codes[i], lens[i])
 #define WRITE_HF(i) WriteBits(codes[i], lens[i])
 
-NO_INLINE void CCoder::LevelTableCode(const Byte *levels, int numLevels, const Byte *lens, const UInt32 *codes)
+NO_INLINE void CCoder::LevelTableCode(const Byte *levels, unsigned numLevels, const Byte *lens, const UInt32 *codes)
 {
-  int prevLen = 0xFF;
-  int nextLen = levels[0];
-  int count = 0;
-  int maxCount = 7;
-  int minCount = 4;
+  unsigned prevLen = 0xFF;
+  unsigned nextLen = levels[0];
+  unsigned count = 0;
+  unsigned maxCount = 7;
+  unsigned minCount = 4;
+  
   if (nextLen == 0)
   {
     maxCount = 138;
     minCount = 3;
   }
-  for (int n = 0; n < numLevels; n++)
+  
+  for (unsigned n = 0; n < numLevels; n++)
   {
-    int curLen = nextLen;
+    unsigned curLen = nextLen;
     nextLen = (n < numLevels - 1) ? levels[n + 1] : 0xFF;
     count++;
     if (count < maxCount && curLen == nextLen)
       continue;
     
     if (count < minCount)
-      for (int i = 0; i < count; i++)
+      for (unsigned i = 0; i < count; i++)
         WRITE_HF(curLen);
     else if (curLen != 0)
     {
@@ -644,7 +644,7 @@ NO_INLINE void CCoder::TryBlock()
     }
     else
     {
-      Byte b = Inline_MatchFinder_GetIndexByte(&_lzInWindow, 0 - m_AdditionalOffset);
+      Byte b = *(Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) - m_AdditionalOffset);
       mainFreqs[b]++;
       codeValue.SetAsLiteral();
       codeValue.Pos = b;
@@ -719,13 +719,13 @@ NO_INLINE void CCoder::WriteBlock()
   WRITE_HF2(mainCodes, m_NewLevels.litLenLevels, kSymbolEndOfBlock);
 }
 
-static UInt32 GetStorePrice(UInt32 blockSize, int bitPosition)
+static UInt32 GetStorePrice(UInt32 blockSize, unsigned bitPosition)
 {
   UInt32 price = 0;
   do
   {
     UInt32 nextBitPosition = (bitPosition + kFinalBlockFieldSize + kBlockTypeFieldSize) & 7;
-    int numBitsForAlign = nextBitPosition > 0 ? (8 - nextBitPosition): 0;
+    unsigned numBitsForAlign = nextBitPosition > 0 ? (8 - nextBitPosition): 0;
     UInt32 curBlockSize = (blockSize < (1 << 16)) ? blockSize : (1 << 16) - 1;
     price += kFinalBlockFieldSize + kBlockTypeFieldSize + numBitsForAlign + (2 + 2) * 8 + curBlockSize * 8;
     bitPosition = 0;
@@ -754,7 +754,7 @@ void CCoder::WriteStoreBlock(UInt32 blockSize, UInt32 additionalOffset, bool fin
   while (blockSize != 0);
 }
 
-NO_INLINE UInt32 CCoder::TryDynBlock(int tableIndex, UInt32 numPasses)
+NO_INLINE UInt32 CCoder::TryDynBlock(unsigned tableIndex, UInt32 numPasses)
 {
   CTables &t = m_Tables[tableIndex];
   BlockSizeRes = t.BlockSizeRes;
@@ -806,7 +806,7 @@ NO_INLINE UInt32 CCoder::TryDynBlock(int tableIndex, UInt32 numPasses)
       m_NumLevelCodes * kLevelFieldSize + kFinalBlockFieldSize + kBlockTypeFieldSize;
 }
 
-NO_INLINE UInt32 CCoder::TryFixedBlock(int tableIndex)
+NO_INLINE UInt32 CCoder::TryFixedBlock(unsigned tableIndex)
 {
   CTables &t = m_Tables[tableIndex];
   BlockSizeRes = t.BlockSizeRes;
@@ -817,7 +817,7 @@ NO_INLINE UInt32 CCoder::TryFixedBlock(int tableIndex)
   return kFinalBlockFieldSize + kBlockTypeFieldSize + GetLzBlockPrice();
 }
 
-NO_INLINE UInt32 CCoder::GetBlockPrice(int tableIndex, int numDivPasses)
+NO_INLINE UInt32 CCoder::GetBlockPrice(unsigned tableIndex, unsigned numDivPasses)
 {
   CTables &t = m_Tables[tableIndex];
   t.StaticMode = false;
@@ -864,12 +864,13 @@ NO_INLINE UInt32 CCoder::GetBlockPrice(int tableIndex, int numDivPasses)
         price = subPrice;
     }
   }
+  
   m_AdditionalOffset = additionalOffsetEnd;
   m_Pos = posTemp;
   return price;
 }
 
-void CCoder::CodeBlock(int tableIndex, bool finalBlock)
+void CCoder::CodeBlock(unsigned tableIndex, bool finalBlock)
 {
   CTables &t = m_Tables[tableIndex];
   if (t.UseSubBlocks)
@@ -888,8 +889,8 @@ void CCoder::CodeBlock(int tableIndex, bool finalBlock)
       {
         WriteBits(NBlockType::kFixedHuffman, kBlockTypeFieldSize);
         TryFixedBlock(tableIndex);
-        int i;
-        const int kMaxStaticHuffLen = 9;
+        unsigned i;
+        const unsigned kMaxStaticHuffLen = 9;
         for (i = 0; i < kFixedMainTableSize; i++)
           mainFreqs[i] = (UInt32)1 << (kMaxStaticHuffLen - m_NewLevels.litLenLevels[i]);
         for (i = 0; i < kFixedDistTableSize; i++)

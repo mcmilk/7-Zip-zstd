@@ -325,10 +325,13 @@ void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCO
 {
   unsigned size = 0;
   int index = index1;
-  unsigned newLevel;
   int imageIndex = Items[index].ImageIndex;
   const CImage &image = Images[imageIndex];
-  for (newLevel = 0;;)
+  
+  unsigned newLevel = 0;
+  bool needColon = false;
+
+  for (;;)
   {
     const CItem &item = Items[index];
     index = item.Parent;
@@ -338,10 +341,11 @@ void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCO
       meta += item.IsAltStream ?
           (IsOldVersion ? 0x10 : 0x24) :
           (IsOldVersion ? kDirRecordSizeOld - 2 : kDirRecordSize - 2);
+      needColon = item.IsAltStream;
       size += Get16(meta) / 2;
       size += newLevel;
       newLevel = 1;
-      if ((UInt32)size >= ((UInt32)1 << 15))
+      if (size >= ((UInt32)1 << 15))
       {
         path = kLongPath;
         return;
@@ -356,7 +360,9 @@ void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCO
     size += image.RootName.Len();
     size += newLevel;
   }
-  
+  else if (needColon)
+    size++;
+
   wchar_t *s = path.AllocBstr(size);
   s[size] = 0;
   
@@ -364,34 +370,45 @@ void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCO
   {
     MyStringCopy(s, (const wchar_t *)image.RootName);
     if (newLevel)
-      s[image.RootName.Len()] = WCHAR_PATH_SEPARATOR;
+      s[image.RootName.Len()] = (wchar_t)(needColon ? L':' : WCHAR_PATH_SEPARATOR);
   }
+  else if (needColon)
+    s[0] = L':';
 
   index = index1;
   wchar_t separator = 0;
+  
   for (;;)
   {
     const CItem &item = Items[index];
     index = item.Parent;
     if (index >= 0 || image.NumEmptyRootItems == 0)
     {
-      if (separator)
+      if (separator != 0)
         s[--size] = separator;
       const Byte *meta = image.Meta + item.Offset;
       meta += (item.IsAltStream) ?
           (IsOldVersion ? 0x10: 0x24) :
           (IsOldVersion ? kDirRecordSizeOld - 2 : kDirRecordSize - 2);
-      UInt32 len = Get16(meta) / 2;
+      unsigned len = Get16(meta) / 2;
       size -= len;
       wchar_t *dest = s + size;
       meta += 2;
-      for (UInt32 i = 0; i < len; i++)
+      for (unsigned i = 0; i < len; i++)
         dest[i] = Get16(meta + i * 2);
     }
     if (index < 0)
       return;
     separator = item.IsAltStream ? L':' : WCHAR_PATH_SEPARATOR;
   }
+}
+
+static bool IsEmptySha(const Byte *data)
+{
+  for (unsigned i = 0; i < kHashSize; i++)
+    if (data[i] != 0)
+      return false;
+  return true;
 }
 
 // Root folders in OLD archives (ver = 1.10) conatin real items.
@@ -472,6 +489,8 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
 
     pos += (size_t)len;
 
+    unsigned numItems2 = Items.Size();
+      
     for (UInt32 i = 0; i < numAltStreams; i++)
     {
       size_t rem = DirSize - pos;
@@ -522,7 +541,13 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
             return S_FALSE;
       }
 
-      if (fileNameLen == 0)
+
+      /* wim uses alt sreams list, if there is at least one alt stream.
+         And alt stream without name is main stream.  */
+      
+      if (fileNameLen == 0 &&
+          (attrib & FILE_ATTRIBUTE_REPARSE_POINT
+          || !item.IsDir /* && (IsOldVersion || IsEmptySha(prevMeta + 0x40)) */ ))
       {
         Byte *prevMeta = DirData + item.Offset;
         if (IsOldVersion)
@@ -546,7 +571,7 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
     if (parent < 0 && numItems == 0 && shortNameLen == 0 && fileNameLen == 0 && item.IsDir)
     {
       CImage &image = Images.Back();
-      image.NumEmptyRootItems = Items.Size() - image.StartItem;
+      image.NumEmptyRootItems = numItems2 - image.StartItem; // Items.Size()
     }
 
     if (item.IsDir && subdirOffset != 0)
@@ -730,14 +755,6 @@ static HRESULT ReadStreams(IInStream *inStream, const CHeader &h, CDatabase &db)
     }
   }
   return (i == offsetBuf.Size()) ? S_OK : S_FALSE;
-}
-
-static bool IsEmptySha(const Byte *data)
-{
-  for (unsigned i = 0; i < kHashSize; i++)
-    if (data[i] != 0)
-      return false;
-  return true;
 }
 
 HRESULT CDatabase::OpenXml(IInStream *inStream, const CHeader &h, CByteBuffer &xml)
@@ -1046,7 +1063,7 @@ HRESULT CDatabase::GenerateSortedItems(int imageIndex, bool showImageNumber)
   SortedItems.Clear();
   VirtualRoots.Clear();
   IndexOfUserImage = imageIndex;
-  NumExludededItems = 0;
+  NumExcludededItems = 0;
   ExludedItem = -1;
 
   if (Images.Size() != 1 && imageIndex < 0)
@@ -1054,6 +1071,7 @@ HRESULT CDatabase::GenerateSortedItems(int imageIndex, bool showImageNumber)
 
   unsigned startItem = 0;
   unsigned endItem = 0;
+  
   if (imageIndex < 0)
   {
     endItem = Items.Size();
@@ -1062,7 +1080,7 @@ HRESULT CDatabase::GenerateSortedItems(int imageIndex, bool showImageNumber)
       IndexOfUserImage = 0;
       const CImage &image = Images[0];
       if (!showImageNumber)
-        NumExludededItems = image.NumEmptyRootItems;
+        NumExcludededItems = image.NumEmptyRootItems;
     }
   }
   else if ((unsigned)imageIndex < Images.Size())
@@ -1071,12 +1089,13 @@ HRESULT CDatabase::GenerateSortedItems(int imageIndex, bool showImageNumber)
     startItem = image.StartItem;
     endItem = startItem + image.NumItems;
     if (!showImageNumber)
-      NumExludededItems = image.NumEmptyRootItems;
+      NumExcludededItems = image.NumEmptyRootItems;
   }
-  if (NumExludededItems != 0)
+  
+  if (NumExcludededItems != 0)
   {
     ExludedItem = startItem;
-    startItem += NumExludededItems;
+    startItem += NumExcludededItems;
   }
 
   unsigned num = endItem - startItem;
@@ -1205,7 +1224,8 @@ HRESULT CDatabase::ExtractReparseStreams(const CObjectVector<CVolume> &volumes, 
     Byte *dest = (Byte *)reparse;
     SetUi32(dest, tag);
     SetUi32(dest + 4, (UInt32)buf.Size());
-    memcpy(dest + 8, buf, buf.Size());
+    if (buf.Size() != 0)
+      memcpy(dest + 8, buf, buf.Size());
     ItemToReparse[i] = ReparseItems.Size() - 1;
   }
 
@@ -1278,20 +1298,28 @@ void CWimXml::ToUnicode(UString &s)
   const Byte *p = Data;
   if (Get16(p) != 0xFEFF)
     return;
-  wchar_t *chars = s.GetBuffer((unsigned)size / 2);
+  wchar_t *chars = s.GetBuf((unsigned)(size / 2));
   for (size_t i = 2; i < size; i += 2)
-    *chars++ = (wchar_t)Get16(p + i);
+  {
+    wchar_t c = Get16(p + i);
+    if (c == 0)
+      break;
+    *chars++ = c;
+  }
   *chars = 0;
-  s.ReleaseBuffer();
+  s.ReleaseBuf_SetLen((unsigned)(chars - (const wchar_t *)s));
 }
 
 bool CWimXml::Parse()
 {
-  UString s;
-  ToUnicode(s);
   AString utf;
-  if (!ConvertUnicodeToUTF8(s, utf))
-    return false;
+  {
+    UString s;
+    ToUnicode(s);
+    // if (!ConvertUnicodeToUTF8(s, utf)) return false;
+    ConvertUnicodeToUTF8(s, utf);
+  }
+
   if (!Xml.Parse(utf))
     return false;
   if (Xml.Root.Name != "WIM")

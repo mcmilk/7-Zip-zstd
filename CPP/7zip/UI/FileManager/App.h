@@ -195,6 +195,7 @@ public:
   void CopyTo() { OnCopy(false, false, GetFocusedPanelIndex()); }
   void MoveTo() { OnCopy(true, false, GetFocusedPanelIndex()); }
   void Delete(bool toRecycleBin) { GetFocusedPanel().DeleteItems(toRecycleBin); }
+  HRESULT CalculateCrc2(const UString &methodName);
   void CalculateCrc(const UString &methodName);
   void DiffFiles();
   void Split();
@@ -204,6 +205,7 @@ public:
   
   #ifndef UNDER_CE
   void Link();
+  void OpenAltStreams() { GetFocusedPanel().OpenAltStreams(); }
   #endif
 
   void CreateFolder() { GetFocusedPanel().CreateFolder(); }

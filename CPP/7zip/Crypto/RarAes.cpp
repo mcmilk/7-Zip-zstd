@@ -4,32 +4,36 @@
 #include "StdAfx.h"
 
 #include "RarAes.h"
-#include "Sha1.h"
+#include "Sha1Cls.h"
 
 namespace NCrypto {
 namespace NRar29 {
 
 CDecoder::CDecoder():
-  CAesCbcDecoder(kRarAesKeySize),
-  _thereIsSalt(false),
-  _needCalculate(true),
-  _rar350Mode(false)
+    CAesCbcDecoder(kRarAesKeySize),
+    _thereIsSalt(false),
+    _needCalc(true),
+    _rar350Mode(false)
 {
-  for (int i = 0; i < sizeof(_salt); i++)
+  for (unsigned i = 0; i < sizeof(_salt); i++)
     _salt[i] = 0;
 }
 
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
-  bool thereIsSaltPrev = _thereIsSalt;
+  bool prev = _thereIsSalt;
   _thereIsSalt = false;
   if (size == 0)
+  {
+    if (!_needCalc && prev)
+      _needCalc = true;
     return S_OK;
+  }
   if (size < 8)
     return E_INVALIDARG;
   _thereIsSalt = true;
   bool same = false;
-  if (_thereIsSalt == thereIsSaltPrev)
+  if (_thereIsSalt == prev)
   {
     same = true;
     if (_thereIsSalt)
@@ -44,91 +48,88 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
   }
   for (unsigned i = 0; i < sizeof(_salt); i++)
     _salt[i] = data[i];
-  if (!_needCalculate && !same)
-    _needCalculate = true;
+  if (!_needCalc && !same)
+    _needCalc = true;
   return S_OK;
 }
 
-static const unsigned kMaxPasswordLength = 127 * 2;
+static const unsigned kPasswordLen_MAX = 127 * 2;
 
 STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
-  if (size > kMaxPasswordLength)
-    size = kMaxPasswordLength;
+  if (size > kPasswordLen_MAX)
+    size = kPasswordLen_MAX;
   bool same = false;
-  if (size == buffer.Size())
+  if (size == _password.Size())
   {
     same = true;
     for (UInt32 i = 0; i < size; i++)
-      if (data[i] != buffer[i])
+      if (data[i] != _password[i])
       {
         same = false;
         break;
       }
   }
-  if (!_needCalculate && !same)
-    _needCalculate = true;
-  buffer.CopyFrom(data, (size_t)size);
+  if (!_needCalc && !same)
+    _needCalc = true;
+  _password.CopyFrom(data, (size_t)size);
   return S_OK;
 }
 
 STDMETHODIMP CDecoder::Init()
 {
-  Calculate();
-  RINOK(SetKey(aesKey, kRarAesKeySize));
-  RINOK(SetInitVector(_aesInit, AES_BLOCK_SIZE));
+  CalcKey();
+  RINOK(SetKey(_key, kRarAesKeySize));
+  RINOK(SetInitVector(_iv, AES_BLOCK_SIZE));
   return CAesCbcCoder::Init();
 }
 
-void CDecoder::Calculate()
+void CDecoder::CalcKey()
 {
-  if (_needCalculate)
-  {
-    const unsigned kSaltSize = 8;
-    
-    Byte rawPassword[kMaxPasswordLength + kSaltSize];
-    
-    memcpy(rawPassword, buffer, buffer.Size());
-    
-    size_t rawLength = buffer.Size();
-    
-    if (_thereIsSalt)
-    {
-      memcpy(rawPassword + rawLength, _salt, kSaltSize);
-      rawLength += kSaltSize;
-    }
-    
-    NSha1::CContext sha;
-    sha.Init();
+  if (!_needCalc)
+    return;
 
-    // rar reverts hash for sha.
-    const unsigned kNumRounds = (1 << 18);
-    unsigned i;
-    for (i = 0; i < kNumRounds; i++)
-    {
-      sha.UpdateRar(rawPassword, rawLength, _rar350Mode);
-      Byte pswNum[3] = { (Byte)i, (Byte)(i >> 8), (Byte)(i >> 16) };
-      sha.UpdateRar(pswNum, 3, _rar350Mode);
-      if (i % (kNumRounds / 16) == 0)
-      {
-        NSha1::CContext shaTemp = sha;
-        Byte digest[NSha1::kDigestSize];
-        shaTemp.Final(digest);
-        _aesInit[i / (kNumRounds / 16)] = (Byte)digest[4 * 4 + 3];
-      }
-    }
-    /*
-    // it's test message for sha
-    const char *message = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
-    sha.Update((const Byte *)message, strlen(message));
-    */
-    Byte digest[20];
-    sha.Final(digest);
-    for (i = 0; i < 4; i++)
-      for (unsigned j = 0; j < 4; j++)
-        aesKey[i * 4 + j] = (digest[i * 4 + 3 - j]);
+  const unsigned kSaltSize = 8;
+  
+  Byte buf[kPasswordLen_MAX + kSaltSize];
+  
+  if (_password.Size() != 0)
+    memcpy(buf, _password, _password.Size());
+  
+  size_t rawSize = _password.Size();
+  
+  if (_thereIsSalt)
+  {
+    memcpy(buf + rawSize, _salt, kSaltSize);
+    rawSize += kSaltSize;
   }
-  _needCalculate = false;
+  
+  NSha1::CContext sha;
+  sha.Init();
+  
+  Byte digest[NSha1::kDigestSize];
+  // rar reverts hash for sha.
+  const UInt32 kNumRounds = (1 << 18);
+  UInt32 i;
+  for (i = 0; i < kNumRounds; i++)
+  {
+    sha.UpdateRar(buf, rawSize, _rar350Mode);
+    Byte pswNum[3] = { (Byte)i, (Byte)(i >> 8), (Byte)(i >> 16) };
+    sha.UpdateRar(pswNum, 3, _rar350Mode);
+    if (i % (kNumRounds / 16) == 0)
+    {
+      NSha1::CContext shaTemp = sha;
+      shaTemp.Final(digest);
+      _iv[i / (kNumRounds / 16)] = (Byte)digest[4 * 4 + 3];
+    }
+  }
+  
+  sha.Final(digest);
+  for (i = 0; i < 4; i++)
+    for (unsigned j = 0; j < 4; j++)
+      _key[i * 4 + j] = (digest[i * 4 + 3 - j]);
+    
+  _needCalc = false;
 }
 
 }}

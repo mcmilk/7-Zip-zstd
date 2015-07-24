@@ -75,11 +75,14 @@ HRESULT CCabBlockInStream::PreRead(ISequentialInStream *stream, UInt32 &packSize
 
 STDMETHODIMP CCabBlockInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 rem = _size - _pos;
-  if (size > rem)
-    size = rem;
-  memcpy(data, _buf + _pos, size);
-  _pos += size;
+  if (size != 0)
+  {
+    UInt32 rem = _size - _pos;
+    if (size > rem)
+      size = rem;
+    memcpy(data, _buf + _pos, size);
+    _pos += size;
+  }
   if (processedSize)
     *processedSize = size;
   return S_OK;

@@ -40,13 +40,18 @@ struct CArcCommand
   NExtract::NPathMode::EEnum GetPathMode() const;
 };
 
+enum
+{
+  k_OutStream_disabled = 0,
+  k_OutStream_stdout = 1,
+  k_OutStream_stderr = 2
+};
+
 struct CArcCmdLineOptions
 {
   bool HelpMode;
 
-  #ifdef _WIN32
   bool LargePages;
-  #endif
   bool CaseSensitiveChange;
   bool CaseSensitive;
 
@@ -70,12 +75,16 @@ struct CArcCmdLineOptions
   #endif
 
   bool TechMode;
+  bool ShowTime;
   
   UStringVector HashMethods;
 
   bool AppendName;
-  UStringVector ArchivePathsSorted;
-  UStringVector ArchivePathsFullSorted;
+  // UStringVector ArchivePathsSorted;
+  // UStringVector ArchivePathsFullSorted;
+  NWildcard::CCensor arcCensor;
+  UString ArcName_for_StdInMode;
+
   CObjectVector<CProperty> Properties;
 
   CExtractOptionsBase ExtractOptions;
@@ -89,17 +98,32 @@ struct CArcCmdLineOptions
   CHashOptions HashOptions;
   UString ArcType;
   UStringVector ExcludedArcTypes;
-  bool EnablePercents;
+  
+  unsigned Number_for_Out;
+  unsigned Number_for_Errors;
+  unsigned Number_for_Percents;
+  unsigned LogLevel;
+
+  // bool IsOutAllowed() const { return Number_for_Out != k_OutStream_disabled; }
 
   // Benchmark
   UInt32 NumIterations;
 
   CArcCmdLineOptions():
+      LargePages(false),
+      CaseSensitiveChange(false),
+      CaseSensitive(false),
+
       StdInMode(false),
       StdOutMode(false),
-      CaseSensitiveChange(false),
-      CaseSensitive(false)
-      {};
+
+      Number_for_Out(k_OutStream_stdout),
+      Number_for_Errors(k_OutStream_stderr),
+      Number_for_Percents(k_OutStream_stdout),
+
+      LogLevel(0)
+  {
+  };
 };
 
 class CArcCmdLineParser
@@ -111,12 +135,13 @@ public:
   void Parse2(CArcCmdLineOptions &options);
 };
 
-void EnumerateDirItemsAndSort(
-    bool storeAltStreams,
+HRESULT EnumerateDirItemsAndSort(
     NWildcard::CCensor &censor,
     NWildcard::ECensorPathMode pathMode,
     const UString &addPathPrefix,
     UStringVector &sortedPaths,
-    UStringVector &sortedFullPaths);
+    UStringVector &sortedFullPaths,
+    CDirItemsStat &st,
+    IDirItemsCallback *callback);
 
 #endif

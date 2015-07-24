@@ -71,68 +71,53 @@ struct CSeqName
   UString _changedPart;
   bool _splitStyle;
   
-  UString GetNextName()
+  bool GetNextName(UString &s)
   {
-    UString newName;
-    if (_splitStyle)
     {
-      int i;
-      int numLetters = _changedPart.Len();
-      for (i = numLetters - 1; i >= 0; i--)
+      unsigned i = _changedPart.Len();
+      for (;;)
       {
-        wchar_t c = _changedPart[i];
-        if (c == 'z')
+        wchar_t c = _changedPart[--i];
+        
+        if (_splitStyle)
         {
-          newName.InsertAtFront('a');
-          continue;
+          if (c == 'z')
+          {
+            _changedPart.ReplaceOneCharAtPos(i, L'a');
+            if (i == 0)
+              return false;
+            continue;
+          }
+          else if (c == 'Z')
+          {
+            _changedPart.ReplaceOneCharAtPos(i, L'A');
+            if (i == 0)
+              return false;
+            continue;
+          }
         }
-        else if (c == 'Z')
+        else
         {
-          newName.InsertAtFront('A');
-          continue;
+          if (c == '9')
+          {
+            _changedPart.ReplaceOneCharAtPos(i, L'0');
+            if (i == 0)
+            {
+              _changedPart.InsertAtFront(L'1');
+              break;
+            }
+            continue;
+          }
         }
+
         c++;
-        if ((c == 'z' || c == 'Z') && i == 0)
-        {
-          _unchangedPart += c;
-          wchar_t newChar = (c == 'z') ? L'a' : L'A';
-          newName.Empty();
-          numLetters++;
-          for (int k = 0; k < numLetters; k++)
-            newName += newChar;
-          break;
-        }
-        newName.InsertAtFront(c);
-        i--;
-        for (; i >= 0; i--)
-          newName.InsertAtFront(_changedPart[i]);
+        _changedPart.ReplaceOneCharAtPos(i, c);
         break;
       }
     }
-    else
-    {
-      int i;
-      int numLetters = _changedPart.Len();
-      for (i = numLetters - 1; i >= 0; i--)
-      {
-        wchar_t c = _changedPart[i];
-        if (c == '9')
-        {
-          newName.InsertAtFront('0');
-          if (i == 0)
-            newName.InsertAtFront('1');
-          continue;
-        }
-        c++;
-        newName.InsertAtFront(c);
-        i--;
-        for (; i >= 0; i--)
-          newName.InsertAtFront(_changedPart[i]);
-        break;
-      }
-    }
-    _changedPart = newName;
-    return _unchangedPart + _changedPart;
+    
+    s = _unchangedPart + _changedPart;
+    return true;
   }
 };
 
@@ -156,7 +141,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
     name = prop.bstrVal;
   }
   
-  int dotPos = name.ReverseFind('.');
+  int dotPos = name.ReverseFind_Dot();
   const UString prefix = name.Left(dotPos + 1);
   const UString ext = name.Ptr(dotPos + 1);
   UString ext2 = ext;
@@ -196,7 +181,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   seqName._splitStyle = splitStyle;
   
   if (prefix.Len() < 1)
-    _subName = L"file";
+    _subName.SetFromAscii("file");
   else
     _subName.SetFrom(prefix, prefix.Len() - 1);
   
@@ -220,7 +205,9 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   
   for (;;)
   {
-    const UString fullName = seqName.GetNextName();
+    UString fullName;
+    if (!seqName.GetNextName(fullName))
+      break;
     CMyComPtr<IInStream> nextStream;
     HRESULT result = volumeCallback->GetStream(fullName, &nextStream);
     if (result == S_FALSE)
@@ -355,15 +342,10 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "Split", "001", 0, 0xEA,
-  0, { 0 },
+REGISTER_ARC_I_NO_SIG(
+  "Split", "001", 0, 0xEA,
   0,
   0,
-  CreateArc };
-
-REGISTER_ARC(Split)
+  NULL)
 
 }}

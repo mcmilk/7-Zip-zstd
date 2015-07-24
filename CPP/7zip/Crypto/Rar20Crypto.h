@@ -11,17 +11,20 @@
 namespace NCrypto {
 namespace NRar20 {
 
+/* ICompressFilter::Init() does nothing for this filter.
+   Call CryptoSetPassword() to initialize filter. */
+
 class CData
 {
   Byte SubstTable[256];
   UInt32 Keys[4];
   
-  UInt32 SubstLong(UInt32 t)
+  UInt32 SubstLong(UInt32 t) const
   {
-    return (UInt32)SubstTable[(int)t & 255] |
-           ((UInt32)SubstTable[(int)(t >> 8) & 255] << 8) |
-           ((UInt32)SubstTable[(int)(t >> 16) & 255] << 16) |
-           ((UInt32)SubstTable[(int)(t >> 24) & 255] << 24);
+    return (UInt32)SubstTable[(unsigned)t & 255]
+        | ((UInt32)SubstTable[(unsigned)(t >> 8) & 255] << 8)
+        | ((UInt32)SubstTable[(unsigned)(t >> 16) & 255] << 16)
+        | ((UInt32)SubstTable[(unsigned)(t >> 24) & 255] << 24);
   }
   void UpdateKeys(const Byte *data);
   void CryptBlock(Byte *buf, bool encrypt);
@@ -34,7 +37,8 @@ public:
 class CDecoder:
   public ICompressFilter,
   public ICryptoSetPassword,
-  public CMyUnknownImp
+  public CMyUnknownImp,
+  public CData
 {
   CData _cipher;
 public:

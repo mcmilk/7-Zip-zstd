@@ -37,7 +37,9 @@ static const Byte kProps[] =
   kpidMethod,
   kpidShortName,
   kpidINode,
-  kpidLinks
+  kpidLinks,
+  kpidIsAltStream,
+  kpidNumAltStreams,
   
   #ifdef WIM_DETAILS
   , kpidVolume
@@ -269,14 +271,12 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         res = kMethodLZX;
       if (xpress)
       {
-        if (!res.IsEmpty())
-          res += ' ';
+        res.Add_Space_if_NotEmpty();
         res += kMethodXpress;
       }
       if (copy)
       {
-        if (!res.IsEmpty())
-          res += ' ';
+        res.Add_Space_if_NotEmpty();
         res += kMethodCopy;
       }
       prop = res;
@@ -308,6 +308,26 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         AddErrorMessage(s, "Some files have incorrect reference count");
       if (!s.IsEmpty())
         prop = s;
+      break;
+    }
+
+    case kpidReadOnly:
+    {
+      bool readOnly = false;
+      if (ThereIsError())
+        readOnly = true;
+      else if (_volumes.Size() != 0)
+      {
+        if (_version != kWimVersion
+            || _volumes.Size() != 2
+            || _volumes[0].Stream
+            // || _db.Images.Size() > kNumImagesMax
+            )
+          readOnly = true;
+      }
+      if (readOnly)
+        prop = readOnly;
+      break;
     }
   }
   prop.Detach(value);
@@ -397,6 +417,22 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidSize: prop = (UInt64)(si ? si->Resource.UnpackSize : 0); break;
       case kpidIsDir: prop = item.IsDir; break;
       case kpidIsAltStream: prop = item.IsAltStream; break;
+      case kpidNumAltStreams:
+      {
+        if (!item.IsAltStream && mainItem->HasMetadata())
+        {
+          UInt32 dirRecordSize = _db.IsOldVersion ? kDirRecordSizeOld : kDirRecordSize;
+          UInt32 numAltStreams = Get16(metadata + dirRecordSize - 6);
+          if (numAltStreams != 0)
+          {
+            if (!item.IsDir)
+              numAltStreams--;
+            prop = numAltStreams;
+          }
+        }
+        break;
+      }
+
       case kpidAttrib:
         if (!item.IsAltStream && mainItem->ImageIndex >= 0)
         {
@@ -481,7 +517,7 @@ STDMETHODIMP CHandler::GetRootProp(PROPID propID, PROPVARIANT *value)
 {
   // COM_TRY_BEGIN
   NCOM::CPropVariant prop;
-  if (_db.Images.Size() != 0 && _db.NumExludededItems != 0)
+  if (_db.Images.Size() != 0 && _db.NumExcludededItems != 0)
   {
     const CImage &image = _db.Images[_db.IndexOfUserImage];
     const CItem &item = _db.Items[image.StartItem];
@@ -532,7 +568,7 @@ STDMETHODIMP CHandler::GetRootRawProp(PROPID propID, const void **data, UInt32 *
   *data = 0;
   *dataSize = 0;
   *propType = 0;
-  if (propID == kpidNtSecure && _db.Images.Size() != 0 && _db.NumExludededItems != 0)
+  if (propID == kpidNtSecure && _db.Images.Size() != 0 && _db.NumExcludededItems != 0)
   {
     const CImage &image = _db.Images[_db.IndexOfUserImage];
     const CItem &item = _db.Items[image.StartItem];
@@ -705,7 +741,7 @@ class CVolumeName
 public:
   void InitName(const UString &name)
   {
-    int dotPos = name.ReverseFind('.');
+    int dotPos = name.ReverseFind_Dot();
     if (dotPos < 0)
       dotPos = name.Len();
     _before = name.Left(dotPos);
@@ -798,11 +834,11 @@ STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCal
       
       if (_xmls.IsEmpty() || xml.Data != _xmls[0].Data)
       {
-        wchar_t sz[16];
+        char sz[16];
         ConvertUInt32ToString(xml.VolIndex, sz);
         xml.FileName = L'[';
-        xml.FileName += sz;
-        xml.FileName += L"].xml";
+        xml.FileName.AddAscii(sz);
+        xml.FileName.AddAscii("].xml");
         _xmls.Add(xml);
       }
       
@@ -957,11 +993,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     int streamIndex = item.StreamIndex;
     if (streamIndex < 0)
     {
-      if (!testMode && !realOutStream)
-        continue;
+      if (!item.IsDir)
+        if (!testMode && !realOutStream)
+          continue;
       RINOK(extractCallback->PrepareOperation(askMode));
       realOutStream.Release();
-      RINOK(extractCallback->SetOperationResult(_db.ItemHasStream(item) ?
+      RINOK(extractCallback->SetOperationResult(!item.IsDir && _db.ItemHasStream(item) ?
           NExtract::NOperationResult::kDataError :
           NExtract::NOperationResult::kOK));
       continue;
@@ -1016,7 +1053,7 @@ CHandler::CHandler()
   _xmlError = false;
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps)
+STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   InitDefaults();
 

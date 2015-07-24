@@ -37,20 +37,20 @@ void PairToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 value, NCOM:
 }
 
 
-AString TypeToString(const char *table[], unsigned num, UInt32 value)
+AString TypeToString(const char * const table[], unsigned num, UInt32 value)
 {
   if (value < num)
     return table[value];
   return GetHex(value);
 }
 
-void TypeToProp(const char *table[], unsigned num, UInt32 value, NCOM::CPropVariant &prop)
+void TypeToProp(const char * const table[], unsigned num, UInt32 value, NCOM::CPropVariant &prop)
 {
   prop = TypeToString(table, num, value);
 }
 
 
-AString FlagsToString(const char **names, unsigned num, UInt32 flags)
+AString FlagsToString(const char * const *names, unsigned num, UInt32 flags)
 {
   AString s;
   for (unsigned i = 0; i < num; i++)

@@ -41,8 +41,8 @@ public:
   #endif
   */
 
-  CFileInfoBase() { Clear(); }
-  void Clear() throw();
+  CFileInfoBase() { ClearBase(); }
+  void ClearBase() throw();
 
   void SetAsDir() { Attrib = FILE_ATTRIBUTE_DIRECTORY; }
 
@@ -68,7 +68,7 @@ struct CFileInfo: public CFileInfoBase
   #endif
 
   bool IsDots() const throw();
-  bool Find(CFSTR wildcard);
+  bool Find(CFSTR path);
 };
 
 class CFindFileBase
@@ -96,7 +96,8 @@ struct CStreamInfo
   UString Name;
   UInt64 Size;
 
-  UString GetReducedName() const;
+  UString GetReducedName() const; // returns ":Name"
+  // UString GetReducedName2() const; // returns "Name"
   bool IsMainStream() const throw();
 };
 
@@ -123,6 +124,8 @@ public:
 bool DoesFileExist(CFSTR name);
 bool DoesDirExist(CFSTR name);
 bool DoesFileOrDirExist(CFSTR name);
+
+DWORD GetFileAttrib(CFSTR path);
 
 class CEnumerator
 {

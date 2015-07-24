@@ -4,125 +4,153 @@
 
 #include "CoderMixer2MT.h"
 
-namespace NCoderMixer {
+namespace NCoderMixer2 {
 
-CCoder2::CCoder2(UInt32 numInStreams, UInt32 numOutStreams):
-    CCoderInfo2(numInStreams, numOutStreams)
+void CCoderMT::Execute() { Code(NULL); }
+
+void CCoderMT::Code(ICompressProgressInfo *progress)
 {
-  InStreams.ClearAndReserve(NumInStreams);
-  OutStreams.ClearAndReserve(NumOutStreams);
-}
+  unsigned numInStreams = EncodeMode ? 1 : NumStreams;
+  unsigned numOutStreams = EncodeMode ? NumStreams : 1;
 
-void CCoder2::Execute() { Code(NULL); }
+  InStreamPointers.ClearAndReserve(numInStreams);
+  OutStreamPointers.ClearAndReserve(numOutStreams);
 
-void CCoder2::Code(ICompressProgressInfo *progress)
-{
-  InStreamPointers.ClearAndReserve(NumInStreams);
-  OutStreamPointers.ClearAndReserve(NumOutStreams);
-  UInt32 i;
-  for (i = 0; i < NumInStreams; i++)
-  {
-    if (InSizePointers[i])
-      InSizePointers[i] = &InSizes[i];
+  unsigned i;
+  
+  for (i = 0; i < numInStreams; i++)
     InStreamPointers.AddInReserved((ISequentialInStream *)InStreams[i]);
-  }
-  for (i = 0; i < NumOutStreams; i++)
-  {
-    if (OutSizePointers[i])
-      OutSizePointers[i] = &OutSizes[i];
+  
+  for (i = 0; i < numOutStreams; i++)
     OutStreamPointers.AddInReserved((ISequentialOutStream *)OutStreams[i]);
-  }
+
+  // we suppose that UnpackSizePointer and PackSizePointers contain correct pointers.
+  /*
+  if (UnpackSizePointer)
+    UnpackSizePointer = &UnpackSize;
+  for (i = 0; i < NumStreams; i++)
+    if (PackSizePointers[i])
+      PackSizePointers[i] = &PackSizes[i];
+  */
+
   if (Coder)
     Result = Coder->Code(InStreamPointers[0], OutStreamPointers[0],
-        InSizePointers[0], OutSizePointers[0], progress);
+        EncodeMode ? UnpackSizePointer : PackSizePointers[0],
+        EncodeMode ? PackSizePointers[0] : UnpackSizePointer,
+        progress);
   else
-    Result = Coder2->Code(&InStreamPointers.Front(), &InSizePointers.Front(), NumInStreams,
-      &OutStreamPointers.Front(), &OutSizePointers.Front(), NumOutStreams, progress);
-  {
-    unsigned i;
-    for (i = 0; i < InStreams.Size(); i++)
-      InStreams[i].Release();
-    for (i = 0; i < OutStreams.Size(); i++)
-      OutStreams[i].Release();
-  }
+    Result = Coder2->Code(
+        &InStreamPointers.Front(),  EncodeMode ? &UnpackSizePointer : &PackSizePointers.Front(), numInStreams,
+        &OutStreamPointers.Front(), EncodeMode ? &PackSizePointers.Front(): &UnpackSizePointer, numOutStreams,
+        progress);
+  
+  InStreamPointers.Clear();
+  OutStreamPointers.Clear();
+
+  for (i = 0; i < InStreams.Size(); i++)
+    InStreams[i].Release();
+  for (i = 0; i < OutStreams.Size(); i++)
+    OutStreams[i].Release();
 }
 
-/*
-void CCoder2::SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes)
+HRESULT CMixerMT::SetBindInfo(const CBindInfo &bindInfo)
 {
-  SetSizes(inSizes, InSizes, InSizePointers, NumInStreams);
-  SetSizes(outSizes, OutSizes, OutSizePointers, NumOutStreams);
-}
-*/
-
-//////////////////////////////////////
-// CCoderMixer2MT
-
-HRESULT CCoderMixer2MT::SetBindInfo(const CBindInfo &bindInfo)
-{
-  _bindInfo = bindInfo;
+  CMixer::SetBindInfo(bindInfo);
+  
   _streamBinders.Clear();
-  FOR_VECTOR (i, _bindInfo.BindPairs)
+  FOR_VECTOR (i, _bi.Bonds)
   {
     RINOK(_streamBinders.AddNew().CreateEvents());
   }
   return S_OK;
 }
 
-void CCoderMixer2MT::AddCoderCommon()
+void CMixerMT::AddCoder(ICompressCoder *coder, ICompressCoder2 *coder2, bool isFilter)
 {
-  const CCoderStreamsInfo &c = _bindInfo.Coders[_coders.Size()];
-  CCoder2 threadCoderInfo(c.NumInStreams, c.NumOutStreams);
-  _coders.Add(threadCoderInfo);
+  const CCoderStreamsInfo &c = _bi.Coders[_coders.Size()];
+  CCoderMT &c2 = _coders.AddNew();
+  c2.NumStreams = c.NumStreams;
+  c2.EncodeMode = EncodeMode;
+  c2.Coder = coder;
+  c2.Coder2 = coder2;
+  IsFilter_Vector.Add(isFilter);
 }
 
-void CCoderMixer2MT::AddCoder(ICompressCoder *coder)
+CCoder &CMixerMT::GetCoder(unsigned index)
 {
-  AddCoderCommon();
-  _coders.Back().Coder = coder;
+  return _coders[index];
 }
 
-void CCoderMixer2MT::AddCoder2(ICompressCoder2 *coder)
-{
-  AddCoderCommon();
-  _coders.Back().Coder2 = coder;
-}
-
-
-void CCoderMixer2MT::ReInit()
+void CMixerMT::ReInit()
 {
   FOR_VECTOR (i, _streamBinders)
     _streamBinders[i].ReInit();
 }
 
-
-HRESULT CCoderMixer2MT::Init(ISequentialInStream **inStreams, ISequentialOutStream **outStreams)
+void CMixerMT::SelectMainCoder(bool useFirst)
 {
-  /*
-  if (_coders.Size() != _bindInfo.Coders.Size())
-    throw 0;
-  */
+  unsigned ci = _bi.UnpackCoder;
+
+  if (!useFirst)
+  for (;;)
+  {
+    if (_coders[ci].NumStreams != 1)
+      break;
+    if (!IsFilter_Vector[ci])
+      break;
+    
+    UInt32 st = _bi.Coder_to_Stream[ci];
+    if (_bi.IsStream_in_PackStreams(st))
+      break;
+    int bond = _bi.FindBond_for_PackStream(st);
+    if (bond < 0)
+      throw 20150213;
+    ci = _bi.Bonds[bond].UnpackIndex;
+  }
+  
+  MainCoderIndex = ci;
+}
+
+HRESULT CMixerMT::Init(ISequentialInStream * const *inStreams, ISequentialOutStream * const *outStreams)
+{
   unsigned i;
+  
   for (i = 0; i < _coders.Size(); i++)
   {
-    CCoder2 &coderInfo = _coders[i];
-    const CCoderStreamsInfo &coderStreamsInfo = _bindInfo.Coders[i];
-    coderInfo.InStreams.Clear();
+    CCoderMT &coderInfo = _coders[i];
+    const CCoderStreamsInfo &csi = _bi.Coders[i];
+    
     UInt32 j;
-    for (j = 0; j < coderStreamsInfo.NumInStreams; j++)
-      coderInfo.InStreams.Add(NULL);
+
+    unsigned numInStreams = EncodeMode ? 1 : csi.NumStreams;
+    unsigned numOutStreams = EncodeMode ? csi.NumStreams : 1;
+
+    coderInfo.InStreams.Clear();
+    for (j = 0; j < numInStreams; j++)
+      coderInfo.InStreams.AddNew();
+    
     coderInfo.OutStreams.Clear();
-    for (j = 0; j < coderStreamsInfo.NumOutStreams; j++)
-      coderInfo.OutStreams.Add(NULL);
+    for (j = 0; j < numOutStreams; j++)
+      coderInfo.OutStreams.AddNew();
   }
 
-  for (i = 0; i < _bindInfo.BindPairs.Size(); i++)
+  for (i = 0; i < _bi.Bonds.Size(); i++)
   {
-    const CBindPair &bindPair = _bindInfo.BindPairs[i];
+    const CBond &bond = _bi.Bonds[i];
+   
     UInt32 inCoderIndex, inCoderStreamIndex;
     UInt32 outCoderIndex, outCoderStreamIndex;
-    _bindInfo.FindInStream(bindPair.InIndex, inCoderIndex, inCoderStreamIndex);
-    _bindInfo.FindOutStream(bindPair.OutIndex, outCoderIndex, outCoderStreamIndex);
+    
+    {
+      UInt32 coderIndex, coderStreamIndex;
+      _bi.GetCoder_for_Stream(bond.PackIndex, coderIndex, coderStreamIndex);
+
+      inCoderIndex = EncodeMode ? bond.UnpackIndex : coderIndex;
+      outCoderIndex = EncodeMode ? coderIndex : bond.UnpackIndex;
+
+      inCoderStreamIndex = EncodeMode ? 0 : coderStreamIndex;
+      outCoderStreamIndex = EncodeMode ? coderStreamIndex : 0;
+    }
 
     _streamBinders[i].CreateStreams(
         &_coders[inCoderIndex].InStreams[inCoderStreamIndex],
@@ -139,23 +167,29 @@ HRESULT CCoderMixer2MT::Init(ISequentialInStream **inStreams, ISequentialOutStre
     }
   }
 
-  for (i = 0; i < _bindInfo.InStreams.Size(); i++)
   {
-    UInt32 inCoderIndex, inCoderStreamIndex;
-    _bindInfo.FindInStream(_bindInfo.InStreams[i], inCoderIndex, inCoderStreamIndex);
-    _coders[inCoderIndex].InStreams[inCoderStreamIndex] = inStreams[i];
+    CCoderMT &cod = _coders[_bi.UnpackCoder];
+    if (EncodeMode)
+      cod.InStreams[0] = inStreams[0];
+    else
+      cod.OutStreams[0] = outStreams[0];
+  }
+
+  for (i = 0; i < _bi.PackStreams.Size(); i++)
+  {
+    UInt32 coderIndex, coderStreamIndex;
+    _bi.GetCoder_for_Stream(_bi.PackStreams[i], coderIndex, coderStreamIndex);
+    CCoderMT &cod = _coders[coderIndex];
+    if (EncodeMode)
+      cod.OutStreams[coderStreamIndex] = outStreams[i];
+    else
+      cod.InStreams[coderStreamIndex] = inStreams[i];
   }
   
-  for (i = 0; i < _bindInfo.OutStreams.Size(); i++)
-  {
-    UInt32 outCoderIndex, outCoderStreamIndex;
-    _bindInfo.FindOutStream(_bindInfo.OutStreams[i], outCoderIndex, outCoderStreamIndex);
-    _coders[outCoderIndex].OutStreams[outCoderStreamIndex] = outStreams[i];
-  }
   return S_OK;
 }
 
-HRESULT CCoderMixer2MT::ReturnIfError(HRESULT code)
+HRESULT CMixerMT::ReturnIfError(HRESULT code)
 {
   FOR_VECTOR (i, _coders)
     if (_coders[i].Result == code)
@@ -163,35 +197,28 @@ HRESULT CCoderMixer2MT::ReturnIfError(HRESULT code)
   return S_OK;
 }
 
-STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
-      const UInt64 ** /* inSizes */,
-      UInt32 numInStreams,
-      ISequentialOutStream **outStreams,
-      const UInt64 ** /* outSizes */,
-      UInt32 numOutStreams,
-      ICompressProgressInfo *progress)
+HRESULT CMixerMT::Code(
+    ISequentialInStream * const *inStreams,
+    ISequentialOutStream * const *outStreams,
+    ICompressProgressInfo *progress)
 {
-  if (numInStreams != (UInt32)_bindInfo.InStreams.Size() ||
-      numOutStreams != (UInt32)_bindInfo.OutStreams.Size())
-    return E_INVALIDARG;
-
   Init(inStreams, outStreams);
 
   unsigned i;
   for (i = 0; i < _coders.Size(); i++)
-    if (i != _progressCoderIndex)
+    if (i != MainCoderIndex)
     {
       RINOK(_coders[i].Create());
     }
 
   for (i = 0; i < _coders.Size(); i++)
-    if (i != _progressCoderIndex)
+    if (i != MainCoderIndex)
       _coders[i].Start();
 
-  _coders[_progressCoderIndex].Code(progress);
+  _coders[MainCoderIndex].Code(progress);
 
   for (i = 0; i < _coders.Size(); i++)
-    if (i != _progressCoderIndex)
+    if (i != MainCoderIndex)
       _coders[i].WaitExecuteFinish();
 
   RINOK(ReturnIfError(E_ABORT));
@@ -200,7 +227,10 @@ STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
   for (i = 0; i < _coders.Size(); i++)
   {
     HRESULT result = _coders[i].Result;
-    if (result != S_OK && result != E_FAIL && result != S_FALSE)
+    if (result != S_OK
+        && result != k_My_HRESULT_WritingWasCut
+        && result != S_FALSE
+        && result != E_FAIL)
       return result;
   }
 
@@ -209,10 +239,16 @@ STDMETHODIMP CCoderMixer2MT::Code(ISequentialInStream **inStreams,
   for (i = 0; i < _coders.Size(); i++)
   {
     HRESULT result = _coders[i].Result;
-    if (result != S_OK)
+    if (result != S_OK && result != k_My_HRESULT_WritingWasCut)
       return result;
   }
+
   return S_OK;
+}
+
+UInt64 CMixerMT::GetBondStreamSize(unsigned bondIndex) const
+{
+  return _streamBinders[bondIndex].ProcessedSize;
 }
 
 }

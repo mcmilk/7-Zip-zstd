@@ -36,10 +36,10 @@ class CFSDrives:
 {
   CObjectVector<CDriveInfo> _drives;
   bool _volumeMode;
-  bool _longMode;
+  bool _superMode;
 
   HRESULT BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder);
-  const wchar_t *GetExt(unsigned index) const;
+  void AddExt(FString &s, unsigned index) const;
   HRESULT GetFileSize(unsigned index, UInt64 &fileSize) const;
 public:
   MY_UNKNOWN_IMP2(IFolderGetSystemIconIndex, IFolderOperations)
@@ -49,10 +49,10 @@ public:
 
   STDMETHOD(GetSystemIconIndex)(UInt32 index, Int32 *iconIndex);
 
-  void Init(bool volMode = false, bool longMode = false)
+  void Init(bool volMode = false, bool superMode = false)
   {
     _volumeMode = volMode;
-    _longMode = longMode;
+    _superMode = superMode;
   }
 };
 

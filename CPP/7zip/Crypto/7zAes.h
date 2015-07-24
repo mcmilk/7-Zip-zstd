@@ -11,28 +11,30 @@
 #include "../IPassword.h"
 
 namespace NCrypto {
-namespace NSevenZ {
+namespace N7z {
 
-const int kKeySize = 32;
+const unsigned kKeySize = 32;
+const unsigned kSaltSizeMax = 16;
+const unsigned kIvSizeMax = 16; // AES_BLOCK_SIZE;
 
 class CKeyInfo
 {
 public:
-  int NumCyclesPower;
-  UInt32 SaltSize;
-  Byte Salt[16];
+  unsigned NumCyclesPower;
+  unsigned SaltSize;
+  Byte Salt[kSaltSizeMax];
   CByteBuffer Password;
   Byte Key[kKeySize];
 
   bool IsEqualTo(const CKeyInfo &a) const;
-  void CalculateDigest();
+  void CalcKey();
 
-  CKeyInfo() { Init(); }
-  void Init()
+  CKeyInfo() { ClearProps(); }
+  void ClearProps()
   {
     NumCyclesPower = 0;
     SaltSize = 0;
-    for (int i = 0; i < sizeof(Salt); i++)
+    for (unsigned i = 0; i < sizeof(Salt); i++)
       Salt[i] = 0;
   }
 };
@@ -43,9 +45,9 @@ class CKeyInfoCache
   CObjectVector<CKeyInfo> Keys;
 public:
   CKeyInfoCache(unsigned size): Size(size) {}
-  bool Find(CKeyInfo &key);
-  // HRESULT Calculate(CKeyInfo &key);
-  void Add(CKeyInfo &key);
+  bool GetKey(CKeyInfo &key);
+  void Add(const CKeyInfo &key);
+  void FindAndAdd(const CKeyInfo &key);
 };
 
 class CBase
@@ -53,9 +55,10 @@ class CBase
   CKeyInfoCache _cachedKeys;
 protected:
   CKeyInfo _key;
-  Byte _iv[16];
-  UInt32 _ivSize;
-  void CalculateDigest();
+  Byte _iv[kIvSizeMax];
+  unsigned _ivSize;
+  
+  void PrepareKey();
   CBase();
 };
 
@@ -68,13 +71,8 @@ class CBaseCoder:
 protected:
   CMyComPtr<ICompressFilter> _aesFilter;
 
-  virtual HRESULT CreateFilter() = 0;
-  #ifndef CRYPTO_AES
-  HRESULT CreateFilterFromDLL(REFCLSID clsID);
-  #endif
 public:
-  STDMETHOD(Init)();
-  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
+  INTERFACE_ICompressFilter(;)
   
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
 };
@@ -87,7 +85,6 @@ class CEncoder:
   // public ICryptoResetSalt,
   public ICryptoResetInitVector
 {
-  virtual HRESULT CreateFilter();
 public:
   MY_UNKNOWN_IMP3(
       ICryptoSetPassword,
@@ -97,19 +94,21 @@ public:
   STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
   // STDMETHOD(ResetSalt)();
   STDMETHOD(ResetInitVector)();
+  CEncoder();
 };
+
 #endif
 
 class CDecoder:
   public CBaseCoder,
   public ICompressSetDecoderProperties2
 {
-  virtual HRESULT CreateFilter();
 public:
   MY_UNKNOWN_IMP2(
       ICryptoSetPassword,
       ICompressSetDecoderProperties2)
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
+  CDecoder();
 };
 
 }}

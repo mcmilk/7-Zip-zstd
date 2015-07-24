@@ -120,15 +120,17 @@ bool CLang::Open(CFSTR fileName, const wchar_t *id)
     return false;
   if (length > (1 << 20))
     return false;
+  
   AString s;
   unsigned len = (unsigned)length;
-  char *p = s.GetBuffer(len);
+  char *p = s.GetBuf(len);
   UInt32 processed;
   if (!file.Read(p, len, processed))
     return false;
   file.Close();
   if (len != processed)
     return false;
+
   char *p2 = p;
   for (unsigned i = 0; i < len; i++)
   {
@@ -138,13 +140,16 @@ bool CLang::Open(CFSTR fileName, const wchar_t *id)
     if (c != 0x0D)
       *p2++ = c;
   }
-  s.ReleaseBuffer((unsigned)(p2 - p));
+  *p2 = 0;
+  s.ReleaseBuf_SetLen((unsigned)(p2 - p));
+  
   if (OpenFromString(s))
   {
-    const wchar_t *s = Get(0);
-    if (s && wcscmp(s, id) == 0)
+    const wchar_t *name = Get(0);
+    if (name && wcscmp(name, id) == 0)
       return true;
   }
+  
   Clear();
   return false;
 }

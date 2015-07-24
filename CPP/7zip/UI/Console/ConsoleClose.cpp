@@ -4,10 +4,10 @@
 
 #include "ConsoleClose.h"
 
-static int g_BreakCounter = 0;
-static const int kBreakAbortThreshold = 2;
-
 namespace NConsoleClose {
+
+unsigned g_BreakCounter = 0;
+static const unsigned kBreakAbortThreshold = 2;
 
 #if !defined(UNDER_CE) && defined(_WIN32)
 static BOOL WINAPI HandlerRoutine(DWORD ctrlType)
@@ -35,24 +35,13 @@ static BOOL WINAPI HandlerRoutine(DWORD ctrlType)
 }
 #endif
 
-bool TestBreakSignal()
-{
-  #ifdef UNDER_CE
-  return false;
-  #else
-  /*
-  if (g_BreakCounter > 0)
-    return true;
-  */
-  return (g_BreakCounter > 0);
-  #endif
-}
-
+/*
 void CheckCtrlBreak()
 {
   if (TestBreakSignal())
     throw CCtrlBreakException();
 }
+*/
 
 CCtrlHandlerSetter::CCtrlHandlerSetter()
 {

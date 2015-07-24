@@ -42,20 +42,25 @@ static bool MyFormatMessage(DWORD errorCode, UString &message)
 
 UString MyFormatMessage(DWORD errorCode)
 {
-  UString message;
-  if (!MyFormatMessage(errorCode, message))
+  UString m;
+  if (!MyFormatMessage(errorCode, m) || m.IsEmpty())
   {
-    wchar_t s[16];
+    char s[16];
     for (int i = 0; i < 8; i++)
     {
       unsigned t = errorCode & 0xF;
       errorCode >>= 4;
-      s[7 - i] = (wchar_t)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
+      s[7 - i] = (char)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
     }
-    s[8] = '\0';
-    message = (UString)L"Error #" + s;
+    s[8] = 0;
+    m.AddAscii("Error #");
+    m.AddAscii(s);
   }
-  return message;
+  else if (m.Len() >= 2
+      && m[m.Len() - 1] == 0x0A
+      && m[m.Len() - 2] == 0x0D)
+    m.DeleteFrom(m.Len() - 2);
+  return m;
 }
 
 }}

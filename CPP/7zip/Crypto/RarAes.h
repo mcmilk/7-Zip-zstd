@@ -18,22 +18,24 @@ const UInt32 kRarAesKeySize = 16;
 
 class CDecoder:
   public CAesCbcDecoder,
-  public ICompressSetDecoderProperties2,
+  // public ICompressSetDecoderProperties2,
   public ICryptoSetPassword
 {
   Byte _salt[8];
   bool _thereIsSalt;
-  CByteBuffer buffer;
-  Byte aesKey[kRarAesKeySize];
-  Byte _aesInit[AES_BLOCK_SIZE];
-  bool _needCalculate;
+  bool _needCalc;
   bool _rar350Mode;
+  
+  CByteBuffer _password;
+  
+  Byte _key[kRarAesKeySize];
+  Byte _iv[AES_BLOCK_SIZE];
 
-  void Calculate();
+  void CalcKey();
 public:
-  MY_UNKNOWN_IMP2(
-    ICryptoSetPassword,
-    ICompressSetDecoderProperties2)
+  MY_UNKNOWN_IMP1(
+    ICryptoSetPassword)
+    // ICompressSetDecoderProperties2
   STDMETHOD(Init)();
   STDMETHOD(CryptoSetPassword)(const Byte *aData, UInt32 aSize);
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);

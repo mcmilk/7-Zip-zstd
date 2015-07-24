@@ -40,13 +40,12 @@ struct CProps
 
   void AddProp32(PROPID propid, UInt32 level);
 
-  void AddPropString(PROPID propid, const wchar_t *s)
+  void AddProp_Ascii(PROPID propid, const char *s)
   {
-    CProp prop;
+    CProp &prop = Props.AddNew();
     prop.IsOptional = true;
     prop.Id = propid;
     prop.Value = s;
-    Props.Add(prop);
   }
 
   HRESULT SetCoderProps(ICompressSetCoderProperties *scp, const UInt64 *dataSizeReduce) const;
@@ -98,6 +97,14 @@ public:
         return Props[i].Value.ulVal;
     int level = GetLevel();
     return level <= 5 ? (1 << (level * 2 + 14)) : (level == 6 ? (1 << 25) : (1 << 26));
+  }
+
+  bool Are_Lzma_Model_Props_Defined() const
+  {
+    if (FindProp(NCoderPropID::kPosStateBits) >= 0) return true;
+    if (FindProp(NCoderPropID::kLitContextBits) >= 0) return true;
+    if (FindProp(NCoderPropID::kLitPosBits) >= 0) return true;
+    return false;
   }
 
   UInt32 Get_Lzma_NumThreads(bool &fixedNumber) const
@@ -153,12 +160,12 @@ public:
     return level >= 9 ? (192 << 20) : ((UInt32)1 << (level + 19));
   }
 
-  void AddLevelProp(UInt32 level)
+  void AddProp_Level(UInt32 level)
   {
     AddProp32(NCoderPropID::kLevel, level);
   }
 
-  void AddNumThreadsProp(UInt32 numThreads)
+  void AddProp_NumThreads(UInt32 numThreads)
   {
     AddProp32(NCoderPropID::kNumThreads, numThreads);
   }
@@ -170,12 +177,14 @@ public:
 class COneMethodInfo: public CMethodProps
 {
 public:
-  UString MethodName;
+  AString MethodName;
+  UString PropsString;
   
   void Clear()
   {
     CMethodProps::Clear();
     MethodName.Empty();
+    PropsString.Empty();
   }
   bool IsEmpty() const { return MethodName.IsEmpty() && Props.IsEmpty(); }
   HRESULT ParseMethodFromPROPVARIANT(const UString &realName, const PROPVARIANT &value);

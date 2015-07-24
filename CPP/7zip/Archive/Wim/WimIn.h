@@ -406,7 +406,7 @@ public:
   CUIntVector SortedItems;
   int IndexOfUserImage;    // -1 : if more than one images was filled to Sorted Items
   
-  unsigned NumExludededItems;
+  unsigned NumExcludededItems;
   int ExludedItem;          // -1 : if there are no exclude items
   CUIntVector VirtualRoots; // we use them for old 1.10 WIM archives
 
@@ -418,7 +418,7 @@ public:
       return 0;
     if (imageIndex >= Images.Size())
       return 0;
-    return Images[imageIndex].NumItems - NumExludededItems;
+    return Images[imageIndex].NumItems - NumExcludededItems;
   }
 
   bool ItemHasStream(const CItem &item) const;

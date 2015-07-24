@@ -47,11 +47,11 @@ HRESULT CPlugin::ExtractFiles(
     progressBoxPointer = &progressBox;
     progressBox.Init(
         // g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
-        g_StartupInfo.GetMsgString(NMessageID::kExtracting), 48);
+        g_StartupInfo.GetMsgString(NMessageID::kExtracting));
   }
 
 
-  CExtractCallBackImp *extractCallbackSpec = new CExtractCallBackImp;
+  CExtractCallbackImp *extractCallbackSpec = new CExtractCallbackImp;
   CMyComPtr<IFolderArchiveExtractCallback> extractCallback(extractCallbackSpec);
   
   extractCallbackSpec->Init(
@@ -100,7 +100,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   NName::NormalizeDirPathPrefix(destPathU);
   destPath = UnicodeStringToMultiByte(destPathU, CP_OEMCP);
 
-  bool extractSelectedFiles = true;
+  // bool extractSelectedFiles = true;
   
   NExtract::CInfo extractionInfo;
   extractionInfo.PathMode = NExtract::NPathMode::kCurPaths;
@@ -211,7 +211,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
         if (destPathU.Back() == kDirDelimiter)
           break;
       }
-      g_StartupInfo.ShowMessage("You must specify directory path");
+      g_StartupInfo.ShowErrorMessage("You must specify directory path");
     }
 
     if (dialogItems[kPathModeRadioIndex].Selected)
@@ -246,9 +246,13 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     extractionInfo.Save();
 
     if (dialogItems[kFilesModeIndex].Selected)
-      extractSelectedFiles = true;
+    {
+      // extractSelectedFiles = true;
+    }
     else if (dialogItems[kFilesModeIndex + 1].Selected)
-      extractSelectedFiles = false;
+    {
+      // extractSelectedFiles = false;
+    }
     else
       throw 31806;
 
@@ -278,7 +282,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   {
     if (result == E_ABORT)
       return NFileOperationReturnCode::kInterruptedByUser;
-    ShowErrorMessage(result);
+    ShowSysErrorMessage(result);
     return NFileOperationReturnCode::kError;
   }
 

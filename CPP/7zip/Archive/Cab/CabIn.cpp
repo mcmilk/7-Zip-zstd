@@ -40,8 +40,7 @@ void CInArchive::ReadName(AString &s)
       throw CUnexpectedEndException();
     if (b == 0)
     {
-      memcpy(s.GetBuffer((unsigned)i), _tempBuf, i);
-      s.ReleaseBuffer((unsigned)i);
+      s.SetFrom((const char *)(const Byte *)_tempBuf, (unsigned)i);
       return;
     }
     if (_tempBuf.Size() == i)

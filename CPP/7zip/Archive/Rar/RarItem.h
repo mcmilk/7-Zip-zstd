@@ -84,10 +84,10 @@ struct CItem
 
   CItem() { Clear(); }
 
-  UInt64 GetFullSize()  const { return MainPartSize + CommentSize + AlignSize + PackSize; };
-  //  DWORD GetHeaderWithCommentSize()  const { return MainPartSize + CommentSize; };
-  UInt64 GetCommentPosition() const { return Position + MainPartSize; };
-  UInt64 GetDataPosition()    const { return GetCommentPosition() + CommentSize + AlignSize; };
+  UInt64 GetFullSize()  const { return MainPartSize + CommentSize + AlignSize + PackSize; }
+  //  DWORD GetHeaderWithCommentSize()  const { return MainPartSize + CommentSize; }
+  UInt64 GetCommentPosition() const { return Position + MainPartSize; }
+  UInt64 GetDataPosition()    const { return GetCommentPosition() + CommentSize + AlignSize; }
 };
 
 }}

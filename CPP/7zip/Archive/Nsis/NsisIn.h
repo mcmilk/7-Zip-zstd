@@ -24,6 +24,7 @@ namespace NNsis {
 const size_t kScriptSizeLimit = 1 << 27;
 
 const unsigned kSignatureSize = 16;
+extern const Byte kSignature[kSignatureSize];
 #define NSIS_SIGNATURE { 0xEF, 0xBE, 0xAD, 0xDE, 'N', 'u', 'l', 'l', 's', 'o', 'f', 't', 'I', 'n', 's', 't' }
 
 const UInt32 kFlagsMask = 0xF;
@@ -261,7 +262,7 @@ private:
   void Add_ButtonID(UInt32 buttonID);
 
   void Add_ShowWindow_Cmd(UInt32 cmd);
-  void Add_TypeFromList(const char **table, unsigned tableSize, UInt32 type);
+  void Add_TypeFromList(const char * const *table, unsigned tableSize, UInt32 type);
   void Add_ExecFlags(UInt32 flagsType);
   void Add_SectOp(UInt32 opType);
 

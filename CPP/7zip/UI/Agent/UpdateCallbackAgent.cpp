@@ -14,14 +14,24 @@ void CUpdateCallbackAgent::SetCallback(IFolderArchiveUpdateCallback *callback)
 {
   Callback = callback;
   _compressProgress.Release();
+  Callback2.Release();
   if (Callback)
+  {
     Callback.QueryInterface(IID_ICompressProgressInfo, &_compressProgress);
+    Callback.QueryInterface(IID_IFolderArchiveUpdateCallback2, &Callback2);
+  }
 }
 
-HRESULT CUpdateCallbackAgent::SetNumFiles(UInt64 numFiles)
+HRESULT CUpdateCallbackAgent::SetNumItems(UInt64 numItems)
 {
   if (Callback)
-    return Callback->SetNumFiles(numFiles);
+    return Callback->SetNumFiles(numItems);
+  return S_OK;
+}
+
+
+HRESULT CUpdateCallbackAgent::WriteSfx(const wchar_t * /* name */, UInt64 /* size */)
+{
   return S_OK;
 }
 
@@ -52,31 +62,65 @@ HRESULT CUpdateCallbackAgent::CheckBreak()
   return S_OK;
 }
 
-HRESULT CUpdateCallbackAgent::Finilize()
+/*
+HRESULT CUpdateCallbackAgent::Finalize()
 {
   return S_OK;
 }
+*/
 
-HRESULT CUpdateCallbackAgent::OpenFileError(const wchar_t *name, DWORD systemError)
+HRESULT CUpdateCallbackAgent::OpenFileError(const FString &path, DWORD systemError)
 {
+  HRESULT hres = HRESULT_FROM_WIN32(systemError);
   // if (systemError == ERROR_SHARING_VIOLATION)
   {
+    if (Callback2)
+    {
+      RINOK(Callback2->OpenFileError(fs2us(path), hres));
+      return S_FALSE;
+    }
+    
     if (Callback)
     {
       UString s = L"WARNING: ";
       s += NError::MyFormatMessage(systemError);
       s += L": ";
-      s += name;
+      s += fs2us(path);
       RINOK(Callback->UpdateErrorMessage(s));
       return S_FALSE;
     }
   }
   // FailedFiles.Add(name);
-  return systemError;
+  return hres;
 }
 
-HRESULT CUpdateCallbackAgent::GetStream(const wchar_t *name, bool /* isAnti */)
+HRESULT CUpdateCallbackAgent::ReadingFileError(const FString &path, DWORD systemError)
 {
+  HRESULT hres = HRESULT_FROM_WIN32(systemError);
+
+  // if (systemError == ERROR_SHARING_VIOLATION)
+  {
+    if (Callback2)
+    {
+      RINOK(Callback2->ReadingFileError(fs2us(path), hres));
+    }
+    else if (Callback)
+    {
+      UString s = L"ERROR: ";
+      s += NError::MyFormatMessage(systemError);
+      s += L": ";
+      s += fs2us(path);
+      RINOK(Callback->UpdateErrorMessage(s));
+    }
+  }
+  // FailedFiles.Add(name);
+  return hres;
+}
+
+HRESULT CUpdateCallbackAgent::GetStream(const wchar_t *name, bool isDir, bool /* isAnti */, UInt32 mode)
+{
+  if (Callback2)
+    return Callback2->ReportUpdateOperation(mode, name, BoolToInt(isDir));
   if (Callback)
     return Callback->CompressOperation(name);
   return S_OK;
@@ -88,6 +132,50 @@ HRESULT CUpdateCallbackAgent::SetOperationResult(Int32 operationResult)
     return Callback->OperationResult(operationResult);
   return S_OK;
 }
+
+void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, const wchar_t *fileName, UString &s);
+
+HRESULT CUpdateCallbackAgent::ReportExtractResult(Int32 opRes, Int32 isEncrypted, const wchar_t *name)
+{
+  if (Callback2)
+  {
+    return Callback2->ReportExtractResult(opRes, isEncrypted, name);
+  }
+  /*
+  if (mode != NArchive::NExtract::NOperationResult::kOK)
+  {
+    Int32 encrypted = 0;
+    UString s;
+    SetExtractErrorMessage(mode, encrypted, name, s);
+    // ProgressDialog->Sync.AddError_Message(s);
+  }
+  */
+  return S_OK;
+}
+
+HRESULT CUpdateCallbackAgent::ReportUpdateOpeartion(UInt32 op, const wchar_t *name, bool isDir)
+{
+  if (Callback2)
+  {
+    return Callback2->ReportUpdateOperation(op, name, BoolToInt(isDir));
+  }
+  return S_OK;
+}
+
+/*
+HRESULT CUpdateCallbackAgent::SetPassword(const UString &
+    #ifndef _NO_CRYPTO
+    password
+    #endif
+    )
+{
+  #ifndef _NO_CRYPTO
+  PasswordIsDefined = true;
+  Password = password;
+  #endif
+  return S_OK;
+}
+*/
 
 HRESULT CUpdateCallbackAgent::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
 {
@@ -114,9 +202,7 @@ HRESULT CUpdateCallbackAgent::CryptoGetTextPassword(BSTR *password)
   return getTextPassword->CryptoGetTextPassword(password);
 }
 
-/*
-HRESULT CUpdateCallbackAgent::ShowDeleteFile(const wchar_t *name)
+HRESULT CUpdateCallbackAgent::ShowDeleteFile(const wchar_t *name, bool /* isDir */)
 {
   return Callback->DeleteOperation(name);
 }
-*/

@@ -114,7 +114,7 @@ bool CItem::IsDir() const
     case NHostOS::kMVS:
       return false; // change it throw kUnknownAttributes;
     case NHostOS::kUnix:
-      return (highAttrib & NUnixAttrib::kIFDIR) != 0;
+      return ((highAttrib & NUnixAttrib::kIFMT) == NUnixAttrib::kIFDIR);
     default:
       return false;
   }
@@ -129,6 +129,11 @@ UInt32 CItem::GetWinAttrib() const
     case NHostOS::kNTFS:
       if (FromCentral)
         winAttrib = ExternalAttrib;
+      break;
+    case NHostOS::kUnix:
+      // do we need to clear 16 low bits in this case?
+      if (FromCentral)
+        winAttrib = ExternalAttrib & 0xFFFF0000;
       break;
   }
   if (IsDir()) // test it;

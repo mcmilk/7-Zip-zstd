@@ -17,89 +17,56 @@ namespace NCompress {
 namespace NLzh {
 namespace NDecoder {
 
-const int kMaxHuffmanLen = 16; // Check it
+const unsigned kMatchMinLen = 3;
+const unsigned kMatchMaxLen = 256;
+const unsigned NC = (256 + kMatchMaxLen - kMatchMinLen + 1);
+const unsigned NUM_CODE_BITS = 16;
+const unsigned NUM_DIC_BITS_MAX = 25;
+const unsigned NT = (NUM_CODE_BITS + 3);
+const unsigned NP = (NUM_DIC_BITS_MAX + 1);
+const unsigned NPT = NP; // Max(NT, NP)
 
-const int kNumSpecLevelSymbols = 3;
-const int kNumLevelSymbols = kNumSpecLevelSymbols + kMaxHuffmanLen;
-
-const int kDictBitsMax = 16;
-const int kNumDistanceSymbols = kDictBitsMax + 1;
-
-const int kMaxMatch = 256;
-const int kMinMatch = 3;
-const int kNumCSymbols = 256 + kMaxMatch + 2 - kMinMatch;
-
-template <UInt32 m_NumSymbols>
-class CHuffmanDecoder:public NCompress::NHuffman::CDecoder<kMaxHuffmanLen, m_NumSymbols>
-{
-public:
-  int Symbol;
-  template <class TBitDecoder>
-  UInt32 Decode(TBitDecoder *bitStream)
-  {
-    if (Symbol >= 0)
-      return (UInt32)Symbol;
-    return this->DecodeSymbol(bitStream);
-  }
-};
-
-class CCoder :
+class CCoder:
   public ICompressCoder,
   public CMyUnknownImp
 {
-  CLzOutWindow m_OutWindowStream;
-  NBitm::CDecoder<CInBuffer> m_InBitStream;
+  CLzOutWindow _outWindow;
+  NBitm::CDecoder<CInBuffer> _inBitStream;
 
-  int m_NumDictBits;
+  int _symbolT;
+  int _symbolC;
 
-  CHuffmanDecoder<kNumLevelSymbols> m_LevelHuffman;
-  CHuffmanDecoder<kNumDistanceSymbols> m_PHuffmanDecoder;
-  CHuffmanDecoder<kNumCSymbols> m_CHuffmanDecoder;
-
-  /*
-  void ReleaseStreams()
-  {
-    m_OutWindowStream.ReleaseStream();
-  }
-  */
+  NHuffman::CDecoder<NUM_CODE_BITS, NPT> _decoderT;
+  NHuffman::CDecoder<NUM_CODE_BITS, NC> _decoderC;
 
   class CCoderReleaser
   {
-    CCoder *m_Coder;
+    CCoder *_coder;
   public:
-    bool NeedFlush;
-    CCoderReleaser(CCoder *coder): m_Coder(coder), NeedFlush(true) {}
-    ~CCoderReleaser()
-    {
-      if (NeedFlush)
-        m_Coder->m_OutWindowStream.Flush();
-      // m_Coder->ReleaseStreams();
-    }
+    CCoderReleaser(CCoder *coder): _coder(coder) {}
+    void Disable() { _coder = NULL; }
+    ~CCoderReleaser() { if (_coder) _coder->_outWindow.Flush(); }
   };
   friend class CCoderReleaser;
 
-  void MakeTable(int nchar, Byte *bitlen, int tablebits,
-      UInt32 *table, int tablesize);
-  
-  UInt32 ReadBits(int numBits);
-  HRESULT ReadLevelTable();
-  HRESULT ReadPTable(int numBits);
-  HRESULT ReadCTable();
+  bool ReadTP(unsigned num, unsigned numBits, int spec);
+  bool ReadC();
 
+  HRESULT CodeReal(UInt64 outSize, ICompressProgressInfo *progress);
 public:
-  
   MY_UNKNOWN_IMP
 
-  STDMETHOD(CodeReal)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-      ICompressProgressInfo *progress);
+  UInt32 DictSize;
+  bool FinishMode;
 
-  STDMETHOD(Code)(ISequentialInStream *inStream,
-      ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-      ICompressProgressInfo *progress);
+  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 
-  void SetDictionary(int numDictBits) { m_NumDictBits = numDictBits; }
-  CCoder(): m_NumDictBits(0) {}
+  void SetDictSize(unsigned dictSize) { DictSize = dictSize; }
+  
+  CCoder(): DictSize(1 << 16), FinishMode(false) {}
+
+  UInt64 GetInputProcessedSize() const { return _inBitStream.GetProcessedSize(); }
 };
 
 }}}

@@ -164,7 +164,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SetSolidBlockSize();
   void SetNumThreads();
 
-  UInt64 GetMemoryUsage(UInt32 dictionary, UInt64 &decompressMemory);
+  UInt64 GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory);
   UInt64 GetMemoryUsage(UInt64 &decompressMemory);
   void PrintMemUsage(UINT res, UInt64 value);
   void SetMemoryUsage();

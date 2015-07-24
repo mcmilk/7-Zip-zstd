@@ -11,7 +11,7 @@ namespace NCompress {
 namespace NImplode {
 namespace NHuffman {
 
-const int kNumBitsInLongestCode = 16;
+const unsigned kNumBitsInLongestCode = 16;
 
 typedef NBitl::CDecoder<CInBuffer> CInBit;
 

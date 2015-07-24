@@ -40,20 +40,20 @@ static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
 
 static void AddValuePair(UString &s, UINT resourceID, UInt64 value, bool addColon = true)
 {
-  wchar_t sz[32];
-  s += LangString(resourceID);
+  AddLangString(s, resourceID);
   if (addColon)
     s += L':';
-  s += L' ';
+  s.Add_Space();
+  char sz[32];
   ConvertUInt64ToString(value, sz);
-  s += sz;
-  s += L'\n';
+  s.AddAscii(sz);
+  s.Add_LF();
 }
 
 static void AddSizePair(UString &s, UINT resourceID, UInt64 value)
 {
   wchar_t sz[32];
-  s += LangString(resourceID);
+  AddLangString(s, resourceID);
   s += L": ";
   ConvertUInt64ToString(value, sz);
   s += MyFormatNew(IDS_FILE_SIZE, sz);
@@ -65,7 +65,7 @@ static void AddSizePair(UString &s, UINT resourceID, UInt64 value)
     s += sz;
     s += L" MB)";
   }
-  s += L'\n';
+  s.Add_LF();
 }
 
 #endif
@@ -122,7 +122,7 @@ HRESULT CThreadExtracting::ProcessVirt()
       AddSizePair(s, IDS_PROP_SIZE, Stat.UnpackSize);
       if (Stat.NumAltStreams != 0)
       {
-        s += L'\n';
+        s.Add_LF();
         AddValuePair(s, IDS_PROP_NUM_ALT_STREAMS, Stat.NumAltStreams);
         AddSizePair(s, IDS_PROP_ALT_STREAMS_SIZE, Stat.AltStreams_UnpackSize);
       }
@@ -130,12 +130,12 @@ HRESULT CThreadExtracting::ProcessVirt()
     
     if (HashBundle)
     {
-      s += L'\n';
+      s.Add_LF();
       AddHashBundleRes(s, *HashBundle, UString());
     }
     
-    s += L'\n';
-    s += LangString(IDS_MESSAGE_NO_ERRORS);
+    s.Add_LF();
+    AddLangString(s, IDS_MESSAGE_NO_ERRORS);
     
     FinalMessage.OkMessage.Title = Title;
     FinalMessage.OkMessage.Message = s;
@@ -237,7 +237,9 @@ HRESULT ExtractGUI(
       0x02000603,
       #endif
       options.OutputDir);
-      MyMessageBox(s2 + UString(L'\n') + s);
+      s2.Add_LF();
+      s2 += s;
+      MyMessageBox(s2);
       return E_FAIL;
     }
     */

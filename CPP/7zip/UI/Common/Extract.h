@@ -89,6 +89,6 @@ HRESULT Extract(
     IHashCalc *hash,
     #endif
     UString &errorMessage,
-    CDecompressStat &stat);
+    CDecompressStat &st);
 
 #endif

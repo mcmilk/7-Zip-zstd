@@ -12,7 +12,7 @@ class CGlobal
 public:
   CGlobal(): _global(NULL){};
   ~CGlobal() { Free(); }
-  operator HGLOBAL() const { return _global; };
+  operator HGLOBAL() const { return _global; }
   void Attach(HGLOBAL hGlobal)
   {
     Free();

@@ -91,8 +91,8 @@ public:
 
   UInt32 m_Pos;
 
-  int m_NumPasses;
-  int m_NumDivPasses;
+  unsigned m_NumPasses;
+  unsigned m_NumDivPasses;
   bool m_CheckStatic;
   bool m_IsMultiPass;
   UInt32 m_ValueBlockSize;
@@ -106,8 +106,8 @@ public:
   bool m_Deflate64Mode;
 
   Byte m_LevelLevels[kLevelTableSize];
-  int m_NumLitLenLevels;
-  int m_NumDistLevels;
+  unsigned m_NumLitLenLevels;
+  unsigned m_NumDistLevels;
   UInt32 m_NumLevelCodes;
   UInt32 m_ValueIndex;
 
@@ -142,17 +142,17 @@ public:
   UInt32 GetOptimal(UInt32 &backRes);
   UInt32 GetOptimalFast(UInt32 &backRes);
 
-  void LevelTableDummy(const Byte *levels, int numLevels, UInt32 *freqs);
+  void LevelTableDummy(const Byte *levels, unsigned numLevels, UInt32 *freqs);
 
-  void WriteBits(UInt32 value, int numBits);
-  void LevelTableCode(const Byte *levels, int numLevels, const Byte *lens, const UInt32 *codes);
+  void WriteBits(UInt32 value, unsigned numBits);
+  void LevelTableCode(const Byte *levels, unsigned numLevels, const Byte *lens, const UInt32 *codes);
 
   void MakeTables(unsigned maxHuffLen);
   UInt32 GetLzBlockPrice() const;
   void TryBlock();
-  UInt32 TryDynBlock(int tableIndex, UInt32 numPasses);
+  UInt32 TryDynBlock(unsigned tableIndex, UInt32 numPasses);
 
-  UInt32 TryFixedBlock(int tableIndex);
+  UInt32 TryFixedBlock(unsigned tableIndex);
 
   void SetPrices(const CLevels &levels);
   void WriteBlock();
@@ -165,8 +165,8 @@ public:
   
   void WriteBlockData(bool writeMode, bool finalBlock);
 
-  UInt32 GetBlockPrice(int tableIndex, int numDivPasses);
-  void CodeBlock(int tableIndex, bool finalBlock);
+  UInt32 GetBlockPrice(unsigned tableIndex, unsigned numDivPasses);
+  void CodeBlock(unsigned tableIndex, bool finalBlock);
 
   void SetProps(const CEncProps *props2);
 public:

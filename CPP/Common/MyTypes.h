@@ -27,4 +27,9 @@ struct CBoolPair
   }
 };
 
+#define CLASS_NO_COPY(cls) \
+  private: \
+  cls(const cls &); \
+  cls &operator=(const cls &);
+
 #endif

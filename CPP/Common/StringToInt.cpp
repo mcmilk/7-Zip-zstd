@@ -8,12 +8,12 @@ static const UInt32 k_UInt32_max = 0xFFFFFFFF;
 static const UInt64 k_UInt64_max = UINT64_CONST(0xFFFFFFFFFFFFFFFF);
 // static const UInt64 k_UInt64_max = (UInt64)(Int64)-1;
 
-#define CONVERT_STRING_TO_UINT_FUNC(uintType, charType) \
+#define CONVERT_STRING_TO_UINT_FUNC(uintType, charType, charTypeUnsigned) \
   uintType ConvertStringTo ## uintType(const charType *s, const charType **end) throw() { \
     if (end) *end = s; \
     uintType res = 0; \
     for (;; s++) { \
-      charType c = *s; \
+      charTypeUnsigned c = (charTypeUnsigned)*s; \
       if (c < '0' || c > '9') { if (end) *end = s; return res; } \
       if (res > (k_ ## uintType ## _max) / 10) return 0; \
       res *= 10; \
@@ -21,10 +21,10 @@ static const UInt64 k_UInt64_max = UINT64_CONST(0xFFFFFFFFFFFFFFFF);
       if (res > (k_ ## uintType ## _max) - v) return 0; \
       res += v; }}
 
-CONVERT_STRING_TO_UINT_FUNC(UInt32, char)
-CONVERT_STRING_TO_UINT_FUNC(UInt32, wchar_t)
-CONVERT_STRING_TO_UINT_FUNC(UInt64, char)
-CONVERT_STRING_TO_UINT_FUNC(UInt64, wchar_t)
+CONVERT_STRING_TO_UINT_FUNC(UInt32, char, Byte)
+CONVERT_STRING_TO_UINT_FUNC(UInt32, wchar_t, wchar_t)
+CONVERT_STRING_TO_UINT_FUNC(UInt64, char, Byte)
+CONVERT_STRING_TO_UINT_FUNC(UInt64, wchar_t, wchar_t)
 
 Int32 ConvertStringToInt32(const wchar_t *s, const wchar_t **end) throw()
 {
@@ -58,7 +58,7 @@ UInt32 ConvertOctStringToUInt32(const char *s, const char **end) throw()
   UInt32 res = 0;
   for (;; s++)
   {
-    char c = *s;
+    unsigned c = (unsigned char)*s;
     if (c < '0' || c > '7')
     {
       if (end)
@@ -79,7 +79,7 @@ UInt64 ConvertOctStringToUInt64(const char *s, const char **end) throw()
   UInt64 res = 0;
   for (;; s++)
   {
-    char c = *s;
+    unsigned c = (unsigned char)*s;
     if (c < '0' || c > '7')
     {
       if (end)
@@ -100,7 +100,7 @@ UInt32 ConvertHexStringToUInt32(const char *s, const char **end) throw()
   UInt32 res = 0;
   for (;; s++)
   {
-    char c = *s;
+    unsigned c = (Byte)*s;
     unsigned v;
     if (c >= '0' && c <= '9') v = (c - '0');
     else if (c >= 'A' && c <= 'F') v = 10 + (c - 'A');
@@ -125,7 +125,7 @@ UInt64 ConvertHexStringToUInt64(const char *s, const char **end) throw()
   UInt64 res = 0;
   for (;; s++)
   {
-    char c = *s;
+    unsigned c = (Byte)*s;
     unsigned v;
     if (c >= '0' && c <= '9') v = (c - '0');
     else if (c >= 'A' && c <= 'F') v = 10 + (c - 'A');

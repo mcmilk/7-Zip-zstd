@@ -95,7 +95,7 @@ FString GetModuleDirPrefix()
   FString s;
   if (MyGetModuleFileName(s))
   {
-    int pos = s.ReverseFind(FCHAR_PATH_SEPARATOR);
+    int pos = s.ReverseFind_PathSepar();
     if (pos >= 0)
     {
       s.DeleteFrom(pos + 1);

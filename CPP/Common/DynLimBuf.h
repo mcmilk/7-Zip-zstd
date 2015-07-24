@@ -18,6 +18,10 @@ class CDynLimBuf
   bool _error;
 
   CDynLimBuf(const CDynLimBuf &s);
+
+  // ---------- forbidden functions ----------
+  CDynLimBuf &operator+=(wchar_t c);
+
 public:
   CDynLimBuf(size_t limit) throw();
   ~CDynLimBuf() { MyFree(_chars); }
@@ -29,7 +33,7 @@ public:
   // const char *Ptr() const { return _chars; }
 
   CDynLimBuf &operator+=(char c) throw();
-  CDynLimBuf &operator+=(const char *s)  throw();
+  CDynLimBuf &operator+=(const char *s) throw();
 };
 
 

@@ -104,7 +104,7 @@ static const char *kHelpString =
     "\nUsage: 7zSFX [<command>] [<switches>...]\n"
     "\n"
     "<Commands>\n"
-    "  l: List contents of archive\n"
+    // "  l: List contents of archive\n"
     "  t: Test integrity of archive\n"
     "  x: eXtract files with full pathname (default)\n"
     "<Switches>\n"
@@ -369,22 +369,22 @@ int Main2(
     {
       CExtractCallbackConsole *ecs = new CExtractCallbackConsole;
       CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
-      ecs->OutStream = g_StdStream;
+      ecs->Init(g_StdStream, &g_StdErr, g_StdStream);
 
       #ifndef _NO_CRYPTO
       ecs->PasswordIsDefined = passwordEnabled;
       ecs->Password = password;
       #endif
 
-      ecs->Init();
-
+      /*
       COpenCallbackConsole openCallback;
-      openCallback.OutStream = g_StdStream;
+      openCallback.Init(g_StdStream, g_StdStream);
 
       #ifndef _NO_CRYPTO
       openCallback.PasswordIsDefined = passwordEnabled;
       openCallback.Password = password;
       #endif
+      */
 
       CExtractOptions eo;
       eo.StdOutMode = false;
@@ -402,7 +402,7 @@ int Main2(
           codecs, CObjectVector<COpenType>(), CIntVector(),
           v1, v2,
           wildcardCensorHead,
-          eo, &openCallback, ecs,
+          eo, ecs, ecs,
           // NULL, // hash
           errorMessage, stat);
       if (!errorMessage.IsEmpty())
@@ -425,6 +425,9 @@ int Main2(
     }
     else
     {
+      throw CSystemException(E_NOTIMPL);
+
+      /*
       UInt64 numErrors = 0;
       UInt64 numWarnings = 0;
       HRESULT result = ListArchives(
@@ -447,6 +450,7 @@ int Main2(
       }
       if (result != S_OK)
         throw CSystemException(result);
+      */
     }
   }
   return 0;

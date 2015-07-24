@@ -55,7 +55,7 @@ public:
 
   LONG SetValue(LPCTSTR name, const void *value, UInt32 size) throw();
 
-  LONG SetValue_Strings(LPCTSTR valueName, const UStringVector &strings) throw();
+  LONG SetValue_Strings(LPCTSTR valueName, const UStringVector &strings);
   LONG GetValue_Strings(LPCTSTR valueName, UStringVector &strings);
 
   LONG SetKeyValue(LPCTSTR keyName, LPCTSTR valueName, LPCTSTR value) throw();

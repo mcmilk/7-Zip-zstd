@@ -7,8 +7,7 @@
 
 #include "../Common/StreamUtils.h"
 
-#include "MyAes.h"
-#include "Sha1.h"
+#include "Sha1Cls.h"
 #include "ZipStrong.h"
 
 namespace NCrypto {
@@ -57,25 +56,22 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
   return S_OK;
 }
 
-HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 /* crc */, UInt64 /* unpackSize */)
+STDMETHODIMP CBaseCoder::Init()
+{
+  return S_OK;
+}
+
+HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 crc, UInt64 unpackSize)
 {
   Byte temp[4];
   RINOK(ReadStream_FALSE(inStream, temp, 2));
   _ivSize = GetUi16(temp);
   if (_ivSize == 0)
   {
-    return E_NOTIMPL;
-
-    /* we don't know how to decode that case:
-    From Appnote: If IVSize is 0,then IV = CRC32 + Uncompressed File Size (as a 64 bit little-endian, unsigned integer value).
-    But it doesn't work. If you know solution, please write about it to 7-Zip developers. */
-    
-    /*
     memset(_iv, 0, 16);
-    // unpackSize += crc;
     SetUi32(_iv + 0, crc);
     SetUi64(_iv + 4, unpackSize);
-    */
+    _ivSize = 12;
   }
   else if (_ivSize == 16)
   {
@@ -96,7 +92,7 @@ HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 /* crc */, UI
   return ReadStream_FALSE(inStream, _bufAligned, _remSize);
 }
 
-HRESULT CDecoder::CheckPassword(bool &passwOK)
+HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
 {
   passwOK = false;
   if (_remSize < 16)
@@ -146,7 +142,7 @@ HRESULT CDecoder::CheckPassword(bool &passwOK)
   Byte fileKey[32];
   NSha1::CContext sha;
   sha.Init();
-  sha.Update(_iv, 16);
+  sha.Update(_iv, _ivSize);
   sha.Update(p, rdSize - 16); // we don't use last 16 bytes (PAD bytes)
   DeriveKey(sha, fileKey);
   
@@ -161,8 +157,6 @@ HRESULT CDecoder::CheckPassword(bool &passwOK)
   if (GetUi32(validData + validSize) != CrcCalc(validData, validSize))
     return S_OK;
   passwOK = true;
-  /* 9.31: The BUG in 9.24-9.30 was fixed.
-     We don't need to call CAesCbcCoder::Init() to reset IV for data. */
   return S_OK;
 }
 

@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /FAs /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /FAs /Yu"StdAfx.h" /FD /GF /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MTd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -77,7 +77,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\UTIL\7z.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /out:"C:\UTIL\7z.exe" /pdbtype:sept /ignore:4033
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "Console - Win32 ReleaseU"
 
@@ -94,7 +95,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /Gz /MD /W3 /GX /O1 /I "../../../" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -120,7 +121,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /Gz /W3 /Gm /GX /ZI /Od /I "../../../" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MTd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MTd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -377,6 +378,10 @@ SOURCE=..\..\..\Common\CommandLineParser.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Common.h
 # End Source File
 # Begin Source File
 

@@ -1,5 +1,5 @@
 /* 7z.h -- 7z interface
-2013-01-18 : Igor Pavlov : Public domain */
+2014-02-08 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_H
 #define __7Z_H
@@ -11,7 +11,7 @@ EXTERN_C_BEGIN
 #define k7zStartHeaderSize 0x20
 #define k7zSignatureSize 6
 
-extern Byte k7zSignature[k7zSignatureSize];
+extern const Byte k7zSignature[k7zSignatureSize];
 
 typedef struct
 {
@@ -25,8 +25,7 @@ typedef struct
 {
   size_t PropsOffset;
   UInt32 MethodID;
-  Byte NumInStreams;
-  Byte NumOutStreams;
+  Byte NumStreams;
   Byte PropsSize;
 } CSzCoderInfo;
 
@@ -34,23 +33,22 @@ typedef struct
 {
   UInt32 InIndex;
   UInt32 OutIndex;
-} CSzBindPair;
+} CSzBond;
 
 #define SZ_NUM_CODERS_IN_FOLDER_MAX 4
-#define SZ_NUM_BINDS_IN_FOLDER_MAX 3
+#define SZ_NUM_BONDS_IN_FOLDER_MAX 3
 #define SZ_NUM_PACK_STREAMS_IN_FOLDER_MAX 4
-#define SZ_NUM_CODERS_OUT_STREAMS_IN_FOLDER_MAX 4
 
 typedef struct
 {
   UInt32 NumCoders;
-  UInt32 NumBindPairs;
+  UInt32 NumBonds;
   UInt32 NumPackStreams;
-  UInt32 MainOutStream;
+  UInt32 UnpackStream;
   UInt32 PackStreams[SZ_NUM_PACK_STREAMS_IN_FOLDER_MAX];
-  CSzBindPair BindPairs[SZ_NUM_BINDS_IN_FOLDER_MAX];
+  CSzBond Bonds[SZ_NUM_BONDS_IN_FOLDER_MAX];
   CSzCoderInfo Coders[SZ_NUM_CODERS_IN_FOLDER_MAX];
-  UInt64 CodersUnpackSizes[SZ_NUM_CODERS_OUT_STREAMS_IN_FOLDER_MAX];
+  UInt64 CodersUnpackSizes[SZ_NUM_CODERS_IN_FOLDER_MAX];
 } CSzFolder;
 
 /*

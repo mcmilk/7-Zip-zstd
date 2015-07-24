@@ -51,11 +51,15 @@ public:
   AString Text;
   bool TextWasChanged;
 
+  // UString Freq;
+  // bool FreqWasChanged;
+
   CProgressSyncInfo()
   {
     if (_startEvent.Create() != S_OK)
       throw 3986437;
   }
+  
   void Init()
   {
     Changed = false;
@@ -70,9 +74,13 @@ public:
 
     NumPasses = 0;
 
+    // Freq.SetFromAscii("MHz: ");
+    // FreqWasChanged = true;
+
     Text.Empty();
     TextWasChanged = true;
   }
+  
   void Stop()
   {
     NWindows::NSynchronization::CCriticalSectionLock lock(CS);

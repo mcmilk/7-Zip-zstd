@@ -30,28 +30,39 @@ static void ThrowException_if_Error(HRESULT res)
     throw CSystemException(res);
 }
 
+#ifdef EXTERNAL_CODECS
+
 #define CREATE_CODECS \
   CCodecs *codecs = new CCodecs; \
   CMyComPtr<ICompressCodecsInfo> compressCodecsInfo = codecs; \
   ThrowException_if_Error(codecs->Load());
 
-#ifdef EXTERNAL_CODECS
-
 #define LOAD_EXTERNAL_CODECS \
     CExternalCodecs __externalCodecs; \
     __externalCodecs.GetCodecs = codecs; \
     __externalCodecs.GetHashers = codecs; \
-    ThrowException_if_Error(__externalCodecs.LoadCodecs());
+    ThrowException_if_Error(__externalCodecs.Load());
 
 #else
 
-LOAD_EXTERNAL_CODECS
+#define CREATE_CODECS \
+  CCodecs *codecs = new CCodecs; \
+  CMyComPtr<IUnknown> compressCodecsInfo = codecs; \
+  ThrowException_if_Error(codecs->Load());
+
+#define LOAD_EXTERNAL_CODECS
 
 #endif
+
+
+
  
 UString GetQuotedString(const UString &s)
 {
-  return UString(L'\"') + s + UString(L'\"');
+  UString s2 = L'\"';
+  s2 += s;
+  s2 += L'\"';
+  return s2;
 }
 
 static void ErrorMessage(LPCWSTR message)
@@ -78,6 +89,7 @@ HRESULT CompressFiles(
     bool email, bool showDialog, bool /* waitFinish */)
 {
   MY_TRY_BEGIN
+  
   CREATE_CODECS
 
   CUpdateCallbackGUI callback;
@@ -128,6 +140,7 @@ HRESULT CompressFiles(
       throw CSystemException(E_FAIL);
     return E_FAIL;
   }
+  
   MY_TRY_FINISH
   return S_OK;
 }
@@ -136,6 +149,7 @@ static HRESULT ExtractGroupCommand(const UStringVector &arcPaths,
     bool showDialog, const UString &outFolder, bool testMode, bool elimDup = false)
 {
   MY_TRY_BEGIN
+  
   CREATE_CODECS
 
   CExtractOptions eo;
@@ -160,7 +174,12 @@ static HRESULT ExtractGroupCommand(const UStringVector &arcPaths,
       arcCensor.AddPreItem(arcPaths[i]);
     }
     arcCensor.AddPathsToCensor(NWildcard::k_RelatPath);
-    EnumerateDirItemsAndSort(false, arcCensor, NWildcard::k_RelatPath, UString(), arcPathsSorted, arcFullPathsSorted);
+    CDirItemsStat st;
+    EnumerateDirItemsAndSort(arcCensor, NWildcard::k_RelatPath, UString(),
+        arcPathsSorted, arcFullPathsSorted,
+        st,
+        NULL // &scan: change it!!!!
+        );
   }
   
   CObjectVector<COpenType> formatIndices;
@@ -184,6 +203,7 @@ static HRESULT ExtractGroupCommand(const UStringVector &arcPaths,
     throw CSystemException(result);
   }
   return ecs->IsOK() ? S_OK : E_FAIL;
+  
   MY_TRY_FINISH
   return result;
 }
@@ -201,6 +221,7 @@ void TestArchives(const UStringVector &arcPaths)
 void CalcChecksum(const UStringVector &paths, const UString &methodName)
 {
   MY_TRY_BEGIN
+  
   CREATE_CODECS
   LOAD_EXTERNAL_CODECS
 
@@ -216,13 +237,14 @@ void CalcChecksum(const UStringVector &paths, const UString &methodName)
   CHashOptions options;
   options.Methods.Add(methodName);
 
-  result = HashCalcGUI(EXTERNAL_CODECS_VARS censor, options, messageWasDisplayed);
+  result = HashCalcGUI(EXTERNAL_CODECS_VARS_L censor, options, messageWasDisplayed);
   if (result != S_OK)
   {
     if (result != E_ABORT && messageWasDisplayed)
       return; //  E_FAIL;
     throw CSystemException(result);
   }
+  
   MY_TRY_FINISH
   return; //  result;
 }
@@ -230,6 +252,7 @@ void CalcChecksum(const UStringVector &paths, const UString &methodName)
 void Benchmark(bool totalMode)
 {
   MY_TRY_BEGIN
+  
   CREATE_CODECS
   LOAD_EXTERNAL_CODECS
   
@@ -241,6 +264,7 @@ void Benchmark(bool totalMode)
     prop.Value = L"*";
     props.Add(prop);
   }
-  result = Benchmark(EXTERNAL_CODECS_VARS props, g_HWND);
+  result = Benchmark(EXTERNAL_CODECS_VARS_L props, g_HWND);
+  
   MY_TRY_FINISH
 }

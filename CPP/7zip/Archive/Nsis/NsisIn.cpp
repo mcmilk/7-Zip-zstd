@@ -20,7 +20,7 @@ namespace NNsis {
 
 static const size_t kInputBufSize = 1 << 20;
 
-static const Byte kSignature[kSignatureSize] = NSIS_SIGNATURE;
+const Byte kSignature[kSignatureSize] = NSIS_SIGNATURE;
 static const UInt32 kMask_IsCompressed = (UInt32)1 << 31;
 
 static const unsigned kNumCommandParams = 6;
@@ -30,7 +30,7 @@ static const unsigned kCmdSize = 4 + kNumCommandParams * 4;
 #define CR_LF "\x0D\x0A"
 #endif
 
-static const char *kErrorStr = "$_ERROR_STR_";
+static const char * const kErrorStr = "$_ERROR_STR_";
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
@@ -244,7 +244,7 @@ static const CCommandInfo k_Commands[kNumCmds] =
 
 #ifdef NSIS_SCRIPT
 
-static const char *k_CommandNames[kNumCmds] =
+static const char * const k_CommandNames[kNumCmds] =
 {
     "Invalid"
   , NULL // Return
@@ -331,7 +331,7 @@ static const char *k_CommandNames[kNumCmds] =
    Some NSIS shell names are not identical to WIN32 CSIDL_* names.
    NSIS doesn't use some CSIDL_* values. But we add name for all CSIDL_ (marked with '+'). */
 
-static const char *kShellStrings[] =
+static const char * const kShellStrings[] =
 {
     "DESKTOP"     // +
   , "INTERNET"    // +
@@ -526,7 +526,7 @@ void CInArchive::AddLicense(UInt32 param, Int32 langID)
 #define kVar_Spec_OUTDIR      31  // NSIS 2.26+
 
 
-static const char *kVarStrings[] =
+static const char * const kVarStrings[] =
 {
     "CMDLINE"
   , "INSTDIR"
@@ -963,8 +963,7 @@ void CInArchive::GetNsisString_Unicode_Raw(const Byte *p)
             else // if (c == PARK_CODE_LANG)
               Add_LangStr(Raw_AString, n);
           }
-          for (const Byte *s = (const Byte *)(const char *)Raw_AString; *s != 0; s++)
-            Raw_UString += *s;
+          Raw_UString.AddAscii(Raw_AString);
           continue;
         }
         c = n;
@@ -1010,8 +1009,7 @@ void CInArchive::GetNsisString_Unicode_Raw(const Byte *p)
       else // if (c == NS_3_CODE_LANG)
         Add_LangStr(Raw_AString, n);
     }
-    for (const Byte *s = (const Byte *)(const char *)Raw_AString; *s != 0; s++)
-      Raw_UString += (wchar_t)*s;
+    Raw_UString.AddAscii(Raw_AString);
   }
 }
 
@@ -1147,8 +1145,7 @@ void CInArchive::ReadString2_Raw(UInt32 pos)
       GetNsisString_Raw(_data + _stringsPos + pos);
     return;
   }
-  for (const char *s = (const char *)Raw_AString; *s != 0; s++)
-    Raw_UString += *s;
+  Raw_UString.SetFromAscii(Raw_AString);
 }
 
 bool CInArchive::IsGoodString(UInt32 param) const
@@ -1417,7 +1414,7 @@ static const char *g_WinAttrib[] =
 
 #define FLAGS_DELIMITER '|'
 
-static void FlagsToString2(CDynLimBuf &s, const char **table, unsigned num, UInt32 flags)
+static void FlagsToString2(CDynLimBuf &s, const char * const *table, unsigned num, UInt32 flags)
 {
   bool filled = false;
   for (unsigned i = 0; i < num; i++)
@@ -1536,7 +1533,7 @@ inline bool IsProbablyEndOfFunc(UInt32 flag)
   return (flag != 0 && flag != CMD_REF_Goto);
 }
 
-static const char *kOnFunc[] =
+static const char * const kOnFunc[] =
 {
     "Init"
   , "InstSuccess"
@@ -1622,12 +1619,12 @@ static bool NoLabels(const UInt32 *labels, UInt32 num)
   return true;
 }
 
-static const char *k_REBOOTOK = " /REBOOTOK";
+static const char * const k_REBOOTOK = " /REBOOTOK";
 
 #define MY__MB_ABORTRETRYIGNORE 2
 #define MY__MB_RETRYCANCEL      5
 
-static const char *k_MB_Buttons[] =
+static const char * const k_MB_Buttons[] =
 {
     "OK"
   , "OKCANCEL"
@@ -1640,7 +1637,7 @@ static const char *k_MB_Buttons[] =
 
 #define MY__MB_ICONSTOP   (1 << 4)
 
-static const char *k_MB_Icons[] =
+static const char * const k_MB_Icons[] =
 {
     NULL
   , "ICONSTOP"
@@ -1649,7 +1646,7 @@ static const char *k_MB_Icons[] =
   , "ICONINFORMATION"
 };
 
-static const char *k_MB_Flags[] =
+static const char * const k_MB_Flags[] =
 {
     "HELP"
   , "NOFOCUS"
@@ -1664,7 +1661,7 @@ static const char *k_MB_Flags[] =
 #define MY__IDCANCEL 2
 #define MY__IDIGNORE 5
 
-static const char *k_Button_IDs[] =
+static const char * const k_Button_IDs[] =
 {
     "0"
   , "IDOK"
@@ -1700,31 +1697,6 @@ bool CInArchive::IsDirectString_Equal(UInt32 offset, const char *s) const
     return AreStringsEqual_16and8(_data + _stringsPos + offset * 2, s);
   else
     return strcmp((const char *)(const Byte *)_data + _stringsPos + offset, s) == 0;
-}
-
-static UInt32 ConvertHexStringToUInt32(const char *s, const char **end)
-{
-  UInt32 result = 0;
-  for (int i = 0; i < 8; i++)
-  {
-    char c = *s;
-    UInt32 v;
-    if (c >= '0' && c <= '9') v = (c - '0');
-    else if (c >= 'A' && c <= 'F') v = 10 + (c - 'A');
-    else if (c >= 'a' && c <= 'f') v = 10 + (c - 'a');
-    else
-    {
-      if (end != NULL)
-        *end = s;
-      return result;
-    }
-    result <<= 4;
-    result |= v;
-    s++;
-  }
-  if (end != NULL)
-    *end = s;
-  return 0;
 }
 
 static bool StringToUInt32(const char *s, UInt32 &res)
@@ -1816,7 +1788,7 @@ void CInArchive::Add_Color(UInt32 v)
 #define MY__SW_SHOWMINNOACTIVE 7
 #define MY__SW_SHOWNA 8
 
-static const char *kShowWindow_Commands[] =
+static const char * const kShowWindow_Commands[] =
 {
     "HIDE"
   , "SHOWNORMAL"     // "NORMAL"
@@ -1854,7 +1826,7 @@ void CInArchive::Add_ShowWindow_Cmd(UInt32 cmd)
     Add_UInt(cmd);
 }
 
-void CInArchive::Add_TypeFromList(const char **table, unsigned tableSize, UInt32 type)
+void CInArchive::Add_TypeFromList(const char * const *table, unsigned tableSize, UInt32 type)
 {
   if (type < tableSize)
     Script += table[type];
@@ -1886,7 +1858,7 @@ enum
 };
 
 // Names for NSIS exec_flags_t structure vars
-static const char *kExecFlags_VarsNames[] =
+static const char * const kExecFlags_VarsNames[] =
 {
     "AutoClose" // autoclose;
   , "ShellVarContext" // all_user_var;
@@ -1940,7 +1912,7 @@ enum
   PWP_CUSTOM
 };
 
-static const char *kPageTypes[] =
+static const char * const kPageTypes[] =
 {
     "license"
   , "components"
@@ -2062,7 +2034,7 @@ void CInArchive::AddStringLF(const char *s)
 
 // ---------- Section ----------
 
-static const char *kSection_VarsNames[] =
+static const char * const kSection_VarsNames[] =
 {
     "Text"
   , "InstTypes"
@@ -2240,7 +2212,7 @@ void CInArchive::NewLine()
 
 static const UInt32 kPageSize = 16 * 4;
 
-static const char *k_SetOverwrite_Modes[] =
+static const char * const k_SetOverwrite_Modes[] =
 {
     "on"
   , "off"
@@ -2294,7 +2266,7 @@ void CInArchive::MessageBox_MB_Part(UInt32 param)
     else if (modal == 2) Script += "|MB_TASKMODAL";
     else if (modal == 3) Script += "|0x3000";
     UInt32 flags = (param >> 14);
-    for (int i = 0; i < ARRAY_SIZE(k_MB_Flags); i++)
+    for (unsigned i = 0; i < ARRAY_SIZE(k_MB_Flags); i++)
       if ((flags & (1 << i)) != 0)
       {
         Script += "|MB_";
@@ -2327,8 +2299,7 @@ static const UInt32 kSectionSize_16bit_Big = kSectionSize_base + 8196 * 2;
 
 static void AddString(AString &dest, const char *src)
 {
-  if (!dest.IsEmpty())
-    dest += ' ';
+  dest.Add_Space_if_NotEmpty();
   dest += src;
 }
 
@@ -3133,7 +3104,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       }
       default: continue;
     }
-    for (int i = 0; mask != 0; i++, mask >>= 1)
+    for (unsigned i = 0; mask != 0; i++, mask >>= 1)
       if (mask & 1)
       {
         UInt32 param = Get32(p + 4 + 4 * i);
@@ -3535,17 +3506,11 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
                 pars[i] = Get32(p2 + i * 4 + 4);
               if (pars[0] == 10 + 4 && pars[2] == 0 && pars[3] == 0) // 10 + 4 means $R4
               {
-                ReadString2_Raw(pars[1]);
-                if (IsUnicode)
-                {
-                  if (!Raw_UString.IsEmpty())
-                    item.NameU = Raw_UString;
-                }
-                else
-                {
-                  if (!Raw_AString.IsEmpty())
-                    item.NameA = Raw_AString;
-                }
+                item.Prefix = -1;
+                item.NameA.Empty();
+                item.NameU.Empty();
+                SetItemName(item, pars[1]);
+                // maybe here we can restore original item name, if new name is empty
               }
             }
           }
@@ -5011,7 +4976,7 @@ HRESULT CInArchive::SortItems()
 #define CH_FLAGS_COMP_ONLY_ON_CUSTOM 256
 #define CH_FLAGS_NO_CUSTOM 512
 
-static const char *k_PostStrings[] =
+static const char * const k_PostStrings[] =
 {
     "install_directory_auto_append"
   , "uninstchild"     // NSIS 2.25+, used by uninstaller:
@@ -5242,7 +5207,7 @@ HRESULT CInArchive::Parse()
       AddRegRoot(rootKey);
       AddParam(subKey);
       AddParam(value);
-      NewLine();
+      AddLF();
     }
   }
 
@@ -5296,6 +5261,9 @@ HRESULT CInArchive::Parse()
   UInt32 langtable_size = Get32(p2 + 32);
   if (bhLangTables.Num > 0)
   {
+    if (langtable_size == (UInt32)(Int32)-1)
+      return E_NOTIMPL; // maybe it's old NSIS archive()
+
     UInt32 numStrings = (langtable_size - 10) / 4;
     _numLangStrings = numStrings;
     AddLF();
@@ -5310,7 +5278,7 @@ HRESULT CInArchive::Parse()
       {
         const Byte *p = _data + bhLangTables.Offset + langtable_size * i;
         LANGID langID = Get16(p);
-        UInt32 val = Get32(p + 10 + licenseLangIndex * 4);
+        UInt32 val = Get32(p + 10 + (UInt32)licenseLangIndex * 4);
         if (val != 0)
         {
           Script += "LicenseLangString ";
@@ -5902,6 +5870,7 @@ void CInArchive::Clear2()
   Script.Empty();
   LicenseFiles.Clear();
   _numRootLicenses = 0;
+  _numLangStrings = 0;
   langStrIDs.Clear();
   LangComment.Empty();
   noParseStringIndexes.Clear();

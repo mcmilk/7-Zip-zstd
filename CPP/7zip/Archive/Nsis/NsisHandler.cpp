@@ -26,7 +26,7 @@ namespace NNsis {
 static const char *kBcjMethod = "BCJ";
 static const char *kUnknownMethod = "Unknown";
 
-static const char *kMethods[] =
+static const char * const kMethods[] =
 {
     "Copy"
   , "Deflate"
@@ -84,9 +84,9 @@ static AString GetMethod(bool useFilter, NMethodType::EEnum method, UInt32 dict)
   if (useFilter)
   {
     s += kBcjMethod;
-    s += ' ';
+    s.Add_Space();
   }
-  s += (method < ARRAY_SIZE(kMethods)) ? kMethods[method] : kUnknownMethod;
+  s += ((unsigned)method < ARRAY_SIZE(kMethods)) ? kMethods[(unsigned)method] : kUnknownMethod;
   if (method == NMethodType::kLZMA)
   {
     s += ':';
@@ -102,7 +102,7 @@ AString CHandler::GetMethod(NMethodType::EEnum method, bool useItemFilter, UInt3
   if (_archive.IsSolid && _archive.UseFilter || !_archive.IsSolid && useItemFilter)
   {
     s += kBcjMethod;
-    s += ' ';
+    s.Add_Space();
   }
   s += (method < ARRAY_SIZE(kMethods)) ? kMethods[method] : kUnknownMethod;
   if (method == NMethodType::kLZMA)
@@ -126,8 +126,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       AString s = _archive.GetFormatDescription();
       if (!_archive.IsInstaller)
       {
-        if (!s.IsEmpty())
-          s += ' ';
+        s.Add_Space_if_NotEmpty();
         s += "(Uninstall)";
       }
       if (!s.IsEmpty())
@@ -138,8 +137,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidMethod: prop = _methodString; break;
     case kpidSolid: prop = _archive.IsSolid; break;
     case kpidOffset: prop = _archive.StartOffset; break;
-    case kpidPhySize: prop = _archive.ExeStub.Size() + _archive.FirstHeader.ArcSize; break;
-    case kpidEmbeddedStubSize: prop = _archive.ExeStub.Size(); break;
+    case kpidPhySize: prop = (UInt64)((UInt64)_archive.ExeStub.Size() + _archive.FirstHeader.ArcSize); break;
+    case kpidEmbeddedStubSize: prop = (UInt64)_archive.ExeStub.Size(); break;
     case kpidHeadersSize: prop = _archive.FirstHeader.HeaderSize; break;
     
     case kpidErrorFlags:
@@ -611,7 +610,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             HRESULT res = _archive.Decoder.Decode(
                 writeToTemp1 ? &tempBuf : NULL,
                 item.IsUninstaller, item.PatchSize,
-                item.IsUninstaller ? NULL : realOutStream,
+                item.IsUninstaller ? NULL : (ISequentialOutStream *)realOutStream,
                 progress,
                 curPacked, curUnpacked32);
             curUnpacked = curUnpacked32;

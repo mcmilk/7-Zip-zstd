@@ -154,10 +154,6 @@ public:
 
   UInt32 BlockSizeMax;
 
-  bool IsBz;
-  bool BzWasFinished; // bzip stream was finished with end signature
-  bool CrcError; // it can CRC error of block or CRC error of whole stream.
-
   ~CDecoder();
   HRESULT Create();
   void Free();
@@ -165,6 +161,10 @@ public:
   #else
   CState m_States[1];
   #endif
+
+  bool IsBz;
+  bool BzWasFinished; // bzip stream was finished with end signature
+  bool CrcError; // it can CRC error of block or CRC error of whole stream.
 
   CDecoder();
 

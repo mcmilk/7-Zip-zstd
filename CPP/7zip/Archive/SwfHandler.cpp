@@ -170,7 +170,7 @@ public:
   INTERFACE_IInArchive(;)
   INTERFACE_IOutArchive(;)
   STDMETHOD(OpenSeq)(ISequentialInStream *stream);
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
+  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
 };
 
 static const Byte kProps[] =
@@ -218,7 +218,7 @@ static void DicSizeToString(char *s, UInt32 val)
     else if ((val & ((1 << 10) - 1)) == 0) { val >>= 10; c = 'k'; }
   }
   ::ConvertUInt32ToString(val, s);
-  int pos = MyStringLen(s);
+  unsigned pos = MyStringLen(s);
   s[pos++] = c;
   s[pos] = 0;
 }
@@ -558,11 +558,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   return NCompress::CopyStream(_seqStream, outStream, NULL);
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps)
+STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   _lzmaMode = false;
   RINOK(_props.SetProperties(names, values, numProps));
-  UString m = _props.MethodName;
+  AString m = _props.MethodName;
   m.MakeLower_Ascii();
   if (m.IsEqualTo("lzma"))
   {
@@ -576,21 +576,16 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *v
   return S_OK;
 }
 
-IMP_CreateArcIn
-IMP_CreateArcOut
-
-static CArcInfo g_ArcInfo =
-  { "SWFc", "swf", "~.swf", 0xD8,
-  2 + 3 + 3,
-  {
+static const Byte k_Signature[] = {
     3, 'C', 'W', 'S',
-    3, 'Z', 'W', 'S',
-  },
+    3, 'Z', 'W', 'S' };
+
+REGISTER_ARC_IO(
+  "SWFc", "swf", "~.swf", 0xD8,
+  k_Signature,
   0,
   NArcInfoFlags::kMultiSignature,
-  REF_CreateArc_Pair, IsArc_Swfc };
-
-REGISTER_ARC(Swfc)
+  IsArc_Swfc)
 
 }
 
@@ -978,15 +973,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 'F', 'W', 'S' };
 
-static CArcInfo g_ArcInfo =
-  { "SWF", "swf", 0, 0xD7,
-  3, { 'F', 'W', 'S' },
+REGISTER_ARC_I(
+  "SWF", "swf", 0, 0xD7,
+  k_Signature,
   0,
   NArcInfoFlags::kKeepName,
-  CreateArc, NULL, NSwfc::IsArc_Swf };
-
-REGISTER_ARC(Swf)
+  NSwfc::IsArc_Swf)
 
 }}

@@ -4,6 +4,8 @@
 
 #include <Psapi.h>
 
+#include "../../../../C/CpuArch.h"
+
 #if defined( _WIN32) && defined( _7ZIP_LARGE_PAGES)
 #include "../../../../C/Alloc.h"
 #endif
@@ -15,14 +17,12 @@
 #include "../../../Common/MyException.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
+#include "../../../Common/UTFConvert.h"
 
 #include "../../../Windows/ErrorMsg.h"
+
 #ifdef _WIN32
 #include "../../../Windows/MemoryLock.h"
-#endif
-
-#ifndef _7ZIP_ST
-#include "../../../Windows/Synchronization.h"
 #endif
 
 #include "../../../Windows/TimeUtils.h"
@@ -30,9 +30,12 @@
 #include "../Common/ArchiveCommandLine.h"
 #include "../Common/ExitCode.h"
 #include "../Common/Extract.h"
+
 #ifdef EXTERNAL_CODECS
 #include "../Common/LoadCodecs.h"
 #endif
+
+#include "../../Common/RegisterCodec.h"
 
 #include "BenchCon.h"
 #include "ConsoleClose.h"
@@ -56,7 +59,15 @@ using namespace NCommandLineParser;
 #ifdef _WIN32
 HINSTANCE g_hInstance = 0;
 #endif
+
 extern CStdOutStream *g_StdStream;
+extern CStdOutStream *g_ErrStream;
+
+extern unsigned g_NumCodecs;
+extern const CCodecInfo *g_Codecs[];
+
+extern unsigned g_NumHashers;
+extern const CHasherInfo *g_Hashers[];
 
 static const char *kCopyrightString = "\n7-Zip"
 #ifndef EXTERNAL_CODECS
@@ -67,14 +78,16 @@ static const char *kCopyrightString = "\n7-Zip"
 #endif
 #endif
 
-#ifdef _WIN64
+#ifdef MY_CPU_64BIT
 " [64]"
+#elif defined MY_CPU_32BIT
+" [32]"
 #endif
 
-" " MY_VERSION_COPYRIGHT_DATE "\n";
+" " MY_VERSION_COPYRIGHT_DATE "\n\n";
 
 static const char *kHelpString =
-    "\nUsage: 7z"
+    "Usage: 7z"
 #ifndef EXTERNAL_CODECS
 #ifdef PROG_VARIANT_R
     "r"
@@ -91,6 +104,7 @@ static const char *kHelpString =
     "  d : Delete files from archive\n"
     "  e : Extract files from archive (without using directory names)\n"
     "  h : Calculate hash values for files\n"
+    "  i : Show information about supported formats\n"
     "  l : List contents of archive\n"
 //    "  l[a|t][f] : List contents of archive\n"
 //    "    a - with Additional fields\n"
@@ -113,6 +127,7 @@ static const char *kHelpString =
     #endif
     "  -r[-|0] : Recurse subdirectories\n"
     "  -scs{UTF-8|UTF-16LE|UTF-16BE|WIN|DOS|{id}} : set charset for list files\n"
+    "  -sdel : Delete files after compression\n"
     "  -sfx[{name}] : Create SFX archive\n"
     "  -si[{name}] : read data from stdin\n"
     "  -slt : show technical information for l (List) command\n"
@@ -137,9 +152,10 @@ static const char *kUnsupportedArcTypeMessage = "Unsupported archive type";
 
 static CFSTR kDefaultSfxModule = FTEXT("7zCon.sfx");
 
-static void ShowMessageAndThrowException(CStdOutStream &s, LPCSTR message, NExitCode::EEnum code)
+static void ShowMessageAndThrowException(LPCSTR message, NExitCode::EEnum code)
 {
-  s << endl << "Error: " << message << endl;
+  if (g_ErrStream)
+    *g_ErrStream << endl << "ERROR: " << message << endl;
   throw code;
 }
 
@@ -155,48 +171,47 @@ static void GetArguments(int numArgs, const char *args[], UStringVector &parts)
 }
 #endif
 
-static void ShowCopyrightAndHelp(CStdOutStream &s, bool needHelp)
+static void ShowCopyrightAndHelp(CStdOutStream *so, bool needHelp)
 {
-  s << kCopyrightString;
-  // s << "# CPUs: " << (UInt64)NWindows::NSystem::GetNumberOfProcessors() << "\n";
+  if (!so)
+    return;
+  *so << kCopyrightString;
+  // *so << "# CPUs: " << (UInt64)NWindows::NSystem::GetNumberOfProcessors() << endl;
   if (needHelp)
-    s << kHelpString;
+    *so << kHelpString;
 }
 
-#ifdef EXTERNAL_CODECS
 
-static void PrintString(CStdOutStream &stdStream, const AString &s, int size)
+static void PrintStringRight(CStdOutStream &so, const AString &s, unsigned size)
 {
-  int len = s.Len();
-  for (int i = len; i < size; i++)
-    stdStream << ' ';
-  stdStream << s;
+  unsigned len = s.Len();
+  for (unsigned i = len; i < size; i++)
+    so << ' ';
+  so << s;
 }
 
-static void PrintUInt32(CStdOutStream &stdStream, UInt32 val, int size)
+static void PrintUInt32(CStdOutStream &so, UInt32 val, unsigned size)
 {
   char s[16];
   ConvertUInt32ToString(val, s);
-  PrintString(stdStream, s, size);
+  PrintStringRight(so, s, size);
 }
 
-static void PrintLibIndex(CStdOutStream &stdStream, int libIndex)
+static void PrintLibIndex(CStdOutStream &so, int libIndex)
 {
   if (libIndex >= 0)
-    PrintUInt32(stdStream, libIndex, 2);
+    PrintUInt32(so, libIndex, 2);
   else
-    stdStream << "  ";
-  stdStream << ' ';
+    so << "  ";
+  so << ' ';
 }
 
-#endif
-
-static void PrintString(CStdOutStream &stdStream, const UString &s, int size)
+static void PrintString(CStdOutStream &so, const UString &s, unsigned size)
 {
-  int len = s.Len();
-  stdStream << s;
-  for (int i = len; i < size; i++)
-    stdStream << ' ';
+  unsigned len = s.Len();
+  so << s;
+  for (unsigned i = len; i < size; i++)
+    so << ' ';
 }
 
 static inline char GetHex(unsigned val)
@@ -204,82 +219,78 @@ static inline char GetHex(unsigned val)
   return (char)((val < 10) ? ('0' + val) : ('A' + (val - 10)));
 }
 
+static void PrintWarningsPaths(const CErrorPathCodes &pc, CStdOutStream &so)
+{
+  FOR_VECTOR(i, pc.Paths)
+  {
+    so << pc.Paths[i] << " : ";
+    so << NError::MyFormatMessage(pc.Codes[i]) << endl;
+  }
+  so << "----------------" << endl;
+}
+
 static int WarningsCheck(HRESULT result, const CCallbackConsoleBase &callback,
-    const CErrorInfo &errorInfo, CStdOutStream &stdStream)
+    const CUpdateErrorInfo &errorInfo, CStdOutStream &so, bool showHeaders)
 {
   int exitCode = NExitCode::kSuccess;
   
-  if (callback.CantFindFiles.Size() > 0)
+  if (callback.ScanErrors.Paths.Size() != 0)
   {
-    stdStream << endl;
-    stdStream << "WARNINGS for files:" << endl << endl;
-    unsigned numErrors = callback.CantFindFiles.Size();
-    for (unsigned i = 0; i < numErrors; i++)
-    {
-      stdStream << callback.CantFindFiles[i] << " : ";
-      stdStream << NError::MyFormatMessage(callback.CantFindCodes[i]) << endl;
-    }
-    stdStream << "----------------" << endl;
-    stdStream << "WARNING: Cannot find " << numErrors << " file";
-    if (numErrors > 1)
-      stdStream << "s";
-    stdStream << endl;
+    so << endl;
+    so << "Scan WARNINGS for files and folders:" << endl << endl;
+    PrintWarningsPaths(callback.ScanErrors, so);
+    so << "Scan WARNINGS: " << callback.ScanErrors.Paths.Size();
+    so << endl;
     exitCode = NExitCode::kWarning;
   }
   
-  if (result != S_OK)
+  if (result != S_OK || errorInfo.ThereIsError())
   {
     UString message;
     if (!errorInfo.Message.IsEmpty())
     {
-      message += errorInfo.Message;
-      message += L"\n";
+      message.AddAscii(errorInfo.Message);
+      message.Add_LF();
     }
-    if (!errorInfo.FileName.IsEmpty())
     {
-      message += fs2us(errorInfo.FileName);
-      message += L"\n";
-    }
-    if (!errorInfo.FileName2.IsEmpty())
-    {
-      message += fs2us(errorInfo.FileName2);
-      message += L"\n";
+      FOR_VECTOR(i, errorInfo.FileNames)
+      {
+        message += fs2us(errorInfo.FileNames[i]);
+        message.Add_LF();
+      }
     }
     if (errorInfo.SystemError != 0)
     {
       message += NError::MyFormatMessage(errorInfo.SystemError);
-      message += L"\n";
+      message.Add_LF();
     }
     if (!message.IsEmpty())
-      stdStream << L"\nError:\n" << message;
+      so << L"\nError:\n" << message;
 
     // we will work with (result) later
     // throw CSystemException(result);
     return NExitCode::kFatalError;
   }
 
-  unsigned numErrors = callback.FailedFiles.Size();
+  unsigned numErrors = callback.FailedFiles.Paths.Size();
   if (numErrors == 0)
   {
-    if (callback.CantFindFiles.Size() == 0)
-      stdStream << kEverythingIsOk << endl;
+    if (showHeaders)
+      if (callback.ScanErrors.Paths.Size() == 0)
+        so << kEverythingIsOk << endl;
   }
   else
   {
-    stdStream << endl;
-    stdStream << "WARNINGS for files:" << endl << endl;
-    for (unsigned i = 0; i < numErrors; i++)
-    {
-      stdStream << callback.FailedFiles[i] << " : ";
-      stdStream << NError::MyFormatMessage(callback.FailedCodes[i]) << endl;
-    }
-    stdStream << "----------------" << endl;
-    stdStream << "WARNING: Cannot open " << numErrors << " file";
+    so << endl;
+    so << "WARNINGS for files:" << endl << endl;
+    PrintWarningsPaths(callback.FailedFiles, so);
+    so << "WARNING: Cannot open " << numErrors << " file";
     if (numErrors > 1)
-      stdStream << "s";
-    stdStream << endl;
+      so << 's';
+    so << endl;
     exitCode = NExitCode::kWarning;
   }
+  
   return exitCode;
 }
 
@@ -413,6 +424,13 @@ static void PrintStat()
   *g_StdStream << endl;
 }
 
+static void PrintHexId(CStdOutStream &so, UInt64 id)
+{
+  char s[32];
+  ConvertUInt64ToHex(id, s);
+  PrintStringRight(so, s, 8);
+}
+
 int Main2(
   #ifndef _WIN32
   int numArgs, const char *args[]
@@ -424,6 +442,7 @@ int Main2(
   #endif
 
   UStringVector commandStrings;
+  
   #ifdef _WIN32
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
   #else
@@ -432,7 +451,7 @@ int Main2(
 
   if (commandStrings.Size() == 1)
   {
-    ShowCopyrightAndHelp(g_StdOut, true);
+    ShowCopyrightAndHelp(g_StdStream, true);
     return 0;
   }
 
@@ -444,15 +463,30 @@ int Main2(
 
   parser.Parse1(commandStrings, options);
 
+
+  if (options.Number_for_Out != k_OutStream_stdout)
+    g_StdStream = (options.Number_for_Out == k_OutStream_stderr ? &g_StdErr : NULL);
+
+  if (options.Number_for_Errors != k_OutStream_stderr)
+    g_ErrStream = (options.Number_for_Errors == k_OutStream_stdout ? &g_StdOut : NULL);
+
+  CStdOutStream *percentsStream = NULL;
+  if (options.Number_for_Percents != k_OutStream_disabled)
+    percentsStream = (options.Number_for_Percents == k_OutStream_stderr) ? &g_StdErr : &g_StdOut;;
+
+  CStdOutStream &so = (g_StdStream ? *g_StdStream : g_StdOut);
+  
+
   if (options.HelpMode)
   {
-    ShowCopyrightAndHelp(g_StdOut, true);
+    ShowCopyrightAndHelp(g_StdStream, true);
     return 0;
   }
 
   #if defined(_WIN32) && !defined(UNDER_CE)
   NSecurity::EnablePrivilege_SymLink();
   #endif
+  
   #ifdef _7ZIP_LARGE_PAGES
   if (options.LargePages)
   {
@@ -463,22 +497,38 @@ int Main2(
   }
   #endif
 
-  CStdOutStream &stdStream = options.StdOutMode ? g_StdErr : g_StdOut;
-  g_StdStream = &stdStream;
-
   if (options.EnableHeaders)
-    ShowCopyrightAndHelp(stdStream, false);
+    ShowCopyrightAndHelp(g_StdStream, false);
 
   parser.Parse2(options);
 
-  CCodecs *codecs = new CCodecs;
-  #ifdef EXTERNAL_CODECS
-  CExternalCodecs __externalCodecs;
-  __externalCodecs.GetCodecs = codecs;
-  __externalCodecs.GetHashers = codecs;
-  #else
-  CMyComPtr<IUnknown> compressCodecsInfo = codecs;
-  #endif
+  unsigned percentsNameLevel = 1;
+  if (options.LogLevel == 0 || options.Number_for_Percents != options.Number_for_Out)
+    percentsNameLevel = 2;
+
+  unsigned consoleWidth = 80;
+
+  if (percentsStream)
+  {
+    #ifdef _WIN32
+    
+    #if !defined(UNDER_CE)
+    CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+    if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo))
+      consoleWidth = consoleInfo.dwSize.X;
+    #endif
+    
+    #else
+    
+    struct winsize w;
+    if (ioctl(0, TIOCGWINSZ, &w) == )
+      consoleWidth = w.ws_col;
+    
+    #endif
+  }
+
+  CREATE_CODECS_OBJECT
+
   codecs->CaseSensitiveChange = options.CaseSensitiveChange;
   codecs->CaseSensitive = options.CaseSensitive;
   ThrowException_if_Error(codecs->Load());
@@ -489,7 +539,18 @@ int Main2(
         (isExtractGroupCommand
         || options.Command.CommandType == NCommandType::kList
         || options.Command.IsFromUpdateGroup()))
+  {
+    #ifdef EXTERNAL_CODECS
+    if (!codecs->MainDll_ErrorPath.IsEmpty())
+    {
+      UString s = L"Can't load module ";
+      s += fs2us(codecs->MainDll_ErrorPath);
+      throw s;
+    }
+    #endif
+    
     throw kNoFormats;
+  }
 
   CObjectVector<COpenType> types;
   if (!ParseOpenTypes(*codecs, options.ArcType, types))
@@ -511,16 +572,19 @@ int Main2(
   if (isExtractGroupCommand
       || options.Command.CommandType == NCommandType::kHash
       || options.Command.CommandType == NCommandType::kBenchmark)
-    ThrowException_if_Error(__externalCodecs.LoadCodecs());
+    ThrowException_if_Error(__externalCodecs.Load());
   #endif
 
   int retCode = NExitCode::kSuccess;
   HRESULT hresultMain = S_OK;
 
-  bool showStat = true;
+  // bool showStat = options.ShowTime;
+  
+  /*
   if (!options.EnableHeaders ||
       options.TechMode)
     showStat = false;
+  */
   
 
   if (options.Command.CommandType == NCommandType::kInfo)
@@ -528,15 +592,15 @@ int Main2(
     unsigned i;
 
     #ifdef EXTERNAL_CODECS
-    stdStream << endl << "Libs:" << endl;
+    so << endl << "Libs:" << endl;
     for (i = 0; i < codecs->Libs.Size(); i++)
     {
-      PrintLibIndex(stdStream, i);
-      stdStream << ' ' << codecs->Libs[i].Path << endl;
+      PrintLibIndex(so, i);
+      so << ' ' << codecs->Libs[i].Path << endl;
     }
     #endif
 
-    stdStream << endl << "Formats:" << endl;
+    so << endl << "Formats:" << endl;
     
     const char *kArcFlags = "KSNFMGOPBELH";
     const unsigned kNumArcFlags = (unsigned)strlen(kArcFlags);
@@ -544,26 +608,30 @@ int Main2(
     for (i = 0; i < codecs->Formats.Size(); i++)
     {
       const CArcInfoEx &arc = codecs->Formats[i];
+
       #ifdef EXTERNAL_CODECS
-      PrintLibIndex(stdStream, arc.LibIndex);
+      PrintLibIndex(so, arc.LibIndex);
       #else
-      stdStream << "  ";
+      so << "  ";
       #endif
-      stdStream << (char)(arc.UpdateEnabled ? 'C' : ' ');
+
+      so << (char)(arc.UpdateEnabled ? 'C' : ' ');
+      
       for (unsigned b = 0; b < kNumArcFlags; b++)
       {
-        stdStream << (char)
+        so << (char)
           ((arc.Flags & ((UInt32)1 << b)) != 0 ? kArcFlags[b] : ' ');
       }
         
-      stdStream << ' ';
-      PrintString(stdStream, arc.Name, 8);
-      stdStream << ' ';
+      so << ' ';
+      PrintString(so, arc.Name, 8);
+      so << ' ';
       UString s;
+      
       FOR_VECTOR (t, arc.Exts)
       {
         if (t != 0)
-          s += L' ';
+          s.Add_Space();
         const CArcExtInfo &ext = arc.Exts[t];
         s += ext.Ext;
         if (!ext.AddExt.IsEmpty())
@@ -573,68 +641,112 @@ int Main2(
           s += L')';
         }
       }
-      PrintString(stdStream, s, 13);
-      stdStream << ' ';
+      
+      PrintString(so, s, 13);
+      so << ' ';
+      
       if (arc.SignatureOffset != 0)
-        stdStream << "offset=" << arc.SignatureOffset << ' ';
+        so << "offset=" << arc.SignatureOffset << ' ';
 
       FOR_VECTOR(si, arc.Signatures)
       {
         if (si != 0)
-          stdStream << "  ||  ";
+          so << "  ||  ";
 
         const CByteBuffer &sig = arc.Signatures[si];
         
         for (size_t j = 0; j < sig.Size(); j++)
         {
           if (j != 0)
-            stdStream << ' ';
+            so << ' ';
           Byte b = sig[j];
           if (b > 0x20 && b < 0x80)
           {
-            stdStream << (char)b;
+            so << (char)b;
           }
           else
           {
-            stdStream << GetHex((b >> 4) & 0xF);
-            stdStream << GetHex(b & 0xF);
+            so << GetHex((b >> 4) & 0xF);
+            so << GetHex(b & 0xF);
           }
         }
       }
-      stdStream << endl;
+      so << endl;
     }
+
+    so << endl << "Codecs:" << endl; //  << "Lib          ID Name" << endl;
+
+    for (i = 0; i < g_NumCodecs; i++)
+    {
+      const CCodecInfo &cod = *g_Codecs[i];
+
+      PrintLibIndex(so, -1);
+
+      if (cod.NumStreams == 1)
+        so << ' ';
+      else
+        so << cod.NumStreams;
+      
+      so << (char)(cod.CreateEncoder ? 'E' : ' ');
+      so << (char)(cod.CreateDecoder ? 'D' : ' ');
+
+      so << ' ';
+      PrintHexId(so, cod.Id);
+      so << ' ' << cod.Name << endl;
+    }
+
 
     #ifdef EXTERNAL_CODECS
 
-    stdStream << endl << "Codecs:" << endl << "Lib         ID  Name" << endl;
     UInt32 numMethods;
-    if (codecs->GetNumberOfMethods(&numMethods) == S_OK)
+    if (codecs->GetNumMethods(&numMethods) == S_OK)
     for (UInt32 j = 0; j < numMethods; j++)
     {
-      PrintLibIndex(stdStream, codecs->GetCodecLibIndex(j));
-      stdStream << (char)(codecs->GetCodecEncoderIsAssigned(j) ? 'C' : ' ');
+      PrintLibIndex(so, codecs->GetCodec_LibIndex(j));
+
+      UInt32 numStreams = codecs->GetCodec_NumStreams(j);
+      if (numStreams == 1)
+        so << ' ';
+      else
+        so << numStreams;
+      
+      so << (char)(codecs->GetCodec_EncoderIsAssigned(j) ? 'E' : ' ');
+      so << (char)(codecs->GetCodec_DecoderIsAssigned(j) ? 'D' : ' ');
+
+      so << ' ';
       UInt64 id;
-      stdStream << "  ";
-      HRESULT res = codecs->GetCodecId(j, id);
+      HRESULT res = codecs->GetCodec_Id(j, id);
       if (res != S_OK)
         id = (UInt64)(Int64)-1;
-      char s[32];
-      ConvertUInt64ToHex(id, s);
-      PrintString(stdStream, s, 8);
-      stdStream << "  " << codecs->GetCodecName(j) << endl;
+      PrintHexId(so, id);
+      so << ' ' << codecs->GetCodec_Name(j) << endl;
     }
+
+    #endif
     
-    stdStream << endl << "Hashers:" << endl << " L Size     ID  Name" << endl;
+
+    so << endl << "Hashers:" << endl; //  << " L Size       ID Name" << endl;
+
+    for (i = 0; i < g_NumHashers; i++)
+    {
+      const CHasherInfo &codec = *g_Hashers[i];
+      PrintLibIndex(so, -1);
+      PrintUInt32(so, codec.DigestSize, 4);
+      so << ' ';
+      PrintHexId(so, codec.Id);
+      so << ' ' << codec.Name << endl;
+    }
+
+    #ifdef EXTERNAL_CODECS
+    
     numMethods = codecs->GetNumHashers();
     for (UInt32 j = 0; j < numMethods; j++)
     {
-      PrintLibIndex(stdStream, codecs->GetHasherLibIndex(j));
-      PrintUInt32(stdStream, codecs->GetHasherDigestSize(j), 4);
-      stdStream << ' ';
-      char s[32];
-      ConvertUInt64ToHex(codecs->GetHasherId(j), s);
-      PrintString(stdStream, s, 6);
-      stdStream << "  " << codecs->GetHasherName(j) << endl;
+      PrintLibIndex(so, codecs->GetHasherLibIndex(j));
+      PrintUInt32(so, codecs->GetHasherDigestSize(j), 4);
+      so << ' ';
+      PrintHexId(so, codecs->GetHasherId(j));
+      so << ' ' << codecs->GetHasherName(j) << endl;
     }
 
     #endif
@@ -642,41 +754,102 @@ int Main2(
   }
   else if (options.Command.CommandType == NCommandType::kBenchmark)
   {
-    hresultMain = BenchCon(EXTERNAL_CODECS_VARS
-        options.Properties, options.NumIterations, (FILE *)stdStream);
+    hresultMain = BenchCon(EXTERNAL_CODECS_VARS_L
+        options.Properties, options.NumIterations, (FILE *)so);
     if (hresultMain == S_FALSE)
     {
-      stdStream << "\nDecoding Error\n";
+      if (g_ErrStream)
+        *g_ErrStream << "\nDecoding ERROR\n";
       retCode = NExitCode::kFatalError;
       hresultMain = S_OK;
     }
   }
   else if (isExtractGroupCommand || options.Command.CommandType == NCommandType::kList)
   {
+    UStringVector ArchivePathsSorted;
+    UStringVector ArchivePathsFullSorted;
+
+    if (options.StdInMode)
+    {
+      ArchivePathsSorted.Add(options.ArcName_for_StdInMode);
+      ArchivePathsFullSorted.Add(options.ArcName_for_StdInMode);
+    }
+    else
+    {
+      CExtractScanConsole scan;
+      
+      scan.Init(options.EnableHeaders ? g_StdStream : NULL, g_ErrStream, percentsStream);
+      scan.SetWindowWidth(consoleWidth);
+
+      if (g_StdStream && options.EnableHeaders)
+        *g_StdStream << "Scanning the drive for archives:" << endl;
+
+      CDirItemsStat st;
+
+      scan.StartScanning();
+
+      hresultMain = EnumerateDirItemsAndSort(
+          options.arcCensor,
+          NWildcard::k_RelatPath,
+          UString(), // addPathPrefix
+          ArchivePathsSorted,
+          ArchivePathsFullSorted,
+          st,
+          &scan);
+
+      scan.CloseScanning();
+
+      if (hresultMain == S_OK)
+      {
+        if (options.EnableHeaders)
+          scan.PrintStat(st);
+      }
+      else
+      {
+        /*
+        if (res != E_ABORT)
+        {
+          throw CSystemException(res);
+          // errorInfo.Message = "Scanning error";
+        }
+        return res;
+        */
+      }
+    }
+
+    if (hresultMain == S_OK)
     if (isExtractGroupCommand)
     {
       CExtractCallbackConsole *ecs = new CExtractCallbackConsole;
       CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
-
-      ecs->OutStream = &stdStream;
 
       #ifndef _NO_CRYPTO
       ecs->PasswordIsDefined = options.PasswordEnabled;
       ecs->Password = options.Password;
       #endif
 
-      ecs->Init();
+      ecs->Init(g_StdStream, g_ErrStream, percentsStream);
+      ecs->MutiArcMode = (ArchivePathsSorted.Size() > 1);
 
+      ecs->LogLevel = options.LogLevel;
+      ecs->PercentsNameLevel = percentsNameLevel;
+      
+      if (percentsStream)
+        ecs->SetWindowWidth(consoleWidth);
+
+      /*
       COpenCallbackConsole openCallback;
-      openCallback.OutStream = &stdStream;
+      openCallback.Init(g_StdStream, g_ErrStream);
 
       #ifndef _NO_CRYPTO
       openCallback.PasswordIsDefined = options.PasswordEnabled;
       openCallback.Password = options.Password;
       #endif
+      */
 
       CExtractOptions eo;
       (CExtractOptionsBase &)eo = options.ExtractOptions;
+      
       eo.StdInMode = options.StdInMode;
       eo.StdOutMode = options.StdOutMode;
       eo.YesToAll = options.YesToAll;
@@ -694,58 +867,63 @@ int Main2(
       if (!options.HashMethods.IsEmpty())
       {
         hashCalc = &hb;
-        ThrowException_if_Error(hb.SetMethods(EXTERNAL_CODECS_VARS options.HashMethods));
+        ThrowException_if_Error(hb.SetMethods(EXTERNAL_CODECS_VARS_L options.HashMethods));
         hb.Init();
       }
+      
       hresultMain = Extract(
           codecs,
           types,
           excludedFormats,
-          options.ArchivePathsSorted,
-          options.ArchivePathsFullSorted,
+          ArchivePathsSorted,
+          ArchivePathsFullSorted,
           options.Censor.Pairs.Front().Head,
-          eo, &openCallback, ecs, hashCalc, errorMessage, stat);
+          eo, ecs, ecs, hashCalc, errorMessage, stat);
+      
+      ecs->ClosePercents();
+
       if (!errorMessage.IsEmpty())
       {
-        stdStream << endl << "Error: " << errorMessage;
+        if (g_ErrStream)
+          *g_ErrStream << endl << "ERROR:" << endl << errorMessage << endl;
         if (hresultMain == S_OK)
           hresultMain = E_FAIL;
       }
 
-      stdStream << endl;
+      so << endl;
 
       if (ecs->NumTryArcs > 1)
       {
-        stdStream << "Archives: " << ecs->NumTryArcs << endl;
-        stdStream << "OK archives: " << ecs->NumOkArcs << endl;
+        so << "Archives: " << ecs->NumTryArcs << endl;
+        so << "OK archives: " << ecs->NumOkArcs << endl;
       }
       bool isError = false;
       if (ecs->NumCantOpenArcs != 0)
       {
         isError = true;
-        stdStream << "Can't open as archive: " << ecs->NumCantOpenArcs << endl;
+        so << "Can't open as archive: " << ecs->NumCantOpenArcs << endl;
       }
       if (ecs->NumArcsWithError != 0)
       {
         isError = true;
-        stdStream << "Archives with Errors: " << ecs->NumArcsWithError << endl;
+        so << "Archives with Errors: " << ecs->NumArcsWithError << endl;
       }
       if (ecs->NumArcsWithWarnings != 0)
-        stdStream << "Archives with Warnings: " << ecs->NumArcsWithWarnings << endl;
+        so << "Archives with Warnings: " << ecs->NumArcsWithWarnings << endl;
       
       if (ecs->NumOpenArcWarnings != 0)
       {
-        stdStream << endl;
+        so << endl;
         if (ecs->NumOpenArcWarnings != 0)
-          stdStream << "Warnings: " << ecs->NumOpenArcWarnings << endl;
+          so << "Warnings: " << ecs->NumOpenArcWarnings << endl;
       }
       
       if (ecs->NumOpenArcErrors != 0)
       {
         isError = true;
-        stdStream << endl;
+        so << endl;
         if (ecs->NumOpenArcErrors != 0)
-          stdStream << "Open Errors: " << ecs->NumOpenArcErrors << endl;
+          so << "Open Errors: " << ecs->NumOpenArcErrors << endl;
       }
 
       if (isError)
@@ -755,29 +933,31 @@ int Main2(
       {
         // if (ecs->NumArchives > 1)
         {
-          stdStream << endl;
+          so << endl;
           if (ecs->NumFileErrors != 0)
-            stdStream << "Sub items Errors: " << ecs->NumFileErrors << endl;
+            so << "Sub items Errors: " << ecs->NumFileErrors << endl;
         }
       }
       else if (hresultMain == S_OK)
       {
-     
-      if (stat.NumFolders != 0)
-        stdStream << "Folders: " << stat.NumFolders << endl;
-      if (stat.NumFiles != 1 || stat.NumFolders != 0 || stat.NumAltStreams != 0)
-        stdStream << "Files: " << stat.NumFiles << endl;
-      if (stat.NumAltStreams != 0)
-      {
-        stdStream << "Alternate Streams: " << stat.NumAltStreams << endl;
-        stdStream << "Alternate Streams Size: " << stat.AltStreams_UnpackSize << endl;
-      }
-
-      stdStream
-           << "Size:       " << stat.UnpackSize << endl
-           << "Compressed: " << stat.PackSize << endl;
-      if (hashCalc)
-        PrintHashStat(stdStream, hb);
+        if (stat.NumFolders != 0)
+          so << "Folders: " << stat.NumFolders << endl;
+        if (stat.NumFiles != 1 || stat.NumFolders != 0 || stat.NumAltStreams != 0)
+          so << "Files: " << stat.NumFiles << endl;
+        if (stat.NumAltStreams != 0)
+        {
+          so << "Alternate Streams: " << stat.NumAltStreams << endl;
+          so << "Alternate Streams Size: " << stat.AltStreams_UnpackSize << endl;
+        }
+        
+        so
+          << "Size:       " << stat.UnpackSize << endl
+          << "Compressed: " << stat.PackSize << endl;
+        if (hashCalc)
+        {
+          so << endl;
+          PrintHashStat(so, hb);
+        }
       }
     }
     else
@@ -792,8 +972,8 @@ int Main2(
           types,
           excludedFormats,
           options.StdInMode,
-          options.ArchivePathsSorted,
-          options.ArchivePathsFullSorted,
+          ArchivePathsSorted,
+          ArchivePathsFullSorted,
           options.ExtractOptions.NtOptions.AltStreams.Val,
           options.AltStreams.Val, // we don't want to show AltStreams by default
           options.Censor.Pairs.Front().Head,
@@ -806,9 +986,10 @@ int Main2(
           &options.Properties,
           numErrors, numWarnings);
 
-        if (options.EnableHeaders)
-          if (numWarnings > 0)
-            g_StdOut << endl << "Warnings: " << numWarnings << endl;
+      if (options.EnableHeaders)
+        if (numWarnings > 0)
+          g_StdOut << endl << "Warnings: " << numWarnings << endl;
+      
       if (numErrors > 0)
       {
         if (options.EnableHeaders)
@@ -824,25 +1005,32 @@ int Main2(
       uo.SfxModule = kDefaultSfxModule;
 
     COpenCallbackConsole openCallback;
-    openCallback.OutStream = &stdStream;
+    openCallback.Init(g_StdStream, g_ErrStream, percentsStream);
 
     #ifndef _NO_CRYPTO
     bool passwordIsDefined =
-        options.PasswordEnabled && !options.Password.IsEmpty();
+        (options.PasswordEnabled && !options.Password.IsEmpty());
     openCallback.PasswordIsDefined = passwordIsDefined;
     openCallback.Password = options.Password;
     #endif
 
     CUpdateCallbackConsole callback;
-    callback.EnablePercents = options.EnablePercents;
+    callback.LogLevel = options.LogLevel;
+    callback.PercentsNameLevel = percentsNameLevel;
+
+    if (percentsStream)
+      callback.SetWindowWidth(consoleWidth);
 
     #ifndef _NO_CRYPTO
     callback.PasswordIsDefined = passwordIsDefined;
-    callback.AskPassword = options.PasswordEnabled && options.Password.IsEmpty();
+    callback.AskPassword = (options.PasswordEnabled && options.Password.IsEmpty());
     callback.Password = options.Password;
     #endif
+
     callback.StdOutMode = uo.StdOutMode;
-    callback.Init(&stdStream);
+    callback.Init(
+      // NULL,
+      g_StdStream, g_ErrStream, percentsStream);
 
     CUpdateErrorInfo errorInfo;
 
@@ -856,29 +1044,36 @@ int Main2(
         options.Censor,
         uo,
         errorInfo, &openCallback, &callback, true);
-    retCode = WarningsCheck(hresultMain, callback, errorInfo, stdStream);
+
+    callback.ClosePercents2();
+
+    retCode = WarningsCheck(hresultMain, callback, errorInfo, so,
+        // options.EnableHeaders
+        true);
   }
   else if (options.Command.CommandType == NCommandType::kHash)
   {
     const CHashOptions &uo = options.HashOptions;
 
     CHashCallbackConsole callback;
-    callback.EnablePercents = options.EnablePercents;
+    if (percentsStream)
+      callback.SetWindowWidth(consoleWidth);
+  
+    callback.Init(g_StdStream, g_ErrStream, percentsStream);
+    callback.PrintHeaders = options.EnableHeaders;
 
-    callback.Init(&stdStream);
-
-    UString errorInfoString;
-    hresultMain = HashCalc(EXTERNAL_CODECS_VARS
+    AString errorInfoString;
+    hresultMain = HashCalc(EXTERNAL_CODECS_VARS_L
         options.Censor, uo,
         errorInfoString, &callback);
-    CErrorInfo errorInfo;
+    CUpdateErrorInfo errorInfo;
     errorInfo.Message = errorInfoString;
-    retCode = WarningsCheck(hresultMain, callback, errorInfo, stdStream);
+    retCode = WarningsCheck(hresultMain, callback, errorInfo, so, options.EnableHeaders);
   }
   else
-    ShowMessageAndThrowException(stdStream, kUserErrorMessage, NExitCode::kUserError);
+    ShowMessageAndThrowException(kUserErrorMessage, NExitCode::kUserError);
 
-  if (showStat)
+  if (options.ShowTime && g_StdStream)
     PrintStat();
 
   ThrowException_if_Error(hresultMain);

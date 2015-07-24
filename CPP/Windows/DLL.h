@@ -13,17 +13,23 @@ namespace NDLL {
 #else
 #define My_GetProcAddress(module, procName) ::GetProcAddress(module, procName)
 #endif
- 
+
+/* Win32: Don't call CLibrary::Free() and FreeLibrary() from another
+    FreeLibrary() code: detaching code in DLL entry-point or in
+    destructors of global objects in DLL module. */
+
 class CLibrary
 {
   HMODULE _module;
+
+  // CLASS_NO_COPY(CLibrary);
 public:
   CLibrary(): _module(NULL) {};
   ~CLibrary() { Free(); }
 
   operator HMODULE() const { return _module; }
   HMODULE* operator&() { return &_module; }
-  bool IsLoaded() const { return (_module != NULL); };
+  bool IsLoaded() const { return (_module != NULL); }
 
   void Attach(HMODULE m)
   {

@@ -11,7 +11,7 @@
 int CExtDatabase::FindExt(const UString &ext)
 {
   FOR_VECTOR (i, Exts)
-    if (Exts[i].Ext.IsEqualToNoCase(ext))
+    if (Exts[i].Ext.IsEqualTo_NoCase(ext))
       return i;
   return -1;
 }

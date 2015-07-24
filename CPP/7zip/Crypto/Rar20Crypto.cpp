@@ -11,9 +11,9 @@
 namespace NCrypto {
 namespace NRar20 {
 
-static const int kNumRounds = 32;
+static const unsigned kNumRounds = 32;
 
-static const Byte InitSubstTable[256] = {
+static const Byte g_InitSubstTable[256] = {
   215, 19,149, 35, 73,197,192,205,249, 28, 16,119, 48,221,  2, 42,
   232,  1,177,233, 14, 88,219, 25,223,195,244, 90, 87,239,153,137,
   255,199,147, 70, 92, 66,246, 13,216, 40, 62, 29,217,230, 86,  6,
@@ -34,8 +34,8 @@ static const Byte InitSubstTable[256] = {
 
 void CData::UpdateKeys(const Byte *data)
 {
-  for (int i = 0; i < 16; i += 4)
-    for (int j = 0; j < 4; j++)
+  for (unsigned i = 0; i < 16; i += 4)
+    for (unsigned j = 0; j < 4; j++)
       Keys[j] ^= g_CrcTable[data[i + j]];
 }
 
@@ -46,7 +46,7 @@ static void Swap(Byte *b1, Byte *b2)
   *b2 = b;
 }
 
-void CData::SetPassword(const Byte *password, UInt32 passwordLen)
+void CData::SetPassword(const Byte *data, UInt32 size)
 {
   Keys[0] = 0xD3A3B879L;
   Keys[1] = 0x3F6D12F7L;
@@ -54,19 +54,22 @@ void CData::SetPassword(const Byte *password, UInt32 passwordLen)
   Keys[3] = 0xA4E7F123L;
   
   Byte psw[256];
+  if (size >= sizeof(psw))
+    size = sizeof(psw) - 1;
   memset(psw, 0, sizeof(psw));
-  memcpy(psw, password, passwordLen);
-  memcpy(SubstTable, InitSubstTable, sizeof(SubstTable));
+  if (size != 0)
+    memcpy(psw, data, size);
+  memcpy(SubstTable, g_InitSubstTable, sizeof(SubstTable));
 
   for (UInt32 j = 0; j < 256; j++)
-    for (UInt32 i = 0; i < passwordLen; i += 2)
+    for (UInt32 i = 0; i < size; i += 2)
     {
       UInt32 n2 = (Byte)g_CrcTable[(psw[i + 1] + j) & 0xFF];
       UInt32 n1 = (Byte)g_CrcTable[(psw[i] - j) & 0xFF];
       for (UInt32 k = 1; (n1 & 0xFF) != n2; n1++, k++)
         Swap(&SubstTable[n1 & 0xFF], &SubstTable[(n1 + i + k) & 0xFF]);
     }
-  for (UInt32 i = 0; i < passwordLen; i+= 16)
+  for (UInt32 i = 0; i < size; i += 16)
     EncryptBlock(&psw[i]);
 }
 
@@ -83,7 +86,7 @@ void CData::CryptBlock(Byte *buf, bool encrypt)
   if (!encrypt)
     memcpy(inBuf, buf, sizeof(inBuf));
   
-  for (int i = 0; i < kNumRounds; i++)
+  for (unsigned i = 0; i < kNumRounds; i++)
   {
     UInt32 key = Keys[(encrypt ? i : (kNumRounds - 1 - i)) & 3];
     T = ((C + rotlFixed(D, 11)) ^ key);

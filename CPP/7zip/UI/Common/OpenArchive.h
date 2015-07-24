@@ -9,11 +9,21 @@
 #include "LoadCodecs.h"
 #include "Property.h"
 
+#ifndef _SFX
+
+#define SUPPORT_ALT_STREAMS
+
+#endif
+
 HRESULT Archive_GetItemBoolProp(IInArchive *arc, UInt32 index, PROPID propID, bool &result) throw();
-HRESULT Archive_IsItem_Folder(IInArchive *arc, UInt32 index, bool &result) throw();
+HRESULT Archive_IsItem_Dir(IInArchive *arc, UInt32 index, bool &result) throw();
 HRESULT Archive_IsItem_Aux(IInArchive *arc, UInt32 index, bool &result) throw();
 HRESULT Archive_IsItem_AltStream(IInArchive *arc, UInt32 index, bool &result) throw();
 HRESULT Archive_IsItem_Deleted(IInArchive *arc, UInt32 index, bool &deleted) throw();
+
+#ifdef SUPPORT_ALT_STREAMS
+int FindAltStreamColon_in_Path(const wchar_t *path);
+#endif
 
 /*
 struct COptionalOpenProperties
@@ -212,11 +222,52 @@ struct CArcErrorInfo
   }
 };
 
+struct CReadArcItem
+{
+  UString Path;            // Path from root (including alt stream name, if alt stream)
+  UStringVector PathParts; // without altStream name, path from root or from _baseParentFolder, if _use_baseParentFolder_mode
+
+  #ifdef SUPPORT_ALT_STREAMS
+  UString MainPath;
+                /* MainPath = Path for non-AltStream,
+                   MainPath = Path of parent, if there is parent for AltStream. */
+  UString AltStreamName;
+  bool IsAltStream;
+  bool WriteToAltStreamIfColon;
+  #endif
+
+  bool IsDir;
+  bool MainIsDir;
+  UInt32 ParentIndex; // use it, if IsAltStream
+
+  #ifndef _SFX
+  bool _use_baseParentFolder_mode;
+  int _baseParentFolder;
+  #endif
+
+  CReadArcItem()
+  {
+    #ifdef SUPPORT_ALT_STREAMS
+    WriteToAltStreamIfColon = false;
+    #endif
+
+    #ifndef _SFX
+    _use_baseParentFolder_mode = false;
+    _baseParentFolder = -1;
+    #endif
+  }
+};
+
 class CArc
 {
   HRESULT PrepareToOpen(const COpenOptions &op, unsigned formatIndex, CMyComPtr<IInArchive> &archive);
   HRESULT CheckZerosTail(const COpenOptions &op, UInt64 offset);
   HRESULT OpenStream2(const COpenOptions &options);
+
+  #ifndef _SFX
+  // parts.Back() can contain alt stream name "nams:AltName"
+  HRESULT GetItemPathToParent(UInt32 index, UInt32 parent, UStringVector &parts) const;
+  #endif
 
 public:
   CMyComPtr<IInArchive> Archive;
@@ -256,6 +307,7 @@ public:
   bool IsParseArc;
 
   bool IsTree;
+  bool IsReadOnly;
   
   bool Ask_Deleted;
   bool Ask_AltStream;
@@ -269,6 +321,7 @@ public:
   CArc():
     MTimeDefined(false),
     IsTree(false),
+    IsReadOnly(false),
     Ask_Deleted(false),
     Ask_AltStream(false),
     Ask_Aux(false),
@@ -286,13 +339,13 @@ public:
     return Archive->Close();
   }
 
-  // AltStream's name is concatenated with base file name in one string in parts.Back()
-  HRESULT GetItemPathToParent(UInt32 index, UInt32 parent, UStringVector &parts) const;
-
   HRESULT GetItemPath(UInt32 index, UString &result) const;
+  HRESULT GetDefaultItemPath(UInt32 index, UString &result) const;
   
   // GetItemPath2 adds [DELETED] dir prefix for deleted items.
   HRESULT GetItemPath2(UInt32 index, UString &result) const;
+
+  HRESULT GetItem(UInt32 index, CReadArcItem &item) const;
   
   HRESULT GetItemSize(UInt32 index, UInt64 &size, bool &defined) const;
   HRESULT GetItemMTime(UInt32 index, FILETIME &ft, bool &defined) const;
@@ -315,6 +368,9 @@ struct CArchiveLink
   UInt64 VolumesSize;
   bool IsOpen;
 
+  bool PasswordWasAsked;
+  // UString Password;
+
   // int NonOpenErrorFormatIndex; // - 1 means no Error.
   UString NonOpen_ArcPath;
 
@@ -323,7 +379,12 @@ struct CArchiveLink
   // UString ErrorsText;
   // void Set_ErrorsText();
 
-  CArchiveLink(): VolumesSize(0), IsOpen(false) {}
+  CArchiveLink():
+      VolumesSize(0),
+      IsOpen(false),
+      PasswordWasAsked(false)
+      {}
+
   void KeepModeForNextOpen();
   HRESULT Close();
   void Release();
@@ -335,8 +396,8 @@ struct CArchiveLink
   IArchiveGetRootProps *GetArchiveGetRootProps() const { return Arcs.Back().GetRootProps; }
 
   HRESULT Open(COpenOptions &options);
-
   HRESULT Open2(COpenOptions &options, IOpenCallbackUI *callbackUI);
+  HRESULT Open3(COpenOptions &options, IOpenCallbackUI *callbackUI);
 
   HRESULT ReOpen(COpenOptions &options);
 };

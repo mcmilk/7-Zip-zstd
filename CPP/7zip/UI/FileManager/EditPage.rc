@@ -1,7 +1,7 @@
 #include "EditPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 200
+#define xc 240
 #define yc 80
 
 IDD_EDIT  MY_PAGE

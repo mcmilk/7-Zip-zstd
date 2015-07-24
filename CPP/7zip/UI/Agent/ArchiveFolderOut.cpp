@@ -1,4 +1,4 @@
-// FolderOut.cpp
+// ArchiveFolderOut.cpp
 
 #include "StdAfx.h"
 
@@ -19,12 +19,12 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
 
-void CAgentFolder::GetPathParts(UStringVector &pathParts)
+void CAgentFolder::GetPathParts(UStringVector &pathParts, bool &isAltStreamFolder)
 {
-  if (_proxyArchive2)
-    _proxyArchive2->GetPathParts(_proxyFolderItem, pathParts);
+  if (_proxy2)
+    _proxy2->GetDirPathParts(_proxyDirIndex, pathParts, isAltStreamFolder);
   else
-    _proxyArchive->GetPathParts(_proxyFolderItem, pathParts);
+    _proxy->GetDirPathParts(_proxyDirIndex, pathParts);
 }
 
 static bool DeleteEmptyFolderAndEmptySubFolders(const FString &path)
@@ -55,16 +55,25 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     const wchar_t *newItemName,
     const NUpdateArchive::CActionSet *actionSet,
     const UInt32 *indices, UInt32 numItems,
-    IFolderArchiveUpdateCallback *updateCallback100)
+    IProgress *progress)
 {
   if (!_agentSpec->CanUpdate())
     return E_NOTIMPL;
 
-  ////////////////////////////
-  // Save FolderItem;
+  CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
+  if (progress)
+    progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&updateCallback100);
+
+  try
+  {
+
+  RINOK(_agentSpec->SetFolder(this));
+
+  // ---------- Save FolderItem ----------
 
   UStringVector pathParts;
-  GetPathParts(pathParts);
+  bool isAltStreamFolder = false;
+  GetPathParts(pathParts, isAltStreamFolder);
 
   FStringVector requestedPaths;
   FStringVector processedPaths;
@@ -153,25 +162,96 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     }
   }
 
-
   {
     CMyComPtr<IArchiveOpenCallback> openCallback;
     if (updateCallback100)
-    {
-      RINOK(updateCallback100->QueryInterface(IID_IArchiveOpenCallback, (void **)&openCallback));
-    }
+      updateCallback100->QueryInterface(IID_IArchiveOpenCallback, (void **)&openCallback);
     RINOK(_agentSpec->ReOpen(openCallback));
   }
    
-  // Restore FolderItem;
+  // CAgent::ReOpen() deletes _proxy and _proxy2
+  _items.Clear();
+  _proxy = NULL;
+  _proxy2 = NULL;
+  _proxyDirIndex = k_Proxy_RootDirIndex;
+  _isAltStreamFolder = false;
+  
+  
+  // ---------- Restore FolderItem ----------
 
   CMyComPtr<IFolderFolder> archiveFolder;
   RINOK(_agentSpec->BindToRootFolder(&archiveFolder));
+
+  // CAgent::BindToRootFolder() changes _proxy and _proxy2
+  _proxy = _agentSpec->_proxy;
+  _proxy2 = _agentSpec->_proxy2;
+
+  if (_proxy)
+  {
+    FOR_VECTOR (i, pathParts)
+    {
+      int next = _proxy->FindSubDir(_proxyDirIndex, pathParts[i]);
+      if (next < 0)
+        break;
+      _proxyDirIndex = next;
+    }
+  }
+  
+  if (_proxy2)
+  {
+    if (pathParts.IsEmpty() && isAltStreamFolder)
+    {
+      _proxyDirIndex = k_Proxy2_AltRootDirIndex;
+    }
+    else FOR_VECTOR (i, pathParts)
+    {
+      bool dirOnly = (i + 1 < pathParts.Size() || !isAltStreamFolder);
+      int index = _proxy2->FindItem(_proxyDirIndex, pathParts[i], dirOnly);
+      if (index < 0)
+        break;
+      
+      const CProxyFile2 &file = _proxy2->Files[_proxy2->Dirs[_proxyDirIndex].Items[index]];
+  
+      if (dirOnly)
+        _proxyDirIndex = file.DirIndex;
+      else
+      {
+        if (file.AltDirIndex >= 0)
+          _proxyDirIndex = file.AltDirIndex;
+        break;
+      }
+    }
+  }
+
+  /*
+  if (pathParts.IsEmpty() && isAltStreamFolder)
+  {
+    CMyComPtr<IFolderAltStreams> folderAltStreams;
+    archiveFolder.QueryInterface(IID_IFolderAltStreams, &folderAltStreams);
+    if (folderAltStreams)
+    {
+      CMyComPtr<IFolderFolder> newFolder;
+      folderAltStreams->BindToAltStreams((UInt32)(Int32)-1, &newFolder);
+      if (newFolder)
+        archiveFolder = newFolder;
+    }
+  }
+
   FOR_VECTOR (i, pathParts)
   {
     CMyComPtr<IFolderFolder> newFolder;
-    archiveFolder->BindToFolder(pathParts[i], &newFolder);
-    if(!newFolder)
+  
+    if (isAltStreamFolder && i == pathParts.Size() - 1)
+    {
+      CMyComPtr<IFolderAltStreams> folderAltStreams;
+      archiveFolder.QueryInterface(IID_IFolderAltStreams, &folderAltStreams);
+      if (folderAltStreams)
+        folderAltStreams->BindToAltStreams(pathParts[i], &newFolder);
+    }
+    else
+      archiveFolder->BindToFolder(pathParts[i], &newFolder);
+    
+    if (!newFolder)
       break;
     archiveFolder = newFolder;
   }
@@ -180,63 +260,56 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   RINOK(archiveFolder.QueryInterface(IID_IArchiveFolderInternal, &archiveFolderInternal));
   CAgentFolder *agentFolder;
   RINOK(archiveFolderInternal->GetAgentFolder(&agentFolder));
-  _proxyFolderItem = agentFolder->_proxyFolderItem;
-  _proxyArchive = agentFolder->_proxyArchive;
-  _proxyArchive2 = agentFolder->_proxyArchive2;
-  _parentFolder = agentFolder->_parentFolder;
+  _proxyDirIndex = agentFolder->_proxyDirIndex;
+  // _parentFolder = agentFolder->_parentFolder;
+  */
+  
+  if (_proxy2)
+    _isAltStreamFolder = _proxy2->IsAltDir(_proxyDirIndex);
 
   return res;
+
+  }
+  catch(const UString &s)
+  {
+    if (updateCallback100)
+    {
+      UString s2 = L"Error: ";
+      s2 += s;
+      RINOK(updateCallback100->UpdateErrorMessage(s2));
+      return E_FAIL;
+    }
+    throw;
+  }
 }
+
+
 
 STDMETHODIMP CAgentFolder::CopyFrom(Int32 moveMode,
     const wchar_t *fromFolderPath, // test it
-    const wchar_t **itemsPaths,
+    const wchar_t * const *itemsPaths,
     UInt32 numItems,
     IProgress *progress)
 {
   COM_TRY_BEGIN
-  CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress)
-  {
-    RINOK(progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&updateCallback100));
-  }
-  try
   {
     RINOK(_agentSpec->SetFiles(fromFolderPath, itemsPaths, numItems));
-    RINOK(_agentSpec->SetFolder(this));
     return CommonUpdateOperation(AGENT_OP_Uni, (moveMode != 0), NULL,
         &NUpdateArchive::k_ActionSet_Add,
-        0, 0, updateCallback100);
-  }
-  catch(const UString &s)
-  {
-    RINOK(updateCallback100->UpdateErrorMessage(UString(L"Error: ") + s));
-    return E_FAIL;
+        NULL, 0, progress);
   }
   COM_TRY_END
 }
 
-STDMETHODIMP CAgentFolder::CopyFromFile(UInt32 destIndex, const wchar_t *itemPath, IProgress * progress)
+STDMETHODIMP CAgentFolder::CopyFromFile(UInt32 destIndex, const wchar_t *itemPath, IProgress *progress)
 {
   COM_TRY_BEGIN
   CUIntVector indices;
   indices.Add(destIndex);
-  CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress)
   {
-    RINOK(progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&updateCallback100));
-  }
-  try
-  {
-    RINOK(_agentSpec->SetFolder(this));
     return CommonUpdateOperation(AGENT_OP_CopyFromFile, false, itemPath,
         &NUpdateArchive::k_ActionSet_Add,
-        &indices.Front(), indices.Size(), updateCallback100);
-  }
-  catch(const UString &s)
-  {
-    RINOK(updateCallback100->UpdateErrorMessage(UString(L"Error: ") + s));
-    return E_FAIL;
+        &indices.Front(), indices.Size(), progress);
   }
   COM_TRY_END
 }
@@ -244,40 +317,30 @@ STDMETHODIMP CAgentFolder::CopyFromFile(UInt32 destIndex, const wchar_t *itemPat
 STDMETHODIMP CAgentFolder::Delete(const UInt32 *indices, UInt32 numItems, IProgress *progress)
 {
   COM_TRY_BEGIN
-  RINOK(_agentSpec->SetFolder(this));
-  CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress)
-  {
-    CMyComPtr<IProgress> progressWrapper = progress;
-    RINOK(progressWrapper.QueryInterface(
-        IID_IFolderArchiveUpdateCallback, &updateCallback100));
-  }
   return CommonUpdateOperation(AGENT_OP_Delete, false, NULL,
-    &NUpdateArchive::k_ActionSet_Delete, indices, numItems, updateCallback100);
+      &NUpdateArchive::k_ActionSet_Delete, indices, numItems, progress);
   COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress)
 {
   COM_TRY_BEGIN
-  if (_proxyArchive2)
+  
+  if (_isAltStreamFolder)
+    return E_NOTIMPL;
+
+  if (_proxy2)
   {
-    if (_proxyArchive2->IsThere_SubDir(_proxyFolderItem, name))
+    if (_proxy2->IsThere_SubDir(_proxyDirIndex, name))
       return ERROR_ALREADY_EXISTS;
   }
   else
   {
-    if (_proxyArchive->FindDirSubItemIndex(_proxyFolderItem, name) >= 0)
+    if (_proxy->FindSubDir(_proxyDirIndex, name) >= 0)
       return ERROR_ALREADY_EXISTS;
   }
-  RINOK(_agentSpec->SetFolder(this));
-  CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress)
-  {
-    CMyComPtr<IProgress> progressWrapper = progress;
-    RINOK(progressWrapper.QueryInterface(IID_IFolderArchiveUpdateCallback, &updateCallback100));
-  }
-  return CommonUpdateOperation(AGENT_OP_CreateFolder, false, name, NULL, NULL, 0, updateCallback100);
+  
+  return CommonUpdateOperation(AGENT_OP_CreateFolder, false, name, NULL, NULL, 0, progress);
   COM_TRY_END
 }
 
@@ -286,15 +349,8 @@ STDMETHODIMP CAgentFolder::Rename(UInt32 index, const wchar_t *newName, IProgres
   COM_TRY_BEGIN
   CUIntVector indices;
   indices.Add(index);
-  RINOK(_agentSpec->SetFolder(this));
-  CMyComPtr<IFolderArchiveUpdateCallback> updateCallback100;
-  if (progress)
-  {
-    CMyComPtr<IProgress> progressWrapper = progress;
-    RINOK(progressWrapper.QueryInterface(IID_IFolderArchiveUpdateCallback, &updateCallback100));
-  }
-  return CommonUpdateOperation(AGENT_OP_Rename, false, newName, NULL, &indices.Front(),
-      indices.Size(), updateCallback100);
+  return CommonUpdateOperation(AGENT_OP_Rename, false, newName, NULL,
+      &indices.Front(), indices.Size(), progress);
   COM_TRY_END
 }
 

@@ -58,6 +58,11 @@ HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 * /* numFiles */, co
   #endif
 }
 
+HRESULT CExtractCallbackImp::Open_Finished()
+{
+  return S_OK;
+}
+
 STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
 {
   #ifndef _NO_PROGRESS
@@ -83,7 +88,7 @@ void CExtractCallbackImp::CreateComplexDirectory(const UStringVector &dirPathPar
   {
     fullPath += us2fs(dirPathParts[i]);
     CreateDir(fullPath);
-    fullPath += FCHAR_PATH_SEPARATOR;
+    fullPath.Add_PathSepar();
   }
 }
 
@@ -95,18 +100,21 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     return E_ABORT;
   #endif
   _outFileStream.Release();
-  NCOM::CPropVariant propVariantName;
-  RINOK(_archiveHandler->GetProperty(index, kpidPath, &propVariantName));
+
   UString fullPath;
-  if (propVariantName.vt == VT_EMPTY)
-    fullPath = _itemDefaultName;
-  else
   {
-    if (propVariantName.vt != VT_BSTR)
-      return E_FAIL;
-    fullPath = propVariantName.bstrVal;
+    NCOM::CPropVariant prop;
+    RINOK(_archiveHandler->GetProperty(index, kpidPath, &prop));
+    if (prop.vt == VT_EMPTY)
+      fullPath = _itemDefaultName;
+    else
+    {
+      if (prop.vt != VT_BSTR)
+        return E_FAIL;
+      fullPath.SetFromBstr(prop.bstrVal);
+    }
+    _filePath = fullPath;
   }
-  _filePath = fullPath;
 
   if (askExtractMode == NArchive::NExtract::NAskMode::kExtract)
   {

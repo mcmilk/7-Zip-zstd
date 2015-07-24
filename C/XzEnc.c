@@ -1,5 +1,5 @@
 /* XzEnc.c -- Xz Encode
-2014-12-30 : Igor Pavlov : Public domain */
+2015-05-01 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -17,14 +17,6 @@
 #endif
 
 #include "XzEnc.h"
-
-static void *SzBigAlloc(void *p, size_t size) { p = p; return BigAlloc(size); }
-static void SzBigFree(void *p, void *address) { p = p; BigFree(address); }
-static ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
-static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
-static void SzFree(void *p, void *address) { p = p; MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 #define XzBlock_ClearFlags(p)       (p)->flags = 0;
 #define XzBlock_SetNumFilters(p, n) (p)->flags |= ((n) - 1);
@@ -59,12 +51,13 @@ SRes XzBlock_WriteHeader(const CXzBlock *p, ISeqOutStream *s)
   Byte header[XZ_BLOCK_HEADER_SIZE_MAX];
 
   unsigned pos = 1;
-  int numFilters, i;
+  unsigned numFilters, i;
   header[pos++] = p->flags;
 
   if (XzBlock_HasPackSize(p)) pos += Xz_WriteVarInt(header + pos, p->packSize);
   if (XzBlock_HasUnpackSize(p)) pos += Xz_WriteVarInt(header + pos, p->unpackSize);
   numFilters = XzBlock_GetNumFilters(p);
+  
   for (i = 0; i < numFilters; i++)
   {
     const CXzFilter *f = &p->filters[i];
@@ -73,8 +66,10 @@ SRes XzBlock_WriteHeader(const CXzBlock *p, ISeqOutStream *s)
     memcpy(header + pos, f->props, f->propsSize);
     pos += f->propsSize;
   }
-  while((pos & 3) != 0)
+
+  while ((pos & 3) != 0)
     header[pos++] = 0;
+
   header[0] = (Byte)(pos >> 2);
   SetUi32(header + pos, CrcCalc(header, pos));
   return WriteBytes(s, header, pos + 4);
@@ -163,13 +158,13 @@ typedef struct
   CXzCheck check;
 } CSeqCheckInStream;
 
-void SeqCheckInStream_Init(CSeqCheckInStream *p, int mode)
+static void SeqCheckInStream_Init(CSeqCheckInStream *p, unsigned mode)
 {
   p->processed = 0;
   XzCheck_Init(&p->check, mode);
 }
 
-void SeqCheckInStream_GetDigest(CSeqCheckInStream *p, Byte *digest)
+static void SeqCheckInStream_GetDigest(CSeqCheckInStream *p, Byte *digest)
 {
   XzCheck_Final(&p->check, digest);
 }
@@ -408,7 +403,7 @@ static SRes Xz_Compress(CXzStream *xz, CLzma2WithFilters *lzmaf,
     CSeqCheckInStream checkInStream;
     CSeqSizeOutStream seqSizeOutStream;
     CXzBlock block;
-    int filterIndex = 0;
+    unsigned filterIndex = 0;
     CXzFilter *filter = NULL;
     const CXzFilterProps *fp = props->filterProps;
     

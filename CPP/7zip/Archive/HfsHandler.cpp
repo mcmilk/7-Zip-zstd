@@ -28,7 +28,7 @@
 namespace NArchive {
 namespace NHfs {
 
-static const wchar_t *kResFileName = L"rsrc"; // L"com.apple.ResourceFork";
+static const char *kResFileName = "rsrc"; // "com.apple.ResourceFork";
 
 struct CExtent
 {
@@ -655,12 +655,17 @@ HRESULT CDatabase::LoadExtentFile(const CFork &fork, IInStream *inStream, CObjec
 
 static void LoadName(const Byte *data, unsigned len, UString &dest)
 {
-  wchar_t *p = dest.GetBuffer(len);
+  wchar_t *p = dest.GetBuf(len);
   unsigned i;
   for (i = 0; i < len; i++)
-    p[i] = Get16(data + i * 2);
+  {
+    wchar_t c = Get16(data + i * 2);
+    if (c == 0)
+      break;
+    p[i] = c;
+  }
   p[i] = 0;
-  dest.ReleaseBuffer();
+  dest.ReleaseBuf_SetLen(i);
 }
 
 static bool IsNameEqualTo(const Byte *data, const char *name)
@@ -805,7 +810,7 @@ static const UInt32 kMethod_Resource = 4; // data stored in resource fork
 bool CDatabase::Parse_decmpgfs(const CAttr &attr, CItem &item, bool &skip)
 {
   skip = false;
-  if (attr.Name != L"com.apple.decmpfs")
+  if (!attr.Name.IsEqualTo("com.apple.decmpfs"))
     return true;
   if (item.UseAttr || !item.DataFork.IsEmpty())
     return false;
@@ -961,13 +966,13 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
                 IsNameEqualTo(name + 8, "HFS+ Private Data"))
             {
               // it's folder for "Hard Links" files
-              item.Name = L"[HFS+ Private Data]";
+              item.Name.SetFromAscii("[HFS+ Private Data]");
             }
           }
 
           // Some dmg files have ' ' folder item.
           if (item.Name.IsEmpty() || item.Name[0] == L' ')
-            item.Name = L"[]";
+            item.Name.SetFromAscii("[]");
         }
       }
 
@@ -1221,7 +1226,7 @@ HRESULT CDatabase::Open2(IInStream *inStream, IArchiveOpenCallback *progress)
     return S_FALSE;
   */
 
-  ResFileName = kResFileName;
+  ResFileName.SetFromAscii(kResFileName);
 
   CFork extentsFork, catalogFork, attrFork;
   // allocationFork.Parse(p + 0x70 + 0x50 * 0);
@@ -1856,19 +1861,15 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   return GetForkStream(item.GetFork(ref.IsResource), stream);
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "HFS", "hfs hfsx", 0, 0xE3,
-  2 * (4 + 1),
-  {
+static const Byte k_Signature[] = {
     4, 'H', '+', 0, 4,
-    4, 'H', 'X', 0, 5,
-  },
+    4, 'H', 'X', 0, 5 };
+
+REGISTER_ARC_I(
+  "HFS", "hfs hfsx", 0, 0xE3,
+  k_Signature,
   kHeaderPadSize,
   NArcInfoFlags::kMultiSignature,
-  CreateArc };
-
-REGISTER_ARC(Hfs)
+  NULL)
 
 }}

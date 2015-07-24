@@ -22,6 +22,7 @@
 #endif
 
 #include "../GUI/ExtractRes.h"
+#include "resourceGui.h"
 
 #include "ExtractCallback.h"
 #include "FormatUtils.h"
@@ -30,6 +31,7 @@
 #ifndef _NO_CRYPTO
 #include "PasswordDialog.h"
 #endif
+#include "PropertyName.h"
 
 using namespace NWindows;
 using namespace NFile;
@@ -39,6 +41,10 @@ CExtractCallbackImp::~CExtractCallbackImp() {}
 
 void CExtractCallbackImp::Init()
 {
+  _lang_Extracting = LangString(IDS_PROGRESS_EXTRACTING);
+  _lang_Testing = LangString(IDS_PROGRESS_TESTING);
+  _lang_Skipping = LangString(IDS_PROGRESS_SKIPPING);
+
   NumArchiveErrors = 0;
   ThereAreMessageErrors = false;
   #ifndef _SFX
@@ -97,6 +103,11 @@ HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 * /* numFiles */, co
   return ProgressDialog->Sync.CheckStop();
 }
 
+HRESULT CExtractCallbackImp::Open_Finished()
+{
+  return ProgressDialog->Sync.CheckStop();
+}
+
 #ifndef _NO_CRYPTO
 
 HRESULT CExtractCallbackImp::Open_CryptoGetTextPassword(BSTR *password)
@@ -104,6 +115,7 @@ HRESULT CExtractCallbackImp::Open_CryptoGetTextPassword(BSTR *password)
   return CryptoGetTextPassword(password);
 }
 
+/*
 HRESULT CExtractCallbackImp::Open_GetPasswordIfAny(bool &passwordIsDefined, UString &password)
 {
   passwordIsDefined = PasswordIsDefined;
@@ -116,10 +128,11 @@ bool CExtractCallbackImp::Open_WasPasswordAsked()
   return PasswordWasAsked;
 }
 
-void CExtractCallbackImp::Open_ClearPasswordWasAskedFlag()
+void CExtractCallbackImp::Open_Clear_PasswordWasAsked_Flag()
 {
   PasswordWasAsked = false;
 }
+*/
 
 #endif
 
@@ -179,10 +192,21 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
 }
 
 
-STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, bool isFolder, Int32 /* askExtractMode */, const UInt64 * /* position */)
+STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 isFolder, Int32 askExtractMode, const UInt64 * /* position */)
 {
-  _isFolder = isFolder;
-  return SetCurrentFilePath2(name);
+  _isFolder = IntToBool(isFolder);
+  _currentFilePath = name;
+
+  const UString *msg = &_lang_Empty;
+  switch (askExtractMode)
+  {
+    case NArchive::NExtract::NAskMode::kExtract: msg = &_lang_Extracting; break;
+    case NArchive::NExtract::NAskMode::kTest:    msg = &_lang_Testing; break;
+    case NArchive::NExtract::NAskMode::kSkip:    msg = &_lang_Skipping; break;
+    // default: s = "Unknown operation";
+  }
+
+  return ProgressDialog->Sync.Set_Status2(*msg, name, IntToBool(isFolder));
 }
 
 STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *s)
@@ -208,7 +232,98 @@ STDMETHODIMP CExtractCallbackImp::ShowMessage(const wchar_t *s)
 
 #endif
 
-STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 opRes, bool encrypted)
+void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, const wchar_t *fileName, UString &s)
+{
+  s.Empty();
+
+  if (opRes == NArchive::NExtract::NOperationResult::kOK)
+    return;
+
+  UINT messageID = 0;
+  UINT id = 0;
+
+  switch (opRes)
+  {
+    case NArchive::NExtract::NOperationResult::kUnsupportedMethod:
+      messageID = IDS_EXTRACT_MESSAGE_UNSUPPORTED_METHOD;
+      id = IDS_EXTRACT_MSG_UNSUPPORTED_METHOD;
+      break;
+    case NArchive::NExtract::NOperationResult::kDataError:
+      messageID = encrypted ?
+          IDS_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED:
+          IDS_EXTRACT_MESSAGE_DATA_ERROR;
+      id = IDS_EXTRACT_MSG_DATA_ERROR;
+      break;
+    case NArchive::NExtract::NOperationResult::kCRCError:
+      messageID = encrypted ?
+          IDS_EXTRACT_MESSAGE_CRC_ERROR_ENCRYPTED:
+          IDS_EXTRACT_MESSAGE_CRC_ERROR;
+      id = IDS_EXTRACT_MSG_CRC_ERROR;
+      break;
+    case NArchive::NExtract::NOperationResult::kUnavailable:
+      id = IDS_EXTRACT_MSG_UNAVAILABLE_DATA;
+      break;
+    case NArchive::NExtract::NOperationResult::kUnexpectedEnd:
+      id = IDS_EXTRACT_MSG_UEXPECTED_END;
+      break;
+    case NArchive::NExtract::NOperationResult::kDataAfterEnd:
+      id = IDS_EXTRACT_MSG_DATA_AFTER_END;
+      break;
+    case NArchive::NExtract::NOperationResult::kIsNotArc:
+      id = IDS_EXTRACT_MSG_IS_NOT_ARC;
+      break;
+    case NArchive::NExtract::NOperationResult::kHeadersError:
+      id = IDS_EXTRACT_MSG_HEADERS_ERROR;
+      break;
+    case NArchive::NExtract::NOperationResult::kWrongPassword:
+      id = IDS_EXTRACT_MSG_WRONG_PSW_CLAIM;
+      break;
+    /*
+    default:
+      messageID = IDS_EXTRACT_MESSAGE_UNKNOWN_ERROR;
+      break;
+    */
+  }
+
+  UString msg;
+  UString msgOld;
+
+  #ifndef _SFX
+  if (id != 0)
+    LangString_OnlyFromLangFile(id, msg);
+  if (messageID != 0 && msg.IsEmpty())
+    LangString_OnlyFromLangFile(messageID, msgOld);
+  #endif
+
+  if (msg.IsEmpty() && !msgOld.IsEmpty())
+    s = MyFormatNew(msgOld, fileName);
+  else
+  {
+    if (msg.IsEmpty() && id != 0)
+      LangString(id, msg);
+    if (!msg.IsEmpty())
+      s += msg;
+    else
+    {
+      char temp[16];
+      ConvertUInt32ToString(opRes, temp);
+      s.AddAscii("Error #");
+      s.AddAscii(temp);
+    }
+
+    if (encrypted && opRes != NArchive::NExtract::NOperationResult::kWrongPassword)
+    {
+      // s.AddAscii(" : ");
+      // AddLangString(s, IDS_EXTRACT_MSG_ENCRYPTED);
+      s.AddAscii(" : ");
+      AddLangString(s, IDS_EXTRACT_MSG_WRONG_PSW_GUESS);
+    }
+    s.AddAscii(" : ");
+    s += fileName;
+  }
+}
+
+STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 opRes, Int32 encrypted)
 {
   switch (opRes)
   {
@@ -216,93 +331,9 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 opRes, bool encrypted
       break;
     default:
     {
-      UINT messageID = 0;
-      UINT id = 0;
-
-      switch (opRes)
-      {
-        case NArchive::NExtract::NOperationResult::kUnsupportedMethod:
-          messageID = IDS_EXTRACT_MESSAGE_UNSUPPORTED_METHOD;
-          id = IDS_EXTRACT_MSG_UNSUPPORTED_METHOD;
-          break;
-        case NArchive::NExtract::NOperationResult::kDataError:
-          messageID = encrypted ?
-              IDS_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED:
-              IDS_EXTRACT_MESSAGE_DATA_ERROR;
-          id = IDS_EXTRACT_MSG_DATA_ERROR;
-          break;
-        case NArchive::NExtract::NOperationResult::kCRCError:
-          messageID = encrypted ?
-              IDS_EXTRACT_MESSAGE_CRC_ERROR_ENCRYPTED:
-              IDS_EXTRACT_MESSAGE_CRC_ERROR;
-          id = IDS_EXTRACT_MSG_CRC_ERROR;
-          break;
-        case NArchive::NExtract::NOperationResult::kUnavailable:
-          id = IDS_EXTRACT_MSG_UNAVAILABLE_DATA;
-          break;
-        case NArchive::NExtract::NOperationResult::kUnexpectedEnd:
-          id = IDS_EXTRACT_MSG_UEXPECTED_END;
-          break;
-        case NArchive::NExtract::NOperationResult::kDataAfterEnd:
-          id = IDS_EXTRACT_MSG_DATA_AFTER_END;
-          break;
-        case NArchive::NExtract::NOperationResult::kIsNotArc:
-          id = IDS_EXTRACT_MSG_IS_NOT_ARC;
-          break;
-        case NArchive::NExtract::NOperationResult::kHeadersError:
-          id = IDS_EXTRACT_MSG_HEADERS_ERROR;
-          break;
-        /*
-        default:
-          messageID = IDS_EXTRACT_MESSAGE_UNKNOWN_ERROR;
-          break;
-        */
-      }
-      if (_needWriteArchivePath)
-      {
-        if (!_currentArchivePath.IsEmpty())
-          AddError_Message(_currentArchivePath);
-        _needWriteArchivePath = false;
-      }
-
-      UString msg;
-      UString msgOld;
-
-      #ifndef _SFX
-      if (id != 0)
-        LangString_OnlyFromLangFile(id, msg);
-      if (messageID != 0 && msg.IsEmpty())
-        LangString_OnlyFromLangFile(messageID, msgOld);
-      #endif
-
       UString s;
-      if (msg.IsEmpty() && !msgOld.IsEmpty())
-        s = MyFormatNew(msgOld, _currentFilePath);
-      else
-      {
-        if (msg.IsEmpty())
-          LangString(id, msg);
-        if (!msg.IsEmpty())
-          s += msg;
-        else
-        {
-          wchar_t temp[16];
-          ConvertUInt32ToString(opRes, temp);
-          s += L"Error #";
-          s += temp;
-        }
-
-        if (encrypted)
-        {
-          // s += L" : ";
-          // s += LangString(IDS_EXTRACT_MSG_ENCRYPTED);
-          s += L" : ";
-          s += LangString(IDS_EXTRACT_MSG_WRONG_PSW);
-        }
-        s += L" : ";
-        s += _currentFilePath;
-      }
-
+      SetExtractErrorMessage(opRes, encrypted, _currentFilePath, s);
+      Add_ArchiveName_Error();
       AddError_Message(s);
     }
   }
@@ -318,10 +349,22 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 opRes, bool encrypted
   return S_OK;
 }
 
+STDMETHODIMP CExtractCallbackImp::ReportExtractResult(Int32 opRes, Int32 encrypted, const wchar_t *name)
+{
+  if (opRes != NArchive::NExtract::NOperationResult::kOK)
+  {
+    UString s;
+    SetExtractErrorMessage(opRes, encrypted, name, s);
+    Add_ArchiveName_Error();
+    AddError_Message(s);
+  }
+  return S_OK;
+}
+
 ////////////////////////////////////////
 // IExtractCallbackUI
 
-HRESULT CExtractCallbackImp::BeforeOpen(const wchar_t *name)
+HRESULT CExtractCallbackImp::BeforeOpen(const wchar_t *name, bool /* testMode */)
 {
   #ifndef _SFX
   RINOK(ProgressDialog->Sync.CheckStop());
@@ -357,27 +400,6 @@ HRESULT CExtractCallbackImp::SetCurrentFilePath(const wchar_t *path)
 
 UString HResultToMessage(HRESULT errorCode);
 
-HRESULT CExtractCallbackImp::OpenResult(const wchar_t *name, HRESULT result, bool encrypted)
-{
-  if (result != S_OK)
-  {
-    UString s;
-    if (result == S_FALSE)
-      s = MyFormatNew(encrypted ? IDS_CANT_OPEN_ENCRYPTED_ARCHIVE : IDS_CANT_OPEN_ARCHIVE, name);
-    else
-    {
-      s = name;
-      s += L": ";
-      s += HResultToMessage(result);
-    }
-    MessageError(s);
-    NumArchiveErrors++;
-  }
-  _currentArchivePath = name;
-  _needWriteArchivePath = true;
-  return S_OK;
-}
-
 static const UInt32 k_ErrorFlagsIds[] =
 {
   IDS_EXTRACT_MSG_IS_NOT_ARC,
@@ -393,9 +415,16 @@ static const UInt32 k_ErrorFlagsIds[] =
   IDS_EXTRACT_MSG_CRC_ERROR
 };
 
+static void AddNewLineString(UString &s, const UString &m)
+{
+  s += m;
+  s.Add_LF();
+}
+
 UString GetOpenArcErrorMessage(UInt32 errorFlags)
 {
   UString s;
+
   for (unsigned i = 0; i < ARRAY_SIZE(k_ErrorFlagsIds); i++)
   {
     UInt32 f = ((UInt32)1 << i);
@@ -407,14 +436,15 @@ UString GetOpenArcErrorMessage(UInt32 errorFlags)
       continue;
     if (f == kpv_ErrorFlags_EncryptedHeadersError)
     {
-      m += L" : ";
-      m += LangString(IDS_EXTRACT_MSG_WRONG_PSW);
+      m.AddAscii(" : ");
+      AddLangString(m, IDS_EXTRACT_MSG_WRONG_PSW_GUESS);
     }
     if (!s.IsEmpty())
-      s += L'\n';
+      s.Add_LF();
     s += m;
     errorFlags &= ~f;
   }
+  
   if (errorFlags != 0)
   {
     char sz[16];
@@ -422,74 +452,151 @@ UString GetOpenArcErrorMessage(UInt32 errorFlags)
     sz[1] = 'x';
     ConvertUInt32ToHex(errorFlags, sz + 2);
     if (!s.IsEmpty())
-      s += L'\n';
-    s += GetUnicodeString(AString(sz));
+      s.Add_LF();
+    s.AddAscii(sz);
   }
+  
   return s;
 }
 
-HRESULT CExtractCallbackImp::SetError(int level, const wchar_t *name,
-    UInt32 errorFlags, const wchar_t *errors,
-    UInt32 warningFlags, const wchar_t *warnings)
+static void ErrorInfo_Print(UString &s, const CArcErrorInfo &er)
 {
-  NumArchiveErrors++;
+  UInt32 errorFlags = er.GetErrorFlags();
+  UInt32 warningFlags = er.GetWarningFlags();
 
+  if (errorFlags != 0)
+    AddNewLineString(s, GetOpenArcErrorMessage(errorFlags));
+      
+  if (!er.ErrorMessage.IsEmpty())
+    AddNewLineString(s, er.ErrorMessage);
+  
+  if (warningFlags != 0)
+  {
+    s += GetNameOfProperty(kpidWarningFlags, L"Warnings");
+    s.AddAscii(":");
+    s.Add_LF();
+    AddNewLineString(s, GetOpenArcErrorMessage(warningFlags));
+  }
+  
+  if (!er.WarningMessage.IsEmpty())
+  {
+    s += GetNameOfProperty(kpidWarning, L"Warning");
+    s.AddAscii(": ");
+    s += er.WarningMessage;
+    s.Add_LF();
+  }
+}
+
+static UString GetBracedType(const wchar_t *type)
+{
+  UString s = L'[';
+  s += type;
+  s += L']';
+  return s;
+}
+
+void OpenResult_GUI(UString &s, const CCodecs *codecs, const CArchiveLink &arcLink, const wchar_t *name, HRESULT result)
+{
+  FOR_VECTOR (level, arcLink.Arcs)
+  {
+    const CArc &arc = arcLink.Arcs[level];
+    const CArcErrorInfo &er = arc.ErrorInfo;
+
+    if (!er.IsThereErrorOrWarning() && er.ErrorFormatIndex < 0)
+      continue;
+
+    if (s.IsEmpty())
+    {
+      s += name;
+      s.Add_LF();
+    }
+    
+    if (level != 0)
+    {
+      AddNewLineString(s, arc.Path);
+    }
+      
+    ErrorInfo_Print(s, er);
+
+    if (er.ErrorFormatIndex >= 0)
+    {
+      AddNewLineString(s, GetNameOfProperty(kpidWarning, L"Warning"));
+      if (arc.FormatIndex == er.ErrorFormatIndex)
+      {
+        AddNewLineString(s, LangString(IDS_IS_OPEN_WITH_OFFSET));
+      }
+      else
+      {
+        AddNewLineString(s, MyFormatNew(IDS_CANT_OPEN_AS_TYPE, GetBracedType(codecs->GetFormatNamePtr(er.ErrorFormatIndex))));
+        AddNewLineString(s, MyFormatNew(IDS_IS_OPEN_AS_TYPE, GetBracedType(codecs->GetFormatNamePtr(arc.FormatIndex))));
+      }
+    }
+  }
+
+  if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0 || result != S_OK)
+  {
+    s += name;
+    s.Add_LF();
+    if (!arcLink.Arcs.IsEmpty())
+      AddNewLineString(s, arcLink.NonOpen_ArcPath);
+    
+    if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0 || result == S_FALSE)
+    {
+      UINT id = IDS_CANT_OPEN_ARCHIVE;
+      UString param;
+      if (arcLink.PasswordWasAsked)
+        id = IDS_CANT_OPEN_ENCRYPTED_ARCHIVE;
+      else if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
+      {
+        id = IDS_CANT_OPEN_AS_TYPE;
+        param = GetBracedType(codecs->GetFormatNamePtr(arcLink.NonOpen_ErrorInfo.ErrorFormatIndex));
+      }
+      UString s2 = MyFormatNew(id, param);
+      s2.Replace(L" ''", L"");
+      s2.Replace(L"''", L"");
+      s += s2;
+    }
+    else
+      s += HResultToMessage(result);
+
+    s.Add_LF();
+    ErrorInfo_Print(s, arcLink.NonOpen_ErrorInfo);
+  }
+
+  if (!s.IsEmpty() && s.Back() == '\n')
+    s.DeleteBack();
+}
+
+HRESULT CExtractCallbackImp::OpenResult(const CCodecs *codecs, const CArchiveLink &arcLink, const wchar_t *name, HRESULT result)
+{
+  _currentArchivePath = name;
+  _needWriteArchivePath = true;
+
+  UString s;
+  OpenResult_GUI(s, codecs, arcLink, name, result);
+  if (!s.IsEmpty())
+  {
+    NumArchiveErrors++;
+    AddError_Message(s);
+    _needWriteArchivePath = false;
+  }
+
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::ThereAreNoFiles()
+{
+  return S_OK;
+}
+
+void CExtractCallbackImp::Add_ArchiveName_Error()
+{
   if (_needWriteArchivePath)
   {
     if (!_currentArchivePath.IsEmpty())
       AddError_Message(_currentArchivePath);
     _needWriteArchivePath = false;
   }
-
-  if (level != 0)
-  {
-    UString s;
-    s += name;
-    s += L": ";
-    MessageError(s);
-  }
-
-  if (errorFlags != 0)
-    MessageError(GetOpenArcErrorMessage(errorFlags));
-
-  if (errors && wcslen(errors) != 0)
-    MessageError(errors);
-
-  if (warningFlags != 0)
-    MessageError((UString)L"Warnings: " + GetOpenArcErrorMessage(warningFlags));
-
-  if (warnings && wcslen(warnings) != 0)
-    MessageError((UString)L"Warnings: " + warnings);
-
-  return S_OK;
-}
-
-HRESULT CExtractCallbackImp::OpenTypeWarning(const wchar_t *name, const wchar_t *okType, const wchar_t *errorType)
-{
-  UString s = L"Warning:\n";
-  s += name;
-  s += L"\n";
-  if (wcscmp(okType, errorType) == 0)
-  {
-    s += L"The archive is open with offset";
-  }
-  else
-  {
-    s += L"Can not open the file as [";
-    s += errorType;
-    s += L"] archive\n";
-    s += L"The file is open as [";
-    s += okType;
-    s += L"] archive";
-  }
-  MessageError(s);
-  NumArchiveErrors++;
-  return S_OK;
-}
-  
-HRESULT CExtractCallbackImp::ThereAreNoFiles()
-{
-  return S_OK;
 }
 
 HRESULT CExtractCallbackImp::ExtractResult(HRESULT result)
@@ -499,7 +606,10 @@ HRESULT CExtractCallbackImp::ExtractResult(HRESULT result)
   NumArchiveErrors++;
   if (result == E_ABORT || result == ERROR_DISK_FULL)
     return result;
-  MessageError(_currentFilePath);
+
+  Add_ArchiveName_Error();
+  if (!_currentFilePath.IsEmpty())
+    MessageError(_currentFilePath);
   MessageError(NError::MyFormatMessage(result));
   return S_OK;
 }
@@ -564,7 +674,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
     {
       if (!destFileInfo.IsDir())
       {
-        RINOK(MessageError("can not replace file with folder with same name: ", destPathSys));
+        RINOK(MessageError("can not replace file with folder with same name", destPathSys));
         return E_ABORT;
       }
       *writeAnswer = BoolToInt(false);
@@ -573,8 +683,9 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
   
     if (destFileInfo.IsDir())
     {
-      RINOK(MessageError("can not replace folder with file with same name: ", destPathSys));
-      return E_FAIL;
+      RINOK(MessageError("can not replace folder with file with same name", destPathSys));
+      *writeAnswer = BoolToInt(false);
+      return S_OK;
     }
 
     switch (OverwriteMode)
@@ -583,13 +694,9 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
         return S_OK;
       case NExtract::NOverwriteMode::kAsk:
       {
-        Int32 overwiteResult;
+        Int32 overwriteResult;
         UString destPathSpec = destPath;
-        int slashPos = destPathSpec.ReverseFind(L'/');
-        #ifdef _WIN32
-        int slash1Pos = destPathSpec.ReverseFind(L'\\');
-        slashPos = MyMax(slashPos, slash1Pos);
-        #endif
+        int slashPos = destPathSpec.ReverseFind_PathSepar();
         destPathSpec.DeleteFrom(slashPos + 1);
         destPathSpec += fs2us(destFileInfo.Name);
 
@@ -598,9 +705,9 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
             &destFileInfo.MTime, &destFileInfo.Size,
             srcPath,
             srcTime, srcSize,
-            &overwiteResult));
+            &overwriteResult));
         
-        switch (overwiteResult)
+        switch (overwriteResult)
         {
           case NOverwriteAnswer::kCancel: return E_ABORT;
           case NOverwriteAnswer::kNo: return S_OK;
@@ -618,7 +725,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
     {
       if (!AutoRenamePath(destPathSys))
       {
-        RINOK(MessageError("can not create name for file: ", destPathSys));
+        RINOK(MessageError("can not create name for file", destPathSys));
         return E_ABORT;
       }
       destPathResultTemp = fs2us(destPathSys);
@@ -626,7 +733,7 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
     else
       if (!NDir::DeleteFileAlways(destPathSys))
       {
-        RINOK(MessageError("can not delete output file: ", destPathSys));
+        RINOK(MessageError("can not delete output file", destPathSys));
         return E_ABORT;
       }
   }
@@ -783,7 +890,7 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation7(Int32 askExtractMode)
   COM_TRY_END
 }
 
-STDMETHODIMP CExtractCallbackImp::SetOperationResult7(Int32 opRes, bool encrypted)
+STDMETHODIMP CExtractCallbackImp::SetOperationResult7(Int32 opRes, Int32 encrypted)
 {
   COM_TRY_BEGIN
   if (VirtFileSystem && _newVirtFileWasAdded)
@@ -865,7 +972,7 @@ HRESULT CVirtFileSystem::FlushToDisk(bool closeLast)
   while (_numFlushed < Files.Size())
   {
     const CVirtFile &file = Files[_numFlushed];
-    const FString path = DirPrefix + us2fs(GetCorrectFsPath(file.Name));
+    const FString path = DirPrefix + us2fs(Get_Correct_FsFile_Name(file.Name));
     if (!_fileIsOpen)
     {
       if (!_outFileStreamSpec->Create(path, false))

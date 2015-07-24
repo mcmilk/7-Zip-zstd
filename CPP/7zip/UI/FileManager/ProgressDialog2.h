@@ -80,9 +80,9 @@ public:
   }
   
   HRESULT CheckStop();
-  HRESULT ScanProgress(UInt64 numFiles, UInt64 totalSize, const UString &fileName, bool isDir = false);
+  HRESULT ScanProgress(UInt64 numFiles, UInt64 totalSize, const FString &fileName, bool isDir = false);
 
-  void Set_NumFilesTotal(UInt64 val);
+  HRESULT Set_NumFilesTotal(UInt64 val);
   void Set_NumBytesTotal(UInt64 val);
   void Set_NumFilesCur(UInt64 val);
   HRESULT Set_NumBytesCur(const UInt64 *val);
@@ -91,7 +91,8 @@ public:
 
   void Set_TitleFileName(const UString &fileName);
   void Set_Status(const UString &s);
-  void Set_FilePath(const UString &path, bool isDir = false);
+  HRESULT Set_Status2(const UString &s, const wchar_t *path, bool isDir = false);
+  void Set_FilePath(const wchar_t *path, bool isDir = false);
 
   void AddError_Message(const wchar_t *message);
   void AddError_Message_Name(const wchar_t *message, const wchar_t *name);
@@ -274,9 +275,8 @@ public:
 
 class CProgressThreadVirt
 {
-  FString ErrorPath1;
-  FString ErrorPath2;
 protected:
+  FStringVector ErrorPaths;
   CProgressFinalMessage FinalMessage;
 
   // error if any of HRESULT, ErrorMessage, ErrorPath
@@ -299,8 +299,7 @@ public:
     return 0;
   }
 
-  void SetErrorPath1(const FString &path) { ErrorPath1 = path; }
-  void SetErrorPath2(const FString &path) { ErrorPath2 = path; }
+  void AddErrorPath(const FString &path) { ErrorPaths.Add(path); }
 
   HRESULT Create(const UString &title, HWND parentWindow = 0);
   CProgressThreadVirt(): Result(E_FAIL), ThreadFinishedOK(false) {}

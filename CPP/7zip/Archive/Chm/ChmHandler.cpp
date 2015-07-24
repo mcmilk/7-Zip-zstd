@@ -123,15 +123,16 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPath:
     {
       UString us;
-      if (ConvertUTF8ToUnicode(item.Name, us))
+      // if (
+      ConvertUTF8ToUnicode(item.Name, us);
       {
         if (!m_Database.LowLevel)
         {
-          if (us.Len() > 1)
-            if (us[0] == L'/')
-              us.Delete(0);
+          if (us.Len() > 1 && us[0] == L'/')
+            us.Delete(0);
         }
-        prop = NItemName::GetOSName2(us);
+        NItemName::ConvertToOSName2(us);
+        prop = us;
       }
       break;
     }
@@ -141,7 +142,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       if (!item.IsDir())
         if (item.Section == 0)
-          prop = L"Copy";
+          prop = "Copy";
         else if (item.Section < m_Database.Sections.Size())
           prop = m_Database.Sections[(int)item.Section].GetMethodName();
       break;
@@ -734,30 +735,30 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 
 namespace NChm {
 
-IMP_CreateArcIn_2(CHandler(false))
+static const Byte k_Signature[] = { 'I', 'T', 'S', 'F', 3, 0, 0, 0, 0x60, 0,  0, 0 };
 
-static CArcInfo g_ArcInfo =
-  { "Chm", "chm chi chq chw", 0, 0xE9,
-  12, { 'I', 'T', 'S', 'F', 3, 0, 0, 0, 0x60, 0,  0, 0 },
+REGISTER_ARC_I_CLS(
+  CHandler(false),
+  "Chm", "chm chi chq chw", 0, 0xE9,
+  k_Signature,
   0,
   0,
-  CreateArc };
+  NULL)
 
-REGISTER_ARC(Chm)
 }
 
 namespace NHxs {
 
-IMP_CreateArcIn_2(CHandler(true))
+static const Byte k_Signature[] = { 'I', 'T', 'O', 'L', 'I', 'T', 'L', 'S', 1, 0, 0, 0, 0x28, 0, 0, 0 };
 
-static CArcInfo g_ArcInfo =
-  { "Hxs", "hxs hxi hxr hxq hxw lit", 0, 0xCE,
-  16, { 'I', 'T', 'O', 'L', 'I', 'T', 'L', 'S', 1, 0, 0, 0, 0x28, 0, 0, 0 },
+REGISTER_ARC_I_CLS(
+  CHandler(true),
+  "Hxs", "hxs hxi hxr hxq hxw lit", 0, 0xCE,
+  k_Signature,
   0,
   NArcInfoFlags::kFindSignature,
-  CreateArc };
+  NULL)
 
-REGISTER_ARC(Hxs)
 }
 
 }}

@@ -8,183 +8,228 @@
 
 #include "ExtractingFilePath.h"
 
-static UString ReplaceIncorrectChars(const UString &s, bool repaceColon)
+static void ReplaceIncorrectChars(UString &s)
 {
-  #ifdef _WIN32
-  UString res;
-  bool beforeColon = true;
   {
     for (unsigned i = 0; i < s.Len(); i++)
     {
       wchar_t c = s[i];
-      if (beforeColon)
-        if (c == '*' || c == '?' || c < 0x20 || c == '<' || c == '>' || c == '|' || c == '"')
-          c = '_';
-      if (c == ':')
-      {
-        if (repaceColon)
-          c = '_';
-        else
-          beforeColon = false;
-      }
-      res += c;
+      if (
+          #ifdef _WIN32
+          c == ':' || c == '*' || c == '?' || c < 0x20 || c == '<' || c == '>' || c == '|' || c == '"'
+          || c == '/' ||
+          #endif
+          c == WCHAR_PATH_SEPARATOR)
+        s.ReplaceOneCharAtPos(i, '_');
     }
   }
-  if (beforeColon)
+  
+  #ifdef _WIN32
   {
-    for (int i = res.Len() - 1; i >= 0; i--)
+    for (unsigned i = s.Len(); i != 0;)
     {
-      wchar_t c = res[i];
+      wchar_t c = s[--i];
       if (c != '.' && c != ' ')
         break;
-      res.ReplaceOneCharAtPos(i, '_');
+      s.ReplaceOneCharAtPos(i, '_');
     }
   }
-  return res;
-  #else
-  return s;
   #endif
 }
 
 #ifdef _WIN32
 
-static const wchar_t *g_ReservedNames[] =
+/* WinXP-64 doesn't support ':', '\\' and '/' symbols in name of alt stream.
+   But colon in postfix ":$DATA" is allowed.
+   WIN32 functions don't allow empty alt stream name "name:" */
+
+void Correct_AltStream_Name(UString &s)
 {
-  L"CON", L"PRN", L"AUX", L"NUL"
+  unsigned len = s.Len();
+  const unsigned kPostfixSize = 6;
+  if (s.Len() >= kPostfixSize
+      && StringsAreEqualNoCase_Ascii(s.RightPtr(kPostfixSize), ":$DATA"))
+    len -= kPostfixSize;
+  for (unsigned i = 0; i < len; i++)
+  {
+    wchar_t c = s[i];
+    if (c == ':' || c == '\\' || c == '/')
+      s.ReplaceOneCharAtPos(i, '_');
+  }
+  if (s.IsEmpty())
+    s = L'_';
+}
+
+static const unsigned g_ReservedWithNum_Index = 4;
+
+static const char * const g_ReservedNames[] =
+{
+  "CON", "PRN", "AUX", "NUL",
+  "COM", "LPT"
 };
-
-static bool CheckTail(const UString &name, unsigned len)
-{
-  int dotPos = name.Find(L'.');
-  if (dotPos < 0)
-    dotPos = name.Len();
-  UString s = name.Left(dotPos);
-  s.TrimRight();
-  return s.Len() != len;
-}
-
-static bool CheckNameNum(const UString &name, const wchar_t *reservedName)
-{
-  unsigned len = MyStringLen(reservedName);
-  if (name.Len() <= len)
-    return true;
-  if (MyStringCompareNoCase_N(name, reservedName, len) != 0)
-    return true;
-  wchar_t c = name[len];
-  if (c < L'0' || c > L'9')
-    return true;
-  return CheckTail(name, len + 1);
-}
 
 static bool IsSupportedName(const UString &name)
 {
   for (unsigned i = 0; i < ARRAY_SIZE(g_ReservedNames); i++)
   {
-    const wchar_t *reservedName = g_ReservedNames[i];
+    const char *reservedName = g_ReservedNames[i];
     unsigned len = MyStringLen(reservedName);
     if (name.Len() < len)
       continue;
-    if (MyStringCompareNoCase_N(name, reservedName, len) != 0)
+    if (!name.IsPrefixedBy_Ascii_NoCase(reservedName))
       continue;
-    if (!CheckTail(name, len))
-      return false;
+    if (i >= g_ReservedWithNum_Index)
+    {
+      wchar_t c = name[len];
+      if (c < L'0' || c > L'9')
+        continue;
+      len++;
+    }
+    for (;;)
+    {
+      wchar_t c = name[len++];
+      if (c == 0 || c == '.')
+        return false;
+      if (c != ' ')
+        break;
+    }
   }
-  if (!CheckNameNum(name, L"COM"))
-    return false;
-  return CheckNameNum(name, L"LPT");
+  return true;
+}
+
+static void CorrectUnsupportedName(UString &name)
+{
+  if (!IsSupportedName(name))
+    name.InsertAtFront(L'_');
 }
 
 #endif
 
-static UString GetCorrectFileName(const UString &path, bool repaceColon)
+static void Correct_PathPart(UString &s)
 {
-  if (path == L".." || path == L".")
-    return UString();
-  return ReplaceIncorrectChars(path, repaceColon);
-}
-
-void MakeCorrectPath(bool isPathFromRoot, UStringVector &pathParts, bool replaceAltStreamColon)
-{
-  for (unsigned i = 0; i < pathParts.Size();)
-  {
-    UString &s = pathParts[i];
-    #ifdef _WIN32
-    bool needReplaceColon = (replaceAltStreamColon || i != pathParts.Size() - 1);
-    if (i == 0 && isPathFromRoot && NWindows::NFile::NName::IsDrivePath(s))
-    {
-      UString s2 = s[0];
-      s2 += L'_';
-      s2 += GetCorrectFileName(s.Ptr(2), needReplaceColon);
-      s = s2;
-    }
-    else
-      s = GetCorrectFileName(s, needReplaceColon);
-    #endif
-
-    if (s.IsEmpty())
-      pathParts.Delete(i);
-    else
-    {
-      #ifdef _WIN32
-      if (!IsSupportedName(s))
-        s = (UString)L"_" + s;
-      #endif
-      i++;
-    }
-  }
-}
-
-UString MakePathNameFromParts(const UStringVector &parts)
-{
-  UString result;
-  FOR_VECTOR (i, parts)
-  {
-    if (i != 0)
-      result += WCHAR_PATH_SEPARATOR;
-    result += parts[i];
-  }
-  return result;
-}
-
-static const wchar_t *k_EmptyReplaceName = L"[]";
-
-void Correct_IfEmptyLastPart(UStringVector &parts)
-{
-  if (parts.IsEmpty())
-    parts.Add(k_EmptyReplaceName);
-  else
-  {
-    UString &s = parts.Back();
-    if (s.IsEmpty())
-      s = k_EmptyReplaceName;
-  }
-}
-
-UString GetCorrectFsPath(const UString &path)
-{
-  UString res = GetCorrectFileName(path, true);
+  // "." and ".."
+  if (s[0] == '.' && (s[1] == 0 || s[1] == '.' && s[2] == 0))
+    s.Empty();
   #ifdef _WIN32
-  if (!IsSupportedName(res))
-    res = (UString)L"_" + res;
+  else
+    ReplaceIncorrectChars(s);
   #endif
+}
+
+// static const wchar_t *k_EmptyReplaceName = L"[]";
+static const wchar_t k_EmptyReplaceName = L'_';
+
+UString Get_Correct_FsFile_Name(const UString &name)
+{
+  UString res = name;
+  Correct_PathPart(res);
+  
+  #ifdef _WIN32
+  CorrectUnsupportedName(res);
+  #endif
+  
   if (res.IsEmpty())
     res = k_EmptyReplaceName;
   return res;
 }
-  
-UString GetCorrectFullFsPath(const UString &path)
+
+
+void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir)
 {
-  UStringVector parts;
-  SplitPathToParts(path, parts);
-  FOR_VECTOR (i, parts)
+  unsigned i = 0;
+
+  if (absIsAllowed)
   {
-    UString &s = parts[i];
-    #ifdef _WIN32
-    while (!s.IsEmpty() && (s.Back() == '.' || s.Back() == ' '))
-      s.DeleteBack();
-    if (!IsSupportedName(s))
-      s.InsertAtFront(L'_');
+    #if defined(_WIN32) && !defined(UNDER_CE)
+    bool isDrive = false;
+    #endif
+    if (parts[0].IsEmpty())
+    {
+      i = 1;
+      #if defined(_WIN32) && !defined(UNDER_CE)
+      if (parts.Size() > 1 && parts[1].IsEmpty())
+      {
+        i = 2;
+        if (parts.Size() > 2 && parts[2] == L"?")
+        {
+          i = 3;
+          if (parts.Size() > 3  && NWindows::NFile::NName::IsDrivePath2(parts[3]))
+          {
+            isDrive = true;
+            i = 4;
+          }
+        }
+      }
+      #endif
+    }
+    #if defined(_WIN32) && !defined(UNDER_CE)
+    else if (NWindows::NFile::NName::IsDrivePath2(parts[0]))
+    {
+      isDrive = true;
+      i = 1;
+    }
+
+    if (isDrive)
+    {
+      // we convert "c:name" to "c:\name", if absIsAllowed path.
+      const UString &ds = parts[i - 1];
+      if (ds.Len() != 2)
+      {
+        UString s = ds.Ptr(2);
+        parts.Insert(i, s);
+      }
+    }
     #endif
   }
-  return MakePathNameFromParts(parts);
+
+  for (; i < parts.Size();)
+  {
+    UString &s = parts[i];
+
+    #ifdef _WIN32
+    Correct_PathPart(s);
+    #endif
+
+    if (s.IsEmpty())
+    {
+      if (isDir || i != parts.Size() - 1)
+      {
+        parts.Delete(i);
+        continue;
+      }
+      s = k_EmptyReplaceName;
+    }
+    else
+    {
+      #ifdef _WIN32
+      CorrectUnsupportedName(s);
+      #endif
+    }
+    
+    i++;
+  }
+
+  if (!isDir)
+  {
+    if (parts.IsEmpty())
+      parts.Add(k_EmptyReplaceName);
+    else
+    {
+      UString &s = parts.Back();
+      if (s.IsEmpty())
+        s = k_EmptyReplaceName;
+    }
+  }
+}
+
+UString MakePathFromParts(const UStringVector &parts)
+{
+  UString s;
+  FOR_VECTOR (i, parts)
+  {
+    if (i != 0)
+      s.Add_PathSepar();
+    s += parts[i];
+  }
+  return s;
 }

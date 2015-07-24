@@ -4,9 +4,12 @@
 
 #include "../../../C/Sha256.h"
 
-#include "../../Windows/Synchronization.h"
+#include "../../Common/ComTry.h"
 
-#include "../Common/StreamObjects.h"
+#ifndef _7ZIP_ST
+#include "../../Windows/Synchronization.h"
+#endif
+
 #include "../Common/StreamUtils.h"
 
 #include "7zAes.h"
@@ -16,60 +19,71 @@
 #include "RandGen.h"
 #endif
 
-using namespace NWindows;
-
 namespace NCrypto {
-namespace NSevenZ {
+namespace N7z {
+
+static const unsigned k_NumCyclesPower_Supported_MAX = 24;
 
 bool CKeyInfo::IsEqualTo(const CKeyInfo &a) const
 {
   if (SaltSize != a.SaltSize || NumCyclesPower != a.NumCyclesPower)
     return false;
-  for (UInt32 i = 0; i < SaltSize; i++)
+  for (unsigned i = 0; i < SaltSize; i++)
     if (Salt[i] != a.Salt[i])
       return false;
   return (Password == a.Password);
 }
 
-void CKeyInfo::CalculateDigest()
+void CKeyInfo::CalcKey()
 {
   if (NumCyclesPower == 0x3F)
   {
-    UInt32 pos;
+    unsigned pos;
     for (pos = 0; pos < SaltSize; pos++)
       Key[pos] = Salt[pos];
-    for (UInt32 i = 0; i < Password.Size() && pos < kKeySize; i++)
+    for (unsigned i = 0; i < Password.Size() && pos < kKeySize; i++)
       Key[pos++] = Password[i];
     for (; pos < kKeySize; pos++)
       Key[pos] = 0;
   }
   else
   {
+    size_t bufSize = 8 + SaltSize + Password.Size();
+    CObjArray<Byte> buf(bufSize);
+    memcpy(buf, Salt, SaltSize);
+    memcpy(buf + SaltSize, Password, Password.Size());
+    
     CSha256 sha;
     Sha256_Init(&sha);
-    const UInt64 numRounds = (UInt64)1 << NumCyclesPower;
-    Byte temp[8] = { 0,0,0,0,0,0,0,0 };
-    for (UInt64 round = 0; round < numRounds; round++)
+    
+    Byte *ctr = buf + SaltSize + Password.Size();
+    
+    for (unsigned i = 0; i < 8; i++)
+      ctr[i] = 0;
+    
+    UInt64 numRounds = (UInt64)1 << NumCyclesPower;
+
+    do
     {
-      Sha256_Update(&sha, Salt, (size_t)SaltSize);
-      Sha256_Update(&sha, Password, Password.Size());
-      Sha256_Update(&sha, temp, 8);
-      for (int i = 0; i < 8; i++)
-        if (++(temp[i]) != 0)
+      Sha256_Update(&sha, buf, bufSize);
+      for (unsigned i = 0; i < 8; i++)
+        if (++(ctr[i]) != 0)
           break;
     }
+    while(--numRounds != 0);
+
     Sha256_Final(&sha, Key);
   }
 }
 
-bool CKeyInfoCache::Find(CKeyInfo &key)
+bool CKeyInfoCache::GetKey(CKeyInfo &key)
 {
   FOR_VECTOR (i, Keys)
   {
     const CKeyInfo &cached = Keys[i];
     if (key.IsEqualTo(cached))
     {
-      for (int j = 0; j < kKeySize; j++)
+      for (unsigned j = 0; j < kKeySize; j++)
         key.Key[j] = cached.Key[j];
       if (i != 0)
         Keys.MoveToFront(i);
@@ -79,40 +93,60 @@ bool CKeyInfoCache::Find(CKeyInfo &key)
   return false;
 }
 
-void CKeyInfoCache::Add(CKeyInfo &key)
+void CKeyInfoCache::FindAndAdd(const CKeyInfo &key)
 {
-  if (Find(key))
-    return;
+  FOR_VECTOR (i, Keys)
+  {
+    const CKeyInfo &cached = Keys[i];
+    if (key.IsEqualTo(cached))
+    {
+      if (i != 0)
+        Keys.MoveToFront(i);
+      return;
+    }
+  }
+  Add(key);
+}
+
+void CKeyInfoCache::Add(const CKeyInfo &key)
+{
   if (Keys.Size() >= Size)
     Keys.DeleteBack();
   Keys.Insert(0, key);
 }
 
 static CKeyInfoCache g_GlobalKeyCache(32);
-static NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
+
+#ifndef _7ZIP_ST
+  static NWindows::NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
+  #define MT_LOCK NWindows::NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
+#else
+  #define MT_LOCK
+#endif
 
 CBase::CBase():
   _cachedKeys(16),
   _ivSize(0)
 {
-  for (int i = 0; i < sizeof(_iv); i++)
+  for (unsigned i = 0; i < sizeof(_iv); i++)
     _iv[i] = 0;
 }
 
-void CBase::CalculateDigest()
+void CBase::PrepareKey()
 {
-  NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
-  if (_cachedKeys.Find(_key))
-    g_GlobalKeyCache.Add(_key);
-  else
+  // BCJ2 threads use same password. So we use long lock.
+  MT_LOCK
+  
+  bool finded = false;
+  if (!_cachedKeys.GetKey(_key))
   {
-    if (!g_GlobalKeyCache.Find(_key))
-    {
-      _key.CalculateDigest();
-      g_GlobalKeyCache.Add(_key);
-    }
+    finded = g_GlobalKeyCache.GetKey(_key);
+    if (!finded)
+      _key.CalcKey();
     _cachedKeys.Add(_key);
   }
+  if (!finded)
+    g_GlobalKeyCache.FindAndAdd(_key);
 }
 
 #ifndef EXTRACT_ONLY
@@ -128,113 +162,119 @@ STDMETHODIMP CEncoder::ResetSalt()
 
 STDMETHODIMP CEncoder::ResetInitVector()
 {
+  for (unsigned i = 0; i < sizeof(_iv); i++)
+    _iv[i] = 0;
   _ivSize = 8;
-  g_RandomGenerator.Generate(_iv, (unsigned)_ivSize);
+  g_RandomGenerator.Generate(_iv, _ivSize);
   return S_OK;
 }
 
 STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 {
-   // _key.Init();
-   for (UInt32 i = _ivSize; i < sizeof(_iv); i++)
-    _iv[i] = 0;
+  Byte props[2 + sizeof(_key.Salt) + sizeof(_iv)];
+  unsigned propsSize = 1;
 
-  UInt32 ivSize = _ivSize;
-  
-  // _key.NumCyclesPower = 0x3F;
-  _key.NumCyclesPower = 19;
+  props[0] = (Byte)(_key.NumCyclesPower
+      | (_key.SaltSize == 0 ? 0 : (1 << 7))
+      | (_ivSize       == 0 ? 0 : (1 << 6)));
 
-  Byte firstByte = (Byte)(_key.NumCyclesPower |
-    (((_key.SaltSize == 0) ? 0 : 1) << 7) |
-    (((ivSize == 0) ? 0 : 1) << 6));
-  RINOK(outStream->Write(&firstByte, 1, NULL));
-  if (_key.SaltSize == 0 && ivSize == 0)
-    return S_OK;
-  Byte saltSizeSpec = (Byte)((_key.SaltSize == 0) ? 0 : (_key.SaltSize - 1));
-  Byte ivSizeSpec = (Byte)((ivSize == 0) ? 0 : (ivSize - 1));
-  Byte secondByte = (Byte)(((saltSizeSpec) << 4) | ivSizeSpec);
-  RINOK(outStream->Write(&secondByte, 1, NULL));
-  if (_key.SaltSize > 0)
+  if (_key.SaltSize != 0 || _ivSize != 0)
   {
-    RINOK(WriteStream(outStream, _key.Salt, _key.SaltSize));
+    props[1] = (Byte)(
+        ((_key.SaltSize == 0 ? 0 : _key.SaltSize - 1) << 4)
+        | (_ivSize      == 0 ? 0 : _ivSize - 1));
+    memcpy(props + 2, _key.Salt, _key.SaltSize);
+    propsSize = 2 + _key.SaltSize;
+    memcpy(props + propsSize, _iv, _ivSize);
+    propsSize += _ivSize;
   }
-  if (ivSize > 0)
-  {
-    RINOK(WriteStream(outStream, _iv, ivSize));
-  }
-  return S_OK;
+
+  return WriteStream(outStream, props, propsSize);
 }
 
-HRESULT CEncoder::CreateFilter()
+CEncoder::CEncoder()
 {
+  // _key.SaltSize = 4; g_RandomGenerator.Generate(_key.Salt, _key.SaltSize);
+  // _key.NumCyclesPower = 0x3F;
+  _key.NumCyclesPower = 19;
   _aesFilter = new CAesCbcEncoder(kKeySize);
-  return S_OK;
 }
 
 #endif
 
+CDecoder::CDecoder()
+{
+  _aesFilter = new CAesCbcDecoder(kKeySize);
+}
+
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
-  _key.Init();
-  UInt32 i;
+  _key.ClearProps();
+ 
+  _ivSize = 0;
+  unsigned i;
   for (i = 0; i < sizeof(_iv); i++)
     _iv[i] = 0;
+  
   if (size == 0)
     return S_OK;
-  UInt32 pos = 0;
-  Byte firstByte = data[pos++];
-
-  _key.NumCyclesPower = firstByte & 0x3F;
-  if ((firstByte & 0xC0) == 0)
-    return S_OK;
-  _key.SaltSize = (firstByte >> 7) & 1;
-  UInt32 ivSize = (firstByte >> 6) & 1;
-
-  if (pos >= size)
-    return E_INVALIDARG;
-  Byte secondByte = data[pos++];
   
-  _key.SaltSize += (secondByte >> 4);
-  ivSize += (secondByte & 0x0F);
-  
-  if (pos + _key.SaltSize + ivSize > size)
+  Byte b0 = data[0];
+
+  _key.NumCyclesPower = b0 & 0x3F;
+  if ((b0 & 0xC0) == 0)
+    return size == 1 ? S_OK : E_INVALIDARG;
+
+  if (size <= 1)
     return E_INVALIDARG;
-  for (i = 0; i < _key.SaltSize; i++)
-    _key.Salt[i] = data[pos++];
+
+  Byte b1 = data[1];
+
+  unsigned saltSize = ((b0 >> 7) & 1) + (b1 >> 4);
+  unsigned ivSize   = ((b0 >> 6) & 1) + (b1 & 0x0F);
+  
+  if (size != 2 + saltSize + ivSize)
+    return E_INVALIDARG;
+  _key.SaltSize = saltSize;
+  data += 2;
+  for (i = 0; i < saltSize; i++)
+    _key.Salt[i] = *data++;
   for (i = 0; i < ivSize; i++)
-    _iv[i] = data[pos++];
-  return (_key.NumCyclesPower <= 24) ? S_OK :  E_NOTIMPL;
+    _iv[i] = *data++;
+  return (_key.NumCyclesPower <= k_NumCyclesPower_Supported_MAX
+      || _key.NumCyclesPower == 0x3F) ? S_OK : E_NOTIMPL;
 }
+
 
 STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
+  COM_TRY_BEGIN
+  
   _key.Password.CopyFrom(data, (size_t)size);
   return S_OK;
+  
+  COM_TRY_END
 }
 
 STDMETHODIMP CBaseCoder::Init()
 {
-  CalculateDigest();
-  if (_aesFilter == 0)
-  {
-    RINOK(CreateFilter());
-  }
+  COM_TRY_BEGIN
+  
+  PrepareKey();
   CMyComPtr<ICryptoProperties> cp;
   RINOK(_aesFilter.QueryInterface(IID_ICryptoProperties, &cp));
-  RINOK(cp->SetKey(_key.Key, sizeof(_key.Key)));
+  if (!cp)
+    return E_FAIL;
+  RINOK(cp->SetKey(_key.Key, kKeySize));
   RINOK(cp->SetInitVector(_iv, sizeof(_iv)));
   return _aesFilter->Init();
+  
+  COM_TRY_END
 }
 
 STDMETHODIMP_(UInt32) CBaseCoder::Filter(Byte *data, UInt32 size)
 {
   return _aesFilter->Filter(data, size);
-}
-
-HRESULT CDecoder::CreateFilter()
-{
-  _aesFilter = new CAesCbcDecoder(kKeySize);
-  return S_OK;
 }
 
 }}

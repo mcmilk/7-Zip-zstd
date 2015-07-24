@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS_2" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS_2" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -99,7 +99,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS_2" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -127,7 +127,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "NEW_FOLDER_INTERFACE" /D "EXTERNAL_CODECS_2" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -211,9 +211,188 @@ SOURCE=..\..\UI\FileManager\Test.bmp
 # Begin Group "Archive"
 
 # PROP Default_Filter ""
+# Begin Group "7z"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Archive\IArchive.h
+SOURCE=..\..\Archive\7z\7zCompressionMode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zCompressionMode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zDecode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zDecode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zEncode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zEncode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zExtract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderInStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderInStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderOutStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandlerOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHeader.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHeader.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zIn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zIn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zItem.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zOut.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zProperties.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zProperties.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zSpecStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zSpecStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zUpdate.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zUpdate.h
+# End Source File
+# End Group
+# Begin Group "Archive Common"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\CoderMixer2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\DummyOutStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\DummyOutStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FindSignature.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\FindSignature.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\HandlerOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\HandlerOut.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\InStreamWithCRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\InStreamWithCRC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\MultiStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\MultiStream.h
 # End Source File
 # Begin Source File
 
@@ -223,10 +402,31 @@ SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp
 
 SOURCE=..\..\Archive\Common\OutStreamWithCRC.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ParseProperties.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ParseProperties.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\..\Archive\IArchive.h
+# End Source File
 # End Group
 # Begin Group "Folders"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\AltStreamsFolder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\AltStreamsFolder.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\UI\FileManager\FSDrives.cpp
@@ -605,6 +805,22 @@ SOURCE=..\..\UI\FileManager\UpdateCallback100.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Common\CreateCoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CreateCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CWrappers.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\CWrappers.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\FilePathAutoRename.cpp
 # End Source File
 # Begin Source File
@@ -621,11 +837,27 @@ SOURCE=..\..\Common\FileStreams.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\InOutTempBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\InOutTempBuffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\MethodProps.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Common\MethodProps.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\OutBuffer.h
 # End Source File
 # Begin Source File
 
@@ -638,6 +870,14 @@ SOURCE=..\..\Common\ProgressUtils.h
 # Begin Source File
 
 SOURCE=..\..\Common\PropId.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamBinder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamBinder.h
 # End Source File
 # Begin Source File
 
@@ -662,6 +902,14 @@ SOURCE=..\..\Common\UniqBlocks.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\UniqBlocks.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\VirtThread.h
 # End Source File
 # End Group
 # Begin Group "C"
@@ -742,6 +990,42 @@ SOURCE=..\..\..\..\C\CpuArch.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\CpuArch.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFind.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFind.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindMt.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindMt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaDec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaEnc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzmaEnc.h
 # End Source File
 # Begin Source File
 
@@ -1302,14 +1586,6 @@ SOURCE=..\..\UI\Common\CompressCall2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\CreateCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Common\CreateCoder.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\UI\Common\DefaultName.cpp
 # End Source File
 # Begin Source File
@@ -1618,6 +1894,14 @@ SOURCE=..\..\UI\GUI\UpdateCallbackGUI.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\GUI\UpdateCallbackGUI2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\GUI\UpdateCallbackGUI2.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\GUI\UpdateGUI.cpp
 # End Source File
 # Begin Source File
@@ -1636,6 +1920,30 @@ SOURCE=..\..\Compress\CopyCoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\CopyCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\CopyRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaEncoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaEncoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmaRegister.cpp
 # End Source File
 # End Group
 # Begin Group "Interface"
@@ -1656,18 +1964,6 @@ SOURCE=..\..\IPassword.h
 # Begin Source File
 
 SOURCE=..\..\IProgress.h
-# End Source File
-# End Group
-# Begin Group "Crypto"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Crypto\Sha1.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Sha1.h
 # End Source File
 # End Group
 # Begin Source File

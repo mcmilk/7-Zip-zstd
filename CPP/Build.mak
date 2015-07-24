@@ -42,7 +42,7 @@ COMPL_ASM = $(MY_ML) $** $O/$(*B).obj
 COMPL_ASM = $(MY_ML) -c -Fo$O/ $**
 !ENDIF
 
-CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -W4 -WX -EHsc -Gy -GR-
+CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -W4 -WX -EHsc -Gy -GR- -GF
 
 !IFDEF MY_STATIC_LINK
 !IFNDEF MY_SINGLE_THREAD

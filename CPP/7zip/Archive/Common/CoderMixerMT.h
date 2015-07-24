@@ -18,7 +18,7 @@ struct CCoder: public CCoderInfo, public CVirtThread
 
   virtual void Execute();
   void Code(ICompressProgressInfo *progress);
-  ~CCoder() { CVirtThread::WaitThreadFinish(); }
+  virtual ~CCoder() { CVirtThread::WaitThreadFinish(); }
 };
 
 /*

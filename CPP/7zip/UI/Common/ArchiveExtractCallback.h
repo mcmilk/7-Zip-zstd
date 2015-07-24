@@ -76,7 +76,7 @@ class CGetProp:
 public:
   const CArc *Arc;
   UInt32 IndexInArc;
-  UString Name; // relative path
+  // UString Name; // relative path
 
   MY_UNKNOWN_IMP1(IGetProp)
   INTERFACE_IGetProp(;)
@@ -124,9 +124,27 @@ public:
 
 #endif
 
+#ifdef SUPPORT_ALT_STREAMS
+
+struct CIndexToPathPair
+{
+  UInt32 Index;
+  FString Path;
+
+  CIndexToPathPair(UInt32 index): Index(index) {}
+  CIndexToPathPair(UInt32 index, const FString &path): Index(index), Path(path) {}
+
+  int Compare(const CIndexToPathPair &pair) const
+  {
+    return MyCompare(Index, pair.Index);
+  }
+};
+
+#endif
+
 class CArchiveExtractCallback:
   public IArchiveExtractCallback,
-  // public IArchiveVolumeExtractCallback,
+  public IArchiveExtractCallbackMessage,
   public ICryptoGetTextPassword,
   public ICompressProgressInfo,
   public CMyUnknownImp
@@ -134,12 +152,15 @@ class CArchiveExtractCallback:
   const CArc *_arc;
   CExtractNtOptions _ntOptions;
 
-  const NWildcard::CCensorNode *_wildcardCensor;
+  const NWildcard::CCensorNode *_wildcardCensor; // we need wildcard for single pass mode (stdin)
   CMyComPtr<IFolderArchiveExtractCallback> _extractCallback2;
   CMyComPtr<ICompressProgressInfo> _compressProgress;
   CMyComPtr<ICryptoGetTextPassword> _cryptoGetTextPassword;
-  FString _directoryPath;
-  FString _directoryPathFull;
+  CMyComPtr<IArchiveExtractCallbackMessage> _callbackMessage;
+  CMyComPtr<IFolderArchiveExtractCallback2> _folderArchiveExtractCallback2;
+
+  FString _dirPathPrefix;
+  FString _dirPathPrefix_Full;
   NExtract::NPathMode::EEnum _pathMode;
   NExtract::NOverwriteMode::EEnum _overwriteMode;
 
@@ -151,11 +172,10 @@ class CArchiveExtractCallback:
   
   #endif
 
+  CReadArcItem _item;
   FString _diskFilePath;
-  UString _filePath;
   UInt64 _position;
   bool _isSplit;
-  bool _isAltStream;
 
   bool _extractMode;
 
@@ -176,8 +196,6 @@ class CArchiveExtractCallback:
     bool ATimeDefined;
     bool MTimeDefined;
     bool AttribDefined;
-
-    bool IsDir;
   } _fi;
 
   UInt32 _index;
@@ -194,9 +212,13 @@ class CArchiveExtractCallback:
   
   #endif
 
+  bool _removePartsForAltStreams;
   UStringVector _removePathParts;
+  
+  #ifndef _SFX
   bool _use_baseParentFolder_mode;
   UInt32 _baseParentFolder;
+  #endif
 
   bool _stdOutMode;
   bool _testMode;
@@ -204,7 +226,9 @@ class CArchiveExtractCallback:
 
   CMyComPtr<ICompressProgressInfo> _localProgress;
   UInt64 _packTotal;
-  UInt64 _unpTotal;
+  
+  UInt64 _progressTotal;
+  bool _progressTotal_Defined;
 
   FStringVector _extractedFolderPaths;
   CRecordVector<UInt32> _extractedFolderIndices;
@@ -218,6 +242,7 @@ class CArchiveExtractCallback:
   HRESULT GetUnpackSize();
 
   HRESULT SendMessageError(const char *message, const FString &path);
+  HRESULT SendMessageError_with_LastError(const char *message, const FString &path);
   HRESULT SendMessageError2(const char *message, const FString &path1, const FString &path2);
 
 public:
@@ -230,15 +255,12 @@ public:
   UInt64 UnpackSize;
   UInt64 AltStreams_UnpackSize;
   
-  MY_UNKNOWN_IMP2(ICryptoGetTextPassword, ICompressProgressInfo)
-  // COM_INTERFACE_ENTRY(IArchiveVolumeExtractCallback)
+  MY_UNKNOWN_IMP3(IArchiveExtractCallbackMessage, ICryptoGetTextPassword, ICompressProgressInfo)
 
   INTERFACE_IArchiveExtractCallback(;)
+  INTERFACE_IArchiveExtractCallbackMessage(;)
 
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
-
-  // IArchiveVolumeExtractCallback
-  // STDMETHOD(GetInStream)(const wchar_t *name, ISequentialInStream **inStream);
 
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
@@ -274,7 +296,7 @@ public:
       IFolderArchiveExtractCallback *extractCallback2,
       bool stdOutMode, bool testMode,
       const FString &directoryPath,
-      const UStringVector &removePathParts,
+      const UStringVector &removePathParts, bool removePartsForAltStreams,
       UInt64 packSize);
 
   #ifdef SUPPORT_LINKS
@@ -285,15 +307,23 @@ public:
   HRESULT PrepareHardLinks(const CRecordVector<UInt32> *realIndices);  // NULL means all items
   #endif
 
+  #ifdef SUPPORT_ALT_STREAMS
+  CObjectVector<CIndexToPathPair> _renamedFiles;
+  #endif
+
   // call it after Init()
 
+  #ifndef _SFX
   void SetBaseParentFolderIndex(UInt32 indexInArc)
   {
-    _use_baseParentFolder_mode = true;
     _baseParentFolder = indexInArc;
+    _use_baseParentFolder_mode = true;
   }
+  #endif
 
   HRESULT SetDirsTimes();
 };
+
+bool CensorNode_CheckPath(const NWildcard::CCensorNode &node, const CReadArcItem &item);
 
 #endif

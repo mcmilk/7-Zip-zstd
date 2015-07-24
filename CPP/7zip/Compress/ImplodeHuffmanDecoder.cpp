@@ -21,9 +21,9 @@ CDecoder::~CDecoder()
 
 bool CDecoder::SetCodeLengths(const Byte *codeLengths)
 {
-  // int lenCounts[kNumBitsInLongestCode + 1], tmpPositions[kNumBitsInLongestCode + 1];
-  int lenCounts[kNumBitsInLongestCode + 2], tmpPositions[kNumBitsInLongestCode + 1];
-  int i;
+  // unsigned lenCounts[kNumBitsInLongestCode + 1], tmpPositions[kNumBitsInLongestCode + 1];
+  unsigned lenCounts[kNumBitsInLongestCode + 2], tmpPositions[kNumBitsInLongestCode + 1];
+  unsigned i;
   for (i = 0; i <= kNumBitsInLongestCode; i++)
     lenCounts[i] = 0;
   UInt32 symbolIndex;
@@ -67,7 +67,7 @@ UInt32 CDecoder::DecodeSymbol(CInBit *inStream)
 {
   UInt32 numBits = 0;
   UInt32 value = inStream->GetValue(kNumBitsInLongestCode);
-  int i;
+  unsigned i;
   for (i = kNumBitsInLongestCode; i > 0; i--)
   {
     if (value < m_Limitits[i])

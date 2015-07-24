@@ -86,8 +86,7 @@ bool CShellExtInfo::ReadFromRegistry(HKEY hkey, const CSysString &ext)
 
 bool CShellExtInfo::IsIt7Zip() const
 {
-  UString s = GetUnicodeString(k7zipPrefix);
-  return MyStringCompareNoCase_N(GetUnicodeString(ProgramKey), s, s.Len()) == 0;
+  return IsString1PrefixedByString2_NoCase(GetUnicodeString(ProgramKey), GetUnicodeString(k7zipPrefix));
 }
 
 LONG DeleteShellExtensionInfo(HKEY hkey, const CSysString &ext)

@@ -5,34 +5,30 @@
 
 #include "../Common/Update.h"
 #include "../Common/ArchiveOpenCallback.h"
-#include "../FileManager/ProgressDialog2.h"
+
+#include "UpdateCallbackGUI2.h"
 
 class CUpdateCallbackGUI:
   public IOpenCallbackUI,
-  public IUpdateCallbackUI2
+  public IUpdateCallbackUI2,
+  public CUpdateCallbackGUI2
 {
 public:
-  bool PasswordIsDefined;
-  UString Password;
+  // CUpdateCallbackGUI();
+  // ~CUpdateCallbackGUI();
+
   bool AskPassword;
-  bool PasswordWasAsked;
-  UInt64 NumFiles;
+
+  void Init();
 
   CUpdateCallbackGUI():
-      PasswordIsDefined(false),
-      PasswordWasAsked(false),
       AskPassword(false)
       {}
-  
-  ~CUpdateCallbackGUI();
-  void Init();
 
   INTERFACE_IUpdateCallbackUI2(;)
   INTERFACE_IOpenCallbackUI(;)
 
-  UStringVector FailedFiles;
-
-  CProgressDialog *ProgressDialog;
+  FStringVector FailedFiles;
 };
 
 #endif

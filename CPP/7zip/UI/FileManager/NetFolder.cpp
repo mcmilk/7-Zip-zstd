@@ -73,7 +73,15 @@ void CNetFolder::Init(const NWindows::NNet::CResourceW *netResource,
     _netResourcePointer = &_netResource;
 
     // if (_netResource.DisplayType == RESOURCEDISPLAYTYPE_SERVER)
-    _path = _netResource.RemoteName + WCHAR_PATH_SEPARATOR;
+    _path = _netResource.RemoteName;
+    
+    /* WinXP-64: When we move UP from Network share without _parentFolder chain,
+         we can get empty _netResource.RemoteName. Do we need to use Provider there ? */
+    if (_path.IsEmpty())
+      _path = _netResource.Provider;
+
+    if (!_path.IsEmpty())
+      _path.Add_PathSepar();
   }
   _parentFolder = parentFolder;
 }
@@ -111,7 +119,7 @@ STDMETHODIMP CNetFolder::LoadItems()
       if (!resource.RemoteNameIsDefined) // For Win 98, I don't know what's wrong
         resource.RemoteName = resource.Comment;
       resource.Name = resource.RemoteName;
-      int pos = resource.Name.ReverseFind(WCHAR_PATH_SEPARATOR);
+      int pos = resource.Name.ReverseFind_PathSepar();
       if (pos >= 0)
       {
         // _path = resource.Name.Left(pos + 1);
@@ -186,7 +194,7 @@ STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder
   {
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
     CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-    RINOK(fsFolderSpec->Init(us2fs(resource.RemoteName + WCHAR_PATH_SEPARATOR), this));
+    RINOK(fsFolderSpec->Init(us2fs(resource.RemoteName + WCHAR_PATH_SEPARATOR))); // , this
     *resultFolder = subFolder.Detach();
   }
   else
@@ -237,7 +245,7 @@ STDMETHODIMP CNetFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   NWindows::NCOM::CPropVariant prop;
   switch(propID)
   {
-    case kpidType: prop = L"NetFolder"; break;
+    case kpidType: prop = "NetFolder"; break;
     case kpidPath: prop = _path; break;
   }
   prop.Detach(value);

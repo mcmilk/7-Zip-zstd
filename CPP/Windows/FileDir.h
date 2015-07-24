@@ -24,7 +24,14 @@ bool MyCreateHardLink(CFSTR newFileName, CFSTR existFileName);
 
 bool RemoveDir(CFSTR path);
 bool CreateDir(CFSTR path);
+
+/* CreateComplexDir returns true, if directory can contain files after the call (two cases):
+    1) the directory already exists (network shares and drive paths are supported)
+    2) the directory was created
+  path can be WITH or WITHOUT trailing path separator. */
+
 bool CreateComplexDir(CFSTR path);
+
 bool DeleteFileAlways(CFSTR name);
 bool RemoveDirWithSubItems(const FString &path);
 

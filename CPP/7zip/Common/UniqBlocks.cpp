@@ -4,13 +4,13 @@
 
 #include "UniqBlocks.h"
 
-int CUniqBlocks::AddUniq(const Byte *data, size_t size)
+unsigned CUniqBlocks::AddUniq(const Byte *data, size_t size)
 {
   unsigned left = 0, right = Sorted.Size();
   while (left != right)
   {
     unsigned mid = (left + right) / 2;
-    int index = Sorted[mid];
+    unsigned index = Sorted[mid];
     const CByteBuffer &buf = Bufs[index];
     size_t sizeMid = buf.Size();
     if (size < sizeMid)
@@ -19,6 +19,8 @@ int CUniqBlocks::AddUniq(const Byte *data, size_t size)
       left = mid + 1;
     else
     {
+      if (size == 0)
+        return index;
       int cmp = memcmp(data, buf, size);
       if (cmp == 0)
         return index;
@@ -28,10 +30,9 @@ int CUniqBlocks::AddUniq(const Byte *data, size_t size)
         left = mid + 1;
     }
   }
-  int index = Bufs.Size();
+  unsigned index = Bufs.Size();
   Sorted.Insert(left, index);
-  CByteBuffer &buf = Bufs.AddNew();
-  buf.CopyFrom(data, size);
+  Bufs.AddNew().CopyFrom(data, size);
   return index;
 }
 
@@ -47,10 +48,8 @@ void CUniqBlocks::GetReverseMap()
 {
   unsigned num = Sorted.Size();
   BufIndexToSortedIndex.ClearAndSetSize(num);
-  int *p = &BufIndexToSortedIndex[0];
-  unsigned i;
-  for (i = 0; i < num; i++)
-    p[i] = 0;
-  for (i = 0; i < num; i++)
-    p[Sorted[i]] = i;
+  unsigned *p = &BufIndexToSortedIndex[0];
+  const unsigned *sorted = &Sorted[0];
+  for (unsigned i = 0; i < num; i++)
+    p[sorted[i]] = i;
 }

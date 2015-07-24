@@ -9,8 +9,28 @@ void OnMenuActivating(HWND hWnd, HMENU hMenu, int position);
 
 bool OnMenuCommand(HWND hWnd, int id);
 void MyLoadMenu();
-void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
-    bool isFsFolder, int numItems, bool allAreFiles);
+
+struct CFileMenu
+{
+  bool programMenu;
+  bool readOnly;
+  bool isFsFolder;
+  bool allAreFiles;
+  bool isAltStreamsSupported;
+  int numItems;
+  
+  CFileMenu():
+      programMenu(false),
+      readOnly(false),
+      isFsFolder(false),
+      allAreFiles(false),
+      isAltStreamsSupported(true),
+      numItems(0)
+    {}
+
+  void Load(HMENU hMenu, unsigned startPos);
+};
+
 bool ExecuteFileCommand(int id);
 
 #endif

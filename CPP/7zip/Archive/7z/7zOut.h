@@ -29,6 +29,8 @@ public:
   }
   void WriteBytes(const void *data, size_t size)
   {
+    if (size == 0)
+      return;
     if (size > _size - _pos)
       throw 1;
     memcpy(_data + _pos, data, size);
@@ -92,7 +94,7 @@ struct COutFolders
   CUInt32DefVector FolderUnpackCRCs; // Now we use it for headers only.
 
   CRecordVector<CNum> NumUnpackStreamsVector;
-  CRecordVector<UInt64> CoderUnpackSizes; // including unpack sizes of bind coders
+  CRecordVector<UInt64> CoderUnpackSizes; // including unpack sizes of bond coders
 
   void OutFoldersClear()
   {

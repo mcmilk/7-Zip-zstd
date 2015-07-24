@@ -51,19 +51,19 @@ static HRESULT DecompressArchive(
       replaceName = arc0.DefaultName;
   }
 
-  outDir.Replace(FSTRING_ANY_MASK, us2fs(GetCorrectFsPath(replaceName)));
+  outDir.Replace(FSTRING_ANY_MASK, us2fs(Get_Correct_FsFile_Name(replaceName)));
 
   bool elimIsPossible = false;
   UString elimPrefix; // only pure name without dir delimiter
   FString outDirReduced = outDir;
   
-  if (options.ElimDup.Val)
+  if (options.ElimDup.Val && options.PathMode != NExtract::NPathMode::kAbsPaths)
   {
     UString dirPrefix;
     SplitPathToParts_Smart(fs2us(outDir), dirPrefix, elimPrefix);
     if (!elimPrefix.IsEmpty())
     {
-      if (IsCharDirLimiter(elimPrefix.Back()))
+      if (IsPathSepar(elimPrefix.Back()))
         elimPrefix.DeleteBack();
       if (!elimPrefix.IsEmpty())
       {
@@ -73,37 +73,66 @@ static HRESULT DecompressArchive(
     }
   }
 
+  bool allFilesAreAllowed = wildcardCensor.AreAllAllowed();
+
   if (!options.StdInMode)
   {
     UInt32 numItems;
     RINOK(archive->GetNumberOfItems(&numItems));
     
-    UString filePath;
+    CReadArcItem item;
 
     for (UInt32 i = 0; i < numItems; i++)
     {
-      RINOK(arc.GetItemPath(i, filePath));
-
-      if (elimIsPossible && options.ElimDup.Val)
+      if (elimIsPossible || !allFilesAreAllowed)
       {
-        if (!IsPath1PrefixedByPath2(filePath, elimPrefix))
+        RINOK(arc.GetItem(i, item));
+      }
+      else
+      {
+        #ifdef SUPPORT_ALT_STREAMS
+        item.IsAltStream = false;
+        if (!options.NtOptions.AltStreams.Val && arc.Ask_AltStream)
+        {
+          RINOK(Archive_IsItem_AltStream(arc.Archive, i, item.IsAltStream));
+        }
+        #endif
+      }
+
+      #ifdef SUPPORT_ALT_STREAMS
+      if (!options.NtOptions.AltStreams.Val && item.IsAltStream)
+        continue;
+      #endif
+      
+      if (elimIsPossible)
+      {
+        const UString &s =
+          #ifdef SUPPORT_ALT_STREAMS
+            item.MainPath;
+          #else
+            item.Path;
+          #endif
+        if (!IsPath1PrefixedByPath2(s, elimPrefix))
           elimIsPossible = false;
         else
         {
-          wchar_t c = filePath[elimPrefix.Len()];
-          if (c != 0 && !IsCharDirLimiter(c))
+          wchar_t c = s[elimPrefix.Len()];
+          if (c == 0)
+          {
+            if (!item.MainIsDir)
+              elimIsPossible = false;
+          }
+          else if (!IsPathSepar(c))
             elimIsPossible = false;
         }
       }
 
-      bool isFolder;
-      RINOK(Archive_IsItem_Folder(archive, i, isFolder));
-      bool isAltStream;
-      RINOK(Archive_IsItem_AltStream(archive, i, isAltStream));
-      if (!options.NtOptions.AltStreams.Val && isAltStream)
-        continue;
-      if (!wildcardCensor.CheckPath(isAltStream, filePath, !isFolder))
-        continue;
+      if (!allFilesAreAllowed)
+      {
+        if (!CensorNode_CheckPath(wildcardCensor, item))
+          continue;
+      }
+
       realIndices.Add(i);
     }
     
@@ -115,7 +144,10 @@ static HRESULT DecompressArchive(
   }
 
   if (elimIsPossible)
-    outDir = outDirReduced;
+  {
+    removePathParts.Add(elimPrefix);
+    // outDir = outDirReduced;
+  }
 
   #ifdef _WIN32
   // GetCorrectFullFsPath doesn't like "..".
@@ -124,16 +156,21 @@ static HRESULT DecompressArchive(
   #endif
 
   if (outDir.IsEmpty())
-    outDir = FString(FTEXT(".")) + FString(FSTRING_PATH_SEPARATOR);
-  else
-    if (!CreateComplexDir(outDir))
-    {
-      HRESULT res = ::GetLastError();
-      if (res == S_OK)
-        res = E_FAIL;
-      errorMessage = ((UString)L"Can not create output directory ") + fs2us(outDir);
-      return res;
-    }
+    outDir = FTEXT(".") FSTRING_PATH_SEPARATOR;
+  /*
+  #ifdef _WIN32
+  else if (NName::IsAltPathPrefix(outDir)) {}
+  #endif
+  */
+  else if (!CreateComplexDir(outDir))
+  {
+    HRESULT res = ::GetLastError();
+    if (res == S_OK)
+      res = E_FAIL;
+    errorMessage.SetFromAscii("Can not create output directory: ");
+    errorMessage += fs2us(outDir);
+    return res;
+  }
 
   ecs->Init(
       options.NtOptions,
@@ -142,7 +179,7 @@ static HRESULT DecompressArchive(
       callback,
       options.StdOutMode, options.TestMode,
       outDir,
-      removePathParts,
+      removePathParts, false,
       packSize);
 
   
@@ -209,15 +246,16 @@ HRESULT Extract(
     IHashCalc *hash,
     #endif
     UString &errorMessage,
-    CDecompressStat &stat)
+    CDecompressStat &st)
 {
-  stat.Clear();
+  st.Clear();
   UInt64 totalPackSize = 0;
   CRecordVector<UInt64> arcSizes;
 
   unsigned numArcs = options.StdInMode ? 1 : arcPaths.Size();
 
   unsigned i;
+  
   for (i = 0; i < numArcs; i++)
   {
     NFind::CFileInfo fi;
@@ -272,11 +310,13 @@ HRESULT Extract(
         throw "there is no such archive";
     }
 
+    /*
     #ifndef _NO_CRYPTO
-    openCallback->Open_ClearPasswordWasAskedFlag();
+    openCallback->Open_Clear_PasswordWasAsked_Flag();
     #endif
+    */
 
-    RINOK(extractCallback->BeforeOpen(arcPath));
+    RINOK(extractCallback->BeforeOpen(arcPath, options.TestMode));
     CArchiveLink arcLink;
 
     CObjectVector<COpenType> types2 = types;
@@ -318,36 +358,17 @@ HRESULT Extract(
     op.stdInMode = options.StdInMode;
     op.stream = NULL;
     op.filePath = arcPath;
-    HRESULT result = arcLink.Open2(op, openCallback);
+
+    HRESULT result = arcLink.Open3(op, openCallback);
 
     if (result == E_ABORT)
       return result;
 
-    bool crypted = false;
-    #ifndef _NO_CRYPTO
-    crypted = openCallback->Open_WasPasswordAsked();
-    #endif
-
-    if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
+    if (result == S_OK && arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
       result = S_FALSE;
 
     // arcLink.Set_ErrorsText();
-    RINOK(extractCallback->OpenResult(arcPath, result, crypted));
-
-
-    {
-      FOR_VECTOR (r, arcLink.Arcs)
-      {
-        const CArc &arc = arcLink.Arcs[r];
-        const CArcErrorInfo &er = arc.ErrorInfo;
-        if (er.IsThereErrorOrWarning())
-        {
-          RINOK(extractCallback->SetError(r, arc.Path,
-              er.GetErrorFlags(), er.ErrorMessage,
-              er.GetWarningFlags(), er.WarningMessage));
-        }
-      }
-    }
+    RINOK(extractCallback->OpenResult(codecs, arcLink, arcPath, result));
 
     if (result != S_OK)
     {
@@ -379,8 +400,8 @@ HRESULT Extract(
           {
             if ((unsigned)index > i)
             {
-              skipArcs[index] = true;
-              correctionSize -= arcSizes[index];
+              skipArcs[(unsigned)index] = true;
+              correctionSize -= arcSizes[(unsigned)index];
             }
           }
         }
@@ -395,6 +416,9 @@ HRESULT Extract(
       }
     }
 
+    /*
+    // Now openCallback and extractCallback use same object. So we don't need to send password.
+
     #ifndef _NO_CRYPTO
     bool passwordIsDefined;
     UString password;
@@ -404,31 +428,7 @@ HRESULT Extract(
       RINOK(extractCallback->SetPassword(password));
     }
     #endif
-
-    FOR_VECTOR (k, arcLink.Arcs)
-    {
-      const CArc &arc = arcLink.Arcs[k];
-      const CArcErrorInfo &er = arc.ErrorInfo;
-
-      if (er.ErrorFormatIndex >= 0)
-      {
-        RINOK(extractCallback->OpenTypeWarning(arc.Path,
-            codecs->GetFormatNamePtr(arc.FormatIndex),
-            codecs->GetFormatNamePtr(er.ErrorFormatIndex)))
-        /*
-        UString s = L"Can not open the file as [" + codecs->Formats[arc.ErrorFormatIndex].Name + L"] archive\n";
-        s += L"The file is open as [" + codecs->Formats[arc.FormatIndex].Name + L"] archive";
-        RINOK(extractCallback->MessageError(s));
-        */
-      }
-      {
-        const UString &s = er.ErrorMessage;
-        if (!s.IsEmpty())
-        {
-          RINOK(extractCallback->MessageError(s));
-        }
-      }
-    }
+    */
 
     CArc &arc = arcLink.Arcs.Back();
     arc.MTimeDefined = (!options.StdInMode && !fi.IsDevice);
@@ -450,6 +450,7 @@ HRESULT Extract(
         options,
         calcCrc,
         extractCallback, ecs, errorMessage, packProcessed));
+
     if (!options.StdInMode)
       packProcessed = fi.Size + arcLink.VolumesSize;
     totalPackProcessed += packProcessed;
@@ -464,12 +465,13 @@ HRESULT Extract(
     RINOK(extractCallback->SetTotal(totalPackSize));
     RINOK(extractCallback->SetCompleted(&totalPackProcessed));
   }
-  stat.NumFolders = ecs->NumFolders;
-  stat.NumFiles = ecs->NumFiles;
-  stat.NumAltStreams = ecs->NumAltStreams;
-  stat.UnpackSize = ecs->UnpackSize;
-  stat.AltStreams_UnpackSize = ecs->AltStreams_UnpackSize;
-  stat.NumArchives = arcPaths.Size();
-  stat.PackSize = ecs->LocalProgressSpec->InSize;
+
+  st.NumFolders = ecs->NumFolders;
+  st.NumFiles = ecs->NumFiles;
+  st.NumAltStreams = ecs->NumAltStreams;
+  st.UnpackSize = ecs->UnpackSize;
+  st.AltStreams_UnpackSize = ecs->AltStreams_UnpackSize;
+  st.NumArchives = arcPaths.Size();
+  st.PackSize = ecs->LocalProgressSpec->InSize;
   return S_OK;
 }

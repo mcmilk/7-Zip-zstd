@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/CpuArch.h"
+
 #include "../../../Common/Defs.h"
 #include "../../../Common/IntToString.h"
 #include "../../../Common/MyException.h"
@@ -15,9 +17,13 @@
 
 #include "../FileManager/HelpUtils.h"
 
+#include "../../MyVersion.h"
+
 #include "BenchmarkDialog.h"
 
 using namespace NWindows;
+
+void GetCpuName(AString &s);
 
 static LPCWSTR kHelpTopic = L"fm/benchmark.htm";
 
@@ -72,7 +78,7 @@ static const int kMinDicLogSize = 21;
 #endif
 static const UInt32 kMinDicSize = (1 << kMinDicLogSize);
 static const UInt32 kMaxDicSize =
-    #ifdef _WIN64
+    #ifdef MY_CPU_64BIT
     (1 << 30);
     #else
     (1 << 27);
@@ -110,6 +116,34 @@ bool CBenchmarkDialog::OnInit()
     if (_font._font)
       _consoleEdit.SendMessage(WM_SETFONT, (WPARAM)_font._font, TRUE);
   }
+
+  {
+    TCHAR s[40];
+    s[0] = '/';
+    s[1] = ' ';
+    ConvertUInt32ToString(NSystem::GetNumberOfProcessors(), s + 2);
+    SetItemText(IDT_BENCH_HARDWARE_THREADS, s);
+  }
+
+  {
+    UString s;
+    {
+      AString cpuName;
+      GetCpuName(cpuName);
+      s.SetFromAscii(cpuName);
+      SetItemText(IDT_BENCH_CPU, s);
+    }
+
+    s.SetFromAscii("7-Zip " MY_VERSION " ["
+        #ifdef MY_CPU_64BIT
+          "64-bit"
+        #elif defined MY_CPU_32BIT
+          "32-bit"
+        #endif
+        "]");
+    SetItemText(IDT_BENCH_VER, s);
+  }
+
 
   UInt32 numCPUs = NSystem::GetNumberOfProcessors();
   if (numCPUs < 1)
@@ -270,9 +304,7 @@ void CBenchmarkDialog::OnChangeSettings()
 {
   EnableItem(IDB_STOP, true);
   UInt32 dictionary = OnChangeDictionary();
-  TCHAR s[40] = { TEXT('/'), TEXT(' '), 0 };
-  ConvertUInt32ToString(NSystem::GetNumberOfProcessors(), s + 2);
-  SetItemText(IDT_BENCH_HARDWARE_THREADS, s);
+  
   for (int i = 0; i < ARRAY_SIZE(g_IDs); i++)
     SetItemText(g_IDs[i], kProcessingString);
   _startTime = GetTickCount();
@@ -394,6 +426,14 @@ bool CBenchmarkDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
   ConvertUInt64ToString(Sync.NumPasses, s);
   SetItemText(IDT_BENCH_PASSES_VAL, s);
 
+  /*
+  if (Sync.FreqWasChanged)
+  {
+    SetItemText(IDT_BENCH_FREQ, Sync.Freq);
+    Sync.FreqWasChanged  = false;
+  }
+  */
+
   {
     UInt32 dicSizeTemp = (UInt32)MyMax(Sync.ProcessedSize, UInt64(1) << 20);
     dicSizeTemp = MyMin(dicSizeTemp, Sync.DictionarySize),
@@ -498,10 +538,25 @@ struct CBenchCallback: public IBenchCallback
   UInt32 dictionarySize;
   CProgressSyncInfo *Sync;
   
+  // void AddCpuFreq(UInt64 cpuFreq);
   HRESULT SetFreq(bool showFreq, UInt64 cpuFreq);
   HRESULT SetEncodeResult(const CBenchInfo &info, bool final);
   HRESULT SetDecodeResult(const CBenchInfo &info, bool final);
 };
+
+/*
+void CBenchCallback::AddCpuFreq(UInt64 cpuFreq)
+{
+  NSynchronization::CCriticalSectionLock lock(Sync->CS);
+  {
+    wchar_t s[32];
+    ConvertUInt64ToString(cpuFreq, s);
+    Sync->Freq.Add_Space_if_NotEmpty();
+    Sync->Freq += s;
+    Sync->FreqWasChanged = true;
+  }
+}
+*/
 
 HRESULT CBenchCallback::SetFreq(bool /* showFreq */, UInt64 /* cpuFreq */)
 {
@@ -605,6 +660,7 @@ HRESULT CThreadBenchmark::Process()
       CBenchCallback2 callback2;
       callback2.Sync = &sync;
       HRESULT result;
+     
       try
       {
         CObjectVector<CProperty> props;
@@ -624,11 +680,11 @@ HRESULT CThreadBenchmark::Process()
           }
           {
             CProperty prop;
-            prop.Name = L"d";
+            prop.Name = L'd';
             wchar_t s[16];
             ConvertUInt32ToString(dictionarySize, s);
             prop.Name += s;
-            prop.Name += 'b';
+            prop.Name += L'b';
             props.Add(prop);
           }
         }
@@ -724,7 +780,7 @@ HRESULT Benchmark(
     const CProperty &prop = props[i];
     UString name = prop.Name;
     name.MakeLower_Ascii();
-    if (name.IsEqualToNoCase(L"m") && prop.Value == L"*")
+    if (name.IsEqualTo_Ascii_NoCase("m") && prop.Value == L"*")
     {
       bd.TotalMode = true;
       continue;

@@ -9,26 +9,29 @@
 
 #include "../Agent/IFolderArchive.h"
 
+#include "../GUI/UpdateCallbackGUI2.h"
+
 #include "ProgressDialog2.h"
 
 class CUpdateCallback100Imp:
   public IFolderArchiveUpdateCallback,
+  public IFolderArchiveUpdateCallback2,
+  public IFolderScanProgress,
   public ICryptoGetTextPassword2,
   public ICryptoGetTextPassword,
   public IArchiveOpenCallback,
   public ICompressProgressInfo,
+  public CUpdateCallbackGUI2,
   public CMyUnknownImp
 {
-  bool _passwordIsDefined;
-  UString _password;
-  UInt64 _numFiles;
 public:
-  CProgressDialog *ProgressDialog;
 
-  CUpdateCallback100Imp(): ProgressDialog(0) {}
+  // CUpdateCallback100Imp() {}
 
-  MY_UNKNOWN_IMP5(
+  MY_UNKNOWN_IMP7(
     IFolderArchiveUpdateCallback,
+    IFolderArchiveUpdateCallback2,
+    IFolderScanProgress,
     ICryptoGetTextPassword2,
     ICryptoGetTextPassword,
     IArchiveOpenCallback,
@@ -37,18 +40,13 @@ public:
   INTERFACE_IProgress(;)
   INTERFACE_IArchiveOpenCallback(;)
   INTERFACE_IFolderArchiveUpdateCallback(;)
+  INTERFACE_IFolderArchiveUpdateCallback2(;)
+  INTERFACE_IFolderScanProgress(;)
 
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
   STDMETHOD(CryptoGetTextPassword2)(Int32 *passwordIsDefined, BSTR *password);
-
-  void Init(bool passwordIsDefined, const UString &password)
-  {
-    _passwordIsDefined = passwordIsDefined;
-    _password = password;
-    _numFiles = 0;
-  }
 };
 
 #endif

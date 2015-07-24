@@ -1,12 +1,17 @@
-7-Zip method IDs (9.24)
------------------------
+7-Zip method IDs for 7z and xz archives
+---------------------------------------
 
-Each compression or crypto method in 7z has unique binary value (ID).
+Version: 15.00
+Date: 2015-04-01
+
+Each compression or crypto method in 7z is associated with unique binary value (ID).
 The length of ID in bytes is arbitrary but it can not exceed 63 bits (8 bytes).
 
+xz and 7z formats use same ID map.
+
 If you want to add some new ID, you have two ways:
-1) Write request for allocating IDs to 7-zip developers.
-2) Generate 8-bytes ID:
+  1) Write request for allocating IDs to 7-Zip developers.
+  2) Generate 8-bytes ID:
 
     3F ZZ ZZ ZZ ZZ ZZ MM MM 
 
@@ -26,87 +31,104 @@ List of defined IDs
 00 - Copy
 
 03 - Delta
-04 - x86 (BCJ)
-05 - PPC (Big Endian)
+04 - BCJ (x86)
+05 - PPC (big-endian)
 06 - IA64
-07 - ARM (little endian)
-08 - ARM Thumb (little endian)
+07 - ARM (little-endian)
+08 - ARMT (little-endian)
 09 - SPARC
+
 21 - LZMA2
           
 02.. - Common
-   03 Swap
+   03 [Swap]
       - 2 Swap2
       - 4 Swap4
 
 03.. - 7z
-   01 - LZMA
-      01 - Version
+   01 - 
+      01 - LZMA
   
-   03 - Branch
-      01 - x86
+   03 - [Branch Codecs]
+      01 - [x86 Codecs]
          03  - BCJ
-         1B  - BCJ2
-      02 - PPC
-         05 - PPC (Big Endian)
-      03 - Alpha
+         1B  - BCJ2 (4 packed streams)
+      02 - 
+         05 - PPC (big-endian)
+      03 - 
          01 - Alpha
-      04 - IA64
+      04 - 
          01 - IA64
-      05 - ARM
-         01 - ARM
-      06 - M68
-         05 - M68 (Big Endian)
-      07 - ARM Thumb
-         01 - ARMT
-      08 - SPARC
+      05 - 
+         01 - ARM (little-endian)
+      06 - 
+         05 - M68 (big-endian)
+      07 - 
+         01 - ARMT (little-endian)
+      08 - 
          05 - SPARC
 
-   04 - PPMD
-      01 - Version
+   04 - 
+      01 - PPMD
 
    7F -
-      01 - experimental methods.
+      01 - experimental method.
 
 
-04.. - Misc
+04.. - Misc codecs
+
    00 - Reserved
-   01 - Zip
-      00 - Copy (not used). Use {00} instead
+
+   01 - [Zip]
+      00 - Copy (not used. Use {00} instead)
       01 - Shrink
       06 - Implode
       08 - Deflate
       09 - Deflate64
       10 - Imploding
-      12 - BZip2 (not used). Use {04 02 02} instead
-      14 - LZMA
+      12 - BZip2 (not used. Use {040202} instead)
+      14 - LZMA (LZMA-zip)
+      5F - xz
       60 - Jpeg
       61 - WavPack
-      62 - PPMd
+      62 - PPMd (PPMd-zip)
       63 - wzAES
-   02 - BZip
+
+   02 - 
       02 - BZip2
-   03 - Rar
+
+   03 - [Rar]
       01 - Rar15
       02 - Rar20
       03 - Rar29
-   04 - Arj
-      01 - Arj (1,2,3)
-      02 - Arj 4
-   05 - Z
-   06 - Lzh
+
+   04 - [Arj]
+      01 - Arj(1,2,3)
+      02 - Arj4
+
+   05 - [Z]
+
+   06 - [Lzh]
+
    07 - Reserved for 7z
-   08 - Cab
-   09 - NSIS
+
+   08 - [Cab]
+
+   09 - [NSIS]
       01 - DeflateNSIS
       02 - BZip2NSIS
+
+   F7 - External codecs (that are not included to 7-Zip)
+
+      0x xx - reserved
+      10 xx - reserved
 
 
 06.. - Crypto 
 
    F0 - Ciphers without hashing algo
 
-      01 - AES
+      01 - [AES]
          0x - AES-128
          4x - AES-192
          8x - AES-256
@@ -119,13 +141,16 @@ List of defined IDs
          x4 - CTR
 
    F1 - Combine Ciphers
-      01 - Zip
-         01 - Main Zip crypto algo
-      03 - RAR
+
+      01 - [Zip]
+         01 - ZipCrypto (Main Zip crypto algo)
+
+      03 - [RAR]
          02 - 
-         03 - Rar29 AES-128 + (modified SHA-1)
-      07 - 7z
-         01 - AES-256 + SHA-256
+         03 - Rar29AES (AES-128 + modified SHA-1)
+
+      07 - [7z]
+         01 - 7zAES (AES-256 + SHA-256)
 
 
 ---

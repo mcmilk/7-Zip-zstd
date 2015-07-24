@@ -63,8 +63,7 @@ bool CLangPage::OnInit()
 
     if (!LangOpen(lang, dirPrefix + fi.Name))
     {
-      if (!error.IsEmpty())
-        error += L' ';
+      error.Add_Space_if_NotEmpty();
       error += fs2us(fi.Name);
       continue;
     }
@@ -80,7 +79,7 @@ bool CLangPage::OnInit()
     index = (int)_langCombo.AddString(s);
     _langCombo.SetItemData(index, _paths.Size());
     _paths.Add(shortName);
-    if (g_LangID.IsEqualToNoCase(shortName))
+    if (g_LangID.IsEqualTo_NoCase(shortName))
       _langCombo.SetCurSel(index);
   }
   

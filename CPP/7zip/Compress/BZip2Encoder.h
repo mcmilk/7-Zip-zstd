@@ -85,7 +85,7 @@ public:
 
 class CEncoder;
 
-const int kNumPassesMax = 10;
+const unsigned kNumPassesMax = 10;
 
 class CThreadInfo
 {
@@ -111,7 +111,7 @@ private:
 
   void WriteBits2(UInt32 value, unsigned numBits);
   void WriteByte2(Byte b);
-  void WriteBit2(bool v);
+  void WriteBit2(Byte v);
   void WriteCrc2(UInt32 v);
 
   void EncodeBlock(const Byte *block, UInt32 blockSize);
@@ -198,7 +198,7 @@ public:
 
   void WriteBits(UInt32 value, unsigned numBits);
   void WriteByte(Byte b);
-  void WriteBit(bool v);
+  // void WriteBit(Byte v);
   void WriteCrc(UInt32 v);
 
   #ifndef _7ZIP_ST

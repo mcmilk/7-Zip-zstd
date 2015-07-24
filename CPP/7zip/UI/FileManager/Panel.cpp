@@ -477,7 +477,7 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
   _comboBoxEdit.SetUserDataLongPtr(LONG_PTR(&_comboBoxEdit));
   _comboBoxEdit._panel = this;
    #ifndef _UNICODE
-   if(g_IsNT)
+   if (g_IsNT)
      _comboBoxEdit._origWindowProc =
       (WNDPROC)_comboBoxEdit.SetLongPtrW(GWLP_WNDPROC, LONG_PTR(ComboBoxEditSubclassProc));
    else
@@ -675,7 +675,7 @@ void CPanel::MessageBoxError2Lines(LPCWSTR message, HRESULT errorCode)
   UString m = message;
   if (errorCode != 0)
   {
-    m += L'\n';
+    m.Add_LF();
     m += HResultToMessage(errorCode);
   }
   MessageBoxMyError(m);
@@ -708,29 +708,32 @@ void CPanel::SetFocusToLastRememberedItem()
 
 UString CPanel::GetFolderTypeID() const
 {
-  NCOM::CPropVariant prop;
-  if (_folder->GetFolderProperty(kpidType, &prop) == S_OK)
-    if (prop.vt == VT_BSTR)
-      return (const wchar_t *)prop.bstrVal;
-  return L"";
+  {
+    NCOM::CPropVariant prop;
+    if (_folder->GetFolderProperty(kpidType, &prop) == S_OK)
+      if (prop.vt == VT_BSTR)
+        return (const wchar_t *)prop.bstrVal;
+  }
+  return UString();
 }
 
-bool CPanel::IsFolderTypeEqTo(const wchar_t *s) const
+bool CPanel::IsFolderTypeEqTo(const char *s) const
 {
-  return GetFolderTypeID() == s;
+  return StringsAreEqual_Ascii(GetFolderTypeID(), s);
 }
 
-bool CPanel::IsRootFolder() const { return IsFolderTypeEqTo(L"RootFolder"); }
-bool CPanel::IsFSFolder() const { return IsFolderTypeEqTo(L"FSFolder"); }
-bool CPanel::IsFSDrivesFolder() const { return IsFolderTypeEqTo(L"FSDrives"); }
+bool CPanel::IsRootFolder() const { return IsFolderTypeEqTo("RootFolder"); }
+bool CPanel::IsFSFolder() const { return IsFolderTypeEqTo("FSFolder"); }
+bool CPanel::IsFSDrivesFolder() const { return IsFolderTypeEqTo("FSDrives"); }
+bool CPanel::IsAltStreamsFolder() const { return IsFolderTypeEqTo("AltStreamsFolder"); }
 bool CPanel::IsArcFolder() const
 {
-  return GetFolderTypeID().IsPrefixedBy(L"7-Zip");
+  return GetFolderTypeID().IsPrefixedBy_Ascii_NoCase("7-Zip");
 }
 
 UString CPanel::GetFsPath() const
 {
-  if (IsFSDrivesFolder() && !IsDeviceDrivesPrefix())
+  if (IsFSDrivesFolder() && !IsDeviceDrivesPrefix() && !IsSuperDrivesPrefix())
     return UString();
   return _currentFolderPrefix;
 }
@@ -742,12 +745,6 @@ UString CPanel::GetDriveOrNetworkPrefix() const
   UString drive = GetFsPath();
   drive.DeleteFrom(NFile::NName::GetRootPrefixSize(drive));
   return drive;
-}
-
-bool CPanel::DoesItSupportOperations() const
-{
-  CMyComPtr<IFolderOperations> folderOperations;
-  return _folder.QueryInterface(IID_IFolderOperations, &folderOperations) == S_OK;
 }
 
 void CPanel::SetListViewMode(UInt32 index)
@@ -805,7 +802,7 @@ void CPanel::AddToArchive()
 {
   CRecordVector<UInt32> indices;
   GetOperatedItemIndices(indices);
-  if (!IsFsOrDrivesFolder())
+  if (!Is_IO_FS_Folder())
   {
     MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
     return;
@@ -817,20 +814,16 @@ void CPanel::AddToArchive()
   }
   UStringVector names;
 
-  UString curPrefix = _currentFolderPrefix;
-  UString destCurDirPrefix = _currentFolderPrefix;
+  const UString curPrefix = GetFsPath();
+  UString destCurDirPrefix = curPrefix;
   if (IsFSDrivesFolder())
-  {
     destCurDirPrefix = ROOT_FS_FOLDER;
-    if (!IsDeviceDrivesPrefix())
-      curPrefix.Empty();
-  }
 
   FOR_VECTOR (i, indices)
-    names.Add(curPrefix + GetItemRelPath(indices[i]));
+    names.Add(curPrefix + GetItemRelPath2(indices[i]));
   bool fromPrev = (names.Size() > 1);
-  const UString archiveName = CreateArchiveName(names.Front(), fromPrev, false);
-  HRESULT res = CompressFiles(destCurDirPrefix, archiveName, L"",
+  const UString arcName = CreateArchiveName(names.Front(), fromPrev, false);
+  HRESULT res = CompressFiles(destCurDirPrefix, arcName, L"",
       true, // addExtension
       names, false, true, false);
   if (res != S_OK)
@@ -841,23 +834,24 @@ void CPanel::AddToArchive()
   // KillSelection();
 }
 
-static UString GetSubFolderNameForExtract(const UString &archiveName)
+static UString GetSubFolderNameForExtract(const UString &arcPath)
 {
-  UString res = archiveName;
-  int slashPos = res.ReverseFind(WCHAR_PATH_SEPARATOR);
-  int dotPos = res.ReverseFind(L'.');
-  if (dotPos < 0 || slashPos > dotPos)
-    res += L'~';
+  UString s = arcPath;
+  int slashPos = s.ReverseFind_PathSepar();
+  int dotPos = s.ReverseFind_Dot();
+  if (dotPos <= slashPos + 1)
+    s += L'~';
   else
   {
-    res.DeleteFrom(dotPos);
-    res.TrimRight();
+    s.DeleteFrom(dotPos);
+    s.TrimRight();
   }
-  return res;
+  return s;
 }
 
 void CPanel::GetFilePaths(const CRecordVector<UInt32> &indices, UStringVector &paths, bool allowFolders)
 {
+  const UString prefix = GetFsPath();
   FOR_VECTOR (i, indices)
   {
     int index = indices[i];
@@ -866,7 +860,7 @@ void CPanel::GetFilePaths(const CRecordVector<UInt32> &indices, UStringVector &p
       paths.Clear();
       break;
     }
-    paths.Add(GetItemFullPath(index));
+    paths.Add(prefix + GetItemRelPath2(index));
   }
   if (paths.Size() == 0)
   {
@@ -888,26 +882,31 @@ void CPanel::ExtractArchives()
   GetFilePaths(indices, paths);
   if (paths.IsEmpty())
     return;
-  UString folderName;
+  
+  UString outFolder = GetFsPath();
   if (indices.Size() == 1)
-    folderName = GetSubFolderNameForExtract(GetItemRelPath(indices[0]));
+    outFolder += GetSubFolderNameForExtract(GetItemRelPath(indices[0]));
   else
-    folderName = L"*";
-  ::ExtractArchives(paths, _currentFolderPrefix + folderName + UString(WCHAR_PATH_SEPARATOR)
+    outFolder += L'*';
+  outFolder.Add_PathSepar();
+  
+  ::ExtractArchives(paths, outFolder
       , true // showDialog
       , false // elimDup
       );
 }
 
-void AddValuePair(UINT resourceID, UInt64 value, UString &s)
+/*
+static void AddValuePair(UINT resourceID, UInt64 value, UString &s)
 {
-  wchar_t sz[32];
-  s += LangString(resourceID);
+  AddLangString(s, resourceID);
+  char sz[32];
   s += L": ";
   ConvertUInt64ToString(value, sz);
-  s += sz;
-  s += L'\n';
+  s.AddAsciiStr(sz);
+  s.Add_LF();
 }
+*/
 
 class CThreadTest: public CProgressThreadVirt
 {
@@ -939,8 +938,8 @@ HRESULT CThreadTest::ProcessVirt()
     AddValuePair(IDS_PROP_FILES, ExtractCallbackSpec->NumFiles, s);
     // AddValuePair(IDS_PROP_SIZE, ExtractCallbackSpec->UnpackSize, s);
     // AddSizePair(IDS_COMPRESSED_COLON, Stat.PackSize, s);
-    s += L'\n';
-    s += LangString(IDS_MESSAGE_NO_ERRORS);
+    s.Add_LF();
+    AddLangString(s, IDS_MESSAGE_NO_ERRORS);
     FinalMessage.OkMessage.Message = s;
   }
   return S_OK;
@@ -948,18 +947,18 @@ HRESULT CThreadTest::ProcessVirt()
 */
 
 /*
-static void AddSizePair(UINT resourceID, UInt32 langID, UInt64 value, UString &s)
+static void AddSizePair(UInt32 langID, UInt64 value, UString &s)
 {
-  wchar_t sz[32];
-  s += LangString(resourceID, langID);
+  char sz[32];
+  AddLangString(s, langID);
   s += L' ';
   ConvertUInt64ToString(value, sz);
-  s += sz;
+  s.AddAsciiStr(sz);
   ConvertUInt64ToString(value >> 20, sz);
-  s += L" (";
-  s += sz;
-  s += L" MB)";
-  s += L'\n';
+  s.AddAsciiStr(" (");
+  s.AddAsciiStr(sz);
+  s.AddAsciiStr(" MB)");
+  s.Add_LF();
 }
 */
 

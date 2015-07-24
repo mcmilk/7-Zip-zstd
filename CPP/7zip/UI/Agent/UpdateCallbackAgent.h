@@ -10,8 +10,10 @@
 class CUpdateCallbackAgent: public IUpdateCallbackUI
 {
   INTERFACE_IUpdateCallbackUI(;)
+  
   CMyComPtr<ICryptoGetTextPassword2> _cryptoGetTextPassword;
   CMyComPtr<IFolderArchiveUpdateCallback> Callback;
+  CMyComPtr<IFolderArchiveUpdateCallback2> Callback2;
   CMyComPtr<ICompressProgressInfo> _compressProgress;
 public:
   void SetCallback(IFolderArchiveUpdateCallback *callback);

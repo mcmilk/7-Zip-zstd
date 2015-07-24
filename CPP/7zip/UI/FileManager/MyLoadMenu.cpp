@@ -13,6 +13,7 @@
 #include "App.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
+#include "MyLoadMenu.h"
 #include "RegistryUtils.h"
 
 #include "resource.h"
@@ -100,19 +101,19 @@ public:
 #define MIIM_FTYPE       0x00000100
 #endif
 
-static UINT Get_fMaskForString()
+static UINT Get_fMask_for_String()
 {
   return g_IsNew_fMask ? MIIM_STRING : MIIM_TYPE;
 }
 
-static UINT Get_fMaskForFTypeAndString()
+static UINT Get_fMask_for_FType_and_String()
 {
   return g_IsNew_fMask ? (MIIM_STRING | MIIM_FTYPE) : MIIM_TYPE;
 }
 */
 
-static inline UINT Get_fMaskForString() { return MIIM_TYPE; }
-static inline UINT Get_fMaskForFTypeAndString() { return MIIM_TYPE; }
+static inline UINT Get_fMask_for_String() { return MIIM_TYPE; }
+static inline UINT Get_fMask_for_FType_and_String() { return MIIM_TYPE; }
 
 static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
 {
@@ -121,7 +122,7 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
   for (int i = 0;; i++)
   {
     CMenuItem item;
-    item.fMask = Get_fMaskForString() | MIIM_SUBMENU | MIIM_ID;
+    item.fMask = Get_fMask_for_String() | MIIM_SUBMENU | MIIM_ID;
     item.fType = MFT_STRING;
     if (!menu.GetItem(i, true, item))
       break;
@@ -157,14 +158,13 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
         if (newString.IsEmpty())
           continue;
 
-        UString shorcutString = item.StringValue;
-        int tabPos = shorcutString.ReverseFind(wchar_t('\t'));
+        int tabPos = item.StringValue.ReverseFind(L'\t');
         if (tabPos >= 0)
-          newString += shorcutString.Ptr(tabPos);
+          newString += item.StringValue.Ptr(tabPos);
       }
       {
         item.StringValue = newString;
-        item.fMask = Get_fMaskForString();
+        item.fMask = Get_fMask_for_String();
         item.fType = MFT_STRING;
         menu.SetItem(i, true, item);
       }
@@ -203,7 +203,7 @@ static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
   for (int i = 0;; i++)
   {
     CMenuItem item;
-    item.fMask = MIIM_SUBMENU | MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
+    item.fMask = MIIM_SUBMENU | MIIM_STATE | MIIM_ID | Get_fMask_for_FType_and_String();
     item.fType = MFT_STRING;
 
     if (!srcMenu.GetItem(i, true, item))
@@ -307,13 +307,14 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     subMenu.Attach(menu.GetSubMenu(0));
     subMenu.RemoveAllItems();
     int i;
+    
     for (i = 0; i < 10; i++)
     {
       UString s = LangString(IDS_BOOKMARK);
-      s += L' ';
+      s.Add_Space();
       wchar_t c = (wchar_t)(L'0' + i);
       s += c;
-      s += L"\tAlt+Shift+";
+      s.AddAscii("\tAlt+Shift+");
       s += c;
       subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, s);
     }
@@ -332,7 +333,7 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
       }
       if (s.IsEmpty())
         s = L'-';
-      s += L"\tAlt+";
+      s.AddAscii("\tAlt+");
       s += (wchar_t)(L'0' + i);
       menu.AppendItem(MF_STRING, kOpenBookmarkMenuID + i, s);
     }
@@ -348,8 +349,7 @@ void OnMenuUnActivating(HWND hWnd, HMENU hMenu, int id)
 }
 */
 
-void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
-    bool isFsFolder, int numItems, bool allAreFiles)
+void CFileMenu::Load(HMENU hMenu, unsigned startPos)
 {
   CMenu destMenu;
   destMenu.Attach(hMenu);
@@ -357,15 +357,17 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
   UString diffPath;
   ReadRegDiff(diffPath);
   
-  int numRealItems = startPos;
-  for (int i = 0;; i++)
+  unsigned numRealItems = startPos;
+  for (unsigned i = 0;; i++)
   {
     CMenuItem item;
 
-    item.fMask = MIIM_SUBMENU | MIIM_STATE | MIIM_ID | Get_fMaskForFTypeAndString();
+    item.fMask = MIIM_SUBMENU | MIIM_STATE | MIIM_ID | Get_fMask_for_FType_and_String();
     item.fType = MFT_STRING;
+    
     if (!g_FileMenu.GetItem(i, true, item))
       break;
+    
     {
       if (!programMenu && item.wID == IDCLOSE)
         continue;
@@ -375,6 +377,26 @@ void LoadFileMenu(HMENU hMenu, int startPos, bool programMenu,
 
       bool isOneFsFile = (isFsFolder && numItems == 1 && allAreFiles);
       bool disable = (!isOneFsFile && (item.wID == IDM_SPLIT || item.wID == IDM_COMBINE));
+
+      if (readOnly)
+      {
+        switch (item.wID)
+        {
+          case IDM_RENAME:
+          case IDM_MOVE_TO:
+          case IDM_DELETE:
+          case IDM_COMMENT:
+          case IDM_CREATE_FOLDER:
+          case IDM_CREATE_FILE:
+            disable = true;
+        }
+      }
+
+      if (item.wID == IDM_LINK && numItems != 1)
+        disable = true;
+
+      if (item.wID == IDM_ALT_STREAMS)
+        disable = !isAltStreamsSupported;
 
       bool isBigScreen = NControl::IsDialogSizeOK(40, 200);
 
@@ -434,6 +456,7 @@ bool ExecuteFileCommand(int id)
     case IDM_CREATE_FILE: g_App.CreateFile(); break;
     #ifndef UNDER_CE
     case IDM_LINK: g_App.Link(); break;
+    case IDM_ALT_STREAMS: g_App.OpenAltStreams(); break;
     #endif
     default: return false;
   }

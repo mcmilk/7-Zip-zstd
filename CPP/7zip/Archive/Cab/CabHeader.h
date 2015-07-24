@@ -1,4 +1,4 @@
-// Archive/Cab/Header.h
+// Archive/CabHeader.h
 
 #ifndef __ARCHIVE_CAB_HEADER_H
 #define __ARCHIVE_CAB_HEADER_H
@@ -10,7 +10,7 @@ namespace NCab {
 namespace NHeader {
 
 const unsigned kMarkerSize = 8;
-extern Byte kMarker[kMarkerSize];
+extern const Byte kMarker[kMarkerSize];
 
 namespace NArcFlags
 {

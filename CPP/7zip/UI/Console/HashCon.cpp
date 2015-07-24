@@ -3,9 +3,6 @@
 #include "StdAfx.h"
 
 #include "../../../Common/IntToString.h"
-#include "../../../Common/StringConvert.h"
-
-#include "../../../Windows/ErrorMsg.h"
 
 #include "ConsoleClose.h"
 #include "HashCon.h"
@@ -14,53 +11,85 @@ static const wchar_t *kEmptyFileAlias = L"[Content]";
 
 static const char *kScanningMessage = "Scanning";
 
-HRESULT CHashCallbackConsole::CheckBreak()
+static HRESULT CheckBreak2()
 {
   return NConsoleClose::TestBreakSignal() ? E_ABORT : S_OK;
 }
 
+HRESULT CHashCallbackConsole::CheckBreak()
+{
+  return CheckBreak2();
+}
+
 HRESULT CHashCallbackConsole::StartScanning()
 {
-  (*OutStream) << kScanningMessage;
-  return CheckBreak();
+  if (PrintHeaders && _so)
+    *_so << kScanningMessage << endl;
+  if (NeedPercents())
+  {
+    _percent.ClearCurState();
+    _percent.Command = "Scan";
+  }
+  return CheckBreak2();
 }
 
-HRESULT CHashCallbackConsole::ScanProgress(UInt64 /* numFolders */, UInt64 /* numFiles */, UInt64 /* totalSize */, const wchar_t * /* path */, bool /* isDir */)
+HRESULT CHashCallbackConsole::ScanProgress(const CDirItemsStat &st, const FString &path, bool /* isDir */)
 {
-  return CheckBreak();
+  if (NeedPercents())
+  {
+    _percent.Files = st.NumDirs + st.NumFiles + st.NumAltStreams;
+    _percent.Completed = st.GetTotalBytes();
+    _percent.FileName = fs2us(path);
+    _percent.Print();
+  }
+  return CheckBreak2();
 }
 
-HRESULT CHashCallbackConsole::CanNotFindError(const wchar_t *name, DWORD systemError)
+HRESULT CHashCallbackConsole::ScanError(const FString &path, DWORD systemError)
 {
-  return CanNotFindError_Base(name, systemError);
+  return ScanError_Base(path, systemError);
 }
 
-HRESULT CHashCallbackConsole::FinishScanning()
+void Print_DirItemsStat(AString &s, const CDirItemsStat &st);
+
+HRESULT CHashCallbackConsole::FinishScanning(const CDirItemsStat &st)
 {
-  (*OutStream) << endl << endl;
-  return CheckBreak();
+  if (NeedPercents())
+  {
+    _percent.ClosePrint(true);
+    _percent.ClearCurState();
+  }
+  if (PrintHeaders && _so)
+  {
+    Print_DirItemsStat(_s, st);
+    *_so << _s << endl << endl;
+  }
+  return CheckBreak2();
 }
 
 HRESULT CHashCallbackConsole::SetNumFiles(UInt64 /* numFiles */)
 {
-  return CheckBreak();
+  return CheckBreak2();
 }
 
 HRESULT CHashCallbackConsole::SetTotal(UInt64 size)
 {
-  if (EnablePercents)
-    m_PercentPrinter.SetTotal(size);
-  return CheckBreak();
+  if (NeedPercents())
+  {
+    _percent.Total = size;
+    _percent.Print();
+  }
+  return CheckBreak2();
 }
 
 HRESULT CHashCallbackConsole::SetCompleted(const UInt64 *completeValue)
 {
-  if (completeValue && EnablePercents)
+  if (completeValue && NeedPercents())
   {
-    m_PercentPrinter.SetRatio(*completeValue);
-    m_PercentPrinter.PrintRatio();
+    _percent.Completed = *completeValue;
+    _percent.Print();
   }
-  return CheckBreak();
+  return CheckBreak2();
 }
 
 static void AddMinuses(AString &s, unsigned num)
@@ -69,171 +98,228 @@ static void AddMinuses(AString &s, unsigned num)
     s += '-';
 }
 
-static void SetSpaces(char *s, int num)
+static void AddSpaces_if_Positive(AString &s, int num)
 {
   for (int i = 0; i < num; i++)
-    s[i] = ' ';
+    s.Add_Space();
 }
 
-static void SetSpacesAndNul(char *s, int num)
+static void SetSpacesAndNul(char *s, unsigned num)
 {
-  SetSpaces(s, num);
+  for (unsigned i = 0; i < num; i++)
+    s[i] = ' ';
   s[num] = 0;
 }
 
-static void AddSpaces(UString &s, int num)
-{
-  for (int i = 0; i < num; i++)
-    s += ' ';
-}
+static const unsigned kSizeField_Len = 13;
+static const unsigned kNameField_Len = 12;
 
-static const int kSizeField_Len = 13;
-static const int kNameField_Len = 12;
+static const unsigned kHashColumnWidth_Min = 4 * 2;
 
 static unsigned GetColumnWidth(unsigned digestSize)
 {
   unsigned width = digestSize * 2;
-  const unsigned kMinColumnWidth = 8;
-  return width < kMinColumnWidth ? kMinColumnWidth: width;
+  return width < kHashColumnWidth_Min ? kHashColumnWidth_Min: width;
 }
 
 void CHashCallbackConsole::PrintSeparatorLine(const CObjectVector<CHasherState> &hashers)
 {
-  AString s;
+  _s.Empty();
+  
   for (unsigned i = 0; i < hashers.Size(); i++)
   {
+    if (i != 0)
+      _s.Add_Space();
     const CHasherState &h = hashers[i];
-    AddMinuses(s, GetColumnWidth(h.DigestSize));
-    s += ' ';
+    AddMinuses(_s, GetColumnWidth(h.DigestSize));
   }
-  AddMinuses(s, kSizeField_Len);
-  s += "  ";
-  AddMinuses(s, kNameField_Len);
-  m_PercentPrinter.PrintString(s);
-  m_PercentPrinter.PrintNewLine();
+
+  if (PrintSize)
+  {
+    _s.Add_Space();
+    AddMinuses(_s, kSizeField_Len);
+  }
+
+  if (PrintName)
+  {
+    AddSpacesBeforeName();
+    AddMinuses(_s, kNameField_Len);
+  }
+  
+  *_so << _s << endl;
 }
 
 HRESULT CHashCallbackConsole::BeforeFirstFile(const CHashBundle &hb)
 {
-  UString s;
-  FOR_VECTOR (i, hb.Hashers)
+  if (PrintHeaders && _so)
   {
-    const CHasherState &h = hb.Hashers[i];
-    s += h.Name;
-    AddSpaces(s, (int)GetColumnWidth(h.DigestSize) - h.Name.Len() + 1);
+    _s.Empty();
+    ClosePercents_for_so();
+    
+    FOR_VECTOR (i, hb.Hashers)
+    {
+      if (i != 0)
+        _s.Add_Space();
+      const CHasherState &h = hb.Hashers[i];
+      _s += h.Name;
+      AddSpaces_if_Positive(_s, (int)GetColumnWidth(h.DigestSize) - (int)h.Name.Len());
+    }
+    
+    if (PrintSize)
+    {
+      _s.Add_Space();
+      const AString s2 = "Size";
+      AddSpaces_if_Positive(_s, (int)kSizeField_Len - (int)s2.Len());
+      _s += s2;
+    }
+    
+    if (PrintName)
+    {
+      AddSpacesBeforeName();
+      _s += "Name";
+    }
+    
+    *_so << _s << endl;
+    PrintSeparatorLine(hb.Hashers);
   }
-  UString s2 = L"Size";
-  AddSpaces(s, kSizeField_Len - s2.Len());
-  s += s2;
-  s += L"  ";
-  s += L"Name";
-  m_PercentPrinter.PrintString(s);
-  m_PercentPrinter.PrintNewLine();
-  PrintSeparatorLine(hb.Hashers);
-  return CheckBreak();
+  
+  return CheckBreak2();
 }
 
-HRESULT CHashCallbackConsole::OpenFileError(const wchar_t *name, DWORD systemError)
+HRESULT CHashCallbackConsole::OpenFileError(const FString &path, DWORD systemError)
 {
-  FailedCodes.Add(systemError);
-  FailedFiles.Add(name);
-  // if (systemError == ERROR_SHARING_VIOLATION)
-  {
-    m_PercentPrinter.PrintString(name);
-    m_PercentPrinter.PrintString(": WARNING: ");
-    m_PercentPrinter.PrintString(NWindows::NError::MyFormatMessage(systemError));
-    return S_FALSE;
-  }
-  // return systemError;
+  return OpenFileError_Base(path, systemError);
 }
 
 HRESULT CHashCallbackConsole::GetStream(const wchar_t *name, bool /* isFolder */)
 {
-  m_FileName = name;
-  return CheckBreak();
+  _fileName = name;
+
+  if (NeedPercents())
+  {
+    if (PrintNameInPercents)
+    {
+      _percent.FileName.Empty();
+      if (name)
+        _percent.FileName = name;
+    }
+   _percent.Print();
+  }
+  return CheckBreak2();
 }
 
 void CHashCallbackConsole::PrintResultLine(UInt64 fileSize,
     const CObjectVector<CHasherState> &hashers, unsigned digestIndex, bool showHash)
 {
+  ClosePercents_for_so();
+
+  _s.Empty();
+
   FOR_VECTOR (i, hashers)
   {
     const CHasherState &h = hashers[i];
-
     char s[k_HashCalc_DigestSize_Max * 2 + 64];
     s[0] = 0;
     if (showHash)
       AddHashHexToString(s, h.Digests[digestIndex], h.DigestSize);
-    SetSpacesAndNul(s + strlen(s), (int)GetColumnWidth(h.DigestSize) - (int)strlen(s) + 1);
-    m_PercentPrinter.PrintString(s);
+    SetSpacesAndNul(s + strlen(s), (int)GetColumnWidth(h.DigestSize) - (int)strlen(s));
+    if (i != 0)
+      _s.Add_Space();
+    _s += s;
   }
-  char s[64];
-  s[0] = 0;
-  char *p = s;
-  if (showHash && fileSize != 0)
+  
+  if (PrintSize)
   {
-    p = s + 32;
-    ConvertUInt64ToString(fileSize, p);
-    int numSpaces = kSizeField_Len - (int)strlen(p);
-    if (numSpaces > 0)
+    _s.Add_Space();
+
+    char s[kSizeField_Len + 32];
+    char *p = s;
+    
+    if (showHash)
     {
-      p -= numSpaces;
-      SetSpaces(p, numSpaces);
+      p = s + kSizeField_Len;
+      ConvertUInt64ToString(fileSize, p);
+      int numSpaces = kSizeField_Len - (int)strlen(p);
+      if (numSpaces > 0)
+      {
+        p -= (unsigned)numSpaces;
+        for (unsigned i = 0; i < (unsigned)numSpaces; i++)
+          p[i] = ' ';
+      }
     }
+    else
+      SetSpacesAndNul(s, kSizeField_Len);
+    
+    _s += p;
   }
-  else
-    SetSpacesAndNul(s, kSizeField_Len - (int)strlen(s));
-  unsigned len = (unsigned)strlen(p);
-  p[len] = ' ';
-  p[len + 1] = ' ';
-  p[len + 2] = 0;
-  m_PercentPrinter.PrintString(p);
+
+  if (PrintName)
+    AddSpacesBeforeName();
+  
+  *_so << _s;
 }
 
 HRESULT CHashCallbackConsole::SetOperationResult(UInt64 fileSize, const CHashBundle &hb, bool showHash)
 {
-  PrintResultLine(fileSize, hb.Hashers, k_HashCalc_Index_Current, showHash);
-  if (m_FileName.IsEmpty())
-    m_PercentPrinter.PrintString(kEmptyFileAlias);
-  else
-    m_PercentPrinter.PrintString(m_FileName);
-  m_PercentPrinter.PrintNewLine();
-  return S_OK;
+  if (_so)
+  {
+    PrintResultLine(fileSize, hb.Hashers, k_HashCalc_Index_Current, showHash);
+    if (PrintName)
+    {
+      if (_fileName.IsEmpty())
+        *_so << kEmptyFileAlias;
+      else
+        *_so << _fileName;
+    }
+    *_so << endl;
+  }
+  
+  if (NeedPercents())
+  {
+    _percent.Files++;
+    _percent.Print();
+  }
+
+  return CheckBreak2();
 }
 
 static const char *k_DigestTitles[] =
 {
-    " :"
+    " : "
   , " for data:              "
   , " for data and names:    "
   , " for streams and names: "
 };
 
-static void PrintSum(CStdOutStream &p, const CHasherState &h, unsigned digestIndex)
+static void PrintSum(CStdOutStream &so, const CHasherState &h, unsigned digestIndex)
 {
+  so << h.Name;
+  
+  {
+    AString temp;
+    AddSpaces_if_Positive(temp, 6 - (int)h.Name.Len());
+    so << temp;
+  }
+
+  so << k_DigestTitles[digestIndex];
+
   char s[k_HashCalc_DigestSize_Max * 2 + 64];
-  UString name = h.Name;
-  AddSpaces(name, 6 - (int)name.Len());
-  p << name;
-  p << k_DigestTitles[digestIndex];
   s[0] = 0;
   AddHashHexToString(s, h.Digests[digestIndex], h.DigestSize);
-  p << s;
-  p << "\n";
+  so << s << endl;
 }
 
-
-void PrintHashStat(CStdOutStream &p, const CHashBundle &hb)
+void PrintHashStat(CStdOutStream &so, const CHashBundle &hb)
 {
   FOR_VECTOR (i, hb.Hashers)
   {
     const CHasherState &h = hb.Hashers[i];
-    p << "\n";
-    PrintSum(p, h, k_HashCalc_Index_DataSum);
+    PrintSum(so, h, k_HashCalc_Index_DataSum);
     if (hb.NumFiles != 1 || hb.NumDirs != 0)
-      PrintSum(p, h, k_HashCalc_Index_NamesSum);
+      PrintSum(so, h, k_HashCalc_Index_NamesSum);
     if (hb.NumAltStreams != 0)
-      PrintSum(p, h, k_HashCalc_Index_StreamsSum);
+      PrintSum(so, h, k_HashCalc_Index_StreamsSum);
+    so << endl;
   }
 }
 
@@ -243,32 +329,39 @@ void CHashCallbackConsole::PrintProperty(const char *name, UInt64 value)
   s[0] = ':';
   s[1] = ' ';
   ConvertUInt64ToString(value, s + 2);
-  m_PercentPrinter.PrintString(name);
-  m_PercentPrinter.PrintString(s);
-  m_PercentPrinter.PrintNewLine();
+  *_so << name << s << endl;
 }
 
 HRESULT CHashCallbackConsole::AfterLastFile(const CHashBundle &hb)
 {
-  PrintSeparatorLine(hb.Hashers);
-
-  PrintResultLine(hb.FilesSize, hb.Hashers, k_HashCalc_Index_DataSum, true);
-  m_PercentPrinter.PrintNewLine();
-  m_PercentPrinter.PrintNewLine();
+  ClosePercents2();
   
-  if (hb.NumFiles != 1 || hb.NumDirs != 0)
+  if (PrintHeaders && _so)
   {
-    if (hb.NumDirs != 0)
-      PrintProperty("Folders", hb.NumDirs);
-    PrintProperty("Files", hb.NumFiles);
+    PrintSeparatorLine(hb.Hashers);
+    
+    PrintResultLine(hb.FilesSize, hb.Hashers, k_HashCalc_Index_DataSum, true);
+    
+    *_so << endl << endl;
+    
+    if (hb.NumFiles != 1 || hb.NumDirs != 0)
+    {
+      if (hb.NumDirs != 0)
+        PrintProperty("Folders", hb.NumDirs);
+      PrintProperty("Files", hb.NumFiles);
+    }
+    
+    PrintProperty("Size", hb.FilesSize);
+    
+    if (hb.NumAltStreams != 0)
+    {
+      PrintProperty("Alternate streams", hb.NumAltStreams);
+      PrintProperty("Alternate streams size", hb.AltStreamsSize);
+    }
+    
+    *_so << endl;
+    PrintHashStat(*_so, hb);
   }
-  PrintProperty("Size", hb.FilesSize);
-  if (hb.NumAltStreams != 0)
-  {
-    PrintProperty("AltStreams", hb.NumAltStreams);
-    PrintProperty("AltStreams size", hb.AltStreamsSize);
-  }
-  PrintHashStat(*m_PercentPrinter.OutStream, hb);
-  m_PercentPrinter.PrintNewLine();
+
   return S_OK;
 }

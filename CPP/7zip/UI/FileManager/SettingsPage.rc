@@ -1,7 +1,7 @@
 #include "SettingsPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 200
+#define xc 240
 #define yc 120
 
 IDD_SETTINGS  MY_PAGE

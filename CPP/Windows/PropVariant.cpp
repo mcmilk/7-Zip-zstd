@@ -35,7 +35,7 @@ HRESULT PropVarEm_Set_Str(PROPVARIANT *p, const char *s) throw()
   p->vt = VT_BSTR;
   BSTR dest = p->bstrVal;
   for (UINT i = 0; i <= len; i++)
-    dest[i] = s[i];
+    dest[i] = (Byte)s[i];
   return S_OK;
 }
 
@@ -97,6 +97,48 @@ CPropVariant& CPropVariant::operator=(LPCOLESTR lpszSrc)
   return *this;
 }
 
+CPropVariant& CPropVariant::operator=(const UString &s)
+{
+  InternalClear();
+  vt = VT_BSTR;
+  wReserved1 = 0;
+  bstrVal = ::SysAllocStringLen(s, s.Len());
+  if (!bstrVal)
+    throw kMemException;
+  return *this;
+}
+
+CPropVariant& CPropVariant::operator=(const UString2 &s)
+{
+  /*
+  if (s.IsEmpty())
+    *this = L"";
+  else
+  */
+  {
+    InternalClear();
+    vt = VT_BSTR;
+    wReserved1 = 0;
+    bstrVal = ::SysAllocStringLen(s.GetRawPtr(), s.Len());
+    if (!bstrVal)
+      throw kMemException;
+    /* SysAllocStringLen probably appends a null-terminating character for NULL string.
+       But it doesn't specified in MSDN.
+       But we suppose that it works
+
+    if (!s.GetRawPtr())
+    {
+      *bstrVal = 0;
+    }
+    */
+
+    /* MSDN: Windows CE: SysAllocStringLen() : Passing invalid (and under some circumstances NULL)
+                         pointers to this function causes  an unexpected termination of the application.
+       Is it safe? Maybe we must chamnge the code for that case ? */
+  }
+  return *this;
+}
+
 CPropVariant& CPropVariant::operator=(const char *s)
 {
   InternalClear();
@@ -112,8 +154,9 @@ CPropVariant& CPropVariant::operator=(const char *s)
   }
   else
   {
+    BSTR dest = bstrVal;
     for (UINT i = 0; i <= len; i++)
-      bstrVal[i] = s[i];
+      dest[i] = (Byte)s[i];
   }
   return *this;
 }

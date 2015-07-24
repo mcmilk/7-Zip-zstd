@@ -8,6 +8,7 @@ COMMON_OBJS = \
   $O\MyVector.obj \
   $O\MyXml.obj \
   $O\NewHandler.obj \
+  $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
@@ -86,7 +87,6 @@ AR_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
-  $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\DummyOutStream.obj \
   $O\FindSignature.obj \
@@ -172,14 +172,11 @@ ZIP_OBJS = \
   $O\ZipRegister.obj \
 
 COMPRESS_OBJS = \
-  $O\ArjDecoder1.obj \
-  $O\ArjDecoder2.obj \
   $O\Bcj2Coder.obj \
   $O\Bcj2Register.obj \
   $O\BcjCoder.obj \
   $O\BcjRegister.obj \
   $O\BitlDecoder.obj \
-  $O\BranchCoder.obj \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\ByteSwap.obj \
@@ -231,8 +228,6 @@ CRYPTO_OBJS = \
   $O\RandGen.obj \
   $O\Rar20Crypto.obj \
   $O\RarAes.obj \
-  $O\Sha1.obj \
-  $O\Sha1Reg.obj \
   $O\WzAes.obj \
   $O\ZipCrypto.obj \
   $O\ZipStrong.obj \
@@ -242,6 +237,8 @@ C_OBJS = \
   $O\7zBuf2.obj \
   $O\7zStream.obj \
   $O\Alloc.obj \
+  $O\Bcj2.obj \
+  $O\Bcj2Enc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
@@ -262,6 +259,7 @@ C_OBJS = \
   $O\Ppmd8.obj \
   $O\Ppmd8Dec.obj \
   $O\Ppmd8Enc.obj \
+  $O\Sha1.obj \
   $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \

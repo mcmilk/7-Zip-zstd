@@ -199,7 +199,7 @@ void COutArchive::WriteNumber(UInt64 value)
     mask >>= 1;
   }
   WriteByte(firstByte);
-  for (;i > 0; i--)
+  for (; i > 0; i--)
   {
     WriteByte((Byte)value);
     value >>= 8;
@@ -254,31 +254,33 @@ void COutArchive::WriteFolder(const CFolder &folder)
 {
   WriteNumber(folder.Coders.Size());
   unsigned i;
+  
   for (i = 0; i < folder.Coders.Size(); i++)
   {
     const CCoderInfo &coder = folder.Coders[i];
     {
-      size_t propsSize = coder.Props.Size();
-      
       UInt64 id = coder.MethodID;
-      int idSize;
+      unsigned idSize;
       for (idSize = 1; idSize < sizeof(id); idSize++)
         if ((id >> (8 * idSize)) == 0)
           break;
-      Byte longID[15];
-      for (int t = idSize - 1; t >= 0 ; t--, id >>= 8)
-        longID[t] = (Byte)(id & 0xFF);
-      Byte b;
-      b = (Byte)(idSize & 0xF);
+      idSize &= 0xF;
+      Byte temp[16];
+      for (unsigned t = idSize; t != 0; t--, id >>= 8)
+        temp[t] = (Byte)(id & 0xFF);
+  
+      Byte b = (Byte)(idSize);
       bool isComplex = !coder.IsSimpleCoder();
       b |= (isComplex ? 0x10 : 0);
-      b |= ((propsSize != 0) ? 0x20 : 0 );
-      WriteByte(b);
-      WriteBytes(longID, idSize);
+
+      size_t propsSize = coder.Props.Size();
+      b |= ((propsSize != 0) ? 0x20 : 0);
+      temp[0] = b;
+      WriteBytes(temp, idSize + 1);
       if (isComplex)
       {
-        WriteNumber(coder.NumInStreams);
-        WriteNumber(coder.NumOutStreams);
+        WriteNumber(coder.NumStreams);
+        WriteNumber(1); // NumOutStreams;
       }
       if (propsSize == 0)
         continue;
@@ -286,17 +288,17 @@ void COutArchive::WriteFolder(const CFolder &folder)
       WriteBytes(coder.Props, propsSize);
     }
   }
-  for (i = 0; i < folder.BindPairs.Size(); i++)
+  
+  for (i = 0; i < folder.Bonds.Size(); i++)
   {
-    const CBindPair &bindPair = folder.BindPairs[i];
-    WriteNumber(bindPair.InIndex);
-    WriteNumber(bindPair.OutIndex);
+    const CBond &bond = folder.Bonds[i];
+    WriteNumber(bond.PackIndex);
+    WriteNumber(bond.UnpackIndex);
   }
+  
   if (folder.PackStreams.Size() > 1)
     for (i = 0; i < folder.PackStreams.Size(); i++)
-    {
       WriteNumber(folder.PackStreams[i]);
-    }
 }
 
 void COutArchive::WriteBoolVector(const CBoolVector &boolVector)
@@ -521,7 +523,10 @@ HRESULT COutArchive::EncodeStream(
   UInt64 unpackSize;
   RINOK(encoder.Encode(
       EXTERNAL_CODECS_LOC_VARS
-      stream, NULL, &dataSize64, folders.AddNew(), outFolders.CoderUnpackSizes, unpackSize, SeqStream, packSizes, NULL))
+      stream,
+      // NULL,
+      &dataSize64,
+      folders.AddNew(), outFolders.CoderUnpackSizes, unpackSize, SeqStream, packSizes, NULL))
   return S_OK;
 }
 

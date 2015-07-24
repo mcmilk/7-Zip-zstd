@@ -3,7 +3,7 @@
 #ifndef __OUT_STREAM_WITH_SHA1_H
 #define __OUT_STREAM_WITH_SHA1_H
 
-#include "../../Crypto/Sha1.h"
+#include "../../../../C/Sha1.h"
 
 #include "../../../Common/MyCom.h"
 
@@ -15,7 +15,7 @@ class COutStreamWithSha1:
 {
   CMyComPtr<ISequentialOutStream> _stream;
   UInt64 _size;
-  NCrypto::NSha1::CContext _sha;
+  CSha1 _sha;
   bool _calculate;
 public:
   MY_UNKNOWN_IMP
@@ -26,11 +26,11 @@ public:
   {
     _size = 0;
     _calculate = calculate;
-    _sha.Init();
+    Sha1_Init(&_sha);
   }
-  void InitSha1() { _sha.Init(); }
+  void InitSha1() { Sha1_Init(&_sha); }
   UInt64 GetSize() const { return _size; }
-  void Final(Byte *digest) { _sha.Final(digest); }
+  void Final(Byte *digest) { Sha1_Final(&_sha, digest); }
 };
 
 #endif

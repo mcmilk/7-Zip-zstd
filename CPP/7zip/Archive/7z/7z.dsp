@@ -350,14 +350,6 @@ SOURCE=..\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\Common\CoderMixer2MT.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\Common\CoderMixer2MT.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\Common\CrossThreadProgress.cpp
 # End Source File
 # Begin Source File

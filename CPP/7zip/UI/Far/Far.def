@@ -3,6 +3,7 @@
 LIBRARY      "7-ZipFar"
 
 EXPORTS
+  ExitFAR
   SetStartupInfo
   OpenPlugin
   OpenFilePlugin

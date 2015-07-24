@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <wchar.h>
+
 #ifndef _UNICODE
 #include "../Common/StringConvert.h"
 #endif
@@ -75,15 +77,15 @@ LONG CKey::RecurseDeleteKey(LPCTSTR subKeyName) throw()
   if (res != ERROR_SUCCESS)
     return res;
   FILETIME fileTime;
-  const UInt32 kBufferSize = MAX_PATH + 1; // 256 in ATL
-  DWORD size = kBufferSize;
-  TCHAR buffer[kBufferSize];
+  const UInt32 kBufSize = MAX_PATH + 1; // 256 in ATL
+  DWORD size = kBufSize;
+  TCHAR buffer[kBufSize];
   while (RegEnumKeyEx(key._object, 0, buffer, &size, NULL, NULL, NULL, &fileTime) == ERROR_SUCCESS)
   {
     res = key.RecurseDeleteKey(buffer);
     if (res != ERROR_SUCCESS)
       return res;
-    size = kBufferSize;
+    size = kBufSize;
   }
   key.Close();
   return DeleteSubKey(subKeyName);
@@ -226,7 +228,6 @@ LONG CKey::GetValue_IfOk(LPCTSTR name, bool &value) throw()
 
 LONG CKey::QueryValue(LPCTSTR name, LPTSTR value, UInt32 &count) throw()
 {
-  MYASSERT(count != NULL);
   DWORD type = 0;
   LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type, (LPBYTE)value, (DWORD *)&count);
   MYASSERT((res != ERROR_SUCCESS) || (type == REG_SZ) || (type == REG_MULTI_SZ) || (type == REG_EXPAND_SZ));
@@ -237,38 +238,47 @@ LONG CKey::QueryValue(LPCTSTR name, CSysString &value)
 {
   value.Empty();
   DWORD type = 0;
-  UInt32 currentSize = 0;
-  LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type, NULL, (DWORD *)&currentSize);
+  UInt32 curSize = 0;
+  LONG res = RegQueryValueEx(_object, (LPTSTR)name, NULL, &type, NULL, (DWORD *)&curSize);
   if (res != ERROR_SUCCESS && res != ERROR_MORE_DATA)
     return res;
-  res = QueryValue(name, value.GetBuffer(currentSize), currentSize);
-  value.ReleaseBuffer();
+  UInt32 curSize2 = curSize;
+  res = QueryValue(name, value.GetBuf(curSize), curSize2);
+  if (curSize > curSize2)
+    curSize = curSize2;
+  value.ReleaseBuf_CalcLen(curSize / sizeof(TCHAR));
   return res;
 }
 
+
 #ifndef _UNICODE
+
 LONG CKey::QueryValue(LPCWSTR name, LPWSTR value, UInt32 &count)
 {
-  MYASSERT(count != NULL);
   DWORD type = 0;
   LONG res = RegQueryValueExW(_object, name, NULL, &type, (LPBYTE)value, (DWORD *)&count);
   MYASSERT((res != ERROR_SUCCESS) || (type == REG_SZ) || (type == REG_MULTI_SZ) || (type == REG_EXPAND_SZ));
   return res;
 }
+
 LONG CKey::QueryValue(LPCWSTR name, UString &value)
 {
   value.Empty();
   DWORD type = 0;
-  UInt32 currentSize = 0;
+  UInt32 curSize = 0;
 
   LONG res;
+
   if (g_IsNT)
   {
-    res = RegQueryValueExW(_object, name, NULL, &type, NULL, (DWORD *)&currentSize);
+    res = RegQueryValueExW(_object, name, NULL, &type, NULL, (DWORD *)&curSize);
     if (res != ERROR_SUCCESS && res != ERROR_MORE_DATA)
       return res;
-    res = QueryValue(name, value.GetBuffer(currentSize), currentSize);
-    value.ReleaseBuffer();
+    UInt32 curSize2 = curSize;
+    res = QueryValue(name, value.GetBuf(curSize), curSize2);
+    if (curSize > curSize2)
+      curSize = curSize2;
+    value.ReleaseBuf_CalcLen(curSize / sizeof(wchar_t));
   }
   else
   {
@@ -276,9 +286,12 @@ LONG CKey::QueryValue(LPCWSTR name, UString &value)
     res = QueryValue(name == 0 ? 0 : (LPCSTR)GetSystemString(name), vTemp);
     value = GetUnicodeString(vTemp);
   }
+  
   return res;
 }
+
 #endif
+
 
 LONG CKey::QueryValue(LPCTSTR name, void *value, UInt32 &count) throw()
 {
@@ -304,14 +317,14 @@ LONG CKey::EnumKeys(CSysStringVector &keyNames)
 {
   keyNames.Clear();
   CSysString keyName;
-  for (UInt32 index = 0; ; index++)
+  for (DWORD index = 0; ; index++)
   {
-    const UInt32 kBufferSize = MAX_PATH + 1; // 256 in ATL
+    const unsigned kBufSize = MAX_PATH + 1; // 256 in ATL
     FILETIME lastWriteTime;
-    UInt32 nameSize = kBufferSize;
-    LONG result = ::RegEnumKeyEx(_object, index, keyName.GetBuffer(kBufferSize),
+    UInt32 nameSize = kBufSize;
+    LONG result = ::RegEnumKeyEx(_object, index, keyName.GetBuf(kBufSize),
         (DWORD *)&nameSize, NULL, NULL, NULL, &lastWriteTime);
-    keyName.ReleaseBuffer();
+    keyName.ReleaseBuf_CalcLen(kBufSize);
     if (result == ERROR_NO_MORE_ITEMS)
       break;
     if (result != ERROR_SUCCESS)
@@ -321,47 +334,56 @@ LONG CKey::EnumKeys(CSysStringVector &keyNames)
   return ERROR_SUCCESS;
 }
 
-LONG CKey::SetValue_Strings(LPCTSTR valueName, const UStringVector &strings) throw()
+LONG CKey::SetValue_Strings(LPCTSTR valueName, const UStringVector &strings)
 {
-  UInt32 numChars = 0;
+  size_t numChars = 0;
+  
   unsigned i;
+  
   for (i = 0; i < strings.Size(); i++)
     numChars += strings[i].Len() + 1;
-  CBuffer<wchar_t> buffer(numChars);
-  unsigned pos = 0;
+  
+  CObjArray<wchar_t> buffer(numChars);
+  size_t pos = 0;
+  
   for (i = 0; i < strings.Size(); i++)
   {
     const UString &s = strings[i];
-    MyStringCopy((wchar_t *)buffer + pos, (const wchar_t *)s);
-    pos += s.Len() + 1;
+    size_t size = s.Len() + 1;
+    wmemcpy(buffer + pos, s, size);
+    pos += size;
   }
-  return SetValue(valueName, buffer, numChars * sizeof(wchar_t));
+  return SetValue(valueName, buffer, (UInt32)numChars * sizeof(wchar_t));
 }
 
 LONG CKey::GetValue_Strings(LPCTSTR valueName, UStringVector &strings)
 {
   strings.Clear();
   CByteBuffer buffer;
-  UInt32 dataSize;
+  UInt32 dataSize = 0;
   LONG res = QueryValue(valueName, buffer, dataSize);
   if (res != ERROR_SUCCESS)
     return res;
+  if (dataSize > buffer.Size())
+    return E_FAIL;
   if (dataSize % sizeof(wchar_t) != 0)
     return E_FAIL;
+
   const wchar_t *data = (const wchar_t *)(const Byte  *)buffer;
-  unsigned numChars = dataSize / sizeof(wchar_t);
+  size_t numChars = dataSize / sizeof(wchar_t);
+  size_t prev = 0;
   UString s;
-  for (unsigned i = 0; i < numChars; i++)
+  
+  for (size_t i = 0; i < numChars; i++)
   {
-    wchar_t c = data[i];
-    if (c == 0)
+    if (data[i] == 0)
     {
+      s = data + prev;
       strings.Add(s);
-      s.Empty();
+      prev = i + 1;
     }
-    else
-      s += c;
   }
+  
   return res;
 }
 

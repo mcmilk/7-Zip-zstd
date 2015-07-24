@@ -2,7 +2,6 @@ PROG = 7zFM.exe
 CFLAGS = $(CFLAGS) \
   -DLANG \
   -DNEW_FOLDER_INTERFACE \
-  -DEXTERNAL_CODECS \
 
 !IFDEF UNDER_CE
 LIBS = $(LIBS) ceshell.lib Commctrl.lib
@@ -86,6 +85,7 @@ GUI_OBJS = \
   $O\ExtractGUI.obj \
   $O\HashGUI.obj \
   $O\UpdateCallbackGUI.obj \
+  $O\UpdateCallbackGUI2.obj \
   $O\UpdateGUI.obj \
 
 

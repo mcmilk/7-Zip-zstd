@@ -72,7 +72,22 @@ public:
     return res;
   }
 
+  /*
+  unsigned ReadBit()
+  {
+    UInt32 res = ((_value >> (8 - _bitPos)) & kMask) >> (kNumValueBits - 1);
+    if (++_bitPos >= 8)
+    {
+      _value = (_value << 8) | _stream.ReadByte();
+      _bitPos -= 8;
+    }
+    return (unsigned)res;
+  }
+  */
+
   void AlignToByte() { MovePos((kNumBigValueBits - _bitPos) & 7); }
+
+  UInt32 ReadAlignBits() { return ReadBits((kNumBigValueBits - _bitPos) & 7); }
 };
 
 }

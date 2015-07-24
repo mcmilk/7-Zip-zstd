@@ -138,7 +138,7 @@ HRESULT CThreadSplit::ProcessVirt()
       if (!outFile.Create(name, false))
       {
         HRESULT res = GetLastError();
-        SetErrorPath1(name);
+        AddErrorPath(name);
         return res;
       }
     }
@@ -165,7 +165,7 @@ void CApp::Split()
 {
   int srcPanelIndex = GetFocusedPanelIndex();
   CPanel &srcPanel = Panels[srcPanelIndex];
-  if (!srcPanel.IsFSFolder())
+  if (!srcPanel.Is_IO_FS_Folder())
   {
     srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
     return;
@@ -187,13 +187,13 @@ void CApp::Split()
   }
   const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel._currentFolderPrefix + srcPanel.GetItemPrefix(index);
+  UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &destPanel = Panels[destPanelIndex];
   if (NumPanels > 1)
     if (destPanel.IsFSFolder())
-      path = destPanel._currentFolderPrefix;
+      path = destPanel.GetFsPath();
   CSplitDialog splitDialog;
   splitDialog.FilePath = srcPanel.GetItemRelPath(index);
   splitDialog.Path = path;
@@ -243,12 +243,13 @@ void CApp::Split()
 
   progressDialog.MainWindow = _window;
   progressDialog.MainTitle = progressWindowTitle;
-  progressDialog.MainAddTitle = title + L' ';
+  progressDialog.MainAddTitle = title;
+  progressDialog.MainAddTitle.Add_Space();
   progressDialog.Sync.Set_TitleFileName(itemName);
 
 
   spliter.FilePath = us2fs(srcPath + itemName);
-  spliter.VolBasePath = us2fs(path + itemName);
+  spliter.VolBasePath = us2fs(path + srcPanel.GetItemName_for_Copy(index));
   spliter.VolumeSizes = splitDialog.VolumeSizes;
   
   // if (splitDialog.VolumeSizes.Size() == 0) return;
@@ -285,7 +286,7 @@ HRESULT CThreadCombine::ProcessVirt()
   if (!outFile.Create(OutputPath, false))
   {
     HRESULT res = GetLastError();
-    SetErrorPath1(OutputPath);
+    AddErrorPath(OutputPath);
     return res;
   }
   
@@ -304,7 +305,7 @@ HRESULT CThreadCombine::ProcessVirt()
     if (!inFile.Open(nextName))
     {
       HRESULT res = GetLastError();
-      SetErrorPath1(nextName);
+      AddErrorPath(nextName);
       return res;
     }
     sync.Set_FilePath(fs2us(nextName));
@@ -314,7 +315,7 @@ HRESULT CThreadCombine::ProcessVirt()
       if (!inFile.Read(buffer, kBufSize, processedSize))
       {
         HRESULT res = GetLastError();
-        SetErrorPath1(nextName);
+        AddErrorPath(nextName);
         return res;
       }
       if (processedSize == 0)
@@ -323,7 +324,7 @@ HRESULT CThreadCombine::ProcessVirt()
       if (!outFile.Write(buffer, needSize, processedSize))
       {
         HRESULT res = GetLastError();
-        SetErrorPath1(OutputPath);
+        AddErrorPath(OutputPath);
         return res;
       }
       if (needSize != processedSize)
@@ -364,13 +365,13 @@ void CApp::Combine()
   }
   const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel._currentFolderPrefix + srcPanel.GetItemPrefix(index);
+  UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
   int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &destPanel = Panels[destPanelIndex];
   if (NumPanels > 1)
     if (destPanel.IsFSFolder())
-      path = destPanel._currentFolderPrefix;
+      path = destPanel.GetFsPath();
 
   CVolSeqName volSeqName;
   if (!volSeqName.ParseName(itemName))
@@ -408,7 +409,7 @@ void CApp::Combine()
   UString info;
   AddValuePair2(info, IDS_PROP_FILES, combiner.Names.Size(), combiner.TotalSize);
   
-  info += L"\n";
+  info.Add_LF();
   info += srcPath;
   
   unsigned i;
@@ -425,7 +426,7 @@ void CApp::Combine()
     CCopyDialog copyDialog;
     copyDialog.Value = path;
     LangString(IDS_COMBINE, copyDialog.Title);
-    copyDialog.Title += ' ';
+    copyDialog.Title.Add_Space();
     copyDialog.Title += srcPanel.GetItemRelPath(index);
     LangString(IDS_COMBINE_TO, copyDialog.Static);
     copyDialog.Info = info;
@@ -468,7 +469,8 @@ void CApp::Combine()
     
     progressDialog.MainWindow = _window;
     progressDialog.MainTitle = progressWindowTitle;
-    progressDialog.MainAddTitle = title + L' ';
+    progressDialog.MainAddTitle = title;
+    progressDialog.MainAddTitle.Add_Space();
     
     combiner.InputDirPrefix = us2fs(srcPath);
     

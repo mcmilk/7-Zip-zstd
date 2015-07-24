@@ -79,8 +79,7 @@ static void AddString(AString &s, const char *name, const Byte *p, unsigned size
   if (i != 0)
   {
     AString d;
-    memcpy(d.GetBuffer(i), p, i);
-    d.ReleaseBuffer(i);
+    d.SetFrom((const char *)p, i);
     s += '\n';
     s += name;
     s += ": ";
@@ -170,11 +169,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       case kpidPath:
       {
-        // char name[16];
-        // ConvertUInt32ToString(index + 1, name);
         AString s = "[BOOT]" STRING_PATH_SEPARATOR;
-        // s += name;
-        // s += '-';
+        if (_archive.BootEntries.Size() != 1)
+        {
+          char temp[16];
+          ConvertUInt32ToString(index + 1, temp);
+          s += temp;
+          s += '-';
+        }
         s += be.GetName();
         prop = s;
         break;
@@ -197,18 +199,18 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         {
           UString s;
           if (_archive.IsJoliet())
-            s = item.GetPathU();
+            item.GetPathU(s);
           else
             s = MultiByteToUnicodeString(item.GetPath(_archive.IsSusp, _archive.SuspSkipSize), CP_OEMCP);
 
-          int pos = s.ReverseFind(L';');
-          if (pos >= 0 && pos == (int)s.Len() - 2)
-              if (s.Back() == L'1')
-                s.DeleteFrom(pos);
-          if (!s.IsEmpty())
-            if (s.Back() == L'.')
-              s.DeleteBack();
-          prop = (const wchar_t *)NItemName::GetOSName2(s);
+          if (s.Len() >= 2 && s[s.Len() - 2] == ';' && s.Back() == '1')
+            s.DeleteFrom(s.Len() - 2);
+          
+          if (!s.IsEmpty() && s.Back() == L'.')
+            s.DeleteBack();
+
+          NItemName::ConvertToOSName2(s);
+          prop = s;
         }
         break;
       case kpidIsDir: prop = item.IsDir(); break;
@@ -319,8 +321,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       UInt64 offset = 0;
       for (UInt32 e = 0; e < ref.NumExtents; e++)
       {
-        if (e != 0)
-          lps->InSize = lps->OutSize = currentTotalSize + offset;
+        lps->InSize = lps->OutSize = currentTotalSize + offset;
         const CDir &item2 = ref.Dir->_subItems[ref.Index + e];
         RINOK(_stream->Seek((UInt64)item2.ExtentLocation * _archive.BlockSize, STREAM_SEEK_SET, NULL));
         streamSpec->Init(item2.Size);
@@ -356,6 +357,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   *stream = 0;
   UInt64 blockIndex;
   UInt64 currentItemSize;
+  
   if (index < (UInt32)_archive.Refs.Size())
   {
     const CRef &ref = _archive.Refs[index];
@@ -402,6 +404,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     currentItemSize = _archive.GetBootItemSize(bootIndex);
     blockIndex = be.LoadRBA;
   }
+  
   return CreateLimitedInStream(_stream, blockIndex * _archive.BlockSize, currentItemSize, stream);
   COM_TRY_END
 }

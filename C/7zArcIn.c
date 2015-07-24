@@ -1,5 +1,5 @@
 /* 7zArcIn.c -- 7z Input functions
-2014-06-16 : Igor Pavlov : Public domain */
+2015-05-16 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -10,8 +10,16 @@
 #include "7zCrc.h"
 #include "CpuArch.h"
 
-#define MY_ALLOC(T, p, size, alloc) { if ((size) == 0) p = 0; else \
+#define MY_ALLOC(T, p, size, alloc) { \
   if ((p = (T *)IAlloc_Alloc(alloc, (size) * sizeof(T))) == 0) return SZ_ERROR_MEM; }
+
+#define MY_ALLOC_ZE(T, p, size, alloc) { if ((size) == 0) p = 0; else MY_ALLOC(T, p, size, alloc) }
+
+#define MY_ALLOC_AND_CPY(to, size, from, alloc) \
+  { MY_ALLOC(Byte, to, size, alloc); memcpy(to, from, size); }
+
+#define MY_ALLOC_ZE_AND_CPY(to, size, from, alloc) \
+  { if ((size) == 0) p = 0; else { MY_ALLOC_AND_CPY(to, size, from, alloc) } }
 
 #define k7zMajorVersion 0
 
@@ -48,17 +56,15 @@ enum EIdEnum
   // k7zIsReal
 };
 
-Byte k7zSignature[k7zSignatureSize] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
+const Byte k7zSignature[k7zSignatureSize] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
 
-#define NUM_FOLDER_CODERS_MAX 32
-#define NUM_CODER_STREAMS_MAX 32
 
 /*
-static int SzFolder_FindBindPairForInStream(const CSzFolder *p, UInt32 inStreamIndex)
+static int SzFolder_FindBondForInStream(const CSzFolder *p, UInt32 inStreamIndex)
 {
   UInt32 i;
-  for (i = 0; i < p->NumBindPairs; i++)
-    if (p->BindPairs[i].InIndex == inStreamIndex)
+  for (i = 0; i < p->NumBonds; i++)
+    if (p->Bonds[i].InIndex == inStreamIndex)
       return i;
   return -1;
 }
@@ -68,8 +74,16 @@ static int SzFolder_FindBindPairForInStream(const CSzFolder *p, UInt32 inStreamI
 
 static SRes SzBitUi32s_Alloc(CSzBitUi32s *p, size_t num, ISzAlloc *alloc)
 {
-  MY_ALLOC(Byte, p->Defs, (num + 7) >> 3, alloc);
-  MY_ALLOC(UInt32, p->Vals, num, alloc);
+  if (num == 0)
+  {
+    p->Defs = 0;
+    p->Vals = 0;
+  }
+  else
+  {
+    MY_ALLOC(Byte, p->Defs, (num + 7) >> 3, alloc);
+    MY_ALLOC(UInt32, p->Vals, num, alloc);
+  }
   return SZ_OK;
 }
 
@@ -170,7 +184,7 @@ void SzArEx_Free(CSzArEx *p, ISzAlloc *alloc)
 
 static int TestSignatureCandidate(Byte *testBytes)
 {
-  size_t i;
+  unsigned i;
   for (i = 0; i < k7zSignatureSize; i++)
     if (testBytes[i] != k7zSignature[i])
       return 0;
@@ -224,7 +238,7 @@ static MY_NO_INLINE SRes ReadNumber(CSzData *sd, UInt64 *value)
     Byte b;
     if ((firstByte & mask) == 0)
     {
-      UInt64 highPart = firstByte & (mask - 1);
+      UInt64 highPart = (unsigned)firstByte & (unsigned)(mask - 1);
       *value |= (highPart << (8 * i));
       return SZ_OK;
     }
@@ -367,23 +381,23 @@ static UInt32 CountDefinedBits(const Byte *bits, UInt32 numItems)
 static MY_NO_INLINE SRes ReadBitVector(CSzData *sd, UInt32 numItems, Byte **v, ISzAlloc *alloc)
 {
   Byte allAreDefined;
-  UInt32 i;
   Byte *v2;
   UInt32 numBytes = (numItems + 7) >> 3;
+  *v = NULL;
   RINOK(SzReadByte(sd, &allAreDefined));
+  if (numBytes == 0)
+    return SZ_OK;
   if (allAreDefined == 0)
   {
     if (numBytes > sd->Size)
       return SZ_ERROR_ARCHIVE;
-    MY_ALLOC(Byte, *v, numBytes, alloc);
-    memcpy(*v, sd->Data, numBytes);
+    MY_ALLOC_AND_CPY(*v, numBytes, sd->Data, alloc);
     SKIP_DATA(sd, numBytes);
     return SZ_OK;
   }
   MY_ALLOC(Byte, *v, numBytes, alloc);
   v2 = *v;
-  for (i = 0; i < numBytes; i++)
-    v2[i] = 0xFF;
+  memset(v2, 0xFF, (size_t)numBytes);
   {
     unsigned numBits = (unsigned)numItems & 7;
     if (numBits != 0)
@@ -398,7 +412,7 @@ static MY_NO_INLINE SRes ReadUi32s(CSzData *sd2, UInt32 numItems, CSzBitUi32s *c
   CSzData sd;
   UInt32 *vals;
   const Byte *defs;
-  MY_ALLOC(UInt32, crcs->Vals, numItems, alloc);
+  MY_ALLOC_ZE(UInt32, crcs->Vals, numItems, alloc);
   sd = *sd2;
   defs = crcs->Defs;
   vals = crcs->Vals;
@@ -486,19 +500,22 @@ static SRes SzReadSwitch(CSzData *sd)
 }
 */
 
-#define SZ_NUM_IN_STREAMS_IN_FOLDER_MAX 16
+#define k_NumCodersStreams_in_Folder_MAX (SZ_NUM_BONDS_IN_FOLDER_MAX + SZ_NUM_PACK_STREAMS_IN_FOLDER_MAX)
 
 SRes SzGetNextFolderItem(CSzFolder *f, CSzData *sd, CSzData *sdSizes)
 {
-  UInt32 numCoders, numBindPairs, numPackStreams, i;
-  UInt32 numInStreams = 0, numOutStreams = 0;
+  UInt32 numCoders, i;
+  UInt32 numInStreams = 0;
   const Byte *dataStart = sd->Data;
-  Byte inStreamUsed[SZ_NUM_IN_STREAMS_IN_FOLDER_MAX];
+
+  f->NumCoders = 0;
+  f->NumBonds = 0;
+  f->NumPackStreams = 0;
+  f->UnpackStream = 0;
   
   RINOK(SzReadNumber32(sd, &numCoders));
-  if (numCoders > SZ_NUM_CODERS_IN_FOLDER_MAX)
+  if (numCoders == 0 || numCoders > SZ_NUM_CODERS_IN_FOLDER_MAX)
     return SZ_ERROR_UNSUPPORTED;
-  f->NumCoders = numCoders;
   
   for (i = 0; i < numCoders; i++)
   {
@@ -506,9 +523,11 @@ SRes SzGetNextFolderItem(CSzFolder *f, CSzData *sd, CSzData *sdSizes)
     CSzCoderInfo *coder = f->Coders + i;
     unsigned idSize, j;
     UInt64 id;
+    
     RINOK(SzReadByte(sd, &mainByte));
     if ((mainByte & 0xC0) != 0)
       return SZ_ERROR_UNSUPPORTED;
+    
     idSize = (unsigned)(mainByte & 0xF);
     if (idSize > sizeof(id))
       return SZ_ERROR_UNSUPPORTED;
@@ -525,106 +544,132 @@ SRes SzGetNextFolderItem(CSzFolder *f, CSzData *sd, CSzData *sdSizes)
       return SZ_ERROR_UNSUPPORTED;
     coder->MethodID = (UInt32)id;
     
-    coder->NumInStreams = 1;
-    coder->NumOutStreams = 1;
+    coder->NumStreams = 1;
     coder->PropsOffset = 0;
     coder->PropsSize = 0;
     
     if ((mainByte & 0x10) != 0)
     {
       UInt32 numStreams;
+      
       RINOK(SzReadNumber32(sd, &numStreams));
-      if (numStreams > NUM_CODER_STREAMS_MAX)
+      if (numStreams > k_NumCodersStreams_in_Folder_MAX)
         return SZ_ERROR_UNSUPPORTED;
-      coder->NumInStreams = (Byte)numStreams;
+      coder->NumStreams = (Byte)numStreams;
+
       RINOK(SzReadNumber32(sd, &numStreams));
-      if (numStreams > NUM_CODER_STREAMS_MAX)
+      if (numStreams != 1)
         return SZ_ERROR_UNSUPPORTED;
-      coder->NumOutStreams = (Byte)numStreams;
     }
+
+    numInStreams += coder->NumStreams;
+
+    if (numInStreams > k_NumCodersStreams_in_Folder_MAX)
+      return SZ_ERROR_UNSUPPORTED;
+
     if ((mainByte & 0x20) != 0)
     {
       UInt32 propsSize = 0;
       RINOK(SzReadNumber32(sd, &propsSize));
-      if (propsSize >= 0x40)
-        return SZ_ERROR_UNSUPPORTED;
       if (propsSize > sd->Size)
         return SZ_ERROR_ARCHIVE;
+      if (propsSize >= 0x80)
+        return SZ_ERROR_UNSUPPORTED;
       coder->PropsOffset = sd->Data - dataStart;
       coder->PropsSize = (Byte)propsSize;
       sd->Data += (size_t)propsSize;
       sd->Size -= (size_t)propsSize;
     }
-    numInStreams += coder->NumInStreams;
-    numOutStreams += coder->NumOutStreams;
   }
 
-  if (numOutStreams == 0)
-    return SZ_ERROR_UNSUPPORTED;
-
-  f->NumBindPairs = numBindPairs = numOutStreams - 1;
-  if (numInStreams < numBindPairs)
-    return SZ_ERROR_ARCHIVE;
-  if (numInStreams > SZ_NUM_IN_STREAMS_IN_FOLDER_MAX)
-    return SZ_ERROR_UNSUPPORTED;
-  f->MainOutStream = 0;
-  f->NumPackStreams = numPackStreams = numInStreams - numBindPairs;
-  if (numPackStreams > SZ_NUM_PACK_STREAMS_IN_FOLDER_MAX)
-    return SZ_ERROR_UNSUPPORTED;
-  for (i = 0; i < numInStreams; i++)
-    inStreamUsed[i] = False;
-  if (numBindPairs != 0)
+  /*
+  if (numInStreams == 1 && numCoders == 1)
   {
-    Byte outStreamUsed[SZ_NUM_CODERS_OUT_STREAMS_IN_FOLDER_MAX];
-
-    if (numBindPairs > SZ_NUM_BINDS_IN_FOLDER_MAX)
-      return SZ_ERROR_UNSUPPORTED;
-
-    for (i = 0; i < numOutStreams; i++)
-      outStreamUsed[i] = False;
-
-    for (i = 0; i < numBindPairs; i++)
-    {
-      CSzBindPair *bp = f->BindPairs + i;
-      RINOK(SzReadNumber32(sd, &bp->InIndex));
-      if (bp->InIndex >= numInStreams)
-        return SZ_ERROR_ARCHIVE;
-      inStreamUsed[bp->InIndex] = True;
-      RINOK(SzReadNumber32(sd, &bp->OutIndex));
-      if (bp->OutIndex >= numInStreams)
-        return SZ_ERROR_ARCHIVE;
-      outStreamUsed[bp->OutIndex] = True;
-    }
-    for (i = 0; i < numOutStreams; i++)
-      if (!outStreamUsed[i])
-      {
-        f->MainOutStream = i;
-        break;
-      }
-    if (i == numOutStreams)
-      return SZ_ERROR_ARCHIVE;
-  }
-
-  if (numPackStreams == 1)
-  {
-    for (i = 0; i < numInStreams; i++)
-      if (!inStreamUsed[i])
-        break;
-    if (i == numInStreams)
-      return SZ_ERROR_ARCHIVE;
-    f->PackStreams[0] = i;
+    f->NumPackStreams = 1;
+    f->PackStreams[0] = 0;
   }
   else
-    for (i = 0; i < numPackStreams; i++)
+  */
+  {
+    Byte streamUsed[k_NumCodersStreams_in_Folder_MAX];
+    UInt32 numBonds, numPackStreams;
+    
+    numBonds = numCoders - 1;
+    if (numInStreams < numBonds)
+      return SZ_ERROR_ARCHIVE;
+    if (numBonds > SZ_NUM_BONDS_IN_FOLDER_MAX)
+      return SZ_ERROR_UNSUPPORTED;
+    f->NumBonds = numBonds;
+    
+    numPackStreams = numInStreams - numBonds;
+    if (numPackStreams > SZ_NUM_PACK_STREAMS_IN_FOLDER_MAX)
+      return SZ_ERROR_UNSUPPORTED;
+    f->NumPackStreams = numPackStreams;
+  
+    for (i = 0; i < numInStreams; i++)
+      streamUsed[i] = False;
+    
+    if (numBonds != 0)
     {
-      RINOK(SzReadNumber32(sd, f->PackStreams + i));
-    }
+      Byte coderUsed[SZ_NUM_CODERS_IN_FOLDER_MAX];
 
-  for (i = 0; i < numOutStreams; i++)
+      for (i = 0; i < numCoders; i++)
+        coderUsed[i] = False;
+      
+      for (i = 0; i < numBonds; i++)
+      {
+        CSzBond *bp = f->Bonds + i;
+        
+        RINOK(SzReadNumber32(sd, &bp->InIndex));
+        if (bp->InIndex >= numInStreams || streamUsed[bp->InIndex])
+          return SZ_ERROR_ARCHIVE;
+        streamUsed[bp->InIndex] = True;
+        
+        RINOK(SzReadNumber32(sd, &bp->OutIndex));
+        if (bp->OutIndex >= numCoders || coderUsed[bp->OutIndex])
+          return SZ_ERROR_ARCHIVE;
+        coderUsed[bp->OutIndex] = True;
+      }
+      
+      for (i = 0; i < numCoders; i++)
+        if (!coderUsed[i])
+        {
+          f->UnpackStream = i;
+          break;
+        }
+      
+      if (i == numCoders)
+        return SZ_ERROR_ARCHIVE;
+    }
+    
+    if (numPackStreams == 1)
+    {
+      for (i = 0; i < numInStreams; i++)
+        if (!streamUsed[i])
+          break;
+      if (i == numInStreams)
+        return SZ_ERROR_ARCHIVE;
+      f->PackStreams[0] = i;
+    }
+    else
+      for (i = 0; i < numPackStreams; i++)
+      {
+        UInt32 index;
+        RINOK(SzReadNumber32(sd, &index));
+        if (index >= numInStreams || streamUsed[index])
+          return SZ_ERROR_ARCHIVE;
+        streamUsed[index] = True;
+        f->PackStreams[i] = index;
+      }
+  }
+
+  for (i = 0; i < numCoders; i++)
   {
     RINOK(ReadNumber(sdSizes, f->CodersUnpackSizes + i));
   }
   
+  f->NumCoders = numCoders;
+
   return SZ_OK;
 }
 
@@ -658,24 +703,25 @@ static MY_NO_INLINE SRes SkipNumbers(CSzData *sd2, UInt32 num)
   return SZ_OK;
 }
 
-#define k_InStreamUsed_MAX 64
-#define k_OutStreamUsed_MAX 64
+#define k_Scan_NumCoders_MAX 64
+#define k_Scan_NumCodersStreams_in_Folder_MAX 64
 
 static SRes ReadUnpackInfo(CSzAr *p,
     CSzData *sd2,
-    UInt32 numFoldersMax, const CBuf *tempBufs, UInt32 numTempBufs,
+    UInt32 numFoldersMax,
+    const CBuf *tempBufs, UInt32 numTempBufs,
     ISzAlloc *alloc)
 {
   CSzData sd;
-  Byte inStreamUsed[k_InStreamUsed_MAX];
-  Byte outStreamUsed[k_OutStreamUsed_MAX];
+  
   UInt32 fo, numFolders, numCodersOutStreams, packStreamIndex;
   const Byte *startBufPtr;
   Byte external;
   
   RINOK(WaitId(sd2, k7zIdFolder));
+  
   RINOK(SzReadNumber32(sd2, &numFolders));
-  if (p->NumFolders > numFoldersMax)
+  if (numFolders > numFoldersMax)
     return SZ_ERROR_UNSUPPORTED;
   p->NumFolders = numFolders;
 
@@ -685,7 +731,7 @@ static SRes ReadUnpackInfo(CSzAr *p,
   else
   {
     UInt32 index;
-    SzReadNumber32(sd2, &index);
+    RINOK(SzReadNumber32(sd2, &index));
     if (index >= numTempBufs)
       return SZ_ERROR_ARCHIVE;
     sd.Data = tempBufs[index].data;
@@ -703,18 +749,19 @@ static SRes ReadUnpackInfo(CSzAr *p,
 
   for (fo = 0; fo < numFolders; fo++)
   {
-    UInt32 numCoders, ci, numInStreams = 0, numOutStreams = 0;
+    UInt32 numCoders, ci, numInStreams = 0;
     
     p->FoCodersOffsets[fo] = sd.Data - startBufPtr;
+    
     RINOK(SzReadNumber32(&sd, &numCoders));
-    if (numCoders > NUM_FOLDER_CODERS_MAX)
+    if (numCoders == 0 || numCoders > k_Scan_NumCoders_MAX)
       return SZ_ERROR_UNSUPPORTED;
     
     for (ci = 0; ci < numCoders; ci++)
     {
       Byte mainByte;
       unsigned idSize;
-      UInt32 coderInStreams, coderOutStreams;
+      UInt32 coderInStreams;
       
       SZ_READ_BYTE_2(mainByte);
       if ((mainByte & 0xC0) != 0)
@@ -727,17 +774,18 @@ static SRes ReadUnpackInfo(CSzAr *p,
       SKIP_DATA2(sd, idSize);
       
       coderInStreams = 1;
-      coderOutStreams = 1;
+      
       if ((mainByte & 0x10) != 0)
       {
+        UInt32 coderOutStreams;
         RINOK(SzReadNumber32(&sd, &coderInStreams));
         RINOK(SzReadNumber32(&sd, &coderOutStreams));
-        if (coderInStreams > NUM_CODER_STREAMS_MAX ||
-            coderOutStreams > NUM_CODER_STREAMS_MAX)
+        if (coderInStreams > k_Scan_NumCodersStreams_in_Folder_MAX || coderOutStreams != 1)
           return SZ_ERROR_UNSUPPORTED;
       }
+      
       numInStreams += coderInStreams;
-      numOutStreams += coderOutStreams;
+
       if ((mainByte & 0x20) != 0)
       {
         UInt32 propsSize;
@@ -751,64 +799,73 @@ static SRes ReadUnpackInfo(CSzAr *p,
     {
       UInt32 indexOfMainStream = 0;
       UInt32 numPackStreams = 1;
-      if (numOutStreams != 1 || numInStreams != 1)
+      
+      if (numCoders != 1 || numInStreams != 1)
       {
+        Byte streamUsed[k_Scan_NumCodersStreams_in_Folder_MAX];
+        Byte coderUsed[k_Scan_NumCoders_MAX];
+    
         UInt32 i;
-        UInt32 numBindPairs = numOutStreams - 1;
-        if (numOutStreams == 0 || numInStreams < numBindPairs)
+        UInt32 numBonds = numCoders - 1;
+        if (numInStreams < numBonds)
           return SZ_ERROR_ARCHIVE;
         
-        if (numInStreams > k_InStreamUsed_MAX ||
-            numOutStreams > k_OutStreamUsed_MAX)
+        if (numInStreams > k_Scan_NumCodersStreams_in_Folder_MAX)
           return SZ_ERROR_UNSUPPORTED;
         
         for (i = 0; i < numInStreams; i++)
-          inStreamUsed[i] = False;
-        for (i = 0; i < numOutStreams; i++)
-          outStreamUsed[i] = False;
+          streamUsed[i] = False;
+        for (i = 0; i < numCoders; i++)
+          coderUsed[i] = False;
         
-        for (i = 0; i < numBindPairs; i++)
+        for (i = 0; i < numBonds; i++)
         {
           UInt32 index;
+          
           RINOK(SzReadNumber32(&sd, &index));
-          if (index >= numInStreams || inStreamUsed[index])
+          if (index >= numInStreams || streamUsed[index])
             return SZ_ERROR_ARCHIVE;
-          inStreamUsed[index] = True;
+          streamUsed[index] = True;
+          
           RINOK(SzReadNumber32(&sd, &index));
-          if (index >= numInStreams || outStreamUsed[index])
+          if (index >= numCoders || coderUsed[index])
             return SZ_ERROR_ARCHIVE;
-          outStreamUsed[index] = True;
+          coderUsed[index] = True;
         }
         
-        numPackStreams = numInStreams - numBindPairs;
+        numPackStreams = numInStreams - numBonds;
         
         if (numPackStreams != 1)
           for (i = 0; i < numPackStreams; i++)
           {
-            UInt32 temp;
-            RINOK(SzReadNumber32(&sd, &temp));
-            if (temp >= numInStreams)
+            UInt32 index;
+            RINOK(SzReadNumber32(&sd, &index));
+            if (index >= numInStreams || streamUsed[index])
               return SZ_ERROR_ARCHIVE;
+            streamUsed[index] = True;
           }
           
-        for (i = 0; i < numOutStreams; i++)
-          if (!outStreamUsed[i])
+        for (i = 0; i < numCoders; i++)
+          if (!coderUsed[i])
           {
             indexOfMainStream = i;
             break;
           }
  
-        if (i == numOutStreams)
+        if (i == numCoders)
           return SZ_ERROR_ARCHIVE;
       }
+      
       p->FoStartPackStreamIndex[fo] = packStreamIndex;
-      p->FoSizesOffsets[fo] = (numOutStreams << 8) | indexOfMainStream;
-      numCodersOutStreams += numOutStreams;
-      if (numCodersOutStreams < numOutStreams)
+      p->FoSizesOffsets[fo] = (numCoders << 8) | indexOfMainStream;
+      numCodersOutStreams += numCoders;
+      if (numCodersOutStreams < numCoders)
         return SZ_ERROR_UNSUPPORTED;
+      
       packStreamIndex += numPackStreams;
       if (packStreamIndex < numPackStreams)
         return SZ_ERROR_UNSUPPORTED;
+      
       if (packStreamIndex > p->NumPackStreams)
         return SZ_ERROR_ARCHIVE;
     }
@@ -818,8 +875,7 @@ static SRes ReadUnpackInfo(CSzAr *p,
     size_t dataSize = sd.Data - startBufPtr;
     p->FoStartPackStreamIndex[fo] = packStreamIndex;
     p->FoCodersOffsets[fo] = dataSize;
-    MY_ALLOC(Byte, p->CodersData, dataSize, alloc);
-    memcpy(p->CodersData, startBufPtr, dataSize);
+    MY_ALLOC_ZE_AND_CPY(p->CodersData, dataSize, startBufPtr, alloc);
   }
   
   if (external != 0)
@@ -831,7 +887,7 @@ static SRes ReadUnpackInfo(CSzAr *p,
   
   RINOK(WaitId(&sd, k7zIdCodersUnpackSize));
   
-  // MY_ALLOC(UInt64, p->CoderUnpackSizes, (size_t)numCodersOutStreams, alloc);
+  // MY_ALLOC_ZE(UInt64, p->CoderUnpackSizes, (size_t)numCodersOutStreams, alloc);
   {
     size_t dataSize = sd.Size;
     /*
@@ -843,8 +899,7 @@ static SRes ReadUnpackInfo(CSzAr *p,
     */
     RINOK(SkipNumbers(&sd, numCodersOutStreams));
     dataSize -= sd.Size;
-    MY_ALLOC(Byte, p->UnpackSizesData, dataSize, alloc);
-    memcpy(p->UnpackSizesData, sd.Data - dataSize, dataSize);
+    MY_ALLOC_ZE_AND_CPY(p->UnpackSizesData, dataSize, sd.Data - dataSize, alloc);
     p->UnpackSizesDataSize = dataSize;
     /*
     const Byte *data = SzReadNumbers(sd.Data, sd.Data + sd.Size, p->CoderUnpackSizes, numCodersOutStreams);
@@ -1019,8 +1074,10 @@ static SRes SzReadAndDecodePackedStreams(
  
   sdCodersUnpSizes.Data = p->UnpackSizesData;
   sdCodersUnpSizes.Size = p->UnpackSizesDataSize;
+  
   for (fo = 0; fo < p->NumFolders; fo++)
     Buf_Init(tempBufs + fo);
+  
   for (fo = 0; fo < p->NumFolders; fo++)
   {
     CBuf *tempBuf = tempBufs + fo;
@@ -1049,6 +1106,7 @@ static SRes SzReadAndDecodePackedStreams(
     if (!Buf_Create(tempBuf, (size_t)unpackSize, allocTemp))
       return SZ_ERROR_MEM;
   }
+  
   p->FoSizesOffsets[fo] = sdCodersUnpSizes.Data - p->UnpackSizesData;
     
   for (fo = 0; fo < p->NumFolders; fo++)
@@ -1060,6 +1118,7 @@ static SRes SzReadAndDecodePackedStreams(
       if (CrcCalc(tempBuf->data, tempBuf->size) != p->FolderCRCs.Vals[fo])
         return SZ_ERROR_CRC;
   }
+  
   return SZ_OK;
 }
 
@@ -1069,6 +1128,8 @@ static SRes SzReadFileNames(const Byte *data, size_t size, UInt32 numFiles, size
   *offsets++ = 0;
   if (numFiles == 0)
     return (size == 0) ? SZ_OK : SZ_ERROR_ARCHIVE;
+  if (size < 2)
+    return SZ_ERROR_ARCHIVE;
   if (data[size - 2] != 0 || data[size - 1] != 0)
     return SZ_ERROR_ARCHIVE;
   do
@@ -1100,20 +1161,23 @@ static MY_NO_INLINE SRes ReadTime(CSzBitUi64s *p, UInt32 num,
   CNtfsFileTime *vals;
   Byte *defs;
   Byte external;
+  
   RINOK(ReadBitVector(sd2, num, &p->Defs, alloc));
+  
   RINOK(SzReadByte(sd2, &external));
   if (external == 0)
     sd = *sd2;
   else
   {
     UInt32 index;
-    SzReadNumber32(sd2, &index);
+    RINOK(SzReadNumber32(sd2, &index));
     if (index >= numTempBufs)
       return SZ_ERROR_ARCHIVE;
     sd.Data = tempBufs[index].data;
     sd.Size = tempBufs[index].size;
   }
-  MY_ALLOC(CNtfsFileTime, p->Vals, num, alloc);
+  
+  MY_ALLOC_ZE(CNtfsFileTime, p->Vals, num, alloc);
   vals = p->Vals;
   defs = p->Defs;
   for (i = 0; i < num; i++)
@@ -1127,8 +1191,10 @@ static MY_NO_INLINE SRes ReadTime(CSzBitUi64s *p, UInt32 num,
     }
     else
       vals[i].High = vals[i].Low = 0;
+  
   if (external == 0)
     *sd2 = sd;
+  
   return SZ_OK;
 }
 
@@ -1141,8 +1207,7 @@ static SRes SzReadHeader2(
     // Byte **emptyFileVector,   /* allocTemp */
     // Byte **lwtVector,         /* allocTemp */
     ILookInStream *inStream,
-    CBuf *tempBufs,
-    UInt32 *numTempBufs,
+    CBuf *tempBufs, UInt32 *numTempBufs,
     ISzAlloc *allocMain,
     ISzAlloc *allocTemp
     )
@@ -1225,11 +1290,12 @@ static SRes SzReadHeader2(
     RINOK(ReadNumber(sd, &size));
     if (size > sd->Size)
       return SZ_ERROR_ARCHIVE;
-    if ((UInt64)(int)type != type)
+    
+    if (type >= ((UInt32)1 << 8))
     {
       SKIP_DATA(sd, size);
     }
-    else switch((int)type)
+    else switch((unsigned)type)
     {
       case k7zIdName:
       {
@@ -1246,7 +1312,7 @@ static SRes SzReadHeader2(
         else
         {
           UInt32 index;
-          SzReadNumber32(sd, &index);
+          RINOK(SzReadNumber32(sd, &index));
           if (index >= *numTempBufs)
             return SZ_ERROR_ARCHIVE;
           namesData = (tempBufs)[index].data;
@@ -1255,9 +1321,8 @@ static SRes SzReadHeader2(
 
         if ((namesSize & 1) != 0)
           return SZ_ERROR_ARCHIVE;
-        MY_ALLOC(Byte, p->FileNames, namesSize, allocMain);
         MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
-        memcpy(p->FileNames, namesData, namesSize);
+        MY_ALLOC_ZE_AND_CPY(p->FileNames, namesSize, namesData, allocMain);
         RINOK(SzReadFileNames(p->FileNames, namesSize, numFiles, p->FileNameOffsets))
         if (external == 0)
         {
@@ -1290,7 +1355,7 @@ static SRes SzReadHeader2(
         else
         {
           UInt32 index;
-          SzReadNumber32(sd, &index);
+          RINOK(SzReadNumber32(sd, &index));
           if (index >= *numTempBufs)
             return SZ_ERROR_ARCHIVE;
           sdSwitch.Data = (tempBufs)[index].data;
@@ -1352,9 +1417,9 @@ static SRes SzReadHeader2(
     sdCodersUnpSizes.Size = p->db.UnpackSizesDataSize;
     
     MY_ALLOC(UInt32, p->FolderStartFileIndex, p->db.NumFolders + 1, allocMain);
-    MY_ALLOC(UInt32, p->FileIndexToFolderIndexMap, p->NumFiles, allocMain);
+    MY_ALLOC_ZE(UInt32, p->FileIndexToFolderIndexMap, p->NumFiles, allocMain);
     MY_ALLOC(UInt64, p->UnpackPositions, p->NumFiles + 1, allocMain);
-    MY_ALLOC(Byte, p->IsDirs, (p->NumFiles + 7) >> 3, allocMain);
+    MY_ALLOC_ZE(Byte, p->IsDirs, (p->NumFiles + 7) >> 3, allocMain);
 
     RINOK(SzBitUi32s_Alloc(&p->CRCs, p->NumFiles, allocMain));
 
@@ -1660,20 +1725,19 @@ static SRes SzArEx_Open2(
       {
         if (type == k7zIdHeader)
         {
+          /*
           CSzData sd2;
-          int ttt;
-          for (ttt = 0; ttt < 1; ttt++)
-          // for (ttt = 0; ttt < 40000; ttt++)
+          unsigned ttt;
+          for (ttt = 0; ttt < 40000; ttt++)
           {
             SzArEx_Free(p, allocMain);
             sd2 = sd;
-            res = SzReadHeader(p, &sd2, inStream, allocMain, allocTemp
-              );
+            res = SzReadHeader(p, &sd2, inStream, allocMain, allocTemp);
             if (res != SZ_OK)
               break;
           }
-
-          // res = SzReadHeader(p, &sd, allocMain, allocTemp);
+          */
+          res = SzReadHeader(p, &sd, inStream, allocMain, allocTemp);
         }
         else
           res = SZ_ERROR_UNSUPPORTED;

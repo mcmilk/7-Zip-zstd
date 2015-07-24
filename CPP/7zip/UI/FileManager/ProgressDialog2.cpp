@@ -28,7 +28,7 @@ static const UINT kTimerElapse =
   #ifdef UNDER_CE
   500
   #else
-  100
+  200
   #endif
   ;
 
@@ -104,13 +104,13 @@ HRESULT CProgressSync::CheckStop()
   }
 }
 
-HRESULT CProgressSync::ScanProgress(UInt64 numFiles, UInt64 totalSize, const UString &fileName, bool isDir)
+HRESULT CProgressSync::ScanProgress(UInt64 numFiles, UInt64 totalSize, const FString &fileName, bool isDir)
 {
   {
     CRITICAL_LOCK
     _totalFiles = numFiles;
     _totalBytes = totalSize;
-    _filePath = fileName;
+    _filePath = fs2us(fileName);
     _isDir = isDir;
     // _completedBytes = 0;
     CHECK_STOP
@@ -118,10 +118,14 @@ HRESULT CProgressSync::ScanProgress(UInt64 numFiles, UInt64 totalSize, const USt
   return CheckStop();
 }
 
-void CProgressSync::Set_NumFilesTotal(UInt64 val)
+HRESULT CProgressSync::Set_NumFilesTotal(UInt64 val)
 {
-  CRITICAL_LOCK
-  _totalFiles = val;
+  {
+    CRITICAL_LOCK
+    _totalFiles = val;
+    CHECK_STOP
+  }
+  return CheckStop();
 }
 
 void CProgressSync::Set_NumBytesTotal(UInt64 val)
@@ -171,16 +175,34 @@ void CProgressSync::Set_TitleFileName(const UString &fileName)
   CRITICAL_LOCK
   _titleFileName = fileName;
 }
+
 void CProgressSync::Set_Status(const UString &s)
 {
   CRITICAL_LOCK
   _status = s;
 }
 
-void CProgressSync::Set_FilePath(const UString &path, bool isDir)
+HRESULT CProgressSync::Set_Status2(const UString &s, const wchar_t *path, bool isDir)
+{
+  {
+    CRITICAL_LOCK
+    _status = s;
+    if (path)
+      _filePath = path;
+    else
+      _filePath.Empty();
+    _isDir = isDir;
+  }
+  return CheckStop();
+}
+
+void CProgressSync::Set_FilePath(const wchar_t *path, bool isDir)
 {
   CRITICAL_LOCK
-  _filePath = path;
+  if (path)
+    _filePath = path;
+  else
+    _filePath.Empty();
   _isDir = isDir;
 }
 
@@ -199,7 +221,7 @@ void CProgressSync::AddError_Message_Name(const wchar_t *message, const wchar_t 
   if (message && *message != 0 )
   {
     if (!s.IsEmpty())
-      s += L'\n';
+      s.Add_LF();
     s += message;
     if (!s.IsEmpty() && s.Back() == L'\n')
       s.DeleteBack();
@@ -633,7 +655,6 @@ static unsigned GetPower64(UInt64 val)
   if (high == 0)
     return GetPower32((UInt32)val);
   return GetPower32(high) + 32;
-
 }
 
 static UInt64 MyMultAndDiv(UInt64 mult1, UInt64 mult2, UInt64 divider)
@@ -867,7 +888,7 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
       s1 = _filePath;
     else
     {
-      int slashPos = _filePath.ReverseFind(WCHAR_PATH_SEPARATOR);
+      int slashPos = _filePath.ReverseFind_PathSepar();
       if (slashPos >= 0)
       {
         s1.SetFrom(_filePath, slashPos + 1);
@@ -878,7 +899,7 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
     }
     ReduceString(s1, _numReduceSymbols);
     ReduceString(s2, _numReduceSymbols);
-    s1 += L'\n';
+    s1.Add_LF();
     s1 += s2;
     SetItemText(IDT_PROGRESS_FILE_NAME, s1);
   }
@@ -1025,22 +1046,22 @@ void CProgressDialog::SetTitleText()
   if (Sync.Get_Paused())
   {
     s += _paused_String;
-    s += L' ';
+    s.Add_Space();
   }
   if (IS_DEFINED_VAL(_prevPercentValue))
   {
-    wchar_t temp[32];
+    char temp[32];
     ConvertUInt64ToString(_prevPercentValue, temp);
-    s += temp;
+    s.AddAscii(temp);
     s += L'%';
   }
   if (!_foreground)
   {
-    s += L' ';
+    s.Add_Space();
     s += _backgrounded_String;
   }
 
-  s += L' ';
+  s.Add_Space();
   #ifndef _SFX
   {
     unsigned len = s.Len();
@@ -1055,7 +1076,7 @@ void CProgressDialog::SetTitleText()
   {
     UString fileName = _titleFileName;
     ReduceString(fileName, kTitleFileNameSizeLimit);
-    s += L' ';
+    s.Add_Space();
     s += fileName;
   }
   SetText(s);
@@ -1239,7 +1260,7 @@ static void AddMessageToString(UString &dest, const UString &src)
   if (!src.IsEmpty())
   {
     if (!dest.IsEmpty())
-      dest += L'\n';
+      dest.Add_LF();
     dest += src;
   }
 }
@@ -1266,8 +1287,15 @@ void CProgressThreadVirt::Process()
       m = HResultToMessage(Result);
   }
   AddMessageToString(m, FinalMessage.ErrorMessage.Message);
-  AddMessageToString(m, fs2us(ErrorPath1));
-  AddMessageToString(m, fs2us(ErrorPath2));
+
+  {
+    FOR_VECTOR(i, ErrorPaths)
+    {
+      if (i >= 32)
+        break;
+      AddMessageToString(m, fs2us(ErrorPaths[i]));
+    }
+  }
 
   CProgressSync &sync = ProgressDialog.Sync;
   NSynchronization::CCriticalSectionLock lock(sync._cs);

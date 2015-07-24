@@ -157,7 +157,8 @@ public:
 
 static bool IsNameVirus(const UString &name)
 {
-  return (name.Find(L"     ") >= 0);
+  // return (name.Find(L"     ") >= 0);
+  return (wcsstr(name, L"     ") != NULL);
 }
 
 struct CTmpProcessInfo: public CTempFileInfo
@@ -223,7 +224,13 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   folderLink.Password = password;
   folderLink.UsePassword = encrypted;
 
-  folderLink.ParentFolder = _folder;
+  if (_folder)
+    folderLink.ParentFolderPath = GetFolderPath(_folder);
+  else
+    folderLink.ParentFolderPath = _currentFolderPrefix;
+  if (!_parentFolders.IsEmpty())
+    folderLink.ParentFolder = _folder;
+
   _parentFolders.Add(folderLink);
   _parentFolders.Back().Library.Attach(_library.Detach());
 
@@ -272,7 +279,7 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
         if (!values[0].IsEmpty())
         {
           if (!s2.IsEmpty())
-            s2 += L"\n";
+            s2.Add_LF();
           s2 += L"[";
           s2 += values[2];
           s2 += L"] Error: ";
@@ -283,7 +290,7 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
           if (!s.IsEmpty())
             s += L"--------------------\n";
           s += values[1];
-          s += L"\n";
+          s.Add_LF();
           s += s2;
         }
       }
@@ -305,8 +312,8 @@ HRESULT CPanel::OpenItemAsArchive(const UString &relPath, const UString &arcForm
 {
   CTempFileInfo tfi;
   tfi.RelPath = relPath;
-  tfi.FolderPath = us2fs(_currentFolderPrefix);
-  const UString fullPath = _currentFolderPrefix + relPath;
+  tfi.FolderPath = us2fs(GetFsPath());
+  const UString fullPath = GetFsPath() + relPath;
   tfi.FilePath = us2fs(fullPath);
   return OpenItemAsArchive(NULL, tfi, fullPath, arcFormat, encrypted);
 }
@@ -316,7 +323,7 @@ HRESULT CPanel::OpenItemAsArchive(int index)
   CDisableTimerProcessing disableTimerProcessing1(*this);
   CDisableNotify disableNotify(*this);
   bool encrypted;
-  HRESULT res = OpenItemAsArchive(GetItemRelPath(index), UString(), encrypted);
+  HRESULT res = OpenItemAsArchive(GetItemRelPath2(index), UString(), encrypted);
   if (res != S_OK)
   {
     RefreshTitle(true); // in case of error we must refresh changed title of 7zFM
@@ -379,7 +386,7 @@ static const char *kStartExtensions =
 
 static bool FindExt(const char *p, const UString &name)
 {
-  int dotPos = name.ReverseFind('.');
+  int dotPos = name.ReverseFind_Dot();
   if (dotPos < 0 || dotPos == (int)name.Len() - 1)
     return false;
 
@@ -409,10 +416,7 @@ static bool DoItemAlwaysStart(const UString &name)
   return FindExt(kStartExtensions, name);
 }
 
-static UString GetQuotedString(const UString &s)
-{
-  return UString(L'\"') + s + UString(L'\"');
-}
+UString GetQuotedString(const UString &s);
 
 static HRESULT StartEditApplication(const UString &path, bool useEditor, HWND window, CProcess &process)
 {
@@ -455,13 +459,17 @@ void CApp::DiffFiles()
   {
     const CPanel &destPanel = Panels[1 - LastFocusedPanel];
     path1 = panel.GetItemFullPath(indices[0]);
-    const UString relPath = panel.GetItemRelPath(indices[0]);
     CRecordVector<UInt32> indices2;
     destPanel.GetSelectedItemsIndices(indices2);
     if (indices2.Size() == 1)
       path2 = destPanel.GetItemFullPath(indices2[0]);
     else
+    {
+      UString relPath = panel.GetItemRelPath2(indices[0]);
+      if (panel._flatMode && !destPanel._flatMode)
+        relPath = panel.GetItemName(indices[0]);
       path2 = destPanel._currentFolderPrefix + relPath;
+    }
   }
   else
     return;
@@ -471,7 +479,9 @@ void CApp::DiffFiles()
   if (command.IsEmpty())
     return;
 
-  UString param = GetQuotedString(path1) + L' ' + GetQuotedString(path2);
+  UString param = GetQuotedString(path1);
+  param.Add_Space();
+  param += GetQuotedString(path2);
 
   HRESULT res = MyCreateProcess(command, param);
   if (res == SZ_OK)
@@ -573,11 +583,11 @@ void CPanel::OpenFolderExternal(int index)
   UString name;
   if (index == kParentIndex)
   {
-    int pos = fsPrefix.ReverseFind(WCHAR_PATH_SEPARATOR);
+    int pos = fsPrefix.ReverseFind_PathSepar();
     if (pos >= 0 && pos == (int)fsPrefix.Len() - 1)
     {
       UString s = fsPrefix.Left(pos);
-      pos = s.ReverseFind(WCHAR_PATH_SEPARATOR);
+      pos = s.ReverseFind_PathSepar();
       if (pos >= 0)
         fsPrefix.SetFrom(s, pos + 1);
     }
@@ -591,7 +601,7 @@ void CPanel::OpenFolderExternal(int index)
 void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
 {
   CDisableTimerProcessing disableTimerProcessing(*this);
-  UString name = GetItemRelPath(index);
+  UString name = GetItemRelPath2(index);
   if (IsNameVirus(name))
   {
     MessageBoxErrorLang(IDS_VIRUS);
@@ -650,8 +660,7 @@ HRESULT CThreadCopyFrom::ProcessVirt()
 HRESULT CPanel::OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath,
     bool usePassword, const UString &password)
 {
-  CMyComPtr<IFolderOperations> folderOperations;
-  if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
+  if (!_folderOperations)
   {
     MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
     return E_FAIL;
@@ -663,8 +672,13 @@ HRESULT CPanel::OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath,
   t.UpdateCallbackSpec->ProgressDialog = &t.ProgressDialog;
   t.ItemIndex = index;
   t.FullPath = fullFilePath;
-  t.FolderOperations = folderOperations;
-  t.UpdateCallbackSpec->Init(usePassword, password);
+  t.FolderOperations = _folderOperations;
+
+  t.UpdateCallbackSpec->Init();
+  t.UpdateCallbackSpec->PasswordIsDefined = usePassword;
+  t.UpdateCallbackSpec->Password = password;
+
+
   RINOK(t.Create(GetItemName(index), (HWND)*this));
   return t.Result;
 }
@@ -862,8 +876,11 @@ STDMETHODIMP CBufSeqOutStream_WithFile::Write(const void *data, UInt32 size, UIn
   {
     if (_size - _pos >= size)
     {
-      memcpy(_buffer + _pos, data, size);
-      _pos += size;
+      if (size != 0)
+      {
+        memcpy(_buffer + _pos, data, size);
+        _pos += size;
+      }
       if (processedSize)
         *processedSize = (UInt32)size;
       return S_OK;
@@ -931,8 +948,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     return;
   }
 
-  CMyComPtr<IFolderOperations> folderOperations;
-  if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
+  if (!_folderOperations)
   {
     MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
     return;
@@ -951,7 +967,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   FString tempDir = tempDirectory.GetPath();
   FString tempDirNorm = tempDir;
   NName::NormalizeDirPathPrefix(tempDirNorm);
-  const FString tempFilePath = tempDirNorm + us2fs(GetCorrectFsPath(name));
+  const FString tempFilePath = tempDirNorm + us2fs(Get_Correct_FsFile_Name(name));
 
   CTempFileInfo tempFileInfo;
   tempFileInfo.FileIndex = index;
@@ -1029,7 +1045,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   bool isAltStream = IsItem_AltStream(index);
 
   CCopyToOptions options;
-  options.includeAltStreams = false;
+  options.includeAltStreams = true;
   options.replaceAltStreamChars = isAltStream;
   
   if (tryAsArchive)
@@ -1137,11 +1153,11 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     return;
 
   CProcess process;
-  /* HRESULT res; */
+  // HRESULT res;
   if (editMode)
     /* res = */ StartEditApplication(fs2us(tempFilePath), useEditor, (HWND)*this, process);
   else
-    /* res = */ StartApplication(fs2us(tempDirNorm), fs2us(tempFilePath), (HWND)*this, process);
+    /* res =  */ StartApplication(fs2us(tempDirNorm), fs2us(tempFilePath), (HWND)*this, process);
 
   if ((HANDLE)process == 0)
     return;

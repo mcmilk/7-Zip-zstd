@@ -19,14 +19,6 @@ HRESULT SetLzmaProp(PROPID propID, const PROPVARIANT &prop, CLzmaEncProps &ep);
 
 namespace NLzma2 {
 
-static void *SzBigAlloc(void *, size_t size) { return BigAlloc(size); }
-static void SzBigFree(void *, void *address) { BigFree(address); }
-static ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
-static void *SzAlloc(void *, size_t size) { return MyAlloc(size); }
-static void SzFree(void *, void *address) { MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
-
 CEncoder::CEncoder()
 {
   _encoder = 0;

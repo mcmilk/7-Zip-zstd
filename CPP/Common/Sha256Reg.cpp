@@ -6,7 +6,6 @@
 
 #include "../Common/MyCom.h"
 
-#include "../7zip/ICoder.h"
 #include "../7zip/Common/RegisterCodec.h"
 
 class CSha256Hasher:
@@ -14,39 +13,28 @@ class CSha256Hasher:
   public CMyUnknownImp
 {
   CSha256 _sha;
+  Byte mtDummy[1 << 7];
+
 public:
-  CSha256Hasher() { Init(); };
+  CSha256Hasher() { Sha256_Init(&_sha); }
 
   MY_UNKNOWN_IMP
-
-  STDMETHOD_(void, Init)();
-  STDMETHOD_(void, Update)(const void *data, UInt32 size);
-  STDMETHOD_(void, Final)(Byte *digest);
-  STDMETHOD_(UInt32, GetDigestSize)();
+  INTERFACE_IHasher(;)
 };
 
-STDMETHODIMP_(void) CSha256Hasher::Init()
+STDMETHODIMP_(void) CSha256Hasher::Init() throw()
 {
   Sha256_Init(&_sha);
 }
 
-STDMETHODIMP_(void) CSha256Hasher::Update(const void *data, UInt32 size)
+STDMETHODIMP_(void) CSha256Hasher::Update(const void *data, UInt32 size) throw()
 {
   Sha256_Update(&_sha, (const Byte *)data, size);
 }
 
-STDMETHODIMP_(void) CSha256Hasher::Final(Byte *digest)
+STDMETHODIMP_(void) CSha256Hasher::Final(Byte *digest) throw()
 {
   Sha256_Final(&_sha, digest);
 }
 
-STDMETHODIMP_(UInt32) CSha256Hasher::GetDigestSize()
-{
-  return SHA256_DIGEST_SIZE;
-}
-
-static IHasher *CreateHasher() { return new CSha256Hasher; }
-
-static CHasherInfo g_HasherInfo = { CreateHasher, 0xA, L"SHA256", SHA256_DIGEST_SIZE };
-
-REGISTER_HASHER(Sha256)
+REGISTER_HASHER(CSha256Hasher, 0xA, "SHA256", SHA256_DIGEST_SIZE)

@@ -18,6 +18,7 @@ GUI_OBJS = \
   $O\GUI.obj \
   $O\HashGUI.obj \
   $O\UpdateCallbackGUI.obj \
+  $O\UpdateCallbackGUI2.obj \
   $O\UpdateGUI.obj \
 
 COMMON_OBJS = \
@@ -107,6 +108,7 @@ FM_OBJS = \
   $O\LangUtils.obj \
   $O\OpenCallback.obj \
   $O\ProgramLocation.obj \
+  $O\PropertyName.obj \
   $O\RegistryUtils.obj \
   $O\SplitUtils.obj \
   $O\StringUtils.obj \

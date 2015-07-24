@@ -10,15 +10,6 @@ template <class T> class CBuffer
   T *_items;
   size_t _size;
 
-  void CopyToEmpty(const CBuffer &buffer)
-  {
-    if (buffer._size > 0)
-    {
-      _items = new T[buffer._size];
-      memcpy(_items, buffer._items, buffer._size * sizeof(T));
-      _size = buffer._size;
-    }
-  }
 public:
   void Free()
   {
@@ -32,11 +23,21 @@ public:
   
   CBuffer(): _items(0), _size(0) {};
   CBuffer(size_t size): _items(0), _size(0) { _items = new T[size]; _size = size; }
-  CBuffer(const CBuffer &buffer): _items(0), _size(0) { CopyToEmpty(buffer); }
+  CBuffer(const CBuffer &buffer): _items(0), _size(0)
+  {
+    size_t size = buffer._size;
+    if (size != 0)
+    {
+      _items = new T[size];
+      memcpy(_items, buffer._items, size * sizeof(T));
+      _size = size;
+    }
+  }
+
   ~CBuffer() { delete []_items; }
 
-  operator       T *()       { return _items; };
-  operator const T *() const { return _items; };
+  operator       T *()       { return _items; }
+  operator const T *() const { return _items; }
   size_t Size() const { return _size; }
 
   void Alloc(size_t size)
@@ -65,7 +66,8 @@ public:
   void CopyFrom(const T *data, size_t size)
   {
     Alloc(size);
-    memcpy(_items, data, size * sizeof(T));
+    if (size != 0)
+      memcpy(_items, data, size * sizeof(T));
   }
 
   void ChangeSize_KeepData(size_t newSize, size_t keepSize)
@@ -73,10 +75,10 @@ public:
     if (newSize == _size)
       return;
     T *newBuffer = NULL;
-    if (newSize > 0)
+    if (newSize != 0)
     {
       newBuffer = new T[newSize];
-      if (_size > 0)
+      if (_size != 0)
         memcpy(newBuffer, _items, MyMin(MyMin(_size, keepSize), newSize) * sizeof(T));
     }
     delete []_items;
@@ -86,8 +88,8 @@ public:
 
   CBuffer& operator=(const CBuffer &buffer)
   {
-    Free();
-    CopyToEmpty(buffer);
+    if (&buffer != this)
+      CopyFrom(buffer, buffer._size);
     return *this;
   }
 };
@@ -98,6 +100,8 @@ bool operator==(const CBuffer<T>& b1, const CBuffer<T>& b2)
   size_t size1 = b1.Size();
   if (size1 != b2.Size())
     return false;
+  if (size1 == 0)
+    return true;
   return memcmp(b1, b2, size1 * sizeof(T)) == 0;
 }
 
@@ -106,6 +110,8 @@ bool operator!=(const CBuffer<T>& b1, const CBuffer<T>& b2)
 {
   size_t size1 = b1.Size();
   if (size1 == b2.Size())
+    return false;
+  if (size1 == 0)
     return false;
   return memcmp(b1, b2, size1 * sizeof(T)) != 0;
 }
@@ -134,8 +140,8 @@ public:
   CObjArray(): _items(0) {};
   ~CObjArray() { delete []_items; }
   
-  operator       T *()       { return _items; };
-  operator const T *() const { return _items; };
+  operator       T *()       { return _items; }
+  operator const T *() const { return _items; }
   
   void Alloc(size_t newSize)
   {
@@ -172,7 +178,7 @@ public:
   CObjArray2(const CObjArray2 &buffer): _items(0), _size(0)
   {
     size_t newSize = buffer._size;
-    if (newSize > 0)
+    if (newSize != 0)
     {
       T *newBuffer = new T[newSize];;
       _items = newBuffer;
@@ -196,8 +202,8 @@ public:
 
   ~CObjArray2() { delete []_items; }
   
-  operator       T *()       { return _items; };
-  operator const T *() const { return _items; };
+  operator       T *()       { return _items; }
+  operator const T *() const { return _items; }
   
   unsigned Size() const { return (unsigned)_size; }
   bool IsEmpty() const { return _size == 0; }
@@ -208,7 +214,7 @@ public:
     if (size == _size)
       return;
     T *newBuffer = NULL;
-    if (size > 0)
+    if (size != 0)
       newBuffer = new T[size];
     delete []_items;
     _items = newBuffer;
@@ -220,7 +226,7 @@ public:
   {
     Free();
     size_t newSize = buffer._size;
-    if (newSize > 0)
+    if (newSize != 0)
     {
       T *newBuffer = new T[newSize];;
       _items = newBuffer;

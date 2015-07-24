@@ -296,9 +296,11 @@ static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const UStringVector &na
 
 void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
 {
-  CDisableTimerProcessing disableTimerProcessing2(*this);
   if (!DoesItSupportOperations())
     return;
+
+  CDisableTimerProcessing disableTimerProcessing2(*this);
+  
   CRecordVector<UInt32> indices;
   GetOperatedItemIndices(indices);
   if (indices.Size() == 0)
@@ -312,7 +314,7 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
 
   bool isFSFolder = IsFSFolder();
   if (isFSFolder)
-    dirPrefix = us2fs(_currentFolderPrefix);
+    dirPrefix = us2fs(GetFsPath());
   else
   {
     tempDirectory.Create(kTempDirPrefix);
@@ -580,7 +582,9 @@ bool CDropTarget::IsItSameDrive() const
     return false;
   if (!IsFsFolderPath())
     return false;
+
   UString drive;
+  
   if (m_Panel->IsFSFolder())
   {
     drive = m_Panel->GetDriveOrNetworkPrefix();
@@ -594,13 +598,14 @@ bool CDropTarget::IsItSameDrive() const
 
   if (m_SourcePaths.Size() == 0)
     return false;
+  
   FOR_VECTOR (i, m_SourcePaths)
   {
-    if (MyStringCompareNoCase_N(m_SourcePaths[i], drive, drive.Len()) != 0)
+    if (!m_SourcePaths[i].IsPrefixedBy_NoCase(drive))
       return false;
   }
+  
   return true;
-
 }
 
 DWORD CDropTarget::GetEffect(DWORD keyState, POINTL /* pt */, DWORD allowedEffect)
@@ -635,13 +640,11 @@ UString CDropTarget::GetTargetPath() const
 {
   if (!IsFsFolderPath())
     return UString();
-  UString path = m_Panel->_currentFolderPrefix;
-  if (m_Panel->IsFSDrivesFolder())
-    path.Empty();
+  UString path = m_Panel->GetFsPath();
   if (m_SubFolderIndex >= 0 && !m_SubFolderName.IsEmpty())
   {
     path += m_SubFolderName;
-    path += WCHAR_PATH_SEPARATOR;
+    path.Add_PathSepar();
   }
   return path;
 }
@@ -728,7 +731,7 @@ STDMETHODIMP CDropTarget::Drop(IDataObject *dataObject, DWORD keyState,
       UString path = GetTargetPath();
       if (m_IsAppTarget && m_Panel)
         if (m_Panel->IsFSFolder())
-          path = m_Panel->_currentFolderPrefix;
+          path = m_Panel->GetFsPath();
       m_Panel->DropObject(dataObject, path);
     }
   }
@@ -779,7 +782,7 @@ static bool AreThereNamesFromTemp(const UStringVector &fileNames)
   if (tempPath.IsEmpty())
     return false;
   FOR_VECTOR (i, fileNames)
-    if (MyStringCompareNoCase_N(fileNames[i], tempPath, tempPath.Len()) == 0)
+    if (fileNames[i].IsPrefixedBy_NoCase(tempPath))
       return true;
   return false;
 }

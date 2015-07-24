@@ -8,6 +8,41 @@
 
 #include "StreamObjects.h"
 
+STDMETHODIMP CBufferInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+{
+  if (processedSize)
+    *processedSize = 0;
+  if (size == 0)
+    return S_OK;
+  if (_pos >= Buf.Size())
+    return S_OK;
+  size_t rem = Buf.Size() - (size_t)_pos;
+  if (rem > size)
+    rem = (size_t)size;
+  memcpy(data, (const Byte *)Buf + (size_t)_pos, rem);
+  _pos += rem;
+  if (processedSize)
+    *processedSize = (UInt32)rem;
+  return S_OK;
+}
+
+STDMETHODIMP CBufferInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+{
+  switch (seekOrigin)
+  {
+    case STREAM_SEEK_SET: break;
+    case STREAM_SEEK_CUR: offset += _pos; break;
+    case STREAM_SEEK_END: offset += Buf.Size(); break;
+    default: return STG_E_INVALIDFUNCTION;
+  }
+  if (offset < 0)
+    return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
+  _pos = offset;
+  if (newPosition)
+    *newPosition = offset;
+  return S_OK;
+}
+
 STDMETHODIMP CBufInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   if (processedSize)
@@ -43,25 +78,22 @@ STDMETHODIMP CBufInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosi
   return S_OK;
 }
 
-/*
-void Create_BufInStream_WithReference(const void *data, size_t size, ISequentialInStream **stream)
+void Create_BufInStream_WithReference(const void *data, size_t size, IUnknown *ref, ISequentialInStream **stream)
 {
+  *stream = NULL;
   CBufInStream *inStreamSpec = new CBufInStream;
   CMyComPtr<ISequentialInStream> streamTemp = inStreamSpec;
-  inStreamSpec->Init((const Byte *)data, size);
+  inStreamSpec->Init((const Byte *)data, size, ref);
   *stream = streamTemp.Detach();
 }
-*/
 
-void Create_BufInStream_WithNewBuf(const void *data, size_t size, ISequentialInStream **stream)
+void Create_BufInStream_WithNewBuffer(const void *data, size_t size, ISequentialInStream **stream)
 {
-  CReferenceBuf *referenceBuf = new CReferenceBuf;
-  CMyComPtr<IUnknown> ref = referenceBuf;
-  referenceBuf->Buf.CopyFrom((const Byte *)data, size);
-
-  CBufInStream *inStreamSpec = new CBufInStream;
+  *stream = NULL;
+  CBufferInStream *inStreamSpec = new CBufferInStream;
   CMyComPtr<ISequentialInStream> streamTemp = inStreamSpec;
-  inStreamSpec->Init(referenceBuf);
+  inStreamSpec->Buf.CopyFrom((const Byte *)data, size);
+  inStreamSpec->Init();
   *stream = streamTemp.Detach();
 }
 
@@ -128,8 +160,11 @@ STDMETHODIMP CBufPtrSeqOutStream::Write(const void *data, UInt32 size, UInt32 *p
   size_t rem = _size - _pos;
   if (rem > size)
     rem = (size_t)size;
-  memcpy(_buffer + _pos, data, rem);
-  _pos += rem;
+  if (rem != 0)
+  {
+    memcpy(_buffer + _pos, data, rem);
+    _pos += rem;
+  }
   if (processedSize)
     *processedSize = (UInt32)rem;
   return (rem != 0 || size == 0) ? S_OK : E_FAIL;

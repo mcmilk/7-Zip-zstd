@@ -3,81 +3,75 @@
 #ifndef __CODER_MIXER2_MT_H
 #define __CODER_MIXER2_MT_H
 
-#include "CoderMixer2.h"
 #include "../../../Common/MyCom.h"
+
 #include "../../Common/StreamBinder.h"
 #include "../../Common/VirtThread.h"
 
-namespace NCoderMixer {
+#include "CoderMixer2.h"
 
-struct CCoder2: public CCoderInfo2, public CVirtThread
+namespace NCoderMixer2 {
+
+class CCoderMT: public CCoder, public CVirtThread
 {
+  CLASS_NO_COPY(CCoderMT)
   CRecordVector<ISequentialInStream*> InStreamPointers;
   CRecordVector<ISequentialOutStream*> OutStreamPointers;
 
+private:
+  void Execute();
 public:
+  bool EncodeMode;
   HRESULT Result;
   CObjectVector< CMyComPtr<ISequentialInStream> > InStreams;
   CObjectVector< CMyComPtr<ISequentialOutStream> > OutStreams;
 
-  CCoder2(UInt32 numInStreams, UInt32 numOutStreams);
-  ~CCoder2() { CVirtThread::WaitThreadFinish(); }
-  // void SetCoderInfo(const UInt64 **inSizes, const UInt64 **outSizes);
-  virtual void Execute();
+  CCoderMT(): EncodeMode(false) {}
+  ~CCoderMT() { CVirtThread::WaitThreadFinish(); }
+  
   void Code(ICompressProgressInfo *progress);
 };
 
 
-/*
-  SetBindInfo()
-  for each coder
-    AddCoder[2]()
-  SetProgressIndex(UInt32 coderIndex);
- 
-  for each file
-  {
-    ReInit()
-    for each coder
-      SetCoderInfo
-    Code
-  }
-*/
 
-class CCoderMixer2MT:
-  public ICompressCoder2,
-  public CCoderMixer2,
+class CMixerMT:
+  public IUnknown,
+  public CMixer,
   public CMyUnknownImp
 {
-  CBindInfo _bindInfo;
   CObjectVector<CStreamBinder> _streamBinders;
-  unsigned _progressCoderIndex;
 
-  void AddCoderCommon();
-  HRESULT Init(ISequentialInStream **inStreams, ISequentialOutStream **outStreams);
+  HRESULT Init(ISequentialInStream * const *inStreams, ISequentialOutStream * const *outStreams);
   HRESULT ReturnIfError(HRESULT code);
+
 public:
-  CObjectVector<CCoder2> _coders;
+  CObjectVector<CCoderMT> _coders;
+
   MY_UNKNOWN_IMP
 
-  STDMETHOD(Code)(ISequentialInStream **inStreams,
-      const UInt64 **inSizes,
-      UInt32 numInStreams,
-      ISequentialOutStream **outStreams,
-      const UInt64 **outSizes,
-      UInt32 numOutStreams,
+  virtual HRESULT SetBindInfo(const CBindInfo &bindInfo);
+
+  virtual void AddCoder(ICompressCoder *coder, ICompressCoder2 *coder2, bool isFilter);
+
+  virtual CCoder &GetCoder(unsigned index);
+
+  virtual void SelectMainCoder(bool useFirst);
+
+  virtual void ReInit();
+  
+  virtual void SetCoderInfo(unsigned coderIndex, const UInt64 *unpackSize, const UInt64 * const *packSizes)
+    { _coders[coderIndex].SetCoderInfo(unpackSize, packSizes); }
+  
+  virtual HRESULT Code(
+      ISequentialInStream * const *inStreams,
+      ISequentialOutStream * const *outStreams,
       ICompressProgressInfo *progress);
 
-  HRESULT SetBindInfo(const CBindInfo &bindInfo);
-  void AddCoder(ICompressCoder *coder);
-  void AddCoder2(ICompressCoder2 *coder);
-  void SetProgressCoderIndex(unsigned coderIndex) {  _progressCoderIndex = coderIndex; }
+  virtual UInt64 GetBondStreamSize(unsigned bondIndex) const;
 
-  void ReInit();
-  void SetCoderInfo(UInt32 coderIndex, const UInt64 **inSizes, const UInt64 **outSizes)
-    {  _coders[coderIndex].SetCoderInfo(inSizes, outSizes); }
-  UInt64 GetWriteProcessedSize(UInt32 binderIndex) const
-    {  return _streamBinders[binderIndex].ProcessedSize; }
+  CMixerMT(bool encodeMode): CMixer(encodeMode) {}
 };
 
 }
+
 #endif

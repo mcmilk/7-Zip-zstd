@@ -7,7 +7,6 @@
 #include "NsisDecode.h"
 
 #include "../../Common/CreateCoder.h"
-#include "../../Common/FilterCoder.h"
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/MethodId.h"
 
@@ -58,18 +57,11 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
   {
     if (!_filterInStream)
     {
-      CFilterCoder *coderSpec = new CFilterCoder;
-      CMyComPtr<ICompressCoder> coder = coderSpec;
-      coderSpec->Filter = new CBCJ_x86_Decoder();
-      coder.QueryInterface(IID_ISequentialInStream, &_filterInStream);
-      if (!_filterInStream)
-        return E_NOTIMPL;
+      _filter = new CFilterCoder(false);
+      _filterInStream = _filter;
+      _filter->Filter = new CBcjCoder(false);
     }
-    CMyComPtr<ICompressSetInStream> setInStream;
-    _filterInStream.QueryInterface(IID_ICompressSetInStream, &setInStream);
-    if (!setInStream)
-      return E_NOTIMPL;
-    RINOK(setInStream->SetInStream(_codecInStream));
+    RINOK(_filter->SetInStream(_codecInStream));
     _decoderInStream = _filterInStream;
   }
 
@@ -99,13 +91,7 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
 
   if (useFilter)
   {
-    /*
-    CMyComPtr<ICompressSetOutStreamSize> setOutStreamSize;
-    _filterInStream.QueryInterface(IID_ICompressSetOutStreamSize, &setOutStreamSize);
-    if (!setOutStreamSize)
-      return E_NOTIMPL;
-    RINOK(setOutStreamSize->SetOutStreamSize(NULL));
-    */
+    RINOK(_filter->SetOutStreamSize(NULL));
   }
 
   return S_OK;

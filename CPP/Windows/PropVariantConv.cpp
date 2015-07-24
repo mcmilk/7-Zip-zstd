@@ -93,7 +93,7 @@ void ConvertPropVariantToShortString(const PROPVARIANT &prop, wchar_t *dest) thr
     case VT_I2: ConvertInt64ToString(prop.iVal, dest); return;
     case VT_I4: ConvertInt64ToString(prop.lVal, dest); return;
     case VT_I8: ConvertInt64ToString(prop.hVal.QuadPart, dest); return;
-    case VT_BOOL: dest[0] = VARIANT_BOOLToBool(prop.boolVal) ? '+' : '-'; dest[1] = 0; return;
+    case VT_BOOL: dest[0] = VARIANT_BOOLToBool(prop.boolVal) ? (wchar_t)'+' : (wchar_t)'-'; dest[1] = 0; return;
     default: dest[0] = '?'; dest[1] = ':'; ConvertUInt32ToString(prop.vt, dest + 2);
   }
 }

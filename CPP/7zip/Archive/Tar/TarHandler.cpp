@@ -143,10 +143,10 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 
     if (!_forceCodePage)
     {
-      if (utf8_OK) utf8_OK = CheckUTF8(item.Name);
+      if (utf8_OK) utf8_OK = CheckUTF8(item.Name, item.NameCouldBeReduced);
+      if (utf8_OK) utf8_OK = CheckUTF8(item.LinkName, item.LinkNameCouldBeReduced);
       if (utf8_OK) utf8_OK = CheckUTF8(item.User);
       if (utf8_OK) utf8_OK = CheckUTF8(item.Group);
-      if (utf8_OK) utf8_OK = CheckUTF8(item.LinkName);
     }
     
     RINOK(stream->Seek(item.GetPackSizeAligned(), STREAM_SEEK_CUR, &_phySize));
@@ -298,19 +298,12 @@ void CHandler::TarStringToUnicode(const AString &s, NWindows::NCOM::CPropVariant
 {
   UString dest;
   if (_curCodePage == CP_UTF8)
-  {
-    if (!ConvertUTF8ToUnicode(s, dest))
-    {
-      prop = "[ERROR-NAME]";
-      return;
-    }
-  }
+    ConvertUTF8ToUnicode(s, dest);
   else
-    dest = MultiByteToUnicodeString(s, _curCodePage);
+    MultiByteToUnicodeString2(dest, s, _curCodePage);
   if (toOs)
-    prop = NItemName::GetOSName2(dest);
-  else
-    prop = dest;
+    NItemName::ConvertToOSName2(dest);
+  prop = dest;
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
@@ -632,10 +625,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   
   if (item.IsSymLink())
   {
-    CBufInStream *streamSpec = new CBufInStream;
-    CMyComPtr<IInStream> streamTemp = streamSpec;
-    streamSpec->Init((const Byte *)(const char *)item.LinkName, item.LinkName.Len(), (IInArchive *)this);
-    *stream = streamTemp.Detach();
+    Create_BufInStream_WithReference((const Byte *)(const char *)item.LinkName, item.LinkName.Len(), (IInArchive *)this, stream);
     return S_OK;
   }
   
@@ -651,7 +641,7 @@ void CHandler::Init()
   _curCodePage = _specifiedCodePage = CP_UTF8;  // CP_OEMCP;
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps)
+STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   Init();
 

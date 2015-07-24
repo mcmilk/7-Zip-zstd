@@ -13,6 +13,15 @@
 #include "MyTypes.h"
 #include "MyVector.h"
 
+#ifdef _WIN32
+#define IS_PATH_SEPAR(c) ((c) == '\\' || (c) == '/')
+#else
+#define IS_PATH_SEPAR(c) ((c) == CHAR_PATH_SEPARATOR)
+#endif
+
+inline bool IsPathSepar(char    c) { return IS_PATH_SEPAR(c); }
+inline bool IsPathSepar(wchar_t c) { return IS_PATH_SEPAR(c); }
+
 inline unsigned MyStringLen(const char *s)
 {
   unsigned i;
@@ -50,6 +59,21 @@ inline void MyStringCopy(wchar_t *dest, const wchar_t *src)
   while ((*dest++ = *src++) != 0);
 }
 
+/*
+inline wchar_t *MyWcpCpy(wchar_t *dest, const wchar_t *src)
+{
+  for (;;)
+  {
+    wchar_t c = *src;
+    *dest = c;
+    if (c == 0)
+      return dest;
+    src++;
+    dest++;
+  }
+}
+*/
+
 int FindCharPosInString(const char *s, char c) throw();
 int FindCharPosInString(const wchar_t *s, wchar_t c) throw();
 
@@ -81,7 +105,7 @@ inline wchar_t MyCharUpper_Ascii(wchar_t c)
 inline char MyCharLower_Ascii(char c)
 {
   if (c >= 'A' && c <= 'Z')
-    return (char)(c + 0x20);
+    return (char)((unsigned char)c + 0x20);
   return c;
 }
 
@@ -134,6 +158,7 @@ inline wchar_t MyCharLower(wchar_t c) throw()
 // char *MyStringLower(char *s) throw();
 
 // void MyStringUpper_Ascii(wchar_t *s) throw();
+void MyStringLower_Ascii(char *s) throw();
 void MyStringLower_Ascii(wchar_t *s) throw();
 // wchar_t *MyStringUpper(wchar_t *s) STRING_UNICODE_THROW;
 // wchar_t *MyStringLower(wchar_t *s) STRING_UNICODE_THROW;
@@ -142,9 +167,10 @@ bool StringsAreEqualNoCase(const wchar_t *s1, const wchar_t *s2) throw();
 
 bool IsString1PrefixedByString2(const char *s1, const char *s2) throw();
 bool IsString1PrefixedByString2(const wchar_t *s1, const wchar_t *s2) throw();
+bool IsString1PrefixedByString2_NoCase(const wchar_t *s1, const wchar_t *s2) throw();
 
 int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2) throw();
-int MyStringCompareNoCase_N(const wchar_t *s1, const wchar_t *s2, unsigned num) throw();
+// int MyStringCompareNoCase_N(const wchar_t *s1, const wchar_t *s2, unsigned num) throw();
 
 // ---------- ASCII ----------
 // char values in ASCII strings must be less then 128
@@ -170,6 +196,7 @@ class AString
   void InsertSpace(unsigned &index, unsigned size);
   
   void ReAlloc(unsigned newLimit);
+  void ReAlloc2(unsigned newLimit);
   void SetStartLen(unsigned len);
   void Grow_1();
   void Grow(unsigned n);
@@ -185,6 +212,17 @@ class AString
   friend AString operator+(const AString &s1, const AString &s2);
   friend AString operator+(const AString &s1, const char    *s2);
   friend AString operator+(const char    *s1, const AString &s2);
+
+  // ---------- forbidden functions ----------
+  AString &operator+=(wchar_t c);
+  AString &operator=(wchar_t c);
+  AString(wchar_t c);
+  void Find(wchar_t c) const;
+  void Find(wchar_t c, unsigned startIndex) const;
+  void ReverseFind(wchar_t c) const;
+  void InsertAtFront(wchar_t c);
+  void RemoveChar(wchar_t ch);
+  void Replace(wchar_t oldChar, wchar_t newChar);
 
 public:
   AString();
@@ -205,20 +243,39 @@ public:
 
   void ReplaceOneCharAtPos(unsigned pos, char c) { _chars[pos] = c; }
 
-  // The minimum size of the character buffer in characters.
-  // This value does not include space for a null terminator.
-  char *GetBuffer(unsigned minBufLen)
+  /* GetBuf(minLen): provides the buffer that can store
+     at least (minLen) characters and additional null terminator.
+     9.35: GetBuf doesn't preserve old characters and terminator */
+  char *GetBuf(unsigned minLen)
   {
-    if (minBufLen > _limit)
-      ReAlloc(minBufLen);
+    if (minLen > _limit)
+      ReAlloc2(minLen);
     return _chars;
   }
-  void ReleaseBuffer() { ReleaseBuffer(MyStringLen(_chars)); }
-  void ReleaseBuffer(unsigned newLen) { _len = newLen; _chars[newLen] = 0; }
+  char *GetBuf_SetEnd(unsigned minLen)
+  {
+    if (minLen > _limit)
+      ReAlloc2(minLen);
+    char *chars = _chars;
+    chars[minLen] = 0;
+    _len = minLen;
+    return chars;
+  }
+
+  void ReleaseBuf_SetLen(unsigned newLen) { _len = newLen; }
+  void ReleaseBuf_SetEnd(unsigned newLen) { _len = newLen; _chars[newLen] = 0; }
+  void ReleaseBuf_CalcLen(unsigned maxLen)
+  {
+    char *chars = _chars;
+    chars[maxLen] = 0;
+    _len = MyStringLen(chars);
+  }
 
   AString &operator=(char c);
   AString &operator=(const char *s);
   AString &operator=(const AString &s);
+  void SetFromWStr_if_Ascii(const wchar_t *s);
+  // void SetFromBstr_if_Ascii(BSTR s);
 
   AString &operator+=(char c)
   {
@@ -231,18 +288,30 @@ public:
     _len = len;
     return *this;
   }
+  
+  void Add_Space();
+  void Add_Space_if_NotEmpty();
+  void Add_LF();
+  void Add_PathSepar() { operator+=(CHAR_PATH_SEPARATOR); }
 
   AString &operator+=(const char *s);
   AString &operator+=(const AString &s);
+  void AddAscii(const char *s) { operator+=(s); }
 
   void SetFrom(const char *s, unsigned len); // no check
+  void SetFrom_CalcLen(const char *s, unsigned len);
+  // void SetFromAscii(const char *s) { operator+=(s); }
+
   // AString Mid(unsigned startIndex, unsigned count) const { return AString(count, _chars + startIndex); }
   AString Left(unsigned count) const { return AString(count, *this); }
 
   // void MakeUpper() { MyStringUpper(_chars); }
   // void MakeLower() { MyStringLower(_chars); }
+  void MakeLower_Ascii() { MyStringLower_Ascii(_chars); }
 
 
+  bool IsEqualTo(const char *s) const { return strcmp(_chars, s) == 0; }
+  bool IsEqualTo_Ascii_NoCase(const char *s) const { return StringsAreEqualNoCase_Ascii(_chars, s); }
   // int Compare(const char *s) const { return MyStringCompare(_chars, s); }
   // int Compare(const AString &s) const { return MyStringCompare(_chars, s._chars); }
   // int CompareNoCase(const char *s) const { return MyStringCompareNoCase(_chars, s); }
@@ -250,16 +319,29 @@ public:
   bool IsPrefixedBy(const char *s) const { return IsString1PrefixedByString2(_chars, s); }
   bool IsPrefixedBy_Ascii_NoCase(const char *s) const throw();
  
+  bool IsAscii() const
+  {
+    unsigned len = Len();
+    const char *s = _chars;
+    for (unsigned i = 0; i < len; i++)
+      if ((unsigned char)s[i] >= 0x80)
+        return false;
+    return true;
+  }
   int Find(char c) const { return FindCharPosInString(_chars, c); }
   int Find(char c, unsigned startIndex) const
   {
     int pos = FindCharPosInString(_chars + startIndex, c);
     return pos < 0 ? -1 : (int)startIndex + pos;
   }
+  
   int ReverseFind(char c) const throw();
-  int Find(const AString &s) const { return Find(s, 0); }
-  int Find(const AString &s, unsigned startIndex) const throw();
+  int ReverseFind_Dot() const throw() { return ReverseFind('.'); }
+  int ReverseFind_PathSepar() const throw();
 
+  int Find(const char *s) const { return Find(s, 0); }
+  int Find(const char *s, unsigned startIndex) const throw();
+  
   void TrimLeft() throw();
   void TrimRight() throw();
   void Trim()
@@ -274,9 +356,10 @@ public:
   void Insert(unsigned index, const AString &s);
 
   void RemoveChar(char ch) throw();
+  
   void Replace(char oldChar, char newChar) throw();
   void Replace(const AString &oldString, const AString &newString);
-  
+
   void Delete(unsigned index) throw();
   void Delete(unsigned index, unsigned count) throw();
   void DeleteFrontal(unsigned num) throw();
@@ -312,6 +395,19 @@ inline bool operator!=(const AString &s1, const AString &s2) { return s1.Len() !
 inline bool operator!=(const AString &s1, const char    *s2) { return strcmp(s1, s2) != 0; }
 inline bool operator!=(const char    *s1, const AString &s2) { return strcmp(s1, s2) != 0; }
 
+// ---------- forbidden functions ----------
+
+void operator==(char c1, const AString &s2);
+void operator==(const AString &s1, char c2);
+
+void operator+(char c, const AString &s); // this function can be OK, but we don't use it
+
+void operator+(const AString &s, int c);
+void operator+(const AString &s, unsigned c);
+void operator+(int c, const AString &s);
+void operator+(unsigned c, const AString &s);
+void operator-(const AString &s, int c);
+void operator-(const AString &s, unsigned c);
 
 
 class UString
@@ -328,6 +424,7 @@ class UString
   void InsertSpace(unsigned index, unsigned size);
   
   void ReAlloc(unsigned newLimit);
+  void ReAlloc2(unsigned newLimit);
   void SetStartLen(unsigned len);
   void Grow_1();
   void Grow(unsigned n);
@@ -343,6 +440,27 @@ class UString
   friend UString operator+(const UString &s1, const UString &s2);
   friend UString operator+(const UString &s1, const wchar_t *s2);
   friend UString operator+(const wchar_t *s1, const UString &s2);
+
+  // ---------- forbidden functions ----------
+  
+  UString &operator+=(char c);
+  UString &operator+=(unsigned char c);
+  UString &operator=(char c);
+  UString &operator=(unsigned char c);
+  UString(char c);
+  UString(unsigned char c);
+  void Find(char c) const;
+  void Find(unsigned char c) const;
+  void Find(char c, unsigned startIndex) const;
+  void Find(unsigned char c, unsigned startIndex) const;
+  void ReverseFind(char c) const;
+  void ReverseFind(unsigned char c) const;
+  void InsertAtFront(char c);
+  void InsertAtFront(unsigned char c);
+  void RemoveChar(char ch);
+  void RemoveChar(unsigned char ch);
+  void Replace(char oldChar, char newChar);
+  void Replace(unsigned char oldChar, unsigned char newChar);
 
 public:
   UString();
@@ -363,20 +481,35 @@ public:
 
   void ReplaceOneCharAtPos(unsigned pos, wchar_t c) { _chars[pos] = c; }
 
-  // The minimum size of the character buffer in characters.
-  // This value does not include space for a null terminator.
-  wchar_t *GetBuffer(unsigned minBufLen)
+  wchar_t *GetBuf(unsigned minLen)
   {
-    if (minBufLen > _limit)
-      ReAlloc(minBufLen);
+    if (minLen > _limit)
+      ReAlloc2(minLen);
     return _chars;
   }
-  void ReleaseBuffer() { ReleaseBuffer(MyStringLen(_chars)); }
-  void ReleaseBuffer(unsigned newLen) { _len = newLen; _chars[newLen] = 0; }
+  wchar_t *GetBuf_SetEnd(unsigned minLen)
+  {
+    if (minLen > _limit)
+      ReAlloc2(minLen);
+    wchar_t *chars = _chars;
+    chars[minLen] = 0;
+    _len = minLen;
+    return chars;
+  }
+
+  void ReleaseBuf_SetLen(unsigned newLen) { _len = newLen; }
+  void ReleaseBuf_SetEnd(unsigned newLen) { _len = newLen; _chars[newLen] = 0; }
+  void ReleaseBuf_CalcLen(unsigned maxLen)
+  {
+    wchar_t *chars = _chars;
+    chars[maxLen] = 0;
+    _len = MyStringLen(chars);
+  }
 
   UString &operator=(wchar_t c);
   UString &operator=(const wchar_t *s);
   UString &operator=(const UString &s);
+  void SetFromBstr(BSTR s);
 
   UString &operator+=(wchar_t c)
   {
@@ -390,13 +523,18 @@ public:
     return *this;
   }
 
+  void Add_Space();
+  void Add_Space_if_NotEmpty();
+  void Add_LF();
+  void Add_PathSepar() { operator+=(WCHAR_PATH_SEPARATOR); }
+
   UString &operator+=(const wchar_t *s);
   UString &operator+=(const UString &s);
 
   void SetFrom(const wchar_t *s, unsigned len); // no check
 
   void SetFromAscii(const char *s);
-  void AddAsciiStr(const char *s);
+  void AddAscii(const char *s);
 
   UString Mid(unsigned startIndex, unsigned count) const { return UString(count, _chars + startIndex); }
   UString Left(unsigned count) const { return UString(count, *this); }
@@ -407,23 +545,38 @@ public:
   void MakeLower_Ascii() { MyStringLower_Ascii(_chars); }
 
   bool IsEqualTo(const char *s) const { return StringsAreEqual_Ascii(_chars, s); }
-  bool IsEqualToNoCase(const wchar_t *s) const { return StringsAreEqualNoCase(_chars, s); }
+  bool IsEqualTo_NoCase(const wchar_t *s) const { return StringsAreEqualNoCase(_chars, s); }
+  bool IsEqualTo_Ascii_NoCase(const char *s) const { return StringsAreEqualNoCase_Ascii(_chars, s); }
   int Compare(const wchar_t *s) const { return wcscmp(_chars, s); }
   // int Compare(const UString &s) const { return MyStringCompare(_chars, s._chars); }
   // int CompareNoCase(const wchar_t *s) const { return MyStringCompareNoCase(_chars, s); }
   // int CompareNoCase(const UString &s) const { return MyStringCompareNoCase(_chars, s._chars); }
-  bool IsPrefixedBy(const wchar_t *s) const { return IsString1PrefixedByString2(_chars, s); };
+  bool IsPrefixedBy(const wchar_t *s) const { return IsString1PrefixedByString2(_chars, s); }
+  bool IsPrefixedBy_NoCase(const wchar_t *s) const { return IsString1PrefixedByString2_NoCase(_chars, s); }
   bool IsPrefixedBy_Ascii_NoCase(const char *s) const throw();
 
+  bool IsAscii() const
+  {
+    unsigned len = Len();
+    const wchar_t *s = _chars;
+    for (unsigned i = 0; i < len; i++)
+      if (s[i] >= 0x80)
+        return false;
+    return true;
+  }
   int Find(wchar_t c) const { return FindCharPosInString(_chars, c); }
   int Find(wchar_t c, unsigned startIndex) const
   {
     int pos = FindCharPosInString(_chars + startIndex, c);
     return pos < 0 ? -1 : (int)startIndex + pos;
   }
-  int Find(const UString &s) const { return Find(s, 0); }
-  int Find(const UString &s, unsigned startIndex) const throw();
+
   int ReverseFind(wchar_t c) const throw();
+  int ReverseFind_Dot() const throw() { return ReverseFind(L'.'); }
+  int ReverseFind_PathSepar() const throw();
+
+  int Find(const wchar_t *s) const { return Find(s, 0); }
+  int Find(const wchar_t *s, unsigned startIndex) const throw();
 
   void TrimLeft() throw();
   void TrimRight() throw();
@@ -439,9 +592,10 @@ public:
   void Insert(unsigned index, const UString &s);
 
   void RemoveChar(wchar_t ch) throw();
+  
   void Replace(wchar_t oldChar, wchar_t newChar) throw();
   void Replace(const UString &oldString, const UString &newString);
-  
+
   void Delete(unsigned index) throw();
   void Delete(unsigned index, unsigned count) throw();
   void DeleteFrontal(unsigned num) throw();
@@ -466,6 +620,110 @@ inline bool operator==(const wchar_t *s1, const UString &s2) { return wcscmp(s1,
 inline bool operator!=(const UString &s1, const UString &s2) { return s1.Len() != s2.Len() || wcscmp(s1, s2) != 0; }
 inline bool operator!=(const UString &s1, const wchar_t *s2) { return wcscmp(s1, s2) != 0; }
 inline bool operator!=(const wchar_t *s1, const UString &s2) { return wcscmp(s1, s2) != 0; }
+
+
+// ---------- forbidden functions ----------
+
+void operator==(wchar_t c1, const UString &s2);
+void operator==(const UString &s1, wchar_t c2);
+
+void operator+(wchar_t c, const UString &s); // this function can be OK, but we don't use it
+
+void operator+(const UString &s, char c);
+void operator+(const UString &s, unsigned char c);
+void operator+(char c, const UString &s);
+void operator+(unsigned char c, const UString &s);
+void operator-(const UString &s1, wchar_t c);
+
+#ifdef _WIN32
+// can we forbid these functions, if wchar_t is 32-bit ?
+void operator+(const UString &s, int c);
+void operator+(const UString &s, unsigned c);
+void operator+(int c, const UString &s);
+void operator+(unsigned c, const UString &s);
+void operator-(const UString &s1, int c);
+void operator-(const UString &s1, unsigned c);
+#endif
+
+
+
+
+
+
+
+class UString2
+{
+  wchar_t *_chars;
+  unsigned _len;
+
+  void ReAlloc2(unsigned newLimit);
+  void SetStartLen(unsigned len);
+
+  // ---------- forbidden functions ----------
+  
+  UString2 &operator=(char c);
+  UString2 &operator=(unsigned char c);
+  UString2 &operator=(wchar_t c);
+  UString2(char c);
+  UString2(unsigned char c);
+
+public:
+  UString2(): _chars(NULL), _len(0) {}
+  // UString2(wchar_t c);
+  UString2(const wchar_t *s);
+  UString2(const UString2 &s);
+  ~UString2() { if (_chars) MY_STRING_DELETE(_chars); }
+
+  unsigned Len() const { return _len; }
+  bool IsEmpty() const { return _len == 0; }
+  // void Empty() { _len = 0; _chars[0] = 0; }
+
+  // operator const wchar_t *() const { return _chars; }
+  const wchar_t *GetRawPtr() const { return _chars; }
+
+  wchar_t *GetBuf(unsigned minLen)
+  {
+    if (!_chars || minLen > _len)
+      ReAlloc2(minLen);
+    return _chars;
+  }
+  void ReleaseBuf_SetLen(unsigned newLen) { _len = newLen; }
+
+  UString2 &operator=(const wchar_t *s);
+  UString2 &operator=(const UString2 &s);
+  void SetFromAscii(const char *s);
+};
+
+bool operator==(const UString2 &s1, const UString2 &s2);
+bool operator==(const UString2 &s1, const wchar_t *s2);
+bool operator==(const wchar_t *s1, const UString2 &s2);
+
+inline bool operator!=(const UString2 &s1, const UString2 &s2) { return !(s1 == s2); }
+inline bool operator!=(const UString2 &s1, const wchar_t *s2) { return !(s1 == s2); }
+inline bool operator!=(const wchar_t *s1, const UString2 &s2) { return !(s1 == s2); }
+
+
+// ---------- forbidden functions ----------
+
+void operator==(wchar_t c1, const UString2 &s2);
+void operator==(const UString2 &s1, wchar_t c2);
+bool operator<(const UString2 &s1, const UString2 &s2);
+bool operator>(const UString2 &s1, const UString2 &s2);
+
+void operator+(const UString2 &s1, const UString2 &s2);
+void operator+(const UString2 &s1, const wchar_t *s2);
+void operator+(const wchar_t *s1, const UString2 &s2);
+void operator+(wchar_t c, const UString2 &s);
+void operator+(const UString2 &s, wchar_t c);
+void operator+(const UString2 &s, char c);
+void operator+(const UString2 &s, unsigned char c);
+void operator+(char c, const UString2 &s);
+void operator+(unsigned char c, const UString2 &s);
+void operator-(const UString2 &s1, wchar_t c);
+
+
+
+
 
 
 typedef CObjectVector<AString> AStringVector;

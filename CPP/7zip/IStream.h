@@ -95,9 +95,9 @@ STREAM_INTERFACE(IStreamGetSize, 0x06)
   STDMETHOD(GetSize)(UInt64 *size) PURE;
 };
 
-STREAM_INTERFACE(IOutStreamFlush, 0x07)
+STREAM_INTERFACE(IOutStreamFinish, 0x07)
 {
-  STDMETHOD(Flush)() PURE;
+  STDMETHOD(OutStreamFinish)() PURE;
 };
 
 

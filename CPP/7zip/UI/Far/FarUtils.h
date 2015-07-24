@@ -59,10 +59,15 @@ public:
   void Init(const PluginStartupInfo &pluginStartupInfo,
       const CSysString &pluginNameForRegestry);
   const char *GetMsgString(int messageId);
+  
   int ShowMessage(unsigned int flags, const char *helpTopic,
       const char **items, int numItems, int numButtons);
-  int ShowMessage(const char *message);
-  int ShowMessageLines(const char *message);
+  int ShowWarningWithOk(const char **items, int numItems);
+ 
+  void SetErrorTitle(AString &s);
+  int ShowErrorMessage(const char *message);
+  int ShowErrorMessage2(const char *m1, const char *m2);
+  // int ShowMessageLines(const char *messageLines);
   int ShowMessage(int messageId);
 
   int ShowDialog(int X1, int Y1, int X2, int Y2,
@@ -158,30 +163,32 @@ public:
 
 extern CStartupInfo g_StartupInfo;
 
-void PrintErrorMessage(const char *message, int code);
-void PrintErrorMessage(const char *message, const char *text);
-void PrintErrorMessage(const char *message, const wchar_t *text);
 
-#define  MY_TRY_BEGIN   try\
-  {
+int PrintErrorMessage(const char *message, unsigned code);
+int PrintErrorMessage(const char *message, const char *text);
+int PrintErrorMessage(const char *message, const wchar_t *name, unsigned maxLen = 70);
 
-#define  MY_TRY_END1(x)     }\
-  catch(int n) { PrintErrorMessage(x, n);  return; }\
+#define  MY_TRY_BEGIN  try {
+
+#define  MY_TRY_END1(x)  }\
+  catch(unsigned n) { PrintErrorMessage(x, n);  return; }\
   catch(const CSysString &s) { PrintErrorMessage(x, s); return; }\
   catch(const char *s) { PrintErrorMessage(x, s); return; }\
-  catch(...) { g_StartupInfo.ShowMessage(x);  return; }
+  catch(...) { g_StartupInfo.ShowErrorMessage(x);  return; }
 
-#define  MY_TRY_END2(x, y)     }\
-  catch(int n) { PrintErrorMessage(x, n); return y; }\
+#define  MY_TRY_END2(x, y)  }\
+  catch(unsigned n) { PrintErrorMessage(x, n); return y; }\
   catch(const AString &s) { PrintErrorMessage(x, s); return y; }\
   catch(const char *s) { PrintErrorMessage(x, s); return y; }\
   catch(const UString &s) { PrintErrorMessage(x, s); return y; }\
   catch(const wchar_t *s) { PrintErrorMessage(x, s); return y; }\
-  catch(...) { g_StartupInfo.ShowMessage(x); return y; }
+  catch(...) { g_StartupInfo.ShowErrorMessage(x); return y; }
+
+int ShowSysErrorMessage(DWORD errorCode);
+int ShowSysErrorMessage(DWORD errorCode, const wchar_t *name);
+int ShowLastErrorMessage();
 
 bool WasEscPressed();
-void ShowErrorMessage(DWORD errorCode);
-void ShowLastErrorMessage();
 
 }
 

@@ -180,6 +180,9 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   
   error = k_ErrorType_Corrupted;
   ReadString(p, NFileHeader::kNameSize, item.Name); p += NFileHeader::kNameSize;
+  item.NameCouldBeReduced =
+      (item.Name.Len() == NFileHeader::kNameSize ||
+       item.Name.Len() == NFileHeader::kNameSize - 1);
 
   RIF(OctalToNumber32(p, 8, item.Mode)); p += 8;
 
@@ -198,6 +201,9 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   item.LinkFlag = *p++;
 
   ReadString(p, NFileHeader::kNameSize, item.LinkName); p += NFileHeader::kNameSize;
+  item.LinkNameCouldBeReduced =
+      (item.LinkName.Len() == NFileHeader::kNameSize ||
+       item.LinkName.Len() == NFileHeader::kNameSize - 1);
 
   memcpy(item.Magic, p, 8); p += 8;
 
@@ -207,12 +213,17 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   item.DeviceMajorDefined = (p[0] != 0); if (item.DeviceMajorDefined) { RIF(OctalToNumber32(p, 8, item.DeviceMajor)); } p += 8;
   item.DeviceMinorDefined = (p[0] != 0); if (item.DeviceMinorDefined) { RIF(OctalToNumber32(p, 8, item.DeviceMinor)); } p += 8;
 
-  AString prefix;
-  ReadString(p, NFileHeader::kPrefixSize, prefix);
+  if (p[0] != 0)
+  {
+    AString prefix;
+    ReadString(p, NFileHeader::kPrefixSize, prefix);
+    if (!prefix.IsEmpty()
+        && item.IsUstarMagic()
+        && (item.LinkFlag != 'L' /* || prefix != "00000000000" */ ))
+      item.Name = prefix + '/' + item.Name;
+  }
+
   p += NFileHeader::kPrefixSize;
-  if (!prefix.IsEmpty() && item.IsUstarMagic() &&
-      (item.LinkFlag != 'L' /* || prefix != "00000000000" */ ))
-    item.Name = prefix + AString('/') + item.Name;
 
   if (item.LinkFlag == NFileHeader::NLinkFlag::kHardLink)
   {
@@ -353,12 +364,11 @@ HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, EErro
       if (item.PackSize > (1 << 14))
         return S_OK;
       unsigned packSize = (unsigned)item.GetPackSizeAligned();
-      char *buf = name->GetBuffer(packSize);
+      char *buf = name->GetBuf(packSize);
       size_t processedSize = packSize;
       HRESULT res = ReadStream(stream, buf, &processedSize);
       item.HeaderSize += (unsigned)processedSize;
-      buf[(size_t)item.PackSize] = 0;
-      name->ReleaseBuffer();
+      name->ReleaseBuf_CalcLen((unsigned)item.PackSize);
       RINOK(res);
       if (processedSize != packSize)
       {
@@ -392,8 +402,18 @@ HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, EErro
           return S_OK;
     }
     
-    if (flagL) item.Name = nameL;
-    if (flagK) item.LinkName = nameK;
+    if (flagL)
+    {
+      item.Name = nameL;
+      item.NameCouldBeReduced = false;
+    }
+    
+    if (flagK)
+    {
+      item.LinkName = nameK;
+      item.LinkNameCouldBeReduced = false;
+    }
+
     error = k_ErrorType_OK;
     return S_OK;
   }

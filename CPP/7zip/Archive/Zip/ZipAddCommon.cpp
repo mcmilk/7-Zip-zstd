@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../../C/7zCrc.h"
+#include "../../../../C/Alloc.h"
 
 #include "../../../Windows/PropVariant.h"
 
@@ -77,32 +78,46 @@ STDMETHODIMP CLzmaEncoder::Code(ISequentialInStream *inStream, ISequentialOutStr
 
 
 CAddCommon::CAddCommon(const CCompressionMethodMode &options):
-  _options(options),
-  _copyCoderSpec(NULL),
-  _cryptoStreamSpec(0)
-  {}
+    _options(options),
+    _copyCoderSpec(NULL),
+    _cryptoStreamSpec(NULL),
+    _buf(NULL)
+    {}
 
-static HRESULT GetStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
+CAddCommon::~CAddCommon()
 {
+  MidFree(_buf);
+}
+
+static const UInt32 kBufSize = ((UInt32)1 << 16);
+
+HRESULT CAddCommon::CalcStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC)
+{
+  if (!_buf)
+  {
+    _buf = (Byte *)MidAlloc(kBufSize);
+    if (!_buf)
+      return E_OUTOFMEMORY;
+  }
+
   UInt32 crc = CRC_INIT_VAL;
-  const UInt32 kBufSize = (1 << 14);
-  Byte buf[kBufSize];
   for (;;)
   {
     UInt32 processed;
-    RINOK(inStream->Read(buf, kBufSize, &processed));
+    RINOK(inStream->Read(_buf, kBufSize, &processed));
     if (processed == 0)
     {
       resultCRC = CRC_GET_DIGEST(crc);
       return S_OK;
     }
-    crc = CrcUpdate(crc, buf, (size_t)processed);
+    crc = CrcUpdate(crc, _buf, (size_t)processed);
   }
 }
 
 HRESULT CAddCommon::Compress(
     DECL_EXTERNAL_CODECS_LOC_VARS
     ISequentialInStream *inStream, IOutStream *outStream,
+    UInt32 /* fileTime */,
     ICompressProgressInfo *progress, CCompressingResult &opRes)
 {
   if (!inStream)
@@ -111,13 +126,14 @@ HRESULT CAddCommon::Compress(
     return E_INVALIDARG;
   }
 
-  CSequentialInStreamWithCRC *inSecCrcStreamSpec = NULL;
+  // CSequentialInStreamWithCRC *inSecCrcStreamSpec = NULL;
   CInStreamWithCRC *inCrcStreamSpec = NULL;
   CMyComPtr<ISequentialInStream> inCrcStream;
   {
     CMyComPtr<IInStream> inStream2;
-    // we don't support stdin, since stream from stdin can require 64-bit size header
-    RINOK(inStream->QueryInterface(IID_IInStream, (void **)&inStream2));
+    
+    inStream->QueryInterface(IID_IInStream, (void **)&inStream2);
+
     if (inStream2)
     {
       inCrcStreamSpec = new CInStreamWithCRC;
@@ -127,28 +143,29 @@ HRESULT CAddCommon::Compress(
     }
     else
     {
+      // we don't support stdin, since stream from stdin can require 64-bit size header
+      return E_NOTIMPL;
+      /*
       inSecCrcStreamSpec = new CSequentialInStreamWithCRC;
       inCrcStream = inSecCrcStreamSpec;
       inSecCrcStreamSpec->SetStream(inStream);
       inSecCrcStreamSpec->Init();
+      */
     }
   }
 
   unsigned numTestMethods = _options.MethodSequence.Size();
   
-  if (numTestMethods > 1 || _options.PasswordIsDefined)
-  {
-    if (!inCrcStreamSpec)
-    {
-      if (_options.PasswordIsDefined)
-        return E_NOTIMPL;
-      numTestMethods = 1;
-    }
-  }
+  if (numTestMethods > 1 && !inCrcStreamSpec)
+    numTestMethods = 1;
+
+  UInt32 crc = 0;
+  bool crc_IsCalculated = false;
   
   Byte method = 0;
-  COutStreamReleaser outStreamReleaser;
+  CFilterCoder::C_OutStream_Releaser outStreamReleaser;
   opRes.ExtractVersion = NFileHeader::NCompressionMethod::kExtractVersion_Default;
+  opRes.FileTimeWasUsed = false;
   
   for (unsigned i = 0; i < numTestMethods; i++)
   {
@@ -164,7 +181,7 @@ HRESULT CAddCommon::Compress(
 
       if (!_cryptoStream)
       {
-        _cryptoStreamSpec = new CFilterCoder;
+        _cryptoStreamSpec = new CFilterCoder(true);
         _cryptoStream = _cryptoStreamSpec;
       }
       
@@ -186,13 +203,32 @@ HRESULT CAddCommon::Compress(
           _cryptoStreamSpec->Filter = _filterSpec = new NCrypto::NZip::CEncoder;
           _filterSpec->CryptoSetPassword((const Byte *)(const char *)_options.Password, _options.Password.Len());
         }
-        UInt32 crc = 0;
-        RINOK(GetStreamCRC(inStream, crc));
-        RINOK(inCrcStreamSpec->Seek(0, STREAM_SEEK_SET, NULL));
-        RINOK(_filterSpec->WriteHeader(outStream, crc));
+        
+        UInt32 check;
+        
+        // if (inCrcStreamSpec)
+        {
+          if (!crc_IsCalculated)
+          {
+            RINOK(CalcStreamCRC(inStream, crc));
+            crc_IsCalculated = true;
+            RINOK(inCrcStreamSpec->Seek(0, STREAM_SEEK_SET, NULL));
+          }
+          check = (crc >> 16);
+        }
+        /*
+        else
+        {
+          opRes.FileTimeWasUsed = true;
+          check = (fileTime & 0xFFFF);
+        }
+        */
+        
+        RINOK(_filterSpec->WriteHeader_Check16(outStream, (UInt16)check));
       }
       
       RINOK(_cryptoStreamSpec->SetOutStream(outStream));
+      RINOK(_cryptoStreamSpec->InitEncoder());
       outStreamReleaser.FilterCoder = _cryptoStreamSpec;
     }
 
@@ -250,7 +286,7 @@ HRESULT CAddCommon::Compress(
           }
           RINOK(CreateCoder(
               EXTERNAL_CODECS_LOC_VARS
-              methodId, _compressEncoder, true));
+              methodId, true, _compressEncoder));
           if (!_compressEncoder)
             return E_NOTIMPL;
 
@@ -284,34 +320,42 @@ HRESULT CAddCommon::Compress(
       }
     }
 
+    if (_options.PasswordIsDefined)
+    {
+      RINOK(_cryptoStreamSpec->OutStreamFinish());
+      
+      if (_options.IsAesMode)
+      {
+        RINOK(_filterAesSpec->WriteFooter(outStream));
+      }
+    }
+    
     RINOK(outStream->Seek(0, STREAM_SEEK_CUR, &opRes.PackSize));
 
-    if (inCrcStreamSpec)
+    // if (inCrcStreamSpec)
     {
       opRes.CRC = inCrcStreamSpec->GetCRC();
       opRes.UnpackSize = inCrcStreamSpec->GetSize();
     }
+    /*
     else
     {
       opRes.CRC = inSecCrcStreamSpec->GetCRC();
       opRes.UnpackSize = inSecCrcStreamSpec->GetSize();
     }
+    */
 
     if (_options.PasswordIsDefined)
     {
       if (opRes.PackSize < opRes.UnpackSize +
-          (_options.IsAesMode ? _filterAesSpec->GetHeaderSize() : NCrypto::NZip::kHeaderSize))
+          (_options.IsAesMode ? _filterAesSpec->GetAddPackSize() : NCrypto::NZip::kHeaderSize))
         break;
     }
     else if (opRes.PackSize < opRes.UnpackSize)
       break;
   }
-  
-  if (_options.PasswordIsDefined && _options.IsAesMode)
-  {
-    RINOK(_filterAesSpec->WriteFooter(outStream));
-    RINOK(outStream->Seek(0, STREAM_SEEK_CUR, &opRes.PackSize));
-  }
+
+
   opRes.Method = method;
   return S_OK;
 }

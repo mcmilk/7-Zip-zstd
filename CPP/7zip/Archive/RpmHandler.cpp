@@ -77,7 +77,7 @@ enum
   k_EntryType_I18NSTRING
 };
 
-static const char *k_CPUs[] =
+static const char * const k_CPUs[] =
 {
     "noarch"
   , "i386"
@@ -101,7 +101,7 @@ static const char *k_CPUs[] =
   , "aarch64"  // 19
 };
 
-static const char *k_OS[] =
+static const char * const k_OS[] =
 {
     "0"
   , "Linux"
@@ -299,12 +299,7 @@ AString CHandler::GetBaseName() const
     }
   }
   else
-  {
-    char *p = s.GetBuffer(kNameSize);
-    memcpy(p, _lead.Name, kNameSize);
-    p[kNameSize] = 0;
-    s.ReleaseBuffer();
-  }
+    s.SetFrom_CalcLen(_lead.Name, kNameSize);
 
   s += '.';
   if (_lead.Type == kRpmType_Src)
@@ -553,7 +548,7 @@ HRESULT CHandler::ReadHeader(ISequentialInStream *stream, bool isMainHeader)
         for (UInt32 t = 0; t < entry.Count; t++)
         {
           if (t != 0)
-            _metadata += ' ';
+            _metadata.Add_Space();
           char temp[16];
           ConvertUInt32ToString(Get32(p + t * 4), temp);
           _metadata += temp;
@@ -592,7 +587,7 @@ HRESULT CHandler::ReadHeader(ISequentialInStream *stream, bool isMainHeader)
         for (UInt32 t = 0; t < entry.Count; t++)
         {
           if (t != 0)
-            _metadata += ' ';
+            _metadata.Add_Space();
           char temp[16];
           ConvertUInt32ToString(Get16(p + t * 2), temp);
           _metadata += temp;
@@ -777,15 +772,13 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 0xED, 0xAB, 0xEE, 0xDB};
 
-static CArcInfo g_ArcInfo =
-  { "Rpm", "rpm", 0, 0xEB,
-  4, { 0xED, 0xAB, 0xEE, 0xDB},
+REGISTER_ARC_I(
+  "Rpm", "rpm", 0, 0xEB,
+  k_Signature,
   0,
   0,
-  CreateArc };
-
-REGISTER_ARC(Rpm)
+  NULL)
 
 }}

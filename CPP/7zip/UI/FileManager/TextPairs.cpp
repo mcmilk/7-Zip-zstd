@@ -185,6 +185,6 @@ void CPairsStorage::SaveToString(UString &text) const
     text += L' ';
     text += pair.Value;
     text += L'\x0D';
-    text += L'\n';
+    text.Add_LF();
   }
 }

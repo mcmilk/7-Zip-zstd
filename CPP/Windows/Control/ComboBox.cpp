@@ -18,11 +18,15 @@ namespace NControl {
 LRESULT CComboBox::GetLBText(int index, CSysString &s)
 {
   s.Empty();
-  LRESULT len = GetLBTextLen(index);
+  LRESULT len = GetLBTextLen(index); // length, excluding the terminating null character
   if (len == CB_ERR)
     return len;
-  len = GetLBText(index, s.GetBuffer((int)len + 1));
-  s.ReleaseBuffer();
+  LRESULT len2 = GetLBText(index, s.GetBuf((unsigned)len));
+  if (len2 == CB_ERR)
+    return len;
+  if (len > len2)
+    len = len2;
+  s.ReleaseBuf_CalcLen((unsigned)len);
   return len;
 }
 
@@ -42,8 +46,12 @@ LRESULT CComboBox::GetLBText(int index, UString &s)
     LRESULT len = SendMessageW(CB_GETLBTEXTLEN, index, 0);
     if (len == CB_ERR)
       return len;
-    len = SendMessageW(CB_GETLBTEXT, index, (LPARAM)s.GetBuffer((int)len + 1));
-    s.ReleaseBuffer();
+    LRESULT len2 = SendMessageW(CB_GETLBTEXT, index, (LPARAM)s.GetBuf((unsigned)len));
+    if (len2 == CB_ERR)
+      return len;
+    if (len > len2)
+      len = len2;
+    s.ReleaseBuf_CalcLen(len);
     return len;
   }
   AString sa;

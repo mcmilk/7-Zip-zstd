@@ -1,4 +1,4 @@
-#include "../../../../C/7zVersion.rc"
+#include "../../MyVersionInfo.rc"
 #include "../../GuiCommon.rc"
 #include "../../UI/GUI/ExtractDialogRes.h"
 #include "../../UI/FileManager/PropertyNameRes.h"

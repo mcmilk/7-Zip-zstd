@@ -696,11 +696,11 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
       cmd->OpCode = (ECommand)inp.ReadBits(3);
     else
       cmd->OpCode = (ECommand)(8 + inp.ReadBits(5));
-    if (kCmdFlags[cmd->OpCode] & CF_BYTEMODE)
+    if (kCmdFlags[(unsigned)cmd->OpCode] & CF_BYTEMODE)
       cmd->ByteMode = (inp.ReadBit()) ? true : false;
     else
       cmd->ByteMode = 0;
-    int opNum = (kCmdFlags[cmd->OpCode] & CF_OPMASK);
+    int opNum = (kCmdFlags[(unsigned)cmd->OpCode] & CF_OPMASK);
     if (opNum > 0)
     {
       DecodeArg(inp, cmd->Op1, cmd->ByteMode);
@@ -708,7 +708,7 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
         DecodeArg(inp, cmd->Op2, cmd->ByteMode);
       else
       {
-        if (cmd->Op1.Type == OP_TYPE_INT && (kCmdFlags[cmd->OpCode] & (CF_JUMP | CF_PROC)))
+        if (cmd->Op1.Type == OP_TYPE_INT && (kCmdFlags[(unsigned)cmd->OpCode] & (CF_JUMP | CF_PROC)))
         {
           int dist = cmd->Op1.Data;
           if (dist >= 256)
@@ -784,7 +784,7 @@ kStdFilters[]=
 static int FindStandardFilter(const Byte *code, UInt32 codeSize)
 {
   UInt32 crc = CrcCalc(code, codeSize);
-  for (int i = 0; i < sizeof(kStdFilters) / sizeof(kStdFilters[0]); i++)
+  for (unsigned i = 0; i < ARRAY_SIZE(kStdFilters); i++)
   {
     const CStandardFilterSignature &sfs = kStdFilters[i];
     if (sfs.CRC == crc && sfs.Length == codeSize)
@@ -857,6 +857,7 @@ static inline UInt32 ItaniumGetOpType(const Byte *data, int bitPos)
   return (data[(unsigned int)bitPos >> 3] >> (bitPos & 7)) & 0xF;
 }
 
+static const Byte kCmdMasks[16] = {4,4,6,6,0,0,7,7,4,4,0,0,4,4,0,0};
 
 static void ItaniumDecode(Byte *data, UInt32 dataSize, UInt32 fileOffset)
 {
@@ -867,7 +868,6 @@ static void ItaniumDecode(Byte *data, UInt32 dataSize, UInt32 fileOffset)
     int b = (data[0] & 0x1F) - 0x10;
     if (b >= 0)
     {
-      static Byte kCmdMasks[16] = {4,4,6,6,0,0,7,7,4,4,0,0,4,4,0,0};
       Byte cmdMask = kCmdMasks[b];
       if (cmdMask != 0)
         for (int i = 0; i < 3; i++)
@@ -993,7 +993,7 @@ static void AudioDecode(Byte *srcData, UInt32 dataSize, UInt32 numChannels)
       {
         UInt32 minDif = dif[0], numMinDif = 0;
         dif[0] = 0;
-        for (int j = 1; j < sizeof(dif) / sizeof(dif[0]); j++)
+        for (unsigned j = 1; j < ARRAY_SIZE(dif); j++)
         {
           if (dif[j] < minDif)
           {
@@ -1029,7 +1029,7 @@ static UInt32 UpCaseDecode(Byte *data, UInt32 dataSize)
   return destPos - dataSize;
 }
 
-void CVm::ExecuteStandardFilter(int filterIndex)
+void CVm::ExecuteStandardFilter(unsigned filterIndex)
 {
   UInt32 dataSize = R[4];
   if (dataSize >= kGlobalOffset)

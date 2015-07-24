@@ -19,6 +19,18 @@
 
 #include "../IStream.h"
 
+#ifdef _WIN32
+typedef UINT_PTR My_UINT_PTR;
+#else
+typedef UINT My_UINT_PTR;
+#endif
+
+struct IInFileStream_Callback
+{
+  virtual HRESULT InFileStream_On_Error(My_UINT_PTR val, DWORD error) = 0;
+  virtual void InFileStream_On_Destroy(My_UINT_PTR val) = 0;
+};
+
 class CInFileStream:
   public IInStream,
   public IStreamGetSize,
@@ -45,12 +57,13 @@ public:
   #endif
 
   bool SupportHardLinks;
-  
+
+  IInFileStream_Callback *Callback;
+  My_UINT_PTR CallbackRef;
+
   virtual ~CInFileStream();
 
-  #ifdef SUPPORT_DEVICE_FILE
   CInFileStream();
-  #endif
   
   bool Open(CFSTR fileName)
   {
@@ -132,15 +145,20 @@ public:
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
   STDMETHOD(SetSize)(UInt64 newSize);
+
+  HRESULT GetSize(UInt64 *size);
 };
 
 class CStdOutFileStream:
   public ISequentialOutStream,
   public CMyUnknownImp
 {
+  UInt64 _size;
 public:
   MY_UNKNOWN_IMP
 
+  UInt64 GetSize() const { return _size; }
+  CStdOutFileStream(): _size(0) {}
   virtual ~CStdOutFileStream() {}
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
 };

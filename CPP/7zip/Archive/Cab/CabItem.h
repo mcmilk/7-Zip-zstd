@@ -51,7 +51,7 @@ struct CItem
       FolderIndex == NHeader::NFolderIndex::kContinuedPrevAndNext;
   }
 
-  int GetFolderIndex(int numFolders) const
+  int GetFolderIndex(unsigned numFolders) const
   {
     if (ContinuedFromPrev())
       return 0;

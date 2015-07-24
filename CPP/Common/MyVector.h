@@ -12,7 +12,7 @@ class CRecordVector
   
   void MoveItems(unsigned destIndex, unsigned srcIndex)
   {
-    memmove(_items + destIndex, _items + srcIndex, (size_t)(_size - srcIndex) * (size_t)sizeof(T));
+    memmove(_items + destIndex, _items + srcIndex, (size_t)(_size - srcIndex) * sizeof(T));
   }
 
   void ReserveOnePosition()
@@ -21,7 +21,8 @@ class CRecordVector
     {
       unsigned newCapacity = _capacity + (_capacity >> 2) + 1;
       T *p = new T[newCapacity];
-      memcpy(p, _items, (size_t)_size * (size_t)sizeof(T));
+      if (_size != 0)
+        memcpy(p, _items, (size_t)_size * sizeof(T));
       delete []_items;
       _items = p;
       _capacity = newCapacity;
@@ -40,7 +41,7 @@ public:
       _items = new T[size];
       _size = size;
       _capacity = size;
-      memcpy(_items, v._items, (size_t)size * (size_t)sizeof(T));
+      memcpy(_items, v._items, (size_t)size * sizeof(T));
     }
   }
   
@@ -61,7 +62,8 @@ public:
     if (newCapacity > _capacity)
     {
       T *p = new T[newCapacity];
-      memcpy(p, _items, (size_t)_size * (size_t)sizeof(T));
+      if (_size != 0)
+        memcpy(p, _items, (size_t)_size * sizeof(T));
       delete []_items;
       _items = p;
       _capacity = newCapacity;
@@ -92,7 +94,8 @@ public:
     if (newSize > _capacity)
     {
       T *p = new T[newSize];
-      memcpy(p, _items, (size_t)_size * (size_t)sizeof(T));
+      if (_size != 0)
+        memcpy(p, _items, (size_t)_size * sizeof(T));
       delete []_items;
       _items = p;
       _capacity = newSize;
@@ -108,7 +111,7 @@ public:
     if (_size != 0)
     {
       p = new T[_size];
-      memcpy(p, _items, (size_t)_size * (size_t)sizeof(T));
+      memcpy(p, _items, (size_t)_size * sizeof(T));
     }
     delete []_items;
     _items = p;
@@ -163,6 +166,8 @@ public:
 
   CRecordVector& operator=(const CRecordVector &v)
   {
+    if (&v == this)
+      return *this;
     unsigned size = v.Size();
     if (size > _capacity)
     {
@@ -174,7 +179,8 @@ public:
       _capacity = size;
     }
     _size = size;
-    memcpy(_items, v._items, (size_t)size * (size_t)sizeof(T));
+    if (size != 0)
+      memcpy(_items, v._items, (size_t)size * sizeof(T));
     return *this;
   }
 
@@ -182,7 +188,8 @@ public:
   {
     unsigned size = v.Size();
     Reserve(_size + size);
-    memcpy(_items + _size, v._items, (size_t)size * (size_t)sizeof(T));
+    if (size != 0)
+      memcpy(_items + _size, v._items, (size_t)size * sizeof(T));
     _size += size;
     return *this;
   }
@@ -212,7 +219,7 @@ public:
     if (index != 0)
     {
       T temp = _items[index];
-      memmove(_items + 1, _items, (size_t)index * (size_t)sizeof(T));
+      memmove(_items + 1, _items, (size_t)index * sizeof(T));
       _items[0] = temp;
     }
   }
@@ -421,6 +428,8 @@ public:
   }
   CObjectVector& operator=(const CObjectVector &v)
   {
+    if (&v == this)
+      return *this;
     Clear();
     unsigned size = v.Size();
     _v.Reserve(size);

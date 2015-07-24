@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 
-<?define VerMajor = "9" ?>
-<?define VerMinor = "38" ?>
+<?define VerMajor = "15" ?>
+<?define VerMinor = "05" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
-<?define MmHex = "0$(var.VerMajor)$(var.VerMinor)" ?>
+<?define MmHex = "$(var.VerMajor)$(var.VerMinor)" ?>
 <?define MmmmVer = "$(var.MmVer).$(var.VerBuild).0" ?>
 <?define UpgradeMinVer = "4.38" ?>
 
@@ -112,6 +112,7 @@
 
     <Property Id="ALLUSERS">2</Property>
 
+    <Property Id="LicenseAccepted">1</Property>
 
     <Property Id="ARPURLINFOABOUT" Value="$(var.AboutURL)" />
     <Property Id="ARPHELPLINK" Value="$(var.SupportURL)" />

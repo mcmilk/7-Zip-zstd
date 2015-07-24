@@ -56,7 +56,7 @@ public:
   INTERFACE_IInArchive(;)
   INTERFACE_IOutArchive(;)
   STDMETHOD(OpenSeq)(ISequentialInStream *stream);
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
+  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
 
   CHandler() { }
 };
@@ -367,6 +367,8 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
+  COM_TRY_BEGIN
+
   if (numItems != 1)
     return E_INVALIDARG;
 
@@ -381,13 +383,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     {
       NCOM::CPropVariant prop;
       RINOK(updateCallback->GetProperty(0, kpidIsDir, &prop));
-      if (prop.vt == VT_BOOL)
-      {
-        if (prop.boolVal != VARIANT_FALSE)
+      if (prop.vt != VT_EMPTY)
+        if (prop.vt != VT_BOOL || prop.boolVal != VARIANT_FALSE)
           return E_INVALIDARG;
-      }
-      else if (prop.vt != VT_EMPTY)
-        return E_INVALIDARG;
     }
   }
   
@@ -403,28 +401,43 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
     return UpdateArchive(size, outStream, _props, updateCallback);
   }
+
   if (indexInArchive != 0)
     return E_INVALIDARG;
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(updateCallback, true);
+
+  CMyComPtr<IArchiveUpdateCallbackFile> opCallback;
+  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackFile, (void **)&opCallback);
+  if (opCallback)
+  {
+    RINOK(opCallback->ReportOperation(
+        NEventIndexType::kInArcIndex, 0,
+        NUpdateNotifyOp::kReplicate))
+  }
+
   if (_stream)
     RINOK(_stream->Seek(0, STREAM_SEEK_SET, NULL));
-  return NCompress::CopyStream(_stream, outStream, NULL);
+
+  return NCompress::CopyStream(_stream, outStream, progress);
+
+  COM_TRY_END
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps)
+STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   return _props.SetProperties(names, values, numProps);
 }
 
-IMP_CreateArcIn
-IMP_CreateArcOut
+static const Byte k_Signature[] = { 'B', 'Z', 'h' };
 
-static CArcInfo g_ArcInfo =
-  { "bzip2", "bz2 bzip2 tbz2 tbz", "* * .tar .tar", 2,
-  3, { 'B', 'Z', 'h' },
+REGISTER_ARC_IO(
+  "bzip2", "bz2 bzip2 tbz2 tbz", "* * .tar .tar", 2,
+  k_Signature,
   0,
   NArcInfoFlags::kKeepName,
-  REF_CreateArc_Pair, IsArc_BZip2 };
-
-REGISTER_ARC(BZip2)
+  IsArc_BZip2)
 
 }}

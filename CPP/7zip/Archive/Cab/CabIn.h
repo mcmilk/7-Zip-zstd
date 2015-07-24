@@ -17,6 +17,12 @@ struct COtherArc
 {
   AString FileName;
   AString DiskName;
+  
+  void Clear()
+  {
+    FileName.Empty();
+    DiskName.Empty();
+  }
 };
 
 struct CArchInfo
@@ -43,7 +49,9 @@ struct CArchInfo
 
   CArchInfo()
   {
-    Clear();
+    PerCabinet_AreaSize = 0;
+    PerFolder_AreaSize = 0;
+    PerDataBlock_AreaSize = 0;
   }
 
   void Clear()
@@ -51,6 +59,9 @@ struct CArchInfo
     PerCabinet_AreaSize = 0;
     PerFolder_AreaSize = 0;
     PerDataBlock_AreaSize = 0;
+
+    PrevArc.Clear();
+    NextArc.Clear();
   }
 };
 

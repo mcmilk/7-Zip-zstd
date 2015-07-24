@@ -7,22 +7,17 @@
 
 #include "../Common/MyCom.h"
 
-#include "../7zip/ICoder.h"
 #include "../7zip/Common/RegisterCodec.h"
 
 EXTERN_C_BEGIN
 
 typedef UInt32 (MY_FAST_CALL *CRC_FUNC)(UInt32 v, const void *data, size_t size, const UInt32 *table);
 
+UInt32 MY_FAST_CALL CrcUpdateT1(UInt32 v, const void *data, size_t size, const UInt32 *table);
+
 extern CRC_FUNC g_CrcUpdate;
-
-#ifdef MY_CPU_X86_OR_AMD64
-  UInt32 MY_FAST_CALL CrcUpdateT8(UInt32 v, const void *data, size_t size, const UInt32 *table);
-#endif
-
-#ifndef MY_CPU_BE
-  UInt32 MY_FAST_CALL CrcUpdateT4(UInt32 v, const void *data, size_t size, const UInt32 *table);
-#endif
+extern CRC_FUNC g_CrcUpdateT8;
+extern CRC_FUNC g_CrcUpdateT4;
 
 EXTERN_C_END
 
@@ -33,62 +28,42 @@ class CCrcHasher:
 {
   UInt32 _crc;
   CRC_FUNC _updateFunc;
+  Byte mtDummy[1 << 7];
+  
   bool SetFunctions(UInt32 tSize);
 public:
   CCrcHasher(): _crc(CRC_INIT_VAL) { SetFunctions(0); }
 
   MY_UNKNOWN_IMP1(ICompressSetCoderProperties)
-
-  STDMETHOD_(void, Init)();
-  STDMETHOD_(void, Update)(const void *data, UInt32 size);
-  STDMETHOD_(void, Final)(Byte *digest);
-  STDMETHOD_(UInt32, GetDigestSize)();
+  INTERFACE_IHasher(;)
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
 };
-
-STDMETHODIMP_(void) CCrcHasher::Init()
-{
-  _crc = CRC_INIT_VAL;
-}
-
-STDMETHODIMP_(void) CCrcHasher::Update(const void *data, UInt32 size)
-{
-  _crc = _updateFunc(_crc, data, size, g_CrcTable);
-}
-
-STDMETHODIMP_(void) CCrcHasher::Final(Byte *digest)
-{
-  UInt32 val = CRC_GET_DIGEST(_crc);
-  SetUi32(digest, val);
-}
-
-STDMETHODIMP_(UInt32) CCrcHasher::GetDigestSize()
-{
-  return 4;
-}
 
 bool CCrcHasher::SetFunctions(UInt32 tSize)
 {
   _updateFunc = g_CrcUpdate;
-  if (tSize == 4)
+  
+  if (tSize == 1)
+    _updateFunc = CrcUpdateT1;
+  else if (tSize == 4)
   {
-    #ifndef MY_CPU_BE
-    _updateFunc = CrcUpdateT4;
-    #endif
+    if (g_CrcUpdateT4)
+      _updateFunc = g_CrcUpdateT4;
+    else
+      return false;
   }
   else if (tSize == 8)
   {
-    #ifdef MY_CPU_X86_OR_AMD64
-      _updateFunc = CrcUpdateT8;
-    #else
+    if (g_CrcUpdateT8)
+      _updateFunc = g_CrcUpdateT8;
+    else
       return false;
-    #endif
   }
+  
   return true;
 }
 
-STDMETHODIMP CCrcHasher::SetCoderProperties(const PROPID *propIDs,
-    const PROPVARIANT *coderProps, UInt32 numProps)
+STDMETHODIMP CCrcHasher::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *coderProps, UInt32 numProps)
 {
   for (UInt32 i = 0; i < numProps; i++)
   {
@@ -104,8 +79,20 @@ STDMETHODIMP CCrcHasher::SetCoderProperties(const PROPID *propIDs,
   return S_OK;
 }
 
-static IHasher *CreateHasher() { return new CCrcHasher(); }
+STDMETHODIMP_(void) CCrcHasher::Init() throw()
+{
+  _crc = CRC_INIT_VAL;
+}
 
-static CHasherInfo g_HasherInfo = { CreateHasher, 0x1, L"CRC32", 4 };
+STDMETHODIMP_(void) CCrcHasher::Update(const void *data, UInt32 size) throw()
+{
+  _crc = _updateFunc(_crc, data, size, g_CrcTable);
+}
 
-REGISTER_HASHER(Crc32)
+STDMETHODIMP_(void) CCrcHasher::Final(Byte *digest) throw()
+{
+  UInt32 val = CRC_GET_DIGEST(_crc);
+  SetUi32(digest, val);
+}
+
+REGISTER_HASHER(CCrcHasher, 0x1, "CRC32", 4)

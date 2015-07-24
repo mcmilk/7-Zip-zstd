@@ -3,7 +3,7 @@ HISTORY of the 7-Zip source code
 
 9.38 beta      2015-01-03
 -------------------------	
-- The BUG in 9.30-9.37 was fixed:
+- The BUG in 9.31-9.37 was fixed:
   IArchiveGetRawProps interface was disabled for 7z archives.
 - The BUG in 9.26-9.36 was fixed:
   Some code in CPP\7zip\Archive\7z\ worked correctly only under Windows.

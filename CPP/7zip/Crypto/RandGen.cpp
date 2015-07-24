@@ -2,7 +2,9 @@
 
 #include "StdAfx.h"
 
+#ifndef _7ZIP_ST
 #include "../../Windows/Synchronization.h"
+#endif
 
 #include "RandGen.h"
 
@@ -85,14 +87,20 @@ void CRandomGenerator::Init()
   _needInit = false;
 }
 
-static NWindows::NSynchronization::CCriticalSection g_CriticalSection;
+#ifndef _7ZIP_ST
+  static NWindows::NSynchronization::CCriticalSection g_CriticalSection;
+  #define MT_LOCK NWindows::NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
+#else
+  #define MT_LOCK
+#endif
 
 void CRandomGenerator::Generate(Byte *data, unsigned size)
 {
-  g_CriticalSection.Enter();
+  MT_LOCK
+
   if (_needInit)
     Init();
-  while (size > 0)
+  while (size != 0)
   {
     CSha256 hash;
     
@@ -106,10 +114,9 @@ void CRandomGenerator::Generate(Byte *data, unsigned size)
     Sha256_Update(&hash, _buff, SHA256_DIGEST_SIZE);
     Byte buff[SHA256_DIGEST_SIZE];
     Sha256_Final(&hash, buff);
-    for (unsigned i = 0; i < SHA256_DIGEST_SIZE && size > 0; i++, size--)
+    for (unsigned i = 0; i < SHA256_DIGEST_SIZE && size != 0; i++, size--)
       *data++ = buff[i];
   }
-  g_CriticalSection.Leave();
 }
 
 CRandomGenerator g_RandomGenerator;

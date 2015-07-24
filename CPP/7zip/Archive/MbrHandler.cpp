@@ -169,7 +169,7 @@ static const CPartType kPartTypes[] =
 
 static int FindPartType(UInt32 type)
 {
-  for (int i = 0; i < ARRAY_SIZE(kPartTypes); i++)
+  for (unsigned i = 0; i < ARRAY_SIZE(kPartTypes); i++)
     if (kPartTypes[i].Id == type)
       return i;
   return -1;
@@ -193,19 +193,19 @@ class CHandler:
   UInt64 _totalSize;
   CByteBuffer _buffer;
 
-  HRESULT ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, int level);
+  HRESULT ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsigned level);
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
-HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, int level)
+HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsigned level)
 {
   if (level >= 128 || _items.Size() >= 128)
     return S_FALSE;
 
-  const int kNumHeaderParts = 4;
+  const unsigned kNumHeaderParts = 4;
   CPartition parts[kNumHeaderParts];
 
   {
@@ -221,7 +221,7 @@ HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, int 
     if (buf[0x1FE] != 0x55 || buf[0x1FF] != 0xAA)
       return S_FALSE;
     
-    for (int i = 0; i < kNumHeaderParts; i++)
+    for (unsigned i = 0; i < kNumHeaderParts; i++)
       if (!parts[i].Parse(buf + 0x1BE + 16 * i))
         return S_FALSE;
   }
@@ -232,13 +232,13 @@ HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, int 
   if (limLba == 0)
     return S_FALSE;
 
-  for (int i = 0; i < kNumHeaderParts; i++)
+  for (unsigned i = 0; i < kNumHeaderParts; i++)
   {
     CPartition &part = parts[i];
     
     if (part.IsEmpty())
       continue;
-    PRF(printf("\n   %2d ", (int)level));
+    PRF(printf("\n   %2d ", (unsigned)level));
     #ifdef SHOW_DEBUG_INFO
     part.Print();
     #endif
@@ -402,8 +402,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         int typeIndex = FindPartType(part.Type);
         s += '.';
         const char *ext = "img";
-        if (typeIndex >= 0 && kPartTypes[typeIndex].Ext != 0)
-          ext = kPartTypes[typeIndex].Ext;
+        if (typeIndex >= 0 && kPartTypes[(unsigned)typeIndex].Ext)
+          ext = kPartTypes[(unsigned)typeIndex].Ext;
         s += ext;
       }
       prop = s;
@@ -416,8 +416,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         ConvertUInt32ToString(part.Type, s);
         const char *res = s;
         int typeIndex = FindPartType(part.Type);
-        if (typeIndex >= 0 && kPartTypes[typeIndex].Name)
-          res = kPartTypes[typeIndex].Name;
+        if (typeIndex >= 0 && kPartTypes[(unsigned)typeIndex].Name)
+          res = kPartTypes[(unsigned)typeIndex].Name;
         prop = res;
       }
       break;
@@ -499,17 +499,14 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
 
-static CArcInfo g_ArcInfo =
-  { "MBR", "mbr", 0, 0xDB,
   // 3, { 1, 1, 0 },
   // 2, { 0x55, 0x1FF },
-  0, { 0 },
+
+REGISTER_ARC_I_NO_SIG(
+  "MBR", "mbr", 0, 0xDB,
   0,
   NArcInfoFlags::kPureStartOpen,
-  CreateArc };
-
-REGISTER_ARC(Mbr)
+  NULL)
 
 }}

@@ -43,7 +43,7 @@ struct CUpdatePair2
 
 struct IUpdateProduceCallback
 {
-  virtual HRESULT ShowDeleteFile(int arcIndex) = 0;
+  virtual HRESULT ShowDeleteFile(unsigned arcIndex) = 0;
 };
 
 void UpdateProduce(

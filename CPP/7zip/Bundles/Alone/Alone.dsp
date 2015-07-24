@@ -350,6 +350,10 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Sha1Reg.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Sha256Reg.cpp
 # End Source File
 # Begin Source File
@@ -1214,14 +1218,6 @@ SOURCE=..\..\Compress\BitmEncoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BranchCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\BranchCoder.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\BranchMisc.cpp
 # End Source File
 # Begin Source File
@@ -1517,14 +1513,6 @@ SOURCE=..\..\Archive\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2MT.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Common\DummyOutStream.cpp
 # End Source File
 # Begin Source File
@@ -1647,6 +1635,10 @@ SOURCE=..\..\Archive\DeflateProps.h
 # Begin Source File
 
 SOURCE=..\..\Archive\GzHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\IArchive.h
 # End Source File
 # Begin Source File
 
@@ -1941,32 +1933,6 @@ SOURCE=..\..\Crypto\RandGen.cpp
 # Begin Source File
 
 SOURCE=..\..\Crypto\RandGen.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Sha1.cpp
-
-!IF  "$(CFG)" == "Alone - Win32 Release"
-
-# ADD CPP /O2
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
-
-!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Sha1.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Crypto\Sha1Reg.cpp
 # End Source File
 # Begin Source File
 
@@ -2382,6 +2348,30 @@ SOURCE=..\..\..\..\C\Bcj2.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Bcj2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bcj2Enc.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -2915,6 +2905,34 @@ SOURCE=..\..\..\..\C\Ppmd8Enc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\RotateDefs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha1.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha1.h
 # End Source File
 # Begin Source File
 

@@ -49,6 +49,9 @@ static UString g_MainPath;
 static UString g_ArcFormat;
 static bool g_Maximized = false;
 
+// HRESULT LoadGlobalCodecs();
+void FreeGlobalCodecs();
+
 #ifndef UNDER_CE
 
 DWORD g_ComCtl32Version;
@@ -568,6 +571,13 @@ static int WINAPI WinMain2(int nCmdShow)
   if (!InitInstance (nCmdShow))
     return FALSE;
 
+  // we will load Global_Codecs at first use instead.
+  /*
+  OutputDebugStringW(L"Before LoadGlobalCodecs");
+  LoadGlobalCodecs();
+  OutputDebugStringW(L"After LoadGlobalCodecs");
+  */
+
   #ifndef _UNICODE
   if (g_IsNT)
   {
@@ -596,6 +606,10 @@ static int WINAPI WinMain2(int nCmdShow)
       }
     }
   }
+
+  // Destructor of g_CodecsReleaser can release DLLs.
+  // But we suppose that it's better to release DLLs here (before destructor).
+  FreeGlobalCodecs();
 
   g_HWND = 0;
   #ifndef UNDER_CE
@@ -780,35 +794,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         xSizes[1] = 0;
 
       g_App.CreateDragTarget();
+      
       bool archiveIsOpened;
       bool encrypted;
       bool needOpenFile = false;
-      if (!g_MainPath.IsEmpty() /* && g_OpenArchive */)
+
+      UString fullPath = g_MainPath;
+      if (!fullPath.IsEmpty() /* && g_OpenArchive */)
       {
-        if (NFile::NFind::DoesFileExist(us2fs(g_MainPath)))
+        if (!NFile::NName::IsAbsolutePath(fullPath))
+        {
+          FString fullPathF;
+          if (NFile::NName::GetFullPath(us2fs(fullPath), fullPathF))
+            fullPath = fs2us(fullPathF);
+        }
+        if (NFile::NFind::DoesFileExist(us2fs(fullPath)))
           needOpenFile = true;
       }
-      HRESULT res = g_App.Create(hWnd, g_MainPath, g_ArcFormat, xSizes, archiveIsOpened, encrypted);
+      
+      HRESULT res = g_App.Create(hWnd, fullPath, g_ArcFormat, xSizes, archiveIsOpened, encrypted);
 
       if (res == E_ABORT)
-      {
         return -1;
-      }
+      
       if (needOpenFile && !archiveIsOpened || res != S_OK)
       {
         UString message = L"Error";
         if (res == S_FALSE || res == S_OK)
         {
           message = MyFormatNew(encrypted ?
-            IDS_CANT_OPEN_ENCRYPTED_ARCHIVE :
-            IDS_CANT_OPEN_ARCHIVE,
-            g_MainPath);
+                IDS_CANT_OPEN_ENCRYPTED_ARCHIVE :
+                IDS_CANT_OPEN_ARCHIVE,
+              fullPath);
         }
         else if (res != S_OK)
           message = HResultToMessage(res);
         ErrorMessage(message);
         return -1;
       }
+      
       // g_SplitterPos = 0;
 
       // ::DragAcceptFiles(hWnd, TRUE);
@@ -816,6 +840,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
       break;
     }
+
     case WM_DESTROY:
     {
       // ::DragAcceptFiles(hWnd, FALSE);
@@ -839,11 +864,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       g_StartCaptureSplitterPos = g_Splitter.GetPos();
       ::SetCapture(hWnd);
       break;
+    
     case WM_LBUTTONUP:
     {
       ::ReleaseCapture();
       break;
     }
+    
     case WM_MOUSEMOVE:
     {
       if ((wParam & MK_LBUTTON) != 0 && ::GetCapture() == hWnd)
@@ -880,10 +907,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       return 0;
       break;
     }
+    
     case WM_SETFOCUS:
       // g_App.SetFocus(g_App.LastFocusedPanel);
       g_App.SetFocusToLastItem();
       break;
+    
     /*
     case WM_ACTIVATE:
     {
@@ -900,6 +929,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       break;
     }
     */
+    
     /*
     case kLangWasChangedMessage:
       MyLoadMenu();
@@ -910,11 +940,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_SETTINGCHANGE:
       break;
     */
+    
     case WM_NOTIFY:
     {
       g_App.OnNotify((int)wParam, (LPNMHDR)lParam);
       break;
     }
+    
     /*
     case WM_DROPFILES:
     {

@@ -105,10 +105,10 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
   CMtf8Decoder mtf;
   mtf.StartInit();
   
-  int numInUse = 0;
+  unsigned numInUse = 0;
   {
     Byte inUse16[16];
-    int i;
+    unsigned i;
     for (i = 0; i < 16; i++)
       inUse16[i] = (Byte)ReadBit();
     for (i = 0; i < 256; i++)
@@ -121,9 +121,9 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
       return S_FALSE;
     // mtf.Init(numInUse);
   }
-  int alphaSize = numInUse + 2;
+  unsigned alphaSize = numInUse + 2;
 
-  int numTables = ReadBits(kNumTablesBits);
+  unsigned numTables = ReadBits(kNumTablesBits);
   if (numTables < kNumTablesMin || numTables > kNumTablesMax)
     return S_FALSE;
   
@@ -133,14 +133,14 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
 
   {
     Byte mtfPos[kNumTablesMax];
-    int t = 0;
+    unsigned t = 0;
     do
       mtfPos[t] = (Byte)t;
     while (++t < numTables);
     UInt32 i = 0;
     do
     {
-      int j = 0;
+      unsigned j = 0;
       while (ReadBit())
         if (++j >= numTables)
           return S_FALSE;
@@ -152,12 +152,12 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
     while (++i < numSelectors);
   }
 
-  int t = 0;
+  unsigned t = 0;
   do
   {
     Byte lens[kMaxAlphaSize];
-    int len = (int)ReadBits(kNumLevelsBits);
-    int i;
+    unsigned len = (unsigned)ReadBits(kNumLevelsBits);
+    unsigned i;
     for (i = 0; i < alphaSize; i++)
     {
       for (;;)
@@ -166,7 +166,8 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
           return S_FALSE;
         if (!ReadBit())
           break;
-        len += 1 - (int)(ReadBit() << 1);
+        len++;
+        len -= (ReadBit() << 1);
       }
       lens[i] = (Byte)len;
     }
@@ -178,7 +179,7 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
   while (++t < numTables);
 
   {
-    for (int i = 0; i < 256; i++)
+    for (unsigned i = 0; i < 256; i++)
       charCounters[i] = 0;
   }
   
@@ -187,7 +188,7 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
     UInt32 groupIndex = 0;
     UInt32 groupSize = 0;
     CHuffmanDecoder *huffmanDecoder = 0;
-    int runPower = 0;
+    unsigned runPower = 0;
     UInt32 runCounter = 0;
     
     for (;;)
@@ -224,7 +225,7 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
       }
       if (nextSym <= (UInt32)numInUse)
       {
-        UInt32 b = (UInt32)mtf.GetAndMove((int)nextSym - 1);
+        UInt32 b = (UInt32)mtf.GetAndMove((unsigned)nextSym - 1);
         if (blockSize >= blockSizeMax)
           return S_FALSE;
         charCounters[b]++;
@@ -510,7 +511,7 @@ HRESULT CDecoder::ReadSignature(UInt32 &crc)
   crc = 0;
 
   Byte s[10];
-  int i;
+  unsigned i;
   for (i = 0; i < 10; i++)
     s[i] = ReadByte();
 
@@ -576,7 +577,7 @@ HRESULT CDecoder::DecodeFile(ICompressProgressInfo *progress)
   */
 
   Byte s[4];
-  int i;
+  unsigned i;
   for (i = 0; i < 4; i++)
     s[i] = ReadByte();
   if (Base.BitDecoder.ExtraBitsWereRead())

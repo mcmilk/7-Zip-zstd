@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 
 #ifndef UNDER_CE
@@ -35,8 +36,8 @@ const char *CStartupInfo::GetMsgString(int messageId)
 int CStartupInfo::ShowMessage(unsigned int flags,
     const char *helpTopic, const char **items, int numItems, int numButtons)
 {
-  return m_Data.Message(m_Data.ModuleNumber, flags, (char *)helpTopic,
-    (char **)items, numItems, numButtons);
+  return m_Data.Message(m_Data.ModuleNumber, flags, helpTopic,
+      items, numItems, numButtons);
 }
 
 namespace NMessageID
@@ -50,12 +51,40 @@ namespace NMessageID
   };
 }
 
-int CStartupInfo::ShowMessage(const char *message)
+int CStartupInfo::ShowWarningWithOk(const char **items, int numItems)
 {
-  const char *items[]= { GetMsgString(NMessageID::kError), message, GetMsgString(NMessageID::kOk) };
-  return ShowMessage(FMSG_WARNING, NULL, items, ARRAY_SIZE(items), 1);
+  return ShowMessage(FMSG_WARNING | FMSG_MB_OK, NULL, items, numItems, 0);
 }
 
+extern const char *g_PluginName_for_Error;
+
+void CStartupInfo::SetErrorTitle(AString &s)
+{
+  if (g_PluginName_for_Error)
+  {
+    s += g_PluginName_for_Error;
+    s += ": ";
+  }
+  s += GetMsgString(NMessageID::kError);
+}
+
+int CStartupInfo::ShowErrorMessage(const char *message)
+{
+  AString s;
+  SetErrorTitle(s);
+  const char *items[]= { s, message };
+  return ShowWarningWithOk(items, ARRAY_SIZE(items));
+}
+
+int CStartupInfo::ShowErrorMessage2(const char *m1, const char *m2)
+{
+  AString s;
+  SetErrorTitle(s);
+  const char *items[]= { s, m1, m2 };
+  return ShowWarningWithOk(items, ARRAY_SIZE(items));
+}
+
+/*
 static void SplitString(const AString &srcString, AStringVector &destStrings)
 {
   destStrings.Clear();
@@ -80,7 +109,9 @@ static void SplitString(const AString &srcString, AStringVector &destStrings)
   if (!string.IsEmpty())
     destStrings.Add(string);
 }
+*/
 
+/*
 int CStartupInfo::ShowMessageLines(const char *message)
 {
   AStringVector strings;
@@ -94,10 +125,22 @@ int CStartupInfo::ShowMessageLines(const char *message)
 
   return ShowMessage(FMSG_WARNING, NULL, items, pos, 1);
 }
+*/
+
+/*
+int CStartupInfo::ShowMessageLines(const char *message)
+{
+  AString s = GetMsgString(NMessageID::kError);
+  s.Add_LF();
+  s += message;
+  return ShowMessage(FMSG_WARNING | FMSG_MB_OK | FMSG_ALLINONE, NULL,
+      (const char **)(const char *)s, 1, 0);
+}
+*/
 
 int CStartupInfo::ShowMessage(int messageId)
 {
-  return ShowMessage(GetMsgString(messageId));
+  return ShowErrorMessage(GetMsgString(messageId));
 }
 
 int CStartupInfo::ShowDialog(int X1, int Y1, int X2, int Y2,
@@ -129,14 +172,14 @@ void CStartupInfo::InitDialogItems(const CInitDialogItem  *srcItems,
     destItem.X2 = srcItem.X2;
     destItem.Y2 = srcItem.Y2;
     destItem.Focus = GetBOOLValue(srcItem.Focus);
-    if(srcItem.HistoryName != NULL)
+    if (srcItem.HistoryName != NULL)
       destItem.History = srcItem.HistoryName;
     else
       destItem.Selected = GetBOOLValue(srcItem.Selected);
     destItem.Flags = srcItem.Flags;
     destItem.DefaultButton = GetBOOLValue(srcItem.DefaultButton);
 
-    if(srcItem.DataMessageId < 0)
+    if (srcItem.DataMessageId < 0)
       MyStringCopy(destItem.Data, srcItem.DataString);
     else
       MyStringCopy(destItem.Data, GetMsgString(srcItem.DataMessageId));
@@ -220,7 +263,7 @@ CSysString CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyN
     return valueDefault;
   
   CSysString value;
-  if(regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
+  if (regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
     return valueDefault;
   
   return value;
@@ -234,7 +277,7 @@ UInt32 CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
     return valueDefault;
   
   UInt32 value;
-  if(regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
+  if (regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
     return valueDefault;
   
   return value;
@@ -248,7 +291,7 @@ bool CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
     return valueDefault;
   
   bool value;
-  if(regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
+  if (regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
     return valueDefault;
   
   return value;
@@ -278,9 +321,9 @@ bool CStartupInfo::ControlGetActivePanelCurrentItemInfo(
     PluginPanelItem &pluginPanelItem)
 {
   PanelInfo panelInfo;
-  if(!ControlGetActivePanelInfo(panelInfo))
+  if (!ControlGetActivePanelInfo(panelInfo))
     return false;
-  if(panelInfo.ItemsNumber <= 0)
+  if (panelInfo.ItemsNumber <= 0)
     throw "There are no items";
   pluginPanelItem = panelInfo.PanelItems[panelInfo.CurrentItem];
   return true;
@@ -291,9 +334,9 @@ bool CStartupInfo::ControlGetActivePanelSelectedOrCurrentItems(
 {
   pluginPanelItems.Clear();
   PanelInfo panelInfo;
-  if(!ControlGetActivePanelInfo(panelInfo))
+  if (!ControlGetActivePanelInfo(panelInfo))
     return false;
-  if(panelInfo.ItemsNumber <= 0)
+  if (panelInfo.ItemsNumber <= 0)
     throw "There are no items";
   if (panelInfo.SelectedItemsNumber == 0)
     pluginPanelItems.Add(panelInfo.PanelItems[panelInfo.CurrentItem]);
@@ -306,7 +349,7 @@ bool CStartupInfo::ControlGetActivePanelSelectedOrCurrentItems(
 bool CStartupInfo::ControlClearPanelSelection()
 {
   PanelInfo panelInfo;
-  if(!ControlGetActivePanelInfo(panelInfo))
+  if (!ControlGetActivePanelInfo(panelInfo))
     return false;
   for (int i = 0; i < panelInfo.ItemsNumber; i++)
     panelInfo.PanelItems[i].Flags &= ~PPIF_SELECTED;
@@ -375,7 +418,7 @@ CScreenRestorer::~CScreenRestorer()
 }
 void CScreenRestorer::Save()
 {
-  if(m_Saved)
+  if (m_Saved)
     return;
   m_HANDLE = g_StartupInfo.SaveScreen();
   m_Saved = true;
@@ -383,40 +426,66 @@ void CScreenRestorer::Save()
 
 void CScreenRestorer::Restore()
 {
-  if(m_Saved)
+  if (m_Saved)
   {
     g_StartupInfo.RestoreScreen(m_HANDLE);
     m_Saved = false;
   }
 };
 
-static AString DWORDToString(DWORD number)
+int PrintErrorMessage(const char *message, unsigned code)
 {
-  char buffer[32];
-  _ultoa(number, buffer, 10);
-  return buffer;
+  AString s = message;
+  s += " #";
+  char temp[16];
+  ConvertUInt32ToString((UInt32)code, temp);
+  s += temp;
+  return g_StartupInfo.ShowErrorMessage(s);
 }
 
-void PrintErrorMessage(const char *message, int code)
+int PrintErrorMessage(const char *message, const char *text)
 {
-  AString tmp = message;
-  tmp += " #";
-  tmp += DWORDToString(code);
-  g_StartupInfo.ShowMessage(tmp);
+  return g_StartupInfo.ShowErrorMessage2(message, text);
 }
 
-void PrintErrorMessage(const char *message, const char *text)
+
+static void ReduceString(UString &s, unsigned size)
 {
-  AString tmp = message;
-  tmp += ":\n";
-  tmp += text;
-  g_StartupInfo.ShowMessageLines(tmp);
+  if (s.Len() > size)
+  {
+    if (size > 5)
+      size -= 5;
+    s.Delete(size / 2, s.Len() - size);
+    s.Insert(size / 2, L" ... ");
+  }
 }
 
-void PrintErrorMessage(const char *message, const wchar_t *text)
+int PrintErrorMessage(const char *message, const wchar_t *name, unsigned maxLen)
 {
-  PrintErrorMessage(message, UnicodeStringToMultiByte(text, CP_OEMCP));
+  UString s = name;
+  ReduceString(s, maxLen);
+  return PrintErrorMessage(message, UnicodeStringToMultiByte(s, CP_OEMCP));
 }
+
+int ShowSysErrorMessage(DWORD errorCode)
+{
+  UString message = NError::MyFormatMessage(errorCode);
+  return g_StartupInfo.ShowErrorMessage(UnicodeStringToMultiByte(message, CP_OEMCP));
+}
+
+int ShowLastErrorMessage()
+{
+  return ShowSysErrorMessage(::GetLastError());
+}
+
+int ShowSysErrorMessage(DWORD errorCode, const wchar_t *name)
+{
+  UString s = NError::MyFormatMessage(errorCode);
+  AString s1 = UnicodeStringToMultiByte(s, CP_OEMCP);
+  AString s2 = UnicodeStringToMultiByte(name, CP_OEMCP);
+  return g_StartupInfo.ShowErrorMessage2(s1, s2);
+}
+
 
 bool WasEscPressed()
 {
@@ -425,19 +494,19 @@ bool WasEscPressed()
   #else
   NConsole::CIn inConsole;
   HANDLE handle = ::GetStdHandle(STD_INPUT_HANDLE);
-  if(handle == INVALID_HANDLE_VALUE)
+  if (handle == INVALID_HANDLE_VALUE)
     return true;
   inConsole.Attach(handle);
   for (;;)
   {
     DWORD numEvents;
-    if(!inConsole.GetNumberOfEvents(numEvents))
+    if (!inConsole.GetNumberOfEvents(numEvents))
       return true;
-    if(numEvents == 0)
+    if (numEvents == 0)
       return false;
 
     INPUT_RECORD event;
-    if(!inConsole.ReadEvent(event, numEvents))
+    if (!inConsole.ReadEvent(event, numEvents))
       return true;
     if (event.EventType == KEY_EVENT &&
         event.Event.KeyEvent.bKeyDown &&
@@ -445,19 +514,6 @@ bool WasEscPressed()
       return true;
   }
   #endif
-}
-
-void ShowErrorMessage(DWORD errorCode)
-{
-  UString message = NError::MyFormatMessage(errorCode);
-  message.RemoveChar(L'\x0D');
-  message.Replace(L'\x0A', L' ');
-  g_StartupInfo.ShowMessage(UnicodeStringToMultiByte(message, CP_OEMCP));
-}
-
-void ShowLastErrorMessage()
-{
-  ShowErrorMessage(::GetLastError());
 }
 
 }

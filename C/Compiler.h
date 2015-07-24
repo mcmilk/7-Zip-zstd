@@ -1,5 +1,5 @@
-/* Compiler.h -- Compiler ypes
-2013-11-12 : Igor Pavlov : Public domain */
+/* Compiler.h
+2015-03-25 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_COMPILER_H
 #define __7Z_COMPILER_H
@@ -24,5 +24,8 @@
   #endif
 
 #endif
+
+#define UNUSED_VAR(x) (void)x;
+/* #define UNUSED_VAR(x) x=x; */
 
 #endif

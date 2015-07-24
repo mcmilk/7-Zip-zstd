@@ -18,10 +18,10 @@
 namespace NCompress {
 namespace NRar2 {
 
-const UInt32 kNumRepDists = 4;
-const UInt32 kDistTableSize = 48;
+const unsigned kNumRepDists = 4;
+const unsigned kDistTableSize = 48;
 
-const int kMMTableSize = 256 + 1;
+const unsigned kMMTableSize = 256 + 1;
 
 const UInt32 kMainTableSize = 298;
 const UInt32 kLenTableSize = 28;
@@ -89,14 +89,14 @@ struct CFilter
 
 };
 
-const int kNumChanelsMax = 4;
+const unsigned kNumChanelsMax = 4;
 
 class CFilter2
 {
 public:
   CFilter  m_Filters[kNumChanelsMax];
   int m_ChannelDelta;
-  int CurrentChannel;
+  unsigned CurrentChannel;
 
   void Init() { memset(this, 0, sizeof(*this)); }
   Byte Decode(Byte delta)
@@ -110,7 +110,7 @@ public:
 
 typedef NBitm::CDecoder<CInBuffer> CBitDecoder;
 
-const int kNumHuffmanBits = 15;
+const unsigned kNumHuffmanBits = 15;
 
 class CDecoder :
   public ICompressCoder,
@@ -128,7 +128,7 @@ class CDecoder :
   bool m_AudioMode;
 
   NMultimedia::CFilter2 m_MmFilter;
-  int m_NumChannels;
+  unsigned m_NumChannels;
 
   UInt32 m_RepDists[kNumRepDists];
   UInt32 m_RepDistPtr;
@@ -141,7 +141,7 @@ class CDecoder :
   bool m_IsSolid;
 
   void InitStructures();
-  UInt32 ReadBits(int numBits);
+  UInt32 ReadBits(unsigned numBits);
   bool ReadTables();
   bool ReadLastTables();
 

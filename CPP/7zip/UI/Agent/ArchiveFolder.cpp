@@ -28,9 +28,14 @@ STDMETHODIMP CAgentFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 
     CMyComPtr<IFolderOperationsExtractCallback> callbackWrap = callback;
     RINOK(callbackWrap.QueryInterface(IID_IFolderArchiveExtractCallback, &extractCallback2));
   }
-  NExtract::NPathMode::EEnum pathMode = _flatMode ?
-      NExtract::NPathMode::kNoPaths :
-      NExtract::NPathMode::kCurPaths;
+  NExtract::NPathMode::EEnum pathMode;
+  if (!_flatMode)
+    pathMode = NExtract::NPathMode::kCurPaths;
+  else
+    pathMode = (_proxy2 && _loadAltStreams) ?
+      NExtract::NPathMode::kNoPathsAlt :
+      NExtract::NPathMode::kNoPaths;
+
   return Extract(indices, numItems,
       includeAltStreams, replaceAltStreamCharsMode,
       pathMode, NExtract::NOverwriteMode::kAsk,

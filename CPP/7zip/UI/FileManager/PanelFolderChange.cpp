@@ -28,10 +28,38 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
+void CPanel::ReleaseFolder()
+{
+  _folder.Release();
+
+  _folderCompare.Release();
+  _folderGetItemName.Release();
+  _folderRawProps.Release();
+  _folderAltStreams.Release();
+  _folderOperations.Release();
+  
+  _thereAreDeletedItems = false;
+}
+
+void CPanel::SetNewFolder(IFolderFolder *newFolder)
+{
+  ReleaseFolder();
+  _folder = newFolder;
+  if (_folder)
+  {
+    _folder.QueryInterface(IID_IFolderCompare, &_folderCompare);
+    _folder.QueryInterface(IID_IFolderGetItemName, &_folderGetItemName);
+    _folder.QueryInterface(IID_IArchiveGetRawProps, &_folderRawProps);
+    _folder.QueryInterface(IID_IFolderAltStreams, &_folderAltStreams);
+    _folder.QueryInterface(IID_IFolderOperations, &_folderOperations);
+  }
+}
+
 void CPanel::SetToRootFolder()
 {
   ReleaseFolder();
   _library.Free();
+  
   CRootFolder *rootFolderSpec = new CRootFolder;
   SetNewFolder(rootFolderSpec);
   rootFolderSpec->Init();
@@ -39,105 +67,188 @@ void CPanel::SetToRootFolder()
 
 HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted)
 {
+  UString path = fullPath;
+  #ifdef _WIN32
+  path.Replace(L'/', WCHAR_PATH_SEPARATOR);
+  #endif
+
   archiveIsOpened = false;
   encrypted = false;
+  
   CDisableTimerProcessing disableTimerProcessing(*this);
   CDisableNotify disableNotify(*this);
 
-  if (_parentFolders.Size() > 0)
+  for (; !_parentFolders.IsEmpty(); CloseOneLevel())
   {
-    const UString &virtPath = _parentFolders.Back().VirtualPath;
-    if (fullPath.IsPrefixedBy(virtPath))
+    // ---------- we try to use open archive ----------
+
+    const CFolderLink &link = _parentFolders.Back();
+    const UString &virtPath = link.VirtualPath;
+    if (!path.IsPrefixedBy(virtPath))
+      continue;
+    UString relatPath = path.Ptr(virtPath.Len());
+    if (!relatPath.IsEmpty())
     {
-      for (;;)
+      if (!IS_PATH_SEPAR(relatPath[0]))
+        continue;
+      else
+        relatPath.Delete(0);
+    }
+    
+    UString relatPath2 = relatPath;
+    if (!relatPath2.IsEmpty() && !IS_PATH_SEPAR(relatPath2.Back()))
+      relatPath2.Add_PathSepar();
+
+    for (;;)
+    {
+      const UString foldPath = GetFolderPath(_folder);
+      if (relatPath2 == foldPath)
+        break;
+      if (relatPath.IsPrefixedBy(foldPath))
       {
-        CMyComPtr<IFolderFolder> newFolder;
-        HRESULT res = _folder->BindToParentFolder(&newFolder);
-        if (!newFolder || res != S_OK)
-          break;
-        SetNewFolder(newFolder);
+        path = relatPath.Ptr(foldPath.Len());
+        break;
       }
-      UStringVector parts;
-      SplitPathToParts(fullPath.Ptr(virtPath.Len()), parts);
-      FOR_VECTOR (i, parts)
+      CMyComPtr<IFolderFolder> newFolder;
+      if (_folder->BindToParentFolder(&newFolder) != S_OK)
+        throw 20140918;
+      if (!newFolder) // we exit from loop above if (relatPath.IsPrefixedBy(empty path for root folder)
+        throw 20140918;
+      SetNewFolder(newFolder);
+    }
+    break;
+  }
+
+  if (_parentFolders.IsEmpty())
+  {
+    // ---------- we open file or folder from file system ----------
+
+    CloseOpenFolders();
+    UString sysPath = path;
+    
+    unsigned prefixSize = NName::GetRootPrefixSize(sysPath);
+    if (prefixSize == 0 || sysPath[prefixSize] == 0)
+      sysPath.Empty();
+    
+    #if defined(_WIN32) && !defined(UNDER_CE)
+    if (!sysPath.IsEmpty() && sysPath.Back() == ':' &&
+      (sysPath.Len() != 2 || !NName::IsDrivePath2(sysPath)))
+    {
+      UString baseFile = sysPath;
+      baseFile.DeleteBack();
+      if (NFind::DoesFileOrDirExist(us2fs(baseFile)))
+        sysPath.Empty();
+    }
+    #endif
+    
+    CFileInfo fileInfo;
+    
+    while (!sysPath.IsEmpty())
+    {
+      if (fileInfo.Find(us2fs(sysPath)))
+        break;
+      int pos = sysPath.ReverseFind_PathSepar();
+      if (pos < 0)
+        sysPath.Empty();
+      else
       {
-        const UString &s = parts[i];
-        if ((i == 0 || i == parts.Size() - 1) && s.IsEmpty())
-          continue;
-        CMyComPtr<IFolderFolder> newFolder;
-        HRESULT res = _folder->BindToFolder(s, &newFolder);
-        if (!newFolder || res != S_OK)
-          break;
-        SetNewFolder(newFolder);
+        /*
+        if (reducedParts.Size() > 0 || pos < (int)sysPath.Len() - 1)
+          reducedParts.Add(sysPath.Ptr(pos + 1));
+        */
+        #if defined(_WIN32) && !defined(UNDER_CE)
+        if (pos == 2 && NName::IsDrivePath2(sysPath) && sysPath.Len() > 3)
+          pos++;
+        #endif
+
+        sysPath.DeleteFrom(pos);
       }
+    }
+    
+    SetToRootFolder();
+
+    CMyComPtr<IFolderFolder> newFolder;
+  
+    if (sysPath.IsEmpty())
+    {
+      _folder->BindToFolder(path, &newFolder);
+    }
+    else if (fileInfo.IsDir())
+    {
+      NName::NormalizeDirPathPrefix(sysPath);
+      _folder->BindToFolder(sysPath, &newFolder);
+    }
+    else
+    {
+      FString dirPrefix, fileName;
+      NDir::GetFullPathAndSplit(us2fs(sysPath), dirPrefix, fileName);
+      HRESULT res;
+      // = OpenItemAsArchive(fs2us(fileName), arcFormat, encrypted);
+      {
+        CTempFileInfo tfi;
+        tfi.RelPath = fs2us(fileName);
+        tfi.FolderPath = dirPrefix;
+        tfi.FilePath = us2fs(sysPath);
+        res = OpenItemAsArchive(NULL, tfi, sysPath, arcFormat, encrypted);
+      }
+      
+      if (res == S_FALSE)
+        _folder->BindToFolder(fs2us(dirPrefix), &newFolder);
+      else
+      {
+        RINOK(res);
+        archiveIsOpened = true;
+        _parentFolders.Back().ParentFolderPath = fs2us(dirPrefix);
+        path.DeleteFrontal(sysPath.Len());
+        if (!path.IsEmpty() && IS_PATH_SEPAR(path[0]))
+          path.Delete(0);
+      }
+    }
+    if (newFolder)
+    {
+      SetNewFolder(newFolder);
+      // LoadFullPath();
       return S_OK;
     }
   }
+  
+  {
+    // ---------- we open folder remPath in archive and sub archives ----------
 
-  CloseOpenFolders();
-  UString sysPath = fullPath;
-  CFileInfo fileInfo;
-  UStringVector reducedParts;
-  while (!sysPath.IsEmpty())
-  {
-    if (fileInfo.Find(us2fs(sysPath)))
-      break;
-    int pos = sysPath.ReverseFind(WCHAR_PATH_SEPARATOR);
-    if (pos < 0)
-      sysPath.Empty();
-    else
+    for (unsigned curPos = 0; curPos != path.Len();)
     {
-      if (reducedParts.Size() > 0 || pos < (int)sysPath.Len() - 1)
-        reducedParts.Add(sysPath.Ptr(pos + 1));
-      sysPath.DeleteFrom(pos);
-    }
-  }
-  SetToRootFolder();
-  CMyComPtr<IFolderFolder> newFolder;
-  if (sysPath.IsEmpty())
-  {
-    if (_folder->BindToFolder(fullPath, &newFolder) == S_OK)
-      SetNewFolder(newFolder);
-  }
-  else if (fileInfo.IsDir())
-  {
-    NName::NormalizeDirPathPrefix(sysPath);
-    if (_folder->BindToFolder(sysPath, &newFolder) == S_OK)
-      SetNewFolder(newFolder);
-  }
-  else
-  {
-    FString dirPrefix, fileName;
-    NDir::GetFullPathAndSplit(us2fs(sysPath), dirPrefix, fileName);
-    if (_folder->BindToFolder(fs2us(dirPrefix), &newFolder) == S_OK)
-    {
-      SetNewFolder(newFolder);
-      LoadFullPath();
+      UString s = path.Ptr(curPos);
+      int slashPos = NName::FindSepar(s);
+      unsigned skipLen = s.Len();
+      if (slashPos >= 0)
       {
-        HRESULT res = OpenItemAsArchive(fs2us(fileName), arcFormat, encrypted);
-        if (res != S_FALSE)
+        s.DeleteFrom(slashPos);
+        skipLen = slashPos + 1;
+      }
+
+      CMyComPtr<IFolderFolder> newFolder;
+      _folder->BindToFolder(s, &newFolder);
+      if (newFolder)
+        curPos += skipLen;
+      else if (_folderAltStreams)
+      {
+        int pos = s.Find(L':');
+        if (pos >= 0)
         {
-          RINOK(res);
-        }
-        /*
-        if (res == E_ABORT)
-          return res;
-        */
-        if (res == S_OK)
-        {
-          archiveIsOpened = true;
-          for (int i = reducedParts.Size() - 1; i >= 0; i--)
-          {
-            CMyComPtr<IFolderFolder> newFolder;
-            _folder->BindToFolder(reducedParts[i], &newFolder);
-            if (!newFolder)
-              break;
-            SetNewFolder(newFolder);
-          }
+          UString baseName = s;
+          baseName.DeleteFrom(pos);
+          if (_folderAltStreams->BindToAltStreams(baseName, &newFolder) == S_OK && newFolder)
+            curPos += pos + 1;
         }
       }
+      
+      if (!newFolder)
+        break;
+
+      SetNewFolder(newFolder);
     }
   }
+
   return S_OK;
 }
 
@@ -163,10 +274,12 @@ void CPanel::OpenBookmark(int index)
 
 UString GetFolderPath(IFolderFolder *folder)
 {
-  NCOM::CPropVariant prop;
-  if (folder->GetFolderProperty(kpidPath, &prop) == S_OK)
-    if (prop.vt == VT_BSTR)
-      return (wchar_t *)prop.bstrVal;
+  {
+    NCOM::CPropVariant prop;
+    if (folder->GetFolderProperty(kpidPath, &prop) == S_OK)
+      if (prop.vt == VT_BSTR)
+        return (wchar_t *)prop.bstrVal;
+  }
   return UString();
 }
 
@@ -176,9 +289,10 @@ void CPanel::LoadFullPath()
   FOR_VECTOR (i, _parentFolders)
   {
     const CFolderLink &folderLink = _parentFolders[i];
-    _currentFolderPrefix += GetFolderPath(folderLink.ParentFolder);
+    _currentFolderPrefix += folderLink.ParentFolderPath;
+        // GetFolderPath(folderLink.ParentFolder);
     _currentFolderPrefix += folderLink.RelPath;
-    _currentFolderPrefix += WCHAR_PATH_SEPARATOR;
+    _currentFolderPrefix.Add_PathSepar();
   }
   if (_folder)
     _currentFolderPrefix += GetFolderPath(_folder);
@@ -364,7 +478,7 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
       {
         UString name = pathParts[i];
         sumPass += name;
-        sumPass += WCHAR_PATH_SEPARATOR;
+        sumPass.Add_PathSepar();
         CFileInfo info;
         DWORD attrib = FILE_ATTRIBUTE_DIRECTORY;
         if (info.Find(us2fs(sumPass)))
@@ -496,73 +610,104 @@ void CPanel::FoldersHistory()
 void CPanel::OpenParentFolder()
 {
   LoadFullPath(); // Maybe we don't need it ??
-  UString focucedName;
-  if (!_currentFolderPrefix.IsEmpty() &&
-      _currentFolderPrefix.Back() == WCHAR_PATH_SEPARATOR)
+  
+  UString parentFolderPrefix;
+  UString focusedName;
+  
+  if (!_currentFolderPrefix.IsEmpty())
   {
-    focucedName = _currentFolderPrefix;
-    focucedName.DeleteBack();
-    if (focucedName != L"\\\\.")
+    wchar_t c = _currentFolderPrefix.Back();
+    if (c == WCHAR_PATH_SEPARATOR || c == ':')
     {
-      int pos = focucedName.ReverseFind(WCHAR_PATH_SEPARATOR);
-      if (pos >= 0)
-        focucedName.DeleteFrontal(pos + 1);
+      focusedName = _currentFolderPrefix;
+      focusedName.DeleteBack();
+      /*
+      if (c == ':' && !focusedName.IsEmpty() && focusedName.Back() == WCHAR_PATH_SEPARATOR)
+      {
+        focusedName.DeleteBack();
+      }
+      else
+      */
+      if (focusedName != L"\\\\." &&
+          focusedName != L"\\\\?")
+      {
+        int pos = focusedName.ReverseFind_PathSepar();
+        if (pos >= 0)
+        {
+          parentFolderPrefix = focusedName;
+          parentFolderPrefix.DeleteFrom(pos + 1);
+          focusedName.DeleteFrontal(pos + 1);
+        }
+      }
     }
   }
 
   CDisableTimerProcessing disableTimerProcessing(*this);
   CDisableNotify disableNotify(*this);
+  
   CMyComPtr<IFolderFolder> newFolder;
   _folder->BindToParentFolder(&newFolder);
+
+  // newFolder.Release(); // for test
+  
   if (newFolder)
     SetNewFolder(newFolder);
   else
   {
-    if (_parentFolders.IsEmpty())
+    bool needSetFolder = true;
+    if (!_parentFolders.IsEmpty())
     {
-      SetToRootFolder();
-      if (focucedName.IsEmpty())
-        focucedName = GetItemName(0);
+      {
+        const CFolderLink &link = _parentFolders.Back();
+        parentFolderPrefix = link.ParentFolderPath;
+        focusedName = link.RelPath;
+      }
+      CloseOneLevel();
+      needSetFolder = (!_folder);
     }
-    else
+    
+    if (needSetFolder)
     {
-      ReleaseFolder();
-      _library.Free();
-      CFolderLink &link = _parentFolders.Back();
-      SetNewFolder(link.ParentFolder);
-      _library.Attach(link.Library.Detach());
-      focucedName = link.RelPath;
-      if (_parentFolders.Size() > 1)
-        OpenParentArchiveFolder();
-      _parentFolders.DeleteBack();
-      if (_parentFolders.IsEmpty())
-        _flatMode = _flatModeForDisk;
+      {
+        bool archiveIsOpened;
+        bool encrypted;
+        BindToPath(parentFolderPrefix, UString(), archiveIsOpened, encrypted);
+      }
     }
   }
-
+    
   UStringVector selectedItems;
   /*
-  if (!focucedName.IsEmpty())
-    selectedItems.Add(focucedName);
+  if (!focusedName.IsEmpty())
+    selectedItems.Add(focusedName);
   */
   LoadFullPath();
   // ::SetCurrentDirectory(::_currentFolderPrefix);
-  RefreshListCtrl(focucedName, -1, true, selectedItems);
+  RefreshListCtrl(focusedName, -1, true, selectedItems);
   // _listView.EnsureVisible(_listView.GetFocusedItem(), false);
+}
+
+void CPanel::CloseOneLevel()
+{
+  ReleaseFolder();
+  _library.Free();
+  {
+    CFolderLink &link = _parentFolders.Back();
+    if (link.ParentFolder)
+      SetNewFolder(link.ParentFolder);
+    _library.Attach(link.Library.Detach());
+  }
+  if (_parentFolders.Size() > 1)
+    OpenParentArchiveFolder();
+  _parentFolders.DeleteBack();
+  if (_parentFolders.IsEmpty())
+    _flatMode = _flatModeForDisk;
 }
 
 void CPanel::CloseOpenFolders()
 {
-  while (_parentFolders.Size() > 0)
-  {
-    ReleaseFolder();
-    _library.Free();
-    SetNewFolder(_parentFolders.Back().ParentFolder);
-    _library.Attach(_parentFolders.Back().Library.Detach());
-    if (_parentFolders.Size() > 1)
-      OpenParentArchiveFolder();
-    _parentFolders.DeleteBack();
-  }
+  while (!_parentFolders.IsEmpty())
+    CloseOneLevel();
   _flatMode = _flatModeForDisk;
   ReleaseFolder();
   _library.Free();
@@ -617,4 +762,46 @@ void CPanel::OpenFolder(int index)
   RefreshListCtrl();
   _listView.SetItemState_Selected(_listView.GetFocusedItem());
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
+}
+
+void CPanel::OpenAltStreams()
+{
+  CRecordVector<UInt32> indices;
+  GetOperatedItemIndices(indices);
+  Int32 realIndex = -1;
+  if (indices.Size() > 1)
+    return;
+  if (indices.Size() == 1)
+    realIndex = indices[0];
+
+  if (_folderAltStreams)
+  {
+    CMyComPtr<IFolderFolder> newFolder;
+    _folderAltStreams->BindToAltStreams(realIndex, &newFolder);
+    if (newFolder)
+    {
+      CDisableTimerProcessing disableTimerProcessing(*this);
+      CDisableNotify disableNotify(*this);
+      SetNewFolder(newFolder);
+      RefreshListCtrl(UString(), -1, true, UStringVector());
+      return;
+    }
+    return;
+  }
+  
+  #if defined(_WIN32) && !defined(UNDER_CE)
+  UString path;
+  if (realIndex >= 0)
+    path = GetItemFullPath(realIndex);
+  else
+  {
+    path = GetFsPath();
+    if (!NName::IsDriveRootPath_SuperAllowed(us2fs(path)))
+      if (!path.IsEmpty() && IS_PATH_SEPAR(path.Back()))
+        path.DeleteBack();
+  }
+
+  path += L':';
+  BindToPathAndRefresh(path);
+  #endif
 }

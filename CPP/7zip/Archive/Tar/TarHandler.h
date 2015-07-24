@@ -67,7 +67,7 @@ public:
   INTERFACE_IOutArchive(;)
   STDMETHOD(OpenSeq)(ISequentialInStream *stream);
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
+  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
 
   void Init();
   CHandler();

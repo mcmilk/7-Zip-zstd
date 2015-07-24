@@ -26,6 +26,7 @@
 #include "../Common/StreamUtils.h"
 
 #include "../Compress/CopyCoder.h"
+#include "../Compress/LzhDecoder.h"
 
 #ifdef SHOW_DEBUG_INFO
 #define PRF(x) x
@@ -41,22 +42,18 @@
 namespace NArchive {
 namespace NUefi {
 
-static const UInt32 kBufTotalSizeMax = (1 << 29);
-static const UInt32 kNumFilesMax = (1 << 18);
-static const int kLevelMax = 64;
+static const size_t kBufTotalSizeMax = (1 << 29);
+static const unsigned kNumFilesMax = (1 << 18);
+static const unsigned kLevelMax = 64;
 
-static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
-static void SzFree(void *p, void *address) { p = p; MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
+static const unsigned kFvHeaderSize = 0x38;
 
-static const UInt32 kFvHeaderSize = 0x38;
-static const UInt32 kGuidSize = 16;
-static const UInt32 kCapsuleSigSize = kGuidSize;
+static const unsigned kGuidSize = 16;
 #define CAPSULE_SIGNATURE \
   { 0xBD,0x86,0x66,0x3B,0x76,0x0D,0x30,0x40,0xB7,0x0E,0xB5,0x51,0x9E,0x2F,0xC5,0xA0 }
-static const Byte kCapsuleSig[kCapsuleSigSize] = CAPSULE_SIGNATURE;
+static const Byte kCapsuleSig[kGuidSize] = CAPSULE_SIGNATURE;
 
-static const UInt32 kFfsGuidOffset = 16;
+static const unsigned kFfsGuidOffset = 16;
 #define FFS_SIGNATURE \
   { 0xD9,0x54,0x93,0x7A,0x68,0x04,0x4A,0x44,0x81,0xCE,0x0B,0xF6,0x17,0xD8,0x90,0xDF }
 static const Byte k_FFS_Guid[kGuidSize] = FFS_SIGNATURE;
@@ -84,7 +81,7 @@ static const Byte kGuids[][kGuidSize] =
 };
 
 
-static const char *kGuidNames[] =
+static const char * const kGuidNames[] =
 {
     "CRC"
   , "VolumeTopFile"
@@ -175,7 +172,7 @@ static bool AreGuidsEq(const Byte *p1, const Byte *p2)
 
 static int FindGuid(const Byte *p)
 {
-  for (int i = 0; i < ARRAY_SIZE(kGuids); i++)
+  for (unsigned i = 0; i < ARRAY_SIZE(kGuids); i++)
     if (AreGuidsEq(p, kGuids[i]))
       return i;
   return -1;
@@ -325,7 +322,7 @@ static const CUInt32PCharPair g_SECTION_TYPE[] =
 #define COMPRESSION_TYPE_LZH  1
 #define COMPRESSION_TYPE_LZMA 2
 
-static const char *g_Methods[] =
+static const char * const g_Methods[] =
 {
     "COPY"
   , "LZH"
@@ -367,7 +364,7 @@ static AString GuidToString(const Byte *p, bool full)
   return s;
 }
 
-static const char *kExpressionCommands[] =
+static const char * const kExpressionCommands[] =
 {
   "BEFORE", "AFTER", "PUSH", "AND", "OR", "NOT", "TRUE", "FALSE", "END", "SOR"
 };
@@ -385,7 +382,7 @@ static bool ParseDepedencyExpression(const Byte *p, UInt32 size, AString &res)
     {
       if (i + kGuidSize > size)
         return false;
-      res += " ";
+      res.Add_Space();
       res += GuidToString(p + i, false);
       i += kGuidSize;
     }
@@ -427,9 +424,11 @@ static const UInt32 kFileHeaderSize = 24;
 
 static void AddSpaceAndString(AString &res, const AString &newString)
 {
-  if (!res.IsEmpty() && !newString.IsEmpty())
-    res += ' ';
-  res += newString;
+  if (!newString.IsEmpty())
+  {
+    res.Add_Space_if_NotEmpty();
+    res += newString;
+  }
 }
 
 class CFfsFileHeader
@@ -604,7 +603,7 @@ void CItem::SetGuid(const Byte *guidName, bool full)
   ThereIsUniqueName = true;
   int index = FindGuid(guidName);
   if (index >= 0)
-    Name = kGuidNames[index];
+    Name = kGuidNames[(unsigned)index];
   else
     Name = GuidToString(guidName, full);
 }
@@ -617,9 +616,9 @@ AString CItem::GetName(int numChildsInParent) const
   char sz2[32];
   ConvertUInt32ToString(NameIndex, sz);
   ConvertUInt32ToString(numChildsInParent - 1, sz2);
-  int numZeros = (int)strlen(sz2) - (int)strlen(sz);
+  unsigned numZeros = (unsigned)strlen(sz2) - (unsigned)strlen(sz);
   AString res;
-  for (int i = 0; i < numZeros; i++)
+  for (unsigned i = 0; i < numZeros; i++)
     res += '0';
   return res + (AString)sz + '.' + Name;
 }
@@ -646,7 +645,7 @@ class CHandler:
   UInt32 _methodsMask;
   bool _capsuleMode;
 
-  UInt32 _totalBufsSize;
+  size_t _totalBufsSize;
   CCapsuleHeader _h;
   UInt64 _phySize;
 
@@ -654,9 +653,9 @@ class CHandler:
   int AddItem(const CItem &item);
   int AddFileItemWithIndex(CItem &item);
   int AddDirItem(CItem &item);
-  int AddBuf(UInt32 size);
+  unsigned AddBuf(size_t size);
 
-  HRESULT ParseSections(int bufIndex, UInt32 pos, UInt32 size, int parent, int method, int level);
+  HRESULT ParseSections(int bufIndex, UInt32 pos, UInt32 size, int parent, int method, unsigned level);
   HRESULT ParseVolume(int bufIndex, UInt32 posBase,
       UInt32 exactSize, UInt32 limitSize,
       int parent, int method, int level);
@@ -711,7 +710,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       break;
     }
     case kpidIsDir: prop = item.IsDir; break;
-    case kpidMethod: if (item.Method >= 0) prop = g_Methods[item.Method]; break;
+    case kpidMethod: if (item.Method >= 0) prop = g_Methods[(unsigned)item.Method]; break;
     case kpidCharacts: if (!item2.Characts.IsEmpty()) prop = item2.Characts; break;
     case kpidSize: if (!item.IsDir) prop = (UInt64)item.Size; break;
   }
@@ -739,15 +738,15 @@ void CHandler::AddCommentString(const wchar_t *name, UInt32 pos)
       c = Get16(buf + i);
       if (c == 0)
         break;
-      s += L'\n';
+      s.Add_LF();
     }
     s += c;
   }
   if (s.IsEmpty())
     return;
-  _comment += L'\n';
+  _comment.Add_LF();
   _comment += name;
-  _comment += L": ";
+  _comment.AddAscii(": ");
   _comment += s;
 }
 
@@ -760,7 +759,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidMethod:
     {
       AString s;
-      for (int i = 0; i < 32; i++)
+      for (unsigned i = 0; i < 32; i++)
         if ((_methodsMask & ((UInt32)1 << i)) != 0)
           AddSpaceAndString(s, g_Methods[i]);
       if (!s.IsEmpty())
@@ -792,341 +791,7 @@ static void MyPrint(UInt32 posBase, UInt32 size, int level, const char *name)
 #define MyPrint(posBase, size, level, name)
 #endif
 
-static const unsigned kNumBigValueBits = 8 * 4;
-static const unsigned kNumValueBytes = 3;
-static const unsigned kNumValueBits = 8  * kNumValueBytes;
-static const UInt32 kMask = (1 << kNumValueBits) - 1;
 
-class CBitmMemDecoder
-{
-  unsigned _bitPos;
-  UInt32 _value;
-  const Byte *_buf;
-  size_t _pos;
-  size_t _size;
-  size_t _extra;
-public:
-  void Init(const Byte *buf, size_t size)
-  {
-    _buf = buf;
-    _size = size;
-    _pos = 0;
-    _extra = 0;
-    _bitPos = kNumBigValueBits;
-    Normalize();
-  }
-  
-  bool IsFullFinished() const { return (_extra * 8) == (kNumBigValueBits - _bitPos); }
-  
-  void Normalize()
-  {
-    for (; _bitPos >= 8; _bitPos -= 8)
-    {
-      Byte b;
-      if (_pos < _size)
-        b = _buf[_pos++];
-      else
-      {
-        b = 0;
-        _extra++;
-      }
-      _value = (_value << 8) | b;
-    }
-  }
-
-  UInt32 GetValue(unsigned numBits) const
-  {
-    return ((_value >> (8 - _bitPos)) & kMask) >> (kNumValueBits - numBits);
-  }
-  
-  void MovePos(unsigned numBits)
-  {
-    _bitPos += numBits;
-    Normalize();
-  }
-  
-  UInt32 ReadBitsFast(unsigned numBits)
-  {
-    UInt32 res = GetValue(numBits);
-    MovePos(numBits);
-    return res;
-  }
-
-  UInt32 ReadBits(unsigned numBits);
-  UInt32 ReadAlignBits() { return ReadBits((32 - _bitPos) & 7); }
-};
-
-UInt32 CBitmMemDecoder::ReadBits(unsigned numBits)
-{
-  UInt32 res = GetValue(numBits);
-  MovePos(numBits);
-  return res;
-}
-
-namespace NHuffman {
-
-static const int kNumTableBits = 9;
-static const int kNumBitsMax = 16;
-
-class CDecoder
-{
-  UInt32 m_Limits[kNumBitsMax + 1];
-  UInt32 m_Positions[kNumBitsMax + 1];
-  Byte m_Lengths[1 << kNumTableBits];
-  Int32 m_MainSymbol;
-
-public:
-  UInt32 *m_Symbols;
-  UInt32 m_NumSymbols;
-
-  void SetSingleSymbolMode(UInt32 symbol) { m_MainSymbol = symbol; }
-  bool SetCodeLengths(const Byte *codeLengths);
-  UInt32 DecodeSymbol(CBitmMemDecoder *bitStream)
-  {
-    if (m_MainSymbol != -1)
-      return (UInt32)m_MainSymbol;
-    int numBits;
-    UInt32 value = bitStream->GetValue(kNumBitsMax);
-    if (value < m_Limits[kNumTableBits])
-      numBits = m_Lengths[value >> (kNumBitsMax - kNumTableBits)];
-    else
-      for (numBits = kNumTableBits + 1; value >= m_Limits[numBits]; numBits++);
-    bitStream->MovePos(numBits);
-    return m_Symbols[m_Positions[numBits] + ((value - m_Limits[numBits - 1]) >> (kNumBitsMax - numBits))];
-  }
-};
-
-bool CDecoder::SetCodeLengths(const Byte *codeLengths)
-{
-  m_MainSymbol = -1;
-  int lenCounts[kNumBitsMax + 1];
-  UInt32 tmpPositions[kNumBitsMax + 1];
-  int i;
-  for (i = 1; i <= kNumBitsMax; i++)
-    lenCounts[i] = 0;
-  UInt32 symbol;
-  for (symbol = 0; symbol < m_NumSymbols; symbol++)
-  {
-    int len = codeLengths[symbol];
-    if (len > kNumBitsMax)
-      return false;
-    lenCounts[len]++;
-    m_Symbols[symbol] = 0xFFFFFFFF;
-  }
-  lenCounts[0] = 0;
-  m_Positions[0] = m_Limits[0] = 0;
-  UInt32 startPos = 0;
-  UInt32 index = 0;
-  const UInt32 kMaxValue = (1 << kNumBitsMax);
-  for (i = 1; i <= kNumBitsMax; i++)
-  {
-    startPos += lenCounts[i] << (kNumBitsMax - i);
-    if (startPos > kMaxValue)
-      return false;
-    m_Limits[i] = (i == kNumBitsMax) ? kMaxValue : startPos;
-    m_Positions[i] = m_Positions[i - 1] + lenCounts[i - 1];
-    tmpPositions[i] = m_Positions[i];
-    if (i <= kNumTableBits)
-    {
-      UInt32 limit = (m_Limits[i] >> (kNumBitsMax - kNumTableBits));
-      for (; index < limit; index++)
-        m_Lengths[index] = (Byte)i;
-    }
-  }
-  if (startPos != kMaxValue)
-    return false;
-  for (symbol = 0; symbol < m_NumSymbols; symbol++)
-  {
-    int len = codeLengths[symbol];
-    if (len != 0)
-      m_Symbols[tmpPositions[len]++] = symbol;
-  }
-  return true;
-}
-
-}
-
-static const int kMaxHuffmanLen = 16;
-static const int kExtraSize = kMaxHuffmanLen + 3;
-static const int kMinMatchLen = 3;
-static const int kMaxMatchLen = 256;
-static const int kNumAlphaSymsMax = 256 + kMaxMatchLen - kMinMatchLen + 1;
-static const int kNumDistSymsMax = 24 + 2; // it's limited by bit decoder.
-
-#define HUFF_START_CODE(huff, numSymsMax, numSymBits) \
-  UInt32 numSyms = bitDec.ReadBits(numSymBits); \
-  Byte lens[numSymsMax]; memset(lens, 0, sizeof(lens)); \
-  if (numSyms > (numSymsMax)) return S_FALSE; \
-  huff.m_NumSymbols = numSyms; \
-  if (numSyms == 0) { \
-    numSyms = bitDec.ReadBits(numSymBits); \
-    if (numSyms >= (numSymsMax)) return S_FALSE; \
-    huff.SetSingleSymbolMode(numSyms); } \
-
-static HRESULT LzhDecode(Byte *dest, UInt32 destSize, const Byte *src, UInt32 srcSize)
-{
-  if (srcSize < 8)
-    return S_FALSE;
-  {
-    UInt32 packSize = Get32(src);
-    UInt32 unpackSize = Get32(src + 4);
-    src += 8;
-    srcSize -= 8;
-    if (destSize != unpackSize || srcSize != packSize)
-      return S_FALSE;
-  }
-
-  CBitmMemDecoder bitDec;
-  bitDec.Init(src, srcSize);
-
-  UInt32 pos = 0;
-  for (;;)
-  {
-    UInt32 blockSize = bitDec.ReadBits(16);
-    UInt32 symbols[kExtraSize + kNumAlphaSymsMax + kNumDistSymsMax];
-
-    NHuffman::CDecoder extraHuff;
-    extraHuff.m_Symbols = symbols;
-    {
-      HUFF_START_CODE(extraHuff, kExtraSize, 5)
-      else
-      {
-        for (UInt32 i = 0; i < numSyms; i++)
-        {
-          if (i == 3)
-          {
-            UInt32 numZeros = bitDec.ReadBits(2);
-            if (i + numZeros > numSyms)
-              return S_FALSE;
-            for (UInt32 j = 0; j < numZeros; j++, i++)
-              lens[i] = (Byte)0;
-            if (i == numSyms)
-              break;
-          }
-          
-          UInt32 len = bitDec.ReadBits(3);
-          if (len == 7)
-          {
-            for(;; len++)
-            {
-              if (len > kMaxHuffmanLen)
-                return S_FALSE;
-              if (bitDec.ReadBits(1) == 0)
-                break;
-            }
-          }
-          lens[i] = (Byte)len;
-        }
-        if (!extraHuff.SetCodeLengths(lens))
-          return S_FALSE;
-      }
-    }
-
-    NHuffman::CDecoder symHuff;
-    symHuff.m_Symbols = symbols + kExtraSize;
-    {
-      HUFF_START_CODE(symHuff, kNumAlphaSymsMax, 9)
-      else
-      {
-        for (UInt32 i = 0; i < numSyms;)
-        {
-          UInt32 c = extraHuff.DecodeSymbol(&bitDec);
-          if (c > 2)
-            lens[i++] = (Byte)(c - 2);
-          else
-          {
-            UInt32 numZeros;
-            if (c == 0)
-              numZeros = 1;
-            else if (c == 1)
-              numZeros = bitDec.ReadBits(4) + 3;
-            else
-              numZeros = bitDec.ReadBits(9) + 20;
-            if (i + numZeros > numSyms)
-              return S_FALSE;
-            for (UInt32 j = 0; j < numZeros; j++, i++)
-              lens[i] = (Byte)0;
-          }
-        }
-        if (!symHuff.SetCodeLengths(lens))
-          return S_FALSE;
-      }
-    }
-
-    NHuffman::CDecoder distHuff;
-    distHuff.m_Symbols = symbols + kExtraSize + kNumAlphaSymsMax;
-    {
-      const UInt32 version = 1;
-      const UInt32 numDistBits = version + 4;
-      HUFF_START_CODE(distHuff, kNumDistSymsMax, numDistBits)
-      else
-      {
-        for (UInt32 i = 0; i < numSyms; i++)
-        {
-          UInt32 len = bitDec.ReadBits(3);
-          if (len == 7)
-          {
-            for(;; len++)
-            {
-              if (len > kMaxHuffmanLen)
-                return S_FALSE;
-              if (bitDec.ReadBits(1) == 0)
-                break;
-            }
-          }
-          lens[i] = (Byte)len;
-        }
-        if (!distHuff.SetCodeLengths(lens))
-          return S_FALSE;
-      }
-    }
-
-    while (blockSize)
-    {
-      blockSize--;
-      UInt32 c = symHuff.DecodeSymbol(&bitDec);
-      if (c < 256)
-      {
-        if (destSize == 0)
-          return S_FALSE;
-        *dest++ = (Byte)c;
-        destSize--;
-        pos++;
-        continue;
-      }
-      c = c - 256 + kMinMatchLen;
-      if (destSize < c)
-        return S_FALSE;
-      UInt32 dist = distHuff.DecodeSymbol(&bitDec);
-      if (dist > 1)
-        dist = ((UInt32)1 << (dist - 1)) + bitDec.ReadBits(dist - 1);
-      dist++;
-      if (dist > pos)
-        return S_FALSE;
-      pos += c;
-      destSize -= c;
-      do
-      {
-        *dest = dest[0 - (Int32)dist];
-        dest++;
-      }
-      while (--c);
-    }
-
-    // PRF(printf("\ndestSize = %6d", destSize));
-    if (destSize == 0)
-    {
-      if (bitDec.ReadAlignBits() != 0)
-        return S_FALSE;
-      if (bitDec.ReadBits(8) != 0)
-        return S_FALSE;
-     if (!bitDec.IsFullFinished())
-        return S_FALSE;
-      break;
-    }
-  }
-  return S_OK;
-}
 
 int CHandler::AddItem(const CItem &item)
 {
@@ -1153,17 +818,17 @@ int CHandler::AddDirItem(CItem &item)
   return AddItem(item);
 }
 
-int CHandler::AddBuf(UInt32 size)
+unsigned CHandler::AddBuf(size_t size)
 {
   if (size > kBufTotalSizeMax - _totalBufsSize)
     throw 1;
   _totalBufsSize += size;
-  int index = _bufs.Size();
+  unsigned index = _bufs.Size();
   _bufs.AddNew().Alloc(size);
   return index;
 }
 
-HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int parent, int method, int level)
+HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int parent, int method, unsigned level)
 {
   if (level > kLevelMax)
     return S_FALSE;
@@ -1229,9 +894,55 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
         }
         else if (compressionType == COMPRESSION_TYPE_LZH)
         {
-          int newBufIndex = AddBuf(uncompressedSize);
+          unsigned newBufIndex = AddBuf(uncompressedSize);
           CByteBuffer &buf = _bufs[newBufIndex];
-          RINOK(LzhDecode(buf, uncompressedSize, pStart, newSectSize));
+
+          NCompress::NLzh::NDecoder::CCoder *lzhDecoderSpec = 0;
+          CMyComPtr<ICompressCoder> lzhDecoder;
+ 
+          lzhDecoderSpec = new NCompress::NLzh::NDecoder::CCoder;
+          lzhDecoder = lzhDecoderSpec;
+
+          {
+            const Byte *src = pStart;
+            if (newSectSize < 8)
+              return S_FALSE;
+            UInt32 packSize = Get32(src);
+            UInt32 unpackSize = Get32(src + 4);
+            if (uncompressedSize != unpackSize || newSectSize - 8 != packSize)
+              return S_FALSE;
+            if (packSize < 1)
+              return S_FALSE;
+            packSize--;
+            src += 8;
+            if (src[packSize] != 0)
+              return S_FALSE;
+
+            CBufInStream *inStreamSpec = new CBufInStream;
+            CMyComPtr<IInStream> inStream = inStreamSpec;
+            inStreamSpec->Init(src, packSize);
+
+            CBufPtrSeqOutStream *outStreamSpec = new CBufPtrSeqOutStream;
+            CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
+            outStreamSpec->Init(buf, uncompressedSize);
+
+            UInt64 uncompressedSize64 = uncompressedSize;
+            lzhDecoderSpec->FinishMode = true;
+            /*
+              EFI 1.1 probably used small dictionary and (pbit = 4) in LZH. We don't support such archives.
+              New version of compression code (named Tiano) uses LZH with (1 << 19) dictionary.
+              But maybe LZH decoder in UEFI decoder supports larger than (1 << 19) dictionary.
+            */
+            lzhDecoderSpec->SetDictSize(1 << 19);
+            
+            HRESULT res = lzhDecoder->Code(inStream, outStream, NULL, &uncompressedSize64, NULL);
+            if (res != S_OK)
+              return res;
+            
+            if (lzhDecoderSpec->GetInputProcessedSize() != packSize)
+              return S_FALSE;
+          }
+
           RINOK(ParseSections(newBufIndex, 0, uncompressedSize, parent, compressionType, level));
         }
         else
@@ -1258,7 +969,7 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
           if (lzmaUncompressedSize < uncompressedSize)
             return S_FALSE;
           SizeT destLen = (SizeT)lzmaUncompressedSize;
-          int newBufIndex = AddBuf((UInt32)lzmaUncompressedSize);
+          unsigned newBufIndex = AddBuf((size_t)lzmaUncompressedSize);
           CByteBuffer &buf = _bufs[newBufIndex];
           ELzmaStatus status;
           SizeT srcLen = newSectSize - (addSize + 5 + 8);
@@ -1278,7 +989,7 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
     }
     else if (type == SECTION_GUID_DEFINED)
     {
-      const UInt32 kHeaderSize = 4 + kGuidSize + 4;
+      const unsigned kHeaderSize = 4 + kGuidSize + 4;
       if (sectSize < kHeaderSize)
         return S_FALSE;
       item.SetGuid(p + 4);
@@ -1373,7 +1084,8 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
             {
               item.BufIndex = AddBuf(s.Len());
               CByteBuffer &buf0 = _bufs[item.BufIndex];
-              memcpy(buf0, s, s.Len());
+              if (s.Len() != 0)
+                memcpy(buf0, s, s.Len());
               item.Offset = 0;
               item.Size = s.Len();
             }
@@ -1389,7 +1101,7 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
             {
               AString s2 = "ver:";
               s2 += UInt32ToString(Get16(p + 4));
-              s2 += ' ';
+              s2.Add_Space();
               s2 += s;
               AddSpaceAndString(_items[item.Parent].Characts, s2);
               needAdd = false;
@@ -1617,7 +1329,7 @@ HRESULT CHandler::ParseVolume(
 
 HRESULT CHandler::OpenCapsule(IInStream *stream)
 {
-  const UInt32 kHeaderSize = 80;
+  const unsigned kHeaderSize = 80;
   Byte buf[kHeaderSize];
   RINOK(ReadStream_FALSE(stream, buf, kHeaderSize));
   _h.Parse(buf);
@@ -1632,7 +1344,7 @@ HRESULT CHandler::OpenCapsule(IInStream *stream)
       _h.OffsetToSplitInformation != 0 )
     return E_NOTIMPL;
 
-  int bufIndex = AddBuf(_h.CapsuleImageSize);
+  unsigned bufIndex = AddBuf(_h.CapsuleImageSize);
   CByteBuffer &buf0 = _bufs[bufIndex];
   memcpy(buf0, buf, kHeaderSize);
   ReadStream_FALSE(stream, buf0 + kHeaderSize, _h.CapsuleImageSize - kHeaderSize);
@@ -1662,7 +1374,7 @@ HRESULT CHandler::OpenFv(IInStream *stream, const UInt64 * /* maxCheckStartPosit
   _phySize = ffsHeader.VolSize;
   RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
   UInt32 fvSize32 = (UInt32)ffsHeader.VolSize;
-  int bufIndex = AddBuf(fvSize32);
+  unsigned bufIndex = AddBuf(fvSize32);
   RINOK(ReadStream_FALSE(stream, _bufs[bufIndex], fvSize32));
   return ParseVolume(bufIndex, 0, fvSize32, fvSize32, -1, -1, 0);
 }
@@ -1680,14 +1392,17 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
 
   unsigned num = _items.Size();
   CIntArr numChilds(num);
+  
   unsigned i;
+  
   for (i = 0; i < num; i++)
     numChilds[i] = 0;
+  
   for (i = 0; i < num; i++)
   {
     int parent = _items[i].Parent;
     if (parent >= 0)
-      numChilds[parent]++;
+      numChilds[(unsigned)parent]++;
   }
 
   for (i = 0; i < num; i++)
@@ -1696,14 +1411,15 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
     int parent = item.Parent;
     if (parent >= 0)
     {
-      CItem &parentItem = _items[parent];
-      if (numChilds[parent] == 1)
+      CItem &parentItem = _items[(unsigned)parent];
+      if (numChilds[(unsigned)parent] == 1)
         if (!item.ThereIsUniqueName || !parentItem.ThereIsUniqueName || !parentItem.ThereAreSubDirs)
           parentItem.Skip = true;
     }
   }
 
   CUIntVector mainToReduced;
+  
   for (i = 0; i < _items.Size(); i++)
   {
     mainToReduced.Add(_items2.Size());
@@ -1714,14 +1430,15 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
     int numItems = -1;
     int parent = item.Parent;
     if (parent >= 0)
-      numItems = numChilds[parent];
+      numItems = numChilds[(unsigned)parent];
     AString name2 = item.GetName(numItems);
     AString characts2 = item.Characts;
     if (item.KeepName)
       name = name2;
+    
     while (parent >= 0)
     {
-      const CItem &item3 = _items[parent];
+      const CItem &item3 = _items[(unsigned)parent];
       if (!item3.Skip)
         break;
       if (item3.KeepName)
@@ -1735,6 +1452,7 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
       AddSpaceAndString(characts2, item3.Characts);
       parent = item3.Parent;
     }
+    
     if (name.IsEmpty())
       name = name2;
     
@@ -1743,7 +1461,7 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
     item2.Name = name;
     item2.Characts = characts2;
     if (parent >= 0)
-      item2.Parent = mainToReduced[parent];
+      item2.Parent = mainToReduced[(unsigned)parent];
     _items2.Add(item2);
     /*
     CItem2 item2;
@@ -1753,6 +1471,7 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
     _items2.Add(item2);
     */
   }
+  
   return S_OK;
 }
 
@@ -1873,30 +1592,26 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 
 namespace UEFIc {
   
-IMP_CreateArcIn_2(CHandler(true))
-
-static CArcInfo g_ArcInfo =
-  { "UEFIc", "scap", 0, 0xD0,
-  kCapsuleSigSize, CAPSULE_SIGNATURE,
+REGISTER_ARC_I_CLS(
+  CHandler(true),
+  "UEFIc", "scap", 0, 0xD0,
+  kCapsuleSig,
   0,
   NArcInfoFlags::kFindSignature,
-  CreateArc };
+  NULL)
   
-REGISTER_ARC(UEFIc)
 }
 
 namespace UEFIf {
   
-IMP_CreateArcIn_2(CHandler(false))
-
-static CArcInfo g_ArcInfo =
-  { "UEFIf", "uefif", 0, 0xD1,
-  kGuidSize, FFS_SIGNATURE,
+REGISTER_ARC_I_CLS(
+  CHandler(false),
+  "UEFIf", "uefif", 0, 0xD1,
+  k_FFS_Guid,
   kFfsGuidOffset,
   NArcInfoFlags::kFindSignature,
-  CreateArc };
- 
-REGISTER_ARC(UEFIf)
+  NULL)
+
 }
 
 }}

@@ -13,10 +13,10 @@
 namespace NCompress {
 namespace NBZip2 {
 
-const int kMaxHuffmanLenForEncoding = 16; // it must be < kMaxHuffmanLen = 20
+const unsigned kMaxHuffmanLenForEncoding = 16; // it must be < kMaxHuffmanLen = 20
 
 static const UInt32 kBufferSize = (1 << 17);
-static const int kNumHuffPasses = 4;
+static const unsigned kNumHuffPasses = 4;
 
 bool CThreadInfo::Alloc()
 {
@@ -126,14 +126,16 @@ void CEncProps::Normalize(int level)
 {
   if (level < 0) level = 5;
   if (level > 9) level = 9;
+  
   if (NumPasses == (UInt32)(Int32)-1)
     NumPasses = (level >= 9 ? 7 : (level >= 7 ? 2 : 1));
-  if (NumPasses < kBlockSizeMultMin) NumPasses = kBlockSizeMultMin;
-  if (NumPasses > kBlockSizeMultMax) NumPasses = kBlockSizeMultMax;
+  if (NumPasses < 1) NumPasses = 1;
+  if (NumPasses > kNumPassesMax) NumPasses = kNumPassesMax;
+  
   if (BlockSizeMult == (UInt32)(Int32)-1)
     BlockSizeMult = (level >= 5 ? 9 : (level >= 1 ? level * 2 - 1: 1));
-  if (BlockSizeMult == 0) BlockSizeMult = 1;
-  if (BlockSizeMult > kNumPassesMax) BlockSizeMult = kNumPassesMax;
+  if (BlockSizeMult < kBlockSizeMultMin) BlockSizeMult = kBlockSizeMultMin;
+  if (BlockSizeMult > kBlockSizeMultMax) BlockSizeMult = kBlockSizeMultMax;
 }
 
 CEncoder::CEncoder()
@@ -212,7 +214,7 @@ UInt32 CEncoder::ReadRleBlock(Byte *buffer)
   if (m_InStream.ReadByte(prevByte))
   {
     UInt32 blockSize = _props.BlockSizeMult * kBlockSizeStep - 1;
-    int numReps = 1;
+    unsigned numReps = 1;
     buffer[i++] = prevByte;
     while (i < blockSize) // "- 1" to support RLE
     {
@@ -246,19 +248,19 @@ UInt32 CEncoder::ReadRleBlock(Byte *buffer)
 
 void CThreadInfo::WriteBits2(UInt32 value, unsigned numBits) { m_OutStreamCurrent->WriteBits(value, numBits); }
 void CThreadInfo::WriteByte2(Byte b) { WriteBits2(b, 8); }
-void CThreadInfo::WriteBit2(bool v) { WriteBits2((v ? 1 : 0), 1); }
+void CThreadInfo::WriteBit2(Byte v) { WriteBits2(v, 1); }
 void CThreadInfo::WriteCrc2(UInt32 v)
 {
-  for (int i = 0; i < 4; i++)
+  for (unsigned i = 0; i < 4; i++)
     WriteByte2(((Byte)(v >> (24 - i * 8))));
 }
 
 void CEncoder::WriteBits(UInt32 value, unsigned numBits) { m_OutStream.WriteBits(value, numBits); }
 void CEncoder::WriteByte(Byte b) { WriteBits(b, 8); }
-void CEncoder::WriteBit(bool v) { WriteBits((v ? 1 : 0), 1); }
+// void CEncoder::WriteBit(Byte v) { WriteBits(v, 1); }
 void CEncoder::WriteCrc(UInt32 v)
 {
-  for (int i = 0; i < 4; i++)
+  for (unsigned i = 0; i < 4; i++)
     WriteByte(((Byte)(v >> (24 - i * 8))));
 }
 
@@ -266,7 +268,7 @@ void CEncoder::WriteCrc(UInt32 v)
 // blockSize > 0
 void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
 {
-  WriteBit2(false); // Randomised = false
+  WriteBit2(0); // Randomised = false
   
   {
     UInt32 origPtr = BlockSort(m_BlockSorterIndex, block, blockSize);
@@ -276,21 +278,21 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
   }
 
   CMtf8Encoder mtf;
-  int numInUse = 0;
+  unsigned numInUse = 0;
   {
-    bool inUse[256];
-    bool inUse16[16];
+    Byte inUse[256];
+    Byte inUse16[16];
     UInt32 i;
     for (i = 0; i < 256; i++)
-      inUse[i] = false;
+      inUse[i] = 0;
     for (i = 0; i < 16; i++)
-      inUse16[i] = false;
+      inUse16[i] = 0;
     for (i = 0; i < blockSize; i++)
-      inUse[block[i]] = true;
+      inUse[block[i]] = 1;
     for (i = 0; i < 256; i++)
       if (inUse[i])
       {
-        inUse16[i >> 4] = true;
+        inUse16[i >> 4] = 1;
         mtf.Buf[numInUse++] = (Byte)i;
       }
     for (i = 0; i < 16; i++)
@@ -299,13 +301,13 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
       if (inUse16[i >> 4])
         WriteBit2(inUse[i]);
   }
-  int alphaSize = numInUse + 2;
+  unsigned alphaSize = numInUse + 2;
 
   Byte *mtfs = m_MtfArray;
   UInt32 mtfArraySize = 0;
   UInt32 symbolCounts[kMaxAlphaSize];
   {
-    for (int i = 0; i < kMaxAlphaSize; i++)
+    for (unsigned i = 0; i < kMaxAlphaSize; i++)
       symbolCounts[i] = 0;
   }
 
@@ -360,17 +362,17 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
 
   UInt32 numSymbols = 0;
   {
-    for (int i = 0; i < kMaxAlphaSize; i++)
+    for (unsigned i = 0; i < kMaxAlphaSize; i++)
       numSymbols += symbolCounts[i];
   }
 
-  int bestNumTables = kNumTablesMin;
+  unsigned bestNumTables = kNumTablesMin;
   UInt32 bestPrice = 0xFFFFFFFF;
   UInt32 startPos = m_OutStreamCurrent->GetPos();
   Byte startCurByte = m_OutStreamCurrent->GetCurByte();
-  for (int nt = kNumTablesMin; nt <= kNumTablesMax + 1; nt++)
+  for (unsigned nt = kNumTablesMin; nt <= kNumTablesMax + 1; nt++)
   {
-    int numTables;
+    unsigned numTables;
 
     if (m_OptimizeNumTables)
     {
@@ -397,21 +399,21 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     
     {
       UInt32 remFreq = numSymbols;
-      int gs = 0;
-      int t = numTables;
+      unsigned gs = 0;
+      unsigned t = numTables;
       do
       {
         UInt32 tFreq = remFreq / t;
-        int ge = gs;
+        unsigned ge = gs;
         UInt32 aFreq = 0;
         while (aFreq < tFreq) //  && ge < alphaSize)
           aFreq += symbolCounts[ge++];
         
-        if (ge - 1 > gs && t != numTables && t != 1 && (((numTables - t) & 1) == 1))
+        if (ge > gs + 1 && t != numTables && t != 1 && (((numTables - t) & 1) == 1))
           aFreq -= symbolCounts[--ge];
         
         Byte *lens = Lens[t - 1];
-        int i = 0;
+        unsigned i = 0;
         do
           lens[i] = (Byte)((i >= gs && i < ge) ? 0 : 1);
         while (++i < alphaSize);
@@ -422,10 +424,10 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     }
     
     
-    for (int pass = 0; pass < kNumHuffPasses; pass++)
+    for (unsigned pass = 0; pass < kNumHuffPasses; pass++)
     {
       {
-        int t = 0;
+        unsigned t = 0;
         do
           memset(Freqs[t], 0, sizeof(Freqs[t]));
         while (++t < numTables);
@@ -437,7 +439,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         do
         {
           UInt32 symbols[kGroupSize];
-          int i = 0;
+          unsigned i = 0;
           do
           {
             UInt32 symbol = mtfs[mtfPos++];
@@ -448,12 +450,12 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
           while (++i < kGroupSize && mtfPos < mtfArraySize);
           
           UInt32 bestPrice = 0xFFFFFFFF;
-          int t = 0;
+          unsigned t = 0;
           do
           {
             const Byte *lens = Lens[t];
             UInt32 price = 0;
-            int j = 0;
+            unsigned j = 0;
             do
               price += lens[symbols[j]];
             while (++j < i);
@@ -465,7 +467,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
           }
           while (++t < numTables);
           UInt32 *freqs = Freqs[m_Selectors[g++]];
-          int j = 0;
+          unsigned j = 0;
           do
             freqs[symbols[j]]++;
           while (++j < i);
@@ -473,11 +475,11 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         while (mtfPos < mtfArraySize);
       }
       
-      int t = 0;
+      unsigned t = 0;
       do
       {
         UInt32 *freqs = Freqs[t];
-        int i = 0;
+        unsigned i = 0;
         do
           if (freqs[i] == 0)
             freqs[i] = 1;
@@ -490,7 +492,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     {
       Byte mtfSel[kNumTablesMax];
       {
-        int t = 0;
+        unsigned t = 0;
         do
           mtfSel[t] = (Byte)t;
         while (++t < numTables);
@@ -500,10 +502,10 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
       do
       {
         Byte sel = m_Selectors[i];
-        int pos;
+        unsigned pos;
         for (pos = 0; mtfSel[pos] != sel; pos++)
-          WriteBit2(true);
-        WriteBit2(false);
+          WriteBit2(1);
+        WriteBit2(0);
         for (; pos > 0; pos--)
           mtfSel[pos] = mtfSel[pos - 1];
         mtfSel[0] = sel;
@@ -512,31 +514,31 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
     }
     
     {
-      int t = 0;
+      unsigned t = 0;
       do
       {
         const Byte *lens = Lens[t];
         UInt32 len = lens[0];
         WriteBits2(len, kNumLevelsBits);
-        int i = 0;
+        unsigned i = 0;
         do
         {
           UInt32 level = lens[i];
           while (len != level)
           {
-            WriteBit2(true);
+            WriteBit2(1);
             if (len < level)
             {
-              WriteBit2(false);
+              WriteBit2(0);
               len++;
             }
             else
             {
-              WriteBit2(true);
+              WriteBit2(1);
               len--;
             }
           }
-          WriteBit2(false);
+          WriteBit2(0);
         }
         while (++i < alphaSize);
       }
@@ -557,7 +559,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         if (groupSize == 0)
         {
           groupSize = kGroupSize;
-          int t = m_Selectors[groupIndex++];
+          unsigned t = m_Selectors[groupIndex++];
           lens = Lens[t];
           codes = Codes[t];
         }
@@ -591,7 +593,7 @@ UInt32 CThreadInfo::EncodeBlockWithHeaders(const Byte *block, UInt32 blockSize)
   WriteByte2(kBlockSig5);
 
   CBZip2Crc crc;
-  int numReps = 0;
+  unsigned numReps = 0;
   Byte prevByte = block[0];
   UInt32 i = 0;
   do

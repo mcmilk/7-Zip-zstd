@@ -5,7 +5,7 @@
 #include "../PropID.h"
 
 // VARTYPE
-Byte k7z_PROPID_To_VARTYPE[kpid_NUM_DEFINED] =
+const Byte k7z_PROPID_To_VARTYPE[kpid_NUM_DEFINED] =
 {
   VT_EMPTY,
   VT_UI4,
@@ -95,5 +95,11 @@ Byte k7z_PROPID_To_VARTYPE[kpid_NUM_DEFINED] =
   VT_BOOL,
   VT_BOOL,
   VT_UI8,
-  VT_UI8
+  VT_UI8,
+  VT_BSTR, // kpidNtReparse
+  VT_BSTR,
+  VT_UI8,
+  VT_UI8,
+  VT_BOOL,
+  VT_BSTR  // kpidOutName
 };

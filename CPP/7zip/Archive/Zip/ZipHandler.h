@@ -33,7 +33,7 @@ public:
   INTERFACE_IInArchive(;)
   INTERFACE_IOutArchive(;)
 
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
+  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
 
   DECL_ISetCompressCodecsInfo
 

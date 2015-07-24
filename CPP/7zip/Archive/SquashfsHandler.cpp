@@ -28,10 +28,6 @@
 namespace NArchive {
 namespace NSquashfs {
 
-static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
-static void SzFree(void *p, void *address) { p = p; MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
-
 static const UInt32 kNumFilesMax = (1 << 28);
 static const unsigned kNumDirLevelsMax = (1 << 10);
 
@@ -68,7 +64,7 @@ static const UInt32 kSignature32_LZ = 0x71736873;
 #define kMethod_LZO  3
 #define kMethod_XZ   4
 
-static const char *k_Methods[] =
+static const char * const k_Methods[] =
 {
     "Unknown"
   , "ZLIB"
@@ -1652,13 +1648,12 @@ AString CHandler::GetPath(int index) const
   len--;
 
   AString path;
-  char *dest = path.GetBuffer(len) + len;
+  char *dest = path.GetBuf_SetEnd(len) + len;
   index = indexMem;
   for (;;)
   {
     const CItem &item = _items[index];
     index = item.Parent;
-
     const Byte *p = _dirs.Data + item.Ptr;
     unsigned size = (_h.IsOldVersion() ? (unsigned)p[2] : (unsigned)Get16(p + 6)) + 1;
     p += _h.GetFileNameOffset();
@@ -1670,7 +1665,6 @@ AString CHandler::GetPath(int index) const
       break;
     *(--dest) = CHAR_PATH_SEPARATOR;
   }
-  path.ReleaseBuffer(len);
   return path;
 }
 
@@ -1846,7 +1840,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       AString res = "SquashFS";
       if (_h.SeveralMethods)
         res += "-LZMA";
-      res += ' ';
+      res.Add_Space();
       char s[16];
       ConvertUInt32ToString(_h.Major, s);
       res += s;
@@ -2049,7 +2043,8 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
   }
   if (offsetInBlock + blockSize > _cachedUnpackBlockSize)
     return S_FALSE;
-  memcpy(dest, _cachedBlock + offsetInBlock, blockSize);
+  if (blockSize != 0)
+    memcpy(dest, _cachedBlock + offsetInBlock, blockSize);
   return S_OK;
 }
 
@@ -2208,20 +2203,16 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "SquashFS", "squashfs", 0, 0xD2,
-  3 * (1 + 4),
-  {
+static const Byte k_Signature[] = {
     4, 'h', 's', 'q', 's',
     4, 's', 'q', 's', 'h',
-    4, 's', 'h', 's', 'q',
-  },
+    4, 's', 'h', 's', 'q' };
+
+REGISTER_ARC_I(
+  "SquashFS", "squashfs", 0, 0xD2,
+  k_Signature,
   0,
   NArcInfoFlags::kMultiSignature,
-  CreateArc };
-
-REGISTER_ARC(Cramfs)
+  NULL)
 
 }}

@@ -2,7 +2,7 @@
 #include "../../GuiCommon.rc"
 
 #define xc 332
-#define yc 228
+#define yc 248
 
 #undef g0xs
 #undef g1x
@@ -42,10 +42,13 @@
 #define g3x (m + g2xs)
 
 #undef GROUP_Y_SIZE
+#undef GROUP_Y2_SIZE
 #ifdef UNDER_CE
 #define GROUP_Y_SIZE 8
+#define GROUP_Y2_SIZE 8
 #else
 #define GROUP_Y_SIZE 40
+#define GROUP_Y2_SIZE 32
 #endif
 
 IDD_BENCH  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE | WS_MINIMIZEBOX
@@ -101,11 +104,14 @@ BEGIN
   RTEXT  "", IDT_BENCH_DECOMPR_RPU2,     xRpu,    136, sRpu,    8
   RTEXT  "", IDT_BENCH_DECOMPR_RATING2,  xRating, 136, sRating, 8
   
-  GROUPBOX  "Total Rating", IDG_BENCH_TOTAL_RATING, xTotalRating, 163, sTotalRating, GROUP_Y_SIZE
+  GROUPBOX  "Total Rating", IDG_BENCH_TOTAL_RATING, xTotalRating, 163, sTotalRating, GROUP_Y2_SIZE
 
-  RTEXT  "", IDT_BENCH_TOTAL_USAGE_VAL,  xUsage,  181, sUsage,  8
-  RTEXT  "", IDT_BENCH_TOTAL_RPU_VAL,    xRpu,    181, sRpu,    8
-  RTEXT  "", IDT_BENCH_TOTAL_RATING_VAL, xRating, 181, sRating, 8
+  RTEXT  "", IDT_BENCH_TOTAL_USAGE_VAL,  xUsage,  176, sUsage,  8
+  RTEXT  "", IDT_BENCH_TOTAL_RPU_VAL,    xRpu,    176, sRpu,    8
+  RTEXT  "", IDT_BENCH_TOTAL_RATING_VAL, xRating, 176, sRating, 8
+
+  RTEXT  "", IDT_BENCH_CPU, m, 202, xc, 8
+  RTEXT  "", IDT_BENCH_VER, m, 216, xc, 8
   
   LTEXT  "Elapsed time:", IDT_BENCH_ELAPSED, m, 163, g2xs, 8
   LTEXT  "Size:", IDT_BENCH_SIZE,            m, 176, g2xs, 8

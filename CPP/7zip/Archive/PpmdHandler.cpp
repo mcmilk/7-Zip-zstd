@@ -28,10 +28,6 @@ using namespace NWindows;
 namespace NArchive {
 namespace NPpmd {
 
-static void *SzBigAlloc(void *, size_t size) { return BigAlloc(size); }
-static void SzBigFree(void *, void *address) { BigFree(address); }
-static ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
 static const UInt32 kBufSize = (1 << 20);
 
 struct CBuf
@@ -90,11 +86,10 @@ HRESULT CItem::ReadHeader(ISequentialInStream *s, UInt32 &headerSize)
     nameLen &= 0x3FFF;
   if (nameLen > (1 << 9))
     return S_FALSE;
-  char *name = Name.GetBuffer(nameLen + 1);
+  char *name = Name.GetBuf(nameLen);
   HRESULT res = ReadStream_FALSE(s, name, nameLen);
-  name[nameLen] = 0;
+  Name.ReleaseBuf_CalcLen(nameLen);
   headerSize = kHeaderSize + nameLen;
-  Name.ReleaseBuffer();
   return res;
 }
 
@@ -449,15 +444,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   return extractCallback->SetOperationResult(opRes);
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 0x8F, 0xAF, 0xAC, 0x84 };
 
-static CArcInfo g_ArcInfo =
-  { "Ppmd", "pmd", 0, 0xD,
-  4, { 0x8F, 0xAF, 0xAC, 0x84 },
+REGISTER_ARC_I(
+  "Ppmd", "pmd", 0, 0xD,
+  k_Signature,
   0,
   0,
-  CreateArc };
-
-REGISTER_ARC(Ppmd)
+  NULL)
 
 }}

@@ -29,25 +29,29 @@ static inline HRESULT ConvertBoolToHRESULT(bool result)
   #endif
 }
 
-#ifdef SUPPORT_DEVICE_FILE
 
 static const UInt32 kClusterSize = 1 << 18;
 CInFileStream::CInFileStream():
+  #ifdef SUPPORT_DEVICE_FILE
   VirtPos(0),
   PhyPos(0),
   Buf(0),
   BufSize(0),
-  SupportHardLinks(false)
+  #endif
+  SupportHardLinks(false),
+  Callback(NULL),
+  CallbackRef(0)
 {
 }
-
-#endif
 
 CInFileStream::~CInFileStream()
 {
   #ifdef SUPPORT_DEVICE_FILE
   MidFree(Buf);
   #endif
+
+  if (Callback)
+    Callback->InFileStream_On_Destroy(CallbackRef);
 }
 
 STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
@@ -148,19 +152,37 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   bool result = File.ReadPart(data, size, realProcessedSize);
   if (processedSize)
     *processedSize = realProcessedSize;
+
   #ifdef SUPPORT_DEVICE_FILE
   VirtPos += realProcessedSize;
   PhyPos += realProcessedSize;
   #endif
-  return ConvertBoolToHRESULT(result);
-  
+
+  if (result)
+    return S_OK;
+
+  {
+    DWORD error = ::GetLastError();
+
+    if (Callback)
+      return Callback->InFileStream_On_Error(CallbackRef, error);
+    if (error == 0)
+      return E_FAIL;
+
+    return HRESULT_FROM_WIN32(error);
+  }
+
   #else
   
   if (processedSize)
     *processedSize = 0;
   ssize_t res = File.Read(data, (size_t)size);
   if (res == -1)
+  {
+    if (Callback)
+      return Callback->InFileStream_On_Error(CallbackRef, E_FAIL);
     return E_FAIL;
+  }
   if (processedSize)
     *processedSize = (UInt32)res;
   return S_OK;
@@ -321,7 +343,7 @@ STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *proces
   #ifdef USE_WIN_FILE
 
   UInt32 realProcessedSize;
-  bool result = File.WritePart(data, size, realProcessedSize);
+  bool result = File.Write(data, size, realProcessedSize);
   ProcessedSize += realProcessedSize;
   if (processedSize)
     *processedSize = realProcessedSize;
@@ -346,6 +368,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
 {
   if (seekOrigin >= 3)
     return STG_E_INVALIDFUNCTION;
+  
   #ifdef USE_WIN_FILE
 
   UInt64 realNewPosition;
@@ -369,6 +392,7 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
 STDMETHODIMP COutFileStream::SetSize(UInt64 newSize)
 {
   #ifdef USE_WIN_FILE
+  
   UInt64 currentPos;
   if (!File.Seek(0, FILE_CURRENT, currentPos))
     return E_FAIL;
@@ -376,12 +400,21 @@ STDMETHODIMP COutFileStream::SetSize(UInt64 newSize)
   UInt64 currentPos2;
   result = result && File.Seek(currentPos, currentPos2);
   return result ? S_OK : E_FAIL;
+  
   #else
+  
   return E_FAIL;
+  
   #endif
 }
 
+HRESULT COutFileStream::GetSize(UInt64 *size)
+{
+  return ConvertBoolToHRESULT(File.GetLength(*size));
+}
+
 #ifdef UNDER_CE
+
 STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   size_t s2 = fwrite(data, 1, size, stdout);
@@ -389,13 +422,16 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
     *processedSize = s2;
   return (s2 == size) ? S_OK : E_FAIL;
 }
+
 #else
+
 STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   if (processedSize)
     *processedSize = 0;
 
   #ifdef _WIN32
+
   UInt32 realProcessedSize;
   BOOL res = TRUE;
   if (size > 0)
@@ -407,6 +443,7 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
       sizeTemp = size;
     res = ::WriteFile(GetStdHandle(STD_OUTPUT_HANDLE),
         data, sizeTemp, (DWORD *)&realProcessedSize, NULL);
+    _size += realProcessedSize;
     size -= realProcessedSize;
     data = (const void *)((const Byte *)data + realProcessedSize);
     if (processedSize)
@@ -417,18 +454,21 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   #else
   
   ssize_t res;
+
   do
   {
     res = write(1, data, (size_t)size);
   }
   while (res < 0 && (errno == EINTR));
+  
   if (res == -1)
     return E_FAIL;
+
+  _size += (size_t)res;
   if (processedSize)
     *processedSize = (UInt32)res;
   return S_OK;
   
-  return S_OK;
   #endif
 }
 

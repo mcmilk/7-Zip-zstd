@@ -37,7 +37,7 @@ using namespace NWindows;
 namespace NArchive {
 namespace NPe {
 
-static const UInt32 k_Signature = 0x00004550;
+static const UInt32 k_Signature32 = 0x00004550;
 
 static HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 excludePos, UInt32 &res)
 {
@@ -137,7 +137,7 @@ struct CHeader
 
 bool CHeader::Parse(const Byte *p)
 {
-  if (Get32(p) != k_Signature)
+  if (Get32(p) != k_Signature32)
     return false;
   p += 4;
   G16( 0, Machine);
@@ -364,19 +364,14 @@ struct CSection
 
 static const unsigned kNameSize = 8;
 
-static AString GetName(const Byte *name)
+static void GetName(const Byte *name, AString &res)
 {
-  AString res;
-  char *p = res.GetBuffer(kNameSize);
-  memcpy(p, name, kNameSize);
-  p[kNameSize] = 0;
-  res.ReleaseBuffer();
-  return res;
+  res.SetFrom_CalcLen((const char *)name, kNameSize);
 }
 
 void CSection::Parse(const Byte *p)
 {
-  Name = GetName(p);
+  GetName(p, Name);
   G32( 8, VSize);
   G32(12, Va);
   G32(16, PSize);
@@ -484,33 +479,33 @@ static const CUInt32PCharPair g_SubSystems[] =
   { 14, "XBOX" }
 };
 
-static const wchar_t *g_ResTypes[] =
+static const char * const g_ResTypes[] =
 {
     NULL
-  , L"CURSOR"
-  , L"BITMAP"
-  , L"ICON"
-  , L"MENU"
-  , L"DIALOG"
-  , L"STRING"
-  , L"FONTDIR"
-  , L"FONT"
-  , L"ACCELERATOR"
-  , L"RCDATA"
-  , L"MESSAGETABLE"
-  , L"GROUP_CURSOR"
+  , "CURSOR"
+  , "BITMAP"
+  , "ICON"
+  , "MENU"
+  , "DIALOG"
+  , "STRING"
+  , "FONTDIR"
+  , "FONT"
+  , "ACCELERATOR"
+  , "RCDATA"
+  , "MESSAGETABLE"
+  , "GROUP_CURSOR"
   , NULL
-  , L"GROUP_ICON"
+  , "GROUP_ICON"
   , NULL
-  , L"VERSION"
-  , L"DLGINCLUDE"
+  , "VERSION"
+  , "DLGINCLUDE"
   , NULL
-  , L"PLUGPLAY"
-  , L"VXD"
-  , L"ANICURSOR"
-  , L"ANIICON"
-  , L"HTML"
-  , L"MANIFEST"
+  , "PLUGPLAY"
+  , "VXD"
+  , "ANICURSOR"
+  , "ANIICON"
+  , "HTML"
+  , "MANIFEST"
 };
 
 static const UInt32 kFlag = (UInt32)1 << 31;
@@ -561,7 +556,10 @@ struct CTextFile
   void NewLine();
   void AddString(const char *s);
   void AddSpaces(int num);
-  void AddBytes(const Byte *p, size_t len);
+  void AddBytes(const Byte *p, size_t size)
+  {
+    Buf.AddData(p, size);
+  }
   
   void OpenBlock(int num)
   {
@@ -623,12 +621,6 @@ void CTextFile::AddSpaces(int num)
     AddChar(' ');
 }
 
-void CTextFile::AddBytes(const Byte *data, size_t size)
-{
-  Byte *p = Buf.GetCurPtrAndGrow(size);
-  memcpy(p, data, size);
-}
-
 struct CStringItem: public CTextFile
 {
   UInt32 Lang;
@@ -648,7 +640,7 @@ struct CMixItem
   int VersionIndex;
 
   CMixItem(): SectionIndex(-1), ResourceIndex(-1), StringIndex(-1), VersionIndex(-1) {}
-  bool IsSectionItem() const { return ResourceIndex < 0 && StringIndex < 0 && VersionIndex < 0; };
+  bool IsSectionItem() const { return ResourceIndex < 0 && StringIndex < 0 && VersionIndex < 0; }
 };
 
 struct CUsedBitmap
@@ -802,6 +794,7 @@ static const STATPROPSTG kArcProps[] =
   { (LPOLESTR)L"Heap Commit", kpidHeapCommit, VT_UI8},
   { (LPOLESTR)L"Image Base", kpidImageBase, VT_UI8},
   { NULL, kpidComment, VT_BSTR},
+  
   // { (LPOLESTR)L"Address Of Entry Point", kpidAddressOfEntryPoint, VT_UI8},
   // { (LPOLESTR)L"Base Of Code", kpidBaseOfCode, VT_UI8},
   // { (LPOLESTR)L"Base Of Data", kpidBaseOfData32, VT_UI8},
@@ -913,7 +906,7 @@ HRESULT CHandler::ReadString(UInt32 offset, UString &dest) const
   if ((rem - 2) / 2 < len)
     return S_FALSE;
   dest.Empty();
-  wchar_t *destBuf = dest.GetBuffer(len);
+  wchar_t *destBuf = dest.GetBuf(len);
   offset += 2;
   const Byte *src = _buf + offset;
   unsigned i;
@@ -924,7 +917,8 @@ HRESULT CHandler::ReadString(UInt32 offset, UString &dest) const
       break;
     destBuf[i] = c;
   }
-  dest.ReleaseBuffer(i);
+  destBuf[i] = 0;
+  dest.ReleaseBuf_SetLen(i);
   return S_OK;
 }
 
@@ -960,7 +954,7 @@ void CHandler::AddLangPrefix(UString &s, UInt32 lang) const
   if (!_oneLang)
   {
     AddResNameToString(s, lang);
-    s += WCHAR_PATH_SEPARATOR;
+    s.Add_PathSepar();
   }
 }
 
@@ -978,7 +972,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       {
         UString s = _resourcesPrefix;
         AddLangPrefix(s, item.Lang);
-        s += L"string.txt";
+        s.AddAscii("string.txt");
         prop = s;
         break;
       }
@@ -996,7 +990,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       {
         UString s = _resourcesPrefix;
         AddLangPrefix(s, item.Lang);
-        s += L"version.txt";
+        s.AddAscii("version.txt");
         prop = s;
         break;
       }
@@ -1015,22 +1009,22 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         UString s = _resourcesPrefix;
         AddLangPrefix(s, item.Lang);
         {
-          const wchar_t *p = NULL;
+          const char *p = NULL;
           if (item.Type < ARRAY_SIZE(g_ResTypes))
             p = g_ResTypes[item.Type];
           if (p)
-            s += p;
+            s.AddAscii(p);
           else
             AddResNameToString(s, item.Type);
         }
-        s += WCHAR_PATH_SEPARATOR;
+        s.Add_PathSepar();
         AddResNameToString(s, item.ID);
         if (item.HeaderSize != 0)
         {
           if (item.IsBmp())
-            s += L".bmp";
+            s.AddAscii(".bmp");
           else if (item.IsIcon())
-            s += L".ico";
+            s.AddAscii(".ico");
         }
         prop = s;
         break;
@@ -1199,11 +1193,14 @@ static UInt32 SetBitmapHeader(Byte *dest, const Byte *src, UInt32 size)
     return 0;
   if (h.YSize < 0)
     h.YSize = -h.YSize;
-  if (h.XSize > (1 << 26) || h.YSize > (1 << 26) || h.Planes != 1 || h.BitCount > 32 ||
-      h.Compression != 0) // BI_RGB
+  if (h.XSize > (1 << 26) || h.YSize > (1 << 26) || h.Planes != 1 || h.BitCount > 32)
     return 0;
   if (h.SizeImage == 0)
+  {
+    if (h.Compression != 0) // BI_RGB
+      return 0;
     h.SizeImage = GetImageSize(h.XSize, h.YSize, h.BitCount);
+  }
   UInt32 totalSize = kBmpHeaderSize + size;
   UInt32 offBits = totalSize - h.SizeImage;
   // BITMAPFILEHEADER
@@ -1413,7 +1410,7 @@ static void PrintVersion(UString &s, UInt32 ms, UInt32 ls)
   PrintUInt32(s, LOWORD(ls));
 }
 
-static const char *k_VS_FileFlags[] =
+static const char * const k_VS_FileFlags[] =
 {
     "DEBUG"
   , "PRERELEASE"
@@ -1432,7 +1429,7 @@ static const CUInt32PCharPair k_VS_FileOS[] =
   {  0x40004, "VOS_NT_WINDOWS32" }
 };
 
-static const char *k_VS_FileOS_High[] =
+static const char * const k_VS_FileOS_High[] =
 {
     "VOS_UNKNOWN"
   , "VOS_DOS"
@@ -1445,7 +1442,7 @@ static const char *k_VS_FileOS_High[] =
 static const UInt32 kMY_VFT_DRV  = 3;
 static const UInt32 kMY_VFT_FONT = 4;
 
-static const char *k_VS_FileOS_Low[] =
+static const char * const k_VS_FileOS_Low[] =
 {
     "VOS__BASE"
   , "VOS__WINDOWS16"
@@ -1454,7 +1451,7 @@ static const char *k_VS_FileOS_Low[] =
   , "VOS__WINDOWS32"
 };
 
-static const char *k_VS_FileType[] =
+static const char * const k_VS_FileType[] =
 {
     "VFT_UNKNOWN"
   , "VFT_APP"
@@ -1467,7 +1464,7 @@ static const char *k_VS_FileType[] =
 };
 
 // Subtype for VFT_DRV Type
-static const char *k_VS_FileSubType_DRV[] =
+static const char * const k_VS_FileSubType_DRV[] =
 {
     "0"
   , "PRINTER"
@@ -1485,7 +1482,7 @@ static const char *k_VS_FileSubType_DRV[] =
 };
 
 // Subtype for VFT_FONT Type
-static const char *k_VS_FileSubType_FONT[] =
+static const char * const k_VS_FileSubType_FONT[] =
 {
     "0"
   , "VFT2_FONT_RASTER"
@@ -1493,10 +1490,10 @@ static const char *k_VS_FileSubType_FONT[] =
   , "VFT2_FONT_TRUETYPE"
 };
 
-static int FindKey(CObjectVector<CStringKeyValue> &v, const UString &key)
+static int FindKey(CObjectVector<CStringKeyValue> &v, const char *key)
 {
   FOR_VECTOR (i, v)
-    if (v[i].Key == key)
+    if (v[i].Key.IsEqualTo(key))
       return i;
   return -1;
 }
@@ -1665,7 +1662,7 @@ struct CVersionBlock
   UInt32 TotalLen;
   UInt32 ValueLen;
   bool IsTextValue;
-  int StrSize;
+  unsigned StrSize;
 
   bool Parse(const Byte *p, UInt32 size);
 };
@@ -1691,7 +1688,7 @@ bool CVersionBlock::Parse(const Byte *p, UInt32 size)
     return false;
   TotalLen = Get16(p);
   ValueLen = Get16(p + 2);
-  if (TotalLen > size)
+  if (TotalLen == 0 || TotalLen > size)
     return false;
   switch (Get16(p + 4))
   {
@@ -1699,8 +1696,12 @@ bool CVersionBlock::Parse(const Byte *p, UInt32 size)
     case 1: IsTextValue = true; break;
     default: return false;
   }
-  StrSize = Get_Utf16Str_Len_InBytes(p + k_ResoureBlockHeader_Size, TotalLen - k_ResoureBlockHeader_Size);
-  return StrSize >= 0;
+  StrSize = 0;
+  int t = Get_Utf16Str_Len_InBytes(p + k_ResoureBlockHeader_Size, TotalLen - k_ResoureBlockHeader_Size);
+  if (t < 0)
+    return false;
+  StrSize = t;
+  return true;
 }
 
 static void AddParamString(CTextFile &f, const Byte *p, size_t sLen)
@@ -1868,7 +1869,7 @@ static bool ParseVersion(const Byte *p, UInt32 size, CTextFile &f, CObjectVector
               int sLen = Get_Utf16Str_Len_InBytes(p + pos, endPos3 - pos);
               if (sLen < 0)
                 return false;
-              AddParamString(f, p + pos, sLen);
+              AddParamString(f, p + pos, (unsigned)sLen);
               CopyToUString(p + pos, value);
               pos += sLen + 2;
             }
@@ -2276,6 +2277,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   // _parseResources = false;
 
   UInt64 mainSize = 0, mainSize2 = 0;
+
   for (i = 0; i < _sections.Size(); i++)
   {
     const CSection &sect = _sections[i];
@@ -2287,7 +2289,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       if (res == S_OK)
       {
         _resourcesPrefix.SetFromAscii(sect.Name);
-        _resourcesPrefix += WCHAR_PATH_SEPARATOR;
+        _resourcesPrefix.Add_PathSepar();
         FOR_VECTOR (j, _items)
         {
           const CResItem &item = _items[j];
@@ -2348,7 +2350,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
         mainSize = sect.PSize;
         _mainSubfile = _mixItems.Size();
       }
-      else
+      else if (sect.PSize >= mainSize2)
         mainSize2 = sect.PSize;
     }
     _mixItems.Add(mixItem);
@@ -2370,7 +2372,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   for (i = 0; i < _versionKeys.Size(); i++)
   {
     if (i != 0)
-      _versionFullString += L'\n';
+      _versionFullString.Add_LF();
     const CStringKeyValue &k = _versionKeys[i];
     _versionFullString += k.Key;
     _versionFullString += L": ";
@@ -2378,20 +2380,20 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   }
 
   {
-    int keyIndex = FindKey(_versionKeys, L"OriginalFilename");
+    int keyIndex = FindKey(_versionKeys, "OriginalFilename");
     if (keyIndex >= 0)
       _originalFilename = _versionKeys[keyIndex].Value;
   }
   {
-    int keyIndex = FindKey(_versionKeys, L"FileDescription");
+    int keyIndex = FindKey(_versionKeys, "FileDescription");
     if (keyIndex >= 0)
       _versionShortString = _versionKeys[keyIndex].Value;
   }
   {
-    int keyIndex = FindKey(_versionKeys, L"FileVersion");
+    int keyIndex = FindKey(_versionKeys, "FileVersion");
     if (keyIndex >= 0)
     {
-      _versionShortString += L' ';
+      _versionShortString.Add_Space();
       _versionShortString += _versionKeys[keyIndex].Value;
     }
   }
@@ -2597,7 +2599,8 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     }
     referenceBuf->Buf.Alloc(item.HeaderSize + item.Size);
     memcpy(referenceBuf->Buf, item.Header, item.HeaderSize);
-    memcpy(referenceBuf->Buf + item.HeaderSize, _buf + offset, item.Size);
+    if (item.Size != 0)
+      memcpy(referenceBuf->Buf + item.HeaderSize, _buf + offset, item.Size);
   }
   inStreamSpec->Init(referenceBuf);
 
@@ -2612,17 +2615,15 @@ STDMETHODIMP CHandler::AllowTail(Int32 allowTail)
   return S_OK;
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 'M', 'Z' };
 
-static CArcInfo g_ArcInfo =
-  { "PE", "exe dll sys", 0, 0xDD,
-  2, { 'M', 'Z' },
+REGISTER_ARC_I(
+  "PE", "exe dll sys", 0, 0xDD,
+  k_Signature,
   0,
   NArcInfoFlags::kPreArc,
-  CreateArc, NULL, IsArc_Pe };
-
-REGISTER_ARC(Pe)
-
+  IsArc_Pe)
+ 
 }
 
 
@@ -2836,7 +2837,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     const CSection &item = _items[index];
     switch (propID)
     {
-      case kpidPath: prop = MultiByteToUnicodeString(NPe::GetName(item.Name)); break;
+      case kpidPath:
+      {
+        AString name;
+        NPe::GetName(item.Name, name);
+        prop = MultiByteToUnicodeString(name);
+        break;
+      }
       case kpidSize:
       case kpidPackSize: prop = (UInt64)item.PSize; break;
       case kpidVirtualSize: prop = (UInt64)item.VSize; break;
@@ -2995,16 +3002,14 @@ STDMETHODIMP CHandler::AllowTail(Int32 allowTail)
   return S_OK;
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 'V', 'Z' };
 
-static CArcInfo g_ArcInfo =
-  { "TE", "te", 0, 0xCF,
-  2, { 'V', 'Z' },
+REGISTER_ARC_I(
+  "TE", "te", 0, 0xCF,
+  k_Signature,
   0,
   NArcInfoFlags::kPreArc,
-  CreateArc, NULL, IsArc_Te };
-
-REGISTER_ARC(TE)
+  IsArc_Te)
 
 }
 }

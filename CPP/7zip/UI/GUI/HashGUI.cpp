@@ -22,7 +22,6 @@ using namespace NWindows;
 class CHashCallbackGUI: public CProgressThreadVirt, public IHashCallbackUI
 {
   UInt64 NumFiles;
-  UStringVector FailedFiles;
   bool _curIsFolder;
   UString FirstFileName;
 
@@ -45,33 +44,28 @@ public:
   }
 };
 
-static void NewLine(UString &s)
-{
-  s += L'\n';
-}
-
 static void AddValuePair(UString &s, UINT resourceID, UInt64 value)
 {
-  s += LangString(resourceID);
-  s += L": ";
-  wchar_t sz[32];
+  AddLangString(s, resourceID);
+  s.AddAscii(": ");
+  char sz[32];
   ConvertUInt64ToString(value, sz);
-  s += sz;
-  NewLine(s);
+  s.AddAscii(sz);
+  s.Add_LF();
 }
 
 static void AddSizeValuePair(UString &s, UINT resourceID, UInt64 value)
 {
-  s += LangString(resourceID);
-  s += L": ";
+  AddLangString(s, resourceID);
+  s.AddAscii(": ");
   wchar_t sz[32];
   ConvertUInt64ToString(value, sz);
   s += MyFormatNew(IDS_FILE_SIZE, sz);
   ConvertUInt64ToString(value >> 20, sz);
-  s += L" (";
+  s.AddAscii(" (");
   s += sz;
-  s += L" MB)";
-  NewLine(s);
+  s.AddAscii(" MB)");
+  s.Add_LF();
 }
 
 HRESULT CHashCallbackGUI::StartScanning()
@@ -81,23 +75,20 @@ HRESULT CHashCallbackGUI::StartScanning()
   return CheckBreak();
 }
 
-HRESULT CHashCallbackGUI::ScanProgress(UInt64 /* numFolders */, UInt64 numFiles, UInt64 totalSize, const wchar_t *path, bool isDir)
+HRESULT CHashCallbackGUI::ScanProgress(const CDirItemsStat &st, const FString &path, bool isDir)
 {
-  return ProgressDialog.Sync.ScanProgress(numFiles, totalSize, path, isDir);
+  return ProgressDialog.Sync.ScanProgress(st.NumFiles, st.GetTotalBytes(), path, isDir);
 }
 
-HRESULT CHashCallbackGUI::CanNotFindError(const wchar_t *name, DWORD systemError)
+HRESULT CHashCallbackGUI::ScanError(const FString &path, DWORD systemError)
 {
-  FailedFiles.Add(name);
-  AddErrorMessage(systemError, name);
+  AddErrorMessage(systemError, fs2us(path));
   return CheckBreak();
 }
 
-HRESULT CHashCallbackGUI::FinishScanning()
+HRESULT CHashCallbackGUI::FinishScanning(const CDirItemsStat &st)
 {
-  CProgressSync &sync = ProgressDialog.Sync;
-  sync.Set_FilePath(L"");
-  return CheckBreak();
+  return ScanProgress(st, FString(), false);
 }
 
 HRESULT CHashCallbackGUI::CheckBreak()
@@ -139,12 +130,11 @@ HRESULT CHashCallbackGUI::GetStream(const wchar_t *name, bool isFolder)
   return CheckBreak();
 }
 
-HRESULT CHashCallbackGUI::OpenFileError(const wchar_t *name, DWORD systemError)
+HRESULT CHashCallbackGUI::OpenFileError(const FString &path, DWORD systemError)
 {
-  FailedFiles.Add(name);
   // if (systemError == ERROR_SHARING_VIOLATION)
   {
-    AddErrorMessage(systemError, name);
+    AddErrorMessage(systemError, fs2us(path));
     return S_FALSE;
   }
   // return systemError;
@@ -159,20 +149,22 @@ HRESULT CHashCallbackGUI::SetOperationResult(UInt64 /* fileSize */, const CHashB
   return CheckBreak();
 }
 
-static void AddHashString(UString &s, const CHasherState &h, int digestIndex, const wchar_t *title)
+static void AddHashString(UString &s, const CHasherState &h, unsigned digestIndex, const wchar_t *title)
 {
   s += title;
-  s += L' ';
+  s.Add_Space();
   char temp[k_HashCalc_DigestSize_Max * 2 + 4];
   AddHashHexToString(temp, h.Digests[digestIndex], h.DigestSize);
-  s.AddAsciiStr(temp);
-  NewLine(s);
+  s.AddAscii(temp);
+  s.Add_LF();
 }
 
-static void AddHashResString(UString &s, const CHasherState &h, int digestIndex, UInt32 resID)
+static void AddHashResString(UString &s, const CHasherState &h, unsigned digestIndex, UInt32 resID)
 {
   UString s2 = LangString(resID);
-  s2.Replace(L"CRC", h.Name);
+  UString name;
+  name.SetFromAscii(h.Name);
+  s2.Replace(L"CRC", name);
   AddHashString(s, h, digestIndex, s2);
 }
 
@@ -181,14 +173,14 @@ void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFil
   if (hb.NumErrors != 0)
   {
     AddValuePair(s, IDS_PROP_NUM_ERRORS, hb.NumErrors);
-    NewLine(s);
+    s.Add_LF();
   }
   if (hb.NumFiles == 1 && hb.NumDirs == 0 && !firstFileName.IsEmpty())
   {
-    s += LangString(IDS_PROP_NAME);
-    s += L": ";
+    AddLangString(s, IDS_PROP_NAME);
+    s.AddAscii(": ");
     s += firstFileName;
-    NewLine(s);
+    s.Add_LF();
   }
   else
   {
@@ -200,23 +192,23 @@ void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFil
 
   if (hb.NumAltStreams != 0)
   {
-    NewLine(s);
+    s.Add_LF();
     AddValuePair(s, IDS_PROP_NUM_ALT_STREAMS, hb.NumAltStreams);
     AddSizeValuePair(s, IDS_PROP_ALT_STREAMS_SIZE, hb.AltStreamsSize);
   }
 
   FOR_VECTOR (i, hb.Hashers)
   {
-    NewLine(s);
+    s.Add_LF();
     const CHasherState &h = hb.Hashers[i];
     if (hb.NumFiles == 1 && hb.NumDirs == 0)
     {
-      s += h.Name;
+      s.AddAscii(h.Name);
       AddHashString(s, h, k_HashCalc_Index_DataSum, L":");
     }
     else
     {
-      AddHashResString(s, h, k_HashCalc_Index_DataSum,  IDS_CHECKSUM_CRC_DATA);
+      AddHashResString(s, h, k_HashCalc_Index_DataSum, IDS_CHECKSUM_CRC_DATA);
       AddHashResString(s, h, k_HashCalc_Index_NamesSum, IDS_CHECKSUM_CRC_DATA_NAMES);
     }
     if (hb.NumAltStreams != 0)
@@ -245,7 +237,7 @@ HRESULT CHashCallbackGUI::ProcessVirt()
 {
   NumFiles = 0;
 
-  UString errorInfo;
+  AString errorInfo;
   HRESULT res = HashCalc(EXTERNAL_CODECS_LOC_VARS
       *censor, *options, errorInfo, this);
 
@@ -270,7 +262,8 @@ HRESULT HashCalcGUI(
   const UString title = LangString(IDS_CHECKSUM_CALCULATING);
 
   t.ProgressDialog.MainTitle = L"7-Zip"; // LangString(IDS_APP_TITLE);
-  t.ProgressDialog.MainAddTitle = title + L' ';
+  t.ProgressDialog.MainAddTitle = title;
+  t.ProgressDialog.MainAddTitle.Add_Space();
 
   RINOK(t.Create(title));
   messageWasDisplayed = t.ThreadFinishedOK && t.ProgressDialog.MessagesDisplayed;

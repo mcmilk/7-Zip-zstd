@@ -26,7 +26,8 @@ template <class T> class CDynamicBuffer
     }
 
     T *newBuffer = new T[newCap];
-    memcpy(newBuffer, _items, _pos * sizeof(T));
+    if (_pos != 0)
+      memcpy(newBuffer, _items, _pos * sizeof(T));
     delete []_items;
     _items = newBuffer;
     _size = newCap;
@@ -34,8 +35,8 @@ template <class T> class CDynamicBuffer
 
 public:
   CDynamicBuffer(): _items(0), _size(0), _pos(0) {}
-  // operator T *() { return _items; };
-  operator const T *() const { return _items; };
+  // operator T *() { return _items; }
+  operator const T *() const { return _items; }
   ~CDynamicBuffer() { delete []_items; }
 
   T *GetCurPtrAndGrow(size_t addSize)
@@ -46,6 +47,11 @@ public:
     T *res = _items + _pos;
     _pos += addSize;
     return res;
+  }
+
+  void AddData(const T *data, size_t size)
+  {
+    memcpy(GetCurPtrAndGrow(size), data, size * sizeof(T));
   }
 
   const size_t GetPos() const { return _pos; }

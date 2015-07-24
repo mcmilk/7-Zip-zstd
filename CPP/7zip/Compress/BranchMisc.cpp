@@ -2,20 +2,17 @@
 
 #include "StdAfx.h"
 
-#include "../../../C/Bra.h"
-
 #include "BranchMisc.h"
 
-#define SUB_FILTER_IMP2(name, coderStr, coderNum) \
-  UInt32 CBC_ ## name ## coderStr::SubFilter(Byte *data, UInt32 size) \
-  { return (UInt32)::name ## Convert(data, size, _bufferPos, coderNum); }
+STDMETHODIMP CBranchCoder::Init()
+{
+  _bufferPos = 0;
+  return S_OK;
+}
 
-#define SUB_FILTER_IMP(name) \
-  SUB_FILTER_IMP2(name, Encoder, 1) \
-  SUB_FILTER_IMP2(name, Decoder, 0) \
-
-SUB_FILTER_IMP(ARM_)
-SUB_FILTER_IMP(ARMT_)
-SUB_FILTER_IMP(PPC_)
-SUB_FILTER_IMP(SPARC_)
-SUB_FILTER_IMP(IA64_)
+STDMETHODIMP_(UInt32) CBranchCoder::Filter(Byte *data, UInt32 size)
+{
+  UInt32 processed = (UInt32)BraFunc(data, size, _bufferPos, _encode);
+  _bufferPos += processed;
+  return processed;
+}

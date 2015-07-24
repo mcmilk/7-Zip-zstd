@@ -27,8 +27,7 @@ namespace NArchive {
 namespace NCom {
 
 #define SIGNATURE { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 }
-static const UInt32 kSignatureSize = 8;
-static const Byte kSignature[kSignatureSize] = SIGNATURE;
+static const Byte kSignature[] = SIGNATURE;
 
 enum EType
 {
@@ -40,7 +39,7 @@ enum EType
   k_Type_Xls,
 };
 
-static const char *kExtensions[] =
+static const char * const kExtensions[] =
 {
     "compound"
   , "msi"
@@ -240,8 +239,8 @@ HRESULT CDatabase::AddNode(int parent, UInt32 did)
   return S_OK;
 }
 
-static const char kCharOpenBracket  = '[';
-static const char kCharCloseBracket = ']';
+static const wchar_t kCharOpenBracket  = L'[';
+static const wchar_t kCharCloseBracket = L']';
 
 static UString CompoundNameToFileName(const UString &s)
 {
@@ -263,23 +262,25 @@ static UString CompoundNameToFileName(const UString &s)
   return res;
 }
 
-static char g_MsiChars[] =
+static const char k_Msi_Chars[] =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._";
 
-static const wchar_t *kMsi_ID = L""; // L"{msi}";
+// static const char *k_Msi_ID = ""; // "{msi}";
+static const wchar_t k_Msi_SpecChar = L'!';
 
-static const unsigned kMsiNumBits = 6;
-static const UInt32 kMsiNumChars = 1 << kMsiNumBits;
-static const UInt32 kMsiCharMask = kMsiNumChars - 1;
-static const UInt32 kMsiStartUnicodeChar = 0x3800;
-static const UInt32 kMsiUnicodeRange = kMsiNumChars * (kMsiNumChars + 1);
+static const unsigned k_Msi_NumBits = 6;
+static const unsigned k_Msi_NumChars = 1 << k_Msi_NumBits;
+static const unsigned k_Msi_CharMask = k_Msi_NumChars - 1;
+static const unsigned k_Msi_StartUnicodeChar = 0x3800;
+static const unsigned k_Msi_UnicodeRange = k_Msi_NumChars * (k_Msi_NumChars + 1);
+
 
 static bool IsMsiName(const Byte *p)
 {
   UInt32 c = Get16(p);
   return
-      c >= kMsiStartUnicodeChar &&
-      c <= kMsiStartUnicodeChar + kMsiUnicodeRange;
+      c >= k_Msi_StartUnicodeChar &&
+      c <= k_Msi_StartUnicodeChar + k_Msi_UnicodeRange;
 }
 
 static bool AreEqualNames(const Byte *rawName, const char *asciiName)
@@ -296,30 +297,32 @@ static bool AreEqualNames(const Byte *rawName, const char *asciiName)
   return false;
 }
 
-static bool CompoundMsiNameToFileName(const UString &name, UString &resultName)
+static bool CompoundMsiNameToFileName(const UString &name, UString &res)
 {
-  resultName.Empty();
+  res.Empty();
   for (unsigned i = 0; i < name.Len(); i++)
   {
     wchar_t c = name[i];
-    if (c < kMsiStartUnicodeChar || c > kMsiStartUnicodeChar + kMsiUnicodeRange)
+    if (c < k_Msi_StartUnicodeChar || c > k_Msi_StartUnicodeChar + k_Msi_UnicodeRange)
       return false;
+    /*
     if (i == 0)
-      resultName += kMsi_ID;
-    c -= kMsiStartUnicodeChar;
+      res += k_Msi_ID;
+    */
+    c -= k_Msi_StartUnicodeChar;
     
-    UInt32 c0 = c & kMsiCharMask;
-    UInt32 c1 = c >> kMsiNumBits;
+    unsigned c0 = (unsigned)c & k_Msi_CharMask;
+    unsigned c1 = (unsigned)c >> k_Msi_NumBits;
 
-    if (c1 <= kMsiNumChars)
+    if (c1 <= k_Msi_NumChars)
     {
-      resultName += (wchar_t)g_MsiChars[c0];
-      if (c1 == kMsiNumChars)
+      res += (wchar_t)(Byte)k_Msi_Chars[c0];
+      if (c1 == k_Msi_NumChars)
         break;
-      resultName += (wchar_t)g_MsiChars[c1];
+      res += (wchar_t)(Byte)k_Msi_Chars[c1];
     }
     else
-      resultName += L'!';
+      res += k_Msi_SpecChar;
   }
   return true;
 }
@@ -328,6 +331,7 @@ static UString ConvertName(const Byte *p, bool &isMsi)
 {
   isMsi = false;
   UString s;
+  
   for (unsigned i = 0; i < kNameSizeMax; i += 2)
   {
     wchar_t c = Get16(p + i);
@@ -335,6 +339,7 @@ static UString ConvertName(const Byte *p, bool &isMsi)
       break;
     s += c;
   }
+  
   UString msiName;
   if (CompoundMsiNameToFileName(s, msiName))
   {
@@ -416,7 +421,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
   Byte p[kHeaderSize];
   PhySize = kHeaderSize;
   RINOK(ReadStream_FALSE(inStream, p, kHeaderSize));
-  if (memcmp(p, kSignature, kSignatureSize) != 0)
+  if (memcmp(p, kSignature, ARRAY_SIZE(kSignature)) != 0)
     return S_FALSE;
   if (Get16(p + 0x1A) > 4) // majorVer
     return S_FALSE;
@@ -573,11 +578,14 @@ HRESULT CDatabase::Open(IInStream *inStream)
       continue;
     bool isMsiName;
     UString msiName = ConvertName(item.Name, isMsiName);
-    if (isMsiName && msiName.Len() >= 4 &&
-        MyStringCompareNoCase(msiName.RightPtr(4), L".cab") == 0)
+    if (isMsiName)
     {
-      numCabs++;
-      MainSubfile = i;
+      if (msiName.Len() >= 4 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(4), ".cab")
+          || msiName.Len() >= 3 && msiName[0] != k_Msi_SpecChar && StringsAreEqualNoCase_Ascii(msiName.RightPtr(3), "exe"))
+      {
+        numCabs++;
+        MainSubfile = i;
+      }
     }
   }
   if (numCabs > 1)
@@ -663,7 +671,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   NWindows::NCOM::CPropVariant prop;
   switch (propID)
   {
-    case kpidExtension: prop = kExtensions[_db.Type]; break;
+    case kpidExtension: prop = kExtensions[(unsigned)_db.Type]; break;
     case kpidPhySize: prop = _db.PhySize; break;
     case kpidClusterSize: prop = (UInt32)1 << _db.SectorSizeBits; break;
     case kpidSectorSize: prop = (UInt32)1 << _db.MiniSectorSizeBits; break;
@@ -861,15 +869,11 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "Compound", "msi msp doc xls ppt", 0, 0xE5,
-  kSignatureSize, SIGNATURE,
+REGISTER_ARC_I(
+  "Compound", "msi msp doc xls ppt", 0, 0xE5,
+  kSignature,
   0,
   0,
-  CreateArc };
-
-REGISTER_ARC(Com)
+  NULL)
 
 }}

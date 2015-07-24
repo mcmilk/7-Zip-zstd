@@ -77,7 +77,7 @@ enum EType
   kType_Lib
 };
 
-static const char *k_TypeExtionsions[] =
+static const char * const k_TypeExtionsions[] =
 {
     "ar"
   , "a"
@@ -121,7 +121,7 @@ struct CItem
   int SameNameIndex;
 
   CItem(): TextFileIndex(-1), SameNameIndex(-1) {}
-  UInt64 GetDataPos() const { return HeaderPos + HeaderSize; };
+  UInt64 GetDataPos() const { return HeaderPos + HeaderSize; }
 };
 
 class CInArchive
@@ -257,10 +257,9 @@ HRESULT CInArchive::GetNextItem(CItem &item, bool &filled)
   {
     SubType = kSubType_BSD;
     size_t processedSize = longNameLen;
-    char *s = item.Name.GetBuffer(longNameLen);
+    char *s = item.Name.GetBuf(longNameLen);
     HRESULT res = ReadStream(m_Stream, s, &processedSize);
-    s[longNameLen] = 0;
-    item.Name.ReleaseBuffer();
+    item.Name.ReleaseBuf_CalcLen(longNameLen);
     RINOK(res);
     if (processedSize != longNameLen)
       return S_OK;
@@ -683,11 +682,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   {
     case kpidPhySize: prop = _phySize; break;
     case kpidMainSubfile: if (_mainSubfile >= 0) prop = (UInt32)_mainSubfile; break;
-    case kpidExtension: prop = k_TypeExtionsions[_type]; break;
+    case kpidExtension: prop = k_TypeExtionsions[(unsigned)_type]; break;
     case kpidShortComment:
     case kpidSubType:
     {
-      AString s = k_TypeExtionsions[_type];
+      AString s = k_TypeExtionsions[(unsigned)_type];
       if (_subType == kSubType_BSD)
         s += ":BSD";
       prop = s;
@@ -724,7 +723,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidSize:
     case kpidPackSize:
       if (item.TextFileIndex >= 0)
-        prop = (UInt64)_libFiles[item.TextFileIndex].Len();
+        prop = (UInt64)_libFiles[(unsigned)item.TextFileIndex].Len();
       else
         prop = item.Size;
       break;
@@ -766,7 +765,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     const CItem &item = _items[allFilesMode ? i : indices[i]];
     totalSize +=
       (item.TextFileIndex >= 0) ?
-        (UInt64)_libFiles[item.TextFileIndex].Len() : item.Size;
+        (UInt64)_libFiles[(unsigned)item.TextFileIndex].Len() : item.Size;
   }
   extractCallback->SetTotal(totalSize);
 
@@ -795,7 +794,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     const CItem &item = _items[index];
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
     currentTotalSize += (item.TextFileIndex >= 0) ?
-        (UInt64)_libFiles[item.TextFileIndex].Len() : item.Size;
+        (UInt64)_libFiles[(unsigned)item.TextFileIndex].Len() : item.Size;
     
     if (!testMode && !realOutStream)
       continue;
@@ -808,7 +807,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     bool isOk = true;
     if (item.TextFileIndex >= 0)
     {
-      const AString &f = _libFiles[item.TextFileIndex];
+      const AString &f = _libFiles[(unsigned)item.TextFileIndex];
       if (realOutStream)
         RINOK(WriteStream(realOutStream, f, f.Len()));
     }
@@ -834,8 +833,8 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   const CItem &item = _items[index];
   if (item.TextFileIndex >= 0)
   {
-    const AString &f = _libFiles[item.TextFileIndex];
-    Create_BufInStream_WithNewBuf((const void *)(const char *)f, f.Len(), stream);
+    const AString &f = _libFiles[(unsigned)item.TextFileIndex];
+    Create_BufInStream_WithNewBuffer((const void *)(const char *)f, f.Len(), stream);
     return S_OK;
   }
   else
@@ -843,15 +842,11 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "Ar", "ar a deb lib", 0, 0xEC,
-  kSignatureLen, SIGNATURE,
+REGISTER_ARC_I(
+  "Ar", "ar a deb lib", 0, 0xEC,
+  kSignature,
   0,
   0,
-  CreateArc };
-
-REGISTER_ARC(Ar)
+  NULL)
 
 }}

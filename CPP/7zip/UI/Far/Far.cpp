@@ -1,3 +1,4 @@
+// Far.cpp
 // Test Align for updating !!!!!!!!!!!!!!!!!!
 
 #include "StdAfx.h"
@@ -11,8 +12,6 @@
 
 #include "../../Common/FileStreams.h"
 
-#include "../Agent/Agent.h"
-
 #include "Messages.h"
 #include "Plugin.h"
 #include "ProgressBox.h"
@@ -22,6 +21,8 @@ using namespace NFile;
 using namespace NDir;
 using namespace NFar;
 
+static const DWORD kShowProgressTime_ms = 100;
+
 static const char *kCommandPrefix = "7-zip";
 static const TCHAR *kRegisrtryMainKeyName = TEXT("");
 static const TCHAR *kRegisrtryValueNameEnabled = TEXT("UsedByDefault3");
@@ -29,6 +30,12 @@ static const char *kHelpTopicConfig =  "Config";
 static bool kPluginEnabledDefault = true;
 
 HINSTANCE g_hInstance;
+
+namespace NFar {
+
+const char *g_PluginName_for_Error = "7-Zip";
+
+}
 
 #define NT_CHECK_FAIL_ACTION return FALSE;
 
@@ -42,8 +49,13 @@ BOOL WINAPI DllMain(
 {
   if (dwReason == DLL_PROCESS_ATTACH)
   {
+    // OutputDebugStringA("7-Zip FAR DLL_PROCESS_ATTACH");
     g_hInstance = (HINSTANCE)hInstance;
     NT_CHECK
+  }
+  if (dwReason == DLL_PROCESS_DETACH)
+  {
+    // OutputDebugStringA("7-Zip FAR DLL_PROCESS_DETACH");
   }
   return TRUE;
 }
@@ -55,6 +67,18 @@ static struct COptions
 
 static const TCHAR *kPliginNameForRegestry = TEXT("7-ZIP");
 
+EXTERN_C void WINAPI ExitFAR()
+{
+  /* WIN32:
+       it's not allowed to call FreeLibrary() from FreeLibrary().
+       So we try to free all DLLs before destructors */
+  // OutputDebugStringA("-- ExitFAR --- START");
+  
+  FreeGlobalCodecs();
+
+  // OutputDebugStringA("-- ExitFAR --- END");
+}
+
 EXTERN_C void WINAPI SetStartupInfo(const PluginStartupInfo *info)
 {
   MY_TRY_BEGIN;
@@ -62,6 +86,10 @@ EXTERN_C void WINAPI SetStartupInfo(const PluginStartupInfo *info)
   g_Options.Enabled = g_StartupInfo.QueryRegKeyValue(
       HKEY_CURRENT_USER, kRegisrtryMainKeyName,
       kRegisrtryValueNameEnabled, kPluginEnabledDefault);
+
+  // OutputDebugStringA("SetStartupInfo");
+  // LoadGlobalCodecs();
+
   MY_TRY_END1("SetStartupInfo");
 }
 
@@ -77,17 +105,8 @@ class COpenArchiveCallback:
 
   CProgressBox _progressBox;
 
-  UInt64 _numFilesTotal;
-  UInt64 _numFilesCur;
-  UInt64 _numBytesTotal;
-  UInt64 _numBytesCur;
-
   bool _numFilesTotalDefined;
-  bool _numFilesCurDefined;
   bool _numBytesTotalDefined;
-  bool _numBytesCurDefined;
-
-  DWORD m_PrevTickCount;
 
   NFind::CFileInfo _fileInfo;
 public:
@@ -123,12 +142,13 @@ public:
     PasswordIsDefined = false;
 
     _numFilesTotalDefined = false;
-    _numFilesCurDefined = false;
     _numBytesTotalDefined = false;
-    _numBytesCurDefined = false;
 
     m_MessageBoxIsShown = false;
-    m_PrevTickCount = GetTickCount();
+
+    _progressBox.Init(
+        // g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
+        g_StartupInfo.GetMsgString(NMessageID::kReading));
   }
   void ShowMessage();
 
@@ -140,113 +160,60 @@ public:
   }
 };
 
+static HRESULT CheckBreak2()
+{
+  return WasEscPressed() ? E_ABORT : S_OK;
+}
+
 void COpenArchiveCallback::ShowMessage()
 {
-  DWORD currentTime = GetTickCount();
   if (!m_MessageBoxIsShown)
   {
-    if (currentTime - m_PrevTickCount < 100)
+    DWORD currentTime = GetTickCount();
+    if (currentTime - _progressBox.StartTick < kShowProgressTime_ms)
       return;
-    _progressBox.Init(
-        // g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
-        g_StartupInfo.GetMsgString(NMessageID::kReading), 48);
-
     m_MessageBoxIsShown = true;
   }
-  else
-  {
-    if (currentTime - m_PrevTickCount < 200)
-      return;
-  }
-  m_PrevTickCount = currentTime;
 
-  UInt64 total = 0, cur = 0;
-  bool curIsDefined = false, totalIsDefined = false;
-
-  char message[256];
-  message[0] = 0;
-  if (_numFilesCurDefined)
-    ConvertUInt64ToStringAligned(_numFilesCur, message, 5);
-
-  if (_numFilesTotalDefined)
-  {
-    strcat(message, " / ");
-    ConvertUInt64ToStringAligned(_numFilesTotal, message + strlen(message), 5);
-    total = _numFilesTotal;
-    totalIsDefined = true;
-    if (_numFilesCurDefined)
-    {
-      cur = _numFilesCur;
-      curIsDefined = true;
-    }
-  }
-  else if (_numBytesTotalDefined)
-  {
-    total = _numBytesTotal;
-    totalIsDefined = true;
-    if (_numBytesCurDefined)
-    {
-      cur = _numBytesCur;
-      curIsDefined = true;
-    }
-  }
-  _progressBox.Progress(
-      totalIsDefined ? &total: NULL,
-      curIsDefined ? &cur: NULL,
-      message);
+  _progressBox.UseBytesForPercents = !_numFilesTotalDefined;
+  _progressBox.Print();
 }
 
 STDMETHODIMP COpenArchiveCallback::SetTotal(const UInt64 *numFiles, const UInt64 *numBytes)
 {
-  if (WasEscPressed())
-    return E_ABORT;
-  
   _numFilesTotalDefined = (numFiles != NULL);
   if (_numFilesTotalDefined)
-    _numFilesTotal = *numFiles;
+    _progressBox.FilesTotal = *numFiles;
 
   _numBytesTotalDefined = (numBytes != NULL);
   if (_numBytesTotalDefined)
-    _numBytesTotal = *numBytes;
+    _progressBox.Total = *numBytes;
 
-  return S_OK;
+  return CheckBreak2();
 }
 
 STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 *numFiles, const UInt64 *numBytes)
 {
-  if (WasEscPressed())
-    return E_ABORT;
+  if (numFiles)
+    _progressBox.Files = *numFiles;
 
-  _numFilesCurDefined = (numFiles != NULL);
-  if (_numFilesCurDefined)
-    _numFilesCur = *numFiles;
+  if (numBytes)
+    _progressBox.Completed = *numBytes;
 
-  _numBytesCurDefined = (numBytes != NULL);
-  if (_numBytesCurDefined)
-    _numBytesCur = *numBytes;
-
-  // if (*numFiles % 100 != 0)
-  //   return S_OK;
   ShowMessage();
-  return S_OK;
+  return CheckBreak2();
 }
 
 
 STDMETHODIMP COpenArchiveCallback::SetTotal(const UInt64 /* total */)
 {
-  if (WasEscPressed())
-    return E_ABORT;
-  return S_OK;
+  return CheckBreak2();
 }
 
-STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 *completed)
+STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 * /* completed */)
 {
-  if (WasEscPressed())
-    return E_ABORT;
-  if (completed == NULL)
-    return S_OK;
   ShowMessage();
-  return S_OK;
+  return CheckBreak2();
 }
 
 STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **inStream)
@@ -303,7 +270,7 @@ HRESULT GetPassword(UString &password)
   
   // sprintf(DialogItems[1].Data,GetMsg(MGetPasswordForFile),FileName);
   if (g_StartupInfo.ShowDialog(76, 6, NULL, dialogItems, kNumItems) < 0)
-    return (E_ABORT);
+    return E_ABORT;
 
   AString oemPassword = dialogItems[2].Data;
   password = MultiByteToUnicodeString(oemPassword, CP_OEMCP);
@@ -383,26 +350,28 @@ static HANDLE MyOpenFilePluginW(const wchar_t *name)
   {
     if (result == E_ABORT)
       return (HANDLE)-2;
+    ShowSysErrorMessage(result);
     return INVALID_HANDLE_VALUE;
   }
 
   UString errorMessage = agent->GetErrorMessage();
   if (!errorMessage.IsEmpty())
-    PrintErrorMessage("7-Zip", UnicodeStringToMultiByte(errorMessage, CP_OEMCP));
+    g_StartupInfo.ShowErrorMessage(UnicodeStringToMultiByte(errorMessage, CP_OEMCP));
 
   // ::OutputDebugStringA("after OpenArchive\n");
 
   CPlugin *plugin = new CPlugin(
       fullName,
       // defaultName,
-      archiveHandler,
+      agent,
       (const wchar_t *)archiveType
       );
-  if (plugin == NULL)
-    return(INVALID_HANDLE_VALUE);
+  if (!plugin)
+    return INVALID_HANDLE_VALUE;
   plugin->PasswordIsDefined = openArchiveCallbackSpec->PasswordIsDefined;
   plugin->Password = openArchiveCallbackSpec->Password;
 
+  // OutputDebugStringA("--- OpenFilePlugin ---- END");
   return (HANDLE)(plugin);
 }
 
@@ -420,6 +389,7 @@ static HANDLE MyOpenFilePlugin(const char *name)
 EXTERN_C HANDLE WINAPI OpenFilePlugin(char *name, const unsigned char * /* data */, int /* dataSize */)
 {
   MY_TRY_BEGIN;
+  // OutputDebugStringA("--- OpenFilePlugin");
   if (name == NULL || (!g_Options.Enabled))
   {
     // if (!Opt.ProcessShiftF1)
@@ -474,9 +444,14 @@ EXTERN_C HANDLE WINAPI OpenPlugin(int openFrom, INT_PTR item)
       case 1:
       {
         CObjectVector<PluginPanelItem> pluginPanelItem;
-        if(!g_StartupInfo.ControlGetActivePanelSelectedOrCurrentItems(pluginPanelItem))
+        if (!g_StartupInfo.ControlGetActivePanelSelectedOrCurrentItems(pluginPanelItem))
           throw 142134;
-        if (CompressFiles(pluginPanelItem) == S_OK)
+        HRESULT res = CompressFiles(pluginPanelItem);
+        if (res != S_OK && res != E_ABORT)
+        {
+          ShowSysErrorMessage(res);
+        }
+        // if (res == S_OK)
         {
           /* int t = */ g_StartupInfo.ControlClearPanelSelection();
           g_StartupInfo.ControlRequestActivePanel(FCTL_UPDATEPANEL, NULL);
@@ -496,8 +471,10 @@ EXTERN_C HANDLE WINAPI OpenPlugin(int openFrom, INT_PTR item)
 
 EXTERN_C void WINAPI ClosePlugin(HANDLE plugin)
 {
+  // OutputDebugStringA("-- ClosePlugin --- START");
   MY_TRY_BEGIN;
   delete (CPlugin *)plugin;
+  // OutputDebugStringA("-- ClosePlugin --- END");
   MY_TRY_END1("ClosePlugin");
 }
 
@@ -599,14 +576,14 @@ EXTERN_C void WINAPI GetOpenPluginInfo(HANDLE plugin,struct OpenPluginInfo *info
 EXTERN_C int WINAPI PutFiles(HANDLE plugin, struct PluginPanelItem *panelItems, int itemsNumber, int move, int opMode)
 {
   MY_TRY_BEGIN;
-  return(((CPlugin *)plugin)->PutFiles(panelItems, itemsNumber, move, opMode));
+  return (((CPlugin *)plugin)->PutFiles(panelItems, itemsNumber, move, opMode));
   MY_TRY_END2("PutFiles", NFileOperationReturnCode::kError);
 }
 
 EXTERN_C int WINAPI DeleteFiles(HANDLE plugin, PluginPanelItem *panelItems, int itemsNumber, int opMode)
 {
   MY_TRY_BEGIN;
-  return(((CPlugin *)plugin)->DeleteFiles(panelItems, itemsNumber, opMode));
+  return (((CPlugin *)plugin)->DeleteFiles(panelItems, itemsNumber, opMode));
   MY_TRY_END2("DeleteFiles", FALSE);
 }
 

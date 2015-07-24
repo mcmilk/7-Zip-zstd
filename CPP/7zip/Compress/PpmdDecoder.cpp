@@ -23,10 +23,6 @@ enum
   kStatus_Error
 };
 
-static void *SzBigAlloc(void *, size_t size) { return BigAlloc(size); }
-static void SzBigFree(void *, void *address) { BigFree(address); }
-static ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
 CDecoder::~CDecoder()
 {
   ::MidFree(_outBuf);

@@ -9,18 +9,15 @@
 namespace NArchive {
 namespace NTar {
 
-IMP_CreateArcIn
-IMP_CreateArcOut
+static const Byte k_Signature[] = { 'u', 's', 't', 'a', 'r' };
 
-static CArcInfo g_ArcInfo =
-  { "tar", "tar", 0, 0xEE,
-  5, { 'u', 's', 't', 'a', 'r' },
+REGISTER_ARC_IO(
+  "tar", "tar", 0, 0xEE,
+  k_Signature,
   NFileHeader::kUstarMagic_Offset,
   NArcInfoFlags::kStartOpen |
   NArcInfoFlags::kSymLinks |
   NArcInfoFlags::kHardLinks,
-  REF_CreateArc_Pair, IsArc_Tar };
-
-REGISTER_ARC(Tar)
-
+  IsArc_Tar)
+ 
 }}

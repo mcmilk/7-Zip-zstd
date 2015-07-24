@@ -29,7 +29,7 @@ struct CRecordingDateTime
     bool res = NWindows::NTime::GetSecondsSince1601(Year + 1900, Month, Day, Hour, Minute, Second, value);
     if (res)
     {
-      value -= (UInt64)((Int64)GmtOffset * 15 * 60);
+      value -= (Int64)((Int32)GmtOffset * 15 * 60);
       value *= 10000000;
     }
     ft.dwLowDateTime = (DWORD)value;
@@ -94,28 +94,23 @@ struct CDirRecord
     return 0;
   }
 
-  unsigned GetLenCur(bool checkSusp, int skipSize) const
+  const Byte* GetNameCur(bool checkSusp, int skipSize, unsigned &nameLenRes) const
   {
+    const Byte *res = NULL;
+    unsigned len = 0;
     if (checkSusp)
+      res = FindSuspName(skipSize, len);
+    if (!res)
     {
-      unsigned len;
-      const Byte *res = FindSuspName(skipSize, len);
-      if (res != 0)
-        return len;
+      res = (const Byte *)FileId;
+      len = (unsigned)FileId.Size();
     }
-    return (unsigned)FileId.Size();
-  }
-
-  const Byte* GetNameCur(bool checkSusp, int skipSize) const
-  {
-    if (checkSusp)
-    {
-      unsigned len;
-      const Byte *res = FindSuspName(skipSize, len);
-      if (res != 0)
-        return res;
-    }
-    return (const Byte *)FileId;
+    unsigned i;
+    for (i = 0; i < len; i++)
+      if (res[i] == 0)
+        break;
+    nameLenRes = i;
+    return res;
   }
 
 

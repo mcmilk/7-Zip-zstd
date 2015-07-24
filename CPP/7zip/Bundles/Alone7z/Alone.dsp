@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MT /W3 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /FAc /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W4 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_CONSOLE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gr /MD /W4 /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_CONSOLE" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -121,7 +121,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W4 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MDd /W4 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -738,14 +738,6 @@ SOURCE=..\..\Compress\BcjRegister.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\BranchCoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\BranchCoder.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\BranchMisc.cpp
 # End Source File
 # Begin Source File
@@ -961,14 +953,6 @@ SOURCE=..\..\Archive\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\CoderMixer2MT.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer2MT.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Common\DummyOutStream.cpp
 # End Source File
 # Begin Source File
@@ -1024,6 +1008,10 @@ SOURCE=..\..\Archive\Common\ParseProperties.cpp
 SOURCE=..\..\Archive\Common\ParseProperties.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\..\Archive\IArchive.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\LzmaHandler.cpp
@@ -1523,6 +1511,58 @@ SOURCE=..\..\..\..\C\Alloc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bcj2.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bcj2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Bcj2Enc.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

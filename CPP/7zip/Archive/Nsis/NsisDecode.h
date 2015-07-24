@@ -5,6 +5,7 @@
 
 #include "../../../Common/MyBuffer.h"
 
+#include "../../Common/FilterCoder.h"
 #include "../../Common/StreamUtils.h"
 
 #include "../../Compress/LzmaDecoder.h"
@@ -31,6 +32,7 @@ class CDecoder
 {
   NMethodType::EEnum _curMethod; // method of created decoder
 
+  CFilterCoder *_filter;
   CMyComPtr<ISequentialInStream> _filterInStream;
   CMyComPtr<ISequentialInStream> _codecInStream;
   CMyComPtr<ISequentialInStream> _decoderInStream;

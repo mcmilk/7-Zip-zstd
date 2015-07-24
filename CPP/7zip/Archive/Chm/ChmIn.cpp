@@ -107,10 +107,10 @@ UString CMethodInfo::GetName() const
   UString s;
   if (IsLzx())
   {
-    s = L"LZX:";
-    wchar_t temp[16];
+    s.SetFromAscii("LZX:");
+    char temp[16];
     ConvertUInt32ToString(LzxInfo.GetNumDictBits(), temp);
-    s += temp;
+    s.AddAscii(temp);
   }
   else
   {
@@ -147,12 +147,12 @@ UString CSectionInfo::GetMethodName() const
     UString temp;
     if (ConvertUTF8ToUnicode(Name, temp))
       s += temp;
-    s += L": ";
+    s.AddAscii(": ");
   }
   FOR_VECTOR (i, Methods)
   {
     if (i != 0)
-      s += L' ';
+      s.Add_Space();
     s += Methods[i].GetName();
   }
   return s;
@@ -584,9 +584,9 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
           AString s;
           ConvertUnicodeToUTF8(name, s);
           Byte b = ReadByte();
-          s += ' ';
+          s.Add_Space();
           PrintByte(b, s);
-          s += ' ';
+          s.Add_Space();
           UInt64 len = ReadEncInt();
           // then number of items ?
           // then length ?
@@ -641,7 +641,10 @@ static const char *kTransformList = "List";
 
 static AString GetSectionPrefix(const AString &name)
 {
-  return AString(kStorage) + name + AString("/");
+  AString s = kStorage;
+  s += name;
+  s += '/';
+  return s;
 }
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
@@ -721,8 +724,8 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
       ReadUString(nameLen, name);
       if (ReadUInt16() != 0)
         return S_FALSE;
-      if (!ConvertUnicodeToUTF8(name, section.Name))
-        return S_FALSE;
+      ConvertUnicodeToUTF8(name, section.Name);
+      // if (!ConvertUnicodeToUTF8(name, section.Name)) return S_FALSE;
       database.Sections.Add(section);
     }
   }

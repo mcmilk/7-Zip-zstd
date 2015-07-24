@@ -45,6 +45,7 @@
 #define IDM_CREATE_FILE          556
 // #define IDM_EXIT                 557
 #define IDM_LINK                 558
+#define IDM_ALT_STREAMS          559
 
 #define IDM_SELECT_ALL           600
 #define IDM_DESELECT_ALL         601

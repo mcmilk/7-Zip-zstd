@@ -104,18 +104,27 @@ typedef int (WINAPI *FARAPIDIALOG)(
 );
 
 enum {
-  FMSG_WARNING=1,
-  FMSG_ERRORTYPE=2,
-  FMSG_KEEPBACKGROUND=4,
-  FMSG_DOWN=8,
-  FMSG_LEFTALIGN=16
+  FMSG_WARNING             = 0x00000001,
+  FMSG_ERRORTYPE           = 0x00000002,
+  FMSG_KEEPBACKGROUND      = 0x00000004,
+  FMSG_DOWN                = 0x00000008,
+  FMSG_LEFTALIGN           = 0x00000010,
+
+  FMSG_ALLINONE            = 0x00000020,
+
+  FMSG_MB_OK               = 0x00010000,
+  FMSG_MB_OKCANCEL         = 0x00020000,
+  FMSG_MB_ABORTRETRYIGNORE = 0x00030000,
+  FMSG_MB_YESNO            = 0x00040000,
+  FMSG_MB_YESNOCANCEL      = 0x00050000,
+  FMSG_MB_RETRYCANCEL      = 0x00060000
 };
 
 typedef int (WINAPI *FARAPIMESSAGE)(
   INT_PTR PluginNumber,
   unsigned int Flags,
-  char *HelpTopic,
-  char **Items,
+  const char *HelpTopic,
+  const char * const *Items,
   int ItemsNumber,
   int ButtonsNumber
 );
@@ -424,21 +433,22 @@ struct OpenPluginInfo
 {
   int StructSize;
   DWORD Flags;
-  char *HostFile;
-  char *CurDir;
-  char *Format;
-  char *PanelTitle;
-  struct InfoPanelLine *InfoLines;
+  const char *HostFile;
+  const char *CurDir;
+  const char *Format;
+  const char *PanelTitle;
+  const struct InfoPanelLine *InfoLines;
   int InfoLinesNumber;
-  char **DescrFiles;
+  const char * const *DescrFiles;
   int DescrFilesNumber;
-  struct PanelMode *PanelModesArray;
+  const struct PanelMode *PanelModesArray;
   int PanelModesNumber;
   int StartPanelMode;
   int StartSortMode;
   int StartSortOrder;
-  struct KeyBarTitles *KeyBar;
-  char *ShortcutData;
+  const struct KeyBarTitles *KeyBar;
+  const char *ShortcutData;
+  // long Reserverd;
 };
 
 enum {

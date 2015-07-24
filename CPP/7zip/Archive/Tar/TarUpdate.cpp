@@ -31,6 +31,9 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
   CMyComPtr<IOutStream> outSeekStream;
   outStream->QueryInterface(IID_IOutStream, (void **)&outSeekStream);
 
+  CMyComPtr<IArchiveUpdateCallbackFile> opCallback;
+  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackFile, (void **)&opCallback);
+
   UInt64 complexity = 0;
 
   unsigned i;
@@ -223,6 +226,13 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
         size = existItem.GetFullSize();
       }
       streamSpec->Init(size);
+
+      if (opCallback)
+      {
+        RINOK(opCallback->ReportOperation(
+            NEventIndexType::kInArcIndex, (UInt32)ui.IndexInArchive,
+            NUpdateNotifyOp::kReplicate))
+      }
 
       RINOK(copyCoder->Code(inStreamLimited, outStream, NULL, NULL, progress));
       if (copyCoderSpec->TotalSize != size)

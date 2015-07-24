@@ -660,8 +660,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   
   NCompress::NLzh::NDecoder::CCoder *lzhDecoderSpec = 0;
   CMyComPtr<ICompressCoder> lzhDecoder;
-  CMyComPtr<ICompressCoder> lzh1Decoder;
-  CMyComPtr<ICompressCoder> arj2Decoder;
+  // CMyComPtr<ICompressCoder> lzh1Decoder;
+  // CMyComPtr<ICompressCoder> arj2Decoder;
 
   NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
   CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
@@ -736,8 +736,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           lzhDecoderSpec = new NCompress::NLzh::NDecoder::CCoder;
           lzhDecoder = lzhDecoderSpec;
         }
-        lzhDecoderSpec->SetDictionary(item.GetNumDictBits());
+        lzhDecoderSpec->FinishMode = true;
+        lzhDecoderSpec->SetDictSize(1 << item.GetNumDictBits());
         result = lzhDecoder->Code(inStream, outStream, NULL, &currentItemUnPacked, progress);
+        if (result == S_OK && lzhDecoderSpec->GetInputProcessedSize() != item.PackSize)
+          result = S_FALSE;
       }
       /*
       else if (item.IsLh1GroupMethod())
@@ -773,15 +776,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { '-', 'l', 'h' };
 
-static CArcInfo g_ArcInfo =
-  { "Lzh", "lzh lha", 0, 6,
-  3, { '-', 'l', 'h' },
+REGISTER_ARC_I(
+  "Lzh", "lzh lha", 0, 6,
+  k_Signature,
   2,
   0,
-  CreateArc, NULL, IsArc_Lzh };
-
-REGISTER_ARC(Lzh)
+  IsArc_Lzh)
 
 }}

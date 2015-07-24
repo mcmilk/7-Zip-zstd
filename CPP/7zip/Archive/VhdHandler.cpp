@@ -6,8 +6,6 @@
 
 #include "../../Common/ComTry.h"
 #include "../../Common/IntToString.h"
-#include "../../Common/MyBuffer.h"
-#include "../../Common/MyString.h"
 
 #include "../../Windows/PropVariant.h"
 
@@ -41,7 +39,7 @@ static const UInt32 kDiskType_Fixed = 2;
 static const UInt32 kDiskType_Dynamic = 3;
 static const UInt32 kDiskType_Diff = 4;
 
-static const char *kDiskTypes[] =
+static const char * const kDiskTypes[] =
 {
     "0"
   , "1"
@@ -201,11 +199,17 @@ bool CDynHeader::Parse(const Byte *p)
   memcpy(ParentId, p + 0x28, 16);
   {
     const unsigned kNameLen = 256;
-    wchar_t *s = ParentName.GetBuffer(kNameLen);
-    for (unsigned i = 0; i < kNameLen; i++)
-      s[i] = Get16(p + 0x40 + i * 2);
-    s[kNameLen] = 0;
-    ParentName.ReleaseBuffer();
+    wchar_t *s = ParentName.GetBuf(kNameLen);
+    unsigned i;
+    for (i = 0; i < kNameLen; i++)
+    {
+      wchar_t c = Get16(p + 0x40 + i * 2);
+      if (c == 0)
+        break;
+      s[i] = c;
+    }
+    s[i] = 0;
+    ParentName.ReleaseBuf_SetLen(i);
   }
   for (unsigned i = 0; i < 8; i++)
     if (!ParentLocators[i].Parse(p + 0x240 + i * 24))
@@ -240,7 +244,7 @@ class CHandler:
   void AddErrorMessage(const wchar_t *s)
   {
     if (!_errorMessage.IsEmpty())
-      _errorMessage += L'\n';
+      _errorMessage.Add_LF();
     _errorMessage += s;
   }
   void UpdatePhySize(UInt64 value)
@@ -265,7 +269,7 @@ class CHandler:
     while (p && p->NeedParent())
     {
       if (!res.IsEmpty())
-        res += L" -> ";
+        res.AddAscii(" -> ");
       UString mainName;
       UString anotherName;
       if (Dyn.RelativeNameWasUsed)
@@ -281,7 +285,7 @@ class CHandler:
       res += mainName;
       if (mainName != anotherName && !anotherName.IsEmpty())
       {
-        res += L' ';
+        res.Add_Space();
         res += L'(';
         res += anotherName;
         res += L')';
@@ -425,12 +429,20 @@ HRESULT CHandler::Open3()
         Byte nameBuf[kNameBufSizeMax];
         UString tempString;
         unsigned len = (locator.DataLen >> 1);
-        wchar_t *s = tempString.GetBuffer(len);
-        RINOK(ReadPhy(locator.DataOffset, nameBuf, locator.DataLen));
-        for (unsigned j = 0; j < len; j++)
-          s[j] = GetUi16(nameBuf + j * 2);
-        s[len] = 0;
-        tempString.ReleaseBuffer();
+        {
+          wchar_t *s = tempString.GetBuf(len);
+          RINOK(ReadPhy(locator.DataOffset, nameBuf, locator.DataLen));
+          unsigned j;
+          for (j = 0; j < len; j++)
+          {
+            wchar_t c = GetUi16(nameBuf + j * 2);
+            if (c == 0)
+              break;
+            s[j] = c;
+          }
+          s[j] = 0;
+          tempString.ReleaseBuf_SetLen(j);
+        }
         if (tempString[0] == L'.' && tempString[1] == L'\\')
           tempString.DeleteFrontal(2);
         Dyn.RelativeParentNameFromLocator = tempString;
@@ -518,10 +530,10 @@ HRESULT CHandler::Open3()
 
 STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
   if (_virtPos >= Footer.CurrentSize)
-    return (Footer.CurrentSize == _virtPos) ? S_OK: E_FAIL;
+    return S_OK;
   UInt64 rem = Footer.CurrentSize - _virtPos;
   if (size > rem)
     size = (UInt32)rem;
@@ -576,7 +588,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
       cur += rem;
     }
   }
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = size;
   _virtPos += size;
   return res;
@@ -705,7 +717,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       AString res = s;
       res.Trim();
       ConvertUInt32ToString(Footer.CreatorVersion >> 16, s);
-      res += ' ';
+      res.Add_Space();
       res += s;
       res += '.';
       ConvertUInt32ToString(Footer.CreatorVersion & 0xFFFF, s);
@@ -971,15 +983,11 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "VHD", "vhd", ".mbr", 0xDC,
-  kSignatureSize, SIGNATURE,
+REGISTER_ARC_I(
+  "VHD", "vhd", ".mbr", 0xDC,
+  kSignature,
   0,
   NArcInfoFlags::kUseGlobalOffset,
-  CreateArc };
-
-REGISTER_ARC(Vhd)
+  NULL)
 
 }}

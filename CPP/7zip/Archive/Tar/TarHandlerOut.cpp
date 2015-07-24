@@ -36,8 +36,8 @@ HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID pro
       s = NItemName::MakeLegalName(s);
     if (codePage == CP_UTF8)
     {
-      if (!ConvertUnicodeToUTF8(s, res))
-        return E_INVALIDARG;
+      ConvertUnicodeToUTF8(s, res);
+      // if (!ConvertUnicodeToUTF8(s, res)) // return E_INVALIDARG;
     }
     else
       UnicodeStringToMultiByte2(res, s, codePage);

@@ -86,9 +86,9 @@ bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const 
   #ifdef WIN_LONG_PATH
   if (hDir == INVALID_HANDLE_VALUE && USE_SUPER_PATH)
   {
-    UString longPath;
-    if (GetSuperPath(path, longPath, USE_MAIN_PATH))
-      hDir = ::CreateFileW(longPath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+    UString superPath;
+    if (GetSuperPath(path, superPath, USE_MAIN_PATH))
+      hDir = ::CreateFileW(superPath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
           NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   }
   #endif
@@ -119,9 +119,9 @@ bool SetFileAttrib(CFSTR path, DWORD attrib)
     #ifdef WIN_LONG_PATH
     if (USE_SUPER_PATH)
     {
-      UString longPath;
-      if (GetSuperPath(path, longPath, USE_MAIN_PATH))
-        return BOOLToBool(::SetFileAttributesW(longPath, attrib));
+      UString superPath;
+      if (GetSuperPath(path, superPath, USE_MAIN_PATH))
+        return BOOLToBool(::SetFileAttributesW(superPath, attrib));
     }
     #endif
   }
@@ -145,9 +145,9 @@ bool RemoveDir(CFSTR path)
     #ifdef WIN_LONG_PATH
     if (USE_SUPER_PATH)
     {
-      UString longPath;
-      if (GetSuperPath(path, longPath, USE_MAIN_PATH))
-        return BOOLToBool(::RemoveDirectoryW(longPath));
+      UString superPath;
+      if (GetSuperPath(path, superPath, USE_MAIN_PATH))
+        return BOOLToBool(::RemoveDirectoryW(superPath));
     }
     #endif
   }
@@ -226,6 +226,29 @@ bool MyCreateHardLink(CFSTR newFileName, CFSTR existFileName)
 
 #endif
 
+/*
+WinXP-64 CreateDir():
+  ""                  - ERROR_PATH_NOT_FOUND
+  \                   - ERROR_ACCESS_DENIED
+  C:\                 - ERROR_ACCESS_DENIED, if there is such drive,
+  
+  D:\folder             - ERROR_PATH_NOT_FOUND, if there is no such drive,
+  C:\nonExistent\folder - ERROR_PATH_NOT_FOUND
+  
+  C:\existFolder      - ERROR_ALREADY_EXISTS
+  C:\existFolder\     - ERROR_ALREADY_EXISTS
+
+  C:\folder   - OK
+  C:\folder\  - OK
+
+  \\Server\nonExistent    - ERROR_BAD_NETPATH
+  \\Server\Share_Readonly - ERROR_ACCESS_DENIED
+  \\Server\Share          - ERROR_ALREADY_EXISTS
+
+  \\Server\Share_NTFS_drive - ERROR_ACCESS_DENIED
+  \\Server\Share_FAT_drive  - ERROR_ALREADY_EXISTS
+*/
+
 bool CreateDir(CFSTR path)
 {
   #ifndef _UNICODE
@@ -243,56 +266,127 @@ bool CreateDir(CFSTR path)
     #ifdef WIN_LONG_PATH
     if ((!USE_MAIN_PATH || ::GetLastError() != ERROR_ALREADY_EXISTS) && USE_SUPER_PATH)
     {
-      UString longPath;
-      if (GetSuperPath(path, longPath, USE_MAIN_PATH))
-        return BOOLToBool(::CreateDirectoryW(longPath, NULL));
+      UString superPath;
+      if (GetSuperPath(path, superPath, USE_MAIN_PATH))
+        return BOOLToBool(::CreateDirectoryW(superPath, NULL));
     }
     #endif
   }
   return false;
 }
 
-bool CreateComplexDir(CFSTR _aPathName)
+/*
+  CreateDir2 returns true, if directory can contain files after the call (two cases):
+    1) the directory already exists
+    2) the directory was created
+  path must be WITHOUT trailing path separator.
+
+  We need CreateDir2, since fileInfo.Find() for reserved names like "com8"
+   returns FILE instead of DIRECTORY. And we need to use SuperPath */
+ 
+static bool CreateDir2(CFSTR path)
 {
-  FString pathName = _aPathName;
-  int pos = pathName.ReverseFind(FCHAR_PATH_SEPARATOR);
-  if (pos > 0 && (unsigned)pos == pathName.Len() - 1)
+  #ifndef _UNICODE
+  if (!g_IsNT)
   {
-    if (pathName.Len() == 3 && pathName[1] == L':')
-      return true; // Disk folder;
-    pathName.Delete(pos);
+    if (::CreateDirectory(fs2fas(path), NULL))
+      return true;
   }
-  const FString pathName2 = pathName;
-  pos = pathName.Len();
+  else
+  #endif
+  {
+    IF_USE_MAIN_PATH
+      if (::CreateDirectoryW(fs2us(path), NULL))
+        return true;
+    #ifdef WIN_LONG_PATH
+    if ((!USE_MAIN_PATH || ::GetLastError() != ERROR_ALREADY_EXISTS) && USE_SUPER_PATH)
+    {
+      UString superPath;
+      if (GetSuperPath(path, superPath, USE_MAIN_PATH))
+      {
+        if (::CreateDirectoryW(superPath, NULL))
+          return true;
+        if (::GetLastError() != ERROR_ALREADY_EXISTS)
+          return false;
+        NFind::CFileInfo fi;
+        if (!fi.Find(us2fs(superPath)))
+          return false;
+        return fi.IsDir();
+      }
+    }
+    #endif
+  }
+  if (::GetLastError() != ERROR_ALREADY_EXISTS)
+    return false;
+  NFind::CFileInfo fi;
+  if (!fi.Find(path))
+    return false;
+  return fi.IsDir();
+}
+
+bool CreateComplexDir(CFSTR _path)
+{
+  #ifdef _WIN32
+  
+  {
+    DWORD attrib = NFind::GetFileAttrib(_path);
+    if (attrib != INVALID_FILE_ATTRIBUTES && (attrib & FILE_ATTRIBUTE_DIRECTORY) != 0)
+      return true;
+  }
+
+  #ifndef UNDER_CE
+  
+  if (IsDriveRootPath_SuperAllowed(_path))
+    return false;
+  
+  unsigned prefixSize = GetRootPrefixSize(_path);
+  
+  #endif
+  
+  #endif
+
+  FString path = _path;
+
+  int pos = path.ReverseFind_PathSepar();
+  if (pos >= 0 && (unsigned)pos == path.Len() - 1)
+  {
+    if (path.Len() == 1)
+      return true;
+    path.DeleteBack();
+  }
+
+  const FString path2 = path;
+  pos = path.Len();
   
   for (;;)
   {
-    if (CreateDir(pathName))
+    if (CreateDir2(path))
       break;
     if (::GetLastError() == ERROR_ALREADY_EXISTS)
-    {
-      NFind::CFileInfo fileInfo;
-      if (!fileInfo.Find(pathName)) // For network folders
-        return true;
-      if (!fileInfo.IsDir())
-        return false;
-      break;
-    }
-    pos = pathName.ReverseFind(FCHAR_PATH_SEPARATOR);
+      return false;
+    pos = path.ReverseFind_PathSepar();
     if (pos < 0 || pos == 0)
       return false;
-    if (pathName[pos - 1] == L':')
+    
+    #if defined(_WIN32) && !defined(UNDER_CE)
+    if (pos == 1 && IS_PATH_SEPAR(path[0]))
       return false;
-    pathName.DeleteFrom(pos);
+    if (prefixSize >= (unsigned)pos + 1)
+      return false;
+    #endif
+    
+    path.DeleteFrom(pos);
   }
   
-  while (pos < (int)pathName2.Len())
+  while (pos < (int)path2.Len())
   {
-    pos = pathName2.Find(FCHAR_PATH_SEPARATOR, pos + 1);
-    if (pos < 0)
-      pos = pathName2.Len();
-    pathName.SetFrom(pathName2, pos);
-    if (!CreateDir(pathName))
+    int pos2 = NName::FindSepar(path2.Ptr(pos + 1));
+    if (pos2 < 0)
+      pos = path2.Len();
+    else
+      pos += 1 + pos2;
+    path.SetFrom(path2, pos);
+    if (!CreateDir(path))
       return false;
   }
   
@@ -301,8 +395,19 @@ bool CreateComplexDir(CFSTR _aPathName)
 
 bool DeleteFileAlways(CFSTR path)
 {
-  if (!SetFileAttrib(path, 0))
-    return false;
+  /* If alt stream, we also need to clear READ-ONLY attribute of main file before delete.
+     SetFileAttrib("name:stream", ) changes attributes of main file. */
+  {
+    DWORD attrib = NFind::GetFileAttrib(path);
+    if (attrib != INVALID_FILE_ATTRIBUTES
+        && (attrib & FILE_ATTRIBUTE_DIRECTORY) == 0
+        && (attrib & FILE_ATTRIBUTE_READONLY) != 0)
+    {
+      if (!SetFileAttrib(path, attrib & ~FILE_ATTRIBUTE_READONLY))
+        return false;
+    }
+  }
+
   #ifndef _UNICODE
   if (!g_IsNT)
   {
@@ -312,15 +417,17 @@ bool DeleteFileAlways(CFSTR path)
   else
   #endif
   {
+    /* DeleteFile("name::$DATA") deletes all alt streams (same as delete DeleteFile("name")).
+       Maybe it's better to open "name::$DATA" and clear data for unnamed stream? */
     IF_USE_MAIN_PATH
       if (::DeleteFileW(fs2us(path)))
         return true;
     #ifdef WIN_LONG_PATH
     if (USE_SUPER_PATH)
     {
-      UString longPath;
-      if (GetSuperPath(path, longPath, USE_MAIN_PATH))
-        return BOOLToBool(::DeleteFileW(longPath));
+      UString superPath;
+      if (GetSuperPath(path, superPath, USE_MAIN_PATH))
+        return BOOLToBool(::DeleteFileW(superPath));
     }
     #endif
   }
@@ -346,7 +453,7 @@ bool RemoveDirWithSubItems(const FString &path)
   if (needRemoveSubItems)
   {
     FString s = path;
-    s += FCHAR_PATH_SEPARATOR;
+    s.Add_PathSepar();
     unsigned prefixSize = s.Len();
     s += FCHAR_ANY_MASK;
     NFind::CEnumerator enumerator(s);
@@ -430,7 +537,7 @@ bool GetFullPathAndSplit(CFSTR path, FString &resDirPrefix, FString &resFileName
   bool res = MyGetFullPathName(path, resDirPrefix);
   if (!res)
     resDirPrefix = path;
-  int pos = resDirPrefix.ReverseFind(FCHAR_PATH_SEPARATOR);
+  int pos = resDirPrefix.ReverseFind_PathSepar();
   resFileName = resDirPrefix.Ptr(pos + 1);
   resDirPrefix.DeleteFrom(pos + 1);
   return res;
@@ -480,7 +587,7 @@ static bool CreateTempFile(CFSTR prefix, bool addRandom, FString &path, NIO::COu
       {
         unsigned t = value & 0xF;
         value >>= 4;
-        s[k] = (char)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
+        s[k] = (FChar)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
       }
       s[k] = '\0';
       if (outFile)

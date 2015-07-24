@@ -16,8 +16,8 @@ bool MyGetTimeFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time,
   if (numChars == 0)
     return false;
   numChars = ::GetTimeFormat(locale, flags, time, format,
-      resultString.GetBuffer(numChars), numChars + 1);
-  resultString.ReleaseBuffer();
+      resultString.GetBuf(numChars), numChars + 1);
+  resultString.ReleaseBuf_CalcLen(numChars);
   return (numChars != 0);
 }
 
@@ -29,8 +29,8 @@ bool MyGetDateFormat(LCID locale, DWORD flags, CONST SYSTEMTIME *time,
   if (numChars == 0)
     return false;
   numChars = ::GetDateFormat(locale, flags, time, format,
-      resultString.GetBuffer(numChars), numChars + 1);
-  resultString.ReleaseBuffer();
+      resultString.GetBuf(numChars), numChars + 1);
+  resultString.ReleaseBuf_CalcLen(numChars);
   return (numChars != 0);
 }
 

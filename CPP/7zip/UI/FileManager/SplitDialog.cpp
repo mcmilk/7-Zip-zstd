@@ -38,7 +38,7 @@ bool CSplitDialog::OnInit()
   {
     UString title;
     GetText(title);
-    title += L' ';
+    title.Add_Space();
     title += FilePath;
     SetText(title);
   }

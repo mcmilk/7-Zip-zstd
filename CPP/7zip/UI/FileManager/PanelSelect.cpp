@@ -22,7 +22,9 @@ void CPanel::OnShiftSelectMessage()
     return;
   int startItem = MyMin(focusedItem, _prevFocusedItem);
   int finishItem = MyMax(focusedItem, _prevFocusedItem);
-  for (int i = 0; i < _listView.GetItemCount(); i++)
+    
+  int numItems = _listView.GetItemCount();
+  for (int i = 0; i < numItems; i++)
   {
     int realIndex = GetRealItemIndex(i);
     if (realIndex == kParentIndex)
@@ -34,6 +36,7 @@ void CPanel::OnShiftSelectMessage()
         _listView.RedrawItem(i);
       }
   }
+
   _prevFocusedItem = focusedItem;
 }
 
@@ -45,6 +48,7 @@ void CPanel::OnArrowWithShift()
   if (focusedItem < 0)
     return;
   int realIndex = GetRealItemIndex(focusedItem);
+  
   if (_selectionIsDefined)
   {
     if (realIndex != kParentIndex)
@@ -64,6 +68,7 @@ void CPanel::OnArrowWithShift()
       _selectedStatusVector[realIndex] = _selectMark;
     }
   }
+  
   _prevFocusedItem = focusedItem;
   PostMessage(kShiftSelectMessage);
   _listView.RedrawItem(focusedItem);
@@ -165,13 +170,6 @@ void CPanel::SelectByType(bool selectMode)
   UString name = GetItemName(realIndex);
   bool isItemFolder = IsItem_Folder(realIndex);
 
-  /*
-  UInt32 numItems;
-  _folder->GetNumberOfItems(&numItems);
-  if ((UInt32)_selectedStatusVector.Size() != numItems)
-    throw 11111;
-  */
-
   if (isItemFolder)
   {
     FOR_VECTOR (i, _selectedStatusVector)
@@ -180,11 +178,11 @@ void CPanel::SelectByType(bool selectMode)
   }
   else
   {
-    int pos = name.ReverseFind(L'.');
+    int pos = name.ReverseFind_Dot();
     if (pos < 0)
     {
       FOR_VECTOR (i, _selectedStatusVector)
-        if (IsItem_Folder(i) == isItemFolder && GetItemName(i).ReverseFind(L'.') < 0)
+        if (IsItem_Folder(i) == isItemFolder && GetItemName(i).ReverseFind_Dot() < 0)
           _selectedStatusVector[i] = selectMode;
     }
     else
@@ -196,6 +194,7 @@ void CPanel::SelectByType(bool selectMode)
           _selectedStatusVector[i] = selectMode;
     }
   }
+
   UpdateSelection();
 }
 
@@ -253,10 +252,11 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
 {
   if (itemActivate->hdr.hwndFrom != HWND(_listView))
     return;
-  // It will be work only for Version 4.71 (IE 4);
+  // It will work only for Version 4.71 (IE 4);
   int indexInList = itemActivate->iItem;
   if (indexInList < 0)
     return;
+  
   #ifndef UNDER_CE
   if ((itemActivate->uKeyFlags & LVKF_SHIFT) != 0)
   {
@@ -264,9 +264,11 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
     int focusedIndex = _startGroupSelect;
     if (focusedIndex < 0)
       return;
-    unsigned startItem = MyMin((unsigned)focusedIndex, (unsigned)indexInList);
-    unsigned finishItem = MyMax((unsigned)focusedIndex, (unsigned)indexInList);
-    FOR_VECTOR (i, _selectedStatusVector)
+    int startItem = MyMin(focusedIndex, indexInList);
+    int finishItem = MyMax(focusedIndex, indexInList);
+
+    int numItems = _listView.GetItemCount();
+    for (int i = 0; i < numItems; i++)
     {
       int realIndex = GetRealItemIndex(i);
       if (realIndex == kParentIndex)
@@ -283,6 +285,7 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
   #endif
   {
     _startGroupSelect = indexInList;
+  
     #ifndef UNDER_CE
     if ((itemActivate->uKeyFlags & LVKF_CONTROL) != 0)
     {
@@ -295,5 +298,6 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
     }
     #endif
   }
+
   return;
 }

@@ -14,7 +14,7 @@ class CLang
   bool OpenFromString(const AString &s);
 public:
   CLang(): _text(0) {}
-  ~CLang() { Clear(); };
+  ~CLang() { Clear(); }
   bool Open(CFSTR fileName, const wchar_t *id);
   void Clear() throw();
   const wchar_t *Get(UInt32 id) const throw();

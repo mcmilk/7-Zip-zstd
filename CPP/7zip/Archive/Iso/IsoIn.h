@@ -25,77 +25,92 @@ struct CDir: public CDirRecord
     _subItems.Clear();
   }
   
-  unsigned GetLen(bool checkSusp, unsigned skipSize) const
-  {
-    unsigned len = GetLenCur(checkSusp, skipSize);
-    if (Parent != 0)
-      if (Parent->Parent != 0)
-        len += 1 + Parent->GetLen(checkSusp, skipSize);
-    return len;
-  }
-
-  unsigned GetLenU() const
-  {
-    unsigned len = (unsigned)(FileId.Size() / 2);
-    if (Parent != 0)
-      if (Parent->Parent != 0)
-        len += 1 + Parent->GetLenU();
-    return len;
-  }
-  
   AString GetPath(bool checkSusp, unsigned skipSize) const
   {
     AString s;
-    unsigned len = GetLen(checkSusp, skipSize);
-    char *p = s.GetBuffer(len);
-    p += len;
-    *p = 0;
+
+    unsigned len = 0;
     const CDir *cur = this;
+
     for (;;)
     {
-      unsigned curLen = cur->GetLenCur(checkSusp, skipSize);
-      p -= curLen;
-      memcpy(p, (const char *)(const Byte *)cur->GetNameCur(checkSusp, skipSize), curLen);
+      unsigned curLen;
+      cur->GetNameCur(checkSusp, skipSize, curLen);
+      len += curLen;
       cur = cur->Parent;
-      if (cur == 0)
+      if (!cur || !cur->Parent)
         break;
-      if (cur->Parent == 0)
+      len++;
+    }
+
+    char *p = s.GetBuf_SetEnd(len) + len;
+    
+    cur = this;
+    
+    for (;;)
+    {
+      unsigned curLen;
+      const Byte *name = cur->GetNameCur(checkSusp, skipSize, curLen);
+      p -= curLen;
+      if (curLen != 0)
+        memcpy(p, name, curLen);
+      cur = cur->Parent;
+      if (!cur || !cur->Parent)
         break;
       p--;
       *p = CHAR_PATH_SEPARATOR;
     }
-    s.ReleaseBuffer();
+    
     return s;
   }
 
-  UString GetPathU() const
+  void GetPathU(UString &s) const
   {
-    UString s;
-    unsigned len = GetLenU();
-    wchar_t *p = s.GetBuffer(len);
-    p += len;
-    *p = 0;
+    s.Empty();
+    
+    unsigned len = 0;
     const CDir *cur = this;
+
     for (;;)
     {
       unsigned curLen = (unsigned)(cur->FileId.Size() / 2);
-      p -= curLen;
-      for (unsigned i = 0; i < curLen; i++)
-      {
-        Byte b0 = ((const Byte *)cur->FileId)[i * 2];
-        Byte b1 = ((const Byte *)cur->FileId)[i * 2 + 1];
-        p[i] = (wchar_t)(((wchar_t)b0 << 8) | b1);
-      }
+      const Byte *fid = cur->FileId;
+
+      unsigned i;
+      for (i = 0; i < curLen; i++)
+        if (fid[i * 2] == 0 && fid[i * 2 + 1] == 0)
+          break;
+      len += i;
       cur = cur->Parent;
-      if (cur == 0)
+      if (!cur || !cur->Parent)
         break;
-      if (cur->Parent == 0)
+      len++;
+    }
+
+    wchar_t *p = s.GetBuf_SetEnd(len) + len;
+    
+    cur = this;
+    
+    for (;;)
+    {
+      unsigned curLen = (unsigned)(cur->FileId.Size() / 2);
+      const Byte *fid = cur->FileId;
+
+      unsigned i;
+      for (i = 0; i < curLen; i++)
+        if (fid[i * 2] == 0 && fid[i * 2 + 1] == 0)
+          break;
+      curLen = i;
+
+      p -= curLen;
+      for (i = 0; i < curLen; i++)
+        p[i] = (wchar_t)(((wchar_t)fid[i * 2] << 8) | fid[i * 2 + 1]);
+      cur = cur->Parent;
+      if (!cur || !cur->Parent)
         break;
       p--;
       *p = WCHAR_PATH_SEPARATOR;
     }
-    s.ReleaseBuffer();
-    return s;
   }
 };
 
@@ -109,6 +124,7 @@ struct CDateTime
   Byte Second;
   Byte Hundredths;
   signed char GmtOffset; // min intervals from -48 (West) to +52 (East) recorded.
+  
   bool NotSpecified() const { return Year == 0 && Month == 0 && Day == 0 &&
       Hour == 0 && Minute == 0 && Second == 0 && GmtOffset == 0; }
 
@@ -118,7 +134,7 @@ struct CDateTime
     bool res = NWindows::NTime::GetSecondsSince1601(Year, Month, Day, Hour, Minute, Second, value);
     if (res)
     {
-      value -= (UInt64)((Int64)GmtOffset * 15 * 60);
+      value -= (Int64)((Int32)GmtOffset * 15 * 60);
       value *= 10000000;
     }
     ft.dwLowDateTime = (DWORD)value;
@@ -157,27 +173,16 @@ struct CBootInitialEntry
   UInt32 LoadRBA;     // This is the start address of the virtual disk. CD’s use
                       // Relative/Logical block addressing.
 
-  UInt64 GetSize() const
+  Byte VendorSpec[20];
+
+  UInt32 GetSize() const
   {
     // if (BootMediaType == NBootMediaType::k1d44Floppy) (1440 << 10);
-    return SectorCount * 512;
+    return (UInt32)SectorCount * 512;
   }
 
-  AString GetName() const
-  {
-    AString s = (Bootable ? "Bootable" : "NotBootable");
-    s += '_';
-    if (BootMediaType < kNumBootMediaTypes)
-      s += kMediaTypes[BootMediaType];
-    else
-    {
-      char name[16];
-      ConvertUInt32ToString(BootMediaType, name);
-      s += name;
-    }
-    s += ".img";
-    return s;
-  }
+  bool Parse(const Byte *p);
+  AString GetName() const;
 };
 
 struct CVolumeDescriptor
@@ -247,7 +252,6 @@ class CInArchive
   void SkipZeros(size_t size);
   Byte ReadByte();
   void ReadBytes(Byte *data, UInt32 size);
-  UInt16 ReadUInt16Spec();
   UInt16 ReadUInt16();
   UInt32 ReadUInt32Le();
   UInt32 ReadUInt32Be();

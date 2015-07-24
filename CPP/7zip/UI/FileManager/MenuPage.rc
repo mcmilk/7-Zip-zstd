@@ -1,7 +1,7 @@
 #include "MenuPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 196
+#define xc 240
 #define yc 196
 
 IDD_MENU  MY_PAGE

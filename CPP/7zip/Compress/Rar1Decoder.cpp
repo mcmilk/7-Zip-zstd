@@ -9,13 +9,13 @@
 namespace NCompress {
 namespace NRar1 {
 
-static UInt32 PosL1[]={0,0,0,2,3,5,7,11,16,20,24,32,32, 256};
-static UInt32 PosL2[]={0,0,0,0,5,7,9,13,18,22,26,34,36, 256};
-static UInt32 PosHf0[]={0,0,0,0,0,8,16,24,33,33,33,33,33, 257};
-static UInt32 PosHf1[]={0,0,0,0,0,0,4,44,60,76,80,80,127, 257};
-static UInt32 PosHf2[]={0,0,0,0,0,0,2,7,53,117,233, 257,0};
-static UInt32 PosHf3[]={0,0,0,0,0,0,0,2,16,218,251, 257,0};
-static UInt32 PosHf4[]={0,0,0,0,0,0,0,0,0,255, 257,0,0};
+static const UInt32 PosL1[] = {0,0,0,2,3,5,7,11,16,20,24,32,32, 256};
+static const UInt32 PosL2[] = {0,0,0,0,5,7,9,13,18,22,26,34,36, 256};
+static const UInt32 PosHf0[] = {0,0,0,0,0,8,16,24,33,33,33,33,33, 257};
+static const UInt32 PosHf1[] = {0,0,0,0,0,0,4,44,60,76,80,80,127, 257};
+static const UInt32 PosHf2[] = {0,0,0,0,0,0,2,7,53,117,233, 257,0};
+static const UInt32 PosHf3[] = {0,0,0,0,0,0,0,2,16,218,251, 257,0};
+static const UInt32 PosHf4[] = {0,0,0,0,0,0,0,0,0,255, 257,0,0};
 
 static const UInt32 kHistorySize = (1 << 16);
 
@@ -67,18 +67,18 @@ UInt32 CDecoder::DecodeNum(const UInt32 *posTab)
   return((num >> (12 - startPos)) + posTab[startPos]);
 }
 
-static Byte kShortLen1 [] = {1,3,4,4,5,6,7,8,8,4,4,5,6,6 };
-static Byte kShortLen1a[] = {1,4,4,4,5,6,7,8,8,4,4,5,6,6,4 };
-static Byte kShortLen2 [] = {2,3,3,3,4,4,5,6,6,4,4,5,6,6 };
-static Byte kShortLen2a[] = {2,3,3,4,4,4,5,6,6,4,4,5,6,6,4 };
-static UInt32 kShortXor1[] = {0,0xa0,0xd0,0xe0,0xf0,0xf8,0xfc,0xfe,0xff,0xc0,0x80,0x90,0x98,0x9c,0xb0};
-static UInt32 kShortXor2[] = {0,0x40,0x60,0xa0,0xd0,0xe0,0xf0,0xf8,0xfc,0xc0,0x80,0x90,0x98,0x9c,0xb0};
+static const Byte kShortLen1 [] = {1,3,4,4,5,6,7,8,8,4,4,5,6,6 };
+static const Byte kShortLen1a[] = {1,4,4,4,5,6,7,8,8,4,4,5,6,6,4 };
+static const Byte kShortLen2 [] = {2,3,3,3,4,4,5,6,6,4,4,5,6,6 };
+static const Byte kShortLen2a[] = {2,3,3,4,4,4,5,6,6,4,4,5,6,6,4 };
+static const UInt32 kShortXor1[] = {0,0xa0,0xd0,0xe0,0xf0,0xf8,0xfc,0xfe,0xff,0xc0,0x80,0x90,0x98,0x9c,0xb0};
+static const UInt32 kShortXor2[] = {0,0x40,0x60,0xa0,0xd0,0xe0,0xf0,0xf8,0xfc,0xc0,0x80,0x90,0x98,0x9c,0xb0};
 
 HRESULT CDecoder::ShortLZ()
 {
   UInt32 len, saveLen, dist;
   int distancePlace;
-  Byte *kShortLen;
+  const Byte *kShortLen;
   const UInt32 *kShortXor;
   NumHuf = 0;
 
@@ -143,17 +143,18 @@ HRESULT CDecoder::ShortLZ()
     AvrLn1 -= AvrLn1 >> 4;
     
     distancePlace = DecodeNum(PosHf2) & 0xff;
-    dist = ChSetA[distancePlace];
+    dist = ChSetA[(unsigned)distancePlace];
     if (--distancePlace != -1)
     {
       PlaceA[dist]--;
-      UInt32 lastDistance = ChSetA[distancePlace];
+      UInt32 lastDistance = ChSetA[(unsigned)distancePlace];
       PlaceA[lastDistance]++;
-      ChSetA[distancePlace + 1] = lastDistance;
-      ChSetA[distancePlace] = dist;
+      ChSetA[(unsigned)distancePlace + 1] = lastDistance;
+      ChSetA[(unsigned)distancePlace] = dist;
     }
     len += 2;
   }
+
   m_RepDists[m_RepDistPtr++] = dist;
   m_RepDistPtr &= 3;
   LastLength = len;
@@ -210,6 +211,7 @@ HRESULT CDecoder::LongLZ()
 
   AvrPlcB += distancePlace;
   AvrPlcB -= AvrPlcB >> 8;
+  
   for (;;)
   {
     dist = ChSetB[distancePlace & 0xff];
@@ -226,6 +228,7 @@ HRESULT CDecoder::LongLZ()
   dist = ((dist & 0xff00) >> 1) | ReadBits(7);
 
   oldAvr3 = AvrLn3;
+  
   if (len != 1 && len != 4)
     if (len == 0 && dist <= MaxDist3)
     {
@@ -235,19 +238,24 @@ HRESULT CDecoder::LongLZ()
     else
       if (AvrLn3 > 0)
         AvrLn3--;
+  
   len += 3;
+  
   if (dist >= MaxDist3)
     len++;
   if (dist <= 256)
     len += 8;
+  
   if (oldAvr3 > 0xb0 || AvrPlc >= 0x2a00 && oldAvr2 < 0x40)
     MaxDist3 = 0x7f00;
   else
     MaxDist3 = 0x2001;
+  
   m_RepDists[m_RepDistPtr++] = --dist;
   m_RepDistPtr &= 3;
   LastLength = len;
   LastDist = dist;
+  
   return CopyBlock(dist, len);
 }
 
@@ -264,6 +272,7 @@ HRESULT CDecoder::HuffDecode()
   else if (AvrPlc > 0x35ff)  bytePlace = DecodeNum(PosHf2);
   else if (AvrPlc > 0x0dff)  bytePlace = DecodeNum(PosHf1);
   else                       bytePlace = DecodeNum(PosHf0);
+  
   if (StMode)
   {
     if (--bytePlace == -1)
@@ -284,10 +293,12 @@ HRESULT CDecoder::HuffDecode()
   }
   else if (NumHuf++ >= 16 && FlagsCnt == 0)
     StMode = 1;
+  
   bytePlace &= 0xff;
   AvrPlc += bytePlace;
   AvrPlc -= AvrPlc >> 8;
   Nhfb+=16;
+  
   if (Nhfb > 0xff)
   {
     Nhfb=0x90;

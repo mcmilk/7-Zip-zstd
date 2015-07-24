@@ -11,7 +11,13 @@ BEGIN
   IDS_CANT_OPEN_ENCRYPTED_ARCHIVE  "Can not open encrypted archive '{0}'. Wrong password?"
   IDS_UNSUPPORTED_ARCHIVE_TYPE  "Unsupported archive type"
 
+  IDS_CANT_OPEN_AS_TYPE   "Can not open the file as {0} archive"
+  IDS_IS_OPEN_AS_TYPE     "The file is open as {0} archive"
+  IDS_IS_OPEN_WITH_OFFSET "The archive is open with offset"
+
   IDS_PROGRESS_EXTRACTING "Extracting"
+
+  IDS_PROGRESS_SKIPPING   "Skipping"
 
   IDS_EXTRACT_SET_FOLDER  "Specify a location for extracted files."
 
@@ -32,7 +38,7 @@ BEGIN
   IDS_EXTRACT_MESSAGE_DATA_ERROR_ENCRYPTED "Data error in encrypted file '{0}'. Wrong password?"
   IDS_EXTRACT_MESSAGE_CRC_ERROR_ENCRYPTED  "CRC failed in encrypted file '{0}'. Wrong password?"
 
-  IDS_EXTRACT_MSG_WRONG_PSW            "Wrong password?"
+  IDS_EXTRACT_MSG_WRONG_PSW_GUESS      "Wrong password?"
   // IDS_EXTRACT_MSG_ENCRYPTED            "Encrypted file"
 
   IDS_EXTRACT_MSG_UNSUPPORTED_METHOD   "Unsupported compression method"
@@ -43,6 +49,7 @@ BEGIN
   IDS_EXTRACT_MSG_DATA_AFTER_END       "There are some data after the end of the payload data"  
   IDS_EXTRACT_MSG_IS_NOT_ARC           "Is not archive"  
   IDS_EXTRACT_MSG_HEADERS_ERROR        "Headers Error"
+  IDS_EXTRACT_MSG_WRONG_PSW_CLAIM      "Wrong password"
 
   IDS_OPEN_MSG_UNAVAILABLE_START  "Unavailable start of archive"
   IDS_OPEN_MSG_UNCONFIRMED_START  "Unconfirmed start of archive"

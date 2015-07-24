@@ -13,7 +13,7 @@ class CBase
 protected:
   HANDLE m_Object;
 public:
-  void Attach(HANDLE handle) { m_Object = handle; };
+  void Attach(HANDLE handle) { m_Object = handle; }
   bool GetMode(DWORD &mode)
     { return BOOLToBool(::GetConsoleMode(m_Object, &mode)); }
   bool SetMode(DWORD mode)

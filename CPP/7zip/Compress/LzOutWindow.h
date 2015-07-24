@@ -35,10 +35,13 @@ public:
     }
     else do
     {
+      UInt32 pos2;
       if (pos == _bufSize)
         pos = 0;
-      _buf[_pos++] = _buf[pos++];
-      if (_pos == _limitPos)
+      pos2 = _pos;
+      _buf[pos2++] = _buf[pos++];
+      _pos = pos2;
+      if (pos2 == _limitPos)
         FlushWithCheck();
     }
     while (--len != 0);
@@ -47,15 +50,17 @@ public:
   
   void PutByte(Byte b)
   {
-    _buf[_pos++] = b;
-    if (_pos == _limitPos)
+    UInt32 pos = _pos;
+    _buf[pos++] = b;
+    _pos = pos;
+    if (pos == _limitPos)
       FlushWithCheck();
   }
   
   Byte GetByte(UInt32 distance) const
   {
     UInt32 pos = _pos - distance - 1;
-    if (pos >= _bufSize)
+    if (distance >= _pos)
       pos += _bufSize;
     return _buf[pos];
   }

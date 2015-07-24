@@ -321,14 +321,14 @@ void CApp::Link()
   int index = indices[0];
   const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel._currentFolderPrefix + srcPanel.GetItemPrefix(index);
+  UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
   {
     int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
     CPanel &destPanel = Panels[destPanelIndex];
     if (NumPanels > 1)
       if (destPanel.IsFSFolder())
-        path = destPanel._currentFolderPrefix;
+        path = destPanel.GetFsPath();
   }
 
   CLinkDialog dlg;

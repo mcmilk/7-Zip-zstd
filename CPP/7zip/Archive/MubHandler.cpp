@@ -292,22 +292,18 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
 namespace NBe {
 
-static CArcInfo g_ArcInfo =
-  { "Mub", "mub", 0, 0xE2,
-  2 + 7 + 4,
-  {
+static const Byte k_Signature[] = {
     7, 0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0,
-    4, 0xB9, 0xFA, 0xF1, 0x0E
-  },
+    4, 0xB9, 0xFA, 0xF1, 0x0E };
+
+REGISTER_ARC_I(
+  "Mub", "mub", 0, 0xE2,
+  k_Signature,
   0,
   NArcInfoFlags::kMultiSignature,
-  CreateArc };
-
-REGISTER_ARC(Mub)
+  NULL)
 
 }
 

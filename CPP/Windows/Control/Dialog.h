@@ -95,9 +95,9 @@ public:
 
   /*
   #ifdef UNDER_CE
-  virtual void OnHelp(void *) { OnHelp(); };
+  virtual void OnHelp(void *) { OnHelp(); }
   #else
-  virtual void OnHelp(LPHELPINFO) { OnHelp(); };
+  virtual void OnHelp(LPHELPINFO) { OnHelp(); }
   #endif
   */
   virtual void OnHelp() {};

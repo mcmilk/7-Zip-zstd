@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../Common/MyString.h"
+
 #include "SecurityUtils.h"
 
 namespace NWindows {
@@ -14,17 +16,18 @@ bool MyLookupAccountSid(LPCTSTR systemName, PSID sid,
   DWORD accountNameSize = 0, domainNameSize = 0;
 
   if (!::LookupAccountSid(systemName, sid,
-      accountName.GetBuffer(0), &accountNameSize,
-      domainName.GetBuffer(0), &domainNameSize, sidNameUse))
+      accountName.GetBuf(0), &accountNameSize,
+      domainName.GetBuf(0), &domainNameSize, sidNameUse))
   {
     if (::GetLastError() != ERROR_INSUFFICIENT_BUFFER)
       return false;
   }
+  DWORD accountNameSize2 = accountNameSize, domainNameSize2 = domainNameSize;
   bool result = BOOLToBool(::LookupAccountSid(systemName, sid,
-      accountName.GetBuffer(accountNameSize), &accountNameSize,
-      domainName.GetBuffer(domainNameSize), &domainNameSize, sidNameUse));
-  accountName.ReleaseBuffer();
-  domainName.ReleaseBuffer();
+      accountName.GetBuf(accountNameSize), &accountNameSize2,
+      domainName.GetBuf(domainNameSize), &domainNameSize2, sidNameUse));
+  accountName.ReleaseBuf_CalcLen(accountNameSize);
+  domainName.ReleaseBuf_CalcLen(domainNameSize);
   return result;
 }
 */

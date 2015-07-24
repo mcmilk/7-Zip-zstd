@@ -48,6 +48,7 @@ BEGIN
     MENUITEM "Create File\tCtrl+N",         IDM_CREATE_FILE
     MENUITEM SEPARATOR
     MENUITEM "&Link...",                    IDM_LINK
+    MENUITEM "&Alternate streams",          IDM_ALT_STREAMS
     MENUITEM SEPARATOR
     MENUITEM "E&xit\tAlt+F4",               IDCLOSE
   END
@@ -252,5 +253,6 @@ END
 #include "SplitDialog.rc"
 #include "SystemPage.rc"
 #include "../GUI/Extract.rc"
+#include "../GUI/resource3.rc"
 #include "../Explorer/resource2.rc"
 #include "resourceGui.rc"

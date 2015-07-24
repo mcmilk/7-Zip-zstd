@@ -14,13 +14,11 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
 {
   if (numItems == 0)
     return FALSE;
-  /*
-  if (!m_ArchiverInfo.UpdateEnabled)
+  if (_agent->IsThereReadOnlyArc())
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return FALSE;
   }
-  */
   if ((opMode & OPM_SILENT) == 0)
   {
     const char *msgItems[]=
@@ -55,21 +53,21 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
     progressBoxPointer = &progressBox;
     progressBox.Init(
         // g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
-        g_StartupInfo.GetMsgString(NMessageID::kDeleting), 48);
+        g_StartupInfo.GetMsgString(NMessageID::kDeleting));
   }
 
+  /*
   CWorkDirTempFile tempFile;
   if (tempFile.CreateTempFile(m_FileName) != S_OK)
     return FALSE;
+  */
 
   CObjArray<UInt32> indices(numItems);
   int i;
   for (i = 0; i < numItems; i++)
     indices[i] = (UInt32)panelItems[i].UserData;
 
-  ////////////////////////////
-  // Save _folder;
-
+  /*
   UStringVector pathVector;
   GetPathParts(pathVector);
   
@@ -80,13 +78,15 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return FALSE;
   }
-  outArchive->SetFolder(_folder);
+  */
 
   CUpdateCallback100Imp *updateCallbackSpec = new CUpdateCallback100Imp;
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
   updateCallbackSpec->Init(/* m_ArchiveHandler, */ progressBoxPointer);
 
+  /*
+  outArchive->SetFolder(_folder);
   result = outArchive->DeleteItems(tempFile.OutStream, indices, numItems, updateCallback);
   updateCallback.Release();
   outArchive.Release();
@@ -95,11 +95,24 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
   {
     result = AfterUpdate(tempFile, pathVector);
   }
+  */
+
+  HRESULT result;
+  {
+    CMyComPtr<IFolderOperations> folderOperations;
+    result = _folder.QueryInterface(IID_IFolderOperations, &folderOperations);
+    if (folderOperations)
+      result = folderOperations->Delete(indices, numItems, updateCallback);
+    else if (result != S_OK)
+      result = E_FAIL;
+  }
+
   if (result != S_OK)
   {
-    ShowErrorMessage(result);
+    ShowSysErrorMessage(result);
     return FALSE;
   }
+
   SetCurrentDirVar();
   return TRUE;
 }

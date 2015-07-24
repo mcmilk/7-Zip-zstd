@@ -40,7 +40,7 @@ struct CModifiedExtInfo: public NRegistryAssoc::CShellExtInfo
       Other = true;
       if (IsIt7Zip())
       {
-        Other7Zip = !iconPath.IsEqualToNoCase(IconPath);
+        Other7Zip = !iconPath.IsEqualTo_NoCase(IconPath);
         if (!Other7Zip)
         {
           State = kExtState_7Zip;

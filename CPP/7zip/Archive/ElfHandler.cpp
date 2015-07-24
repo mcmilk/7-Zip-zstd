@@ -963,15 +963,13 @@ STDMETHODIMP CHandler::AllowTail(Int32 allowTail)
   return S_OK;
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 0x7F, 'E', 'L', 'F' };
 
-static CArcInfo g_ArcInfo =
-  { "ELF", "elf", 0, 0xDE,
-  4, { 0x7F, 'E', 'L', 'F' },
+REGISTER_ARC_I(
+  "ELF", "elf", 0, 0xDE,
+  k_Signature,
   0,
   NArcInfoFlags::kPreArc,
-  CreateArc };
-
-REGISTER_ARC(Elf)
+  NULL)
 
 }}

@@ -10,7 +10,7 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage = CP_AC
 
 // optimized versions that work faster for ASCII strings
 void MultiByteToUnicodeString2(UString &dest, const AString &srcString, UINT codePage = CP_ACP);
-void UnicodeStringToMultiByte2(AString &dest, const UString &s, UINT codePage, char defaultChar, bool &defaultCharWasUsed);
+// void UnicodeStringToMultiByte2(AString &dest, const UString &s, UINT codePage, char defaultChar, bool &defaultCharWasUsed);
 void UnicodeStringToMultiByte2(AString &dest, const UString &srcString, UINT codePage);
 
 AString UnicodeStringToMultiByte(const UString &srcString, UINT codePage, char defaultChar, bool &defaultCharWasUsed);

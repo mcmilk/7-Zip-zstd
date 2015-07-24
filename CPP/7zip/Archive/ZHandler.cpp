@@ -224,15 +224,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 0x1F, 0x9D };
 
-static CArcInfo g_ArcInfo =
-  { "Z", "z taz", "* .tar", 5,
-  2, { 0x1F, 0x9D },
+REGISTER_ARC_I(
+  "Z", "z taz", "* .tar", 5,
+  k_Signature,
   0,
   0,
-  CreateArc, NULL, IsArc_Z };
-
-REGISTER_ARC(Z)
+  IsArc_Z)
 
 }}

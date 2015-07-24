@@ -7,21 +7,15 @@
 
 #include "IFolder.h"
 
-const int kNumRootFolderItems =
-  #ifdef UNDER_CE
-  1
-  #else
-  4
-  #endif
-  ;
+const unsigned kNumRootFolderItems_Max = 4;
 
 class CRootFolder:
   public IFolderFolder,
   public IFolderGetSystemIconIndex,
   public CMyUnknownImp
 {
-  UString _names[kNumRootFolderItems];
-  int _iconIndices[kNumRootFolderItems];
+  UString _names[kNumRootFolderItems_Max];
+  int _iconIndices[kNumRootFolderItems_Max];
 
 public:
   MY_UNKNOWN_IMP1(IFolderGetSystemIconIndex)

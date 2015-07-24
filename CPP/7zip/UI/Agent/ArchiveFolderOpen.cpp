@@ -2,21 +2,19 @@
 
 #include "StdAfx.h"
 
+#include "../../../Windows/DLL.h"
+
 #include "Agent.h"
 
 void CArchiveFolderManager::LoadFormats()
 {
-  if (!_codecs)
-  {
-    _compressCodecsInfo = _codecs = new CCodecs;
-    _codecs->Load();
-  }
+  LoadGlobalCodecs();
 }
 
 int CArchiveFolderManager::FindFormat(const UString &type)
 {
-  FOR_VECTOR (i, _codecs->Formats)
-    if (type.IsEqualToNoCase(_codecs->Formats[i].Name))
+  FOR_VECTOR (i, g_CodecsObj->Formats)
+    if (type.IsEqualTo_NoCase(g_CodecsObj->Formats[i].Name))
       return i;
   return -1;
 }
@@ -54,7 +52,7 @@ STDMETHODIMP CArchiveFolderManager::GetExtensions(const wchar_t *type, BSTR *ext
   if (formatIndex <  0)
     return E_INVALIDARG;
   // Exts[0].Ext;
-  return StringToBstr(_codecs.Formats[formatIndex].GetAllExtensions(), extensions);
+  return StringToBstr(g_CodecsObj.Formats[formatIndex].GetAllExtensions(), extensions);
 }
 */
 
@@ -62,8 +60,7 @@ static void AddIconExt(const CCodecIcons &lib, UString &dest)
 {
   FOR_VECTOR (i, lib.IconPairs)
   {
-    if (!dest.IsEmpty())
-      dest += L' ';
+    dest.Add_Space_if_NotEmpty();
     dest += lib.IconPairs[i].Ext;
   }
 }
@@ -73,20 +70,30 @@ STDMETHODIMP CArchiveFolderManager::GetExtensions(BSTR *extensions)
   LoadFormats();
   *extensions = 0;
   UString res;
-  FOR_VECTOR (i, _codecs->Libs)
-    AddIconExt(_codecs->Libs[i], res);
-  AddIconExt(_codecs->InternalIcons, res);
+  
+  #ifdef EXTERNAL_CODECS
+  
+  FOR_VECTOR (i, g_CodecsObj->Libs)
+    AddIconExt(g_CodecsObj->Libs[i], res);
+  
+  #endif
+  
+  AddIconExt(g_CodecsObj->InternalIcons, res);
   return StringToBstr(res, extensions);
 }
 
 STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex)
 {
-  LoadFormats();
   *iconPath = 0;
   *iconIndex = 0;
-  FOR_VECTOR (i, _codecs->Libs)
+
+  LoadFormats();
+
+  #ifdef EXTERNAL_CODECS
+
+  FOR_VECTOR (i, g_CodecsObj->Libs)
   {
-    const CCodecLib &lib = _codecs->Libs[i];
+    const CCodecLib &lib = g_CodecsObj->Libs[i];
     int ii;
     if (lib.FindIconIndex(ext, ii))
     {
@@ -94,8 +101,11 @@ STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPa
       return StringToBstr(fs2us(lib.Path), iconPath);
     }
   }
+  
+  #endif
+
   int ii;
-  if (_codecs->InternalIcons.FindIconIndex(ext, ii))
+  if (g_CodecsObj->InternalIcons.FindIconIndex(ext, ii))
   {
     FString path;
     if (NWindows::NDLL::MyGetModuleFileName(path))
@@ -112,13 +122,13 @@ STDMETHODIMP CArchiveFolderManager::GetTypes(BSTR *types)
 {
   LoadFormats();
   UString typesStrings;
-  FOR_VECTOR(i, _codecs.Formats)
+  FOR_VECTOR(i, g_CodecsObj.Formats)
   {
-    const CArcInfoEx &ai = _codecs.Formats[i];
+    const CArcInfoEx &ai = g_CodecsObj.Formats[i];
     if (ai.AssociateExts.Size() == 0)
       continue;
     if (i != 0)
-      typesStrings += L' ';
+      typesStrings.Add_Space();
     typesStrings += ai.Name;
   }
   return StringToBstr(typesStrings, types);

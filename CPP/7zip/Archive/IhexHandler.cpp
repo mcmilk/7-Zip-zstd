@@ -85,7 +85,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   const CBlock &block = _blocks[index];
   switch (propID)
   {
-    case kpidSize: prop = block.Data.GetPos(); break;
+    case kpidSize: prop = (UInt64)block.Data.GetPos(); break;
     case kpidVa: prop = block.Offset; break;
     case kpidPath:
     {
@@ -103,7 +103,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-static inline int HexToByte(char c)
+static inline int HexToByte(unsigned c)
 {
   if (c >= '0' && c <= '9') return c - '0';
   if (c >= 'A' && c <= 'F') return c - 'A' + 10;
@@ -138,9 +138,9 @@ API_FUNC_static_IsArc IsArc_Ihex(const Byte *p, size_t size)
   p++;
   size--;
 
-  const int kNumLinesToCheck = 3; // 1 line is OK also, but we don't want false detection
+  const unsigned kNumLinesToCheck = 3; // 1 line is OK also, but we don't want false detection
 
-  for (int j = 0; j < kNumLinesToCheck; j++)
+  for (unsigned j = 0; j < kNumLinesToCheck; j++)
   {
     if (size < 4 * 2)
       return k_IsArc_Res_NEED_MORE;
@@ -279,7 +279,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
       }
       
       {
-        size_t numPairs = (num + 4);
+        size_t numPairs = ((unsigned)num + 4);
         size_t numBytes = numPairs * 2;
         if (s.ReadBytes(temp, numBytes) != numBytes)
         {
@@ -287,7 +287,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
           return S_FALSE;
         }
         
-        int sum = num;
+        unsigned sum = num;
         for (size_t i = 0; i < numPairs; i++)
         {
           int a = Parse(temp + i * 2);
@@ -339,7 +339,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
             block = &_blocks.AddNew();
             block->Offset = offs;
           }
-          memcpy(block->Data.GetCurPtrAndGrow(num), temp + 3, num);
+          block->Data.AddData(temp + 3, (unsigned)num);
         }
       }
       else if (type == kType_Eof)
@@ -486,16 +486,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+// k_Signature: { ':', '1' }
 
-static CArcInfo g_ArcInfo =
-  { "IHex", "ihex", 0, 0xCD,
-  0, { 0 },
-  // 2, { ':', '1' },
+REGISTER_ARC_I_NO_SIG(
+  "IHex", "ihex", 0, 0xCD,
   0,
   NArcInfoFlags::kStartOpen,
-  CreateArc, NULL, IsArc_Ihex };
-
-REGISTER_ARC(Z)
+  IsArc_Ihex)
 
 }}

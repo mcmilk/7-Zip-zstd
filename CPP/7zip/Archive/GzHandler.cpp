@@ -44,10 +44,10 @@ namespace NGz {
 
   namespace NFlags
   {
-    const Byte kIsText = 1 << 0;
-    const Byte kCrc = 1 << 1;
-    const Byte kExtra = 1 << 2;
-    const Byte kName = 1 << 3;
+    const Byte kIsText  = 1 << 0;
+    const Byte kCrc     = 1 << 1;
+    const Byte kExtra   = 1 << 2;
+    const Byte kName    = 1 << 3;
     const Byte kComment = 1 << 4;
     const Byte kReserved = 0xE0;
   }
@@ -85,7 +85,7 @@ namespace NGz {
     };
   }
 
-static const char *kHostOSes[] =
+static const char * const kHostOSes[] =
 {
     "FAT"
   , "AMIGA"
@@ -126,19 +126,44 @@ public:
   AString Comment;
   // CByteBuffer Extra;
 
+  CItem():
+    Flags(0),
+    ExtraFlags(0),
+    HostOS(0),
+    Time(0),
+    Crc(0),
+    Size32(0) {}
+
+  void Clear()
+  {
+    Name.Empty();
+    Comment.Empty();
+    // Extra.Free();
+  }
+
+  void CopyMetaPropsFrom(const CItem &a)
+  {
+    Flags = a.Flags;
+    HostOS = a.HostOS;
+    Time = a.Time;
+    Name = a.Name;
+    Comment = a.Comment;
+    // Extra = a.Extra;
+  }
+
+  void CopyDataPropsFrom(const CItem &a)
+  {
+    ExtraFlags = a.ExtraFlags;
+    Crc = a.Crc;
+    Size32 = a.Size32;
+  }
+  
   // bool IsText() const { return TestFlag(NFlags::kIsText); }
   bool HeaderCrcIsPresent() const { return TestFlag(NFlags::kCrc); }
   bool ExtraFieldIsPresent() const { return TestFlag(NFlags::kExtra); }
   bool NameIsPresent() const { return TestFlag(NFlags::kName); }
   bool CommentIsPresent() const { return TestFlag(NFlags::kComment); }
   bool IsSupported() const { return (Flags & NFlags::kReserved) == 0; }
-
-  void Clear()
-  {
-    Name.Empty();
-    Comment.Empty();
-    // Extra.SetCapacity(0);
-  }
 
   HRESULT ReadHeader(NDecoder::CCOMCoder *stream);
   HRESULT ReadFooter1(NDecoder::CCOMCoder *stream);
@@ -459,7 +484,7 @@ public:
   INTERFACE_IInArchive(;)
   INTERFACE_IOutArchive(;)
   STDMETHOD(OpenSeq)(ISequentialInStream *stream);
-  STDMETHOD(SetProperties)(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps);
+  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
 
   CHandler()
   {
@@ -510,7 +535,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     }
     case kpidName:
       if (_item.NameIsPresent())
-        prop = MultiByteToUnicodeString(_item.Name, CP_ACP) + L".gz";
+      {
+        UString s = MultiByteToUnicodeString(_item.Name, CP_ACP);
+        s.AddAscii(".gz");
+        prop = s;
+      }
       break;
   }
   prop.Detach(value);
@@ -656,7 +685,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   if (numItems != (UInt32)(Int32)-1 && (numItems != 1 || indices[0] != 0))
     return E_INVALIDARG;
 
-  // if (_stream) extractCallback->SetTotal(_packSize);
+  if (_packSize_Defined)
+    extractCallback->SetTotal(_packSize);
   // UInt64 currentTotalPacked = 0;
   // RINOK(extractCallback->SetCompleted(&currentTotalPacked));
   CMyComPtr<ISequentialOutStream> realOutStream;
@@ -794,6 +824,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       result = S_FALSE;
       break;
     }
+
+    // break; // we can use break, if we need only first stream
   }
 
   } catch(const CInBufferException &e) { return e.ErrorCode; }
@@ -844,7 +876,7 @@ static const Byte kHostOS =
 static HRESULT UpdateArchive(
     ISequentialOutStream *outStream,
     UInt64 unpackSize,
-    const CItem &newItem,
+    CItem &item,
     const CSingleMethodProps &props,
     IArchiveUpdateCallback *updateCallback)
 {
@@ -865,7 +897,6 @@ static HRESULT UpdateArchive(
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(updateCallback, true);
   
-  CItem item = newItem;
   item.ExtraFlags = props.GetLevel() >= 7 ?
       NExtraFlags::kMaximum :
       NExtraFlags::kFastest;
@@ -894,6 +925,8 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback)
 {
+  COM_TRY_BEGIN
+
   if (numItems != 1)
     return E_INVALIDARG;
 
@@ -903,11 +936,15 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     return E_FAIL;
   RINOK(updateCallback->GetUpdateItemInfo(0, &newData, &newProps, &indexInArchive));
 
-  CItem newItem = _item;
-  newItem.ExtraFlags = 0;
-  newItem.Flags = 0;
-  if (IntToBool(newProps))
+  CItem newItem;
+  
+  if (!IntToBool(newProps))
   {
+    newItem.CopyMetaPropsFrom(_item);
+  }
+  else
+  {
+    newItem.HostOS = kHostOS;
     {
       NCOM::CPropVariant prop;
       RINOK(updateCallback->GetProperty(0, kpidMTime, &prop));
@@ -924,9 +961,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (prop.vt == VT_BSTR)
       {
         UString name = prop.bstrVal;
-        int dirDelimiterPos = name.ReverseFind(WCHAR_PATH_SEPARATOR);
-        if (dirDelimiterPos >= 0)
-          name = name.Ptr(dirDelimiterPos + 1);
+        int slashPos = name.ReverseFind_PathSepar();
+        if (slashPos >= 0)
+          name.DeleteFrontal(slashPos + 1);
         newItem.Name = UnicodeStringToMultiByte(name, CP_ACP);
         if (!newItem.Name.IsEmpty())
           newItem.Flags |= NFlags::kName;
@@ -937,13 +974,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     {
       NCOM::CPropVariant prop;
       RINOK(updateCallback->GetProperty(0, kpidIsDir, &prop));
-      if (prop.vt == VT_BOOL)
-      {
-        if (prop.boolVal != VARIANT_FALSE)
+      if (prop.vt != VT_EMPTY)
+        if (prop.vt != VT_BOOL || prop.boolVal != VARIANT_FALSE)
           return E_INVALIDARG;
-      }
-      else if (prop.vt != VT_EMPTY)
-        return E_INVALIDARG;
     }
   }
 
@@ -959,12 +992,27 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
     return UpdateArchive(outStream, size, newItem, _props, updateCallback);
   }
-    
+
   if (indexInArchive != 0)
     return E_INVALIDARG;
 
   if (!_stream)
     return E_NOTIMPL;
+
+  CLocalProgress *lps = new CLocalProgress;
+  CMyComPtr<ICompressProgressInfo> progress = lps;
+  lps->Init(updateCallback, true);
+
+  CMyComPtr<IArchiveUpdateCallbackFile> opCallback;
+  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackFile, (void **)&opCallback);
+  if (opCallback)
+  {
+    RINOK(opCallback->ReportOperation(
+        NEventIndexType::kInArcIndex, 0,
+        NUpdateNotifyOp::kReplicate))
+  }
+
+  newItem.CopyDataPropsFrom(_item);
 
   UInt64 offset = 0;
   if (IntToBool(newProps))
@@ -973,24 +1021,24 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     offset += _headerSize;
   }
   RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
-  return NCompress::CopyStream(_stream, outStream, NULL);
+
+  return NCompress::CopyStream(_stream, outStream, progress);
+
+  COM_TRY_END
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t **names, const PROPVARIANT *values, UInt32 numProps)
+STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   return _props.SetProperties(names, values, numProps);
 }
 
-IMP_CreateArcIn
-IMP_CreateArcOut
+static const Byte k_Signature[] = { kSignature_0, kSignature_1, kSignature_2 };
 
-static CArcInfo g_ArcInfo =
-  { "gzip", "gz gzip tgz tpz", "* * .tar .tar", 0xEF,
-  3, { kSignature_0, kSignature_1, kSignature_2 },
+REGISTER_ARC_IO(
+  "gzip", "gz gzip tgz tpz", "* * .tar .tar", 0xEF,
+  k_Signature,
   0,
   NArcInfoFlags::kKeepName,
-  REF_CreateArc_Pair, IsArc_Gz };
-
-REGISTER_ARC(GZip)
+  IsArc_Gz)
 
 }}

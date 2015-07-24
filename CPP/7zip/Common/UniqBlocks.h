@@ -10,20 +10,16 @@
 struct CUniqBlocks
 {
   CObjectVector<CByteBuffer> Bufs;
-  CIntVector Sorted;
-  CIntVector BufIndexToSortedIndex;
+  CUIntVector Sorted;
+  CUIntVector BufIndexToSortedIndex;
 
-  int AddUniq(const Byte *data, size_t size);
+  unsigned AddUniq(const Byte *data, size_t size);
   UInt64 GetTotalSizeInBytes() const;
   void GetReverseMap();
 
   bool IsOnlyEmpty() const
   {
-    if (Bufs.Size() == 0)
-      return true;
-    if (Bufs.Size() > 1)
-      return false;
-    return Bufs[0].Size() == 0;
+    return (Bufs.Size() == 0 || Bufs.Size() == 1 && Bufs[0].Size() == 0);
   }
 };
 

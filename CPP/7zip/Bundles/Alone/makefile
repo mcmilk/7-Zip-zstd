@@ -23,6 +23,7 @@ COMMON_OBJS = \
   $O\MyVector.obj \
   $O\Wildcard.obj \
   $O\XzCrc64Reg.obj \
+  $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
 
 WIN_OBJS = \
@@ -50,7 +51,6 @@ WIN_OBJS = \
   $O\InBuffer.obj \
   $O\InOutTempBuffer.obj \
   $O\LimitedStreams.obj \
-  $O\LockedStream.obj \
   $O\MemBlocks.obj \
   $O\MethodId.obj \
   $O\MethodProps.obj \
@@ -77,7 +77,6 @@ AR_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
-  $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\DummyOutStream.obj \
   $O\FindSignature.obj \
@@ -139,7 +138,6 @@ COMPRESS_OBJS = \
   $O\BcjCoder.obj \
   $O\BcjRegister.obj \
   $O\BitlDecoder.obj \
-  $O\BranchCoder.obj \
   $O\BranchMisc.obj \
   $O\BranchRegister.obj \
   $O\ByteSwap.obj \
@@ -181,8 +179,6 @@ CRYPTO_OBJS = \
   $O\MyAesReg.obj \
   $O\Pbkdf2HmacSha1.obj \
   $O\RandGen.obj \
-  $O\Sha1.obj \
-  $O\Sha1Reg.obj \
   $O\WzAes.obj \
   $O\ZipCrypto.obj \
   $O\ZipStrong.obj \
@@ -190,6 +186,8 @@ CRYPTO_OBJS = \
 C_OBJS = \
   $O\7zStream.obj \
   $O\Alloc.obj \
+  $O\Bcj2.obj \
+  $O\Bcj2Enc.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
@@ -210,6 +208,7 @@ C_OBJS = \
   $O\Ppmd8.obj \
   $O\Ppmd8Dec.obj \
   $O\Ppmd8Enc.obj \
+  $O\Sha1.obj \
   $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \

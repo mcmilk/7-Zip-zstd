@@ -29,7 +29,7 @@
 // But real support version for that function is NT 3.1 (probably)
 // So we must define GetCompressedFileSizeW
 EXTERN_C_BEGIN
-WINBASEAPI DWORD WINAPI GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD  lpFileSizeHigh );
+WINBASEAPI DWORD WINAPI GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh);
 EXTERN_C_END
 #endif
 #endif
@@ -68,20 +68,23 @@ static const Byte kProps[] =
   kpidPrefix
 };
 
-HRESULT CFSFolder::Init(const FString &path, IFolderFolder *parentFolder)
+HRESULT CFSFolder::Init(const FString &path /* , IFolderFolder *parentFolder */)
 {
-  _parentFolder = parentFolder;
+  // _parentFolder = parentFolder;
   _path = path;
 
   _findChangeNotification.FindFirst(_path, false,
-      FILE_NOTIFY_CHANGE_FILE_NAME |
-      FILE_NOTIFY_CHANGE_DIR_NAME |
-      FILE_NOTIFY_CHANGE_ATTRIBUTES |
-      FILE_NOTIFY_CHANGE_SIZE |
-      FILE_NOTIFY_CHANGE_LAST_WRITE /*|
-      FILE_NOTIFY_CHANGE_LAST_ACCESS |
-      FILE_NOTIFY_CHANGE_CREATION |
-      FILE_NOTIFY_CHANGE_SECURITY */);
+        FILE_NOTIFY_CHANGE_FILE_NAME
+      | FILE_NOTIFY_CHANGE_DIR_NAME
+      | FILE_NOTIFY_CHANGE_ATTRIBUTES
+      | FILE_NOTIFY_CHANGE_SIZE
+      | FILE_NOTIFY_CHANGE_LAST_WRITE
+      /*
+      | FILE_NOTIFY_CHANGE_LAST_ACCESS
+      | FILE_NOTIFY_CHANGE_CREATION
+      | FILE_NOTIFY_CHANGE_SECURITY
+      */
+      );
   if (!_findChangeNotification.IsHandleAllocated())
   {
     DWORD lastError = GetLastError();
@@ -99,7 +102,7 @@ HRESULT CFsFolderStat::Enumerate()
   {
     RINOK(Progress->SetCompleted(NULL));
   }
-  Path += FCHAR_PATH_SEPARATOR;
+  Path.Add_PathSepar();
   unsigned len = Path.Len();
   Path += FCHAR_ANY_MASK;
   CEnumerator enumerator(Path);
@@ -124,7 +127,7 @@ HRESULT CFsFolderStat::Enumerate()
 
 #ifndef UNDER_CE
 
-static bool MyGetCompressedFileSizeW(CFSTR path, UInt64 &size)
+bool MyGetCompressedFileSizeW(CFSTR path, UInt64 &size)
 {
   DWORD highPart;
   DWORD lowPart = INVALID_FILE_SIZE;
@@ -140,10 +143,10 @@ static bool MyGetCompressedFileSizeW(CFSTR path, UInt64 &size)
   #ifdef WIN_LONG_PATH
   if (USE_SUPER_PATH)
   {
-    UString longPath;
-    if (GetSuperPath(path, longPath, USE_MAIN_PATH))
+    UString superPath;
+    if (GetSuperPath(path, superPath, USE_MAIN_PATH))
     {
-      lowPart = ::GetCompressedFileSizeW(longPath, &highPart);
+      lowPart = ::GetCompressedFileSizeW(superPath, &highPart);
       if (lowPart != INVALID_FILE_SIZE || ::GetLastError() == NO_ERROR)
       {
         size = ((UInt64)highPart << 32) | lowPart;
@@ -279,11 +282,10 @@ bool CFSFolder::LoadComments()
   if (len >= (1 << 28))
     return false;
   AString s;
-  char *p = s.GetBuffer((unsigned)((size_t)len + 1));
+  char *p = s.GetBuf((unsigned)(size_t)len);
   UInt32 processedSize;
   file.Read(p, (UInt32)len, processedSize);
-  p[len] = 0;
-  s.ReleaseBuffer();
+  s.ReleaseBuf_CalcLen((unsigned)(size_t)len);
   if (processedSize != len)
     return false;
   file.Close();
@@ -291,14 +293,6 @@ bool CFSFolder::LoadComments()
   if (!ConvertUTF8ToUnicode(s, unicodeString))
     return false;
   return _comments.ReadFromString(unicodeString);
-}
-
-static bool IsAscii(const AString &s)
-{
-  for (unsigned i = 0; i < s.Len(); i++)
-    if ((Byte)s[i] >= 0x80)
-      return false;
-  return true;
 }
 
 bool CFSFolder::SaveComments()
@@ -309,7 +303,7 @@ bool CFSFolder::SaveComments()
     _comments.SaveToString(unicode);
     ConvertUnicodeToUTF8(unicode, utf);
   }
-  if (!IsAscii(utf))
+  if (!utf.IsAscii())
     utf.Insert(0, "\xEF\xBB\xBF" "\r\n");
 
   FString path = _path + kDescriptionFileName;
@@ -576,7 +570,7 @@ STDMETHODIMP CFSFolder::GetRawProp(UInt32
 
 static inline CFSTR GetExtensionPtr(const FString &name)
 {
-  int dotPos = name.ReverseFind(FTEXT('.'));
+  int dotPos = name.ReverseFind_Dot();
   return name.Ptr((dotPos < 0) ? name.Len() : dotPos);
 }
 
@@ -686,7 +680,7 @@ HRESULT CFSFolder::BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder)
   *resultFolder = 0;
   CFSFolder *folderSpec = new CFSFolder;
   CMyComPtr<IFolderFolder> subFolder = folderSpec;
-  RINOK(folderSpec->Init(_path + name + FCHAR_PATH_SEPARATOR, 0));
+  RINOK(folderSpec->Init(_path + name + FCHAR_PATH_SEPARATOR));
   *resultFolder = subFolder.Detach();
   return S_OK;
 }
@@ -700,6 +694,7 @@ void CFSFolder::GetPrefix(const CDirItem &item, FString &prefix) const
     prefix.Empty();
 }
 */
+
 /*
 void CFSFolder::GetPrefix(const CDirItem &item, FString &prefix) const
 {
@@ -714,20 +709,17 @@ void CFSFolder::GetPrefix(const CDirItem &item, FString &prefix) const
     parent = cur.Parent;
   }
 
-  unsigned totalLen = len;
-  wchar_t *p = prefix.GetBuffer(len);
+  wchar_t *p = prefix.GetBuf_SetEnd(len) + len;
   parent = item.Parent;
 
   while (parent >= 0)
   {
     const CDirItem &cur = Files[parent];
-    // path = cur->Name + FCHAR_PATH_SEPARATOR + path;
-    MyStringCopy(p + len - cur.Name.Len() - 1, (const wchar_t *)cur.Name);
-    p[--len] = FCHAR_PATH_SEPARATOR;
-    len -= cur.Name.Len();
+    *(--p) = FCHAR_PATH_SEPARATOR;
+    p -= cur.Name.Len();
+    wmemcpy(p, cur.Name, cur.Name.Len());
     parent = cur.Parent;
   }
-  prefix.ReleaseBuffer(totalLen);
 }
 */
 
@@ -752,24 +744,26 @@ STDMETHODIMP CFSFolder::BindToFolder(const wchar_t *name, IFolderFolder **result
   return BindToFolderSpec(us2fs(name), resultFolder);
 }
 
-static CFSTR kLongPrefix = FTEXT("\\\\?\\");
+static const CFSTR kSuperPrefix = FTEXT("\\\\?\\");
 
 STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
 {
   *resultFolder = 0;
+  /*
   if (_parentFolder)
   {
     CMyComPtr<IFolderFolder> parentFolder = _parentFolder;
     *resultFolder = parentFolder.Detach();
     return S_OK;
   }
+  */
   if (_path.IsEmpty())
     return E_INVALIDARG;
-  int pos = _path.ReverseFind(FCHAR_PATH_SEPARATOR);
+  int pos = _path.ReverseFind_PathSepar();
   if (pos < 0 || pos != (int)_path.Len() - 1)
     return E_FAIL;
   FString parentPath = _path.Left(pos);
-  pos = parentPath.ReverseFind(FCHAR_PATH_SEPARATOR);
+  pos = parentPath.ReverseFind_PathSepar();
   if (pos < 0)
   {
     #ifdef UNDER_CE
@@ -783,9 +777,10 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
     return S_OK;
   }
   
+  /*
   parentPath.DeleteFrom(pos + 1);
   
-  if (parentPath == kLongPrefix)
+  if (parentPath == kSuperPrefix)
   {
     #ifdef UNDER_CE
     *resultFolder = 0;
@@ -801,10 +796,10 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   FString parentPathReduced = parentPath.Left(pos);
   
   #ifndef UNDER_CE
-  pos = parentPathReduced.ReverseFind(FCHAR_PATH_SEPARATOR);
+  pos = parentPathReduced.ReverseFind_PathSepar();
   if (pos == 1)
   {
-    if (parentPath[0] != FCHAR_PATH_SEPARATOR)
+    if (!IS_PATH_SEPAR_CHAR(parentPath[0]))
       return E_FAIL;
     CNetFolder *netFolderSpec = new CNetFolder;
     CMyComPtr<IFolderFolder> netFolder = netFolderSpec;
@@ -818,6 +813,7 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   CMyComPtr<IFolderFolder> parentFolder = parentFolderSpec;
   RINOK(parentFolderSpec->Init(parentPath, 0));
   *resultFolder = parentFolder.Detach();
+  */
   return S_OK;
 }
 
@@ -837,7 +833,7 @@ STDMETHODIMP CFSFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   NWindows::NCOM::CPropVariant prop;
   switch (propID)
   {
-    case kpidType: prop = L"FSFolder"; break;
+    case kpidType: prop = "FSFolder"; break;
     case kpidPath: prop = fs2us(_path); break;
   }
   prop.Detach(value);
@@ -874,7 +870,7 @@ STDMETHODIMP CFSFolder::Clone(IFolderFolder **resultFolder)
 {
   CFSFolder *fsFolderSpec = new CFSFolder;
   CMyComPtr<IFolderFolder> folderNew = fsFolderSpec;
-  fsFolderSpec->Init(_path, 0);
+  fsFolderSpec->Init(_path);
   *resultFolder = folderNew.Detach();
   return S_OK;
 }
@@ -1060,7 +1056,7 @@ STDMETHODIMP CFSFolder::SetProperty(UInt32 index, PROPID propID,
         CTextPair pair;
         pair.ID = filename;
         pair.ID.Trim();
-        pair.Value = value->bstrVal;
+        pair.Value.SetFromBstr(value->bstrVal);
         pair.Value.Trim();
         if (pair.Value.IsEmpty())
           _comments.DeletePair(filename);

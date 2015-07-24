@@ -26,8 +26,7 @@ namespace NCramfs {
 
 #define SIGNATURE { 'C','o','m','p','r','e','s','s','e','d',' ','R','O','M','F','S' }
 
-static const UInt32 kSignatureSize = 16;
-static const char kSignature[kSignatureSize] = SIGNATURE;
+static const Byte kSignature[] = SIGNATURE;
 
 static const UInt32 kArcSizeMax = (256 + 16) << 20;
 static const UInt32 kNumFilesMax = (1 << 19);
@@ -55,7 +54,7 @@ static const unsigned k_Flags_Method_Mask = 3;
 #define k_Flags_Method_ZLIB 1
 #define k_Flags_Method_LZMA 2
 
-static const char *k_Methods[] =
+static const char * const k_Methods[] =
 {
     "Copy"
   , "ZLIB"
@@ -145,7 +144,7 @@ struct CHeader
 
   bool Parse(const Byte *p)
   {
-    if (memcmp(p + 16, kSignature, kSignatureSize) != 0)
+    if (memcmp(p + 16, kSignature, ARRAY_SIZE(kSignature)) != 0)
       return false;
     switch(GetUi32(p))
     {
@@ -408,7 +407,7 @@ AString CHandler::GetPath(int index) const
   len--;
 
   AString path;
-  char *dest = path.GetBuffer(len) + len;
+  char *dest = path.GetBuf_SetEnd(len) + len;
   index = indexMem;
   for (;;)
   {
@@ -425,7 +424,6 @@ AString CHandler::GetPath(int index) const
       break;
     *(--dest) = CHAR_PATH_SEPARATOR;
   }
-  path.ReleaseBuffer(len);
   return path;
 }
 
@@ -564,10 +562,6 @@ HRESULT CCramfsInStream::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSi
 {
   return Handler->ReadBlock(blockIndex, dest, blockSize);
 }
-
-static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
-static void SzFree(void *p, void *address) { p = p; MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
 {
@@ -789,15 +783,11 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "CramFS", "cramfs", 0, 0xD3,
-  kSignatureSize, SIGNATURE,
+REGISTER_ARC_I(
+  "CramFS", "cramfs", 0, 0xD3,
+  kSignature,
   16,
   0,
-  CreateArc };
-
-REGISTER_ARC(Cramfs)
+  NULL)
 
 }}

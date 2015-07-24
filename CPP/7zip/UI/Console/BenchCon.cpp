@@ -23,7 +23,7 @@ void CPrintBenchCallback::Print(const char *s)
 
 void CPrintBenchCallback::NewLine()
 {
-  Print("\n");
+  fputc('\n', _file);
 }
 
 HRESULT CPrintBenchCallback::CheckBreak()
@@ -36,7 +36,6 @@ HRESULT BenchCon(DECL_EXTERNAL_CODECS_LOC_VARS
 {
   CPrintBenchCallback callback;
   callback._file = f;
-  callback.NewLine();
   return Bench(EXTERNAL_CODECS_LOC_VARS
       &callback, NULL, props, numIterations, true);
 }

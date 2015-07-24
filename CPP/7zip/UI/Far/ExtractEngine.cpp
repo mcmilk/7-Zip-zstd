@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#ifndef _7ZIP_ST
+#include "../../../Windows/Synchronization.h"
+#endif
+
 #include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 
@@ -13,13 +17,26 @@
 using namespace NWindows;
 using namespace NFar;
 
+#ifndef _7ZIP_ST
+static NSynchronization::CCriticalSection g_CriticalSection;
+#define MT_LOCK NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
+#else
+#define MT_LOCK
+#endif
+
+
+static HRESULT CheckBreak2()
+{
+  return WasEscPressed() ? E_ABORT : S_OK;
+}
+
 extern void PrintMessage(const char *message);
 
-CExtractCallBackImp::~CExtractCallBackImp()
+CExtractCallbackImp::~CExtractCallbackImp()
 {
 }
 
-void CExtractCallBackImp::Init(
+void CExtractCallbackImp::Init(
     UINT codePage,
     CProgressBox *progressBox,
     bool passwordIsDefined,
@@ -28,35 +45,41 @@ void CExtractCallBackImp::Init(
   m_PasswordIsDefined = passwordIsDefined;
   m_Password = password;
   m_CodePage = codePage;
-  m_ProgressBox = progressBox;
+  _percent = progressBox;
 }
 
-STDMETHODIMP CExtractCallBackImp::SetTotal(UInt64 size)
+STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
 {
-  _total = size;
-  _totalIsDefined = true;
-  return S_OK;
+  MT_LOCK
+
+  if (_percent)
+  {
+    _percent->Total = size;
+    _percent->Print();
+  }
+  return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallBackImp::SetCompleted(const UInt64 *completeValue)
+STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
 {
-  if (WasEscPressed())
-    return E_ABORT;
-  _processedIsDefined = (completeValue != NULL);
-  if (_processedIsDefined)
-    _processed = *completeValue;
-  if (m_ProgressBox != 0)
-    m_ProgressBox->Progress(
-      _totalIsDefined ? &_total: NULL,
-      _processedIsDefined ? &_processed: NULL, AString());
-  return S_OK;
+  MT_LOCK
+
+  if (_percent)
+  {
+    if (completeValue)
+      _percent->Completed = *completeValue;
+    _percent->Print();
+  }
+  return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallBackImp::AskOverwrite(
+STDMETHODIMP CExtractCallbackImp::AskOverwrite(
     const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
     const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
     Int32 *answer)
 {
+  MT_LOCK
+
   NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
   oldFileInfo.TimeIsDefined = (existTime != 0);
   if (oldFileInfo.TimeIsDefined)
@@ -101,44 +124,62 @@ STDMETHODIMP CExtractCallBackImp::AskOverwrite(
   default:
     return E_FAIL;
   }
-  return S_OK;
+  
+  return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallBackImp::PrepareOperation(const wchar_t *name, bool /* isFolder */, Int32 /* askExtractMode */, const UInt64 * /* position */)
+static const char *kTestString    =  "Testing";
+static const char *kExtractString =  "Extracting";
+static const char *kSkipString    =  "Skipping";
+
+STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /* isFolder */, Int32 askExtractMode, const UInt64 * /* position */)
 {
-  if (WasEscPressed())
-    return E_ABORT;
+  MT_LOCK
+
   m_CurrentFilePath = name;
-  return S_OK;
-}
+  const char *s;
 
-STDMETHODIMP CExtractCallBackImp::MessageError(const wchar_t *message)
-{
-  AString s = UnicodeStringToMultiByte(message, CP_OEMCP);
-  if (g_StartupInfo.ShowMessage((const char *)s) == -1)
-    return E_ABORT;
-  return S_OK;
-}
-
-static void ReduceString(UString &s, unsigned size)
-{
-  if (s.Len() > size)
+  switch (askExtractMode)
   {
-    s.Delete(size / 2, s.Len() - size);
-    s.Insert(size / 2, L" ... ");
+    case NArchive::NExtract::NAskMode::kExtract: s = kExtractString; break;
+    case NArchive::NExtract::NAskMode::kTest:    s = kTestString; break;
+    case NArchive::NExtract::NAskMode::kSkip:    s = kSkipString; break;
+    default: s = "???"; // return E_FAIL;
+  };
+
+  if (_percent)
+  {
+    _percent->Command = s;
+    _percent->FileName = name;
+    _percent->Print();
   }
+
+  return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallBackImp::SetOperationResult(Int32 operationResult, bool encrypted)
+STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *message)
 {
-  switch (operationResult)
+  MT_LOCK
+
+  AString s = UnicodeStringToMultiByte(message, CP_OEMCP);
+  if (g_StartupInfo.ShowErrorMessage((const char *)s) == -1)
+    return E_ABORT;
+
+  return CheckBreak2();
+}
+
+void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &s)
+{
+  s.Empty();
+
+  switch (opRes)
   {
     case NArchive::NExtract::NOperationResult::kOK:
-      break;
+      return;
     default:
     {
       UINT messageID = 0;
-      switch (operationResult)
+      switch (opRes)
       {
         case NArchive::NExtract::NOperationResult::kUnsupportedMethod:
           messageID = NMessageID::kExtractUnsupportedMethod;
@@ -154,44 +195,78 @@ STDMETHODIMP CExtractCallBackImp::SetOperationResult(Int32 operationResult, bool
             NMessageID::kExtractDataError;
           break;
       }
-      UString name = m_CurrentFilePath;
-      ReduceString(name, 70);
-      AString s;
       if (messageID != 0)
       {
         s = g_StartupInfo.GetMsgString(messageID);
         s.Replace(" '%s'", "");
       }
-      else if (operationResult == NArchive::NExtract::NOperationResult::kUnavailable)
+      else if (opRes == NArchive::NExtract::NOperationResult::kUnavailable)
         s = "Unavailable data";
-      else if (operationResult == NArchive::NExtract::NOperationResult::kUnexpectedEnd)
+      else if (opRes == NArchive::NExtract::NOperationResult::kUnexpectedEnd)
         s = "Unexpected end of data";
-      else if (operationResult == NArchive::NExtract::NOperationResult::kDataAfterEnd)
+      else if (opRes == NArchive::NExtract::NOperationResult::kDataAfterEnd)
         s = "There are some data after the end of the payload data";
-      else if (operationResult == NArchive::NExtract::NOperationResult::kIsNotArc)
+      else if (opRes == NArchive::NExtract::NOperationResult::kIsNotArc)
         s = "Is not archive";
-      else if (operationResult == NArchive::NExtract::NOperationResult::kHeadersError)
+      else if (opRes == NArchive::NExtract::NOperationResult::kHeadersError)
         s = "kHeaders Error";
       else
       {
         char temp[16];
-        ConvertUInt32ToString(operationResult, temp);
+        ConvertUInt32ToString(opRes, temp);
         s = "Error #";
         s += temp;
       }
-      s += "\n";
-      s += UnicodeStringToMultiByte(name, m_CodePage);
-      if (g_StartupInfo.ShowMessageLines(s) == -1)
-        return E_ABORT;
     }
   }
-  return S_OK;
+}
+
+STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 opRes, Int32 encrypted)
+{
+  MT_LOCK
+
+  if (opRes == NArchive::NExtract::NOperationResult::kOK)
+  {
+    if (_percent)
+    {
+      _percent->Command.Empty();
+      _percent->FileName.Empty();
+      _percent->Files++;
+    }
+  }
+  else
+  {
+    AString s;
+    SetExtractErrorMessage(opRes, encrypted, s);
+    if (PrintErrorMessage(s, m_CurrentFilePath) == -1)
+      return E_ABORT;
+  }
+  
+  return CheckBreak2();
+}
+
+
+STDMETHODIMP CExtractCallbackImp::ReportExtractResult(Int32 opRes, Int32 encrypted, const wchar_t *name)
+{
+  MT_LOCK
+
+  if (opRes != NArchive::NExtract::NOperationResult::kOK)
+  {
+    AString s;
+    SetExtractErrorMessage(opRes, encrypted, s);
+    if (PrintErrorMessage(s, name) == -1)
+      return E_ABORT;
+  }
+  
+  return CheckBreak2();
 }
 
 extern HRESULT GetPassword(UString &password);
 
-STDMETHODIMP CExtractCallBackImp::CryptoGetTextPassword(BSTR *password)
+STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
 {
+  MT_LOCK
+
   if (!m_PasswordIsDefined)
   {
     RINOK(GetPassword(m_Password));

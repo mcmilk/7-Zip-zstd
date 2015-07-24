@@ -49,11 +49,12 @@ void CPanel::InvokeSystemCommand(const char *command)
   contextMenu->InvokeCommand(&ci);
 }
 
-static const wchar_t *kSeparator = L"----------------------------\n";
-static const wchar_t *kSeparatorSmall = L"----\n";
-static const wchar_t *kPropValueSeparator = L": ";
+static const char *kSeparator = "----------------------------\n";
+static const char *kSeparatorSmall = "----\n";
+static const char *kPropValueSeparator = ": ";
 
-extern UString ConvertSizeToString(UInt64 value);
+extern UString ConvertSizeToString(UInt64 value) throw();
+bool IsSizeProp(UINT propID) throw();
 
 UString GetOpenArcErrorMessage(UInt32 errorFlags);
 
@@ -74,20 +75,7 @@ static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
         val = GetOpenArcErrorMessage(flags);
     }
     if (val.IsEmpty())
-    if ((prop.vt == VT_UI8 || prop.vt == VT_UI4 || prop.vt == VT_UI2) && (
-        propID == kpidSize ||
-        propID == kpidPackSize ||
-        propID == kpidNumSubDirs ||
-        propID == kpidNumSubFiles ||
-        propID == kpidNumBlocks ||
-        propID == kpidClusterSize ||
-        propID == kpidTotalSize ||
-        propID == kpidFreeSpace ||
-        propID == kpidPhySize ||
-        propID == kpidHeadersSize ||
-        propID == kpidFreeSpace ||
-        propID == kpidUnpackSize
-        ))
+    if ((prop.vt == VT_UI8 || prop.vt == VT_UI4 || prop.vt == VT_UI2) && IsSizeProp(propID))
     {
       UInt64 v = 0;
       ConvertPropVariantToUInt64(prop, v);
@@ -99,13 +87,13 @@ static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
     if (!val.IsEmpty())
     {
       s += GetNameOfProperty(propID, nameBSTR);
-      s += kPropValueSeparator;
+      s.AddAscii(kPropValueSeparator);
       /*
       if (propID == kpidComment)
-        s += L'\n';
+        s.Add_LF();
       */
       s += val;
-      s += L'\n';
+      s.Add_LF();
     }
   }
 }
@@ -210,21 +198,21 @@ void CPanel::Properties()
               }
             }
             message += GetNameOfProperty(propID, name);
-            message += kPropValueSeparator;
-            message += GetUnicodeString(s);
-            message += L'\n';
+            message.AddAscii(kPropValueSeparator);
+            message.AddAscii(s);
+            message.Add_LF();
           }
         }
       }
 
-      message += kSeparator;
+      message.AddAscii(kSeparator);
     }
         
     /*
-    message += LangString(IDS_PROP_FILE_TYPE, 0x02000214);
+    AddLangString(message, IDS_PROP_FILE_TYPE);
     message += kPropValueSeparator;
     message += GetFolderTypeID();
-    message += L"\n";
+    message.Add_LF();
     */
 
     {
@@ -277,7 +265,7 @@ void CPanel::Properties()
             {
               const int kNumSpecProps = ARRAY_SIZE(kSpecProps);
 
-              message += kSeparator;
+              message.AddAscii(kSeparator);
               
               for (Int32 i = -(int)kNumSpecProps; i < (Int32)numProps; i++)
               {
@@ -302,7 +290,7 @@ void CPanel::Properties()
             UInt32 numProps;
             if (getProps->GetArcNumProps2(level, &numProps) == S_OK)
             {
-              message += kSeparatorSmall;
+              message.AddAscii(kSeparatorSmall);
               for (Int32 i = 0; i < (Int32)numProps; i++)
               {
                 CMyComBSTR name;
@@ -414,9 +402,7 @@ HRESULT CPanel::CreateShellContextMenu(
   FOR_VECTOR (i, operatedIndices)
   {
     LPITEMIDLIST pidl;
-    UString fileName = GetItemRelPath(operatedIndices[i]);
-    if (IsFSDrivesFolder())
-      fileName += WCHAR_PATH_SEPARATOR;
+    UString fileName = GetItemRelPath2(operatedIndices[i]);
     RINOK(parentFolder->ParseDisplayName(GetParent(), 0,
       (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
     pidls.AddInReserved(pidl);
@@ -574,11 +560,11 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
     if (contextMenu.QueryInterface(IID_IInitContextMenu, &initContextMenu) != S_OK)
       return;
     */
-    UString currentFolderUnicode = _currentFolderPrefix;
+    UString currentFolderUnicode = GetFsPath();
     UStringVector names;
     unsigned i;
     for (i = 0; i < operatedIndices.Size(); i++)
-      names.Add(currentFolderUnicode + GetItemRelPath(operatedIndices[i]));
+      names.Add(currentFolderUnicode + GetItemRelPath2(operatedIndices[i]));
     CRecordVector<const wchar_t *> namePointers;
     for (i = 0; i < operatedIndices.Size(); i++)
       namePointers.Add(names[i]);
@@ -596,6 +582,74 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
       // int nextItemID = code;
     }
   }
+}
+
+static bool IsReadOnlyFolder(IFolderFolder *folder)
+{
+  if (!folder)
+    return false;
+
+  bool res = false;
+  {
+    NCOM::CPropVariant prop;
+    if (folder->GetFolderProperty(kpidReadOnly, &prop) == S_OK)
+      if (prop.vt == VT_BOOL)
+        res = VARIANT_BOOLToBool(prop.boolVal);
+  }
+  return res;
+}
+
+bool CPanel::IsThereReadOnlyFolder() const
+{
+  if (!_folderOperations)
+    return true;
+  if (IsReadOnlyFolder(_folder))
+    return true;
+  FOR_VECTOR (i, _parentFolders)
+  {
+    if (IsReadOnlyFolder(_parentFolders[i].ParentFolder))
+      return true;
+  }
+  return false;
+}
+
+bool CPanel::CheckBeforeUpdate(UINT resourceID)
+{
+  if (!_folderOperations)
+  {
+    MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+    // resourceID = resourceID;
+    // MessageBoxErrorForUpdate(E_NOINTERFACE, resourceID);
+    return false;
+  }
+
+  for (int i = (int)_parentFolders.Size(); i >= 0; i--)
+  {
+    IFolderFolder *folder;
+    if (i == (int)_parentFolders.Size())
+      folder = _folder;
+    else
+      folder = _parentFolders[i].ParentFolder;
+    
+    if (!IsReadOnlyFolder(folder))
+      continue;
+    
+    UString s;
+    AddLangString(s, resourceID);
+    s.Add_LF();
+    AddLangString(s, IDS_OPERATION_IS_NOT_SUPPORTED);
+    s.Add_LF();
+    if (i == 0)
+      s += GetFolderPath(folder);
+    else
+      s += _parentFolders[i - 1].VirtualPath;
+    s.Add_LF();
+    AddLangString(s, IDS_PROP_READ_ONLY);
+    MessageBoxMyError(s);
+    return false;
+  }
+
+  return true;
 }
 
 void CPanel::CreateFileMenu(HMENU menuSpec,
@@ -631,8 +685,38 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
     if (IsItem_Folder(operatedIndices[i]))
       break;
   bool allAreFiles = (i == operatedIndices.Size());
-  LoadFileMenu(menu, menu.GetItemCount(), programMenu,
-      IsFSFolder(), operatedIndices.Size(), allAreFiles);
+
+  CFileMenu fm;
+  
+  fm.readOnly = IsThereReadOnlyFolder();
+  fm.isFsFolder = Is_IO_FS_Folder();
+  fm.programMenu = programMenu;
+  fm.allAreFiles = allAreFiles;
+  fm.numItems = operatedIndices.Size();
+
+  fm.isAltStreamsSupported = false;
+  
+  if (_folderAltStreams)
+  {
+    if (operatedIndices.Size() <= 1)
+    {
+      Int32 realIndex = -1;
+      if (operatedIndices.Size() == 1)
+        realIndex = operatedIndices[0];
+      Int32 val = 0;
+      if (_folderAltStreams->AreAltStreamsSupported(realIndex, &val) == S_OK)
+        fm.isAltStreamsSupported = IntToBool(val);
+    }
+  }
+  else
+  {
+    if (fm.numItems == 0)
+      fm.isAltStreamsSupported = IsFSFolder();
+    else
+      fm.isAltStreamsSupported = IsFolder_with_FsItems();
+  }
+
+  fm.Load(menu, menu.GetItemCount());
 }
 
 bool CPanel::InvokePluginCommand(int id)
@@ -654,26 +738,31 @@ bool CPanel::InvokePluginCommand(int id,
   else
     offset = id  - kSevenZipStartMenuID;
 
-  #ifndef use_CMINVOKECOMMANDINFOEXR
-  CMINVOKECOMMANDINFO
+  #ifdef use_CMINVOKECOMMANDINFOEX
+    CMINVOKECOMMANDINFOEX
   #else
-  CMINVOKECOMMANDINFOEX
+    CMINVOKECOMMANDINFO
   #endif
-    commandInfo;
+      commandInfo;
+  
   memset(&commandInfo, 0, sizeof(commandInfo));
   commandInfo.cbSize = sizeof(commandInfo);
+  
   commandInfo.fMask = 0
-  #ifdef use_CMINVOKECOMMANDINFOEXR
-  | CMIC_MASK_UNICODE
+  #ifdef use_CMINVOKECOMMANDINFOEX
+    | CMIC_MASK_UNICODE
   #endif
-  ;
+    ;
+
   commandInfo.hwnd = GetParent();
   commandInfo.lpVerb = (LPCSTR)(MAKEINTRESOURCE(offset));
   commandInfo.lpParameters = NULL;
   CSysString currentFolderSys = GetSystemString(_currentFolderPrefix);
   commandInfo.lpDirectory = (LPCSTR)(LPCTSTR)(currentFolderSys);
   commandInfo.nShow = SW_SHOW;
-  #ifdef use_CMINVOKECOMMANDINFOEXR
+  
+  #ifdef use_CMINVOKECOMMANDINFOEX
+  
   commandInfo.lpParametersW = NULL;
   commandInfo.lpTitle = "";
   commandInfo.lpVerbW = (LPCWSTR)(MAKEINTRESOURCEW(offset));
@@ -684,7 +773,9 @@ bool CPanel::InvokePluginCommand(int id,
   // commandInfo.ptInvoke.y = yPos;
   commandInfo.ptInvoke.x = 0;
   commandInfo.ptInvoke.y = 0;
+  
   #endif
+  
   HRESULT result;
   if (isSystemMenu)
     result = systemContextMenu->InvokeCommand(LPCMINVOKECOMMANDINFO(&commandInfo));

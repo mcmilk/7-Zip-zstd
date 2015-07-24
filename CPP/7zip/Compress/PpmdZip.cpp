@@ -12,10 +12,6 @@
 namespace NCompress {
 namespace NPpmdZip {
 
-static void *SzBigAlloc(void *, size_t size) { return BigAlloc(size); }
-static void SzBigFree(void *, void *address) { BigFree(address); }
-static ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
 CDecoder::CDecoder(bool fullFileMode):
   _fullFileMode(fullFileMode)
 {
@@ -259,15 +255,5 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     }
   }
 }
-
-/*
-static void *CreateCodec() { return (void *)(ICompressCoder *)(new CDecoder(false)); }
-static void *CreateCodecOut() { return (void *)(ICompressCoder *)(new CEncoder);  }
-
-static CCodecInfo g_CodecInfo =
-  { CreateCodec, CreateCodecOut, 0x040162, L"PPMdZIP", 1, false };
-
-REGISTER_CODEC(PPMdZIP)
-*/
 
 }}

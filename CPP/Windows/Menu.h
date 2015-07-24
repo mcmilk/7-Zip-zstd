@@ -81,14 +81,18 @@ public:
 
   HMENU GetSubMenu(int pos) { return ::GetSubMenu(_menu, pos); }
   #ifndef UNDER_CE
+  /*
   bool GetItemString(UINT idItem, UINT flag, CSysString &result)
   {
     result.Empty();
     int len = ::GetMenuString(_menu, idItem, 0, 0, flag);
-    len = ::GetMenuString(_menu, idItem, result.GetBuffer(len + 2), len + 1, flag);
-    result.ReleaseBuffer();
+    int len2 = ::GetMenuString(_menu, idItem, result.GetBuf(len + 2), len + 1, flag);
+    if (len > len2)
+      len = len2;
+    result.ReleaseBuf_CalcLen(len + 2);
     return (len != 0);
   }
+  */
   UINT GetItemID(int pos) { return ::GetMenuItemID(_menu, pos);   }
   UINT GetItemState(UINT id, UINT flags) { return ::GetMenuState(_menu, id, flags);   }
   #endif

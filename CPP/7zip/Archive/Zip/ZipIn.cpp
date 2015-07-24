@@ -348,7 +348,7 @@ HRESULT CInArchive::FindAndReadMarker(IInStream *stream, const UInt64 *searchLim
   return S_FALSE;
 }
 
-HRESULT CInArchive::IncreaseRealPosition(UInt64 addValue)
+HRESULT CInArchive::IncreaseRealPosition(Int64 addValue)
 {
   return Stream->Seek(addValue, STREAM_SEEK_CUR, &m_Position);
 }
@@ -439,10 +439,9 @@ void CInArchive::ReadFileName(unsigned size, AString &s)
     s.Empty();
     return;
   }
-  char *p = s.GetBuffer(size);
+  char *p = s.GetBuf(size);
   SafeReadBytes(p, size);
-  p[size] = 0;
-  s.ReleaseBuffer();
+  s.ReleaseBuf_CalcLen(size);
 }
 
 bool CInArchive::ReadExtra(unsigned extraSize, CExtraBlock &extraBlock,
@@ -556,7 +555,12 @@ bool CInArchive::ReadLocalItem(CItemEx &item)
     UInt32 diskStartNumber = 0;
     if (!ReadExtra(extraSize, item.LocalExtra, item.Size, item.PackSize,
         localHeaderOffset, diskStartNumber))
-      return false;
+    {
+      /* Most of archives are OK for Extra. But there are some rare cases
+         that have error. And if error in first item, it can't open archive.
+         So we ignore that error */
+      // return false;
+    }
   }
   if (!CheckDosTime(item.Time))
   {
@@ -650,6 +654,7 @@ HRESULT CInArchive::ReadLocalItemDescriptor(CItemEx &item)
     numBytesInBuffer += processedSize;
     if (numBytesInBuffer < kDataDescriptorSize)
       return S_FALSE;
+    
     UInt32 i;
     for (i = 0; i <= numBytesInBuffer - kDataDescriptorSize; i++)
     {
@@ -666,10 +671,11 @@ HRESULT CInArchive::ReadLocalItemDescriptor(CItemEx &item)
           item.Crc = Get32(buf + i + 4);
           item.PackSize = descriptorPackSize;
           item.Size = Get32(buf + i + 12);
-          return IncreaseRealPosition(Int64(Int32(0 - (numBytesInBuffer - i - kDataDescriptorSize))));
+          return IncreaseRealPosition((Int64)(Int32)(0 - (numBytesInBuffer - i - kDataDescriptorSize)));
         }
       }
     }
+    
     packedSize += i;
     unsigned j;
     for (j = 0; i < numBytesInBuffer; i++, j++)
@@ -1262,7 +1268,10 @@ HRESULT CInArchive::ReadHeaders2(CObjectVector<CItemEx> &items, CProgressVirt *p
       (UInt32)ecd64.cdSize != (UInt32)cdSize ||
       ((UInt32)(ecd64.cdStartOffset) != (UInt32)cdRelatOffset &&
         (!items.IsEmpty())))
-    return S_FALSE;
+  {
+    // return S_FALSE;
+    HeadersError = true;
+  }
   
   // printf("\nOpen OK");
   return S_OK;

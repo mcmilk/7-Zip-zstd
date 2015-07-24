@@ -15,10 +15,6 @@
 namespace NCompress {
 namespace NRar3 {
 
-static void *SzBigAlloc(void *, size_t size) { return BigAlloc(size); }
-static void SzBigFree(void *, void *address) { BigFree(address); }
-static ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
 static const UInt32 kNumAlignReps = 15;
 
 static const UInt32 kSymbolReadTable = 256;

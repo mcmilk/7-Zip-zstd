@@ -82,13 +82,13 @@ void CDString::Parse(const Byte *p, unsigned size)
 static UString ParseDString(const Byte *data, unsigned size)
 {
   UString res;
-  wchar_t *p;
   if (size > 0)
   {
+    wchar_t *p;
     Byte type = data[0];
     if (type == 8)
     {
-      p = res.GetBuffer(size);
+      p = res.GetBuf(size);
       for (unsigned i = 1; i < size; i++)
       {
         wchar_t c = data[i];
@@ -99,7 +99,7 @@ static UString ParseDString(const Byte *data, unsigned size)
     }
     else if (type == 16)
     {
-      p = res.GetBuffer(size / 2);
+      p = res.GetBuf(size / 2);
       for (unsigned i = 1; i + 2 <= size; i += 2)
       {
         wchar_t c = GetBe16(data + i);
@@ -110,8 +110,8 @@ static UString ParseDString(const Byte *data, unsigned size)
     }
     else
       return L"[unknow]";
-    *p++ = 0;
-    res.ReleaseBuffer();
+    *p = 0;
+    res.ReleaseBuf_SetLen((unsigned)(p - (const wchar_t *)res));
   }
   return res;
 }
@@ -432,6 +432,8 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
   CTag tag;
   const Byte *p = buf;
   RINOK(tag.Parse(p, size));
+  if (size < 176)
+    return S_FALSE;
   if (tag.Id != DESC_TYPE_File)
     return S_FALSE;
 
@@ -449,7 +451,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
 
   if ((extendedAttrLen & 3) != 0)
     return S_FALSE;
-  int pos = 176;
+  size_t pos = 176;
   if (extendedAttrLen > size - pos)
     return S_FALSE;
   /*
@@ -595,7 +597,7 @@ API_FUNC_IsArc IsArc_Udf(const Byte *p, size_t size)
     if (SecLogSize < 8)
       return res;
     UInt32 offset = (UInt32)256 << SecLogSize;
-    size_t bufSize = 1 << SecLogSize;
+    size_t bufSize = (UInt32)1 << SecLogSize;
     if (offset + bufSize > size)
       res = k_IsArc_Res_NEED_MORE;
     else
@@ -652,7 +654,7 @@ HRESULT CInArchive::Open2()
     if (offset >= fileSize)
       continue;
     RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
-    size_t bufSize = 1 << SecLogSize;
+    size_t bufSize = (UInt32)1 << SecLogSize;
     size_t readSize = bufSize;
     RINOK(ReadStream(_stream, buf, &readSize));
     if (readSize == bufSize)
@@ -677,7 +679,7 @@ HRESULT CInArchive::Open2()
 
   for (UInt32 location = 0; ; location++)
   {
-    size_t bufSize = 1 << SecLogSize;
+    size_t bufSize = (UInt32)1 << SecLogSize;
     size_t pos = 0;
     if (((UInt64)(location + 1) << SecLogSize) > extentVDS.Len)
       return S_FALSE;
@@ -950,7 +952,7 @@ HRESULT CInArchive::Open2()
   if (PhySize < fileSize)
   {
     RINOK(_stream->Seek(PhySize, STREAM_SEEK_SET, NULL));
-    size_t bufSize = 1 << SecLogSize;
+    size_t bufSize = (UInt32)1 << SecLogSize;
     size_t readSize = bufSize;
     RINOK(ReadStream(_stream, buf, &readSize));
     if (readSize == bufSize)
@@ -1018,8 +1020,8 @@ UString CInArchive::GetComment() const
   UString res;
   FOR_VECTOR (i, LogVols)
   {
-    if (i > 0)
-      res += L" ";
+    if (i != 0)
+      res.Add_Space();
     res += LogVols[i].GetName();
   }
   return res;

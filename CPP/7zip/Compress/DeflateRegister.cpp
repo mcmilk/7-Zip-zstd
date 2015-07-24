@@ -6,16 +6,13 @@
 
 #include "DeflateDecoder.h"
 
-static void *CreateCodecDeflate() { return (void *)(ICompressCoder *)(new NCompress::NDeflate::NDecoder::CCOMCoder); }
+REGISTER_CODEC_CREATE(CreateDec, NCompress::NDeflate::NDecoder::CCOMCoder)
 
 #if !defined(EXTRACT_ONLY) && !defined(DEFLATE_EXTRACT_ONLY)
 #include "DeflateEncoder.h"
-static void *CreateCodecOutDeflate() { return (void *)(ICompressCoder *)(new NCompress::NDeflate::NEncoder::CCOMCoder);  }
+REGISTER_CODEC_CREATE(CreateEnc, NCompress::NDeflate::NEncoder::CCOMCoder)
 #else
-#define CreateCodecOutDeflate 0
+#define CreateEnc NULL
 #endif
 
-static CCodecInfo g_CodecInfo =
-  { CreateCodecDeflate,   CreateCodecOutDeflate,   0x040108, L"Deflate", 1, false };
-
-REGISTER_CODEC(Deflate)
+REGISTER_CODEC_2(Deflate, CreateDec, CreateEnc, 0x40108, "Deflate")

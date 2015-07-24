@@ -29,7 +29,7 @@ bool CAboutDialog::OnInit()
   UString s = L"7-Zip " LLL(MY_VERSION);
   #ifdef MY_CPU_64BIT
   s += L" [";
-  s += LangString(IDS_PROP_BIT64);
+  AddLangString(s, IDS_PROP_BIT64);
   s += L']';
   #endif
 

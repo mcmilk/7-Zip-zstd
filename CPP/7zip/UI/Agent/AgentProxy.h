@@ -7,46 +7,61 @@
 
 struct CProxyFile
 {
-  UInt32 Index;
-  UString Name;
+  const wchar_t *Name;
+  unsigned NameLen;
+  bool NeedDeleteName;
+  
+  CProxyFile(): Name(NULL), NameLen(0), NeedDeleteName(false)  {}
+  ~CProxyFile() { if (NeedDeleteName) delete [](wchar_t *)Name; }
 };
 
-class CProxyFolder: public CProxyFile
+const unsigned k_Proxy_RootDirIndex = 0;
+
+struct CProxyDir
 {
-public:
-  int Parent;
-  CRecordVector<unsigned> Folders;
-  CObjectVector<CProxyFile> Files;
+  const wchar_t *Name;
+  unsigned NameLen;
+
+  int ArcIndex;  // index in proxy->Files[] ;  -1 if there is no item for that folder
+  int ParentDir; // index in proxy->Dirs[]  ;  -1 for root folder; ;
+  CRecordVector<unsigned> SubDirs;
+  CRecordVector<unsigned> SubFiles;
+
   UInt64 Size;
   UInt64 PackSize;
   UInt32 Crc;
-  UInt32 NumSubFolders;
+  UInt32 NumSubDirs;
   UInt32 NumSubFiles;
-  bool IsLeaf;
   bool CrcIsDefined;
 
-  CProxyFolder(): Parent(-1) {};
-  void AddFileSubItem(UInt32 index, const UString &name);
+  CProxyDir(): Name(NULL), NameLen(0), ParentDir(-1) {};
+  ~CProxyDir() { delete [](wchar_t *)Name; }
+
   void Clear();
+  bool IsLeaf() const { return ArcIndex >= 0; }
 };
 
-class CProxyArchive
+class CProxyArc
 {
-  int FindDirSubItemIndex(unsigned folderIndex, const UString &name, unsigned &insertPos) const;
+  int FindSubDir(unsigned dirIndex, const wchar_t *name, unsigned &insertPos) const;
 
-  void CalculateSizes(unsigned folderIndex, IInArchive *archive);
-  unsigned AddDirSubItem(unsigned folderIndex, UInt32 index, bool leaf, const UString &name);
+  void CalculateSizes(unsigned dirIndex, IInArchive *archive);
+  unsigned AddDir(unsigned dirIndex, int arcIndex, const UString &name);
 public:
-  CObjectVector<CProxyFolder> Folders; // Folders[0] - isRoot
+  CObjectVector<CProxyDir> Dirs; // Dirs[0] - root
+  CObjArray<CProxyFile> Files;   // all items from archive in same order
 
-  int FindDirSubItemIndex(unsigned folderIndex, const UString &name) const;
-  void GetPathParts(int folderIndex, UStringVector &pathParts) const;
-  UString GetFullPathPrefix(int folderIndex) const;
+  // returns index in Dirs[], or -1,
+  int FindSubDir(unsigned dirIndex, const wchar_t *name) const;
+
+  void GetDirPathParts(int dirIndex, UStringVector &pathParts) const;
+  // returns full path of Dirs[dirIndex], including back slash
+  UString GetDirPath_as_Prefix(int dirIndex) const;
   
-  // AddRealIndices DOES ADD also item represented by folderIndex (if it's Leaf)
-  void AddRealIndices(unsigned folderIndex, CUIntVector &realIndices) const;
-  int GetRealIndex(unsigned folderIndex, unsigned index) const;
-  void GetRealIndices(unsigned folderIndex, const UInt32 *indices, UInt32 numItems, CUIntVector &realIndices) const;
+  // AddRealIndices DOES ADD also item represented by dirIndex (if it's Leaf)
+  void AddRealIndices(unsigned dirIndex, CUIntVector &realIndices) const;
+  int GetRealIndex(unsigned dirIndex, unsigned index) const;
+  void GetRealIndices(unsigned dirIndex, const UInt32 *indices, UInt32 numItems, CUIntVector &realIndices) const;
 
   HRESULT Load(const CArc &arc, IProgress *progress);
 };
@@ -56,19 +71,25 @@ public:
 
 struct CProxyFile2
 {
-  int FolderIndex;            // >= 0 for dir. (index in ProxyArchive2->Folders)
-  int AltStreamsFolderIndex;  // >= 0 if there are alt streams. (index in ProxyArchive2->Folders)
-  int Parent;                 // >= 0 if there is parent. (index in archive and in ProxyArchive2->Files)
+  int DirIndex;     // >= 0 for dir. (index in ProxyArchive2->Dirs)
+  int AltDirIndex;  // >= 0 if there are alt streams. (index in ProxyArchive2->Dirs)
+  int Parent;          // >= 0 if there is parent. (index in archive and in ProxyArchive2->Files)
   const wchar_t *Name;
-  unsigned NameSize;
+  unsigned NameLen;
+  bool NeedDeleteName;
   bool Ignore;
   bool IsAltStream;
-  bool NeedDeleteName;
   
-  int GetFolderIndex(bool forAltStreams) const { return forAltStreams ? AltStreamsFolderIndex : FolderIndex; }
+  int GetDirIndex(bool forAltStreams) const { return forAltStreams ? AltDirIndex : DirIndex; }
 
-  bool IsDir() const { return FolderIndex >= 0; }
-  CProxyFile2(): FolderIndex(-1), AltStreamsFolderIndex(-1), Name(NULL), Ignore(false), IsAltStream(false), NeedDeleteName(false) {}
+  bool IsDir() const { return DirIndex >= 0; }
+  CProxyFile2():
+      DirIndex(-1), AltDirIndex(-1), Parent(-1),
+      Name(NULL), NameLen(0),
+      NeedDeleteName(false),
+      Ignore(false),
+      IsAltStream(false)
+      {}
   ~CProxyFile2()
   {
     if (NeedDeleteName)
@@ -76,53 +97,66 @@ struct CProxyFile2
   }
 };
 
-class CProxyFolder2
+struct CProxyDir2
 {
-public:
-  Int32 ArcIndex; // = -1 for Root folder
-  CRecordVector<unsigned> SubFiles;
+  int ArcIndex;   // = -1 for root folders, index in proxy->Files[]
+  CRecordVector<unsigned> Items;
   UString PathPrefix;
   UInt64 Size;
   UInt64 PackSize;
   bool CrcIsDefined;
   UInt32 Crc;
-  UInt32 NumSubFolders;
+  UInt32 NumSubDirs;
   UInt32 NumSubFiles;
 
-  CProxyFolder2(): ArcIndex(-1) {};
+  CProxyDir2(): ArcIndex(-1) {};
   void AddFileSubItem(UInt32 index, const UString &name);
   void Clear();
-
 };
 
-class CProxyArchive2
+const unsigned k_Proxy2_RootDirIndex = k_Proxy_RootDirIndex;
+const unsigned k_Proxy2_AltRootDirIndex = 1;
+const unsigned k_Proxy2_NumRootDirs = 2;
+
+class CProxyArc2
 {
-  void CalculateSizes(unsigned folderIndex, IInArchive *archive);
-  // AddRealIndices_of_Folder DOES NOT ADD item itself represented by folderIndex
-  void AddRealIndices_of_Folder(unsigned folderIndex, bool includeAltStreams, CUIntVector &realIndices) const;
+  void CalculateSizes(unsigned dirIndex, IInArchive *archive);
+  // AddRealIndices_of_Dir DOES NOT ADD item itself represented by dirIndex
+  void AddRealIndices_of_Dir(unsigned dirIndex, bool includeAltStreams, CUIntVector &realIndices) const;
 public:
-  CObjectVector<CProxyFolder2> Folders; // Folders[0] - is root folder
-  CObjArray<CProxyFile2> Files;  // all aitems from archive in same order
+  CObjectVector<CProxyDir2> Dirs;  // Dirs[0] - root folder
+                                   // Dirs[1] - for alt streams of root dir
+  CObjArray<CProxyFile2> Files;    // all items from archive in same order
 
-  bool IsThere_SubDir(unsigned folderIndex, const UString &name) const;
+  bool IsThere_SubDir(unsigned dirIndex, const UString &name) const;
 
-  void GetPathParts(int folderIndex, UStringVector &pathParts) const;
-  UString GetFullPathPrefix(unsigned folderIndex) const;
+  void GetDirPathParts(int dirIndex, UStringVector &pathParts, bool &isAltStreamDir) const;
+  UString GetDirPath_as_Prefix(unsigned dirIndex, bool &isAltStreamDir) const;
+  bool IsAltDir(unsigned dirIndex) const;
   
   // AddRealIndices_of_ArcItem DOES ADD item and subItems
   void AddRealIndices_of_ArcItem(unsigned arcIndex, bool includeAltStreams, CUIntVector &realIndices) const;
-  unsigned GetRealIndex(unsigned folderIndex, unsigned index) const;
-  void GetRealIndices(unsigned folderIndex, const UInt32 *indices, UInt32 numItems, bool includeAltStreams, CUIntVector &realIndices) const;
+  unsigned GetRealIndex(unsigned dirIndex, unsigned index) const;
+  void GetRealIndices(unsigned dirIndex, const UInt32 *indices, UInt32 numItems, bool includeAltStreams, CUIntVector &realIndices) const;
 
   HRESULT Load(const CArc &arc, IProgress *progress);
 
-  int GetParentFolderOfFile(UInt32 indexInArc) const
+  int GetParentDirOfFile(UInt32 arcIndex) const
   {
-    const CProxyFile2 &file = Files[indexInArc];
+    const CProxyFile2 &file = Files[arcIndex];
+    
     if (file.Parent < 0)
-      return 0;
-    return Files[file.Parent].FolderIndex;
+      return file.IsAltStream ?
+          k_Proxy2_AltRootDirIndex :
+          k_Proxy2_RootDirIndex;
+    
+    const CProxyFile2 &parentFile = Files[file.Parent];
+    return file.IsAltStream ?
+        parentFile.AltDirIndex :
+        parentFile.DirIndex;
   }
+  
+  int FindItem(unsigned dirIndex, const wchar_t *name, bool foldersOnly) const;
 };
 
 #endif

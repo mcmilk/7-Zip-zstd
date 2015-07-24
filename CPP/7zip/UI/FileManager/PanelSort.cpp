@@ -76,7 +76,7 @@ static int CompareFileNames_Le16(const Byte *s1, unsigned size1, const Byte *s2,
 
 static inline const wchar_t *GetExtensionPtr(const UString &name)
 {
-  int dotPos = name.ReverseFind(L'.');
+  int dotPos = name.ReverseFind_Dot();
   return name.Ptr((dotPos < 0) ? name.Len() : dotPos);
 }
 

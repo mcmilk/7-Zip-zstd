@@ -120,10 +120,10 @@ struct CLzxInfo
     return 0;
   }
 
-  UInt64 GetFolderSize() const { return ResetTable.BlockSize * ResetInterval; };
-  UInt64 GetFolder(UInt64 offset) const { return offset / GetFolderSize(); };
-  UInt64 GetFolderPos(UInt64 folderIndex) const { return folderIndex * GetFolderSize(); };
-  UInt64 GetBlockIndexFromFolderIndex(UInt64 folderIndex) const { return folderIndex * ResetInterval; };
+  UInt64 GetFolderSize() const { return ResetTable.BlockSize * ResetInterval; }
+  UInt64 GetFolder(UInt64 offset) const { return offset / GetFolderSize(); }
+  UInt64 GetFolderPos(UInt64 folderIndex) const { return folderIndex * GetFolderSize(); }
+  UInt64 GetBlockIndexFromFolderIndex(UInt64 folderIndex) const { return folderIndex * ResetInterval; }
   bool GetOffsetOfFolder(UInt64 folderIndex, UInt64 &offset) const
   {
     UInt64 blockIndex = GetBlockIndexFromFolderIndex(folderIndex);

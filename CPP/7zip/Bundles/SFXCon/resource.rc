@@ -1,4 +1,4 @@
-#include "../../../../C/7zVersion.rc"
+#include "../../MyVersionInfo.rc"
 
 MY_VERSION_INFO_APP("7z Console SFX", "7z.sfx")
 

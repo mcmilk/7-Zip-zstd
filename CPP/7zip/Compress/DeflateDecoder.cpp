@@ -106,7 +106,7 @@ bool CCoder::ReadTables(void)
     Byte levelLevels[kLevelTableSize];
     for (unsigned i = 0; i < kLevelTableSize; i++)
     {
-      int position = kCodeLengthAlphabetOrder[i];
+      unsigned position = kCodeLengthAlphabetOrder[i];
       if (i < numLevelCodes)
         levelLevels[position] = (Byte)ReadBits(kLevelFieldSize);
       else
@@ -299,7 +299,7 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream,
           finishInputStream = true;
       }
     }
-    if (curSize == 0)
+    if (!finishInputStream && curSize == 0)
       break;
     RINOK(CodeSpec(curSize, finishInputStream));
     if (_remainLen == kLenIdFinished)
@@ -314,12 +314,12 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream,
   if (_remainLen == kLenIdFinished && ZlibMode)
   {
     m_InBitStream.AlignToByte();
-    for (int i = 0; i < 4; i++)
+    for (unsigned i = 0; i < 4; i++)
       ZlibFooter[i] = ReadAlignedByte();
   }
   flusher.NeedFlush = false;
   res = Flush();
-  if (res == S_OK && InputEofError())
+  if (res == S_OK && _remainLen != kLenIdNeedInit && InputEofError())
     return S_FALSE;
   DEFLATE_TRY_END(res)
   return res;

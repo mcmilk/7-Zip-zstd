@@ -44,7 +44,6 @@ WIN_CTRL_OBJS = \
   $O\InBuffer.obj \
   $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
-  $O\LockedStream.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
   $O\PropId.obj \
@@ -68,7 +67,6 @@ FM_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
-  $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
@@ -82,13 +80,15 @@ AR_COMMON_OBJS = \
   $O\7zRegister.obj \
 
 COMPRESS_OBJS = \
-  $O\BranchCoder.obj \
   $O\Bcj2Coder.obj \
   $O\Bcj2Register.obj \
   $O\BcjCoder.obj \
   $O\BcjRegister.obj \
+  $O\BranchMisc.obj \
+  $O\BranchRegister.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
+  $O\DeltaFilter.obj \
   $O\Lzma2Decoder.obj \
   $O\Lzma2Register.obj \
   $O\LzmaDecoder.obj \
@@ -96,8 +96,12 @@ COMPRESS_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\Bcj2.obj \
+  $O\Bra.obj \
   $O\Bra86.obj \
+  $O\BraIA64.obj \
   $O\CpuArch.obj \
+  $O\Delta.obj \
   $O\Lzma2Dec.obj \
   $O\LzmaDec.obj \
   $O\Threads.obj \

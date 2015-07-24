@@ -54,14 +54,17 @@ void SplitString(const UString &srcString, UStringVector &destStrings)
     destStrings.Add(s);
 }
 
+/*
 UString JoinStrings(const UStringVector &srcStrings)
 {
+
   UString s;
   FOR_VECTOR (i, srcStrings)
   {
     if (i != 0)
-      s += L' ';
+      s.Add_Space();
     s += srcStrings[i];
   }
   return s;
 }
+*/

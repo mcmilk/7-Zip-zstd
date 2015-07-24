@@ -65,6 +65,7 @@ struct CUpdateItem
   // int SecureIndex; // 0 means (no_security)
 
   bool HasStream() const { return !IsDir && !IsAnti && Size != 0; }
+  // bool HasStream() const { return !IsDir && !IsAnti /* && Size != 0 */; } // for test purposes
 
   CUpdateItem():
       // ParentSortIndex(-1),
@@ -77,18 +78,19 @@ struct CUpdateItem
       MTimeDefined(false)
       // SecureIndex(0)
       {}
-  void SetDirStatusFromAttrib() { IsDir = ((Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0); };
+  void SetDirStatusFromAttrib() { IsDir = ((Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0); }
 
-  int GetExtensionPos() const;
-  UString GetExtension() const;
+  // unsigned GetExtensionPos() const;
+  // UString GetExtension() const;
 };
 
 struct CUpdateOptions
 {
   const CCompressionMethodMode *Method;
   const CCompressionMethodMode *HeaderMethod;
-  bool UseFilters;
-  bool MaxFilter;
+  bool UseFilters; // use additional filters for some files
+  bool MaxFilter;  // use BCJ2 filter instead of BCJ
+  int AnalysisLevel;
 
   CHeaderOptions HeaderOptions;
 
@@ -96,7 +98,20 @@ struct CUpdateOptions
   UInt64 NumSolidBytes;
   bool SolidExtension;
   bool RemoveSfxBlock;
-  bool VolumeMode;
+  bool MultiThreadMixer;
+
+  CUpdateOptions():
+      Method(NULL),
+      HeaderMethod(NULL),
+      UseFilters(false),
+      MaxFilter(false),
+      AnalysisLevel(-1),
+      NumSolidFiles((UInt64)(Int64)(-1)),
+      NumSolidBytes((UInt64)(Int64)(-1)),
+      SolidExtension(false),
+      RemoveSfxBlock(false),
+      MultiThreadMixer(true)
+    {}
 };
 
 HRESULT Update(

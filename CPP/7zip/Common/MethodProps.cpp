@@ -10,12 +10,12 @@ using namespace NWindows;
 
 bool StringToBool(const UString &s, bool &res)
 {
-  if (s.IsEmpty() || s == L"+" || StringsAreEqualNoCase_Ascii(s, "ON"))
+  if (s.IsEmpty() || (s[0] == '+' && s[1] == 0) || StringsAreEqualNoCase_Ascii(s, "ON"))
   {
     res = true;
     return true;
   }
-  if (s == L"-" || StringsAreEqualNoCase_Ascii(s, "OFF"))
+  if ((s[0] == '-' && s[1] == 0) || StringsAreEqualNoCase_Ascii(s, "OFF"))
   {
     res = false;
     return true;
@@ -137,11 +137,10 @@ static HRESULT PROPVARIANT_to_DictSize(const PROPVARIANT &prop, UInt32 &resValue
 
 void CProps::AddProp32(PROPID propid, UInt32 level)
 {
-  CProp prop;
+  CProp &prop = Props.AddNew();
   prop.IsOptional = true;
   prop.Id = propid;
   prop.Value = (UInt32)level;
-  Props.Add(prop);
 }
 
 class CCoderProps
@@ -331,7 +330,7 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
   int index = FindPropIdExact(name);
   if (index < 0)
     return E_INVALIDARG;
-  const CNameToPropID &nameToPropID = g_NameToPropID[index];
+  const CNameToPropID &nameToPropID = g_NameToPropID[(unsigned)index];
   CProp prop;
   prop.Id = index;
 
@@ -401,7 +400,7 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
   int index = FindPropIdExact(realName);
   if (index < 0)
     return E_INVALIDARG;
-  const CNameToPropID &nameToPropID = g_NameToPropID[index];
+  const CNameToPropID &nameToPropID = g_NameToPropID[(unsigned)index];
   CProp prop;
   prop.Id = index;
   
@@ -422,12 +421,20 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
 
 HRESULT COneMethodInfo::ParseMethodFromString(const UString &s)
 {
-  int splitPos = s.Find(':');
-  MethodName = s;
+  MethodName.Empty();
+  int splitPos = s.Find(L':');
+  {
+    UString temp = s;
+    if (splitPos >= 0)
+      temp.DeleteFrom(splitPos);
+    if (!temp.IsAscii())
+      return E_INVALIDARG;
+    MethodName.SetFromWStr_if_Ascii(temp);
+  }
   if (splitPos < 0)
     return S_OK;
-  MethodName.DeleteFrom(splitPos);
-  return ParseParamsFromString(s.Ptr(splitPos + 1));
+  PropsString = s.Ptr(splitPos + 1);
+  return ParseParamsFromString(PropsString);
 }
 
 HRESULT COneMethodInfo::ParseMethodFromPROPVARIANT(const UString &realName, const PROPVARIANT &value)

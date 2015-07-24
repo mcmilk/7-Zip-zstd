@@ -8,208 +8,240 @@ namespace NCompress{
 namespace NLzh {
 namespace NDecoder {
 
-static const UInt32 kHistorySize = (1 << 16);
+static const UInt32 kWindowSizeMin = 1 << 16;
 
-static const int kBlockSizeBits = 16;
-static const int kNumCBits = 9;
-static const int kNumLevelBits = 5; // smallest integer such that (1 << kNumLevelBits) > kNumLevelSymbols/
-
-UInt32 CCoder::ReadBits(int numBits) { return m_InBitStream.ReadBits(numBits); }
-
-HRESULT CCoder::ReadLevelTable()
+static bool CheckCodeLens(const Byte *lens, unsigned num)
 {
-  int n = ReadBits(kNumLevelBits);
-  if (n == 0)
+  UInt32 sum = 0;
+  for (unsigned i = 0; i < num; i++)
   {
-    m_LevelHuffman.Symbol = ReadBits(kNumLevelBits);
-    if (m_LevelHuffman.Symbol >= kNumLevelSymbols)
-      return S_FALSE;
+    unsigned len = lens[i];
+    if (len != 0)
+      sum += ((UInt32)1 << (NUM_CODE_BITS - len));
   }
-  else
-  {
-    if (n > kNumLevelSymbols)
-      return S_FALSE;
-    m_LevelHuffman.Symbol = -1;
-    Byte lens[kNumLevelSymbols];
-    int i = 0;
-    while (i < n)
-    {
-      int c = m_InBitStream.ReadBits(3);
-      if (c == 7)
-        while (ReadBits(1))
-          if (c++ > kMaxHuffmanLen)
-            return S_FALSE;
-      lens[i++] = (Byte)c;
-      if (i == kNumSpecLevelSymbols)
-      {
-        c = ReadBits(2);
-        while (--c >= 0)
-          lens[i++] = 0;
-      }
-    }
-    while (i < kNumLevelSymbols)
-      lens[i++] = 0;
-    m_LevelHuffman.SetCodeLengths(lens);
-  }
-  return S_OK;
+  return sum == ((UInt32)1 << NUM_CODE_BITS);
 }
 
-HRESULT CCoder::ReadPTable(int numBits)
+bool CCoder::ReadTP(unsigned num, unsigned numBits, int spec)
 {
-  int n = ReadBits(numBits);
+  _symbolT = -1;
+
+  UInt32 n = _inBitStream.ReadBits(numBits);
   if (n == 0)
   {
-    m_PHuffmanDecoder.Symbol = ReadBits(numBits);
-    if (m_PHuffmanDecoder.Symbol >= kNumDistanceSymbols)
-      return S_FALSE;
+    _symbolT = _inBitStream.ReadBits(numBits);
+    return ((unsigned)_symbolT < num);
   }
-  else
+
+  if (n > num)
+    return false;
+
   {
-    if (n > kNumDistanceSymbols)
-      return S_FALSE;
-    m_PHuffmanDecoder.Symbol = -1;
-    Byte lens[kNumDistanceSymbols];
-    int i = 0;
-    while (i < n)
+    Byte lens[NPT];
+    unsigned i;
+    for (i = 0; i < NPT; i++)
+      lens[i] = 0;
+
+    i = 0;
+    
+    do
     {
-      int c = m_InBitStream.ReadBits(3);
+      UInt32 val = _inBitStream.GetValue(16);
+      unsigned c = val >> 13;
+      
       if (c == 7)
-        while (ReadBits(1))
+      {
+        UInt32 mask = 1 << 12;
+        while (mask & val)
         {
-          if (c > kMaxHuffmanLen)
-            return S_FALSE;
+          mask >>= 1;
           c++;
         }
+        if (c > 16)
+          return false;
+      }
+      
+      _inBitStream.MovePos(c < 7 ? 3 : c - 3);
       lens[i++] = (Byte)c;
+      
+      if (i == (unsigned)spec)
+        i += _inBitStream.ReadBits(2);
     }
-    while (i < kNumDistanceSymbols)
-      lens[i++] = 0;
-    m_PHuffmanDecoder.SetCodeLengths(lens);
+    while (i < n);
+    
+    if (!CheckCodeLens(lens, NPT))
+      return false;
+    return _decoderT.SetCodeLengths(lens);
   }
-  return S_OK;
 }
 
-HRESULT CCoder::ReadCTable()
+static const unsigned NUM_C_BITS = 9;
+
+bool CCoder::ReadC()
 {
-  int n = ReadBits(kNumCBits);
+  _symbolC = -1;
+
+  unsigned n = _inBitStream.ReadBits(NUM_C_BITS);
+  
   if (n == 0)
   {
-    m_CHuffmanDecoder.Symbol = ReadBits(kNumCBits);
-    if (m_CHuffmanDecoder.Symbol >= kNumCSymbols)
-      return S_FALSE;
+    _symbolC = _inBitStream.ReadBits(NUM_C_BITS);
+    return ((unsigned)_symbolC < NC);
   }
-  else
+
+  if (n > NC)
+    return false;
+
   {
-    if (n > kNumCSymbols)
-      return S_FALSE;
-    m_CHuffmanDecoder.Symbol = -1;
-    Byte lens[kNumCSymbols];
-    int i = 0;
-    while (i < n)
+    Byte lens[NC];
+
+    unsigned i = 0;
+  
+    do
     {
-      int c = m_LevelHuffman.Decode(&m_InBitStream);
-      if (c < kNumSpecLevelSymbols)
+      UInt32 c = (unsigned)_symbolT;
+      if (_symbolT < 0)
+        c = _decoderT.DecodeSymbol(&_inBitStream);
+      
+      if (c <= 2)
       {
         if (c == 0)
           c = 1;
         else if (c == 1)
-          c = ReadBits(4) + 3;
+          c = _inBitStream.ReadBits(4) + 3;
         else
-          c = ReadBits(kNumCBits) + 20;
-        while (--c >= 0)
-        {
-          if (i > kNumCSymbols)
-            return S_FALSE;
+          c = _inBitStream.ReadBits(NUM_C_BITS) + 20;
+    
+        if (i + c > n)
+          return false;
+        
+        do
           lens[i++] = 0;
-        }
+        while (--c);
       }
       else
         lens[i++] = (Byte)(c - 2);
     }
-    while (i < kNumCSymbols)
+    while (i < n);
+    
+    while (i < NC)
       lens[i++] = 0;
-    m_CHuffmanDecoder.SetCodeLengths(lens);
+    
+    if (!CheckCodeLens(lens, NC))
+      return false;
+    return _decoderC.SetCodeLengths(lens);
   }
-  return S_OK;
 }
 
-STDMETHODIMP CCoder::CodeReal(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 *outSize,
-    ICompressProgressInfo *progress)
+HRESULT CCoder::CodeReal(UInt64 rem, ICompressProgressInfo *progress)
 {
-  if (outSize == NULL)
-    return E_INVALIDARG;
-
-  if (!m_OutWindowStream.Create(kHistorySize))
-    return E_OUTOFMEMORY;
-  if (!m_InBitStream.Create(1 << 20))
-    return E_OUTOFMEMORY;
-
-  UInt64 pos = 0;
-  m_OutWindowStream.SetStream(outStream);
-  m_OutWindowStream.Init(false);
-  m_InBitStream.SetStream(inStream);
-  m_InBitStream.Init();
-  
-  CCoderReleaser coderReleaser(this);
-
-  int pbit;
-  if (m_NumDictBits <= 13)
-    pbit = 4;
-  else
-    pbit = 5;
+  unsigned pbit = (DictSize <= (1 << 14) ? 4 : 5);
 
   UInt32 blockSize = 0;
 
-  while (pos < *outSize)
+  while (rem != 0)
   {
-    // for (i = 0; i < dictSize; i++) dtext[i] = 0x20;
-    
     if (blockSize == 0)
     {
-      if (progress != NULL)
+      if (_inBitStream.ExtraBitsWereRead())
+        return S_FALSE;
+
+      if (progress)
       {
-        UInt64 packSize = m_InBitStream.GetProcessedSize();
+        UInt64 packSize = _inBitStream.GetProcessedSize();
+        UInt64 pos = _outWindow.GetProcessedSize();
         RINOK(progress->SetRatioInfo(&packSize, &pos));
       }
-      blockSize = ReadBits(kBlockSizeBits);
-      ReadLevelTable();
-      ReadCTable();
-      RINOK(ReadPTable(pbit));
+      
+      blockSize = _inBitStream.ReadBits(16);
+      if (blockSize == 0)
+        return S_FALSE;
+      
+      if (!ReadTP(NT, 5, 3))
+        return S_FALSE;
+      if (!ReadC())
+        return S_FALSE;
+      if (!ReadTP(NP, pbit, -1))
+        return S_FALSE;
     }
+  
     blockSize--;
-    UInt32 c = m_CHuffmanDecoder.Decode(&m_InBitStream);
-    if (c < 256)
+
+    UInt32 number = (unsigned)_symbolC;
+    if (_symbolC < 0)
+      number = _decoderC.DecodeSymbol(&_inBitStream);
+
+    if (number < 256)
     {
-      m_OutWindowStream.PutByte((Byte)c);
-      pos++;
+      _outWindow.PutByte((Byte)number);
+      rem--;
     }
-    else if (c >= kNumCSymbols)
-      return S_FALSE;
     else
     {
-      // offset = (interface->method == LARC_METHOD_NUM) ? 0x100 - 2 : 0x100 - 3;
-      UInt32 len = c - 256 + kMinMatch;
-      UInt32 distance = m_PHuffmanDecoder.Decode(&m_InBitStream);
-      if (distance != 0)
-        distance = (1 << (distance - 1)) + ReadBits(distance - 1);
-      if (distance >= pos)
+      UInt32 len = number - 256 + kMatchMinLen;
+
+      UInt32 dist = (unsigned)_symbolT;
+      if (_symbolT < 0)
+        dist = _decoderT.DecodeSymbol(&_inBitStream);
+      
+      if (dist > 1)
+      {
+        dist--;
+        dist = ((UInt32)1 << dist) + _inBitStream.ReadBits((unsigned)dist);
+      }
+      
+      if (dist >= DictSize)
         return S_FALSE;
-      if (pos + len > *outSize)
-        len = (UInt32)(*outSize - pos);
-      pos += len;
-      m_OutWindowStream.CopyBlock(distance, len);
+
+      if (len > rem)
+        len = (UInt32)rem;
+
+      if (!_outWindow.CopyBlock(dist, len))
+        return S_FALSE;
+      rem -= len;
     }
   }
-  coderReleaser.NeedFlush = false;
-  return m_OutWindowStream.Flush();
+
+  if (FinishMode)
+  {
+    if (blockSize != 0)
+      return S_FALSE;
+    if (_inBitStream.ReadAlignBits() != 0)
+      return S_FALSE;
+  }
+
+  if (_inBitStream.ExtraBitsWereRead())
+    return S_FALSE;
+
+  return S_OK;
 }
 
-STDMETHODIMP CCoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
-    ICompressProgressInfo *progress)
+
+STDMETHODIMP CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
-  try { return CodeReal(inStream, outStream, inSize, outSize, progress);}
+  try
+  {
+    if (!outSize)
+      return E_INVALIDARG;
+    
+    if (!_outWindow.Create(DictSize > kWindowSizeMin ? DictSize : kWindowSizeMin))
+      return E_OUTOFMEMORY;
+    if (!_inBitStream.Create(1 << 17))
+      return E_OUTOFMEMORY;
+    
+    _outWindow.SetStream(outStream);
+    _outWindow.Init(false);
+    _inBitStream.SetStream(inStream);
+    _inBitStream.Init();
+    
+    CCoderReleaser coderReleaser(this);
+    
+    RINOK(CodeReal(*outSize, progress));
+
+    coderReleaser.Disable();
+    return _outWindow.Flush();
+  }
   catch(const CInBufferException &e) { return e.ErrorCode; }
   catch(const CLzOutWindowException &e) { return e.ErrorCode; }
   catch(...) { return S_FALSE; }

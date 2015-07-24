@@ -8,9 +8,10 @@
 
 #include "../../../Windows/FileFind.h"
 
+#include "../../Archive/IArchive.h"
+
 #include "IFolder.h"
 #include "TextPairs.h"
-#include "..\..\Archive\IArchive.h"
 
 namespace NFsFolder {
 
@@ -133,7 +134,7 @@ private:
   CObjectVector<CDirItem> Files;
   FStringVector Folders;
   // CObjectVector<CAltStream> Streams;
-  CMyComPtr<IFolderFolder> _parentFolder;
+  // CMyComPtr<IFolderFolder> _parentFolder;
 
   bool _commentsAreLoaded;
   CPairsStorage _comments;
@@ -158,9 +159,9 @@ private:
   #endif
 
 public:
-  HRESULT Init(const FString &path, IFolderFolder *parentFolder);
-  #ifdef UNDER_CE
-  HRESULT InitToRoot() { return Init(FTEXT("\\"), NULL); }
+  HRESULT Init(const FString &path /* , IFolderFolder *parentFolder */);
+  #if !defined(_WIN32) || defined(UNDER_CE)
+  HRESULT InitToRoot() { return Init(FSTRING_PATH_SEPARATOR /* , NULL */); }
   #endif
 
   CFSFolder() : _flatMode(false)
@@ -178,6 +179,7 @@ public:
   }
 
   // void GetPrefix(const CDirItem &item, FString &prefix) const;
+
   FString GetRelPath(const CDirItem &item) const;
 
   void Clear()
@@ -187,6 +189,24 @@ public:
     // Streams.Clear();
   }
 };
+
+struct CCopyStateIO
+{
+  IProgress *Progress;
+  UInt64 TotalSize;
+  UInt64 StartPos;
+  UInt64 CurrentSize;
+  bool DeleteSrcFile;
+
+  int ErrorFileIndex;
+  UString ErrorMessage;
+
+  CCopyStateIO(): DeleteSrcFile(false), TotalSize(0), StartPos(0) {}
+
+  HRESULT MyCopyFile(CFSTR inPath, CFSTR outPath);
+};
+
+HRESULT SendLastErrorMessage(IFolderOperationsExtractCallback *callback, const FString &fileName);
 
 }
 

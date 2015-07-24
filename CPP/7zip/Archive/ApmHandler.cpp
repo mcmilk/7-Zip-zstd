@@ -376,15 +376,13 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { kSig0, kSig1 };
 
-static CArcInfo g_ArcInfo =
-  { "APM", "apm", 0, 0xD4,
-  2, { kSig0, kSig1 },
+REGISTER_ARC_I(
+  "APM", "apm", 0, 0xD4,
+  k_Signature,
   0,
   0,
-  CreateArc, NULL, IsArc_Apm };
-
-REGISTER_ARC(Apm)
+  IsArc_Apm)
 
 }}

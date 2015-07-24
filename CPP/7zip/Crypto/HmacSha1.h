@@ -4,7 +4,7 @@
 #ifndef __CRYPTO_HMAC_SHA1_H
 #define __CRYPTO_HMAC_SHA1_H
 
-#include "Sha1.h"
+#include "Sha1Cls.h"
 
 namespace NCrypto {
 namespace NSha1 {
@@ -28,9 +28,9 @@ class CHmac32
 public:
   void SetKey(const Byte *key, size_t keySize);
   void Update(const UInt32 *data, size_t dataSize) { _sha.Update(data, dataSize); }
-  void Final(UInt32 *mac, size_t macSize = kDigestSizeInWords);
+  void Final(UInt32 *mac, size_t macSize = kNumDigestWords);
   
-  // It'sa for hmac function. in,out: mac[kDigestSizeInWords].
+  // It'sa for hmac function. in,out: mac[kNumDigestWords].
   void GetLoopXorDigest(UInt32 *mac, UInt32 numIteration);
 };
 

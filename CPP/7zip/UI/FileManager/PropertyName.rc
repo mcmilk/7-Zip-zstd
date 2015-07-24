@@ -94,4 +94,6 @@ BEGIN
   IDS_PROP_HARD_LINK    "Hard Link"
   IDS_PROP_INODE        "iNode"
   IDS_PROP_STREAM_ID    "Stream ID"
+  IDS_PROP_READ_ONLY    "Read-only"
+  IDS_PROP_OUT_NAME     "Out Name"
 END

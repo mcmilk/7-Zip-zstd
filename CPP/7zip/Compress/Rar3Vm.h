@@ -157,7 +157,7 @@ private:
   bool ExecuteCode(const CProgram *prg);
   
   #ifdef RARVM_STANDARD_FILTERS
-  void ExecuteStandardFilter(int filterIndex);
+  void ExecuteStandardFilter(unsigned filterIndex);
   #endif
   
   Byte *Mem;

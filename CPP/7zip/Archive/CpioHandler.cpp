@@ -87,7 +87,7 @@ enum EType
   k_Type_HexCrc
 };
 
-static const char *k_Types[] =
+static const char * const k_Types[] =
 {
     "Binary LE"
   , "Binary BE"
@@ -396,11 +396,10 @@ HRESULT CInArchive::GetNextItem(CItem &item, EErrorType &errorType)
     return S_FALSE;
   if (nameSize == 0 || nameSize >= kNameSizeMax)
     return S_OK;
-  char *s = item.Name.GetBuffer(nameSize);
+  char *s = item.Name.GetBuf(nameSize);
   size_t processedSize = nameSize;
   RINOK(Read(s, &processedSize));
-  s[nameSize] = 0;
-  item.Name.ReleaseBuffer();
+  item.Name.ReleaseBuf_CalcLen(nameSize);
   if (processedSize != nameSize)
   {
     errorType = k_ErrorType_UnexpectedEnd;
@@ -451,7 +450,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   NCOM::CPropVariant prop;
   switch (propID)
   {
-    case kpidSubType: prop = k_Types[_Type]; break;
+    case kpidSubType: prop = k_Types[(unsigned)_Type]; break;
     case kpidPhySize: prop = _phySize; break;
     case kpidErrorFlags:
     {
@@ -780,20 +779,16 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "Cpio", "cpio", 0, 0xED,
-  3 + 5 + 2 + 2,
-  {
+static const Byte k_Signature[] = {
     5, '0', '7', '0', '7', '0',
     2, kMagicBin0, kMagicBin1,
-    2, kMagicBin1, kMagicBin0,
-  },
+    2, kMagicBin1, kMagicBin0 };
+
+REGISTER_ARC_I(
+  "Cpio", "cpio", 0, 0xED,
+  k_Signature,
   0,
   NArcInfoFlags::kMultiSignature,
-  CreateArc, NULL, IsArc_Cpio };
-
-REGISTER_ARC(Cpio)
+  IsArc_Cpio)
 
 }}

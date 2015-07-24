@@ -60,6 +60,7 @@ FM_OBJS = \
 !IFNDEF UNDER_CE
 
 FM_OBJS = $(FM_OBJS) \
+  $O\AltStreamsFolder.obj \
   $O\FSDrives.obj \
   $O\LinkDialog.obj \
   $O\NetFolder.obj \

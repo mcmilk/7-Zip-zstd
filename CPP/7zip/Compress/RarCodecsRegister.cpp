@@ -8,19 +8,19 @@
 #include "Rar2Decoder.h"
 #include "Rar3Decoder.h"
 
-#define CREATE_CODEC(x) static void *CreateCodec ## x() { return (void *)(ICompressCoder *)(new NCompress::NRar ## x::CDecoder); }
+#define CREATE_CODEC(x) REGISTER_CODEC_CREATE(CreateCodec ## x, NCompress::NRar ## x::CDecoder())
 
 CREATE_CODEC(1)
 CREATE_CODEC(2)
 CREATE_CODEC(3)
 
-#define RAR_CODEC(x, name) { CreateCodec ## x, 0, 0x040300 + x, L"Rar" name, 1, false }
+#define RAR_CODEC(x, name) { CreateCodec ## x, NULL, 0x40300 + x, "Rar" name, 1, false }
 
-static CCodecInfo g_CodecsInfo[] =
+REGISTER_CODECS_VAR
 {
-  RAR_CODEC(1, L"1"),
-  RAR_CODEC(2, L"2"),
-  RAR_CODEC(3, L"3"),
+  RAR_CODEC(1, "1"),
+  RAR_CODEC(2, "2"),
+  RAR_CODEC(3, "3"),
 };
 
 REGISTER_CODECS(Rar)

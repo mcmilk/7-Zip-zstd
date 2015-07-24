@@ -86,6 +86,8 @@ struct CItemEx: public CItem
 {
   UInt64 HeaderPos;
   unsigned HeaderSize;
+  bool NameCouldBeReduced;
+  bool LinkNameCouldBeReduced;
 
   UInt64 GetDataPosition() const { return HeaderPos + HeaderSize; }
   UInt64 GetFullSize() const { return HeaderSize + PackSize; }

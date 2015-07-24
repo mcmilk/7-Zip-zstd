@@ -35,15 +35,15 @@ using namespace NWindows;
 namespace NArchive {
 namespace NXar {
 
-static const UInt32 kXmlSizeMax = ((UInt32)1 << 30) - (1 << 14);
-static const UInt32 kXmlPackSizeMax = kXmlSizeMax;
+static const size_t kXmlSizeMax = ((size_t )1 << 30) - (1 << 14);
+static const size_t kXmlPackSizeMax = kXmlSizeMax;
 
 /*
 #define XAR_CKSUM_NONE  0
 #define XAR_CKSUM_SHA1  1
 #define XAR_CKSUM_MD5   2
 
-static const char *k_ChecksumAlgos[] =
+static const char * const k_ChecksumAlgos[] =
 {
     "None"
   , "SHA-1"
@@ -76,8 +76,8 @@ struct CFile
   bool Sha1IsDefined;
   // bool packSha1IsDefined;
 
-  Byte Sha1[NCrypto::NSha1::kDigestSize];
-  // Byte packSha1[NCrypto::NSha1::kDigestSize];
+  Byte Sha1[SHA1_DIGEST_SIZE];
+  // Byte packSha1[SHA1_DIGEST_SIZE];
 
   int Parent;
 
@@ -107,7 +107,8 @@ class CHandler:
 {
   UInt64 _dataStartPos;
   CMyComPtr<IInStream> _inStream;
-  AString _xml;
+  CByteArr _xml;
+  size_t _xmlLen;
   CObjectVector<CFile> _files;
   // UInt32 _checkSumAlgo;
   UInt64 _phySize;
@@ -182,7 +183,7 @@ static UInt64 ParseTime(const CXmlItem &item, const char *name)
   return numSecs * 10000000;
 }
 
-static int HexToByte(char c)
+static int HexToByte(unsigned char c)
 {
   if (c >= '0' && c <= '9') return c - '0';
   if (c >= 'A' && c <= 'F') return c - 'A' + 10;
@@ -200,7 +201,7 @@ static bool ParseSha1(const CXmlItem &item, const char *name, Byte *digest)
   if (style == "SHA1")
   {
     const AString s = checkItem.GetSubString();
-    if (s.Len() != NCrypto::NSha1::kDigestSize * 2)
+    if (s.Len() != SHA1_DIGEST_SIZE * 2)
       return false;
     for (unsigned i = 0; i < s.Len(); i += 2)
     {
@@ -321,8 +322,9 @@ HRESULT CHandler::Open2(IInStream *stream)
   _dataStartPos = kHeaderSize + packSize;
   _phySize = _dataStartPos;
 
-  char *ss = _xml.GetBuffer((unsigned)unpackSize);
-
+  _xml.Alloc((size_t)unpackSize + 1);
+  _xmlLen = (size_t)unpackSize;
+  
   NCompress::NZlib::CDecoder *zlibCoderSpec = new NCompress::NZlib::CDecoder();
   CMyComPtr<ICompressCoder> zlibCoder = zlibCoderSpec;
 
@@ -333,18 +335,18 @@ HRESULT CHandler::Open2(IInStream *stream)
 
   CBufPtrSeqOutStream *outStreamLimSpec = new CBufPtrSeqOutStream;
   CMyComPtr<ISequentialOutStream> outStreamLim(outStreamLimSpec);
-  outStreamLimSpec->Init((Byte *)ss, (size_t)unpackSize);
+  outStreamLimSpec->Init(_xml, (size_t)unpackSize);
 
   RINOK(zlibCoder->Code(inStreamLim, outStreamLim, NULL, NULL, NULL));
 
   if (outStreamLimSpec->GetPos() != (size_t)unpackSize)
     return S_FALSE;
 
-  ss[(size_t)unpackSize] = 0;
-  _xml.ReleaseBuffer();
+  _xml[(size_t)unpackSize] = 0;
+  if (strlen((const char *)(const Byte *)_xml) != unpackSize) return S_FALSE;
 
   CXml xml;
-  if (!xml.Parse(_xml))
+  if (!xml.Parse((const char *)(const Byte *)_xml))
     return S_FALSE;
   
   if (!xml.Root.IsTagged("xar") || xml.Root.SubItems.Size() != 1)
@@ -390,7 +392,8 @@ STDMETHODIMP CHandler::Close()
   _phySize = 0;
   _inStream.Release();
   _files.Clear();
-  _xml.Empty();
+  _xmlLen = 0;
+  _xml.Free();
   _mainSubfile = -1;
   _is_pkg = false;
   return S_OK;
@@ -456,7 +459,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       case kpidPath: prop = "[TOC].xml"; break;
       case kpidSize:
-      case kpidPackSize: prop = (UInt64)_xml.Len(); break;
+      case kpidPackSize: prop = (UInt64)_xmlLen; break;
     }
   }
   else
@@ -531,7 +534,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     UInt32 index = (allFilesMode ? i : indices[i]);
     #ifdef XAR_SHOW_RAW
     if (index == _files.Size())
-      totalSize += _xml.Len();
+      totalSize += _xmlLen;
     else
     #endif
       totalSize += _files[index].Size;
@@ -614,9 +617,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (index == _files.Size())
     {
       outStreamSha1Spec->Init(false);
-      outStreamLimSpec->Init(_xml.Len());
-      RINOK(WriteStream(outStream, (const char *)_xml, _xml.Len()));
-      currentPackSize = currentUnpSize = _xml.Len();
+      outStreamLimSpec->Init(_xmlLen);
+      RINOK(WriteStream(outStream, _xml, _xmlLen));
+      currentPackSize = currentUnpSize = _xmlLen;
     }
     else
     #endif
@@ -670,9 +673,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             }
             else if (item.Sha1IsDefined)
             {
-              Byte digest[NCrypto::NSha1::kDigestSize];
+              Byte digest[SHA1_DIGEST_SIZE];
               outStreamSha1Spec->Final(digest);
-              if (memcmp(digest, item.Sha1, NCrypto::NSha1::kDigestSize) != 0)
+              if (memcmp(digest, item.Sha1, SHA1_DIGEST_SIZE) != 0)
                 opRes = NExtract::NOperationResult::kCRCError;
             }
           }
@@ -695,7 +698,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   #ifdef XAR_SHOW_RAW
   if (index == _files.Size())
   {
-    Create_BufInStream_WithNewBuf((const void *)(const char *)_xml, _xml.Len(), stream);
+    Create_BufInStream_WithNewBuffer(_xml, _xmlLen, stream);
     return S_OK;
   }
   else
@@ -709,15 +712,13 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { 'x', 'a', 'r', '!', 0, 0x1C };
 
-static CArcInfo g_ArcInfo =
-  { "Xar", "xar pkg", 0, 0xE1,
-  6, { 'x', 'a', 'r', '!', 0, 0x1C },
+REGISTER_ARC_I(
+  "Xar", "xar pkg", 0, 0xE1,
+  k_Signature,
   0,
   0,
-  CreateArc };
-
-REGISTER_ARC(Xar)
+  NULL)
 
 }}

@@ -25,19 +25,15 @@ namespace NCompress {
 namespace NLzma {
 
 CDecoder::CDecoder(): _inBuf(0), _propsWereSet(false), _outSizeDefined(false),
-  _inBufSize(1 << 20),
-  _outBufSize(1 << 22),
-  FinishStream(false),
-  NeedMoreInput(false)
+    _inBufSize(1 << 20),
+    _outBufSize(1 << 22),
+    FinishStream(false),
+    NeedMoreInput(false)
 {
   _inSizeProcessed = 0;
   _inPos = _inSize = 0;
   LzmaDec_Construct(&_state);
 }
-
-static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
-static void SzFree(void *p, void *address) { p = p; MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 CDecoder::~CDecoder()
 {
@@ -84,6 +80,12 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
   _inPos = _inSize = 0;
   NeedMoreInput = false;
   SetOutStreamSizeResume(outSize);
+  return S_OK;
+}
+
+STDMETHODIMP CDecoder::SetFinishMode(UInt32 finishMode)
+{
+  FinishStream = (finishMode != 0);
   return S_OK;
 }
 

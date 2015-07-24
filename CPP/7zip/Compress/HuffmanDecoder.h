@@ -8,39 +8,42 @@
 namespace NCompress {
 namespace NHuffman {
 
-const int kNumTableBits = 9;
+const unsigned kNumTableBits = 9;
 
-template <int kNumBitsMax, UInt32 m_NumSymbols>
+template <unsigned kNumBitsMax, UInt32 m_NumSymbols>
 class CDecoder
 {
   UInt32 m_Limits[kNumBitsMax + 1];     // m_Limits[i] = value limit for symbols with length = i
   UInt32 m_Positions[kNumBitsMax + 1];  // m_Positions[i] = index in m_Symbols[] of first symbol with length = i
   UInt32 m_Symbols[m_NumSymbols];
-  Byte m_Lengths[1 << kNumTableBits];   // Table oh length for short codes.
+  Byte m_Lengths[1 << kNumTableBits];   // Table of length for short codes
 
 public:
-  
-  bool SetCodeLengths(const Byte *codeLengths)
+
+  bool SetCodeLengths(const Byte *lens)
   {
-    int lenCounts[kNumBitsMax + 1];
+    unsigned lenCounts[kNumBitsMax + 1];
     UInt32 tmpPositions[kNumBitsMax + 1];
-    int i;
+    unsigned i;
     for (i = 1; i <= kNumBitsMax; i++)
       lenCounts[i] = 0;
     UInt32 symbol;
+    
     for (symbol = 0; symbol < m_NumSymbols; symbol++)
     {
-      int len = codeLengths[symbol];
+      unsigned len = lens[symbol];
       if (len > kNumBitsMax)
         return false;
       lenCounts[len]++;
       m_Symbols[symbol] = 0xFFFFFFFF;
     }
+    
     lenCounts[0] = 0;
     m_Positions[0] = m_Limits[0] = 0;
     UInt32 startPos = 0;
     UInt32 index = 0;
     const UInt32 kMaxValue = (1 << kNumBitsMax);
+    
     for (i = 1; i <= kNumBitsMax; i++)
     {
       startPos += lenCounts[i] << (kNumBitsMax - i);
@@ -56,19 +59,21 @@ public:
           m_Lengths[index] = (Byte)i;
       }
     }
+    
     for (symbol = 0; symbol < m_NumSymbols; symbol++)
     {
-      int len = codeLengths[symbol];
+      unsigned len = lens[symbol];
       if (len != 0)
         m_Symbols[tmpPositions[len]++] = symbol;
     }
+    
     return true;
   }
 
   template <class TBitDecoder>
   UInt32 DecodeSymbol(TBitDecoder *bitStream)
   {
-    int numBits;
+    unsigned numBits;
     UInt32 value = bitStream->GetValue(kNumBitsMax);
     if (value < m_Limits[kNumTableBits])
       numBits = m_Lengths[value >> (kNumBitsMax - kNumTableBits)];

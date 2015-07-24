@@ -111,11 +111,13 @@ static const unsigned kHeaderSize = kSignatureSize + 1 + 4;
 static const Byte kSignature[kSignatureSize] = MSLZ_SIGNATURE;
 
 // we support only 3 chars strings here
-static const char *g_Exts[] =
+static const char * const g_Exts[] =
 {
-    "dll"
+    "bin"
+  , "dll"
   , "exe"
   , "kmd"
+  , "pdf"
   , "sys"
 };
 
@@ -147,14 +149,15 @@ void CHandler::ParseName(Byte replaceByte, IArchiveOpenCallback *callback)
     for (unsigned i = 0; i < ARRAY_SIZE(g_Exts); i++)
     {
       const char *ext = g_Exts[i];
-      if (s[s.Len() - 2] == ext[0] &&
-          s[s.Len() - 1] == ext[1])
+      if (s[s.Len() - 2] == (Byte)ext[0] &&
+          s[s.Len() - 1] == (Byte)ext[1])
       {
         replaceByte = ext[2];
         break;
       }
     }
   }
+  
   if (replaceByte >= 0x20 && replaceByte < 0x80)
     _name += (wchar_t)replaceByte;
 }
@@ -225,6 +228,7 @@ static HRESULT MslzDec(CInBuffer &inStream, ISequentialOutStream *outStream, UIn
   Byte buf[kBufSize];
   UInt32 dest = 0;
   memset(buf, ' ', kBufSize);
+  
   while (dest < unpackSize)
   {
     Byte b;
@@ -233,6 +237,7 @@ static HRESULT MslzDec(CInBuffer &inStream, ISequentialOutStream *outStream, UIn
       needMoreData = true;
       return S_FALSE;
     }
+    
     for (unsigned mask = (unsigned)b | 0x100; mask > 1 && dest < unpackSize; mask >>= 1)
     {
       if (!inStream.ReadByte(b))
@@ -240,6 +245,7 @@ static HRESULT MslzDec(CInBuffer &inStream, ISequentialOutStream *outStream, UIn
         needMoreData = true;
         return S_FALSE;
       }
+  
       if (mask & 1)
       {
         buf[dest++ & kMask] = b;
@@ -258,6 +264,7 @@ static HRESULT MslzDec(CInBuffer &inStream, ISequentialOutStream *outStream, UIn
         unsigned len = (b1 & 0xF) + 3;
         if (len > kMaxLen || dest + len > unpackSize)
           return S_FALSE;
+    
         do
         {
           buf[dest++ & kMask] = buf[src++ & kMask];
@@ -267,6 +274,7 @@ static HRESULT MslzDec(CInBuffer &inStream, ISequentialOutStream *outStream, UIn
       }
     }
   }
+  
   if (outStream)
     RINOK(WriteStream(outStream, buf, dest & kMask));
   return S_OK;
@@ -379,15 +387,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "MsLZ", "mslz", 0, 0xD5,
-  kSignatureSize, MSLZ_SIGNATURE,
+REGISTER_ARC_I(
+  "MsLZ", "mslz", 0, 0xD5,
+  kSignature,
   0,
   0,
-  CreateArc };
-
-REGISTER_ARC(Mslz)
+  NULL)
 
 }}

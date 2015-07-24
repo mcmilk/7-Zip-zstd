@@ -36,6 +36,21 @@ FOLDER_INTERFACE(IFolderFolder, 0x00)
   INTERFACE_FolderFolder(PURE)
 };
 
+/*
+  IFolderAltStreams::
+    BindToAltStreams((UInt32)(Int32)-1, ... ) means alt streams of that folder
+*/
+
+#define INTERFACE_FolderAltStreams(x) \
+  STDMETHOD(BindToAltStreams)(UInt32 index, IFolderFolder **resultFolder) x; \
+  STDMETHOD(BindToAltStreams)(const wchar_t *name, IFolderFolder **resultFolder) x; \
+  STDMETHOD(AreAltStreamsSupported)(UInt32 index, Int32 *isSupported) x; \
+
+FOLDER_INTERFACE(IFolderAltStreams, 0x17)
+{
+  INTERFACE_FolderAltStreams(PURE)
+};
+
 FOLDER_INTERFACE(IFolderWasChanged, 0x04)
 {
   STDMETHOD(WasChanged)(Int32 *wasChanged) PURE;
@@ -67,7 +82,7 @@ FOLDER_INTERFACE_SUB(IFolderOperationsExtractCallback, IProgress, 0x0B)
       Int32 includeAltStreams, Int32 replaceAltStreamCharsMode, \
       const wchar_t *path, IFolderOperationsExtractCallback *callback) x; \
   STDMETHOD(CopyFrom)(Int32 moveMode, const wchar_t *fromFolderPath, \
-      const wchar_t **itemsPaths, UInt32 numItems, IProgress *progress) x; \
+      const wchar_t * const *itemsPaths, UInt32 numItems, IProgress *progress) x; \
   STDMETHOD(SetProperty)(UInt32 index, PROPID propID, const PROPVARIANT *value, IProgress *progress) x; \
   STDMETHOD(CopyFromFile)(UInt32 index, const wchar_t *fullFilePath, IProgress *progress) x; \
 

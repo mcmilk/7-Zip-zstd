@@ -11,7 +11,8 @@ void ConvertPropertyToString(UString &dest, const PROPVARIANT &propVariant, PROP
 
 bool ConvertNtReparseToString(const Byte *data, UInt32 size, UString &s);
 void ConvertNtSecureToString(const Byte *data, UInt32 size, AString &s);
-bool CheckNtSecure(const Byte *data, UInt32 size);
-void ConvertWinAttribToString(char *s, UInt32 wa);
+bool CheckNtSecure(const Byte *data, UInt32 size) throw();;
+
+void ConvertWinAttribToString(char *s, UInt32 wa) throw();
 
 #endif

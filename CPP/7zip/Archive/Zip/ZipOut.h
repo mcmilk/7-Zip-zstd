@@ -63,7 +63,7 @@ public:
   HRESULT Create(IOutStream *outStream);
   
   void MoveCurPos(UInt64 distanceToMove);
-  UInt64 GetCurPos() const { return m_CurPos; };
+  UInt64 GetCurPos() const { return m_CurPos; }
 
   void SeekToCurPos();
 

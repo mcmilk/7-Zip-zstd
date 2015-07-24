@@ -25,7 +25,7 @@ public:
   UInt64 GetLocalFullSize() const
     { return LocalFullHeaderSize + PackSize + (HasDescriptor() ? kDataDescriptorSize : 0); }
   UInt64 GetDataPosition() const
-    { return LocalHeaderPos + LocalFullHeaderSize; };
+    { return LocalHeaderPos + LocalFullHeaderSize; }
 };
 
 struct CInArchiveInfo
@@ -107,7 +107,7 @@ class CInArchive
   
   HRESULT Seek(UInt64 offset);
   HRESULT FindAndReadMarker(IInStream *stream, const UInt64 *searchHeaderSizeLimit);
-  HRESULT IncreaseRealPosition(UInt64 addValue);
+  HRESULT IncreaseRealPosition(Int64 addValue);
 
   HRESULT ReadBytes(void *data, UInt32 size, UInt32 *processedSize);
   void SafeReadBytes(void *data, unsigned size);

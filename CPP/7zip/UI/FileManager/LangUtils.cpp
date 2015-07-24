@@ -115,6 +115,11 @@ UString LangString(UInt32 langID)
   return MyLoadString(langID);
 }
 
+void AddLangString(UString &s, UInt32 langID)
+{
+  s += LangString(langID);
+}
+
 void LangString(UInt32 langID, UString &dest)
 {
   const wchar_t *s = g_Lang.Get(langID);
@@ -166,7 +171,7 @@ static void FindShortNames(UInt32 primeLang, UStringVector &names)
           p++;
       }
       while (p != p2)
-        s += (wchar_t)*p++;
+        s += (wchar_t)(Byte)*p++;
       names.Add(s);
     }
     p = p2 + 1;

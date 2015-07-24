@@ -54,6 +54,8 @@ namespace NFileHeader
       kLZMA = 14,
       kTerse = 18,
       kLz77 = 19,
+      
+      kXz = 0x5F,
       kJpeg = 0x60,
       kWavPack = 0x61,
       kPPMd = 0x62,

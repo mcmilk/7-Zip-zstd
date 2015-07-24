@@ -3,18 +3,23 @@
 00 IProgress.h
 
   05  IProgress
+  // 050002  IProgress2
 
 01 IFolderArchive.h
 
   // 05  IArchiveFolder   // old 
   // 06  IInFolderArchive // old
   07  IFileExtractCallback.h::IFolderArchiveExtractCallback
+  08  IFileExtractCallback.h::IFolderArchiveExtractCallback2
   // 0A  IOutFolderArchive
   0B  IFolderArchiveUpdateCallback
   0C  Agent.h::IArchiveFolderInternal
   0D  IArchiveFolder
   0E  IInFolderArchive
   0F  IOutFolderArchive
+  10  IFolderArchiveUpdateCallback2
+  11  IFolderScanProgress
+  
   20  IFileExtractCallback.h::IGetProp
   30  IFileExtractCallback.h::IFolderExtractToStreamCallback
 
@@ -25,7 +30,7 @@
   03  IInStream
   04  IOutStream
   06  IStreamGetSize
-  07  IOutStreamFlush
+  07  IOutStreamFinish
   08  IStreamGetProps
   09  IStreamGetProps2
 
@@ -41,12 +46,20 @@
   23  ICompressWriteCoderProperties
   24  ICompressGetInStreamProcessedSize
   25  ICompressSetCoderMt
+  26  ICompressSetFinishMode
+
   30  ICompressGetSubStreamSize
   31  ICompressSetInStream
   32  ICompressSetOutStream
-  33  ICompressSetInStreamSize
+//  33  ICompressSetInStreamSize
   34  ICompressSetOutStreamSize
   35  ICompressSetBufSize
+  36  ICompressInitEncoder
+  37  ICompressSetInStream2
+//  38  ICompressSetOutStream2
+//  39  SetInStreamSize2
+//  3A  SetOutStreamSize2
+
   40  ICompressFilter
   60  ICompressCodecsInfo
   61  ISetCompressCodecsInfo
@@ -72,7 +85,10 @@
   05  IArchiveAllowTail
 
   10  IArchiveOpenCallback
+  
   20  IArchiveExtractCallback
+  21  IArchiveExtractCallbackMessage
+  
   30  IArchiveOpenVolumeCallback
   40  IInArchiveGetStream
   50  IArchiveOpenSetSubArchiveName
@@ -83,6 +99,8 @@
 
   80  IArchiveUpdateCallback
   82  IArchiveUpdateCallback2
+  83  IArchiveUpdateCallbackFile
+
   A0  IOutArchive
 
 
@@ -112,6 +130,7 @@
   14 IFolderCalcItemFullSize
   15 IFolderCompare
   16 IFolderGetItemName
+  17 IFolderAltStreams
 
 
 09 IFolder.h :: FOLDER_MANAGER_INTERFACE
@@ -180,12 +199,11 @@ Handler GUIDs:
   EE Tar
   EF GZip
 
-{23170F69-40C1-278A-1000-000100030000} CAgentArchiveHandle
 {23170F69-40C1-278A-1000-000100020000} ContextMenu.h::CZipContextMenu
 
-{23170F69-40C1-278B- old codecs clsids
-
-{23170F69-40C1-278D-1000-000100020000} OptionsDialog.h::CLSID_CSevenZipOptions
+// {23170F69-40C1-278A-1000-000100030000} // CAgentArchiveHandler
+// {23170F69-40C1-278B- old codecs clsids
+// {23170F69-40C1-278D-1000-000100020000} OptionsDialog.h::CLSID_CSevenZipOptions
 
 {23170F69-40C1-2790-id} Codec Decoders
 {23170F69-40C1-2791-id} Codec Encoders

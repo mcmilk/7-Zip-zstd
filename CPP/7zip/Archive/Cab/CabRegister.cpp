@@ -9,15 +9,11 @@
 namespace NArchive {
 namespace NCab {
 
-IMP_CreateArcIn
-
-static CArcInfo g_ArcInfo =
-  { "Cab", "cab", 0, 8,
-  8, { 'M', 'S', 'C', 'F', 0, 0, 0, 0 },
+REGISTER_ARC_I(
+  "Cab", "cab", 0, 8,
+  NHeader::kMarker,
   0,
   NArcInfoFlags::kFindSignature,
-  CreateArc };
-
-REGISTER_ARC(Cab)
+  NULL)
 
 }}

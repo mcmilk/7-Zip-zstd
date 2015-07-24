@@ -22,7 +22,7 @@ public:
     CoInitialize(NULL);
     #endif
   };
-  ~CComInitializer() { CoUninitialize(); };
+  ~CComInitializer() { CoUninitialize(); }
 };
 
 class CStgMedium
@@ -45,6 +45,7 @@ public:
 
 #endif
 
+/*
 //////////////////////////////////
 // GUID <--> String Conversions
 UString GUIDToStringW(REFGUID guid);
@@ -62,6 +63,7 @@ HRESULT StringToGUIDA(const char *string, GUID &classID);
 #else
   #define StringToGUID StringToGUIDA
 #endif
+*/
 
 }}
 

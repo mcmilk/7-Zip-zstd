@@ -26,7 +26,7 @@ static void UdfTimeToFileTime(const CTime &t, NWindows::NCOM::CPropVariant &prop
   if (!NWindows::NTime::GetSecondsSince1601(t.GetYear(), d[4], d[5], d[6], d[7], d[8], numSecs))
     return;
   if (t.IsLocal())
-    numSecs -= t.GetMinutesOffset() * 60;
+    numSecs -= (Int64)((Int32)t.GetMinutesOffset() * 60);
   FILETIME ft;
   UInt64 v = (((numSecs * 100 + d[9]) * 100 + d[10]) * 100 + d[11]) * 10;
   ft.dwLowDateTime = (UInt32)v;
@@ -227,13 +227,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 
   if (item.IsInline)
   {
-    CBufInStream *inStreamSpec = new CBufInStream;
-    CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
-    CReferenceBuf *referenceBuf = new CReferenceBuf;
-    CMyComPtr<IUnknown> ref = referenceBuf;
-    referenceBuf->Buf = item.InlineData;
-    inStreamSpec->Init(referenceBuf);
-    *stream = inStream.Detach();
+    Create_BufInStream_WithNewBuffer(item.InlineData, stream);
     return S_OK;
   }
 
@@ -366,18 +360,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
-IMP_CreateArcIn
-
 static const UInt32 kIsoStartPos = 0x8000;
 
-static CArcInfo g_ArcInfo =
-  { "Udf", "udf iso img", 0, 0xE0,
-  //  5, { 0, 'N', 'S', 'R', '0' },
-  6, { 1, 'C', 'D', '0', '0', '1' },
+//  5, { 0, 'N', 'S', 'R', '0' },
+static const Byte k_Signature[] = { 1, 'C', 'D', '0', '0', '1' };
+
+REGISTER_ARC_I(
+  "Udf", "udf iso img", 0, 0xE0,
+  k_Signature,
   kIsoStartPos,
   NArcInfoFlags::kStartOpen,
-  CreateArc, NULL, IsArc_Udf };
-
-REGISTER_ARC(Udf)
+  IsArc_Udf)
 
 }}

@@ -2,11 +2,19 @@
 
 #include "StdAfx.h"
 
+#include <wchar.h>
+
 #include "../../../../C/Sort.h"
 
 #include "../../../Common/ComTry.h"
 
+#include "../../../Windows/FileDir.h"
+#include "../../../Windows/FileName.h"
 #include "../../../Windows/PropVariantConv.h"
+
+#ifndef _7ZIP_ST
+#include "../../../Windows/Synchronization.h"
+#endif
 
 #include "../Common/ArchiveExtractCallback.h"
 #include "../FileManager/RegistryUtils.h"
@@ -15,43 +23,109 @@
 
 using namespace NWindows;
 
+CCodecs *g_CodecsObj;
+
+#ifdef EXTERNAL_CODECS
+  CExternalCodecs g_ExternalCodecs;
+  CCodecs::CReleaser g_CodecsReleaser;
+#else
+  CMyComPtr<IUnknown> g_CodecsRef;
+#endif
+
+#ifndef _7ZIP_ST
+static NSynchronization::CCriticalSection g_CriticalSection;
+#define MT_LOCK NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
+#else
+#define MT_LOCK
+#endif
+
+void FreeGlobalCodecs()
+{
+  MT_LOCK
+
+  #ifdef EXTERNAL_CODECS
+  if (g_CodecsObj)
+  {
+    g_CodecsObj->CloseLibs();
+  }
+  g_CodecsReleaser.Set(NULL);
+  g_CodecsObj = NULL;
+  g_ExternalCodecs.ClearAndRelease();
+  #else
+  g_CodecsRef.Release();
+  #endif
+}
+
+HRESULT LoadGlobalCodecs()
+{
+  MT_LOCK
+
+  if (g_CodecsObj)
+    return S_OK;
+
+  g_CodecsObj = new CCodecs;
+
+  #ifdef EXTERNAL_CODECS
+  g_ExternalCodecs.GetCodecs = g_CodecsObj;
+  g_ExternalCodecs.GetHashers = g_CodecsObj;
+  g_CodecsReleaser.Set(g_CodecsObj);
+  #else
+  g_CodecsRef.Release();
+  g_CodecsRef = g_CodecsObj;
+  #endif
+
+  RINOK(g_CodecsObj->Load());
+  if (g_CodecsObj->Formats.IsEmpty())
+  {
+    FreeGlobalCodecs();
+    return E_NOTIMPL;
+  }
+
+  #ifdef EXTERNAL_CODECS
+  RINOK(g_ExternalCodecs.Load());
+  #endif
+
+  return S_OK;
+}
+
 STDMETHODIMP CAgentFolder::GetAgentFolder(CAgentFolder **agentFolder)
 {
   *agentFolder = this;
   return S_OK;
 }
 
-void CAgentFolder::LoadFolder(unsigned proxyFolderIndex)
+void CAgentFolder::LoadFolder(unsigned proxyDirIndex)
 {
-  unsigned i;
   CProxyItem item;
-  item.ProxyFolderIndex = proxyFolderIndex;
-  if (_proxyArchive2)
+  item.DirIndex = proxyDirIndex;
+  
+  if (_proxy2)
   {
-    const CProxyFolder2 &folder = _proxyArchive2->Folders[proxyFolderIndex];
-    for (i = 0; i < folder.SubFiles.Size(); i++)
+    const CProxyDir2 &dir = _proxy2->Dirs[proxyDirIndex];
+    FOR_VECTOR (i, dir.Items)
     {
       item.Index = i;
       _items.Add(item);
-      const CProxyFile2 &file = _proxyArchive2->Files[folder.SubFiles[i]];
-      int subFolderIndex = file.FolderIndex;
-      if (subFolderIndex >= 0)
-        LoadFolder(subFolderIndex);
-      subFolderIndex = file.AltStreamsFolderIndex;
-      if (subFolderIndex >= 0)
-        LoadFolder(subFolderIndex);
+      const CProxyFile2 &file = _proxy2->Files[dir.Items[i]];
+      if (file.DirIndex >= 0)
+        LoadFolder(file.DirIndex);
+      if (_loadAltStreams && file.AltDirIndex >= 0)
+        LoadFolder(file.AltDirIndex);
     }
     return;
   }
-  const CProxyFolder &folder = _proxyArchive->Folders[proxyFolderIndex];
-  for (i = 0; i < folder.Folders.Size(); i++)
+  
+  const CProxyDir &dir = _proxy->Dirs[proxyDirIndex];
+  unsigned i;
+  for (i = 0; i < dir.SubDirs.Size(); i++)
   {
     item.Index = i;
     _items.Add(item);
-    LoadFolder(folder.Folders[i]);
+    LoadFolder(dir.SubDirs[i]);
   }
-  unsigned start = folder.Folders.Size();
-  for (i = 0; i < folder.Files.Size(); i++)
+  
+  unsigned start = dir.SubDirs.Size();
+  for (i = 0; i < dir.SubFiles.Size(); i++)
   {
     item.Index = start + i;
     _items.Add(item);
@@ -64,7 +138,14 @@ STDMETHODIMP CAgentFolder::LoadItems()
     return E_FAIL;
   _items.Clear();
   if (_flatMode)
-    LoadFolder(_proxyFolderItem);
+  {
+    LoadFolder(_proxyDirIndex);
+    if (_proxy2 && _loadAltStreams)
+    {
+      if (_proxyDirIndex == k_Proxy2_RootDirIndex)
+        LoadFolder(k_Proxy2_AltRootDirIndex);
+    }
+  }
   return S_OK;
 }
 
@@ -72,37 +153,37 @@ STDMETHODIMP CAgentFolder::GetNumberOfItems(UInt32 *numItems)
 {
   if (_flatMode)
     *numItems = _items.Size();
-  else if (_proxyArchive2)
-    *numItems = _proxyArchive2->Folders[_proxyFolderItem].SubFiles.Size();
+  else if (_proxy2)
+    *numItems = _proxy2->Dirs[_proxyDirIndex].Items.Size();
   else
   {
-    const CProxyFolder *folder = &_proxyArchive->Folders[_proxyFolderItem];
-    *numItems = folder->Folders.Size() + folder ->Files.Size();
+    const CProxyDir *dir = &_proxy->Dirs[_proxyDirIndex];
+    *numItems = dir->SubDirs.Size() + dir->SubFiles.Size();
   }
   return S_OK;
 }
 
-#define SET_realIndex_AND_folder \
-  UInt32 realIndex; const CProxyFolder *folder; \
-  if (_flatMode) { const CProxyItem &item = _items[index]; folder = &_proxyArchive->Folders[item.ProxyFolderIndex]; realIndex = item.Index; } \
-  else { folder = &_proxyArchive->Folders[_proxyFolderItem]; realIndex = index; }
+#define SET_realIndex_AND_dir \
+  unsigned realIndex; const CProxyDir *dir; \
+  if (_flatMode) { const CProxyItem &item = _items[index]; dir = &_proxy->Dirs[item.DirIndex]; realIndex = item.Index; } \
+  else { dir = &_proxy->Dirs[_proxyDirIndex]; realIndex = index; }
 
-#define SET_realIndex_AND_folder_2 \
-  UInt32 realIndex; const CProxyFolder2 *folder; \
-  if (_flatMode) { const CProxyItem &item = _items[index]; folder = &_proxyArchive2->Folders[item.ProxyFolderIndex]; realIndex = item.Index; } \
-  else { folder = &_proxyArchive2->Folders[_proxyFolderItem]; realIndex = index; }
+#define SET_realIndex_AND_dir_2 \
+  unsigned realIndex; const CProxyDir2 *dir; \
+  if (_flatMode) { const CProxyItem &item = _items[index]; dir = &_proxy2->Dirs[item.DirIndex]; realIndex = item.Index; } \
+  else { dir = &_proxy2->Dirs[_proxyDirIndex]; realIndex = index; }
 
 UString CAgentFolder::GetName(UInt32 index) const
 {
-  if (_proxyArchive2)
+  if (_proxy2)
   {
-    SET_realIndex_AND_folder_2
-    return _proxyArchive2->Files[folder->SubFiles[realIndex]].Name;
+    SET_realIndex_AND_dir_2
+    return _proxy2->Files[dir->Items[realIndex]].Name;
   }
-  SET_realIndex_AND_folder
-  if (realIndex < (UInt32)folder->Folders.Size())
-    return _proxyArchive->Folders[folder->Folders[realIndex]].Name;
-  return folder->Files[realIndex - folder->Folders.Size()].Name;
+  SET_realIndex_AND_dir
+  if (realIndex < dir->SubDirs.Size())
+    return _proxy->Dirs[dir->SubDirs[realIndex]].Name;
+  return _proxy->Files[dir->SubFiles[realIndex - dir->SubDirs.Size()]].Name;
 }
 
 void CAgentFolder::GetPrefix(UInt32 index, UString &prefix) const
@@ -112,97 +193,101 @@ void CAgentFolder::GetPrefix(UInt32 index, UString &prefix) const
     prefix.Empty();
     return;
   }
+  
   const CProxyItem &item = _items[index];
-  unsigned proxyIndex = item.ProxyFolderIndex;
-  unsigned totalLen;
-  if (_proxyArchive2)
+  unsigned proxyIndex = item.DirIndex;
+  
+  if (_proxy2)
   {
+    // that code is unused. 7-Zip gets prefix via GetItemPrefix() .
+
     unsigned len = 0;
-    while (proxyIndex != _proxyFolderItem)
+    while (proxyIndex != _proxyDirIndex && proxyIndex >= k_Proxy2_NumRootDirs)
     {
-      const CProxyFile2 &file = _proxyArchive2->Files[_proxyArchive2->Folders[proxyIndex].ArcIndex];
-      len += file.NameSize + 1;
-      proxyIndex = (file.Parent < 0) ? 0 : _proxyArchive2->Files[file.Parent].GetFolderIndex(file.IsAltStream);
+      const CProxyFile2 &file = _proxy2->Files[_proxy2->Dirs[proxyIndex].ArcIndex];
+      len += file.NameLen + 1;
+      proxyIndex = (file.Parent < 0) ? 0 : _proxy2->Files[file.Parent].GetDirIndex(file.IsAltStream);
     }
-    totalLen = len;
     
-    wchar_t *p = prefix.GetBuffer(len);
-    proxyIndex = item.ProxyFolderIndex;
-    while (proxyIndex != _proxyFolderItem)
+    wchar_t *p = prefix.GetBuf_SetEnd(len) + len;
+    proxyIndex = item.DirIndex;
+    while (proxyIndex != _proxyDirIndex && proxyIndex >= k_Proxy2_NumRootDirs)
     {
-      const CProxyFile2 &file = _proxyArchive2->Files[_proxyArchive2->Folders[proxyIndex].ArcIndex];
-      MyStringCopy(p + len - file.NameSize - 1, file.Name);
-      p[--len] = WCHAR_PATH_SEPARATOR;
-      len -= file.NameSize;
-      proxyIndex = (file.Parent < 0) ? 0 : _proxyArchive2->Files[file.Parent].GetFolderIndex(file.IsAltStream);
+      const CProxyFile2 &file = _proxy2->Files[_proxy2->Dirs[proxyIndex].ArcIndex];
+      p--;
+      *p = WCHAR_PATH_SEPARATOR;
+      p -= file.NameLen;
+      wmemcpy(p, file.Name, file.NameLen);
+      proxyIndex = (file.Parent < 0) ? 0 : _proxy2->Files[file.Parent].GetDirIndex(file.IsAltStream);
     }
   }
   else
   {
     unsigned len = 0;
-    while (proxyIndex != _proxyFolderItem)
+    while (proxyIndex != _proxyDirIndex)
     {
-      const CProxyFolder *folder = &_proxyArchive->Folders[proxyIndex];
-      len += folder->Name.Len() + 1;
-      proxyIndex = folder->Parent;
+      const CProxyDir *dir = &_proxy->Dirs[proxyIndex];
+      len += dir->NameLen + 1;
+      proxyIndex = dir->ParentDir;
     }
-    totalLen = len;
     
-    wchar_t *p = prefix.GetBuffer(len);
-    proxyIndex = item.ProxyFolderIndex;
-    while (proxyIndex != _proxyFolderItem)
+    wchar_t *p = prefix.GetBuf_SetEnd(len) + len;
+    proxyIndex = item.DirIndex;
+    while (proxyIndex != _proxyDirIndex)
     {
-      const CProxyFolder *folder = &_proxyArchive->Folders[proxyIndex];
-      MyStringCopy(p + len - folder->Name.Len() - 1, (const wchar_t *)folder->Name);
-      p[--len] = WCHAR_PATH_SEPARATOR;
-      len -= folder->Name.Len();
-      proxyIndex = folder->Parent;
+      const CProxyDir *dir = &_proxy->Dirs[proxyIndex];
+      p--;
+      *p = WCHAR_PATH_SEPARATOR;
+      p -= dir->NameLen;
+      wmemcpy(p, dir->Name, dir->NameLen);
+      proxyIndex = dir->ParentDir;
     }
   }
-  prefix.ReleaseBuffer(totalLen);
 }
 
-UString CAgentFolder::GetFullPathPrefixPlusPrefix(UInt32 index) const
+UString CAgentFolder::GetFullPrefix(UInt32 index) const
 {
-  UString prefix;
-  GetPrefix(index, prefix);
-  if (_proxyArchive2)
-    return _proxyArchive2->GetFullPathPrefix(_proxyFolderItem) + prefix;
+  int foldIndex = _proxyDirIndex;
+  
+  if (_flatMode)
+    foldIndex = _items[index].DirIndex;
+
+  if (_proxy2)
+    return _proxy2->Dirs[foldIndex].PathPrefix;
   else
-    return _proxyArchive->GetFullPathPrefix(_proxyFolderItem) + prefix;
+    return _proxy->GetDirPath_as_Prefix(foldIndex);
 }
 
 STDMETHODIMP_(UInt64) CAgentFolder::GetItemSize(UInt32 index)
 {
   unsigned arcIndex;
-  if (_proxyArchive2)
+  if (_proxy2)
   {
-    SET_realIndex_AND_folder_2
-    arcIndex = folder->SubFiles[realIndex];
-    const CProxyFile2 &item = _proxyArchive2->Files[arcIndex];
+    SET_realIndex_AND_dir_2
+    arcIndex = dir->Items[realIndex];
+    const CProxyFile2 &item = _proxy2->Files[arcIndex];
     if (item.IsDir())
     {
-      const CProxyFolder2 &itemFolder = _proxyArchive2->Folders[item.FolderIndex];
+      const CProxyDir2 &itemFolder = _proxy2->Dirs[item.DirIndex];
       if (!_flatMode)
         return itemFolder.Size;
     }
   }
   else
   {
-    SET_realIndex_AND_folder
-    if (realIndex < (UInt32)folder->Folders.Size())
+    SET_realIndex_AND_dir
+    if (realIndex < dir->SubDirs.Size())
     {
-      const CProxyFolder &item = _proxyArchive->Folders[folder->Folders[realIndex]];
+      const CProxyDir &item = _proxy->Dirs[dir->SubDirs[realIndex]];
       if (!_flatMode)
         return item.Size;
-      if (!item.IsLeaf)
+      if (!item.IsLeaf())
         return 0;
-      arcIndex = item.Index;
+      arcIndex = item.ArcIndex;
     }
     else
     {
-      const CProxyFile &item = folder->Files[realIndex - folder->Folders.Size()];
-      arcIndex = item.Index;
+      arcIndex = dir->SubFiles[realIndex - dir->SubDirs.Size()];
     }
   }
   NCOM::CPropVariant prop;
@@ -227,11 +312,19 @@ STDMETHODIMP CAgentFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT 
       prop = prefix;
     }
   }
-  else if (_proxyArchive2)
+  else if (_proxy2)
   {
-    SET_realIndex_AND_folder_2
-    unsigned arcIndex = folder->SubFiles[realIndex];
-    const CProxyFile2 &item = _proxyArchive2->Files[arcIndex];
+    SET_realIndex_AND_dir_2
+    unsigned arcIndex = dir->Items[realIndex];
+    const CProxyFile2 &item = _proxy2->Files[arcIndex];
+    /*
+    if (propID == kpidNumAltStreams)
+    {
+      if (item.AltDirIndex >= 0)
+        prop = _proxy2->Dirs[item.AltDirIndex].Items.Size();
+    }
+    else
+    */
     if (!item.IsDir())
     {
       switch (propID)
@@ -243,7 +336,7 @@ STDMETHODIMP CAgentFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT 
     }
     else
     {
-      const CProxyFolder2 &itemFolder = _proxyArchive2->Folders[item.FolderIndex];
+      const CProxyDir2 &itemFolder = _proxy2->Dirs[item.DirIndex];
       if (!_flatMode && propID == kpidSize)
         prop = itemFolder.Size;
       else if (!_flatMode && propID == kpidPackSize)
@@ -251,7 +344,7 @@ STDMETHODIMP CAgentFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT 
       else switch (propID)
       {
         case kpidIsDir: prop = true; break;
-        case kpidNumSubDirs: prop = itemFolder.NumSubFolders; break;
+        case kpidNumSubDirs: prop = itemFolder.NumSubDirs; break;
         case kpidNumSubFiles: prop = itemFolder.NumSubFiles; break;
         case kpidName: prop = item.Name; break;
         case kpidCRC:
@@ -274,10 +367,10 @@ STDMETHODIMP CAgentFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT 
   }
   else
   {
-  SET_realIndex_AND_folder
-  if (realIndex < (UInt32)folder->Folders.Size())
+  SET_realIndex_AND_dir
+  if (realIndex < dir->SubDirs.Size())
   {
-    const CProxyFolder &item = _proxyArchive->Folders[folder->Folders[realIndex]];
+    const CProxyDir &item = _proxy->Dirs[dir->SubDirs[realIndex]];
     if (!_flatMode && propID == kpidSize)
       prop = item.Size;
     else if (!_flatMode && propID == kpidPackSize)
@@ -286,33 +379,33 @@ STDMETHODIMP CAgentFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT 
     switch (propID)
     {
       case kpidIsDir: prop = true; break;
-      case kpidNumSubDirs: prop = item.NumSubFolders; break;
+      case kpidNumSubDirs: prop = item.NumSubDirs; break;
       case kpidNumSubFiles: prop = item.NumSubFiles; break;
       case kpidName: prop = item.Name; break;
       case kpidCRC:
       {
-        if (item.IsLeaf)
+        if (item.IsLeaf())
         {
-          RINOK(_agentSpec->GetArchive()->GetProperty(item.Index, propID, value));
+          RINOK(_agentSpec->GetArchive()->GetProperty(item.ArcIndex, propID, value));
         }
         if (item.CrcIsDefined && value->vt == VT_EMPTY)
           prop = item.Crc;
         break;
       }
       default:
-        if (item.IsLeaf)
-          return _agentSpec->GetArchive()->GetProperty(item.Index, propID, value);
+        if (item.IsLeaf())
+          return _agentSpec->GetArchive()->GetProperty(item.ArcIndex, propID, value);
     }
   }
   else
   {
-    const CProxyFile &item = folder->Files[realIndex - folder->Folders.Size()];
+    unsigned arcIndex = dir->SubFiles[realIndex - dir->SubDirs.Size()];
     switch (propID)
     {
       case kpidIsDir: prop = false; break;
-      case kpidName: prop = item.Name; break;
+      case kpidName: prop = _proxy->Files[arcIndex].Name; break;
       default:
-        return _agentSpec->GetArchive()->GetProperty(item.Index, propID, value);
+        return _agentSpec->GetArchive()->GetProperty(arcIndex, propID, value);
     }
   }
   }
@@ -334,30 +427,30 @@ static UInt64 GetUInt64Prop(IInArchive *archive, UInt32 index, PROPID propID)
 
 STDMETHODIMP CAgentFolder::GetItemName(UInt32 index, const wchar_t **name, unsigned *len)
 {
-  if (_proxyArchive2)
+  if (_proxy2)
   {
-    SET_realIndex_AND_folder_2
-    unsigned arcIndex = folder->SubFiles[realIndex];
-    const CProxyFile2 &item = _proxyArchive2->Files[arcIndex];
+    SET_realIndex_AND_dir_2
+    unsigned arcIndex = dir->Items[realIndex];
+    const CProxyFile2 &item = _proxy2->Files[arcIndex];
     *name = item.Name;
-    *len = item.NameSize;
+    *len = item.NameLen;
     return S_OK;
   }
   else
   {
-    SET_realIndex_AND_folder
-    if (realIndex < (UInt32)folder->Folders.Size())
+    SET_realIndex_AND_dir
+    if (realIndex < dir->SubDirs.Size())
     {
-      const CProxyFolder &item = _proxyArchive->Folders[folder->Folders[realIndex]];
+      const CProxyDir &item = _proxy->Dirs[dir->SubDirs[realIndex]];
       *name = item.Name;
-      *len = item.Name.Len();
+      *len = item.NameLen;
       return S_OK;
     }
     else
     {
-      const CProxyFile &item = folder->Files[realIndex - folder->Folders.Size()];
+      const CProxyFile &item = _proxy->Files[dir->SubFiles[realIndex - dir->SubDirs.Size()]];
       *name = item.Name;
-      *len = item.Name.Len();
+      *len = item.NameLen;
       return S_OK;
     }
   }
@@ -369,26 +462,21 @@ STDMETHODIMP CAgentFolder::GetItemPrefix(UInt32 index, const wchar_t **name, uns
   *len = 0;
   if (!_flatMode)
     return S_OK;
-  if (_proxyArchive2)
-  {
-    SET_realIndex_AND_folder_2
 
-    unsigned arcIndex = folder->SubFiles[realIndex];
-    const CProxyFile2 &item = _proxyArchive2->Files[arcIndex];
-    if (item.Parent >= 0)
+  if (_proxy2)
+  {
+    const CProxyItem &item = _items[index];
+    const UString &s = _proxy2->Dirs[item.DirIndex].PathPrefix;
+    unsigned baseLen = _proxy2->Dirs[_proxyDirIndex].PathPrefix.Len();
+    if (baseLen <= s.Len())
     {
-      const CProxyFile2 &item2 = _proxyArchive2->Files[item.Parent];
-      int foldInd = item2.GetFolderIndex(item.IsAltStream);
-      if (foldInd >= 0)
-      {
-        const UString &s = _proxyArchive2->Folders[foldInd].PathPrefix;
-        unsigned baseLen = _proxyArchive2->Folders[_proxyFolderItem].PathPrefix.Len();
-        if (baseLen <= s.Len())
-        {
-          *name = (const wchar_t *)s + baseLen;
-          *len = s.Len() - baseLen;
-        }
-      }
+      *name = (const wchar_t *)s + baseLen;
+      *len = s.Len() - baseLen;
+    }
+    else
+    {
+      return E_FAIL;
+      // throw 111l;
     }
   }
   return S_OK;
@@ -437,21 +525,21 @@ static const wchar_t *GetExtension(const wchar_t *name)
 
 int CAgentFolder::CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw)
 {
-  UInt32 realIndex1, realIndex2;
-  const CProxyFolder2 *folder1, *folder2;
+  unsigned realIndex1, realIndex2;
+  const CProxyDir2 *dir1, *dir2;
   
   if (_flatMode)
   {
     const CProxyItem &item1 = _items[index1];
     const CProxyItem &item2 = _items[index2];
-    folder1 = &_proxyArchive2->Folders[item1.ProxyFolderIndex];
-    folder2 = &_proxyArchive2->Folders[item2.ProxyFolderIndex];
+    dir1 = &_proxy2->Dirs[item1.DirIndex];
+    dir2 = &_proxy2->Dirs[item2.DirIndex];
     realIndex1 = item1.Index;
     realIndex2 = item2.Index;
   }
   else
   {
-    folder2 = folder1 = &_proxyArchive2->Folders[_proxyFolderItem];
+    dir2 = dir1 = &_proxy2->Dirs[_proxyDirIndex];
     realIndex1 = index1;
     realIndex2 = index2;
   }
@@ -459,10 +547,10 @@ int CAgentFolder::CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int
   UInt32 arcIndex1;
   UInt32 arcIndex2;
   bool isDir1, isDir2;
-  arcIndex1 = folder1->SubFiles[realIndex1];
-  arcIndex2 = folder2->SubFiles[realIndex2];
-  const CProxyFile2 &prox1 = _proxyArchive2->Files[arcIndex1];
-  const CProxyFile2 &prox2 = _proxyArchive2->Files[arcIndex2];
+  arcIndex1 = dir1->Items[realIndex1];
+  arcIndex2 = dir2->Items[realIndex2];
+  const CProxyFile2 &prox1 = _proxy2->Files[arcIndex1];
+  const CProxyFile2 &prox2 = _proxy2->Files[arcIndex2];
 
   if (propID == kpidName)
   {
@@ -473,14 +561,9 @@ int CAgentFolder::CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int
   {
     if (!_flatMode)
       return 0;
-    if (prox1.Parent < 0) return prox2.Parent < 0 ? 0 : -1;
-    if (prox2.Parent < 0) return 1;
-
-    const CProxyFile2 &proxPar1 = _proxyArchive2->Files[prox1.Parent];
-    const CProxyFile2 &proxPar2 = _proxyArchive2->Files[prox2.Parent];
     return CompareFileNames_ForFolderList(
-        _proxyArchive2->Folders[proxPar1.GetFolderIndex(prox1.IsAltStream)].PathPrefix,
-        _proxyArchive2->Folders[proxPar2.GetFolderIndex(prox2.IsAltStream)].PathPrefix);
+        _proxy2->Dirs[_items[index1].DirIndex].PathPrefix,
+        _proxy2->Dirs[_items[index2].DirIndex].PathPrefix);
   }
   
   if (propID == kpidExtension)
@@ -500,17 +583,17 @@ int CAgentFolder::CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int
     return isDir1 ? -1 : 1;
   }
 
-  const CProxyFolder2 *proxFolder1 = NULL;
-  const CProxyFolder2 *proxFolder2 = NULL;
-  if (isDir1) proxFolder1 = &_proxyArchive2->Folders[prox1.FolderIndex];
-  if (isDir2) proxFolder2 = &_proxyArchive2->Folders[prox2.FolderIndex];
+  const CProxyDir2 *proxFolder1 = NULL;
+  const CProxyDir2 *proxFolder2 = NULL;
+  if (isDir1) proxFolder1 = &_proxy2->Dirs[prox1.DirIndex];
+  if (isDir2) proxFolder2 = &_proxy2->Dirs[prox2.DirIndex];
 
   if (propID == kpidNumSubDirs)
   {
     UInt32 n1 = 0;
     UInt32 n2 = 0;
-    if (isDir1) n1 = proxFolder1->NumSubFolders;
-    if (isDir2) n2 = proxFolder2->NumSubFolders;
+    if (isDir1) n1 = proxFolder1->NumSubDirs;
+    if (isDir2) n2 = proxFolder2->NumSubDirs;
     return MyCompare(n1, n2);
   }
   
@@ -585,27 +668,29 @@ int CAgentFolder::CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int
 
 STDMETHODIMP_(Int32) CAgentFolder::CompareItems(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw)
 {
-  COM_TRY_BEGIN
-  if (_proxyArchive2)
+  try {
+  if (_proxy2)
     return CompareItems2(index1, index2, propID, propIsRaw);
-  UInt32 realIndex1, realIndex2;
-  const CProxyFolder *folder1, *folder2;
   
+  unsigned realIndex1, realIndex2;
+  const CProxyDir *dir1, *dir2;
+
   if (_flatMode)
   {
     const CProxyItem &item1 = _items[index1];
     const CProxyItem &item2 = _items[index2];
-    folder1 = &_proxyArchive->Folders[item1.ProxyFolderIndex];
-    folder2 = &_proxyArchive->Folders[item2.ProxyFolderIndex];
+    dir1 = &_proxy->Dirs[item1.DirIndex];
+    dir2 = &_proxy->Dirs[item2.DirIndex];
     realIndex1 = item1.Index;
     realIndex2 = item2.Index;
   }
   else
   {
-    folder2 = folder1 = &_proxyArchive->Folders[_proxyFolderItem];
+    dir2 = dir1 = &_proxy->Dirs[_proxyDirIndex];
     realIndex1 = index1;
     realIndex2 = index2;
   }
+  
   if (propID == kpidPrefix)
   {
     if (!_flatMode)
@@ -615,109 +700,116 @@ STDMETHODIMP_(Int32) CAgentFolder::CompareItems(UInt32 index1, UInt32 index2, PR
     GetPrefix(index2, prefix2);
     return CompareFileNames_ForFolderList(prefix1, prefix2);
   }
-  const CProxyFile *prox1;
-  const CProxyFile *prox2;
-  const CProxyFolder *proxFolder1 = NULL;
-  const CProxyFolder *proxFolder2 = NULL;
-  bool isDir1, isDir2;
-  if (realIndex1 < (UInt32)folder1->Folders.Size())
-  {
-    isDir1 = true;
-    prox1 = proxFolder1 = &_proxyArchive->Folders[folder1->Folders[realIndex1]];
-  }
-  else
-  {
-    isDir1 = false;
-    prox1 = &folder1->Files[realIndex1 - folder1->Folders.Size()];
-  }
+  
+  UInt32 arcIndex1;
+  UInt32 arcIndex2;
 
-  if (realIndex2 < (UInt32)folder2->Folders.Size())
+  const CProxyDir *proxFolder1 = NULL;
+  const CProxyDir *proxFolder2 = NULL;
+  
+  if (realIndex1 < dir1->SubDirs.Size())
   {
-    isDir2 = true;
-    prox2 = proxFolder2 = &_proxyArchive->Folders[folder2->Folders[realIndex2]];
+    proxFolder1 = &_proxy->Dirs[dir1->SubDirs[realIndex1]];
+    arcIndex1 = proxFolder1->ArcIndex;
   }
   else
+    arcIndex1 = dir1->SubFiles[realIndex1 - dir1->SubDirs.Size()];
+
+  if (realIndex2 < dir2->SubDirs.Size())
   {
-    isDir2 = false;
-    prox2 = &folder2->Files[realIndex2 - folder2->Folders.Size()];
+    proxFolder2 = &_proxy->Dirs[dir2->SubDirs[realIndex2]];
+    arcIndex2 = proxFolder2->ArcIndex;
   }
+  else
+    arcIndex2 = dir2->SubFiles[realIndex2 - dir2->SubDirs.Size()];
 
   if (propID == kpidName)
-  {
-    return CompareFileNames_ForFolderList(prox1->Name, prox2->Name);
-  }
+    return CompareFileNames_ForFolderList(
+        proxFolder1 ? proxFolder1->Name : _proxy->Files[arcIndex1].Name,
+        proxFolder2 ? proxFolder2->Name : _proxy->Files[arcIndex2].Name);
+  
   if (propID == kpidExtension)
-  {
-     return CompareFileNames_ForFolderList(
-         GetExtension(prox1->Name),
-         GetExtension(prox2->Name));
-  }
+    return CompareFileNames_ForFolderList(
+       GetExtension(proxFolder1 ? proxFolder1->Name : _proxy->Files[arcIndex1].Name),
+       GetExtension(proxFolder2 ? proxFolder2->Name : _proxy->Files[arcIndex2].Name));
 
   if (propID == kpidIsDir)
   {
-    if (isDir1 == isDir2)
-      return 0;
-    return isDir1 ? -1 : 1;
+    if (proxFolder1)
+      return proxFolder2 ? 0 : -1;
+    return proxFolder2 ? 1 : 0;
   }
+  
   if (propID == kpidNumSubDirs)
   {
     UInt32 n1 = 0;
     UInt32 n2 = 0;
-    if (isDir1) n1 = proxFolder1->NumSubFolders;
-    if (isDir2) n2 = proxFolder2->NumSubFolders;
+    if (proxFolder1) n1 = proxFolder1->NumSubDirs;
+    if (proxFolder2) n2 = proxFolder2->NumSubDirs;
     return MyCompare(n1, n2);
   }
+  
   if (propID == kpidNumSubFiles)
   {
     UInt32 n1 = 0;
     UInt32 n2 = 0;
-    if (isDir1) n1 = proxFolder1->NumSubFiles;
-    if (isDir2) n2 = proxFolder2->NumSubFiles;
+    if (proxFolder1) n1 = proxFolder1->NumSubFiles;
+    if (proxFolder2) n2 = proxFolder2->NumSubFiles;
     return MyCompare(n1, n2);
   }
+  
   if (propID == kpidSize)
   {
     UInt64 n1, n2;
-    if (isDir1)
+    if (proxFolder1)
       n1 = _flatMode ? 0 : proxFolder1->Size;
     else
-      n1 = GetUInt64Prop(_agentSpec->GetArchive(), prox1->Index, kpidSize);
-    if (isDir2)
+      n1 = GetUInt64Prop(_agentSpec->GetArchive(), arcIndex1, kpidSize);
+    if (proxFolder2)
       n2 = _flatMode ? 0 : proxFolder2->Size;
     else
-      n2 = GetUInt64Prop(_agentSpec->GetArchive(), prox2->Index, kpidSize);
+      n2 = GetUInt64Prop(_agentSpec->GetArchive(), arcIndex2, kpidSize);
     return MyCompare(n1, n2);
   }
+  
   if (propID == kpidPackSize)
   {
     UInt64 n1, n2;
-    if (isDir1)
+    if (proxFolder1)
       n1 = _flatMode ? 0 : proxFolder1->PackSize;
     else
-      n1 = GetUInt64Prop(_agentSpec->GetArchive(), prox1->Index, kpidPackSize);
-    if (isDir2)
+      n1 = GetUInt64Prop(_agentSpec->GetArchive(), arcIndex1, kpidPackSize);
+    if (proxFolder2)
       n2 = _flatMode ? 0 : proxFolder2->PackSize;
     else
-      n2 = GetUInt64Prop(_agentSpec->GetArchive(), prox2->Index, kpidPackSize);
+      n2 = GetUInt64Prop(_agentSpec->GetArchive(), arcIndex2, kpidPackSize);
     return MyCompare(n1, n2);
   }
 
   if (propID == kpidCRC)
   {
     UInt64 n1, n2;
-    if (!isDir1 || proxFolder1->IsLeaf)
-      n1 = GetUInt64Prop(_agentSpec->GetArchive(), prox1->Index, kpidCRC);
-    else
+    if (proxFolder1 && !proxFolder1->IsLeaf())
       n1 = proxFolder1->Crc;
-    if (!isDir2 || proxFolder2->IsLeaf)
-      n2 = GetUInt64Prop(_agentSpec->GetArchive(), prox2->Index, kpidCRC);
     else
+      n1 = GetUInt64Prop(_agentSpec->GetArchive(), arcIndex1, kpidCRC);
+    if (proxFolder2 && !proxFolder2->IsLeaf())
       n2 = proxFolder2->Crc;
+    else
+      n2 = GetUInt64Prop(_agentSpec->GetArchive(), arcIndex2, kpidCRC);
     return MyCompare(n1, n2);
   }
 
   if (propIsRaw)
-    return CompareRawProps(_agentSpec->_archiveLink.GetArchiveGetRawProps(), prox1->Index, prox2->Index, propID);
+  {
+    bool isVirt1 = (proxFolder1 && !proxFolder1->IsLeaf());
+    bool isVirt2 = (proxFolder2 && !proxFolder2->IsLeaf());
+    if (isVirt1)
+      return isVirt2 ? 0 : -1;
+    if (isVirt2)
+      return 1;
+    return CompareRawProps(_agentSpec->_archiveLink.GetArchiveGetRawProps(), arcIndex1, arcIndex2, propID);
+  }
 
   NCOM::CPropVariant prop1, prop2;
   // Name must be first property
@@ -733,21 +825,20 @@ STDMETHODIMP_(Int32) CAgentFolder::CompareItems(UInt32 index1, UInt32 index2, PR
   }
   return prop1.Compare(prop2);
 
-  COM_TRY_END
+  } catch(...) { return 0; }
 }
 
-HRESULT CAgentFolder::BindToFolder_Internal(unsigned proxyFolderIndex, IFolderFolder **resultFolder)
+HRESULT CAgentFolder::BindToFolder_Internal(unsigned proxyDirIndex, IFolderFolder **resultFolder)
 {
+  /*
   CMyComPtr<IFolderFolder> parentFolder;
 
-  if (_proxyArchive2)
+  if (_proxy2)
   {
-    parentFolder = NULL; // Change it;
-    const CProxyFolder2 &folder = _proxyArchive2->Folders[proxyFolderIndex];
-    int par = _proxyArchive2->GetParentFolderOfFile(folder.ArcIndex);
-    if (par != (int)_proxyFolderItem)
+    const CProxyDir2 &dir = _proxy2->Dirs[proxyDirIndex];
+    int par = _proxy2->GetParentFolderOfFile(dir.ArcIndex);
+    if (par != (int)_proxyDirIndex)
     {
-      // return E_FAIL;
       RINOK(BindToFolder_Internal(par, &parentFolder));
     }
     else
@@ -755,17 +846,18 @@ HRESULT CAgentFolder::BindToFolder_Internal(unsigned proxyFolderIndex, IFolderFo
   }
   else
   {
-    const CProxyFolder &folder = _proxyArchive->Folders[proxyFolderIndex];
-    if (folder.Parent != (int)_proxyFolderItem)
+    const CProxyDir &dir = _proxy->Dirs[proxyDirIndex];
+    if (dir.Parent != (int)_proxyDirIndex)
     {
-      RINOK(BindToFolder_Internal(folder.Parent, &parentFolder));
+      RINOK(BindToFolder_Internal(dir.Parent, &parentFolder));
     }
     else
       parentFolder = this;
   }
+  */
   CAgentFolder *folderSpec = new CAgentFolder;
   CMyComPtr<IFolderFolder> agentFolder = folderSpec;
-  folderSpec->Init(_proxyArchive, _proxyArchive2, proxyFolderIndex, parentFolder, _agentSpec);
+  folderSpec->Init(_proxy, _proxy2, proxyDirIndex, /* parentFolder, */ _agentSpec);
   *resultFolder = agentFolder.Detach();
   return S_OK;
 }
@@ -773,51 +865,229 @@ HRESULT CAgentFolder::BindToFolder_Internal(unsigned proxyFolderIndex, IFolderFo
 STDMETHODIMP CAgentFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
 {
   COM_TRY_BEGIN
-  if (_proxyArchive2)
+  if (_proxy2)
   {
-    SET_realIndex_AND_folder_2
-    unsigned arcIndex = folder->SubFiles[realIndex];
-    const CProxyFile2 &item = _proxyArchive2->Files[arcIndex];
+    SET_realIndex_AND_dir_2
+    unsigned arcIndex = dir->Items[realIndex];
+    const CProxyFile2 &item = _proxy2->Files[arcIndex];
     if (!item.IsDir())
       return E_INVALIDARG;
-    return BindToFolder_Internal(item.FolderIndex, resultFolder);
+    return BindToFolder_Internal(item.DirIndex, resultFolder);
   }
-  SET_realIndex_AND_folder
-  if (realIndex >= (UInt32)folder->Folders.Size())
+  SET_realIndex_AND_dir
+  if (realIndex >= (UInt32)dir->SubDirs.Size())
     return E_INVALIDARG;
-  return BindToFolder_Internal(folder->Folders[realIndex], resultFolder);
+  return BindToFolder_Internal(dir->SubDirs[realIndex], resultFolder);
   COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
 {
   COM_TRY_BEGIN
-  if (_proxyArchive2)
+  if (_proxy2)
   {
-    const CProxyFolder2 &folder = _proxyArchive2->Folders[_proxyFolderItem];
-    FOR_VECTOR (i, folder.SubFiles)
-    {
-      const CProxyFile2 &file = _proxyArchive2->Files[folder.SubFiles[i]];
-      if (file.FolderIndex >= 0)
-        if (StringsAreEqualNoCase(file.Name, name))
-          return BindToFolder_Internal(file.FolderIndex, resultFolder);
-    }
-    return E_INVALIDARG;
+    int index = _proxy2->FindItem(_proxyDirIndex, name, true);
+    if (index < 0)
+      return E_INVALIDARG;
+    return BindToFolder_Internal(_proxy2->Files[_proxy2->Dirs[_proxyDirIndex].Items[index]].DirIndex, resultFolder);
   }
-  int index = _proxyArchive->FindDirSubItemIndex(_proxyFolderItem, name);
+  int index = _proxy->FindSubDir(_proxyDirIndex, name);
   if (index < 0)
     return E_INVALIDARG;
   return BindToFolder_Internal(index, resultFolder);
   COM_TRY_END
 }
 
+
+
+// ---------- IFolderAltStreams ----------
+
+HRESULT CAgentFolder::BindToAltStreams_Internal(unsigned proxyDirIndex, IFolderFolder **resultFolder)
+{
+  *resultFolder = NULL;
+  if (!_proxy2)
+    return S_OK;
+
+  /*
+  CMyComPtr<IFolderFolder> parentFolder;
+
+  int par = _proxy2->GetParentFolderOfFile(_proxy2->Dirs[proxyDirIndex].ArcIndex);
+  if (par != (int)_proxyDirIndex)
+  {
+    RINOK(BindToFolder_Internal(par, &parentFolder));
+    if (!parentFolder)
+      return S_OK;
+  }
+  else
+    parentFolder = this;
+  */
+  
+  CAgentFolder *folderSpec = new CAgentFolder;
+  CMyComPtr<IFolderFolder> agentFolder = folderSpec;
+  folderSpec->Init(_proxy, _proxy2, proxyDirIndex, /* parentFolder, */ _agentSpec);
+  *resultFolder = agentFolder.Detach();
+  return S_OK;
+}
+
+STDMETHODIMP CAgentFolder::BindToAltStreams(UInt32 index, IFolderFolder **resultFolder)
+{
+  COM_TRY_BEGIN
+
+  *resultFolder = NULL;
+  
+  if (!_proxy2)
+    return S_OK;
+
+  if (_proxy2->IsAltDir(_proxyDirIndex))
+    return S_OK;
+
+  {
+    if (index == (UInt32)(Int32)-1)
+    {
+      unsigned altDirIndex;
+      // IFolderFolder *parentFolder;
+  
+      if (_proxyDirIndex == k_Proxy2_RootDirIndex)
+      {
+        altDirIndex = k_Proxy2_AltRootDirIndex;
+        // parentFolder = this; // we want to use Root dir as parent for alt root
+      }
+      else
+      {
+        unsigned arcIndex = _proxy2->Dirs[_proxyDirIndex].ArcIndex;
+        const CProxyFile2 &item = _proxy2->Files[arcIndex];
+        if (item.AltDirIndex < 0)
+          return S_OK;
+        altDirIndex = item.AltDirIndex;
+        // parentFolder = _parentFolder;
+      }
+      
+      CAgentFolder *folderSpec = new CAgentFolder;
+      CMyComPtr<IFolderFolder> agentFolder = folderSpec;
+      folderSpec->Init(_proxy, _proxy2, altDirIndex, /* parentFolder, */ _agentSpec);
+      *resultFolder = agentFolder.Detach();
+      return S_OK;
+    }
+
+    SET_realIndex_AND_dir_2
+    unsigned arcIndex = dir->Items[realIndex];
+    const CProxyFile2 &item = _proxy2->Files[arcIndex];
+    if (item.AltDirIndex < 0)
+      return S_OK;
+    return BindToAltStreams_Internal(item.AltDirIndex, resultFolder);
+  }
+  
+  COM_TRY_END
+}
+
+STDMETHODIMP CAgentFolder::BindToAltStreams(const wchar_t *name, IFolderFolder **resultFolder)
+{
+  COM_TRY_BEGIN
+
+  *resultFolder = NULL;
+  
+  if (!_proxy2)
+    return S_OK;
+
+  if (_proxy2->IsAltDir(_proxyDirIndex))
+    return S_OK;
+
+  if (name[0] == 0)
+    return BindToAltStreams((UInt32)(Int32)-1, resultFolder);
+
+  {
+    const CProxyDir2 &dir = _proxy2->Dirs[_proxyDirIndex];
+    FOR_VECTOR (i, dir.Items)
+    {
+      const CProxyFile2 &file = _proxy2->Files[dir.Items[i]];
+      if (file.AltDirIndex >= 0)
+        if (CompareFileNames(file.Name, name) == 0)
+          return BindToAltStreams_Internal(file.AltDirIndex, resultFolder);
+    }
+    return E_INVALIDARG;
+  }
+  COM_TRY_END
+}
+
+STDMETHODIMP CAgentFolder::AreAltStreamsSupported(UInt32 index, Int32 *isSupported)
+{
+  *isSupported = BoolToInt(false);
+  
+  if (!_proxy2)
+    return S_OK;
+
+  if (_proxy2->IsAltDir(_proxyDirIndex))
+    return S_OK;
+
+  unsigned arcIndex;
+  
+  if (index == (UInt32)(Int32)-1)
+  {
+    if (_proxyDirIndex == k_Proxy2_RootDirIndex)
+    {
+      *isSupported = BoolToInt(true);
+      return S_OK;
+    }
+    arcIndex = _proxy2->Dirs[_proxyDirIndex].ArcIndex;
+  }
+  else
+  {
+    SET_realIndex_AND_dir_2
+    arcIndex = dir->Items[realIndex];
+  }
+  
+  if (_proxy2->Files[arcIndex].AltDirIndex >= 0)
+    *isSupported = BoolToInt(true);
+  return S_OK;
+}
+
+
 STDMETHODIMP CAgentFolder::BindToParentFolder(IFolderFolder **resultFolder)
 {
-  // COM_TRY_BEGIN
+  COM_TRY_BEGIN
+  /*
   CMyComPtr<IFolderFolder> parentFolder = _parentFolder;
   *resultFolder = parentFolder.Detach();
+  */
+  *resultFolder = NULL;
+  
+  unsigned proxyDirIndex;
+  
+  if (_proxy2)
+  {
+    if (_proxyDirIndex == k_Proxy2_RootDirIndex)
+      return S_OK;
+    if (_proxyDirIndex == k_Proxy2_AltRootDirIndex)
+      proxyDirIndex = k_Proxy2_RootDirIndex;
+    else
+    {
+      const CProxyDir2 &fold = _proxy2->Dirs[_proxyDirIndex];
+      const CProxyFile2 &file = _proxy2->Files[fold.ArcIndex];
+      int parentIndex = file.Parent;
+      if (parentIndex < 0)
+        proxyDirIndex = k_Proxy2_RootDirIndex;
+      else
+      {
+        const CProxyFile2 &file = _proxy2->Files[parentIndex];
+        proxyDirIndex = file.DirIndex;
+      }
+    }
+  }
+  else
+  {
+    int parent = _proxy->Dirs[_proxyDirIndex].ParentDir;
+    if (parent < 0)
+      return S_OK;
+    proxyDirIndex = parent;
+  }
+
+  CAgentFolder *folderSpec = new CAgentFolder;
+  CMyComPtr<IFolderFolder> agentFolder = folderSpec;
+  folderSpec->Init(_proxy, _proxy2, proxyDirIndex, /* parentFolder, */ _agentSpec);
+  *resultFolder = agentFolder.Detach();
+
   return S_OK;
-  // COM_TRY_END
+  COM_TRY_END
 }
 
 STDMETHODIMP CAgentFolder::GetStream(UInt32 index, ISequentialInStream **stream)
@@ -827,33 +1097,37 @@ STDMETHODIMP CAgentFolder::GetStream(UInt32 index, ISequentialInStream **stream)
   if (!getStream)
     return S_OK;
 
-  UInt32 indexInArchive;
-  if (_proxyArchive2)
+  UInt32 arcIndex;
+  if (_proxy2)
   {
-    SET_realIndex_AND_folder_2
-    indexInArchive = folder->SubFiles[realIndex];
+    SET_realIndex_AND_dir_2
+    arcIndex = dir->Items[realIndex];
   }
   else
   {
-  SET_realIndex_AND_folder
+    SET_realIndex_AND_dir
 
-  if (realIndex < (UInt32)folder->Folders.Size())
-  {
-    const CProxyFolder &item = _proxyArchive->Folders[folder->Folders[realIndex]];
-    if (!item.IsLeaf)
-      return S_OK;
-    indexInArchive = item.Index;
+    if (realIndex < dir->SubDirs.Size())
+    {
+      const CProxyDir &item = _proxy->Dirs[dir->SubDirs[realIndex]];
+      if (!item.IsLeaf())
+        return S_OK;
+      arcIndex = item.ArcIndex;
+    }
+    else
+      arcIndex = dir->SubFiles[realIndex - dir->SubDirs.Size()];
   }
-  else
-    indexInArchive = folder->Files[realIndex - folder->Folders.Size()].Index;
-  }
-  return getStream->GetStream(indexInArchive, stream);
+  return getStream->GetStream(arcIndex, stream);
 }
+
+// static const unsigned k_FirstOptionalProp = 2;
 
 static const PROPID kProps[] =
 {
   kpidNumSubDirs,
   kpidNumSubFiles,
+
+  // kpidNumAltStreams,
   kpidPrefix
 };
 
@@ -872,9 +1146,13 @@ STDMETHODIMP CAgentFolder::GetNumberOfProperties(UInt32 *numProps)
   if (!_flatMode)
     (*numProps)--;
   /*
-  bool thereIsPathProp = _proxyArchive2 ?
-    _agentSpec->_proxyArchive2->ThereIsPathProp :
-    _agentSpec->_proxyArchive->ThereIsPathProp;
+  if (!_agentSpec->ThereIsAltStreamProp)
+    (*numProps)--;
+  */
+  /*
+  bool thereIsPathProp = _proxy2 ?
+    _agentSpec->_proxy2->ThereIsPathProp :
+    _agentSpec->_proxy->ThereIsPathProp;
   */
 
   // if there is kpidPath, we change kpidPath to kpidName
@@ -892,9 +1170,9 @@ STDMETHODIMP CAgentFolder::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *pro
   _agentSpec->GetArchive()->GetNumberOfProperties(&numProps);
 
   /*
-  bool thereIsPathProp = _proxyArchive2 ?
-    _agentSpec->_proxyArchive2->ThereIsPathProp :
-    _agentSpec->_proxyArchive->ThereIsPathProp;
+  bool thereIsPathProp = _proxy2 ?
+    _agentSpec->_proxy2->ThereIsPathProp :
+    _agentSpec->_proxy->ThereIsPathProp;
   */
 
   if (!_agentSpec->ThereIsPathProp)
@@ -917,7 +1195,15 @@ STDMETHODIMP CAgentFolder::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *pro
   }
   else
   {
-    *propID = kProps[index - numProps];
+    index -= numProps;
+    /*
+    if (index >= k_FirstOptionalProp)
+    {
+      if (!_agentSpec->ThereIsAltStreamProp)
+        index++;
+    }
+    */
+    *propID = kProps[index];
     *varType = k7z_PROPID_To_VARTYPE[(unsigned)*propID];
     *name = 0;
   }
@@ -940,44 +1226,47 @@ STDMETHODIMP CAgentFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
 
   NWindows::NCOM::CPropVariant prop;
 
-  if (_proxyArchive2)
+  if (propID == kpidReadOnly)
+    prop = _agentSpec->IsThereReadOnlyArc();
+  else if (_proxy2)
   {
-    const CProxyFolder2 &folder = _proxyArchive2->Folders[_proxyFolderItem];
+    const CProxyDir2 &dir = _proxy2->Dirs[_proxyDirIndex];
     if (propID == kpidName)
     {
-      if (folder.ArcIndex >= 0)
-        prop = _proxyArchive2->Files[folder.ArcIndex].Name;
+      if (dir.ArcIndex >= 0)
+        prop = _proxy2->Files[dir.ArcIndex].Name;
     }
     else if (propID == kpidPath)
     {
-      prop = _proxyArchive2->GetFullPathPrefix(_proxyFolderItem);
+      bool isAltStreamFolder = false;
+      prop = _proxy2->GetDirPath_as_Prefix(_proxyDirIndex, isAltStreamFolder);
     }
     else switch (propID)
     {
-      case kpidSize:         prop = folder.Size; break;
-      case kpidPackSize:     prop = folder.PackSize; break;
-      case kpidNumSubDirs:   prop = folder.NumSubFolders; break;
-      case kpidNumSubFiles:  prop = folder.NumSubFiles; break;
-        // case kpidName:         prop = folder.Name; break;
-      // case kpidPath:         prop = _proxyArchive2->GetFullPathPrefix(_proxyFolderItem); break;
+      case kpidSize:         prop = dir.Size; break;
+      case kpidPackSize:     prop = dir.PackSize; break;
+      case kpidNumSubDirs:   prop = dir.NumSubDirs; break;
+      case kpidNumSubFiles:  prop = dir.NumSubFiles; break;
+        // case kpidName:         prop = dir.Name; break;
+      // case kpidPath:         prop = _proxy2->GetFullPathPrefix(_proxyDirIndex); break;
       case kpidType: prop = UString(L"7-Zip.") + _agentSpec->ArchiveType; break;
-      case kpidCRC: if (folder.CrcIsDefined) prop = folder.Crc; break;
+      case kpidCRC: if (dir.CrcIsDefined) prop = dir.Crc; break;
     }
     
   }
   else
   {
-  const CProxyFolder &folder = _proxyArchive->Folders[_proxyFolderItem];
+  const CProxyDir &dir = _proxy->Dirs[_proxyDirIndex];
   switch (propID)
   {
-    case kpidSize:         prop = folder.Size; break;
-    case kpidPackSize:     prop = folder.PackSize; break;
-    case kpidNumSubDirs:   prop = folder.NumSubFolders; break;
-    case kpidNumSubFiles:  prop = folder.NumSubFiles; break;
-    case kpidName:         prop = folder.Name; break;
-    case kpidPath:         prop = _proxyArchive->GetFullPathPrefix(_proxyFolderItem); break;
+    case kpidSize:         prop = dir.Size; break;
+    case kpidPackSize:     prop = dir.PackSize; break;
+    case kpidNumSubDirs:   prop = dir.NumSubDirs; break;
+    case kpidNumSubFiles:  prop = dir.NumSubFiles; break;
+    case kpidName:         prop = dir.Name; break;
+    case kpidPath:         prop = _proxy->GetDirPath_as_Prefix(_proxyDirIndex); break;
     case kpidType: prop = UString(L"7-Zip.") + _agentSpec->ArchiveType; break;
-    case kpidCRC: if (folder.CrcIsDefined) prop = folder.Crc; break;
+    case kpidCRC: if (dir.CrcIsDefined) prop = dir.Crc; break;
   }
   }
   prop.Detach(value);
@@ -1022,31 +1311,28 @@ STDMETHODIMP CAgentFolder::GetRawProp(UInt32 index, PROPID propID, const void **
   if (rawProps)
   {
     unsigned arcIndex;
-    if (_proxyArchive2)
+    if (_proxy2)
     {
-      SET_realIndex_AND_folder_2
-      arcIndex = folder->SubFiles[realIndex];
+      SET_realIndex_AND_dir_2
+      arcIndex = dir->Items[realIndex];
     }
     else
     {
-      SET_realIndex_AND_folder
-      if (realIndex < (UInt32)folder->Folders.Size())
+      SET_realIndex_AND_dir
+      if (realIndex < dir->SubDirs.Size())
       {
-        const CProxyFolder &item = _proxyArchive->Folders[folder->Folders[realIndex]];
-        if (!item.IsLeaf)
+        const CProxyDir &item = _proxy->Dirs[dir->SubDirs[realIndex]];
+        if (!item.IsLeaf())
         {
           *data = NULL;
           *dataSize = 0;
           *propType = 0;
           return S_OK;
         }
-        arcIndex = item.Index;
+        arcIndex = item.ArcIndex;
       }
       else
-      {
-        const CProxyFile &item = folder->Files[realIndex - folder->Folders.Size()];
-        arcIndex = item.Index;
-      }
+        arcIndex = dir->SubFiles[realIndex - dir->SubDirs.Size()];
     }
     return rawProps->GetRawProp(arcIndex, propID, data, dataSize, propType);
   }
@@ -1077,30 +1363,30 @@ int CAgentFolder::GetRealIndex(unsigned index) const
 {
   if (!_flatMode)
   {
-    if (_proxyArchive2)
-      return _proxyArchive2->GetRealIndex(_proxyFolderItem, index);
+    if (_proxy2)
+      return _proxy2->GetRealIndex(_proxyDirIndex, index);
     else
-      return _proxyArchive->GetRealIndex(_proxyFolderItem, index);
+      return _proxy->GetRealIndex(_proxyDirIndex, index);
   }
   {
     const CProxyItem &item = _items[index];
-    if (_proxyArchive2)
+    if (_proxy2)
     {
-      const CProxyFolder2 *folder = &_proxyArchive2->Folders[item.ProxyFolderIndex];
-      return folder->SubFiles[item.Index];
+      const CProxyDir2 *dir = &_proxy2->Dirs[item.DirIndex];
+      return dir->Items[item.Index];
     }
     else
     {
-      const CProxyFolder *folder = &_proxyArchive->Folders[item.ProxyFolderIndex];
+      const CProxyDir *dir = &_proxy->Dirs[item.DirIndex];
       unsigned realIndex = item.Index;
-      if (realIndex < folder->Folders.Size())
+      if (realIndex < dir->SubDirs.Size())
       {
-        const CProxyFolder &f = _proxyArchive->Folders[folder->Folders[realIndex]];
-        if (!f.IsLeaf)
+        const CProxyDir &f = _proxy->Dirs[dir->SubDirs[realIndex]];
+        if (!f.IsLeaf())
           return -1;
-        return f.Index;
+        return f.ArcIndex;
       }
-      return folder->Files[realIndex - folder->Folders.Size()].Index;
+      return dir->SubFiles[realIndex - dir->SubDirs.Size()];
     }
   }
 }
@@ -1109,43 +1395,46 @@ void CAgentFolder::GetRealIndices(const UInt32 *indices, UInt32 numItems, bool i
 {
   if (!_flatMode)
   {
-    if (_proxyArchive2)
-      _proxyArchive2->GetRealIndices(_proxyFolderItem, indices, numItems, includeAltStreams, realIndices);
+    if (_proxy2)
+      _proxy2->GetRealIndices(_proxyDirIndex, indices, numItems, includeAltStreams, realIndices);
     else
-      _proxyArchive->GetRealIndices(_proxyFolderItem, indices, numItems, realIndices);
+      _proxy->GetRealIndices(_proxyDirIndex, indices, numItems, realIndices);
     return;
   }
+
   realIndices.Clear();
+  
   for (UInt32 i = 0; i < numItems; i++)
   {
     const CProxyItem &item = _items[indices[i]];
-    if (_proxyArchive2)
+    if (_proxy2)
     {
-      const CProxyFolder2 *folder = &_proxyArchive2->Folders[item.ProxyFolderIndex];
-      _proxyArchive2->AddRealIndices_of_ArcItem(folder->SubFiles[item.Index], includeAltStreams, realIndices);
+      const CProxyDir2 *dir = &_proxy2->Dirs[item.DirIndex];
+      _proxy2->AddRealIndices_of_ArcItem(dir->Items[item.Index], includeAltStreams, realIndices);
       continue;
     }
     UInt32 arcIndex;
     {
-      const CProxyFolder *folder = &_proxyArchive->Folders[item.ProxyFolderIndex];
+      const CProxyDir *dir = &_proxy->Dirs[item.DirIndex];
       unsigned realIndex = item.Index;
-      if (realIndex < folder->Folders.Size())
+      if (realIndex < dir->SubDirs.Size())
       {
         if (includeFolderSubItemsInFlatMode)
         {
-          _proxyArchive->AddRealIndices(folder->Folders[realIndex], realIndices);
+          _proxy->AddRealIndices(dir->SubDirs[realIndex], realIndices);
           continue;
         }
-        const CProxyFolder &f = _proxyArchive->Folders[folder->Folders[realIndex]];
-        if (!f.IsLeaf)
+        const CProxyDir &f = _proxy->Dirs[dir->SubDirs[realIndex]];
+        if (!f.IsLeaf())
           continue;
-        arcIndex = f.Index;
+        arcIndex = f.ArcIndex;
       }
       else
-        arcIndex = folder->Files[realIndex - folder->Folders.Size()].Index;
+        arcIndex = dir->SubFiles[realIndex - dir->SubDirs.Size()];
     }
     realIndices.Add(arcIndex);
   }
+  
   HeapSort(&realIndices.Front(), realIndices.Size());
 }
 
@@ -1163,10 +1452,11 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
   CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
   UStringVector pathParts;
-  if (_proxyArchive2)
-    _proxyArchive2->GetPathParts(_proxyFolderItem, pathParts);
+  bool isAltStreamFolder = false;
+  if (_proxy2)
+    _proxy2->GetDirPathParts(_proxyDirIndex, pathParts, isAltStreamFolder);
   else
-    _proxyArchive->GetPathParts(_proxyFolderItem, pathParts);
+    _proxy->GetDirPathParts(_proxyDirIndex, pathParts);
 
   /*
   if (_flatMode)
@@ -1177,7 +1467,14 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
 
   FString pathU;
   if (path)
+  {
     pathU = us2fs(path);
+    if (!pathU.IsEmpty())
+    {
+      NFile::NName::NormalizeDirPathPrefix(pathU);
+      NFile::NDir::CreateComplexDir(pathU);
+    }
+  }
 
   CExtractNtOptions extractNtOptions;
   extractNtOptions.AltStreams.Val = IntToBool(includeAltStreams); // change it!!!
@@ -1191,12 +1488,12 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
       extractCallback2,
       false, // stdOutMode
       IntToBool(testMode),
-      path ? pathU : FTEXT(""),
-      pathParts,
+      pathU,
+      pathParts, isAltStreamFolder,
       (UInt64)(Int64)-1);
   
-  if (_proxyArchive2)
-    extractCallbackSpec->SetBaseParentFolderIndex(_proxyArchive2->Folders[_proxyFolderItem].ArcIndex);
+  if (_proxy2)
+    extractCallbackSpec->SetBaseParentFolderIndex(_proxy2->Dirs[_proxyDirIndex].ArcIndex);
 
   CUIntVector realIndices;
   GetRealIndices(indices, numItems, IntToBool(includeAltStreams),
@@ -1224,19 +1521,19 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
 // CAgent
 
 CAgent::CAgent():
-  _proxyArchive(NULL),
-  _proxyArchive2(NULL),
-  _isDeviceFile(false),
-  _codecs(0)
+    _proxy(NULL),
+    _proxy2(NULL),
+    _isDeviceFile(false),
+    _updatePathPrefix_is_AltFolder(false)
 {
 }
 
 CAgent::~CAgent()
 {
-  if (_proxyArchive)
-    delete _proxyArchive;
-  if (_proxyArchive2)
-    delete _proxyArchive2;
+  if (_proxy)
+    delete _proxy;
+  if (_proxy2)
+    delete _proxy2;
 }
 
 bool CAgent::CanUpdate() const
@@ -1274,13 +1571,10 @@ STDMETHODIMP CAgent::Open(
   }
   CArcInfoEx archiverInfo0, archiverInfo1;
 
-  _compressCodecsInfo.Release();
-  _codecs = new CCodecs;
-  _compressCodecsInfo = _codecs;
-  RINOK(_codecs->Load());
+  RINOK(LoadGlobalCodecs());
 
   CObjectVector<COpenType> types;
-  if (!ParseOpenTypes(*_codecs, arcFormat, types))
+  if (!ParseOpenTypes(*g_CodecsObj, arcFormat, types))
     return S_FALSE;
 
   /*
@@ -1296,7 +1590,7 @@ STDMETHODIMP CAgent::Open(
 
   COpenOptions options;
   options.props = NULL;
-  options.codecs = _codecs;
+  options.codecs = g_CodecsObj;
   options.types = &types;
   CIntVector exl;
   options.excludedFormats = &exl;
@@ -1326,15 +1620,15 @@ STDMETHODIMP CAgent::Open(
 STDMETHODIMP CAgent::ReOpen(IArchiveOpenCallback *openArchiveCallback)
 {
   COM_TRY_BEGIN
-  if (_proxyArchive2)
+  if (_proxy2)
   {
-    delete _proxyArchive2;
-    _proxyArchive2 = NULL;
+    delete _proxy2;
+    _proxy2 = NULL;
   }
-  if (_proxyArchive)
+  if (_proxy)
   {
-    delete _proxyArchive;
-    _proxyArchive = NULL;
+    delete _proxy;
+    _proxy = NULL;
   }
 
   CObjectVector<COpenType> incl;
@@ -1342,7 +1636,7 @@ STDMETHODIMP CAgent::ReOpen(IArchiveOpenCallback *openArchiveCallback)
 
   COpenOptions options;
   options.props = NULL;
-  options.codecs = _codecs;
+  options.codecs = g_CodecsObj;
   options.types = &incl;
   options.excludedFormats = &exl;
   options.stdInMode = false;
@@ -1370,20 +1664,22 @@ STDMETHODIMP CAgent::EnumProperties(IEnumSTATPROPSTG **EnumProperties)
 
 HRESULT CAgent::ReadItems()
 {
-  if (_proxyArchive || _proxyArchive2)
+  if (_proxy || _proxy2)
     return S_OK;
   
   const CArc &arc = GetArc();
   bool useProxy2 = (arc.GetRawProps && arc.IsTree);
+  
   // useProxy2 = false;
 
   if (useProxy2)
-    _proxyArchive2 = new CProxyArchive2();
+    _proxy2 = new CProxyArc2();
   else
-    _proxyArchive = new CProxyArchive();
+    _proxy = new CProxyArc();
 
   {
     ThereIsPathProp = false;
+    // ThereIsAltStreamProp = false;
     UInt32 numProps;
     arc.Archive->GetNumberOfProperties(&numProps);
     for (UInt32 i = 0; i < numProps; i++)
@@ -1393,16 +1689,17 @@ HRESULT CAgent::ReadItems()
       VARTYPE varType;
       RINOK(arc.Archive->GetPropertyInfo(i, &name, &propID, &varType));
       if (propID == kpidPath)
-      {
         ThereIsPathProp = true;
-        break;
-      }
+      /*
+      if (propID == kpidIsAltStream)
+        ThereIsAltStreamProp = true;
+      */
     }
   }
 
-  if (_proxyArchive2)
-    return _proxyArchive2->Load(GetArc(), NULL);
-  return _proxyArchive->Load(GetArc(), NULL);
+  if (_proxy2)
+    return _proxy2->Load(GetArc(), NULL);
+  return _proxy->Load(GetArc(), NULL);
 }
 
 STDMETHODIMP CAgent::BindToRootFolder(IFolderFolder **resultFolder)
@@ -1411,7 +1708,7 @@ STDMETHODIMP CAgent::BindToRootFolder(IFolderFolder **resultFolder)
   RINOK(ReadItems());
   CAgentFolder *folderSpec = new CAgentFolder;
   CMyComPtr<IFolderFolder> rootFolder = folderSpec;
-  folderSpec->Init(_proxyArchive, _proxyArchive2, 0, NULL, this);
+  folderSpec->Init(_proxy, _proxy2, k_Proxy_RootDirIndex, /* NULL, */ this);
   *resultFolder = rootFolder.Detach();
   return S_OK;
   COM_TRY_END
@@ -1441,7 +1738,7 @@ STDMETHODIMP CAgent::Extract(
       false, // stdOutMode
       IntToBool(testMode),
       us2fs(path),
-      UStringVector(),
+      UStringVector(), false,
       (UInt64)(Int64)-1);
 
   #ifdef SUPPORT_LINKS
@@ -1497,7 +1794,7 @@ STDMETHODIMP CAgent::GetArcProp(UInt32 level, PROPID propID, PROPVARIANT *value)
         break;
       case kpidErrorType:
         if (_archiveLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
-          prop = _codecs->Formats[_archiveLink.NonOpen_ErrorInfo.ErrorFormatIndex].Name;
+          prop = g_CodecsObj->Formats[_archiveLink.NonOpen_ErrorInfo.ErrorFormatIndex].Name;
         break;
     }
   }
@@ -1508,7 +1805,7 @@ STDMETHODIMP CAgent::GetArcProp(UInt32 level, PROPID propID, PROPVARIANT *value)
     {
       case kpidType: prop = GetTypeOfArc(arc); break;
       case kpidPath: prop = arc.Path; break;
-      case kpidErrorType: if (arc.ErrorInfo.ErrorFormatIndex >= 0) prop = _codecs->Formats[arc.ErrorInfo.ErrorFormatIndex].Name; break;
+      case kpidErrorType: if (arc.ErrorInfo.ErrorFormatIndex >= 0) prop = g_CodecsObj->Formats[arc.ErrorInfo.ErrorFormatIndex].Name; break;
       case kpidErrorFlags:
       {
         UInt32 flags = arc.ErrorInfo.GetErrorFlags();

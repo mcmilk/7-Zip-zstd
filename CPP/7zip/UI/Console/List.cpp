@@ -23,9 +23,10 @@
 using namespace NWindows;
 using namespace NCOM;
 
+extern CStdOutStream *g_StdStream;
+extern CStdOutStream *g_ErrStream;
 
-
-static const char *kPropIdToName[] =
+static const char * const kPropIdToName[] =
 {
     "0"
   , "1"
@@ -120,6 +121,8 @@ static const char *kPropIdToName[] =
   , "Hard Link"
   , "iNode"
   , "Stream ID"
+  , "Read-only"
+  , "Out Name"
 };
 
 static const char kEmptyAttribChar = '.';
@@ -130,6 +133,8 @@ static const char *kString_Files = "files";
 static const char *kString_Dirs = "folders";
 static const char *kString_AltStreams = "alternate streams";
 static const char *kString_Streams = "streams";
+
+static const char *kError = "ERROR: ";
 
 static void GetAttribString(UInt32 wa, bool isDir, bool allAttribs, char *s)
 {
@@ -163,8 +168,8 @@ struct CFieldInfo
   AString NameA;
   EAdjustment TitleAdjustment;
   EAdjustment TextAdjustment;
-  int PrefixSpacesWidth;
-  int Width;
+  unsigned PrefixSpacesWidth;
+  unsigned Width;
 };
 
 struct CFieldInfoInit
@@ -173,8 +178,8 @@ struct CFieldInfoInit
   const char *Name;
   EAdjustment TitleAdjustment;
   EAdjustment TextAdjustment;
-  int PrefixSpacesWidth;
-  int Width;
+  unsigned PrefixSpacesWidth;
+  unsigned Width;
 };
 
 static const CFieldInfoInit kStandardFieldTable[] =
@@ -186,71 +191,105 @@ static const CFieldInfoInit kStandardFieldTable[] =
   { kpidPath, "Name", kLeft, kLeft, 2, 24 }
 };
 
-const int kNumSpacesMax = 32; // it must be larger than max CFieldInfoInit.Width
+const unsigned kNumSpacesMax = 32; // it must be larger than max CFieldInfoInit.Width
 static const char *g_Spaces =
 "                                " ;
 
-static void PrintSpaces(int numSpaces)
+static void PrintSpaces(unsigned numSpaces)
 {
   if (numSpaces > 0 && numSpaces <= kNumSpacesMax)
     g_StdOut << g_Spaces + (kNumSpacesMax - numSpaces);
 }
 
-static void PrintSpacesToString(char *dest, int numSpaces)
+static void PrintSpacesToString(char *dest, unsigned numSpaces)
 {
-  int i;
+  unsigned i;
   for (i = 0; i < numSpaces; i++)
     dest[i] = ' ';
   dest[i] = 0;
 }
 
-static void PrintString(EAdjustment adj, int width, const UString &textString)
+// extern int g_CodePage;
+
+static void PrintUString(EAdjustment adj, unsigned width, const UString &s, AString &temp)
 {
-  const int numSpaces = width - textString.Len();
-  int numLeftSpaces = 0;
-  switch (adj)
+  /*
+  // we don't need multibyte align.
+  int codePage = g_CodePage;
+  if (codePage == -1)
+    codePage = CP_OEMCP;
+  if (codePage == CP_UTF8)
+    ConvertUnicodeToUTF8(s, temp);
+  else
+    UnicodeStringToMultiByte2(temp, s, (UINT)codePage);
+  */
+
+  unsigned numSpaces = 0;
+
+  if (width > s.Len())
   {
-    case kLeft:   numLeftSpaces = 0; break;
-    case kCenter: numLeftSpaces = numSpaces / 2; break;
-    case kRight:  numLeftSpaces = numSpaces; break;
+    numSpaces = width - s.Len();
+    unsigned numLeftSpaces = 0;
+    switch (adj)
+    {
+      case kLeft:   numLeftSpaces = 0; break;
+      case kCenter: numLeftSpaces = numSpaces / 2; break;
+      case kRight:  numLeftSpaces = numSpaces; break;
+    }
+    PrintSpaces(numLeftSpaces);
+    numSpaces -= numLeftSpaces;
   }
-  PrintSpaces(numLeftSpaces);
-  g_StdOut << textString;
-  PrintSpaces(numSpaces - numLeftSpaces);
+  
+  g_StdOut.PrintUString(s, temp);
+  PrintSpaces(numSpaces);
 }
 
-static void PrintString(EAdjustment adj, int width, const char *textString)
+static void PrintString(EAdjustment adj, unsigned width, const char *s)
 {
-  const int numSpaces = width - (int)strlen(textString);
-  int numLeftSpaces = 0;
-  switch (adj)
+  unsigned numSpaces = 0;
+  unsigned len = (unsigned)strlen(s);
+
+  if (width > len)
   {
-    case kLeft:   numLeftSpaces = 0; break;
-    case kCenter: numLeftSpaces = numSpaces / 2; break;
-    case kRight:  numLeftSpaces = numSpaces; break;
+    numSpaces = width - len;
+    unsigned numLeftSpaces = 0;
+    switch (adj)
+    {
+      case kLeft:   numLeftSpaces = 0; break;
+      case kCenter: numLeftSpaces = numSpaces / 2; break;
+      case kRight:  numLeftSpaces = numSpaces; break;
+    }
+    PrintSpaces(numLeftSpaces);
+    numSpaces -= numLeftSpaces;
   }
-  PrintSpaces(numLeftSpaces);
-  g_StdOut << textString;
-  PrintSpaces(numSpaces - numLeftSpaces);
+  
+  g_StdOut << s;
+  PrintSpaces(numSpaces);
 }
 
-static void PrintStringToString(char *dest, EAdjustment adj, int width, const char *textString)
+static void PrintStringToString(char *dest, EAdjustment adj, unsigned width, const char *textString)
 {
-  int len = (int)strlen(textString);
-  const int numSpaces = width - len;
-  int numLeftSpaces = 0;
-  switch (adj)
+  unsigned numSpaces = 0;
+  unsigned len = (unsigned)strlen(textString);
+  
+  if (width > len)
   {
-    case kLeft:   numLeftSpaces = 0; break;
-    case kCenter: numLeftSpaces = numSpaces / 2; break;
-    case kRight:  numLeftSpaces = numSpaces; break;
-  }
-  PrintSpacesToString(dest, numLeftSpaces);
-  if (numLeftSpaces > 0)
+    numSpaces = width - len;
+    unsigned numLeftSpaces = 0;
+    switch (adj)
+    {
+      case kLeft:   numLeftSpaces = 0; break;
+      case kCenter: numLeftSpaces = numSpaces / 2; break;
+      case kRight:  numLeftSpaces = numSpaces; break;
+    }
+    PrintSpacesToString(dest, numLeftSpaces);
     dest += numLeftSpaces;
+    numSpaces -= numLeftSpaces;
+  }
+  
   memcpy(dest, textString, len);
   dest += len;
-  PrintSpacesToString(dest, numSpaces - numLeftSpaces);
+  PrintSpacesToString(dest, numSpaces);
 }
 
 struct CListUInt64Def
@@ -287,12 +326,12 @@ struct CListStat
   UInt64 NumFiles;
 
   CListStat(): NumFiles(0) {}
-  void Update(const CListStat &stat)
+  void Update(const CListStat &st)
   {
-    Size.Add(stat.Size);
-    PackSize.Add(stat.PackSize);
-    MTime.Update(stat.MTime);
-    NumFiles += stat.NumFiles;
+    Size.Add(st.Size);
+    PackSize.Add(st.PackSize);
+    MTime.Update(st.MTime);
+    NumFiles += st.NumFiles;
   }
   void SetSizeDefIfNoFiles() { if (NumFiles == 0) Size.Def = true; }
 };
@@ -305,11 +344,11 @@ struct CListStat2
 
   CListStat2(): NumDirs(0) {}
 
-  void Update(const CListStat2 &stat)
+  void Update(const CListStat2 &st)
   {
-    MainFiles.Update(stat.MainFiles);
-    AltStreams.Update(stat.AltStreams);
-    NumDirs += stat.NumDirs;
+    MainFiles.Update(st.MainFiles);
+    AltStreams.Update(st.AltStreams);
+    NumDirs += st.NumDirs;
   }
   const UInt64 GetNumStreams() const { return MainFiles.NumFiles + AltStreams.NumFiles; }
   CListStat &GetStat(bool altStreamsMode) { return altStreamsMode ? AltStreams : MainFiles; }
@@ -319,34 +358,34 @@ class CFieldPrinter
 {
   CObjectVector<CFieldInfo> _fields;
 
-  void AddProp(BSTR name, PROPID propID, bool isRawProp);
+  void AddProp(const wchar_t *name, PROPID propID, bool isRawProp);
 public:
   const CArc *Arc;
   bool TechMode;
   UString FilePath;
   AString TempAString;
   UString TempWString;
-  bool IsFolder;
+  bool IsDir;
 
   AString LinesString;
 
   void Clear() { _fields.Clear(); LinesString.Empty(); }
-  void Init(const CFieldInfoInit *standardFieldTable, int numItems);
+  void Init(const CFieldInfoInit *standardFieldTable, unsigned numItems);
 
   HRESULT AddMainProps(IInArchive *archive);
   HRESULT AddRawProps(IArchiveGetRawProps *getRawProps);
   
   void PrintTitle();
   void PrintTitleLines();
-  HRESULT PrintItemInfo(UInt32 index, const CListStat &stat);
-  void PrintSum(const CListStat &stat, UInt64 numDirs, const char *str);
-  void PrintSum(const CListStat2 &stat);
+  HRESULT PrintItemInfo(UInt32 index, const CListStat &st);
+  void PrintSum(const CListStat &st, UInt64 numDirs, const char *str);
+  void PrintSum(const CListStat2 &stat2);
 };
 
-void CFieldPrinter::Init(const CFieldInfoInit *standardFieldTable, int numItems)
+void CFieldPrinter::Init(const CFieldInfoInit *standardFieldTable, unsigned numItems)
 {
   Clear();
-  for (int i = 0; i < numItems; i++)
+  for (unsigned i = 0; i < numItems; i++)
   {
     CFieldInfo &f = _fields.AddNew();
     const CFieldInfoInit &fii = standardFieldTable[i];
@@ -358,9 +397,9 @@ void CFieldPrinter::Init(const CFieldInfoInit *standardFieldTable, int numItems)
     f.PrefixSpacesWidth = fii.PrefixSpacesWidth;
     f.Width = fii.Width;
 
-    int k;
+    unsigned k;
     for (k = 0; k < fii.PrefixSpacesWidth; k++)
-      LinesString += ' ';
+      LinesString.Add_Space();
     for (k = 0; k < fii.Width; k++)
       LinesString += '-';
   }
@@ -383,13 +422,13 @@ static void GetPropName(PROPID propID, const wchar_t *name, AString &nameA, UStr
   }
 }
 
-void CFieldPrinter::AddProp(BSTR name, PROPID propID, bool isRawProp)
+void CFieldPrinter::AddProp(const wchar_t *name, PROPID propID, bool isRawProp)
 {
   CFieldInfo f;
   f.PropID = propID;
   f.IsRawProp = isRawProp;
   GetPropName(propID, name, f.NameA, f.NameU);
-  f.NameU += L" = ";
+  f.NameU.AddAscii(" = ");
   if (!f.NameA.IsEmpty())
     f.NameA += " = ";
   else
@@ -486,9 +525,9 @@ static void HexToString(char *dest, const Byte *data, UInt32 size)
 
 #endif
 
-#define MY_ENDL '\n'
+#define MY_ENDL endl
 
-HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &stat)
+HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &st)
 {
   char temp[128];
   size_t tempPos = 0;
@@ -530,7 +569,7 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &stat)
       continue;
     }
 
-    int width = f.Width;
+    const unsigned width = f.Width;
     
     if (f.IsRawProp)
     {
@@ -561,7 +600,7 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &stat)
           if (ConvertNtReparseToString((const Byte *)data, dataSize, s))
           {
             needPrint = false;
-            g_StdOut << s;
+            g_StdOut.PrintUString(s, TempAString);
           }
         }
       
@@ -593,15 +632,15 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &stat)
       CPropVariant prop;
       switch (f.PropID)
       {
-        case kpidSize: if (stat.Size.Def) prop = stat.Size.Val; break;
-        case kpidPackSize: if (stat.PackSize.Def) prop = stat.PackSize.Val; break;
-        case kpidMTime: if (stat.MTime.Def) prop = stat.MTime.Val; break;
+        case kpidSize: if (st.Size.Def) prop = st.Size.Val; break;
+        case kpidPackSize: if (st.PackSize.Def) prop = st.PackSize.Val; break;
+        case kpidMTime: if (st.MTime.Def) prop = st.MTime.Val; break;
         default:
           RINOK(Arc->Archive->GetProperty(index, f.PropID, &prop));
       }
       if (f.PropID == kpidAttrib && (prop.vt == VT_EMPTY || prop.vt == VT_UI4))
       {
-        GetAttribString((prop.vt == VT_EMPTY) ? 0 : prop.ulVal, IsFolder, techMode, temp + tempPos);
+        GetAttribString((prop.vt == VT_EMPTY) ? 0 : prop.ulVal, IsDir, techMode, temp + tempPos);
         if (techMode)
           g_StdOut << temp + tempPos;
         else
@@ -626,24 +665,22 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &stat)
           tempPos += len;
           if (len < (unsigned)f.Width)
           {
-            len = (size_t)f.Width - len;
-            PrintSpacesToString(temp + tempPos, (int)len);
+            len = f.Width - len;
+            PrintSpacesToString(temp + tempPos, (unsigned)len);
             tempPos += len;
           }
         }
       }
       else if (prop.vt == VT_BSTR)
       {
+        TempWString.SetFromBstr(prop.bstrVal);
         if (techMode)
         {
-          int len = (int)wcslen(prop.bstrVal);
-          MyStringCopy(TempWString.GetBuffer(len), prop.bstrVal);
           // replace CR/LF here.
-          TempWString.ReleaseBuffer(len);
           g_StdOut.PrintUString(TempWString, TempAString);
         }
         else
-          PrintString(f.TextAdjustment, width, prop.bstrVal);
+          PrintUString(f.TextAdjustment, width, TempWString, TempAString);
       }
       else
       {
@@ -665,55 +702,48 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &stat)
   return S_OK;
 }
 
-static void PrintNumber(EAdjustment adj, int width, const CListUInt64Def &value)
+static void PrintNumber(EAdjustment adj, unsigned width, const CListUInt64Def &value)
 {
-  wchar_t s[32];
+  char s[32];
   s[0] = 0;
   if (value.Def)
     ConvertUInt64ToString(value.Val, s);
   PrintString(adj, width, s);
 }
 
-static void PrintNumberAndString(AString &s, UInt64 value, const char *text)
-{
-  char t[32];
-  ConvertUInt64ToString(value, t);
-  s += t;
-  s += ' ';
-  s += text;
-}
+void Print_UInt64_and_String(AString &s, UInt64 val, const char *name);
 
-void CFieldPrinter::PrintSum(const CListStat &stat, UInt64 numDirs, const char *str)
+void CFieldPrinter::PrintSum(const CListStat &st, UInt64 numDirs, const char *str)
 {
   FOR_VECTOR (i, _fields)
   {
     const CFieldInfo &f = _fields[i];
     PrintSpaces(f.PrefixSpacesWidth);
     if (f.PropID == kpidSize)
-      PrintNumber(f.TextAdjustment, f.Width, stat.Size);
+      PrintNumber(f.TextAdjustment, f.Width, st.Size);
     else if (f.PropID == kpidPackSize)
-      PrintNumber(f.TextAdjustment, f.Width, stat.PackSize);
+      PrintNumber(f.TextAdjustment, f.Width, st.PackSize);
     else if (f.PropID == kpidMTime)
     {
       char s[64];
       s[0] = 0;
-      if (stat.MTime.Def)
-        PrintTime(s, &stat.MTime.Val);
+      if (st.MTime.Def)
+        PrintTime(s, &st.MTime.Val);
       PrintString(f.TextAdjustment, f.Width, s);
     }
     else if (f.PropID == kpidPath)
     {
       AString s;
-      PrintNumberAndString(s, stat.NumFiles, str);
+      Print_UInt64_and_String(s, st.NumFiles, str);
       if (numDirs != 0)
       {
         s += ", ";
-        PrintNumberAndString(s, numDirs, kString_Dirs);
+        Print_UInt64_and_String(s, numDirs, kString_Dirs);
       }
       PrintString(f.TextAdjustment, 0, s);
     }
     else
-      PrintString(f.TextAdjustment, f.Width, L"");
+      PrintString(f.TextAdjustment, f.Width, "");
   }
   g_StdOut << endl;
 }
@@ -724,9 +754,9 @@ void CFieldPrinter::PrintSum(const CListStat2 &stat2)
   if (stat2.AltStreams.NumFiles != 0)
   {
     PrintSum(stat2.AltStreams, 0, kString_AltStreams);;
-    CListStat stat = stat2.MainFiles;
-    stat.Update(stat2.AltStreams);
-    PrintSum(stat, 0, kString_Streams);
+    CListStat st = stat2.MainFiles;
+    st.Update(stat2.AltStreams);
+    PrintSum(st, 0, kString_Streams);
   }
 }
 
@@ -757,12 +787,12 @@ static HRESULT GetItemMTime(IInArchive *archive, UInt32 index, CListFileTimeDef 
   return S_OK;
 }
 
-static void PrintPropNameAndNumber(const char *name, UInt64 val)
+static void PrintPropNameAndNumber(CStdOutStream &so, const char *name, UInt64 val)
 {
-  g_StdOut << name << ": " << val << endl;
+  so << name << ": " << val << endl;
 }
 
-static void PrintPropName_and_Eq(PROPID propID)
+static void PrintPropName_and_Eq(CStdOutStream &so, PROPID propID)
 {
   const char *s;
   char temp[16];
@@ -773,28 +803,28 @@ static void PrintPropName_and_Eq(PROPID propID)
     ConvertUInt32ToString(propID, temp);
     s = temp;
   }
-  g_StdOut << s << " = ";
+  so << s << " = ";
 }
 
-static void PrintPropNameAndNumber(PROPID propID, UInt64 val)
+static void PrintPropNameAndNumber(CStdOutStream &so, PROPID propID, UInt64 val)
 {
-  PrintPropName_and_Eq(propID);
-  g_StdOut << val << endl;
+  PrintPropName_and_Eq(so, propID);
+  so << val << endl;
 }
 
-static void PrintPropNameAndNumber_Signed(PROPID propID, Int64 val)
+static void PrintPropNameAndNumber_Signed(CStdOutStream &so, PROPID propID, Int64 val)
 {
-  PrintPropName_and_Eq(propID);
-  g_StdOut << val << endl;
+  PrintPropName_and_Eq(so, propID);
+  so << val << endl;
 }
 
-static void PrintPropPair(const char *name, const wchar_t *val)
+static void PrintPropPair(CStdOutStream &so, const char *name, const wchar_t *val)
 {
-  g_StdOut << name << " = " << val << endl;
+  so << name << " = " << val << endl;
 }
 
 
-static void PrintPropertyPair2(PROPID propID, const wchar_t *name, const CPropVariant &prop)
+static void PrintPropertyPair2(CStdOutStream &so, PROPID propID, const wchar_t *name, const CPropVariant &prop)
 {
   UString s;
   ConvertPropertyToString(s, prop, propID);
@@ -804,23 +834,23 @@ static void PrintPropertyPair2(PROPID propID, const wchar_t *name, const CPropVa
     UString nameU;
     GetPropName(propID, name, nameA, nameU);
     if (!nameA.IsEmpty())
-      PrintPropPair(nameA, s);
+      PrintPropPair(so, nameA, s);
     else
-      g_StdOut << nameU << " = " << s << endl;
+      so << nameU << " = " << s << endl;
   }
 }
 
-static HRESULT PrintArcProp(IInArchive *archive, PROPID propID, const wchar_t *name)
+static HRESULT PrintArcProp(CStdOutStream &so, IInArchive *archive, PROPID propID, const wchar_t *name)
 {
   CPropVariant prop;
   RINOK(archive->GetArchiveProperty(propID, &prop));
-  PrintPropertyPair2(propID, name, prop);
+  PrintPropertyPair2(so, propID, name, prop);
   return S_OK;
 }
 
-static void PrintArcTypeError(const UString &type, bool isWarning)
+static void PrintArcTypeError(CStdOutStream &so, const UString &type, bool isWarning)
 {
-  g_StdOut << "Open " << (isWarning ? "Warning" : "Error")
+  so << "Open " << (isWarning ? "WARNING" : "ERROR")
     << ": Can not open the file as ["
     << type
     << "] archive"
@@ -829,24 +859,108 @@ static void PrintArcTypeError(const UString &type, bool isWarning)
 
 int Find_FileName_InSortedVector(const UStringVector &fileName, const UString& name);
 
-AString GetOpenArcErrorMessage(UInt32 errorFlags);
+void PrintErrorFlags(CStdOutStream &so, const char *s, UInt32 errorFlags);
 
-static void PrintErrorFlags(const char *s, UInt32 errorFlags)
+static void ErrorInfo_Print(CStdOutStream &so, const CArcErrorInfo &er)
 {
-  g_StdOut << s << endl << GetOpenArcErrorMessage(errorFlags) << endl;
-}
-
-static void ErrorInfo_Print(const CArcErrorInfo &er)
-{
-  if (er.AreThereErrors())
-    PrintErrorFlags("Errors:", er.GetErrorFlags());
+  PrintErrorFlags(so, "ERRORS:", er.GetErrorFlags());
   if (!er.ErrorMessage.IsEmpty())
-    PrintPropPair("Error", er.ErrorMessage);
-  if (er.AreThereWarnings())
-    PrintErrorFlags("Warnings:", er.GetWarningFlags());
+    PrintPropPair(so, "ERROR", er.ErrorMessage);
+  
+  PrintErrorFlags(so, "WARNINGS:", er.GetWarningFlags());
   if (!er.WarningMessage.IsEmpty())
-    PrintPropPair("Warning", er.WarningMessage);
+    PrintPropPair(so, "WARNING", er.WarningMessage);
 }
+
+HRESULT Print_OpenArchive_Props(CStdOutStream &so, const CCodecs *codecs, const CArchiveLink &arcLink)
+{
+  FOR_VECTOR (r, arcLink.Arcs)
+  {
+    const CArc &arc = arcLink.Arcs[r];
+    const CArcErrorInfo &er = arc.ErrorInfo;
+    
+    so << "--\n";
+    PrintPropPair(so, "Path", arc.Path);
+    if (er.ErrorFormatIndex >= 0)
+    {
+      if (er.ErrorFormatIndex == arc.FormatIndex)
+        so << "Warning: The archive is open with offset" << endl;
+      else
+        PrintArcTypeError(so, codecs->GetFormatNamePtr(er.ErrorFormatIndex), true);
+    }
+    PrintPropPair(so, "Type", codecs->GetFormatNamePtr(arc.FormatIndex));
+    
+    ErrorInfo_Print(so, er);
+    
+    Int64 offset = arc.GetGlobalOffset();
+    if (offset != 0)
+      PrintPropNameAndNumber_Signed(so, kpidOffset, offset);
+    IInArchive *archive = arc.Archive;
+    RINOK(PrintArcProp(so, archive, kpidPhySize, NULL));
+    if (er.TailSize != 0)
+      PrintPropNameAndNumber(so, kpidTailSize, er.TailSize);
+    UInt32 numProps;
+    RINOK(archive->GetNumberOfArchiveProperties(&numProps));
+    
+    {
+      for (UInt32 j = 0; j < numProps; j++)
+      {
+        CMyComBSTR name;
+        PROPID propID;
+        VARTYPE vt;
+        RINOK(archive->GetArchivePropertyInfo(j, &name, &propID, &vt));
+        RINOK(PrintArcProp(so, archive, propID, name));
+      }
+    }
+    
+    if (r != arcLink.Arcs.Size() - 1)
+    {
+      UInt32 numProps;
+      so << "----\n";
+      if (archive->GetNumberOfProperties(&numProps) == S_OK)
+      {
+        UInt32 mainIndex = arcLink.Arcs[r + 1].SubfileIndex;
+        for (UInt32 j = 0; j < numProps; j++)
+        {
+          CMyComBSTR name;
+          PROPID propID;
+          VARTYPE vt;
+          RINOK(archive->GetPropertyInfo(j, &name, &propID, &vt));
+          CPropVariant prop;
+          RINOK(archive->GetProperty(mainIndex, propID, &prop));
+          PrintPropertyPair2(so, propID, name, prop);
+        }
+      }
+    }
+  }
+  return S_OK;
+}
+
+HRESULT Print_OpenArchive_Error(CStdOutStream &so, const CCodecs *codecs, const CArchiveLink &arcLink)
+{
+  #ifndef _NO_CRYPTO
+  if (arcLink.PasswordWasAsked)
+    so << "Can not open encrypted archive. Wrong password?";
+  else
+  #endif
+  {
+    if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
+    {
+      so << arcLink.NonOpen_ArcPath << endl;
+      PrintArcTypeError(so, codecs->Formats[arcLink.NonOpen_ErrorInfo.ErrorFormatIndex].Name, false);
+    }
+    else
+      so << "Can not open the file as archive";
+  }
+
+  so << endl;
+  so << endl;
+  ErrorInfo_Print(so, arcLink.NonOpen_ErrorInfo);
+
+  return S_OK;
+}
+
+bool CensorNode_CheckPath(const NWildcard::CCensorNode &node, const CReadArcItem &item);
 
 HRESULT ListArchives(CCodecs *codecs,
     const CObjectVector<COpenType> &types,
@@ -865,7 +979,7 @@ HRESULT ListArchives(CCodecs *codecs,
     UInt64 &numErrors,
     UInt64 &numWarnings)
 {
-  bool AllFilesAreAllowed = wildcardCensor.AreAllAllowed();
+  bool allFilesAreAllowed = wildcardCensor.AreAllAllowed();
 
   numErrors = 0;
   numWarnings = 0;
@@ -874,7 +988,7 @@ HRESULT ListArchives(CCodecs *codecs,
   if (!techMode)
     fp.Init(kStandardFieldTable, ARRAY_SIZE(kStandardFieldTable));
 
-  CListStat2 stat2;
+  CListStat2 stat2total;
   
   CBoolArr skipArcs(arcPaths.Size());
   unsigned arcIndex;
@@ -884,18 +998,34 @@ HRESULT ListArchives(CCodecs *codecs,
   UInt64 numArcs = 0;
   UInt64 totalArcSizes = 0;
 
+  HRESULT lastError = 0;
+
   for (arcIndex = 0; arcIndex < arcPaths.Size(); arcIndex++)
   {
     if (skipArcs[arcIndex])
       continue;
-    const UString &archiveName = arcPaths[arcIndex];
+    const UString &arcPath = arcPaths[arcIndex];
     UInt64 arcPackSize = 0;
+    
     if (!stdInMode)
     {
       NFile::NFind::CFileInfo fi;
-      if (!fi.Find(us2fs(archiveName)) || fi.IsDir())
+      if (!fi.Find(us2fs(arcPath)))
       {
-        g_StdOut << endl << "Error: " << archiveName << " is not file" << endl;
+        DWORD errorCode = GetLastError();
+        if (errorCode == 0)
+          errorCode = ERROR_FILE_NOT_FOUND;
+        lastError = HRESULT_FROM_WIN32(lastError);;
+        g_StdOut.Flush();
+        *g_ErrStream << endl << kError << NError::MyFormatMessage(errorCode) <<
+              endl << arcPath << endl << endl;
+        numErrors++;
+        continue;
+      }
+      if (fi.IsDir())
+      {
+        g_StdOut.Flush();
+        *g_ErrStream << endl << kError << arcPath << " is not a file" << endl << endl;
         numErrors++;
         continue;
       }
@@ -906,7 +1036,7 @@ HRESULT ListArchives(CCodecs *codecs,
     CArchiveLink arcLink;
 
     COpenCallbackConsole openCallback;
-    openCallback.OutStream = &g_StdOut;
+    openCallback.Init(&g_StdOut, g_ErrStream, NULL);
 
     #ifndef _NO_CRYPTO
 
@@ -930,40 +1060,39 @@ HRESULT ListArchives(CCodecs *codecs,
     options.excludedFormats = &excludedFormats;
     options.stdInMode = stdInMode;
     options.stream = NULL;
-    options.filePath = archiveName;
-    HRESULT result = arcLink.Open2(options, &openCallback);
+    options.filePath = arcPath;
+
+    if (enableHeaders)
+    {
+      g_StdOut << endl << kListing << arcPath << endl << endl;
+    }
+    
+    HRESULT result = arcLink.Open3(options, &openCallback);
 
     if (result != S_OK)
     {
       if (result == E_ABORT)
         return result;
-      g_StdOut << endl << "Error: " << archiveName << ": ";
+      g_StdOut.Flush();
+      *g_ErrStream << endl << kError << arcPath << " : ";
       if (result == S_FALSE)
       {
-        #ifndef _NO_CRYPTO
-        if (openCallback.Open_WasPasswordAsked())
-          g_StdOut << "Can not open encrypted archive. Wrong password?";
-        else
-        #endif
-        {
-          if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
-          {
-            PrintArcTypeError(codecs->Formats[arcLink.NonOpen_ErrorInfo.ErrorFormatIndex].Name, false);
-          }
-          else
-            g_StdOut << "Can not open the file as archive";
-        }
-        g_StdOut << endl;
-        ErrorInfo_Print(arcLink.NonOpen_ErrorInfo);
+        Print_OpenArchive_Error(*g_ErrStream, codecs, arcLink);
       }
-      else if (result == E_OUTOFMEMORY)
-        g_StdOut << "Can't allocate required memory";
       else
-        g_StdOut << NError::MyFormatMessage(result);
-      g_StdOut << endl;
+      {
+        lastError = result;
+        *g_ErrStream << "opening : ";
+        if (result == E_OUTOFMEMORY)
+          *g_ErrStream << "Can't allocate required memory";
+        else
+          *g_ErrStream << NError::MyFormatMessage(result);
+      }
+      *g_ErrStream << endl;
       numErrors++;
       continue;
     }
+    
     {
       if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
         numErrors++;
@@ -998,72 +1127,15 @@ HRESULT ListArchives(CCodecs *codecs,
       {
         int index = Find_FileName_InSortedVector(arcPathsFull, arcLink.VolumePaths[v]);
         if (index >= 0 && (unsigned)index > arcIndex)
-          skipArcs[index] = true;
+          skipArcs[(unsigned)index] = true;
       }
     }
 
 
     if (enableHeaders)
     {
-      g_StdOut << endl << kListing << archiveName << endl << endl;
+      RINOK(Print_OpenArchive_Props(g_StdOut, codecs, arcLink));
 
-      FOR_VECTOR (r, arcLink.Arcs)
-      {
-        const CArc &arc = arcLink.Arcs[r];
-        const CArcErrorInfo &er = arc.ErrorInfo;
-        
-        g_StdOut << "--\n";
-        PrintPropPair("Path", arc.Path);
-        if (er.ErrorFormatIndex >= 0)
-        {
-          if (er.ErrorFormatIndex == arc.FormatIndex)
-            g_StdOut << "Warning: The archive is open with offset" << endl;
-          else
-            PrintArcTypeError(codecs->GetFormatNamePtr(er.ErrorFormatIndex), true);
-        }
-        PrintPropPair("Type", codecs->GetFormatNamePtr(arc.FormatIndex));
-
-        ErrorInfo_Print(er);
-
-        Int64 offset = arc.GetGlobalOffset();
-        if (offset != 0)
-          PrintPropNameAndNumber_Signed(kpidOffset, offset);
-        IInArchive *archive = arc.Archive;
-        RINOK(PrintArcProp(archive, kpidPhySize, NULL));
-        if (er.TailSize != 0)
-          PrintPropNameAndNumber(kpidTailSize, er.TailSize);
-        UInt32 numProps;
-        RINOK(archive->GetNumberOfArchiveProperties(&numProps));
-        {
-          for (UInt32 j = 0; j < numProps; j++)
-          {
-            CMyComBSTR name;
-            PROPID propID;
-            VARTYPE vt;
-            RINOK(archive->GetArchivePropertyInfo(j, &name, &propID, &vt));
-            RINOK(PrintArcProp(archive, propID, name));
-          }
-        }
-        if (r != arcLink.Arcs.Size() - 1)
-        {
-          UInt32 numProps;
-          g_StdOut << "----\n";
-          if (archive->GetNumberOfProperties(&numProps) == S_OK)
-          {
-            UInt32 mainIndex = arcLink.Arcs[r + 1].SubfileIndex;
-            for (UInt32 j = 0; j < numProps; j++)
-            {
-              CMyComBSTR name;
-              PROPID propID;
-              VARTYPE vt;
-              RINOK(archive->GetPropertyInfo(j, &name, &propID, &vt));
-              CPropVariant prop;
-              RINOK(archive->GetProperty(mainIndex, propID, &prop));
-              PrintPropertyPair2(propID, name, prop);
-            }
-          }
-        }
-      }
       g_StdOut << endl;
       if (techMode)
         g_StdOut << "----------\n";
@@ -1091,10 +1163,14 @@ HRESULT ListArchives(CCodecs *codecs,
       }
     }
     
-    CListStat2 stat;
+    CListStat2 stat2;
     
     UInt32 numItems;
     RINOK(archive->GetNumberOfItems(&numItems));
+ 
+    CReadArcItem item;
+    UStringVector pathParts;
+    
     for (UInt32 i = 0; i < numItems; i++)
     {
       if (NConsoleClose::TestBreakSignal())
@@ -1122,12 +1198,25 @@ HRESULT ListArchives(CCodecs *codecs,
           continue;
       }
 
-      RINOK(Archive_IsItem_Folder(archive, i, fp.IsFolder));
+      RINOK(Archive_IsItem_Dir(archive, i, fp.IsDir));
 
-      if (!AllFilesAreAllowed)
+      if (!allFilesAreAllowed)
       {
-        if (!wildcardCensor.CheckPath(isAltStream, fp.FilePath, !fp.IsFolder))
-          continue;
+        if (isAltStream)
+        {
+          RINOK(arc.GetItem(i, item));
+          if (!CensorNode_CheckPath(wildcardCensor, item))
+            continue;
+        }
+        else
+        {
+          SplitPathToParts(fp.FilePath, pathParts);;
+          bool include;
+          if (!wildcardCensor.CheckPathVect(pathParts, !fp.IsDir, include))
+            continue;
+          if (!include)
+            continue;
+        }
       }
       
       CListStat st;
@@ -1136,33 +1225,35 @@ HRESULT ListArchives(CCodecs *codecs,
       RINOK(GetUInt64Value(archive, i, kpidPackSize, st.PackSize));
       RINOK(GetItemMTime(archive, i, st.MTime));
 
-      if (fp.IsFolder)
-        stat.NumDirs++;
+      if (fp.IsDir)
+        stat2.NumDirs++;
       else
         st.NumFiles = 1;
-      stat.GetStat(isAltStream).Update(st);
+      stat2.GetStat(isAltStream).Update(st);
 
       if (isAltStream && !showAltStreams)
         continue;
       RINOK(fp.PrintItemInfo(i, st));
     }
 
-    UInt64 numStreams = stat.GetNumStreams();
+    UInt64 numStreams = stat2.GetNumStreams();
     if (!stdInMode
-        && !stat.MainFiles.PackSize.Def
-        && !stat.AltStreams.PackSize.Def)
+        && !stat2.MainFiles.PackSize.Def
+        && !stat2.AltStreams.PackSize.Def)
     {
       if (arcLink.VolumePaths.Size() != 0)
         arcPackSize += arcLink.VolumesSize;
-      stat.MainFiles.PackSize.Add((numStreams == 0) ? 0 : arcPackSize);
+      stat2.MainFiles.PackSize.Add((numStreams == 0) ? 0 : arcPackSize);
     }
-    stat.MainFiles.SetSizeDefIfNoFiles();
-    stat.AltStreams.SetSizeDefIfNoFiles();
+  
+    stat2.MainFiles.SetSizeDefIfNoFiles();
+    stat2.AltStreams.SetSizeDefIfNoFiles();
+    
     if (enableHeaders && !techMode)
     {
       fp.PrintTitleLines();
       g_StdOut << endl;
-      fp.PrintSum(stat);
+      fp.PrintSum(stat2);
     }
 
     if (enableHeaders)
@@ -1170,23 +1261,30 @@ HRESULT ListArchives(CCodecs *codecs,
       if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
       {
         g_StdOut << "----------\n";
-        PrintPropPair("Path", arcLink.NonOpen_ArcPath);
-        PrintArcTypeError(codecs->Formats[arcLink.NonOpen_ErrorInfo.ErrorFormatIndex].Name, false);
+        PrintPropPair(g_StdOut, "Path", arcLink.NonOpen_ArcPath);
+        PrintArcTypeError(g_StdOut, codecs->Formats[arcLink.NonOpen_ErrorInfo.ErrorFormatIndex].Name, false);
       }
     }
-    stat2.Update(stat);
-    fflush(stdout);
+    
+    stat2total.Update(stat2);
+
+    g_StdOut.Flush();
   }
+  
   if (enableHeaders && !techMode && (arcPaths.Size() > 1 || numVolumes > 1))
   {
     g_StdOut << endl;
     fp.PrintTitleLines();
     g_StdOut << endl;
-    fp.PrintSum(stat2);
+    fp.PrintSum(stat2total);
     g_StdOut << endl;
-    PrintPropNameAndNumber("Archives", numArcs);
-    PrintPropNameAndNumber("Volumes", numVolumes);
-    PrintPropNameAndNumber("Total archives size", totalArcSizes);
+    PrintPropNameAndNumber(g_StdOut, "Archives", numArcs);
+    PrintPropNameAndNumber(g_StdOut, "Volumes", numVolumes);
+    PrintPropNameAndNumber(g_StdOut, "Total archives size", totalArcSizes);
   }
+
+  if (numErrors == 1 && lastError != 0)
+    return lastError;
+  
   return S_OK;
 }

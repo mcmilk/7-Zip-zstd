@@ -45,7 +45,7 @@ public:
   STDMETHOD(InvokeCommand)(LPCMINVOKECOMMANDINFO lpici);
   STDMETHOD(GetCommandString)(UINT_PTR idCmd, UINT uType, UINT *pwReserved, LPSTR pszName, UINT cchMax);
 
-  HRESULT InitContextMenu(const wchar_t *folder, const wchar_t **names, unsigned numFiles);
+  HRESULT InitContextMenu(const wchar_t *folder, const wchar_t * const *names, unsigned numFiles);
 
   CZipContextMenu();
   ~CZipContextMenu();

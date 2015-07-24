@@ -5,8 +5,8 @@
 
 #include "MyString.h"
 
-bool CheckUTF8(const char *src) throw();
+bool CheckUTF8(const char *src, bool allowReduced = false) throw();
 bool ConvertUTF8ToUnicode(const AString &utfString, UString &resultString);
-bool ConvertUnicodeToUTF8(const UString &unicodeString, AString &resultString);
+void ConvertUnicodeToUTF8(const UString &unicodeString, AString &resultString);
 
 #endif

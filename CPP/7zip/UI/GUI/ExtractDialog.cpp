@@ -143,7 +143,7 @@ bool CExtractDialog::OnInit()
       GetText(s);
     if (!ArcPath.IsEmpty())
     {
-      s += L" : ";
+      s.AddAscii(" : ");
       s += ArcPath;
     }
     SetText(s);
@@ -289,7 +289,7 @@ void CExtractDialog::OnButtonSetPath()
 void AddUniqueString(UStringVector &list, const UString &s)
 {
   FOR_VECTOR (i, list)
-    if (s.IsEqualToNoCase(list[i]))
+    if (s.IsEqualTo_NoCase(list[i]))
       return;
   list.Add(s);
 }

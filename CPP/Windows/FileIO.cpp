@@ -130,7 +130,7 @@ bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition
   if (low == 0xFFFFFFFF)
     if (::GetLastError() != NO_ERROR)
       return false;
-  newPosition = (((UInt64)high) << 32) + low;
+  newPosition = (((UInt64)(UInt32)high) << 32) + low;
   return true;
 }
 

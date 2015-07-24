@@ -119,6 +119,7 @@ STDMETHODIMP COpenCallbackImp::CryptoGetTextPassword(BSTR *password)
   }
   if (!Callback)
     return E_NOTIMPL;
+  PasswordWasAsked = true;
   return Callback->Open_CryptoGetTextPassword(password);
   COM_TRY_END
 }

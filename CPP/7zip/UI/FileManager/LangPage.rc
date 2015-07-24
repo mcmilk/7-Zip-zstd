@@ -1,7 +1,7 @@
 #include "LangPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 148
+#define xc 160
 #define yc 100
 
 IDD_LANG  DIALOG  0, 0, xs, ys  MY_PAGE_STYLE  MY_FONT

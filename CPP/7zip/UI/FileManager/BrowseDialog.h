@@ -9,7 +9,7 @@ bool MyBrowseForFolder(HWND owner, LPCWSTR title, LPCWSTR path, UString &resultP
 bool MyBrowseForFile(HWND owner, LPCWSTR title, LPCWSTR path, LPCWSTR filterDescription, LPCWSTR filter, UString &resultPath);
 
 /* CorrectFsPath removes undesirable characters in names (dots and spaces at the end of file)
-   But it doesn't change "bad" name in any of the following caes:
+   But it doesn't change "bad" name in any of the following cases:
      - path is Super Path (with \\?\ prefix)
      - path is relative and relBase is Super Path
      - there is file or dir in filesystem with specified "bad" name */

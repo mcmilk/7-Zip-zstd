@@ -6,7 +6,7 @@
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
 
-// #include "../../../Windows/Error.h"
+#include "../../../Windows/DLL.h"
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileName.h"
 #include "../../../Windows/Thread.h"
@@ -54,9 +54,8 @@ HRESULT CThreadUpdating::ProcessVirt()
   HRESULT res = UpdateArchive(codecs, *formatIndices, *cmdArcPath,
       *WildcardCensor, *Options,
       ei, UpdateCallbackGUI, UpdateCallbackGUI, needSetPath);
-  FinalMessage.ErrorMessage.Message = ei.Message;
-  SetErrorPath1(ei.FileName);
-  SetErrorPath2(ei.FileName2);
+  FinalMessage.ErrorMessage.Message.SetFromAscii(ei.Message);
+  ErrorPaths = ei.FileNames;
   if (ei.SystemError != S_OK && ei.SystemError != E_FAIL && ei.SystemError != E_ABORT)
     return ei.SystemError;
   return res;
@@ -260,7 +259,7 @@ static HRESULT ShowDialog(
         FOR_VECTOR (i, item.PathParts)
         {
           if (i > 0)
-            name += WCHAR_PATH_SEPARATOR;
+            name.Add_PathSepar();
           name += item.PathParts[i];
         }
         if (fileInfo.Find(us2fs(name)))
@@ -306,8 +305,8 @@ static HRESULT ShowDialog(
     if (!oneFile && ai.Flags_KeepName())
       continue;
     if ((int)i != di.FormatIndex)
-      if (ai.Name.IsEqualToNoCase(L"swfc"))
-        if (!oneFile || name.Len() < 4 || !StringsAreEqualNoCase(name.RightPtr(4), L".swf"))
+      if (ai.Name.IsEqualTo_Ascii_NoCase("swfc"))
+        if (!oneFile || name.Len() < 4 || !StringsAreEqualNoCase_Ascii(name.RightPtr(4), ".swf"))
           continue;
     dialog.ArcIndices.Add(i);
   }
@@ -387,7 +386,7 @@ static HRESULT ShowDialog(
 
   options.MethodMode.Properties.Clear();
 
-  bool is7z = archiverInfo.Name.IsEqualToNoCase(L"7z");
+  bool is7z = archiverInfo.Name.IsEqualTo_Ascii_NoCase("7z");
   bool methodOverride = IsThereMethodOverride(is7z, di.Options);
 
   SetOutProperties(

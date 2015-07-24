@@ -7,7 +7,7 @@
 
 #include "../../../Windows/FileFind.h"
 
-UString CreateArchiveName(const UString &srcName, bool fromPrev, bool keepName);
-UString CreateArchiveName(const NWindows::NFile::NFind::CFileInfo fileInfo, bool keepName);
+UString CreateArchiveName(const UString &path, bool fromPrev, bool keepName);
+UString CreateArchiveName(const NWindows::NFile::NFind::CFileInfo &fileInfo, bool keepName);
 
 #endif

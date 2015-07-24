@@ -13,7 +13,7 @@ namespace N7z {
 
 struct CPropMap
 {
-  UInt64 FilePropID;
+  UInt32 FilePropID;
   STATPROPSTG StatPROPSTG;
 };
 
@@ -35,7 +35,7 @@ static const CPropMap kPropMap[] =
   { NID::kMTime, { NULL, kpidMTime, VT_FILETIME } },
   { NID::kATime, { NULL, kpidATime, VT_FILETIME } },
   { NID::kWinAttrib, { NULL, kpidAttrib, VT_UI4 } },
-  { NID::kStartPos, { NULL, kpidPosition, VT_UI4 } },
+  { NID::kStartPos, { NULL, kpidPosition, VT_UI8 } },
 
   { NID::kCRC, { NULL, kpidCRC, VT_UI4 } },
   
@@ -44,19 +44,11 @@ static const CPropMap kPropMap[] =
 
   #ifndef _SFX
   ,
-  { 97, { NULL,kpidEncrypted, VT_BOOL } },
-  { 98, { NULL,kpidMethod, VT_BSTR } },
-  { 99, { NULL,kpidBlock, VT_UI4 } }
+  { 97, { NULL, kpidEncrypted, VT_BOOL } },
+  { 98, { NULL, kpidMethod, VT_BSTR } },
+  { 99, { NULL, kpidBlock, VT_UI4 } }
   #endif
 };
-
-static int FindPropInMap(UInt64 filePropID)
-{
-  for (int i = 0; i < ARRAY_SIZE(kPropMap); i++)
-    if (kPropMap[i].FilePropID == filePropID)
-      return i;
-  return -1;
-}
 
 static void CopyOneItem(CRecordVector<UInt64> &src,
     CRecordVector<UInt64> &dest, UInt32 item)
@@ -131,6 +123,7 @@ void CHandler::FillPopIDs()
   _fileInfoPopIDs.Add(98);
   _fileInfoPopIDs.Add(99);
   #endif
+
   #ifdef _MULTI_PACK
   _fileInfoPopIDs.Add(100);
   _fileInfoPopIDs.Add(101);
@@ -155,16 +148,27 @@ STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProps)
 
 STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)
 {
-  if ((int)index >= _fileInfoPopIDs.Size())
+  if (index >= _fileInfoPopIDs.Size())
     return E_INVALIDARG;
-  int indexInMap = FindPropInMap(_fileInfoPopIDs[index]);
-  if (indexInMap == -1)
-    return E_INVALIDARG;
-  const STATPROPSTG &srcItem = kPropMap[indexInMap].StatPROPSTG;
-  *propID = srcItem.propid;
-  *varType = srcItem.vt;
-  *name = 0;
-  return S_OK;
+  UInt64 id = _fileInfoPopIDs[index];
+  for (unsigned i = 0; i < ARRAY_SIZE(kPropMap); i++)
+  {
+    const CPropMap &pr = kPropMap[i];
+    if (pr.FilePropID == id)
+    {
+      const STATPROPSTG &st = pr.StatPROPSTG;
+      *propID = st.propid;
+      *varType = st.vt;
+      /*
+      if (st.lpwstrName)
+        *name = ::SysAllocString(st.lpwstrName);
+      else
+      */
+        *name = NULL;
+      return S_OK;
+    }
+  }
+  return E_INVALIDARG;
 }
 
 }}

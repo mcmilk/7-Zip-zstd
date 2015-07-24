@@ -31,7 +31,8 @@ void my_delete(void *p) throw()
 void * my_Realloc(void *p, size_t newSize, size_t oldSize)
 {
   void *newBuf = my_new(newSize);
-  memcpy(newBuf, p, oldSize);
+  if (oldSize != 0)
+    memcpy(newBuf, p, oldSize);
   my_delete(p);
   return newBuf;
 }

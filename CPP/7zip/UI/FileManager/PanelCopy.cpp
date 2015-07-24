@@ -1,4 +1,4 @@
-/// PanelExtract.cpp
+/// PanelCopy.cpp
 
 #include "StdAfx.h"
 
@@ -79,18 +79,25 @@ HRESULT CPanelCopyThread::ProcessVirt()
   return Result;
 }
 
+
+/*
+#ifdef EXTERNAL_CODECS
+
 static void ThrowException_if_Error(HRESULT res)
 {
   if (res != S_OK)
     throw CSystemException(res);
 }
 
+#endif
+*/
+
+
 HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &indices,
     UStringVector *messages,
     bool &usePassword, UString &password)
 {
-  CMyComPtr<IFolderOperations> folderOperations;
-  if (_folder.QueryInterface(IID_IFolderOperations, &folderOperations) != S_OK)
+  if (!_folderOperations)
   {
     UString errorMessage = LangString(IDS_OPERATION_IS_NOT_SUPPORTED);
     if (options.showErrorMessages)
@@ -100,8 +107,17 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
     return E_FAIL;
   }
 
-  HRESULT res;
+  HRESULT res = S_OK;
+
   {
+  /*
+  #ifdef EXTERNAL_CODECS
+  CExternalCodecs g_ExternalCodecs;
+  #endif
+  */
+  /* extracter.Hash uses g_ExternalCodecs
+     extracter must be declared after g_ExternalCodecs for correct destructor order !!! */
+
   CPanelCopyThread extracter;
 
   extracter.ExtractCallbackSpec = new CExtractCallbackImp;
@@ -113,11 +129,6 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
 
   extracter.ExtractCallbackSpec->StreamMode = options.streamMode;
 
-  #ifdef EXTERNAL_CODECS
-  CExternalCodecs __externalCodecs;
-  #else
-  CMyComPtr<IUnknown> compressCodecsInfo;
-  #endif
 
   if (indices.Size() == 1)
     extracter.FirstFilePath = GetItemRelPath(indices[0]);
@@ -131,19 +142,16 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
 
   if (!options.hashMethods.IsEmpty())
   {
-    {
-      CCodecs *codecs = new CCodecs;
-      ThrowException_if_Error(codecs->Load());
-      #ifdef EXTERNAL_CODECS
-      __externalCodecs.GetCodecs = codecs;
-      __externalCodecs.GetHashers = codecs;
-      ThrowException_if_Error(__externalCodecs.LoadCodecs());
-      #else
-      compressCodecsInfo = codecs;
-      #endif
-    }
+    /* this code is used when we call CRC calculation for files in side archive
+       But new code uses global codecs so we don't need to call LoadGlobalCodecs again */
 
-    extracter.Hash.SetMethods(EXTERNAL_CODECS_VARS options.hashMethods);
+    /*
+    #ifdef EXTERNAL_CODECS
+    ThrowException_if_Error(LoadGlobalCodecs());
+    #endif
+    */
+
+    extracter.Hash.SetMethods(EXTERNAL_CODECS_VARS_G options.hashMethods);
     extracter.ExtractCallbackSpec->SetHashMethods(&extracter.Hash);
   }
   else if (options.testMode)
@@ -153,7 +161,6 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
 
   extracter.Hash.Init();
 
-  
   UString title;
   {
     UInt32 titleID = IDS_COPYING;
@@ -185,7 +192,7 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
   extracter.ExtractCallbackSpec->OverwriteMode = NExtract::NOverwriteMode::kAsk;
   extracter.ExtractCallbackSpec->Init();
   extracter.Indices = indices;
-  extracter.FolderOperations = folderOperations;
+  extracter.FolderOperations = _folderOperations;
 
   extracter.ExtractCallbackSpec->PasswordIsDefined = usePassword;
   extracter.ExtractCallbackSpec->Password = password;
@@ -244,10 +251,8 @@ struct CThreadUpdate
 HRESULT CPanel::CopyFrom(bool moveMode, const UString &folderPrefix, const UStringVector &filePaths,
     bool showErrorMessages, UStringVector *messages)
 {
-  CMyComPtr<IFolderOperations> folderOperations;
-  _folder.QueryInterface(IID_IFolderOperations, &folderOperations);
   HRESULT res;
-  if (!folderOperations)
+  if (!_folderOperations)
     res = E_NOINTERFACE;
   else
   {
@@ -255,6 +260,7 @@ HRESULT CPanel::CopyFrom(bool moveMode, const UString &folderPrefix, const UStri
   updater.MoveMode = moveMode;
   updater.UpdateCallbackSpec = new CUpdateCallback100Imp;
   updater.UpdateCallback = updater.UpdateCallbackSpec;
+  updater.UpdateCallbackSpec->Init();
 
   updater.UpdateCallbackSpec->ProgressDialog = &updater.ProgressDialog;
 
@@ -263,10 +269,18 @@ HRESULT CPanel::CopyFrom(bool moveMode, const UString &folderPrefix, const UStri
 
   updater.ProgressDialog.MainWindow = GetParent();
   updater.ProgressDialog.MainTitle = progressWindowTitle;
-  updater.ProgressDialog.MainAddTitle = title + UString(L' ');
+  updater.ProgressDialog.MainAddTitle = title + L' ';
   
-  updater.UpdateCallbackSpec->Init(false, L"");
-  updater.FolderOperations = folderOperations;
+  {
+    if (!_parentFolders.IsEmpty())
+    {
+      const CFolderLink &fl = _parentFolders.Back();
+      updater.UpdateCallbackSpec->PasswordIsDefined = fl.UsePassword;
+      updater.UpdateCallbackSpec->Password = fl.Password;
+    }
+  }
+
+  updater.FolderOperations = _folderOperations;
   updater.FolderPrefix = folderPrefix;
   updater.FileNames.ClearAndReserve(filePaths.Size());
   unsigned i;

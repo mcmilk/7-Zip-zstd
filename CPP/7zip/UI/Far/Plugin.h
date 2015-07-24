@@ -5,13 +5,13 @@
 
 #include "../../../Common/MyCom.h"
 
-#include "../../../Windows/COM.h"
+// #include "../../../Windows/COM.h"
 #include "../../../Windows/FileFind.h"
 #include "../../../Windows/PropVariant.h"
 
 #include "../Common/WorkDir.h"
 
-#include "../Agent/IFolderArchive.h"
+#include "../Agent/Agent.h"
 
 #include "FarUtils.h"
 
@@ -19,10 +19,18 @@ const UInt32 kNumInfoLinesMax = 64;
 
 class CPlugin
 {
-  NWindows::NCOM::CComInitializer m_ComInitializer;
+  CAgent *_agent;
+  CMyComPtr<IInFolderArchive> m_ArchiveHandler;
+  CMyComPtr<IFolderFolder> _folder;
+
+  // NWindows::NCOM::CComInitializer m_ComInitializer;
   UString m_CurrentDir;
 
   UString m_PannelTitle;
+  FString m_FileName;
+  NWindows::NFile::NFind::CFileInfo m_FileInfo;
+
+  UString _archiveTypeName;
   
   InfoPanelLine m_InfoLines[kNumInfoLinesMax];
 
@@ -32,26 +40,20 @@ class CPlugin
 
   AString PanelModeColumnTypes;
   AString PanelModeColumnWidths;
-  PanelMode PanelMode;
+  // PanelMode _PanelMode;
   void AddColumn(PROPID aPropID);
 
   void EnterToDirectory(const UString &dirName);
   void GetPathParts(UStringVector &pathParts);
   void SetCurrentDirVar();
-  HRESULT AfterUpdate(CWorkDirTempFile &tempFile, const UStringVector &pathVector);
-public:
-  FString m_FileName;
-  NWindows::NFile::NFind::CFileInfo m_FileInfo;
+  // HRESULT AfterUpdate(CWorkDirTempFile &tempFile, const UStringVector &pathVector);
 
-  CMyComPtr<IInFolderArchive> m_ArchiveHandler;
-  CMyComPtr<IFolderFolder> _folder;
-  
-  UString _archiveTypeName;
+public:
 
   bool PasswordIsDefined;
   UString Password;
 
-  CPlugin(const FString &fileName, IInFolderArchive *archiveHandler, UString archiveTypeName);
+  CPlugin(const FString &fileName, CAgent *agent, UString archiveTypeName);
   ~CPlugin();
 
   void ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex);
@@ -80,6 +82,7 @@ public:
 
   NFar::NFileOperationReturnCode::EEnum PutFiles(struct PluginPanelItem *panelItems, int itemsNumber,
       int move, int opMode);
+  HRESULT CreateFolder();
 
   HRESULT ShowAttributesWindow();
 

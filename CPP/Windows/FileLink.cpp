@@ -102,6 +102,8 @@ void WriteString(Byte *dest, const wchar_t *path)
   }
 }
 
+#if defined(_WIN32) && !defined(UNDER_CE)
+
 bool FillLinkData(CByteBuffer &dest, const wchar_t *path, bool isSymLink)
 {
   bool isAbs = IsAbsolutePath(path);
@@ -175,13 +177,21 @@ bool FillLinkData(CByteBuffer &dest, const wchar_t *path, bool isSymLink)
   return true;
 }
 
+#endif
+
 static void GetString(const Byte *p, unsigned len, UString &res)
 {
-  wchar_t *s = res.GetBuffer(len);
-  for (unsigned i = 0; i < len; i++)
-    s[i] = Get16(p + i * 2);
-  s[len] = 0;
-  res.ReleaseBuffer();
+  wchar_t *s = res.GetBuf(len);
+  unsigned i;
+  for (i = 0; i < len; i++)
+  {
+    wchar_t c = Get16(p + i * 2);
+    if (c == 0)
+      break;
+    s[i] = c;
+  }
+  s[i] = 0;
+  res.ReleaseBuf_SetLen(i);
 }
 
 bool CReparseAttr::Parse(const Byte *p, size_t size)
@@ -367,7 +377,7 @@ bool GetReparseData(CFSTR path, CByteBuffer &reparseData, BY_HANDLE_FILE_INFORMA
 static bool CreatePrefixDirOfFile(CFSTR path)
 {
   FString path2 = path;
-  int pos = path2.ReverseFind(FCHAR_PATH_SEPARATOR);
+  int pos = path2.ReverseFind_PathSepar();
   if (pos < 0)
     return true;
   #ifdef _WIN32

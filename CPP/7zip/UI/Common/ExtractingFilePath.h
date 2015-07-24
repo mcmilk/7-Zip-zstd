@@ -5,17 +5,15 @@
 
 #include "../../../Common/MyString.h"
 
-UString MakePathNameFromParts(const UStringVector &parts);
+#ifdef _WIN32
+void Correct_AltStream_Name(UString &s);
+#endif
 
-/* for WIN32:
-  if (isRoot == true), and  pathParts[0] contains path like "c:name",
-  it thinks that "c:" is drive prefix (it's not ":name alt stream) and
-  the function changes part to c_name */
-void MakeCorrectPath(bool isPathFromRoot, UStringVector &pathParts, bool replaceAltStreamColon);
+// replaces unsuported characters, and replaces "." , ".." and "" to "[]"
+UString Get_Correct_FsFile_Name(const UString &name);
 
-UString GetCorrectFsPath(const UString &path);
-UString GetCorrectFullFsPath(const UString &path);
+void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir);
 
-void Correct_IfEmptyLastPart(UStringVector &parts);
+UString MakePathFromParts(const UStringVector &parts);
 
 #endif

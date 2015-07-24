@@ -17,12 +17,179 @@
 #include "../Common/StreamObjects.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/ArjDecoder1.h"
-#include "../Compress/ArjDecoder2.h"
 #include "../Compress/CopyCoder.h"
+#include "../Compress/LzhDecoder.h"
 
 #include "Common/ItemNameUtils.h"
 #include "Common/OutStreamWithCRC.h"
+
+namespace NCompress {
+namespace NArj {
+namespace NDecoder {
+
+static const unsigned kMatchMinLen = 3;
+
+static const UInt32 kWindowSize = 1 << 15; // must be >= (1 << 14)
+
+class CCoder:
+  public ICompressCoder,
+  public CMyUnknownImp
+{
+  CLzOutWindow _outWindow;
+  NBitm::CDecoder<CInBuffer> _inBitStream;
+
+  class CCoderReleaser
+  {
+    CCoder *_coder;
+  public:
+    CCoderReleaser(CCoder *coder): _coder(coder) {}
+    void Disable() { _coder = NULL; }
+    ~CCoderReleaser() { if (_coder) _coder->_outWindow.Flush(); }
+  };
+  friend class CCoderReleaser;
+
+  HRESULT CodeReal(UInt64 outSize, ICompressProgressInfo *progress);
+public:
+  MY_UNKNOWN_IMP
+
+  bool FinishMode;
+  CCoder(): FinishMode(false) {}
+
+  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
+  UInt64 GetInputProcessedSize() const { return _inBitStream.GetProcessedSize(); }
+};
+
+HRESULT CCoder::CodeReal(UInt64 rem, ICompressProgressInfo *progress)
+{
+  const UInt32 kStep = 1 << 20;
+  UInt64 next = 0;
+  if (rem > kStep && progress)
+    next = rem - kStep;
+
+  while (rem != 0)
+  {
+    if (rem <= next)
+    {
+      if (_inBitStream.ExtraBitsWereRead())
+        return S_FALSE;
+
+      UInt64 packSize = _inBitStream.GetProcessedSize();
+      UInt64 pos = _outWindow.GetProcessedSize();
+      RINOK(progress->SetRatioInfo(&packSize, &pos));
+      next = 0;
+      if (rem > kStep)
+        next = rem - kStep;
+    }
+
+    UInt32 len;
+    
+    {
+      const unsigned kNumBits = 7 + 7;
+      UInt32 val = _inBitStream.GetValue(kNumBits);
+      
+      if ((val & (1 << (kNumBits - 1))) == 0)
+      {
+        _outWindow.PutByte((Byte)(val >> 5));
+        _inBitStream.MovePos(1 + 8);
+        rem--;
+        continue;
+      }
+
+      UInt32 mask = 1 << (kNumBits - 2);
+      unsigned w;
+
+      for (w = 1; w < 7; w++, mask >>= 1)
+        if ((val & mask) == 0)
+          break;
+      
+      unsigned readBits = (w != 7 ? 1 : 0);
+      readBits += w + w;
+      len = (1 << w) - 1 + kMatchMinLen - 1 +
+          (((val >> (kNumBits - readBits)) & ((1 << w) - 1)));
+      _inBitStream.MovePos(readBits);
+    }
+    
+    {
+      const unsigned kNumBits = 4 + 13;
+      UInt32 val = _inBitStream.GetValue(kNumBits);
+
+      unsigned readBits = 1;
+      unsigned w;
+     
+           if ((val & ((UInt32)1 << 16)) == 0) w = 9;
+      else if ((val & ((UInt32)1 << 15)) == 0) w = 10;
+      else if ((val & ((UInt32)1 << 14)) == 0) w = 11;
+      else if ((val & ((UInt32)1 << 13)) == 0) w = 12;
+      else { w = 13; readBits = 0; }
+
+      readBits += w + w - 9;
+
+      UInt32 dist = ((UInt32)1 << w) - (1 << 9) +
+          (((val >> (kNumBits - readBits)) & ((1 << w) - 1)));
+      _inBitStream.MovePos(readBits);
+
+      if (len > rem)
+        len = (UInt32)rem;
+
+      if (!_outWindow.CopyBlock(dist, len))
+        return S_FALSE;
+      rem -= len;
+    }
+  }
+
+  if (FinishMode)
+  {
+    if (_inBitStream.ReadAlignBits() != 0)
+      return S_FALSE;
+  }
+
+  if (_inBitStream.ExtraBitsWereRead())
+    return S_FALSE;
+
+  return S_OK;
+}
+
+
+
+STDMETHODIMP CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+{
+  try
+  {
+    if (!outSize)
+      return E_INVALIDARG;
+    
+    if (!_outWindow.Create(kWindowSize))
+      return E_OUTOFMEMORY;
+    if (!_inBitStream.Create(1 << 17))
+      return E_OUTOFMEMORY;
+    
+    _outWindow.SetStream(outStream);
+    _outWindow.Init(false);
+    _inBitStream.SetStream(inStream);
+    _inBitStream.Init();
+    
+    CCoderReleaser coderReleaser(this);
+    HRESULT res;
+    {
+      res = CodeReal(*outSize, progress);
+      if (res != S_OK)
+        return res;
+    }
+    
+    coderReleaser.Disable();
+    return _outWindow.Flush();
+  }
+  catch(const CInBufferException &e) { return e.ErrorCode; }
+  catch(const CLzOutWindowException &e) { return e.ErrorCode; }
+  catch(...) { return S_FALSE; }
+}
+
+}}}
+
+
+
 
 using namespace NWindows;
 
@@ -95,7 +262,7 @@ namespace NHostOS
   };
 }
 
-static const char *kHostOS[] =
+static const char * const kHostOS[] =
 {
     "MSDOS"
   , "PRIMOS"
@@ -164,10 +331,10 @@ API_FUNC_static_IsArc IsArc_Arj(const Byte *p, size_t size)
 
 static HRESULT ReadString(const Byte *p, unsigned &size, AString &res)
 {
-  for (unsigned i = 0; i < size;)
+  unsigned num = size;
+  for (unsigned i = 0; i < num;)
   {
-    char c = (char)p[i++];
-    if (c == 0)
+    if (p[i++] == 0)
     {
       size = i;
       res = (const char *)p;
@@ -656,15 +823,19 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
     const CItem &item = _items[allFilesMode ? i : indices[i]];
     totalUnpacked += item.Size;
-    totalPacked += item.PackSize;
+    // totalPacked += item.PackSize;
   }
   extractCallback->SetTotal(totalUnpacked);
 
   totalUnpacked = totalPacked = 0;
   UInt64 curUnpacked, curPacked;
   
-  CMyComPtr<ICompressCoder> arj1Decoder;
-  CMyComPtr<ICompressCoder> arj2Decoder;
+  NCompress::NLzh::NDecoder::CCoder *lzhDecoderSpec = NULL;
+  CMyComPtr<ICompressCoder> lzhDecoder;
+
+  NCompress::NArj::NDecoder::CCoder *arjDecoderSpec = NULL;
+  CMyComPtr<ICompressCoder> arjDecoder;
+
   NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
   CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 
@@ -741,22 +912,37 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           case NCompressionMethod::kCompressed1b:
           case NCompressionMethod::kCompressed1c:
           {
-            if (!arj1Decoder)
-              arj1Decoder = new NCompress::NArj::NDecoder1::CCoder;
-            result = arj1Decoder->Code(inStream, outStream, NULL, &curUnpacked, progress);
+            if (!lzhDecoder)
+            {
+              lzhDecoderSpec = new NCompress::NLzh::NDecoder::CCoder;
+              lzhDecoder = lzhDecoderSpec;
+            }
+            lzhDecoderSpec->FinishMode = true;
+            const UInt32 kHistorySize = 26624;
+            lzhDecoderSpec->SetDictSize(kHistorySize);
+            result = lzhDecoder->Code(inStream, outStream, NULL, &curUnpacked, progress);
+            if (result == S_OK && lzhDecoderSpec->GetInputProcessedSize() != item.PackSize)
+              result = S_FALSE;
             break;
           }
           case NCompressionMethod::kCompressed2:
           {
-            if (!arj2Decoder)
-              arj2Decoder = new NCompress::NArj::NDecoder2::CCoder;
-            result = arj2Decoder->Code(inStream, outStream, NULL, &curUnpacked, progress);
+            if (!arjDecoder)
+            {
+              arjDecoderSpec = new NCompress::NArj::NDecoder::CCoder;
+              arjDecoder = arjDecoderSpec;
+            }
+            arjDecoderSpec->FinishMode = true;
+            result = arjDecoder->Code(inStream, outStream, NULL, &curUnpacked, progress);
+            if (result == S_OK && arjDecoderSpec->GetInputProcessedSize() != item.PackSize)
+              result = S_FALSE;
             break;
           }
           default:
             opRes = NExtract::NOperationResult::kUnsupportedMethod;
         }
       }
+      
       if (opRes == NExtract::NOperationResult::kOK)
       {
         if (result == S_FALSE)
@@ -769,23 +955,23 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
               NExtract::NOperationResult::kCRCError;
         }
       }
+      
       outStream.Release();
       RINOK(extractCallback->SetOperationResult(opRes));
     }
   }
+  
   return S_OK;
   COM_TRY_END
 }
 
-IMP_CreateArcIn
+static const Byte k_Signature[] = { kSig0, kSig1 };
 
-static CArcInfo g_ArcInfo =
-  { "Arj", "arj", 0, 4,
-  2, { kSig0, kSig1 },
+REGISTER_ARC_I(
+  "Arj", "arj", 0, 4,
+  k_Signature,
   0,
   0,
-  CreateArc, NULL, IsArc_Arj };
-
-REGISTER_ARC(Arj)
+  IsArc_Arj)
 
 }}

@@ -19,7 +19,7 @@ class CPairsStorage
   int FindID(const UString &id) const;
   void Sort();
 public:
-  void Clear() { Pairs.Clear(); };
+  void Clear() { Pairs.Clear(); }
   bool ReadFromString(const UString &text);
   void SaveToString(UString &text) const;
 

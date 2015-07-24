@@ -65,9 +65,9 @@ public:
     { return ::GetModuleBaseName(_handle, hModule, baseName, size); }
   bool MyGetModuleBaseName(HMODULE hModule, CSysString &name)
   {
-    const int length = 1000;
-    DWORD resultLen = MyGetModuleBaseName(hModule, name.GetBuffer(length), length);
-    name.ReleaseBuffer();
+    const unsigned len = MAX_PATH + 100;
+    DWORD resultLen = MyGetModuleBaseName(hModule, name.GetBuf(len), len);
+    name.ReleaseBuf_CalcLen(len);
     return (resultLen != 0);
   }
 
@@ -75,9 +75,9 @@ public:
     { return ::GetModuleFileNameEx(_handle, hModule, baseName, size); }
   bool MyGetModuleFileNameEx(HMODULE hModule, CSysString &name)
   {
-    const int length = MAX_PATH + 100;
-    DWORD resultLen = MyGetModuleFileNameEx(hModule, name.GetBuffer(length), length);
-    name.ReleaseBuffer();
+    const unsigned len = MAX_PATH + 100;
+    DWORD resultLen = MyGetModuleFileNameEx(hModule, name.GetBuf(len), len);
+    name.ReleaseBuf_CalcLen(len);
     return (resultLen != 0);
   }
 

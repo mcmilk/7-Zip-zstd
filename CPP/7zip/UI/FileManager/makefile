@@ -97,6 +97,7 @@ EXPLORER_OBJS = \
 
 GUI_OBJS = \
   $O\HashGUI.obj \
+  $O\UpdateCallbackGUI2.obj \
 
 COMPRESS_OBJS = \
   $O\CopyCoder.obj \

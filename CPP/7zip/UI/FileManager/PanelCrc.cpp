@@ -6,6 +6,7 @@
 
 #include "../../../Windows/FileFind.h"
 #include "../../../Windows/FileIO.h"
+#include "../../../Windows/FileName.h"
 
 #include "../Common/LoadCodecs.h"
 
@@ -19,12 +20,18 @@
 using namespace NWindows;
 using namespace NFile;
 
+#ifdef EXTERNAL_CODECS
+extern CExternalCodecs g_ExternalCodecs;
+HRESULT LoadGlobalCodecs();
+#endif
+
 static const UInt32 kBufSize = (1 << 15);
 
 struct CDirEnumerator
 {
   bool EnterToDirs;
   FString BasePrefix;
+  FString BasePrefix_for_Open;
   FStringVector FilePaths;
 
   CObjectVector<NFind::CEnumerator> Enumerators;
@@ -54,22 +61,27 @@ DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &r
 {
   filled = false;
   resPath.Empty();
+  
   for (;;)
   {
+    #if defined(_WIN32) && !defined(UNDER_CE)
+    bool isRootPrefix = (BasePrefix.IsEmpty() || (NName::IsSuperPath(BasePrefix) && BasePrefix[NName::kSuperPathPrefixSize] == 0));
+    #endif
+
     if (Enumerators.IsEmpty())
     {
       if (Index >= FilePaths.Size())
         return S_OK;
       const FString &path = FilePaths[Index++];
-      int pos = path.ReverseFind(FCHAR_PATH_SEPARATOR);
+      int pos = path.ReverseFind_PathSepar();
       if (pos >= 0)
         resPath.SetFrom(path, pos + 1);
 
-      #ifdef _WIN32
-      if (BasePrefix.IsEmpty() && path.Len() == 2 && path[1] == ':')
+      #if defined(_WIN32) && !defined(UNDER_CE)
+      if (isRootPrefix && path.Len() == 2 && NName::IsDrivePath2(path))
       {
         // we use "c:" item as directory item
-        fi.Clear();
+        fi.ClearBase();
         fi.Name = path;
         fi.SetAsDir();
         fi.Size = 0;
@@ -82,9 +94,12 @@ DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &r
         resPath = path;
         return error;
       }
+    
       break;
     }
+    
     bool found;
+    
     if (Enumerators.Back().Next(fi, found))
     {
       if (found)
@@ -101,18 +116,22 @@ DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &r
       Prefixes.DeleteBack();
       return error;
     }
+    
     Enumerators.DeleteBack();
     Prefixes.DeleteBack();
   }
+  
   resPath += fi.Name;
+  
   if (EnterToDirs && fi.IsDir())
   {
     FString s = resPath;
-    s += FCHAR_PATH_SEPARATOR;
+    s.Add_PathSepar();
     Prefixes.Add(s);
     s += FCHAR_ANY_MASK;
     Enumerators.Add(NFind::CEnumerator(BasePrefix + s));
   }
+  
   filled = true;
   return S_OK;
 }
@@ -137,10 +156,9 @@ void CThreadCrc::AddErrorMessage(DWORD systemError, const FChar *name)
 void CThreadCrc::SetStatus(const UString &s2)
 {
   UString s = s2;
-  if (Enumerator.BasePrefix)
+  if (!Enumerator.BasePrefix.IsEmpty())
   {
-    if (!s.IsEmpty())
-      s += L' ';
+    s.Add_Space_if_NotEmpty();
     s += fs2us(Enumerator.BasePrefix);
   }
   ProgressDialog.Sync.Set_Status(s);
@@ -201,10 +219,10 @@ HRESULT CThreadCrc::ProcessVirt()
     */
     if (needPrint)
     {
-      RINOK(sync.ScanProgress(numFiles, totalSize, fs2us(path), fi.IsDir()));
+      RINOK(sync.ScanProgress(numFiles, totalSize, path, fi.IsDir()));
     }
   }
-  RINOK(sync.ScanProgress(numFiles, totalSize, L"", false));
+  RINOK(sync.ScanProgress(numFiles, totalSize, FString(), false));
   // sync.SetNumFilesTotal(numFiles);
   // sync.SetProgress(totalSize, 0);
   // SetStatus(LangString(IDS_CHECKSUM_CALCULATING));
@@ -235,7 +253,7 @@ HRESULT CThreadCrc::ProcessVirt()
     if (!fi.IsDir())
     {
       NIO::CInFile inFile;
-      tempPath = Enumerator.BasePrefix;
+      tempPath = Enumerator.BasePrefix_for_Open;
       tempPath += path;
       if (!inFile.Open(tempPath))
       {
@@ -289,13 +307,8 @@ HRESULT CThreadCrc::ProcessVirt()
   return S_OK;
 }
 
-static void ThrowException_if_Error(HRESULT res)
-{
-  if (res != S_OK)
-    throw CSystemException(res);
-}
 
-void CApp::CalculateCrc(const UString &methodName)
+HRESULT CApp::CalculateCrc2(const UString &methodName)
 {
   int srcPanelIndex = GetFocusedPanelIndex();
   CPanel &srcPanel = Panels[srcPanelIndex];
@@ -303,9 +316,9 @@ void CApp::CalculateCrc(const UString &methodName)
   CRecordVector<UInt32> indices;
   srcPanel.GetOperatedIndicesSmart(indices);
   if (indices.IsEmpty())
-    return;
+    return S_OK;
 
-  if (!srcPanel.IsFsOrDrivesFolder())
+  if (!srcPanel.Is_IO_FS_Folder())
   {
     CCopyToOptions options;
     options.streamMode = true;
@@ -313,27 +326,13 @@ void CApp::CalculateCrc(const UString &methodName)
     options.hashMethods.Add(methodName);
 
     UStringVector messages;
-    HRESULT res = srcPanel.CopyTo(options, indices, &messages);
-    if (res != S_OK)
-    {
-      if (res != E_ABORT)
-        srcPanel.MessageBoxError(res);
-    }
-    return;
+    return srcPanel.CopyTo(options, indices, &messages);
   }
 
-  CCodecs *codecs = new CCodecs;
   #ifdef EXTERNAL_CODECS
-  CExternalCodecs __externalCodecs;
-  __externalCodecs.GetCodecs = codecs;
-  __externalCodecs.GetHashers = codecs;
-  #else
-  CMyComPtr<IUnknown> compressCodecsInfo = codecs;
-  #endif
-  ThrowException_if_Error(codecs->Load());
 
-  #ifdef EXTERNAL_CODECS
-  ThrowException_if_Error(__externalCodecs.LoadCodecs());
+  LoadGlobalCodecs();
+    
   #endif
 
   {
@@ -341,11 +340,23 @@ void CApp::CalculateCrc(const UString &methodName)
     {
       UStringVector methods;
       methods.Add(methodName);
-      t.Hash.SetMethods(EXTERNAL_CODECS_VARS methods);
+      RINOK(t.Hash.SetMethods(EXTERNAL_CODECS_VARS_G methods));
     }
     FOR_VECTOR (i, indices)
       t.Enumerator.FilePaths.Add(us2fs(srcPanel.GetItemRelPath(indices[i])));
-    t.Enumerator.BasePrefix = us2fs(srcPanel.GetFsPath());
+
+    UString basePrefix = srcPanel.GetFsPath();
+    UString basePrefix2 = basePrefix;
+    if (basePrefix2.Back() == ':')
+    {
+      int pos = basePrefix2.ReverseFind_PathSepar();
+      if (pos >= 0)
+        basePrefix2.DeleteFrom(pos + 1);
+    }
+
+    t.Enumerator.BasePrefix = us2fs(basePrefix);
+    t.Enumerator.BasePrefix_for_Open = us2fs(basePrefix2);
+
     t.Enumerator.EnterToDirs = !GetFlatMode();
     
     t.ProgressDialog.ShowCompressionInfo = false;
@@ -354,10 +365,22 @@ void CApp::CalculateCrc(const UString &methodName)
     
     t.ProgressDialog.MainWindow = _window;
     t.ProgressDialog.MainTitle = L"7-Zip"; // LangString(IDS_APP_TITLE);
-    t.ProgressDialog.MainAddTitle = title + UString(L' ');
+    t.ProgressDialog.MainAddTitle = title;
+    t.ProgressDialog.MainAddTitle.Add_Space();
     
-    if (t.Create(title, _window) != S_OK)
-      return;
+    RINOK(t.Create(title, _window));
   }
   RefreshTitleAlways();
+  return S_OK;
+}
+
+void CApp::CalculateCrc(const UString &methodName)
+{
+  HRESULT res = CalculateCrc2(methodName);
+  if (res != S_OK && res != E_ABORT)
+  {
+    int srcPanelIndex = GetFocusedPanelIndex();
+    CPanel &srcPanel = Panels[srcPanelIndex];
+    srcPanel.MessageBoxError(res);
+  }
 }

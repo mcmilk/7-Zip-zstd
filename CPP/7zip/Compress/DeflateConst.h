@@ -6,37 +6,37 @@
 namespace NCompress {
 namespace NDeflate {
 
-const int kNumHuffmanBits = 15;
+const unsigned kNumHuffmanBits = 15;
 
 const UInt32 kHistorySize32 = (1 << 15);
 const UInt32 kHistorySize64 = (1 << 16);
 
-const UInt32 kDistTableSize32 = 30;
-const UInt32 kDistTableSize64 = 32;
+const unsigned kDistTableSize32 = 30;
+const unsigned kDistTableSize64 = 32;
   
-const UInt32 kNumLenSymbols32 = 256;
-const UInt32 kNumLenSymbols64 = 255; // don't change it. It must be <= 255.
-const UInt32 kNumLenSymbolsMax = kNumLenSymbols32;
+const unsigned kNumLenSymbols32 = 256;
+const unsigned kNumLenSymbols64 = 255; // don't change it. It must be <= 255.
+const unsigned kNumLenSymbolsMax = kNumLenSymbols32;
   
-const UInt32 kNumLenSlots = 29;
+const unsigned kNumLenSlots = 29;
 
-const UInt32 kFixedDistTableSize = 32;
-const UInt32 kFixedLenTableSize = 31;
+const unsigned kFixedDistTableSize = 32;
+const unsigned kFixedLenTableSize = 31;
 
-const UInt32 kSymbolEndOfBlock = 0x100;
-const UInt32 kSymbolMatch = kSymbolEndOfBlock + 1;
+const unsigned kSymbolEndOfBlock = 0x100;
+const unsigned kSymbolMatch = kSymbolEndOfBlock + 1;
 
-const UInt32 kMainTableSize = kSymbolMatch + kNumLenSlots;
-const UInt32 kFixedMainTableSize = kSymbolMatch + kFixedLenTableSize;
+const unsigned kMainTableSize = kSymbolMatch + kNumLenSlots;
+const unsigned kFixedMainTableSize = kSymbolMatch + kFixedLenTableSize;
 
-const UInt32 kLevelTableSize = 19;
+const unsigned kLevelTableSize = 19;
 
-const UInt32 kTableDirectLevels = 16;
-const UInt32 kTableLevelRepNumber = kTableDirectLevels;
-const UInt32 kTableLevel0Number = kTableLevelRepNumber + 1;
-const UInt32 kTableLevel0Number2 = kTableLevel0Number + 1;
+const unsigned kTableDirectLevels = 16;
+const unsigned kTableLevelRepNumber = kTableDirectLevels;
+const unsigned kTableLevel0Number = kTableLevelRepNumber + 1;
+const unsigned kTableLevel0Number2 = kTableLevel0Number + 1;
 
-const UInt32 kLevelMask = 0xF;
+const unsigned kLevelMask = 0xF;
 
 const Byte kLenStart32[kFixedLenTableSize] =
   {0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224, 255, 0, 0};
@@ -58,12 +58,12 @@ const Byte kLevelDirectBits[3] = {2, 3, 7};
 
 const Byte kCodeLengthAlphabetOrder[kLevelTableSize] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
-const UInt32 kMatchMinLen = 3;
-const UInt32 kMatchMaxLen32 = kNumLenSymbols32 + kMatchMinLen - 1; //256 + 2
-const UInt32 kMatchMaxLen64 = kNumLenSymbols64 + kMatchMinLen - 1; //255 + 2
-const UInt32 kMatchMaxLen = kMatchMaxLen32;
+const unsigned kMatchMinLen = 3;
+const unsigned kMatchMaxLen32 = kNumLenSymbols32 + kMatchMinLen - 1; // 256 + 2
+const unsigned kMatchMaxLen64 = kNumLenSymbols64 + kMatchMinLen - 1; // 255 + 2
+const unsigned kMatchMaxLen = kMatchMaxLen32;
 
-const int kFinalBlockFieldSize = 1;
+const unsigned kFinalBlockFieldSize = 1;
 
 namespace NFinalBlockField
 {
@@ -74,7 +74,7 @@ namespace NFinalBlockField
   };
 }
 
-const int kBlockTypeFieldSize = 2;
+const unsigned kBlockTypeFieldSize = 2;
 
 namespace NBlockType
 {
@@ -86,17 +86,17 @@ namespace NBlockType
   };
 }
 
-const int kNumLenCodesFieldSize = 5;
-const int kNumDistCodesFieldSize = 5;
-const int kNumLevelCodesFieldSize = 4;
+const unsigned kNumLenCodesFieldSize = 5;
+const unsigned kNumDistCodesFieldSize = 5;
+const unsigned kNumLevelCodesFieldSize = 4;
 
-const UInt32 kNumLitLenCodesMin = 257;
-const UInt32 kNumDistCodesMin = 1;
-const UInt32 kNumLevelCodesMin = 4;
+const unsigned kNumLitLenCodesMin = 257;
+const unsigned kNumDistCodesMin = 1;
+const unsigned kNumLevelCodesMin = 4;
 
-const int kLevelFieldSize = 3;
+const unsigned kLevelFieldSize = 3;
 
-const int kStoredBlockLengthFieldSize = 16;
+const unsigned kStoredBlockLengthFieldSize = 16;
 
 struct CLevels
 {
@@ -105,7 +105,7 @@ struct CLevels
 
   void SubClear()
   {
-    UInt32 i;
+    unsigned i;
     for (i = kNumLitLenCodesMin; i < kFixedMainTableSize; i++)
       litLenLevels[i] = 0;
     for (i = 0; i < kFixedDistTableSize; i++)
@@ -114,7 +114,7 @@ struct CLevels
 
   void SetFixedLevels()
   {
-    int i = 0;
+    unsigned i = 0;
     
     for (; i < 144; i++) litLenLevels[i] = 8;
     for (; i < 256; i++) litLenLevels[i] = 9;

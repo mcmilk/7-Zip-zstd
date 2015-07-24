@@ -20,9 +20,9 @@
 
 #define INTERFACE_IOpenCallbackUI_Crypto(x) \
   virtual HRESULT Open_CryptoGetTextPassword(BSTR *password) x; \
-  virtual HRESULT Open_GetPasswordIfAny(bool &passwordIsDefined, UString &password) x; \
-  virtual bool Open_WasPasswordAsked() x; \
-  virtual void Open_ClearPasswordWasAskedFlag() x; \
+  /* virtual HRESULT Open_GetPasswordIfAny(bool &passwordIsDefined, UString &password) x; */ \
+  /* virtual bool Open_WasPasswordAsked() x; */ \
+  /* virtual void Open_Clear_PasswordWasAsked_Flag() x; */  \
   
 #endif
 
@@ -30,6 +30,7 @@
   virtual HRESULT Open_CheckBreak() x; \
   virtual HRESULT Open_SetTotal(const UInt64 *files, const UInt64 *bytes) x; \
   virtual HRESULT Open_SetCompleted(const UInt64 *files, const UInt64 *bytes) x; \
+  virtual HRESULT Open_Finished() x; \
   INTERFACE_IOpenCallbackUI_Crypto(x)
 
 struct IOpenCallbackUI
@@ -85,6 +86,8 @@ public:
   UStringVector FileNames;
   CBoolVector FileNames_WasUsed;
   CRecordVector<UInt64> FileSizes;
+  
+  bool PasswordWasAsked;
 
   IOpenCallbackUI *Callback;
   CMyComPtr<IArchiveOpenCallback> ReOpenCallback;
@@ -101,6 +104,7 @@ public:
     FileSizes.Clear();
     _subArchiveMode = false;
     // TotalSize = 0;
+    PasswordWasAsked = false;
   }
   bool SetSecondFileInfo(CFSTR newName)
   {

@@ -36,8 +36,7 @@ class CGrowBuf
   Byte *_items;
   size_t _size;
 
-  CGrowBuf(const CGrowBuf &buffer);
-  void operator=(const CGrowBuf &buffer);
+  CLASS_NO_COPY(CGrowBuf);
 
 public:
   bool ReAlloc_KeepData(size_t newSize, size_t keepSize)
@@ -45,7 +44,8 @@ public:
     void *buf = MyAlloc(newSize);
     if (!buf)
       return false;
-    memcpy(buf, _items, keepSize);
+    if (keepSize != 0)
+      memcpy(buf, _items, keepSize);
     MyFree(_items);
     _items = (Byte *)buf;
     _size = newSize;
@@ -55,8 +55,8 @@ public:
   CGrowBuf(): _items(0), _size(0) {}
   ~CGrowBuf() { MyFree(_items); }
 
-  operator Byte *() { return _items; };
-  operator const Byte *() const { return _items; };
+  operator Byte *() { return _items; }
+  operator const Byte *() const { return _items; }
   size_t Size() const { return _size; }
 };
 
@@ -135,10 +135,11 @@ public:
   {
     if (_fileMode)
       return false;
-    if (Files.Size() < 1 || Files[0].IsAltStream || Files[0].IsDir)
+    if (Files.Size() < 1 || /* Files[0].IsAltStream || */ Files[0].IsDir)
       return false;
     return true;
   }
+
   size_t GetMemStreamWrittenSize() const { return _pos; }
 
   CVirtFileSystem(): _outFileStreamSpec(NULL), MaxTotalAllocSize((UInt64)0 - 1) {}
@@ -165,6 +166,7 @@ public:
 class CExtractCallbackImp:
   public IExtractCallbackUI, // it includes IFolderArchiveExtractCallback
   public IOpenCallbackUI,
+  public IFolderArchiveExtractCallback2,
   #ifndef _SFX
   public IFolderOperationsExtractCallback,
   public IFolderExtractToStreamCallback,
@@ -176,8 +178,10 @@ class CExtractCallbackImp:
   public CMyUnknownImp
 {
   HRESULT MessageError(const char *message, const FString &path);
+  void Add_ArchiveName_Error();
 public:
   MY_QUERYINTERFACE_BEGIN2(IFolderArchiveExtractCallback)
+  MY_QUERYINTERFACE_ENTRY(IFolderArchiveExtractCallback2)
   #ifndef _SFX
   MY_QUERYINTERFACE_ENTRY(IFolderOperationsExtractCallback)
   MY_QUERYINTERFACE_ENTRY(IFolderExtractToStreamCallback)
@@ -191,33 +195,12 @@ public:
 
   INTERFACE_IProgress(;)
   INTERFACE_IOpenCallbackUI(;)
-
-  // IFolderArchiveExtractCallback
+  INTERFACE_IFolderArchiveExtractCallback(;)
+  INTERFACE_IFolderArchiveExtractCallback2(;)
   // STDMETHOD(SetTotalFiles)(UInt64 total);
   // STDMETHOD(SetCompletedFiles)(const UInt64 *value);
-  STDMETHOD(AskOverwrite)(
-      const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
-      const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
-      Int32 *answer);
-  STDMETHOD (PrepareOperation)(const wchar_t *name, bool isFolder, Int32 askExtractMode, const UInt64 *position);
 
-  STDMETHOD(MessageError)(const wchar_t *message);
-  STDMETHOD(SetOperationResult)(Int32 operationResult, bool encrypted);
-
-  // IExtractCallbackUI
-  
-  HRESULT BeforeOpen(const wchar_t *name);
-  HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted);
-  HRESULT SetError(int level, const wchar_t *name,
-      UInt32 errorFlags, const wchar_t *errors,
-      UInt32 warningFlags, const wchar_t *warnings);
-  HRESULT ThereAreNoFiles();
-  HRESULT ExtractResult(HRESULT result);
-  HRESULT OpenTypeWarning(const wchar_t *name, const wchar_t *okType, const wchar_t *errorType);
-
-  #ifndef _NO_CRYPTO
-  HRESULT SetPassword(const UString &password);
-  #endif
+  INTERFACE_IExtractCallbackUI(;)
 
   #ifndef _SFX
   // IFolderOperationsExtractCallback
@@ -294,6 +277,12 @@ public:
   bool PasswordWasAsked;
   UString Password;
   #endif
+
+
+  UString _lang_Extracting;
+  UString _lang_Testing;
+  UString _lang_Skipping;
+  UString _lang_Empty;
 
   CExtractCallbackImp():
     #ifndef _NO_CRYPTO

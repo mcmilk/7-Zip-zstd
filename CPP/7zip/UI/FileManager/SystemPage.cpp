@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../Common/StringConvert.h"
+#include "../../../Common/Defs.h"
 
 #include "../../../Windows/DLL.h"
 #include "../../../Windows/ErrorMsg.h"
@@ -15,6 +16,10 @@
 #include "SystemPageRes.h"
 
 using namespace NWindows;
+
+#ifndef _UNICODE
+extern bool g_IsNT;
+#endif
 
 static const UInt32 kLangIDs[] =
 {
@@ -48,8 +53,8 @@ int CSystemPage::AddIcon(const UString &iconPath, int iconIndex)
   // we expand path from REG_EXPAND_SZ registry item.
   UString path;
   DWORD size = MAX_PATH + 10;
-  DWORD needLen = ::ExpandEnvironmentStringsW(iconPath, path.GetBuffer((int)size + 1), size);
-  path.ReleaseBuffer();
+  DWORD needLen = ::ExpandEnvironmentStringsW(iconPath, path.GetBuf(size + 2), size);
+  path.ReleaseBuf_CalcLen(size);
   if (needLen == 0 || needLen >= size)
     path = iconPath;
   int num = ExtractIconExW(path, iconIndex, NULL, &hicon, 1);
@@ -140,32 +145,49 @@ bool CSystemPage::OnInit()
 
   _listView.InsertColumn(0, LangString(IDS_PROP_FILE_TYPE), 72);
 
-  CSysString s;
+  UString s;
 
   #if NUM_EXT_GROUPS == 1
-    s = TEXT("Program");
+    s.SetFromAscii("Program");
   #else
     #ifndef UNDER_CE
-      DWORD size = 256;
-      BOOL res = GetUserName(s.GetBuffer(size), &size);
-      s.ReleaseBuffer();
+      const unsigned kSize = 256;
+      BOOL res;
+
+      DWORD size = kSize;
+      #ifndef _UNICODE
+      if (!g_IsNT)
+      {
+        AString s2;
+        res = GetUserNameA(s2.GetBuf(size), &size);
+        s2.ReleaseBuf_CalcLen(MyMin((unsigned)size, kSize));
+        s = GetUnicodeString(s2);
+      }
+      else
+      #endif
+      {
+        res = GetUserNameW(s.GetBuf(size), &size);
+        s.ReleaseBuf_CalcLen(MyMin((unsigned)size, kSize));
+      }
+    
       if (!res)
     #endif
-        s = TEXT("Current User");
+        s.SetFromAscii("Current User");
   #endif
 
-  LVCOLUMN ci;
+  LV_COLUMNW ci;
   ci.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_SUBITEM;
-  ci.cx = 100;
-  ci.pszText = (TCHAR *)(const TCHAR *)s;
-  ci.iSubItem = 1;
+  ci.cx = 128;
   ci.fmt = LVCFMT_CENTER;
+  ci.pszText = (WCHAR *)(const WCHAR *)s;
+  ci.iSubItem = 1;
   _listView.InsertColumn(1, &ci);
 
   #if NUM_EXT_GROUPS > 1
   {
+    LangString(IDS_SYSTEM_ALL_USERS, s);
+    ci.pszText = (WCHAR *)(const WCHAR *)s;
     ci.iSubItem = 2;
-    ci.pszText = (LPTSTR)TEXT("All Users");
     _listView.InsertColumn(2, &ci);
   }
   #endif

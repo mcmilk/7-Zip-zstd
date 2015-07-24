@@ -15,6 +15,15 @@
 #define FOLDER_ARCHIVE_INTERFACE_SUB(i, base, x) DECL_INTERFACE_SUB(i, base, 0x01, x)
 #define FOLDER_ARCHIVE_INTERFACE(i, x) FOLDER_ARCHIVE_INTERFACE_SUB(i, IUnknown, x)
 
+/* ---------- IArchiveFolder ----------
+IArchiveFolder is implemented by CAgentFolder (Agent/Agent.h)
+IArchiveFolder is used by:
+  - FileManager/PanelCopy.cpp
+      CPanel::CopyTo(), if (options->testMode)
+  - FAR/PluginRead.cpp
+      CPlugin::ExtractFiles
+*/
+
 #define INTERFACE_IArchiveFolder(x) \
   STDMETHOD(Extract)(const UInt32 *indices, UInt32 numItems, \
       Int32 includeAltStreams, \
@@ -28,6 +37,12 @@ FOLDER_ARCHIVE_INTERFACE(IArchiveFolder, 0x0D)
 {
   INTERFACE_IArchiveFolder(PURE)
 };
+
+
+/* ---------- IInFolderArchive ----------
+IInFolderArchive is implemented by CAgent (Agent/Agent.h)
+IInFolderArchive Is used by FAR/Plugin
+*/
 
 #define INTERFACE_IInFolderArchive(x) \
   STDMETHOD(Open)(IInStream *inStream, const wchar_t *filePath, const wchar_t *arcFormat, BSTR *archiveTypeRes, IArchiveOpenCallback *openArchiveCallback) x; \
@@ -48,7 +63,7 @@ FOLDER_ARCHIVE_INTERFACE(IInFolderArchive, 0x0E)
 #define INTERFACE_IFolderArchiveUpdateCallback(x) \
   STDMETHOD(CompressOperation)(const wchar_t *name) x; \
   STDMETHOD(DeleteOperation)(const wchar_t *name) x; \
-  STDMETHOD(OperationResult)(Int32 operationResult) x; \
+  STDMETHOD(OperationResult)(Int32 opRes) x; \
   STDMETHOD(UpdateErrorMessage)(const wchar_t *message) x; \
   STDMETHOD(SetNumFiles)(UInt64 numFiles) x; \
 
@@ -59,7 +74,7 @@ FOLDER_ARCHIVE_INTERFACE_SUB(IFolderArchiveUpdateCallback, IProgress, 0x0B)
 
 #define INTERFACE_IOutFolderArchive(x) \
   STDMETHOD(SetFolder)(IFolderFolder *folder) x; \
-  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t **names, UInt32 numNames) x; \
+  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t * const *names, UInt32 numNames) x; \
   STDMETHOD(DeleteItems)(ISequentialOutStream *outArchiveStream, \
       const UInt32 *indices, UInt32 numItems, IFolderArchiveUpdateCallback *updateCallback) x; \
   STDMETHOD(DoOperation)( \
@@ -77,6 +92,28 @@ FOLDER_ARCHIVE_INTERFACE_SUB(IFolderArchiveUpdateCallback, IProgress, 0x0B)
 FOLDER_ARCHIVE_INTERFACE(IOutFolderArchive, 0x0F)
 {
   INTERFACE_IOutFolderArchive(PURE)
+};
+
+
+#define INTERFACE_IFolderArchiveUpdateCallback2(x) \
+  STDMETHOD(OpenFileError)(const wchar_t *path, HRESULT errorCode) x; \
+  STDMETHOD(ReadingFileError)(const wchar_t *path, HRESULT errorCode) x; \
+  STDMETHOD(ReportExtractResult)(Int32 opRes, Int32 isEncrypted, const wchar_t *path) x; \
+  STDMETHOD(ReportUpdateOperation)(UInt32 notifyOp, const wchar_t *path, Int32 isDir) x; \
+
+FOLDER_ARCHIVE_INTERFACE(IFolderArchiveUpdateCallback2, 0x10)
+{
+  INTERFACE_IFolderArchiveUpdateCallback2(PURE)
+};
+
+
+#define INTERFACE_IFolderScanProgress(x) \
+  STDMETHOD(ScanError)(const wchar_t *path, HRESULT errorCode) x; \
+  STDMETHOD(ScanProgress)(UInt64 numFolders, UInt64 numFiles, UInt64 totalSize, const wchar_t *path, Int32 isDir) x; \
+
+FOLDER_ARCHIVE_INTERFACE(IFolderScanProgress, 0x11)
+{
+  INTERFACE_IFolderScanProgress(PURE)
 };
 
 #endif

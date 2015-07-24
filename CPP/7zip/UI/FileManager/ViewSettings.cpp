@@ -302,7 +302,7 @@ void ReadCopyHistory(UStringVector &folders)
 void AddUniqueStringToHeadOfList(UStringVector &list, const UString &s)
 {
   for (unsigned i = 0; i < list.Size();)
-    if (s.IsEqualToNoCase(list[i]))
+    if (s.IsEqualTo_NoCase(list[i]))
       list.Delete(i);
     else
       i++;

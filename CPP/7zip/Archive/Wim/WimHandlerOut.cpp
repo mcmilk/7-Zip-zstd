@@ -21,7 +21,7 @@
 #include "../../Common/UniqBlocks.h"
 
 #include "../../Crypto/RandGen.h"
-#include "../../Crypto/Sha1.h"
+#include "../../Crypto/Sha1Cls.h"
 
 #include "WimHandler.h"
 
@@ -676,6 +676,8 @@ static void AddTrees(CObjectVector<CDir> &trees, CObjectVector<CMetaItem> &metaI
     trees.AddNew().Dirs.AddNew().MetaIndex = metaItems.Add(ri);
 }
 
+#define IS_LETTER_CHAR(c) ((c) >= 'a' && (c) <= 'z' || (c) >= 'A' && (c) <= 'Z')
+
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 numItems, IArchiveUpdateCallback *callback)
 {
   COM_TRY_BEGIN
@@ -789,7 +791,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
         unsigned imageIndex = (unsigned)val - 1;
         if (imageIndex < _db.Images.Size())
           isChangedImage[imageIndex] = true;
-        if (_defaultImageNumber > 0 && val != _defaultImageNumber)
+        if (_defaultImageNumber > 0 && val != (unsigned)_defaultImageNumber)
           return E_INVALIDARG;
       }
     }
@@ -1065,9 +1067,16 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
         int colonPos = fileName.Find(L':');
         if (colonPos < 0)
           return E_INVALIDARG;
+        
+        // we want to support cases of c::substream, where c: is drive name
+        if (colonPos == 1 && fileName[2] == L':' && IS_LETTER_CHAR(fileName[0]))
+          colonPos = 2;
         const UString mainName = fileName.Left(colonPos);
         unsigned indexOfDir;
-        if (curItem->FindDir(db.MetaItems, mainName, indexOfDir))
+        
+        if (mainName.IsEmpty())
+          ui.MetaIndex = curItem->MetaIndex;
+        else if (curItem->FindDir(db.MetaItems, mainName, indexOfDir))
           ui.MetaIndex = curItem->Dirs[indexOfDir].MetaIndex;
         else
         {
@@ -1082,6 +1091,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
             }
           }
         }
+        
         if (ui.MetaIndex >= 0)
         {
           CAltStream ss;
@@ -1126,7 +1136,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
         NCOM::CPropVariant prop;
         RINOK(GetOutProperty(callback, i, arcIndex, kpidShortName, &prop));
         if (prop.vt == VT_BSTR)
-          mi.ShortName = prop.bstrVal;
+          mi.ShortName.SetFromBstr(prop.bstrVal);
         else if (prop.vt != VT_EMPTY)
           return E_INVALIDARG;
       }
@@ -1235,7 +1245,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
     {
       const CItem &item = _db.Items[k];
       if (item.StreamIndex >= 0)
-        streamsRefs[item.StreamIndex]++;
+        streamsRefs[(unsigned)item.StreamIndex]++;
     }
   }
 
@@ -1250,7 +1260,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
         continue;
       const CItem &item = _db.Items[_db.SortedItems[ui.InArcIndex]];
       if (item.StreamIndex >= 0)
-        streamsRefs[item.StreamIndex]++;
+        streamsRefs[(unsigned)item.StreamIndex]++;
     }
     else
     {
@@ -1614,7 +1624,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
     db.DefaultDirItem = ri;
     pos += db.WriteTree_Dummy(tree);
     
-    CByteBuffer meta(pos);
+    CByteArr meta(pos);
     
     Set32((Byte *)meta + 4, secBufs.Size()); // num security entries
     pos = kSecuritySize;
@@ -1637,8 +1647,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
       {
         const CByteBuffer &buf = secBufs[i];
         size_t size = buf.Size();
-        memcpy(meta + pos, buf, size);
-        pos += size;
+        if (size != 0)
+        {
+          memcpy(meta + pos, buf, size);
+          pos += size;
+        }
       }
       while ((pos & 7) != 0)
         meta[pos++] = 0;
@@ -1740,15 +1753,15 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
 
   size_t xmlSize;
   {
-    UString utf16String;
-    if (!ConvertUTF8ToUnicode(xml, utf16String))
+    UString utf16;
+    if (!ConvertUTF8ToUnicode(xml, utf16))
       return S_FALSE;
-    xmlSize = (utf16String.Len() + 1) * 2;
+    xmlSize = (utf16.Len() + 1) * 2;
 
-    CByteBuffer xmlBuf(xmlSize);
+    CByteArr xmlBuf(xmlSize);
     Set16((Byte *)xmlBuf, 0xFEFF);
-    for (i = 0; i < (unsigned)utf16String.Len(); i++)
-      Set16((Byte *)xmlBuf + 2 + i * 2, utf16String[i]);
+    for (i = 0; i < (unsigned)utf16.Len(); i++)
+      Set16((Byte *)xmlBuf + 2 + i * 2, utf16[i]);
     RINOK(WriteStream(outStream, (const Byte *)xmlBuf, xmlSize));
   }
   
