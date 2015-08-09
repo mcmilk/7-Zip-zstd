@@ -553,20 +553,16 @@ HRESULT CDatabase::GetPath_Prop(unsigned index, PROPVARIANT *path) const throw()
 
   const Byte *p = ((const Byte *)NamesBuf + offset * 2);
 
-  #if defined(_WIN32) && defined(MY_CPU_LE)
-  
-  wmemcpy(s, (const wchar_t *)p, size);
-  
-  #else
-
   for (size_t i = 0; i < size; i++)
   {
-    *s = Get16(p);
+    wchar_t c = Get16(p);
     p += 2;
-    s++;
+    #if WCHAR_PATH_SEPARATOR != L'/'
+    if (c == L'/')
+      c = WCHAR_PATH_SEPARATOR;
+    #endif
+    *s++ = c;
   }
-
-  #endif
 
   return S_OK;
 

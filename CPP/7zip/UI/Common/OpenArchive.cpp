@@ -590,12 +590,15 @@ HRESULT CArc::GetItemPath(UInt32 index, UString &result) const
         {
           wchar_t c = GetUi16(p);
           p = (const void *)((const Byte *)p + 2);
-          if (c == '/')
+          #if WCHAR_PATH_SEPARATOR != L'/'
+          if (c == L'/')
             c = WCHAR_PATH_SEPARATOR;
+          #endif
           *s++ = c;
         }
         result.ReleaseBuffer(len);
-        return S_OK;
+        if (len != 0)
+          return S_OK;
       }
     }
     /*

@@ -102,7 +102,7 @@ class CHandler:
 {
 public:
   MY_QUERYINTERFACE_BEGIN2(IInArchive)
-  // MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
+  MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
   #ifdef __7Z_SET_PROPERTIES
   MY_QUERYINTERFACE_ENTRY(ISetProperties)
   #endif
