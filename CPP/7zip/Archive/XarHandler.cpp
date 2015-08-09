@@ -358,15 +358,24 @@ HRESULT CHandler::Open2(IInStream *stream)
     return S_FALSE;
 
   UInt64 totalPackSize = 0;
+  unsigned numMainFiles = 0;
+  
   FOR_VECTOR(i, _files)
   {
     const CFile &file = _files[i];
     file.UpdateTotalPackSize(totalPackSize);
     if (file.Name == "Payload")
+    {
       _mainSubfile = i;
+      numMainFiles++;
+    }
     if (file.Name == "PackageInfo")
       _is_pkg = true;
   }
+
+  if (numMainFiles > 1)
+    _mainSubfile = -1;
+  
   _phySize = _dataStartPos + totalPackSize;
 
   return S_OK;

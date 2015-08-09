@@ -591,6 +591,29 @@ static bool FlagsAreSame(const CItem &i1, const CItem &i2)
   return ((i1.Flags & mask) == (i2.Flags & mask));
 }
 
+// #ifdef _WIN32
+static bool AreEqualPaths_IgnoreSlashes(const char *s1, const char *s2)
+{
+  for (;;)
+  {
+    char c1 = *s1++;
+    char c2 = *s2++;
+    if (c1 == c2)
+    {
+      if (c1 == 0)
+        return true;
+    }
+    else
+    {
+      if (c1 == '\\') c1 = '/';
+      if (c2 == '\\') c2 = '/';
+      if (c1 != c2)
+        return false;
+    }
+  }
+}
+// #endif
+
 static bool AreItemsEqual(const CItemEx &localItem, const CItemEx &cdItem)
 {
   if (!FlagsAreSame(cdItem, localItem))
@@ -611,7 +634,30 @@ static bool AreItemsEqual(const CItemEx &localItem, const CItemEx &cdItem)
     return false;
   */
   if (cdItem.Name != localItem.Name)
-    return false;
+  {
+    // #ifdef _WIN32
+    // some xap files use backslash in central dir items.
+    // we can ignore such errors in windows, where all slashes are converted to backslashes
+    unsigned hostOs = cdItem.GetHostOS();
+    
+    if (hostOs == NFileHeader::NHostOS::kFAT ||
+        hostOs == NFileHeader::NHostOS::kNTFS)
+    {
+      if (!AreEqualPaths_IgnoreSlashes(cdItem.Name, localItem.Name))
+      {
+        // pkzip 2.50 uses DOS encoding in central dir and WIN encoding in local header.
+        // so we ignore that error
+        if (hostOs != NFileHeader::NHostOS::kFAT
+            || cdItem.MadeByVersion.Version != 25)
+          return false;
+      }
+    }
+    /*
+    else
+    #endif
+      return false;
+    */
+  }
   return true;
 }
 

@@ -3,6 +3,10 @@
 #ifndef __PANEL_H
 #define __PANEL_H
 
+#include "../../../Common/MyWindows.h"
+
+#include <ShlObj.h>
+
 #include "../../../../C/Alloc.h"
 
 #include "../../../Common/Defs.h"

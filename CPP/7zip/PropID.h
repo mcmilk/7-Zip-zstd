@@ -102,6 +102,7 @@ enum
   kpidStreamId,
   kpidReadOnly,
   kpidOutName,
+  kpidCopyLink,
 
   kpid_NUM_DEFINED,
 

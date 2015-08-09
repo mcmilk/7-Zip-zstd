@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../Common/MyWindows.h"
+
 #include "../Common/Defs.h"
 
 #include "System.h"

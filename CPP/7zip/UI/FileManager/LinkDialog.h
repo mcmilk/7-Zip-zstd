@@ -23,6 +23,7 @@ class CLinkDialog: public NWindows::NControl::CModalDialog
   void ShowError(const wchar_t *s);
   void Set_LinkType_Radio(int idb);
 public:
+  UString CurDirPrefix;
   UString FilePath;
   UString AnotherPath;
   

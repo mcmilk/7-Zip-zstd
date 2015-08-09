@@ -865,7 +865,7 @@ STDMETHODIMP CCodecs::CreateDecoder(UInt32 index, const GUID *iid, void **coder)
   {
     const CCodecLib &lib = Libs[ci.LibIndex];
     if (lib.CreateDecoder)
-      return lib.CreateDecoder(index - NUM_EXPORT_CODECS, iid, (void **)coder);
+      return lib.CreateDecoder(ci.CodecIndex, iid, (void **)coder);
     return lib.CreateObject(&ci.Decoder, iid, (void **)coder);
   }
   return S_OK;
@@ -887,7 +887,7 @@ STDMETHODIMP CCodecs::CreateEncoder(UInt32 index, const GUID *iid, void **coder)
   {
     const CCodecLib &lib = Libs[ci.LibIndex];
     if (lib.CreateEncoder)
-      return lib.CreateEncoder(index - NUM_EXPORT_CODECS, iid, (void **)coder);
+      return lib.CreateEncoder(ci.CodecIndex, iid, (void **)coder);
     return lib.CreateObject(&ci.Encoder, iid, (void **)coder);
   }
   return S_OK;

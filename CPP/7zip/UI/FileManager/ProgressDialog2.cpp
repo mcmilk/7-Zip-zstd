@@ -1229,7 +1229,7 @@ void CProgressDialog::CheckNeedClose()
 {
   if (_needClose)
   {
-    PostMessage(kCloseMessage);
+    PostMsg(kCloseMessage);
     _needClose = false;
   }
 }
@@ -1241,7 +1241,7 @@ void CProgressDialog::ProcessWasFinished()
     WaitCreating();
   
   if (_wasCreated)
-    PostMessage(kCloseMessage);
+    PostMsg(kCloseMessage);
   else
     _needClose = true;
 }

@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
 #include <tlhelp32.h>
 
 #include "../../../Common/AutoPtr.h"

@@ -96,4 +96,5 @@ BEGIN
   IDS_PROP_STREAM_ID    "Stream ID"
   IDS_PROP_READ_ONLY    "Read-only"
   IDS_PROP_OUT_NAME     "Out Name"
+  IDS_PROP_COPY_LINK    "Copy Link"
 END

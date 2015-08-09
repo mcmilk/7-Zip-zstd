@@ -19,7 +19,7 @@
 
 struct CAlignedMidBuffer
 {
-  #ifndef _WIN32
+  #ifdef _WIN32
 
   Byte *_buf;
 

@@ -354,7 +354,7 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFOW * lpnmh)
 
   _dontShowMode = true;
 
-  PostMessage(kReLoadMessage);
+  PostMsg(kReLoadMessage);
   return TRUE;
 }
 

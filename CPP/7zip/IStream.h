@@ -4,7 +4,7 @@
 #define __ISTREAM_H
 
 #include "../Common/MyTypes.h"
-#include "../Common/MyUnknown.h"
+#include "../Common/MyWindows.h"
 
 #include "IDecl.h"
 

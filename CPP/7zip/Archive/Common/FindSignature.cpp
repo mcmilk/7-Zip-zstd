@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <string.h>
+
 #include "../../../Common/MyBuffer.h"
 
 #include "../../Common/StreamUtils.h"

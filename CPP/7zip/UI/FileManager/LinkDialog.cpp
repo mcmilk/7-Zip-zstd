@@ -42,7 +42,7 @@ static const UInt32 kLangIDs[] =
 
 static bool GetSymLink(CFSTR path, CReparseAttr &attr)
 {
-  NFile::NIO::CInFile file;
+  NIO::CInFile file;
   if (!file.Open(path,
       FILE_SHARE_READ,
       OPEN_EXISTING,
@@ -88,12 +88,13 @@ bool CLinkDialog::OnInit()
   LangSetWindowText(*this, IDD_LINK);
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
   #endif
+  
   _pathFromCombo.Attach(GetItem(IDC_LINK_PATH_FROM));
   _pathToCombo.Attach(GetItem(IDC_LINK_PATH_TO));
   
   if (!FilePath.IsEmpty())
   {
-    NFile::NFind::CFileInfo fi;
+    NFind::CFileInfo fi;
     int linkType = 0;
     if (!fi.Find(us2fs(FilePath)))
       linkType = IDR_LINK_TYPE_SYM_FILE;
@@ -219,7 +220,7 @@ void CLinkDialog::OnButton_SetPath(bool to)
   UString resultPath;
   if (!MyBrowseForFolder(*this, title, currentPath, resultPath))
     return;
-  NFile::NName::NormalizeDirPathPrefix(resultPath);
+  NName::NormalizeDirPathPrefix(resultPath);
   combo.SetCurSel(-1);
   combo.SetText(resultPath);
 }
@@ -239,16 +240,23 @@ void CLinkDialog::OnButton_Link()
   UString from, to;
   _pathFromCombo.GetText(from);
   _pathToCombo.GetText(to);
-  int i;
-  for (i = 0; i < ARRAY_SIZE(k_LinkType_Buttons); i++)
-    if (IsButtonCheckedBool(k_LinkType_Buttons[i]))
-      break;
-  if (i >= ARRAY_SIZE(k_LinkType_Buttons))
+
+  if (from.IsEmpty())
     return;
+  if (!NName::IsAbsolutePath(from))
+    from.Insert(0, CurDirPrefix);
 
-  int idb = k_LinkType_Buttons[i];
+  int idb = -1;
+  for (unsigned i = 0;; i++)
+  {
+    if (i >= ARRAY_SIZE(k_LinkType_Buttons))
+      return;
+    idb = k_LinkType_Buttons[i];
+    if (IsButtonCheckedBool(idb))
+      break;
+  }
 
-  NFile::NFind::CFileInfo info1, info2;
+  NFind::CFileInfo info1, info2;
   bool finded1 = info1.Find(us2fs(from));
   bool finded2 = info2.Find(us2fs(to));
 
@@ -259,14 +267,13 @@ void CLinkDialog::OnButton_Link()
   if (finded1 && info1.IsDir() != isDirLink ||
       finded2 && info2.IsDir() != isDirLink)
   {
-    ShowError(L"Incorrect linkType");
+    ShowError(L"Incorrect link type");
     return;
   }
   
   if (idb == IDR_LINK_TYPE_HARD)
   {
-    bool res = NFile::NDir::MyCreateHardLink(us2fs(from), us2fs(to));
-    if (!res)
+    if (!NDir::MyCreateHardLink(us2fs(from), us2fs(to)))
     {
       ShowLastErrorMessage();
       return;
@@ -291,9 +298,10 @@ void CLinkDialog::OnButton_Link()
     }
     
     
-    if (!NFile::NIO::SetReparseData(us2fs(from), isDirLink, data, (DWORD)data.Size()))
+    if (!NIO::SetReparseData(us2fs(from), isDirLink, data, (DWORD)data.Size()))
     {
       ShowLastErrorMessage();
+      return;
     }
   }
 
@@ -321,7 +329,8 @@ void CApp::Link()
   int index = indices[0];
   const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
+  const UString fsPrefix = srcPanel.GetFsPath();
+  const UString srcPath = fsPrefix + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
   {
     int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
@@ -332,6 +341,7 @@ void CApp::Link()
   }
 
   CLinkDialog dlg;
+  dlg.CurDirPrefix = fsPrefix;
   dlg.FilePath = srcPath + itemName;
   dlg.AnotherPath = path;
 

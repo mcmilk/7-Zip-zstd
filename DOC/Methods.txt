@@ -1,8 +1,8 @@
 7-Zip method IDs for 7z and xz archives
 ---------------------------------------
 
-Version: 15.00
-Date: 2015-04-01
+Version: 15.06
+Date: 2015-06-23
 
 Each compression or crypto method in 7z is associated with unique binary value (ID).
 The length of ID in bytes is arbitrary but it can not exceed 63 bits (8 bytes).
@@ -22,7 +22,7 @@ If you want to add some new ID, you have two ways:
 
     You can notify 7-Zip developers about your Developer ID / Method ID.
 
-    Note: Use new ID only if old codec can not decode data encoded with new version.
+    Note: Use new ID, if old codec can not decode data encoded with new version.
 
 
 List of defined IDs
@@ -85,9 +85,9 @@ List of defined IDs
       06 - Implode
       08 - Deflate
       09 - Deflate64
-      10 - Imploding
-      12 - BZip2 (not used. Use {040202} instead)
-      14 - LZMA (LZMA-zip)
+      0A - Imploding
+      0C - BZip2 (not used. Use {040202} instead)
+      0E - LZMA (LZMA-zip)
       5F - xz
       60 - Jpeg
       61 - WavPack
@@ -98,9 +98,10 @@ List of defined IDs
       02 - BZip2
 
    03 - [Rar]
-      01 - Rar15
-      02 - Rar20
-      03 - Rar29
+      01 - Rar1
+      02 - Rar2
+      03 - Rar3
+      05 - Rar5
 
    04 - [Arj]
       01 - Arj(1,2,3)

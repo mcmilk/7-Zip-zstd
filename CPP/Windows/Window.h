@@ -3,6 +3,7 @@
 #ifndef __WINDOWS_WINDOW_H
 #define __WINDOWS_WINDOW_H
 
+#include "../Common/MyWindows.h"
 #include "../Common/MyString.h"
 
 #include "Defs.h"
@@ -170,7 +171,7 @@ public:
   bool Update() { return BOOLToBool(::UpdateWindow(_window)); }
   bool InvalidateRect(LPCRECT rect, bool backgroundErase = true)
     { return BOOLToBool(::InvalidateRect(_window, rect, BoolToBOOL(backgroundErase))); }
-  void SetRedraw(bool redraw = true) { SendMessage(WM_SETREDRAW, BoolToBOOL(redraw), 0); }
+  void SetRedraw(bool redraw = true) { SendMsg(WM_SETREDRAW, BoolToBOOL(redraw), 0); }
 
   LONG_PTR SetStyle(LONG_PTR style) { return SetLongPtr(GWL_STYLE, style); }
   LONG_PTR GetStyle() const { return GetLongPtr(GWL_STYLE); }
@@ -222,18 +223,18 @@ public:
  
   HWND SetFocus() { return ::SetFocus(_window); }
 
-  LRESULT SendMessage(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
-    { return ::SendMessage(_window, message, wParam, lParam) ;}
+  LRESULT SendMsg(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
+    { return ::SendMessage(_window, message, wParam, lParam); }
   #ifndef _UNICODE
-  LRESULT SendMessageW(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
-    { return ::SendMessageW(_window, message, wParam, lParam) ;}
+  LRESULT SendMsgW(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
+    { return ::SendMessageW(_window, message, wParam, lParam); }
   #endif
 
-  bool PostMessage(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
-    {  return BOOLToBool(::PostMessage(_window, message, wParam, lParam)) ;}
+  bool PostMsg(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
+    { return BOOLToBool(::PostMessage(_window, message, wParam, lParam)); }
   #ifndef _UNICODE
-  LRESULT PostMessageW(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
-    { return ::PostMessageW(_window, message, wParam, lParam) ;}
+  bool PostMsgW(UINT message, WPARAM wParam = 0, LPARAM lParam = 0)
+    { return BOOLToBool(::PostMessageW(_window, message, wParam, lParam)); }
   #endif
 
   bool SetText(LPCTSTR s) { return BOOLToBool(::SetWindowText(_window, s)); }
@@ -270,7 +271,7 @@ public:
   bool KillTimer(UINT_PTR idEvent)
     {return BOOLToBool(::KillTimer(_window, idEvent)); }
 
-  HICON SetIcon(WPARAM sizeType, HICON icon) { return (HICON)SendMessage(WM_SETICON, sizeType, (LPARAM)icon); }
+  HICON SetIcon(WPARAM sizeType, HICON icon) { return (HICON)SendMsg(WM_SETICON, sizeType, (LPARAM)icon); }
 };
 
 #define RECT_SIZE_X(r) ((r).right - (r).left)

@@ -12,21 +12,21 @@ class CReBar: public NWindows::CWindow
 {
 public:
   bool SetBarInfo(LPREBARINFO barInfo)
-    { return LRESULTToBool(SendMessage(RB_SETBARINFO, 0, (LPARAM)barInfo)); }
+    { return LRESULTToBool(SendMsg(RB_SETBARINFO, 0, (LPARAM)barInfo)); }
   bool InsertBand(int index, LPREBARBANDINFO bandInfo)
-    { return LRESULTToBool(SendMessage(RB_INSERTBAND, index, (LPARAM)bandInfo)); }
+    { return LRESULTToBool(SendMsg(RB_INSERTBAND, index, (LPARAM)bandInfo)); }
   bool SetBandInfo(unsigned index, LPREBARBANDINFO bandInfo)
-    { return LRESULTToBool(SendMessage(RB_SETBANDINFO, index, (LPARAM)bandInfo)); }
+    { return LRESULTToBool(SendMsg(RB_SETBANDINFO, index, (LPARAM)bandInfo)); }
   void MaximizeBand(unsigned index, bool ideal)
-    { SendMessage(RB_MAXIMIZEBAND, index, BoolToBOOL(ideal)); }
+    { SendMsg(RB_MAXIMIZEBAND, index, BoolToBOOL(ideal)); }
   bool SizeToRect(LPRECT rect)
-    { return LRESULTToBool(SendMessage(RB_SIZETORECT, 0, (LPARAM)rect)); }
+    { return LRESULTToBool(SendMsg(RB_SIZETORECT, 0, (LPARAM)rect)); }
   UINT GetHeight()
-    { return (UINT)SendMessage(RB_GETBARHEIGHT); }
+    { return (UINT)SendMsg(RB_GETBARHEIGHT); }
   UINT GetBandCount()
-    { return (UINT)SendMessage(RB_GETBANDCOUNT); }
+    { return (UINT)SendMsg(RB_GETBANDCOUNT); }
   bool DeleteBand(UINT index)
-    { return LRESULTToBool(SendMessage(RB_DELETEBAND, index)); }
+    { return LRESULTToBool(SendMsg(RB_DELETEBAND, index)); }
 };
 
 }}

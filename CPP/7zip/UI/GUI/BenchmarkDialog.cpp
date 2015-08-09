@@ -114,7 +114,7 @@ bool CBenchmarkDialog::OnInit()
     // f.lfFaceName[0] = 0;
     _font.Create(&f);
     if (_font._font)
-      _consoleEdit.SendMessage(WM_SETFONT, (WPARAM)_font._font, TRUE);
+      _consoleEdit.SendMsg(WM_SETFONT, (WPARAM)_font._font, TRUE);
   }
 
   {

@@ -1,5 +1,5 @@
-/* 7zipInnstall.c - 7-Zip Installer
-2015-06-13 : Igor Pavlov : Public domain */
+/* 7zipInstall.c - 7-Zip Installer
+2015-08-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -37,7 +37,7 @@ static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip";
 #define k_7zip_with_Ver_base L"7-Zip " LLL(MY_VERSION)
 
 #ifdef _64BIT_INSTALLER
-  #define k_7zip_with_Ver k_7zip_with_Ver_base L" x64"
+  #define k_7zip_with_Ver k_7zip_with_Ver_base L" (x64)"
 #else
   #define k_7zip_with_Ver k_7zip_with_Ver_base
 #endif
@@ -83,6 +83,8 @@ static HWND g_HWND;
 static HWND g_Path_HWND;
 static HWND g_InfoLine_HWND;
 static HWND g_Progress_HWND;
+
+static DWORD g_TotalSize;
 
 static WCHAR path[MAX_PATH * 2 + 40];
 
@@ -143,7 +145,7 @@ static WRes CreateComplexDir()
 
   if (IS_DRIVE_PATH(s))
     prefixSize = 3;
-  else if (IS_SEPAR(s[1]) && IS_SEPAR(s[1]))
+  else if (IS_SEPAR(s[0]) && IS_SEPAR(s[1]))
     prefixSize = 2;
   else
     return ERROR_INVALID_NAME;
@@ -796,16 +798,30 @@ static void WriteShellEx()
       // wcscpy(destPath, path);
       // wcscat(destPath, L"7zFM.exe");
       MyRegistry_SetString(destKey, L"DisplayName", k_7zip_with_Ver_str);
+      MyRegistry_SetString(destKey, L"DisplayVersion", LLL(MY_VERSION_NUMBERS));
 
       MyRegistry_SetString(destKey, L"DisplayIcon", destPath);
 
       wcscpy(destPath, path);
-      // MyRegistry_SetString(destKey, L"InstallLocation", destPath);
+      MyRegistry_SetString(destKey, L"InstallLocation", destPath);
       wcscat(destPath, L"Uninstall.exe");
       // wcscat(destPath, L"\"");
       MyRegistry_SetString(destKey, L"UninstallString", destPath);
+      
       MyRegistry_SetDWORD(destKey, L"NoModify", 1);
       MyRegistry_SetDWORD(destKey, L"NoRepair", 1);
+
+      MyRegistry_SetDWORD(destKey, L"EstimatedSize", g_TotalSize >> 10);
+      
+      MyRegistry_SetDWORD(destKey, L"VersionMajor", MY_VER_MAJOR);
+      MyRegistry_SetDWORD(destKey, L"VersionMinor", MY_VER_MINOR);
+  
+      MyRegistry_SetString(destKey, L"Publisher", LLL(MY_AUTHOR_NAME));
+      
+      // MyRegistry_SetString(destKey, L"HelpLink", L"http://www.7-zip.org/support.html");
+      // MyRegistry_SetString(destKey, L"URLInfoAbout", L"http://www.7-zip.org/");
+      // MyRegistry_SetString(destKey, L"URLUpdateInfo", L"http://www.7-zip.org/");
+      
       RegCloseKey(destKey);
     }
   }
@@ -1108,6 +1124,23 @@ if (res == SZ_OK)
   FileInStream_CreateVTable(&archiveStream);
   LookToRead_CreateVTable(&lookStream, False);
  
+  {
+    // Remove post spaces
+    unsigned endPos = 0;
+    unsigned i = 0;
+    
+    for (;;)
+    {
+      wchar_t c = path[i++];
+      if (c == 0)
+        break;
+      if (c != ' ')
+        endPos = i;
+    }
+
+    path[endPos] = 0;
+  }
+
   NormalizePrefix(path);
   winRes = CreateComplexDir();
 
@@ -1131,6 +1164,8 @@ if (res == SZ_OK)
     UInt32 blockIndex = 0xFFFFFFFF; /* it can have any value before first call, if(!outBuf) */
     Byte *outBuf = NULL; /* it must be NULL before first call for each new archive. */
     size_t outBufSize = 0;  /* it can have any value before first call, if(!outBuf) */
+    
+    g_TotalSize = 0;
 
     if (!g_SilentMode)
     {
@@ -1309,6 +1344,8 @@ if (res == SZ_OK)
             res = SZ_ERROR_FAIL;
           }
           
+          g_TotalSize += (DWORD)outSizeProcessed;
+
           #ifdef USE_WINDOWS_FILE
           if (SzBitWithVals_Check(&db.MTime, i))
           {

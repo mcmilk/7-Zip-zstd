@@ -1083,6 +1083,7 @@ static bool IsNewStyleSignature(const CArcInfoEx &ai)
 
 class CArchiveOpenCallback_Offset:
   public IArchiveOpenCallback,
+  public IArchiveOpenVolumeCallback,
   #ifndef _NO_CRYPTO
   public ICryptoGetTextPassword,
   #endif
@@ -1090,19 +1091,24 @@ class CArchiveOpenCallback_Offset:
 {
 public:
   CMyComPtr<IArchiveOpenCallback> Callback;
+  CMyComPtr<IArchiveOpenVolumeCallback> OpenVolumeCallback;
   UInt64 Files;
   UInt64 Offset;
   
   #ifndef _NO_CRYPTO
   CMyComPtr<ICryptoGetTextPassword> GetTextPassword;
-  MY_UNKNOWN_IMP2(
-      IArchiveOpenCallback,
-      ICryptoGetTextPassword)
-  #else
-  MY_UNKNOWN_IMP1(IArchiveOpenCallback)
   #endif
-  STDMETHOD(SetTotal)(const UInt64 *files, const UInt64 *bytes);
-  STDMETHOD(SetCompleted)(const UInt64 *files, const UInt64 *bytes);
+
+  MY_QUERYINTERFACE_BEGIN2(IArchiveOpenCallback)
+  MY_QUERYINTERFACE_ENTRY(IArchiveOpenVolumeCallback)
+  #ifndef _NO_CRYPTO
+  MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
+  #endif
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
+
+  INTERFACE_IArchiveOpenCallback(;)
+  INTERFACE_IArchiveOpenVolumeCallback(;)
   #ifndef _NO_CRYPTO
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
   #endif
@@ -1119,12 +1125,12 @@ STDMETHODIMP CArchiveOpenCallback_Offset::CryptoGetTextPassword(BSTR *password)
 }
 #endif
 
-STDMETHODIMP CArchiveOpenCallback_Offset::SetTotal(const UInt64 * /* files */, const UInt64 * /* bytes */)
+STDMETHODIMP CArchiveOpenCallback_Offset::SetTotal(const UInt64 *, const UInt64 *)
 {
   return S_OK;
 }
 
-STDMETHODIMP CArchiveOpenCallback_Offset::SetCompleted(const UInt64 * /* files */, const UInt64 *bytes)
+STDMETHODIMP CArchiveOpenCallback_Offset::SetCompleted(const UInt64 *, const UInt64 *bytes)
 {
   if (!Callback)
     return S_OK;
@@ -1134,7 +1140,24 @@ STDMETHODIMP CArchiveOpenCallback_Offset::SetCompleted(const UInt64 * /* files *
   return Callback->SetCompleted(&Files, &value);
 }
 
+STDMETHODIMP CArchiveOpenCallback_Offset::GetProperty(PROPID propID, PROPVARIANT *value)
+{
+  if (OpenVolumeCallback)
+    return OpenVolumeCallback->GetProperty(propID, value);
+  NCOM::PropVariant_Clear(value);
+  return S_OK;
+  // return E_NOTIMPL;
+}
+
+STDMETHODIMP CArchiveOpenCallback_Offset::GetStream(const wchar_t *name, IInStream **inStream)
+{
+  if (OpenVolumeCallback)
+    return OpenVolumeCallback->GetStream(name, inStream);
+  return S_FALSE;
+}
+
 #endif
+
 
 UInt32 GetOpenArcErrorFlags(const NCOM::CPropVariant &prop, bool *isDefinedProp)
 {
@@ -2208,9 +2231,6 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
   }
   
   {
-    CArchiveOpenCallback_Offset *openCallback_Offset_Spec = new CArchiveOpenCallback_Offset;
-    CMyComPtr<IArchiveOpenCallback> openCallback_Offset = openCallback_Offset_Spec;
-
     const size_t kBeforeSize = 1 << 16;
     const size_t kAfterSize  = 1 << 20;
     const size_t kBufSize = 1 << 22; // it must be more than kBeforeSize + kAfterSize
@@ -2288,14 +2308,18 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
     CMyComPtr<IInStream> limitedStream = limitedStreamSpec;
     limitedStreamSpec->SetStream(op.stream);
 
-    openCallback_Offset_Spec->Callback = op.callback;
-
-    #ifndef _NO_CRYPTO
+    CArchiveOpenCallback_Offset *openCallback_Offset_Spec = NULL;
+    CMyComPtr<IArchiveOpenCallback> openCallback_Offset;
     if (op.callback)
     {
+      openCallback_Offset_Spec = new CArchiveOpenCallback_Offset;
+      openCallback_Offset = openCallback_Offset_Spec;
+      openCallback_Offset_Spec->Callback = op.callback;
+      openCallback_Offset_Spec->Callback.QueryInterface(IID_IArchiveOpenVolumeCallback, &openCallback_Offset_Spec->OpenVolumeCallback);
+      #ifndef _NO_CRYPTO
       openCallback_Offset_Spec->Callback.QueryInterface(IID_ICryptoGetTextPassword, &openCallback_Offset_Spec->GetTextPassword);
+      #endif
     }
-    #endif
 
     if (op.callback)
       RINOK(op.callback->SetTotal(NULL, &fileSize));
@@ -2382,12 +2406,19 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
         }
       }
 
-      if (pos >= callbackPrev + (1 << 23))
+      bool useOffsetCallback = false;
+      if (openCallback_Offset)
       {
         openCallback_Offset_Spec->Files = handlerSpec->_items.Size();
         openCallback_Offset_Spec->Offset = pos;
-        RINOK(openCallback_Offset->SetCompleted(NULL, NULL));
-        callbackPrev = pos;
+
+        useOffsetCallback = (!op.openType.CanReturnArc || handlerSpec->_items.Size() > 1);
+ 
+        if (pos >= callbackPrev + (1 << 23))
+        {
+          RINOK(openCallback_Offset_Spec->SetCompleted(NULL, NULL));
+          callbackPrev = pos;
+        }
       }
 
       {
@@ -2557,14 +2588,21 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
         }
         
         UInt64 maxCheckStartPosition = 0;
-        openCallback_Offset_Spec->Files = handlerSpec->_items.Size();
-        openCallback_Offset_Spec->Offset = startArcPos;
+        
+        if (openCallback_Offset)
+        {
+          openCallback_Offset_Spec->Files = handlerSpec->_items.Size();
+          openCallback_Offset_Spec->Offset = startArcPos;
+        }
+
         // HRESULT result = archive->Open(limitedStream, &maxCheckStartPosition, openCallback_Offset);
         extractCallback_To_OpenCallback_Spec->Files = 0;
         extractCallback_To_OpenCallback_Spec->Offset = startArcPos;
 
-        HRESULT result = OpenArchiveSpec(archive, true, limitedStream, &maxCheckStartPosition, openCallback_Offset, extractCallback_To_OpenCallback);
-     
+        HRESULT result = OpenArchiveSpec(archive, true, limitedStream, &maxCheckStartPosition,
+            useOffsetCallback ? (IArchiveOpenCallback *)openCallback_Offset : (IArchiveOpenCallback *)op.callback,
+            extractCallback_To_OpenCallback);
+
         RINOK(ReadBasicProps(archive, ai.Flags_UseGlobalOffset() ? 0 : startArcPos, result));
 
         bool isOpen = false;

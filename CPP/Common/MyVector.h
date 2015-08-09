@@ -3,6 +3,8 @@
 #ifndef __COMMON_MY_VECTOR_H
 #define __COMMON_MY_VECTOR_H
 
+#include <string.h>
+
 template <class T>
 class CRecordVector
 {

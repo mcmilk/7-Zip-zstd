@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../Common/MyWindows.h"
+
 #include "../../Common/MyInitGuid.h"
 
 #if defined(_7ZIP_LARGE_PAGES)

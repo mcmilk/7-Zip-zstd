@@ -299,13 +299,22 @@ public:
       const UStringVector &removePathParts, bool removePartsForAltStreams,
       UInt64 packSize);
 
+
   #ifdef SUPPORT_LINKS
+
 private:
   CHardLinks _hardLinks;
+  UString linkPath;
+
+  // FString _CopyFile_Path;
+  // HRESULT MyCopyFile(ISequentialOutStream *outStream);
+
 public:
   // call PrepareHardLinks() after Init()
   HRESULT PrepareHardLinks(const CRecordVector<UInt32> *realIndices);  // NULL means all items
+
   #endif
+
 
   #ifdef SUPPORT_ALT_STREAMS
   CObjectVector<CIndexToPathPair> _renamedFiles;

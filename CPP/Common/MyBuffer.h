@@ -78,8 +78,10 @@ public:
     if (newSize != 0)
     {
       newBuffer = new T[newSize];
-      if (_size != 0)
-        memcpy(newBuffer, _items, MyMin(MyMin(_size, keepSize), newSize) * sizeof(T));
+      if (keepSize > _size)
+        keepSize = _size;
+      if (keepSize != 0)
+        memcpy(newBuffer, _items, MyMin(keepSize, newSize) * sizeof(T));
     }
     delete []_items;
     _items = newBuffer;
@@ -109,8 +111,8 @@ template <class T>
 bool operator!=(const CBuffer<T>& b1, const CBuffer<T>& b2)
 {
   size_t size1 = b1.Size();
-  if (size1 == b2.Size())
-    return false;
+  if (size1 != b2.Size())
+    return true;
   if (size1 == 0)
     return false;
   return memcmp(b1, b2, size1 * sizeof(T)) != 0;
@@ -118,7 +120,7 @@ bool operator!=(const CBuffer<T>& b1, const CBuffer<T>& b2)
 
 
 typedef CBuffer<char> CCharBuffer;
-typedef CBuffer<wchar_t> CWCharBuffer;
+// typedef CBuffer<wchar_t> CWCharBuffer;
 typedef CBuffer<unsigned char> CByteBuffer;
 
 
@@ -155,11 +157,9 @@ typedef CObjArray<unsigned char> CByteArr;
 typedef CObjArray<bool> CBoolArr;
 typedef CObjArray<int> CIntArr;
 
-// #define CRecArray CObjArray
 
 template <class T> class CObjArray2
 {
-// protected:
   T *_items;
   unsigned _size;
 

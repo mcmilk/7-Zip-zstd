@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2015-06-13 : Igor Pavlov : Public domain */
+2015-08-09 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -31,7 +31,7 @@
 #define k_7zip_with_Ver_base L"7-Zip " LLL(MY_VERSION)
 
 #ifdef _64BIT_INSTALLER
-  #define k_7zip_with_Ver k_7zip_with_Ver_base L" x64"
+  #define k_7zip_with_Ver k_7zip_with_Ver_base L" (x64)"
 #else
   #define k_7zip_with_Ver k_7zip_with_Ver_base
 #endif

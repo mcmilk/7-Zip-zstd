@@ -22,11 +22,13 @@ public:
 
   bool SetCodeLengths(const Byte *lens)
   {
-    unsigned lenCounts[kNumBitsMax + 1];
+    UInt32 lenCounts[kNumBitsMax + 1];
     UInt32 tmpPositions[kNumBitsMax + 1];
+    
     unsigned i;
     for (i = 1; i <= kNumBitsMax; i++)
       lenCounts[i] = 0;
+    
     UInt32 symbol;
     
     for (symbol = 0; symbol < m_NumSymbols; symbol++)
@@ -42,7 +44,7 @@ public:
     m_Positions[0] = m_Limits[0] = 0;
     UInt32 startPos = 0;
     UInt32 index = 0;
-    const UInt32 kMaxValue = (1 << kNumBitsMax);
+    const UInt32 kMaxValue = (UInt32)1 << kNumBitsMax;
     
     for (i = 1; i <= kNumBitsMax; i++)
     {
@@ -74,14 +76,15 @@ public:
   UInt32 DecodeSymbol(TBitDecoder *bitStream)
   {
     unsigned numBits;
-    UInt32 value = bitStream->GetValue(kNumBitsMax);
-    if (value < m_Limits[kNumTableBits])
-      numBits = m_Lengths[value >> (kNumBitsMax - kNumTableBits)];
+    UInt32 val = bitStream->GetValue(kNumBitsMax);
+    
+    if (val < m_Limits[kNumTableBits])
+      numBits = m_Lengths[val >> (kNumBitsMax - kNumTableBits)];
     else
-      for (numBits = kNumTableBits + 1; value >= m_Limits[numBits]; numBits++);
+      for (numBits = kNumTableBits + 1; val >= m_Limits[numBits]; numBits++);
+    
     bitStream->MovePos(numBits);
-    UInt32 index = m_Positions[numBits] +
-      ((value - m_Limits[numBits - 1]) >> (kNumBitsMax - numBits));
+    UInt32 index = m_Positions[numBits] + ((val - m_Limits[numBits - 1]) >> (kNumBitsMax - numBits));
     if (index >= m_NumSymbols)
       // throw CDecoderException(); // test it
       return 0xFFFFFFFF;

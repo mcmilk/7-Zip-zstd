@@ -194,6 +194,7 @@ class CDecoder:
   bool m_IsSolid;
 
   bool _lzMode;
+  bool _unsupportedFilter;
 
   UInt32 PrevAlignBits;
   UInt32 PrevAlignCount;

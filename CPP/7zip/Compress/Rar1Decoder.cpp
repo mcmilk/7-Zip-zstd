@@ -486,7 +486,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   if (size < 1)
     return E_INVALIDARG;
-  m_IsSolid = (data[0] != 0);
+  m_IsSolid = ((data[0] & 1) != 0);
   return S_OK;
 }
 

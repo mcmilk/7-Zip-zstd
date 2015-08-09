@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
 #include "../../../Common/MyInitGuid.h"
 
 #include "../../../Common/CommandLineParser.h"

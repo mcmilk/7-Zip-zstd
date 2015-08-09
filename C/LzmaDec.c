@@ -1,5 +1,5 @@
 /* LzmaDec.c -- LZMA Decoder
-2015-05-14 : Igor Pavlov : Public domain */
+2015-06-23 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -438,10 +438,16 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
         if (checkDicSize == 0)
         {
           if (distance >= processedPos)
+          {
+            p->dicPos = dicPos;
             return SZ_ERROR_DATA;
+          }
         }
         else if (distance >= checkDicSize)
+        {
+          p->dicPos = dicPos;
           return SZ_ERROR_DATA;
+        }
         state = (state < kNumStates + kNumLitStates) ? kNumLitStates : kNumLitStates + 3;
       }
 
@@ -453,7 +459,10 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
         SizeT pos;
         
         if ((rem = limit - dicPos) == 0)
+        {
+          p->dicPos = dicPos;
           return SZ_ERROR_DATA;
+        }
         
         curLen = ((rem < len) ? (unsigned)rem : len);
         pos = dicPos - rep0 + (dicPos < rep0 ? dicBufSize : 0);

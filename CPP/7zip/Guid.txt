@@ -163,6 +163,7 @@ Handler GUIDs:
   0C xz
   0D ppmd
 
+  CC Rar5
   CD IHex
   CE Hxs
   CF TE

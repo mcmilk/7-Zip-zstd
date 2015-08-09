@@ -1,5 +1,5 @@
 /* CpuArch.h -- CPU specific code
-2015-03-25: Igor Pavlov : Public domain */
+2015-08-02: Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -90,9 +90,10 @@ Stop_Compiling_Bad_Endian
 #define GetUi16(p) (*(const UInt16 *)(const void *)(p))
 #define GetUi32(p) (*(const UInt32 *)(const void *)(p))
 #define GetUi64(p) (*(const UInt64 *)(const void *)(p))
-#define SetUi16(p, v) *(UInt16 *)(p) = (v);
-#define SetUi32(p, v) *(UInt32 *)(p) = (v);
-#define SetUi64(p, v) *(UInt64 *)(p) = (v);
+
+#define SetUi16(p, v) { *(UInt16 *)(p) = (v); }
+#define SetUi32(p, v) { *(UInt32 *)(p) = (v); }
+#define SetUi64(p, v) { *(UInt64 *)(p) = (v); }
 
 #else
 

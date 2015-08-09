@@ -7,7 +7,7 @@
 
 namespace NMessageID {
 
-const UINT k_Last_PropId_supported_by_plugin = kpidStreamId;
+const unsigned k_Last_PropId_supported_by_plugin = kpidStreamId;
 
 enum EEnum
 {

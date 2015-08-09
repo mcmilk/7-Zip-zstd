@@ -4,7 +4,6 @@
 #define __IPROGRESS_H
 
 #include "../Common/MyTypes.h"
-#include "../Common/MyUnknown.h"
 
 #include "IDecl.h"
 

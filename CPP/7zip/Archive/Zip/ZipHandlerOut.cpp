@@ -207,7 +207,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
     if (IntToBool(newData))
     {
-      UInt64 size;
+      UInt64 size = 0;
+      if (!ui.IsDir)
       {
         NCOM::CPropVariant prop;
         RINOK(callback->GetProperty(i, kpidSize, &prop));
@@ -219,6 +220,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         largestSizeDefined = true;
       }
       ui.Size = size;
+
       // ui.Size -= ui.Size / 2;
     }
     updateItems.Add(ui);

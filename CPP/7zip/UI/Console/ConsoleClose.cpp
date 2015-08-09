@@ -4,6 +4,10 @@
 
 #include "ConsoleClose.h"
 
+#if !defined(UNDER_CE) && defined(_WIN32)
+#include "../../../Common/MyWindows.h"
+#endif
+
 namespace NConsoleClose {
 
 unsigned g_BreakCounter = 0;

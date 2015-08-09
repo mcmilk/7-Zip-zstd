@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
+#include <shlwapi.h>
+
 #include "../../../../C/Alloc.h"
 
 #include "../../../Common/IntToString.h"

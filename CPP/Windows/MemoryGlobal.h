@@ -3,6 +3,8 @@
 #ifndef __WINDOWS_MEMORY_GLOBAL_H
 #define __WINDOWS_MEMORY_GLOBAL_H
 
+#include "../Common/MyWindows.h"
+
 namespace NWindows {
 namespace NMemory {
 

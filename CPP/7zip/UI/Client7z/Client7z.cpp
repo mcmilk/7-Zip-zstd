@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 
+#include "../../../Common/MyWindows.h"
+
 #include "../../../Common/Defs.h"
 #include "../../../Common/MyInitGuid.h"
 

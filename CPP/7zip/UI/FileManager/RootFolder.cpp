@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
+#include <ShlObj.h>
+
 #include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/DLL.h"

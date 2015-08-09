@@ -10,6 +10,8 @@
 
 #include "SysIconUtils.h"
 
+#include <ShlObj.h>
+
 #ifndef _UNICODE
 extern bool g_IsNT;
 #endif

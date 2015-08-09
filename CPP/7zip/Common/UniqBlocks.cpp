@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <string.h>
+
 #include "UniqBlocks.h"
 
 unsigned CUniqBlocks::AddUniq(const Byte *data, size_t size)

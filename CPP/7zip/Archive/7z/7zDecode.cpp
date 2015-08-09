@@ -301,6 +301,12 @@ HRESULT CDecoder::Decode(
     {
       const CCoderInfo &coderInfo = folderInfo.Coders[i];
 
+      #ifndef _SFX
+      // we don't support RAR codecs here
+      if ((coderInfo.MethodID >> 8) == 0x403)
+        return E_NOTIMPL;
+      #endif
+  
       CCreatedCoder cod;
       RINOK(CreateCoder(
           EXTERNAL_CODECS_LOC_VARS

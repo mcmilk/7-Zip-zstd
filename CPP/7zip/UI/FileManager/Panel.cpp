@@ -795,7 +795,7 @@ void CPanel::Change_ShowNtfsStrems_Mode()
 void CPanel::Post_Refresh_StatusBar()
 {
   if (_processStatusBar)
-    PostMessage(kRefresh_StatusBar);
+    PostMsg(kRefresh_StatusBar);
 }
 
 void CPanel::AddToArchive()

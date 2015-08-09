@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
 #include <Winbase.h>
 
 #include "../../../Common/Defs.h"
@@ -585,7 +587,6 @@ STDMETHODIMP CFSFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
 
   CCopyState state;
   state.ProgressInfo.TotalSize = stat.Size;
-  state.ProgressInfo.TotalSize = stat.Size;
   state.ProgressInfo.StartPos = 0;
   state.ProgressInfo.Progress = callback;
   state.ProgressInfo.Init();
@@ -593,7 +594,6 @@ STDMETHODIMP CFSFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
   state.MoveMode = IntToBool(moveMode);
   state.UseReadWriteMode = isAltDest;
   state.Prepare();
-  state.TotalSize = stat.Size;
 
   for (UInt32 i = 0; i < numItems; i++)
   {

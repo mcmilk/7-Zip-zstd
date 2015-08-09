@@ -44,6 +44,7 @@ public:
   UInt64 _numSolidBytes;
   bool _numSolidBytesDefined;
   bool _solidExtension;
+  bool _useTypeSorting;
 
   bool _compressHeaders;
   bool _encryptHeadersSpecified;

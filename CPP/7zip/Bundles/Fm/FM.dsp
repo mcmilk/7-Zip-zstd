@@ -332,14 +332,6 @@ SOURCE=..\..\Archive\7z\7zUpdate.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\CoderMixer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CoderMixer.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Common\CoderMixer2.cpp
 # End Source File
 # Begin Source File

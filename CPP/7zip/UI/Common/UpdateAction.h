@@ -35,7 +35,7 @@ namespace NUpdateArchive {
   {
     NPairAction::EEnum StateActions[NPairState::kNumValues];
     
-    const bool IsEqualTo(const CActionSet &a) const
+    bool IsEqualTo(const CActionSet &a) const
     {
       for (unsigned i = 0; i < NPairState::kNumValues; i++)
         if (StateActions[i] != a.StateActions[i])

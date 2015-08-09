@@ -3,6 +3,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
 #include "../../../Common/MyInitGuid.h"
 
 #include "../../../Common/StringConvert.h"
@@ -96,6 +98,7 @@ EXTERN_C void WINAPI SetStartupInfo(const PluginStartupInfo *info)
 class COpenArchiveCallback:
   public IArchiveOpenCallback,
   public IArchiveOpenVolumeCallback,
+  public IArchiveOpenSetSubArchiveName,
   public IProgress,
   public ICryptoGetTextPassword,
   public CMyUnknownImp
@@ -109,6 +112,8 @@ class COpenArchiveCallback:
   bool _numBytesTotalDefined;
 
   NFind::CFileInfo _fileInfo;
+  bool _subArchiveMode;
+  UString _subArchiveName;
 public:
   bool PasswordIsDefined;
   UString Password;
@@ -116,8 +121,9 @@ public:
   FString _folderPrefix;
 
 public:
-  MY_UNKNOWN_IMP3(
+  MY_UNKNOWN_IMP4(
      IArchiveOpenVolumeCallback,
+     IArchiveOpenSetSubArchiveName,
      IProgress,
      ICryptoGetTextPassword
     )
@@ -134,12 +140,23 @@ public:
   STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value);
   STDMETHOD(GetStream)(const wchar_t *name, IInStream **inStream);
 
+  STDMETHOD(SetSubArchiveName(const wchar_t *name))
+  {
+    _subArchiveMode = true;
+    _subArchiveName = name;
+    return S_OK;
+  }
+
   // ICryptoGetTextPassword
   STDMETHOD(CryptoGetTextPassword)(BSTR *password);
 
+  COpenArchiveCallback(): _subArchiveMode(false) {}
+  
   void Init()
   {
     PasswordIsDefined = false;
+
+    _subArchiveMode = false;
 
     _numFilesTotalDefined = false;
     _numBytesTotalDefined = false;
@@ -220,6 +237,8 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **in
 {
   if (WasEscPressed())
     return E_ABORT;
+  if (_subArchiveMode)
+    return S_FALSE;
   *inStream = NULL;
   FString fullPath = _folderPrefix + us2fs(name);
   if (!_fileInfo.Find(fullPath))
@@ -238,6 +257,14 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **in
 STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant prop;
+  if (_subArchiveMode)
+  {
+    switch(propID)
+    {
+      case kpidName: prop = _subArchiveName; break;
+    }
+  }
+  else
   switch(propID)
   {
     case kpidName:  prop = GetUnicodeString(_fileInfo.Name, CP_OEMCP); break;

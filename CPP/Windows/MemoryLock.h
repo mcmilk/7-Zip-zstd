@@ -3,12 +3,14 @@
 #ifndef __WINDOWS_MEMORY_LOCK_H
 #define __WINDOWS_MEMORY_LOCK_H
 
+#include "../Common/MyWindows.h"
+
 namespace NWindows {
 namespace NSecurity {
 
 #ifndef UNDER_CE
 
-  bool EnablePrivilege(LPCTSTR privilegeName, bool enable = true);
+bool EnablePrivilege(LPCTSTR privilegeName, bool enable = true);
 
 inline bool EnablePrivilege_LockMemory(bool enable = true)
 {

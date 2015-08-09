@@ -6,13 +6,12 @@
 #include "../../Common/MyCom.h"
 
 #include "../ICoder.h"
-#include "../IPassword.h"
 
 namespace NCrypto {
-namespace NRar20 {
+namespace NRar2 {
 
 /* ICompressFilter::Init() does nothing for this filter.
-   Call CryptoSetPassword() to initialize filter. */
+   Call SetPassword() to initialize filter. */
 
 class CData
 {
@@ -31,22 +30,17 @@ class CData
 public:
   void EncryptBlock(Byte *buf) { CryptBlock(buf, true); }
   void DecryptBlock(Byte *buf) { CryptBlock(buf, false); }
-  void SetPassword(const Byte *password, UInt32 passwordLen);
+  void SetPassword(const Byte *password, unsigned passwordLen);
 };
 
 class CDecoder:
   public ICompressFilter,
-  public ICryptoSetPassword,
   public CMyUnknownImp,
   public CData
 {
-  CData _cipher;
 public:
-  MY_UNKNOWN_IMP1(ICryptoSetPassword)
-
-  STDMETHOD(Init)();
-  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
-  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
+  MY_UNKNOWN_IMP
+  INTERFACE_ICompressFilter(;)
 };
 
 }}

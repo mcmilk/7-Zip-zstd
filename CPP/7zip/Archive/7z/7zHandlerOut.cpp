@@ -508,14 +508,19 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
     if (ui.NewData)
     {
-      NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(i, kpidSize, &prop));
-      if (prop.vt != VT_UI8)
-        return E_INVALIDARG;
-      ui.Size = (UInt64)prop.uhVal.QuadPart;
-      if (ui.Size != 0 && ui.IsAnti)
-        return E_INVALIDARG;
+      ui.Size = 0;
+      if (!ui.IsDir)
+      {
+        NCOM::CPropVariant prop;
+        RINOK(updateCallback->GetProperty(i, kpidSize, &prop));
+        if (prop.vt != VT_UI8)
+          return E_INVALIDARG;
+        ui.Size = (UInt64)prop.uhVal.QuadPart;
+        if (ui.Size != 0 && ui.IsAnti)
+          return E_INVALIDARG;
+      }
     }
+    
     updateItems.Add(ui);
   }
 
@@ -613,6 +618,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   options.NumSolidFiles = _numSolidFiles;
   options.NumSolidBytes = _numSolidBytes;
   options.SolidExtension = _solidExtension;
+  options.UseTypeSorting = _useTypeSorting;
+
   options.RemoveSfxBlock = _removeSfxBlock;
   // options.VolumeMode = _volumeMode;
 
@@ -701,6 +708,7 @@ void COutHandler::InitProps()
   // _volumeMode = false;
 
   InitSolid();
+  _useTypeSorting = false;
 }
 
 HRESULT COutHandler::SetSolidFromString(const UString &s)
@@ -820,6 +828,8 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
     if (name.IsEqualTo("tm")) return PROPVARIANT_to_BoolPair(value, Write_MTime);
     
     if (name.IsEqualTo("mtf")) return PROPVARIANT_to_bool(value, _useMultiThreadMixer);
+
+    if (name.IsEqualTo("qs")) return PROPVARIANT_to_bool(value, _useTypeSorting);
 
     // if (name.IsEqualTo("v"))  return PROPVARIANT_to_bool(value, _volumeMode);
   }

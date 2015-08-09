@@ -16,7 +16,7 @@ public:
   bool SetText(LPCTSTR text)
     { return CWindow::SetText(text); }
   bool SetText(unsigned index, LPCTSTR text, UINT type)
-    { return LRESULTToBool(SendMessage(SB_SETTEXT, index | type, (LPARAM)text)); }
+    { return LRESULTToBool(SendMsg(SB_SETTEXT, index | type, (LPARAM)text)); }
   bool SetText(unsigned index, LPCTSTR text)
     { return SetText(index, text, 0); }
 
@@ -26,15 +26,15 @@ public:
   bool SetText(LPCWSTR text)
     { return CWindow::SetText(text); }
   bool SetText(unsigned index, LPCWSTR text, UINT type)
-    { return LRESULTToBool(SendMessage(SB_SETTEXTW, index | type, (LPARAM)text)); }
+    { return LRESULTToBool(SendMsg(SB_SETTEXTW, index | type, (LPARAM)text)); }
   bool SetText(unsigned index, LPCWSTR text)
     { return SetText(index, text, 0); }
   #endif
 
   bool SetParts(unsigned numParts, const int *edgePostions)
-    { return LRESULTToBool(SendMessage(SB_SETPARTS, numParts, (LPARAM)edgePostions)); }
+    { return LRESULTToBool(SendMsg(SB_SETPARTS, numParts, (LPARAM)edgePostions)); }
   void Simple(bool simple)
-    { SendMessage(SB_SIMPLE, BoolToBOOL(simple), 0); }
+    { SendMsg(SB_SIMPLE, BoolToBOOL(simple), 0); }
 };
 
 }}

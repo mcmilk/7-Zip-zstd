@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #ifdef _WIN32
-#include <windows.h>
 #include <wchar.h>
 #else
 #include <ctype.h>

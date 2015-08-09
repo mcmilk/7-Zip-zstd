@@ -141,6 +141,7 @@ NSIS_OBJS = \
 
 RAR_OBJS = \
   $O\RarHandler.obj \
+  $O\Rar5Handler.obj \
 
 TAR_OBJS = \
   $O\TarHandler.obj \
@@ -212,6 +213,7 @@ COMPRESS_OBJS = \
   $O\Rar2Decoder.obj \
   $O\Rar3Decoder.obj \
   $O\Rar3Vm.obj \
+  $O\Rar5Decoder.obj \
   $O\RarCodecsRegister.obj \
   $O\ShrinkDecoder.obj \
   $O\ZlibDecoder.obj \
@@ -222,11 +224,13 @@ CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
   $O\HmacSha1.obj \
+  $O\HmacSha256.obj \
   $O\MyAes.obj \
   $O\MyAesReg.obj \
   $O\Pbkdf2HmacSha1.obj \
   $O\RandGen.obj \
   $O\Rar20Crypto.obj \
+  $O\Rar5Aes.obj \
   $O\RarAes.obj \
   $O\WzAes.obj \
   $O\ZipCrypto.obj \
@@ -239,6 +243,7 @@ C_OBJS = \
   $O\Alloc.obj \
   $O\Bcj2.obj \
   $O\Bcj2Enc.obj \
+  $O\Blake2s.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \

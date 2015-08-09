@@ -140,6 +140,8 @@ void CDecoder::ExecuteFilter(int tempFilterIndex, NVm::CBlockRef &outBlockRef)
   NVm::SetValue32(&tempFilter->GlobalData[0x24], (UInt32)_writtenFileSize);
   NVm::SetValue32(&tempFilter->GlobalData[0x28], (UInt32)(_writtenFileSize >> 32));
   CFilter *filter = _filters[tempFilter->FilterIndex];
+  if (!filter->IsSupported)
+    _unsupportedFilter = true;
   _vm.Execute(filter, tempFilter, outBlockRef, filter->GlobalData);
   delete tempFilter;
   _tempFilters[tempFilterIndex] = 0;
@@ -226,12 +228,15 @@ void CDecoder::InitFilters()
   _filters.Clear();
 }
 
+static const unsigned MAX_UNPACK_FILTERS = 8192;
+
 bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
 {
   CMemBitDecoder inp;
   inp.Init(_vmData, codeSize);
 
   UInt32 filterIndex;
+  
   if (firstByte & 0x80)
   {
     filterIndex = inp.ReadEncodedUInt32();
@@ -242,6 +247,7 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
   }
   else
     filterIndex = _lastFilter;
+  
   if (filterIndex > (UInt32)_filters.Size())
     return false;
   _lastFilter = filterIndex;
@@ -251,7 +257,7 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
   if (newFilter)
   {
     // check if too many filters
-    if (filterIndex > 1024)
+    if (filterIndex > MAX_UNPACK_FILTERS)
       return false;
     filter = new CFilter;
     _filters.Add(filter);
@@ -301,6 +307,8 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
       if (initMask & (1 << i))
         tempFilter->InitR[i] = inp.ReadEncodedUInt32();
   }
+
+  bool isOK = true;
   if (newFilter)
   {
     UInt32 vmCodeSize = inp.ReadEncodedUInt32();
@@ -308,7 +316,7 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
       return false;
     for (UInt32 i = 0; i < vmCodeSize; i++)
       _vmCode[i] = (Byte)inp.ReadBits(8);
-    filter->PrepareProgram(_vmCode, vmCodeSize);
+    isOK = filter->PrepareProgram(_vmCode, vmCodeSize);
   }
 
   Byte *globalData = &tempFilter->GlobalData[0];
@@ -331,7 +339,8 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
     for (UInt32 i = 0; i < dataSize; i++)
       dest[i] = (Byte)inp.ReadBits(8);
   }
-  return true;
+  
+  return isOK;
 }
 
 bool CDecoder::ReadVmCodeLZ()
@@ -796,6 +805,7 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
 HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
 {
   _writtenFileSize = 0;
+  _unsupportedFilter = false;
   if (!m_IsSolid)
   {
     _lzSize = 0;
@@ -843,6 +853,10 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
   RINOK(progress->SetRatioInfo(&packSize, &_writtenFileSize));
   if (_writtenFileSize < _unpackSize)
     return S_FALSE;
+
+  if (_unsupportedFilter)
+    return E_NOTIMPL;
+
   return S_OK;
 }
 
@@ -892,7 +906,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   if (size < 1)
     return E_INVALIDARG;
-  m_IsSolid = (data[0] != 0);
+  m_IsSolid = ((data[0] & 1) != 0);
   return S_OK;
 }
 

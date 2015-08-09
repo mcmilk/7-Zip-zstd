@@ -1,5 +1,5 @@
 /* 7zDec.c -- Decoding from 7z folder
-2015-06-13 : Igor Pavlov : Public domain */
+2015-08-01 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -144,11 +144,11 @@ static SRes SzDecodeLzma(const Byte *props, unsigned propsSize, UInt64 inSize, I
 
   for (;;)
   {
-    Byte *inBuf = NULL;
+    const void *inBuf = NULL;
     size_t lookahead = (1 << 18);
     if (lookahead > inSize)
       lookahead = (size_t)inSize;
-    res = inStream->Look((void *)inStream, (const void **)&inBuf, &lookahead);
+    res = inStream->Look(inStream, &inBuf, &lookahead);
     if (res != SZ_OK)
       break;
 
@@ -197,11 +197,11 @@ static SRes SzDecodeLzma2(const Byte *props, unsigned propsSize, UInt64 inSize, 
 
   for (;;)
   {
-    Byte *inBuf = NULL;
+    const void *inBuf = NULL;
     size_t lookahead = (1 << 18);
     if (lookahead > inSize)
       lookahead = (size_t)inSize;
-    res = inStream->Look((void *)inStream, (const void **)&inBuf, &lookahead);
+    res = inStream->Look(inStream, &inBuf, &lookahead);
     if (res != SZ_OK)
       break;
 
@@ -237,11 +237,11 @@ static SRes SzDecodeCopy(UInt64 inSize, ILookInStream *inStream, Byte *outBuffer
 {
   while (inSize > 0)
   {
-    void *inBuf;
+    const void *inBuf;
     size_t curSize = (1 << 18);
     if (curSize > inSize)
       curSize = (size_t)inSize;
-    RINOK(inStream->Look((void *)inStream, (const void **)&inBuf, &curSize));
+    RINOK(inStream->Look(inStream, &inBuf, &curSize));
     if (curSize == 0)
       return SZ_ERROR_INPUT_EOF;
     memcpy(outBuffer, inBuf, curSize);
@@ -429,7 +429,7 @@ static SRes SzFolder_Decode2(const CSzFolder *folder,
         RINOK(SzDecodePpmd(propsData + coder->PropsOffset, coder->PropsSize, inSize, inStream, outBufCur, outSizeCur, allocMain));
       }
       #endif
-      else 
+      else
         return SZ_ERROR_UNSUPPORTED;
     }
     else if (coder->MethodID == k_BCJ2)

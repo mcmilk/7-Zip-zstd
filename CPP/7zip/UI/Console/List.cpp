@@ -123,6 +123,7 @@ static const char * const kPropIdToName[] =
   , "Stream ID"
   , "Read-only"
   , "Out Name"
+  , "Copy Link"
 };
 
 static const char kEmptyAttribChar = '.';

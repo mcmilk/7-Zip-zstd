@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <string.h>
+
 #include "LimitedStreams.h"
 #include "../../Common/Defs.h"
 

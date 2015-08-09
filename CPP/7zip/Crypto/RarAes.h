@@ -12,14 +12,14 @@
 #include "MyAes.h"
 
 namespace NCrypto {
-namespace NRar29 {
+namespace NRar3 {
 
-const UInt32 kRarAesKeySize = 16;
+const unsigned kAesKeySize = 16;
 
 class CDecoder:
-  public CAesCbcDecoder,
+  public CAesCbcDecoder
   // public ICompressSetDecoderProperties2,
-  public ICryptoSetPassword
+  // public ICryptoSetPassword
 {
   Byte _salt[8];
   bool _thereIsSalt;
@@ -28,17 +28,20 @@ class CDecoder:
   
   CByteBuffer _password;
   
-  Byte _key[kRarAesKeySize];
+  Byte _key[kAesKeySize];
   Byte _iv[AES_BLOCK_SIZE];
 
   void CalcKey();
 public:
+  /*
   MY_UNKNOWN_IMP1(
-    ICryptoSetPassword)
+    ICryptoSetPassword
     // ICompressSetDecoderProperties2
+  */
   STDMETHOD(Init)();
-  STDMETHOD(CryptoSetPassword)(const Byte *aData, UInt32 aSize);
-  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
+  
+  void SetPassword(const Byte *data, unsigned size);
+  HRESULT SetDecoderProperties2(const Byte *data, UInt32 size);
 
   CDecoder();
   void SetRar350Mode(bool rar350Mode) { _rar350Mode = rar350Mode; }

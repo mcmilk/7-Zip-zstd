@@ -103,7 +103,8 @@ static void SetFileHeader(
     item.ExtractVersion.Version = NFileHeader::NCompressionMethod::kExtractVersion_Dir;
     item.Method = kMethodForDirectory;
     item.PackSize = 0;
-    item.Crc = 0; // test it
+    item.Size = 0;
+    item.Crc = 0;
   }
 }
 

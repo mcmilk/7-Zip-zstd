@@ -12,6 +12,8 @@ Note:
 
 #include "StdAfx.h"
 
+#include <stdlib.h>
+
 #include "../../../C/7zCrc.h"
 #include "../../../C/Alloc.h"
 
@@ -54,6 +56,8 @@ UInt32 CMemBitDecoder::ReadEncodedUInt32()
 namespace NVm {
 
 static const UInt32 kStackRegIndex = kNumRegs - 1;
+
+#ifdef RARVM_VM_ENABLE
 
 static const UInt32 FLAG_C = 1;
 static const UInt32 FLAG_Z = 2;
@@ -113,11 +117,14 @@ static const Byte kCmdFlags[]=
   /* CMD_PRINT */ CF_OP0
 };
 
+#endif
+
+
 CVm::CVm(): Mem(NULL) {}
 
 bool CVm::Create()
 {
-  if (Mem == NULL)
+  if (!Mem)
     Mem = (Byte *)::MyAlloc(kSpaceSize + 4);
   return (Mem != NULL);
 }
@@ -145,12 +152,14 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
     memcpy(Mem + kGlobalOffset + globalSize, &prg->StaticData[0], staticSize);
 
   bool res = true;
+  
   #ifdef RARVM_STANDARD_FILTERS
   if (prg->StandardFilterIndex >= 0)
     ExecuteStandardFilter(prg->StandardFilterIndex);
   else
   #endif
   {
+    #ifdef RARVM_VM_ENABLE
     res = ExecuteCode(prg);
     if (!res)
     {
@@ -158,7 +167,11 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
       prg->Commands.Add(CCommand());
       prg->Commands.Back().OpCode = CMD_RET;
     }
+    #else
+    res = false;
+    #endif
   }
+  
   UInt32 newBlockPos = GetFixedGlobalValue32(NGlobalOffset::kBlockPos) & kSpaceMask;
   UInt32 newBlockSize = GetFixedGlobalValue32(NGlobalOffset::kBlockSize) & kSpaceMask;
   if (newBlockPos + newBlockSize >= kSpaceSize)
@@ -175,9 +188,11 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
     outGlobalData.ClearAndSetSize(dataSize);
     memcpy(&outGlobalData[0], Mem + kGlobalOffset, dataSize);
   }
+
   return res;
 }
 
+#ifdef RARVM_VM_ENABLE
 
 #define SET_IP(IP) \
   if ((IP) >= numCommands) return true; \
@@ -191,7 +206,7 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
 
 UInt32 CVm::GetOperand32(const COperand *op) const
 {
-  switch(op->Type)
+  switch (op->Type)
   {
     case OP_TYPE_REG: return R[op->Data];
     case OP_TYPE_REGMEM: return GetValue32(&Mem[(op->Base + R[op->Data]) & kSpaceMask]);
@@ -201,7 +216,7 @@ UInt32 CVm::GetOperand32(const COperand *op) const
 
 void CVm::SetOperand32(const COperand *op, UInt32 val)
 {
-  switch(op->Type)
+  switch (op->Type)
   {
     case OP_TYPE_REG: R[op->Data] = val; return;
     case OP_TYPE_REGMEM: SetValue32(&Mem[(op->Base + R[op->Data]) & kSpaceMask], val); return;
@@ -210,7 +225,7 @@ void CVm::SetOperand32(const COperand *op, UInt32 val)
 
 Byte CVm::GetOperand8(const COperand *op) const
 {
-  switch(op->Type)
+  switch (op->Type)
   {
     case OP_TYPE_REG: return (Byte)R[op->Data];
     case OP_TYPE_REGMEM: return Mem[(op->Base + R[op->Data]) & kSpaceMask];;
@@ -220,7 +235,7 @@ Byte CVm::GetOperand8(const COperand *op) const
 
 void CVm::SetOperand8(const COperand *op, Byte val)
 {
-  switch(op->Type)
+  switch (op->Type)
   {
     case OP_TYPE_REG: R[op->Data] = (R[op->Data] & 0xFFFFFF00) | val; return;
     case OP_TYPE_REGMEM: Mem[(op->Base + R[op->Data]) & kSpaceMask] = val; return;
@@ -253,10 +268,8 @@ bool CVm::ExecuteCode(const CProgram *prg)
 
   for (;;)
   {
-    switch(cmd->OpCode)
+    switch (cmd->OpCode)
     {
-      #ifndef RARVM_NO_VM
-      
       case CMD_MOV:
         SetOperand32(&cmd->Op1, GetOperand32(&cmd->Op2));
         break;
@@ -619,8 +632,6 @@ bool CVm::ExecuteCode(const CProgram *prg)
         }
         break;
       
-      #endif
-      
       case CMD_RET:
         {
           if (R[kStackRegIndex] >= kSpaceSize)
@@ -637,7 +648,6 @@ bool CVm::ExecuteCode(const CProgram *prg)
     --maxOpCount;
   }
 }
-
 
 //////////////////////////////////////////////////////
 // Read program
@@ -682,25 +692,31 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
   inp.Init(code, codeSize);
 
   StaticData.Clear();
+  
   if (inp.ReadBit())
   {
     UInt32 dataSize = inp.ReadEncodedUInt32() + 1;
     for (UInt32 i = 0; inp.Avail() && i < dataSize; i++)
       StaticData.Add((Byte)inp.ReadBits(8));
   }
+  
   while (inp.Avail())
   {
     Commands.Add(CCommand());
     CCommand *cmd = &Commands.Back();
+    
     if (inp.ReadBit() == 0)
       cmd->OpCode = (ECommand)inp.ReadBits(3);
     else
       cmd->OpCode = (ECommand)(8 + inp.ReadBits(5));
+
     if (kCmdFlags[(unsigned)cmd->OpCode] & CF_BYTEMODE)
       cmd->ByteMode = (inp.ReadBit()) ? true : false;
     else
       cmd->ByteMode = 0;
+    
     int opNum = (kCmdFlags[(unsigned)cmd->OpCode] & CF_OPMASK);
+    
     if (opNum > 0)
     {
       DecodeArg(inp, cmd->Op1, cmd->ByteMode);
@@ -727,6 +743,7 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
         }
       }
     }
+
     if (cmd->ByteMode)
     {
       switch (cmd->OpCode)
@@ -751,6 +768,9 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
   }
 }
 
+#endif
+
+
 #ifdef RARVM_STANDARD_FILTERS
 
 enum EStandardFilter
@@ -760,8 +780,8 @@ enum EStandardFilter
   SF_ITANIUM,
   SF_RGB,
   SF_AUDIO,
-  SF_DELTA,
-  SF_UPCASE
+  SF_DELTA
+  // SF_UPCASE
 };
 
 static const struct CStandardFilterSignature
@@ -777,8 +797,8 @@ kStdFilters[]=
   { 120, 0x3769893f, SF_ITANIUM },
   {  29, 0x0e06077d, SF_DELTA },
   { 149, 0x1c2c5dc8, SF_RGB },
-  { 216, 0xbc85e701, SF_AUDIO },
-  {  40, 0x46b9c560, SF_UPCASE }
+  { 216, 0xbc85e701, SF_AUDIO }
+  // {  40, 0x46b9c560, SF_UPCASE }
 };
 
 static int FindStandardFilter(const Byte *code, UInt32 codeSize)
@@ -795,28 +815,48 @@ static int FindStandardFilter(const Byte *code, UInt32 codeSize)
 
 #endif
 
-void CProgram::PrepareProgram(const Byte *code, UInt32 codeSize)
-{
-  Byte xorSum = 0;
-  for (UInt32 i = 1; i < codeSize; i++)
-    xorSum ^= code[i];
 
+bool CProgram::PrepareProgram(const Byte *code, UInt32 codeSize)
+{
+  IsSupported = false;
+
+  #ifdef RARVM_VM_ENABLE
   Commands.Clear();
+  #endif
+  
   #ifdef RARVM_STANDARD_FILTERS
   StandardFilterIndex = -1;
   #endif
 
-  if (xorSum == code[0] && codeSize > 0)
+  bool isOK = false;
+
+  Byte xorSum = 0;
+  for (UInt32 i = 0; i < codeSize; i++)
+    xorSum ^= code[i];
+
+  if (xorSum == 0 && codeSize != 0)
   {
+    IsSupported = true;
+    isOK = true;
     #ifdef RARVM_STANDARD_FILTERS
     StandardFilterIndex = FindStandardFilter(code, codeSize);
     if (StandardFilterIndex >= 0)
-      return;
+      return true;
     #endif
+  
+    #ifdef RARVM_VM_ENABLE
     ReadProgram(code + 1, codeSize - 1);
+    #else
+    IsSupported = false;
+    #endif
   }
+  
+  #ifdef RARVM_VM_ENABLE
   Commands.Add(CCommand());
   Commands.Back().OpCode = CMD_RET;
+  #endif
+  
+  return isOK;
 }
 
 void CVm::SetMemory(UInt32 pos, const Byte *data, UInt32 dataSize)
@@ -833,12 +873,11 @@ static void E8E9Decode(Byte *data, UInt32 dataSize, UInt32 fileOffset, bool e9)
     return;
   dataSize -= 4;
   const UInt32 kFileSize = 0x1000000;
-  Byte cmpByte2 = (Byte)(e9 ? 0xE9 : 0xE8);
+  Byte cmpMask = (Byte)(e9 ? 0xFE : 0xFF);
   for (UInt32 curPos = 0; curPos < dataSize;)
   {
-    Byte curByte = *(data++);
     curPos++;
-    if (curByte == 0xE8 || curByte == cmpByte2)
+    if (((*data++) & cmpMask) == 0xE8)
     {
       UInt32 offset = curPos + fileOffset;
       UInt32 addr = (Int32)GetValue32(data);
@@ -852,9 +891,9 @@ static void E8E9Decode(Byte *data, UInt32 dataSize, UInt32 fileOffset, bool e9)
   }
 }
 
-static inline UInt32 ItaniumGetOpType(const Byte *data, int bitPos)
+static inline UInt32 ItaniumGetOpType(const Byte *data, unsigned bitPos)
 {
-  return (data[(unsigned int)bitPos >> 3] >> (bitPos & 7)) & 0xF;
+  return (data[bitPos >> 3] >> (bitPos & 7)) & 0xF;
 }
 
 static const Byte kCmdMasks[16] = {4,4,6,6,0,0,7,7,4,4,0,0,4,4,0,0};
@@ -870,20 +909,20 @@ static void ItaniumDecode(Byte *data, UInt32 dataSize, UInt32 fileOffset)
     {
       Byte cmdMask = kCmdMasks[b];
       if (cmdMask != 0)
-        for (int i = 0; i < 3; i++)
+        for (unsigned i = 0; i < 3; i++)
           if (cmdMask & (1 << i))
           {
-            int startPos = i * 41 + 18;
+            unsigned startPos = i * 41 + 18;
             if (ItaniumGetOpType(data, startPos + 24) == 5)
             {
               const UInt32 kMask = 0xFFFFF;
-              Byte *p = data + ((unsigned int)startPos >> 3);
+              Byte *p = data + (startPos >> 3);
               UInt32 bitField = ((UInt32)p[0]) | ((UInt32)p[1] <<  8) | ((UInt32)p[2] << 16);
-              int inBit = (startPos & 7);
+              unsigned inBit = (startPos & 7);
               UInt32 offset = (bitField >> inBit) & kMask;
               UInt32 andMask = ~(kMask << inBit);
               bitField = ((offset - fileOffset) & kMask) << inBit;
-              for (int j = 0; j < 3; j++)
+              for (unsigned j = 0; j < 3; j++)
               {
                 p[j] &= andMask;
                 p[j] |= bitField;
@@ -1016,6 +1055,7 @@ static void AudioDecode(Byte *srcData, UInt32 dataSize, UInt32 numChannels)
   }
 }
 
+/*
 static UInt32 UpCaseDecode(Byte *data, UInt32 dataSize)
 {
   UInt32 srcPos = 0, destPos = dataSize;
@@ -1028,6 +1068,7 @@ static UInt32 UpCaseDecode(Byte *data, UInt32 dataSize)
   }
   return destPos - dataSize;
 }
+*/
 
 void CVm::ExecuteStandardFilter(unsigned filterIndex)
 {
@@ -1068,6 +1109,7 @@ void CVm::ExecuteStandardFilter(unsigned filterIndex)
       SetBlockPos(dataSize);
       AudioDecode(Mem, dataSize, R[0]);
       break;
+    /*
     case SF_UPCASE:
       if (dataSize >= kGlobalOffset / 2)
         break;
@@ -1075,6 +1117,7 @@ void CVm::ExecuteStandardFilter(unsigned filterIndex)
       SetBlockSize(destSize);
       SetBlockPos(dataSize);
       break;
+    */
   }
 }
 

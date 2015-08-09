@@ -1566,7 +1566,8 @@ static const CBenchHash g_Hash[] =
   { 10,   339, 0x8F8FEDAB, "CRC32:8" },
   { 10,   512, 0xDF1C17CC, "CRC64" },
   { 10,  5100, 0x2D79FF2E, "SHA256" },
-  { 10,  2340, 0x4C25132B, "SHA1" }
+  { 10,  2340, 0x4C25132B, "SHA1" },
+  {  2,  5500, 0xE084E913, "BLAKE2sp" }
 };
 
 struct CTotalBenchRes

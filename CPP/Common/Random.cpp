@@ -6,6 +6,8 @@
 
 #ifndef _WIN32
 #include <time.h>
+#else
+#include "MyWindows.h"
 #endif
 
 #include "Random.h"

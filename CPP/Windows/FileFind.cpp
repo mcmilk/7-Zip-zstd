@@ -130,9 +130,11 @@ WinXP-64 FindFirstFile():
   \\Server\        - ERROR_INVALID_NAME
       
   \\Server\Share            - ERROR_BAD_NETPATH
+  \\Server\Share            - ERROR_BAD_NET_NAME (Win7)
   \\Server\Share\           - ERROR_FILE_NOT_FOUND
   
   \\?\UNC\Server\Share      - ERROR_INVALID_NAME
+  \\?\UNC\Server\Share      - ERROR_BAD_PATHNAME (Win7)
   \\?\UNC\Server\Share\     - ERROR_FILE_NOT_FOUND
   
   \\Server\Share_RootDrive  - ERROR_INVALID_NAME
@@ -512,9 +514,11 @@ bool CFileInfo::Find(CFSTR path)
   #if defined(_WIN32) && !defined(UNDER_CE)
   {
     DWORD lastError = GetLastError();
-    if (lastError == ERROR_BAD_NETPATH ||
-        lastError == ERROR_FILE_NOT_FOUND ||
-        lastError == ERROR_INVALID_NAME // for "\\SERVER\shared" paths that are translated to "\\?\UNC\SERVER\shared"
+    if (lastError == ERROR_FILE_NOT_FOUND
+        || lastError == ERROR_BAD_NETPATH  // XP64: "\\Server\Share"
+        || lastError == ERROR_BAD_NET_NAME // Win7: "\\Server\Share"
+        || lastError == ERROR_INVALID_NAME // XP64: "\\?\UNC\Server\Share"
+        || lastError == ERROR_BAD_PATHNAME // Win7: "\\?\UNC\Server\Share"
         )
     {
       unsigned rootSize = 0;

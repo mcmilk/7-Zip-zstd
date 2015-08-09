@@ -1,5 +1,4 @@
 // Crypto/RarAes.cpp
-// Note: you must include MyAes.cpp to project to initialize AES tables
 
 #include "StdAfx.h"
 
@@ -7,10 +6,10 @@
 #include "Sha1Cls.h"
 
 namespace NCrypto {
-namespace NRar29 {
+namespace NRar3 {
 
 CDecoder::CDecoder():
-    CAesCbcDecoder(kRarAesKeySize),
+    CAesCbcDecoder(kAesKeySize),
     _thereIsSalt(false),
     _needCalc(true),
     _rar350Mode(false)
@@ -19,7 +18,7 @@ CDecoder::CDecoder():
     _salt[i] = 0;
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
+HRESULT CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   bool prev = _thereIsSalt;
   _thereIsSalt = false;
@@ -53,12 +52,12 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
   return S_OK;
 }
 
-static const unsigned kPasswordLen_MAX = 127 * 2;
+static const unsigned kPasswordLen_Bytes_MAX = 127 * 2;
 
-STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
+void CDecoder::SetPassword(const Byte *data, unsigned size)
 {
-  if (size > kPasswordLen_MAX)
-    size = kPasswordLen_MAX;
+  if (size > kPasswordLen_Bytes_MAX)
+    size = kPasswordLen_Bytes_MAX;
   bool same = false;
   if (size == _password.Size())
   {
@@ -73,13 +72,12 @@ STDMETHODIMP CDecoder::CryptoSetPassword(const Byte *data, UInt32 size)
   if (!_needCalc && !same)
     _needCalc = true;
   _password.CopyFrom(data, (size_t)size);
-  return S_OK;
 }
 
 STDMETHODIMP CDecoder::Init()
 {
   CalcKey();
-  RINOK(SetKey(_key, kRarAesKeySize));
+  RINOK(SetKey(_key, kAesKeySize));
   RINOK(SetInitVector(_iv, AES_BLOCK_SIZE));
   return CAesCbcCoder::Init();
 }
@@ -91,7 +89,7 @@ void CDecoder::CalcKey()
 
   const unsigned kSaltSize = 8;
   
-  Byte buf[kPasswordLen_MAX + kSaltSize];
+  Byte buf[kPasswordLen_Bytes_MAX + kSaltSize];
   
   if (_password.Size() != 0)
     memcpy(buf, _password, _password.Size());
@@ -109,7 +107,7 @@ void CDecoder::CalcKey()
   
   Byte digest[NSha1::kDigestSize];
   // rar reverts hash for sha.
-  const UInt32 kNumRounds = (1 << 18);
+  const UInt32 kNumRounds = ((UInt32)1 << 18);
   UInt32 i;
   for (i = 0; i < kNumRounds; i++)
   {

@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "MemoryLock.h"
+
 namespace NWindows {
 namespace NSecurity {
 

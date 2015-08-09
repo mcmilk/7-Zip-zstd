@@ -4,6 +4,7 @@
 #define __WINDOWS_TIME_UTILS_H
 
 #include "../Common/MyTypes.h"
+#include "../Common/MyWindows.h"
 
 namespace NWindows {
 namespace NTime {

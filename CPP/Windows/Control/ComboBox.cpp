@@ -34,7 +34,7 @@ LRESULT CComboBox::GetLBText(int index, CSysString &s)
 LRESULT CComboBox::AddString(LPCWSTR s)
 {
   if (g_IsNT)
-    return SendMessageW(CB_ADDSTRING, 0, (LPARAM)s);
+    return SendMsgW(CB_ADDSTRING, 0, (LPARAM)s);
   return AddString(GetSystemString(s));
 }
 
@@ -43,10 +43,10 @@ LRESULT CComboBox::GetLBText(int index, UString &s)
   s.Empty();
   if (g_IsNT)
   {
-    LRESULT len = SendMessageW(CB_GETLBTEXTLEN, index, 0);
+    LRESULT len = SendMsgW(CB_GETLBTEXTLEN, index, 0);
     if (len == CB_ERR)
       return len;
-    LRESULT len2 = SendMessageW(CB_GETLBTEXT, index, (LPARAM)s.GetBuf((unsigned)len));
+    LRESULT len2 = SendMsgW(CB_GETLBTEXT, index, (LPARAM)s.GetBuf((unsigned)len));
     if (len2 == CB_ERR)
       return len;
     if (len > len2)

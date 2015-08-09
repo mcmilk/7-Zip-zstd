@@ -413,7 +413,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
     {
       case kpidPath:  prop = DirItems->GetLogPath(up.DirIndex); break;
       case kpidIsDir:  prop = di.IsDir(); break;
-      case kpidSize:  prop = di.Size; break;
+      case kpidSize:  prop = di.IsDir() ? (UInt64)0 : di.Size; break;
       case kpidAttrib:  prop = di.Attrib; break;
       case kpidCTime:  prop = di.CTime; break;
       case kpidATime:  prop = di.ATime; break;

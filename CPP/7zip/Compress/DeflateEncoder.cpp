@@ -130,14 +130,14 @@ CCoder::CCoder(bool deflate64Mode):
   m_Values(0),
   m_Tables(0)
 {
-  {
-    CEncProps props;
-    SetProps(&props);
-  }
   m_MatchMaxLen = deflate64Mode ? kMatchMaxLen64 : kMatchMaxLen32;
   m_NumLenCombinations = deflate64Mode ? kNumLenSymbols64 : kNumLenSymbols32;
   m_LenStart = deflate64Mode ? kLenStart64 : kLenStart32;
   m_LenDirectBits = deflate64Mode ? kLenDirectBits64 : kLenDirectBits32;
+  {
+    CEncProps props;
+    SetProps(&props);
+  }
   MatchFinder_Construct(&_lzInWindow);
 }
 

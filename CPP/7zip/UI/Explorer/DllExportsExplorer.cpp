@@ -8,10 +8,12 @@
 
 #include "StdAfx.h"
 
-#include "../../../Common/MyInitGuid.h"
+#include "../../../Common/MyWindows.h"
 
 #include <ShlGuid.h>
 #include <OleCtl.h>
+
+#include "../../../Common/MyInitGuid.h"
 
 #include "../../../Common/ComTry.h"
 #include "../../../Common/StringConvert.h"

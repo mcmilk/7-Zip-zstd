@@ -10,6 +10,7 @@
 #include <wchar.h>
 #endif
 
+#include "MyWindows.h"
 #include "MyTypes.h"
 #include "MyVector.h"
 

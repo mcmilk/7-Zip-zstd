@@ -380,6 +380,21 @@ STDMETHODIMP CAgent::DoOperation(
   HRESULT res = outArchive->UpdateItems(outArchiveStream, updatePairs2.Size(), updateCallback);
   if (res == S_OK && processedPaths)
   {
+    {
+      /* OutHandler for 7z archives doesn't report compression operation for empty files.
+         So we must include these files manually */
+      FOR_VECTOR(i, updatePairs2)
+      {
+        const CUpdatePair2 &up = updatePairs2[i];
+        if (up.DirIndex >= 0 && up.NewData)
+        {
+          const CDirItem &di = dirItems.Items[up.DirIndex];
+          if (!di.IsDir() && di.Size == 0)
+            processedItems[up.DirIndex] = 1;
+        }
+      }
+    }
+
     FOR_VECTOR (i, dirItems.Items)
       if (processedItems[i] != 0)
         processedPaths->Add(dirItems.GetPhyPath(i));

@@ -2,6 +2,10 @@
  
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
+#include <commctrl.h>
+
 #ifndef UNDER_CE
 #include "../../../Windows/CommonDialog.h"
 #include "../../../Windows/Shell.h"
@@ -106,7 +110,7 @@ class CBrowseDialog: public NControl::CModalDialog
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   virtual void OnOK();
 
-  void Post_RefreshPathEdit() { PostMessage(k_Message_RefreshPathEdit); }
+  void Post_RefreshPathEdit() { PostMsg(k_Message_RefreshPathEdit); }
 
   bool GetParentPath(const UString &path, UString &parentPrefix, UString &name);
   // Reload changes DirPrefix. Don't send DirPrefix in pathPrefix parameter
@@ -295,7 +299,7 @@ bool CBrowseDialog::OnInit()
   #ifndef UNDER_CE
   /* If we clear UISF_HIDEFOCUS, the focus rectangle in ListView will be visible,
      even if we use mouse for pressing the button to open this dialog. */
-  PostMessage(MY__WM_UPDATEUISTATE, MAKEWPARAM(MY__UIS_CLEAR, MY__UISF_HIDEFOCUS));
+  PostMsg(MY__WM_UPDATEUISTATE, MAKEWPARAM(MY__UIS_CLEAR, MY__UISF_HIDEFOCUS));
   #endif
 
   return CModalDialog::OnInit();

@@ -48,18 +48,13 @@ class COpenCallbackImp:
   public CMyUnknownImp
 {
 public:
+  MY_QUERYINTERFACE_BEGIN2(IArchiveOpenVolumeCallback)
+  MY_QUERYINTERFACE_ENTRY(IArchiveOpenSetSubArchiveName)
   #ifndef _NO_CRYPTO
-  MY_UNKNOWN_IMP3(
-      IArchiveOpenVolumeCallback,
-      ICryptoGetTextPassword,
-      IArchiveOpenSetSubArchiveName
-      )
-  #else
-  MY_UNKNOWN_IMP2(
-      IArchiveOpenVolumeCallback,
-      IArchiveOpenSetSubArchiveName
-      )
+  MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
   #endif
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   INTERFACE_IArchiveOpenCallback(;)
   INTERFACE_IArchiveOpenVolumeCallback(;)
@@ -93,7 +88,8 @@ public:
   CMyComPtr<IArchiveOpenCallback> ReOpenCallback;
   // UInt64 TotalSize;
 
-  COpenCallbackImp(): Callback(NULL) {}
+  COpenCallbackImp(): Callback(NULL), _subArchiveMode(false) {}
+  
   void Init(const FString &folderPrefix, const FString &fileName)
   {
     _folderPrefix = folderPrefix;
@@ -106,6 +102,7 @@ public:
     // TotalSize = 0;
     PasswordWasAsked = false;
   }
+
   bool SetSecondFileInfo(CFSTR newName)
   {
     return _fileInfo.Find(newName) && !_fileInfo.IsDir();

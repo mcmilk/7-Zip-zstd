@@ -12,7 +12,7 @@
 #define MY_SET_BINARY_MODE(file)
 #endif
 
-// #include "../../../Common/MyWindows.h"
+#include "../../../Common/MyWindows.h"
 #include "../../../Common/MyInitGuid.h"
 
 #include "../../../../C/7zVersion.h"

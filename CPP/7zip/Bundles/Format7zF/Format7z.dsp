@@ -243,6 +243,10 @@ SOURCE=..\..\..\Common\CrcReg.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Defs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
@@ -449,6 +453,24 @@ SOURCE=..\..\Compress\Rar3Vm.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\Rar3Vm.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Rar5Decoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Rar5Decoder.h
 # End Source File
 # Begin Source File
 
@@ -821,6 +843,14 @@ SOURCE=..\..\Crypto\HmacSha1.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Crypto\HmacSha256.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\HmacSha256.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Crypto\MyAes.cpp
 # End Source File
 # Begin Source File
@@ -884,6 +914,14 @@ SOURCE=..\..\Crypto\Rar20Crypto.cpp
 # Begin Source File
 
 SOURCE=..\..\Crypto\Rar20Crypto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Rar5Aes.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Rar5Aes.h
 # End Source File
 # Begin Source File
 
@@ -1304,6 +1342,26 @@ SOURCE=..\..\..\..\C\Bcj2.h
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Bcj2Enc.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Blake2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Blake2s.c
 
 !IF  "$(CFG)" == "7z - Win32 Release"
 
@@ -1874,6 +1932,14 @@ SOURCE=..\..\Archive\7z\7zUpdateItem.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Archive\Rar\Rar5Handler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Rar\Rar5Handler.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Rar\RarHandler.cpp
 # End Source File
 # Begin Source File
@@ -1887,6 +1953,10 @@ SOURCE=..\..\Archive\Rar\RarHeader.h
 # Begin Source File
 
 SOURCE=..\..\Archive\Rar\RarItem.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Rar\RarVol.h
 # End Source File
 # End Group
 # Begin Group "Cab"

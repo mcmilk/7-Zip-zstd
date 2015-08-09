@@ -1,4 +1,4 @@
-7-Zip 15.05 Sources
+7-Zip 15.06 Sources
 -------------------
 
 7-Zip is a file archiver for Windows. 

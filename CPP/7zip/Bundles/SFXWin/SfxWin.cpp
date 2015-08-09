@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/MyWindows.h"
+
 #include <Shlwapi.h>
 
 #include "../../../Common/MyInitGuid.h"

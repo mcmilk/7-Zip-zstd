@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../Common/MyWindows.h"
+
 #include "../PropID.h"
 
 // VARTYPE
@@ -101,5 +103,6 @@ const Byte k7z_PROPID_To_VARTYPE[kpid_NUM_DEFINED] =
   VT_UI8,
   VT_UI8,
   VT_BOOL,
-  VT_BSTR  // kpidOutName
+  VT_BSTR,
+  VT_BSTR
 };

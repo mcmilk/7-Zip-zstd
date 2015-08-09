@@ -359,7 +359,7 @@ LRESULT CPanel::OnNotifyComboBoxEnter(const UString &s)
 {
   if (BindToPathAndRefresh(GetUnicodeString(s)) == S_OK)
   {
-    PostMessage(kSetFocusToListView);
+    PostMsg(kSetFocusToListView);
     return TRUE;
   }
   return FALSE;
@@ -370,7 +370,7 @@ bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDITW info, LRESULT &result)
   if (info->iWhy == CBENF_ESCAPE)
   {
     _headerComboBox.SetText(_currentFolderPrefix);
-    PostMessage(kSetFocusToListView);
+    PostMsg(kSetFocusToListView);
     result = FALSE;
     return true;
   }
@@ -401,7 +401,7 @@ bool CPanel::OnNotifyComboBoxEndEdit(PNMCBEENDEDIT info, LRESULT &result)
   if (info->iWhy == CBENF_ESCAPE)
   {
     _headerComboBox.SetText(_currentFolderPrefix);
-    PostMessage(kSetFocusToListView);
+    PostMsg(kSetFocusToListView);
     result = FALSE;
     return true;
   }
@@ -528,9 +528,9 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
         // _headerComboBox.SetText(pass); // it's fix for seclecting by mouse.
         if (BindToPathAndRefresh(pass) == S_OK)
         {
-          PostMessage(kSetFocusToListView);
+          PostMsg(kSetFocusToListView);
           #ifdef UNDER_CE
-          PostMessage(kRefresh_HeaderComboBox);
+          PostMsg(kRefresh_HeaderComboBox);
           #endif
           return true;
         }

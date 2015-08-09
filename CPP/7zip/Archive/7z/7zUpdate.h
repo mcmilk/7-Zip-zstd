@@ -97,6 +97,9 @@ struct CUpdateOptions
   UInt64 NumSolidFiles;
   UInt64 NumSolidBytes;
   bool SolidExtension;
+  
+  bool UseTypeSorting;
+  
   bool RemoveSfxBlock;
   bool MultiThreadMixer;
 
@@ -109,6 +112,7 @@ struct CUpdateOptions
       NumSolidFiles((UInt64)(Int64)(-1)),
       NumSolidBytes((UInt64)(Int64)(-1)),
       SolidExtension(false),
+      UseTypeSorting(true),
       RemoveSfxBlock(false),
       MultiThreadMixer(true)
     {}

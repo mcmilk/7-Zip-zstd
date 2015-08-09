@@ -1,5 +1,5 @@
 PROG = 7z.dll
-DEF_FILE = ../../Archive/Archive2.def
+DEF_FILE = ../Archive.def
 CFLAGS = $(CFLAGS) \
   -DEXTERNAL_CODECS \
 
@@ -60,9 +60,11 @@ WIN_OBJS = \
   $O\StreamUtils.obj \
   $O\VirtThread.obj \
 
+COMPRESS_OBJS = \
+  $O\CopyCoder.obj \
+
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
-  $O\CoderMixer2MT.obj \
   $O\CrossThreadProgress.obj \
   $O\HandlerOut.obj \
   $O\InStreamWithCRC.obj \
@@ -75,5 +77,7 @@ C_OBJS = \
   $O\Alloc.obj \
   $O\CpuArch.obj \
   $O\Threads.obj \
+
+!include "../../Crc.mak"
 
 !include "../../7zip.mak"

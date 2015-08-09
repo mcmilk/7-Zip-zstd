@@ -3,6 +3,10 @@
 #ifndef __CONTEXT_MENU_H
 #define __CONTEXT_MENU_H
 
+#include "../../../Common/MyWindows.h"
+
+#include <ShlObj.h>
+
 #include "../../../Common/MyString.h"
 
 #include "../FileManager/MyCom2.h"

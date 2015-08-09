@@ -70,7 +70,7 @@ void CPanel::OnArrowWithShift()
   }
   
   _prevFocusedItem = focusedItem;
-  PostMessage(kShiftSelectMessage);
+  PostMsg(kShiftSelectMessage);
   _listView.RedrawItem(focusedItem);
 }
 

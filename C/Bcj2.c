@@ -1,5 +1,5 @@
 /* Bcj2.c -- BCJ2 Decoder (Converter for x86 code)
-2014-11-09 : Igor Pavlov : Public domain */
+2015-08-01 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -178,8 +178,8 @@ SRes Bcj2Dec_Decode(CBcj2Dec *p)
           p->state =
             p->bufs[BCJ2_STREAM_MAIN] ==
             p->lims[BCJ2_STREAM_MAIN] ?
-              BCJ2_STREAM_MAIN :
-              BCJ2_DEC_STATE_ORIG;
+              (unsigned)BCJ2_STREAM_MAIN :
+              (unsigned)BCJ2_DEC_STATE_ORIG;
           return SZ_OK;
         }
         

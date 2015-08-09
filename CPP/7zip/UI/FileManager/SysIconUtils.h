@@ -3,6 +3,10 @@
 #ifndef __SYS_ICON_UTILS_H
 #define __SYS_ICON_UTILS_H
 
+#include "../../../Common/MyWindows.h"
+
+#include <commctrl.h>
+
 #include "../../../Common/MyString.h"
 
 struct CExtIconPair

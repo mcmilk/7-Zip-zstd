@@ -9,9 +9,11 @@
 
 #include "../../../Common/Common.h"
 
+// #include "../../../Common/MyWindows.h"
+
 // #include <commctrl.h>
-#include <ShlObj.h>
-#include <shlwapi.h>
+// #include <ShlObj.h>
+// #include <shlwapi.h>
 
 // #define printf(x) NO_PRINTF_(x)
 // #define sprintf(x) NO_SPRINTF_(x)

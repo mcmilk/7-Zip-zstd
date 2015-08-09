@@ -16,7 +16,7 @@
 /* If NSIS_SCRIPT is defined, it will decompile NSIS script to [NSIS].nsi file.
    The code is much larger in that case. */
  
-#define NSIS_SCRIPT
+// #define NSIS_SCRIPT
 
 namespace NArchive {
 namespace NNsis {
