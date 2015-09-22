@@ -143,7 +143,9 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
           else
             continue;
         }
+        
         LangString_OnlyFromLangFile(langID, newString);
+        
         if (newString.IsEmpty())
           continue;
       }
@@ -154,7 +156,21 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
         int langPos = FindLangItem(item.wID);
 
         // we don't need lang change for CRC items!!!
-        LangString_OnlyFromLangFile(langPos >= 0 ? kIDLangPairs[langPos].LangID : item.wID, newString);
+
+        UInt32 langID = langPos >= 0 ? kIDLangPairs[langPos].LangID : item.wID;
+        
+        if (langID == IDM_OPEN_INSIDE_ONE || langID == IDM_OPEN_INSIDE_PARSER)
+        {
+          LangString_OnlyFromLangFile(IDM_OPEN_INSIDE, newString);
+          newString.Replace(L"&", L"");
+          int tabPos = newString.Find(L"\t");
+          if (tabPos >= 0)
+            newString.DeleteFrom(tabPos);
+          newString += (langID == IDM_OPEN_INSIDE_ONE ? L" *" : L" #");
+        }
+        else
+          LangString_OnlyFromLangFile(langID, newString);
+
         if (newString.IsEmpty())
           continue;
 
@@ -162,6 +178,7 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
         if (tabPos >= 0)
           newString += item.StringValue.Ptr(tabPos);
       }
+
       {
         item.StringValue = newString;
         item.fMask = Get_fMask_for_String();
@@ -358,6 +375,7 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
   ReadRegDiff(diffPath);
   
   unsigned numRealItems = startPos;
+  
   for (unsigned i = 0;; i++)
   {
     CMenuItem item;
@@ -374,6 +392,13 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
 
       if (item.wID == IDM_DIFF && diffPath.IsEmpty())
         continue;
+
+      if (item.wID == IDM_OPEN_INSIDE_ONE || item.wID == IDM_OPEN_INSIDE_PARSER)
+      {
+        // We use diff as "super mode" marker for additional commands.
+        if (diffPath.IsEmpty())
+          continue;
+      }
 
       bool isOneFsFile = (isFsFolder && numItems == 1 && allAreFiles);
       bool disable = (!isOneFsFile && (item.wID == IDM_SPLIT || item.wID == IDM_COMBINE));
@@ -415,6 +440,7 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
         numRealItems = startPos;
     }
   }
+  
   destMenu.RemoveAllItemsFrom(numRealItems);
 }
 
@@ -432,7 +458,11 @@ bool ExecuteFileCommand(int id)
   {
     // File
     case IDM_OPEN: g_App.OpenItem(); break;
-    case IDM_OPEN_INSIDE: g_App.OpenItemInside(); break;
+    
+    case IDM_OPEN_INSIDE:        g_App.OpenItemInside(NULL); break;
+    case IDM_OPEN_INSIDE_ONE:    g_App.OpenItemInside(L"*"); break;
+    case IDM_OPEN_INSIDE_PARSER: g_App.OpenItemInside(L"#"); break;
+
     case IDM_OPEN_OUTSIDE: g_App.OpenItemOutside(); break;
     case IDM_FILE_VIEW: g_App.EditItem(false); break;
     case IDM_FILE_EDIT: g_App.EditItem(true); break;

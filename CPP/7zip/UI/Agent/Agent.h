@@ -251,7 +251,9 @@ public:
     FOR_VECTOR (i, _archiveLink.Arcs)
     {
       const CArc &arc = _archiveLink.Arcs[i];
-      if (!g_CodecsObj->Formats[arc.FormatIndex].UpdateEnabled || arc.IsReadOnly)
+      if (arc.FormatIndex < 0
+          || arc.IsReadOnly
+          || !g_CodecsObj->Formats[arc.FormatIndex].UpdateEnabled)
         return true;
     }
     return false;
@@ -274,9 +276,14 @@ public:
       UString s2;
       if (arc.ErrorInfo.ErrorFormatIndex >= 0)
       {
-        s2.AddAscii("Can not open the file as [");
-        s2 += g_CodecsObj->Formats[arc.ErrorInfo.ErrorFormatIndex].Name;
-        s2.AddAscii("] archive");
+        if (arc.ErrorInfo.ErrorFormatIndex == arc.FormatIndex)
+          s2.AddAscii("Warning: The archive is open with offset");
+        else
+        {
+          s2.AddAscii("Can not open the file as [");
+          s2 += g_CodecsObj->GetFormatNamePtr(arc.ErrorInfo.ErrorFormatIndex);
+          s2.AddAscii("] archive");
+        }
       }
 
       if (!arc.ErrorInfo.ErrorMessage.IsEmpty())
@@ -288,6 +295,7 @@ public:
         s2.AddAscii("]: ");
         s2 += arc.ErrorInfo.ErrorMessage;
       }
+      
       if (!s2.IsEmpty())
       {
         if (!s.IsEmpty())

@@ -304,6 +304,7 @@ HRESULT CDecoder::AddFilter(CBitDecoder &_bitStream)
   // if (f.Size > ((UInt32)1 << 16)) _unsupportedFilter = true;
 
   f.Type = (Byte)_bitStream.ReadBits9fix(3);
+  f.Channels = 0;
   if (f.Type == FILTER_DELTA)
     f.Channels = (Byte)(_bitStream.ReadBits9fix(5) + 1);
   f.Start = _lzSize + blockStart;
@@ -408,7 +409,7 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
     if (_bitStream.IsBlockOverRead())
       return S_FALSE;
     
-    RIF(m_LevelDecoder.SetCodeLengths(lens2));
+    RIF(m_LevelDecoder.Build(lens2));
   }
   
   Byte lens[kTablesSizesSum];
@@ -424,7 +425,7 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
         return S_FALSE;
     }
     
-    UInt32 sym = m_LevelDecoder.DecodeSymbol(&_bitStream);
+    UInt32 sym = m_LevelDecoder.Decode(&_bitStream);
     
     if (sym < 16)
       lens[i++] = (Byte)sym;
@@ -466,10 +467,10 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
   if (_bitStream.InputEofError())
     return S_FALSE;
 
-  RIF(m_MainDecoder.SetCodeLengths(&lens[0]));
-  RIF(m_DistDecoder.SetCodeLengths(&lens[kMainTableSize]));
-  RIF(m_AlignDecoder.SetCodeLengths(&lens[kMainTableSize + kDistTableSize]));
-  RIF(m_LenDecoder.SetCodeLengths(&lens[kMainTableSize + kDistTableSize + kAlignTableSize]));
+  RIF(m_MainDecoder.Build(&lens[0]));
+  RIF(m_DistDecoder.Build(&lens[kMainTableSize]));
+  RIF(m_AlignDecoder.Build(&lens[kMainTableSize + kDistTableSize]));
+  RIF(m_LenDecoder.Build(&lens[kMainTableSize + kDistTableSize + kAlignTableSize]));
 
   _useAlignBits = false;
   // _useAlignBits = true;
@@ -601,7 +602,7 @@ HRESULT CDecoder::DecodeLZ()
       }
     }
 
-    UInt32 sym = m_MainDecoder.DecodeSymbol(&_bitStream);
+    UInt32 sym = m_MainDecoder.Decode(&_bitStream);
     
     if (sym < 256)
     {
@@ -638,7 +639,7 @@ HRESULT CDecoder::DecodeLZ()
           rep0 = dist;
         }
         
-        UInt32 sym = m_LenDecoder.DecodeSymbol(&_bitStream);
+        UInt32 sym = m_LenDecoder.Decode(&_bitStream);
         if (sym >= kLenTableSize)
           break; // return S_FALSE;
         len = SlotToLen(_bitStream, sym);
@@ -669,7 +670,7 @@ HRESULT CDecoder::DecodeLZ()
       _reps[1] = rep0;
       len = SlotToLen(_bitStream, sym - (kSymbolRep + kNumReps));
       
-      rep0 = m_DistDecoder.DecodeSymbol(&_bitStream);
+      rep0 = m_DistDecoder.Decode(&_bitStream);
       
       if (rep0 >= 4)
       {
@@ -690,7 +691,7 @@ HRESULT CDecoder::DecodeLZ()
           {
             // if (numBits > kNumAlignBits)
               rep0 += (_bitStream.ReadBits32(numBits - kNumAlignBits) << kNumAlignBits);
-            UInt32 a = m_AlignDecoder.DecodeSymbol(&_bitStream);
+            UInt32 a = m_AlignDecoder.Decode(&_bitStream);
             if (a >= kAlignTableSize)
               break; // return S_FALSE;
             rep0 += a;

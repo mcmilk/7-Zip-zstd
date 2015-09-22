@@ -9,12 +9,80 @@
 namespace NCompress {
 namespace NQuantum {
 
-static const int kLenIdNeedInit = -2;
-
 static const unsigned kNumLenSymbols = 27;
 static const unsigned kMatchMinLen = 3;
 static const unsigned kNumSimplePosSlots = 4;
 static const unsigned kNumSimpleLenSlots = 6;
+
+static const UInt16 kUpdateStep = 8;
+static const UInt16 kFreqSumMax = 3800;
+static const unsigned kReorderCountStart = 4;
+static const unsigned kReorderCount = 50;
+
+void CModelDecoder::Init(unsigned numItems)
+{
+  NumItems = numItems;
+  ReorderCount = kReorderCountStart;
+  for (unsigned i = 0; i < numItems; i++)
+  {
+    Freqs[i] = (UInt16)(numItems - i);
+    Vals[i] = (Byte)i;
+  }
+  Freqs[numItems] = 0;
+}
+
+unsigned CModelDecoder::Decode(CRangeDecoder *rc)
+{
+  UInt32 threshold = rc->GetThreshold(Freqs[0]);
+  unsigned i;
+  for (i = 1; Freqs[i] > threshold; i++);
+  
+  rc->Decode(Freqs[i], Freqs[i - 1], Freqs[0]);
+  unsigned res = Vals[--i];
+  
+  do
+    Freqs[i] += kUpdateStep;
+  while (i--);
+  
+  if (Freqs[0] > kFreqSumMax)
+  {
+    if (--ReorderCount == 0)
+    {
+      ReorderCount = kReorderCount;
+      for (i = 0; i < NumItems; i++)
+        Freqs[i] = (UInt16)(((Freqs[i] - Freqs[i + 1]) + 1) >> 1);
+      for (i = 0; i < NumItems - 1; i++)
+        for (unsigned j = i + 1; j < NumItems; j++)
+          if (Freqs[i] < Freqs[j])
+          {
+            UInt16 tmpFreq = Freqs[i];
+            Byte tmpVal = Vals[i];
+            Freqs[i] = Freqs[j];
+            Vals[i] = Vals[j];
+            Freqs[j] = tmpFreq;
+            Vals[j] = tmpVal;
+          }
+      
+      do
+        Freqs[i] = (UInt16)(Freqs[i] + Freqs[i + 1]);
+      while (i--);
+    }
+    else
+    {
+      i = NumItems - 1;
+      do
+      {
+        Freqs[i] >>= 1;
+        if (Freqs[i] <= Freqs[i + 1])
+          Freqs[i] = (UInt16)(Freqs[i + 1] + 1);
+      }
+      while (i--);
+    }
+  }
+  
+  return res;
+}
+
 
 void CDecoder::Init()
 {
@@ -29,156 +97,97 @@ void CDecoder::Init()
   m_LenSlot.Init(kNumLenSymbols);
 }
 
-HRESULT CDecoder::CodeSpec(UInt32 curSize)
+
+HRESULT CDecoder::CodeSpec(const Byte *inData, size_t inSize, UInt32 outSize)
 {
-  if (_remainLen == kLenIdNeedInit)
-  {
-    _rangeDecoder.Init();
-    _remainLen = 0;
-  }
-  if (curSize == 0)
-    return S_OK;
+  if (inSize < 2)
+    return S_FALSE;
 
-  while (_remainLen > 0 && curSize > 0)
-  {
-    _remainLen--;
-    Byte b = _outWindowStream.GetByte(_rep0);
-    _outWindowStream.PutByte(b);
-    curSize--;
-  }
+  CRangeDecoder rc;
+  rc.Stream.SetStreamAndInit(inData, inSize);
+  rc.Init();
 
-  while (curSize > 0)
+  while (outSize != 0)
   {
-    if (_rangeDecoder.Stream.WasFinished())
+    if (rc.Stream.WasExtraRead())
       return S_FALSE;
 
-    unsigned selector = m_Selector.Decode(&_rangeDecoder);
+    unsigned selector = m_Selector.Decode(&rc);
+    
     if (selector < kNumLitSelectors)
     {
-      Byte b = (Byte)((selector << (8 - kNumLitSelectorBits)) + m_Literals[selector].Decode(&_rangeDecoder));
-      _outWindowStream.PutByte(b);
-      curSize--;
+      Byte b = (Byte)((selector << (8 - kNumLitSelectorBits)) + m_Literals[selector].Decode(&rc));
+      _outWindow.PutByte(b);
+      outSize--;
     }
     else
     {
       selector -= kNumLitSelectors;
       unsigned len = selector + kMatchMinLen;
+    
       if (selector == 2)
       {
-        unsigned lenSlot = m_LenSlot.Decode(&_rangeDecoder);
+        unsigned lenSlot = m_LenSlot.Decode(&rc);
         if (lenSlot >= kNumSimpleLenSlots)
         {
           lenSlot -= 2;
-          int numDirectBits = (int)(lenSlot >> 2);
+          unsigned numDirectBits = (unsigned)(lenSlot >> 2);
           len += ((4 | (lenSlot & 3)) << numDirectBits) - 2;
           if (numDirectBits < 6)
-            len += _rangeDecoder.Stream.ReadBits(numDirectBits);
+            len += rc.Stream.ReadBits(numDirectBits);
         }
         else
           len += lenSlot;
       }
-      UInt32 rep0 = m_PosSlot[selector].Decode(&_rangeDecoder);
-      if (rep0 >= kNumSimplePosSlots)
+      
+      UInt32 dist = m_PosSlot[selector].Decode(&rc);
+      
+      if (dist >= kNumSimplePosSlots)
       {
-        int numDirectBits = (int)((rep0 >> 1) - 1);
-        rep0 = ((2 | (rep0 & 1)) << numDirectBits) + _rangeDecoder.Stream.ReadBits(numDirectBits);
+        unsigned numDirectBits = (unsigned)((dist >> 1) - 1);
+        dist = ((2 | (dist & 1)) << numDirectBits) + rc.Stream.ReadBits(numDirectBits);
       }
+      
       unsigned locLen = len;
-      if (len > curSize)
-        locLen = (unsigned)curSize;
-      if (!_outWindowStream.CopyBlock(rep0, locLen))
+      if (len > outSize)
+        locLen = (unsigned)outSize;
+      if (!_outWindow.CopyBlock(dist, locLen))
         return S_FALSE;
-      curSize -= locLen;
+      outSize -= locLen;
       len -= locLen;
       if (len != 0)
-      {
-        _remainLen = (int)len;
-        _rep0 = rep0;
-        break;
-      }
+        return S_FALSE;
     }
   }
-  return _rangeDecoder.Stream.WasFinished() ? S_FALSE : S_OK;
+
+  return rc.Finish() ? S_OK : S_FALSE;
 }
 
-HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *, const UInt64 *outSize, ICompressProgressInfo *progress)
+HRESULT CDecoder::Code(const Byte *inData, size_t inSize,
+      ISequentialOutStream *outStream, UInt32 outSize,
+      bool keepHistory)
 {
-  if (outSize == NULL)
-    return E_INVALIDARG;
-  UInt64 size = *outSize;
-
-  // SetInStream(inStream);
-  _rangeDecoder.SetStream(inStream);
-
-  _outWindowStream.SetStream(outStream);
-  SetOutStreamSize(outSize);
-  CDecoderFlusher flusher(this);
-
-  const UInt64 start = _outWindowStream.GetProcessedSize();
-  for (;;)
+  try
   {
-    UInt32 curSize = 1 << 18;
-    UInt64 rem = size - (_outWindowStream.GetProcessedSize() - start);
-    if (curSize > rem)
-      curSize = (UInt32)rem;
-    if (curSize == 0)
-      break;
-    RINOK(CodeSpec(curSize));
-    if (progress != NULL)
-    {
-      UInt64 inSize = _rangeDecoder.GetProcessedSize();
-      UInt64 nowPos64 = _outWindowStream.GetProcessedSize() - start;
-      RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
-    }
+    _outWindow.SetStream(outStream);
+    _outWindow.Init(keepHistory);
+    if (!keepHistory)
+      Init();
+    
+    HRESULT res = CodeSpec(inData, inSize, outSize);
+    HRESULT res2 = _outWindow.Flush();
+    return res != S_OK ? res : res2;
   }
-  flusher.NeedFlush = false;
-  return Flush();
-}
-
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
-{
-  try  { return CodeReal(inStream, outStream, inSize, outSize, progress); }
-  catch(const CInBufferException &e)  { return e.ErrorCode; }
-  catch(const CLzOutWindowException &e)  { return e.ErrorCode; }
+  catch(const CLzOutWindowException &e) { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
 }
 
-/*
-STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream)
-{
-  m_InStreamRef = inStream;
-  _rangeDecoder.SetStream(inStream);
-  return S_OK;
-}
-
-STDMETHODIMP CDecoder::ReleaseInStream()
-{
-  m_InStreamRef.Release();
-  return S_OK;
-}
-*/
-
-STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
-{
-  if (outSize == NULL)
-    return E_FAIL;
-  _remainLen = kLenIdNeedInit;
-  _outWindowStream.Init(_keepHistory);
-  if (!_keepHistory)
-    Init();
-  return S_OK;
-}
-
-HRESULT CDecoder::SetParams(int numDictBits)
+HRESULT CDecoder::SetParams(unsigned numDictBits)
 {
   if (numDictBits > 21)
     return E_INVALIDARG;
   _numDictBits = numDictBits;
-  if (!_outWindowStream.Create((UInt32)1 << _numDictBits))
-    return E_OUTOFMEMORY;
-  if (!_rangeDecoder.Create(1 << 20))
+  if (!_outWindow.Create((UInt32)1 << _numDictBits))
     return E_OUTOFMEMORY;
   return S_OK;
 }

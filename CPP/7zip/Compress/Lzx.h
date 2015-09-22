@@ -6,55 +6,51 @@
 namespace NCompress {
 namespace NLzx {
 
+const unsigned kBlockType_NumBits = 3;
+const unsigned kBlockType_Verbatim = 1;
+const unsigned kBlockType_Aligned = 2;
+const unsigned kBlockType_Uncompressed = 3;
+
 const unsigned kNumHuffmanBits = 16;
-const UInt32 kNumRepDistances = 3;
+const unsigned kNumReps = 3;
 
-const UInt32 kNumLenSlots = 8;
-const UInt32 kMatchMinLen = 2;
-const UInt32 kNumLenSymbols = 249;
-const UInt32 kMatchMaxLen = kMatchMinLen + (kNumLenSlots - 1) + kNumLenSymbols - 1;
+const unsigned kNumLenSlots = 8;
+const unsigned kMatchMinLen = 2;
+const unsigned kNumLenSymbols = 249;
+const unsigned kMatchMaxLen = kMatchMinLen + (kNumLenSlots - 1) + kNumLenSymbols - 1;
 
+const unsigned kNumAlignLevelBits = 3;
 const unsigned kNumAlignBits = 3;
-const UInt32 kAlignTableSize = 1 << kNumAlignBits;
+const unsigned kAlignTableSize = 1 << kNumAlignBits;
 
-const UInt32 kNumPosSlots = 50;
-const UInt32 kNumPosLenSlots = kNumPosSlots * kNumLenSlots;
+const unsigned kNumPosSlots = 50;
+const unsigned kNumPosLenSlots = kNumPosSlots * kNumLenSlots;
 
-const UInt32 kMainTableSize = 256 + kNumPosLenSlots;
-const UInt32 kLevelTableSize = 20;
-const UInt32 kMaxTableSize = kMainTableSize;
+const unsigned kMainTableSize = 256 + kNumPosLenSlots;
+const unsigned kLevelTableSize = 20;
+const unsigned kMaxTableSize = kMainTableSize;
 
-const unsigned kNumBlockTypeBits = 3;
-const unsigned kBlockTypeVerbatim = 1;
-const unsigned kBlockTypeAligned = 2;
-const unsigned kBlockTypeUncompressed = 3;
+const unsigned kNumLevelBits = 4;
 
-const unsigned kUncompressedBlockSizeNumBits = 24;
+const unsigned kLevelSym_Zero1 = 17;
+const unsigned kLevelSym_Zero2 = 18;
+const unsigned kLevelSym_Same = 19;
 
-const unsigned kNumBitsForPreTreeLevel = 4;
+const unsigned kLevelSym_Zero1_Start = 4;
+const unsigned kLevelSym_Zero1_NumBits = 4;
 
-const unsigned kLevelSymbolZeros = 17;
-const unsigned kLevelSymbolZerosBig = 18;
-const unsigned kLevelSymbolSame = 19;
+const unsigned kLevelSym_Zero2_Start = kLevelSym_Zero1_Start + (1 << kLevelSym_Zero1_NumBits);
+const unsigned kLevelSym_Zero2_NumBits = 5;
 
-const unsigned kLevelSymbolZerosStartValue = 4;
-const unsigned kLevelSymbolZerosNumBits = 4;
-
-const unsigned kLevelSymbolZerosBigStartValue = kLevelSymbolZerosStartValue +
-    (1 << kLevelSymbolZerosNumBits);
-const unsigned kLevelSymbolZerosBigNumBits = 5;
-
-const unsigned kLevelSymbolSameNumBits = 1;
-const unsigned kLevelSymbolSameStartValue = 4;
-
-const unsigned kNumBitsForAlignLevel = 3;
-  
-const unsigned kNumDictionaryBitsMin = 15;
-const unsigned kNumDictionaryBitsMax = 21;
-const UInt32 kDictionarySizeMax = (1 << kNumDictionaryBitsMax);
+const unsigned kLevelSym_Same_NumBits = 1;
+const unsigned kLevelSym_Same_Start = 4;
+ 
+const unsigned kNumDictBits_Min = 15;
+const unsigned kNumDictBits_Max = 21;
+const UInt32 kDictSize_Max = (UInt32)1 << kNumDictBits_Max;
 
 const unsigned kNumLinearPosSlotBits = 17;
-const UInt32 kNumPowerPosSlots = 0x26;
+const unsigned kNumPowerPosSlots = 38;
 
 }}
 

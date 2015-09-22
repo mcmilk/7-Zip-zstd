@@ -254,6 +254,8 @@ static int Main2()
       }
     }
 
+    ecs->MultiArcMode = (ArchivePathsSorted.Size() > 1);
+
     HRESULT result = ExtractGUI(codecs,
           formatIndices, excludedFormatIndices,
           ArchivePathsSorted,

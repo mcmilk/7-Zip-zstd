@@ -68,6 +68,7 @@ void CStartupInfo::SetErrorTitle(AString &s)
   s += GetMsgString(NMessageID::kError);
 }
 
+/*
 int CStartupInfo::ShowErrorMessage(const char *message)
 {
   AString s;
@@ -75,6 +76,7 @@ int CStartupInfo::ShowErrorMessage(const char *message)
   const char *items[]= { s, message };
   return ShowWarningWithOk(items, ARRAY_SIZE(items));
 }
+*/
 
 int CStartupInfo::ShowErrorMessage2(const char *m1, const char *m2)
 {
@@ -84,48 +86,45 @@ int CStartupInfo::ShowErrorMessage2(const char *m1, const char *m2)
   return ShowWarningWithOk(items, ARRAY_SIZE(items));
 }
 
-/*
-static void SplitString(const AString &srcString, AStringVector &destStrings)
+static void SplitString(const AString &src, AStringVector &destStrings)
 {
   destStrings.Clear();
-  AString string;
-  unsigned len = srcString.Len();
+  AString s;
+  unsigned len = src.Len();
   if (len == 0)
     return;
   for (unsigned i = 0; i < len; i++)
   {
-    char c = srcString[i];
+    char c = src[i];
     if (c == '\n')
     {
-      if (!string.IsEmpty())
+      if (!s.IsEmpty())
       {
-        destStrings.Add(string);
-        string.Empty();
+        destStrings.Add(s);
+        s.Empty();
       }
     }
     else
-      string += c;
+      s += c;
   }
-  if (!string.IsEmpty())
-    destStrings.Add(string);
+  if (!s.IsEmpty())
+    destStrings.Add(s);
 }
-*/
 
-/*
-int CStartupInfo::ShowMessageLines(const char *message)
+int CStartupInfo::ShowErrorMessage(const char *message)
 {
   AStringVector strings;
   SplitString(message, strings);
   const unsigned kNumStringsMax = 20;
-  const char *items[kNumStringsMax + 1] = { GetMsgString(NMessageID::kError) };
-  unsigned pos = 1;
+  const char *items[kNumStringsMax + 1];
+  unsigned pos = 0;
+  items[pos++] = GetMsgString(NMessageID::kError);
   for (unsigned i = 0; i < strings.Size() && pos < kNumStringsMax; i++)
     items[pos++] = strings[i];
   items[pos++] = GetMsgString(NMessageID::kOk);
 
   return ShowMessage(FMSG_WARNING, NULL, items, pos, 1);
 }
-*/
 
 /*
 int CStartupInfo::ShowMessageLines(const char *message)

@@ -2,394 +2,528 @@
 
 #include "StdAfx.h"
 
-#include "../../Common/Defs.h"
+#include <string.h>
+
+// #define SHOW_DEBUG_INFO
+
+#ifdef SHOW_DEBUG_INFO
+#include <stdio.h>
+#define PRF(x) x
+#else
+#define PRF(x)
+#endif
+
+#include "../../../C/Alloc.h"
 
 #include "LzxDecoder.h"
 
 namespace NCompress {
 namespace NLzx {
 
-const int kLenIdNeedInit = -2;
+static void x86_Filter(Byte *data, UInt32 size, UInt32 processedSize, UInt32 translationSize)
+{
+  const UInt32 kResidue = 10;
+  if (size <= kResidue)
+    return;
+  size -= kResidue;
+  
+  Byte save = data[size + 4];
+  data[size + 4] = 0xE8;
+  
+  for (UInt32 i = 0;;)
+  {
+    const Byte *p = data + i;
+    for (;;)
+    {
+      if (*p++ == 0xE8) break;
+      if (*p++ == 0xE8) break;
+      if (*p++ == 0xE8) break;
+      if (*p++ == 0xE8) break;
+    }
+
+    i = (UInt32)(p - data);
+
+    if (i > size)
+      break;
+    {
+      Int32 v = GetUi32(p);
+      Int32 pos = (Int32)((Int32)1 - (Int32)(processedSize + i));
+      i += 4;
+      if (v >= pos && v < (Int32)translationSize)
+      {
+        v += (v >= 0 ? pos : translationSize);
+        SetUi32(p, v);
+      }
+    }
+  }
+
+  data[size + 4] = save;
+}
+
 
 CDecoder::CDecoder(bool wimMode):
-  _keepHistory(false),
-  _skipByte(false),
-  _wimMode(wimMode)
+    _win(NULL),
+    _keepHistory(false),
+    _skipByte(false),
+    _wimMode(wimMode),
+    _numDictBits(15),
+    _unpackBlockSize(0),
+    _x86_buf(NULL),
+    _x86_translationSize(0),
+    KeepHistoryForNext(true),
+    NeedAlloc(true),
+    _unpackedData(NULL)
 {
-  m_x86ConvertOutStreamSpec = new Cx86ConvertOutStream;
-  m_x86ConvertOutStream = m_x86ConvertOutStreamSpec;
 }
 
-/*
-void CDecoder::ReleaseStreams()
+CDecoder::~CDecoder()
 {
-  m_OutWindowStream.ReleaseStream();
-  m_InBitStream.ReleaseStream();
-  m_x86ConvertOutStreamSpec->ReleaseStream();
-}
-*/
-
-STDMETHODIMP CDecoder::Flush()
-{
-  RINOK(m_OutWindowStream.Flush());
-  return m_x86ConvertOutStreamSpec->Flush();
+  if (NeedAlloc)
+    ::MidFree(_win);
+  ::MidFree(_x86_buf);
 }
 
-UInt32 CDecoder::ReadBits(unsigned numBits) { return m_InBitStream.ReadBits(numBits); }
+HRESULT CDecoder::Flush()
+{
+  if (_x86_translationSize != 0)
+  {
+    Byte *destData = _win + _writePos;
+    UInt32 curSize = _pos - _writePos;
+    if (KeepHistoryForNext)
+    {
+      if (!_x86_buf)
+      {
+        // we must change it to support another chunk sizes
+        const size_t kChunkSize = (size_t)1 << 15;
+        if (curSize > kChunkSize)
+          return E_NOTIMPL;
+        _x86_buf = (Byte *)::MidAlloc(kChunkSize);
+        if (!_x86_buf)
+          return E_OUTOFMEMORY;
+      }
+      memcpy(_x86_buf, destData, curSize);
+      _unpackedData = _x86_buf;
+      destData = _x86_buf;
+    }
+    x86_Filter(destData, (UInt32)curSize, _x86_processedSize, _x86_translationSize);
+    _x86_processedSize += (UInt32)curSize;
+    if (_x86_processedSize >= ((UInt32)1 << 30))
+      _x86_translationSize = 0;
+  }
+ 
+  return S_OK;
+}
+
+
+UInt32 CDecoder::ReadBits(unsigned numBits) { return _bitStream.ReadBitsSmall(numBits); }
 
 #define RIF(x) { if (!(x)) return false; }
 
-bool CDecoder::ReadTable(Byte *lastLevels, Byte *newLevels, UInt32 numSymbols)
+bool CDecoder::ReadTable(Byte *levels, unsigned numSymbols)
 {
-  Byte levelLevels[kLevelTableSize];
-  UInt32 i;
-  for (i = 0; i < kLevelTableSize; i++)
-    levelLevels[i] = (Byte)ReadBits(kNumBitsForPreTreeLevel);
-  RIF(m_LevelDecoder.SetCodeLengths(levelLevels));
-  unsigned num = 0;
-  Byte symbol = 0;
-  for (i = 0; i < numSymbols;)
   {
-    if (num != 0)
+    Byte levels2[kLevelTableSize];
+    for (unsigned i = 0; i < kLevelTableSize; i++)
+      levels2[i] = (Byte)ReadBits(kNumLevelBits);
+    RIF(_levelDecoder.Build(levels2));
+  }
+  
+  unsigned i = 0;
+  do
+  {
+    UInt32 sym = _levelDecoder.Decode(&_bitStream);
+    if (sym <= kNumHuffmanBits)
     {
-      lastLevels[i] = newLevels[i] = symbol;
-      i++;
-      num--;
+      int delta = (int)levels[i] - (int)sym;
+      delta += (delta < 0) ? (kNumHuffmanBits + 1) : 0;
+      levels[i++] = (Byte)delta;
       continue;
     }
-    UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
-    if (number == kLevelSymbolZeros)
+    
+    unsigned num;
+    Byte symbol;
+
+    if (sym < kLevelSym_Same)
     {
-      num = kLevelSymbolZerosStartValue + (unsigned)ReadBits(kLevelSymbolZerosNumBits);
+      sym -= kLevelSym_Zero1;
+      num = kLevelSym_Zero1_Start + ((unsigned)sym << kLevelSym_Zero1_NumBits) +
+          (unsigned)ReadBits(kLevelSym_Zero1_NumBits + sym);
       symbol = 0;
     }
-    else if (number == kLevelSymbolZerosBig)
+    else if (sym == kLevelSym_Same)
     {
-      num = kLevelSymbolZerosBigStartValue + (unsigned)ReadBits(kLevelSymbolZerosBigNumBits);
-      symbol = 0;
-    }
-    else if (number == kLevelSymbolSame || number <= kNumHuffmanBits)
-    {
-      if (number <= kNumHuffmanBits)
-        num = 1;
-      else
-      {
-        num = kLevelSymbolSameStartValue + (unsigned)ReadBits(kLevelSymbolSameNumBits);
-        number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
-        if (number > kNumHuffmanBits)
-          return false;
-      }
-      symbol = Byte((17 + lastLevels[i] - number) % (kNumHuffmanBits + 1));
+      num = kLevelSym_Same_Start + (unsigned)ReadBits(kLevelSym_Same_NumBits);
+      sym = _levelDecoder.Decode(&_bitStream);
+      if (sym > kNumHuffmanBits)
+        return false;
+      int delta = (int)levels[i] - (int)sym;
+      delta += (delta < 0) ? (kNumHuffmanBits + 1) : 0;
+      symbol = (Byte)delta;
     }
     else
       return false;
+
+    unsigned limit = i + num;
+    if (limit > numSymbols)
+      return false;
+
+    do
+      levels[i++] = symbol;
+    while (i < limit);
   }
+  while (i < numSymbols);
+
   return true;
 }
 
+
 bool CDecoder::ReadTables(void)
 {
-  Byte newLevels[kMaxTableSize];
   {
     if (_skipByte)
-      m_InBitStream.DirectReadByte();
-    m_InBitStream.Normalize();
-
-    unsigned blockType = (unsigned)ReadBits(kNumBlockTypeBits);
-    if (blockType > kBlockTypeUncompressed)
-      return false;
-    if (_wimMode)
-      if (ReadBits(1) == 1)
-        m_UnCompressedBlockSize = (1 << 15);
-      else
-        m_UnCompressedBlockSize = ReadBits(16);
-    else
-      m_UnCompressedBlockSize = m_InBitStream.ReadBitsBig(kUncompressedBlockSizeNumBits);
-
-    m_IsUncompressedBlock = (blockType == kBlockTypeUncompressed);
-
-    _skipByte = (m_IsUncompressedBlock && ((m_UnCompressedBlockSize & 1) != 0));
-
-    if (m_IsUncompressedBlock)
     {
-      ReadBits(16 - m_InBitStream.GetBitPosition());
-      if (!m_InBitStream.ReadUInt32(m_RepDistances[0]))
+      if (_bitStream.DirectReadByte() != 0)
         return false;
-      m_RepDistances[0]--;
-      for (unsigned i = 1; i < kNumRepDistances; i++)
+    }
+
+    _bitStream.NormalizeBig();
+
+    unsigned blockType = (unsigned)ReadBits(kBlockType_NumBits);
+    if (blockType > kBlockType_Uncompressed)
+      return false;
+    
+    _unpackBlockSize = (1 << 15);
+    if (!_wimMode || ReadBits(1) == 0)
+    {
+      _unpackBlockSize = ReadBits(16);
+      // wimlib supports chunks larger than 32KB (unsupported my MS wim).
+      if (!_wimMode || _numDictBits >= 16)
       {
-        UInt32 rep = 0;
-        for (unsigned j = 0; j < 4; j++)
-          rep |= (UInt32)m_InBitStream.DirectReadByte() << (8 * j);
-        m_RepDistances[i] = rep - 1;
+        _unpackBlockSize <<= 8;
+        _unpackBlockSize |= ReadBits(8);
       }
+    }
+
+    PRF(printf("\nBlockSize = %6d   %s  ", _unpackBlockSize, (_pos & 1) ? "@@@" : "   "));
+
+    _isUncompressedBlock = (blockType == kBlockType_Uncompressed);
+
+    _skipByte = false;
+
+    if (_isUncompressedBlock)
+    {
+      _skipByte = ((_unpackBlockSize & 1) != 0);
+
+      PRF(printf(" UncompressedBlock "));
+      if (_unpackBlockSize & 1)
+      {
+        PRF(printf(" ######### "));
+      }
+
+      if (!_bitStream.PrepareUncompressed())
+        return false;
+      if (_bitStream.GetRem() < kNumReps * 4)
+        return false;
+
+      for (unsigned i = 0; i < kNumReps; i++)
+      {
+        UInt32 rep = _bitStream.ReadUInt32();
+        if (rep > _winSize)
+          return false;
+        _reps[i] = rep;
+      }
+      
       return true;
     }
-    m_AlignIsUsed = (blockType == kBlockTypeAligned);
-    if (m_AlignIsUsed)
+
+    _numAlignBits = 64;
+
+    if (blockType == kBlockType_Aligned)
     {
+      Byte levels[kAlignTableSize];
+      _numAlignBits = kNumAlignBits;
       for (unsigned i = 0; i < kAlignTableSize; i++)
-        newLevels[i] = (Byte)ReadBits(kNumBitsForAlignLevel);
-      RIF(m_AlignDecoder.SetCodeLengths(newLevels));
+        levels[i] = (Byte)ReadBits(kNumAlignLevelBits);
+      RIF(_alignDecoder.Build(levels));
     }
   }
 
-  RIF(ReadTable(m_LastMainLevels, newLevels, 256));
-  RIF(ReadTable(m_LastMainLevels + 256, newLevels + 256, m_NumPosLenSlots));
-  for (UInt32 i = 256 + m_NumPosLenSlots; i < kMainTableSize; i++)
-    newLevels[i] = 0;
-  RIF(m_MainDecoder.SetCodeLengths(newLevels));
-
-  RIF(ReadTable(m_LastLenLevels, newLevels, kNumLenSymbols));
-  return m_LenDecoder.SetCodeLengths(newLevels);
-}
-
-class CDecoderFlusher
-{
-  CDecoder *m_Decoder;
-public:
-  bool NeedFlush;
-  CDecoderFlusher(CDecoder *decoder): m_Decoder(decoder), NeedFlush(true) {}
-  ~CDecoderFlusher()
-  {
-    if (NeedFlush)
-      m_Decoder->Flush();
-    // m_Decoder->ReleaseStreams();
-  }
-};
-
-
-void CDecoder::ClearPrevLevels()
-{
-  unsigned i;
-  for (i = 0; i < kMainTableSize; i++)
-    m_LastMainLevels[i] = 0;
-  for (i = 0; i < kNumLenSymbols; i++)
-    m_LastLenLevels[i] = 0;
+  RIF(ReadTable(_mainLevels, 256));
+  RIF(ReadTable(_mainLevels + 256, _numPosLenSlots));
+  unsigned end = 256 + _numPosLenSlots;
+  memset(_mainLevels + end, 0, kMainTableSize - end);
+  RIF(_mainDecoder.Build(_mainLevels));
+  RIF(ReadTable(_lenLevels, kNumLenSymbols));
+  return _lenDecoder.Build(_lenLevels);
 }
 
 
 HRESULT CDecoder::CodeSpec(UInt32 curSize)
 {
-  if (_remainLen == kLenIdNeedInit)
+  if (!_keepHistory || !_isUncompressedBlock)
+    _bitStream.NormalizeBig();
+ 
+  if (!_keepHistory)
   {
-    _remainLen = 0;
-    m_InBitStream.Init();
-    if (!_keepHistory || !m_IsUncompressedBlock)
-      m_InBitStream.Normalize();
-    if (!_keepHistory)
+    _skipByte = false;
+    _unpackBlockSize = 0;
+
+    memset(_mainLevels, 0, kMainTableSize);
+    memset(_lenLevels, 0, kNumLenSymbols);
+    
     {
-      _skipByte = false;
-      m_UnCompressedBlockSize = 0;
-      ClearPrevLevels();
-      UInt32 i86TranslationSize = 12000000;
-      bool translationMode = true;
+      _x86_translationSize = 12000000;
       if (!_wimMode)
       {
-        translationMode = (ReadBits(1) != 0);
-        if (translationMode)
+        _x86_translationSize = 0;
+        if (ReadBits(1) != 0)
         {
-          i86TranslationSize = ReadBits(16) << 16;
-          i86TranslationSize |= ReadBits(16);
+          UInt32 v = ReadBits(16) << 16;
+          v |= ReadBits(16);
+          _x86_translationSize = v;
         }
       }
-      m_x86ConvertOutStreamSpec->Init(translationMode, i86TranslationSize);
       
-      for (unsigned i = 0 ; i < kNumRepDistances; i++)
-        m_RepDistances[i] = 0;
+      _x86_processedSize = 0;
     }
-  }
 
-  while (_remainLen > 0 && curSize > 0)
-  {
-    m_OutWindowStream.PutByte(m_OutWindowStream.GetByte(m_RepDistances[0]));
-    _remainLen--;
-    curSize--;
+    _reps[0] = 1;
+    _reps[1] = 1;
+    _reps[2] = 1;
   }
 
   while (curSize > 0)
   {
-    if (m_UnCompressedBlockSize == 0)
+    if (_bitStream.WasExtraReadError_Fast())
+      return S_FALSE;
+    
+    if (_unpackBlockSize == 0)
+    {
       if (!ReadTables())
         return S_FALSE;
-    UInt32 next = (Int32)MyMin(m_UnCompressedBlockSize, curSize);
-    curSize -= next;
-    m_UnCompressedBlockSize -= next;
-    if (m_IsUncompressedBlock)
-    {
-      while (next > 0)
-      {
-        m_OutWindowStream.PutByte(m_InBitStream.DirectReadByte());
-        next--;
-      }
+      continue;
     }
-    else while (next > 0)
+
+    UInt32 next = _unpackBlockSize;
+    if (next > curSize)
+      next = curSize;
+    
+    if (_isUncompressedBlock)
     {
-      UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
-      if (number < 256)
+      size_t rem = _bitStream.GetRem();
+      if (rem == 0)
+        return S_FALSE;
+      if (next > rem)
+        next = (UInt32)rem;
+      _bitStream.CopyTo(_win + _pos, next);
+      _pos += next;
+      curSize -= next;
+      _unpackBlockSize -= next;
+
+      /* we don't know where skipByte can be placed, if it's end of chunk:
+          1) in current chunk - there are such cab archives, if chunk is last
+          2) in next chunk - are there such archives ? */
+
+      if (_skipByte
+          && _unpackBlockSize == 0
+          && curSize == 0
+          && _bitStream.IsOneDirectByteLeft())
       {
-        m_OutWindowStream.PutByte((Byte)number);
-        next--;
-      }
-      else
-      {
-        UInt32 posLenSlot = number - 256;
-        if (posLenSlot >= m_NumPosLenSlots)
+        _skipByte = false;
+        if (_bitStream.DirectReadByte() != 0)
           return S_FALSE;
-        UInt32 posSlot = posLenSlot / kNumLenSlots;
-        UInt32 lenSlot = posLenSlot % kNumLenSlots;
+      }
+      
+      continue;
+    }
+
+    curSize -= next;
+    _unpackBlockSize -= next;
+    
+    Byte *win = _win;
+
+    while (next > 0)
+    {
+      if (_bitStream.WasExtraReadError_Fast())
+        return S_FALSE;
+
+      UInt32 sym = _mainDecoder.Decode(&_bitStream);
+      
+      if (sym < 256)
+      {
+        win[_pos++] = (Byte)sym;
+        next--;
+        continue;
+      }
+      {
+        sym -= 256;
+        if (sym >= _numPosLenSlots)
+          return S_FALSE;
+        UInt32 posSlot = sym / kNumLenSlots;
+        UInt32 lenSlot = sym % kNumLenSlots;
         UInt32 len = kMatchMinLen + lenSlot;
+        
         if (lenSlot == kNumLenSlots - 1)
         {
-          UInt32 lenTemp = m_LenDecoder.DecodeSymbol(&m_InBitStream);
+          UInt32 lenTemp = _lenDecoder.Decode(&_bitStream);
           if (lenTemp >= kNumLenSymbols)
             return S_FALSE;
-          len += lenTemp;
+          len = kMatchMinLen + kNumLenSlots - 1 + lenTemp;
         }
         
-        if (posSlot < kNumRepDistances)
+        UInt32 dist;
+        
+        if (posSlot < kNumReps)
         {
-          UInt32 distance = m_RepDistances[posSlot];
-          m_RepDistances[posSlot] = m_RepDistances[0];
-          m_RepDistances[0] = distance;
+          dist = _reps[posSlot];
+          _reps[posSlot] = _reps[0];
+          _reps[0] = dist;
         }
         else
         {
-          UInt32 distance;
           unsigned numDirectBits;
+          
           if (posSlot < kNumPowerPosSlots)
           {
             numDirectBits = (unsigned)(posSlot >> 1) - 1;
-            distance = ((2 | (posSlot & 1)) << numDirectBits);
+            dist = ((2 | (posSlot & 1)) << numDirectBits);
           }
           else
           {
             numDirectBits = kNumLinearPosSlotBits;
-            distance = ((posSlot - 0x22) << kNumLinearPosSlotBits);
+            dist = ((posSlot - 0x22) << kNumLinearPosSlotBits);
           }
 
-          if (m_AlignIsUsed && numDirectBits >= kNumAlignBits)
+          if (numDirectBits >= _numAlignBits)
           {
-            distance += (m_InBitStream.ReadBits(numDirectBits - kNumAlignBits) << kNumAlignBits);
-            UInt32 alignTemp = m_AlignDecoder.DecodeSymbol(&m_InBitStream);
+            dist += (_bitStream.ReadBitsSmall(numDirectBits - kNumAlignBits) << kNumAlignBits);
+            UInt32 alignTemp = _alignDecoder.Decode(&_bitStream);
             if (alignTemp >= kAlignTableSize)
               return S_FALSE;
-            distance += alignTemp;
+            dist += alignTemp;
           }
           else
-            distance += m_InBitStream.ReadBits(numDirectBits);
-          m_RepDistances[2] = m_RepDistances[1];
-          m_RepDistances[1] = m_RepDistances[0];
-          m_RepDistances[0] = distance - kNumRepDistances;
+            dist += _bitStream.ReadBitsBig(numDirectBits);
+          
+          dist -= kNumReps - 1;
+          _reps[2] = _reps[1];
+          _reps[1] = _reps[0];
+          _reps[0] = dist;
         }
 
-        UInt32 locLen = len;
-        if (locLen > next)
-          locLen = next;
-
-        if (!m_OutWindowStream.CopyBlock(m_RepDistances[0], locLen))
+        if (len > next)
           return S_FALSE;
 
-        len -= locLen;
-        next -= locLen;
-        if (len != 0)
+        if (dist > _pos && !_overDict)
+          return S_FALSE;
+
+        Byte *dest = win + _pos;
+        const UInt32 mask = (_winSize - 1);
+        UInt32 srcPos = (_pos - dist) & mask;
+
+        next -= len;
+        
+        if (len > _winSize - srcPos)
         {
-          _remainLen = (int)len;
-          return S_OK;
+          _pos += len;
+          do
+          {
+            *dest++ = win[srcPos++];
+            srcPos &= mask;
+          }
+          while (--len);
+        }
+        else
+        {
+          ptrdiff_t src = (ptrdiff_t)srcPos - (ptrdiff_t)_pos;
+          _pos += len;
+          const Byte *lim = dest + len;
+          *(dest) = *(dest + src);
+          dest++;
+          do
+            *(dest) = *(dest + src);
+          while (++dest != lim);
         }
       }
     }
   }
+
+  if (!_bitStream.WasFinishedOK())
+    return S_FALSE;
+
   return S_OK;
 }
 
-HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *, const UInt64 *outSize, ICompressProgressInfo *progress)
+
+HRESULT CDecoder::Code(const Byte *inData, size_t inSize, UInt32 outSize)
 {
-  if (outSize == NULL)
-    return E_INVALIDARG;
-  UInt64 size = *outSize;
-
-  // RINOK(SetInStream(inStream));
-  m_InBitStream.SetStream(inStream);
-  m_x86ConvertOutStreamSpec->SetStream(outStream);
-  m_OutWindowStream.SetStream(m_x86ConvertOutStream);
-  RINOK(SetOutStreamSize(outSize));
-
-  CDecoderFlusher flusher(this);
-
-  const UInt64 start = m_OutWindowStream.GetProcessedSize();
-  for (;;)
+  if (_pos == _winSize)
   {
-    UInt32 curSize = 1 << 18;
-    UInt64 rem = size - (m_OutWindowStream.GetProcessedSize() - start);
-    if (curSize > rem)
-      curSize = (UInt32)rem;
-    if (curSize == 0)
-      break;
-    RINOK(CodeSpec(curSize));
-    if (progress != NULL)
+    _pos = 0;
+    _overDict = true;
+  }
+
+  if (!_keepHistory)
+  {
+    _pos = 0;
+    _overDict = false;
+  }
+
+  _writePos = _pos;
+  _unpackedData = _win + _pos;
+  
+  if (outSize > _winSize - _pos)
+    return S_FALSE;
+
+  PRF(printf("\ninSize = %d", inSize));
+  if ((inSize & 1) != 0)
+  {
+    PRF(printf(" ---------"));
+  }
+
+  if (inSize < 1)
+    return S_FALSE;
+
+  _bitStream.Init(inData, inSize);
+
+  HRESULT res = CodeSpec(outSize);
+  HRESULT res2 = Flush();
+  return (res == S_OK ? res2 : res);
+}
+
+
+HRESULT CDecoder::SetParams2(unsigned numDictBits)
+{
+  _numDictBits = numDictBits;
+  if (numDictBits < kNumDictBits_Min || numDictBits > kNumDictBits_Max)
+    return E_INVALIDARG;
+  unsigned numPosSlots = (numDictBits < 20) ?
+      numDictBits * 2 :
+      34 + ((unsigned)1 << (numDictBits - 17));
+  _numPosLenSlots = numPosSlots * kNumLenSlots;
+  return S_OK;
+}
+  
+
+HRESULT CDecoder::SetParams_and_Alloc(unsigned numDictBits)
+{
+  RINOK(SetParams2(numDictBits));
+  
+  UInt32 newWinSize = (UInt32)1 << numDictBits;
+ 
+  if (NeedAlloc)
+  {
+    if (!_win || newWinSize != _winSize)
     {
-      UInt64 inSize = m_InBitStream.GetProcessedSize();
-      UInt64 nowPos64 = m_OutWindowStream.GetProcessedSize() - start;
-      RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
+      ::MidFree(_win);
+      _winSize = 0;
+      _win = (Byte *)::MidAlloc(newWinSize);
+      if (!_win)
+        return E_OUTOFMEMORY;
     }
   }
-  flusher.NeedFlush = false;
-  return Flush();
-}
 
-HRESULT CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
-{
-  try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
-  catch(const CLzOutWindowException &e) { return e.ErrorCode; }
-  catch(...) { return S_FALSE; }
-}
-
-/*
-STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream)
-{
-  m_InStreamRef = inStream;
-  m_InBitStream.SetStream(inStream);
-  return S_OK;
-}
-
-STDMETHODIMP CDecoder::ReleaseInStream()
-{
-  m_InStreamRef.Release();
-  return S_OK;
-}
-*/
-
-STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
-{
-  if (outSize == NULL)
-    return E_FAIL;
-  // flush calls m_x86ConvertOutStreamSpec->flush, so we must init x86Convert.
-  if (!_keepHistory)
-    m_x86ConvertOutStreamSpec->Init(false, 0);
-  _remainLen = kLenIdNeedInit;
-  m_OutWindowStream.Init(_keepHistory);
-  return S_OK;
-}
-
-HRESULT CDecoder::SetParams(unsigned numDictBits)
-{
-  if (numDictBits < kNumDictionaryBitsMin || numDictBits > kNumDictionaryBitsMax)
-    return E_INVALIDARG;
-  UInt32 numPosSlots;
-  if (numDictBits < 20)
-    numPosSlots = 30 + (numDictBits - 15) * 2;
-  else if (numDictBits == 20)
-    numPosSlots = 42;
-  else
-    numPosSlots = 50;
-  m_NumPosLenSlots = numPosSlots * kNumLenSlots;
-  if (!m_OutWindowStream.Create(kDictionarySizeMax))
-    return E_OUTOFMEMORY;
-  if (!m_InBitStream.Create(1 << 16))
-    return E_OUTOFMEMORY;
+  _winSize = (UInt32)newWinSize;
   return S_OK;
 }
 

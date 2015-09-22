@@ -373,17 +373,20 @@ static HANDLE MyOpenFilePluginW(const wchar_t *name)
   HRESULT result = ::OpenArchive(fullName, &archiveHandler,
       archiverInfoResult, defaultName, openArchiveCallback);
   */
-  if (result != S_OK)
-  {
-    if (result == E_ABORT)
-      return (HANDLE)-2;
-    ShowSysErrorMessage(result);
-    return INVALID_HANDLE_VALUE;
-  }
+  if (result == E_ABORT)
+    return (HANDLE)-2;
 
   UString errorMessage = agent->GetErrorMessage();
   if (!errorMessage.IsEmpty())
     g_StartupInfo.ShowErrorMessage(UnicodeStringToMultiByte(errorMessage, CP_OEMCP));
+
+  if (result != S_OK)
+  {
+    if (result == S_FALSE)
+      return INVALID_HANDLE_VALUE;
+    ShowSysErrorMessage(result);
+    return INVALID_HANDLE_VALUE;
+  }
 
   // ::OutputDebugStringA("after OpenArchive\n");
 

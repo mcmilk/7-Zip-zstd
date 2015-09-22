@@ -17,7 +17,9 @@ static void ReplaceIncorrectChars(UString &s)
       if (
           #ifdef _WIN32
           c == ':' || c == '*' || c == '?' || c < 0x20 || c == '<' || c == '>' || c == '|' || c == '"'
-          || c == '/' ||
+          || c == '/'
+          || c == 0x202E // RLO
+          ||
           #endif
           c == WCHAR_PATH_SEPARATOR)
         s.ReplaceOneCharAtPos(i, '_');
@@ -53,7 +55,9 @@ void Correct_AltStream_Name(UString &s)
   for (unsigned i = 0; i < len; i++)
   {
     wchar_t c = s[i];
-    if (c == ':' || c == '\\' || c == '/')
+    if (c == ':' || c == '\\' || c == '/'
+        || c == 0x202E // RLO
+        )
       s.ReplaceOneCharAtPos(i, '_');
   }
   if (s.IsEmpty())

@@ -320,23 +320,33 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
       const wchar_t *name = NULL;
       unsigned nameLen = 0;
       _folderGetItemName->GetItemName(realIndex, &name, &nameLen);
+      
       if (name)
       {
         unsigned dest = 0;
         unsigned limit = item.cchTextMax - 1;
+        
         for (unsigned i = 0; dest < limit;)
         {
           wchar_t c = name[i++];
           if (c == 0)
             break;
           text[dest++] = c;
+          
           if (c != ' ')
+          {
+            if (c != 0x202E) // RLO
+              continue;
+            text[dest - 1] = '_';
             continue;
+          }
+          
           if (name[i + 1] != ' ')
             continue;
           
           unsigned t = 2;
           for (; name[i + t] == ' '; t++);
+        
           if (t >= 4 && dest + 4 <= limit)
           {
             text[dest++] = '.';
@@ -346,6 +356,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
             i += t;
           }
         }
+      
         text[dest] = 0;
         return 0;
       }

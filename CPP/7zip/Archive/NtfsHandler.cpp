@@ -2514,8 +2514,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         attrib |= FILE_ATTRIBUTE_DIRECTORY;
 
       /* some system entries can contain extra flags (Index View).
-      // 0x10000000 	(Directory)
-      // 0x20000000 	FILE_ATTR_VIEW_INDEX_PRESENT MFT_RECORD_IS_VIEW_INDEX (Index View)
+      // 0x10000000   (Directory)
+      // 0x20000000   FILE_ATTR_VIEW_INDEX_PRESENT MFT_RECORD_IS_VIEW_INDEX (Index View)
       But we don't need them */
       attrib &= 0xFFFF;
 

@@ -156,6 +156,7 @@ public:
 typedef CObjArray<unsigned char> CByteArr;
 typedef CObjArray<bool> CBoolArr;
 typedef CObjArray<int> CIntArr;
+typedef CObjArray<unsigned> CUIntArr;
 
 
 template <class T> class CObjArray2

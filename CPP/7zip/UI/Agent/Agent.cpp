@@ -1465,6 +1465,9 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
 
   extractCallbackSpec->InitForMulti(false, pathMode, overwriteMode);
 
+  if (extractCallback2)
+    extractCallback2->SetTotal(_agentSpec->GetArc().GetEstmatedPhySize());
+
   FString pathU;
   if (path)
   {

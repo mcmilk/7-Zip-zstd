@@ -161,7 +161,6 @@ COMPRESS_OBJS = \
   $O\LzmaEncoder.obj \
   $O\LzmaRegister.obj \
   $O\LzOutWindow.obj \
-  $O\Lzx86Converter.obj \
   $O\LzxDecoder.obj \
   $O\PpmdDecoder.obj \
   $O\PpmdEncoder.obj \

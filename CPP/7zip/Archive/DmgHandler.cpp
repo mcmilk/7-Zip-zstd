@@ -545,8 +545,8 @@ HRESULT CHandler::Open2(IInStream *stream)
   CChecksum masterChecksum;
   masterChecksum.Parse(buf + 0x160);
 
-	// UInt32 imageVariant = Get32(buf + 0x1E8);
-	// UInt64 numSectors = Get64(buf + 0x1EC);
+  // UInt32 imageVariant = Get32(buf + 0x1E8);
+  // UInt64 numSectors = Get64(buf + 0x1EC);
   // Byte reserved[0x12]
 
   const UInt32 RSRC_HEAD_SIZE = 0x100;

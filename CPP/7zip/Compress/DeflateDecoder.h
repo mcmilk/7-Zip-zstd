@@ -36,7 +36,7 @@ class CCoder:
   NBitl::CDecoder<CInBuffer> m_InBitStream;
   NCompress::NHuffman::CDecoder<kNumHuffmanBits, kFixedMainTableSize> m_MainDecoder;
   NCompress::NHuffman::CDecoder<kNumHuffmanBits, kFixedDistTableSize> m_DistDecoder;
-  NCompress::NHuffman::CDecoder<kNumHuffmanBits, kLevelTableSize> m_LevelDecoder;
+  NCompress::NHuffman::CDecoder7b<kLevelTableSize> m_LevelDecoder;
 
   UInt32 m_StoredBlockSize;
 
@@ -56,7 +56,7 @@ class CCoder:
 
   UInt32 ReadBits(unsigned numBits);
 
-  bool DeCodeLevelTable(Byte *values, unsigned numSymbols);
+  bool DecodeLevels(Byte *levels, unsigned numSymbols);
   bool ReadTables();
   
   HRESULT Flush() { return m_OutWindowStream.Flush(); }

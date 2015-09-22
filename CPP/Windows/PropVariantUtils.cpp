@@ -108,3 +108,42 @@ void FlagsToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags, NCOM
 {
   prop = FlagsToString(pairs, num, flags);
 }
+
+
+AString Flags64ToString(const CUInt32PCharPair *pairs, unsigned num, UInt64 flags)
+{
+  AString s;
+  for (unsigned i = 0; i < num; i++)
+  {
+    const CUInt32PCharPair &p = pairs[i];
+    UInt64 flag = (UInt64)1 << (unsigned)p.Value;
+    if ((flags & flag) != 0)
+    {
+      if (p.Name[0] != 0)
+      {
+        if (!s.IsEmpty())
+          s += ' ';
+        s += p.Name;
+      }
+    }
+    flags &= ~flag;
+  }
+  if (flags != 0)
+  {
+    if (!s.IsEmpty())
+      s += ' ';
+    {
+      char sz[32];
+      sz[0] = '0';
+      sz[1] = 'x';
+      ConvertUInt64ToHex(flags, sz + 2);
+      s += sz;
+    }
+  }
+  return s;
+}
+
+void Flags64ToProp(const CUInt32PCharPair *pairs, unsigned num, UInt64 flags, NCOM::CPropVariant &prop)
+{
+  prop = Flags64ToString(pairs, num, flags);
+}

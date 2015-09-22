@@ -299,6 +299,8 @@ public:
   UInt64 AvailPhySize; // PhySize, but it's reduced if exceed end of file
   // bool offsetDefined;
 
+  UInt64 GetEstmatedPhySize() const { return PhySizeDefined ? PhySize : FileSize; }
+
   UInt64 ArcStreamOffset; // offset of stream that is open by Archive Handler
   Int64 GetGlobalOffset() const { return ArcStreamOffset + Offset; } // it's global offset of archive
 

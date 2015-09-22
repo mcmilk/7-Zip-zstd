@@ -27,4 +27,7 @@ void TypeToProp(const char * const table[], unsigned num, UInt32 value, NWindows
 #define FLAGS_TO_PROP(pairs, value, prop) FlagsToProp(pairs, ARRAY_SIZE(pairs), value, prop)
 #define TYPE_TO_PROP(table, value, prop) TypeToProp(table, ARRAY_SIZE(table), value, prop)
 
+void Flags64ToProp(const CUInt32PCharPair *pairs, unsigned num, UInt64 flags, NWindows::NCOM::CPropVariant &prop);
+#define FLAGS64_TO_PROP(pairs, value, prop) Flags64ToProp(pairs, ARRAY_SIZE(pairs), value, prop)
+
 #endif

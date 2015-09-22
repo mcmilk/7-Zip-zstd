@@ -5,91 +5,93 @@
 
 #include "../../Common/MyCom.h"
 
-#include "../ICoder.h"
-
-#include "../Common/InBuffer.h"
-
 #include "LzOutWindow.h"
 
 namespace NCompress {
 namespace NQuantum {
 
-class CStreamBitDecoder
+class CBitDecoder
 {
   UInt32 Value;
-  CInBuffer Stream;
+  bool _extra;
+  const Byte *_buf;
+  const Byte *_bufLim;
 public:
-  bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
-  void SetStream(ISequentialInStream *stream) { Stream.SetStream(stream); }
-  // void ReleaseStream() { Stream.ReleaseStream(); }
-
-  void Finish() { Value = 0x10000; }
-
-  void Init()
+  void SetStreamAndInit(const Byte *inData, size_t inSize)
   {
-    Stream.Init();
+    _buf = inData;
+    _bufLim = inData + inSize;
     Value = 0x10000;
+    _extra = false;
   }
 
-  UInt64 GetProcessedSize() const { return Stream.GetProcessedSize(); }
-  bool WasFinished() const { return Stream.WasFinished(); }
+  bool WasExtraRead() const { return _extra; }
+
+  bool WasFinishedOK() const
+  {
+    return !_extra && _buf == _bufLim;
+  }
   
   UInt32 ReadBit()
   {
     if (Value >= 0x10000)
-      Value = 0x100 | Stream.ReadByte();
+    {
+      Byte b;
+      if (_buf >= _bufLim)
+      {
+        b = 0xFF;
+        _extra = true;
+      }
+      else
+        b = *_buf++;
+      Value = 0x100 | b;
+    }
     UInt32 res = (Value >> 7) & 1;
     Value <<= 1;
     return res;
   }
 
-  UInt32 ReadBits(int numBits) // numBits > 0
+  UInt32 ReadStart16Bits()
+  {
+    // we use check for extra read in another code.
+    UInt32 val = ((UInt32)*_buf << 8) | _buf[1];
+    _buf += 2;
+    return val;
+  }
+
+  UInt32 ReadBits(unsigned numBits) // numBits > 0
   {
     UInt32 res = 0;
     do
       res = (res << 1) | ReadBit();
-    while (--numBits != 0);
+    while (--numBits);
     return res;
   }
 };
 
-const unsigned kNumLitSelectorBits = 2;
-const unsigned kNumLitSelectors = (1 << kNumLitSelectorBits);
-const unsigned kNumLitSymbols = 1 << (8 - kNumLitSelectorBits);
-const unsigned kNumMatchSelectors = 3;
-const unsigned kNumSelectors = kNumLitSelectors + kNumMatchSelectors;
-const unsigned kNumSymbolsMax = kNumLitSymbols; // 64
 
-namespace NRangeCoder {
-
-class CDecoder
+class CRangeDecoder
 {
   UInt32 Low;
   UInt32 Range;
   UInt32 Code;
 public:
-  CStreamBitDecoder Stream;
-  bool Create(UInt32 bufferSize) { return Stream.Create(bufferSize); }
-  void SetStream(ISequentialInStream *stream) { Stream.SetStream(stream); }
-  // void ReleaseStream() { Stream.ReleaseStream(); }
+  CBitDecoder Stream;
 
   void Init()
   {
-    Stream.Init();
     Low = 0;
     Range = 0x10000;
-    Code = Stream.ReadBits(16);
+    Code = Stream.ReadStart16Bits();
   }
 
-  void Finish()
+  bool Finish()
   {
-    // we need these extra two Bit_reads
-    Stream.ReadBit();
-    Stream.ReadBit();
-    Stream.Finish();
+    // do all streams use these two bits at end?
+    if (Stream.ReadBit() != 0) return false;
+    if (Stream.ReadBit() != 0) return false;
+    return Stream.WasFinishedOK();
   }
-
-  UInt64 GetProcessedSize() const { return Stream.GetProcessedSize(); }
 
   UInt32 GetThreshold(UInt32 total) const
   {
@@ -119,148 +121,52 @@ public:
   }
 };
 
-const UInt16 kUpdateStep = 8;
-const UInt16 kFreqSumMax = 3800;
-const UInt16 kReorderCountStart = 4;
-const UInt16 kReorderCount = 50;
+
+const unsigned kNumLitSelectorBits = 2;
+const unsigned kNumLitSelectors = (1 << kNumLitSelectorBits);
+const unsigned kNumLitSymbols = 1 << (8 - kNumLitSelectorBits);
+const unsigned kNumMatchSelectors = 3;
+const unsigned kNumSelectors = kNumLitSelectors + kNumMatchSelectors;
+const unsigned kNumSymbolsMax = kNumLitSymbols; // 64
+
 
 class CModelDecoder
 {
   unsigned NumItems;
   unsigned ReorderCount;
   UInt16 Freqs[kNumSymbolsMax + 1];
-  Byte Values[kNumSymbolsMax];
+  Byte Vals[kNumSymbolsMax];
 public:
-  void Init(unsigned numItems)
-  {
-    NumItems = numItems;
-    ReorderCount = kReorderCountStart;
-    for (unsigned i = 0; i < numItems; i++)
-    {
-      Freqs[i] = (UInt16)(numItems - i);
-      Values[i] = (Byte)i;
-    }
-    Freqs[numItems] = 0;
-  }
-  
-  unsigned Decode(CDecoder *rangeDecoder)
-  {
-    UInt32 threshold = rangeDecoder->GetThreshold(Freqs[0]);
-    unsigned i;
-    for (i = 1; Freqs[i] > threshold; i++);
-    rangeDecoder->Decode(Freqs[i], Freqs[i - 1], Freqs[0]);
-    unsigned res = Values[--i];
-    do
-      Freqs[i] += kUpdateStep;
-    while (i-- != 0);
-
-    if (Freqs[0] > kFreqSumMax)
-    {
-      if (--ReorderCount == 0)
-      {
-        ReorderCount = kReorderCount;
-        for (i = 0; i < NumItems; i++)
-          Freqs[i] = (UInt16)(((Freqs[i] - Freqs[i + 1]) + 1) >> 1);
-        for (i = 0; i < NumItems - 1; i++)
-          for (unsigned j = i + 1; j < NumItems; j++)
-            if (Freqs[i] < Freqs[j])
-            {
-              UInt16 tmpFreq = Freqs[i];
-              Byte tmpVal = Values[i];
-              Freqs[i] = Freqs[j];
-              Values[i] = Values[j];
-              Freqs[j] = tmpFreq;
-              Values[j] = tmpVal;
-            }
-        do
-          Freqs[i] = (UInt16)(Freqs[i] + Freqs[i + 1]);
-        while (i-- != 0);
-      }
-      else
-      {
-        i = NumItems - 1;
-        do
-        {
-          Freqs[i] >>= 1;
-          if (Freqs[i] <= Freqs[i + 1])
-            Freqs[i] = (UInt16)(Freqs[i + 1] + 1);
-        }
-        while (i-- != 0);
-      }
-    }
-    return res;
-  }
+  void Init(unsigned numItems);
+  unsigned Decode(CRangeDecoder *rc);
 };
 
-}
 
 class CDecoder:
-  public ICompressCoder,
-  // public ICompressSetInStream,
-  // public ICompressSetOutStreamSize,
+  public IUnknown,
   public CMyUnknownImp
 {
-  CLzOutWindow _outWindowStream;
-  // CMyComPtr<ISequentialInStream> m_InStreamRef;
-  NRangeCoder::CDecoder _rangeDecoder;
+  CLzOutWindow _outWindow;
+  unsigned _numDictBits;
 
-  UInt64 _outSize;
-  int _remainLen; // -1 means end of stream. // -2 means need Init
-  UInt32 _rep0;
+  CModelDecoder m_Selector;
+  CModelDecoder m_Literals[kNumLitSelectors];
+  CModelDecoder m_PosSlot[kNumMatchSelectors];
+  CModelDecoder m_LenSlot;
 
-  int _numDictBits;
-  bool _keepHistory;
-
-  NRangeCoder::CModelDecoder m_Selector;
-  NRangeCoder::CModelDecoder m_Literals[kNumLitSelectors];
-  NRangeCoder::CModelDecoder m_PosSlot[kNumMatchSelectors];
-  NRangeCoder::CModelDecoder m_LenSlot;
   void Init();
-  HRESULT CodeSpec(UInt32 size);
+  HRESULT CodeSpec(const Byte *inData, size_t inSize, UInt32 outSize);
 public:
 
   MY_UNKNOWN_IMP
 
-  /*
-  MY_UNKNOWN_IMP2(
-      ICompressSetInStream,
-      ICompressSetOutStreamSize)
-  void ReleaseStreams()
-  {
-    _outWindowStream.ReleaseStream();
-    ReleaseInStream();
-  }
-  */
+  HRESULT Code(const Byte *inData, size_t inSize,
+      ISequentialOutStream *outStream, UInt32 outSize,
+      bool keepHistory);
 
-  class CDecoderFlusher
-  {
-    CDecoder *_decoder;
-  public:
-    bool NeedFlush;
-    CDecoderFlusher(CDecoder *decoder): _decoder(decoder), NeedFlush(true) {}
-    ~CDecoderFlusher()
-    {
-      if (NeedFlush)
-        _decoder->Flush();
-      // _decoder->ReleaseStreams();
-    }
-  };
-
-  HRESULT Flush() { return _outWindowStream.Flush(); }
-
-  HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
+  HRESULT SetParams(unsigned numDictBits);
   
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  // STDMETHOD(SetInStream)(ISequentialInStream *inStream);
-  // STDMETHOD(ReleaseInStream)();
-  STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
-
-  HRESULT SetParams(int numDictBits);
-  void SetKeepHistory(bool keepHistory) { _keepHistory = keepHistory; }
-  CDecoder(): _keepHistory(false) {}
+  CDecoder(): _numDictBits(0) {}
   virtual ~CDecoder() {}
 };
 

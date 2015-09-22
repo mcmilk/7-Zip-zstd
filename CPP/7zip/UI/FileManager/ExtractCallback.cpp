@@ -91,15 +91,45 @@ HRESULT CExtractCallbackImp::Open_CheckBreak()
   return ProgressDialog->Sync.CheckStop();
 }
 
-HRESULT CExtractCallbackImp::Open_SetTotal(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+HRESULT CExtractCallbackImp::Open_SetTotal(const UInt64 *files, const UInt64 *bytes)
 {
-  // if (numFiles != NULL) ProgressDialog->Sync.SetNumFilesTotal(*numFiles);
-  return S_OK;
+  HRESULT res = S_OK;
+  if (!MultiArcMode)
+  {
+    if (files)
+    {
+      _totalFilesDefined = true;
+      // res = ProgressDialog->Sync.Set_NumFilesTotal(*files);
+    }
+    else
+      _totalFilesDefined = false;
+
+    if (bytes)
+    {
+      _totalBytesDefined = true;
+      ProgressDialog->Sync.Set_NumBytesTotal(*bytes);
+    }
+    else
+      _totalBytesDefined = false;
+  }
+
+  return res;
 }
 
-HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 * /* numFiles */, const UInt64 * /* numBytes */)
+HRESULT CExtractCallbackImp::Open_SetCompleted(const UInt64 *files, const UInt64 *bytes)
 {
-  // if (numFiles != NULL) ProgressDialog->Sync.SetNumFilesCur(*numFiles);
+  if (!MultiArcMode)
+  {
+    if (files)
+    {
+      ProgressDialog->Sync.Set_NumFilesCur(*files);
+    }
+
+    if (bytes)
+    {
+    }
+  }
+
   return ProgressDialog->Sync.CheckStop();
 }
 

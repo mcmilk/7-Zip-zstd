@@ -19,7 +19,7 @@ HRESULT COpenCallbackConsole::Open_CheckBreak()
 
 HRESULT COpenCallbackConsole::Open_SetTotal(const UInt64 *files, const UInt64 *bytes)
 {
-  if (!MutiArcMode && NeedPercents())
+  if (!MultiArcMode && NeedPercents())
   {
     if (files)
     {
@@ -46,7 +46,7 @@ HRESULT COpenCallbackConsole::Open_SetTotal(const UInt64 *files, const UInt64 *b
 
 HRESULT COpenCallbackConsole::Open_SetCompleted(const UInt64 *files, const UInt64 *bytes)
 {
-  if (!MutiArcMode && NeedPercents())
+  if (!MultiArcMode && NeedPercents())
   {
     if (files)
     {

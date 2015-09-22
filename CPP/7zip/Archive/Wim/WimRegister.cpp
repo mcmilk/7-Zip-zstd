@@ -10,7 +10,7 @@ namespace NArchive {
 namespace NWim {
 
 REGISTER_ARC_IO(
-  "wim", "wim swm", 0, 0xE6,
+  "wim", "wim swm esd", 0, 0xE6,
   kSignature,
   0,
   NArcInfoFlags::kAltStreams |

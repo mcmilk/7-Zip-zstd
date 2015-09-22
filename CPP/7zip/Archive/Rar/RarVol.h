@@ -17,110 +17,110 @@ inline bool IsDigit(wchar_t c)
 
 class CVolumeName
 {
-  bool _first;
-  bool _newStyle;
-  UString _unchangedPart;
-  UString _changedPart;
-  UString _afterPart;
+  bool _needChangeForNext;
+  UString _before;
+  UString _changed;
+  UString _after;
 public:
-  CVolumeName(): _newStyle(true) {};
+  CVolumeName(): _needChangeForNext(true) {};
 
   bool InitName(const UString &name, bool newStyle = true)
   {
-    _first = true;
-    _newStyle = newStyle;
+    _needChangeForNext = true;
+    _after.Empty();
+    UString base = name;
     int dotPos = name.ReverseFind_Dot();
-    UString basePart = name;
 
     if (dotPos >= 0)
     {
-      UString ext = name.Ptr(dotPos + 1);
+      const UString ext = name.Ptr(dotPos + 1);
       if (ext.IsEqualTo_Ascii_NoCase("rar"))
       {
-        _afterPart = name.Ptr(dotPos);
-        basePart = name.Left(dotPos);
+        _after = name.Ptr(dotPos);
+        base.DeleteFrom(dotPos);
       }
       else if (ext.IsEqualTo_Ascii_NoCase("exe"))
       {
-        _afterPart.SetFromAscii(".rar");
-        basePart = name.Left(dotPos);
+        _after.SetFromAscii(".rar");
+        base.DeleteFrom(dotPos);
       }
-      else if (!_newStyle)
+      else if (!newStyle)
       {
         if (ext.IsEqualTo_Ascii_NoCase("000") ||
             ext.IsEqualTo_Ascii_NoCase("001") ||
             ext.IsEqualTo_Ascii_NoCase("r00") ||
             ext.IsEqualTo_Ascii_NoCase("r01"))
         {
-          _afterPart.Empty();
-          _first = false;
-          _changedPart = ext;
-          _unchangedPart = name.Left(dotPos + 1);
+          _changed = ext;
+          _before = name.Left(dotPos + 1);
           return true;
         }
       }
     }
 
-    if (!_newStyle)
+    if (newStyle)
     {
-      _afterPart.Empty();
-      _unchangedPart = basePart;
-      _unchangedPart += L'.';
-      _changedPart.SetFromAscii("r00");
-      return true;
-    }
+      unsigned i = base.Len();
 
-    if (basePart.IsEmpty())
-      return false;
-    unsigned i = basePart.Len();
+      for (; i != 0; i--)
+        if (!IsDigit(base[i - 1]))
+          break;
+
+      if (i != base.Len())
+      {
+        _before = base.Left(i);
+        _changed = base.Ptr(i);
+        return true;
+      }
+    }
     
-    do
-      if (!IsDigit(basePart[i - 1]))
-        break;
-    while (--i);
-    
-    _unchangedPart = basePart.Left(i);
-    _changedPart = basePart.Ptr(i);
+    _after.Empty();
+    _before = base;
+    _before += L'.';
+    _changed.SetFromAscii("r00");
+    _needChangeForNext = false;
     return true;
   }
 
   /*
   void MakeBeforeFirstName()
   {
-    unsigned len = _changedPart.Len();
-    _changedPart.Empty();
+    unsigned len = _changed.Len();
+    _changed.Empty();
     for (unsigned i = 0; i < len; i++)
-      _changedPart += L'0';
+      _changed += L'0';
   }
   */
 
   UString GetNextName()
   {
-    if (_newStyle || !_first)
+    if (_needChangeForNext)
     {
-      unsigned i = _changedPart.Len();
+      unsigned i = _changed.Len();
+      if (i == 0)
+        return UString();
       for (;;)
       {
-        wchar_t c = _changedPart[--i];
+        wchar_t c = _changed[--i];
         if (c == L'9')
         {
           c = L'0';
-          _changedPart.ReplaceOneCharAtPos(i, c);
+          _changed.ReplaceOneCharAtPos(i, c);
           if (i == 0)
           {
-            _changedPart.InsertAtFront(L'1');
+            _changed.InsertAtFront(L'1');
             break;
           }
           continue;
         }
         c++;
-        _changedPart.ReplaceOneCharAtPos(i, c);
+        _changed.ReplaceOneCharAtPos(i, c);
         break;
       }
     }
     
-    _first = false;
-    return _unchangedPart + _changedPart + _afterPart;
+    _needChangeForNext = true;
+    return _before + _changed + _after;
   }
 };
 

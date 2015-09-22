@@ -2,7 +2,14 @@
 
 #include "StdAfx.h"
 
-// #include <stdio.h>
+// #define SHOW_DEBUG_INFO
+
+#ifdef SHOW_DEBUG_INFO
+#include <stdio.h>
+#define PRF(x) x
+#else
+#define PRF(x)
+#endif
 
 #include "../../../../C/CpuArch.h"
 
@@ -13,6 +20,8 @@
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
+
+#include "../../Compress/XPressDecoder.h"
 
 #include "../Common/OutStreamWithSha1.h"
 
@@ -25,226 +34,377 @@
 namespace NArchive {
 namespace NWim {
 
-namespace NXpress {
-
-class CDecoderFlusher
+static int inline GetLog(UInt32 num)
 {
-  CDecoder *m_Decoder;
-public:
-  bool NeedFlush;
-  CDecoderFlusher(CDecoder *decoder): m_Decoder(decoder), NeedFlush(true) {}
-  ~CDecoderFlusher()
+  for (int i = 0; i < 32; i++)
+    if (((UInt32)1 << i) == num)
+      return i;
+  return -1;
+}
+
+
+CUnpacker::~CUnpacker()
+{
+  if (lzmsDecoder)
+    delete lzmsDecoder;
+}
+
+
+HRESULT CUnpacker::UnpackChunk(
+    ISequentialInStream *inStream,
+    unsigned method, unsigned chunkSizeBits,
+    size_t inSize, size_t outSize,
+    ISequentialOutStream *outStream)
+{
+  if (inSize == outSize)
   {
-    if (NeedFlush)
-      m_Decoder->Flush();
   }
-};
-
-HRESULT CDecoder::CodeSpec(UInt32 outSize)
-{
+  else if (method == NMethod::kXPRESS)
   {
-    Byte levels[kMainTableSize];
-    for (unsigned i = 0; i < kMainTableSize; i += 2)
+  }
+  else if (method == NMethod::kLZX)
+  {
+    if (!lzxDecoder)
     {
-      Byte b = m_InBitStream.DirectReadByte();
-      levels[i] = (Byte)(b & 0xF);
-      levels[i + 1] = (Byte)(b >> 4);
+      lzxDecoderSpec = new NCompress::NLzx::CDecoder(true);
+      lzxDecoder = lzxDecoderSpec;
     }
-    if (!m_MainDecoder.SetCodeLengths(levels))
-      return S_FALSE;
   }
-
-  while (outSize > 0)
+  else if (method == NMethod::kLZMS)
   {
-    UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
-    if (number < 256)
+    if (!lzmsDecoder)
+      lzmsDecoder = new NCompress::NLzms::CDecoder();
+  }
+  else
+    return E_NOTIMPL;
+
+  const size_t chunkSize = (size_t)1 << chunkSizeBits;
+  
+  unpackBuf.EnsureCapacity(chunkSize);
+  if (!unpackBuf.Data)
+    return E_OUTOFMEMORY;
+  
+  HRESULT res = S_FALSE;
+  size_t unpackedSize = 0;
+  
+  if (inSize == outSize)
+  {
+    unpackedSize = outSize;
+    res = ReadStream(inStream, unpackBuf.Data, &unpackedSize);
+    TotalPacked += unpackedSize;
+  }
+  else if (inSize < chunkSize)
+  {
+    packBuf.EnsureCapacity(chunkSize);
+    if (!packBuf.Data)
+      return E_OUTOFMEMORY;
+    
+    RINOK(ReadStream_FALSE(inStream, packBuf.Data, inSize));
+
+    TotalPacked += inSize;
+    
+    if (method == NMethod::kXPRESS)
     {
-      m_OutWindowStream.PutByte((Byte)number);
-      outSize--;
+      res = NCompress::NXpress::Decode(packBuf.Data, inSize, unpackBuf.Data, outSize);
+      if (res == S_OK)
+        unpackedSize = outSize;
+    }
+    else if (method == NMethod::kLZX)
+    {
+      lzxDecoderSpec->SetExternalWindow(unpackBuf.Data, chunkSizeBits);
+      lzxDecoderSpec->KeepHistoryForNext = false;
+      lzxDecoderSpec->SetKeepHistory(false);
+      res = lzxDecoderSpec->Code(packBuf.Data, inSize, (UInt32)outSize);
+      unpackedSize = lzxDecoderSpec->GetUnpackSize();
+      if (res == S_OK && !lzxDecoderSpec->WasBlockFinished())
+        res = S_FALSE;
     }
     else
     {
-      if (number >= kMainTableSize)
-        return S_FALSE;
-      UInt32 posLenSlot = number - 256;
-      UInt32 posSlot = posLenSlot / kNumLenSlots;
-      UInt32 len = posLenSlot % kNumLenSlots;
-      UInt32 distance = (1 << posSlot) - 1 + m_InBitStream.ReadBits(posSlot);
-      
-      if (len == kNumLenSlots - 1)
-      {
-        len = m_InBitStream.DirectReadByte();
-        if (len == 0xFF)
-        {
-          len = m_InBitStream.DirectReadByte();
-          len |= (UInt32)m_InBitStream.DirectReadByte() << 8;
-        }
-        else
-          len += kNumLenSlots - 1;
-      }
-      
-      len += kMatchMinLen;
-      UInt32 locLen = (len <= outSize ? len : outSize);
-
-      if (!m_OutWindowStream.CopyBlock(distance, locLen))
-        return S_FALSE;
-      
-      len -= locLen;
-      outSize -= locLen;
-      if (len != 0)
-        return S_FALSE;
+      res = lzmsDecoder->Code(packBuf.Data, inSize, unpackBuf.Data, outSize);
+      unpackedSize = lzmsDecoder->GetUnpackSize();;
     }
   }
-  return S_OK;
-}
-
-const UInt32 kDictSize = (1 << kNumPosSlots);
-
-HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream, UInt32 outSize)
-{
-  if (!m_OutWindowStream.Create(kDictSize) || !m_InBitStream.Create(1 << 16))
-    return E_OUTOFMEMORY;
-
-  CDecoderFlusher flusher(this);
-
-  m_InBitStream.SetStream(inStream);
-  m_OutWindowStream.SetStream(outStream);
-  m_InBitStream.Init();
-  m_OutWindowStream.Init(false);
-
-  RINOK(CodeSpec(outSize));
-
-  flusher.NeedFlush = false;
-  return Flush();
-}
-
-HRESULT CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream, UInt32 outSize)
-{
-  try { return CodeReal(inStream, outStream, outSize); }
-  catch(const CInBufferException &e) { return e.ErrorCode; } \
-  catch(const CLzOutWindowException &e) { return e.ErrorCode; }
-  catch(...) { return S_FALSE; }
-}
-
-}
-
-HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource, bool lzxMode,
-    ISequentialOutStream *outStream, ICompressProgressInfo *progress)
-{
-  RINOK(inStream->Seek(resource.Offset, STREAM_SEEK_SET, NULL));
-
-  CLimitedSequentialInStream *limitedStreamSpec = new CLimitedSequentialInStream();
-  CMyComPtr<ISequentialInStream> limitedStream = limitedStreamSpec;
-  limitedStreamSpec->SetStream(inStream);
-
-  if (!copyCoder)
+  
+  if (unpackedSize != outSize)
   {
-    copyCoderSpec = new NCompress::CCopyCoder;
-    copyCoder = copyCoderSpec;
+    if (res == S_OK)
+      res = S_FALSE;
+    
+    if (unpackedSize > outSize)
+      res = S_FALSE;
+    else
+      memset(unpackBuf.Data + unpackedSize, 0, outSize - unpackedSize);
   }
-  if (!resource.IsCompressed())
+  
+  if (outStream)
   {
+    RINOK(WriteStream(outStream, unpackBuf.Data, outSize));
+  }
+  
+  return res;
+}
+
+
+HRESULT CUnpacker::Unpack2(
+    IInStream *inStream,
+    const CResource &resource,
+    const CHeader &header,
+    const CDatabase *db,
+    ISequentialOutStream *outStream,
+    ICompressProgressInfo *progress)
+{
+  if (!resource.IsCompressed() && !resource.IsSolid())
+  {
+    if (!copyCoder)
+    {
+      copyCoderSpec = new NCompress::CCopyCoder;
+      copyCoder = copyCoderSpec;
+    }
+
+    CLimitedSequentialInStream *limitedStreamSpec = new CLimitedSequentialInStream();
+    CMyComPtr<ISequentialInStream> limitedStream = limitedStreamSpec;
+    limitedStreamSpec->SetStream(inStream);
+    
+    RINOK(inStream->Seek(resource.Offset, STREAM_SEEK_SET, NULL));
     if (resource.PackSize != resource.UnpackSize)
       return S_FALSE;
+
     limitedStreamSpec->Init(resource.PackSize);
-    return copyCoder->Code(limitedStreamSpec, outStream, NULL, NULL, progress);
-  }
-  if (resource.UnpackSize == 0)
-    return S_OK;
-  UInt64 numChunks = (resource.UnpackSize + kChunkSize - 1) >> kChunkSizeBits;
-  unsigned entrySize = ((resource.UnpackSize > (UInt64)1 << 32) ? 8 : 4);
-  UInt64 sizesBufSize64 = entrySize * (numChunks - 1);
-  size_t sizesBufSize = (size_t)sizesBufSize64;
-  if (sizesBufSize != sizesBufSize64)
-    return E_OUTOFMEMORY;
-  sizesBuf.AllocAtLeast(sizesBufSize);
-  RINOK(ReadStream_FALSE(inStream, (Byte *)sizesBuf, sizesBufSize));
-  const Byte *p = (const Byte *)sizesBuf;
-  
-  if (lzxMode && !lzxDecoder)
-  {
-    lzxDecoderSpec = new NCompress::NLzx::CDecoder(true);
-    lzxDecoder = lzxDecoderSpec;
-    RINOK(lzxDecoderSpec->SetParams(kChunkSizeBits));
+    TotalPacked += resource.PackSize;
+    
+    HRESULT res = copyCoder->Code(limitedStream, outStream, NULL, NULL, progress);
+    
+    if (res == S_OK && copyCoderSpec->TotalSize != resource.UnpackSize)
+      res = S_FALSE;
+    return res;
   }
   
-  UInt64 baseOffset = resource.Offset + sizesBufSize64;
-  UInt64 outProcessed = 0;
-  for (UInt32 i = 0; i < (UInt32)numChunks; i++)
+  if (resource.IsSolid())
   {
-    UInt64 offset = 0;
-    if (i > 0)
+    if (!db || resource.SolidIndex < 0)
+      return E_NOTIMPL;
+    if (resource.IsCompressed())
+      return E_NOTIMPL;
+
+    const CSolid &ss = db->Solids[resource.SolidIndex];
+    
+    const unsigned chunkSizeBits = ss.ChunkSizeBits;
+    const size_t chunkSize = (size_t)1 << chunkSizeBits;
+    
+    size_t chunkIndex = 0;
+    UInt64 rem = ss.UnpackSize;
+    size_t offsetInChunk = 0;
+    
+    if (resource.IsSolidSmall())
     {
-      offset = (entrySize == 4) ? Get32(p): Get64(p);
-      p += entrySize;
+      UInt64 offs = resource.Offset;
+      if (offs < ss.SolidOffset)
+        return E_NOTIMPL;
+      offs -= ss.SolidOffset;
+      if (offs > ss.UnpackSize)
+        return E_NOTIMPL;
+      rem = resource.PackSize;
+      if (rem > ss.UnpackSize - offs)
+        return E_NOTIMPL;
+      chunkIndex = (size_t)(offs >> chunkSizeBits);
+      offsetInChunk = (size_t)offs & (chunkSize - 1);
     }
-    UInt64 nextOffset = resource.PackSize - sizesBufSize64;
-    if (i + 1 < (UInt32)numChunks)
-      nextOffset = (entrySize == 4) ? Get32(p): Get64(p);
+    
+    UInt64 packProcessed = 0;
+    UInt64 outProcessed = 0;
+    
+    if (_solidIndex == resource.SolidIndex && _unpackedChunkIndex == chunkIndex)
+    {
+      size_t cur = chunkSize - offsetInChunk;
+      if (cur > rem)
+        cur = (size_t)rem;
+      RINOK(WriteStream(outStream, unpackBuf.Data + offsetInChunk, cur));
+      outProcessed += cur;
+      rem -= cur;
+      offsetInChunk = 0;
+      chunkIndex++;
+    }
+    
+    for (;;)
+    {
+      if (rem == 0)
+        return S_OK;
+    
+      UInt64 offset = ss.Chunks[chunkIndex];
+      UInt64 packSize = ss.GetChunkPackSize(chunkIndex);
+      const CResource &rs = db->DataStreams[ss.StreamIndex].Resource;
+      RINOK(inStream->Seek(rs.Offset + ss.HeadersSize + offset, STREAM_SEEK_SET, NULL));
+      
+      size_t cur = chunkSize;
+      UInt64 unpackRem = ss.UnpackSize - ((UInt64)chunkIndex << chunkSizeBits);
+      if (cur > unpackRem)
+        cur = (size_t)unpackRem;
+      
+      _solidIndex = -1;
+      _unpackedChunkIndex = 0;
+      
+      HRESULT res = UnpackChunk(inStream, ss.Method, chunkSizeBits, (size_t)packSize, cur, NULL);
+      
+      if (res != S_OK)
+      {
+        // We ignore data errors in solid stream. SHA will show what files are bad.
+        if (res != S_FALSE)
+          return res;
+      }
+      
+      _solidIndex = resource.SolidIndex;
+      _unpackedChunkIndex = chunkIndex;
+      
+      if (cur > rem)
+        cur = (size_t)rem;
+      
+      RINOK(WriteStream(outStream, unpackBuf.Data + offsetInChunk, cur));
+      
+      if (progress)
+      {
+        RINOK(progress->SetRatioInfo(&packProcessed, &outProcessed));
+        packProcessed += packSize;
+        outProcessed += cur;
+      }
+      
+      rem -= cur;
+      offsetInChunk = 0;
+      chunkIndex++;
+    }
+  }
+
+
+  // ---------- NON Solid ----------
+
+  const UInt64 unpackSize = resource.UnpackSize;
+  if (unpackSize == 0)
+  {
+    if (resource.PackSize == 0)
+      return S_OK;
+    return S_FALSE;
+  }
+
+  if (unpackSize > ((UInt64)1 << 63))
+    return E_NOTIMPL;
+
+  const unsigned chunkSizeBits = header.ChunkSizeBits;
+  const unsigned entrySizeShifts = (resource.UnpackSize < ((UInt64)1 << 32) ? 2 : 3);
+
+  UInt64 baseOffset = resource.Offset;
+  UInt64 packDataSize;
+  size_t numChunks;
+  {
+    UInt64 numChunks64 = (unpackSize + (((UInt32)1 << chunkSizeBits) - 1)) >> chunkSizeBits;
+    UInt64 sizesBufSize64 = (numChunks64 - 1) << entrySizeShifts;
+    if (sizesBufSize64 > resource.PackSize)
+      return S_FALSE;
+    packDataSize = resource.PackSize - sizesBufSize64;
+    size_t sizesBufSize = (size_t)sizesBufSize64;
+    if (sizesBufSize != sizesBufSize64)
+      return E_OUTOFMEMORY;
+    sizesBuf.AllocAtLeast(sizesBufSize);
+    RINOK(inStream->Seek(baseOffset, STREAM_SEEK_SET, NULL));
+    RINOK(ReadStream_FALSE(inStream, sizesBuf, sizesBufSize));
+    baseOffset += sizesBufSize64;
+    numChunks = (size_t)numChunks64;
+  }
+
+  _solidIndex = -1;
+  _unpackedChunkIndex = 0;
+
+  UInt64 outProcessed = 0;
+  UInt64 offset = 0;
+  
+  for (size_t i = 0; i < numChunks; i++)
+  {
+    UInt64 nextOffset = packDataSize;
+    
+    if (i + 1 < numChunks)
+    {
+      const Byte *p = (const Byte *)sizesBuf + (i << entrySizeShifts);
+      nextOffset = (entrySizeShifts == 2) ? Get32(p): Get64(p);
+    }
+    
     if (nextOffset < offset)
       return S_FALSE;
 
+    UInt64 inSize64 = nextOffset - offset;
+    size_t inSize = (size_t)inSize64;
+    if (inSize != inSize64)
+      return S_FALSE;
+
     RINOK(inStream->Seek(baseOffset + offset, STREAM_SEEK_SET, NULL));
-    UInt64 inSize = nextOffset - offset;
-    limitedStreamSpec->Init(inSize);
 
     if (progress)
     {
       RINOK(progress->SetRatioInfo(&offset, &outProcessed));
     }
     
-    UInt32 outSize = kChunkSize;
-    if (outProcessed + outSize > resource.UnpackSize)
-      outSize = (UInt32)(resource.UnpackSize - outProcessed);
-    UInt64 outSize64 = outSize;
-    if (inSize == outSize)
-    {
-      RINOK(copyCoder->Code(limitedStreamSpec, outStream, NULL, &outSize64, NULL));
-    }
-    else
-    {
-      if (lzxMode)
-      {
-        lzxDecoderSpec->SetKeepHistory(false);
-        RINOK(lzxDecoder->Code(limitedStreamSpec, outStream, NULL, &outSize64, NULL));
-      }
-      else
-      {
-        RINOK(xpressDecoder.Code(limitedStreamSpec, outStream, outSize));
-      }
-    }
+    size_t outSize = (size_t)1 << chunkSizeBits;
+    const UInt64 rem = unpackSize - outProcessed;
+    if (outSize > rem)
+      outSize = (size_t)rem;
+
+    RINOK(UnpackChunk(inStream, header.GetMethod(), chunkSizeBits, inSize, outSize, outStream));
+
     outProcessed += outSize;
+    offset = nextOffset;
   }
+  
   return S_OK;
 }
 
-HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource, bool lzxMode,
+
+HRESULT CUnpacker::Unpack(IInStream *inStream, const CResource &resource, const CHeader &header, const CDatabase *db,
     ISequentialOutStream *outStream, ICompressProgressInfo *progress, Byte *digest)
 {
-  COutStreamWithSha1 *shaStreamSpec = new COutStreamWithSha1();
-  CMyComPtr<ISequentialOutStream> shaStream = shaStreamSpec;
-  shaStreamSpec->SetStream(outStream);
-  shaStreamSpec->Init(digest != NULL);
-  HRESULT result = Unpack(inStream, resource, lzxMode, shaStream, progress);
+  COutStreamWithSha1 *shaStreamSpec = NULL;
+  CMyComPtr<ISequentialOutStream> shaStream;
+  
+  // outStream can be NULL, so we use COutStreamWithSha1 even if sha1 is not required
+  // if (digest)
+  {
+    shaStreamSpec = new COutStreamWithSha1();
+    shaStream = shaStreamSpec;
+    shaStreamSpec->SetStream(outStream);
+    shaStreamSpec->Init(digest != NULL);
+    outStream = shaStream;
+  }
+  
+  HRESULT res = Unpack2(inStream, resource, header, db, outStream, progress);
+  
   if (digest)
     shaStreamSpec->Final(digest);
-  return result;
+  
+  return res;
 }
 
-static HRESULT UnpackData(IInStream *inStream, const CResource &resource, bool lzxMode, CByteBuffer &buf, Byte *digest)
+
+HRESULT CUnpacker::UnpackData(IInStream *inStream,
+    const CResource &resource, const CHeader &header,
+    const CDatabase *db,
+    CByteBuffer &buf, Byte *digest)
 {
-  size_t size = (size_t)resource.UnpackSize;
-  if (size != resource.UnpackSize)
+  // if (resource.IsSolid()) return E_NOTIMPL;
+
+  UInt64 unpackSize64 = resource.UnpackSize;
+  if (db)
+    unpackSize64 = db->Get_UnpackSize_of_Resource(resource);
+
+  size_t size = (size_t)unpackSize64;
+  if (size != unpackSize64)
     return E_OUTOFMEMORY;
+
   buf.Alloc(size);
 
   CBufPtrSeqOutStream *outStreamSpec = new CBufPtrSeqOutStream();
   CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
   outStreamSpec->Init((Byte *)buf, size);
 
-  CUnpacker unpacker;
-  return unpacker.Unpack(inStream, resource, lzxMode, outStream, NULL, digest);
+  return Unpack(inStream, resource, header, db, outStream, NULL, digest);
 }
+
 
 void CResource::Parse(const Byte *p)
 {
@@ -252,18 +412,19 @@ void CResource::Parse(const Byte *p)
   PackSize = Get64(p) & (((UInt64)1 << 56) - 1);
   Offset = Get64(p + 8);
   UnpackSize = Get64(p + 16);
+  KeepSolid = false;
+  SolidIndex = -1;
 }
 
 #define GET_RESOURCE(_p_, res) res.ParseAndUpdatePhySize(_p_, phySize)
 
-static void GetStream(bool oldVersion, const Byte *p, CStreamInfo &s)
+static inline void ParseStream(bool oldVersion, const Byte *p, CStreamInfo &s)
 {
   s.Resource.Parse(p);
   if (oldVersion)
   {
     s.PartNumber = 1;
     s.Id = Get32(p + 24);
-    // printf("\n%d", s.Id);
     p += 28;
   }
   else
@@ -300,6 +461,7 @@ void CDatabase::GetShortName(unsigned index, NWindows::NCOM::CPropVariant &name)
   // empty shortName has no ZERO at the end ?
 }
 
+
 void CDatabase::GetItemName(unsigned index, NWindows::NCOM::CPropVariant &name) const
 {
   const CItem &item = Items[index];
@@ -320,6 +482,7 @@ void CDatabase::GetItemName(unsigned index, NWindows::NCOM::CPropVariant &name) 
   for (UInt32 i = 0; i < len; i++)
     s[i] = Get16(meta + i * 2);
 }
+
 
 void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCOM::CPropVariant &path) const
 {
@@ -403,22 +566,16 @@ void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCO
   }
 }
 
-static bool IsEmptySha(const Byte *data)
-{
-  for (unsigned i = 0; i < kHashSize; i++)
-    if (data[i] != 0)
-      return false;
-  return true;
-}
 
-// Root folders in OLD archives (ver = 1.10) conatin real items.
-// Root folders in NEW archives (ver > 1.11) contain only one folder with empty name.
+// if (ver <= 1.10), root folder contains real items.
+// if (ver >= 1.12), root folder contains only one folder with empty name.
 
 HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
 {
-  if ((pos & 7) != 0)
+  const unsigned align = GetDirAlignMask();
+  if ((pos & align) != 0)
     return S_FALSE;
- 
+
   for (unsigned numItems = 0;; numItems++)
   {
     if (OpenCallback && (Items.Size() & 0xFFFF) == 0)
@@ -426,25 +583,28 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
       UInt64 numFiles = Items.Size();
       RINOK(OpenCallback->SetCompleted(&numFiles, NULL));
     }
+    
     size_t rem = DirSize - pos;
     if (pos < DirStartOffset || pos > DirSize || rem < 8)
       return S_FALSE;
+
     const Byte *p = DirData + pos;
+
     UInt64 len = Get64(p);
     if (len == 0)
     {
-      if (parent < 0 && numItems != 1)
-        Images.Back().NumEmptyRootItems = 0;
       DirProcessed += 8;
       return S_OK;
     }
-    if ((len & 7) != 0 || rem < len)
+    
+    if ((len & align) != 0 || rem < len)
       return S_FALSE;
+    
     DirProcessed += (size_t)len;
     if (DirProcessed > DirSize)
       return S_FALSE;
 
-    UInt32 dirRecordSize = IsOldVersion ? kDirRecordSizeOld : kDirRecordSize;
+    const unsigned dirRecordSize = IsOldVersion ? kDirRecordSizeOld : kDirRecordSize;
     if (len < dirRecordSize)
       return S_FALSE;
 
@@ -452,14 +612,15 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
     UInt32 attrib = Get32(p + 8);
     item.IsDir = ((attrib & 0x10) != 0);
     UInt64 subdirOffset = Get64(p + 0x10);
-    UInt32 numAltStreams = Get16(p + dirRecordSize - 6);
-    UInt32 shortNameLen = Get16(p + dirRecordSize - 4);
-    UInt32 fileNameLen = Get16(p + dirRecordSize - 2);
+
+    const UInt32 numAltStreams = Get16(p + dirRecordSize - 6);
+    const UInt32 shortNameLen = Get16(p + dirRecordSize - 4);
+    const UInt32 fileNameLen = Get16(p + dirRecordSize - 2);
     if ((shortNameLen & 1) != 0 || (fileNameLen & 1) != 0)
       return S_FALSE;
-    UInt32 shortNameLen2 = (shortNameLen == 0 ? shortNameLen : shortNameLen + 2);
-    UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
-    if (((dirRecordSize + fileNameLen2 + shortNameLen2 + 6) & ~7) > len)
+    const UInt32 shortNameLen2 = (shortNameLen == 0 ? shortNameLen : shortNameLen + 2);
+    const UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
+    if (((dirRecordSize + fileNameLen2 + shortNameLen2 + align) & ~align) > len)
       return S_FALSE;
     
     p += dirRecordSize;
@@ -471,6 +632,9 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
         if (*(const UInt16 *)(p + j) == 0)
           return S_FALSE;
     }
+
+    // PRF(printf("\n%S", p));
+
     if (shortNameLen != 0)
     {
       // empty shortName has no ZERO at the end ?
@@ -485,36 +649,27 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
     item.Offset = pos;
     item.Parent = parent;
     item.ImageIndex = Images.Size() - 1;
-    unsigned prevIndex = Items.Add(item);
+    
+    const unsigned prevIndex = Items.Add(item);
 
     pos += (size_t)len;
 
-    unsigned numItems2 = Items.Size();
-      
     for (UInt32 i = 0; i < numAltStreams; i++)
     {
-      size_t rem = DirSize - pos;
+      const size_t rem = DirSize - pos;
       if (pos < DirStartOffset || pos > DirSize || rem < 8)
         return S_FALSE;
       const Byte *p = DirData + pos;
-      UInt64 len = Get64(p);
-      if (len == 0)
+      const UInt64 len = Get64(p);
+      if ((len & align) != 0 || rem < len || len < (IsOldVersion ? 0x18 : 0x28))
         return S_FALSE;
-      if ((len & 7) != 0 || rem < len)
-        return S_FALSE;
-      if (IsOldVersion)
-      {
-        if (len < 0x18)
-          return S_FALSE;
-      }
-      else
-        if (len < 0x28)
-          return S_FALSE;
+     
       DirProcessed += (size_t)len;
       if (DirProcessed > DirSize)
         return S_FALSE;
 
       unsigned extraOffset = 0;
+      
       if (IsOldVersion)
         extraOffset = 0x10;
       else
@@ -523,13 +678,14 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
           return S_FALSE;
         extraOffset = 0x24;
       }
+      
       UInt32 fileNameLen = Get16(p + extraOffset);
       if ((fileNameLen & 1) != 0)
         return S_FALSE;
       /* Probably different versions of ImageX can use different number of
          additional ZEROs. So we don't use exact check. */
       UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
-      if (((extraOffset + 2 + fileNameLen2 + 6) & ~7) > len)
+      if (((extraOffset + 2 + fileNameLen2 + align) & ~align) > len)
         return S_FALSE;
       
       {
@@ -539,21 +695,30 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
         for (UInt32 j = 0; j < fileNameLen; j += 2)
           if (*(const UInt16 *)(p2 + j) == 0)
             return S_FALSE;
+  
+        // PRF(printf("\n  %S", p2));
       }
 
 
       /* wim uses alt sreams list, if there is at least one alt stream.
-         And alt stream without name is main stream.  */
+         And alt stream without name is main stream. */
+
+      // Why wimlib writes two alt streams for REPARSE_POINT, with empty second alt stream?
       
+      Byte *prevMeta = DirData + item.Offset;
+
       if (fileNameLen == 0 &&
-          (attrib & FILE_ATTRIBUTE_REPARSE_POINT
-          || !item.IsDir /* && (IsOldVersion || IsEmptySha(prevMeta + 0x40)) */ ))
+          ((attrib & FILE_ATTRIBUTE_REPARSE_POINT) || !item.IsDir)
+          && (IsOldVersion || IsEmptySha(prevMeta + 0x40)))
       {
-        Byte *prevMeta = DirData + item.Offset;
         if (IsOldVersion)
           memcpy(prevMeta + 0x10, p + 8, 4); // It's 32-bit Id
-        else
-          memcpy(prevMeta + 0x40, p + 0x10, kHashSize);
+        else if (!IsEmptySha(p + 0x10))
+        {
+          // if (IsEmptySha(prevMeta + 0x40))
+            memcpy(prevMeta + 0x40, p + 0x10, kHashSize);
+          // else HeadersError = true;
+        }
       }
       else
       {
@@ -565,13 +730,31 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
         item2.ImageIndex = Images.Size() - 1;
         Items.Add(item2);
       }
+
       pos += (size_t)len;
     }
 
     if (parent < 0 && numItems == 0 && shortNameLen == 0 && fileNameLen == 0 && item.IsDir)
     {
-      CImage &image = Images.Back();
-      image.NumEmptyRootItems = numItems2 - image.StartItem; // Items.Size()
+      const Byte *p2 = DirData + pos;
+      if (DirSize - pos >= 8 && Get64(p2) == 0)
+      {
+        CImage &image = Images.Back();
+        image.NumEmptyRootItems = 1;
+
+        if (subdirOffset != 0
+            && DirSize - pos >= 16
+            && Get64(p2 + 8) != 0
+            && pos + 8 < subdirOffset)
+        {
+          // Longhorn.4093 contains hidden files after empty root folder and before items of next folder. Why?
+          // That code shows them. If we want to ignore them, we need to update DirProcessed.
+          // DirProcessed += (size_t)(subdirOffset - (pos + 8));
+          // printf("\ndirOffset = %5d hiddenOffset = %5d\n", (int)subdirOffset, (int)pos + 8);
+          subdirOffset = pos + 8;
+          // return S_FALSE;
+        }
+      }
     }
 
     if (item.IsDir && subdirOffset != 0)
@@ -580,6 +763,7 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
     }
   }
 }
+
 
 HRESULT CDatabase::ParseImageDirs(CByteBuffer &buf, int parent)
 {
@@ -593,29 +777,37 @@ HRESULT CDatabase::ParseImageDirs(CByteBuffer &buf, int parent)
 
   if (IsOldVersion)
   {
-    // there is no specification about that code
-    UInt32 sum = 0;
-    image.SecurOffsets.Add(0);
-    for (;;)
+    UInt32 numEntries = Get32(p + 4);
+
+    if (numEntries > (1 << 28) ||
+        numEntries > (DirSize >> 3))
+      return S_FALSE;
+
+    UInt32 sum = 8;
+    if (numEntries != 0)
+      sum = numEntries * 8;
+
+    image.SecurOffsets.ClearAndReserve(numEntries + 1);
+    image.SecurOffsets.AddInReserved(sum);
+
+    for (UInt32 i = 0; i < numEntries; i++)
     {
-      if (pos + 8 > DirSize)
+      const Byte *pp = p + (size_t)i * 8;
+      UInt32 len = Get32(pp);
+      if (i != 0 && Get32(pp + 4) != 0)
         return S_FALSE;
-      UInt32 len = Get32(p + pos);
       if (len > DirSize - sum)
         return S_FALSE;
       sum += len;
-      image.SecurOffsets.Add(sum);
-      UInt32 n = Get32(p + pos + 4); // what does this field mean?
-      pos += 8;
-      if (n == 0)
-        break;
+      if (sum < len)
+        return S_FALSE;
+      image.SecurOffsets.AddInReserved(sum);
     }
-    if (sum > DirSize - pos)
-      return S_FALSE;
-    FOR_VECTOR (i, image.SecurOffsets)
-      image.SecurOffsets[i] += (UInt32)pos;
-    pos += sum;
-    pos = (pos + 7) & ~(size_t)7;
+
+    pos = sum;
+
+    const size_t align = GetDirAlignMask();
+    pos = (pos + align) & ~(size_t)align;
   }
   else
   {
@@ -633,6 +825,7 @@ HRESULT CDatabase::ParseImageDirs(CByteBuffer &buf, int parent)
       UInt32 sum = (UInt32)pos + numEntries * 8;
       image.SecurOffsets.ClearAndReserve(numEntries + 1);
       image.SecurOffsets.AddInReserved(sum);
+      
       for (UInt32 i = 0; i < numEntries; i++, pos += 8)
       {
         UInt64 len = Get64(p + pos);
@@ -641,6 +834,7 @@ HRESULT CDatabase::ParseImageDirs(CByteBuffer &buf, int parent)
         sum += (UInt32)len;
         image.SecurOffsets.AddInReserved(sum);
       }
+      
       pos = sum;
       pos = (pos + 7) & ~(size_t)7;
       if (pos != (((size_t)totalLen + 7) & ~(size_t)7))
@@ -650,20 +844,26 @@ HRESULT CDatabase::ParseImageDirs(CByteBuffer &buf, int parent)
   
   if (pos > DirSize)
     return S_FALSE;
+  
   DirStartOffset = DirProcessed = pos;
   image.StartItem = Items.Size();
+
   RINOK(ParseDirItem(pos, parent));
+  
   image.NumItems = Items.Size() - image.StartItem;
   if (DirProcessed == DirSize)
     return S_OK;
+
   /* Original program writes additional 8 bytes (END_OF_ROOT_FOLDER),
      but the reference to that folder is empty */
 
   // we can't use DirProcessed - DirStartOffset == 112 check if there is alt stream in root
-  if (DirProcessed == DirSize - 8 && Get64(p + DirSize - 8) == 0)
+  if (DirProcessed == DirSize - 8 && Get64(p + DirSize - 8) != 0)
     return S_OK;
+
   return S_FALSE;
 }
+
 
 HRESULT CHeader::Parse(const Byte *p, UInt64 &phySize)
 {
@@ -673,10 +873,37 @@ HRESULT CHeader::Parse(const Byte *p, UInt64 &phySize)
   Flags = Get32(p + 0x10);
   if (!IsSupported())
     return S_FALSE;
-  ChunkSize = Get32(p + 0x14);
-  if (ChunkSize != kChunkSize && ChunkSize != 0)
-    return S_FALSE;
+  
+  {
+    ChunkSize = Get32(p + 0x14);
+    ChunkSizeBits = kChunkSizeBits;
+    if (ChunkSize != 0)
+    {
+      int log = GetLog(ChunkSize);
+      if (log < 12)
+        return S_FALSE;
+      ChunkSizeBits = log;
+    }
+  }
+
+  _IsOldVersion = false;
+  _IsNewVersion = false;
+  
+  if (IsSolidVersion())
+    _IsNewVersion = true;
+  else
+  {
+    if (Version < 0x010900)
+      return S_FALSE;
+    _IsOldVersion = (Version <= 0x010A00);
+    // We don't know details about 1.11 version. So we use headerSize to guess exact features.
+    if (Version == 0x010B00 && headerSize == 0x60)
+      _IsOldVersion = true;
+    _IsNewVersion = (Version >= 0x010D00);
+  }
+
   unsigned offset;
+  
   if (IsOldVersion())
   {
     if (headerSize != 0x60)
@@ -693,27 +920,33 @@ HRESULT CHeader::Parse(const Byte *p, UInt64 &phySize)
     memcpy(Guid, p + 0x18, 16);
     PartNumber = Get16(p + 0x28);
     NumParts = Get16(p + 0x2A);
+    if (PartNumber == 0 || PartNumber > NumParts)
+      return S_FALSE;
     offset = 0x2C;
     if (IsNewVersion())
     {
+      // if (headerSize < 0xD0)
+      if (headerSize != 0xD0)
+        return S_FALSE;
       NumImages = Get32(p + offset);
       offset += 4;
     }
   }
+  
   GET_RESOURCE(p + offset       , OffsetResource);
   GET_RESOURCE(p + offset + 0x18, XmlResource);
   GET_RESOURCE(p + offset + 0x30, MetadataResource);
   BootIndex = 0;
+  
   if (IsNewVersion())
   {
-    if (headerSize < 0xD0)
-      return S_FALSE;
     BootIndex = Get32(p + offset + 0x48);
     GET_RESOURCE(p + offset + 0x4C, IntegrityResource);
   }
 
   return S_OK;
 }
+
 
 const Byte kSignature[kSignatureSize] = { 'M', 'S', 'W', 'I', 'M', 0, 0, 0 };
 
@@ -726,40 +959,85 @@ HRESULT ReadHeader(IInStream *inStream, CHeader &h, UInt64 &phySize)
   return h.Parse(p, phySize);
 }
 
+
 static HRESULT ReadStreams(IInStream *inStream, const CHeader &h, CDatabase &db)
 {
   CByteBuffer offsetBuf;
-  RINOK(UnpackData(inStream, h.OffsetResource, h.IsLzxMode(), offsetBuf, NULL));
-  size_t i;
-  size_t streamInfoSize = h.IsOldVersion() ? kStreamInfoSize + 2 : kStreamInfoSize;
-  for (i = 0; offsetBuf.Size() - i >= streamInfoSize; i += streamInfoSize)
+  
+  CUnpacker unpacker;
+  RINOK(unpacker.UnpackData(inStream, h.OffsetResource, h, NULL, offsetBuf, NULL));
+  
+  const size_t streamInfoSize = h.IsOldVersion() ? kStreamInfoSize + 2 : kStreamInfoSize;
+  unsigned numItems = (unsigned)(offsetBuf.Size() / streamInfoSize);
+  if ((size_t)numItems * streamInfoSize != offsetBuf.Size())
+    return S_FALSE;
+  db.DataStreams.Reserve(numItems);
+
+  bool keepSolid = false;
+
+  for (size_t i = 0; i < offsetBuf.Size(); i += streamInfoSize)
   {
     CStreamInfo s;
-    GetStream(h.IsOldVersion(), (const Byte *)offsetBuf + i, s);
-    if (s.PartNumber == h.PartNumber)
+    ParseStream(h.IsOldVersion(), (const Byte *)offsetBuf + i, s);
+
+    PRF(printf("\n"));
+    PRF(printf(s.Resource.IsMetadata() ? "### META" : "    DATA"));
+    PRF(printf(" %2X", s.Resource.Flags));
+    PRF(printf(" %9I64X", s.Resource.Offset));
+    PRF(printf(" %9I64X", s.Resource.PackSize));
+    PRF(printf(" %9I64X", s.Resource.UnpackSize));
+    PRF(printf(" %d", s.RefCount));
+    
+    if (s.PartNumber != h.PartNumber)
+      continue;
+
+    if (s.Resource.IsSolid())
     {
-      if (s.Resource.IsMetadata())
+      s.Resource.KeepSolid = keepSolid;
+      keepSolid = true;
+    }
+    else
+    {
+      s.Resource.KeepSolid = false;
+      keepSolid = false;
+    }
+
+    if (!s.Resource.IsMetadata())
+      db.DataStreams.AddInReserved(s);
+    else
+    {
+      if (s.Resource.IsSolid())
+        return E_NOTIMPL;
+      if (s.RefCount == 0)
       {
-        if (s.RefCount == 0)
-          return S_FALSE;
-        if (s.RefCount > 1)
-        {
-          s.RefCount--;
-          db.DataStreams.Add(s);
-        }
-        s.RefCount = 1;
-        db.MetaStreams.Add(s);
+        // some wims have such (deleted?) metadata stream.
+        // examples: boot.wim in VistaBeta2, WinPE.wim from WAIK.
+        // db.DataStreams.Add(s);
+        // we can show these delete images, if we comment "continue" command;
+        continue;
       }
-      else
-        db.DataStreams.Add(s);
+      
+      if (s.RefCount > 1)
+      {
+        return S_FALSE;
+        // s.RefCount--;
+        // db.DataStreams.Add(s);
+      }
+
+      db.MetaStreams.Add(s);
     }
   }
-  return (i == offsetBuf.Size()) ? S_OK : S_FALSE;
+  
+  PRF(printf("\n"));
+  
+  return S_OK;
 }
+
 
 HRESULT CDatabase::OpenXml(IInStream *inStream, const CHeader &h, CByteBuffer &xml)
 {
-  return UnpackData(inStream, h.XmlResource, h.IsLzxMode(), xml, NULL);
+  CUnpacker unpacker;
+  return unpacker.UnpackData(inStream, h.XmlResource, h, this, xml, NULL);
 }
 
 static void SetRootNames(CImage &image, unsigned value)
@@ -777,66 +1055,63 @@ static void SetRootNames(CImage &image, unsigned value)
   }
 }
 
+
 HRESULT CDatabase::Open(IInStream *inStream, const CHeader &h, unsigned numItemsReserve, IArchiveOpenCallback *openCallback)
 {
   OpenCallback = openCallback;
   IsOldVersion = h.IsOldVersion();
+  IsOldVersion9 = (h.Version == 0x10900);
+
   RINOK(ReadStreams(inStream, h, *this));
 
-  // printf("\nh.PartNumber = %02d", (unsigned)h.PartNumber);
   bool needBootMetadata = !h.MetadataResource.IsEmpty();
+  unsigned numNonDeletedImages = 0;
+
+  CUnpacker unpacker;
 
   FOR_VECTOR (i, MetaStreams)
   {
     const CStreamInfo &si = MetaStreams[i];
-    /*
-    printf("\ni = %5d"
-      "  Refs = %3d"
-      "  Part = %1d"
-      "  Offs = %7X"
-      "  PackSize = %7X"
-      "  Size = %7X"
-      "  Flags = %d "
-      ,
-        i,
-        si.RefCount,
-        (unsigned)si.PartNumber,
-        (unsigned)si.Resource.Offset,
-        (unsigned)si.Resource.PackSize,
-        (unsigned)si.Resource.UnpackSize,
-        (unsigned)si.Resource.Flags
-        );
-    for (unsigned y = 0; y < 2; y++)
-      printf("%02X", (unsigned)si.Hash[y]);
-    */
 
     if (h.PartNumber != 1 || si.PartNumber != h.PartNumber)
       continue;
 
-    Byte hash[kHashSize];
+    const int userImage = Images.Size() + GetStartImageIndex();
     CImage &image = Images.AddNew();
-    SetRootNames(image, Images.Size());
+    SetRootNames(image, userImage);
+    
     CByteBuffer &metadata = image.Meta;
-    RINOK(UnpackData(inStream, si.Resource, h.IsLzxMode(), metadata, hash));
+    Byte hash[kHashSize];
+    
+    RINOK(unpacker.UnpackData(inStream, si.Resource, h, this, metadata, hash));
+   
     if (memcmp(hash, si.Hash, kHashSize) != 0 &&
         !(h.IsOldVersion() && IsEmptySha(si.Hash)))
       return S_FALSE;
+    
     image.NumEmptyRootItems = 0;
+    
     if (Items.IsEmpty())
       Items.ClearAndReserve(numItemsReserve);
+
     RINOK(ParseImageDirs(metadata, -1));
+    
     if (needBootMetadata)
     {
       bool sameRes = (h.MetadataResource.Offset == si.Resource.Offset);
       if (sameRes)
         needBootMetadata = false;
-      bool isBootIndex = (h.BootIndex == (UInt32)Images.Size());
       if (h.IsNewVersion())
       {
-        if (sameRes && !isBootIndex)
-          return S_FALSE;
-        if (isBootIndex && !sameRes)
-          return S_FALSE;
+        if (si.RefCount == 1)
+        {
+          numNonDeletedImages++;
+          bool isBootIndex = (h.BootIndex == numNonDeletedImages);
+          if (sameRes && !isBootIndex)
+            return S_FALSE;
+          if (isBootIndex && !sameRes)
+            return S_FALSE;
+        }
       }
     }
   }
@@ -846,69 +1121,6 @@ HRESULT CDatabase::Open(IInStream *inStream, const CHeader &h, unsigned numItems
   return S_OK;
 }
 
-
-#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
-
-static int CompareStreamsByPos(const CStreamInfo *p1, const CStreamInfo *p2, void * /* param */)
-{
-  RINOZ(MyCompare(p1->PartNumber, p2->PartNumber));
-  RINOZ(MyCompare(p1->Resource.Offset, p2->Resource.Offset));
-  return MyCompare(p1->Resource.PackSize, p2->Resource.PackSize);
-}
-
-static int CompareIDs(const unsigned *p1, const unsigned *p2, void *param)
-{
-  const CRecordVector<CStreamInfo> &streams = *(const CRecordVector<CStreamInfo> *)param;
-  return MyCompare(streams[*p1].Id, streams[*p2].Id);
-}
-
-static int CompareHashRefs(const unsigned *p1, const unsigned *p2, void *param)
-{
-  const CRecordVector<CStreamInfo> &streams = *(const CRecordVector<CStreamInfo> *)param;
-  return memcmp(streams[*p1].Hash, streams[*p2].Hash, kHashSize);
-}
-
-static int FindId(const CRecordVector<CStreamInfo> &streams,
-    const CUIntVector &sortedByHash, UInt32 id)
-{
-  unsigned left = 0, right = streams.Size();
-  while (left != right)
-  {
-    unsigned mid = (left + right) / 2;
-    unsigned streamIndex = sortedByHash[mid];
-    UInt32 id2 = streams[streamIndex].Id;
-    if (id == id2)
-      return streamIndex;
-    if (id < id2)
-      right = mid;
-    else
-      left = mid + 1;
-  }
-  return -1;
-}
-
-static int FindHash(const CRecordVector<CStreamInfo> &streams,
-    const CUIntVector &sortedByHash, const Byte *hash)
-{
-  unsigned left = 0, right = streams.Size();
-  while (left != right)
-  {
-    unsigned mid = (left + right) / 2;
-    unsigned streamIndex = sortedByHash[mid];
-    const Byte *hash2 = streams[streamIndex].Hash;
-    unsigned i;
-    for (i = 0; i < kHashSize; i++)
-      if (hash[i] != hash2[i])
-        break;
-    if (i == kHashSize)
-      return streamIndex;
-    if (hash[i] < hash2[i])
-      right = mid;
-    else
-      left = mid + 1;
-  }
-  return -1;
-}
 
 bool CDatabase::ItemHasStream(const CItem &item) const
 {
@@ -925,10 +1137,69 @@ bool CDatabase::ItemHasStream(const CItem &item) const
     return id != 0;
   }
   meta += (item.IsAltStream ? 0x10 : 0x40);
-  for (unsigned i = 0; i < kHashSize; i++)
-    if (meta[i] != 0)
-      return true;
-  return false;
+  return !IsEmptySha(meta);
+}
+
+
+#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
+
+static int CompareStreamsByPos(const CStreamInfo *p1, const CStreamInfo *p2, void * /* param */)
+{
+  RINOZ(MyCompare(p1->PartNumber, p2->PartNumber));
+  RINOZ(MyCompare(p1->Resource.Offset, p2->Resource.Offset));
+  return MyCompare(p1->Resource.PackSize, p2->Resource.PackSize);
+}
+
+static int CompareIDs(const unsigned *p1, const unsigned *p2, void *param)
+{
+  const CStreamInfo *streams = (const CStreamInfo *)param;
+  return MyCompare(streams[*p1].Id, streams[*p2].Id);
+}
+
+static int CompareHashRefs(const unsigned *p1, const unsigned *p2, void *param)
+{
+  const CStreamInfo *streams = (const CStreamInfo *)param;
+  return memcmp(streams[*p1].Hash, streams[*p2].Hash, kHashSize);
+}
+
+static int FindId(const CStreamInfo *streams, const CUIntVector &sorted, UInt32 id)
+{
+  unsigned left = 0, right = sorted.Size();
+  while (left != right)
+  {
+    unsigned mid = (left + right) / 2;
+    unsigned streamIndex = sorted[mid];
+    UInt32 id2 = streams[streamIndex].Id;
+    if (id == id2)
+      return streamIndex;
+    if (id < id2)
+      right = mid;
+    else
+      left = mid + 1;
+  }
+  return -1;
+}
+
+static int FindHash(const CStreamInfo *streams, const CUIntVector &sorted, const Byte *hash)
+{
+  unsigned left = 0, right = sorted.Size();
+  while (left != right)
+  {
+    unsigned mid = (left + right) / 2;
+    unsigned streamIndex = sorted[mid];
+    const Byte *hash2 = streams[streamIndex].Hash;
+    unsigned i;
+    for (i = 0; i < kHashSize; i++)
+      if (hash[i] != hash2[i])
+        break;
+    if (i == kHashSize)
+      return streamIndex;
+    if (hash[i] < hash2[i])
+      right = mid;
+    else
+      left = mid + 1;
+  }
+  return -1;
 }
 
 static int CompareItems(const unsigned *a1, const unsigned *a2, void *param)
@@ -946,10 +1217,190 @@ static int CompareItems(const unsigned *a1, const unsigned *a2, void *param)
   return MyCompare(i1.Offset, i2.Offset);
 }
 
-HRESULT CDatabase::FillAndCheck()
+
+HRESULT CDatabase::FillAndCheck(const CObjectVector<CVolume> &volumes)
 {
+  CUIntVector sortedByHash;
+  sortedByHash.Reserve(DataStreams.Size());
   {
-    DataStreams.Sort(CompareStreamsByPos, NULL);
+    CByteBuffer sizesBuf;
+
+    for (unsigned iii = 0; iii < DataStreams.Size();)
+    {
+      {
+        const CResource &r = DataStreams[iii].Resource;
+        if (!r.IsSolid())
+        {
+          sortedByHash.AddInReserved(iii++);
+          continue;
+        }
+      }
+
+      UInt64 solidRunOffset = 0;
+      unsigned k;
+      unsigned numSolidsStart = Solids.Size();
+
+      for (k = iii; k < DataStreams.Size(); k++)
+      {
+        CStreamInfo &si = DataStreams[k];
+        CResource &r = si.Resource;
+
+        if (!r.IsSolid())
+          break;
+        if (!r.KeepSolid && k != iii)
+          break;
+
+        if (r.Flags != NResourceFlags::kSolid)
+          return S_FALSE;
+
+        if (!r.IsSolidBig())
+          continue;
+
+        if (!si.IsEmptyHash())
+          return S_FALSE;
+        if (si.RefCount != 1)
+          return S_FALSE;
+
+        r.SolidIndex = Solids.Size();
+
+        CSolid &ss = Solids.AddNew();
+        ss.StreamIndex = k;
+        ss.SolidOffset = solidRunOffset;
+        {
+          const size_t kSolidHeaderSize = 8 + 4 + 4;
+          Byte header[kSolidHeaderSize];
+
+          if (si.PartNumber >= volumes.Size())
+            return S_FALSE;
+
+          const CVolume &vol = volumes[si.PartNumber];
+          IInStream *inStream = vol.Stream;
+          RINOK(inStream->Seek(r.Offset, STREAM_SEEK_SET, NULL));
+          RINOK(ReadStream_FALSE(inStream, (Byte *)header, kSolidHeaderSize));
+          
+          ss.UnpackSize = GetUi64(header);
+
+          if (ss.UnpackSize > ((UInt64)1 << 63))
+            return S_FALSE;
+
+          solidRunOffset += ss.UnpackSize;
+          if (solidRunOffset < ss.UnpackSize)
+            return S_FALSE;
+
+          const UInt32 solidChunkSize = GetUi32(header + 8);
+          int log = GetLog(solidChunkSize);
+          if (log < 8 || log > 31)
+            return S_FALSE;
+          ss.ChunkSizeBits = log;
+          ss.Method = GetUi32(header + 12);
+          
+          UInt64 numChunks64 = (ss.UnpackSize + (((UInt32)1 << ss.ChunkSizeBits) - 1)) >> ss.ChunkSizeBits;
+          UInt64 sizesBufSize64 = 4 * numChunks64;
+          ss.HeadersSize = kSolidHeaderSize + sizesBufSize64;
+          size_t sizesBufSize = (size_t)sizesBufSize64;
+          if (sizesBufSize != sizesBufSize64)
+            return E_OUTOFMEMORY;
+          sizesBuf.AllocAtLeast(sizesBufSize);
+          
+          RINOK(ReadStream_FALSE(inStream, sizesBuf, sizesBufSize));
+          
+          size_t numChunks = (size_t)numChunks64;
+          ss.Chunks.Alloc(numChunks + 1);
+
+          UInt64 offset = 0;
+          
+          size_t c;
+          for (c = 0; c < numChunks; c++)
+          {
+            ss.Chunks[c] = offset;
+            UInt32 packSize = GetUi32((const Byte *)sizesBuf + c * 4);
+            offset += packSize;
+            if (offset < packSize)
+              return S_FALSE;
+          }
+          ss.Chunks[c] = offset;
+
+          if (ss.Chunks[0] != 0)
+            return S_FALSE;
+          if (ss.HeadersSize + offset != r.PackSize)
+            return S_FALSE;
+        }
+      }
+      
+      unsigned solidLim = k;
+
+      for (k = iii; k < solidLim; k++)
+      {
+        CStreamInfo &si = DataStreams[k];
+        CResource &r = si.Resource;
+
+        if (!r.IsSolidSmall())
+          continue;
+
+        if (si.IsEmptyHash())
+          return S_FALSE;
+
+        unsigned solidIndex;
+        {
+          UInt64 offset = r.Offset;
+          for (solidIndex = numSolidsStart;; solidIndex++)
+          {
+            if (solidIndex == Solids.Size())
+              return S_FALSE;
+            UInt64 unpackSize = Solids[solidIndex].UnpackSize;
+            if (offset < unpackSize)
+              break;
+            offset -= unpackSize;
+          }
+        }
+        CSolid &ss = Solids[solidIndex];
+        if (r.Offset < ss.SolidOffset)
+          return S_FALSE;
+        UInt64 relat = r.Offset - ss.SolidOffset;
+        if (relat > ss.UnpackSize)
+          return S_FALSE;
+        if (r.PackSize > ss.UnpackSize - relat)
+          return S_FALSE;
+        r.SolidIndex = solidIndex;
+        if (ss.FirstSmallStream < 0)
+          ss.FirstSmallStream = k;
+
+        sortedByHash.AddInReserved(k);
+        // ss.NumRefs++;
+      }
+      
+      iii = solidLim;
+    }
+  }
+
+  if (Solids.IsEmpty())
+  {
+    /* We want to check that streams layout is OK.
+       So we need resources sorted by offset.
+       Another code can work with non-sorted streams.
+       NOTE: all WIM programs probably create wim archives with
+         sorted data streams. So it doesn't call Sort() here. */
+       
+    {
+      unsigned i;
+      for (i = 1; i < DataStreams.Size(); i++)
+      {
+        const CStreamInfo &s0 = DataStreams[i - 1];
+        const CStreamInfo &s1 = DataStreams[i];
+        if (s0.PartNumber < s1.PartNumber) continue;
+        if (s0.PartNumber > s1.PartNumber) break;
+        if (s0.Resource.Offset < s1.Resource.Offset) continue;
+        if (s0.Resource.Offset > s1.Resource.Offset) break;
+        if (s0.Resource.PackSize > s1.Resource.PackSize) break;
+      }
+      
+      if (i < DataStreams.Size())
+      {
+        // return E_FAIL;
+        DataStreams.Sort(CompareStreamsByPos, NULL);
+      }
+    }
+
     for (unsigned i = 1; i < DataStreams.Size(); i++)
     {
       const CStreamInfo &s0 = DataStreams[i - 1];
@@ -961,17 +1412,35 @@ HRESULT CDatabase::FillAndCheck()
   }
   
   {
-    CUIntVector sortedByHash;
     {
-      unsigned num = DataStreams.Size();
-      sortedByHash.ClearAndSetSize(num);
-      unsigned *vals = &sortedByHash[0];
-      for (unsigned i = 0; i < num; i++)
-        vals[i] = i;
+      const CStreamInfo *streams = &DataStreams.Front();
+
       if (IsOldVersion)
-        sortedByHash.Sort(CompareIDs, &DataStreams);
+      {
+        sortedByHash.Sort(CompareIDs, (void *)streams);
+        
+        for (unsigned i = 1; i < sortedByHash.Size(); i++)
+          if (streams[sortedByHash[i - 1]].Id >=
+              streams[sortedByHash[i]].Id)
+            return S_FALSE;
+      }
       else
-        sortedByHash.Sort(CompareHashRefs, &DataStreams);
+      {
+        sortedByHash.Sort(CompareHashRefs, (void *)streams);
+
+        if (!sortedByHash.IsEmpty())
+        {
+          if (IsEmptySha(streams[sortedByHash[0]].Hash))
+            HeadersError = true;
+          
+          for (unsigned i = 1; i < sortedByHash.Size(); i++)
+            if (memcmp(
+                streams[sortedByHash[i - 1]].Hash,
+                streams[sortedByHash[i]].Hash,
+                kHashSize) >= 0)
+              return S_FALSE;
+        }
+      }
     }
     
     FOR_VECTOR (i, Items)
@@ -986,7 +1455,7 @@ HRESULT CDatabase::FillAndCheck()
           hash += (item.IsAltStream ? 0x8 : 0x10);
           UInt32 id = GetUi32(hash);
           if (id != 0)
-            item.StreamIndex = FindId(DataStreams, sortedByHash, id);
+            item.StreamIndex = FindId(&DataStreams.Front(), sortedByHash, id);
         }
       }
       /*
@@ -998,13 +1467,9 @@ HRESULT CDatabase::FillAndCheck()
       else
       {
         hash += (item.IsAltStream ? 0x10 : 0x40);
-        unsigned hi;
-        for (hi = 0; hi < kHashSize; hi++)
-          if (hash[hi] != 0)
-            break;
-        if (hi != kHashSize)
+        if (!IsEmptySha(hash))
         {
-          item.StreamIndex = FindHash(DataStreams, sortedByHash, hash);
+          item.StreamIndex = FindHash(&DataStreams.Front(), sortedByHash, hash);
         }
       }
     }
@@ -1035,28 +1500,35 @@ HRESULT CDatabase::FillAndCheck()
     for (i = 0; i < DataStreams.Size(); i++)
     {
       const CStreamInfo &s = DataStreams[i];
-      if (s.RefCount != refCounts[i])
+      if (s.RefCount != refCounts[i]
+          && !s.Resource.IsSolidBig())
       {
         /*
-        printf("\ni = %5d  si.Refcount = %d  realRefs = %d size = %6d offset = %6x id = %4d ",
+        printf("\ni=%5d  si.Ref=%2d  realRefs=%2d size=%8d offset=%8x id=%4d ",
           i, s.RefCount, refCounts[i], (unsigned)s.Resource.UnpackSize, (unsigned)s.Resource.Offset, s.Id);
         */
-        // return S_FALSE;
         RefCountError = true;
       }
+      
       if (refCounts[i] == 0)
       {
-        CItem item;
-        item.Offset = 0;
-        item.StreamIndex = i;
-        item.ImageIndex = -1;
-        ThereAreDeletedStreams = true;
-        Items.Add(item);
+        const CResource &r = DataStreams[i].Resource;
+        if (!r.IsSolidBig() || Solids[r.SolidIndex].FirstSmallStream < 0)
+        {
+          CItem item;
+          item.Offset = 0;
+          item.StreamIndex = i;
+          item.ImageIndex = -1;
+          Items.Add(item);
+          ThereAreDeletedStreams = true;
+        }
       }
     }
   }
+
   return S_OK;
 }
+
 
 HRESULT CDatabase::GenerateSortedItems(int imageIndex, bool showImageNumber)
 {
@@ -1117,8 +1589,10 @@ HRESULT CDatabase::GenerateSortedItems(int imageIndex, bool showImageNumber)
       image.VirtualRootIndex = VirtualRoots.Size();
       VirtualRoots.Add(i);
     }
+
   return S_OK;
 }
+
 
 static void IntVector_SetMinusOne_IfNeed(CIntVector &v, unsigned size)
 {
@@ -1130,6 +1604,7 @@ static void IntVector_SetMinusOne_IfNeed(CIntVector &v, unsigned size)
     vals[i] = -1;
 }
 
+
 HRESULT CDatabase::ExtractReparseStreams(const CObjectVector<CVolume> &volumes, IArchiveOpenCallback *openCallback)
 {
   ItemToReparse.Clear();
@@ -1140,11 +1615,14 @@ HRESULT CDatabase::ExtractReparseStreams(const CObjectVector<CVolume> &volumes, 
     return S_OK;
 
   CIntVector streamToReparse;
+  CUnpacker unpacker;
+  UInt64 totalPackedPrev = 0;
 
-  FOR_VECTOR(i, Items)
+  FOR_VECTOR(indexInSorted, SortedItems)
   {
-    // maybe it's better to use sorted items for faster access?
-    const CItem &item = Items[i];
+    // we use sorted items for faster access
+    unsigned itemIndex = SortedItems[indexInSorted];
+    const CItem &item = Items[itemIndex];
     
     if (!item.HasMetadata() || item.IsAltStream)
       continue;
@@ -1173,10 +1651,14 @@ HRESULT CDatabase::ExtractReparseStreams(const CObjectVector<CVolume> &volumes, 
     int reparseIndex = streamToReparse[item.StreamIndex];
     CByteBuffer buf;
 
-    if (openCallback && (i & 0xFFFF) == 0)
+    if (openCallback)
     {
-      UInt64 numFiles = Items.Size();
-      RINOK(openCallback->SetCompleted(&numFiles, NULL));
+      if ((unpacker.TotalPacked - totalPackedPrev) >= ((UInt32)1 << 16))
+      {
+        UInt64 numFiles = Items.Size();
+        RINOK(openCallback->SetCompleted(&numFiles, &unpacker.TotalPacked));
+        totalPackedPrev = unpacker.TotalPacked;
+      }
     }
 
     if (reparseIndex >= 0)
@@ -1184,7 +1666,7 @@ HRESULT CDatabase::ExtractReparseStreams(const CObjectVector<CVolume> &volumes, 
       const CByteBuffer &reparse = ReparseItems[reparseIndex];
       if (tag == Get32(reparse))
       {
-        ItemToReparse[i] = reparseIndex;
+        ItemToReparse[itemIndex] = reparseIndex;
         continue;
       }
       buf = reparse;
@@ -1203,7 +1685,7 @@ HRESULT CDatabase::ExtractReparseStreams(const CObjectVector<CVolume> &volumes, 
       */
       
       Byte digest[kHashSize];
-      HRESULT res = UnpackData(vol.Stream, si.Resource, vol.Header.IsLzxMode(), buf, digest);
+      HRESULT res = unpacker.UnpackData(vol.Stream, si.Resource, vol.Header, this, buf, digest);
 
       if (res == S_FALSE)
         continue;
@@ -1226,7 +1708,7 @@ HRESULT CDatabase::ExtractReparseStreams(const CObjectVector<CVolume> &volumes, 
     SetUi32(dest + 4, (UInt32)buf.Size());
     if (buf.Size() != 0)
       memcpy(dest + 8, buf, buf.Size());
-    ItemToReparse[i] = ReparseItems.Size() - 1;
+    ItemToReparse[itemIndex] = ReparseItems.Size() - 1;
   }
 
   return S_OK;
@@ -1252,6 +1734,7 @@ static bool ParseNumber64(const AString &s, UInt64 &res)
   return *end == 0;
 }
 
+
 static bool ParseNumber32(const AString &s, UInt32 &res)
 {
   UInt64 res64;
@@ -1260,6 +1743,7 @@ static bool ParseNumber32(const AString &s, UInt32 &res)
   res = (UInt32)res64;
   return true;
 }
+
 
 static bool ParseTime(const CXmlItem &item, FILETIME &ft, const char *tag)
 {
@@ -1278,6 +1762,7 @@ static bool ParseTime(const CXmlItem &item, FILETIME &ft, const char *tag)
   }
   return false;
 }
+
 
 void CImageInfo::Parse(const CXmlItem &item)
 {
@@ -1310,8 +1795,10 @@ void CWimXml::ToUnicode(UString &s)
   s.ReleaseBuf_SetLen((unsigned)(chars - (const wchar_t *)s));
 }
 
+
 bool CWimXml::Parse()
 {
+  IsEncrypted = false;
   AString utf;
   {
     UString s;
@@ -1328,16 +1815,36 @@ bool CWimXml::Parse()
   FOR_VECTOR (i, Xml.Root.SubItems)
   {
     const CXmlItem &item = Xml.Root.SubItems[i];
+    
     if (item.IsTagged("IMAGE"))
     {
       CImageInfo imageInfo;
       imageInfo.Parse(item);
-      if (!imageInfo.IndexDefined || imageInfo.Index != (UInt32)Images.Size() + 1)
+      if (!imageInfo.IndexDefined)
         return false;
+
+      if (imageInfo.Index != (UInt32)Images.Size() + 1)
+      {
+        // old wim (1.09) uses zero based image index
+        if (imageInfo.Index != (UInt32)Images.Size())
+          return false;
+      }
+
       imageInfo.ItemIndexInXml = i;
       Images.Add(imageInfo);
     }
+
+    if (item.IsTagged("ESD"))
+    {
+      FOR_VECTOR (k, item.SubItems)
+      {
+        const CXmlItem &item2 = item.SubItems[k];
+        if (item2.IsTagged("ENCRYPTED"))
+          IsEncrypted = true;
+      }
+    }
   }
+
   return true;
 }
 

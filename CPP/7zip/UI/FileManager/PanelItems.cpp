@@ -210,14 +210,15 @@ HRESULT CPanel::InitColumns()
   */
   _sortID = _listViewInfo.SortID;
 
+  _visibleProperties.Sort();
+
   for (i = 0; i < _visibleProperties.Size(); i++)
-  {
     InsertColumn(i);
-  }
+
   return S_OK;
 }
 
-void CPanel::InsertColumn(int index)
+void CPanel::InsertColumn(unsigned index)
 {
   const CItemProperty &prop = _visibleProperties[index];
   LV_COLUMNW column;
@@ -225,6 +226,7 @@ void CPanel::InsertColumn(int index)
   column.cx = prop.Width;
   column.fmt = GetColumnAlign(prop.ID, prop.Type);
   column.iOrder = prop.Order;
+  // iOrder must be <= _listView.ItemCount
   column.iSubItem = index;
   column.pszText = const_cast<wchar_t *>((const wchar_t *)prop.Name);
   _listView.InsertColumn(index, &column);
@@ -775,7 +777,7 @@ void CPanel::EditItem(bool useEditor)
     EditItem(realIndex, useEditor);
 }
 
-void CPanel::OpenFocusedItemAsInternal()
+void CPanel::OpenFocusedItemAsInternal(const wchar_t *type)
 {
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
@@ -784,7 +786,7 @@ void CPanel::OpenFocusedItemAsInternal()
   if (IsItem_Folder(realIndex))
     OpenFolder(realIndex);
   else
-    OpenItem(realIndex, true, false);
+    OpenItem(realIndex, true, false, type);
 }
 
 void CPanel::OpenSelectedItems(bool tryInternal)
@@ -1059,10 +1061,10 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
 
     if (prop.IsVisible)
     {
-      int prevVisibleSize = _visibleProperties.Size();
-      prop.Order = prevVisibleSize;
+      unsigned num = _visibleProperties.Size();
+      prop.Order = num;
       _visibleProperties.Add(prop);
-      InsertColumn(prevVisibleSize);
+      InsertColumn(num);
     }
     else
     {

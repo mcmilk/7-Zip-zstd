@@ -64,6 +64,8 @@ AR_OBJS = \
   $O\FatHandler.obj \
   $O\FlvHandler.obj \
   $O\GzHandler.obj \
+  $O\GptHandler.obj \
+  $O\HandlerCont.obj \
   $O\HfsHandler.obj \
   $O\IhexHandler.obj \
   $O\LzhHandler.obj \
@@ -75,12 +77,15 @@ AR_OBJS = \
   $O\NtfsHandler.obj \
   $O\PeHandler.obj \
   $O\PpmdHandler.obj \
+  $O\QcowHandler.obj \
   $O\RpmHandler.obj \
   $O\SplitHandler.obj \
   $O\SquashfsHandler.obj \
   $O\SwfHandler.obj \
   $O\UefiHandler.obj \
+  $O\VdiHandler.obj \
   $O\VhdHandler.obj \
+  $O\VmdkHandler.obj \
   $O\XarHandler.obj \
   $O\XzHandler.obj \
   $O\ZHandler.obj \
@@ -201,8 +206,8 @@ COMPRESS_OBJS = \
   $O\LzmaDecoder.obj \
   $O\LzmaEncoder.obj \
   $O\LzmaRegister.obj \
+  $O\LzmsDecoder.obj \
   $O\LzOutWindow.obj \
-  $O\Lzx86Converter.obj \
   $O\LzxDecoder.obj \
   $O\PpmdDecoder.obj \
   $O\PpmdEncoder.obj \
@@ -219,6 +224,7 @@ COMPRESS_OBJS = \
   $O\ZlibDecoder.obj \
   $O\ZlibEncoder.obj \
   $O\ZDecoder.obj \
+  $O\XPressDecoder.obj \
 
 CRYPTO_OBJS = \
   $O\7zAes.obj \

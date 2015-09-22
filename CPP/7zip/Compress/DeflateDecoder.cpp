@@ -26,39 +26,51 @@ Byte CCoder::ReadAlignedByte()
   return m_InBitStream.ReadAlignedByte();
 }
 
-bool CCoder::DeCodeLevelTable(Byte *values, unsigned numSymbols)
+bool CCoder::DecodeLevels(Byte *levels, unsigned numSymbols)
 {
   unsigned i = 0;
+  
   do
   {
-    UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
-    if (number < kTableDirectLevels)
-      values[i++] = (Byte)number;
-    else if (number < kLevelTableSize)
+    UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream);
+    if (sym < kTableDirectLevels)
+      levels[i++] = (Byte)sym;
+    else
     {
-      if (number == kTableLevelRepNumber)
+      if (sym >= kLevelTableSize)
+        return false;
+      
+      unsigned num;
+      unsigned numBits;
+      Byte symbol;
+      
+      if (sym == kTableLevelRepNumber)
       {
         if (i == 0)
           return false;
-        unsigned num = ReadBits(2) + 3;
-        for (; num > 0 && i < numSymbols; num--, i++)
-          values[i] = values[i - 1];
+        numBits = 2;
+        num = 0;
+        symbol = levels[i - 1];
       }
       else
       {
-        unsigned num;
-        if (number == kTableLevel0Number)
-          num = ReadBits(3) + 3;
-        else
-          num = ReadBits(7) + 11;
-        for (; num > 0 && i < numSymbols; num--)
-          values[i++] = 0;
+        sym -= kTableLevel0Number;
+        sym <<= 2;
+        numBits = 3 + (unsigned)sym;
+        num = ((unsigned)sym << 1);
+        symbol = 0;
       }
+      
+      num += i + 3 + ReadBits(numBits);
+      if (num > numSymbols)
+        return false;
+      do
+        levels[i++] = symbol;
+      while (i < num);
     }
-    else
-      return false;
   }
   while (i < numSymbols);
+  
   return true;
 }
 
@@ -116,10 +128,10 @@ bool CCoder::ReadTables(void)
     if (m_InBitStream.ExtraBitsWereRead())
       return false;
 
-    RIF(m_LevelDecoder.SetCodeLengths(levelLevels));
+    RIF(m_LevelDecoder.Build(levelLevels));
     
     Byte tmpLevels[kFixedMainTableSize + kFixedDistTableSize];
-    if (!DeCodeLevelTable(tmpLevels, numLitLenLevels + _numDistLevels))
+    if (!DecodeLevels(tmpLevels, numLitLenLevels + _numDistLevels))
       return false;
     
     if (m_InBitStream.ExtraBitsWereRead())
@@ -129,8 +141,8 @@ bool CCoder::ReadTables(void)
     memcpy(levels.litLenLevels, tmpLevels, numLitLenLevels);
     memcpy(levels.distLevels, tmpLevels + numLitLenLevels, _numDistLevels);
   }
-  RIF(m_MainDecoder.SetCodeLengths(levels.litLenLevels));
-  return m_DistDecoder.SetCodeLengths(levels.distLevels);
+  RIF(m_MainDecoder.Build(levels.litLenLevels));
+  return m_DistDecoder.Build(levels.distLevels);
 }
 
 HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream)
@@ -161,6 +173,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream)
   {
     if (m_InBitStream.ExtraBitsWereRead())
       return S_FALSE;
+
     if (_needReadTable)
     {
       if (m_FinalBlock)
@@ -194,43 +207,44 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream)
       if (m_InBitStream.ExtraBitsWereRead_Fast())
         return S_FALSE;
 
-      UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
-      if (number < 0x100)
+      UInt32 sym = m_MainDecoder.Decode(&m_InBitStream);
+
+      if (sym < 0x100)
       {
-        m_OutWindowStream.PutByte((Byte)number);
+        m_OutWindowStream.PutByte((Byte)sym);
         curSize--;
         continue;
       }
-      else if (number == kSymbolEndOfBlock)
+      else if (sym == kSymbolEndOfBlock)
       {
         _needReadTable = true;
         break;
       }
-      else if (number < kMainTableSize)
+      else if (sym < kMainTableSize)
       {
-        number -= kSymbolMatch;
+        sym -= kSymbolMatch;
         UInt32 len;
         {
           unsigned numBits;
           if (_deflate64Mode)
           {
-            len = kLenStart64[number];
-            numBits = kLenDirectBits64[number];
+            len = kLenStart64[sym];
+            numBits = kLenDirectBits64[sym];
           }
           else
           {
-            len = kLenStart32[number];
-            numBits = kLenDirectBits32[number];
+            len = kLenStart32[sym];
+            numBits = kLenDirectBits32[sym];
           }
           len += kMatchMinLen + m_InBitStream.ReadBits(numBits);
         }
         UInt32 locLen = len;
         if (locLen > curSize)
           locLen = (UInt32)curSize;
-        number = m_DistDecoder.DecodeSymbol(&m_InBitStream);
-        if (number >= _numDistLevels)
+        sym = m_DistDecoder.Decode(&m_InBitStream);
+        if (sym >= _numDistLevels)
           return S_FALSE;
-        UInt32 distance = kDistStart[number] + m_InBitStream.ReadBits(kDistDirectBits[number]);
+        UInt32 distance = kDistStart[sym] + m_InBitStream.ReadBits(kDistDirectBits[sym]);
         if (!m_OutWindowStream.CopyBlock(distance, locLen))
           return S_FALSE;
         curSize -= locLen;
@@ -248,7 +262,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream)
     
     if (finishInputStream && curSize == 0)
     {
-      if (m_MainDecoder.DecodeSymbol(&m_InBitStream) != kSymbolEndOfBlock)
+      if (m_MainDecoder.Decode(&m_InBitStream) != kSymbolEndOfBlock)
         return S_FALSE;
       _needReadTable = true;
     }
@@ -259,6 +273,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream)
 
   return S_OK;
 }
+
 
 #ifdef _NO_EXCEPTIONS
 
@@ -275,6 +290,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream)
 
 #endif
 
+
 HRESULT CCoder::CodeReal(ISequentialOutStream *outStream,
       const UInt64 *outSize, ICompressProgressInfo *progress)
 {
@@ -285,6 +301,7 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream,
 
   const UInt64 inStart = _needInitInStream ? 0 : m_InBitStream.GetProcessedSize();
   const UInt64 start = m_OutWindowStream.GetProcessedSize();
+
   for (;;)
   {
     UInt32 curSize = 1 << 18;
@@ -311,12 +328,14 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream,
       RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
     }
   }
+  
   if (_remainLen == kLenIdFinished && ZlibMode)
   {
     m_InBitStream.AlignToByte();
     for (unsigned i = 0; i < 4; i++)
       ZlibFooter[i] = ReadAlignedByte();
   }
+  
   flusher.NeedFlush = false;
   res = Flush();
   if (res == S_OK && _remainLen != kLenIdNeedInit && InputEofError())
@@ -337,7 +356,7 @@ HRESULT CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStr
 
 STDMETHODIMP CCoder::GetInStreamProcessedSize(UInt64 *value)
 {
-  if (value == NULL)
+  if (!value)
     return E_INVALIDARG;
   *value = m_InBitStream.GetProcessedSize();
   return S_OK;

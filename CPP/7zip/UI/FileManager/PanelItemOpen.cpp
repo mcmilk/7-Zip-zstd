@@ -157,12 +157,6 @@ public:
   }
 };
 
-static bool IsNameVirus(const UString &name)
-{
-  // return (name.Find(L"     ") >= 0);
-  return (wcsstr(name, L"     ") != NULL);
-}
-
 struct CTmpProcessInfo: public CTempFileInfo
 {
   CChildProcesses Processes;
@@ -320,12 +314,12 @@ HRESULT CPanel::OpenItemAsArchive(const UString &relPath, const UString &arcForm
   return OpenItemAsArchive(NULL, tfi, fullPath, arcFormat, encrypted);
 }
 
-HRESULT CPanel::OpenItemAsArchive(int index)
+HRESULT CPanel::OpenItemAsArchive(int index, const wchar_t *type)
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
   CDisableNotify disableNotify(*this);
   bool encrypted;
-  HRESULT res = OpenItemAsArchive(GetItemRelPath2(index), UString(), encrypted);
+  HRESULT res = OpenItemAsArchive(GetItemRelPath2(index), type ? type : L"", encrypted);
   if (res != S_OK)
   {
     RefreshTitle(true); // in case of error we must refresh changed title of 7zFM
@@ -600,19 +594,77 @@ void CPanel::OpenFolderExternal(int index)
   StartApplicationDontWait(fsPrefix, name, (HWND)*this);
 }
 
-void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
+bool CPanel::IsVirus_Message(const UString &name)
+{
+  UString name2;
+
+  const wchar_t cRLO = (wchar_t)0x202E;
+  bool isVirus = false;
+  bool isSpaceError = false;
+  name2 = name;
+  
+  if (name2.Find(cRLO) >= 0)
+  {
+    UString badString = cRLO;
+    name2.Replace(badString, L"[RLO]");
+    isVirus = true;
+  }
+  {
+    const wchar_t *kVirusSpaces = L"     ";
+    // const unsigned kNumSpaces = strlen(kVirusSpaces);
+    for (;;)
+    {
+      int pos = name2.Find(kVirusSpaces);
+      if (pos < 0)
+        break;
+      isVirus = true;
+      isSpaceError = true;
+      name2.Replace(kVirusSpaces, L" ");
+    }
+  }
+  
+  if (!isVirus)
+    return false;
+
+  UString s = LangString(IDS_VIRUS);
+  
+  if (!isSpaceError)
+  {
+    int pos1 = s.Find(L'(');
+    if (pos1 >= 0)
+    {
+      int pos2 = s.Find(L')', pos1 + 1);
+      if (pos2 >= 0)
+      {
+        s.Delete(pos1, pos2 + 1 - pos1);
+        if (pos1 > 0 && s[pos1 - 1] == ' ' && s[pos1] == '.')
+          s.Delete(pos1 - 1);
+      }
+    }
+  }
+
+  UString name3 = name;
+  name3.Replace(L'\n', L'_');
+  name2.Replace(L'\n', L'_');
+
+  s.Add_LF(); s += name2;
+  s.Add_LF(); s += name3;
+
+  MessageBoxMyError(s);
+  return true;
+}
+
+void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal, const wchar_t *type)
 {
   CDisableTimerProcessing disableTimerProcessing(*this);
   UString name = GetItemRelPath2(index);
-  if (IsNameVirus(name))
-  {
-    MessageBoxErrorLang(IDS_VIRUS);
+  
+  if (IsVirus_Message(name))
     return;
-  }
 
   if (!_parentFolders.IsEmpty())
   {
-    OpenItemInArchive(index, tryInternal, tryExternal, false, false);
+    OpenItemInArchive(index, tryInternal, tryExternal, false, false, type);
     return;
   }
 
@@ -623,7 +675,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
   if (tryInternal)
     if (!tryExternal || !DoItemAlwaysStart(name))
     {
-      HRESULT res = OpenItemAsArchive(index);
+      HRESULT res = OpenItemAsArchive(index, type);
       disableNotify.Restore(); // we must restore to allow text notification update
       InvalidateList();
       if (res == S_OK || res == E_ABORT)
@@ -634,6 +686,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal)
         return;
       }
     }
+  
   if (tryExternal)
   {
     // SetCurrentDirectory opens HANDLE to folder!!!
@@ -939,16 +992,13 @@ static HRESULT GetTime(IFolderFolder *folder, UInt32 index, PROPID propID, FILET
 }
 */
 
-void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bool editMode, bool useEditor)
+void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bool editMode, bool useEditor, const wchar_t *type)
 {
   const UString name = GetItemName(index);
   const UString relPath = GetItemRelPath(index);
   
-  if (IsNameVirus(name))
-  {
-    MessageBoxErrorLang(IDS_VIRUS);
+  if (IsVirus_Message(name))
     return;
-  }
 
   if (!_folderOperations)
   {
@@ -966,6 +1016,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     MessageBoxLastError();
     return;
   }
+  
   FString tempDir = tempDirectory.GetPath();
   FString tempDirNorm = tempDir;
   NName::NormalizeDirPathPrefix(tempDirNorm);
@@ -993,7 +1044,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
         if (subStream)
         {
           bool encrypted;
-          HRESULT res = OpenItemAsArchive(subStream, tempFileInfo, fullVirtPath, UString(), encrypted);
+          HRESULT res = OpenItemAsArchive(subStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted);
           if (res == S_OK)
           {
             tempDirectory.DisableDeleting();
@@ -1104,7 +1155,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
       CMyComPtr<IInStream> bufInStream = bufInStreamSpec;
       bufInStreamSpec->Init(file.Data, streamSize, virtFileSystem);
       bool encrypted;
-      if (OpenItemAsArchive(bufInStream, tempFileInfo, fullVirtPath, UString(), encrypted) == S_OK)
+      if (OpenItemAsArchive(bufInStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted) == S_OK)
       {
         tempDirectory.DisableDeleting();
         RefreshListCtrl();
@@ -1130,7 +1181,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   if (tryAsArchive)
   {
     bool encrypted;
-    if (OpenItemAsArchive(NULL, tempFileInfo, fullVirtPath, UString(), encrypted) == S_OK)
+    if (OpenItemAsArchive(NULL, tempFileInfo, fullVirtPath, type ? type : L"", encrypted) == S_OK)
     {
       tempDirectory.DisableDeleting();
       RefreshListCtrl();

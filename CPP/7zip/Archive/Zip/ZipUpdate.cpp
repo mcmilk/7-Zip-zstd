@@ -8,7 +8,7 @@
 #include "../../../Common/Defs.h"
 #include "../../../Common/StringConvert.h"
 
-#include "../../../Windows/Defs.h"
+#include "../../../Windows/TimeUtils.h"
 #include "../../../Windows/Thread.h"
 
 #include "../../Common/CreateCoder.h"
@@ -61,6 +61,7 @@ static HRESULT WriteRange(IInStream *inStream, COutArchive &outArchive,
   return progress->SetRatioInfo(&range.Size, &range.Size);
 }
 
+
 static void SetFileHeader(
     COutArchive &archive,
     const CCompressionMethodMode &options,
@@ -108,6 +109,7 @@ static void SetFileHeader(
   }
 }
 
+
 static void SetItemInfoFromCompressingResult(const CCompressingResult &compressingResult,
     bool isAesMode, Byte aesKeyMode, CItem &item)
 {
@@ -133,6 +135,7 @@ static void SetItemInfoFromCompressingResult(const CCompressingResult &compressi
     item.CentralExtra.SubBlocks.Add(sb);
   }
 }
+
 
 #ifndef _7ZIP_ST
 
@@ -188,7 +191,6 @@ struct CThreadInfo
     Thread.Wait();
     Thread.Close();
   }
-
 };
 
 void CThreadInfo::WaitAndCode()
@@ -390,8 +392,10 @@ static HRESULT UpdateItemOldData(
     complexity += range.Size;
     archive.MoveCurPos(range.Size);
   }
+
   return S_OK;
 }
+
 
 static void WriteDirHeader(COutArchive &archive, const CCompressionMethodMode *options,
     const CUpdateItem &ui, CItemOut &item)
@@ -404,15 +408,65 @@ static void WriteDirHeader(COutArchive &archive, const CCompressionMethodMode *o
   archive.WriteLocalHeader_And_SeekToNextFile(item);
 }
 
+
+static inline bool IsZero_FILETIME(const FILETIME &ft)
+{
+  return (ft.dwHighDateTime == 0 && ft.dwLowDateTime == 0);
+}
+
+static void UpdatePropsFromStream(CUpdateItem &item, ISequentialInStream *fileInStream,
+    IArchiveUpdateCallback *updateCallback, UInt64 &totalComplexity)
+{
+  CMyComPtr<IStreamGetProps> getProps;
+  fileInStream->QueryInterface(IID_IStreamGetProps, (void **)&getProps);
+  if (!getProps)
+    return;
+
+  FILETIME cTime, aTime, mTime;
+  UInt64 size;
+  // UInt32 attrib;
+  if (getProps->GetProps(&size, &cTime, &aTime, &mTime, NULL) != S_OK)
+    return;
+  
+  if (size != item.Size && size != (UInt64)(Int64)-1)
+  {
+    Int64 newComplexity = totalComplexity + ((Int64)size - (Int64)item.Size);
+    if (newComplexity > 0)
+    {
+      totalComplexity = newComplexity;
+      updateCallback->SetTotal(totalComplexity);
+    }
+    item.Size = size;
+  }
+  
+  if (!IsZero_FILETIME(mTime))
+  {
+    item.Ntfs_MTime = mTime;
+    FILETIME loc = { 0, 0 };
+    if (FileTimeToLocalFileTime(&mTime, &loc))
+    {
+      item.Time = 0;
+      NTime::FileTimeToDosTime(loc, item.Time);
+    }
+  }
+
+  if (!IsZero_FILETIME(cTime)) item.Ntfs_CTime = cTime;
+  if (!IsZero_FILETIME(aTime)) item.Ntfs_ATime = aTime;
+
+  // item.Attrib = attrib;
+}
+
+
 static HRESULT Update2St(
     DECL_EXTERNAL_CODECS_LOC_VARS
     COutArchive &archive,
     CInArchive *inArchive,
     const CObjectVector<CItemEx> &inputItems,
-    const CObjectVector<CUpdateItem> &updateItems,
+    CObjectVector<CUpdateItem> &updateItems,
     const CCompressionMethodMode *options,
     const CByteBuffer *comment,
     IArchiveUpdateCallback *updateCallback,
+    UInt64 &totalComplexity,
     IArchiveUpdateCallbackFile *opCallback)
 {
   CLocalProgress *lps = new CLocalProgress;
@@ -429,7 +483,7 @@ static HRESULT Update2St(
     lps->InSize = unpackSizeTotal;
     lps->OutSize = packSizeTotal;
     RINOK(lps->SetCur());
-    const CUpdateItem &ui = updateItems[itemIndex];
+    CUpdateItem &ui = updateItems[itemIndex];
     CItemEx itemEx;
     CItemOut item;
 
@@ -471,8 +525,10 @@ static HRESULT Update2St(
         }
         */
 
-        // file Size can be 64-bit !!!
+        UpdatePropsFromStream(ui, fileInStream, updateCallback, totalComplexity);
         SetFileHeader(archive, *options, ui, item);
+
+        // file Size can be 64-bit !!!
         archive.PrepareWriteCompressedData(item.Name.Len(), ui.Size, options->IsRealAesMode());
         CCompressingResult compressingResult;
         CMyComPtr<IOutStream> outStream;
@@ -508,6 +564,7 @@ static HRESULT Update2St(
       lps->SendRatio = true;
       lps->ProgressOffset += complexity;
     }
+  
     items.Add(item);
     lps->ProgressOffset += kLocalHeaderSize;
   }
@@ -519,12 +576,13 @@ static HRESULT Update2St(
   return S_OK;
 }
 
+
 static HRESULT Update2(
     DECL_EXTERNAL_CODECS_LOC_VARS
     COutArchive &archive,
     CInArchive *inArchive,
     const CObjectVector<CItemEx> &inputItems,
-    const CObjectVector<CUpdateItem> &updateItems,
+    CObjectVector<CUpdateItem> &updateItems,
     const CCompressionMethodMode *options,
     const CByteBuffer *comment,
     IArchiveUpdateCallback *updateCallback)
@@ -567,6 +625,8 @@ static HRESULT Update2(
   complexity++; // end of central
   updateCallback->SetTotal(complexity);
 
+  UInt64 totalComplexity = complexity;
+
   CAddCommon compressor(*options);
   
   complexity = 0;
@@ -596,6 +656,7 @@ static HRESULT Update2(
     mtMode = false;
 
   Byte method = options->MethodSequence.Front();
+
   if (!mtMode)
   {
     if (options2.MethodInfo.FindProp(NCoderPropID::kNumThreads) < 0)
@@ -643,7 +704,7 @@ static HRESULT Update2(
     return Update2St(
         EXTERNAL_CODECS_LOC_VARS
         archive, inArchive,
-        inputItems, updateItems, &options2, comment, updateCallback, opCallback);
+        inputItems, updateItems, &options2, comment, updateCallback, totalComplexity, opCallback);
 
 
   #ifndef _7ZIP_ST
@@ -691,8 +752,8 @@ static HRESULT Update2(
       RINOK(threadInfo.CreateThread());
     }
   }
-  unsigned mtItemIndex = 0;
 
+  unsigned mtItemIndex = 0;
   unsigned itemIndex = 0;
   int lastRealStreamItemIndex = -1;
 
@@ -700,11 +761,12 @@ static HRESULT Update2(
   {
     if ((UInt32)threadIndices.Size() < numThreads && mtItemIndex < updateItems.Size())
     {
-      const CUpdateItem &ui = updateItems[mtItemIndex++];
+      CUpdateItem &ui = updateItems[mtItemIndex++];
       if (!ui.NewData)
         continue;
       CItemEx itemEx;
       CItemOut item;
+      
       if (ui.NewProps)
       {
         if (ui.IsDir)
@@ -719,7 +781,9 @@ static HRESULT Update2(
         if (item.IsDir())
           continue;
       }
+      
       CMyComPtr<ISequentialInStream> fileInStream;
+      
       {
         NWindows::NSynchronization::CCriticalSectionLock lock(mtProgressMixerSpec->Mixer2->CriticalSection);
         HRESULT res = updateCallback->GetStream(ui.IndexInClient, &fileInStream);
@@ -735,6 +799,7 @@ static HRESULT Update2(
         RINOK(res);
         if (!fileInStream)
           return E_INVALIDARG;
+        UpdatePropsFromStream(ui, fileInStream, updateCallback, totalComplexity);
         RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
       }
 
@@ -760,6 +825,7 @@ static HRESULT Update2(
           break;
         }
       }
+ 
       continue;
     }
     
@@ -773,6 +839,7 @@ static HRESULT Update2(
 
     CItemEx itemEx;
     CItemOut item;
+    
     if (!ui.NewProps || !ui.NewData)
     {
       itemEx = inputItems[ui.IndexInArc];
@@ -784,6 +851,7 @@ static HRESULT Update2(
     if (ui.NewData)
     {
       bool isDir = ((ui.NewProps) ? ui.IsDir : item.IsDir());
+      
       if (isDir)
       {
         WriteDirHeader(archive, options, ui, item);
@@ -799,6 +867,7 @@ static HRESULT Update2(
         }
 
         CMemBlocks2 &memRef = refs.Refs[itemIndex];
+        
         if (memRef.Defined)
         {
           CMyComPtr<IOutStream> outStream;
@@ -834,6 +903,7 @@ static HRESULT Update2(
             DWORD lastError = GetLastError();
             return lastError != 0 ? lastError : E_FAIL;
           }
+          
           unsigned t = (unsigned)(result - WAIT_OBJECT_0);
           if (t >= compressingCompletedEvents.Size())
             return E_FAIL;
@@ -844,6 +914,7 @@ static HRESULT Update2(
           RINOK(threadInfo.Result);
           threadIndices.Delete(t);
           compressingCompletedEvents.Delete(t);
+          
           if (t == 0)
           {
             RINOK(threadInfo.OutStreamSpec->WriteToRealStream());
@@ -868,16 +939,19 @@ static HRESULT Update2(
     {
       RINOK(UpdateItemOldData(archive, inArchive, itemEx, ui, item, progress, opCallback, complexity));
     }
+ 
     items.Add(item);
     complexity += kLocalHeaderSize;
     mtProgressMixerSpec->Mixer2->SetProgressOffset(complexity);
     itemIndex++;
   }
+  
   RINOK(mtCompressProgressMixer.SetRatioInfo(0, NULL, NULL));
   archive.WriteCentralDir(items, comment);
   return S_OK;
   #endif
 }
+
 
 static const size_t kCacheBlockSize = (1 << 20);
 static const size_t kCacheSize = (kCacheBlockSize << 2);
@@ -1095,7 +1169,7 @@ STDMETHODIMP CCacheOutStream::SetSize(UInt64 newSize)
 HRESULT Update(
     DECL_EXTERNAL_CODECS_LOC_VARS
     const CObjectVector<CItemEx> &inputItems,
-    const CObjectVector<CUpdateItem> &updateItems,
+    CObjectVector<CUpdateItem> &updateItems,
     ISequentialOutStream *seqOutStream,
     CInArchive *inArchive, bool removeSfx,
     CCompressionMethodMode *compressionMethodMode,

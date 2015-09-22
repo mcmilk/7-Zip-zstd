@@ -284,6 +284,10 @@ public:
   UString _lang_Skipping;
   UString _lang_Empty;
 
+  bool _totalFilesDefined;
+  bool _totalBytesDefined;
+  bool MultiArcMode;
+
   CExtractCallbackImp():
     #ifndef _NO_CRYPTO
     PasswordIsDefined(false),
@@ -291,7 +295,12 @@ public:
     #endif
     OverwriteMode(NExtract::NOverwriteMode::kAsk),
     StreamMode(false),
-    ProcessAltStreams(true)
+    ProcessAltStreams(true),
+    
+    _totalFilesDefined(false),
+    _totalBytesDefined(false),
+    MultiArcMode(false)
+    
     #ifndef _SFX
     , _hashCalc(NULL)
     #endif

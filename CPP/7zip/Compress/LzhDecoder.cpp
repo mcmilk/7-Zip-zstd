@@ -71,7 +71,7 @@ bool CCoder::ReadTP(unsigned num, unsigned numBits, int spec)
     
     if (!CheckCodeLens(lens, NPT))
       return false;
-    return _decoderT.SetCodeLengths(lens);
+    return _decoderT.Build(lens);
   }
 }
 
@@ -101,7 +101,7 @@ bool CCoder::ReadC()
     {
       UInt32 c = (unsigned)_symbolT;
       if (_symbolT < 0)
-        c = _decoderT.DecodeSymbol(&_inBitStream);
+        c = _decoderT.Decode(&_inBitStream);
       
       if (c <= 2)
       {
@@ -129,7 +129,7 @@ bool CCoder::ReadC()
     
     if (!CheckCodeLens(lens, NC))
       return false;
-    return _decoderC.SetCodeLengths(lens);
+    return _decoderC.Build(lens);
   }
 }
 
@@ -169,7 +169,7 @@ HRESULT CCoder::CodeReal(UInt64 rem, ICompressProgressInfo *progress)
 
     UInt32 number = (unsigned)_symbolC;
     if (_symbolC < 0)
-      number = _decoderC.DecodeSymbol(&_inBitStream);
+      number = _decoderC.Decode(&_inBitStream);
 
     if (number < 256)
     {
@@ -182,7 +182,7 @@ HRESULT CCoder::CodeReal(UInt64 rem, ICompressProgressInfo *progress)
 
       UInt32 dist = (unsigned)_symbolT;
       if (_symbolT < 0)
-        dist = _decoderT.DecodeSymbol(&_inBitStream);
+        dist = _decoderT.Decode(&_inBitStream);
       
       if (dist > 1)
       {

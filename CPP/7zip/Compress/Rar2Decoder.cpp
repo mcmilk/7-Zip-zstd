@@ -122,21 +122,21 @@ bool CDecoder::ReadTables(void)
   unsigned i;
   for (i = 0; i < kLevelTableSize; i++)
     levelLevels[i] = (Byte)ReadBits(4);
-  RIF(m_LevelDecoder.SetCodeLengths(levelLevels));
+  RIF(m_LevelDecoder.Build(levelLevels));
   
   i = 0;
   
   while (i < numLevels)
   {
-    UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream);
-    if (number < kTableDirectLevels)
+    UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream);
+    if (sym < kTableDirectLevels)
     {
-      newLevels[i] = (Byte)((number + m_LastLevels[i]) & kLevelMask);
+      newLevels[i] = (Byte)((sym + m_LastLevels[i]) & kLevelMask);
       i++;
     }
     else
     {
-      if (number == kTableLevelRepNumber)
+      if (sym == kTableLevelRepNumber)
       {
         unsigned t = ReadBits(2) + 3;
         for (unsigned reps = t; reps > 0 && i < numLevels; reps--, i++)
@@ -145,9 +145,9 @@ bool CDecoder::ReadTables(void)
       else
       {
         unsigned num;
-        if (number == kTableLevel0Number)
+        if (sym == kTableLevel0Number)
           num = ReadBits(3) + 3;
-        else if (number == kTableLevel0Number2)
+        else if (sym == kTableLevel0Number2)
           num = ReadBits(7) + 11;
         else
           return false;
@@ -160,13 +160,13 @@ bool CDecoder::ReadTables(void)
   if (m_AudioMode)
     for (i = 0; i < m_NumChannels; i++)
     {
-      RIF(m_MMDecoders[i].SetCodeLengths(&newLevels[i * kMMTableSize]));
+      RIF(m_MMDecoders[i].Build(&newLevels[i * kMMTableSize]));
     }
   else
   {
-    RIF(m_MainDecoder.SetCodeLengths(&newLevels[0]));
-    RIF(m_DistDecoder.SetCodeLengths(&newLevels[kMainTableSize]));
-    RIF(m_LenDecoder.SetCodeLengths(&newLevels[kMainTableSize + kDistTableSize]));
+    RIF(m_MainDecoder.Build(&newLevels[0]));
+    RIF(m_DistDecoder.Build(&newLevels[kMainTableSize]));
+    RIF(m_LenDecoder.Build(&newLevels[kMainTableSize + kDistTableSize]));
   }
   
   memcpy(m_LastLevels, newLevels, kMaxTableSize);
@@ -182,7 +182,7 @@ bool CDecoder::ReadLastTables()
   // if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect;
     if (m_AudioMode)
     {
-      UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].DecodeSymbol(&m_InBitStream);
+      UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
       if (symbol == 256)
         return ReadTables();
       if (symbol >= kMMTableSize)
@@ -190,10 +190,10 @@ bool CDecoder::ReadLastTables()
     }
     else
     {
-      UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
-      if (number == kReadTableNumber)
+      UInt32 sym = m_MainDecoder.Decode(&m_InBitStream);
+      if (sym == kReadTableNumber)
         return ReadTables();
-      if (number >= kMainTableSize)
+      if (sym >= kMainTableSize)
         return false;
     }
   return true;
@@ -216,7 +216,7 @@ bool CDecoder::DecodeMm(UInt32 pos)
 {
   while (pos-- > 0)
   {
-    UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].DecodeSymbol(&m_InBitStream);
+    UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
     if (symbol == 256)
       return true;
     if (symbol >= kMMTableSize)
@@ -238,23 +238,23 @@ bool CDecoder::DecodeLz(Int32 pos)
 {
   while (pos > 0)
   {
-    UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream);
+    UInt32 sym = m_MainDecoder.Decode(&m_InBitStream);
     UInt32 length, distance;
-    if (number < 256)
+    if (sym < 256)
     {
-      m_OutWindowStream.PutByte(Byte(number));
+      m_OutWindowStream.PutByte(Byte(sym));
       pos--;
       continue;
     }
-    else if (number >= kMatchNumber)
+    else if (sym >= kMatchNumber)
     {
-      number -= kMatchNumber;
-      length = kNormalMatchMinLen + UInt32(kLenStart[number]) +
-        m_InBitStream.ReadBits(kLenDirectBits[number]);
-      number = m_DistDecoder.DecodeSymbol(&m_InBitStream);
-      if (number >= kDistTableSize)
+      sym -= kMatchNumber;
+      length = kNormalMatchMinLen + UInt32(kLenStart[sym]) +
+        m_InBitStream.ReadBits(kLenDirectBits[sym]);
+      sym = m_DistDecoder.Decode(&m_InBitStream);
+      if (sym >= kDistTableSize)
         return false;
-      distance = kDistStart[number] + m_InBitStream.ReadBits(kDistDirectBits[number]);
+      distance = kDistStart[sym] + m_InBitStream.ReadBits(kDistDirectBits[sym]);
       if (distance >= kDistLimit3)
       {
         length += 2 - ((distance - kDistLimit4) >> 31);
@@ -263,20 +263,20 @@ bool CDecoder::DecodeLz(Int32 pos)
         //  length++;
       }
     }
-    else if (number == kRepBothNumber)
+    else if (sym == kRepBothNumber)
     {
       length = m_LastLength;
       if (length == 0)
         return false;
       distance = m_RepDists[(m_RepDistPtr + 4 - 1) & 3];
     }
-    else if (number < kLen2Number)
+    else if (sym < kLen2Number)
     {
-      distance = m_RepDists[(m_RepDistPtr - (number - kRepNumber + 1)) & 3];
-      number = m_LenDecoder.DecodeSymbol(&m_InBitStream);
-      if (number >= kLenTableSize)
+      distance = m_RepDists[(m_RepDistPtr - (sym - kRepNumber + 1)) & 3];
+      sym = m_LenDecoder.Decode(&m_InBitStream);
+      if (sym >= kLenTableSize)
         return false;
-      length = 2 + kLenStart[number] + m_InBitStream.ReadBits(kLenDirectBits[number]);
+      length = 2 + kLenStart[sym] + m_InBitStream.ReadBits(kLenDirectBits[sym]);
       if (distance >= kDistLimit2)
       {
         length++;
@@ -289,14 +289,14 @@ bool CDecoder::DecodeLz(Int32 pos)
         }
       }
     }
-    else if (number < kReadTableNumber)
+    else if (sym < kReadTableNumber)
     {
-      number -= kLen2Number;
-      distance = kLen2DistStarts[number] +
-        m_InBitStream.ReadBits(kLen2DistDirectBits[number]);
+      sym -= kLen2Number;
+      distance = kLen2DistStarts[sym] +
+        m_InBitStream.ReadBits(kLen2DistDirectBits[sym]);
       length = 2;
     }
-    else if (number == kReadTableNumber)
+    else if (sym == kReadTableNumber)
       return true;
     else
       return false;

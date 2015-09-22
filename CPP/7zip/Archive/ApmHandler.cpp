@@ -7,16 +7,13 @@
 #include "../../Common/ComTry.h"
 #include "../../Common/Defs.h"
 #include "../../Common/IntToString.h"
-#include "../../Common/MyString.h"
 
 #include "../../Windows/PropVariant.h"
 
-#include "../Common/LimitedStreams.h"
-#include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/CopyCoder.h"
+#include "HandlerCont.h"
 
 #define Get16(p) GetBe16(p)
 #define Get32(p) GetBe32(p)
@@ -75,13 +72,9 @@ struct CItem
   }
 };
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
+class CHandler: public CHandlerCont
 {
   CRecordVector<CItem> _items;
-  CMyComPtr<IInStream> _stream;
   unsigned _blockSizeLog;
   UInt32 _numBlocks;
   UInt64 _phySize;
@@ -89,11 +82,11 @@ class CHandler:
 
   HRESULT ReadTables(IInStream *stream);
   UInt64 BlocksToBytes(UInt32 i) const { return (UInt64)i << _blockSizeLog; }
-  UInt64 GetItemSize(const CItem &item) const { return BlocksToBytes(item.NumBlocks); }
+
+  virtual UInt64 GetItemPos(UInt32 index) const { return BlocksToBytes(_items[index].StartBlock); }
+  virtual UInt64 GetItemSize(UInt32 index) const { return BlocksToBytes(_items[index].NumBlocks); }
 public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
+  INTERFACE_IInArchive_Cont(;)
 };
 
 static const UInt32 kSectorSize = 512;
@@ -300,79 +293,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     }
     case kpidSize:
     case kpidPackSize:
-      prop = GetItemSize(item);
+      prop = BlocksToBytes(item.NumBlocks);
       break;
     case kpidOffset: prop = BlocksToBytes(item.StartBlock); break;
   }
   prop.Detach(value);
   return S_OK;
-  COM_TRY_END
-}
-
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
-{
-  COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
-  if (allFilesMode)
-    numItems = _items.Size();
-  if (numItems == 0)
-    return S_OK;
-  UInt64 totalSize = 0;
-  UInt32 i;
-  for (i = 0; i < numItems; i++)
-    totalSize += GetItemSize(_items[allFilesMode ? i : indices[i]]);
-  extractCallback->SetTotal(totalSize);
-
-  totalSize = 0;
-  
-  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
-  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
-
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
-  lps->Init(extractCallback, false);
-
-  CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
-  CMyComPtr<ISequentialInStream> inStream(streamSpec);
-  streamSpec->SetStream(_stream);
-
-  for (i = 0; i < numItems; i++)
-  {
-    lps->InSize = totalSize;
-    lps->OutSize = totalSize;
-    RINOK(lps->SetCur());
-    CMyComPtr<ISequentialOutStream> outStream;
-    Int32 askMode = testMode ?
-        NExtract::NAskMode::kTest :
-        NExtract::NAskMode::kExtract;
-    Int32 index = allFilesMode ? i : indices[i];
-    const CItem &item = _items[index];
-
-    RINOK(extractCallback->GetStream(index, &outStream, askMode));
-    UInt64 size = GetItemSize(item);
-    totalSize += size;
-    if (!testMode && !outStream)
-      continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
-
-    RINOK(_stream->Seek(BlocksToBytes(item.StartBlock), STREAM_SEEK_SET, NULL));
-    streamSpec->Init(size);
-    RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
-    outStream.Release();
-    RINOK(extractCallback->SetOperationResult(copyCoderSpec->TotalSize == size ?
-        NExtract::NOperationResult::kOK:
-        NExtract::NOperationResult::kDataError));
-  }
-  return S_OK;
-  COM_TRY_END
-}
-
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
-{
-  COM_TRY_BEGIN
-  const CItem &item = _items[index];
-  return CreateLimitedInStream(_stream, BlocksToBytes(item.StartBlock), GetItemSize(item), stream);
   COM_TRY_END
 }
 

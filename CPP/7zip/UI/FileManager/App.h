@@ -188,7 +188,7 @@ public:
 
   // File Menu
   void OpenItem() { GetFocusedPanel().OpenSelectedItems(true); }
-  void OpenItemInside() { GetFocusedPanel().OpenFocusedItemAsInternal(); }
+  void OpenItemInside(const wchar_t *type) { GetFocusedPanel().OpenFocusedItemAsInternal(type); }
   void OpenItemOutside() { GetFocusedPanel().OpenSelectedItems(false); }
   void EditItem(bool useEditor) { GetFocusedPanel().EditItem(useEditor); }
   void Rename() { GetFocusedPanel().RenameFile(); }

@@ -173,7 +173,7 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
     }
     for (; i < kMaxAlphaSize; i++)
       lens[i] = 0;
-    if (!m_HuffmanDecoders[t].SetCodeLengths(lens))
+    if (!m_HuffmanDecoders[t].Build(lens))
       return S_FALSE;
   }
   while (++t < numTables);
@@ -205,7 +205,7 @@ HRESULT CBase::ReadBlock(UInt32 *charCounters, UInt32 blockSizeMax, CBlockProps 
       if (BitDecoder.ExtraBitsWereRead_Fast())
         break;
 
-      UInt32 nextSym = huffmanDecoder->DecodeSymbol(&BitDecoder);
+      UInt32 nextSym = huffmanDecoder->Decode(&BitDecoder);
       
       if (nextSym < 2)
       {

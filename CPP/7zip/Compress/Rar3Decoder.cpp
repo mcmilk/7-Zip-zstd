@@ -568,26 +568,26 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
     }
     levelLevels[i] = (Byte)length;
   }
-  RIF(m_LevelDecoder.SetCodeLengths(levelLevels));
+  RIF(m_LevelDecoder.Build(levelLevels));
   i = 0;
   while (i < kTablesSizesSum)
   {
-    UInt32 number = m_LevelDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
-    if (number < 16)
+    UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream.BitDecoder);
+    if (sym < 16)
     {
-      newLevels[i] = Byte((number + m_LastLevels[i]) & 15);
+      newLevels[i] = Byte((sym + m_LastLevels[i]) & 15);
       i++;
     }
-    else if (number > kLevelTableSize)
+    else if (sym > kLevelTableSize)
       return S_FALSE;
     else
     {
       int num;
-      if (((number - 16) & 1) == 0)
+      if (((sym - 16) & 1) == 0)
         num = ReadBits(3) + 3;
       else
         num = ReadBits(7) + 11;
-      if (number < 18)
+      if (sym < 18)
       {
         if (i == 0)
           return S_FALSE;
@@ -612,10 +612,10 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
   }
   */
 
-  RIF(m_MainDecoder.SetCodeLengths(&newLevels[0]));
-  RIF(m_DistDecoder.SetCodeLengths(&newLevels[kMainTableSize]));
-  RIF(m_AlignDecoder.SetCodeLengths(&newLevels[kMainTableSize + kDistTableSize]));
-  RIF(m_LenDecoder.SetCodeLengths(&newLevels[kMainTableSize + kDistTableSize + kAlignTableSize]));
+  RIF(m_MainDecoder.Build(&newLevels[0]));
+  RIF(m_DistDecoder.Build(&newLevels[kMainTableSize]));
+  RIF(m_AlignDecoder.Build(&newLevels[kMainTableSize + kDistTableSize]));
+  RIF(m_LenDecoder.Build(&newLevels[kMainTableSize + kDistTableSize + kAlignTableSize]));
 
   memcpy(m_LastLevels, newLevels, kTablesSizesSum);
   return S_OK;
@@ -687,38 +687,38 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
     if (InputEofError_Fast())
       return S_FALSE;
 
-    UInt32 number = m_MainDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
-    if (number < 256)
+    UInt32 sym = m_MainDecoder.Decode(&m_InBitStream.BitDecoder);
+    if (sym < 256)
     {
-      PutByte((Byte)number);
+      PutByte((Byte)sym);
       continue;
     }
-    else if (number == kSymbolReadTable)
+    else if (sym == kSymbolReadTable)
     {
       RINOK(ReadEndOfBlock(keepDecompressing));
       break;
     }
-    else if (number == 257)
+    else if (sym == 257)
     {
       if (!ReadVmCodeLZ())
         return S_FALSE;
       continue;
     }
-    else if (number == 258)
+    else if (sym == 258)
     {
       if (length == 0)
         return S_FALSE;
     }
-    else if (number < kSymbolRep + 4)
+    else if (sym < kSymbolRep + 4)
     {
-      if (number != kSymbolRep)
+      if (sym != kSymbolRep)
       {
         UInt32 distance;
-        if (number == kSymbolRep + 1)
+        if (sym == kSymbolRep + 1)
           distance = rep1;
         else
         {
-          if (number == kSymbolRep + 2)
+          if (sym == kSymbolRep + 2)
             distance = rep2;
           else
           {
@@ -731,32 +731,32 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
         rep0 = distance;
       }
 
-      UInt32 number = m_LenDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
-      if (number >= kLenTableSize)
+      UInt32 sym = m_LenDecoder.Decode(&m_InBitStream.BitDecoder);
+      if (sym >= kLenTableSize)
         return S_FALSE;
-      length = 2 + kLenStart[number] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[number]);
+      length = 2 + kLenStart[sym] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[sym]);
     }
     else
     {
       rep3 = rep2;
       rep2 = rep1;
       rep1 = rep0;
-      if (number < 271)
+      if (sym < 271)
       {
-        number -= 263;
-        rep0 = kLen2DistStarts[number] + m_InBitStream.BitDecoder.ReadBits(kLen2DistDirectBits[number]);
+        sym -= 263;
+        rep0 = kLen2DistStarts[sym] + m_InBitStream.BitDecoder.ReadBits(kLen2DistDirectBits[sym]);
         length = 2;
       }
-      else if (number < 299)
+      else if (sym < 299)
       {
-        number -= 271;
-        length = kNormalMatchMinLen + (UInt32)kLenStart[number] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[number]);
-        UInt32 number = m_DistDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
-        if (number >= kDistTableSize)
+        sym -= 271;
+        length = kNormalMatchMinLen + (UInt32)kLenStart[sym] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[sym]);
+        UInt32 sym = m_DistDecoder.Decode(&m_InBitStream.BitDecoder);
+        if (sym >= kDistTableSize)
           return S_FALSE;
-        rep0 = kDistStart[number];
-        int numBits = kDistDirectBits[number];
-        if (number >= (kNumAlignBits * 2) + 2)
+        rep0 = kDistStart[sym];
+        int numBits = kDistDirectBits[sym];
+        if (sym >= (kNumAlignBits * 2) + 2)
         {
           if (numBits > kNumAlignBits)
             rep0 += (m_InBitStream.BitDecoder.ReadBits(numBits - kNumAlignBits) << kNumAlignBits);
@@ -767,13 +767,13 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
           }
           else
           {
-            UInt32 number = m_AlignDecoder.DecodeSymbol(&m_InBitStream.BitDecoder);
-            if (number < (1 << kNumAlignBits))
+            UInt32 sym = m_AlignDecoder.Decode(&m_InBitStream.BitDecoder);
+            if (sym < (1 << kNumAlignBits))
             {
-              rep0 += number;
-              PrevAlignBits = number;
+              rep0 += sym;
+              PrevAlignBits = sym;
             }
-            else if (number == (1 << kNumAlignBits))
+            else if (sym == (1 << kNumAlignBits))
             {
               PrevAlignCount = kNumAlignReps;
               rep0 += PrevAlignBits;

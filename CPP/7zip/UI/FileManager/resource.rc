@@ -19,6 +19,8 @@ BEGIN
   BEGIN
     MENUITEM "&Open\tEnter",                IDM_OPEN
     MENUITEM "Open &Inside\tCtrl+PgDn",     IDM_OPEN_INSIDE
+    MENUITEM "Open Inside *",               IDM_OPEN_INSIDE_ONE
+    MENUITEM "Open Inside #",               IDM_OPEN_INSIDE_PARSER
     MENUITEM "Open O&utside\tShift+Enter",  IDM_OPEN_OUTSIDE
     MENUITEM "&View\tF3",                   IDM_FILE_VIEW
     MENUITEM "&Edit\tF4",                   IDM_FILE_EDIT

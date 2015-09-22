@@ -10,6 +10,8 @@
 namespace NArchive {
 namespace NWim {
 
+static const Int32 kNumImagesMaxUpdate = (1 << 10);
+
 class CHandler:
   public IInArchive,
   public IArchiveGetRawProps,
@@ -34,6 +36,7 @@ class CHandler:
 
   bool _xmlError;
   bool _isArc;
+  bool _unsupported;
 
   bool _set_use_ShowImageNumber;
   bool _set_showImageNumber;
@@ -51,6 +54,26 @@ class CHandler:
     _set_use_ShowImageNumber = false;
     _set_showImageNumber = false;
     _defaultImageNumber = -1;
+  }
+
+  bool IsUpdateSupported() const
+  {
+    if (ThereIsError()) return false;
+    if (_db.Images.Size() > kNumImagesMaxUpdate) return false;
+
+    // Solid format is complicated. So we disable updating now.
+    if (!_db.Solids.IsEmpty()) return false;
+
+    if (_volumes.Size() == 0)
+      return true;
+    
+    if (_volumes.Size() != 2) return false;
+    if (_volumes[0].Stream) return false;
+    if (_version != k_Version_NonSolid
+        // && _version != k_Version_Solid
+        ) return false;
+    
+    return true;
   }
 
   bool ThereIsError() const { return _xmlError || _db.ThereIsError(); }

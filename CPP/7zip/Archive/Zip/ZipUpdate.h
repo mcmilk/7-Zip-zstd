@@ -48,7 +48,7 @@ struct CUpdateItem
 HRESULT Update(
     DECL_EXTERNAL_CODECS_LOC_VARS
     const CObjectVector<CItemEx> &inputItems,
-    const CObjectVector<CUpdateItem> &updateItems,
+    CObjectVector<CUpdateItem> &updateItems,
     ISequentialOutStream *seqOutStream,
     CInArchive *inArchive, bool removeSfx,
     CCompressionMethodMode *compressionMethodMode,

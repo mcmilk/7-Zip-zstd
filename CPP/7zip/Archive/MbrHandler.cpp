@@ -13,16 +13,13 @@
 #include "../../Common/ComTry.h"
 #include "../../Common/IntToString.h"
 #include "../../Common/MyBuffer.h"
-#include "../../Common/MyString.h"
 
 #include "../../Windows/PropVariant.h"
 
-#include "../Common/LimitedStreams.h"
-#include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/CopyCoder.h"
+#include "HandlerCont.h"
 
 #ifdef SHOW_DEBUG_INFO
 #define PRF(x) x
@@ -56,12 +53,15 @@ struct CChs
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
+// Chs in some MBRs contains only low bits of "Cyl number". So we disable check.
+/*
 static int CompareChs(const CChs &c1, const CChs &c2)
 {
   RINOZ(MyCompare(c1.GetCyl(), c2.GetCyl()));
   RINOZ(MyCompare(c1.Head, c2.Head));
   return MyCompare(c1.GetSector(), c2.GetSector());
 }
+*/
 
 static void AddUIntToString(UInt32 val, AString &res)
 {
@@ -112,12 +112,11 @@ struct CPartition
       return true;
     if (Status != 0 && Status != 0x80)
       return false;
-    return
-       BeginChs.Check() &&
-       EndChs.Check() &&
-       CompareChs(BeginChs, EndChs) <= 0 &&
-       NumBlocks > 0 &&
-       CheckLbaLimits();
+    return BeginChs.Check()
+       && EndChs.Check()
+       // && CompareChs(BeginChs, EndChs) <= 0
+       && NumBlocks > 0
+       && CheckLbaLimits();
   }
 
   #ifdef SHOW_DEBUG_INFO
@@ -159,11 +158,12 @@ static const CPartType kPartTypes[] =
   { 0x1E, kFat, "FAT16-LBA-WIN95-Hidden" },
   { 0x82, 0, "Solaris x86 / Linux swap" },
   { 0x83, 0, "Linux" },
+  { 0xA5, 0, "BSD slice" },
   { 0xBE, 0, "Solaris 8 boot" },
   { 0xBF, 0, "New Solaris x86" },
   { 0xC2, 0, "Linux-Hidden" },
   { 0xC3, 0, "Linux swap-Hidden" },
-  { 0xEE, 0, "EFI-MBR" },
+  { 0xEE, 0, "GPT" },
   { 0xEE, 0, "EFI" }
 };
 
@@ -183,21 +183,17 @@ struct CItem
   CPartition Part;
 };
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
+class CHandler: public CHandlerCont
 {
-  CMyComPtr<IInStream> _stream;
   CObjectVector<CItem> _items;
   UInt64 _totalSize;
   CByteBuffer _buffer;
 
+  virtual UInt64 GetItemPos(UInt32 index) const { return _items[index].Part.GetPos(); }
+  virtual UInt64 GetItemSize(UInt32 index) const { return _items[index].Size; }
   HRESULT ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsigned level);
 public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
+  INTERFACE_IInArchive_Cont(;)
 };
 
 HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsigned level)
@@ -391,7 +387,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
   const CItem &item = _items[index];
   const CPartition &part = item.Part;
-  switch(propID)
+  switch (propID)
   {
     case kpidPath:
     {
@@ -421,7 +417,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         prop = res;
       }
       break;
-    case kpidSize: prop = item.Size; break;;
+    case kpidSize:
     case kpidPackSize: prop = item.Size; break;
     case kpidOffset: prop = part.GetPos(); break;
     case kpidPrimary: if (item.IsReal) prop = item.IsPrim; break;
@@ -430,72 +426,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   }
   prop.Detach(value);
   return S_OK;
-  COM_TRY_END
-}
-
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
-{
-  COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
-  if (allFilesMode)
-    numItems = _items.Size();
-  if (numItems == 0)
-    return S_OK;
-  UInt64 totalSize = 0;
-  UInt32 i;
-  for (i = 0; i < numItems; i++)
-    totalSize += _items[allFilesMode ? i : indices[i]].Size;
-  extractCallback->SetTotal(totalSize);
-
-  totalSize = 0;
-  
-  NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
-  CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
-
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
-  lps->Init(extractCallback, false);
-
-  CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
-  CMyComPtr<ISequentialInStream> inStream(streamSpec);
-  streamSpec->SetStream(_stream);
-
-  for (i = 0; i < numItems; i++)
-  {
-    lps->InSize = totalSize;
-    lps->OutSize = totalSize;
-    RINOK(lps->SetCur());
-    CMyComPtr<ISequentialOutStream> outStream;
-    Int32 askMode = testMode ?
-        NExtract::NAskMode::kTest :
-        NExtract::NAskMode::kExtract;
-    Int32 index = allFilesMode ? i : indices[i];
-    const CItem &item = _items[index];
-    const CPartition &part = item.Part;
-    RINOK(extractCallback->GetStream(index, &outStream, askMode));
-    totalSize += item.Size;
-    if (!testMode && !outStream)
-      continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
-
-    RINOK(_stream->Seek(part.GetPos(), STREAM_SEEK_SET, NULL));
-    streamSpec->Init(item.Size);
-    RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
-    outStream.Release();
-    RINOK(extractCallback->SetOperationResult(copyCoderSpec->TotalSize == item.Size ?
-        NExtract::NOperationResult::kOK:
-        NExtract::NOperationResult::kDataError));
-  }
-  return S_OK;
-  COM_TRY_END
-}
-
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
-{
-  COM_TRY_BEGIN
-  const CItem &item = _items[index];
-  return CreateLimitedInStream(_stream, item.Part.GetPos(), item.Size, stream);
   COM_TRY_END
 }
 

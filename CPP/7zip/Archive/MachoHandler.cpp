@@ -40,7 +40,7 @@ namespace NMacho {
 
 #define CPU_SUBTYPE_LIB64 (1 << 31)
 
-#define CPU_SUBTYPE_POWERPC_970	100
+#define CPU_SUBTYPE_POWERPC_970 100
 
 static const char * const k_PowerPc_SubTypes[] =
 {

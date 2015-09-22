@@ -285,7 +285,7 @@ private:
  
   HRESULT InitColumns();
   // void InitColumns2(PROPID sortID);
-  void InsertColumn(int index);
+  void InsertColumn(unsigned index);
 
   void SetFocusedSelectedItem(int index, bool select);
   HRESULT RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
@@ -351,6 +351,7 @@ public:
     */
     return (UInt32)item.lParam;
   }
+  
   int GetRealItemIndex(int indexInListView) const
   {
     /*
@@ -690,7 +691,7 @@ public:
 
   void OpenAltStreams();
 
-  void OpenFocusedItemAsInternal();
+  void OpenFocusedItemAsInternal(const wchar_t *type = NULL);
   void OpenSelectedItems(bool internal);
 
   void OpenFolderExternal(int index);
@@ -703,13 +704,14 @@ public:
       const UString &arcFormat,
       bool &encrypted);
   HRESULT OpenItemAsArchive(const UString &relPath, const UString &arcFormat, bool &encrypted);
-  HRESULT OpenItemAsArchive(int index);
+  HRESULT OpenItemAsArchive(int index, const wchar_t *type = NULL);
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
-      bool editMode, bool useEditor);
+      bool editMode, bool useEditor, const wchar_t *type = NULL);
   HRESULT OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath, bool usePassword, const UString &password);
   LRESULT OnOpenItemChanged(LPARAM lParam);
 
-  void OpenItem(int index, bool tryInternal, bool tryExternal);
+  bool IsVirus_Message(const UString &name);
+  void OpenItem(int index, bool tryInternal, bool tryExternal, const wchar_t *type = NULL);
   void EditItem(bool useEditor);
   void EditItem(int index, bool useEditor);
 

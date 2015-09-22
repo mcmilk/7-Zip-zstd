@@ -1145,14 +1145,6 @@ SOURCE=..\..\Compress\Lzx.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Lzx86Converter.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzx86Converter.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\LzxDecoder.cpp
 # End Source File
 # Begin Source File

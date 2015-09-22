@@ -756,15 +756,17 @@ SOURCE=..\..\Compress\Lzx.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\Lzx86Converter.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\Lzx86Converter.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\LzxDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -793,11 +795,47 @@ SOURCE=..\..\Compress\LzhDecoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Compress\LzmsDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzmsDecoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Compress\LzOutWindow.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\LzOutWindow.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XpressDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XpressDecoder.h
 # End Source File
 # Begin Source File
 
@@ -2401,7 +2439,19 @@ SOURCE=..\..\Archive\FlvHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\GptHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\GzHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\HandlerCont.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\HandlerCont.h
 # End Source File
 # Begin Source File
 
@@ -2463,6 +2513,10 @@ SOURCE=..\..\Archive\PpmdHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\QcowHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\RpmHandler.cpp
 # End Source File
 # Begin Source File
@@ -2483,7 +2537,15 @@ SOURCE=..\..\Archive\UefiHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\VdiHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\VhdHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\VmdkHandler.cpp
 # End Source File
 # Begin Source File
 

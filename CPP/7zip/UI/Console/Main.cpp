@@ -847,7 +847,7 @@ int Main2(
       #endif
 
       ecs->Init(g_StdStream, g_ErrStream, percentsStream);
-      ecs->MutiArcMode = (ArchivePathsSorted.Size() > 1);
+      ecs->MultiArcMode = (ArchivePathsSorted.Size() > 1);
 
       ecs->LogLevel = options.LogLevel;
       ecs->PercentsNameLevel = percentsNameLevel;

@@ -163,6 +163,10 @@ Handler GUIDs:
   0C xz
   0D ppmd
 
+  C8 VMDK
+  C9 VDI
+  CA Qcow
+  CB GPT
   CC Rar5
   CD IHex
   CE Hxs

@@ -118,11 +118,11 @@ static int Parse_EXE(const Byte *buf, size_t size, CFilterMode *filterMode)
 
 #define ELF_SIG 0x464C457F
 
-#define	ELF_CLASS_32	1
-#define	ELF_CLASS_64	2
+#define ELF_CLASS_32  1
+#define ELF_CLASS_64  2
 
-#define	ELF_DATA_2LSB	1
-#define	ELF_DATA_2MSB	2
+#define ELF_DATA_2LSB 1
+#define ELF_DATA_2MSB 2
 
 static UInt16 Get16(const Byte *p, Bool be) { if (be) return (UInt16)GetBe16(p); return (UInt16)GetUi16(p); }
 static UInt32 Get32(const Byte *p, Bool be) { if (be) return GetBe32(p); return GetUi32(p); }

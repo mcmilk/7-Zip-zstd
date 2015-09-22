@@ -36,11 +36,12 @@ struct CItem
   
   bool IsDir() const
   {
-    if (Name.Len() == 0)
+    if (Name.IsEmpty())
       return false;
     return (Name.Back() == '/');
   }
 };
+
 
 struct CDatabase
 {
@@ -73,11 +74,14 @@ struct CDatabase
   }
 };
 
+
+const UInt32 kBlockSize = 1 << 15;
+
 struct CResetTable
 {
   UInt64 UncompressedSize;
   UInt64 CompressedSize;
-  UInt64 BlockSize;
+  // unsigned BlockSizeBits;
   CRecordVector<UInt64> ResetOffsets;
   
   bool GetCompressedSizeOfBlocks(UInt64 blockIndex, UInt32 numBlocks, UInt64 &size) const
@@ -91,39 +95,41 @@ struct CResetTable
       size = ResetOffsets[(unsigned)(blockIndex + numBlocks)] - startPos;
     return true;
   }
+
   bool GetCompressedSizeOfBlock(UInt64 blockIndex, UInt64 &size) const
   {
     return GetCompressedSizeOfBlocks(blockIndex, 1, size);
   }
+  
   UInt64 GetNumBlocks(UInt64 size) const
   {
-    return (size + BlockSize - 1) / BlockSize;
+    return (size + kBlockSize - 1) / kBlockSize;
   }
 };
+
 
 struct CLzxInfo
 {
   UInt32 Version;
-  UInt32 ResetInterval;
-  UInt32 WindowSize;
+  
+  unsigned ResetIntervalBits;
+  unsigned WindowSizeBits;
   UInt32 CacheSize;
+  
   CResetTable ResetTable;
 
-  UInt32 GetNumDictBits() const
+  unsigned GetNumDictBits() const
   {
     if (Version == 2 || Version == 3)
-    {
-      for (unsigned i = 0; i <= 31; i++)
-        if (((UInt32)1 << i) >= WindowSize)
-          return 15 + i;
-    }
+      return 15 + WindowSizeBits;
     return 0;
   }
 
-  UInt64 GetFolderSize() const { return ResetTable.BlockSize * ResetInterval; }
+  UInt64 GetFolderSize() const { return kBlockSize << ResetIntervalBits; }
   UInt64 GetFolder(UInt64 offset) const { return offset / GetFolderSize(); }
   UInt64 GetFolderPos(UInt64 folderIndex) const { return folderIndex * GetFolderSize(); }
-  UInt64 GetBlockIndexFromFolderIndex(UInt64 folderIndex) const { return folderIndex * ResetInterval; }
+  UInt64 GetBlockIndexFromFolderIndex(UInt64 folderIndex) const { return folderIndex << ResetIntervalBits; }
+
   bool GetOffsetOfFolder(UInt64 folderIndex, UInt64 &offset) const
   {
     UInt64 blockIndex = GetBlockIndexFromFolderIndex(folderIndex);
@@ -132,23 +138,27 @@ struct CLzxInfo
     offset = ResetTable.ResetOffsets[(unsigned)blockIndex];
     return true;
   }
+  
   bool GetCompressedSizeOfFolder(UInt64 folderIndex, UInt64 &size) const
   {
     UInt64 blockIndex = GetBlockIndexFromFolderIndex(folderIndex);
-    return ResetTable.GetCompressedSizeOfBlocks(blockIndex, ResetInterval, size);
+    return ResetTable.GetCompressedSizeOfBlocks(blockIndex, (UInt32)1 << ResetIntervalBits, size);
   }
 };
+
 
 struct CMethodInfo
 {
   GUID Guid;
   CByteBuffer ControlData;
   CLzxInfo LzxInfo;
+  
   bool IsLzx() const;
   bool IsDes() const;
   AString GetGuidString() const;
   UString GetName() const;
 };
+
 
 struct CSectionInfo
 {
@@ -203,19 +213,12 @@ public:
     CDatabase::Clear();
     HighLevelClear();
   }
+  
   void SetIndices();
   void Sort();
   bool Check();
 };
 
-/*
-class CProgressVirt
-{
-public:
-  STDMETHOD(SetTotal)(const UInt64 *numFiles) PURE;
-  STDMETHOD(SetCompleted)(const UInt64 *numFiles) PURE;
-};
-*/
 
 class CInArchive
 {

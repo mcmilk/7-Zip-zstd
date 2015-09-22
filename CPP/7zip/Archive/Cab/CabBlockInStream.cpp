@@ -29,15 +29,24 @@ CCabBlockInStream::~CCabBlockInStream()
 static UInt32 CheckSum(const Byte *p, UInt32 size)
 {
   UInt32 sum = 0;
-  for (UInt32 i = size >> 2; i != 0; i--)
+  
+  for (; size >= 8; size -= 8)
+  {
+    sum ^= GetUi32(p) ^ GetUi32(p + 4);
+    p += 8;
+  }
+  
+  if (size >= 4)
   {
     sum ^= GetUi32(p);
     p += 4;
   }
+  
   size &= 3;
   if (size > 2) sum ^= (UInt32)(*p++) << 16;
   if (size > 1) sum ^= (UInt32)(*p++) << 8;
   if (size > 0) sum ^= (UInt32)(*p++);
+  
   return sum;
 }
 
