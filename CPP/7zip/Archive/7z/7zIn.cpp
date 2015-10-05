@@ -1180,7 +1180,7 @@ HRESULT CInArchive::ReadHeader(
     bool isKnownType = true;
     if (type > ((UInt32)1 << 30))
       isKnownType = false;
-    else switch((UInt32)type)
+    else switch ((UInt32)type)
     {
       case NID::kName:
       {
@@ -1338,7 +1338,7 @@ HRESULT CInArchive::ReadHeader(
       db.UnsupportedFeatureWarning = true;
       _inByteBack->SkipRem();
     }
-    // SkipData worked incorrectly in some versions before v4.59 (7zVer <= 00.02)
+    // SkipData worked incorrectly in some versions before v4.59 (7zVer <= 0.02)
     if (_inByteBack->GetRem() != 0)
       ThrowIncorrect();
   }

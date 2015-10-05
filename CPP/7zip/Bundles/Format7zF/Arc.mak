@@ -61,6 +61,7 @@ AR_OBJS = \
   $O\DeflateProps.obj \
   $O\DmgHandler.obj \
   $O\ElfHandler.obj \
+  $O\ExtHandler.obj \
   $O\FatHandler.obj \
   $O\FlvHandler.obj \
   $O\GzHandler.obj \

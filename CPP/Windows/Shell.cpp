@@ -177,7 +177,7 @@ bool BrowseForFolder(LPBROWSEINFO browseInfo, CSysString &resultPath)
 int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
 {
   #ifndef UNDER_CE
-  switch(uMsg)
+  switch (uMsg)
   {
     case BFFM_INITIALIZED:
     {
@@ -275,7 +275,7 @@ bool BrowseForFolder(LPBROWSEINFOW browseInfo, UString &resultPath)
 
 int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
 {
-  switch(uMsg)
+  switch (uMsg)
   {
     case BFFM_INITIALIZED:
     {

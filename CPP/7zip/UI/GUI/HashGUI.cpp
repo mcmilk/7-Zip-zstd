@@ -13,7 +13,7 @@
 #include "../FileManager/ProgressDialog2.h"
 #include "../FileManager/ProgressDialog2Res.h"
 #include "../FileManager/PropertyNameRes.h"
-#include "../FileManager/resourceGUI.h"
+#include "../FileManager/resourceGui.h"
 
 #include "HashGUI.h"
 

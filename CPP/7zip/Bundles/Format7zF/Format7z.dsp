@@ -283,6 +283,10 @@ SOURCE=..\..\..\Common\MyInitGuid.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyLinux.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyMap.cpp
 # End Source File
 # Begin Source File
@@ -2428,6 +2432,10 @@ SOURCE=..\..\Archive\DmgHandler.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\ElfHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\ExtHandler.cpp
 # End Source File
 # Begin Source File
 

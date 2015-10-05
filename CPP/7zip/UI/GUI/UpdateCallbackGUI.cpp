@@ -10,7 +10,7 @@
 #include "../FileManager/FormatUtils.h"
 #include "../FileManager/LangUtils.h"
 
-#include "../FileManager/resourceGUI.h"
+#include "../FileManager/resourceGui.h"
 
 #include "resource2.h"
 

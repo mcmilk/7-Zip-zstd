@@ -608,6 +608,10 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
   _curSizeDefined = false;
   _index = index;
 
+  _diskFilePath.Empty();
+
+  // _fi.Clear();
+
   #ifdef SUPPORT_LINKS
   // _CopyFile_Path.Empty();
   linkPath.Empty();
@@ -1454,7 +1458,7 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 opRes)
   }
   
   #ifdef _USE_SECURITY_CODE
-  if (_ntOptions.NtSecurity.Val && _arc->GetRawProps)
+  if (!_stdOutMode && _extractMode && _ntOptions.NtSecurity.Val && _arc->GetRawProps)
   {
     const void *data;
     UInt32 dataSize;
@@ -1497,7 +1501,7 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 opRes)
   else
     NumFiles++;
 
-  if (_extractMode && _fi.AttribDefined)
+  if (!_stdOutMode && _extractMode && _fi.AttribDefined)
     SetFileAttrib(_diskFilePath, _fi.Attrib);
   
   RINOK(_extractCallback2->SetOperationResult(opRes, BoolToInt(_encrypted)));

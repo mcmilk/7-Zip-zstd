@@ -57,7 +57,7 @@ public:
 HRESULT CThreadFolderOperations::ProcessVirt()
 {
   NCOM::CComInitializer comInitializer;
-  switch(OpType)
+  switch (OpType)
   {
     case FOLDER_TYPE_CREATE_FOLDER:
       Result = FolderOperations->CreateFolder(Name, UpdateCallback);

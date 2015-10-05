@@ -8,6 +8,8 @@
 
 #include "../../Common/StreamUtils.h"
 
+#include "../HandlerCont.h"
+
 #include "IsoIn.h"
 
 namespace NArchive {
@@ -596,7 +598,7 @@ HRESULT CInArchive::Open2()
   ReadBootInfo();
 
   {
-    FOR_VECTOR(i, Refs)
+    FOR_VECTOR (i, Refs)
     {
       const CRef &ref = Refs[i];
       for (UInt32 j = 0; j < ref.NumExtents; j++)
@@ -608,12 +610,28 @@ HRESULT CInArchive::Open2()
     }
   }
   {
-    FOR_VECTOR(i, BootEntries)
+    FOR_VECTOR (i, BootEntries)
     {
       const CBootInitialEntry &be = BootEntries[i];
       UpdatePhySize(be.LoadRBA, GetBootItemSize(i));
     }
   }
+
+  if (PhySize < _fileSize)
+  {
+    UInt64 rem = _fileSize - PhySize;
+    const UInt64 kRemMax = 1 << 21;
+    if (rem <= kRemMax)
+    {
+      RINOK(_stream->Seek(PhySize, STREAM_SEEK_SET, NULL));
+      bool areThereNonZeros = false;
+      UInt64 numZeros = 0;
+      RINOK(ReadZeroTail(_stream, areThereNonZeros, numZeros, kRemMax));
+      if (!areThereNonZeros)
+        PhySize += numZeros;
+    }
+  }
+
   return S_OK;
 }
 

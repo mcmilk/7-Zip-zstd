@@ -10,7 +10,7 @@
 
 static HRESULT SResToHRESULT(SRes res)
 {
-  switch(res)
+  switch (res)
   {
     case SZ_OK: return S_OK;
     case SZ_ERROR_MEM: return E_OUTOFMEMORY;

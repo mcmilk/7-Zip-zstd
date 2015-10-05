@@ -229,7 +229,7 @@ HRESULT ExtractGUI(
     NName::NormalizeDirPathPrefix(options.OutputDir);
     
     /*
-    if(!CreateComplexDirectory(options.OutputDir))
+    if (!CreateComplexDirectory(options.OutputDir))
     {
       UString s = GetUnicodeString(NError::MyFormatMessage(GetLastError()));
       UString s2 = MyFormatNew(IDS_CANNOT_CREATE_FOLDER,

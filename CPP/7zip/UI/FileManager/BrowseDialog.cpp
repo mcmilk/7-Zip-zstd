@@ -277,7 +277,7 @@ bool CBrowseDialog::OnInit()
   if (!GetParentPath(FilePath, DirPrefix, name))
     DirPrefix = _topDirPrefix;
 
-  for(;;)
+  for (;;)
   {
     UString baseFolder = DirPrefix;
     if (Reload(baseFolder, name) == S_OK)

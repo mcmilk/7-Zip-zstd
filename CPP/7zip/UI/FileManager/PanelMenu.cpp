@@ -480,7 +480,7 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
     // HMENU hMenu = CreatePopupMenu();
     CMenu popupMenu;
     // CMenuDestroyer menuDestroyer(popupMenu);
-    if(!popupMenu.CreatePopup())
+    if (!popupMenu.CreatePopup())
       throw 210503;
 
     HMENU hMenu = popupMenu;

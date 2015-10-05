@@ -78,14 +78,14 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     g_App.SwitchOnOffOnePanel();
   }
 
-  if(keyDownInfo->wVKey >= VK_F3 && keyDownInfo->wVKey <= VK_F12 && ctrl)
+  if (keyDownInfo->wVKey >= VK_F3 && keyDownInfo->wVKey <= VK_F12 && ctrl)
   {
     int index = FindVKeyPropIDPair(keyDownInfo->wVKey);
     if (index >= 0)
       SortItemsWithPropID(g_VKeyPropIDPairs[index].PropID);
   }
 
-  switch(keyDownInfo->wVKey)
+  switch (keyDownInfo->wVKey)
   {
     case VK_SHIFT:
     {
@@ -191,7 +191,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     }
     case VK_DOWN:
     {
-      if(shift)
+      if (shift)
         OnArrowWithShift();
       return false;
     }
@@ -199,7 +199,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     {
       if (alt)
         _panelCallback->OnSetSameFolder();
-      else if(shift)
+      else if (shift)
         OnArrowWithShift();
       return false;
     }
@@ -207,7 +207,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     {
       if (alt)
         _panelCallback->OnSetSubFolder();
-      else if(shift)
+      else if (shift)
         OnArrowWithShift();
       return false;
     }
@@ -215,7 +215,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     {
       if (alt)
         _panelCallback->OnSetSubFolder();
-      else if(shift)
+      else if (shift)
         OnArrowWithShift();
       return false;
     }
@@ -234,7 +234,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
         SelectByType(true);
       else if (shift)
         SelectAll(true);
-      else if(!ctrl)
+      else if (!ctrl)
         SelectSpec(true);
       return true;
     }
@@ -272,7 +272,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     }
     */
     case 'A':
-      if(ctrl)
+      if (ctrl)
       {
         SelectAll(true);
         return true;
@@ -307,14 +307,14 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
       }
       return false;
     case 'R':
-      if(ctrl)
+      if (ctrl)
       {
         OnReload();
         return true;
       }
       return false;
     case 'Z':
-      if(ctrl)
+      if (ctrl)
       {
         ChangeComment();
         return true;
@@ -324,7 +324,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     case '2':
     case '3':
     case '4':
-      if(ctrl)
+      if (ctrl)
       {
         int styleIndex = keyDownInfo->wVKey - '1';
         SetListViewMode(styleIndex);

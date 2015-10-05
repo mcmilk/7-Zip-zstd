@@ -40,11 +40,11 @@ CPlugin::CPlugin(const FString &fileName, CAgent *agent, UString archiveTypeName
 
 CPlugin::~CPlugin() {}
 
-static void MyGetFileTime(IFolderFolder *anArchiveFolder, UInt32 itemIndex,
+static void MyGetFileTime(IFolderFolder *folder, UInt32 itemIndex,
     PROPID propID, FILETIME &fileTime)
 {
   NCOM::CPropVariant prop;
-  if (anArchiveFolder->GetProperty(itemIndex, propID, &prop) != S_OK)
+  if (folder->GetProperty(itemIndex, propID, &prop) != S_OK)
     throw 271932;
   if (prop.vt == VT_EMPTY)
   {

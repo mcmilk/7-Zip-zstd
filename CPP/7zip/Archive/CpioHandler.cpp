@@ -5,6 +5,7 @@
 #include "../../../C/CpuArch.h"
 
 #include "../../Common/ComTry.h"
+#include "../../Common/MyLinux.h"
 #include "../../Common/StringConvert.h"
 #include "../../Common/StringToInt.h"
 #include "../../Common/UTFConvert.h"
@@ -121,7 +122,7 @@ struct CItem
 
   bool IsBin() const { return Type == k_Type_BinLe || Type == k_Type_BinBe; }
   bool IsCrcFormat() const { return Type == k_Type_HexCrc; }
-  bool IsDir() const { return (Mode & 0170000) == 0040000; }
+  bool IsDir() const { return MY_LIN_S_ISDIR(Mode); }
   bool IsTrailer() const { return strcmp(Name, kName_TRAILER) == 0; }
   UInt64 GetDataPosition() const { return HeaderPos + HeaderSize; }
 };

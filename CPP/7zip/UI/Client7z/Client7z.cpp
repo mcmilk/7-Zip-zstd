@@ -309,7 +309,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     NCOM::CPropVariant prop;
     RINOK(_archiveHandler->GetProperty(index, kpidMTime, &prop));
     _processedFileInfo.MTimeDefined = false;
-    switch(prop.vt)
+    switch (prop.vt)
     {
       case VT_EMPTY:
         // _processedFileInfo.MTime = _utcMTimeDefault;
@@ -582,7 +582,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
 
   {
     const CDirItem &dirItem = (*DirItems)[index];
-    switch(propID)
+    switch (propID)
     {
       case kpidPath:  prop = dirItem.Name; break;
       case kpidIsDir:  prop = dirItem.isDir(); break;

@@ -940,7 +940,7 @@ STDMETHODIMP CZipContextMenu::GetCommandString(UINT_PTR commandOffset, UINT uTyp
     UINT * /* pwReserved */ , LPSTR pszName, UINT /* cchMax */)
 {
   int cmdOffset = (int)commandOffset;
-  switch(uType)
+  switch (uType)
   {
     #ifdef UNDER_CE
     case GCS_VALIDATE:

@@ -254,7 +254,7 @@ public:
       _winPos += len;
       do
         *dest++ = *src++;
-      while(--len != 0);
+      while (--len != 0);
       return;
     }
     do
@@ -263,7 +263,7 @@ public:
       winPos = (winPos + 1) & kWindowMask;
       pos = (pos + 1) & kWindowMask;
     }
-    while(--len != 0);
+    while (--len != 0);
     _winPos = winPos;
   }
   

@@ -166,6 +166,14 @@ SOURCE=..\..\..\Common\StringToInt.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\UTFConvert.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\UTFConvert.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Wildcard.cpp
 # End Source File
 # Begin Source File

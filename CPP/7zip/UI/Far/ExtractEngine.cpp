@@ -100,7 +100,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
   NOverwriteDialog::NResult::EEnum result =
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
   
-  switch(result)
+  switch (result)
   {
   case NOverwriteDialog::NResult::kCancel:
     // *answer = NOverwriteAnswer::kCancel;

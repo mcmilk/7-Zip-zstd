@@ -505,7 +505,7 @@ bool CBenchmarkDialog::OnCommand(int code, int itemID, LPARAM lParam)
 
 bool CBenchmarkDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDB_RESTART:
       OnRestartButton();

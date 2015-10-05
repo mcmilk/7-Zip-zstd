@@ -253,7 +253,7 @@ void CExtractDialog::UpdatePasswordControl()
 
 bool CExtractDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDB_EXTRACT_SET_PATH:
       OnButtonSetPath();

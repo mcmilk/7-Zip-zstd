@@ -2,10 +2,13 @@
 
 #include "StdAfx.h"
 
-#include "ZipHeader.h"
-#include "ZipItem.h"
-#include "../Common/ItemNameUtils.h"
 #include "../../../../C/CpuArch.h"
+
+#include "../../../Common/MyLinux.h"
+
+#include "../Common/ItemNameUtils.h"
+
+#include "ZipItem.h"
 
 namespace NArchive {
 namespace NZip {
@@ -114,7 +117,7 @@ bool CItem::IsDir() const
     case NHostOS::kMVS:
       return false; // change it throw kUnknownAttributes;
     case NHostOS::kUnix:
-      return ((highAttrib & NUnixAttrib::kIFMT) == NUnixAttrib::kIFDIR);
+      return MY_LIN_S_ISDIR(highAttrib);
     default:
       return false;
   }
@@ -151,7 +154,7 @@ bool CItem::GetPosixAttrib(UInt32 &attrib) const
   }
   attrib = 0;
   if (IsDir())
-    attrib = NUnixAttrib::kIFDIR;
+    attrib = MY_LIN_S_IFDIR;
   return false;
 }
 

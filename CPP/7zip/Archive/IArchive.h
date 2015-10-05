@@ -293,12 +293,14 @@ namespace NPropDataType
   const UInt32 kMask_ZeroEnd   = 1 << 4;
   // const UInt32 kMask_BigEndian = 1 << 5;
   const UInt32 kMask_Utf       = 1 << 6;
-  // const UInt32 kMask_Utf8  = kMask_Utf | 0;
+  const UInt32 kMask_Utf8  = kMask_Utf | 0;
   const UInt32 kMask_Utf16 = kMask_Utf | 1;
   // const UInt32 kMask_Utf32 = kMask_Utf | 2;
 
   const UInt32 kNotDefined = 0;
   const UInt32 kRaw = 1;
+
+  const UInt32 kUtf8z  = kMask_Utf8  | kMask_ZeroEnd;
   const UInt32 kUtf16z = kMask_Utf16 | kMask_ZeroEnd;
 };
 
@@ -512,12 +514,26 @@ ARCHIVE_INTERFACE(IArchiveAllowTail, 0x05)
     { if (index >= ARRAY_SIZE(k)) return E_INVALIDARG; \
     *propID = k[index]; *varType = k7z_PROPID_To_VARTYPE[(unsigned)*propID];  *name = 0; return S_OK; } \
 
+
+struct CStatProp
+{
+  const char *Name;
+  UInt32 PropID;
+  VARTYPE vt;
+};
+
+namespace NWindows {
+namespace NCOM {
+// PropVariant.cpp
+BSTR AllocBstrFromAscii(const char *s) throw();
+}}
+
 #define IMP_IInArchive_GetProp_WITH_NAME(k) \
   (UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) \
     { if (index >= ARRAY_SIZE(k)) return E_INVALIDARG; \
-    const STATPROPSTG &srcItem = k[index]; \
-    *propID = srcItem.propid; *varType = srcItem.vt; \
-    if (srcItem.lpwstrName == 0) *name = 0; else *name = ::SysAllocString(srcItem.lpwstrName); return S_OK; } \
+    const CStatProp &prop = k[index]; \
+    *propID = (PROPID)prop.PropID; *varType = prop.vt; \
+    *name = NWindows::NCOM::AllocBstrFromAscii(prop.Name); return S_OK; } \
 
 #define IMP_IInArchive_Props \
   STDMETHODIMP CHandler::GetNumberOfProperties(UInt32 *numProps) \

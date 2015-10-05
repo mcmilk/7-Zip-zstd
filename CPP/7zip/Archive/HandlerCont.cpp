@@ -227,4 +227,30 @@ STDMETHODIMP CHandlerImg::Extract(const UInt32 *indices, UInt32 numItems,
   COM_TRY_END
 }
 
+
+HRESULT ReadZeroTail(ISequentialInStream *stream, bool &areThereNonZeros, UInt64 &numZeros, UInt64 maxSize)
+{
+  areThereNonZeros = false;
+  numZeros = 0;
+  const size_t kBufSize = 1 << 11;
+  Byte buf[kBufSize];
+  for (;;)
+  {
+    UInt32 size = 0;
+    HRESULT(stream->Read(buf, kBufSize, &size));
+    if (size == 0)
+      return S_OK;
+    for (UInt32 i = 0; i < size; i++)
+      if (buf[i] != 0)
+      {
+        areThereNonZeros = true;
+        numZeros += i;
+        return S_OK;
+      }
+    numZeros += size;
+    if (numZeros > maxSize)
+      return S_OK;
+  }
+}
+
 }

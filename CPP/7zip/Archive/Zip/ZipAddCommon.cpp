@@ -271,7 +271,7 @@ HRESULT CAddCommon::Compress(
           else
           {
           CMethodId methodId;
-          switch(method)
+          switch (method)
           {
             case NFileHeader::NCompressionMethod::kBZip2:
               methodId = kMethodId_BZip2;

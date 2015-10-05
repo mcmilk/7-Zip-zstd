@@ -103,7 +103,7 @@ void CMemBlockManagerMt::FreeBlock(void *p, bool lockMode)
 
 void CMemBlocks::Free(CMemBlockManagerMt *manager)
 {
-  while(Blocks.Size() > 0)
+  while (Blocks.Size() > 0)
   {
     manager->FreeBlock(Blocks.Back());
     Blocks.DeleteBack();

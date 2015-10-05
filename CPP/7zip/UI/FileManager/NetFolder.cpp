@@ -13,7 +13,7 @@
 using namespace NWindows;
 using namespace NNet;
 
-static const PROPID kProps[] =
+static const Byte  kProps[] =
 {
   kpidName,
   kpidLocalName,
@@ -170,7 +170,7 @@ STDMETHODIMP CNetFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIAN
 {
   NCOM::CPropVariant prop;
   const CResourceEx &item = _items[itemIndex];
-  switch(propID)
+  switch (propID)
   {
     case kpidIsDir:  prop = true; break;
     case kpidName:
@@ -243,7 +243,7 @@ IMP_IFolderFolder_Props(CNetFolder)
 STDMETHODIMP CNetFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
 {
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidType: prop = "NetFolder"; break;
     case kpidPath: prop = _path; break;

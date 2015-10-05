@@ -37,7 +37,17 @@ bool ConvertFileTimeToString(const FILETIME &ft, char *s, bool includeTime, bool
     UINT_TO_STR_2(' ', st.wHour);
     UINT_TO_STR_2(':', st.wMinute);
     if (includeSeconds)
+    {
       UINT_TO_STR_2(':', st.wSecond);
+      /*
+      *s++ = '.';
+      unsigned val = st.wMilliseconds;
+      s[2] = (char)('0' + val % 10); val /= 10;
+      s[1] = (char)('0' + val % 10);
+      s[0] = (char)('0' + val / 10);
+      s += 3;
+      */
+    }
   }
   *s = 0;
   return true;

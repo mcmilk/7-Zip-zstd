@@ -460,7 +460,7 @@ extern UString RootFolder_GetName_Documents(int &iconIndex);
 bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
 {
   result = FALSE;
-  switch(code)
+  switch (code)
   {
     case CBN_DROPDOWN:
     {

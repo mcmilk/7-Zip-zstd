@@ -4,6 +4,7 @@
 
 #include "../../../Common/ComTry.h"
 #include "../../../Common/Defs.h"
+#include "../../../Common/MyLinux.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/UTFConvert.h"
 
@@ -113,7 +114,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         NCOM::CPropVariant prop;
         RINOK(callback->GetProperty(i, kpidPosixAttrib, &prop));
         if (prop.vt == VT_EMPTY)
-          ui.Mode = 0777 | (ui.IsDir ? 0040000 : 0100000);
+          ui.Mode =
+                MY_LIN_S_IRWXO
+              | MY_LIN_S_IRWXG
+              | MY_LIN_S_IRWXU
+              | (ui.IsDir ? MY_LIN_S_IFDIR : MY_LIN_S_IFREG);
         else if (prop.vt != VT_UI4)
           return E_INVALIDARG;
         else

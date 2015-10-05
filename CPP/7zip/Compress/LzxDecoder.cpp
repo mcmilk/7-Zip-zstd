@@ -457,16 +457,15 @@ HRESULT CDecoder::CodeSpec(UInt32 curSize)
 
 HRESULT CDecoder::Code(const Byte *inData, size_t inSize, UInt32 outSize)
 {
-  if (_pos == _winSize)
-  {
-    _pos = 0;
-    _overDict = true;
-  }
-
   if (!_keepHistory)
   {
     _pos = 0;
     _overDict = false;
+  }
+  else if (_pos == _winSize)
+  {
+    _pos = 0;
+    _overDict = true;
   }
 
   _writePos = _pos;

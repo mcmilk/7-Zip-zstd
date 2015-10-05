@@ -571,6 +571,7 @@ static HRESULT Compress(
       const CArcItem &ai = arcItems[i];
       bool needRename = false;
       UString dest;
+      
       if (ai.Censored)
       {
         FOR_VECTOR (j, options.RenamePairs)
@@ -581,6 +582,8 @@ static HRESULT Compress(
             needRename = true;
             break;
           }
+          
+          #ifdef SUPPORT_ALT_STREAMS
           if (ai.IsAltStream)
           {
             int colonPos = FindAltStreamColon_in_Path(ai.Name);
@@ -600,8 +603,10 @@ static HRESULT Compress(
               }
             }
           }
+          #endif
         }
       }
+      
       CUpdatePair2 up2;
       up2.SetAs_NoChangeArcItem(ai.IndexInServer);
       if (needRename)

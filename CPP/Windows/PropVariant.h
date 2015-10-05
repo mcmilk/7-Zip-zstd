@@ -10,6 +10,8 @@
 namespace NWindows {
 namespace NCOM {
 
+BSTR AllocBstrFromAscii(const char *s) throw();
+
 HRESULT PropVariant_Clear(PROPVARIANT *p) throw();
 
 HRESULT PropVarEm_Alloc_Bstr(PROPVARIANT *p, unsigned numChars) throw();

@@ -77,7 +77,7 @@ bool CSplitDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
 
 bool CSplitDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDB_SPLIT_PATH:
       OnButtonSetPath();

@@ -56,7 +56,7 @@ enum
   kpidBootImage
 };
 
-static const STATPROPSTG kArcProps[] =
+static const CStatProp kArcProps[] =
 {
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidPackSize, VT_UI8},
@@ -69,8 +69,8 @@ static const STATPROPSTG kArcProps[] =
   { NULL, kpidIsVolume, VT_BOOL},
   { NULL, kpidVolume, VT_UI4},
   { NULL, kpidNumVolumes, VT_UI4},
-  { (LPOLESTR)L"Images", kpidNumImages, VT_UI4},
-  { (LPOLESTR)L"Boot Image", kpidBootImage, VT_UI4}
+  { "Images", kpidNumImages, VT_UI4},
+  { "Boot Image", kpidBootImage, VT_UI4}
 };
 
 

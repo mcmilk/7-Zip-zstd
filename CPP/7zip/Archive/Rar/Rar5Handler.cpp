@@ -30,6 +30,8 @@
 #include "../Common/FindSignature.h"
 #include "../Common/ItemNameUtils.h"
 
+#include "../HandlerCont.h"
+
 #include "RarVol.h"
 #include "Rar5Handler.h"
 
@@ -38,13 +40,6 @@ using namespace NWindows;
 #define Get32(p) GetUi32(p)
 
 namespace NArchive {
-
-namespace NRar {
-
-HRESULT ReadZeroTail(ISequentialInStream *stream, bool &areThereNonZeros, UInt64 &numZeros, UInt64 maxSize);
-
-}
-
 namespace NRar5 {
 
 static const unsigned kMarkerSize = 8;
@@ -1938,7 +1933,7 @@ HRESULT CHandler::Open2(IInStream *stream,
             bool areThereNonZeros;
             UInt64 numZeros;
             const UInt64 maxSize = 1 << 12;
-            RINOK(NRar::ReadZeroTail(inStream, areThereNonZeros, numZeros, maxSize));
+            RINOK(ReadZeroTail(inStream, areThereNonZeros, numZeros, maxSize));
             if (!areThereNonZeros && numZeros != 0 && numZeros <= maxSize)
               arcInfo.EndPos += numZeros;
           }

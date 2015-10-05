@@ -70,7 +70,7 @@ void CKeyInfo::CalcKey()
         if (++(ctr[i]) != 0)
           break;
     }
-    while(--numRounds != 0);
+    while (--numRounds != 0);
 
     Sha256_Final(&sha, Key);
   }

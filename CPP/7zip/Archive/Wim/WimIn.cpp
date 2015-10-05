@@ -21,7 +21,7 @@
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
 
-#include "../../Compress/XPressDecoder.h"
+#include "../../Compress/XpressDecoder.h"
 
 #include "../Common/OutStreamWithSha1.h"
 

@@ -25,7 +25,7 @@ public:
 
   bool GetExitCodeProcess(LPDWORD lpExitCode) { return BOOLToBool(::GetExitCodeProcess(_handle, lpExitCode)); }
   bool Terminate(UINT exitCode) { return BOOLToBool(::TerminateProcess(_handle, exitCode)); }
-  #if(WINVER >= 0x0500)
+  #if (WINVER >= 0x0500)
   DWORD GetGuiResources (DWORD uiFlags) { return ::GetGuiResources(_handle, uiFlags); }
   #endif
   bool SetPriorityClass(DWORD dwPriorityClass) { return BOOLToBool(::SetPriorityClass(_handle, dwPriorityClass)); }

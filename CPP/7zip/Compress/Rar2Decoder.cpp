@@ -56,7 +56,7 @@ Byte CFilter::Decode(int &channelDelta, Byte deltaByte)
       Dif[i] = 0;
     }
     
-    switch(numMinDif)
+    switch (numMinDif)
     {
       case 1: if (K1 >= -16) K1--; break;
       case 2: if (K1 <   16) K1++; break;

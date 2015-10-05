@@ -78,7 +78,7 @@ bool CListViewDialog::OnNotify(UINT /* controlID */, LPNMHDR header)
 {
   if (header->hwndFrom != _listView)
     return false;
-  switch(header->code)
+  switch (header->code)
   {
     case LVN_ITEMACTIVATE:
       if (g_LVN_ITEMACTIVATE_Support)
@@ -99,7 +99,7 @@ bool CListViewDialog::OnNotify(UINT /* controlID */, LPNMHDR header)
     case LVN_KEYDOWN:
     {
       LPNMLVKEYDOWN keyDownInfo = LPNMLVKEYDOWN(header);
-      switch(keyDownInfo->wVKey)
+      switch (keyDownInfo->wVKey)
       {
         case VK_DELETE:
         {

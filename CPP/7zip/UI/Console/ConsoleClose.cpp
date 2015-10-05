@@ -27,7 +27,7 @@ static BOOL WINAPI HandlerRoutine(DWORD ctrlType)
     return TRUE;
   return FALSE;
   /*
-  switch(ctrlType)
+  switch (ctrlType)
   {
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:
@@ -50,7 +50,7 @@ void CheckCtrlBreak()
 CCtrlHandlerSetter::CCtrlHandlerSetter()
 {
   #if !defined(UNDER_CE) && defined(_WIN32)
-  if(!SetConsoleCtrlHandler(HandlerRoutine, TRUE))
+  if (!SetConsoleCtrlHandler(HandlerRoutine, TRUE))
     throw "SetConsoleCtrlHandler fails";
   #endif
 }
@@ -58,7 +58,7 @@ CCtrlHandlerSetter::CCtrlHandlerSetter()
 CCtrlHandlerSetter::~CCtrlHandlerSetter()
 {
   #if !defined(UNDER_CE) && defined(_WIN32)
-  if(!SetConsoleCtrlHandler(HandlerRoutine, FALSE))
+  if (!SetConsoleCtrlHandler(HandlerRoutine, FALSE))
     throw "SetConsoleCtrlHandler fails";
   #endif
 }

@@ -95,7 +95,7 @@ public:
 // it's hack for supporting Windows NT
 // constants are from WinUser.h
 
-#if(WINVER < 0x0500)
+#if (WINVER < 0x0500)
 #define MIIM_STRING      0x00000040
 #define MIIM_BITMAP      0x00000080
 #define MIIM_FTYPE       0x00000100
@@ -162,6 +162,8 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
         if (langID == IDM_OPEN_INSIDE_ONE || langID == IDM_OPEN_INSIDE_PARSER)
         {
           LangString_OnlyFromLangFile(IDM_OPEN_INSIDE, newString);
+          if (newString.IsEmpty())
+            continue;
           newString.Replace(L"&", L"");
           int tabPos = newString.Find(L"\t");
           if (tabPos >= 0)

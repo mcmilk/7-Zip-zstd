@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2015-08-04 : Igor Pavlov : Public domain */
+2015-09-28 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -1161,9 +1161,9 @@ if (res == SZ_OK)
   if (res == SZ_OK)
   {
     UInt32 i;
-    UInt32 blockIndex = 0xFFFFFFFF; /* it can have any value before first call, if(!outBuf) */
+    UInt32 blockIndex = 0xFFFFFFFF; /* it can have any value before first call, if (!outBuf) */
     Byte *outBuf = NULL; /* it must be NULL before first call for each new archive. */
-    size_t outBufSize = 0;  /* it can have any value before first call, if(!outBuf) */
+    size_t outBufSize = 0;  /* it can have any value before first call, if (!outBuf) */
     
     g_TotalSize = 0;
 

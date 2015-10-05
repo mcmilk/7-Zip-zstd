@@ -544,7 +544,7 @@ static HRESULT StartApplication(const UString &dir, const UString &path, HWND wi
   }
   if (result <= 32)
   {
-    switch(result)
+    switch (result)
     {
       case SE_ERR_NOASSOC:
         ::MessageBoxW(window,
@@ -1241,7 +1241,7 @@ static bool CheckDeleteItem(UINT64 currentFileTime, UINT64 folderFileTime)
 void DeleteOldTempFiles()
 {
   UString tempPath;
-  if(!MyGetTempPath(tempPath))
+  if (!MyGetTempPath(tempPath))
     throw 1;
 
   UINT64 currentFileTime;
@@ -1250,12 +1250,12 @@ void DeleteOldTempFiles()
   searchWildCard += WCHAR(NName::kAnyStringWildcard);
   NFind::CEnumeratorW enumerator(searchWildCard);
   NFind::CFileInfo fileInfo;
-  while(enumerator.Next(fileInfo))
+  while (enumerator.Next(fileInfo))
   {
     if (!fileInfo.IsDir())
       continue;
     const UINT64 &cTime = *(const UINT64 *)(&fileInfo.CTime);
-    if(CheckDeleteItem(cTime, currentFileTime))
+    if (CheckDeleteItem(cTime, currentFileTime))
       RemoveDirectoryWithSubItems(tempPath + fileInfo.Name);
   }
 }

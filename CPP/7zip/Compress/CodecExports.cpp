@@ -8,7 +8,6 @@
 #include "../../Common/MyCom.h"
 
 #include "../../Windows/Defs.h"
-#include "../../Windows/PropVariant.h"
 
 #include "../ICoder.h"
 
@@ -23,7 +22,7 @@ extern const CHasherInfo *g_Hashers[];
 static void SetPropFromAscii(const char *s, PROPVARIANT *prop) throw()
 {
   UINT len = (UINT)strlen(s);
-  OLECHAR *dest = ::SysAllocStringLen(NULL, len);
+  BSTR dest = ::SysAllocStringLen(NULL, len);
   if (dest)
   {
     for (UINT i = 0; i <= len; i++)

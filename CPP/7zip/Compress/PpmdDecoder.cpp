@@ -49,7 +49,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *props, UInt32 size)
 
 HRESULT CDecoder::CodeSpec(Byte *memStream, UInt32 size)
 {
-  switch(_status)
+  switch (_status)
   {
     case kStatus_Finished: return S_OK;
     case kStatus_Error: return S_FALSE;

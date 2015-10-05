@@ -18,7 +18,7 @@ static void ReplaceIncorrectChars(UString &s)
           #ifdef _WIN32
           c == ':' || c == '*' || c == '?' || c < 0x20 || c == '<' || c == '>' || c == '|' || c == '"'
           || c == '/'
-          || c == 0x202E // RLO
+          // || c == 0x202E // RLO
           ||
           #endif
           c == WCHAR_PATH_SEPARATOR)
@@ -190,9 +190,7 @@ void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir)
   {
     UString &s = parts[i];
 
-    #ifdef _WIN32
     Correct_PathPart(s);
-    #endif
 
     if (s.IsEmpty())
     {

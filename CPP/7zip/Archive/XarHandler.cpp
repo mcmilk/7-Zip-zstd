@@ -5,6 +5,7 @@
 #include "../../../C/CpuArch.h"
 
 #include "../../Common/ComTry.h"
+#include "../../Common/MyLinux.h"
 #include "../../Common/MyXml.h"
 #include "../../Common/StringToInt.h"
 #include "../../Common/UTFConvert.h"
@@ -360,7 +361,7 @@ HRESULT CHandler::Open2(IInStream *stream)
   UInt64 totalPackSize = 0;
   unsigned numMainFiles = 0;
   
-  FOR_VECTOR(i, _files)
+  FOR_VECTOR (i, _files)
   {
     const CFile &file = _files[i];
     file.UpdateTotalPackSize(totalPackSize);
@@ -511,10 +512,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         if (item.ModeDefined)
         {
           UInt32 mode = item.Mode;
-          const UInt32 k_PosixAttrib_Dir = (1 << 14);
-          const UInt32 k_PosixAttrib_RegFile = (1 << 15);
-          if ((mode & 0xF000) == 0)
-            mode |= (item.IsDir ? k_PosixAttrib_Dir : k_PosixAttrib_RegFile);
+          if ((mode & MY_LIN_S_IFMT) == 0)
+            mode |= (item.IsDir ? MY_LIN_S_IFDIR : MY_LIN_S_IFREG);
           prop = mode;
         }
         break;

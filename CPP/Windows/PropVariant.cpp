@@ -9,9 +9,23 @@
 namespace NWindows {
 namespace NCOM {
 
+BSTR AllocBstrFromAscii(const char *s) throw()
+{
+  if (!s)
+    return NULL;
+  UINT len = (UINT)strlen(s);
+  BSTR p = ::SysAllocStringLen(NULL, len);
+  if (p)
+  {
+    for (UINT i = 0; i <= len; i++)
+      p[i] = (Byte)s[i];
+  }
+  return p;
+}
+
 HRESULT PropVarEm_Alloc_Bstr(PROPVARIANT *p, unsigned numChars) throw()
 {
-  p->bstrVal = ::SysAllocStringLen(0, numChars);
+  p->bstrVal = ::SysAllocStringLen(NULL, numChars);
   if (!p->bstrVal)
   {
     p->vt = VT_ERROR;
@@ -24,19 +38,12 @@ HRESULT PropVarEm_Alloc_Bstr(PROPVARIANT *p, unsigned numChars) throw()
 
 HRESULT PropVarEm_Set_Str(PROPVARIANT *p, const char *s) throw()
 {
-  UINT len = (UINT)strlen(s);
-  p->bstrVal = ::SysAllocStringLen(0, len);
-  if (!p->bstrVal)
-  {
-    p->vt = VT_ERROR;
-    p->scode = E_OUTOFMEMORY;
-    return E_OUTOFMEMORY;
-  }
-  p->vt = VT_BSTR;
-  BSTR dest = p->bstrVal;
-  for (UINT i = 0; i <= len; i++)
-    dest[i] = (Byte)s[i];
-  return S_OK;
+  p->bstrVal = AllocBstrFromAscii(s);
+  if (p->bstrVal)
+    return S_OK;
+  p->vt = VT_ERROR;
+  p->scode = E_OUTOFMEMORY;
+  return E_OUTOFMEMORY;
 }
 
 CPropVariant::CPropVariant(const PROPVARIANT &varSrc)
@@ -68,6 +75,7 @@ CPropVariant& CPropVariant::operator=(const CPropVariant &varSrc)
   InternalCopy(&varSrc);
   return *this;
 }
+
 CPropVariant& CPropVariant::operator=(const PROPVARIANT &varSrc)
 {
   InternalCopy(&varSrc);
@@ -144,19 +152,12 @@ CPropVariant& CPropVariant::operator=(const char *s)
   InternalClear();
   vt = VT_BSTR;
   wReserved1 = 0;
-  UINT len = (UINT)strlen(s);
-  bstrVal = ::SysAllocStringLen(0, len);
+  bstrVal = AllocBstrFromAscii(s);
   if (!bstrVal)
   {
     throw kMemException;
     // vt = VT_ERROR;
     // scode = E_OUTOFMEMORY;
-  }
-  else
-  {
-    BSTR dest = bstrVal;
-    for (UINT i = 0; i <= len; i++)
-      dest[i] = (Byte)s[i];
   }
   return *this;
 }
@@ -178,7 +179,7 @@ BSTR CPropVariant::AllocBstr(unsigned numChars)
     InternalClear();
   vt = VT_BSTR;
   wReserved1 = 0;
-  bstrVal = ::SysAllocStringLen(0, numChars);
+  bstrVal = ::SysAllocStringLen(NULL, numChars);
   if (!bstrVal)
   {
     throw kMemException;
@@ -244,7 +245,7 @@ HRESULT CPropVariant::Clear() throw()
 HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc) throw()
 {
   ::VariantClear((tagVARIANT *)this);
-  switch(pSrc->vt)
+  switch (pSrc->vt)
   {
     case VT_UI1:
     case VT_I1:

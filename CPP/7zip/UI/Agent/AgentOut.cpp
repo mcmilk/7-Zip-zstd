@@ -265,7 +265,7 @@ STDMETHODIMP CAgent::DoOperation(
   UInt32 value;
   RINOK(outArchive->GetFileTimeType(&value));
 
-  switch(value)
+  switch (value)
   {
     case NFileTimeType::kWindows:
     case NFileTimeType::kDOS:

@@ -14,7 +14,7 @@ namespace N7z {
 struct CPropMap
 {
   UInt32 FilePropID;
-  STATPROPSTG StatPROPSTG;
+  CStatProp StatProp;
 };
 
 static const CPropMap kPropMap[] =
@@ -24,11 +24,11 @@ static const CPropMap kPropMap[] =
   { NID::kPackInfo, { NULL, kpidPackSize, VT_UI8 } },
   
   #ifdef _MULTI_PACK
-  { 100, { L"Pack0", kpidPackedSize0, VT_UI8 } },
-  { 101, { L"Pack1", kpidPackedSize1, VT_UI8 } },
-  { 102, { L"Pack2", kpidPackedSize2, VT_UI8 } },
-  { 103, { L"Pack3", kpidPackedSize3, VT_UI8 } },
-  { 104, { L"Pack4", kpidPackedSize4, VT_UI8 } },
+  { 100, { "Pack0", kpidPackedSize0, VT_UI8 } },
+  { 101, { "Pack1", kpidPackedSize1, VT_UI8 } },
+  { 102, { "Pack2", kpidPackedSize2, VT_UI8 } },
+  { 103, { "Pack3", kpidPackedSize3, VT_UI8 } },
+  { 104, { "Pack4", kpidPackedSize4, VT_UI8 } },
   #endif
 
   { NID::kCTime, { NULL, kpidCTime, VT_FILETIME } },
@@ -90,7 +90,7 @@ void CHandler::FillPopIDs()
   _fileInfoPopIDs.Clear();
 
   #ifdef _7Z_VOL
-  if(_volumes.Size() < 1)
+  if (_volumes.Size() < 1)
     return;
   const CVolume &volume = _volumes.Front();
   const CArchiveDatabaseEx &_db = volume.Database;
@@ -156,8 +156,8 @@ STDMETHODIMP CHandler::GetPropertyInfo(UInt32 index, BSTR *name, PROPID *propID,
     const CPropMap &pr = kPropMap[i];
     if (pr.FilePropID == id)
     {
-      const STATPROPSTG &st = pr.StatPROPSTG;
-      *propID = st.propid;
+      const CStatProp &st = pr.StatProp;
+      *propID = st.PropID;
       *varType = st.vt;
       /*
       if (st.lpwstrName)

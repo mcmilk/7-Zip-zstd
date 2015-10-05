@@ -58,7 +58,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidPhySize: prop = _archive.PhySize; break;
 

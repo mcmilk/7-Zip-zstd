@@ -3,10 +3,16 @@
 #include "StdAfx.h"
 
 // #include <stdio.h>
+#ifdef _WIN32
+#include <wchar.h>
+#else
+#include <ctype.h>
+#endif
 
 #include "../../../../C/Sort.h"
 #include "../../../../C/CpuArch.h"
 
+#include "../../../Common/UTFConvert.h"
 #include "../../../Common/Wildcard.h"
 
 #include "../../../Windows/PropVariant.h"
@@ -555,7 +561,10 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
   }
 
   Files.Alloc(numItems);
-  
+
+  UString tempUString;
+  AString tempAString;
+
   UInt32 i;
   for (i = 0; i < numItems; i++)
   {
@@ -567,12 +576,12 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
     
     CProxyFile2 &file = Files[i];
     
-    #ifdef MY_CPU_LE
     const void *p;
     UInt32 size;
     UInt32 propType;
     RINOK(arc.GetRawProps->GetRawProp(i, kpidName, &p, &size, &propType));
     
+    #ifdef MY_CPU_LE
     if (p && propType == PROP_DATA_TYPE_wchar_t_PTR_Z_LE)
     {
       file.Name = (const wchar_t *)p;
@@ -582,6 +591,16 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
     }
     else
     #endif
+    if (p && propType == NPropDataType::kUtf8z)
+    {
+      tempAString = (const char *)p;
+      ConvertUTF8ToUnicode(tempAString, tempUString);
+      file.NameLen = tempUString.Len();
+      file.Name = new wchar_t[file.NameLen + 1];
+      file.NeedDeleteName = true;
+      wmemcpy((wchar_t *)file.Name, tempUString.Ptr(), file.NameLen + 1);
+    }
+    else
     {
       NCOM::CPropVariant prop;
       RINOK(arc.Archive->GetProperty(i, kpidName, &prop));
@@ -595,7 +614,7 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
       file.NameLen = MyStringLen(s);
       file.Name = new wchar_t[file.NameLen + 1];
       file.NeedDeleteName = true;
-      MyStringCopy((wchar_t *)file.Name, s);
+      wmemcpy((wchar_t *)file.Name, s, file.NameLen + 1);
     }
     
     UInt32 parent = (UInt32)(Int32)-1;

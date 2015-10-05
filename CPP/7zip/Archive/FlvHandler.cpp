@@ -145,7 +145,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 {
   NWindows::NCOM::CPropVariant prop;
   const CItem2 &item = _items2[index];
-  switch(propID)
+  switch (propID)
   {
     case kpidExtension:
       prop = _isRaw ?
@@ -209,7 +209,7 @@ AString CHandler::GetComment()
       Byte type = *p++;
       size--;
       bool ok = false;
-      switch(type)
+      switch (type)
       {
         case 0:
         {
@@ -256,7 +256,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   // COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     // case kpidComment: prop = GetComment(); break;
     case kpidPhySize: prop = (UInt64)_phySize; break;

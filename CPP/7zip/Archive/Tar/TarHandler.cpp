@@ -639,6 +639,7 @@ void CHandler::Init()
   _forceCodePage = false;
   // _codePage = CP_OEMCP;
   _curCodePage = _specifiedCodePage = CP_UTF8;  // CP_OEMCP;
+  _thereIsPaxExtendedHeader = false;
 }
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)

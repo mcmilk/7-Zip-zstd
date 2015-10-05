@@ -805,7 +805,7 @@ enum
   // kpidFileSysType
 };
 
-static const STATPROPSTG kArcProps[] =
+static const CStatProp kArcProps[] =
 {
   { NULL, kpidFileSystem, VT_BSTR},
   { NULL, kpidClusterSize, VT_UI4},
@@ -814,12 +814,12 @@ static const STATPROPSTG kArcProps[] =
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidVolumeName, VT_BSTR},
 
-  { (LPOLESTR)L"FATs", kpidNumFats, VT_UI4},
+  { "FATs", kpidNumFats, VT_UI4},
   { NULL, kpidSectorSize, VT_UI4},
   { NULL, kpidId, VT_UI4},
-  // { (LPOLESTR)L"OEM Name", kpidOemName, VT_BSTR},
-  // { (LPOLESTR)L"Volume Name", kpidVolName, VT_BSTR},
-  // { (LPOLESTR)L"File System Type", kpidFileSysType, VT_BSTR}
+  // { "OEM Name", kpidOemName, VT_BSTR},
+  // { "Volume Name", kpidVolName, VT_BSTR},
+  // { "File System Type", kpidFileSysType, VT_BSTR}
   // { NULL, kpidSectorsPerTrack, VT_UI4},
   // { NULL, kpidNumHeads, VT_UI4},
   // { NULL, kpidHiddenSectors, VT_UI4}
@@ -858,7 +858,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidFileSystem:
     {
@@ -897,7 +897,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
   const CItem &item = Items[index];
-  switch(propID)
+  switch (propID)
   {
     case kpidPath: prop = GetItemPath(index); break;
     case kpidShortName: prop = item.GetShortName(); break;

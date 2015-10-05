@@ -23,7 +23,7 @@ void CBitDecoder::Prepare2() throw()
 
   size_t rem = _bufLim - _buf;
   if (rem != 0)
-    memcpy(_bufBase, _buf, rem);
+    memmove(_bufBase, _buf, rem);
 
   _bufLim = _bufBase + rem;
   _processedSize += (_buf - _bufBase);

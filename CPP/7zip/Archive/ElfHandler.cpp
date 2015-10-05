@@ -632,7 +632,7 @@ enum
   kpidInfoSection
 };
 
-static const STATPROPSTG kProps[] =
+static const CStatProp kProps[] =
 {
   { NULL, kpidPath, VT_BSTR },
   { NULL, kpidSize, VT_UI8 },
@@ -641,8 +641,8 @@ static const STATPROPSTG kProps[] =
   { NULL, kpidVa, VT_UI8 },
   { NULL, kpidType, VT_BSTR },
   { NULL, kpidCharacts, VT_BSTR }
-  , { (LPOLESTR)L"Link Section", kpidLinkSection, VT_BSTR}
-  , { (LPOLESTR)L"Info Section", kpidInfoSection, VT_BSTR}
+  , { "Link Section", kpidLinkSection, VT_BSTR}
+  , { "Info Section", kpidInfoSection, VT_BSTR}
 };
 
 IMP_IInArchive_Props_WITH_NAME

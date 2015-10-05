@@ -141,7 +141,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UInt32 index,
     }
 
     RINOK(_archiveHandler->GetProperty(index, kpidMTime, &prop));
-    switch(prop.vt)
+    switch (prop.vt)
     {
       case VT_EMPTY: _processedFileInfo.MTime = _defaultMTime; break;
       case VT_FILETIME: _processedFileInfo.MTime = prop.filetime; break;
@@ -215,7 +215,7 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(Int32 askExtractMode)
 
 STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResult)
 {
-  switch(resultEOperationResult)
+  switch (resultEOperationResult)
   {
     case NArchive::NExtract::NOperationResult::kOK:
       break;
@@ -223,7 +223,7 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 resultEOperationResul
     default:
     {
       _outFileStream.Release();
-      switch(resultEOperationResult)
+      switch (resultEOperationResult)
       {
         case NArchive::NExtract::NOperationResult::kUnsupportedMethod:
           _message = kUnsupportedMethod;

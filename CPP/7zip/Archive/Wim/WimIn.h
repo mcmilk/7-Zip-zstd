@@ -221,6 +221,7 @@ namespace NHeaderFlags
   const UInt32 kXPRESS       = (UInt32)1 << 17;
   const UInt32 kLZX          = (UInt32)1 << 18;
   const UInt32 kLZMS         = (UInt32)1 << 19;
+  const UInt32 kXPRESS2      = (UInt32)1 << 21; // XPRESS with nonstandard chunk size ?
 
   const UInt32 kMethodMask   = 0xFFFE0000;
 }
@@ -277,7 +278,8 @@ struct CHeader
     return (!IsCompressed()
         || (Flags & NHeaderFlags::kLZX) != 0
         || (Flags & NHeaderFlags::kXPRESS) != 0
-        || (Flags & NHeaderFlags::kLZMS) != 0);
+        || (Flags & NHeaderFlags::kLZMS) != 0
+        || (Flags & NHeaderFlags::kXPRESS2) != 0);
   }
   
   unsigned GetMethod() const
@@ -289,6 +291,7 @@ struct CHeader
     if (mask == NHeaderFlags::kXPRESS) return NMethod::kXPRESS;
     if (mask == NHeaderFlags::kLZX) return NMethod::kLZX;
     if (mask == NHeaderFlags::kLZMS) return NMethod::kLZMS;
+    if (mask == NHeaderFlags::kXPRESS2) return NMethod::kXPRESS;
     return mask;
   }
 

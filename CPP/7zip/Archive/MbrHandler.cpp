@@ -332,15 +332,15 @@ enum
   kpidEndChs
 };
 
-static const STATPROPSTG kProps[] =
+static const CStatProp kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidFileSystem, VT_BSTR},
   { NULL, kpidOffset, VT_UI8},
-  { (LPOLESTR)L"Primary", kpidPrimary, VT_BOOL},
-  { (LPOLESTR)L"Begin CHS", kpidBegChs, VT_BSTR},
-  { (LPOLESTR)L"End CHS", kpidEndChs, VT_BSTR}
+  { "Primary", kpidPrimary, VT_BOOL},
+  { "Begin CHS", kpidBegChs, VT_BSTR},
+  { "End CHS", kpidEndChs, VT_BSTR}
 };
 
 IMP_IInArchive_Props_WITH_NAME

@@ -579,7 +579,7 @@ static bool FlagsAreSame(const CItem &i1, const CItem &i2)
   if (i1.Flags == i2.Flags)
     return true;
   UInt32 mask = 0xFFFF;
-  switch(i1.Method)
+  switch (i1.Method)
   {
     case NFileHeader::NCompressionMethod::kDeflated:
       mask = 0x7FF9;

@@ -119,9 +119,9 @@ HRESULT COutVolumeStream::Flush()
 /*
 STDMETHODIMP COutMultiStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  if(processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
-  while(size > 0)
+  while (size > 0)
   {
     if (_streamIndex >= Streams.Size())
     {
@@ -157,7 +157,7 @@ STDMETHODIMP COutMultiStream::Write(const void *data, UInt32 size, UInt32 *proce
     _absPos += realProcessed;
     if (_absPos > _length)
       _length = _absPos;
-    if(processedSize != NULL)
+    if (processedSize)
       *processedSize += realProcessed;
     if (subStream.Pos == subStream.Size)
     {

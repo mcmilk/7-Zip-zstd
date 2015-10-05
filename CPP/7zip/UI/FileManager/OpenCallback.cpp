@@ -60,14 +60,14 @@ STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value
   NCOM::CPropVariant prop;
   if (_subArchiveMode)
   {
-    switch(propID)
+    switch (propID)
     {
       case kpidName: prop = _subArchiveName; break;
     }
   }
   else
   {
-    switch(propID)
+    switch (propID)
     {
       case kpidName:  prop = _fileInfo.Name; break;
       case kpidIsDir:  prop = _fileInfo.IsDir(); break;

@@ -103,7 +103,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   NCOM::CPropVariant prop;
   if (m_Database.NewFormat)
   {
-    switch(propID)
+    switch (propID)
     {
       case kpidSize:
         prop = (UInt64)m_Database.NewFormatString.Len();
@@ -318,7 +318,7 @@ HRESULT CChmFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *proce
   if (processedSize)
    *processedSize = 0;
   
-  while(size != 0)
+  while (size != 0)
   {
     if (m_FileIsOpen)
     {

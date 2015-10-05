@@ -1,5 +1,5 @@
 /* 7zArcIn.c -- 7z Input functions
-2015-05-16 : Igor Pavlov : Public domain */
+2015-09-28 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -1295,7 +1295,7 @@ static SRes SzReadHeader2(
     {
       SKIP_DATA(sd, size);
     }
-    else switch((unsigned)type)
+    else switch ((unsigned)type)
     {
       case k7zIdName:
       {

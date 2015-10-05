@@ -75,7 +75,7 @@ bool CCopyDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
 
 bool CCopyDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDB_COPY_SET_PATH:
       OnButtonSetPath();

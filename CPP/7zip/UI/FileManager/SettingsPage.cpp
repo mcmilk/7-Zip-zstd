@@ -93,7 +93,7 @@ void CSettingsPage::OnNotifyHelp()
 
 bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDX_SETTINGS_SINGLE_CLICK:
     /*

@@ -52,7 +52,7 @@ bool CFoldersPage::OnInit()
 int CFoldersPage::GetWorkMode() const
 {
   for (int i = 0; i < kNumWorkModeButtons; i++)
-    if(IsButtonCheckedBool(kWorkModeButtons[i]))
+    if (IsButtonCheckedBool(kWorkModeButtons[i]))
       return i;
   throw 0;
 }
@@ -104,7 +104,7 @@ bool CFoldersPage::OnButtonClicked(int buttonID, HWND buttonHWND)
       ModifiedEvent();
       return true;
     }
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDB_FOLDERS_WORK_PATH:
       OnFoldersWorkButtonPath();

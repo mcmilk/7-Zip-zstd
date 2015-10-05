@@ -86,7 +86,7 @@ CSeqOutStreamWrap::CSeqOutStreamWrap(ISequentialOutStream *stream) throw()
 
 HRESULT SResToHRESULT(SRes res) throw()
 {
-  switch(res)
+  switch (res)
   {
     case SZ_OK: return S_OK;
     case SZ_ERROR_MEM: return E_OUTOFMEMORY;
@@ -111,7 +111,7 @@ static SRes InStreamWrap_Seek(void *pp, Int64 *offset, ESzSeek origin) throw()
 {
   CSeekInStreamWrap *p = (CSeekInStreamWrap *)pp;
   UInt32 moveMethod;
-  switch(origin)
+  switch (origin)
   {
     case SZ_SEEK_SET: moveMethod = STREAM_SEEK_SET; break;
     case SZ_SEEK_CUR: moveMethod = STREAM_SEEK_CUR; break;

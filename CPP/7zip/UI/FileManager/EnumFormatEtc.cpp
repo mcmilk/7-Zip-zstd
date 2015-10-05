@@ -30,7 +30,7 @@ private:
 static void DeepCopyFormatEtc(FORMATETC *dest, const FORMATETC *src)
 {
   *dest = *src;
-  if(src->ptd)
+  if (src->ptd)
   {
     dest->ptd = (DVTARGETDEVICE*)CoTaskMemAlloc(sizeof(DVTARGETDEVICE));
     *(dest->ptd) = *(src->ptd);
@@ -43,20 +43,20 @@ CEnumFormatEtc::CEnumFormatEtc(const FORMATETC *pFormatEtc, ULONG numFormats)
   m_Index = 0;
   m_NumFormats = 0;
   m_Formats = new FORMATETC[numFormats];
-  if(m_Formats)
+  if (m_Formats)
   {
     m_NumFormats = numFormats;
-    for(ULONG i = 0; i < numFormats; i++)
+    for (ULONG i = 0; i < numFormats; i++)
       DeepCopyFormatEtc(&m_Formats[i], &pFormatEtc[i]);
   }
 }
 
 CEnumFormatEtc::~CEnumFormatEtc()
 {
-  if(m_Formats)
+  if (m_Formats)
   {
-    for(ULONG i = 0; i < m_NumFormats; i++)
-      if(m_Formats[i].ptd)
+    for (ULONG i = 0; i < m_NumFormats; i++)
+      if (m_Formats[i].ptd)
         CoTaskMemFree(m_Formats[i].ptd);
       delete[]m_Formats;
   }
@@ -65,15 +65,15 @@ CEnumFormatEtc::~CEnumFormatEtc()
 STDMETHODIMP CEnumFormatEtc::Next(ULONG celt, FORMATETC *pFormatEtc, ULONG *pceltFetched)
 {
   ULONG copied  = 0;
-  if(celt == 0 || pFormatEtc == 0)
+  if (celt == 0 || pFormatEtc == 0)
     return E_INVALIDARG;
-  while(m_Index < m_NumFormats && copied < celt)
+  while (m_Index < m_NumFormats && copied < celt)
   {
     DeepCopyFormatEtc(&pFormatEtc[copied], &m_Formats[m_Index]);
     copied++;
     m_Index++;
   }
-  if(pceltFetched != 0)
+  if (pceltFetched != 0)
     *pceltFetched = copied;
   return (copied == celt) ? S_OK : S_FALSE;
 }
@@ -93,7 +93,7 @@ STDMETHODIMP CEnumFormatEtc::Reset(void)
 STDMETHODIMP CEnumFormatEtc::Clone(IEnumFORMATETC ** ppEnumFormatEtc)
 {
   HRESULT hResult = CreateEnumFormatEtc(m_NumFormats, m_Formats, ppEnumFormatEtc);
-  if(hResult == S_OK)
+  if (hResult == S_OK)
     ((CEnumFormatEtc *)*ppEnumFormatEtc)->m_Index = m_Index;
   return hResult;
 }
@@ -101,7 +101,7 @@ STDMETHODIMP CEnumFormatEtc::Clone(IEnumFORMATETC ** ppEnumFormatEtc)
 // replacement for SHCreateStdEnumFmtEtc
 HRESULT CreateEnumFormatEtc(UINT numFormats, const FORMATETC *formats, IEnumFORMATETC **enumFormat)
 {
-  if(numFormats == 0 || formats == 0 || enumFormat == 0)
+  if (numFormats == 0 || formats == 0 || enumFormat == 0)
     return E_INVALIDARG;
   *enumFormat = new CEnumFormatEtc(formats, numFormats);
   return (*enumFormat) ? S_OK : E_OUTOFMEMORY;

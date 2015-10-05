@@ -694,7 +694,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   NWindows::NCOM::CPropVariant prop;
   const CItem2 &item2 = _items2[index];
   const CItem &item = _items[item2.MainIndex];
-  switch(propID)
+  switch (propID)
   {
     case kpidPath:
     {
@@ -754,7 +754,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidMethod:
     {
@@ -1039,7 +1039,7 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
     else
     {
       bool needAdd = true;
-      switch(type)
+      switch (type)
       {
         case SECTION_RAW:
         {

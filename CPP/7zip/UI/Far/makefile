@@ -20,6 +20,7 @@ CURRENT_OBJS = \
   $O\PluginWrite.obj \
   $O\ProgressBox.obj \
   $O\UpdateCallbackFar.obj \
+  $O\UTFConvert.obj \
 
 COMMON_OBJS = \
   $O\IntToString.obj \

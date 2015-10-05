@@ -132,7 +132,7 @@ bool CProgressDialog::OnTimer(WPARAM /* timerID */, LPARAM /* callback */)
 
 bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
-  switch(message)
+  switch (message)
   {
     case kCloseMessage:
     {
@@ -158,7 +158,7 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 
 bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  switch(buttonID)
+  switch (buttonID)
   {
     case IDCANCEL:
     {

@@ -100,7 +100,7 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
   return S_OK;
 }
 
-static const PROPID kProps[] =
+static const Byte kProps[] =
 {
   kpidName,
   // kpidOutName,

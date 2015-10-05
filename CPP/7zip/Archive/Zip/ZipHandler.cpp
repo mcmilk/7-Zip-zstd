@@ -929,7 +929,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = m_Items.Size();
-  if(numItems == 0)
+  if (numItems == 0)
     return S_OK;
   UInt32 i;
   for (i = 0; i < numItems; i++)

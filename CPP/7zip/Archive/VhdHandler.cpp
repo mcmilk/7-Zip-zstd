@@ -599,17 +599,17 @@ enum
   kpidSavedState
 };
 
-static const STATPROPSTG kArcProps[] =
+static const CStatProp kArcProps[] =
 {
   { NULL, kpidSize, VT_UI8},
   { NULL, kpidOffset, VT_UI8},
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidClusterSize, VT_UI8},
   { NULL, kpidMethod, VT_BSTR},
-  { (LPOLESTR)L"Parent", kpidParent, VT_BSTR},
+  { "Parent", kpidParent, VT_BSTR},
   { NULL, kpidCreatorApp, VT_BSTR},
   { NULL, kpidHostOS, VT_BSTR},
-  { (LPOLESTR)L"Saved State", kpidSavedState, VT_BOOL},
+  { "Saved State", kpidSavedState, VT_BOOL},
   { NULL, kpidId, VT_BSTR}
  };
 

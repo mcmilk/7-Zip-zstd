@@ -268,7 +268,7 @@ void CHandler::AddItem(const CParseItem &item)
 }
 
 /*
-static const STATPROPSTG kProps[] =
+static const CStatProp kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},

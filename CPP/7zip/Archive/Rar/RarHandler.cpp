@@ -30,6 +30,8 @@
 #include "../Common/ItemNameUtils.h"
 #include "../Common/OutStreamWithCRC.h"
 
+#include "../HandlerCont.h"
+
 #include "RarVol.h"
 #include "RarHandler.h"
 
@@ -938,7 +940,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   if (item.BaseFileIndex >= 0)
     mainItem = &_items[_refItems[item.BaseFileIndex].ItemIndex];
   */
-  switch(propID)
+  switch (propID)
   {
     case kpidPath:
     {
@@ -997,31 +999,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-
-HRESULT ReadZeroTail(ISequentialInStream *stream, bool &areThereNonZeros, UInt64 &numZeros, UInt64 maxSize)
-{
-  areThereNonZeros = false;
-  numZeros = 0;
-  const size_t kBufSize = 1 << 9;
-  Byte buf[kBufSize];
-  for (;;)
-  {
-    UInt32 size = 0;
-    HRESULT(stream->Read(buf, kBufSize, &size));
-    if (size == 0)
-      return S_OK;
-    for (UInt32 i = 0; i < size; i++)
-      if (buf[i] != 0)
-      {
-        areThereNonZeros = true;
-        numZeros += i;
-        return S_OK;
-      }
-    numZeros += size;
-    if (numZeros > maxSize)
-      return S_OK;
-  }
-}
 
 HRESULT CHandler::Open2(IInStream *stream,
     const UInt64 *maxCheckStartPosition,
@@ -1593,7 +1570,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     
     CMyComPtr<ICompressCoder> commonCoder;
     
-    switch(item.Method)
+    switch (item.Method)
     {
       case '0':
       {

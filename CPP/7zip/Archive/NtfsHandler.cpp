@@ -519,7 +519,7 @@ bool CAttr::ParseExtents(CRecordVector<CExtent> &extents, UInt64 numClustersMax,
     UInt64 vSize = 0;
     {
       unsigned i = num;
-      do vSize = (vSize << 8) | p[--i]; while(i);
+      do vSize = (vSize << 8) | p[--i]; while (i);
     }
     if (vSize == 0)
       return false;
@@ -1835,7 +1835,7 @@ HRESULT CDatabase::Open()
     int indexOfUnnamedStream = -1;
     if (!rec.IsDir())
     {
-      FOR_VECTOR(di, rec.DataRefs)
+      FOR_VECTOR (di, rec.DataRefs)
         if (rec.DataAttrs[rec.DataRefs[di].Start].Name.IsEmpty())
         {
           indexOfUnnamedStream = di;
@@ -1849,7 +1849,7 @@ HRESULT CDatabase::Open()
       if (i < kNumSysRecs)
       {
         needShow = false;
-        FOR_VECTOR(di, rec.DataRefs)
+        FOR_VECTOR (di, rec.DataRefs)
           if (rec.GetSize(di) != 0)
           {
             needShow = true;
@@ -1905,7 +1905,7 @@ HRESULT CDatabase::Open()
 
       unsigned numAltStreams = 0;
 
-      FOR_VECTOR(di, rec.DataRefs)
+      FOR_VECTOR (di, rec.DataRefs)
       {
         if (!rec.IsDir() && (int)di == indexOfUnnamedStream)
           continue;
@@ -2173,7 +2173,7 @@ enum
   kpidATime2
 };
 
-static const STATPROPSTG kProps[] =
+static const CStatProp kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidSize, VT_UI8},
@@ -2181,20 +2181,20 @@ static const STATPROPSTG kProps[] =
 
   // { NULL, kpidLink, VT_BSTR},
   
-  // { (LPOLESTR)L"Link 2", kpidLink2, VT_BSTR},
-  // { (LPOLESTR)L"Link Type", kpidLinkType, VT_UI2},
+  // { "Link 2", kpidLink2, VT_BSTR},
+  // { "Link Type", kpidLinkType, VT_UI2},
   { NULL, kpidINode, VT_UI8},
  
   { NULL, kpidMTime, VT_FILETIME},
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidATime, VT_FILETIME},
   
-  // { (LPOLESTR)L"Record Modified", kpidRecMTime, VT_FILETIME},
+  // { "Record Modified", kpidRecMTime, VT_FILETIME},
 
-  // { (LPOLESTR)L"Modified 2", kpidMTime2, VT_FILETIME},
-  // { (LPOLESTR)L"Created 2", kpidCTime2, VT_FILETIME},
-  // { (LPOLESTR)L"Accessed 2", kpidATime2, VT_FILETIME},
-  // { (LPOLESTR)L"Record Modified 2", kpidRecMTime2, VT_FILETIME},
+  // { "Modified 2", kpidMTime2, VT_FILETIME},
+  // { "Created 2", kpidCTime2, VT_FILETIME},
+  // { "Accessed 2", kpidATime2, VT_FILETIME},
+  // { "Record Modified 2", kpidRecMTime2, VT_FILETIME},
 
   { NULL, kpidAttrib, VT_UI4},
   { NULL, kpidNumBlocks, VT_UI4},
@@ -2226,13 +2226,13 @@ enum
   kpidRecordSize = kpidUserDefined
 };
 
-static const STATPROPSTG kArcProps[] =
+static const CStatProp kArcProps[] =
 {
   { NULL, kpidVolumeName, VT_BSTR},
   { NULL, kpidFileSystem, VT_BSTR},
   { NULL, kpidClusterSize, VT_UI4},
   { NULL, kpidSectorSize, VT_UI4},
-  { (LPOLESTR)L"Record Size", kpidRecordSize, VT_UI4},
+  { "Record Size", kpidRecordSize, VT_UI4},
   { NULL, kpidHeadersSize, VT_UI8},
   { NULL, kpidCTime, VT_FILETIME},
   { NULL, kpidId, VT_UI8},

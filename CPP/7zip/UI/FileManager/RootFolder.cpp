@@ -41,7 +41,7 @@ static const unsigned kNumRootFolderItems =
 
 using namespace NWindows;
 
-static const PROPID kProps[] =
+static const Byte  kProps[] =
 {
   kpidName
 };
@@ -108,7 +108,7 @@ STDMETHODIMP CRootFolder::GetNumberOfItems(UInt32 *numItems)
 STDMETHODIMP CRootFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant prop;
-  switch(propID)
+  switch (propID)
   {
     case kpidIsDir:  prop = true; break;
     case kpidName:  prop = _names[itemIndex]; break;

@@ -92,7 +92,7 @@ STDMETHODIMP CArchiveUpdateCallback::SetRatioInfo(const UInt64 *inSize, const UI
 
 
 /*
-static const STATPROPSTG kProps[] =
+static const CStatProp kProps[] =
 {
   { NULL, kpidPath, VT_BSTR},
   { NULL, kpidIsDir, VT_BOOL},

@@ -34,7 +34,7 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
     AString scannedString = g_StdIn.ScanStringUntilNewLine();
     scannedString.Trim();
     if (!scannedString.IsEmpty())
-      switch(::MyCharLower_Ascii(scannedString[0]))
+      switch (::MyCharLower_Ascii(scannedString[0]))
       {
         case kYes:    return NUserAnswerMode::kYes;
         case kNo:     return NUserAnswerMode::kNo;
