@@ -1,9 +1,9 @@
 #define MY_VER_MAJOR 15
-#define MY_VER_MINOR 8
+#define MY_VER_MINOR 9
 #define MY_VER_BUILD 0
-#define MY_VERSION_NUMBERS "15.08"
-#define MY_VERSION "15.08 beta"
-#define MY_DATE "2015-10-01"
+#define MY_VERSION_NUMBERS "15.09"
+#define MY_VERSION "15.09 beta"
+#define MY_DATE "2015-10-16"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
 #define MY_AUTHOR_NAME "Igor Pavlov"

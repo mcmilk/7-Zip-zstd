@@ -56,8 +56,15 @@ class CHandler: public CHandlerCont
   CItem _items[kNumFilesMax];
 
   HRESULT Open2(IInStream *stream);
-  virtual UInt64 GetItemPos(UInt32 index) const { return _items[index].Offset; }
-  virtual UInt64 GetItemSize(UInt32 index) const { return _items[index].Size; }
+
+  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const
+  {
+    const CItem &item = _items[index];
+    pos = item.Offset;
+    size = item.Size;
+    return NExtract::NOperationResult::kOK;
+  }
+
 public:
   INTERFACE_IInArchive_Cont(;)
 };

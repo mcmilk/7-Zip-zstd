@@ -1,5 +1,5 @@
 /* LzFindMt.c -- multithreaded Match finder for LZ algorithms
-2015-05-03 : Igor Pavlov : Public domain */
+2015-10-15 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -173,12 +173,12 @@ static void HashThreadFunc(CMatchFinderMt *mt)
           CriticalSection_Enter(&mt->btSync.cs);
           CriticalSection_Enter(&mt->hashSync.cs);
           {
-            const Byte *beforePtr = MatchFinder_GetPointerToCurrentPos(mf);
-            const Byte *afterPtr;
+            const Byte *beforePtr = Inline_MatchFinder_GetPointerToCurrentPos(mf);
+            ptrdiff_t offset;
             MatchFinder_MoveBlock(mf);
-            afterPtr = MatchFinder_GetPointerToCurrentPos(mf);
-            mt->pointerToCurPos -= beforePtr - afterPtr;
-            mt->buffer -= beforePtr - afterPtr;
+            offset = beforePtr - Inline_MatchFinder_GetPointerToCurrentPos(mf);
+            mt->pointerToCurPos -= offset;
+            mt->buffer -= offset;
           }
           CriticalSection_Leave(&mt->btSync.cs);
           CriticalSection_Leave(&mt->hashSync.cs);
@@ -501,8 +501,11 @@ void MatchFinderMt_Init(CMatchFinderMt *p)
   CMatchFinder *mf = p->MatchFinder;
   p->btBufPos = p->btBufPosLimit = 0;
   p->hashBufPos = p->hashBufPosLimit = 0;
-  MatchFinder_Init(mf);
-  p->pointerToCurPos = MatchFinder_GetPointerToCurrentPos(mf);
+
+  /* Init without data reading. We don't want to read data in this thread */
+  MatchFinder_Init_2(mf, False);
+  
+  p->pointerToCurPos = Inline_MatchFinder_GetPointerToCurrentPos(mf);
   p->btNumAvailBytes = 0;
   p->lzPos = p->historySize + 1;
 

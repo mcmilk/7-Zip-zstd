@@ -156,8 +156,15 @@ class CHandler: public CHandlerCont
   CByteBuffer _buffer;
 
   HRESULT Open2(IInStream *stream);
-  virtual UInt64 GetItemPos(UInt32 index) const { return _items[index].GetPos(); }
-  virtual UInt64 GetItemSize(UInt32 index) const { return _items[index].GetSize(); }
+
+  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const
+  {
+    const CPartition &item = _items[index];
+    pos = item.GetPos();
+    size = item.GetSize();
+    return NExtract::NOperationResult::kOK;
+  }
+
 public:
   INTERFACE_IInArchive_Cont(;)
 };

@@ -177,25 +177,25 @@ class CFilesDatabase: public CDatabase
 {
 public:
   bool LowLevel;
-  CRecordVector<int> Indices;
+  CUIntVector Indices;
   CObjectVector<CSectionInfo> Sections;
 
-  UInt64 GetFileSize(int fileIndex) const { return Items[Indices[fileIndex]].Size; }
-  UInt64 GetFileOffset(int fileIndex) const { return Items[Indices[fileIndex]].Offset; }
+  UInt64 GetFileSize(unsigned fileIndex) const { return Items[Indices[fileIndex]].Size; }
+  UInt64 GetFileOffset(unsigned fileIndex) const { return Items[Indices[fileIndex]].Offset; }
 
-  UInt64 GetFolder(int fileIndex) const
+  UInt64 GetFolder(unsigned fileIndex) const
   {
     const CItem &item = Items[Indices[fileIndex]];
-    const CSectionInfo &section = Sections[(int)item.Section];
+    const CSectionInfo &section = Sections[(unsigned)item.Section];
     if (section.IsLzx())
       return section.Methods[0].LzxInfo.GetFolder(item.Offset);
     return 0;
   }
 
-  UInt64 GetLastFolder(int fileIndex) const
+  UInt64 GetLastFolder(unsigned fileIndex) const
   {
     const CItem &item = Items[Indices[fileIndex]];
-    const CSectionInfo &section = Sections[(int)item.Section];
+    const CSectionInfo &section = Sections[(unsigned)item.Section];
     if (section.IsLzx())
       return section.Methods[0].LzxInfo.GetFolder(item.Offset + item.Size - 1);
     return 0;

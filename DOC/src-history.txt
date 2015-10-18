@@ -1,6 +1,20 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+15.09 beta     2015-10-16
+-------------------------	
+- The BUG in LZMA / LZMA2 encoding code was fixed.
+  The BUG in LzFind.c::MatchFinder_ReadBlock() function.
+  If input data size is larger than (4 GiB - dictionary_size),
+  the following code worked incorrectly:
+  -  LZMA : LzmaEnc_MemEncode(), LzmaEncode() : LZMA encoding functions 
+     for compressing from memory to memory. 
+     That BUG is not related to LZMA encoder version that works via streams.
+  -  LZMA2 : multi-threaded version of LZMA2 encoder worked incorrectly, if 
+     default value of chunk size (CLzma2EncProps::blockSize) is changed 
+     to value larger than (4 GiB - dictionary_size).
+
+
 9.38 beta      2015-01-03
 -------------------------	
 - The BUG in 9.31-9.37 was fixed:

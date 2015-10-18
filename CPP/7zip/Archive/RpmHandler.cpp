@@ -226,8 +226,13 @@ class CHandler: public CHandlerCont
   HRESULT ReadHeader(ISequentialInStream *stream, bool isMainHeader);
   HRESULT Open2(ISequentialInStream *stream);
 
-  virtual UInt64 GetItemPos(UInt32) const { return _headersSize; }
-  virtual UInt64 GetItemSize(UInt32) const { return _size; }
+  virtual int GetItem_ExtractInfo(UInt32 /* index */, UInt64 &pos, UInt64 &size) const
+  {
+    pos = _headersSize;
+    size = _size;
+    return NExtract::NOperationResult::kOK;
+  }
+
 public:
   INTERFACE_IInArchive_Cont(;)
 };

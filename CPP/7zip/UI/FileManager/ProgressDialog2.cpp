@@ -8,12 +8,13 @@
 #include "../../../Windows/Control/Static.h"
 #include "../../../Windows/ErrorMsg.h"
 
-#include "ProgressDialog2.h"
-#include "DialogSize.h"
-
-#include "ProgressDialog2Res.h"
-
 #include "../GUI/ExtractRes.h"
+
+#include "LangUtils.h"
+
+#include "DialogSize.h"
+#include "ProgressDialog2.h"
+#include "ProgressDialog2Res.h"
 
 using namespace NWindows;
 
@@ -41,8 +42,6 @@ static const UINT kCreateDelay =
   ;
 
 static const DWORD kPauseSleepTime = 100;
-
-#include "LangUtils.h"
 
 #ifdef LANG
 
@@ -705,10 +704,9 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
 
   UInt32 curTime = ::GetTickCount();
 
+  const UInt64 progressTotal = bytesProgressMode ? total : totalFiles;
+  const UInt64 progressCompleted = bytesProgressMode ? completed : completedFiles;
   {
-    UInt64 progressTotal = bytesProgressMode ? total : totalFiles;
-    UInt64 progressCompleted = bytesProgressMode ? completed : completedFiles;
-    
     if (IS_UNDEFINED_VAL(progressTotal))
     {
       // SetPos(0);
@@ -757,9 +755,9 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
       }
     }
 
-    if (completed != 0)
+    if (progressCompleted != 0)
     {
-      if (IS_UNDEFINED_VAL(total))
+      if (IS_UNDEFINED_VAL(progressTotal))
       {
         if (IS_DEFINED_VAL(_prevRemainingSec))
         {
@@ -770,8 +768,8 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
       else
       {
         UInt64 remainingTime = 0;
-        if (completed < total)
-          remainingTime = MyMultAndDiv(_elapsedTime, total - completed, completed);
+        if (progressCompleted < progressTotal)
+          remainingTime = MyMultAndDiv(_elapsedTime, progressTotal - progressCompleted, progressCompleted);
         UInt64 remainingSec = remainingTime / 1000;
         if (remainingSec != _prevRemainingSec)
         {
@@ -783,7 +781,7 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
       }
       {
         UInt64 elapsedTime = (_elapsedTime == 0) ? 1 : _elapsedTime;
-        UInt64 v = (completed * 1000) / elapsedTime;
+        UInt64 v = (progressCompleted * 1000) / elapsedTime;
         Byte c = 0;
         unsigned moveBits = 0;
              if (v >= ((UInt64)10000 << 10)) { moveBits = 20; c = 'M'; }
@@ -811,11 +809,11 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
     {
       UInt64 percent = 0;
       {
-        if (IS_DEFINED_VAL(total))
+        if (IS_DEFINED_VAL(progressTotal))
         {
-          percent = completed * 100;
-          if (total != 0)
-            percent /= total;
+          percent = progressCompleted * 100;
+          if (progressTotal != 0)
+            percent /= progressTotal;
         }
       }
       if (percent != _prevPercentValue)

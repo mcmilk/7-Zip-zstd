@@ -85,7 +85,7 @@ public:
   CRecordVector<bool> NeedWait;
 
   ~CChildProcesses() { CloseAll(); }
-  void DisableWait(int index) { NeedWait[index] = false; }
+  void DisableWait(unsigned index) { NeedWait[index] = false; }
   
   void CloseAll()
   {
@@ -491,7 +491,19 @@ typedef BOOL (WINAPI * ShellExecuteExWP)(LPSHELLEXECUTEINFOW lpExecInfo);
 
 static HRESULT StartApplication(const UString &dir, const UString &path, HWND window, CProcess &process)
 {
+  UString path2 = path;
+
+  #ifdef _WIN32
+  {
+    int dot = path2.ReverseFind_Dot();
+    int separ = path2.ReverseFind_PathSepar();
+    if (dot < 0 || dot < separ)
+      path2 += L'.';
+  }
+  #endif
+
   UINT32 result;
+  
   #ifndef _UNICODE
   if (g_IsNT)
   {
@@ -500,14 +512,14 @@ static HRESULT StartApplication(const UString &dir, const UString &path, HWND wi
     execInfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT;
     execInfo.hwnd = NULL;
     execInfo.lpVerb = NULL;
-    execInfo.lpFile = path;
+    execInfo.lpFile = path2;
     execInfo.lpParameters = NULL;
     execInfo.lpDirectory = dir.IsEmpty() ? NULL : (LPCWSTR)dir;
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
     ShellExecuteExWP shellExecuteExW = (ShellExecuteExWP)
     ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "ShellExecuteExW");
-    if (shellExecuteExW == 0)
+    if (!shellExecuteExW)
       return 0;
     shellExecuteExW(&execInfo);
     result = (UINT32)(UINT_PTR)execInfo.hInstApp;
@@ -525,23 +537,24 @@ static HRESULT StartApplication(const UString &dir, const UString &path, HWND wi
       ;
     execInfo.hwnd = NULL;
     execInfo.lpVerb = NULL;
-    const CSysString sysPath = GetSystemString(path);
+    const CSysString sysPath = GetSystemString(path2);
     const CSysString sysDir = GetSystemString(dir);
     execInfo.lpFile = sysPath;
     execInfo.lpParameters = NULL;
     execInfo.lpDirectory =
-    #ifdef UNDER_CE
-    NULL
-    #else
-    sysDir.IsEmpty() ? NULL : (LPCTSTR)sysDir
-    #endif
-    ;
+      #ifdef UNDER_CE
+        NULL
+      #else
+        sysDir.IsEmpty() ? NULL : (LPCTSTR)sysDir
+      #endif
+      ;
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
     ::ShellExecuteEx(&execInfo);
     result = (UINT32)(UINT_PTR)execInfo.hInstApp;
     process.Attach(execInfo.hProcess);
   }
+  
   if (result <= 32)
   {
     switch (result)
@@ -553,6 +566,7 @@ static HRESULT StartApplication(const UString &dir, const UString &path, HWND wi
           L"7-Zip", MB_OK | MB_ICONSTOP);
     }
   }
+  
   return S_OK;
 }
 
@@ -795,7 +809,7 @@ static THREAD_FUNC_DECL MyThreadFunction(void *param)
   for (;;)
   {
     CRecordVector<HANDLE> handles;
-    CRecordVector<int> indices;
+    CUIntVector indices;
     
     FOR_VECTOR (i, processes.Handles)
     {
@@ -992,6 +1006,17 @@ static HRESULT GetTime(IFolderFolder *folder, UInt32 index, PROPID propID, FILET
 }
 */
 
+
+/*
+tryInternal tryExternal
+  false       false      : unused
+  false       true       : external
+  true        false      : internal
+  true        true       : smart based on file extension:
+                      !alwaysStart(name) : both
+                      alwaysStart(name)  : external
+*/
+
 void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bool editMode, bool useEditor, const wchar_t *type)
 {
   const UString name = GetItemName(index);
@@ -1008,7 +1033,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
 
   bool tryAsArchive = tryInternal && (!tryExternal || !DoItemAlwaysStart(name));
 
-  UString fullVirtPath = _currentFolderPrefix + relPath;
+  const UString fullVirtPath = _currentFolderPrefix + relPath;
 
   CTempDir tempDirectory;
   if (!tempDirectory.Create(kTempDirPrefix))
@@ -1058,6 +1083,8 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
             // probably we must show some message here
             // return;
           }
+          if (!tryExternal)
+            return;
         }
       }
     }
@@ -1126,6 +1153,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
 
   options.folder = fs2us(tempDirNorm);
   options.showErrorMessages = true;
+
   HRESULT result = CopyTo(options, indices, &messages, usePassword, password);
 
   if (_parentFolders.Size() > 0)

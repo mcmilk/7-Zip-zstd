@@ -86,26 +86,34 @@ STDMETHODIMP CClusterInStream::Read(void *data, UInt32 size, UInt32 *processedSi
     *processedSize = 0;
   if (_virtPos >= Size)
     return S_OK;
+  {
+    UInt64 rem = Size - _virtPos;
+    if (size > rem)
+      size = (UInt32)rem;
+  }
+  if (size == 0)
+    return S_OK;
 
   if (_curRem == 0)
   {
-    UInt32 blockSize = (UInt32)1 << BlockSizeLog;
-    UInt32 virtBlock = (UInt32)(_virtPos >> BlockSizeLog);
-    UInt32 offsetInBlock = (UInt32)_virtPos & (blockSize - 1);
-    UInt32 phyBlock = Vector[virtBlock];
+    const UInt32 blockSize = (UInt32)1 << BlockSizeLog;
+    const UInt32 virtBlock = (UInt32)(_virtPos >> BlockSizeLog);
+    const UInt32 offsetInBlock = (UInt32)_virtPos & (blockSize - 1);
+    const UInt32 phyBlock = Vector[virtBlock];
+    
     UInt64 newPos = StartOffset + ((UInt64)phyBlock << BlockSizeLog) + offsetInBlock;
     if (newPos != _physPos)
     {
       _physPos = newPos;
       RINOK(SeekToPhys());
     }
+
     _curRem = blockSize - offsetInBlock;
+    
     for (int i = 1; i < 64 && (virtBlock + i) < (UInt32)Vector.Size() && phyBlock + i == Vector[virtBlock + i]; i++)
       _curRem += (UInt32)1 << BlockSizeLog;
-    UInt64 rem = Size - _virtPos;
-    if (_curRem > rem)
-      _curRem = (UInt32)rem;
   }
+  
   if (size > _curRem)
     size = _curRem;
   HRESULT res = Stream->Read(data, size, &size);

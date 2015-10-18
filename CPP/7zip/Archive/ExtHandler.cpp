@@ -4,6 +4,11 @@
 
 // #define SHOW_DEBUG_INFO
 
+// #include <stdio.h>
+// #define PRF2(x) x
+
+#define PRF2(x)
+
 #ifdef SHOW_DEBUG_INFO
 #include <stdio.h>
 #define PRF(x) x
@@ -23,7 +28,6 @@
 #include "../../Windows/PropVariantUtils.h"
 #include "../../Windows/TimeUtils.h"
 
-#include "../Common/LimitedStreams.h"
 #include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamObjects.h"
@@ -300,7 +304,7 @@ struct CHeader
   // UInt64 NumBlocksSuper;
   UInt64 NumFreeBlocks;
   UInt32 NumFreeInodes;
-  UInt32 FirstDataBlock;
+  // UInt32 FirstDataBlock;
 
   UInt32 BlocksPerGroup;
   UInt32 ClustersPerGroup;
@@ -349,6 +353,7 @@ struct CHeader
   bool IsOldRev() const { return RevLevel == EXT4_GOOD_OLD_REV; }
 
   UInt64 GetNumGroups() const { return (NumBlocks + BlocksPerGroup - 1) / BlocksPerGroup; }
+  UInt64 GetNumGroups2() const { return ((UInt64)NumInodes + InodesPerGroup - 1) / InodesPerGroup; }
 
   bool IsThereFileType() const { return (FeatureIncompat & EXT4_FEATURE_INCOMPAT_FILETYPE) != 0; }
   bool Is64Bit() const { return (FeatureIncompat & EXT4_FEATURE_INCOMPAT_64BIT) != 0; }
@@ -367,6 +372,15 @@ static int inline GetLog(UInt32 num)
   return -1;
 }
 
+static bool inline IsEmptyData(const Byte *data, unsigned size)
+{
+  for (unsigned i = 0; i < size; i++)
+    if (data[i] != 0)
+      return false;
+  return true;
+}
+
+
 bool CHeader::Parse(const Byte *p)
 {
   if (GetUi16(p + 0x38) != 0xEF53)
@@ -375,21 +389,25 @@ bool CHeader::Parse(const Byte *p)
   LE_32 (0x18, BlockBits);
   LE_32 (0x1C, ClusterBits);
   
-  if (ClusterBits != 0 && BlockBits !=  ClusterBits)
+  if (ClusterBits != 0 && BlockBits != ClusterBits)
     return false;
 
-  if (BlockBits > 16 - 10) return false;
+  if (BlockBits > 16 - 10)
+    return false;
   BlockBits += 10;
-  if (ClusterBits > 16) return false;
   
   LE_32 (0x00, NumInodes);
   LE_32 (0x04, NumBlocks);
   // LE_32 (0x08, NumBlocksSuper);
   LE_32 (0x0C, NumFreeBlocks);
   LE_32 (0x10, NumFreeInodes);
-  LE_32 (0x14, FirstDataBlock);
 
-  if (FirstDataBlock != 0)
+  if (NumInodes < 2 || NumInodes <= NumFreeInodes)
+    return false;
+
+  UInt32 FirstDataBlock;
+  LE_32 (0x14, FirstDataBlock);
+  if (FirstDataBlock != (unsigned)(BlockBits == 10 ? 1 : 0))
     return false;
     
   LE_32 (0x20, BlocksPerGroup);
@@ -397,10 +415,18 @@ bool CHeader::Parse(const Byte *p)
 
   if (BlocksPerGroup != ClustersPerGroup)
     return false;
-  if (BlocksPerGroup != ((UInt32)1 << (BlockBits + 3)))
+  if (BlocksPerGroup == 0)
     return false;
+  if (BlocksPerGroup != ((UInt32)1 << (BlockBits + 3)))
+  {
+    // it's allowed in ext2
+    // return false;
+  }
 
   LE_32 (0x28, InodesPerGroup);
+
+  if (InodesPerGroup < 1 || InodesPerGroup > NumInodes)
+    return false;
   
   LE_32 (0x2C, MountTime);
   LE_32 (0x30, WriteTime);
@@ -483,6 +509,9 @@ bool CHeader::Parse(const Byte *p)
   if (NumBlocks < 1)
     return false;
   if (NumFreeBlocks > NumBlocks)
+    return false;
+
+  if (GetNumGroups() != GetNumGroups2())
     return false;
 
   return true;
@@ -612,7 +641,7 @@ struct CExtTime
 
 struct CNode
 {
-  Int32 ParentNode;   // in _nodes[], -1 if not dir
+  Int32 ParentNode;   // in _refs[], -1 if not dir
   int ItemIndex;      // in _items[]
   int SymLinkIndex;   // in _symLinks[]
   int DirIndex;       // in _dirs[]
@@ -621,7 +650,6 @@ struct CNode
   UInt16 Uid;
   UInt16 Gid;
   // UInt16 Checksum;
-  bool IsEmpty;
   
   UInt64 FileSize;
   CExtTime MTime;
@@ -662,6 +690,7 @@ bool CNode::Parse(const Byte *p, const CHeader &_h)
   MTime.Extra = 0;
   ATime.Extra = 0;
   CTime.Extra = 0;
+  CTime.Val = 0;
   // InodeChangeTime.Extra = 0;
   // DTime.Extra = 0;
 
@@ -692,14 +721,21 @@ bool CNode::Parse(const Byte *p, const CHeader &_h)
       FileSize |= ((UInt64)highSize << 32);
   }
 
+  // UInt32 fragmentAddress;
   // LE_32 (0x70, fragmentAddress);
   
   // osd2
   {
     // Linux;
+    // ext2:
+    // Byte FragmentNumber = p[0x74];
+    // Byte FragmentSize = p[0x74 + 1];
+    
+    // ext4:
     UInt32 numBlocksHigh;
     LE_16 (0x74, numBlocksHigh);
     NumBlocks |= (UInt64)numBlocksHigh << 32;
+    
     HI_16 (0x74 + 4, Uid);
     HI_16 (0x74 + 6, Gid);
     /*
@@ -738,8 +774,8 @@ bool CNode::Parse(const Byte *p, const CHeader &_h)
 
 struct CItem
 {
-  unsigned Node;        // in _nodes[]
-  int ParentNode;       // in _nodes[]
+  unsigned Node;        // in _refs[]
+  int ParentNode;       // in _refs[]
   int SymLinkItemIndex; // in _items[], if the Node contains SymLink to existing dir
   Byte Type;
   
@@ -778,6 +814,7 @@ class CHandler:
   public CMyUnknownImp
 {
   CObjectVector<CItem> _items;
+  CIntVector _refs;
   CRecordVector<CNode> _nodes;
   CObjectVector<CUIntVector> _dirs; // each CUIntVector contains indexes in _items[] only for dir items;
   AStringVector _symLinks;
@@ -789,6 +826,7 @@ class CHandler:
   UInt64 _phySize;
   bool _isArc;
   bool _headersError;
+  bool _headersWarning;
   bool _linksError;
   
   bool _isUTF;
@@ -831,14 +869,14 @@ class CHandler:
   }
 
   HRESULT SeekAndRead(IInStream *inStream, UInt64 block, Byte *data, size_t size);
-  HRESULT ParseDir(const Byte *data, size_t size, unsigned nodeIndex);
+  HRESULT ParseDir(const Byte *data, size_t size, unsigned iNodeDir);
   int FindTargetItem_for_SymLink(unsigned dirNode, const AString &path) const;
 
   HRESULT FillFileBlocks2(UInt32 block, unsigned level, unsigned numBlocks, CRecordVector<UInt32> &blocks);
   HRESULT FillFileBlocks(const Byte *p, unsigned numBlocks, CRecordVector<UInt32> &blocks);
   HRESULT FillExtents(const Byte *p, size_t size, CRecordVector<CExtent> &extents, int parentDepth);
 
-  HRESULT GetStream_Node(UInt32 nodeIndex, ISequentialInStream **stream);
+  HRESULT GetStream_Node(unsigned nodeIndex, ISequentialInStream **stream);
   HRESULT ExtractNode(unsigned nodeIndex, CByteBuffer &data);
 
   void ClearRefs();
@@ -860,13 +898,13 @@ public:
 
 
 
-HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
+HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned iNodeDir)
 {
   bool isThereSelfLink = false;
 
-  PRF(printf("\n\n========= node = %5d    size = %5d", nodeIndex, size));
+  PRF(printf("\n\n========= node = %5d    size = %5d", (unsigned)iNodeDir, (unsigned)size));
 
-  CNode &nodeDir = _nodes[nodeIndex];
+  CNode &nodeDir = _nodes[_refs[iNodeDir]];
   nodeDir.DirIndex = _dirs.Size();
   CUIntVector &dir = _dirs.AddNew();
   int parentNode = -1;
@@ -891,7 +929,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
     if (nameLen + 8 > recLen)
       return S_FALSE;
 
-    if (iNode >= _nodes.Size())
+    if (iNode >= _refs.Size())
       return S_FALSE;
 
     item.Clear();
@@ -901,7 +939,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
     else if (type != 0)
       return S_FALSE;
 
-    item.ParentNode = nodeIndex;
+    item.ParentNode = iNodeDir;
     item.Node = iNode;
     item.Name.SetFrom_CalcLen((const char *)(p + 8), nameLen);
   
@@ -922,7 +960,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
         return S_FALSE;
       */
 
-      PRF(printf("\n EMPTY %6d %d %s", recLen, type, (const char *)item.Name));
+      PRF(printf("\n EMPTY %6d %d %s", (unsigned)recLen, (unsigned)type, (const char *)item.Name));
       if (type == 0xDE)
       {
         // checksum
@@ -930,9 +968,10 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
       continue;
     }
 
-    CNode &node = _nodes[iNode];
-    if (node.IsEmpty)
+    int nodeIndex = _refs[iNode];
+    if (nodeIndex < 0)
       return S_FALSE;
+    CNode &node = _nodes[nodeIndex];
 
     if (_h.IsThereFileType() && type != 0)
     {
@@ -944,7 +983,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
 
     node.NumLinksCalced++;
     
-    PRF(printf("\n%s %6d %s", item.IsDir() ? "DIR  " : "     ", item.Node, (const char *)item.Name));
+    PRF(printf("\n%s %6d %s", item.IsDir() ? "DIR  " : "     ", (unsigned)item.Node, (const char *)item.Name));
     
     if (item.Name[0] == '.')
     {
@@ -953,7 +992,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
         if (isThereSelfLink)
           return S_FALSE;
         isThereSelfLink = true;
-        if (nodeIndex != nodeIndex)
+        if (iNode != iNodeDir)
           return S_FALSE;
         continue;
       }
@@ -964,7 +1003,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
           return S_FALSE;
         if (!node.IsDir())
           return S_FALSE;
-        if (iNode == nodeIndex && iNode != k_INODE_ROOT)
+        if (iNode == iNodeDir && iNode != k_INODE_ROOT)
           return S_FALSE;
         
         parentNode = iNode;
@@ -978,7 +1017,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
       }
     }
 
-    if (iNode == nodeIndex)
+    if (iNode == iNodeDir)
       return S_FALSE;
 
     if (parentNode < 0)
@@ -987,8 +1026,8 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
     if (node.IsDir())
     {
       if (node.ParentNode < 0)
-        node.ParentNode = nodeIndex;
-      else if ((unsigned)node.ParentNode != nodeIndex)
+        node.ParentNode = iNodeDir;
+      else if ((unsigned)node.ParentNode != iNodeDir)
         return S_FALSE;
       const unsigned itemIndex = _items.Size();
       dir.Add(itemIndex);
@@ -1005,7 +1044,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned nodeIndex)
 }
 
 
-int CHandler::FindTargetItem_for_SymLink(unsigned nodeIndex, const AString &path) const
+int CHandler::FindTargetItem_for_SymLink(unsigned iNode, const AString &path) const
 {
   unsigned pos = 0;
   
@@ -1014,8 +1053,8 @@ int CHandler::FindTargetItem_for_SymLink(unsigned nodeIndex, const AString &path
   
   if (path[0] == '/')
   {
-    nodeIndex = k_INODE_ROOT;
-    if (nodeIndex >= _nodes.Size())
+    iNode = k_INODE_ROOT;
+    if (iNode >= _refs.Size())
       return -1;
     pos = 1;
   }
@@ -1024,7 +1063,7 @@ int CHandler::FindTargetItem_for_SymLink(unsigned nodeIndex, const AString &path
 
   while (pos != path.Len())
   {
-    const CNode &node = _nodes[nodeIndex];
+    const CNode &node = _nodes[_refs[iNode]];
     int slash = path.Find('/', pos);
     
     if (slash < 0)
@@ -1046,9 +1085,9 @@ int CHandler::FindTargetItem_for_SymLink(unsigned nodeIndex, const AString &path
       {
         if (node.ParentNode < 0)
           return -1;
-        if (nodeIndex == k_INODE_ROOT)
+        if (iNode == k_INODE_ROOT)
           return -1;
-        nodeIndex = node.ParentNode;
+        iNode = node.ParentNode;
         continue;
       }
     }
@@ -1065,13 +1104,13 @@ int CHandler::FindTargetItem_for_SymLink(unsigned nodeIndex, const AString &path
       const CItem &item = _items[dir[i]];
       if (item.Name == s)
       {
-        nodeIndex = item.Node;
+        iNode = item.Node;
         break;
       }
     }
   }
 
-  return _nodes[nodeIndex].ItemIndex;
+  return _nodes[_refs[iNode]].ItemIndex;
 }
 
 
@@ -1178,7 +1217,10 @@ HRESULT CHandler::Open2(IInStream *inStream)
       UInt32 numReserveInodes = _h.NumInodes - _h.NumFreeInodes + 1;
       // numReserveInodes = _h.NumInodes + 1;
       if (numReserveInodes != 0)
+      {
         _nodes.Reserve(numReserveInodes);
+        _refs.Reserve(numReserveInodes);
+      }
       
       UInt32 numNodes = _h.InodesPerGroup;
       if (numNodes > _h.NumInodes)
@@ -1195,6 +1237,8 @@ HRESULT CHandler::Open2(IInStream *inStream)
       nodesMap.Alloc(blockSize);
       
       unsigned globalNodeIndex = 0;
+      // unsigned numEmpty = 0;
+      unsigned numEmpty_in_Maps = 0;
 
       FOR_VECTOR (gi, groups)
       {
@@ -1203,40 +1247,40 @@ HRESULT CHandler::Open2(IInStream *inStream)
 
         const CGroupDescriptor &gd = groups[gi];
         
-        PRF(printf("\n\ng%6d block = %6x\n", gi, gd.InodeTable));
+        PRF(printf("\n\ng%6d block = %6x\n", gi, (unsigned)gd.InodeTable));
         
         RINOK(SeekAndRead(inStream, gd.InodeBitmap, nodesMap, blockSize));
         RINOK(SeekAndRead(inStream, gd.InodeTable, nodesData, nodesDataSize));
+
+        unsigned numEmpty_in_Map = 0;
         
         for (size_t n = 0; n < numNodes && globalNodeIndex < _h.NumInodes; n++, globalNodeIndex++)
         {
           if ((nodesMap[n >> 3] & ((unsigned)1 << (n & 7))) == 0)
+          {
+            numEmpty_in_Map++;
             continue;
+          }
 
           const Byte *p = nodesData + (size_t)n * _h.InodeSize;
-          unsigned j = 0;
-          for (j = 0; j < _h.InodeSize; j++)
-            if (p[j] != 0)
-              break;
-            
-          if (j == _h.InodeSize)
+          if (IsEmptyData(p, _h.InodeSize))
           {
-            if (_nodes.Size() >= _h.FirstInode)
+            if (globalNodeIndex + 1 >= _h.FirstInode)
             {
+              _headersError = true;
               // return S_FALSE;
             }
             continue;
           }
 
           CNode node;
-          node.IsEmpty = false;
               
           PRF(printf("\nnode = %5d ", (unsigned)n));
 
           if (!node.Parse(p, _h))
             return S_FALSE;
   
-          // PRF(printf("\n %6d", n));
+          // PRF(printf("\n %6d", (unsigned)n));
           /*
             SetUi32(p + 0x7C, 0)
             SetUi32(p + 0x82, 0)
@@ -1249,19 +1293,36 @@ HRESULT CHandler::Open2(IInStream *inStream)
             if (crc != node.Checksum) return S_FALSE;
           */
 
-          while (_nodes.Size() < globalNodeIndex + 1)
+          while (_refs.Size() < globalNodeIndex + 1)
           {
-            CNode node2;
-            node2.IsEmpty = true;
-            _nodes.Add(node2);
+            // numEmpty++;
+            _refs.Add(-1);
           }
           
-          _nodes.Add(node);
+          _refs.Add(_nodes.Add(node));
+        }
+
+        
+        numEmpty_in_Maps += numEmpty_in_Map;
+        
+        if (numEmpty_in_Map != gd.NumFreeInodes)
+        {
+          _headersWarning = true;
+          // return S_FALSE;
         }
       }
       
-      if (_nodes.Size() <= k_INODE_ROOT)
+      if (numEmpty_in_Maps != _h.NumFreeInodes)
+      {
+        // some ext2 examples has incorrect value in _h.NumFreeInodes.
+        // so we disable check;
+        _headersWarning = true;
+      }
+
+      if (_refs.Size() <= k_INODE_ROOT)
         return S_FALSE;
+
+      // printf("\n numReserveInodes = %6d, _refs.Size() = %d, numEmpty = %7d\n", numReserveInodes, _refs.Size(), (unsigned)numEmpty);
     }
   }
 
@@ -1272,14 +1333,17 @@ HRESULT CHandler::Open2(IInStream *inStream)
 
     CByteBuffer dataBuf;
 
-    FOR_VECTOR (i, _nodes)
+    FOR_VECTOR (i, _refs)
     {
+      int nodeIndex = _refs[i];
       {
-        const CNode &node = _nodes[i];
-        if (node.IsEmpty || !node.IsDir())
+        if (nodeIndex < 0)
+          continue;
+        const CNode &node = _nodes[nodeIndex];
+        if (!node.IsDir())
           continue;
       }
-      RINOK(ExtractNode(i, dataBuf));
+      RINOK(ExtractNode(nodeIndex, dataBuf));
       if (dataBuf.Size() == 0)
       {
         // _headersError = true;
@@ -1292,18 +1356,19 @@ HRESULT CHandler::Open2(IInStream *inStream)
       RINOK(CheckProgress());
     }
 
-    if (_nodes[k_INODE_ROOT].ParentNode != k_INODE_ROOT)
+    if (_nodes[_refs[k_INODE_ROOT]].ParentNode != k_INODE_ROOT)
       return S_FALSE;
   }
 
   {
     // ---------- Check NumLinks and unreferenced dir nodes ----------
   
-    FOR_VECTOR (i, _nodes)
+    FOR_VECTOR (i, _refs)
     {
-      const CNode &node = _nodes[i];
-      if (node.IsEmpty)
+      int nodeIndex = _refs[i];
+      if (nodeIndex < 0)
         continue;
+      const CNode &node = _nodes[nodeIndex];
 
       if (node.NumLinks != node.NumLinksCalced)
       {
@@ -1331,19 +1396,23 @@ HRESULT CHandler::Open2(IInStream *inStream)
   {
     // ---------- Check that there is no loops in parents list ----------
 
-    unsigned numNodes = _nodes.Size();
+    unsigned numNodes = _refs.Size();
     CIntArr UsedByNode(numNodes);
     {
-      for (unsigned i = 0; i < numNodes; i++)
-        UsedByNode[i] = -1;
+      {
+        for (unsigned i = 0; i < numNodes; i++)
+          UsedByNode[i] = -1;
+      }
     }
 
-    FOR_VECTOR (i, _nodes)
+    FOR_VECTOR (i, _refs)
     {
       {
-        CNode &node = _nodes[i];
-        if (node.IsEmpty
-            || node.ParentNode < 0 // not dir
+        int nodeIndex = _refs[i];
+        if (nodeIndex < 0)
+          continue;
+        const CNode &node = _nodes[nodeIndex];
+        if (node.ParentNode < 0 // not dir
             || i == k_INODE_ROOT)
           continue;
       }
@@ -1352,9 +1421,10 @@ HRESULT CHandler::Open2(IInStream *inStream)
 
       for (;;)
       {
-        CNode &node = _nodes[c];
-        if (node.IsEmpty)
+        int nodeIndex = _refs[c];
+        if (nodeIndex < 0)
           return S_FALSE;
+        CNode &node = _nodes[nodeIndex];
         
         if (UsedByNode[c] != -1)
         {
@@ -1380,14 +1450,17 @@ HRESULT CHandler::Open2(IInStream *inStream)
     CByteBuffer data;
 
     unsigned i;
-    for (i = 0; i < _nodes.Size(); i++)
+    for (i = 0; i < _refs.Size(); i++)
     {
-      CNode &node = _nodes[i];
-      if (node.IsEmpty || !node.IsLink())
+      int nodeIndex = _refs[i];
+      if (nodeIndex < 0)
+        continue;
+      CNode &node = _nodes[nodeIndex];
+      if (!node.IsLink())
         continue;
       if (node.FileSize > ((UInt32)1 << 14))
         continue;
-      if (ExtractNode(i, data) == S_OK && data.Size() != 0)
+      if (ExtractNode(nodeIndex, data) == S_OK && data.Size() != 0)
       {
         s.SetFrom_CalcLen((const char *)(const Byte *)data, (unsigned)data.Size());
         if (s.Len() == data.Size())
@@ -1402,7 +1475,7 @@ HRESULT CHandler::Open2(IInStream *inStream)
     for (i = 0; i < _items.Size(); i++)
     {
       CItem &item = _items[i];
-      int sym = _nodes[item.Node].SymLinkIndex;
+      int sym = _nodes[_refs[item.Node]].SymLinkIndex;
       if (sym >= 0 && item.ParentNode >= 0)
       {
         item.SymLinkItemIndex = FindTargetItem_for_SymLink(item.ParentNode, _symLinks[sym]);
@@ -1425,11 +1498,12 @@ HRESULT CHandler::Open2(IInStream *inStream)
     bool useSys = false;
     bool useUnknown = false;
 
-    for (unsigned i = 0; i < _nodes.Size(); i++)
+    FOR_VECTOR (i, _refs)
     {
-      const CNode &node = _nodes[i];
-      if (node.IsEmpty)
+      int nodeIndex = _refs[i];
+      if (nodeIndex < 0)
         continue;
+      const CNode &node = _nodes[nodeIndex];
       
       if (node.NumLinksCalced == 0 /* || i > 100 && i < 150 */) // for debug
       {
@@ -1509,6 +1583,7 @@ void CHandler::ClearRefs()
   _stream.Release();
   _items.Clear();
   _nodes.Clear();
+  _refs.Clear();
   _auxItems.Clear();
   _symLinks.Clear();
   _dirs.Clear();
@@ -1524,6 +1599,7 @@ STDMETHODIMP CHandler::Close()
   _phySize = 0;
   _isArc = false;
   _headersError = false;
+  _headersWarning = false;
   _linksError = false;
   _isUTF = true;
 
@@ -1562,7 +1638,7 @@ void CHandler::GetPath(unsigned index, AString &s) const
       return;
     }
 
-    const CNode &node = _nodes[item.ParentNode];
+    const CNode &node = _nodes[_refs[item.ParentNode]];
     if (node.ItemIndex < 0)
       return;
     index = node.ItemIndex;
@@ -1585,7 +1661,7 @@ bool CHandler::GetPackSize(unsigned index, UInt64 &totalPack) const
   }
 
   const CItem &item = _items[index];
-  const CNode &node = _nodes[item.Node];
+  const CNode &node = _nodes[_refs[item.Node]];
 
   // if (!node.IsFlags_EXTENTS())
   {
@@ -1766,22 +1842,29 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
     case kpidId:
     {
-      char s[16 * 2 + 2];
-      for (unsigned i = 0; i < 16; i++)
-        PrintHex(_h.Uuid[i], s + i * 2);
-      s[16 * 2] = 0;
-      prop = s;
+      if (!IsEmptyData(_h.Uuid, 16))
+      {
+        char s[16 * 2 + 2];
+        for (unsigned i = 0; i < 16; i++)
+          PrintHex(_h.Uuid[i], s + i * 2);
+        s[16 * 2] = 0;
+        prop = s;
+      }
       break;
     }
 
     case kpidCodePage: if (_isUTF) prop = "UTF-8"; break;
-    case kpidVolumeName: StringToProp(_isUTF, _h.VolName, sizeof(_h.VolName), prop); break;
+    
+    case kpidShortComment:
+    case kpidVolumeName:
+        StringToProp(_isUTF, _h.VolName, sizeof(_h.VolName), prop); break;
+    
     case kpidLastMount: StringToProp(_isUTF, _h.LastMount, sizeof(_h.LastMount), prop); break;
 
     case kpidCharacts: FLAGS_TO_PROP(g_FeatureCompat_Flags, _h.FeatureCompat, prop); break;
     case kpidFeatureIncompat: FLAGS_TO_PROP(g_FeatureIncompat_Flags, _h.FeatureIncompat, prop); break;
     case kpidFeatureRoCompat: FLAGS_TO_PROP(g_FeatureRoCompat_Flags, _h.FeatureRoCompat, prop); break;
-    case kpidWrittenKB: prop = _h.WrittenKB; break;
+    case kpidWrittenKB: if (_h.WrittenKB != 0) prop = _h.WrittenKB; break;
 
     case kpidPhySize: prop = _phySize; break;
 
@@ -1793,6 +1876,15 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       if (_headersError) v |= kpv_ErrorFlags_HeadersError;
       if (!_stream && v == 0 && _isArc)
         v = kpv_ErrorFlags_HeadersError;
+      if (v != 0)
+        prop = v;
+      break;
+    }
+
+    case kpidWarningFlags:
+    {
+      UInt32 v = 0;
+      if (_headersWarning) v |= kpv_ErrorFlags_HeadersError;
       if (v != 0)
         prop = v;
       break;
@@ -1846,7 +1938,7 @@ STDMETHODIMP CHandler::GetParent(UInt32 index, UInt32 *parent, UInt32 *parentTyp
   }
   else
   {
-    int itemIndex = _nodes[item.ParentNode].ItemIndex;
+    int itemIndex = _nodes[_refs[item.ParentNode]].ItemIndex;
     if (itemIndex >= 0)
       *parent = itemIndex;
   }
@@ -1952,7 +2044,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   {
 
   const CItem &item = _items[index];
-  const CNode &node = _nodes[item.Node];
+  const CNode &node = _nodes[_refs[item.Node]];
   bool isDir = node.IsDir();
 
   switch (propID)
@@ -1987,7 +2079,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       bool isDir2 = isDir;
       if (item.SymLinkItemIndex >= 0)
-        isDir2 = _nodes[_items[item.SymLinkItemIndex].Node].IsDir();
+        isDir2 = _nodes[_refs[_items[item.SymLinkItemIndex].Node]].IsDir();
       prop = isDir2;
       break;
     }
@@ -2050,6 +2142,118 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 }
 
 
+class CClusterInStream2:
+  public IInStream,
+  public CMyUnknownImp
+{
+  UInt64 _virtPos;
+  UInt64 _physPos;
+  UInt32 _curRem;
+public:
+  unsigned BlockBits;
+  UInt64 Size;
+  CMyComPtr<IInStream> Stream;
+  CRecordVector<UInt32> Vector;
+
+  HRESULT SeekToPhys() { return Stream->Seek(_physPos, STREAM_SEEK_SET, NULL); }
+
+  HRESULT InitAndSeek()
+  {
+    _curRem = 0;
+    _virtPos = 0;
+    _physPos = 0;
+    if (Vector.Size() > 0)
+    {
+      _physPos = (Vector[0] << BlockBits);
+      return SeekToPhys();
+    }
+    return S_OK;
+  }
+
+  MY_UNKNOWN_IMP2(ISequentialInStream, IInStream)
+
+  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+};
+
+
+STDMETHODIMP CClusterInStream2::Read(void *data, UInt32 size, UInt32 *processedSize)
+{
+  if (processedSize)
+    *processedSize = 0;
+  if (_virtPos >= Size)
+    return S_OK;
+  {
+    UInt64 rem = Size - _virtPos;
+    if (size > rem)
+      size = (UInt32)rem;
+  }
+  if (size == 0)
+    return S_OK;
+
+  if (_curRem == 0)
+  {
+    const UInt32 blockSize = (UInt32)1 << BlockBits;
+    const UInt32 virtBlock = (UInt32)(_virtPos >> BlockBits);
+    const UInt32 offsetInBlock = (UInt32)_virtPos & (blockSize - 1);
+    const UInt32 phyBlock = Vector[virtBlock];
+    
+    if (phyBlock == 0)
+    {
+      UInt32 cur = blockSize - offsetInBlock;
+      if (cur > size)
+        cur = size;
+      memset(data, 0, cur);
+      _virtPos += cur;
+      if (processedSize)
+        *processedSize = cur;
+      return S_OK;
+    }
+    
+    UInt64 newPos = ((UInt64)phyBlock << BlockBits) + offsetInBlock;
+    if (newPos != _physPos)
+    {
+      _physPos = newPos;
+      RINOK(SeekToPhys());
+    }
+    
+    _curRem = blockSize - offsetInBlock;
+    
+    for (unsigned i = 1; i < 64 && (virtBlock + i) < (UInt32)Vector.Size() && phyBlock + i == Vector[virtBlock + i]; i++)
+      _curRem += (UInt32)1 << BlockBits;
+  }
+
+  if (size > _curRem)
+    size = _curRem;
+  HRESULT res = Stream->Read(data, size, &size);
+  if (processedSize)
+    *processedSize = size;
+  _physPos += size;
+  _virtPos += size;
+  _curRem -= size;
+  return res;
+}
+ 
+STDMETHODIMP CClusterInStream2::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+{
+  switch (seekOrigin)
+  {
+    case STREAM_SEEK_SET: break;
+    case STREAM_SEEK_CUR: offset += _virtPos; break;
+    case STREAM_SEEK_END: offset += Size; break;
+    default: return STG_E_INVALIDFUNCTION;
+  }
+  if (offset < 0)
+    return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
+  if (_virtPos != (UInt64)offset)
+    _curRem = 0;
+  _virtPos = offset;
+  if (newPosition)
+    *newPosition = offset;
+  return S_OK;
+}
+
+
 class CExtInStream:
   public IInStream,
   public CMyUnknownImp
@@ -2057,8 +2261,8 @@ class CExtInStream:
   UInt64 _virtPos;
   UInt64 _phyPos;
 public:
-  UInt64 _size;
   unsigned BlockBits;
+  UInt64 Size;
   CMyComPtr<IInStream> Stream;
   CRecordVector<CExtent> Extents;
 
@@ -2080,11 +2284,13 @@ STDMETHODIMP CExtInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   if (processedSize)
     *processedSize = 0;
-  if (_virtPos >= _size)
+  if (_virtPos >= Size)
     return S_OK;
-  UInt64 rem = _size - _virtPos;
-  if (size > rem)
-    size = (UInt32)rem;
+  {
+    UInt64 rem = Size - _virtPos;
+    if (size > rem)
+      size = (UInt32)rem;
+  }
   if (size == 0)
     return S_OK;
 
@@ -2155,7 +2361,7 @@ STDMETHODIMP CExtInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosi
   {
     case STREAM_SEEK_SET: break;
     case STREAM_SEEK_CUR: offset += _virtPos; break;
-    case STREAM_SEEK_END: offset += _size; break;
+    case STREAM_SEEK_END: offset += Size; break;
     default: return STG_E_INVALIDFUNCTION;
   }
   if (offset < 0)
@@ -2174,6 +2380,8 @@ HRESULT CHandler::FillFileBlocks2(UInt32 block, unsigned level, unsigned numBloc
   CByteBuffer &tempBuf = _tempBufs[level];
   tempBuf.Alloc(blockSize);
 
+  PRF2(printf("\n level = %d, block = %7d", level, (unsigned)block));
+
   RINOK(SeekAndRead(_stream, block, tempBuf, blockSize));
 
   const Byte *p = tempBuf;
@@ -2184,16 +2392,34 @@ HRESULT CHandler::FillFileBlocks2(UInt32 block, unsigned level, unsigned numBloc
     if (blocks.Size() == numBlocks)
       break;
     UInt32 val = GetUi32(p + 4 * i);
-    if (val == 0 || val >= _h.NumBlocks)
+    if (val >= _h.NumBlocks)
       return S_FALSE;
 
     if (level != 0)
     {
+      if (val == 0)
+      {
+        /*
+        size_t num = (size_t)1 << ((_h.BlockBits - 2) * (level));
+        PRF2(printf("\n num empty = %3d", (unsigned)num));
+        for (size_t k = 0; k < num; k++)
+        {
+          blocks.Add(0);
+          if (blocks.Size() == numBlocks)
+            return S_OK;
+        }
+        continue;
+        */
+        return S_FALSE;
+      }
+      
       RINOK(FillFileBlocks2(val, level - 1, numBlocks, blocks));
       continue;
     }
     
-    PRF(printf("\n i = %3d,  start = %5d ", (unsigned)val));
+    PRF2(printf("\n i = %3d,  blocks.Size() = %6d, block = %5d ", i, blocks.Size(), (unsigned)val));
+
+    PRF(printf("\n i = %3d,  start = %5d ", (unsigned)i, (unsigned)val));
     
     blocks.Add(val);
   }
@@ -2206,28 +2432,44 @@ static const unsigned kNumDirectNodeBlocks = 12;
 
 HRESULT CHandler::FillFileBlocks(const Byte *p, unsigned numBlocks, CRecordVector<UInt32> &blocks)
 {
+  // ext2 supports zero blocks (blockIndex == 0).
+
   blocks.ClearAndReserve(numBlocks);
 
-  unsigned i;
-  
-  for (i = 0; i < kNumDirectNodeBlocks; i++)
+  for (unsigned i = 0; i < kNumDirectNodeBlocks; i++)
   {
     if (i == numBlocks)
       return S_OK;
     UInt32 val = GetUi32(p + 4 * i);
-    if (val == 0 || val >= _h.NumBlocks)
+    if (val >= _h.NumBlocks)
       return S_FALSE;
     blocks.Add(val);
   }
   
-  for (i = 0; i < 3; i++)
+  for (unsigned level = 0; level < 3; level++)
   {
     if (blocks.Size() == numBlocks)
       break;
-    UInt32 val = GetUi32(p + 4 * (kNumDirectNodeBlocks + i));
-    if (val == 0 || val >= _h.NumBlocks)
+    UInt32 val = GetUi32(p + 4 * (kNumDirectNodeBlocks + level));
+    if (val >= _h.NumBlocks)
       return S_FALSE;
-    RINOK(FillFileBlocks2(val, i, numBlocks, blocks));
+
+    if (val == 0)
+    {
+      /*
+      size_t num = (size_t)1 << ((_h.BlockBits - 2) * (level + 1));
+      for (size_t k = 0; k < num; k++)
+      {
+        blocks.Add(0);
+        if (blocks.Size() == numBlocks)
+          return S_OK;
+      }
+      continue;
+      */
+      return S_FALSE;
+    }
+
+    RINOK(FillFileBlocks2(val, level, numBlocks, blocks));
   }
   
   return S_OK;
@@ -2331,7 +2573,7 @@ HRESULT CHandler::FillExtents(const Byte *p, size_t size, CRecordVector<CExtent>
 }
 
 
-HRESULT CHandler::GetStream_Node(UInt32 nodeIndex, ISequentialInStream **stream)
+HRESULT CHandler::GetStream_Node(unsigned nodeIndex, ISequentialInStream **stream)
 {
   COM_TRY_BEGIN
 
@@ -2341,7 +2583,12 @@ HRESULT CHandler::GetStream_Node(UInt32 nodeIndex, ISequentialInStream **stream)
 
   if (!node.IsFlags_EXTENTS())
   {
-    // maybe sparse file can have NumBlocks == 0 ?
+    // maybe sparse file can have (node.NumBlocks == 0) ?
+
+    /* The following code doesn't work correctly for some CentOS images,
+       where there are nodes with inline data and (node.NumBlocks != 0).
+       If you know better way to detect inline data, please notify 7-Zip developers. */
+
     if (node.NumBlocks == 0 && node.FileSize < kNodeBlockFieldSize)
     {
       Create_BufInStream_WithNewBuffer(node.Block, (size_t)node.FileSize, stream);
@@ -2365,7 +2612,7 @@ HRESULT CHandler::GetStream_Node(UInt32 nodeIndex, ISequentialInStream **stream)
     streamTemp = streamSpec;
     
     streamSpec->BlockBits = _h.BlockBits;
-    streamSpec->_size = node.FileSize;
+    streamSpec->Size = node.FileSize;
     streamSpec->Stream = _stream;
     
     RINOK(FillExtents(node.Block, kNodeBlockFieldSize, streamSpec->Extents, -1));
@@ -2421,11 +2668,10 @@ HRESULT CHandler::GetStream_Node(UInt32 nodeIndex, ISequentialInStream **stream)
     if (numBlocks != numBlocks64)
       return S_FALSE;
 
-    CClusterInStream *streamSpec = new CClusterInStream;
+    CClusterInStream2 *streamSpec = new CClusterInStream2;
     streamTemp = streamSpec;
 
-    streamSpec->BlockSizeLog = _h.BlockBits;
-    streamSpec->StartOffset = 0;
+    streamSpec->BlockBits = _h.BlockBits;
     streamSpec->Size = node.FileSize;
     streamSpec->Stream = _stream;
 
@@ -2477,7 +2723,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (index >= _items.Size())
       continue;
     const CItem &item = _items[index];
-    const CNode &node = _nodes[item.Node];
+    const CNode &node = _nodes[_refs[item.Node]];
     if (!node.IsDir())
       totalSize += node.FileSize;
   }
@@ -2520,7 +2766,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     }
 
     const CItem &item = _items[index];
-    const CNode &node = _nodes[item.Node];
+    const CNode &node = _nodes[_refs[item.Node]];
 
     if (node.IsDir())
     {
@@ -2583,7 +2829,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   *stream = NULL;
   if (index >= _items.Size())
     return S_FALSE;
-  return GetStream_Node(_items[index].Node, stream);
+  return GetStream_Node(_refs[_items[index].Node], stream);
 }
 
 
@@ -2601,7 +2847,7 @@ API_FUNC_static_IsArc IsArc_Ext(const Byte *p, size_t size)
 static const Byte k_Signature[] = { 0x53, 0xEF };
 
 REGISTER_ARC_I(
-  "Ext", "ext ext3 ext4", 0, 0xC7,
+  "Ext", "ext ext2 ext3 ext4 img", 0, 0xC7,
   k_Signature,
   0x438,
   0,

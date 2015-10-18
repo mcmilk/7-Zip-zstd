@@ -73,11 +73,11 @@ class CClusterInStream:
   UInt64 _physPos;
   UInt32 _curRem;
 public:
-  CMyComPtr<IInStream> Stream;
-  UInt64 StartOffset;
-  UInt64 Size;
   unsigned BlockSizeLog;
+  UInt64 Size;
+  CMyComPtr<IInStream> Stream;
   CRecordVector<UInt32> Vector;
+  UInt64 StartOffset;
 
   HRESULT SeekToPhys() { return Stream->Seek(_physPos, STREAM_SEEK_SET, NULL); }
 

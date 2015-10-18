@@ -90,50 +90,64 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 default
   return ParsePropToUInt32(name, prop, numThreads);
 }
 
-static HRESULT StringToDictSize(const UString &s, UInt32 &dicSize)
+
+static HRESULT StringToDictSize(const UString &s, NCOM::CPropVariant &destProp)
 {
   const wchar_t *end;
   UInt32 number = ConvertStringToUInt32(s, &end);
   unsigned numDigits = (unsigned)(end - s);
   if (numDigits == 0 || s.Len() > numDigits + 1)
     return E_INVALIDARG;
-  const unsigned kLogDictSizeLimit = 32;
+  
   if (s.Len() == numDigits)
   {
-    if (number >= kLogDictSizeLimit)
+    if (number >= 64)
       return E_INVALIDARG;
-    dicSize = (UInt32)1 << (unsigned)number;
+    if (number < 32)
+      destProp = (UInt32)((UInt32)1 << (unsigned)number);
+    else
+      destProp = (UInt64)((UInt64)1 << (unsigned)number);
     return S_OK;
   }
+  
   unsigned numBits;
+  
   switch (MyCharLower_Ascii(s[numDigits]))
   {
-    case 'b': dicSize = number; return S_OK;
+    case 'b': destProp = number; return S_OK;
     case 'k': numBits = 10; break;
     case 'm': numBits = 20; break;
     case 'g': numBits = 30; break;
     default: return E_INVALIDARG;
   }
-  if (number >= ((UInt32)1 << (kLogDictSizeLimit - numBits)))
-    return E_INVALIDARG;
-  dicSize = number << numBits;
+  
+  if (number < ((UInt32)1 << (32 - numBits)))
+    destProp = (UInt32)(number << numBits);
+  else
+    destProp = (UInt64)((UInt64)number << numBits);
+  
   return S_OK;
 }
 
-static HRESULT PROPVARIANT_to_DictSize(const PROPVARIANT &prop, UInt32 &resValue)
+
+static HRESULT PROPVARIANT_to_DictSize(const PROPVARIANT &prop, NCOM::CPropVariant &destProp)
 {
   if (prop.vt == VT_UI4)
   {
     UInt32 v = prop.ulVal;
-    if (v >= 32)
+    if (v >= 64)
       return E_INVALIDARG;
-    resValue = (UInt32)1 << v;
+    if (v < 32)
+      destProp = (UInt32)((UInt32)1 << (unsigned)v);
+    else
+      destProp = (UInt64)((UInt64)1 << (unsigned)v);
     return S_OK;
   }
   if (prop.vt == VT_BSTR)
-    return StringToDictSize(prop.bstrVal, resValue);
+    return StringToDictSize(prop.bstrVal, destProp);
   return E_INVALIDARG;
 }
+
 
 void CProps::AddProp32(PROPID propid, UInt32 level)
 {
@@ -275,10 +289,10 @@ static void SplitParams(const UString &srcString, UStringVector &subStrings)
 {
   subStrings.Clear();
   UString s;
-  int len = srcString.Len();
+  unsigned len = srcString.Len();
   if (len == 0)
     return;
-  for (int i = 0; i < len; i++)
+  for (unsigned i = 0; i < len; i++)
   {
     wchar_t c = srcString[i];
     if (c == L':')
@@ -336,9 +350,7 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
 
   if (IsLogSizeProp(prop.Id))
   {
-    UInt32 dicSize;
-    RINOK(StringToDictSize(value, dicSize));
-    prop.Value = dicSize;
+    RINOK(StringToDictSize(value, prop.Value));
   }
   else
   {
@@ -406,9 +418,7 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
   
   if (IsLogSizeProp(prop.Id))
   {
-    UInt32 dicSize;
-    RINOK(PROPVARIANT_to_DictSize(value, dicSize));
-    prop.Value = dicSize;
+    RINOK(PROPVARIANT_to_DictSize(value, prop.Value));
   }
   else
   {

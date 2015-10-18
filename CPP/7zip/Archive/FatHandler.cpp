@@ -133,15 +133,23 @@ bool CHeader::Parse(const Byte *p)
     default: return false;
   }
   {
-    int s = GetLog(Get16(p + 11));
-    if (s < 9 || s > 12)
-      return false;
-    SectorSizeLog = (Byte)s;
-    s = GetLog(p[13]);
-    if (s < 0)
-      return false;
-    SectorsPerClusterLog = (Byte)s;
+    {
+      UInt32 val32 = Get16(p + 11);
+      int s = GetLog(val32);
+      if (s < 9 || s > 12)
+        return false;
+      SectorSizeLog = (Byte)s;
+    }
+    {
+      UInt32 val32 = p[13];
+      int s = GetLog(val32);
+      if (s < 0)
+        return false;
+      SectorsPerClusterLog = (Byte)s;
+    }
     ClusterSizeLog = (Byte)(SectorSizeLog + SectorsPerClusterLog);
+    if (ClusterSizeLog > 24)
+      return false;
   }
 
   NumReservedSectors = Get16(p + 14);

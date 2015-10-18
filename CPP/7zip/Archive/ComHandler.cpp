@@ -433,9 +433,9 @@ HRESULT CDatabase::Open(IInStream *inStream)
   SectorSizeBits = sectorSizeBits;
   MiniSectorSizeBits = miniSectorSizeBits;
 
-  if (sectorSizeBits > 28 ||
+  if (sectorSizeBits > 24 ||
       sectorSizeBits < 7 ||
-      miniSectorSizeBits > 28 ||
+      miniSectorSizeBits > 24 ||
       miniSectorSizeBits < 2 ||
       miniSectorSizeBits > sectorSizeBits)
     return S_FALSE;

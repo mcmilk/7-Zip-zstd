@@ -30,8 +30,8 @@ class CHandlerCont:
 protected:
   CMyComPtr<IInStream> _stream;
 
-  virtual UInt64 GetItemPos(UInt32 index) const = 0;
-  virtual UInt64 GetItemSize(UInt32 index) const = 0;
+  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const = 0;
+
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive_Cont(PURE)
@@ -39,6 +39,9 @@ public:
   STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, Int32 testMode, IArchiveExtractCallback *extractCallback) MY_NO_THROW_DECL_ONLY;
   
   STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
+
+  // destructor must be virtual for this class
+  virtual ~CHandlerCont() {}
 };
 
 
@@ -68,6 +71,22 @@ protected:
   UInt64 _size;
   CMyComPtr<IInStream> Stream;
   const char *_imgExt;
+  
+  bool _stream_unavailData;
+  bool _stream_unsupportedMethod;
+  bool _stream_dataError;
+  // bool _stream_UsePackSize;
+  // UInt64 _stream_PackSize;
+
+  void ClearStreamVars()
+  {
+    _stream_unavailData = false;
+    _stream_unsupportedMethod = false;
+    _stream_dataError = false;
+    // _stream_UsePackSize = false;
+    // _stream_PackSize = 0;
+  }
+
 
   virtual HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openCallback) = 0;
   virtual void CloseAtError();
@@ -83,6 +102,10 @@ public:
   
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize) = 0;
   STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+
+  CHandlerImg();
+  // destructor must be virtual for this class
+  virtual ~CHandlerImg() {}
 };
 
 

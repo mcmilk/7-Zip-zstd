@@ -88,15 +88,15 @@ AString CBootInitialEntry::GetName() const
 
 Byte CInArchive::ReadByte()
 {
-  if (m_BufferPos >= BlockSize)
+  if (m_BufferPos >= kBlockSize)
     m_BufferPos = 0;
   if (m_BufferPos == 0)
   {
-    size_t processed = BlockSize;
+    size_t processed = kBlockSize;
     HRESULT res = ReadStream(_stream, m_Buffer, &processed);
     if (res != S_OK)
       throw CSystemException(res);
-    if (processed != BlockSize)
+    if (processed != kBlockSize)
       throw CUnexpectedEndException();
     UInt64 end = _position + processed;
     if (PhySize < end)
@@ -511,7 +511,7 @@ HRESULT CInArchive::Open2()
 
   PhySize = _position;
   m_BufferPos = 0;
-  BlockSize = kBlockSize;
+  // BlockSize = kBlockSize;
   
   for (;;)
   {

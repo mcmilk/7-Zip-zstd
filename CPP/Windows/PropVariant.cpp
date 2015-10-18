@@ -40,7 +40,10 @@ HRESULT PropVarEm_Set_Str(PROPVARIANT *p, const char *s) throw()
 {
   p->bstrVal = AllocBstrFromAscii(s);
   if (p->bstrVal)
+  {
+    p->vt = VT_BSTR;
     return S_OK;
+  }
   p->vt = VT_ERROR;
   p->scode = E_OUTOFMEMORY;
   return E_OUTOFMEMORY;

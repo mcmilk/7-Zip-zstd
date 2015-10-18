@@ -723,7 +723,7 @@ static HRESULT Update2(
 
   CThreads threads;
   CRecordVector<HANDLE> compressingCompletedEvents;
-  CRecordVector<int> threadIndices;  // list threads in order of updateItems
+  CUIntVector threadIndices;  // list threads in order of updateItems
 
   {
     RINOK(memManager.AllocateSpaceAlways((size_t)numThreads * (kMemPerThread / kBlockSize)));
@@ -759,7 +759,7 @@ static HRESULT Update2(
 
   while (itemIndex < updateItems.Size())
   {
-    if ((UInt32)threadIndices.Size() < numThreads && mtItemIndex < updateItems.Size())
+    if (threadIndices.Size() < numThreads && mtItemIndex < updateItems.Size())
     {
       CUpdateItem &ui = updateItems[mtItemIndex++];
       if (!ui.NewData)

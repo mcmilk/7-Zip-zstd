@@ -576,20 +576,20 @@ class CInStream:
   UInt64 _physPos;
   UInt64 _curRem;
   bool _sparseMode;
-  size_t _compressedPos;
   
-  UInt64 _tags[kNumCacheChunks];
+
   unsigned _chunkSizeLog;
+  UInt64 _tags[kNumCacheChunks];
   CByteBuffer _inBuf;
   CByteBuffer _outBuf;
 public:
-  CMyComPtr<IInStream> Stream;
   UInt64 Size;
   UInt64 InitializedSize;
   unsigned BlockSizeLog;
   unsigned CompressionUnit;
-  bool InUse;
   CRecordVector<CExtent> Extents;
+  bool InUse;
+  CMyComPtr<IInStream> Stream;
 
   HRESULT SeekToPhys() { return Stream->Seek(_physPos, STREAM_SEEK_SET, NULL); }
 
@@ -597,11 +597,11 @@ public:
   HRESULT InitAndSeek(unsigned compressionUnit)
   {
     CompressionUnit = compressionUnit;
+    _chunkSizeLog = BlockSizeLog + CompressionUnit;
     if (compressionUnit != 0)
     {
       UInt32 cuSize = GetCuSize();
       _inBuf.Alloc(cuSize);
-      _chunkSizeLog = BlockSizeLog + CompressionUnit;
       _outBuf.Alloc(kNumCacheChunks << _chunkSizeLog);
     }
     for (size_t i = 0; i < kNumCacheChunks; i++)

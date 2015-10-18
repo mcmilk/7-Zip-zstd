@@ -252,7 +252,7 @@ struct CItem
   bool IsInline;
   CByteBuffer InlineData;
   CRecordVector<CMyExtent> Extents;
-  CRecordVector<int> SubFiles;
+  CUIntVector SubFiles;
 
   void Parse(const Byte *buf);
 
@@ -282,7 +282,7 @@ struct CItem
 struct CRef
 {
   int Parent;
-  int FileIndex;
+  unsigned FileIndex;
 };
 
 
@@ -346,7 +346,7 @@ class CInArchive
   HRESULT ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &lad, int numRecurseAllowed);
 
   HRESULT Open2();
-  HRESULT FillRefs(CFileSet &fs, int fileIndex, int parent, int numRecurseAllowed);
+  HRESULT FillRefs(CFileSet &fs, unsigned fileIndex, int parent, int numRecurseAllowed);
 
   UInt64 _processedProgressBytes;
 

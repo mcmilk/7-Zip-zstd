@@ -564,7 +564,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
   return S_OK;
 }
 
-HRESULT CInArchive::FillRefs(CFileSet &fs, int fileIndex, int parent, int numRecurseAllowed)
+HRESULT CInArchive::FillRefs(CFileSet &fs, unsigned fileIndex, int parent, int numRecurseAllowed)
 {
   if ((_numRefs & 0xFFF) == 0)
   {

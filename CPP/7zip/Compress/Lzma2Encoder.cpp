@@ -38,7 +38,20 @@ HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzm
   switch (propID)
   {
     case NCoderPropID::kBlockSize:
-      if (prop.vt != VT_UI4) return E_INVALIDARG; lzma2Props.blockSize = prop.ulVal; break;
+    {
+      if (prop.vt == VT_UI4)
+        lzma2Props.blockSize = prop.ulVal;
+      else if (prop.vt == VT_UI8)
+      {
+        size_t v = (size_t)prop.uhVal.QuadPart;
+        if (v != prop.uhVal.QuadPart)
+          return E_INVALIDARG;
+        lzma2Props.blockSize = v;
+      }
+      else
+        return E_INVALIDARG;
+      break;
+    }
     case NCoderPropID::kNumThreads:
       if (prop.vt != VT_UI4) return E_INVALIDARG; lzma2Props.numTotalThreads = (int)(prop.ulVal); break;
     default:

@@ -83,8 +83,14 @@ class CHandler: public CHandlerCont
   HRESULT ReadTables(IInStream *stream);
   UInt64 BlocksToBytes(UInt32 i) const { return (UInt64)i << _blockSizeLog; }
 
-  virtual UInt64 GetItemPos(UInt32 index) const { return BlocksToBytes(_items[index].StartBlock); }
-  virtual UInt64 GetItemSize(UInt32 index) const { return BlocksToBytes(_items[index].NumBlocks); }
+  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const
+  {
+    const CItem &item = _items[index];
+    pos = BlocksToBytes(item.StartBlock);
+    size = BlocksToBytes(item.NumBlocks);
+    return NExtract::NOperationResult::kOK;
+  }
+
 public:
   INTERFACE_IInArchive_Cont(;)
 };

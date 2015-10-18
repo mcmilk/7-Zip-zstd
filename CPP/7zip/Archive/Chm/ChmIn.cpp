@@ -656,7 +656,7 @@ static AString GetSectionPrefix(const AString &name)
 
 #define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
-static int CompareFiles(const int *p1, const int *p2, void *param)
+static int CompareFiles(const unsigned *p1, const unsigned *p2, void *param)
 {
   const CObjectVector<CItem> &items = *(const CObjectVector<CItem> *)param;
   const CItem &item1 = items[*p1];
@@ -731,7 +731,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     RINOK(DecompressStream(inStream, database, kNameList));
     /* UInt16 length = */ ReadUInt16();
     UInt16 numSections = ReadUInt16();
-    for (int i = 0; i < numSections; i++)
+    for (unsigned i = 0; i < numSections; i++)
     {
       CSectionInfo section;
       UInt16 nameLen = ReadUInt16();
@@ -766,10 +766,10 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
       RINOK(DecompressStream(inStream, database, transformPrefix + kTransformList));
       if ((_chunkSize & 0xF) != 0)
         return S_FALSE;
-      int numGuids = (int)(_chunkSize / 0x10);
+      unsigned numGuids = (unsigned)(_chunkSize / 0x10);
       if (numGuids < 1)
         return S_FALSE;
-      for (int i = 0; i < numGuids; i++)
+      for (unsigned i = 0; i < numGuids; i++)
       {
         CMethodInfo method;
         ReadGUID(method.Guid);
@@ -803,14 +803,17 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
             return S_FALSE;
           
           {
-            int n = GetLog(ReadUInt32());
+            // There is bug in VC6, if we use function call as parameter for inline function
+            UInt32 val32 = ReadUInt32();
+            int n = GetLog(val32);
             if (n < 0 || n > 16)
               return S_FALSE;
             li.ResetIntervalBits = n;
           }
           
           {
-            int n = GetLog(ReadUInt32());
+            UInt32 val32 = ReadUInt32();
+            int n = GetLog(val32);
             if (n < 0 || n > 16)
               return S_FALSE;
             li.WindowSizeBits = n;

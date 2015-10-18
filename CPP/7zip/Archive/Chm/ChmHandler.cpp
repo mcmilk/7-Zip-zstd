@@ -101,6 +101,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
+  
   if (m_Database.NewFormat)
   {
     switch (propID)
@@ -112,12 +113,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     prop.Detach(value);
     return S_OK;
   }
-  int entryIndex;
+  
+  unsigned entryIndex;
   if (m_Database.LowLevel)
     entryIndex = index;
   else
     entryIndex = m_Database.Indices[index];
+  
   const CItem &item = m_Database.Items[entryIndex];
+  
   switch (propID)
   {
     case kpidPath:
@@ -161,6 +165,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
     #endif
   }
+  
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
@@ -244,9 +249,9 @@ public:
   UInt64 m_PosInFolder;
   UInt64 m_PosInSection;
   const CRecordVector<bool> *m_ExtractStatuses;
-  int m_StartIndex;
-  int m_CurrentIndex;
-  int m_NumFiles;
+  unsigned m_StartIndex;
+  unsigned m_CurrentIndex;
+  unsigned m_NumFiles;
 
 private:
   const CFilesDatabase *m_Database;
@@ -298,7 +303,7 @@ HRESULT CChmFolderOutStream::WriteEmptyFiles()
 {
   if (m_FileIsOpen)
     return S_OK;
-  for (;m_CurrentIndex < m_NumFiles; m_CurrentIndex++)
+  for (; m_CurrentIndex < m_NumFiles; m_CurrentIndex++)
   {
     UInt64 fileSize = m_Database->GetFileSize(m_StartIndex + m_CurrentIndex);
     if (fileSize != 0)
@@ -368,7 +373,7 @@ HRESULT CChmFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *proce
         // return E_FAIL;
       }
 
-      int fullIndex = m_StartIndex + m_CurrentIndex;
+      unsigned fullIndex = m_StartIndex + m_CurrentIndex;
       m_RemainFileSize = m_Database->GetFileSize(fullIndex);
       UInt64 fileOffset = m_Database->GetFileOffset(fullIndex);
       if (fileOffset < m_PosInSection)
@@ -408,7 +413,7 @@ HRESULT CChmFolderOutStream::FlushCorrupted(UInt64 maxSize)
 {
   const UInt32 kBufferSize = (1 << 10);
   Byte buffer[kBufferSize];
-  for (int i = 0; i < kBufferSize; i++)
+  for (unsigned i = 0; i < kBufferSize; i++)
     buffer[i] = 0;
   if (maxSize > m_FolderSize)
     maxSize = m_FolderSize;
@@ -531,9 +536,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     UInt32 index = allFilesMode ? i : indices[i];
-    int entryIndex = m_Database.Indices[index];
-    const CItem &item = m_Database.Items[entryIndex];
-    UInt64 sectionIndex = item.Section;
+    const CItem &item = m_Database.Items[m_Database.Indices[index]];
+    const UInt64 sectionIndex = item.Section;
     if (item.IsDir() || item.Size == 0)
       continue;
     if (sectionIndex == 0)
@@ -567,14 +571,17 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   CByteBuffer packBuf;
   
-  for (i = 0; i < numItems;)
+  for (i = 0;;)
   {
     RINOK(extractCallback->SetCompleted(&currentTotalSize));
+
+    if (i >= numItems)
+      break;
+
     UInt32 index = allFilesMode ? i : indices[i];
     i++;
-    int entryIndex = m_Database.Indices[index];
-    const CItem &item = m_Database.Items[entryIndex];
-    UInt64 sectionIndex = item.Section;
+    const CItem &item = m_Database.Items[m_Database.Indices[index]];
+    const UInt64 sectionIndex = item.Section;
     Int32 askMode= testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
@@ -645,7 +652,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     UInt64 folderIndex = m_Database.GetFolder(index);
 
-    UInt64 compressedPos = m_Database.ContentOffset + section.Offset;
+    const UInt64 compressedPos = m_Database.ContentOffset + section.Offset;
     RINOK(lzxDecoderSpec->SetParams_and_Alloc(lzxInfo.GetNumDictBits()));
 
     const CItem *lastItem = &item;
@@ -673,9 +680,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         for (; i < numItems; i++)
         {
-          UInt32 nextIndex = allFilesMode ? i : indices[i];
-          int entryIndex = m_Database.Indices[nextIndex];
-          const CItem &nextItem = m_Database.Items[entryIndex];
+          const UInt32 nextIndex = allFilesMode ? i : indices[i];
+          const CItem &nextItem = m_Database.Items[m_Database.Indices[nextIndex]];
           if (nextItem.Section != sectionIndex)
             break;
           UInt64 nextFolderIndex = m_Database.GetFolder(nextIndex);

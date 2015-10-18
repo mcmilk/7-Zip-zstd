@@ -28,7 +28,11 @@ STDMETHODIMP CHandlerCont::Extract(const UInt32 *indices, UInt32 numItems,
   UInt64 totalSize = 0;
   UInt32 i;
   for (i = 0; i < numItems; i++)
-    totalSize += GetItemSize(allFilesMode ? i : indices[i]);
+  {
+    UInt64 pos, size;
+    GetItem_ExtractInfo(allFilesMode ? i : indices[i], pos, size);
+    totalSize += size;
+  }
   extractCallback->SetTotal(totalSize);
 
   totalSize = 0;
@@ -56,21 +60,31 @@ STDMETHODIMP CHandlerCont::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 index = allFilesMode ? i : indices[i];
     
     RINOK(extractCallback->GetStream(index, &outStream, askMode));
-    UInt64 size = GetItemSize(index);
+
+    UInt64 pos, size;
+    int opRes = GetItem_ExtractInfo(index, pos, size);
     totalSize += size;
     if (!testMode && !outStream)
       continue;
+    
     RINOK(extractCallback->PrepareOperation(askMode));
 
-    RINOK(_stream->Seek(GetItemPos(index), STREAM_SEEK_SET, NULL));
-    streamSpec->Init(size);
-    RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+    if (opRes == NExtract::NOperationResult::kOK)
+    {
+      RINOK(_stream->Seek(pos, STREAM_SEEK_SET, NULL));
+      streamSpec->Init(size);
+    
+      RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+      
+      opRes = NExtract::NOperationResult::kDataError;
+      
+      if (copyCoderSpec->TotalSize == size)
+        opRes = NExtract::NOperationResult::kOK;
+      else if (copyCoderSpec->TotalSize < size)
+        opRes = NExtract::NOperationResult::kUnexpectedEnd;
+    }
+    
     outStream.Release();
-    int opRes = NExtract::NOperationResult::kDataError;
-    if (copyCoderSpec->TotalSize == size)
-      opRes = NExtract::NOperationResult::kOK;
-    else if (copyCoderSpec->TotalSize < size)
-      opRes = NExtract::NOperationResult::kUnexpectedEnd;
     RINOK(extractCallback->SetOperationResult(opRes));
   }
   
@@ -81,12 +95,21 @@ STDMETHODIMP CHandlerCont::Extract(const UInt32 *indices, UInt32 numItems,
 STDMETHODIMP CHandlerCont::GetStream(UInt32 index, ISequentialInStream **stream)
 {
   COM_TRY_BEGIN
-  // const CPartition &item = _items[index];
-  return CreateLimitedInStream(_stream, GetItemPos(index), GetItemSize(index), stream);
+  *stream = NULL;
+  UInt64 pos, size;
+  if (GetItem_ExtractInfo(index, pos, size) != NExtract::NOperationResult::kOK)
+    return S_FALSE;
+  return CreateLimitedInStream(_stream, pos, size, stream);
   COM_TRY_END
 }
 
 
+
+CHandlerImg::CHandlerImg():
+    _imgExt(NULL)
+{
+  ClearStreamVars();
+}
 
 STDMETHODIMP CHandlerImg::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
 {
@@ -190,6 +213,8 @@ STDMETHODIMP CHandlerImg::Extract(const UInt32 *indices, UInt32 numItems,
 
   int opRes = NExtract::NOperationResult::kDataError;
   
+  ClearStreamVars();
+  
   CMyComPtr<ISequentialInStream> inStream;
   HRESULT hres = GetStream(0, &inStream);
   if (hres == S_FALSE)
@@ -205,6 +230,13 @@ STDMETHODIMP CHandlerImg::Extract(const UInt32 *indices, UInt32 numItems,
     {
       if (copyCoderSpec->TotalSize == _size)
         opRes = NExtract::NOperationResult::kOK;
+      
+      if (_stream_unavailData)
+        opRes = NExtract::NOperationResult::kUnavailable;
+      else if (_stream_unsupportedMethod)
+        opRes = NExtract::NOperationResult::kUnsupportedMethod;
+      else if (_stream_dataError)
+        opRes = NExtract::NOperationResult::kDataError;
       else if (copyCoderSpec->TotalSize < _size)
         opRes = NExtract::NOperationResult::kUnexpectedEnd;
     }

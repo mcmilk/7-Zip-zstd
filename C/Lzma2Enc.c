@@ -1,5 +1,5 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2015-09-16 : Igor Pavlov : Public domain */
+2015-10-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -479,7 +479,7 @@ SRes Lzma2Enc_Encode(CLzma2EncHandle pp,
 
   for (i = 0; i < p->props.numBlockThreads; i++)
   {
-    CLzma2EncInt *t = &p->coders[i];
+    CLzma2EncInt *t = &p->coders[(unsigned)i];
     if (!t->enc)
     {
       t->enc = LzmaEnc_Create(p->alloc);
@@ -489,11 +489,7 @@ SRes Lzma2Enc_Encode(CLzma2EncHandle pp,
   }
 
   #ifndef _7ZIP_ST
-  if (p->props.numBlockThreads <= 1)
-  #endif
-    return Lzma2Enc_EncodeMt1(&p->coders[0], p, outStream, inStream, progress);
-
-  #ifndef _7ZIP_ST
+  if (p->props.numBlockThreads > 1)
   {
     CMtCallbackImp mtCallback;
 
@@ -508,9 +504,17 @@ SRes Lzma2Enc_Encode(CLzma2EncHandle pp,
 
     p->mtCoder.blockSize = p->props.blockSize;
     p->mtCoder.destBlockSize = p->props.blockSize + (p->props.blockSize >> 10) + 16;
+    if (p->mtCoder.destBlockSize < p->props.blockSize)
+    {
+      p->mtCoder.destBlockSize = (size_t)0 - 1;
+      if (p->mtCoder.destBlockSize < p->props.blockSize)
+        return SZ_ERROR_FAIL;
+    }
     p->mtCoder.numThreads = p->props.numBlockThreads;
     
     return MtCoder_Code(&p->mtCoder);
   }
   #endif
+
+  return Lzma2Enc_EncodeMt1(&p->coders[0], p, outStream, inStream, progress);
 }

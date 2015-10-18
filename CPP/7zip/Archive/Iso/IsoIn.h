@@ -282,7 +282,7 @@ public:
   CRecordVector<CRef> Refs;
   CObjectVector<CVolumeDescriptor> VolDescs;
   int MainVolDescIndex;
-  UInt32 BlockSize;
+  // UInt32 BlockSize;
   CObjectVector<CBootInitialEntry> BootEntries;
 
   bool IsArc;
@@ -297,8 +297,8 @@ public:
 
   void UpdatePhySize(UInt32 blockIndex, UInt64 size)
   {
-    UInt64 alignedSize = (size + BlockSize - 1) & ~((UInt64)BlockSize - 1);
-    UInt64 end = blockIndex * BlockSize + alignedSize;
+    const UInt64 alignedSize = (size + kBlockSize - 1) & ~((UInt64)kBlockSize - 1);
+    const UInt64 end = (UInt64)blockIndex * kBlockSize + alignedSize;
     if (PhySize < end)
       PhySize = end;
   }
@@ -315,7 +315,7 @@ public:
       size = (1440 << 10);
     else if (be.BootMediaType == NBootMediaType::k2d88Floppy)
       size = (2880 << 10);
-    UInt64 startPos = (UInt64)be.LoadRBA * BlockSize;
+    UInt64 startPos = (UInt64)be.LoadRBA * kBlockSize;
     if (startPos < _fileSize)
     {
       if (_fileSize - startPos < size)
