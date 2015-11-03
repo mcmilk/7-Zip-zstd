@@ -82,20 +82,21 @@ void CPanel::OnInsert()
       LVIS_CUT : 0;
   _listView.SetItemState(focusedItem, state, LVIS_CUT);
   // _listView.SetItemState_Selected(focusedItem);
-
   */
+
   int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int realIndex = GetRealItemIndex(focusedItem);
-  bool isSelected = !_selectedStatusVector[realIndex];
-  if (realIndex != kParentIndex)
-    _selectedStatusVector[realIndex] = isSelected;
   
-  if (!_mySelectMode)
-    _listView.SetItemState_Selected(focusedItem, isSelected);
-
-  _listView.RedrawItem(focusedItem);
+  int realIndex = GetRealItemIndex(focusedItem);
+  if (realIndex != kParentIndex)
+  {
+    bool isSelected = !_selectedStatusVector[realIndex];
+    _selectedStatusVector[realIndex] = isSelected;
+    if (!_mySelectMode)
+      _listView.SetItemState_Selected(focusedItem, isSelected);
+    _listView.RedrawItem(focusedItem);
+  }
 
   int nextIndex = focusedItem + 1;
   if (nextIndex < _listView.GetItemCount())
@@ -112,6 +113,8 @@ void CPanel::OnUpWithShift()
   if (focusedItem < 0)
     return;
   int index = GetRealItemIndex(focusedItem);
+  if (index == kParentIndex)
+    return;
   _selectedStatusVector[index] = !_selectedStatusVector[index];
   _listView.RedrawItem(index);
 }
@@ -122,6 +125,8 @@ void CPanel::OnDownWithShift()
   if (focusedItem < 0)
     return;
   int index = GetRealItemIndex(focusedItem);
+  if (index == kParentIndex)
+    return;
   _selectedStatusVector[index] = !_selectedStatusVector[index];
   _listView.RedrawItem(index);
 }

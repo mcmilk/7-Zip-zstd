@@ -27,6 +27,8 @@
 #include "RegistryUtils.h"
 #include "UpdateCallback100.h"
 
+#include "../GUI/ExtractRes.h"
+
 #include "resource.h"
 
 using namespace NWindows;
@@ -182,7 +184,8 @@ public:
   }
 };
 
-HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
+
+HRESULT CPanel::OpenAsArc(IInStream *inStream,
     const CTempFileInfo &tempFileInfo,
     const UString &virtualFilePath,
     const UString &arcFormat,
@@ -191,6 +194,7 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   encrypted = false;
   CFolderLink folderLink;
   (CTempFileInfo &)folderLink = tempFileInfo;
+  
   if (inStream)
     folderLink.IsVirtual = true;
   else
@@ -224,6 +228,7 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
     folderLink.ParentFolderPath = GetFolderPath(_folder);
   else
     folderLink.ParentFolderPath = _currentFolderPrefix;
+  
   if (!_parentFolders.IsEmpty())
     folderLink.ParentFolder = _folder;
 
@@ -240,6 +245,7 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   CMyComPtr<IGetFolderArcProps> getFolderArcProps;
   _folder.QueryInterface(IID_IGetFolderArcProps, &getFolderArcProps);
   _thereAreDeletedItems = false;
+  
   if (getFolderArcProps)
   {
     CMyComPtr<IFolderArcProps> arcProps;
@@ -304,22 +310,58 @@ HRESULT CPanel::OpenItemAsArchive(IInStream *inStream,
   return S_OK;
 }
 
-HRESULT CPanel::OpenItemAsArchive(const UString &relPath, const UString &arcFormat, bool &encrypted)
+
+HRESULT CPanel::OpenAsArc_Msg(IInStream *inStream,
+    const CTempFileInfo &tempFileInfo,
+    const UString &virtualFilePath,
+    const UString &arcFormat,
+    bool &encrypted,
+    bool showErrorMessage)
+{
+  HRESULT res = OpenAsArc(inStream, tempFileInfo, virtualFilePath, arcFormat, encrypted);
+  
+  if (res == S_OK)
+    return res;
+  if (res == E_ABORT)
+    return res;
+
+  if (showErrorMessage && encrypted)
+  {
+    UString message = L"Error";
+    if (res == S_FALSE)
+    {
+      message = MyFormatNew(
+          encrypted ?
+            IDS_CANT_OPEN_ENCRYPTED_ARCHIVE :
+            IDS_CANT_OPEN_ARCHIVE,
+          virtualFilePath);
+    }
+    else
+      message = HResultToMessage(res);
+    MessageBoxMyError(message);
+  }
+
+  return res;
+}
+
+
+HRESULT CPanel::OpenAsArc_Name(const UString &relPath, const UString &arcFormat, bool &encrypted, bool showErrorMessage)
 {
   CTempFileInfo tfi;
   tfi.RelPath = relPath;
   tfi.FolderPath = us2fs(GetFsPath());
   const UString fullPath = GetFsPath() + relPath;
   tfi.FilePath = us2fs(fullPath);
-  return OpenItemAsArchive(NULL, tfi, fullPath, arcFormat, encrypted);
+  return OpenAsArc_Msg(NULL, tfi, fullPath, arcFormat, encrypted, showErrorMessage);
 }
 
-HRESULT CPanel::OpenItemAsArchive(int index, const wchar_t *type)
+
+HRESULT CPanel::OpenAsArc_Index(int index, const wchar_t *type, bool showErrorMessage)
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
   CDisableNotify disableNotify(*this);
   bool encrypted;
-  HRESULT res = OpenItemAsArchive(GetItemRelPath2(index), type ? type : L"", encrypted);
+  HRESULT res = OpenAsArc_Name(GetItemRelPath2(index), type ? type : L"", encrypted, showErrorMessage);
   if (res != S_OK)
   {
     RefreshTitle(true); // in case of error we must refresh changed title of 7zFM
@@ -328,6 +370,7 @@ HRESULT CPanel::OpenItemAsArchive(int index, const wchar_t *type)
   RefreshListCtrl();
   return S_OK;
 }
+
 
 HRESULT CPanel::OpenParentArchiveFolder()
 {
@@ -358,6 +401,7 @@ HRESULT CPanel::OpenParentArchiveFolder()
   folderLink.DeleteDirAndFile();
   return S_OK;
 }
+
 
 static const char *kStartExtensions =
   #ifdef UNDER_CE
@@ -668,6 +712,7 @@ bool CPanel::IsVirus_Message(const UString &name)
   return true;
 }
 
+
 void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal, const wchar_t *type)
 {
   CDisableTimerProcessing disableTimerProcessing(*this);
@@ -689,7 +734,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal, const wchar
   if (tryInternal)
     if (!tryExternal || !DoItemAlwaysStart(name))
     {
-      HRESULT res = OpenItemAsArchive(index, type);
+      HRESULT res = OpenAsArc_Index(index, type, true);
       disableNotify.Restore(); // we must restore to allow text notification update
       InvalidateList();
       if (res == S_OK || res == E_ABORT)
@@ -1069,22 +1114,18 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
         if (subStream)
         {
           bool encrypted;
-          HRESULT res = OpenItemAsArchive(subStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted);
+          HRESULT res = OpenAsArc_Msg(subStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted, true);
           if (res == S_OK)
           {
             tempDirectory.DisableDeleting();
             RefreshListCtrl();
             return;
           }
-          if (res == E_ABORT)
+          if (res == E_ABORT || res != S_FALSE)
             return;
-          if (res != S_FALSE)
-          {
-            // probably we must show some message here
-            // return;
-          }
           if (!tryExternal)
             return;
+          tryAsArchive = false;
         }
       }
     }
@@ -1183,12 +1224,21 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
       CMyComPtr<IInStream> bufInStream = bufInStreamSpec;
       bufInStreamSpec->Init(file.Data, streamSize, virtFileSystem);
       bool encrypted;
-      if (OpenItemAsArchive(bufInStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted) == S_OK)
+
+      HRESULT res = OpenAsArc_Msg(bufInStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted, true);
+      if (res == S_OK)
       {
         tempDirectory.DisableDeleting();
         RefreshListCtrl();
         return;
       }
+
+      if (res == E_ABORT || res != S_FALSE)
+        return;
+      if (!tryExternal)
+        return;
+      
+      tryAsArchive = false;
       if (virtFileSystemSpec->FlushToDisk(true) != S_OK)
         return;
     }
@@ -1209,13 +1259,19 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   if (tryAsArchive)
   {
     bool encrypted;
-    if (OpenItemAsArchive(NULL, tempFileInfo, fullVirtPath, type ? type : L"", encrypted) == S_OK)
+    HRESULT res = OpenAsArc_Msg(NULL, tempFileInfo, fullVirtPath, type ? type : L"", encrypted, true);
+    if (res == S_OK)
     {
       tempDirectory.DisableDeleting();
       RefreshListCtrl();
       return;
     }
+    if (res == E_ABORT || res != S_FALSE)
+      return;
   }
+
+  if (!tryExternal)
+    return;
 
   CMyAutoPtr<CTmpProcessInfo> tmpProcessInfoPtr(new CTmpProcessInfo());
   CTmpProcessInfo *tpi = tmpProcessInfoPtr.get();
@@ -1229,9 +1285,6 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     return;
 
   CTmpProcessInfoRelease tmpProcessInfoRelease(*tpi);
-
-  if (!tryExternal)
-    return;
 
   CProcess process;
   // HRESULT res;

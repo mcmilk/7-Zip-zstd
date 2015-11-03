@@ -1292,6 +1292,18 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       break;
     }
     
+    case kpidError:
+    {
+      if (/* &_missingVol || */ !_missingVolName.IsEmpty())
+      {
+        UString s;
+        s.SetFromAscii("Missing volume : ");
+        s += _missingVolName;
+        prop = s;
+      }
+      break;
+    }
+
     case kpidErrorFlags:
     {
       UInt32 v = _errorFlags;
@@ -1840,13 +1852,18 @@ HRESULT CHandler::Open2(IInStream *stream,
           break;
       }
       
-      HRESULT result = openVolumeCallback->GetStream(seqName.GetNextName(), &inStream);
-      if (result == S_FALSE)
-        break;
-      if (result != S_OK)
+      const UString volName = seqName.GetNextName();
+      
+      HRESULT result = openVolumeCallback->GetStream(volName, &inStream);
+      
+      if (result != S_OK && result != S_FALSE)
         return result;
-      if (!inStream)
+
+      if (!inStream || result != S_OK)
+      {
+        _missingVolName = volName;
         break;
+      }
     }
     
     UInt64 endPos = 0;
@@ -2120,6 +2137,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
 STDMETHODIMP CHandler::Close()
 {
   COM_TRY_BEGIN
+  _missingVolName.Empty();
   _errorFlags = 0;
   // _warningFlags = 0;
   _isArc = false;

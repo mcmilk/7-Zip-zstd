@@ -450,6 +450,8 @@ class CHandler: public CHandlerImg
 
   CByteBuffer _descriptorBuf;
   CDescriptor _descriptor;
+
+  UString _missingVolName;
   
   void InitAndSeekMain()
   {
@@ -882,6 +884,19 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
     case kpidNumVolumes: if (_isMultiVol) prop = (UInt32)_extents.Size(); break;
 
+    case kpidError:
+    {
+      if (_missingVol || !_missingVolName.IsEmpty())
+      {
+        UString s;
+        s.SetFromAscii("Missing volume : ");
+        if (!_missingVolName.IsEmpty())
+          s += _missingVolName;
+        prop = s;
+      }
+      break;
+    }
+
     case kpidErrorFlags:
     {
       UInt32 v = 0;
@@ -889,7 +904,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       if (_unsupported) v |= kpv_ErrorFlags_UnsupportedMethod;
       if (_unsupportedSome) v |= kpv_ErrorFlags_UnsupportedMethod;
       if (_headerError) v |= kpv_ErrorFlags_HeadersError;
-      if (_missingVol)  v |= kpv_ErrorFlags_UnexpectedEnd;
+      // if (_missingVol)  v |= kpv_ErrorFlags_UnexpectedEnd;
       if (v != 0)
         prop = v;
       break;
@@ -1081,15 +1096,14 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
       }
 
       HRESULT result = volumeCallback->GetStream(u, &nextStream);
-      if (result == S_FALSE)
-      {
-        _missingVol = true;
-        continue;
-      }
-      if (result != S_OK)
+
+      if (result != S_OK && result != S_FALSE)
         return result;
-      if (!nextStream)
+      
+      if (!nextStream || result != S_OK)
       {
+        if (_missingVolName.IsEmpty())
+          _missingVolName = u;
         _missingVol = true;
         continue;
       }
@@ -1430,6 +1444,8 @@ STDMETHODIMP CHandler::Close()
   _missingVol = false;
   _isMultiVol = false;
   _needDeflate = false;
+
+  _missingVolName.Empty();
 
   _descriptorBuf.Free();
   _descriptor.Clear();

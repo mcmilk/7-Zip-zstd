@@ -682,9 +682,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       {
         s += " -> ";
         const CHandler *p = this;
-        while (p != 0 && p->NeedParent())
+        while (p && p->NeedParent())
           p = p->Parent;
-        if (p == 0)
+        if (!p)
           s += '?';
         else
           s += p->Footer.GetTypeString();
@@ -750,26 +750,24 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
+
 HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback *openArchiveCallback, unsigned level)
 {
   Close();
   Stream = stream;
   if (level > (1 << 12)) // Maybe we need to increase that limit
     return S_FALSE;
+  
   RINOK(Open3());
+  
   if (child && memcmp(child->Dyn.ParentId, Footer.Id, 16) != 0)
     return S_FALSE;
   if (Footer.Type != kDiskType_Diff)
     return S_OK;
-  CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
-  if (openArchiveCallback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback) != S_OK)
-  {
-    // return S_FALSE;
-  }
-  CMyComPtr<IInStream> nextStream;
 
   bool useRelative;
   UString name;
+  
   if (!Dyn.RelativeParentNameFromLocator.IsEmpty())
   {
     useRelative = true;
@@ -780,11 +778,17 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
     useRelative = false;
     name = Dyn.ParentName;
   }
+  
   Dyn.RelativeNameWasUsed = useRelative;
+
+  CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
+  openArchiveCallback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
 
   if (openVolumeCallback)
   {
+    CMyComPtr<IInStream> nextStream;
     HRESULT res = openVolumeCallback->GetStream(name, &nextStream);
+    
     if (res == S_FALSE)
     {
       if (useRelative && Dyn.ParentName != Dyn.RelativeParentNameFromLocator)
@@ -793,19 +797,35 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
         if (res == S_OK)
           Dyn.RelativeNameWasUsed = false;
       }
-      if (res == S_FALSE)
-        return S_OK;
     }
-    RINOK(res);
+
+    if (res != S_OK && res != S_FALSE)
+      return res;
+    
+    if (res == S_FALSE || !nextStream)
+    {
+      UString s;
+      s.SetFromAscii("Missing volume : ");
+      s += name;
+      AddErrorMessage(s);
+      return S_OK;
+    }
     
     Parent = new CHandler;
     ParentStream = Parent;
     
     res = Parent->Open2(nextStream, this, openArchiveCallback, level + 1);
-    if (res == S_FALSE)
+
+    if (res != S_OK)
     {
       Parent = NULL;
       ParentStream.Release();
+      if (res == E_ABORT)
+        return res;
+      if (res != S_FALSE)
+      {
+        // we must show that error code
+      }
     }
   }
   {
@@ -813,7 +833,7 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
     while (p->NeedParent())
     {
       p = p->Parent;
-      if (p == 0)
+      if (!p)
       {
         AddErrorMessage(L"Can't open parent VHD file:");
         AddErrorMessage(Dyn.ParentName);
@@ -824,12 +844,13 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
   return S_OK;
 }
 
+
 void CHandler::CloseAtError()
 {
   _phySize = 0;
   Bat.Clear();
   NumUsedBlocks = 0;
-  Parent = 0;
+  Parent = NULL;
   Stream.Release();
   ParentStream.Release();
   Dyn.Clear();

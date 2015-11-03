@@ -147,7 +147,9 @@ HRESULT CSingleMethodProps::SetProperties(const wchar_t * const *names, const PR
       #endif
     }
     else
-      return ParseMethodFromPROPVARIANT(names[i], value);
+    {
+      RINOK(ParseMethodFromPROPVARIANT(names[i], value));
+    }
   }
   return S_OK;
 }

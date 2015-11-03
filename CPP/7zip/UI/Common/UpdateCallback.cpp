@@ -14,7 +14,6 @@
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileName.h"
 #include "../../../Windows/PropVariant.h"
-#include "../../../Windows/Synchronization.h"
 
 #include "../../Common/StreamObjects.h"
 
@@ -429,7 +428,9 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
   COM_TRY_END
 }
 
+#ifndef _7ZIP_ST
 static NSynchronization::CCriticalSection CS;
+#endif
 
 STDMETHODIMP CArchiveUpdateCallback::GetStream2(UInt32 index, ISequentialInStream **inStream, UInt32 mode)
 {
@@ -536,7 +537,9 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream2(UInt32 index, ISequentialInStrea
 
     if (ProcessedItemsStatuses)
     {
+      #ifndef _7ZIP_ST
       NSynchronization::CCriticalSectionLock lock(CS);
+      #endif
       ProcessedItemsStatuses[(unsigned)up.DirIndex] = 1;
     }
     *inStream = inStreamLoc.Detach();

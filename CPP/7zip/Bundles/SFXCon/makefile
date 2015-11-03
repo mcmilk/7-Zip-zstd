@@ -72,7 +72,6 @@ AR_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
-  $O\CrossThreadProgress.obj \
   $O\ItemNameUtils.obj \
   $O\MultiStream.obj \
   $O\OutStreamWithCRC.obj \
@@ -81,7 +80,6 @@ AR_COMMON_OBJS = \
 7Z_OBJS = \
   $O\7zDecode.obj \
   $O\7zExtract.obj \
-  $O\7zFolderOutStream.obj \
   $O\7zHandler.obj \
   $O\7zIn.obj \
   $O\7zRegister.obj \

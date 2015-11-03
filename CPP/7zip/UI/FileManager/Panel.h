@@ -698,15 +698,26 @@ public:
 
   void OpenFolder(int index);
   HRESULT OpenParentArchiveFolder();
-  HRESULT OpenItemAsArchive(IInStream *inStream,
+  
+  HRESULT OpenAsArc(IInStream *inStream,
       const CTempFileInfo &tempFileInfo,
       const UString &virtualFilePath,
       const UString &arcFormat,
       bool &encrypted);
-  HRESULT OpenItemAsArchive(const UString &relPath, const UString &arcFormat, bool &encrypted);
-  HRESULT OpenItemAsArchive(int index, const wchar_t *type = NULL);
+
+  HRESULT OpenAsArc_Msg(IInStream *inStream,
+      const CTempFileInfo &tempFileInfo,
+      const UString &virtualFilePath,
+      const UString &arcFormat,
+      bool &encrypted,
+      bool showErrorMessage);
+  
+  HRESULT OpenAsArc_Name(const UString &relPath, const UString &arcFormat, bool &encrypted, bool showErrorMessage);
+  HRESULT OpenAsArc_Index(int index, const wchar_t *type /* = NULL */, bool showErrorMessage);
+  
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       bool editMode, bool useEditor, const wchar_t *type = NULL);
+  
   HRESULT OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath, bool usePassword, const UString &password);
   LRESULT OnOpenItemChanged(LPARAM lParam);
 

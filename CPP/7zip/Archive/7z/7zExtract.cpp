@@ -254,8 +254,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   lps->Init(extractCallback, false);
 
   CDecoder decoder(
-    #ifndef USE_MIXER_ST
+    #if !defined(USE_MIXER_MT)
       false
+    #elif !defined(USE_MIXER_ST)
+      true
+    #elif !defined(__7Z_SET_PROPERTIES)
+      #ifdef _7ZIP_ST
+        false
+      #else
+        true
+      #endif
     #else
       _useMultiThreadMixer
     #endif

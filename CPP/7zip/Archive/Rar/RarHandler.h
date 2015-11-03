@@ -79,6 +79,7 @@ class CHandler:
   UInt32 _errorFlags;
   UInt32 _warningFlags;
   bool _isArc;
+  UString _missingVolName;
 
   DECL_EXTERNAL_CODECS_VARS
 

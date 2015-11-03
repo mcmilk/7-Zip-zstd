@@ -36,10 +36,14 @@ CHandler::CHandler()
   #endif
 
   #ifdef EXTRACT_ONLY
+  
   _crcSize = 4;
+  
   #ifdef __7Z_SET_PROPERTIES
   _numThreads = NSystem::GetNumberOfProcessors();
+  _useMultiThreadMixer = true;
   #endif
+  
   #endif
 }
 
@@ -722,10 +726,14 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
       return E_INVALIDARG;
     const PROPVARIANT &value = values[i];
     UInt32 number;
-    int index = ParseStringToUInt32(name, number);
+    unsigned index = ParseStringToUInt32(name, number);
     if (index == 0)
     {
-      if (name.IsEqualTo("mtf")) return PROPVARIANT_to_bool(value, _useMultiThreadMixer);
+      if (name.IsEqualTo("mtf"))
+      {
+        RINOK(PROPVARIANT_to_bool(value, _useMultiThreadMixer));
+        continue;
+      }
       if (name.IsPrefixedBy_Ascii_NoCase("mt"))
       {
         RINOK(ParseMtProp(name.Ptr(2), value, numProcessors, _numThreads));

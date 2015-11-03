@@ -183,13 +183,13 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
       FString dirPrefix, fileName;
       NDir::GetFullPathAndSplit(us2fs(sysPath), dirPrefix, fileName);
       HRESULT res;
-      // = OpenItemAsArchive(fs2us(fileName), arcFormat, encrypted);
+      // = OpenAsArc(fs2us(fileName), arcFormat, encrypted);
       {
         CTempFileInfo tfi;
         tfi.RelPath = fs2us(fileName);
         tfi.FolderPath = dirPrefix;
         tfi.FilePath = us2fs(sysPath);
-        res = OpenItemAsArchive(NULL, tfi, sysPath, arcFormat, encrypted);
+        res = OpenAsArc(NULL, tfi, sysPath, arcFormat, encrypted);
       }
       
       if (res == S_FALSE)
@@ -204,6 +204,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
           path.Delete(0);
       }
     }
+    
     if (newFolder)
     {
       SetNewFolder(newFolder);

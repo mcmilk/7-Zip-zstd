@@ -294,7 +294,11 @@ void CInArchive::ReadVolumeDescriptor(CVolumeDescriptor &d)
   d.FileStructureVersion = ReadByte(); // = 1
   SkipZeros(1);
   ReadBytes(d.ApplicationUse, sizeof(d.ApplicationUse));
-  SkipZeros(653);
+
+  // Most ISO contains zeros in the following field (reserved for future standardization).
+  // But some ISO programs write some data to that area.
+  // So we disable check for zeros.
+  Skip(653); // SkipZeros(653);
 }
 
 static const Byte kSig_CD001[5] = { 'C', 'D', '0', '0', '1' };

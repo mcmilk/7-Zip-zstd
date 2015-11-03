@@ -255,7 +255,12 @@ HRESULT CUnpacker::Unpack2(
       
       _solidIndex = resource.SolidIndex;
       _unpackedChunkIndex = chunkIndex;
+
+      if (cur < offsetInChunk)
+        return E_FAIL;
       
+      cur -= offsetInChunk;
+        
       if (cur > rem)
         cur = (size_t)rem;
       

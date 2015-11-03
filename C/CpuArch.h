@@ -1,5 +1,5 @@
 /* CpuArch.h -- CPU specific code
-2015-08-02: Igor Pavlov : Public domain */
+2015-10-31: Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -10,14 +10,18 @@ EXTERN_C_BEGIN
 
 /*
 MY_CPU_LE means that CPU is LITTLE ENDIAN.
-If MY_CPU_LE is not defined, we don't know about that property of platform (it can be LITTLE ENDIAN).
+MY_CPU_BE means that CPU is BIG ENDIAN.
+If MY_CPU_LE and MY_CPU_BE are not defined, we don't know about ENDIANNESS of platform.
 
 MY_CPU_LE_UNALIGN means that CPU is LITTLE ENDIAN and CPU supports unaligned memory accesses.
-If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of platform.
 */
 
-#if defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__)
-#define MY_CPU_AMD64
+#if defined(_M_X64) \
+   || defined(_M_AMD64) \
+   || defined(__x86_64__) \
+   || defined(__AMD64__) \
+   || defined(__amd64__)
+  #define MY_CPU_AMD64
 #endif
 
 #if defined(MY_CPU_AMD64) \
@@ -52,10 +56,6 @@ If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of pla
 #define MY_CPU_IA64_LE
 #endif
 
-#if defined(MY_CPU_X86_OR_AMD64)
-#define MY_CPU_LE_UNALIGN
-#endif
-
 #if defined(MY_CPU_X86_OR_AMD64) \
     || defined(MY_CPU_ARM_LE) \
     || defined(MY_CPU_IA64_LE) \
@@ -65,7 +65,8 @@ If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of pla
     || defined(__AARCH64EL__) \
     || defined(__MIPSEL__) \
     || defined(__MIPSEL) \
-    || defined(_MIPSEL)
+    || defined(_MIPSEL) \
+    || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__))
   #define MY_CPU_LE
 #endif
 
@@ -76,12 +77,22 @@ If MY_CPU_LE_UNALIGN is not defined, we don't know about these properties of pla
     || defined(__MIPSEB__) \
     || defined(__MIPSEB) \
     || defined(_MIPSEB) \
-    || defined(__m68k__)
+    || defined(__m68k__) \
+    || defined(__s390x__) \
+    || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__))
   #define MY_CPU_BE
 #endif
 
 #if defined(MY_CPU_LE) && defined(MY_CPU_BE)
 Stop_Compiling_Bad_Endian
+#endif
+
+
+#ifdef MY_CPU_LE
+  #if defined(MY_CPU_X86_OR_AMD64) \
+      /* || defined(__AARCH64EL__) */
+    #define MY_CPU_LE_UNALIGN
+  #endif
 #endif
 
 
@@ -128,6 +139,8 @@ Stop_Compiling_Bad_Endian
 
 #if defined(MY_CPU_LE_UNALIGN) && /* defined(_WIN64) && */ (_MSC_VER >= 1300)
 
+/* Note: we use bswap instruction, that is unsupported in 386 cpu */
+
 #include <stdlib.h>
 
 #pragma intrinsic(_byteswap_ulong)
@@ -136,6 +149,13 @@ Stop_Compiling_Bad_Endian
 #define GetBe64(p) _byteswap_uint64(*(const UInt64 *)(const Byte *)(p))
 
 #define SetBe32(p, v) (*(UInt32 *)(void *)(p)) = _byteswap_ulong(v)
+
+#elif defined(MY_CPU_LE_UNALIGN) && defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
+
+#define GetBe32(p) __builtin_bswap32(*(const UInt32 *)(const Byte *)(p))
+#define GetBe64(p) __builtin_bswap64(*(const UInt64 *)(const Byte *)(p))
+
+#define SetBe32(p, v) (*(UInt32 *)(void *)(p)) = __builtin_bswap32(v)
 
 #else
 

@@ -157,14 +157,6 @@ SOURCE=..\..\Archive\7z\7zExtract.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\7z\7zFolderOutStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zFolderOutStream.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\7z\7zHandler.cpp
 # End Source File
 # Begin Source File
@@ -202,14 +194,6 @@ SOURCE=..\..\Archive\Common\CoderMixer2.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\CoderMixer2.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CrossThreadProgress.h
 # End Source File
 # Begin Source File
 

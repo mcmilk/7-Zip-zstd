@@ -554,14 +554,6 @@ SOURCE=..\..\Common\CreateCoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\CrossThreadProgress.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Common\CrossThreadProgress.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Common\CWrappers.cpp
 # End Source File
 # Begin Source File
@@ -1282,14 +1274,6 @@ SOURCE=..\..\Archive\7z\7zFolderInStream.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\7z\7zFolderInStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zFolderOutStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zFolderOutStream.h
 # End Source File
 # Begin Source File
 

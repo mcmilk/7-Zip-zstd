@@ -1028,6 +1028,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCal
   COM_TRY_END
 }
 
+
 STDMETHODIMP CHandler::Close()
 {
   _firstVolumeIndex = -1;
@@ -1093,7 +1094,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, false);
 
-  for (i = 0; i < numItems;
+  for (i = 0;; i++,
       currentTotalUnPacked += currentItemUnPacked)
   {
     currentItemUnPacked = 0;
@@ -1102,14 +1103,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     lps->OutSize = currentTotalUnPacked;
 
     RINOK(lps->SetCur());
+
+    if (i >= numItems)
+      break;
+
     UInt32 index = allFilesMode ? i : indices[i];
-    i++;
     Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
 
     CMyComPtr<ISequentialOutStream> realOutStream;
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+
     if (index >= _db.SortedItems.Size())
     {
       if (!testMode && !realOutStream)
@@ -1153,13 +1158,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       continue;
     RINOK(extractCallback->PrepareOperation(askMode));
     Int32 opRes = NExtract::NOperationResult::kOK;
+    
     if (streamIndex != prevSuccessStreamIndex || realOutStream)
     {
       Byte digest[kHashSize];
       const CVolume &vol = _volumes[si.PartNumber];
       bool needDigest = !si.IsEmptyHash();
+      
       HRESULT res = unpacker.Unpack(vol.Stream, si.Resource, vol.Header, &_db,
           realOutStream, progress, needDigest ? digest : NULL);
+      
       if (res == S_OK)
       {
         if (!needDigest || memcmp(digest, si.Hash, kHashSize) == 0)
@@ -1174,12 +1182,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       else
         return res;
     }
+    
     realOutStream.Release();
     RINOK(extractCallback->SetOperationResult(opRes));
   }
+  
   return S_OK;
   COM_TRY_END
 }
+
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {

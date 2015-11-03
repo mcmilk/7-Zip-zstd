@@ -7,12 +7,12 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\CrcReg.obj \
   $O\IntToString.obj \
-  $O\NewHandler.obj \
   $O\MyString.obj \
+  $O\MyVector.obj \
+  $O\NewHandler.obj \
   $O\Sha256Reg.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
@@ -42,7 +42,6 @@ AR_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
-  $O\CrossThreadProgress.obj \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
   $O\ParseProperties.obj \
@@ -51,7 +50,6 @@ AR_COMMON_OBJS = \
   $O\7zCompressionMode.obj \
   $O\7zDecode.obj \
   $O\7zExtract.obj \
-  $O\7zFolderOutStream.obj \
   $O\7zHandler.obj \
   $O\7zHeader.obj \
   $O\7zIn.obj \

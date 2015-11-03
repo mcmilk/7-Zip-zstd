@@ -381,6 +381,7 @@ private:
   // UInt32 _warningFlags;
   bool _isArc;
   CByteBuffer _comment;
+  UString _missingVolName;
 
   DECL_EXTERNAL_CODECS_VARS
 

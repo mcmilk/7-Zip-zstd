@@ -158,7 +158,7 @@ static const char *kHelpString =
     "  -u[-][p#][q#][r#][x#][y#][z#][!newArchiveName] : Update options\n"
     "  -v{Size}[b|k|m|g] : Create volumes\n"
     "  -w[{path}] : assign Work directory. Empty path means a temporary directory\n"
-    "  -x[r[-|0]]]{@listfile|!wildcard} : eXclude filenames\n"
+    "  -x[r[-|0]]{@listfile|!wildcard} : eXclude filenames\n"
     "  -y : assume Yes on all queries\n";
 
 // ---------------------------

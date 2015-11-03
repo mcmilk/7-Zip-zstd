@@ -211,122 +211,6 @@ SOURCE=..\..\UI\FileManager\Test.bmp
 # Begin Group "Archive"
 
 # PROP Default_Filter ""
-# Begin Group "7z"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zCompressionMode.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zCompressionMode.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zDecode.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zDecode.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zEncode.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zEncode.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zExtract.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zFolderInStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zFolderInStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zFolderOutStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zFolderOutStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zHandler.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zHandlerOut.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zHeader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zHeader.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zIn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zIn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zOut.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zOut.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zProperties.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zProperties.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zRegister.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zSpecStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zSpecStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdate.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\7z\7zUpdate.h
-# End Source File
-# End Group
 # Begin Group "Archive Common"
 
 # PROP Default_Filter ""
@@ -401,6 +285,114 @@ SOURCE=..\..\Archive\Common\ParseProperties.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\ParseProperties.h
+# End Source File
+# End Group
+# Begin Group "7z"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zCompressionMode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zCompressionMode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zDecode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zDecode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zEncode.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zEncode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zExtract.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderInStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zFolderInStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHandlerOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHeader.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zHeader.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zIn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zIn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zItem.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zOut.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zOut.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zProperties.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zProperties.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zSpecStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zSpecStream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zUpdate.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\7z\7zUpdate.h
 # End Source File
 # End Group
 # Begin Source File

@@ -13,7 +13,6 @@ AR_OBJS = \
   $O\7zEncode.obj \
   $O\7zExtract.obj \
   $O\7zFolderInStream.obj \
-  $O\7zFolderOutStream.obj \
   $O\7zHandler.obj \
   $O\7zHandlerOut.obj \
   $O\7zHeader.obj \
@@ -65,7 +64,6 @@ COMPRESS_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
-  $O\CrossThreadProgress.obj \
   $O\HandlerOut.obj \
   $O\InStreamWithCRC.obj \
   $O\ItemNameUtils.obj \

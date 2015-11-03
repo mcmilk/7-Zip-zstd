@@ -32,9 +32,9 @@ struct IBenchCallback
 UInt64 GetCompressRating(UInt32 dictSize, UInt64 elapsedTime, UInt64 freq, UInt64 size);
 UInt64 GetDecompressRating(UInt64 elapsedTime, UInt64 freq, UInt64 outSize, UInt64 inSize, UInt64 numIterations);
 
-const int kBenchMinDicLogSize = 18;
+const unsigned kBenchMinDicLogSize = 18;
 
-UInt64 GetBenchMemoryUsage(UInt32 numThreads, UInt32 dictionary);
+UInt64 GetBenchMemoryUsage(UInt32 numThreads, UInt32 dictionary, bool totalBench = false);
 
 struct IBenchPrintCallback
 {
