@@ -1,5 +1,5 @@
 /* Crypto/Sha256.c -- SHA-256 Hash
-2015-03-02 : Igor Pavlov : Public domain
+2015-11-14 : Igor Pavlov : Public domain
 This code is based on public domain code from Wei Dai's Crypto++ library. */
 
 #include "Precomp.h"
@@ -113,10 +113,26 @@ static void Sha256_WriteByteBlock(CSha256 *p)
 {
   UInt32 W[16];
   unsigned j;
-  UInt32 *state = p->state;
+  UInt32 *state;
 
   #ifdef _SHA256_UNROLL2
   UInt32 a,b,c,d,e,f,g,h;
+  #else
+  UInt32 T[8];
+  #endif
+
+  for (j = 0; j < 16; j += 4)
+  {
+    const Byte *ccc = p->buffer + j * 4;
+    W[j    ] = GetBe32(ccc);
+    W[j + 1] = GetBe32(ccc + 4);
+    W[j + 2] = GetBe32(ccc + 8);
+    W[j + 3] = GetBe32(ccc + 12);
+  }
+
+  state = p->state;
+
+  #ifdef _SHA256_UNROLL2
   a = state[0];
   b = state[1];
   c = state[2];
@@ -126,16 +142,9 @@ static void Sha256_WriteByteBlock(CSha256 *p)
   g = state[6];
   h = state[7];
   #else
-  UInt32 T[8];
   for (j = 0; j < 8; j++)
     T[j] = state[j];
   #endif
-
-  for (j = 0; j < 16; j += 2)
-  {
-    W[j    ] = GetBe32(p->buffer + j * 4);
-    W[j + 1] = GetBe32(p->buffer + j * 4 + 4);
-  }
 
   for (j = 0; j < 64; j += 16)
   {
@@ -226,11 +235,13 @@ void Sha256_Final(CSha256 *p, Byte *digest)
   
   Sha256_WriteByteBlock(p);
 
-  for (i = 0; i < 8; i++)
+  for (i = 0; i < 8; i += 2)
   {
-    UInt32 v = p->state[i];
-    SetBe32(digest, v);
-    digest += 4;
+    UInt32 v0 = p->state[i];
+    UInt32 v1 = p->state[i + 1];
+    SetBe32(digest    , v0);
+    SetBe32(digest + 4, v1);
+    digest += 8;
   }
   
   Sha256_Init(p);

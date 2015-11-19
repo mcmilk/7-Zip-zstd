@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2015-03-25 : Igor Pavlov : Public domain */
+2015-11-08 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -88,7 +88,7 @@ static unsigned FindItem(const char * const *items, unsigned num, const wchar_t 
 #ifdef _CONSOLE
 static BOOL WINAPI HandlerRoutine(DWORD ctrlType)
 {
-  ctrlType = ctrlType;
+  UNUSED_VAR(ctrlType);
   return TRUE;
 }
 #endif
@@ -144,7 +144,7 @@ static Bool FindSignature(CSzFile *stream, UInt64 *resPos)
     processed -= k7zStartHeaderSize;
     for (pos = 0; pos <= processed; pos++)
     {
-      for (; buf[pos] != '7' && pos <= processed; pos++);
+      for (; pos <= processed && buf[pos] != '7'; pos++);
       if (pos > processed)
         break;
       if (memcmp(buf + pos, k7zSignature, k7zSignatureSize) == 0)
@@ -257,10 +257,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   #ifdef _CONSOLE
   SetConsoleCtrlHandler(HandlerRoutine, TRUE);
   #else
-  hInstance = hInstance;
-  hPrevInstance = hPrevInstance;
-  lpCmdLine = lpCmdLine;
-  nCmdShow = nCmdShow;
+  UNUSED_VAR(hInstance);
+  UNUSED_VAR(hPrevInstance);
+  UNUSED_VAR(lpCmdLine);
+  UNUSED_VAR(nCmdShow);
   #endif
 
   CrcGenerateTable();

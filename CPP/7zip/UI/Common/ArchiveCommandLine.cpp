@@ -271,7 +271,7 @@ static const unsigned kCommandIndex = 0;
 static const char *kCannotFindListFile = "Cannot find listfile";
 static const char *kIncorrectListFile = "Incorrect item in listfile.\nCheck charset encoding and -scs switch.";
 static const char *kTerminalOutError = "I won't write compressed data to a terminal";
-static const char *kSameTerminalError = "I won't write data and program's messages to same terminal";
+static const char *kSameTerminalError = "I won't write data and program's messages to same stream";
 static const char *kEmptyFilePath = "Empty file path";
 static const char *kCannotFindArchive = "Cannot find archive";
 
@@ -1219,8 +1219,26 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
     
     if (isExtractGroupCommand)
     {
-      if (options.StdOutMode && options.IsStdOutTerminal && options.IsStdErrTerminal)
-        throw CArcCmdLineException(kSameTerminalError);
+      if (options.StdOutMode)
+      {
+        if (
+                  options.Number_for_Percents == k_OutStream_stdout
+            // || options.Number_for_Out      == k_OutStream_stdout
+            // || options.Number_for_Errors   == k_OutStream_stdout
+            ||
+            (
+              (options.IsStdOutTerminal && options.IsStdErrTerminal)
+              &&
+              (
+                      options.Number_for_Percents != k_OutStream_disabled
+                // || options.Number_for_Out      != k_OutStream_disabled
+                // || options.Number_for_Errors   != k_OutStream_disabled
+              )
+            )
+           )
+          throw CArcCmdLineException(kSameTerminalError);
+      }
+      
       if (parser[NKey::kOutputDir].ThereIs)
       {
         eo.OutputDir = us2fs(parser[NKey::kOutputDir].PostStrings[0]);
@@ -1293,8 +1311,18 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
 
     if (updateOptions.StdOutMode && updateOptions.EMailMode)
       throw CArcCmdLineException("stdout mode and email mode cannot be combined");
-    if (updateOptions.StdOutMode && options.IsStdOutTerminal)
-      throw CArcCmdLineException(kTerminalOutError);
+    
+    if (updateOptions.StdOutMode)
+    {
+      if (options.IsStdOutTerminal)
+        throw CArcCmdLineException(kTerminalOutError);
+      
+      if (options.Number_for_Percents == k_OutStream_stdout
+          || options.Number_for_Out == k_OutStream_stdout
+          || options.Number_for_Errors == k_OutStream_stdout)
+        throw CArcCmdLineException(kSameTerminalError);
+    }
+    
     if (updateOptions.StdInMode)
       updateOptions.StdInFileName = parser[NKey::kStdIn].PostStrings.Front();
 

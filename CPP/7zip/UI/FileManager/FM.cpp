@@ -42,6 +42,7 @@ using namespace NFind;
 
 #define MENU_HEIGHT 26
 
+bool g_RAM_Size_Defined;
 UInt64 g_RAM_Size;
 
 #ifdef _WIN32
@@ -425,7 +426,7 @@ static void ErrorMessage(const wchar_t *s)
 
 static int WINAPI WinMain2(int nCmdShow)
 {
-  g_RAM_Size = NSystem::GetRamSize();
+  g_RAM_Size_Defined = NSystem::GetRamSize(g_RAM_Size);
 
   #ifdef _WIN32
 

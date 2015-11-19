@@ -185,7 +185,7 @@ static void UnicodeStringToMultiByte2(AString &dest, const UString &src, UINT co
     {
       BOOL defUsed = FALSE;
       bool isUtf = (codePage == CP_UTF8 || codePage == CP_UTF7);
-      defaultChar = defaultChar;
+      // defaultChar = defaultChar;
       len = WideCharToMultiByte(codePage, 0, src, src.Len(),
           dest.GetBuf(len), len,
           (isUtf ? NULL : &defaultChar),

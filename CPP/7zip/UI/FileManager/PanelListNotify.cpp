@@ -175,7 +175,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (item.cchTextMax <= 1)
     return 0;
   
-  const CItemProperty &property = _visibleProperties[item.iSubItem];
+  const CPropColumn &property = _visibleColumns[item.iSubItem];
   PROPID propID = property.ID;
 
   if (realIndex == kParentIndex)

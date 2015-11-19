@@ -1,5 +1,5 @@
 /* 7zArcIn.c -- 7z Input functions
-2015-09-28 : Igor Pavlov : Public domain */
+2015-11-13 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -942,7 +942,6 @@ typedef struct
 static SRes ReadSubStreamsInfo(CSzAr *p, CSzData *sd, CSubStreamInfo *ssi)
 {
   UInt64 type = 0;
-  UInt32 i;
   UInt32 numSubDigests = 0;
   UInt32 numFolders = p->NumFolders;
   UInt32 numUnpackStreams = numFolders;
@@ -953,6 +952,7 @@ static SRes ReadSubStreamsInfo(CSzAr *p, CSzData *sd, CSubStreamInfo *ssi)
     RINOK(ReadID(sd, &type));
     if (type == k7zIdNumUnpackStream)
     {
+      UInt32 i;
       ssi->sdNumSubStreams.Data = sd->Data;
       numUnpackStreams = 0;
       numSubDigests = 0;
@@ -1215,7 +1215,6 @@ static SRes SzReadHeader2(
   UInt64 type;
   UInt32 numFiles = 0;
   UInt32 numEmptyStreams = 0;
-  UInt32 i;
   CSubStreamInfo ssi;
   const Byte *emptyStreams = 0;
   const Byte *emptyFiles = 0;
@@ -1397,22 +1396,22 @@ static SRes SzReadHeader2(
   }
 
   {
+    UInt32 i;
     UInt32 emptyFileIndex = 0;
-
     UInt32 folderIndex = 0;
-    UInt32 indexInFolder = 0;
+    UInt32 remSubStreams = 0;
+    UInt32 numSubStreams = 0;
     UInt64 unpackPos = 0;
     const Byte *digestsDefs = 0;
     const Byte *digestsVals = 0;
     UInt32 digestsValsIndex = 0;
     UInt32 digestIndex;
     Byte allDigestsDefined = 0;
-    UInt32 curNumSubStreams = (UInt32)(Int32)-1;
     Byte isDirMask = 0;
     Byte crcMask = 0;
     Byte mask = 0x80;
-    // size_t unpSizesOffset = 0;
     CSzData sdCodersUnpSizes;
+
     sdCodersUnpSizes.Data = p->db.UnpackSizesData;
     sdCodersUnpSizes.Size = p->db.UnpackSizesDataSize;
     
@@ -1437,6 +1436,7 @@ static SRes SzReadHeader2(
     }
 
     digestIndex = 0;
+    
     for (i = 0; i < numFiles; i++, mask >>= 1)
     {
       if (mask == 0)
@@ -1451,49 +1451,45 @@ static SRes SzReadHeader2(
 
       p->UnpackPositions[i] = unpackPos;
       p->CRCs.Vals[i] = 0;
-      // p->CRCs.Defs[i] = 0;
-      if (emptyStreams && SzBitArray_Check(emptyStreams , i))
+      
+      if (emptyStreams && SzBitArray_Check(emptyStreams, i))
       {
         if (!emptyFiles || !SzBitArray_Check(emptyFiles, emptyFileIndex))
           isDirMask |= mask;
         emptyFileIndex++;
-        if (indexInFolder == 0)
+        if (remSubStreams == 0)
         {
           p->FileIndexToFolderIndexMap[i] = (UInt32)-1;
           continue;
         }
       }
-      if (indexInFolder == 0)
+      
+      if (remSubStreams == 0)
       {
-        /*
-        v3.13 incorrectly worked with empty folders
-        v4.07: Loop for skipping empty folders
-        */
         for (;;)
         {
           if (folderIndex >= p->db.NumFolders)
             return SZ_ERROR_ARCHIVE;
           p->FolderStartFileIndex[folderIndex] = i;
-          if (curNumSubStreams == (UInt32)(Int32)-1);
+          numSubStreams = 1;
+          if (ssi.sdNumSubStreams.Data)
           {
-            curNumSubStreams = 1;
-            if (ssi.sdNumSubStreams.Data != 0)
-            {
-              RINOK(SzReadNumber32(&ssi.sdNumSubStreams, &curNumSubStreams));
-            }
+            RINOK(SzReadNumber32(&ssi.sdNumSubStreams, &numSubStreams));
           }
-          if (curNumSubStreams != 0)
+          remSubStreams = numSubStreams;
+          if (numSubStreams != 0)
             break;
-          curNumSubStreams = (UInt32)(Int32)-1;
-          folderIndex++; // check it
+          p->db.FoSizesOffsets[folderIndex] = sdCodersUnpSizes.Data - p->db.UnpackSizesData;
+          folderIndex++;
         }
       }
+      
       p->FileIndexToFolderIndexMap[i] = folderIndex;
-      if (emptyStreams && SzBitArray_Check(emptyStreams , i))
+      
+      if (emptyStreams && SzBitArray_Check(emptyStreams, i))
         continue;
       
-      indexInFolder++;
-      if (indexInFolder >= curNumSubStreams)
+      if (--remSubStreams == 0)
       {
         UInt64 folderUnpackSize = 0;
         UInt64 startFolderUnpackPos;
@@ -1523,7 +1519,7 @@ static SRes SzReadHeader2(
           return SZ_ERROR_ARCHIVE;
         unpackPos = startFolderUnpackPos + folderUnpackSize;
 
-        if (curNumSubStreams == 1 && SzBitWithVals_Check(&p->db.FolderCRCs, i))
+        if (numSubStreams == 1 && SzBitWithVals_Check(&p->db.FolderCRCs, i))
         {
           p->CRCs.Vals[i] = p->db.FolderCRCs.Vals[folderIndex];
           crcMask |= mask;
@@ -1534,14 +1530,16 @@ static SRes SzReadHeader2(
           digestsValsIndex++;
           crcMask |= mask;
         }
+        
         folderIndex++;
-        indexInFolder = 0;
       }
       else
       {
         UInt64 v;
         RINOK(ReadNumber(&ssi.sdSizes, &v));
         unpackPos += v;
+        if (unpackPos < v)
+          return SZ_ERROR_ARCHIVE;
         if (allDigestsDefined || (digestsDefs && SzBitArray_Check(digestsDefs, digestIndex)))
         {
           p->CRCs.Vals[i] = GetUi32(digestsVals + (size_t)digestsValsIndex * 4);
@@ -1550,12 +1548,14 @@ static SRes SzReadHeader2(
         }
       }
     }
+
     if (mask != 0x80)
     {
       UInt32 byteIndex = (i - 1) >> 3;
       p->IsDirs[byteIndex] = isDirMask;
       p->CRCs.Defs[byteIndex] = crcMask;
     }
+    
     p->UnpackPositions[i] = unpackPos;
     p->FolderStartFileIndex[folderIndex] = i;
     p->db.FoSizesOffsets[folderIndex] = sdCodersUnpSizes.Data - p->db.UnpackSizesData;
@@ -1567,9 +1567,8 @@ static SRes SzReadHeader(
     CSzArEx *p,
     CSzData *sd,
     ILookInStream *inStream,
-    ISzAlloc *allocMain
-    ,ISzAlloc *allocTemp
-    )
+    ISzAlloc *allocMain,
+    ISzAlloc *allocTemp)
 {
   // Byte *emptyStreamVector = 0;
   // Byte *emptyFileVector = 0;

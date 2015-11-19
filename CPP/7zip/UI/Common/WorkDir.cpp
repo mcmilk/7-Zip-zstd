@@ -17,7 +17,7 @@ FString GetWorkDir(const NWorkDir::CInfo &workDirInfo, const FString &path, FStr
 {
   NWorkDir::NMode::EEnum mode = workDirInfo.Mode;
   
-  #ifndef UNDER_CE
+  #if defined(_WIN32) && !defined(UNDER_CE)
   if (workDirInfo.ForRemovableOnly)
   {
     mode = NWorkDir::NMode::kCurrent;

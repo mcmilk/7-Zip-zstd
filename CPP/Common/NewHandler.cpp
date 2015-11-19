@@ -109,7 +109,7 @@ void * __cdecl operator new(size_t size)
   }
   if (p == 0)
     throw CNewException();
-  printf("Alloc %6d, size = %8d\n", numAllocs, size);
+  printf("Alloc %6d, size = %8u\n", numAllocs, (unsigned)size);
   return p;
 }
 

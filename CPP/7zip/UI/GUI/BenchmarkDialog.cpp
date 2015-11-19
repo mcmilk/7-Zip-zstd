@@ -177,7 +177,9 @@ bool CBenchmarkDialog::OnInit()
 
   m_Dictionary.Attach(GetItem(IDC_BENCH_DICTIONARY));
   cur = 0;
-  UInt64 ramSize = NSystem::GetRamSize();
+  
+  UInt64 ramSize = (UInt64)(sizeof(size_t)) << 29;
+  bool ramSize_Defined = NSystem::GetRamSize(ramSize);
   
   #ifdef UNDER_CE
   const UInt32 kNormalizedCeSize = (16 << 20);
@@ -187,8 +189,14 @@ bool CBenchmarkDialog::OnInit()
 
   if (Sync.DictionarySize == (UInt32)(Int32)-1)
   {
-    unsigned dicSizeLog;
-    for (dicSizeLog = 25; dicSizeLog > kBenchMinDicLogSize; dicSizeLog--)
+    unsigned dicSizeLog = 25;
+
+    #ifdef UNDER_CE
+    dicSizeLog = 20;
+    #endif
+
+    if (ramSize_Defined)
+    for (; dicSizeLog > kBenchMinDicLogSize; dicSizeLog--)
       if (GetBenchMemoryUsage(Sync.NumThreads, ((UInt32)1 << dicSizeLog)) + (8 << 20) <= ramSize)
         break;
     Sync.DictionarySize = (1 << dicSizeLog);

@@ -250,9 +250,10 @@ static bool IsMethodSupportedBySfx(int methodID)
   return false;
 }
 
-static UInt64 GetMaxRamSizeForProgram()
+static bool GetMaxRamSizeForProgram(UInt64 &physSize)
 {
-  UInt64 physSize = NSystem::GetRamSize();
+  physSize = (UInt64)(sizeof(size_t)) << 29;
+  bool ramSize_Defined = NSystem::GetRamSize(physSize);
   const UInt64 kMinSysSize = (1 << 24);
   if (physSize <= kMinSysSize)
     physSize = 0;
@@ -261,7 +262,7 @@ static UInt64 GetMaxRamSizeForProgram()
   const UInt64 kMinUseSize = (1 << 24);
   if (physSize < kMinUseSize)
     physSize = kMinUseSize;
-  return physSize;
+  return ramSize_Defined;
 }
 
 
@@ -1170,7 +1171,8 @@ void CCompressDialog::SetDictionary()
   UInt32 level = GetLevel2();
   if (methodID < 0)
     return;
-  const UInt64 maxRamSize = GetMaxRamSizeForProgram();
+  UInt64 maxRamSize;
+  bool maxRamSize_Defined = GetMaxRamSizeForProgram(maxRamSize);
   
   switch (methodID)
   {
@@ -1196,18 +1198,20 @@ void CCompressDialog::SetDictionary()
           if (i == 20 && j > 0)
             continue;
           UInt32 dict = ((UInt32)(2 + j) << (i - 1));
+          
           if (dict >
-          #ifdef MY_CPU_64BIT
-            (3 << 29)
-          #else
-            (1 << 26)
-          #endif
+            #ifdef MY_CPU_64BIT
+              (3 << 29)
+            #else
+              (1 << 26)
+            #endif
             )
             continue;
+          
           AddDictionarySize(dict);
           UInt64 decomprSize;
           UInt64 requiredComprSize = GetMemoryUsage(dict, decomprSize);
-          if (dict <= defaultDict && requiredComprSize <= maxRamSize)
+          if (dict <= defaultDict && (!maxRamSize_Defined || requiredComprSize <= maxRamSize))
             m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
         }
 
@@ -1242,11 +1246,12 @@ void CCompressDialog::SetDictionary()
           AddDictionarySize(dict);
           UInt64 decomprSize;
           UInt64 requiredComprSize = GetMemoryUsage(dict, decomprSize);
-          if (dict <= defaultDict && requiredComprSize <= maxRamSize || m_Dictionary.GetCount() == 0)
+          if ((dict <= defaultDict && (!maxRamSize_Defined || requiredComprSize <= maxRamSize))
+              || m_Dictionary.GetCount() == 1)
             m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
         }
       
-      SetNearestSelectComboBox(m_Dictionary, defaultDict);
+      // SetNearestSelectComboBox(m_Dictionary, defaultDict);
       break;
     }
 
@@ -1295,11 +1300,12 @@ void CCompressDialog::SetDictionary()
         AddDictionarySize(dict);
         UInt64 decomprSize;
         UInt64 requiredComprSize = GetMemoryUsage(dict, decomprSize);
-        if (dict <= defaultDict && requiredComprSize <= maxRamSize || m_Dictionary.GetCount() == 0)
+        if ((dict <= defaultDict && (!maxRamSize_Defined || requiredComprSize <= maxRamSize))
+            || m_Dictionary.GetCount() == 1)
           m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
       }
       
-      SetNearestSelectComboBox(m_Dictionary, defaultDict);
+      // SetNearestSelectComboBox(m_Dictionary, defaultDict);
       break;
     }
   }

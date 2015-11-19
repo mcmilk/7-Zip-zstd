@@ -36,6 +36,7 @@ using namespace NSynchronization;
 using namespace NFile;
 using namespace NDir;
 
+extern bool g_RAM_Size_Defined;
 extern UInt64 g_RAM_Size;
 
 #ifndef _UNICODE
@@ -1173,7 +1174,10 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   {
     NCOM::CPropVariant prop;
     _folder->GetProperty(index, kpidSize, &prop);
-    UInt64 fileLimit = g_RAM_Size / 4;
+    UInt64 fileLimit = 1 << 22;
+    if (g_RAM_Size_Defined)
+      fileLimit = g_RAM_Size / 4;
+
     UInt64 fileSize = 0;
     if (!ConvertPropVariantToUInt64(prop, fileSize))
       fileSize = fileLimit;

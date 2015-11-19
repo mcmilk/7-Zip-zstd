@@ -513,4 +513,3 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
   #endif
   return Groups[0];
 }
-

@@ -10,5 +10,3 @@ void ProcessMessages(HWND window);
 }
 
 #endif
-
-

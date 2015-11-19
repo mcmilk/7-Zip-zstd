@@ -69,30 +69,66 @@ struct CPanelCallback
 
 void PanelCopyItems();
 
-struct CItemProperty
+
+struct CPropColumn
 {
-  UString Name;
+  int Order;
   PROPID ID;
   VARTYPE Type;
-  int Order;
   bool IsVisible;
   bool IsRawProp;
   UInt32 Width;
+  UString Name;
 
-  int Compare(const CItemProperty &a) const { return MyCompare(Order, a.Order); }
+  bool IsEqualTo(const CPropColumn &a) const
+  {
+    return Order == a.Order
+        && ID == a.ID
+        && Type == a.Type
+        && IsVisible == a.IsVisible
+        && IsRawProp == a.IsRawProp
+        && Width == a.Width
+        && Name == a.Name;
+  }
+
+  int Compare(const CPropColumn &a) const { return MyCompare(Order, a.Order); }
+
+  int Compare_NameFirst(const CPropColumn &a) const
+  {
+    if (ID == kpidName)
+    {
+      if (a.ID != kpidName)
+        return -1;
+    }
+    else if (a.ID == kpidName)
+      return 1;
+    return MyCompare(Order, a.Order);
+  }
 };
 
-class CItemProperties: public CObjectVector<CItemProperty>
+
+class CPropColumns: public CObjectVector<CPropColumn>
 {
 public:
-  int FindItemWithID(PROPID id)
+  int FindItem_for_PropID(PROPID id) const
   {
     FOR_VECTOR (i, (*this))
       if ((*this)[i].ID == id)
         return i;
     return -1;
   }
+
+  bool IsEqualTo(const CPropColumns &props) const
+  {
+    if (Size() != props.Size())
+      return false;
+    FOR_VECTOR (i, (*this))
+      if (!(*this)[i].IsEqualTo(props[i]))
+        return false;
+    return true;
+  }
 };
+
 
 struct CTempFileInfo
 {
@@ -284,8 +320,8 @@ private:
   void ChangeWindowSize(int xSize, int ySize);
  
   HRESULT InitColumns();
-  // void InitColumns2(PROPID sortID);
-  void InsertColumn(unsigned index);
+  void DeleteColumn(unsigned index);
+  void AddColumn(const CPropColumn &prop);
 
   void SetFocusedSelectedItem(int index, bool select);
   HRESULT RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
@@ -446,7 +482,6 @@ public:
   void SetFocusToLastRememberedItem();
 
 
-  void ReadListViewInfo();
   void SaveListViewInfo();
 
   CPanel() :
@@ -484,8 +519,9 @@ public:
   bool _needSaveInfo;
   UString _typeIDString;
   CListViewInfo _listViewInfo;
-  CItemProperties _properties;
-  CItemProperties _visibleProperties;
+  
+  CPropColumns _columns;
+  CPropColumns _visibleColumns;
   
   PROPID _sortID;
   // int _sortIndex;

@@ -1825,6 +1825,8 @@ HRESULT CHandler::Open2(IInStream *stream,
   int prevSplitFile = -1;
   int prevMainFile = -1;
   
+  bool nextVol_is_Required = false;
+
   CInArchive arch;
   
   for (;;)
@@ -1861,7 +1863,8 @@ HRESULT CHandler::Open2(IInStream *stream,
 
       if (!inStream || result != S_OK)
       {
-        _missingVolName = volName;
+        if (nextVol_is_Required)
+          _missingVolName = volName;
         break;
       }
     }
@@ -2111,11 +2114,18 @@ HRESULT CHandler::Open2(IInStream *stream,
     }
       
     curBytes += endPos;
+
+    nextVol_is_Required = false;
+
     if (!arcInfo.IsVolume())
       break;
-    if (arcInfo.EndOfArchive_was_Read
-        && !arcInfo.AreMoreVolumes())
-      break;
+
+    if (arcInfo.EndOfArchive_was_Read)
+    {
+      if (!arcInfo.AreMoreVolumes())
+        break;
+      nextVol_is_Required = true;
+    }
   }
 
   FillLinks();

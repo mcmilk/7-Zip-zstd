@@ -757,4 +757,3 @@ void CArchiveUpdateCallback::InFileStream_On_Destroy(UINT_PTR val)
   }
   throw 20141125;
 }
-

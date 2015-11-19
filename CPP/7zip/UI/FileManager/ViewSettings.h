@@ -23,13 +23,21 @@ struct CListViewInfo
   CRecordVector<CColumnInfo> Columns;
   PROPID SortID;
   bool Ascending;
+  bool IsLoaded;
 
   void Clear()
   {
     SortID = 0;
     Ascending = true;
+    IsLoaded = false;
     Columns.Clear();
   }
+
+  CListViewInfo():
+    SortID(0),
+    Ascending(true),
+    IsLoaded(false)
+    {}
 
   /*
   int FindColumnWithID(PROPID propID) const

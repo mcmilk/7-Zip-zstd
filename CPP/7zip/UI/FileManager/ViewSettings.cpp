@@ -97,6 +97,8 @@ void CListViewInfo::Read(const UString &id)
   Get32(buf + 4, SortID);
   GetBool(buf + 8, Ascending);
 
+  IsLoaded = true;
+
   size -= kListViewHeaderSize;
   if (size % kColumnInfoSize != 0)
     return;

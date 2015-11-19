@@ -39,6 +39,8 @@ cmdline\switches\method.htm
 cmdline\switches\ar_include.htm
 cmdline\switches\ar_exclude.htm
 cmdline\switches\ar_no.htm
+cmdline\switches\bb.htm
+cmdline\switches\bs.htm
 cmdline\switches\charset.htm
 cmdline\switches\email.htm
 cmdline\switches\list_tech.htm
@@ -61,6 +63,7 @@ cmdline\switches\stdin.htm
 cmdline\switches\stdout.htm
 cmdline\switches\stl.htm
 cmdline\switches\stop_switch.htm
+cmdline\switches\stx.htm
 cmdline\switches\type.htm
 cmdline\switches\update.htm
 cmdline\switches\working_dir.htm

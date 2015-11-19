@@ -32,9 +32,7 @@
 #include "../../../../C/Alloc.h"
 #include "../../../../C/CpuArch.h"
 
-#if defined(_WIN32)
 #include "../../../Windows/System.h"
-#endif
 
 #ifndef _7ZIP_ST
 #include "../../../Windows/Synchronization.h"
@@ -1860,11 +1858,15 @@ static void PrintTotals(IBenchPrintCallback &f, bool showFreq, UInt64 cpuFreq, c
   PrintResults(f, res.Usage / numIterations2, res.RPU / numIterations2, res.Rating / numIterations2, showFreq, cpuFreq);
 }
 
-static void PrintRequirements(IBenchPrintCallback &f, const char *sizeString, UInt64 size, const char *threadsString, UInt32 numThreads)
+static void PrintRequirements(IBenchPrintCallback &f, const char *sizeString,
+    bool size_Defined, UInt64 size, const char *threadsString, UInt32 numThreads)
 {
   f.Print("RAM ");
   f.Print(sizeString);
-  PrintNumber(f, (size >> 20), 6);
+  if (size_Defined)
+    PrintNumber(f, (size >> 20), 6);
+  else
+    f.Print("      ?");
   f.Print(" MB,  # ");
   f.Print(threadsString);
   PrintNumber(f, numThreads, 3);
@@ -2450,15 +2452,13 @@ HRESULT Bench(
     return S_FALSE;
 
   UInt32 numCPUs = 1;
-  UInt64 ramSize = (UInt64)512 << 20;
+  UInt64 ramSize = (UInt64)(sizeof(size_t)) << 29;
 
   #ifndef _7ZIP_ST
   numCPUs = NSystem::GetNumberOfProcessors();
   #endif
   
-  #if defined(_WIN32)
-  ramSize = NSystem::GetRamSize();
-  #endif
+  bool ramSize_Defined = NSystem::GetRamSize(ramSize);
 
   UInt32 numThreadsSpecified = numCPUs;
 
@@ -2640,7 +2640,7 @@ HRESULT Bench(
   {
     printCallback->NewLine();
     printCallback->NewLine();
-    PrintRequirements(*printCallback, "size: ", ramSize, "CPU hardware threads:", numCPUs);
+    PrintRequirements(*printCallback, "size: ", ramSize_Defined, ramSize, "CPU hardware threads:", numCPUs);
   }
 
   if (numThreadsSpecified < 1 || numThreadsSpecified > kNumThreadsMax)
@@ -2834,6 +2834,7 @@ HRESULT Bench(
     dicSizeLog = (UInt64)1 << 20;
     #endif
 
+    if (ramSize_Defined)
     for (; dicSizeLog > kBenchMinDicLogSize; dicSizeLog--)
       if (GetBenchMemoryUsage(numThreads, ((UInt32)1 << dicSizeLog), totalBenchMode) + (8 << 20) <= ramSize)
         break;
@@ -2848,7 +2849,7 @@ HRESULT Bench(
     }
   }
 
-  PrintRequirements(f, "usage:", GetBenchMemoryUsage(numThreads, dict, totalBenchMode), "Benchmark threads:   ", numThreads);
+  PrintRequirements(f, "usage:", true, GetBenchMemoryUsage(numThreads, dict, totalBenchMode), "Benchmark threads:   ", numThreads);
 
   f.NewLine();
 

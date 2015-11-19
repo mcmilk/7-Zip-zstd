@@ -451,31 +451,41 @@ static UString GetDirPrefixOf(const UString &src)
   return s;
 }
 
-static bool IsSafePath(const UString &path)
+#endif
+
+
+bool IsSafePath(const UString &path)
 {
+  if (NName::IsAbsolutePath(path))
+    return false;
+
   UStringVector parts;
   SplitPathToParts(path, parts);
-  int level = 0;
-  FOR_VECTOR(i, parts)
+  unsigned level = 0;
+  
+  FOR_VECTOR (i, parts)
   {
     const UString &s = parts[i];
     if (s.IsEmpty())
+    {
+      if (i == 0)
+        return false;
       continue;
+    }
     if (s == L".")
       continue;
     if (s == L"..")
     {
-      if (level <= 0)
+      if (level == 0)
         return false;
       level--;
     }
     else
       level++;
   }
+  
   return level > 0;
 }
-
-#endif
 
 
 bool CensorNode_CheckPath2(const NWildcard::CCensorNode &node, const CReadArcItem &item, bool &include)

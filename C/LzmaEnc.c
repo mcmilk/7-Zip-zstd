@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2015-10-15 Igor Pavlov : Public domain */
+2015-11-08 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -854,7 +854,7 @@ static void MovePos(CLzmaEnc *p, UInt32 num)
 {
   #ifdef SHOW_STAT
   g_STAT_OFFSET += num;
-  printf("\n MovePos %d", num);
+  printf("\n MovePos %u", num);
   #endif
   
   if (num != 0)
@@ -871,12 +871,12 @@ static UInt32 ReadMatchDistances(CLzmaEnc *p, UInt32 *numDistancePairsRes)
   numPairs = p->matchFinder.GetMatches(p->matchFinderObj, p->matches);
   
   #ifdef SHOW_STAT
-  printf("\n i = %d numPairs = %d    ", g_STAT_OFFSET, numPairs / 2);
+  printf("\n i = %u numPairs = %u    ", g_STAT_OFFSET, numPairs / 2);
   g_STAT_OFFSET++;
   {
     UInt32 i;
     for (i = 0; i < numPairs; i += 2)
-      printf("%2d %6d   | ", p->matches[i], p->matches[i + 1]);
+      printf("%2u %6u   | ", p->matches[i], p->matches[i + 1]);
   }
   #endif
   
@@ -1167,12 +1167,12 @@ static UInt32 GetOptimum(CLzmaEnc *p, UInt32 position, UInt32 *backRes)
   cur = 0;
 
     #ifdef SHOW_STAT2
-    if (position >= 0)
+    /* if (position >= 0) */
     {
       unsigned i;
       printf("\n pos = %4X", position);
       for (i = cur; i <= lenEnd; i++)
-      printf("\nprice[%4X] = %d", position - cur + i, p->opt[i].price);
+      printf("\nprice[%4X] = %u", position - cur + i, p->opt[i].price);
     }
     #endif
 
@@ -1397,13 +1397,13 @@ static UInt32 GetOptimum(CLzmaEnc *p, UInt32 position, UInt32 *backRes)
         {
           UInt32 lenTest2 = lenTest + 1;
           UInt32 limit = lenTest2 + p->numFastBytes;
-          UInt32 nextRepMatchPrice;
           if (limit > numAvailFull)
             limit = numAvailFull;
           for (; lenTest2 < limit && data[lenTest2] == data2[lenTest2]; lenTest2++);
           lenTest2 -= lenTest + 1;
           if (lenTest2 >= 2)
           {
+            UInt32 nextRepMatchPrice;
             UInt32 state2 = kRepNextStates[state];
             UInt32 posStateNext = (position + lenTest) & p->pbMask;
             UInt32 curAndLenCharPrice =
@@ -1487,13 +1487,13 @@ static UInt32 GetOptimum(CLzmaEnc *p, UInt32 position, UInt32 *backRes)
           const Byte *data2 = data - curBack - 1;
           UInt32 lenTest2 = lenTest + 1;
           UInt32 limit = lenTest2 + p->numFastBytes;
-          UInt32 nextRepMatchPrice;
           if (limit > numAvailFull)
             limit = numAvailFull;
           for (; lenTest2 < limit && data[lenTest2] == data2[lenTest2]; lenTest2++);
           lenTest2 -= lenTest + 1;
           if (lenTest2 >= 2)
           {
+            UInt32 nextRepMatchPrice;
             UInt32 state2 = kMatchNextStates[state];
             UInt32 posStateNext = (position + lenTest) & p->pbMask;
             UInt32 curAndLenCharPrice = curAndLenPrice +
@@ -1829,7 +1829,7 @@ static SRes LzmaEnc_CodeOneBlock(CLzmaEnc *p, Bool useLimits, UInt32 maxPackSize
       len = GetOptimum(p, nowPos32, &pos);
 
     #ifdef SHOW_STAT2
-    printf("\n pos = %4X,   len = %d   pos = %d", nowPos32, len, pos);
+    printf("\n pos = %4X,   len = %u   pos = %u", nowPos32, len, pos);
     #endif
 
     posState = nowPos32 & p->pbMask;

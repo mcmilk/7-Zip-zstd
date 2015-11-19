@@ -1,5 +1,5 @@
 /* LzmaUtil.c -- Test application for LZMA compression
-2015-06-13 : Igor Pavlov : Public domain */
+2015-11-08 : Igor Pavlov : Public domain */
 
 #include "../../Precomp.h"
 
@@ -133,7 +133,7 @@ static SRes Encode(ISeqOutStream *outStream, ISeqInStream *inStream, UInt64 file
   SRes res;
   CLzmaEncProps props;
 
-  rs = rs;
+  UNUSED_VAR(rs);
 
   enc = LzmaEnc_Create(&g_Alloc);
   if (enc == 0)

@@ -18,7 +18,6 @@ FILE_IO =FileIO
 FILE_IO_2 =Windows/$(FILE_IO)
 
 MT_FILES = \
-  System.o \
   LzFindMt.o \
   Threads.o \
 
@@ -60,6 +59,7 @@ OBJS = \
   StringConvert.o \
   StringToInt.o \
   PropVariant.o \
+  System.o \
   7zCrc.o \
   7zCrcOpt.o \
   Alloc.o \
@@ -150,10 +150,8 @@ StringToInt.o: ../../../Common/StringToInt.cpp
 PropVariant.o: ../../../Windows/PropVariant.cpp
 	$(CXX) $(CFLAGS) ../../../Windows/PropVariant.cpp
 
-ifdef MT_FILES
 System.o: ../../../Windows/System.cpp
 	$(CXX) $(CFLAGS) ../../../Windows/System.cpp
-endif
 
 7zCrc.o: ../../../../C/7zCrc.c
 	$(CXX_C) $(CFLAGS) ../../../../C/7zCrc.c
@@ -195,4 +193,3 @@ Lzma86Enc.o: ../../../../C/Lzma86Enc.c
 
 clean:
 	-$(RM) $(PROG) $(OBJS)
-

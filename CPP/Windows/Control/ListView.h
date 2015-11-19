@@ -32,6 +32,18 @@ public:
 
   int InsertColumn(int columnIndex, const LVCOLUMN *columnInfo) { return ListView_InsertColumn(_window, columnIndex, columnInfo); }
   int InsertColumn(int columnIndex, LPCTSTR text, int width);
+  bool SetColumnOrderArray(int count, const int *columns) { return BOOLToBool(ListView_SetColumnOrderArray(_window, count, columns)); }
+
+  /*
+  int GetNumColumns()
+  {
+    HWND header = ListView_GetHeader(_window);
+    if (!header)
+      return -1;
+    return Header_GetItemCount(header);
+  }
+  */
+
   int InsertItem(const LVITEM* item) { return ListView_InsertItem(_window, item); }
   int InsertItem(int index, LPCTSTR text);
   bool SetItem(const LVITEM* item) { return BOOLToBool(ListView_SetItem(_window, item)); }

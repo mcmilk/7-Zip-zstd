@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2015-05-01 : Igor Pavlov : Public domain */
+2015-11-09 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -74,7 +74,7 @@ static void BraState_Free(void *pp, ISzAlloc *alloc)
 static SRes BraState_SetProps(void *pp, const Byte *props, size_t propSize, ISzAlloc *alloc)
 {
   CBraState *p = ((CBraState *)pp);
-  alloc = alloc;
+  UNUSED_VAR(alloc);
   p->ip = 0;
   if (p->methodId == XZ_ID_Delta)
   {
@@ -129,9 +129,9 @@ static SRes BraState_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *src,
   CBraState *p = ((CBraState *)pp);
   SizeT destLenOrig = *destLen;
   SizeT srcLenOrig = *srcLen;
+  UNUSED_VAR(finishMode);
   *destLen = 0;
   *srcLen = 0;
-  finishMode = finishMode;
   *wasFinished = 0;
   while (destLenOrig > 0)
   {
@@ -236,8 +236,8 @@ static void SbState_Free(void *pp, ISzAlloc *alloc)
 static SRes SbState_SetProps(void *pp, const Byte *props, size_t propSize, ISzAlloc *alloc)
 {
   UNUSED_VAR(pp);
-  props = props;
-  alloc = alloc;
+  UNUSED_VAR(props);
+  UNUSED_VAR(alloc);
   return (propSize == 0) ? SZ_OK : SZ_ERROR_UNSUPPORTED;
 }
 
@@ -251,7 +251,7 @@ static SRes SbState_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *src, 
 {
   CSbDec *p = (CSbDec *)pp;
   SRes res;
-  srcWasFinished = srcWasFinished;
+  UNUSED_VAR(srcWasFinished);
   p->dest = dest;
   p->destLen = *destLen;
   p->src = src;
@@ -308,7 +308,7 @@ static SRes Lzma2State_Code(void *pp, Byte *dest, SizeT *destLen, const Byte *sr
   ELzmaStatus status;
   /* ELzmaFinishMode fm = (finishMode == LZMA_FINISH_ANY) ? LZMA_FINISH_ANY : LZMA_FINISH_END; */
   SRes res = Lzma2Dec_DecodeToBuf((CLzma2Dec *)pp, dest, destLen, src, srcLen, (ELzmaFinishMode)finishMode, &status);
-  srcWasFinished = srcWasFinished;
+  UNUSED_VAR(srcWasFinished);
   *wasFinished = (status == LZMA_STATUS_FINISHED_WITH_MARK);
   return res;
 }
@@ -555,7 +555,7 @@ SRes XzBlock_Parse(CXzBlock *p, const Byte *header)
     pos += (unsigned)size;
 
     #ifdef XZ_DUMP
-    printf("\nf[%d] = %2X: ", i, filter->id);
+    printf("\nf[%u] = %2X: ", i, (unsigned)filter->id);
     {
       unsigned i;
       for (i = 0; i < size; i++)

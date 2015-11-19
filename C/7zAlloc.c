@@ -1,5 +1,5 @@
 /* 7zAlloc.c -- Allocation functions
-2015-02-21 : Igor Pavlov : Public domain */
+2015-11-09 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -26,7 +26,7 @@ void *SzAlloc(void *p, size_t size)
   if (size == 0)
     return 0;
   #ifdef _SZ_ALLOC_DEBUG
-  fprintf(stderr, "\nAlloc %10d bytes; count = %10d", size, g_allocCount);
+  fprintf(stderr, "\nAlloc %10u bytes; count = %10d", (unsigned)size, g_allocCount);
   g_allocCount++;
   #endif
   return malloc(size);
@@ -51,7 +51,7 @@ void *SzAllocTemp(void *p, size_t size)
   if (size == 0)
     return 0;
   #ifdef _SZ_ALLOC_DEBUG
-  fprintf(stderr, "\nAlloc_temp %10d bytes;  count = %10d", size, g_allocCountTemp);
+  fprintf(stderr, "\nAlloc_temp %10u bytes;  count = %10d", (unsigned)size, g_allocCountTemp);
   g_allocCountTemp++;
   #ifdef _WIN32
   return HeapAlloc(GetProcessHeap(), 0, size);

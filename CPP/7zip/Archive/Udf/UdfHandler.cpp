@@ -98,6 +98,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       if (!_archive.IsArc) v |= kpv_ErrorFlags_IsNotArc;
       if (_archive.Unsupported) v |= kpv_ErrorFlags_UnsupportedFeature;
       if (_archive.UnexpectedEnd) v |= kpv_ErrorFlags_UnexpectedEnd;
+      if (_archive.NoEndAnchor) v |= kpv_ErrorFlags_HeadersError;
       prop = v;
       break;
     }

@@ -142,14 +142,16 @@ void ConvertPropertyToShortString(char *dest, const PROPVARIANT &prop, PROPID pr
     case kpidVa:
     {
       UInt64 v = 0;
-      if (ConvertPropVariantToUInt64(prop, v))
-      {
-        dest[0] = '0';
-        dest[1] = 'x';
-        ConvertUInt64ToHex(prop.ulVal, dest + 2);
-        return;
-      }
-      break;
+      if (prop.vt == VT_UI4)
+        v = prop.ulVal;
+      else if (prop.vt == VT_UI8)
+        v = (UInt64)prop.uhVal.QuadPart;
+      else
+        break;
+      dest[0] = '0';
+      dest[1] = 'x';
+      ConvertUInt64ToHex(v, dest + 2);
+      return;
     }
   }
   

@@ -73,8 +73,10 @@ void CRandomGenerator::Init()
     HASH_UPD(v2);
     #endif
 
+    #ifdef _WIN32
     DWORD tickCount = ::GetTickCount();
     HASH_UPD(tickCount);
+    #endif
     
     for (unsigned j = 0; j < 100; j++)
     {

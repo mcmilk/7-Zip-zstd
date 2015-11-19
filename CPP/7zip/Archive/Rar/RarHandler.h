@@ -45,6 +45,7 @@ struct CInArcInfo
 
   bool IsEncryptOld()       const { return (!IsThereEncryptVer() || EncryptVersion < 36); }
 
+  bool AreMoreVolumes()       const { return (EndFlags & NHeader::NArchive::kEndOfArc_Flags_NextVol) != 0; }
   bool Is_VolNumber_Defined() const { return (EndFlags & NHeader::NArchive::kEndOfArc_Flags_VolNumber) != 0; }
   bool Is_DataCRC_Defined()   const { return (EndFlags & NHeader::NArchive::kEndOfArc_Flags_DataCRC) != 0; }
 };

@@ -370,6 +370,7 @@ public:
   bool IsArc;
   bool Unsupported;
   bool UnexpectedEnd;
+  bool NoEndAnchor;
 
   void UpdatePhySize(UInt64 val)
   {

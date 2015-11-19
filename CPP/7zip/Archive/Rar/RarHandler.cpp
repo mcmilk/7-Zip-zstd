@@ -640,6 +640,7 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
       {
         ArcInfo.EndFlags = m_BlockHeader.Flags;
         UInt32 offset = 7;
+        
         if (m_BlockHeader.Flags & NHeader::NArchive::kEndOfArc_Flags_DataCRC)
         {
           if (processed < offset + 4)
@@ -648,6 +649,7 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
             ArcInfo.DataCRC = Get32(m_FileHeaderData + offset);
           offset += 4;
         }
+        
         if (m_BlockHeader.Flags & NHeader::NArchive::kEndOfArc_Flags_VolNumber)
         {
           if (processed < offset + 2)
@@ -657,6 +659,7 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
 
         ArcInfo.EndOfArchive_was_Read = true;
       }
+
       m_Position += processed;
       FinishCryptoBlock();
       ArcInfo.EndPos = m_Position;
@@ -699,11 +702,13 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
         continue;
       */
     }
+    
     if (m_CryptoMode && m_BlockHeader.HeadSize > (1 << 10))
     {
       error = k_ErrorType_DecryptionError;
       return S_OK;
     }
+    
     if ((m_BlockHeader.Flags & NHeader::NBlock::kLongBlock) != 0)
     {
       if (m_FileHeaderData.Size() < 7 + 4)
@@ -1032,7 +1037,10 @@ HRESULT CHandler::Open2(IInStream *stream,
       openCallback->QueryInterface(IID_ICryptoGetTextPassword, (void **)&getTextPassword);
     }
 
+    bool nextVol_is_Required = false;
+
     CInArchive archive;
+
     for (;;)
     {
       CMyComPtr<IInStream> inStream;
@@ -1072,7 +1080,8 @@ HRESULT CHandler::Open2(IInStream *stream,
 
         if (!inStream || result != S_OK)
         {
-          _missingVolName = volName;
+          if (nextVol_is_Required)
+            _missingVolName = volName;
           break;
         }
       }
@@ -1190,6 +1199,18 @@ HRESULT CHandler::Open2(IInStream *stream,
         CArc &arc = _arcs.AddNew();
         arc.PhySize = archive.ArcInfo.GetPhySize();
         arc.Stream = inStream;
+      }
+
+      nextVol_is_Required = false;
+
+      if (!archive.ArcInfo.IsVolume())
+        break;
+
+      if (archive.ArcInfo.EndOfArchive_was_Read)
+      {
+        if (!archive.ArcInfo.AreMoreVolumes())
+          break;
+        nextVol_is_Required = true;
       }
     }
   }

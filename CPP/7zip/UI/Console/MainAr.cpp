@@ -20,7 +20,7 @@ CStdOutStream *g_ErrStream = NULL;
 
 extern int Main2(
   #ifndef _WIN32
-  int numArgs, const char *args[]
+  int numArgs, char *args[]
   #endif
 );
 
@@ -49,7 +49,7 @@ static void PrintError(const char *message)
 int MY_CDECL main
 (
   #ifndef _WIN32
-  int numArgs, const char *args[]
+  int numArgs, char *args[]
   #endif
 )
 {

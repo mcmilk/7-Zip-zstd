@@ -87,6 +87,8 @@ struct CFolders
     return PackPositions[index + 1] - PackPositions[index];
   }
 
+  CFolders(): NumPackStreams(0), NumFolders(0) {}
+
   void Clear()
   {
     NumPackStreams = 0;

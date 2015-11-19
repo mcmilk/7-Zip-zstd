@@ -179,4 +179,3 @@ bool AddLockMemoryPrivilege()
 }
 
 }}
-

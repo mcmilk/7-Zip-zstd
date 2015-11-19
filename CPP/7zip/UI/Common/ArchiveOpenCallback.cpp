@@ -73,18 +73,40 @@ struct CInFileStreamVol: public CInFileStream
   }
 };
 
+
+// from ArchiveExtractCallback.cpp
+bool IsSafePath(const UString &path);
+
 STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStream)
 {
   COM_TRY_BEGIN
   *inStream = NULL;
+  
   if (_subArchiveMode)
     return S_FALSE;
   if (Callback)
   {
     RINOK(Callback->Open_CheckBreak());
   }
+
+  UString name2 = name;
+
+  
+  #ifndef _SFX
+  
+  #ifdef _WIN32
+  name2.Replace(L'/', WCHAR_PATH_SEPARATOR);
+  #endif
+
+  // if (!allowAbsVolPaths)
+  if (!IsSafePath(name2))
+    return S_FALSE;
+  
+  #endif
+
+
   FString fullPath;
-  if (!NFile::NName::GetFullPath(_folderPrefix, us2fs(name), fullPath))
+  if (!NFile::NName::GetFullPath(_folderPrefix, us2fs(name2), fullPath))
     return S_FALSE;
   if (!_fileInfo.Find(fullPath))
     return S_FALSE;
@@ -93,10 +115,15 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
   CInFileStreamVol *inFile = new CInFileStreamVol;
   CMyComPtr<IInStream> inStreamTemp = inFile;
   if (!inFile->Open(fullPath))
-    return ::GetLastError();
+  {
+    DWORD lastError = ::GetLastError();
+    if (lastError == 0)
+      return E_FAIL;
+    return HRESULT_FROM_WIN32(lastError);
+  }
 
   FileSizes.Add(_fileInfo.Size);
-  FileNames.Add(name);
+  FileNames.Add(name2);
   inFile->FileNameIndex = FileNames_WasUsed.Add(true);
   inFile->OpenCallbackImp = this;
   inFile->OpenCallbackRef = this;

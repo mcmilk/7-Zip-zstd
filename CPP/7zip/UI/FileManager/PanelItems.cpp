@@ -82,15 +82,33 @@ static int GetColumnAlign(PROPID propID, VARTYPE varType)
   }
 }
 
+
+static int ItemProperty_Compare_NameFirst(void *const *a1, void *const *a2, void * /* param */)
+{
+  return (*(*((const CPropColumn **)a1))).Compare_NameFirst(*(*((const CPropColumn **)a2)));
+}
+
 HRESULT CPanel::InitColumns()
 {
-  if (_needSaveInfo)
-    SaveListViewInfo();
+  SaveListViewInfo();
 
   _listView.DeleteAllItems();
   _selectedStatusVector.Clear();
 
-  ReadListViewInfo();
+  {
+    // ReadListViewInfo();
+    const UString oldType = _typeIDString;
+    _typeIDString = GetFolderTypeID();
+    // an empty _typeIDString is allowed.
+    
+    // we read registry only for new FolderTypeID
+    if (!_needSaveInfo || _typeIDString != oldType)
+      _listViewInfo.Read(_typeIDString);
+    
+    // folders with same FolderTypeID can have different columns
+    // so we still read columns for that case.
+    // if (_needSaveInfo && _typeIDString == oldType) return S_OK;
+  }
 
   // PROPID sortID;
   /*
@@ -101,9 +119,8 @@ HRESULT CPanel::InitColumns()
 
   _ascending = _listViewInfo.Ascending;
 
-  _properties.Clear();
+  _columns.Clear();
 
-  _needSaveInfo = true;
   bool isFsFolder = IsFSFolder() || IsAltStreamsFolder();
 
   {
@@ -125,7 +142,7 @@ HRESULT CPanel::InitColumns()
       }
       if (propID == kpidIsDir)
         continue;
-      CItemProperty prop;
+      CPropColumn prop;
       prop.Type = varType;
       prop.ID = propID;
       prop.Name = GetNameOfProperty(propID, name);
@@ -133,7 +150,7 @@ HRESULT CPanel::InitColumns()
       prop.IsVisible = GetColumnVisible(propID, isFsFolder);
       prop.Width = GetColumnWidth(propID, varType);
       prop.IsRawProp = false;
-      _properties.Add(prop);
+      _columns.Add(prop);
     }
   }
 
@@ -141,13 +158,15 @@ HRESULT CPanel::InitColumns()
   {
     UInt32 numProps;
     _folderRawProps->GetNumRawProps(&numProps);
+    
     for (UInt32 i = 0; i < numProps; i++)
     {
       CMyComBSTR name;
       PROPID propID;
-      RINOK(_folderRawProps->GetRawPropInfo(i, &name, &propID));
-      
-      CItemProperty prop;
+      HRESULT res = _folderRawProps->GetRawPropInfo(i, &name, &propID);
+      if (res != S_OK)
+        continue;
+      CPropColumn prop;
       prop.Type = VT_EMPTY;
       prop.ID = propID;
       prop.Name = GetNameOfProperty(propID, name);
@@ -155,15 +174,9 @@ HRESULT CPanel::InitColumns()
       prop.IsVisible = GetColumnVisible(propID, isFsFolder);
       prop.Width = GetColumnWidth(propID, VT_BSTR);;
       prop.IsRawProp = true;
-      _properties.Add(prop);
+      _columns.Add(prop);
     }
   }
-
-  // InitColumns2(sortID);
-
-  for (;;)
-    if (!_listView.DeleteColumn(0))
-      break;
 
   unsigned order = 0;
   unsigned i;
@@ -171,66 +184,136 @@ HRESULT CPanel::InitColumns()
   for (i = 0; i < _listViewInfo.Columns.Size(); i++)
   {
     const CColumnInfo &columnInfo = _listViewInfo.Columns[i];
-    int index = _properties.FindItemWithID(columnInfo.PropID);
+    int index = _columns.FindItem_for_PropID(columnInfo.PropID);
     if (index >= 0)
     {
-      CItemProperty &item = _properties[index];
-      item.IsVisible = columnInfo.IsVisible;
+      CPropColumn &item = _columns[index];
+      if (item.Order >= 0)
+        continue; // we ignore duplicated items
+      bool isVisible = columnInfo.IsVisible;
+      // we enable kpidName, if it was disabled by some incorrect code
+      if (columnInfo.PropID == kpidName)
+        isVisible = true;
+      item.IsVisible = isVisible;
       item.Width = columnInfo.Width;
-      if (columnInfo.IsVisible)
+      if (isVisible)
         item.Order = order++;
       continue;
     }
   }
-  
-  for (i = 0; i < _properties.Size(); i++)
+
+  for (i = 0; i < _columns.Size(); i++)
   {
-    CItemProperty &item = _properties[i];
+    CPropColumn &item = _columns[i];
+    if (item.IsVisible && item.Order < 0)
+      item.Order = order++;
+  }
+  
+  for (i = 0; i < _columns.Size(); i++)
+  {
+    CPropColumn &item = _columns[i];
     if (item.Order < 0)
       item.Order = order++;
   }
 
-  _visibleProperties.Clear();
-  for (i = 0; i < _properties.Size(); i++)
+  CPropColumns newColumns;
+  
+  for (i = 0; i < _columns.Size(); i++)
   {
-    const CItemProperty &prop = _properties[i];
+    const CPropColumn &prop = _columns[i];
     if (prop.IsVisible)
-      _visibleProperties.Add(prop);
+      newColumns.Add(prop);
   }
 
-  // _sortIndex = 0;
-  _sortID = kpidName;
+
   /*
+  _sortIndex = 0;
   if (_listViewInfo.SortIndex >= 0)
   {
-    int sortIndex = _properties.FindItemWithID(sortID);
+    int sortIndex = _columns.FindItem_for_PropID(sortID);
     if (sortIndex >= 0)
       _sortIndex = sortIndex;
   }
   */
-  _sortID = _listViewInfo.SortID;
 
-  _visibleProperties.Sort();
+  if (_listViewInfo.IsLoaded)
+    _sortID = _listViewInfo.SortID;
+  else
+  {
+    _sortID = 0;
+    if (IsFSFolder() || IsAltStreamsFolder() || IsArcFolder())
+      _sortID = kpidName;
+  }
 
-  for (i = 0; i < _visibleProperties.Size(); i++)
-    InsertColumn(i);
+  /* There are restrictions in ListView control:
+     1) main column (kpidName) must have (LV_COLUMNW::iSubItem = 0)
+        So we need special sorting for columns.
+     2) when we add new column, LV_COLUMNW::iOrder can not be larger than already inserted columns)
+        So we set column order after all columns are added.
+  */
+  newColumns.Sort(ItemProperty_Compare_NameFirst, NULL);
+  
+  if (newColumns.IsEqualTo(_visibleColumns))
+    return S_OK;
+
+  CIntArr columns(newColumns.Size());
+  for (i = 0; i < newColumns.Size(); i++)
+    columns[i] = -1;
+  
+  bool orderError = false;
+  
+  for (i = 0; i < newColumns.Size(); i++)
+  {
+    const CPropColumn &prop = newColumns[i];
+    if (prop.Order < (int)newColumns.Size() && columns[prop.Order] == -1)
+      columns[prop.Order] = i;
+    else
+      orderError = true;
+  }
+
+  for (;;)
+  {
+    unsigned numColumns = _visibleColumns.Size();
+    if (numColumns == 0)
+      break;
+    DeleteColumn(numColumns - 1);
+  }
+
+  for (i = 0; i < newColumns.Size(); i++)
+    AddColumn(newColumns[i]);
+
+  // columns[0], columns[1], .... should be displayed from left to right:
+  if (!orderError)
+    _listView.SetColumnOrderArray(_visibleColumns.Size(), columns);
+
+  _needSaveInfo = true;
 
   return S_OK;
 }
 
-void CPanel::InsertColumn(unsigned index)
+
+void CPanel::DeleteColumn(unsigned index)
 {
-  const CItemProperty &prop = _visibleProperties[index];
+  _visibleColumns.Delete(index);
+  _listView.DeleteColumn(index);
+}
+
+void CPanel::AddColumn(const CPropColumn &prop)
+{
+  const int index = _visibleColumns.Size();
+  
   LV_COLUMNW column;
   column.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM | LVCF_ORDER;
   column.cx = prop.Width;
   column.fmt = GetColumnAlign(prop.ID, prop.Type);
-  column.iOrder = prop.Order;
-  // iOrder must be <= _listView.ItemCount
-  column.iSubItem = index;
+  column.iOrder = index; // must be <= _listView.ItemCount
+  column.iSubItem = index; // must be <= _listView.ItemCount
   column.pszText = const_cast<wchar_t *>((const wchar_t *)prop.Name);
+
+  _visibleColumns.Add(prop);
   _listView.InsertColumn(index, &column);
 }
+
 
 HRESULT CPanel::RefreshListCtrl()
 {
@@ -959,20 +1042,17 @@ UInt64 CPanel::GetItemSize(int itemIndex) const
   return 0;
 }
 
-void CPanel::ReadListViewInfo()
-{
-  _typeIDString = GetFolderTypeID();
-  if (!_typeIDString.IsEmpty())
-    _listViewInfo.Read(_typeIDString);
-}
 
 void CPanel::SaveListViewInfo()
 {
+  if (!_needSaveInfo)
+    return;
+
   unsigned i;
   
-  for (i = 0; i < _visibleProperties.Size(); i++)
+  for (i = 0; i < _visibleColumns.Size(); i++)
   {
-    CItemProperty &prop = _visibleProperties[i];
+    CPropColumn &prop = _visibleColumns[i];
     LVCOLUMN winColumnInfo;
     winColumnInfo.mask = LVCF_ORDER | LVCF_WIDTH;
     if (!_listView.GetColumn(i, &winColumnInfo))
@@ -983,14 +1063,18 @@ void CPanel::SaveListViewInfo()
 
   CListViewInfo viewInfo;
   
-  // PROPID sortPropID = _properties[_sortIndex].ID;
+  // PROPID sortPropID = _columns[_sortIndex].ID;
   PROPID sortPropID = _sortID;
   
-  _visibleProperties.Sort();
+  // we save columns as "sorted by order" to registry
+
+  CPropColumns sortedProperties = _visibleColumns;
+
+  sortedProperties.Sort();
   
-  for (i = 0; i < _visibleProperties.Size(); i++)
+  for (i = 0; i < sortedProperties.Size(); i++)
   {
-    const CItemProperty &prop = _visibleProperties[i];
+    const CPropColumn &prop = sortedProperties[i];
     CColumnInfo columnInfo;
     columnInfo.IsVisible = prop.IsVisible;
     columnInfo.PropID = prop.ID;
@@ -998,13 +1082,13 @@ void CPanel::SaveListViewInfo()
     viewInfo.Columns.Add(columnInfo);
   }
   
-  for (i = 0; i < _properties.Size(); i++)
+  for (i = 0; i < _columns.Size(); i++)
   {
-    const CItemProperty &prop = _properties[i];
-    if (!prop.IsVisible)
+    const CPropColumn &prop = _columns[i];
+    if (sortedProperties.FindItem_for_PropID(prop.ID) < 0)
     {
       CColumnInfo columnInfo;
-      columnInfo.IsVisible = prop.IsVisible;
+      columnInfo.IsVisible = false;
       columnInfo.PropID = prop.ID;
       columnInfo.Width = prop.Width;
       viewInfo.Columns.Add(columnInfo);
@@ -1040,9 +1124,9 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
   menu.CreatePopup();
 
   const int kCommandStart = 100;
-  FOR_VECTOR (i, _properties)
+  FOR_VECTOR (i, _columns)
   {
-    const CItemProperty &prop = _properties[i];
+    const CPropColumn &prop = _columns[i];
     UINT flags =  MF_STRING;
     if (prop.IsVisible)
       flags |= MF_CHECKED;
@@ -1053,25 +1137,22 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
   
   int menuResult = menu.Track(TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY, x, y, _listView);
   
-  if (menuResult >= kCommandStart && menuResult <= kCommandStart + (int)_properties.Size())
+  if (menuResult >= kCommandStart && menuResult <= kCommandStart + (int)_columns.Size())
   {
     int index = menuResult - kCommandStart;
-    CItemProperty &prop = _properties[index];
+    CPropColumn &prop = _columns[index];
     prop.IsVisible = !prop.IsVisible;
 
     if (prop.IsVisible)
     {
-      unsigned num = _visibleProperties.Size();
-      prop.Order = num;
-      _visibleProperties.Add(prop);
-      InsertColumn(num);
+      prop.Order = _visibleColumns.Size();
+      AddColumn(prop);
     }
     else
     {
-      int visibleIndex = _visibleProperties.FindItemWithID(prop.ID);
+      int visibleIndex = _visibleColumns.FindItem_for_PropID(prop.ID);
       if (visibleIndex >= 0)
       {
-        _visibleProperties.Delete(visibleIndex);
         /*
         if (_sortIndex == index)
         {
@@ -1084,8 +1165,7 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
           _sortID = kpidName;
           _ascending = true;
         }
-        
-        _listView.DeleteColumn(visibleIndex);
+        DeleteColumn(visibleIndex);
       }
     }
   }

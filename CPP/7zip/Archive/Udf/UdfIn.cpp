@@ -610,6 +610,7 @@ API_FUNC_IsArc IsArc_Udf(const Byte *p, size_t size)
   }
 }
 
+
 HRESULT CInArchive::Open2()
 {
   Clear();
@@ -644,8 +645,10 @@ HRESULT CInArchive::Open2()
   CExtent extentVDS;
   extentVDS.Parse(buf + i + 16);
   */
+
   const size_t kBufSize = 1 << 11;
   Byte buf[kBufSize];
+  
   for (SecLogSize = 11;; SecLogSize -= 3)
   {
     if (SecLogSize < 8)
@@ -665,6 +668,7 @@ HRESULT CInArchive::Open2()
           break;
     }
   }
+  
   PhySize = (UInt32)(256 + 1) << SecLogSize;
   IsArc = true;
 
@@ -946,27 +950,62 @@ HRESULT CInArchive::Open2()
   }
 
   {
-    UInt32 secMask = ((UInt32)1 << SecLogSize) - 1;
+    const UInt32 secMask = ((UInt32)1 << SecLogSize) - 1;
     PhySize = (PhySize + secMask) & ~(UInt64)secMask;
   }
+  
+  NoEndAnchor = true;
+
   if (PhySize < fileSize)
   {
+    UInt64 rem = fileSize - PhySize;
+    const size_t secSize = (size_t)1 << SecLogSize;
+
     RINOK(_stream->Seek(PhySize, STREAM_SEEK_SET, NULL));
-    size_t bufSize = (UInt32)1 << SecLogSize;
-    size_t readSize = bufSize;
-    RINOK(ReadStream(_stream, buf, &readSize));
-    if (readSize == bufSize)
+
+    // some UDF images contain ZEROs before "Anchor Volume Descriptor Pointer" at the end
+
+    for (unsigned sec = 0; sec < 1024; sec++)
     {
-      CTag tag;
-      if (tag.Parse(buf, readSize) == S_OK)
-        if (tag.Id == DESC_TYPE_AnchorVolPtr)
+      if (rem == 0)
+        break;
+      
+      size_t readSize = secSize;
+      if (readSize > rem)
+        readSize = (size_t)rem;
+      
+      RINOK(ReadStream(_stream, buf, &readSize));
+      
+      if (readSize == 0)
+        break;
+      
+      if (readSize == secSize && NoEndAnchor)
+      {
+        CTag tag;
+        if (tag.Parse(buf, readSize) == S_OK &&
+            tag.Id == DESC_TYPE_AnchorVolPtr)
         {
-          PhySize += bufSize;
+          NoEndAnchor = false;
+          rem -= readSize;
+          PhySize = fileSize - rem;
+          continue;
         }
+      }
+      
+      size_t i;
+      for (i = 0; i < readSize && buf[i] == 0; i++);
+      if (i != readSize)
+        break;
+      rem -= readSize;
     }
+
+    if (rem == 0)
+      PhySize = fileSize;
   }
+
   return S_OK;
 }
+
 
 HRESULT CInArchive::Open(IInStream *inStream, CProgressVirt *progress)
 {
@@ -1000,6 +1039,7 @@ void CInArchive::Clear()
   IsArc = false;
   Unsupported = false;
   UnexpectedEnd = false;
+  NoEndAnchor = false;
 
   PhySize = 0;
   FileSize = 0;

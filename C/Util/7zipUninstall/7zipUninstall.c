@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2015-08-09 : Igor Pavlov : Public domain */
+2015-11-08 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -384,7 +384,7 @@ static void WriteCLSID()
         if (res == ERROR_SUCCESS)
         {
           RegDeleteValueW(destKey, k_7zip_CLSID);
-          res = RegCloseKey(destKey);
+          /* res = */ RegCloseKey(destKey);
         }
       }
     }
@@ -419,7 +419,7 @@ static void WriteCLSID()
         if (res == ERROR_SUCCESS)
         {
           RegDeleteValueW(destKey, k_7zip_CLSID);
-          res = RegCloseKey(destKey);
+          /* res = */ RegCloseKey(destKey);
         }
       }
     }
