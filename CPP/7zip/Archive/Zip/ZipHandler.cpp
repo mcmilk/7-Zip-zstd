@@ -373,6 +373,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
               ConvertUInt32ToString(f.AlgId, temp + 1);
               m += temp;
             }
+            if (f.CertificateIsUsed())
+              m += "-Cert";
           }
           else
             m += kMethod_StrongCrypto;

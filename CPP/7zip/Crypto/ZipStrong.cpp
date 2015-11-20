@@ -112,25 +112,87 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
   if (algId * 64 + 128 != bitLen)
     return E_NOTIMPL;
   _key.KeySize = 16 + algId * 8;
-  if ((flags & 1) == 0)
-    return E_NOTIMPL;
+  bool cert = ((flags & 2) != 0);
+
   if ((flags & 0x4000) != 0)
   {
     // Use 3DES
     return E_NOTIMPL;
   }
 
+  if (cert)
+  {
+    return E_NOTIMPL;
+  }
+  else
+  {
+    if ((flags & 1) == 0)
+      return E_NOTIMPL;
+  }
+
   UInt32 rdSize = GetUi16(p + 8);
-  if ((rdSize & 0xF) != 0 || rdSize + 16 > _remSize)
-    return E_NOTIMPL;
-  memmove(p, p + 10, rdSize);
-  Byte *validData = p + rdSize + 16;
-  if (GetUi32(validData - 6) != 0) // reserved
-    return E_NOTIMPL;
-  UInt32 validSize = GetUi16(validData - 2);
-  if ((validSize & 0xF) != 0 || 16 + rdSize + validSize != _remSize)
+
+  if (rdSize + 16 > _remSize)
     return E_NOTIMPL;
 
+  /*
+  if (cert)
+  {
+    // how to filter rd, if ((rdSize & 0xF) != 0) ?
+    /*
+    if ((rdSize & 0x7) != 0)
+      return E_NOTIMPL;
+  }
+  else
+  */
+  {
+    if ((rdSize & 0xF) != 0)
+      return E_NOTIMPL;
+  }
+
+  memmove(p, p + 10, rdSize);
+  const Byte *p2 = p + rdSize + 10;
+  UInt32 reserved = GetUi32(p2);
+  p2 += 4;
+  
+  /*
+  if (cert)
+  {
+    UInt32 numRecipients = reserved;
+
+    if (numRecipients == 0)
+      return E_NOTIMPL;
+
+    {
+      UInt32 hashAlg = GetUi16(p2);
+      hashAlg = hashAlg;
+      UInt32 hashSize = GetUi16(p2 + 2);
+      hashSize = hashSize;
+      p2 += 4;
+
+      reserved = reserved;
+      // return E_NOTIMPL;
+
+      for (unsigned r = 0; r < numRecipients; r++)
+      {
+        UInt32 specSize = GetUi16(p2);
+        p2 += 2;
+        p2 += specSize;
+      }
+    }
+  }
+  else
+  */
+  {
+    if (reserved != 0)
+      return E_NOTIMPL;
+  }
+
+  UInt32 validSize = GetUi16(p2);
+  p2 += 2;
+  const size_t validOffset = p2 - p;
+  if ((validSize & 0xF) != 0 || validOffset + validSize != _remSize)
+    return E_NOTIMPL;
 
   {
     RINOK(SetKey(_key.MasterKey, _key.KeySize));
@@ -149,12 +211,14 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
   RINOK(SetKey(fileKey, _key.KeySize));
   RINOK(SetInitVector(_iv, 16));
   Init();
-  Filter(validData, validSize);
+
+  memmove(p, p + validOffset, validSize);
+  Filter(p, validSize);
 
   if (validSize < 4)
     return E_NOTIMPL;
   validSize -= 4;
-  if (GetUi32(validData + validSize) != CrcCalc(validData, validSize))
+  if (GetUi32(p + validSize) != CrcCalc(p, validSize))
     return S_OK;
   passwOK = true;
   return S_OK;

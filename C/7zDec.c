@@ -1,5 +1,5 @@
 /* 7zDec.c -- Decoding from 7z folder
-2015-08-01 : Igor Pavlov : Public domain */
+2015-11-18 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -8,6 +8,7 @@
 /* #define _7ZIP_PPMD_SUPPPORT */
 
 #include "7z.h"
+#include "7zCrc.h"
 
 #include "Bcj2.h"
 #include "Bra.h"
@@ -160,14 +161,23 @@ static SRes SzDecodeLzma(const Byte *props, unsigned propsSize, UInt64 inSize, I
       inSize -= inProcessed;
       if (res != SZ_OK)
         break;
-      if (state.dicPos == state.dicBufSize || (inProcessed == 0 && dicPos == state.dicPos))
+
+      if (status == LZMA_STATUS_FINISHED_WITH_MARK)
       {
-        if (state.dicBufSize != outSize || lookahead != 0 ||
-            (status != LZMA_STATUS_FINISHED_WITH_MARK &&
-             status != LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK))
+        if (outSize != state.dicPos || inSize != 0)
           res = SZ_ERROR_DATA;
         break;
       }
+
+      if (outSize == state.dicPos && inSize == 0 && status == LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK)
+        break;
+
+      if (inProcessed == 0 && dicPos == state.dicPos)
+      {
+        res = SZ_ERROR_DATA;
+        break;
+      }
+
       res = inStream->Skip((void *)inStream, inProcessed);
       if (res != SZ_OK)
         break;
@@ -213,13 +223,20 @@ static SRes SzDecodeLzma2(const Byte *props, unsigned propsSize, UInt64 inSize, 
       inSize -= inProcessed;
       if (res != SZ_OK)
         break;
-      if (state.decoder.dicPos == state.decoder.dicBufSize || (inProcessed == 0 && dicPos == state.decoder.dicPos))
+
+      if (status == LZMA_STATUS_FINISHED_WITH_MARK)
       {
-        if (state.decoder.dicBufSize != outSize || lookahead != 0 ||
-            (status != LZMA_STATUS_FINISHED_WITH_MARK))
+        if (outSize != state.decoder.dicPos || inSize != 0)
           res = SZ_ERROR_DATA;
         break;
       }
+
+      if (inProcessed == 0 && dicPos == state.decoder.dicPos)
+      {
+        res = SZ_ERROR_DATA;
+        break;
+      }
+
       res = inStream->Skip((void *)inStream, inProcessed);
       if (res != SZ_OK)
         break;
@@ -537,33 +554,38 @@ SRes SzAr_DecodeFolder(const CSzAr *p, UInt32 folderIndex,
   SRes res;
   CSzFolder folder;
   CSzData sd;
-  CSzData sdSizes;
   
   const Byte *data = p->CodersData + p->FoCodersOffsets[folderIndex];
   sd.Data = data;
   sd.Size = p->FoCodersOffsets[folderIndex + 1] - p->FoCodersOffsets[folderIndex];
   
-  sdSizes.Data = p->UnpackSizesData + p->FoSizesOffsets[folderIndex];
-  sdSizes.Size =
-      p->FoSizesOffsets[folderIndex + 1] -
-      p->FoSizesOffsets[folderIndex];
-
-  res = SzGetNextFolderItem(&folder, &sd, &sdSizes);
+  res = SzGetNextFolderItem(&folder, &sd);
   
   if (res != SZ_OK)
     return res;
 
-  if (sd.Size != 0 || outSize != folder.CodersUnpackSizes[folder.UnpackStream])
+  if (sd.Size != 0
+      || folder.UnpackStream != p->FoToMainUnpackSizeIndex[folderIndex]
+      || outSize != SzAr_GetFolderUnpackSize(p, folderIndex))
     return SZ_ERROR_FAIL;
   {
     unsigned i;
     Byte *tempBuf[3] = { 0, 0, 0};
-    res = SzFolder_Decode2(&folder, data, folder.CodersUnpackSizes,
+
+    res = SzFolder_Decode2(&folder, data,
+        &p->CoderUnpackSizes[p->FoToCoderUnpackSizes[folderIndex]],
         p->PackPositions + p->FoStartPackStreamIndex[folderIndex],
         inStream, startPos,
         outBuffer, (SizeT)outSize, allocMain, tempBuf);
+    
     for (i = 0; i < 3; i++)
       IAlloc_Free(allocMain, tempBuf[i]);
+
+    if (res == SZ_OK)
+      if (SzBitWithVals_Check(&p->FolderCRCs, folderIndex))
+        if (CrcCalc(outBuffer, outSize) != p->FolderCRCs.Vals[folderIndex])
+          res = SZ_ERROR_CRC;
+
     return res;
   }
 }

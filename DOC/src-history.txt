@@ -1,6 +1,21 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+15.12          2015-11-19
+-------------------------	
+- The BUG in C version of 7z decoder was fixed:
+  7zDec.c : SzDecodeLzma2()
+  7z decoder could mistakenly report about decoding error for some 7z archives
+  that use LZMA2 compression method.
+  The probability to get that mistaken decoding error report was about 
+  one error per 16384 solid blocks for solid blocks larger than 16 KB (compressed size). 
+- The BUG (in 9.26-15.11) in C version of 7z decoder was fixed:
+  7zArcIn.c : SzReadHeader2()
+  7z decoder worked incorrectly for 7z archives that contain 
+  empty solid blocks, that can be placed to 7z archive, if some file is 
+  unavailable for reading during archive creation.
+
+
 15.09 beta     2015-10-16
 -------------------------	
 - The BUG in LZMA / LZMA2 encoding code was fixed.

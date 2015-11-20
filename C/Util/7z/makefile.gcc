@@ -73,4 +73,3 @@ Ppmd7Dec.o: ../../Ppmd7Dec.c
 
 clean:
 	-$(RM) $(PROG) $(OBJS)
-

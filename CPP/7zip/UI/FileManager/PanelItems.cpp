@@ -1097,6 +1097,7 @@ void CPanel::SaveListViewInfo()
   
   viewInfo.SortID = sortPropID;
   viewInfo.Ascending = _ascending;
+  viewInfo.IsLoaded = true;
   if (!_listViewInfo.IsEqual(viewInfo))
   {
     viewInfo.Save(_typeIDString);

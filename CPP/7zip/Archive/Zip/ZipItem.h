@@ -109,6 +109,8 @@ struct CStrongCryptoExtra
     Flags  = GetUi16(p + 6);
     return (Format == 2);
   }
+
+  bool CertificateIsUsed() const { return (Flags > 0x0001); }
 };
 
 struct CExtraBlock

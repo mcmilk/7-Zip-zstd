@@ -175,6 +175,7 @@ void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFil
     AddValuePair(s, IDS_PROP_NUM_ERRORS, hb.NumErrors);
     s.Add_LF();
   }
+  
   if (hb.NumFiles == 1 && hb.NumDirs == 0 && !firstFileName.IsEmpty())
   {
     AddLangString(s, IDS_PROP_NAME);
@@ -195,6 +196,12 @@ void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFil
     s.Add_LF();
     AddValuePair(s, IDS_PROP_NUM_ALT_STREAMS, hb.NumAltStreams);
     AddSizeValuePair(s, IDS_PROP_ALT_STREAMS_SIZE, hb.AltStreamsSize);
+  }
+
+  if (hb.NumErrors == 0 && hb.Hashers.IsEmpty())
+  {
+    s.Add_LF();
+    AddLangString(s, IDS_MESSAGE_NO_ERRORS);
   }
 
   FOR_VECTOR (i, hb.Hashers)
