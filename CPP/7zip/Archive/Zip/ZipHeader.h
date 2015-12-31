@@ -84,6 +84,8 @@ namespace NFileHeader
       kNTFS = 0x0A,
       kStrongEncrypt = 0x17,
       kUnixTime = 0x5455,
+      kIzUnicodeComment = 0x6375,
+      kIzUnicodeName = 0x7075,
       kWzAES = 0x9901
     };
   }

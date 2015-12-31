@@ -170,7 +170,7 @@ struct CBootInitialEntry
                       // Partition Table found in the boot image.
   UInt16 SectorCount; // This is the number of virtual/emulated sectors the system
                       // will store at Load Segment during the initial boot procedure.
-  UInt32 LoadRBA;     // This is the start address of the virtual disk. CD’s use
+  UInt32 LoadRBA;     // This is the start address of the virtual disk. CDs use
                       // Relative/Logical block addressing.
 
   Byte VendorSpec[20];

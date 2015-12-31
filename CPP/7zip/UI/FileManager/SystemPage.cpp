@@ -6,8 +6,8 @@
 
 #include <ShlObj.h>
 
-#include "../../../Common/StringConvert.h"
 #include "../../../Common/Defs.h"
+#include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/DLL.h"
 #include "../../../Windows/ErrorMsg.h"
@@ -43,13 +43,16 @@ CSysString CModifiedExtInfo::GetString() const
   return ProgramKey;
 };
 
+
 int CSystemPage::AddIcon(const UString &iconPath, int iconIndex)
 {
   if (iconPath.IsEmpty())
     return -1;
   if (iconIndex == -1)
     iconIndex = 0;
+  
   HICON hicon;
+  
   #ifdef UNDER_CE
   ExtractIconExW(iconPath, iconIndex, NULL, &hicon, 1);
   if (!hicon)
@@ -65,12 +68,14 @@ int CSystemPage::AddIcon(const UString &iconPath, int iconIndex)
   if (num != 1 || !hicon)
   #endif
     return -1;
+  
   _imageList.AddIcon(hicon);
   DestroyIcon(hicon);
   return _numIcons++;
 }
 
-void CSystemPage::RefreshListItem(int group, int listIndex)
+
+void CSystemPage::RefreshListItem(unsigned group, unsigned listIndex)
 {
   const CAssoc &assoc = _items[GetRealIndex(listIndex)];
   _listView.SetSubItem(listIndex, group + 1, assoc.Pair[group].GetString());
@@ -82,13 +87,14 @@ void CSystemPage::RefreshListItem(int group, int listIndex)
   _listView.SetItem(&newItem);
 }
 
-void CSystemPage::ChangeState(int group, const CIntVector &indices)
+
+void CSystemPage::ChangeState(unsigned group, const CUIntVector &indices)
 {
   if (indices.IsEmpty())
     return;
 
   bool thereAreClearItems = false;
-  int counters[3] = { 0, 0, 0 };
+  unsigned counters[3] = { 0, 0, 0 };
   
   unsigned i;
   for (i = 0; i < indices.Size(); i++)
@@ -114,27 +120,34 @@ void CSystemPage::ChangeState(int group, const CIntVector &indices)
   
   for (i = 0; i < indices.Size(); i++)
   {
-    int listIndex = indices[i];
+    unsigned listIndex = indices[i];
     CAssoc &assoc = _items[GetRealIndex(listIndex)];
     CModifiedExtInfo &mi = assoc.Pair[group];
     bool change = false;
+    
     switch (state)
     {
       case kExtState_Clear: change = true; break;
       case kExtState_Other: change = mi.Other; break;
       default: change = !(mi.Other && thereAreClearItems); break;
     }
+    
     if (change)
     {
       mi.State = state;
       RefreshListItem(group, listIndex);
     }
   }
+  
+  _needSave = true;
   Changed();
 }
 
+
 bool CSystemPage::OnInit()
 {
+  _needSave = false;
+
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
 
   _listView.Attach(GetItem(IDL_SYSTEM_ASSOCIATE));
@@ -159,6 +172,7 @@ bool CSystemPage::OnInit()
       BOOL res;
 
       DWORD size = kSize;
+
       #ifndef _UNICODE
       if (!g_IsNT)
       {
@@ -218,7 +232,7 @@ bool CSystemPage::OnInit()
     assoc.SevenZipImageIndex = AddIcon(plug.IconPath, plug.IconIndex);
 
     CSysString texts[NUM_EXT_GROUPS];
-    int g;
+    unsigned g;
     for (g = 0; g < NUM_EXT_GROUPS; g++)
     {
       CModifiedExtInfo &mi = assoc.Pair[g];
@@ -240,61 +254,82 @@ bool CSystemPage::OnInit()
   return CPropertyPage::OnInit();
 }
 
+
 static UString GetProgramCommand()
 {
-  return L"\"" + fs2us(NDLL::GetModuleDirPrefix()) + L"7zFM.exe\" \"%1\"";
+  UString s = L"\"";
+  s += fs2us(NDLL::GetModuleDirPrefix());
+  s.AddAscii("7zFM.exe\" \"%1\"");
+  return s;
 }
+
 
 LONG CSystemPage::OnApply()
 {
+  if (!_needSave)
+    return PSNRET_NOERROR;
+
   const UString command = GetProgramCommand();
   
   LONG res = 0;
 
   FOR_VECTOR (listIndex, _extDB.Exts)
   {
-    int realIndex = GetRealIndex(listIndex);
+    unsigned realIndex = GetRealIndex(listIndex);
     const CExtPlugins &extInfo = _extDB.Exts[realIndex];
     CAssoc &assoc = _items[realIndex];
 
-    for (int g = 0; g < NUM_EXT_GROUPS; g++)
+    for (unsigned g = 0; g < NUM_EXT_GROUPS; g++)
     {
       CModifiedExtInfo &mi = assoc.Pair[g];
       HKEY key = GetHKey(g);
+      
       if (mi.OldState != mi.State)
       {
         LONG res2 = 0;
+        
         if (mi.State == kExtState_7Zip)
         {
-          UString title = extInfo.Ext + UString(L" Archive");
+          UString title = extInfo.Ext;
+          title.AddAscii(" Archive");
           const CPluginToIcon &plug = extInfo.Plugins[0];
           res2 = NRegistryAssoc::AddShellExtensionInfo(key, GetSystemString(extInfo.Ext),
               title, command, plug.IconPath, plug.IconIndex);
         }
         else if (mi.State == kExtState_Clear)
           res2 = NRegistryAssoc::DeleteShellExtensionInfo(key, GetSystemString(extInfo.Ext));
+        
         if (res == 0)
           res = res2;
         if (res2 == 0)
           mi.OldState = mi.State;
+        
         mi.State = mi.OldState;
         RefreshListItem(g, listIndex);
       }
     }
   }
+  
   #ifndef UNDER_CE
   SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
-  WasChanged = true;
   #endif
+
+  WasChanged = true;
+
+  _needSave = false;
+  
   if (res != 0)
     MessageBoxW(*this, NError::MyFormatMessage(res), L"7-Zip", MB_ICONERROR);
+  
   return PSNRET_NOERROR;
 }
+
 
 void CSystemPage::OnNotifyHelp()
 {
   ShowHelpWindow(NULL, kSystemTopic);
 }
+
 
 bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
@@ -313,6 +348,7 @@ bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
   return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
 }
 
+
 bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
 {
   if (lParam->hwndFrom == HWND(_listView))
@@ -324,7 +360,7 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
         ChangeState(0);
         return true;
       }
-      break;
+
       case NM_CLICK:
       {
         #ifdef UNDER_CE
@@ -334,12 +370,12 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
         if (item->uKeyFlags == 0)
         #endif
         {
-          int realIndex = GetRealIndex(item->iItem);
-          if (realIndex >= 0)
+          if (item->iItem >= 0)
           {
+            // unsigned realIndex = GetRealIndex(item->iItem);
             if (item->iSubItem >= 1 && item->iSubItem <= 2)
             {
-              CIntVector indices;
+              CUIntVector indices;
               indices.Add(item->iItem);
               ChangeState(item->iSubItem < 2 ? 0 : 1, indices);
             }
@@ -347,12 +383,14 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
         }
         break;
       }
+      
       case LVN_KEYDOWN:
       {
         if (OnListKeyDown(LPNMLVKEYDOWN(lParam)))
           return true;
         break;
       }
+      
       /*
       case NM_RCLICK:
       case NM_DBLCLK:
@@ -366,17 +404,22 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
   return CPropertyPage::OnNotify(controlID, lParam);
 }
 
-void CSystemPage::ChangeState(int group)
+
+void CSystemPage::ChangeState(unsigned group)
 {
-  CIntVector indices;
+  CUIntVector indices;
+  
   int itemIndex = -1;
   while ((itemIndex = _listView.GetNextSelectedItem(itemIndex)) != -1)
     indices.Add(itemIndex);
+  
   if (indices.IsEmpty())
     FOR_VECTOR (i, _items)
       indices.Add(i);
+  
   ChangeState(group, indices);
 }
+
 
 bool CSystemPage::OnListKeyDown(LPNMLVKEYDOWN keyDownInfo)
 {
@@ -386,8 +429,8 @@ bool CSystemPage::OnListKeyDown(LPNMLVKEYDOWN keyDownInfo)
   if (alt)
     return false;
 
-  if ((ctrl && keyDownInfo->wVKey == 'A') ||
-      (!ctrl && keyDownInfo->wVKey == VK_MULTIPLY))
+  if ((ctrl && keyDownInfo->wVKey == 'A')
+      || (!ctrl && keyDownInfo->wVKey == VK_MULTIPLY))
   {
     _listView.SelectAll();
     return true;
@@ -400,15 +443,19 @@ bool CSystemPage::OnListKeyDown(LPNMLVKEYDOWN keyDownInfo)
     case VK_SUBTRACT:
     case VK_SEPARATOR:
     case VK_DIVIDE:
+
     #ifndef UNDER_CE
     case VK_OEM_PLUS:
     case VK_OEM_MINUS:
     #endif
+
       if (!ctrl)
       {
         ChangeState(keyDownInfo->wVKey == VK_SPACE ? 0 : 1);
         return true;
       }
+      break;
   }
+
   return false;
 }

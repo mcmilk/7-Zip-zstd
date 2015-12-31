@@ -1,5 +1,5 @@
 /* CpuArch.h -- CPU specific code
-2015-10-31: Igor Pavlov : Public domain */
+2015-12-01: Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -78,7 +78,9 @@ MY_CPU_LE_UNALIGN means that CPU is LITTLE ENDIAN and CPU supports unaligned mem
     || defined(__MIPSEB) \
     || defined(_MIPSEB) \
     || defined(__m68k__) \
+    || defined(__s390__) \
     || defined(__s390x__) \
+    || defined(__zarch__) \
     || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__))
   #define MY_CPU_BE
 #endif

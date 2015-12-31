@@ -18,7 +18,7 @@ struct CVKeyPropIDPair
   PROPID PropID;
 };
 
-static CVKeyPropIDPair g_VKeyPropIDPairs[] =
+static const CVKeyPropIDPair g_VKeyPropIDPairs[] =
 {
   { VK_F3, kpidName },
   { VK_F4, kpidExtension },

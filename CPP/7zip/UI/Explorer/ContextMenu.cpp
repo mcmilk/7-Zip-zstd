@@ -241,7 +241,7 @@ static const CHashCommand g_HashCommands[] =
 
 static int FindCommand(CZipContextMenu::ECommandInternalID &id)
 {
-  for (int i = 0; i < ARRAY_SIZE(g_Commands); i++)
+  for (unsigned i = 0; i < ARRAY_SIZE(g_Commands); i++)
     if (g_Commands[i].CommandInternalID == id)
       return i;
   return -1;
@@ -287,12 +287,10 @@ static const char * const kArcExts[] =
   , "zip"
 };
 
-static bool IsItArcExt(const UString &ext2)
+static bool IsItArcExt(const UString &ext)
 {
-  UString ext = ext2;
-  ext.MakeLower_Ascii();
   for (unsigned i = 0; i < ARRAY_SIZE(kArcExts); i++)
-    if (ext.IsEqualTo(kArcExts[i]))
+    if (ext.IsEqualTo_Ascii_NoCase(kArcExts[i]))
       return true;
   return false;
 }
@@ -429,6 +427,7 @@ void CZipContextMenu::AddMapItem_ForSubMenu(const wchar_t *verb)
   _commandMap.Add(commandMapItem);
 }
 
+
 STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UINT commandIDFirst, UINT commandIDLast, UINT flags)
 {
@@ -451,12 +450,15 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   CContextMenuInfo ci;
   ci.Load();
 
+  _elimDup = ci.ElimDup;
+
   HBITMAP bitmap = NULL;
-  if (ci.MenuIcons)
+  if (ci.MenuIcons.Val)
     bitmap = _bitmap;
 
   UINT subIndex = indexMenu;
-  if (ci.Cascaded)
+  
+  if (ci.Cascaded.Val)
   {
     if (!popupMenu.CreatePopup())
       return E_FAIL;
@@ -473,15 +475,21 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   else
   {
     popupMenu.Attach(hMenu);
+    CMenuItem mi;
+    mi.fType = MFT_SEPARATOR;
+    mi.fMask = MIIM_TYPE;
+    popupMenu.InsertItem(subIndex++, true, mi);
   }
 
   UInt32 contextMenuFlags = ci.Flags;
 
   NFind::CFileInfo fi0;
   FString folderPrefix;
+  
   if (_fileNames.Size() > 0)
   {
     const UString &fileName = _fileNames.Front();
+  
     #if defined(_WIN32) && !defined(UNDER_CE)
     if (NName::IsDevicePath(us2fs(fileName)))
     {
@@ -505,6 +513,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   }
 
   UString mainString;
+  
   if (_fileNames.Size() == 1 && currentCommandID + 14 <= commandIDLast)
   {
     if (!fi0.IsDir() && DoNeedExtract(fi0.Name))
@@ -565,6 +574,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   if (_fileNames.Size() > 0 && currentCommandID + 10 <= commandIDLast)
   {
     bool needExtract = (!fi0.IsDir() && DoNeedExtract(fi0.Name));
+    
     if (!needExtract)
     {
       FOR_VECTOR (i, _fileNames)
@@ -579,7 +589,9 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         }
       }
     }
+    
     const UString &fileName = _fileNames.Front();
+    
     if (needExtract)
     {
       // Extract
@@ -629,6 +641,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
         _commandMap.Add(commandMapItem);
       }
+    
       // Test
       if ((contextMenuFlags & NContextMenuFlags::kTest) != 0)
       {
@@ -644,6 +657,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       arcName = CreateArchiveName(fi0, false);
     else
       arcName = CreateArchiveName(fileName, _fileNames.Size() > 1, false);
+    
     UString arcName7z = arcName + L".7z";
     UString arcNameZip = arcName + L".zip";
 
@@ -745,7 +759,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   // PRB: Duplicate Menu Items In the File Menu For a Shell Context Menu Extension
   // ID: Q214477
   
-  if (ci.Cascaded)
+  if (ci.Cascaded.Val)
   {
     CMenuItem mi;
     mi.fType = MFT_STRING;
@@ -756,12 +770,20 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     mi.hSubMenu = popupMenu.Detach();
     mi.StringValue.SetFromAscii("7-Zip"); // LangString(IDS_CONTEXT_POPUP_CAPTION);
     mi.hbmpUnchecked = bitmap;
+    
     CMenu menu;
     menu.Attach(hMenu);
     menuDestroyer.Disable();
     menu.InsertItem(indexMenu++, true, mi);
+    
     AddMapItem_ForSubMenu(kMainVerb);
   }
+  else
+  {
+    popupMenu.Detach();
+    indexMenu = subIndex;
+  }
+
   
   if (!_isMenuForFM &&
       ((contextMenuFlags & NContextMenuFlags::kCRC) != 0
@@ -771,6 +793,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     // CMenuDestroyer menuDestroyer_CRC;
     
     UINT subIndex_CRC = 0;
+    
     if (subMenu.CreatePopup())
     {
       // menuDestroyer_CRC.Attach(subMenu);
@@ -783,13 +806,15 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       mi.hSubMenu = subMenu;
       mi.StringValue.SetFromAscii("CRC SHA");
       mi.hbmpUnchecked = bitmap;
+      
       CMenu menu;
       menu.Attach(hMenu);
       // menuDestroyer_CRC.Disable();
       menu.InsertItem(indexMenu++, true, mi);
+      
       AddMapItem_ForSubMenu(kCheckSumCascadedVerb);
 
-      for (int i = 0; i < ARRAY_SIZE(g_HashCommands); i++)
+      for (unsigned i = 0; i < ARRAY_SIZE(g_HashCommands); i++)
       {
         const CHashCommand &hc = g_HashCommands[i];
         CCommandMapItem commandMapItem;
@@ -799,6 +824,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         MyInsertMenu(subMenu, subIndex_CRC++, currentCommandID++, hc.UserName, bitmap);
         _commandMap.Add(commandMapItem);
       }
+      
       subMenu.Detach();
     }
   }
@@ -872,7 +898,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
       {
         ExtractArchives(_fileNames, commandMapItem.Folder,
             (cmdID == kExtract), // showDialog
-            (cmdID == kExtractTo) // elimDup
+            (cmdID == kExtractTo) && _elimDup.Val // elimDup
             );
         break;
       }
@@ -902,12 +928,14 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
             _fileNames, email, showDialog, false);
         break;
       }
+      
       case kHash_CRC32:
       case kHash_CRC64:
       case kHash_SHA1:
       case kHash_SHA256:
       case kHash_All:
-        for (int i = 0; i < ARRAY_SIZE(g_HashCommands); i++)
+      {
+        for (unsigned i = 0; i < ARRAY_SIZE(g_HashCommands); i++)
         {
           const CHashCommand &hc = g_HashCommands[i];
           if (hc.CommandInternalID == cmdID)
@@ -917,6 +945,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
           }
         }
         break;
+      }
     }
   }
   catch(...)

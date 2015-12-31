@@ -25,6 +25,7 @@ struct COtherArc
   }
 };
 
+
 struct CArchInfo
 {
   Byte VersionMinor; // cabinet file format version, minor
@@ -64,6 +65,7 @@ struct CArchInfo
     NextArc.Clear();
   }
 };
+
 
 struct CInArcInfo: public CArchInfo
 {
@@ -105,16 +107,19 @@ struct CDatabase
   }
 };
 
+
 struct CDatabaseEx: public CDatabase
 {
   CMyComPtr<IInStream> Stream;
 };
+
 
 struct CMvItem
 {
   unsigned VolumeIndex;
   unsigned ItemIndex;
 };
+
 
 class CMvDatabaseEx
 {

@@ -15,37 +15,27 @@ void ReadRegEditor(bool useEditor, UString &path);
 void SaveRegDiff(const UString &path);
 void ReadRegDiff(UString &path);
 
-void SaveShowDots(bool showDots);
-bool ReadShowDots();
+struct CFmSettings
+{
+  bool ShowDots;
+  bool ShowRealFileIcons;
+  bool FullRow;
+  bool ShowGrid;
+  bool SingleClick;
+  bool AlternativeSelection;
+  // bool Underline;
 
-void SaveShowRealFileIcons(bool show);
-bool ReadShowRealFileIcons();
+  bool ShowSystemMenu;
 
-void Save_ShowSystemMenu(bool showSystemMenu);
-bool Read_ShowSystemMenu();
-
-void SaveFullRow(bool enable);
-bool ReadFullRow();
-
-void SaveShowGrid(bool enable);
-bool ReadShowGrid();
-
-void SaveAlternativeSelection(bool enable);
-bool ReadAlternativeSelection();
+  void Save() const;
+  void Load();
+};
 
 // void SaveLockMemoryAdd(bool enable);
 // bool ReadLockMemoryAdd();
 
 bool ReadLockMemoryEnable();
 void SaveLockMemoryEnable(bool enable);
-
-void SaveSingleClick(bool enable);
-bool ReadSingleClick();
-
-/*
-void SaveUnderline(bool enable);
-bool ReadUnderline();
-*/
 
 void SaveFlatView(UInt32 panelIndex, bool enable);
 bool ReadFlatView(UInt32 panelIndex);

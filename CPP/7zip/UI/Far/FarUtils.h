@@ -190,6 +190,8 @@ int ShowLastErrorMessage();
 
 bool WasEscPressed();
 
+void ReduceString(UString &s, unsigned size);
+
 }
 
 #endif

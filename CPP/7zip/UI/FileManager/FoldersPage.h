@@ -10,11 +10,14 @@
 class CFoldersPage : public NWindows::NControl::CPropertyPage
 {
   NWorkDir::CInfo m_WorkDirInfo;
+  NWindows::NControl::CDialogChildControl m_WorkPath;
+
+  bool _needSave;
+  bool _initMode;
 
   void MyEnableControls();
   void ModifiedEvent();
-  NWindows::NControl::CDialogChildControl m_WorkPath;
-  NWindows::NControl::CDialogChildControl m_ButtonSetWorkPath;
+  
   void OnFoldersWorkButtonPath();
   int GetWorkMode() const;
   void GetWorkDir(NWorkDir::CInfo &workDirInfo);

@@ -1265,7 +1265,7 @@ if (askExtractMode == NArchive::NExtract::NAskMode::kExtract && !_testMode)
                 CReparseAttr attr;
                 if (!attr.Parse(data, data.Size()))
                 {
-                  RINOK(SendMessageError("Internal error for symbolic link file", _item.Path));
+                  RINOK(SendMessageError("Internal error for symbolic link file", us2fs(_item.Path)));
                   // return E_FAIL;
                 }
                 else

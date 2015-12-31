@@ -3,14 +3,11 @@
 #ifndef __REGISTRY_CONTEXT_MENU_H
 #define __REGISTRY_CONTEXT_MENU_H
 
-namespace NZipRootRegistry {
-
 #ifndef UNDER_CE
-  bool CheckContextMenuHandler();
-  void AddContextMenuHandler();
-  void DeleteContextMenuHandler();
-#endif
 
-}
+bool CheckContextMenuHandler(const UString &path, UInt32 wow = 0);
+LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow = 0);
+
+#endif
 
 #endif

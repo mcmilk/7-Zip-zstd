@@ -2,7 +2,7 @@
 #include "../../GuiCommon.rc"
 
 #define xc 240
-#define yc 196
+#define yc 224
 
 IDD_MENU  MY_PAGE
 #include "MenuPage2.rc"

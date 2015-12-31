@@ -72,17 +72,18 @@ void CApp::ReloadLang()
 
 void CApp::SetListSettings()
 {
-  bool showDots = ReadShowDots();
-  bool showRealFileIcons = ReadShowRealFileIcons();
+  CFmSettings st;
+  st.Load();
+
+  ShowSystemMenu = st.ShowSystemMenu;
 
   DWORD extendedStyle = LVS_EX_HEADERDRAGDROP;
-  if (ReadFullRow())
+  if (st.FullRow)
     extendedStyle |= LVS_EX_FULLROWSELECT;
-  if (ReadShowGrid())
+  if (st.ShowGrid)
     extendedStyle |= LVS_EX_GRIDLINES;
-  bool mySelectionMode = ReadAlternativeSelection();
   
-  if (ReadSingleClick())
+  if (st.SingleClick)
   {
     extendedStyle |= LVS_EX_ONECLICKACTIVATE | LVS_EX_TRACKSELECT;
     /*
@@ -91,27 +92,22 @@ void CApp::SetListSettings()
     */
   }
 
-  for (int i = 0; i < kNumPanelsMax; i++)
+  for (unsigned i = 0; i < kNumPanelsMax; i++)
   {
     CPanel &panel = Panels[i];
-    panel._mySelectMode = mySelectionMode;
-    panel._showDots = showDots;
-    panel._showRealFileIcons = showRealFileIcons;
+    panel._mySelectMode = st.AlternativeSelection;
+    panel._showDots = st.ShowDots;
+    panel._showRealFileIcons = st.ShowRealFileIcons;
     panel._exStyle = extendedStyle;
 
     DWORD style = (DWORD)panel._listView.GetStyle();
-    if (mySelectionMode)
+    if (st.AlternativeSelection)
       style |= LVS_SINGLESEL;
     else
       style &= ~LVS_SINGLESEL;
     panel._listView.SetStyle(style);
     panel.SetExtendedStyle();
   }
-}
-
-void CApp::SetShowSystemMenu()
-{
-  ShowSystemMenu = Read_ShowSystemMenu();
 }
 
 #ifndef ILC_COLOR32
@@ -179,7 +175,7 @@ struct CButtonInfo
   UString GetText() const { return LangString(StringResID); }
 };
 
-static CButtonInfo g_StandardButtons[] =
+static const CButtonInfo g_StandardButtons[] =
 {
   { IDM_COPY_TO,    IDB_COPY,   IDB_COPY2,   IDS_BUTTON_COPY },
   { IDM_MOVE_TO,    IDB_MOVE,   IDB_MOVE2,   IDS_BUTTON_MOVE },
@@ -187,16 +183,16 @@ static CButtonInfo g_StandardButtons[] =
   { IDM_PROPERTIES, IDB_INFO,   IDB_INFO2,   IDS_BUTTON_INFO }
 };
 
-static CButtonInfo g_ArchiveButtons[] =
+static const CButtonInfo g_ArchiveButtons[] =
 {
   { kMenuCmdID_Toolbar_Add,     IDB_ADD,     IDB_ADD2,     IDS_ADD },
   { kMenuCmdID_Toolbar_Extract, IDB_EXTRACT, IDB_EXTRACT2, IDS_EXTRACT },
   { kMenuCmdID_Toolbar_Test,    IDB_TEST,    IDB_TEST2,    IDS_TEST }
 };
 
-static bool SetButtonText(int commandID, CButtonInfo *buttons, int numButtons, UString &s)
+static bool SetButtonText(int commandID, const CButtonInfo *buttons, unsigned numButtons, UString &s)
 {
-  for (int i = 0; i < numButtons; i++)
+  for (unsigned i = 0; i < numButtons; i++)
   {
     const CButtonInfo &b = buttons[i];
     if (b.CommandID == commandID)
@@ -218,7 +214,7 @@ static void SetButtonText(int commandID, UString &s)
 static void AddButton(
     NControl::CImageList &imageList,
     NControl::CToolBar &toolBar,
-    CButtonInfo &butInfo, bool showText, bool large)
+    const CButtonInfo &butInfo, bool showText, bool large)
 {
   TBBUTTON but;
   but.iBitmap = 0;
@@ -258,7 +254,7 @@ void CApp::ReloadToolbars()
   if (ShowArchiveToolbar || ShowStandardToolbar)
   {
     CreateToolbar(_window, _buttonsImageList, _toolBar, LargeButtons);
-    int i;
+    unsigned i;
     if (ShowArchiveToolbar)
       for (i = 0; i < ARRAY_SIZE(g_ArchiveButtons); i++)
         AddButton(_buttonsImageList, _toolBar, g_ArchiveButtons[i], ShowButtonsLables, LargeButtons);
@@ -282,10 +278,13 @@ void MyLoadMenu();
 HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool &archiveIsOpened, bool &encrypted)
 {
   _window.Attach(hwnd);
+
   #ifdef UNDER_CE
   _commandBar.Create(g_hInstance, hwnd, 1);
   #endif
+
   MyLoadMenu();
+  
   #ifdef UNDER_CE
   _commandBar.AutoSize();
   #endif
@@ -298,14 +297,16 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
     PanelsCreated[i] = false;
 
   AppState.Read();
+  
   SetListSettings();
-  SetShowSystemMenu();
+
   if (LastFocusedPanel >= kNumPanelsMax)
     LastFocusedPanel = 0;
   // ShowDeletedFiles = Read_ShowDeleted();
 
   CListMode listMode;
   listMode.Read();
+  
   for (i = 0; i < kNumPanelsMax; i++)
   {
     CPanel &panel = Panels[i];
@@ -313,6 +314,7 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
     panel._xSize = xSizes[i];
     panel._flatModeForArc = ReadFlatView(i);
   }
+  
   for (i = 0; i < kNumPanelsMax; i++)
     if (NumPanels > 1 || i == LastFocusedPanel)
     {
@@ -328,6 +330,7 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
         encrypted = encrypted2;
       }
     }
+  
   SetFocusedPanel(LastFocusedPanel);
   Panels[LastFocusedPanel].SetFocusToList();
   return S_OK;
@@ -357,7 +360,8 @@ void CApp::Save()
 {
   AppState.Save();
   CListMode listMode;
-  for (int i = 0; i < kNumPanelsMax; i++)
+  
+  for (unsigned i = 0; i < kNumPanelsMax; i++)
   {
     const CPanel &panel = Panels[i];
     UString path;
@@ -370,6 +374,7 @@ void CApp::Save()
     listMode.Panels[i] = panel.GetListViewMode();
     SaveFlatView(i, panel._flatModeForArc);
   }
+  
   listMode.Save();
   // Save_ShowDeleted(ShowDeletedFiles);
 }
@@ -377,7 +382,7 @@ void CApp::Save()
 void CApp::Release()
 {
   // It's for unloading COM dll's: don't change it.
-  for (int i = 0; i < kNumPanelsMax; i++)
+  for (unsigned i = 0; i < kNumPanelsMax; i++)
     Panels[i].Release();
 }
 
@@ -467,6 +472,7 @@ UString CPanel::GetItemsInfoString(const CRecordVector<UInt32> &indices)
   UString info;
   UInt64 numDirs, numFiles, filesSize, foldersSize;
   numDirs = numFiles = filesSize = foldersSize = 0;
+  
   unsigned i;
   for (i = 0; i < indices.Size(); i++)
   {

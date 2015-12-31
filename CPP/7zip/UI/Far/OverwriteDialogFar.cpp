@@ -68,8 +68,17 @@ NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInf
   SetFileInfoStrings(oldFileInfo, oldFileInfoStrings);
   SetFileInfoStrings(newFileInfo, newFileInfoStrings);
 
-  AString oldName = UnicodeStringToMultiByte(oldFileInfo.Name, CP_OEMCP);
-  AString newName = UnicodeStringToMultiByte(newFileInfo.Name, CP_OEMCP);
+  UString oldName2 = oldFileInfo.Name;
+  UString newName2 = newFileInfo.Name;
+
+  {
+    const unsigned maxNameLen = kXSize - 9 - 2;
+    ReduceString(oldName2, maxNameLen);
+    ReduceString(newName2, maxNameLen);
+  }
+
+  AString oldName = UnicodeStringToMultiByte(oldName2);
+  AString newName = UnicodeStringToMultiByte(newName2);
 
   struct CInitDialogItem initItems[]={
     { DI_DOUBLEBOX, 3, 1, kXSize - 4, kYSize - 2, false, false, 0, false, NMessageID::kOverwriteTitle, NULL, NULL },

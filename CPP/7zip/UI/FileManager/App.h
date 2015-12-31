@@ -258,7 +258,6 @@ public:
   */
 
   void SetListSettings();
-  void SetShowSystemMenu();
   HRESULT SwitchOnOffOnePanel();
   
   bool GetFlatMode() { return Panels[LastFocusedPanel].GetFlatMode(); }

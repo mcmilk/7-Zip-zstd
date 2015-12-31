@@ -18,7 +18,9 @@ bool CListViewDialog::OnInit()
   #endif
   _listView.Attach(GetItem(IDL_LISTVIEW));
 
-  if (ReadSingleClick())
+  CFmSettings st;
+  st.Load();
+  if (st.SingleClick)
     _listView.SetExtendedListViewStyle(LVS_EX_ONECLICKACTIVATE | LVS_EX_TRACKSELECT);
 
   SetText(Title);

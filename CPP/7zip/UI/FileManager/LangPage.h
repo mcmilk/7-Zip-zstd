@@ -10,10 +10,12 @@ class CLangPage: public NWindows::NControl::CPropertyPage
 {
   NWindows::NControl::CComboBox _langCombo;
   UStringVector _paths;
+
+  bool _needSave;
 public:
   bool LangWasChanged;
   
-  CLangPage() { LangWasChanged =  false; }
+  CLangPage(): _needSave(false), LangWasChanged(false) {}
   virtual bool OnInit();
   virtual void OnNotifyHelp();
   virtual bool OnCommand(int code, int itemID, LPARAM param);

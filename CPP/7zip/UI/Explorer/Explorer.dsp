@@ -538,13 +538,5 @@ SOURCE=".\7-zip.dll.manifest"
 
 SOURCE=.\ContextMenuFlags.h
 # End Source File
-# Begin Source File
-
-SOURCE=.\RegistryContextMenu.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\RegistryContextMenu.h
-# End Source File
 # End Target
 # End Project

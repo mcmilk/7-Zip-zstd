@@ -841,4 +841,28 @@ public:
   ~CMyBuffer() { ::MidFree(_data); }
 };
 
+class CExitEventLauncher
+{
+public:
+  NWindows::NSynchronization::CManualResetEvent _exitEvent;
+  bool _needExit;
+  CRecordVector< ::CThread > _threads;
+  unsigned _numActiveThreads;
+    
+  CExitEventLauncher()
+  {
+    _needExit = false;
+    if (_exitEvent.Create(false) != S_OK)
+      throw 9387173;
+    _needExit = true;
+    _numActiveThreads = 0;
+  };
+
+  ~CExitEventLauncher() { Exit(true); }
+
+  void Exit(bool hardExit);
+};
+
+extern CExitEventLauncher g_ExitEventLauncher;
+
 #endif

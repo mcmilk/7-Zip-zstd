@@ -59,7 +59,7 @@ struct CAssoc
 
   int GetIconIndex() const
   {
-    for (int i = 0; i < 2; i++)
+    for (unsigned i = 0; i < 2; i++)
     {
       const CModifiedExtInfo &pair = Pair[i];
       if (pair.State == kExtState_Clear)
@@ -84,11 +84,13 @@ class CSystemPage: public NWindows::NControl::CPropertyPage
   CExtDatabase _extDB;
   CObjectVector<CAssoc> _items;
 
-  int _numIcons;
+  unsigned _numIcons;
   NWindows::NControl::CImageList _imageList;
   NWindows::NControl::CListView _listView;
 
-  const HKEY GetHKey(int
+  bool _needSave;
+
+  const HKEY GetHKey(unsigned
       #if NUM_EXT_GROUPS != 1
         group
       #endif
@@ -102,15 +104,16 @@ class CSystemPage: public NWindows::NControl::CPropertyPage
   }
 
   int AddIcon(const UString &path, int iconIndex);
-  int GetRealIndex(int listIndex) const { return listIndex; }
-  void RefreshListItem(int group, int listIndex);
-  void ChangeState(int group, const CIntVector &indices);
-  void ChangeState(int group);
+  unsigned GetRealIndex(unsigned listIndex) const { return listIndex; }
+  void RefreshListItem(unsigned group, unsigned listIndex);
+  void ChangeState(unsigned group, const CUIntVector &indices);
+  void ChangeState(unsigned group);
 
   bool OnListKeyDown(LPNMLVKEYDOWN keyDownInfo);
   
 public:
   bool WasChanged;
+  
   CSystemPage(): WasChanged(false) {}
 
   virtual bool OnInit();

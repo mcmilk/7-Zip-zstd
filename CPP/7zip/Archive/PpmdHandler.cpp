@@ -1,5 +1,5 @@
-/* PpmdHandler.c -- PPMd format handler
-2010-03-10 : Igor Pavlov : Public domain
+/* PpmdHandler.cpp -- PPMd format handler
+2015-11-30 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.H (2001) / var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -349,6 +349,7 @@ struct CPpmdCpp
   }
 };
 
+
 STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
@@ -386,13 +387,17 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CPpmdCpp ppmd(_item.Ver);
   if (!ppmd.Alloc(_item.MemInMB))
     return E_OUTOFMEMORY;
+  
   Int32 opRes = NExtract::NOperationResult::kUnsupportedMethod;
+
   if (_item.IsSupported())
   {
     opRes = NExtract::NOperationResult::kDataError;
+    
     ppmd.Init(_item.Order, _item.Restor);
     inBuf.Init();
     UInt64 outSize = 0;
+    
     if (ppmd.InitRc(&inBuf) && !inBuf.Extra && inBuf.Res == S_OK)
     for (;;)
     {
@@ -431,6 +436,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         RINOK(WriteStream(realOutStream, outBuf.Buf, i));
       }
+
+      if (inBuf.Extra)
+      {
+        opRes = NExtract::NOperationResult::kUnexpectedEnd;
+        break;
+      }
+
       if (sym < 0)
       {
         if (sym == -1 && ppmd.IsFinishedOK())
@@ -438,11 +450,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         break;
       }
     }
+    
     RINOK(inBuf.Res);
   }
+  
   realOutStream.Release();
   return extractCallback->SetOperationResult(opRes);
 }
+
 
 static const Byte k_Signature[] = { 0x8F, 0xAF, 0xAC, 0x84 };
 

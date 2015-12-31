@@ -7,7 +7,6 @@
 
 #include "../../../Common/MyBuffer.h"
 #include "../../../Common/MyString.h"
-#include "../../../Common/StringConvert.h"
 #include "../../../Common/UTFConvert.h"
 
 #include "ZipHeader.h"
@@ -28,6 +27,23 @@ struct CExtraSubBlock
 
   bool ExtractNtfsTime(unsigned index, FILETIME &ft) const;
   bool ExtractUnixTime(bool isCentral, unsigned index, UInt32 &res) const;
+  
+  bool ExtractIzUnicode(UInt32 crc, AString &name) const
+  {
+    unsigned size = (unsigned)Data.Size();
+    if (size < 1 + 4)
+      return false;
+    const Byte *p = (const Byte *)Data;
+    if (p[0] > 1)
+      return false;
+    if (crc != GetUi32(p + 1))
+      return false;
+    size -= 5;
+    name.SetFrom_CalcLen((const char *)p + 5, size);
+    if (size != name.Len())
+      return false;
+    return CheckUTF8(name, false);
+  }
 };
 
 const unsigned k_WzAesExtra_Size = 7;
@@ -157,27 +173,8 @@ struct CExtraBlock
   }
   */
 
-  bool GetNtfsTime(unsigned index, FILETIME &ft) const
-  {
-    FOR_VECTOR (i, SubBlocks)
-    {
-      const CExtraSubBlock &sb = SubBlocks[i];
-      if (sb.ID == NFileHeader::NExtraID::kNTFS)
-        return sb.ExtractNtfsTime(index, ft);
-    }
-    return false;
-  }
-
-  bool GetUnixTime(bool isCentral, unsigned index, UInt32 &res) const
-  {
-    FOR_VECTOR (i, SubBlocks)
-    {
-      const CExtraSubBlock &sb = SubBlocks[i];
-      if (sb.ID == NFileHeader::NExtraID::kUnixTime)
-        return sb.ExtractUnixTime(isCentral, index, res);
-    }
-    return false;
-  }
+  bool GetNtfsTime(unsigned index, FILETIME &ft) const;
+  bool GetUnixTime(bool isCentral, unsigned index, UInt32 &res) const;
 
   void RemoveUnknownSubBlocks()
   {
@@ -274,45 +271,22 @@ public:
     MadeByVersion.HostOS = 0;
   }
 
+  const CExtraBlock &GetMainExtra() const { return *(FromCentral ? &CentralExtra : &LocalExtra); }
+
   bool IsDir() const;
   UInt32 GetWinAttrib() const;
   bool GetPosixAttrib(UInt32 &attrib) const;
 
   Byte GetHostOS() const { return FromCentral ? MadeByVersion.HostOS : ExtractVersion.HostOS; }
 
-  void GetUnicodeString(const AString &s, UString &res, bool useSpecifiedCodePage, UINT codePage) const
-  {
-    bool isUtf8 = IsUtf8();
-    bool ignore_Utf8_Errors = true;
-
-    #ifdef _WIN32
-    if (!isUtf8)
-    {
-      if (useSpecifiedCodePage)
-        isUtf8 = (codePage == CP_UTF8);
-      else if (GetHostOS() == NFileHeader::NHostOS::kUnix)
-      {
-        /* Some ZIP archives in Unix use UTF-8 encoding without Utf8 flag in header.
-           We try to get name as UTF-8.
-           Do we need to do it in POSIX version also? */
-        isUtf8 = true;
-        ignore_Utf8_Errors = false;
-      }
-    }
-    #endif
-
-    if (isUtf8)
-      if (ConvertUTF8ToUnicode(s, res) || ignore_Utf8_Errors)
-        return;
-    MultiByteToUnicodeString2(res, s, useSpecifiedCodePage ? codePage : GetCodePage());
-  }
+  void GetUnicodeString(UString &res, const AString &s, bool isComment, bool useSpecifiedCodePage, UINT codePage) const;
 
   bool IsThereCrc() const
   {
     if (Method == NFileHeader::NCompressionMethod::kWzAES)
     {
       CWzAesExtra aesField;
-      if (CentralExtra.GetWzAes(aesField))
+      if (GetMainExtra().GetWzAes(aesField))
         return aesField.NeedCrc();
     }
     return (Crc != 0 || !IsDir());
@@ -322,8 +296,10 @@ public:
   {
     Byte hostOS = GetHostOS();
     return (UINT)((
-        hostOS == NFileHeader::NHostOS::kFAT ||
-        hostOS == NFileHeader::NHostOS::kNTFS) ? CP_OEMCP : CP_ACP);
+           hostOS == NFileHeader::NHostOS::kFAT
+        || hostOS == NFileHeader::NHostOS::kNTFS
+        || hostOS == NFileHeader::NHostOS::kUnix // do we need it?
+        ) ? CP_OEMCP : CP_ACP);
   }
 };
 

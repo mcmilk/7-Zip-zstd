@@ -209,7 +209,23 @@ STDMETHODIMP CDropSource::QueryContinueDrag(BOOL escapePressed, DWORD keyState)
     {
       CCopyToOptions options;
       options.folder = Folder;
+
+      // 15.13: fixed problem with mouse cursor for password window.
+      // DoDragDrop() probably calls SetCapture() to some hidden window.
+      // But it's problem, if we show some modal window, like MessageBox.
+      // So we return capture to our window.
+      // If you know better way to solve the problem, please notify 7-Zip developer.
+      
+      // MessageBoxW(*Panel, L"test", L"test", 0);
+
+      /* HWND oldHwnd = */ SetCapture(*Panel);
+
       Result = Panel->CopyTo(options, Indices, &Messages);
+
+      // do we need to restore capture?
+      // ReleaseCapture();
+      // oldHwnd = SetCapture(oldHwnd);
+
       if (Result != S_OK || !Messages.IsEmpty())
         return DRAGDROP_S_CANCEL;
     }
@@ -357,10 +373,14 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
     effectsOK |= DROPEFFECT_MOVE;
   DWORD effect;
   _panelCallback->DragBegin();
+  
   HRESULT res = DoDragDrop(dataObject, dropSource, effectsOK, &effect);
+  
   _panelCallback->DragEnd();
   bool canceled = (res == DRAGDROP_S_CANCEL);
+  
   CDisableNotify disableNotify(*this);
+  
   if (res == DRAGDROP_S_DROP)
   {
     res = dropSourceSpec->Result;

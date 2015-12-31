@@ -3,8 +3,10 @@
 #include "StdAfx.h"
 
 #include "../../../../C/CpuArch.h"
+#include "../../../../C/7zCrc.h"
 
 #include "../../../Common/MyLinux.h"
+#include "../../../Common/StringConvert.h"
 
 #include "../Common/ItemNameUtils.h"
 
@@ -80,6 +82,30 @@ bool CExtraSubBlock::ExtractUnixTime(bool isCentral, unsigned index, UInt32 &res
   return false;
 }
 
+
+bool CExtraBlock::GetNtfsTime(unsigned index, FILETIME &ft) const
+{
+  FOR_VECTOR (i, SubBlocks)
+  {
+    const CExtraSubBlock &sb = SubBlocks[i];
+    if (sb.ID == NFileHeader::NExtraID::kNTFS)
+      return sb.ExtractNtfsTime(index, ft);
+  }
+  return false;
+}
+
+bool CExtraBlock::GetUnixTime(bool isCentral, unsigned index, UInt32 &res) const
+{
+  FOR_VECTOR (i, SubBlocks)
+  {
+    const CExtraSubBlock &sb = SubBlocks[i];
+    if (sb.ID == NFileHeader::NExtraID::kUnixTime)
+      return sb.ExtractUnixTime(isCentral, index, res);
+  }
+  return false;
+}
+
+
 bool CLocalItem::IsDir() const
 {
   return NItemName::HasTailSlash(Name, GetCodePage());
@@ -89,12 +115,29 @@ bool CItem::IsDir() const
 {
   if (NItemName::HasTailSlash(Name, GetCodePage()))
     return true;
+  
+  Byte hostOS = GetHostOS();
+
+  if (Size == 0 && PackSize == 0 && !Name.IsEmpty() && Name.Back() == '\\')
+  {
+    // do we need to use CharPrevExA?
+    // .NET Framework 4.5 : System.IO.Compression::CreateFromDirectory() probably writes backslashes to headers?
+    // so we support that case
+    switch (hostOS)
+    {
+      case NHostOS::kFAT:
+      case NHostOS::kNTFS:
+      case NHostOS::kHPFS:
+      case NHostOS::kVFAT:
+        return true;
+    }
+  }
+
   if (!FromCentral)
     return false;
   
   UInt16 highAttrib = (UInt16)((ExternalAttrib >> 16 ) & 0xFFFF);
 
-  Byte hostOS = GetHostOS();
   switch (hostOS)
   {
     case NHostOS::kAMIGA:
@@ -156,6 +199,55 @@ bool CItem::GetPosixAttrib(UInt32 &attrib) const
   if (IsDir())
     attrib = MY_LIN_S_IFDIR;
   return false;
+}
+
+void CItem::GetUnicodeString(UString &res, const AString &s, bool isComment, bool useSpecifiedCodePage, UINT codePage) const
+{
+  bool isUtf8 = IsUtf8();
+  bool ignore_Utf8_Errors = true;
+  
+  if (!isUtf8)
+  {
+    {
+      const unsigned id = isComment ?
+          NFileHeader::NExtraID::kIzUnicodeComment:
+          NFileHeader::NExtraID::kIzUnicodeName;
+      const CObjectVector<CExtraSubBlock> &subBlocks = GetMainExtra().SubBlocks;
+      
+      FOR_VECTOR (i, subBlocks)
+      {
+        const CExtraSubBlock &sb = subBlocks[i];
+        if (sb.ID == id)
+        {
+          AString utf;
+          if (sb.ExtractIzUnicode(CrcCalc(s, s.Len()), utf))
+            if (ConvertUTF8ToUnicode(utf, res))
+              return;
+          break;
+        }
+      }
+    }
+    
+    if (useSpecifiedCodePage)
+      isUtf8 = (codePage == CP_UTF8);
+    #ifdef _WIN32
+    else if (GetHostOS() == NFileHeader::NHostOS::kUnix)
+    {
+      /* Some ZIP archives in Unix use UTF-8 encoding without Utf8 flag in header.
+         We try to get name as UTF-8.
+         Do we need to do it in POSIX version also? */
+      isUtf8 = true;
+      ignore_Utf8_Errors = false;
+    }
+    #endif
+  }
+  
+  
+  if (isUtf8)
+    if (ConvertUTF8ToUnicode(s, res) || ignore_Utf8_Errors)
+      return;
+  
+  MultiByteToUnicodeString2(res, s, useSpecifiedCodePage ? codePage : GetCodePage());
 }
 
 }}

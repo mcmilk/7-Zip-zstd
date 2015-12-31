@@ -160,10 +160,13 @@ bool CHeader::Parse(const Byte *p)
   if (NumFats < 1 || NumFats > 4)
     return false;
 
+  // we also support images that contain 0 in offset field.
+  bool isOkOffset = (codeOffset == 0 || (p[0] == 0xEB && p[1] == 0));
+
   UInt16 numRootDirEntries = Get16(p + 17);
   if (numRootDirEntries == 0)
   {
-    if (codeOffset < 90)
+    if (codeOffset < 90 && !isOkOffset)
       return false;
     NumFatBits = 32;
     NumRootDirSectors = 0;
@@ -171,7 +174,7 @@ bool CHeader::Parse(const Byte *p)
   else
   {
     // Some FAT12s don't contain VolFields
-    if (codeOffset < 62 - 24)
+    if (codeOffset < 62 - 24 && !isOkOffset)
       return false;
     NumFatBits = 0;
     UInt32 mask = (1 << (SectorSizeLog - 5)) - 1;

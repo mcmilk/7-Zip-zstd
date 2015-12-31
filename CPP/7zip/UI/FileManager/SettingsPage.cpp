@@ -35,21 +35,29 @@ extern bool IsLargePageSupported();
 
 bool CSettingsPage::OnInit()
 {
+  _wasChanged = false;
+  _largePages_wasChanged = false;
+
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
 
-  CheckButton(IDX_SETTINGS_SHOW_DOTS, ReadShowDots());
-  CheckButton(IDX_SETTINGS_SHOW_SYSTEM_MENU, Read_ShowSystemMenu());
-  CheckButton(IDX_SETTINGS_SHOW_REAL_FILE_ICONS, ReadShowRealFileIcons());
-  CheckButton(IDX_SETTINGS_FULL_ROW, ReadFullRow());
-  CheckButton(IDX_SETTINGS_SHOW_GRID, ReadShowGrid());
-  CheckButton(IDX_SETTINGS_ALTERNATIVE_SELECTION, ReadAlternativeSelection());
+  CFmSettings st;
+  st.Load();
+
+  CheckButton(IDX_SETTINGS_SHOW_DOTS, st.ShowDots);
+  CheckButton(IDX_SETTINGS_SHOW_REAL_FILE_ICONS, st.ShowRealFileIcons);
+  CheckButton(IDX_SETTINGS_FULL_ROW, st.FullRow);
+  CheckButton(IDX_SETTINGS_SHOW_GRID, st.ShowGrid);
+  CheckButton(IDX_SETTINGS_SINGLE_CLICK, st.SingleClick);
+  CheckButton(IDX_SETTINGS_ALTERNATIVE_SELECTION, st.AlternativeSelection);
+  // CheckButton(IDX_SETTINGS_UNDERLINE, st.Underline);
+
+  CheckButton(IDX_SETTINGS_SHOW_SYSTEM_MENU, st.ShowSystemMenu);
+  
   if (IsLargePageSupported())
     CheckButton(IDX_SETTINGS_LARGE_PAGES, ReadLockMemoryEnable());
   else
     EnableItem(IDX_SETTINGS_LARGE_PAGES, false);
-  CheckButton(IDX_SETTINGS_SINGLE_CLICK, ReadSingleClick());
-  // CheckButton(IDX_SETTINGS_UNDERLINE, ReadUnderline());
-
+  
   // EnableSubItems();
 
   return CPropertyPage::OnInit();
@@ -64,25 +72,37 @@ void CSettingsPage::EnableSubItems()
 
 LONG CSettingsPage::OnApply()
 {
-  SaveShowDots(IsButtonCheckedBool(IDX_SETTINGS_SHOW_DOTS));
-  Save_ShowSystemMenu(IsButtonCheckedBool(IDX_SETTINGS_SHOW_SYSTEM_MENU));
-  SaveShowRealFileIcons(IsButtonCheckedBool(IDX_SETTINGS_SHOW_REAL_FILE_ICONS));
-
-  SaveFullRow(IsButtonCheckedBool(IDX_SETTINGS_FULL_ROW));
-  SaveShowGrid(IsButtonCheckedBool(IDX_SETTINGS_SHOW_GRID));
-  SaveAlternativeSelection(IsButtonCheckedBool(IDX_SETTINGS_ALTERNATIVE_SELECTION));
-  #ifndef UNDER_CE
-  if (IsLargePageSupported())
+  if (_wasChanged)
   {
-    bool enable = IsButtonCheckedBool(IDX_SETTINGS_LARGE_PAGES);
-    NSecurity::EnablePrivilege_LockMemory(enable);
-    SaveLockMemoryEnable(enable);
+    CFmSettings st;
+    st.ShowDots = IsButtonCheckedBool(IDX_SETTINGS_SHOW_DOTS);
+    st.ShowRealFileIcons = IsButtonCheckedBool(IDX_SETTINGS_SHOW_REAL_FILE_ICONS);
+    st.FullRow = IsButtonCheckedBool(IDX_SETTINGS_FULL_ROW);
+    st.ShowGrid = IsButtonCheckedBool(IDX_SETTINGS_SHOW_GRID);
+    st.SingleClick = IsButtonCheckedBool(IDX_SETTINGS_SINGLE_CLICK);
+    st.AlternativeSelection = IsButtonCheckedBool(IDX_SETTINGS_ALTERNATIVE_SELECTION);
+    // st.Underline = IsButtonCheckedBool(IDX_SETTINGS_UNDERLINE);
+    
+    st.ShowSystemMenu = IsButtonCheckedBool(IDX_SETTINGS_SHOW_SYSTEM_MENU);
+
+    st.Save();
+    
+    _wasChanged = false;
+  }
+  
+  #ifndef UNDER_CE
+  if (_largePages_wasChanged)
+  {
+    if (IsLargePageSupported())
+    {
+      bool enable = IsButtonCheckedBool(IDX_SETTINGS_LARGE_PAGES);
+      NSecurity::EnablePrivilege_LockMemory(enable);
+      SaveLockMemoryEnable(enable);
+    }
+    _largePages_wasChanged = false;
   }
   #endif
   
-  SaveSingleClick(IsButtonCheckedBool(IDX_SETTINGS_SINGLE_CLICK));
-  // SaveUnderline(IsButtonCheckedBool(IDX_SETTINGS_UNDERLINE));
-
   return PSNRET_NOERROR;
 }
 
@@ -106,9 +126,17 @@ bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
     case IDX_SETTINGS_FULL_ROW:
     case IDX_SETTINGS_SHOW_GRID:
     case IDX_SETTINGS_ALTERNATIVE_SELECTION:
+      _wasChanged = true;
+      break;
+
     case IDX_SETTINGS_LARGE_PAGES:
-      Changed();
-      return true;
+      _largePages_wasChanged = true;
+      break;
+
+    default:
+      return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
   }
-  return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
+
+  Changed();
+  return true;
 }

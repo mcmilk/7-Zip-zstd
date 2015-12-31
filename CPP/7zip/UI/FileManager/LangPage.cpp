@@ -84,14 +84,16 @@ bool CLangPage::OnInit()
   }
   
   if (!error.IsEmpty())
-    MessageBoxW(0, error, L"Error in Lang file", MB_OK | MB_ICONSTOP);
+    MessageBoxW(0, error, L"Error in Lang file", MB_ICONERROR);
   return CPropertyPage::OnInit();
 }
 
 LONG CLangPage::OnApply()
 {
   int pathIndex = (int)_langCombo.GetItemData_of_CurSel();
-  SaveRegLang(_paths[pathIndex]);
+  if (_needSave)
+    SaveRegLang(_paths[pathIndex]);
+  _needSave = false;
   ReloadLang();
   LangWasChanged = true;
   return PSNRET_NOERROR;
@@ -106,6 +108,7 @@ bool CLangPage::OnCommand(int code, int itemID, LPARAM param)
 {
   if (code == CBN_SELCHANGE && itemID == IDC_LANG_LANG)
   {
+    _needSave = true;
     Changed();
     return true;
   }

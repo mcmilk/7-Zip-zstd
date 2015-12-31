@@ -203,7 +203,8 @@ API_FUNC_IsArc IsArc_Zip(const Byte *p, size_t size)
     const Byte *p2 = p + kLocalHeaderSize;
     for (size_t i = 0; i < rem; i++)
       if (p2[i] == 0)
-        return k_IsArc_Res_NO;
+        if (i != nameSize - 1)
+          return k_IsArc_Res_NO;
   }
 
   if (size < extraOffset)

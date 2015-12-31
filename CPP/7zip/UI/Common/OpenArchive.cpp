@@ -39,7 +39,7 @@
 #endif
 
 // increase it, if you need to support larger SFX stubs
-static const UInt64 kMaxCheckStartPosition = 1 << 22;
+static const UInt64 kMaxCheckStartPosition = 1 << 23;
 
 /*
 Open:

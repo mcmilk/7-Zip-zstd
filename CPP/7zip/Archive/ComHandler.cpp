@@ -571,6 +571,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
   RINOK(AddNode(-1, root.SonDid));
   
   unsigned numCabs = 0;
+  
   FOR_VECTOR (i, Refs)
   {
     const CItem &item = Items[Refs[i].Did];
@@ -578,16 +579,20 @@ HRESULT CDatabase::Open(IInStream *inStream)
       continue;
     bool isMsiName;
     UString msiName = ConvertName(item.Name, isMsiName);
-    if (isMsiName)
+    if (isMsiName && !msiName.IsEmpty())
     {
+      bool isThereExt = (msiName.Find(L'.') >= 0);
+      bool isMsiSpec = (msiName[0] == k_Msi_SpecChar);
       if (msiName.Len() >= 4 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(4), ".cab")
-          || msiName.Len() >= 3 && msiName[0] != k_Msi_SpecChar && StringsAreEqualNoCase_Ascii(msiName.RightPtr(3), "exe"))
+          || !isMsiSpec && msiName.Len() >= 3 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(3), "exe")
+          || !isMsiSpec && !isThereExt)
       {
         numCabs++;
         MainSubfile = i;
       }
     }
   }
+  
   if (numCabs > 1)
     MainSubfile = -1;
 

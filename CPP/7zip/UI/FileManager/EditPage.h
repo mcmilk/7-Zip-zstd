@@ -6,11 +6,19 @@
 #include "../../../Windows/Control/PropertyPage.h"
 #include "../../../Windows/Control/Edit.h"
 
+struct CEditPageCtrl
+{
+  NWindows::NControl::CEdit Edit;
+  bool WasChanged;
+  int Ctrl;
+  int Button;
+};
+
 class CEditPage: public NWindows::NControl::CPropertyPage
 {
-  NWindows::NControl::CEdit _viewer;
-  NWindows::NControl::CEdit _editor;
-  NWindows::NControl::CEdit _diff;
+  CEditPageCtrl _ctrls[3];
+
+  bool _initMode;
 public:
   virtual bool OnInit();
   virtual void OnNotifyHelp();

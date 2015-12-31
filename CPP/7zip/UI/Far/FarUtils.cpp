@@ -448,7 +448,7 @@ int PrintErrorMessage(const char *message, const char *text)
 }
 
 
-static void ReduceString(UString &s, unsigned size)
+void ReduceString(UString &s, unsigned size)
 {
   if (s.Len() > size)
   {

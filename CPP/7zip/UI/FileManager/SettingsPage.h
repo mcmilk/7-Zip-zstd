@@ -8,6 +8,10 @@
 
 class CSettingsPage: public NWindows::NControl::CPropertyPage
 {
+  bool _wasChanged;
+
+  bool _largePages_wasChanged;
+
   // void EnableSubItems();
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
 public:

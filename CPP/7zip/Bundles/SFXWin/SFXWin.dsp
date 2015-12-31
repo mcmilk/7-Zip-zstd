@@ -325,14 +325,6 @@ SOURCE=..\..\UI\FileManager\ComboDialog.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\UI\FileManager\MessagesDialog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\UI\FileManager\MessagesDialog.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\UI\FileManager\OverwriteDialog.cpp
 # End Source File
 # Begin Source File

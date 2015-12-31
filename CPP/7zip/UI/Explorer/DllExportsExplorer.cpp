@@ -10,13 +10,11 @@
 
 #include "../../../Common/MyWindows.h"
 
-#include <ShlGuid.h>
 #include <OleCtl.h>
 
 #include "../../../Common/MyInitGuid.h"
 
 #include "../../../Common/ComTry.h"
-#include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/DLL.h"
 #include "../../../Windows/ErrorMsg.h"
@@ -24,11 +22,15 @@
 #include "../../../Windows/Registry.h"
 
 #include "../FileManager/IFolder.h"
-#include "../FileManager/LangUtils.h"
 
 #include "ContextMenu.h"
 
+static LPCTSTR k_ShellExtName = TEXT("7-Zip Shell Extension");
+static LPCTSTR k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
+
 // {23170F69-40C1-278A-1000-000100020000}
+static LPCTSTR k_Clsid = TEXT("{23170F69-40C1-278A-1000-000100020000}");
+
 DEFINE_GUID(CLSID_CZipContextMenu,
     k_7zip_GUID_Data1,
     k_7zip_GUID_Data2,
@@ -42,10 +44,6 @@ HWND g_HWND = 0;
 
 LONG g_DllRefCount = 0; // Reference count of this DLL.
 
-static LPCWSTR kShellExtName = L"7-Zip Shell Extension";
-static LPCTSTR kClsidMask = TEXT("CLSID\\%s");
-static LPCTSTR kClsidInprocMask = TEXT("CLSID\\%s\\InprocServer32");
-static LPCTSTR kApprovedKeyPath = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
 
 // #define ODS(sz) OutputDebugString(L#sz)
 
@@ -77,7 +75,7 @@ STDMETHODIMP CShellExtClassFactory::CreateInstance(LPUNKNOWN pUnkOuter,
     shellExt = new CZipContextMenu();
   }
   catch(...) { return E_OUTOFMEMORY; }
-  if (shellExt == NULL)
+  if (!shellExt)
     return E_OUTOFMEMORY;
   
   HRESULT res = shellExt->QueryInterface(riid, ppvObj);
@@ -117,7 +115,7 @@ BOOL WINAPI DllMain(
   return TRUE;
 }
 
-/////////////////////////////////////////////////////////////////////////////
+
 // Used to determine whether the DLL can be unloaded by OLE
 
 STDAPI DllCanUnloadNow(void)
@@ -138,7 +136,7 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
       cf = new CShellExtClassFactory;
     }
     catch(...) { return E_OUTOFMEMORY; }
-    if (cf == 0)
+    if (!cf)
       return E_OUTOFMEMORY;
     HRESULT res = cf->QueryInterface(riid, ppv);
     if (res != S_OK)
@@ -149,66 +147,28 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
   // return _Module.GetClassObject(rclsid, riid, ppv);
 }
 
-static BOOL GetStringFromIID(CLSID clsid, LPTSTR s, int size)
-{
-  LPWSTR pwsz;
-  if (StringFromIID(clsid, &pwsz) != S_OK)
-    return FALSE;
-  if (!pwsz)
-    return FALSE;
-  #ifdef UNICODE
-  for (int i = 0; i < size; i++)
-  {
-    s[i] = pwsz[i];
-    if (pwsz[i] == 0)
-      break;
-  }
-  s[size - 1] = 0;
-  #else
-  WideCharToMultiByte(CP_ACP, 0, pwsz, -1, s, size, NULL, NULL);
-  #endif
-  CoTaskMemFree(pwsz);
-  s[size - 1] = 0;
-  return TRUE;
-}
 
-typedef struct
+static BOOL RegisterServer()
 {
-  HKEY hRootKey;
-  LPCTSTR SubKey;
-  LPCWSTR ValueName;
-  LPCWSTR Data;
-} CRegItem;
-
-static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
-{
-  TCHAR clsidString[MAX_PATH];
-  if (!GetStringFromIID(clsid, clsidString, MAX_PATH))
-    return FALSE;
-  
   FString modulePath;
   if (!NDLL::MyGetModuleFileName(modulePath))
     return FALSE;
-  UString modulePathU = fs2us(modulePath);
+  const UString modulePathU = fs2us(modulePath);
   
-  CRegItem clsidEntries[] =
-  {
-    HKEY_CLASSES_ROOT, kClsidMask,        NULL,              title,
-    HKEY_CLASSES_ROOT, kClsidInprocMask,  NULL,              modulePathU,
-    HKEY_CLASSES_ROOT, kClsidInprocMask,  L"ThreadingModel", L"Apartment",
-    NULL,              NULL,              NULL,              NULL
-  };
+  CSysString clsidString = k_Clsid;
+  CSysString s = TEXT("CLSID\\");
+  s += clsidString;
   
-  //register the CLSID entries
-  for (int i = 0; clsidEntries[i].hRootKey; i++)
   {
-    TCHAR subKey[MAX_PATH];
-    const CRegItem &r = clsidEntries[i];
-    wsprintf(subKey, r.SubKey, clsidString);
     NRegistry::CKey key;
-    if (key.Create(r.hRootKey, subKey, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE) != NOERROR)
+    if (key.Create(HKEY_CLASSES_ROOT, s, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE) != NOERROR)
       return FALSE;
-    key.SetValue(clsidEntries[i].ValueName, clsidEntries[i].Data);
+    key.SetValue(NULL, k_ShellExtName);
+    NRegistry::CKey keyInproc;
+    if (keyInproc.Create(key, TEXT("InprocServer32"), NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE) != NOERROR)
+      return FALSE;
+    keyInproc.SetValue(NULL, modulePathU);
+    keyInproc.SetValue(TEXT("ThreadingModel"), TEXT("Apartment"));
   }
  
   #if !defined(_WIN64) && !defined(UNDER_CE)
@@ -216,46 +176,45 @@ static BOOL RegisterServer(CLSID clsid, LPCWSTR title)
   #endif
   {
     NRegistry::CKey key;
-    if (key.Create(HKEY_LOCAL_MACHINE, kApprovedKeyPath, NULL,
-        REG_OPTION_NON_VOLATILE, KEY_WRITE) == NOERROR)
-      key.SetValue(GetUnicodeString(clsidString), title);
+    if (key.Create(HKEY_LOCAL_MACHINE, k_Approved, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE) == NOERROR)
+      key.SetValue(clsidString, k_ShellExtName);
   }
+  
   return TRUE;
 }
 
 STDAPI DllRegisterServer(void)
 {
-  return RegisterServer(CLSID_CZipContextMenu, kShellExtName) ?  S_OK: SELFREG_E_CLASS;
+  return RegisterServer() ?  S_OK: SELFREG_E_CLASS;
 }
 
-static BOOL UnregisterServer(CLSID clsid)
+static BOOL UnregisterServer()
 {
-  TCHAR clsidString[MAX_PATH];
-  if (!GetStringFromIID(clsid, clsidString, MAX_PATH))
-    return FALSE;
+  const CSysString clsidString = k_Clsid;
+  CSysString s = TEXT("CLSID\\");
+  s += clsidString;
+  CSysString s2 = s;
+  s2.AddAscii("\\InprocServer32");
 
-  TCHAR subKey[MAX_PATH];
-  wsprintf(subKey, kClsidInprocMask, clsidString);
-  RegDeleteKey(HKEY_CLASSES_ROOT, subKey);
-  
-  wsprintf (subKey, kClsidMask, clsidString);
-  RegDeleteKey(HKEY_CLASSES_ROOT, subKey);
+  RegDeleteKey(HKEY_CLASSES_ROOT, s2);
+  RegDeleteKey(HKEY_CLASSES_ROOT, s);
 
   #if !defined(_WIN64) && !defined(UNDER_CE)
   if (IsItWindowsNT())
   #endif
   {
     HKEY hKey;
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, kApprovedKeyPath, 0, KEY_SET_VALUE, &hKey) == NOERROR)
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, k_Approved, 0, KEY_SET_VALUE, &hKey) == NOERROR)
     {
       RegDeleteValue(hKey, clsidString);
       RegCloseKey(hKey);
     }
   }
+
   return TRUE;
 }
 
 STDAPI DllUnregisterServer(void)
 {
-  return UnregisterServer(CLSID_CZipContextMenu) ? S_OK: SELFREG_E_CLASS;
+  return UnregisterServer() ? S_OK: SELFREG_E_CLASS;
 }

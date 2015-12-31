@@ -42,6 +42,12 @@ static void Key_Get_BoolPair(CKey &key, LPCTSTR name, CBoolPair &b)
   b.Def = (key.GetValue_IfOk(name, b.Val) == ERROR_SUCCESS);
 }
 
+static void Key_Get_BoolPair_true(CKey &key, LPCTSTR name, CBoolPair &b)
+{
+  b.Val = true;
+  b.Def = (key.GetValue_IfOk(name, b.Val) == ERROR_SUCCESS);
+}
+
 namespace NExtract
 {
 
@@ -112,9 +118,8 @@ void CInfo::Load()
     OverwriteMode_Force = true;
   }
 
-  Key_Get_BoolPair(key, kSplitDest, SplitDest);
-  if (!SplitDest.Def)
-    SplitDest.Val = true;
+  Key_Get_BoolPair_true(key, kSplitDest, SplitDest);
+
   Key_Get_BoolPair(key, kElimDup, ElimDup);
   // Key_Get_BoolPair(key, kAltStreams, AltStreams);
   Key_Get_BoolPair(key, kNtSecur, NtSecurity);
@@ -348,27 +353,45 @@ void CInfo::Load()
 static const TCHAR *kCascadedMenu = TEXT("CascadedMenu");
 static const TCHAR *kContextMenu = TEXT("ContextMenu");
 static const TCHAR *kMenuIcons = TEXT("MenuIcons");
+static const TCHAR *kElimDup = TEXT("ElimDupExtract");
 
 void CContextMenuInfo::Save() const
 {
   CS_LOCK
   CKey key;
   CreateMainKey(key, kOptionsInfoKeyName);
-  key.SetValue(kCascadedMenu, Cascaded);
-  key.SetValue(kMenuIcons, MenuIcons);
-  key.SetValue(kContextMenu, Flags);
+  
+  Key_Set_BoolPair(key, kCascadedMenu, Cascaded);
+  Key_Set_BoolPair(key, kMenuIcons, MenuIcons);
+  Key_Set_BoolPair(key, kElimDup, ElimDup);
+  
+  if (Flags_Def)
+    key.SetValue(kContextMenu, Flags);
 }
 
 void CContextMenuInfo::Load()
 {
-  MenuIcons = false;
-  Cascaded = true;
+  Cascaded.Val = true;
+  Cascaded.Def = false;
+
+  MenuIcons.Val = false;
+  MenuIcons.Def = false;
+
+  ElimDup.Val = true;
+  ElimDup.Def = false;
+
   Flags = (UInt32)(Int32)-1;
+  Flags_Def = false;
+  
   CS_LOCK
+  
   CKey key;
   if (OpenMainKey(key, kOptionsInfoKeyName) != ERROR_SUCCESS)
     return;
-  key.GetValue_IfOk(kCascadedMenu, Cascaded);
-  key.GetValue_IfOk(kMenuIcons, MenuIcons);
-  key.GetValue_IfOk(kContextMenu, Flags);
+  
+  Key_Get_BoolPair_true(key, kCascadedMenu, Cascaded);
+  Key_Get_BoolPair_true(key, kElimDup, ElimDup);
+  Key_Get_BoolPair(key, kMenuIcons, MenuIcons);
+
+  Flags_Def = (key.GetValue_IfOk(kContextMenu, Flags) == ERROR_SUCCESS);
 }

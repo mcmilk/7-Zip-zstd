@@ -4,6 +4,7 @@
 
 #include "../../../Common/ComTry.h"
 #include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/PropVariant.h"
 #include "../../../Windows/TimeUtils.h"
@@ -241,12 +242,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
   const CItemEx &item = m_Items[index];
+  const CExtraBlock &extra = item.GetMainExtra();
+  
   switch (propID)
   {
     case kpidPath:
     {
       UString res;
-      item.GetUnicodeString(item.Name, res, _forceCodePage, _specifiedCodePage);
+      item.GetUnicodeString(res, item.Name, false, _forceCodePage, _specifiedCodePage);
       NItemName::ConvertToOSName2(res);
       prop = res;
       break;
@@ -261,9 +264,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       FILETIME ft;
       UInt32 unixTime;
       UInt32 type;
-      if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, ft))
+      if (extra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, ft))
         type = NFileTimeType::kWindows;
-      else if (item.CentralExtra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
+      else if (extra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
         type = NFileTimeType::kUnix;
       else
         type = NFileTimeType::kDOS;
@@ -274,7 +277,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidCTime:
     {
       FILETIME ft;
-      if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kCTime, ft))
+      if (extra.GetNtfsTime(NFileHeader::NNtfsExtra::kCTime, ft))
         prop = ft;
       break;
     }
@@ -282,7 +285,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidATime:
     {
       FILETIME ft;
-      if (item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kATime, ft))
+      if (extra.GetNtfsTime(NFileHeader::NNtfsExtra::kATime, ft))
         prop = ft;
       break;
     }
@@ -291,10 +294,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       FILETIME utc;
       bool defined = true;
-      if (!item.CentralExtra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, utc))
+      if (!extra.GetNtfsTime(NFileHeader::NNtfsExtra::kMTime, utc))
       {
         UInt32 unixTime = 0;
-        if (item.CentralExtra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
+        if (extra.GetUnixTime(true, NFileHeader::NUnixTime::kMTime, unixTime))
           NTime::UnixTimeToFileTime(unixTime, utc);
         else
         {
@@ -328,7 +331,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       if (item.Comment.Size() != 0)
       {
         UString res;
-        item.GetUnicodeString(BytesToString(item.Comment), res, _forceCodePage, _specifiedCodePage);
+        item.GetUnicodeString(res, BytesToString(item.Comment), true, _forceCodePage, _specifiedCodePage);
         prop = res;
       }
       break;
@@ -347,7 +350,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         {
           m += kMethod_AES;
           CWzAesExtra aesField;
-          if (item.CentralExtra.GetWzAes(aesField))
+          if (extra.GetWzAes(aesField))
           {
             char s[16];
             s[0] = '-';
@@ -360,7 +363,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         {
           CStrongCryptoExtra f;
           f.AlgId = 0;
-          if (item.CentralExtra.GetStrongCrypto(f))
+          if (extra.GetStrongCrypto(f))
           {
             const char *s = FindNameForId(k_StrongCryptoPairs, ARRAY_SIZE(k_StrongCryptoPairs), f.AlgId);
             if (s)
@@ -427,6 +430,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       prop = (UInt32)item.ExtractVersion.Version;
       break;
   }
+  
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
@@ -617,7 +621,7 @@ HRESULT CZipDecoder::Decode(
     if (!pkAesMode && id == NFileHeader::NCompressionMethod::kWzAES)
     {
       CWzAesExtra aesField;
-      if (item.CentralExtra.GetWzAes(aesField))
+      if (item.GetMainExtra().GetWzAes(aesField))
       {
         wzAesMode = true;
         needCRC = aesField.NeedCrc();
@@ -653,7 +657,7 @@ HRESULT CZipDecoder::Decode(
     if (wzAesMode)
     {
       CWzAesExtra aesField;
-      if (!item.CentralExtra.GetWzAes(aesField))
+      if (!item.GetMainExtra().GetWzAes(aesField))
         return S_OK;
       id = aesField.Method;
       if (!_wzAesDecoder)

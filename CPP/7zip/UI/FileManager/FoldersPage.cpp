@@ -27,10 +27,13 @@ static const int kWorkModeButtons[] =
   IDR_FOLDERS_WORK_SPECIFIED
 };
 
-static const int kNumWorkModeButtons = ARRAY_SIZE(kWorkModeButtons);
+static const unsigned kNumWorkModeButtons = ARRAY_SIZE(kWorkModeButtons);
  
 bool CFoldersPage::OnInit()
 {
+  _initMode = true;
+  _needSave = false;
+
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
   m_WorkDirInfo.Load();
 
@@ -40,18 +43,18 @@ bool CFoldersPage::OnInit()
       kWorkModeButtons[m_WorkDirInfo.Mode]);
 
   m_WorkPath.Init(*this, IDE_FOLDERS_WORK_PATH);
-  m_ButtonSetWorkPath.Init(*this, IDB_FOLDERS_WORK_PATH);
 
   m_WorkPath.SetText(fs2us(m_WorkDirInfo.Path));
 
   MyEnableControls();
   
+  _initMode = false;
   return CPropertyPage::OnInit();
 }
 
 int CFoldersPage::GetWorkMode() const
 {
-  for (int i = 0; i < kNumWorkModeButtons; i++)
+  for (unsigned i = 0; i < kNumWorkModeButtons; i++)
     if (IsButtonCheckedBool(kWorkModeButtons[i]))
       return i;
   throw 0;
@@ -61,7 +64,7 @@ void CFoldersPage::MyEnableControls()
 {
   bool enablePath = (GetWorkMode() == NWorkDir::NMode::kSpecified);
   m_WorkPath.Enable(enablePath);
-  m_ButtonSetWorkPath.Enable(enablePath);
+  EnableItem(IDB_FOLDERS_WORK_PATH, enablePath);
 }
 
 void CFoldersPage::GetWorkDir(NWorkDir::CInfo &workDirInfo)
@@ -86,7 +89,11 @@ bool CFoldersPage::WasChanged()
 
 void CFoldersPage::ModifiedEvent()
 {
-  Changed();
+  if (!_initMode)
+  {
+    _needSave = true;
+    Changed();
+  }
   /*
   if (WasChanged())
     Changed();
@@ -97,23 +104,25 @@ void CFoldersPage::ModifiedEvent()
 
 bool CFoldersPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 {
-  for (int i = 0; i < kNumWorkModeButtons; i++)
+  for (unsigned i = 0; i < kNumWorkModeButtons; i++)
     if (buttonID == kWorkModeButtons[i])
     {
       MyEnableControls();
       ModifiedEvent();
       return true;
     }
+  
   switch (buttonID)
   {
     case IDB_FOLDERS_WORK_PATH:
       OnFoldersWorkButtonPath();
-      break;
+      return true;
     case IDX_FOLDERS_WORK_FOR_REMOVABLE:
       break;
     default:
       return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);
   }
+  
   ModifiedEvent();
   return true;
 }
@@ -140,8 +149,12 @@ void CFoldersPage::OnFoldersWorkButtonPath()
 
 LONG CFoldersPage::OnApply()
 {
-  GetWorkDir(m_WorkDirInfo);
-  m_WorkDirInfo.Save();
+  if (_needSave)
+  {
+    GetWorkDir(m_WorkDirInfo);
+    m_WorkDirInfo.Save();
+    _needSave = false;
+  }
   return PSNRET_NOERROR;
 }
 

@@ -917,7 +917,7 @@ void CArcCmdLineParser::Parse1(const UStringVector &commandStrings,
 
   if (parser[NKey::kAffinity].ThereIs)
   {
-    const UString &s = us2fs(parser[NKey::kAffinity].PostStrings[0]);
+    const UString &s = parser[NKey::kAffinity].PostStrings[0];
     if (!s.IsEmpty())
     {
       UInt32 v = 0;

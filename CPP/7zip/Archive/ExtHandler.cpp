@@ -1118,7 +1118,7 @@ HRESULT CHandler::SeekAndRead(IInStream *inStream, UInt64 block, Byte *data, siz
 {
   if (block == 0 || block >= _h.NumBlocks)
     return S_FALSE;
-  if (((size + (1 << _h.BlockBits) + 1) >> _h.BlockBits) > _h.NumBlocks - block)
+  if (((size + ((size_t)1 << _h.BlockBits) - 1) >> _h.BlockBits) > _h.NumBlocks - block)
     return S_FALSE;
   RINOK(inStream->Seek((UInt64)block << _h.BlockBits, STREAM_SEEK_SET, NULL));
   _totalRead += size;
@@ -1167,6 +1167,9 @@ HRESULT CHandler::Open2(IInStream *inStream)
       RINOK(_openCallback->SetTotal(NULL, &_phySize));
     }
 
+    UInt64 fileSize = 0;
+    RINOK(inStream->Seek(0, STREAM_SEEK_END, &fileSize));
+
     CRecordVector<CGroupDescriptor> groups;
 
     {
@@ -1213,6 +1216,21 @@ HRESULT CHandler::Open2(IInStream *inStream)
 
       if (_h.NumInodes < _h.NumFreeInodes)
         return S_FALSE;
+
+      UInt32 numNodes = _h.InodesPerGroup;
+      if (numNodes > _h.NumInodes)
+        numNodes = _h.NumInodes;
+      size_t nodesDataSize = (size_t)numNodes * _h.InodeSize;
+      
+      if (nodesDataSize / _h.InodeSize != numNodes)
+        return S_FALSE;
+
+      // that code to reduce false detecting cases
+      if (nodesDataSize > fileSize)
+      {
+        if (numNodes > (1 << 24))
+          return S_FALSE;
+      }
       
       UInt32 numReserveInodes = _h.NumInodes - _h.NumFreeInodes + 1;
       // numReserveInodes = _h.NumInodes + 1;
@@ -1222,13 +1240,6 @@ HRESULT CHandler::Open2(IInStream *inStream)
         _refs.Reserve(numReserveInodes);
       }
       
-      UInt32 numNodes = _h.InodesPerGroup;
-      if (numNodes > _h.NumInodes)
-        numNodes = _h.NumInodes;
-      size_t nodesDataSize = numNodes * _h.InodeSize;
-      if (nodesDataSize / _h.InodeSize != numNodes)
-        return S_FALSE;
-
       CByteBuffer nodesData;
       nodesData.Alloc(nodesDataSize);
       

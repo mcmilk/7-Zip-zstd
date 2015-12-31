@@ -781,6 +781,7 @@ HRESULT CFolderOutStream::Write2(const void *data, UInt32 size, UInt32 *processe
         realProcessed += size;
         if (processedSize)
           *processedSize = realProcessed;
+        m_PosInFolder += size;
         return S_OK;
         // return E_FAIL;
       }
@@ -843,7 +844,7 @@ HRESULT CFolderOutStream::FlushCorrupted(unsigned folderIndex)
     return S_OK;
   }
 
-  const unsigned kBufSize = (1 << 10);
+  const unsigned kBufSize = (1 << 12);
   Byte buf[kBufSize];
   for (unsigned i = 0; i < kBufSize; i++)
     buf[i] = 0;
@@ -937,8 +938,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   CRecordVector<bool> extractStatuses;
   
-  for (i = 0; i < numItems;)
+  for (i = 0;;)
   {
+    lps->OutSize = totalUnPacked;
+    lps->InSize = totalPacked;
+    RINOK(lps->SetCur());
+
+    if (i >= numItems)
+      break;
+
     unsigned index = allFilesMode ? i : indices[i];
 
     const CMvItem &mvItem = m_Database.Items[index];
@@ -1002,10 +1010,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       startIndex++;
       curUnpack = item.GetEndOffset();
     }
-
-    lps->OutSize = totalUnPacked;
-    lps->InSize = totalPacked;
-    RINOK(lps->SetCur());
 
     CFolderOutStream *cabFolderOutStream = new CFolderOutStream;
     CMyComPtr<ISequentialOutStream> outStream(cabFolderOutStream);

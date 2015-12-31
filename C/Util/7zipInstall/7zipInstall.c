@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2015-11-08 : Igor Pavlov : Public domain */
+2015-12-09 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -571,6 +571,8 @@ static INT_PTR CALLBACK MyDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
           #endif
           break;
         }
+        
+        default: return FALSE;
       }
       break;
     
@@ -1011,7 +1013,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       BOOL bRet;
       MSG msg;
       
-      while ((bRet = GetMessage(&msg, g_HWND, 0, 0)) != 0)
+      // we need messages for all thread windows (including EDITTEXT window in dialog)
+      while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
       {
         if (bRet == -1)
           return retCode;

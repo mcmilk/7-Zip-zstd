@@ -74,6 +74,8 @@ private:
 
   HBITMAP _bitmap;
 
+  CBoolPair _elimDup;
+
   HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
   int FindVerb(const UString &verb);
   bool FillCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &commandMapItem);

@@ -2487,7 +2487,7 @@ HRESULT Bench(
       #ifdef USE_WIN_FILE
       
       NFile::NIO::CInFile file;
-      if (!file.Open(property.Value))
+      if (!file.Open(us2fs(property.Value)))
         return E_INVALIDARG;
       UInt64 len;
       if (!file.GetLength(len))

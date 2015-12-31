@@ -303,7 +303,7 @@ public:
   void SetFrom_CalcLen(const char *s, unsigned len);
   // void SetFromAscii(const char *s) { operator+=(s); }
 
-  // AString Mid(unsigned startIndex, unsigned count) const { return AString(count, _chars + startIndex); }
+  AString Mid(unsigned startIndex, unsigned count) const { return AString(count, _chars + startIndex); }
   AString Left(unsigned count) const { return AString(count, *this); }
 
   // void MakeUpper() { MyStringUpper(_chars); }

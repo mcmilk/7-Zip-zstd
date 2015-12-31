@@ -67,6 +67,7 @@ void CInArchive::ReadOtherArc(COtherArc &oa)
   ReadName(oa.DiskName);
 }
 
+
 struct CSignatureFinder
 {
   Byte *Buf;
@@ -99,6 +100,7 @@ struct CSignatureFinder
   */
   HRESULT Find();
 };
+
 
 HRESULT CSignatureFinder::Find()
 {
@@ -156,6 +158,7 @@ HRESULT CSignatureFinder::Find()
   }
 }
 
+
 bool CInArcInfo::Parse(const Byte *p)
 {
   if (Get32(p + 0x0C) != 0 ||
@@ -177,6 +180,7 @@ bool CInArcInfo::Parse(const Byte *p)
   return true;
 }
   
+
 HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
 {
   IsArc = false;
@@ -286,7 +290,9 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
   if (ai.IsThereNext()) ReadOtherArc(ai.NextArc);
   
   UInt32 i;
+  
   db.Folders.ClearAndReserve(ai.NumFolders);
+  
   for (i = 0; i < ai.NumFolders; i++)
   {
     Read(p, 8);
@@ -311,6 +317,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
   }
 
   db.Items.ClearAndReserve(ai.NumFiles);
+
   for (i = 0; i < ai.NumFiles; i++)
   {
     Read(p, 16);
@@ -324,6 +331,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
     item.Attributes = Get16(p + 14);
 
     ReadName(item.Name);
+    
     if (item.GetFolderIndex(db.Folders.Size()) >= (int)db.Folders.Size())
     {
       HeaderError = true;
@@ -335,6 +343,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
   
   return S_OK;
 }
+
 
 HRESULT CInArchive::Open(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
 {
@@ -370,6 +379,7 @@ static int CompareMvItems(const CMvItem *p1, const CMvItem *p2, void *param)
   return MyCompare(p1->ItemIndex, p2->ItemIndex);
 }
 
+
 bool CMvDatabaseEx::AreItemsEqual(unsigned i1, unsigned i2)
 {
   const CMvItem *p1 = &Items[i1];
@@ -384,12 +394,15 @@ bool CMvDatabaseEx::AreItemsEqual(unsigned i1, unsigned i2)
       && item1.Name == item2.Name;
 }
 
+
 void CMvDatabaseEx::FillSortAndShrink()
 {
   Items.Clear();
   StartFolderOfVol.Clear();
   FolderStartFileIndex.Clear();
+  
   int offset = 0;
+  
   FOR_VECTOR (v, Volumes)
   {
     const CDatabaseEx &db = Volumes[v];
@@ -422,10 +435,11 @@ void CMvDatabaseEx::FillSortAndShrink()
   FOR_VECTOR (i, Items)
   {
     int folderIndex = GetFolderIndex(&Items[i]);
-    if (folderIndex >= (int)FolderStartFileIndex.Size())
+    while (folderIndex >= (int)FolderStartFileIndex.Size())
       FolderStartFileIndex.Add(i);
   }
 }
+
 
 bool CMvDatabaseEx::Check()
 {
@@ -444,9 +458,11 @@ bool CMvDatabaseEx::Check()
         return false;
     }
   }
+
   UInt32 beginPos = 0;
   UInt64 endPos = 0;
   int prevFolder = -2;
+  
   FOR_VECTOR (i, Items)
   {
     const CMvItem &mvItem = Items[i];
@@ -456,15 +472,19 @@ bool CMvDatabaseEx::Check()
     const CItem &item = Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
     if (item.IsDir())
       continue;
+    
     int folderIndex = GetFolderIndex(&mvItem);
+  
     if (folderIndex != prevFolder)
       prevFolder = folderIndex;
     else if (item.Offset < endPos &&
         (item.Offset != beginPos || item.GetEndOffset() != endPos))
       return false;
+    
     beginPos = item.Offset;
     endPos = item.GetEndOffset();
   }
+  
   return true;
 }
 

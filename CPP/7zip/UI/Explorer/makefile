@@ -14,7 +14,6 @@ EXPLORER_OBJS = \
   $O\DllExportsExplorer.obj \
   $O\ContextMenu.obj \
   $O\MyMessages.obj \
-  $O\RegistryContextMenu.obj \
 
 COMMON_OBJS = \
   $O\IntToString.obj \

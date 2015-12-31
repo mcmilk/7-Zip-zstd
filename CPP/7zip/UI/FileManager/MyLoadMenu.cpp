@@ -512,7 +512,8 @@ bool OnMenuCommand(HWND hWnd, int id)
     // File
     case IDCLOSE:
       SendMessage(hWnd, WM_ACTIVATE, MAKEWPARAM(WA_INACTIVE, 0), (LPARAM)hWnd);
-      SendMessage (hWnd, WM_CLOSE, 0, 0);
+      g_ExitEventLauncher.Exit(false);
+      SendMessage(hWnd, WM_CLOSE, 0, 0);
       break;
     
     // Edit

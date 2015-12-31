@@ -208,7 +208,6 @@ struct CCopyState
 {
   CProgressInfo ProgressInfo;
   IFolderOperationsExtractCallback *Callback;
-  UInt64 TotalSize;
   bool MoveMode;
   bool UseReadWriteMode;
 
@@ -423,7 +422,7 @@ static HRESULT CopyFile_Ask(
       NFsFolder::CCopyStateIO state2;
       state2.Progress = state.Callback;
       state2.DeleteSrcFile = state.MoveMode;
-      state2.TotalSize = state.TotalSize;
+      state2.TotalSize = state.ProgressInfo.TotalSize;
       state2.StartPos = state.ProgressInfo.StartPos;
       RINOK(state2.MyCopyFile(srcPath, destPathNew));
       if (state2.ErrorFileIndex >= 0)
@@ -460,10 +459,10 @@ static HRESULT CopyFile_Ask(
   }
   else
   {
-    if (state.TotalSize >= srcFileInfo.Size)
+    if (state.ProgressInfo.TotalSize >= srcFileInfo.Size)
     {
-      state.TotalSize -= srcFileInfo.Size;
-      RINOK(state.ProgressInfo.Progress->SetTotal(state.TotalSize));
+      state.ProgressInfo.TotalSize -= srcFileInfo.Size;
+      RINOK(state.ProgressInfo.Progress->SetTotal(state.ProgressInfo.TotalSize));
     }
   }
   return state.CallProgress();
