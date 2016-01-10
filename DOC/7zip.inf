@@ -10,7 +10,7 @@ AppName = "7-Zip"
 InstallDir = %CE1%\%AppName%
 
 [Strings]
-AppVer = "15.13"
+AppVer = "15.14"
 AppDate = "2015-12-31"
 
 [CEDevice]
