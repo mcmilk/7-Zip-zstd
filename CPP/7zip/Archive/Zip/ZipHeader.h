@@ -18,9 +18,8 @@ namespace NSignature
   const UInt32 kEcd               = 0x06054B50;
   const UInt32 kEcd64             = 0x06064B50;
   const UInt32 kEcd64Locator      = 0x07064B50;
-
-  // const UInt32 kSpan    = 0x08074B50;
-  const UInt32 kNoSpan = 0x30304b50; // PK00, replaces kSpan, if there is only 1 segment
+  const UInt32 kSpan              = 0x08074B50;
+  const UInt32 kNoSpan            = 0x30304B50; // PK00, replaces kSpan, if there is only 1 segment
 }
 
 const unsigned kLocalHeaderSize = 4 + 26; // including signature

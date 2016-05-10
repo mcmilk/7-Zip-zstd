@@ -1,5 +1,5 @@
 /* Sha1.c -- SHA-1 Hash
-2015-05-10 : Igor Pavlov : Public domain
+2016-02-09 : Igor Pavlov : Public domain
 This code is based on public domain code of Steve Reid from Wei Dai's Crypto++ library. */
 
 #include "Precomp.h"
@@ -151,18 +151,23 @@ void Sha1_Update(CSha1 *p, const Byte *data, size_t size)
   
   if (pos2 != 0)
   {
-    UInt32 w = ((UInt32)data[0]) << 24;
-    if (--size && pos2 < 3)
+    UInt32 w;
+    pos2 = (3 - pos2) * 8;
+    w = ((UInt32)*data++) << pos2;
+    if (--size && pos2)
     {
-      w |= ((UInt32)data[1]) << 16;
-      if (--size && pos2 < 2)
+      pos2 -= 8;
+      w |= ((UInt32)*data++) << pos2;
+      if (--size && pos2)
       {
-        w |= ((UInt32)data[2]) << 8;
-        --size;
+        pos2 -= 8;
+        w |= ((UInt32)*data++) << pos2;
+        size--;
       }
     }
-    data += 4 - pos2;
-    p->buffer[pos++] |= (w >> (8 * pos2));
+    p->buffer[pos] |= w;
+    if (pos2 == 0)
+      pos++;
   }
 
   for (;;)

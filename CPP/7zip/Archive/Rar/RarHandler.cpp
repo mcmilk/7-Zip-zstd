@@ -953,6 +953,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   NCOM::CPropVariant prop;
   const CRefItem &refItem = _refItems[index];
   const CItem &item = _items[refItem.ItemIndex];
+  const CItem &lastItem = _items[refItem.ItemIndex + refItem.NumItems - 1];
+
   /*
   const CItem *mainItem = &item;
   if (item.BaseFileIndex >= 0)
@@ -972,7 +974,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       break;
     }
     case kpidIsDir: prop = item.IsDir(); break;
-    case kpidSize: prop = item.Size; break;
+    case kpidSize: if (lastItem.Is_Size_Defined()) prop = lastItem.Size; break;
     case kpidPackSize: prop = GetPackSize(index); break;
     case kpidMTime: RarTimeToProp(item.MTime, prop); break;
     case kpidCTime: if (item.CTimeDefined) RarTimeToProp(item.CTime, prop); break;
@@ -985,7 +987,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidSplitAfter: prop = _items[refItem.ItemIndex + refItem.NumItems - 1].IsSplitAfter(); break;
     case kpidCRC:
     {
-      const CItem &lastItem = _items[refItem.ItemIndex + refItem.NumItems - 1];
       prop = ((lastItem.IsSplitAfter()) ? item.FileCRC : lastItem.FileCRC);
       break;
     }
@@ -1378,34 +1379,52 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CRecordVector<unsigned> importantIndexes;
   CRecordVector<bool> extractStatuses;
 
+  bool isThereUndefinedSize = false;
+
   for (UInt32 t = 0; t < numItems; t++)
   {
     unsigned index = allFilesMode ? t : indices[t];
-    const CRefItem &refItem = _refItems[index];
-    const CItem &item = _items[refItem.ItemIndex];
-    censoredTotalUnPacked += item.Size;
-    // censoredTotalPacked += item.PackSize;
+    
+    {
+      const CRefItem &refItem = _refItems[index];
+      const CItem &item = _items[refItem.ItemIndex + refItem.NumItems - 1];
+      
+      if (item.Is_Size_Defined())
+        censoredTotalUnPacked += item.Size;
+      else
+        isThereUndefinedSize = true;
+      
+      // censoredTotalPacked += item.PackSize;
+    }
+    
     unsigned j;
     for (j = lastIndex; j <= index; j++)
       // if (!_items[_refItems[j].ItemIndex].IsSolid())
       if (!IsSolid(j))
         lastIndex = j;
+  
     for (j = lastIndex; j <= index; j++)
     {
       const CRefItem &refItem = _refItems[j];
-      const CItem &item = _items[refItem.ItemIndex];
+      const CItem &item = _items[refItem.ItemIndex + refItem.NumItems - 1];
 
-      // const CItem &item = _items[j];
-
-      importantTotalUnPacked += item.Size;
+      if (item.Is_Size_Defined())
+        importantTotalUnPacked += item.Size;
+      else
+        isThereUndefinedSize = true;
       // importantTotalPacked += item.PackSize;
       importantIndexes.Add(j);
       extractStatuses.Add(j == index);
     }
+
     lastIndex = index + 1;
   }
 
-  RINOK(extractCallback->SetTotal(importantTotalUnPacked));
+  if (importantTotalUnPacked != 0 || !isThereUndefinedSize)
+  {
+    RINOK(extractCallback->SetTotal(importantTotalUnPacked));
+  }
+
   UInt64 currentImportantTotalUnPacked = 0;
   UInt64 currentImportantTotalPacked = 0;
   UInt64 currentUnPackSize, currentPackSize;
@@ -1431,13 +1450,19 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   lps->Init(extractCallback, false);
 
   bool solidStart = true;
-  for (unsigned i = 0; i < importantIndexes.Size(); i++,
+  
+  for (unsigned i = 0;;
+      i++,
       currentImportantTotalUnPacked += currentUnPackSize,
       currentImportantTotalPacked += currentPackSize)
   {
     lps->InSize = currentImportantTotalPacked;
     lps->OutSize = currentImportantTotalUnPacked;
     RINOK(lps->SetCur());
+
+    if (i >= importantIndexes.Size())
+      break;
+
     CMyComPtr<ISequentialOutStream> realOutStream;
 
     Int32 askMode;
@@ -1452,8 +1477,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     const CRefItem &refItem = _refItems[index];
     const CItem &item = _items[refItem.ItemIndex];
-
-    currentUnPackSize = item.Size;
+    const CItem &lastItem = _items[refItem.ItemIndex + refItem.NumItems - 1];
+    
+    UInt64 outSize = (UInt64)(Int64)-1;
+    currentUnPackSize = 0;
+    if (lastItem.Is_Size_Defined())
+    {
+      outSize = lastItem.Size;
+      currentUnPackSize = outSize;
+    }
 
     currentPackSize = GetPackSize(index);
 
@@ -1678,12 +1710,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         continue;
     }
     
-    HRESULT result = commonCoder->Code(inStream, outStream, &packSize, &item.Size, progress);
+    HRESULT result = commonCoder->Code(inStream, outStream, &packSize, &outSize, progress);
     
     if (item.IsEncrypted())
       filterStreamSpec->ReleaseInStream();
     
-    const CItem &lastItem = _items[refItem.ItemIndex + refItem.NumItems - 1];
+    if (outSize == (UInt64)(Int64)-1)
+      currentUnPackSize = outStreamSpec->GetSize();
+
     int opRes = (volsInStreamSpec->CrcIsOK && outStreamSpec->GetCRC() == lastItem.FileCRC) ?
         NExtract::NOperationResult::kOK:
         NExtract::NOperationResult::kCRCError;

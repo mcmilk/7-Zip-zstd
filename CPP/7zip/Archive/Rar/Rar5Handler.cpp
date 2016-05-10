@@ -2333,6 +2333,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   {
     UInt64 total = 0;
+    bool isThereUndefinedSize = false;
     bool thereAreLinks = false;
 
     {
@@ -2342,9 +2343,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         unsigned index = allFilesMode ? t : indices[t];
         const CRefItem &ref = _refs[index];
         const CItem &item = _items[ref.Item];
+        const CItem &lastItem = _items[ref.Last];
         
         extractStatuses[index] |= kStatus_Extract;
-        total += item.Size;
+
+        if (!lastItem.Is_UnknownSize())
+          total += lastItem.Size;
+        else
+          isThereUndefinedSize = true;
         
         if (ref.Link >= 0)
         {
@@ -2352,11 +2358,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           {
             if ((unsigned)ref.Link < index)
             {
-              const CItem &linkItem = _items[_refs[(unsigned)ref.Link].Item];
+              const CRefItem &linkRef = _refs[(unsigned)ref.Link];
+              const CItem &linkItem = _items[linkRef.Item];
               if (linkItem.IsSolid() && linkItem.Size <= k_CopyLinkFile_MaxSize)
               {
                 if (extractStatuses[(unsigned)ref.Link] == 0)
-                  total += linkItem.Size;
+                {
+                  const CItem &lastLinkItem = _items[linkRef.Last];
+                  if (!lastLinkItem.Is_UnknownSize())
+                    total += lastLinkItem.Size;
+                  else
+                    isThereUndefinedSize = true;
+                }
                 extractStatuses[(unsigned)ref.Link] |= kStatus_Link;
                 thereAreLinks = true;
               }
@@ -2375,11 +2388,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           while (j > solidLimit)
           {
             j--;
-            const CItem &item2 = _items[_refs[j].Item];
+            const CRefItem &ref2 = _refs[j];
+            const CItem &item2 = _items[ref2.Item];
             if (!item2.IsService())
             {
               if (extractStatuses[j] == 0)
-                total += item2.Size;
+              {
+                const CItem &lastItem2 = _items[ref2.Last];
+                if (!lastItem2.Is_UnknownSize())
+                  total += lastItem2.Size;
+                else
+                  isThereUndefinedSize = true;
+              }
               extractStatuses[j] |= kStatus_Skip;
               if (!item2.IsSolid())
                 break;
@@ -2415,13 +2435,20 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           while (j > solidLimit)
           {
             j--;
-            const CItem &item2 = _items[_refs[j].Item];
+            const CRefItem &ref2 = _refs[j];
+            const CItem &item2 = _items[ref2.Item];
             if (!item2.IsService())
             {
               if (extractStatuses[j] != 0)
                 break;
               extractStatuses[j] = kStatus_Skip;
-              total += item2.Size;
+              {
+                const CItem &lastItem2 = _items[ref2.Last];
+                if (!lastItem2.Is_UnknownSize())
+                  total += lastItem2.Size;
+                else
+                  isThereUndefinedSize = true;
+              }
               if (!item2.IsSolid())
                 break;
             }
@@ -2449,7 +2476,10 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       }
     }
     
-    RINOK(extractCallback->SetTotal(total));
+    if (total != 0 || !isThereUndefinedSize)
+    {
+      RINOK(extractCallback->SetTotal(total));
+    }
   }
 
 
@@ -2502,8 +2532,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     const CRefItem *ref = &_refs[index];
     const CItem *item = &_items[ref->Item];
+    const CItem &lastItem = _items[ref->Last];
 
-    curUnpackSize = item->Size;
+    curUnpackSize = 0;
+    if (!lastItem.Is_UnknownSize())
+      curUnpackSize = lastItem.Size;
+
     curPackSize = GetPackSize(index);
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
@@ -2532,11 +2566,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     {
       const CRefItem &ref2 = _refs[index2];
       const CItem &item2 = _items[ref2.Item];
+      const CItem &lastItem2 = _items[ref2.Last];
       if (!item2.IsSolid())
       {
         item = &item2;
         ref = &ref2;
-        curUnpackSize = item->Size;
+        if (!lastItem2.Is_UnknownSize())
+          curUnpackSize = lastItem2.Size;
+        else
+          curUnpackSize = 0;
         curPackSize = GetPackSize(index2);
       }
       else if ((unsigned)index2 < index)

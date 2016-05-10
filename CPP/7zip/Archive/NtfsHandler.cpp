@@ -1148,8 +1148,16 @@ bool CMftRec::Parse(Byte *p, unsigned sectorSizeLog, UInt32 numSectors, UInt32 r
       return false;
 
     if (usaOffset >= 0x30) // NTFS 3.1+
-      if (Get32(p + 0x2C) != recNumber)
-        return false;
+    {
+      UInt32 iii = Get32(p + 0x2C);
+      if (iii != recNumber)
+      {
+        // ntfs-3g probably writes 0 (that probably is incorrect value) to this field for unused records.
+        // so we support that "bad" case.
+        if (iii != 0)
+          return false;
+      }
+    }
     
     UInt16 usn = Get16(p + usaOffset);
     // PRF(printf("\nusn = %d", usn));

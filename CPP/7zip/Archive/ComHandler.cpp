@@ -578,14 +578,16 @@ HRESULT CDatabase::Open(IInStream *inStream)
     if (item.IsDir() || numCabs > 1)
       continue;
     bool isMsiName;
-    UString msiName = ConvertName(item.Name, isMsiName);
+    const UString msiName = ConvertName(item.Name, isMsiName);
     if (isMsiName && !msiName.IsEmpty())
     {
-      bool isThereExt = (msiName.Find(L'.') >= 0);
+      // bool isThereExt = (msiName.Find(L'.') >= 0);
       bool isMsiSpec = (msiName[0] == k_Msi_SpecChar);
       if (msiName.Len() >= 4 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(4), ".cab")
           || !isMsiSpec && msiName.Len() >= 3 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(3), "exe")
-          || !isMsiSpec && !isThereExt)
+          // || !isMsiSpec && !isThereExt
+          )
+
       {
         numCabs++;
         MainSubfile = i;

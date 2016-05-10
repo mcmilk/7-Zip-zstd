@@ -10,8 +10,8 @@
 namespace NCompress {
 namespace NShrink {
 
-const int kNumMaxBits = 13;
-const UInt32 kNumItems = 1 << kNumMaxBits;
+const unsigned kNumMaxBits = 13;
+const unsigned kNumItems = 1 << kNumMaxBits;
 
 class CDecoder :
   public ICompressCoder,
@@ -20,8 +20,6 @@ class CDecoder :
   UInt16 _parents[kNumItems];
   Byte _suffixes[kNumItems];
   Byte _stack[kNumItems];
-  bool _isFree[kNumItems];
-  bool _isParent[kNumItems];
 
 public:
   MY_UNKNOWN_IMP

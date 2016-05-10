@@ -74,6 +74,7 @@ HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
     const UString &currentFolderPrefix,
     const UString &arcFormat,
     CPanelCallback *panelCallback, CAppState *appState,
+    bool needOpenArc,
     bool &archiveIsOpened, bool &encrypted)
 {
   _mainWindow = mainWindow;
@@ -100,10 +101,15 @@ HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
 
   RINOK(BindToPath(cfp, arcFormat, archiveIsOpened, encrypted));
 
+  if (needOpenArc && !archiveIsOpened)
+    return S_OK;
+
   if (!CreateEx(0, kClassName, 0, WS_CHILD | WS_VISIBLE,
       0, 0, _xSize, 260,
       parentWindow, (HMENU)(UINT_PTR)id, g_hInstance))
     return E_FAIL;
+  PanelCreated = true;
+
   return S_OK;
 }
 
@@ -525,7 +531,7 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
   _statusBar.Create(WS_CHILD | WS_VISIBLE, L"Status", (*this), _statusBarID);
   // _statusBar2.Create(WS_CHILD | WS_VISIBLE, L"Status", (*this), _statusBarID + 1);
 
-  int sizes[] = {160, 250, 350, -1};
+  const int sizes[] = {220, 320, 420, -1};
   _statusBar.SetParts(4, sizes);
   // _statusBar2.SetParts(5, sizes);
 
@@ -834,18 +840,20 @@ void CPanel::AddToArchive()
   // KillSelection();
 }
 
-static UString GetSubFolderNameForExtract(const UString &arcPath)
+// function from ContextMenu.cpp
+UString GetSubFolderNameForExtract(const UString &arcPath);
+
+static UString GetSubFolderNameForExtract2(const UString &arcPath)
 {
-  UString s = arcPath;
-  int slashPos = s.ReverseFind_PathSepar();
-  int dotPos = s.ReverseFind_Dot();
-  if (dotPos <= slashPos + 1)
-    s += L'~';
-  else
+  int slashPos = arcPath.ReverseFind_PathSepar();
+  UString s;
+  UString name = arcPath;
+  if (slashPos >= 0)
   {
-    s.DeleteFrom(dotPos);
-    s.TrimRight();
+    s = arcPath.Left(slashPos + 1);
+    name = arcPath.Ptr(slashPos + 1);
   }
+  s += GetSubFolderNameForExtract(name);
   return s;
 }
 
@@ -885,7 +893,7 @@ void CPanel::ExtractArchives()
   
   UString outFolder = GetFsPath();
   if (indices.Size() == 1)
-    outFolder += GetSubFolderNameForExtract(GetItemRelPath(indices[0]));
+    outFolder += GetSubFolderNameForExtract2(GetItemRelPath(indices[0]));
   else
     outFolder += L'*';
   outFolder.Add_PathSepar();

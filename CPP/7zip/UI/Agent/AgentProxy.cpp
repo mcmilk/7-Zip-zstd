@@ -304,14 +304,25 @@ HRESULT CProxyArc::Load(const CArc &arc, IProgress *progress)
     */
 
     unsigned namePos = 0;
+
+    unsigned numLevels = 0;
+
     for (unsigned j = 0; j < len; j++)
     {
       wchar_t c = s[j];
       if (c == WCHAR_PATH_SEPARATOR || c == L'/')
       {
-        name.SetFrom(s + namePos, j - namePos);
-        curItem = AddDir(curItem, -1, name);
+        const unsigned kLevelLimit = 1 << 10;
+        if (numLevels <= kLevelLimit)
+        {
+          if (numLevels == kLevelLimit)
+            name.SetFromAscii("[LONG_PATH]");
+          else
+            name.SetFrom(s + namePos, j - namePos);
+          curItem = AddDir(curItem, -1, name);
+        }
         namePos = j + 1;
+        numLevels++;
       }
     }
 

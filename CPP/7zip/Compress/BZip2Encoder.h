@@ -214,11 +214,13 @@ public:
 
   HRESULT Flush() { return m_OutStream.Flush(); }
   
+  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   #ifndef _7ZIP_ST
-  MY_UNKNOWN_IMP2(ICompressSetCoderMt, ICompressSetCoderProperties)
-  #else
-  MY_UNKNOWN_IMP1(ICompressSetCoderProperties)
+  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
   #endif
+  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderProperties)
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
 
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);

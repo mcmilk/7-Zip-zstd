@@ -59,7 +59,7 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
     {
       _filter = new CFilterCoder(false);
       _filterInStream = _filter;
-      _filter->Filter = new CBcjCoder(false);
+      _filter->Filter = new NCompress::NBcj::CCoder(false);
     }
     RINOK(_filter->SetInStream(_codecInStream));
     _decoderInStream = _filterInStream;

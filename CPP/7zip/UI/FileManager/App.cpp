@@ -46,7 +46,7 @@ void CPanelCallbackImp::OnTab()
   _app->RefreshTitle();
 }
 
-void CPanelCallbackImp::SetFocusToPath(int index)
+void CPanelCallbackImp::SetFocusToPath(unsigned index)
 {
   int newPanelIndex = index;
   if (g_App.NumPanels == 1)
@@ -60,10 +60,10 @@ void CPanelCallbackImp::SetFocusToPath(int index)
 void CPanelCallbackImp::OnCopy(bool move, bool copyToSame) { _app->OnCopy(move, copyToSame, _index); }
 void CPanelCallbackImp::OnSetSameFolder() { _app->OnSetSameFolder(_index); }
 void CPanelCallbackImp::OnSetSubFolder()  { _app->OnSetSubFolder(_index); }
-void CPanelCallbackImp::PanelWasFocused() { _app->SetFocusedPanel(_index); _app->RefreshTitle(_index); }
+void CPanelCallbackImp::PanelWasFocused() { _app->SetFocusedPanel(_index); _app->RefreshTitlePanel(_index); }
 void CPanelCallbackImp::DragBegin() { _app->DragBegin(_index); }
 void CPanelCallbackImp::DragEnd() { _app->DragEnd(); }
-void CPanelCallbackImp::RefreshTitle(bool always) { _app->RefreshTitle(_index, always); }
+void CPanelCallbackImp::RefreshTitle(bool always) { _app->RefreshTitlePanel(_index, always); }
 
 void CApp::ReloadLang()
 {
@@ -115,11 +115,14 @@ void CApp::SetListSettings()
 #endif
 
 HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat,
-  bool &archiveIsOpened, bool &encrypted)
+    bool needOpenArc,
+    bool &archiveIsOpened, bool &encrypted)
 {
-  if (PanelsCreated[panelIndex])
+  if (Panels[panelIndex].PanelCreated)
     return S_OK;
+  
   m_PanelCallbackImp[panelIndex].Init(this, panelIndex);
+  
   UString path;
   if (mainPath.IsEmpty())
   {
@@ -128,12 +131,15 @@ HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, const UStr
   }
   else
     path = mainPath;
+  
   int id = 1000 + 100 * panelIndex;
-  RINOK(Panels[panelIndex].Create(_window, _window,
-      id, path, arcFormat, &m_PanelCallbackImp[panelIndex], &AppState, archiveIsOpened, encrypted));
-  PanelsCreated[panelIndex] = true;
-  return S_OK;
+
+  return Panels[panelIndex].Create(_window, _window,
+      id, path, arcFormat, &m_PanelCallbackImp[panelIndex], &AppState,
+      needOpenArc,
+      archiveIsOpened, encrypted);
 }
+
 
 static void CreateToolbar(HWND parent,
     NControl::CImageList &imageList,
@@ -164,6 +170,7 @@ static void CreateToolbar(HWND parent,
       ILC_MASK | ILC_COLOR32, 0, 0);
   toolBar.SetImageList(0, imageList);
 }
+
 
 struct CButtonInfo
 {
@@ -273,9 +280,11 @@ void CApp::SaveToolbarChanges()
   MoveSubWindows();
 }
 
+
 void MyLoadMenu();
 
-HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool &archiveIsOpened, bool &encrypted)
+
+HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, bool &archiveIsOpened, bool &encrypted)
 {
   _window.Attach(hwnd);
 
@@ -292,9 +301,9 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
   ReadToolbar();
   ReloadToolbars();
 
-  int i;
+  unsigned i;
   for (i = 0; i < kNumPanelsMax; i++)
-    PanelsCreated[i] = false;
+    Panels[i].PanelCreated = false;
 
   AppState.Read();
   
@@ -316,25 +325,42 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
   }
   
   for (i = 0; i < kNumPanelsMax; i++)
-    if (NumPanels > 1 || i == LastFocusedPanel)
+  {
+    unsigned panelIndex = i;
+    if (needOpenArc && LastFocusedPanel == 1)
+      panelIndex = 1 - i;
+
+    bool isMainPanel = (panelIndex == LastFocusedPanel);
+
+    if (NumPanels > 1 || isMainPanel)
     {
       if (NumPanels == 1)
-        Panels[i]._xSize = xSizes[0] + xSizes[1];
+        Panels[panelIndex]._xSize = xSizes[0] + xSizes[1];
       bool archiveIsOpened2 = false;
       bool encrypted2 = false;
-      bool mainPanel = (i == LastFocusedPanel);
-      RINOK(CreateOnePanel(i, mainPanel ? mainPath : L"", arcFormat, archiveIsOpened2, encrypted2));
-      if (mainPanel)
+      UString path;
+      if (isMainPanel)
+        path = mainPath;
+      
+      RINOK(CreateOnePanel(panelIndex, path, arcFormat,
+          isMainPanel && needOpenArc,
+          archiveIsOpened2, encrypted2));
+      
+      if (isMainPanel)
       {
         archiveIsOpened = archiveIsOpened2;
         encrypted = encrypted2;
+        if (needOpenArc && !archiveIsOpened2)
+          return S_OK;
       }
     }
+  }
   
   SetFocusedPanel(LastFocusedPanel);
   Panels[LastFocusedPanel].SetFocusToList();
   return S_OK;
 }
+
 
 HRESULT CApp::SwitchOnOffOnePanel()
 {
@@ -342,7 +368,9 @@ HRESULT CApp::SwitchOnOffOnePanel()
   {
     NumPanels++;
     bool archiveIsOpened, encrypted;
-    RINOK(CreateOnePanel(1 - LastFocusedPanel, UString(), UString(), archiveIsOpened, encrypted));
+    RINOK(CreateOnePanel(1 - LastFocusedPanel, UString(), UString(),
+        false, // needOpenArc
+        archiveIsOpened, encrypted));
     Panels[1 - LastFocusedPanel].Enable(true);
     Panels[1 - LastFocusedPanel].Show(SW_SHOWNORMAL);
   }
@@ -530,7 +558,7 @@ static bool IsFsPath(const FString &path)
 
 void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
 {
-  int destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
+  unsigned destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &srcPanel = Panels[srcPanelIndex];
   CPanel &destPanel = Panels[destPanelIndex];
 
@@ -854,7 +882,7 @@ int CApp::GetFocusedPanelIndex() const
   {
     if (hwnd == 0)
       return 0;
-    for (int i = 0; i < kNumPanelsMax; i++)
+    for (unsigned i = 0; i < kNumPanelsMax; i++)
     {
       if (PanelsCreated[i] &&
           ((HWND)Panels[i] == hwnd || Panels[i]._listView == hwnd))
@@ -906,7 +934,7 @@ void CApp::RefreshTitle(bool always)
   NWindows::MySetWindowText(_window, path);
 }
 
-void CApp::RefreshTitle(int panelIndex, bool always)
+void CApp::RefreshTitlePanel(unsigned panelIndex, bool always)
 {
   if (panelIndex != GetFocusedPanelIndex())
     return;

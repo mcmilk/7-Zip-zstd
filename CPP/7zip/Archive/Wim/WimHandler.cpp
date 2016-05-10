@@ -475,14 +475,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
       case kpidPackSize:
       {
-        UInt64 size = 0;
         if (si)
         {
           if (!si->Resource.IsSolidSmall())
-          {
-            size = si->Resource.PackSize;
-            prop = size;
-          }
+            prop = si->Resource.PackSize;
           else
           {
             if (si->Resource.SolidIndex >= 0)
@@ -493,12 +489,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
             }
           }
         }
+        else if (!item.IsDir)
+          prop = (UInt64)0;
+
         break;
       }
 
       case kpidSize:
       {
-        UInt64 size = 0;
         if (si)
         {
           if (si->Resource.IsSolid())
@@ -507,22 +505,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
             {
               if (si->Resource.SolidIndex >= 0)
               {
-                CSolid &ss = _db.Solids[(unsigned)si->Resource.SolidIndex];
+                const CSolid &ss = _db.Solids[(unsigned)si->Resource.SolidIndex];
                 prop = ss.UnpackSize;
               }
             }
             else
-            {
-              size = si->Resource.PackSize;
-              prop = size;
-            }
+              prop = si->Resource.PackSize;
           }
           else
-          {
-            size = si->Resource.UnpackSize;
-            prop = size;
-          }
+            prop = si->Resource.UnpackSize;
         }
+        else if (!item.IsDir)
+          prop = (UInt64)0;
+
         break;
       }
       

@@ -987,7 +987,9 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
       item.GroupID = Get32(r + 0x24);
       item.AdminFlags = r[0x28];
       item.OwnerFlags = r[0x29];
+      */
       item.FileMode = Get16(r + 0x2A);
+      /*
       item.special.iNodeNum = Get16(r + 0x2C); // or .linkCount
       item.FileType = Get32(r + 0x30);
       item.FileCreator = Get32(r + 0x34);
@@ -1571,6 +1573,9 @@ HRESULT CHandler::ExtractZlibFile(
       blockSize = (UInt32)rem;
 
     UInt32 size = GetUi32(tableBuf + i * 8 + 4);
+
+    if (size > buf.Size() || size > kCompressionBlockSize + 1)
+      return S_FALSE;
 
     RINOK(ReadStream_FALSE(inStream, buf, size));
 

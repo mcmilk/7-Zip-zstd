@@ -18,7 +18,7 @@ class CSha1Hasher:
 public:
   CSha1Hasher() { Sha1_Init(&_sha); }
 
-  MY_UNKNOWN_IMP
+  MY_UNKNOWN_IMP1(IHasher)
   INTERFACE_IHasher(;)
 };
 

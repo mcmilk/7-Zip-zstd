@@ -57,7 +57,7 @@ const int kParentIndex = -1;
 struct CPanelCallback
 {
   virtual void OnTab() = 0;
-  virtual void SetFocusToPath(int index) = 0;
+  virtual void SetFocusToPath(unsigned index) = 0;
   virtual void OnCopy(bool move, bool copyToSame) = 0;
   virtual void OnSetSameFolder() = 0;
   virtual void OnSetSubFolder() = 0;
@@ -222,6 +222,7 @@ struct CSelectedState
   UString FocusedName;
   bool SelectFocused;
   UStringVector SelectedNames;
+  
   CSelectedState(): FocusedItem(-1), SelectFocused(false) {}
 };
 
@@ -377,6 +378,8 @@ public:
   bool _thereAreDeletedItems;
   bool _markDeletedItems;
 
+  bool PanelCreated;
+
   HWND GetParent();
 
   UInt32 GetRealIndex(const LVITEMW &item) const
@@ -460,8 +463,8 @@ public:
   HRESULT BindToPathAndRefresh(const UString &path);
   void OpenDrivesFolder();
   
-  void SetBookmark(int index);
-  void OpenBookmark(int index);
+  void SetBookmark(unsigned index);
+  void OpenBookmark(unsigned index);
   
   void LoadFullPath();
   void LoadFullPathAndShow();
@@ -477,7 +480,9 @@ public:
       const UString &currentFolderPrefix,
       const UString &arcFormat,
       CPanelCallback *panelCallback,
-      CAppState *appState, bool &archiveIsOpened, bool &encrypted);
+      CAppState *appState,
+      bool needOpenArc,
+      bool &archiveIsOpened, bool &encrypted);
   void SetFocusToList();
   void SetFocusToLastRememberedItem();
 
@@ -496,6 +501,7 @@ public:
       _flatMode(false),
       _flatModeForDisk(false),
       _flatModeForArc(false),
+      PanelCreated(false),
 
       // _showNtfsStrems_Mode(false),
       // _showNtfsStrems_ModeForDisk(false),

@@ -92,14 +92,16 @@ public:
       const UInt64 *outSize, ICompressProgressInfo *progress);
 
   #ifndef NO_READ_FROM_CODER
-  MY_UNKNOWN_IMP4(
+  MY_UNKNOWN_IMP5(
+      ICompressCoder,
       ICompressGetInStreamProcessedSize,
       ICompressSetInStream,
       ICompressSetOutStreamSize,
       ISequentialInStream
       )
   #else
-  MY_UNKNOWN_IMP1(
+  MY_UNKNOWN_IMP2(
+      ICompressCoder,
       ICompressGetInStreamProcessedSize)
   #endif
 

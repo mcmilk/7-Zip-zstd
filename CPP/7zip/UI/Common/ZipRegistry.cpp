@@ -98,6 +98,8 @@ void CInfo::Load()
   OverwriteMode = NOverwriteMode::kAsk;
   OverwriteMode_Force = false;
   
+  SplitDest.Val = true;
+
   Paths.Clear();
 
   CS_LOCK

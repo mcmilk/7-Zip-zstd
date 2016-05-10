@@ -389,7 +389,10 @@ HRESULT CInArchive::ReadFileItem(int volIndex, int fsIndex, const CLongAllocDesc
     return S_FALSE;
   CFile &file = Files.Back();
   const CLogVol &vol = LogVols[volIndex];
-  CPartition &partition = Partitions[vol.PartitionMaps[lad.Location.PartitionRef].PartitionIndex];
+  unsigned partitionRef = lad.Location.PartitionRef;
+  if (partitionRef >= vol.PartitionMaps.Size())
+    return S_FALSE;
+  CPartition &partition = Partitions[vol.PartitionMaps[partitionRef].PartitionIndex];
 
   UInt32 key = lad.Location.Pos;
   UInt32 value;

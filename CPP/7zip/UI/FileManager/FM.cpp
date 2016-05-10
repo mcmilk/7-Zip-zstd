@@ -157,6 +157,7 @@ static bool g_CanChangeSplitter = false;
 static UInt32 g_SplitterPos = 0;
 static CSplitterPos g_Splitter;
 static bool g_PanelsInfoDefined = false;
+static bool g_WindowWasCreated = false;
 
 static int g_StartCaptureMousePos;
 static int g_StartCaptureSplitterPos;
@@ -238,8 +239,9 @@ static BOOL InitInstance(int nCmdShow)
 
   if (windowPosIsRead)
   {
-    // x = rect.left;
-    // y = rect.top;
+    x = info.rect.left;
+    y = info.rect.top;
+    
     xSize = RECT_SIZE_X(info.rect);
     ySize = RECT_SIZE_Y(info.rect);
   }
@@ -258,6 +260,7 @@ static BOOL InitInstance(int nCmdShow)
     info.numPanels = kNumDefaultPanels;
     info.currentPanel = 0;
   }
+
   g_App.NumPanels = info.numPanels;
   g_App.LastFocusedPanel = info.currentPanel;
 
@@ -832,7 +835,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
           needOpenFile = true;
       }
       
-      HRESULT res = g_App.Create(hWnd, fullPath, g_ArcFormat, xSizes, archiveIsOpened, encrypted);
+      HRESULT res = g_App.Create(hWnd, fullPath, g_ArcFormat, xSizes,
+          needOpenFile,
+          archiveIsOpened, encrypted);
 
       if (res == E_ABORT)
         return -1;
@@ -852,6 +857,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         ErrorMessage(message);
         return -1;
       }
+
+      g_WindowWasCreated = true;
       
       // g_SplitterPos = 0;
 
@@ -867,9 +874,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       RevokeDragDrop(hWnd);
       g_App._dropTarget.Release();
 
-      g_App.Save();
+      if (g_WindowWasCreated)
+        g_App.Save();
+    
       g_App.Release();
-      SaveWindowInfo(hWnd);
+      
+      if (g_WindowWasCreated)
+        SaveWindowInfo(hWnd);
 
       g_ExitEventLauncher.Exit(true);
       PostQuitMessage(0);

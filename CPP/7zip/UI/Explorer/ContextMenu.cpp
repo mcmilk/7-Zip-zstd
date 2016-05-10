@@ -295,7 +295,7 @@ static bool IsItArcExt(const UString &ext)
   return false;
 }
 
-static UString GetSubFolderNameForExtract(const UString &arcName)
+UString GetSubFolderNameForExtract(const UString &arcName)
 {
   int dotPos = arcName.ReverseFind_Dot();
   if (dotPos < 0)

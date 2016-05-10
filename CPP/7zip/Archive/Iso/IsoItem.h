@@ -79,7 +79,7 @@ struct CDirRecord
     while (rem >= 5)
     {
       unsigned len = p[2];
-      if (len > rem)
+      if (len < 3 || len > rem)
         return 0;
       if (p[0] == 'N' && p[1] == 'M' && p[3] == 1)
       {

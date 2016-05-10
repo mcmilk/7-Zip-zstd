@@ -347,8 +347,8 @@ struct CSection
 
   CSection(): IsRealSect(false), IsDebug(false), IsAdditionalSection(false) {}
 
-  // const UInt32 GetSize() const { return PSize; }
-  const UInt32 GetSize() const { return MyMin(PSize, VSize); }
+  const UInt32 GetSizeExtract() const { return PSize; }
+  const UInt32 GetSizeMin() const { return MyMin(PSize, VSize); }
 
   void UpdateTotalSize(UInt32 &totalSize) const
   {
@@ -362,8 +362,8 @@ struct CSection
   int Compare(const CSection &s) const
   {
     RINOZ(MyCompare(Pa, s.Pa));
-    UInt32 size1 = GetSize();
-    UInt32 size2 = s.GetSize();
+    UInt32 size1 = GetSizeExtract();
+    UInt32 size2 = s.GetSizeExtract();
     return MyCompare(size1, size2);
   }
 };
@@ -1045,7 +1045,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     switch (propID)
     {
       case kpidPath: prop = MultiByteToUnicodeString(item.Name); break;
-      case kpidSize: prop = (UInt64)item.GetSize(); break;
+      case kpidSize: prop = (UInt64)item.PSize; break;
       case kpidPackSize: prop = (UInt64)item.PSize; break;
       case kpidVirtualSize: prop = (UInt64)item.VSize; break;
       case kpidOffset: prop = item.Pa; break;
@@ -1898,7 +1898,7 @@ static bool ParseVersion(const Byte *p, UInt32 size, CTextFile &f, CObjectVector
 HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchiveOpenCallback *callback)
 {
   const CSection &sect = _sections[sectionIndex];
-  const size_t fileSize = sect.GetSize();
+  const size_t fileSize = sect.GetSizeMin();
 
   if (fileSize > kFileSizeMax)
     return S_FALSE;
@@ -1926,6 +1926,7 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
   _oneLang = true;
   bool stringsOk = true;
   size_t maxOffset = 0;
+  
   FOR_VECTOR (i, specItems)
   {
     const CTableItem &item1 = specItems[i];
@@ -2007,6 +2008,7 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
           }
           // PrintError("ver.Parse error");
         }
+  
         item.Enabled = true;
         _items.Add(item);
       }
@@ -2041,7 +2043,10 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
     UInt32 mask = (1 << numBits) - 1;
     size_t end = ((maxOffset + mask) & ~mask);
     
-    if (/* end < sect.VSize && */ end <= sect.GetSize())
+    // PSize can be much larger than VSize in some exe installers.
+    // it contains archive data after PE resources.
+    // So we need to use PSize here!
+    if (/* end < sect.VSize && */ end <= sect.PSize)
     {
       CSection sect2;
       sect2.Flags = 0;
@@ -2059,7 +2064,7 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
 
       // 9.29: we use sect.PSize instead of sect.VSize to support some CAB-SFX
       // the code for .rsrc_2 is commented.
-      sect2.PSize = sect.GetSize() - (UInt32)maxOffset;
+      sect2.PSize = sect.PSize - (UInt32)maxOffset;
 
       if (sect2.PSize != 0)
       {
@@ -2473,7 +2478,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     else if (mixItem.ResourceIndex >= 0)
       size = _items[mixItem.ResourceIndex].GetSize();
     else
-      size = _sections[mixItem.SectionIndex].GetSize();
+      size = _sections[mixItem.SectionIndex].GetSizeExtract();
     totalSize += size;
   }
   extractCallback->SetTotal(totalSize);
@@ -2549,7 +2554,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     }
     else
     {
-      currentItemSize = sect.GetSize();
+      currentItemSize = sect.GetSizeExtract();
       if (!testMode && !outStream)
         continue;
       

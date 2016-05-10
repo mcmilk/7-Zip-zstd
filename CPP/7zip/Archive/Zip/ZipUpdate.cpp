@@ -52,16 +52,6 @@ static HRESULT CopyBlockToArchive(ISequentialInStream *inStream, UInt64 size,
   return NCompress::CopyStream_ExactSize(inStream, outStream, size, progress);
 }
 
-static HRESULT WriteRange(IInStream *inStream, COutArchive &outArchive,
-    const CUpdateRange &range, ICompressProgressInfo *progress)
-{
-  UInt64 position;
-  RINOK(inStream->Seek(range.Position, STREAM_SEEK_SET, &position));
-  RINOK(CopyBlockToArchive(inStream, range.Size, outArchive, progress));
-  return progress->SetRatioInfo(&range.Size, &range.Size);
-}
-
-
 static void SetFileHeader(
     COutArchive &archive,
     const CCompressionMethodMode &options,
@@ -358,9 +348,12 @@ static HRESULT UpdateItemOldData(
       return E_NOTIMPL;
     
     // use old name size.
-    // CUpdateRange range(item.GetLocalExtraPosition(), item.LocalExtraSize + item.PackSize);
-    CUpdateRange range(inArchive->GetOffsetInStream(itemEx.GetDataPosition()), itemEx.PackSize);
     
+    CMyComPtr<ISequentialInStream> packStream;
+    RINOK(inArchive->GetItemStream(itemEx, true, packStream));
+    if (!packStream)
+      return E_NOTIMPL;
+
     // we keep ExternalAttrib and some another properties from old archive
     // item.ExternalAttrib = ui.Attrib;
 
@@ -378,19 +371,27 @@ static HRESULT UpdateItemOldData(
 
     archive.PrepareWriteCompressedData2(item.Name.Len(), item.Size, item.PackSize, item.LocalExtra.HasWzAes());
     archive.WriteLocalHeader(item);
-    RINOK(WriteRange(inArchive->Stream, archive, range, progress));
-    complexity += range.Size;
+
+    RINOK(CopyBlockToArchive(packStream, itemEx.PackSize, archive, progress));
+
+    complexity += itemEx.PackSize;
   }
   else
   {
-    CUpdateRange range(inArchive->GetOffsetInStream(itemEx.LocalHeaderPos), itemEx.GetLocalFullSize());
+    CMyComPtr<ISequentialInStream> packStream;
+    RINOK(inArchive->GetItemStream(itemEx, false, packStream));
+    if (!packStream)
+      return E_NOTIMPL;
     
     // set new header position
     item.LocalHeaderPos = archive.GetCurPos();
     
-    RINOK(WriteRange(inArchive->Stream, archive, range, progress));
-    complexity += range.Size;
-    archive.MoveCurPos(range.Size);
+    const UInt64 rangeSize = itemEx.GetLocalFullSize();
+    
+    RINOK(CopyBlockToArchive(packStream, rangeSize, archive, progress));
+
+    complexity += rangeSize;
+    archive.MoveCurPos(rangeSize);
   }
 
   return S_OK;
@@ -1191,10 +1192,11 @@ HRESULT Update(
 
     if (inArchive)
     {
-      if (inArchive->ArcInfo.Base > 0 && !removeSfx)
+      if (!inArchive->IsMultiVol && inArchive->ArcInfo.Base > 0 && !removeSfx)
       {
-        RINOK(inArchive->Stream->Seek(0, STREAM_SEEK_SET, NULL));
-        RINOK(NCompress::CopyStream_ExactSize(inArchive->Stream, outStreamReal, inArchive->ArcInfo.Base, NULL));
+        IInStream *baseStream = inArchive->GetBaseStream();
+        RINOK(baseStream->Seek(0, STREAM_SEEK_SET, NULL));
+        RINOK(NCompress::CopyStream_ExactSize(baseStream, outStreamReal, inArchive->ArcInfo.Base, NULL));
       }
     }
 
@@ -1210,11 +1212,12 @@ HRESULT Update(
 
   if (inArchive)
   {
-    if ((Int64)inArchive->ArcInfo.MarkerPos2 > inArchive->ArcInfo.Base)
+    if (!inArchive->IsMultiVol && (Int64)inArchive->ArcInfo.MarkerPos2 > inArchive->ArcInfo.Base)
     {
-      RINOK(inArchive->Stream->Seek(inArchive->ArcInfo.Base, STREAM_SEEK_SET, NULL));
+      IInStream *baseStream = inArchive->GetBaseStream();
+      RINOK(baseStream->Seek(inArchive->ArcInfo.Base, STREAM_SEEK_SET, NULL));
       UInt64 embStubSize = inArchive->ArcInfo.MarkerPos2 - inArchive->ArcInfo.Base;
-      RINOK(NCompress::CopyStream_ExactSize(inArchive->Stream, outStream, embStubSize, NULL));
+      RINOK(NCompress::CopyStream_ExactSize(baseStream, outStream, embStubSize, NULL));
       outArchive.MoveCurPos(embStubSize);
     }
   }

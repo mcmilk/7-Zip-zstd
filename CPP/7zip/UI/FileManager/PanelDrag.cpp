@@ -16,6 +16,7 @@
 
 #include "../Common/ArchiveName.h"
 #include "../Common/CompressCall.h"
+#include "../Common/ExtractingFilePath.h"
 
 #include "MessagesDialog.h"
 
@@ -350,7 +351,10 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
       if (isFSFolder)
         s = GetItemRelPath(index);
       else
+      {
         s = GetItemName(index);
+        s = Get_Correct_FsFile_Name(s);
+      }
       names.Add(fs2us(dirPrefix) + s);
     }
     if (!CopyNamesToHGlobal(dataObjectSpec->hGlobal, names))
@@ -470,7 +474,7 @@ void CDropTarget::PositionCursor(POINTL ptl)
   {
     POINT pt2 = pt;
     App->_window.ScreenToClient(&pt2);
-    for (int i = 0; i < kNumPanelsMax; i++)
+    for (unsigned i = 0; i < kNumPanelsMax; i++)
       if (App->IsPanelVisible(i))
         if (App->Panels[i].IsEnabled())
           if (ChildWindowFromPointEx(App->_window, pt2,
@@ -478,7 +482,7 @@ void CDropTarget::PositionCursor(POINTL ptl)
           {
             m_Panel = &App->Panels[i];
             m_IsAppTarget = false;
-            if (i == SrcPanelIndex)
+            if ((int)i == SrcPanelIndex)
             {
               m_PanelDropIsAllowed = false;
               return;

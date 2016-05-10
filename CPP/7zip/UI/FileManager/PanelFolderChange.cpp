@@ -263,12 +263,12 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
   return S_OK;
 }
 
-void CPanel::SetBookmark(int index)
+void CPanel::SetBookmark(unsigned index)
 {
   _appState->FastFolders.SetString(index, _currentFolderPrefix);
 }
 
-void CPanel::OpenBookmark(int index)
+void CPanel::OpenBookmark(unsigned index)
 {
   BindToPathAndRefresh(_appState->FastFolders.GetString(index));
 }

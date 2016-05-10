@@ -154,7 +154,7 @@ HRESULT CDecoder::WriteBuf()
   FOR_VECTOR (i, _tempFilters)
   {
     CTempFilter *filter = _tempFilters[i];
-    if (filter == NULL)
+    if (!filter)
       continue;
     if (filter->NextWindow)
     {
@@ -187,8 +187,10 @@ HRESULT CDecoder::WriteBuf()
         while (i + 1 < _tempFilters.Size())
         {
           CTempFilter *nextFilter = _tempFilters[i + 1];
-          if (nextFilter == NULL || nextFilter->BlockStart != blockStart ||
-              nextFilter->BlockSize != outBlockRef.Size || nextFilter->NextWindow)
+          if (!nextFilter
+              || nextFilter->BlockStart != blockStart
+              || nextFilter->BlockSize != outBlockRef.Size
+              || nextFilter->NextWindow)
             break;
           _vm.SetMemory(0, _vm.GetDataPointer(outBlockRef.Offset), outBlockRef.Size);
           ExecuteFilter(++i, outBlockRef);
@@ -203,7 +205,7 @@ HRESULT CDecoder::WriteBuf()
         for (unsigned j = i; j < _tempFilters.Size(); j++)
         {
           CTempFilter *filter = _tempFilters[j];
-          if (filter != NULL && filter->NextWindow)
+          if (filter && filter->NextWindow)
             filter->NextWindow = false;
         }
         _wrPtr = writtenBorder;
@@ -273,7 +275,7 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
   for (i = 0; i < _tempFilters.Size(); i++)
   {
     _tempFilters[i - numEmptyItems] = _tempFilters[i];
-    if (_tempFilters[i] == NULL)
+    if (!_tempFilters[i])
       numEmptyItems++;
     if (numEmptyItems > 0)
       _tempFilters[i] = NULL;
@@ -865,21 +867,21 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 {
   try
   {
-    if (inSize == NULL || outSize == NULL)
+    if (!inSize)
       return E_INVALIDARG;
 
-    if (_vmData == 0)
+    if (!_vmData)
     {
       _vmData = (Byte *)::MidAlloc(kVmDataSizeMax + kVmCodeSizeMax);
-      if (_vmData == 0)
+      if (!_vmData)
         return E_OUTOFMEMORY;
       _vmCode = _vmData + kVmDataSizeMax;
     }
     
-    if (_window == 0)
+    if (!_window)
     {
       _window = (Byte *)::MidAlloc(kWindowSize);
-      if (_window == 0)
+      if (!_window)
         return E_OUTOFMEMORY;
     }
     if (!m_InBitStream.BitDecoder.Create(1 << 20))
@@ -893,7 +895,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     _outStream = outStream;
    
     // CCoderReleaser coderReleaser(this);
-    _unpackSize = *outSize;
+    _unpackSize = outSize ? *outSize : (UInt64)(Int64)-1;
     return CodeReal(progress);
   }
   catch(const CInBufferException &e)  { return e.ErrorCode; }

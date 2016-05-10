@@ -14,7 +14,7 @@ class CApp;
 extern CApp g_App;
 extern HWND g_HWND;
 
-const int kNumPanelsMax = 2;
+const unsigned kNumPanelsMax = 2;
 
 extern bool g_IsSmallScreen;
 
@@ -32,15 +32,15 @@ enum
 class CPanelCallbackImp: public CPanelCallback
 {
   CApp *_app;
-  int _index;
+  unsigned _index;
 public:
-  void Init(CApp *app, int index)
+  void Init(CApp *app, unsigned index)
   {
     _app = app;
     _index = index;
   }
   virtual void OnTab();
-  virtual void SetFocusToPath(int index);
+  virtual void SetFocusToPath(unsigned index);
   virtual void OnCopy(bool move, bool copyToSame);
   virtual void OnSetSameFolder();
   virtual void OnSetSubFolder();
@@ -111,8 +111,8 @@ public:
   NWindows::CWindow _window;
   bool ShowSystemMenu;
   // bool ShowDeletedFiles;
-  int NumPanels;
-  int LastFocusedPanel;
+  unsigned NumPanels;
+  unsigned LastFocusedPanel;
 
   bool ShowStandardToolbar;
   bool ShowArchiveToolbar;
@@ -122,7 +122,6 @@ public:
   CAppState AppState;
   CPanelCallbackImp m_PanelCallbackImp[kNumPanelsMax];
   CPanel Panels[kNumPanelsMax];
-  bool PanelsCreated[kNumPanelsMax];
 
   NWindows::NControl::CImageList _buttonsImageList;
 
@@ -151,13 +150,13 @@ public:
     _dropTargetSpec->App = (this);
   }
 
-  void SetFocusedPanel(int index)
+  void SetFocusedPanel(unsigned index)
   {
     LastFocusedPanel = index;
     _dropTargetSpec->TargetPanelIndex = LastFocusedPanel;
   }
 
-  void DragBegin(int panelIndex)
+  void DragBegin(unsigned panelIndex)
   {
     _dropTargetSpec->TargetPanelIndex = (NumPanels > 1) ? 1 - panelIndex : panelIndex;
     _dropTargetSpec->SrcPanelIndex = panelIndex;
@@ -174,16 +173,16 @@ public:
   void OnSetSameFolder(int srcPanelIndex);
   void OnSetSubFolder(int srcPanelIndex);
 
-  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted);
-  HRESULT Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool &archiveIsOpened, bool &encrypted);
+  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat, bool needOpenArc, bool &archiveIsOpened, bool &encrypted);
+  HRESULT Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, bool &archiveIsOpened, bool &encrypted);
   void Read();
   void Save();
   void Release();
 
   // void SetFocus(int panelIndex) { Panels[panelIndex].SetFocusToList(); }
   void SetFocusToLastItem() { Panels[LastFocusedPanel].SetFocusToLastRememberedItem(); }
-  int GetFocusedPanelIndex() const { return LastFocusedPanel; }
-  bool IsPanelVisible(int index) const { return (NumPanels > 1 || index == LastFocusedPanel); }
+  unsigned GetFocusedPanelIndex() const { return LastFocusedPanel; }
+  bool IsPanelVisible(unsigned index) const { return (NumPanels > 1 || index == LastFocusedPanel); }
   CPanel &GetFocusedPanel() { return Panels[GetFocusedPanelIndex()]; }
 
   // File Menu
@@ -235,9 +234,9 @@ public:
   void RefreshView() { GetFocusedPanel().OnReload(); }
   void RefreshAllPanels()
   {
-    for (int i = 0; i < NumPanels; i++)
+    for (unsigned i = 0; i < NumPanels; i++)
     {
-      int index = i;
+      unsigned index = i;
       if (NumPanels == 1)
         index = LastFocusedPanel;
       Panels[index].OnReload();
@@ -247,9 +246,9 @@ public:
   /*
   void SysIconsWereChanged()
   {
-    for (int i = 0; i < NumPanels; i++)
+    for (unsigned i = 0; i < NumPanels; i++)
     {
-      int index = i;
+      unsigned index = i;
       if (NumPanels == 1)
         index = LastFocusedPanel;
       Panels[index].SysIconsWereChanged();
@@ -280,7 +279,7 @@ public:
   }
   void SetPanels_AutoRefresh_Mode()
   {
-    for (int i = 0; i < kNumPanelsMax; i++)
+    for (unsigned i = 0; i < kNumPanelsMax; i++)
       Panels[i].Set_AutoRefresh_Mode(AutoRefresh_Mode);
   }
 
@@ -347,7 +346,7 @@ public:
   UString PrevTitle;
   void RefreshTitle(bool always = false);
   void RefreshTitleAlways() { RefreshTitle(true); }
-  void RefreshTitle(int panelIndex, bool always = false);
+  void RefreshTitlePanel(unsigned panelIndex, bool always = false);
 
   void MoveSubWindows();
 };

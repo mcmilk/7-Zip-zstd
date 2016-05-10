@@ -1,6 +1,12 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+16.00          2016-05-10
+-------------------------	
+- 7-Zip now can extract multivolume ZIP archives (z01, z02, ... , zip).
+- Some bugs were fixed,
+
+
 15.12          2015-11-19
 -------------------------	
 - The BUG in C version of 7z decoder was fixed:

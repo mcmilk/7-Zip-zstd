@@ -199,6 +199,8 @@ public:
   UInt64 PackSize;
   UInt32 Time;
   UInt32 Crc;
+
+  UInt32 Disk;
   
   AString Name;
 

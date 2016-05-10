@@ -9,7 +9,9 @@
 #include "Rar3Decoder.h"
 #include "Rar5Decoder.h"
 
-#define CREATE_CODEC(x) REGISTER_CODEC_CREATE(CreateCodec ## x, NCompress::NRar ## x::CDecoder())
+namespace NCompress {
+
+#define CREATE_CODEC(x) REGISTER_CODEC_CREATE(CreateCodec ## x, NRar ## x::CDecoder())
 
 CREATE_CODEC(1)
 CREATE_CODEC(2)
@@ -27,3 +29,5 @@ REGISTER_CODECS_VAR
 };
 
 REGISTER_CODECS(Rar)
+
+}

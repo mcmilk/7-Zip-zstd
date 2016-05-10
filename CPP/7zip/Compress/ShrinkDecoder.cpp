@@ -1,6 +1,9 @@
 // ShrinkDecoder.cpp
 
+
 #include "StdAfx.h"
+
+#include <stdio.h>
 
 #include "../../../C/Alloc.h"
 
@@ -13,8 +16,8 @@
 namespace NCompress {
 namespace NShrink {
 
-static const UInt32 kBufferSize = (1 << 20);
-static const int kNumMinBits = 9;
+static const UInt32 kBufferSize = (1 << 18);
+static const unsigned kNumMinBits = 9;
 
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
@@ -32,109 +35,121 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   outBuffer.SetStream(outStream);
   outBuffer.Init();
 
-  UInt64 prevPos = 0;
-  int numBits = kNumMinBits;
-  UInt32 head = 257;
-  bool needPrev = false;
-  UInt32 lastSymbol = 0;
+  {
+    unsigned i;
+    for (i = 0; i < 257; i++)
+      _parents[i] = (UInt16)i;
+    for (; i < kNumItems; i++)
+      _parents[i] = kNumItems;
+    for (i = 0; i < kNumItems; i++)
+      _suffixes[i] = 0;
+  }
 
-  int i;
-  for (i = 0; i < kNumItems; i++)
-    _parents[i] = 0;
-  for (i = 0; i < kNumItems; i++)
-    _suffixes[i] = 0;
-  for (i = 0; i < 257; i++)
-    _isFree[i] = false;
-  for (; i < kNumItems; i++)
-    _isFree[i] = true;
+  UInt64 prevPos = 0;
+  unsigned numBits = kNumMinBits;
+  unsigned head = 257;
+  int lastSym = -1;
+  Byte lastChar2 = 0;
 
   for (;;)
   {
-    UInt32 symbol = inBuffer.ReadBits(numBits);
+    UInt32 sym = inBuffer.ReadBits(numBits);
+    
     if (inBuffer.ExtraBitsWereRead())
       break;
-    if (_isFree[symbol])
-      return S_FALSE;
-    if (symbol == 256)
+    
+    if (sym == 256)
     {
-      UInt32 symbol = inBuffer.ReadBits(numBits);
-      if (symbol == 1)
+      sym = inBuffer.ReadBits(numBits);
+      if (sym == 1)
       {
-        if (numBits < kNumMaxBits)
-          numBits++;
+        if (numBits >= kNumMaxBits)
+          return S_FALSE;
+        numBits++;
+        continue;
       }
-      else if (symbol == 2)
-      {
-        if (needPrev)
-          _isFree[head - 1] = true;
-        for (i = 257; i < kNumItems; i++)
-          _isParent[i] = false;
-        for (i = 257; i < kNumItems; i++)
-          if (!_isFree[i])
-            _isParent[_parents[i]] = true;
-        for (i = 257; i < kNumItems; i++)
-          if (!_isParent[i])
-            _isFree[i] = true;
-        head = 257;
-        while (head < kNumItems && !_isFree[head])
-          head++;
-        if (head < kNumItems)
-        {
-          needPrev = true;
-          _isFree[head] = false;
-          _parents[head] = (UInt16)lastSymbol;
-          head++;
-        }
-      }
-      else
+      if (sym != 2)
         return S_FALSE;
-      continue;
+      {
+        unsigned i;
+        for (i = 257; i < kNumItems; i++)
+          _stack[i] = 0;
+        for (i = 257; i < kNumItems; i++)
+        {
+          unsigned par = _parents[i];
+          if (par != kNumItems)
+            _stack[par] = 1;
+        }
+        for (i = 257; i < kNumItems; i++)
+          if (_stack[i] == 0)
+            _parents[i] = kNumItems;
+       
+        head = 257;
+       
+        continue;
+      }
     }
-    UInt32 cur = symbol;
-    i = 0;
-    int corectionIndex = -1;
+
+    bool needPrev = false;
+    if (head < kNumItems && lastSym >= 0)
+    {
+      while (head < kNumItems && _parents[head] != kNumItems)
+        head++;
+      if (head < kNumItems)
+      {
+        if (head == (unsigned)lastSym)
+        {
+          // we need to fix the code for that case
+          // _parents[head] is not allowed to link to itself
+          return E_NOTIMPL;
+        }
+        needPrev = true;
+        _parents[head] = (UInt16)lastSym;
+        _suffixes[head] = (Byte)lastChar2;
+        head++;
+      }
+    }
+
+    if (_parents[sym] == kNumItems)
+      return S_FALSE;
+
+    lastSym = sym;
+    unsigned cur = sym;
+    unsigned i = 0;
+    
     while (cur >= 256)
     {
-      if (cur == head - 1)
-        corectionIndex = i;
       _stack[i++] = _suffixes[cur];
       cur = _parents[cur];
     }
+    
     _stack[i++] = (Byte)cur;
-    if (needPrev)
-    {
-      _suffixes[head - 1] = (Byte)cur;
-      if (corectionIndex >= 0)
-        _stack[corectionIndex] = (Byte)cur;
-    }
-    while (i > 0)
-      outBuffer.WriteByte((_stack[--i]));
-    while (head < kNumItems && !_isFree[head])
-      head++;
-    if (head < kNumItems)
-    {
-      needPrev = true;
-      _isFree[head] = false;
-      _parents[head] = (UInt16)symbol;
-      head++;
-    }
-    else
-      needPrev = false;
-    lastSymbol = symbol;
+    lastChar2 = (Byte)cur;
 
-    UInt64 nowPos = outBuffer.GetProcessedSize();
-    if (progress != NULL && nowPos - prevPos > (1 << 18))
+    if (needPrev)
+      _suffixes[head - 1] = (Byte)cur;
+
+    do
+      outBuffer.WriteByte(_stack[--i]);
+    while (i);
+    
+    if (progress)
     {
-      prevPos = nowPos;
-      UInt64 packSize = inBuffer.GetProcessedSize();
-      RINOK(progress->SetRatioInfo(&packSize, &nowPos));
+      const UInt64 nowPos = outBuffer.GetProcessedSize();
+      if (nowPos - prevPos >= (1 << 18))
+      {
+        prevPos = nowPos;
+        const UInt64 packSize = inBuffer.GetProcessedSize();
+        RINOK(progress->SetRatioInfo(&packSize, &nowPos));
+      }
     }
   }
+  
   return outBuffer.Flush();
 }
 
 STDMETHODIMP CDecoder ::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize,    ICompressProgressInfo *progress)
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
   catch(const CInBufferException &e) { return e.ErrorCode; }

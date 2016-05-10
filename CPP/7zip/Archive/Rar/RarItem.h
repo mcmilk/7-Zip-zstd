@@ -42,6 +42,8 @@ struct CItem
 
   Byte Salt[8];
   
+  bool Is_Size_Defined() const { return Size != (UInt64)(Int64)-1; }
+
   bool IsEncrypted()   const { return (Flags & NHeader::NFile::kEncrypted) != 0; }
   bool IsSolid()       const { return (Flags & NHeader::NFile::kSolid) != 0; }
   bool IsCommented()   const { return (Flags & NHeader::NFile::kComment) != 0; }

@@ -348,15 +348,19 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   
   CMyComPtr<IInStream> nextStream = inStream;
   bool prevChecked = false;
+  UString startVolName;
+  bool startVolName_was_Requested = false;
   UInt64 numItems = 0;
   unsigned numTempVolumes = 0;
   // try
   {
-    while (nextStream != NULL)
+    while (nextStream)
     {
       CDatabaseEx db;
       db.Stream = nextStream;
+      
       HRESULT res = archive.Open(db, maxCheckStartPosition);
+      
       _errorInHeaders |= archive.HeaderError;
       _errorInHeaders |= archive.ErrorInNames;
       _unexpectedEnd |= archive.UnexpectedEnd;
@@ -426,6 +430,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       for (;;)
       {
         const COtherArc *otherArc = NULL;
+        
         if (!prevChecked)
         {
           if (numTempVolumes == 0)
@@ -449,18 +454,35 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
             }
           }
         }
+        
         if (!otherArc)
         {
           const CInArcInfo &ai = m_Database.Volumes.Back().ArcInfo;
           if (ai.IsThereNext())
             otherArc = &ai.NextArc;
         }
+        
         if (!otherArc)
           break;
         if (!openVolumeCallback)
           break;
         // printf("\n%s", otherArc->FileName);
         const UString fullName = MultiByteToUnicodeString(otherArc->FileName, CP_ACP);
+
+        if (!startVolName_was_Requested)
+        {
+          // some "bad" cab example can contain the link to itself.
+          startVolName_was_Requested = true;
+          {
+            NCOM::CPropVariant prop;
+            RINOK(openVolumeCallback->GetProperty(kpidName, &prop));
+            if (prop.vt == VT_BSTR)
+              startVolName = prop.bstrVal;
+          }
+          if (fullName == startVolName)
+            break;
+        }
+
         HRESULT result = openVolumeCallback->GetStream(fullName, &nextStream);
         if (result == S_OK)
           break;

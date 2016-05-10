@@ -71,7 +71,7 @@ CDynLimBuf &CDynLimBuf::operator+=(const char *s) throw()
     size_t n = _pos + len;
     if (n - _size < _size)
     {
-      size_t n = _sizeLimit;
+      n = _sizeLimit;
       if (n - _size > _size)
         n = _size * 2;
     }

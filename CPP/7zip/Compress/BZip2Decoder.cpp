@@ -783,7 +783,7 @@ void CState::ThreadFunc()
       }
       packSize = Decoder->Base.BitDecoder.GetProcessedSize();
     }
-    catch(const CInBufferException &e) { res = e.ErrorCode;  if (res != S_OK) res = E_FAIL; }
+    catch(const CInBufferException &e) { res = e.ErrorCode; if (res == S_OK) res = E_FAIL; }
     catch(...) { res = E_FAIL; }
     if (res != S_OK)
     {
@@ -809,7 +809,7 @@ void CState::ThreadFunc()
           res = S_FALSE;
       }
     }
-    catch(const COutBufferException &e) { res = e.ErrorCode; if (res != S_OK) res = E_FAIL; }
+    catch(const COutBufferException &e) { res = e.ErrorCode; if (res == S_OK) res = E_FAIL; }
     catch(...) { res = E_FAIL; }
     if (res != S_OK)
     {
