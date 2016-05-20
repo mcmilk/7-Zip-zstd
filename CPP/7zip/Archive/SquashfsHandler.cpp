@@ -296,23 +296,25 @@ struct CNode
 
 UInt32 CNode::Parse1(const Byte *p, UInt32 size, const CHeader &_h)
 {
-  bool be = _h.be;
+  const bool be = _h.be;
   if (size < 4)
     return 0;
-  UInt16 t = Get16(p);
-  if (be)
   {
-    Type = (UInt16)(t >> 12);
-    Mode = (UInt16)(t & 0xFFF);
-    Uid = (UInt16)(p[2] >> 4);
-    Gid = (UInt16)(p[2] & 0xF);
-  }
-  else
-  {
-    Type = (UInt16)(t & 0xF);
-    Mode = (UInt16)(t >> 4);
-    Uid = (UInt16)(p[2] & 0xF);
-    Gid = (UInt16)(p[2] >> 4);
+    const UInt32 t = Get16(p);
+    if (be)
+    {
+      Type = (UInt16)(t >> 12);
+      Mode = (UInt16)(t & 0xFFF);
+      Uid = (UInt16)(p[2] >> 4);
+      Gid = (UInt16)(p[2] & 0xF);
+    }
+    else
+    {
+      Type = (UInt16)(t & 0xF);
+      Mode = (UInt16)(t >> 4);
+      Uid = (UInt16)(p[2] & 0xF);
+      Gid = (UInt16)(p[2] >> 4);
+    }
   }
 
   // Xattr = kXattr_Empty;
@@ -402,17 +404,20 @@ UInt32 CNode::Parse2(const Byte *p, UInt32 size, const CHeader &_h)
   bool be = _h.be;
   if (size < 4)
     return 0;
-  UInt16 t = Get16(p);
-  if (be)
   {
-    Type = (UInt16)(t >> 12);
-    Mode = (UInt16)(t & 0xFFF);
+    const UInt32 t = Get16(p);
+    if (be)
+    {
+      Type = (UInt16)(t >> 12);
+      Mode = (UInt16)(t & 0xFFF);
+    }
+    else
+    {
+      Type = (UInt16)(t & 0xF);
+      Mode = (UInt16)(t >> 4);
+    }
   }
-  else
-  {
-    Type = (UInt16)(t & 0xF);
-    Mode = (UInt16)(t >> 4);
-  }
+
   Uid = p[2];
   Gid = p[3];
 
@@ -532,17 +537,21 @@ UInt32 CNode::Parse3(const Byte *p, UInt32 size, const CHeader &_h)
   bool be = _h.be;
   if (size < 12)
     return 0;
-  UInt16 t = Get16(p);
-  if (be)
+  
   {
-    Type = (UInt16)(t >> 12);
-    Mode = (UInt16)(t & 0xFFF);
+    const UInt32 t = Get16(p);
+    if (be)
+    {
+      Type = (UInt16)(t >> 12);
+      Mode = (UInt16)(t & 0xFFF);
+    }
+    else
+    {
+      Type = (UInt16)(t & 0xF);
+      Mode = (UInt16)(t >> 4);
+    }
   }
-  else
-  {
-    Type = (UInt16)(t & 0xF);
-    Mode = (UInt16)(t >> 4);
-  }
+
   Uid = p[2];
   Gid = p[3];
   // GET_32 (4, MTime);
@@ -2115,7 +2124,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         RINOK(hres);
         {
-          HRESULT hres = copyCoder->Code(inSeqStream, outStream, NULL, NULL, progress);
+          hres = copyCoder->Code(inSeqStream, outStream, NULL, NULL, progress);
           if (hres == S_OK)
           {
             if (copyCoderSpec->TotalSize == unpackSize)

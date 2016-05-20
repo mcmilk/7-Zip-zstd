@@ -667,13 +667,15 @@ static int CompareFiles(const unsigned *p1, const unsigned *p2, void *param)
     return -1;
   if (isDir2)
   {
-    if (isDir1)
-      return MyCompare(*p1, *p2);
-    return 1;
+    if (!isDir1)
+      return 1;
   }
-  RINOZ(MyCompare(item1.Section, item2.Section));
-  RINOZ(MyCompare(item1.Offset, item2.Offset));
-  RINOZ(MyCompare(item1.Size, item2.Size));
+  else
+  {
+    RINOZ(MyCompare(item1.Section, item2.Section));
+    RINOZ(MyCompare(item1.Offset, item2.Offset));
+    RINOZ(MyCompare(item1.Size, item2.Size));
+  }
   return MyCompare(*p1, *p2);
 }
 
@@ -716,6 +718,19 @@ bool CFilesDatabase::Check()
   return true;
 }
 
+bool CFilesDatabase::CheckSectionRefs()
+{
+  FOR_VECTOR (i, Indices)
+  {
+    const CItem &item = Items[Indices[i]];
+    if (item.Section == 0 || item.IsDir())
+      continue;
+    if (item.Section >= Sections.Size())
+      return false;
+  }
+  return true;
+}
+
 static int inline GetLog(UInt32 num)
 {
   for (int i = 0; i < 32; i++)
@@ -745,10 +760,10 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     }
   }
 
-  unsigned i;
-  for (i = 1; i < database.Sections.Size(); i++)
+  unsigned si;
+  for (si = 1; si < database.Sections.Size(); si++)
   {
-    CSectionInfo &section = database.Sections[i];
+    CSectionInfo &section = database.Sections[si];
     AString sectionPrefix = GetSectionPrefix(section.Name);
     {
       // Content
@@ -993,6 +1008,8 @@ HRESULT CInArchive::Open2(IInStream *inStream,
         return S_OK;
       }
       RINOK(res);
+      if (!database.CheckSectionRefs())
+        HeadersError = true;
       database.LowLevel = false;
     }
     catch(...)

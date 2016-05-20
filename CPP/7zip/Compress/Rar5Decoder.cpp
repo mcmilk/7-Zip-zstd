@@ -639,10 +639,10 @@ HRESULT CDecoder::DecodeLZ()
           rep0 = dist;
         }
         
-        UInt32 sym = m_LenDecoder.Decode(&_bitStream);
-        if (sym >= kLenTableSize)
+        const UInt32 sym2 = m_LenDecoder.Decode(&_bitStream);
+        if (sym2 >= kLenTableSize)
           break; // return S_FALSE;
-        len = SlotToLen(_bitStream, sym);
+        len = SlotToLen(_bitStream, sym2);
       }
       else
       {

@@ -2810,7 +2810,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         RINOK(hres);
         {
-          HRESULT hres = copyCoder->Code(inSeqStream, outStream, NULL, NULL, progress);
+          hres = copyCoder->Code(inSeqStream, outStream, NULL, NULL, progress);
           if (hres == S_OK)
           {
             if (copyCoderSpec->TotalSize == unpackSize)

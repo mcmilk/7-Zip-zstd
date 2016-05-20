@@ -1349,43 +1349,45 @@ HRESULT CExtent::Open3(IInStream *stream, IArchiveOpenCallback *openCallback,
 
   for (size_t i = 0; i < numGdeEntries; i++)
   {
-    UInt32 v = Get32((const Byte *)table + (size_t)i * 4);
-    CByteBuffer &buf = Tables.AddNew();
-    if (v == 0 || v == ZeroSector)
-      continue;
-    if (openCallback && (i - numProcessed_Prev) >= 1024)
-    {
-      const UInt64 comp = complexityStart + ((UInt64)i << (k_NumMidBits + 2));
-      const UInt64 volIndex2 = volIndex;
-      RINOK(openCallback->SetCompleted(numVols == 1 ? NULL : &volIndex2, &comp));
-      numProcessed_Prev = i;
-    }
-
     const size_t k_NumSectors = (size_t)1 << (k_NumMidBits - 9 + 2);
-    
-    if (h.Is_Marker())
-    {
-      Byte buf2[1 << 9];
-      if (ReadForHeader(stream, v - 1, buf2, 1) != S_OK)
-        return S_FALSE;
-      {
-        CMarker m;
-        m.Parse(buf2);
-        if (m.Type != k_Marker_GRAIN_TABLE
-            || m.NumSectors != k_NumSectors
-            || m.SpecSize != 0)
-          return S_FALSE;
-      }
-    }
-
     const size_t k_NumMidItems = (size_t)1 << k_NumMidBits;
 
-    buf.Alloc(k_NumMidItems * 4);
-    RINOK(ReadForHeader(stream, v, buf, k_NumSectors));
+    CByteBuffer &buf = Tables.AddNew();
+
+    {
+      const UInt32 v = Get32((const Byte *)table + (size_t)i * 4);
+      if (v == 0 || v == ZeroSector)
+        continue;
+      if (openCallback && (i - numProcessed_Prev) >= 1024)
+      {
+        const UInt64 comp = complexityStart + ((UInt64)i << (k_NumMidBits + 2));
+        const UInt64 volIndex2 = volIndex;
+        RINOK(openCallback->SetCompleted(numVols == 1 ? NULL : &volIndex2, &comp));
+        numProcessed_Prev = i;
+      }
+      
+      if (h.Is_Marker())
+      {
+        Byte buf2[1 << 9];
+        if (ReadForHeader(stream, v - 1, buf2, 1) != S_OK)
+          return S_FALSE;
+        {
+          CMarker m;
+          m.Parse(buf2);
+          if (m.Type != k_Marker_GRAIN_TABLE
+            || m.NumSectors != k_NumSectors
+            || m.SpecSize != 0)
+            return S_FALSE;
+        }
+      }
+      
+      buf.Alloc(k_NumMidItems * 4);
+      RINOK(ReadForHeader(stream, v, buf, k_NumSectors));
+    }
 
     for (size_t k = 0; k < k_NumMidItems; k++)
     {
-      UInt32 v = Get32((const Byte *)buf + (size_t)k * 4);
+      const UInt32 v = Get32((const Byte *)buf + (size_t)k * 4);
       if (v == 0 || v == ZeroSector)
         continue;
       if (v < h.overHead)

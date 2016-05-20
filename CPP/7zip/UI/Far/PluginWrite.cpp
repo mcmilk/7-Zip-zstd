@@ -437,10 +437,8 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
   UString archiveNameSrc = resultPath;
   UString arcName = archiveNameSrc;
 
-  const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
   int prevFormat = archiverIndex;
- 
-  SetArcName(arcName, arcInfo);
+  SetArcName(arcName, codecs->Formats[archiverIndex]);
   
   const CActionSet *actionSet = &k_ActionSet_Add;
 
@@ -454,13 +452,14 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     const int kMethodRadioIndex = kArchiveNameIndex + 2;
     const int kModeRadioIndex = kMethodRadioIndex + 7;
 
-    const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
 
     char updateAddToArchiveString[512];
-    const AString s = UnicodeStringToMultiByte(arcInfo.Name, CP_OEMCP);
-
-    sprintf(updateAddToArchiveString,
+    {
+      const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
+      const AString s = UnicodeStringToMultiByte(arcInfo.Name, CP_OEMCP);
+      sprintf(updateAddToArchiveString,
         g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), (const char *)s);
+    }
 
     int methodIndex = 0;
     int i;
@@ -471,7 +470,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
         break;
       }
 
-    struct CInitDialogItem initItems[]=
+    const struct CInitDialogItem initItems[]=
     {
       { DI_DOUBLEBOX, 3, 1, 72, kYSize - 2, false, false, 0, false, NMessageID::kUpdateTitle, NULL, NULL },
 
@@ -532,12 +531,12 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     {
       CIntVector indices;
       CSysStringVector archiverNames;
-      FOR_VECTOR (i, codecs->Formats)
+      FOR_VECTOR (k, codecs->Formats)
       {
-        const CArcInfoEx &arc = codecs->Formats[i];
+        const CArcInfoEx &arc = codecs->Formats[k];
         if (arc.UpdateEnabled)
         {
-          indices.Add(i);
+          indices.Add(k);
           archiverNames.Add(GetSystemString(arc.Name, CP_OEMCP));
         }
       }

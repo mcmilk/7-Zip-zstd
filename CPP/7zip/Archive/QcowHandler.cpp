@@ -463,22 +463,26 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
       RINOK(openCallback->SetCompleted(NULL, &numBytes));
     }
 
-    UInt64 v = Get64((const Byte *)table + (size_t)i * 8);
-    v &= offsetMask;
-    CByteBuffer &buf = _tables.AddNew();
-    if (v == 0)
-      continue;
+    CByteBuffer &buf2 = _tables.AddNew();
+    
+    {
+      UInt64 v = Get64((const Byte *)table + (size_t)i * 8);
+      v &= offsetMask;
+      if (v == 0)
+        continue;
+      
+      buf2.Alloc((size_t)1 << (_numMidBits + 3));
+      RINOK(stream->Seek(v, STREAM_SEEK_SET, NULL));
+      RINOK(ReadStream_FALSE(stream, buf2, clusterSize));
 
-    buf.Alloc((size_t)1 << (_numMidBits + 3));
-    RINOK(stream->Seek(v, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream_FALSE(stream, buf, clusterSize));
-    UInt64 end = v + clusterSize;
-    if (_phySize < end)
-      _phySize = end;
+      const UInt64 end = v + clusterSize;
+      if (_phySize < end)
+        _phySize = end;
+    }
 
     for (size_t k = 0; k < clusterSize; k += 8)
     {
-      UInt64 v = Get64((const Byte *)buf + (size_t)k);
+      const UInt64 v = Get64((const Byte *)buf2 + (size_t)k);
       if (v == 0)
         continue;
       UInt64 offset = v & offsetMask;

@@ -242,7 +242,7 @@ struct COptHeader
 
   int GetNumFileAlignBits() const
   {
-    for (int i = 9; i <= 16; i++)
+    for (unsigned i = 0; i <= 31; i++)
       if (((UInt32)1 << i) == FileAlign)
         return i;
     return -1;
@@ -1154,7 +1154,7 @@ HRESULT CHandler::ReadTable(UInt32 offset, CRecordVector<CTableItem> &items)
   return S_OK;
 }
 
-static const UInt32 kFileSizeMax = (UInt32)1 << 30;
+static const UInt32 kFileSizeMax = (UInt32)1 << 31;
 static const unsigned kNumResItemsMax = (unsigned)1 << 23;
 static const unsigned kNumStringLangsMax = 256;
 
@@ -1898,25 +1898,61 @@ static bool ParseVersion(const Byte *p, UInt32 size, CTextFile &f, CObjectVector
 HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchiveOpenCallback *callback)
 {
   const CSection &sect = _sections[sectionIndex];
-  const size_t fileSize = sect.GetSizeMin();
-
-  if (fileSize > kFileSizeMax)
-    return S_FALSE;
+  size_t fileSize = sect.PSize;
   {
-    UInt64 fileSize64 = fileSize;
-    if (callback)
-      RINOK(callback->SetTotal(NULL, &fileSize64));
-    RINOK(stream->Seek(sect.Pa, STREAM_SEEK_SET, NULL));
-    _buf.Alloc(fileSize);
-    for (size_t pos = 0; pos < fileSize;)
+    size_t fileSizeMin = sect.PSize;
+    
+    if (sect.VSize < sect.PSize)
     {
-      UInt64 offset64 = pos;
+      fileSize = fileSizeMin = sect.VSize;
+      const int numBits = _optHeader.GetNumFileAlignBits();
+      if (numBits > 0)
+      {
+        const UInt32 mask = ((UInt32)1 << numBits) - 1;
+        const size_t end = (size_t)((sect.VSize + mask) & (UInt32)~mask);
+        if (end > sect.VSize)
+          if (end <= sect.PSize)
+            fileSize = end;
+          else
+            fileSize = sect.PSize;
+      }
+    }
+
+    if (fileSize > kFileSizeMax)
+      return S_FALSE;
+
+    {
+      const UInt64 fileSize64 = fileSize;
       if (callback)
-        RINOK(callback->SetCompleted(NULL, &offset64))
+        RINOK(callback->SetTotal(NULL, &fileSize64));
+    }
+    
+    RINOK(stream->Seek(sect.Pa, STREAM_SEEK_SET, NULL));
+    
+    _buf.Alloc(fileSize);
+    
+    size_t pos;
+    
+    for (pos = 0; pos < fileSize;)
+    {
+      {
+        const UInt64 offset64 = pos;
+        if (callback)
+          RINOK(callback->SetCompleted(NULL, &offset64))
+      }
       size_t rem = MyMin(fileSize - pos, (size_t)(1 << 22));
-      RINOK(ReadStream_FALSE(stream, _buf + pos, rem));
+      RINOK(ReadStream(stream, _buf + pos, &rem));
+      if (rem == 0)
+      {
+        if (pos < fileSizeMin)
+          return S_FALSE;
+        break;
+      }
       pos += rem;
     }
+    
+    if (pos < fileSize)
+      memset(_buf + pos, 0, fileSize - pos);
   }
   
   _usedRes.Alloc(fileSize);
@@ -2037,19 +2073,13 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
 
   _usedRes.Free();
 
-  int numBits = _optHeader.GetNumFileAlignBits();
-  if (numBits >= 0)
   {
-    UInt32 mask = (1 << numBits) - 1;
-    size_t end = ((maxOffset + mask) & ~mask);
-    
     // PSize can be much larger than VSize in some exe installers.
     // it contains archive data after PE resources.
     // So we need to use PSize here!
-    if (/* end < sect.VSize && */ end <= sect.PSize)
+    if (maxOffset < sect.PSize)
     {
-      CSection sect2;
-      sect2.Flags = 0;
+      size_t end = fileSize;
 
       // we skip Zeros to start of aligned block
       size_t i;
@@ -2059,6 +2089,8 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
       if (i == end)
         maxOffset = end;
       
+      CSection sect2;
+      sect2.Flags = 0;
       sect2.Pa = sect.Pa + (UInt32)maxOffset;
       sect2.Va = sect.Va + (UInt32)maxOffset;
 
@@ -2211,14 +2243,14 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       }
       */
 
-      size_t i;
-      for (i = 0; i < processed; i++)
-        if (buf[i] != 0)
+      size_t k;
+      for (k = 0; k < processed; k++)
+        if (buf[k] != 0)
           break;
       if (processed < size && processed < 100)
         _totalSize += (UInt32)processed;
-      else if (((_totalSize + i) & 0x1FF) == 0 || processed < size)
-        _totalSize += (UInt32)i;
+      else if (((_totalSize + k) & 0x1FF) == 0 || processed < size)
+        _totalSize += (UInt32)k;
     }
   }
 
@@ -2248,9 +2280,9 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
     sections.Sort();
     UInt32 limit = (1 << 12);
     unsigned num = 0;
-    FOR_VECTOR (i, sections)
+    FOR_VECTOR (k, sections)
     {
-      const CSection &s = sections[i];
+      const CSection &s = sections[k];
       if (s.Pa > limit)
       {
         CSection &s2 = _sections.AddNew();

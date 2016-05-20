@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2015-12-26 : Igor Pavlov : Public domain */
+2016-05-16 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -362,9 +362,11 @@ static void WriteCLSID()
   {
     if (AreEqual_Path_PrefixName(s, path, L"7-zip.dll"))
     {
-      LONG res = MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
-      if (res == ERROR_SUCCESS)
-        MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip);
+      {
+        LONG res = MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
+        if (res == ERROR_SUCCESS)
+          MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip);
+      }
 
       {
         unsigned i;
@@ -397,9 +399,11 @@ static void WriteCLSID()
   {
     if (AreEqual_Path_PrefixName(s, path, L"7-zip32.dll"))
     {
-      LONG res = MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
-      if (res == ERROR_SUCCESS)
-        MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip);
+      {
+        LONG res = MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
+        if (res == ERROR_SUCCESS)
+          MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip);
+      }
 
       {
         unsigned i;

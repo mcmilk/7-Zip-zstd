@@ -204,9 +204,9 @@ HRESULT CDecoder::WriteBuf()
       {
         for (unsigned j = i; j < _tempFilters.Size(); j++)
         {
-          CTempFilter *filter = _tempFilters[j];
-          if (filter && filter->NextWindow)
-            filter->NextWindow = false;
+          CTempFilter *filter2 = _tempFilters[j];
+          if (filter2 && filter2->NextWindow)
+            filter2->NextWindow = false;
         }
         _wrPtr = writtenBorder;
         return S_OK; // check it
@@ -270,15 +270,16 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
     filter->ExecCount++;
   }
 
-  int numEmptyItems = 0;
-  unsigned i;
-  for (i = 0; i < _tempFilters.Size(); i++)
+  unsigned numEmptyItems = 0;
   {
-    _tempFilters[i - numEmptyItems] = _tempFilters[i];
-    if (!_tempFilters[i])
-      numEmptyItems++;
-    if (numEmptyItems > 0)
-      _tempFilters[i] = NULL;
+    FOR_VECTOR (i, _tempFilters)
+    {
+      _tempFilters[i - numEmptyItems] = _tempFilters[i];
+      if (!_tempFilters[i])
+        numEmptyItems++;
+      if (numEmptyItems != 0)
+        _tempFilters[i] = NULL;
+    }
   }
   if (numEmptyItems == 0)
   {
@@ -305,7 +306,7 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
   if (firstByte & 0x10)
   {
     UInt32 initMask = inp.ReadBits(NVm::kNumGpRegs);
-    for (int i = 0; i < NVm::kNumGpRegs; i++)
+    for (unsigned i = 0; i < NVm::kNumGpRegs; i++)
       if (initMask & (1 << i))
         tempFilter->InitR[i] = inp.ReadEncodedUInt32();
   }
@@ -321,12 +322,14 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
     isOK = filter->PrepareProgram(_vmCode, vmCodeSize);
   }
 
-  Byte *globalData = &tempFilter->GlobalData[0];
-  for (i = 0; i < NVm::kNumGpRegs; i++)
-    NVm::SetValue32(&globalData[i * 4], tempFilter->InitR[i]);
-  NVm::SetValue32(&globalData[NVm::NGlobalOffset::kBlockSize], tempFilter->BlockSize);
-  NVm::SetValue32(&globalData[NVm::NGlobalOffset::kBlockPos], 0); // It was commented. why?
-  NVm::SetValue32(&globalData[NVm::NGlobalOffset::kExecCount], filter->ExecCount);
+  {
+    Byte *globalData = &tempFilter->GlobalData[0];
+    for (unsigned i = 0; i < NVm::kNumGpRegs; i++)
+      NVm::SetValue32(&globalData[i * 4], tempFilter->InitR[i]);
+    NVm::SetValue32(&globalData[NVm::NGlobalOffset::kBlockSize], tempFilter->BlockSize);
+    NVm::SetValue32(&globalData[NVm::NGlobalOffset::kBlockPos], 0); // It was commented. why?
+    NVm::SetValue32(&globalData[NVm::NGlobalOffset::kExecCount], filter->ExecCount);
+  }
 
   if (firstByte & 8)
   {
@@ -497,24 +500,24 @@ HRESULT CDecoder::DecodePPM(Int32 num, bool &keepDecompressing)
         {
           for (int i = 0; i < 3; i++)
           {
-            int c = DecodePpmSymbol();
-            if (c < 0)
+            int c2 = DecodePpmSymbol();
+            if (c2 < 0)
             {
               PpmError = true;
               return S_FALSE;
             }
-            distance = (distance << 8) + (Byte)c;
+            distance = (distance << 8) + (Byte)c2;
           }
           distance++;
           length += 28;
         }
-        int c = DecodePpmSymbol();
-        if (c < 0)
+        int c2 = DecodePpmSymbol();
+        if (c2 < 0)
         {
           PpmError = true;
           return S_FALSE;
         }
-        length += c;
+        length += c2;
         if (distance >= _lzSize)
           return S_FALSE;
         CopyBlock(distance, length);
@@ -733,10 +736,10 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
         rep0 = distance;
       }
 
-      UInt32 sym = m_LenDecoder.Decode(&m_InBitStream.BitDecoder);
-      if (sym >= kLenTableSize)
+      const UInt32 sym2 = m_LenDecoder.Decode(&m_InBitStream.BitDecoder);
+      if (sym2 >= kLenTableSize)
         return S_FALSE;
-      length = 2 + kLenStart[sym] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[sym]);
+      length = 2 + kLenStart[sym2] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[sym2]);
     }
     else
     {
@@ -753,12 +756,12 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
       {
         sym -= 271;
         length = kNormalMatchMinLen + (UInt32)kLenStart[sym] + m_InBitStream.BitDecoder.ReadBits(kLenDirectBits[sym]);
-        UInt32 sym = m_DistDecoder.Decode(&m_InBitStream.BitDecoder);
-        if (sym >= kDistTableSize)
+        const UInt32 sym2 = m_DistDecoder.Decode(&m_InBitStream.BitDecoder);
+        if (sym2 >= kDistTableSize)
           return S_FALSE;
-        rep0 = kDistStart[sym];
-        int numBits = kDistDirectBits[sym];
-        if (sym >= (kNumAlignBits * 2) + 2)
+        rep0 = kDistStart[sym2];
+        int numBits = kDistDirectBits[sym2];
+        if (sym2 >= (kNumAlignBits * 2) + 2)
         {
           if (numBits > kNumAlignBits)
             rep0 += (m_InBitStream.BitDecoder.ReadBits(numBits - kNumAlignBits) << kNumAlignBits);
@@ -769,13 +772,13 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
           }
           else
           {
-            UInt32 sym = m_AlignDecoder.Decode(&m_InBitStream.BitDecoder);
-            if (sym < (1 << kNumAlignBits))
+            const UInt32 sym3 = m_AlignDecoder.Decode(&m_InBitStream.BitDecoder);
+            if (sym3 < (1 << kNumAlignBits))
             {
-              rep0 += sym;
-              PrevAlignBits = sym;
+              rep0 += sym3;
+              PrevAlignBits = sym3;
             }
-            else if (sym == (1 << kNumAlignBits))
+            else if (sym3 == (1 << kNumAlignBits))
             {
               PrevAlignCount = kNumAlignReps;
               rep0 += PrevAlignBits;

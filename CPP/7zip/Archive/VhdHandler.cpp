@@ -532,9 +532,11 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
     *processedSize = 0;
   if (_virtPos >= Footer.CurrentSize)
     return S_OK;
-  UInt64 rem = Footer.CurrentSize - _virtPos;
-  if (size > rem)
-    size = (UInt32)rem;
+  {
+    const UInt64 rem = Footer.CurrentSize - _virtPos;
+    if (size > rem)
+      size = (UInt32)rem;
+  }
   if (size == 0)
     return S_OK;
   UInt32 blockIndex = (UInt32)(_virtPos >> Dyn.BlockSizeLog);
@@ -565,7 +567,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
     RINOK(ReadPhy(newPos + BitMap.Size() + offsetInBlock, data, size));
     for (UInt32 cur = 0; cur < size;)
     {
-      UInt32 rem = MyMin(0x200 - (offsetInBlock & 0x1FF), size - cur);
+      const UInt32 rem = MyMin(0x200 - (offsetInBlock & 0x1FF), size - cur);
       UInt32 bmi = offsetInBlock >> kSectorSize_Log;
       if (((BitMap[bmi >> 3] >> (7 - (bmi & 7))) & 1) == 0)
       {

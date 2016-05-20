@@ -589,7 +589,7 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
       RINOK(OpenCallback->SetCompleted(&numFiles, NULL));
     }
     
-    size_t rem = DirSize - pos;
+    const size_t rem = DirSize - pos;
     if (pos < DirStartOffset || pos > DirSize || rem < 8)
       return S_FALSE;
 
@@ -661,15 +661,15 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
 
     for (UInt32 i = 0; i < numAltStreams; i++)
     {
-      const size_t rem = DirSize - pos;
-      if (pos < DirStartOffset || pos > DirSize || rem < 8)
+      const size_t rem2 = DirSize - pos;
+      if (pos < DirStartOffset || pos > DirSize || rem2 < 8)
         return S_FALSE;
-      const Byte *p = DirData + pos;
-      const UInt64 len = Get64(p);
-      if ((len & align) != 0 || rem < len || len < (IsOldVersion ? 0x18 : 0x28))
+      const Byte *p2 = DirData + pos;
+      const UInt64 len2 = Get64(p2);
+      if ((len2 & align) != 0 || rem2 < len2 || len2 < (IsOldVersion ? 0x18 : 0x28))
         return S_FALSE;
      
-      DirProcessed += (size_t)len;
+      DirProcessed += (size_t)len2;
       if (DirProcessed > DirSize)
         return S_FALSE;
 
@@ -679,29 +679,29 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
         extraOffset = 0x10;
       else
       {
-        if (Get64(p + 8) != 0)
+        if (Get64(p2 + 8) != 0)
           return S_FALSE;
         extraOffset = 0x24;
       }
       
-      UInt32 fileNameLen = Get16(p + extraOffset);
-      if ((fileNameLen & 1) != 0)
+      const UInt32 fileNameLen111 = Get16(p2 + extraOffset);
+      if ((fileNameLen111 & 1) != 0)
         return S_FALSE;
       /* Probably different versions of ImageX can use different number of
          additional ZEROs. So we don't use exact check. */
-      UInt32 fileNameLen2 = (fileNameLen == 0 ? fileNameLen : fileNameLen + 2);
-      if (((extraOffset + 2 + fileNameLen2 + align) & ~align) > len)
+      const UInt32 fileNameLen222 = (fileNameLen111 == 0 ? fileNameLen111 : fileNameLen111 + 2);
+      if (((extraOffset + 2 + fileNameLen222 + align) & ~align) > len2)
         return S_FALSE;
       
       {
-        const Byte *p2 = p + extraOffset + 2;
-        if (*(const UInt16 *)(p2 + fileNameLen) != 0)
+        const Byte *p3 = p2 + extraOffset + 2;
+        if (*(const UInt16 *)(p3 + fileNameLen111) != 0)
           return S_FALSE;
-        for (UInt32 j = 0; j < fileNameLen; j += 2)
-          if (*(const UInt16 *)(p2 + j) == 0)
+        for (UInt32 j = 0; j < fileNameLen111; j += 2)
+          if (*(const UInt16 *)(p3 + j) == 0)
             return S_FALSE;
   
-        // PRF(printf("\n  %S", p2));
+        // PRF(printf("\n  %S", p3));
       }
 
 
@@ -712,16 +712,16 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
       
       Byte *prevMeta = DirData + item.Offset;
 
-      if (fileNameLen == 0 &&
+      if (fileNameLen111 == 0 &&
           ((attrib & FILE_ATTRIBUTE_REPARSE_POINT) || !item.IsDir)
           && (IsOldVersion || IsEmptySha(prevMeta + 0x40)))
       {
         if (IsOldVersion)
-          memcpy(prevMeta + 0x10, p + 8, 4); // It's 32-bit Id
-        else if (!IsEmptySha(p + 0x10))
+          memcpy(prevMeta + 0x10, p2 + 8, 4); // It's 32-bit Id
+        else if (!IsEmptySha(p2 + 0x10))
         {
           // if (IsEmptySha(prevMeta + 0x40))
-            memcpy(prevMeta + 0x40, p + 0x10, kHashSize);
+            memcpy(prevMeta + 0x40, p2 + 0x10, kHashSize);
           // else HeadersError = true;
         }
       }
@@ -736,7 +736,7 @@ HRESULT CDatabase::ParseDirItem(size_t pos, int parent)
         Items.Add(item2);
       }
 
-      pos += (size_t)len;
+      pos += (size_t)len2;
     }
 
     if (parent < 0 && numItems == 0 && shortNameLen == 0 && fileNameLen == 0 && item.IsDir)
@@ -973,10 +973,15 @@ static HRESULT ReadStreams(IInStream *inStream, const CHeader &h, CDatabase &db)
   RINOK(unpacker.UnpackData(inStream, h.OffsetResource, h, NULL, offsetBuf, NULL));
   
   const size_t streamInfoSize = h.IsOldVersion() ? kStreamInfoSize + 2 : kStreamInfoSize;
-  unsigned numItems = (unsigned)(offsetBuf.Size() / streamInfoSize);
-  if ((size_t)numItems * streamInfoSize != offsetBuf.Size())
-    return S_FALSE;
-  db.DataStreams.Reserve(numItems);
+  {
+    const unsigned numItems = (unsigned)(offsetBuf.Size() / streamInfoSize);
+    if ((size_t)numItems * streamInfoSize != offsetBuf.Size())
+      return S_FALSE;
+    const unsigned numItems2 = db.DataStreams.Size() + numItems;
+    if (numItems2 < numItems)
+      return S_FALSE;
+    db.DataStreams.Reserve(numItems2);
+  }
 
   bool keepSolid = false;
 

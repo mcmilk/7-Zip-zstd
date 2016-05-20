@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2015-11-08 : Igor Pavlov : Public domain */
+2016-05-16 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -396,11 +396,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     {
       size_t offset = 0;
       size_t outSizeProcessed = 0;
-      size_t len;
       WCHAR *temp;
-      len = SzArEx_GetFileNameUtf16(&db, i, NULL);
-      
-      if (len >= MAX_PATH)
+
+      if (SzArEx_GetFileNameUtf16(&db, i, NULL) >= MAX_PATH)
       {
         res = SZ_ERROR_FAIL;
         break;

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "16" ?>
-<?define VerMinor = "00" ?>
+<?define VerMinor = "01" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "$(var.VerMajor)$(var.VerMinor)" ?>
@@ -59,6 +59,7 @@
 <?define CompFormats  = "$(var.CompId)10" ?>
 <?define CompCodecs   = "$(var.CompId)11" ?>
 <?define CompLang     = "$(var.CompId)12" ?>
+<?define CompShellExt2 = "$(var.CompId)13" ?>
 <?define CompInstallRegCU         = "$(var.CompId)80" ?>
 <?define CompInstallRegLM         = "$(var.CompId)81" ?>
 <?define CompInstallRegWild       = "$(var.CompId)82" ?>
@@ -190,7 +191,7 @@
 
           <?if $(var.MyCPU) = "x64" ?>
 
-          <Component Id="ShellExt32" Guid="$(var.CompShellExt)" DiskId="1" Win64="no">
+          <Component Id="ShellExt32" Guid="$(var.CompShellExt2)" DiskId="1" Win64="no">
             <File Id="_7zip32.dll" Name="7-zip32.dll" />
             <Registry Id="shellReg0_32" Action="write" Type="string" Root="HKCR"
                Key="CLSID\$(var.ShellExtId)\InprocServer32"

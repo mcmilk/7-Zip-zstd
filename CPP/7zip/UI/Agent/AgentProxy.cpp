@@ -34,10 +34,10 @@ int CProxyArc::FindSubDir(unsigned dirIndex, const wchar_t *name, unsigned &inse
       return -1;
     }
     unsigned mid = (left + right) / 2;
-    unsigned dirIndex = subDirs[mid];
-    int compare = CompareFileNames(name, Dirs[dirIndex].Name);
+    unsigned dirIndex2 = subDirs[mid];
+    int compare = CompareFileNames(name, Dirs[dirIndex2].Name);
     if (compare == 0)
-      return dirIndex;
+      return dirIndex2;
     if (compare < 0)
       right = mid;
     else

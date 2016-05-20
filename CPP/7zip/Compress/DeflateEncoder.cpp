@@ -331,48 +331,50 @@ NO_INLINE UInt32 CCoder::GetOptimal(UInt32 &backRes)
   
   GetMatches();
 
-  UInt32 numDistancePairs = m_MatchDistances[0];
-  if (numDistancePairs == 0)
-    return 1;
-
-  const UInt16 *matchDistances = m_MatchDistances + 1;
-  UInt32 lenMain = matchDistances[numDistancePairs - 2];
-
-  if (lenMain > m_NumFastBytes)
+  UInt32 lenEnd;
   {
-    backRes = matchDistances[numDistancePairs - 1];
-    MovePos(lenMain - 1);
-    return lenMain;
-  }
-  m_Optimum[1].Price = m_LiteralPrices[*(Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) - m_AdditionalOffset)];
-  m_Optimum[1].PosPrev = 0;
+    const UInt32 numDistancePairs = m_MatchDistances[0];
+    if (numDistancePairs == 0)
+      return 1;
+    const UInt16 *matchDistances = m_MatchDistances + 1;
+    lenEnd = matchDistances[numDistancePairs - 2];
+    
+    if (lenEnd > m_NumFastBytes)
+    {
+      backRes = matchDistances[numDistancePairs - 1];
+      MovePos(lenEnd - 1);
+      return lenEnd;
+    }
 
-  m_Optimum[2].Price = kIfinityPrice;
-  m_Optimum[2].PosPrev = 1;
-
-
-  UInt32 offs = 0;
-  for (UInt32 i = kMatchMinLen; i <= lenMain; i++)
-  {
-    UInt32 distance = matchDistances[offs + 1];
-    m_Optimum[i].PosPrev = 0;
-    m_Optimum[i].BackPrev = (UInt16)distance;
-    m_Optimum[i].Price = m_LenPrices[i - kMatchMinLen] + m_PosPrices[GetPosSlot(distance)];
-    if (i == matchDistances[offs])
-      offs += 2;
+    m_Optimum[1].Price = m_LiteralPrices[*(Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) - m_AdditionalOffset)];
+    m_Optimum[1].PosPrev = 0;
+    
+    m_Optimum[2].Price = kIfinityPrice;
+    m_Optimum[2].PosPrev = 1;
+    
+    UInt32 offs = 0;
+  
+    for (UInt32 i = kMatchMinLen; i <= lenEnd; i++)
+    {
+      UInt32 distance = matchDistances[offs + 1];
+      m_Optimum[i].PosPrev = 0;
+      m_Optimum[i].BackPrev = (UInt16)distance;
+      m_Optimum[i].Price = m_LenPrices[i - kMatchMinLen] + m_PosPrices[GetPosSlot(distance)];
+      if (i == matchDistances[offs])
+        offs += 2;
+    }
   }
 
   UInt32 cur = 0;
-  UInt32 lenEnd = lenMain;
+
   for (;;)
   {
     ++cur;
     if (cur == lenEnd || cur == kNumOptsBase || m_Pos >= kMatchArrayLimit)
       return Backward(backRes, cur);
     GetMatches();
-    matchDistances = m_MatchDistances + 1;
-
-    UInt32 numDistancePairs = m_MatchDistances[0];
+    const UInt16 *matchDistances = m_MatchDistances + 1;
+    const UInt32 numDistancePairs = m_MatchDistances[0];
     UInt32 newLen = 0;
     if (numDistancePairs != 0)
     {
@@ -388,18 +390,20 @@ NO_INLINE UInt32 CCoder::GetOptimal(UInt32 &backRes)
       }
     }
     UInt32 curPrice = m_Optimum[cur].Price;
-    UInt32 curAnd1Price = curPrice + m_LiteralPrices[*(Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) + cur - m_AdditionalOffset)];
-    COptimal &optimum = m_Optimum[cur + 1];
-    if (curAnd1Price < optimum.Price)
     {
-      optimum.Price = curAnd1Price;
-      optimum.PosPrev = (UInt16)cur;
+      const UInt32 curAnd1Price = curPrice + m_LiteralPrices[*(Inline_MatchFinder_GetPointerToCurrentPos(&_lzInWindow) + cur - m_AdditionalOffset)];
+      COptimal &optimum = m_Optimum[cur + 1];
+      if (curAnd1Price < optimum.Price)
+      {
+        optimum.Price = curAnd1Price;
+        optimum.PosPrev = (UInt16)cur;
+      }
     }
     if (numDistancePairs == 0)
       continue;
     while (lenEnd < cur + newLen)
       m_Optimum[++lenEnd].Price = kIfinityPrice;
-    offs = 0;
+    UInt32 offs = 0;
     UInt32 distance = matchDistances[offs + 1];
     curPrice += m_PosPrices[GetPosSlot(distance)];
     for (UInt32 lenTest = kMatchMinLen; ; lenTest++)

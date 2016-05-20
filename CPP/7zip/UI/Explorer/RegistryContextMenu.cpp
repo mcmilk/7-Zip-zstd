@@ -157,10 +157,12 @@ LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow)
 
   INIT_REG_WOW
 
+  LONG res;
+
+  {
   CSysString s = TEXT("CLSID\\");
   s += k_Clsid;
 
-  LONG res;
   if (setMode)
   {
     {
@@ -192,6 +194,7 @@ LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow)
 
     MyRegistry_DeleteKey_HKCR(s2, wow);
     res = MyRegistry_DeleteKey_HKCR(s, wow);
+  }
   }
 
   // shellex items probably are shared beween 32-bit and 64-bit apps. So we don't delete items for delete operation.

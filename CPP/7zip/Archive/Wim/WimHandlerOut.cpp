@@ -1351,9 +1351,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
     header.ChunkSizeBits = srcHeader.ChunkSizeBits;
   }
 
-  Byte buf[kHeaderSizeMax];
-  header.WriteTo(buf);
-  RINOK(WriteStream(outStream, buf, kHeaderSizeMax));
+  {
+    Byte buf[kHeaderSizeMax];
+    header.WriteTo(buf);
+    RINOK(WriteStream(outStream, buf, kHeaderSizeMax));
+  }
 
   UInt64 curPos = kHeaderSizeMax;
 
@@ -1754,14 +1756,14 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
     }
     else
     {
-      unsigned i;
-      for (i = 0; i < secBufs.Size(); i++, pos += 8)
+      unsigned k;
+      for (k = 0; k < secBufs.Size(); k++, pos += 8)
       {
-        Set64(meta + pos, secBufs[i].Size());
+        Set64(meta + pos, secBufs[k].Size());
       }
-      for (i = 0; i < secBufs.Size(); i++)
+      for (k = 0; k < secBufs.Size(); k++)
       {
-        const CByteBuffer &buf = secBufs[i];
+        const CByteBuffer &buf = secBufs[k];
         size_t size = buf.Size();
         if (size != 0)
         {
@@ -1888,8 +1890,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
 
   outStream->Seek(0, STREAM_SEEK_SET, NULL);
   header.NumImages = trees.Size();
-  header.WriteTo(buf);
-  return WriteStream(outStream, buf, kHeaderSizeMax);
+  {
+    Byte buf[kHeaderSizeMax];
+    header.WriteTo(buf);
+    return WriteStream(outStream, buf, kHeaderSizeMax);
+  }
 
   COM_TRY_END
 }

@@ -297,11 +297,14 @@ HRESULT CInArchive::FindMarker(IInStream *stream, const UInt64 *searchLimit)
   if (searchLimit && *searchLimit == 0)
   {
     Byte startBuf[kMarkerSize];
-    size_t processed = kMarkerSize;
-    RINOK(ReadStream(stream, startBuf, &processed));
-    m_Position += processed;
-    if (processed < kMarkerSize)
-      return S_FALSE;
+    {
+      size_t processed = kMarkerSize;
+      RINOK(ReadStream(stream, startBuf, &processed));
+      m_Position += processed;
+      if (processed != kMarkerSize)
+        return S_FALSE;
+    }
+
     m_Signature = Get32(startBuf);
 
     if (m_Signature != NSignature::kEcd &&
@@ -318,7 +321,7 @@ HRESULT CInArchive::FindMarker(IInStream *stream, const UInt64 *searchLimit)
       size_t processed = kMarkerSize;
       RINOK(ReadStream(stream, startBuf, &processed));
       m_Position += processed;
-      if (processed < kMarkerSize)
+      if (processed != kMarkerSize)
         return S_FALSE;
       m_Signature = Get32(startBuf);
       if (m_Signature != NSignature::kEcd &&
@@ -1567,7 +1570,7 @@ HRESULT CInArchive::ReadVols()
   if (Vols.StartIsZip)
     Vols.ZipStream = StartStream;
 
-  bool cdOK = false;
+  // bool cdOK = false;
 
   if (Vols.ZipStream)
   {
@@ -1589,12 +1592,16 @@ HRESULT CInArchive::ReadVols()
       // Vols.EndVolIndex = ecd.ThisDisk;
       unsigned numMissingVols;
       if (cdDisk == zipDisk)
-        cdOK = true;
+      {
+        // cdOK = true;
+      }
       else
       {
         RINOK(ReadVols2(volCallback, cdDisk, zipDisk, zipDisk, 0, numMissingVols));
         if (numMissingVols == 0)
-          cdOK = false;
+        {
+          // cdOK = false;
+        }
       }
     }
     else if (res != S_FALSE)

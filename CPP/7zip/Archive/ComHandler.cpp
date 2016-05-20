@@ -167,7 +167,7 @@ HRESULT CDatabase::ReadSector(IInStream *inStream, Byte *buf, unsigned sectorSiz
 {
   UpdatePhySize(((UInt64)sid + 2) << sectorSizeBits);
   RINOK(inStream->Seek((((UInt64)sid + 1) << sectorSizeBits), STREAM_SEEK_SET, NULL));
-  return ReadStream_FALSE(inStream, buf, (UInt32)1 << sectorSizeBits);
+  return ReadStream_FALSE(inStream, buf, (size_t)1 << sectorSizeBits);
 }
 
 HRESULT CDatabase::ReadIDs(IInStream *inStream, Byte *buf, unsigned sectorSizeBits, UInt32 sid, UInt32 *dest)

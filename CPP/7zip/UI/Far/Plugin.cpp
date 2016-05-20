@@ -496,6 +496,7 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
 
   info->Format = kPluginFormatName;
 
+  {
   UString name;
   {
     FString dirPrefix, fileName;
@@ -516,6 +517,8 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
  
   COPY_STR_LIMITED(m_PannelTitleBuffer, UnicodeStringToMultiByte(m_PannelTitle, CP_OEMCP));
   info->PanelTitle = m_PannelTitleBuffer;
+
+  }
 
   memset(m_InfoLines, 0, sizeof(m_InfoLines));
   m_InfoLines[0].Text[0] = 0;
@@ -716,11 +719,14 @@ HRESULT CPlugin::ShowAttributesWindow()
 
   int size = 2;
   CRecordVector<CInitDialogItem> initDialogItems;
-  
+
   int xSize = 70;
-  CInitDialogItem idi =
-  { DI_DOUBLEBOX, 3, 1, xSize - 4, size - 2, false, false, 0, false, NMessageID::kProperties, NULL, NULL };
-  initDialogItems.Add(idi);
+  {
+    const CInitDialogItem idi =
+      { DI_DOUBLEBOX, 3, 1, xSize - 4, size - 2, false, false, 0, false, NMessageID::kProperties, NULL, NULL };
+    initDialogItems.Add(idi);
+  }
+
   AStringVector values;
 
   const int kStartY = 3;
@@ -731,12 +737,14 @@ HRESULT CPlugin::ShowAttributesWindow()
 
     int startY = kStartY + values.Size();
 
-    CInitDialogItem idi =
-      { DI_TEXT, 5, startY, 0, 0, false, false, 0, false, 0, NULL, NULL };
-    idi.DataMessageId = FindPropNameID(property.ID);
-    if (idi.DataMessageId < 0)
-      idi.DataString = property.Name;
-    initDialogItems.Add(idi);
+    {
+      CInitDialogItem idi =
+        { DI_TEXT, 5, startY, 0, 0, false, false, 0, false, 0, NULL, NULL };
+      idi.DataMessageId = FindPropNameID(property.ID);
+      if (idi.DataMessageId < 0)
+        idi.DataString = property.Name;
+      initDialogItems.Add(idi);
+    }
     
     NCOM::CPropVariant prop;
     RINOK(_folder->GetProperty(itemIndex, property.ID, &prop));
@@ -744,7 +752,7 @@ HRESULT CPlugin::ShowAttributesWindow()
     values.Add(s);
     
     {
-      CInitDialogItem idi =
+      const CInitDialogItem idi =
         { DI_TEXT, 30, startY, 0, 0, false, false, 0, false, -1, NULL, NULL };
       initDialogItems.Add(idi);
     }
@@ -774,7 +782,7 @@ HRESULT CPlugin::ShowAttributesWindow()
       properties2.Add(prop);
     }
 
-    for (unsigned i = 0; i < properties2.Size(); i++)
+    for (i = 0; i < properties2.Size(); i++)
     {
       const CArchiveItemProperty &property = properties2[i];
       CMyComBSTR name;
@@ -802,9 +810,9 @@ HRESULT CPlugin::ShowAttributesWindow()
           }
           else
           {
-            for (UInt32 i = 0; i < dataSize; i++)
+            for (UInt32 k = 0; k < dataSize; k++)
             {
-              Byte b = ((const Byte *)data)[i];
+              Byte b = ((const Byte *)data)[k];
               s += GetHex((Byte)((b >> 4) & 0xF));
               s += GetHex((Byte)(b & 0xF));
             }
@@ -812,17 +820,20 @@ HRESULT CPlugin::ShowAttributesWindow()
         }
 
         int startY = kStartY + values.Size();
-        CInitDialogItem idi =
-          { DI_TEXT, 5, startY, 0, 0, false, false, 0, false, 0, NULL, NULL };
-        idi.DataMessageId = FindPropNameID(property.ID);
-        if (idi.DataMessageId < 0)
-          idi.DataString = property.Name;
-        initDialogItems.Add(idi);
+
+        {
+          CInitDialogItem idi =
+            { DI_TEXT, 5, startY, 0, 0, false, false, 0, false, 0, NULL, NULL };
+          idi.DataMessageId = FindPropNameID(property.ID);
+          if (idi.DataMessageId < 0)
+            idi.DataString = property.Name;
+          initDialogItems.Add(idi);
+        }
         
         values.Add(s);
         
         {
-          CInitDialogItem idi =
+          const CInitDialogItem idi =
             { DI_TEXT, 30, startY, 0, 0, false, false, 0, false, -1, NULL, NULL };
           initDialogItems.Add(idi);
         }

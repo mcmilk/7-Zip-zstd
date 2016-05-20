@@ -267,12 +267,15 @@ HRESULT CDecoder::CodeReal(const Byte *in, size_t inSize, Byte *_win, size_t out
 
   {
     {
-      unsigned i;
-      for (i = 0 ; i < k_NumReps + 1; i++)
-        _reps[i] = i + 1;
+      {
+        for (unsigned i = 0 ; i < k_NumReps + 1; i++)
+          _reps[i] = i + 1;
+      }
 
-      for (i = 0 ; i < k_NumReps + 1; i++)
-        _deltaReps[i] = i + 1;
+      {
+        for (unsigned i = 0 ; i < k_NumReps + 1; i++)
+          _deltaReps[i] = i + 1;
+      }
 
       mainState = 0;
       matchState = 0;

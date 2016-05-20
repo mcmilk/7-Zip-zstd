@@ -630,24 +630,27 @@ static size_t Lznt1Dec(Byte *dest, size_t outBufLim, size_t destLen, const Byte 
   {
     if (srcLen < 2 || (destSize & 0xFFF) != 0)
       break;
-    UInt32 v = Get16(src);
-    if (v == 0)
-      break;
-    src += 2;
-    srcLen -= 2;
-    UInt32 comprSize = (v & 0xFFF) + 1;
-    if (comprSize > srcLen)
-      break;
-    srcLen -= comprSize;
-    if ((v & 0x8000) == 0)
+    UInt32 comprSize;
     {
-      if (comprSize != (1 << 12))
+      const UInt32 v = Get16(src);
+      if (v == 0)
         break;
-      memcpy(dest + destSize, src, comprSize);
-      src += comprSize;
-      destSize += comprSize;
+      src += 2;
+      srcLen -= 2;
+      comprSize = (v & 0xFFF) + 1;
+      if (comprSize > srcLen)
+        break;
+      srcLen -= comprSize;
+      if ((v & 0x8000) == 0)
+      {
+        if (comprSize != (1 << 12))
+          break;
+        memcpy(dest + destSize, src, comprSize);
+        src += comprSize;
+        destSize += comprSize;
+        continue;
+      }
     }
-    else
     {
       if (destSize + (1 << 12) > outBufLim || (src[0] & 1) != 0)
         return 0;
@@ -672,7 +675,7 @@ static size_t Lznt1Dec(Byte *dest, size_t outBufLim, size_t destLen, const Byte 
           {
             if (comprSize < 2)
               return 0;
-            UInt32 v = Get16(src + pos);
+            const UInt32 v = Get16(src + pos);
             pos += 2;
             comprSize -= 2;
 
@@ -709,9 +712,12 @@ STDMETHODIMP CInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     return (Size == _virtPos) ? S_OK: E_FAIL;
   if (size == 0)
     return S_OK;
-  UInt64 rem = Size - _virtPos;
-  if (size > rem)
-    size = (UInt32)rem;
+  {
+    const UInt64 rem = Size - _virtPos;
+    if (size > rem)
+      size = (UInt32)rem;
+  }
+
   if (_virtPos >= InitializedSize)
   {
     memset((Byte *)data, 0, size);
@@ -719,9 +725,12 @@ STDMETHODIMP CInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     *processedSize = size;
     return S_OK;
   }
-  rem = InitializedSize - _virtPos;
-  if (size > rem)
-    size = (UInt32)rem;
+
+  {
+    const UInt64 rem = InitializedSize - _virtPos;
+    if (size > rem)
+      size = (UInt32)rem;
+  }
 
   while (_curRem == 0)
   {
@@ -838,7 +847,7 @@ STDMETHODIMP CInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     }
     size_t destLenMax = GetCuSize();
     size_t destLen = destLenMax;
-    UInt64 rem = Size - (virtBlock2 << BlockSizeLog);
+    const UInt64 rem = Size - (virtBlock2 << BlockSizeLog);
     if (destLen > rem)
       destLen = (size_t)rem;
 
@@ -895,10 +904,13 @@ STDMETHODIMP CInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPositio
 static HRESULT DataParseExtents(unsigned clusterSizeLog, const CObjectVector<CAttr> &attrs,
     unsigned attrIndex, unsigned attrIndexLim, UInt64 numPhysClusters, CRecordVector<CExtent> &Extents)
 {
-  CExtent e;
-  e.Virt = 0;
-  e.Phy = kEmptyExtent;
-  Extents.Add(e);
+  {
+    CExtent e;
+    e.Virt = 0;
+    e.Phy = kEmptyExtent;
+    Extents.Add(e);
+  }
+  
   const CAttr &attr0 = attrs[attrIndex];
 
   if (attr0.AllocatedSize < attr0.Size ||
@@ -1075,20 +1087,22 @@ HRESULT CMftRec::GetStream(IInStream *mainStream, int dataIndex,
     {
       if (numNonResident != ref.Num || !attr0.IsCompressionUnitSupported())
         return S_FALSE;
-      CInStream *streamSpec = new CInStream;
-      CMyComPtr<IInStream> streamTemp = streamSpec;
-      RINOK(DataParseExtents(clusterSizeLog, DataAttrs, ref.Start, ref.Start + ref.Num, numPhysClusters, streamSpec->Extents));
-      streamSpec->Size = attr0.Size;
-      streamSpec->InitializedSize = attr0.InitializedSize;
-      streamSpec->Stream = mainStream;
-      streamSpec->BlockSizeLog = clusterSizeLog;
-      streamSpec->InUse = InUse();
-      RINOK(streamSpec->InitAndSeek(attr0.CompressionUnit));
-      *destStream = streamTemp.Detach();
+      CInStream *ss = new CInStream;
+      CMyComPtr<IInStream> streamTemp2 = ss;
+      RINOK(DataParseExtents(clusterSizeLog, DataAttrs, ref.Start, ref.Start + ref.Num, numPhysClusters, ss->Extents));
+      ss->Size = attr0.Size;
+      ss->InitializedSize = attr0.InitializedSize;
+      ss->Stream = mainStream;
+      ss->BlockSizeLog = clusterSizeLog;
+      ss->InUse = InUse();
+      RINOK(ss->InitAndSeek(attr0.CompressionUnit));
+      *destStream = streamTemp2.Detach();
       return S_OK;
     }
+  
     streamSpec->Buf = attr0.Data;
   }
+
   streamSpec->Init();
   *destStream = streamTemp.Detach();
   return S_OK;
@@ -1691,36 +1705,40 @@ HRESULT CDatabase::Open()
   if ((mftSize >> 4) > Header.GetPhySize_Clusters())
     return S_FALSE;
 
-  UInt64 numFiles = mftSize >> RecSizeLog;
-  if (numFiles > (1 << 30))
-    return S_FALSE;
-  if (OpenCallback)
-  {
-    RINOK(OpenCallback->SetTotal(&numFiles, &mftSize));
-  }
-  
   const size_t kBufSize = (1 << 15);
   const size_t recSize = ((size_t)1 << RecSizeLog);
   if (kBufSize < recSize)
     return S_FALSE;
 
-  ByteBuf.Alloc(kBufSize);
-  Recs.ClearAndReserve((unsigned)numFiles);
+  {
+    const UInt64 numFiles = mftSize >> RecSizeLog;
+    if (numFiles > (1 << 30))
+      return S_FALSE;
+    if (OpenCallback)
+    {
+      RINOK(OpenCallback->SetTotal(&numFiles, &mftSize));
+    }
+    
+    ByteBuf.Alloc(kBufSize);
+    Recs.ClearAndReserve((unsigned)numFiles);
+  }
   
   for (UInt64 pos64 = 0;;)
   {
     if (OpenCallback)
     {
-      UInt64 numFiles = Recs.Size();
+      const UInt64 numFiles = Recs.Size();
       if ((numFiles & 0x3FF) == 0)
       {
         RINOK(OpenCallback->SetCompleted(&numFiles, &pos64));
       }
     }
     size_t readSize = kBufSize;
-    UInt64 rem = mftSize - pos64;
-    if (readSize > rem)
-      readSize = (size_t)rem;
+    {
+      const UInt64 rem = mftSize - pos64;
+      if (readSize > rem)
+        readSize = (size_t)rem;
+    }
     if (readSize < recSize)
       break;
     RINOK(ReadStream_FALSE(mftStream, ByteBuf, readSize));
@@ -2668,7 +2686,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         RINOK(hres);
         if (inStream)
         {
-          HRESULT hres = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
+          hres = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
           if (hres != S_OK &&  hres != S_FALSE)
           {
             RINOK(hres);

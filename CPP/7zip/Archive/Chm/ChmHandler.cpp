@@ -154,7 +154,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidBlock:
       if (m_Database.LowLevel)
         prop = item.Section;
-      else if (item.Section != 0)
+      else if (item.Section != 0 && item.Section < m_Database.Sections.Size())
         prop = m_Database.GetFolder(index);
       break;
     
@@ -545,7 +545,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       currentTotalSize += item.Size;
       continue;
     }
-    const CSectionInfo &section = m_Database.Sections[(unsigned)item.Section];
+
+    if (sectionIndex >= m_Database.Sections.Size())
+      continue;
+
+    const CSectionInfo &section = m_Database.Sections[(unsigned)sectionIndex];
     if (section.IsLzx())
     {
       const CLzxInfo &lzxInfo = section.Methods[0].LzxInfo;
@@ -621,6 +625,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       continue;
     }
   
+    if (sectionIndex >= m_Database.Sections.Size())
+    {
+      // we must report error here;
+      CMyComPtr<ISequentialOutStream> realOutStream;
+      RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+      if (!testMode && !realOutStream)
+        continue;
+      RINOK(extractCallback->PrepareOperation(askMode));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kHeadersError));
+      continue;
+    }
+
     const CSectionInfo &section = m_Database.Sections[(unsigned)sectionIndex];
 
     if (!section.IsLzx())

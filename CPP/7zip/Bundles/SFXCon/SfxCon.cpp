@@ -363,9 +363,11 @@ int Main2(
       IUnknown
       #endif
       > compressCodecsInfo = codecs;
-    HRESULT result = codecs->Load();
-    if (result != S_OK)
-      throw CSystemException(result);
+    {
+      HRESULT result = codecs->Load();
+      if (result != S_OK)
+        throw CSystemException(result);
+    }
 
     if (command.CommandType != NCommandType::kList)
     {

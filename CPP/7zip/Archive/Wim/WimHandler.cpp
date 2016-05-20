@@ -130,9 +130,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         int index = -1;
         FOR_VECTOR (i, xml.Images)
         {
-          const CImageInfo &image = xml.Images[i];
-          if (image.CTimeDefined)
-            if (index < 0 || ::CompareFileTime(&image.CTime, &xml.Images[index].CTime) < 0)
+          const CImageInfo &image2 = xml.Images[i];
+          if (image2.CTimeDefined)
+            if (index < 0 || ::CompareFileTime(&image2.CTime, &xml.Images[index].CTime) < 0)
               index = i;
         }
         if (index >= 0)
@@ -147,9 +147,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         int index = -1;
         FOR_VECTOR (i, xml.Images)
         {
-          const CImageInfo &image = xml.Images[i];
-          if (image.MTimeDefined)
-            if (index < 0 || ::CompareFileTime(&image.MTime, &xml.Images[index].MTime) > 0)
+          const CImageInfo &image2 = xml.Images[i];
+          if (image2.MTimeDefined)
+            if (index < 0 || ::CompareFileTime(&image2.MTime, &xml.Images[index].MTime) > 0)
               index = i;
         }
         if (index >= 0)
@@ -158,7 +158,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       break;
 
     case kpidComment:
-      if (image != NULL)
+      if (image)
       {
         if (_xmlInComments)
         {

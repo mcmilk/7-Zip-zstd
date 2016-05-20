@@ -428,7 +428,7 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
   if (lad.GetLen() != vol.BlockSize)
     return S_FALSE;
 
-  size_t size = lad.GetLen();
+  const size_t size = lad.GetLen();
   CByteBuffer buf(size);
   RINOK(Read(volIndex, lad, buf));
 
@@ -518,20 +518,20 @@ HRESULT CInArchive::ReadItem(int volIndex, int fsIndex, const CLongAllocDesc &la
   {
     if (!item.CheckChunkSizes() || !CheckItemExtents(volIndex, item))
       return S_FALSE;
-    CByteBuffer buf;
-    RINOK(ReadFromFile(volIndex, item, buf));
+    CByteBuffer buf2;
+    RINOK(ReadFromFile(volIndex, item, buf2));
     item.Size = 0;
     item.Extents.ClearAndFree();
     item.InlineData.Free();
 
-    const Byte *p = buf;
-    size = buf.Size();
+    const Byte *p2 = buf2;
+    const size_t size2 = buf2.Size();
     size_t processedTotal = 0;
-    for (; processedTotal < size;)
+    for (; processedTotal < size2;)
     {
       size_t processedCur;
       CFileId fileId;
-      RINOK(fileId.Parse(p + processedTotal, size - processedTotal, processedCur));
+      RINOK(fileId.Parse(p2 + processedTotal, size2 - processedTotal, processedCur));
       if (!fileId.IsItLinkParent())
       {
         CFile file;
@@ -599,8 +599,8 @@ API_FUNC_IsArc IsArc_Udf(const Byte *p, size_t size)
   {
     if (SecLogSize < 8)
       return res;
-    UInt32 offset = (UInt32)256 << SecLogSize;
-    size_t bufSize = (UInt32)1 << SecLogSize;
+    const UInt32 offset = (UInt32)256 << SecLogSize;
+    const UInt32 bufSize = (UInt32)1 << SecLogSize;
     if (offset + bufSize > size)
       res = k_IsArc_Res_NEED_MORE;
     else
@@ -660,7 +660,7 @@ HRESULT CInArchive::Open2()
     if (offset >= fileSize)
       continue;
     RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
-    size_t bufSize = (UInt32)1 << SecLogSize;
+    const size_t bufSize = (size_t)1 << SecLogSize;
     size_t readSize = bufSize;
     RINOK(ReadStream(_stream, buf, &readSize));
     if (readSize == bufSize)
@@ -686,8 +686,7 @@ HRESULT CInArchive::Open2()
 
   for (UInt32 location = 0; ; location++)
   {
-    size_t bufSize = (UInt32)1 << SecLogSize;
-    size_t pos = 0;
+    const size_t bufSize = (size_t)1 << SecLogSize;
     if (((UInt64)(location + 1) << SecLogSize) > extentVDS.Len)
       return S_FALSE;
 
@@ -700,7 +699,10 @@ HRESULT CInArchive::Open2()
 
 
     CTag tag;
-    RINOK(tag.Parse(buf + pos, bufSize - pos));
+    {
+      const size_t pos = 0;
+      RINOK(tag.Parse(buf + pos, bufSize - pos));
+    }
     if (tag.Id == DESC_TYPE_Terminating)
       break;
     
@@ -862,9 +864,9 @@ HRESULT CInArchive::Open2()
     {
       if (nextExtent.GetLen() < 512)
         return S_FALSE;
-      CByteBuffer buf(nextExtent.GetLen());
-      RINOK(Read(volIndex, nextExtent, buf));
-      const Byte *p = buf;
+      CByteBuffer buf2(nextExtent.GetLen());
+      RINOK(Read(volIndex, nextExtent, buf2));
+      const Byte *p = buf2;
       size_t size = nextExtent.GetLen();
 
       CTag tag;

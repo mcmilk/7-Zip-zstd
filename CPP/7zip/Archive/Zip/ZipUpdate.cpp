@@ -596,6 +596,7 @@ static HRESULT Update2(
   UInt64 numBytesToCompress = 0;
  
   unsigned i;
+  
   for (i = 0; i < updateItems.Size(); i++)
   {
     const CUpdateItem &ui = updateItems[i];
@@ -731,7 +732,6 @@ static HRESULT Update2(
     for (i = 0; i < updateItems.Size(); i++)
       refs.Refs.Add(CMemBlocks2());
 
-    UInt32 i;
     for (i = 0; i < numThreads; i++)
       threads.Threads.Add(CThreadInfo(options2));
 
@@ -804,9 +804,9 @@ static HRESULT Update2(
         RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
       }
 
-      for (UInt32 i = 0; i < numThreads; i++)
+      for (UInt32 k = 0; k < numThreads; k++)
       {
-        CThreadInfo &threadInfo = threads.Threads[i];
+        CThreadInfo &threadInfo = threads.Threads[k];
         if (threadInfo.IsFree)
         {
           threadInfo.IsFree = false;
@@ -822,7 +822,7 @@ static HRESULT Update2(
           threadInfo.UpdateIndex = mtItemIndex - 1;
 
           compressingCompletedEvents.Add(threadInfo.CompressionCompletedEvent);
-          threadIndices.Add(i);
+          threadIndices.Add(k);
           break;
         }
       }
@@ -927,10 +927,10 @@ static HRESULT Update2(
           }
           else
           {
-            CMemBlocks2 &memRef = refs.Refs[threadInfo.UpdateIndex];
-            threadInfo.OutStreamSpec->DetachData(memRef);
-            memRef.CompressingResult = threadInfo.CompressingResult;
-            memRef.Defined = true;
+            CMemBlocks2 &memRef2 = refs.Refs[threadInfo.UpdateIndex];
+            threadInfo.OutStreamSpec->DetachData(memRef2);
+            memRef2.CompressingResult = threadInfo.CompressingResult;
+            memRef2.Defined = true;
             continue;
           }
         }

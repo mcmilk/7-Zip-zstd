@@ -866,10 +866,9 @@ HRESULT CEncoderInfo::Init(
 
 
   outStreamSpec = new CBenchmarkOutStream;
+  outStream = outStreamSpec;
   if (!outStreamSpec->Alloc(kCompressedBufferSize))
     return E_OUTOFMEMORY;
-
-  outStream = outStreamSpec;
 
   propStreamSpec = 0;
   if (!propStream)
@@ -917,15 +916,8 @@ HRESULT CEncoderInfo::Init(
 
         // we must call encoding one time to calculate password key for key cache.
         // it must be after WriteCoderProperties!
-        CBenchmarkInStream *inStreamSpec = new CBenchmarkInStream;
-        CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
         Byte temp[16];
         memset(temp, 0, sizeof(temp));
-        inStreamSpec->Init(temp, sizeof(temp));
-        
-        CCrcOutStream *outStreamSpec = new CCrcOutStream;
-        CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-        outStreamSpec->Init();
         
         if (_encoderFilter)
         {
@@ -934,7 +926,15 @@ HRESULT CEncoderInfo::Init(
         }
         else
         {
-          RINOK(_encoder->Code(inStream, outStream, 0, 0, NULL));
+          CBenchmarkInStream *inStreamSpec = new CBenchmarkInStream;
+          CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
+          inStreamSpec->Init(temp, sizeof(temp));
+          
+          CCrcOutStream *crcStreamSpec = new CCrcOutStream;
+          CMyComPtr<ISequentialOutStream> crcStream = crcStreamSpec;
+          crcStreamSpec->Init();
+
+          RINOK(_encoder->Code(inStream, crcStream, 0, 0, NULL));
         }
       }
     }
@@ -2390,10 +2390,10 @@ static void x86cpuid_to_String(const Cx86cpuid &c, AString &s)
   {
     for (int i = 0; i < 3; i++)
     {
-      UInt32 c[4] = { 0 };
-      MyCPUID(0x80000002 + i, &c[0], &c[1], &c[2], &c[3]);
+      UInt32 d[4] = { 0 };
+      MyCPUID(0x80000002 + i, &d[0], &d[1], &d[2], &d[3]);
       for (int j = 0; j < 4; j++)
-        PrintCpuChars(s, c[j]);
+        PrintCpuChars(s, d[j]);
     }
   }
 
@@ -2469,10 +2469,11 @@ HRESULT Bench(
   bool multiThreadTests = false;
 
   COneMethodInfo method;
-  unsigned i;
 
   CBenchBuffer fileDataBuffer;
-  
+
+  {
+  unsigned i;
   for (i = 0; i < props.Size(); i++)
   {
     const CProperty &property = props[i];
@@ -2567,6 +2568,7 @@ HRESULT Bench(
     }
     
     RINOK(method.ParseMethodFromPROPVARIANT(name, propVariant));
+  }
   }
 
   if (printCallback)
@@ -3013,7 +3015,7 @@ HRESULT Bench(
     if (needSetComplexity)
       callback.BenchProps.SetLzmaCompexity();
 
-  for (i = 0; i < numIterations; i++)
+  for (unsigned i = 0; i < numIterations; i++)
   {
     const unsigned kStartDicLog = 22;
     unsigned pow = (dict < ((UInt32)1 << kStartDicLog)) ? kBenchMinDicLogSize : kStartDicLog;

@@ -67,19 +67,21 @@ public:
   {
     if (_bitPos <= 16)
     {
-      UInt32 val;
-      if (_buf >= _bufLim)
       {
-        val = 0xFFFF;
-        _extraSize += 2;
+        UInt32 val;
+        if (_buf >= _bufLim)
+        {
+          val = 0xFFFF;
+          _extraSize += 2;
+        }
+        else
+        {
+          val = GetUi16(_buf);
+          _buf += 2;
+        }
+        _value = (_value << 16) | val;
+        _bitPos += 16;
       }
-      else
-      {
-        val = GetUi16(_buf);
-        _buf += 2;
-      }
-      _value = (_value << 16) | val;
-      _bitPos += 16;
       if (_bitPos <= 16)
       {
         UInt32 val;

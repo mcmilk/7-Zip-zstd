@@ -844,17 +844,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       
       if (needOpenFile && !archiveIsOpened || res != S_OK)
       {
-        UString message = L"Error";
+        UString m = L"Error";
         if (res == S_FALSE || res == S_OK)
         {
-          message = MyFormatNew(encrypted ?
+          m = MyFormatNew(encrypted ?
                 IDS_CANT_OPEN_ENCRYPTED_ARCHIVE :
                 IDS_CANT_OPEN_ARCHIVE,
               fullPath);
         }
         else if (res != S_OK)
-          message = HResultToMessage(res);
-        ErrorMessage(message);
+          m = HResultToMessage(res);
+        ErrorMessage(m);
         return -1;
       }
 

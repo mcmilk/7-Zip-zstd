@@ -713,16 +713,18 @@ void CCompressDialog::OnOK()
   }
 
   SaveOptionsInMem();
-  UString s;
-  if (!GetFinalPath_Smart(s))
   {
-    ShowErrorMessage(*this, k_IncorrectPathMessage);
-    return;
+    UString s;
+    if (!GetFinalPath_Smart(s))
+    {
+      ShowErrorMessage(*this, k_IncorrectPathMessage);
+      return;
+    }
+    
+    m_RegistryInfo.ArcPaths.Clear();
+    AddUniqueString(m_RegistryInfo.ArcPaths, s);
+    Info.ArcPath = s;
   }
-
-  m_RegistryInfo.ArcPaths.Clear();
-  AddUniqueString(m_RegistryInfo.ArcPaths, s);
-  Info.ArcPath = s;
   
   Info.UpdateMode = (NCompressDialog::NUpdateMode::EEnum)k_UpdateMode_Vals[m_UpdateMode.GetCurSel()];;
   Info.PathMode = (NWildcard::ECensorPathMode)k_PathMode_Vals[m_PathMode.GetCurSel()];
@@ -1007,15 +1009,17 @@ void CCompressDialog::SetLevel()
   m_Level.ResetContent();
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  int index = FindRegistryFormat(ai.Name);
   UInt32 level = 5;
-  if (index >= 0)
   {
-    const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-    if (fo.Level <= 9)
-      level = fo.Level;
-    else
-      level = 9;
+    int index = FindRegistryFormat(ai.Name);
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      if (fo.Level <= 9)
+        level = fo.Level;
+      else
+        level = 9;
+    }
   }
   
   for (unsigned i = 0; i <= 9; i++)
@@ -1469,18 +1473,23 @@ void CCompressDialog::SetSolidBlockSize()
   UInt32 defaultBlockSize = (UInt32)(Int32)-1;
 
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  int index = FindRegistryFormat(ai.Name);
-  if (index >= 0)
   {
-    const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-    if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()))
-      defaultBlockSize = fo.BlockLogSize;
+    int index = FindRegistryFormat(ai.Name);
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()))
+        defaultBlockSize = fo.BlockLogSize;
+    }
   }
 
-  index = (int)m_Solid.AddString(LangString(IDS_COMPRESS_NON_SOLID));
-  m_Solid.SetItemData(index, (UInt32)kNoSolidBlockSize);
-  m_Solid.SetCurSel(0);
-  bool needSet = defaultBlockSize == (UInt32)(Int32)-1;
+  {
+    int index = (int)m_Solid.AddString(LangString(IDS_COMPRESS_NON_SOLID));
+    m_Solid.SetItemData(index, (UInt32)kNoSolidBlockSize);
+    m_Solid.SetCurSel(0);
+  }
+  
+  bool needSet = (defaultBlockSize == (UInt32)(Int32)-1);
   
   for (unsigned i = 20; i <= 36; i++)
   {
@@ -1495,8 +1504,11 @@ void CCompressDialog::SetSolidBlockSize()
     m_Solid.SetItemData(index, (UInt32)i);
   }
   
-  index = (int)m_Solid.AddString(LangString(IDS_COMPRESS_SOLID));
-  m_Solid.SetItemData(index, kSolidBlockSize);
+  {
+    int index = (int)m_Solid.AddString(LangString(IDS_COMPRESS_SOLID));
+    m_Solid.SetItemData(index, kSolidBlockSize);
+  }
+  
   if (defaultBlockSize == (UInt32)(Int32)-1)
     defaultBlockSize = kSolidBlockSize;
   if (defaultBlockSize != kNoSolidBlockSize)
@@ -1514,13 +1526,15 @@ void CCompressDialog::SetNumThreads()
   UInt32 numHardwareThreads = NSystem::GetNumberOfProcessors();
   UInt32 defaultValue = numHardwareThreads;
 
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  int index = FindRegistryFormat(ai.Name);
-  if (index >= 0)
   {
-    const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-    if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()) && fo.NumThreads != (UInt32)(Int32)-1)
-      defaultValue = fo.NumThreads;
+    const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+    int index = FindRegistryFormat(ai.Name);
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()) && fo.NumThreads != (UInt32)(Int32)-1)
+        defaultValue = fo.NumThreads;
+    }
   }
 
   UInt32 numAlgoThreadsMax = 1;

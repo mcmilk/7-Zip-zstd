@@ -375,10 +375,10 @@ HRESULT Extract(
       thereAreNotOpenArcs = true;
       if (!options.StdInMode)
       {
-        NFind::CFileInfo fi;
-        if (fi.Find(us2fs(arcPath)))
-          if (!fi.IsDir())
-            totalPackProcessed += fi.Size;
+        NFind::CFileInfo fi2;
+        if (fi2.Find(us2fs(arcPath)))
+          if (!fi2.IsDir())
+            totalPackProcessed += fi2.Size;
       }
       continue;
     }

@@ -186,18 +186,24 @@ public:
   UInt64 GetFolder(unsigned fileIndex) const
   {
     const CItem &item = Items[Indices[fileIndex]];
-    const CSectionInfo &section = Sections[(unsigned)item.Section];
-    if (section.IsLzx())
-      return section.Methods[0].LzxInfo.GetFolder(item.Offset);
+    if (item.Section < Sections.Size())
+    {
+      const CSectionInfo &section = Sections[(unsigned)item.Section];
+      if (section.IsLzx())
+        return section.Methods[0].LzxInfo.GetFolder(item.Offset);
+    }
     return 0;
   }
 
   UInt64 GetLastFolder(unsigned fileIndex) const
   {
     const CItem &item = Items[Indices[fileIndex]];
-    const CSectionInfo &section = Sections[(unsigned)item.Section];
-    if (section.IsLzx())
-      return section.Methods[0].LzxInfo.GetFolder(item.Offset + item.Size - 1);
+    if (item.Section < Sections.Size())
+    {
+      const CSectionInfo &section = Sections[(unsigned)item.Section];
+      if (section.IsLzx())
+        return section.Methods[0].LzxInfo.GetFolder(item.Offset + item.Size - 1);
+    }
     return 0;
   }
 
@@ -217,6 +223,7 @@ public:
   void SetIndices();
   void Sort();
   bool Check();
+  bool CheckSectionRefs();
 };
 
 

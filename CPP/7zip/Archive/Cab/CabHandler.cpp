@@ -1017,11 +1017,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     for (; i < numItems; i++)
     {
       unsigned indexNext = allFilesMode ? i : indices[i];
-      const CMvItem &mvItem = m_Database.Items[indexNext];
-      const CItem &item = m_Database.Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
-      if (item.IsDir())
+      const CMvItem &mvItem2 = m_Database.Items[indexNext];
+      const CItem &item2 = m_Database.Volumes[mvItem2.VolumeIndex].Items[mvItem2.ItemIndex];
+      if (item2.IsDir())
         continue;
-      int newFolderIndex = m_Database.GetFolderIndex(&mvItem);
+      int newFolderIndex = m_Database.GetFolderIndex(&mvItem2);
 
       if (newFolderIndex != folderIndex)
         break;
@@ -1029,7 +1029,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         extractStatuses.Add(false);
       extractStatuses.Add(true);
       startIndex++;
-      curUnpack = item.GetEndOffset();
+      curUnpack = item2.GetEndOffset();
     }
 
     CFolderOutStream *cabFolderOutStream = new CFolderOutStream;
@@ -1104,16 +1104,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           break;
         }
 
-        const CDatabaseEx &db = m_Database.Volumes[volIndex];
-        const CFolder &folder = db.Folders[locFolderIndex];
+        const CDatabaseEx &db2 = m_Database.Volumes[volIndex];
+        const CFolder &folder2 = db2.Folders[locFolderIndex];
         
         if (bl == 0)
         {
-          cabBlockInStreamSpec->ReservedSize = db.ArcInfo.GetDataBlockReserveSize();
-          RINOK(db.Stream->Seek(db.StartPosition + folder.DataStart, STREAM_SEEK_SET, NULL));
+          cabBlockInStreamSpec->ReservedSize = db2.ArcInfo.GetDataBlockReserveSize();
+          RINOK(db2.Stream->Seek(db2.StartPosition + folder2.DataStart, STREAM_SEEK_SET, NULL));
         }
         
-        if (bl == folder.NumDataBlocks)
+        if (bl == folder2.NumDataBlocks)
         {
           /*
             CFolder::NumDataBlocks (CFFOLDER::cCFData in CAB specification) is 16-bit.
@@ -1138,7 +1138,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           cabBlockInStreamSpec->InitForNewBlock();
 
         UInt32 packSize, unpackSize;
-        res = cabBlockInStreamSpec->PreRead(db.Stream, packSize, unpackSize);
+        res = cabBlockInStreamSpec->PreRead(db2.Stream, packSize, unpackSize);
         if (res == S_FALSE)
           break;
         RINOK(res);
@@ -1180,7 +1180,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         UInt64 unpackSize64 = unpackSize;
         UInt32 packSizeChunk = cabBlockInStreamSpec->GetPackSizeAvail();
 
-        switch (folder.GetMethod())
+        switch (folder2.GetMethod())
         {
           case NHeader::NMethod::kNone:
             res = copyCoder->Code(cabBlockInStream, outStream, NULL, &unpackSize64, NULL);

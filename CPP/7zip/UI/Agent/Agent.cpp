@@ -1067,10 +1067,7 @@ STDMETHODIMP CAgentFolder::BindToParentFolder(IFolderFolder **resultFolder)
       if (parentIndex < 0)
         proxyDirIndex = k_Proxy2_RootDirIndex;
       else
-      {
-        const CProxyFile2 &file = _proxy2->Files[parentIndex];
-        proxyDirIndex = file.DirIndex;
-      }
+        proxyDirIndex = _proxy2->Files[parentIndex].DirIndex;
     }
   }
   else

@@ -508,10 +508,10 @@ EXTERN_C HANDLE WINAPI OpenPlugin(int openFrom, INT_PTR item)
 EXTERN_C void WINAPI ClosePlugin(HANDLE plugin)
 {
   // OutputDebugStringA("-- ClosePlugin --- START");
-  MY_TRY_BEGIN;
+  // MY_TRY_BEGIN;
   delete (CPlugin *)plugin;
   // OutputDebugStringA("-- ClosePlugin --- END");
-  MY_TRY_END1("ClosePlugin");
+  // MY_TRY_END1("ClosePlugin");
 }
 
 EXTERN_C int WINAPI GetFindData(HANDLE plugin, struct PluginPanelItem **panelItems, int *itemsNumber, int opMode)

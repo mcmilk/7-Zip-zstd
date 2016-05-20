@@ -139,7 +139,6 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
   if (cert)
   {
     // how to filter rd, if ((rdSize & 0xF) != 0) ?
-    /*
     if ((rdSize & 0x7) != 0)
       return E_NOTIMPL;
   }

@@ -1681,17 +1681,18 @@ HRESULT Update(
   }
 
   UInt64 inSizeForReduce = 0;
-  unsigned i;
-  for (i = 0; i < updateItems.Size(); i++)
   {
-    const CUpdateItem &ui = updateItems[i];
-    if (ui.NewData)
+    FOR_VECTOR (i, updateItems)
     {
-      complexity += ui.Size;
-      if (numSolidFiles != 1)
-        inSizeForReduce += ui.Size;
-      else if (inSizeForReduce < ui.Size)
-        inSizeForReduce = ui.Size;
+      const CUpdateItem &ui = updateItems[i];
+      if (ui.NewData)
+      {
+        complexity += ui.Size;
+        if (numSolidFiles != 1)
+          inSizeForReduce += ui.Size;
+        else if (inSizeForReduce < ui.Size)
+          inSizeForReduce = ui.Size;
+      }
     }
   }
 
@@ -1753,7 +1754,7 @@ HRESULT Update(
 
     const CCompressionMethodMode &method = *options.Method;
     
-    for (i = 0; i < updateItems.Size(); i++)
+    FOR_VECTOR (i, updateItems)
     {
       const CUpdateItem &ui = updateItems[i];
       if (!ui.NewData || !ui.HasStream())
@@ -1857,6 +1858,8 @@ HRESULT Update(
     /* ---------- Write non-AUX dirs and Empty files ---------- */
     CUIntVector emptyRefs;
     
+    unsigned i;
+
     for (i = 0; i < updateItems.Size(); i++)
     {
       const CUpdateItem &ui = updateItems[i];
@@ -1919,7 +1922,8 @@ HRESULT Update(
     const CFilterMode2 &filterMode = filters[groupIndex];
 
     CCompressionMethodMode method = *options.Method;
-    HRESULT res = MakeExeMethod(method, filterMode,
+    {
+      HRESULT res = MakeExeMethod(method, filterMode,
         #ifdef _7ZIP_ST
           false
         #else
@@ -1927,7 +1931,8 @@ HRESULT Update(
         #endif
         );
 
-    RINOK(res);
+      RINOK(res);
+    }
 
     if (filterMode.Encrypted)
     {
@@ -2266,8 +2271,12 @@ HRESULT Update(
     CRecordVector<CRefItem> refItems;
     refItems.ClearAndSetSize(numFiles);
     bool sortByType = (options.UseTypeSorting && numSolidFiles > 1);
+    
+    unsigned i;
+
     for (i = 0; i < numFiles; i++)
       refItems[i] = CRefItem(group.Indices[i], updateItems[group.Indices[i]], sortByType);
+
     CSortParam sortParam;
     // sortParam.TreeFolders = &treeFolders;
     sortParam.SortByType = sortByType;

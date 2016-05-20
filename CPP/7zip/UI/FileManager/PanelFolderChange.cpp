@@ -504,10 +504,10 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
       {
         FString s = driveStrings[i];
         ComboBoxPaths.Add(fs2us(s));
-        int iconIndex = GetRealIconIndex(s, 0);
+        int iconIndex2 = GetRealIconIndex(s, 0);
         if (s.Len() > 0 && s.Back() == FCHAR_PATH_SEPARATOR)
           s.DeleteBack();
-        AddComboBoxItem(fs2us(s), iconIndex, 1, false);
+        AddComboBoxItem(fs2us(s), iconIndex2, 1, false);
       }
 
       name = RootFolder_GetName_Network(iconIndex);

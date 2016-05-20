@@ -189,8 +189,8 @@ bool CItem::FindExtra_Version(UInt64 &version) const
     return false;
   const Byte *p = Extra + (unsigned)offset;
 
-  UInt64 Flags;
-  unsigned num = ReadVarInt(p, size, &Flags);
+  UInt64 flags;
+  unsigned num = ReadVarInt(p, size, &flags);
   if (num == 0) return false; p += num; size -= num;
   
   num = ReadVarInt(p, size, &version);
@@ -1881,6 +1881,7 @@ HRESULT CHandler::Open2(IInStream *stream,
     }
     
     CInArcInfo arcInfoOpen;
+    {
     HRESULT res = arch.Open(inStream, maxCheckStartPosition, getTextPassword, arcInfoOpen);
     if (arch.IsArc && arch.UnexpectedEnd)
       _errorFlags |= kpv_ErrorFlags_UnexpectedEnd;
@@ -1896,6 +1897,7 @@ HRESULT CHandler::Open2(IInStream *stream,
       if (_arcs.IsEmpty())
         return res;
       break;
+    }
     }
     
     CArc &arc = _arcs.AddNew();
@@ -2068,12 +2070,12 @@ HRESULT CHandler::Open2(IInStream *stream,
           {
             if (prevSplitFile >= 0)
             {
-              CRefItem &ref = _refs[prevSplitFile];
-              CItem &prevItem = _items[ref.Last];
+              CRefItem &ref2 = _refs[prevSplitFile];
+              CItem &prevItem = _items[ref2.Last];
               if (item.IsNextForItem(prevItem))
               {
-                ref.Last = _items.Size();
-                prevItem.NextItem = ref.Last;
+                ref2.Last = _items.Size();
+                prevItem.NextItem = ref2.Last;
                 needAdd = false;
               }
             }

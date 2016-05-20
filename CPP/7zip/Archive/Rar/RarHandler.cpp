@@ -1602,11 +1602,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           if (len > kPasswordLen_MAX)
             len = kPasswordLen_MAX;
           CByteArr buffer(len * 2);
-          for (unsigned i = 0; i < len; i++)
+          for (unsigned k = 0; k < len; k++)
           {
-            wchar_t c = password[i];
-            ((Byte *)buffer)[i * 2] = (Byte)c;
-            ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
+            wchar_t c = password[k];
+            ((Byte *)buffer)[k * 2] = (Byte)c;
+            ((Byte *)buffer)[k * 2 + 1] = (Byte)(c >> 8);
           }
           rar3CryptoDecoderSpec->SetPassword((const Byte *)buffer, len * 2);
         }

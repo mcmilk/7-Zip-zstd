@@ -900,10 +900,10 @@ HRESULT Print_OpenArchive_Props(CStdOutStream &so, const CCodecs *codecs, const 
     RINOK(PrintArcProp(so, archive, kpidPhySize, NULL));
     if (er.TailSize != 0)
       PrintPropNameAndNumber(so, kpidTailSize, er.TailSize);
-    UInt32 numProps;
-    RINOK(archive->GetNumberOfArchiveProperties(&numProps));
-    
     {
+      UInt32 numProps;
+      RINOK(archive->GetNumberOfArchiveProperties(&numProps));
+      
       for (UInt32 j = 0; j < numProps; j++)
       {
         CMyComBSTR name;

@@ -358,7 +358,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   UInt64 blockIndex;
   UInt64 currentItemSize;
   
-  if (index < (UInt32)_archive.Refs.Size())
+  if (index < _archive.Refs.Size())
   {
     const CRef &ref = _archive.Refs[index];
     const CDir &item = ref.Dir->_subItems[ref.Index];
@@ -375,14 +375,14 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
       UInt64 virtOffset = 0;
       for (UInt32 i = 0; i < ref.NumExtents; i++)
       {
-        const CDir &item = ref.Dir->_subItems[ref.Index + i];
-        if (item.Size == 0)
+        const CDir &item2 = ref.Dir->_subItems[ref.Index + i];
+        if (item2.Size == 0)
           continue;
         CSeekExtent se;
-        se.Phy = (UInt64)item.ExtentLocation * kBlockSize;
+        se.Phy = (UInt64)item2.ExtentLocation * kBlockSize;
         se.Virt = virtOffset;
         extentStreamSpec->Extents.Add(se);
-        virtOffset += item.Size;
+        virtOffset += item2.Size;
       }
       if (virtOffset != ref.TotalSize)
         return S_FALSE;
@@ -394,6 +394,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
       *stream = extentStream.Detach();
       return S_OK;
     }
+    
     currentItemSize = item.Size;
     blockIndex = item.ExtentLocation;
   }

@@ -449,7 +449,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
           }
           while (++i < kGroupSize && mtfPos < mtfArraySize);
           
-          UInt32 bestPrice = 0xFFFFFFFF;
+          UInt32 bestPrice2 = 0xFFFFFFFF;
           unsigned t = 0;
           do
           {
@@ -459,10 +459,10 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
             do
               price += lens[symbols[j]];
             while (++j < i);
-            if (price < bestPrice)
+            if (price < bestPrice2)
             {
               m_Selectors[g] = (Byte)t;
-              bestPrice = price;
+              bestPrice2 = price;
             }
           }
           while (++t < numTables);

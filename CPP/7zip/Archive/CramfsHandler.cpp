@@ -583,13 +583,13 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
     }
   }
 
-  bool be = _h.be;
-  const Byte *p = _data + (_curBlocksOffset + (UInt32)blockIndex * 4);
-  UInt32 start = (blockIndex == 0 ? _curBlocksOffset + _curNumBlocks * 4: Get32(p - 4));
-  UInt32 end = Get32(p);
+  const bool be = _h.be;
+  const Byte *p2 = _data + (_curBlocksOffset + (UInt32)blockIndex * 4);
+  const UInt32 start = (blockIndex == 0 ? _curBlocksOffset + _curNumBlocks * 4: Get32(p2 - 4));
+  const UInt32 end = Get32(p2);
   if (end < start || end > _size)
     return S_FALSE;
-  UInt32 inSize = end - start;
+  const UInt32 inSize = end - start;
 
   if (_method == k_Flags_Method_LZMA)
   {
@@ -707,7 +707,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         RINOK(hres);
         {
-          HRESULT hres = copyCoder->Code(inSeqStream, outStream, NULL, NULL, progress);
+          hres = copyCoder->Code(inSeqStream, outStream, NULL, NULL, progress);
           if (hres == S_OK)
           {
             if (copyCoderSpec->TotalSize == curSize)

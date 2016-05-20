@@ -242,13 +242,17 @@ bool CBenchmarkDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   int bx1, bx2, by;
   GetItemSizes(IDCANCEL, bx1, by);
   GetItemSizes(IDHELP, bx2, by);
-  int y = ySize - my - by;
-  int x = xSize - mx - bx1;
 
-  InvalidateRect(NULL);
+  {
+    int y = ySize - my - by;
+    int x = xSize - mx - bx1;
+    
+    InvalidateRect(NULL);
+    
+    MoveItem(IDCANCEL, x, y, bx1, by);
+    MoveItem(IDHELP, x - mx - bx2, y, bx2, by);
+  }
 
-  MoveItem(IDCANCEL, x, y, bx1, by);
-  MoveItem(IDHELP, x - mx - bx2, y, bx2, by);
   if (_consoleEdit)
   {
     int yPos = ySize - my - by;

@@ -876,7 +876,7 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
   // CNodeDescriptor nodeDesc;
   // nodeDesc.Parse(p);
   CHeaderRec hr;
-  hr.Parse(p + kNodeDescriptor_Size);
+  RINOK(hr.Parse(p + kNodeDescriptor_Size));
   
   // CaseSensetive = (Header.IsHfsX() && hr.KeyCompareType == 0xBC);
 
@@ -1764,7 +1764,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             if (rem == 0)
             {
               // Here we check that there are no extra (empty) blocks in last extent.
-              if (extentRem >= (UInt64)((UInt32)1 << Header.BlockSizeLog))
+              if (extentRem >= ((UInt64)1 << Header.BlockSizeLog))
                 res = NExtract::NOperationResult::kDataError;
               break;
             }

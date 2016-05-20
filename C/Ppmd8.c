@@ -1,5 +1,5 @@
 /* Ppmd8.c -- PPMdI codec
-2015-09-28 : Igor Pavlov : Public domain
+2016-05-16 : Igor Pavlov : Public domain
 This code is based on PPMd var.I (2002): Dmitry Shkarin : Public domain */
 
 #include "Precomp.h"
@@ -240,8 +240,8 @@ static void *AllocUnits(CPpmd8 *p, unsigned indx)
 }
 
 #define MyMem12Cpy(dest, src, num) \
-  { UInt32 *d = (UInt32 *)dest; const UInt32 *s = (const UInt32 *)src; UInt32 n = num; \
-    do { d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; s += 3; d += 3; } while (--n); }
+  { UInt32 *d = (UInt32 *)dest; const UInt32 *z = (const UInt32 *)src; UInt32 n = num; \
+    do { d[0] = z[0]; d[1] = z[1]; d[2] = z[2]; z += 3; d += 3; } while (--n); }
 
 static void *ShrinkUnits(CPpmd8 *p, void *oldPtr, unsigned oldNU, unsigned newNU)
 {
@@ -772,7 +772,7 @@ static CTX_PTR ReduceOrder(CPpmd8 *p, CPpmd_State *s1, CTX_PTR c)
   if (SUCCESSOR(s) <= upBranch)
   {
     CTX_PTR successor;
-    CPpmd_State *s1 = p->FoundState;
+    CPpmd_State *s2 = p->FoundState;
     p->FoundState = s;
 
     successor = CreateSuccessors(p, False, NULL, c);
@@ -780,7 +780,7 @@ static CTX_PTR ReduceOrder(CPpmd8 *p, CPpmd_State *s1, CTX_PTR c)
       SetSuccessor(s, 0);
     else
       SetSuccessor(s, REF(successor));
-    p->FoundState = s1;
+    p->FoundState = s2;
   }
   
   if (p->OrderFall == 1 && c1 == p->MaxContext)
@@ -924,19 +924,19 @@ static void UpdateModel(CPpmd8 *p)
     }
     else
     {
-      CPpmd_State *s = (CPpmd_State*)AllocUnits(p, 0);
-      if (!s)
+      CPpmd_State *s2 = (CPpmd_State*)AllocUnits(p, 0);
+      if (!s2)
       {
         RESTORE_MODEL(c, CTX(fSuccessor));
         return;
       }
-      *s = *ONE_STATE(c);
-      c->Stats = REF(s);
-      if (s->Freq < MAX_FREQ / 4 - 1)
-        s->Freq <<= 1;
+      *s2 = *ONE_STATE(c);
+      c->Stats = REF(s2);
+      if (s2->Freq < MAX_FREQ / 4 - 1)
+        s2->Freq <<= 1;
       else
-        s->Freq = MAX_FREQ - 4;
-      c->SummFreq = (UInt16)(s->Freq + p->InitEsc + (ns > 2));
+        s2->Freq = MAX_FREQ - 4;
+      c->SummFreq = (UInt16)(s2->Freq + p->InitEsc + (ns > 2));
     }
     cf = 2 * fFreq * (c->SummFreq + 6);
     sf = (UInt32)s0 + c->SummFreq;
@@ -951,10 +951,10 @@ static void UpdateModel(CPpmd8 *p)
       c->SummFreq = (UInt16)(c->SummFreq + cf);
     }
     {
-      CPpmd_State *s = STATS(c) + ns1 + 1;
-      SetSuccessor(s, successor);
-      s->Symbol = fSymbol;
-      s->Freq = (Byte)cf;
+      CPpmd_State *s2 = STATS(c) + ns1 + 1;
+      SetSuccessor(s2, successor);
+      s2->Symbol = fSymbol;
+      s2->Freq = (Byte)cf;
       c->Flags |= flag;
       c->NumStats = (Byte)(ns1 + 1);
     }

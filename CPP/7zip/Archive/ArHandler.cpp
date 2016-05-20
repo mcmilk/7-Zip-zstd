@@ -343,16 +343,17 @@ HRESULT CHandler::ParseLongNames(IInStream *stream)
   if (item.Size > ((UInt32)1 << 30))
     return S_FALSE;
   RINOK(stream->Seek(item.GetDataPos(), STREAM_SEEK_SET, NULL));
-  size_t size = (size_t)item.Size;
+  const size_t size = (size_t)item.Size;
 
   CByteArr p(size);
   RINOK(ReadStream_FALSE(stream, p, size));
+  
   for (i = 0; i < _items.Size(); i++)
   {
-    CItem &item = _items[i];
-    if (item.Name[0] != '/')
+    CItem &item2 = _items[i];
+    if (item2.Name[0] != '/')
       continue;
-    const char *ptr = item.Name.Ptr(1);
+    const char *ptr = item2.Name.Ptr(1);
     const char *end;
     UInt32 pos = ConvertStringToUInt32(ptr, &end);
     if (*end != 0 || end == ptr)
@@ -369,8 +370,9 @@ HRESULT CHandler::ParseLongNames(IInStream *stream)
         break;
       pos++;
     }
-    item.Name.SetFrom((const char *)(p + start), pos - start);
+    item2.Name.SetFrom((const char *)(p + start), pos - start);
   }
+  
   _longNames_FileIndex = fileIndex;
   return S_OK;
 }
