@@ -388,7 +388,7 @@ static void MethodToProp(int method, int chunksSizeBits, NCOM::CPropVariant &pro
     char temp[32];
     
     if ((unsigned)method < ARRAY_SIZE(k_Methods))
-      strcpy(temp, k_Methods[method]);
+      strcpy(temp, k_Methods[(unsigned)method]);
     else
       ConvertUInt32ToString((unsigned)method, temp);
     

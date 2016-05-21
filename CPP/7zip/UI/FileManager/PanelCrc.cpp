@@ -310,7 +310,7 @@ HRESULT CThreadCrc::ProcessVirt()
 
 HRESULT CApp::CalculateCrc2(const UString &methodName)
 {
-  int srcPanelIndex = GetFocusedPanelIndex();
+  unsigned srcPanelIndex = GetFocusedPanelIndex();
   CPanel &srcPanel = Panels[srcPanelIndex];
 
   CRecordVector<UInt32> indices;
@@ -379,7 +379,7 @@ void CApp::CalculateCrc(const UString &methodName)
   HRESULT res = CalculateCrc2(methodName);
   if (res != S_OK && res != E_ABORT)
   {
-    int srcPanelIndex = GetFocusedPanelIndex();
+    unsigned srcPanelIndex = GetFocusedPanelIndex();
     CPanel &srcPanel = Panels[srcPanelIndex];
     srcPanel.MessageBoxError(res);
   }

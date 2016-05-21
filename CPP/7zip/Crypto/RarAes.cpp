@@ -11,8 +11,8 @@ namespace NRar3 {
 CDecoder::CDecoder():
     CAesCbcDecoder(kAesKeySize),
     _thereIsSalt(false),
-    _needCalc(true),
-    _rar350Mode(false)
+    _needCalc(true)
+    // _rar350Mode(false)
 {
   for (unsigned i = 0; i < sizeof(_salt); i++)
     _salt[i] = 0;
@@ -111,9 +111,9 @@ void CDecoder::CalcKey()
   UInt32 i;
   for (i = 0; i < kNumRounds; i++)
   {
-    sha.UpdateRar(buf, rawSize, _rar350Mode);
+    sha.UpdateRar(buf, rawSize /* , _rar350Mode */);
     Byte pswNum[3] = { (Byte)i, (Byte)(i >> 8), (Byte)(i >> 16) };
-    sha.UpdateRar(pswNum, 3, _rar350Mode);
+    sha.UpdateRar(pswNum, 3 /* , _rar350Mode */);
     if (i % (kNumRounds / 16) == 0)
     {
       NSha1::CContext shaTemp = sha;

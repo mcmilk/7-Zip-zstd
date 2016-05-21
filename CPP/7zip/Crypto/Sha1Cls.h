@@ -28,7 +28,7 @@ class CContext: public CContextBase
 {
 public:
   void Update(const Byte *data, size_t size) throw() { Sha1_Update(&_s, data, size); }
-  void UpdateRar(Byte *data, size_t size, bool rar350Mode) throw() { Sha1_Update_Rar(&_s, data, size, rar350Mode ? 1 : 0); }
+  void UpdateRar(Byte *data, size_t size /* , bool rar350Mode */) throw() { Sha1_Update_Rar(&_s, data, size /* , rar350Mode ? 1 : 0 */); }
   void Final(Byte *digest) throw() { Sha1_Final(&_s, digest); }
 };
 

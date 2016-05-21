@@ -1,5 +1,5 @@
 /* Sha1.c -- SHA-1 Hash
-2016-02-09 : Igor Pavlov : Public domain
+2016-05-20 : Igor Pavlov : Public domain
 This code is based on public domain code of Steve Reid from Wei Dai's Crypto++ library. */
 
 #include "Precomp.h"
@@ -212,7 +212,7 @@ void Sha1_Update(CSha1 *p, const Byte *data, size_t size)
   }
 }
 
-void Sha1_Update_Rar(CSha1 *p, Byte *data, size_t size, int rar350Mode)
+void Sha1_Update_Rar(CSha1 *p, Byte *data, size_t size /* , int rar350Mode */)
 {
   int returnRes = False;
   
@@ -246,7 +246,8 @@ void Sha1_Update_Rar(CSha1 *p, Byte *data, size_t size, int rar350Mode)
           SetUi32(prev, d);
         }
       }
-      returnRes = rar350Mode;
+      // returnRes = rar350Mode;
+      returnRes = True;
     }
   }
 }

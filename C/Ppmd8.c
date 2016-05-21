@@ -1,5 +1,5 @@
 /* Ppmd8.c -- PPMdI codec
-2016-05-16 : Igor Pavlov : Public domain
+2016-05-21 : Igor Pavlov : Public domain
 This code is based on PPMd var.I (2002): Dmitry Shkarin : Public domain */
 
 #include "Precomp.h"
@@ -1038,9 +1038,9 @@ CPpmd_See *Ppmd8_MakeEscFreq(CPpmd8 *p, unsigned numMasked1, UInt32 *escFreq)
   CPpmd_See *see;
   if (p->MinContext->NumStats != 0xFF)
   {
-    see = p->See[p->NS2Indx[p->MinContext->NumStats + 2] - 3] +
+    see = p->See[(unsigned)p->NS2Indx[(unsigned)p->MinContext->NumStats + 2] - 3] +
         (p->MinContext->SummFreq > 11 * ((unsigned)p->MinContext->NumStats + 1)) +
-        2 * (2 * (unsigned)p->MinContext->NumStats <
+        2 * (unsigned)(2 * (unsigned)p->MinContext->NumStats <
         ((unsigned)SUFFIX(p->MinContext)->NumStats + numMasked1)) +
         p->MinContext->Flags;
     {

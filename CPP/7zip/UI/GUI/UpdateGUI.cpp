@@ -343,7 +343,7 @@ static HRESULT ShowDialog(
     int index = FindActionSet(actionSet);
     if (index < 0)
       return E_NOTIMPL;
-    di.UpdateMode = g_UpdateMode_Pairs[index].UpdateMode;
+    di.UpdateMode = g_UpdateMode_Pairs[(unsigned)index].UpdateMode;
   }
 
   if (dialog.Create(hwndParent) != IDOK)

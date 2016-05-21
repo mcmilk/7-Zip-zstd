@@ -1,5 +1,5 @@
 /* Sha1.h -- SHA-1 Hash
-2015-03-04 : Igor Pavlov : Public domain */
+2016-05-20 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_SHA1_H
 #define __7Z_SHA1_H
@@ -27,7 +27,7 @@ void Sha1_GetBlockDigest(CSha1 *p, const UInt32 *data, UInt32 *destDigest);
 void Sha1_Update(CSha1 *p, const Byte *data, size_t size);
 void Sha1_Final(CSha1 *p, Byte *digest);
 
-void Sha1_Update_Rar(CSha1 *p, Byte *data, size_t size, int rar350Mode);
+void Sha1_Update_Rar(CSha1 *p, Byte *data, size_t size /* , int rar350Mode */);
 
 void Sha1_32_PrepareBlock(const CSha1 *p, UInt32 *block, unsigned size);
 void Sha1_32_Update(CSha1 *p, const UInt32 *data, size_t size);

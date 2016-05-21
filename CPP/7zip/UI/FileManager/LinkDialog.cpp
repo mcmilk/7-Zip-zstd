@@ -310,7 +310,7 @@ void CLinkDialog::OnButton_Link()
 
 void CApp::Link()
 {
-  int srcPanelIndex = GetFocusedPanelIndex();
+  unsigned srcPanelIndex = GetFocusedPanelIndex();
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {

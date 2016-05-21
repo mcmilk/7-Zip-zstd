@@ -24,7 +24,7 @@ class CDecoder:
   Byte _salt[8];
   bool _thereIsSalt;
   bool _needCalc;
-  bool _rar350Mode;
+  // bool _rar350Mode;
   
   CByteBuffer _password;
   
@@ -44,7 +44,7 @@ public:
   HRESULT SetDecoderProperties2(const Byte *data, UInt32 size);
 
   CDecoder();
-  void SetRar350Mode(bool rar350Mode) { _rar350Mode = rar350Mode; }
+  // void SetRar350Mode(bool rar350Mode) { _rar350Mode = rar350Mode; }
 };
 
 }}

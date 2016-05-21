@@ -220,6 +220,8 @@ HRESULT CInArchive::Open(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
   ArcInfo.Flags = Get16(buf + 3);
 
   UInt32 headerSize = NHeader::NArchive::kArchiveHeaderSize;
+  
+  /*
   if (ArcInfo.IsThereEncryptVer())
   {
     if (blockSize <= headerSize)
@@ -229,6 +231,8 @@ HRESULT CInArchive::Open(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
     ArcInfo.EncryptVersion = buf[NHeader::NArchive::kArchiveHeaderSize];
     headerSize += 1;
   }
+  */
+  
   if (blockSize < headerSize
       || buf[2] != NHeader::NBlockType::kArchiveHeader
       || !CheckHeaderCrc(buf, headerSize))
@@ -509,7 +513,7 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
         m_RarAESSpec = new NCrypto::NRar3::CDecoder;
         m_RarAES = m_RarAESSpec;
       }
-      m_RarAESSpec->SetRar350Mode(ArcInfo.IsEncryptOld());
+      // m_RarAESSpec->SetRar350Mode(ArcInfo.IsEncryptOld());
 
       // Salt
       const UInt32 kSaltSize = 8;
@@ -1552,7 +1556,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           rar3CryptoDecoderSpec = new NCrypto::NRar3::CDecoder;
           rar3CryptoDecoder = rar3CryptoDecoderSpec;
         }
-        rar3CryptoDecoderSpec->SetRar350Mode(item.UnPackVersion < 36);
+        // rar3CryptoDecoderSpec->SetRar350Mode(item.UnPackVersion < 36);
         /*
         CMyComPtr<ICompressSetDecoderProperties2> cryptoProperties;
         RINOK(rar3CryptoDecoder.QueryInterface(IID_ICompressSetDecoderProperties2,

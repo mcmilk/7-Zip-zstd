@@ -41,9 +41,9 @@ struct CInArcInfo
   bool IsRecovery()         const { return (Flags & NHeader::NArchive::kRecovery) != 0; }
   bool IsEncrypted()        const { return (Flags & NHeader::NArchive::kBlockEncryption) != 0; }
   bool IsFirstVolume()      const { return (Flags & NHeader::NArchive::kFirstVolume) != 0; }
-  bool IsThereEncryptVer()  const { return (Flags & NHeader::NArchive::kEncryptVer) != 0; }
 
-  bool IsEncryptOld()       const { return (!IsThereEncryptVer() || EncryptVersion < 36); }
+  // bool IsThereEncryptVer()  const { return (Flags & NHeader::NArchive::kEncryptVer) != 0; }
+  // bool IsEncryptOld()       const { return (!IsThereEncryptVer() || EncryptVersion < 36); }
 
   bool AreMoreVolumes()       const { return (EndFlags & NHeader::NArchive::kEndOfArc_Flags_NextVol) != 0; }
   bool Is_VolNumber_Defined() const { return (EndFlags & NHeader::NArchive::kEndOfArc_Flags_VolNumber) != 0; }

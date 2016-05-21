@@ -41,7 +41,8 @@ namespace NArchive
   const UInt16 kRecovery = 0x40;
   const UInt16 kBlockEncryption  = 0x80;
   const UInt16 kFirstVolume = 0x100; // (set only by RAR 3.0 and later)
-  const UInt16 kEncryptVer = 0x200; // RAR 3.6 there is EncryptVer Byte in End of MainHeader
+
+  // const UInt16 kEncryptVer = 0x200; // RAR 3.6 : that feature was discarded by origial RAR
 
   const UInt16 kEndOfArc_Flags_NextVol   = 1;
   const UInt16 kEndOfArc_Flags_DataCRC   = 2;
