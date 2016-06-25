@@ -1,6 +1,6 @@
 @echo off
 
-set ROOT=Z:\setups\7zip\dl-zstd\src\7z1602_Zstd_070\CPP\7Zip
+set ROOT=Z:\projekte\7zip-ZStd\git\CPP\7zip
 set OPTS=clean
 
 cd %ROOT%\Bundles\Format7zF

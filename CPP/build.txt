@@ -1,0 +1,1164 @@
+
+Z:\projekte\7zip-ZStd\git\CPP>set ROOT=Z:\projekte\7zip-ZStd\git\CPP\7zip 
+
+Z:\projekte\7zip-ZStd\git\CPP>set OPTS=CPU=AMD64 MY_STATIC_LINK=1 
+
+Z:\projekte\7zip-ZStd\git\CPP>set LFLAGS=/SUBSYSTEM:WINDOWS,"5.02" 
+
+Z:\projekte\7zip-ZStd\git\CPP>mkdir Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64 
+
+Z:\projekte\7zip-ZStd\git\CPP>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zF 
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zF>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yc"StdAfx.h" -FpAMD64/a.pch StdAfx.cpp
+StdAfx.cpp
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/AesOpt.asm
+ Assembling: ../../../../Asm/x86/AesOpt.asm
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/7zCrcOpt.asm
+ Assembling: ../../../../Asm/x86/7zCrcOpt.asm
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/XzCrc64Opt.asm
+ Assembling: ../../../../Asm/x86/XzCrc64Opt.asm
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Common\CRC.cpp ../../../Common\CrcReg.cpp ../../../Common\DynLimBuf.cpp ../../../Common\IntToString.cpp ../../../Common\MyMap.cpp ../../../Common\MyString.cpp ../../../Common\MyVector.cpp ../../../Common\MyXml.cpp ../../../Common\NewHandler.cpp ../../../Common\Sha1Reg.cpp ../../../Common\Sha256Reg.cpp ../../../Common\StringConvert.cpp ../../../Common\StringToInt.cpp ../../../Common\UTFConvert.cpp ../../../Common\Wildcard.cpp ../../../Common\XzCrc64Reg.cpp 
+CRC.cpp
+CrcReg.cpp
+DynLimBuf.cpp
+IntToString.cpp
+MyMap.cpp
+MyString.cpp
+MyVector.cpp
+MyXml.cpp
+NewHandler.cpp
+Sha1Reg.cpp
+Sha256Reg.cpp
+StringConvert.cpp
+StringToInt.cpp
+UTFConvert.cpp
+Wildcard.cpp
+XzCrc64Reg.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows\FileDir.cpp ../../../Windows\FileFind.cpp ../../../Windows\FileIO.cpp ../../../Windows\FileName.cpp ../../../Windows\PropVariant.cpp ../../../Windows\PropVariantUtils.cpp ../../../Windows\Synchronization.cpp ../../../Windows\System.cpp ../../../Windows\TimeUtils.cpp 
+FileDir.cpp
+FileFind.cpp
+FileIO.cpp
+FileName.cpp
+PropVariant.cpp
+PropVariantUtils.cpp
+Synchronization.cpp
+System.cpp
+TimeUtils.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Common\CreateCoder.cpp ../../Common\CWrappers.cpp ../../Common\InBuffer.cpp ../../Common\InOutTempBuffer.cpp ../../Common\FilterCoder.cpp ../../Common\LimitedStreams.cpp ../../Common\LockedStream.cpp ../../Common\MemBlocks.cpp ../../Common\MethodId.cpp ../../Common\MethodProps.cpp ../../Common\OffsetStream.cpp ../../Common\OutBuffer.cpp ../../Common\OutMemStream.cpp ../../Common\ProgressMt.cpp ../../Common\ProgressUtils.cpp ../../Common\PropId.cpp ../../Common\StreamBinder.cpp ../../Common\StreamObjects.cpp ../../Common\StreamUtils.cpp ../../Common\UniqBlocks.cpp ../../Common\VirtThread.cpp 
+CreateCoder.cpp
+CWrappers.cpp
+InBuffer.cpp
+InOutTempBuffer.cpp
+FilterCoder.cpp
+LimitedStreams.cpp
+LockedStream.cpp
+MemBlocks.cpp
+MethodId.cpp
+MethodProps.cpp
+OffsetStream.cpp
+OutBuffer.cpp
+OutMemStream.cpp
+ProgressMt.cpp
+ProgressUtils.cpp
+PropId.cpp
+StreamBinder.cpp
+StreamObjects.cpp
+StreamUtils.cpp
+UniqBlocks.cpp
+Code wird generiert...
+Kompilieren...
+VirtThread.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive\ApmHandler.cpp ../../Archive\ArHandler.cpp ../../Archive\ArjHandler.cpp ../../Archive\Bz2Handler.cpp ../../Archive\ComHandler.cpp ../../Archive\CpioHandler.cpp ../../Archive\CramfsHandler.cpp ../../Archive\DeflateProps.cpp ../../Archive\DmgHandler.cpp ../../Archive\ElfHandler.cpp ../../Archive\ExtHandler.cpp ../../Archive\FatHandler.cpp ../../Archive\FlvHandler.cpp ../../Archive\GzHandler.cpp ../../Archive\GptHandler.cpp ../../Archive\HandlerCont.cpp ../../Archive\HfsHandler.cpp ../../Archive\IhexHandler.cpp ../../Archive\LzhHandler.cpp ../../Archive\LzmaHandler.cpp ../../Archive\MachoHandler.cpp ../../Archive\MbrHandler.cpp ../../Archive\MslzHandler.cpp ../../Archive\MubHandler.cpp ../../Archive\NtfsHandler.cpp ../../Archive\PeHandler.cpp ../../Archive\PpmdHandler.cpp ../../Archive\QcowHandler.cpp ../../Archive\RpmHandler.cpp ../../Archive\SplitHandler.cpp ../../Archive\SquashfsHandler.cpp ../../Archive\SwfHandler.cpp ../../Archive\UefiHandler.cpp ../../Archive\VdiHandler.cpp ../../Archive\VhdHandler.cpp ../../Archive\VmdkHandler.cpp ../../Archive\XarHandler.cpp ../../Archive\XzHandler.cpp ../../Archive\ZHandler.cpp ../../Archive\ArchiveExports.cpp ../../Archive\DllExports2.cpp 
+ApmHandler.cpp
+ArHandler.cpp
+ArjHandler.cpp
+Bz2Handler.cpp
+ComHandler.cpp
+CpioHandler.cpp
+CramfsHandler.cpp
+DeflateProps.cpp
+DmgHandler.cpp
+ElfHandler.cpp
+ExtHandler.cpp
+FatHandler.cpp
+FlvHandler.cpp
+GzHandler.cpp
+GptHandler.cpp
+HandlerCont.cpp
+HfsHandler.cpp
+IhexHandler.cpp
+LzhHandler.cpp
+LzmaHandler.cpp
+Code wird generiert...
+Kompilieren...
+MachoHandler.cpp
+MbrHandler.cpp
+MslzHandler.cpp
+MubHandler.cpp
+NtfsHandler.cpp
+PeHandler.cpp
+PpmdHandler.cpp
+QcowHandler.cpp
+RpmHandler.cpp
+SplitHandler.cpp
+SquashfsHandler.cpp
+SwfHandler.cpp
+UefiHandler.cpp
+VdiHandler.cpp
+VhdHandler.cpp
+VmdkHandler.cpp
+XarHandler.cpp
+XzHandler.cpp
+ZHandler.cpp
+ArchiveExports.cpp
+Code wird generiert...
+Kompilieren...
+DllExports2.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Common\CoderMixer2.cpp ../../Archive/Common\DummyOutStream.cpp ../../Archive/Common\FindSignature.cpp ../../Archive/Common\InStreamWithCRC.cpp ../../Archive/Common\ItemNameUtils.cpp ../../Archive/Common\MultiStream.cpp ../../Archive/Common\OutStreamWithCRC.cpp ../../Archive/Common\OutStreamWithSha1.cpp ../../Archive/Common\HandlerOut.cpp ../../Archive/Common\ParseProperties.cpp 
+CoderMixer2.cpp
+DummyOutStream.cpp
+FindSignature.cpp
+InStreamWithCRC.cpp
+ItemNameUtils.cpp
+MultiStream.cpp
+OutStreamWithCRC.cpp
+OutStreamWithSha1.cpp
+HandlerOut.cpp
+ParseProperties.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/7z\7zCompressionMode.cpp ../../Archive/7z\7zDecode.cpp ../../Archive/7z\7zEncode.cpp ../../Archive/7z\7zExtract.cpp ../../Archive/7z\7zFolderInStream.cpp ../../Archive/7z\7zHandler.cpp ../../Archive/7z\7zHandlerOut.cpp ../../Archive/7z\7zHeader.cpp ../../Archive/7z\7zIn.cpp ../../Archive/7z\7zOut.cpp ../../Archive/7z\7zProperties.cpp ../../Archive/7z\7zSpecStream.cpp ../../Archive/7z\7zUpdate.cpp ../../Archive/7z\7zRegister.cpp 
+7zCompressionMode.cpp
+7zDecode.cpp
+7zEncode.cpp
+7zExtract.cpp
+7zFolderInStream.cpp
+7zHandler.cpp
+7zHandlerOut.cpp
+7zHeader.cpp
+7zIn.cpp
+7zOut.cpp
+7zProperties.cpp
+7zSpecStream.cpp
+7zUpdate.cpp
+7zRegister.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Cab\CabBlockInStream.cpp ../../Archive/Cab\CabHandler.cpp ../../Archive/Cab\CabHeader.cpp ../../Archive/Cab\CabIn.cpp ../../Archive/Cab\CabRegister.cpp 
+CabBlockInStream.cpp
+CabHandler.cpp
+CabHeader.cpp
+CabIn.cpp
+CabRegister.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Chm\ChmHandler.cpp ../../Archive/Chm\ChmIn.cpp 
+ChmHandler.cpp
+ChmIn.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Iso\IsoHandler.cpp ../../Archive/Iso\IsoHeader.cpp ../../Archive/Iso\IsoIn.cpp ../../Archive/Iso\IsoRegister.cpp 
+IsoHandler.cpp
+IsoHeader.cpp
+IsoIn.cpp
+IsoRegister.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Nsis\NsisDecode.cpp ../../Archive/Nsis\NsisHandler.cpp ../../Archive/Nsis\NsisIn.cpp ../../Archive/Nsis\NsisRegister.cpp 
+NsisDecode.cpp
+NsisHandler.cpp
+NsisIn.cpp
+NsisRegister.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Rar\RarHandler.cpp ../../Archive/Rar\Rar5Handler.cpp 
+RarHandler.cpp
+Rar5Handler.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Tar\TarHandler.cpp ../../Archive/Tar\TarHandlerOut.cpp ../../Archive/Tar\TarHeader.cpp ../../Archive/Tar\TarIn.cpp ../../Archive/Tar\TarOut.cpp ../../Archive/Tar\TarUpdate.cpp ../../Archive/Tar\TarRegister.cpp 
+TarHandler.cpp
+TarHandlerOut.cpp
+TarHeader.cpp
+TarIn.cpp
+TarOut.cpp
+TarUpdate.cpp
+TarRegister.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Udf\UdfHandler.cpp ../../Archive/Udf\UdfIn.cpp 
+UdfHandler.cpp
+UdfIn.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Wim\WimHandler.cpp ../../Archive/Wim\WimHandlerOut.cpp ../../Archive/Wim\WimIn.cpp ../../Archive/Wim\WimRegister.cpp 
+WimHandler.cpp
+WimHandlerOut.cpp
+WimIn.cpp
+WimRegister.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Zip\ZipAddCommon.cpp ../../Archive/Zip\ZipHandler.cpp ../../Archive/Zip\ZipHandlerOut.cpp ../../Archive/Zip\ZipIn.cpp ../../Archive/Zip\ZipItem.cpp ../../Archive/Zip\ZipOut.cpp ../../Archive/Zip\ZipUpdate.cpp ../../Archive/Zip\ZipRegister.cpp 
+ZipAddCommon.cpp
+ZipHandler.cpp
+ZipHandlerOut.cpp
+ZipIn.cpp
+ZipItem.cpp
+ZipOut.cpp
+ZipUpdate.cpp
+ZipRegister.cpp
+Code wird generiert...
+	cl   -DEXTERNAL_CODECS -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../Compress\Bcj2Coder.cpp ../../Compress\Bcj2Register.cpp ../../Compress\BcjCoder.cpp ../../Compress\BcjRegister.cpp ../../Compress\BitlDecoder.cpp ../../Compress\BranchMisc.cpp ../../Compress\BranchRegister.cpp ../../Compress\ByteSwap.cpp ../../Compress\BZip2Crc.cpp ../../Compress\BZip2Decoder.cpp ../../Compress\BZip2Encoder.cpp ../../Compress\BZip2Register.cpp ../../Compress\CopyCoder.cpp ../../Compress\CopyRegister.cpp ../../Compress\Deflate64Register.cpp ../../Compress\DeflateDecoder.cpp ../../Compress\DeflateEncoder.cpp ../../Compress\DeflateRegister.cpp ../../Compress\DeltaFilter.cpp ../../Compress\ImplodeDecoder.cpp ../../Compress\ImplodeHuffmanDecoder.cpp ../../Compress\LzhDecoder.cpp ../../Compress\Lzma2Decoder.cpp ../../Compress\Lzma2Encoder.cpp ../../Compress\Lzma2Register.cpp ../../Compress\LzmaDecoder.cpp ../../Compress\LzmaEncoder.cpp ../../Compress\LzmaRegister.cpp ../../Compress\LzmsDecoder.cpp ../../Compress\LzOutWindow.cpp ../../Compress\LzxDecoder.cpp ../../Compress\PpmdDecoder.cpp ../../Compress\PpmdEncoder.cpp ../../Compress\PpmdRegister.cpp ../../Compress\PpmdZip.cpp ../../Compress\QuantumDecoder.cpp ../../Compress\Rar1Decoder.cpp ../../Compress\Rar2Decoder.cpp ../../Compress\Rar3Decoder.cpp ../../Compress\Rar3Vm.cpp ../../Compress\Rar5Decoder.cpp ../../Compress\RarCodecsRegister.cpp ../../Compress\ShrinkDecoder.cpp ../../Compress\ZlibDecoder.cpp ../../Compress\ZlibEncoder.cpp ../../Compress\ZDecoder.cpp ../../Compress\XPressDecoder.cpp ../../Compress\CodecExports.cpp ../../Compress\ZstdDecoder.cpp ../../Compress\ZstdEncoder.cpp ../../Compress\ZstdRegister.cpp 
+Bcj2Coder.cpp
+Bcj2Register.cpp
+BcjCoder.cpp
+BcjRegister.cpp
+BitlDecoder.cpp
+BranchMisc.cpp
+BranchRegister.cpp
+ByteSwap.cpp
+BZip2Crc.cpp
+BZip2Decoder.cpp
+BZip2Encoder.cpp
+BZip2Register.cpp
+CopyCoder.cpp
+CopyRegister.cpp
+Deflate64Register.cpp
+DeflateDecoder.cpp
+DeflateEncoder.cpp
+DeflateRegister.cpp
+DeltaFilter.cpp
+ImplodeDecoder.cpp
+Code wird generiert...
+Kompilieren...
+ImplodeHuffmanDecoder.cpp
+LzhDecoder.cpp
+Lzma2Decoder.cpp
+Lzma2Encoder.cpp
+Lzma2Register.cpp
+LzmaDecoder.cpp
+LzmaEncoder.cpp
+LzmaRegister.cpp
+LzmsDecoder.cpp
+LzOutWindow.cpp
+LzxDecoder.cpp
+PpmdDecoder.cpp
+PpmdEncoder.cpp
+PpmdRegister.cpp
+PpmdZip.cpp
+QuantumDecoder.cpp
+Rar1Decoder.cpp
+Rar2Decoder.cpp
+Rar3Decoder.cpp
+Rar3Vm.cpp
+Code wird generiert...
+Kompilieren...
+Rar5Decoder.cpp
+RarCodecsRegister.cpp
+ShrinkDecoder.cpp
+ZlibDecoder.cpp
+ZlibEncoder.cpp
+ZDecoder.cpp
+XPressDecoder.cpp
+CodecExports.cpp
+ZstdDecoder.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+ZstdEncoder.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+ZstdRegister.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+Code wird generiert...
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zF>copy AMD64\7z.dll Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\7z.dll 
+Das System kann die angegebene Datei nicht finden.
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zF>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zZStd 
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zZStd>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yc"StdAfx.h" -FpAMD64/a.pch StdAfx.cpp
+StdAfx.cpp
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Common\CRC.cpp ../../../Common\CrcReg.cpp ../../../Common\IntToString.cpp ../../../Common\NewHandler.cpp ../../../Common\MyString.cpp ../../../Common\Sha256Reg.cpp ../../../Common\StringConvert.cpp ../../../Common\StringToInt.cpp ../../../Common\MyVector.cpp ../../../Common\Wildcard.cpp 
+CRC.cpp
+CrcReg.cpp
+IntToString.cpp
+NewHandler.cpp
+MyString.cpp
+Sha256Reg.cpp
+StringConvert.cpp
+StringToInt.cpp
+MyVector.cpp
+Wildcard.cpp
+Code wird generiert...
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows\FileDir.cpp ../../../Windows\FileFind.cpp ../../../Windows\FileIO.cpp ../../../Windows\FileName.cpp ../../../Windows\PropVariant.cpp ../../../Windows\Synchronization.cpp ../../../Windows\System.cpp 
+FileDir.cpp
+FileFind.cpp
+FileIO.cpp
+FileName.cpp
+PropVariant.cpp
+Synchronization.cpp
+System.cpp
+Code wird generiert...
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Common\CreateCoder.cpp ../../Common\CWrappers.cpp ../../Common\InBuffer.cpp ../../Common\InOutTempBuffer.cpp ../../Common\FilterCoder.cpp ../../Common\LimitedStreams.cpp ../../Common\MethodId.cpp ../../Common\MethodProps.cpp ../../Common\OutBuffer.cpp ../../Common\ProgressUtils.cpp ../../Common\PropId.cpp ../../Common\StreamBinder.cpp ../../Common\StreamObjects.cpp ../../Common\StreamUtils.cpp ../../Common\UniqBlocks.cpp ../../Common\VirtThread.cpp 
+CreateCoder.cpp
+CWrappers.cpp
+InBuffer.cpp
+InOutTempBuffer.cpp
+FilterCoder.cpp
+LimitedStreams.cpp
+MethodId.cpp
+MethodProps.cpp
+OutBuffer.cpp
+ProgressUtils.cpp
+PropId.cpp
+StreamBinder.cpp
+StreamObjects.cpp
+StreamUtils.cpp
+UniqBlocks.cpp
+VirtThread.cpp
+Code wird generiert...
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive\ArchiveExports.cpp ../../Archive\DllExports2.cpp 
+ArchiveExports.cpp
+DllExports2.cpp
+Code wird generiert...
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Common\CoderMixer2.cpp ../../Archive/Common\HandlerOut.cpp ../../Archive/Common\InStreamWithCRC.cpp ../../Archive/Common\ItemNameUtils.cpp ../../Archive/Common\OutStreamWithCRC.cpp ../../Archive/Common\ParseProperties.cpp 
+CoderMixer2.cpp
+HandlerOut.cpp
+InStreamWithCRC.cpp
+ItemNameUtils.cpp
+OutStreamWithCRC.cpp
+ParseProperties.cpp
+Code wird generiert...
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/7z\7zCompressionMode.cpp ../../Archive/7z\7zDecode.cpp ../../Archive/7z\7zEncode.cpp ../../Archive/7z\7zExtract.cpp ../../Archive/7z\7zFolderInStream.cpp ../../Archive/7z\7zHandler.cpp ../../Archive/7z\7zHandlerOut.cpp ../../Archive/7z\7zHeader.cpp ../../Archive/7z\7zIn.cpp ../../Archive/7z\7zOut.cpp ../../Archive/7z\7zProperties.cpp ../../Archive/7z\7zSpecStream.cpp ../../Archive/7z\7zUpdate.cpp ../../Archive/7z\7zRegister.cpp 
+7zCompressionMode.cpp
+7zDecode.cpp
+7zEncode.cpp
+7zExtract.cpp
+7zFolderInStream.cpp
+7zHandler.cpp
+7zHandlerOut.cpp
+7zHeader.cpp
+7zIn.cpp
+7zOut.cpp
+7zProperties.cpp
+7zSpecStream.cpp
+7zUpdate.cpp
+7zRegister.cpp
+Code wird generiert...
+	cl  -DEXTERNAL_CODECS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../Compress\CodecExports.cpp ../../Compress\Bcj2Coder.cpp ../../Compress\Bcj2Register.cpp ../../Compress\BcjCoder.cpp ../../Compress\BcjRegister.cpp ../../Compress\BitlDecoder.cpp ../../Compress\BranchMisc.cpp ../../Compress\BranchRegister.cpp ../../Compress\ByteSwap.cpp ../../Compress\BZip2Crc.cpp ../../Compress\BZip2Encoder.cpp ../../Compress\BZip2Decoder.cpp ../../Compress\BZip2Register.cpp ../../Compress\CopyCoder.cpp ../../Compress\CopyRegister.cpp ../../Compress\DeflateEncoder.cpp ../../Compress\DeflateDecoder.cpp ../../Compress\DeflateRegister.cpp ../../Compress\DeltaFilter.cpp ../../Compress\Lzma2Decoder.cpp ../../Compress\Lzma2Encoder.cpp ../../Compress\Lzma2Register.cpp ../../Compress\LzmaDecoder.cpp ../../Compress\LzmaEncoder.cpp ../../Compress\LzmaRegister.cpp ../../Compress\LzOutWindow.cpp ../../Compress\PpmdDecoder.cpp ../../Compress\PpmdEncoder.cpp ../../Compress\PpmdRegister.cpp ../../Compress\ZstdDecoder.cpp ../../Compress\ZstdEncoder.cpp ../../Compress\ZstdRegister.cpp 
+CodecExports.cpp
+Bcj2Coder.cpp
+Bcj2Register.cpp
+BcjCoder.cpp
+BcjRegister.cpp
+BitlDecoder.cpp
+BranchMisc.cpp
+BranchRegister.cpp
+ByteSwap.cpp
+BZip2Crc.cpp
+BZip2Encoder.cpp
+BZip2Decoder.cpp
+BZip2Register.cpp
+CopyCoder.cpp
+CopyRegister.cpp
+DeflateEncoder.cpp
+DeflateDecoder.cpp
+DeflateRegister.cpp
+DeltaFilter.cpp
+Lzma2Decoder.cpp
+Code wird generiert...
+Kompilieren...
+Lzma2Encoder.cpp
+Lzma2Register.cpp
+LzmaDecoder.cpp
+LzmaEncoder.cpp
+LzmaRegister.cpp
+LzOutWindow.cpp
+PpmdDecoder.cpp
+PpmdEncoder.cpp
+PpmdRegister.cpp
+ZstdDecoder.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+ZstdEncoder.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+ZstdRegister.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+Code wird generiert...
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zZStd>copy AMD64\7z.dll Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\7za.dll 
+Das System kann die angegebene Datei nicht finden.
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\Format7zZStd>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\FileManager 
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\FileManager>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yc"StdAfx.h" -FpAMD64/a.pch StdAfx.cpp
+StdAfx.cpp
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Common\IntToString.cpp ../../../Common\Lang.cpp ../../../Common\MyString.cpp ../../../Common\MyVector.cpp ../../../Common\NewHandler.cpp ../../../Common\Random.cpp ../../../Common\StringConvert.cpp ../../../Common\StringToInt.cpp ../../../Common\UTFConvert.cpp ../../../Common\Wildcard.cpp 
+IntToString.cpp
+Lang.cpp
+MyString.cpp
+MyVector.cpp
+NewHandler.cpp
+Random.cpp
+StringConvert.cpp
+StringToInt.cpp
+UTFConvert.cpp
+Wildcard.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows\FileSystem.cpp ../../../Windows\Net.cpp ../../../Windows\SecurityUtils.cpp ../../../Windows\Clipboard.cpp ../../../Windows\CommonDialog.cpp ../../../Windows\DLL.cpp ../../../Windows\ErrorMsg.cpp ../../../Windows\FileDir.cpp ../../../Windows\FileFind.cpp ../../../Windows\FileIO.cpp ../../../Windows\FileLink.cpp ../../../Windows\FileName.cpp ../../../Windows\MemoryGlobal.cpp ../../../Windows\MemoryLock.cpp ../../../Windows\Menu.cpp ../../../Windows\ProcessUtils.cpp ../../../Windows\PropVariant.cpp ../../../Windows\PropVariantConv.cpp ../../../Windows\Registry.cpp ../../../Windows\ResourceString.cpp ../../../Windows\Shell.cpp ../../../Windows\Synchronization.cpp ../../../Windows\System.cpp ../../../Windows\TimeUtils.cpp ../../../Windows\Window.cpp 
+FileSystem.cpp
+Net.cpp
+SecurityUtils.cpp
+Clipboard.cpp
+CommonDialog.cpp
+DLL.cpp
+ErrorMsg.cpp
+FileDir.cpp
+FileFind.cpp
+FileIO.cpp
+FileLink.cpp
+FileName.cpp
+MemoryGlobal.cpp
+MemoryLock.cpp
+Menu.cpp
+ProcessUtils.cpp
+PropVariant.cpp
+PropVariantConv.cpp
+Registry.cpp
+ResourceString.cpp
+Code wird generiert...
+Kompilieren...
+Shell.cpp
+Synchronization.cpp
+System.cpp
+TimeUtils.cpp
+Window.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows/Control\ComboBox.cpp ../../../Windows/Control\Dialog.cpp ../../../Windows/Control\ListView.cpp ../../../Windows/Control\PropertyPage.cpp ../../../Windows/Control\Window2.cpp 
+ComboBox.cpp
+Dialog.cpp
+ListView.cpp
+PropertyPage.cpp
+Window2.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Common\CreateCoder.cpp ../../Common\FilePathAutoRename.cpp ../../Common\FileStreams.cpp ../../Common\FilterCoder.cpp ../../Common\LimitedStreams.cpp ../../Common\MethodProps.cpp ../../Common\ProgressUtils.cpp ../../Common\PropId.cpp ../../Common\StreamObjects.cpp ../../Common\StreamUtils.cpp ../../Common\UniqBlocks.cpp 
+CreateCoder.cpp
+FilePathAutoRename.cpp
+FileStreams.cpp
+FilterCoder.cpp
+LimitedStreams.cpp
+MethodProps.cpp
+ProgressUtils.cpp
+PropId.cpp
+StreamObjects.cpp
+StreamUtils.cpp
+UniqBlocks.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Common\ArchiveExtractCallback.cpp ../../UI/Common\ArchiveName.cpp ../../UI/Common\ArchiveOpenCallback.cpp ../../UI/Common\CompressCall.cpp ../../UI/Common\DefaultName.cpp ../../UI/Common\EnumDirItems.cpp ../../UI/Common\ExtractingFilePath.cpp ../../UI/Common\HashCalc.cpp ../../UI/Common\LoadCodecs.cpp ../../UI/Common\OpenArchive.cpp ../../UI/Common\PropIDUtils.cpp ../../UI/Common\SetProperties.cpp ../../UI/Common\SortUtils.cpp ../../UI/Common\UpdateAction.cpp ../../UI/Common\UpdateCallback.cpp ../../UI/Common\UpdatePair.cpp ../../UI/Common\UpdateProduce.cpp ../../UI/Common\WorkDir.cpp ../../UI/Common\ZipRegistry.cpp 
+ArchiveExtractCallback.cpp
+ArchiveName.cpp
+ArchiveOpenCallback.cpp
+CompressCall.cpp
+DefaultName.cpp
+EnumDirItems.cpp
+ExtractingFilePath.cpp
+HashCalc.cpp
+LoadCodecs.cpp
+OpenArchive.cpp
+PropIDUtils.cpp
+SetProperties.cpp
+SortUtils.cpp
+UpdateAction.cpp
+UpdateCallback.cpp
+UpdatePair.cpp
+UpdateProduce.cpp
+WorkDir.cpp
+ZipRegistry.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Agent\Agent.cpp ../../UI/Agent\AgentOut.cpp ../../UI/Agent\AgentProxy.cpp ../../UI/Agent\ArchiveFolder.cpp ../../UI/Agent\ArchiveFolderOpen.cpp ../../UI/Agent\ArchiveFolderOut.cpp ../../UI/Agent\UpdateCallbackAgent.cpp 
+Agent.cpp
+AgentOut.cpp
+AgentProxy.cpp
+ArchiveFolder.cpp
+ArchiveFolderOpen.cpp
+ArchiveFolderOut.cpp
+UpdateCallbackAgent.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Explorer\ContextMenu.cpp ../../UI/Explorer\RegistryContextMenu.cpp 
+ContextMenu.cpp
+RegistryContextMenu.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/FileManager\App.cpp ../../UI/FileManager\BrowseDialog.cpp ../../UI/FileManager\ClassDefs.cpp ../../UI/FileManager\EnumFormatEtc.cpp ../../UI/FileManager\ExtractCallback.cpp ../../UI/FileManager\FileFolderPluginOpen.cpp ../../UI/FileManager\FilePlugins.cpp ../../UI/FileManager\FM.cpp ../../UI/FileManager\FoldersPage.cpp ../../UI/FileManager\FormatUtils.cpp ../../UI/FileManager\FSFolder.cpp ../../UI/FileManager\FSFolderCopy.cpp ../../UI/FileManager\HelpUtils.cpp ../../UI/FileManager\LangUtils.cpp ../../UI/FileManager\MenuPage.cpp ../../UI/FileManager\MyLoadMenu.cpp ../../UI/FileManager\OpenCallback.cpp ../../UI/FileManager\OptionsDialog.cpp ../../UI/FileManager\Panel.cpp ../../UI/FileManager\PanelCopy.cpp ../../UI/FileManager\PanelCrc.cpp ../../UI/FileManager\PanelDrag.cpp ../../UI/FileManager\PanelFolderChange.cpp ../../UI/FileManager\PanelItemOpen.cpp ../../UI/FileManager\PanelItems.cpp ../../UI/FileManager\PanelKey.cpp ../../UI/FileManager\PanelListNotify.cpp ../../UI/FileManager\PanelMenu.cpp ../../UI/FileManager\PanelOperations.cpp ../../UI/FileManager\PanelSelect.cpp ../../UI/FileManager\PanelSort.cpp ../../UI/FileManager\PanelSplitFile.cpp ../../UI/FileManager\ProgramLocation.cpp ../../UI/FileManager\PropertyName.cpp ../../UI/FileManager\RegistryAssociations.cpp ../../UI/FileManager\RegistryPlugins.cpp ../../UI/FileManager\RegistryUtils.cpp ../../UI/FileManager\RootFolder.cpp ../../UI/FileManager\SplitUtils.cpp ../../UI/FileManager\StringUtils.cpp ../../UI/FileManager\SysIconUtils.cpp ../../UI/FileManager\TextPairs.cpp ../../UI/FileManager\UpdateCallback100.cpp ../../UI/FileManager\ViewSettings.cpp ../../UI/FileManager\AboutDialog.cpp ../../UI/FileManager\ComboDialog.cpp ../../UI/FileManager\CopyDialog.cpp ../../UI/FileManager\EditPage.cpp ../../UI/FileManager\LangPage.cpp ../../UI/FileManager\ListViewDialog.cpp ../../UI/FileManager\MessagesDialog.cpp ../../UI/FileManager\OverwriteDialog.cpp ../../UI/FileManager\PasswordDialog.cpp ../../UI/FileManager\ProgressDialog2.cpp ../../UI/FileManager\SettingsPage.cpp ../../UI/FileManager\SplitDialog.cpp ../../UI/FileManager\SystemPage.cpp ../../UI/FileManager\AltStreamsFolder.cpp ../../UI/FileManager\FSDrives.cpp ../../UI/FileManager\LinkDialog.cpp ../../UI/FileManager\NetFolder.cpp 
+App.cpp
+BrowseDialog.cpp
+ClassDefs.cpp
+EnumFormatEtc.cpp
+ExtractCallback.cpp
+FileFolderPluginOpen.cpp
+FilePlugins.cpp
+FM.cpp
+FoldersPage.cpp
+FormatUtils.cpp
+FSFolder.cpp
+FSFolderCopy.cpp
+HelpUtils.cpp
+LangUtils.cpp
+MenuPage.cpp
+MyLoadMenu.cpp
+OpenCallback.cpp
+OptionsDialog.cpp
+Panel.cpp
+PanelCopy.cpp
+Code wird generiert...
+Kompilieren...
+PanelCrc.cpp
+PanelDrag.cpp
+PanelFolderChange.cpp
+PanelItemOpen.cpp
+PanelItems.cpp
+PanelKey.cpp
+PanelListNotify.cpp
+PanelMenu.cpp
+PanelOperations.cpp
+PanelSelect.cpp
+PanelSort.cpp
+PanelSplitFile.cpp
+ProgramLocation.cpp
+PropertyName.cpp
+RegistryAssociations.cpp
+RegistryPlugins.cpp
+RegistryUtils.cpp
+RootFolder.cpp
+SplitUtils.cpp
+StringUtils.cpp
+Code wird generiert...
+Kompilieren...
+SysIconUtils.cpp
+TextPairs.cpp
+UpdateCallback100.cpp
+ViewSettings.cpp
+AboutDialog.cpp
+ComboDialog.cpp
+CopyDialog.cpp
+EditPage.cpp
+LangPage.cpp
+ListViewDialog.cpp
+MessagesDialog.cpp
+OverwriteDialog.cpp
+PasswordDialog.cpp
+ProgressDialog2.cpp
+SettingsPage.cpp
+SplitDialog.cpp
+SystemPage.cpp
+AltStreamsFolder.cpp
+FSDrives.cpp
+LinkDialog.cpp
+Code wird generiert...
+Kompilieren...
+NetFolder.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/GUI\HashGUI.cpp ../../UI/GUI\UpdateCallbackGUI2.cpp 
+HashGUI.cpp
+UpdateCallbackGUI2.cpp
+Code wird generiert...
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../Compress\CopyCoder.cpp 
+CopyCoder.cpp
+	cl   -DLANG  -DNEW_FOLDER_INTERFACE  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../../../C\Alloc.c ../../../../C\Sort.c ../../../../C\Threads.c 
+Alloc.c
+Sort.c
+Threads.c
+Code wird generiert...
+	link /SUBSYSTEM:WINDOWS,"5.02" -nologo -OPT:REF -OPT:ICF /LARGEADDRESSAWARE -out:AMD64\7zFM.exe AMD64\StdAfx.obj    AMD64\IntToString.obj  AMD64\Lang.obj  AMD64\MyString.obj  AMD64\MyVector.obj  AMD64\NewHandler.obj  AMD64\Random.obj  AMD64\StringConvert.obj  AMD64\StringToInt.obj  AMD64\UTFConvert.obj  AMD64\Wildcard.obj    AMD64\FileSystem.obj  AMD64\Net.obj  AMD64\SecurityUtils.obj  AMD64\Clipboard.obj  AMD64\CommonDialog.obj  AMD64\DLL.obj  AMD64\ErrorMsg.obj  AMD64\FileDir.obj  AMD64\FileFind.obj  AMD64\FileIO.obj  AMD64\FileLink.obj  AMD64\FileName.obj  AMD64\MemoryGlobal.obj  AMD64\MemoryLock.obj  AMD64\Menu.obj  AMD64\ProcessUtils.obj  AMD64\PropVariant.obj  AMD64\PropVariantConv.obj  AMD64\Registry.obj  AMD64\ResourceString.obj  AMD64\Shell.obj  AMD64\Synchronization.obj  AMD64\System.obj  AMD64\TimeUtils.obj  AMD64\Window.obj  AMD64\ComboBox.obj  AMD64\Dialog.obj  AMD64\ListView.obj  AMD64\PropertyPage.obj  AMD64\Window2.obj  AMD64\CreateCoder.obj  AMD64\FilePathAutoRename.obj  AMD64\FileStreams.obj  AMD64\FilterCoder.obj  AMD64\LimitedStreams.obj  AMD64\MethodProps.obj  AMD64\ProgressUtils.obj  AMD64\PropId.obj  AMD64\StreamObjects.obj  AMD64\StreamUtils.obj  AMD64\UniqBlocks.obj      AMD64\ArchiveExtractCallback.obj  AMD64\ArchiveName.obj  AMD64\ArchiveOpenCallback.obj  AMD64\CompressCall.obj  AMD64\DefaultName.obj  AMD64\EnumDirItems.obj  AMD64\ExtractingFilePath.obj  AMD64\HashCalc.obj  AMD64\LoadCodecs.obj  AMD64\OpenArchive.obj  AMD64\PropIDUtils.obj  AMD64\SetProperties.obj  AMD64\SortUtils.obj  AMD64\UpdateAction.obj  AMD64\UpdateCallback.obj  AMD64\UpdatePair.obj  AMD64\UpdateProduce.obj  AMD64\WorkDir.obj  AMD64\ZipRegistry.obj  AMD64\Agent.obj  AMD64\AgentOut.obj  AMD64\AgentProxy.obj  AMD64\ArchiveFolder.obj  AMD64\ArchiveFolderOpen.obj  AMD64\ArchiveFolderOut.obj  AMD64\UpdateCallbackAgent.obj    AMD64\ContextMenu.obj  AMD64\RegistryContextMenu.obj  AMD64\App.obj  AMD64\BrowseDialog.obj  AMD64\ClassDefs.obj  AMD64\EnumFormatEtc.obj  AMD64\ExtractCallback.obj  AMD64\FileFolderPluginOpen.obj  AMD64\FilePlugins.obj  AMD64\FM.obj  AMD64\FoldersPage.obj  AMD64\FormatUtils.obj  AMD64\FSFolder.obj  AMD64\FSFolderCopy.obj  AMD64\HelpUtils.obj  AMD64\LangUtils.obj  AMD64\MenuPage.obj  AMD64\MyLoadMenu.obj  AMD64\OpenCallback.obj  AMD64\OptionsDialog.obj  AMD64\Panel.obj  AMD64\PanelCopy.obj  AMD64\PanelCrc.obj  AMD64\PanelDrag.obj  AMD64\PanelFolderChange.obj  AMD64\PanelItemOpen.obj  AMD64\PanelItems.obj  AMD64\PanelKey.obj  AMD64\PanelListNotify.obj  AMD64\PanelMenu.obj  AMD64\PanelOperations.obj  AMD64\PanelSelect.obj  AMD64\PanelSort.obj  AMD64\PanelSplitFile.obj  AMD64\ProgramLocation.obj  AMD64\PropertyName.obj  AMD64\RegistryAssociations.obj  AMD64\RegistryPlugins.obj  AMD64\RegistryUtils.obj  AMD64\RootFolder.obj  AMD64\SplitUtils.obj  AMD64\StringUtils.obj  AMD64\SysIconUtils.obj  AMD64\TextPairs.obj  AMD64\UpdateCallback100.obj  AMD64\ViewSettings.obj  AMD64\AboutDialog.obj  AMD64\ComboDialog.obj  AMD64\CopyDialog.obj  AMD64\EditPage.obj  AMD64\LangPage.obj  AMD64\ListViewDialog.obj  AMD64\MessagesDialog.obj  AMD64\OverwriteDialog.obj  AMD64\PasswordDialog.obj  AMD64\ProgressDialog2.obj  AMD64\SettingsPage.obj  AMD64\SplitDialog.obj  AMD64\SystemPage.obj    AMD64\AltStreamsFolder.obj  AMD64\FSDrives.obj  AMD64\LinkDialog.obj  AMD64\NetFolder.obj  AMD64\HashGUI.obj  AMD64\UpdateCallbackGUI2.obj                        AMD64\CopyCoder.obj    AMD64\Alloc.obj  AMD64\Sort.obj  AMD64\Threads.obj      AMD64\resource.res  comctl32.lib htmlhelp.lib comdlg32.lib Mpr.lib Gdi32.lib oleaut32.lib ole32.lib user32.lib advapi32.lib shell32.lib
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\FileManager>copy AMD64\7zFM.exe Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\7zFM.exe 
+        1 Datei(en) kopiert.
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\FileManager>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\GUI 
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\GUI>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yc"StdAfx.h" -FpAMD64/a.pch StdAfx.cpp
+StdAfx.cpp
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/7zCrcOpt.asm
+ Assembling: ../../../../Asm/x86/7zCrcOpt.asm
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Common\CommandLineParser.cpp ../../../Common\CRC.cpp ../../../Common\IntToString.cpp ../../../Common\Lang.cpp ../../../Common\ListFileUtils.cpp ../../../Common\MyString.cpp ../../../Common\MyVector.cpp ../../../Common\NewHandler.cpp ../../../Common\StringConvert.cpp ../../../Common\StringToInt.cpp ../../../Common\UTFConvert.cpp ../../../Common\Wildcard.cpp 
+CommandLineParser.cpp
+CRC.cpp
+IntToString.cpp
+Lang.cpp
+ListFileUtils.cpp
+MyString.cpp
+MyVector.cpp
+NewHandler.cpp
+StringConvert.cpp
+StringToInt.cpp
+UTFConvert.cpp
+Wildcard.cpp
+Code wird generiert...
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows\CommonDialog.cpp ../../../Windows\DLL.cpp ../../../Windows\ErrorMsg.cpp ../../../Windows\FileDir.cpp ../../../Windows\FileFind.cpp ../../../Windows\FileIO.cpp ../../../Windows\FileLink.cpp ../../../Windows\FileName.cpp ../../../Windows\FileSystem.cpp ../../../Windows\MemoryLock.cpp ../../../Windows\PropVariant.cpp ../../../Windows\PropVariantConv.cpp ../../../Windows\Registry.cpp ../../../Windows\ResourceString.cpp ../../../Windows\Shell.cpp ../../../Windows\Synchronization.cpp ../../../Windows\System.cpp ../../../Windows\TimeUtils.cpp ../../../Windows\Window.cpp 
+CommonDialog.cpp
+DLL.cpp
+ErrorMsg.cpp
+FileDir.cpp
+FileFind.cpp
+FileIO.cpp
+FileLink.cpp
+FileName.cpp
+FileSystem.cpp
+MemoryLock.cpp
+PropVariant.cpp
+PropVariantConv.cpp
+Registry.cpp
+ResourceString.cpp
+Shell.cpp
+Synchronization.cpp
+System.cpp
+TimeUtils.cpp
+Window.cpp
+Code wird generiert...
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows/Control\ComboBox.cpp ../../../Windows/Control\Dialog.cpp ../../../Windows/Control\ListView.cpp 
+ComboBox.cpp
+Dialog.cpp
+ListView.cpp
+Code wird generiert...
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Common\CreateCoder.cpp ../../Common\FilePathAutoRename.cpp ../../Common\FileStreams.cpp ../../Common\FilterCoder.cpp ../../Common\LimitedStreams.cpp ../../Common\MethodProps.cpp ../../Common\ProgressUtils.cpp ../../Common\PropId.cpp ../../Common\StreamObjects.cpp ../../Common\StreamUtils.cpp ../../Common\UniqBlocks.cpp 
+CreateCoder.cpp
+FilePathAutoRename.cpp
+FileStreams.cpp
+FilterCoder.cpp
+LimitedStreams.cpp
+MethodProps.cpp
+ProgressUtils.cpp
+PropId.cpp
+StreamObjects.cpp
+StreamUtils.cpp
+UniqBlocks.cpp
+Code wird generiert...
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Common\OutStreamWithCRC.cpp 
+OutStreamWithCRC.cpp
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Common\ArchiveCommandLine.cpp ../../UI/Common\ArchiveExtractCallback.cpp ../../UI/Common\ArchiveOpenCallback.cpp ../../UI/Common\Bench.cpp ../../UI/Common\DefaultName.cpp ../../UI/Common\EnumDirItems.cpp ../../UI/Common\Extract.cpp ../../UI/Common\ExtractingFilePath.cpp ../../UI/Common\HashCalc.cpp ../../UI/Common\LoadCodecs.cpp ../../UI/Common\OpenArchive.cpp ../../UI/Common\PropIDUtils.cpp ../../UI/Common\SetProperties.cpp ../../UI/Common\SortUtils.cpp ../../UI/Common\TempFiles.cpp ../../UI/Common\Update.cpp ../../UI/Common\UpdateAction.cpp ../../UI/Common\UpdateCallback.cpp ../../UI/Common\UpdatePair.cpp ../../UI/Common\UpdateProduce.cpp ../../UI/Common\WorkDir.cpp ../../UI/Common\ZipRegistry.cpp 
+ArchiveCommandLine.cpp
+ArchiveExtractCallback.cpp
+ArchiveOpenCallback.cpp
+Bench.cpp
+DefaultName.cpp
+EnumDirItems.cpp
+Extract.cpp
+ExtractingFilePath.cpp
+HashCalc.cpp
+LoadCodecs.cpp
+OpenArchive.cpp
+PropIDUtils.cpp
+SetProperties.cpp
+SortUtils.cpp
+TempFiles.cpp
+Update.cpp
+UpdateAction.cpp
+UpdateCallback.cpp
+UpdatePair.cpp
+UpdateProduce.cpp
+Code wird generiert...
+Kompilieren...
+WorkDir.cpp
+ZipRegistry.cpp
+Code wird generiert...
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Explorer\MyMessages.cpp 
+MyMessages.cpp
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/FileManager\ExtractCallback.cpp ../../UI/FileManager\FormatUtils.cpp ../../UI/FileManager\HelpUtils.cpp ../../UI/FileManager\LangUtils.cpp ../../UI/FileManager\OpenCallback.cpp ../../UI/FileManager\ProgramLocation.cpp ../../UI/FileManager\PropertyName.cpp ../../UI/FileManager\RegistryUtils.cpp ../../UI/FileManager\SplitUtils.cpp ../../UI/FileManager\StringUtils.cpp ../../UI/FileManager\OverwriteDialog.cpp ../../UI/FileManager\PasswordDialog.cpp ../../UI/FileManager\ProgressDialog2.cpp ../../UI/FileManager\BrowseDialog.cpp ../../UI/FileManager\ComboDialog.cpp ../../UI/FileManager\SysIconUtils.cpp 
+ExtractCallback.cpp
+FormatUtils.cpp
+HelpUtils.cpp
+LangUtils.cpp
+OpenCallback.cpp
+ProgramLocation.cpp
+PropertyName.cpp
+RegistryUtils.cpp
+SplitUtils.cpp
+StringUtils.cpp
+OverwriteDialog.cpp
+PasswordDialog.cpp
+ProgressDialog2.cpp
+BrowseDialog.cpp
+ComboDialog.cpp
+SysIconUtils.cpp
+Code wird generiert...
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/GUI\BenchmarkDialog.cpp ../../UI/GUI\CompressDialog.cpp ../../UI/GUI\ExtractDialog.cpp ../../UI/GUI\ExtractGUI.cpp ../../UI/GUI\GUI.cpp ../../UI/GUI\HashGUI.cpp ../../UI/GUI\UpdateCallbackGUI.cpp ../../UI/GUI\UpdateCallbackGUI2.cpp ../../UI/GUI\UpdateGUI.cpp 
+BenchmarkDialog.cpp
+CompressDialog.cpp
+ExtractDialog.cpp
+ExtractGUI.cpp
+GUI.cpp
+HashGUI.cpp
+UpdateCallbackGUI.cpp
+UpdateCallbackGUI2.cpp
+UpdateGUI.cpp
+Code wird generiert...
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../Compress\CopyCoder.cpp 
+CopyCoder.cpp
+	cl   -DLANG  -DEXTERNAL_CODECS -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../../../C\Alloc.c ../../../../C\CpuArch.c ../../../../C\Sort.c ../../../../C\Threads.c ../../../../C\7zCrc.c 
+Alloc.c
+CpuArch.c
+Sort.c
+Threads.c
+7zCrc.c
+Code wird generiert...
+	link /SUBSYSTEM:WINDOWS,"5.02" -nologo -OPT:REF -OPT:ICF /LARGEADDRESSAWARE -out:AMD64\7zG.exe AMD64\StdAfx.obj    AMD64\CommandLineParser.obj  AMD64\CRC.obj  AMD64\IntToString.obj  AMD64\Lang.obj  AMD64\ListFileUtils.obj  AMD64\MyString.obj  AMD64\MyVector.obj  AMD64\NewHandler.obj  AMD64\StringConvert.obj  AMD64\StringToInt.obj  AMD64\UTFConvert.obj  AMD64\Wildcard.obj  AMD64\CommonDialog.obj  AMD64\DLL.obj  AMD64\ErrorMsg.obj  AMD64\FileDir.obj  AMD64\FileFind.obj  AMD64\FileIO.obj  AMD64\FileLink.obj  AMD64\FileName.obj  AMD64\FileSystem.obj  AMD64\MemoryLock.obj  AMD64\PropVariant.obj  AMD64\PropVariantConv.obj  AMD64\Registry.obj  AMD64\ResourceString.obj  AMD64\Shell.obj  AMD64\Synchronization.obj  AMD64\System.obj  AMD64\TimeUtils.obj  AMD64\Window.obj  AMD64\ComboBox.obj  AMD64\Dialog.obj  AMD64\ListView.obj  AMD64\CreateCoder.obj  AMD64\FilePathAutoRename.obj  AMD64\FileStreams.obj  AMD64\FilterCoder.obj  AMD64\LimitedStreams.obj  AMD64\MethodProps.obj  AMD64\ProgressUtils.obj  AMD64\PropId.obj  AMD64\StreamObjects.obj  AMD64\StreamUtils.obj  AMD64\UniqBlocks.obj    AMD64\OutStreamWithCRC.obj  AMD64\ArchiveCommandLine.obj  AMD64\ArchiveExtractCallback.obj  AMD64\ArchiveOpenCallback.obj  AMD64\Bench.obj  AMD64\DefaultName.obj  AMD64\EnumDirItems.obj  AMD64\Extract.obj  AMD64\ExtractingFilePath.obj  AMD64\HashCalc.obj  AMD64\LoadCodecs.obj  AMD64\OpenArchive.obj  AMD64\PropIDUtils.obj  AMD64\SetProperties.obj  AMD64\SortUtils.obj  AMD64\TempFiles.obj  AMD64\Update.obj  AMD64\UpdateAction.obj  AMD64\UpdateCallback.obj  AMD64\UpdatePair.obj  AMD64\UpdateProduce.obj  AMD64\WorkDir.obj  AMD64\ZipRegistry.obj      AMD64\MyMessages.obj  AMD64\ExtractCallback.obj  AMD64\FormatUtils.obj  AMD64\HelpUtils.obj  AMD64\LangUtils.obj  AMD64\OpenCallback.obj  AMD64\ProgramLocation.obj  AMD64\PropertyName.obj  AMD64\RegistryUtils.obj  AMD64\SplitUtils.obj  AMD64\StringUtils.obj  AMD64\OverwriteDialog.obj  AMD64\PasswordDialog.obj  AMD64\ProgressDialog2.obj  AMD64\BrowseDialog.obj  AMD64\ComboDialog.obj  AMD64\SysIconUtils.obj  AMD64\BenchmarkDialog.obj  AMD64\CompressDialog.obj  AMD64\ExtractDialog.obj  AMD64\ExtractGUI.obj  AMD64\GUI.obj  AMD64\HashGUI.obj  AMD64\UpdateCallbackGUI.obj  AMD64\UpdateCallbackGUI2.obj  AMD64\UpdateGUI.obj                        AMD64\CopyCoder.obj    AMD64\Alloc.obj  AMD64\CpuArch.obj  AMD64\Sort.obj  AMD64\Threads.obj  AMD64\7zCrc.obj      AMD64\7zCrcOpt.obj  AMD64\resource.res  comctl32.lib htmlhelp.lib comdlg32.lib gdi32.lib oleaut32.lib ole32.lib user32.lib advapi32.lib shell32.lib
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\GUI>copy AMD64\7zG.exe Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\7zG.exe 
+        1 Datei(en) kopiert.
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\GUI>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXWin 
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXWin>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yc"StdAfx.h" -FpAMD64/a.pch StdAfx.cpp
+StdAfx.cpp
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/AesOpt.asm
+ Assembling: ../../../../Asm/x86/AesOpt.asm
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/7zCrcOpt.asm
+ Assembling: ../../../../Asm/x86/7zCrcOpt.asm
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch .\SfxWin.cpp 
+SfxWin.cpp
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Common\CRC.cpp ../../../Common\CommandLineParser.cpp ../../../Common\IntToString.cpp ../../../Common\NewHandler.cpp ../../../Common\MyString.cpp ../../../Common\StringConvert.cpp ../../../Common\MyVector.cpp ../../../Common\Wildcard.cpp 
+CRC.cpp
+CommandLineParser.cpp
+IntToString.cpp
+NewHandler.cpp
+MyString.cpp
+StringConvert.cpp
+MyVector.cpp
+Wildcard.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows\CommonDialog.cpp ../../../Windows\DLL.cpp ../../../Windows\ErrorMsg.cpp ../../../Windows\FileDir.cpp ../../../Windows\FileFind.cpp ../../../Windows\FileIO.cpp ../../../Windows\FileName.cpp ../../../Windows\PropVariant.cpp ../../../Windows\PropVariantConv.cpp ../../../Windows\ResourceString.cpp ../../../Windows\Shell.cpp ../../../Windows\Synchronization.cpp ../../../Windows\Window.cpp 
+CommonDialog.cpp
+DLL.cpp
+ErrorMsg.cpp
+FileDir.cpp
+FileFind.cpp
+FileIO.cpp
+FileName.cpp
+PropVariant.cpp
+PropVariantConv.cpp
+ResourceString.cpp
+Shell.cpp
+Synchronization.cpp
+Window.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows/Control\ComboBox.cpp ../../../Windows/Control\Dialog.cpp ../../../Windows/Control\ListView.cpp 
+ComboBox.cpp
+Dialog.cpp
+ListView.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Common\CreateCoder.cpp ../../Common\CWrappers.cpp ../../Common\FilePathAutoRename.cpp ../../Common\FileStreams.cpp ../../Common\InBuffer.cpp ../../Common\FilterCoder.cpp ../../Common\LimitedStreams.cpp ../../Common\OutBuffer.cpp ../../Common\ProgressUtils.cpp ../../Common\PropId.cpp ../../Common\StreamBinder.cpp ../../Common\StreamObjects.cpp ../../Common\StreamUtils.cpp ../../Common\VirtThread.cpp 
+CreateCoder.cpp
+CWrappers.cpp
+FilePathAutoRename.cpp
+FileStreams.cpp
+InBuffer.cpp
+FilterCoder.cpp
+LimitedStreams.cpp
+OutBuffer.cpp
+ProgressUtils.cpp
+PropId.cpp
+StreamBinder.cpp
+StreamObjects.cpp
+StreamUtils.cpp
+VirtThread.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive\SplitHandler.cpp 
+SplitHandler.cpp
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Common\CoderMixer2.cpp ../../Archive/Common\ItemNameUtils.cpp ../../Archive/Common\MultiStream.cpp ../../Archive/Common\OutStreamWithCRC.cpp 
+CoderMixer2.cpp
+ItemNameUtils.cpp
+MultiStream.cpp
+OutStreamWithCRC.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Common\ArchiveExtractCallback.cpp ../../UI/Common\ArchiveOpenCallback.cpp ../../UI/Common\DefaultName.cpp ../../UI/Common\Extract.cpp ../../UI/Common\ExtractingFilePath.cpp ../../UI/Common\LoadCodecs.cpp ../../UI/Common\OpenArchive.cpp 
+ArchiveExtractCallback.cpp
+ArchiveOpenCallback.cpp
+DefaultName.cpp
+Extract.cpp
+ExtractingFilePath.cpp
+LoadCodecs.cpp
+OpenArchive.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Explorer\MyMessages.cpp 
+MyMessages.cpp
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/FileManager\BrowseDialog.cpp ../../UI/FileManager\ComboDialog.cpp ../../UI/FileManager\ExtractCallback.cpp ../../UI/FileManager\FormatUtils.cpp ../../UI/FileManager\OverwriteDialog.cpp ../../UI/FileManager\PasswordDialog.cpp ../../UI/FileManager\ProgressDialog2.cpp ../../UI/FileManager\PropertyName.cpp ../../UI/FileManager\SysIconUtils.cpp 
+BrowseDialog.cpp
+ComboDialog.cpp
+ExtractCallback.cpp
+FormatUtils.cpp
+OverwriteDialog.cpp
+PasswordDialog.cpp
+ProgressDialog2.cpp
+PropertyName.cpp
+SysIconUtils.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/GUI\ExtractDialog.cpp ../../UI/GUI\ExtractGUI.cpp 
+ExtractDialog.cpp
+ExtractGUI.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/7z\7zDecode.cpp ../../Archive/7z\7zExtract.cpp ../../Archive/7z\7zHandler.cpp ../../Archive/7z\7zIn.cpp ../../Archive/7z\7zRegister.cpp 
+7zDecode.cpp
+7zExtract.cpp
+7zHandler.cpp
+7zIn.cpp
+7zRegister.cpp
+Code wird generiert...
+	cl   -DNO_REGISTRY  -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../Compress\Bcj2Coder.cpp ../../Compress\Bcj2Register.cpp ../../Compress\BcjCoder.cpp ../../Compress\BcjRegister.cpp ../../Compress\BranchMisc.cpp ../../Compress\BranchRegister.cpp ../../Compress\CopyCoder.cpp ../../Compress\CopyRegister.cpp ../../Compress\DeltaFilter.cpp ../../Compress\Lzma2Decoder.cpp ../../Compress\Lzma2Register.cpp ../../Compress\LzmaDecoder.cpp ../../Compress\LzmaRegister.cpp ../../Compress\PpmdDecoder.cpp ../../Compress\PpmdRegister.cpp ../../Compress\ZstdDecoder.cpp ../../Compress\ZStdRegister.cpp 
+Bcj2Coder.cpp
+Bcj2Register.cpp
+BcjCoder.cpp
+BcjRegister.cpp
+BranchMisc.cpp
+BranchRegister.cpp
+CopyCoder.cpp
+CopyRegister.cpp
+DeltaFilter.cpp
+Lzma2Decoder.cpp
+Lzma2Register.cpp
+LzmaDecoder.cpp
+LzmaRegister.cpp
+PpmdDecoder.cpp
+PpmdRegister.cpp
+ZstdDecoder.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+ZStdRegister.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+Code wird generiert...
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXWin>copy AMD64\7z.sfx Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\7z.sfx 
+Das System kann die angegebene Datei nicht finden.
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXWin>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\..\..\C\Util\7zipInstall 
+
+Z:\projekte\7zip-ZStd\git\C\Util\7zipInstall>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 7zipInstall.c
+7zipInstall.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zAlloc.c
+7zAlloc.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zArcIn.c
+7zArcIn.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zBuf.c
+7zBuf.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zBuf2.c
+7zBuf2.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zCrc.c
+7zCrc.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zCrcOpt.c
+7zCrcOpt.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zFile.c
+7zFile.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zDec.c
+7zDec.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../7zStream.c
+7zStream.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../Bcj2.c
+Bcj2.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../CpuArch.c
+CpuArch.c
+	cl  -D_LZMA_SIZE_OPT  -D_7Z_NO_METHOD_LZMA2  -D_7Z_NO_METHODS_FILTERS -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 ../../LzmaDec.c
+LzmaDec.c
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	link /SUBSYSTEM:WINDOWS,"5.02" -nologo -OPT:REF -OPT:ICF /LARGEADDRESSAWARE -out:AMD64\7zipInstall.exe AMD64\7zipInstall.obj  AMD64\7zAlloc.obj  AMD64\7zArcIn.obj  AMD64\7zBuf.obj  AMD64\7zBuf2.obj  AMD64\7zCrc.obj  AMD64\7zCrcOpt.obj  AMD64\7zFile.obj  AMD64\7zDec.obj  AMD64\7zStream.obj  AMD64\Bcj2.obj  AMD64\CpuArch.obj  AMD64\LzmaDec.obj  AMD64\resource.res  oleaut32.lib ole32.lib user32.lib advapi32.lib shell32.lib
+
+Z:\projekte\7zip-ZStd\git\C\Util\7zipInstall>copy AMD64\7zipInstall.exe Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\Install-x32.exe 
+        1 Datei(en) kopiert.
+
+Z:\projekte\7zip-ZStd\git\C\Util\7zipInstall>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\..\..\C\Util\7zipUninstall 
+
+Z:\projekte\7zip-ZStd\git\C\Util\7zipUninstall>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl  -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 7zipUninstall.c
+7zipUninstall.c
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	link /SUBSYSTEM:WINDOWS,"5.02" -nologo -OPT:REF -OPT:ICF /LARGEADDRESSAWARE -out:AMD64\7zipUninstall.exe AMD64\7zipUninstall.obj  AMD64\resource.res  oleaut32.lib ole32.lib user32.lib advapi32.lib shell32.lib
+
+Z:\projekte\7zip-ZStd\git\C\Util\7zipUninstall>copy AMD64\7zipUninstall.exe Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\Uninstall.exe 
+        1 Datei(en) kopiert.
+
+Z:\projekte\7zip-ZStd\git\C\Util\7zipUninstall>set LFLAGS=/SUBSYSTEM:CONSOLE,"5.02" 
+
+Z:\projekte\7zip-ZStd\git\C\Util\7zipUninstall>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\Console 
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\Console>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yc"StdAfx.h" -FpAMD64/a.pch StdAfx.cpp
+StdAfx.cpp
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/7zCrcOpt.asm
+ Assembling: ../../../../Asm/x86/7zCrcOpt.asm
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Common\CommandLineParser.cpp ../../../Common\CRC.cpp ../../../Common\IntToString.cpp ../../../Common\ListFileUtils.cpp ../../../Common\NewHandler.cpp ../../../Common\StdInStream.cpp ../../../Common\StdOutStream.cpp ../../../Common\MyString.cpp ../../../Common\StringConvert.cpp ../../../Common\StringToInt.cpp ../../../Common\UTFConvert.cpp ../../../Common\MyVector.cpp ../../../Common\Wildcard.cpp 
+CommandLineParser.cpp
+CRC.cpp
+IntToString.cpp
+ListFileUtils.cpp
+NewHandler.cpp
+StdInStream.cpp
+StdOutStream.cpp
+MyString.cpp
+StringConvert.cpp
+StringToInt.cpp
+UTFConvert.cpp
+MyVector.cpp
+Wildcard.cpp
+Code wird generiert...
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows\DLL.cpp ../../../Windows\ErrorMsg.cpp ../../../Windows\FileDir.cpp ../../../Windows\FileFind.cpp ../../../Windows\FileIO.cpp ../../../Windows\FileLink.cpp ../../../Windows\FileName.cpp ../../../Windows\FileSystem.cpp ../../../Windows\MemoryLock.cpp ../../../Windows\PropVariant.cpp ../../../Windows\PropVariantConv.cpp ../../../Windows\Registry.cpp ../../../Windows\System.cpp ../../../Windows\TimeUtils.cpp 
+DLL.cpp
+ErrorMsg.cpp
+FileDir.cpp
+FileFind.cpp
+FileIO.cpp
+FileLink.cpp
+FileName.cpp
+FileSystem.cpp
+MemoryLock.cpp
+PropVariant.cpp
+PropVariantConv.cpp
+Registry.cpp
+System.cpp
+TimeUtils.cpp
+Code wird generiert...
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Common\CreateCoder.cpp ../../Common\FilePathAutoRename.cpp ../../Common\FileStreams.cpp ../../Common\FilterCoder.cpp ../../Common\LimitedStreams.cpp ../../Common\MethodProps.cpp ../../Common\ProgressUtils.cpp ../../Common\PropId.cpp ../../Common\StreamObjects.cpp ../../Common\StreamUtils.cpp ../../Common\UniqBlocks.cpp 
+CreateCoder.cpp
+FilePathAutoRename.cpp
+FileStreams.cpp
+FilterCoder.cpp
+LimitedStreams.cpp
+MethodProps.cpp
+ProgressUtils.cpp
+PropId.cpp
+StreamObjects.cpp
+StreamUtils.cpp
+UniqBlocks.cpp
+Code wird generiert...
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Common\OutStreamWithCRC.cpp 
+OutStreamWithCRC.cpp
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Common\ArchiveCommandLine.cpp ../../UI/Common\ArchiveExtractCallback.cpp ../../UI/Common\ArchiveOpenCallback.cpp ../../UI/Common\Bench.cpp ../../UI/Common\DefaultName.cpp ../../UI/Common\EnumDirItems.cpp ../../UI/Common\Extract.cpp ../../UI/Common\ExtractingFilePath.cpp ../../UI/Common\HashCalc.cpp ../../UI/Common\LoadCodecs.cpp ../../UI/Common\OpenArchive.cpp ../../UI/Common\PropIDUtils.cpp ../../UI/Common\SetProperties.cpp ../../UI/Common\SortUtils.cpp ../../UI/Common\TempFiles.cpp ../../UI/Common\Update.cpp ../../UI/Common\UpdateAction.cpp ../../UI/Common\UpdateCallback.cpp ../../UI/Common\UpdatePair.cpp ../../UI/Common\UpdateProduce.cpp 
+ArchiveCommandLine.cpp
+ArchiveExtractCallback.cpp
+ArchiveOpenCallback.cpp
+Bench.cpp
+DefaultName.cpp
+EnumDirItems.cpp
+Extract.cpp
+ExtractingFilePath.cpp
+HashCalc.cpp
+LoadCodecs.cpp
+OpenArchive.cpp
+PropIDUtils.cpp
+SetProperties.cpp
+SortUtils.cpp
+TempFiles.cpp
+Update.cpp
+UpdateAction.cpp
+UpdateCallback.cpp
+UpdatePair.cpp
+UpdateProduce.cpp
+Code wird generiert...
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Console\BenchCon.cpp ../../UI/Console\ConsoleClose.cpp ../../UI/Console\ExtractCallbackConsole.cpp ../../UI/Console\HashCon.cpp ../../UI/Console\List.cpp ../../UI/Console\Main.cpp ../../UI/Console\MainAr.cpp ../../UI/Console\OpenCallbackConsole.cpp ../../UI/Console\PercentPrinter.cpp ../../UI/Console\UpdateCallbackConsole.cpp ../../UI/Console\UserInputUtils.cpp 
+BenchCon.cpp
+ConsoleClose.cpp
+ExtractCallbackConsole.cpp
+HashCon.cpp
+List.cpp
+Main.cpp
+MainAr.cpp
+OpenCallbackConsole.cpp
+PercentPrinter.cpp
+UpdateCallbackConsole.cpp
+UserInputUtils.cpp
+Code wird generiert...
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../Compress\CopyCoder.cpp 
+CopyCoder.cpp
+	cl    -DEXTERNAL_CODECS -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../../../C\Alloc.c ../../../../C\CpuArch.c ../../../../C\Sort.c ../../../../C\Threads.c ../../../../C\7zCrc.c 
+Alloc.c
+CpuArch.c
+Sort.c
+Threads.c
+7zCrc.c
+Code wird generiert...
+	link /SUBSYSTEM:CONSOLE,"5.02" -nologo -OPT:REF -OPT:ICF /LARGEADDRESSAWARE -out:AMD64\7z.exe AMD64\StdAfx.obj    AMD64\CommandLineParser.obj  AMD64\CRC.obj  AMD64\IntToString.obj  AMD64\ListFileUtils.obj  AMD64\NewHandler.obj  AMD64\StdInStream.obj  AMD64\StdOutStream.obj  AMD64\MyString.obj  AMD64\StringConvert.obj  AMD64\StringToInt.obj  AMD64\UTFConvert.obj  AMD64\MyVector.obj  AMD64\Wildcard.obj  AMD64\DLL.obj  AMD64\ErrorMsg.obj  AMD64\FileDir.obj  AMD64\FileFind.obj  AMD64\FileIO.obj  AMD64\FileLink.obj  AMD64\FileName.obj  AMD64\FileSystem.obj  AMD64\MemoryLock.obj  AMD64\PropVariant.obj  AMD64\PropVariantConv.obj  AMD64\Registry.obj  AMD64\System.obj  AMD64\TimeUtils.obj    AMD64\CreateCoder.obj  AMD64\FilePathAutoRename.obj  AMD64\FileStreams.obj  AMD64\FilterCoder.obj  AMD64\LimitedStreams.obj  AMD64\MethodProps.obj  AMD64\ProgressUtils.obj  AMD64\PropId.obj  AMD64\StreamObjects.obj  AMD64\StreamUtils.obj  AMD64\UniqBlocks.obj    AMD64\OutStreamWithCRC.obj  AMD64\ArchiveCommandLine.obj  AMD64\ArchiveExtractCallback.obj  AMD64\ArchiveOpenCallback.obj  AMD64\Bench.obj  AMD64\DefaultName.obj  AMD64\EnumDirItems.obj  AMD64\Extract.obj  AMD64\ExtractingFilePath.obj  AMD64\HashCalc.obj  AMD64\LoadCodecs.obj  AMD64\OpenArchive.obj  AMD64\PropIDUtils.obj  AMD64\SetProperties.obj  AMD64\SortUtils.obj  AMD64\TempFiles.obj  AMD64\Update.obj  AMD64\UpdateAction.obj  AMD64\UpdateCallback.obj  AMD64\UpdatePair.obj  AMD64\UpdateProduce.obj    AMD64\BenchCon.obj  AMD64\ConsoleClose.obj  AMD64\ExtractCallbackConsole.obj  AMD64\HashCon.obj  AMD64\List.obj  AMD64\Main.obj  AMD64\MainAr.obj  AMD64\OpenCallbackConsole.obj  AMD64\PercentPrinter.obj  AMD64\UpdateCallbackConsole.obj  AMD64\UserInputUtils.obj                              AMD64\CopyCoder.obj    AMD64\Alloc.obj  AMD64\CpuArch.obj  AMD64\Sort.obj  AMD64\Threads.obj  AMD64\7zCrc.obj      AMD64\7zCrcOpt.obj  AMD64\resource.res  oleaut32.lib ole32.lib user32.lib advapi32.lib shell32.lib
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\Console>copy AMD64\7z.exe Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\7z.exe 
+        1 Datei(en) kopiert.
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\UI\Console>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXCon 
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXCon>nmake CPU=AMD64 MY_STATIC_LINK=1 
+	if not exist "AMD64" mkdir "AMD64"
+	if not exist "AMD64/Asm" mkdir "AMD64/Asm"
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yc"StdAfx.h" -FpAMD64/a.pch StdAfx.cpp
+StdAfx.cpp
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/AesOpt.asm
+ Assembling: ../../../../Asm/x86/AesOpt.asm
+	ml64 -Dx64 -c -FoAMD64/ ../../../../Asm/x86/7zCrcOpt.asm
+ Assembling: ../../../../Asm/x86/7zCrcOpt.asm
+	rc  -foAMD64\resource.res resource.rc
+Microsoft (R) Windows (R) Resource Compiler Version 6.3.9600.17336
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch .\SfxCon.cpp 
+SfxCon.cpp
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Common\CommandLineParser.cpp ../../../Common\CRC.cpp ../../../Common\IntToString.cpp ../../../Common\MyString.cpp ../../../Common\MyVector.cpp ../../../Common\NewHandler.cpp ../../../Common\StdInStream.cpp ../../../Common\StdOutStream.cpp ../../../Common\StringConvert.cpp ../../../Common\Wildcard.cpp ../../../Common\UTFConvert.cpp 
+CommandLineParser.cpp
+CRC.cpp
+IntToString.cpp
+MyString.cpp
+MyVector.cpp
+NewHandler.cpp
+StdInStream.cpp
+StdOutStream.cpp
+StringConvert.cpp
+Wildcard.cpp
+UTFConvert.cpp
+Code wird generiert...
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../../Windows\DLL.cpp ../../../Windows\ErrorMsg.cpp ../../../Windows\FileDir.cpp ../../../Windows\FileFind.cpp ../../../Windows\FileIO.cpp ../../../Windows\FileName.cpp ../../../Windows\PropVariant.cpp ../../../Windows\PropVariantConv.cpp ../../../Windows\Synchronization.cpp 
+DLL.cpp
+ErrorMsg.cpp
+FileDir.cpp
+FileFind.cpp
+FileIO.cpp
+FileName.cpp
+PropVariant.cpp
+PropVariantConv.cpp
+Synchronization.cpp
+Code wird generiert...
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Common\CreateCoder.cpp ../../Common\CWrappers.cpp ../../Common\FilePathAutoRename.cpp ../../Common\FileStreams.cpp ../../Common\InBuffer.cpp ../../Common\FilterCoder.cpp ../../Common\LimitedStreams.cpp ../../Common\OutBuffer.cpp ../../Common\ProgressUtils.cpp ../../Common\PropId.cpp ../../Common\StreamBinder.cpp ../../Common\StreamObjects.cpp ../../Common\StreamUtils.cpp ../../Common\VirtThread.cpp 
+CreateCoder.cpp
+CWrappers.cpp
+FilePathAutoRename.cpp
+FileStreams.cpp
+InBuffer.cpp
+FilterCoder.cpp
+LimitedStreams.cpp
+OutBuffer.cpp
+ProgressUtils.cpp
+PropId.cpp
+StreamBinder.cpp
+StreamObjects.cpp
+StreamUtils.cpp
+VirtThread.cpp
+Code wird generiert...
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive\SplitHandler.cpp 
+SplitHandler.cpp
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/Common\CoderMixer2.cpp ../../Archive/Common\ItemNameUtils.cpp ../../Archive/Common\MultiStream.cpp ../../Archive/Common\OutStreamWithCRC.cpp 
+CoderMixer2.cpp
+ItemNameUtils.cpp
+MultiStream.cpp
+OutStreamWithCRC.cpp
+Code wird generiert...
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Common\ArchiveExtractCallback.cpp ../../UI/Common\ArchiveOpenCallback.cpp ../../UI/Common\DefaultName.cpp ../../UI/Common\LoadCodecs.cpp ../../UI/Common\Extract.cpp ../../UI/Common\ExtractingFilePath.cpp ../../UI/Common\OpenArchive.cpp ../../UI/Common\PropIDUtils.cpp 
+ArchiveExtractCallback.cpp
+ArchiveOpenCallback.cpp
+DefaultName.cpp
+LoadCodecs.cpp
+Extract.cpp
+ExtractingFilePath.cpp
+OpenArchive.cpp
+PropIDUtils.cpp
+Code wird generiert...
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../UI/Console\ConsoleClose.cpp ../../UI/Console\ExtractCallbackConsole.cpp ../../UI/Console\List.cpp ../../UI/Console\MainAr.cpp ../../UI/Console\OpenCallbackConsole.cpp ../../UI/Console\PercentPrinter.cpp ../../UI/Console\UserInputUtils.cpp 
+ConsoleClose.cpp
+ExtractCallbackConsole.cpp
+List.cpp
+MainAr.cpp
+OpenCallbackConsole.cpp
+PercentPrinter.cpp
+UserInputUtils.cpp
+Code wird generiert...
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /O1 -Yu"StdAfx.h" -FpAMD64/a.pch ../../Archive/7z\7zDecode.cpp ../../Archive/7z\7zExtract.cpp ../../Archive/7z\7zHandler.cpp ../../Archive/7z\7zIn.cpp ../../Archive/7z\7zRegister.cpp 
+7zDecode.cpp
+7zExtract.cpp
+7zHandler.cpp
+7zIn.cpp
+7zRegister.cpp
+Code wird generiert...
+	cl   -DEXTRACT_ONLY  -DNO_READ_FROM_CODER  -D_SFX -DUNICODE -D_UNICODE -Gr -nologo -c -FoAMD64/ -W4 -WX -EHsc -Gy -GR- -GF -MT /Ox /Ot ../../Compress\Bcj2Coder.cpp ../../Compress\Bcj2Register.cpp ../../Compress\BcjCoder.cpp ../../Compress\BcjRegister.cpp ../../Compress\BranchMisc.cpp ../../Compress\BranchRegister.cpp ../../Compress\CopyCoder.cpp ../../Compress\CopyRegister.cpp ../../Compress\DeltaFilter.cpp ../../Compress\Lzma2Decoder.cpp ../../Compress\Lzma2Register.cpp ../../Compress\LzmaDecoder.cpp ../../Compress\LzmaRegister.cpp ../../Compress\PpmdDecoder.cpp ../../Compress\PpmdRegister.cpp ../../Compress\ZstdDecoder.cpp ../../Compress\ZStdRegister.cpp 
+Bcj2Coder.cpp
+Bcj2Register.cpp
+BcjCoder.cpp
+BcjRegister.cpp
+BranchMisc.cpp
+BranchRegister.cpp
+CopyCoder.cpp
+CopyRegister.cpp
+DeltaFilter.cpp
+Lzma2Decoder.cpp
+Lzma2Register.cpp
+LzmaDecoder.cpp
+LzmaRegister.cpp
+PpmdDecoder.cpp
+PpmdRegister.cpp
+ZstdDecoder.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+ZStdRegister.cpp
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2143: Syntaxfehler: Es fehlt ";" vor "const"
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C4430: Fehlender Typspezifizierer - int wird angenommen. Hinweis: "default-int" wird von C++ nicht untersttzt.
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): error C2440: "Initialisierung": "initializer list" kann nicht in "int" konvertiert werden
+z:\projekte\7zip-zstd\git\c\zstd\zstd_internal.h(236): note: Der Initialisierer enth„lt zu viele Elemente.
+Code wird generiert...
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXCon>copy AMD64\7zCon.sfx Z:\projekte\7zip-ZStd\git\CPP\7zip\bin64\7zCon.sfx 
+Das System kann die angegebene Datei nicht finden.
+
+Z:\projekte\7zip-ZStd\git\CPP\7zip\Bundles\SFXCon>cd Z:\projekte\7zip-ZStd\git\CPP\7zip\.. 
