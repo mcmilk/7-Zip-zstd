@@ -28,7 +28,7 @@ copy AMD64\7z.sfx %ROOT%\bin64\7z.sfx
 
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%
-copy AMD64\7zipInstall.exe %ROOT%\bin64\Install-x32.exe
+copy AMD64\7zipInstall.exe %ROOT%\bin64\Install-x64.exe
 
 cd %ROOT%\..\..\C\Util\7zipUninstall
 nmake %OPTS%
