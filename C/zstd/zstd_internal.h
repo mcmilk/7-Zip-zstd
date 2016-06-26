@@ -42,13 +42,6 @@
 
 
 /*-*************************************
-*  Common macros
-***************************************/
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-#define MAX(a,b) ((a)>(b) ? (a) : (b))
-
-
-/*-*************************************
 *  Common constants
 ***************************************/
 #define ZSTD_OPT_DEBUG 0     // 3 = compression stats;  5 = check encoded sequences;  9 = full logs

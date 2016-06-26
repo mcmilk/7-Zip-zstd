@@ -13,7 +13,6 @@ copy O\7z.dll %ROOT%\bin32\7z.dll
 cd %ROOT%\Bundles\Format7zZStd
 nmake %OPTS%
 copy O\7z.dll %ROOT%\bin32\7za.dll
-goto ende
 
 cd %ROOT%\UI\FileManager
 nmake %OPTS%
