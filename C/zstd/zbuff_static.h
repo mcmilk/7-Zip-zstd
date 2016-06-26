@@ -47,11 +47,6 @@ extern "C" {
 #include "zstd_static.h"     /* ZSTD_parameters */
 #include "zbuff.h"
 
-/*-*************************************
-*  Common macros
-***************************************/
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-#define MAX(a,b) ((a)>(b) ? (a) : (b))
 
 /* *************************************
 *  Advanced Streaming functions
