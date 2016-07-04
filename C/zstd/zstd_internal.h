@@ -40,10 +40,18 @@
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 
+
+/*-*************************************
+*  Common macros
+***************************************/
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
+#define MAX(a,b) ((a)>(b) ? (a) : (b))
+
+
 /*-*************************************
 *  Common constants
 ***************************************/
-#define ZSTD_OPT_DEBUG 0     // 3 = compression stats;  5 = check encoded sequences;  9 = full logs
+#define ZSTD_OPT_DEBUG 0     /* 3 = compression stats;  5 = check encoded sequences;  9 = full logs */
 #include <stdio.h>
 #if defined(ZSTD_OPT_DEBUG) && ZSTD_OPT_DEBUG>=9
     #define ZSTD_LOG_PARSER(...) printf(__VA_ARGS__)
@@ -225,6 +233,6 @@ int ZSTD_isSkipFrame(ZSTD_DCtx* dctx);
 /* custom memory allocation functions */
 void* ZSTD_defaultAllocFunction(void* opaque, size_t size);
 void ZSTD_defaultFreeFunction(void* opaque, void* address);
-static ZSTD_customMem const defaultCustomMem = { ZSTD_defaultAllocFunction, ZSTD_defaultFreeFunction, NULL };
+static const ZSTD_customMem defaultCustomMem = { ZSTD_defaultAllocFunction, ZSTD_defaultFreeFunction, NULL };
 
 #endif   /* ZSTD_CCOMMON_H_MODULE */

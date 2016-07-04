@@ -140,7 +140,6 @@ C_OBJS = \
 
 ZSTD_OBJS = \
   $O\entropy_common.obj \
-  $O\entropy_common.obj \
   $O\fse_compress.obj \
   $O\fse_decompress.obj \
   $O\huf_compress.obj \

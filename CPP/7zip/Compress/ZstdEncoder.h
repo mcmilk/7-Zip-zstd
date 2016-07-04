@@ -3,9 +3,10 @@
 
 #include "StdAfx.h"
 
+#define ZSTD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
-#include "../../../C/ZStd/zstd_static.h"
-#include "../../../C/ZStd/zbuff_static.h"
+#include "../../../C/ZStd/zstd.h"
+#include "../../../C/ZStd/zbuff.h"
 
 #include "../../Common/Common.h"
 #include "../../Common/MyCom.h"

@@ -52,12 +52,12 @@ extern "C" {
 */
 MEM_STATIC unsigned ZSTD_isLegacy (U32 magicNumberLE)
 {
-	switch(magicNumberLE)
-	{
-		case ZSTDv05_MAGICNUMBER : return 5;
-		case ZSTDv06_MAGICNUMBER : return 6;
-		default : return 0;
-	}
+    switch(magicNumberLE)
+    {
+        case ZSTDv05_MAGICNUMBER : return 5;
+        case ZSTDv06_MAGICNUMBER : return 6;
+        default : return 0;
+    }
 }
 
 
@@ -67,29 +67,27 @@ MEM_STATIC size_t ZSTD_decompressLegacy(
                const void* dict,size_t dictSize,
                      U32 magicNumberLE)
 {
-	switch(magicNumberLE)
-	{
-		case ZSTDv05_MAGICNUMBER :
-		    {
-		        size_t result;
-		        ZSTDv05_DCtx* zd = ZSTDv05_createDCtx();
-		        if (zd==NULL) return ERROR(memory_allocation);
-		        result = ZSTDv05_decompress_usingDict(zd, dst, dstCapacity, src, compressedSize, dict, dictSize);
-		        ZSTDv05_freeDCtx(zd);
-		        return result;
-		    }
-		case ZSTDv06_MAGICNUMBER :
-		    {
-		        size_t result;
-		        ZSTDv06_DCtx* zd = ZSTDv06_createDCtx();
-		        if (zd==NULL) return ERROR(memory_allocation);
-		        result = ZSTDv06_decompress_usingDict(zd, dst, dstCapacity, src, compressedSize, dict, dictSize);
-		        ZSTDv06_freeDCtx(zd);
-		        return result;
-		    }
-		default :
-		    return ERROR(prefix_unknown);
-	}
+    switch(magicNumberLE)
+    {
+        case ZSTDv05_MAGICNUMBER :
+            {   size_t result;
+                ZSTDv05_DCtx* const zd = ZSTDv05_createDCtx();
+                if (zd==NULL) return ERROR(memory_allocation);
+                result = ZSTDv05_decompress_usingDict(zd, dst, dstCapacity, src, compressedSize, dict, dictSize);
+                ZSTDv05_freeDCtx(zd);
+                return result;
+            }
+        case ZSTDv06_MAGICNUMBER :
+            {   size_t result;
+                ZSTDv06_DCtx* const zd = ZSTDv06_createDCtx();
+                if (zd==NULL) return ERROR(memory_allocation);
+                result = ZSTDv06_decompress_usingDict(zd, dst, dstCapacity, src, compressedSize, dict, dictSize);
+                ZSTDv06_freeDCtx(zd);
+                return result;
+            }
+        default :
+            return ERROR(prefix_unknown);
+    }
 }
 
 
