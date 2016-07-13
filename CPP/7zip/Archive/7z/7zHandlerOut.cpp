@@ -19,7 +19,7 @@ namespace NArchive {
 namespace N7z {
 
 static const char *k_LZMA_Name = "LZMA";
-static const char *kDefaultMethodName = "LZMA2";
+static const char *kDefaultMethodName = "zstd";
 static const char *k_Copy_Name = "Copy";
 
 static const char *k_MatchFinder_ForHeaders = "BT2";

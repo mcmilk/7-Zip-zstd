@@ -130,6 +130,8 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SetNearestSelectComboBox(NWindows::NControl::CComboBox &comboBox, UInt32 value);
 
   void SetLevel();
+  void SetLevel_zstd();
+  void SetLevel_default();
   
   void SetMethod(int keepMethodId = -1);
   int GetMethodID();

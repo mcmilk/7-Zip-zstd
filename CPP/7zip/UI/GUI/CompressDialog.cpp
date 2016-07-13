@@ -100,45 +100,45 @@ static const UInt32 g_Levels[] =
 enum EMethodID
 {
   kCopy,
+  kZSTD,
   kLZMA,
   kLZMA2,
   kPPMd,
   kBZip2,
   kDeflate,
   kDeflate64,
-  kPPMdZip,
-  kZStd
+  kPPMdZip
 };
 
 static const LPCWSTR kMethodsNames[] =
 {
   L"Copy",
+  L"ZSTD",
   L"LZMA",
   L"LZMA2",
   L"PPMd",
   L"BZip2",
   L"Deflate",
   L"Deflate64",
-  L"PPMd",
-  L"ZStd"
+  L"PPMd"
 };
 
 static const EMethodID g_7zMethods[] =
 {
+  kZSTD,
   kLZMA2,
   kLZMA,
   kPPMd,
-  kBZip2,
-  kZStd
+  kBZip2
 };
 
 static const EMethodID g_7zSfxMethods[] =
 {
   kCopy,
+  kZSTD,
   kLZMA,
   kLZMA2,
-  kPPMd,
-  kZStd
+  kPPMd
 };
 
 static const EMethodID g_ZipMethods[] =
@@ -174,7 +174,7 @@ struct CFormatInfo
 {
   LPCWSTR Name;
   UInt32 LevelsMask;
-  const EMethodID *MathodIDs;
+  const EMethodID *MethodIDs;
   unsigned NumMethods;
 
   bool Filter;
@@ -835,6 +835,8 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         SetItemText(IDT_COMPRESS_ARCHIVE_FOLDER, DirPrefix);
 
         /*
+
+
         UString path;
         m_ArchivePath.GetText(path);
         m_ArchivePath.SetText(L"");
@@ -867,7 +869,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         int index = FindRegistryFormatAlways(ai.Name);
         NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
         fo.ResetForLevelChange();
-        SetMethod();
+        SetMethod(GetMethodID());
         SetSolidBlockSize();
         SetNumThreads();
         CheckSFXNameChange();
@@ -876,6 +878,13 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
       }
       case IDC_COMPRESS_METHOD:
       {
+        // MessageBoxW(*this, L"IDC_COMPRESS_METHOD!", L"7-Zip", MB_ICONERROR);
+        if (GetMethodID() == kZSTD)
+        {
+          SetLevel_zstd();
+        } else {
+          SetLevel_default();
+        }
         SetDictionary();
         SetOrder();
         SetSolidBlockSize();
@@ -1007,12 +1016,69 @@ void CCompressDialog::SetNearestSelectComboBox(NControl::CComboBox &comboBox, UI
     comboBox.SetCurSel(0);
 }
 
-void CCompressDialog::SetLevel()
+void CCompressDialog::SetLevel_zstd()
 {
-  m_Level.ResetContent();
-  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  UInt32 level = GetLevel2();
+
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  UInt32 level = 5;
+  {
+    int index = FindRegistryFormat(ai.Name);
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      if (fo.Level <= 22)
+        level = fo.Level;
+    }
+  }
+
+  /* ZStandard has 22 levels */
+  m_Level.ResetContent();
+  for (unsigned i = 0; i <= 22; i++)
+  {
+    TCHAR s[40];
+    TCHAR t[50] = { TEXT('L'), TEXT('e'), TEXT('v'), TEXT('e'), TEXT('l'), TEXT(' '), 0 };
+    ConvertUInt32ToString(i, s);
+    lstrcat(t, s);
+    switch (i) {
+    case 1:
+      lstrcat(t, TEXT(" ("));
+      lstrcat(t, LangString(IDS_METHOD_FASTEST));
+      lstrcat(t, TEXT(")"));
+      break;
+    case 5:
+      lstrcat(t, TEXT(" ("));
+      lstrcat(t, LangString(IDS_METHOD_FAST));
+      lstrcat(t, TEXT(")"));
+      break;
+    case 11:
+      lstrcat(t, TEXT(" ("));
+      lstrcat(t, LangString(IDS_METHOD_NORMAL));
+      lstrcat(t, TEXT(")"));
+      break;
+    case 17:
+      lstrcat(t, TEXT(" ("));
+      lstrcat(t, LangString(IDS_METHOD_MAXIMUM));
+      lstrcat(t, TEXT(")"));
+      break;
+    case 22:
+      lstrcat(t, TEXT(" ("));
+      lstrcat(t, LangString(IDS_METHOD_ULTRA));
+      lstrcat(t, TEXT(")"));
+      break;
+    }
+    int index = (int)m_Level.AddString(t);
+    m_Level.SetItemData(index, i);
+  }
+
+  SetNearestSelectComboBox(m_Level, level);
+  return;
+}
+
+void CCompressDialog::SetLevel_default()
+{
+  UInt32 level = GetLevel2();
+
+  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
   {
     int index = FindRegistryFormat(ai.Name);
     if (index >= 0)
@@ -1024,24 +1090,48 @@ void CCompressDialog::SetLevel()
         level = 9;
     }
   }
-  
+
+  /* 9 default levels */
+  m_Level.ResetContent();
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+
   for (unsigned i = 0; i <= 9; i++)
   {
     if ((fi.LevelsMask & (1 << i)) != 0)
     {
+      TCHAR s[40];
+      TCHAR t[50] = { TEXT('L'), TEXT('e'), TEXT('v'), TEXT('e'), TEXT('l'), TEXT(' '), 0 };
       UInt32 langID = g_Levels[i];
-      int index = (int)m_Level.AddString(LangString(langID));
+      ConvertUInt32ToString(i, s);
+      lstrcat(t, s);
+      lstrcat(t, TEXT(" ("));
+      lstrcat(t, LangString(langID));
+      lstrcat(t, TEXT(")"));
+      int index = (int)m_Level.AddString(t);
       m_Level.SetItemData(index, i);
     }
   }
+
   SetNearestSelectComboBox(m_Level, level);
+  return;
+}
+
+void CCompressDialog::SetLevel()
+{
   SetMethod();
+
+  if (GetMethodID() == kZSTD)
+  {
+    SetLevel_zstd();
+  } else {
+    SetLevel_default();
+  }
 }
 
 void CCompressDialog::SetMethod(int keepMethodId)
 {
   m_Method.ResetContent();
-  UInt32 level = GetLevel();
+  UInt32 level = GetLevel2();
   if (level == 0)
   {
     SetDictionary();
@@ -1062,23 +1152,26 @@ void CCompressDialog::SetMethod(int keepMethodId)
   
   for (unsigned m = 0; m < fi.NumMethods; m++)
   {
-    EMethodID methodID = fi.MathodIDs[m];
+    EMethodID methodID = fi.MethodIDs[m];
     if (isSfx)
       if (!IsMethodSupportedBySfx(methodID))
         continue;
     const LPCWSTR method = kMethodsNames[methodID];
     int itemIndex = (int)m_Method.AddString(GetSystemString(method));
     m_Method.SetItemData(itemIndex, methodID);
+
+
     if (keepMethodId == methodID)
     {
       m_Method.SetCurSel(itemIndex);
       weUseSameMethod = true;
       continue;
     }
+
     if ((defaultMethod.IsEqualTo_NoCase(method) || m == 0) && !weUseSameMethod)
       m_Method.SetCurSel(itemIndex);
   }
-  
+
   if (!weUseSameMethod)
   {
     SetDictionary();
