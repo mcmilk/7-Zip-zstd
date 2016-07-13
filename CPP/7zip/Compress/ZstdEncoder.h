@@ -25,7 +25,7 @@ struct CProps
     memset (this, 0, sizeof (*this));
     _ver_major = ZSTD_VERSION_MAJOR;
     _ver_minor = ZSTD_VERSION_MINOR;
-    _level = 1;
+    _level = 3;
   }
 
   Byte _ver_major;
