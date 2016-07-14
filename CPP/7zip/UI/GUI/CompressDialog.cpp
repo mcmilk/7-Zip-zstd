@@ -129,6 +129,8 @@ static const EMethodID g_7zMethods[] =
   kLZMA2,
   kLZMA,
   kPPMd,
+  kDeflate,
+  kDeflate64,
   kBZip2
 };
 
@@ -1040,6 +1042,11 @@ void CCompressDialog::SetLevel_zstd()
     ConvertUInt32ToString(i, s);
     lstrcat(t, s);
     switch (i) {
+    case 0:
+      lstrcat(t, TEXT(" ("));
+      lstrcat(t, LangString(IDS_METHOD_STORE));
+      lstrcat(t, TEXT(")"));
+      break;
     case 1:
       lstrcat(t, TEXT(" ("));
       lstrcat(t, LangString(IDS_METHOD_FASTEST));
@@ -1734,6 +1741,38 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory)
       return size + decompressMemory;
     }
     
+    case kZSTD:
+    {
+      /* Code Snippet for CPP/7zip/UI/GUI/CompressDialog.cpp with blocklen=4194304 */
+      size = 0;
+      switch (level) {
+        case 1: size = 562124; break;
+        case 2: size = 758732; break;
+        case 3: size = 1807308; break;
+        case 4: size = 1053644; break;
+        case 5: size = 1676236; break;
+        case 6: size = 2855884; break;
+        case 7: size = 5215180; break;
+        case 8: size = 5739468; break;
+        case 9: size = 8885196; break;
+        case 10: size = 10982348; break;
+        case 11: size = 21468108; break;
+        case 12: size = 21468108; break;
+        case 13: size = 25662412; break;
+        case 14: size = 25662412; break;
+        case 15: size = 17273804; break;
+        case 16: size = 34051020; break;
+        case 17: size = 50828236; break;
+        case 18: size = 50977224; break;
+        case 19: size = 51621650; break;
+        case 20: size = 51621650; break;
+        case 21: size = 51621650; break;
+        case 22: size = 51621650; break;
+      }
+      decompressMemory = 152872;
+      return size;
+    }
+
     case kDeflate:
     case kDeflate64:
     {

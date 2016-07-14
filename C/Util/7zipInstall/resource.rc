@@ -6,7 +6,7 @@
 #include "../../7zVersion.rc"
 #include "resource.h"
 
-MY_VERSION_INFO(MY_VFT_APP, "7-Zip Installer ZStd", "7zipInstall", "7zipInstall.exe")
+MY_VERSION_INFO(MY_VFT_APP, "7-Zip Installer ZStandard", "7zipInstall", "7zipInstall.exe")
 
 1  ICON "7zip.ico"
 

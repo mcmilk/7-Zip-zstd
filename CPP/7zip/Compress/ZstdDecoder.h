@@ -50,7 +50,6 @@ class CDecoder:public ICompressCoder,
   UInt32 _inSize;
   bool _eofFlag;
 
-  // ZBUFF_DCtx *_state;
   void *_state;
 
   DProps _props;
