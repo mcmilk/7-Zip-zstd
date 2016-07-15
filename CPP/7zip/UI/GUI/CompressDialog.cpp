@@ -1746,30 +1746,30 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory)
       /* Code Snippet for CPP/7zip/UI/GUI/CompressDialog.cpp with blocklen=4194304 */
       size = 0;
       switch (level) {
-        case 1: size = 562124; break;
-        case 2: size = 758732; break;
-        case 3: size = 1807308; break;
-        case 4: size = 1053644; break;
-        case 5: size = 1676236; break;
-        case 6: size = 2855884; break;
-        case 7: size = 5215180; break;
-        case 8: size = 5739468; break;
-        case 9: size = 8885196; break;
-        case 10: size = 10982348; break;
-        case 11: size = 21468108; break;
-        case 12: size = 21468108; break;
-        case 13: size = 25662412; break;
-        case 14: size = 25662412; break;
-        case 15: size = 17273804; break;
-        case 16: size = 34051020; break;
-        case 17: size = 50828236; break;
-        case 18: size = 50977224; break;
-        case 19: size = 51621650; break;
-        case 20: size = 51621650; break;
-        case 21: size = 51621650; break;
-        case 22: size = 51621650; break;
+        case 1: size = 1086412; decompressMemory = 677160; return size;
+        case 2: size = 1283020; decompressMemory = 677160; return size;
+        case 3: size = 2855884; decompressMemory = 1201448; return size;
+        case 4: size = 2102220; decompressMemory = 1201448; return size;
+        case 5: size = 2724812; decompressMemory = 1201448; return size;
+        case 6: size = 4953036; decompressMemory = 2250024; return size;
+        case 7: size = 7312332; decompressMemory = 2250024; return size;
+        case 8: size = 7836620; decompressMemory = 2250024; return size;
+        case 9: size = 10982348; decompressMemory = 2250024; return size;
+        case 10: size = 13079500; decompressMemory = 2250024; return size;
+        case 11: size = 25662412; decompressMemory = 4347176; return size;
+        case 12: size = 25662412; decompressMemory = 4347176; return size;
+        case 13: size = 29856716; decompressMemory = 4347176; return size;
+        case 14: size = 29856716; decompressMemory = 4347176; return size;
+        case 15: size = 21468108; decompressMemory = 4347176; return size;
+        case 16: size = 38245324; decompressMemory = 4347176; return size;
+        case 17: size = 55022540; decompressMemory = 4347176; return size;
+        case 18: size = 55171528; decompressMemory = 4347176; return size;
+        case 19: size = 55815954; decompressMemory = 4347176; return size;
+        case 20: size = 55815954; decompressMemory = 4347176; return size;
+        case 21: size = 55815954; decompressMemory = 4347176; return size;
+        case 22: size = 55815954; decompressMemory = 4347176; return size;
       }
-      decompressMemory = 152872;
+      decompressMemory = 0;
       return size;
     }
 
