@@ -97,6 +97,8 @@ STDMETHODIMP CDecoder::SetDecoderProperties2 (const Byte * prop, UInt32 size)
   switch (pProps->_ver_minor) {
   case ZSTD_VERSION_MINOR:
     break;
+  case 6:
+    break;
   case 5:
     break;
   default:
