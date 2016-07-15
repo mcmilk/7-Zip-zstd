@@ -2,7 +2,7 @@
 This is the Github Page of 7-Zip with support for **zstd**, short for Zstandard, which is a fast lossless compression algorithm, targeting real-time compression scenarios at zlib-level compression ratio. 
 
 - ZStandard Homepage: https://github.com/Cyan4973/zstd
-- 7-Zip ZStandard Homepage: https://mcmilk.de/projects/7-Zip-ZStandard/
+- 7-Zip ZStandard Homepage: https://mcmilk.de/projects/7-Zip-zstd/
 - Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
   - result, will not be included :(
 
