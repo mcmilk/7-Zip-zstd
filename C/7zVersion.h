@@ -6,7 +6,7 @@
 #define MY_DATE "2016-06-12"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
-#define MY_AUTHOR_NAME "Igor Pavlov"
+#define MY_AUTHOR_NAME "Igor Pavlov, Tino Reichardt"
 #define MY_COPYRIGHT_PD "Igor Pavlov : Public domain"
 #define MY_COPYRIGHT_CR "Copyright (c) 1999-2016 Igor Pavlov"
 
