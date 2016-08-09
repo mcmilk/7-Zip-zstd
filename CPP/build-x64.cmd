@@ -9,25 +9,23 @@ set LFLAGS=/SUBSYSTEM:WINDOWS,"5.02"
 
 cd %ROOT%\Bundles\Format7z
 nmake %OPTS%
-copy O\7za.dll %OUTDIR%\7za.dll
-
-goto ende
+copy AMD64\7za.dll %OUTDIR%\7za.dll
 
 cd %ROOT%\Bundles\Format7zExtract
 nmake %OPTS%
-copy O\7zxa.dll %OUTDIR%\7zxa.dll
+copy AMD64\7zxa.dll %OUTDIR%\7zxa.dll
 
 cd %ROOT%\Bundles\Format7zExtractR
 nmake %OPTS%
-copy O\7zxr.dll %OUTDIR%\7zxr.dll
+copy AMD64\7zxr.dll %OUTDIR%\7zxr.dll
 
 cd %ROOT%\Bundles\Format7zF
 nmake %OPTS%
-copy O\7z.dll %OUTDIR%\7z.dll
+copy AMD64\7z.dll %OUTDIR%\7z.dll
 
 cd %ROOT%\Bundles\Format7zR
 nmake %OPTS%
-copy O\7zra.dll %OUTDIR%\7zra.dll
+copy AMD64\7zra.dll %OUTDIR%\7zra.dll
 
 cd %ROOT%\UI\FileManager
 nmake %OPTS%
