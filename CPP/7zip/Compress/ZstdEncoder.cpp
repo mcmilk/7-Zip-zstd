@@ -12,8 +12,6 @@
 #define PRF(x)
 #endif
 
-#define ZSTD_DEFAULT_BUFFER_SIZE (1U << 22U)
-
 #ifndef EXTRACT_ONLY
 namespace NCompress {
 namespace NZSTD {
@@ -26,8 +24,8 @@ CEncoder::CEncoder():
   _inSize (0),
   _inBufSizeAllocated (0),
   _outBufSizeAllocated (0),
-  _inBufSize (ZSTD_DEFAULT_BUFFER_SIZE),
-  _outBufSize (ZSTD_DEFAULT_BUFFER_SIZE),
+  _inBufSize (ZBUFF_recommendedCInSize()),
+  _outBufSize (ZBUFF_recommendedCOutSize()),
   _inSizeProcessed (0),
   _outSizeProcessed (0)
 {
@@ -89,7 +87,7 @@ HRESULT CEncoder::CreateBuffers ()
     _inBuf = (Byte *) MyAlloc (_inBufSize);
     if (_inBuf == 0)
       return E_OUTOFMEMORY;
-    _inBufSizeAllocated = _inBufSize;
+    _inBufSizeAllocated = (UInt32)_inBufSize;
   }
 
   if (_outBuf == 0 || _outBufSize != _outBufSizeAllocated)
@@ -98,7 +96,7 @@ HRESULT CEncoder::CreateBuffers ()
     _outBuf = (Byte *) MyAlloc (_outBufSize);
     if (_outBuf == 0)
       return E_OUTOFMEMORY;
-    _outBufSizeAllocated = _outBufSize;
+    _outBufSizeAllocated = (UInt32)_outBufSize;
   }
 
   return S_OK;

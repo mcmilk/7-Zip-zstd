@@ -100,8 +100,6 @@ COMPRESS_OBJS = \
   $O\LzmaRegister.obj \
   $O\PpmdDecoder.obj \
   $O\PpmdRegister.obj \
-  $O\ZstdDecoder.obj \
-  $O\ZStdRegister.obj \
 
 CRYPTO_OBJS = \
   $O\7zAes.obj \
@@ -123,15 +121,8 @@ C_OBJS = \
   $O\Sha256.obj \
   $O\Threads.obj \
 
-ZSTD_OBJS = \
-  $O\entropy_common.obj \
-  $O\fse_decompress.obj \
-  $O\huf_decompress.obj \
-  $O\zbuff_decompress.obj \
-  $O\zstd_common.obj \
-  $O\zstd_decompress.obj \
-  $O\xxhash.obj \
-
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+
+!include "../../zstd.mak"
 !include "../../7zip.mak"

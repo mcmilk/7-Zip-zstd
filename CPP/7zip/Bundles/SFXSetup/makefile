@@ -106,4 +106,5 @@ C_OBJS = \
 
 !include "../../Crc.mak"
 
+!include "../../zstd.mak"
 !include "../../7zip.mak"

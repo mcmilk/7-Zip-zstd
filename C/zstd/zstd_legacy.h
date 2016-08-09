@@ -44,32 +44,65 @@ extern "C" {
 #include "error_private.h"  /* ERROR */
 #include "zstd_v05.h"
 #include "zstd_v06.h"
+#include "zstd_v07.h"
 
 
 /** ZSTD_isLegacy() :
     @return : > 0 if supported by legacy decoder. 0 otherwise.
               return value is the version.
 */
-MEM_STATIC unsigned ZSTD_isLegacy (U32 magicNumberLE)
+MEM_STATIC unsigned ZSTD_isLegacy(const void* src, size_t srcSize)
 {
+    U32 magicNumberLE;
+    if (srcSize<4) return 0;
+    magicNumberLE = MEM_readLE32(src);
     switch(magicNumberLE)
     {
         case ZSTDv05_MAGICNUMBER : return 5;
         case ZSTDv06_MAGICNUMBER : return 6;
+        case ZSTDv07_MAGICNUMBER : return 7;
         default : return 0;
     }
 }
 
 
+MEM_STATIC unsigned long long ZSTD_getDecompressedSize_legacy(const void* src, size_t srcSize)
+{
+    if (srcSize < 4) return 0;
+
+    {   U32 const version = ZSTD_isLegacy(src, srcSize);
+        if (version < 5) return 0;  /* no decompressed size in frame header, or not a legacy format */
+        if (version==5) {
+            ZSTDv05_parameters fParams;
+            size_t const frResult = ZSTDv05_getFrameParams(&fParams, src, srcSize);
+            if (frResult != 0) return 0;
+            return fParams.srcSize;
+        }
+        if (version==6) {
+            ZSTDv06_frameParams fParams;
+            size_t const frResult = ZSTDv06_getFrameParams(&fParams, src, srcSize);
+            if (frResult != 0) return 0;
+            return fParams.frameContentSize;
+        }
+        if (version==7) {
+            ZSTDv07_frameParams fParams;
+            size_t const frResult = ZSTDv07_getFrameParams(&fParams, src, srcSize);
+            if (frResult != 0) return 0;
+            return fParams.frameContentSize;
+        }
+        return 0;   /* should not be possible */
+    }
+}
+
 MEM_STATIC size_t ZSTD_decompressLegacy(
                      void* dst, size_t dstCapacity,
                const void* src, size_t compressedSize,
-               const void* dict,size_t dictSize,
-                     U32 magicNumberLE)
+               const void* dict,size_t dictSize)
 {
-    switch(magicNumberLE)
+    U32 const version = ZSTD_isLegacy(src, compressedSize);
+    switch(version)
     {
-        case ZSTDv05_MAGICNUMBER :
+        case 5 :
             {   size_t result;
                 ZSTDv05_DCtx* const zd = ZSTDv05_createDCtx();
                 if (zd==NULL) return ERROR(memory_allocation);
@@ -77,12 +110,20 @@ MEM_STATIC size_t ZSTD_decompressLegacy(
                 ZSTDv05_freeDCtx(zd);
                 return result;
             }
-        case ZSTDv06_MAGICNUMBER :
+        case 6 :
             {   size_t result;
                 ZSTDv06_DCtx* const zd = ZSTDv06_createDCtx();
                 if (zd==NULL) return ERROR(memory_allocation);
                 result = ZSTDv06_decompress_usingDict(zd, dst, dstCapacity, src, compressedSize, dict, dictSize);
                 ZSTDv06_freeDCtx(zd);
+                return result;
+            }
+        case 7 :
+            {   size_t result;
+                ZSTDv07_DCtx* const zd = ZSTDv07_createDCtx();
+                if (zd==NULL) return ERROR(memory_allocation);
+                result = ZSTDv07_decompress_usingDict(zd, dst, dstCapacity, src, compressedSize, dict, dictSize);
+                ZSTDv07_freeDCtx(zd);
                 return result;
             }
         default :

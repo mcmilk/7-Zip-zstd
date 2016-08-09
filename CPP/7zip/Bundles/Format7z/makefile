@@ -1,8 +1,8 @@
 PROG = 7za.dll
 DEF_FILE = ../../Archive/Archive2.def
-CFLAGS = $(CFLAGS) \
-  -DDEFLATE_EXTRACT_ONLY \
-  -DBZIP2_EXTRACT_ONLY \
+CFLAGS = $(CFLAGS)
+#  -DDEFLATE_EXTRACT_ONLY \
+#  -DBZIP2_EXTRACT_ONLY \
 
 COMMON_OBJS = \
   $O\CRC.obj \
@@ -55,6 +55,7 @@ AR_COMMON_OBJS = \
   $O\OutStreamWithCRC.obj \
   $O\ParseProperties.obj \
 
+
 7Z_OBJS = \
   $O\7zCompressionMode.obj \
   $O\7zDecode.obj \
@@ -71,6 +72,7 @@ AR_COMMON_OBJS = \
   $O\7zUpdate.obj \
   $O\7zRegister.obj \
 
+
 COMPRESS_OBJS = \
   $O\CodecExports.obj \
   $O\Bcj2Coder.obj \
@@ -82,10 +84,12 @@ COMPRESS_OBJS = \
   $O\BranchRegister.obj \
   $O\ByteSwap.obj \
   $O\BZip2Crc.obj \
+  $O\BZip2Encoder.obj \
   $O\BZip2Decoder.obj \
   $O\BZip2Register.obj \
   $O\CopyCoder.obj \
   $O\CopyRegister.obj \
+  $O\DeflateEncoder.obj \
   $O\DeflateDecoder.obj \
   $O\DeflateRegister.obj \
   $O\DeltaFilter.obj \
@@ -99,9 +103,6 @@ COMPRESS_OBJS = \
   $O\PpmdDecoder.obj \
   $O\PpmdEncoder.obj \
   $O\PpmdRegister.obj \
-  $O\ZStdDecoder.obj \
-  $O\ZStdEncoder.obj \
-  $O\ZStdRegister.obj \
 
 CRYPTO_OBJS = \
   $O\7zAes.obj \
@@ -135,20 +136,13 @@ C_OBJS = \
   $O\Sort.obj \
   $O\Threads.obj \
 
-ZSTD_OBJS = \
-  $O\entropy_common.obj \
-  $O\fse_compress.obj \
-  $O\fse_decompress.obj \
-  $O\huf_compress.obj \
-  $O\huf_decompress.obj \
-  $O\zbuff_compress.obj \
-  $O\zbuff_decompress.obj \
-  $O\zstd_common.obj \
-  $O\zstd_compress.obj \
-  $O\zstd_decompress.obj \
-  $O\zstd_v05.obj \
-
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+!include "../../zstd.mak"
+ZSTD_OBJS = $(ZSTD_OBJS) \
+  $O\fse_compress.obj \
+  $O\huf_compress.obj \
+  $O\zbuff_compress.obj \
+  $O\zstd_compress.obj \
 
 !include "../../7zip.mak"

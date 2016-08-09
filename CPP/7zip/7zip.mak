@@ -174,7 +174,7 @@ $(C_OBJS): ../../../../C/$(*B).c
 !ENDIF
 
 !IFDEF ZSTD_OBJS
-$(ZSTD_OBJS): ../../../../C/ZStd/$(*B).c
+$(ZSTD_OBJS): ../../../../C/zstd/$(*B).c
 	$(COMPL_O2)
 !ENDIF
 
@@ -240,7 +240,7 @@ $(ZSTD_OBJS): ../../../../C/ZStd/$(*B).c
 	$(COMPLB_O2)
 {../../../../C}.c{$O}.obj::
 	$(CCOMPLB)
-{../../../../C/ZStd}.c{$O}.obj::
+{../../../../C/zstd}.c{$O}.obj::
 	$(CCOMPLB)
 
 !ENDIF

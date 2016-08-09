@@ -12,8 +12,6 @@
 #define PRF(x)
 #endif
 
-#define ZSTD_DEFAULT_BUFFER_SIZE (1U << 22U)
-
 namespace NCompress {
 namespace NZSTD {
 
@@ -33,8 +31,8 @@ CDecoder::CDecoder ():
   _inBufSizeAllocated (0),
   _outBufSizeAllocated (0),
 
-  _inBufSize (ZSTD_DEFAULT_BUFFER_SIZE),
-  _outBufSize (ZSTD_DEFAULT_BUFFER_SIZE)
+  _inBufSize (ZBUFF_recommendedDInSize()),
+  _outBufSize (ZBUFF_recommendedDOutSize())
 {
   _props.clear ();
 }
@@ -68,7 +66,7 @@ HRESULT CDecoder::CreateBuffers ()
     _inBuf = (Byte *) MyAlloc (_inBufSize);
     if (_inBuf == 0)
       return E_OUTOFMEMORY;
-    _inBufSizeAllocated = _inBufSize;
+    _inBufSizeAllocated = (UInt32)_inBufSize;
   }
 
   if (_outBuf == 0 || _outBufSize != _outBufSizeAllocated)
@@ -77,7 +75,7 @@ HRESULT CDecoder::CreateBuffers ()
     _outBuf = (Byte *) MyAlloc (_outBufSize);
     if (_outBuf == 0)
       return E_OUTOFMEMORY;
-    _outBufSizeAllocated = _outBufSize;
+    _outBufSizeAllocated = (UInt32)_outBufSize;
   }
 
   return S_OK;
@@ -97,10 +95,14 @@ STDMETHODIMP CDecoder::SetDecoderProperties2 (const Byte * prop, UInt32 size)
   switch (pProps->_ver_minor) {
   case ZSTD_VERSION_MINOR:
     break;
-  case 6:
-    break;
+#ifdef ZSTD_LEGACY
   case 5:
     break;
+  case 6:
+    break;
+  case 7:
+    break;
+#endif
   default:
     return E_FAIL;
   }
@@ -249,13 +251,16 @@ STDMETHODIMP CDecoder::Code (ISequentialInStream * inStream,
 void *CDecoder::ZB_createDCtx(void)
 {
   PRF(fprintf(stderr, "zstdcodec: ZB_createDCtx(v=%d)\n", _props._ver_minor));
-#ifndef EXTRACT_ONLY
+#ifdef ZSTD_LEGACY
   switch (_props._ver_minor) {
   case 5:
     return (void*)ZBUFFv05_createDCtx();
     break;
   case 6:
     return (void*)ZBUFFv06_createDCtx();
+    break;
+  case 7:
+    return (void*)ZBUFFv07_createDCtx();
     break;
   }
 #endif
@@ -265,13 +270,16 @@ void *CDecoder::ZB_createDCtx(void)
 size_t CDecoder::ZB_freeDCtx(void *dctx)
 {
   PRF(fprintf(stderr, "zstdcodec: ZB_freeDCtx(v=%d)\n", _props._ver_minor));
-#ifndef EXTRACT_ONLY
+#ifdef ZSTD_LEGACY
   switch (_props._ver_minor) {
   case 5:
     return ZBUFFv05_freeDCtx((ZBUFFv05_DCtx *)dctx);
     break;
   case 6:
     return ZBUFFv06_freeDCtx((ZBUFFv06_DCtx *)dctx);
+    break;
+  case 7:
+    return ZBUFFv07_freeDCtx((ZBUFFv07_DCtx *)dctx);
     break;
   }
 #endif
@@ -281,13 +289,16 @@ size_t CDecoder::ZB_freeDCtx(void *dctx)
 size_t CDecoder::ZB_decompressInit(void *dctx)
 {
   PRF(fprintf(stderr, "zstdcodec: ZB_decompressInit(v=%d)\n", _props._ver_minor));
-#ifndef EXTRACT_ONLY
+#ifdef ZSTD_LEGACY
   switch (_props._ver_minor) {
   case 5:
     return ZBUFFv05_decompressInit((ZBUFFv05_DCtx *)dctx);
     break;
   case 6:
     return ZBUFFv06_decompressInit((ZBUFFv06_DCtx *)dctx);
+    break;
+  case 7:
+    return ZBUFFv07_decompressInit((ZBUFFv07_DCtx *)dctx);
     break;
   }
 #endif
@@ -297,13 +308,16 @@ size_t CDecoder::ZB_decompressInit(void *dctx)
 size_t CDecoder::ZB_decompressContinue(void *dctx, void* dst, size_t *dstCapacityPtr, const void* src, size_t *srcSizePtr)
 {
   PRF(fprintf(stderr, "zstdcodec: ZB_decompressContinue(v=%d)\n", _props._ver_minor));
-#ifndef EXTRACT_ONLY
+#ifdef ZSTD_LEGACY
   switch (_props._ver_minor) {
   case 5:
     return ZBUFFv05_decompressContinue((ZBUFFv05_DCtx *)dctx, dst, dstCapacityPtr, src, srcSizePtr);
     break;
   case 6:
     return ZBUFFv06_decompressContinue((ZBUFFv06_DCtx *)dctx, dst, dstCapacityPtr, src, srcSizePtr);
+    break;
+  case 7:
+    return ZBUFFv07_decompressContinue((ZBUFFv07_DCtx *)dctx, dst, dstCapacityPtr, src, srcSizePtr);
     break;
   }
 #endif

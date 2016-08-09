@@ -1,8 +1,6 @@
 // ZstdEncoder.h
 // (C) 2016 Rich Geldreich, Tino Reichardt
 
-#include "StdAfx.h"
-
 #define ZSTD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/ZStd/zstd.h"
@@ -51,8 +49,8 @@ class CEncoder:
 
   UInt32 _inBufSizeAllocated;
   UInt32 _outBufSizeAllocated;
-  UInt32 _inBufSize;
-  UInt32 _outBufSize;
+  size_t _inBufSize;
+  size_t _outBufSize;
 
   UInt64 _inSizeProcessed;
   UInt64 _outSizeProcessed;

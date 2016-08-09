@@ -1,8 +1,6 @@
 // ZstdDecoder.h
 // (C) 2016 Rich Geldreich, Tino Reichardt
 
-#include "StdAfx.h"
-
 #define ZSTD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/ZStd/zstd.h"
@@ -62,8 +60,8 @@ class CDecoder:public ICompressCoder,
 
   UInt32 _inBufSizeAllocated;
   UInt32 _outBufSizeAllocated;
-  UInt32 _inBufSize;
-  UInt32 _outBufSize;
+  size_t _inBufSize;
+  size_t _outBufSize;
 
   HRESULT CreateBuffers ();
   HRESULT CodeSpec (ISequentialInStream * inStream, ISequentialOutStream * outStream, ICompressProgressInfo * progress);
