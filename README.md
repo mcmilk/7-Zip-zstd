@@ -10,23 +10,26 @@ You can install it in two ways:
    Explorer context menu
 2. just the codec plugin, which goes to your existing 7-Zip installation
 
-
-![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
-![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
-
 ## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
 
 ### Installation
 
-1. download the setup from here https://mcmilk.de/projects/7-Zip-zstd/dl/
-   - https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x32.exe
-   - https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x64.exe
+1. download the setup from here for 32 bit: [7z1602-zstd-x32.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x32.exe),
+ or here for 64 bit [7z1602-zstd-x64.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x64.exe)
 2. install it
 
-### Usage
+### Usage (full installation)
 
-![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
+```
+7z a archiv.7z -m0=zstd -mx0   Fastest Mode, without BCJ preprocessor
+7z a archiv.7z -m0=zstd -mx1   Fast mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=zstd -mx..  ...
+7z a archiv.7z -m0=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
+```
+
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
+![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
 
 ## ZStandard codec Plugin for 7-Zip
 
@@ -36,7 +39,7 @@ You can install it in two ways:
 2. create a new directory named "Codecs"
 3. put in there the zstd-x32.dll or the zstd-x64.dll, depending on your 7-Zip installation
    - normally, the x32 should go to: "C:\Program Files (x86)\7-Zip\Codecs"
-   - and the x64 version should go in here: "C:\Program Files\7-Zip\Codecs"
+   - the x64 version should go in here: "C:\Program Files\7-Zip\Codecs"
 4. After this, you may check if the dll is correctly installed via this command: `7z.exe i`
 
 The output should look like this:
@@ -68,18 +71,16 @@ Codecs:
  1  ED  4F71101 ZSTD  <-- NEW
 ```
 
-### Usage
+### Usage (plugin version)
 
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable
-  the bcj2 filter via `-m0=bcj`
-
+  the bcj2 filter via `-m0=bcj`, when using only the plugin dll's
 - so the usage should look like this:
 ```
-7z a archiv.7z -m0=bcj -m1=zstd -mx0   ...Fastest Mode, without BCJ preprocessor
-7z a archiv.7z -m0=bcj -m1=zstd -mx1   ...Fast mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=bcj -m1=zstd -mx1   Fast mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=bcj -m1=zstd -mx..  ...
-7z a archiv.7z -m0=bcj -m1=zstd -mx21  ...2nd Slowest Mode, with BCJ preprocessor on executables
-7z a archiv.7z -m0=bcj -m1=zstd -mx22  ...Ultra Mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=bcj -m1=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=bcj -m1=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
 ```
 
 ## Links
@@ -87,5 +88,9 @@ Codecs:
 - 7-Zip ZStandard Homepage: https://mcmilk.de/projects/7-Zip-zstd/dl/
 - Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
   - result, will not be included :(
+
+## Benchmarks with i7-3632QM cpu
+![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
+![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
 
 /TR 2016-08-15
