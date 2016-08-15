@@ -89,6 +89,7 @@ Codecs:
 - [7-Zip ZStandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
 - Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
   - result, will not be included :(
+- [Support me](https://www.paypal.me/TinoReichardt) - when you want
 
 ## Benchmarks with i7-3632QM cpu
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
