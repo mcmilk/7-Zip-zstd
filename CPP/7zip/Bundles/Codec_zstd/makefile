@@ -2,11 +2,6 @@ PROG = zstd.dll
 DEF_FILE = ../../Compress/Codec.def
 CFLAGS = $(CFLAGS)
 
-#EXPORTS
-#  CreateObject PRIVATE
-#  GetNumberOfMethods PRIVATE
-#  GetMethodProperty PRIVATE
-
 7ZIP_COMMON_OBJS = \
   $O\StreamUtils.obj \
 
