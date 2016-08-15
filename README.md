@@ -14,9 +14,10 @@ You can install it in two ways:
 
 ### Installation
 
-1. download the setup from here for 32 bit: [7z1602-zstd-x32.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x32.exe),
- or here for 64 bit [7z1602-zstd-x64.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x64.exe)
-2. install it
+1. download the setup from here [7z1602-zstd-x32.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x32.exe) (32 bit),
+ or here [7z1602-zstd-x64.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x64.exe) (64 bit)
+2. install it, like the default 7-Zip
+3. use it ;)
 
 ### Usage (full installation)
 
