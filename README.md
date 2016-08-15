@@ -1,4 +1,6 @@
 
+# README
+
 This is the Github Page of 7-Zip with support for **zstd**, short for
 Zstandard, which is a fast lossless compression algorithm, targeting
 real-time compression scenarios at zlib-level compression ratio.
@@ -12,23 +14,23 @@ You can install it in two ways:
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
 
-# 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
+## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
 
-## Installation
+### Installation
 
 1. download the setup from here https://mcmilk.de/projects/7-Zip-zstd/dl/
    - https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x32.exe
    - https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x64.exe
 2. install it
 
-## Usage
+### Usage
 
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
 
-# ZStandard codec Plugin for 7-Zip
+## ZStandard codec Plugin for 7-Zip
 
-## Installation
+### Installation
 
 1. download the codec archiv from https://mcmilk.de/projects/7-Zip-zstd/dl/Codecs.7z
 2. create a new directory named "Codecs"
@@ -66,7 +68,7 @@ Codecs:
  1  ED  4F71101 ZSTD  <-- NEW
 ```
 
-## Usage
+### Usage
 
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable
   the bcj2 filter via `-m0=bcj`
@@ -80,7 +82,7 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=zstd -mx22  ...Ultra Mode, with BCJ preprocessor on executables
 ```
 
-# Links
+## Links
 - ZStandard Homepage: https://github.com/Cyan4973/zstd
 - 7-Zip ZStandard Homepage: https://mcmilk.de/projects/7-Zip-zstd/dl/
 - Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
