@@ -39,6 +39,10 @@ cd %ROOT%\Bundles\SFXWin
 nmake %OPTS%
 copy AMD64\7z.sfx %OUTDIR%\7z.sfx
 
+cd %ROOT%\Bundles\Codec_zstd
+nmake %OPTS%
+copy AMD64\zstd.dll %OUTDIR%\zstd-x64.dll
+
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%
 copy AMD64\7zipInstall.exe %OUTDIR%\Install-x64.exe

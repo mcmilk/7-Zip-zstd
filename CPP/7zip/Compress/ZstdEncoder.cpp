@@ -24,8 +24,8 @@ CEncoder::CEncoder():
   _inSize (0),
   _inBufSizeAllocated (0),
   _outBufSizeAllocated (0),
-  _inBufSize (ZBUFF_recommendedCInSize()),
-  _outBufSize (ZBUFF_recommendedCOutSize()),
+  _inBufSize (ZBUFF_recommendedCInSize() * 30),
+  _outBufSize (ZBUFF_recommendedCOutSize() * 30),
   _inSizeProcessed (0),
   _outSizeProcessed (0)
 {

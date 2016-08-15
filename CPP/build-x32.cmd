@@ -39,6 +39,10 @@ cd %ROOT%\Bundles\SFXWin
 nmake %OPTS%
 copy O\7z.sfx %OUTDIR%\7z.sfx
 
+cd %ROOT%\Bundles\Codec_zstd
+nmake %OPTS%
+copy O\zstd.dll %OUTDIR%\zstd-x32.dll
+
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%
 copy O\7zipInstall.exe %OUTDIR%\Install-x32.exe

@@ -31,8 +31,8 @@ CDecoder::CDecoder ():
   _inBufSizeAllocated (0),
   _outBufSizeAllocated (0),
 
-  _inBufSize (ZBUFF_recommendedDInSize()),
-  _outBufSize (ZBUFF_recommendedDOutSize())
+  _inBufSize (ZBUFF_recommendedDInSize() * 30),
+  _outBufSize (ZBUFF_recommendedDOutSize()* 30)
 {
   _props.clear ();
 }
