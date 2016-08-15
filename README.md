@@ -71,7 +71,7 @@ Codecs:
  1  ED  4F71101 ZSTD  <-- NEW
 ```
 
-### Usage (plugin version)
+### Usage (codec plugin)
 
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable
   the bcj2 filter via `-m0=bcj`, when using only the plugin dll's
