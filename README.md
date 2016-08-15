@@ -6,6 +6,7 @@ Zstandard, which is a fast lossless compression algorithm, targeting
 real-time compression scenarios at zlib-level compression ratio.
 
 You can install it in two ways:
+
 1. A full setup with ZStandard additions within the GUI and an modified
    Explorer context menu
 2. just the codec plugin, which goes to your existing 7-Zip installation
