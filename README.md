@@ -96,5 +96,8 @@ Codecs:
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
 
+## License and redistribution
 
-/TR 2016-08-15
+- the same as the original 7-Zip, which means GNU LGPL
+
+/TR 2016-08-16
