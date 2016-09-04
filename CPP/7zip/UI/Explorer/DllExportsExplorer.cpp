@@ -28,8 +28,8 @@
 static LPCTSTR k_ShellExtName = TEXT("7-Zip Shell Extension");
 static LPCTSTR k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
 
-// {23170F69-40C1-278A-1000-000100020000}
-static LPCTSTR k_Clsid = TEXT("{23170F69-40C1-278A-1000-000100020000}");
+// {23170F69-40C1-0803-0409-000100020000}
+static LPCTSTR k_Clsid = TEXT("{23170F69-40C1-0803-0409-000100020000}");
 
 DEFINE_GUID(CLSID_CZipContextMenu,
     k_7zip_GUID_Data1,

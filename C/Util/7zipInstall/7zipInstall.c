@@ -24,9 +24,9 @@
 
 #include "resource.h"
 
-static const WCHAR *k_7zip = L"7-Zip";
+static const WCHAR *k_7zip = L"7-Zip-ZStandard";
 
-static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip";
+static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip-ZStandard";
 
 // #define _64BIT_INSTALLER 1
 
@@ -68,7 +68,7 @@ static const WCHAR *k_Reg_Path32 = L"Path"
   #define k_Reg_WOW_Flag_32 0
 #endif
 
-#define k_7zip_CLSID L"{23170F69-40C1-278A-1000-000100020000}"
+#define k_7zip_CLSID L"{23170F69-40C1-0803-0409-000100020000}"
 
 static const WCHAR *k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
 static const WCHAR *k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
@@ -478,9 +478,9 @@ static const WCHAR *FindSubString(const WCHAR *s1, const char *s2)
 static void Set7zipPostfix(WCHAR *s)
 {
   NormalizePrefix(s);
-  if (FindSubString(s, "7-Zip"))
+  if (FindSubString(s, "7-Zip-ZStandard"))
     return;
-  wcscat(s, L"7-Zip\\");
+  wcscat(s, L"7-Zip-ZStandard\\");
 }
     
 
@@ -763,7 +763,7 @@ static void WriteShellEx()
   for (i = 0; i < sizeof(k_ShellEx_Items) / sizeof(k_ShellEx_Items[0]); i++)
   {
     wcscpy(destPath, k_ShellEx_Items[i]);
-    wcscat(destPath, L"\\7-Zip");
+    wcscat(destPath, L"\\7-Zip-ZStandard");
 
     #ifdef _64BIT_INSTALLER
     MyRegistry_CreateKeyAndVal_32(HKEY_CLASSES_ROOT, destPath, NULL, k_7zip_CLSID);
@@ -794,7 +794,7 @@ static void WriteShellEx()
   
   {
     HKEY destKey = 0;
-    LONG res = MyRegistry_CreateKey(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip", &destKey);
+    LONG res = MyRegistry_CreateKey(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip-ZStandard", &destKey);
     if (res == ERROR_SUCCESS)
     {
       // wcscpy(destPath, path);

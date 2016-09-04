@@ -1,6 +1,6 @@
 @echo on
 
-set ROOT=Z:\projekte\7zip-ZStd\git\CPP\7zip
+set ROOT=Z:\projekte\7zip-zstd\7-Zip-zstd\CPP\7zip
 set OUTDIR=%ROOT%\bin32
 mkdir %OUTDIR%
 
@@ -23,17 +23,21 @@ cd %ROOT%\UI\GUI
 nmake %OPTS%
 copy O\7zG.exe %OUTDIR%\7zG.exe
 
+cd %ROOT%\UI\Explorer
+nmake %OPTS%
+copy AMD64\7-zip.dll %OUTDIR%\7-zip.dll
+
 cd %ROOT%\Bundles\SFXWin
 nmake %OPTS%
 copy O\7z.sfx %OUTDIR%\7z.sfx
 
 cd %ROOT%\Bundles\Codec_zstd
 nmake %OPTS%
-copy O\zstd.dll %OUTDIR%\zstd-x32.dll
+copy O\zstd.dll %OUTDIR%\zstd-x32min.dll
 
 cd %ROOT%\Bundles\Codec_zstdF
 nmake %OPTS%
-copy O\zstd.dll %OUTDIR%\zstd-x32big.dll
+copy O\zstd.dll %OUTDIR%\zstd-x32.dll
 
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%

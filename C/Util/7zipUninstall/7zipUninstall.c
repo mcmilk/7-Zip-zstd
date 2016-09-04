@@ -38,7 +38,7 @@
 
 // static const WCHAR *k_7zip_with_Ver_str = k_7zip_with_Ver;
 
-static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip";
+static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip-ZStandard";
 
 static const WCHAR *k_Reg_Path = L"Path";
  
@@ -62,7 +62,7 @@ static const WCHAR *k_Reg_Path32 = L"Path"
   #define k_Reg_WOW_Flag_32 0
 #endif
 
-#define k_7zip_CLSID L"{23170F69-40C1-278A-1000-000100020000}"
+#define k_7zip_CLSID L"{23170F69-40C1-0803-0409-000100020000}"
 
 static const WCHAR *k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
 static const WCHAR *k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
@@ -295,7 +295,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
       continue;
 
     NormalizePrefix(link);
-    wcscat(link, L"7-Zip\\");
+    wcscat(link, L"7-Zip-ZStandard\\");
     
     {
       const size_t baseLen = wcslen(link);
@@ -344,7 +344,7 @@ static const WCHAR *k_Shell_Approved = L"Software\\Microsoft\\Windows\\CurrentVe
 
 static const WCHAR *k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\7zFM.exe";
 #define k_REG_Uninstall L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
-static const WCHAR *k_Uninstall_7zip = k_REG_Uninstall L"7-Zip";
+static const WCHAR *k_Uninstall_7zip = k_REG_Uninstall L"7-Zip-ZStandard";
 
 
 static Bool AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix, const wchar_t *name)
@@ -374,7 +374,7 @@ static void WriteCLSID()
         {
           WCHAR destPath[MAX_PATH];
           wcscpy(destPath, k_ShellEx_Items[i]);
-          wcscat(destPath, L"\\7-Zip");
+          wcscat(destPath, L"\\7-Zip-ZStandard");
           
           MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, destPath);
         }
@@ -411,7 +411,7 @@ static void WriteCLSID()
         {
           WCHAR destPath[MAX_PATH];
           wcscpy(destPath, k_ShellEx_Items[i]);
-          wcscat(destPath, L"\\7-Zip");
+          wcscat(destPath, L"\\7-Zip-ZStandard");
           
           MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, destPath);
         }
