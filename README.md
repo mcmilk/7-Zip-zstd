@@ -13,12 +13,50 @@ You can install it in two ways:
 
 ## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
 
-### Installation
+### Installation (via setup)
 
 1. download the setup from here [7z1602-zstd-x32.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x32.exe)
  (32 bit) or here [7z1602-zstd-x64.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x64.exe) (64 bit)
 2. install it, like the default 7-Zip
 3. use it ;)
+4. you may check, if the 7-Zip can deal with ZStandard via this command: `7z.exe i`
+
+The output should look like this:
+```
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-06-12
+
+
+Libs:
+ 0  c:\Program Files\7-Zip-ZStandard\7z.dll
+
+...
+
+Codecs:
+ 0 4ED  303011B BCJ2
+ 0  ED  3030103 BCJ
+ 0  ED  3030205 PPC
+ 0  ED  3030401 IA64
+ 0  ED  3030501 ARM
+ 0  ED  3030701 ARMT
+ 0  ED  3030805 SPARC
+ 0  ED    20302 Swap2
+ 0  ED    20304 Swap4
+ 0  ED    40202 BZip2
+ 0  ED        0 Copy
+ 0  ED    40109 Deflate64
+ 0  ED    40108 Deflate
+ 0  ED        3 Delta
+ 0  ED       21 LZMA2
+ 0  ED    30101 LZMA
+ 0  ED    30401 PPMD
+ 0   D    40301 Rar1
+ 0   D    40302 Rar2
+ 0   D    40303 Rar3
+ 0   D    40305 Rar5
+ 0  ED  4F71101 ZSTD  <-- NEW
+ 0  ED  6F10701 7zAES
+ 0  ED  6F00181 AES256CBC
+```
 
 ### Usage (full installation)
 
@@ -35,7 +73,7 @@ You can install it in two ways:
 
 ## ZStandard codec Plugin for 7-Zip
 
-### Installation
+### Installation (via plugin)
 
 1. download the codec archiv from https://mcmilk.de/projects/7-Zip-zstd/dl/Codecs.7z
 2. create a new directory named "Codecs"
@@ -46,8 +84,16 @@ You can install it in two ways:
 
 The output should look like this:
 ```
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-06-12
+
+
+Libs:
+ 0  c:\Program Files\7-Zip\7z.dll
+ 1  c:\Program Files\7-Zip\Codecs\zstd-x64.dll
+
+...
+
 Codecs:
- 0  ED    40202 BZip2
  0 4ED  303011B BCJ2
  0  ED  3030103 BCJ
  0  ED  3030205 PPC
@@ -57,6 +103,7 @@ Codecs:
  0  ED  3030805 SPARC
  0  ED    20302 Swap2
  0  ED    20304 Swap4
+ 0  ED    40202 BZip2
  0  ED        0 Copy
  0  ED    40109 Deflate64
  0  ED    40108 Deflate
@@ -64,12 +111,12 @@ Codecs:
  0  ED       21 LZMA2
  0  ED    30101 LZMA
  0  ED    30401 PPMD
+ 0   D    40301 Rar1
+ 0   D    40302 Rar2
+ 0   D    40303 Rar3
+ 0   D    40305 Rar5
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
- 1   D    40301 Rar1
- 1   D    40302 Rar2
- 1   D    40303 Rar3
- 1   D    40305 Rar5
  1  ED  4F71101 ZSTD  <-- NEW
 ```
 
@@ -100,4 +147,5 @@ Codecs:
 
 - the same as the original 7-Zip, which means GNU LGPL
 
-/TR 2016-08-16
+
+/TR 2016-09-04 (ZStandard Version 1.0.1)

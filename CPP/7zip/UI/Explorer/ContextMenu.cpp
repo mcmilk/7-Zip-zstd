@@ -768,7 +768,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       mi.fMask |= MIIM_CHECKMARKS;
     mi.wID = currentCommandID++;
     mi.hSubMenu = popupMenu.Detach();
-    mi.StringValue.SetFromAscii("7-Zip"); // LangString(IDS_CONTEXT_POPUP_CAPTION);
+    mi.StringValue.SetFromAscii("7-Zip-ZStandard"); // LangString(IDS_CONTEXT_POPUP_CAPTION);
     mi.hbmpUnchecked = bitmap;
     
     CMenu menu;

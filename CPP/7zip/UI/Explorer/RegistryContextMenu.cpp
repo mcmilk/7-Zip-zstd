@@ -17,14 +17,14 @@ using namespace NRegistry;
 // CLISID (and Approved ?) items are separated for 32-bit and 64-bit code.
 // shellex items shared by 32-bit and 64-bit code?
 
-static LPCTSTR k_Clsid = TEXT("{23170F69-40C1-278A-1000-000100020000}");
+static LPCTSTR k_Clsid = TEXT("{23170F69-40C1-278A-1000-000100020001}");
 static LPCTSTR k_ShellExtName = TEXT("7-Zip Shell Extension");
 
 static LPCTSTR k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
 static LPCTSTR k_Inproc = TEXT("InprocServer32");
 
-static LPCTSTR k_KeyPostfix_ContextMenu = TEXT("\\shellex\\ContextMenuHandlers\\7-Zip");
-static LPCTSTR k_KeyPostfix_DragDrop    = TEXT("\\shellex\\DragDropHandlers\\7-Zip");
+static LPCTSTR k_KeyPostfix_ContextMenu = TEXT("\\shellex\\ContextMenuHandlers\\7-Zip-ZStandard");
+static LPCTSTR k_KeyPostfix_DragDrop    = TEXT("\\shellex\\DragDropHandlers\\7-Zip-ZStandard");
 
 static LPCTSTR k_KeyName_File      = TEXT("*");
 static LPCTSTR k_KeyName_Folder    = TEXT("Folder");
