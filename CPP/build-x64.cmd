@@ -11,21 +11,9 @@ cd %ROOT%\Bundles\Format7z
 nmake %OPTS%
 copy AMD64\7za.dll %OUTDIR%\7za.dll
 
-cd %ROOT%\Bundles\Format7zExtract
-nmake %OPTS%
-copy AMD64\7zxa.dll %OUTDIR%\7zxa.dll
-
-cd %ROOT%\Bundles\Format7zExtractR
-nmake %OPTS%
-copy AMD64\7zxr.dll %OUTDIR%\7zxr.dll
-
 cd %ROOT%\Bundles\Format7zF
 nmake %OPTS%
 copy AMD64\7z.dll %OUTDIR%\7z.dll
-
-cd %ROOT%\Bundles\Format7zR
-nmake %OPTS%
-copy AMD64\7zra.dll %OUTDIR%\7zra.dll
 
 cd %ROOT%\UI\FileManager
 nmake %OPTS%
@@ -42,6 +30,10 @@ copy AMD64\7z.sfx %OUTDIR%\7z.sfx
 cd %ROOT%\Bundles\Codec_zstd
 nmake %OPTS%
 copy AMD64\zstd.dll %OUTDIR%\zstd-x64.dll
+
+cd %ROOT%\Bundles\Codec_zstdf
+nmake %OPTS%
+copy AMD64\zstd.dll %OUTDIR%\zstd-x64big.dll
 
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%

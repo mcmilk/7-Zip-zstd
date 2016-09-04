@@ -1,7 +1,7 @@
 PROG = 7z.dll
 DEF_FILE = ../../Archive/Archive2.def
 CFLAGS = $(CFLAGS) \
-  -DEXTERNAL_CODECS -DZSTD_LEGACY \
+  -DEXTERNAL_CODECS -DZSTD_LEGACY_SUPPORT \
 
 !IFNDEF UNDER_CE
 CFLAGS = $(CFLAGS) -D_7ZIP_LARGE_PAGES
@@ -21,10 +21,9 @@ AR_OBJS = $(AR_OBJS) \
 ZSTD_OBJS = $(ZSTD_OBJS) \
   $O\fse_compress.obj \
   $O\huf_compress.obj \
-  $O\zbuff_compress.obj \
   $O\zstd_compress.obj \
-  $O\zstd_v07.obj \
-  $O\zstd_v06.obj \
   $O\zstd_v05.obj \
+  $O\zstd_v06.obj \
+  $O\zstd_v07.obj \
 
 !include "../../7zip.mak"

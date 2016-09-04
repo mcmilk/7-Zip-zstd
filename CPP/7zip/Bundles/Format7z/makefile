@@ -1,8 +1,6 @@
 PROG = 7za.dll
 DEF_FILE = ../../Archive/Archive2.def
 CFLAGS = $(CFLAGS)
-#  -DDEFLATE_EXTRACT_ONLY \
-#  -DBZIP2_EXTRACT_ONLY \
 
 COMMON_OBJS = \
   $O\CRC.obj \
@@ -142,7 +140,6 @@ C_OBJS = \
 ZSTD_OBJS = $(ZSTD_OBJS) \
   $O\fse_compress.obj \
   $O\huf_compress.obj \
-  $O\zbuff_compress.obj \
   $O\zstd_compress.obj \
 
 !include "../../7zip.mak"
