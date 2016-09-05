@@ -29,9 +29,6 @@ CDecoder::~CDecoder()
 
   MyFree(_buffIn);
   MyFree(_buffOut);
-
-  _buffInSizeAllocated = 0;
-  _buffOutSizeAllocated = 0;
 }
 
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
@@ -66,13 +63,28 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
     return E_FAIL;
   if (pProps->_ver_minor != ZSTD_VERSION_MINOR)
     return E_FAIL;
-
 #endif
 
   memcpy(&_props, pProps, sizeof (DProps));
   _propsWereSet = true;
 
   return S_OK;
+}
+
+HRESULT CDecoder::ErrorOut(size_t code)
+{
+  const char *strError = ZSTD_getErrorName(code);
+  size_t strErrorLen = strlen(strError) + 1;
+  wchar_t *wstrError = (wchar_t *)MyAlloc(sizeof(wchar_t) * strErrorLen);
+
+  if (!wstrError)
+    return E_FAIL;
+
+  mbstowcs(wstrError, strError, strErrorLen - 1);
+  MessageBoxW(0, wstrError, L"7-Zip ZStandard", MB_ICONERROR | MB_OK);
+  MyFree(wstrError);
+
+  return E_FAIL;
 }
 
 HRESULT CDecoder::CreateDecompressor()
@@ -90,13 +102,12 @@ HRESULT CDecoder::CreateDecompressor()
 
   result = ZSTD_initDStream(_dstream);
   if (ZSTD_isError(result))
-    return E_FAIL;
+    return ErrorOut(result);
 
   /* allocate buffers */
   if (_buffInSizeAllocated != _buffInSize)
   {
-    if (_buffIn)
-      MyFree(_buffIn);
+    MyFree(_buffIn);
     _buffIn = MyAlloc(_buffInSize);
 
     if (!_buffIn)
@@ -106,8 +117,7 @@ HRESULT CDecoder::CreateDecompressor()
 
   if (_buffOutSizeAllocated != _buffOutSize)
   {
-    if (_buffOut)
-      MyFree(_buffOut);
+    MyFree(_buffOut);
     _buffOut = MyAlloc(_buffOutSize);
 
     if (!_buffOut)
@@ -168,15 +178,21 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream, ISequentialOutStream 
     for (;;) {
       ZSTD_outBuffer output = { _buffOut, _buffOutSize, 0 };
       result = ZSTD_decompressStream(_dstream, &output , &input);
+      #if 0
+      printf("%s in=%d out=%d result=%d in.pos=%d in.size=%d\n", __FUNCTION__,
+        InSize, output.pos, result, input.pos, input.size);
+      fflush(stdout);
+      #endif
       if (ZSTD_isError(result))
-        return S_FALSE;
+        return ErrorOut(result);
+
       /* write decompressed stream and update progress */
       RINOK(WriteStream(outStream, _buffOut, output.pos));
       _processedOut += output.pos;
       RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
 
       /* one more round */
-      if ((input.pos == input.size) && (result == 1))
+      if ((input.pos == input.size) && (result == 1) && output.pos)
         continue;
 
       /* finished */
@@ -236,7 +252,7 @@ STDMETHODIMP CDecoder::Read(void *data, UInt32 /*size*/, UInt32 *processedSize)
       ZSTD_outBuffer output = { dataout, _buffOutSize, 0 };
       result = ZSTD_decompressStream(_dstream, &output , &input);
       if (ZSTD_isError(result))
-        return S_FALSE;
+        return ErrorOut(result);
 
       if (processedSize)
         *processedSize += static_cast < UInt32 > (output.pos);
@@ -244,7 +260,7 @@ STDMETHODIMP CDecoder::Read(void *data, UInt32 /*size*/, UInt32 *processedSize)
       dataout += output.pos;
 
       /* one more round */
-      if ((input.pos == input.size) && (result == 1))
+      if ((input.pos == input.size) && (result == 1) && output.pos)
         continue;
 
       /* finished */

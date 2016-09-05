@@ -27,8 +27,6 @@ CEncoder::~CEncoder()
 
   MyFree(_buffIn);
   MyFree(_buffOut);
-  _buffIn = 0;
-  _buffOut = 0;
 }
 
 STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps)
