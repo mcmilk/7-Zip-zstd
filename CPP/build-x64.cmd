@@ -1,6 +1,6 @@
 @echo on
 
-set ROOT=Z:\projekte\7zip-zstd\7-Zip-zstd\CPP\7zip
+set ROOT=%cd%\7zip
 set OUTDIR=%ROOT%\bin64
 mkdir %OUTDIR%
 
