@@ -129,9 +129,9 @@ HRESULT CZipContextMenu::InitContextMenu(const wchar_t * /* folder */, const wch
 /////////////////////////////
 // IContextMenu
 
-static LPCWSTR kMainVerb = L"SevenZip";
-static LPCWSTR kOpenCascadedVerb = L"SevenZip.OpenWithType.";
-static LPCWSTR kCheckSumCascadedVerb = L"SevenZip.Checksum";
+static LPCWSTR kMainVerb = L"SevenZipZS";
+static LPCWSTR kOpenCascadedVerb = L"SevenZipZS.OpenWithType.";
+static LPCWSTR kCheckSumCascadedVerb = L"SevenZipZS.Checksum";
 
 /*
 static LPCTSTR kOpenVerb = TEXT("SevenOpen");
@@ -768,7 +768,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       mi.fMask |= MIIM_CHECKMARKS;
     mi.wID = currentCommandID++;
     mi.hSubMenu = popupMenu.Detach();
-    mi.StringValue.SetFromAscii("7-Zip-ZStandard"); // LangString(IDS_CONTEXT_POPUP_CAPTION);
+    mi.StringValue.SetFromAscii("7-Zip ZStandard"); // LangString(IDS_CONTEXT_POPUP_CAPTION);
     mi.hbmpUnchecked = bitmap;
     
     CMenu menu;
@@ -804,7 +804,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         mi.fMask |= MIIM_CHECKMARKS;
       mi.wID = currentCommandID++;
       mi.hSubMenu = subMenu;
-      mi.StringValue.SetFromAscii("CRC SHA");
+      mi.StringValue.SetFromAscii("CRC SHA ZS");
       mi.hbmpUnchecked = bitmap;
       
       CMenu menu;

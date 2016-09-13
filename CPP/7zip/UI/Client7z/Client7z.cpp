@@ -33,7 +33,7 @@ HINSTANCE g_hInstance = 0;
 
 // Tou can find the list of all GUIDs in Guid.txt file.
 // use another CLSIDs, if you want to support other formats (zip, rar, ...).
-// {23170F69-40C1-278A-1000-000110070000}
+// {23170F69-0803-278A-1000-000110070000}
 
 DEFINE_GUID(CLSID_CFormat7z,
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00);
