@@ -14,9 +14,7 @@ You can install it in two ways:
 ## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
 
 ### Installation (via setup)
-
-1. download the setup from here [7z1602-zstd-x32.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x32.exe)
- (32 bit) or here [7z1602-zstd-x64.exe](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1602-zstd-x64.exe) (64 bit)
+1. download the setup from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases)
 2. install it, like the default 7-Zip
 3. use it ;)
 4. you may check, if the 7-Zip can deal with ZStandard via this command: `7z.exe i`
@@ -29,6 +27,13 @@ The output should look like this:
 Libs:
  0  c:\Program Files\7-Zip-ZStandard\7z.dll
 
+Formats:
+...
+ 0 CK            xz       xz txz (.tar) FD 7 z X Z 00
+ 0               Z        z taz (.tar)  1F 9D
+ 0 CK            zstd     zst tzstd (.tar) 0 x F D 2 F B 5 2 5 . . 0 x F D 2 F B 5 2 8 00
+ 0 C   F         7z       7z            7 z BC AF ' 1C
+ 0     F         Cab      cab           M S C F 00 00 00 00
 ...
 
 Codecs:
@@ -66,6 +71,9 @@ Codecs:
 7z a archiv.7z -m0=zstd -mx..  ...
 7z a archiv.7z -m0=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
+
+rem show contents of test.tar.zst:
+7z x -so test.tar.zst | 7z l -si -ttar
 ```
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
@@ -131,6 +139,7 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=bcj -m1=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
 ```
+- you can only create .7z files with zstd compression, but you can not create .zst files :/
 
 ## Links
 - [ZStandard Homepage](https://github.com/Cyan4973/zstd)
@@ -139,13 +148,13 @@ Codecs:
   - result, will not be included :(
 - [Support me](https://www.paypal.me/TinoReichardt) - when you want
 
-## Benchmarks with i7-3632QM cpu
+## Benchmarks with i7-3632QM
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
 
 ## License and redistribution
 
-- the same as the original 7-Zip, which means GNU LGPL
+- the same as the original 7-Zip, which means GNU GPL
 
 
-/TR 2016-09-04 (ZStandard Version 1.0.1)
+/TR 2016-09-15 (ZStandard Version 1.0.1, 7-Zip Version 16.02)
