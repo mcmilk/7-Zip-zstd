@@ -16,8 +16,7 @@ CDecoder::CDecoder():
   _buffInSize(ZSTD_DStreamInSize()),
   _buffOutSize(ZSTD_DStreamOutSize()*4),
   _processedIn(0),
-  _processedOut(0),
-  _propsWereSet(false)
+  _processedOut(0)
 {
   _props.clear();
 }
@@ -66,7 +65,6 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 #endif
 
   memcpy(&_props, pProps, sizeof (DProps));
-  _propsWereSet = true;
 
   return S_OK;
 }
@@ -90,9 +88,6 @@ HRESULT CDecoder::ErrorOut(size_t code)
 HRESULT CDecoder::CreateDecompressor()
 {
   size_t result;
-
-  if (!_propsWereSet)
-    return E_FAIL;
 
   if (!_dstream) {
     _dstream = ZSTD_createDStream();
@@ -198,6 +193,13 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream, ISequentialOutStream 
       /* finished */
       if (input.pos == input.size)
         break;
+
+      /* end of frame */
+      if (result == 0) {
+        result = ZSTD_initDStream(_dstream);
+        if (ZSTD_isError(result))
+          return ErrorOut(result);
+      }
     }
   }
 }
@@ -266,6 +268,13 @@ STDMETHODIMP CDecoder::Read(void *data, UInt32 /*size*/, UInt32 *processedSize)
       /* finished */
       if (input.pos == input.size)
         break;
+
+      /* end of frame */
+      if (result == 0) {
+        result = ZSTD_initDStream(_dstream);
+        if (ZSTD_isError(result))
+          return ErrorOut(result);
+      }
     }
   }
 }

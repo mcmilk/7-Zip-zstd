@@ -49,7 +49,6 @@ class CDecoder:public ICompressCoder,
   CMyComPtr < ISequentialInStream > _inStream;
 
   DProps _props;
-  bool _propsWereSet;
 
   ZSTD_DStream *_dstream;
   void *_buffIn;

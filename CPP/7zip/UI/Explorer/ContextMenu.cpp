@@ -804,7 +804,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         mi.fMask |= MIIM_CHECKMARKS;
       mi.wID = currentCommandID++;
       mi.hSubMenu = subMenu;
-      mi.StringValue.SetFromAscii("CRC SHA ZS");
+      mi.StringValue.SetFromAscii("CRC SHA ZStandard");
       mi.hbmpUnchecked = bitmap;
       
       CMenu menu;

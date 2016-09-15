@@ -90,6 +90,7 @@ AR_OBJS = \
   $O\XarHandler.obj \
   $O\XzHandler.obj \
   $O\ZHandler.obj \
+  $O\ZstdHandler.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
