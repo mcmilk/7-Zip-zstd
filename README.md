@@ -83,7 +83,7 @@ rem show contents of test.tar.zst:
 
 ### Installation (via plugin)
 
-1. download the codec archiv from https://mcmilk.de/projects/7-Zip-zstd/dl/Codecs.7z
+1. download the codec archiv from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases)
 2. create a new directory named "Codecs"
 3. put in there the zstd-x32.dll or the zstd-x64.dll, depending on your 7-Zip installation
    - normally, the x32 should go to: "C:\Program Files (x86)\7-Zip\Codecs"
