@@ -4,6 +4,8 @@
 This is the Github Page of 7-Zip with support for **zstd**, short for
 Zstandard, which is a fast lossless compression algorithm, targeting
 real-time compression scenarios at zlib-level compression ratio.
+LZ4 and LZ5 compression is also on the way, you can see some first
+coding for it here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
 
 You can install it in two ways:
 
