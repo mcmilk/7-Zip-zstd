@@ -175,7 +175,7 @@ static const CCommandInfo k_Commands[kNumCmds] =
   { 0 }, // "BringToFront" },
   { 2 }, // "SetDetailsView" },
   { 2 }, // "SetFileAttributes" },
-  { 2 }, // CreateDirectory, SetOutPath
+  { 3 }, // CreateDirectory, SetOutPath
   { 3 }, // "IfFileExists" },
   { 3 }, // SetRebootFlag, ...
   { 4 }, // "If" }, // IfAbort, IfSilent, IfErrors, IfRebootFlag
@@ -1395,7 +1395,7 @@ void CInArchive::AddRegRoot(UInt32 val)
   Script += s;
 }
 
-static const char *g_WinAttrib[] =
+static const char * const g_WinAttrib[] =
 {
     "READONLY"
   , "HIDDEN"
@@ -3362,6 +3362,11 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         #ifdef NSIS_SCRIPT
         s += isSetOutPath ? "SetOutPath" : "CreateDirectory";
         AddParam(params[0]);
+        if (params[2] != 0)
+        {
+          SmallSpaceComment();
+          s += "CreateRestrictedDirectory";
+        }
         #endif
         
         break;
@@ -3378,11 +3383,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
               params[2] == 0 &&
               params[3] == 0)
           {
-            if (IsVarStr(params[1], kVar_OUTDIR))
-            {
-              spec_outdir_U = UPrefixes.Back(); // outdir_U;
-              spec_outdir_A = APrefixes.Back();// outdir_A;
-            }
+            spec_outdir_U = UPrefixes.Back(); // outdir_U;
+            spec_outdir_A = APrefixes.Back(); // outdir_A;
           }
         }
 
@@ -5045,6 +5047,9 @@ HRESULT CInArchive::Parse()
 
   DetectNsisType(bhEntries, _data + bhEntries.Offset);
 
+  Decoder.IsNsisDeflate = (NsisType != k_NsisType_Nsis3);
+
+
   #ifdef NSIS_SCRIPT
 
   {
@@ -5606,6 +5611,9 @@ HRESULT CInArchive::Open2(const Byte *sig, size_t size)
   Decoder.Method = Method;
   Decoder.FilterFlag = FilterFlag;
   Decoder.Solid = IsSolid;
+  
+  Decoder.IsNsisDeflate = true; // we need some smart check that NSIS is not NSIS3 here.
+  
   Decoder.InputStream = _stream;
   Decoder.Buffer.Alloc(kInputBufSize);
   Decoder.StreamPos = 0;

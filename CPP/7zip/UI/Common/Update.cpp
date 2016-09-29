@@ -251,8 +251,6 @@ STDMETHODIMP COutMultiVolStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *n
 
 STDMETHODIMP COutMultiVolStream::SetSize(UInt64 newSize)
 {
-  if (newSize < 0)
-    return E_INVALIDARG;
   unsigned i = 0;
   while (i < Streams.Size())
   {
@@ -1108,14 +1106,11 @@ HRESULT UpdateArchive(
 
       RINOK(callback->StartOpenArchive(arcPath));
 
-      HRESULT result = arcLink.Open3(op, openCallback);
+      HRESULT result = arcLink.Open_Strict(op, openCallback);
 
       if (result == E_ABORT)
         return result;
       
-      if (result == S_OK && arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
-        result = S_FALSE;
-
       HRESULT res2 = callback->OpenResult(codecs, arcLink, arcPath, result);
       /*
       if (result == S_FALSE)

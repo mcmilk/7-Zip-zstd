@@ -767,7 +767,7 @@ static void ParseNumberString(const UString &s, NCOM::CPropVariant &prop)
 
 HRESULT Benchmark(
     DECL_EXTERNAL_CODECS_LOC_VARS
-    const CObjectVector<CProperty> props, HWND hwndParent)
+    const CObjectVector<CProperty> &props, HWND hwndParent)
 {
   CThreadBenchmark benchmarker;
   #ifdef EXTERNAL_CODECS

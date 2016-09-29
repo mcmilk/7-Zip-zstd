@@ -1068,7 +1068,7 @@ HRESULT ListArchives(CCodecs *codecs,
       g_StdOut << endl << kListing << arcPath << endl << endl;
     }
     
-    HRESULT result = arcLink.Open3(options, &openCallback);
+    HRESULT result = arcLink.Open_Strict(options, &openCallback);
 
     if (result != S_OK)
     {
@@ -1095,9 +1095,6 @@ HRESULT ListArchives(CCodecs *codecs,
     }
     
     {
-      if (arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
-        numErrors++;
-      
       FOR_VECTOR (r, arcLink.Arcs)
       {
         const CArcErrorInfo &arc = arcLink.Arcs[r].ErrorInfo;

@@ -276,7 +276,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       EXTERNAL_CODECS_VARS
       m_Items, updateItems, outStream,
       m_Archive.IsOpen() ? &m_Archive : NULL, _removeSfxBlock,
-      &options, callback);
+      options, callback);
  
   COM_TRY_END2
 }

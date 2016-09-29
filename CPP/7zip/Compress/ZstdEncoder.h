@@ -4,6 +4,7 @@
 #define ZSTD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/ZStd/zstd.h"
+#include "../../../C/ZStd/zstdmt.h"
 
 #include "../../Common/Common.h"
 #include "../../Common/MyCom.h"
@@ -39,21 +40,22 @@ class CEncoder:
 {
   CProps _props;
 
-  ZSTD_CStream *_cstream;
-  void *_buffIn;
-  void *_buffOut;
-  size_t _buffInSize;
-  size_t _buffOutSize;
   UInt64 _processedIn;
   UInt64 _processedOut;
+  UInt32 _inputSize;
+  UInt32 _numThreads;
 
-  HRESULT CreateCompressor();
+  int MyRead(void *arg, ZSTDMT_Buffer * in);
+  int MyWrite(void *arg, ZSTDMT_Buffer * out);
+
+  HRESULT CEncoder::ErrorOut(size_t code);
 
 public:
   MY_UNKNOWN_IMP2 (ICompressSetCoderProperties, ICompressWriteCoderProperties)
   STDMETHOD (Code) (ISequentialInStream *inStream, ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
   STDMETHOD (SetCoderProperties) (const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
   STDMETHOD (WriteCoderProperties) (ISequentialOutStream *outStream);
+  STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads);
 
   CEncoder();
   virtual ~CEncoder();

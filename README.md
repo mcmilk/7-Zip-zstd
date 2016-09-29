@@ -159,4 +159,4 @@ Codecs:
 - the same as the original 7-Zip, which means GNU GPL
 
 
-/TR 2016-09-15 (ZStandard Version 1.0.1, 7-Zip Version 16.02)
+/TR 2016-09-29 (ZStandard Version 1.1.0, 7-Zip Version 16.03)

@@ -43,7 +43,7 @@ CEnumFormatEtc::CEnumFormatEtc(const FORMATETC *pFormatEtc, ULONG numFormats)
   m_Index = 0;
   m_NumFormats = 0;
   m_Formats = new FORMATETC[numFormats];
-  if (m_Formats)
+  // if (m_Formats)
   {
     m_NumFormats = numFormats;
     for (ULONG i = 0; i < numFormats; i++)

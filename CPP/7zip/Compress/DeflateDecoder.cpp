@@ -8,9 +8,9 @@ namespace NCompress {
 namespace NDeflate {
 namespace NDecoder {
 
-CCoder::CCoder(bool deflate64Mode, bool deflateNSIS):
+CCoder::CCoder(bool deflate64Mode):
     _deflate64Mode(deflate64Mode),
-    _deflateNSIS(deflateNSIS),
+    _deflateNSIS(false),
     _keepHistory(false),
     _needFinishInput(false),
     _needInitInStream(true),

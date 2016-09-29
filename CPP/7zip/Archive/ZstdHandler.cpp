@@ -355,7 +355,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
   return _props.SetProperties(names, values, numProps);
 }
 
-static const Byte k_Signature[] = "0xFD2FB525 .. 0xFD2FB528";
+static const Byte k_Signature[] = "0xFD2FB525..0xFD2FB528";
 
 REGISTER_ARC_IO(
   "zstd", "zst tzstd", "* .tar", 0x0e,

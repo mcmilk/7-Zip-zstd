@@ -359,13 +359,10 @@ HRESULT Extract(
     op.stream = NULL;
     op.filePath = arcPath;
 
-    HRESULT result = arcLink.Open3(op, openCallback);
+    HRESULT result = arcLink.Open_Strict(op, openCallback);
 
     if (result == E_ABORT)
       return result;
-
-    if (result == S_OK && arcLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
-      result = S_FALSE;
 
     // arcLink.Set_ErrorsText();
     RINOK(extractCallback->OpenResult(codecs, arcLink, arcPath, result));

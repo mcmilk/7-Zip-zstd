@@ -396,8 +396,7 @@ static HANDLE MyOpenFilePluginW(const wchar_t *name)
       agent,
       (const wchar_t *)archiveType
       );
-  if (!plugin)
-    return INVALID_HANDLE_VALUE;
+
   plugin->PasswordIsDefined = openArchiveCallbackSpec->PasswordIsDefined;
   plugin->Password = openArchiveCallbackSpec->Password;
 

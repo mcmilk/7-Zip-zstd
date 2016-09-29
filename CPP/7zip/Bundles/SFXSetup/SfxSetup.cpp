@@ -23,6 +23,8 @@
 
 #include "ExtractEngine.h"
 
+#include "../../../../C/DllSecur.h"
+
 #include "resource.h"
 
 using namespace NWindows;
@@ -134,6 +136,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   g_hInstance = (HINSTANCE)hInstance;
 
   NT_CHECK
+
+  #ifdef _WIN32
+  LoadSecurityDlls();
+  #endif
 
   // InitCommonControls();
 

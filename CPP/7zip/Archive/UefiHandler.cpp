@@ -225,7 +225,7 @@ enum
   FV_FILETYPE_FFS_PAD = 0xF0
 };
 
-static const char *g_FileTypes[] =
+static const char * const g_FileTypes[] =
 {
     "ALL"
   , "RAW"

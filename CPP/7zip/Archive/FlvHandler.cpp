@@ -93,7 +93,7 @@ static const Byte kProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_NO_Table
 
-static const char *g_AudioTypes[16] =
+static const char * const g_AudioTypes[16] =
 {
     "pcm"
   , "adpcm"
@@ -113,7 +113,7 @@ static const char *g_AudioTypes[16] =
   , "audio15"
 };
 
-static const char *g_VideoTypes[16] =
+static const char * const g_VideoTypes[16] =
 {
     "video0"
   , "jpeg"
@@ -133,7 +133,7 @@ static const char *g_VideoTypes[16] =
   , "video15"
 };
 
-static const char *g_Rates[4] =
+static const char * const g_Rates[4] =
 {
     "5.5 kHz"
   , "11 kHz"

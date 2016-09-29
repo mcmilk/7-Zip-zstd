@@ -356,8 +356,8 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
             i += t;
           }
         }
-      
         text[dest] = 0;
+        // OutputDebugStringW(text);
         return 0;
       }
     }

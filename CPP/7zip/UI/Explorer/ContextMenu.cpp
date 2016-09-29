@@ -489,7 +489,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   if (_fileNames.Size() > 0)
   {
     const UString &fileName = _fileNames.Front();
-  
+
     #if defined(_WIN32) && !defined(UNDER_CE)
     if (NName::IsDevicePath(us2fs(fileName)))
     {
@@ -577,7 +577,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     
     if (!needExtract)
     {
-      FOR_VECTOR (i, _fileNames)
+      for (unsigned i = 1; i < _fileNames.Size(); i++)
       {
         NFind::CFileInfo fi;
         if (!fi.Find(us2fs(_fileNames[i])))
@@ -594,57 +594,52 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     
     if (needExtract)
     {
-      // Extract
-      if ((contextMenuFlags & NContextMenuFlags::kExtract) != 0)
       {
-        CCommandMapItem commandMapItem;
-        FillCommand(kExtract, mainString, commandMapItem);
+        UString baseFolder = fs2us(folderPrefix);
         if (_dropMode)
-          commandMapItem.Folder = _dropPath;
-        else
-          commandMapItem.Folder = fs2us(folderPrefix);
-        commandMapItem.Folder += GetSubFolderNameForExtract(fs2us(fi0.Name));
-        commandMapItem.Folder.Add_PathSepar();
-        MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString, bitmap);
-        _commandMap.Add(commandMapItem);
-      }
-
-      // Extract Here
-      if ((contextMenuFlags & NContextMenuFlags::kExtractHere) != 0)
-      {
-        CCommandMapItem commandMapItem;
-        FillCommand(kExtractHere, mainString, commandMapItem);
-        MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString, bitmap);
-        if (_dropMode)
-          commandMapItem.Folder = _dropPath;
-        else
-          commandMapItem.Folder = fs2us(folderPrefix);
-        _commandMap.Add(commandMapItem);
-      }
-
-      // Extract To
-      if ((contextMenuFlags & NContextMenuFlags::kExtractTo) != 0)
-      {
-        CCommandMapItem commandMapItem;
-        UString s;
-        FillCommand(kExtractTo, s, commandMapItem);
-        UString folder = L'*';
-        if (_fileNames.Size() == 1)
-          folder = GetSubFolderNameForExtract(fs2us(fi0.Name));
-        if (_dropMode)
-          commandMapItem.Folder = _dropPath;
-        else
-          commandMapItem.Folder = fs2us(folderPrefix);
-        commandMapItem.Folder += folder;
-        folder.Add_PathSepar();
-        MyFormatNew_ReducedName(s, folder);
-        MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
-        _commandMap.Add(commandMapItem);
-      }
+          baseFolder = _dropPath;
     
-      // Test
+        UString specFolder = L'*';
+        if (_fileNames.Size() == 1)
+          specFolder = GetSubFolderNameForExtract(fs2us(fi0.Name));
+        specFolder.Add_PathSepar();
+
+        if ((contextMenuFlags & NContextMenuFlags::kExtract) != 0)
+        {
+          // Extract
+          CCommandMapItem commandMapItem;
+          FillCommand(kExtract, mainString, commandMapItem);
+          commandMapItem.Folder = baseFolder + specFolder;
+          MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString, bitmap);
+          _commandMap.Add(commandMapItem);
+        }
+
+        if ((contextMenuFlags & NContextMenuFlags::kExtractHere) != 0)
+        {
+          // Extract Here
+          CCommandMapItem commandMapItem;
+          FillCommand(kExtractHere, mainString, commandMapItem);
+          commandMapItem.Folder = baseFolder;
+          MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString, bitmap);
+          _commandMap.Add(commandMapItem);
+        }
+
+        if ((contextMenuFlags & NContextMenuFlags::kExtractTo) != 0)
+        {
+          // Extract To
+          CCommandMapItem commandMapItem;
+          UString s;
+          FillCommand(kExtractTo, s, commandMapItem);
+          commandMapItem.Folder = baseFolder + specFolder;
+          MyFormatNew_ReducedName(s, specFolder);
+          MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
+          _commandMap.Add(commandMapItem);
+        }
+      }
+
       if ((contextMenuFlags & NContextMenuFlags::kTest) != 0)
       {
+        // Test
         CCommandMapItem commandMapItem;
         FillCommand(kTest, mainString, commandMapItem);
         MyInsertMenu(popupMenu, subIndex++, currentCommandID++, mainString, bitmap);

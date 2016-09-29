@@ -646,7 +646,7 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-static const char *g_TagDesc[92] =
+static const char * const g_TagDesc[92] =
 {
     "End"
   , "ShowFrame"

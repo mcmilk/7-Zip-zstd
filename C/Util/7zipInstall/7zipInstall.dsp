@@ -191,6 +191,14 @@ SOURCE=..\..\Delta.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\DllSecur.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\DllSecur.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Lzma2Dec.c
 # End Source File
 # Begin Source File

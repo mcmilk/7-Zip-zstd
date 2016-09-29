@@ -3,6 +3,8 @@
 #ifndef __ARCHIVE_ISO_ITEM_H
 #define __ARCHIVE_ISO_ITEM_H
 
+#include "../../../../C/CpuArch.h"
+
 #include "../../../Common/MyString.h"
 #include "../../../Common/MyBuffer.h"
 
@@ -38,6 +40,32 @@ struct CRecordingDateTime
   }
 };
 
+enum EPx
+{
+  k_Px_Mode,
+  k_Px_Links,
+  k_Px_User,
+  k_Px_Group,
+  k_Px_SerialNumber
+
+  // k_Px_Num
+};
+
+/*
+enum ETf
+{
+  k_Tf_CTime,
+  k_Tf_MTime,
+  k_Tf_ATime,
+  k_Tf_Attrib,
+  k_Tf_Backup,
+  k_Tf_Expiration,
+  k_Tf_Effective
+
+  // k_Tf_Num
+};
+*/
+
 struct CDirRecord
 {
   UInt32 ExtentLocation;
@@ -69,7 +97,8 @@ struct CDirRecord
     return (b == 0 || b == 1);
   }
 
-  const Byte* FindSuspName(unsigned skipSize, unsigned &lenRes) const
+  
+  const Byte* FindSuspRecord(unsigned skipSize, Byte id0, Byte id1, unsigned &lenRes) const
   {
     lenRes = 0;
     if (SystemUse.Size() < skipSize)
@@ -81,12 +110,12 @@ struct CDirRecord
       unsigned len = p[2];
       if (len < 3 || len > rem)
         return 0;
-      if (p[0] == 'N' && p[1] == 'M' && p[3] == 1)
+      if (p[0] == id0 && p[1] == id1 && p[3] == 1)
       {
-        if (len < 5)
+        if (len < 4)
           return 0; // Check it
-        lenRes = len - 5;
-        return p + 5;
+        lenRes = len - 4;
+        return p + 4;
       }
       p += len;
       rem -= len;
@@ -94,16 +123,22 @@ struct CDirRecord
     return 0;
   }
 
+  
   const Byte* GetNameCur(bool checkSusp, int skipSize, unsigned &nameLenRes) const
   {
     const Byte *res = NULL;
     unsigned len = 0;
     if (checkSusp)
-      res = FindSuspName(skipSize, len);
-    if (!res)
+      res = FindSuspRecord(skipSize, 'N', 'M', len);
+    if (!res || len < 1)
     {
       res = (const Byte *)FileId;
       len = (unsigned)FileId.Size();
+    }
+    else
+    {
+      res++;
+      len--;
     }
     unsigned i;
     for (i = 0; i < len; i++)
@@ -113,6 +148,141 @@ struct CDirRecord
     return res;
   }
 
+
+  const bool GetSymLink(int skipSize, AString &link) const
+  {
+    link.Empty();
+    const Byte *p = NULL;
+    unsigned len = 0;
+    p = FindSuspRecord(skipSize, 'S', 'L', len);
+    if (!p || len < 1)
+      return false;
+
+    if (*p != 0)
+      return false;
+
+    p++;
+    len--;
+
+    while (len != 0)
+    {
+      if (len < 2)
+        return false;
+      unsigned flags = p[0];
+      unsigned cl = p[1];
+      p += 2;
+      len -= 2;
+
+      if (cl > len)
+        return false;
+
+      bool needSlash = false;
+      
+           if (flags & (1 << 1)) link += "./";
+      else if (flags & (1 << 2)) link += "../";
+      else if (flags & (1 << 3)) link += '/';
+      else
+        needSlash = true;
+
+      for (unsigned i = 0; i < cl; i++)
+      {
+        char c = p[i];
+        if (c == 0)
+        {
+          break;
+          // return false;
+        }
+        link += c;
+      }
+
+      p += cl;
+      len -= cl;
+
+      if (len == 0)
+        break;
+
+      if (needSlash)
+        link += '/';
+    }
+
+    return true;
+  }
+
+  static const bool GetLe32Be32(const Byte *p, UInt32 &dest)
+  {
+    UInt32 v1 = GetUi32(p);
+    UInt32 v2 = GetBe32(p + 4);
+    if (v1 == v2)
+    {
+      dest = v1;
+      return true;
+    }
+    return false;
+  }
+
+
+  const bool GetPx(int skipSize, unsigned pxType, UInt32 &val) const
+  {
+    const Byte *p = NULL;
+    unsigned len = 0;
+    p = FindSuspRecord(skipSize, 'P', 'X', len);
+    if (!p)
+      return false;
+    // px.Clear();
+    if (len < ((unsigned)pxType + 1) * 8)
+      return false;
+
+    return GetLe32Be32(p + pxType * 8, val);
+  }
+
+  /*
+  const bool GetTf(int skipSize, unsigned pxType, CRecordingDateTime &t) const
+  {
+    const Byte *p = NULL;
+    unsigned len = 0;
+    p = FindSuspRecord(skipSize, 'T', 'F', len);
+    if (!p)
+      return false;
+    if (len < 1)
+      return false;
+    Byte flags = *p++;
+    len--;
+
+    unsigned step = 7;
+    if (flags & 0x80)
+    {
+      step = 17;
+      return false;
+    }
+
+    if ((flags & (1 << pxType)) == 0)
+      return false;
+
+    for (unsigned i = 0; i < pxType; i++)
+    {
+      if (len < step)
+        return false;
+      if (flags & (1 << i))
+      {
+        p += step;
+        len -= step;
+      }
+    }
+
+    if (len < step)
+      return false;
+    
+    t.Year = p[0];
+    t.Month = p[1];
+    t.Day = p[2];
+    t.Hour = p[3];
+    t.Minute = p[4];
+    t.Second = p[5];
+    t.GmtOffset = (signed char)p[6];
+
+    return true;
+  }
+  */
 
   bool CheckSusp(const Byte *p, unsigned &startPos) const
   {

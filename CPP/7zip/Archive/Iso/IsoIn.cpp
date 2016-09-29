@@ -608,7 +608,7 @@ HRESULT CInArchive::Open2()
       for (UInt32 j = 0; j < ref.NumExtents; j++)
       {
         const CDir &item = ref.Dir->_subItems[ref.Index + j];
-        if (!item.IsDir())
+        if (!item.IsDir() && item.Size != 0)
           UpdatePhySize(item.ExtentLocation, item.Size);
       }
     }

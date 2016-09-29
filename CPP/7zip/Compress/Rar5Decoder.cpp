@@ -862,22 +862,26 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
       _numCorrectDistSymbols = newSizeLog * 2;
     }
 
-    if (!_window || _winSize != newSize)
+    // If dictionary was reduced, we use allocated dictionary block
+    // for compatibility with original unRAR decoder.
+
+    if (_window && newSize < _winSizeAllocated)
+      _winSize = _winSizeAllocated;
+    else if (!_window || _winSize != newSize)
     {
-      if (!_isSolid && newSize > _winSizeAllocated)
+      if (!_isSolid)
       {
         ::MidFree(_window);
         _window = NULL;
         _winSizeAllocated = 0;
       }
 
-      Byte *win = _window;
-      if (!_window || newSize > _winSizeAllocated)
+      Byte *win;
+
       {
         win = (Byte *)::MidAlloc(newSize);
         if (!win)
           return E_OUTOFMEMORY;
-        _winSizeAllocated = newSize;
         memset(win, 0, newSize);
       }
       
@@ -892,16 +896,18 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
         size_t newMask = newSize - 1;
         size_t oldMask = _winSize - 1;
         size_t winPos = _winPos;
-        for (size_t i = 1; i < oldSize; i++) // i < oldSize) ?
+        for (size_t i = 1; i <= oldSize; i++)
           win[(winPos - i) & newMask] = winOld[(winPos - i) & oldMask];
         ::MidFree(_window);
       }
       
       _window = win;
+      _winSizeAllocated = newSize;
       _winSize = newSize;
     }
 
     _winMask = _winSize - 1;
+    _winPos &= _winMask;
 
     if (!_inputBuf)
     {
