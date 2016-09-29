@@ -30,6 +30,8 @@ using namespace NFind;
 
 void CPanel::ReleaseFolder()
 {
+  DeleteListItems();
+
   _folder.Release();
 
   _folderCompare.Release();
@@ -175,15 +177,36 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
     }
     else if (fileInfo.IsDir())
     {
+      #ifdef _WIN32
+      if (DoesNameContainWildcard(sysPath))
+      {
+        FString dirPrefix, fileName;
+        NDir::GetFullPathAndSplit(us2fs(sysPath), dirPrefix, fileName);
+        if (DoesNameContainWildcard(dirPrefix))
+          return E_INVALIDARG;
+        sysPath = fs2us(dirPrefix + fileInfo.Name);
+      }
+      #endif
+
       NName::NormalizeDirPathPrefix(sysPath);
       _folder->BindToFolder(sysPath, &newFolder);
     }
     else
     {
       FString dirPrefix, fileName;
+      
       NDir::GetFullPathAndSplit(us2fs(sysPath), dirPrefix, fileName);
-      HRESULT res;
-      // = OpenAsArc(fs2us(fileName), arcFormat, encrypted);
+
+      HRESULT res = S_OK;
+      
+      #ifdef _WIN32
+      if (DoesNameContainWildcard(dirPrefix))
+        return E_INVALIDARG;
+
+      if (DoesNameContainWildcard(fileName))
+        res = S_FALSE;
+      else
+      #endif
       {
         CTempFileInfo tfi;
         tfi.RelPath = fs2us(fileName);
@@ -258,9 +281,9 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
   CDisableTimerProcessing disableTimerProcessing(*this);
   CDisableNotify disableNotify(*this);
   bool archiveIsOpened, encrypted;
-  RINOK(BindToPath(path, UString(), archiveIsOpened, encrypted));
+  HRESULT res = BindToPath(path, UString(), archiveIsOpened, encrypted);
   RefreshListCtrl(UString(), -1, true, UStringVector());
-  return S_OK;
+  return res;
 }
 
 void CPanel::SetBookmark(unsigned index)

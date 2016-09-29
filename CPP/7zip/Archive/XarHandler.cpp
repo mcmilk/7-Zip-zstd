@@ -255,13 +255,13 @@ static bool AddItem(const CXmlItem &item, CObjectVector<CFile> &files, int paren
         if (encodingItem.IsTag)
         {
           AString s = encodingItem.GetPropVal("style");
-          if (s.Len() >= 0)
+          if (!s.IsEmpty())
           {
-            AString appl = "application/";
+            const AString appl = "application/";
             if (s.IsPrefixedBy(appl))
             {
               s.DeleteFrontal(appl.Len());
-              AString xx = "x-";
+              const AString xx = "x-";
               if (s.IsPrefixedBy(xx))
               {
                 s.DeleteFrontal(xx.Len());
@@ -365,12 +365,12 @@ HRESULT CHandler::Open2(IInStream *stream)
   {
     const CFile &file = _files[i];
     file.UpdateTotalPackSize(totalPackSize);
-    if (file.Name == "Payload")
+    if (file.Name == "Payload" || file.Name == "Content")
     {
       _mainSubfile = i;
       numMainFiles++;
     }
-    if (file.Name == "PackageInfo")
+    else if (file.Name == "PackageInfo")
       _is_pkg = true;
   }
 
@@ -723,7 +723,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 static const Byte k_Signature[] = { 'x', 'a', 'r', '!', 0, 0x1C };
 
 REGISTER_ARC_I(
-  "Xar", "xar pkg", 0, 0xE1,
+  "Xar", "xar pkg xip", 0, 0xE1,
   k_Signature,
   0,
   0,

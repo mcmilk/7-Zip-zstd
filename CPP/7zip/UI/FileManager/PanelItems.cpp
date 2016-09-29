@@ -92,7 +92,7 @@ HRESULT CPanel::InitColumns()
 {
   SaveListViewInfo();
 
-  _listView.DeleteAllItems();
+  // DeleteListItems();
   _selectedStatusVector.Clear();
 
   {
@@ -411,9 +411,21 @@ void CPanel::SetFocusedSelectedItem(int index, bool select)
   }
 }
 
+// #define PRINT_STAT
+
+#ifdef PRINT_STAT
+  void Print_OnNotify(const char *name);
+#else
+  #define Print_OnNotify(x)
+#endif
+
+
 HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
     const UStringVector &selectedNames)
 {
+  if (!_folder)
+    return S_OK;
+
   _dontShowMode = false;
   LoadFullPathAndShow();
   // OutputDebugStringA("=======\n");
@@ -431,10 +443,10 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
   ZeroMemory(&item, sizeof(item));
   
   // DWORD tickCount0 = GetTickCount();
-  _enableItemChangeNotify = false;
-  _listView.DeleteAllItems();
+  
+  // _enableItemChangeNotify = false;
+  DeleteListItems();
   _enableItemChangeNotify = true;
-
 
   int listViewItemCount = 0;
 
@@ -511,6 +523,12 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
       }
     }
   }
+
+  _thereAre_ListView_Items = true;
+
+  // OutputDebugStringA("\n\n");
+
+  Print_OnNotify("===== Before Load");
 
   if (showDots)
   {
@@ -642,7 +660,8 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
       // item.pszText = const_cast<wchar_t *>((const wchar_t *)name);
       item.pszText = LPSTR_TEXTCALLBACKW;
       /* LPSTR_TEXTCALLBACKW works, but in some cases there are problems,
-      since we block notify handler. */
+      since we block notify handler.
+      LPSTR_TEXTCALLBACKW can be 2-3 times faster for loading in this loop. */
     }
 
     UInt32 attrib = 0;
@@ -687,14 +706,35 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
     listViewItemCount++;
   }
   
-  // OutputDebugStringA("End2\n");
+  /*
+    xp-64: there is different order when Windows calls CPanel::OnNotify for _listView modes:
+    Details      : after whole code
+    List         : 2 times:
+                        1) - ListView.SotRedraw()
+                        2) - after whole code
+    Small Icons  :
+    Large icons  : 2 times:
+                        1) - ListView.Sort()
+                        2) - after whole code (calls with reverse order of items)
+
+    So we need to allow Notify(), when windows requests names during the following code.
+  */
+
+  Print_OnNotify("after Load");
+
+  disableNotify.SetMemMode_Enable();
+  disableNotify.Restore();
 
   if (_listView.GetItemCount() > 0 && cursorIndex >= 0)
     SetFocusedSelectedItem(cursorIndex, selectFocused);
-  // DWORD tickCount3 = GetTickCount();
+
+  Print_OnNotify("after SetFocusedSelectedItem");
+  
   SetSortRawStatus();
   _listView.SortItems(CompareItems, (LPARAM)this);
-  // DWORD tickCount4 = GetTickCount();
+  
+  Print_OnNotify("after  Sort");
+
   if (cursorIndex < 0 && _listView.GetItemCount() > 0)
   {
     if (focusedPos >= _listView.GetItemCount())
@@ -702,23 +742,29 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
     // we select item only in showDots mode.
     SetFocusedSelectedItem(focusedPos, showDots);
   }
-  // m_RedrawEnabled = true;
-  // DWORD tickCount5 = GetTickCount();
-  _listView.EnsureVisible(_listView.GetFocusedItem(), false);
-  // DWORD tickCount6 = GetTickCount();
 
-  disableNotify.SetMemMode_Enable();
-  disableNotify.Restore();
+  // m_RedrawEnabled = true;
+  
+  Print_OnNotify("after  SetFocusedSelectedItem2");
+
+  _listView.EnsureVisible(_listView.GetFocusedItem(), false);
+
+  // disableNotify.SetMemMode_Enable();
+  // disableNotify.Restore();
+
+  Print_OnNotify("after  EnsureVisible");
+
   _listView.SetRedraw(true);
-  // DWORD tickCount7 = GetTickCount();
+
+  Print_OnNotify("after  SetRedraw");
+
   _listView.InvalidateRect(NULL, true);
-  // DWORD tickCount8 = GetTickCount();
-  // OutputDebugStringA("End1\n");
+  
+  Print_OnNotify("after InvalidateRect");
   /*
   _listView.UpdateWindow();
   */
   Refresh_StatusBar();
-  // DWORD tickCount9 = GetTickCount();
   /*
   char s[256];
   sprintf(s,

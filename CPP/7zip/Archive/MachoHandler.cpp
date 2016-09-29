@@ -75,7 +75,7 @@ static const CUInt32PCharPair g_CpuPairs[] =
 
 #define SECT_ATTR_ZEROFILL 1
 
-static const char *g_SectTypes[] =
+static const char * const g_SectTypes[] =
 {
     "REGULAR"
   , "ZEROFILL"
@@ -108,7 +108,7 @@ enum EFileType
   kType_DSYM
 };
 
-static const char *g_FileTypes[] =
+static const char * const g_FileTypes[] =
 {
     "0"
   , "OBJECT"
@@ -124,7 +124,7 @@ static const char *g_FileTypes[] =
 };
 
 
-static const char *g_ArcFlags[] =
+static const char * const g_ArcFlags[] =
 {
     "NOUNDEFS"
   , "INCRLINK"

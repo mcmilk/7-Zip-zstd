@@ -348,7 +348,7 @@ BOOL CPanel::OnEndLabelEdit(LV_DISPINFOW * lpnmh)
 
   // We need clear all items to disable GetText before Reload:
   // number of items can change.
-  // _listView.DeleteAllItems();
+  // DeleteListItems();
   // But seems it can still call GetText (maybe for current item)
   // so we can't delete items.
 

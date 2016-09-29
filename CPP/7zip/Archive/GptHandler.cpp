@@ -244,9 +244,31 @@ HRESULT CHandler::Open2(IInStream *stream)
     _items.Add(item);
   }
   
-  UInt64 end = (backupLba + 1) * kSectorSize;
-  if (_totalSize < end)
-    _totalSize = end;
+  {
+    const UInt64 end = (backupLba + 1) * kSectorSize;
+    if (_totalSize < end)
+      _totalSize = end;
+  }
+
+  {
+    UInt64 fileEnd;
+    RINOK(stream->Seek(0, STREAM_SEEK_END, &fileEnd));
+    
+    if (_totalSize < fileEnd)
+    {
+      const UInt64 rem = fileEnd - _totalSize;
+      const UInt64 kRemMax = 1 << 22;
+      if (rem <= kRemMax)
+      {
+        RINOK(stream->Seek(_totalSize, STREAM_SEEK_SET, NULL));
+        bool areThereNonZeros = false;
+        UInt64 numZeros = 0;
+        if (ReadZeroTail(stream, areThereNonZeros, numZeros, kRemMax) == S_OK)
+          if (!areThereNonZeros)
+            _totalSize += numZeros;
+      }
+    }
+  }
 
   return S_OK;
 }

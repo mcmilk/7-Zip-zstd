@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include <Windowsx.h>
+// #include <stdio.h>
 
 #include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
@@ -619,10 +620,47 @@ bool CPanel::OnNotifyReBar(LPNMHDR header, LRESULT & /* result */)
   return false;
 }
 
+/*
+UInt32 g_OnNotify = 0;
+UInt32 g_LVIF_TEXT = 0;
+UInt32 g_Time = 0;
+
+void Print_OnNotify(const char *name)
+{
+  char s[256];
+  DWORD tim = GetTickCount();
+  sprintf(s,
+      "Time = %7u ms, Notify = %9u, TEXT = %9u, %s",
+      tim - g_Time,
+      g_OnNotify,
+      g_LVIF_TEXT,
+      name);
+  g_Time = tim;
+  OutputDebugStringA(s);
+  g_OnNotify = 0;
+  g_LVIF_TEXT = 0;
+}
+*/
+
 bool CPanel::OnNotify(UINT /* controlID */, LPNMHDR header, LRESULT &result)
 {
+  /*
+  g_OnNotify++;
+
+  if (header->hwndFrom == _listView)
+  {
+    if (header->code == LVN_GETDISPINFOW)
+    {
+      LV_DISPINFOW *dispInfo = (LV_DISPINFOW *)header;
+        if ((dispInfo->item.mask & LVIF_TEXT))
+          g_LVIF_TEXT++;
+    }
+  }
+  */
+
   if (!_processNotify)
     return false;
+
   if (header->hwndFrom == _headerComboBox)
     return OnNotifyComboBox(header, result);
   else if (header->hwndFrom == _headerReBar)

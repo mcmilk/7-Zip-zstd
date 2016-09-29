@@ -20,6 +20,7 @@
 #include "../../7zCrc.h"
 #include "../../7zFile.h"
 #include "../../CpuArch.h"
+#include "../../DllSecur.h"
 
 #define k_EXE_ExtIndex 2
 
@@ -253,6 +254,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   const char *errorMessage = NULL;
   Bool useShellExecute = True;
   DWORD exitCode = 0;
+
+  LoadSecurityDlls();
 
   #ifdef _CONSOLE
   SetConsoleCtrlHandler(HandlerRoutine, TRUE);

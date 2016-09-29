@@ -175,6 +175,6 @@ public:
 
 HRESULT Benchmark(
     DECL_EXTERNAL_CODECS_LOC_VARS
-    const CObjectVector<CProperty> props, HWND hwndParent = NULL);
+    const CObjectVector<CProperty> &props, HWND hwndParent = NULL);
 
 #endif

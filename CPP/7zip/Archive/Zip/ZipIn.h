@@ -139,6 +139,7 @@ public:
   bool StartIsZ;    // is .zip or .zNN
   bool StartIsZip;  // is .zip
   bool IsUpperCase;
+  bool MissingZip;
   Int32 StartVolIndex; // = (NN - 1), if StartStream is .zNN
 
   Int32 StartParsingVol; // if we need local parsing, we must use that stream
@@ -173,6 +174,7 @@ public:
     BaseName.Empty();
     MissingName.Empty();
 
+    MissingZip = false;
     ecd_wasRead = false;
 
     Streams.Clear();

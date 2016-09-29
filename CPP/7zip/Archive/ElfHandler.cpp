@@ -156,7 +156,7 @@ bool CHeader::Parse(const Byte *p)
 
 #define PT_PHDR 6
 
-static const char *g_SegnmentTypes[] =
+static const char * const g_SegnmentTypes[] =
 {
   "Unused",
   "Loadable segment",
@@ -554,13 +554,31 @@ static const CUInt32PCharPair g_OS[] =
   { 255, "Standalone" }
 };
 
+#define k_Machine_ARM 40
+
+/*
+#define EF_ARM_ABIMASK        0xFF000000
+#define EF_ARM_BE8            0x00800000
+#define EF_ARM_GCCMASK        0x00400FFF
+#define EF_ARM_ABI_FLOAT_SOFT 0x00000200
+#define EF_ARM_ABI_FLOAT_HARD 0x00000400
+*/
+
+static const CUInt32PCharPair g_ARM_Flags[] =
+{
+  { 9, "SF" },
+  { 10, "HF" },
+  { 23, "BE8" }
+};
+
+
 #define ET_NONE 0
 #define ET_REL  1
 #define ET_EXEC 2
 #define ET_DYN  3
 #define ET_CORE 4
 
-static const char *g_Types[] =
+static const char * const g_Types[] =
 {
   "None",
   "Relocatable file",
@@ -568,6 +586,9 @@ static const char *g_Types[] =
   "Shared object file",
   "Core file"
 };
+
+
+
 
 class CHandler:
   public IInArchive,
@@ -659,7 +680,29 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidBit64: if (_header.Mode64) prop = _header.Mode64; break;
     case kpidBigEndian: if (_header.Be) prop = _header.Be; break;
     case kpidShortComment:
-    case kpidCpu: PAIR_TO_PROP(g_Machines, _header.Machine, prop); break;
+
+    case kpidCpu:
+    {
+      AString s = TypePairToString(g_Machines, ARRAY_SIZE(g_Machines), _header.Machine);
+      UInt32 flags = _header.Flags;
+      if (flags != 0)
+      {
+        char sz[16];
+        s.Add_Space();
+        if (_header.Machine == k_Machine_ARM)
+        {
+          s += FlagsToString(g_ARM_Flags, ARRAY_SIZE(g_ARM_Flags), flags & (((UInt32)1 << 24) - 1));
+          s += " ABI:";
+          ConvertUInt32ToString(flags >> 24, sz);
+        }
+        else
+          ConvertUInt32ToHex(flags, sz);
+        s += sz;
+      }
+      prop = s;
+      break;
+    }
+
     case kpidHostOS: PAIR_TO_PROP(g_OS, _header.Os, prop); break;
     case kpidCharacts: TYPE_TO_PROP(g_Types, _header.Type, prop); break;
     case kpidExtension:

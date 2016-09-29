@@ -321,7 +321,7 @@ bool COptHeader::Parse(const Byte *p, UInt32 size)
   if (NumDirItems > (1 << 16))
     return false;
   pos += 4;
-  if (pos + 8 * NumDirItems != size)
+  if (pos + 8 * NumDirItems > size)
     return false;
   for (UInt32 i = 0; i < NumDirItems && i < kNumDirItemsMax; i++)
     DirItems[i].Parse(p + pos + i * 8);

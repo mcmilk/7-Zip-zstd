@@ -168,7 +168,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
     case kpidVolumeIndex:
     {
-      if (m_Database.Volumes.Size() == 1)
+      if (!m_Database.Volumes.IsEmpty())
       {
         const CDatabaseEx &db = m_Database.Volumes[0];
         const CInArcInfo &ai = db.ArcInfo;

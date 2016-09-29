@@ -959,7 +959,7 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
   *srcLen = 0;
   const Byte *destStart = dest;
   const Byte *srcStart = src;
-  unsigned mode = 2;
+  unsigned mode = 0;
 
   {
     if (srcRem == 0)
@@ -970,7 +970,7 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
       src++;
       srcRem--;
       b -= 17;
-      mode = (b < 4 ? 0 : 1);
+      mode = (b < 4 ? 1 : 4);
       if (b > srcRem || b > destRem)
         return S_FALSE;
       srcRem -= b;
@@ -988,6 +988,7 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
     UInt32 b = *src++;
     srcRem--;
     UInt32 len, back;
+    
     if (b >= 64)
     {
       srcRem--;
@@ -996,7 +997,7 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
     }
     else if (b < 16)
     {
-      if (mode == 2)
+      if (mode == 0)
       {
         if (b == 0)
         {
@@ -1013,21 +1014,23 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
             }
           }
         }
+      
         b += 3;
         if (b > srcRem || b > destRem)
           return S_FALSE;
         srcRem -= b;
         destRem -= b;
-        mode = 1;
+        mode = 4;
         do
           *dest++ = *src++;
         while (--b);
         continue;
       }
+      
       srcRem--;
       back = (b >> 2) + (*src++ << 2);
       len = 2;
-      if (mode == 1)
+      if (mode == 4)
       {
         back += (1 << 11);
         len = 3;
@@ -1038,6 +1041,7 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
       UInt32 bOld = b;
       b = (b < 32 ? 7 : 31);
       len = bOld & b;
+      
       if (len == 0)
       {
         for (len = b;; len += 255)
@@ -1053,6 +1057,7 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
           }
         }
       }
+      
       len += 2;
       if (srcRem < 2)
         return S_FALSE;
@@ -1062,38 +1067,39 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
       srcRem -= 2;
       if (bOld < 32)
       {
+        back += ((bOld & 8) << 11);
         if (back == 0)
         {
           *destLen = dest - destStart;
           *srcLen = src - srcStart;
           return S_OK;
         }
-        back += ((bOld & 8) << 11) + (1 << 14) - 1;
+        back += (1 << 14) - 1;
       }
     }
+    
     back++;
     if (len > destRem || (size_t)(dest - destStart) < back)
       return S_FALSE;
     destRem -= len;
     Byte *destTemp = dest - back;
     dest += len;
+    
     do
     {
       *(destTemp + back) = *destTemp;
       destTemp++;
     }
     while (--len);
+    
     b &= 3;
+    mode = b;
     if (b == 0)
-    {
-      mode = 2;
       continue;
-    }
     if (b > srcRem || b > destRem)
       return S_FALSE;
     srcRem -= b;
     destRem -= b;
-    mode = 0;
     *dest++ = *src++;
     if (b > 1)
     {

@@ -404,8 +404,11 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
   }
   else
   {
-    if (res != DRAGDROP_S_CANCEL && res != S_OK)
+    // we ignore E_UNEXPECTED that is returned if we drag file to printer
+    if (res != DRAGDROP_S_CANCEL && res != S_OK
+        && res != E_UNEXPECTED)
       MessageBoxError(res);
+
     res = dropSourceSpec->Result;
   }
 

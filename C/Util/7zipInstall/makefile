@@ -25,6 +25,7 @@ C_OBJS = \
   $O\7zStream.obj \
   $O\Bcj2.obj \
   $O\CpuArch.obj \
+  $O\DllSecur.obj \
   $O\LzmaDec.obj \
 
 OBJS = \

@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2015-12-09 : Igor Pavlov : Public domain */
+2016-06-08 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -21,6 +21,7 @@
 #include "../../7zFile.h"
 #include "../../7zVersion.h"
 #include "../../CpuArch.h"
+#include "../../DllSecur.h"
 
 #include "resource.h"
 
@@ -876,6 +877,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   UNUSED_VAR(nCmdShow)
 
   #ifndef UNDER_CE
+  LoadSecurityDlls();
   CoInitialize(NULL);
   #endif
 

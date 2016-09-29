@@ -2157,7 +2157,7 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
       return S_OK;
     const CItem &item = Items[index];
     const CMftRec &rec = Recs[item.RecIndex];
-    if (rec.SiAttr.SecurityId >= 0)
+    if (rec.SiAttr.SecurityId > 0)
     {
       UInt64 offset;
       UInt32 size;
@@ -2169,6 +2169,7 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
       }
     }
   }
+  
   return S_OK;
 }
 

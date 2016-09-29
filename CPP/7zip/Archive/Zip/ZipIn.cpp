@@ -1454,7 +1454,10 @@ HRESULT CVols::ParseArcName(IArchiveOpenVolumeCallback *volCallback)
   if (result == S_FALSE || !ZipStream)
   {
     if (MissingName.IsEmpty())
+    {
+      MissingZip = true;
       MissingName = volName;
+    }
     return S_OK;
   }
 
@@ -1988,6 +1991,12 @@ HRESULT CInArchive::ReadHeaders2(CObjectVector<CItemEx> &items)
 
   if (!IsMultiVol)
   {
+    if (EcdVolIndex == 0 && Vols.MissingZip && Vols.StartIsExe)
+    {
+      Vols.MissingName.Empty();
+      Vols.MissingZip = false;
+    }
+
     UseDisk_in_SingleVol = true;
 
     if (localsWereRead)
