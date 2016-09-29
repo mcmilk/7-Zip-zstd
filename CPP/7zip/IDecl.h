@@ -6,7 +6,12 @@
 #include "../Common/MyUnknown.h"
 
 #define k_7zip_GUID_Data1 0x23170F69
+
+#ifdef NEED_7ZIP_GUID
+#define k_7zip_GUID_Data2 0x40C1
+#else
 #define k_7zip_GUID_Data2 0x0803
+#endif
 
 #define k_7zip_GUID_Data3_Common  0x278A
 

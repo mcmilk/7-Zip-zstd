@@ -1,6 +1,6 @@
-PROG = zstd.dll
+PROG = zstd-min.dll
 DEF_FILE = ../../Compress/Codec.def
-CFLAGS = $(CFLAGS)
+CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID
 
 7ZIP_COMMON_OBJS = \
   $O\StreamUtils.obj \
