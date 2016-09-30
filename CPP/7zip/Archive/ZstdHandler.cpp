@@ -108,9 +108,15 @@ API_FUNC_static_IsArc IsArc_zstd(const Byte *p, size_t size)
     return k_IsArc_Res_NEED_MORE;
 
   UInt32 magic = GetUi32(p);
-  // zstd magic's
-  if (magic >= 0xFD2FB525 && magic <= 0xFD2FB528)
+
+  // zstd 0.1
+  if (magic == 0xFD2FB51E)
     return k_IsArc_Res_YES;
+
+  // zstd magic's for 0.2 .. 0.8 (aka 1.x)
+  if (magic >= 0xFD2FB522 && magic <= 0xFD2FB528)
+    return k_IsArc_Res_YES;
+
   // skippable frames
   if (magic >= 0x184D2A50 && magic <= 0x184D2A5F)
     return k_IsArc_Res_YES;
