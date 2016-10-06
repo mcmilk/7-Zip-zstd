@@ -231,6 +231,18 @@ bool CItem::Is_CopyLink() const
   return FindExtra_Link(link) && link.Type == NLinkType::kFileCopy;
 }
 
+bool CItem::Is_HardLink() const
+{
+  CLinkInfo link;
+  return FindExtra_Link(link) && link.Type == NLinkType::kHardLink;
+}
+
+bool CItem::Is_CopyLink_or_HardLink() const
+{
+  CLinkInfo link;
+  return FindExtra_Link(link) && (link.Type == NLinkType::kFileCopy || link.Type == NLinkType::kHardLink);
+}
+
 void CItem::Link_to_Prop(unsigned linkType, NWindows::NCOM::CPropVariant &prop) const
 {
   CLinkInfo link;
@@ -2587,7 +2599,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     {
       if (testMode)
       {
-        if (item->Is_CopyLink() && item->PackSize == 0)
+        if (item->NeedUse_as_CopyLink_or_HardLink())
         {
           RINOK(extractCallback->PrepareOperation(askMode));
           RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
@@ -2597,6 +2609,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       else
       {
         if (item->IsService())
+          continue;
+
+        if (item->NeedUse_as_HardLink())
           continue;
 
         bool needDecode = false;
@@ -2639,7 +2654,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       continue;
     }
 
-    if (item->Is_CopyLink() && item->PackSize == 0)
+    if (item->NeedUse_as_CopyLink())
     {
       RINOK(extractCallback->SetOperationResult(
           realOutStream ?

@@ -1,5 +1,5 @@
 /* DllSecur.c -- DLL loading security
-2016-09-15 : Igor Pavlov : Public domain */
+2016-10-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -42,7 +42,7 @@ void LoadSecurityDlls()
     // at Vista (ver 6.0) : CoCreateInstance(CLSID_ShellLink, ...) doesn't work after SetDefaultDllDirectories() : Check it ???
     OSVERSIONINFO vi;
     vi.dwOSVersionInfoSize = sizeof(vi);
-    if (!GetVersionEx(&vi) || vi.dwMajorVersion != 6 || vi.dwMajorVersion != 0)
+    if (!GetVersionEx(&vi) || vi.dwMajorVersion != 6 || vi.dwMinorVersion != 0)
     {
       Func_SetDefaultDllDirectories setDllDirs = (Func_SetDefaultDllDirectories)
           GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "SetDefaultDllDirectories");

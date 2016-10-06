@@ -262,8 +262,12 @@ struct CItem
   bool FindExtra_Link(CLinkInfo &link) const;
   void Link_to_Prop(unsigned linkType, NWindows::NCOM::CPropVariant &prop) const;
   bool Is_CopyLink() const;
+  bool Is_HardLink() const;
+  bool Is_CopyLink_or_HardLink() const;
 
   bool NeedUse_as_CopyLink() const { return PackSize == 0 && Is_CopyLink(); }
+  bool NeedUse_as_HardLink() const { return PackSize == 0 && Is_HardLink(); }
+  bool NeedUse_as_CopyLink_or_HardLink() const { return PackSize == 0 && Is_CopyLink_or_HardLink(); }
 
   bool GetAltStreamName(AString &name) const;
 
