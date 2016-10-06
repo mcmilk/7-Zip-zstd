@@ -80,7 +80,8 @@ static const UInt32 kHistorySize = 1 << 20;
 static const UInt32 kWindowReservSize = (1 << 22) + 256;
 
 CDecoder::CDecoder():
-  m_IsSolid(false)
+  m_IsSolid(false),
+  m_TablesOK(false)
 {
 }
 
@@ -100,6 +101,8 @@ UInt32 CDecoder::ReadBits(unsigned numBits) { return m_InBitStream.ReadBits(numB
 
 bool CDecoder::ReadTables(void)
 {
+  m_TablesOK = false;
+
   Byte levelLevels[kLevelTableSize];
   Byte newLevels[kMaxTableSize];
   m_AudioMode = (ReadBits(1) == 1);
@@ -170,6 +173,9 @@ bool CDecoder::ReadTables(void)
   }
   
   memcpy(m_LastLevels, newLevels, kMaxTableSize);
+
+  m_TablesOK = true;
+
   return true;
 }
 
@@ -340,9 +346,11 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
           return S_FALSE;
       return S_OK;
     }
-    if (!ReadTables())
-      return S_FALSE;
+    ReadTables();
   }
+
+  if (!m_TablesOK)
+    return S_FALSE;
 
   UInt64 startPos = m_OutWindowStream.GetProcessedSize();
   while (pos < unPackSize)
