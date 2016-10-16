@@ -41,6 +41,7 @@ WIN_OBJS = \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
   $O\Synchronization.obj \
+  $O\System.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
@@ -126,5 +127,22 @@ C_OBJS = \
 !include "../../Aes.mak"
 !include "../../Crc.mak"
 
-!include "../../zstd.mak"
+COMPRESS_OBJS = $(COMPRESS_OBJS) \
+  $O\ZstdDecoder.obj \
+  $O\ZstdRegister.obj \
+
+ZSTD_OBJS = \
+  $O\entropy_common.obj \
+  $O\fse_decompress.obj \
+  $O\huf_decompress.obj \
+  $O\zstd_common.obj \
+  $O\zstd_decompress.obj \
+  $O\xxhash.obj \
+  $O\error_private.obj \
+
+ZSTDMT_OBJS = \
+  $O\threading.obj \
+  $O\zstdmt_common.obj \
+  $O\zstdmt_decompress.obj \
+
 !include "../../7zip.mak"

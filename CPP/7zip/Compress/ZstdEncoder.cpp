@@ -1,32 +1,27 @@
-// ZstdEncoder.cpp
 // (C) 2016 Tino Reichardt
 
 #include "StdAfx.h"
 #include "ZstdEncoder.h"
+#include "ZstdDecoder.h"
 
 #ifndef EXTRACT_ONLY
 namespace NCompress {
 namespace NZSTD {
 
 CEncoder::CEncoder():
-  _cstream(NULL),
-  _buffIn(NULL),
-  _buffOut(NULL),
-  _buffInSize(0),
-  _buffOutSize(0),
   _processedIn(0),
-  _processedOut(0)
+  _processedOut(0),
+  _inputSize(0),
+  _ctx(NULL),
+  _numThreads(NWindows::NSystem::GetNumberOfProcessors())
 {
   _props.clear();
 }
 
 CEncoder::~CEncoder()
 {
-  if (_cstream)
-    ZSTD_freeCStream(_cstream);
-
-  MyFree(_buffIn);
-  MyFree(_buffOut);
+  if (_ctx)
+    ZSTDMT_freeCCtx(_ctx);
 }
 
 STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps)
@@ -37,6 +32,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
   {
     const PROPVARIANT & prop = coderProps[i];
     PROPID propID = propIDs[i];
+    UInt32 v = (UInt32)prop.ulVal;
     switch (propID)
     {
     case NCoderPropID::kLevel:
@@ -52,15 +48,17 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
 
         break;
       }
+    case NCoderPropID::kNumThreads:
+      {
+        SetNumberOfThreads(v);
+        break;
+      }
     default:
       {
         break;
       }
     }
   }
-
-  _processedIn = 0;
-  _processedOut = 0;
 
   return S_OK;
 }
@@ -71,75 +69,70 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream * outStream)
 }
 
 STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
-  ISequentialOutStream *outStream, const UInt64 * /* inSize */ ,
-  const UInt64 * /* outSize */ , ICompressProgressInfo *progress)
+  ISequentialOutStream *outStream, const UInt64 * /*inSize*/ ,
+  const UInt64 * /*outSize */, ICompressProgressInfo *progress)
 {
+  ZSTDMT_RdWr_t rdwr;
   size_t result;
+  HRESULT res = S_OK;
 
-  /* init only once in beginning */
-  if (!_cstream) {
+  struct ZstdStream Rd;
+  Rd.inStream = inStream;
+  Rd.outStream = outStream;
+  Rd.processedIn = &_processedIn;
+  Rd.processedOut = &_processedOut;
 
-    /* allocate stream */
-    _cstream = ZSTD_createCStream();
-    if (!_cstream)
-      return E_OUTOFMEMORY;
+  struct ZstdStream Wr;
+  if (_processedIn == 0)
+    Wr.progress = progress;
+  else
+    Wr.progress = 0;
+  Wr.inStream = inStream;
+  Wr.outStream = outStream;
+  Wr.processedIn = &_processedIn;
+  Wr.processedOut = &_processedOut;
 
-    /* allocate buffers */
-    _buffInSize = ZSTD_CStreamInSize();
-    _buffIn = MyAlloc(_buffInSize);
-    if (!_buffIn)
-      return E_OUTOFMEMORY;
+  /* 1) setup read/write functions */
+  rdwr.fn_read = ::ZstdRead;
+  rdwr.fn_write = ::ZstdWrite;
+  rdwr.arg_read = (void *)&Rd;
+  rdwr.arg_write = (void *)&Wr;
 
-    _buffOutSize = ZSTD_CStreamOutSize();
-    _buffOut = MyAlloc(_buffOutSize);
-    if (!_buffOut)
-      return E_OUTOFMEMORY;
-  }
-
-  /* init or re-init stream */
-  result = ZSTD_initCStream(_cstream, _props._level);
-  if (ZSTD_isError(result))
+  /* 2) create compression context, if needed */
+  if (!_ctx)
+    _ctx = ZSTDMT_createCCtx(_numThreads, _props._level, _inputSize);
+  if (!_ctx)
     return S_FALSE;
 
-  UInt32 read, toRead = static_cast < UInt32 > (_buffInSize);
-  for(;;) {
+  /* 3) compress */
+  result = ZSTDMT_compressCCtx(_ctx, &rdwr);
+  if (result == (size_t)-ZSTDMT_error_read_fail)
+    res = E_ABORT;
+  else if (ZSTDMT_isError(result))
+    return ErrorOut(result);
 
-    /* read input */
-    RINOK(inStream->Read(_buffIn, toRead, &read));
-    size_t InSize = static_cast < size_t > (read);
-    _processedIn += InSize;
+  return res;
+}
 
-    if (InSize == 0) {
+STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
+{
+  const UInt32 kNumThreadsMax = ZSTDMT_THREAD_MAX;
+  if (numThreads < 1) numThreads = 1;
+  if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
+  _numThreads = numThreads;
+  return S_OK;
+}
 
-      /* @eof */
-      ZSTD_outBuffer output = { _buffOut, _buffOutSize, 0 };
-      result = ZSTD_endStream(_cstream, &output);
-      if (ZSTD_isError(result))
-        return S_FALSE;
+HRESULT CEncoder::ErrorOut(size_t code)
+{
+  const char *strError = ZSTDMT_getErrorString(code);
+  wchar_t wstrError[200+5]; /* no malloc here, /TR */
 
-      if (output.pos) {
-        /* write last compressed bytes and update progress */
-        RINOK(WriteStream(outStream, _buffOut, output.pos));
-        _processedOut += output.pos;
-        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
-      }
+  mbstowcs(wstrError, strError, 200);
+  MessageBoxW(0, wstrError, L"7-Zip ZStandard", MB_ICONERROR | MB_OK);
+  MyFree(wstrError);
 
-      return S_OK;
-    }
-
-    /* compress input */
-    ZSTD_inBuffer input = { _buffIn, InSize, 0 };
-    while (input.pos < input.size) {
-      ZSTD_outBuffer output = { _buffOut, _buffOutSize, 0 };
-      result = ZSTD_compressStream(_cstream, &output , &input);
-      if (ZSTD_isError(result))
-        return S_FALSE;
-      /* write compressed stream and update progress */
-      RINOK(WriteStream(outStream, _buffOut, output.pos));
-      _processedOut += output.pos;
-      RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
-    }
-  }
+  return S_FALSE;
 }
 
 }}

@@ -69,6 +69,9 @@ AR_OBJS = \
   $O\HandlerCont.obj \
   $O\HfsHandler.obj \
   $O\IhexHandler.obj \
+  $O\LzHandler.obj \
+  $O\Lz4Handler.obj \
+  $O\Lz5Handler.obj \
   $O\LzhHandler.obj \
   $O\LzmaHandler.obj \
   $O\MachoHandler.obj \
@@ -103,7 +106,6 @@ AR_COMMON_OBJS = \
   $O\OutStreamWithSha1.obj \
   $O\HandlerOut.obj \
   $O\ParseProperties.obj \
-
 
 7Z_OBJS = \
   $O\7zCompressionMode.obj \
@@ -241,7 +243,6 @@ CRYPTO_OBJS = \
   $O\WzAes.obj \
   $O\ZipCrypto.obj \
   $O\ZipStrong.obj \
-
 
 C_OBJS = \
   $O\7zBuf2.obj \

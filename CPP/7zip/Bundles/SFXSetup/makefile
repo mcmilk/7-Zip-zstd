@@ -106,6 +106,4 @@ C_OBJS = \
   $O\Threads.obj \
 
 !include "../../Crc.mak"
-
-!include "../../zstd.mak"
 !include "../../7zip.mak"

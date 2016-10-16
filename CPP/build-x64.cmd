@@ -31,9 +31,13 @@ cd %ROOT%\Bundles\SFXWin
 nmake %OPTS%
 copy AMD64\7z.sfx %OUTDIR%\7z.sfx
 
-cd %ROOT%\Bundles\Codec_zstd
+cd %ROOT%\Bundles\Codec_lz4
 nmake %OPTS%
-copy AMD64\zstd.dll %OUTDIR%\zstd-x64min.dll
+copy AMD64\lz4.dll %OUTDIR%\lz4-x64.dll
+
+cd %ROOT%\Bundles\Codec_lz5
+nmake %OPTS%
+copy AMD64\lz5.dll %OUTDIR%\lz5-x64.dll
 
 cd %ROOT%\Bundles\Codec_zstdf
 nmake %OPTS%

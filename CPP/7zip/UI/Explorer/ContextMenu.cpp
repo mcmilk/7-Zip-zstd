@@ -283,8 +283,12 @@ static const char * const kArcExts[] =
     "7z"
   , "bz2"
   , "gz"
+  , "lz"
+  , "lz4"
+  , "lz5"
   , "rar"
   , "zip"
+  , "zst"
 };
 
 static bool IsItArcExt(const UString &ext)

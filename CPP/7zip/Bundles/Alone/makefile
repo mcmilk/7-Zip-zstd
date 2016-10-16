@@ -70,6 +70,7 @@ AR_OBJS = \
   $O\Bz2Handler.obj \
   $O\DeflateProps.obj \
   $O\GzHandler.obj \
+  $O\LzHandler.obj \
   $O\LzmaHandler.obj \
   $O\SplitHandler.obj \
   $O\XzHandler.obj \

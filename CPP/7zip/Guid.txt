@@ -161,8 +161,11 @@ Handler GUIDs:
   0A lzma
   0B lzma86
   0C xz
-  0D ppmd
+  0E zstd
+  0F lz4
+  10 lz5
 
+  C6 Lzip
   C7 Ext
   C8 VMDK
   C9 VDI

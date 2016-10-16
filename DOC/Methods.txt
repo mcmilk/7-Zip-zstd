@@ -123,7 +123,10 @@ List of defined IDs
 
       0x xx - reserved
       10 xx - reserved (LZHAM)
-      11 xx - reserved (Zstd)
+      11 xx - reserved (Tino Reichardt)
+      11 01 - reserved (Zstd)
+      11 04 - reserved (LZ4)
+      11 05 - reserved (LZ5)
 
 
 06.. - Crypto 

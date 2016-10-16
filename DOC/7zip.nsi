@@ -3,7 +3,7 @@
 
 !define VERSION_MAJOR 16
 !define VERSION_MINOR 04
-!define VERSION_POSTFIX_FULL ""
+!define VERSION_POSTFIX_FULL "-ZS"
 !ifdef WIN64
 !ifdef IA64
 !define VERSION_SYS_POSTFIX_FULL " for Windows IA-64"
@@ -534,6 +534,7 @@ Section Uninstall
   DeleteRegKey HKCR 7-Zip.hfs
   DeleteRegKey HKCR 7-Zip.iso
   DeleteRegKey HKCR 7-Zip.lha
+  DeleteRegKey HKCR 7-Zip.lz
   DeleteRegKey HKCR 7-Zip.lzh
   DeleteRegKey HKCR 7-Zip.lzma
   DeleteRegKey HKCR 7-Zip.ntfs
@@ -545,6 +546,7 @@ Section Uninstall
   DeleteRegKey HKCR 7-Zip.tar
   DeleteRegKey HKCR 7-Zip.taz
   DeleteRegKey HKCR 7-Zip.tgz
+  DeleteRegKey HKCR 7-Zip.tlz
   DeleteRegKey HKCR 7-Zip.tpz
   DeleteRegKey HKCR 7-Zip.txz
   DeleteRegKey HKCR 7-Zip.vhd

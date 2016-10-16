@@ -248,7 +248,7 @@ size_t ZSTD_getFrameParams(ZSTD_frameParams* fparamsPtr, const void* src, size_t
         if (!singleSegment) {
             BYTE const wlByte = ip[pos++];
             U32 const windowLog = (wlByte >> 3) + ZSTD_WINDOWLOG_ABSOLUTEMIN;
-            if (windowLog > ZSTD_WINDOWLOG_MAX) return ERROR(frameParameter_unsupported);
+            if (windowLog > ZSTD_WINDOWLOG_MAX) return ERROR(frameParameter_windowTooLarge);  /* avoids issue with 1 << windowLog */
             windowSize = (1U << windowLog);
             windowSize += (windowSize >> 3) * (wlByte&7);
         }
@@ -270,7 +270,7 @@ size_t ZSTD_getFrameParams(ZSTD_frameParams* fparamsPtr, const void* src, size_t
             case 3 : frameContentSize = MEM_readLE64(ip+pos); break;
         }
         if (!windowSize) windowSize = (U32)frameContentSize;
-        if (windowSize > windowSizeMax) return ERROR(frameParameter_unsupported);
+        if (windowSize > windowSizeMax) return ERROR(frameParameter_windowTooLarge);
         fparamsPtr->frameContentSize = frameContentSize;
         fparamsPtr->windowSize = windowSize;
         fparamsPtr->dictID = dictID;
@@ -878,7 +878,12 @@ size_t ZSTD_execSequence(BYTE* op,
             op = oLitEnd + length1;
             sequence.matchLength -= length1;
             match = base;
+            if (op > oend_w) {
+              memmove(op, match, sequence.matchLength);
+              return sequenceLength;
+            }
     }   }
+    /* Requirement: op <= oend_w */
 
     /* match within prefix */
     if (sequence.offset < 8) {
@@ -1397,7 +1402,9 @@ ZSTD_DDict* ZSTD_createDDict_advanced(const void* dict, size_t dictSize, ZSTD_cu
             return NULL;
         }
 
-        memcpy(dictContent, dict, dictSize);
+        if (dictSize) {
+            memcpy(dictContent, dict, dictSize);
+        }
         {   size_t const errorCode = ZSTD_decompressBegin_usingDict(dctx, dictContent, dictSize);
             if (ZSTD_isError(errorCode)) {
                 ZSTD_free(dictContent, customMem);
@@ -1568,7 +1575,7 @@ size_t ZSTD_setDStreamParameter(ZSTD_DStream* zds,
     switch(paramType)
     {
         default : return ERROR(parameter_unknown);
-        case ZSTDdsp_maxWindowSize : zds->maxWindowSize = paramValue; break;
+        case ZSTDdsp_maxWindowSize : zds->maxWindowSize = paramValue ? paramValue : (U32)(-1); break;
     }
     return 0;
 }
@@ -1649,7 +1656,7 @@ size_t ZSTD_decompressStream(ZSTD_DStream* zds, ZSTD_outBuffer* output, ZSTD_inB
             }   }
 
             zds->fParams.windowSize = MAX(zds->fParams.windowSize, 1U << ZSTD_WINDOWLOG_ABSOLUTEMIN);
-            if (zds->fParams.windowSize > zds->maxWindowSize) return ERROR(frameParameter_unsupported);
+            if (zds->fParams.windowSize > zds->maxWindowSize) return ERROR(frameParameter_windowTooLarge);
 
             /* Adapt buffer sizes to frame header instructions */
             {   size_t const blockSize = MIN(zds->fParams.windowSize, ZSTD_BLOCKSIZE_ABSOLUTEMAX);

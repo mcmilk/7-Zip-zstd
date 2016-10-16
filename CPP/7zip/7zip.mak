@@ -27,7 +27,10 @@ OBJS = \
   $(COMPRESS_OBJS) \
   $(CRYPTO_OBJS) \
   $(C_OBJS) \
+  $(LZ4_OBJS) \
+  $(LZ5_OBJS) \
   $(ZSTD_OBJS) \
+  $(ZSTDMT_OBJS) \
   $(ASM_OBJS) \
   $O\resource.res \
 
@@ -173,8 +176,23 @@ $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
 !ENDIF
 
+!IFDEF LZ4_OBJS
+$(LZ4_OBJS): ../../../../C/lz4/$(*B).c
+	$(COMPL_O2)
+!ENDIF
+
+!IFDEF LZ5_OBJS
+$(LZ5_OBJS): ../../../../C/lz5/$(*B).c
+	$(COMPL_O2)
+!ENDIF
+
 !IFDEF ZSTD_OBJS
 $(ZSTD_OBJS): ../../../../C/zstd/$(*B).c
+	$(COMPL_O2)
+!ENDIF
+
+!IFDEF ZSTDMT_OBJS
+$(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 	$(COMPL_O2)
 !ENDIF
 
@@ -240,8 +258,17 @@ $(ZSTD_OBJS): ../../../../C/zstd/$(*B).c
 	$(COMPLB_O2)
 {../../../../C}.c{$O}.obj::
 	$(CCOMPLB)
+{../../../../C/lz4}.c{$O}.obj::
+	$(CCOMPLB)
+{../../../../C/lz5}.c{$O}.obj::
+	$(CCOMPLB)
 {../../../../C/zstd}.c{$O}.obj::
 	$(CCOMPLB)
+{../../../../C/zstdmt}.c{$O}.obj::
+	$(CCOMPLB) \
+	-I ../../../../C/lz4 \
+	-I ../../../../C/lz5 \
+	-I ../../../../C/zstd
 
 !ENDIF
 
