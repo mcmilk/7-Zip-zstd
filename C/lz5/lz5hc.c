@@ -1444,7 +1444,7 @@ _Search:
         {
         int price, best_price;
         U32 off0=0, off1=0;
-        const uint8_t *pos, *best_pos;
+        const U8 *pos, *best_pos;
 
     //	find the lowest price for encoding ml bytes
         best_pos = ip;
