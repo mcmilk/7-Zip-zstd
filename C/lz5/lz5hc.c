@@ -43,9 +43,6 @@
 #include "lz5common.h"
 #include "lz5.h"
 #include "lz5hc.h"
-#include <stdio.h>
-#include <stdint.h>
-
 
 /**************************************
 *  HC Compression
