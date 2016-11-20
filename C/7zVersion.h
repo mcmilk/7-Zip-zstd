@@ -2,11 +2,11 @@
 #define MY_VER_MINOR 04
 #define MY_VER_BUILD 0
 #define MY_VERSION_NUMBERS "16.04 ZS"
-#define MY_VERSION "16.04 ZS"
-#define MY_DATE "2016-10-16"
+#define MY_VERSION         "16.04 ZS"
+#define MY_DATE            "2016-11-20"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
-#define MY_AUTHOR_NAME "Igor Pavlov, Tino Reichardt"
+#define MY_AUTHOR_NAME  "Igor Pavlov, Tino Reichardt"
 #define MY_COPYRIGHT_PD "Igor Pavlov : Public domain"
 #define MY_COPYRIGHT_CR "Copyright (c) 1999-2016 Igor Pavlov"
 
