@@ -24,6 +24,18 @@ CEncoder::~CEncoder()
     ZSTDMT_freeCCtx(_ctx);
 }
 
+HRESULT CEncoder::ErrorOut(size_t code)
+{
+  const char *strError = ZSTDMT_getErrorString(code);
+  wchar_t wstrError[200+5]; /* no malloc here, /TR */
+
+  mbstowcs(wstrError, strError, 200);
+  MessageBoxW(0, wstrError, L"7-Zip ZStandard", MB_ICONERROR | MB_OK);
+  MyFree(wstrError);
+
+  return S_FALSE;
+}
+
 STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps)
 {
   _props.clear();
@@ -42,9 +54,9 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
 
         /* level 1..22 */
         _props._level = static_cast < Byte > (prop.ulVal);
-        Byte zstd_level = static_cast < Byte > (ZSTD_maxCLevel());
-        if (_props._level > zstd_level)
-          _props._level = zstd_level;
+        Byte mylevel = static_cast < Byte > (ZSTDMT_LEVEL_MAX);
+        if (_props._level > mylevel)
+          _props._level = mylevel;
 
         break;
       }
@@ -106,10 +118,11 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
   /* 3) compress */
   result = ZSTDMT_compressCCtx(_ctx, &rdwr);
-  if (result == (size_t)-ZSTDMT_error_read_fail)
-    res = E_ABORT;
-  else if (ZSTDMT_isError(result))
+  if (ZSTDMT_isError(result)) {
+    if (result == (size_t)-ZSTDMT_error_canceled)
+      return E_ABORT;
     return ErrorOut(result);
+  }
 
   return res;
 }
@@ -121,18 +134,6 @@ STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
   if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   _numThreads = numThreads;
   return S_OK;
-}
-
-HRESULT CEncoder::ErrorOut(size_t code)
-{
-  const char *strError = ZSTDMT_getErrorString(code);
-  wchar_t wstrError[200+5]; /* no malloc here, /TR */
-
-  mbstowcs(wstrError, strError, 200);
-  MessageBoxW(0, wstrError, L"7-Zip ZStandard", MB_ICONERROR | MB_OK);
-  MyFree(wstrError);
-
-  return S_FALSE;
 }
 
 }}

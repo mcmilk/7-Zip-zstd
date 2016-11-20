@@ -1,10 +1,5 @@
 // (C) 2016 Tino Reichardt
 
-/**
- * you can define LZ4_LEGACY_SUPPORT to be backwards compatible (0.1 .. 0.7)
- * /TR 2016-10-01
- */
-
 #define LZ4_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"

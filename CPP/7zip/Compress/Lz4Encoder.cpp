@@ -24,6 +24,18 @@ CEncoder::~CEncoder()
     LZ4MT_freeCCtx(_ctx);
 }
 
+HRESULT CEncoder::ErrorOut(size_t code)
+{
+  const char *strError = LZ4MT_getErrorString(code);
+  wchar_t wstrError[200+5]; /* no malloc here, /TR */
+
+  mbstowcs(wstrError, strError, 200);
+  MessageBoxW(0, wstrError, L"7-Zip ZStandard", MB_ICONERROR | MB_OK);
+  MyFree(wstrError);
+
+  return S_FALSE;
+}
+
 STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps)
 {
   _props.clear();
@@ -40,10 +52,11 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         if (prop.vt != VT_UI4)
           return E_INVALIDARG;
 
+        /* level 1..22 */
         _props._level = static_cast < Byte > (prop.ulVal);
-        Byte lz4_level = static_cast < Byte > (LZ4MT_LEVEL_MAX);
-        if (_props._level > lz4_level)
-          _props._level = lz4_level;
+        Byte mylevel = static_cast < Byte > (LZ4MT_LEVEL_MAX);
+        if (_props._level > mylevel)
+          _props._level = mylevel;
 
         break;
       }
@@ -104,12 +117,12 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     return S_FALSE;
 
   /* 3) compress */
-  result = LZ4MT_CompressCCtx(_ctx, &rdwr);
-  if (result == (size_t)-LZ4MT_error_read_fail)
-    res = E_ABORT;
-  else if (LZ4MT_isError(result))
-    if (result != LZ4MT_error_read_fail)
-      return ErrorOut(result);
+  result = LZ4MT_compressCCtx(_ctx, &rdwr);
+  if (LZ4MT_isError(result)) {
+    if (result == (size_t)-LZ4MT_error_canceled)
+      return E_ABORT;
+    return ErrorOut(result);
+  }
 
   return res;
 }
@@ -121,18 +134,6 @@ STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
   if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   _numThreads = numThreads;
   return S_OK;
-}
-
-HRESULT CEncoder::ErrorOut(size_t code)
-{
-  const char *strError = LZ4MT_getErrorString(code);
-  wchar_t wstrError[200+5]; /* no malloc here, /TR */
-
-  mbstowcs(wstrError, strError, 200);
-  MessageBoxW(0, wstrError, L"7-Zip ZStandard", MB_ICONERROR | MB_OK);
-  MyFree(wstrError);
-
-  return S_FALSE;
 }
 
 }}

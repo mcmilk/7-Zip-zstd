@@ -9,6 +9,16 @@ int Lz5Read(void *arg, LZ5MT_Buffer * in)
   size_t size = in->size;
 
   HRESULT res = ReadStream(x->inStream, in->buf, &size);
+
+  /* catch errors */
+  switch (res) {
+  case E_ABORT:
+    return -2;
+  case E_OUTOFMEMORY:
+    return -3;
+  }
+
+  /* some other error -> read_fail */
   if (res != S_OK)
     return -1;
 
@@ -28,17 +38,29 @@ int Lz5Write(void *arg, LZ5MT_Buffer * out)
   {
     UInt32 block;
     HRESULT res = x->outStream->Write((char*)out->buf + done, todo, &block);
+
+    /* catch errors */
+    switch (res) {
+    case E_ABORT:
+      return -2;
+    case E_OUTOFMEMORY:
+      return -3;
+    }
+
     done += block;
     if (res == k_My_HRESULT_WritingWasCut)
       break;
+    /* some other error -> write_fail */
     if (res != S_OK)
       return -1;
+
     if (block == 0)
-      return E_FAIL;
+      return -1;
     todo -= block;
   }
 
   *x->processedOut += done;
+  /* we need no lock here, cause only one thread can write... */
   if (x->progress)
     x->progress->SetRatioInfo(x->processedIn, x->processedOut);
 
@@ -130,18 +152,18 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   rdwr.arg_read = (void *)&Rd;
   rdwr.arg_write = (void *)&Wr;
 
-  /* 2) create compression context */
+  /* 2) create decompression context */
   LZ5MT_DCtx *ctx = LZ5MT_createDCtx(_numThreads, _inputSize);
   if (!ctx)
       return S_FALSE;
 
-  /* 3) compress */
-  result = LZ5MT_DecompressDCtx(ctx, &rdwr);
-  if (result == (size_t)-LZ5MT_error_read_fail)
-    res = E_ABORT;
-  else if (LZ5MT_isError(result))
-    if (result != LZ5MT_error_read_fail)
-      return ErrorOut(result);
+  /* 3) decompress */
+  result = LZ5MT_decompressDCtx(ctx, &rdwr);
+  if (LZ5MT_isError(result)) {
+    if (result == (size_t)-LZ5MT_error_canceled)
+      return E_ABORT;
+    return ErrorOut(result);
+  }
 
   /* 4) free resources */
   LZ5MT_freeDCtx(ctx);

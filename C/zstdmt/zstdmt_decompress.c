@@ -175,6 +175,8 @@ static size_t pt_write(ZSTDMT_DCtx * ctx, struct writelist *wl)
 			int rv = ctx->fn_write(ctx->arg_write, &wl->out);
 			if (rv == -1)
 				return ZSTDMT_ERROR(write_fail);
+			if (rv == -2)
+				return ZSTDMT_ERROR(canceled);
 			ctx->outsize += wl->out.size;
 			ctx->curframe++;
 			list_move(entry, &ctx->writelist_free);
@@ -216,6 +218,8 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 			hdr.size = 5;
 			rv = ctx->fn_read(ctx->arg_read, &hdr);
 			if (rv == -1)
+				goto error_read;
+			if (rv == -2)
 				goto error_read;
 			if (hdr.size != 5)
 				goto error_data;
@@ -284,6 +288,8 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 	rv = ctx->fn_read(ctx->arg_read, &hdr);
 	if (rv == -1)
 		goto error_read;
+	if (rv == -2)
+		goto error_canceled;
 
 	/* eof reached ? */
 	if (unlikely(hdr.size == 0)) {
@@ -318,6 +324,8 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 		/* generic read failure! */
 		if (rv == -1)
 			goto error_read;
+		if (rv == -2)
+ 			goto error_canceled;
 		/* needed more bytes! */
 		if (in->size != toRead)
 			goto error_data;
@@ -330,6 +338,9 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 	/* done, no error */
 	return 0;
 
+ error_canceled:
+	pthread_mutex_unlock(&ctx->read_mutex);
+	return ZSTDMT_ERROR(canceled);
  error_data:
 	pthread_mutex_unlock(&ctx->read_mutex);
 	return ZSTDMT_ERROR(data_error);
@@ -602,6 +613,14 @@ static size_t st_decompress(void *arg)
 				w.size = zOut.pos;
 				w.buf = zOut.dst;
 				rv = ctx->fn_write(ctx->arg_write, &w);
+				if (rv == -1) {
+					return ZSTDMT_ERROR(write_fail);
+					goto error_clib;
+				}
+				if (rv == -2) {
+					return ZSTDMT_ERROR(canceled);
+					goto error_clib;
+				}
 				ctx->outsize += zOut.pos;
 			}
 

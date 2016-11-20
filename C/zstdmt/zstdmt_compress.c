@@ -15,7 +15,6 @@
 #include <stdlib.h>
 
 #define ZSTD_STATIC_LINKING_ONLY
-//#define DEBUGME
 #include "zstd.h"
 
 #include "mem.h"
@@ -115,7 +114,7 @@ ZSTDMT_CCtx *ZSTDMT_createCCtx(int threads, int level, int inputsize)
 	if (inputsize)
 		ctx->inputsize = inputsize;
 	else {
-#ifndef DEBUGME
+#if 1
 		const int windowLog[] = {
 			0, 19, 19, 20, 20, 20, 21, 21,
 			21, 21, 21, 22, 22, 22, 22, 22,
@@ -123,7 +122,8 @@ ZSTDMT_CCtx *ZSTDMT_createCCtx(int threads, int level, int inputsize)
 		};
 		ctx->inputsize = 1 << (windowLog[level] + 1);
 #else
-		const int mb[] = { 0, 1, 1, 1, 2, 2, 2,
+		const int mb[] = {
+			0, 1, 1, 1, 2, 2, 2,
 			3, 3, 3, 4, 4, 4, 5,
 			5, 5, 5, 5, 5, 5, 5
 		};
@@ -180,6 +180,8 @@ static size_t pt_write(ZSTDMT_CCtx * ctx, struct writelist *wl)
 		rv = ctx->fn_write(ctx->arg_write, &b);
 		if (rv == -1)
 			return ZSTDMT_ERROR(write_fail);
+		if (rv == -2)
+			return ZSTDMT_ERROR(canceled);
 		if (b.size != 9)
 			return ZSTDMT_ERROR(write_fail);
 		ctx->outsize += 9;
@@ -197,6 +199,8 @@ static size_t pt_write(ZSTDMT_CCtx * ctx, struct writelist *wl)
 			rv = ctx->fn_write(ctx->arg_write, &wl->out);
 			if (rv == -1)
 				return ZSTDMT_ERROR(write_fail);
+			if (rv == -2)
+				return ZSTDMT_ERROR(canceled);
 			ctx->outsize += wl->out.size;
 			ctx->curframe++;
 			list_move(entry, &ctx->writelist_free);
@@ -264,6 +268,10 @@ static void *pt_compress(void *arg)
 			pthread_mutex_unlock(&ctx->read_mutex);
 			result = ZSTDMT_ERROR(read_fail);
 			goto error;
+		} else if (rv == -2) {
+			pthread_mutex_unlock(&ctx->read_mutex);
+			result = ZSTDMT_ERROR(canceled);
+			goto error;
 		}
 
 		/* eof */
@@ -305,6 +313,7 @@ static void *pt_compress(void *arg)
 		/* write result */
 		pthread_mutex_lock(&ctx->write_mutex);
 		result = pt_write(ctx, wl);
+		printf("pt_write() = %d\n", result);
 		pthread_mutex_unlock(&ctx->write_mutex);
 		if (ZSTDMT_isError(result))
 			goto error;

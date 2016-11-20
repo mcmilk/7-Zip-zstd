@@ -48,6 +48,7 @@ typedef enum {
   ZSTDMT_error_frame_decompress,
   ZSTDMT_error_compressionParameter_unsupported,
   ZSTDMT_error_compression_library,
+  ZSTDMT_error_canceled,
   ZSTDMT_error_maxCode
 } ZSTDMT_ErrorCode;
 
@@ -73,6 +74,12 @@ typedef struct {
  * - you can use stdio functions or plain read/write
  * - just write some wrapper on your own
  * - a sample is given in 7-Zip ZS
+ *
+ * error definitions:
+ *  0 = success
+ * -1 = generic read/write error
+ * -2 = user abort
+ * -3 = memory
  */
 typedef int (fn_read) (void *args, ZSTDMT_Buffer * in);
 typedef int (fn_write) (void *args, ZSTDMT_Buffer * out);
