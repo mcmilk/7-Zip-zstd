@@ -142,6 +142,24 @@ LZ5MT_DCtx *LZ5MT_createDCtx(int threads, int inputsize)
 }
 
 /**
+ * mt_error - return mt lib specific error code
+ */
+static size_t mt_error(int rv)
+{
+	switch (rv) {
+	case -1:
+		return ERROR(read_fail);
+	case -2:
+		return ERROR(canceled);
+	case -3:
+		return ERROR(memory_allocation);
+	}
+
+	/* XXX, some catch all other errors */
+	return ERROR(read_fail);
+}
+
+/**
  * pt_write - queue for decompressed output
  */
 static size_t pt_write(LZ5MT_DCtx * ctx, struct writelist *wl)
@@ -156,8 +174,8 @@ static size_t pt_write(LZ5MT_DCtx * ctx, struct writelist *wl)
 		wl = list_entry(entry, struct writelist, node);
 		if (wl->frame == ctx->curframe) {
 			int rv = ctx->fn_write(ctx->arg_write, &wl->out);
-			if (rv == -1)
-				return ERROR(write_fail);
+			if (rv < 0)
+				return mt_error(rv);
 			ctx->outsize += wl->out.size;
 			ctx->curframe++;
 			list_move(entry, &ctx->writelist_free);
@@ -185,8 +203,10 @@ static size_t pt_read(LZ5MT_DCtx * ctx, LZ5MT_Buffer * in, size_t * frame)
 		hdr.buf = hdrbuf + 4;
 		hdr.size = 8;
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
-		if (rv == -1)
-			goto error_read;
+		if (rv < 0) {
+			pthread_mutex_unlock(&ctx->read_mutex);
+			return mt_error(rv);
+		}
 		if (hdr.size != 8)
 			goto error_read;
 		hdr.buf = hdrbuf;
@@ -194,8 +214,10 @@ static size_t pt_read(LZ5MT_DCtx * ctx, LZ5MT_Buffer * in, size_t * frame)
 		hdr.buf = hdrbuf;
 		hdr.size = 12;
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
-		if (rv == -1)
-			goto error_read;
+		if (rv < 0) {
+			pthread_mutex_unlock(&ctx->read_mutex);
+			return mt_error(rv);
+		}
 		/* eof reached ? */
 		if (hdr.size == 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
@@ -231,8 +253,10 @@ static size_t pt_read(LZ5MT_DCtx * ctx, LZ5MT_Buffer * in, size_t * frame)
 		in->size = toRead;
 		rv = ctx->fn_read(ctx->arg_read, in);
 		/* generic read failure! */
-		if (rv == -1)
-			goto error_read;
+		if (rv < 0) {
+			pthread_mutex_unlock(&ctx->read_mutex);
+			return mt_error(rv);
+		}
 		/* needed more bytes! */
 		if (in->size != toRead)
 			goto error_data;
@@ -293,14 +317,13 @@ static void *pt_decompress(void *arg)
 
 		/* zero should not happen here! */
 		result = pt_read(ctx, in, &wl->frame);
-		if (in->size == 0)
-			break;
-
 		if (LZ5MT_isError(result)) {
 			list_move(&wl->node, &ctx->writelist_free);
-
 			goto error_lock;
 		}
+
+		if (in->size == 0)
+			break;
 
 		{
 			/* get frame size for output buffer */
@@ -407,10 +430,10 @@ static size_t st_decompress(void *arg)
 		/* read new input */
 		in->size = nextToLoad;
 		rv = ctx->fn_read(ctx->arg_read, in);
-		if (rv == -1) {
+		if (rv < 0) {
 			free(in->buf);
 			free(out->buf);
-			return ERROR(read_fail);
+			return mt_error(rv);
 		}
 
 		/* done, eof reached */
@@ -436,10 +459,10 @@ static size_t st_decompress(void *arg)
 			/* have some output */
 			if (out->size) {
 				rv = ctx->fn_write(ctx->arg_write, out);
-				if (rv == -1) {
+				if (rv < 0) {
 					free(in->buf);
 					free(out->buf);
-					return ERROR(write_fail);
+					return mt_error(rv);
 				}
 			}
 
@@ -456,7 +479,7 @@ static size_t st_decompress(void *arg)
 	return 0;
 }
 
-size_t LZ5MT_DecompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
+size_t LZ5MT_decompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
 {
 	unsigned char buf[4];
 	int t, rv;
@@ -476,8 +499,8 @@ size_t LZ5MT_DecompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
 	in->buf = buf;
 	in->size = 4;
 	rv = ctx->fn_read(ctx->arg_read, in);
-	if (rv == -1)
-		return ERROR(read_fail);
+	if (rv < 0)
+		return mt_error(rv);
 	if (in->size != 4)
 		return ERROR(data_error);
 

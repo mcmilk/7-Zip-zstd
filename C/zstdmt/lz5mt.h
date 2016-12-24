@@ -47,6 +47,7 @@ typedef enum {
   LZ5MT_error_frame_decompress,
   LZ5MT_error_compressionParameter_unsupported,
   LZ5MT_error_compression_library,
+  LZ5MT_error_canceled,
   LZ5MT_error_maxCode
 } LZ5MT_ErrorCode;
 
@@ -105,7 +106,7 @@ LZ5MT_CCtx *LZ5MT_createCCtx(int threads, int level, int inputsize);
  * 2) threaded compression
  * - return -1 on error
  */
-size_t LZ5MT_CompressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr);
+size_t LZ5MT_compressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr);
 
 /**
  * 3) get some statistic
@@ -141,7 +142,7 @@ LZ5MT_DCtx *LZ5MT_createDCtx(int threads, int inputsize);
  * 2) threaded compression
  * - return -1 on error
  */
-size_t LZ5MT_DecompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr);
+size_t LZ5MT_decompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr);
 
 /**
  * 3) get some statistic

@@ -52,12 +52,10 @@ pthread_create(pthread_t * thread, const void *unused,
 
 int _pthread_join(pthread_t * thread, void **value_ptr)
 {
-	DWORD result;
-
 	if (!thread->handle)
 		return 0;
 
-	result = WaitForSingleObject(thread->handle, INFINITE);
+	DWORD result = WaitForSingleObject(thread->handle, INFINITE);
 	switch (result) {
 	case WAIT_OBJECT_0:
 		if (value_ptr)

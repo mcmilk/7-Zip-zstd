@@ -1,9 +1,9 @@
 #define MY_VER_MAJOR 1
 #define MY_VER_MINOR 1
 #define MY_VER_BUILD 0
-#define MY_VERSION_NUMBERS "1.1.0"
-#define MY_VERSION         "1.1.0"
-#define MY_DATE            "2016-11-20"
+#define MY_VERSION_NUMBERS "1.1.2"
+#define MY_VERSION         "1.1.2"
+#define MY_DATE            "2016-12-22"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
 #define MY_AUTHOR_NAME     "Tino Reichardt"

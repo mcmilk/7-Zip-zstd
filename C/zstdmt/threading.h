@@ -31,7 +31,7 @@ extern "C" {
 #include <windows.h>
 
 /* mutex */
-#define pthread_mutex_t           CRITICAL_SECTION
+#define pthread_mutex_t CRITICAL_SECTION
 #define pthread_mutex_init(a,b)   InitializeCriticalSection((a))
 #define pthread_mutex_destroy(a)  DeleteCriticalSection((a))
 #define pthread_mutex_lock        EnterCriticalSection

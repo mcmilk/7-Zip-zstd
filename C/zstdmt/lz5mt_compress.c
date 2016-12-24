@@ -156,6 +156,24 @@ LZ5MT_CCtx *LZ5MT_createCCtx(int threads, int level, int inputsize)
 }
 
 /**
+ * mt_error - return mt lib specific error code
+ */
+static size_t mt_error(int rv)
+{
+	switch (rv) {
+	case -1:
+		return ERROR(read_fail);
+	case -2:
+		return ERROR(canceled);
+	case -3:
+		return ERROR(memory_allocation);
+	}
+
+	/* XXX, some catch all other errors */
+	return ERROR(read_fail);
+}
+
+/**
  * pt_write - queue for compressed output
  */
 static size_t pt_write(LZ5MT_CCtx * ctx, struct writelist *wl)
@@ -175,8 +193,8 @@ static size_t pt_write(LZ5MT_CCtx * ctx, struct writelist *wl)
 		wl = list_entry(entry, struct writelist, node);
 		if (wl->frame == ctx->curframe) {
 			int rv = ctx->fn_write(ctx->arg_write, &wl->out);
-			if (rv == -1)
-				return ERROR(write_fail);
+			if (rv < 0)
+				return mt_error(rv);
 			ctx->outsize += wl->out.size;
 			ctx->curframe++;
 			list_move(entry, &ctx->writelist_free);
@@ -239,9 +257,9 @@ static void *pt_compress(void *arg)
 		pthread_mutex_lock(&ctx->read_mutex);
 		in.size = ctx->inputsize;
 		rv = ctx->fn_read(ctx->arg_read, &in);
-		if (rv == -1) {
+		if (rv < 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
-			return (void *)ERROR(read_fail);
+			return (void*)mt_error(rv);
 		}
 
 		/* eof */
@@ -277,8 +295,7 @@ static void *pt_compress(void *arg)
 		MEM_writeLE32((unsigned char *)wl->out.buf + 0,
 			      LZ5FMT_MAGIC_SKIPPABLE);
 		MEM_writeLE32((unsigned char *)wl->out.buf + 4, 4);
-		MEM_writeLE32((unsigned char *)wl->out.buf + 8,
-			      (U32)result);
+		MEM_writeLE32((unsigned char *)wl->out.buf + 8, (U32) result);
 		wl->out.size = result + 12;
 
 		/* write result */
@@ -293,7 +310,7 @@ static void *pt_compress(void *arg)
 	return 0;
 }
 
-size_t LZ5MT_CompressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr)
+size_t LZ5MT_compressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr)
 {
 	int t;
 
