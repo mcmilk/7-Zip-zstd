@@ -17,7 +17,7 @@
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 
-#include "mem.h"
+#include "memmt.h"
 #include "threading.h"
 #include "list.h"
 #include "zstdmt.h"
@@ -191,7 +191,7 @@ static size_t pt_write(ZSTDMT_DCtx * ctx, struct writelist *wl)
 		wl = list_entry(entry, struct writelist, node);
 		if (wl->frame == ctx->curframe) {
 			int rv = ctx->fn_write(ctx->arg_write, &wl->out);
-			if (rv < 0)
+			if (rv != 0)
 				return mt_error(rv);
 			ctx->outsize += wl->out.size;
 			ctx->curframe++;
@@ -233,7 +233,7 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 			hdr.buf = hdrbuf + 7;
 			hdr.size = 5;
 			rv = ctx->fn_read(ctx->arg_read, &hdr);
-			if (rv < 0) {
+			if (rv != 0) {
 				pthread_mutex_unlock(&ctx->read_mutex);
 				return mt_error(rv);
 			}
@@ -250,7 +250,7 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 				goto error_nomem;
 			in->allocated = in->size;
 			rv = ctx->fn_read(ctx->arg_read, in);
-			if (rv < 0) {
+			if (rv != 0) {
 				pthread_mutex_unlock(&ctx->read_mutex);
 				return mt_error(rv);
 			}
@@ -282,7 +282,7 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 			in->buf = start + 4;
 			in->size = toRead - 4;
 			rv = ctx->fn_read(ctx->arg_read, in);
-			if (rv < 0) {
+			if (rv != 0) {
 				pthread_mutex_unlock(&ctx->read_mutex);
 				return mt_error(rv);
 			}
@@ -306,7 +306,7 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 	hdr.buf = hdrbuf;
 	hdr.size = 12;
 	rv = ctx->fn_read(ctx->arg_read, &hdr);
-	if (rv < 0) {
+	if (rv != 0) {
 		pthread_mutex_unlock(&ctx->read_mutex);
 		return mt_error(rv);
 	}
@@ -341,11 +341,10 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 
 		in->size = toRead;
 		rv = ctx->fn_read(ctx->arg_read, in);
-		/* generic read failure! */
-		if (rv == -1)
-			goto error_read;
-		if (rv == -2)
-			goto error_canceled;
+		if (rv != 0) {
+			pthread_mutex_unlock(&ctx->read_mutex);
+			return mt_error(rv);
+		}
 		/* needed more bytes! */
 		if (in->size != toRead)
 			goto error_data;
@@ -358,9 +357,6 @@ static size_t pt_read(ZSTDMT_DCtx * ctx, ZSTDMT_Buffer * in, size_t * frame)
 	/* done, no error */
 	return 0;
 
- error_canceled:
-	pthread_mutex_unlock(&ctx->read_mutex);
-	return ZSTDMT_ERROR(canceled);
  error_data:
 	pthread_mutex_unlock(&ctx->read_mutex);
 	return ZSTDMT_ERROR(data_error);
@@ -603,7 +599,7 @@ static size_t st_decompress(void *arg)
 
 		/* read more bytes, to fill buffer */
 		rv = ctx->fn_read(ctx->arg_read, in);
-		if (rv < 0) {
+		if (rv != 0) {
 			result = mt_error(rv);
 			goto error;
 		}
@@ -635,17 +631,9 @@ static size_t st_decompress(void *arg)
 				w.size = zOut.pos;
 				w.buf = zOut.dst;
 				rv = ctx->fn_write(ctx->arg_write, &w);
-				if (rv == -1) {
-					return ZSTDMT_ERROR(write_fail);
-					goto error_clib;
-				}
-				if (rv == -2) {
-					return ZSTDMT_ERROR(canceled);
-					goto error_clib;
-				}
-				if (rv == -3) {
-					return ZSTDMT_ERROR(memory_allocation);
-					goto error_clib;
+				if (rv != 0) {
+					result = mt_error(rv);
+					goto error;
 				}
 				ctx->outsize += zOut.pos;
 			}
@@ -669,7 +657,7 @@ static size_t st_decompress(void *arg)
 		/* read next input */
 		in->size = in->allocated;
 		rv = ctx->fn_read(ctx->arg_read, in);
-		if (rv < 0) {
+		if (rv != 0) {
 			result = mt_error(rv);
 			goto error;
 		}
@@ -732,7 +720,7 @@ size_t ZSTDMT_decompressDCtx(ZSTDMT_DCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 	in->buf = buf;
 	in->size = 16;
 	rv = ctx->fn_read(ctx->arg_read, in);
-	if (rv < 0)
+	if (rv != 0)
 		return mt_error(rv);
 
 	/* must be single threaded standard zstd, when smaller 16 bytes */

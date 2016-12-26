@@ -17,7 +17,7 @@
 #define LZ5F_DISABLE_OBSOLETE_ENUMS
 #include "lz5frame.h"
 
-#include "mem.h"
+#include "memmt.h"
 #include "threading.h"
 #include "list.h"
 #include "lz5mt.h"
@@ -193,7 +193,7 @@ static size_t pt_write(LZ5MT_CCtx * ctx, struct writelist *wl)
 		wl = list_entry(entry, struct writelist, node);
 		if (wl->frame == ctx->curframe) {
 			int rv = ctx->fn_write(ctx->arg_write, &wl->out);
-			if (rv < 0)
+			if (rv != 0)
 				return mt_error(rv);
 			ctx->outsize += wl->out.size;
 			ctx->curframe++;
@@ -257,7 +257,7 @@ static void *pt_compress(void *arg)
 		pthread_mutex_lock(&ctx->read_mutex);
 		in.size = ctx->inputsize;
 		rv = ctx->fn_read(ctx->arg_read, &in);
-		if (rv < 0) {
+		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
 			return (void*)mt_error(rv);
 		}

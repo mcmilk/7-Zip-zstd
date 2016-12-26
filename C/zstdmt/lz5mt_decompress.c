@@ -17,7 +17,7 @@
 #define LZ5F_DISABLE_OBSOLETE_ENUMS
 #include "lz5frame.h"
 
-#include "mem.h"
+#include "memmt.h"
 #include "threading.h"
 #include "list.h"
 #include "lz5mt.h"
@@ -174,7 +174,7 @@ static size_t pt_write(LZ5MT_DCtx * ctx, struct writelist *wl)
 		wl = list_entry(entry, struct writelist, node);
 		if (wl->frame == ctx->curframe) {
 			int rv = ctx->fn_write(ctx->arg_write, &wl->out);
-			if (rv < 0)
+			if (rv != 0)
 				return mt_error(rv);
 			ctx->outsize += wl->out.size;
 			ctx->curframe++;
@@ -203,7 +203,7 @@ static size_t pt_read(LZ5MT_DCtx * ctx, LZ5MT_Buffer * in, size_t * frame)
 		hdr.buf = hdrbuf + 4;
 		hdr.size = 8;
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
-		if (rv < 0) {
+		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
 			return mt_error(rv);
 		}
@@ -214,7 +214,7 @@ static size_t pt_read(LZ5MT_DCtx * ctx, LZ5MT_Buffer * in, size_t * frame)
 		hdr.buf = hdrbuf;
 		hdr.size = 12;
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
-		if (rv < 0) {
+		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
 			return mt_error(rv);
 		}
@@ -253,7 +253,7 @@ static size_t pt_read(LZ5MT_DCtx * ctx, LZ5MT_Buffer * in, size_t * frame)
 		in->size = toRead;
 		rv = ctx->fn_read(ctx->arg_read, in);
 		/* generic read failure! */
-		if (rv < 0) {
+		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
 			return mt_error(rv);
 		}
@@ -430,7 +430,7 @@ static size_t st_decompress(void *arg)
 		/* read new input */
 		in->size = nextToLoad;
 		rv = ctx->fn_read(ctx->arg_read, in);
-		if (rv < 0) {
+		if (rv != 0) {
 			free(in->buf);
 			free(out->buf);
 			return mt_error(rv);
@@ -459,7 +459,7 @@ static size_t st_decompress(void *arg)
 			/* have some output */
 			if (out->size) {
 				rv = ctx->fn_write(ctx->arg_write, out);
-				if (rv < 0) {
+				if (rv != 0) {
 					free(in->buf);
 					free(out->buf);
 					return mt_error(rv);
@@ -499,7 +499,7 @@ size_t LZ5MT_decompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
 	in->buf = buf;
 	in->size = 4;
 	rv = ctx->fn_read(ctx->arg_read, in);
-	if (rv < 0)
+	if (rv != 0)
 		return mt_error(rv);
 	if (in->size != 4)
 		return ERROR(data_error);
