@@ -69,30 +69,35 @@ Codecs:
 
 ### Usage and features of the full installation
 
+- compression / decompression for lz4 version 1.5.4.2, lz5 1.5.0 and zstd 1.1.2
+- included lzip decompression support, patch from http://download.savannah.gnu.org/releases/lzip/7zip/
+
 ```
-7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor (only full installation)
+7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
 7z a archiv.7z -m0=zstd -mx1   Zstandard Fast mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=zstd -mx..  ...
 7z a archiv.7z -m0=zstd -mx21  Zstandard 2nd Slowest Mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=zstd -mx22  Zstandard Ultra Mode, with BCJ preprocessor on executables
 
+7z a archiv.7z -m0=lz4 -mx0   LZ4 Fastest Mode, without BCJ preprocessor
 7z a archiv.7z -m0=lz4 -mx1   LZ4 Fast mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=lz4 -mx..  ...
 7z a archiv.7z -m0=lz4 -mx16  LZ4 Ultra Mode, with BCJ preprocessor on executables
 
+7z a archiv.7z -m0=lz5 -mx0   LZ5 Fastest Mode, without BCJ preprocessor
 7z a archiv.7z -m0=lz5 -mx1   LZ5 Fast mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=lz5 -mx..  ...
 7z a archiv.7z -m0=lz5 -mx16  LZ5 Ultra Mode, with BCJ preprocessor on executables
 
-rem show contents of test.tar.zst:
-7z x -so test.tar.zst | 7z l -si -ttar
+7z x -so test.tar.zstd | 7z l -si -ttar
+-> show contents of zstd compressed tar archiv test.tar.zstd
+
+7z x -so test.tar.lz | 7z l -si -ttar
+-> show contents of lzip compressed tar archiv test.tar.lz
 ```
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
-
-- included lzip decompression support (patch from http://download.savannah.gnu.org/releases/lzip/7zip/)
-- included compression / decompression for lz4 version 1.5.4.2, lz5 1.5.0 and zstd 1.1.2
 
 ## ZStandard codec Plugin for 7-Zip
 
