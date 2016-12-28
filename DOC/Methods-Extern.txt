@@ -12,9 +12,9 @@ Overview of defined ID ranges
 
 F7 0x xx - reserved
 F7 10 xx - LZHAM
-F7 11 xx - ZStandard
-F7 12 xx - LZ4
-F7 13 xx - LZ5
+F7 11 01 - ZStandard
+F7 11 04 - LZ4
+F7 11 05 - LZ5
 
 
 
@@ -42,10 +42,8 @@ Codec plugin author: Rich Geldreich
 Codec Homepage:      http://richg42.blogspot.de/2015/02/lzham-10-integrated-into-7zip-command.html
 Source Code:         http://www.tenacioussoftware.com/7zipsrc_release3_lzham_1_0.7z
 
-Versions:
-The 7-Zip LZHAM codec will be kept in sync with the current releases of ZStandard.
 
-Range F7 11 xx, ZStandard
+Range F7 11 01, ZStandard
 -------------------------
 
 Description:
@@ -59,9 +57,9 @@ License:
 Zstandard library is provided as open source software using a BSD license.
 
 7-Zip Container Header:
- Byte _ver_major;
- Byte _ver_minor;
- Byte _level;
+ Byte _ver_major; // currently 1
+ Byte _ver_minor; // currently 1
+ Byte _level;     // currently 1..22
  Byte _reserved[2];
 
 Algorithm author:    Yann Collet
@@ -90,7 +88,7 @@ Versions:
 The 7-Zip codec will be kept in sync with the current releases of ZStandard.
 
 
-Range F7 12 xx, LZ4
+Range F7 11 04, LZ4
 -------------------
 
 Description:
@@ -131,7 +129,7 @@ Versions:
 The 7-Zip codec will be kept in sync with the current releases of LZ4.
 
 
-Range F7 13 xx, LZ5
+Range F7 11 05, LZ5
 -------------------
 
 Description:
