@@ -11,10 +11,10 @@ Overview of defined ID ranges
 -----------------------------
 
 F7 0x xx - reserved
-F7 10 xx - LZHAM
-F7 11 01 - ZStandard
-F7 11 04 - LZ4
-F7 11 05 - LZ5
+F7 10 xx - LZHAM by Rich Geldreich
+F7 11 01 - ZStandard by Yann Collet, Tino Reichardt
+F7 11 04 - LZ4 by Yann Collet, Tino Reichardt
+F7 11 05 - LZ5 by Przemyslaw Skibinski, Tino Reichardt
 
 
 
@@ -61,6 +61,13 @@ Zstandard library is provided as open source software using a BSD license.
  Byte _ver_minor; // currently 1
  Byte _level;     // currently 1..22
  Byte _reserved[2];
+- this header holds some information about the version, which was
+  used for creating that 7-Zip container data
+- _ver_major should contain the major release of zstd
+- _ver_minor should contain the major release of zstd
+- _level should contain the level, the data is packed with
+- the other two bytes should be set to zero currently and are
+  reserved for future use
 
 Algorithm author:    Yann Collet
 Algorithm Homepage:  https://facebook.github.io/zstd/
@@ -73,7 +80,7 @@ Source Code:         https://github.com/mcmilk/7-Zip-zstd
 Modes:
 - threading is supported through skippable frame id 0x184D2A50U
 - all levels are supported (1..22)
-- future version of zstd will support multi threading out of the box
+- future versions of zstd will support multithreading out of the box
   -> this new format is fully compatible with the one within this codec
 - the codec is used as archiv handler also, see ZstdHandler.cpp
   - this handler is does not use any additional headers, it supports the plain
@@ -106,6 +113,14 @@ LZ4 library is provided as open source software using a BSD license.
  Byte _ver_minor;  // currently 7
  Byte _level;      // 1..16
  Byte _reserved[2];
+- this header holds some information about the version, which was
+  used for creating that 7-Zip container data
+- _ver_major should contain the major release of LZ4
+- _ver_minor should contain the major release of LZ4
+- _level should contain the level, the data is packed with
+- the other two bytes should be set to zero currently and are
+  reserved for future use
+
 
 Algorithm author:    Yann Collet
 Algorithm Homepage:  https://lz4.github.io/lz4/
@@ -144,6 +159,13 @@ LZ5 library is provided as open source software using a BSD license.
  Byte _ver_minor;  // currently 5
  Byte _level;      // 1..16
  Byte _reserved[2];
+- this header holds some information about the version, which was
+  used for creating that 7-Zip container data
+- _ver_major should contain the major release of LZ5
+- _ver_minor should contain the major release of LZ5
+- _level should contain the level, the data is packed with
+- the other two bytes should be set to zero currently and are
+  reserved for future use
 
 Algorithm author:    Przemyslaw Skibinski
 Algorithm Homepage:  https://github.com/inikep/lz5
@@ -159,9 +181,9 @@ Modes:
 - the codec is used as archiv handler also, see Lz5Handler.cpp
   - this handler is does not use any additional headers, it supports the plain
     lz5 v1.5 format
-- future formats of this algorithm will not be compatible with current release,
+- future formats of this algorithm may not be compatible with current release,
   this codec is very experimental
-- multiple ID's are required for this codec
+- one ID should be okay for this codec
 
 Versions:
 The 7-Zip codec will be kept in sync with the current releases of LZ5.
