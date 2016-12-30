@@ -697,6 +697,7 @@ size_t ZSTDMT_decompressDCtx(ZSTDMT_DCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 	ZSTDMT_Buffer *in = &In;
 	cwork_t *w;
 	int t, rv, type = TYPE_UNKNOWN;
+	void *retval_of_thread = 0;
 
 	if (!ctx)
 		return ZSTDMT_ERROR(compressionParameter_unsupported);
@@ -819,7 +820,7 @@ size_t ZSTDMT_decompressDCtx(ZSTDMT_DCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 		void *p;
 		pthread_join(w->pthread, &p);
 		if (p)
-			return (size_t) p;
+			retval_of_thread = p;
 	}
 
 	/* clean up pthread stuff */
@@ -838,7 +839,7 @@ size_t ZSTDMT_decompressDCtx(ZSTDMT_DCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 		free(wl);
 	}
 
-	return 0;
+	return (size_t)retval_of_thread;
 }
 
 /* returns current uncompressed data size */

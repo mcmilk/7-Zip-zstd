@@ -328,7 +328,7 @@ static void *pt_compress(void *arg)
 size_t ZSTDMT_compressCCtx(ZSTDMT_CCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 {
 	int t;
-	void *rv = 0;
+	void *retval_of_thread = 0;
 
 	if (!ctx)
 		return ZSTDMT_ERROR(init_missing);
@@ -358,7 +358,7 @@ size_t ZSTDMT_compressCCtx(ZSTDMT_CCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 		void *p;
 		pthread_join(w->pthread, &p);
 		if (p)
-			rv = p;
+			retval_of_thread = p;
 	}
 
 	/* clean up the free list */
@@ -373,7 +373,7 @@ size_t ZSTDMT_compressCCtx(ZSTDMT_CCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 	}
 
 	/* on error, these two lists may have some entries */
-	if (rv) {
+	if (retval_of_thread) {
 		struct writelist *wl;
 		struct list_head *entry;
 
@@ -394,7 +394,7 @@ size_t ZSTDMT_compressCCtx(ZSTDMT_CCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 		}
 	}
 
-	return (size_t) rv;
+	return (size_t)retval_of_thread;
 }
 
 /* returns current uncompressed data size */

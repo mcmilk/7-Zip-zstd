@@ -485,6 +485,7 @@ size_t LZ5MT_decompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
 	int t, rv;
 	cwork_t *w = &ctx->cwork[0];
 	LZ5MT_Buffer *in = &w->in;
+	void *retval_of_thread = 0;
 
 	if (!ctx)
 		return ERROR(compressionParameter_unsupported);
@@ -544,7 +545,7 @@ size_t LZ5MT_decompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
 		void *p;
 		pthread_join(w->pthread, &p);
 		if (p)
-			return (size_t) p;
+			retval_of_thread = p;
 	}
 
  okay:
@@ -559,7 +560,7 @@ size_t LZ5MT_decompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
 		free(wl);
 	}
 
-	return 0;
+	return (size_t)retval_of_thread;
 }
 
 /* returns current uncompressed data size */
