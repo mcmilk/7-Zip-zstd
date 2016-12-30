@@ -100,7 +100,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
   DProps *pProps = (DProps *)prop;
 
   if (size != sizeof(DProps))
-    return E_FAIL;
+    return E_NOTIMPL;
 
   memcpy(&_props, pProps, sizeof (DProps));
 
