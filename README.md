@@ -23,7 +23,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip [64] 16.04 : Copyright (c) 1999-2016 Igor Pavlov : 2016-06-26
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-06-12
 
 
 Libs:
@@ -60,40 +60,22 @@ Codecs:
  0   D    40302 Rar2
  0   D    40303 Rar3
  0   D    40305 Rar5
- 0  ED  4F71104 LZ4  <-- NEW
- 0  ED  4F71105 LZ5  <-- NEW
  0  ED  4F71101 ZSTD  <-- NEW
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
 ```
 
-### Usage and features of the full installation
-
-- compression / decompression for lz4 version 1.5.4.2, lz5 1.5.0 and zstd 1.1.2
-- included lzip decompression support, patch from http://download.savannah.gnu.org/releases/lzip/7zip/
+### Usage (full installation)
 
 ```
-7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
-7z a archiv.7z -m0=zstd -mx1   Zstandard Fast mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=zstd -mx0   Fastest Mode, without BCJ preprocessor
+7z a archiv.7z -m0=zstd -mx1   Fast mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=zstd -mx..  ...
-7z a archiv.7z -m0=zstd -mx21  Zstandard 2nd Slowest Mode, with BCJ preprocessor on executables
-7z a archiv.7z -m0=zstd -mx22  Zstandard Ultra Mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
 
-7z a archiv.7z -m0=lz4 -mx0   LZ4 Fastest Mode, without BCJ preprocessor
-7z a archiv.7z -m0=lz4 -mx1   LZ4 Fast mode, with BCJ preprocessor on executables
-7z a archiv.7z -m0=lz4 -mx..  ...
-7z a archiv.7z -m0=lz4 -mx16  LZ4 Ultra Mode, with BCJ preprocessor on executables
-
-7z a archiv.7z -m0=lz5 -mx0   LZ5 Fastest Mode, without BCJ preprocessor
-7z a archiv.7z -m0=lz5 -mx1   LZ5 Fast mode, with BCJ preprocessor on executables
-7z a archiv.7z -m0=lz5 -mx..  ...
-7z a archiv.7z -m0=lz5 -mx16  LZ5 Ultra Mode, with BCJ preprocessor on executables
-
-7z x -so test.tar.zstd | 7z l -si -ttar
--> show contents of zstd compressed tar archiv test.tar.zstd
-
-7z x -so test.tar.lz | 7z l -si -ttar
--> show contents of lzip compressed tar archiv test.tar.lz
+rem show contents of test.tar.zst:
+7z x -so test.tar.zst | 7z l -si -ttar
 ```
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
@@ -112,14 +94,12 @@ Codecs:
 
 The output should look like this:
 ```
-7-Zip [64] 16.04 : Copyright (c) 1999-2016 Igor Pavlov : 2016-10-04
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-06-12
 
 
 Libs:
- 0  C:\Program Files\7-Zip\7z.dll
- 1  C:\Program Files\7-Zip\Codecs\lz4-x64.dll
- 2  C:\Program Files\7-Zip\Codecs\lz5-x64.dll
- 3  C:\Program Files\7-Zip\Codecs\zstd-x64.dll
+ 0  c:\Program Files\7-Zip\7z.dll
+ 1  c:\Program Files\7-Zip\Codecs\zstd-x64.dll
 
 ...
 
@@ -147,9 +127,7 @@ Codecs:
  0   D    40305 Rar5
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
- 1  ED  4F71104 LZ4 -> NEW
- 2  ED  4F71105 LZ5 -> NEW
- 3  ED  4F71101 ZSTD -> NEW
+ 1  ED  4F71101 ZSTD  <-- NEW
 ```
 
 ### Usage (codec plugin)
@@ -180,5 +158,11 @@ Codecs:
 
 - the same as the original 7-Zip, which means GNU GPL
 
+## Version Information
 
-/TR 2016-12-26 (ZStandard Version 1.1.2, 7-Zip Version 16.04)
+- 7-Zip ZS Version 16.04
+  - ZStandard Version 1.1.3
+  - LZ4 Version 1.7.5
+  - LZ5 Version 1.5
+
+/TR 2017-02-06
