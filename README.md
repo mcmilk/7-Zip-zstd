@@ -69,7 +69,7 @@ Codecs:
 
 ### Usage and features of the full installation
 
-- compression / decompression for lz4 version 1.5.4.2, lz5 1.5.0 and zstd 1.1.2
+- compression / decompression for lz4, lz5 and zstd
 - included lzip decompression support, patch from http://download.savannah.gnu.org/releases/lzip/7zip/
 
 ```
