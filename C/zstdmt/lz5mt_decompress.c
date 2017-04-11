@@ -532,18 +532,18 @@ size_t LZ5MT_decompressDCtx(LZ5MT_DCtx * ctx, LZ5MT_RdWr_t * rdwr)
 
 	/* multi threaded */
 	for (t = 0; t < ctx->threads; t++) {
-		cwork_t *w = &ctx->cwork[t];
-		w->in.buf = 0;
-		w->in.size = 0;
-		w->in.allocated = 0;
-		pthread_create(&w->pthread, NULL, pt_decompress, w);
+		cwork_t *wt = &ctx->cwork[t];
+		wt->in.buf = 0;
+		wt->in.size = 0;
+		wt->in.allocated = 0;
+		pthread_create(&wt->pthread, NULL, pt_decompress, wt);
 	}
 
 	/* wait for all workers */
 	for (t = 0; t < ctx->threads; t++) {
-		cwork_t *w = &ctx->cwork[t];
+		cwork_t *wt = &ctx->cwork[t];
 		void *p;
-		pthread_join(w->pthread, &p);
+		pthread_join(wt->pthread, &p);
 		if (p)
 			retval_of_thread = p;
 	}
