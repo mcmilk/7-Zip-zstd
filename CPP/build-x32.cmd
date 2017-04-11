@@ -60,5 +60,9 @@ cd %ROOT%\Bundles\SFXCon
 nmake %OPTS%
 copy O\7zCon.sfx %OUTDIR%\7zCon.sfx
 
+cd %ROOT%\Bundles\Alone
+nmake %OPTS%
+copy O\7za.exe %OUTDIR%\7za.exe
+
 :ende
 cd %ROOT%\..
