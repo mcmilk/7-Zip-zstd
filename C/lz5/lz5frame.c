@@ -63,6 +63,7 @@ You can contact the author at :
 #include "lz5frame_static.h"
 #include "lz5.h"
 #include "lz5hc.h"
+#define XXH_NAMESPACE lz
 #include "xxhash.h"
 
 

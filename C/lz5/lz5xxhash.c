@@ -106,6 +106,7 @@ You can contact the author at :
 /**************************************
 *  Includes & Memory related functions
 ***************************************/
+#define XXH_NAMESPACE lz
 #include "xxhash.h"
 /* Modify the local functions below should you wish to use some other memory routines */
 /* for malloc(), free() */

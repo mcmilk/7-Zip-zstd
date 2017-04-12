@@ -627,10 +627,10 @@ static size_t st_decompress(void *arg)
 				goto error_clib;
 
 			if (zOut.pos) {
-				ZSTDMT_Buffer w;
-				w.size = zOut.pos;
-				w.buf = zOut.dst;
-				rv = ctx->fn_write(ctx->arg_write, &w);
+				ZSTDMT_Buffer wb;
+				wb.size = zOut.pos;
+				wb.buf = zOut.dst;
+				rv = ctx->fn_write(ctx->arg_write, &wb);
 				if (rv != 0) {
 					result = mt_error(rv);
 					goto error;
@@ -810,15 +810,15 @@ size_t ZSTDMT_decompressDCtx(ZSTDMT_DCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 
 	/* multi threaded */
 	for (t = 0; t < ctx->threads; t++) {
-		cwork_t *w = &ctx->cwork[t];
-		pthread_create(&w->pthread, NULL, pt_decompress, w);
+		cwork_t *wt = &ctx->cwork[t];
+		pthread_create(&wt->pthread, NULL, pt_decompress, wt);
 	}
 
 	/* wait for all workers */
 	for (t = 0; t < ctx->threads; t++) {
-		cwork_t *w = &ctx->cwork[t];
+		cwork_t *wt = &ctx->cwork[t];
 		void *p;
-		pthread_join(w->pthread, &p);
+		pthread_join(wt->pthread, &p);
 		if (p)
 			retval_of_thread = p;
 	}
