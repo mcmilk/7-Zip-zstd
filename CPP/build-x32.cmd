@@ -15,6 +15,10 @@ cd %ROOT%\Bundles\Format7zF
 nmake %OPTS%
 copy O\7z.dll %OUTDIR%\7z.dll
 
+cd %ROOT%\Bundles\Format7zUSB
+nmake %OPTS%
+copy O\7zu.dll %OUTDIR%\7zu-x32.dll
+
 cd %ROOT%\UI\FileManager
 nmake %OPTS%
 copy O\7zFM.exe %OUTDIR%\7zFM.exe

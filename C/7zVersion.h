@@ -1,9 +1,9 @@
 #define MY_VER_MAJOR 16
 #define MY_VER_MINOR 04
 #define MY_VER_BUILD 0
-#define MY_VERSION_NUMBERS "16.04 ZS"
+#define MY_VERSION_NUMBERS "16.04 ZS v1.1.4"
 #define MY_VERSION "16.04 ZS"
-#define MY_DATE "2017-03-20"
+#define MY_DATE "2017-04-27"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
 #define MY_AUTHOR_NAME "Igor Pavlov, Tino Reichardt"
