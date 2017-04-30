@@ -253,7 +253,7 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "lz4",
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 16),
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 12),
     METHODS_PAIR(g_Lz4Methods),
     false, false, true, false, false, false
   },
