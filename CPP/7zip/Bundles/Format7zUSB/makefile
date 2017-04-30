@@ -1,4 +1,4 @@
-PROG = 7za.dll
+PROG = 7zu.dll
 DEF_FILE = ../../Archive/Archive2.def
 CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID
 
