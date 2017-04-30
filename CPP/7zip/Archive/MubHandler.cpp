@@ -31,6 +31,7 @@ namespace NMub {
 
 #define MACH_CPU_TYPE_PPC64 (MACH_CPU_ARCH_ABI64 | MACH_CPU_TYPE_PPC)
 #define MACH_CPU_TYPE_AMD64 (MACH_CPU_ARCH_ABI64 | MACH_CPU_TYPE_386)
+#define MACH_CPU_TYPE_ARM64 (MACH_CPU_ARCH_ABI64 | MACH_CPU_TYPE_ARM)
 
 #define MACH_CPU_SUBTYPE_LIB64 (1 << 31)
 
@@ -105,17 +106,20 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       const char *ext = 0;
       switch (item.Type)
       {
-        case MACH_CPU_TYPE_386:   ext = "x86";    break;
+        case MACH_CPU_TYPE_386:   ext = "x86";   break;
         case MACH_CPU_TYPE_ARM:   ext = "arm";   break;
         case MACH_CPU_TYPE_SPARC: ext = "sparc"; break;
         case MACH_CPU_TYPE_PPC:   ext = "ppc";   break;
-        case MACH_CPU_TYPE_PPC64: ext = "ppc64"; break;
         case MACH_CPU_TYPE_AMD64: ext = "x64";   break;
+        case MACH_CPU_TYPE_ARM64: ext = "arm64"; break;
+        case MACH_CPU_TYPE_PPC64: ext = "ppc64"; break;
         default:
           temp[0] = 'c';
           temp[1] = 'p';
           temp[2] = 'u';
-          ConvertUInt32ToString(item.Type, temp + 3);
+          ConvertUInt32ToString(item.Type & ~MACH_CPU_ARCH_ABI64, temp + 3);
+          if (item.Type & MACH_CPU_ARCH_ABI64)
+            MyStringCopy(temp + MyStringLen(temp), "_64");
           break;
       }
       if (ext)

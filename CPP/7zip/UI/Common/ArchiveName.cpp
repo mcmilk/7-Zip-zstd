@@ -29,7 +29,7 @@ UString CreateArchiveName(const NFind::CFileInfo &fi, bool keepName)
 
 static FString CreateArchiveName2(const FString &path, bool fromPrev, bool keepName)
 {
-  FString resultName = FTEXT("Archive");
+  FString resultName ("Archive");
   if (fromPrev)
   {
     FString dirPrefix;

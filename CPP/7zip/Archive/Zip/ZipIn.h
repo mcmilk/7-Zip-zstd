@@ -3,11 +3,10 @@
 #ifndef __ZIP_IN_H
 #define __ZIP_IN_H
 
+#include "../../../Common/MyBuffer2.h"
 #include "../../../Common/MyCom.h"
 
 #include "../../IStream.h"
-
-#include "../../Common/InBuffer.h"
 
 #include "ZipHeader.h"
 #include "ZipItem.h"
@@ -22,8 +21,12 @@ class CItemEx: public CItem
 public:
   UInt32 LocalFullHeaderSize; // including Name and Extra
   
+  bool DescriptorWasRead;
+
+  CItemEx(): DescriptorWasRead(false) {}
+
   UInt64 GetLocalFullSize() const
-    { return LocalFullHeaderSize + PackSize + (HasDescriptor() ? kDataDescriptorSize : 0); }
+    { return LocalFullHeaderSize + GetPackSizeWithDescriptor(); }
   UInt64 GetDataPosition() const
     { return LocalHeaderPos + LocalFullHeaderSize; }
 };
@@ -52,6 +55,10 @@ struct CInArchiveInfo
   UInt64 FirstItemRelatOffset; /* Relative offset of first local (read from cd) (relative to Base).
                                   = 0 in most archives
                                   = size of stub for some SFXs */
+
+
+  int MarkerVolIndex;
+
   bool CdWasRead;
   bool IsSpanMode;
   bool ThereIsTail;
@@ -68,6 +75,7 @@ struct CInArchiveInfo
       FinishPos(0),
       FileEndPos(0),
       FirstItemRelatOffset(0),
+      MarkerVolIndex(-1),
       CdWasRead(false),
       IsSpanMode(false),
       ThereIsTail(false)
@@ -82,6 +90,7 @@ struct CInArchiveInfo
     MarkerPos2 = 0;
     FinishPos = 0;
     FileEndPos = 0;
+    MarkerVolIndex = -1;
     ThereIsTail = false;
 
     FirstItemRelatOffset = 0;
@@ -96,6 +105,10 @@ struct CInArchiveInfo
 
 struct CCdInfo
 {
+  bool IsFromEcd64;
+  
+  UInt16 CommentSize;
+  
   // 64
   UInt16 VersionMade;
   UInt16 VersionNeedExtract;
@@ -108,39 +121,55 @@ struct CCdInfo
   UInt64 Size;
   UInt64 Offset;
 
-  UInt16 CommentSize;
-
-  CCdInfo() { memset(this, 0, sizeof(*this)); }
+  CCdInfo() { memset(this, 0, sizeof(*this)); IsFromEcd64 = false; }
 
   void ParseEcd32(const Byte *p);   // (p) includes signature
   void ParseEcd64e(const Byte *p);  // (p) exclude signature
+
+  bool IsEmptyArc() const
+  {
+    return ThisDisk == 0
+        && CdDisk == 0
+        && NumEntries_in_ThisDisk == 0
+        && NumEntries == 0
+        && Size == 0
+        && Offset == 0 // test it
+    ;
+  }
 };
 
 
-class CVols
+struct CVols
 {
-public:
-
   struct CSubStreamInfo
   {
     CMyComPtr<IInStream> Stream;
     UInt64 Size;
 
+    HRESULT SeekToStart() const { return Stream->Seek(0, STREAM_SEEK_SET, NULL); }
+
     CSubStreamInfo(): Size(0) {}
   };
   
   CObjectVector<CSubStreamInfo> Streams;
-  int StreamIndex;
+  
+  int StreamIndex;   // -1 for StartStream
+                     // -2 for ZipStream at multivol detection code
+                     // >=0 volume index in multivol
+  
   bool NeedSeek;
-
-  CMyComPtr<IInStream> ZipStream;
 
   bool StartIsExe;  // is .exe
   bool StartIsZ;    // is .zip or .zNN
   bool StartIsZip;  // is .zip
   bool IsUpperCase;
   bool MissingZip;
-  Int32 StartVolIndex; // = (NN - 1), if StartStream is .zNN
+
+  bool ecd_wasRead;
+
+  Int32 StartVolIndex; // -1, if unknown vol index
+                       // = (NN - 1), if StartStream is .zNN
+                       // = 0, if start vol is exe
 
   Int32 StartParsingVol; // if we need local parsing, we must use that stream
   unsigned NumVols;
@@ -148,18 +177,26 @@ public:
   int EndVolIndex; // index of last volume (ecd volume),
                    // -1, if is not multivol
 
-  UString BaseName; // including '.'
-
+  UString BaseName; // name of archive including '.'
   UString MissingName;
 
+  CMyComPtr<IInStream> ZipStream;
+
   CCdInfo ecd;
-  bool ecd_wasRead;
+
+  UInt64 TotalBytesSize; // for MultiVol only
+
+  void ClearRefs()
+  {
+    Streams.Clear();
+    ZipStream.Release();
+    TotalBytesSize = 0;
+  }
 
   void Clear()
   {
     StreamIndex = -1;
     NeedSeek = false;
-
 
     StartIsExe = false;
     StartIsZ = false;
@@ -177,21 +214,12 @@ public:
     MissingZip = false;
     ecd_wasRead = false;
 
-    Streams.Clear();
-    ZipStream.Release();
+    ClearRefs();
   }
 
   HRESULT ParseArcName(IArchiveOpenVolumeCallback *volCallback);
 
   HRESULT Read(void *data, UInt32 size, UInt32 *processedSize);
-  
-  UInt64 GetTotalSize() const
-  {
-    UInt64 total = 0;
-    FOR_VECTOR (i, Streams)
-      total += Streams[i].Size;
-    return total;
-  }
 };
 
 
@@ -210,44 +238,69 @@ public:
 
 class CInArchive
 {
-  CInBuffer _inBuffer;
-  bool _inBufMode;
-  UInt32 m_Signature;
-  UInt64 m_Position;
+  CMidBuffer Buffer;
+  size_t _bufPos;
+  size_t _bufCached;
 
-  UInt64 _processedCnt;
-  
+  UInt64 _streamPos;
+  UInt64 _cnt;
+
+  size_t GetAvail() const { return _bufCached - _bufPos; }
+
+  void InitBuf() { _bufPos = 0; _bufCached = 0; }
+  void DisableBufMode() { InitBuf(); _inBufMode = false; }
+
+  void SkipLookahed(size_t skip)
+  {
+    _bufPos += skip;
+    _cnt += skip;
+  }
+
+  UInt64 GetVirtStreamPos() { return _streamPos - _bufCached + _bufPos; }
+
+  bool _inBufMode;
+
+  bool IsArcOpen;
   bool CanStartNewVol;
+
+  UInt32 _signature;
 
   CMyComPtr<IInStream> StreamRef;
   IInStream *Stream;
   IInStream *StartStream;
+  IArchiveOpenCallback *Callback;
 
-  bool IsArcOpen;
+  HRESULT Seek_SavePos(UInt64 offset);
+  HRESULT SeekToVol(int volIndex, UInt64 offset);
+
+  HRESULT ReadFromCache(Byte *data, unsigned size, unsigned &processed);
 
   HRESULT ReadVols2(IArchiveOpenVolumeCallback *volCallback,
       unsigned start, int lastDisk, int zipDisk, unsigned numMissingVolsMax, unsigned &numMissingVols);
   HRESULT ReadVols();
 
-  HRESULT Seek(UInt64 offset);
-  HRESULT FindMarker(IInStream *stream, const UInt64 *searchLimit);
-  HRESULT IncreaseRealPosition(Int64 addValue, bool &isFinished);
+  HRESULT FindMarker(const UInt64 *searchLimit);
+  HRESULT IncreaseRealPosition(UInt64 addValue, bool &isFinished);
 
-  HRESULT ReadBytes(void *data, UInt32 size, UInt32 *processedSize);
-  void SafeReadBytes(void *data, unsigned size);
+  HRESULT LookAhead(size_t minRequiredInBuffer);
+  void SafeRead(Byte *data, unsigned size);
   void ReadBuffer(CByteBuffer &buffer, unsigned size);
-  Byte ReadByte();
-  UInt16 ReadUInt16();
+  // Byte ReadByte();
+  // UInt16 ReadUInt16();
   UInt32 ReadUInt32();
   UInt64 ReadUInt64();
-  void Skip(unsigned num);
-  void Skip64(UInt64 num);
-  void ReadFileName(unsigned nameSize, AString &dest);
 
-  bool ReadExtra(unsigned extraSize, CExtraBlock &extraBlock,
-      UInt64 &unpackSize, UInt64 &packSize, UInt64 &localHeaderOffset, UInt32 &diskStartNumber);
+  void ReadSignature();
+
+  void Skip(size_t num);
+  HRESULT Skip64(UInt64 num, unsigned numFiles);
+
+  bool ReadFileName(unsigned nameSize, AString &dest);
+
+  bool ReadExtra(unsigned extraSize, CExtraBlock &extra,
+      UInt64 &unpackSize, UInt64 &packSize, UInt64 &localOffset, UInt32 &disk);
   bool ReadLocalItem(CItemEx &item);
-  HRESULT ReadLocalItemDescriptor(CItemEx &item);
+  HRESULT FindDescriptor(CItemEx &item, unsigned numFiles);
   HRESULT ReadCdItem(CItemEx &item);
   HRESULT TryEcd64(UInt64 offset, CCdInfo &cdInfo);
   HRESULT FindCd(bool checkOffsetMode);
@@ -255,21 +308,28 @@ class CInArchive
   HRESULT ReadCd(CObjectVector<CItemEx> &items, UInt32 &cdDisk, UInt64 &cdOffset, UInt64 &cdSize);
   HRESULT ReadLocals(CObjectVector<CItemEx> &localItems);
 
-  HRESULT ReadHeaders2(CObjectVector<CItemEx> &items);
+  HRESULT ReadHeaders(CObjectVector<CItemEx> &items);
 
   HRESULT GetVolStream(unsigned vol, UInt64 pos, CMyComPtr<ISequentialInStream> &stream);
+
 public:
   CInArchiveInfo ArcInfo;
   
   bool IsArc;
   bool IsZip64;
+  
   bool HeadersError;
   bool HeadersWarning;
   bool ExtraMinorError;
   bool UnexpectedEnd;
+  bool LocalsWereRead;
+  bool LocalsCenterMerged;
   bool NoCentralDir;
+  bool Overflow32bit; // = true, if zip without Zip64 extension support and it has some fields values truncated to 32-bits.
+  bool Cd_NumEntries_Overflow_16bit; // = true, if no Zip64 and 16-bit ecd:NumEntries was overflowed.
 
   bool MarkerIsFound;
+  bool MarkerIsSafe;
 
   bool IsMultiVol;
   bool UseDisk_in_SingleVol;
@@ -277,9 +337,7 @@ public:
 
   CVols Vols;
  
-  IArchiveOpenCallback *Callback;
-
-  CInArchive(): Stream(NULL), Callback(NULL), IsArcOpen(false) {}
+  CInArchive(): Stream(NULL), StartStream(NULL), Callback(NULL), IsArcOpen(false) {}
 
   UInt64 GetPhySize() const
   {
@@ -301,7 +359,6 @@ public:
   void ClearRefs();
   void Close();
   HRESULT Open(IInStream *stream, const UInt64 *searchLimit, IArchiveOpenCallback *callback, CObjectVector<CItemEx> &items);
-  HRESULT ReadHeaders(CObjectVector<CItemEx> &items);
 
   bool IsOpen() const { return IsArcOpen; }
   
@@ -329,7 +386,8 @@ public:
   }
 
 
-  HRESULT ReadLocalItemAfterCdItem(CItemEx &item, bool &isAvail);
+  HRESULT CheckDescriptor(const CItemEx &item);
+  HRESULT ReadLocalItemAfterCdItem(CItemEx &item, bool &isAvail, bool &headersError);
   HRESULT ReadLocalItemAfterCdItemFull(CItemEx &item);
 
   HRESULT GetItemStream(const CItemEx &item, bool seekPackData, CMyComPtr<ISequentialInStream> &stream);

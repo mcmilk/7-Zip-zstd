@@ -63,21 +63,14 @@ static int CompareChs(const CChs &c1, const CChs &c2)
 }
 */
 
-static void AddUIntToString(UInt32 val, AString &res)
-{
-  char s[16];
-  ConvertUInt32ToString(val, s);
-  res += s;
-}
-
 void CChs::ToString(NCOM::CPropVariant &prop) const
 {
   AString s;
-  AddUIntToString(GetCyl(), s);
+  s.Add_UInt32(GetCyl());
   s += '-';
-  AddUIntToString(Head, s);
+  s.Add_UInt32(Head);
   s += '-';
-  AddUIntToString(GetSector(), s);
+  s.Add_UInt32(GetSector());
   prop = s;
 }
 
@@ -137,7 +130,7 @@ struct CPartType
   const char *Name;
 };
 
-static const char *kFat = "fat";
+#define kFat "fat"
 
 static const CPartType kPartTypes[] =
 {
@@ -156,6 +149,7 @@ static const CPartType kPartTypes[] =
   { 0x1B, kFat, "FAT32-Hidden" },
   { 0x1C, kFat, "FAT32-LBA-Hidden" },
   { 0x1E, kFat, "FAT16-LBA-WIN95-Hidden" },
+  { 0x27, "ntfs", "NTFS-WinRE" },
   { 0x82, 0, "Solaris x86 / Linux swap" },
   { 0x83, 0, "Linux" },
   { 0x8E, "lvm", "Linux LVM" },
@@ -399,14 +393,16 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPath:
     {
       AString s;
-      AddUIntToString(index, s);
+      s.Add_UInt32(index);
       if (item.IsReal)
       {
-        int typeIndex = FindPartType(part.Type);
         s += '.';
-        const char *ext = "img";
-        if (typeIndex >= 0 && kPartTypes[(unsigned)typeIndex].Ext)
+        const char *ext = NULL;
+        int typeIndex = FindPartType(part.Type);
+        if (typeIndex >= 0)
           ext = kPartTypes[(unsigned)typeIndex].Ext;
+        if (!ext)
+          ext = "img";
         s += ext;
       }
       prop = s;

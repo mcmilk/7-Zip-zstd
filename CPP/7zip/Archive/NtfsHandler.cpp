@@ -56,9 +56,9 @@ using namespace NWindows;
 namespace NArchive {
 namespace Ntfs {
 
-static const wchar_t *kVirtualFolder_System = L"[SYSTEM]";
-static const wchar_t *kVirtualFolder_Lost_Normal = L"[LOST]";
-static const wchar_t *kVirtualFolder_Lost_Deleted = L"[UNKNOWN]";
+static const wchar_t * const kVirtualFolder_System = L"[SYSTEM]";
+static const wchar_t * const kVirtualFolder_Lost_Normal = L"[LOST]";
+static const wchar_t * const kVirtualFolder_Lost_Deleted = L"[UNKNOWN]";
 
 static const unsigned kNumSysRecs = 16;
 
@@ -394,7 +394,7 @@ static int CompareAttr(void *const *elem1, void *const *elem2, void *)
     return 1;
   else
   {
-    RINOZ(wcscmp(a1.Name.GetRawPtr(), a2.Name.GetRawPtr()));
+    RINOZ(a1.Name.Compare(a2.Name.GetRawPtr()));
   }
   return MyCompare(a1.LowVcn, a2.LowVcn);
 }
@@ -2340,7 +2340,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     }
     case kpidFileSystem:
     {
-      AString s = "NTFS";
+      AString s ("NTFS");
       FOR_VECTOR (i, VolAttrs)
       {
         const CAttr &attr = VolAttrs[i];
@@ -2350,12 +2350,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           if (attr.ParseVolInfo(vi))
           {
             s.Add_Space();
-            char temp[16];
-            ConvertUInt32ToString(vi.MajorVer, temp);
-            s += temp;
+            s.Add_UInt32(vi.MajorVer);
             s += '.';
-            ConvertUInt32ToString(vi.MinorVer, temp);
-            s += temp;
+            s.Add_UInt32(vi.MinorVer);
           }
           break;
         }
@@ -2722,18 +2719,14 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
 
   for (UInt32 i = 0; i < numProps; i++)
   {
-    UString name = names[i];
-    name.MakeLower_Ascii();
-    if (name.IsEmpty())
-      return E_INVALIDARG;
-
+    const wchar_t *name = names[i];
     const PROPVARIANT &prop = values[i];
 
-    if (name.IsEqualTo("ld"))
+    if (StringsAreEqualNoCase_Ascii(name, "ld"))
     {
       RINOK(PROPVARIANT_to_bool(prop, _showDeletedFiles));
     }
-    else if (name.IsEqualTo("ls"))
+    else if (StringsAreEqualNoCase_Ascii(name, "ls"))
     {
       RINOK(PROPVARIANT_to_bool(prop, _showSystemFiles));
     }

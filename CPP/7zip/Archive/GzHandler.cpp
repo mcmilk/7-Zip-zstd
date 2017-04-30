@@ -11,6 +11,7 @@
 #include "../../Common/StringConvert.h"
 
 #include "../../Windows/PropVariant.h"
+#include "../../Windows/PropVariantUtils.h"
 #include "../../Windows/TimeUtils.h"
 
 #include "../Common/ProgressUtils.h"
@@ -109,7 +110,6 @@ static const char * const kHostOSes[] =
   , "OS/X"
 };
 
-static const char *kUnknownOS = "Unknown";
 
 class CItem
 {
@@ -537,7 +537,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       if (_item.NameIsPresent())
       {
         UString s = MultiByteToUnicodeString(_item.Name, CP_ACP);
-        s.AddAscii(".gz");
+        s += ".gz";
         prop = s;
       }
       break;
@@ -587,8 +587,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
         prop = _packSize;
       break;
     }
-    case kpidHostOS: prop = (_item.HostOS < ARRAY_SIZE(kHostOSes)) ?
-          kHostOSes[_item.HostOS] : kUnknownOS; break;
+    case kpidHostOS: TYPE_TO_PROP(kHostOSes, _item.HostOS, prop); break;
     case kpidCRC: if (_stream) prop = _item.Crc; break;
   }
   prop.Detach(value);
@@ -1035,7 +1034,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
 static const Byte k_Signature[] = { kSignature_0, kSignature_1, kSignature_2 };
 
 REGISTER_ARC_IO(
-  "gzip", "gz gzip tgz tpz", "* * .tar .tar", 0xEF,
+  "gzip", "gz gzip tgz tpz apk", "* * .tar .tar .tar", 0xEF,
   k_Signature,
   0,
   NArcInfoFlags::kKeepName,

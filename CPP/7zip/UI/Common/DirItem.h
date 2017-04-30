@@ -20,9 +20,18 @@ struct CDirItemsStat
   UInt64 AltStreamsSize;
   
   UInt64 NumErrors;
-  // UInt64 GetTotalItems() const { return NumDirs + NumFiles + NumAltStreams; }
   
+  UInt64 Get_NumItems() const { return NumDirs + NumFiles + NumAltStreams; }
+  UInt64 Get_NumDataItems() const { return NumFiles + NumAltStreams; }
   UInt64 GetTotalBytes() const { return FilesSize + AltStreamsSize; }
+
+  bool IsEmpty() const { return
+           0 == NumDirs
+        && 0 == NumFiles
+        && 0 == NumAltStreams
+        && 0 == FilesSize
+        && 0 == AltStreamsSize
+        && 0 == NumErrors; }
   
   CDirItemsStat():
       NumDirs(0),

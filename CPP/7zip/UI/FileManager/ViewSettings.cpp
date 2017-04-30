@@ -17,18 +17,19 @@ using namespace NRegistry;
 
 #define REG_PATH_FM TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip") TEXT(STRING_PATH_SEPARATOR) TEXT("FM")
 
-static const TCHAR *kCUBasePath = REG_PATH_FM;
-static const TCHAR *kCulumnsKeyName = REG_PATH_FM TEXT(STRING_PATH_SEPARATOR) TEXT("Columns");
+static LPCTSTR const kCUBasePath = REG_PATH_FM;
+static LPCTSTR const kCulumnsKeyName = REG_PATH_FM TEXT(STRING_PATH_SEPARATOR) TEXT("Columns");
 
-static const TCHAR *kPositionValueName = TEXT("Position");
-static const TCHAR *kPanelsInfoValueName = TEXT("Panels");
-static const TCHAR *kToolbars = TEXT("Toolbars");
+static LPCTSTR const kPositionValueName = TEXT("Position");
+static LPCTSTR const kPanelsInfoValueName = TEXT("Panels");
+static LPCTSTR const kToolbars = TEXT("Toolbars");
 
-static const WCHAR *kPanelPathValueName = L"PanelPath";
-static const TCHAR *kListMode = TEXT("ListMode");
-static const TCHAR *kFolderHistoryValueName = TEXT("FolderHistory");
-static const TCHAR *kFastFoldersValueName = TEXT("FolderShortcuts");
-static const TCHAR *kCopyHistoryValueName = TEXT("CopyHistory");
+static LPCWSTR const kPanelPathValueName = L"PanelPath";
+
+static LPCTSTR const kListMode = TEXT("ListMode");
+static LPCTSTR const kFolderHistoryValueName = TEXT("FolderHistory");
+static LPCTSTR const kFastFoldersValueName = TEXT("FolderShortcuts");
+static LPCTSTR const kCopyHistoryValueName = TEXT("CopyHistory");
 
 static NSynchronization::CCriticalSection g_CS;
 
@@ -246,9 +247,9 @@ void CListMode::Read()
 
 static UString GetPanelPathName(UInt32 panelIndex)
 {
-  WCHAR s[16];
-  ConvertUInt32ToString(panelIndex, s);
-  return (UString)kPanelPathValueName + s;
+  UString s (kPanelPathValueName);
+  s.Add_UInt32(panelIndex);
+  return s;
 }
 
 void SavePanelPath(UInt32 panel, const UString &path)

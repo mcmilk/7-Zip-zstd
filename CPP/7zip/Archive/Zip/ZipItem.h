@@ -22,11 +22,12 @@ struct CVersion
 
 struct CExtraSubBlock
 {
-  UInt16 ID;
+  UInt32 ID;
   CByteBuffer Data;
 
   bool ExtractNtfsTime(unsigned index, FILETIME &ft) const;
   bool ExtractUnixTime(bool isCentral, unsigned index, UInt32 &res) const;
+  bool ExtractUnixExtraTime(unsigned index, UInt32 &res) const;
   
   bool ExtractIzUnicode(UInt32 crc, AString &name) const
   {
@@ -44,6 +45,8 @@ struct CExtraSubBlock
       return false;
     return CheckUTF8(name, false);
   }
+
+  void PrintInfo(AString &s) const;
 };
 
 const unsigned k_WzAesExtra_Size = 7;
@@ -129,11 +132,22 @@ struct CStrongCryptoExtra
   bool CertificateIsUsed() const { return (Flags > 0x0001); }
 };
 
+
 struct CExtraBlock
 {
   CObjectVector<CExtraSubBlock> SubBlocks;
+  bool Error;
+  bool MinorError;
+  bool IsZip64;
+  bool IsZip64_Error;
   
-  void Clear() { SubBlocks.Clear(); }
+  CExtraBlock(): Error(false), MinorError(false), IsZip64(false), IsZip64_Error(false) {}
+
+  void Clear()
+  {
+    SubBlocks.Clear();
+    IsZip64 = false;
+  }
   
   size_t GetSize() const
   {
@@ -176,6 +190,8 @@ struct CExtraBlock
   bool GetNtfsTime(unsigned index, FILETIME &ft) const;
   bool GetUnixTime(bool isCentral, unsigned index, UInt32 &res) const;
 
+  void PrintInfo(AString &s) const;
+
   void RemoveUnknownSubBlocks()
   {
     for (unsigned i = SubBlocks.Size(); i != 0;)
@@ -206,12 +222,19 @@ public:
 
   CExtraBlock LocalExtra;
 
+  unsigned GetDescriptorSize() const { return LocalExtra.IsZip64 ? kDataDescriptorSize64 : kDataDescriptorSize32; }
+
+  UInt64 GetPackSizeWithDescriptor() const
+    { return PackSize + (HasDescriptor() ? GetDescriptorSize() : 0); }
+
   bool IsUtf8() const { return (Flags & NFileHeader::NFlags::kUtf8) != 0; }
   bool IsEncrypted() const { return (Flags & NFileHeader::NFlags::kEncrypted) != 0; }
   bool IsStrongEncrypted() const { return IsEncrypted() && (Flags & NFileHeader::NFlags::kStrongEncrypted) != 0; }
   bool IsAesEncrypted() const { return IsEncrypted() && (IsStrongEncrypted() || Method == NFileHeader::NCompressionMethod::kWzAES); }
   bool IsLzmaEOS() const { return (Flags & NFileHeader::NFlags::kLzmaEOS) != 0; }
   bool HasDescriptor() const { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
+
+  unsigned GetDeflateLevel() const { return (Flags >> 1) & 3; }
   
   bool IsDir() const;
 

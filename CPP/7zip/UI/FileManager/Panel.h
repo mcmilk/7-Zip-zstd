@@ -17,6 +17,7 @@
 #include "../../../Windows/FileFind.h"
 #include "../../../Windows/FileName.h"
 #include "../../../Windows/Handle.h"
+#include "../../../Windows/PropVariantConv.h"
 #include "../../../Windows/Synchronization.h"
 
 #include "../../../Windows/Control/ComboBox.h"
@@ -373,6 +374,16 @@ public:
   // CUIntVector _realIndices;
   bool _enableItemChangeNotify;
   bool _mySelectMode;
+
+  int _timestampLevel;
+
+
+  void RedrawListItems()
+  {
+    _listView.RedrawAllItems();
+  }
+
+
   CBoolVector _selectedStatusVector;
 
   CSelectedState _selectedState;
@@ -466,6 +477,7 @@ public:
   UString GetItemRelPath(int itemIndex) const;
   UString GetItemRelPath2(int itemIndex) const;
   UString GetItemFullPath(int itemIndex) const;
+  UInt64 GetItem_UInt64Prop(int itemIndex, PROPID propID) const;
   UInt64 GetItemSize(int itemIndex) const;
 
   ////////////////////////
@@ -487,6 +499,7 @@ public:
   void CloseOpenFolders();
   void OpenRootFolder();
 
+  UString GetParentDirPrefix() const;
 
   HRESULT Create(HWND mainWindow, HWND parentWindow,
       UINT id,
@@ -526,7 +539,9 @@ public:
       _thereAreDeletedItems(false),
       _markDeletedItems(true),
       _enableItemChangeNotify(true),
-      _dontShowMode(false)
+      _dontShowMode(false),
+
+      _timestampLevel(kTimestampPrintLevel_MIN)
   {}
 
   void SetExtendedStyle()

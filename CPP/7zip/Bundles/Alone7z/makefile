@@ -22,6 +22,7 @@ COMMON_OBJS = \
   $O\UTFConvert.obj \
   $O\MyVector.obj \
   $O\Wildcard.obj \
+  $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
 
 WIN_OBJS = \
@@ -109,6 +110,8 @@ COMPRESS_OBJS = \
   $O\LzmaDecoder.obj \
   $O\LzmaEncoder.obj \
   $O\LzmaRegister.obj \
+  $O\XzDecoder.obj \
+  $O\XzEncoder.obj \
 
 CRYPTO_OBJS = \
   $O\7zAes.obj \

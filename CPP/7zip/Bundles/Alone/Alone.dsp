@@ -410,6 +410,10 @@ SOURCE=..\..\..\Common\Wildcard.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\XzCrc64Init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\XzCrc64Reg.cpp
 # End Source File
 # End Group
@@ -511,6 +515,14 @@ SOURCE=..\..\..\Windows\PropVariantConv.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\PropVariantConv.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariantUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\PropVariantUtils.h
 # End Source File
 # Begin Source File
 
@@ -903,14 +915,6 @@ SOURCE=..\..\Compress\ImplodeDecoder.cpp
 
 SOURCE=..\..\Compress\ImplodeDecoder.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\ImplodeHuffmanDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\ImplodeHuffmanDecoder.h
-# End Source File
 # End Group
 # Begin Group "LZMA"
 
@@ -1231,6 +1235,22 @@ SOURCE=..\..\Compress\LzOutWindow.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\LzOutWindow.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzEncoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzEncoder.h
 # End Source File
 # End Group
 # Begin Group "Archive"

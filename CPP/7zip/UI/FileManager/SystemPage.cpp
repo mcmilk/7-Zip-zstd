@@ -30,7 +30,7 @@ static const UInt32 kLangIDs[] =
   IDT_SYSTEM_ASSOCIATE
 };
 
-static LPCWSTR kSystemTopic = L"FM/options.htm#system";
+#define kSystemTopic "FM/options.htm#system"
 
 CSysString CModifiedExtInfo::GetString() const
 {
@@ -165,7 +165,7 @@ bool CSystemPage::OnInit()
   UString s;
 
   #if NUM_EXT_GROUPS == 1
-    s.SetFromAscii("Program");
+    s = "Program";
   #else
     #ifndef UNDER_CE
       const unsigned kSize = 256;
@@ -190,7 +190,7 @@ bool CSystemPage::OnInit()
     
       if (!res)
     #endif
-        s.SetFromAscii("Current User");
+        s = "Current User";
   #endif
 
   LV_COLUMNW ci;
@@ -257,9 +257,9 @@ bool CSystemPage::OnInit()
 
 static UString GetProgramCommand()
 {
-  UString s = L"\"";
+  UString s ('\"');
   s += fs2us(NDLL::GetModuleDirPrefix());
-  s.AddAscii("7zFM.exe\" \"%1\"");
+  s += "7zFM.exe\" \"%1\"";
   return s;
 }
 
@@ -291,7 +291,7 @@ LONG CSystemPage::OnApply()
         if (mi.State == kExtState_7Zip)
         {
           UString title = extInfo.Ext;
-          title.AddAscii(" Archive");
+          title += " Archive";
           const CPluginToIcon &plug = extInfo.Plugins[0];
           res2 = NRegistryAssoc::AddShellExtensionInfo(key, GetSystemString(extInfo.Ext),
               title, command, plug.IconPath, plug.IconIndex);
@@ -327,7 +327,7 @@ LONG CSystemPage::OnApply()
 
 void CSystemPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kSystemTopic);
+  ShowHelpWindow(kSystemTopic);
 }
 
 

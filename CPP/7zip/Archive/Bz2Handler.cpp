@@ -179,6 +179,7 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
+
 STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
@@ -191,8 +192,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   if (_packSize_Defined)
     extractCallback->SetTotal(_packSize);
 
-  // RINOK(extractCallback->SetCompleted(&packSize));
-
   CMyComPtr<ISequentialOutStream> realOutStream;
   Int32 askMode = testMode ?
       NExtract::NAskMode::kTest :
@@ -203,7 +202,6 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   extractCallback->PrepareOperation(askMode);
 
-
   if (_needSeekToStart)
   {
     if (!_stream)
@@ -213,14 +211,10 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   else
     _needSeekToStart = true;
 
-  Int32 opRes;
-
-  try
-  {
+  // try {
 
   NCompress::NBZip2::CDecoder *decoderSpec = new NCompress::NBZip2::CDecoder;
   CMyComPtr<ICompressCoder> decoder = decoderSpec;
-  decoderSpec->SetInStream(_seqStream);
 
   #ifndef _7ZIP_ST
   RINOK(decoderSpec->SetNumberOfThreads(_props._numThreads));
@@ -237,74 +231,43 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(extractCallback, true);
 
-  UInt64 packSize = 0;
-  UInt64 unpackedSize = 0;
-  UInt64 numStreams = 0;
-
-  decoderSpec->InitNumBlocks();
+  decoderSpec->FinishMode = true;
+  decoderSpec->Base.DecodeAllStreams = true;
   
-  HRESULT result = S_OK;
+  _dataAfterEnd = false;
+  _needMoreInput = false;
 
-  for (;;)
+  lps->InSize = 0;
+  lps->OutSize = 0;
+  
+  HRESULT result = decoderSpec->Code(_seqStream, outStream, NULL, NULL, progress);
+  
+  if (result != S_FALSE && result != S_OK)
+    return result;
+  
+  if (decoderSpec->Base.NumStreams == 0)
   {
-    lps->InSize = packSize;
-    lps->OutSize = unpackedSize;
-
-    RINOK(lps->SetCur());
-
-    result = decoderSpec->CodeResume(outStream, progress);
-
-    if (result != S_FALSE && result != S_OK)
-      return result;
-
-    if (decoderSpec->IsBz)
-      numStreams++;
-    else if (numStreams == 0)
-    {
-      _isArc = false;
-      result = S_FALSE;
-      break;
-    }
-
-    unpackedSize = outStreamSpec->GetSize();
-    UInt64 streamSize = decoderSpec->GetStreamSize();
-
-    if (streamSize == packSize)
-    {
-      // no new bytes in input stream, So it's good end of archive.
-      result = S_OK;
-      break;
-    }
-    
-    if (!decoderSpec->IsBz)
-    {
-      _dataAfterEnd = true;
-      result = S_FALSE;
-      break;
-    }
-
-    if (decoderSpec->Base.BitDecoder.ExtraBitsWereRead())
-    {
-      _needMoreInput = true;
-      packSize = streamSize;
-      result = S_FALSE;
-      break;
-    }
-
-    packSize = decoderSpec->GetInputProcessedSize();
-
-    if (packSize > streamSize)
-      return E_FAIL;
-
-    if (result != S_OK)
-      break;
+    _isArc = false;
+    result = S_FALSE;
   }
-
-  if (numStreams != 0)
+  else
   {
+    const UInt64 inProcessedSize = decoderSpec->GetInputProcessedSize();
+    UInt64 packSize = inProcessedSize;
+
+    if (decoderSpec->Base.NeedMoreInput)
+      _needMoreInput = true;
+    
+    if (!decoderSpec->Base.IsBz)
+    {
+      packSize = decoderSpec->Base.FinishedPackSize;
+      if (packSize != inProcessedSize)
+        _dataAfterEnd = true;
+    }
+
     _packSize = packSize;
-    _unpackSize = unpackedSize;
-    _numStreams = numStreams;
+    _unpackSize = decoderSpec->GetOutProcessedSize();
+    _numStreams = decoderSpec->Base.NumStreams;
     _numBlocks = decoderSpec->GetNumBlocks();
 
     _packSize_Defined = true;
@@ -313,31 +276,35 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     _numBlocks_Defined = true;
   }
   
-  decoderSpec->ReleaseInStream();
   outStream.Release();
+
+  Int32 opRes;
 
   if (!_isArc)
     opRes = NExtract::NOperationResult::kIsNotArc;
   else if (_needMoreInput)
     opRes = NExtract::NOperationResult::kUnexpectedEnd;
-  else if (decoderSpec->CrcError)
+  else if (decoderSpec->GetCrcError())
     opRes = NExtract::NOperationResult::kCRCError;
   else if (_dataAfterEnd)
     opRes = NExtract::NOperationResult::kDataAfterEnd;
   else if (result == S_FALSE)
+    opRes = NExtract::NOperationResult::kDataError;
+  else if (decoderSpec->Base.MinorError)
     opRes = NExtract::NOperationResult::kDataError;
   else if (result == S_OK)
     opRes = NExtract::NOperationResult::kOK;
   else
     return result;
 
-  }
-  catch(const CInBufferException &e)  { return e.ErrorCode; }
-
   return extractCallback->SetOperationResult(opRes);
+
+  // } catch(...)  { return E_FAIL; }
 
   COM_TRY_END
 }
+
+
 
 static HRESULT UpdateArchive(
     UInt64 unpackSize,

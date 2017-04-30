@@ -44,15 +44,17 @@ static const UInt32 kVmCodeSizeMax = 1 << 16;
 
 extern "C" {
 
-static UInt32 Range_GetThreshold(void *pp, UInt32 total)
+#define GET_RangeDecoder CRangeDecoder *p = CONTAINER_FROM_VTBL_CLS(pp, CRangeDecoder, vt);
+
+static UInt32 Range_GetThreshold(const IPpmd7_RangeDec *pp, UInt32 total)
 {
-  CRangeDecoder *p = (CRangeDecoder *)pp;
+  GET_RangeDecoder;
   return p->Code / (p->Range /= total);
 }
 
-static void Range_Decode(void *pp, UInt32 start, UInt32 size)
+static void Range_Decode(const IPpmd7_RangeDec *pp, UInt32 start, UInt32 size)
 {
-  CRangeDecoder *p = (CRangeDecoder *)pp;
+  GET_RangeDecoder;
   start *= p->Range;
   p->Low += start;
   p->Code -= start;
@@ -60,28 +62,28 @@ static void Range_Decode(void *pp, UInt32 start, UInt32 size)
   p->Normalize();
 }
 
-static UInt32 Range_DecodeBit(void *pp, UInt32 size0)
+static UInt32 Range_DecodeBit(const IPpmd7_RangeDec *pp, UInt32 size0)
 {
-  CRangeDecoder *p = (CRangeDecoder *)pp;
+  GET_RangeDecoder;
   if (p->Code / (p->Range >>= 14) < size0)
   {
-    Range_Decode(p, 0, size0);
+    Range_Decode(&p->vt, 0, size0);
     return 0;
   }
   else
   {
-    Range_Decode(p, size0, (1 << 14) - size0);
+    Range_Decode(&p->vt, size0, (1 << 14) - size0);
     return 1;
   }
 }
 
 }
 
-CRangeDecoder::CRangeDecoder()
+CRangeDecoder::CRangeDecoder() throw()
 {
-  s.GetThreshold = Range_GetThreshold;
-  s.Decode = Range_Decode;
-  s.DecodeBit = Range_DecodeBit;
+  vt.GetThreshold = Range_GetThreshold;
+  vt.Decode = Range_Decode;
+  vt.DecodeBit = Range_DecodeBit;
 }
 
 CDecoder::CDecoder():
@@ -445,7 +447,7 @@ HRESULT CDecoder::InitPPM()
   return S_OK;
 }
 
-int CDecoder::DecodePpmSymbol() { return Ppmd7_DecodeSymbol(&_ppmd, &m_InBitStream.s); }
+int CDecoder::DecodePpmSymbol() { return Ppmd7_DecodeSymbol(&_ppmd, &m_InBitStream.vt); }
 
 HRESULT CDecoder::DecodePPM(Int32 num, bool &keepDecompressing)
 {
@@ -545,6 +547,9 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
     return InitPPM();
   }
 
+  TablesRead = false;
+  TablesOK = false;
+
   _lzMode = true;
   PrevAlignBits = 0;
   PrevAlignCount = 0;
@@ -597,7 +602,7 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
         if (i == 0)
           return S_FALSE;
         for (; num > 0 && i < kTablesSizesSum; num--, i++)
-          newLevels[i] = newLevels[i - 1];
+          newLevels[i] = newLevels[(size_t)i - 1];
       }
       else
       {
@@ -606,6 +611,7 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
       }
     }
   }
+
   TablesRead = true;
 
   // original code has check here:
@@ -623,6 +629,9 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
   RIF(m_LenDecoder.Build(&newLevels[kMainTableSize + kDistTableSize + kAlignTableSize]));
 
   memcpy(m_LastLevels, newLevels, kTablesSizesSum);
+
+  TablesOK = true;
+
   return S_OK;
 }
 
@@ -641,16 +650,15 @@ public:
 
 HRESULT CDecoder::ReadEndOfBlock(bool &keepDecompressing)
 {
-  if (ReadBits(1) != 0)
+  if (ReadBits(1) == 0)
   {
-    // old file
-    TablesRead = false;
-    return ReadTables(keepDecompressing);
+    // new file
+    keepDecompressing = false;
+    TablesRead = (ReadBits(1) == 0);
+    return S_OK;
   }
-  // new file
-  keepDecompressing = false;
-  TablesRead = (ReadBits(1) == 0);
-  return S_OK;
+  TablesRead = false;
+  return ReadTables(keepDecompressing);
 }
 
 UInt32 kDistStart[kDistTableSize];
@@ -807,10 +815,12 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
   return S_OK;
 }
 
+
 HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
 {
   _writtenFileSize = 0;
   _unsupportedFilter = false;
+  
   if (!m_IsSolid)
   {
     _lzSize = 0;
@@ -825,6 +835,7 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
     PpmError = true;
     InitFilters();
   }
+
   if (!m_IsSolid || !TablesRead)
   {
     bool keepDecompressing;
@@ -838,6 +849,8 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
     bool keepDecompressing;
     if (_lzMode)
     {
+      if (!TablesOK)
+        return S_FALSE;
       RINOK(DecodeLZ(keepDecompressing))
     }
     else

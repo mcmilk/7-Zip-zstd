@@ -6,7 +6,7 @@
 
 #if defined(UNDER_CE) || !defined(_WIN32)
 
-void ShowHelpWindow(HWND, LPCWSTR)
+void ShowHelpWindow(LPCSTR)
 {
 }
 
@@ -18,12 +18,15 @@ void ShowHelpWindow(HWND, LPCWSTR)
 
 #include "../../../Windows/DLL.h"
 
-static LPCWSTR kHelpFileName = L"7-zip.chm::/";
+#define kHelpFileName "7-zip.chm::/"
 
-void ShowHelpWindow(HWND hwnd, LPCWSTR topicFile)
+void ShowHelpWindow(LPCSTR topicFile)
 {
   FString path = NWindows::NDLL::GetModuleDirPrefix();
-  HtmlHelp(hwnd, GetSystemString(fs2us(path) + kHelpFileName + topicFile), HH_DISPLAY_TOPIC, 0);
+  path += kHelpFileName;
+  path += topicFile;
+  // HWND hwnd = NULL;
+  HtmlHelp(NULL, GetSystemString(fs2us(path)), HH_DISPLAY_TOPIC, 0);
 }
 
 #endif

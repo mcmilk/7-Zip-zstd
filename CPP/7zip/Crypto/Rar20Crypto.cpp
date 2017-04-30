@@ -68,7 +68,7 @@ void CData::SetPassword(const Byte *data, unsigned size)
     for (unsigned i = 0; i < size; i += 2)
     {
       unsigned n1 = (Byte)g_CrcTable[(psw[i] - j) & 0xFF];
-      unsigned n2 = (Byte)g_CrcTable[(psw[i + 1] + j) & 0xFF];
+      unsigned n2 = (Byte)g_CrcTable[(psw[(size_t)i + 1] + j) & 0xFF];
       for (unsigned k = 1; (n1 & 0xFF) != n2; n1++, k++)
         Swap(SubstTable[n1 & 0xFF], SubstTable[(n1 + i + k) & 0xFF]);
     }

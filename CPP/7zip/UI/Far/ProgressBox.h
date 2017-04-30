@@ -76,7 +76,7 @@ public:
       MaxLen(60)
     {}
 
-  void Init(const AString &title);
+  void Init(const char *title);
   void Print();
 };
 

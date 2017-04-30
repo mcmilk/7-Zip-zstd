@@ -27,8 +27,8 @@ static void x86_Filter(Byte *data, UInt32 size, UInt32 processedSize, UInt32 tra
     return;
   size -= kResidue;
   
-  Byte save = data[size + 4];
-  data[size + 4] = 0xE8;
+  Byte save = data[(size_t)size + 4];
+  data[(size_t)size + 4] = 0xE8;
   
   for (UInt32 i = 0;;)
   {
@@ -57,7 +57,7 @@ static void x86_Filter(Byte *data, UInt32 size, UInt32 processedSize, UInt32 tra
     }
   }
 
-  data[size + 4] = save;
+  data[(size_t)size + 4] = save;
 }
 
 

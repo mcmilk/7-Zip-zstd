@@ -20,10 +20,10 @@ class CData
   
   UInt32 SubstLong(UInt32 t) const
   {
-    return (UInt32)SubstTable[(unsigned)t & 255]
-        | ((UInt32)SubstTable[(unsigned)(t >> 8) & 255] << 8)
+    return (UInt32)SubstTable[(unsigned)t         & 255]
+        | ((UInt32)SubstTable[(unsigned)(t >>  8) & 255] << 8)
         | ((UInt32)SubstTable[(unsigned)(t >> 16) & 255] << 16)
-        | ((UInt32)SubstTable[(unsigned)(t >> 24) & 255] << 24);
+        | ((UInt32)SubstTable[(unsigned)(t >> 24)      ] << 24);
   }
   void UpdateKeys(const Byte *data);
   void CryptBlock(Byte *buf, bool encrypt);

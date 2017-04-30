@@ -274,7 +274,7 @@ STDMETHODIMP CAltStreamsFolder::BindToFolder(const wchar_t * /* name */, IFolder
   return E_INVALIDARG;
 }
 
-static const CFSTR kSuperPrefix = FTEXT("\\\\?\\");
+// static CFSTR const kSuperPrefix = FTEXT("\\\\?\\");
 
 STDMETHODIMP CAltStreamsFolder::BindToParentFolder(IFolderFolder **resultFolder)
 {
@@ -408,7 +408,7 @@ static HRESULT SendMessageError(IFolderOperationsExtractCallback *callback,
     const wchar_t *message, const FString &fileName)
 {
   UString s = message;
-  s += L" : ";
+  s += " : ";
   s += fs2us(fileName);
   return callback->ShowMessage(s);
 }
@@ -417,7 +417,7 @@ static HRESULT SendMessageError(IFolderArchiveUpdateCallback *callback,
     const wchar_t *message, const FString &fileName)
 {
   UString s = message;
-  s += L" : ";
+  s += " : ";
   s += fs2us(fileName);
   return callback->UpdateErrorMessage(s);
 }
@@ -629,7 +629,7 @@ static HRESULT CopyStream(
   if (IntToBool(writeAskResult))
   {
     RINOK(callback->SetCurrentFilePath(fs2us(srcPath)));
-    FString destPathNew = us2fs((LPCOLESTR)destPathResult);
+    FString destPathNew (us2fs((LPCOLESTR)destPathResult));
     RINOK(state.MyCopyFile(srcPath, destPathNew));
     if (state.ErrorFileIndex >= 0)
     {
@@ -712,7 +712,7 @@ STDMETHODIMP CAltStreamsFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UI
   }
   */
 
-  FString destPath = us2fs(path);
+  FString destPath (us2fs(path));
   if (destPath.IsEmpty() /* && !ExtractToStreamCallback */)
     return E_INVALIDARG;
 

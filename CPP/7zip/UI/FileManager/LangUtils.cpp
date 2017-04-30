@@ -25,7 +25,7 @@ static NSynchronization::CCriticalSection g_CriticalSection;
 
 bool LangOpen(CLang &lang, CFSTR fileName)
 {
-  return lang.Open(fileName, L"7-Zip");
+  return lang.Open(fileName, "7-Zip");
 }
 
 FString GetLangDirPrefix()
@@ -94,7 +94,7 @@ void LangSetDlgItems_Colon(HWND dialog, const UInt32 *ids, unsigned numItems)
     {
       CWindow window(GetDlgItem(dialog, id));
       UString s2 = s;
-      s2 += L':';
+      s2 += ':';
       window.SetText(s2);
     }
   }
@@ -139,7 +139,7 @@ void LangString_OnlyFromLangFile(UInt32 langID, UString &dest)
     dest = s;
 }
 
-static const char *kLangs =
+static const char * const kLangs =
   "ar.bg.ca.zh.-tw.-cn.cs.da.de.el.en.es.fi.fr.he.hu.is."
   "it.ja.ko.nl.no.=nb.=nn.pl.pt.-br.rm.ro.ru.sr.=hr.-spl.-spc.sk.sq.sv.th.tr."
   "ur.id.uk.be.sl.et.lv.lt.tg.fa.vi.hy.az.eu.hsb.mk."
@@ -153,7 +153,7 @@ static const char *kLangs =
   // ".gd."
   ;
 
-static void FindShortNames(UInt32 primeLang, UStringVector &names)
+static void FindShortNames(UInt32 primeLang, AStringVector &names)
 {
   UInt32 index = 0;
   for (const char *p = kLangs; *p != 0;)
@@ -167,7 +167,7 @@ static void FindShortNames(UInt32 primeLang, UStringVector &names)
     {
       if (index > primeLang)
         break;
-      UString s;
+      AString s;
       if (isSub)
       {
         if (p[0] == '-')
@@ -176,7 +176,7 @@ static void FindShortNames(UInt32 primeLang, UStringVector &names)
           p++;
       }
       while (p != p2)
-        s += (wchar_t)(Byte)*p++;
+        s += (char)(Byte)*p++;
       names.Add(s);
     }
     p = p2 + 1;
@@ -195,7 +195,7 @@ static struct CC1Lang
       UString s;
       char ttt[32];
       ConvertUInt32ToHex(i, ttt);
-      s.AddAscii(ttt);
+      s += ttt;
       UStringVector names;
       FindShortNames(i, names);
 
@@ -238,18 +238,21 @@ static void OpenDefaultLang()
   WORD primLang = (WORD)(PRIMARYLANGID(langID));
   WORD subLang = (WORD)(SUBLANGID(langID));
   {
-    UStringVector names;
+    AStringVector names;
     FindShortNames(primLang, names);
-    const FString dirPrefix = GetLangDirPrefix();
+    const FString dirPrefix (GetLangDirPrefix());
     for (unsigned i = 0; i < 2; i++)
     {
       unsigned index = (i == 0 ? subLang : 0);
       if (index < names.Size())
       {
-        const UString &name = names[index];
+        const AString &name = names[index];
         if (!name.IsEmpty())
         {
-          if (LangOpen(g_Lang, dirPrefix + us2fs(name) + FTEXT(".txt")))
+          FString path (dirPrefix);
+          path += name;
+          path += ".txt";
+          if (LangOpen(g_Lang, path))
           {
             g_LangID = name;
             return;
@@ -280,7 +283,7 @@ void ReloadLang()
     if (s.Find(FCHAR_PATH_SEPARATOR) < 0)
     {
       if (s.Find(FTEXT('.')) < 0)
-        s += FTEXT(".txt");
+        s += ".txt";
       s.Insert(0, GetLangDirPrefix());
     }
     LangOpen(g_Lang, s);

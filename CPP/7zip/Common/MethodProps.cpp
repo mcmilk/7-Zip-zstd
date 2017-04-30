@@ -8,9 +8,9 @@
 
 using namespace NWindows;
 
-bool StringToBool(const UString &s, bool &res)
+bool StringToBool(const wchar_t *s, bool &res)
 {
-  if (s.IsEmpty() || (s[0] == '+' && s[1] == 0) || StringsAreEqualNoCase_Ascii(s, "ON"))
+  if (s[0] == 0 || (s[0] == '+' && s[1] == 0) || StringsAreEqualNoCase_Ascii(s, "ON"))
   {
     res = true;
     return true;
@@ -95,7 +95,7 @@ static HRESULT StringToDictSize(const UString &s, NCOM::CPropVariant &destProp)
 {
   const wchar_t *end;
   UInt32 number = ConvertStringToUInt32(s, &end);
-  unsigned numDigits = (unsigned)(end - s);
+  unsigned numDigits = (unsigned)(end - s.Ptr());
   if (numDigits == 0 || s.Len() > numDigits + 1)
     return E_INVALIDARG;
   
@@ -144,17 +144,29 @@ static HRESULT PROPVARIANT_to_DictSize(const PROPVARIANT &prop, NCOM::CPropVaria
     return S_OK;
   }
   if (prop.vt == VT_BSTR)
-    return StringToDictSize(prop.bstrVal, destProp);
+  {
+    UString s;
+    s = prop.bstrVal;
+    return StringToDictSize(s, destProp);
+  }
   return E_INVALIDARG;
 }
 
 
-void CProps::AddProp32(PROPID propid, UInt32 level)
+void CProps::AddProp32(PROPID propid, UInt32 val)
 {
   CProp &prop = Props.AddNew();
   prop.IsOptional = true;
   prop.Id = propid;
-  prop.Value = (UInt32)level;
+  prop.Value = (UInt32)val;
+}
+
+void CProps::AddPropBool(PROPID propid, bool val)
+{
+  CProp &prop = Props.AddNew();
+  prop.IsOptional = true;
+  prop.Id = propid;
+  prop.Value = val;
 }
 
 class CCoderProps
@@ -454,5 +466,7 @@ HRESULT COneMethodInfo::ParseMethodFromPROPVARIANT(const UString &realName, cons
   // -m{N}=method
   if (value.vt != VT_BSTR)
     return E_INVALIDARG;
-  return ParseMethodFromString(value.bstrVal);
+  UString s;
+  s = value.bstrVal;
+  return ParseMethodFromString(s);
 }

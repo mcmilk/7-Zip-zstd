@@ -3,8 +3,6 @@
 #include "StdAfx.h"
 
 #include "../../../C/Alloc.h"
-#include "../../../C/XzCrc64.h"
-#include "../../../C/XzEnc.h"
 
 #include "../../Common/ComTry.h"
 #include "../../Common/Defs.h"
@@ -12,14 +10,14 @@
 
 #include "../../Windows/PropVariant.h"
 
-#include "../ICoder.h"
-
 #include "../Common/CWrappers.h"
 #include "../Common/ProgressUtils.h"
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
 
 #include "../Compress/CopyCoder.h"
+#include "../Compress/XzDecoder.h"
+#include "../Compress/XzEncoder.h"
 
 #include "IArchive.h"
 
@@ -27,46 +25,13 @@
 #include "Common/HandlerOut.h"
 #endif
 
-#include "XzHandler.h"
-
 using namespace NWindows;
-
-namespace NCompress {
-namespace NLzma2 {
-
-HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzma2Props);
-
-}}
 
 namespace NArchive {
 namespace NXz {
 
-struct CCrc64Gen { CCrc64Gen() { Crc64GenerateTable(); } } g_Crc64TableInit;
+#define k_LZMA2_Name "LZMA2"
 
-static const char *k_LZMA2_Name = "LZMA2";
-
-void CStatInfo::Clear()
-{
-  InSize = 0;
-  OutSize = 0;
-  PhySize = 0;
-  
-  NumStreams = 0;
-  NumBlocks = 0;
-  
-  UnpackSize_Defined = false;
-  
-  NumStreams_Defined = false;
-  NumBlocks_Defined = false;
-  
-  IsArc = false;
-  UnexpectedEnd = false;
-  DataAfterEnd = false;
-  Unsupported = false;
-  HeadersError = false;
-  DataError = false;
-  CrcError = false;
-}
 
 class CHandler:
   public IInArchive,
@@ -78,7 +43,7 @@ class CHandler:
   #endif
   public CMyUnknownImp
 {
-  CStatInfo _stat;
+  NCompress::NXz::CStatInfo _stat;
   
   bool _isArc;
   bool _needSeekToStart;
@@ -104,9 +69,12 @@ class CHandler:
   HRESULT Open2(IInStream *inStream, /* UInt32 flags, */ IArchiveOpenCallback *callback);
 
   HRESULT Decode2(ISequentialInStream *seqInStream, ISequentialOutStream *outStream,
-      CDecoder &decoder, ICompressProgressInfo *progress)
+      NCompress::NXz::CDecoder &decoder, ICompressProgressInfo *progress)
   {
-    RINOK(decoder.Decode(seqInStream, outStream, progress));
+    RINOK(decoder.Decode(seqInStream, outStream,
+        NULL, // *outSizeLimit
+        true, // finishStream
+        progress));
     _stat = decoder;
     _phySize_Defined = true;
     return S_OK;
@@ -169,13 +137,6 @@ static inline void AddHexToString(AString &s, Byte value)
   s += GetHex(value & 0xF);
 }
 
-static void AddUInt32ToString(AString &s, UInt32 value)
-{
-  char temp[16];
-  ConvertUInt32ToString(value, temp);
-  s += temp;
-}
-
 static void Lzma2PropToString(AString &s, unsigned prop)
 {
   char c = 0;
@@ -192,7 +153,7 @@ static void Lzma2PropToString(AString &s, unsigned prop)
       c = 'm';
     }
   }
-  AddUInt32ToString(s, size);
+  s.Add_UInt32(size);
   if (c != 0)
     s += c;
 }
@@ -232,7 +193,7 @@ static AString GetMethodString(const CXzFilter &f)
     p = temp;
   }
 
-  AString s = p;
+  AString s (p);
 
   if (f.propsSize > 0)
   {
@@ -240,7 +201,7 @@ static AString GetMethodString(const CXzFilter &f)
     if (f.id == XZ_ID_LZMA2 && f.propsSize == 1)
       Lzma2PropToString(s, f.props[0]);
     else if (f.id == XZ_ID_Delta && f.propsSize == 1)
-      AddUInt32ToString(s, (UInt32)f.props[0] + 1);
+      s.Add_UInt32((UInt32)f.props[0] + 1);
     else
     {
       s += '[';
@@ -294,7 +255,7 @@ static AString GetCheckString(const CXzs &xzs)
       else
       {
         s2 = "Check-";
-        AddUInt32ToString(s2, (UInt32)i);
+        s2.Add_UInt32((UInt32)i);
       }
       AddString(s, s2);
     }
@@ -354,26 +315,27 @@ STDMETHODIMP CHandler::GetProperty(UInt32, PROPID propID, PROPVARIANT *value)
 
 struct COpenCallbackWrap
 {
-  ICompressProgress p;
+  ICompressProgress vt;
   IArchiveOpenCallback *OpenCallback;
   HRESULT Res;
   COpenCallbackWrap(IArchiveOpenCallback *progress);
 };
 
-static SRes OpenCallbackProgress(void *pp, UInt64 inSize, UInt64 /* outSize */)
+static SRes OpenCallbackProgress(const ICompressProgress *pp, UInt64 inSize, UInt64 /* outSize */)
 {
-  COpenCallbackWrap *p = (COpenCallbackWrap *)pp;
+  COpenCallbackWrap *p = CONTAINER_FROM_VTBL(pp, COpenCallbackWrap, vt);
   if (p->OpenCallback)
     p->Res = p->OpenCallback->SetCompleted(NULL, &inSize);
-  return (SRes)p->Res;
+  return HRESULT_To_SRes(p->Res, SZ_ERROR_PROGRESS);
 }
 
 COpenCallbackWrap::COpenCallbackWrap(IArchiveOpenCallback *callback)
 {
-  p.Progress = OpenCallbackProgress;
+  vt.Progress = OpenCallbackProgress;
   OpenCallback = callback;
   Res = SZ_OK;
 }
+
 
 struct CXzsCPP
 {
@@ -381,6 +343,30 @@ struct CXzsCPP
   CXzsCPP() { Xzs_Construct(&p); }
   ~CXzsCPP() { Xzs_Free(&p, &g_Alloc); }
 };
+
+#define kInputBufSize ((size_t)1 << 10)
+
+struct CLookToRead2_CPP: public CLookToRead2
+{
+  CLookToRead2_CPP()
+  {
+    buf = NULL;
+    LookToRead2_CreateVTable(this,
+        True // Lookahead ?
+        );
+  }
+  void Alloc(size_t allocSize)
+  {
+    buf = (Byte *)MyAlloc(allocSize);
+    if (buf)
+      this->bufSize = allocSize;
+  }
+  ~CLookToRead2_CPP()
+  {
+    MyFree(buf);
+  }
+};
+
 
 static HRESULT SRes_to_Open_HRESULT(SRes res)
 {
@@ -401,14 +387,18 @@ static HRESULT SRes_to_Open_HRESULT(SRes res)
   return S_FALSE;
 }
 
+
+
 HRESULT CHandler::Open2(IInStream *inStream, /* UInt32 flags, */ IArchiveOpenCallback *callback)
 {
   _needSeekToStart = true;
 
   {
     CXzStreamFlags st;
-    CSeqInStreamWrap inStreamWrap(inStream);
-    SRes res = Xz_ReadHeader(&st, &inStreamWrap.p);
+    CSeqInStreamWrap inStreamWrap;
+    
+    inStreamWrap.Init(inStream);
+    SRes res = Xz_ReadHeader(&st, &inStreamWrap.vt);
     if (res != SZ_OK)
       return SRes_to_Open_HRESULT(res);
 
@@ -416,7 +406,7 @@ HRESULT CHandler::Open2(IInStream *inStream, /* UInt32 flags, */ IArchiveOpenCal
       CXzBlock block;
       Bool isIndex;
       UInt32 headerSizeRes;
-      SRes res2 = XzBlock_ReadHeader(&block, &inStreamWrap.p, &isIndex, &headerSizeRes);
+      SRes res2 = XzBlock_ReadHeader(&block, &inStreamWrap.vt, &isIndex, &headerSizeRes);
       if (res2 == SZ_OK && !isIndex)
       {
         unsigned numFilters = XzBlock_GetNumFilters(&block);
@@ -432,18 +422,25 @@ HRESULT CHandler::Open2(IInStream *inStream, /* UInt32 flags, */ IArchiveOpenCal
     RINOK(callback->SetTotal(NULL, &_stat.PhySize));
   }
 
-  CSeekInStreamWrap inStreamImp(inStream);
+  CSeekInStreamWrap inStreamImp;;
+  
+  inStreamImp.Init(inStream);
 
-  CLookToRead lookStream;
-  LookToRead_CreateVTable(&lookStream, True);
-  lookStream.realStream = &inStreamImp.p;
-  LookToRead_Init(&lookStream);
+  CLookToRead2_CPP lookStream;
+
+  lookStream.Alloc(kInputBufSize);
+  
+  if (!lookStream.buf)
+    return E_OUTOFMEMORY;
+
+  lookStream.realStream = &inStreamImp.vt;
+  LookToRead2_Init(&lookStream);
 
   COpenCallbackWrap openWrap(callback);
 
   CXzsCPP xzs;
   Int64 startPosition;
-  SRes res = Xzs_ReadBackward(&xzs.p, &lookStream.s, &startPosition, &openWrap.p, &g_Alloc);
+  SRes res = Xzs_ReadBackward(&xzs.p, &lookStream.vt, &startPosition, &openWrap.vt, &g_Alloc);
   if (res == SZ_ERROR_PROGRESS)
     return (openWrap.Res == S_OK) ? E_FAIL : openWrap.Res;
   /*
@@ -511,6 +508,8 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
+
+
 class CSeekToSeqStream:
   public IInStream,
   public CMyUnknownImp
@@ -530,169 +529,12 @@ STDMETHODIMP CSeekToSeqStream::Read(void *data, UInt32 size, UInt32 *processedSi
 
 STDMETHODIMP CSeekToSeqStream::Seek(Int64, UInt32, UInt64 *) { return E_NOTIMPL; }
 
-CXzUnpackerCPP::CXzUnpackerCPP(): InBuf(0), OutBuf(0)
-{
-  XzUnpacker_Construct(&p, &g_Alloc);
-}
 
-CXzUnpackerCPP::~CXzUnpackerCPP()
-{
-  XzUnpacker_Free(&p);
-  MyFree(InBuf);
-  MyFree(OutBuf);
-}
 
-HRESULT CDecoder::Decode(ISequentialInStream *seqInStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress)
-{
-  const size_t kInBufSize = 1 << 15;
-  const size_t kOutBufSize = 1 << 21;
 
-  Clear();
-  DecodeRes = SZ_OK;
 
-  XzUnpacker_Init(&xzu.p);
-  if (!xzu.InBuf)
-    xzu.InBuf = (Byte *)MyAlloc(kInBufSize);
-  if (!xzu.OutBuf)
-    xzu.OutBuf = (Byte *)MyAlloc(kOutBufSize);
-  
-  UInt32 inSize = 0;
-  SizeT inPos = 0;
-  SizeT outPos = 0;
 
-  for (;;)
-  {
-    if (inPos == inSize)
-    {
-      inPos = inSize = 0;
-      RINOK(seqInStream->Read(xzu.InBuf, kInBufSize, &inSize));
-    }
 
-    SizeT inLen = inSize - inPos;
-    SizeT outLen = kOutBufSize - outPos;
-    ECoderStatus status;
-    
-    SRes res = XzUnpacker_Code(&xzu.p,
-        xzu.OutBuf + outPos, &outLen,
-        xzu.InBuf + inPos, &inLen,
-        (inSize == 0 ? CODER_FINISH_END : CODER_FINISH_ANY), &status);
-
-    inPos += inLen;
-    outPos += outLen;
-
-    InSize += inLen;
-    OutSize += outLen;
-
-    DecodeRes = res;
-
-    bool finished = ((inLen == 0 && outLen == 0) || res != SZ_OK);
-
-    if (outStream)
-    {
-      if (outPos == kOutBufSize || finished)
-      {
-        if (outPos != 0)
-        {
-          RINOK(WriteStream(outStream, xzu.OutBuf, outPos));
-          outPos = 0;
-        }
-      }
-    }
-    else
-      outPos = 0;
-    
-    if (progress)
-    {
-      RINOK(progress->SetRatioInfo(&InSize, &OutSize));
-    }
-    
-    if (finished)
-    {
-      PhySize = InSize;
-      NumStreams = xzu.p.numStartedStreams;
-      if (NumStreams > 0)
-        IsArc = true;
-      NumBlocks = xzu.p.numTotalBlocks;
-
-      UnpackSize_Defined = true;
-      NumStreams_Defined = true;
-      NumBlocks_Defined = true;
-
-      UInt64 extraSize = XzUnpacker_GetExtraSize(&xzu.p);
-
-      if (res == SZ_OK)
-      {
-        if (status == CODER_STATUS_NEEDS_MORE_INPUT)
-        {
-          extraSize = 0;
-          if (!XzUnpacker_IsStreamWasFinished(&xzu.p))
-          {
-            // finished at padding bytes, but padding is not aligned for 4
-            UnexpectedEnd = true;
-            res = SZ_ERROR_DATA;
-          }
-        }
-        else // status == CODER_STATUS_NOT_FINISHED
-          res = SZ_ERROR_DATA;
-      }
-      else if (res == SZ_ERROR_NO_ARCHIVE)
-      {
-        if (InSize == extraSize)
-          IsArc = false;
-        else
-        {
-          if (extraSize != 0 || inPos != inSize)
-          {
-            DataAfterEnd = true;
-            res = SZ_OK;
-          }
-        }
-      }
-
-      DecodeRes = res;
-      PhySize -= extraSize;
-
-      switch (res)
-      {
-        case SZ_OK: break;
-        case SZ_ERROR_NO_ARCHIVE: IsArc = false; break;
-        case SZ_ERROR_ARCHIVE: HeadersError = true; break;
-        case SZ_ERROR_UNSUPPORTED: Unsupported = true; break;
-        case SZ_ERROR_CRC: CrcError = true; break;
-        case SZ_ERROR_DATA: DataError = true; break;
-        default: DataError = true; break;
-      }
-
-      break;
-    }
-  }
-
-  return S_OK;
-}
-
-Int32 CDecoder::Get_Extract_OperationResult() const
-{
-  Int32 opRes;
-  if (!IsArc)
-    opRes = NExtract::NOperationResult::kIsNotArc;
-  else if (UnexpectedEnd)
-    opRes = NExtract::NOperationResult::kUnexpectedEnd;
-  else if (DataAfterEnd)
-    opRes = NExtract::NOperationResult::kDataAfterEnd;
-  else if (CrcError)
-    opRes = NExtract::NOperationResult::kCRCError;
-  else if (Unsupported)
-    opRes = NExtract::NOperationResult::kUnsupportedMethod;
-  else if (HeadersError)
-    opRes = NExtract::NOperationResult::kDataError;
-  else if (DataError)
-    opRes = NExtract::NOperationResult::kDataError;
-  else if (DecodeRes != SZ_OK)
-    opRes = NExtract::NOperationResult::kDataError;
-  else
-    opRes = NExtract::NOperationResult::kOK;
-  return opRes;
-}
 
 STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
@@ -733,7 +575,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   else
     _needSeekToStart = true;
 
-  CDecoder decoder;
+  NCompress::NXz::CDecoder decoder;
   RINOK(Decode2(_seqStream, realOutStream, decoder, lpsRef));
   Int32 opRes = decoder.Get_Extract_OperationResult();
 
@@ -755,11 +597,13 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 {
   COM_TRY_BEGIN
 
-  CSeqOutStreamWrap seqOutStream(outStream);
   
   if (numItems == 0)
   {
-    SRes res = Xz_EncodeEmpty(&seqOutStream.p);
+    CSeqOutStreamWrap seqOutStream;
+    
+    seqOutStream.Init(outStream);
+    SRes res = Xz_EncodeEmpty(&seqOutStream.vt);
     return SResToHRESULT(res);
   }
   
@@ -795,34 +639,36 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       RINOK(updateCallback->SetTotal(size));
     }
 
-    CLzma2EncProps lzma2Props;
-    Lzma2EncProps_Init(&lzma2Props);
+    NCompress::NXz::CEncoder *encoderSpec = new NCompress::NXz::CEncoder;
+    CMyComPtr<ICompressCoder> encoder = encoderSpec;
+    CLzma2EncProps &lzma2Props = encoderSpec->_lzma2Props;
 
     lzma2Props.lzmaProps.level = GetLevel();
 
     CMyComPtr<ISequentialInStream> fileInStream;
     RINOK(updateCallback->GetStream(0, &fileInStream));
 
-    CSeqInStreamWrap seqInStream(fileInStream);
-
     {
       NCOM::CPropVariant prop = (UInt64)size;
-      RINOK(NCompress::NLzma2::SetLzma2Prop(NCoderPropID::kReduceSize, prop, lzma2Props));
+      RINOK(encoderSpec->SetCoderProp(NCoderPropID::kReduceSize, prop));
     }
 
     FOR_VECTOR (i, _methods)
     {
       COneMethodInfo &m = _methods[i];
-      SetGlobalLevelAndThreads(m
+
+      /*
+      SetGlobalLevelTo(m);
       #ifndef _7ZIP_ST
-      , _numThreads
+      CMultiMethodProps::SetMethodThreads(m, _numThreads);
       #endif
-      );
+      */
+
       {
         FOR_VECTOR (j, m.Props)
         {
           const CProp &prop = m.Props[j];
-          RINOK(NCompress::NLzma2::SetLzma2Prop(prop.Id, prop.Value, lzma2Props));
+          RINOK(encoderSpec->SetCoderProp(prop.Id, prop.Value));
         }
       }
     }
@@ -835,11 +681,12 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     CMyComPtr<ICompressProgressInfo> progress = lps;
     lps->Init(updateCallback, true);
 
-    CCompressProgressWrap progressWrap(progress);
-    CXzProps xzProps;
-    CXzFilterProps filter;
+    CXzProps &xzProps = encoderSpec->xzProps;
+    CXzFilterProps &filter = encoderSpec->filter;
+    
     XzProps_Init(&xzProps);
     XzFilterProps_Init(&filter);
+    
     xzProps.lzma2Props = &lzma2Props;
     xzProps.filterProps = (_filterId != 0 ? &filter : NULL);
     switch (_crcSize)
@@ -869,10 +716,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (!deltaDefined)
         return E_INVALIDARG;
     }
-    SRes res = Xz_Encode(&seqOutStream.p, &seqInStream.p, &xzProps, &progressWrap.p);
-    if (res == SZ_OK)
-      return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
-    return SResToHRESULT(res);
+
+    return encoderSpec->Code(fileInStream, outStream, NULL, NULL, progress);
   }
 
   if (indexInArchive != 0)
@@ -900,6 +745,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   COM_TRY_END
 }
+
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {

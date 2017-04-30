@@ -46,25 +46,29 @@ public:
   {
     return (_stream.NumExtraBytes > 4);
   }
-
+  
+  MY_FORCE_INLINE
   void Normalize()
   {
     for (; _bitPos >= 8; _bitPos -= 8)
       _value = (_value << 8) | _stream.ReadByte();
   }
 
+  MY_FORCE_INLINE
   UInt32 GetValue(unsigned numBits) const
   {
     // return (_value << _bitPos) >> (kNumBigValueBits - numBits);
     return ((_value >> (8 - _bitPos)) & kMask) >> (kNumValueBits - numBits);
   }
-  
+
+  MY_FORCE_INLINE
   void MovePos(unsigned numBits)
   {
     _bitPos += numBits;
     Normalize();
   }
-  
+
+  MY_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     UInt32 res = GetValue(numBits);
@@ -87,6 +91,7 @@ public:
 
   void AlignToByte() { MovePos((kNumBigValueBits - _bitPos) & 7); }
 
+  MY_FORCE_INLINE
   UInt32 ReadAlignBits() { return ReadBits((kNumBigValueBits - _bitPos) & 7); }
 };
 

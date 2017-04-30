@@ -1,5 +1,5 @@
 /* Bcj2Enc.c -- BCJ2 Encoder (Converter for x86 code)
-2014-11-10 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -271,7 +271,7 @@ void Bcj2Enc_Encode(CBcj2Enc *p)
         unsigned i;
         p->tempPos = tempPos;
         for (i = 0; i < tempPos; i++)
-          p->temp[i] = p->temp[i + num];
+          p->temp[i] = p->temp[(size_t)i + num];
       
         p->src = src;
         p->srcLim = srcLim;

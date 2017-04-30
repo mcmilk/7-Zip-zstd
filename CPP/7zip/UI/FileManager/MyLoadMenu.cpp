@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../Windows/Menu.h"
+#include "../../../Windows/TimeUtils.h"
 #include "../../../Windows/Control/Dialog.h"
 
 #include "../../PropID.h"
@@ -22,10 +23,12 @@ using namespace NWindows;
 
 static const UINT kOpenBookmarkMenuID = 830;
 static const UINT kSetBookmarkMenuID = 810;
+static const UINT kMenuID_Time_Parent = 760;
+static const UINT kMenuID_Time = 761;
 
 extern HINSTANCE g_hInstance;
 
-static LPCWSTR kFMHelpTopic = L"FM/index.htm";
+#define kFMHelpTopic "FM/index.htm"
 
 extern void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance);
 
@@ -115,10 +118,12 @@ static UINT Get_fMask_for_FType_and_String()
 static inline UINT Get_fMask_for_String() { return MIIM_TYPE; }
 static inline UINT Get_fMask_for_FType_and_String() { return MIIM_TYPE; }
 
+
 static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
 {
   CMenu menu;
   menu.Attach(menuLoc);
+  
   for (int i = 0;; i++)
   {
     CMenuItem item;
@@ -137,7 +142,12 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
         {
           MyChangeMenu(item.hSubMenu, level + 1, i);
           if (level == 1 && menuIndex == kMenuIndex_View)
-            langID = kToolbarsLangID;
+          {
+            if (item.wID == kMenuID_Time_Parent || item.StringValue.IsPrefixedBy_Ascii_NoCase("20"))
+              continue;
+            else
+              langID = kToolbarsLangID;
+          }
           else if (level == 0 && i < ARRAY_SIZE(kTopMenuLangIDs))
             langID = kTopMenuLangIDs[i];
           else
@@ -168,7 +178,18 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
           int tabPos = newString.Find(L"\t");
           if (tabPos >= 0)
             newString.DeleteFrom(tabPos);
-          newString += (langID == IDM_OPEN_INSIDE_ONE ? L" *" : L" #");
+          newString += (langID == IDM_OPEN_INSIDE_ONE ? " *" : " #");
+        }
+        else if (langID == IDM_BENCHMARK2)
+        {
+          LangString_OnlyFromLangFile(IDM_BENCHMARK, newString);
+          if (newString.IsEmpty())
+            continue;
+          newString.Replace(L"&", L"");
+          int tabPos = newString.Find(L"\t");
+          if (tabPos >= 0)
+            newString.DeleteFrom(tabPos);
+          newString += " 2";
         }
         else
           LangString_OnlyFromLangFile(langID, newString);
@@ -245,6 +266,8 @@ void MyLoadMenu()
     ::DestroyMenu(oldMenu);
   /* BOOL b = */ g_App._commandBar.InsertMenubar(g_hInstance, IDM_MENU, 0);
   baseMenu = g_App._commandBar.GetMenu(0);
+  // if (startInit)
+  // SetIdsForSubMenes(baseMenu, 0, 0);
   if (!g_LangID.IsEmpty())
     MyChangeMenu(baseMenu, 0, 0);
   g_App._commandBar.DrawMenuBar(0);
@@ -256,6 +279,8 @@ void MyLoadMenu()
   ::SetMenu(hWnd, ::LoadMenu(g_hInstance, MAKEINTRESOURCE(IDM_MENU)));
   ::DestroyMenu(oldMenu);
   baseMenu = ::GetMenu(hWnd);
+  // if (startInit)
+  // SetIdsForSubMenes(baseMenu, 0, 0);
   if (!g_LangID.IsEmpty())
     MyChangeMenu(baseMenu, 0, 0);
   ::DrawMenuBar(hWnd);
@@ -277,8 +302,10 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     ::GetMenu(g_HWND)
     #endif
     ;
+  
   if (::GetSubMenu(mainMenu, position) != hMenu)
     return;
+  
   if (position == kMenuIndex_File)
   {
     CMenu menu;
@@ -316,6 +343,72 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     menu.CheckItemByID(IDM_VIEW_AUTO_REFRESH, g_App.Get_AutoRefresh_Mode());
     // menu.CheckItemByID(IDM_VIEW_SHOW_STREAMS, g_App.Get_ShowNtfsStrems_Mode());
     // menu.CheckItemByID(IDM_VIEW_SHOW_DELETED, g_App.ShowDeletedFiles);
+
+    for (int i = 0;; i++)
+    {
+      CMenuItem item;
+      item.fMask = Get_fMask_for_String() | MIIM_SUBMENU | MIIM_ID;
+      item.fType = MFT_STRING;
+      if (!menu.GetItem(i, true, item))
+        break;
+      if (item.hSubMenu && (item.wID == kMenuID_Time_Parent
+          || item.StringValue.IsPrefixedBy_Ascii_NoCase("20")
+          ))
+      {
+        FILETIME ft;
+        NTime::GetCurUtcFileTime(ft);
+
+        {
+          wchar_t s[64];
+          s[0] = 0;
+          if (ConvertUtcFileTimeToString(ft, s, kTimestampPrintLevel_DAY))
+            item.StringValue = s;
+        }
+
+        item.fMask = Get_fMask_for_String() | MIIM_ID;
+        item.fType = MFT_STRING;
+        item.wID = kMenuID_Time_Parent;
+        menu.SetItem(i, true, item);
+
+        CMenu subMenu;
+        subMenu.Attach(menu.GetSubMenu(i));
+        subMenu.RemoveAllItems();
+        
+        const int k_TimeLevels[] =
+        {
+          kTimestampPrintLevel_DAY,
+          kTimestampPrintLevel_MIN,
+          kTimestampPrintLevel_SEC,
+          // 1,2,3,4,5,6,
+          kTimestampPrintLevel_NTFS
+        };
+
+        unsigned last = kMenuID_Time;
+        unsigned selectedCommand = 0;
+        g_App._timestampLevels.Clear();
+        unsigned id = kMenuID_Time;
+        
+        for (unsigned k = 0; k < ARRAY_SIZE(k_TimeLevels); k++)
+        {
+          wchar_t s[64];
+          s[0] = 0;
+          int timestampLevel = k_TimeLevels[k];
+          if (ConvertUtcFileTimeToString(ft, s, timestampLevel))
+          {
+            if (subMenu.AppendItem(MF_STRING, id, s))
+            {
+              last = id;
+              g_App._timestampLevels.Add(timestampLevel);
+              if (g_App.GetTimestampLevel() == timestampLevel)
+                selectedCommand = id;
+              id++;
+            }
+          }
+        }
+        if (selectedCommand != 0)
+          menu.CheckRadioItem(kMenuID_Time, last, selectedCommand, MF_BYCOMMAND);
+      }
+    }
   }
   else if (position == kMenuIndex_Bookmarks)
   {
@@ -331,9 +424,9 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     {
       UString s = LangString(IDS_BOOKMARK);
       s.Add_Space();
-      wchar_t c = (wchar_t)(L'0' + i);
+      char c = (char)(L'0' + i);
       s += c;
-      s.AddAscii("\tAlt+Shift+");
+      s += "\tAlt+Shift+";
       s += c;
       subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, s);
     }
@@ -351,9 +444,9 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
         s.Insert(kFirstPartSize, L" ... ");
       }
       if (s.IsEmpty())
-        s = L'-';
-      s.AddAscii("\tAlt+");
-      s += (wchar_t)(L'0' + i);
+        s = '-';
+      s += "\tAlt+";
+      s += (char)('0' + i);
       menu.AppendItem(MF_STRING, kOpenBookmarkMenuID + i, s);
     }
   }
@@ -396,6 +489,15 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
         continue;
 
       if (item.wID == IDM_OPEN_INSIDE_ONE || item.wID == IDM_OPEN_INSIDE_PARSER)
+      {
+        // We use diff as "super mode" marker for additional commands.
+        /*
+        if (diffPath.IsEmpty())
+          continue;
+        */
+      }
+
+      if (item.wID == IDM_BENCHMARK2)
       {
         // We use diff as "super mode" marker for additional commands.
         if (diffPath.IsEmpty())
@@ -473,11 +575,11 @@ bool ExecuteFileCommand(int id)
     case IDM_MOVE_TO: g_App.MoveTo(); break;
     case IDM_DELETE: g_App.Delete(!IsKeyDown(VK_SHIFT)); break;
     
-    case IDM_HASH_ALL: g_App.CalculateCrc(L"*"); break;
-    case IDM_CRC32: g_App.CalculateCrc(L"CRC32"); break;
-    case IDM_CRC64: g_App.CalculateCrc(L"CRC64"); break;
-    case IDM_SHA1: g_App.CalculateCrc(L"SHA1"); break;
-    case IDM_SHA256: g_App.CalculateCrc(L"SHA256"); break;
+    case IDM_HASH_ALL: g_App.CalculateCrc("*"); break;
+    case IDM_CRC32: g_App.CalculateCrc("CRC32"); break;
+    case IDM_CRC64: g_App.CalculateCrc("CRC64"); break;
+    case IDM_SHA1: g_App.CalculateCrc("SHA1"); break;
+    case IDM_SHA256: g_App.CalculateCrc("SHA256"); break;
     
     case IDM_DIFF: g_App.DiffFiles(); break;
     case IDM_SPLIT: g_App.Split(); break;
@@ -614,7 +716,7 @@ bool OnMenuCommand(HWND hWnd, int id)
 
     // Help
     case IDM_HELP_CONTENTS:
-      ShowHelpWindow(NULL, kFMHelpTopic);
+      ShowHelpWindow(kFMHelpTopic);
       break;
     case IDM_ABOUT:
     {
@@ -632,6 +734,12 @@ bool OnMenuCommand(HWND hWnd, int id)
       else if (id >= kSetBookmarkMenuID && id <= kSetBookmarkMenuID + 9)
       {
         g_App.SetBookmark(id - kSetBookmarkMenuID);
+        return true;
+      }
+      else if (id >= kMenuID_Time && (unsigned)id <= kMenuID_Time + g_App._timestampLevels.Size())
+      {
+        unsigned index = id - kMenuID_Time;
+        g_App.SetTimestampLevel(g_App._timestampLevels[index]);
         return true;
       }
       return false;

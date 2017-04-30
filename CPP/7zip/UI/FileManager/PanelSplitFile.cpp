@@ -24,21 +24,21 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
 
-static const wchar_t *g_Message_FileWriteError = L"File write error";
+static const char * const g_Message_FileWriteError = "File write error";
 
 struct CVolSeqName
 {
   UString UnchangedPart;
   UString ChangedPart;
-  CVolSeqName(): ChangedPart(L"000") {};
+  CVolSeqName(): ChangedPart("000") {};
 
   void SetNumDigits(UInt64 numVolumes)
   {
-    ChangedPart = L"000";
+    ChangedPart = "000";
     while (numVolumes > 999)
     {
       numVolumes /= 10;
-      ChangedPart += L'0';
+      ChangedPart += '0';
     }
   }
 
@@ -131,7 +131,7 @@ HRESULT CThreadSplit::ProcessVirt()
     if (curVolSize == 0)
     {
       FString name = VolBasePath;
-      name += FTEXT('.');
+      name += '.';
       name += us2fs(seqName.GetNextName());
       sync.Set_FilePath(fs2us(name));
       sync.Set_NumFilesCur(numFiles++);
@@ -236,7 +236,7 @@ void CApp::Split()
 
   CProgressDialog &progressDialog = spliter.ProgressDialog;
 
-  UString progressWindowTitle = L"7-Zip"; // LangString(IDS_APP_TITLE, 0x03000000);
+  UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);
   UString title = LangString(IDS_SPLITTING);
 
   progressDialog.ShowCompressionInfo = false;
@@ -340,7 +340,7 @@ extern void AddValuePair2(UString &s, UINT resourceID, UInt64 num, UInt64 size);
 
 static void AddInfoFileName(UString &dest, const UString &name)
 {
-  dest += L"\n  ";
+  dest += "\n  ";
   dest += name;
 }
 
@@ -450,7 +450,7 @@ void CApp::Combine()
     outName.DeleteBack();
   }
   if (outName.IsEmpty())
-    outName = L"file";
+    outName = "file";
   
   NFind::CFileInfo fileInfo;
   UString destFilePath = path + outName;
@@ -464,7 +464,7 @@ void CApp::Combine()
     CProgressDialog &progressDialog = combiner.ProgressDialog;
     progressDialog.ShowCompressionInfo = false;
   
-    UString progressWindowTitle = L"7-Zip"; // LangString(IDS_APP_TITLE, 0x03000000);
+    UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);
     UString title = LangString(IDS_COMBINING);
     
     progressDialog.MainWindow = _window;

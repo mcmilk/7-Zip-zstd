@@ -5,15 +5,12 @@
 
 #include "../../../Common/MyCom.h"
 
-#include "../../IStream.h"
 #include "../../Common/OutBuffer.h"
 
 #include "ZipItem.h"
 
 namespace NArchive {
 namespace NZip {
-
-// can throw CSystemException and COutBufferException
 
 class CItemOut: public CItem
 {
@@ -28,21 +25,23 @@ public:
   CItemOut(): NtfsTimeIsDefined(false) {}
 };
 
+
+// COutArchive can throw CSystemException and COutBufferException
+
 class COutArchive
 {
-  CMyComPtr<IOutStream> m_Stream;
   COutBuffer m_OutBuffer;
+  CMyComPtr<IOutStream> m_Stream;
 
-  UInt64 m_Base; // Base of arc (offset in output Stream)
+  UInt64 m_Base; // Base of archive (offset in output Stream)
   UInt64 m_CurPos; // Curent position in archive (relative from m_Base)
+  UInt64 m_LocalHeaderPos; // LocalHeaderPos (relative from m_Base) for last WriteLocalHeader() call
 
   UInt32 m_LocalFileHeaderSize;
   UInt32 m_ExtraSize;
   bool m_IsZip64;
 
-  void SeekToRelatPos(UInt64 offset);
-
-  void WriteBytes(const void *buffer, UInt32 size);
+  void WriteBytes(const void *data, size_t size);
   void Write8(Byte b);
   void Write16(UInt16 val);
   void Write32(UInt32 val);
@@ -57,30 +56,26 @@ class COutArchive
   void WriteCommonItemInfo(const CLocalItem &item, bool isZip64);
   void WriteCentralHeader(const CItemOut &item);
 
-  void PrepareWriteCompressedDataZip64(unsigned fileNameLen, bool isZip64, bool aesEncryption);
-
+  void SeekToCurPos();
 public:
   HRESULT Create(IOutStream *outStream);
   
-  void MoveCurPos(UInt64 distanceToMove);
   UInt64 GetCurPos() const { return m_CurPos; }
 
-  void SeekToCurPos();
-
-  void PrepareWriteCompressedData(unsigned fileNameLen, UInt64 unPackSize, bool aesEncryption);
-  void PrepareWriteCompressedData2(unsigned fileNameLen, UInt64 unPackSize, UInt64 packSize, bool aesEncryption);
-  void WriteLocalHeader(const CLocalItem &item);
-
-  void WriteLocalHeader_And_SeekToNextFile(const CLocalItem &item)
+  void MoveCurPos(UInt64 distanceToMove)
   {
-    WriteLocalHeader(item);
-    SeekToCurPos();
+    m_CurPos += distanceToMove;
   }
+
+  void WriteLocalHeader(CItemOut &item, bool needCheck = false);
+  void WriteLocalHeader_Replace(CItemOut &item);
+
+  void WriteDescriptor(const CItemOut &item);
 
   void WriteCentralDir(const CObjectVector<CItemOut> &items, const CByteBuffer *comment);
 
-  void CreateStreamForCompressing(IOutStream **outStream);
-  void CreateStreamForCopying(ISequentialOutStream **outStream);
+  void CreateStreamForCompressing(CMyComPtr<IOutStream> &outStream);
+  void CreateStreamForCopying(CMyComPtr<ISequentialOutStream> &outStream);
 };
 
 }}

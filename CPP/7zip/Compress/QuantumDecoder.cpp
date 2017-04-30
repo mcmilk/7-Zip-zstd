@@ -37,7 +37,7 @@ unsigned CModelDecoder::Decode(CRangeDecoder *rc)
   unsigned i;
   for (i = 1; Freqs[i] > threshold; i++);
   
-  rc->Decode(Freqs[i], Freqs[i - 1], Freqs[0]);
+  rc->Decode(Freqs[i], Freqs[(size_t)i - 1], Freqs[0]);
   unsigned res = Vals[--i];
   
   do
@@ -50,7 +50,7 @@ unsigned CModelDecoder::Decode(CRangeDecoder *rc)
     {
       ReorderCount = kReorderCount;
       for (i = 0; i < NumItems; i++)
-        Freqs[i] = (UInt16)(((Freqs[i] - Freqs[i + 1]) + 1) >> 1);
+        Freqs[i] = (UInt16)(((Freqs[i] - Freqs[(size_t)i + 1]) + 1) >> 1);
       for (i = 0; i < NumItems - 1; i++)
         for (unsigned j = i + 1; j < NumItems; j++)
           if (Freqs[i] < Freqs[j])
@@ -64,7 +64,7 @@ unsigned CModelDecoder::Decode(CRangeDecoder *rc)
           }
       
       do
-        Freqs[i] = (UInt16)(Freqs[i] + Freqs[i + 1]);
+        Freqs[i] = (UInt16)(Freqs[i] + Freqs[(size_t)i + 1]);
       while (i--);
     }
     else
@@ -73,8 +73,8 @@ unsigned CModelDecoder::Decode(CRangeDecoder *rc)
       do
       {
         Freqs[i] >>= 1;
-        if (Freqs[i] <= Freqs[i + 1])
-          Freqs[i] = (UInt16)(Freqs[i + 1] + 1);
+        if (Freqs[i] <= Freqs[(size_t)i + 1])
+          Freqs[i] = (UInt16)(Freqs[(size_t)i + 1] + 1);
       }
       while (i--);
     }

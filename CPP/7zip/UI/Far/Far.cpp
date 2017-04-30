@@ -25,10 +25,10 @@ using namespace NFar;
 
 static const DWORD kShowProgressTime_ms = 100;
 
-static const char *kCommandPrefix = "7-zip";
-static const TCHAR *kRegisrtryMainKeyName = TEXT("");
-static const TCHAR *kRegisrtryValueNameEnabled = TEXT("UsedByDefault3");
-static const char *kHelpTopicConfig =  "Config";
+static const char * const kCommandPrefix = "7-zip";
+static const char * const kRegisrtryMainKeyName = NULL; // ""
+static LPCTSTR const kRegisrtryValueNameEnabled = TEXT("UsedByDefault3");
+static const char * const kHelpTopicConfig =  "Config";
 static bool kPluginEnabledDefault = true;
 
 HINSTANCE g_hInstance;
@@ -67,7 +67,7 @@ static struct COptions
   bool Enabled;
 } g_Options;
 
-static const TCHAR *kPliginNameForRegestry = TEXT("7-ZIP");
+static const char * const kPliginNameForRegistry = "7-ZIP";
 
 EXTERN_C void WINAPI ExitFAR()
 {
@@ -84,7 +84,7 @@ EXTERN_C void WINAPI ExitFAR()
 EXTERN_C void WINAPI SetStartupInfo(const PluginStartupInfo *info)
 {
   MY_TRY_BEGIN;
-  g_StartupInfo.Init(*info, kPliginNameForRegestry);
+  g_StartupInfo.Init(*info, kPliginNameForRegistry);
   g_Options.Enabled = g_StartupInfo.QueryRegKeyValue(
       HKEY_CURRENT_USER, kRegisrtryMainKeyName,
       kRegisrtryValueNameEnabled, kPluginEnabledDefault);
@@ -299,8 +299,7 @@ HRESULT GetPassword(UString &password)
   if (g_StartupInfo.ShowDialog(76, 6, NULL, dialogItems, kNumItems) < 0)
     return E_ABORT;
 
-  AString oemPassword = dialogItems[2].Data;
-  password = MultiByteToUnicodeString(oemPassword, CP_OEMCP);
+  password = MultiByteToUnicodeString(dialogItems[2].Data, CP_OEMCP);
   return S_OK;
 }
 
@@ -449,7 +448,7 @@ EXTERN_C HANDLE WINAPI OpenPlugin(int openFrom, INT_PTR item)
   
   if (openFrom == OPEN_COMMANDLINE)
   {
-    AString fileName = (const char *)item;
+    AString fileName ((const char *)item);
     if (fileName.IsEmpty())
       return INVALID_HANDLE_VALUE;
     if (fileName.Len() >= 2
@@ -522,9 +521,9 @@ EXTERN_C int WINAPI GetFindData(HANDLE plugin, struct PluginPanelItem **panelIte
 
 EXTERN_C void WINAPI FreeFindData(HANDLE plugin, struct PluginPanelItem *panelItems, int itemsNumber)
 {
-  MY_TRY_BEGIN;
+  // MY_TRY_BEGIN;
   ((CPlugin *)plugin)->FreeFindData(panelItems, itemsNumber);
-  MY_TRY_END1("FreeFindData");
+  // MY_TRY_END1("FreeFindData");
 }
 
 EXTERN_C int WINAPI GetFiles(HANDLE plugin, struct PluginPanelItem *panelItems,

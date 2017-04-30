@@ -1,5 +1,5 @@
 /* Lzma2Enc.h -- LZMA2 Encoder
-2013-01-18 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #ifndef __LZMA2_ENC_H
 #define __LZMA2_ENC_H
@@ -33,7 +33,7 @@ Returns:
 
 typedef void * CLzma2EncHandle;
 
-CLzma2EncHandle Lzma2Enc_Create(ISzAlloc *alloc, ISzAlloc *allocBig);
+CLzma2EncHandle Lzma2Enc_Create(ISzAllocPtr alloc, ISzAllocPtr allocBig);
 void Lzma2Enc_Destroy(CLzma2EncHandle p);
 SRes Lzma2Enc_SetProps(CLzma2EncHandle p, const CLzma2EncProps *props);
 Byte Lzma2Enc_WriteProperties(CLzma2EncHandle p);
@@ -54,7 +54,7 @@ Return code:
 /*
 SRes Lzma2Encode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
     const CLzmaEncProps *props, Byte *propsEncoded, int writeEndMark,
-    ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+    ICompressProgress *progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 */
 
 EXTERN_C_END

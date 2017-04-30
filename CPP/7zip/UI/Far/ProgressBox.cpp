@@ -18,7 +18,7 @@ void CPercentPrinterState::ClearCurState()
   FileName.Empty();
 }
 
-void CProgressBox::Init(const AString &title)
+void CProgressBox::Init(const char *title)
 {
   _title = title;
   _wasPrinted = false;
@@ -218,14 +218,13 @@ void CProgressBox::Print()
       unsigned filled = 0;
       if (total != (UInt64)(Int64)-1 && total != 0)
         filled = (unsigned)(cur * numChars / total);
+      if (filled > numChars)
+        filled = numChars;
       unsigned i = 0;
-      if (filled < numChars)
-      {
-        for (i = 0; i < filled; i++)
-          _perc += '=';
-      }
+      for (i = 0; i < filled; i++)
+        _perc += (char)(Byte)0xDB; // '=';
       for (; i < numChars; i++)
-        _perc += '.';
+        _perc += (char)(Byte)0xB0; // '.';
     }
     
     _perc.Add_Space();

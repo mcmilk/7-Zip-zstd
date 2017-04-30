@@ -46,20 +46,58 @@ static const size_t kBufTotalSizeMax = (1 << 29);
 static const unsigned kNumFilesMax = (1 << 18);
 static const unsigned kLevelMax = 64;
 
+static const Byte k_IntelMeSignature[] =
+{
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0x5A, 0xA5, 0xF0, 0x0F
+};
+
+bool IsIntelMe(const Byte *p)
+{
+  return memcmp(p, k_IntelMeSignature, sizeof(k_IntelMeSignature)) == 0;
+}
+
 static const unsigned kFvHeaderSize = 0x38;
 
 static const unsigned kGuidSize = 16;
-#define CAPSULE_SIGNATURE \
-  { 0xBD,0x86,0x66,0x3B,0x76,0x0D,0x30,0x40,0xB7,0x0E,0xB5,0x51,0x9E,0x2F,0xC5,0xA0 }
-static const Byte kCapsuleSig[kGuidSize] = CAPSULE_SIGNATURE;
+
+#define CAPSULE_SIGNATURE   0xBD,0x86,0x66,0x3B,0x76,0x0D,0x30,0x40,0xB7,0x0E,0xB5,0x51,0x9E,0x2F,0xC5,0xA0
+#define CAPSULE2_SIGNATURE  0x8B,0xA6,0x3C,0x4A,0x23,0x77,0xFB,0x48,0x80,0x3D,0x57,0x8C,0xC1,0xFE,0xC4,0x4D
+#define CAPSULE_UEFI_SIGNATURE  0xB9,0x82,0x91,0x53,0xB5,0xAB,0x91,0x43,0xB6,0x9A,0xE3,0xA9,0x43,0xF7,0x2F,0xCC
+/*
+  6dcbd5ed-e82d-4c44-bda1-7194199ad92a : Firmware Management `
+*/
+
+static const Byte k_Guids_Capsules[][kGuidSize] =
+{
+  { CAPSULE_SIGNATURE },
+  { CAPSULE2_SIGNATURE },
+  { CAPSULE_UEFI_SIGNATURE }
+};
+
 
 static const unsigned kFfsGuidOffset = 16;
-#define FFS_SIGNATURE \
-  { 0xD9,0x54,0x93,0x7A,0x68,0x04,0x4A,0x44,0x81,0xCE,0x0B,0xF6,0x17,0xD8,0x90,0xDF }
-static const Byte k_FFS_Guid[kGuidSize] = FFS_SIGNATURE;
 
-static const Byte k_MacFS_Guid[kGuidSize] =
-  { 0xAD,0xEE,0xAD,0x04,0xFF,0x61,0x31,0x4D,0xB6,0xBA,0x64,0xF8,0xBF,0x90,0x1F,0x5A };
+#define FFS1_SIGNATURE  0xD9,0x54,0x93,0x7A,0x68,0x04,0x4A,0x44,0x81,0xCE,0x0B,0xF6,0x17,0xD8,0x90,0xDF
+#define FFS2_SIGNATURE  0x78,0xE5,0x8C,0x8C,0x3D,0x8A,0x1C,0x4F,0x99,0x35,0x89,0x61,0x85,0xC3,0x2D,0xD3
+#define MACFS_SIGNATURE 0xAD,0xEE,0xAD,0x04,0xFF,0x61,0x31,0x4D,0xB6,0xBA,0x64,0xF8,0xBF,0x90,0x1F,0x5A
+// APPLE_BOOT
+/*
+  "FFS3":        "5473c07a-3dcb-4dca-bd6f-1e9689e7349a",
+  "NVRAM_EVSA":  "fff12b8d-7696-4c8b-a985-2747075b4f50",
+  "NVRAM_NVAR":  "cef5b9a3-476d-497f-9fdc-e98143e0422c",
+  "NVRAM_EVSA2": "00504624-8a59-4eeb-bd0f-6b36e96128e0",
+static const Byte k_NVRAM_NVAR_Guid[kGuidSize] =
+  { 0xA3,0xB9,0xF5,0xCE,0x6D,0x47,0x7F,0x49,0x9F,0xDC,0xE9,0x81,0x43,0xE0,0x42,0x2C };
+*/
+
+static const Byte k_Guids_FS[][kGuidSize] =
+{
+  { FFS1_SIGNATURE },
+  { FFS2_SIGNATURE },
+  { MACFS_SIGNATURE }
+};
+
 
 static const UInt32 kFvSignature = 0x4856465F; // "_FVH"
 
@@ -80,6 +118,8 @@ static const Byte kGuids[][kGuidSize] =
   { 0x18,0x88,0x53,0x4A,0xE0,0x5A,0xB2,0x4E,0xB2,0xEB,0x48,0x8B,0x23,0x65,0x70,0x22 }
 };
 
+static const Byte k_Guid_LZMA_COMPRESSED[kGuidSize] =
+  { 0x98,0x58,0x4E,0xEE,0x14,0x39,0x59,0x42,0x9D,0x6E,0xDC,0x7B,0xD7,0x94,0x03,0xCF };
 
 static const char * const kGuidNames[] =
 {
@@ -180,7 +220,12 @@ static int FindGuid(const Byte *p)
  
 static bool IsFfs(const Byte *p)
 {
-  return (Get32(p + 0x28) == kFvSignature && AreGuidsEq(p + kFfsGuidOffset, k_FFS_Guid));
+  if (Get32(p + 0x28) != kFvSignature)
+    return false;
+  for (unsigned i = 0; i < ARRAY_SIZE(k_Guids_FS); i++)
+    if (AreGuidsEq(p + kFfsGuidOffset, k_Guids_FS[i]))
+      return true;
+  return false;
 }
 
 #define FVB_ERASE_POLARITY  (1 << 11)
@@ -329,39 +374,15 @@ static const char * const g_Methods[] =
   , "LZMA"
 };
 
-static AString UInt32ToString(UInt32 val)
-{
-  char sz[16];
-  ConvertUInt32ToString(val, sz);
-  return sz;
-}
 
-static void ConvertByteToHex(unsigned value, char *s)
+static void AddGuid(AString &dest, const Byte *p, bool full)
 {
-  for (int i = 0; i < 2; i++)
-  {
-    unsigned t = value & 0xF;
-    value >>= 4;
-    s[1 - i] = (char)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
-  }
-}
-
-static AString GuidToString(const Byte *p, bool full)
-{
-  char s[16 * 2 + 8];
-  int i;
-  for (i = 0; i < 4; i++)
-    ConvertByteToHex(p[3 - i], s + i * 2);
-  s[8] = 0;
-
-  if (full)
-  {
-    s[8] = '-';
-    for (i = 4; i < kGuidSize; i++)
-      ConvertByteToHex(p[i], s + 1 + i * 2);
-    s[32 + 1] = 0;
-  }
-  return s;
+  char s[64];
+  ::RawLeGuidToString(p, s);
+  // MyStringUpper_Ascii(s);
+  if (!full)
+    s[8] = 0;
+  dest += s;
 }
 
 static const char * const kExpressionCommands[] =
@@ -383,7 +404,7 @@ static bool ParseDepedencyExpression(const Byte *p, UInt32 size, AString &res)
       if (i + kGuidSize > size)
         return false;
       res.Add_Space();
-      res += GuidToString(p + i, false);
+      AddGuid(res, p + i, false);
       i += kGuidSize;
     }
     res += "; ";
@@ -433,6 +454,7 @@ static void AddSpaceAndString(AString &res, const AString &newString)
 
 class CFfsFileHeader
 {
+PRF(public:)
   Byte CheckHeader;
   Byte CheckFile;
   Byte Attrib;
@@ -530,7 +552,7 @@ public:
     if (align != 0)
     {
       s += " Align:";
-      s += UInt32ToString((UInt32)1 << g_Allignment[align]);
+      s.Add_UInt32((UInt32)1 << g_Allignment[align]);
     }
     */
     return s;
@@ -538,6 +560,7 @@ public:
 };
 
 #define G32(_offs_, dest) dest = Get32(p + (_offs_));
+#define G16(_offs_, dest) dest = Get16(p + (_offs_));
 
 struct CCapsuleHeader
 {
@@ -557,22 +580,50 @@ struct CCapsuleHeader
 
   void Clear() { memset(this, 0, sizeof(*this)); }
 
-  void Parse(const Byte *p)
+  bool Parse(const Byte *p)
   {
+    Clear();
     G32(0x10, HeaderSize);
     G32(0x14, Flags);
     G32(0x18, CapsuleImageSize);
-    G32(0x1C, SequenceNumber);
-    G32(0x30, OffsetToSplitInformation);
-    G32(0x34, OffsetToCapsuleBody);
-    G32(0x38, OffsetToOemDefinedHeader);
-    G32(0x3C, OffsetToAuthorInformation);
-    G32(0x40, OffsetToRevisionInformation);
-    G32(0x44, OffsetToShortDescription);
-    G32(0x48, OffsetToLongDescription);
-    G32(0x4C, OffsetToApplicableDevices);
+    if (HeaderSize < 0x1C)
+      return false;
+    if (AreGuidsEq(p, k_Guids_Capsules[0]))
+    {
+      const unsigned kHeaderSize = 80;
+      if (HeaderSize != kHeaderSize)
+        return false;
+      G32(0x1C, SequenceNumber);
+      G32(0x30, OffsetToSplitInformation);
+      G32(0x34, OffsetToCapsuleBody);
+      G32(0x38, OffsetToOemDefinedHeader);
+      G32(0x3C, OffsetToAuthorInformation);
+      G32(0x40, OffsetToRevisionInformation);
+      G32(0x44, OffsetToShortDescription);
+      G32(0x48, OffsetToLongDescription);
+      G32(0x4C, OffsetToApplicableDevices);
+      return true;
+    }
+    else if (AreGuidsEq(p, k_Guids_Capsules[1]))
+    {
+      // capsule v2
+      G16(0x1C, OffsetToCapsuleBody);
+      G16(0x1E, OffsetToOemDefinedHeader);
+      return true;
+    }
+    else if (AreGuidsEq(p, k_Guids_Capsules[2]))
+    {
+      OffsetToCapsuleBody = HeaderSize;
+      return true;
+    }
+    else
+    {
+      // here we must check for another capsule types
+      return false;
+    }
   }
 };
+
 
 struct CItem
 {
@@ -605,7 +656,10 @@ void CItem::SetGuid(const Byte *guidName, bool full)
   if (index >= 0)
     Name = kGuidNames[(unsigned)index];
   else
-    Name = GuidToString(guidName, full);
+  {
+    Name.Empty();
+    AddGuid(Name, guidName, full);
+  }
 }
 
 AString CItem::GetName(int numChildsInParent) const
@@ -616,11 +670,14 @@ AString CItem::GetName(int numChildsInParent) const
   char sz2[32];
   ConvertUInt32ToString(NameIndex, sz);
   ConvertUInt32ToString(numChildsInParent - 1, sz2);
-  unsigned numZeros = (unsigned)strlen(sz2) - (unsigned)strlen(sz);
+  int numZeros = (int)strlen(sz2) - (int)strlen(sz);
   AString res;
-  for (unsigned i = 0; i < numZeros; i++)
+  for (int i = 0; i < numZeros; i++)
     res += '0';
-  return res + (AString)sz + '.' + Name;
+  res += sz;
+  res += '.';
+  res += Name;
+  return res;
 }
 
 struct CItem2
@@ -644,21 +701,30 @@ class CHandler:
   UString _comment;
   UInt32 _methodsMask;
   bool _capsuleMode;
+  bool _headersError;
 
   size_t _totalBufsSize;
   CCapsuleHeader _h;
   UInt64 _phySize;
 
-  void AddCommentString(const wchar_t *name, UInt32 pos);
+  void AddCommentString(const char *name, UInt32 pos);
   int AddItem(const CItem &item);
   int AddFileItemWithIndex(CItem &item);
   int AddDirItem(CItem &item);
   unsigned AddBuf(size_t size);
 
-  HRESULT ParseSections(int bufIndex, UInt32 pos, UInt32 size, int parent, int method, unsigned level);
+  HRESULT DecodeLzma(const Byte *data, size_t inputSize);
+
+  HRESULT ParseSections(int bufIndex, UInt32 pos, UInt32 size, int parent, int method, unsigned level, bool &error);
+  
+  HRESULT ParseIntelMe(int bufIndex, UInt32 posBase,
+      UInt32 exactSize, UInt32 limitSize,
+      int parent, int method, int level);
+
   HRESULT ParseVolume(int bufIndex, UInt32 posBase,
       UInt32 exactSize, UInt32 limitSize,
       int parent, int method, int level);
+
   HRESULT OpenCapsule(IInStream *stream);
   HRESULT OpenFv(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback);
   HRESULT Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback);
@@ -674,6 +740,7 @@ static const Byte kProps[] =
   kpidPath,
   kpidIsDir,
   kpidSize,
+  // kpidOffset,
   kpidMethod,
   kpidCharacts
 };
@@ -698,7 +765,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   {
     case kpidPath:
     {
-      AString path = item2.Name;
+      AString path (item2.Name);
       int cur = item2.Parent;
       while (cur >= 0)
       {
@@ -714,13 +781,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidMethod: if (item.Method >= 0) prop = g_Methods[(unsigned)item.Method]; break;
     case kpidCharacts: if (!item2.Characts.IsEmpty()) prop = item2.Characts; break;
     case kpidSize: if (!item.IsDir) prop = (UInt64)item.Size; break;
+    // case kpidOffset: if (!item.IsDir) prop = item.Offset; break;
   }
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
 
-void CHandler::AddCommentString(const wchar_t *name, UInt32 pos)
+void CHandler::AddCommentString(const char *name, UInt32 pos)
 {
   UString s;
   const Byte *buf = _bufs[0];
@@ -747,7 +815,7 @@ void CHandler::AddCommentString(const wchar_t *name, UInt32 pos)
     return;
   _comment.Add_LF();
   _comment += name;
-  _comment.AddAscii(": ");
+  _comment += ": ";
   _comment += s;
 }
 
@@ -762,13 +830,22 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       AString s;
       for (unsigned i = 0; i < 32; i++)
         if ((_methodsMask & ((UInt32)1 << i)) != 0)
-          AddSpaceAndString(s, g_Methods[i]);
+          AddSpaceAndString(s, (AString)g_Methods[i]);
       if (!s.IsEmpty())
         prop = s;
       break;
     }
     case kpidComment: if (!_comment.IsEmpty()) prop = _comment; break;
     case kpidPhySize: prop = (UInt64)_phySize; break;
+
+    case kpidErrorFlags:
+    {
+      UInt32 v = 0;
+      if (!_headersError) v |= kpv_ErrorFlags_HeadersError;
+      if (v != 0)
+        prop = v;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;
@@ -785,7 +862,7 @@ static void PrintLevel(int level)
 static void MyPrint(UInt32 posBase, UInt32 size, int level, const char *name)
 {
   PrintLevel(level);
-  PRF(printf("%s, pos = %6x, size = %6d", name, posBase, size));
+  PRF(printf("%s, pos = %6x, size = %6x", name, posBase, size));
 }
 #else
 #define PrintLevel(level)
@@ -829,8 +906,36 @@ unsigned CHandler::AddBuf(size_t size)
   return index;
 }
 
-HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int parent, int method, unsigned level)
+
+HRESULT CHandler::DecodeLzma(const Byte *data, size_t inputSize)
 {
+  if (inputSize < 5 + 8)
+    return S_FALSE;
+  const UInt64 unpackSize = Get64(data + 5);
+  if (unpackSize > ((UInt32)1 << 30))
+    return S_FALSE;
+  SizeT destLen = (SizeT)unpackSize;
+  const unsigned newBufIndex = AddBuf((size_t)unpackSize);
+  CByteBuffer &buf = _bufs[newBufIndex];
+  ELzmaStatus status;
+  SizeT srcLen = inputSize - (5 + 8);
+  const SizeT srcLen2 = srcLen;
+  SRes res = LzmaDecode(buf, &destLen, data + 13, &srcLen,
+      data, 5, LZMA_FINISH_END, &status, &g_Alloc);
+  if (res != 0)
+    return S_FALSE;
+  if (srcLen != srcLen2 || destLen != unpackSize || (
+      status != LZMA_STATUS_FINISHED_WITH_MARK &&
+      status != LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK))
+    return S_FALSE;
+  return S_OK;
+}
+
+
+HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int parent, int method, unsigned level, bool &error)
+{
+  error = false;
+
   if (level > kLevelMax)
     return S_FALSE;
   MyPrint(posBase, size, level, "Sections");
@@ -842,7 +947,7 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
     if (size == pos)
       return S_OK;
     PrintLevel(level);
-    PRF(printf("%s, pos = %6x", "Sect", pos));
+    PRF(printf("%s, abs = %6x, relat = %6x", "Sect", posBase + pos, pos));
     pos = (pos + 3) & ~(UInt32)3;
     if (pos > size)
       return S_FALSE;
@@ -851,14 +956,23 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
       return S_OK;
     if (rem < 4)
       return S_FALSE;
-    const Byte *p = bufData + posBase + pos;
-    UInt32 sectSize = Get24(p);
-    if (sectSize > rem || sectSize < 4)
-      return S_FALSE;
     
-    Byte type = p[3];
-    PrintLevel(level);
-    PRF(printf("%s, type = %2x, pos = %6x, size = %6d", "Sect", type, pos, sectSize));
+    const Byte *p = bufData + posBase + pos;
+    
+    const UInt32 sectSize = Get24(p);
+    const Byte type = p[3];
+    
+    // PrintLevel(level);
+    PRF(printf(" type = %2x, sectSize = %6x", type, sectSize));
+
+    if (sectSize > rem || sectSize < 4)
+    {
+      _headersError = true;
+      error = true;
+      return S_OK;
+      // return S_FALSE;
+    }
+
     CItem item;
     item.Method = method;
     item.BufIndex = bufIndex;
@@ -891,7 +1005,8 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
         // int parent = AddDirItem(item);
         if (compressionType == COMPRESSION_TYPE_NONE)
         {
-          RINOK(ParseSections(bufIndex, newOffset, newSectSize, parent, method, level));
+          bool error2;
+          RINOK(ParseSections(bufIndex, newOffset, newSectSize, parent, method, level, error2));
         }
         else if (compressionType == COMPRESSION_TYPE_LZH)
         {
@@ -910,6 +1025,9 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
               return S_FALSE;
             UInt32 packSize = Get32(src);
             UInt32 unpackSize = Get32(src + 4);
+
+            PRF(printf(" LZH packSize = %6x, unpackSize = %6x", packSize, unpackSize));
+
             if (uncompressedSize != unpackSize || newSectSize - 8 != packSize)
               return S_FALSE;
             if (packSize < 1)
@@ -921,30 +1039,34 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
 
             CBufInStream *inStreamSpec = new CBufInStream;
             CMyComPtr<IInStream> inStream = inStreamSpec;
-            inStreamSpec->Init(src, packSize);
 
             CBufPtrSeqOutStream *outStreamSpec = new CBufPtrSeqOutStream;
             CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-            outStreamSpec->Init(buf, uncompressedSize);
 
             UInt64 uncompressedSize64 = uncompressedSize;
             lzhDecoderSpec->FinishMode = true;
             /*
-              EFI 1.1 probably used small dictionary and (pbit = 4) in LZH. We don't support such archives.
+              EFI 1.1 probably used LZH with small dictionary and (pbit = 4). It was named "Efi compression".
               New version of compression code (named Tiano) uses LZH with (1 << 19) dictionary.
               But maybe LZH decoder in UEFI decoder supports larger than (1 << 19) dictionary.
+              We check both LZH versions: Tiano and then Efi.
             */
-            lzhDecoderSpec->SetDictSize(1 << 19);
-            
-            HRESULT res = lzhDecoder->Code(inStream, outStream, NULL, &uncompressedSize64, NULL);
-            if (res != S_OK)
-              return res;
-            
-            if (lzhDecoderSpec->GetInputProcessedSize() != packSize)
-              return S_FALSE;
+            HRESULT res = S_FALSE;
+
+            for (unsigned m = 0 ; m < 2; m++)
+            {
+              inStreamSpec->Init(src, packSize);
+              outStreamSpec->Init(buf, uncompressedSize);
+              lzhDecoderSpec->SetDictSize((m == 0) ? ((UInt32)1 << 19) : ((UInt32)1 << 14));
+              res = lzhDecoder->Code(inStream, outStream, NULL, &uncompressedSize64, NULL);
+              if (res == S_OK)
+                break;
+            }
+            RINOK(res);
           }
 
-          RINOK(ParseSections(newBufIndex, 0, uncompressedSize, parent, compressionType, level));
+          bool error2;
+          RINOK(ParseSections(newBufIndex, 0, uncompressedSize, parent, compressionType, level, error2));
         }
         else
         {
@@ -964,26 +1086,14 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
             // firstSectType can be 0 in some archives
           }
           pStart += addSize;
-          UInt64 lzmaUncompressedSize = Get64(pStart + 5);
-          if (lzmaUncompressedSize > (1 << 30))
-            return S_FALSE;
+
+          RINOK(DecodeLzma(pStart, newSectSize - addSize));
+          const size_t lzmaUncompressedSize = _bufs.Back().Size();
+          // if (lzmaUncompressedSize != uncompressedSize)
           if (lzmaUncompressedSize < uncompressedSize)
             return S_FALSE;
-          SizeT destLen = (SizeT)lzmaUncompressedSize;
-          unsigned newBufIndex = AddBuf((size_t)lzmaUncompressedSize);
-          CByteBuffer &buf = _bufs[newBufIndex];
-          ELzmaStatus status;
-          SizeT srcLen = newSectSize - (addSize + 5 + 8);
-          SizeT srcLen2 = srcLen;
-          SRes res = LzmaDecode(buf, &destLen, pStart + 13, &srcLen,
-              pStart, 5, LZMA_FINISH_END, &status, &g_Alloc);
-          if (res != 0)
-            return S_FALSE;
-          if (srcLen != srcLen2 || destLen != lzmaUncompressedSize || (
-              status != LZMA_STATUS_FINISHED_WITH_MARK &&
-              status != LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK))
-            return S_FALSE;
-          RINOK(ParseSections(newBufIndex, 0, (UInt32)lzmaUncompressedSize, parent, compressionType, level));
+          bool error2;
+          RINOK(ParseSections(_bufs.Size() - 1, 0, (UInt32)lzmaUncompressedSize, parent, compressionType, level, error2));
         }
         _methodsMask |= (1 << compressionType);
       }
@@ -1003,9 +1113,26 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
       UInt32 newOffset = posBase + pos + dataOffset;
       item.Offset = newOffset;
       UInt32 propsSize = dataOffset - kHeaderSize;
-      bool needDir = true;
       AddSpaceAndString(item.Characts, FLAGS_TO_STRING(g_GUIDED_SECTION_ATTRIBUTES, attrib));
-      if (AreGuidsEq(p + 0x4, kGuids[kGuidIndex_CRC]) && propsSize == 4)
+
+      bool needDir = true;
+      unsigned newBufIndex = bufIndex;
+      int newMethod = method;
+  
+      if (AreGuidsEq(p + 0x4, k_Guid_LZMA_COMPRESSED))
+      {
+        // item.Name = "guid.lzma";
+        // AddItem(item);
+        const Byte *pStart = bufData + newOffset;
+        // do we need correct pStart here for lzma steram offset?
+        RINOK(DecodeLzma(pStart, newSectSize));
+        _methodsMask |= (1 << COMPRESSION_TYPE_LZMA);
+        newBufIndex = _bufs.Size() - 1;
+        newOffset = 0;
+        newSectSize = (UInt32)_bufs.Back().Size();
+        newMethod = COMPRESSION_TYPE_LZMA;
+      }
+      else if (AreGuidsEq(p + 0x4, kGuids[kGuidIndex_CRC]) && propsSize == 4)
       {
         needDir = false;
         item.KeepName = false;
@@ -1023,10 +1150,12 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
           AddItem(item2);
         }
       }
+
       int newParent = parent;
       if (needDir)
         newParent = AddDirItem(item);
-      RINOK(ParseSections(bufIndex, newOffset, newSectSize, newParent, method, level));
+      bool error2;
+      RINOK(ParseSections(newBufIndex, newOffset, newSectSize, newParent, newMethod, level, error2));
     }
     else if (type == SECTION_FIRMWARE_VOLUME_IMAGE)
     {
@@ -1100,8 +1229,8 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
             AString s;
             if (ParseUtf16zString2(p + 6, sectDataSize - 2, s))
             {
-              AString s2 = "ver:";
-              s2 += UInt32ToString(Get16(p + 4));
+              AString s2 ("ver:");
+              s2.Add_UInt32(Get16(p + 4));
               s2.Add_Space();
               s2 += s;
               AddSpaceAndString(_items[item.Parent].Characts, s2);
@@ -1135,6 +1264,7 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
       if (needAdd)
         AddFileItemWithIndex(item);
     }
+
     pos += sectSize;
   }
 }
@@ -1174,6 +1304,7 @@ bool CVolFfsHeader::Parse(const Byte *p)
   return true;
 };
 
+
 HRESULT CHandler::ParseVolume(
     int bufIndex, UInt32 posBase,
     UInt32 exactSize, UInt32 limitSize,
@@ -1181,14 +1312,13 @@ HRESULT CHandler::ParseVolume(
 {
   if (level > kLevelMax)
     return S_FALSE;
-  MyPrint(posBase, size, level, "Volume");
+  MyPrint(posBase, exactSize, level, "Volume");
   level++;
   if (exactSize < kFvHeaderSize)
     return S_FALSE;
   const Byte *p = _bufs[bufIndex] + posBase;
   // first 16 bytes must be zeros, but they are not zeros sometimes.
-  if (!AreGuidsEq(p + kFfsGuidOffset, k_FFS_Guid) &&
-      !AreGuidsEq(p + kFfsGuidOffset, k_MacFS_Guid))
+  if (!IsFfs(p))
   {
     CItem item;
     item.Method = method;
@@ -1196,8 +1326,10 @@ HRESULT CHandler::ParseVolume(
     item.Parent = parent;
     item.Offset = posBase;
     item.Size = exactSize;
-    item.SetGuid(p + kFfsGuidOffset);
-    item.Name += " [VOLUME]";
+    if (!Is_FF_Stream(p + kFfsGuidOffset, 16))
+      item.SetGuid(p + kFfsGuidOffset);
+    // if (item.Name.IsEmpty())
+      item.Name += "[VOL]";
     AddItem(item);
     return S_OK;
   }
@@ -1268,9 +1400,13 @@ HRESULT CHandler::ParseVolume(
         item.Size = rem - num_FF_bytes;
         AddItem(item);
       }
+      PrintLevel(level); PRF(printf("== FF FF reminder"));
+
       break;
     }
-    PrintLevel(level); PRF(printf("%s, pos = %6x, size = %6d", "FILE", posBase + pos, fh.Size));
+
+    PrintLevel(level); PRF(printf("%s, type = %3d,  pos = %7x, size = %7x", "FILE", fh.Type, posBase + pos, fh.Size));
+    
     if (!fh.Check(pFile, rem))
       return S_FALSE;
     
@@ -1295,9 +1431,16 @@ HRESULT CHandler::ParseVolume(
     item.SetGuid(fh.GuidName, full);
     
     item.Characts = fh.GetCharacts();
-    PrintLevel(level);
-    PRF(printf("%s", item.Characts));
-    
+    // PrintLevel(level);
+    PRF(printf(" : %s", item.Characts));
+
+    {
+      PRF(printf(" attrib = %2d State = %3d ", (unsigned)fh.Attrib, (unsigned)fh.State));
+      PRF(char s[64]);
+      PRF(RawLeGuidToString(fh.GuidName, s));
+      PRF(printf(" : %s ", s));
+    }
+
     if (fh.Type == FV_FILETYPE_FFS_PAD ||
         fh.Type == FV_FILETYPE_RAW)
     {
@@ -1321,23 +1464,127 @@ HRESULT CHandler::ParseVolume(
     }
     else
     {
-      int newParent = AddDirItem(item);
-      RINOK(ParseSections(bufIndex, offset, sectSize, newParent, method, level));
+      /*
+      if (fh.Type == FV_FILETYPE_FREEFORM)
+      {
+        // in intel bio example: one FV_FILETYPE_FREEFORM file is wav file (not sections)
+        // AddItem(item);
+      }
+      else
+      */
+      {
+        int newParent = AddDirItem(item);
+        bool error2;
+        RINOK(ParseSections(bufIndex, offset, sectSize, newParent, method, level + 1, error2));
+        if (error2)
+        {
+          // in intel bio example: one FV_FILETYPE_FREEFORM file is wav file (not sections)
+          item.IsDir = false;
+          item.Size = sectSize;
+          item.Name.Insert(0, "[ERROR]");
+          AddItem(item);
+        }
+      }
     }
+  }
+  
+  return S_OK;
+}
+
+
+static const char * const kRegionName[] =
+{
+    "Descriptor"
+  , "BIOS"
+  , "ME"
+  , "GbE"
+  , "PDR"
+  , "Region5"
+  , "Region6"
+  , "Region7"
+};
+
+
+HRESULT CHandler::ParseIntelMe(
+    int bufIndex, UInt32 posBase,
+    UInt32 exactSize, UInt32 limitSize,
+    int parent, int method, int level)
+{
+  UNUSED_VAR(limitSize)
+  level++;
+  const Byte *p = _bufs[bufIndex] + posBase;
+  if (exactSize < 16 + 16)
+    return S_FALSE;
+  if (!IsIntelMe(p))
+    return S_FALSE;
+
+  UInt32 v0 = GetUi32(p + 20);
+  // UInt32 numRegions = (v0 >> 24) & 0x7;
+  UInt32 regAddr = (v0 >> 12) & 0xFF0;
+  // UInt32 numComps  = (v0 >> 8) & 0x3;
+  // UInt32 fcba = (v0 <<  4) & 0xFF0;
+  
+  // (numRegions == 0) in header in some new images.
+  // So we don't use the value from header
+  UInt32 numRegions = 7;
+
+  for (unsigned i = 0; i <= numRegions; i++)
+  {
+    UInt32 offset = regAddr + i * 4;
+    if (offset + 4 > exactSize)
+      break;
+    UInt32 val = GetUi32(p + offset);
+
+    // only 12 bits probably are OK.
+    // How does it work for files larger than 16 MB?
+    const UInt32 kMask = 0xFFF;
+    // const UInt32 kMask = 0xFFFF; // 16-bit is more logical
+    const UInt32 lim  = (val >> 16) & kMask;
+    const UInt32 base = (val & kMask);
+
+    /*
+      strange combinations:
+        PDR:   base = 0x1FFF lim = 0;
+        empty: base = 0xFFFF lim = 0xFFFF;
+
+        PDR:   base = 0x7FFF lim = 0;
+        empty: base = 0x7FFF lim = 0;
+    */
+    if (base == kMask && lim == 0)
+      continue; // unused
+
+    if (lim < base)
+      continue; // unused
+
+    CItem item;
+    item.Name = kRegionName[i];
+    item.Method = method;
+    item.BufIndex = bufIndex;
+    item.Parent = parent;
+    item.Offset = posBase + (base << 12);
+    if (item.Offset > exactSize)
+      continue;
+    item.Size = (lim + 1 - base) << 12;
+    // item.SetGuid(p + kFfsGuidOffset);
+    // item.Name += " [VOLUME]";
+    AddItem(item);
   }
   return S_OK;
 }
+
 
 HRESULT CHandler::OpenCapsule(IInStream *stream)
 {
   const unsigned kHeaderSize = 80;
   Byte buf[kHeaderSize];
   RINOK(ReadStream_FALSE(stream, buf, kHeaderSize));
-  _h.Parse(buf);
-  if (_h.HeaderSize != kHeaderSize ||
-      _h.CapsuleImageSize < kHeaderSize ||
-      _h.OffsetToCapsuleBody < kHeaderSize ||
-      _h.OffsetToCapsuleBody > _h.CapsuleImageSize)
+  if (!_h.Parse(buf))
+    return S_FALSE;
+  if (_h.CapsuleImageSize < kHeaderSize
+       || _h.CapsuleImageSize < _h.HeaderSize
+       || _h.OffsetToCapsuleBody < _h.HeaderSize
+       || _h.OffsetToCapsuleBody > _h.CapsuleImageSize
+      )
     return S_FALSE;
   _phySize = _h.CapsuleImageSize;
 
@@ -1350,16 +1597,20 @@ HRESULT CHandler::OpenCapsule(IInStream *stream)
   memcpy(buf0, buf, kHeaderSize);
   ReadStream_FALSE(stream, buf0 + kHeaderSize, _h.CapsuleImageSize - kHeaderSize);
 
-  AddCommentString(L"Author", _h.OffsetToAuthorInformation);
-  AddCommentString(L"Revision", _h.OffsetToRevisionInformation);
-  AddCommentString(L"Short Description", _h.OffsetToShortDescription);
-  AddCommentString(L"Long Description", _h.OffsetToLongDescription);
+  AddCommentString("Author", _h.OffsetToAuthorInformation);
+  AddCommentString("Revision", _h.OffsetToRevisionInformation);
+  AddCommentString("Short Description", _h.OffsetToShortDescription);
+  AddCommentString("Long Description", _h.OffsetToLongDescription);
 
-  return ParseVolume(bufIndex, _h.OffsetToCapsuleBody,
-    _h.CapsuleImageSize - _h.OffsetToCapsuleBody,
-    _h.CapsuleImageSize - _h.OffsetToCapsuleBody,
-    -1, -1, 0);
+
+  const UInt32 size = _h.CapsuleImageSize - _h.OffsetToCapsuleBody;
+
+  if (size >= 32 && IsIntelMe(buf0 + _h.OffsetToCapsuleBody))
+    return ParseIntelMe(bufIndex, _h.OffsetToCapsuleBody, size, size, -1, -1, 0);
+
+  return ParseVolume(bufIndex, _h.OffsetToCapsuleBody, size, size, -1, -1, 0);
 }
+
 
 HRESULT CHandler::OpenFv(IInStream *stream, const UInt64 * /* maxCheckStartPosition */, IArchiveOpenCallback * /* callback */)
 {
@@ -1379,6 +1630,7 @@ HRESULT CHandler::OpenFv(IInStream *stream, const UInt64 * /* maxCheckStartPosit
   RINOK(ReadStream_FALSE(stream, _bufs[bufIndex], fvSize32));
   return ParseVolume(bufIndex, 0, fvSize32, fvSize32, -1, -1, 0);
 }
+
 
 HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback)
 {
@@ -1432,8 +1684,8 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
     int parent = item.Parent;
     if (parent >= 0)
       numItems = numChilds[(unsigned)parent];
-    AString name2 = item.GetName(numItems);
-    AString characts2 = item.Characts;
+    AString name2 (item.GetName(numItems));
+    AString characts2 (item.Characts);
     if (item.KeepName)
       name = name2;
     
@@ -1444,7 +1696,7 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
         break;
       if (item3.KeepName)
       {
-        AString name3 = item3.GetName(-1);
+        AString name3 (item3.GetName(-1));
         if (name.IsEmpty())
           name = name3;
         else
@@ -1500,6 +1752,7 @@ STDMETHODIMP CHandler::Close()
   _items2.Clear();
   _bufs.Clear();
   _comment.Empty();
+  _headersError = false;
   _h.Clear();
   return S_OK;
 }
@@ -1580,11 +1833,12 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   CBufInStream *streamSpec = new CBufInStream;
   CMyComPtr<IInStream> streamTemp = streamSpec;
   const CByteBuffer &buf = _bufs[item.BufIndex];
-  /*
-  if (item.Offset + item.Size > buf.GetCapacity())
+  if (item.Offset > buf.Size())
     return S_FALSE;
-  */
-  streamSpec->Init(buf + item.Offset, item.Size, (IInArchive *)this);
+  size_t size = buf.Size() - item.Offset;
+  if (size > item.Size)
+    size = item.Size;
+  streamSpec->Init(buf + item.Offset, size, (IInArchive *)this);
   *stream = streamTemp.Detach();
   return S_OK;
   COM_TRY_END
@@ -1593,11 +1847,19 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 
 namespace UEFIc {
   
+static const Byte k_Capsule_Signatures[] =
+{
+   16, CAPSULE_SIGNATURE,
+   16, CAPSULE2_SIGNATURE,
+   16, CAPSULE_UEFI_SIGNATURE
+};
+
 REGISTER_ARC_I_CLS(
   CHandler(true),
   "UEFIc", "scap", 0, 0xD0,
-  kCapsuleSig,
+  k_Capsule_Signatures,
   0,
+  NArcInfoFlags::kMultiSignature |
   NArcInfoFlags::kFindSignature,
   NULL)
   
@@ -1605,11 +1867,19 @@ REGISTER_ARC_I_CLS(
 
 namespace UEFIf {
   
+static const Byte k_FFS_Signatures[] =
+{
+   16, FFS1_SIGNATURE,
+   16, FFS2_SIGNATURE
+};
+
+
 REGISTER_ARC_I_CLS(
   CHandler(false),
   "UEFIf", "uefif", 0, 0xD1,
-  k_FFS_Guid,
+  k_FFS_Signatures,
   kFfsGuidOffset,
+  NArcInfoFlags::kMultiSignature |
   NArcInfoFlags::kFindSignature,
   NULL)
 

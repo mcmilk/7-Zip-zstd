@@ -1,5 +1,5 @@
 /* LzFindMt.c -- multithreaded Match finder for LZ algorithms
-2015-10-15 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -443,13 +443,13 @@ void MatchFinderMt_Construct(CMatchFinderMt *p)
   MtSync_Construct(&p->btSync);
 }
 
-static void MatchFinderMt_FreeMem(CMatchFinderMt *p, ISzAlloc *alloc)
+static void MatchFinderMt_FreeMem(CMatchFinderMt *p, ISzAllocPtr alloc)
 {
-  alloc->Free(alloc, p->hashBuf);
+  ISzAlloc_Free(alloc, p->hashBuf);
   p->hashBuf = NULL;
 }
 
-void MatchFinderMt_Destruct(CMatchFinderMt *p, ISzAlloc *alloc)
+void MatchFinderMt_Destruct(CMatchFinderMt *p, ISzAllocPtr alloc)
 {
   MtSync_Destruct(&p->hashSync);
   MtSync_Destruct(&p->btSync);
@@ -472,7 +472,7 @@ static THREAD_FUNC_RET_TYPE THREAD_FUNC_CALL_TYPE BtThreadFunc2(void *p)
 }
 
 SRes MatchFinderMt_Create(CMatchFinderMt *p, UInt32 historySize, UInt32 keepAddBufferBefore,
-    UInt32 matchMaxLen, UInt32 keepAddBufferAfter, ISzAlloc *alloc)
+    UInt32 matchMaxLen, UInt32 keepAddBufferAfter, ISzAllocPtr alloc)
 {
   CMatchFinder *mf = p->MatchFinder;
   p->historySize = historySize;
@@ -480,7 +480,7 @@ SRes MatchFinderMt_Create(CMatchFinderMt *p, UInt32 historySize, UInt32 keepAddB
     return SZ_ERROR_PARAM;
   if (!p->hashBuf)
   {
-    p->hashBuf = (UInt32 *)alloc->Alloc(alloc, (kHashBufferSize + kBtBufferSize) * sizeof(UInt32));
+    p->hashBuf = (UInt32 *)ISzAlloc_Alloc(alloc, (kHashBufferSize + kBtBufferSize) * sizeof(UInt32));
     if (!p->hashBuf)
       return SZ_ERROR_MEM;
     p->btBuf = p->hashBuf + kHashBufferSize;
@@ -591,10 +591,10 @@ static UInt32 * MixMatches3(CMatchFinderMt *p, UInt32 matchMinPos, UInt32 *dista
   MT_HASH3_CALC
 
   curMatch2 = hash[                h2];
-  curMatch3 = hash[kFix3HashSize + h3];
+  curMatch3 = (hash + kFix3HashSize)[h3];
   
   hash[                h2] = lzPos;
-  hash[kFix3HashSize + h3] = lzPos;
+  (hash + kFix3HashSize)[h3] = lzPos;
 
   if (curMatch2 >= matchMinPos && cur[(ptrdiff_t)curMatch2 - lzPos] == cur[0])
   {
@@ -627,12 +627,12 @@ static UInt32 *MixMatches4(CMatchFinderMt *p, UInt32 matchMinPos, UInt32 *distan
   MT_HASH4_CALC
       
   curMatch2 = hash[                h2];
-  curMatch3 = hash[kFix3HashSize + h3];
-  curMatch4 = hash[kFix4HashSize + h4];
+  curMatch3 = (hash + kFix3HashSize)[h3];
+  curMatch4 = (hash + kFix4HashSize)[h4];
   
   hash[                h2] = lzPos;
-  hash[kFix3HashSize + h3] = lzPos;
-  hash[kFix4HashSize + h4] = lzPos;
+  (hash + kFix3HashSize)[h3] = lzPos;
+  (hash + kFix4HashSize)[h4] = lzPos;
 
   if (curMatch2 >= matchMinPos && cur[(ptrdiff_t)curMatch2 - lzPos] == cur[0])
   {
@@ -746,7 +746,7 @@ static void MatchFinderMt3_Skip(CMatchFinderMt *p, UInt32 num)
   SKIP_HEADER_MT(3)
       UInt32 h2, h3;
       MT_HASH3_CALC
-      hash[kFix3HashSize + h3] =
+      (hash + kFix3HashSize)[h3] =
       hash[                h2] =
         p->lzPos;
   SKIP_FOOTER_MT
@@ -758,8 +758,8 @@ static void MatchFinderMt4_Skip(CMatchFinderMt *p, UInt32 num)
   SKIP_HEADER_MT(4)
       UInt32 h2, h3, h4;
       MT_HASH4_CALC
-      hash[kFix4HashSize + h4] =
-      hash[kFix3HashSize + h3] =
+      (hash + kFix4HashSize)[h4] =
+      (hash + kFix3HashSize)[h3] =
       hash[                h2] =
         p->lzPos;
   SKIP_FOOTER_MT

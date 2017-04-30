@@ -176,16 +176,12 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
   panel->_folder->GetProperty((UInt32)lParam1, propID, &prop1);
   panel->_folder->GetProperty((UInt32)lParam2, propID, &prop2);
   if (prop1.vt != prop2.vt)
-  {
     return MyCompare(prop1.vt, prop2.vt);
-  }
   if (prop1.vt == VT_BSTR)
-  {
-    return _wcsicmp(prop1.bstrVal, prop2.bstrVal);
-  }
+    return MyStringCompareNoCase(prop1.bstrVal, prop2.bstrVal);
   return prop1.Compare(prop2);
-  // return 0;
 }
+
 
 int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {

@@ -135,7 +135,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           if (us.Len() > 1 && us[0] == L'/')
             us.Delete(0);
         }
-        NItemName::ConvertToOSName2(us);
+        NItemName::ReplaceToOsSlashes_Remove_TailSlash(us);
         prop = us;
       }
       break;

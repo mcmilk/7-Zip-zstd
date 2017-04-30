@@ -27,6 +27,8 @@ static const int kWorkModeButtons[] =
   IDR_FOLDERS_WORK_SPECIFIED
 };
 
+#define kFoldersTopic "fm/options.htm#folders"
+
 static const unsigned kNumWorkModeButtons = ARRAY_SIZE(kWorkModeButtons);
  
 bool CFoldersPage::OnInit()
@@ -158,9 +160,7 @@ LONG CFoldersPage::OnApply()
   return PSNRET_NOERROR;
 }
 
-static LPCWSTR kFoldersTopic = L"fm/options.htm#folders";
-
 void CFoldersPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kFoldersTopic);
+  ShowHelpWindow(kFoldersTopic);
 }

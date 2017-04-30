@@ -10,7 +10,7 @@
 
 using namespace NWindows;
 
-// static LPCWSTR kHelpTopic = L"FM/index.htm";
+// #define kHelpTopic "FM/index.htm"
 
 struct CVKeyPropIDPair
 {

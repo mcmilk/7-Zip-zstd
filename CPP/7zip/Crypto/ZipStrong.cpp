@@ -15,10 +15,14 @@ namespace NZipStrong {
 
 static const UInt16 kAES128 = 0x660E;
 
-// DeriveKey* function is similar to CryptDeriveKey() from Windows.
-// But MSDN tells that we need such scheme only if
-// "the required key length is longer than the hash value"
-// but ZipStrong uses it always.
+/*
+  DeriveKey() function is similar to CryptDeriveKey() from Windows.
+  New version of MSDN contains the following condition in CryptDeriveKey() description:
+    "If the hash is not a member of the SHA-2 family and the required key is for either 3DES or AES".
+  Now we support ZipStrong for AES only. And it uses SHA1.
+  Our DeriveKey() code is equal to CryptDeriveKey() in Windows for such conditions: (SHA1 + AES).
+  if (method != AES && method != 3DES), probably we need another code.
+*/
 
 static void DeriveKey2(const Byte *digest, Byte c, Byte *dest)
 {
@@ -116,7 +120,7 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
 
   if ((flags & 0x4000) != 0)
   {
-    // Use 3DES
+    // Use 3DES for rd data
     return E_NOTIMPL;
   }
 
@@ -135,17 +139,21 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
   if (rdSize + 16 > _remSize)
     return E_NOTIMPL;
 
+  const unsigned kPadSize = kAesPadAllign; // is equal to blockSize of cipher for rd
+
   /*
   if (cert)
   {
-    // how to filter rd, if ((rdSize & 0xF) != 0) ?
     if ((rdSize & 0x7) != 0)
       return E_NOTIMPL;
   }
   else
   */
   {
-    if ((rdSize & 0xF) != 0)
+    // PKCS7 padding
+    if (rdSize < kPadSize)
+      return E_NOTIMPL;
+    if ((rdSize & (kPadSize - 1)) != 0)
       return E_NOTIMPL;
   }
 
@@ -198,13 +206,18 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
     RINOK(SetInitVector(_iv, 16));
     RINOK(Init());
     Filter(p, rdSize);
+
+    rdSize -= kPadSize;
+    for (unsigned i = 0; i < kPadSize; i++)
+      if (p[(size_t)rdSize + i] != kPadSize)
+        return S_OK; // passwOK = false;
   }
 
   Byte fileKey[32];
   NSha1::CContext sha;
   sha.Init();
   sha.Update(_iv, _ivSize);
-  sha.Update(p, rdSize - 16); // we don't use last 16 bytes (PAD bytes)
+  sha.Update(p, rdSize);
   DeriveKey(sha, fileKey);
   
   RINOK(SetKey(fileKey, _key.KeySize));

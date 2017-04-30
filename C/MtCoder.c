@@ -1,5 +1,5 @@
 /* MtCoder.c -- Multi-thread Coder
-2015-10-13 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -55,7 +55,7 @@ WRes LoopThread_WaitSubThread(CLoopThread *p) { return Event_Wait(&p->finishedEv
 
 static SRes Progress(ICompressProgress *p, UInt64 inSize, UInt64 outSize)
 {
-  return (p && p->Progress(p, inSize, outSize) != SZ_OK) ? SZ_ERROR_PROGRESS : SZ_OK;
+  return (p && ICompressProgress_Progress(p, inSize, outSize) != SZ_OK) ? SZ_ERROR_PROGRESS : SZ_OK;
 }
 
 static void MtProgress_Init(CMtProgress *p, ICompressProgress *progress)
@@ -137,18 +137,18 @@ static void CMtThread_Destruct(CMtThread *p)
   }
 
   if (p->mtCoder->alloc)
-    IAlloc_Free(p->mtCoder->alloc, p->outBuf);
+    ISzAlloc_Free(p->mtCoder->alloc, p->outBuf);
   p->outBuf = 0;
 
   if (p->mtCoder->alloc)
-    IAlloc_Free(p->mtCoder->alloc, p->inBuf);
+    ISzAlloc_Free(p->mtCoder->alloc, p->inBuf);
   p->inBuf = 0;
 }
 
 #define MY_BUF_ALLOC(buf, size, newSize) \
   if (buf == 0 || size != newSize) \
-  { IAlloc_Free(p->mtCoder->alloc, buf); \
-    size = newSize; buf = (Byte *)IAlloc_Alloc(p->mtCoder->alloc, size); \
+  { ISzAlloc_Free(p->mtCoder->alloc, buf); \
+    size = newSize; buf = (Byte *)ISzAlloc_Alloc(p->mtCoder->alloc, size); \
     if (buf == 0) return SZ_ERROR_MEM; }
 
 static SRes CMtThread_Prepare(CMtThread *p)
@@ -171,7 +171,7 @@ static SRes FullRead(ISeqInStream *stream, Byte *data, size_t *processedSize)
   while (size != 0)
   {
     size_t curSize = size;
-    SRes res = stream->Read(stream, data, &curSize);
+    SRes res = ISeqInStream_Read(stream, data, &curSize);
     *processedSize += curSize;
     data += curSize;
     size -= curSize;
@@ -208,7 +208,7 @@ static SRes MtThread_Process(CMtThread *p, Bool *stop)
     if (Event_Set(&next->canRead) != 0)
       return SZ_ERROR_THREAD;
 
-    RINOK(p->mtCoder->mtCallback->Code(p->mtCoder->mtCallback, p->index,
+    RINOK(IMtCoderCallback_Code(p->mtCoder->mtCallback, p->index,
         p->outBuf, &destSize, p->inBuf, size, *stop));
 
     MtProgress_Reinit(&p->mtCoder->mtProgress, p->index);
@@ -217,7 +217,7 @@ static SRes MtThread_Process(CMtThread *p, Bool *stop)
       return SZ_ERROR_THREAD;
     if (p->stopWriting)
       return SZ_ERROR_FAIL;
-    if (p->mtCoder->outStream->Write(p->mtCoder->outStream, p->outBuf, destSize) != destSize)
+    if (ISeqOutStream_Write(p->mtCoder->outStream, p->outBuf, destSize) != destSize)
       return SZ_ERROR_WRITE;
     return Event_Set(&next->canWrite) == 0 ? SZ_OK : SZ_ERROR_THREAD;
   }

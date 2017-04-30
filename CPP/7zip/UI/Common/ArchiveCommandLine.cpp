@@ -29,6 +29,7 @@
 #include "UpdateAction.h"
 
 extern bool g_CaseSensitive;
+extern bool g_PathTrailReplaceMode;
 
 #ifdef UNDER_CE
 
@@ -61,10 +62,10 @@ static bool StringToUInt32(const wchar_t *s, UInt32 &v)
 
 CArcCmdLineException::CArcCmdLineException(const char *a, const wchar_t *u)
 {
-  (*this) += MultiByteToUnicodeString(a);
+  (*this) += a;
   if (u)
   {
-    this->Add_LF();
+    Add_LF();
     (*this) += u;
   }
 }
@@ -133,9 +134,12 @@ enum Enum
   kHardLinks,
   kSymLinks,
   kNtSecurity,
+  
   kAltStreams,
   kReplaceColonForAltStream,
   kWriteToAltStreamIfColon,
+
+  kNameTrailReplace,
 
   kDeleteAfterCompressing,
   kSetArcMTime
@@ -149,11 +153,11 @@ enum Enum
 
 
 static const wchar_t kRecursedIDChar = 'r';
-static const char *kRecursedPostCharSet = "0-";
+static const char * const kRecursedPostCharSet = "0-";
 
-static const char *k_ArcNameMode_PostCharSet = "sea";
+static const char * const k_ArcNameMode_PostCharSet = "sea";
 
-static const char *k_Stream_PostCharSet = "012";
+static const char * const k_Stream_PostCharSet = "012";
 
 static inline const EArcNameMode ParseArcNameMode(int postCharIndex)
 {
@@ -180,7 +184,7 @@ static const char kFileListID = '@';
 static const char kSomeCludePostStringMinSize = 2; // at least <@|!><N>ame must be
 static const char kSomeCludeAfterRecursedPostStringMinSize = 2; // at least <@|!><N>ame must be
 
-static const char *kOverwritePostCharSet = "asut";
+static const char * const kOverwritePostCharSet = "asut";
 
 static const NExtract::NOverwriteMode::EEnum k_OverwriteModes[] =
 {
@@ -251,9 +255,12 @@ static const CSwitchForm kSwitchForms[] =
   { "snh", NSwitchType::kMinus },
   { "snl", NSwitchType::kMinus },
   { "sni" },
+  
   { "sns", NSwitchType::kMinus },
   { "snr" },
   { "snc" },
+  
+  { "snt", NSwitchType::kMinus },
   
   { "sdel" },
   { "stl" }
@@ -263,17 +270,17 @@ static const CSwitchForm kSwitchForms[] =
   #endif
 };
 
-static const wchar_t *kUniversalWildcard = L"*";
+static const char * const kUniversalWildcard = "*";
 static const unsigned kMinNonSwitchWords = 1;
 static const unsigned kCommandIndex = 0;
 
-// static const char *kUserErrorMessage  = "Incorrect command line";
-static const char *kCannotFindListFile = "Cannot find listfile";
-static const char *kIncorrectListFile = "Incorrect item in listfile.\nCheck charset encoding and -scs switch.";
-static const char *kTerminalOutError = "I won't write compressed data to a terminal";
-static const char *kSameTerminalError = "I won't write data and program's messages to same stream";
-static const char *kEmptyFilePath = "Empty file path";
-static const char *kCannotFindArchive = "Cannot find archive";
+// static const char * const kUserErrorMessage  = "Incorrect command line";
+static const char * const kCannotFindListFile = "Cannot find listfile";
+static const char * const kIncorrectListFile = "Incorrect item in listfile.\nCheck charset encoding and -scs switch.";
+static const char * const kTerminalOutError = "I won't write compressed data to a terminal";
+static const char * const kSameTerminalError = "I won't write data and program's messages to same stream";
+static const char * const kEmptyFilePath = "Empty file path";
+static const char * const kCannotFindArchive = "Cannot find archive";
 
 bool CArcCommand::IsFromExtractGroup() const
 {
@@ -328,7 +335,7 @@ static const char *g_Commands = "audtexlbih";
 
 static bool ParseArchiveCommand(const UString &commandString, CArcCommand &command)
 {
-  UString s = commandString;
+  UString s (commandString);
   s.MakeLower_Ascii();
   if (s.Len() == 1)
   {
@@ -386,9 +393,9 @@ static void AddRenamePair(CObjectVector<CRenamePair> *renamePairs,
     val += pair.NewName;
     val.Add_LF();
     if (type == NRecursedType::kRecursed)
-      val.AddAscii("-r");
+      val += "-r";
     else if (type == NRecursedType::kWildcardOnlyRecursed)
-      val.AddAscii("-r0");
+      val += "-r0";
     throw CArcCmdLineException("Unsupported rename command:", val);
   }
 }
@@ -422,23 +429,28 @@ static void AddToCensorFromNonSwitchesStrings(
     CObjectVector<CRenamePair> *renamePairs,
     unsigned startIndex,
     NWildcard::CCensor &censor,
-    const UStringVector &nonSwitchStrings, NRecursedType::EEnum type,
+    const UStringVector &nonSwitchStrings,
+    int stopSwitchIndex,
+    NRecursedType::EEnum type,
     bool wildcardMatching,
     bool thereAreSwitchIncludes, Int32 codePage)
 {
   if ((renamePairs || nonSwitchStrings.Size() == startIndex) && !thereAreSwitchIncludes)
-    AddNameToCensor(censor, kUniversalWildcard, true, type,
+    AddNameToCensor(censor, UString(kUniversalWildcard), true, type,
         true // wildcardMatching
         );
 
   int oldIndex = -1;
   
+  if (stopSwitchIndex < 0)
+    stopSwitchIndex = nonSwitchStrings.Size();
+
   for (unsigned i = startIndex; i < nonSwitchStrings.Size(); i++)
   {
     const UString &s = nonSwitchStrings[i];
     if (s.IsEmpty())
       throw CArcCmdLineException(kEmptyFilePath);
-    if (s[0] == kFileListID)
+    if (i < (unsigned)stopSwitchIndex && s[0] == kFileListID)
       AddToCensorFromListFile(renamePairs, censor, s.Ptr(1), true, type, wildcardMatching, codePage);
     else if (renamePairs)
     {
@@ -477,7 +489,7 @@ struct CEventSetEnd
   }
 };
 
-const char *k_IncorrectMapCommand = "Incorrect Map command";
+static const char * const k_IncorrectMapCommand = "Incorrect Map command";
 
 static const char *ParseMapWithPaths(
     NWildcard::CCensor &censor,
@@ -485,7 +497,7 @@ static const char *ParseMapWithPaths(
     NRecursedType::EEnum commonRecursedType,
     bool wildcardMatching)
 {
-  UString s = s2;
+  UString s (s2);
   int pos = s.Find(L':');
   if (pos < 0)
     return k_IncorrectMapCommand;
@@ -577,7 +589,7 @@ static void AddSwitchWildcardsToCensor(
       break;
     }
     
-    UString tail = name.Ptr(pos + 1);
+    const UString tail = name.Ptr(pos + 1);
     
     if (name[pos] == kImmediateNameID)
       AddNameToCensor(censor, tail, include, recursedType, wildcardMatching);
@@ -610,7 +622,7 @@ static void ConvertToLongName(const UString &prefix, UString &name)
   if (name.IsEmpty() || DoesNameContainWildcard(name))
     return;
   NFind::CFileInfo fi;
-  const FString path = us2fs(prefix + name);
+  const FString path (us2fs(prefix + name));
   #ifndef UNDER_CE
   if (NFile::NName::IsDevicePath(path))
     return;
@@ -693,11 +705,11 @@ static NUpdateArchive::NPairAction::EEnum GetUpdatePairActionType(int i)
 }
 */
 
-static const wchar_t *kUpdatePairStateIDSet = L"pqrxyzw";
+static const char * const kUpdatePairStateIDSet = "pqrxyzw";
 static const int kUpdatePairStateNotSupportedActions[] = {2, 2, 1, -1, -1, -1, -1};
 
 static const unsigned kNumUpdatePairActions = 4;
-static const char *kUpdateIgnoreItselfPostStringID = "-";
+static const char * const kUpdateIgnoreItselfPostStringID = "-";
 static const wchar_t kUpdateNewArchivePostCharID = '!';
 
 
@@ -707,8 +719,8 @@ static bool ParseUpdateCommandString2(const UString &command,
   for (unsigned i = 0; i < command.Len();)
   {
     wchar_t c = MyCharLower_Ascii(command[i]);
-    int statePos = FindCharPosInString(kUpdatePairStateIDSet, c);
-    if (statePos < 0)
+    int statePos = FindCharPosInString(kUpdatePairStateIDSet, (char)c);
+    if (c > 0x7F || statePos < 0)
     {
       postString = command.Ptr(i);
       return true;
@@ -849,7 +861,6 @@ static void SetMethodOptions(const CParser &parser, CObjectVector<CProperty> &pr
   }
 }
 
-CArcCmdLineParser::CArcCmdLineParser(): parser(ARRAY_SIZE(kSwitchForms)) {}
 
 static inline void SetStreamMode(const CSwitchResult &sw, unsigned &res)
 {
@@ -857,10 +868,11 @@ static inline void SetStreamMode(const CSwitchResult &sw, unsigned &res)
     res = sw.PostCharIndex;
 }
 
+
 void CArcCmdLineParser::Parse1(const UStringVector &commandStrings,
     CArcCmdLineOptions &options)
 {
-  if (!parser.ParseStrings(kSwitchForms, commandStrings))
+  if (!parser.ParseStrings(kSwitchForms, ARRAY_SIZE(kSwitchForms), commandStrings))
     throw CArcCmdLineException(parser.ErrorMessage, parser.ErrorLine);
 
   options.IsInTerminal = MY_IS_TERMINAL(stdin);
@@ -965,7 +977,7 @@ static Int32 FindCharset(const NCommandLineParser::CParser &parser, unsigned key
   if (!parser[keyIndex].ThereIs)
     return defaultVal;
 
-  UString name = parser[keyIndex].PostStrings.Back();
+  UString name (parser[keyIndex].PostStrings.Back());
   UInt32 v;
   if (StringToUInt32(name, v))
     if (v < ((UInt32)1 << 16))
@@ -1051,7 +1063,7 @@ static void SetBoolPair(NCommandLineParser::CParser &parser, unsigned switchID, 
 void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
 {
   const UStringVector &nonSwitchStrings = parser.NonSwitchStrings;
-  unsigned numNonSwitchStrings = nonSwitchStrings.Size();
+  const unsigned numNonSwitchStrings = nonSwitchStrings.Size();
   if (numNonSwitchStrings < kMinNonSwitchWords)
     throw CArcCmdLineException("The command must be specified");
 
@@ -1081,6 +1093,9 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
         throw CArcCmdLineException("Unsupported -spf:", s);
     }
   }
+
+  if (parser[NKey::kNameTrailReplace].ThereIs)
+    g_PathTrailReplaceMode = !parser[NKey::kNameTrailReplace].WithMinus;
 
   NRecursedType::EEnum recursedType;
   if (parser[NKey::kRecursed].ThereIs)
@@ -1138,7 +1153,8 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
 
   AddToCensorFromNonSwitchesStrings(isRename ? &options.UpdateOptions.RenamePairs : NULL,
       curCommandIndex, options.Censor,
-      nonSwitchStrings, recursedType, wildcardMatching,
+      nonSwitchStrings, parser.StopSwitchIndex,
+      recursedType, wildcardMatching,
       thereAreSwitchIncludes, codePage);
 
   options.YesToAll = parser[NKey::kYes].ThereIs;

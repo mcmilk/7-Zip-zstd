@@ -38,10 +38,10 @@ cd ..\codecs
 7z a ..\Codecs.7z -m0=lzma -mx9 -ms=on -mf=bcj2
 cd ..
 
-copy bin32\Install-x32.exe + 32.7z 7z1604-zstd-x32.exe
-copy bin64\Install-x64.exe + 64.7z 7z1604-zstd-x64.exe
+copy bin32\Install-x32.exe + 32.7z 7z1700-zstd-x32.exe
+copy bin64\Install-x64.exe + 64.7z 7z1700-zstd-x64.exe
 del 32.7z 64.7z
 
-signtool.exe sign /v /fd SHA256 /tr %TSERVER% /td sha256 7z1604-zstd-*.exe
+signtool.exe sign /v /fd SHA256 /tr %TSERVER% /td sha256 7z1700-zstd-*.exe
 cd %wd%
 

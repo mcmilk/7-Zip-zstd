@@ -6,7 +6,6 @@
 #include "../../../C/Lzma2Dec.h"
 
 #include "../../Common/MyCom.h"
-
 #include "../ICoder.h"
 
 namespace NCompress {
@@ -25,25 +24,23 @@ class CDecoder:
   #endif
   public CMyUnknownImp
 {
-  CMyComPtr<ISequentialInStream> _inStream;
   Byte *_inBuf;
   UInt32 _inPos;
-  UInt32 _inSize;
+  UInt32 _inLim;
 
   bool _finishMode;
   bool _outSizeDefined;
   UInt64 _outSize;
-
-  UInt64 _inSizeProcessed;
-  UInt64 _outSizeProcessed;
+  UInt64 _inProcessed;
+  UInt64 _outProcessed;
   
+  UInt32 _outStep;
   UInt32 _inBufSize;
   UInt32 _inBufSizeNew;
-  UInt32 _outStepSize;
 
   CLzma2Dec _state;
-public:
 
+public:
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetDecoderProperties2)
   MY_QUERYINTERFACE_ENTRY(ICompressSetFinishMode)
@@ -59,28 +56,27 @@ public:
 
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
-
   STDMETHOD(SetFinishMode)(UInt32 finishMode);
-
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
-
+  STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
   STDMETHOD(SetInBufSize)(UInt32 streamIndex, UInt32 size);
   STDMETHOD(SetOutBufSize)(UInt32 streamIndex, UInt32 size);
 
+  #ifndef NO_READ_FROM_CODER
+
+private:
+  CMyComPtr<ISequentialInStream> _inStream;
+public:
+
   STDMETHOD(SetInStream)(ISequentialInStream *inStream);
   STDMETHOD(ReleaseInStream)();
-  
-  STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
-
-  #ifndef NO_READ_FROM_CODER
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+
   #endif
 
   CDecoder();
   virtual ~CDecoder();
-
 };
 
 }}

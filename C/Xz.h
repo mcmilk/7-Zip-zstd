@@ -1,5 +1,5 @@
 /* Xz.h - Xz interface
-2015-05-01 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #ifndef __XZ_H
 #define __XZ_H
@@ -112,7 +112,7 @@ typedef struct
 } CXzStream;
 
 void Xz_Construct(CXzStream *p);
-void Xz_Free(CXzStream *p, ISzAlloc *alloc);
+void Xz_Free(CXzStream *p, ISzAllocPtr alloc);
 
 #define XZ_SIZE_OVERFLOW ((UInt64)(Int64)-1)
 
@@ -127,8 +127,8 @@ typedef struct
 } CXzs;
 
 void Xzs_Construct(CXzs *p);
-void Xzs_Free(CXzs *p, ISzAlloc *alloc);
-SRes Xzs_ReadBackward(CXzs *p, ILookInStream *inStream, Int64 *startOffset, ICompressProgress *progress, ISzAlloc *alloc);
+void Xzs_Free(CXzs *p, ISzAllocPtr alloc);
+SRes Xzs_ReadBackward(CXzs *p, ILookInStream *inStream, Int64 *startOffset, ICompressProgress *progress, ISzAllocPtr alloc);
 
 UInt64 Xzs_GetNumBlocks(const CXzs *p);
 UInt64 Xzs_GetUnpackSize(const CXzs *p);
@@ -150,8 +150,8 @@ typedef enum
 typedef struct _IStateCoder
 {
   void *p;
-  void (*Free)(void *p, ISzAlloc *alloc);
-  SRes (*SetProps)(void *p, const Byte *props, size_t propSize, ISzAlloc *alloc);
+  void (*Free)(void *p, ISzAllocPtr alloc);
+  SRes (*SetProps)(void *p, const Byte *props, size_t propSize, ISzAllocPtr alloc);
   void (*Init)(void *p);
   SRes (*Code)(void *p, Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
       int srcWasFinished, ECoderFinishMode finishMode, int *wasFinished);
@@ -161,7 +161,7 @@ typedef struct _IStateCoder
 
 typedef struct
 {
-  ISzAlloc *alloc;
+  ISzAllocPtr alloc;
   Byte *buf;
   unsigned numCoders;
   int finished[MIXCODER_NUM_FILTERS_MAX - 1];
@@ -171,7 +171,7 @@ typedef struct
   IStateCoder coders[MIXCODER_NUM_FILTERS_MAX];
 } CMixCoder;
 
-void MixCoder_Construct(CMixCoder *p, ISzAlloc *alloc);
+void MixCoder_Construct(CMixCoder *p, ISzAllocPtr alloc);
 void MixCoder_Free(CMixCoder *p);
 void MixCoder_Init(CMixCoder *p);
 SRes MixCoder_SetFromMethod(CMixCoder *p, unsigned coderIndex, UInt64 methodId);
@@ -222,7 +222,7 @@ typedef struct
   Byte buf[XZ_BLOCK_HEADER_SIZE_MAX];
 } CXzUnpacker;
 
-void XzUnpacker_Construct(CXzUnpacker *p, ISzAlloc *alloc);
+void XzUnpacker_Construct(CXzUnpacker *p, ISzAllocPtr alloc);
 void XzUnpacker_Init(CXzUnpacker *p);
 void XzUnpacker_Free(CXzUnpacker *p);
 

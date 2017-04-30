@@ -100,7 +100,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       }
     }
     unsigned bytePos = bitPos >> 3;
-    UInt32 symbol = buf[bytePos] | ((UInt32)buf[bytePos + 1] << 8) | ((UInt32)buf[bytePos + 2] << 16);
+    UInt32 symbol = buf[bytePos] | ((UInt32)buf[(size_t)bytePos + 1] << 8) | ((UInt32)buf[(size_t)bytePos + 2] << 16);
     symbol >>= (bitPos & 7);
     symbol &= (1 << numBits) - 1;
     bitPos += numBits;
@@ -129,7 +129,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     _stack[i++] = (Byte)cur;
     if (needPrev)
     {
-      _suffixes[head - 1] = (Byte)cur;
+      _suffixes[(size_t)head - 1] = (Byte)cur;
       if (symbol == head - 1)
         _stack[0] = (Byte)cur;
     }

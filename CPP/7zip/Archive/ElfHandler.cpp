@@ -158,21 +158,21 @@ bool CHeader::Parse(const Byte *p)
 
 static const char * const g_SegnmentTypes[] =
 {
-  "Unused",
-  "Loadable segment",
-  "Dynamic linking tables",
-  "Program interpreter path name",
-  "Note section",
-  "SHLIB",
-  "Program header table",
-  "TLS"
+    "Unused"
+  , "Loadable segment"
+  , "Dynamic linking tables"
+  , "Program interpreter path name"
+  , "Note section"
+  , "SHLIB"
+  , "Program header table"
+  , "TLS"
 };
 
-static const CUInt32PCharPair g_SegmentFlags[] =
+static const char * const g_SegmentFlags[] =
 {
-  { 0, "Execute" },
-  { 1, "Write" },
-  { 2, "Read" }
+    "Execute"
+  , "Write"
+  , "Read"
 };
 
 struct CSegment
@@ -359,173 +359,215 @@ bool CSection::Parse(const Byte *p, bool mode64, bool be)
   return true;
 }
 
-static const CUInt32PCharPair g_Machines[] =
+
+static const char * const g_Machines[] =
 {
-  { 0, "None" },
-  { 1, "AT&T WE 32100" },
-  { 2, "SPARC" },
-  { 3, "Intel 386" },
-  { 4, "Motorola 68000" },
-  { 5, "Motorola 88000" },
-  { 6, "Intel 486" },
-  { 7, "Intel i860" },
-  { 8, "MIPS" },
-  { 9, "IBM S/370" },
-  { 10, "MIPS RS3000 LE" },
-  { 11, "RS6000" },
+    "None"
+  , "AT&T WE 32100"
+  , "SPARC"
+  , "Intel 386"
+  , "Motorola 68000"
+  , "Motorola 88000"
+  , "Intel 486"
+  , "Intel i860"
+  , "MIPS"
+  , "IBM S/370"
+  , "MIPS RS3000 LE"
+  , "RS6000"
+  , NULL
+  , NULL
+  , NULL
+  , "PA-RISC"
+  , "nCUBE"
+  , "Fujitsu VPP500"
+  , "SPARC 32+"
+  , "Intel i960"
+  , "PowerPC"
+  , "PowerPC 64-bit"
+  , "IBM S/390"
+  , "SPU"
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , "NEX v800"
+  , "Fujitsu FR20"
+  , "TRW RH-32"
+  , "Motorola RCE"
+  , "ARM"
+  , "Alpha"
+  , "Hitachi SH"
+  , "SPARC-V9"
+  , "Siemens Tricore"
+  , "ARC"
+  , "H8/300"
+  , "H8/300H"
+  , "H8S"
+  , "H8/500"
+  , "IA-64"
+  , "Stanford MIPS-X"
+  , "Motorola ColdFire"
+  , "M68HC12"
+  , "Fujitsu MMA"
+  , "Siemens PCP"
+  , "Sony nCPU"
+  , "Denso NDR1"
+  , "Motorola StarCore"
+  , "Toyota ME16"
+  , "ST100"
+  , "Advanced Logic TinyJ"
+  , "AMD64"
+  , "Sony DSP"
+  , NULL
+  , NULL
+  , "Siemens FX66"
+  , "ST9+"
+  , "ST7"
+  , "MC68HC16"
+  , "MC68HC11"
+  , "MC68HC08"
+  , "MC68HC05"
+  , "Silicon Graphics SVx"
+  , "ST19"
+  , "Digital VAX"
+  , "Axis CRIS"
+  , "Infineon JAVELIN"
+  , "Element 14 FirePath"
+  , "LSI ZSP"
+  , "MMIX"
+  , "HUANY"
+  , "SiTera Prism"
+  , "Atmel AVR"
+  , "Fujitsu FR30"
+  , "Mitsubishi D10V"
+  , "Mitsubishi D30V"
+  , "NEC v850"
+  , "Mitsubishi M32R"
+  , "Matsushita MN10300"
+  , "Matsushita MN10200"
+  , "picoJava"
+  , "OpenRISC"
+  , "ARC Tangent-A5"
+  , "Tensilica Xtensa"
+  , "Alphamosaic VideoCore"
+  , "Thompson MM GPP"
+  , "National Semiconductor 32K"
+  , "Tenor Network TPC"
+  , "Trebia SNP 1000"
+  , "ST200"
+  , "Ubicom IP2xxx"
+  , "MAX"
+  , "NS CompactRISC"
+  , "Fujitsu F2MC16"
+  , "TI msp430"
+  , "Blackfin (DSP)"
+  , "SE S1C33"
+  , "Sharp embedded"
+  , "Arca RISC"
+  , "Unicore"
+  , "eXcess"
+  , "DXP"
+  , "Altera Nios II"
+  , "NS CRX"
+  , "Motorola XGATE"
+  , "Infineon C16x/XC16x"
+  , "Renesas M16C"
+  , "Microchip Technology dsPIC30F"
+  , "Freescale CE"
+  , "Renesas M32C"
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , "Altium TSK3000"
+  , "Freescale RS08"
+  , "Analog Devices SHARC"
+  , "Cyan Technology eCOG2"
+  , "Sunplus S+core7 RISC"
+  , "NJR 24-bit DSP"
+  , "Broadcom VideoCore III"
+  , "Lattice FPGA"
+  , "SE C17"
+  , "TI TMS320C6000"
+  , "TI TMS320C2000"
+  , "TI TMS320C55x"
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , "STM 64bit VLIW Data Signal"
+  , "Cypress M8C"
+  , "Renesas R32C"
+  , "NXP TriMedia"
+  , "Qualcomm Hexagon"
+  , "Intel 8051"
+  , "STMicroelectronics STxP7x"
+  , "Andes"
+  , "Cyan Technology eCOG1X"
+  , "Dallas Semiconductor MAXQ30"
+  , "NJR 16-bit DSP"
+  , "M2000"
+  , "Cray NV2"
+  , "Renesas RX"
+  , "Imagination Technologies META"
+  , "MCST Elbrus"
+  , "Cyan Technology eCOG16"
+  , "National Semiconductor CR16"
+  , "Freescale ETPUnit"
+  , "Infineon SLE9X"
+  , "Intel L10M"
+  , "Intel K10M"
+  , NULL
+  , "ARM64"
+  , NULL
+  , "Atmel AVR32"
+  , "STM8"
+  , "Tilera TILE64"
+  , "Tilera TILEPro"
+  , "Xilinx MicroBlaze"
+  , "NVIDIA CUDA"
+  , "Tilera TILE-Gx"
+  , "CloudShield"
+  , "KIPO-KAIST Core-A 1st"
+  , "KIPO-KAIST Core-A 2nd"
+  , "Synopsys ARCompact V2"
+  , "Open8"
+  , "Renesas RL78"
+  , "Broadcom VideoCore V"
+  , "Renesas 78KOR"
+  , "Freescale 56800EX" // 200
+};
 
-  { 15, "PA-RISC" },
-  { 16, "nCUBE" },
-  { 17, "Fujitsu VPP500" },
-  { 18, "SPARC 32+" },
-  { 19, "Intel i960" },
-  { 20, "PowerPC" },
-  { 21, "PowerPC 64-bit" },
-  { 22, "IBM S/390" },
-  { 23, "SPU" },
-
-  { 36, "NEX v800" },
-  { 37, "Fujitsu FR20" },
-  { 38, "TRW RH-32" },
-  { 39, "Motorola RCE" },
-  { 40, "ARM" },
-  { 41, "Alpha" },
-  { 42, "Hitachi SH" },
-  { 43, "SPARC-V9" },
-  { 44, "Siemens Tricore" },
-  { 45, "ARC" },
-  { 46, "H8/300" },
-  { 47, "H8/300H" },
-  { 48, "H8S" },
-  { 49, "H8/500" },
-  { 50, "IA-64" },
-  { 51, "Stanford MIPS-X" },
-  { 52, "Motorola ColdFire" },
-  { 53, "M68HC12" },
-  { 54, "Fujitsu MMA" },
-  { 55, "Siemens PCP" },
-  { 56, "Sony nCPU" },
-  { 57, "Denso NDR1" },
-  { 58, "Motorola StarCore" },
-  { 59, "Toyota ME16" },
-  { 60, "ST100" },
-  { 61, "Advanced Logic TinyJ" },
-  { 62, "AMD64" },
-  { 63, "Sony DSP" },
-
-
-  { 66, "Siemens FX66" },
-  { 67, "ST9+" },
-  { 68, "ST7" },
-  { 69, "MC68HC16" },
-  { 70, "MC68HC11" },
-  { 71, "MC68HC08" },
-  { 72, "MC68HC05" },
-  { 73, "Silicon Graphics SVx" },
-  { 74, "ST19" },
-  { 75, "Digital VAX" },
-  { 76, "Axis CRIS" },
-  { 77, "Infineon JAVELIN" },
-  { 78, "Element 14 FirePath" },
-  { 79, "LSI ZSP" },
-  { 80, "MMIX" },
-  { 81, "HUANY" },
-  { 82, "SiTera Prism" },
-  { 83, "Atmel AVR" },
-  { 84, "Fujitsu FR30" },
-  { 85, "Mitsubishi D10V" },
-  { 86, "Mitsubishi D30V" },
-  { 87, "NEC v850" },
-  { 88, "Mitsubishi M32R" },
-  { 89, "Matsushita MN10300" },
-  { 90, "Matsushita MN10200" },
-  { 91, "picoJava" },
-  { 92, "OpenRISC" },
-  { 93, "ARC Tangent-A5" },
-  { 94, "Tensilica Xtensa" },
-  { 95, "Alphamosaic VideoCore" },
-  { 96, "Thompson MM GPP" },
-  { 97, "National Semiconductor 32K" },
-  { 98, "Tenor Network TPC" },
-  { 99, "Trebia SNP 1000" },
-  { 100, "ST200" },
-  { 101, "Ubicom IP2xxx" },
-  { 102, "MAX" },
-  { 103, "NS CompactRISC" },
-  { 104, "Fujitsu F2MC16" },
-  { 105, "TI msp430" },
-  { 106, "Blackfin (DSP)" },
-  { 107, "SE S1C33" },
-  { 108, "Sharp embedded" },
-  { 109, "Arca RISC" },
-  { 110, "Unicore" },
-  { 111, "eXcess" },
-  { 112, "DXP" },
-  { 113, "Altera Nios II" },
-  { 114, "NS CRX" },
-  { 115, "Motorola XGATE" },
-  { 116, "Infineon C16x/XC16x" },
-  { 117, "Renesas M16C" },
-  { 118, "Microchip Technology dsPIC30F" },
-  { 119, "Freescale CE" },
-  { 120, "Renesas M32C" },
-  
-  { 131, "Altium TSK3000" },
-  { 132, "Freescale RS08" },
-  { 133, "Analog Devices SHARC" },
-  { 134, "Cyan Technology eCOG2" },
-  { 135, "Sunplus S+core7 RISC" },
-  { 136, "NJR 24-bit DSP" },
-  { 137, "Broadcom VideoCore III" },
-  { 138, "Lattice FPGA" },
-  { 139, "SE C17" },
-  { 140, "TI TMS320C6000" },
-  { 141, "TI TMS320C2000" },
-  { 142, "TI TMS320C55x" },
-  
-  { 160, "STM 64bit VLIW Data Signal" },
-  { 161, "Cypress M8C" },
-  { 162, "Renesas R32C" },
-  { 163, "NXP TriMedia" },
-  { 164, "Qualcomm Hexagon" },
-  { 165, "Intel 8051" },
-  { 166, "STMicroelectronics STxP7x" },
-  { 167, "Andes" },
-  { 168, "Cyan Technology eCOG1X" },
-  { 169, "Dallas Semiconductor MAXQ30" },
-  { 170, "NJR 16-bit DSP" },
-  { 171, "M2000" },
-  { 172, "Cray NV2" },
-  { 173, "Renesas RX" },
-  { 174, "Imagination Technologies META" },
-  { 175, "MCST Elbrus" },
-  { 176, "Cyan Technology eCOG16" },
-  { 177, "National Semiconductor CR16" },
-  { 178, "Freescale ETPUnit" },
-  { 179, "Infineon SLE9X" },
-  { 180, "Intel L10M" },
-  { 181, "Intel K10M" },
-  
-  { 183, "ARM64" },
-  
-  { 185, "Atmel AVR32" },
-  { 186, "STM8" },
-  { 187, "Tilera TILE64" },
-  { 188, "Tilera TILEPro" },
-  { 189, "Xilinx MicroBlaze" },
-  { 190, "NVIDIA CUDA" },
-  { 191, "Tilera TILE-Gx" },
-  { 192, "CloudShield" },
-  { 193, "KIPO-KAIST Core-A 1st" },
-  { 194, "KIPO-KAIST Core-A 2nd" },
-  { 195, "Synopsys ARCompact V2" },
-  { 196, "Open8" },
-  { 197, "Renesas RL78" },
-  { 198, "Broadcom VideoCore V" },
-  { 199, "Renesas 78KOR" },
-  { 200, "Freescale 56800EX" },
-
-  { 47787, "Xilinx MicroBlaze" },
+static const CUInt32PCharPair g_MachinePairs[] =
+{
+  { 47787, "Xilinx MicroBlaze" }
   // { 0x9026, "Alpha" }
 };
 
@@ -554,6 +596,7 @@ static const CUInt32PCharPair g_OS[] =
   { 255, "Standalone" }
 };
 
+#define k_Machine_MIPS 8
 #define k_Machine_ARM 40
 
 /*
@@ -566,9 +609,26 @@ static const CUInt32PCharPair g_OS[] =
 
 static const CUInt32PCharPair g_ARM_Flags[] =
 {
+  { 1, "HasEntry" },
   { 9, "SF" },
   { 10, "HF" },
   { 23, "BE8" }
+};
+
+
+static const CUInt32PCharPair g_MIPS_Flags[] =
+{
+  { 0, "NOREORDER" },
+  { 1, "PIC" },
+  { 2, "CPIC" },
+  { 3, "XGOT" },
+  { 4, "64BIT_WHIRL" },
+  { 5, "ABI2" },
+  { 6, "ABI_ON32" },
+  { 10, "NAN2008" },
+  { 25, "MicroMIPS" },
+  { 26, "M16" },
+  { 27, "MDMX" }
 };
 
 
@@ -580,11 +640,11 @@ static const CUInt32PCharPair g_ARM_Flags[] =
 
 static const char * const g_Types[] =
 {
-  "None",
-  "Relocatable file",
-  "Executable file",
-  "Shared object file",
-  "Core file"
+    "None"
+  , "Relocatable file"
+  , "Executable file"
+  , "Shared object file"
+  , "Core file"
 };
 
 
@@ -643,8 +703,7 @@ static const Byte kArcProps[] =
   kpidBigEndian,
   kpidHostOS,
   kpidCharacts,
-  kpidHeadersSize,
-  kpidName
+  kpidHeadersSize
 };
 
 enum
@@ -683,21 +742,49 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
     case kpidCpu:
     {
-      AString s = TypePairToString(g_Machines, ARRAY_SIZE(g_Machines), _header.Machine);
+      AString s;
+      if (_header.Machine < ARRAY_SIZE(g_Machines))
+      {
+        const char *name = g_Machines[_header.Machine];
+        if (name)
+          s = name;
+      }
+      if (s.IsEmpty())
+        s = TypePairToString(g_MachinePairs, ARRAY_SIZE(g_MachinePairs), _header.Machine);
       UInt32 flags = _header.Flags;
       if (flags != 0)
       {
-        char sz[16];
         s.Add_Space();
         if (_header.Machine == k_Machine_ARM)
         {
           s += FlagsToString(g_ARM_Flags, ARRAY_SIZE(g_ARM_Flags), flags & (((UInt32)1 << 24) - 1));
           s += " ABI:";
-          ConvertUInt32ToString(flags >> 24, sz);
+          s.Add_UInt32(flags >> 24);
+        }
+        else if (_header.Machine == k_Machine_MIPS)
+        {
+          UInt32 ver = flags >> 28;
+          s += "v";
+          s.Add_UInt32(ver);
+          flags &= (((UInt32)1 << 28) - 1);
+
+          UInt32 abi = (flags >> 12) & 7;
+          if (abi != 0)
+          {
+            s += " ABI:";
+            s.Add_UInt32(abi);
+          }
+          flags &= ~((UInt32)7 << 12);
+          
+          s.Add_Space();
+          s += FlagsToString(g_MIPS_Flags, ARRAY_SIZE(g_MIPS_Flags), flags);
         }
         else
+        {
+          char sz[16];
           ConvertUInt32ToHex(flags, sz);
-        s += sz;
+          s += sz;
+        }
       }
       prop = s;
       break;

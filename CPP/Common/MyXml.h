@@ -21,13 +21,13 @@ public:
   
   const char * ParseItem(const char *s, int numAllowedLevels);
 
-  bool IsTagged(const AString &tag) const throw();
-  int FindProp(const AString &propName) const throw();
-  AString GetPropVal(const AString &propName) const;
+  bool IsTagged(const char *tag) const throw();
+  int FindProp(const char *propName) const throw();
+  AString GetPropVal(const char *propName) const;
   AString GetSubString() const;
   const AString * GetSubStringPtr() const throw();
-  int FindSubTag(const AString &tag) const throw();
-  AString GetSubStringForTag(const AString &tag) const;
+  int FindSubTag(const char *tag) const throw();
+  AString GetSubStringForTag(const char *tag) const;
 
   void AppendTo(AString &s) const;
 };

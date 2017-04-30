@@ -11,6 +11,9 @@
 
 #define IDT_BENCH_VER              105
 #define IDT_BENCH_CPU              106
+#define IDT_BENCH_SYS1             107
+#define IDT_BENCH_SYS2             108
+#define IDT_BENCH_CPU_FEATURE      109
 
 #define IDT_BENCH_COMPRESS_SPEED1  110
 #define IDT_BENCH_COMPRESS_SPEED2  111
@@ -38,6 +41,9 @@
 #define IDT_BENCH_SIZE_VAL         141
 #define IDT_BENCH_PASSES_VAL       142
 
+
+// #define IDT_BENCH_FREQ_CUR         150
+// #define IDT_BENCH_FREQ_RES         151
 
 #define IDB_STOP                 442
 #define IDB_RESTART              443

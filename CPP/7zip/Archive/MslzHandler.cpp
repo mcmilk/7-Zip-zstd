@@ -159,7 +159,7 @@ void CHandler::ParseName(Byte replaceByte, IArchiveOpenCallback *callback)
   }
   
   if (replaceByte >= 0x20 && replaceByte < 0x80)
-    _name += (wchar_t)replaceByte;
+    _name += (char)replaceByte;
 }
 
 STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * /* maxCheckStartPosition */,

@@ -47,25 +47,30 @@ public:
 static void AddValuePair(UString &s, UINT resourceID, UInt64 value)
 {
   AddLangString(s, resourceID);
-  s.AddAscii(": ");
+  s += ": ";
   char sz[32];
   ConvertUInt64ToString(value, sz);
-  s.AddAscii(sz);
+  s += sz;
   s.Add_LF();
 }
 
 static void AddSizeValuePair(UString &s, UINT resourceID, UInt64 value)
 {
   AddLangString(s, resourceID);
-  s.AddAscii(": ");
-  wchar_t sz[32];
-  ConvertUInt64ToString(value, sz);
-  s += MyFormatNew(IDS_FILE_SIZE, sz);
-  ConvertUInt64ToString(value >> 20, sz);
-  s.AddAscii(" (");
-  s += sz;
-  s.AddAscii(" MB)");
-  s.Add_LF();
+  s += ": ";
+  {
+    wchar_t sz[32];
+    ConvertUInt64ToString(value, sz);
+    s += MyFormatNew(IDS_FILE_SIZE, sz);
+  }
+  {
+    char sz[32];
+    ConvertUInt64ToString(value >> 20, sz);
+    s += " (";
+    s += sz;
+    s += " MB)";
+    s.Add_LF();
+  }
 }
 
 HRESULT CHashCallbackGUI::StartScanning()
@@ -155,15 +160,14 @@ static void AddHashString(UString &s, const CHasherState &h, unsigned digestInde
   s.Add_Space();
   char temp[k_HashCalc_DigestSize_Max * 2 + 4];
   AddHashHexToString(temp, h.Digests[digestIndex], h.DigestSize);
-  s.AddAscii(temp);
+  s += temp;
   s.Add_LF();
 }
 
 static void AddHashResString(UString &s, const CHasherState &h, unsigned digestIndex, UInt32 resID)
 {
   UString s2 = LangString(resID);
-  UString name;
-  name.SetFromAscii(h.Name);
+  UString name (h.Name);
   s2.Replace(L"CRC", name);
   AddHashString(s, h, digestIndex, s2);
 }
@@ -179,7 +183,7 @@ void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFil
   if (hb.NumFiles == 1 && hb.NumDirs == 0 && !firstFileName.IsEmpty())
   {
     AddLangString(s, IDS_PROP_NAME);
-    s.AddAscii(": ");
+    s += ": ";
     s += firstFileName;
     s.Add_LF();
   }
@@ -210,7 +214,7 @@ void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFil
     const CHasherState &h = hb.Hashers[i];
     if (hb.NumFiles == 1 && hb.NumDirs == 0)
     {
-      s.AddAscii(h.Name);
+      s += h.Name;
       AddHashString(s, h, k_HashCalc_Index_DataSum, L":");
     }
     else
@@ -268,7 +272,7 @@ HRESULT HashCalcGUI(
 
   const UString title = LangString(IDS_CHECKSUM_CALCULATING);
 
-  t.ProgressDialog.MainTitle = L"7-Zip"; // LangString(IDS_APP_TITLE);
+  t.ProgressDialog.MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
   t.ProgressDialog.MainAddTitle = title;
   t.ProgressDialog.MainAddTitle.Add_Space();
 

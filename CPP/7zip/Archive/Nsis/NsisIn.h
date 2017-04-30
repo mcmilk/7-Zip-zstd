@@ -350,14 +350,19 @@ public:
     return Decoder.Init(_stream, useFilter);
   }
 
+  HRESULT SeekTo(UInt64 pos)
+  {
+    return _stream->Seek(pos, STREAM_SEEK_SET, NULL);
+  }
+
   HRESULT SeekTo_DataStreamOffset()
   {
-    return _stream->Seek(DataStreamOffset, STREAM_SEEK_SET, NULL);
+    return SeekTo(DataStreamOffset);
   }
 
   HRESULT SeekToNonSolidItem(unsigned index)
   {
-    return _stream->Seek(GetPosOfNonSolidItem(index), STREAM_SEEK_SET, NULL);
+    return SeekTo(GetPosOfNonSolidItem(index));
   }
 
   void Clear();
@@ -403,23 +408,23 @@ public:
         s = MultiByteToUnicodeString(APrefixes[item.Prefix]);
       if (s.Len() > 0)
         if (s.Back() != L'\\')
-          s += L'\\';
+          s += '\\';
     }
 
     if (IsUnicode)
     {
       s += item.NameU;
       if (item.NameU.IsEmpty())
-        s += L"file";
+        s += "file";
     }
     else
     {
       s += MultiByteToUnicodeString(item.NameA);
       if (item.NameA.IsEmpty())
-        s += L"file";
+        s += "file";
     }
     
-    const char *kRemoveStr = "$INSTDIR\\";
+    const char * const kRemoveStr = "$INSTDIR\\";
     if (s.IsPrefixedBy_Ascii_NoCase(kRemoveStr))
     {
       s.Delete(0, MyStringLen(kRemoveStr));
@@ -427,7 +432,7 @@ public:
         s.DeleteFrontal(1);
     }
     if (item.IsUninstaller && ExeStub.Size() == 0)
-      s += L".nsis";
+      s += ".nsis";
     return s;
   }
 

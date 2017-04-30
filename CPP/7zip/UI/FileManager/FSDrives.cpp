@@ -28,12 +28,14 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
-static const CFSTR kVolPrefix   = FTEXT("\\\\.\\");
-static const CFSTR kSuperPrefix = FTEXT("\\\\?\\");
+static const char * const kVolPrefix   = "\\\\.\\";
+static const char * const kSuperPrefix = "\\\\?\\";
 
 FString CDriveInfo::GetDeviceFileIoName() const
 {
-  return kVolPrefix + Name;
+  FString f (kVolPrefix);
+  f += Name;
+  return f;
 }
 
 struct CPhysTempBuffer
@@ -179,11 +181,10 @@ STDMETHODIMP CFSDrives::LoadItems()
     // we must use IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS
     for (unsigned n = 0; n < 16; n++) // why 16 ?
     {
-      FChar temp[16];
-      ConvertUInt32ToString(n, temp);
-      FString name = FTEXT("PhysicalDrive");
-      name += temp;
-      FString fullPath = kVolPrefix;
+      FString name ("PhysicalDrive");
+      name.Add_UInt32(n);
+      
+      FString fullPath (kVolPrefix);
       fullPath += name;
 
       CFileInfo fi;
@@ -336,7 +337,7 @@ STDMETHODIMP CFSDrives::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
 
 void CFSDrives::AddExt(FString &s, unsigned index) const
 {
-  s += FTEXT('.');
+  s += '.';
   const CDriveInfo &di = _drives[index];
   const char *ext;
   if (di.DriveType == DRIVE_CDROM)
@@ -347,7 +348,7 @@ void CFSDrives::AddExt(FString &s, unsigned index) const
     ext = "fat";
   else
     ext = "img";
-  s.AddAscii(ext);
+  s += ext;
 }
 
 HRESULT CFSDrives::GetFileSize(unsigned index, UInt64 &fileSize) const

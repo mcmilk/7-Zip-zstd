@@ -52,7 +52,7 @@ bool ReadNamesFromListFile(CFSTR fileName, UStringVector &strings, UINT codePage
     if (codePage == MY__CP_UTF16)
       for (unsigned i = 0; i < num; i++)
       {
-        wchar_t c = GetUi16(buf + i * 2);
+        wchar_t c = GetUi16(buf + (size_t)i * 2);
         if (c == 0)
           return false;
         p[i] = c;
@@ -60,7 +60,7 @@ bool ReadNamesFromListFile(CFSTR fileName, UStringVector &strings, UINT codePage
     else
       for (unsigned i = 0; i < num; i++)
       {
-        wchar_t c = (wchar_t)GetBe16(buf + i * 2);
+        wchar_t c = (wchar_t)GetBe16(buf + (size_t)i * 2);
         if (c == 0)
           return false;
         p[i] = c;
@@ -104,7 +104,7 @@ bool ReadNamesFromListFile(CFSTR fileName, UStringVector &strings, UINT codePage
     wchar_t c = u[i];
     if (c == kGoodBOM || c == kBadBOM)
       return false;
-    if (c == L'\n' || c == 0xD)
+    if (c == '\n' || c == 0xD)
     {
       AddName(strings, s);
       s.Empty();

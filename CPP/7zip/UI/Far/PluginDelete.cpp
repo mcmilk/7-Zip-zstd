@@ -84,6 +84,8 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
   updateCallbackSpec->Init(/* m_ArchiveHandler, */ progressBoxPointer);
+  updateCallbackSpec->PasswordIsDefined = PasswordIsDefined;
+  updateCallbackSpec->Password = Password;
 
   /*
   outArchive->SetFolder(_folder);

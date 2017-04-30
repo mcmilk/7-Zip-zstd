@@ -232,7 +232,7 @@ STDMETHODIMP CNetFolder::BindToParentFolder(IFolderFolder **resultFolder)
 
     CNetFolder *netFolder = new CNetFolder;
     CMyComPtr<IFolderFolder> subFolder = netFolder;
-    netFolder->Init(&resourceParent, 0, WCHAR_PATH_SEPARATOR);
+    netFolder->Init(&resourceParent, 0, WSTRING_PATH_SEPARATOR);
     *resultFolder = subFolder.Detach();
   }
   return S_OK;

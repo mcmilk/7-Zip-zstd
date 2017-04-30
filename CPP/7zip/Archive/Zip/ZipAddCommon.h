@@ -27,6 +27,7 @@ struct CCompressingResult
   UInt16 Method;
   Byte ExtractVersion;
   bool FileTimeWasUsed;
+  bool LzmaEos;
 };
 
 class CAddCommon
@@ -37,6 +38,7 @@ class CAddCommon
 
   CMyComPtr<ICompressCoder> _compressEncoder;
   Byte _compressExtractVersion;
+  bool _isLzmaEos;
 
   CFilterCoder *_cryptoStreamSpec;
   CMyComPtr<ISequentialOutStream> _cryptoStream;
@@ -50,11 +52,14 @@ class CAddCommon
 public:
   CAddCommon(const CCompressionMethodMode &options);
   ~CAddCommon();
+
+  HRESULT Set_Pre_CompressionResult(bool seqMode, UInt64 unpackSize, CCompressingResult &opRes) const;
+  
   HRESULT Compress(
       DECL_EXTERNAL_CODECS_LOC_VARS
       ISequentialInStream *inStream, IOutStream *outStream,
-      UInt32 fileTime,
-      ICompressProgressInfo *progress, CCompressingResult &operationResult);
+      bool seqMode, UInt32 fileTime,
+      ICompressProgressInfo *progress, CCompressingResult &opRes);
 };
 
 }}

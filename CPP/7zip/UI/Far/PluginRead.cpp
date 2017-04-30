@@ -21,11 +21,11 @@ using namespace NFile;
 using namespace NDir;
 using namespace NFar;
 
-static const char *kHelpTopicExtrFromSevenZip =  "Extract";
+static const char * const kHelpTopicExtrFromSevenZip =  "Extract";
 
-static const char kDirDelimiter = '\\';
+static const char kDirDelimiter = CHAR_PATH_SEPARATOR;
 
-static const char *kExractPathHistoryName  = "7-ZipExtractPath";
+static const char * const kExractPathHistoryName  = "7-ZipExtractPath";
 
 HRESULT CPlugin::ExtractFiles(
     bool decompressAllItems,
@@ -95,7 +95,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     return NFileOperationReturnCode::kError;
   }
 
-  AString destPath = destPathLoc;
+  AString destPath (destPathLoc);
   UString destPathU = GetUnicodeString(destPath, CP_OEMCP);
   NName::NormalizeDirPathPrefix(destPathU);
   destPath = UnicodeStringToMultiByte(destPathU, CP_OEMCP);
@@ -127,7 +127,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     
     const int kXMid = kXSize / 2;
 
-    AString oemPassword = UnicodeStringToMultiByte(password, CP_OEMCP);
+    AString oemPassword (UnicodeStringToMultiByte(password, CP_OEMCP));
     
     struct CInitDialogItem initItems[]={
       { DI_DOUBLEBOX, 3, 1, kXSize - 4, kYSize - 2, false, false, 0, false, NMessageID::kExtractTitle, NULL, NULL },
@@ -196,7 +196,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       if (destPathU.IsEmpty())
       {
         #ifdef UNDER_CE
-        destPathU = L"\\";
+        destPathU = "\\";
         #else
         FString destPathF = us2fs(destPathU);
         if (!GetCurrentDir(destPathF))

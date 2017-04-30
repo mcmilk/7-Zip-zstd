@@ -27,9 +27,9 @@ using namespace NFar;
 
 using namespace NUpdateArchive;
 
-static const char *kHelpTopic = "Update";
+static const char * const kHelpTopic = "Update";
 
-static const char *kArchiveHistoryKeyName = "7-ZipArcName";
+static const char * const kArchiveHistoryKeyName = "7-ZipArcName";
 
 static const UInt32 g_MethodMap[] = { 0, 1, 3, 5, 7, 9 };
 
@@ -38,13 +38,18 @@ static HRESULT SetOutProperties(IOutFolderArchive *outArchive, UInt32 method)
   CMyComPtr<ISetProperties> setProperties;
   if (outArchive->QueryInterface(IID_ISetProperties, (void **)&setProperties) == S_OK)
   {
+    /*
     UStringVector realNames;
-    realNames.Add(UString(L"x"));
+    realNames.Add(UString("x"));
     NCOM::CPropVariant value = (UInt32)method;
     CRecordVector<const wchar_t *> names;
     FOR_VECTOR (i, realNames)
       names.Add(realNames[i]);
     RINOK(setProperties->SetProperties(&names.Front(), &value, names.Size()));
+    */
+    NCOM::CPropVariant value = (UInt32)method;
+    const wchar_t *name = L"x";
+    RINOK(setProperties->SetProperties(&name, &value, 1));
   }
   return S_OK;
 }
@@ -219,6 +224,8 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec );
   
   updateCallbackSpec->Init(/* m_ArchiveHandler, */ progressBoxPointer);
+  updateCallbackSpec->PasswordIsDefined = PasswordIsDefined;
+  updateCallbackSpec->Password = Password;
 
   if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
     return NFileOperationReturnCode::kError;
@@ -287,7 +294,7 @@ struct CParsedPath
   UString MergePath() const;
 };
 
-static const wchar_t kDirDelimiter = WCHAR_PATH_SEPARATOR;
+static const char kDirDelimiter = CHAR_PATH_SEPARATOR;
 static const wchar_t kDiskDelimiter = L':';
 
 namespace NPathType
@@ -322,7 +329,7 @@ void CParsedPath::ParsePath(const UString &path)
     case NPathType::kUNC:
     {
       // the bug was fixed:
-      curPos = path.Find(kDirDelimiter, 2);
+      curPos = path.Find((wchar_t)kDirDelimiter, 2);
       if (curPos < 0)
         curPos = path.Len();
       else
@@ -355,7 +362,7 @@ static void SetArcName(UString &arcName, const CArcInfoEx &arcInfo)
     if (dotPos > slashPos + 1)
       arcName.DeleteFrom(dotPos);
   }
-  arcName += L'.';
+  arcName += '.';
   arcName += arcInfo.GetMainExt();
 }
 
@@ -444,7 +451,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 
   for (;;)
   {
-    AString archiveNameA = UnicodeStringToMultiByte(arcName, CP_OEMCP);
+    AString archiveNameA (UnicodeStringToMultiByte(arcName, CP_OEMCP));
     const int kYSize = 16;
     const int kXMid = 38;
   
@@ -456,7 +463,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     char updateAddToArchiveString[512];
     {
       const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
-      const AString s = UnicodeStringToMultiByte(arcInfo.Name, CP_OEMCP);
+      const AString s (UnicodeStringToMultiByte(arcInfo.Name, CP_OEMCP));
       sprintf(updateAddToArchiveString,
         g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), (const char *)s);
     }
@@ -530,14 +537,14 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     if (askCode == kSelectarchiverButtonIndex)
     {
       CIntVector indices;
-      CSysStringVector archiverNames;
+      AStringVector archiverNames;
       FOR_VECTOR (k, codecs->Formats)
       {
         const CArcInfoEx &arc = codecs->Formats[k];
         if (arc.UpdateEnabled)
         {
           indices.Add(k);
-          archiverNames.Add(GetSystemString(arc.Name, CP_OEMCP));
+          archiverNames.Add(GetOemString(arc.Name));
         }
       }
     
@@ -704,7 +711,7 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
 }
 
 
-static const char *k_CreateFolder_History = "NewFolder"; // we use default FAR folder name
+static const char * const k_CreateFolder_History = "NewFolder"; // we use default FAR folder name
 
 HRESULT CPlugin::CreateFolder()
 {
@@ -720,7 +727,7 @@ HRESULT CPlugin::CreateFolder()
     const int kYSize = 8;
     const int kPathIndex = 2;
 
-    AString destPath = "New Folder";
+    AString destPath ("New Folder");
 
     const struct CInitDialogItem initItems[]={
       { DI_DOUBLEBOX, 3, 1, kXSize - 4, kYSize - 2, false, false, 0, false,
@@ -773,6 +780,8 @@ HRESULT CPlugin::CreateFolder()
   CMyComPtr<IFolderArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
   updateCallbackSpec->Init(/* m_ArchiveHandler, */ progressBoxPointer);
+  updateCallbackSpec->PasswordIsDefined = PasswordIsDefined;
+  updateCallbackSpec->Password = Password;
 
   HRESULT result;
   {
@@ -797,7 +806,7 @@ HRESULT CPlugin::CreateFolder()
 
   if (g_StartupInfo.ControlGetActivePanelInfo(panelInfo))
   {
-    AString destPath = GetOemString(destPathU);
+    const AString destPath (GetOemString(destPathU));
     
     for (int i = 0; i < panelInfo.ItemsNumber; i++)
     {

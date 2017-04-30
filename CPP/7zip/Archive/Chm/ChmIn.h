@@ -149,14 +149,14 @@ struct CLzxInfo
 
 struct CMethodInfo
 {
-  GUID Guid;
+  Byte Guid[16];
   CByteBuffer ControlData;
   CLzxInfo LzxInfo;
   
   bool IsLzx() const;
   bool IsDes() const;
   AString GetGuidString() const;
-  UString GetName() const;
+  AString GetName() const;
 };
 
 
@@ -243,7 +243,7 @@ class CInArchive
   UInt64 ReadEncInt();
   void ReadString(unsigned size, AString &s);
   void ReadUString(unsigned size, UString &s);
-  void ReadGUID(GUID &g);
+  void ReadGUID(Byte *g);
 
   HRESULT ReadChunk(IInStream *inStream, UInt64 pos, UInt64 size);
 

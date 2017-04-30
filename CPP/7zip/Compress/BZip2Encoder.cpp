@@ -337,7 +337,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         }
         else
           mtfs[mtfArraySize++] = (Byte)(pos + 1);
-        symbolCounts[pos + 1]++;
+        symbolCounts[(size_t)pos + 1]++;
       }
     }
     while (++i < blockSize);
@@ -357,7 +357,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
       mtfs[mtfArraySize++] = 0xFF;
       mtfs[mtfArraySize++] = (Byte)(alphaSize - 256);
     }
-    symbolCounts[alphaSize - 1]++;
+    symbolCounts[(size_t)alphaSize - 1]++;
   }
 
   UInt32 numSymbols = 0;
@@ -412,7 +412,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
         if (ge > gs + 1 && t != numTables && t != 1 && (((numTables - t) & 1) == 1))
           aFreq -= symbolCounts[--ge];
         
-        Byte *lens = Lens[t - 1];
+        Byte *lens = Lens[(size_t)t - 1];
         unsigned i = 0;
         do
           lens[i] = (Byte)((i >= gs && i < ge) ? 0 : 1);
@@ -507,7 +507,7 @@ void CThreadInfo::EncodeBlock(const Byte *block, UInt32 blockSize)
           WriteBit2(1);
         WriteBit2(0);
         for (; pos > 0; pos--)
-          mtfSel[pos] = mtfSel[pos - 1];
+          mtfSel[pos] = mtfSel[(size_t)pos - 1];
         mtfSel[0] = sel;
       }
       while (++i < numSelectors);
@@ -634,10 +634,13 @@ void CThreadInfo::EncodeBlock2(const Byte *block, UInt32 blockSize, UInt32 numPa
   UInt32 endPos = 0;
   if (numPasses > 1 && blockSize >= (1 << 10))
   {
-    UInt32 blockSize0 = blockSize / 2;
-    for (;(block[blockSize0] == block[blockSize0 - 1] ||
-          block[blockSize0 - 1] == block[blockSize0 - 2]) &&
-          blockSize0 < blockSize; blockSize0++);
+    UInt32 blockSize0 = blockSize / 2; // ????
+    
+    for (; (block[blockSize0] == block[(size_t)blockSize0 - 1]
+            || block[(size_t)blockSize0 - 1] == block[(size_t)blockSize0 - 2])
+          && blockSize0 < blockSize;
+        blockSize0++);
+    
     if (blockSize0 < blockSize)
     {
       EncodeBlock2(block, blockSize0, numPasses - 1);

@@ -5,11 +5,13 @@
 
 #include "../../Common/MyString.h"
 
+#include "../../Windows/Defs.h"
+
 #include "../../Windows/PropVariant.h"
 
 #include "../ICoder.h"
 
-bool StringToBool(const UString &s, bool &res);
+bool StringToBool(const wchar_t *s, bool &res);
 HRESULT PROPVARIANT_to_bool(const PROPVARIANT &prop, bool &dest);
 unsigned ParseStringToUInt32(const UString &srcString, UInt32 &number);
 HRESULT ParsePropToUInt32(const UString &name, const PROPVARIANT &prop, UInt32 &resValue);
@@ -38,7 +40,9 @@ struct CProps
     return false;
   }
 
-  void AddProp32(PROPID propid, UInt32 level);
+  void AddProp32(PROPID propid, UInt32 val);
+  
+  void AddPropBool(PROPID propid, bool val);
 
   void AddProp_Ascii(PROPID propid, const char *s)
   {
@@ -99,6 +103,18 @@ public:
     return level <= 5 ? (1 << (level * 2 + 14)) : (level == 6 ? (1 << 25) : (1 << 26));
   }
 
+  bool Get_Lzma_Eos() const
+  {
+    int i = FindProp(NCoderPropID::kEndMarker);
+    if (i >= 0)
+    {
+      const NWindows::NCOM::CPropVariant &val = Props[i].Value;
+      if (val.vt == VT_BOOL)
+        return VARIANT_BOOLToBool(val.boolVal);
+    }
+    return false;
+  }
+
   bool Are_Lzma_Model_Props_Defined() const
   {
     if (FindProp(NCoderPropID::kPosStateBits) >= 0) return true;
@@ -107,17 +123,51 @@ public:
     return false;
   }
 
-  UInt32 Get_Lzma_NumThreads(bool &fixedNumber) const
+  UInt32 Get_Lzma_NumThreads() const
+  {
+    if (Get_Lzma_Algo() == 0)
+      return 1;
+    int numThreads = Get_NumThreads();
+    if (numThreads >= 0)
+      return numThreads < 2 ? 1 : 2;
+    return 2;
+  }
+
+  UInt32 Get_Lzma2_NumThreads(bool &fixedNumber) const
   {
     fixedNumber = false;
     int numThreads = Get_NumThreads();
     if (numThreads >= 0)
     {
       fixedNumber = true;
-      return numThreads < 2 ? 1 : 2;
+      if (numThreads < 1) return 1;
+      const unsigned kNumLzma2ThreadsMax = 32;
+      if (numThreads > kNumLzma2ThreadsMax) return kNumLzma2ThreadsMax;
+      return numThreads;
     }
-    return Get_Lzma_Algo() == 0 ? 1 : 2;
+    return 1;
   }
+
+  UInt64 Get_Lzma2_BlockSize() const
+  {
+    int i = FindProp(NCoderPropID::kBlockSize);
+    if (i >= 0)
+    {
+      const NWindows::NCOM::CPropVariant &val = Props[i].Value;
+      if (val.vt == VT_UI4) return val.ulVal;
+      if (val.vt == VT_UI8) return val.uhVal.QuadPart;
+    }
+
+    UInt32 dictSize = Get_Lzma_DicSize();
+    UInt64 blockSize = (UInt64)dictSize << 2;
+    const UInt32 kMinSize = (UInt32)1 << 20;
+    const UInt32 kMaxSize = (UInt32)1 << 28;
+    if (blockSize < kMinSize) blockSize = kMinSize;
+    if (blockSize > kMaxSize) blockSize = kMaxSize;
+    if (blockSize < dictSize) blockSize = dictSize;
+    return blockSize;
+  }
+
 
   UInt32 Get_BZip2_NumThreads(bool &fixedNumber) const
   {
@@ -127,7 +177,8 @@ public:
     {
       fixedNumber = true;
       if (numThreads < 1) return 1;
-      if (numThreads > 64) return 64;
+      const unsigned kNumBZip2ThreadsMax = 64;
+      if (numThreads > kNumBZip2ThreadsMax) return kNumBZip2ThreadsMax;
       return numThreads;
     }
     return 1;
@@ -168,6 +219,12 @@ public:
   void AddProp_NumThreads(UInt32 numThreads)
   {
     AddProp32(NCoderPropID::kNumThreads, numThreads);
+  }
+
+  void AddProp_EndMarker_if_NotFound(bool eos)
+  {
+    if (FindProp(NCoderPropID::kEndMarker) < 0)
+      AddPropBool(NCoderPropID::kEndMarker, eos);
   }
 
   HRESULT ParseParamsFromString(const UString &srcString);

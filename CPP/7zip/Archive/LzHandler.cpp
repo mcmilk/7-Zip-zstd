@@ -415,7 +415,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
     if (dataAfterEnd)
       _dataAfterEnd = true;
-    else if (decoder._lzmaDecoderSpec->NeedMoreInput)
+    else if (decoder._lzmaDecoderSpec->NeedsMoreInput())
       _needMoreInput = true;
 
     _packSize = packSize;

@@ -74,7 +74,7 @@ static const UInt32 kReparseFlags_Microsoft   = ((UInt32)1 << 31);
 #define Set16(p, v) SetUi16(p, v)
 #define Set32(p, v) SetUi32(p, v)
 
-static const wchar_t *k_LinkPrefix = L"\\??\\";
+static const wchar_t * const k_LinkPrefix = L"\\??\\";
 static const unsigned k_LinkPrefix_Size = 4;
 
 static const bool IsLinkPrefix(const wchar_t *s)
@@ -83,7 +83,7 @@ static const bool IsLinkPrefix(const wchar_t *s)
 }
 
 /*
-static const wchar_t *k_VolumePrefix = L"Volume{";
+static const wchar_t * const k_VolumePrefix = L"Volume{";
 static const bool IsVolumeName(const wchar_t *s)
 {
   return IsString1PrefixedByString2(s, k_VolumePrefix);
@@ -332,7 +332,7 @@ bool CReparseAttr::IsVolume() const
 
 UString CReparseAttr::GetPath() const
 {
-  UString s = SubsName;
+  UString s (SubsName);
   if (IsLinkPrefix(s))
   {
     s.ReplaceOneCharAtPos(1, '\\');
@@ -376,7 +376,7 @@ bool GetReparseData(CFSTR path, CByteBuffer &reparseData, BY_HANDLE_FILE_INFORMA
 
 static bool CreatePrefixDirOfFile(CFSTR path)
 {
-  FString path2 = path;
+  FString path2 (path);
   int pos = path2.ReverseFind_PathSepar();
   if (pos < 0)
     return true;

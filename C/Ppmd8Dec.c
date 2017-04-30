@@ -1,5 +1,5 @@
 /* Ppmd8Dec.c -- PPMdI Decoder
-2010-04-16 : Igor Pavlov : Public domain
+2017-04-03 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -18,7 +18,7 @@ Bool Ppmd8_RangeDec_Init(CPpmd8 *p)
   p->Range = 0xFFFFFFFF;
   p->Code = 0;
   for (i = 0; i < 4; i++)
-    p->Code = (p->Code << 8) | p->Stream.In->Read(p->Stream.In);
+    p->Code = (p->Code << 8) | IByteIn_Read(p->Stream.In);
   return (p->Code < 0xFFFFFFFF);
 }
 
@@ -37,7 +37,7 @@ static void RangeDec_Decode(CPpmd8 *p, UInt32 start, UInt32 size)
   while ((p->Low ^ (p->Low + p->Range)) < kTop ||
       (p->Range < kBot && ((p->Range = (0 - p->Low) & (kBot - 1)), 1)))
   {
-    p->Code = (p->Code << 8) | p->Stream.In->Read(p->Stream.In);
+    p->Code = (p->Code << 8) | IByteIn_Read(p->Stream.In);
     p->Range <<= 8;
     p->Low <<= 8;
   }

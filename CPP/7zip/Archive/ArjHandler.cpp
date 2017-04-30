@@ -5,10 +5,10 @@
 #include "../../../C/CpuArch.h"
 
 #include "../../Common/ComTry.h"
-#include "../../Common/IntToString.h"
 #include "../../Common/StringConvert.h"
 
 #include "../../Windows/PropVariant.h"
+#include "../../Windows/PropVariantUtils.h"
 #include "../../Windows/TimeUtils.h"
 
 #include "../Common/LimitedStreams.h"
@@ -642,16 +642,7 @@ static void SetTime(UInt32 dosTime, NCOM::CPropVariant &prop)
 
 static void SetHostOS(Byte hostOS, NCOM::CPropVariant &prop)
 {
-  char temp[16];
-  const char *s = NULL;
-  if (hostOS < ARRAY_SIZE(kHostOS))
-    s = kHostOS[hostOS];
-  else
-  {
-    ConvertUInt32ToString(hostOS, temp);
-    s = temp;
-  }
-  prop = s;
+  TYPE_TO_PROP(kHostOS, hostOS, prop);
 }
 
 static void SetUnicodeString(const AString &s, NCOM::CPropVariant &prop)
@@ -703,7 +694,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   const CItem &item = _items[index];
   switch (propID)
   {
-    case kpidPath:  prop = NItemName::GetOSName(MultiByteToUnicodeString(item.Name, CP_OEMCP)); break;
+    case kpidPath:  prop = NItemName::GetOsPath(MultiByteToUnicodeString(item.Name, CP_OEMCP)); break;
     case kpidIsDir:  prop = item.IsDir(); break;
     case kpidSize:  prop = item.Size; break;
     case kpidPackSize:  prop = item.PackSize; break;

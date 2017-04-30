@@ -14,6 +14,7 @@
 namespace NArchive {
 namespace NZip {
 
+/*
 struct CUpdateRange
 {
   UInt64 Position;
@@ -22,6 +23,7 @@ struct CUpdateRange
   // CUpdateRange() {};
   CUpdateRange(UInt64 position, UInt64 size): Position(position), Size(size) {};
 };
+*/
 
 struct CUpdateItem
 {
@@ -36,11 +38,22 @@ struct CUpdateItem
   UInt32 Time;
   UInt64 Size;
   AString Name;
+  CByteBuffer Comment;
   // bool Commented;
   // CUpdateRange CommentRange;
   FILETIME Ntfs_MTime;
   FILETIME Ntfs_ATime;
   FILETIME Ntfs_CTime;
+
+  void Clear()
+  {
+    IsDir = false;
+    NtfsTimeIsDefined = false;
+    IsUtf8 = false;
+    Size = 0;
+    Name.Empty();
+    Comment.Free();
+  }
 
   CUpdateItem(): NtfsTimeIsDefined(false), IsUtf8(false), Size(0) {}
 };

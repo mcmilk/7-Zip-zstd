@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2016-05-16 : Igor Pavlov : Public domain */
+2017-04-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -23,6 +23,8 @@
 #include "../../DllSecur.h"
 
 #define k_EXE_ExtIndex 2
+
+#define kInputBufSize ((size_t)1 << 18)
 
 static const char * const kExts[] =
 {
@@ -238,7 +240,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #endif
 {
   CFileInStream archiveStream;
-  CLookToRead lookStream;
+  CLookToRead2 lookStream;
   CSzArEx db;
   SRes res = SZ_OK;
   ISzAlloc allocImp;
@@ -275,7 +277,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   allocTempImp.Free = SzFreeTemp;
 
   FileInStream_CreateVTable(&archiveStream);
-  LookToRead_CreateVTable(&lookStream, False);
+  LookToRead2_CreateVTable(&lookStream, False);
+  lookStream.buf = NULL;
  
   winRes = GetModuleFileNameW(NULL, sfxPath, MAX_PATH);
   if (winRes == 0 || winRes > MAX_PATH)
@@ -376,14 +379,22 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
   if (res == SZ_OK)
   {
-    lookStream.realStream = &archiveStream.s;
-    LookToRead_Init(&lookStream);
+    lookStream.buf = ISzAlloc_Alloc(&allocImp, kInputBufSize);
+    if (!lookStream.buf)
+      res = SZ_ERROR_MEM;
+    else
+    {
+      lookStream.bufSize = kInputBufSize;
+      lookStream.realStream = &archiveStream.vt;
+      LookToRead2_Init(&lookStream);
+    }
   }
 
   SzArEx_Init(&db);
+  
   if (res == SZ_OK)
   {
-    res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
+    res = SzArEx_Open(&db, &lookStream.vt, &allocImp, &allocTempImp);
   }
   
   if (res == SZ_OK)
@@ -411,7 +422,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       
       SzArEx_GetFileNameUtf16(&db, i, temp);
       {
-        res = SzArEx_Extract(&db, &lookStream.s, i,
+        res = SzArEx_Extract(&db, &lookStream.vt, i,
           &blockIndex, &outBuffer, &outBufferSize,
           &offset, &outSizeProcessed,
           &allocImp, &allocTempImp);
@@ -522,9 +533,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             temp[j] = CHAR_PATH_SEPARATOR;
       }
     }
-    IAlloc_Free(&allocImp, outBuffer);
+    ISzAlloc_Free(&allocImp, outBuffer);
   }
+
   SzArEx_Free(&db, &allocImp);
+
+  ISzAlloc_Free(&allocImp, lookStream.buf);
 
   File_Close(&archiveStream.file);
 

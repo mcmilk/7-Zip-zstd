@@ -3,6 +3,8 @@
 #ifndef __ARCHIVE_TAR_ITEM_H
 #define __ARCHIVE_TAR_ITEM_H
 
+#include "../../../Common/MyLinux.h"
+
 #include "../Common/ItemNameUtils.h"
 
 #include "TarHeader.h"
@@ -54,6 +56,32 @@ struct CItem
         return true;
     }
     return false;
+  }
+
+  UInt32 Get_Combined_Mode() const
+  {
+    return (Mode & ~(UInt32)MY_LIN_S_IFMT) | Get_FileTypeMode_from_LinkFlag();
+  }
+  
+  UInt32 Get_FileTypeMode_from_LinkFlag() const
+  {
+    switch (LinkFlag)
+    {
+      /*
+      case NFileHeader::NLinkFlag::kDirectory:
+      case NFileHeader::NLinkFlag::kDumpDir:
+        return MY_LIN_S_IFDIR;
+      */
+      case NFileHeader::NLinkFlag::kSymLink: return MY_LIN_S_IFLNK;
+      case NFileHeader::NLinkFlag::kBlock: return MY_LIN_S_IFBLK;
+      case NFileHeader::NLinkFlag::kCharacter: return MY_LIN_S_IFCHR;
+      case NFileHeader::NLinkFlag::kFIFO: return MY_LIN_S_IFIFO;
+      // case return MY_LIN_S_IFSOCK;
+    }
+
+    if (IsDir())
+      return MY_LIN_S_IFDIR;
+    return MY_LIN_S_IFREG;
   }
 
   bool IsDir() const

@@ -398,11 +398,9 @@ static const char * const kShellStrings[] =
 };
 
 
-static void UIntToString(AString &s, UInt32 v)
+static inline void UIntToString(AString &s, UInt32 v)
 {
-  char sz[16];
-  ConvertUInt32ToString(v, sz);
-  s += sz;
+  s.Add_UInt32(v);
 }
 
 #ifdef NSIS_SCRIPT
@@ -461,7 +459,7 @@ void CInArchive::AddLicense(UInt32 param, Int32 langID)
       }
     }
   }
-  AString fileName = "[LICENSE]";
+  AString fileName ("[LICENSE]");
   if (langID >= 0)
   {
     fileName += "\\license-";
@@ -940,7 +938,7 @@ void CInArchive::GetNsisString_Unicode_Raw(const Byte *p)
         break;
       if (c < 0x80)
       {
-        Raw_UString += (wchar_t)c;
+        Raw_UString += (char)c;
         continue;
       }
       
@@ -963,7 +961,7 @@ void CInArchive::GetNsisString_Unicode_Raw(const Byte *p)
             else // if (c == PARK_CODE_LANG)
               Add_LangStr(Raw_AString, n);
           }
-          Raw_UString.AddAscii(Raw_AString);
+          Raw_UString += Raw_AString.Ptr(); // check it !
           continue;
         }
         c = n;
@@ -1009,7 +1007,7 @@ void CInArchive::GetNsisString_Unicode_Raw(const Byte *p)
       else // if (c == NS_3_CODE_LANG)
         Add_LangStr(Raw_AString, n);
     }
-    Raw_UString.AddAscii(Raw_AString);
+    Raw_UString += Raw_AString.Ptr();
   }
 }
 
@@ -1145,7 +1143,7 @@ void CInArchive::ReadString2_Raw(UInt32 pos)
       GetNsisString_Raw(_data + _stringsPos + pos);
     return;
   }
-  Raw_UString.SetFromAscii(Raw_AString);
+  Raw_UString = Raw_AString.Ptr();
 }
 
 bool CInArchive::IsGoodString(UInt32 param) const
@@ -2309,7 +2307,7 @@ static void AddString(AString &dest, const char *src)
 
 AString CInArchive::GetFormatDescription() const
 {
-  AString s = "NSIS-";
+  AString s ("NSIS-");
   char c;
   if (IsPark())
   {
@@ -3185,8 +3183,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
   UString spec_outdir_U;
   AString spec_outdir_A;
 
-  UPrefixes.Add(L"$INSTDIR");
-  APrefixes.Add("$INSTDIR");
+  UPrefixes.Add(UString("$INSTDIR"));
+  APrefixes.Add(AString("$INSTDIR"));
 
   p = _data + bh.Offset;
 
@@ -4021,7 +4019,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       case EW_INTOP:
       {
         AddParam_Var(params[0]);
-        const char *kOps = "+-*/|&^!|&%<>"; // NSIS 2.01+
+        const char * const kOps = "+-*/|&^!|&%<>"; // NSIS 2.01+
                         // "+-*/|&^!|&%";   // NSIS 2.0b4+
                         // "+-*/|&^~!|&%";  // NSIS old
         UInt32 opIndex = params[3];
@@ -4857,11 +4855,11 @@ static int CompareItems(void *const *p1, void *const *p2, void *param)
     {
       if (i1.Prefix < 0) return -1;
       if (i2.Prefix < 0) return 1;
-      RINOZ(wcscmp(
-          inArchive->UPrefixes[i1.Prefix],
+      RINOZ(
+          inArchive->UPrefixes[i1.Prefix].Compare(
           inArchive->UPrefixes[i2.Prefix]));
     }
-    RINOZ(wcscmp(i1.NameU, i2.NameU));
+    RINOZ(i1.NameU.Compare(i2.NameU));
   }
   else
   {
@@ -4934,7 +4932,7 @@ HRESULT CInArchive::SortItems()
       for (i = 0; i < Items.Size(); i++)
       {
         CItem &item = Items[i];
-        RINOK(_stream->Seek(GetPosOfNonSolidItem(i), STREAM_SEEK_SET, NULL));
+        RINOK(SeekToNonSolidItem(i));
         const UInt32 kSigSize = 4 + 1 + 1 + 4; // size,[flag],prop,dict
         BYTE sig[kSigSize];
         size_t processedSize = kSigSize;
@@ -4997,6 +4995,9 @@ HRESULT CInArchive::Parse()
   // ???? offset == FirstHeader.HeaderSize
   const Byte *p = _data;
 
+  if (_size < 4 + 8 * 8)
+    return S_FALSE;
+
   CBlockHeader bhEntries, bhStrings, bhLangTables;
   bhEntries.Parse(p + 4 + 8 * 2);
   bhStrings.Parse(p + 4 + 8 * 3);
@@ -5014,12 +5015,14 @@ HRESULT CInArchive::Parse()
   #endif
 
   _stringsPos = bhStrings.Offset;
-  if (_stringsPos > _size)
+  if (_stringsPos > _size
+      || bhLangTables.Offset > _size
+      || bhEntries.Offset > _size)
     return S_FALSE;
   {
     if (bhLangTables.Offset < bhStrings.Offset)
       return S_FALSE;
-    UInt32 stringTableSize = bhLangTables.Offset - bhStrings.Offset;
+    const UInt32 stringTableSize = bhLangTables.Offset - bhStrings.Offset;
     if (stringTableSize < 2)
       return S_FALSE;
     const Byte *strData = _data + _stringsPos;
@@ -5035,12 +5038,9 @@ HRESULT CInArchive::Parse()
       if (strData[stringTableSize - 2] != 0)
         return S_FALSE;
     }
-
   }
 
   if (bhEntries.Num > (1 << 25))
-    return S_FALSE;
-  if (bhEntries.Offset > _size)
     return S_FALSE;
   if (bhEntries.Num * kCmdSize > _size - bhEntries.Offset)
     return S_FALSE;
@@ -5595,15 +5595,18 @@ HRESULT CInArchive::Open2(const Byte *sig, size_t size)
 
   if (IsSolid)
   {
-    RINOK(_stream->Seek(DataStreamOffset, STREAM_SEEK_SET, NULL));
+    RINOK(SeekTo_DataStreamOffset());
   }
   else
   {
     _headerIsCompressed = ((compressedHeaderSize & kMask_IsCompressed) != 0);
     compressedHeaderSize &= ~kMask_IsCompressed;
     _nonSolidStartOffset = compressedHeaderSize;
-    RINOK(_stream->Seek(DataStreamOffset + 4, STREAM_SEEK_SET, NULL));
+    RINOK(SeekTo(DataStreamOffset + 4));
   }
+
+  if (FirstHeader.HeaderSize == 0)
+    return S_FALSE;
 
   _data.Alloc(FirstHeader.HeaderSize);
   _size = (size_t)FirstHeader.HeaderSize;

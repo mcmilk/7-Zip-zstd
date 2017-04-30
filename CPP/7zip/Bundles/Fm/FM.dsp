@@ -995,6 +995,24 @@ SOURCE=..\..\..\..\C\LzFindMt.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Lzma2Dec.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Lzma2Dec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Lzma2Enc.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Lzma2Enc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\LzmaDec.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -1010,6 +1028,15 @@ SOURCE=..\..\..\..\C\LzmaEnc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\LzmaEnc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\MtCoder.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\MtCoder.h
 # End Source File
 # Begin Source File
 
@@ -1908,6 +1935,26 @@ SOURCE=..\..\Compress\CopyCoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\CopyRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzma2Decoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzma2Decoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzma2Encoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzma2Encoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\Lzma2Register.cpp
 # End Source File
 # Begin Source File
 

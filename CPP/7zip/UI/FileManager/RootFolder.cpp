@@ -79,7 +79,7 @@ enum
 };
 
 #ifdef USE_WIN_PATHS
-static const wchar_t *kVolPrefix = L"\\\\.";
+static const char * const kVolPrefix = "\\\\.";
 #endif
 
 void CRootFolder::Init()
@@ -194,7 +194,7 @@ static bool AreEqualNames(const UString &path, const wchar_t *name)
   unsigned len = MyStringLen(name);
   if (len > path.Len() || len + 1 < path.Len())
     return false;
-  if (len + 1 == path.Len() && path[len] != WCHAR_PATH_SEPARATOR)
+  if (len + 1 == path.Len() && !IS_PATH_SEPAR(path[len]))
     return false;
   return path.IsPrefixedBy(name);
 }
@@ -244,13 +244,13 @@ STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
   CMyComPtr<IFolderFolder> subFolder;
   
   #ifdef USE_WIN_PATHS
-  if (name2.IsPrefixedBy(kVolPrefix))
+  if (name2.IsPrefixedBy_Ascii_NoCase(kVolPrefix))
   {
     CFSDrives *folderSpec = new CFSDrives;
     subFolder = folderSpec;
     folderSpec->Init(true);
   }
-  else if (name2 == NFile::NName::kSuperPathPrefix)
+  else if (name2.IsEqualTo(NFile::NName::kSuperPathPrefix))
   {
     CFSDrives *folderSpec = new CFSDrives;
     subFolder = folderSpec;
@@ -272,7 +272,7 @@ STDMETHODIMP CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
     if (fsFolderSpec->Init(us2fs(name2)) != S_OK)
     {
       #ifdef USE_WIN_PATHS
-      if (name2[0] == WCHAR_PATH_SEPARATOR)
+      if (IS_PATH_SEPAR(name2[0]))
       {
         CNetFolder *netFolderSpec = new CNetFolder;
         subFolder = netFolderSpec;

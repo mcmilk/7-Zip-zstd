@@ -11,7 +11,6 @@
 #include "../../../Common/MyInitGuid.h"
 
 #include "../../../Common/CommandLineParser.h"
-#include "../../../Common/IntToString.h"
 #include "../../../Common/MyException.h"
 #include "../../../Common/StringConvert.h"
 
@@ -37,8 +36,8 @@
 using namespace NWindows;
 
 HINSTANCE g_hInstance;
-#ifndef _UNICODE
-#endif
+
+bool g_LargePagesMode = false;
 
 #ifndef UNDER_CE
 
@@ -74,12 +73,17 @@ static void ErrorMessage(LPCWSTR message)
   MessageBoxW(NULL, message, L"7-Zip", MB_ICONERROR | MB_OK);
 }
 
+static void ErrorMessage(const char *s)
+{
+  ErrorMessage(GetUnicodeString(s));
+}
+
 static void ErrorLangMessage(UINT resourceID)
 {
   ErrorMessage(LangString(resourceID));
 }
 
-static const char *kNoFormats = "7-Zip cannot find the code that works with archives.";
+static const char * const kNoFormats = "7-Zip cannot find the code that works with archives.";
 
 static int ShowMemErrorMessage()
 {
@@ -126,7 +130,10 @@ static int Main2()
   NSecurity::EnablePrivilege_SymLink();
   #ifdef _7ZIP_LARGE_PAGES
   if (options.LargePages)
-    NSecurity::EnablePrivilege_LockMemory();
+  {
+    SetLargePageSize();
+    g_LargePagesMode = NSecurity::EnablePrivilege_LockMemory();
+  }
   #endif
   #endif
 
@@ -146,7 +153,7 @@ static int Main2()
     #ifdef EXTERNAL_CODECS
     if (!codecs->MainDll_ErrorPath.IsEmpty())
     {
-      UString s = L"7-Zip cannot load module ";
+      UString s ("7-Zip cannot load module: ");
       s += fs2us(codecs->MainDll_ErrorPath);
       throw s;
     }
@@ -350,7 +357,7 @@ static int Main2()
   return 0;
 }
 
-#define NT_CHECK_FAIL_ACTION ErrorMessage(L"Unsupported Windows version"); return NExitCode::kFatalError;
+#define NT_CHECK_FAIL_ACTION ErrorMessage("Unsupported Windows version"); return NExitCode::kFatalError;
 
 int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   #ifdef UNDER_CE
@@ -361,9 +368,9 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   /* lpCmdLine */, int /* nCmdShow */)
 {
   g_hInstance = hInstance;
+  
   #ifdef _WIN32
   NT_CHECK
-  SetLargePageSize();
   #endif
 
   InitCommonControls();
@@ -407,7 +414,7 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   }
   catch(const AString &s)
   {
-    ErrorMessage(GetUnicodeString(s));
+    ErrorMessage(s);
     return NExitCode::kFatalError;
   }
   catch(const wchar_t *s)
@@ -417,19 +424,19 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   }
   catch(const char *s)
   {
-    ErrorMessage(GetUnicodeString(s));
+    ErrorMessage(s);
     return NExitCode::kFatalError;
   }
   catch(int v)
   {
-    wchar_t s[32];
-    ConvertUInt32ToString(v, s);
-    ErrorMessage(UString(L"Error: ") + s);
+    AString e ("Error: ");
+    e.Add_UInt32(v);
+    ErrorMessage(e);
     return NExitCode::kFatalError;
   }
   catch(...)
   {
-    ErrorMessage(L"Unknown error");
+    ErrorMessage("Unknown error");
     return NExitCode::kFatalError;
   }
 }

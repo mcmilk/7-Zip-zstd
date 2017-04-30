@@ -29,7 +29,7 @@ static const UInt32 kLangIDs[] =
   IDX_SETTINGS_LARGE_PAGES
 };
 
-static LPCWSTR kEditTopic = L"FM/options.htm#settings";
+#define kSettingsTopic "FM/options.htm#settings"
 
 extern bool IsLargePageSupported();
 
@@ -108,7 +108,7 @@ LONG CSettingsPage::OnApply()
 
 void CSettingsPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kEditTopic); // change it
+  ShowHelpWindow(kSettingsTopic);
 }
 
 bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)

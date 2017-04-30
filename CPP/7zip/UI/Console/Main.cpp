@@ -64,6 +64,8 @@ using namespace NCommandLineParser;
 HINSTANCE g_hInstance = 0;
 #endif
 
+bool g_LargePagesMode = false;
+
 extern CStdOutStream *g_StdStream;
 extern CStdOutStream *g_ErrStream;
 
@@ -73,24 +75,19 @@ extern const CCodecInfo *g_Codecs[];
 extern unsigned g_NumHashers;
 extern const CHasherInfo *g_Hashers[];
 
-static const char *kCopyrightString = "\n7-Zip"
-#ifndef EXTERNAL_CODECS
-#ifdef PROG_VARIANT_R
-" (r)"
-#else
-" (a)"
-#endif
-#endif
+static const char * const kCopyrightString = "\n7-Zip"
+  #ifndef EXTERNAL_CODECS
+    #ifdef PROG_VARIANT_R
+      " (r)"
+    #else
+      " (a)"
+    #endif
+  #endif
 
-#ifdef MY_CPU_64BIT
-" [64]"
-#elif defined MY_CPU_32BIT
-" [32]"
-#endif
+  " " MY_VERSION_CPU
+  " : " MY_COPYRIGHT_DATE "\n\n";
 
-" " MY_VERSION_COPYRIGHT_DATE "\n\n";
-
-static const char *kHelpString =
+static const char * const kHelpString =
     "Usage: 7z"
 #ifndef EXTERNAL_CODECS
 #ifdef PROG_VARIANT_R
@@ -128,6 +125,7 @@ static const char *kHelpString =
     "  -i[r[-|0]]{@listfile|!wildcard} : Include filenames\n"
     "  -m{Parameters} : set compression Method\n"
     "    -mmt[N] : set number of CPU threads\n"
+    "    -mx[N] : set compression level: -mx1 (fastest) ... -mx9 (ultra)\n"
     "  -o{Directory} : set Output directory\n"
     #ifndef _NO_CRYPTO
     "  -p{Password} : set Password\n"
@@ -166,13 +164,13 @@ static const char *kHelpString =
 // ---------------------------
 // exception messages
 
-static const char *kEverythingIsOk = "Everything is Ok";
-static const char *kUserErrorMessage = "Incorrect command line";
-static const char *kNoFormats = "7-Zip cannot find the code that works with archives.";
-static const char *kUnsupportedArcTypeMessage = "Unsupported archive type";
-// static const char *kUnsupportedUpdateArcType = "Can't create archive for that type";
+static const char * const kEverythingIsOk = "Everything is Ok";
+static const char * const kUserErrorMessage = "Incorrect command line";
+static const char * const kNoFormats = "7-Zip cannot find the code that works with archives.";
+static const char * const kUnsupportedArcTypeMessage = "Unsupported archive type";
+// static const char * const kUnsupportedUpdateArcType = "Can't create archive for that type";
 
-static CFSTR kDefaultSfxModule = FTEXT("7zCon.sfx");
+#define kDefaultSfxModule "7zCon.sfx"
 
 static void ShowMessageAndThrowException(LPCSTR message, NExitCode::EEnum code)
 {
@@ -204,9 +202,9 @@ static void ShowCopyrightAndHelp(CStdOutStream *so, bool needHelp)
 }
 
 
-static void PrintStringRight(CStdOutStream &so, const AString &s, unsigned size)
+static void PrintStringRight(CStdOutStream &so, const char *s, unsigned size)
 {
-  unsigned len = s.Len();
+  unsigned len = MyStringLen(s);
   for (unsigned i = len; i < size; i++)
     so << ' ';
   so << s;
@@ -279,7 +277,7 @@ static int WarningsCheck(HRESULT result, const CCallbackConsoleBase &callback,
       UString message;
       if (!errorInfo.Message.IsEmpty())
       {
-        message.AddAscii(errorInfo.Message);
+        message += errorInfo.Message.Ptr();
         message.Add_LF();
       }
       {
@@ -389,6 +387,7 @@ static void PrintMemUsage(const char *s, UInt64 val)
 EXTERN_C_BEGIN
 typedef BOOL (WINAPI *Func_GetProcessMemoryInfo)(HANDLE Process,
     PPROCESS_MEMORY_COUNTERS ppsmemCounters, DWORD cb);
+typedef BOOL (WINAPI *Func_QueryProcessCycleTime)(HANDLE Process, PULONG64 CycleTime);
 EXTERN_C_END
 
 #endif
@@ -415,6 +414,8 @@ static void PrintStat()
   PROCESS_MEMORY_COUNTERS m;
   memset(&m, 0, sizeof(m));
   BOOL memDefined = FALSE;
+  BOOL cycleDefined = FALSE;
+  ULONG64 cycleTime = 0;
   {
     /* NT 4.0: GetProcessMemoryInfo() in Psapi.dll
        Win7: new function K32GetProcessMemoryInfo() in kernel32.dll
@@ -425,8 +426,9 @@ static void PrintStat()
        // memDefined = GetProcessMemoryInfo(GetCurrentProcess(), &m, sizeof(m));
     */
 
+    HMODULE kern = ::GetModuleHandleW(L"kernel32.dll");
     Func_GetProcessMemoryInfo my_GetProcessMemoryInfo = (Func_GetProcessMemoryInfo)
-        ::GetProcAddress(::GetModuleHandleW(L"kernel32.dll"), "K32GetProcessMemoryInfo");
+        ::GetProcAddress(kern, "K32GetProcessMemoryInfo");
     if (!my_GetProcessMemoryInfo)
     {
       HMODULE lib = LoadLibraryW(L"Psapi.dll");
@@ -436,6 +438,11 @@ static void PrintStat()
     if (my_GetProcessMemoryInfo)
       memDefined = my_GetProcessMemoryInfo(GetCurrentProcess(), &m, sizeof(m));
     // FreeLibrary(lib);
+
+    Func_QueryProcessCycleTime my_QueryProcessCycleTime = (Func_QueryProcessCycleTime)
+        ::GetProcAddress(kern, "QueryProcessCycleTime");
+    if (my_QueryProcessCycleTime)
+      cycleDefined = my_QueryProcessCycleTime(GetCurrentProcess(), &cycleTime);
   }
 
   #endif
@@ -448,6 +455,16 @@ static void PrintStat()
   UInt64 totalTime = curTime - creationTime;
   
   PrintTime("Kernel ", kernelTime, totalTime);
+
+  #ifndef UNDER_CE
+  if (cycleDefined)
+  {
+    *g_StdStream << " ";
+    PrintNum(cycleTime / 1000000, 22);
+    *g_StdStream << " MCycles";
+  }
+  #endif
+
   PrintTime("User   ", userTime, totalTime);
   
   PrintTime("Process", kernelTime + userTime, totalTime);
@@ -470,6 +487,7 @@ static void PrintHexId(CStdOutStream &so, UInt64 id)
   PrintStringRight(so, s, 8);
 }
 
+
 int Main2(
   #ifndef _WIN32
   int numArgs, char *args[]
@@ -488,13 +506,16 @@ int Main2(
   GetArguments(numArgs, args, commandStrings);
   #endif
 
-  if (commandStrings.Size() == 1)
+  #ifndef UNDER_CE
+  if (commandStrings.Size() > 0)
+    commandStrings.Delete(0);
+  #endif
+
+  if (commandStrings.Size() == 0)
   {
     ShowCopyrightAndHelp(g_StdStream, true);
     return 0;
   }
-
-  commandStrings.Delete(0);
 
   CArcCmdLineOptions options;
 
@@ -527,8 +548,11 @@ int Main2(
   if (options.LargePages)
   {
     SetLargePageSize();
+    g_LargePagesMode =
     #if defined(_WIN32) && !defined(UNDER_CE)
-    NSecurity::EnablePrivilege_LockMemory();
+      NSecurity::EnablePrivilege_LockMemory();
+    #else
+      true;
     #endif
   }
   #endif
@@ -579,7 +603,7 @@ int Main2(
     #ifdef EXTERNAL_CODECS
     if (!codecs->MainDll_ErrorPath.IsEmpty())
     {
-      UString s = L"Can't load module ";
+      UString s ("Can't load module: ");
       s += fs2us(codecs->MainDll_ErrorPath);
       throw s;
     }
@@ -639,7 +663,7 @@ int Main2(
 
     so << endl << "Formats:" << endl;
     
-    const char *kArcFlags = "KSNFMGOPBELH";
+    const char * const kArcFlags = "KSNFMGOPBELH";
     const unsigned kNumArcFlags = (unsigned)strlen(kArcFlags);
     
     for (i = 0; i < codecs->Formats.Size(); i++)
@@ -673,9 +697,9 @@ int Main2(
         s += ext.Ext;
         if (!ext.AddExt.IsEmpty())
         {
-          s += L" (";
+          s += " (";
           s += ext.AddExt;
-          s += L')';
+          s += ')';
         }
       }
       

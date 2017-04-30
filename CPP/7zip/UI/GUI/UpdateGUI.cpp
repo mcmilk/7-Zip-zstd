@@ -28,8 +28,8 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
 
-static CFSTR kDefaultSfxModule = FTEXT("7z.sfx");
-static const wchar_t *kSFXExtension = L"exe";
+static const char * const kDefaultSfxModule = "7z.sfx";
+static const char * const kSFXExtension = "exe";
 
 extern void AddMessageToString(UString &dest, const UString &src);
 
@@ -54,14 +54,14 @@ HRESULT CThreadUpdating::ProcessVirt()
   HRESULT res = UpdateArchive(codecs, *formatIndices, *cmdArcPath,
       *WildcardCensor, *Options,
       ei, UpdateCallbackGUI, UpdateCallbackGUI, needSetPath);
-  FinalMessage.ErrorMessage.Message.SetFromAscii(ei.Message);
+  FinalMessage.ErrorMessage.Message = ei.Message.Ptr();
   ErrorPaths = ei.FileNames;
   if (ei.SystemError != S_OK && ei.SystemError != E_FAIL && ei.SystemError != E_ABORT)
     return ei.SystemError;
   return res;
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, const UString &name, const UString &value)
+static void AddProp(CObjectVector<CProperty> &properties, const char *name, const UString &value)
 {
   CProperty prop;
   prop.Name = name;
@@ -69,16 +69,16 @@ static void AddProp(CObjectVector<CProperty> &properties, const UString &name, c
   properties.Add(prop);
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, const UString &name, UInt32 value)
+static void AddProp(CObjectVector<CProperty> &properties, const char *name, UInt32 value)
 {
-  wchar_t tmp[32];
+  char tmp[32];
   ConvertUInt64ToString(value, tmp);
-  AddProp(properties, name, tmp);
+  AddProp(properties, name, UString(tmp));
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, const UString &name, bool value)
+static void AddProp(CObjectVector<CProperty> &properties, const char *name, bool value)
 {
-  AddProp(properties, name, value ? UString(L"on"): UString(L"off"));
+  AddProp(properties, name, UString(value ? "on": "off"));
 }
 
 static bool IsThereMethodOverride(bool is7z, const UString &propertiesString)
@@ -128,12 +128,12 @@ static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
 
 static UString GetNumInBytesString(UInt64 v)
 {
-  wchar_t s[32];
+  char s[32];
   ConvertUInt64ToString(v, s);
-  size_t len = wcslen(s);
-  s[len++] = L'B';
-  s[len] = L'\0';
-  return s;
+  size_t len = MyStringLen(s);
+  s[len++] = 'B';
+  s[len] = '\0';
+  return UString(s);
 }
 
 static void SetOutProperties(
@@ -152,44 +152,38 @@ static void SetOutProperties(
     bool /* sfxMode */)
 {
   if (level != (UInt32)(Int32)-1)
-    AddProp(properties, L"x", (UInt32)level);
+    AddProp(properties, "x", (UInt32)level);
   if (setMethod)
   {
     if (!method.IsEmpty())
-      AddProp(properties, is7z ? L"0": L"m", method);
+      AddProp(properties, is7z ? "0": "m", method);
     if (dictionary != (UInt32)(Int32)-1)
     {
-      UString name;
+      AString name;
       if (is7z)
-        name = L"0";
-      if (orderMode)
-        name += L"mem";
-      else
-        name += L"d";
+        name = "0";
+      name += (orderMode ? "mem" : "d");
       AddProp(properties, name, GetNumInBytesString(dictionary));
     }
     if (order != (UInt32)(Int32)-1)
     {
-      UString name;
+      AString name;
       if (is7z)
-        name = L"0";
-      if (orderMode)
-        name += L"o";
-      else
-        name += L"fb";
+        name = "0";
+      name += (orderMode ? "o" : "fb");
       AddProp(properties, name, (UInt32)order);
     }
   }
     
   if (!encryptionMethod.IsEmpty())
-    AddProp(properties, L"em", encryptionMethod);
+    AddProp(properties, "em", encryptionMethod);
 
   if (encryptHeadersIsAllowed)
-    AddProp(properties, L"he", encryptHeaders);
+    AddProp(properties, "he", encryptHeaders);
   if (solidIsSpecified)
-    AddProp(properties, L"s", GetNumInBytesString(solidBlockSize));
+    AddProp(properties, "s", GetNumInBytesString(solidBlockSize));
   if (multiThreadIsAllowed)
-    AddProp(properties, L"mt", numThreads);
+    AddProp(properties, "mt", numThreads);
 }
 
 struct C_UpdateMode_ToAction_Pair
@@ -453,8 +447,8 @@ HRESULT UpdateGUI(
   }
   if (options.SfxMode && options.SfxModule.IsEmpty())
   {
-    FString folder = NWindows::NDLL::GetModuleDirPrefix();
-    options.SfxModule = folder + kDefaultSfxModule;
+    options.SfxModule = NWindows::NDLL::GetModuleDirPrefix();
+    options.SfxModule += kDefaultSfxModule;
   }
 
   CThreadUpdating tu;

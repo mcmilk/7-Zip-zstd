@@ -68,7 +68,7 @@ static void SplitNameToPureNameAndExtension(const FString &fullName,
   else
   {
     pureName.SetFrom(fullName, index);
-    extensionDelimiter = FTEXT('.');
+    extensionDelimiter = '.';
     extension = fullName.Ptr(index + 1);
   }
 }
@@ -151,7 +151,7 @@ HRESULT OpenFileFolderPlugin(
 
     UString progressTitle = LangString(IDS_OPENNING);
     t.OpenCallbackSpec->ProgressDialog.MainWindow = parentWindow;
-    t.OpenCallbackSpec->ProgressDialog.MainTitle = L"7-Zip"; // LangString(IDS_APP_TITLE);
+    t.OpenCallbackSpec->ProgressDialog.MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
     t.OpenCallbackSpec->ProgressDialog.MainAddTitle = progressTitle + L' ';
     t.OpenCallbackSpec->ProgressDialog.WaitMode = true;
 

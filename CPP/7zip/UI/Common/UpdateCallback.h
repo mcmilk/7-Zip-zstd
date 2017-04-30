@@ -15,6 +15,18 @@
 
 #include "OpenArchive.h"
 
+struct CArcToDoStat
+{
+  CDirItemsStat NewData;
+  CDirItemsStat OldData;
+  CDirItemsStat DeleteData;
+
+  UInt64 Get_NumDataItems_Total() const
+  {
+    return NewData.Get_NumDataItems() + OldData.Get_NumDataItems();
+  }
+};
+
 #define INTERFACE_IUpdateCallbackUI(x) \
   virtual HRESULT WriteSfx(const wchar_t *name, UInt64 size) x; \
   virtual HRESULT SetTotal(UInt64 size) x; \
@@ -22,7 +34,7 @@
   virtual HRESULT SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize) x; \
   virtual HRESULT CheckBreak() x; \
   /* virtual HRESULT Finalize() x; */ \
-  virtual HRESULT SetNumItems(UInt64 numItems) x; \
+  virtual HRESULT SetNumItems(const CArcToDoStat &stat) x; \
   virtual HRESULT GetStream(const wchar_t *name, bool isDir, bool isAnti, UInt32 mode) x; \
   virtual HRESULT OpenFileError(const FString &path, DWORD systemError) x; \
   virtual HRESULT ReadingFileError(const FString &path, DWORD systemError) x; \
@@ -120,6 +132,8 @@ public:
   const CObjectVector<CArcItem> *ArcItems;
   const CRecordVector<CUpdatePair2> *UpdatePairs;
   const UStringVector *NewNames;
+  int CommentIndex;
+  const UString *Comment;
 
   bool ShareForWrite;
   bool StdInMode;

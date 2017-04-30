@@ -6,7 +6,6 @@
 #include "../../../Windows/Synchronization.h"
 #endif
 
-#include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 
 #include "ExtractEngine.h"
@@ -128,9 +127,9 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
   return CheckBreak2();
 }
 
-static const char *kTestString    =  "Testing";
-static const char *kExtractString =  "Extracting";
-static const char *kSkipString    =  "Skipping";
+static const char * const kTestString    =  "Testing";
+static const char * const kExtractString =  "Extracting";
+static const char * const kSkipString    =  "Skipping";
 
 STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /* isFolder */, Int32 askExtractMode, const UInt64 * /* position */)
 {
@@ -161,7 +160,7 @@ STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *message)
 {
   MT_LOCK
 
-  AString s = UnicodeStringToMultiByte(message, CP_OEMCP);
+  AString s (UnicodeStringToMultiByte(message, CP_OEMCP));
   if (g_StartupInfo.ShowErrorMessage((const char *)s) == -1)
     return E_ABORT;
 
@@ -198,7 +197,7 @@ void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &s)
       if (messageID != 0)
       {
         s = g_StartupInfo.GetMsgString(messageID);
-        s.Replace(" '%s'", "");
+        s.Replace((AString)" '%s'", AString());
       }
       else if (opRes == NArchive::NExtract::NOperationResult::kUnavailable)
         s = "Unavailable data";
@@ -212,10 +211,8 @@ void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &s)
         s = "kHeaders Error";
       else
       {
-        char temp[16];
-        ConvertUInt32ToString(opRes, temp);
         s = "Error #";
-        s += temp;
+        s.Add_UInt32(opRes);
       }
     }
   }

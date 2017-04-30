@@ -44,6 +44,16 @@ typedef UINT32 ULONG;
 #undef DWORD
 typedef UINT32 DWORD;
 
+typedef long BOOL;
+
+#ifndef FALSE
+  #define FALSE 0
+  #define TRUE 1
+#endif
+
+// typedef size_t ULONG_PTR;
+typedef size_t DWORD_PTR;
+
 typedef Int64 LONGLONG;
 typedef UInt64 ULONGLONG;
 

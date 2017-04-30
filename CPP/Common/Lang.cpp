@@ -10,13 +10,13 @@
 
 void CLang::Clear() throw()
 {
-  delete []_text;
-  _text = 0;
   _ids.Clear();
   _offsets.Clear();
+  delete []_text;
+  _text = 0;
 }
 
-static const wchar_t *kLangSignature = L";!@Lang2@!UTF-8!";
+static const char * const kLangSignature = ";!@Lang2@!UTF-8!";
 
 bool CLang::OpenFromString(const AString &s2)
 {
@@ -29,9 +29,9 @@ bool CLang::OpenFromString(const AString &s2)
   if (s[0] == 0xFEFF)
     i++;
 
-  for (const wchar_t *p = kLangSignature;; i++)
+  for (const char *p = kLangSignature;; i++)
   {
-    wchar_t c = *p++;
+    Byte c = *p++;
     if (c == 0)
       break;
     if (s[i] != c)
@@ -109,7 +109,7 @@ bool CLang::OpenFromString(const AString &s2)
   return true;
 }
 
-bool CLang::Open(CFSTR fileName, const wchar_t *id)
+bool CLang::Open(CFSTR fileName, const char *id)
 {
   Clear();
   NWindows::NFile::NIO::CInFile file;
@@ -146,7 +146,7 @@ bool CLang::Open(CFSTR fileName, const wchar_t *id)
   if (OpenFromString(s))
   {
     const wchar_t *name = Get(0);
-    if (name && wcscmp(name, id) == 0)
+    if (name && StringsAreEqual_Ascii(name, id))
       return true;
   }
   

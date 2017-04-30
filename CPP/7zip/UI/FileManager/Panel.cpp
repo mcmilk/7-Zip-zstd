@@ -68,7 +68,7 @@ HWND CPanel::GetParent()
   return (h == 0) ? _mainWindow : h;
 }
 
-static LPCWSTR kClassName = L"7-Zip::Panel";
+#define kClassName L"7-Zip::Panel"
 
 
 HRESULT CPanel::Create(HWND mainWindow, HWND parentWindow, UINT id,
@@ -933,7 +933,7 @@ void CPanel::ExtractArchives()
   if (indices.Size() == 1)
     outFolder += GetSubFolderNameForExtract2(GetItemRelPath(indices[0]));
   else
-    outFolder += L'*';
+    outFolder += '*';
   outFolder.Add_PathSepar();
   
   ::ExtractArchives(paths, outFolder
@@ -947,9 +947,9 @@ static void AddValuePair(UINT resourceID, UInt64 value, UString &s)
 {
   AddLangString(s, resourceID);
   char sz[32];
-  s += L": ";
+  s += ": ";
   ConvertUInt64ToString(value, sz);
-  s.AddAsciiStr(sz);
+  s += sz;
   s.Add_LF();
 }
 */
@@ -999,11 +999,11 @@ static void AddSizePair(UInt32 langID, UInt64 value, UString &s)
   AddLangString(s, langID);
   s += L' ';
   ConvertUInt64ToString(value, sz);
-  s.AddAsciiStr(sz);
+  s += sz;
   ConvertUInt64ToString(value >> 20, sz);
-  s.AddAsciiStr(" (");
-  s.AddAsciiStr(sz);
-  s.AddAsciiStr(" MB)");
+  s += " (";
+  s += sz;
+  s += " MB)";
   s.Add_LF();
 }
 */
@@ -1051,11 +1051,10 @@ void CPanel::TestArchives()
     extracter.Indices = indices;
     
     UString title = LangString(IDS_PROGRESS_TESTING);
-    UString progressWindowTitle = L"7-Zip"; // LangString(IDS_APP_TITLE);
     
     extracter.ProgressDialog.CompressingMode = false;
     extracter.ProgressDialog.MainWindow = GetParent();
-    extracter.ProgressDialog.MainTitle = progressWindowTitle;
+    extracter.ProgressDialog.MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
     extracter.ProgressDialog.MainAddTitle = title + L' ';
     
     extracter.ExtractCallbackSpec->OverwriteMode = NExtract::NOverwriteMode::kAskBefore;

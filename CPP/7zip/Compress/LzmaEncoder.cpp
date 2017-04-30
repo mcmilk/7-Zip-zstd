@@ -134,11 +134,16 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
 {
-  CSeqInStreamWrap inWrap(inStream);
-  CSeqOutStreamWrap outWrap(outStream);
-  CCompressProgressWrap progressWrap(progress);
+  CSeqInStreamWrap inWrap;
+  CSeqOutStreamWrap outWrap;
+  CCompressProgressWrap progressWrap;
 
-  SRes res = LzmaEnc_Encode(_encoder, &outWrap.p, &inWrap.p, progress ? &progressWrap.p : NULL, &g_Alloc, &g_BigAlloc);
+  inWrap.Init(inStream);
+  outWrap.Init(outStream);
+  progressWrap.Init(progress);
+
+  SRes res = LzmaEnc_Encode(_encoder, &outWrap.vt, &inWrap.vt, progress ? &progressWrap.vt : NULL, &g_Alloc, &g_BigAlloc);
+
   _inputProcessed = inWrap.Processed;
   if (res == SZ_ERROR_READ && inWrap.Res != S_OK)
     return inWrap.Res;

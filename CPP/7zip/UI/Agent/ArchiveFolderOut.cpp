@@ -30,9 +30,11 @@ void CAgentFolder::GetPathParts(UStringVector &pathParts, bool &isAltStreamFolde
 static bool DeleteEmptyFolderAndEmptySubFolders(const FString &path)
 {
   NFind::CFileInfo fileInfo;
-  FString pathPrefix = path + FCHAR_PATH_SEPARATOR;
+  FString pathPrefix = path;
+  pathPrefix.Add_PathSepar();
   {
-    NFind::CEnumerator enumerator(pathPrefix + FCHAR_ANY_MASK);
+    NFind::CEnumerator enumerator;
+    enumerator.SetDirPrefix(pathPrefix);
     while (enumerator.Next(fileInfo))
     {
       if (fileInfo.IsDir())
@@ -111,6 +113,9 @@ HRESULT CAgentFolder::CommonUpdateOperation(
         break;
       case AGENT_OP_Rename:
         result = _agentSpec->RenameItem(tailStream, indices, numItems, newItemName, updateCallback100);
+        break;
+      case AGENT_OP_Comment:
+        result = _agentSpec->CommentItem(tailStream, indices, numItems, newItemName, updateCallback100);
         break;
       case AGENT_OP_CopyFromFile:
         result = _agentSpec->UpdateOneFile(tailStream, indices, numItems, newItemName, updateCallback100);
@@ -274,7 +279,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   {
     if (updateCallback100)
     {
-      UString s2 = L"Error: ";
+      UString s2 ("Error: ");
       s2 += s;
       RINOK(updateCallback100->UpdateErrorMessage(s2));
       return E_FAIL;
@@ -304,13 +309,9 @@ STDMETHODIMP CAgentFolder::CopyFrom(Int32 moveMode,
 STDMETHODIMP CAgentFolder::CopyFromFile(UInt32 destIndex, const wchar_t *itemPath, IProgress *progress)
 {
   COM_TRY_BEGIN
-  CUIntVector indices;
-  indices.Add(destIndex);
-  {
-    return CommonUpdateOperation(AGENT_OP_CopyFromFile, false, itemPath,
-        &NUpdateArchive::k_ActionSet_Add,
-        &indices.Front(), indices.Size(), progress);
-  }
+  return CommonUpdateOperation(AGENT_OP_CopyFromFile, false, itemPath,
+      &NUpdateArchive::k_ActionSet_Add,
+      &destIndex, 1, progress);
   COM_TRY_END
 }
 
@@ -347,10 +348,8 @@ STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress
 STDMETHODIMP CAgentFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *progress)
 {
   COM_TRY_BEGIN
-  CUIntVector indices;
-  indices.Add(index);
   return CommonUpdateOperation(AGENT_OP_Rename, false, newName, NULL,
-      &indices.Front(), indices.Size(), progress);
+      &index, 1, progress);
   COM_TRY_END
 }
 
@@ -359,8 +358,16 @@ STDMETHODIMP CAgentFolder::CreateFile(const wchar_t * /* name */, IProgress * /*
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CAgentFolder::SetProperty(UInt32 /* index */, PROPID /* propID */,
-    const PROPVARIANT * /* value */, IProgress * /* progress */)
+STDMETHODIMP CAgentFolder::SetProperty(UInt32 index, PROPID propID,
+    const PROPVARIANT *value, IProgress *progress)
 {
-  return E_NOTIMPL;
+  COM_TRY_BEGIN
+  if (propID != kpidComment || value->vt != VT_BSTR)
+    return E_NOTIMPL;
+  if (!_agentSpec || !_agentSpec->GetTypeOfArc(_agentSpec->GetArc()).IsEqualTo_Ascii_NoCase("zip"))
+    return E_NOTIMPL;
+  
+  return CommonUpdateOperation(AGENT_OP_Comment, false, value->bstrVal, NULL,
+      &index, 1, progress);
+  COM_TRY_END
 }

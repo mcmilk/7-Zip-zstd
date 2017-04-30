@@ -57,7 +57,7 @@ UInt32 CDecoder::DecodeNum(const UInt32 *posTab)
   UInt32 num = m_InBitStream.GetValue(12);
   for (;;)
   {
-    UInt32 cur = (posTab[startPos + 1] - posTab[startPos]) << (12 - startPos);
+    UInt32 cur = (posTab[(size_t)startPos + 1] - posTab[startPos]) << (12 - startPos);
     if (num < cur)
       break;
     startPos++;
@@ -149,7 +149,7 @@ HRESULT CDecoder::ShortLZ()
       PlaceA[dist]--;
       UInt32 lastDistance = ChSetA[(unsigned)distancePlace];
       PlaceA[lastDistance]++;
-      ChSetA[(unsigned)distancePlace + 1] = lastDistance;
+      ChSetA[(size_t)(unsigned)distancePlace + 1] = lastDistance;
       ChSetA[(unsigned)distancePlace] = dist;
     }
     len += 2;

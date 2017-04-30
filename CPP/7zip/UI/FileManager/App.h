@@ -195,7 +195,7 @@ public:
   void MoveTo() { OnCopy(true, false, GetFocusedPanelIndex()); }
   void Delete(bool toRecycleBin) { GetFocusedPanel().DeleteItems(toRecycleBin); }
   HRESULT CalculateCrc2(const UString &methodName);
-  void CalculateCrc(const UString &methodName);
+  void CalculateCrc(const char *methodName);
   void DiffFiles();
   void Split();
   void Combine();
@@ -259,7 +259,23 @@ public:
   void SetListSettings();
   HRESULT SwitchOnOffOnePanel();
   
+  CIntVector _timestampLevels;
+
   bool GetFlatMode() { return Panels[LastFocusedPanel].GetFlatMode(); }
+
+  int GetTimestampLevel() const { return Panels[LastFocusedPanel]._timestampLevel; }
+  void SetTimestampLevel(int level)
+  {
+    unsigned i;
+    for (i = 0; i < kNumPanelsMax; i++)
+    {
+      CPanel &panel = Panels[i];
+      panel._timestampLevel = level;
+      if (panel.PanelCreated)
+        panel.RedrawListItems();
+    }
+  }
+
   // bool Get_ShowNtfsStrems_Mode() { return Panels[LastFocusedPanel].Get_ShowNtfsStrems_Mode(); }
   
   void ChangeFlatMode() { Panels[LastFocusedPanel].ChangeFlatMode(); }

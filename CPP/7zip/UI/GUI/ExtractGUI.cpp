@@ -34,7 +34,7 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
 
-static const wchar_t *kIncorrectOutDir = L"Incorrect output directory path";
+static const wchar_t * const kIncorrectOutDir = L"Incorrect output directory path";
 
 #ifndef _SFX
 
@@ -42,28 +42,31 @@ static void AddValuePair(UString &s, UINT resourceID, UInt64 value, bool addColo
 {
   AddLangString(s, resourceID);
   if (addColon)
-    s += L':';
+    s += ':';
   s.Add_Space();
   char sz[32];
   ConvertUInt64ToString(value, sz);
-  s.AddAscii(sz);
+  s += sz;
   s.Add_LF();
 }
 
 static void AddSizePair(UString &s, UINT resourceID, UInt64 value)
 {
-  wchar_t sz[32];
-  AddLangString(s, resourceID);
-  s += L": ";
-  ConvertUInt64ToString(value, sz);
-  s += MyFormatNew(IDS_FILE_SIZE, sz);
+  {
+    wchar_t sz[32];
+    AddLangString(s, resourceID);
+    s += ": ";
+    ConvertUInt64ToString(value, sz);
+    s += MyFormatNew(IDS_FILE_SIZE, sz);
+  }
   // s += sz;
   if (value >= (1 << 20))
   {
+    char sz[32];
     ConvertUInt64ToString(value >> 20, sz);
-    s += L" (";
+    s += " (";
     s += sz;
-    s += L" MB)";
+    s += " MB)";
   }
   s.Add_LF();
 }

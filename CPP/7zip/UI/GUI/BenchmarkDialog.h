@@ -29,7 +29,7 @@ struct CBenchInfo2 : public CBenchInfo
   }
 };
 
-class CProgressSyncInfo
+class CBenchProgressSync
 {
 public:
   bool Stopped;
@@ -51,10 +51,12 @@ public:
   AString Text;
   bool TextWasChanged;
 
+  // bool FirstPath;
+  // UInt64 Freq;
   // UString Freq;
   // bool FreqWasChanged;
 
-  CProgressSyncInfo()
+  CBenchProgressSync()
   {
     if (_startEvent.Create() != S_OK)
       throw 3986437;
@@ -74,6 +76,8 @@ public:
 
     NumPasses = 0;
 
+    // FirstPath = true;
+    // Freq = 0;
     // Freq.SetFromAscii("MHz: ");
     // FreqWasChanged = true;
 
@@ -135,6 +139,9 @@ class CBenchmarkDialog:
   UInt32 _startTime;
   CMyFont _font;
 
+  UInt64 ramSize;
+  bool ramSize_Defined;
+
   bool OnSize(WPARAM /* wParam */, int xSize, int ySize);
   bool OnTimer(WPARAM timerID, LPARAM callback);
   virtual bool OnInit();
@@ -156,10 +163,15 @@ class CBenchmarkDialog:
   UInt32 GetNumberOfThreads();
   UInt32 OnChangeDictionary();
   void OnChangeSettings();
+
+  void SetItemText_Number(int itemID, UInt64 val, LPCTSTR post = NULL);
+
 public:
-  CProgressSyncInfo Sync;
+  CBenchProgressSync Sync;
   bool TotalMode;
   CObjectVector<CProperty> Props;
+
+  CSysString Bench2Text;
 
   CBenchmarkDialog(): _timer(0), TotalMode(false) {}
   INT_PTR Create(HWND wndParent = 0)

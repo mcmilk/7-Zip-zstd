@@ -42,13 +42,15 @@ public:
   UInt64 GetProcessedSize() const { return _stream.GetProcessedSize() - ((kNumBigValueBits - _bitPos) >> 3); }
 
   bool ThereAreDataInBitsBuffer() const { return this->_bitPos != kNumBigValueBits; }
-
+  
+  MY_FORCE_INLINE
   void Normalize()
   {
     for (; _bitPos >= 8; _bitPos -= 8)
       _value = ((UInt32)_stream.ReadByte() << (kNumBigValueBits - _bitPos)) | _value;
   }
   
+  MY_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
@@ -88,7 +90,8 @@ public:
     CBaseDecoder<TInByte>::Init();
     _normalValue = 0;
   }
-
+  
+  MY_FORCE_INLINE
   void Normalize()
   {
     for (; this->_bitPos >= 8; this->_bitPos -= 8)
@@ -99,18 +102,21 @@ public:
     }
   }
   
+  MY_FORCE_INLINE
   UInt32 GetValue(unsigned numBits)
   {
     Normalize();
     return ((this->_value >> (8 - this->_bitPos)) & kMask) >> (kNumValueBits - numBits);
   }
-
+  
+  MY_FORCE_INLINE
   void MovePos(unsigned numBits)
   {
     this->_bitPos += numBits;
     _normalValue >>= numBits;
   }
   
+  MY_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
@@ -120,9 +126,11 @@ public:
   }
 
   void AlignToByte() { MovePos((32 - this->_bitPos) & 7); }
-
+  
+  MY_FORCE_INLINE
   Byte ReadDirectByte() { return this->_stream.ReadByte(); }
-
+  
+  MY_FORCE_INLINE
   Byte ReadAlignedByte()
   {
     if (this->_bitPos == kNumBigValueBits)

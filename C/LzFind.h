@@ -1,5 +1,5 @@
 /* LzFind.h -- Match finder for LZ algorithms
-2015-10-15 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #ifndef __LZ_FIND_H
 #define __LZ_FIND_H
@@ -71,8 +71,8 @@ void MatchFinder_Construct(CMatchFinder *p);
 */
 int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
     UInt32 keepAddBufferBefore, UInt32 matchMaxLen, UInt32 keepAddBufferAfter,
-    ISzAlloc *alloc);
-void MatchFinder_Free(CMatchFinder *p, ISzAlloc *alloc);
+    ISzAllocPtr alloc);
+void MatchFinder_Free(CMatchFinder *p, ISzAllocPtr alloc);
 void MatchFinder_Normalize3(UInt32 subValue, CLzRef *items, size_t numItems);
 void MatchFinder_ReduceOffsets(CMatchFinder *p, UInt32 subValue);
 

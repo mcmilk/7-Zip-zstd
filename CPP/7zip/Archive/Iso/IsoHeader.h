@@ -25,7 +25,7 @@ namespace NFileFlags
   const Byte kNonFinalExtent = 1 << 7;
 }
 
-extern const char *kElToritoSpec;
+extern const char * const kElToritoSpec;
 
 const UInt32 kStartPos = 0x8000;
 

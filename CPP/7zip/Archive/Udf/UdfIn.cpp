@@ -51,13 +51,13 @@ void MY_FAST_CALL Crc16GenerateTable(void)
   for (i = 0; i < 256; i++)
   {
     UInt32 r = (i << 8);
-    for (int j = 8; j > 0; j--)
-      r = ((r & 0x8000) ? ((r << 1) ^ kCrc16Poly) : (r << 1)) & 0xFFFF;
+    for (unsigned j = 0; j < 8; j++)
+      r = ((r << 1) ^ (kCrc16Poly & ((UInt32)0 - (r >> 15)))) & 0xFFFF;
     g_Crc16Table[i] = (UInt16)r;
   }
 }
 
-UInt16 MY_FAST_CALL Crc16_Update(UInt16 v, const void *data, size_t size)
+UInt32 MY_FAST_CALL Crc16_Update(UInt32 v, const void *data, size_t size)
 {
   const Byte *p = (const Byte *)data;
   for (; size > 0 ; size--, p++)
@@ -65,12 +65,12 @@ UInt16 MY_FAST_CALL Crc16_Update(UInt16 v, const void *data, size_t size)
   return v;
 }
 
-UInt16 MY_FAST_CALL Crc16Calc(const void *data, size_t size)
+UInt32 MY_FAST_CALL Crc16Calc(const void *data, size_t size)
 {
   return Crc16_Update(CRC16_INIT_VAL, data, size);
 }
 
-struct CCrc16TableInit { CCrc16TableInit() { Crc16GenerateTable(); } } g_Crc16TableInit;
+static struct CCrc16TableInit { CCrc16TableInit() { Crc16GenerateTable(); } } g_Crc16TableInit;
 
 
 
@@ -109,7 +109,7 @@ static UString ParseDString(const Byte *data, unsigned size)
       }
     }
     else
-      return L"[unknow]";
+      return UString("[unknow]");
     *p = 0;
     res.ReleaseBuf_SetLen((unsigned)(p - (const wchar_t *)res));
   }
@@ -179,12 +179,12 @@ HRESULT CTag::Parse(const Byte *buf, size_t size)
   Id = Get16(buf);
   Version = Get16(buf + 2);
   // SerialNumber = Get16(buf + 6);
-  UInt16 crc = Get16(buf + 8);
-  UInt16 crcLen = Get16(buf + 10);
+  UInt32 crc = Get16(buf + 8);
+  UInt32 crcLen = Get16(buf + 10);
   // TagLocation = Get32(buf + 12);
 
-  if (size >= 16 + (size_t)crcLen)
-    if (crc == Crc16Calc(buf + 16, crcLen))
+  if (size >= 16 + crcLen)
+    if (crc == Crc16Calc(buf + 16, (size_t)crcLen))
       return S_OK;
   return S_FALSE;
 }
@@ -1077,14 +1077,7 @@ static UString GetSpecName(const UString &name)
   UString name2 = name;
   name2.Trim();
   if (name2.IsEmpty())
-  {
-    /*
-    wchar_t s[32];
-    ConvertUInt64ToString(id, s);
-    return L"[" + (UString)s + L"]";
-    */
-    return L"[]";
-  }
+    return UString("[]");
   return name;
 }
 
@@ -1116,22 +1109,19 @@ UString CInArchive::GetItemPath(int volIndex, int fsIndex, int refIndex,
 
   if (showFsName)
   {
-    wchar_t s[32];
-    ConvertUInt32ToString(fsIndex, s);
-    UString newName = L"File Set ";
-    newName += s;
+    UString newName ("File Set ");
+    newName.Add_UInt32(fsIndex);
     UpdateWithName(name, newName);
   }
 
   if (showVolName)
   {
-    wchar_t s[32];
-    ConvertUInt32ToString(volIndex, s);
-    UString newName = s;
+    UString newName;
+    newName.Add_UInt32(volIndex);
     UString newName2 = vol.GetName();
     if (newName2.IsEmpty())
-      newName2 = L"Volume";
-    newName += L'-';
+      newName2 = "Volume";
+    newName += '-';
     newName += newName2;
     UpdateWithName(name, newName);
   }

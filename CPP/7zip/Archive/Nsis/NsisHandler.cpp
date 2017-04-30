@@ -23,8 +23,8 @@ using namespace NWindows;
 namespace NArchive {
 namespace NNsis {
 
-static const char *kBcjMethod = "BCJ";
-static const char *kUnknownMethod = "Unknown";
+#define kBcjMethod "BCJ"
+#define kUnknownMethod "Unknown"
 
 static const char * const kMethods[] =
 {
@@ -64,7 +64,7 @@ static AString UInt32ToString(UInt32 val)
 {
   char s[16];
   ConvertUInt32ToString(val, s);
-  return s;
+  return (AString)s;
 }
 
 static AString GetStringForSizeValue(UInt32 val)
@@ -123,7 +123,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     // case kpidCodePage: if (_archive.IsUnicode) prop = "UTF-16"; break;
     case kpidSubType:
     {
-      AString s = _archive.GetFormatDescription();
+      AString s (_archive.GetFormatDescription());
       if (!_archive.IsInstaller)
       {
         s.Add_Space_if_NotEmpty();
@@ -308,7 +308,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidOffset: prop = item.Pos; break;
       case kpidPath:
       {
-        UString s = NItemName::WinNameToOSName(_archive.GetReducedName(index));
+        UString s = NItemName::WinPathToOsPath(_archive.GetReducedName(index));
         if (!s.IsEmpty())
           prop = (const wchar_t *)s;
         break;
@@ -481,7 +481,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    UInt32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
@@ -647,6 +647,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           {
             UInt32 curPacked2 = 0;
             UInt32 curUnpacked2 = 0;
+
+            if (!_archive.IsSolid)
+            {
+              RINOK(_archive.SeekTo(_archive.GetPosOfNonSolidItem(index) + 4 + curPacked ));
+            }
+
             HRESULT res = _archive.Decoder.Decode(
                 writeToTemp ? &tempBuf2 : NULL,
                 false, 0,

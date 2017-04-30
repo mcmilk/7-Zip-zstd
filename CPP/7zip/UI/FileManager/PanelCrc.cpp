@@ -128,13 +128,14 @@ DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &r
     FString s = resPath;
     s.Add_PathSepar();
     Prefixes.Add(s);
-    s += FCHAR_ANY_MASK;
-    Enumerators.Add(NFind::CEnumerator(BasePrefix + s));
+    Enumerators.AddNew().SetDirPrefix(BasePrefix + s);
   }
   
   filled = true;
   return S_OK;
 }
+
+
 
 class CThreadCrc: public CProgressThreadVirt
 {
@@ -364,7 +365,7 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
     UString title = LangString(IDS_CHECKSUM_CALCULATING);
     
     t.ProgressDialog.MainWindow = _window;
-    t.ProgressDialog.MainTitle = L"7-Zip"; // LangString(IDS_APP_TITLE);
+    t.ProgressDialog.MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
     t.ProgressDialog.MainAddTitle = title;
     t.ProgressDialog.MainAddTitle.Add_Space();
     
@@ -374,9 +375,9 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
   return S_OK;
 }
 
-void CApp::CalculateCrc(const UString &methodName)
+void CApp::CalculateCrc(const char *methodName)
 {
-  HRESULT res = CalculateCrc2(methodName);
+  HRESULT res = CalculateCrc2(UString(methodName));
   if (res != S_OK && res != E_ABORT)
   {
     unsigned srcPanelIndex = GetFocusedPanelIndex();

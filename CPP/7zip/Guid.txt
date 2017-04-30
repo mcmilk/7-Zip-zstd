@@ -47,6 +47,7 @@
   24  ICompressGetInStreamProcessedSize
   25  ICompressSetCoderMt
   26  ICompressSetFinishMode
+  27  ICompressGetInStreamProcessedSize2
 
   30  ICompressGetSubStreamSize
   31  ICompressSetInStream

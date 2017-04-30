@@ -22,6 +22,7 @@ COMMON_OBJS = \
   $O\UTFConvert.obj \
   $O\MyVector.obj \
   $O\Wildcard.obj \
+  $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
@@ -38,6 +39,7 @@ WIN_OBJS = \
   $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
+  $O\PropVariantUtils.obj \
   $O\Synchronization.obj \
   $O\System.obj \
   $O\TimeUtils.obj \
@@ -152,7 +154,6 @@ COMPRESS_OBJS = \
   $O\DeflateRegister.obj \
   $O\DeltaFilter.obj \
   $O\ImplodeDecoder.obj \
-  $O\ImplodeHuffmanDecoder.obj \
   $O\Lzma2Decoder.obj \
   $O\Lzma2Encoder.obj \
   $O\Lzma2Register.obj \
@@ -167,6 +168,8 @@ COMPRESS_OBJS = \
   $O\PpmdZip.obj \
   $O\QuantumDecoder.obj \
   $O\ShrinkDecoder.obj \
+  $O\XzDecoder.obj \
+  $O\XzEncoder.obj \
   $O\ZDecoder.obj \
 
 CRYPTO_OBJS = \
@@ -257,12 +260,12 @@ ZSTD_OBJS = \
   $O\zstd_v07.obj \
 
 ZSTDMT_OBJS = \
-  $O\lz5mt_common.obj \
-  $O\lz5mt_compress.obj \
-  $O\lz5mt_decompress.obj \
   $O\lz4mt_common.obj \
   $O\lz4mt_compress.obj \
   $O\lz4mt_decompress.obj \
+  $O\lz5mt_common.obj \
+  $O\lz5mt_compress.obj \
+  $O\lz5mt_decompress.obj \
   $O\threading.obj \
   $O\zstdmt_common.obj \
   $O\zstdmt_compress.obj \

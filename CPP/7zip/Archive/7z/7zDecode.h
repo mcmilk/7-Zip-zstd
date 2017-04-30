@@ -53,7 +53,9 @@ public:
 
       , ISequentialOutStream *outStream
       , ICompressProgressInfo *compressProgress
+
       , ISequentialInStream **inStreamMainRes
+      , bool &dataAfterEnd_Error
       
       _7Z_DECODER_CRYPRO_VARS_DECL
       

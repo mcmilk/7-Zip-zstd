@@ -316,7 +316,7 @@ HRESULT CProxyArc::Load(const CArc &arc, IProgress *progress)
         if (numLevels <= kLevelLimit)
         {
           if (numLevels == kLevelLimit)
-            name.SetFromAscii("[LONG_PATH]");
+            name = "[LONG_PATH]";
           else
             name.SetFrom(s + namePos, j - namePos);
           curItem = AddDir(curItem, -1, name);
@@ -569,7 +569,7 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
   {
     // Dirs[1] - for alt streams of root dir
     CProxyDir2 &dir = Dirs.AddNew();
-    dir.PathPrefix = L':';
+    dir.PathPrefix = ':';
   }
 
   Files.Alloc(numItems);

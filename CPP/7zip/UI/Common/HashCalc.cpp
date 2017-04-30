@@ -30,17 +30,13 @@ public:
   ~CHashMidBuf() { ::MidFree(_data); }
 };
 
-static const char *k_DefaultHashMethod = "CRC32";
+static const char * const k_DefaultHashMethod = "CRC32";
 
 HRESULT CHashBundle::SetMethods(DECL_EXTERNAL_CODECS_LOC_VARS const UStringVector &hashMethods)
 {
   UStringVector names = hashMethods;
   if (names.IsEmpty())
-  {
-    UString s;
-    s.SetFromAscii(k_DefaultHashMethod);
-    names.Add(s);
-  }
+    names.Add(UString(k_DefaultHashMethod));
 
   CRecordVector<CMethodId> ids;
   CObjectVector<COneMethodInfo> methods;

@@ -13,8 +13,8 @@ void CBZip2Crc::InitTable()
   for (UInt32 i = 0; i < 256; i++)
   {
     UInt32 r = (i << 24);
-    for (int j = 8; j > 0; j--)
-      r = (r & 0x80000000) ? ((r << 1) ^ kBZip2CrcPoly) : (r << 1);
+    for (unsigned j = 0; j < 8; j++)
+      r = (r << 1) ^ (kBZip2CrcPoly & ((UInt32)0 - (r >> 31)));
     Table[i] = r;
   }
 }

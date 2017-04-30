@@ -1,5 +1,5 @@
 /* HuffEnc.c -- functions for Huffman encoding
-2016-05-16 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -113,7 +113,7 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
         if (len >= maxLen)
           for (len = maxLen - 1; lenCounters[len] == 0; len--);
         lenCounters[len]--;
-        lenCounters[len + 1] += 2;
+        lenCounters[(size_t)len + 1] += 2;
       }
       
       {
@@ -133,7 +133,7 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
           UInt32 code = 0;
           UInt32 len;
           for (len = 1; len <= kMaxLen; len++)
-            nextCodes[len] = code = (code + lenCounters[len - 1]) << 1;
+            nextCodes[len] = code = (code + lenCounters[(size_t)len - 1]) << 1;
         }
         /* if (code + lenCounters[kMaxLen] - 1 != (1 << kMaxLen) - 1) throw 1; */
 

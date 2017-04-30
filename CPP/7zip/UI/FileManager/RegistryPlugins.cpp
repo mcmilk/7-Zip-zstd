@@ -13,12 +13,12 @@ using namespace NWindows;
 using namespace NFile;
 
 /*
-static const TCHAR *kLMBasePath = TEXT("Software\\7-Zip\\FM");
+static LPCTSTR const kLMBasePath = TEXT("Software\\7-Zip\\FM");
 
-static const TCHAR *kPluginsKeyName = TEXT("Plugins");
-static const TCHAR *kPluginsOpenClassIDValue = TEXT("CLSID");
-static const TCHAR *kPluginsOptionsClassIDValue = TEXT("Options");
-static const TCHAR *kPluginsTypeValue = TEXT("Type");
+static LPCTSTR const kPluginsKeyName = TEXT("Plugins");
+static LPCTSTR const kPluginsOpenClassIDValue = TEXT("CLSID");
+static LPCTSTR const kPluginsOptionsClassIDValue = TEXT("Options");
+static LPCTSTR const kPluginsTypeValue = TEXT("Type");
 
 static CSysString GetFileFolderPluginsKeyName()
 {
@@ -101,8 +101,10 @@ void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins)
     if (::ReadPluginInfo(pluginInfo, false))
       plugins.Add(pluginInfo);
   }
-  FString folderPath = baseFolderPrefix + FTEXT("Plugins") FSTRING_PATH_SEPARATOR;
-  NFind::CEnumerator enumerator(folderPath + FCHAR_ANY_MASK);
+  FString folderPath = baseFolderPrefix;
+  folderPath += "Plugins" STRING_PATH_SEPARATOR;
+  NFind::CEnumerator enumerator;
+  enumerator.SetDirPrefix(folderPath);
   NFind::CFileInfo fileInfo;
   while (enumerator.Next(fileInfo))
   {
@@ -127,7 +129,7 @@ void ReadFileFolderPluginInfoList(CObjectVector<CPluginInfo> &plugins)
     CPluginInfo p;
     // p.FilePath.Empty();
     p.Type = kPluginTypeFF;
-    p.Name = L"7-Zip";
+    p.Name = "7-Zip";
     // p.ClassID = CLSID_CAgentArchiveHandler;
     p.ClassIDDefined = true;
     // p.OptionsClassID;

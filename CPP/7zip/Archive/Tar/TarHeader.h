@@ -67,15 +67,15 @@ namespace NFileHeader
         the last file name. */
   }
 
-  extern const char *kLongLink;  //   = "././@LongLink";
-  extern const char *kLongLink2; //   = "@LongLink";
+  extern const char * const kLongLink;  //   = "././@LongLink";
+  extern const char * const kLongLink2; //   = "@LongLink";
 
   namespace NMagic
   {
-    // extern const char *kUsTar;  //  = "ustar"; // 5 chars
-    // extern const char *kGNUTar; //  = "GNUtar "; // 7 chars and a null
-    // extern const char *kEmpty;  //  = "\0\0\0\0\0\0\0\0"
-    extern const char kUsTar_00[];
+    // extern const char * const kUsTar;  //  = "ustar"; // 5 chars
+    // extern const char * const kGNUTar; //  = "GNUtar "; // 7 chars and a null
+    // extern const char * const kEmpty;  //  = "\0\0\0\0\0\0\0\0"
+    extern const char kUsTar_00[8];
   }
 }
 

@@ -31,8 +31,9 @@ using namespace NDir;
 extern bool g_IsNT;
 #endif
 
-static CFSTR kTempDirPrefix = FTEXT("7zE");
-static LPCTSTR kSvenZipSetFolderFormat = TEXT("7-Zip::SetTargetFolder");
+#define kTempDirPrefix FTEXT("7zE")
+
+static LPCTSTR const kSvenZipSetFolderFormat = TEXT("7-Zip::SetTargetFolder");
 
 ////////////////////////////////////////////////////////
 
@@ -619,7 +620,10 @@ bool CDropTarget::IsItSameDrive() const
       return false;
   }
   else if (m_Panel->IsFSDrivesFolder() && m_SelectionIndex >= 0)
-    drive = m_SubFolderName + WCHAR_PATH_SEPARATOR;
+  {
+    drive = m_SubFolderName;
+    drive.Add_PathSepar();
+  }
   else
     return false;
 

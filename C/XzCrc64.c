@@ -1,5 +1,5 @@
 /* XzCrc64.c -- CRC64 calculation
-2015-03-01 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -52,12 +52,12 @@ void MY_FAST_CALL Crc64GenerateTable()
     UInt64 r = i;
     unsigned j;
     for (j = 0; j < 8; j++)
-      r = (r >> 1) ^ (kCrc64Poly & ~((r & 1) - 1));
+      r = (r >> 1) ^ (kCrc64Poly & ((UInt64)0 - (r & 1)));
     g_Crc64Table[i] = r;
   }
-  for (; i < 256 * CRC_NUM_TABLES; i++)
+  for (i = 256; i < 256 * CRC_NUM_TABLES; i++)
   {
-    UInt64 r = g_Crc64Table[i - 256];
+    UInt64 r = g_Crc64Table[(size_t)i - 256];
     g_Crc64Table[i] = g_Crc64Table[r & 0xFF] ^ (r >> 8);
   }
   
@@ -76,7 +76,7 @@ void MY_FAST_CALL Crc64GenerateTable()
     {
       for (i = 256 * CRC_NUM_TABLES - 1; i >= 256; i--)
       {
-        UInt64 x = g_Crc64Table[i - 256];
+        UInt64 x = g_Crc64Table[(size_t)i - 256];
         g_Crc64Table[i] = CRC_UINT64_SWAP(x);
       }
       g_Crc64Update = XzCrc64UpdateT1_BeT4;

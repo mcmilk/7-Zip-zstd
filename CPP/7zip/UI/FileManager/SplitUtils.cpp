@@ -57,16 +57,25 @@ bool ParseVolumeSizes(const UString &s, CRecordVector<UInt64> &values)
   return true;
 }
 
+
+static const char * const k_Sizes[] =
+{
+    "10M"
+  , "100M"
+  , "1000M"
+  , "650M - CD"
+  , "700M - CD"
+  , "4092M - FAT"
+  , "4480M - DVD"     //  4489 MiB limit
+  , "8128M - DVD DL"  //  8147 MiB limit
+  , "23040M - BD"     // 23866 MiB limit
+  // , "1457664 - 3.5\" floppy"
+};
+
 void AddVolumeItems(NWindows::NControl::CComboBox &combo)
 {
-  combo.AddString(TEXT("10M"));
-  combo.AddString(TEXT("650M - CD"));
-  combo.AddString(TEXT("700M - CD"));
-  combo.AddString(TEXT("4092M - FAT"));
-  combo.AddString(TEXT("4480M - DVD"));     //  4489 MiB limit
-  combo.AddString(TEXT("8128M - DVD DL"));  //  8147 MiB limit
-  combo.AddString(TEXT("23040M - BD"));     // 23866 MiB limit
-  combo.AddString(TEXT("1457664 - 3.5\" floppy"));
+  for (unsigned i = 0; i < ARRAY_SIZE(k_Sizes); i++)
+    combo.AddString(CSysString(k_Sizes[i]));
 }
 
 UInt64 GetNumberOfVolumes(UInt64 size, const CRecordVector<UInt64> &volSizes)

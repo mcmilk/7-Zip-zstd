@@ -239,9 +239,6 @@ HRESULT CDatabase::AddNode(int parent, UInt32 did)
   return S_OK;
 }
 
-static const wchar_t kCharOpenBracket  = L'[';
-static const wchar_t kCharCloseBracket = L']';
-
 static UString CompoundNameToFileName(const UString &s)
 {
   UString res;
@@ -250,11 +247,9 @@ static UString CompoundNameToFileName(const UString &s)
     wchar_t c = s[i];
     if (c < 0x20)
     {
-      res += kCharOpenBracket;
-      wchar_t buf[32];
-      ConvertUInt32ToString(c, buf);
-      res += buf;
-      res += kCharCloseBracket;
+      res += '[';
+      res.Add_UInt32(c);
+      res += ']';
     }
     else
       res += c;
@@ -265,8 +260,8 @@ static UString CompoundNameToFileName(const UString &s)
 static const char k_Msi_Chars[] =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._";
 
-// static const char *k_Msi_ID = ""; // "{msi}";
-static const wchar_t k_Msi_SpecChar = L'!';
+// static const char * const k_Msi_ID = ""; // "{msi}";
+static const char k_Msi_SpecChar = '!';
 
 static const unsigned k_Msi_NumBits = 6;
 static const unsigned k_Msi_NumChars = 1 << k_Msi_NumBits;
@@ -316,10 +311,10 @@ static bool CompoundMsiNameToFileName(const UString &name, UString &res)
 
     if (c1 <= k_Msi_NumChars)
     {
-      res += (wchar_t)(Byte)k_Msi_Chars[c0];
+      res += k_Msi_Chars[c0];
       if (c1 == k_Msi_NumChars)
         break;
-      res += (wchar_t)(Byte)k_Msi_Chars[c1];
+      res += k_Msi_Chars[c1];
     }
     else
       res += k_Msi_SpecChar;

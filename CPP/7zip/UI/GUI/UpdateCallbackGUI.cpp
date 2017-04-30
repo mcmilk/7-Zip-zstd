@@ -97,9 +97,9 @@ HRESULT CUpdateCallbackGUI::Finalize()
 }
 */
 
-HRESULT CUpdateCallbackGUI::SetNumItems(UInt64 numItems)
+HRESULT CUpdateCallbackGUI::SetNumItems(const CArcToDoStat &stat)
 {
-  ProgressDialog->Sync.Set_NumFilesTotal(numItems);
+  ProgressDialog->Sync.Set_NumFilesTotal(stat.Get_NumDataItems_Total());
   return S_OK;
 }
 

@@ -20,13 +20,13 @@ static const UInt32 kLangIDs[] =
   IDT_LANG_LANG
 };
 
-static LPCWSTR kLangTopic = L"fm/options.htm#language";
+#define kLangTopic "fm/options.htm#language"
 
 static void NativeLangString(UString &dest, const wchar_t *s)
 {
-  dest += L" (";
+  dest += " (";
   dest += s;
-  dest += L')';
+  dest += ')';
 }
 
 bool LangOpen(CLang &lang, CFSTR fileName);
@@ -45,7 +45,8 @@ bool CLangPage::OnInit()
   _langCombo.SetCurSel(0);
 
   const FString dirPrefix = GetLangDirPrefix();
-  NFile::NFind::CEnumerator enumerator(dirPrefix + FTEXT("*.txt"));
+  NFile::NFind::CEnumerator enumerator;
+  enumerator.SetDirPrefix(dirPrefix);
   NFile::NFind::CFileInfo fi;
   CLang lang;
   UString error;
@@ -54,12 +55,15 @@ bool CLangPage::OnInit()
   {
     if (fi.IsDir())
       continue;
-    const int kExtSize = 4;
+    const unsigned kExtSize = 4;
     if (fi.Name.Len() < kExtSize)
       continue;
-    unsigned pos = fi.Name.Len() - kExtSize;
+    const unsigned pos = fi.Name.Len() - kExtSize;
     if (!StringsAreEqualNoCase_Ascii(fi.Name.Ptr(pos), ".txt"))
+    {
+      // if (!StringsAreEqualNoCase_Ascii(fi.Name.Ptr(pos), ".ttt"))
       continue;
+    }
 
     if (!LangOpen(lang, dirPrefix + fi.Name))
     {
@@ -101,7 +105,7 @@ LONG CLangPage::OnApply()
 
 void CLangPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kLangTopic);
+  ShowHelpWindow(kLangTopic);
 }
 
 bool CLangPage::OnCommand(int code, int itemID, LPARAM param)

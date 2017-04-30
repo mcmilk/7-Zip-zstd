@@ -448,7 +448,7 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
           // return S_FALSE;
           continue; // original unRAR
         }
-        Byte v = lens[i - 1];
+        Byte v = lens[(size_t)i - 1];
         do
           lens[i++] = v;
         while (i < num);
@@ -475,7 +475,7 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
   _useAlignBits = false;
   // _useAlignBits = true;
   for (i = 0; i < kAlignTableSize; i++)
-    if (lens[kMainTableSize + kDistTableSize + i] != kNumAlignBits)
+    if (lens[kMainTableSize + kDistTableSize + (size_t)i] != kNumAlignBits)
     {
       _useAlignBits = true;
       break;

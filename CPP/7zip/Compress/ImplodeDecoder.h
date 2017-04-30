@@ -7,48 +7,65 @@
 
 #include "../ICoder.h"
 
-#include "ImplodeHuffmanDecoder.h"
+#include "../Common/InBuffer.h"
+
+#include "BitlDecoder.h"
 #include "LzOutWindow.h"
 
 namespace NCompress {
 namespace NImplode {
 namespace NDecoder {
 
+typedef NBitl::CDecoder<CInBuffer> CInBit;
+
+const unsigned kNumHuffmanBits = 16;
+const unsigned kMaxHuffTableSize = 1 << 8;
+
+class CHuffmanDecoder
+{
+  UInt32 _limits[kNumHuffmanBits + 1];
+  UInt32 _poses[kNumHuffmanBits + 1];
+  Byte _symbols[kMaxHuffTableSize];
+public:
+  bool Build(const Byte *lens, unsigned numSymbols) throw();
+  UInt32 Decode(CInBit *inStream) const throw();
+};
+
+
 class CCoder:
   public ICompressCoder,
   public ICompressSetDecoderProperties2,
+  public ICompressSetFinishMode,
+  public ICompressGetInStreamProcessedSize,
   public CMyUnknownImp
 {
-  CLzOutWindow m_OutWindowStream;
-  NBitl::CDecoder<CInBuffer> m_InBitStream;
+  CLzOutWindow _outWindowStream;
+  CInBit _inBitStream;
   
-  NImplode::NHuffman::CDecoder m_LiteralDecoder;
-  NImplode::NHuffman::CDecoder m_LengthDecoder;
-  NImplode::NHuffman::CDecoder m_DistanceDecoder;
+  CHuffmanDecoder _litDecoder;
+  CHuffmanDecoder _lenDecoder;
+  CHuffmanDecoder _distDecoder;
 
-  bool m_BigDictionaryOn;
-  bool m_LiteralsOn;
+  Byte _flags;
+  bool _fullStreamMode;
 
-  int m_NumDistanceLowDirectBits;
-  UInt32 m_MinMatchLength;
-
-  bool ReadLevelItems(NImplode::NHuffman::CDecoder &table, Byte *levels, int numLevelItems);
-  bool ReadTables();
-  void DeCodeLevelTable(Byte *newLevels, int numLevels);
-public:
-  CCoder();
-
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
-
-  // void ReleaseStreams();
-  
+  bool BuildHuff(CHuffmanDecoder &table, unsigned numSymbols);
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 
+public:
+  MY_UNKNOWN_IMP3(
+      ICompressSetDecoderProperties2,
+      ICompressSetFinishMode,
+      ICompressGetInStreamProcessedSize)
+
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
+  STDMETHOD(SetFinishMode)(UInt32 finishMode);
+  STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
+
+  CCoder();
 };
 
 }}}

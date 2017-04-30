@@ -5,6 +5,6 @@
 
 #include "../../../Common/MyString.h"
 
-void ShowHelpWindow(HWND hwnd, LPCWSTR topicFile);
+void ShowHelpWindow(LPCSTR topicFile);
 
 #endif

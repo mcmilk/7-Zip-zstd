@@ -90,7 +90,7 @@ void CSplitDialog::OnButtonSetPath()
 {
   UString currentPath;
   _pathCombo.GetText(currentPath);
-  // UString title = L"Specify a location for output folder";
+  // UString title = "Specify a location for output folder";
   UString title = LangString(IDS_SET_FOLDER);
 
   UString resultPath;

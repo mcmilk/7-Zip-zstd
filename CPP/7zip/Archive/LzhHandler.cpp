@@ -9,6 +9,7 @@
 #include "../../Common/StringConvert.h"
 
 #include "../../Windows/PropVariant.h"
+#include "../../Windows/PropVariantUtils.h"
 #include "../../Windows/TimeUtils.h"
 
 #include "../ICoder.h"
@@ -31,10 +32,44 @@ using namespace NTime;
 #define Get16(p) GetUi16(p)
 #define Get32(p) GetUi32(p)
 
+
+// CRC-16 (-IBM, -ANSI). The poly is 0x8005 (x^16 + x^15 + x^2 + 1)
+
+static const UInt16 kCrc16Poly = 0xA001;
+
+static UInt16 g_LzhCrc16Table[256];
+
+#define CRC16_UPDATE_BYTE(crc, b) (g_LzhCrc16Table[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
+
+UInt32 LzhCrc16Update(UInt32 crc, const void *data, size_t size)
+{
+  const Byte *p = (const Byte *)data;
+  const Byte *pEnd = p + size;
+  for (; p != pEnd; p++)
+    crc = CRC16_UPDATE_BYTE(crc, *p);
+  return crc;
+}
+
+static class CLzhCrc16TableInit
+{
+public:
+  CLzhCrc16TableInit()
+  {
+    for (UInt32 i = 0; i < 256; i++)
+    {
+      UInt32 r = i;
+      for (unsigned j = 0; j < 8; j++)
+        r = (r >> 1) ^ (kCrc16Poly & ((UInt32)0 - (r & 1)));
+      g_LzhCrc16Table[i] = (UInt16)r;
+    }
+  }
+} g_LzhCrc16TableInit;
+
+
 namespace NArchive {
 namespace NLzh{
 
-const int kMethodIdSize = 5;
+const unsigned kMethodIdSize = 5;
 
 const Byte kExtIdFileName = 0x01;
 const Byte kExtIdDirName  = 0x02;
@@ -125,7 +160,7 @@ struct CItem
     return false;
   }
   
-  int GetNumDictBits() const
+  unsigned GetNumDictBits() const
   {
     if (!IsLhMethod())
       return 0;
@@ -185,7 +220,7 @@ struct CItem
 
   AString GetName() const
   {
-    AString dirName = GetDirName();
+    AString dirName (GetDirName());
     const char kDirSeparator = '\\';
     // check kDirSeparator in Linux
     dirName.Replace((char)(unsigned char)0xFF, kDirSeparator);
@@ -310,13 +345,8 @@ static HRESULT GetNextItem(ISequentialInStream *stream, bool &filled, CItem &ite
   return S_OK;
 }
 
-struct COsPair
-{
-  Byte Id;
-  const char *Name;
-};
 
-static const COsPair g_OsPairs[] =
+static const CUInt32PCharPair g_OsPairs[] =
 {
   {   0, "MS-DOS" },
   { 'M', "MS-DOS" },
@@ -337,15 +367,6 @@ static const COsPair g_OsPairs[] =
   { 'J', "Java VM" }
 };
 
-static const char *kUnknownOS = "Unknown";
-
-static const char *GetOS(Byte osId)
-{
-  for (unsigned i = 0; i < ARRAY_SIZE(g_OsPairs); i++)
-    if (g_OsPairs[i].Id == osId)
-      return g_OsPairs[i].Name;
-  return kUnknownOS;
-}
 
 static const Byte kProps[] =
 {
@@ -360,52 +381,6 @@ static const Byte kProps[] =
   kpidHostOS
 };
 
-class CCRC
-{
-  UInt16 _value;
-public:
-  static UInt16 Table[256];
-  static void InitTable();
-  
-  CCRC(): _value(0) {}
-  void Init() { _value = 0; }
-  void Update(const void *data, size_t size);
-  UInt16 GetDigest() const { return _value; }
-};
-
-static const UInt16 kCRCPoly = 0xA001;
-
-UInt16 CCRC::Table[256];
-
-void CCRC::InitTable()
-{
-  for (UInt32 i = 0; i < 256; i++)
-  {
-    UInt32 r = i;
-    for (int j = 0; j < 8; j++)
-      if (r & 1)
-        r = (r >> 1) ^ kCRCPoly;
-      else
-        r >>= 1;
-    CCRC::Table[i] = (UInt16)r;
-  }
-}
-
-class CCRCTableInit
-{
-public:
-  CCRCTableInit() { CCRC::InitTable(); }
-} g_CRCTableInit;
-
-void CCRC::Update(const void *data, size_t size)
-{
-  UInt16 v = _value;
-  const Byte *p = (const Byte *)data;
-  for (; size > 0; size--, p++)
-    v = (UInt16)(Table[((Byte)(v)) ^ *p] ^ (v >> 8));
-  _value = v;
-}
-
 
 class COutStreamWithCRC:
   public ISequentialOutStream,
@@ -416,40 +391,35 @@ public:
 
   STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
 private:
-  CCRC _crc;
+  UInt32 _crc;
   CMyComPtr<ISequentialOutStream> _stream;
 public:
   void Init(ISequentialOutStream *stream)
   {
     _stream = stream;
-    _crc.Init();
+    _crc = 0;
   }
   void ReleaseStream() { _stream.Release(); }
-  UInt32 GetCRC() const { return _crc.GetDigest(); }
-  void InitCRC() { _crc.Init(); }
+  UInt32 GetCRC() const { return _crc; }
 };
 
 STDMETHODIMP COutStreamWithCRC::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  UInt32 realProcessedSize;
-  HRESULT result;
-  if (!_stream)
-  {
-    realProcessedSize = size;
-    result = S_OK;
-  }
-  else
-    result = _stream->Write(data, size, &realProcessedSize);
-  _crc.Update(data, realProcessedSize);
-  if (processedSize != NULL)
-    *processedSize = realProcessedSize;
-  return result;
+  HRESULT res = S_OK;
+  if (_stream)
+    res = _stream->Write(data, size, &size);
+  _crc = LzhCrc16Update(_crc, data, size);
+  if (processedSize)
+    *processedSize = size;
+  return res;
 }
+
 
 struct CItemEx: public CItem
 {
   UInt64 DataPosition;
 };
+
 
 class CHandler:
   public IInArchive,
@@ -503,7 +473,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   {
     case kpidPath:
     {
-      UString s = NItemName::WinNameToOSName(MultiByteToUnicodeString(item.GetName(), CP_OEMCP));
+      UString s = NItemName::WinPathToOsPath(MultiByteToUnicodeString(item.GetName(), CP_OEMCP));
       if (!s.IsEmpty())
       {
         if (s.Back() == WCHAR_PATH_SEPARATOR)
@@ -516,7 +486,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidSize:   prop = item.Size; break;
     case kpidPackSize:  prop = item.PackSize; break;
     case kpidCRC:  prop = (UInt32)item.CRC; break;
-    case kpidHostOS:  prop = GetOS(item.OsId); break;
+    case kpidHostOS:  PAIR_TO_PROP(g_OsPairs, item.OsId, prop); break;
     case kpidMTime:
     {
       FILETIME utc;
@@ -571,15 +541,15 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     {
       CItemEx item;
       bool filled;
-      HRESULT result = GetNextItem(stream, filled, item);
+      HRESULT res = GetNextItem(stream, filled, item);
       RINOK(stream->Seek(0, STREAM_SEEK_CUR, &item.DataPosition));
-      if (result == S_FALSE)
+      if (res == S_FALSE)
       {
         _errorFlags = kpv_ErrorFlags_HeadersError;
         break;
       }
 
-      if (result != S_OK)
+      if (res != S_OK)
         return S_FALSE;
       _phySize = item.DataPosition;
       if (!filled)
@@ -720,14 +690,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
       streamSpec->Init(item.PackSize);
 
-      HRESULT result = S_OK;
+      HRESULT res = S_OK;
       Int32 opRes = NExtract::NOperationResult::kOK;
 
       if (item.IsCopyMethod())
       {
-        result = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
-        if (result == S_OK && copyCoderSpec->TotalSize != item.PackSize)
-          result = S_FALSE;
+        res = copyCoder->Code(inStream, outStream, NULL, NULL, progress);
+        if (res == S_OK && copyCoderSpec->TotalSize != item.PackSize)
+          res = S_FALSE;
       }
       else if (item.IsLh4GroupMethod())
       {
@@ -738,9 +708,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         }
         lzhDecoderSpec->FinishMode = true;
         lzhDecoderSpec->SetDictSize(1 << item.GetNumDictBits());
-        result = lzhDecoder->Code(inStream, outStream, NULL, &currentItemUnPacked, progress);
-        if (result == S_OK && lzhDecoderSpec->GetInputProcessedSize() != item.PackSize)
-          result = S_FALSE;
+        res = lzhDecoder->Code(inStream, outStream, NULL, &currentItemUnPacked, progress);
+        if (res == S_OK && lzhDecoderSpec->GetInputProcessedSize() != item.PackSize)
+          res = S_FALSE;
       }
       /*
       else if (item.IsLh1GroupMethod())
@@ -751,7 +721,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           lzh1Decoder = lzh1DecoderSpec;
         }
         lzh1DecoderSpec->SetDictionary(item.GetNumDictBits());
-        result = lzh1Decoder->Code(inStream, outStream, NULL, &currentItemUnPacked, progress);
+        res = lzh1Decoder->Code(inStream, outStream, NULL, &currentItemUnPacked, progress);
       }
       */
       else
@@ -759,11 +729,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
       if (opRes == NExtract::NOperationResult::kOK)
       {
-        if (result == S_FALSE)
+        if (res == S_FALSE)
           opRes = NExtract::NOperationResult::kDataError;
         else
         {
-          RINOK(result);
+          RINOK(res);
           if (outStreamSpec->GetCRC() != item.CRC)
             opRes = NExtract::NOperationResult::kCRCError;
         }

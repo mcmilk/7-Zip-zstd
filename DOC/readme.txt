@@ -1,9 +1,9 @@
-7-Zip 16.04 Sources
--------------------
+7-Zip 17.00 beta Sources
+------------------------
 
 7-Zip is a file archiver for Windows. 
 
-7-Zip Copyright (C) 1999-2016 Igor Pavlov.
+7-Zip Copyright (C) 1999-2017 Igor Pavlov.
 
 
 License Info
