@@ -259,7 +259,7 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "lz5",
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 16),
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15),
     METHODS_PAIR(g_Lz5Methods),
     false, false, true, false, false, false
   },
