@@ -41,8 +41,8 @@ Algorithm Homepage:  https://github.com/richgel999/lzham_codec
 Source code:         https://github.com/richgel999/lzham_codec
 
 Codec plugin author: Rich Geldreich
-Codec Homepage:      http://richg42.blogspot.de/2015/02/lzham-10-integrated-into-7zip-command.html
-Source Code:         http://www.tenacioussoftware.com/7zipsrc_release3_lzham_1_0.7z
+Codec Homepage:      http://richg42.blogspot.com/2015/11/lzham-custom-codec-plugin-for-7-zip.html
+Source Code:         https://github.com/richgel999/lzham_codec_devel
 
 
 Range F7 11 01, ZStandard
