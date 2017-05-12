@@ -184,8 +184,8 @@ Codecs:
 ## Version Information
 
 - 7-Zip ZS Version 17.00
-  - ZStandard Version 1.1.4
+  - ZStandard Version 1.2.0
   - LZ4 Version 1.7.5
   - LZ5 Version 1.5
 
-/TR 2017-04-30
+/TR 2017-05-12
