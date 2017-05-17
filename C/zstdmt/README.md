@@ -1,10 +1,8 @@
 
 # Multithreading Library for [LZ4], [LZ5] and [ZStandard]
 
-- this library is a temporary solution to the threading problem with zstd, lz4 and lz5
-- future versions of that compression libs will support threading in some way, I think ;)
-- it's based on my zstdmt version @ github...
+- this library is used as a multthreading wrapper for zstd, lz4 and lz5
+- zstandard has multithreading now on board, maybe I switch to it
+- homepage of it: https://github.com/mcmilk/zstdmt
 
-zstdmt_compress.c
-
-/TR 2016-12-26
+/TR 2017-05-17

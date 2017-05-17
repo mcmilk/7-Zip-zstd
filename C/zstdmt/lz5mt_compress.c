@@ -1,6 +1,6 @@
 
 /**
- * Copyright (c) 2016 Tino Reichardt
+ * Copyright (c) 2016 - 2017 Tino Reichardt
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -333,7 +333,7 @@ size_t LZ5MT_compressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr)
 	/* wait for all workers */
 	for (t = 0; t < ctx->threads; t++) {
 		cwork_t *w = &ctx->cwork[t];
-		void *p;
+		void *p = 0;
 		pthread_join(w->pthread, &p);
 		if (p)
 			retval_of_thread = p;

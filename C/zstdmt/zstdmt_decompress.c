@@ -1,6 +1,6 @@
 
 /**
- * Copyright (c) 2016 Tino Reichardt
+ * Copyright (c) 2016 - 2017 Tino Reichardt
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -817,7 +817,7 @@ size_t ZSTDMT_decompressDCtx(ZSTDMT_DCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 	/* wait for all workers */
 	for (t = 0; t < ctx->threads; t++) {
 		cwork_t *wt = &ctx->cwork[t];
-		void *p;
+		void *p = 0;
 		pthread_join(wt->pthread, &p);
 		if (p)
 			retval_of_thread = p;
