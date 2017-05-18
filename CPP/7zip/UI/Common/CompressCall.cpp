@@ -18,6 +18,7 @@
 
 #include "../FileManager/RegistryUtils.h"
 
+#include "ZipRegistry.h"
 #include "CompressCall.h"
 
 using namespace NWindows;
@@ -41,6 +42,7 @@ using namespace NWindows;
 #define kStopSwitchParsing  " --"
 #define kLargePagesDisable  " -slp-"
 
+static NCompression::CInfo m_RegistryInfo;
 extern HWND g_HWND;
 
 UString GetQuotedString(const UString &s)
@@ -176,6 +178,29 @@ static HRESULT CreateMap(const UStringVector &names,
   return S_OK;
 }
 
+int FindRegistryFormat(const UString &name)
+{
+  FOR_VECTOR (i, m_RegistryInfo.Formats)
+  {
+    const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[i];
+    if (name.IsEqualTo_NoCase(GetUnicodeString(fo.FormatID)))
+      return i;
+  }
+  return -1;
+}
+
+int FindRegistryFormatAlways(const UString &name)
+{
+  int index = FindRegistryFormat(name);
+  if (index < 0)
+  {
+    NCompression::CFormatOptions fo;
+    fo.FormatID = GetSystemString(name);
+    index = m_RegistryInfo.Formats.Add(fo);
+  }
+  return index;
+}
+
 HRESULT CompressFiles(
     const UString &arcPathPrefix,
     const UString &arcName,
@@ -186,7 +211,7 @@ HRESULT CompressFiles(
 {
   MY_TRY_BEGIN
   UString params ('a');
-  
+
   CFileMapping fileMapping;
   NSynchronization::CManualResetEvent event;
   params += kIncludeSwitch;
@@ -194,9 +219,30 @@ HRESULT CompressFiles(
 
   if (!arcType.IsEmpty())
   {
+    int index;
     params += kArchiveTypeSwitch;
     params += arcType;
+    m_RegistryInfo.Load();
+    index = FindRegistryFormatAlways(arcType);
+    if (index >= 0)
+    {
+      char temp[32];
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      params += " -m0=";
+      params += fo.Method;
+      params += " -mx";
+      ConvertUInt64ToString(fo.Level, temp);
+      params += temp;
+      if (fo.NumThreads)
+      {
+        params += " -mmt";
+        ConvertUInt64ToString(fo.NumThreads, temp);
+        params += temp;
+      }
+    }
   }
+  // for testing current params, /TR 2017-05-18
+  // ErrorMessage(params);
 
   if (email)
     params += kEmailSwitch;
