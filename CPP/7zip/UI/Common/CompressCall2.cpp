@@ -67,7 +67,7 @@ UString GetQuotedString(const UString &s)
 
 static void ErrorMessage(LPCWSTR message)
 {
-  MessageBoxW(g_HWND, message, L"7-Zip", MB_ICONERROR);
+  MessageBoxW(g_HWND, message, L"7-Zip ZS", MB_ICONERROR);
 }
 
 static void ErrorMessageHRESULT(HRESULT res)

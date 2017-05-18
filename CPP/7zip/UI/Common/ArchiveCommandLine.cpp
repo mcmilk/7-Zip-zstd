@@ -533,7 +533,7 @@ static const char *ParseMapWithPaths(
     wchar_t c = p[i];
     if (c == 0)
     {
-      // MessageBoxW(0, name, L"7-Zip", 0);
+      // MessageBoxW(0, name, L"7-Zip ZS", 0);
       AddNameToCensor(censor, name, include, commonRecursedType, wildcardMatching);
       name.Empty();
     }
