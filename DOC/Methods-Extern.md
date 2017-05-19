@@ -5,7 +5,7 @@
 History of this document
 ------------------------
 
-- see https://github.com/mcmilk/7-Zip-zstd/commits/master/DOC/Methods-Extern.txt
+- see https://github.com/mcmilk/7-Zip-zstd/commits/master/DOC/Methods-Extern.md
 
 
 Overview of defined ID ranges
@@ -33,12 +33,13 @@ License:
 LZHAM library is provided as open source software using the MIT license.
 
 7-Zip Container Header:
+``` C
  Byte _ver;
  Byte _dict_size;
  Byte _level;
  Byte _flags;
  Byte _reserved[1];
-
+```
 
 Algorithm author: Rich Geldreich
 - Homepage: https://github.com/richgel999/lzham_codec
@@ -61,10 +62,12 @@ License:
 Zstandard library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
+``` C
  Byte _ver_major; // currently 1
  Byte _ver_minor; // currently 1
  Byte _level;     // currently 1..22
  Byte _reserved[2];
+```
 - this header holds some information about the version, which was
   used for creating that 7-Zip container data
 - _ver_major should contain the major release of zstd
@@ -113,9 +116,11 @@ License:
 The Brotli library is provided as open source software using the MIT license.
 
 7-Zip Container Header (3 bytes):
+``` C
  Byte _ver_major; // currently 0
  Byte _ver_minor; // currently 6
  Byte _level;     // currently 1..11 (Brotli quality)
+```
 - this header holds some information about the version, which was
   used for creating that 7-Zip container data
 - _ver_major should contain the major release of brotli
@@ -153,10 +158,12 @@ License:
 LZ4 library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
+``` C
  Byte _ver_major;  // currently 1
  Byte _ver_minor;  // currently 7
  Byte _level;      // 1..12
  Byte _reserved[2];
+```
 - this header holds some information about the version, which was
   used for creating that 7-Zip container data
 - _ver_major should contain the major release of LZ4
@@ -199,10 +206,12 @@ License:
 LZ5 library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
+``` C
  Byte _ver_major;  // currently 1
  Byte _ver_minor;  // currently 5
  Byte _level;      // 1..15
  Byte _reserved[2];
+```
 - this header holds some information about the version, which was used for
   creating that 7-Zip container data
 - _ver_major should contain the major release of LZ5
@@ -229,8 +238,56 @@ Modes:
 - one ID should be okay for this codec
 
 Versions:
-The 7-Zip codec will be frozen to v1.5 of this codec.
+The 7-Zip LZ5 codec will be frozen to v1.5 of this codec. No updates are planned.
 
----
-End of document
-Tino Reichardt, 2017-05-19
+Range F7 11 06, Lizard
+----------------------
+
+Description:
+Lizard is an efficient compressor with very fast decompression. It achieves
+compression ratio that is comparable to zip/zlib and zstd/brotli (at low and
+medium compression levels) at decompression speed of 1000 MB/s and faster.
+
+License:
+Lizard library is provided as open source software using the BSD license.
+
+7-Zip Container Header:
+``` C
+ Byte _ver_major;  // currently 2
+ Byte _ver_minor;  // currently 0
+ Byte _level;      // 10..49
+```
+- this header holds some information about the version, which was used for
+  creating that 7-Zip container data
+- _ver_major should contain the major release of Lizard
+- _ver_minor should contain the major release of Lizard
+- _level should contain the level, the data is packed with
+
+Algorithm author: Przemyslaw Skibinski
+- Homepage: https://github.com/inikep/lizard
+- Source:   https://github.com/inikep/lizard
+
+Codec plugin author: Tino Reichardt
+- Homepage: https://mcmilk.de/projects/7-Zip-zstd/
+- Source:   https://github.com/mcmilk/7-Zip-zstd
+
+Modes:
+- threading is supported through skippable frame id 0x184D2A50U
+- all compression levels of v1.0 are supported, which means:
+  1. Level 10..19
+   - fastLZ4, designed to give better decompression speed than LZ4 i.e. over 2000 MB/s
+  2. Level 20..29
+   - LIZv1, designed to give better ratio than LZ4 keeping 75% decompression speed
+  3. Level 30..39
+   - fastLZ4 + Huffman, add Huffman coding to fastLZ4
+  4. Level 40..49
+   - LIZv1 + Huffman, give the best ratio
+   - comparable to zlib and low levels of zstd/brotli
+   - but also decompression speed of 1000 MB/s
+- the codec is used as archiv handler also, see LizardHandler.cpp
+  - this handler is does not use any additional headers, it supports the plain lizarv v1.0 format
+- future formats of this algorithm will not follow
+- one ID should be okay for this codec
+
+Versions:
+The 7-Zip Lizard codec will be kept in sync with the current releases of Lizard.
