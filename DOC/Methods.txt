@@ -128,8 +128,10 @@ List of defined IDs
 
       11 xx - reserved (Tino Reichardt)
          01 - ZSTD
+         02 - Brotli
          04 - LZ4
          05 - LZ5
+         06 - Lizard
  
 
 06.. - Crypto 

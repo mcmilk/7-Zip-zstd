@@ -1,6 +1,6 @@
 
 /**
- * Copyright (c) 2016 Tino Reichardt
+ * Copyright (c) 2016 - 2017 Tino Reichardt
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -26,7 +26,7 @@ extern "C" {
 
 /* current maximum the library will accept */
 #define LZ5MT_THREAD_MAX 128
-#define LZ5MT_LEVEL_MAX   16
+#define LZ5MT_LEVEL_MAX   15
 
 #define LZ5FMT_MAGICNUMBER     0x184D2205U
 #define LZ5FMT_MAGIC_SKIPPABLE 0x184D2A50U
@@ -55,7 +55,7 @@ typedef enum {
 #  undef ERROR   /* reported already defined on VS 2015 (Rich Geldreich) */
 #endif
 #define PREFIX(name) LZ5MT_error_##name
-#define ERROR(name) ((size_t)-PREFIX(name))
+#define ERROR(name)  ((size_t)-PREFIX(name))
 extern unsigned LZ5MT_isError(size_t code);
 extern const char* LZ5MT_getErrorString(size_t code);
 
@@ -73,7 +73,9 @@ typedef struct {
  * reading and writing functions
  * - you can use stdio functions or plain read/write
  * - just write some wrapper on your own
- * - a sample is given in 7-Zip ZS
+ * - a sample is given in 7-Zip ZS or lz5mt.c
+ * - the function should return -1 on error and zero on success
+ * - the read or written bytes will go to in->size or out->size
  */
 typedef int (fn_read) (void *args, LZ5MT_Buffer * in);
 typedef int (fn_write) (void *args, LZ5MT_Buffer * out);
@@ -95,7 +97,7 @@ typedef struct LZ5MT_CCtx_s LZ5MT_CCtx;
  * 1) allocate new cctx
  * - return cctx or zero on error
  *
- * @level   - 1 .. 16
+ * @level   - 1 .. 9
  * @threads - 1 .. LZ5MT_THREAD_MAX
  * @inputsize - if zero, becomes some optimal value for the level
  *            - if nonzero, the given value is taken
@@ -104,7 +106,7 @@ LZ5MT_CCtx *LZ5MT_createCCtx(int threads, int level, int inputsize);
 
 /**
  * 2) threaded compression
- * - return -1 on error
+ * - errorcheck via 
  */
 size_t LZ5MT_compressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr);
 
@@ -122,7 +124,7 @@ size_t LZ5MT_GetOutsizeCCtx(LZ5MT_CCtx * ctx);
 void LZ5MT_freeCCtx(LZ5MT_CCtx * ctx);
 
 /* **************************************
- * Decompression - TODO, but it's easy...
+ * Decompression
  ****************************************/
 
 typedef struct LZ5MT_DCtx_s LZ5MT_DCtx;
@@ -131,10 +133,8 @@ typedef struct LZ5MT_DCtx_s LZ5MT_DCtx;
  * 1) allocate new cctx
  * - return cctx or zero on error
  *
- * @level   - 1 .. 22
  * @threads - 1 .. LZ5MT_THREAD_MAX
- * @srclen  - the max size of src for LZ5MT_CompressCCtx()
- * @dstlen  - the min size of dst
+ * @ inputsize - used for single threaded standard lz5 format without skippable frames
  */
 LZ5MT_DCtx *LZ5MT_createDCtx(int threads, int inputsize);
 
