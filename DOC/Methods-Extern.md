@@ -12,7 +12,7 @@ Overview of defined ID ranges
 -----------------------------
 
 ID       | Codec, Author                | 7-Zip Plugin Author
----------+------------------------------+----------------------
+---------|------------------------------|----------------------
 F7 0x xx | reserved                     |
 F7 10 xx | LZHAM, Rich Geldreich        | Rich Geldreich
 F7 11 01 | ZStandard, Yann Collet       | Tino Reichardt
