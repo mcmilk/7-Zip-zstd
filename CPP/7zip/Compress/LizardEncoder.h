@@ -1,9 +1,9 @@
 // (C) 2016 Tino Reichardt
 
-#define LZ5_STATIC_LINKING_ONLY
+#define LIZARD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
-#include "../../../C/lz5/lz5.h"
+#include "../../../C/lizard/lizard.h"
 #include "../../../C/zstdmt/zstd-mt.h"
 
 #include "../../Common/Common.h"
@@ -13,7 +13,7 @@
 
 #ifndef EXTRACT_ONLY
 namespace NCompress {
-namespace NLZ5 {
+namespace NLIZARD {
 
 struct CProps
 {
@@ -21,8 +21,8 @@ struct CProps
   void clear ()
   {
     memset(this, 0, sizeof (*this));
-    _ver_major = LZ5_VERSION_MAJOR;
-    _ver_minor = LZ5_VERSION_MINOR;
+    _ver_major = LIZARD_VERSION_MAJOR;
+    _ver_minor = LIZARD_VERSION_MINOR;
     _level = 3;
   }
 
@@ -45,7 +45,7 @@ class CEncoder:
   UInt32 _inputSize;
   UInt32 _numThreads;
 
-  LZ5MT_CCtx *_ctx;
+  LIZARDMT_CCtx *_ctx;
   HRESULT CEncoder::ErrorOut(size_t code);
 
 public:

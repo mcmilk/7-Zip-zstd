@@ -4,7 +4,7 @@
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
 #include "../../../C/lz4/lz4.h"
-#include "../../../C/zstdmt/lz4mt.h"
+#include "../../../C/zstdmt/zstd-mt.h"
 
 #include "../../Windows/System.h"
 #include "../../Common/Common.h"

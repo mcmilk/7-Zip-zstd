@@ -1,9 +1,9 @@
 // (C) 2016 Tino Reichardt
 
-#define LZ5_STATIC_LINKING_ONLY
+#define LIZARD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
-#include "../../../C/lz5/lz5.h"
+#include "../../../C/lizard/lizard.h"
 #include "../../../C/zstdmt/zstd-mt.h"
 
 #include "../../Windows/System.h"
@@ -14,7 +14,7 @@
 #include "../Common/RegisterCodec.h"
 #include "../Common/ProgressMt.h"
 
-struct Lz5Stream {
+struct LizardStream {
   ISequentialInStream *inStream;
   ISequentialOutStream *outStream;
   ICompressProgressInfo *progress;
@@ -24,11 +24,11 @@ struct Lz5Stream {
   int flags;
 };
 
-extern int Lz5Read(void *Stream, LZ5MT_Buffer * in);
-extern int Lz5Write(void *Stream, LZ5MT_Buffer * in);
+extern int LizardRead(void *Stream, LIZARDMT_Buffer * in);
+extern int LizardWrite(void *Stream, LIZARDMT_Buffer * in);
 
 namespace NCompress {
-namespace NLZ5 {
+namespace NLIZARD {
 
 struct DProps
 {
@@ -36,8 +36,8 @@ struct DProps
   void clear ()
   {
     memset(this, 0, sizeof (*this));
-    _ver_major = LZ5_VERSION_MAJOR;
-    _ver_minor = LZ5_VERSION_MINOR;
+    _ver_major = LIZARD_VERSION_MAJOR;
+    _ver_minor = LIZARD_VERSION_MINOR;
     _level = 1;
   }
 
