@@ -325,7 +325,10 @@ static void *pt_decompress(void *arg)
 		if (in->size == 0)
 			break;
 
-		{
+		/* mininmal frame */
+		if (in->size < 40 && ctx->frames == 1) {
+			out->size = 1024 * 64;
+		} else {
 			/* get frame size for output buffer */
 			unsigned char *src = (unsigned char *)in->buf + 6;
 			out->size = (size_t) MEM_readLE64(src);

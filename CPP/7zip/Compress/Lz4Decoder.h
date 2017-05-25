@@ -1,10 +1,10 @@
-// (C) 2016 Tino Reichardt
+// (C) 2016 - 2017 Tino Reichardt
 
 #define LZ4_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
 #include "../../../C/lz4/lz4.h"
-#include "../../../C/zstdmt/zstd-mt.h"
+#include "../../../C/zstdmt/lz4-mt.h"
 
 #include "../../Windows/System.h"
 #include "../../Common/Common.h"

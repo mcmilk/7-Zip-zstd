@@ -10,7 +10,7 @@
 #define BROTLI_ENC_STATIC_DICT_H_
 
 #include "../common/dictionary.h"
-#include <brotli/types.h>
+#include "../types.h"
 #include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)

@@ -104,7 +104,7 @@ LZ4MT_CCtx *LZ4MT_createCCtx(int threads, int level, int inputsize)
 		return 0;
 
 	/* check level */
-	if (level < 1 || level > LZ4MT_LEVEL_MAX)
+	if (level < LZ4MT_LEVEL_MIN || level > LZ4MT_LEVEL_MAX)
 		return 0;
 
 	/* calculate chunksize for one thread */
@@ -169,7 +169,6 @@ static size_t mt_error(int rv)
 		return ERROR(memory_allocation);
 	}
 
-	/* XXX, some catch all other errors */
 	return ERROR(read_fail);
 }
 
@@ -261,9 +260,9 @@ static void *pt_compress(void *arg)
 			pthread_mutex_unlock(&ctx->read_mutex);
 			return (void *)mt_error(rv);
 		}
-
+		
 		/* eof */
-		if (in.size == 0) {
+		if (in.size == 0 && ctx->frames > 0) {
 			free(in.buf);
 			pthread_mutex_unlock(&ctx->read_mutex);
 

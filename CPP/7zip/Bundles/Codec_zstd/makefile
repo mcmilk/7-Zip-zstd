@@ -22,12 +22,12 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdRegister.obj \
 
 ZSTD_OBJS = \
+  $O\xxhash.obj \
   $O\entropy_common.obj \
   $O\fse_decompress.obj \
   $O\huf_decompress.obj \
   $O\zstd_common.obj \
   $O\zstd_decompress.obj \
-  $O\xxhash.obj \
   $O\fse_compress.obj \
   $O\huf_compress.obj \
   $O\zstd_compress.obj \
@@ -35,8 +35,8 @@ ZSTD_OBJS = \
 
 ZSTDMT_OBJS = \
   $O\threading.obj \
-  $O\zstdmt_common.obj \
-  $O\zstdmt_compress.obj \
-  $O\zstdmt_decompress.obj \
+  $O\zstd-mt_common.obj \
+  $O\zstd-mt_compress.obj \
+  $O\zstd-mt_decompress.obj \
 
 !include "../../7zip.mak"

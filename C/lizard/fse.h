@@ -31,8 +31,8 @@
    You can contact the author at :
    - Source repository : https://github.com/Cyan4973/FiniteStateEntropy
 ****************************************************************** */
-#ifndef FSE_H
-#define FSE_H
+#ifndef LIZFSE_H
+#define LIZFSE_H
 
 #if defined (__cplusplus)
 extern "C" {
@@ -48,67 +48,67 @@ extern "C" {
 /*-****************************************
 *  FSE simple functions
 ******************************************/
-/*! FSE_compress() :
+/*! LIZFSE_compress() :
     Compress content of buffer 'src', of size 'srcSize', into destination buffer 'dst'.
-    'dst' buffer must be already allocated. Compression runs faster is dstCapacity >= FSE_compressBound(srcSize).
+    'dst' buffer must be already allocated. Compression runs faster is dstCapacity >= LIZFSE_compressBound(srcSize).
     @return : size of compressed data (<= dstCapacity).
     Special values : if return == 0, srcData is not compressible => Nothing is stored within dst !!!
                      if return == 1, srcData is a single byte symbol * srcSize times. Use RLE compression instead.
-                     if FSE_isError(return), compression failed (more details using FSE_getErrorName())
+                     if LIZFSE_isError(return), compression failed (more details using LIZFSE_getErrorName())
 */
-size_t FSE_compress(void* dst, size_t dstCapacity,
+size_t LIZFSE_compress(void* dst, size_t dstCapacity,
               const void* src, size_t srcSize);
 
-/*! FSE_decompress():
+/*! LIZFSE_decompress():
     Decompress FSE data from buffer 'cSrc', of size 'cSrcSize',
     into already allocated destination buffer 'dst', of size 'dstCapacity'.
     @return : size of regenerated data (<= maxDstSize),
-              or an error code, which can be tested using FSE_isError() .
+              or an error code, which can be tested using LIZFSE_isError() .
 
-    ** Important ** : FSE_decompress() does not decompress non-compressible nor RLE data !!!
+    ** Important ** : LIZFSE_decompress() does not decompress non-compressible nor RLE data !!!
     Why ? : making this distinction requires a header.
     Header management is intentionally delegated to the user layer, which can better manage special cases.
 */
-size_t FSE_decompress(void* dst,  size_t dstCapacity,
+size_t LIZFSE_decompress(void* dst,  size_t dstCapacity,
                 const void* cSrc, size_t cSrcSize);
 
 
 /*-*****************************************
 *  Tool functions
 ******************************************/
-size_t FSE_compressBound(size_t size);       /* maximum compressed size */
+size_t LIZFSE_compressBound(size_t size);       /* maximum compressed size */
 
 /* Error Management */
-unsigned    FSE_isError(size_t code);        /* tells if a return value is an error code */
-const char* FSE_getErrorName(size_t code);   /* provides error code string (useful for debugging) */
+unsigned    LIZFSE_isError(size_t code);        /* tells if a return value is an error code */
+const char* LIZFSE_getErrorName(size_t code);   /* provides error code string (useful for debugging) */
 
 
 /*-*****************************************
 *  FSE advanced functions
 ******************************************/
-/*! FSE_compress2() :
-    Same as FSE_compress(), but allows the selection of 'maxSymbolValue' and 'tableLog'
+/*! LIZFSE_compress2() :
+    Same as LIZFSE_compress(), but allows the selection of 'maxSymbolValue' and 'tableLog'
     Both parameters can be defined as '0' to mean : use default value
     @return : size of compressed data
     Special values : if return == 0, srcData is not compressible => Nothing is stored within cSrc !!!
                      if return == 1, srcData is a single byte symbol * srcSize times. Use RLE compression.
-                     if FSE_isError(return), it's an error code.
+                     if LIZFSE_isError(return), it's an error code.
 */
-size_t FSE_compress2 (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog);
+size_t LIZFSE_compress2 (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog);
 
 
 /*-*****************************************
 *  FSE detailed API
 ******************************************/
 /*!
-FSE_compress() does the following:
+LIZFSE_compress() does the following:
 1. count symbol occurrence from source[] into table count[]
 2. normalize counters so that sum(count[]) == Power_of_2 (2^tableLog)
 3. save normalized counters to memory buffer using writeNCount()
 4. build encoding table 'CTable' from normalized counters
 5. encode the data stream using encoding table 'CTable'
 
-FSE_decompress() does the following:
+LIZFSE_decompress() does the following:
 1. read normalized counters with readNCount()
 2. build decoding table 'DTable' from normalized counters
 3. decode the data stream using decoding table 'DTable'
@@ -120,128 +120,128 @@ or to save and provide normalized distribution using external method.
 
 /* *** COMPRESSION *** */
 
-/*! FSE_count():
+/*! LIZFSE_count():
     Provides the precise count of each byte within a table 'count'.
     'count' is a table of unsigned int, of minimum size (*maxSymbolValuePtr+1).
     *maxSymbolValuePtr will be updated if detected smaller than initial value.
     @return : the count of the most frequent symbol (which is not identified).
               if return == srcSize, there is only one symbol.
-              Can also return an error code, which can be tested with FSE_isError(). */
-size_t FSE_count(unsigned* count, unsigned* maxSymbolValuePtr, const void* src, size_t srcSize);
+              Can also return an error code, which can be tested with LIZFSE_isError(). */
+size_t LIZFSE_count(unsigned* count, unsigned* maxSymbolValuePtr, const void* src, size_t srcSize);
 
-/*! FSE_optimalTableLog():
+/*! LIZFSE_optimalTableLog():
     dynamically downsize 'tableLog' when conditions are met.
     It saves CPU time, by using smaller tables, while preserving or even improving compression ratio.
     @return : recommended tableLog (necessarily <= 'maxTableLog') */
-unsigned FSE_optimalTableLog(unsigned maxTableLog, size_t srcSize, unsigned maxSymbolValue);
+unsigned LIZFSE_optimalTableLog(unsigned maxTableLog, size_t srcSize, unsigned maxSymbolValue);
 
-/*! FSE_normalizeCount():
+/*! LIZFSE_normalizeCount():
     normalize counts so that sum(count[]) == Power_of_2 (2^tableLog)
     'normalizedCounter' is a table of short, of minimum size (maxSymbolValue+1).
     @return : tableLog,
-              or an errorCode, which can be tested using FSE_isError() */
-size_t FSE_normalizeCount(short* normalizedCounter, unsigned tableLog, const unsigned* count, size_t srcSize, unsigned maxSymbolValue);
+              or an errorCode, which can be tested using LIZFSE_isError() */
+size_t LIZFSE_normalizeCount(short* normalizedCounter, unsigned tableLog, const unsigned* count, size_t srcSize, unsigned maxSymbolValue);
 
-/*! FSE_NCountWriteBound():
+/*! LIZFSE_NCountWriteBound():
     Provides the maximum possible size of an FSE normalized table, given 'maxSymbolValue' and 'tableLog'.
     Typically useful for allocation purpose. */
-size_t FSE_NCountWriteBound(unsigned maxSymbolValue, unsigned tableLog);
+size_t LIZFSE_NCountWriteBound(unsigned maxSymbolValue, unsigned tableLog);
 
-/*! FSE_writeNCount():
+/*! LIZFSE_writeNCount():
     Compactly save 'normalizedCounter' into 'buffer'.
     @return : size of the compressed table,
-              or an errorCode, which can be tested using FSE_isError(). */
-size_t FSE_writeNCount (void* buffer, size_t bufferSize, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
+              or an errorCode, which can be tested using LIZFSE_isError(). */
+size_t LIZFSE_writeNCount (void* buffer, size_t bufferSize, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
 
 
-/*! Constructor and Destructor of FSE_CTable.
-    Note that FSE_CTable size depends on 'tableLog' and 'maxSymbolValue' */
-typedef unsigned FSE_CTable;   /* don't allocate that. It's only meant to be more restrictive than void* */
-FSE_CTable* FSE_createCTable (unsigned tableLog, unsigned maxSymbolValue);
-void        FSE_freeCTable (FSE_CTable* ct);
+/*! Constructor and Destructor of LIZFSE_CTable.
+    Note that LIZFSE_CTable size depends on 'tableLog' and 'maxSymbolValue' */
+typedef unsigned LIZFSE_CTable;   /* don't allocate that. It's only meant to be more restrictive than void* */
+LIZFSE_CTable* LIZFSE_createCTable (unsigned tableLog, unsigned maxSymbolValue);
+void        LIZFSE_freeCTable (LIZFSE_CTable* ct);
 
-/*! FSE_buildCTable():
-    Builds `ct`, which must be already allocated, using FSE_createCTable().
-    @return : 0, or an errorCode, which can be tested using FSE_isError() */
-size_t FSE_buildCTable(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
+/*! LIZFSE_buildCTable():
+    Builds `ct`, which must be already allocated, using LIZFSE_createCTable().
+    @return : 0, or an errorCode, which can be tested using LIZFSE_isError() */
+size_t LIZFSE_buildCTable(LIZFSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
 
-/*! FSE_compress_usingCTable():
+/*! LIZFSE_compress_usingCTable():
     Compress `src` using `ct` into `dst` which must be already allocated.
     @return : size of compressed data (<= `dstCapacity`),
               or 0 if compressed data could not fit into `dst`,
-              or an errorCode, which can be tested using FSE_isError() */
-size_t FSE_compress_usingCTable (void* dst, size_t dstCapacity, const void* src, size_t srcSize, const FSE_CTable* ct);
+              or an errorCode, which can be tested using LIZFSE_isError() */
+size_t LIZFSE_compress_usingCTable (void* dst, size_t dstCapacity, const void* src, size_t srcSize, const LIZFSE_CTable* ct);
 
 /*!
 Tutorial :
 ----------
-The first step is to count all symbols. FSE_count() does this job very fast.
+The first step is to count all symbols. LIZFSE_count() does this job very fast.
 Result will be saved into 'count', a table of unsigned int, which must be already allocated, and have 'maxSymbolValuePtr[0]+1' cells.
 'src' is a table of bytes of size 'srcSize'. All values within 'src' MUST be <= maxSymbolValuePtr[0]
 maxSymbolValuePtr[0] will be updated, with its real value (necessarily <= original value)
-FSE_count() will return the number of occurrence of the most frequent symbol.
+LIZFSE_count() will return the number of occurrence of the most frequent symbol.
 This can be used to know if there is a single symbol within 'src', and to quickly evaluate its compressibility.
-If there is an error, the function will return an ErrorCode (which can be tested using FSE_isError()).
+If there is an error, the function will return an ErrorCode (which can be tested using LIZFSE_isError()).
 
 The next step is to normalize the frequencies.
-FSE_normalizeCount() will ensure that sum of frequencies is == 2 ^'tableLog'.
+LIZFSE_normalizeCount() will ensure that sum of frequencies is == 2 ^'tableLog'.
 It also guarantees a minimum of 1 to any Symbol with frequency >= 1.
 You can use 'tableLog'==0 to mean "use default tableLog value".
-If you are unsure of which tableLog value to use, you can ask FSE_optimalTableLog(),
+If you are unsure of which tableLog value to use, you can ask LIZFSE_optimalTableLog(),
 which will provide the optimal valid tableLog given sourceSize, maxSymbolValue, and a user-defined maximum (0 means "default").
 
-The result of FSE_normalizeCount() will be saved into a table,
+The result of LIZFSE_normalizeCount() will be saved into a table,
 called 'normalizedCounter', which is a table of signed short.
 'normalizedCounter' must be already allocated, and have at least 'maxSymbolValue+1' cells.
 The return value is tableLog if everything proceeded as expected.
 It is 0 if there is a single symbol within distribution.
-If there is an error (ex: invalid tableLog value), the function will return an ErrorCode (which can be tested using FSE_isError()).
+If there is an error (ex: invalid tableLog value), the function will return an ErrorCode (which can be tested using LIZFSE_isError()).
 
-'normalizedCounter' can be saved in a compact manner to a memory area using FSE_writeNCount().
+'normalizedCounter' can be saved in a compact manner to a memory area using LIZFSE_writeNCount().
 'buffer' must be already allocated.
-For guaranteed success, buffer size must be at least FSE_headerBound().
+For guaranteed success, buffer size must be at least LIZFSE_headerBound().
 The result of the function is the number of bytes written into 'buffer'.
-If there is an error, the function will return an ErrorCode (which can be tested using FSE_isError(); ex : buffer size too small).
+If there is an error, the function will return an ErrorCode (which can be tested using LIZFSE_isError(); ex : buffer size too small).
 
 'normalizedCounter' can then be used to create the compression table 'CTable'.
-The space required by 'CTable' must be already allocated, using FSE_createCTable().
-You can then use FSE_buildCTable() to fill 'CTable'.
-If there is an error, both functions will return an ErrorCode (which can be tested using FSE_isError()).
+The space required by 'CTable' must be already allocated, using LIZFSE_createCTable().
+You can then use LIZFSE_buildCTable() to fill 'CTable'.
+If there is an error, both functions will return an ErrorCode (which can be tested using LIZFSE_isError()).
 
-'CTable' can then be used to compress 'src', with FSE_compress_usingCTable().
-Similar to FSE_count(), the convention is that 'src' is assumed to be a table of char of size 'srcSize'
+'CTable' can then be used to compress 'src', with LIZFSE_compress_usingCTable().
+Similar to LIZFSE_count(), the convention is that 'src' is assumed to be a table of char of size 'srcSize'
 The function returns the size of compressed data (without header), necessarily <= `dstCapacity`.
 If it returns '0', compressed data could not fit into 'dst'.
-If there is an error, the function will return an ErrorCode (which can be tested using FSE_isError()).
+If there is an error, the function will return an ErrorCode (which can be tested using LIZFSE_isError()).
 */
 
 
 /* *** DECOMPRESSION *** */
 
-/*! FSE_readNCount():
+/*! LIZFSE_readNCount():
     Read compactly saved 'normalizedCounter' from 'rBuffer'.
     @return : size read from 'rBuffer',
-              or an errorCode, which can be tested using FSE_isError().
+              or an errorCode, which can be tested using LIZFSE_isError().
               maxSymbolValuePtr[0] and tableLogPtr[0] will also be updated with their respective values */
-size_t FSE_readNCount (short* normalizedCounter, unsigned* maxSymbolValuePtr, unsigned* tableLogPtr, const void* rBuffer, size_t rBuffSize);
+size_t LIZFSE_readNCount (short* normalizedCounter, unsigned* maxSymbolValuePtr, unsigned* tableLogPtr, const void* rBuffer, size_t rBuffSize);
 
-/*! Constructor and Destructor of FSE_DTable.
+/*! Constructor and Destructor of LIZFSE_DTable.
     Note that its size depends on 'tableLog' */
-typedef unsigned FSE_DTable;   /* don't allocate that. It's just a way to be more restrictive than void* */
-FSE_DTable* FSE_createDTable(unsigned tableLog);
-void        FSE_freeDTable(FSE_DTable* dt);
+typedef unsigned LIZFSE_DTable;   /* don't allocate that. It's just a way to be more restrictive than void* */
+LIZFSE_DTable* LIZFSE_createDTable(unsigned tableLog);
+void        LIZFSE_freeDTable(LIZFSE_DTable* dt);
 
-/*! FSE_buildDTable():
-    Builds 'dt', which must be already allocated, using FSE_createDTable().
-    return : 0, or an errorCode, which can be tested using FSE_isError() */
-size_t FSE_buildDTable (FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
+/*! LIZFSE_buildDTable():
+    Builds 'dt', which must be already allocated, using LIZFSE_createDTable().
+    return : 0, or an errorCode, which can be tested using LIZFSE_isError() */
+size_t LIZFSE_buildDTable (LIZFSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
 
-/*! FSE_decompress_usingDTable():
+/*! LIZFSE_decompress_usingDTable():
     Decompress compressed source `cSrc` of size `cSrcSize` using `dt`
     into `dst` which must be already allocated.
     @return : size of regenerated data (necessarily <= `dstCapacity`),
-              or an errorCode, which can be tested using FSE_isError() */
-size_t FSE_decompress_usingDTable(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, const FSE_DTable* dt);
+              or an errorCode, which can be tested using LIZFSE_isError() */
+size_t LIZFSE_decompress_usingDTable(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, const LIZFSE_DTable* dt);
 
 /*!
 Tutorial :
@@ -251,28 +251,28 @@ Tutorial :
  If block is a single repeated byte, use memset() instead )
 
 The first step is to obtain the normalized frequencies of symbols.
-This can be performed by FSE_readNCount() if it was saved using FSE_writeNCount().
+This can be performed by LIZFSE_readNCount() if it was saved using LIZFSE_writeNCount().
 'normalizedCounter' must be already allocated, and have at least 'maxSymbolValuePtr[0]+1' cells of signed short.
 In practice, that means it's necessary to know 'maxSymbolValue' beforehand,
 or size the table to handle worst case situations (typically 256).
-FSE_readNCount() will provide 'tableLog' and 'maxSymbolValue'.
-The result of FSE_readNCount() is the number of bytes read from 'rBuffer'.
+LIZFSE_readNCount() will provide 'tableLog' and 'maxSymbolValue'.
+The result of LIZFSE_readNCount() is the number of bytes read from 'rBuffer'.
 Note that 'rBufferSize' must be at least 4 bytes, even if useful information is less than that.
-If there is an error, the function will return an error code, which can be tested using FSE_isError().
+If there is an error, the function will return an error code, which can be tested using LIZFSE_isError().
 
-The next step is to build the decompression tables 'FSE_DTable' from 'normalizedCounter'.
-This is performed by the function FSE_buildDTable().
-The space required by 'FSE_DTable' must be already allocated using FSE_createDTable().
-If there is an error, the function will return an error code, which can be tested using FSE_isError().
+The next step is to build the decompression tables 'LIZFSE_DTable' from 'normalizedCounter'.
+This is performed by the function LIZFSE_buildDTable().
+The space required by 'LIZFSE_DTable' must be already allocated using LIZFSE_createDTable().
+If there is an error, the function will return an error code, which can be tested using LIZFSE_isError().
 
-`FSE_DTable` can then be used to decompress `cSrc`, with FSE_decompress_usingDTable().
+`LIZFSE_DTable` can then be used to decompress `cSrc`, with LIZFSE_decompress_usingDTable().
 `cSrcSize` must be strictly correct, otherwise decompression will fail.
-FSE_decompress_usingDTable() result will tell how many bytes were regenerated (<=`dstCapacity`).
-If there is an error, the function will return an error code, which can be tested using FSE_isError(). (ex: dst buffer too small)
+LIZFSE_decompress_usingDTable() result will tell how many bytes were regenerated (<=`dstCapacity`).
+If there is an error, the function will return an error code, which can be tested using LIZFSE_isError(). (ex: dst buffer too small)
 */
 
 
-#ifdef FSE_STATIC_LINKING_ONLY
+#ifdef LIZFSE_STATIC_LINKING_ONLY
 
 /* *** Dependency *** */
 #include "bitstream.h"
@@ -282,35 +282,35 @@ If there is an error, the function will return an error code, which can be teste
 *  Static allocation
 *******************************************/
 /* FSE buffer bounds */
-#define FSE_NCOUNTBOUND 512
-#define FSE_BLOCKBOUND(size) (size + (size>>7))
-#define FSE_COMPRESSBOUND(size) (FSE_NCOUNTBOUND + FSE_BLOCKBOUND(size))   /* Macro version, useful for static allocation */
+#define LIZFSE_NCOUNTBOUND 512
+#define LIZFSE_BLOCKBOUND(size) (size + (size>>7))
+#define LIZFSE_COMPRESSBOUND(size) (LIZFSE_NCOUNTBOUND + LIZFSE_BLOCKBOUND(size))   /* Macro version, useful for static allocation */
 
 /* It is possible to statically allocate FSE CTable/DTable as a table of unsigned using below macros */
-#define FSE_CTABLE_SIZE_U32(maxTableLog, maxSymbolValue)   (1 + (1<<(maxTableLog-1)) + ((maxSymbolValue+1)*2))
-#define FSE_DTABLE_SIZE_U32(maxTableLog)                   (1 + (1<<maxTableLog))
+#define LIZFSE_CTABLE_SIZE_U32(maxTableLog, maxSymbolValue)   (1 + (1<<(maxTableLog-1)) + ((maxSymbolValue+1)*2))
+#define LIZFSE_DTABLE_SIZE_U32(maxTableLog)                   (1 + (1<<maxTableLog))
 
 
 /* *****************************************
 *  FSE advanced API
 *******************************************/
-size_t FSE_countFast(unsigned* count, unsigned* maxSymbolValuePtr, const void* src, size_t srcSize);
-/**< same as FSE_count(), but blindly trusts that all byte values within src are <= *maxSymbolValuePtr  */
+size_t LIZFSE_countFast(unsigned* count, unsigned* maxSymbolValuePtr, const void* src, size_t srcSize);
+/**< same as LIZFSE_count(), but blindly trusts that all byte values within src are <= *maxSymbolValuePtr  */
 
-unsigned FSE_optimalTableLog_internal(unsigned maxTableLog, size_t srcSize, unsigned maxSymbolValue, unsigned minus);
-/**< same as FSE_optimalTableLog(), which used `minus==2` */
+unsigned LIZFSE_optimalTableLog_internal(unsigned maxTableLog, size_t srcSize, unsigned maxSymbolValue, unsigned minus);
+/**< same as LIZFSE_optimalTableLog(), which used `minus==2` */
 
-size_t FSE_buildCTable_raw (FSE_CTable* ct, unsigned nbBits);
-/**< build a fake FSE_CTable, designed to not compress an input, where each symbol uses nbBits */
+size_t LIZFSE_buildCTable_raw (LIZFSE_CTable* ct, unsigned nbBits);
+/**< build a fake LIZFSE_CTable, designed to not compress an input, where each symbol uses nbBits */
 
-size_t FSE_buildCTable_rle (FSE_CTable* ct, unsigned char symbolValue);
-/**< build a fake FSE_CTable, designed to compress always the same symbolValue */
+size_t LIZFSE_buildCTable_rle (LIZFSE_CTable* ct, unsigned char symbolValue);
+/**< build a fake LIZFSE_CTable, designed to compress always the same symbolValue */
 
-size_t FSE_buildDTable_raw (FSE_DTable* dt, unsigned nbBits);
-/**< build a fake FSE_DTable, designed to read an uncompressed bitstream where each symbol uses nbBits */
+size_t LIZFSE_buildDTable_raw (LIZFSE_DTable* dt, unsigned nbBits);
+/**< build a fake LIZFSE_DTable, designed to read an uncompressed bitstream where each symbol uses nbBits */
 
-size_t FSE_buildDTable_rle (FSE_DTable* dt, unsigned char symbolValue);
-/**< build a fake FSE_DTable, designed to always generate the same symbolValue */
+size_t LIZFSE_buildDTable_rle (LIZFSE_DTable* dt, unsigned char symbolValue);
+/**< build a fake LIZFSE_DTable, designed to always generate the same symbolValue */
 
 
 /* *****************************************
@@ -329,16 +329,16 @@ typedef struct
     const void* stateTable;
     const void* symbolTT;
     unsigned    stateLog;
-} FSE_CState_t;
+} LIZFSE_CState_t;
 
-static void FSE_initCState(FSE_CState_t* CStatePtr, const FSE_CTable* ct);
+static void LIZFSE_initCState(LIZFSE_CState_t* CStatePtr, const LIZFSE_CTable* ct);
 
-static void FSE_encodeSymbol(BIT_CStream_t* bitC, FSE_CState_t* CStatePtr, unsigned symbol);
+static void LIZFSE_encodeSymbol(BIT_CStream_t* bitC, LIZFSE_CState_t* CStatePtr, unsigned symbol);
 
-static void FSE_flushCState(BIT_CStream_t* bitC, const FSE_CState_t* CStatePtr);
+static void LIZFSE_flushCState(BIT_CStream_t* bitC, const LIZFSE_CState_t* CStatePtr);
 
 /**<
-These functions are inner components of FSE_compress_usingCTable().
+These functions are inner components of LIZFSE_compress_usingCTable().
 They allow the creation of custom streams, mixing multiple tables and bit sources.
 
 A key property to keep in mind is that encoding and decoding are done **in reverse direction**.
@@ -346,20 +346,20 @@ So the first symbol you will encode is the last you will decode, like a LIFO sta
 
 You will need a few variables to track your CStream. They are :
 
-FSE_CTable    ct;         // Provided by FSE_buildCTable()
+LIZFSE_CTable    ct;         // Provided by LIZFSE_buildCTable()
 BIT_CStream_t bitStream;  // bitStream tracking structure
-FSE_CState_t  state;      // State tracking structure (can have several)
+LIZFSE_CState_t  state;      // State tracking structure (can have several)
 
 
 The first thing to do is to init bitStream and state.
     size_t errorCode = BIT_initCStream(&bitStream, dstBuffer, maxDstSize);
-    FSE_initCState(&state, ct);
+    LIZFSE_initCState(&state, ct);
 
-Note that BIT_initCStream() can produce an error code, so its result should be tested, using FSE_isError();
+Note that BIT_initCStream() can produce an error code, so its result should be tested, using LIZFSE_isError();
 You can then encode your input data, byte after byte.
-FSE_encodeSymbol() outputs a maximum of 'tableLog' bits at a time.
+LIZFSE_encodeSymbol() outputs a maximum of 'tableLog' bits at a time.
 Remember decoding will be done in reverse direction.
-    FSE_encodeByte(&bitStream, &state, symbol);
+    LIZFSE_encodeByte(&bitStream, &state, symbol);
 
 At any time, you can also add any bit sequence.
 Note : maximum allowed nbBits is 25, for compatibility with 32-bits decoders
@@ -371,12 +371,12 @@ Writing data to memory is a manual operation, performed by the flushBits functio
     BIT_flushBits(&bitStream);
 
 Your last FSE encoding operation shall be to flush your last state value(s).
-    FSE_flushState(&bitStream, &state);
+    LIZFSE_flushState(&bitStream, &state);
 
 Finally, you must close the bitStream.
 The function returns the size of CStream in bytes.
 If data couldn't fit into dstBuffer, it will return a 0 ( == not compressible)
-If there is an error, it returns an errorCode (which can be tested using FSE_isError()).
+If there is an error, it returns an errorCode (which can be tested using LIZFSE_isError()).
     size_t size = BIT_closeCStream(&bitStream);
 */
 
@@ -388,37 +388,37 @@ typedef struct
 {
     size_t      state;
     const void* table;   /* precise table may vary, depending on U16 */
-} FSE_DState_t;
+} LIZFSE_DState_t;
 
 
-static void     FSE_initDState(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD, const FSE_DTable* dt);
+static void     LIZFSE_initDState(LIZFSE_DState_t* DStatePtr, BIT_DStream_t* bitD, const LIZFSE_DTable* dt);
 
-static unsigned char FSE_decodeSymbol(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD);
+static unsigned char LIZFSE_decodeSymbol(LIZFSE_DState_t* DStatePtr, BIT_DStream_t* bitD);
 
-static unsigned FSE_endOfDState(const FSE_DState_t* DStatePtr);
+static unsigned LIZFSE_endOfDState(const LIZFSE_DState_t* DStatePtr);
 
 /**<
-Let's now decompose FSE_decompress_usingDTable() into its unitary components.
+Let's now decompose LIZFSE_decompress_usingDTable() into its unitary components.
 You will decode FSE-encoded symbols from the bitStream,
 and also any other bitFields you put in, **in reverse order**.
 
 You will need a few variables to track your bitStream. They are :
 
 BIT_DStream_t DStream;    // Stream context
-FSE_DState_t  DState;     // State context. Multiple ones are possible
-FSE_DTable*   DTablePtr;  // Decoding table, provided by FSE_buildDTable()
+LIZFSE_DState_t  DState;     // State context. Multiple ones are possible
+LIZFSE_DTable*   DTablePtr;  // Decoding table, provided by LIZFSE_buildDTable()
 
 The first thing to do is to init the bitStream.
     errorCode = BIT_initDStream(&DStream, srcBuffer, srcSize);
 
 You should then retrieve your initial state(s)
 (in reverse flushing order if you have several ones) :
-    errorCode = FSE_initDState(&DState, &DStream, DTablePtr);
+    errorCode = LIZFSE_initDState(&DState, &DStream, DTablePtr);
 
 You can then decode your data, symbol after symbol.
-For information the maximum number of bits read by FSE_decodeSymbol() is 'tableLog'.
+For information the maximum number of bits read by LIZFSE_decodeSymbol() is 'tableLog'.
 Keep in mind that symbols are decoded in reverse order, like a LIFO stack (last in, first out).
-    unsigned char symbol = FSE_decodeSymbol(&DState, &DStream);
+    unsigned char symbol = LIZFSE_decodeSymbol(&DState, &DStream);
 
 You can retrieve any bitfield you eventually stored into the bitStream (in reverse order)
 Note : maximum allowed nbBits is 25, for 32-bits compatibility
@@ -426,7 +426,7 @@ Note : maximum allowed nbBits is 25, for 32-bits compatibility
 
 All above operations only read from local register (which size depends on size_t).
 Refueling the register from memory is manually performed by the reload method.
-    endSignal = FSE_reloadDStream(&DStream);
+    endSignal = LIZFSE_reloadDStream(&DStream);
 
 BIT_reloadDStream() result tells if there is still some more data to read from DStream.
 BIT_DStream_unfinished : there is still some data left into the DStream.
@@ -443,14 +443,14 @@ When it's done, verify decompression is fully completed, by checking both DStrea
 Checking if DStream has reached its end is performed by :
     BIT_endOfDStream(&DStream);
 Check also the states. There might be some symbols left there, if some high probability ones (>50%) are possible.
-    FSE_endOfDState(&DState);
+    LIZFSE_endOfDState(&DState);
 */
 
 
 /* *****************************************
 *  FSE unsafe API
 *******************************************/
-static unsigned char FSE_decodeSymbolFast(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD);
+static unsigned char LIZFSE_decodeSymbolFast(LIZFSE_DState_t* DStatePtr, BIT_DStream_t* bitD);
 /* faster, but works only if nbBits is always >= 1 (otherwise, result will be corrupted) */
 
 
@@ -460,9 +460,9 @@ static unsigned char FSE_decodeSymbolFast(FSE_DState_t* DStatePtr, BIT_DStream_t
 typedef struct {
     int deltaFindState;
     U32 deltaNbBits;
-} FSE_symbolCompressionTransform; /* total 8 bytes */
+} LIZFSE_symbolCompressionTransform; /* total 8 bytes */
 
-MEM_STATIC void FSE_initCState(FSE_CState_t* statePtr, const FSE_CTable* ct)
+MEM_STATIC void LIZFSE_initCState(LIZFSE_CState_t* statePtr, const LIZFSE_CTable* ct)
 {
     const void* ptr = ct;
     const U16* u16ptr = (const U16*) ptr;
@@ -474,13 +474,13 @@ MEM_STATIC void FSE_initCState(FSE_CState_t* statePtr, const FSE_CTable* ct)
 }
 
 
-/*! FSE_initCState2() :
-*   Same as FSE_initCState(), but the first symbol to include (which will be the last to be read)
+/*! LIZFSE_initCState2() :
+*   Same as LIZFSE_initCState(), but the first symbol to include (which will be the last to be read)
 *   uses the smallest state value possible, saving the cost of this symbol */
-MEM_STATIC void FSE_initCState2(FSE_CState_t* statePtr, const FSE_CTable* ct, U32 symbol)
+MEM_STATIC void LIZFSE_initCState2(LIZFSE_CState_t* statePtr, const LIZFSE_CTable* ct, U32 symbol)
 {
-    FSE_initCState(statePtr, ct);
-    {   const FSE_symbolCompressionTransform symbolTT = ((const FSE_symbolCompressionTransform*)(statePtr->symbolTT))[symbol];
+    LIZFSE_initCState(statePtr, ct);
+    {   const LIZFSE_symbolCompressionTransform symbolTT = ((const LIZFSE_symbolCompressionTransform*)(statePtr->symbolTT))[symbol];
         const U16* stateTable = (const U16*)(statePtr->stateTable);
         U32 nbBitsOut  = (U32)((symbolTT.deltaNbBits + (1<<15)) >> 16);
         statePtr->value = (nbBitsOut << 16) - symbolTT.deltaNbBits;
@@ -488,16 +488,16 @@ MEM_STATIC void FSE_initCState2(FSE_CState_t* statePtr, const FSE_CTable* ct, U3
     }
 }
 
-MEM_STATIC void FSE_encodeSymbol(BIT_CStream_t* bitC, FSE_CState_t* statePtr, U32 symbol)
+MEM_STATIC void LIZFSE_encodeSymbol(BIT_CStream_t* bitC, LIZFSE_CState_t* statePtr, U32 symbol)
 {
-    const FSE_symbolCompressionTransform symbolTT = ((const FSE_symbolCompressionTransform*)(statePtr->symbolTT))[symbol];
+    const LIZFSE_symbolCompressionTransform symbolTT = ((const LIZFSE_symbolCompressionTransform*)(statePtr->symbolTT))[symbol];
     const U16* const stateTable = (const U16*)(statePtr->stateTable);
     U32 nbBitsOut  = (U32)((statePtr->value + symbolTT.deltaNbBits) >> 16);
     BIT_addBits(bitC, statePtr->value, nbBitsOut);
     statePtr->value = stateTable[ (statePtr->value >> nbBitsOut) + symbolTT.deltaFindState];
 }
 
-MEM_STATIC void FSE_flushCState(BIT_CStream_t* bitC, const FSE_CState_t* statePtr)
+MEM_STATIC void LIZFSE_flushCState(BIT_CStream_t* bitC, const LIZFSE_CState_t* statePtr)
 {
     BIT_addBits(bitC, statePtr->value, statePtr->stateLog);
     BIT_flushBits(bitC);
@@ -508,41 +508,41 @@ MEM_STATIC void FSE_flushCState(BIT_CStream_t* bitC, const FSE_CState_t* statePt
 typedef struct {
     U16 tableLog;
     U16 fastMode;
-} FSE_DTableHeader;   /* sizeof U32 */
+} LIZFSE_DTableHeader;   /* sizeof U32 */
 
 typedef struct
 {
     unsigned short newState;
     unsigned char  symbol;
     unsigned char  nbBits;
-} FSE_decode_t;   /* size == U32 */
+} LIZFSE_decode_t;   /* size == U32 */
 
-MEM_STATIC void FSE_initDState(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD, const FSE_DTable* dt)
+MEM_STATIC void LIZFSE_initDState(LIZFSE_DState_t* DStatePtr, BIT_DStream_t* bitD, const LIZFSE_DTable* dt)
 {
     const void* ptr = dt;
-    const FSE_DTableHeader* const DTableH = (const FSE_DTableHeader*)ptr;
+    const LIZFSE_DTableHeader* const DTableH = (const LIZFSE_DTableHeader*)ptr;
     DStatePtr->state = BIT_readBits(bitD, DTableH->tableLog);
     BIT_reloadDStream(bitD);
     DStatePtr->table = dt + 1;
 }
 
-MEM_STATIC BYTE FSE_peekSymbol(const FSE_DState_t* DStatePtr)
+MEM_STATIC BYTE LIZFSE_peekSymbol(const LIZFSE_DState_t* DStatePtr)
 {
-    FSE_decode_t const DInfo = ((const FSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
+    LIZFSE_decode_t const DInfo = ((const LIZFSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
     return DInfo.symbol;
 }
 
-MEM_STATIC void FSE_updateState(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD)
+MEM_STATIC void LIZFSE_updateState(LIZFSE_DState_t* DStatePtr, BIT_DStream_t* bitD)
 {
-    FSE_decode_t const DInfo = ((const FSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
+    LIZFSE_decode_t const DInfo = ((const LIZFSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
     U32 const nbBits = DInfo.nbBits;
     size_t const lowBits = BIT_readBits(bitD, nbBits);
     DStatePtr->state = DInfo.newState + lowBits;
 }
 
-MEM_STATIC BYTE FSE_decodeSymbol(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD)
+MEM_STATIC BYTE LIZFSE_decodeSymbol(LIZFSE_DState_t* DStatePtr, BIT_DStream_t* bitD)
 {
-    FSE_decode_t const DInfo = ((const FSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
+    LIZFSE_decode_t const DInfo = ((const LIZFSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
     U32 const nbBits = DInfo.nbBits;
     BYTE const symbol = DInfo.symbol;
     size_t const lowBits = BIT_readBits(bitD, nbBits);
@@ -551,11 +551,11 @@ MEM_STATIC BYTE FSE_decodeSymbol(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD)
     return symbol;
 }
 
-/*! FSE_decodeSymbolFast() :
+/*! LIZFSE_decodeSymbolFast() :
     unsafe, only works if no symbol has a probability > 50% */
-MEM_STATIC BYTE FSE_decodeSymbolFast(FSE_DState_t* DStatePtr, BIT_DStream_t* bitD)
+MEM_STATIC BYTE LIZFSE_decodeSymbolFast(LIZFSE_DState_t* DStatePtr, BIT_DStream_t* bitD)
 {
-    FSE_decode_t const DInfo = ((const FSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
+    LIZFSE_decode_t const DInfo = ((const LIZFSE_decode_t*)(DStatePtr->table))[DStatePtr->state];
     U32 const nbBits = DInfo.nbBits;
     BYTE const symbol = DInfo.symbol;
     size_t const lowBits = BIT_readBitsFast(bitD, nbBits);
@@ -564,14 +564,14 @@ MEM_STATIC BYTE FSE_decodeSymbolFast(FSE_DState_t* DStatePtr, BIT_DStream_t* bit
     return symbol;
 }
 
-MEM_STATIC unsigned FSE_endOfDState(const FSE_DState_t* DStatePtr)
+MEM_STATIC unsigned LIZFSE_endOfDState(const LIZFSE_DState_t* DStatePtr)
 {
     return DStatePtr->state == 0;
 }
 
 
 
-#ifndef FSE_COMMONDEFS_ONLY
+#ifndef LIZFSE_COMMONDEFS_ONLY
 
 /* **************************************************************
 *  Tuning parameters
@@ -581,48 +581,48 @@ MEM_STATIC unsigned FSE_endOfDState(const FSE_DState_t* DStatePtr)
 *  Increasing memory usage improves compression ratio
 *  Reduced memory usage can improve speed, due to cache effect
 *  Recommended max value is 14, for 16KB, which nicely fits into Intel x86 L1 cache */
-#define FSE_MAX_MEMORY_USAGE 14
-#define FSE_DEFAULT_MEMORY_USAGE 13
+#define LIZFSE_MAX_MEMORY_USAGE 14
+#define LIZFSE_DEFAULT_MEMORY_USAGE 13
 
-/*!FSE_MAX_SYMBOL_VALUE :
+/*!LIZFSE_MAX_SYMBOL_VALUE :
 *  Maximum symbol value authorized.
 *  Required for proper stack allocation */
-#define FSE_MAX_SYMBOL_VALUE 255
+#define LIZFSE_MAX_SYMBOL_VALUE 255
 
 
 /* **************************************************************
 *  template functions type & suffix
 ****************************************************************/
-#define FSE_FUNCTION_TYPE BYTE
-#define FSE_FUNCTION_EXTENSION
-#define FSE_DECODE_TYPE FSE_decode_t
+#define LIZFSE_FUNCTION_TYPE BYTE
+#define LIZFSE_FUNCTION_EXTENSION
+#define LIZFSE_DECODE_TYPE LIZFSE_decode_t
 
 
-#endif   /* !FSE_COMMONDEFS_ONLY */
+#endif   /* !LIZFSE_COMMONDEFS_ONLY */
 
 
 /* ***************************************************************
 *  Constants
 *****************************************************************/
-#define FSE_MAX_TABLELOG  (FSE_MAX_MEMORY_USAGE-2)
-#define FSE_MAX_TABLESIZE (1U<<FSE_MAX_TABLELOG)
-#define FSE_MAXTABLESIZE_MASK (FSE_MAX_TABLESIZE-1)
-#define FSE_DEFAULT_TABLELOG (FSE_DEFAULT_MEMORY_USAGE-2)
-#define FSE_MIN_TABLELOG 5
+#define LIZFSE_MAX_TABLELOG  (LIZFSE_MAX_MEMORY_USAGE-2)
+#define LIZFSE_MAX_TABLESIZE (1U<<LIZFSE_MAX_TABLELOG)
+#define LIZFSE_MAXTABLESIZE_MASK (LIZFSE_MAX_TABLESIZE-1)
+#define LIZFSE_DEFAULT_TABLELOG (LIZFSE_DEFAULT_MEMORY_USAGE-2)
+#define LIZFSE_MIN_TABLELOG 5
 
-#define FSE_TABLELOG_ABSOLUTE_MAX 15
-#if FSE_MAX_TABLELOG > FSE_TABLELOG_ABSOLUTE_MAX
-#  error "FSE_MAX_TABLELOG > FSE_TABLELOG_ABSOLUTE_MAX is not supported"
+#define LIZFSE_TABLELOG_ABSOLUTE_MAX 15
+#if LIZFSE_MAX_TABLELOG > LIZFSE_TABLELOG_ABSOLUTE_MAX
+#  error "LIZFSE_MAX_TABLELOG > LIZFSE_TABLELOG_ABSOLUTE_MAX is not supported"
 #endif
 
-#define FSE_TABLESTEP(tableSize) ((tableSize>>1) + (tableSize>>3) + 3)
+#define LIZFSE_TABLESTEP(tableSize) ((tableSize>>1) + (tableSize>>3) + 3)
 
 
-#endif /* FSE_STATIC_LINKING_ONLY */
+#endif /* LIZFSE_STATIC_LINKING_ONLY */
 
 
 #if defined (__cplusplus)
 }
 #endif
 
-#endif  /* FSE_H */
+#endif  /* LIZFSE_H */

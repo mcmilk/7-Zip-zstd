@@ -53,7 +53,6 @@ AR_COMMON_OBJS = \
   $O\OutStreamWithCRC.obj \
   $O\ParseProperties.obj \
 
-
 7Z_OBJS = \
   $O\7zCompressionMode.obj \
   $O\7zDecode.obj \
@@ -138,9 +137,15 @@ C_OBJS = \
 !include "../../Crc.mak"
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
+  $O\BrotliDecoder.obj \
+  $O\BrotliEncoder.obj \
+  $O\BrotliRegister.obj \
   $O\Lz4Decoder.obj \
   $O\Lz4Encoder.obj \
   $O\Lz4Register.obj \
+  $O\LizardDecoder.obj \
+  $O\LizardEncoder.obj \
+  $O\LizardRegister.obj \
   $O\Lz5Decoder.obj \
   $O\Lz5Encoder.obj \
   $O\Lz5Register.obj \
@@ -148,11 +153,44 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdEncoder.obj \
   $O\ZstdRegister.obj \
 
+BROTLI_OBJS = \
+  $O/br_dictionary.obj \
+  $O/br_bit_reader.obj \
+  $O/br_decode.obj \
+  $O/br_huffman.obj \
+  $O/br_state.obj \
+  $O/br_backward_references.obj \
+  $O/br_backward_references_hq.obj \
+  $O/br_bit_cost.obj \
+  $O/br_block_splitter.obj \
+  $O/br_brotli_bit_stream.obj \
+  $O/br_cluster.obj \
+  $O/br_compress_fragment.obj \
+  $O/br_compress_fragment_two_pass.obj \
+  $O/br_dictionary_hash.obj \
+  $O/br_encode.obj \
+  $O/br_entropy_encode.obj \
+  $O/br_histogram.obj \
+  $O/br_literal_cost.obj \
+  $O/br_memory.obj \
+  $O/br_metablock.obj \
+  $O/br_static_dict.obj \
+  $O/br_utf8_util.obj \
+
+LIZARD_OBJS = \
+  $O/liz_entropy_common.obj \
+  $O/liz_fse_compress.obj \
+  $O/liz_fse_decompress.obj \
+  $O/liz_huf_compress.obj \
+  $O/liz_huf_decompress.obj \
+  $O/liz_lz5_compress.obj \
+  $O/liz_lz5_decompress.obj \
+  $O/liz_lz5frame.obj \
+
 LZ4_OBJS = \
   $O\lz4.obj \
   $O\lz4frame.obj \
   $O\lz4hc.obj \
-  $O\lz4xxhash.obj \
 
 LZ5_OBJS = \
   $O\lz5.obj \
@@ -160,12 +198,12 @@ LZ5_OBJS = \
   $O\lz5hc.obj \
 
 ZSTD_OBJS = \
+  $O\xxhash.obj \
   $O\entropy_common.obj \
   $O\fse_decompress.obj \
   $O\huf_decompress.obj \
   $O\zstd_common.obj \
   $O\zstd_decompress.obj \
-  $O\xxhash.obj \
   $O\fse_compress.obj \
   $O\huf_compress.obj \
   $O\zstd_compress.obj \
@@ -173,14 +211,20 @@ ZSTD_OBJS = \
 
 ZSTDMT_OBJS = \
   $O\threading.obj \
-  $O\lz4mt_common.obj \
-  $O\lz4mt_compress.obj \
-  $O\lz4mt_decompress.obj \
-  $O\lz5mt_common.obj \
-  $O\lz5mt_compress.obj \
-  $O\lz5mt_decompress.obj \
-  $O\zstdmt_common.obj \
-  $O\zstdmt_compress.obj \
-  $O\zstdmt_decompress.obj \
+  $O\brotli-mt_common.obj \
+  $O\brotli-mt_compress.obj \
+  $O\brotli-mt_decompress.obj \
+  $O\lizard-mt_common.obj \
+  $O\lizard-mt_compress.obj \
+  $O\lizard-mt_decompress.obj \
+  $O\lz4-mt_common.obj \
+  $O\lz4-mt_compress.obj \
+  $O\lz4-mt_decompress.obj \
+  $O\lz5-mt_common.obj \
+  $O\lz5-mt_compress.obj \
+  $O\lz5-mt_decompress.obj \
+  $O\zstd-mt_common.obj \
+  $O\zstd-mt_compress.obj \
+  $O\zstd-mt_decompress.obj \
 
 !include "../../7zip.mak"

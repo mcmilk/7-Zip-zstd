@@ -9,7 +9,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include "lz5frame.h"
+#include "lizframe.h"
 #include "lizard-mt.h"
 
 /* will be used for lib errors */
@@ -32,10 +32,10 @@ unsigned LIZARDMT_isError(size_t code)
  */
 const char *LIZARDMT_getErrorString(size_t code)
 {
-	if (LZ5F_isError(lizardmt_errcode))
-		return LZ5F_getErrorName(lizardmt_errcode);
+	if (LIZF_isError(lizardmt_errcode))
+		return LIZF_getErrorName(lizardmt_errcode);
 
-	static const char *notErrorCode = "Unspecified error lizardmt code";
+	static const char *noErrorCode = "Unspecified lizardmt error code";
 	switch ((LIZARDMT_ErrorCode) (0 - code)) {
 	case PREFIX(no_error):
 		return "No error detected";
@@ -57,6 +57,6 @@ const char *LIZARDMT_getErrorString(size_t code)
 		return "Compression library reports failure";
 	case PREFIX(maxCode):
 	default:
-		return notErrorCode;
+		return noErrorCode;
 	}
 }

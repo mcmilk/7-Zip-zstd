@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <brotli/decode.h>
+#include "decode.h"
 
 #include "brotli-mt.h"
 #include "memmt.h"
@@ -22,7 +22,7 @@
 #include "list.h"
 
 /**
- * multi threaded bro - multiple workers version
+ * multi threaded brotli - multiple workers version
  *
  * - each thread works on his own
  * - no main thread which does reading and then starting the work
@@ -143,15 +143,15 @@ static size_t mt_error(int rv)
 {
 	switch (rv) {
 	case -1:
-		return ERROR(read_fail);
+		return MT_ERROR(read_fail);
 	case -2:
-		return ERROR(canceled);
+		return MT_ERROR(canceled);
 	case -3:
-		return ERROR(memory_allocation);
+		return MT_ERROR(memory_allocation);
 	}
 
 	/* XXX, some catch all other errors */
-	return ERROR(read_fail);
+	return MT_ERROR(read_fail);
 }
 
 /**
@@ -184,30 +184,30 @@ static size_t pt_write(BROTLIMT_DCtx * ctx, struct writelist *wl)
 /**
  * pt_read - read compressed output
  */
-static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame)
+static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame, size_t * uncompressed)
 {
-	unsigned char hdrbuf[12];
+	unsigned char hdrbuf[16];
 	BROTLIMT_Buffer hdr;
 	int rv;
 
-	/* read skippable frame (8 or 12 bytes) */
+	/* read skippable frame (12 or 16 bytes) */
 	pthread_mutex_lock(&ctx->read_mutex);
 
 	/* special case, first 4 bytes already read */
 	if (ctx->frames == 0) {
 		hdr.buf = hdrbuf + 4;
-		hdr.size = 8;
+		hdr.size = 12;
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
 		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
 			return mt_error(rv);
 		}
-		if (hdr.size != 8)
+		if (hdr.size != 12)
 			goto error_read;
 		hdr.buf = hdrbuf;
 	} else {
 		hdr.buf = hdrbuf;
-		hdr.size = 12;
+		hdr.size = 16;
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
 		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
@@ -219,18 +219,26 @@ static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame)
 			in->size = 0;
 			return 0;
 		}
-		if (hdr.size != 12)
+		if (hdr.size != 16)
 			goto error_read;
 		if (MEM_readLE32((unsigned char *)hdr.buf + 0) !=
-		    BROFMT_MAGIC_SKIPPABLE)
+		    BROTLIMT_MAGIC_SKIPPABLE)
 			goto error_data;
 	}
 
 	/* check header data */
-	if (MEM_readLE32((unsigned char *)hdr.buf + 4) != 4)
+	if (MEM_readLE32((unsigned char *)hdr.buf + 4) != 8)
+		goto error_data;
+	if (MEM_readLE16((unsigned char *)hdr.buf + 12) != BROTLIMT_MAGICNUMBER)
 		goto error_data;
 
-	ctx->insize += 12;
+	/* get uncompressed size for output buffer */
+	{
+		U16 hintsize = MEM_readLE16((unsigned char *)hdr.buf + 14);
+		*uncompressed = hintsize << 16;
+	}
+
+	ctx->insize += 16;
 	/* read new inputsize */
 	{
 		size_t toRead = MEM_readLE32((unsigned char *)hdr.buf + 8);
@@ -266,13 +274,13 @@ static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame)
 
  error_data:
 	pthread_mutex_unlock(&ctx->read_mutex);
-	return ERROR(data_error);
+	return MT_ERROR(data_error);
  error_read:
 	pthread_mutex_unlock(&ctx->read_mutex);
-	return ERROR(read_fail);
+	return MT_ERROR(read_fail);
  error_nomem:
 	pthread_mutex_unlock(&ctx->read_mutex);
-	return ERROR(memory_allocation);
+	return MT_ERROR(memory_allocation);
 }
 
 static void *pt_decompress(void *arg)
@@ -286,6 +294,7 @@ static void *pt_decompress(void *arg)
 	for (;;) {
 		struct list_head *entry;
 		BROTLIMT_Buffer *out;
+		int rv;
 
 		/* allocate space for new output */
 		pthread_mutex_lock(&ctx->write_mutex);
@@ -299,7 +308,7 @@ static void *pt_decompress(void *arg)
 			wl = (struct writelist *)
 			    malloc(sizeof(struct writelist));
 			if (!wl) {
-				result = ERROR(memory_allocation);
+				result = MT_ERROR(memory_allocation);
 				goto error_unlock;
 			}
 			wl->out.buf = 0;
@@ -311,7 +320,7 @@ static void *pt_decompress(void *arg)
 		out = &wl->out;
 
 		/* zero should not happen here! */
-		result = pt_read(ctx, in, &wl->frame);
+		result = pt_read(ctx, in, &wl->frame, &wl->out.size);
 		if (BROTLIMT_isError(result)) {
 			list_move(&wl->node, &ctx->writelist_free);
 			goto error_lock;
@@ -320,43 +329,24 @@ static void *pt_decompress(void *arg)
 		if (in->size == 0)
 			break;
 
-		{
-			/* get frame size for output buffer */
-			unsigned char *src = (unsigned char *)in->buf + 6;
-			out->size = (size_t) MEM_readLE64(src);
-		}
-
 		if (out->allocated < out->size) {
 			if (out->allocated)
 				out->buf = realloc(out->buf, out->size);
 			else
 				out->buf = malloc(out->size);
 			if (!out->buf) {
-				result = ERROR(memory_allocation);
+				result = MT_ERROR(memory_allocation);
 				goto error_lock;
 			}
 			out->allocated = out->size;
 		}
-/*
- *  size_t encoded_size,
- *  const uint8_t encoded_buffer[BROTLI_ARRAY_PARAM(encoded_size)],
- *  size_t* decoded_size,
- *  uint8_t decoded_buffer[BROTLI_ARRAY_PARAM(*decoded_size)]);
- */
-		result =
+
+		rv =
 		    BrotliDecoderDecompress(in->size, in->buf, &out->size,
 					    out->buf);
 
-#if 0
-		if (BROF_isError(result)) {
-			bromt_errcode = result;
-			result = ERROR(compression_library);
-			goto error_lock;
-		}
-#endif
-
-		if (result != 0) {
-			result = ERROR(frame_decompress);
+		if (rv != BROTLI_DECODER_RESULT_SUCCESS) {
+			result = MT_ERROR(frame_decompress);
 			goto error_lock;
 		}
 
@@ -386,113 +376,6 @@ static void *pt_decompress(void *arg)
 	return (void *)result;
 }
 
-/* single threaded */
-static size_t st_decompress(void *arg)
-{
-	BROTLIMT_DCtx *ctx = (BROTLIMT_DCtx *) arg;
-	BrotliDecoderResult nextToLoad = 0;
-	cwork_t *w = &ctx->cwork[0];
-	BROTLIMT_Buffer Out;
-	BROTLIMT_Buffer *out = &Out;
-	BROTLIMT_Buffer *in = &w->in;
-	void *magic = in->buf;
-	size_t pos = 0;
-	int rv;
-
-	/* allocate space for input buffer */
-	in->size = ctx->inputsize;
-	in->buf = malloc(in->size);
-	if (!in->buf)
-		return ERROR(memory_allocation);
-
-	/* allocate space for output buffer */
-	out->size = ctx->inputsize;
-	out->buf = malloc(out->size);
-	if (!out->buf) {
-		free(in->buf);
-		return ERROR(memory_allocation);
-	}
-
-	/* we have read already 4 bytes */
-	in->size = 4;
-	memcpy(in->buf, magic, in->size);
-
-#if 0
-	nextToLoad =
-	    BROF_decompress(w->dctx, out->buf, &pos, in->buf, &in->size, 0);
-	if (BROF_isError(nextToLoad)) {
-		free(in->buf);
-		free(out->buf);
-		return ERROR(compression_library);
-	}
-#endif
-
-	for (; nextToLoad; pos = 0) {
-		if (nextToLoad > ctx->inputsize)
-			nextToLoad = ctx->inputsize;
-
-		/* read new input */
-		in->size = nextToLoad;
-		rv = ctx->fn_read(ctx->arg_read, in);
-		if (rv != 0) {
-			free(in->buf);
-			free(out->buf);
-			return mt_error(rv);
-		}
-
-		/* done, eof reached */
-		if (in->size == 0)
-			break;
-
-		/* still to read, or still to flush */
-		while ((pos < in->size) || (out->size == ctx->inputsize)) {
-			size_t remaining = in->size - pos;
-			out->size = ctx->inputsize;
-
-/**
- * BrotliDecoderResult BrotliDecoderDecompress(
- *  size_t encoded_size,
- *  const uint8_t encoded_buffer[BROTLI_ARRAY_PARAM(encoded_size)],
- *  size_t* decoded_size,
- *  uint8_t decoded_buffer[BROTLI_ARRAY_PARAM(*decoded_size)]);
- */
-
-			/* decompress */
-#if 0
-			nextToLoad =
-			    BrotliDecoderDecompress(out->buf, &out->size,
-						    (unsigned char *)in->buf +
-						    pos, &remaining, NULL);
-			if (BROF_isError(nextToLoad)) {
-				free(in->buf);
-				free(out->buf);
-				return ERROR(compression_library);
-			}
-#endif
-
-			/* have some output */
-			if (out->size) {
-				rv = ctx->fn_write(ctx->arg_write, out);
-				if (rv != 0) {
-					free(in->buf);
-					free(out->buf);
-					return mt_error(rv);
-				}
-			}
-
-			if (nextToLoad == 0)
-				break;
-
-			pos += remaining;
-		}
-	}
-
-	/* no error */
-	free(out->buf);
-	free(in->buf);
-	return 0;
-}
-
 size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 {
 	unsigned char buf[4];
@@ -502,7 +385,7 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	void *retval_of_thread = 0;
 
 	if (!ctx)
-		return ERROR(compressionParameter_unsupported);
+		return MT_ERROR(compressionParameter_unsupported);
 
 	/* init reading and writing functions */
 	ctx->fn_read = rdwr->fn_read;
@@ -510,25 +393,18 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	ctx->arg_read = rdwr->arg_read;
 	ctx->arg_write = rdwr->arg_write;
 
-	/* check for BROFMT_MAGIC_SKIPPABLE */
+	/* check for BROTLIMT_MAGIC_SKIPPABLE */
 	in->buf = buf;
 	in->size = 4;
 	rv = ctx->fn_read(ctx->arg_read, in);
 	if (rv != 0)
 		return mt_error(rv);
 	if (in->size != 4)
-		return ERROR(data_error);
+		return MT_ERROR(data_error);
 
 	/* single threaded with unknown sizes */
-	if (MEM_readLE32(buf) != BROFMT_MAGIC_SKIPPABLE) {
-
-		/* look for correct magic */
-		if (MEM_readLE32(buf) != BROFMT_MAGICNUMBER)
-			return ERROR(data_error);
-
-		/* decompress single threaded */
-		return st_decompress(ctx);
-	}
+	if (MEM_readLE32(buf) != BROTLIMT_MAGIC_SKIPPABLE)
+		return MT_ERROR(data_error);
 
 	/* mark unused */
 	in->buf = 0;

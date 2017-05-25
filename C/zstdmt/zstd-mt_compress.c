@@ -79,7 +79,6 @@ struct ZSTDMT_CCtx_s {
 
 	/* error handling */
 	pthread_mutex_t error_mutex;
-	size_t zstd_errcode;
 	size_t zstdmt_errcode;
 
 	/* lists for writing queue */
@@ -107,7 +106,7 @@ ZSTDMT_CCtx *ZSTDMT_createCCtx(int threads, int level, int inputsize)
 		goto err_ctx;
 
 	/* check level */
-	if (level < 1 || level > ZSTDMT_LEVEL_MAX)
+	if (level < ZSTDMT_LEVEL_MIN || level > ZSTDMT_LEVEL_MAX)
 		goto err_ctx;
 
 	/* calculate chunksize for one thread */
@@ -173,7 +172,6 @@ static size_t mt_error(int rv)
 		return ZSTDMT_ERROR(memory_allocation);
 	}
 
-	/* XXX, some catch all other errors */
 	return ZSTDMT_ERROR(read_fail);
 }
 
@@ -270,7 +268,7 @@ static void *pt_compress(void *arg)
 		}
 
 		/* eof */
-		if (in.size == 0) {
+		if (in.size == 0 && ctx->frames > 0) {
 			free(in.buf);
 			pthread_mutex_unlock(&ctx->read_mutex);
 

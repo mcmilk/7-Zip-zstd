@@ -27,6 +27,8 @@ OBJS = \
   $(COMPRESS_OBJS) \
   $(CRYPTO_OBJS) \
   $(C_OBJS) \
+  $(BROTLI_OBJS) \
+  $(LIZARD_OBJS) \
   $(LZ4_OBJS) \
   $(LZ5_OBJS) \
   $(ZSTD_OBJS) \
@@ -176,6 +178,16 @@ $(C_OBJS): ../../../../C/$(*B).c
 	$(COMPL_O2)
 !ENDIF
 
+!IFDEF BROTLI_OBJS
+$(BROTLI_OBJS): ../../../../C/brotli/$(*B).c
+	$(COMPL_O2)
+!ENDIF
+
+!IFDEF LIZARD_OBJS
+$(LIZARD_OBJS): ../../../../C/lizard/$(*B).c
+	$(COMPL_O2)
+!ENDIF
+
 !IFDEF LZ4_OBJS
 $(LZ4_OBJS): ../../../../C/lz4/$(*B).c
 	$(COMPL_O2)
@@ -257,15 +269,21 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 {../../Crypto}.cpp{$O}.obj::
 	$(COMPLB_O2)
 {../../../../C}.c{$O}.obj::
-	$(CCOMPLB)
+	$(COMPLB_O2)
+{../../../../C/brotli}.c{$O}.obj::
+	$(COMPLB_O2)
+{../../../../C/lizard}.c{$O}.obj::
+	$(COMPLB_O2)
 {../../../../C/lz4}.c{$O}.obj::
-	$(CCOMPLB)
+	$(COMPLB_O2)
 {../../../../C/lz5}.c{$O}.obj::
-	$(CCOMPLB)
+	$(COMPLB_O2)
 {../../../../C/zstd}.c{$O}.obj::
-	$(CCOMPLB)
+	$(COMPLB_O2)
 {../../../../C/zstdmt}.c{$O}.obj::
-	$(CCOMPLB) \
+	$(COMPLB_O2) \
+	-I ../../../../C/brotli \
+	-I ../../../../C/lizard \
 	-I ../../../../C/lz4 \
 	-I ../../../../C/lz5 \
 	-I ../../../../C/zstd

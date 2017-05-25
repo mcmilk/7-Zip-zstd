@@ -11,7 +11,7 @@
 
 #include "../common/constants.h"
 #include "../common/dictionary.h"
-#include <brotli/types.h>
+#include "../types.h"
 #include "./bit_reader.h"
 #include "./huffman.h"
 #include "./port.h"

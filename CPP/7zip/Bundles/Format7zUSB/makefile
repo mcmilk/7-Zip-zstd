@@ -152,7 +152,6 @@ LZ4_OBJS = \
   $O\lz4.obj \
   $O\lz4frame.obj \
   $O\lz4hc.obj \
-  $O\lz4xxhash.obj \
 
 LZ5_OBJS = \
   $O\lz5.obj \
@@ -160,12 +159,12 @@ LZ5_OBJS = \
   $O\lz5hc.obj \
 
 ZSTD_OBJS = \
+  $O\xxhash.obj \
   $O\entropy_common.obj \
   $O\fse_decompress.obj \
   $O\huf_decompress.obj \
   $O\zstd_common.obj \
   $O\zstd_decompress.obj \
-  $O\xxhash.obj \
   $O\fse_compress.obj \
   $O\huf_compress.obj \
   $O\zstd_compress.obj \
@@ -173,14 +172,14 @@ ZSTD_OBJS = \
 
 ZSTDMT_OBJS = \
   $O\threading.obj \
-  $O\lz4mt_common.obj \
-  $O\lz4mt_compress.obj \
-  $O\lz4mt_decompress.obj \
-  $O\lz5mt_common.obj \
-  $O\lz5mt_compress.obj \
-  $O\lz5mt_decompress.obj \
-  $O\zstdmt_common.obj \
-  $O\zstdmt_compress.obj \
-  $O\zstdmt_decompress.obj \
+  $O\lz4-mt_common.obj \
+  $O\lz4-mt_compress.obj \
+  $O\lz4-mt_decompress.obj \
+  $O\lz5-mt_common.obj \
+  $O\lz5-mt_compress.obj \
+  $O\lz5-mt_decompress.obj \
+  $O\zstd-mt_common.obj \
+  $O\zstd-mt_compress.obj \
+  $O\zstd-mt_decompress.obj \
 
 !include "../../7zip.mak"

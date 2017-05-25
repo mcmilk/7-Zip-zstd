@@ -63,8 +63,7 @@ You can contact the author at :
 #include "lz4.h"
 #include "lz4hc.h"
 #define XXH_STATIC_LINKING_ONLY
-#define XXH_NAMESPACE lz
-#include "xxhash.h"
+#include "../zstd/xxhash.h"
 
 
 /*-************************************

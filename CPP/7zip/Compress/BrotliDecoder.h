@@ -1,9 +1,9 @@
-// (C) 2016 Tino Reichardt
+// (C) 2017 Tino Reichardt
 
 #define BROTLI_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
-#include "../../../C/brotli/brotli.h"
+#include "../../../C/brotli/decode.h"
 #include "../../../C/zstdmt/brotli-mt.h"
 
 #include "../../Windows/System.h"
@@ -44,7 +44,6 @@ struct DProps
   Byte _ver_major;
   Byte _ver_minor;
   Byte _level;
-  Byte _reserved[2];
 };
 
 class CDecoder:public ICompressCoder,

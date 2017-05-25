@@ -12,8 +12,8 @@
 #ifndef BROTLI_ENC_ENCODE_H_
 #define BROTLI_ENC_ENCODE_H_
 
-#include <brotli/port.h>
-#include <brotli/types.h>
+#include "port.h"
+#include "types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -35,11 +35,6 @@ extern "C" {
 #define BROTLI_MIN_QUALITY 0
 /** Maximal value for ::BROTLI_PARAM_QUALITY parameter. */
 #define BROTLI_MAX_QUALITY 11
-
-BROTLI_DEPRECATED static const int kBrotliMinWindowBits =
-    BROTLI_MIN_WINDOW_BITS;
-BROTLI_DEPRECATED static const int kBrotliMaxWindowBits =
-    BROTLI_MAX_WINDOW_BITS;
 
 /** Options for ::BROTLI_PARAM_MODE parameter. */
 typedef enum BrotliEncoderMode {
@@ -227,20 +222,6 @@ BROTLI_ENC_API BrotliEncoderState* BrotliEncoderCreateInstance(
  * @param state decoder instance to be cleaned up and deallocated
  */
 BROTLI_ENC_API void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
-
-/* Calculates maximum input size that can be processed at once. */
-BROTLI_DEPRECATED BROTLI_ENC_API size_t BrotliEncoderInputBlockSize(
-    BrotliEncoderState* state);
-
-/* Copies the given input data to the internal ring buffer. */
-BROTLI_DEPRECATED BROTLI_ENC_API void BrotliEncoderCopyInputToRingBuffer(
-    BrotliEncoderState* state, const size_t input_size,
-    const uint8_t* input_buffer);
-
-/* Processes the accumulated input. */
-BROTLI_DEPRECATED BROTLI_ENC_API BROTLI_BOOL BrotliEncoderWriteData(
-    BrotliEncoderState* state, const BROTLI_BOOL is_last,
-    const BROTLI_BOOL force_flush, size_t* out_size, uint8_t** output);
 
 /**
  * Prepends imaginary LZ77 dictionary.

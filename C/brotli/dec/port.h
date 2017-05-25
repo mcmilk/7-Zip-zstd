@@ -30,7 +30,7 @@
 #include <stdio.h>
 #endif
 
-#include <brotli/port.h>
+#include "../port.h"
 
 #if defined(__arm__) || defined(__thumb__) || \
     defined(_M_ARM) || defined(_M_ARMT) || defined(__ARM64_ARCH_8__)

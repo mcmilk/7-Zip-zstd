@@ -1,15 +1,18 @@
 
 # README
 
-This is the Github Page of 7-Zip with support for **zstd**, short for
+This is the Github Page of 7-Zip ZS with support of additional Codecs.
+
+for **zstd**, short for
 Zstandard, which is a fast lossless compression algorithm, targeting
 real-time compression scenarios at zlib-level compression ratio.
+
 LZ4 and LZ5 compression with multithreading is also included.
 The library used therefore is located here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
 
 You can install it in two ways:
 
-1. full setup with ZStandard additions within the GUI and an modified
+1. full setup with [ZStandard] additions within the GUI and an modified
    Explorer context menu
 2. just the codec plugin, which goes to your existing 7-Zip installation
 
@@ -17,13 +20,13 @@ You can install it in two ways:
 
 ### Installation (via setup)
 1. download the setup from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases)
-2. install it, like the default 7-Zip
+2. install it, like the default [7-Zip]
 3. use it ;)
 4. you may check, if the 7-Zip can deal with ZStandard via this command: `7z.exe i`
 
 The output should look like this:
 ```
-7-Zip [64] 16.04 : Copyright (c) 1999-2016 Igor Pavlov : 2016-06-26
+7-Zip 17.00 ZS v1.2.0 R3 (x64) : Copyright (c) 1999-2017 Igor Pavlov, 2016-2017 Tino Reichardt : 2017-05-25
 
 
 Libs:
@@ -60,17 +63,20 @@ Codecs:
  0   D    40302 Rar2
  0   D    40303 Rar3
  0   D    40305 Rar5
- 0  ED  4F71104 LZ4  <-- NEW
- 0  ED  4F71105 LZ5  <-- NEW
- 0  ED  4F71101 ZSTD  <-- NEW
+ 0  ED  4F71102 BROTLI
+ 0  ED  4F71104 LZ4
+ 0  ED  4F71106 LIZARD
+ 0  ED  4F71105 LZ5
+ 0  ED  4F71101 ZSTD
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
 ```
 
 ### Usage and features of the full installation
 
-- compression / decompression for lz4, lz5 and zstd
+- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard]
 - included lzip decompression support, patch from http://download.savannah.gnu.org/releases/lzip/7zip/
+- right click and ```compress to archive``` will use the last selected method (codec, level and threads)
 
 ```
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
@@ -112,14 +118,16 @@ Codecs:
 
 The output should look like this:
 ```
-7-Zip [64] 16.04 : Copyright (c) 1999-2016 Igor Pavlov : 2016-10-04
+7-Zip 17.00 beta (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2017-04-29
 
 
 Libs:
- 0  C:\Program Files\7-Zip\7z.dll
- 1  C:\Program Files\7-Zip\Codecs\lz4-x64.dll
- 2  C:\Program Files\7-Zip\Codecs\lz5-x64.dll
- 3  C:\Program Files\7-Zip\Codecs\zstd-x64.dll
+ 0  c:\Program Files\7-Zip\7z.dll
+ 1  c:\Program Files\7-Zip\Codecs\brotli-x64.dll
+ 2  c:\Program Files\7-Zip\Codecs\lizard-x64.dll
+ 3  c:\Program Files\7-Zip\Codecs\lz4-x64.dll
+ 4  c:\Program Files\7-Zip\Codecs\lz5-x64.dll
+ 5  c:\Program Files\7-Zip\Codecs\zstd-x64.dll
 
 ...
 
@@ -147,9 +155,11 @@ Codecs:
  0   D    40305 Rar5
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
- 1  ED  4F71104 LZ4 -> NEW
- 2  ED  4F71105 LZ5 -> NEW
- 3  ED  4F71101 ZSTD -> NEW
+ 1  ED  4F71102 BROTLI
+ 2  ED  4F71106 LIZARD
+ 3  ED  4F71104 LZ4
+ 4  ED  4F71105 LZ5
+ 5  ED  4F71101 ZSTD
 ```
 
 ### Usage (codec plugin)
@@ -165,13 +175,6 @@ Codecs:
 ```
 - you can only create .7z files with zstd compression, but you can not create .zst files :/
 
-## Links
-- [ZStandard Homepage](https://github.com/Cyan4973/zstd)
-- [7-Zip ZStandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
-- Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
-  - result, will not be included :(
-- [Support me](https://www.paypal.me/TinoReichardt) - when you want
-
 ## Benchmarks with i7-3632QM
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
@@ -180,12 +183,29 @@ Codecs:
 
 - the same as the original 7-Zip, which means GNU GPL
 
+## Links
+
+- [7-Zip Homepage](http://www.7-zip.org/)
+- [7-Zip ZStandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
+- Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
+  - result, will not be included :(
+- [Support me](https://www.paypal.me/TinoReichardt) - when you want
 
 ## Version Information
 
 - 7-Zip ZS Version 17.00
-  - ZStandard Version 1.2.0
-  - LZ4 Version 1.7.5
-  - LZ5 Version 1.5
+  - [Brotli] Version 0.6.0
+  - [Lizard] Version 2.0
+  - [LZ4] Version 1.7.5
+  - [LZ5] Version 1.5
+  - [ZStandard] Version 1.2.0
 
-/TR 2017-05-12
+/TR 2017-05-25
+
+[7-Zip]:http://www.7-zip.org/
+[Brotli]:https://github.com/google/brotli/
+[LZ4]:https://github.com/lz4/lz4/
+[LZ5]:https://github.com/inikep/lz5/
+[ZStandard]:https://github.com/facebook/zstd/
+[Lizard]:https://github.com/inikep/lizard/
+

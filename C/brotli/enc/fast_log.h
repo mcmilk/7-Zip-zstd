@@ -11,8 +11,8 @@
 
 #include <math.h>
 
-#include <brotli/types.h>
-#include <brotli/port.h>
+#include "../types.h"
+#include "../port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {

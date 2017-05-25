@@ -35,7 +35,7 @@ const char *LZ4MT_getErrorString(size_t code)
 	if (LZ4F_isError(lz4mt_errcode))
 		return LZ4F_getErrorName(lz4mt_errcode);
 
-	static const char *notErrorCode = "Unspecified error lz4mt code";
+	static const char *noErrorCode = "Unspecified lz4mt error code";
 	switch ((LZ4MT_ErrorCode) (0 - code)) {
 	case PREFIX(no_error):
 		return "No error detected";
@@ -57,6 +57,6 @@ const char *LZ4MT_getErrorString(size_t code)
 		return "Compression library reports failure";
 	case PREFIX(maxCode):
 	default:
-		return notErrorCode;
+		return noErrorCode;
 	}
 }

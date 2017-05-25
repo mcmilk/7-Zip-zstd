@@ -12,8 +12,8 @@
 #include <assert.h>
 #include <string.h>  /* memcpy */
 
-#include <brotli/port.h>
-#include <brotli/types.h>
+#include "../port.h"
+#include "../types.h"
 
 #if defined OS_LINUX || defined OS_CYGWIN
 #include <endian.h>

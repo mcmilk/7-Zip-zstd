@@ -25,12 +25,14 @@ LZ5_OBJS = \
   $O\lz5.obj \
   $O\lz5frame.obj \
   $O\lz5hc.obj \
-  $O\lz5xxhash.obj \
+
+ZSTD_OBJS = \
+  $O\xxhash.obj \
 
 ZSTDMT_OBJS = \
-  $O\lz5mt_common.obj \
-  $O\lz5mt_compress.obj \
-  $O\lz5mt_decompress.obj \
   $O\threading.obj \
+  $O\lz5-mt_common.obj \
+  $O\lz5-mt_compress.obj \
+  $O\lz5-mt_decompress.obj \
 
 !include "../../7zip.mak"

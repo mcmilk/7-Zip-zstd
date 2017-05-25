@@ -1,4 +1,4 @@
-// (C) 2016 Tino Reichardt
+// (C) 2017 Tino Reichardt
 
 #include "StdAfx.h"
 #include "BrotliEncoder.h"
@@ -52,7 +52,6 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         if (prop.vt != VT_UI4)
           return E_INVALIDARG;
 
-        /* level 1..22 */
         _props._level = static_cast < Byte > (prop.ulVal);
         Byte mylevel = static_cast < Byte > (BROTLIMT_LEVEL_MAX);
         if (_props._level > mylevel)

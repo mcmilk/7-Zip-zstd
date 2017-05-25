@@ -11,7 +11,7 @@
 
 #include <string.h>  /* memcpy */
 
-#include <brotli/types.h>
+#include "../types.h"
 #include "./memory.h"
 #include "./port.h"
 #include "./quality.h"

@@ -98,6 +98,8 @@ enum EMethodID
 {
   kCopy,
   kZSTD,
+  kBROTLI,
+  kLIZARD,
   kLZ4,
   kLZ5,
   kLZMA,
@@ -113,6 +115,8 @@ static LPCSTR const kMethodsNames[] =
 {
     "Copy"
   , "ZSTD"
+  , "BROTLI"
+  , "LIZARD"
   , "LZ4"
   , "LZ5"
   , "LZMA"
@@ -129,6 +133,16 @@ static const EMethodID g_ZstdMethods[] =
   kZSTD
 };
 
+static const EMethodID g_BrotliMethods[] =
+{
+  kBROTLI
+};
+
+static const EMethodID g_LizardMethods[] =
+{
+  kLIZARD
+};
+
 static const EMethodID g_Lz4Methods[] =
 {
   kLZ4
@@ -138,9 +152,12 @@ static const EMethodID g_Lz5Methods[] =
 {
   kLZ5
 };
+
 static const EMethodID g_7zMethods[] =
 {
   kZSTD,
+  kBROTLI,
+  kLIZARD,
   kLZ4,
   kLZ5,
   kLZMA2,
@@ -200,7 +217,7 @@ struct CFormatInfo
   bool Solid;
   bool MultiThread;
   bool SFX;
-  
+
   bool Encrypt;
   bool EncryptFileNames;
 };
@@ -246,19 +263,31 @@ static const CFormatInfo g_Formats[] =
     false, false, true, false, false, false
   },
   {
-    "zstd",
+    "zstd", /* 6 */
     (1 << 0) | (1 << 1) | (1 << 5) | (1 << 11) | (1 << 17) | (1 << 22),
     METHODS_PAIR(g_ZstdMethods),
     false, false, true, false, false, false
   },
   {
-    "lz4",
+    "Brotli",
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 11),
+    METHODS_PAIR(g_BrotliMethods),
+    false, false, true, false, false, false
+  },
+  {
+    "Lizard", /* 10..19 / 20..29 / .... */
+    (1 << 10) | (1 << 11) | (1 << 13) | (1 << 15) | (1 << 17) | (1 << 19),
+    METHODS_PAIR(g_LizardMethods),
+    false, false, true, false, false, false
+  },
+  {
+    "LZ4",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 12),
     METHODS_PAIR(g_Lz4Methods),
     false, false, true, false, false, false
   },
   {
-    "lz5",
+    "LZ5",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15),
     METHODS_PAIR(g_Lz5Methods),
     false, false, true, false, false, false
@@ -1052,6 +1081,7 @@ void CCompressDialog::SetLevel()
 {
   UInt32 level = GetLevel2();
   UInt32 LevelsMask;
+  UInt32 LevelsStart = 0;
   UInt32 langID = 0;
 
   SetMethod(GetMethodID());
@@ -1061,24 +1091,29 @@ void CCompressDialog::SetLevel()
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      if (fo.Level <= 22)
+      if (fo.Level <= 49)
         level = fo.Level;
       else
         level = 5;
     }
   }
-  
+
   m_Level.ResetContent();
   if (GetMethodID() == kZSTD)
     LevelsMask = g_Formats[6].LevelsMask;
-  else if (GetMethodID() == kLZ4)
+  else if (GetMethodID() == kBROTLI)
     LevelsMask = g_Formats[7].LevelsMask;
-  else if (GetMethodID() == kLZ5)
+  else if (GetMethodID() == kLIZARD) {
     LevelsMask = g_Formats[8].LevelsMask;
+    LevelsStart = 10;
+  } else if (GetMethodID() == kLZ4)
+    LevelsMask = g_Formats[9].LevelsMask;
+  else if (GetMethodID() == kLZ5)
+    LevelsMask = g_Formats[10].LevelsMask;
   else
     LevelsMask = g_Formats[GetStaticFormatIndex()].LevelsMask;
 
-  for (unsigned i = 0; i <= 22; i++)
+  for (unsigned i = LevelsStart; i <= 49; i++)
   {
     TCHAR s[40];
     TCHAR t[50] = { TEXT('L'), TEXT('e'), TEXT('v'), TEXT('e'), TEXT('l'), TEXT(' '), 0 };

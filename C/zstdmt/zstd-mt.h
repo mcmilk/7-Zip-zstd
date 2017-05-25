@@ -25,6 +25,7 @@ extern "C" {
 #include <stddef.h>   /* size_t */
 
 #define ZSTDMT_THREAD_MAX 128
+#define ZSTDMT_LEVEL_MIN    1
 #define ZSTDMT_LEVEL_MAX   22
 
 /* zstd magic values */

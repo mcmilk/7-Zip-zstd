@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <stdio.h>  /* printf */
 
-#include <brotli/types.h>
+#include "../types.h"
 #include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)

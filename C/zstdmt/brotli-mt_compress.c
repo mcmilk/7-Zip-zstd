@@ -13,9 +13,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
-#include <brotli/encode.h>
+#include "encode.h"
 
 #include "brotli-mt.h"
 #include "memmt.h"
@@ -23,7 +22,7 @@
 #include "list.h"
 
 /**
- * multi threaded bro - multiple workers version
+ * multi threaded brotli - multiple workers version
  *
  * - each thread works on his own
  * - no main thread which does reading and then starting the work
@@ -49,8 +48,6 @@ struct writelist {
 };
 
 struct BROTLIMT_CCtx_s {
-
-	/* level: 1..22 */
 	int level;
 
 	/* threads: 1..BROTLIMT_THREAD_MAX */
@@ -103,14 +100,14 @@ BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize)
 		return 0;
 
 	/* check level */
-	if (level < 1 || level > BROTLIMT_LEVEL_MAX)
+	if (level < BROTLIMT_LEVEL_MIN || level > BROTLIMT_LEVEL_MAX)
 		return 0;
 
 	/* calculate chunksize for one thread */
 	if (inputsize)
 		ctx->inputsize = inputsize;
 	else
-		ctx->inputsize = 1024 * 1024 * level;
+		ctx->inputsize = 1024 * 1024 * (level ? level : 1);
 
 	/* setup ctx */
 	ctx->level = level;
@@ -152,15 +149,14 @@ static size_t mt_error(int rv)
 {
 	switch (rv) {
 	case -1:
-		return ERROR(read_fail);
+		return MT_ERROR(read_fail);
 	case -2:
-		return ERROR(canceled);
+		return MT_ERROR(canceled);
 	case -3:
-		return ERROR(memory_allocation);
+		return MT_ERROR(memory_allocation);
 	}
 
-	/* XXX, some catch all other errors */
-	return ERROR(read_fail);
+	return MT_ERROR(read_fail);
 }
 
 /**
@@ -206,7 +202,7 @@ static void *pt_compress(void *arg)
 	in.size = ctx->inputsize;
 	in.buf = malloc(in.size);
 	if (!in.buf)
-		return (void *)ERROR(memory_allocation);
+		return (void *)MT_ERROR(memory_allocation);
 
 	for (;;) {
 		struct list_head *entry;
@@ -228,14 +224,14 @@ static void *pt_compress(void *arg)
 			    malloc(sizeof(struct writelist));
 			if (!wl) {
 				pthread_mutex_unlock(&ctx->write_mutex);
-				return (void *)ERROR(memory_allocation);
+				return (void *)MT_ERROR(memory_allocation);
 			}
 			wl->out.size =
 			    BrotliEncoderMaxCompressedSize(ctx->inputsize) + 16;
 			wl->out.buf = malloc(wl->out.size);
 			if (!wl->out.buf) {
 				pthread_mutex_unlock(&ctx->write_mutex);
-				return (void *)ERROR(memory_allocation);
+				return (void *)MT_ERROR(memory_allocation);
 			}
 			list_add(&wl->node, &ctx->writelist_busy);
 		}
@@ -251,7 +247,7 @@ static void *pt_compress(void *arg)
 		}
 
 		/* eof */
-		if (in.size == 0) {
+		if (in.size == 0 && ctx->frames > 0) {
 			free(in.buf);
 			pthread_mutex_unlock(&ctx->read_mutex);
 
@@ -268,31 +264,45 @@ static void *pt_compress(void *arg)
 		/* compress whole frame */
 		{
 			const uint8_t *ibuf = in.buf;
-			uint8_t *obuf = wl->out.buf + 12;
-			wl->out.size -= 12;
+			uint8_t *obuf = (uint8_t*)wl->out.buf + 16;
+			wl->out.size -= 16;
 			rv = BrotliEncoderCompress(ctx->level,
 						   BROTLI_MAX_WINDOW_BITS,
 						   BROTLI_MODE_GENERIC, in.size,
 						   ibuf, &wl->out.size, obuf);
 
+			/* printf("BrotliEncoderCompress() rv=%d in=%zu out=%zu\n", rv, in.size, wl->out.size); */
+
 			if (rv == BROTLI_FALSE) {
 				pthread_mutex_lock(&ctx->write_mutex);
 				list_move(&wl->node, &ctx->writelist_free);
 				pthread_mutex_unlock(&ctx->write_mutex);
-				/* user can lookup that code */
-				//bromt_errcode = result;
-				return (void *)-1;
+				return (void *)MT_ERROR(frame_compress);
 			}
 		}
 
 		/* write skippable frame */
 		MEM_writeLE32((unsigned char *)wl->out.buf + 0,
-			      BROFMT_MAGIC_SKIPPABLE);
-		MEM_writeLE32((unsigned char *)wl->out.buf + 4, 4);
+			      BROTLIMT_MAGIC_SKIPPABLE);
+		MEM_writeLE32((unsigned char *)wl->out.buf + 4, 8);
 		MEM_writeLE32((unsigned char *)wl->out.buf + 8,
 			      (U32) wl->out.size);
-		MEM_writeLE32((unsigned char *)wl->out.buf + 12,
-			      (U32) BROFMT_MAGICNUMBER);
+		/* BR */
+		MEM_writeLE16((unsigned char *)wl->out.buf + 12,
+			      (U16) BROTLIMT_MAGICNUMBER);
+
+		/* number of 64KB blocks needed for decompression */
+		{
+		U16 hintsize;
+		if (ctx->inputsize > (int)in.size) {
+			hintsize = (U16)(in.size >> 16);
+			hintsize += 1;
+		} else
+			hintsize = ctx->inputsize >> 16;
+		MEM_writeLE16((unsigned char *)wl->out.buf + 14,
+			      hintsize);
+		}
+
 		wl->out.size += 16;
 
 		/* write result */
@@ -313,7 +323,7 @@ size_t BROTLIMT_compressCCtx(BROTLIMT_CCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	void *retval_of_thread = 0;
 
 	if (!ctx)
-		return ERROR(compressionParameter_unsupported);
+		return MT_ERROR(compressionParameter_unsupported);
 
 	/* init reading and writing functions */
 	ctx->fn_read = rdwr->fn_read;

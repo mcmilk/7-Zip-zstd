@@ -31,7 +31,7 @@ unsigned ZSTDMT_isError(size_t code)
  */
 const char *ZSTDMT_getErrorString(size_t code)
 {
-	static const char *notErrorCode = "Unspecified error zstmt code";
+	static const char *noErrorCode = "Unspecified zstmt error code";
 
 	if (ZSTD_isError(zstdmt_errcode))
 		return ZSTD_getErrorName(zstdmt_errcode);
@@ -57,6 +57,6 @@ const char *ZSTDMT_getErrorString(size_t code)
 		return "Compression library reports failure";
 	case ZSTDMT_PREFIX(maxCode):
 	default:
-		return notErrorCode;
+		return noErrorCode;
 	}
 }

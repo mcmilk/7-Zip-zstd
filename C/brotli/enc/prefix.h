@@ -11,8 +11,8 @@
 #define BROTLI_ENC_PREFIX_H_
 
 #include "../common/constants.h"
-#include <brotli/port.h>
-#include <brotli/types.h>
+#include "../port.h"
+#include "../types.h"
 #include "./fast_log.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)

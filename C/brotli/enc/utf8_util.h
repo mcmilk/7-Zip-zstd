@@ -9,7 +9,7 @@
 #ifndef BROTLI_ENC_UTF8_UTIL_H_
 #define BROTLI_ENC_UTF8_UTIL_H_
 
-#include <brotli/types.h>
+#include "../types.h"
 #include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)

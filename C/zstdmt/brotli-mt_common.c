@@ -1,7 +1,7 @@
 
 /**
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
- * Copyright (c) 2016 Tino Reichardt
+ * Copyright (c) 2016 - 2017 Tino Reichardt
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -9,13 +9,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <brotli/encode.h>
-#include <brotli/decode.h>
+#include "encode.h"
+#include "decode.h"
 
 #include "brotli-mt.h"
-
-/* will be used for lib errors */
-size_t bromt_errcode;
 
 /* ****************************************
  * BROMT Error Management
@@ -26,23 +23,15 @@ size_t bromt_errcode;
  */
 unsigned BROTLIMT_isError(size_t code)
 {
-	return (code > ERROR(maxCode));
+	return (code > MT_ERROR(maxCode));
 }
 
 /**
- * BROTLIMT_getErrorString() - give error code string from function result
+ * BROTLIMT_getErrorString() - give our error code string of result
  */
 const char *BROTLIMT_getErrorString(size_t code)
 {
-	if (code > 10)
-		return "nono";
-
-	return "nono2";
-#if 0
-	if (BROF_isError(bromt_errcode))
-		return BROF_getErrorName(bromt_errcode);
-
-	static const char *notErrorCode = "Unspecified error bromt code";
+	static const char *noErrorCode = "Unspecified brotli error code";
 	switch ((BROTLIMT_ErrorCode) (0 - code)) {
 	case PREFIX(no_error):
 		return "No error detected";
@@ -60,11 +49,8 @@ const char *BROTLIMT_getErrorString(size_t code)
 		return "Could not decompress frame at once";
 	case PREFIX(compressionParameter_unsupported):
 		return "Compression parameter is out of bound";
-	case PREFIX(compression_library):
-		return "Compression library reports failure";
 	case PREFIX(maxCode):
 	default:
-		return notErrorCode;
+		return noErrorCode;
 	}
-#endif
 }

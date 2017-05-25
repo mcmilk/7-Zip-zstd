@@ -26,6 +26,7 @@ extern "C" {
 
 /* current maximum the library will accept */
 #define LZ5MT_THREAD_MAX 128
+#define LZ5MT_LEVEL_MIN    1
 #define LZ5MT_LEVEL_MAX   15
 
 #define LZ5FMT_MAGICNUMBER     0x184D2205U

@@ -1,10 +1,11 @@
-// (C) 2016 Tino Reichardt
+// (C) 2017 Tino Reichardt
 
 #define LIZARD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
-#include "../../../C/lizard/lizard.h"
-#include "../../../C/zstdmt/zstd-mt.h"
+#include "../../../C/lizard/liz_compress.h"
+#include "../../../C/lizard/lizframe.h"
+#include "../../../C/zstdmt/lizard-mt.h"
 
 #include "../../Windows/System.h"
 #include "../../Common/Common.h"
@@ -36,15 +37,14 @@ struct DProps
   void clear ()
   {
     memset(this, 0, sizeof (*this));
-    _ver_major = LIZARD_VERSION_MAJOR;
-    _ver_minor = LIZARD_VERSION_MINOR;
+    _ver_major = LIZ_VERSION_MAJOR;
+    _ver_minor = LIZ_VERSION_MINOR;
     _level = 1;
   }
 
   Byte _ver_major;
   Byte _ver_minor;
   Byte _level;
-  Byte _reserved[2];
 };
 
 class CDecoder:public ICompressCoder,
