@@ -197,7 +197,7 @@ Codecs:
 ## Donate
 If you find this project useful, you can...
 
-[![paypal](https://www.paypalobjects.com/webstatic/en_US/btn/btn_donate_pp_142x27.png)](https://www.paypal.me/TinoReichardt)
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/TinoReichardt)
 
 ## Version Information
 
