@@ -268,7 +268,6 @@ Lizard library is provided as open source software using the BSD license.
 This header is for informational purposes only. It's not mandatory for
 decompressing the data.
 ``` C
-``` C
  Byte _ver_major;  // currently 2
  Byte _ver_minor;  // currently 0
  Byte _level;      // 10..49
