@@ -4,8 +4,7 @@
 This is the Github Page of 7-Zip ZS with support of additional Codecs. The library used therefore is located here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
 
 You can install it in two ways:
-1. full setup with [ZStandard] additions within the GUI and an modified
-   Explorer context menu
+1. full setup with additions within the GUI and an modified an Explorer context menu
 2. just the codec plugin, which goes to your existing 7-Zip installation
 
 ## Codec overview
@@ -25,7 +24,7 @@ You can install it in two ways:
 1. download the setup from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases)
 2. install it, like the default [7-Zip]
 3. use it ;)
-4. you may check, if the 7-Zip can deal with ZStandard via this command: `7z.exe i`
+4. you may check, if the 7-Zip can deal with [ZStandard] or other codecs via this command: `7z.exe i`
 
 The output should look like this:
 ```
@@ -77,8 +76,9 @@ Codecs:
 
 ### Usage and features of the full installation
 
-- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard]
-- included lzip decompression support, patch from http://download.savannah.gnu.org/releases/lzip/7zip/
+- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard] within the 7-Zip container format
+- compression and decompression of [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [ZStandard] (`.zst`) files
+- included [lzip] decompression support, patch from: http://download.savannah.gnu.org/releases/lzip/7zip/
 - right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
 - the FileManager ListBox will show more information about these codecs now
 
@@ -168,8 +168,10 @@ Codecs:
 
 ### Usage (codec plugin)
 
-- when compressing binaries (*.exe, *.dll), you have to explicitly disable
-  the bcj2 filter via `-m0=bcj`, when using only the plugin dll's
+- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard] within the 7-Zip container format
+- you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zst` are not covered by the plugins
+- when compressing binaries (*.exe, *.dll), you have to explicitly disable the bcj2 filter via `-m0=bcj`,
+  when using only the plugin dll's
 - so the usage should look like this:
 ```
 7z a archiv.7z -m0=bcj -m1=zstd -mx1   Fast mode, with BCJ preprocessor on executables
@@ -177,8 +179,6 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=bcj -m1=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
 ```
-- you can only create .7z files with zstd compression, but you can not create .zst files :/
-
 ## Benchmarks with i7-3632QM
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
@@ -211,6 +211,7 @@ If you find this project useful, you can...
 /TR 2017-05-25
 
 [7-Zip]:http://www.7-zip.org/
+[lzip]:http://www.nongnu.org/lzip/
 [Brotli]:https://github.com/google/brotli/
 [LZ4]:https://github.com/lz4/lz4/
 [LZ5]:https://github.com/inikep/lz5/
