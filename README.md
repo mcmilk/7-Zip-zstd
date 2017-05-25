@@ -8,7 +8,7 @@ You can install it in two ways:
    Explorer context menu
 2. just the codec plugin, which goes to your existing 7-Zip installation
 
-# Codec overview
+## Codec overview
 1. [Zstandard] is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
 
 2. [Brotli] is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
@@ -193,7 +193,11 @@ Codecs:
 - [7-Zip ZStandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
 - Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
   - result, will not be included :(
-- [Support me](https://www.paypal.me/TinoReichardt) - when you want
+
+## Donate
+If you find this project useful, you can...
+
+[![paypal](https://www.paypalobjects.com/webstatic/en_US/btn/btn_donate_pp_142x27.png)](https://www.paypal.me/TinoReichardt)
 
 ## Version Information
 
@@ -212,4 +216,3 @@ Codecs:
 [LZ5]:https://github.com/inikep/lz5/
 [ZStandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
-
