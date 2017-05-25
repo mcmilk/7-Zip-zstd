@@ -1,20 +1,23 @@
 
 # README
 
-This is the Github Page of 7-Zip ZS with support of additional Codecs.
-
-for **zstd**, short for
-Zstandard, which is a fast lossless compression algorithm, targeting
-real-time compression scenarios at zlib-level compression ratio.
-
-LZ4 and LZ5 compression with multithreading is also included.
-The library used therefore is located here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
+This is the Github Page of 7-Zip ZS with support of additional Codecs. The library used therefore is located here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
 
 You can install it in two ways:
-
 1. full setup with [ZStandard] additions within the GUI and an modified
    Explorer context menu
 2. just the codec plugin, which goes to your existing 7-Zip installation
+
+# Codec overview
+1. [Zstandard] is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+
+2. [Brotli] is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
+
+3. [LZ4] is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
+
+4. [LZ5] is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
+
+5. [Lizard] is an efficient compressor with very fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
 
 ## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
 
@@ -76,7 +79,8 @@ Codecs:
 
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard]
 - included lzip decompression support, patch from http://download.savannah.gnu.org/releases/lzip/7zip/
-- right click and ```compress to archive``` will use the last selected method (codec, level and threads)
+- right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
+- the FileManager ListBox will show more information about these codecs now
 
 ```
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
