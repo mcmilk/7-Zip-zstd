@@ -180,7 +180,7 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
 ```
 ## Benchmarks with i7-3632QM
-![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-074-usb2.png "Compression Speed vs Ratio")
+![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1700_v120_ratio.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
 
 ## License and redistribution
