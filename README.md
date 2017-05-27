@@ -21,7 +21,7 @@ You can install it in two ways:
    - Levels: 1..15
 
 5. [Lizard] is an efficient compressor with very fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
- - Levels: 10..49 (10..19 for method1, 20..29 for method2, ...)
+   - Levels: 10..49 (10..19 for method1, 20..29 for method2, ...)
 
 ## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
 
