@@ -1,6 +1,6 @@
 #include "../../../../C/7zVersionTr.h"
 #include "../../../../C/7zVersion.rc"
 
-MY_VERSION_INFO_DLL("7z Lizard Plugin", "Lizard")
+MY_VERSION_INFO_DLL("7-Zip Lizard Plugin v2.0", "Lizard")
 
 101  ICON  "../../Archive/Icons/7z.ico"

@@ -1,6 +1,6 @@
 #include "../../../../C/7zVersionTr.h"
 #include "../../../../C/7zVersion.rc"
 
-MY_VERSION_INFO_DLL("7z Brotli Plugin", "Brotli")
+MY_VERSION_INFO_DLL("7-Zip Brotli Plugin v0.6.0", "Brotli")
 
 101  ICON  "../../Archive/Icons/7z.ico"
