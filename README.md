@@ -15,10 +15,11 @@ You can install it in two ways:
  - `Levels: 0..11`
 
 3. [LZ4] is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
- - Levels: 1..12
+
+> Levels: 1..12
 
 4. [LZ5] is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
- - Levels: 1..15
+   - Levels: 1..15
 
 5. [Lizard] is an efficient compressor with very fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
  - Levels: 10..49 (10..19 for method1, 20..29 for method2, ...)
