@@ -1083,6 +1083,7 @@ void CCompressDialog::SetLevel()
   UInt32 LevelsMask;
   UInt32 LevelsStart = 0;
   UInt32 langID = 0;
+  unsigned i, ir;
 
   SetMethod(GetMethodID());
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
@@ -1113,16 +1114,25 @@ void CCompressDialog::SetLevel()
   else
     LevelsMask = g_Formats[GetStaticFormatIndex()].LevelsMask;
 
-  for (unsigned i = LevelsStart; i <= 49; i++)
+  for (i = LevelsStart; i <= 49; i++)
   {
     TCHAR s[40];
     TCHAR t[50] = { TEXT('L'), TEXT('e'), TEXT('v'), TEXT('e'), TEXT('l'), TEXT(' '), 0 };
 
+    // lizard needs extra handling
+    if (GetMethodID() == kLIZARD) {
+      ir = i;
+      if (ir % 10 == 0) langID = 0;
+      while (ir > 19) { ir -= 10; }
+    } else {
+      ir = i;
+    }
+
     // max reached
-    if (LevelsMask < (UInt32)(1 << i))
+    if (LevelsMask < (UInt32)(1 << ir))
       break;
 
-    if ((LevelsMask & (1 << i)) != 0)
+    if ((LevelsMask & (1 << ir)) != 0)
     {
       ConvertUInt32ToString(i, s);
       lstrcat(t, s);
@@ -1658,9 +1668,11 @@ void CCompressDialog::SetNumThreads()
   int methodID = GetMethodID();
   switch (methodID)
   {
+    case kZSTD: numAlgoThreadsMax = 128; break;
+    case kBROTLI: numAlgoThreadsMax = 128; break;
     case kLZ4: numAlgoThreadsMax = 128; break;
     case kLZ5: numAlgoThreadsMax = 128; break;
-    case kZSTD: numAlgoThreadsMax = 128; break;
+    case kLIZARD: numAlgoThreadsMax = 128; break;
     case kLZMA: numAlgoThreadsMax = 2; break;
     case kLZMA2: numAlgoThreadsMax = 32; break;
     case kBZip2: numAlgoThreadsMax = 32; break;

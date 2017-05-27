@@ -15,7 +15,7 @@
 #undef MY_VERSION_COPYRIGHT_DATE
 #define MY_AUTHOR_NAME "Igor Pavlov, Tino Reichardt"
 #define MY_COPYRIGHT_PD "Igor Pavlov : Public domain"
-#define MY_COPYRIGHT_CR "Copyright (c) 1999-2017 Igor Pavlov, 2016-2017 Tino Reichardt"
+#define MY_COPYRIGHT_CR "Copyright (c) 1999-2017 Igor Pavlov"
 
 #ifdef USE_COPYRIGHT_CR
   #define MY_COPYRIGHT MY_COPYRIGHT_CR
