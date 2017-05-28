@@ -8,20 +8,23 @@ You can install it in two ways:
 2. just the codec plugin, which goes to your existing 7-Zip installation
 
 ## Codec overview
-1. [Zstandard] is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+1. [Zstandard] v1.2.0 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
-2. [Brotli] is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
+2. [Brotli] v.0.6.0 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
    - Levels: 0..11
 
-3. [LZ4] is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
+3. [LZ4] v1.7.5 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
    - Levels: 1..12
 
-4. [LZ5] is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
+4. [LZ5] v1.5 is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
    - Levels: 1..15
 
-5. [Lizard] is an efficient compressor with very fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
-   - Levels: 10..49 (10..19 for method1, 20..29 for method2, ...)
+5. [Lizard] v1.0 is an efficient compressor with very fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
+   - Levels 10..19 (fastLZ4) are designed to give about 10% better decompression speed than LZ4
+   - Levels 20..29 LIZv1) are designed to give better ratio than LZ4 keeping 75% decompression speed
+   - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
+   - Levels 40..49 (LIZv1 + Huffman) give the best ratio, comparable to zlib and low levels of zstd/brotli, but with a faster decompression speed
 
 ## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
 
@@ -208,12 +211,12 @@ If you find this project useful, you can...
 
 - 7-Zip ZS Version 17.00
   - [Brotli] Version 0.6.0
-  - [Lizard] Version 2.0
+  - [Lizard] Version 1.0
   - [LZ4] Version 1.7.5
   - [LZ5] Version 1.5
   - [ZStandard] Version 1.2.0
 
-/TR 2017-05-25
+/TR 2017-05-28
 
 [7-Zip]:http://www.7-zip.org/
 [lzip]:http://www.nongnu.org/lzip/
