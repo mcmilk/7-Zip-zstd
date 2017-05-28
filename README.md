@@ -36,7 +36,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 17.00 ZS v1.2.0 R3 (x64) : Copyright (c) 1999-2017 Igor Pavlov, 2016-2017 Tino Reichardt : 2017-05-25
+7-Zip 17.00 ZS v1.2.0 R5 (x64) : Copyright (c) 1999-2017 Igor Pavlov
 
 
 Libs:
@@ -85,7 +85,7 @@ Codecs:
 ### Usage and features of the full installation
 
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard] within the 7-Zip container format
-- compression and decompression of [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [ZStandard] (`.zst`) files
+- compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [ZStandard] (`.zst`) files
 - included [lzip] decompression support, patch from: http://download.savannah.gnu.org/releases/lzip/7zip/
 - right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
 - the FileManager ListBox will show more information about these codecs now
