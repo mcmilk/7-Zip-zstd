@@ -22,7 +22,7 @@ You can install it in two ways:
 
 5. [Lizard] v1.0 is an efficient compressor with very fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
    - Levels 10..19 (fastLZ4) are designed to give about 10% better decompression speed than LZ4
-   - Levels 20..29 LIZv1) are designed to give better ratio than LZ4 keeping 75% decompression speed
+   - Levels 20..29 (LIZv1) are designed to give better ratio than LZ4 keeping 75% decompression speed
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
    - Levels 40..49 (LIZv1 + Huffman) give the best ratio, comparable to zlib and low levels of zstd/brotli, but with a faster decompression speed
 
