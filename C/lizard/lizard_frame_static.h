@@ -1,7 +1,8 @@
 /*
-   LZ5 auto-framing library
+   Lizard auto-framing library
    Header File for static linking only
    Copyright (C) 2011-2015, Yann Collet.
+   Copyright (C) 2016-2017, Przemyslaw Skibinski
 
    BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 
@@ -29,7 +30,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-   - LZ5 source repository : https://github.com/inikep/lz5
+   - Lizard source repository : https://github.com/inikep/lizard
 */
 
 #pragma once
@@ -38,7 +39,7 @@
 extern "C" {
 #endif
 
-/* lz5frame_static.h should be used solely in the context of static linking.
+/* lizard_frame_static.h should be used solely in the context of static linking.
  * It contains definitions which may still change overtime.
  * Never use it in the context of DLL linking.
  * */
@@ -47,13 +48,13 @@ extern "C" {
 /**************************************
 *  Includes
 **************************************/
-#include "lizframe.h"
+#include "lizard_frame.h"
 
 
 /**************************************
  * Error management
  * ************************************/
-#define LIZF_LIST_ERRORS(ITEM) \
+#define LIZARDF_LIST_ERRORS(ITEM) \
         ITEM(OK_NoError) ITEM(ERROR_GENERIC) \
         ITEM(ERROR_maxBlockSize_invalid) ITEM(ERROR_blockMode_invalid) ITEM(ERROR_contentChecksumFlag_invalid) \
         ITEM(ERROR_compressionLevel_invalid) \
@@ -66,13 +67,13 @@ extern "C" {
         ITEM(ERROR_headerChecksum_invalid) ITEM(ERROR_contentChecksum_invalid) \
         ITEM(ERROR_maxCode)
 
-//#define LIZF_DISABLE_OLD_ENUMS
-#ifndef LIZF_DISABLE_OLD_ENUMS
-#define LIZF_GENERATE_ENUM(ENUM) LIZF_##ENUM, ENUM = LIZF_##ENUM,
+//#define LIZARDF_DISABLE_OLD_ENUMS
+#ifndef LIZARDF_DISABLE_OLD_ENUMS
+#define LIZARDF_GENERATE_ENUM(ENUM) LizardF_##ENUM, ENUM = LizardF_##ENUM,
 #else
-#define LIZF_GENERATE_ENUM(ENUM) LIZF_##ENUM,
+#define LIZARDF_GENERATE_ENUM(ENUM) LizardF_##ENUM,
 #endif
-typedef enum { LIZF_LIST_ERRORS(LIZF_GENERATE_ENUM) } LIZF_errorCodes;  /* enum is exposed, to handle specific errors; compare function result to -enum value */
+typedef enum { LIZARDF_LIST_ERRORS(LIZARDF_GENERATE_ENUM) } LizardF_errorCodes;  /* enum is exposed, to handle specific errors; compare function result to -enum value */
 
 
 #if defined (__cplusplus)

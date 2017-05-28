@@ -1,7 +1,7 @@
-#define LIZ_LENGTH_SIZE_LZ4(len) ((len >= (1<<16)+RUN_MASK_LZ4) ? 5 : ((len >= 254+RUN_MASK_LZ4) ? 3 : ((len >= RUN_MASK_LZ4) ? 1 : 0)))
+#define LIZARD_LENGTH_SIZE_LZ4(len) ((len >= (1<<16)+RUN_MASK_LZ4) ? 5 : ((len >= 254+RUN_MASK_LZ4) ? 3 : ((len >= RUN_MASK_LZ4) ? 1 : 0)))
 
-FORCE_INLINE int LIZ_encodeSequence_LZ4 (
-    LIZ_stream_t* ctx,
+FORCE_INLINE int Lizard_encodeSequence_LZ4 (
+    Lizard_stream_t* ctx,
     const BYTE** ip,
     const BYTE** anchor,
     size_t matchLength,
@@ -14,7 +14,7 @@ FORCE_INLINE int LIZ_encodeSequence_LZ4 (
     COMPLOG_CODEWORDS_LZ4("literal : %u  --  match : %u  --  offset : %u\n", (U32)(*ip - *anchor), (U32)matchLength, (U32)(*ip-match));
   
     /* Encode Literal length */
- //   if (ctx->literalsPtr > ctx->literalsEnd - length - LIZ_LENGTH_SIZE_LZ4(length) - 2 - WILDCOPYLENGTH) { LIZ_LOG_COMPRESS_LZ4("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
+ //   if (ctx->literalsPtr > ctx->literalsEnd - length - LIZARD_LENGTH_SIZE_LZ4(length) - 2 - WILDCOPYLENGTH) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
     if (length >= RUN_MASK_LZ4) 
     {   size_t len = length - RUN_MASK_LZ4;
         *token = RUN_MASK_LZ4; 
@@ -26,13 +26,13 @@ FORCE_INLINE int LIZ_encodeSequence_LZ4 (
 
     /* Copy Literals */
     if (length > 0) {
-        LIZ_wildCopy(ctx->literalsPtr, *anchor, (ctx->literalsPtr) + length);
-#if 0 //def LIZ_USE_HUFFMAN
+        Lizard_wildCopy(ctx->literalsPtr, *anchor, (ctx->literalsPtr) + length);
+#if 0 //def LIZARD_USE_HUFFMAN
         ctx->litSum += (U32)length;
         ctx->litPriceSum += (U32)(length * ctx->log2LitSum);
         {   U32 u;
             for (u=0; u < length; u++) {
-                ctx->litPriceSum -= LIZ_highbit32(ctx->litFreq[ctx->literalsPtr[u]]+1);
+                ctx->litPriceSum -= Lizard_highbit32(ctx->litFreq[ctx->literalsPtr[u]]+1);
                 ctx->litFreq[ctx->literalsPtr[u]]++;
         }   }
 #endif
@@ -40,14 +40,12 @@ FORCE_INLINE int LIZ_encodeSequence_LZ4 (
     }
 
     /* Encode Offset */
-//    if (match > *ip) printf("match > *ip\n"), exit(1);
-//    if ((U32)(*ip-match) >= (1<<16)) printf("off=%d\n", (U32)(*ip-match)), exit(1);
     MEM_writeLE16(ctx->literalsPtr, (U16)(*ip-match));
     ctx->literalsPtr+=2;
 
     /* Encode MatchLength */
     length = matchLength - MINMATCH;
-  //  if (ctx->literalsPtr > ctx->literalsEnd - 5 /*LIZ_LENGTH_SIZE_LZ4(length)*/) { LIZ_LOG_COMPRESS_LZ4("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
+  //  if (ctx->literalsPtr > ctx->literalsEnd - 5 /*LIZARD_LENGTH_SIZE_LZ4(length)*/) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
     if (length >= ML_MASK_LZ4) {
         *token += (BYTE)(ML_MASK_LZ4<<RUN_BITS_LZ4);
         length -= ML_MASK_LZ4;
@@ -57,11 +55,11 @@ FORCE_INLINE int LIZ_encodeSequence_LZ4 (
     }
     else *token += (BYTE)(length<<RUN_BITS_LZ4);
 
-#ifndef LIZ_NO_HUFFMAN
+#ifndef LIZARD_NO_HUFFMAN
     if (ctx->huffType) { 
         ctx->flagFreq[*token]++;
         ctx->flagSum++;
-        LIZ_setLog2Prices(ctx);
+        Lizard_setLog2Prices(ctx);
     }
 #endif
 
@@ -73,8 +71,8 @@ FORCE_INLINE int LIZ_encodeSequence_LZ4 (
 }
 
 
-FORCE_INLINE int LIZ_encodeLastLiterals_LZ4 (
-    LIZ_stream_t* ctx,
+FORCE_INLINE int Lizard_encodeLastLiterals_LZ4 (
+    Lizard_stream_t* ctx,
     const BYTE** ip,
     const BYTE** anchor)
 {
@@ -88,29 +86,28 @@ FORCE_INLINE int LIZ_encodeLastLiterals_LZ4 (
 }
 
 
-#define LIZ_GET_TOKEN_PRICE_LZ4(token)  (ctx->log2FlagSum - LIZ_highbit32(ctx->flagFreq[token]+1))
+#define LIZARD_GET_TOKEN_PRICE_LZ4(token)  (ctx->log2FlagSum - Lizard_highbit32(ctx->flagFreq[token]+1))
 
-FORCE_INLINE size_t LIZ_get_price_LZ4(LIZ_stream_t* const ctx, const BYTE *ip, const size_t litLength, U32 offset, size_t matchLength) 
+FORCE_INLINE size_t Lizard_get_price_LZ4(Lizard_stream_t* const ctx, const BYTE *ip, const size_t litLength, U32 offset, size_t matchLength) 
 {
     size_t price = 0;
     BYTE token = 0;
-#if 0 //def LIZ_USE_HUFFMAN
+#if 0 //def LIZARD_USE_HUFFMAN
     const BYTE* literals = ip - litLength;
     U32 u;
 
     if (ctx->cachedLiterals == literals && litLength >= ctx->cachedLitLength) {
         size_t const additional = litLength - ctx->cachedLitLength;
-    //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
         const BYTE* literals2 = ctx->cachedLiterals + ctx->cachedLitLength;
         price = ctx->cachedPrice + additional * ctx->log2LitSum;
         for (u=0; u < additional; u++)
-            price -= LIZ_highbit32(ctx->litFreq[literals2[u]]+1);
+            price -= Lizard_highbit32(ctx->litFreq[literals2[u]]+1);
         ctx->cachedPrice = (U32)price;
         ctx->cachedLitLength = (U32)litLength;
     } else {
         price = litLength * ctx->log2LitSum;
         for (u=0; u < litLength; u++)
-            price -= LIZ_highbit32(ctx->litFreq[literals[u]]+1);
+            price -= Lizard_highbit32(ctx->litFreq[literals[u]]+1);
 
         if (litLength >= 12) {
             ctx->cachedLiterals = literals;
@@ -140,8 +137,8 @@ FORCE_INLINE size_t LIZ_get_price_LZ4(LIZ_stream_t* const ctx, const BYTE *ip, c
         size_t length;
         price += 16; /* Encode Offset */
 
-        if (offset < 8) return LIZ_MAX_PRICE; // error
-        if (matchLength < MINMATCH) return LIZ_MAX_PRICE; // error
+        if (offset < 8) return LIZARD_MAX_PRICE; // error
+        if (matchLength < MINMATCH) return LIZARD_MAX_PRICE; // error
             
         length = matchLength - MINMATCH;
         if (length >= ML_MASK_LZ4) {
@@ -156,7 +153,7 @@ FORCE_INLINE size_t LIZ_get_price_LZ4(LIZ_stream_t* const ctx, const BYTE *ip, c
 
     if (ctx->huffType) { 
         if (offset > 0 || matchLength > 0) price += 2;
-        price += LIZ_GET_TOKEN_PRICE_LZ4(token);
+        price += LIZARD_GET_TOKEN_PRICE_LZ4(token);
     } else {
         price += 8; // token
     }

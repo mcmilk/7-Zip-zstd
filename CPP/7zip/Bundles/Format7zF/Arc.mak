@@ -73,6 +73,7 @@ AR_OBJS = \
   $O\LzHandler.obj \
   $O\Lz4Handler.obj \
   $O\Lz5Handler.obj \
+  $O\LizardHandler.obj \
   $O\LzhHandler.obj \
   $O\LzmaHandler.obj \
   $O\MachoHandler.obj \

@@ -3,4 +3,4 @@
 
 MY_VERSION_INFO_DLL("7-Zip LZ5 Plugin v1.5", "Lz5")
 
-101  ICON  "../../Archive/Icons/7z.ico"
+101  ICON  "../../Archive/Icons/lz5.ico"

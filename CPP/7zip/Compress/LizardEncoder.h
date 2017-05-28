@@ -3,8 +3,8 @@
 #define LIZARD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
-#include "../../../C/lizard/liz_compress.h"
-#include "../../../C/lizard/lizframe.h"
+#include "../../../C/lizard/lizard_compress.h"
+#include "../../../C/lizard/lizard_frame.h"
 #include "../../../C/zstdmt/lizard-mt.h"
 
 #include "../../Common/Common.h"
@@ -22,8 +22,8 @@ struct CProps
   void clear ()
   {
     memset(this, 0, sizeof (*this));
-    _ver_major = LIZ_VERSION_MAJOR;
-    _ver_minor = LIZ_VERSION_MINOR;
+    _ver_major = LIZARD_VERSION_MAJOR;
+    _ver_minor = LIZARD_VERSION_MINOR;
     _level = 3;
   }
 

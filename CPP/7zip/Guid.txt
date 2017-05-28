@@ -166,6 +166,7 @@ Handler GUIDs:
   0E zstd
   0F lz4
   10 lz5
+  11 liz
 
   C6 Lzip
   C7 Ext

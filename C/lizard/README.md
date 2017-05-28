@@ -1,95 +1,76 @@
-LZ5 - efficient compression with very fast decompression
---------------------------------------------------------
+Lizard - Library Files
+================================
 
-LZ5 is a lossless compression algorithm which contains 4 compression methods:
-- fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than [LZ4] i.e. over 2000 MB/s
-- LZ5v2 : compression levels -20...-29 are designed to give better ratio than [LZ4] keeping 75% decompression speed
-- fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
-- LZ5v2 + Huffman : compression levels -40...-49 give the best ratio (comparable to [zlib] and low levels of [zstd]/[brotli]) at decompression speed of 1000 MB/s 
-
-LZ5 library is based on frequently used [LZ4] library by Yann Collet.
-LZ5 library is provided as open-source software using BSD 2-Clause license.
-The high compression/decompression speed is achieved without any SSE and AVX extensions.
+The __lib__ directory contains several directories.
+Depending on target use case, it's enough to include only files from relevant directories.
 
 
-|Branch      |Status   |
-|------------|---------|
-|lz5_v1.5    | [![Build Status][travis15Badge]][travisLink]    [![Build status][Appveyor15Badge]][AppveyorLink]     |
-|lz5_v2.0    | [![Build Status][travis20Badge]][travisLink]    [![Build status][Appveyor20Badge]][AppveyorLink]     |
+#### API
 
-[travis15Badge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v1.5 "Continuous Integration test suite"
-[travis20Badge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v2.0 "Continuous Integration test suite"
-[travisLink]: https://travis-ci.org/inikep/lz5
-[Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
-[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v2.0?svg=true "Visual test suite"
-[AppveyorLink]: https://ci.appveyor.com/project/inikep/lz5
-[LZ4]: https://github.com/lz4/lz4
-[zlib]: https://github.com/madler/zlib
-[zstd]: https://github.com/facebook/zstd
-[brotli]: https://github.com/google/brotli
+Lizard stable API is exposed within [lizard_compress.h](lizard_compress.h) and [lizard_decompress.h](lizard_decompress.h),
+at the root of `lib` directory.
 
 
-Benchmarks
--------------------------
+#### Compatibility issues
 
-The following results are obtained with [lzbench](https://github.com/inikep/lzbench) and `-t16,16`
-using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 6.2.0)
-with [silesia.tar] which contains tarred files from [Silesia compression corpus](http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia).
-
-| Compressor name         | Compression| Decompress.| Compr. size | Ratio |
-| ---------------         | -----------| -----------| ----------- | ----- |
-| memcpy                  |  7332 MB/s |  8719 MB/s |   211947520 |100.00 |
-| lz4 1.7.3               |   440 MB/s |  2318 MB/s |   100880800 | 47.60 |
-| lz4hc 1.7.3 -1          |    98 MB/s |  2121 MB/s |    87591763 | 41.33 |
-| lz4hc 1.7.3 -4          |    55 MB/s |  2259 MB/s |    79807909 | 37.65 |
-| lz4hc 1.7.3 -9          |    22 MB/s |  2315 MB/s |    77892285 | 36.75 |
-| lz4hc 1.7.3 -12         |    17 MB/s |  2323 MB/s |    77849762 | 36.73 |
-| lz4hc 1.7.3 -16         |    10 MB/s |  2323 MB/s |    77841782 | 36.73 |
-| lz5 2.0 -10             |   346 MB/s |  2610 MB/s |   103402971 | 48.79 |
-| lz5 2.0 -12             |   103 MB/s |  2458 MB/s |    86232422 | 40.69 |
-| lz5 2.0 -15             |    50 MB/s |  2552 MB/s |    81187330 | 38.31 |
-| lz5 2.0 -19             |  3.04 MB/s |  2497 MB/s |    77416400 | 36.53 |
-| lz5 2.0 -21             |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
-| lz5 2.0 -23             |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
-| lz5 2.0 -26             |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
-| lz5 2.0 -29             |  1.37 MB/s |  1634 MB/s |    68694227 | 32.41 |
-| lz5 2.0 -30             |   246 MB/s |   909 MB/s |    85727429 | 40.45 |
-| lz5 2.0 -32             |    94 MB/s |  1244 MB/s |    76929454 | 36.30 |
-| lz5 2.0 -35             |    47 MB/s |  1435 MB/s |    73850400 | 34.84 |
-| lz5 2.0 -39             |  2.94 MB/s |  1502 MB/s |    69807522 | 32.94 |
-| lz5 2.0 -41             |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
-| lz5 2.0 -43             |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
-| lz5 2.0 -46             |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
-| lz5 2.0 -49             |  1.27 MB/s |  1064 MB/s |    60679215 | 28.63 |
-| zlib 1.2.8 -1           |    66 MB/s |   244 MB/s |    77259029 | 36.45 |
-| zlib 1.2.8 -6           |    20 MB/s |   263 MB/s |    68228431 | 32.19 |
-| zlib 1.2.8 -9           |  8.37 MB/s |   266 MB/s |    67644548 | 31.92 |
-| zstd 1.1.1 -1           |   235 MB/s |   645 MB/s |    73659468 | 34.75 |
-| zstd 1.1.1 -2           |   181 MB/s |   600 MB/s |    70168955 | 33.11 |
-| zstd 1.1.1 -5           |    88 MB/s |   565 MB/s |    65002208 | 30.67 |
-| zstd 1.1.1 -8           |    31 MB/s |   619 MB/s |    61026497 | 28.79 |
-| zstd 1.1.1 -11          |    16 MB/s |   613 MB/s |    59523167 | 28.08 |
-| zstd 1.1.1 -15          |  4.97 MB/s |   639 MB/s |    58007773 | 27.37 |
-| zstd 1.1.1 -18          |  2.87 MB/s |   583 MB/s |    55294241 | 26.09 |
-| zstd 1.1.1 -22          |  1.44 MB/s |   505 MB/s |    52731930 | 24.88 |
-| brotli 0.5.2 -0         |   217 MB/s |   244 MB/s |    78226979 | 36.91 |
-| brotli 0.5.2 -2         |    96 MB/s |   283 MB/s |    68066621 | 32.11 |
-| brotli 0.5.2 -5         |    24 MB/s |   312 MB/s |    60801716 | 28.69 |
-| brotli 0.5.2 -8         |  5.56 MB/s |   324 MB/s |    57382470 | 27.07 |
-| brotli 0.5.2 -11        |  0.39 MB/s |   266 MB/s |    51138054 | 24.13 |
-
-[silesia.tar]: https://drive.google.com/file/d/0BwX7dtyRLxThenZpYU9zLTZhR1k/view?usp=sharing
-
-
-Documentation
--------------------------
-
-The raw LZ5 block compression format is detailed within [lz5_Block_format].
-
+The raw Lizard block compression format is detailed within [lizard_Block_format].
 To compress an arbitrarily long file or data stream, multiple blocks are required.
 Organizing these blocks and providing a common header format to handle their content
-is the purpose of the Frame format, defined into [lz5_Frame_format].
-Interoperable versions of LZ5 must respect this frame format.
+is the purpose of the Frame format, defined in [lizard_Frame_format].
+`lizard` command line utility produces files or streams compatible with the Frame format.
+(_Advanced stuff_ : It's possible to hide xxhash symbols into a local namespace.
+This is what `liblizard` does, to avoid symbol duplication
+in case a user program would link to several libraries containing xxhash symbols.)
 
-[lz5_Block_format]: doc/lz5_Block_format.md
-[lz5_Frame_format]: doc/lz5_Frame_format.md
+[lizard_Block_format]: ../doc/lizard_Block_format.md
+[lizard_Frame_format]: ../doc/lizard_Frame_format.md
+
+
+#### Various Lizard builds
+
+Files `lizard_common.h`, `lizard_compress*`, `lizard_parser_*.h`, `lizard_decompress*`, and `entropy\mem.h` are required in all circumstances.
+
+To compile:
+- Lizard_raw only with levels 10...29 : use the `-DLIZARD_NO_HUFFMAN` compiler flag
+- Lizard_raw with levels 10...49 : include also all files from `entropy` directory
+- Lizard_frame with levels 10...49 : `lizard_frame*` and all files from `entropy` and `xxhash` directories
+
+
+#### Advanced API 
+
+A more complex `lizard_frame_static.h` is also provided.
+It contains definitions which are not guaranteed to remain stable within future versions.
+It must be used with static linking ***only***.
+
+
+#### Using MinGW+MSYS to create DLL
+
+DLL can be created using MinGW+MSYS with the `make liblizard` command.
+This command creates `dll\liblizard.dll` and the import library `dll\liblizard.lib`.
+The import library is only required with Visual C++.
+The header files `lizard.h`, `lizardhc.h`, `lizard_frame.h` and the dynamic library
+`dll\liblizard.dll` are required to compile a project using gcc/MinGW.
+The dynamic library has to be added to linking options.
+It means that if a project that uses Lizard consists of a single `test-dll.c`
+file it should be compiled with `liblizard.lib`. For example:
+```
+    gcc $(CFLAGS) -Iinclude/ test-dll.c -o test-dll dll\liblizard.dll
+```
+The compiled executable will require Lizard DLL which is available at `dll\liblizard.dll`. 
+
+
+#### Miscellaneous 
+
+Other files present in the directory are not source code. There are :
+
+ - LICENSE : contains the BSD license text
+ - Makefile : script to compile or install lizard library (static or dynamic)
+ - liblizard.pc.in : for pkg-config (make install)
+ - README.md : this file
+
+
+#### License 
+
+All source material within __lib__ directory are BSD 2-Clause licensed.
+See [LICENSE](LICENSE) for details.
+The license is also repeated at the top of each source file.

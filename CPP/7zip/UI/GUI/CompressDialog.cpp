@@ -99,9 +99,12 @@ enum EMethodID
   kCopy,
   kZSTD,
   kBROTLI,
-  kLIZARD,
   kLZ4,
   kLZ5,
+  kLIZARD_M1,
+  kLIZARD_M2,
+  kLIZARD_M3,
+  kLIZARD_M4,
   kLZMA,
   kLZMA2,
   kPPMd,
@@ -111,14 +114,37 @@ enum EMethodID
   kPPMdZip
 };
 
+static LPCSTR const kMethodsLongnames[] =
+{
+    "Copy"
+  , "ZStandard"
+  , "Brotli"
+  , "LZ4"
+  , "LZ5"
+  , "Lizard, FastLZ4"
+  , "Lizard, LIZv1"
+  , "Lizard, FastLZ4 + Huffman"
+  , "Lizard, LIZv1 + Huffman"
+  , "LZMA"
+  , "LZMA2"
+  , "PPMd"
+  , "BZip2"
+  , "Deflate"
+  , "Deflate64"
+  , "PPMd"
+};
+
 static LPCSTR const kMethodsNames[] =
 {
     "Copy"
-  , "ZSTD"
-  , "BROTLI"
-  , "LIZARD"
+  , "zstd"
+  , "Brotli"
   , "LZ4"
   , "LZ5"
+  , "Lizard"
+  , "Lizard"
+  , "Lizard"
+  , "Lizard"
   , "LZMA"
   , "LZMA2"
   , "PPMd"
@@ -140,7 +166,10 @@ static const EMethodID g_BrotliMethods[] =
 
 static const EMethodID g_LizardMethods[] =
 {
-  kLIZARD
+  kLIZARD_M1,
+  kLIZARD_M2,
+  kLIZARD_M3,
+  kLIZARD_M4
 };
 
 static const EMethodID g_Lz4Methods[] =
@@ -157,9 +186,12 @@ static const EMethodID g_7zMethods[] =
 {
   kZSTD,
   kBROTLI,
-  kLIZARD,
   kLZ4,
   kLZ5,
+  kLIZARD_M1,
+  kLIZARD_M2,
+  kLIZARD_M3,
+  kLIZARD_M4,
   kLZMA2,
   kLZMA,
   kPPMd,
@@ -269,25 +301,25 @@ static const CFormatInfo g_Formats[] =
     false, false, true, false, false, false
   },
   {
-    "Brotli",
+    "Brotli", /* 7 */
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 11),
     METHODS_PAIR(g_BrotliMethods),
     false, false, true, false, false, false
   },
   {
-    "Lizard", /* 10..19 / 20..29 / .... */
+    "Lizard", /* 8 */
     (1 << 10) | (1 << 11) | (1 << 13) | (1 << 15) | (1 << 17) | (1 << 19),
     METHODS_PAIR(g_LizardMethods),
     false, false, true, false, false, false
   },
   {
-    "LZ4",
+    "LZ4", /* 9 */
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 12),
     METHODS_PAIR(g_Lz4Methods),
     false, false, true, false, false, false
   },
   {
-    "LZ5",
+    "LZ5", /* 10 */
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15),
     METHODS_PAIR(g_Lz5Methods),
     false, false, true, false, false, false
@@ -1082,6 +1114,7 @@ void CCompressDialog::SetLevel()
   UInt32 level = GetLevel2();
   UInt32 LevelsMask;
   UInt32 LevelsStart = 0;
+  UInt32 LevelsEnd = 22;
   UInt32 langID = 0;
   unsigned i, ir;
 
@@ -1104,9 +1137,22 @@ void CCompressDialog::SetLevel()
     LevelsMask = g_Formats[6].LevelsMask;
   else if (GetMethodID() == kBROTLI)
     LevelsMask = g_Formats[7].LevelsMask;
-  else if (GetMethodID() == kLIZARD) {
+  else if (GetMethodID() == kLIZARD_M1) {
     LevelsMask = g_Formats[8].LevelsMask;
     LevelsStart = 10;
+    LevelsEnd = 19;
+  } else if (GetMethodID() == kLIZARD_M2) {
+    LevelsMask = g_Formats[8].LevelsMask;
+    LevelsStart = 20;
+    LevelsEnd = 29;
+  } else if (GetMethodID() == kLIZARD_M3) {
+    LevelsMask = g_Formats[8].LevelsMask;
+    LevelsStart = 30;
+    LevelsEnd = 39;
+  } else if (GetMethodID() == kLIZARD_M4) {
+    LevelsMask = g_Formats[8].LevelsMask;
+    LevelsStart = 40;
+    LevelsEnd = 49;
   } else if (GetMethodID() == kLZ4)
     LevelsMask = g_Formats[9].LevelsMask;
   else if (GetMethodID() == kLZ5)
@@ -1114,13 +1160,13 @@ void CCompressDialog::SetLevel()
   else
     LevelsMask = g_Formats[GetStaticFormatIndex()].LevelsMask;
 
-  for (i = LevelsStart; i <= 49; i++)
+  for (i = LevelsStart; i <= LevelsEnd; i++)
   {
     TCHAR s[40];
     TCHAR t[50] = { TEXT('L'), TEXT('e'), TEXT('v'), TEXT('e'), TEXT('l'), TEXT(' '), 0 };
 
     // lizard needs extra handling
-    if (GetMethodID() == kLIZARD) {
+    if (GetMethodID() >= kLIZARD_M1 && GetMethodID() <= kLIZARD_M4) {
       ir = i;
       if (ir % 10 == 0) langID = 0;
       while (ir > 19) { ir -= 10; }
@@ -1153,7 +1199,6 @@ void CCompressDialog::SetLevel()
   return;
 }
 
-
 static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s)
 {
   return cb.AddString((CSysString)s);
@@ -1174,33 +1219,56 @@ void CCompressDialog::SetMethod(int keepMethodId)
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
   int index = FindRegistryFormat(ai.Name);
   UString defaultMethod;
-  if (index >= 0)
-  {
+  int defaultLevel = 5;
+  if (index >= 0) {
     const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
     defaultMethod = fo.Method;
+    defaultLevel = fo.Level;
   }
+
   bool isSfx = IsSFX();
   bool weUseSameMethod = false;
-  
+
+#if 0
+  {
+  wchar_t buf[2000];
+  wsprintf(buf, L"keep=%d level = %d method=%s", keepMethodId, defaultLevel, (LPCWSTR)defaultMethod);
+  ShowErrorMessage(*this, buf);
+  }
+#endif
+
+
   for (unsigned m = 0; m < fi.NumMethods; m++)
   {
     EMethodID methodID = fi.MathodIDs[m];
     if (isSfx)
       if (!IsMethodSupportedBySfx(methodID))
         continue;
+
+    const char *methodLong = kMethodsLongnames[methodID];
     const char *method = kMethodsNames[methodID];
-    int itemIndex = (int)ComboBox_AddStringAscii(m_Method, method);
+    int itemIndex = (int)ComboBox_AddStringAscii(m_Method, methodLong);
     m_Method.SetItemData(itemIndex, methodID);
-    if (keepMethodId == methodID)
-    {
-      m_Method.SetCurSel(itemIndex);
+
+    if (keepMethodId == methodID) {
       weUseSameMethod = true;
+      m_Method.SetCurSel(itemIndex);
       continue;
     }
-    if ((defaultMethod.IsEqualTo_Ascii_NoCase(method) || m == 0) && !weUseSameMethod)
+
+    // Lizard :/
+    if (defaultMethod.IsEqualTo_Ascii_NoCase("lizard") && keepMethodId == -1) {
+      if (defaultLevel >= 10 && defaultLevel <= 19) m_Method.SetCurSel(kLIZARD_M1 - 1);
+      if (defaultLevel >= 20 && defaultLevel <= 29) m_Method.SetCurSel(kLIZARD_M2 - 1);
+      if (defaultLevel >= 30 && defaultLevel <= 39) m_Method.SetCurSel(kLIZARD_M3 - 1);
+      if (defaultLevel >= 40 && defaultLevel <= 49) m_Method.SetCurSel(kLIZARD_M4 - 1);
+    }
+
+    if ((defaultMethod.IsEqualTo_Ascii_NoCase(method) || m == 0) && !weUseSameMethod) {
       m_Method.SetCurSel(itemIndex);
+    }
   }
-  
+
   if (!weUseSameMethod)
   {
     SetDictionary();
@@ -1672,7 +1740,10 @@ void CCompressDialog::SetNumThreads()
     case kBROTLI: numAlgoThreadsMax = 128; break;
     case kLZ4: numAlgoThreadsMax = 128; break;
     case kLZ5: numAlgoThreadsMax = 128; break;
-    case kLIZARD: numAlgoThreadsMax = 128; break;
+    case kLIZARD_M1: numAlgoThreadsMax = 128; break;
+    case kLIZARD_M2: numAlgoThreadsMax = 128; break;
+    case kLIZARD_M3: numAlgoThreadsMax = 128; break;
+    case kLIZARD_M4: numAlgoThreadsMax = 128; break;
     case kLZMA: numAlgoThreadsMax = 2; break;
     case kLZMA2: numAlgoThreadsMax = 32; break;
     case kBZip2: numAlgoThreadsMax = 32; break;

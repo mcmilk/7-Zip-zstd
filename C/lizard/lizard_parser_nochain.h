@@ -1,39 +1,22 @@
-#define LIZ_HC_MIN_OFFSET 8
-#define LIZ_HC_LONGOFF_MM 0 /* not used with offsets > 1<<16 */
 #define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
-#define GET_MINMATCH(offset) (MINMATCH)
 
-#if 1
-    #define LIZ_HC_HASH_FUNCTION(ip, hashLog) LIZ_hashPtr(ip, hashLog, ctx->params.searchLength)
-#else
-    #define LIZ_HC_HASH_FUNCTION(ip, hashLog) LIZ_hash5Ptr(ip, hashLog)
-#endif
+//#define LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog) Lizard_hashPtr(ip, hashLog, ctx->params.searchLength)
+#define LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog) Lizard_hash5Ptr(ip, hashLog)
+#define LIZARD_NOCHAIN_MIN_OFFSET 8
 
 /* Update chains up to ip (excluded) */
-FORCE_INLINE void LIZ_Insert (LIZ_stream_t* ctx, const BYTE* ip)
+FORCE_INLINE void Lizard_InsertNoChain (Lizard_stream_t* ctx, const BYTE* ip)
 {
-    U32* const chainTable = ctx->chainTable;
     U32* const hashTable  = ctx->hashTable;
-#if MINMATCH == 3
-    U32* HashTable3  = ctx->hashTable3;
-#endif 
     const BYTE* const base = ctx->base;
     U32 const target = (U32)(ip - base);
     U32 idx = ctx->nextToUpdate;
     const int hashLog = ctx->params.hashLog;
-    const U32 contentMask = (1 << ctx->params.contentLog) - 1;
-    const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
 
     while (idx < target) {
-        size_t const h = LIZ_hashPtr(base+idx, hashLog, ctx->params.searchLength);
-        size_t delta = idx - hashTable[h];
-        if (delta>maxDistance) delta = maxDistance;
-        DELTANEXT(idx) = (U32)delta;
-        if (idx >= hashTable[h] + LIZ_HC_MIN_OFFSET)
+        size_t const h = LIZARD_NOCHAIN_HASH_FUNCTION(base+idx, hashLog);
+        if ((hashTable[h] >= idx) || (idx >= hashTable[h] + LIZARD_NOCHAIN_MIN_OFFSET))
             hashTable[h] = idx;
-#if MINMATCH == 3
-        HashTable3[LIZ_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
-#endif 
         idx++;
     }
 
@@ -41,73 +24,58 @@ FORCE_INLINE void LIZ_Insert (LIZ_stream_t* ctx, const BYTE* ip)
 }
 
 
-
-FORCE_INLINE int LIZ_InsertAndFindBestMatch (LIZ_stream_t* ctx,   /* Index table will be updated */
+FORCE_INLINE int Lizard_InsertAndFindBestMatchNoChain (Lizard_stream_t* ctx,   /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos)
 {
-    U32* const chainTable = ctx->chainTable;
     U32* const HashTable = ctx->hashTable;
     const BYTE* const base = ctx->base;
     const BYTE* const dictBase = ctx->dictBase;
     const U32 dictLimit = ctx->dictLimit;
     const BYTE* const lowPrefixPtr = base + dictLimit;
     const BYTE* const dictEnd = dictBase + dictLimit;
-    U32 matchIndex, delta;
+    U32 matchIndex;
     const BYTE* match;
-    int nbAttempts=ctx->params.searchNum;
     size_t ml=0;
     const int hashLog = ctx->params.hashLog;
-    const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
-    const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
+    const U32 current = (U32)(ip - base);
+    const U32 lowLimit = (ctx->lowLimit + maxDistance >= current) ? ctx->lowLimit : current - maxDistance;
 
     /* HC4 match finder */
-    LIZ_Insert(ctx, ip);
-    matchIndex = HashTable[LIZ_HC_HASH_FUNCTION(ip, hashLog)];
+    Lizard_InsertNoChain(ctx, ip);
+    matchIndex = HashTable[LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
 
-    while ((matchIndex>=lowLimit) && (nbAttempts)) {
-        nbAttempts--;
+    if ((matchIndex < current) && (matchIndex >= lowLimit)) {
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;
-#if LIZ_HC_MIN_OFFSET > 0
-            if ((U32)(ip - match) >= LIZ_HC_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
-            if (*(match+ml) == *(ip+ml)
-                && (MEM_read32(match) == MEM_read32(ip)))
+            if (*(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip)))
             {
-                size_t const mlt = LIZ_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-#if LIZ_HC_LONGOFF_MM > 0
-                if ((mlt >= LIZ_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZ_MAX_16BIT_OFFSET))
-#endif
+                size_t const mlt = Lizard_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                 if (mlt > ml) { ml = mlt; *matchpos = match; }
             }
         } else {
             match = dictBase + matchIndex;
-//            fprintf(stderr, "dictBase[%p]+matchIndex[%d]=match[%p] dictLimit=%d base=%p ip=%p iLimit=%p off=%d\n", dictBase, matchIndex, match, dictLimit, base, ip, iLimit, (U32)(ip-match));
-#if LIZ_HC_MIN_OFFSET > 0
-            if ((U32)(ip - (base + matchIndex)) >= LIZ_HC_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
-                size_t mlt = LIZ_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
-#if LIZ_HC_LONGOFF_MM > 0
-                if ((mlt >= LIZ_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZ_MAX_16BIT_OFFSET))
-#endif
+                size_t mlt = Lizard_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
                 if (mlt > ml) { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
         }
-        delta = DELTANEXT(matchIndex);
-        if (delta > matchIndex) break;
-        matchIndex -= delta;
     }
 
     return (int)ml;
 }
 
 
-FORCE_INLINE int LIZ_InsertAndGetWiderMatch (
-    LIZ_stream_t* ctx,
+FORCE_INLINE int Lizard_InsertAndGetWiderMatchNoChain (
+    Lizard_stream_t* ctx,
     const BYTE* const ip,
     const BYTE* const iLowLimit,
     const BYTE* const iHighLimit,
@@ -115,42 +83,36 @@ FORCE_INLINE int LIZ_InsertAndGetWiderMatch (
     const BYTE** matchpos,
     const BYTE** startpos)
 {
-    U32* const chainTable = ctx->chainTable;
     U32* const HashTable = ctx->hashTable;
     const BYTE* const base = ctx->base;
     const U32 dictLimit = ctx->dictLimit;
     const BYTE* const lowPrefixPtr = base + dictLimit;
     const BYTE* const dictBase = ctx->dictBase;
     const BYTE* const dictEnd = dictBase + dictLimit;
-    U32   matchIndex, delta;
-    int nbAttempts = ctx->params.searchNum;
+    U32   matchIndex;
     int LLdelta = (int)(ip-iLowLimit);
     const int hashLog = ctx->params.hashLog;
-    const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
-    const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
-    
-    /* First Match */
-    LIZ_Insert(ctx, ip);
-    matchIndex = HashTable[LIZ_HC_HASH_FUNCTION(ip, hashLog)];
+    const U32 current = (U32)(ip - base);
+    const U32 lowLimit = (ctx->lowLimit + maxDistance >= current) ? ctx->lowLimit : current - maxDistance;
 
-    while ((matchIndex>=lowLimit) && (nbAttempts)) {
-        nbAttempts--;
+    /* First Match */
+    Lizard_InsertNoChain(ctx, ip);
+    matchIndex = HashTable[LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
+
+    if ((matchIndex < current) && (matchIndex >= lowLimit)) {
         if (matchIndex >= dictLimit) {
             const BYTE* match = base + matchIndex;
-#if LIZ_HC_MIN_OFFSET > 0
-            if ((U32)(ip - match) >= LIZ_HC_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
             if (*(iLowLimit + longest) == *(match - LLdelta + longest)) {
                 if (MEM_read32(match) == MEM_read32(ip)) {
-                    int mlt = MINMATCH + LIZ_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
+                    int mlt = MINMATCH + Lizard_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
                     int back = 0;
                     while ((ip+back > iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
                     mlt -= back;
 
-#if LIZ_HC_LONGOFF_MM > 0
-                    if ((mlt >= LIZ_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZ_MAX_16BIT_OFFSET))
-#endif
                     if (mlt > longest) {
                         longest = (int)mlt;
                         *matchpos = match+back;
@@ -160,32 +122,26 @@ FORCE_INLINE int LIZ_InsertAndGetWiderMatch (
             }
         } else {
             const BYTE* match = dictBase + matchIndex;
-#if LIZ_HC_MIN_OFFSET > 0
-            if ((U32)(ip - (base + matchIndex)) >= LIZ_HC_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
                 int back=0;
-                size_t mlt = LIZ_count_2segments(ip+MINMATCH, match+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
+                size_t mlt = Lizard_count_2segments(ip+MINMATCH, match+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
                 while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == match[back-1])) back--;
                 mlt -= back;
-#if LIZ_HC_LONGOFF_MM > 0
-                if ((mlt >= LIZ_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZ_MAX_16BIT_OFFSET))
-#endif
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }
         }
-        delta = DELTANEXT(matchIndex);
-        if (delta > matchIndex) break;
-        matchIndex -= delta;
     }
 
     return longest;
 }
 
 
-FORCE_INLINE int LIZ_compress_hashChain (
-        LIZ_stream_t* const ctx,
+FORCE_INLINE int Lizard_compress_noChain (
+        Lizard_stream_t* const ctx,
         const BYTE* ip,
         const BYTE* const iend)
 {
@@ -207,7 +163,7 @@ FORCE_INLINE int LIZ_compress_hashChain (
 
     /* Main Loop */
     while (ip < mflimit) {
-        ml = LIZ_InsertAndFindBestMatch (ctx, ip, matchlimit, (&ref));
+        ml = Lizard_InsertAndFindBestMatchNoChain (ctx, ip, matchlimit, (&ref));
         if (!ml) { ip++; continue; }
 
         /* saved, in case we would skip too much */
@@ -217,11 +173,11 @@ FORCE_INLINE int LIZ_compress_hashChain (
 
 _Search2:
         if (ip+ml < mflimit)
-            ml2 = LIZ_InsertAndGetWiderMatch(ctx, ip + ml - 2, ip + 1, matchlimit, ml, &ref2, &start2);
+            ml2 = Lizard_InsertAndGetWiderMatchNoChain(ctx, ip + ml - 2, ip + 1, matchlimit, ml, &ref2, &start2);
         else ml2 = ml;
 
         if (ml2 == ml) { /* No better match */
-            if (LIZ_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
+            if (Lizard_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
             continue;
         }
 
@@ -251,13 +207,7 @@ _Search3:
             int correction;
             int new_ml = ml;
             if (new_ml > OPTIMAL_ML) new_ml = OPTIMAL_ML;
-            if (ip+new_ml > start2 + ml2 - GET_MINMATCH((U32)(start2 - ref2))) {
-                new_ml = (int)(start2 - ip) + ml2 - GET_MINMATCH((U32)(start2 - ref2));
-                if (new_ml < GET_MINMATCH((U32)(ip - ref))) { // match2 doesn't fit
-                    if (LIZ_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
-                    continue;
-                }
-            }
+            if (ip+new_ml > start2 + ml2 - MINMATCH) new_ml = (int)(start2 - ip) + ml2 - MINMATCH;
             correction = new_ml - (int)(start2 - ip);
             if (correction > 0) {
                 start2 += correction;
@@ -268,16 +218,16 @@ _Search3:
         /* Now, we have start2 = ip+new_ml, with new_ml = min(ml, OPTIMAL_ML=18) */
 
         if (start2 + ml2 < mflimit)
-            ml3 = LIZ_InsertAndGetWiderMatch(ctx, start2 + ml2 - 3, start2, matchlimit, ml2, &ref3, &start3);
+            ml3 = Lizard_InsertAndGetWiderMatchNoChain(ctx, start2 + ml2 - 3, start2, matchlimit, ml2, &ref3, &start3);
         else ml3 = ml2;
 
         if (ml3 == ml2) {  /* No better match : 2 sequences to encode */
             /* ip & ref are known; Now for ml */
             if (start2 < ip+ml)  ml = (int)(start2 - ip);
             /* Now, encode 2 sequences */
-            if (LIZ_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
+            if (Lizard_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
             ip = start2;
-            if (LIZ_encodeSequence_LZ4(ctx, &ip, &anchor, ml2, ref2)) return 0;
+            if (Lizard_encodeSequence_LZ4(ctx, &ip, &anchor, ml2, ref2)) return 0;
             continue;
         }
 
@@ -288,14 +238,14 @@ _Search3:
                     start2 += correction;
                     ref2 += correction;
                     ml2 -= correction;
-                    if (ml2 < GET_MINMATCH((U32)(start2 - ref2))) {
+                    if (ml2 < MINMATCH) {
                         start2 = start3;
                         ref2 = ref3;
                         ml2 = ml3;
                     }
                 }
 
-                if (LIZ_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
+                if (Lizard_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
                 ip  = start3;
                 ref = ref3;
                 ml  = ml3;
@@ -320,10 +270,10 @@ _Search3:
             if ((start2 - ip) < (int)ML_MASK_LZ4) {
                 int correction;
                 if (ml > OPTIMAL_ML) ml = OPTIMAL_ML;
-                if (ip + ml > start2 + ml2 - GET_MINMATCH((U32)(start2 - ref2))) {
-                    ml = (int)(start2 - ip) + ml2 - GET_MINMATCH((U32)(start2 - ref2));
-                    if (ml < GET_MINMATCH((U32)(ip - ref))) { // match2 doesn't fit, remove it
-                        if (LIZ_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
+                if (ip + ml > start2 + ml2 - MINMATCH) {
+                    ml = (int)(start2 - ip) + ml2 - MINMATCH;
+                    if (ml < MINMATCH) { // match2 doesn't fit, remove it
+                        if (Lizard_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
                         ip  = start3;
                         ref = ref3;
                         ml  = ml3;
@@ -344,7 +294,7 @@ _Search3:
                 ml = (int)(start2 - ip);
             }
         }
-        if (LIZ_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
+        if (Lizard_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
 
         ip = start2;
         ref = ref2;
@@ -359,7 +309,7 @@ _Search3:
 
     /* Encode Last Literals */
     ip = iend;
-    if (LIZ_encodeLastLiterals_LZ4(ctx, &ip, &anchor)) goto _output_error;
+    if (Lizard_encodeLastLiterals_LZ4(ctx, &ip, &anchor)) goto _output_error;
 
     /* End */
     return 1;

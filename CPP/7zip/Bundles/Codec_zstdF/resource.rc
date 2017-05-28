@@ -3,4 +3,4 @@
 
 MY_VERSION_INFO_DLL("7-Zip ZStandard Plugin v1.2.0", "zstd")
 
-101  ICON  "../../Archive/Icons/7z.ico"
+101  ICON  "../../Archive/Icons/zstd.ico"

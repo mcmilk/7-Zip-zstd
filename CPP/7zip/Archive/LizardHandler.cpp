@@ -1,4 +1,4 @@
-// Lz4Handler.cpp
+// LizardHandler.cpp
 
 #include "StdAfx.h"
 
@@ -10,8 +10,8 @@
 #include "../Common/RegisterArc.h"
 #include "../Common/StreamUtils.h"
 
-#include "../Compress/Lz4Decoder.h"
-#include "../Compress/Lz4Encoder.h"
+#include "../Compress/LizardDecoder.h"
+#include "../Compress/LizardEncoder.h"
 #include "../Compress/CopyCoder.h"
 
 #include "Common/DummyOutStream.h"
@@ -20,7 +20,7 @@
 using namespace NWindows;
 
 namespace NArchive {
-namespace NLZ4 {
+namespace NLIZARD {
 
 class CHandler:
   public IInArchive,
@@ -100,7 +100,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
 
 static const unsigned kSignatureCheckSize = 4;
 
-API_FUNC_static_IsArc IsArc_lz4(const Byte *p, size_t size)
+API_FUNC_static_IsArc IsArc_lizard(const Byte *p, size_t size)
 {
   if (size < 4)
     return k_IsArc_Res_NEED_MORE;
@@ -114,8 +114,8 @@ API_FUNC_static_IsArc IsArc_lz4(const Byte *p, size_t size)
     magic = GetUi32(p+12);
   }
 
-  // lz4 magic
-  if (magic == 0x184D2204)
+  // Lizard Magic
+  if (magic == 0x184D2206)
     return k_IsArc_Res_YES;
 
   return k_IsArc_Res_NO;
@@ -129,7 +129,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
   {
     Byte buf[kSignatureCheckSize];
     RINOK(ReadStream_FALSE(stream, buf, kSignatureCheckSize));
-    if (IsArc_lz4(buf, kSignatureCheckSize) == k_IsArc_Res_NO)
+    if (IsArc_lizard(buf, kSignatureCheckSize) == k_IsArc_Res_NO)
       return S_FALSE;
     _isArc = true;
     _stream = stream;
@@ -190,7 +190,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   {
 
-  NCompress::NLZ4::CDecoder *decoderSpec = new NCompress::NLZ4::CDecoder;
+  NCompress::NLIZARD::CDecoder *decoderSpec = new NCompress::NLIZARD::CDecoder;
   CMyComPtr<ICompressCoder> decoder = decoderSpec;
   decoderSpec->SetInStream(_seqStream);
 
@@ -274,7 +274,7 @@ static HRESULT UpdateArchive(
   CLocalProgress *localProgressSpec = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
   localProgressSpec->Init(updateCallback, true);
-  NCompress::NLZ4::CEncoder *encoderSpec = new NCompress::NLZ4::CEncoder;
+  NCompress::NLIZARD::CEncoder *encoderSpec = new NCompress::NLIZARD::CEncoder;
   CMyComPtr<ICompressCoder> encoder = encoderSpec;
   RINOK(props.SetCoderProps(encoderSpec, NULL));
   RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));
@@ -354,13 +354,13 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
   return _props.SetProperties(names, values, numProps);
 }
 
-static const Byte k_Signature[] = "0x184D2204";
+static const Byte k_Signature[] = "0x184D2206";
 
 REGISTER_ARC_IO(
-  "lz4", "lz4 tlz4", "* .tar", 0x0f,
+  "liz", "liz tliz", "* .tar", 0x11,
   k_Signature,
   0,
   NArcInfoFlags::kKeepName,
-  IsArc_lz4)
+  IsArc_lizard)
 
 }}

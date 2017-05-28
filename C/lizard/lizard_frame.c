@@ -1,6 +1,7 @@
 /*
-LZ5 auto-framing library
-Copyright (C) 2011-2016, Yann Collet.
+Lizard auto-framing library
+Copyright (C) 2011-2016, Yann Collet
+Copyright (C) 2016-2017, Przemyslaw Skibinski
 
 BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 
@@ -28,10 +29,10 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 You can contact the author at :
-- LZ5 source repository : https://github.com/inikep/lz5
+- Lizard source repository : https://github.com/inikep/lizard
 */
 
-/* LZ5F is a stand-alone API to create LZ5-compressed Frames
+/* LizardF is a stand-alone API to create Lizard-compressed Frames
 *  in full conformance with specification v1.5.0
 *  All related operations, including memory management, are handled by the library.
 * */
@@ -49,10 +50,10 @@ You can contact the author at :
 /*-************************************
 *  Includes
 **************************************/
-#include "lizframe_static.h"
-#include "liz_compress.h"
-#include "liz_decompress.h"
-#include "liz_common.h"  /* LIZ_DICT_SIZE */
+#include "lizard_frame_static.h"
+#include "lizard_compress.h"
+#include "lizard_decompress.h"
+#include "lizard_common.h"  /* LIZARD_DICT_SIZE */
 #define XXH_STATIC_LINKING_ONLY
 #include "../zstd/xxhash.h"
 #include <stdio.h>
@@ -60,7 +61,7 @@ You can contact the author at :
 
 
 /* unoptimized version; solves endianess & alignment issues */
-static U32 LIZF_readLE32 (const void* src)
+static U32 LizardF_readLE32 (const void* src)
 {
     const BYTE* const srcPtr = (const BYTE*)src;
     U32 value32 = srcPtr[0];
@@ -70,7 +71,7 @@ static U32 LIZF_readLE32 (const void* src)
     return value32;
 }
 
-static void LIZF_writeLE32 (BYTE* dstPtr, U32 value32)
+static void LizardF_writeLE32 (BYTE* dstPtr, U32 value32)
 {
     dstPtr[0] = (BYTE)value32;
     dstPtr[1] = (BYTE)(value32 >> 8);
@@ -78,7 +79,7 @@ static void LIZF_writeLE32 (BYTE* dstPtr, U32 value32)
     dstPtr[3] = (BYTE)(value32 >> 24);
 }
 
-static U64 LIZF_readLE64 (const BYTE* srcPtr)
+static U64 LizardF_readLE64 (const BYTE* srcPtr)
 {
     U64 value64 = srcPtr[0];
     value64 += ((U64)srcPtr[1]<<8);
@@ -91,7 +92,7 @@ static U64 LIZF_readLE64 (const BYTE* srcPtr)
     return value64;
 }
 
-static void LIZF_writeLE64 (BYTE* dstPtr, U64 value64)
+static void LizardF_writeLE64 (BYTE* dstPtr, U64 value64)
 {
     dstPtr[0] = (BYTE)value64;
     dstPtr[1] = (BYTE)(value64 >> 8);
@@ -113,10 +114,10 @@ static void LIZF_writeLE64 (BYTE* dstPtr, U64 value64)
 #define _4BITS 0x0F
 #define _8BITS 0xFF
 
-#define LIZF_MAGIC_SKIPPABLE_START  0x184D2A50U
-#define LIZF_MAGICNUMBER            0x184D2206U
-#define LIZF_BLOCKUNCOMPRESSED_FLAG 0x80000000U
-#define LIZF_BLOCKSIZEID_DEFAULT LIZF_max128KB
+#define LIZARDF_MAGIC_SKIPPABLE_START  0x184D2A50U
+#define LIZARDF_MAGICNUMBER            0x184D2206U
+#define LIZARDF_BLOCKUNCOMPRESSED_FLAG 0x80000000U
+#define LIZARDF_BLOCKSIZEID_DEFAULT LizardF_max128KB
 
 static const size_t minFHSize = 7;
 static const size_t maxFHSize = 15;
@@ -126,9 +127,9 @@ static const size_t BHSize = 4;
 /*-************************************
 *  Structures and local types
 **************************************/
-typedef struct LIZF_cctx_s
+typedef struct LizardF_cctx_s
 {
-    LIZF_preferences_t prefs;
+    LizardF_preferences_t prefs;
     U32    version;
     U32    cStage;
     size_t maxBlockSize;
@@ -138,13 +139,13 @@ typedef struct LIZF_cctx_s
     size_t tmpInSize;
     U64    totalInSize;
     XXH32_state_t xxh;
-    LIZ_stream_t* lz5CtxPtr;
-    U32    lz5CtxLevel;     /* 0: unallocated;  1: LIZ_stream_t;  */
-} LIZF_cctx_t;
+    Lizard_stream_t* lizardCtxPtr;
+    U32    lizardCtxLevel;     /* 0: unallocated;  1: Lizard_stream_t;  */
+} LizardF_cctx_t;
 
-typedef struct LIZF_dctx_s
+typedef struct LizardF_dctx_s
 {
-    LIZF_frameInfo_t frameInfo;
+    LizardF_frameInfo_t frameInfo;
     U32    version;
     U32    dStage;
     U64    frameRemainingSize;
@@ -162,25 +163,25 @@ typedef struct LIZF_dctx_s
     size_t tmpOutStart;
     XXH32_state_t xxh;
     BYTE   header[16];
-} LIZF_dctx_t;
+} LizardF_dctx_t;
 
 
 /*-************************************
 *  Error management
 **************************************/
-#define LIZF_GENERATE_STRING(STRING) #STRING,
-static const char* LIZF_errorStrings[] = { LIZF_LIST_ERRORS(LIZF_GENERATE_STRING) };
+#define LIZARDF_GENERATE_STRING(STRING) #STRING,
+static const char* LizardF_errorStrings[] = { LIZARDF_LIST_ERRORS(LIZARDF_GENERATE_STRING) };
 
 
-unsigned LIZF_isError(LIZF_errorCode_t code)
+unsigned LizardF_isError(LizardF_errorCode_t code)
 {
-    return (code > (LIZF_errorCode_t)(-LIZF_ERROR_maxCode));
+    return (code > (LizardF_errorCode_t)(-LizardF_ERROR_maxCode));
 }
 
-const char* LIZF_getErrorName(LIZF_errorCode_t code)
+const char* LizardF_getErrorName(LizardF_errorCode_t code)
 {
     static const char* codeError = "Unspecified error code";
-    if (LIZF_isError(code)) return LIZF_errorStrings[-(int)(code)];
+    if (LizardF_isError(code)) return LizardF_errorStrings[-(int)(code)];
     return codeError;
 }
 
@@ -188,35 +189,35 @@ const char* LIZF_getErrorName(LIZF_errorCode_t code)
 /*-************************************
 *  Private functions
 **************************************/
-static size_t LIZF_getBlockSize(unsigned blockSizeID)
+static size_t LizardF_getBlockSize(unsigned blockSizeID)
 {
     static const size_t blockSizes[7] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
 
-    if (blockSizeID == 0) blockSizeID = LIZF_BLOCKSIZEID_DEFAULT;
+    if (blockSizeID == 0) blockSizeID = LIZARDF_BLOCKSIZEID_DEFAULT;
     blockSizeID -= 1;
-    if (blockSizeID >= 7) return (size_t)-LIZF_ERROR_maxBlockSize_invalid;
+    if (blockSizeID >= 7) return (size_t)-LizardF_ERROR_maxBlockSize_invalid;
 
     return blockSizes[blockSizeID];
 }
 
-static LIZF_blockSizeID_t LIZF_optimalBSID(const LIZF_blockSizeID_t requestedBSID, const size_t srcSize)
+static LizardF_blockSizeID_t LizardF_optimalBSID(const LizardF_blockSizeID_t requestedBSID, const size_t srcSize)
 {
-    LIZF_blockSizeID_t proposedBSID = LIZF_max128KB;
+    LizardF_blockSizeID_t proposedBSID = LizardF_max128KB;
     size_t maxBlockSize;
 
     while (requestedBSID > proposedBSID)
     {
-        maxBlockSize = LIZF_getBlockSize(proposedBSID);
+        maxBlockSize = LizardF_getBlockSize(proposedBSID);
         if (srcSize <= maxBlockSize) {
             return proposedBSID;
         }
-        proposedBSID = (LIZF_blockSizeID_t)((int)proposedBSID + 1);
+        proposedBSID = (LizardF_blockSizeID_t)((int)proposedBSID + 1);
     }
     return requestedBSID;
 }
 
 
-static BYTE LIZF_headerChecksum (const void* header, size_t length)
+static BYTE LizardF_headerChecksum (const void* header, size_t length)
 {
     U32 xxh = XXH32(header, length, 0);
     return (BYTE)(xxh >> 8);
@@ -227,41 +228,41 @@ static BYTE LIZF_headerChecksum (const void* header, size_t length)
 *  Simple compression functions
 **************************************/
 
-size_t LIZF_compressFrameBound(size_t srcSize, const LIZF_preferences_t* preferencesPtr)
+size_t LizardF_compressFrameBound(size_t srcSize, const LizardF_preferences_t* preferencesPtr)
 {
-    LIZF_preferences_t prefs;
+    LizardF_preferences_t prefs;
     size_t headerSize;
     size_t streamSize;
 
     if (preferencesPtr!=NULL) prefs = *preferencesPtr;
     else memset(&prefs, 0, sizeof(prefs));
 
-    prefs.frameInfo.blockSizeID = LIZF_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
+    prefs.frameInfo.blockSizeID = LizardF_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
     prefs.autoFlush = 1;
 
     headerSize = maxFHSize;      /* header size, including magic number and frame content size*/
-    streamSize = LIZF_compressBound(srcSize, &prefs);
+    streamSize = LizardF_compressBound(srcSize, &prefs);
 
     return headerSize + streamSize;
 }
 
 
 
-/*! LIZF_compressFrame() :
-* Compress an entire srcBuffer into a valid LZ5 frame, as defined by specification v1.5.0, in a single step.
+/*! LizardF_compressFrame() :
+* Compress an entire srcBuffer into a valid Lizard frame, as defined by specification v1.5.0, in a single step.
 * The most important rule is that dstBuffer MUST be large enough (dstMaxSize) to ensure compression completion even in worst case.
-* You can get the minimum value of dstMaxSize by using LIZF_compressFrameBound()
-* If this condition is not respected, LIZF_compressFrame() will fail (result is an errorCode)
-* The LIZF_preferences_t structure is optional : you can provide NULL as argument. All preferences will then be set to default.
+* You can get the minimum value of dstMaxSize by using LizardF_compressFrameBound()
+* If this condition is not respected, LizardF_compressFrame() will fail (result is an errorCode)
+* The LizardF_preferences_t structure is optional : you can provide NULL as argument. All preferences will then be set to default.
 * The result of the function is the number of bytes written into dstBuffer.
-* The function outputs an error code if it fails (can be tested using LIZF_isError())
+* The function outputs an error code if it fails (can be tested using LizardF_isError())
 */
-size_t LIZF_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuffer, size_t srcSize, const LIZF_preferences_t* preferencesPtr)
+size_t LizardF_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuffer, size_t srcSize, const LizardF_preferences_t* preferencesPtr)
 {
-    LIZF_cctx_t cctxI;
-    LIZF_preferences_t prefs;
-    LIZF_compressOptions_t options;
-    LIZF_errorCode_t errorCode;
+    LizardF_cctx_t cctxI;
+    LizardF_preferences_t prefs;
+    LizardF_compressOptions_t options;
+    LizardF_errorCode_t errorCode;
     BYTE* const dstStart = (BYTE*) dstBuffer;
     BYTE* dstPtr = dstStart;
     BYTE* const dstEnd = dstStart + dstMaxSize;
@@ -269,7 +270,7 @@ size_t LIZF_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     memset(&cctxI, 0, sizeof(cctxI));   /* works because no allocation */
     memset(&options, 0, sizeof(options));
 
-    cctxI.version = LIZF_VERSION;
+    cctxI.version = LIZARDF_VERSION;
     cctxI.maxBufferSize = 5 MB;   /* mess with real buffer size to prevent allocation; works because autoflush==1 & stableSrc==1 */
 
     if (preferencesPtr!=NULL)
@@ -279,33 +280,33 @@ size_t LIZF_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     if (prefs.frameInfo.contentSize != 0)
         prefs.frameInfo.contentSize = (U64)srcSize;   /* auto-correct content size if selected (!=0) */
 
-    prefs.frameInfo.blockSizeID = LIZF_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
+    prefs.frameInfo.blockSizeID = LizardF_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
     prefs.autoFlush = 1;
-    if (srcSize <= LIZF_getBlockSize(prefs.frameInfo.blockSizeID))
-        prefs.frameInfo.blockMode = LIZF_blockIndependent;   /* no need for linked blocks */
+    if (srcSize <= LizardF_getBlockSize(prefs.frameInfo.blockSizeID))
+        prefs.frameInfo.blockMode = LizardF_blockIndependent;   /* no need for linked blocks */
 
     options.stableSrc = 1;
 
-    if (dstMaxSize < LIZF_compressFrameBound(srcSize, &prefs))
-        return (size_t)-LIZF_ERROR_dstMaxSize_tooSmall;
+    if (dstMaxSize < LizardF_compressFrameBound(srcSize, &prefs))
+        return (size_t)-LizardF_ERROR_dstMaxSize_tooSmall;
 
-    errorCode = LIZF_compressBegin(&cctxI, dstBuffer, dstMaxSize, &prefs);  /* write header */
-    if (LIZF_isError(errorCode)) goto error;
+    errorCode = LizardF_compressBegin(&cctxI, dstBuffer, dstMaxSize, &prefs);  /* write header */
+    if (LizardF_isError(errorCode)) goto error;
     dstPtr += errorCode;   /* header size */
 
-    errorCode = LIZF_compressUpdate(&cctxI, dstPtr, dstEnd-dstPtr, srcBuffer, srcSize, &options);
-    if (LIZF_isError(errorCode)) goto error;
+    errorCode = LizardF_compressUpdate(&cctxI, dstPtr, dstEnd-dstPtr, srcBuffer, srcSize, &options);
+    if (LizardF_isError(errorCode)) goto error;
     dstPtr += errorCode;
 
-    errorCode = LIZF_compressEnd(&cctxI, dstPtr, dstEnd-dstPtr, &options);   /* flush last block, and generate suffix */
-    if (LIZF_isError(errorCode)) goto error;
+    errorCode = LizardF_compressEnd(&cctxI, dstPtr, dstEnd-dstPtr, &options);   /* flush last block, and generate suffix */
+    if (LizardF_isError(errorCode)) goto error;
     dstPtr += errorCode;
 
-    LIZ_freeStream(cctxI.lz5CtxPtr);
+    Lizard_freeStream(cctxI.lizardCtxPtr);
     FREEMEM(cctxI.tmpBuff);
     return (dstPtr - dstStart);
 error:
-    LIZ_freeStream(cctxI.lz5CtxPtr);
+    Lizard_freeStream(cctxI.lizardCtxPtr);
     FREEMEM(cctxI.tmpBuff);
     return errorCode;
 }
@@ -315,94 +316,93 @@ error:
 *  Advanced compression functions
 ***********************************/
 
-/* LIZF_createCompressionContext() :
+/* LizardF_createCompressionContext() :
 * The first thing to do is to create a compressionContext object, which will be used in all compression operations.
-* This is achieved using LIZF_createCompressionContext(), which takes as argument a version and an LIZF_preferences_t structure.
-* The version provided MUST be LIZF_VERSION. It is intended to track potential version differences between different binaries.
-* The function will provide a pointer to an allocated LIZF_compressionContext_t object.
-* If the result LIZF_errorCode_t is not OK_NoError, there was an error during context creation.
-* Object can release its memory using LIZF_freeCompressionContext();
+* This is achieved using LizardF_createCompressionContext(), which takes as argument a version and an LizardF_preferences_t structure.
+* The version provided MUST be LIZARDF_VERSION. It is intended to track potential version differences between different binaries.
+* The function will provide a pointer to an allocated LizardF_compressionContext_t object.
+* If the result LizardF_errorCode_t is not OK_NoError, there was an error during context creation.
+* Object can release its memory using LizardF_freeCompressionContext();
 */
-LIZF_errorCode_t LIZF_createCompressionContext(LIZF_compressionContext_t* LIZF_compressionContextPtr, unsigned version)
+LizardF_errorCode_t LizardF_createCompressionContext(LizardF_compressionContext_t* LizardF_compressionContextPtr, unsigned version)
 {
-    LIZF_cctx_t* cctxPtr;
+    LizardF_cctx_t* cctxPtr;
 
-    cctxPtr = (LIZF_cctx_t*)ALLOCATOR(1, sizeof(LIZF_cctx_t));
-    if (cctxPtr==NULL) return (LIZF_errorCode_t)(-LIZF_ERROR_allocation_failed);
+    cctxPtr = (LizardF_cctx_t*)ALLOCATOR(1, sizeof(LizardF_cctx_t));
+    if (cctxPtr==NULL) return (LizardF_errorCode_t)(-LizardF_ERROR_allocation_failed);
 
     cctxPtr->version = version;
     cctxPtr->cStage = 0;   /* Next stage : write header */
 
-    *LIZF_compressionContextPtr = (LIZF_compressionContext_t)cctxPtr;
+    *LizardF_compressionContextPtr = (LizardF_compressionContext_t)cctxPtr;
 
-    return LIZF_OK_NoError;
+    return LizardF_OK_NoError;
 }
 
 
-LIZF_errorCode_t LIZF_freeCompressionContext(LIZF_compressionContext_t LIZF_compressionContext)
+LizardF_errorCode_t LizardF_freeCompressionContext(LizardF_compressionContext_t LizardF_compressionContext)
 {
-    LIZF_cctx_t* cctxPtr = (LIZF_cctx_t*)LIZF_compressionContext;
+    LizardF_cctx_t* cctxPtr = (LizardF_cctx_t*)LizardF_compressionContext;
 
     if (cctxPtr != NULL) {  /* null pointers can be safely provided to this function, like free() */
-       LIZ_freeStream(cctxPtr->lz5CtxPtr);
+       Lizard_freeStream(cctxPtr->lizardCtxPtr);
        FREEMEM(cctxPtr->tmpBuff);
-       FREEMEM(LIZF_compressionContext);
+       FREEMEM(LizardF_compressionContext);
     }
 
-    return LIZF_OK_NoError;
+    return LizardF_OK_NoError;
 }
 
 
-/*! LIZF_compressBegin() :
+/*! LizardF_compressBegin() :
 * will write the frame header into dstBuffer.
-* dstBuffer must be large enough to accommodate a header (dstMaxSize). Maximum header size is LIZF_MAXHEADERFRAME_SIZE bytes.
+* dstBuffer must be large enough to accommodate a header (dstMaxSize). Maximum header size is LizardF_MAXHEADERFRAME_SIZE bytes.
 * The result of the function is the number of bytes written into dstBuffer for the header
-* or an error code (can be tested using LIZF_isError())
+* or an error code (can be tested using LizardF_isError())
 */
-size_t LIZF_compressBegin(LIZF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const LIZF_preferences_t* preferencesPtr)
+size_t LizardF_compressBegin(LizardF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const LizardF_preferences_t* preferencesPtr)
 {
-    LIZF_preferences_t prefNull;
-    LIZF_cctx_t* cctxPtr = (LIZF_cctx_t*)compressionContext;
+    LizardF_preferences_t prefNull;
+    LizardF_cctx_t* cctxPtr = (LizardF_cctx_t*)compressionContext;
     BYTE* const dstStart = (BYTE*)dstBuffer;
     BYTE* dstPtr = dstStart;
     BYTE* headerStart;
     size_t requiredBuffSize;
 
-    if (dstMaxSize < maxFHSize) return (size_t)-LIZF_ERROR_dstMaxSize_tooSmall;
-    if (cctxPtr->cStage != 0) return (size_t)-LIZF_ERROR_GENERIC;
+    if (dstMaxSize < maxFHSize) return (size_t)-LizardF_ERROR_dstMaxSize_tooSmall;
+    if (cctxPtr->cStage != 0) return (size_t)-LizardF_ERROR_GENERIC;
     memset(&prefNull, 0, sizeof(prefNull));
     if (preferencesPtr == NULL) preferencesPtr = &prefNull;
     cctxPtr->prefs = *preferencesPtr;
 
     /* ctx Management */
-    if (cctxPtr->lz5CtxLevel == 0) {
-        cctxPtr->lz5CtxPtr = LIZ_createStream(cctxPtr->prefs.compressionLevel);
-        cctxPtr->lz5CtxLevel = 1;
+    if (cctxPtr->lizardCtxLevel == 0) {
+        cctxPtr->lizardCtxPtr = Lizard_createStream(cctxPtr->prefs.compressionLevel);
+        cctxPtr->lizardCtxLevel = 1;
     }
 
     /* Buffer Management */
-    if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LIZF_BLOCKSIZEID_DEFAULT;
-    cctxPtr->maxBlockSize = LIZF_getBlockSize(cctxPtr->prefs.frameInfo.blockSizeID);
-    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LIZF_blockLinked) * 2 * LIZ_DICT_SIZE);
- //   printf("LIZF_compressBegin maxBlockSize=%d requiredBuffSize=%d LIZF_blockLinked=%d\n", (int)cctxPtr->maxBlockSize, (int)requiredBuffSize, (cctxPtr->prefs.frameInfo.blockMode == LIZF_blockLinked));
+    if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LIZARDF_BLOCKSIZEID_DEFAULT;
+    cctxPtr->maxBlockSize = LizardF_getBlockSize(cctxPtr->prefs.frameInfo.blockSizeID);
+    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LizardF_blockLinked) * 2 * LIZARD_DICT_SIZE);
 
     if (preferencesPtr->autoFlush)
-        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LIZF_blockLinked) * LIZ_DICT_SIZE;   /* just needs dict */
+        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LizardF_blockLinked) * LIZARD_DICT_SIZE;   /* just needs dict */
 
     if (cctxPtr->maxBufferSize < requiredBuffSize) {
         cctxPtr->maxBufferSize = requiredBuffSize;
         FREEMEM(cctxPtr->tmpBuff);
         cctxPtr->tmpBuff = (BYTE*)ALLOCATOR(1, requiredBuffSize);
-        if (cctxPtr->tmpBuff == NULL) { printf("ERROR in LIZF_compressBegin: Cannot allocate %d MB\n", (int)(requiredBuffSize>>20)); return (size_t)-LIZF_ERROR_allocation_failed; }
+        if (cctxPtr->tmpBuff == NULL) { printf("ERROR in LizardF_compressBegin: Cannot allocate %d MB\n", (int)(requiredBuffSize>>20)); return (size_t)-LizardF_ERROR_allocation_failed; }
     }
     cctxPtr->tmpIn = cctxPtr->tmpBuff;
     cctxPtr->tmpInSize = 0;
     XXH32_reset(&(cctxPtr->xxh), 0);
-    cctxPtr->lz5CtxPtr = LIZ_resetStream((LIZ_stream_t*)(cctxPtr->lz5CtxPtr), cctxPtr->prefs.compressionLevel);
-    if (!cctxPtr->lz5CtxPtr) return (size_t)-LIZF_ERROR_allocation_failed;
+    cctxPtr->lizardCtxPtr = Lizard_resetStream((Lizard_stream_t*)(cctxPtr->lizardCtxPtr), cctxPtr->prefs.compressionLevel);
+    if (!cctxPtr->lizardCtxPtr) return (size_t)-LizardF_ERROR_allocation_failed;
 
     /* Magic Number */
-    LIZF_writeLE32(dstPtr, LIZF_MAGICNUMBER);
+    LizardF_writeLE32(dstPtr, LIZARDF_MAGICNUMBER);
     dstPtr += 4;
     headerStart = dstPtr;
 
@@ -415,12 +415,12 @@ size_t LIZF_compressBegin(LIZF_compressionContext_t compressionContext, void* ds
     *dstPtr++ = (BYTE)((cctxPtr->prefs.frameInfo.blockSizeID & _3BITS) << 4);
     /* Optional Frame content size field */
     if (cctxPtr->prefs.frameInfo.contentSize) {
-        LIZF_writeLE64(dstPtr, cctxPtr->prefs.frameInfo.contentSize);
+        LizardF_writeLE64(dstPtr, cctxPtr->prefs.frameInfo.contentSize);
         dstPtr += 8;
         cctxPtr->totalInSize = 0;
     }
     /* CRC Byte */
-    *dstPtr = LIZF_headerChecksum(headerStart, dstPtr - headerStart);
+    *dstPtr = LizardF_headerChecksum(headerStart, dstPtr - headerStart);
     dstPtr++;
 
     cctxPtr->cStage = 1;   /* header written, now request input data block */
@@ -429,18 +429,18 @@ size_t LIZF_compressBegin(LIZF_compressionContext_t compressionContext, void* ds
 }
 
 
-/* LIZF_compressBound() : gives the size of Dst buffer given a srcSize to handle worst case situations.
-*                        The LIZF_frameInfo_t structure is optional :
+/* LizardF_compressBound() : gives the size of Dst buffer given a srcSize to handle worst case situations.
+*                        The LizardF_frameInfo_t structure is optional :
 *                        you can provide NULL as argument, preferences will then be set to cover worst case situations.
 * */
-size_t LIZF_compressBound(size_t srcSize, const LIZF_preferences_t* preferencesPtr)
+size_t LizardF_compressBound(size_t srcSize, const LizardF_preferences_t* preferencesPtr)
 {
-    LIZF_preferences_t prefsNull;
+    LizardF_preferences_t prefsNull;
     memset(&prefsNull, 0, sizeof(prefsNull));
-    prefsNull.frameInfo.contentChecksumFlag = LIZF_contentChecksumEnabled;   /* worst case */
-    {   const LIZF_preferences_t* prefsPtr = (preferencesPtr==NULL) ? &prefsNull : preferencesPtr;
-        LIZF_blockSizeID_t bid = prefsPtr->frameInfo.blockSizeID;
-        size_t blockSize = LIZF_getBlockSize(bid);
+    prefsNull.frameInfo.contentChecksumFlag = LizardF_contentChecksumEnabled;   /* worst case */
+    {   const LizardF_preferences_t* prefsPtr = (preferencesPtr==NULL) ? &prefsNull : preferencesPtr;
+        LizardF_blockSizeID_t bid = prefsPtr->frameInfo.blockSizeID;
+        size_t blockSize = LizardF_getBlockSize(bid);
         unsigned nbBlocks = (unsigned)(srcSize / blockSize) + 1;
         size_t lastBlockSize = prefsPtr->autoFlush ? srcSize % blockSize : blockSize;
         size_t blockInfo = 4;   /* default, without block CRC option */
@@ -453,16 +453,16 @@ size_t LIZF_compressBound(size_t srcSize, const LIZF_preferences_t* preferencesP
 
 typedef int (*compressFunc_t)(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level);
 
-static size_t LIZF_compressBlock(void* dst, const void* src, size_t srcSize, compressFunc_t compress, void* lz5ctx, int level)
+static size_t LizardF_compressBlock(void* dst, const void* src, size_t srcSize, compressFunc_t compress, void* lizardctx, int level)
 {
     /* compress one block */
     BYTE* cSizePtr = (BYTE*)dst;
     U32 cSize;
-    cSize = (U32)compress(lz5ctx, (const char*)src, (char*)(cSizePtr+4), (int)(srcSize), (int)(srcSize-1), level);
-    LIZF_writeLE32(cSizePtr, cSize);
+    cSize = (U32)compress(lizardctx, (const char*)src, (char*)(cSizePtr+4), (int)(srcSize), (int)(srcSize-1), level);
+    LizardF_writeLE32(cSizePtr, cSize);
     if (cSize == 0) {  /* compression failed */
         cSize = (U32)srcSize;
-        LIZF_writeLE32(cSizePtr, cSize + LIZF_BLOCKUNCOMPRESSED_FLAG);
+        LizardF_writeLE32(cSizePtr, cSize + LIZARDF_BLOCKUNCOMPRESSED_FLAG);
         memcpy(cSizePtr+4, src, srcSize);
     }
     return cSize + 4;
@@ -470,54 +470,54 @@ static size_t LIZF_compressBlock(void* dst, const void* src, size_t srcSize, com
 
 
 
-static int LIZF_localLIZ_compress_continue(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level)
+static int LizardF_localLizard_compress_continue(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level)
 {
     (void)level;
-    return LIZ_compress_continue((LIZ_stream_t*)ctx, src, dst, srcSize, dstSize);
+    return Lizard_compress_continue((Lizard_stream_t*)ctx, src, dst, srcSize, dstSize);
 }
 
-static compressFunc_t LIZF_selectCompression(LIZF_blockMode_t blockMode)
+static compressFunc_t LizardF_selectCompression(LizardF_blockMode_t blockMode)
 {
-    if (blockMode == LIZF_blockIndependent) return LIZ_compress_extState;
-    return LIZF_localLIZ_compress_continue;
+    if (blockMode == LizardF_blockIndependent) return Lizard_compress_extState;
+    return LizardF_localLizard_compress_continue;
 }
 
-static int LIZF_localSaveDict(LIZF_cctx_t* cctxPtr)
+static int LizardF_localSaveDict(LizardF_cctx_t* cctxPtr)
 {
-    return LIZ_saveDict ((LIZ_stream_t*)(cctxPtr->lz5CtxPtr), (char*)(cctxPtr->tmpBuff), LIZ_DICT_SIZE);
+    return Lizard_saveDict ((Lizard_stream_t*)(cctxPtr->lizardCtxPtr), (char*)(cctxPtr->tmpBuff), LIZARD_DICT_SIZE);
 }
 
-typedef enum { notDone, fromTmpBuffer, fromSrcBuffer } LIZF_lastBlockStatus;
+typedef enum { notDone, fromTmpBuffer, fromSrcBuffer } LizardF_lastBlockStatus;
 
-/*! LIZF_compressUpdate() :
-* LIZF_compressUpdate() can be called repetitively to compress as much data as necessary.
+/*! LizardF_compressUpdate() :
+* LizardF_compressUpdate() can be called repetitively to compress as much data as necessary.
 * The most important rule is that dstBuffer MUST be large enough (dstMaxSize) to ensure compression completion even in worst case.
-* If this condition is not respected, LIZF_compress() will fail (result is an errorCode)
-* You can get the minimum value of dstMaxSize by using LIZF_compressBound()
-* The LIZF_compressOptions_t structure is optional : you can provide NULL as argument.
+* If this condition is not respected, LizardF_compress() will fail (result is an errorCode)
+* You can get the minimum value of dstMaxSize by using LizardF_compressBound()
+* The LizardF_compressOptions_t structure is optional : you can provide NULL as argument.
 * The result of the function is the number of bytes written into dstBuffer : it can be zero, meaning input data was just buffered.
-* The function outputs an error code if it fails (can be tested using LIZF_isError())
+* The function outputs an error code if it fails (can be tested using LizardF_isError())
 */
-size_t LIZF_compressUpdate(LIZF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const void* srcBuffer, size_t srcSize, const LIZF_compressOptions_t* compressOptionsPtr)
+size_t LizardF_compressUpdate(LizardF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const void* srcBuffer, size_t srcSize, const LizardF_compressOptions_t* compressOptionsPtr)
 {
-    LIZF_compressOptions_t cOptionsNull;
-    LIZF_cctx_t* cctxPtr = (LIZF_cctx_t*)compressionContext;
+    LizardF_compressOptions_t cOptionsNull;
+    LizardF_cctx_t* cctxPtr = (LizardF_cctx_t*)compressionContext;
     size_t blockSize = cctxPtr->maxBlockSize;
     const BYTE* srcPtr = (const BYTE*)srcBuffer;
     const BYTE* const srcEnd = srcPtr + srcSize;
     BYTE* const dstStart = (BYTE*)dstBuffer;
     BYTE* dstPtr = dstStart;
-    LIZF_lastBlockStatus lastBlockCompressed = notDone;
+    LizardF_lastBlockStatus lastBlockCompressed = notDone;
     compressFunc_t compress;
 
 
-    if (cctxPtr->cStage != 1) return (size_t)-LIZF_ERROR_GENERIC;
-    if (dstMaxSize < LIZF_compressBound(srcSize, &(cctxPtr->prefs))) return (size_t)-LIZF_ERROR_dstMaxSize_tooSmall;
+    if (cctxPtr->cStage != 1) return (size_t)-LizardF_ERROR_GENERIC;
+    if (dstMaxSize < LizardF_compressBound(srcSize, &(cctxPtr->prefs))) return (size_t)-LizardF_ERROR_dstMaxSize_tooSmall;
     memset(&cOptionsNull, 0, sizeof(cOptionsNull));
     if (compressOptionsPtr == NULL) compressOptionsPtr = &cOptionsNull;
 
     /* select compression function */
-    compress = LIZF_selectCompression(cctxPtr->prefs.frameInfo.blockMode);
+    compress = LizardF_selectCompression(cctxPtr->prefs.frameInfo.blockMode);
 
     /* complete tmp buffer */
     if (cctxPtr->tmpInSize > 0) {   /* some data already within tmp buffer */
@@ -534,9 +534,9 @@ size_t LIZF_compressUpdate(LIZF_compressionContext_t compressionContext, void* d
             memcpy(cctxPtr->tmpIn + cctxPtr->tmpInSize, srcBuffer, sizeToCopy);
             srcPtr += sizeToCopy;
 
-            dstPtr += LIZF_compressBlock(dstPtr, cctxPtr->tmpIn, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
+            dstPtr += LizardF_compressBlock(dstPtr, cctxPtr->tmpIn, blockSize, compress, cctxPtr->lizardCtxPtr, cctxPtr->prefs.compressionLevel);
 
-            if (cctxPtr->prefs.frameInfo.blockMode==LIZF_blockLinked) cctxPtr->tmpIn += blockSize;
+            if (cctxPtr->prefs.frameInfo.blockMode==LizardF_blockLinked) cctxPtr->tmpIn += blockSize;
             cctxPtr->tmpInSize = 0;
         }
     }
@@ -544,33 +544,33 @@ size_t LIZF_compressUpdate(LIZF_compressionContext_t compressionContext, void* d
     while ((size_t)(srcEnd - srcPtr) >= blockSize) {
         /* compress full block */
         lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LIZF_compressBlock(dstPtr, srcPtr, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
+        dstPtr += LizardF_compressBlock(dstPtr, srcPtr, blockSize, compress, cctxPtr->lizardCtxPtr, cctxPtr->prefs.compressionLevel);
         srcPtr += blockSize;
     }
 
     if ((cctxPtr->prefs.autoFlush) && (srcPtr < srcEnd)) {
         /* compress remaining input < blockSize */
         lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LIZF_compressBlock(dstPtr, srcPtr, srcEnd - srcPtr, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
+        dstPtr += LizardF_compressBlock(dstPtr, srcPtr, srcEnd - srcPtr, compress, cctxPtr->lizardCtxPtr, cctxPtr->prefs.compressionLevel);
         srcPtr  = srcEnd;
     }
 
     /* preserve dictionary if necessary */
-    if ((cctxPtr->prefs.frameInfo.blockMode==LIZF_blockLinked) && (lastBlockCompressed==fromSrcBuffer)) {
+    if ((cctxPtr->prefs.frameInfo.blockMode==LizardF_blockLinked) && (lastBlockCompressed==fromSrcBuffer)) {
         if (compressOptionsPtr->stableSrc) {
             cctxPtr->tmpIn = cctxPtr->tmpBuff;
         } else {
-            int realDictSize = LIZF_localSaveDict(cctxPtr);
-            if (realDictSize==0) return (size_t)-LIZF_ERROR_GENERIC;
+            int realDictSize = LizardF_localSaveDict(cctxPtr);
+            if (realDictSize==0) return (size_t)-LizardF_ERROR_GENERIC;
             cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
         }
     }
 
     /* keep tmpIn within limits */
-    if ((cctxPtr->tmpIn + blockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize)   /* necessarily LIZF_blockLinked && lastBlockCompressed==fromTmpBuffer */
+    if ((cctxPtr->tmpIn + blockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize)   /* necessarily LizardF_blockLinked && lastBlockCompressed==fromTmpBuffer */
         && !(cctxPtr->prefs.autoFlush))
     {
-        int realDictSize = LIZF_localSaveDict(cctxPtr);
+        int realDictSize = LizardF_localSaveDict(cctxPtr);
         cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
     }
 
@@ -582,7 +582,7 @@ size_t LIZF_compressUpdate(LIZF_compressionContext_t compressionContext, void* d
         cctxPtr->tmpInSize = sizeToCopy;
     }
 
-    if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LIZF_contentChecksumEnabled)
+    if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LizardF_contentChecksumEnabled)
         XXH32_update(&(cctxPtr->xxh), srcBuffer, srcSize);
 
     cctxPtr->totalInSize += srcSize;
@@ -590,38 +590,38 @@ size_t LIZF_compressUpdate(LIZF_compressionContext_t compressionContext, void* d
 }
 
 
-/*! LIZF_flush() :
+/*! LizardF_flush() :
 * Should you need to create compressed data immediately, without waiting for a block to be filled,
-* you can call LIZ_flush(), which will immediately compress any remaining data stored within compressionContext.
+* you can call Lizard_flush(), which will immediately compress any remaining data stored within compressionContext.
 * The result of the function is the number of bytes written into dstBuffer
 * (it can be zero, this means there was no data left within compressionContext)
-* The function outputs an error code if it fails (can be tested using LIZF_isError())
-* The LIZF_compressOptions_t structure is optional : you can provide NULL as argument.
+* The function outputs an error code if it fails (can be tested using LizardF_isError())
+* The LizardF_compressOptions_t structure is optional : you can provide NULL as argument.
 */
-size_t LIZF_flush(LIZF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const LIZF_compressOptions_t* compressOptionsPtr)
+size_t LizardF_flush(LizardF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const LizardF_compressOptions_t* compressOptionsPtr)
 {
-    LIZF_cctx_t* cctxPtr = (LIZF_cctx_t*)compressionContext;
+    LizardF_cctx_t* cctxPtr = (LizardF_cctx_t*)compressionContext;
     BYTE* const dstStart = (BYTE*)dstBuffer;
     BYTE* dstPtr = dstStart;
     compressFunc_t compress;
 
 
     if (cctxPtr->tmpInSize == 0) return 0;   /* nothing to flush */
-    if (cctxPtr->cStage != 1) return (size_t)-LIZF_ERROR_GENERIC;
-    if (dstMaxSize < (cctxPtr->tmpInSize + 8)) return (size_t)-LIZF_ERROR_dstMaxSize_tooSmall;   /* +8 : block header(4) + block checksum(4) */
+    if (cctxPtr->cStage != 1) return (size_t)-LizardF_ERROR_GENERIC;
+    if (dstMaxSize < (cctxPtr->tmpInSize + 8)) return (size_t)-LizardF_ERROR_dstMaxSize_tooSmall;   /* +8 : block header(4) + block checksum(4) */
     (void)compressOptionsPtr;   /* not yet useful */
 
     /* select compression function */
-    compress = LIZF_selectCompression(cctxPtr->prefs.frameInfo.blockMode);
+    compress = LizardF_selectCompression(cctxPtr->prefs.frameInfo.blockMode);
 
     /* compress tmp buffer */
-    dstPtr += LIZF_compressBlock(dstPtr, cctxPtr->tmpIn, cctxPtr->tmpInSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
-    if (cctxPtr->prefs.frameInfo.blockMode==LIZF_blockLinked) cctxPtr->tmpIn += cctxPtr->tmpInSize;
+    dstPtr += LizardF_compressBlock(dstPtr, cctxPtr->tmpIn, cctxPtr->tmpInSize, compress, cctxPtr->lizardCtxPtr, cctxPtr->prefs.compressionLevel);
+    if (cctxPtr->prefs.frameInfo.blockMode==LizardF_blockLinked) cctxPtr->tmpIn += cctxPtr->tmpInSize;
     cctxPtr->tmpInSize = 0;
 
     /* keep tmpIn within limits */
-    if ((cctxPtr->tmpIn + cctxPtr->maxBlockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize)) {  /* necessarily LIZF_blockLinked */
-        int realDictSize = LIZF_localSaveDict(cctxPtr);
+    if ((cctxPtr->tmpIn + cctxPtr->maxBlockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize)) {  /* necessarily LizardF_blockLinked */
+        int realDictSize = LizardF_localSaveDict(cctxPtr);
         cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
     }
 
@@ -629,32 +629,32 @@ size_t LIZF_flush(LIZF_compressionContext_t compressionContext, void* dstBuffer,
 }
 
 
-/*! LIZF_compressEnd() :
-* When you want to properly finish the compressed frame, just call LIZF_compressEnd().
-* It will flush whatever data remained within compressionContext (like LIZ_flush())
+/*! LizardF_compressEnd() :
+* When you want to properly finish the compressed frame, just call LizardF_compressEnd().
+* It will flush whatever data remained within compressionContext (like Lizard_flush())
 * but also properly finalize the frame, with an endMark and a checksum.
 * The result of the function is the number of bytes written into dstBuffer (necessarily >= 4 (endMark size))
-* The function outputs an error code if it fails (can be tested using LIZF_isError())
-* The LIZF_compressOptions_t structure is optional : you can provide NULL as argument.
-* compressionContext can then be used again, starting with LIZF_compressBegin(). The preferences will remain the same.
+* The function outputs an error code if it fails (can be tested using LizardF_isError())
+* The LizardF_compressOptions_t structure is optional : you can provide NULL as argument.
+* compressionContext can then be used again, starting with LizardF_compressBegin(). The preferences will remain the same.
 */
-size_t LIZF_compressEnd(LIZF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const LIZF_compressOptions_t* compressOptionsPtr)
+size_t LizardF_compressEnd(LizardF_compressionContext_t compressionContext, void* dstBuffer, size_t dstMaxSize, const LizardF_compressOptions_t* compressOptionsPtr)
 {
-    LIZF_cctx_t* cctxPtr = (LIZF_cctx_t*)compressionContext;
+    LizardF_cctx_t* cctxPtr = (LizardF_cctx_t*)compressionContext;
     BYTE* const dstStart = (BYTE*)dstBuffer;
     BYTE* dstPtr = dstStart;
     size_t errorCode;
 
-    errorCode = LIZF_flush(compressionContext, dstBuffer, dstMaxSize, compressOptionsPtr);
-    if (LIZF_isError(errorCode)) return errorCode;
+    errorCode = LizardF_flush(compressionContext, dstBuffer, dstMaxSize, compressOptionsPtr);
+    if (LizardF_isError(errorCode)) return errorCode;
     dstPtr += errorCode;
 
-    LIZF_writeLE32(dstPtr, 0);
+    LizardF_writeLE32(dstPtr, 0);
     dstPtr+=4;   /* endMark */
 
-    if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LIZF_contentChecksumEnabled) {
+    if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LizardF_contentChecksumEnabled) {
         U32 xxh = XXH32_digest(&(cctxPtr->xxh));
-        LIZF_writeLE32(dstPtr, xxh);
+        LizardF_writeLE32(dstPtr, xxh);
         dstPtr+=4;   /* content Checksum */
     }
 
@@ -663,7 +663,7 @@ size_t LIZF_compressEnd(LIZF_compressionContext_t compressionContext, void* dstB
 
     if (cctxPtr->prefs.frameInfo.contentSize) {
         if (cctxPtr->prefs.frameInfo.contentSize != cctxPtr->totalInSize)
-            return (size_t)-LIZF_ERROR_frameSize_wrong;
+            return (size_t)-LizardF_ERROR_frameSize_wrong;
     }
 
     return dstPtr - dstStart;
@@ -676,28 +676,28 @@ size_t LIZF_compressEnd(LIZF_compressionContext_t compressionContext, void* dstB
 
 /* Resource management */
 
-/*! LIZF_createDecompressionContext() :
+/*! LizardF_createDecompressionContext() :
 *   Create a decompressionContext object, which will track all decompression operations.
-*   Provides a pointer to a fully allocated and initialized LIZF_decompressionContext object.
-*   Object can later be released using LIZF_freeDecompressionContext().
+*   Provides a pointer to a fully allocated and initialized LizardF_decompressionContext object.
+*   Object can later be released using LizardF_freeDecompressionContext().
 *   @return : if != 0, there was an error during context creation.
 */
-LIZF_errorCode_t LIZF_createDecompressionContext(LIZF_decompressionContext_t* LIZF_decompressionContextPtr, unsigned versionNumber)
+LizardF_errorCode_t LizardF_createDecompressionContext(LizardF_decompressionContext_t* LizardF_decompressionContextPtr, unsigned versionNumber)
 {
-    LIZF_dctx_t* const dctxPtr = (LIZF_dctx_t*)ALLOCATOR(1, sizeof(LIZF_dctx_t));
-    if (dctxPtr==NULL) return (LIZF_errorCode_t)-LIZF_ERROR_GENERIC;
+    LizardF_dctx_t* const dctxPtr = (LizardF_dctx_t*)ALLOCATOR(1, sizeof(LizardF_dctx_t));
+    if (dctxPtr==NULL) return (LizardF_errorCode_t)-LizardF_ERROR_GENERIC;
 
     dctxPtr->version = versionNumber;
-    *LIZF_decompressionContextPtr = (LIZF_decompressionContext_t)dctxPtr;
-    return LIZF_OK_NoError;
+    *LizardF_decompressionContextPtr = (LizardF_decompressionContext_t)dctxPtr;
+    return LizardF_OK_NoError;
 }
 
-LIZF_errorCode_t LIZF_freeDecompressionContext(LIZF_decompressionContext_t LIZF_decompressionContext)
+LizardF_errorCode_t LizardF_freeDecompressionContext(LizardF_decompressionContext_t LizardF_decompressionContext)
 {
-    LIZF_errorCode_t result = LIZF_OK_NoError;
-    LIZF_dctx_t* const dctxPtr = (LIZF_dctx_t*)LIZF_decompressionContext;
+    LizardF_errorCode_t result = LizardF_OK_NoError;
+    LizardF_dctx_t* const dctxPtr = (LizardF_dctx_t*)LizardF_decompressionContext;
     if (dctxPtr != NULL) {   /* can accept NULL input, like free() */
-      result = (LIZF_errorCode_t)dctxPtr->dStage;
+      result = (LizardF_errorCode_t)dctxPtr->dStage;
       FREEMEM(dctxPtr->tmpIn);
       FREEMEM(dctxPtr->tmpOutBuffer);
       FREEMEM(dctxPtr);
@@ -722,20 +722,20 @@ typedef enum { dstage_getHeader=0, dstage_storeHeader,
 } dStage_t;
 
 
-/*! LIZF_headerSize() :
+/*! LizardF_headerSize() :
 *   @return : size of frame header
-*             or an error code, which can be tested using LIZF_isError()
+*             or an error code, which can be tested using LizardF_isError()
 */
-static size_t LIZF_headerSize(const void* src, size_t srcSize)
+static size_t LizardF_headerSize(const void* src, size_t srcSize)
 {
     /* minimal srcSize to determine header size */
-    if (srcSize < 5) return (size_t)-LIZF_ERROR_frameHeader_incomplete;
+    if (srcSize < 5) return (size_t)-LizardF_ERROR_frameHeader_incomplete;
 
     /* special case : skippable frames */
-    if ((LIZF_readLE32(src) & 0xFFFFFFF0U) == LIZF_MAGIC_SKIPPABLE_START) return 8;
+    if ((LizardF_readLE32(src) & 0xFFFFFFF0U) == LIZARDF_MAGIC_SKIPPABLE_START) return 8;
 
     /* control magic number */
-    if (LIZF_readLE32(src) != LIZF_MAGICNUMBER) return (size_t)-LIZF_ERROR_frameType_unknown;
+    if (LizardF_readLE32(src) != LIZARDF_MAGICNUMBER) return (size_t)-LizardF_ERROR_frameType_unknown;
 
     /* Frame Header Size */
     {   BYTE const FLG = ((const BYTE*)src)[4];
@@ -745,15 +745,15 @@ static size_t LIZF_headerSize(const void* src, size_t srcSize)
 }
 
 
-/*! LIZF_decodeHeader() :
+/*! LizardF_decodeHeader() :
    input   : `srcVoidPtr` points at the **beginning of the frame**
    output  : set internal values of dctx, such as
              dctxPtr->frameInfo and dctxPtr->dStage.
              Also allocates internal buffers.
    @return : nb Bytes read from srcVoidPtr (necessarily <= srcSize)
-             or an error code (testable with LIZF_isError())
+             or an error code (testable with LizardF_isError())
 */
-static size_t LIZF_decodeHeader(LIZF_dctx_t* dctxPtr, const void* srcVoidPtr, size_t srcSize)
+static size_t LizardF_decodeHeader(LizardF_dctx_t* dctxPtr, const void* srcVoidPtr, size_t srcSize)
 {
     BYTE FLG, BD, HC;
     unsigned version, blockMode, blockChecksumFlag, contentSizeFlag, contentChecksumFlag, blockSizeID;
@@ -762,12 +762,12 @@ static size_t LIZF_decodeHeader(LIZF_dctx_t* dctxPtr, const void* srcVoidPtr, si
     const BYTE* srcPtr = (const BYTE*)srcVoidPtr;
 
     /* need to decode header to get frameInfo */
-    if (srcSize < minFHSize) return (size_t)-LIZF_ERROR_frameHeader_incomplete;   /* minimal frame header size */
+    if (srcSize < minFHSize) return (size_t)-LizardF_ERROR_frameHeader_incomplete;   /* minimal frame header size */
     memset(&(dctxPtr->frameInfo), 0, sizeof(dctxPtr->frameInfo));
 
     /* special case : skippable frames */
-    if ((LIZF_readLE32(srcPtr) & 0xFFFFFFF0U) == LIZF_MAGIC_SKIPPABLE_START) {
-        dctxPtr->frameInfo.frameType = LIZF_skippableFrame;
+    if ((LizardF_readLE32(srcPtr) & 0xFFFFFFF0U) == LIZARDF_MAGIC_SKIPPABLE_START) {
+        dctxPtr->frameInfo.frameType = LizardF_skippableFrame;
         if (srcVoidPtr == (void*)(dctxPtr->header)) {
             dctxPtr->tmpInSize = srcSize;
             dctxPtr->tmpInTarget = 8;
@@ -780,8 +780,8 @@ static size_t LIZF_decodeHeader(LIZF_dctx_t* dctxPtr, const void* srcVoidPtr, si
     }
 
     /* control magic number */
-    if (LIZF_readLE32(srcPtr) != LIZF_MAGICNUMBER) return (size_t)-LIZF_ERROR_frameType_unknown;
-    dctxPtr->frameInfo.frameType = LIZF_frame;
+    if (LizardF_readLE32(srcPtr) != LIZARDF_MAGICNUMBER) return (size_t)-LizardF_ERROR_frameType_unknown;
+    dctxPtr->frameInfo.frameType = LizardF_frame;
 
     /* Flags */
     FLG = srcPtr[4];
@@ -808,40 +808,39 @@ static size_t LIZF_decodeHeader(LIZF_dctx_t* dctxPtr, const void* srcVoidPtr, si
     blockSizeID = (BD>>4) & _3BITS;
 
     /* validate */
-    if (version != 1) return (size_t)-LIZF_ERROR_headerVersion_wrong;        /* Version Number, only supported value */
-    if (blockChecksumFlag != 0) return (size_t)-LIZF_ERROR_blockChecksum_unsupported; /* Not supported for the time being */
-    if (((FLG>>0)&_2BITS) != 0) return (size_t)-LIZF_ERROR_reservedFlag_set; /* Reserved bits */
-    if (((BD>>7)&_1BIT) != 0) return (size_t)-LIZF_ERROR_reservedFlag_set;   /* Reserved bit */
-    if (blockSizeID < 1) return (size_t)-LIZF_ERROR_maxBlockSize_invalid;    /* 1-7 only supported values for the time being */
-    if (((BD>>0)&_4BITS) != 0) return (size_t)-LIZF_ERROR_reservedFlag_set;  /* Reserved bits */
+    if (version != 1) return (size_t)-LizardF_ERROR_headerVersion_wrong;        /* Version Number, only supported value */
+    if (blockChecksumFlag != 0) return (size_t)-LizardF_ERROR_blockChecksum_unsupported; /* Not supported for the time being */
+    if (((FLG>>0)&_2BITS) != 0) return (size_t)-LizardF_ERROR_reservedFlag_set; /* Reserved bits */
+    if (((BD>>7)&_1BIT) != 0) return (size_t)-LizardF_ERROR_reservedFlag_set;   /* Reserved bit */
+    if (blockSizeID < 1) return (size_t)-LizardF_ERROR_maxBlockSize_invalid;    /* 1-7 only supported values for the time being */
+    if (((BD>>0)&_4BITS) != 0) return (size_t)-LizardF_ERROR_reservedFlag_set;  /* Reserved bits */
 
     /* check */
-    HC = LIZF_headerChecksum(srcPtr+4, frameHeaderSize-5);
-    if (HC != srcPtr[frameHeaderSize-1]) return (size_t)-LIZF_ERROR_headerChecksum_invalid;   /* Bad header checksum error */
+    HC = LizardF_headerChecksum(srcPtr+4, frameHeaderSize-5);
+    if (HC != srcPtr[frameHeaderSize-1]) return (size_t)-LizardF_ERROR_headerChecksum_invalid;   /* Bad header checksum error */
 
     /* save */
-    dctxPtr->frameInfo.blockMode = (LIZF_blockMode_t)blockMode;
-    dctxPtr->frameInfo.contentChecksumFlag = (LIZF_contentChecksum_t)contentChecksumFlag;
-    dctxPtr->frameInfo.blockSizeID = (LIZF_blockSizeID_t)blockSizeID;
+    dctxPtr->frameInfo.blockMode = (LizardF_blockMode_t)blockMode;
+    dctxPtr->frameInfo.contentChecksumFlag = (LizardF_contentChecksum_t)contentChecksumFlag;
+    dctxPtr->frameInfo.blockSizeID = (LizardF_blockSizeID_t)blockSizeID;
     currentBlockSize = dctxPtr->maxBlockSize;
-    dctxPtr->maxBlockSize = LIZF_getBlockSize(blockSizeID);
+    dctxPtr->maxBlockSize = LizardF_getBlockSize(blockSizeID);
     if (contentSizeFlag)
-        dctxPtr->frameRemainingSize = dctxPtr->frameInfo.contentSize = LIZF_readLE64(srcPtr+6);
+        dctxPtr->frameRemainingSize = dctxPtr->frameInfo.contentSize = LizardF_readLE64(srcPtr+6);
 
     /* init */
     if (contentChecksumFlag) XXH32_reset(&(dctxPtr->xxh), 0);
 
     /* alloc */
-    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LIZF_blockLinked) * 2 * LIZ_DICT_SIZE);
-//    printf("LIZF_decodeHeader maxBlockSize=%d/%d bufferNeeded=%d/%d LIZF_blockLinked=%d\n", (int)dctxPtr->maxBlockSize, (int)dctxPtr->tmpInSize, (int)bufferNeeded, (int)dctxPtr->maxBufferSize, (dctxPtr->frameInfo.blockMode == LIZF_blockLinked));
+    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LizardF_blockLinked) * 2 * LIZARD_DICT_SIZE);
     if (bufferNeeded > dctxPtr->maxBufferSize || dctxPtr->maxBlockSize > currentBlockSize) {   /* tmp buffers too small */
         FREEMEM(dctxPtr->tmpIn);
         FREEMEM(dctxPtr->tmpOutBuffer);
         dctxPtr->maxBufferSize = 0;
         dctxPtr->tmpIn = (BYTE*)ALLOCATOR(1, dctxPtr->maxBlockSize);
-        if (dctxPtr->tmpIn == NULL) return (size_t)-LIZF_ERROR_GENERIC;
+        if (dctxPtr->tmpIn == NULL) return (size_t)-LizardF_ERROR_GENERIC;
         dctxPtr->tmpOutBuffer= (BYTE*)ALLOCATOR(1, bufferNeeded);
-        if (dctxPtr->tmpOutBuffer== NULL) return (size_t)-LIZF_ERROR_GENERIC;
+        if (dctxPtr->tmpOutBuffer== NULL) return (size_t)-LizardF_ERROR_GENERIC;
         dctxPtr->maxBufferSize = bufferNeeded;
     }
     dctxPtr->tmpInSize = 0;
@@ -858,36 +857,36 @@ static size_t LIZF_decodeHeader(LIZF_dctx_t* dctxPtr, const void* srcVoidPtr, si
 }
 
 
-/*! LIZF_getFrameInfo() :
+/*! LizardF_getFrameInfo() :
 *   Decodes frame header information, such as blockSize.
-*   It is optional : you could start by calling directly LIZF_decompress() instead.
+*   It is optional : you could start by calling directly LizardF_decompress() instead.
 *   The objective is to extract header information without starting decompression, typically for allocation purposes.
-*   LIZF_getFrameInfo() can also be used *after* starting decompression, on a valid LIZF_decompressionContext_t.
+*   LizardF_getFrameInfo() can also be used *after* starting decompression, on a valid LizardF_decompressionContext_t.
 *   The number of bytes read from srcBuffer will be provided within *srcSizePtr (necessarily <= original value).
 *   You are expected to resume decompression from where it stopped (srcBuffer + *srcSizePtr)
-*   @return : hint of the better `srcSize` to use for next call to LIZF_decompress,
-*             or an error code which can be tested using LIZF_isError().
+*   @return : hint of the better `srcSize` to use for next call to LizardF_decompress,
+*             or an error code which can be tested using LizardF_isError().
 */
-LIZF_errorCode_t LIZF_getFrameInfo(LIZF_decompressionContext_t dCtx, LIZF_frameInfo_t* frameInfoPtr,
+LizardF_errorCode_t LizardF_getFrameInfo(LizardF_decompressionContext_t dCtx, LizardF_frameInfo_t* frameInfoPtr,
                                    const void* srcBuffer, size_t* srcSizePtr)
 {
-    LIZF_dctx_t* dctxPtr = (LIZF_dctx_t*)dCtx;
+    LizardF_dctx_t* dctxPtr = (LizardF_dctx_t*)dCtx;
 
     if (dctxPtr->dStage > dstage_storeHeader) {  /* note : requires dstage_* header related to be at beginning of enum */
         /* frameInfo already decoded */
         size_t o=0, i=0;
         *srcSizePtr = 0;
         *frameInfoPtr = dctxPtr->frameInfo;
-        return LIZF_decompress(dCtx, NULL, &o, NULL, &i, NULL);  /* returns : recommended nb of bytes for LIZF_decompress() */
+        return LizardF_decompress(dCtx, NULL, &o, NULL, &i, NULL);  /* returns : recommended nb of bytes for LizardF_decompress() */
     } else {
         size_t nextSrcSize, o=0;
-        size_t const hSize = LIZF_headerSize(srcBuffer, *srcSizePtr);
-        if (LIZF_isError(hSize)) { *srcSizePtr=0; return hSize; }
-        if (*srcSizePtr < hSize) { *srcSizePtr=0; return (size_t)-LIZF_ERROR_frameHeader_incomplete; }
+        size_t const hSize = LizardF_headerSize(srcBuffer, *srcSizePtr);
+        if (LizardF_isError(hSize)) { *srcSizePtr=0; return hSize; }
+        if (*srcSizePtr < hSize) { *srcSizePtr=0; return (size_t)-LizardF_ERROR_frameHeader_incomplete; }
 
         *srcSizePtr = hSize;
-        nextSrcSize = LIZF_decompress(dCtx, NULL, &o, srcBuffer, srcSizePtr, NULL);
-        if (dctxPtr->dStage <= dstage_storeHeader) return (size_t)-LIZF_ERROR_frameHeader_incomplete; /* should not happen, already checked */
+        nextSrcSize = LizardF_decompress(dCtx, NULL, &o, srcBuffer, srcSizePtr, NULL);
+        if (dctxPtr->dStage <= dstage_storeHeader) return (size_t)-LizardF_ERROR_frameHeader_incomplete; /* should not happen, already checked */
         *frameInfoPtr = dctxPtr->frameInfo;
         return nextSrcSize;
     }
@@ -895,14 +894,14 @@ LIZF_errorCode_t LIZF_getFrameInfo(LIZF_decompressionContext_t dCtx, LIZF_frameI
 
 
 /* trivial redirector, for common prototype */
-static int LIZF_decompress_safe (const char* source, char* dest, int compressedSize, int maxDecompressedSize, const char* dictStart, int dictSize)
+static int LizardF_decompress_safe (const char* source, char* dest, int compressedSize, int maxDecompressedSize, const char* dictStart, int dictSize)
 {
     (void)dictStart; (void)dictSize;
-    return LIZ_decompress_safe (source, dest, compressedSize, maxDecompressedSize);
+    return Lizard_decompress_safe (source, dest, compressedSize, maxDecompressedSize);
 }
 
 
-static void LIZF_updateDict(LIZF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dstSize, const BYTE* dstPtr0, unsigned withinTmp)
+static void LizardF_updateDict(LizardF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dstSize, const BYTE* dstPtr0, unsigned withinTmp)
 {
     if (dctxPtr->dictSize==0)
         dctxPtr->dict = (const BYTE*)dstPtr;   /* priority to dictionary continuity */
@@ -912,7 +911,7 @@ static void LIZF_updateDict(LIZF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
         return;
     }
 
-    if (dstPtr - dstPtr0 + dstSize >= LIZ_DICT_SIZE) {  /* dstBuffer large enough to become dictionary */
+    if (dstPtr - dstPtr0 + dstSize >= LIZARD_DICT_SIZE) {  /* dstBuffer large enough to become dictionary */
         dctxPtr->dict = (const BYTE*)dstPtr0;
         dctxPtr->dictSize = dstPtr - dstPtr0 + dstSize;
         return;
@@ -926,9 +925,9 @@ static void LIZF_updateDict(LIZF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
 
     if (withinTmp) { /* copy relevant dict portion in front of tmpOut within tmpOutBuffer */
         size_t preserveSize = dctxPtr->tmpOut - dctxPtr->tmpOutBuffer;
-        size_t copySize = LIZ_DICT_SIZE - dctxPtr->tmpOutSize;
+        size_t copySize = LIZARD_DICT_SIZE - dctxPtr->tmpOutSize;
         const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize - dctxPtr->tmpOutStart;
-        if (dctxPtr->tmpOutSize > LIZ_DICT_SIZE) copySize = 0;
+        if (dctxPtr->tmpOutSize > LIZARD_DICT_SIZE) copySize = 0;
         if (copySize > preserveSize) copySize = preserveSize;
 
         memcpy(dctxPtr->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
@@ -940,7 +939,7 @@ static void LIZF_updateDict(LIZF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
 
     if (dctxPtr->dict == dctxPtr->tmpOutBuffer) {    /* copy dst into tmp to complete dict */
         if (dctxPtr->dictSize + dstSize > dctxPtr->maxBufferSize) {  /* tmp buffer not large enough */
-            size_t preserveSize = LIZ_DICT_SIZE - dstSize;   /* note : dstSize < LIZ_DICT_SIZE */
+            size_t preserveSize = LIZARD_DICT_SIZE - dstSize;   /* note : dstSize < LIZARD_DICT_SIZE */
             memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - preserveSize, preserveSize);
             dctxPtr->dictSize = preserveSize;
         }
@@ -950,7 +949,7 @@ static void LIZF_updateDict(LIZF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
     }
 
     /* join dict & dest into tmp */
-    {   size_t preserveSize = LIZ_DICT_SIZE - dstSize;   /* note : dstSize < LIZ_DICT_SIZE */
+    {   size_t preserveSize = LIZARD_DICT_SIZE - dstSize;   /* note : dstSize < LIZARD_DICT_SIZE */
         if (preserveSize > dctxPtr->dictSize) preserveSize = dctxPtr->dictSize;
         memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - preserveSize, preserveSize);
         memcpy(dctxPtr->tmpOutBuffer + preserveSize, dstPtr, dstSize);
@@ -961,7 +960,7 @@ static void LIZF_updateDict(LIZF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
 
 
 
-/*! LIZF_decompress() :
+/*! LizardF_decompress() :
 * Call this function repetitively to regenerate data compressed within srcBuffer.
 * The function will attempt to decode *srcSizePtr from srcBuffer, into dstBuffer of maximum size *dstSizePtr.
 *
@@ -971,20 +970,20 @@ static void LIZF_updateDict(LIZF_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
 * If the number of bytes read is < number of bytes provided, then the decompression operation is not complete.
 * You will have to call it again, continuing from where it stopped.
 *
-* The function result is an hint of the better srcSize to use for next call to LIZF_decompress.
+* The function result is an hint of the better srcSize to use for next call to LizardF_decompress.
 * Basically, it's the size of the current (or remaining) compressed block + header of next block.
 * Respecting the hint provides some boost to performance, since it allows less buffer shuffling.
 * Note that this is just a hint, you can always provide any srcSize you want.
 * When a frame is fully decoded, the function result will be 0.
-* If decompression failed, function result is an error code which can be tested using LIZF_isError().
+* If decompression failed, function result is an error code which can be tested using LizardF_isError().
 */
-size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
+size_t LizardF_decompress(LizardF_decompressionContext_t decompressionContext,
                        void* dstBuffer, size_t* dstSizePtr,
                        const void* srcBuffer, size_t* srcSizePtr,
-                       const LIZF_decompressOptions_t* decompressOptionsPtr)
+                       const LizardF_decompressOptions_t* decompressOptionsPtr)
 {
-    LIZF_dctx_t* dctxPtr = (LIZF_dctx_t*)decompressionContext;
-    LIZF_decompressOptions_t optionsNull;
+    LizardF_dctx_t* dctxPtr = (LizardF_dctx_t*)decompressionContext;
+    LizardF_decompressOptions_t optionsNull;
     const BYTE* const srcStart = (const BYTE*)srcBuffer;
     const BYTE* const srcEnd = srcStart + *srcSizePtr;
     const BYTE* srcPtr = srcStart;
@@ -1003,7 +1002,7 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
 
     /* expect to continue decoding src buffer where it left previously */
     if (dctxPtr->srcExpect != NULL) {
-        if (srcStart != dctxPtr->srcExpect) return (size_t)-LIZF_ERROR_srcPtr_wrong;
+        if (srcStart != dctxPtr->srcExpect) return (size_t)-LizardF_ERROR_srcPtr_wrong;
     }
 
     /* programmed as a state machine */
@@ -1015,8 +1014,8 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
 
         case dstage_getHeader:
             if ((size_t)(srcEnd-srcPtr) >= maxFHSize) {  /* enough to decode - shortcut */
-                LIZF_errorCode_t const hSize = LIZF_decodeHeader(dctxPtr, srcPtr, srcEnd-srcPtr);
-                if (LIZF_isError(hSize)) return hSize;
+                LizardF_errorCode_t const hSize = LizardF_decodeHeader(dctxPtr, srcPtr, srcEnd-srcPtr);
+                if (LizardF_isError(hSize)) return hSize;
                 srcPtr += hSize;
                 break;
             }
@@ -1036,8 +1035,8 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
                     doAnotherStage = 0;   /* not enough src data, ask for some more */
                     break;
                 }
-                {   LIZF_errorCode_t const hSize = LIZF_decodeHeader(dctxPtr, dctxPtr->header, dctxPtr->tmpInTarget);
-                    if (LIZF_isError(hSize)) return hSize;
+                {   LizardF_errorCode_t const hSize = LizardF_decodeHeader(dctxPtr, dctxPtr->header, dctxPtr->tmpInTarget);
+                    if (LizardF_isError(hSize)) return hSize;
                 }
                 break;
             }
@@ -1069,14 +1068,14 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
             }
 
         /* case dstage_decodeCBlockSize: */   /* no more direct access, to prevent scan-build warning */
-            {   size_t const nextCBlockSize = LIZF_readLE32(selectedIn) & 0x7FFFFFFFU;
+            {   size_t const nextCBlockSize = LizardF_readLE32(selectedIn) & 0x7FFFFFFFU;
                 if (nextCBlockSize==0) {  /* frameEnd signal, no more CBlock */
                     dctxPtr->dStage = dstage_getSuffix;
                     break;
                 }
-                if (nextCBlockSize > dctxPtr->maxBlockSize) return (size_t)-LIZF_ERROR_GENERIC;   /* invalid cBlockSize */
+                if (nextCBlockSize > dctxPtr->maxBlockSize) return (size_t)-LizardF_ERROR_GENERIC;   /* invalid cBlockSize */
                 dctxPtr->tmpInTarget = nextCBlockSize;
-                if (LIZF_readLE32(selectedIn) & LIZF_BLOCKUNCOMPRESSED_FLAG) {
+                if (LizardF_readLE32(selectedIn) & LIZARDF_BLOCKUNCOMPRESSED_FLAG) {
                     dctxPtr->dStage = dstage_copyDirect;
                     break;
                 }
@@ -1097,8 +1096,8 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
                 if (dctxPtr->frameInfo.contentSize) dctxPtr->frameRemainingSize -= sizeToCopy;
 
                 /* dictionary management */
-                if (dctxPtr->frameInfo.blockMode==LIZF_blockLinked)
-                    LIZF_updateDict(dctxPtr, dstPtr, sizeToCopy, dstStart, 0);
+                if (dctxPtr->frameInfo.blockMode==LizardF_blockLinked)
+                    LizardF_updateDict(dctxPtr, dstPtr, sizeToCopy, dstStart, 0);
 
                 srcPtr += sizeToCopy;
                 dstPtr += sizeToCopy;
@@ -1150,19 +1149,19 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
             {   int (*decoder)(const char*, char*, int, int, const char*, int);
                 int decodedSize;
 
-                if (dctxPtr->frameInfo.blockMode == LIZF_blockLinked)
-                    decoder = LIZ_decompress_safe_usingDict;
+                if (dctxPtr->frameInfo.blockMode == LizardF_blockLinked)
+                    decoder = Lizard_decompress_safe_usingDict;
                 else
-                    decoder = LIZF_decompress_safe;
+                    decoder = LizardF_decompress_safe;
 
                 decodedSize = decoder((const char*)selectedIn, (char*)dstPtr, (int)dctxPtr->tmpInTarget, (int)dctxPtr->maxBlockSize, (const char*)dctxPtr->dict, (int)dctxPtr->dictSize);
-                if (decodedSize < 0) return (size_t)-LIZF_ERROR_GENERIC;   /* decompression failed */
+                if (decodedSize < 0) return (size_t)-LizardF_ERROR_GENERIC;   /* decompression failed */
                 if (dctxPtr->frameInfo.contentChecksumFlag) XXH32_update(&(dctxPtr->xxh), dstPtr, decodedSize);
                 if (dctxPtr->frameInfo.contentSize) dctxPtr->frameRemainingSize -= decodedSize;
 
                 /* dictionary management */
-                if (dctxPtr->frameInfo.blockMode==LIZF_blockLinked)
-                    LIZF_updateDict(dctxPtr, dstPtr, decodedSize, dstStart, 0);
+                if (dctxPtr->frameInfo.blockMode==LizardF_blockLinked)
+                    LizardF_updateDict(dctxPtr, dstPtr, decodedSize, dstStart, 0);
 
                 dstPtr += decodedSize;
                 dctxPtr->dStage = dstage_getCBlockSize;
@@ -1174,29 +1173,29 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
             {   int (*decoder)(const char*, char*, int, int, const char*, int);
                 int decodedSize;
 
-                if (dctxPtr->frameInfo.blockMode == LIZF_blockLinked)
-                    decoder = LIZ_decompress_safe_usingDict;
+                if (dctxPtr->frameInfo.blockMode == LizardF_blockLinked)
+                    decoder = Lizard_decompress_safe_usingDict;
                 else
-                    decoder = LIZF_decompress_safe;
+                    decoder = LizardF_decompress_safe;
 
                 /* ensure enough place for tmpOut */
-                if (dctxPtr->frameInfo.blockMode == LIZF_blockLinked) {
+                if (dctxPtr->frameInfo.blockMode == LizardF_blockLinked) {
                     if (dctxPtr->dict == dctxPtr->tmpOutBuffer) {
-                        if (dctxPtr->dictSize > 2 * LIZ_DICT_SIZE) {
-                            memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - LIZ_DICT_SIZE, LIZ_DICT_SIZE);
-                            dctxPtr->dictSize = LIZ_DICT_SIZE;
+                        if (dctxPtr->dictSize > 2 * LIZARD_DICT_SIZE) {
+                            memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - LIZARD_DICT_SIZE, LIZARD_DICT_SIZE);
+                            dctxPtr->dictSize = LIZARD_DICT_SIZE;
                         }
                         dctxPtr->tmpOut = dctxPtr->tmpOutBuffer + dctxPtr->dictSize;
                     } else {  /* dict not within tmp */
                         size_t reservedDictSpace = dctxPtr->dictSize;
-                        if (reservedDictSpace > LIZ_DICT_SIZE) reservedDictSpace = LIZ_DICT_SIZE;
+                        if (reservedDictSpace > LIZARD_DICT_SIZE) reservedDictSpace = LIZARD_DICT_SIZE;
                         dctxPtr->tmpOut = dctxPtr->tmpOutBuffer + reservedDictSpace;
                     }
                 }
 
                 /* Decode */
                 decodedSize = decoder((const char*)selectedIn, (char*)dctxPtr->tmpOut, (int)dctxPtr->tmpInTarget, (int)dctxPtr->maxBlockSize, (const char*)dctxPtr->dict, (int)dctxPtr->dictSize);
-                if (decodedSize < 0) return (size_t)-LIZF_ERROR_decompressionFailed;   /* decompression failed */
+                if (decodedSize < 0) return (size_t)-LizardF_ERROR_decompressionFailed;   /* decompression failed */
                 if (dctxPtr->frameInfo.contentChecksumFlag) XXH32_update(&(dctxPtr->xxh), dctxPtr->tmpOut, decodedSize);
                 if (dctxPtr->frameInfo.contentSize) dctxPtr->frameRemainingSize -= decodedSize;
                 dctxPtr->tmpOutSize = decodedSize;
@@ -1211,8 +1210,8 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
                 memcpy(dstPtr, dctxPtr->tmpOut + dctxPtr->tmpOutStart, sizeToCopy);
 
                 /* dictionary management */
-                if (dctxPtr->frameInfo.blockMode==LIZF_blockLinked)
-                    LIZF_updateDict(dctxPtr, dstPtr, sizeToCopy, dstStart, 1);
+                if (dctxPtr->frameInfo.blockMode==LizardF_blockLinked)
+                    LizardF_updateDict(dctxPtr, dstPtr, sizeToCopy, dstStart, 1);
 
                 dctxPtr->tmpOutStart += sizeToCopy;
                 dstPtr += sizeToCopy;
@@ -1229,7 +1228,7 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
 
         case dstage_getSuffix:
             {   size_t const suffixSize = dctxPtr->frameInfo.contentChecksumFlag * 4;
-                if (dctxPtr->frameRemainingSize) return (size_t)-LIZF_ERROR_frameSize_wrong;   /* incorrect frame size decoded */
+                if (dctxPtr->frameRemainingSize) return (size_t)-LizardF_ERROR_frameSize_wrong;   /* incorrect frame size decoded */
                 if (suffixSize == 0) {  /* frame completed */
                     nextSrcSizeHint = 0;
                     dctxPtr->dStage = dstage_getHeader;
@@ -1262,9 +1261,9 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
             }
 
         /* case dstage_checkSuffix: */   /* no direct call, to avoid scan-build warning */
-            {   U32 const readCRC = LIZF_readLE32(selectedIn);
+            {   U32 const readCRC = LizardF_readLE32(selectedIn);
                 U32 const resultCRC = XXH32_digest(&(dctxPtr->xxh));
-                if (readCRC != resultCRC) return (size_t)-LIZF_ERROR_contentChecksum_invalid;
+                if (readCRC != resultCRC) return (size_t)-LizardF_ERROR_contentChecksum_invalid;
                 nextSrcSizeHint = 0;
                 dctxPtr->dStage = dstage_getHeader;
                 doAnotherStage = 0;
@@ -1299,7 +1298,7 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
             }
 
         /* case dstage_decodeSFrameSize: */   /* no direct access */
-            {   size_t const SFrameSize = LIZF_readLE32(selectedIn);
+            {   size_t const SFrameSize = LizardF_readLE32(selectedIn);
                 dctxPtr->frameInfo.contentSize = SFrameSize;
                 dctxPtr->tmpInTarget = SFrameSize;
                 dctxPtr->dStage = dstage_skipSkippable;
@@ -1321,7 +1320,7 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
     }
 
     /* preserve dictionary within tmp if necessary */
-    if ( (dctxPtr->frameInfo.blockMode==LIZF_blockLinked)
+    if ( (dctxPtr->frameInfo.blockMode==LizardF_blockLinked)
         &&(dctxPtr->dict != dctxPtr->tmpOutBuffer)
         &&(!decompressOptionsPtr->stableDst)
         &&((unsigned)(dctxPtr->dStage-1) < (unsigned)(dstage_getSuffix-1))
@@ -1329,9 +1328,9 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
     {
         if (dctxPtr->dStage == dstage_flushOut) {
             size_t preserveSize = dctxPtr->tmpOut - dctxPtr->tmpOutBuffer;
-            size_t copySize = LIZ_DICT_SIZE - dctxPtr->tmpOutSize;
+            size_t copySize = LIZARD_DICT_SIZE - dctxPtr->tmpOutSize;
             const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize - dctxPtr->tmpOutStart;
-            if (dctxPtr->tmpOutSize > LIZ_DICT_SIZE) copySize = 0;
+            if (dctxPtr->tmpOutSize > LIZARD_DICT_SIZE) copySize = 0;
             if (copySize > preserveSize) copySize = preserveSize;
 
             memcpy(dctxPtr->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
@@ -1341,7 +1340,7 @@ size_t LIZF_decompress(LIZF_decompressionContext_t decompressionContext,
         } else {
             size_t newDictSize = dctxPtr->dictSize;
             const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize;
-            if ((newDictSize) > LIZ_DICT_SIZE) newDictSize = LIZ_DICT_SIZE;
+            if ((newDictSize) > LIZARD_DICT_SIZE) newDictSize = LIZARD_DICT_SIZE;
 
             memcpy(dctxPtr->tmpOutBuffer, oldDictEnd - newDictSize, newDictSize);
 

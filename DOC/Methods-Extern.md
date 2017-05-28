@@ -62,9 +62,9 @@ License:
 Zstandard library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 5 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
+
+This header is for informational purposes only. It's not mandatory for
+decompressing the data.
 ``` C
  Byte _ver_major; // currently 1
  Byte _ver_minor; // currently 2
@@ -119,9 +119,9 @@ License:
 The Brotli library is provided as open source software using the MIT license.
 
 7-Zip Container Header (3 bytes):
-This header is mandatory and must be exact 3 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
+
+This header is for informational purposes only. It's not mandatory for
+decompressing the data.
 ``` C
  Byte _ver_major; // currently 0
  Byte _ver_minor; // currently 6
@@ -164,9 +164,9 @@ License:
 LZ4 library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 5 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
+
+This header is for informational purposes only. It's not mandatory for
+decompressing the data.
 ``` C
  Byte _ver_major;  // currently 1
  Byte _ver_minor;  // currently 7
@@ -215,9 +215,9 @@ License:
 LZ5 library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 5 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
+
+This header is for informational purposes only. It's not mandatory for
+decompressing the data.
 ``` C
  Byte _ver_major;  // currently 1
  Byte _ver_minor;  // currently 5
@@ -264,9 +264,9 @@ License:
 Lizard library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 3 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
+
+This header is for informational purposes only. It's not mandatory for
+decompressing the data.
 ``` C
  Byte _ver_major;  // currently 2
  Byte _ver_minor;  // currently 0

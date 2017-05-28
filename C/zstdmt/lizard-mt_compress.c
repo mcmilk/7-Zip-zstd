@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LIZF_DISABLE_OBSOLETE_ENUMS
-#include "lizframe.h"
+#define LizardF_DISABLE_OBSOLETE_ENUMS
+#include "lizard_frame.h"
 
 #include "memmt.h"
 #include "threading.h"
@@ -38,7 +38,7 @@
 /* worker for compression */
 typedef struct {
 	LIZARDMT_CCtx *ctx;
-	LIZF_preferences_t zpref;
+	LizardF_preferences_t zpref;
 	pthread_t pthread;
 } cwork_t;
 
@@ -138,12 +138,12 @@ LIZARDMT_CCtx *LIZARDMT_createCCtx(int threads, int level, int inputsize)
 		w->ctx = ctx;
 
 		/* setup preferences for that thread */
-		memset(&w->zpref, 0, sizeof(LIZF_preferences_t));
+		memset(&w->zpref, 0, sizeof(LizardF_preferences_t));
 		w->zpref.compressionLevel = level;
-		w->zpref.frameInfo.blockMode = LIZF_blockLinked;
+		w->zpref.frameInfo.blockMode = LizardF_blockLinked;
 		w->zpref.frameInfo.contentSize = 1;
 		w->zpref.frameInfo.contentChecksumFlag =
-		    LIZF_contentChecksumEnabled;
+		    LizardF_contentChecksumEnabled;
 
 	}
 
@@ -229,7 +229,7 @@ static void *pt_compress(void *arg)
 			entry = list_first(&ctx->writelist_free);
 			wl = list_entry(entry, struct writelist, node);
 			wl->out.size =
-			    LIZF_compressFrameBound(ctx->inputsize,
+			    LizardF_compressFrameBound(ctx->inputsize,
 						    &w->zpref) + 12;
 			list_move(entry, &ctx->writelist_busy);
 		} else {
@@ -241,7 +241,7 @@ static void *pt_compress(void *arg)
 				return (void *)ERROR(memory_allocation);
 			}
 			wl->out.size =
-			    LIZF_compressFrameBound(ctx->inputsize,
+			    LizardF_compressFrameBound(ctx->inputsize,
 						    &w->zpref) + 12;;
 			wl->out.buf = malloc(wl->out.size);
 			if (!wl->out.buf) {
@@ -278,10 +278,10 @@ static void *pt_compress(void *arg)
 
 		/* compress whole frame */
 		result =
-		    LIZF_compressFrame((unsigned char *)wl->out.buf + 12,
+		    LizardF_compressFrame((unsigned char *)wl->out.buf + 12,
 				       wl->out.size - 12, in.buf, in.size,
 				       &w->zpref);
-		if (LIZF_isError(result)) {
+		if (LizardF_isError(result)) {
 			pthread_mutex_lock(&ctx->write_mutex);
 			list_move(&wl->node, &ctx->writelist_free);
 			pthread_mutex_unlock(&ctx->write_mutex);
