@@ -187,7 +187,12 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=bcj -m1=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
 ```
-## Benchmarks with i7-3632QM
+## Benchmarks
+
+For the benchmarks I am using Windows 7 64bit on my Laptop which has the following Hardware:
+- Intel i7-3632QM, 16GB RAM, Samsung 1TB SSD (EVO 850), disabled swap space
+- the compression benchmarks are written to SSD, the decompression benchmark is in RAM via: `7z t archiv.7z`
+- the tool for measuring the times is [wtime](https://github.com/mcmilk/wtime), together with some [scripts](https://github.com/mcmilk/7-Zip-Benchmarking)
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1700_v120_ratio.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
 
