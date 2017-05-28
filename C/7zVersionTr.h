@@ -1,7 +1,7 @@
 #define MY_VER_MAJOR 1
 #define MY_VER_MINOR 2
 #define MY_VER_BUILD 0
-#define MY_VERSION_NUMBERS "1.2.0 R5"
+#define MY_VERSION_NUMBERS "1.2.0 R6"
 #define MY_VERSION         MY_VERSION_NUMBERS
 #define MY_DATE            "2017-05-28"
 #undef MY_COPYRIGHT

@@ -274,6 +274,7 @@ static const char * const kArcExts[] =
   , "bz2"
   , "gz"
   , "lz"
+  , "liz"
   , "lz4"
   , "lz5"
   , "rar"
