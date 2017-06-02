@@ -48,6 +48,7 @@ struct DProps
 
 class CDecoder:public ICompressCoder,
   public ICompressSetDecoderProperties2,
+  public ICompressSetCoderMt,
   public CMyUnknownImp
 {
   CMyComPtr < ISequentialInStream > _inStream;
@@ -71,13 +72,14 @@ public:
 #ifndef NO_READ_FROM_CODER
   MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)
 #endif
+  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
   MY_QUERYINTERFACE_END
 
   MY_ADDREF_RELEASE
   STDMETHOD (Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
   STDMETHOD (SetDecoderProperties2)(const Byte *data, UInt32 size);
   STDMETHOD (SetOutStreamSize)(const UInt64 *outSize);
-  STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads);
+  STDMETHOD (SetNumberOfThreads)(UInt32 numThreads);
 
 #ifndef NO_READ_FROM_CODER
   STDMETHOD (SetInStream)(ISequentialInStream *inStream);

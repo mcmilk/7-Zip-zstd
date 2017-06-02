@@ -34,6 +34,7 @@ struct CProps
 
 class CEncoder:
   public ICompressCoder,
+  public ICompressSetCoderMt,
   public ICompressSetCoderProperties,
   public ICompressWriteCoderProperties,
   public CMyUnknownImp
@@ -49,11 +50,17 @@ class CEncoder:
   HRESULT CEncoder::ErrorOut(size_t code);
 
 public:
-  MY_UNKNOWN_IMP2 (ICompressSetCoderProperties, ICompressWriteCoderProperties)
+  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
+  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
+  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderProperties)
+  MY_QUERYINTERFACE_ENTRY(ICompressWriteCoderProperties)
+  MY_QUERYINTERFACE_END
+  MY_ADDREF_RELEASE
+
   STDMETHOD (Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
   STDMETHOD (SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
   STDMETHOD (WriteCoderProperties)(ISequentialOutStream *outStream);
-  STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads);
+  STDMETHOD (SetNumberOfThreads)(UInt32 numThreads);
 
   CEncoder();
   virtual ~CEncoder();
