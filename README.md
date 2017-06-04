@@ -116,6 +116,7 @@ Codecs:
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
+![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods.png "Methods")
 
 ## ZStandard codec Plugin for 7-Zip
 
@@ -190,11 +191,12 @@ Codecs:
 ## Benchmarks
 
 For the benchmarks I am using Windows 7 64bit on my Laptop which has the following Hardware:
-- Intel i7-3632QM, 16GB RAM, Samsung 1TB SSD (EVO 850), disabled swap space
-- the compression benchmarks are written to SSD, the decompression benchmark is in RAM via: `7z t archiv.7z`
+- Intel i7-3632QM, limited to 2,2GHz, 16GB RAM, disabled swap space
+- the compression benchmark is read / written to an 4 GiB [ImDisk]
+- the decompression benchmark is also done in RAM via: `7z t archiv.7z`
 - the tool for measuring the times is [wtime](https://github.com/mcmilk/wtime), together with some [scripts](https://github.com/mcmilk/7-Zip-Benchmarking)
-![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/7z1700_v120_ratio.png "Compression Speed vs Ratio")
-![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decompr-074.png "Decompression Speed @ Windows 7 64Bit")
+![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr.png "Compression Speed vs Ratio")
+![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decomp.png "Decompression Speed per Level")
 
 ## License and redistribution
 
@@ -230,3 +232,4 @@ If you find this project useful, you can...
 [LZ5]:https://github.com/inikep/lz5/
 [ZStandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
+[ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/
