@@ -196,8 +196,8 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 - the decompression benchmark is also done in RAM via: `7z t archiv.7z`
 - the tool for measuring the times is [wtime](https://github.com/mcmilk/wtime), together with some [scripts](https://github.com/mcmilk/7-Zip-Benchmarking)
 - the testfile is generated via [generate-mcorpus](https://github.com/mcmilk/7-Zip-Benchmarking/blob/master/generate-mcorpus)
-![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr.png "Compression Speed vs Ratio")
-![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decomp.png "Decompression Speed per Level")
+![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-v120.png "Compression Speed vs Ratio")
+![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decomp-v120.png "Decompression Speed per Level")
 
 ## License and redistribution
 
@@ -207,8 +207,8 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 
 - [7-Zip Homepage](http://www.7-zip.org/)
 - [7-Zip ZStandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
-- Request for inclusion into the mainline 7-Zip: https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/
-  - result, will not be included :(
+- [Request for inclusion](https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/) into the mainline 7-Zip:
+  - result, will currently not included :(
 
 ## Donate
 If you find this project useful, you can...
