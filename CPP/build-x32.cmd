@@ -1,11 +1,15 @@
 @echo on
 
 set ROOT=%cd%\7zip
-set OUTDIR=%ROOT%\bin32
+if not defined OUTDIR set OUTDIR=%ROOT%\bin32
 mkdir %OUTDIR%
 
 set OPTS=MY_STATIC_LINK=1
 set LFLAGS=/SUBSYSTEM:WINDOWS,"5.01"
+
+cd %ROOT%\Bundles\Format7zExtract
+nmake %OPTS%
+copy O\7zxa.dll %OUTDIR%\7zxa.dll
 
 cd %ROOT%\Bundles\Format7z
 nmake %OPTS%
