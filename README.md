@@ -7,6 +7,11 @@ You can install it in two ways:
 1. full setup with additions within the GUI and an modified an Explorer context menu
 2. just the codec plugin, which goes to your existing 7-Zip installation
 
+# Status
+
+[![Build status](https://ci.appveyor.com/api/projects/status/j9cwlxqe1g21c4dj?svg=true)](https://ci.appveyor.com/project/mcmilk/7-zip-zstd)
+[![Latest stable release](https://img.shields.io/github/release/mcmilk/7-Zip-zstd.svg)](https://github.com/mcmilk/7-Zip-zstd/releases)
+
 ## Codec overview
 1. [Zstandard] v1.2.0 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
@@ -188,6 +193,14 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=bcj -m1=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
 ```
+
+## Codec Plugin for Total Commander
+- download [TotalCmd.7z](https://github.com/mcmilk/7-Zip-zstd/releases)
+- install it, by replacing the files `tc7z.dll` and `tc7z64.dll` with the new ones
+- you can check the Total Commander Forum for more information about this [DLL Files](http://ghisler.ch/board/viewtopic.php?p=319216)
+- decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard] ot the 7-Zip `.7z` format
+  will work out of the box with Total Commander now :-)
+
 ## Benchmarks
 
 For the benchmarks I am using Windows 7 64bit on my Laptop which has the following Hardware:
@@ -198,6 +211,8 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 - the testfile is generated via [generate-mcorpus](https://github.com/mcmilk/7-Zip-Benchmarking/blob/master/generate-mcorpus)
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-v120.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decomp-v120.png "Decompression Speed per Level")
+![Memory at Compression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemCompr.png "Memory usage at Compression")
+![Memory at Decompression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemDecomp.png "Memory usage at Decompression")
 
 ## License and redistribution
 
@@ -211,7 +226,8 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
   - result, will currently not included :(
 
 ## Donate
-If you find this project useful, you can...
+
+You find this project useful, maybe you consider a donation ;-)
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/TinoReichardt)
 
@@ -224,7 +240,7 @@ If you find this project useful, you can...
   - [LZ5] Version 1.5
   - [ZStandard] Version 1.2.0
 
-/TR 2017-05-28
+/TR 2017-06-18
 
 [7-Zip]:http://www.7-zip.org/
 [lzip]:http://www.nongnu.org/lzip/
