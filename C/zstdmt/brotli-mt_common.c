@@ -32,6 +32,7 @@ unsigned BROTLIMT_isError(size_t code)
 const char *BROTLIMT_getErrorString(size_t code)
 {
 	static const char *noErrorCode = "Unspecified brotli error code";
+
 	switch ((BROTLIMT_ErrorCode) (0 - code)) {
 	case PREFIX(no_error):
 		return "No error detected";

@@ -32,10 +32,11 @@ unsigned LIZARDMT_isError(size_t code)
  */
 const char *LIZARDMT_getErrorString(size_t code)
 {
+	static const char *noErrorCode = "Unspecified lizardmt error code";
+
 	if (LizardF_isError(lizardmt_errcode))
 		return LizardF_getErrorName(lizardmt_errcode);
 
-	static const char *noErrorCode = "Unspecified lizardmt error code";
 	switch ((LIZARDMT_ErrorCode) (0 - code)) {
 	case PREFIX(no_error):
 		return "No error detected";
