@@ -46,12 +46,12 @@ goto %NEXT%
 :build_sdk
 set PATH=%OPATH%
 call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86
-call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /x86 /xp
-set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x32
-call build-x32.cmd
-call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /x64 /xp
-set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x64
-call build-x64.cmd
+REM call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /x86 /xp
+REM set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x32
+REM call build-x32.cmd
+REM call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /x64 /xp
+REM set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x64
+REM call build-x64.cmd
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /ia64 /xp
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-ia64
 call build-ia64.cmd

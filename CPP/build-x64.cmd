@@ -19,6 +19,10 @@ cd %ROOT%\Bundles\Format7zF
 nmake %OPTS%
 copy AMD64\7z.dll %OUTDIR%\7z.dll
 
+cd %ROOT%\Bundles\Format7zFO
+nmake %OPTS%
+copy AMD64\7z.dll %OUTDIR%\7zOrig.dll
+
 cd %ROOT%\Bundles\Format7zUSB
 nmake %OPTS%
 copy AMD64\7zu.dll %OUTDIR%\7zu-x64.dll
