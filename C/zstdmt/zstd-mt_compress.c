@@ -36,23 +36,23 @@
 
 /* worker for compression */
 typedef struct {
-	ZSTDMT_CCtx *ctx;
+	ZSTDCB_CCtx *ctx;
 	pthread_t pthread;
 } cwork_t;
 
 struct writelist;
 struct writelist {
 	size_t frame;
-	ZSTDMT_Buffer out;
+	ZSTDCB_Buffer out;
 	struct list_head node;
 };
 
-struct ZSTDMT_CCtx_s {
+struct ZSTDCB_CCtx_s {
 
-	/* level: 1..ZSTDMT_LEVEL_MAX */
+	/* level: 1..ZSTDCB_LEVEL_MAX */
 	int level;
 
-	/* threads: 1..ZSTDMT_THREAD_MAX */
+	/* threads: 1..ZSTDCB_THREAD_MAX */
 	int threads;
 
 	/* buffersize for reading input */
@@ -91,43 +91,39 @@ struct ZSTDMT_CCtx_s {
  * Compression
  ****************************************/
 
-ZSTDMT_CCtx *ZSTDMT_createCCtx(int threads, int level, int inputsize)
+ZSTDCB_CCtx *ZSTDCB_createCCtx(int threads, int level, int inputsize)
 {
-	ZSTDMT_CCtx *ctx;
+	ZSTDCB_CCtx *ctx;
 	int t;
 
 	/* allocate ctx */
-	ctx = (ZSTDMT_CCtx *) malloc(sizeof(ZSTDMT_CCtx));
+	ctx = (ZSTDCB_CCtx *) malloc(sizeof(ZSTDCB_CCtx));
 	if (!ctx)
 		return 0;
 
 	/* check threads value */
-	if (threads < 1 || threads > ZSTDMT_THREAD_MAX)
+	if (threads < 1 || threads > ZSTDCB_THREAD_MAX)
 		goto err_ctx;
 
 	/* check level */
-	if (level < ZSTDMT_LEVEL_MIN || level > ZSTDMT_LEVEL_MAX)
+	if (level < ZSTDCB_LEVEL_MIN || level > ZSTDCB_LEVEL_MAX)
 		goto err_ctx;
+
+
+
 
 	/* calculate chunksize for one thread */
 	if (inputsize)
 		ctx->inputsize = inputsize;
 	else {
-#if 1
 		const int windowLog[] = {
-			0, 19, 19, 20, 20, 20, 21, 21,
-			21, 21, 21, 22, 22, 22, 22, 22,
-			23, 23, 23, 23, 23, 25, 26, 27
+			19, 19, 20, 20, 20, /*  1 -  5 */
+			21, 21, 21, 21, 21, /*  6 - 10 */
+			22, 22, 22, 22, 22, /* 11 - 15 */
+			23, 23, 23, 23, 25, /* 16 - 20 */
+			26, 27
 		};
-		ctx->inputsize = 1 << (windowLog[level] + 1);
-#else
-		const int mb[] = {
-			0, 1, 1, 1, 2, 2, 2,
-			3, 3, 3, 4, 4, 4, 5,
-			5, 5, 5, 5, 5, 5, 5
-		};
-		ctx->inputsize = 1024 * 1024 * mb[level];
-#endif
+		ctx->inputsize = 1 << (windowLog[level - 1] + 1);
 	}
 
 	/* setup ctx */
@@ -165,20 +161,20 @@ static size_t mt_error(int rv)
 {
 	switch (rv) {
 	case -1:
-		return ZSTDMT_ERROR(read_fail);
+		return ZSTDCB_ERROR(read_fail);
 	case -2:
-		return ZSTDMT_ERROR(canceled);
+		return ZSTDCB_ERROR(canceled);
 	case -3:
-		return ZSTDMT_ERROR(memory_allocation);
+		return ZSTDCB_ERROR(memory_allocation);
 	}
 
-	return ZSTDMT_ERROR(read_fail);
+	return ZSTDCB_ERROR(read_fail);
 }
 
 /**
  * pt_write - queue for compressed output
  */
-static size_t pt_write(ZSTDMT_CCtx * ctx, struct writelist *wl)
+static size_t pt_write(ZSTDCB_CCtx * ctx, struct writelist *wl)
 {
 	struct list_head *entry;
 	int rv;
@@ -212,20 +208,20 @@ static size_t pt_write(ZSTDMT_CCtx * ctx, struct writelist *wl)
 static void *pt_compress(void *arg)
 {
 	cwork_t *w = (cwork_t *) arg;
-	ZSTDMT_CCtx *ctx = w->ctx;
+	ZSTDCB_CCtx *ctx = w->ctx;
 	struct writelist *wl;
 	size_t result;
-	ZSTDMT_Buffer in;
+	ZSTDCB_Buffer in;
 
 	/* inbuf is constant */
 	in.size = ctx->inputsize;
 	in.buf = malloc(in.size);
 	if (!in.buf)
-		return (void *)ZSTDMT_ERROR(memory_allocation);
+		return (void *)ZSTDCB_ERROR(memory_allocation);
 
 	for (;;) {
 		struct list_head *entry;
-		ZSTDMT_Buffer *out;
+		ZSTDCB_Buffer *out;
 		int rv;
 
 		/* allocate space for new output */
@@ -243,14 +239,14 @@ static void *pt_compress(void *arg)
 			if (!wl) {
 				pthread_mutex_unlock(&ctx->write_mutex);
 				free(in.buf);
-				return (void *)ZSTDMT_ERROR(memory_allocation);
+				return (void *)ZSTDCB_ERROR(memory_allocation);
 			}
 			wl->out.size = ZSTD_compressBound(ctx->inputsize) + 12;;
 			wl->out.buf = malloc(wl->out.size);
 			if (!wl->out.buf) {
 				pthread_mutex_unlock(&ctx->write_mutex);
 				free(in.buf);
-				return (void *)ZSTDMT_ERROR(memory_allocation);
+				return (void *)ZSTDCB_ERROR(memory_allocation);
 			}
 			list_add(&wl->node, &ctx->writelist_busy);
 		}
@@ -290,7 +286,7 @@ static void *pt_compress(void *arg)
 					  in.size, ctx->level);
 			if (ZSTD_isError(result)) {
 				zstdmt_errcode = result;
-				result = ZSTDMT_ERROR(compression_library);
+				result = ZSTDCB_ERROR(compression_library);
 				goto error;
 			}
 		}
@@ -299,7 +295,7 @@ static void *pt_compress(void *arg)
 		{
 			unsigned char *outbuf = out->buf;
 
-			MEM_writeLE32(outbuf + 0, ZSTDMT_MAGIC_SKIPPABLE);
+			MEM_writeLE32(outbuf + 0, ZSTDCB_MAGIC_SKIPPABLE);
 			MEM_writeLE32(outbuf + 4, 4);
 			MEM_writeLE32(outbuf + 8, (U32) result);
 			out->size = result + 12;
@@ -309,7 +305,7 @@ static void *pt_compress(void *arg)
 		pthread_mutex_lock(&ctx->write_mutex);
 		result = pt_write(ctx, wl);
 		pthread_mutex_unlock(&ctx->write_mutex);
-		if (ZSTDMT_isError(result))
+		if (ZSTDCB_isError(result))
 			goto error;
 	}
 
@@ -323,13 +319,13 @@ static void *pt_compress(void *arg)
 }
 
 /* compress data, until input ends */
-size_t ZSTDMT_compressCCtx(ZSTDMT_CCtx * ctx, ZSTDMT_RdWr_t * rdwr)
+size_t ZSTDCB_compressCCtx(ZSTDCB_CCtx * ctx, ZSTDCB_RdWr_t * rdwr)
 {
 	int t;
 	void *retval_of_thread = 0;
 
 	if (!ctx)
-		return ZSTDMT_ERROR(init_missing);
+		return ZSTDCB_ERROR(init_missing);
 
 	/* setup reading and writing functions */
 	ctx->fn_read = rdwr->fn_read;
@@ -396,37 +392,37 @@ size_t ZSTDMT_compressCCtx(ZSTDMT_CCtx * ctx, ZSTDMT_RdWr_t * rdwr)
 }
 
 /* returns current uncompressed data size */
-size_t ZSTDMT_GetInsizeCCtx(ZSTDMT_CCtx * ctx)
+size_t ZSTDCB_GetInsizeCCtx(ZSTDCB_CCtx * ctx)
 {
 	if (!ctx)
-		return ZSTDMT_ERROR(init_missing);
+		return ZSTDCB_ERROR(init_missing);
 
 	/* no mutex needed here */
 	return ctx->insize;
 }
 
 /* returns the current compressed data size */
-size_t ZSTDMT_GetOutsizeCCtx(ZSTDMT_CCtx * ctx)
+size_t ZSTDCB_GetOutsizeCCtx(ZSTDCB_CCtx * ctx)
 {
 	if (!ctx)
-		return ZSTDMT_ERROR(init_missing);
+		return ZSTDCB_ERROR(init_missing);
 
 	/* no mutex needed here */
 	return ctx->outsize;
 }
 
 /* returns the current compressed data frame count */
-size_t ZSTDMT_GetFramesCCtx(ZSTDMT_CCtx * ctx)
+size_t ZSTDCB_GetFramesCCtx(ZSTDCB_CCtx * ctx)
 {
 	if (!ctx)
-		return ZSTDMT_ERROR(init_missing);
+		return ZSTDCB_ERROR(init_missing);
 
 	/* no mutex needed here */
 	return ctx->curframe;
 }
 
 /* free all allocated buffers and structures */
-void ZSTDMT_freeCCtx(ZSTDMT_CCtx * ctx)
+void ZSTDCB_freeCCtx(ZSTDCB_CCtx * ctx)
 {
 	if (!ctx)
 		return;
