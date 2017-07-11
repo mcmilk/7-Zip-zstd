@@ -21,12 +21,12 @@ CEncoder::CEncoder():
 CEncoder::~CEncoder()
 {
   if (_ctx)
-    ZSTDMT_freeCCtx(_ctx);
+    ZSTDCB_freeCCtx(_ctx);
 }
 
 HRESULT CEncoder::ErrorOut(size_t code)
 {
-  const char *strError = ZSTDMT_getErrorString(code);
+  const char *strError = ZSTDCB_getErrorString(code);
   wchar_t wstrError[200+5]; /* no malloc here, /TR */
 
   mbstowcs(wstrError, strError, 200);
@@ -54,7 +54,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
 
         /* level 1..22 */
         _props._level = static_cast < Byte > (prop.ulVal);
-        Byte mylevel = static_cast < Byte > (ZSTDMT_LEVEL_MAX);
+        Byte mylevel = static_cast < Byte > (ZSTDCB_LEVEL_MAX);
         if (_props._level > mylevel)
           _props._level = mylevel;
 
@@ -84,7 +84,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   ISequentialOutStream *outStream, const UInt64 * /*inSize*/ ,
   const UInt64 * /*outSize */, ICompressProgressInfo *progress)
 {
-  ZSTDMT_RdWr_t rdwr;
+  ZSTDCB_RdWr_t rdwr;
   size_t result;
   HRESULT res = S_OK;
 
@@ -112,14 +112,14 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
   /* 2) create compression context, if needed */
   if (!_ctx)
-    _ctx = ZSTDMT_createCCtx(_numThreads, _props._level, _inputSize);
+    _ctx = ZSTDCB_createCCtx(_numThreads, _props._level, _inputSize);
   if (!_ctx)
     return S_FALSE;
 
   /* 3) compress */
-  result = ZSTDMT_compressCCtx(_ctx, &rdwr);
-  if (ZSTDMT_isError(result)) {
-    if (result == (size_t)-ZSTDMT_error_canceled)
+  result = ZSTDCB_compressCCtx(_ctx, &rdwr);
+  if (ZSTDCB_isError(result)) {
+    if (result == (size_t)-ZSTDCB_error_canceled)
       return E_ABORT;
     return ErrorOut(result);
   }
@@ -129,7 +129,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
 STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
 {
-  const UInt32 kNumThreadsMax = ZSTDMT_THREAD_MAX;
+  const UInt32 kNumThreadsMax = ZSTDCB_THREAD_MAX;
   if (numThreads < 1) numThreads = 1;
   if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   _numThreads = numThreads;

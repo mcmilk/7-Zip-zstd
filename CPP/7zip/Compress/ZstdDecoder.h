@@ -20,12 +20,10 @@ struct ZstdStream {
   ICompressProgressInfo *progress;
   UInt64 *processedIn;
   UInt64 *processedOut;
-  CCriticalSection *cs;
-  int flags;
 };
 
-extern int ZstdRead(void *Stream, ZSTDMT_Buffer * in);
-extern int ZstdWrite(void *Stream, ZSTDMT_Buffer * in);
+extern int ZstdRead(void *Stream, ZSTDCB_Buffer * in);
+extern int ZstdWrite(void *Stream, ZSTDCB_Buffer * in);
 
 namespace NCompress {
 namespace NZSTD {
@@ -55,7 +53,6 @@ class CDecoder:public ICompressCoder,
   CMyComPtr < ISequentialInStream > _inStream;
 
   DProps _props;
-  CCriticalSection cs;
 
   UInt64 _processedIn;
   UInt64 _processedOut;

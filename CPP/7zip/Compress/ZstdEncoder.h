@@ -46,7 +46,7 @@ class CEncoder:
   UInt32 _inputSize;
   UInt32 _numThreads;
 
-  ZSTDMT_CCtx *_ctx;
+  ZSTDCB_CCtx *_ctx;
   HRESULT CEncoder::ErrorOut(size_t code);
 
 public:

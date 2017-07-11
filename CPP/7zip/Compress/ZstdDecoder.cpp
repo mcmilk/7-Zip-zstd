@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 #include "ZstdDecoder.h"
 
-int ZstdRead(void *arg, ZSTDMT_Buffer * in)
+int ZstdRead(void *arg, ZSTDCB_Buffer * in)
 {
   struct ZstdStream *x = (struct ZstdStream*)arg;
   size_t size = in->size;
@@ -28,7 +28,7 @@ int ZstdRead(void *arg, ZSTDMT_Buffer * in)
   return 0;
 }
 
-int ZstdWrite(void *arg, ZSTDMT_Buffer * out)
+int ZstdWrite(void *arg, ZSTDCB_Buffer * out)
 {
   struct ZstdStream *x = (struct ZstdStream*)arg;
   UInt32 todo = (UInt32)out->size;
@@ -85,7 +85,7 @@ CDecoder::~CDecoder()
 
 HRESULT CDecoder::ErrorOut(size_t code)
 {
-  const char *strError = ZSTDMT_getErrorString(code);
+  const char *strError = ZSTDCB_getErrorString(code);
   wchar_t wstrError[200+5]; /* no malloc here, /TR */
 
   mbstowcs(wstrError, strError, 200);
@@ -109,7 +109,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 
 STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)
 {
-  const UInt32 kNumThreadsMax = ZSTDMT_THREAD_MAX;
+  const UInt32 kNumThreadsMax = ZSTDCB_THREAD_MAX;
   if (numThreads < 1) numThreads = 1;
   if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   _numThreads = numThreads;
@@ -132,7 +132,7 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 * outSize)
 HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   ISequentialOutStream * outStream, ICompressProgressInfo * progress)
 {
-  ZSTDMT_RdWr_t rdwr;
+  ZSTDCB_RdWr_t rdwr;
   size_t result;
   HRESULT res = S_OK;
 
@@ -153,20 +153,20 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   rdwr.arg_write = (void *)&Wr;
 
   /* 2) create decompression context */
-  ZSTDMT_DCtx *ctx = ZSTDMT_createDCtx(_numThreads, _inputSize);
+  ZSTDCB_DCtx *ctx = ZSTDCB_createDCtx(_numThreads, _inputSize);
   if (!ctx)
       return S_FALSE;
 
   /* 3) decompress */
-  result = ZSTDMT_decompressDCtx(ctx, &rdwr);
-  if (ZSTDMT_isError(result)) {
-    if (result == (size_t)-ZSTDMT_error_canceled)
+  result = ZSTDCB_decompressDCtx(ctx, &rdwr);
+  if (ZSTDCB_isError(result)) {
+    if (result == (size_t)-ZSTDCB_error_canceled)
       return E_ABORT;
     return ErrorOut(result);
   }
 
   /* 4) free resources */
-  ZSTDMT_freeDCtx(ctx);
+  ZSTDCB_freeDCtx(ctx);
   return res;
 }
 
