@@ -20,8 +20,6 @@ struct BrotliStream {
   ICompressProgressInfo *progress;
   UInt64 *processedIn;
   UInt64 *processedOut;
-  CCriticalSection *cs;
-  int flags;
 };
 
 extern int BrotliRead(void *Stream, BROTLIMT_Buffer * in);
@@ -54,7 +52,6 @@ class CDecoder:public ICompressCoder,
   CMyComPtr < ISequentialInStream > _inStream;
 
   DProps _props;
-  CCriticalSection cs;
 
   UInt64 _processedIn;
   UInt64 _processedOut;

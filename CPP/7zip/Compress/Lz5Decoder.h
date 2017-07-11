@@ -20,8 +20,6 @@ struct Lz5Stream {
   ICompressProgressInfo *progress;
   UInt64 *processedIn;
   UInt64 *processedOut;
-  CCriticalSection *cs;
-  int flags;
 };
 
 extern int Lz5Read(void *Stream, LZ5MT_Buffer * in);
@@ -55,7 +53,6 @@ class CDecoder:public ICompressCoder,
   CMyComPtr < ISequentialInStream > _inStream;
 
   DProps _props;
-  CCriticalSection cs;
 
   UInt64 _processedIn;
   UInt64 _processedOut;
