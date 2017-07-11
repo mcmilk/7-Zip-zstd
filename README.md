@@ -41,7 +41,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 17.00 ZS v1.2.0 R5 (x64) : Copyright (c) 1999-2017 Igor Pavlov
+7-Zip 17.00 ZS v1.3.0 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov
 
 
 Libs:
@@ -216,7 +216,7 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 
 ## License and redistribution
 
-- the same as the original 7-Zip, which means GNU GPL
+- the same as the original 7-Zip, which means GNU LGPL
 
 ## Links
 
@@ -240,7 +240,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [ZStandard] Version 1.3.0
 
-/TR 2017-07-05
+/TR 2017-07-12
 
 [7-Zip]:http://www.7-zip.org/
 [lzip]:http://www.nongnu.org/lzip/

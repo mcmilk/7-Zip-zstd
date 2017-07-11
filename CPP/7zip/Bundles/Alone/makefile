@@ -292,6 +292,8 @@ ZSTD_OBJS = \
   $O\zstd_v05.obj \
   $O\zstd_v06.obj \
   $O\zstd_v07.obj \
+  $O\zstdmt_compress.obj \
+  $O\pool.obj \
 
 ZSTDMT_OBJS = \
   $O\threading.obj \

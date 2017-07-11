@@ -31,6 +31,8 @@ ZSTD_OBJS = \
   $O\fse_compress.obj \
   $O\huf_compress.obj \
   $O\zstd_compress.obj \
+  $O\zstdmt_compress.obj \
+  $O\pool.obj \
   $O\error_private.obj \
 
 ZSTDMT_OBJS = \

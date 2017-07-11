@@ -203,6 +203,8 @@ ZSTD_OBJS = \
   $O\huf_compress.obj \
   $O\zstd_compress.obj \
   $O\error_private.obj \
+  $O\zstdmt_compress.obj \
+  $O\pool.obj \
 
 ZSTDMT_OBJS = \
   $O\threading.obj \
