@@ -228,14 +228,17 @@ HRESULT CompressFiles(
     {
       char temp[32];
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      params += " -m0=";
-      params += fo.Method;
-      params += " -mx";
-      ConvertUInt64ToString(fo.Level, temp);
-      params += temp;
-      if (fo.NumThreads)
+
+      if (!fo.Method.IsEmpty())
       {
-        params += " -mmt";
+        params += " -m0=";
+        params += fo.Method;
+
+        params += " -mx=";
+        ConvertUInt64ToString(fo.Level, temp);
+        params += temp;
+
+        params += " -mmt=";
         ConvertUInt64ToString(fo.NumThreads, temp);
         params += temp;
       }
