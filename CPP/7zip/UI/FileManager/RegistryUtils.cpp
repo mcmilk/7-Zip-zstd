@@ -11,7 +11,7 @@
 using namespace NWindows;
 using namespace NRegistry;
 
-#define REG_PATH_7Z TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip-ZStandard")
+#define REG_PATH_7Z TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip-Zstandard")
 
 static LPCTSTR const kCUBasePath = REG_PATH_7Z;
 static LPCTSTR const kCU_FMPath = REG_PATH_7Z TEXT(STRING_PATH_SEPARATOR) TEXT("FM");

@@ -31,13 +31,13 @@ You can install it in two ways:
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
    - Levels 40..49 (LIZv1 + Huffman) give the best ratio, comparable to zlib and low levels of zstd/brotli, but with a faster decompression speed
 
-## 7-Zip ZStandard Edition (full setup, with GUI and Explorer integration)
+## 7-Zip Zstandard Edition (full setup, with GUI and Explorer integration)
 
 ### Installation (via setup)
 1. download the setup from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases)
 2. install it, like the default [7-Zip]
 3. use it ;)
-4. you may check, if the 7-Zip can deal with [ZStandard] or other codecs via this command: `7z.exe i`
+4. you may check, if the 7-Zip can deal with [Zstandard] or other codecs via this command: `7z.exe i`
 
 The output should look like this:
 ```
@@ -45,7 +45,7 @@ The output should look like this:
 
 
 Libs:
- 0  c:\Program Files\7-Zip-ZStandard\7z.dll
+ 0  c:\Program Files\7-Zip-Zstandard\7z.dll
 
 Formats:
 ...
@@ -89,8 +89,8 @@ Codecs:
 
 ### Usage and features of the full installation
 
-- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard] within the 7-Zip container format
-- compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [ZStandard] (`.zst`) files
+- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
+- compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
 - included [lzip] decompression support, patch from: http://download.savannah.gnu.org/releases/lzip/7zip/
 - right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
 - the FileManager ListBox will show more information about these codecs now
@@ -123,7 +123,7 @@ Codecs:
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
 ![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods.png "Methods")
 
-## ZStandard codec Plugin for 7-Zip
+## Zstandard codec Plugin for 7-Zip
 
 ### Installation (via plugin)
 
@@ -182,7 +182,7 @@ Codecs:
 
 ### Usage (codec plugin)
 
-- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard] within the 7-Zip container format
+- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
 - you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zst` are not covered by the plugins
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable the bcj2 filter via `-m0=bcj`,
   when using only the plugin dll's
@@ -198,7 +198,7 @@ Codecs:
 - download [TotalCmd.7z](https://github.com/mcmilk/7-Zip-zstd/releases)
 - install it, by replacing the files `tc7z.dll` and `tc7z64.dll` with the new ones
 - you can check the Total Commander Forum for more information about this [DLL Files](http://ghisler.ch/board/viewtopic.php?p=319216)
-- decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard] ot the 7-Zip `.7z` format
+- decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] ot the 7-Zip `.7z` format
   will work out of the box with Total Commander now :-)
 
 ## Benchmarks
@@ -221,7 +221,7 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 ## Links
 
 - [7-Zip Homepage](http://www.7-zip.org/)
-- [7-Zip ZStandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
+- [7-Zip Zstandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
 - [Request for inclusion](https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/) into the mainline 7-Zip:
   - result, will currently not included :(
 
@@ -238,7 +238,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Lizard] Version 1.0
   - [LZ4] Version 1.7.5
   - [LZ5] Version 1.5
-  - [ZStandard] Version 1.3.0
+  - [Zstandard] Version 1.3.0
 
 /TR 2017-07-12
 
@@ -247,6 +247,6 @@ You find this project useful, maybe you consider a donation ;-)
 [Brotli]:https://github.com/google/brotli/
 [LZ4]:https://github.com/lz4/lz4/
 [LZ5]:https://github.com/inikep/lz5/
-[ZStandard]:https://github.com/facebook/zstd/
+[Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
 [ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/

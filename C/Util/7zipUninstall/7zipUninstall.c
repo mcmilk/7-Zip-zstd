@@ -28,7 +28,7 @@
   #define _64BIT_INSTALLER 1
 #endif
 
-#define k_7zip_with_Ver_base L"7-Zip ZStandard " LLL(MY_VERSION)
+#define k_7zip_with_Ver_base L"7-Zip Zstandard " LLL(MY_VERSION)
 
 #ifdef _64BIT_INSTALLER
   #define k_7zip_with_Ver k_7zip_with_Ver_base L" (x64)"
@@ -38,7 +38,7 @@
 
 // static const WCHAR * const k_7zip_with_Ver_str = k_7zip_with_Ver;
 
-static const WCHAR * const k_Reg_Software_7zip = L"Software\\7-Zip-ZStandard";
+static const WCHAR * const k_Reg_Software_7zip = L"Software\\7-Zip-Zstandard";
 
 static const WCHAR * const k_Reg_Path = L"Path";
  
@@ -295,7 +295,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
       continue;
 
     NormalizePrefix(link);
-    wcscat(link, L"7-Zip-ZStandard\\");
+    wcscat(link, L"7-Zip-Zstandard\\");
     
     {
       const size_t baseLen = wcslen(link);
@@ -344,7 +344,7 @@ static const WCHAR * const k_Shell_Approved = L"Software\\Microsoft\\Windows\\Cu
 
 static const WCHAR * const k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\7zFM.exe";
 #define k_REG_Uninstall L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
-static const WCHAR * const k_Uninstall_7zip = k_REG_Uninstall L"7-Zip-ZStandard";
+static const WCHAR * const k_Uninstall_7zip = k_REG_Uninstall L"7-Zip-Zstandard";
 
 
 static Bool AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix, const wchar_t *name)
@@ -374,7 +374,7 @@ static void WriteCLSID()
         {
           WCHAR destPath[MAX_PATH];
           wcscpy(destPath, k_ShellEx_Items[i]);
-          wcscat(destPath, L"\\7-Zip-ZStandard");
+          wcscat(destPath, L"\\7-Zip-Zstandard");
           
           MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, destPath);
         }
@@ -411,7 +411,7 @@ static void WriteCLSID()
         {
           WCHAR destPath[MAX_PATH];
           wcscpy(destPath, k_ShellEx_Items[i]);
-          wcscat(destPath, L"\\7-Zip-ZStandard");
+          wcscat(destPath, L"\\7-Zip-Zstandard");
           
           MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, destPath);
         }

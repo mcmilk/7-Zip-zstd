@@ -1,5 +1,5 @@
 
-# Multithreading Library for [Brotli], [Lizard], [LZ4], [LZ5] and [ZStandard]
+# Multithreading Library for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard]
 
 ## Description
 - works with skippables frame id 0x184D2A50 (12 bytes per compressed frame)
@@ -8,7 +8,7 @@
 
 ## Generic skippable frame definition
 
-- the frame header for [Lizard], [LZ4], [LZ5] and [ZStandard] is like this:
+- the frame header for [Lizard], [LZ4], [LZ5] and [Zstandard] is like this:
 
 size    | value             | description
 --------|-------------------|------------
@@ -41,7 +41,7 @@ size    | value             | description
 [Brotli]:https://github.com/google/brotli/
 [LZ4]:https://github.com/lz4/lz4/
 [LZ5]:https://github.com/inikep/lz5/
-[ZStandard]:https://github.com/facebook/zstd/
+[Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
 
 

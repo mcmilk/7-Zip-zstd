@@ -762,7 +762,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       mi.fMask |= MIIM_CHECKMARKS;
     mi.wID = currentCommandID++;
     mi.hSubMenu = popupMenu.Detach();
-    mi.StringValue = "7-Zip ZStandard"; // LangString(IDS_CONTEXT_POPUP_CAPTION);
+    mi.StringValue = "7-Zip Zstandard"; // LangString(IDS_CONTEXT_POPUP_CAPTION);
     mi.hbmpUnchecked = bitmap;
     
     CMenu menu;
@@ -798,7 +798,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         mi.fMask |= MIIM_CHECKMARKS;
       mi.wID = currentCommandID++;
       mi.hSubMenu = subMenu;
-      mi.StringValue = "CRC SHA ZStandard";
+      mi.StringValue = "CRC SHA Zstandard";
       mi.hbmpUnchecked = bitmap;
       
       CMenu menu;

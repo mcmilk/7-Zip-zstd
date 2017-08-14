@@ -30,7 +30,7 @@ HRESULT CEncoder::ErrorOut(size_t code)
   wchar_t wstrError[200+5]; /* no malloc here, /TR */
 
   mbstowcs(wstrError, strError, 200);
-  MessageBoxW(0, wstrError, L"7-Zip ZStandard", MB_ICONERROR | MB_OK);
+  MessageBoxW(0, wstrError, L"7-Zip Zstandard", MB_ICONERROR | MB_OK);
   MyFree(wstrError);
 
   return S_FALSE;

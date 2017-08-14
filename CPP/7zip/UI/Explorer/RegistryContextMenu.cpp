@@ -25,8 +25,8 @@ static LPCTSTR const k_ShellExtName = TEXT("7-Zip Shell Extension");
 static LPCTSTR const k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
 static LPCTSTR const k_Inproc = TEXT("InprocServer32");
 
-static LPCSTR const k_KeyPostfix_ContextMenu = "\\shellex\\ContextMenuHandlers\\7-Zip-ZStandard";
-static LPCSTR const k_KeyPostfix_DragDrop    = "\\shellex\\DragDropHandlers\\7-Zip-ZStandard";
+static LPCSTR const k_KeyPostfix_ContextMenu = "\\shellex\\ContextMenuHandlers\\7-Zip-Zstandard";
+static LPCSTR const k_KeyPostfix_DragDrop    = "\\shellex\\DragDropHandlers\\7-Zip-Zstandard";
 
 static LPCSTR const k_KeyName_File      = "*";
 static LPCSTR const k_KeyName_Folder    = "Folder";

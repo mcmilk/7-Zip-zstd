@@ -15,7 +15,7 @@ ID       | Codec, Author                | 7-Zip Plugin Author
 ---------|------------------------------|----------------------
 F7 0x xx | reserved                     |
 F7 10 xx | LZHAM, Rich Geldreich        | Rich Geldreich
-F7 11 01 | ZStandard, Yann Collet       | Tino Reichardt
+F7 11 01 | Zstandard, Yann Collet       | Tino Reichardt
 F7 11 02 | Brotli, Google               | Tino Reichardt
 F7 11 04 | LZ4, Yann Collet             | Tino Reichardt
 F7 11 05 | LZ5, Przemyslaw Skibinski    | Tino Reichardt
@@ -50,7 +50,7 @@ Codec plugin author: Rich Geldreich
 - Source:   https://github.com/richgel999/lzham_codec_devel
 
 
-Range F7 11 01, ZStandard
+Range F7 11 01, Zstandard
 -------------------------
 
 Description:
@@ -98,11 +98,11 @@ Modes:
   - when compiled with ZSTD_LEGACY_SUPPORT, then support is increased to these
     addtional version numbers of zstd: v0.1 up v0.7
 - future formats of this algorithm will be fully compatible with release v1.0
-  of ZStandard (ZStandard 0.8 == ZStandard 1.0)
+  of Zstandard (Zstandard 0.8 == Zstandard 1.0)
 - one ID should be okay for this codec
 
 Versions:
-The 7-Zip codec will be kept in sync with the current releases of ZStandard.
+The 7-Zip codec will be kept in sync with the current releases of Zstandard.
 
 
 Range F7 11 02, Brotli

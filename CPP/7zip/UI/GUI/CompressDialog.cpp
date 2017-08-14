@@ -117,7 +117,7 @@ enum EMethodID
 static LPCSTR const kMethodsLongnames[] =
 {
     "Copy"
-  , "ZStandard"
+  , "Zstandard"
   , "Brotli"
   , "LZ4"
   , "LZ5"
