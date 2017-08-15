@@ -11,6 +11,8 @@ You can install it in two ways:
 
 [![Build status](https://ci.appveyor.com/api/projects/status/j9cwlxqe1g21c4dj?svg=true)](https://ci.appveyor.com/project/mcmilk/7-zip-zstd)
 [![Latest stable release](https://img.shields.io/github/release/mcmilk/7-Zip-zstd.svg)](https://github.com/mcmilk/7-Zip-zstd/releases)
+[![PayPal.me](https://img.shields.io/badge/PayPal-me-blue.svg?maxAge=2592000)](https://www.paypal.me/TinoReichardt)
+
 
 ## Codec overview
 1. [Zstandard] v1.3.0 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
