@@ -1,11 +1,11 @@
 
 # README
 
-This is the Github Page of 7-Zip ZS with support of additional Codecs. The library used therefore is located here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
+This is the Github Page of [7-Zip] ZS with support of additional Codecs. The library used therefore is located here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
 
 You can install it in two ways:
 1. full setup with additions within the GUI and an modified an Explorer context menu
-2. just the codec plugin, which goes to your existing 7-Zip installation
+2. just the codec plugin, which goes to your existing [7-Zip] installation
 
 # Status
 
@@ -39,7 +39,8 @@ You can install it in two ways:
 1. download the setup from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases)
 2. install it, like the default [7-Zip]
 3. use it ;)
-4. you may check, if the 7-Zip can deal with [Zstandard] or other codecs via this command: `7z.exe i`
+4. you may check, if the [7-Zip] can deal with [Zstandard] or other codecs via this command: `7z.exe i`
+5. the binaries within this installation are not binary compatible with [7-Zip]... use therefore the files from the `Codecs.7z` archive
 
 The output should look like this:
 ```
@@ -91,7 +92,7 @@ Codecs:
 
 ### Usage and features of the full installation
 
-- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
+- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
 - compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
 - included [lzip] decompression support, patch from: http://download.savannah.gnu.org/releases/lzip/7zip/
 - right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
@@ -125,16 +126,16 @@ Codecs:
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
 ![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods.png "Methods")
 
-## Zstandard codec Plugin for 7-Zip
+## Zstandard codec Plugin for Mainline 7-Zip
 
 ### Installation (via plugin)
 
-1. download the codec archiv from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases)
-2. create a new directory named "Codecs"
-3. put in there the zstd-x32.dll or the zstd-x64.dll, depending on your 7-Zip installation
+1. download the `Codecs.7z` archiv from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases), this archive holds binaries, which are compatible with the Mainline version of [7-Zip]
+2. create a new directory named `Codecs` and put in there the zstd-x32.dll or the zstd-x64.dll, depending on your [7-Zip] installation
    - normally, the x32 should go to: "C:\Program Files (x86)\7-Zip\Codecs"
    - the x64 version should go in here: "C:\Program Files\7-Zip\Codecs"
-4. After this, you may check if the dll is correctly installed via this command: `7z.exe i`
+3. you could also replace the `7z.dll` directly within `C:\Program Files (x86)\7-Zip`
+4. then you may check if the dll is correctly installed via this command: `7z.exe i`
 
 The output should look like this:
 ```
@@ -218,7 +219,7 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 
 ## License and redistribution
 
-- the same as the original 7-Zip, which means GNU LGPL
+- the same as the Mainline [7-Zip], which means GNU LGPL
 
 ## Links
 
