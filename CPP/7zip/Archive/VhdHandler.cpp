@@ -5,7 +5,6 @@
 #include "../../../C/CpuArch.h"
 
 #include "../../Common/ComTry.h"
-#include "../../Common/IntToString.h"
 
 #include "../../Windows/PropVariant.h"
 
@@ -69,17 +68,16 @@ struct CFooter
   UInt32 NumCyls() const { return DiskGeometry >> 16; }
   UInt32 NumHeads() const { return (DiskGeometry >> 8) & 0xFF; }
   UInt32 NumSectorsPerTrack() const { return DiskGeometry & 0xFF; }
-  AString GetTypeString() const;
+  void AddTypeString(AString &s) const;
   bool Parse(const Byte *p);
 };
 
-AString CFooter::GetTypeString() const
+void CFooter::AddTypeString(AString &s) const
 {
   if (Type < ARRAY_SIZE(kDiskTypes))
-    return kDiskTypes[Type];
-  char s[16];
-  ConvertUInt32ToString(Type, s);
-  return s;
+    s += kDiskTypes[Type];
+  else
+    s.Add_UInt32(Type);
 }
 
 static bool CheckBlock(const Byte *p, unsigned size, unsigned checkSumOffset, unsigned zeroOffset)
@@ -234,12 +232,15 @@ class CHandler: public CHandlerImg
   UString _errorMessage;
   // bool _unexpectedEnd;
 
-  void AddErrorMessage(const wchar_t *s)
+  void AddErrorMessage(const char *message, const wchar_t *name = NULL)
   {
     if (!_errorMessage.IsEmpty())
       _errorMessage.Add_LF();
-    _errorMessage += s;
+    _errorMessage += message;
+    if (name)
+      _errorMessage += name;
   }
+
   void UpdatePhySize(UInt64 value)
   {
     if (_phySize < value)
@@ -262,7 +263,7 @@ class CHandler: public CHandlerImg
     while (p && p->NeedParent())
     {
       if (!res.IsEmpty())
-        res.AddAscii(" -> ");
+        res += " -> ";
       UString mainName;
       UString anotherName;
       if (Dyn.RelativeNameWasUsed)
@@ -279,9 +280,9 @@ class CHandler: public CHandlerImg
       if (mainName != anotherName && !anotherName.IsEmpty())
       {
         res.Add_Space();
-        res += L'(';
+        res += '(';
         res += anotherName;
-        res += L')';
+        res += ')';
       }
       p = p->Parent;
     }
@@ -522,7 +523,7 @@ HRESULT CHandler::Open3()
   }
   _posInArcLimit = _phySize;
   _phySize += kHeaderSize;
-  AddErrorMessage(L"Can't find footer");
+  AddErrorMessage("Can't find footer");
   return S_OK;
 }
 
@@ -679,7 +680,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidShortComment:
     case kpidMethod:
     {
-      AString s = Footer.GetTypeString();
+      AString s;
+      Footer.AddTypeString(s);
       if (NeedParent())
       {
         s += " -> ";
@@ -689,7 +691,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         if (!p)
           s += '?';
         else
-          s += p->Footer.GetTypeString();
+          p->Footer.AddTypeString(s);
       }
       prop = s;
       break;
@@ -698,14 +700,12 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     {
       char s[16];
       StringToAString(s, Footer.CreatorApp);
-      AString res = s;
+      AString res (s);
       res.Trim();
-      ConvertUInt32ToString(Footer.CreatorVersion >> 16, s);
       res.Add_Space();
-      res += s;
+      res.Add_UInt32(Footer.CreatorVersion >> 16);
       res += '.';
-      ConvertUInt32ToString(Footer.CreatorVersion & 0xFFFF, s);
-      res += s;
+      res.Add_UInt32(Footer.CreatorVersion & 0xFFFF);
       prop = res;
       break;
     }
@@ -806,10 +806,7 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
     
     if (res == S_FALSE || !nextStream)
     {
-      UString s;
-      s.SetFromAscii("Missing volume : ");
-      s += name;
-      AddErrorMessage(s);
+      AddErrorMessage("Missing volume : ", name);
       return S_OK;
     }
     
@@ -837,8 +834,7 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
       p = p->Parent;
       if (!p)
       {
-        AddErrorMessage(L"Can't open parent VHD file:");
-        AddErrorMessage(Dyn.ParentName);
+        AddErrorMessage("Can't open parent VHD file : ", Dyn.ParentName);
         break;
       }
     }

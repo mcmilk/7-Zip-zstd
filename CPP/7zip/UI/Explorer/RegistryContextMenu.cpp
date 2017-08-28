@@ -17,21 +17,23 @@ using namespace NRegistry;
 // CLISID (and Approved ?) items are separated for 32-bit and 64-bit code.
 // shellex items shared by 32-bit and 64-bit code?
 
-static LPCTSTR k_Clsid = TEXT("{23170F69-40C1-278A-1000-000100020000}");
-static LPCTSTR k_ShellExtName = TEXT("7-Zip Shell Extension");
+#define k_Clsid_A "{23170F69-40C1-278A-1000-000100020000}"
 
-static LPCTSTR k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
-static LPCTSTR k_Inproc = TEXT("InprocServer32");
+static LPCTSTR const k_Clsid = TEXT(k_Clsid_A);
+static LPCTSTR const k_ShellExtName = TEXT("7-Zip Shell Extension");
 
-static LPCTSTR k_KeyPostfix_ContextMenu = TEXT("\\shellex\\ContextMenuHandlers\\7-Zip");
-static LPCTSTR k_KeyPostfix_DragDrop    = TEXT("\\shellex\\DragDropHandlers\\7-Zip");
+static LPCTSTR const k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
+static LPCTSTR const k_Inproc = TEXT("InprocServer32");
 
-static LPCTSTR k_KeyName_File      = TEXT("*");
-static LPCTSTR k_KeyName_Folder    = TEXT("Folder");
-static LPCTSTR k_KeyName_Directory = TEXT("Directory");
-static LPCTSTR k_KeyName_Drive     = TEXT("Drive");
+static LPCSTR const k_KeyPostfix_ContextMenu = "\\shellex\\ContextMenuHandlers\\7-Zip";
+static LPCSTR const k_KeyPostfix_DragDrop    = "\\shellex\\DragDropHandlers\\7-Zip";
 
-static LPCTSTR const k_shellex_Prefixes[] =
+static LPCSTR const k_KeyName_File      = "*";
+static LPCSTR const k_KeyName_Folder    = "Folder";
+static LPCSTR const k_KeyName_Directory = "Directory";
+static LPCSTR const k_KeyName_Drive     = "Drive";
+
+static LPCSTR const k_shellex_Prefixes[] =
 {
   k_KeyName_File,
   k_KeyName_Folder,
@@ -95,32 +97,32 @@ static LONG MyRegistry_DeleteKey_HKCR(LPCTSTR name, UInt32 wow)
 
 // static NSynchronization::CCriticalSection g_CS;
 
-static CSysString Get_ContextMenuHandler_KeyName(const CSysString &keyName)
-  { return (keyName + k_KeyPostfix_ContextMenu); }
+static AString Get_ContextMenuHandler_KeyName(LPCSTR keyName)
+  { return (AString)keyName + k_KeyPostfix_ContextMenu; }
 
 /*
-static CSysString Get_DragDropHandler_KeyName(const CSysString &keyName)
-  { return (keyName + k_KeyPostfix_DragDrop); }
+static CSysString Get_DragDropHandler_KeyName(LPCTSTR keyName)
+  { return (AString)keyName + k_KeyPostfix_DragDrop); }
 */
 
-static bool CheckHandlerCommon(const CSysString &keyName, UInt32 wow)
+static bool CheckHandlerCommon(const AString &keyName, UInt32 wow)
 {
   CKey key;
-  if (key.Open(HKEY_CLASSES_ROOT, keyName, KEY_READ | wow) != ERROR_SUCCESS)
+  if (key.Open(HKEY_CLASSES_ROOT, (CSysString)keyName, KEY_READ | wow) != ERROR_SUCCESS)
     return false;
   CSysString value;
   if (key.QueryValue(NULL, value) != ERROR_SUCCESS)
     return false;
-  return StringsAreEqualNoCase_Ascii(value, k_Clsid);
+  return StringsAreEqualNoCase_Ascii(value, k_Clsid_A);
 }
 
 bool CheckContextMenuHandler(const UString &path, UInt32 wow)
 {
   // NSynchronization::CCriticalSectionLock lock(g_CS);
 
-  CSysString s = TEXT("CLSID\\");
-  s += k_Clsid;
-  s.AddAscii("\\InprocServer32");
+  CSysString s ("CLSID\\");
+  s += k_Clsid_A;
+  s += "\\InprocServer32";
   
   {
     NRegistry::CKey key;
@@ -160,8 +162,8 @@ LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow)
   LONG res;
 
   {
-  CSysString s = TEXT("CLSID\\");
-  s += k_Clsid;
+  CSysString s ("CLSID\\");
+  s += k_Clsid_A;
 
   if (setMode)
   {
@@ -189,8 +191,8 @@ LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow)
   }
   else
   {
-    CSysString s2 = s;
-    s2.AddAscii("\\InprocServer32");
+    CSysString s2 (s);
+    s2 += "\\InprocServer32";
 
     MyRegistry_DeleteKey_HKCR(s2, wow);
     res = MyRegistry_DeleteKey_HKCR(s, wow);
@@ -203,7 +205,7 @@ LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow)
   {
     for (unsigned k = 0; k < ARRAY_SIZE(k_shellex_Prefixes); k++)
     {
-      CSysString s = k_shellex_Prefixes[k];
+      CSysString s (k_shellex_Prefixes[k]);
       s += (i == 0 ? k_KeyPostfix_ContextMenu : k_KeyPostfix_DragDrop);
       if (k_shellex_Statuses[i][k])
       {

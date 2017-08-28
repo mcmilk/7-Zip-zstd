@@ -11,6 +11,7 @@
 #include "../../Common/UTFConvert.h"
 
 #include "../../Windows/PropVariant.h"
+#include "../../Windows/PropVariantUtils.h"
 #include "../../Windows/TimeUtils.h"
 
 #include "../Common/RegisterArc.h"
@@ -167,6 +168,16 @@ struct CEntry
   }
 };
 
+
+#ifdef _SHOW_RPM_METADATA
+struct CMetaFile
+{
+  UInt32 Tag;
+  UInt32 Offset;
+  UInt32 Size;
+};
+#endif
+
 class CHandler: public CHandlerCont
 {
   UInt64 _headersSize; // is equal to start offset of payload data
@@ -198,6 +209,7 @@ class CHandler: public CHandlerCont
 
   #ifdef _SHOW_RPM_METADATA
   AString _metadata;
+  CRecordVector<CMetaFile> _metaFiles;
   #endif
 
   void SetTime(NCOM::CPropVariant &prop) const
@@ -205,8 +217,8 @@ class CHandler: public CHandlerCont
     if (_time_Defined && _buildTime != 0)
     {
       FILETIME ft;
-      if (NTime::UnixTime64ToFileTime(_buildTime, ft))
-        prop = ft;
+      NTime::UnixTimeToFileTime(_buildTime, ft);
+      prop = ft;
     }
   }
 
@@ -266,16 +278,10 @@ void CHandler::AddCPU(AString &s) const
   {
     if (_lead.Type == kRpmType_Bin)
     {
-      char temp[16];
-      const char *p;
       if (_lead.Cpu < ARRAY_SIZE(k_CPUs))
-        p = k_CPUs[_lead.Cpu];
+        s += k_CPUs[_lead.Cpu];
       else
-      {
-        ConvertUInt32ToString(_lead.Cpu, temp);
-        p = temp;
-      }
-      s += p;
+        s.Add_UInt32(_lead.Cpu);
     }
   }
 }
@@ -376,29 +382,18 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           SetStringProp(_os, prop);
         else
         {
-          char temp[16];
-          const char *p;
-          if (_lead.Os < ARRAY_SIZE(k_OS))
-            p = k_OS[_lead.Os];
-          else
-          {
-            ConvertUInt32ToString(_lead.Os, temp);
-            p = temp;
-          }
-          prop = p;
+          TYPE_TO_PROP(k_OS, _lead.Os, prop);
         }
         break;
       }
 
     #ifdef _SHOW_RPM_METADATA
-    case kpidComment: SetStringProp(_metadata, prop); break;
+    // case kpidComment: SetStringProp(_metadata, prop); break;
     #endif
 
     case kpidName:
     {
-      AString s = GetBaseName();
-      s += ".rpm";
-      SetStringProp(s, prop);
+      SetStringProp(GetBaseName() + ".rpm", prop);
       break;
     }
   }
@@ -408,9 +403,10 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   NWindows::NCOM::CPropVariant prop;
+  if (index == 0)
   switch (propID)
   {
     case kpidSize:
@@ -425,7 +421,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
 
     case kpidPath:
     {
-      AString s = GetBaseName();
+      AString s (GetBaseName());
       s += '.';
       AddSubFileExtension(s);
       SetStringProp(s, prop);
@@ -440,6 +436,37 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
     }
     */
   }
+  #ifdef _SHOW_RPM_METADATA
+  else
+  {
+    index--;
+    if (index > _metaFiles.Size())
+      return E_INVALIDARG;
+    const CMetaFile &meta = _metaFiles[index];
+    switch (propID)
+    {
+      case kpidSize:
+      case kpidPackSize:
+        prop = meta.Size;
+        break;
+      
+      case kpidMTime:
+      case kpidCTime:
+        SetTime(prop);
+        break;
+      
+      case kpidPath:
+      {
+        AString s ("[META]");
+        s.Add_PathSepar();
+        s.Add_UInt32(meta.Tag);
+        prop = s;
+        break;
+      }
+    }
+  }
+  #endif
+
   prop.Detach(value);
   return S_OK;
 }
@@ -499,10 +526,7 @@ HRESULT CHandler::ReadHeader(ISequentialInStream *stream, bool isMainHeader)
     {
       #ifdef _SHOW_RPM_METADATA
       {
-        char temp[16];
-        ConvertUInt32ToString(entry.Tag, temp);
-
-        _metadata += temp;
+        _metadata.Add_UInt32(entry.Tag);
         _metadata += ": ";
       }
       #endif
@@ -515,7 +539,7 @@ HRESULT CHandler::ReadHeader(ISequentialInStream *stream, bool isMainHeader)
         for (j = 0; j < rem && p[j] != 0; j++);
         if (j == rem)
           return S_FALSE;
-        AString s = (const char *)p;
+        AString s((const char *)p);
         switch (entry.Tag)
         {
           case RPMTAG_NAME: _name = s; break;
@@ -548,9 +572,7 @@ HRESULT CHandler::ReadHeader(ISequentialInStream *stream, bool isMainHeader)
         {
           if (t != 0)
             _metadata.Add_Space();
-          char temp[16];
-          ConvertUInt32ToString(Get32(p + t * 4), temp);
-          _metadata += temp;
+          _metadata.Add_UInt32(Get32(p + t * 4));
         }
         #endif
       }
@@ -587,9 +609,7 @@ HRESULT CHandler::ReadHeader(ISequentialInStream *stream, bool isMainHeader)
         {
           if (t != 0)
             _metadata.Add_Space();
-          char temp[16];
-          ConvertUInt32ToString(Get16(p + t * 2), temp);
-          _metadata += temp;
+          _metadata.Add_UInt32(Get16(p + t * 2));
         }
       }
       else if (entry.Type == k_EntryType_BIN)
@@ -607,9 +627,18 @@ HRESULT CHandler::ReadHeader(ISequentialInStream *stream, bool isMainHeader)
       {
         // p = p;
       }
+
       _metadata += '\n';
       #endif
     }
+    
+    #ifdef _SHOW_RPM_METADATA
+    CMetaFile meta;
+    meta.Offset = entry.Offset;
+    meta.Tag = entry.Tag;
+    meta.Size = entry.Count;
+    _metaFiles.Add(meta);
+    #endif
   }
 
   headerSize += k_HeaderSig_Size;
@@ -715,6 +744,7 @@ STDMETHODIMP CHandler::Close()
 
   #ifdef _SHOW_RPM_METADATA
   _metadata.Empty();
+  _metaFiles.Size();
   #endif
 
   _stream.Release();
@@ -723,7 +753,12 @@ STDMETHODIMP CHandler::Close()
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
-  *numItems = 1;
+  *numItems = 1
+  #ifdef _SHOW_RPM_METADATA
+    + _metaFiles.Size()
+  #endif
+  ;
+
   return S_OK;
 }
 

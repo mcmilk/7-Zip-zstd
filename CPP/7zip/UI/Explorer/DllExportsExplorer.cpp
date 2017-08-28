@@ -25,11 +25,11 @@
 
 #include "ContextMenu.h"
 
-static LPCTSTR k_ShellExtName = TEXT("7-Zip Shell Extension");
-static LPCTSTR k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
+static LPCTSTR const k_ShellExtName = TEXT("7-Zip Shell Extension");
+static LPCTSTR const k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
 
 // {23170F69-40C1-278A-1000-000100020000}
-static LPCTSTR k_Clsid = TEXT("{23170F69-40C1-278A-1000-000100020000}");
+static LPCTSTR const k_Clsid = TEXT("{23170F69-40C1-278A-1000-000100020000}");
 
 DEFINE_GUID(CLSID_CZipContextMenu,
     k_7zip_GUID_Data1,
@@ -155,9 +155,8 @@ static BOOL RegisterServer()
     return FALSE;
   const UString modulePathU = fs2us(modulePath);
   
-  CSysString clsidString = k_Clsid;
-  CSysString s = TEXT("CLSID\\");
-  s += clsidString;
+  CSysString s ("CLSID\\");
+  s += k_Clsid;
   
   {
     NRegistry::CKey key;
@@ -177,7 +176,7 @@ static BOOL RegisterServer()
   {
     NRegistry::CKey key;
     if (key.Create(HKEY_LOCAL_MACHINE, k_Approved, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE) == NOERROR)
-      key.SetValue(clsidString, k_ShellExtName);
+      key.SetValue(k_Clsid, k_ShellExtName);
   }
   
   return TRUE;
@@ -190,13 +189,10 @@ STDAPI DllRegisterServer(void)
 
 static BOOL UnregisterServer()
 {
-  const CSysString clsidString = k_Clsid;
-  CSysString s = TEXT("CLSID\\");
-  s += clsidString;
-  CSysString s2 = s;
-  s2.AddAscii("\\InprocServer32");
+  CSysString s ("CLSID\\");
+  s += k_Clsid;
 
-  RegDeleteKey(HKEY_CLASSES_ROOT, s2);
+  RegDeleteKey(HKEY_CLASSES_ROOT, s + TEXT("\\InprocServer32"));
   RegDeleteKey(HKEY_CLASSES_ROOT, s);
 
   #if !defined(_WIN64) && !defined(UNDER_CE)
@@ -206,7 +202,7 @@ static BOOL UnregisterServer()
     HKEY hKey;
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, k_Approved, 0, KEY_SET_VALUE, &hKey) == NOERROR)
     {
-      RegDeleteValue(hKey, clsidString);
+      RegDeleteValue(hKey, k_Clsid);
       RegCloseKey(hKey);
     }
   }

@@ -156,7 +156,7 @@ void CPanel::SelectSpec(bool selectMode)
   CComboDialog dlg;
   LangString(selectMode ? IDS_SELECT : IDS_DESELECT, dlg.Title );
   LangString(IDS_SELECT_MASK, dlg.Static);
-  dlg.Value = L'*';
+  dlg.Value = '*';
   if (dlg.Create(GetParent()) != IDOK)
     return;
   const UString &mask = dlg.Value;
@@ -192,7 +192,7 @@ void CPanel::SelectByType(bool selectMode)
     }
     else
     {
-      UString mask = L'*';
+      UString mask ('*');
       mask += name.Ptr(pos);
       FOR_VECTOR (i, _selectedStatusVector)
         if (IsItem_Folder(i) == isItemFolder && DoesWildcardMatchName(mask, GetItemName(i)))

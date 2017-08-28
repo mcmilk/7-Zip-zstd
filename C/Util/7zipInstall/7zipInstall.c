@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2016-06-08 : Igor Pavlov : Public domain */
+2017-04-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -25,9 +25,22 @@
 
 #include "resource.h"
 
-static const WCHAR *k_7zip = L"7-Zip";
 
-static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip";
+#define wcscat lstrcatW
+#define wcslen lstrlenW
+#define wcscpy lstrcpyW
+#define wcsncpy lstrcpynW
+
+
+#define kInputBufSize ((size_t)1 << 18)
+
+
+#define _7ZIP_CUR_VER ((MY_VER_MAJOR << 16) | MY_VER_MINOR)
+#define _7ZIP_DLL_VER_COMPAT ((16 << 16) | 3)
+
+static LPCWSTR const k_7zip = L"7-Zip";
+
+static LPCWSTR const k_Reg_Software_7zip = L"Software\\7-Zip";
 
 // #define _64BIT_INSTALLER 1
 
@@ -43,13 +56,13 @@ static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip";
   #define k_7zip_with_Ver k_7zip_with_Ver_base
 #endif
 
-static const WCHAR *k_7zip_with_Ver_str = k_7zip_with_Ver;
+static LPCWSTR const k_7zip_with_Ver_str = k_7zip_with_Ver;
 
-static const WCHAR *k_7zip_Setup = k_7zip_with_Ver L" Setup";
+static LPCWSTR const k_7zip_Setup = k_7zip_with_Ver L" Setup";
 
-static const WCHAR *k_Reg_Path = L"Path";
+static LPCWSTR const k_Reg_Path = L"Path";
 
-static const WCHAR *k_Reg_Path32 = L"Path"
+static LPCWSTR const k_Reg_Path32 = L"Path"
   #ifdef _64BIT_INSTALLER
     L"64"
   #else
@@ -71,8 +84,8 @@ static const WCHAR *k_Reg_Path32 = L"Path"
 
 #define k_7zip_CLSID L"{23170F69-40C1-278A-1000-000100020000}"
 
-static const WCHAR *k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
-static const WCHAR *k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
+static LPCWSTR const k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
+static LPCWSTR const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
 
 #define g_AllUsers True
 
@@ -107,7 +120,35 @@ static void PrintErrorMessage(const char *s)
   MessageBoxW(g_HWND, s2, k_7zip_with_Ver_str, MB_ICONERROR);
 }
 
-static WRes MyCreateDir(const WCHAR *name)
+
+static DWORD GetFileVersion(LPCWSTR s)
+{
+  DWORD size = 0;
+  BYTE *vi = NULL;
+  DWORD version = 0;
+  
+  size = GetFileVersionInfoSizeW(s, NULL);
+  if (size == 0)
+    return 0;
+  
+  vi = malloc(size);
+  if (!vi)
+    return 0;
+  
+  if (GetFileVersionInfoW(s, 0, size, vi))
+  {
+    VS_FIXEDFILEINFO *fi = NULL;
+    UINT fiLen = 0;
+    if (VerQueryValueW(vi, L"\\", (LPVOID *)&fi, &fiLen))
+      version = fi->dwFileVersionMS;
+  }
+  
+  free(vi);
+  return version;
+}
+
+
+static WRes MyCreateDir(LPCWSTR name)
 {
   return CreateDirectoryW(name, NULL) ? 0 : GetLastError();
 }
@@ -455,7 +496,7 @@ static wchar_t MyWCharLower_Ascii(wchar_t c)
   return c;
 }
 
-static const WCHAR *FindSubString(const WCHAR *s1, const char *s2)
+static LPCWSTR FindSubString(LPCWSTR s1, const char *s2)
 {
   for (;;)
   {
@@ -702,8 +743,8 @@ static void SetShellProgramsGroup(HWND hwndOwner)
   #endif
 }
 
-static const WCHAR *k_Shell_Approved = L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved";
-static const WCHAR *k_7zip_ShellExtension = L"7-Zip Shell Extension";
+static LPCWSTR const k_Shell_Approved = L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved";
+static LPCWSTR const k_7zip_ShellExtension = L"7-Zip Shell Extension";
 
 static void WriteCLSID()
 {
@@ -747,7 +788,7 @@ static void WriteCLSID()
   }
 }
 
-static const WCHAR * const k_ShellEx_Items[] =
+static LPCWSTR const k_ShellEx_Items[] =
 {
     L"*\\shellex\\ContextMenuHandlers"
   , L"Directory\\shellex\\ContextMenuHandlers"
@@ -916,7 +957,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             num = s2 - s;
             if (num > MAX_PATH)
               num = MAX_PATH;
-            wcsncpy(path, s, num);
+            wcsncpy(path, s, (unsigned)num);
             RemoveQuotes(path);
           }
         }
@@ -1059,6 +1100,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   }
 }
 
+
 static Bool GetErrorMessage(DWORD errorCode, WCHAR *message)
 {
   LPVOID msgBuf;
@@ -1073,10 +1115,12 @@ static Bool GetErrorMessage(DWORD errorCode, WCHAR *message)
   return True;
 }
 
+
+
 static int Install()
 {
   CFileInStream archiveStream;
-  CLookToRead lookStream;
+  CLookToRead2 lookStream;
   CSzArEx db;
   
   SRes res = SZ_OK;
@@ -1087,7 +1131,7 @@ static int Install()
   ISzAlloc allocTempImp;
   WCHAR sfxPath[MAX_PATH + 2];
 
-  Bool needReboot = False;
+  int needRebootLevel = 0;
 
   allocImp.Alloc = SzAlloc;
   allocImp.Free = SzFree;
@@ -1127,7 +1171,8 @@ if (res == SZ_OK)
   }
 
   FileInStream_CreateVTable(&archiveStream);
-  LookToRead_CreateVTable(&lookStream, False);
+  LookToRead2_CreateVTable(&lookStream, False);
+  lookStream.buf = NULL;
  
   {
     // Remove post spaces
@@ -1150,17 +1195,28 @@ if (res == SZ_OK)
   winRes = CreateComplexDir();
 
   if (winRes != 0)
-    res = E_FAIL;
+    res = SZ_ERROR_FAIL;
 
   pathLen = wcslen(path);
+
+  if (res == SZ_OK)
+  {
+    lookStream.buf = ISzAlloc_Alloc(&allocImp, kInputBufSize);
+    if (!lookStream.buf)
+      res = SZ_ERROR_MEM;
+    else
+    {
+      lookStream.bufSize = kInputBufSize;
+      lookStream.realStream = &archiveStream.vt;
+      LookToRead2_Init(&lookStream);
+    }
+  }
+
   SzArEx_Init(&db);
 
   if (res == SZ_OK)
   {
-    lookStream.realStream = &archiveStream.s;
-    LookToRead_Init(&lookStream);
-    
-    res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
+    res = SzArEx_Open(&db, &lookStream.vt, &allocImp, &allocTempImp);
   }
     
   if (res == SZ_OK)
@@ -1222,7 +1278,7 @@ if (res == SZ_OK)
         SetWindowTextW(g_InfoLine_HWND, temp);
 
       {
-        res = SzArEx_Extract(&db, &lookStream.s, i,
+        res = SzArEx_Extract(&db, &lookStream.vt, i,
             &blockIndex, &outBuf, &outBufSize,
             &offset, &outSizeProcessed,
             &allocImp, &allocTempImp);
@@ -1236,6 +1292,7 @@ if (res == SZ_OK)
         size_t j;
         // size_t nameStartPos = 0;
         UInt32 tempIndex = 0;
+        int fileLevel = 1 << 2;
         WCHAR origPath[MAX_PATH * 2 + 10];
 
         for (j = 0; temp[j] != 0; j++)
@@ -1289,13 +1346,20 @@ if (res == SZ_OK)
                 break;
             }
 
-            if (tempIndex != 0
-                || FindSubString(temp, "7-zip.dll")
+            if (tempIndex != 0)
+            {
+              tempIndex++;
+              continue;
+            }
+            
+            if (FindSubString(temp, "7-zip.dll")
                 #ifdef _64BIT_INSTALLER
                 || FindSubString(temp, "7-zip32.dll")
                 #endif
                 )
             {
+              DWORD ver = GetFileVersion(path);
+              fileLevel = ((ver < _7ZIP_DLL_VER_COMPAT || ver > _7ZIP_CUR_VER) ? 2 : 1);
               tempIndex++;
               continue;
             }
@@ -1339,7 +1403,7 @@ if (res == SZ_OK)
           */
         }
   
-        // if (res = S_OK)
+        // if (res == SZ_OK)
         {
           processedSize = outSizeProcessed;
           winRes = File_Write(&outFile, outBuf + offset, &processedSize);
@@ -1388,14 +1452,14 @@ if (res == SZ_OK)
             winRes = GetLastError();
             break;
           }
-          needReboot = True;
+          needRebootLevel |= fileLevel;
           #endif
         }
 
       }
     }
 
-    IAlloc_Free(&allocImp, outBuf);
+    ISzAlloc_Free(&allocImp, outBuf);
 
     if (!g_SilentMode)
       SendMessage(g_Progress_HWND, PBM_SETPOS, i, 0);
@@ -1416,6 +1480,8 @@ if (res == SZ_OK)
 
   SzArEx_Free(&db, &allocImp);
 
+  ISzAlloc_Free(&allocImp, lookStream.buf);
+
   File_Close(&archiveStream.file);
 
 }
@@ -1425,7 +1491,7 @@ if (res == SZ_OK)
 
   if (res == SZ_OK)
   {
-    if (!g_SilentMode && needReboot)
+    if (!g_SilentMode && needRebootLevel > 1)
     {
       if (MessageBoxW(g_HWND, L"You must restart your system to complete the installation.\nRestart now?",
           k_7zip_Setup, MB_YESNO | MB_DEFBUTTON2) == IDYES)

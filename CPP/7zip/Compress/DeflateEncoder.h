@@ -46,11 +46,6 @@ struct CTables: public CLevels
   void InitStructures();
 };
 
-typedef struct _CSeqInStream
-{
-  ISeqInStream SeqInStream;
-  ISequentialInStream *RealStream;
-} CSeqInStream;
 
 struct CEncProps
 {
@@ -75,8 +70,6 @@ class CCoder
 {
   CMatchFinder _lzInWindow;
   CBitlEncoder m_OutStream;
-
-  CSeqInStream _seqInStream;
 
 public:
   CCodeValue *m_Values;

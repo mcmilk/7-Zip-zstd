@@ -17,14 +17,14 @@ namespace NRegistryAssoc {
   
 // static NSynchronization::CCriticalSection g_CriticalSection;
 
-static const TCHAR *kClasses = TEXT("Software\\Classes\\");
-// static const TCHAR *kShellNewKeyName = TEXT("ShellNew");
-// static const TCHAR *kShellNewDataValueName = TEXT("Data");
-static const TCHAR *kDefaultIconKeyName = TEXT("DefaultIcon");
-static const TCHAR *kShellKeyName = TEXT("shell");
-static const TCHAR *kOpenKeyName = TEXT("open");
-static const TCHAR *kCommandKeyName = TEXT("command");
-static const TCHAR *k7zipPrefix = TEXT("7-Zip.");
+static const TCHAR * const kClasses = TEXT("Software\\Classes\\");
+// static const TCHAR * const kShellNewKeyName = TEXT("ShellNew");
+// static const TCHAR * const kShellNewDataValueName = TEXT("Data");
+static const TCHAR * const kDefaultIconKeyName = TEXT("DefaultIcon");
+static const TCHAR * const kShellKeyName = TEXT("shell");
+static const TCHAR * const kOpenKeyName = TEXT("open");
+static const TCHAR * const kCommandKeyName = TEXT("command");
+static const char * const k7zipPrefix = "7-Zip.";
 
 static CSysString GetExtProgramKeyName(const CSysString &ext)
 {
@@ -59,7 +59,8 @@ bool CShellExtInfo::ReadFromRegistry(HKEY hkey, const CSysString &ext)
   }
   {
     CKey iconKey;
-    if (iconKey.Open(hkey, GetFullKeyPath(hkey, ProgramKey + CSysString(TEXT(CHAR_PATH_SEPARATOR)) + kDefaultIconKeyName), KEY_READ) == ERROR_SUCCESS)
+ 
+    if (iconKey.Open(hkey, GetFullKeyPath(hkey, ProgramKey + CSysString(CHAR_PATH_SEPARATOR) + kDefaultIconKeyName), KEY_READ) == ERROR_SUCCESS)
     {
       UString value;
       if (iconKey.QueryValue(NULL, value) == ERROR_SUCCESS)
@@ -86,7 +87,7 @@ bool CShellExtInfo::ReadFromRegistry(HKEY hkey, const CSysString &ext)
 
 bool CShellExtInfo::IsIt7Zip() const
 {
-  return IsString1PrefixedByString2_NoCase(GetUnicodeString(ProgramKey), GetUnicodeString(k7zipPrefix));
+  return ProgramKey.IsPrefixedBy_Ascii_NoCase(k7zipPrefix);
 }
 
 LONG DeleteShellExtensionInfo(HKEY hkey, const CSysString &ext)
@@ -114,9 +115,9 @@ LONG AddShellExtensionInfo(HKEY hkey,
   // NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
   CSysString programKeyName;
   {
-    CSysString ext2 = ext;
+    CSysString ext2 (ext);
     if (iconIndex < 0)
-      ext2 = TEXT("*");
+      ext2 = "*";
     programKeyName = GetExtProgramKeyName(ext2);
   }
   {
@@ -142,10 +143,8 @@ LONG AddShellExtensionInfo(HKEY hkey,
       iconIndex = 0;
     // if (iconIndex >= 0)
     {
-      iconPathFull += L',';
-      wchar_t s[16];
-      ConvertUInt32ToString((UInt32)iconIndex, s);
-      iconPathFull += s;
+      iconPathFull += ',';
+      iconPathFull.Add_UInt32((UInt32)iconIndex);
     }
     iconKey.Create(programKey, kDefaultIconKeyName);
     iconKey.SetValue(NULL, iconPathFull);

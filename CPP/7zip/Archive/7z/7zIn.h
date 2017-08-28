@@ -115,6 +115,7 @@ struct CDatabase: public CFolders
   CUInt64DefVector ATime;
   CUInt64DefVector MTime;
   CUInt64DefVector StartPos;
+  CUInt32DefVector Attrib;
   CBoolVector IsAnti;
   /*
   CBoolVector IsAux;
@@ -146,6 +147,7 @@ struct CDatabase: public CFolders
     ATime.Clear();
     MTime.Clear();
     StartPos.Clear();
+    Attrib.Clear();
     IsAnti.Clear();
     // IsAux.Clear();
   }
@@ -368,6 +370,8 @@ class CInArchive
   void SkipData(UInt64 size) { _inByteBack->SkipData(size); }
   void SkipData() { _inByteBack->SkipData(); }
   void WaitId(UInt64 id);
+
+  void Read_UInt32_Vector(CUInt32DefVector &v);
 
   void ReadArchiveProperties(CInArchiveInfo &archiveInfo);
   void ReadHashDigests(unsigned numItems, CUInt32DefVector &crcs);

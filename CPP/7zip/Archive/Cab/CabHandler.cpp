@@ -226,12 +226,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         if (ai.SetID != 0)
         {
           AString s;
-          char temp[32];
-          ConvertUInt32ToString(ai.SetID, temp);
-          s += temp;
-          ConvertUInt32ToString(ai.CabinetNumber + 1, temp);
+          s.Add_UInt32(ai.SetID);
           s += '_';
-          s += temp;
+          s.Add_UInt32(ai.CabinetNumber + 1);
           s += ".cab";
           prop = s;
         }
@@ -288,7 +285,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         ConvertUTF8ToUnicode(item.Name, unicodeName);
       else
         unicodeName = MultiByteToUnicodeString(item.Name, CP_ACP);
-      prop = (const wchar_t *)NItemName::WinNameToOSName(unicodeName);
+      prop = (const wchar_t *)NItemName::WinPathToOsPath(unicodeName);
       break;
     }
     
@@ -491,7 +488,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 
         if (!_errorMessage.IsEmpty())
           _errorMessage.Add_LF();
-        _errorMessage.AddAscii("Can't open volume: ");
+        _errorMessage += "Can't open volume: ";
         _errorMessage += fullName;
         
         if (prevChecked)

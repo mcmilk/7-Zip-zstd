@@ -75,7 +75,7 @@ HRESULT CCopyStateIO::MyCopyFile(CFSTR inPath, CFSTR outPath)
       }
       if (written != num)
       {
-        ErrorMessage = L"Write error";
+        ErrorMessage = "Write error";
         return S_OK;
       }
       CurrentSize += num;
@@ -357,7 +357,7 @@ static HRESULT SendMessageError(IFolderOperationsExtractCallback *callback,
     const wchar_t *message, const FString &fileName)
 {
   UString s = message;
-  s += L" : ";
+  s += " : ";
   s += fs2us(fileName);
   return callback->ShowMessage(s);
 }
@@ -514,7 +514,8 @@ static HRESULT CopyFolder(
     return E_ABORT;
   }
 
-  CEnumerator enumerator(CombinePath(srcPath, FSTRING_ANY_MASK));
+  CEnumerator enumerator;
+  enumerator.SetDirPrefix(CombinePath(srcPath, FString()));
   
   for (;;)
   {

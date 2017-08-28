@@ -114,8 +114,8 @@ static void x86_Filter(Byte *data, UInt32 size, Int32 *history)
 
   size -= 16;
   const unsigned kSave = 6;
-  const Byte savedByte = data[size + kSave];
-  data[size + kSave] = 0xE8;
+  const Byte savedByte = data[(size_t)size + kSave];
+  data[(size_t)size + kSave] = 0xE8;
   Int32 last_x86_pos = -k_x86_TransOffset - 1;
 
   // first byte is ignored
@@ -215,7 +215,7 @@ static void x86_Filter(Byte *data, UInt32 size, Int32 *history)
     *target = i;
   }
 
-  data[size + kSave] = savedByte;
+  data[(size_t)size + kSave] = savedByte;
 }
 
 

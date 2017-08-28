@@ -85,12 +85,6 @@ static HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 exc
   return S_OK;
 }
 
-static AString GetDecString(UInt32 v)
-{
-  char sz[16];
-  ConvertUInt32ToString(v, sz);
-  return sz;
-}
 
 struct CVersion
 {
@@ -407,13 +401,16 @@ static const CUInt32PCharPair g_HeaderCharacts[] =
 
 static const CUInt32PCharPair g_DllCharacts[] =
 {
+  {  5, "HighEntropyVA" },
   {  6, "Relocated" },
   {  7, "Integrity" },
   {  8, "NX-Compatible" },
   {  9, "NoIsolation" },
   { 10, "NoSEH" },
   { 11, "NoBind" },
+  { 12, "AppContainer" },
   { 13, "WDM" },
+  { 14, "GuardCF" },
   { 15, "TerminalServerAware" }
 };
 
@@ -467,22 +464,30 @@ static const CUInt32PCharPair g_MachinePairs[] =
   { 0x0EBC, "EFI" },
   { 0x8664, "x64" },
   { 0x9041, "M32R" },
+  { 0xAA64, "ARM64" },
   { 0xC0EE, "CEE" }
 };
 
-static const CUInt32PCharPair g_SubSystems[] =
+static const char * const g_SubSystems[] =
 {
-  {  0, "Unknown" },
-  {  1, "Native" },
-  {  2, "Windows GUI" },
-  {  3, "Windows CUI" },
-  {  7, "Posix" },
-  {  9, "Windows CE" },
-  { 10, "EFI" },
-  { 11, "EFI Boot" },
-  { 12, "EFI Runtime" },
-  { 13, "EFI ROM" },
-  { 14, "XBOX" }
+    "Unknown"
+  , "Native"
+  , "Windows GUI"
+  , "Windows CUI"
+  , NULL // "Old Windows CE"
+  , "OS2"
+  , NULL
+  , "Posix"
+  , "Win9x"
+  , "Windows CE"
+  , "EFI"
+  , "EFI Boot"
+  , "EFI Runtime"
+  , "EFI ROM"
+  , "XBOX"
+  , NULL
+  , "Windows Boot"
+  , "XBOX Catalog" // 17
 };
 
 static const char * const g_ResTypes[] =
@@ -878,7 +883,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
     case kpidCpu: PAIR_TO_PROP(g_MachinePairs, _header.Machine, prop); break;
     case kpidBit64: if (_optHeader.Is64Bit()) prop = true; break;
-    case kpidSubSystem: PAIR_TO_PROP(g_SubSystems, _optHeader.SubSystem, prop); break;
+    case kpidSubSystem: TYPE_TO_PROP(g_SubSystems, _optHeader.SubSystem, prop); break;
 
     case kpidMTime:
     case kpidCTime: TimeToProp(_header.Time, prop); break;
@@ -950,9 +955,7 @@ void CHandler::AddResNameToString(UString &s, UInt32 id) const
       return;
     }
   }
-  wchar_t sz[16];
-  ConvertUInt32ToString(id, sz);
-  s += sz;
+  s.Add_UInt32(id);
 }
 
 void CHandler::AddLangPrefix(UString &s, UInt32 lang) const
@@ -978,7 +981,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       {
         UString s = _resourcesPrefix;
         AddLangPrefix(s, item.Lang);
-        s.AddAscii("string.txt");
+        s += "string.txt";
         prop = s;
         break;
       }
@@ -996,7 +999,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       {
         UString s = _resourcesPrefix;
         AddLangPrefix(s, item.Lang);
-        s.AddAscii("version.txt");
+        s += "version.txt";
         prop = s;
         break;
       }
@@ -1019,7 +1022,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           if (item.Type < ARRAY_SIZE(g_ResTypes))
             p = g_ResTypes[item.Type];
           if (p)
-            s.AddAscii(p);
+            s += p;
           else
             AddResNameToString(s, item.Type);
         }
@@ -1028,9 +1031,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         if (item.HeaderSize != 0)
         {
           if (item.IsBmp())
-            s.AddAscii(".bmp");
+            s += ".bmp";
           else if (item.IsIcon())
-            s.AddAscii(".ico");
+            s += ".ico";
         }
         prop = s;
         break;
@@ -1112,7 +1115,8 @@ HRESULT CHandler::LoadDebugSections(IInStream *stream, bool &thereIsSection)
       thereIsSection = true;
 
       CSection &sect = _sections.AddNew();
-      sect.Name = ".debug" + GetDecString(i);
+      sect.Name = ".debug";
+      sect.Name.Add_UInt32(i);
       sect.IsDebug = true;
       sect.Time = de.Time;
       sect.Va = de.Va;
@@ -1384,11 +1388,9 @@ static void PrintUInt32(CTextFile &f, UInt32 v)
   f.AddString(s);
 }
 
-static void PrintUInt32(UString &dest, UInt32 v)
+static inline void PrintUInt32(UString &dest, UInt32 v)
 {
-  wchar_t s[16];
-  ConvertUInt32ToString(v, s);
-  dest += s;
+  dest.Add_UInt32(v);
 }
 
 static void PrintHex(CTextFile &f, UInt32 val)
@@ -1410,9 +1412,9 @@ static void PrintVersion(CTextFile &f, UInt32 ms, UInt32 ls)
 
 static void PrintVersion(UString &s, UInt32 ms, UInt32 ls)
 {
-  PrintUInt32(s, HIWORD(ms));  s += L'.';
-  PrintUInt32(s, LOWORD(ms));  s += L'.';
-  PrintUInt32(s, HIWORD(ls));  s += L'.';
+  PrintUInt32(s, HIWORD(ms));  s += '.';
+  PrintUInt32(s, LOWORD(ms));  s += '.';
+  PrintUInt32(s, HIWORD(ls));  s += '.';
   PrintUInt32(s, LOWORD(ls));
 }
 
@@ -1694,7 +1696,7 @@ bool CVersionBlock::Parse(const Byte *p, UInt32 size)
     return false;
   TotalLen = Get16(p);
   ValueLen = Get16(p + 2);
-  if (TotalLen == 0 || TotalLen > size)
+  if (TotalLen < k_ResoureBlockHeader_Size || TotalLen > size)
     return false;
   switch (Get16(p + 4))
   {
@@ -2114,7 +2116,8 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
 
 static inline bool CheckPeOffset(UInt32 pe)
 {
-  return (pe >= 0x40 && pe <= 0x1000 && (pe & 7) == 0);
+  // ((pe & 7) == 0) is for most PE files. But there is unusual EFI-PE file that uses unaligned pe value.
+  return pe >= 0x40 && pe <= 0x1000 /* && (pe & 7) == 0 */ ;
 }
 
 static const unsigned kStartSize = 0x40;
@@ -2290,7 +2293,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
         s2.PSize = s2.VSize = s.Pa - limit;
         s2.IsAdditionalSection = true;
         s2.Name = '[';
-        s2.Name += GetDecString(num++);
+        s2.Name.Add_UInt32(num++);
         s2.Name += ']';
         limit = s.Pa;
       }
@@ -2332,10 +2335,11 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
     mixItem.SectionIndex = i;
     if (_parseResources && sect.Name == ".rsrc" && _items.IsEmpty())
     {
+      const unsigned numMixItems = _mixItems.Size();
       HRESULT res = OpenResources(i, stream, callback);
       if (res == S_OK)
       {
-        _resourcesPrefix.SetFromAscii(sect.Name);
+        _resourcesPrefix = sect.Name.Ptr();
         _resourcesPrefix.Add_PathSepar();
         FOR_VECTOR (j, _items)
         {
@@ -2387,6 +2391,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       }
       if (res != S_FALSE)
         return res;
+      _mixItems.DeleteFrom(numMixItems);
       CloseResources();
     }
     if (sect.IsAdditionalSection)
@@ -2422,7 +2427,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       _versionFullString.Add_LF();
     const CStringKeyValue &k = _versionKeys[i];
     _versionFullString += k.Key;
-    _versionFullString += L": ";
+    _versionFullString += ": ";
     _versionFullString += k.Value;
   }
 
@@ -2702,7 +2707,8 @@ static bool FindValue(const CUInt32PCharPair *pairs, unsigned num, UInt32 value)
   return false;
 }
 
-#define MY_FIND_VALUE(pairs, value) FindValue(pairs, ARRAY_SIZE(pairs), value)
+#define MY_FIND_VALUE(pairs, val) FindValue(pairs, ARRAY_SIZE(pairs), val)
+#define MY_FIND_VALUE_2(strings, val) (val < ARRAY_SIZE(strings) && strings[val])
  
 static const UInt32 kNumSection_MAX = 32;
 
@@ -2751,7 +2757,7 @@ bool CHeader::Parse(const Byte *p)
   }
   return
       MY_FIND_VALUE(NPe::g_MachinePairs, Machine) &&
-      MY_FIND_VALUE(NPe::g_SubSystems, SubSystem);
+      MY_FIND_VALUE_2(NPe::g_SubSystems, SubSystem);
 }
 
 API_FUNC_static_IsArc IsArc_Te(const Byte *p, size_t size)
@@ -2864,7 +2870,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   {
     case kpidPhySize: prop = _totalSize; break;
     case kpidCpu: PAIR_TO_PROP(NPe::g_MachinePairs, _h.Machine, prop); break;
-    case kpidSubSystem: PAIR_TO_PROP(NPe::g_SubSystems, _h.SubSystem, prop); break;
+    case kpidSubSystem: TYPE_TO_PROP(NPe::g_SubSystems, _h.SubSystem, prop); break;
     /*
     case kpidImageBase: prop = _h.ImageBase; break;
     case kpidAddressOfEntryPoint: prop = _h.AddressOfEntryPoint; break;

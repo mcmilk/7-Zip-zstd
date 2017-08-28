@@ -129,27 +129,16 @@ HRESULT CZipContextMenu::InitContextMenu(const wchar_t * /* folder */, const wch
 /////////////////////////////
 // IContextMenu
 
-static LPCWSTR kMainVerb = L"SevenZip";
-static LPCWSTR kOpenCascadedVerb = L"SevenZip.OpenWithType.";
-static LPCWSTR kCheckSumCascadedVerb = L"SevenZip.Checksum";
+static LPCSTR const kMainVerb = "SevenZip";
+static LPCSTR const kOpenCascadedVerb = "SevenZip.OpenWithType.";
+static LPCSTR const kCheckSumCascadedVerb = "SevenZip.Checksum";
 
-/*
-static LPCTSTR kOpenVerb = TEXT("SevenOpen");
-static LPCTSTR kExtractVerb = TEXT("SevenExtract");
-static LPCTSTR kExtractHereVerb = TEXT("SevenExtractHere");
-static LPCTSTR kExtractToVerb = TEXT("SevenExtractTo");
-static LPCTSTR kTestVerb = TEXT("SevenTest");
-static LPCTSTR kCompressVerb = TEXT("SevenCompress");
-static LPCTSTR kCompressToVerb = TEXT("SevenCompressTo");
-static LPCTSTR kCompressEmailVerb = TEXT("SevenCompressEmail");
-static LPCTSTR kCompressToEmailVerb = TEXT("SevenCompressToEmail");
-*/
 
 struct CContextMenuCommand
 {
   UInt32 flag;
   CZipContextMenu::ECommandInternalID CommandInternalID;
-  LPCWSTR Verb;
+  LPCSTR Verb;
   UINT ResourceID;
 };
 
@@ -158,67 +147,67 @@ static const CContextMenuCommand g_Commands[] =
   {
     NContextMenuFlags::kOpen,
     CZipContextMenu::kOpen,
-    L"Open",
+    "Open",
     IDS_CONTEXT_OPEN
   },
   {
     NContextMenuFlags::kExtract,
     CZipContextMenu::kExtract,
-    L"Extract",
+    "Extract",
     IDS_CONTEXT_EXTRACT
   },
   {
     NContextMenuFlags::kExtractHere,
     CZipContextMenu::kExtractHere,
-    L"ExtractHere",
+    "ExtractHere",
     IDS_CONTEXT_EXTRACT_HERE
   },
   {
     NContextMenuFlags::kExtractTo,
     CZipContextMenu::kExtractTo,
-    L"ExtractTo",
+    "ExtractTo",
     IDS_CONTEXT_EXTRACT_TO
   },
   {
     NContextMenuFlags::kTest,
     CZipContextMenu::kTest,
-    L"Test",
+    "Test",
     IDS_CONTEXT_TEST
   },
   {
     NContextMenuFlags::kCompress,
     CZipContextMenu::kCompress,
-    L"Compress",
+    "Compress",
     IDS_CONTEXT_COMPRESS
   },
   {
     NContextMenuFlags::kCompressEmail,
     CZipContextMenu::kCompressEmail,
-    L"CompressEmail",
+    "CompressEmail",
     IDS_CONTEXT_COMPRESS_EMAIL
   },
   {
     NContextMenuFlags::kCompressTo7z,
     CZipContextMenu::kCompressTo7z,
-    L"CompressTo7z",
+    "CompressTo7z",
     IDS_CONTEXT_COMPRESS_TO
   },
   {
     NContextMenuFlags::kCompressTo7zEmail,
     CZipContextMenu::kCompressTo7zEmail,
-    L"CompressTo7zEmail",
+    "CompressTo7zEmail",
     IDS_CONTEXT_COMPRESS_TO_EMAIL
   },
   {
     NContextMenuFlags::kCompressToZip,
     CZipContextMenu::kCompressToZip,
-    L"CompressToZip",
+    "CompressToZip",
     IDS_CONTEXT_COMPRESS_TO
   },
   {
     NContextMenuFlags::kCompressToZipEmail,
     CZipContextMenu::kCompressToZipEmail,
-    L"CompressToZipEmail",
+    "CompressToZipEmail",
     IDS_CONTEXT_COMPRESS_TO_EMAIL
   }
 };
@@ -226,17 +215,17 @@ static const CContextMenuCommand g_Commands[] =
 struct CHashCommand
 {
   CZipContextMenu::ECommandInternalID CommandInternalID;
-  LPCWSTR UserName;
-  LPCWSTR MethodName;
+  LPCSTR UserName;
+  LPCSTR MethodName;
 };
 
 static const CHashCommand g_HashCommands[] =
 {
-  { CZipContextMenu::kHash_CRC32,  L"CRC-32",  L"CRC32" },
-  { CZipContextMenu::kHash_CRC64,  L"CRC-64",  L"CRC64" },
-  { CZipContextMenu::kHash_SHA1,   L"SHA-1",   L"SHA1" },
-  { CZipContextMenu::kHash_SHA256, L"SHA-256", L"SHA256" },
-  { CZipContextMenu::kHash_All,    L"*",       L"*" }
+  { CZipContextMenu::kHash_CRC32,  "CRC-32",  "CRC32" },
+  { CZipContextMenu::kHash_CRC64,  "CRC-64",  "CRC64" },
+  { CZipContextMenu::kHash_SHA1,   "SHA-1",   "SHA1" },
+  { CZipContextMenu::kHash_SHA256, "SHA-256", "SHA256" },
+  { CZipContextMenu::kHash_All,    "*",       "*" }
 };
 
 static int FindCommand(CZipContextMenu::ECommandInternalID &id)
@@ -255,7 +244,8 @@ bool CZipContextMenu::FillCommand(ECommandInternalID id, UString &mainString, CC
     return false;
   const CContextMenuCommand &command = g_Commands[i];
   commandMapItem.CommandInternalID = command.CommandInternalID;
-  commandMapItem.Verb = (UString)kMainVerb + (UString)command.Verb;
+  commandMapItem.Verb = kMainVerb;
+  commandMapItem.Verb += command.Verb;
   // LangString(command.ResourceHelpID, command.LangID + 1, commandMapItem.HelpString);
   LangString(command.ResourceID, mainString);
   return true;
@@ -341,7 +331,7 @@ static void MyFormatNew_ReducedName(UString &s, const UString &name)
   s = MyFormatNew(s, GetQuotedReducedString(name));
 }
 
-static const char *kExtractExludeExtensions =
+static const char * const kExtractExludeExtensions =
   " 3gp"
   " aac ans ape asc asm asp aspx avi awk"
   " bas bat bmp"
@@ -353,7 +343,7 @@ static const char *kExtractExludeExtensions =
   " h hpp hta htm html hxx"
   " ico idl inc ini inl"
   " java jpeg jpg js"
-  " la log"
+  " la lnk log"
   " mak manifest wmv mov mp3 mp4 mpe mpeg mpg m4a"
   " ofr ogg"
   " pac pas pdf php php3 php4 php5 phptml pl pm png ps py pyo"
@@ -366,7 +356,7 @@ static const char *kExtractExludeExtensions =
   " ";
 
 /*
-static const char *kNoOpenAsExtensions =
+static const char * const kNoOpenAsExtensions =
   " 7z arj bz2 cab chm cpio flv gz lha lzh lzma rar swm tar tbz2 tgz wim xar xz z zip ";
 */
 
@@ -419,7 +409,7 @@ static bool DoNeedExtract(const FString &name)
 }
 
 // we must use diferent Verbs for Popup subMenu.
-void CZipContextMenu::AddMapItem_ForSubMenu(const wchar_t *verb)
+void CZipContextMenu::AddMapItem_ForSubMenu(const char *verb)
 {
   CCommandMapItem commandMapItem;
   commandMapItem.CommandInternalID = kCommandNULL;
@@ -498,9 +488,9 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       fi0.Name = us2fs(fileName.Ptr(NName::kDevicePathPrefixSize)); // change it 4 - must be constant
       folderPrefix =
         #ifdef UNDER_CE
-          FTEXT("\\");
+          "\\";
         #else
-          FTEXT("C:\\");
+          "C:\\";
         #endif
     }
     else
@@ -555,9 +545,11 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
               FillCommand(kOpen, mainString, commandMapItem);
             else
             {
-              mainString.SetFromAscii(kOpenTypes[i]);
+              mainString = kOpenTypes[i];
               commandMapItem.CommandInternalID = kOpen;
-              commandMapItem.Verb = (UString)kMainVerb + L".Open." + mainString;
+              commandMapItem.Verb = kMainVerb;
+              commandMapItem.Verb += ".Open.";
+              commandMapItem.Verb += mainString;
               commandMapItem.HelpString = mainString;
               commandMapItem.ArcType = mainString;
             }
@@ -599,7 +591,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         if (_dropMode)
           baseFolder = _dropPath;
     
-        UString specFolder = L'*';
+        UString specFolder ('*');
         if (_fileNames.Size() == 1)
           specFolder = GetSubFolderNameForExtract(fs2us(fi0.Name));
         specFolder.Add_PathSepar();
@@ -653,8 +645,10 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     else
       arcName = CreateArchiveName(fileName, _fileNames.Size() > 1, false);
     
-    UString arcName7z = arcName + L".7z";
-    UString arcNameZip = arcName + L".zip";
+    UString arcName7z = arcName;
+    arcName7z += ".7z";
+    UString arcNameZip = arcName;
+    arcNameZip += ".zip";
 
     // Compress
     if ((contextMenuFlags & NContextMenuFlags::kCompress) != 0)
@@ -694,7 +688,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       else
         commandMapItem.Folder = fs2us(folderPrefix);
       commandMapItem.ArcName = arcName7z;
-      commandMapItem.ArcType.SetFromAscii("7z");
+      commandMapItem.ArcType = "7z";
       MyFormatNew_ReducedName(s, arcName7z);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
       _commandMap.Add(commandMapItem);
@@ -708,7 +702,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UString s;
       FillCommand(kCompressTo7zEmail, s, commandMapItem);
       commandMapItem.ArcName = arcName7z;
-      commandMapItem.ArcType.SetFromAscii("7z");
+      commandMapItem.ArcType = "7z";
       MyFormatNew_ReducedName(s, arcName7z);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
       _commandMap.Add(commandMapItem);
@@ -727,7 +721,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       else
         commandMapItem.Folder = fs2us(folderPrefix);
       commandMapItem.ArcName = arcNameZip;
-      commandMapItem.ArcType.SetFromAscii("zip");
+      commandMapItem.ArcType = "zip";
       MyFormatNew_ReducedName(s, arcNameZip);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
       _commandMap.Add(commandMapItem);
@@ -741,7 +735,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UString s;
       FillCommand(kCompressToZipEmail, s, commandMapItem);
       commandMapItem.ArcName = arcNameZip;
-      commandMapItem.ArcType.SetFromAscii("zip");
+      commandMapItem.ArcType = "zip";
       MyFormatNew_ReducedName(s, arcNameZip);
       MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
       _commandMap.Add(commandMapItem);
@@ -763,7 +757,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       mi.fMask |= MIIM_CHECKMARKS;
     mi.wID = currentCommandID++;
     mi.hSubMenu = popupMenu.Detach();
-    mi.StringValue.SetFromAscii("7-Zip"); // LangString(IDS_CONTEXT_POPUP_CAPTION);
+    mi.StringValue = "7-Zip"; // LangString(IDS_CONTEXT_POPUP_CAPTION);
     mi.hbmpUnchecked = bitmap;
     
     CMenu menu;
@@ -799,7 +793,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         mi.fMask |= MIIM_CHECKMARKS;
       mi.wID = currentCommandID++;
       mi.hSubMenu = subMenu;
-      mi.StringValue.SetFromAscii("CRC SHA");
+      mi.StringValue = "CRC SHA";
       mi.hbmpUnchecked = bitmap;
       
       CMenu menu;
@@ -814,9 +808,10 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
         const CHashCommand &hc = g_HashCommands[i];
         CCommandMapItem commandMapItem;
         commandMapItem.CommandInternalID = hc.CommandInternalID;
-        commandMapItem.Verb = (UString)kCheckSumCascadedVerb + (UString)hc.MethodName;
+        commandMapItem.Verb = kCheckSumCascadedVerb;
+        commandMapItem.Verb += hc.MethodName;
         // commandMapItem.HelpString = hc.Name;
-        MyInsertMenu(subMenu, subIndex_CRC++, currentCommandID++, hc.UserName, bitmap);
+        MyInsertMenu(subMenu, subIndex_CRC++, currentCommandID++, (UString)hc.UserName, bitmap);
         _commandMap.Add(commandMapItem);
       }
       
@@ -881,7 +876,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
         params = GetQuotedString(_fileNames[0]);
         if (!commandMapItem.ArcType.IsEmpty())
         {
-          params += L" -t";
+          params += " -t";
           params += commandMapItem.ArcType;
         }
         MyCreateProcess(Get7zFmPath(), params);
@@ -935,7 +930,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
           const CHashCommand &hc = g_HashCommands[i];
           if (hc.CommandInternalID == cmdID)
           {
-            CalcChecksum(_fileNames, hc.MethodName);
+            CalcChecksum(_fileNames, (UString)hc.MethodName);
             break;
           }
         }

@@ -18,6 +18,7 @@ void PairToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 value, NWind
 
 AString FlagsToString(const char * const *names, unsigned num, UInt32 flags);
 AString FlagsToString(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags);
+void FlagsToProp(const char * const *names, unsigned num, UInt32 flags, NWindows::NCOM::CPropVariant &prop);
 void FlagsToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags, NWindows::NCOM::CPropVariant &prop);
 
 AString TypeToString(const char * const table[], unsigned num, UInt32 value);

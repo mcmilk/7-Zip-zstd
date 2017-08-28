@@ -28,7 +28,7 @@
 namespace NArchive {
 namespace NHfs {
 
-static const char *kResFileName = "rsrc"; // "com.apple.ResourceFork";
+static const char * const kResFileName = "rsrc"; // "com.apple.ResourceFork";
 
 struct CExtent
 {
@@ -497,11 +497,14 @@ struct CHeaderRec
   // UInt32 Attributes;
   // UInt32 Reserved3[16];
   
-  HRESULT Parse(const Byte *p);
+  HRESULT Parse2(const CByteBuffer &buf);
 };
 
-HRESULT CHeaderRec::Parse(const Byte *p)
+HRESULT CHeaderRec::Parse2(const CByteBuffer &buf)
 {
+  if (buf.Size() < kNodeDescriptor_Size + 0x2A + 16 * 4)
+    return S_FALSE;
+  const Byte * p = (const Byte *)buf + kNodeDescriptor_Size;
   // TreeDepth = Get16(p);
   // RootNode = Get32(p + 2);
   // LeafRecords = Get32(p + 6);
@@ -527,6 +530,10 @@ HRESULT CHeaderRec::Parse(const Byte *p)
   for (int i = 0; i < 16; i++)
     Reserved3[i] = Get32(p + 0x2A + i * 4);
   */
+
+  if ((buf.Size() >> NodeSizeLog) < TotalNodes)
+    return S_FALSE;
+
   return S_OK;
 }
 
@@ -553,10 +560,7 @@ HRESULT CDatabase::LoadExtentFile(const CFork &fork, IInStream *inStream, CObjec
   // CNodeDescriptor nodeDesc;
   // nodeDesc.Parse(p);
   CHeaderRec hr;
-  RINOK(hr.Parse(p + kNodeDescriptor_Size));
-
-  if ((buf.Size() >> hr.NodeSizeLog) < hr.TotalNodes)
-    return S_FALSE;
+  RINOK(hr.Parse2(buf));
 
   UInt32 node = hr.FirstLeafNode;
   if (node == 0)
@@ -695,12 +699,9 @@ HRESULT CDatabase::LoadAttrs(const CFork &fork, IInStream *inStream, IArchiveOpe
   // CNodeDescriptor nodeDesc;
   // nodeDesc.Parse(p);
   CHeaderRec hr;
-  RINOK(hr.Parse(p + kNodeDescriptor_Size));
+  RINOK(hr.Parse2(AttrBuf));
   
   // CaseSensetive = (Header.IsHfsX() && hr.KeyCompareType == 0xBC);
-
-  if ((AttrBuf.Size() >> hr.NodeSizeLog) < hr.TotalNodes)
-    return S_FALSE;
 
   UInt32 node = hr.FirstLeafNode;
   if (node == 0)
@@ -876,12 +877,9 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
   // CNodeDescriptor nodeDesc;
   // nodeDesc.Parse(p);
   CHeaderRec hr;
-  RINOK(hr.Parse(p + kNodeDescriptor_Size));
+  RINOK(hr.Parse2(buf));
   
   // CaseSensetive = (Header.IsHfsX() && hr.KeyCompareType == 0xBC);
-
-  if ((buf.Size() >> hr.NodeSizeLog) < hr.TotalNodes)
-    return S_FALSE;
 
   CByteBuffer usedBuf(hr.TotalNodes);
   memset(usedBuf, 0, hr.TotalNodes);
@@ -966,13 +964,13 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
                 IsNameEqualTo(name + 8, "HFS+ Private Data"))
             {
               // it's folder for "Hard Links" files
-              item.Name.SetFromAscii("[HFS+ Private Data]");
+              item.Name = "[HFS+ Private Data]";
             }
           }
 
           // Some dmg files have ' ' folder item.
           if (item.Name.IsEmpty() || item.Name[0] == L' ')
-            item.Name.SetFromAscii("[]");
+            item.Name = "[]";
         }
       }
 
@@ -1228,7 +1226,7 @@ HRESULT CDatabase::Open2(IInStream *inStream, IArchiveOpenCallback *progress)
     return S_FALSE;
   */
 
-  ResFileName.SetFromAscii(kResFileName);
+  ResFileName = kResFileName;
 
   CFork extentsFork, catalogFork, attrFork;
   // allocationFork.Parse(p + 0x70 + 0x50 * 0);

@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#include "../../../Common/IntToString.h"
+// #include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 
 #ifndef UNDER_CE
@@ -19,13 +19,15 @@ namespace NFar {
 
 CStartupInfo g_StartupInfo;
 
+const char kRegistryKeyDelimiter = '\\';
+
 void CStartupInfo::Init(const PluginStartupInfo &pluginStartupInfo,
-    const CSysString &pluginNameForRegestry)
+    const char *pluginNameForRegistry)
 {
   m_Data = pluginStartupInfo;
-  m_RegistryPath = GetSystemString(pluginStartupInfo.RootKey);
-  m_RegistryPath += TEXT('\\');
-  m_RegistryPath += pluginNameForRegestry;
+  m_RegistryPath = pluginStartupInfo.RootKey;
+  m_RegistryPath += kRegistryKeyDelimiter;
+  m_RegistryPath += pluginNameForRegistry;
 }
 
 const char *CStartupInfo::GetMsgString(int messageId)
@@ -114,7 +116,7 @@ static void SplitString(const AString &src, AStringVector &destStrings)
 int CStartupInfo::ShowErrorMessage(const char *message)
 {
   AStringVector strings;
-  SplitString(message, strings);
+  SplitString((AString)message, strings);
   const unsigned kNumStringsMax = 20;
   const char *items[kNumStringsMax + 1];
   unsigned pos = 0;
@@ -209,28 +211,31 @@ void CStartupInfo::RestoreScreen(HANDLE handle)
   m_Data.RestoreScreen(handle);
 }
 
-const TCHAR kRegestryKeyDelimiter = TEXT('\'');
-
-CSysString CStartupInfo::GetFullKeyName(const CSysString &keyName) const
+CSysString CStartupInfo::GetFullKeyName(const char *keyName) const
 {
-  return (keyName.IsEmpty()) ? m_RegistryPath:
-    (m_RegistryPath + kRegestryKeyDelimiter + keyName);
+  AString s = m_RegistryPath;
+  if (keyName && *keyName)
+  {
+    s += kRegistryKeyDelimiter;
+    s += keyName;
+  }
+  return (CSysString)s;
 }
 
 
 LONG CStartupInfo::CreateRegKey(HKEY parentKey,
-    const CSysString &keyName, NRegistry::CKey &destKey) const
+    const char *keyName, NRegistry::CKey &destKey) const
 {
   return destKey.Create(parentKey, GetFullKeyName(keyName));
 }
 
 LONG CStartupInfo::OpenRegKey(HKEY parentKey,
-    const CSysString &keyName, NRegistry::CKey &destKey) const
+    const char *keyName, NRegistry::CKey &destKey) const
 {
   return destKey.Open(parentKey, GetFullKeyName(keyName));
 }
 
-void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
+void CStartupInfo::SetRegKeyValue(HKEY parentKey, const char *keyName,
     LPCTSTR valueName, LPCTSTR value) const
 {
   NRegistry::CKey regKey;
@@ -238,7 +243,7 @@ void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
   regKey.SetValue(valueName, value);
 }
 
-void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
+void CStartupInfo::SetRegKeyValue(HKEY parentKey, const char *keyName,
     LPCTSTR valueName, UInt32 value) const
 {
   NRegistry::CKey regKey;
@@ -246,7 +251,7 @@ void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
   regKey.SetValue(valueName, value);
 }
 
-void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
+void CStartupInfo::SetRegKeyValue(HKEY parentKey, const char *keyName,
     LPCTSTR valueName, bool value) const
 {
   NRegistry::CKey regKey;
@@ -254,7 +259,7 @@ void CStartupInfo::SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
   regKey.SetValue(valueName, value);
 }
 
-CSysString CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+CSysString CStartupInfo::QueryRegKeyValue(HKEY parentKey, const char *keyName,
     LPCTSTR valueName, const CSysString &valueDefault) const
 {
   NRegistry::CKey regKey;
@@ -268,7 +273,7 @@ CSysString CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyN
   return value;
 }
 
-UInt32 CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+UInt32 CStartupInfo::QueryRegKeyValue(HKEY parentKey, const char *keyName,
     LPCTSTR valueName, UInt32 valueDefault) const
 {
   NRegistry::CKey regKey;
@@ -282,7 +287,7 @@ UInt32 CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
   return value;
 }
 
-bool CStartupInfo::QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+bool CStartupInfo::QueryRegKeyValue(HKEY parentKey, const char *keyName,
     LPCTSTR valueName, bool valueDefault) const
 {
   NRegistry::CKey regKey;
@@ -390,7 +395,7 @@ int CStartupInfo::Menu(
     unsigned int flags,
     const char *title,
     const char *helpTopic,
-    const CSysStringVector &items,
+    const AStringVector &items,
     int selectedItem)
 {
   CRecordVector<FarMenuItem> farMenuItems;
@@ -400,8 +405,8 @@ int CStartupInfo::Menu(
     item.Checked = 0;
     item.Separator = 0;
     item.Selected = ((int)i == selectedItem);
-    CSysString reducedString = items[i].Left(ARRAY_SIZE(item.Text) - 1);
-    MyStringCopy(item.Text, (const char *)GetOemString(reducedString));
+    const AString reducedString (items[i].Left(ARRAY_SIZE(item.Text) - 1));
+    MyStringCopy(item.Text, reducedString);
     farMenuItems.Add(item);
   }
   return Menu(flags, title, helpTopic, &farMenuItems.Front(), farMenuItems.Size());
@@ -434,11 +439,9 @@ void CScreenRestorer::Restore()
 
 int PrintErrorMessage(const char *message, unsigned code)
 {
-  AString s = message;
+  AString s (message);
   s += " #";
-  char temp[16];
-  ConvertUInt32ToString((UInt32)code, temp);
-  s += temp;
+  s.Add_UInt32((UInt32)code);
   return g_StartupInfo.ShowErrorMessage(s);
 }
 
@@ -479,10 +482,10 @@ int ShowLastErrorMessage()
 
 int ShowSysErrorMessage(DWORD errorCode, const wchar_t *name)
 {
-  UString s = NError::MyFormatMessage(errorCode);
-  AString s1 = UnicodeStringToMultiByte(s, CP_OEMCP);
-  AString s2 = UnicodeStringToMultiByte(name, CP_OEMCP);
-  return g_StartupInfo.ShowErrorMessage2(s1, s2);
+  const UString s = NError::MyFormatMessage(errorCode);
+  return g_StartupInfo.ShowErrorMessage2(
+      UnicodeStringToMultiByte(s, CP_OEMCP),
+      UnicodeStringToMultiByte(name, CP_OEMCP));
 }
 
 

@@ -49,8 +49,8 @@ HRESULT Decode(const Byte *in, size_t inSize, Byte *out, size_t outSize)
     for (unsigned i = 0; i < kNumSyms / 2; i++)
     {
       Byte b = in[i];
-      levels[i * 2] = (Byte)(b & 0xF);
-      levels[i * 2 + 1] = (Byte)(b >> 4);
+      levels[(size_t)i * 2] = (Byte)(b & 0xF);
+      levels[(size_t)i * 2 + 1] = (Byte)(b >> 4);
     }
     if (!huff.BuildFull(levels))
       return S_FALSE;

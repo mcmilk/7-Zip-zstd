@@ -8,45 +8,52 @@
 namespace NCompress {
 namespace NHuffman {
 
+const unsigned kNumPairLenBits = 4;
+const unsigned kPairLenMask = (1 << kNumPairLenBits) - 1;
+
 template <unsigned kNumBitsMax, UInt32 m_NumSymbols, unsigned kNumTableBits = 9>
 class CDecoder
 {
+public:
   UInt32 _limits[kNumBitsMax + 2];
   UInt32 _poses[kNumBitsMax + 1];
   UInt16 _lens[1 << kNumTableBits];
   UInt16 _symbols[m_NumSymbols];
-public:
 
   bool Build(const Byte *lens) throw()
   {
-    UInt32 lenCounts[kNumBitsMax + 1];
-    UInt32 tmpPoses[kNumBitsMax + 1];
+    UInt32 counts[kNumBitsMax + 1];
     
     unsigned i;
     for (i = 0; i <= kNumBitsMax; i++)
-      lenCounts[i] = 0;
+      counts[i] = 0;
     
     UInt32 sym;
     
     for (sym = 0; sym < m_NumSymbols; sym++)
-      lenCounts[lens[sym]]++;
+      counts[lens[sym]]++;
     
-    lenCounts[0] = 0;
-    _poses[0] = 0;
-    _limits[0] = 0;
-    UInt32 startPos = 0;
     const UInt32 kMaxValue = (UInt32)1 << kNumBitsMax;
+
+    _limits[0] = 0;
+    
+    UInt32 startPos = 0;
+    UInt32 sum = 0;
     
     for (i = 1; i <= kNumBitsMax; i++)
     {
-      startPos += lenCounts[i] << (kNumBitsMax - i);
+      const UInt32 cnt = counts[i];
+      startPos += cnt << (kNumBitsMax - i);
       if (startPos > kMaxValue)
         return false;
       _limits[i] = startPos;
-      _poses[i] = _poses[i - 1] + lenCounts[i - 1];
-      tmpPoses[i] = _poses[i];
+      counts[i] = sum;
+      _poses[i] = sum;
+      sum += cnt;
     }
 
+    counts[0] = sum;
+    _poses[0] = sum;
     _limits[kNumBitsMax + 1] = kMaxValue;
     
     for (sym = 0; sym < m_NumSymbols; sym++)
@@ -55,16 +62,15 @@ public:
       if (len == 0)
         continue;
 
-      unsigned offset = tmpPoses[len];
+      unsigned offset = counts[len]++;
       _symbols[offset] = (UInt16)sym;
-      tmpPoses[len] = offset + 1;
 
       if (len <= kNumTableBits)
       {
         offset -= _poses[len];
         UInt32 num = (UInt32)1 << (kNumTableBits - len);
-        UInt16 val = (UInt16)((sym << 4) | len);
-        UInt16 *dest = _lens + (_limits[len - 1] >> (kNumBitsMax - kNumTableBits)) + (offset << (kNumTableBits - len));
+        UInt16 val = (UInt16)((sym << kNumPairLenBits) | len);
+        UInt16 *dest = _lens + (_limits[(size_t)len - 1] >> (kNumBitsMax - kNumTableBits)) + (offset << (kNumTableBits - len));
         for (UInt32 k = 0; k < num; k++)
           dest[k] = val;
       }
@@ -73,36 +79,41 @@ public:
     return true;
   }
 
+
   bool BuildFull(const Byte *lens, UInt32 numSymbols = m_NumSymbols) throw()
   {
-    UInt32 lenCounts[kNumBitsMax + 1];
-    UInt32 tmpPoses[kNumBitsMax + 1];
+    UInt32 counts[kNumBitsMax + 1];
     
     unsigned i;
     for (i = 0; i <= kNumBitsMax; i++)
-      lenCounts[i] = 0;
+      counts[i] = 0;
     
     UInt32 sym;
     
     for (sym = 0; sym < numSymbols; sym++)
-      lenCounts[lens[sym]]++;
+      counts[lens[sym]]++;
     
-    lenCounts[0] = 0;
-    _poses[0] = 0;
-    _limits[0] = 0;
-    UInt32 startPos = 0;
     const UInt32 kMaxValue = (UInt32)1 << kNumBitsMax;
+
+    _limits[0] = 0;
+    
+    UInt32 startPos = 0;
+    UInt32 sum = 0;
     
     for (i = 1; i <= kNumBitsMax; i++)
     {
-      startPos += lenCounts[i] << (kNumBitsMax - i);
+      const UInt32 cnt = counts[i];
+      startPos += cnt << (kNumBitsMax - i);
       if (startPos > kMaxValue)
         return false;
       _limits[i] = startPos;
-      _poses[i] = _poses[i - 1] + lenCounts[i - 1];
-      tmpPoses[i] = _poses[i];
+      counts[i] = sum;
+      _poses[i] = sum;
+      sum += cnt;
     }
 
+    counts[0] = sum;
+    _poses[0] = sum;
     _limits[kNumBitsMax + 1] = kMaxValue;
     
     for (sym = 0; sym < numSymbols; sym++)
@@ -111,16 +122,15 @@ public:
       if (len == 0)
         continue;
 
-      unsigned offset = tmpPoses[len];
+      unsigned offset = counts[len]++;
       _symbols[offset] = (UInt16)sym;
-      tmpPoses[len] = offset + 1;
 
       if (len <= kNumTableBits)
       {
         offset -= _poses[len];
         UInt32 num = (UInt32)1 << (kNumTableBits - len);
-        UInt16 val = (UInt16)((sym << 4) | len);
-        UInt16 *dest = _lens + (_limits[len - 1] >> (kNumBitsMax - kNumTableBits)) + (offset << (kNumTableBits - len));
+        UInt16 val = (UInt16)((sym << kNumPairLenBits) | len);
+        UInt16 *dest = _lens + (_limits[(size_t)len - 1] >> (kNumBitsMax - kNumTableBits)) + (offset << (kNumTableBits - len));
         for (UInt32 k = 0; k < num; k++)
           dest[k] = val;
       }
@@ -129,16 +139,18 @@ public:
     return startPos == kMaxValue;
   }
 
+  
   template <class TBitDecoder>
-  UInt32 Decode(TBitDecoder *bitStream) const throw()
+  MY_FORCE_INLINE
+  UInt32 Decode(TBitDecoder *bitStream) const
   {
     UInt32 val = bitStream->GetValue(kNumBitsMax);
     
     if (val < _limits[kNumTableBits])
     {
       UInt32 pair = _lens[val >> (kNumBitsMax - kNumTableBits)];
-      bitStream->MovePos((unsigned)(pair & 0xF));
-      return pair >> 4;
+      bitStream->MovePos((unsigned)(pair & kPairLenMask));
+      return pair >> kNumPairLenBits;
     }
 
     unsigned numBits;
@@ -148,27 +160,29 @@ public:
       return 0xFFFFFFFF;
 
     bitStream->MovePos(numBits);
-    UInt32 index = _poses[numBits] + ((val - _limits[numBits - 1]) >> (kNumBitsMax - numBits));
+    UInt32 index = _poses[numBits] + ((val - _limits[(size_t)numBits - 1]) >> (kNumBitsMax - numBits));
     return _symbols[index];
   }
 
+  
   template <class TBitDecoder>
-  UInt32 DecodeFull(TBitDecoder *bitStream) const throw()
+  MY_FORCE_INLINE
+  UInt32 DecodeFull(TBitDecoder *bitStream) const
   {
     UInt32 val = bitStream->GetValue(kNumBitsMax);
     
     if (val < _limits[kNumTableBits])
     {
       UInt32 pair = _lens[val >> (kNumBitsMax - kNumTableBits)];
-      bitStream->MovePos((unsigned)(pair & 0xF));
-      return pair >> 4;
+      bitStream->MovePos((unsigned)(pair & kPairLenMask));
+      return pair >> kNumPairLenBits;
     }
 
     unsigned numBits;
     for (numBits = kNumTableBits + 1; val >= _limits[numBits]; numBits++);
     
     bitStream->MovePos(numBits);
-    UInt32 index = _poses[numBits] + ((val - _limits[numBits - 1]) >> (kNumBitsMax - numBits));
+    UInt32 index = _poses[numBits] + ((val - _limits[(size_t)numBits - 1]) >> (kNumBitsMax - numBits));
     return _symbols[index];
   }
 };
@@ -185,35 +199,40 @@ public:
   {
     const unsigned kNumBitsMax = 7;
     
-    UInt32 lenCounts[kNumBitsMax + 1];
-    UInt32 tmpPoses[kNumBitsMax + 1];
+    UInt32 counts[kNumBitsMax + 1];
     UInt32 _poses[kNumBitsMax + 1];
     UInt32 _limits[kNumBitsMax + 1];
       
     unsigned i;
     for (i = 0; i <= kNumBitsMax; i++)
-      lenCounts[i] = 0;
+      counts[i] = 0;
     
     UInt32 sym;
     
     for (sym = 0; sym < m_NumSymbols; sym++)
-      lenCounts[lens[sym]]++;
+      counts[lens[sym]]++;
     
-    lenCounts[0] = 0;
-    _poses[0] = 0;
-    _limits[0] = 0;
-    UInt32 startPos = 0;
     const UInt32 kMaxValue = (UInt32)1 << kNumBitsMax;
+
+    _limits[0] = 0;
+    
+    UInt32 startPos = 0;
+    UInt32 sum = 0;
     
     for (i = 1; i <= kNumBitsMax; i++)
     {
-      startPos += lenCounts[i] << (kNumBitsMax - i);
+      const UInt32 cnt = counts[i];
+      startPos += cnt << (kNumBitsMax - i);
       if (startPos > kMaxValue)
         return false;
       _limits[i] = startPos;
-      _poses[i] = _poses[i - 1] + lenCounts[i - 1];
-      tmpPoses[i] = _poses[i];
+      counts[i] = sum;
+      _poses[i] = sum;
+      sum += cnt;
     }
+
+    counts[0] = sum;
+    _poses[0] = sum;
 
     for (sym = 0; sym < m_NumSymbols; sym++)
     {
@@ -221,14 +240,13 @@ public:
       if (len == 0)
         continue;
 
-      unsigned offset = tmpPoses[len];
-      tmpPoses[len] = offset + 1;
+      unsigned offset = counts[len]++;
 
       {
         offset -= _poses[len];
         UInt32 num = (UInt32)1 << (kNumBitsMax - len);
         Byte val = (Byte)((sym << 3) | len);
-        Byte *dest = _lens + (_limits[len - 1]) + (offset << (kNumBitsMax - len));
+        Byte *dest = _lens + (_limits[(size_t)len - 1]) + (offset << (kNumBitsMax - len));
         for (UInt32 k = 0; k < num; k++)
           dest[k] = val;
       }
@@ -246,7 +264,7 @@ public:
   }
 
   template <class TBitDecoder>
-  UInt32 Decode(TBitDecoder *bitStream) const throw()
+  UInt32 Decode(TBitDecoder *bitStream) const
   {
     UInt32 val = bitStream->GetValue(7);
     UInt32 pair = _lens[val];

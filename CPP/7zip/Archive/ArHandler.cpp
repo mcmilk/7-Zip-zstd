@@ -688,7 +688,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidShortComment:
     case kpidSubType:
     {
-      AString s = k_TypeExtionsions[(unsigned)_type];
+      AString s (k_TypeExtionsions[(unsigned)_type]);
       if (_subType == kSubType_BSD)
         s += ":BSD";
       prop = s;
@@ -720,7 +720,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       if (item.TextFileIndex >= 0)
         prop = (item.TextFileIndex == 0) ? "1.txt" : "2.txt";
       else
-        prop = (const wchar_t *)NItemName::GetOSName2(MultiByteToUnicodeString(item.Name, CP_OEMCP));
+        prop = (const wchar_t *)NItemName::GetOsPath_Remove_TailSlash(MultiByteToUnicodeString(item.Name, CP_OEMCP));
       break;
     case kpidSize:
     case kpidPackSize:

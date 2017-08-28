@@ -891,52 +891,46 @@ static void E8E9Decode(Byte *data, UInt32 dataSize, UInt32 fileOffset, bool e9)
   }
 }
 
-static inline UInt32 ItaniumGetOpType(const Byte *data, unsigned bitPos)
-{
-  return (data[bitPos >> 3] >> (bitPos & 7)) & 0xF;
-}
-
-static const Byte kCmdMasks[16] = {4,4,6,6,0,0,7,7,4,4,0,0,4,4,0,0};
 
 static void ItaniumDecode(Byte *data, UInt32 dataSize, UInt32 fileOffset)
 {
-  UInt32 curPos = 0;
+  if (dataSize <= 21)
+    return;
   fileOffset >>= 4;
-  while (curPos < dataSize - 21)
+  dataSize -= 21;
+  dataSize += 15;
+  dataSize >>= 4;
+  dataSize += fileOffset;
+  do
   {
-    int b = (data[0] & 0x1F) - 0x10;
-    if (b >= 0)
+    unsigned m = ((UInt32)0x334B0000 >> (data[0] & 0x1E)) & 3;
+    if (m)
     {
-      Byte cmdMask = kCmdMasks[b];
-      if (cmdMask != 0)
-        for (unsigned i = 0; i < 3; i++)
-          if (cmdMask & (1 << i))
-          {
-            unsigned startPos = i * 41 + 18;
-            if (ItaniumGetOpType(data, startPos + 24) == 5)
-            {
-              const UInt32 kMask = 0xFFFFF;
-              Byte *p = data + (startPos >> 3);
-              UInt32 bitField = ((UInt32)p[0]) | ((UInt32)p[1] <<  8) | ((UInt32)p[2] << 16);
-              unsigned inBit = (startPos & 7);
-              UInt32 offset = (bitField >> inBit) & kMask;
-              UInt32 andMask = ~(kMask << inBit);
-              bitField = ((offset - fileOffset) & kMask) << inBit;
-              for (unsigned j = 0; j < 3; j++)
-              {
-                p[j] &= andMask;
-                p[j] |= bitField;
-                andMask >>= 8;
-                bitField >>= 8;
-              }
-            }
-          }
+      m++;
+      do
+      {
+        Byte *p = data + ((size_t)m * 5 - 8);
+        if (((p[3] >> m) & 15) == 5)
+        {
+          const UInt32 kMask = 0xFFFFF;
+          // UInt32 raw = ((UInt32)p[0]) | ((UInt32)p[1] << 8) | ((UInt32)p[2] << 16);
+          UInt32 raw = GetUi32(p);
+          UInt32 v = raw >> m;
+          v -= fileOffset;
+          v &= kMask;
+          raw &= ~(kMask << m);
+          raw |= (v << m);
+          // p[0] = (Byte)raw; p[1] = (Byte)(raw >> 8); p[2] = (Byte)(raw >> 16);
+          SetUi32(p, raw);
+        }
+      }
+      while (++m <= 4);
     }
     data += 16;
-    curPos += 16;
-    fileOffset++;
   }
+  while (++fileOffset != dataSize);
 }
+
 
 static void DeltaDecode(Byte *data, UInt32 dataSize, UInt32 numChannels)
 {

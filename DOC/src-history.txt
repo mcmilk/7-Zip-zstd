@@ -1,6 +1,15 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+17.00 beta     2017-04-29
+-------------------------
+- NewHandler.h / NewHandler.cpp: 
+    now it redefines operator new() only for old MSVC compilers (_MSC_VER < 1900).
+- C/7zTypes.h : the names of variables in interface structures were changed (vt).
+- Some bugs were fixed. 7-Zip could crash in some cases.
+- Some internal changes in code.
+
+
 16.02          2016-05-21
 -------------------------
 - The BUG in 16.00 - 16.01 was fixed:

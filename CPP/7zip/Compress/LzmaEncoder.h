@@ -30,7 +30,9 @@ public:
 
   CEncoder();
   virtual ~CEncoder();
+
   UInt64 GetInputProcessedSize() const { return _inputProcessed; }
+  bool IsWriteEndMark() const { return LzmaEnc_IsWriteEndMark(_encoder) != 0; }
 };
 
 }}

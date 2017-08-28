@@ -3,7 +3,6 @@
 #include "StdAfx.h"
 
 #include "../../../Common/ComTry.h"
-#include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/PropVariant.h"
@@ -176,12 +175,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       case kpidPath:
       {
-        AString s = "[BOOT]" STRING_PATH_SEPARATOR;
+        AString s ("[BOOT]" STRING_PATH_SEPARATOR);
         if (_archive.BootEntries.Size() != 1)
         {
-          char temp[16];
-          ConvertUInt32ToString(index + 1, temp);
-          s += temp;
+          s.Add_UInt32(index + 1);
           s += '-';
         }
         s += be.GetName();
@@ -216,7 +213,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           if (!s.IsEmpty() && s.Back() == L'.')
             s.DeleteBack();
 
-          NItemName::ConvertToOSName2(s);
+          NItemName::ReplaceToOsSlashes_Remove_TailSlash(s);
           prop = s;
         }
         break;

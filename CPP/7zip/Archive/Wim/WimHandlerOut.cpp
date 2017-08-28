@@ -1828,7 +1828,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
     curPos += kStreamInfoSize;
   }
 
-  AString xml = "<WIM>";
+  AString xml ("<WIM>");
   AddTagUInt64_ToString(xml, "TOTALBYTES", curPos);
   for (i = 0; i < trees.Size(); i++)
   {

@@ -1,5 +1,5 @@
 /* Bcj2.c -- BCJ2 Decoder (Converter for x86 code)
-2015-08-01 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -61,7 +61,8 @@ SRes Bcj2Dec_Decode(CBcj2Dec *p)
       Byte *dest = p->dest;
       if (dest == p->destLim)
         return SZ_OK;
-      *dest = p->temp[p->state++ - BCJ2_DEC_STATE_ORIG_0];
+      *dest = p->temp[(size_t)p->state - BCJ2_DEC_STATE_ORIG_0];
+      p->state++;
       p->dest = dest + 1;
     }
   }

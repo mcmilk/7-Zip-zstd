@@ -20,7 +20,6 @@
 #include "../../../C/CpuArch.h"
 
 #include "../../Common/ComTry.h"
-#include "../../Common/IntToString.h"
 #include "../../Common/MyLinux.h"
 #include "../../Common/StringConvert.h"
 #include "../../Common/UTFConvert.h"
@@ -36,6 +35,8 @@
 #include "../Compress/CopyCoder.h"
 
 using namespace NWindows;
+
+UInt32 LzhCrc16Update(UInt32 crc, const void *data, size_t size);
 
 namespace NArchive {
 namespace NExt {
@@ -87,33 +88,9 @@ static UInt32 Crc32C_Calc(Byte const *data, size_t size)
 */
 
 
-// CRC-16-ANSI. The poly is 0x8005 (x^16 + x^15 + x^2 + 1)
-static UInt16 g_Crc16Table[256];
-
-static struct CInitCrc16
-{
-  CInitCrc16()
-  {
-    for (unsigned i = 0; i < 256; i++)
-    {
-      UInt32 r = i;
-      unsigned j;
-      for (j = 0; j < 8; j++)
-        r = (r >> 1) ^ (0xA001 & ~((r & 1) - 1));
-      g_Crc16Table[i] = (UInt16)r;
-    }
-  }
-} g_InitCrc16;
-
-#define CRC16_UPDATE_BYTE(crc, b) (g_Crc16Table[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
 #define CRC16_INIT_VAL 0xFFFF
 
-static UInt32 Crc16Update(UInt32 crc, Byte const *data, size_t size)
-{
-  for (size_t i = 0; i < size; i++)
-    crc = CRC16_UPDATE_BYTE(crc, data[i]);
-  return crc;
-}
+#define Crc16Update(crc, data, size)  LzhCrc16Update(crc, data, size)
 
 static UInt32 Crc16Calc(Byte const *data, size_t size)
 {
@@ -161,64 +138,64 @@ static const char * const kHostOS[] =
   , "Lites"
 };
 
-static const CUInt32PCharPair g_FeatureCompat_Flags[] =
+static const char * const g_FeatureCompat_Flags[] =
 {
-  { 0, "DIR_PREALLOC" },
-  { 1, "IMAGIC_INODES" },
-  { 2, "HAS_JOURNAL" },
-  { 3, "EXT_ATTR" },
-  { 4, "RESIZE_INODE" },
-  { 5, "DIR_INDEX" },
-  { 6, "LAZY_BG" }, // not in Linux
-  // { 7, "EXCLUDE_INODE" }, // not used
- // { 8, "EXCLUDE_BITMAP" }, // not in kernel
-  { 9, "SPARSE_SUPER2" }
+    "DIR_PREALLOC"
+  , "IMAGIC_INODES"
+  , "HAS_JOURNAL"
+  , "EXT_ATTR"
+  , "RESIZE_INODE"
+  , "DIR_INDEX"
+  , "LAZY_BG" // not in Linux
+  , NULL // { 7, "EXCLUDE_INODE" // not used
+  , NULL // { 8, "EXCLUDE_BITMAP" // not in kernel
+  , "SPARSE_SUPER2"
 };
   
 
 #define EXT4_FEATURE_INCOMPAT_FILETYPE (1 << 1)
 #define EXT4_FEATURE_INCOMPAT_64BIT (1 << 7)
 
-static const CUInt32PCharPair g_FeatureIncompat_Flags[] =
+static const char * const g_FeatureIncompat_Flags[] =
 {
-  { 0, "COMPRESSION" },
-  { 1, "FILETYPE" },
-  { 2, "RECOVER" }, /* Needs recovery */
-  { 3, "JOURNAL_DEV" }, /* Journal device */
-  { 4, "META_BG" },
-  
-  { 6, "EXTENTS" }, /* extents support */
-  { 7, "64BIT" },
-  { 8, "MMP" },
-  { 9, "FLEX_BG" },
-  { 10, "EA_INODE" }, /* EA in inode */
-  
-  { 12, "DIRDATA" }, /* data in dirent */
-  { 13, "BG_USE_META_CSUM" }, /* use crc32c for bg */
-  { 14, "LARGEDIR" }, /* >2GB or 3-lvl htree */
-  { 15, "INLINE_DATA" }, /* data in inode */
-  { 16, "ENCRYPT" }
+    "COMPRESSION"
+  , "FILETYPE"
+  , "RECOVER" /* Needs recovery */
+  , "JOURNAL_DEV" /* Journal device */
+  , "META_BG"
+  , NULL
+  , "EXTENTS" /* extents support */
+  , "64BIT"
+  , "MMP"
+  , "FLEX_BG"
+  , "EA_INODE" /* EA in inode */
+  , NULL
+  , "DIRDATA" /* data in dirent */
+  , "BG_USE_META_CSUM" /* use crc32c for bg */
+  , "LARGEDIR" /* >2GB or 3-lvl htree */
+  , "INLINE_DATA" /* data in inode */
+  , "ENCRYPT" // 16
 };
 
 
 static const UInt32 RO_COMPAT_GDT_CSUM = 1 << 4;
 static const UInt32 RO_COMPAT_METADATA_CSUM = 1 << 10;
 
-static const CUInt32PCharPair g_FeatureRoCompat_Flags[] =
+static const char * const g_FeatureRoCompat_Flags[] =
 {
-  { 0, "SPARSE_SUPER" },
-  { 1, "LARGE_FILE" },
-  { 2, "BTREE_DIR" },
-  { 3, "HUGE_FILE" },
-  { 4, "GDT_CSUM" },
-  { 5, "DIR_NLINK" },
-  { 6, "EXTRA_ISIZE" },
-  { 7, "HAS_SNAPSHOT" },
-  { 8, "QUOTA" },
-  { 9, "BIGALLOC" },
-  { 10, "METADATA_CSUM" },
-  { 11, "REPLICA" },
-  { 12, "READONLY" }
+    "SPARSE_SUPER"
+  , "LARGE_FILE"
+  , "BTREE_DIR"
+  , "HUGE_FILE"
+  , "GDT_CSUM"
+  , "DIR_NLINK"
+  , "EXTRA_ISIZE"
+  , "HAS_SNAPSHOT"
+  , "QUOTA"
+  , "BIGALLOC"
+  , "METADATA_CSUM"
+  , "REPLICA"
+  , "READONLY" // 12
 };
 
 
@@ -227,33 +204,37 @@ static const UInt32 k_NodeFlags_HUGE = (UInt32)1 << 18;
 static const UInt32 k_NodeFlags_EXTENTS = (UInt32)1 << 19;
 
 
-static const CUInt32PCharPair g_NodeFlags[] =
+static const char * const g_NodeFlags[] =
 {
-  { 0, "SECRM" },
-  { 1, "UNRM" },
-  { 2, "COMPR" },
-  { 3, "SYNC" },
-  { 4, "IMMUTABLE" },
-  { 5, "APPEND" },
-  { 6, "NODUMP" },
-  { 7, "NOATIME" },
-  { 8, "DIRTY" },
-  { 9, "COMPRBLK" },
-  { 10, "NOCOMPR" },
-  { 11, "ENCRYPT" },
-  { 12, "INDEX" },
-  { 13, "IMAGIC" },
-  { 14, "JOURNAL_DATA" },
-  { 15, "NOTAIL" },
-  { 16, "DIRSYNC" },
-  { 17, "TOPDIR" },
-  { 18, "HUGE_FILE" },
-  { 19, "EXTENTS" },
-
-  { 21, "EA_INODE" },
-  { 22, "EOFBLOCKS" },
-
-  { 28, "INLINE_DATA" }
+    "SECRM"
+  , "UNRM"
+  , "COMPR"
+  , "SYNC"
+  , "IMMUTABLE"
+  , "APPEND"
+  , "NODUMP"
+  , "NOATIME"
+  , "DIRTY"
+  , "COMPRBLK"
+  , "NOCOMPR"
+  , "ENCRYPT"
+  , "INDEX"
+  , "IMAGIC"
+  , "JOURNAL_DATA"
+  , "NOTAIL"
+  , "DIRSYNC"
+  , "TOPDIR"
+  , "HUGE_FILE"
+  , "EXTENTS"
+  , NULL
+  , "EA_INODE"
+  , "EOFBLOCKS"
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , "INLINE_DATA" // 28
 };
 
 
@@ -1540,20 +1521,16 @@ HRESULT CHandler::Open2(IInStream *inStream)
           useUnknown = true;
         
         if (item.Name.IsEmpty())
-        {
-          char temp[16];
-          ConvertUInt32ToString(item.Node, temp);
-          item.Name = temp;
-        }
+          item.Name.Add_UInt32(item.Node);
 
         _items.Add(item);
       }
     }
 
     if (useSys)
-      _auxSysIndex = _auxItems.Add("[SYS]");
+      _auxSysIndex = _auxItems.Add((AString)"[SYS]");
     if (useUnknown)
-      _auxUnknownIndex = _auxItems.Add("[UNKNOWN]");
+      _auxUnknownIndex = _auxItems.Add((AString)"[UNKNOWN]");
   }
 
   return S_OK;
@@ -1834,16 +1811,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
     case kpidHostOS:
     {
-      char temp[16];
-      const char *s = NULL;
-      if (_h.CreatorOs < ARRAY_SIZE(kHostOS))
-        s = kHostOS[_h.CreatorOs];
-      else
-      {
-        ConvertUInt32ToString(_h.CreatorOs, temp);
-        s = temp;
-      }
-      prop = s;
+      TYPE_TO_PROP(kHostOS, _h.CreatorOs, prop);
       break;
     }
     
@@ -1995,39 +1963,34 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
 
 static void ExtTimeToProp(const CExtTime &t, NCOM::CPropVariant &prop)
 {
-  /*
-  UInt32 nano = 0;
-  if (t.Extra != 0)
-  {
-    UInt32 mask = t.Extra & 3;
-    if (mask != 0)
-      return;
-    nano = t.Extra >> 2;
-  }
-  UInt64 v;
-  if (t.Val == 0 && nano == 0)
+  if (t.Val == 0 && t.Extra == 0)
     return;
-  if (!NTime::UnixTime_to_FileTime64(t.Val, v))
-    return;
-  if (nano != 0)
-    v += nano / 100;
 
   FILETIME ft;
-  ft.dwLowDateTime = (DWORD)v;
-  ft.dwHighDateTime = (DWORD)(v >> 32);
-  prop = ft;
-  */
-  if (t.Val == 0)
-    return;
-  if (t.Extra != 0)
+  // if (t.Extra != 0)
   {
-    UInt32 mask = t.Extra & 3;
-    if (mask != 0)
-      return;
+    // 1901-2446 :
+    Int64 v = (Int64)(Int32)t.Val;
+    v += (UInt64)(t.Extra & 3) << 32;  // 2 low bits are offset for main timestamp
+    UInt64 ft64 = NTime::UnixTime64ToFileTime64(v);
+    const UInt32 ns = (t.Extra >> 2);
+    if (ns < 1000000000)
+      ft64 += ns / 100;
+    ft.dwLowDateTime = (DWORD)ft64;
+    ft.dwHighDateTime = (DWORD)(ft64 >> 32);
   }
-  FILETIME ft;
-  if (NTime::UnixTime64ToFileTime(t.Val, ft))
-    prop = ft;
+  /*
+  else
+  {
+    // 1901-2038 : that code is good for ext4 and compatibility with Extra
+    NTime::UnixTime64ToFileTime((Int32)t.Val, ft); // for
+
+    // 1970-2106 : that code is good if timestamp is used as unsigned 32-bit
+    // are there such systems?
+    // NTime::UnixTimeToFileTime(t.Val, ft); // for
+  }
+  */
+  prop = ft;
 }
 
 
@@ -2043,8 +2006,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidPath:
       case kpidName:
       {
-        AString s = _auxItems[index - _items.Size()];
-        prop = s;
+        prop = _auxItems[index - _items.Size()];
         break;
       }
       case kpidIsDir: prop = true; break;

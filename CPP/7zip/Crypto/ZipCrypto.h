@@ -50,6 +50,8 @@ public:
   MY_UNKNOWN_IMP1(ICryptoSetPassword)
   STDMETHOD(Init)();
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
+  
+  virtual ~CCipher() {}
 };
 
 class CEncoder: public CCipher

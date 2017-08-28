@@ -523,6 +523,21 @@ static const wchar_t *GetExtension(const wchar_t *name)
   }
 }
 
+
+int CAgentFolder::CompareItems3(UInt32 index1, UInt32 index2, PROPID propID)
+{
+  NCOM::CPropVariant prop1, prop2;
+  // Name must be first property
+  GetProperty(index1, propID, &prop1);
+  GetProperty(index2, propID, &prop2);
+  if (prop1.vt != prop2.vt)
+    return MyCompare(prop1.vt, prop2.vt);
+  if (prop1.vt == VT_BSTR)
+    return MyStringCompareNoCase(prop1.bstrVal, prop2.bstrVal);
+  return prop1.Compare(prop2);
+}
+
+
 int CAgentFolder::CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw)
 {
   unsigned realIndex1, realIndex2;
@@ -651,20 +666,9 @@ int CAgentFolder::CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int
   if (propIsRaw)
     return CompareRawProps(_agentSpec->_archiveLink.GetArchiveGetRawProps(), arcIndex1, arcIndex2, propID);
 
-  NCOM::CPropVariant prop1, prop2;
-  // Name must be first property
-  GetProperty(index1, propID, &prop1);
-  GetProperty(index2, propID, &prop2);
-  if (prop1.vt != prop2.vt)
-  {
-    return MyCompare(prop1.vt, prop2.vt);
-  }
-  if (prop1.vt == VT_BSTR)
-  {
-    return _wcsicmp(prop1.bstrVal, prop2.bstrVal);
-  }
-  return prop1.Compare(prop2);
+  return CompareItems3(index1, index2, propID);
 }
+
 
 STDMETHODIMP_(Int32) CAgentFolder::CompareItems(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw)
 {
@@ -811,22 +815,11 @@ STDMETHODIMP_(Int32) CAgentFolder::CompareItems(UInt32 index1, UInt32 index2, PR
     return CompareRawProps(_agentSpec->_archiveLink.GetArchiveGetRawProps(), arcIndex1, arcIndex2, propID);
   }
 
-  NCOM::CPropVariant prop1, prop2;
-  // Name must be first property
-  GetProperty(index1, propID, &prop1);
-  GetProperty(index2, propID, &prop2);
-  if (prop1.vt != prop2.vt)
-  {
-    return MyCompare(prop1.vt, prop2.vt);
-  }
-  if (prop1.vt == VT_BSTR)
-  {
-    return _wcsicmp(prop1.bstrVal, prop2.bstrVal);
-  }
-  return prop1.Compare(prop2);
+  return CompareItems3(index1, index2, propID);
 
   } catch(...) { return 0; }
 }
+
 
 HRESULT CAgentFolder::BindToFolder_Internal(unsigned proxyDirIndex, IFolderFolder **resultFolder)
 {
@@ -1246,7 +1239,7 @@ STDMETHODIMP CAgentFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
       case kpidNumSubFiles:  prop = dir.NumSubFiles; break;
         // case kpidName:         prop = dir.Name; break;
       // case kpidPath:         prop = _proxy2->GetFullPathPrefix(_proxyDirIndex); break;
-      case kpidType: prop = UString(L"7-Zip.") + _agentSpec->ArchiveType; break;
+      case kpidType: prop = UString("7-Zip.") + _agentSpec->ArchiveType; break;
       case kpidCRC: if (dir.CrcIsDefined) prop = dir.Crc; break;
     }
     
@@ -1262,7 +1255,7 @@ STDMETHODIMP CAgentFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
     case kpidNumSubFiles:  prop = dir.NumSubFiles; break;
     case kpidName:         prop = dir.Name; break;
     case kpidPath:         prop = _proxy->GetDirPath_as_Prefix(_proxyDirIndex); break;
-    case kpidType: prop = UString(L"7-Zip.") + _agentSpec->ArchiveType; break;
+    case kpidType: prop = UString("7-Zip.") + _agentSpec->ArchiveType; break;
     case kpidCRC: if (dir.CrcIsDefined) prop = dir.Crc; break;
   }
   }
@@ -1582,9 +1575,9 @@ STDMETHODIMP CAgent::Open(
   if (Read_ShowDeleted())
   {
     COptionalOpenProperties &optPair = optProps.AddNew();
-    optPair.FormatName = L"ntfs";
-    // optPair.Props.AddNew().Name = L"LS";
-    optPair.Props.AddNew().Name = L"LD";
+    optPair.FormatName = "ntfs";
+    // optPair.Props.AddNew().Name = "LS";
+    optPair.Props.AddNew().Name = "LD";
   }
   */
 

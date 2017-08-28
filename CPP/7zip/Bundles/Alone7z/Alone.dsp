@@ -406,6 +406,10 @@ SOURCE=..\..\..\Common\Wildcard.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\XzCrc64Init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\XzCrc64Reg.cpp
 # End Source File
 # End Group
@@ -803,6 +807,22 @@ SOURCE=..\..\Compress\LzmaEncoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\LzmaRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzEncoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzEncoder.h
 # End Source File
 # End Group
 # Begin Group "Archive"

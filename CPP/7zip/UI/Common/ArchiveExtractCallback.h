@@ -57,6 +57,8 @@ struct CExtractNtOptions
   bool ReplaceColonForAltStream;
   bool WriteToAltStreamIfColon;
 
+  bool PreAllocateOutFile;
+
   CExtractNtOptions():
       ReplaceColonForAltStream(false),
       WriteToAltStreamIfColon(false)
@@ -64,6 +66,13 @@ struct CExtractNtOptions
     SymLinks.Val = true;
     HardLinks.Val = true;
     AltStreams.Val = true;
+    
+    PreAllocateOutFile =
+      #ifdef _WIN32
+        true;
+      #else
+        false;
+      #endif
   }
 };
 
@@ -201,6 +210,7 @@ class CArchiveExtractCallback:
   UInt32 _index;
   UInt64 _curSize;
   bool _curSizeDefined;
+  bool _fileLengthWasSet;
   COutFileStream *_outFileStreamSpec;
   CMyComPtr<ISequentialOutStream> _outFileStream;
 

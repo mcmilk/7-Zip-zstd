@@ -50,21 +50,58 @@ static const Byte kMarker[kMarkerSize] = SIGNATURE;
 
 static const size_t kCommentSize_Max = (size_t)1 << 16;
 
+
 static const char * const kHostOS[] =
 {
     "Windows"
   , "Unix"
 };
 
-static const CUInt32PCharPair k_ArcFlags[] =
+
+static const char * const k_ArcFlags[] =
 {
-  { 0, "Volume" },
-  { 1, "VolumeField" },
-  { 2, "Solid" },
-  { 3, "Recovery" },
-  { 4, "Lock" }
+    "Volume"
+  , "VolumeField"
+  , "Solid"
+  , "Recovery"
+  , "Lock" // 4
 };
 
+
+static const char * const k_FileFlags[] =
+{
+    "Dir"
+  , "UnixTime"
+  , "CRC"
+  , "UnknownSize"
+};
+
+
+static const char * const g_ExtraTypes[] =
+{
+    "0"
+  , "Crypto"
+  , "Hash"
+  , "Time"
+  , "Version"
+  , "Link"
+  , "UnixOwner"
+  , "Subdata"
+};
+
+
+static const char * const g_LinkTypes[] =
+{
+    "0"
+  , "UnixSymLink"
+  , "WinSymLink"
+  , "WinJunction"
+  , "HardLink"
+  , "FileCopy"
+};
+
+
+static const char g_ExtraTimeFlags[] = { 'u', 'M', 'C', 'A', 'n' };
 
 
 template <unsigned alignMask>
@@ -106,7 +143,8 @@ static unsigned ReadVarInt(const Byte *p, size_t maxSize, UInt64 *val)
   {
     Byte b = p[i];
     if (i < 10)
-      *val |= (UInt64)(b & 0x7F) << (7 * i++);
+      *val |= (UInt64)(b & 0x7F) << (7 * i);
+    i++;
     if ((b & 0x80) == 0)
       return i;
   }
@@ -114,7 +152,54 @@ static unsigned ReadVarInt(const Byte *p, size_t maxSize, UInt64 *val)
 }
 
 
-int CItem::FindExtra(unsigned type, unsigned &recordDataSize) const
+bool CLinkInfo::Parse(const Byte *p, unsigned size)
+{
+  const Byte *pStart = p;
+  unsigned num = ReadVarInt(p, size, &Type);
+  if (num == 0) return false; p += num; size -= num;
+  
+  num = ReadVarInt(p, size, &Flags);
+  if (num == 0) return false; p += num; size -= num;
+
+  UInt64 len;
+  num = ReadVarInt(p, size, &len);
+  if (num == 0) return false; p += num; size -= num;
+
+  if (size != len)
+    return false;
+
+  NameLen = (unsigned)len;
+  NameOffset = (unsigned)(p - pStart);
+  return true;
+}
+
+
+static void AddHex64(AString &s, UInt64 v)
+{
+  char sz[32];
+  sz[0] = '0';
+  sz[1] = 'x';
+  ConvertUInt64ToHex(v, sz + 2);
+  s += sz;
+}
+
+
+static void PrintType(AString &s, const char * const table[], unsigned num, UInt64 val)
+{
+  char sz[32];
+  const char *p = NULL;
+  if (val < num)
+    p = table[(unsigned)val];
+  if (!p)
+  {
+    ConvertUInt64ToString(val, sz);
+    p = sz;
+  }
+  s += p;
+}
+
+
+int CItem::FindExtra(unsigned extraID, unsigned &recordDataSize) const
 {
   recordDataSize = 0;
   size_t offset = 0;
@@ -137,8 +222,8 @@ int CItem::FindExtra(unsigned type, unsigned &recordDataSize) const
       rem = (size_t)size;
     }
     {
-      UInt64 type2;
-      unsigned num = ReadVarInt(Extra + offset, rem, &type2);
+      UInt64 id;
+      unsigned num = ReadVarInt(Extra + offset, rem, &id);
       if (num == 0)
         return -1;
       offset += num;
@@ -147,12 +232,12 @@ int CItem::FindExtra(unsigned type, unsigned &recordDataSize) const
       // There was BUG in RAR 5.21- : it stored (size-1) instead of (size)
       // for Subdata record in Service header.
       // That record always was last in bad archives, so we can fix that case.
-      if (type2 == NExtraRecordType::kSubdata
+      if (id == NExtraID::kSubdata
           && RecordType == NHeaderType::kService
           && rem + 1 == Extra.Size() - offset)
         rem++;
 
-      if (type2 == type)
+      if (id == extraID)
       {
         recordDataSize = (unsigned)rem;
         return (int)offset;
@@ -164,18 +249,117 @@ int CItem::FindExtra(unsigned type, unsigned &recordDataSize) const
 }
 
 
+void CItem::PrintInfo(AString &s) const
+{
+  size_t offset = 0;
+
+  for (;;)
+  {
+    size_t rem = Extra.Size() - offset;
+    if (rem == 0)
+      return;
+    
+    {
+      UInt64 size;
+      unsigned num = ReadVarInt(Extra + offset, rem, &size);
+      if (num == 0)
+        return;
+      offset += num;
+      rem -= num;
+      if (size > rem)
+        break;
+      rem = (size_t)size;
+    }
+    {
+      UInt64 id;
+      {
+        unsigned num = ReadVarInt(Extra + offset, rem, &id);
+        if (num == 0)
+          break;
+        offset += num;
+        rem -= num;
+      }
+
+      // There was BUG in RAR 5.21- : it stored (size-1) instead of (size)
+      // for Subdata record in Service header.
+      // That record always was last in bad archives, so we can fix that case.
+      if (id == NExtraID::kSubdata
+          && RecordType == NHeaderType::kService
+          && rem + 1 == Extra.Size() - offset)
+        rem++;
+
+      s.Add_Space_if_NotEmpty();
+      PrintType(s, g_ExtraTypes, ARRAY_SIZE(g_ExtraTypes), id);
+
+      if (id == NExtraID::kTime)
+      {
+        const Byte *p = Extra + offset;
+        UInt64 flags;
+        unsigned num = ReadVarInt(p, rem, &flags);
+        if (num != 0)
+        {
+          s += ':';
+          for (unsigned i = 0; i < ARRAY_SIZE(g_ExtraTimeFlags); i++)
+            if ((flags & ((UInt64)1 << i)) != 0)
+              s += g_ExtraTimeFlags[i];
+          flags &= ~(((UInt64)1 << ARRAY_SIZE(g_ExtraTimeFlags)) - 1);
+          if (flags != 0)
+          {
+            s += '_';
+            AddHex64(s, flags);
+          }
+        }
+      }
+      else if (id == NExtraID::kLink)
+      {
+        CLinkInfo linkInfo;
+        if (linkInfo.Parse(Extra + offset, (unsigned)rem))
+        {
+          s += ':';
+          PrintType(s, g_LinkTypes, ARRAY_SIZE(g_LinkTypes), linkInfo.Type);
+          UInt64 flags = linkInfo.Flags;
+          if (flags != 0)
+          {
+            s += ':';
+            if (flags & NLinkFlags::kTargetIsDir)
+            {
+              s += 'D';
+              flags &= ~((UInt64)NLinkFlags::kTargetIsDir);
+            }
+            if (flags != 0)
+            {
+              s += '_';
+              AddHex64(s, flags);
+            }
+          }
+        }
+      }
+
+      offset += rem;
+    }
+  }
+
+  s.Add_OptSpaced("ERROR");
+}
+
+
 bool CCryptoInfo::Parse(const Byte *p, size_t size)
 {
+  Algo = 0;
+  Flags = 0;
+  Cnt = 0;
+
   unsigned num = ReadVarInt(p, size, &Algo);
   if (num == 0) return false; p += num; size -= num;
   
   num = ReadVarInt(p, size, &Flags);
   if (num == 0) return false; p += num; size -= num;
 
+  if (size > 0)
+    Cnt = p[0];
+
   if (size != 1 + 16 + 16 + (unsigned)(IsThereCheck() ? 12 : 0))
     return false;
-
-  Cnt = p[0];
 
   return true;
 }
@@ -184,7 +368,7 @@ bool CCryptoInfo::Parse(const Byte *p, size_t size)
 bool CItem::FindExtra_Version(UInt64 &version) const
 {
   unsigned size;
-  int offset = FindExtra(NExtraRecordType::kVersion, size);
+  int offset = FindExtra(NExtraID::kVersion, size);
   if (offset < 0)
     return false;
   const Byte *p = Extra + (unsigned)offset;
@@ -202,26 +386,12 @@ bool CItem::FindExtra_Version(UInt64 &version) const
 bool CItem::FindExtra_Link(CLinkInfo &link) const
 {
   unsigned size;
-  int offset = FindExtra(NExtraRecordType::kLink, size);
+  int offset = FindExtra(NExtraID::kLink, size);
   if (offset < 0)
     return false;
-  const Byte *p = Extra + (unsigned)offset;
-
-  unsigned num = ReadVarInt(p, size, &link.Type);
-  if (num == 0) return false; p += num; size -= num;
-  
-  num = ReadVarInt(p, size, &link.Flags);
-  if (num == 0) return false; p += num; size -= num;
-
-  UInt64 len;
-  num = ReadVarInt(p, size, &len);
-  if (num == 0) return false; p += num; size -= num;
-
-  if (size != len)
+  if (!link.Parse(Extra + (unsigned)offset, size))
     return false;
-
-  link.NameLen = (unsigned)len;
-  link.NameOffset = (unsigned)(p - Extra);
+  link.NameOffset += offset;
   return true;
 }
 
@@ -268,14 +438,14 @@ void CItem::Link_to_Prop(unsigned linkType, NWindows::NCOM::CPropVariant &prop) 
 
   UString unicode;
   if (ConvertUTF8ToUnicode(s, unicode))
-    prop = NItemName::GetOSName(unicode);
+    prop = NItemName::GetOsPath(unicode);
 }
 
 bool CItem::GetAltStreamName(AString &name) const
 {
   name.Empty();
   unsigned size;
-  int offset = FindExtra(NExtraRecordType::kSubdata, size);
+  int offset = FindExtra(NExtraID::kSubdata, size);
   if (offset < 0)
     return false;
   name.SetFrom_CalcLen((const char *)(Extra + (unsigned)offset), size);
@@ -578,7 +748,7 @@ HRESULT CInArchive::ReadBlockHeader(CHeader &h)
 
 
 /*
-int CInArcInfo::FindExtra(unsigned type, unsigned &recordDataSize) const
+int CInArcInfo::FindExtra(unsigned extraID, unsigned &recordDataSize) const
 {
   recordDataSize = 0;
   size_t offset = 0;
@@ -601,14 +771,14 @@ int CInArcInfo::FindExtra(unsigned type, unsigned &recordDataSize) const
       rem = (size_t)size;
     }
     {
-      UInt64 type2;
-      unsigned num = ReadVarInt(Extra + offset, rem, &type2);
+      UInt64 id;
+      unsigned num = ReadVarInt(Extra + offset, rem, &id);
       if (num == 0)
         return -1;
       offset += num;
       rem -= num;
 
-      if (type2 == type)
+      if (id == extraID)
       {
         recordDataSize = (unsigned)rem;
         return (int)offset;
@@ -929,7 +1099,7 @@ HRESULT CUnpacker::Create(DECL_EXTERNAL_CODECS_LOC_VARS const CItem &item, bool 
   }
 
   unsigned cryptoSize = 0;
-  int cryptoOffset = item.FindExtra(NExtraRecordType::kCrypto, cryptoSize);
+  int cryptoOffset = item.FindExtra(NExtraID::kCrypto, cryptoSize);
 
   if (cryptoOffset >= 0)
   {
@@ -1023,7 +1193,7 @@ HRESULT CUnpacker::Code(const CItem &item, const CItem &lastItem, UInt64 packSiz
   // if (res == S_OK)
   {
     unsigned cryptoSize = 0;
-    int cryptoOffset = lastItem.FindExtra(NExtraRecordType::kCrypto, cryptoSize);
+    int cryptoOffset = lastItem.FindExtra(NExtraID::kCrypto, cryptoSize);
     NCrypto::NRar5::CDecoder *crypto = NULL;
 
     if (cryptoOffset >= 0)
@@ -1190,7 +1360,7 @@ static const Byte kProps[] =
   kpidCRC,
   kpidHostOS,
   kpidMethod,
-
+  kpidCharacts,
   kpidSymLink,
   kpidHardLink,
   kpidCopyLink,
@@ -1308,8 +1478,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     {
       if (/* &_missingVol || */ !_missingVolName.IsEmpty())
       {
-        UString s;
-        s.SetFromAscii("Missing volume : ");
+        UString s ("Missing volume : ");
         s += _missingVolName;
         prop = s;
       }
@@ -1339,13 +1508,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       {
         if (arcInfo->IsVolume())
         {
-          char sz[32];
-          ConvertUInt64ToString(arcInfo->GetVolIndex() + 1, sz);
-          unsigned len = MyStringLen(sz);
-          AString s = "part";
-          for (; len < 2; len++)
+          AString s ("part");
+          UInt32 v = (UInt32)arcInfo->GetVolIndex() + 1;
+          if (v < 10)
             s += '0';
-          s += sz;
+          s.Add_UInt32(v);
           s += ".rar";
           prop = s;
         }
@@ -1452,7 +1619,7 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
 static void TimeRecordToProp(const CItem &item, unsigned stampIndex, NCOM::CPropVariant &prop)
 {
   unsigned size;
-  int offset = item.FindExtra(NExtraRecordType::kTime, size);
+  int offset = item.FindExtra(NExtraID::kTime, size);
   if (offset < 0)
     return;
 
@@ -1470,29 +1637,43 @@ static void TimeRecordToProp(const CItem &item, unsigned stampIndex, NCOM::CProp
     return;
   
   unsigned numStamps = 0;
+  unsigned curStamp = 0;
   unsigned i;
   for (i = 0; i < 3; i++)
     if ((flags & (NTimeRecord::NFlags::kMTime << i)) != 0)
+    {
+      if (i == stampIndex)
+        curStamp = numStamps;
       numStamps++;
-  unsigned stampSizeLog = ((flags & NTimeRecord::NFlags::kUnixTime) != 0) ? 2 : 3;
-  
-  if ((numStamps << stampSizeLog) != size)
-    return;
-  
-  numStamps = 0;
-  for (i = 0; i < stampIndex; i++)
-    if ((flags & (NTimeRecord::NFlags::kMTime << i)) != 0)
-      numStamps++;
-
-  p += (numStamps << stampSizeLog);
+    }
 
   FILETIME ft;
+  
   if ((flags & NTimeRecord::NFlags::kUnixTime) != 0)
-    NWindows::NTime::UnixTimeToFileTime(Get32(p), ft);
+  {
+    curStamp *= 4;
+    if (curStamp + 4 > size)
+      return;
+    const Byte *p2 = p + curStamp;
+    UInt64 val = NTime::UnixTimeToFileTime64(Get32(p2));
+    numStamps *= 4;
+    if ((flags & NTimeRecord::NFlags::kUnixNs) != 0 && numStamps * 2 <= size)
+    {
+      const UInt32 ns = Get32(p2 + numStamps) & 0x3FFFFFFF;
+      if (ns < 1000000000)
+        val += ns / 100;
+    }
+    ft.dwLowDateTime = (DWORD)val;
+    ft.dwHighDateTime = (DWORD)(val >> 32);
+  }
   else
   {
-    ft.dwLowDateTime = Get32(p);
-    ft.dwHighDateTime = Get32(p + 4);
+    curStamp *= 8;
+    if (curStamp + 8 > size)
+      return;
+    const Byte *p2 = p + curStamp;
+    ft.dwLowDateTime = Get32(p2);
+    ft.dwHighDateTime = Get32(p2 + 4);
   }
   
   prop = ft;
@@ -1537,19 +1718,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           break;
         if (item.Version_Defined)
         {
-          wchar_t temp[32];
+          char temp[32];
           // temp[0] = ';';
           // ConvertUInt64ToString(item.Version, temp + 1);
           // unicodeName += temp;
           ConvertUInt64ToString(item.Version, temp);
-          UString s2 = L"[VER]" WSTRING_PATH_SEPARATOR;
+          UString s2 ("[VER]" STRING_PATH_SEPARATOR);
           s2 += temp;
           s2.Add_PathSepar();
           unicodeName.Insert(0, s2);
         }
       }
       
-      NItemName::ConvertToOSName2(unicodeName);
+      NItemName::ReplaceToOsSlashes_Remove_TailSlash(unicodeName);
       prop = unicodeName;
 
       break;
@@ -1623,7 +1804,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
     case kpidMethod:
     {
-      char temp[64];
+      char temp[128];
       unsigned algo = item.GetAlgoVersion();
       char *s = temp;
       if (algo != 0)
@@ -1645,16 +1826,28 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
 
       unsigned cryptoSize = 0;
-      int cryptoOffset = item.FindExtra(NExtraRecordType::kCrypto, cryptoSize);
+      int cryptoOffset = item.FindExtra(NExtraID::kCrypto, cryptoSize);
       if (cryptoOffset >= 0)
       {
         s = temp + strlen(temp);
         *s++ = ' ';
-        strcpy(s, "AES:");
+        
         CCryptoInfo cryptoInfo;
-        if (cryptoInfo.Parse(item.Extra + (unsigned)cryptoOffset, cryptoSize))
+       
+        bool isOK = cryptoInfo.Parse(item.Extra + (unsigned)cryptoOffset, cryptoSize);
+        
+        if (cryptoInfo.Algo == 0)
+          s = MyStpCpy(s, "AES");
+        else
         {
+          s = MyStpCpy(s, "Crypto_");
+          ConvertUInt64ToString(cryptoInfo.Algo, s);
           s += strlen(s);
+        }
+
+        if (isOK)
+        {
+          *s++ = ':';
           ConvertUInt32ToString(cryptoInfo.Cnt, s);
           s += strlen(s);
           *s++ = ':';
@@ -1666,6 +1859,35 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       break;
     }
     
+    case kpidCharacts:
+    {
+      AString s;
+
+      if (item.ACL >= 0)
+      {
+        s.Add_OptSpaced("ACL");
+      }
+
+      UInt32 flags = item.Flags;
+      // flags &= ~(6); // we don't need compression related bits here.
+
+      if (flags != 0)
+      {
+        AString s2 = FlagsToString(k_FileFlags, ARRAY_SIZE(k_FileFlags), flags);
+        if (!s2.IsEmpty())
+        {
+          s.Add_OptSpaced(s2);
+        }
+      }
+
+      item.PrintInfo(s);
+    
+      if (!s.IsEmpty())
+        prop = s;
+      break;
+    }
+
+
     case kpidHostOS:
       if (item.HostOS < ARRAY_SIZE(kHostOS))
         prop = kHostOS[(size_t)item.HostOS];
@@ -1788,7 +2010,7 @@ void CHandler::FillLinks()
     const CItem &item = _items[ref.Item];
     if (item.IsDir() || item.IsService() || item.PackSize != 0)
       continue;
-    CItem::CLinkInfo linkInfo;
+    CLinkInfo linkInfo;
     if (!item.FindExtra_Link(linkInfo) || linkInfo.Type != NLinkType::kFileCopy)
       continue;
     link.SetFrom_CalcLen((const char *)(item.Extra + linkInfo.NameOffset), linkInfo.NameLen);

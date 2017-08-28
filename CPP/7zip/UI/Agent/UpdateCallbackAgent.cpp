@@ -22,10 +22,10 @@ void CUpdateCallbackAgent::SetCallback(IFolderArchiveUpdateCallback *callback)
   }
 }
 
-HRESULT CUpdateCallbackAgent::SetNumItems(UInt64 numItems)
+HRESULT CUpdateCallbackAgent::SetNumItems(const CArcToDoStat &stat)
 {
   if (Callback)
-    return Callback->SetNumFiles(numItems);
+    return Callback->SetNumFiles(stat.Get_NumDataItems_Total());
   return S_OK;
 }
 
@@ -82,9 +82,9 @@ HRESULT CUpdateCallbackAgent::OpenFileError(const FString &path, DWORD systemErr
     
     if (Callback)
     {
-      UString s = L"WARNING: ";
+      UString s ("WARNING: ");
       s += NError::MyFormatMessage(systemError);
-      s += L": ";
+      s += ": ";
       s += fs2us(path);
       RINOK(Callback->UpdateErrorMessage(s));
       return S_FALSE;
@@ -106,9 +106,9 @@ HRESULT CUpdateCallbackAgent::ReadingFileError(const FString &path, DWORD system
     }
     else if (Callback)
     {
-      UString s = L"ERROR: ";
+      UString s ("ERROR: ");
       s += NError::MyFormatMessage(systemError);
-      s += L": ";
+      s += ": ";
       s += fs2us(path);
       RINOK(Callback->UpdateErrorMessage(s));
     }

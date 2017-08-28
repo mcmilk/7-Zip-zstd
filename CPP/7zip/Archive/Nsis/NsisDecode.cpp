@@ -11,12 +11,23 @@
 #include "../../Common/MethodId.h"
 
 #include "../../Compress/BcjCoder.h"
-#include "../../Compress/BZip2Decoder.h"
 
 #define Get32(p) GetUi32(p)
 
 namespace NArchive {
 namespace NNsis {
+
+UInt64 CDecoder::GetInputProcessedSize() const
+{
+  if (_lzmaDecoder)
+    return _lzmaDecoder->GetInputProcessedSize();
+  if (_deflateDecoder)
+    return _deflateDecoder->GetInputProcessedSize();
+  if (_bzDecoder)
+    return _bzDecoder->GetInputProcessedSize();
+  return 0;
+}
+
 
 HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
 {
@@ -36,7 +47,10 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
         _deflateDecoder = new NCompress::NDeflate::NDecoder::CCOMCoder();
         _codecInStream = _deflateDecoder;
         break;
-      case NMethodType::kBZip2: _codecInStream = new NCompress::NBZip2::CNsisDecoder(); break;
+      case NMethodType::kBZip2:
+        _bzDecoder = new NCompress::NBZip2::CNsisDecoder();
+        _codecInStream = _bzDecoder;
+        break;
       case NMethodType::kLZMA:
         _lzmaDecoder = new NCompress::NLzma::CDecoder();
         _codecInStream = _lzmaDecoder;
@@ -103,15 +117,15 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
   return S_OK;
 }
 
+
 static const UInt32 kMask_IsCompressed = (UInt32)1 << 31;
+
 
 HRESULT CDecoder::SetToPos(UInt64 pos, ICompressProgressInfo *progress)
 {
   if (StreamPos > pos)
     return E_FAIL;
-  UInt64 inSizeStart = 0;
-  if (_lzmaDecoder)
-    inSizeStart = _lzmaDecoder->GetInputProcessedSize();
+  const UInt64 inSizeStart = GetInputProcessedSize();
   UInt64 offset = 0;
   while (StreamPos < pos)
   {
@@ -122,13 +136,12 @@ HRESULT CDecoder::SetToPos(UInt64 pos, ICompressProgressInfo *progress)
     StreamPos += size;
     offset += size;
 
-    UInt64 inSize = 0;
-    if (_lzmaDecoder)
-      inSize = _lzmaDecoder->GetInputProcessedSize() - inSizeStart;
+    const UInt64 inSize = GetInputProcessedSize() - inSizeStart;
     RINOK(progress->SetRatioInfo(&inSize, &offset));
   }
   return S_OK;
 }
+
 
 HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unpackSize,
     ISequentialOutStream *realOutStream, ICompressProgressInfo *progress,
@@ -144,9 +157,9 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
     Byte temp[4];
     size_t processedSize = 4;
     RINOK(Read(temp, &processedSize));
+    StreamPos += processedSize;
     if (processedSize != 4)
       return S_FALSE;
-    StreamPos += processedSize;
     UInt32 size = Get32(temp);
     if (unpackSizeDefined && size != unpackSize)
       return S_FALSE;
@@ -156,8 +169,13 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
   else
   {
     Byte temp[4];
-    RINOK(ReadStream_FALSE(InputStream, temp, 4));
-    StreamPos += 4;
+    {
+      size_t processedSize = 4;
+      RINOK(ReadStream(InputStream, temp, &processedSize));
+      StreamPos += processedSize;
+      if (processedSize != 4)
+        return S_FALSE;
+    }
     UInt32 size = Get32(temp);
 
     if ((size & kMask_IsCompressed) == 0)
@@ -209,9 +227,7 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
       outBuf->Alloc(unpackSize);
   }
 
-  UInt64 inSizeStart = 0;
-  if (_lzmaDecoder)
-    inSizeStart = _lzmaDecoder->GetInputProcessedSize();
+  const UInt64 inSizeStart = GetInputProcessedSize();
 
   // we don't allow files larger than 4 GB;
   if (!unpackSizeDefined)
@@ -254,9 +270,8 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
     StreamPos += size;
     offset += (UInt32)size;
 
-    UInt64 inSize = 0; // it can be improved: we need inSize for Deflate and BZip2 too.
-    if (_lzmaDecoder)
-      inSize = _lzmaDecoder->GetInputProcessedSize() - inSizeStart;
+    const UInt64 inSize = GetInputProcessedSize() - inSizeStart;
+
     if (Solid)
       packSizeRes = (UInt32)inSize;
     unpackSizeRes += (UInt32)size;

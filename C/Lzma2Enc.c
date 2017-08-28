@@ -1,5 +1,5 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2015-10-04 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -60,9 +60,9 @@ static SRes Lzma2EncInt_Init(CLzma2EncInt *p, const CLzma2EncProps *props)
 }
 
 SRes LzmaEnc_PrepareForLzma2(CLzmaEncHandle pp, ISeqInStream *inStream, UInt32 keepWindowSize,
-    ISzAlloc *alloc, ISzAlloc *allocBig);
+    ISzAllocPtr alloc, ISzAllocPtr allocBig);
 SRes LzmaEnc_MemPrepare(CLzmaEncHandle pp, const Byte *src, SizeT srcLen,
-    UInt32 keepWindowSize, ISzAlloc *alloc, ISzAlloc *allocBig);
+    UInt32 keepWindowSize, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 SRes LzmaEnc_CodeOneMemBlock(CLzmaEncHandle pp, Bool reInit,
     Byte *dest, size_t *destLen, UInt32 desiredPackSize, UInt32 *unpackSize);
 const Byte *LzmaEnc_GetCurBuf(CLzmaEncHandle pp);
@@ -126,7 +126,7 @@ static SRes Lzma2EncInt_EncodeSubblock(CLzma2EncInt *p, Byte *outBuf,
       if (outStream)
       {
         *packSizeRes += destPos;
-        if (outStream->Write(outStream, outBuf, destPos) != destPos)
+        if (ISeqOutStream_Write(outStream, outBuf, destPos) != destPos)
           return SZ_ERROR_WRITE;
         destPos = 0;
       }
@@ -162,7 +162,7 @@ static SRes Lzma2EncInt_EncodeSubblock(CLzma2EncInt *p, Byte *outBuf,
     p->srcPos += unpackSize;
 
     if (outStream)
-      if (outStream->Write(outStream, outBuf, destPos) != destPos)
+      if (ISeqOutStream_Write(outStream, outBuf, destPos) != destPos)
         return SZ_ERROR_WRITE;
     
     *packSizeRes = destPos;
@@ -264,7 +264,7 @@ void Lzma2EncProps_Normalize(CLzma2EncProps *p)
 
 static SRes Progress(ICompressProgress *p, UInt64 inSize, UInt64 outSize)
 {
-  return (p && p->Progress(p, inSize, outSize) != SZ_OK) ? SZ_ERROR_PROGRESS : SZ_OK;
+  return (p && ICompressProgress_Progress(p, inSize, outSize) != SZ_OK) ? SZ_ERROR_PROGRESS : SZ_OK;
 }
 
 
@@ -277,8 +277,8 @@ typedef struct
   
   Byte *outBuf;
 
-  ISzAlloc *alloc;
-  ISzAlloc *allocBig;
+  ISzAllocPtr alloc;
+  ISzAllocPtr allocBig;
 
   CLzma2EncInt coders[NUM_MT_CODER_THREADS_MAX];
 
@@ -299,7 +299,7 @@ static SRes Lzma2Enc_EncodeMt1(CLzma2EncInt *p, CLzma2Enc *mainEncoder,
 
   if (!mainEncoder->outBuf)
   {
-    mainEncoder->outBuf = (Byte *)IAlloc_Alloc(mainEncoder->alloc, LZMA2_CHUNK_SIZE_COMPRESSED_MAX);
+    mainEncoder->outBuf = (Byte *)ISzAlloc_Alloc(mainEncoder->alloc, LZMA2_CHUNK_SIZE_COMPRESSED_MAX);
     if (!mainEncoder->outBuf)
       return SZ_ERROR_MEM;
   }
@@ -327,7 +327,7 @@ static SRes Lzma2Enc_EncodeMt1(CLzma2EncInt *p, CLzma2Enc *mainEncoder,
   if (res == SZ_OK)
   {
     Byte b = 0;
-    if (outStream->Write(outStream, &b, 1) != 1)
+    if (ISeqOutStream_Write(outStream, &b, 1) != 1)
       return SZ_ERROR_WRITE;
   }
   
@@ -343,10 +343,10 @@ typedef struct
   CLzma2Enc *lzma2Enc;
 } CMtCallbackImp;
 
-static SRes MtCallbackImp_Code(void *pp, unsigned index, Byte *dest, size_t *destSize,
+static SRes MtCallbackImp_Code(const IMtCoderCallback *pp, unsigned index, Byte *dest, size_t *destSize,
       const Byte *src, size_t srcSize, int finished)
 {
-  CMtCallbackImp *imp = (CMtCallbackImp *)pp;
+  CMtCallbackImp *imp = CONTAINER_FROM_VTBL(pp, CMtCallbackImp, funcTable);
   CLzma2Enc *mainEncoder = imp->lzma2Enc;
   CLzma2EncInt *p = &mainEncoder->coders[index];
 
@@ -403,9 +403,9 @@ static SRes MtCallbackImp_Code(void *pp, unsigned index, Byte *dest, size_t *des
 
 /* ---------- Lzma2Enc ---------- */
 
-CLzma2EncHandle Lzma2Enc_Create(ISzAlloc *alloc, ISzAlloc *allocBig)
+CLzma2EncHandle Lzma2Enc_Create(ISzAllocPtr alloc, ISzAllocPtr allocBig)
 {
-  CLzma2Enc *p = (CLzma2Enc *)alloc->Alloc(alloc, sizeof(CLzma2Enc));
+  CLzma2Enc *p = (CLzma2Enc *)ISzAlloc_Alloc(alloc, sizeof(CLzma2Enc));
   if (!p)
     return NULL;
   Lzma2EncProps_Init(&p->props);
@@ -444,8 +444,8 @@ void Lzma2Enc_Destroy(CLzma2EncHandle pp)
   MtCoder_Destruct(&p->mtCoder);
   #endif
 
-  IAlloc_Free(p->alloc, p->outBuf);
-  IAlloc_Free(p->alloc, pp);
+  ISzAlloc_Free(p->alloc, p->outBuf);
+  ISzAlloc_Free(p->alloc, pp);
 }
 
 SRes Lzma2Enc_SetProps(CLzma2EncHandle pp, const CLzma2EncProps *props)

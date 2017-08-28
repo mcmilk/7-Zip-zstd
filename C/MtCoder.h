@@ -1,5 +1,5 @@
 /* MtCoder.h -- Multi-thread Coder
-2009-11-19 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #ifndef __MT_CODER_H
 #define __MT_CODER_H
@@ -64,11 +64,15 @@ typedef struct
   CAutoResetEvent canWrite;
 } CMtThread;
 
-typedef struct
+
+typedef struct IMtCoderCallback IMtCoderCallback;
+struct IMtCoderCallback
 {
-  SRes (*Code)(void *p, unsigned index, Byte *dest, size_t *destSize,
+  SRes (*Code)(const IMtCoderCallback *p, unsigned index, Byte *dest, size_t *destSize,
       const Byte *src, size_t srcSize, int finished);
-} IMtCoderCallback;
+};
+#define IMtCoderCallback_Code(p, index, dest, destSize, src, srcSize, finished) (p)->Code(p, index, dest, destSize, src, srcSize, finished)
+
 
 typedef struct _CMtCoder
 {
@@ -79,7 +83,7 @@ typedef struct _CMtCoder
   ISeqInStream *inStream;
   ISeqOutStream *outStream;
   ICompressProgress *progress;
-  ISzAlloc *alloc;
+  ISzAllocPtr alloc;
 
   IMtCoderCallback *mtCallback;
   CCriticalSection cs;

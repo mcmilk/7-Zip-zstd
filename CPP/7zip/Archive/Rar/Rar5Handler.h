@@ -85,7 +85,7 @@ enum EHostOS
 
 // ---------- Extra ----------
 
-namespace NExtraRecordType
+namespace NExtraID
 {
   enum
   {
@@ -99,7 +99,7 @@ namespace NExtraRecordType
   };
 }
 
-// const unsigned kCryptoAlgo_AES = 0;
+const unsigned kCryptoAlgo_AES = 0;
 
 namespace NCryptoFlags
 {
@@ -133,8 +133,9 @@ namespace NTimeRecord
   {
     const unsigned kUnixTime = 1 << 0;
     const unsigned kMTime    = 1 << 1;
-    // const unsigned kCTime    = 1 << 2;
-    // const unsigned kATime    = 1 << 3;
+    const unsigned kCTime    = 1 << 2;
+    const unsigned kATime    = 1 << 3;
+    const unsigned kUnixNs   = 1 << 4;
   }
 }
 
@@ -154,6 +155,17 @@ namespace NLinkFlags
 {
   const unsigned kTargetIsDir = 1 << 0;
 }
+
+
+struct CLinkInfo
+{
+  UInt64 Type;
+  UInt64 Flags;
+  unsigned NameOffset;
+  unsigned NameLen;
+  
+  bool Parse(const Byte *p, unsigned size);
+};
 
 
 struct CItem
@@ -230,18 +242,20 @@ struct CItem
   bool Is_ACL() const { return IsService() && Name == "ACL"; }
   // bool Is_QO()  const { return IsService() && Name == "QO"; }
 
-  int FindExtra(unsigned type, unsigned &recordDataSize) const;
+  int FindExtra(unsigned extraID, unsigned &recordDataSize) const;
+  void PrintInfo(AString &s) const;
+
 
   bool IsEncrypted() const
   {
     unsigned size;
-    return FindExtra(NExtraRecordType::kCrypto, size) >= 0;
+    return FindExtra(NExtraID::kCrypto, size) >= 0;
   }
 
   int FindExtra_Blake() const
   {
     unsigned size = 0;
-    int offset = FindExtra(NExtraRecordType::kHash, size);
+    int offset = FindExtra(NExtraID::kHash, size);
     if (offset >= 0
         && size == BLAKE2S_DIGEST_SIZE + 1
         && Extra[(unsigned)offset] == kHashID_Blake2sp)
@@ -250,14 +264,6 @@ struct CItem
   }
 
   bool FindExtra_Version(UInt64 &version) const;
-
-  struct CLinkInfo
-  {
-    UInt64 Type;
-    UInt64 Flags;
-    unsigned NameOffset;
-    unsigned NameLen;
-  };
 
   bool FindExtra_Link(CLinkInfo &link) const;
   void Link_to_Prop(unsigned linkType, NWindows::NCOM::CPropVariant &prop) const;
@@ -313,7 +319,7 @@ struct CInArcInfo
     bool Is_Recovery() const { return (Flags & NLocatorFlags::kRecovery) != 0; }
   };
 
-  int FindExtra(unsigned type, unsigned &recordDataSize) const;
+  int FindExtra(unsigned extraID, unsigned &recordDataSize) const;
   bool FindExtra_Locator(CLocator &locator) const;
   */
 

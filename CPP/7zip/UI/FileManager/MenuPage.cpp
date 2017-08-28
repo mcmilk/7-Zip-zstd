@@ -35,7 +35,7 @@ static const UInt32 kLangIDs[] =
   IDT_SYSTEM_CONTEXT_MENU_ITEMS
 };
 
-static LPCWSTR kSystemTopic = L"fm/options.htm#sevenZip";
+#define kMenuTopic "fm/options.htm#sevenZip"
 
 struct CContextMenuItem
 {
@@ -71,6 +71,13 @@ static const CContextMenuItem kMenuItems[] =
 extern bool g_Is_Wow64;
 #endif
 
+#ifndef KEY_WOW64_64KEY
+  #define KEY_WOW64_64KEY (0x0100)
+#endif
+
+#ifndef KEY_WOW64_32KEY
+  #define KEY_WOW64_32KEY (0x0200)
+#endif
 
 bool CMenuPage::OnInit()
 {
@@ -95,14 +102,14 @@ bool CMenuPage::OnInit()
     }
     UString bit64 = LangString(IDS_PROP_BIT64);
     if (bit64.IsEmpty())
-      bit64.SetFromAscii("64-bit");
+      bit64 = "64-bit";
     #ifdef _WIN64
       bit64.Replace(L"64", L"32");
     #endif
     s.Add_Space();
-    s += L'(';
+    s += '(';
     s += bit64;
-    s += L')';
+    s += ')';
     SetItemText(IDX_SYSTEM_INTEGRATE_TO_MENU_2, s);
   }
 
@@ -136,7 +143,7 @@ bool CMenuPage::OnInit()
 
     FString &path = dll.Path;
     path = prefix;
-    path.AddAscii(d == 0 ? "7-zip.dll" :
+    path += (d == 0 ? "7-zip.dll" :
         #ifdef _WIN64
           "7-zip32.dll"
         #else
@@ -180,10 +187,10 @@ bool CMenuPage::OnInit()
 
     UString s = LangString(menuItem.ControlID);
     if (menuItem.Flag == kCRC)
-      s.SetFromAscii("CRC SHA");
+      s = "CRC SHA";
     if (menuItem.Flag == kOpenAs ||
         menuItem.Flag == kCRC)
-      s.AddAscii(" >");
+      s += " >";
 
     switch (menuItem.ControlID)
     {
@@ -200,11 +207,11 @@ bool CMenuPage::OnInit()
         {
           case kCompressTo7z:
           case kCompressTo7zEmail:
-            s2.AddAscii(".7z");
+            s2 += (".7z");
             break;
           case kCompressToZip:
           case kCompressToZipEmail:
-            s2.AddAscii(".zip");
+            s2 += (".zip");
             break;
         }
         s = MyFormatNew(s, s2);
@@ -286,7 +293,7 @@ LONG CMenuPage::OnApply()
 
 void CMenuPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kSystemTopic);
+  ShowHelpWindow(kMenuTopic);
 }
 
 bool CMenuPage::OnButtonClicked(int buttonID, HWND buttonHWND)

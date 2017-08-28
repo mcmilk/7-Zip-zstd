@@ -1,5 +1,5 @@
 /* BwtSort.c -- BWT block sorting
-2013-11-12 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -314,7 +314,7 @@ UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 group
       #ifndef BLOCK_SORT_EXTERNAL_FLAGS
       UInt32 subGroupSize = ((ind2[j] & ~0xC0000000) >> kNumBitsMax);
       if ((ind2[j] & 0x40000000) != 0)
-        subGroupSize += ((ind2[j + 1] >> kNumBitsMax) << kNumExtra0Bits);
+        subGroupSize += ((ind2[(size_t)j + 1] >> kNumBitsMax) << kNumExtra0Bits);
       subGroupSize++;
       for (;;)
       {
@@ -362,7 +362,7 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
   for (i = 0; i < kNumHashValues; i++)
     counters[i] = 0;
   for (i = 0; i < blockSize - 1; i++)
-    counters[((UInt32)data[i] << 8) | data[i + 1]]++;
+    counters[((UInt32)data[i] << 8) | data[(size_t)i + 1]]++;
   counters[((UInt32)data[i] << 8) | data[0]]++;
 
   Groups = counters + BS_TEMP_SIZE;
@@ -392,11 +392,11 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
     }
 
     for (i = 0; i < blockSize - 1; i++)
-      Groups[i] = counters[((UInt32)data[i] << 8) | data[i + 1]];
+      Groups[i] = counters[((UInt32)data[i] << 8) | data[(size_t)i + 1]];
     Groups[i] = counters[((UInt32)data[i] << 8) | data[0]];
 
     for (i = 0; i < blockSize - 1; i++)
-      Indices[counters[((UInt32)data[i] << 8) | data[i + 1]]++] = i;
+      Indices[counters[((UInt32)data[i] << 8) | data[(size_t)i + 1]]++] = i;
     Indices[counters[((UInt32)data[i] << 8) | data[0]]++] = i;
     
     #ifndef BLOCK_SORT_EXTERNAL_FLAGS
@@ -451,8 +451,8 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
       Bool finishedGroup = ((Indices[i] & 0x80000000) == 0);
       if ((Indices[i] & 0x40000000) != 0)
       {
-        groupSize += ((Indices[i + 1] >> kNumBitsMax) << kNumExtra0Bits);
-        Indices[i + 1] &= kIndexMask;
+        groupSize += ((Indices[(size_t)i + 1] >> kNumBitsMax) << kNumExtra0Bits);
+        Indices[(size_t)i + 1] &= kIndexMask;
       }
       Indices[i] &= kIndexMask;
       groupSize++;
@@ -460,7 +460,7 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
       {
         Indices[i - finishedGroupSize] &= kIndexMask;
         if (finishedGroupSize > 1)
-          Indices[i - finishedGroupSize + 1] &= kIndexMask;
+          Indices[(size_t)(i - finishedGroupSize) + 1] &= kIndexMask;
         {
         UInt32 newGroupSize = groupSize + finishedGroupSize;
         SetFinishedGroupSize(Indices + i - finishedGroupSize, newGroupSize);
@@ -503,8 +503,8 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
     UInt32 groupSize = ((Indices[i] & ~0xC0000000) >> kNumBitsMax);
     if ((Indices[i] & 0x40000000) != 0)
     {
-      groupSize += ((Indices[i + 1] >> kNumBitsMax) << kNumExtra0Bits);
-      Indices[i + 1] &= kIndexMask;
+      groupSize += ((Indices[(size_t)i + 1] >> kNumBitsMax) << kNumExtra0Bits);
+      Indices[(size_t)i + 1] &= kIndexMask;
     }
     Indices[i] &= kIndexMask;
     groupSize++;

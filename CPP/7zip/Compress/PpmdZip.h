@@ -31,8 +31,11 @@ struct CBuf
   }
 };
 
+
 class CDecoder :
   public ICompressCoder,
+  public ICompressSetFinishMode,
+  public ICompressGetInStreamProcessedSize,
   public CMyUnknownImp
 {
   CByteInBufWrap _inStream;
@@ -40,12 +43,19 @@ class CDecoder :
   CPpmd8 _ppmd;
   bool _fullFileMode;
 public:
-  MY_UNKNOWN_IMP
+  MY_UNKNOWN_IMP2(
+      ICompressSetFinishMode,
+      ICompressGetInStreamProcessedSize)
+
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
+  STDMETHOD(SetFinishMode)(UInt32 finishMode);
+  STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
+
   CDecoder(bool fullFileMode);
   ~CDecoder();
 };
+
 
 struct CEncProps
 {

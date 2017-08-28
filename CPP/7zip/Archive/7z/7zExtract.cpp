@@ -348,6 +348,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       #endif
 
 
+      bool dataAfterEnd_Error = false;
+
       HRESULT result = decoder.Decode(
           EXTERNAL_CODECS_VARS
           _inStream,
@@ -358,6 +360,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           outStream,
           progress,
           NULL // *inStreamMainRes
+          , dataAfterEnd_Error
           
           _7Z_DECODER_CRYPRO_VARS
           #if !defined(_7ZIP_ST) && !defined(_SFX)
@@ -365,13 +368,19 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           #endif
           );
 
-      if (result == S_FALSE || result == E_NOTIMPL)
+      if (result == S_FALSE || result == E_NOTIMPL || dataAfterEnd_Error)
       {
         bool wasFinished = folderOutStream->WasWritingFinished();
-      
-        int resOp = (result == S_FALSE ?
-            NExtract::NOperationResult::kDataError :
-            NExtract::NOperationResult::kUnsupportedMethod);
+
+        int resOp = NExtract::NOperationResult::kDataError;
+        
+        if (result != S_FALSE)
+        {
+          if (result == E_NOTIMPL)
+            resOp = NExtract::NOperationResult::kUnsupportedMethod;
+          else if (wasFinished && dataAfterEnd_Error)
+            resOp = NExtract::NOperationResult::kDataAfterEnd;
+        }
 
         RINOK(folderOutStream->FlushCorrupted(resOp));
 

@@ -23,6 +23,7 @@
 #include "FormatUtils.h"
 #include "IFolder.h"
 #include "LangUtils.h"
+#include "MyLoadMenu.h"
 #include "RegistryUtils.h"
 #include "ViewSettings.h"
 
@@ -37,7 +38,7 @@ using namespace NName;
 extern DWORD g_ComCtl32Version;
 extern HINSTANCE g_hInstance;
 
-static CFSTR kTempDirPrefix = FTEXT("7zE");
+#define kTempDirPrefix FTEXT("7zE")
 
 void CPanelCallbackImp::OnTab()
 {
@@ -281,9 +282,6 @@ void CApp::SaveToolbarChanges()
 }
 
 
-void MyLoadMenu();
-
-
 HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, bool &archiveIsOpened, bool &encrypted)
 {
   _window.Attach(hwnd);
@@ -460,7 +458,7 @@ static void AddSizeValue(UString &s, UInt64 size)
 static void AddValuePair1(UString &s, UINT resourceID, UInt64 size)
 {
   AddLangString(s, resourceID);
-  s += L": ";
+  s += ": ";
   AddSizeValue(s, size);
   s.Add_LF();
 }
@@ -470,14 +468,14 @@ void AddValuePair2(UString &s, UINT resourceID, UInt64 num, UInt64 size)
   if (num == 0)
     return;
   AddLangString(s, resourceID);
-  s += L": ";
+  s += ": ";
   s += ConvertSizeToString(num);
 
   if (size != (UInt64)(Int64)-1)
   {
-    s += L"    ( ";
+    s += "    ( ";
     AddSizeValue(s, size);
-    s += L" )";
+    s += " )";
   }
   s.Add_LF();
 }
@@ -529,14 +527,18 @@ UString CPanel::GetItemsInfoString(const CRecordVector<UInt32> &indices)
   
   for (i = 0; i < indices.Size() && (int)i < (int)kCopyDialog_NumInfoLines - 6; i++)
   {
-    info += L"\n  ";
+    info.Add_LF();
+    info += "  ";
     int index = indices[i];
     info += GetItemRelPath(index);
     if (IsItem_Folder(index))
       info.Add_PathSepar();
   }
   if (i != indices.Size())
-    info += L"\n  ...";
+  {
+    info.Add_LF();
+    info += "  ...";
+  }
   return info;
 }
 
@@ -697,7 +699,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       else
       {
         if (indices.Size() == 1 &&
-          !destPath.IsEmpty() && destPath.Back() != WCHAR_PATH_SEPARATOR)
+          !destPath.IsEmpty() && !IS_PATH_SEPAR(destPath.Back()))
         {
           int pos = destPath.ReverseFind_PathSepar();
           if (pos < 0)
@@ -810,7 +812,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     // srcPanel.InvalidateList(NULL, true);
 
     if (result != E_ABORT)
-      srcPanel.MessageBoxError(result, L"Error");
+      srcPanel.MessageBoxError(result);
     // return;
   }
 
@@ -862,12 +864,24 @@ void CApp::OnSetSubFolder(int srcPanelIndex)
   {
     if (srcPanel._folder->BindToParentFolder(&newFolder) != S_OK)
       return;
+    if (!newFolder)
+    {
+      const UString parentPrefix = srcPanel.GetParentDirPrefix();
+      bool archiveIsOpened, encrypted;
+      destPanel.BindToPath(parentPrefix, UString(), archiveIsOpened, encrypted);
+      destPanel.RefreshListCtrl();
+      return;
+    }
   }
   else
   {
     if (srcPanel._folder->BindToFolder(realIndex, &newFolder) != S_OK)
       return;
   }
+
+  if (!newFolder)
+    return;
+
   destPanel.CloseOpenFolders();
   destPanel.SetNewFolder(newFolder);
   destPanel.RefreshListCtrl();
@@ -927,7 +941,7 @@ void CApp::RefreshTitle(bool always)
 {
   UString path = GetFocusedPanel()._currentFolderPrefix;
   if (path.IsEmpty())
-    path = L"7-Zip"; // LangString(IDS_APP_TITLE);
+    path = "7-Zip"; // LangString(IDS_APP_TITLE);
   if (!always && path == PrevTitle)
     return;
   PrevTitle = path;

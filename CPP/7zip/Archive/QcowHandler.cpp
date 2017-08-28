@@ -284,11 +284,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         if (_cryptMethod == 1)
           s += "AES";
         else
-        {
-          char temp[16];
-          ConvertUInt32ToString(_cryptMethod, temp);
-          s += temp;
-        }
+          s.Add_UInt32(_cryptMethod);
       }
       
       if (!s.IsEmpty())

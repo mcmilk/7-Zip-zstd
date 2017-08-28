@@ -10,6 +10,7 @@
 #include "../../Common/MyString.h"
 
 #include "../../Windows/PropVariant.h"
+#include "../../Windows/PropVariantUtils.h"
 
 #include "../Common/InBuffer.h"
 #include "../Common/LimitedStreams.h"
@@ -562,14 +563,13 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
 {
   _lzmaMode = false;
   RINOK(_props.SetProperties(names, values, numProps));
-  AString m = _props.MethodName;
-  m.MakeLower_Ascii();
-  if (m.IsEqualTo("lzma"))
+  const AString &m = _props.MethodName;
+  if (m.IsEqualTo_Ascii_NoCase("lzma"))
   {
     return E_NOTIMPL;
     // _lzmaMode = true;
   }
-  else if (m.IsEqualTo("deflate") || m.IsEmpty())
+  else if (m.IsEqualTo_Ascii_NoCase("Deflate") || m.IsEmpty())
     _lzmaMode = false;
   else
     return E_INVALIDARG;
@@ -762,12 +762,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPackSize:
       prop = (UInt64)tag.Buf.Size(); break;
     case kpidComment:
-      if (tag.Type < ARRAY_SIZE(g_TagDesc))
-      {
-        const char *s = g_TagDesc[tag.Type];
-        if (s != NULL)
-          prop = s;
-      }
+      TYPE_TO_PROP(g_TagDesc, tag.Type, prop);
       break;
   }
   prop.Detach(value);

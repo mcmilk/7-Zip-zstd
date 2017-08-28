@@ -5,8 +5,11 @@
 #include "../../../../C/CpuArch.h"
 #include "../../../../C/7zCrc.h"
 
+#include "../../../Common/IntToString.h"
 #include "../../../Common/MyLinux.h"
 #include "../../../Common/StringConvert.h"
+
+#include "../../../Windows/PropVariantUtils.h"
 
 #include "../Common/ItemNameUtils.h"
 
@@ -16,6 +19,62 @@ namespace NArchive {
 namespace NZip {
 
 using namespace NFileHeader;
+
+static const CUInt32PCharPair g_ExtraTypes[] =
+{
+  { NExtraID::kZip64, "Zip64" },
+  { NExtraID::kNTFS, "NTFS" },
+  { NExtraID::kStrongEncrypt, "StrongCrypto" },
+  { NExtraID::kUnixTime, "UT" },
+  { NExtraID::kUnixExtra, "UX" },
+  { NExtraID::kIzUnicodeComment, "uc" },
+  { NExtraID::kIzUnicodeName, "up" },
+  { NExtraID::kWzAES, "WzAES" }
+};
+
+void CExtraSubBlock::PrintInfo(AString &s) const
+{
+  for (unsigned i = 0; i < ARRAY_SIZE(g_ExtraTypes); i++)
+  {
+    const CUInt32PCharPair &pair = g_ExtraTypes[i];
+    if (pair.Value == ID)
+    {
+      s += pair.Name;
+      return;
+    }
+  }
+  {
+    char sz[32];
+    sz[0] = '0';
+    sz[1] = 'x';
+    ConvertUInt32ToHex(ID, sz + 2);
+    s += sz;
+  }
+}
+
+
+void CExtraBlock::PrintInfo(AString &s) const
+{
+  if (Error)
+    s.Add_OptSpaced("Extra_ERROR");
+
+  if (MinorError)
+    s.Add_OptSpaced("Minor_Extra_ERROR");
+
+  if (IsZip64 || IsZip64_Error)
+  {
+    s.Add_OptSpaced("Zip64");
+    if (IsZip64_Error)
+      s += "_ERROR";
+  }
+
+  FOR_VECTOR (i, SubBlocks)
+  {
+    s.Add_Space_if_NotEmpty();
+    SubBlocks[i].PrintInfo(s);
+  }
+}
+
 
 bool CExtraSubBlock::ExtractNtfsTime(unsigned index, FILETIME &ft) const
 {
@@ -83,6 +142,19 @@ bool CExtraSubBlock::ExtractUnixTime(bool isCentral, unsigned index, UInt32 &res
 }
 
 
+bool CExtraSubBlock::ExtractUnixExtraTime(unsigned index, UInt32 &res) const
+{
+  res = 0;
+  const size_t size = Data.Size();
+  unsigned offset = index * 4;
+  if (ID != NExtraID::kUnixExtra || size < offset + 4)
+    return false;
+  const Byte *p = (const Byte *)Data + offset;
+  res = GetUi32(p);
+  return true;
+}
+
+
 bool CExtraBlock::GetNtfsTime(unsigned index, FILETIME &ft) const
 {
   FOR_VECTOR (i, SubBlocks)
@@ -96,11 +168,29 @@ bool CExtraBlock::GetNtfsTime(unsigned index, FILETIME &ft) const
 
 bool CExtraBlock::GetUnixTime(bool isCentral, unsigned index, UInt32 &res) const
 {
-  FOR_VECTOR (i, SubBlocks)
   {
-    const CExtraSubBlock &sb = SubBlocks[i];
-    if (sb.ID == NFileHeader::NExtraID::kUnixTime)
-      return sb.ExtractUnixTime(isCentral, index, res);
+    FOR_VECTOR (i, SubBlocks)
+    {
+      const CExtraSubBlock &sb = SubBlocks[i];
+      if (sb.ID == NFileHeader::NExtraID::kUnixTime)
+        return sb.ExtractUnixTime(isCentral, index, res);
+    }
+  }
+  
+  switch (index)
+  {
+    case NUnixTime::kMTime: index = NUnixExtra::kMTime; break;
+    case NUnixTime::kATime: index = NUnixExtra::kATime; break;
+    default: return false;
+  }
+  
+  {
+    FOR_VECTOR (i, SubBlocks)
+    {
+      const CExtraSubBlock &sb = SubBlocks[i];
+      if (sb.ID == NFileHeader::NExtraID::kUnixExtra)
+        return sb.ExtractUnixExtraTime(index, res);
+    }
   }
   return false;
 }

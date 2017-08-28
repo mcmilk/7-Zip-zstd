@@ -67,6 +67,12 @@ void CPanel::SetToRootFolder()
   rootFolderSpec->Init();
 }
 
+
+static bool DoesNameContainWildcard_SkipRoot(const UString &path)
+{
+  return DoesNameContainWildcard(path.Ptr(NName::GetRootPrefixSize(path)));
+}
+
 HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted)
 {
   UString path = fullPath;
@@ -178,11 +184,11 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
     else if (fileInfo.IsDir())
     {
       #ifdef _WIN32
-      if (DoesNameContainWildcard(sysPath))
+      if (DoesNameContainWildcard_SkipRoot(sysPath))
       {
         FString dirPrefix, fileName;
         NDir::GetFullPathAndSplit(us2fs(sysPath), dirPrefix, fileName);
-        if (DoesNameContainWildcard(dirPrefix))
+        if (DoesNameContainWildcard_SkipRoot(fs2us(dirPrefix)))
           return E_INVALIDARG;
         sysPath = fs2us(dirPrefix + fileInfo.Name);
       }
@@ -200,10 +206,10 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
       HRESULT res = S_OK;
       
       #ifdef _WIN32
-      if (DoesNameContainWildcard(dirPrefix))
+      if (DoesNameContainWildcard_SkipRoot(fs2us(dirPrefix)))
         return E_INVALIDARG;
 
-      if (DoesNameContainWildcard(fileName))
+      if (DoesNameContainWildcard(fs2us(fileName)))
         res = S_FALSE;
       else
       #endif
@@ -281,7 +287,17 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
   CDisableTimerProcessing disableTimerProcessing(*this);
   CDisableNotify disableNotify(*this);
   bool archiveIsOpened, encrypted;
-  HRESULT res = BindToPath(path, UString(), archiveIsOpened, encrypted);
+  UString s = path;
+  
+  #ifdef _WIN32
+    if (!s.IsEmpty() && s[0] == '\"' && s.Back() == '\"')
+    {
+      s.DeleteBack();
+      s.Delete(0);
+    }
+  #endif
+
+  HRESULT res = BindToPath(s, UString(), archiveIsOpened, encrypted);
   RefreshListCtrl(UString(), -1, true, UStringVector());
   return res;
 }
@@ -349,14 +365,14 @@ void CPanel::LoadFullPathAndShow()
       #else
       1
       #endif
-      && path.Back() == WCHAR_PATH_SEPARATOR)
+      && IS_PATH_SEPAR(path.Back()))
     path.DeleteBack();
 
   DWORD attrib = FILE_ATTRIBUTE_DIRECTORY;
 
   // GetRealIconIndex is slow for direct DVD/UDF path. So we use dummy path
   if (path.IsPrefixedBy(L"\\\\.\\"))
-    path = L"_TestFolder_";
+    path = "_TestFolder_";
   else
   {
     CFileInfo fi;
@@ -456,7 +472,7 @@ void CPanel::AddComboBoxItem(const UString &name, int iconIndex, int indent, boo
   UString s;
   iconIndex = iconIndex;
   for (int i = 0; i < indent; i++)
-    s += L"  ";
+    s += "  ";
   _headerComboBox.AddString(s + name);
   
   #else
@@ -631,6 +647,30 @@ void CPanel::FoldersHistory()
     BindToPathAndRefresh(selectString);
 }
 
+
+UString CPanel::GetParentDirPrefix() const
+{
+  UString s;
+  if (!_currentFolderPrefix.IsEmpty())
+  {
+    wchar_t c = _currentFolderPrefix.Back();
+    if (IS_PATH_SEPAR(c) || c == ':')
+    {
+      s = _currentFolderPrefix;
+      s.DeleteBack();
+      if (s != L"\\\\." &&
+          s != L"\\\\?")
+      {
+        int pos = s.ReverseFind_PathSepar();
+        if (pos >= 0)
+          s.DeleteFrom(pos + 1);
+      }
+    }
+  }
+  return s;
+}
+
+
 void CPanel::OpenParentFolder()
 {
   LoadFullPath(); // Maybe we don't need it ??
@@ -641,12 +681,12 @@ void CPanel::OpenParentFolder()
   if (!_currentFolderPrefix.IsEmpty())
   {
     wchar_t c = _currentFolderPrefix.Back();
-    if (c == WCHAR_PATH_SEPARATOR || c == ':')
+    if (IS_PATH_SEPAR(c) || c == ':')
     {
       focusedName = _currentFolderPrefix;
       focusedName.DeleteBack();
       /*
-      if (c == ':' && !focusedName.IsEmpty() && focusedName.Back() == WCHAR_PATH_SEPARATOR)
+      if (c == ':' && !focusedName.IsEmpty() && IS_PATH_SEPAR(focusedName.Back()))
       {
         focusedName.DeleteBack();
       }
@@ -825,7 +865,7 @@ void CPanel::OpenAltStreams()
         path.DeleteBack();
   }
 
-  path += L':';
+  path += ':';
   BindToPathAndRefresh(path);
   #endif
 }

@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2016-05-16 : Igor Pavlov : Public domain */
+2017-04-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -20,7 +20,7 @@
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
 
-// static const WCHAR *k_7zip = L"7-Zip";
+// static const WCHAR * const k_7zip = L"7-Zip";
 
 // #define _64BIT_INSTALLER 1
 
@@ -36,13 +36,13 @@
   #define k_7zip_with_Ver k_7zip_with_Ver_base
 #endif
 
-// static const WCHAR *k_7zip_with_Ver_str = k_7zip_with_Ver;
+// static const WCHAR * const k_7zip_with_Ver_str = k_7zip_with_Ver;
 
-static const WCHAR *k_Reg_Software_7zip = L"Software\\7-Zip";
+static const WCHAR * const k_Reg_Software_7zip = L"Software\\7-Zip";
 
-static const WCHAR *k_Reg_Path = L"Path";
+static const WCHAR * const k_Reg_Path = L"Path";
  
-static const WCHAR *k_Reg_Path32 = L"Path"
+static const WCHAR * const k_Reg_Path32 = L"Path"
   #ifdef _64BIT_INSTALLER
     L"64"
   #else
@@ -64,8 +64,8 @@ static const WCHAR *k_Reg_Path32 = L"Path"
 
 #define k_7zip_CLSID L"{23170F69-40C1-278A-1000-000100020000}"
 
-static const WCHAR *k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
-static const WCHAR *k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
+static const WCHAR * const k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
+static const WCHAR * const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
 
 
 #define g_AllUsers True
@@ -90,7 +90,7 @@ static WCHAR tempPath[MAX_PATH * 2 + 40];
 static WCHAR cmdLine[MAX_PATH * 3 + 40];
 static WCHAR copyPath[MAX_PATH * 2 + 40];
 
-static const WCHAR *kUninstallExe = L"Uninstall.exe";
+static const WCHAR * const kUninstallExe = L"Uninstall.exe";
 
 #define MAKE_CHAR_UPPER(c) ((((c) >= 'a' && (c) <= 'z') ? (c) -= 0x20 : (c)))
 
@@ -340,11 +340,11 @@ static const WCHAR * const k_ShellEx_Items[] =
   , L"Drive\\shellex\\DragDropHandlers"
 };
 
-static const WCHAR *k_Shell_Approved = L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved";
+static const WCHAR * const k_Shell_Approved = L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved";
 
-static const WCHAR *k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\7zFM.exe";
+static const WCHAR * const k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\7zFM.exe";
 #define k_REG_Uninstall L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
-static const WCHAR *k_Uninstall_7zip = k_REG_Uninstall L"7-Zip";
+static const WCHAR * const k_Uninstall_7zip = k_REG_Uninstall L"7-Zip";
 
 
 static Bool AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix, const wchar_t *name)
@@ -556,7 +556,7 @@ static BOOL RemoveDir()
 
 #define NUM_FILES (NUM_LANG_TXT_FILES + 1 + 13 + NUM_EXTRA_FILES_64BIT)
 
-static const char *k_Names =
+static const char * const k_Names =
   "af an ar ast az ba be bg bn br ca co cs cy da de el eo es et eu ext"
   " fa fi fr fur fy ga gl gu he hi hr hu hy id io is it ja ka kaa kk ko ku ku-ckb ky"
   " lij lt lv mk mn mng mng2 mr ms nb ne nl nn pa-in pl ps pt pt-br ro ru"

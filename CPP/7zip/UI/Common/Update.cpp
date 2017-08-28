@@ -4,7 +4,6 @@
 
 #include "Update.h"
 
-#include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/DLL.h"
@@ -30,8 +29,11 @@
 #include "TempFiles.h"
 #include "UpdateCallback.h"
 
-static const char *kUpdateIsNotSupoorted =
+static const char * const kUpdateIsNotSupoorted =
   "update operations are not supported for this archive";
+
+static const char * const kUpdateIsNotSupoorted_MultiVol =
+  "Updating for multivolume archives is not implemented";
 
 using namespace NWindows;
 using namespace NCOM;
@@ -39,7 +41,7 @@ using namespace NFile;
 using namespace NDir;
 using namespace NName;
 
-static CFSTR kTempFolderPrefix = FTEXT("7zE");
+static CFSTR const kTempFolderPrefix = FTEXT("7zE");
 
 
 void CUpdateErrorInfo::SetFromLastError(const char *message)
@@ -60,7 +62,8 @@ static bool DeleteEmptyFolderAndEmptySubFolders(const FString &path)
   NFind::CFileInfo fileInfo;
   FString pathPrefix = path + FCHAR_PATH_SEPARATOR;
   {
-    NFind::CEnumerator enumerator(pathPrefix + FCHAR_ANY_MASK);
+    NFind::CEnumerator enumerator;
+    enumerator.SetDirPrefix(pathPrefix);
     while (enumerator.Next(fileInfo))
     {
       if (fileInfo.IsDir())
@@ -156,7 +159,7 @@ bool COutMultiVolStream::SetMTime(const FILETIME *mTime)
 
 STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
-  if (processedSize != NULL)
+  if (processedSize)
     *processedSize = 0;
   while (size > 0)
   {
@@ -164,9 +167,8 @@ STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *pr
     {
       CAltStreamInfo altStream;
 
-      FChar temp[16];
-      ConvertUInt32ToString(_streamIndex + 1, temp);
-      FString name = temp;
+      FString name;
+      name.Add_UInt32(_streamIndex + 1);
       while (name.Len() < 3)
         name.InsertAtFront(FTEXT('0'));
       name.Insert(0, Prefix);
@@ -218,7 +220,7 @@ STDMETHODIMP COutMultiVolStream::Write(const void *data, UInt32 size, UInt32 *pr
       _length = _absPos;
     if (_offsetPos > altStream.RealSize)
       altStream.RealSize = _offsetPos;
-    if (processedSize != NULL)
+    if (processedSize)
       *processedSize += realProcessed;
     if (altStream.Pos == volSize)
     {
@@ -243,7 +245,7 @@ STDMETHODIMP COutMultiVolStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *n
     case STREAM_SEEK_END: _absPos = _length + offset; break;
   }
   _offsetPos = _absPos;
-  if (newPosition != NULL)
+  if (newPosition)
     *newPosition = _absPos;
   _streamIndex = 0;
   return S_OK;
@@ -316,7 +318,7 @@ UString CArchivePath::GetFinalPath() const
   UString path = GetPathWithoutExt();
   if (!BaseExtension.IsEmpty())
   {
-    path += L'.';
+    path += '.';
     path += BaseExtension;
   }
   return path;
@@ -327,7 +329,7 @@ UString CArchivePath::GetFinalVolPath() const
   UString path = GetPathWithoutExt();
   if (!BaseExtension.IsEmpty())
   {
-    path += L'.';
+    path += '.';
     path += VolExtension;
   }
   return path;
@@ -339,17 +341,17 @@ FString CArchivePath::GetTempPath() const
   path += us2fs(Name);
   if (!BaseExtension.IsEmpty())
   {
-    path += FTEXT('.');
+    path += '.';
     path += us2fs(BaseExtension);
   }
-  path.AddAscii(".tmp");
+  path += ".tmp";
   path += TempPostfix;
   return path;
 }
 
-static const wchar_t *kDefaultArcType = L"7z";
-static const wchar_t *kDefaultArcExt = L"7z";
-static const char *kSFXExtension =
+static const char * const kDefaultArcType = "7z";
+static const char * const kDefaultArcExt = "7z";
+static const char * const kSFXExtension =
   #ifdef _WIN32
     "exe";
   #else
@@ -398,7 +400,7 @@ bool CUpdateOptions::SetArcPath(const CCodecs *codecs, const UString &arcPath)
   }
   UString ext = typeExt;
   if (SfxMode)
-    ext.SetFromAscii(kSFXExtension);
+    ext = kSFXExtension;
   ArchivePath.BaseExtension = ext;
   ArchivePath.VolExtension = typeExt;
   ArchivePath.ParseFromPath(arcPath, ArcNameMode);
@@ -412,19 +414,43 @@ bool CUpdateOptions::SetArcPath(const CCodecs *codecs, const UString &arcPath)
   return true;
 }
 
+
 struct CUpdateProduceCallbackImp: public IUpdateProduceCallback
 {
   const CObjectVector<CArcItem> *_arcItems;
   IUpdateCallbackUI *_callback;
+  CDirItemsStat *_stat;
   
-  CUpdateProduceCallbackImp(const CObjectVector<CArcItem> *a,
-      IUpdateCallbackUI *callback): _arcItems(a), _callback(callback) {}
+  CUpdateProduceCallbackImp(
+      const CObjectVector<CArcItem> *a,
+      CDirItemsStat *stat,
+      IUpdateCallbackUI *callback):
+    _arcItems(a),
+    _stat(stat),
+    _callback(callback) {}
+  
   virtual HRESULT ShowDeleteFile(unsigned arcIndex);
 };
+
 
 HRESULT CUpdateProduceCallbackImp::ShowDeleteFile(unsigned arcIndex)
 {
   const CArcItem &ai = (*_arcItems)[arcIndex];
+  {
+    CDirItemsStat &stat = *_stat;
+    if (ai.IsDir)
+      stat.NumDirs++;
+    else if (ai.IsAltStream)
+    {
+      stat.NumAltStreams++;
+      stat.AltStreamsSize += ai.Size;
+    }
+    else
+    {
+      stat.NumFiles++;
+      stat.FilesSize += ai.Size;
+    }
+  }
   return _callback->ShowDeleteFile(ai.Name, ai.IsDir);
 }
 
@@ -562,6 +588,8 @@ static HRESULT Compress(
 
   UStringVector newNames;
 
+  CArcToDoStat stat2;
+
   if (options.RenamePairs.Size() != 0)
   {
     FOR_VECTOR (i, arcItems)
@@ -595,7 +623,7 @@ static HRESULT Compress(
               if (rp.GetNewPath(false, mainName, dest))
               {
                 needRename = true;
-                dest += L':';
+                dest += ':';
                 dest += ai.Name.Ptr(colonPos + 1);
                 break;
               }
@@ -620,17 +648,51 @@ static HRESULT Compress(
   {
     CRecordVector<CUpdatePair> updatePairs;
     GetUpdatePairInfoList(dirItems, arcItems, fileTimeType, updatePairs); // must be done only once!!!
-    CUpdateProduceCallbackImp upCallback(&arcItems, callback);
+    CUpdateProduceCallbackImp upCallback(&arcItems, &stat2.DeleteData, callback);
     
     UpdateProduce(updatePairs, actionSet, updatePairs2, isUpdatingItself ? &upCallback : NULL);
   }
 
   {
-    UInt32 numItems = 0;
     FOR_VECTOR (i, updatePairs2)
-      if (updatePairs2[i].NewData)
-        numItems++;
-    RINOK(callback->SetNumItems(numItems));
+    {
+      const CUpdatePair2 &up = updatePairs2[i];
+      if (up.NewData)
+      {
+        CDirItemsStat &stat = stat2.NewData;
+        const CDirItem &di = dirItems.Items[up.DirIndex];
+        if (di.IsDir())
+          stat.NumDirs++;
+        else if (di.IsAltStream)
+        {
+          stat.NumAltStreams++;
+          stat.AltStreamsSize += di.Size;
+        }
+        else
+        {
+          stat.NumFiles++;
+          stat.FilesSize += di.Size;
+        }
+      }
+      else if (up.ArcIndex >= 0)
+      {
+        CDirItemsStat &stat = stat2.OldData;
+        const CArcItem &ai = arcItems[up.ArcIndex];
+        if (ai.IsDir)
+          stat.NumDirs++;
+        else if (ai.IsAltStream)
+        {
+          stat.NumAltStreams++;
+          stat.AltStreamsSize += ai.Size;
+        }
+        else
+        {
+          stat.NumFiles++;
+          stat.FilesSize += ai.Size;
+        }
+      }
+    }
+    RINOK(callback->SetNumItems(stat2));
   }
   
   CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
@@ -698,9 +760,8 @@ static HRESULT Compress(
         {
           if (i > 0)
           {
-            FChar s[16];
-            ConvertUInt32ToString(i, s);
-            archivePath.TempPostfix = s;
+            archivePath.TempPostfix.Empty();
+            archivePath.TempPostfix.Add_UInt32(i);
           }
           realPath = archivePath.GetTempPath();
         }
@@ -734,7 +795,7 @@ static HRESULT Compress(
     outStream = outSeekStream;
     volStreamSpec->Sizes = options.VolumesSizes;
     volStreamSpec->Prefix = us2fs(archivePath.GetFinalVolPath());
-    volStreamSpec->Prefix += FTEXT('.');
+    volStreamSpec->Prefix += '.';
     volStreamSpec->TempFiles = &tempFiles;
     volStreamSpec->Init();
 
@@ -742,7 +803,7 @@ static HRESULT Compress(
     updateCallbackSpec->VolumesSizes = volumesSizes;
     updateCallbackSpec->VolName = archivePath.Prefix + archivePath.Name;
     if (!archivePath.VolExtension.IsEmpty())
-      updateCallbackSpec->VolExt = UString(L'.') + archivePath.VolExtension;
+      updateCallbackSpec->VolExt = UString('.') + archivePath.VolExtension;
     */
   }
 
@@ -1025,7 +1086,7 @@ HRESULT UpdateArchive(
   if (options.SfxMode)
   {
     CProperty property;
-    property.Name.SetFromAscii("rsfx");
+    property.Name = "rsfx";
     options.MethodMode.Properties.Add(property);
     if (options.SfxModule.IsEmpty())
     {
@@ -1058,7 +1119,15 @@ HRESULT UpdateArchive(
         !options.SetArcPath(codecs, cmdArcPath2))
       return E_NOTIMPL;
   }
-  const UString arcPath = options.ArchivePath.GetFinalPath();
+  
+  UString arcPath = options.ArchivePath.GetFinalPath();
+
+  if (!options.VolumesSizes.IsEmpty())
+  {
+    arcPath = options.ArchivePath.GetFinalVolPath();
+    arcPath += '.';
+    arcPath += "001";
+  }
 
   if (cmdArcPath2.IsEmpty())
   {
@@ -1085,7 +1154,12 @@ HRESULT UpdateArchive(
       if (fi.IsDevice)
         return E_NOTIMPL;
       if (options.VolumesSizes.Size() > 0)
+      {
+        errorInfo.FileNames.Add(us2fs(arcPath));
+        errorInfo.SystemError = (DWORD)E_NOTIMPL;
+        errorInfo.Message = kUpdateIsNotSupoorted_MultiVol;
         return E_NOTIMPL;
+      }
       CObjectVector<COpenType> types2;
       // change it.
       if (options.MethodMode.Type_Defined)
@@ -1122,7 +1196,7 @@ HRESULT UpdateArchive(
       if (arcLink.VolumePaths.Size() > 1)
       {
         errorInfo.SystemError = (DWORD)E_NOTIMPL;
-        errorInfo.Message = "Updating for multivolume archives is not implemented";
+        errorInfo.Message = kUpdateIsNotSupoorted_MultiVol;
         return E_NOTIMPL;
       }
       
@@ -1147,7 +1221,7 @@ HRESULT UpdateArchive(
 
   if (options.MethodMode.Type.FormatIndex < 0)
   {
-    options.MethodMode.Type.FormatIndex = codecs->FindFormatForArchiveType(kDefaultArcType);
+    options.MethodMode.Type.FormatIndex = codecs->FindFormatForArchiveType((UString)kDefaultArcType);
     if (options.MethodMode.Type.FormatIndex < 0)
       return E_NOTIMPL;
   }
@@ -1218,7 +1292,7 @@ HRESULT UpdateArchive(
       {
         NFind::CFileInfo fi;
         FString prefix = us2fs(censor.Pairs[0].Prefix);
-        prefix += FTEXT('.');
+        prefix += '.';
         // UString prefix = censor.Pairs[0].Prefix;
         /*
         if (prefix.Back() == WCHAR_PATH_SEPARATOR)
@@ -1353,7 +1427,7 @@ HRESULT UpdateArchive(
     
     if (options.StdOutMode)
     {
-      name.SetFromAscii("stdout");
+      name = "stdout";
       isUpdating = thereIsInArchive;
     }
     else
@@ -1461,10 +1535,10 @@ HRESULT UpdateArchive(
     
     for (i = 0; i < fullPaths.Size(); i++)
     {
-      UString arcPath2 = fs2us(fullPaths[i]);
-      UString fileName = ExtractFileNameFromPath(arcPath2);
-      AString path = GetAnsiString(arcPath2);
-      AString name = GetAnsiString(fileName);
+      const UString arcPath2 = fs2us(fullPaths[i]);
+      const UString fileName = ExtractFileNameFromPath(arcPath2);
+      const AString path (GetAnsiString(arcPath2));
+      const AString name (GetAnsiString(fileName));
       // Warning!!! MAPISendDocuments function changes Current directory
       // fnSend(0, ";", (LPSTR)(LPCSTR)path, (LPSTR)(LPCSTR)name, 0);
 
@@ -1479,7 +1553,7 @@ HRESULT UpdateArchive(
       m.nFileCount = 1;
       m.lpFiles = &f;
       
-      const AString addr = GetAnsiString(options.EMailAddress);
+      const AString addr (GetAnsiString(options.EMailAddress));
       MapiRecipDesc rec;
       if (!addr.IsEmpty())
       {

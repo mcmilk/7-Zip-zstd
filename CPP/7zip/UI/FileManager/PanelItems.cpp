@@ -532,7 +532,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
 
   if (showDots)
   {
-    UString itemName = L"..";
+    UString itemName ("..");
     item.iItem = listViewItemCount;
     if (itemName == focusedName)
       cursorIndex = item.iItem;
@@ -587,7 +587,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
           unsigned prefixLen = 0;
           _folderGetItemName->GetItemPrefix(i, &prefix, &prefixLen);
           if (prefix)
-            relPath += prefix;
+            relPath = prefix;
         }
         if (!prefix)
         {
@@ -595,7 +595,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
           if (_folder->GetProperty(i, kpidPrefix, &prop) != S_OK)
             throw 2723400;
           if (prop.vt == VT_BSTR)
-            relPath += prop.bstrVal;
+            relPath.SetFromBstr(prop.bstrVal);
         }
       }
       relPath += name;
@@ -637,7 +637,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
     if (j < finish)
     {
       correctedName.Empty();
-      correctedName = L"virus";
+      correctedName = "virus";
       int pos = 0;
       for (;;)
       {
@@ -648,7 +648,7 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
           break;
         }
         correctedName += itemName.Mid(pos, posNew - pos);
-        correctedName += L" ... ";
+        correctedName += " ... ";
         pos = posNew;
         while (itemName[++pos] == ' ');
       }
@@ -664,19 +664,6 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
       LPSTR_TEXTCALLBACKW can be 2-3 times faster for loading in this loop. */
     }
 
-    UInt32 attrib = 0;
-    // for (int yyy = 0; yyy < 6000000; yyy++) {
-    NCOM::CPropVariant prop;
-    RINOK(_folder->GetProperty(i, kpidAttrib, &prop));
-    if (prop.vt == VT_UI4)
-    {
-      // char s[256]; sprintf(s, "attrib = %7x", attrib); OutputDebugStringA(s);
-      attrib = prop.ulVal;
-    }
-    else if (IsItem_Folder(i))
-      attrib |= FILE_ATTRIBUTE_DIRECTORY;
-    // }
-
     bool defined = false;
   
     if (folderGetSystemIconIndex)
@@ -684,8 +671,19 @@ HRESULT CPanel::RefreshListCtrl(const UString &focusedName, int focusedPos, bool
       folderGetSystemIconIndex->GetSystemIconIndex(i, &item.iImage);
       defined = (item.iImage > 0);
     }
+
     if (!defined)
     {
+      UInt32 attrib = 0;
+      {
+        NCOM::CPropVariant prop;
+        RINOK(_folder->GetProperty(i, kpidAttrib, &prop));
+        if (prop.vt == VT_UI4)
+          attrib = prop.ulVal;
+      }
+      if (IsItem_Folder(i))
+        attrib |= FILE_ATTRIBUTE_DIRECTORY;
+
       if (_currentFolderPrefix.IsEmpty())
       {
         int iconIndexTemp;
@@ -993,7 +991,7 @@ void CPanel::GetItemName(int itemIndex, UString &s) const
 {
   if (itemIndex == kParentIndex)
   {
-    s = L"..";
+    s = "..";
     return;
   }
   NCOM::CPropVariant prop;
@@ -1073,14 +1071,12 @@ bool CPanel::IsItem_AltStream(int itemIndex) const
   return GetItem_BoolProp(itemIndex, kpidIsAltStream);
 }
 
-UInt64 CPanel::GetItemSize(int itemIndex) const
+UInt64 CPanel::GetItem_UInt64Prop(int itemIndex, PROPID propID) const
 {
   if (itemIndex == kParentIndex)
     return 0;
-  if (_folderGetItemName)
-    return _folderGetItemName->GetItemSize(itemIndex);
   NCOM::CPropVariant prop;
-  if (_folder->GetProperty(itemIndex, kpidSize, &prop) != S_OK)
+  if (_folder->GetProperty(itemIndex, propID, &prop) != S_OK)
     throw 2723400;
   UInt64 val = 0;
   if (ConvertPropVariantToUInt64(prop, val))
@@ -1088,6 +1084,14 @@ UInt64 CPanel::GetItemSize(int itemIndex) const
   return 0;
 }
 
+UInt64 CPanel::GetItemSize(int itemIndex) const
+{
+  if (itemIndex == kParentIndex)
+    return 0;
+  if (_folderGetItemName)
+    return _folderGetItemName->GetItemSize(itemIndex);
+  return GetItem_UInt64Prop(itemIndex, kpidSize);
+}
 
 void CPanel::SaveListViewInfo()
 {

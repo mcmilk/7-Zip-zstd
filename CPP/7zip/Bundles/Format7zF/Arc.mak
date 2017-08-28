@@ -14,6 +14,7 @@ COMMON_OBJS = \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
   $O\Wildcard.obj \
+  $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
 
 WIN_OBJS = \
@@ -197,7 +198,6 @@ COMPRESS_OBJS = \
   $O\DeflateRegister.obj \
   $O\DeltaFilter.obj \
   $O\ImplodeDecoder.obj \
-  $O\ImplodeHuffmanDecoder.obj \
   $O\LzhDecoder.obj \
   $O\Lzma2Decoder.obj \
   $O\Lzma2Encoder.obj \
@@ -220,10 +220,13 @@ COMPRESS_OBJS = \
   $O\Rar5Decoder.obj \
   $O\RarCodecsRegister.obj \
   $O\ShrinkDecoder.obj \
+  $O\XpressDecoder.obj \
+  $O\XzDecoder.obj \
+  $O\XzEncoder.obj \
   $O\ZlibDecoder.obj \
   $O\ZlibEncoder.obj \
   $O\ZDecoder.obj \
-  $O\XPressDecoder.obj \
+
 
 CRYPTO_OBJS = \
   $O\7zAes.obj \

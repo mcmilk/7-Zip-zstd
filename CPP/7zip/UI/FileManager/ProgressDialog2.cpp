@@ -217,7 +217,7 @@ void CProgressSync::AddError_Message_Name(const wchar_t *message, const wchar_t 
   UString s;
   if (name && *name != 0)
     s += name;
-  if (message && *message != 0 )
+  if (message && *message != 0)
   {
     if (!s.IsEmpty())
       s.Add_LF();
@@ -232,7 +232,7 @@ void CProgressSync::AddError_Code_Name(DWORD systemError, const wchar_t *name)
 {
   UString s = NError::MyFormatMessage(systemError);
   if (systemError == 0)
-    s = L"Error";
+    s = "Error";
   AddError_Message_Name(s, name);
 }
 
@@ -828,8 +828,8 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
       ConvertUInt64ToString(completedFiles, s);
       if (IS_DEFINED_VAL(totalFiles))
       {
-        wcscat(s, L" / ");
-        ConvertUInt64ToString(totalFiles, s + wcslen(s));
+        MyStringCat(s, L" / ");
+        ConvertUInt64ToString(totalFiles, s + MyStringLen(s));
       }
       if (_filesStr_Prev != s)
       {
@@ -862,7 +862,7 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
         {
           _ratio_Prev = ratio;
           ConvertUInt64ToString(ratio, s);
-          wcscat(s, L"%");
+          MyStringCat(s, L"%");
           SetItemText(IDT_PROGRESS_RATIO_VAL, s);
         }
       }
@@ -986,7 +986,7 @@ bool CProgressDialog::OnExternalCloseMessage()
   {
     MessagesDisplayed = true;
     if (fm.ErrorMessage.Title.IsEmpty())
-      fm.ErrorMessage.Title = L"7-Zip";
+      fm.ErrorMessage.Title = "7-Zip";
     MessageBoxW(*this, fm.ErrorMessage.Message, fm.ErrorMessage.Title, MB_ICONERROR);
   }
   else if (!thereAreMessages)
@@ -995,7 +995,7 @@ bool CProgressDialog::OnExternalCloseMessage()
     if (!fm.OkMessage.Message.IsEmpty())
     {
       if (fm.OkMessage.Title.IsEmpty())
-        fm.OkMessage.Title = L"7-Zip";
+        fm.OkMessage.Title = "7-Zip";
       MessageBoxW(*this, fm.OkMessage.Message, fm.OkMessage.Title, MB_OK);
     }
   }
@@ -1050,8 +1050,8 @@ void CProgressDialog::SetTitleText()
   {
     char temp[32];
     ConvertUInt64ToString(_prevPercentValue, temp);
-    s.AddAscii(temp);
-    s += L'%';
+    s += temp;
+    s += '%';
   }
   if (!_foreground)
   {
@@ -1273,12 +1273,10 @@ void CProgressThreadVirt::Process()
   catch(const char *s) { m = GetUnicodeString(s); }
   catch(int v)
   {
-    wchar_t s[16];
-    ConvertUInt32ToString(v, s);
-    m = L"Error #";
-    m += s;
+    m = "Error #";
+    m.Add_UInt32(v);
   }
-  catch(...) { m = L"Error"; }
+  catch(...) { m = "Error"; }
   if (Result != E_ABORT)
   {
     if (m.IsEmpty() && Result != S_OK)

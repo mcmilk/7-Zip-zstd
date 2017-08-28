@@ -51,7 +51,7 @@ static HRESULT DecompressArchive(
       replaceName = arc0.DefaultName;
   }
 
-  outDir.Replace(FSTRING_ANY_MASK, us2fs(Get_Correct_FsFile_Name(replaceName)));
+  outDir.Replace(FString("*"), us2fs(Get_Correct_FsFile_Name(replaceName)));
 
   bool elimIsPossible = false;
   UString elimPrefix; // only pure name without dir delimiter
@@ -156,7 +156,7 @@ static HRESULT DecompressArchive(
   #endif
 
   if (outDir.IsEmpty())
-    outDir = FTEXT(".") FSTRING_PATH_SEPARATOR;
+    outDir = "." STRING_PATH_SEPARATOR;
   /*
   #ifdef _WIN32
   else if (NName::IsAltPathPrefix(outDir)) {}
@@ -167,7 +167,7 @@ static HRESULT DecompressArchive(
     HRESULT res = ::GetLastError();
     if (res == S_OK)
       res = E_FAIL;
-    errorMessage.SetFromAscii("Can not create output directory: ");
+    errorMessage = "Can not create output directory: ";
     errorMessage += fs2us(outDir);
     return res;
   }

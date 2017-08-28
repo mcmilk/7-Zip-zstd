@@ -105,6 +105,8 @@ public:
     _key.KeySizeMode = (EKeySizeMode)mode;
     return true;
   }
+
+  virtual ~CBaseCoder() {}
 };
 
 class CEncoder:

@@ -47,17 +47,13 @@ bool CBootInitialEntry::Parse(const Byte *p)
 
 AString CBootInitialEntry::GetName() const
 {
-  AString s = (Bootable ? "Boot" : "NotBoot");
+  AString s (Bootable ? "Boot" : "NotBoot");
   s += '-';
   
   if (BootMediaType < ARRAY_SIZE(kMediaTypes))
     s += kMediaTypes[BootMediaType];
   else
-  {
-    char name[16];
-    ConvertUInt32ToString(BootMediaType, name);
-    s += name;
-  }
+    s.Add_UInt32(BootMediaType);
   
   if (VendorSpec[0] == 1)
   {

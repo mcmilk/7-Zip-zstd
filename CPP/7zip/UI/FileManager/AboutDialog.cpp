@@ -17,8 +17,8 @@ static const UInt32 kLangIDs[] =
   IDT_ABOUT_INFO
 };
 
-static LPCTSTR kHomePageURL = TEXT("http://www.7-zip.org/");
-static LPCWSTR kHelpTopic = L"start.htm";
+#define kHomePageURL TEXT("http://www.7-zip.org/")
+#define kHelpTopic "start.htm"
 
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
@@ -26,14 +26,7 @@ static LPCWSTR kHelpTopic = L"start.htm";
 bool CAboutDialog::OnInit()
 {
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
-  UString s = L"7-Zip " LLL(MY_VERSION);
-  #ifdef MY_CPU_64BIT
-  s += L" [";
-  AddLangString(s, IDS_PROP_BIT64);
-  s += L']';
-  #endif
-
-  SetItemText(IDT_ABOUT_VERSION, s);
+  SetItemText(IDT_ABOUT_VERSION, UString("7-Zip " MY_VERSION_CPU));
   SetItemText(IDT_ABOUT_DATE, LLL(MY_DATE));
   
   LangSetWindowText(*this, IDD_ABOUT);
@@ -43,7 +36,7 @@ bool CAboutDialog::OnInit()
 
 void CAboutDialog::OnHelp()
 {
-  ShowHelpWindow(NULL, kHelpTopic);
+  ShowHelpWindow(kHelpTopic);
 }
 
 bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)

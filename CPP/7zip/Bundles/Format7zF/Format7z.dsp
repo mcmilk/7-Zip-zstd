@@ -271,6 +271,10 @@ SOURCE=..\..\..\Common\MyBuffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyBuffer2.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File
@@ -383,6 +387,10 @@ SOURCE=..\..\..\Common\Wildcard.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\XzCrc64Init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\XzCrc64Reg.cpp
 # End Source File
 # End Group
@@ -419,6 +427,16 @@ SOURCE=..\..\Compress\BitmEncoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\Rar1Decoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -427,6 +445,16 @@ SOURCE=..\..\Compress\Rar1Decoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\Rar2Decoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -453,6 +481,16 @@ SOURCE=..\..\Compress\Rar3Decoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\Rar3Vm.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -479,6 +517,16 @@ SOURCE=..\..\Compress\Rar5Decoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\RarCodecsRegister.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # End Group
 # Begin Group "BZip2 Compress"
@@ -491,6 +539,16 @@ SOURCE=..\..\Compress\BZip2Const.h
 # Begin Source File
 
 SOURCE=..\..\Compress\BZip2Crc.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -499,6 +557,16 @@ SOURCE=..\..\Compress\BZip2Crc.h
 # Begin Source File
 
 SOURCE=..\..\Compress\BZip2Decoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -507,6 +575,16 @@ SOURCE=..\..\Compress\BZip2Decoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\BZip2Encoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -515,6 +593,16 @@ SOURCE=..\..\Compress\BZip2Encoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\BZip2Register.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -527,6 +615,16 @@ SOURCE=..\..\Compress\Mtf8.h
 # Begin Source File
 
 SOURCE=..\..\Compress\Deflate64Register.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -535,6 +633,16 @@ SOURCE=..\..\Compress\DeflateConst.h
 # Begin Source File
 
 SOURCE=..\..\Compress\DeflateDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -543,6 +651,16 @@ SOURCE=..\..\Compress\DeflateDecoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\DeflateEncoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -551,10 +669,30 @@ SOURCE=..\..\Compress\DeflateEncoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\DeflateRegister.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Compress\ImplodeDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -562,15 +700,17 @@ SOURCE=..\..\Compress\ImplodeDecoder.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Compress\ImplodeHuffmanDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\ImplodeHuffmanDecoder.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\PpmdZip.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -579,6 +719,16 @@ SOURCE=..\..\Compress\PpmdZip.h
 # Begin Source File
 
 SOURCE=..\..\Compress\ShrinkDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -587,6 +737,16 @@ SOURCE=..\..\Compress\ShrinkDecoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\ZlibDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -595,6 +755,16 @@ SOURCE=..\..\Compress\ZlibDecoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\ZlibEncoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -840,6 +1010,22 @@ SOURCE=..\..\Compress\XpressDecoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\XpressDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzEncoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\XzEncoder.h
 # End Source File
 # Begin Source File
 
@@ -1298,6 +1484,10 @@ SOURCE=..\..\..\..\C\XzIn.c
 
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zBuf.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\C\7zBuf2.c

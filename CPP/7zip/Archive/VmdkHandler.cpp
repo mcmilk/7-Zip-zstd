@@ -296,10 +296,15 @@ bool CDescriptor::Parse(const Byte *p, size_t size)
   AString name;
   AString val;
   
-  for (size_t i = 0;; i++)
+  for (;;)
   {
-    const char c = p[i];
-    if (i == size || c == 0 || c == 0xA || c == 0xD)
+    char c = 0;
+    if (size != 0)
+    {
+      size--;
+      c = *p++;
+    }
+    if (c == 0 || c == 0xA || c == 0xD)
     {
       if (!s.IsEmpty() && s[0] != '#')
       {
@@ -322,14 +327,12 @@ bool CDescriptor::Parse(const Byte *p, size_t size)
       }
       
       s.Empty();
-      if (c == 0 || i >= size)
-        break;
+      if (c == 0)
+        return true;
     }
     else
       s += (char)c;
   }
-
-  return true;
 }
 
 
@@ -819,9 +822,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           else if (algo != (int)h.algo)
           {
             s.Add_Space_if_NotEmpty();
-            char temp[16];
-            ConvertUInt32ToString(h.algo, temp);
-            s += temp;
+            s.Add_UInt32(h.algo);
             algo = h.algo;
           }
         }
@@ -831,16 +832,10 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       }
 
       if (zlib)
-      {
-        s.Add_Space_if_NotEmpty();
-        s += "zlib";
-      }
+        s.Add_OptSpaced("zlib");
 
       if (marker)
-      {
-        s.Add_Space_if_NotEmpty();
-        s += "Marker";
-      }
+        s.Add_OptSpaced("Marker");
       
       if (!s.IsEmpty())
         prop = s;
@@ -888,8 +883,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     {
       if (_missingVol || !_missingVolName.IsEmpty())
       {
-        UString s;
-        s.SetFromAscii("Missing volume : ");
+        UString s ("Missing volume : ");
         if (!_missingVolName.IsEmpty())
           s += _missingVolName;
         prop = s;
@@ -983,6 +977,9 @@ void CHandler::CloseAtError()
 }
 
 
+static const char * const kSignature_Descriptor = "# Disk DescriptorFile";
+
+
 HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 {
   const unsigned kSectoreSize = 512;
@@ -997,7 +994,6 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 
   if (memcmp(buf, k_Signature, sizeof(k_Signature)) != 0)
   {
-    const char *kSignature_Descriptor = "# Disk DescriptorFile";
     const size_t k_SigDesc_Size = strlen(kSignature_Descriptor);
     if (headerSize < k_SigDesc_Size)
       return S_FALSE;

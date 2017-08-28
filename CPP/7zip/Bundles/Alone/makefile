@@ -22,6 +22,7 @@ COMMON_OBJS = \
   $O\UTFConvert.obj \
   $O\MyVector.obj \
   $O\Wildcard.obj \
+  $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
@@ -38,6 +39,7 @@ WIN_OBJS = \
   $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
+  $O\PropVariantUtils.obj \
   $O\Synchronization.obj \
   $O\System.obj \
   $O\TimeUtils.obj \
@@ -151,7 +153,6 @@ COMPRESS_OBJS = \
   $O\DeflateRegister.obj \
   $O\DeltaFilter.obj \
   $O\ImplodeDecoder.obj \
-  $O\ImplodeHuffmanDecoder.obj \
   $O\Lzma2Decoder.obj \
   $O\Lzma2Encoder.obj \
   $O\Lzma2Register.obj \
@@ -166,6 +167,8 @@ COMPRESS_OBJS = \
   $O\PpmdZip.obj \
   $O\QuantumDecoder.obj \
   $O\ShrinkDecoder.obj \
+  $O\XzDecoder.obj \
+  $O\XzEncoder.obj \
   $O\ZDecoder.obj \
 
 CRYPTO_OBJS = \

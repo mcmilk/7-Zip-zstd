@@ -16,9 +16,9 @@ using namespace NRegistry;
 static NSynchronization::CCriticalSection g_CS;
 #define CS_LOCK NSynchronization::CCriticalSectionLock lock(g_CS);
 
-static const TCHAR *kCuPrefix = TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip") TEXT(STRING_PATH_SEPARATOR);
+static LPCTSTR const kCuPrefix = TEXT("Software") TEXT(STRING_PATH_SEPARATOR) TEXT("7-Zip") TEXT(STRING_PATH_SEPARATOR);
 
-static CSysString GetKeyPath(const CSysString &path) { return kCuPrefix + path; }
+static CSysString GetKeyPath(LPCTSTR path) { return kCuPrefix + (CSysString)path; }
 
 static LONG OpenMainKey(CKey &key, LPCTSTR keyName)
 {
@@ -51,16 +51,16 @@ static void Key_Get_BoolPair_true(CKey &key, LPCTSTR name, CBoolPair &b)
 namespace NExtract
 {
 
-static const TCHAR *kKeyName = TEXT("Extraction");
+static LPCTSTR const kKeyName = TEXT("Extraction");
 
-static const TCHAR *kExtractMode = TEXT("ExtractMode");
-static const TCHAR *kOverwriteMode = TEXT("OverwriteMode");
-static const TCHAR *kShowPassword = TEXT("ShowPassword");
-static const TCHAR *kPathHistory = TEXT("PathHistory");
-static const TCHAR *kSplitDest = TEXT("SplitDest");
-static const TCHAR *kElimDup = TEXT("ElimDup");
-// static const TCHAR *kAltStreams = TEXT("AltStreams");
-static const TCHAR *kNtSecur = TEXT("Security");
+static LPCTSTR const kExtractMode = TEXT("ExtractMode");
+static LPCTSTR const kOverwriteMode = TEXT("OverwriteMode");
+static LPCTSTR const kShowPassword = TEXT("ShowPassword");
+static LPCTSTR const kPathHistory = TEXT("PathHistory");
+static LPCTSTR const kSplitDest = TEXT("SplitDest");
+static LPCTSTR const kElimDup = TEXT("ElimDup");
+// static LPCTSTR const kAltStreams = TEXT("AltStreams");
+static LPCTSTR const kNtSecur = TEXT("Security");
 
 void CInfo::Save() const
 {
@@ -144,30 +144,30 @@ bool Read_ShowPassword()
 namespace NCompression
 {
 
-static const TCHAR *kKeyName = TEXT("Compression");
+static LPCTSTR const kKeyName = TEXT("Compression");
 
-static const TCHAR *kArcHistory = TEXT("ArcHistory");
-static const WCHAR *kArchiver = L"Archiver";
-static const TCHAR *kShowPassword = TEXT("ShowPassword");
-static const TCHAR *kEncryptHeaders = TEXT("EncryptHeaders");
+static LPCTSTR const kArcHistory = TEXT("ArcHistory");
+static LPCWSTR const kArchiver = L"Archiver";
+static LPCTSTR const kShowPassword = TEXT("ShowPassword");
+static LPCTSTR const kEncryptHeaders = TEXT("EncryptHeaders");
 
-static const TCHAR *kOptionsKeyName = TEXT("Options");
+static LPCTSTR const kOptionsKeyName = TEXT("Options");
 
-static const TCHAR *kLevel = TEXT("Level");
-static const TCHAR *kDictionary = TEXT("Dictionary");
-static const TCHAR *kOrder = TEXT("Order");
-static const TCHAR *kBlockSize = TEXT("BlockSize");
-static const TCHAR *kNumThreads = TEXT("NumThreads");
-static const WCHAR *kMethod = L"Method";
-static const WCHAR *kOptions = L"Options";
-static const WCHAR *kEncryptionMethod = L"EncryptionMethod";
+static LPCTSTR const kLevel = TEXT("Level");
+static LPCTSTR const kDictionary = TEXT("Dictionary");
+static LPCTSTR const kOrder = TEXT("Order");
+static LPCTSTR const kBlockSize = TEXT("BlockSize");
+static LPCTSTR const kNumThreads = TEXT("NumThreads");
+static LPCWSTR const kMethod = L"Method";
+static LPCWSTR const kOptions = L"Options";
+static LPCWSTR const kEncryptionMethod = L"EncryptionMethod";
 
-static const TCHAR *kNtSecur = TEXT("Security");
-static const TCHAR *kAltStreams = TEXT("AltStreams");
-static const TCHAR *kHardLinks = TEXT("HardLinks");
-static const TCHAR *kSymLinks = TEXT("SymLinks");
+static LPCTSTR const kNtSecur = TEXT("Security");
+static LPCTSTR const kAltStreams = TEXT("AltStreams");
+static LPCTSTR const kHardLinks = TEXT("HardLinks");
+static LPCTSTR const kSymLinks = TEXT("SymLinks");
 
-static void SetRegString(CKey &key, const WCHAR *name, const UString &value)
+static void SetRegString(CKey &key, LPCWSTR name, const UString &value)
 {
   if (value.IsEmpty())
     key.DeleteValue(name);
@@ -175,7 +175,7 @@ static void SetRegString(CKey &key, const WCHAR *name, const UString &value)
     key.SetValue(name, value);
 }
 
-static void SetRegUInt32(CKey &key, const TCHAR *name, UInt32 value)
+static void SetRegUInt32(CKey &key, LPCTSTR name, UInt32 value)
 {
   if (value == (UInt32)(Int32)-1)
     key.DeleteValue(name);
@@ -183,13 +183,13 @@ static void SetRegUInt32(CKey &key, const TCHAR *name, UInt32 value)
     key.SetValue(name, value);
 }
 
-static void GetRegString(CKey &key, const WCHAR *name, UString &value)
+static void GetRegString(CKey &key, LPCWSTR name, UString &value)
 {
   if (key.QueryValue(name, value) != ERROR_SUCCESS)
     value.Empty();
 }
 
-static void GetRegUInt32(CKey &key, const TCHAR *name, UInt32 &value)
+static void GetRegUInt32(CKey &key, LPCTSTR name, UInt32 &value)
 {
   if (key.QueryValue(name, value) != ERROR_SUCCESS)
     value = (UInt32)(Int32)-1;
@@ -300,13 +300,13 @@ void CInfo::Load()
 
 }
 
-static const TCHAR *kOptionsInfoKeyName = TEXT("Options");
+static LPCTSTR const kOptionsInfoKeyName = TEXT("Options");
 
 namespace NWorkDir
 {
-static const TCHAR *kWorkDirType = TEXT("WorkDirType");
-static const WCHAR *kWorkDirPath = L"WorkDirPath";
-static const TCHAR *kTempRemovableOnly = TEXT("TempRemovableOnly");
+static LPCTSTR const kWorkDirType = TEXT("WorkDirType");
+static LPCWSTR const kWorkDirPath = L"WorkDirPath";
+static LPCTSTR const kTempRemovableOnly = TEXT("TempRemovableOnly");
 
 
 void CInfo::Save()const
@@ -352,10 +352,10 @@ void CInfo::Load()
 
 }
 
-static const TCHAR *kCascadedMenu = TEXT("CascadedMenu");
-static const TCHAR *kContextMenu = TEXT("ContextMenu");
-static const TCHAR *kMenuIcons = TEXT("MenuIcons");
-static const TCHAR *kElimDup = TEXT("ElimDupExtract");
+static LPCTSTR const kCascadedMenu = TEXT("CascadedMenu");
+static LPCTSTR const kContextMenu = TEXT("ContextMenu");
+static LPCTSTR const kMenuIcons = TEXT("MenuIcons");
+static LPCTSTR const kElimDup = TEXT("ElimDupExtract");
 
 void CContextMenuInfo::Save() const
 {

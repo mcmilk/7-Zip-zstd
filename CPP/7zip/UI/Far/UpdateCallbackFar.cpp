@@ -62,6 +62,20 @@ STDMETHODIMP CUpdateCallback100Imp::SetNumFiles(UInt64 numFiles)
   return CheckBreak2();
 }
 
+
+STDMETHODIMP CUpdateCallback100Imp::SetTotal(const UInt64 * /* files */, const UInt64 * /* bytes */)
+{
+  return S_OK;
+}
+
+STDMETHODIMP CUpdateCallback100Imp::SetCompleted(const UInt64 * /* files */, const UInt64 * /* bytes */)
+{
+  MT_LOCK
+  return CheckBreak2();
+}
+
+
+
 STDMETHODIMP CUpdateCallback100Imp::SetTotal(UInt64 size)
 {
   MT_LOCK
@@ -203,10 +217,21 @@ STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password)
   MT_LOCK
 
   *password = NULL;
-  if (!m_PasswordIsDefined)
+  if (!PasswordIsDefined)
   {
-    RINOK(GetPassword(m_Password));
-    m_PasswordIsDefined = true;
+    RINOK(GetPassword(Password));
+    PasswordIsDefined = true;
   }
-  return StringToBstr(m_Password, password);
+  return StringToBstr(Password, password);
+}
+
+STDMETHODIMP CUpdateCallback100Imp::CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password)
+{
+  MT_LOCK
+
+  *password = NULL;
+  *passwordIsDefined = BoolToInt(PasswordIsDefined);
+  if (!PasswordIsDefined)
+    return S_OK;
+  return StringToBstr(Password, password);
 }

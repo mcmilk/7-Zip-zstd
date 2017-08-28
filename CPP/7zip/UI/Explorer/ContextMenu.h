@@ -79,7 +79,7 @@ private:
   HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
   int FindVerb(const UString &verb);
   bool FillCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &commandMapItem);
-  void AddMapItem_ForSubMenu(const wchar_t *ver);
+  void AddMapItem_ForSubMenu(const char *ver);
 };
 
 #endif

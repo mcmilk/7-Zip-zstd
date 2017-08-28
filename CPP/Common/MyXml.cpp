@@ -20,7 +20,7 @@ static bool IsSpaceChar(char c)
 
 #define SKIP_SPACES(s) while (IsSpaceChar(*s)) s++;
 
-int CXmlItem::FindProp(const AString &propName) const throw()
+int CXmlItem::FindProp(const char *propName) const throw()
 {
   FOR_VECTOR (i, Props)
     if (Props[i].Name == propName)
@@ -28,7 +28,7 @@ int CXmlItem::FindProp(const AString &propName) const throw()
   return -1;
 }
 
-AString CXmlItem::GetPropVal(const AString &propName) const
+AString CXmlItem::GetPropVal(const char *propName) const
 {
   int index = FindProp(propName);
   if (index >= 0)
@@ -36,12 +36,12 @@ AString CXmlItem::GetPropVal(const AString &propName) const
   return AString();
 }
 
-bool CXmlItem::IsTagged(const AString &tag) const throw()
+bool CXmlItem::IsTagged(const char *tag) const throw()
 {
   return (IsTag && Name == tag);
 }
 
-int CXmlItem::FindSubTag(const AString &tag) const throw()
+int CXmlItem::FindSubTag(const char *tag) const throw()
 {
   FOR_VECTOR (i, SubItems)
     if (SubItems[i].IsTagged(tag))
@@ -71,7 +71,7 @@ const AString * CXmlItem::GetSubStringPtr() const throw()
   return NULL;
 }
 
-AString CXmlItem::GetSubStringForTag(const AString &tag) const
+AString CXmlItem::GetSubStringForTag(const char *tag) const
 {
   int index = FindSubTag(tag);
   if (index >= 0)

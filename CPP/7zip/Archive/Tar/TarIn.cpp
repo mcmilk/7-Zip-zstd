@@ -91,6 +91,16 @@ static bool ParseInt64(const char *p, Int64 &val)
   return res;
 }
 
+static bool ParseInt64_MTime(const char *p, Int64 &val)
+{
+  // rare case tar contains spaces instead of MTime
+  for (unsigned i = 0; i < 12; i++)
+    if (p[i] != ' ')
+      return ParseInt64(p, val);
+  val = 0;
+  return true;
+}
+
 static bool ParseSize(const char *p, UInt64 &val)
 {
   if (GetBe32(p) == (UInt32)1 << 31)
@@ -124,7 +134,7 @@ API_FUNC_IsArc IsArc_Tar(const Byte *p2, size_t size)
   Int64 time;
   UInt32 checkSum;
   CHECK(ParseSize(p, packSize)); p += 12;
-  CHECK(ParseInt64(p, time)); p += 12;
+  CHECK(ParseInt64_MTime(p, time)); p += 12;
   CHECK(OctalToNumber32(p, 8, checkSum));
   return k_IsArc_Res_YES;
 }
@@ -192,7 +202,7 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
   RIF(ParseSize(p, item.PackSize));
   item.Size = item.PackSize;
   p += 12;
-  RIF(ParseInt64(p, item.MTime)); p += 12;
+  RIF(ParseInt64_MTime(p, item.MTime)); p += 12;
   
   UInt32 checkSum;
   RIF(OctalToNumber32(p, 8, checkSum));

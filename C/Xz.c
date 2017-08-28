@@ -1,5 +1,5 @@
 /* Xz.c - Xz
-2015-05-01 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -20,7 +20,7 @@ unsigned Xz_WriteVarInt(Byte *buf, UInt64 v)
     v >>= 7;
   }
   while (v != 0);
-  buf[i - 1] &= 0x7F;
+  buf[(size_t)i - 1] &= 0x7F;
   return i;
 }
 
@@ -31,9 +31,9 @@ void Xz_Construct(CXzStream *p)
   p->flags = 0;
 }
 
-void Xz_Free(CXzStream *p, ISzAlloc *alloc)
+void Xz_Free(CXzStream *p, ISzAllocPtr alloc)
 {
-  alloc->Free(alloc, p->blocks);
+  ISzAlloc_Free(alloc, p->blocks);
   p->numBlocks = p->numBlocksAllocated = 0;
   p->blocks = 0;
 }

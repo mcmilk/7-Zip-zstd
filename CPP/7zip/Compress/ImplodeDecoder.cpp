@@ -10,214 +10,248 @@ namespace NCompress {
 namespace NImplode {
 namespace NDecoder {
 
-class CException
+bool CHuffmanDecoder::Build(const Byte *lens, unsigned numSymbols) throw()
 {
-public:
-  enum ECauseType
+  unsigned counts[kNumHuffmanBits + 1];
+  
+  unsigned i;
+  for (i = 0; i <= kNumHuffmanBits; i++)
+    counts[i] = 0;
+  
+  unsigned sym;
+  for (sym = 0; sym < numSymbols; sym++)
+    counts[lens[sym]]++;
+
+  const UInt32 kMaxValue = (UInt32)1 << kNumHuffmanBits;
+  
+  // _limits[0] = kMaxValue;
+
+  UInt32 startPos = kMaxValue;
+  UInt32 sum = 0;
+
+  for (i = 1; i <= kNumHuffmanBits; i++)
   {
-    kData
-  } m_Cause;
-  CException(ECauseType cause): m_Cause(cause) {}
-};
+    const UInt32 cnt = counts[i];
+    const UInt32 range = cnt << (kNumHuffmanBits - i);
+    if (startPos < range)
+      return false;
+    startPos -= range;
+    _limits[i] = startPos;
+    _poses[i] = sum;
+    sum += cnt;
+    counts[i] = sum;
+  }
 
-static const int kNumDistanceLowDirectBitsForBigDict = 7;
-static const int kNumDistanceLowDirectBitsForSmallDict = 6;
+  // counts[0] += sum;
 
-static const int kNumBitsInByte = 8;
+  if (startPos != 0)
+    return false;
 
-// static const int kLevelStructuresNumberFieldSize = kNumBitsInByte;
-static const int kLevelStructuresNumberAdditionalValue = 1;
+  for (sym = 0; sym < numSymbols; sym++)
+  {
+    unsigned len = lens[sym];
+    if (len != 0)
+      _symbols[--counts[len]] = (Byte)sym;
+  }
 
-static const int kNumLevelStructureLevelBits = 4;
-static const int kLevelStructureLevelAdditionalValue = 1;
-
-static const int kNumLevelStructureRepNumberBits = 4;
-static const int kLevelStructureRepNumberAdditionalValue = 1;
+  return true;
+}
 
 
-static const int kLiteralTableSize = (1 << kNumBitsInByte);
-static const int kDistanceTableSize = 64;
-static const int kLengthTableSize = 64;
-
-static const UInt32 kHistorySize =
-    (1 << MyMax(kNumDistanceLowDirectBitsForBigDict,
-                kNumDistanceLowDirectBitsForSmallDict)) *
-    kDistanceTableSize; // = 8 KB;
-
-static const int kNumAdditionalLengthBits = 8;
-
-static const UInt32 kMatchMinLenWhenLiteralsOn = 3;
-static const UInt32 kMatchMinLenWhenLiteralsOff = 2;
-
-static const UInt32 kMatchMinLenMax = MyMax(kMatchMinLenWhenLiteralsOn,
-    kMatchMinLenWhenLiteralsOff);  // 3
-
-// static const UInt32 kMatchMaxLenMax = kMatchMinLenMax + (kLengthTableSize - 1) + (1 << kNumAdditionalLengthBits) - 1;  // or 2
-
-enum
+UInt32 CHuffmanDecoder::Decode(CInBit *inStream) const throw()
 {
-  kMatchId = 0,
-  kLiteralId = 1
-};
+  UInt32 val = inStream->GetValue(kNumHuffmanBits);
+  unsigned numBits;
+  for (numBits = 1; val < _limits[numBits]; numBits++);
+  UInt32 sym = _symbols[_poses[numBits] + ((val - _limits[numBits]) >> (kNumHuffmanBits - numBits))];
+  inStream->MovePos(numBits);
+  return sym;
+}
+
+
+
+static const unsigned kNumLenDirectBits = 8;
+
+static const unsigned kNumDistDirectBitsSmall = 6;
+static const unsigned kNumDistDirectBitsBig = 7;
+
+static const unsigned kLitTableSize = (1 << 8);
+static const unsigned kDistTableSize = 64;
+static const unsigned kLenTableSize = 64;
+
+static const UInt32 kHistorySize = (1 << kNumDistDirectBitsBig) * kDistTableSize; // 8 KB
 
 
 CCoder::CCoder():
-  m_LiteralDecoder(kLiteralTableSize),
-  m_LengthDecoder(kLengthTableSize),
-  m_DistanceDecoder(kDistanceTableSize)
-{
-}
+  _fullStreamMode(false),
+  _flags(0)
+{}
 
-/*
-void CCoder::ReleaseStreams()
-{
-  m_OutWindowStream.ReleaseStream();
-  m_InBitStream.ReleaseStream();
-}
-*/
 
-bool CCoder::ReadLevelItems(NImplode::NHuffman::CDecoder &decoder,
-    Byte *levels, int numLevelItems)
+bool CCoder::BuildHuff(CHuffmanDecoder &decoder, unsigned numSymbols)
 {
-  int numCodedStructures = m_InBitStream.ReadBits(kNumBitsInByte) +
-      kLevelStructuresNumberAdditionalValue;
-  int currentIndex = 0;
-  for (int i = 0; i < numCodedStructures; i++)
+  Byte levels[kMaxHuffTableSize];
+  unsigned numRecords = (unsigned)_inBitStream.ReadAlignedByte() + 1;
+  unsigned index = 0;
+  do
   {
-    int level = m_InBitStream.ReadBits(kNumLevelStructureLevelBits) +
-      kLevelStructureLevelAdditionalValue;
-    int rep = m_InBitStream.ReadBits(kNumLevelStructureRepNumberBits) +
-      kLevelStructureRepNumberAdditionalValue;
-    if (currentIndex + rep > numLevelItems)
-      throw CException(CException::kData);
-    for (int j = 0; j < rep; j++)
-      levels[currentIndex++] = (Byte)level;
-  }
-  if (currentIndex != numLevelItems)
-    return false;
-  return decoder.SetCodeLengths(levels);
-}
-
-
-bool CCoder::ReadTables(void)
-{
-  if (m_LiteralsOn)
-  {
-    Byte literalLevels[kLiteralTableSize];
-    if (!ReadLevelItems(m_LiteralDecoder, literalLevels, kLiteralTableSize))
+    unsigned b = (unsigned)_inBitStream.ReadAlignedByte();
+    Byte level = (Byte)((b & 0xF) + 1);
+    unsigned rep = ((unsigned)b >> 4) + 1;
+    if (index + rep > numSymbols)
       return false;
+    for (unsigned j = 0; j < rep; j++)
+      levels[index++] = level;
   }
+  while (--numRecords);
 
-  Byte lengthLevels[kLengthTableSize];
-  if (!ReadLevelItems(m_LengthDecoder, lengthLevels, kLengthTableSize))
+  if (index != numSymbols)
     return false;
-
-  Byte distanceLevels[kDistanceTableSize];
-  return ReadLevelItems(m_DistanceDecoder, distanceLevels, kDistanceTableSize);
+  return decoder.Build(levels, numSymbols);
 }
 
-/*
-class CCoderReleaser
-{
-  CCoder *m_Coder;
-public:
-  CCoderReleaser(CCoder *coder): m_Coder(coder) {}
-  ~CCoderReleaser() { m_Coder->ReleaseStreams(); }
-};
-*/
 
 HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
-  if (!m_InBitStream.Create(1 << 20))
+  if (!_inBitStream.Create(1 << 18))
     return E_OUTOFMEMORY;
-  if (!m_OutWindowStream.Create(kHistorySize))
+  if (!_outWindowStream.Create(kHistorySize << 1)) // 16 KB
     return E_OUTOFMEMORY;
-  if (outSize == NULL)
+  if (!outSize)
     return E_INVALIDARG;
+
+  _outWindowStream.SetStream(outStream);
+  _outWindowStream.Init(false);
+  _inBitStream.SetStream(inStream);
+  _inBitStream.Init();
+
+  const unsigned numDistDirectBits = (_flags & 2) ?
+      kNumDistDirectBitsBig:
+      kNumDistDirectBitsSmall;
+  const bool literalsOn = ((_flags & 4) != 0);
+  const UInt32 minMatchLen = (literalsOn ? 3 : 2);
+
+  if (literalsOn)
+    if (!BuildHuff(_litDecoder, kLitTableSize))
+      return S_FALSE;
+  if (!BuildHuff(_lenDecoder, kLenTableSize))
+    return S_FALSE;
+  if (!BuildHuff(_distDecoder, kDistTableSize))
+    return S_FALSE;
+ 
+  UInt64 prevProgress = 0;
+  bool moreOut = false;
   UInt64 pos = 0, unPackSize = *outSize;
 
-  m_OutWindowStream.SetStream(outStream);
-  m_OutWindowStream.Init(false);
-  m_InBitStream.SetStream(inStream);
-  m_InBitStream.Init();
-  // CCoderReleaser coderReleaser(this);
-
-  if (!ReadTables())
-    return S_FALSE;
-  
   while (pos < unPackSize)
   {
-    if (progress != NULL && pos % (1 << 16) == 0)
+    if (progress && (pos - prevProgress) >= (1 << 18))
     {
-      UInt64 packSize = m_InBitStream.GetProcessedSize();
+      const UInt64 packSize = _inBitStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&packSize, &pos));
+      prevProgress = pos;
     }
-    if (m_InBitStream.ReadBits(1) == kMatchId) // match
+
+    if (_inBitStream.ReadBits(1) != 0)
     {
-      UInt32 lowDistBits = m_InBitStream.ReadBits(m_NumDistanceLowDirectBits);
-      UInt32 distance = m_DistanceDecoder.DecodeSymbol(&m_InBitStream);
-      if (distance >= kDistanceTableSize)
-        return S_FALSE;
-      distance = (distance << m_NumDistanceLowDirectBits) + lowDistBits;
-      UInt32 lengthSymbol = m_LengthDecoder.DecodeSymbol(&m_InBitStream);
-      if (lengthSymbol >= kLengthTableSize)
-        return S_FALSE;
-      UInt32 length = lengthSymbol + m_MinMatchLength;
-      if (lengthSymbol == kLengthTableSize - 1) // special symbol = 63
-        length += m_InBitStream.ReadBits(kNumAdditionalLengthBits);
-      while (distance >= pos && length > 0)
+      Byte b;
+      if (literalsOn)
       {
-        m_OutWindowStream.PutByte(0);
-        pos++;
-        length--;
+        UInt32 sym = _litDecoder.Decode(&_inBitStream);
+        // if (sym >= kLitTableSize) break;
+        b = (Byte)sym;
       }
-      if (length > 0)
-        m_OutWindowStream.CopyBlock(distance, length);
-      pos += length;
+      else
+        b = (Byte)_inBitStream.ReadBits(8);
+      _outWindowStream.PutByte(b);
+      pos++;
     }
     else
     {
-      Byte b;
-      if (m_LiteralsOn)
+      UInt32 lowDistBits = _inBitStream.ReadBits(numDistDirectBits);
+      UInt32 dist = _distDecoder.Decode(&_inBitStream);
+      // if (dist >= kDistTableSize) break;
+      dist = (dist << numDistDirectBits) + lowDistBits;
+      UInt32 len = _lenDecoder.Decode(&_inBitStream);
+      // if (len >= kLenTableSize) break;
+      if (len == kLenTableSize - 1)
+        len += _inBitStream.ReadBits(kNumLenDirectBits);
+      len += minMatchLen;
+
       {
-        UInt32 temp = m_LiteralDecoder.DecodeSymbol(&m_InBitStream);
-        if (temp >= kLiteralTableSize)
-          return S_FALSE;
-        b = (Byte)temp;
+        const UInt64 limit = unPackSize - pos;
+        if (len > limit)
+        {
+          moreOut = true;
+          len = (UInt32)limit;
+        }
       }
-      else
-        b = (Byte)m_InBitStream.ReadBits(kNumBitsInByte);
-      m_OutWindowStream.PutByte(b);
-      pos++;
+
+      while (dist >= pos && len != 0)
+      {
+        _outWindowStream.PutByte(0);
+        pos++;
+        len--;
+      }
+      
+      if (len != 0)
+      {
+        _outWindowStream.CopyBlock(dist, len);
+        pos += len;
+      }
     }
   }
-  if (pos > unPackSize)
-    return S_FALSE;
-  return m_OutWindowStream.Flush();
+
+  HRESULT res = _outWindowStream.Flush();
+
+  if (res == S_OK)
+  {
+    if (_fullStreamMode)
+    {
+      if (moreOut)
+        res = S_FALSE;
+      if (inSize && *inSize != _inBitStream.GetProcessedSize())
+        res = S_FALSE;
+    }
+    if (pos != unPackSize)
+      res = S_FALSE;
+  }
+
+  return res;
 }
+
 
 STDMETHODIMP CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress);  }
-  catch(const CLzOutWindowException &e) { return e.ErrorCode; }
+  // catch(const CInBufferException &e)  { return e.ErrorCode; }
+  // catch(const CLzOutWindowException &e) { return e.ErrorCode; }
+  catch(const CSystemException &e) { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
 }
 
+
 STDMETHODIMP CCoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
-  if (size < 1)
-    return E_INVALIDARG;
-  Byte flag = data[0];
-  m_BigDictionaryOn = ((flag & 2) != 0);
-  m_NumDistanceLowDirectBits = m_BigDictionaryOn ?
-      kNumDistanceLowDirectBitsForBigDict:
-      kNumDistanceLowDirectBitsForSmallDict;
-  m_LiteralsOn = ((flag & 4) != 0);
-  m_MinMatchLength = m_LiteralsOn ?
-      kMatchMinLenWhenLiteralsOn :
-      kMatchMinLenWhenLiteralsOff;
+  if (size == 0)
+    return E_NOTIMPL;
+  _flags = data[0];
+  return S_OK;
+}
+
+
+STDMETHODIMP CCoder::SetFinishMode(UInt32 finishMode)
+{
+  _fullStreamMode = (finishMode != 0);
+  return S_OK;
+}
+
+
+STDMETHODIMP CCoder::GetInStreamProcessedSize(UInt64 *value)
+{
+  *value = _inBitStream.GetProcessedSize();
   return S_OK;
 }
 

@@ -442,7 +442,7 @@ static inline void ParseStream(bool oldVersion, const Byte *p, CStreamInfo &s)
 }
 
 
-static const char *kLongPath = "[LongPath]";
+#define kLongPath "[LongPath]"
 
 void CDatabase::GetShortName(unsigned index, NWindows::NCOM::CPropVariant &name) const
 {

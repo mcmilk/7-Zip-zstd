@@ -3,7 +3,6 @@
 #ifndef __ARCHIVE_ISO_IN_H
 #define __ARCHIVE_ISO_IN_H
 
-#include "../../../Common/IntToString.h"
 #include "../../../Common/MyCom.h"
 
 #include "../../IStream.h"

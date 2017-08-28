@@ -47,17 +47,17 @@ struct CInitDialogItem
 class CStartupInfo
 {
   PluginStartupInfo m_Data;
-  CSysString m_RegistryPath;
+  AString m_RegistryPath;
 
-  CSysString GetFullKeyName(const CSysString &keyName) const;
+  CSysString GetFullKeyName(const char *keyName) const;
   LONG CreateRegKey(HKEY parentKey,
-    const CSysString &keyName, NWindows::NRegistry::CKey &destKey) const;
+    const char *keyName, NWindows::NRegistry::CKey &destKey) const;
   LONG OpenRegKey(HKEY parentKey,
-    const CSysString &keyName, NWindows::NRegistry::CKey &destKey) const;
+    const char *keyName, NWindows::NRegistry::CKey &destKey) const;
 
 public:
   void Init(const PluginStartupInfo &pluginStartupInfo,
-      const CSysString &pluginNameForRegestry);
+      const char *pluginNameForRegistry);
   const char *GetMsgString(int messageId);
   
   int ShowMessage(unsigned int flags, const char *helpTopic,
@@ -82,20 +82,20 @@ public:
   HANDLE SaveScreen();
   void RestoreScreen(HANDLE handle);
 
-  void SetRegKeyValue(HKEY parentKey, const CSysString &keyName,
+  void SetRegKeyValue(HKEY parentKey, const char *keyName,
       const LPCTSTR valueName, LPCTSTR value) const;
-  void SetRegKeyValue(HKEY hRoot, const CSysString &keyName,
+  void SetRegKeyValue(HKEY hRoot, const char *keyName,
       const LPCTSTR valueName, UInt32 value) const;
-  void SetRegKeyValue(HKEY hRoot, const CSysString &keyName,
+  void SetRegKeyValue(HKEY hRoot, const char *keyName,
       const LPCTSTR valueName, bool value) const;
 
-  CSysString QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+  CSysString QueryRegKeyValue(HKEY parentKey, const char *keyName,
       LPCTSTR valueName, const CSysString &valueDefault) const;
 
-  UInt32 QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+  UInt32 QueryRegKeyValue(HKEY parentKey, const char *keyName,
       LPCTSTR valueName, UInt32 valueDefault) const;
 
-  bool QueryRegKeyValue(HKEY parentKey, const CSysString &keyName,
+  bool QueryRegKeyValue(HKEY parentKey, const char *keyName,
       LPCTSTR valueName, bool valueDefault) const;
 
   bool Control(HANDLE plugin, int command, void *param);
@@ -131,7 +131,7 @@ public:
       unsigned int flags,
       const char *title,
       const char *helpTopic,
-      const CSysStringVector &items,
+      const AStringVector &items,
       int selectedItem);
 
   int Editor(const char *fileName, const char *title,

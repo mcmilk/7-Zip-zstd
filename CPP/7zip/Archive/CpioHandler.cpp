@@ -36,7 +36,7 @@ static const Byte kMagicHex    = '1'; // New ASCII Format
 static const Byte kMagicHexCrc = '2'; // New CRC Format
 static const Byte kMagicOct    = '7'; // Portable ASCII Format
 
-static const char *kName_TRAILER = "TRAILER!!!";
+static const char * const kName_TRAILER = "TRAILER!!!";
 
 static const unsigned k_BinRecord_Size = 2 + 8 * 2 + 2 * 4;
 static const unsigned k_OctRecord_Size = 6 + 8 * 6 + 2 * 11;
@@ -627,7 +627,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       #endif
       if (needConvert)
         res = MultiByteToUnicodeString(item.Name, CP_OEMCP);
-      prop = NItemName::GetOSName(res);
+      prop = NItemName::GetOsPath(res);
       break;
     }
     case kpidIsDir: prop = item.IsDir(); break;

@@ -23,7 +23,7 @@ static const UInt32 kLangIDs_Colon[] =
   IDT_EDIT_VIEWER
 };
 
-static LPCWSTR kEditTopic = L"FM/options.htm#editor";
+#define kEditTopic "FM/options.htm#editor"
 
 bool CEditPage::OnInit()
 {
@@ -76,17 +76,38 @@ LONG CEditPage::OnApply()
 
 void CEditPage::OnNotifyHelp()
 {
-  ShowHelpWindow(NULL, kEditTopic);
+  ShowHelpWindow(kEditTopic);
 }
+
+void SplitCmdLineSmart(const UString &cmd, UString &prg, UString &params);
 
 static void Edit_BrowseForFile(NWindows::NControl::CEdit &edit, HWND hwnd)
 {
-  UString path;
-  edit.GetText(path);
+  UString cmd;
+  edit.GetText(cmd);
+
+  UString param;
+  UString prg;
+  
+  SplitCmdLineSmart(cmd, prg, param);
+
   UString resPath;
-  if (MyBrowseForFile(hwnd, 0, path, NULL, L"*.exe", resPath))
+  
+  if (MyBrowseForFile(hwnd, 0, prg, NULL, L"*.exe", resPath))
   {
-    edit.SetText(resPath);
+    resPath.Trim();
+    cmd = resPath;
+    /*
+    if (!param.IsEmpty() && !resPath.IsEmpty())
+    {
+      cmd.InsertAtFront(L'\"');
+      cmd += L'\"';
+      cmd.Add_Space();
+      cmd += param;
+    }
+    */
+
+    edit.SetText(cmd);
     // Changed();
   }
 }

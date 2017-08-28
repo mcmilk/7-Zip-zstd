@@ -12,7 +12,6 @@ This code is based on:
 #include "../../../C/Ppmd8.h"
 
 #include "../../Common/ComTry.h"
-#include "../../Common/IntToString.h"
 #include "../../Common/StringConvert.h"
 
 #include "../../Windows/PropVariant.h"
@@ -104,6 +103,8 @@ class CHandler:
   UInt64 _packSize;
   CMyComPtr<ISequentialInStream> _stream;
 
+  void GetVersion(NCOM::CPropVariant &prop);
+
 public:
   MY_UNKNOWN_IMP2(IInArchive, IArchiveOpenSeq)
   INTERFACE_IInArchive(;)
@@ -118,8 +119,30 @@ static const Byte kProps[] =
   kpidMethod
 };
 
+static const Byte kArcProps[] =
+{
+  kpidMethod
+};
+
 IMP_IInArchive_Props
-IMP_IInArchive_ArcProps_NO_Table
+IMP_IInArchive_ArcProps
+
+void CHandler::GetVersion(NCOM::CPropVariant &prop)
+{
+  AString s ("PPMd");
+  s += (char)('A' + _item.Ver);
+  s += ":o";
+  s.Add_UInt32(_item.Order);
+  s += ":mem";
+  s.Add_UInt32(_item.MemInMB);
+  s += 'm';
+  if (_item.Ver >= kNewHeaderVer && _item.Restor != 0)
+  {
+    s += ":r";
+    s.Add_UInt32(_item.Restor);
+  }
+  prop = s;
+}
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
@@ -127,6 +150,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   switch (propID)
   {
     case kpidPhySize: if (_packSize_Defined) prop = _packSize; break;
+    case kpidMethod: GetVersion(prop); break;
   }
   prop.Detach(value);
   return S_OK;
@@ -137,14 +161,6 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = 1;
   return S_OK;
-}
-
-static void UIntToString(AString &s, const char *prefix, unsigned value)
-{
-  s += prefix;
-  char temp[16];
-  ::ConvertUInt32ToString((UInt32)value, temp);
-  s += temp;
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
@@ -164,17 +180,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
     }
     case kpidAttrib: prop = _item.Attrib; break;
     case kpidPackSize: if (_packSize_Defined) prop = _packSize; break;
-    case kpidMethod:
-    {
-      AString s = "PPMd";
-      s += (char)('A' + _item.Ver);
-      UIntToString(s, ":o", _item.Order);
-      UIntToString(s, ":mem", _item.MemInMB);
-      s += 'm';
-      if (_item.Ver >= kNewHeaderVer && _item.Restor != 0)
-        UIntToString(s, ":r", _item.Restor);
-      prop = s;
-    }
+    case kpidMethod: GetVersion(prop); break;
   }
   prop.Detach(value);
   return S_OK;
@@ -217,7 +223,7 @@ static const UInt32 kBot = (1 << 15);
 
 struct CRangeDecoder
 {
-  IPpmd7_RangeDec s;
+  IPpmd7_RangeDec vt;
   UInt32 Range;
   UInt32 Code;
   UInt32 Low;
@@ -251,15 +257,17 @@ public:
 
 extern "C" {
 
-static UInt32 Range_GetThreshold(void *pp, UInt32 total)
+#define GET_RangeDecoder CRangeDecoder *p = CONTAINER_FROM_VTBL(pp, CRangeDecoder, vt);
+
+static UInt32 Range_GetThreshold(const IPpmd7_RangeDec *pp, UInt32 total)
 {
-  CRangeDecoder *p = (CRangeDecoder *)pp;
+  GET_RangeDecoder
   return p->Code / (p->Range /= total);
 }
 
-static void Range_Decode(void *pp, UInt32 start, UInt32 size)
+static void Range_Decode(const IPpmd7_RangeDec *pp, UInt32 start, UInt32 size)
 {
-  CRangeDecoder *p = (CRangeDecoder *)pp;
+  GET_RangeDecoder
   start *= p->Range;
   p->Low += start;
   p->Code -= start;
@@ -267,17 +275,17 @@ static void Range_Decode(void *pp, UInt32 start, UInt32 size)
   p->Normalize();
 }
 
-static UInt32 Range_DecodeBit(void *pp, UInt32 size0)
+static UInt32 Range_DecodeBit(const IPpmd7_RangeDec *pp, UInt32 size0)
 {
-  CRangeDecoder *p = (CRangeDecoder *)pp;
+  GET_RangeDecoder
   if (p->Code / (p->Range >>= 14) < size0)
   {
-    Range_Decode(p, 0, size0);
+    Range_Decode(&p->vt, 0, size0);
     return 0;
   }
   else
   {
-    Range_Decode(p, size0, (1 << 14) - size0);
+    Range_Decode(&p->vt, size0, (1 << 14) - size0);
     return 1;
   }
 }
@@ -286,9 +294,9 @@ static UInt32 Range_DecodeBit(void *pp, UInt32 size0)
 
 CRangeDecoder::CRangeDecoder()
 {
-  s.GetThreshold = Range_GetThreshold;
-  s.Decode = Range_Decode;
-  s.DecodeBit = Range_DecodeBit;
+  vt.GetThreshold = Range_GetThreshold;
+  vt.Decode = Range_Decode;
+  vt.DecodeBit = Range_DecodeBit;
 }
 
 struct CPpmdCpp
@@ -336,7 +344,7 @@ struct CPpmdCpp
     }
     else
     {
-      _ppmd8.Stream.In = &inStream->p;
+      _ppmd8.Stream.In = &inStream->vt;
       return Ppmd8_RangeDec_Init(&_ppmd8) != 0;
     }
   }
@@ -412,7 +420,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         for (i = 0; i < kBufSize; i++)
         {
-          sym = Ppmd7_DecodeSymbol(&ppmd._ppmd7, &ppmd._rc.s);
+          sym = Ppmd7_DecodeSymbol(&ppmd._ppmd7, &ppmd._rc.vt);
           if (inBuf.Extra || sym < 0)
             break;
           outBuf.Buf[i] = (Byte)sym;

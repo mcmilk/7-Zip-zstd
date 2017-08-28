@@ -11,6 +11,7 @@
 #include "../../Common/MyLinux.h"
 #include "../../Common/IntToString.h"
 #include "../../Common/StringConvert.h"
+#include "../../Common/UTFConvert.h"
 
 #include "../../Windows/PropVariantUtils.h"
 #include "../../Windows/TimeUtils.h"
@@ -67,7 +68,7 @@ static const UInt32 kSignature32_LZ = 0x71736873;
 
 static const char * const k_Methods[] =
 {
-    "Unknown"
+    "0"
   , "ZLIB"
   , "LZMA"
   , "LZO"
@@ -109,16 +110,16 @@ enum
   kFlag_EXPORT
 };
 
-static const CUInt32PCharPair k_Flags[] =
+static const char * const k_Flags[] =
 {
-  { kFlag_UNC_INODES, "UNCOMPRESSED_INODES" },
-  { kFlag_UNC_DATA, "UNCOMPRESSED_DATA" },
-  { kFlag_CHECK, "CHECK" },
-  { kFlag_UNC_FRAGS, "UNCOMPRESSED_FRAGMENTS" },
-  { kFlag_NO_FRAGS, "NO_FRAGMENTS" },
-  { kFlag_ALWAYS_FRAG, "ALWAYS_FRAGMENTS" },
-  { kFlag_DUPLICATE, "DUPLICATES_REMOVED" },
-  { kFlag_EXPORT, "EXPORTABLE" }
+    "UNCOMPRESSED_INODES"
+  , "UNCOMPRESSED_DATA"
+  , "CHECK"
+  , "UNCOMPRESSED_FRAGMENTS"
+  , "NO_FRAGMENTS"
+  , "ALWAYS_FRAGMENTS"
+  , "DUPLICATES_REMOVED"
+  , "EXPORTABLE"
 };
 
 static const UInt32 kNotCompressedBit16 = (1 << 15);
@@ -841,6 +842,8 @@ class CHandler:
   CHeader _h;
   bool _noPropsLZMA;
   bool _needCheckLzma;
+  
+  UInt32 _openCodePage;
 
   CMyComPtr<IInStream> _stream;
   UInt64 _sizeCalculated;
@@ -944,7 +947,8 @@ static const Byte kArcProps[] =
   kpidClusterSize,
   kpidBigEndian,
   kpidCTime,
-  kpidCharacts
+  kpidCharacts,
+  kpidCodePage
   // kpidNumBlocks
 };
 
@@ -1333,6 +1337,8 @@ HRESULT CHandler::OpenDir(int parent, UInt32 startBlock, UInt32 offset, unsigned
     return S_FALSE;
   rem = fileSize;
 
+  AString tempString;
+
   CRecordVector<CTempItem> tempItems;
   while (rem != 0)
   {
@@ -1398,7 +1404,7 @@ HRESULT CHandler::OpenDir(int parent, UInt32 startBlock, UInt32 offset, unsigned
       }
       
       CItem item;
-      item.Ptr = (UInt32)(p - _dirs.Data);
+      item.Ptr = (UInt32)(p - (const Byte *)_dirs.Data);
 
       UInt32 size;
       if (_h.IsOldVersion())
@@ -1432,6 +1438,14 @@ HRESULT CHandler::OpenDir(int parent, UInt32 startBlock, UInt32 offset, unsigned
       size++;
       if (rem < size)
         return S_FALSE;
+
+      if (_openCodePage == CP_UTF8)
+      {
+        tempString.SetFrom_CalcLen((const char *)p, size);
+        if (!CheckUTF8(tempString))
+          _openCodePage = CP_OEMCP;
+      }
+
       p += size;
       rem -= size;
       item.Parent = parent;
@@ -1706,6 +1720,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
 
 STDMETHODIMP CHandler::Close()
 {
+  _openCodePage = CP_UTF8;
   _sizeCalculated = 0;
 
   _limitedInStreamSpec->ReleaseStream();
@@ -1829,6 +1844,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   {
     case kpidMethod:
     {
+      char sz[16];
       const char *s;
       if (_noPropsLZMA)
         s = "LZMA Spec";
@@ -1836,25 +1852,27 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         s = "LZMA ZLIB";
       else
       {
-        s = k_Methods[0];
+        s = NULL;
         if (_h.Method < ARRAY_SIZE(k_Methods))
           s = k_Methods[_h.Method];
+        if (!s)
+        {
+          ConvertUInt32ToString(_h.Method, sz);
+          s = sz;
+        }
       }
       prop = s;
       break;
     }
     case kpidFileSystem:
     {
-      AString res = "SquashFS";
+      AString res ("SquashFS");
       if (_h.SeveralMethods)
         res += "-LZMA";
       res.Add_Space();
-      char s[16];
-      ConvertUInt32ToString(_h.Major, s);
-      res += s;
+      res.Add_UInt32(_h.Major);
       res += '.';
-      ConvertUInt32ToString(_h.Minor, s);
-      res += s;
+      res.Add_UInt32(_h.Minor);
       prop = res;
       break;
     }
@@ -1875,6 +1893,24 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       if (_sizeCalculated >= _h.InodeTable)
         prop = _sizeCalculated - _h.InodeTable;
       break;
+
+    case kpidCodePage:
+    {
+      char sz[16];
+      const char *name = NULL;
+      switch (_openCodePage)
+      {
+        case CP_OEMCP: name = "OEM"; break;
+        case CP_UTF8: name = "UTF-8"; break;
+      }
+      if (!name)
+      {
+        ConvertUInt32ToString(_openCodePage, sz);
+        name = sz;
+      }
+      prop = name;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;
@@ -1892,7 +1928,17 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
   switch (propID)
   {
-    case kpidPath: prop = MultiByteToUnicodeString(GetPath(index), CP_OEMCP); break;
+    case kpidPath:
+    {
+      AString path (GetPath(index));
+      UString s;
+      if (_openCodePage == CP_UTF8)
+        ConvertUTF8ToUnicode(path, s);
+      else
+        MultiByteToUnicodeString2(s, path, _openCodePage);
+      prop = s;
+      break;
+    }
     case kpidIsDir: prop = isDir; break;
     // case kpidOffset: if (!node.IsLink()) prop = (UInt64)node.StartBlock; break;
     case kpidSize: if (!isDir) prop = node.GetSize(); break;

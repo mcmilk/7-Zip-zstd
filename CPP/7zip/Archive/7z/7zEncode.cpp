@@ -333,7 +333,7 @@ HRESULT CEncoder::Encode(
   }
 
   for (i = 0; i < numMethods; i++)
-    _mixer->SetCoderInfo(i, NULL, NULL);
+    _mixer->SetCoderInfo(i, NULL, NULL, false);
 
 
   /* inStreamSize can be used by BCJ2 to set optimal range of conversion.
@@ -429,10 +429,12 @@ HRESULT CEncoder::Encode(
   for (i = 1; i < _bindInfo.PackStreams.Size(); i++)
     outStreamPointers.Add(tempBuffers[i - 1]);
 
+  bool dataAfterEnd_Error;
+
   RINOK(_mixer->Code(
       &inStreamPointer,
       &outStreamPointers.Front(),
-      mtProgress ? (ICompressProgressInfo *)mtProgress : compressProgress));
+      mtProgress ? (ICompressProgressInfo *)mtProgress : compressProgress, dataAfterEnd_Error));
   
   if (_bindInfo.PackStreams.Size() != 0)
     packSizes.Add(outStreamSizeCountSpec->GetSize());

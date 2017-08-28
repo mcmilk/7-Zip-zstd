@@ -19,6 +19,18 @@
 
 using namespace NWindows;
 
+/* Unicode characters for space:
+0x009C STRING TERMINATOR
+0x00B7 Middle dot
+0x237D Shouldered open box
+0x2420 Symbol for space
+0x2422 Blank symbol
+0x2423 Open box
+*/
+
+#define SPACE_REPLACE_CHAR (wchar_t)(0x2423)
+#define SPACE_TERMINATOR_CHAR (wchar_t)(0x9C)
+
 #define INT_TO_STR_SPEC(v) \
   while (v >= 10) { temp[i++] = (unsigned char)('0' + (unsigned)(v % 10)); v /= 10; } \
   *s++ = (unsigned char)('0' + (unsigned)v);
@@ -42,7 +54,7 @@ static void ConvertSizeToString(UInt64 val, wchar_t *s) throw()
   {
     if (i != 0)
     {
-      *s++ = temp[i - 1];
+      *s++ = temp[(size_t)i - 1];
       if (i == 2)
         *s++ = temp[0];
     }
@@ -62,9 +74,9 @@ static void ConvertSizeToString(UInt64 val, wchar_t *s) throw()
   do
   {
     s[0] = ' ';
-    s[1] = temp[i - 1];
-    s[2] = temp[i - 2];
-    s[3] = temp[i - 3];
+    s[1] = temp[(size_t)i - 1];
+    s[2] = temp[(size_t)i - 2];
+    s[3] = temp[(size_t)i - 3];
     s += 4;
   }
   while (i -= 3);
@@ -337,17 +349,17 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
           {
             if (c != 0x202E) // RLO
               continue;
-            text[dest - 1] = '_';
+            text[(size_t)dest - 1] = '_';
             continue;
           }
           
-          if (name[i + 1] != ' ')
+          if (name[i] != ' ')
             continue;
           
-          unsigned t = 2;
+          unsigned t = 1;
           for (; name[i + t] == ' '; t++);
-        
-          if (t >= 4 && dest + 4 <= limit)
+
+          if (t >= 4 && dest + 4 < limit)
           {
             text[dest++] = '.';
             text[dest++] = '.';
@@ -356,6 +368,20 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
             i += t;
           }
         }
+
+        if (dest == 0)
+          text[dest++]= '_';
+
+        #ifdef _WIN32
+        else if (text[(size_t)dest - 1] == ' ')
+        {
+          if (dest < limit)
+            text[dest++] = SPACE_TERMINATOR_CHAR;
+          else
+            text[dest - 1] = SPACE_REPLACE_CHAR;
+        }
+        #endif
+
         text[dest] = 0;
         // OutputDebugStringW(text);
         return 0;
@@ -392,7 +418,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   if (res != S_OK)
   {
     MyStringCopy(text, L"Error: ");
-    // s = UString(L"Error: ") + HResultToMessage(res);
+    // s = UString("Error: ") + HResultToMessage(res);
   }
   else if ((prop.vt == VT_UI8 || prop.vt == VT_UI4 || prop.vt == VT_UI2) && IsSizeProp(propID))
   {
@@ -418,7 +444,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   else
   {
     char temp[64];
-    ConvertPropertyToShortString(temp, prop, propID, false);
+    ConvertPropertyToShortString2(temp, prop, propID, _timestampLevel);
     unsigned i;
     unsigned limit = item.cchTextMax - 1;
     for (i = 0; i < limit; i++)
@@ -712,7 +738,7 @@ void CPanel::Refresh_StatusBar()
       {
         char dateString2[32];
         dateString2[0] = 0;
-        ConvertPropertyToShortString(dateString2, prop, kpidMTime, false);
+        ConvertPropertyToShortString2(dateString2, prop, kpidMTime);
         for (unsigned i = 0;; i++)
         {
           char c = dateString2[i];

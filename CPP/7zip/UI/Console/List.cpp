@@ -128,14 +128,14 @@ static const char * const kPropIdToName[] =
 
 static const char kEmptyAttribChar = '.';
 
-static const char *kListing = "Listing archive: ";
+static const char * const kListing = "Listing archive: ";
 
-static const char *kString_Files = "files";
-static const char *kString_Dirs = "folders";
-static const char *kString_AltStreams = "alternate streams";
-static const char *kString_Streams = "streams";
+static const char * const kString_Files = "files";
+static const char * const kString_Dirs = "folders";
+static const char * const kString_AltStreams = "alternate streams";
+static const char * const kString_Streams = "streams";
 
-static const char *kError = "ERROR: ";
+static const char * const kError = "ERROR: ";
 
 static void GetAttribString(UInt32 wa, bool isDir, bool allAttribs, char *s)
 {
@@ -417,9 +417,8 @@ static void GetPropName(PROPID propID, const wchar_t *name, AString &nameA, UStr
     nameU = name;
   else
   {
-    char s[16];
-    ConvertUInt32ToString(propID, s);
-    nameA = s;
+    nameA.Empty();
+    nameA.Add_UInt32(propID);
   }
 }
 
@@ -429,7 +428,7 @@ void CFieldPrinter::AddProp(const wchar_t *name, PROPID propID, bool isRawProp)
   f.PropID = propID;
   f.IsRawProp = isRawProp;
   GetPropName(propID, name, f.NameA, f.NameU);
-  f.NameU.AddAscii(" = ");
+  f.NameU += " = ";
   if (!f.NameA.IsEmpty())
     f.NameA += " = ";
   else
@@ -499,10 +498,7 @@ static void PrintTime(char *dest, const FILETIME *ft)
   *dest = 0;
   if (ft->dwLowDateTime == 0 && ft->dwHighDateTime == 0)
     return;
-  FILETIME locTime;
-  if (!FileTimeToLocalFileTime(ft, &locTime))
-    throw 20121211;
-  ConvertFileTimeToString(locTime, dest, true, true);
+  ConvertUtcFileTimeToString(*ft, dest, kTimestampPrintLevel_SEC);
 }
 
 #ifndef _SFX
@@ -686,7 +682,7 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &st)
       else
       {
         char s[64];
-        ConvertPropertyToShortString(s, prop, f.PropID);
+        ConvertPropertyToShortString2(s, prop, f.PropID);
         if (techMode)
           g_StdOut << s;
         else
@@ -828,7 +824,7 @@ static void PrintPropPair(CStdOutStream &so, const char *name, const wchar_t *va
 static void PrintPropertyPair2(CStdOutStream &so, PROPID propID, const wchar_t *name, const CPropVariant &prop)
 {
   UString s;
-  ConvertPropertyToString(s, prop, propID);
+  ConvertPropertyToString2(s, prop, propID);
   if (!s.IsEmpty())
   {
     AString nameA;

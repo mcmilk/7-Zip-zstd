@@ -364,8 +364,8 @@ DWORD AddConnection2(const CResourceW &resource, LPCWSTR password, LPCWSTR userN
   }
   CResource resourceA;
   ConvertResourceWToResource(resource, resourceA);
-  CSysString passwordA = GetSystemString(password);
-  CSysString userNameA = GetSystemString(userName);
+  const CSysString passwordA (GetSystemString(password));
+  const CSysString userNameA (GetSystemString(userName));
   return AddConnection2(resourceA,
     password ? (LPCTSTR)passwordA: 0,
     userName ? (LPCTSTR)userNameA: 0,

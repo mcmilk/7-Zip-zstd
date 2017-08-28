@@ -80,8 +80,9 @@ using namespace NDir;
 
 static const unsigned kHistorySize = 20;
 
-static LPCWSTR kExeExt = L".exe";
-static LPCWSTR k7zFormat = L"7z";
+static LPCSTR const kExeExt = ".exe";
+
+#define k7zFormat "7z"
 
 static const UInt32 g_Levels[] =
 {
@@ -109,16 +110,16 @@ enum EMethodID
   kPPMdZip
 };
 
-static const LPCWSTR kMethodsNames[] =
+static LPCSTR const kMethodsNames[] =
 {
-  L"Copy",
-  L"LZMA",
-  L"LZMA2",
-  L"PPMd",
-  L"BZip2",
-  L"Deflate",
-  L"Deflate64",
-  L"PPMd"
+    "Copy"
+  , "LZMA"
+  , "LZMA2"
+  , "PPMd"
+  , "BZip2"
+  , "Deflate"
+  , "Deflate64"
+  , "PPMd"
 };
 
 static const EMethodID g_7zMethods[] =
@@ -169,10 +170,10 @@ static const EMethodID g_SwfcMethods[] =
 
 struct CFormatInfo
 {
-  LPCWSTR Name;
+  LPCSTR Name;
   UInt32 LevelsMask;
-  const EMethodID *MathodIDs;
   unsigned NumMethods;
+  const EMethodID *MathodIDs;
   bool Filter;
   bool Solid;
   bool MultiThread;
@@ -182,12 +183,12 @@ struct CFormatInfo
   bool EncryptFileNames;
 };
 
-#define METHODS_PAIR(x) x, ARRAY_SIZE(x)
+#define METHODS_PAIR(x) ARRAY_SIZE(x), x
 
 static const CFormatInfo g_Formats[] =
 {
   {
-    L"",
+    "",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     0, 0,
     false, false, false, false, false, false
@@ -199,43 +200,43 @@ static const CFormatInfo g_Formats[] =
     true, true, true, true, true, true
   },
   {
-    L"Zip",
+    "Zip",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_ZipMethods),
     false, false, true, false, true, false
   },
   {
-    L"GZip",
+    "GZip",
     (1 << 1) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_GZipMethods),
     false, false, false, false, false, false
   },
   {
-    L"BZip2",
+    "BZip2",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_BZip2Methods),
     false, false, true, false, false, false
   },
   {
-    L"xz",
+    "xz",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_XzMethods),
     false, false, true, false, false, false
   },
   {
-    L"Swfc",
+    "Swfc",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_SwfcMethods),
     false, false, true, false, false, false
   },
   {
-    L"Tar",
+    "Tar",
     (1 << 0),
     0, 0,
     false, false, false, false, false, false
   },
   {
-    L"wim",
+    "wim",
     (1 << 0),
     0, 0,
     false, false, false, false, false, false
@@ -383,6 +384,8 @@ bool CCompressDialog::OnInit()
     }
   }
 
+  CheckButton(IDX_COMPRESS_SFX, Info.SFXMode);
+
   {
     UString fileName;
     SetArcPathFields(Info.ArcPath, fileName, true);
@@ -408,7 +411,6 @@ bool CCompressDialog::OnInit()
   ConvertUInt32ToString(NSystem::GetNumberOfProcessors(), s + 2);
   SetItemText(IDT_COMPRESS_HARDWARE_THREADS, s);
 
-  CheckButton(IDX_COMPRESS_SFX, Info.SFXMode);
   CheckButton(IDX_COMPRESS_SHARED, Info.OpenShareForWrite);
   CheckButton(IDX_COMPRESS_DEL, Info.DeleteAfterCompressing);
 
@@ -580,7 +582,7 @@ void CCompressDialog::OnButtonSFX()
     if (dotPos >= 0)
     {
       UString ext = fileName.Ptr(dotPos);
-      if (ext.IsEqualTo_NoCase(kExeExt))
+      if (ext.IsEqualTo_Ascii_NoCase(kExeExt))
       {
         fileName.DeleteFrom(dotPos);
         m_ArchivePath.SetText(fileName);
@@ -639,7 +641,7 @@ bool CCompressDialog::SetArcPathFields(const UString &path, UString &name, bool 
   return res;
 }
 
-static const wchar_t *k_IncorrectPathMessage = L"Incorrect archive path";
+static const wchar_t * const k_IncorrectPathMessage = L"Incorrect archive path";
 
 void CCompressDialog::OnButtonSetArchive()
 {
@@ -652,7 +654,7 @@ void CCompressDialog::OnButtonSetArchive()
 
   UString title = LangString(IDS_COMPRESS_SET_ARCHIVE_BROWSE);
   UString filterDescription = LangString(IDS_OPEN_TYPE_ALL_FILES);
-  filterDescription += L" (*.*)";
+  filterDescription += " (*.*)";
   UString resPath;
   CurrentDirWasChanged = true;
   if (!MyBrowseForFile(*this, title,
@@ -812,11 +814,11 @@ void CCompressDialog::OnOK()
   CModalDialog::OnOK();
 }
 
-static LPCWSTR kHelpTopic = L"fm/plugins/7-zip/add.htm";
+#define kHelpTopic "fm/plugins/7-zip/add.htm"
 
 void CCompressDialog::OnHelp()
 {
-  ShowHelpWindow(NULL, kHelpTopic);
+  ShowHelpWindow(kHelpTopic);
 }
 
 bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
@@ -917,7 +919,10 @@ void CCompressDialog::SetArchiveName2(bool prevWasSFX)
     if (prevWasSFX)
       prevExtension = kExeExt;
     else
-      prevExtension = UString(L'.') + prevArchiverInfo.GetMainExt();
+    {
+      prevExtension += '.';
+      prevExtension += prevArchiverInfo.GetMainExt();
+    }
     const unsigned prevExtensionLen = prevExtension.Len();
     if (fileName.Len() >= prevExtensionLen)
       if (StringsAreEqualNoCase(fileName.RightPtr(prevExtensionLen), prevExtension))
@@ -954,7 +959,7 @@ void CCompressDialog::SetArchiveName(const UString &name)
     fileName += kExeExt;
   else
   {
-    fileName += L'.';
+    fileName += '.';
     fileName += ai.GetMainExt();
   }
   m_ArchivePath.SetText(fileName);
@@ -987,7 +992,7 @@ int CCompressDialog::GetStaticFormatIndex()
 {
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
   for (unsigned i = 0; i < ARRAY_SIZE(g_Formats); i++)
-    if (ai.Name.IsEqualTo_NoCase(g_Formats[i].Name))
+    if (ai.Name.IsEqualTo_Ascii_NoCase(g_Formats[i].Name))
       return i;
   return 0; // -1;
 }
@@ -1035,6 +1040,13 @@ void CCompressDialog::SetLevel()
   SetMethod();
 }
 
+
+static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s)
+{
+  return cb.AddString((CSysString)s);
+}
+
+
 void CCompressDialog::SetMethod(int keepMethodId)
 {
   m_Method.ResetContent();
@@ -1063,8 +1075,8 @@ void CCompressDialog::SetMethod(int keepMethodId)
     if (isSfx)
       if (!IsMethodSupportedBySfx(methodID))
         continue;
-    const LPCWSTR method = kMethodsNames[methodID];
-    int itemIndex = (int)m_Method.AddString(GetSystemString(method));
+    const char *method = kMethodsNames[methodID];
+    int itemIndex = (int)ComboBox_AddStringAscii(m_Method, method);
     m_Method.SetItemData(itemIndex, methodID);
     if (keepMethodId == methodID)
     {
@@ -1072,7 +1084,7 @@ void CCompressDialog::SetMethod(int keepMethodId)
       weUseSameMethod = true;
       continue;
     }
-    if ((defaultMethod.IsEqualTo_NoCase(method) || m == 0) && !weUseSameMethod)
+    if ((defaultMethod.IsEqualTo_Ascii_NoCase(method) || m == 0) && !weUseSameMethod)
       m_Method.SetCurSel(itemIndex);
   }
   
@@ -1095,7 +1107,7 @@ void CCompressDialog::SetEncryptionMethod()
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
   if (ai.Name.IsEqualTo_Ascii_NoCase("7z"))
   {
-    _encryptionMethod.AddString(TEXT("AES-256"));
+    ComboBox_AddStringAscii(_encryptionMethod, "AES-256");
     _encryptionMethod.SetCurSel(0);
   }
   else if (ai.Name.IsEqualTo_Ascii_NoCase("zip"))
@@ -1107,8 +1119,8 @@ void CCompressDialog::SetEncryptionMethod()
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
       encryptionMethod = fo.EncryptionMethod;
     }
-    _encryptionMethod.AddString(TEXT("ZipCrypto"));
-    _encryptionMethod.AddString(TEXT("AES-256"));
+    ComboBox_AddStringAscii(_encryptionMethod, "ZipCrypto");
+    ComboBox_AddStringAscii(_encryptionMethod, "AES-256");
     _encryptionMethod.SetCurSel(encryptionMethod.IsPrefixedBy_Ascii_NoCase("aes") ? 1 : 0);
   }
 }
@@ -1122,21 +1134,22 @@ int CCompressDialog::GetMethodID()
 
 UString CCompressDialog::GetMethodSpec()
 {
-  if (m_Method.GetCount() <= 1)
-    return UString();
-  return kMethodsNames[GetMethodID()];
+  UString s;
+  if (m_Method.GetCount() > 1)
+    s = kMethodsNames[GetMethodID()];
+  return s;
 }
 
 UString CCompressDialog::GetEncryptionMethodSpec()
 {
-  if (_encryptionMethod.GetCount() <= 1)
-    return UString();
-  if (_encryptionMethod.GetCurSel() <= 0)
-    return UString();
-  UString result;
-  _encryptionMethod.GetText(result);
-  result.RemoveChar(L'-');
-  return result;
+  UString s;
+  if (_encryptionMethod.GetCount() > 1
+      && _encryptionMethod.GetCurSel() > 0)
+  {
+    _encryptionMethod.GetText(s);
+    s.RemoveChar(L'-');
+  }
+  return s;
 }
 
 void CCompressDialog::AddDictionarySize(UInt32 size)

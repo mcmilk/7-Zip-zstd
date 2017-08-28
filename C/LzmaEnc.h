@@ -1,5 +1,5 @@
 /*  LzmaEnc.h -- LZMA Encoder
-2013-01-18 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #ifndef __LZMA_ENC_H
 #define __LZMA_ENC_H
@@ -49,14 +49,15 @@ Returns:
 
 typedef void * CLzmaEncHandle;
 
-CLzmaEncHandle LzmaEnc_Create(ISzAlloc *alloc);
-void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAlloc *alloc, ISzAlloc *allocBig);
+CLzmaEncHandle LzmaEnc_Create(ISzAllocPtr alloc);
+void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 SRes LzmaEnc_SetProps(CLzmaEncHandle p, const CLzmaEncProps *props);
 SRes LzmaEnc_WriteProperties(CLzmaEncHandle p, Byte *properties, SizeT *size);
+unsigned LzmaEnc_IsWriteEndMark(CLzmaEncHandle p);
 SRes LzmaEnc_Encode(CLzmaEncHandle p, ISeqOutStream *outStream, ISeqInStream *inStream,
-    ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+    ICompressProgress *progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 SRes LzmaEnc_MemEncode(CLzmaEncHandle p, Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
-    int writeEndMark, ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+    int writeEndMark, ICompressProgress *progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 
 /* ---------- One Call Interface ---------- */
 
@@ -71,7 +72,7 @@ Return code:
 
 SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
     const CLzmaEncProps *props, Byte *propsEncoded, SizeT *propsSize, int writeEndMark,
-    ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+    ICompressProgress *progress, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 
 EXTERN_C_END
 

@@ -1,5 +1,5 @@
 /* LzmaDec.h -- LZMA Decoder
-2013-01-18 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
 
 #ifndef __LZMA_DEC_H
 #define __LZMA_DEC_H
@@ -129,11 +129,11 @@ LzmaDec_Allocate* can return:
   SZ_ERROR_UNSUPPORTED - Unsupported properties
 */
    
-SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc);
-void LzmaDec_FreeProbs(CLzmaDec *p, ISzAlloc *alloc);
+SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAllocPtr alloc);
+void LzmaDec_FreeProbs(CLzmaDec *p, ISzAllocPtr alloc);
 
-SRes LzmaDec_Allocate(CLzmaDec *state, const Byte *prop, unsigned propsSize, ISzAlloc *alloc);
-void LzmaDec_Free(CLzmaDec *state, ISzAlloc *alloc);
+SRes LzmaDec_Allocate(CLzmaDec *state, const Byte *prop, unsigned propsSize, ISzAllocPtr alloc);
+void LzmaDec_Free(CLzmaDec *state, ISzAllocPtr alloc);
 
 /* ---------- Dictionary Interface ---------- */
 
@@ -220,7 +220,7 @@ Returns:
 
 SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
     const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode,
-    ELzmaStatus *status, ISzAlloc *alloc);
+    ELzmaStatus *status, ISzAllocPtr alloc);
 
 EXTERN_C_END
 

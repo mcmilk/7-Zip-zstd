@@ -6,7 +6,6 @@
 
 #include "../../Common/ComTry.h"
 #include "../../Common/Defs.h"
-#include "../../Common/IntToString.h"
 
 #include "../../Windows/PropVariant.h"
 
@@ -232,7 +231,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       int mainIndex = -1;
       FOR_VECTOR (i, _items)
       {
-        AString s = GetString(_items[i].Type);
+        AString s (GetString(_items[i].Type));
         if (s != "Apple_Free" &&
             s != "Apple_partition_map")
         {
@@ -279,14 +278,10 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   {
     case kpidPath:
     {
-      AString s = GetString(item.Name);
+      AString s (GetString(item.Name));
       if (s.IsEmpty())
-      {
-        char s2[32];
-        ConvertUInt32ToString(index, s2);
-        s = s2;
-      }
-      AString type = GetString(item.Type);
+        s.Add_UInt32(index);
+      AString type (GetString(item.Type));
       if (type == "Apple_HFS")
         type = "hfs";
       if (!type.IsEmpty())

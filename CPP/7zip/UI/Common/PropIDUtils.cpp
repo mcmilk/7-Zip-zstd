@@ -83,18 +83,17 @@ void ConvertWinAttribToString(char *s, UInt32 wa) throw()
   }
 }
 
-void ConvertPropertyToShortString(char *dest, const PROPVARIANT &prop, PROPID propID, bool full) throw()
+void ConvertPropertyToShortString2(char *dest, const PROPVARIANT &prop, PROPID propID, int level) throw()
 {
   *dest = 0;
   
   if (prop.vt == VT_FILETIME)
   {
-    FILETIME localFileTime;
-    if ((prop.filetime.dwHighDateTime == 0 &&
-        prop.filetime.dwLowDateTime == 0) ||
-        !::FileTimeToLocalFileTime(&prop.filetime, &localFileTime))
+    const FILETIME &ft = prop.filetime;
+    if ((ft.dwHighDateTime == 0 &&
+         ft.dwLowDateTime == 0))
       return;
-    ConvertFileTimeToString(localFileTime, dest, true, full);
+    ConvertUtcFileTimeToString(prop.filetime, dest, level);
     return;
   }
 
@@ -158,7 +157,7 @@ void ConvertPropertyToShortString(char *dest, const PROPVARIANT &prop, PROPID pr
   ConvertPropVariantToShortString(prop, dest);
 }
 
-void ConvertPropertyToString(UString &dest, const PROPVARIANT &prop, PROPID propID, bool full)
+void ConvertPropertyToString2(UString &dest, const PROPVARIANT &prop, PROPID propID, int level)
 {
   if (prop.vt == VT_BSTR)
   {
@@ -166,8 +165,8 @@ void ConvertPropertyToString(UString &dest, const PROPVARIANT &prop, PROPID prop
     return;
   }
   char temp[64];
-  ConvertPropertyToShortString(temp, prop, propID, full);
-  dest.SetFromAscii(temp);
+  ConvertPropertyToShortString2(temp, prop, propID, level);
+  dest = temp;
 }
 
 static inline unsigned GetHex(unsigned v)
@@ -349,13 +348,9 @@ static void ParseSid(AString &s, const Byte *p, UInt32 lim, UInt32 &sidSize)
     }
   }
   
-  char sz[16];
   s += "S-1-";
   if (p[2] == 0 && p[3] == 0)
-  {
-    ConvertUInt32ToString(authority, sz);
-    s += sz;
-  }
+    s.Add_UInt32(authority);
   else
   {
     s += "0x";
@@ -365,8 +360,7 @@ static void ParseSid(AString &s, const Byte *p, UInt32 lim, UInt32 &sidSize)
   for (UInt32 i = 0; i < num; i++)
   {
     s += '-';
-    ConvertUInt32ToString(Get32(p + 8 + i * 4), sz);
-    s += sz;
+    s.Add_UInt32(Get32(p + 8 + i * 4));
   }
 }
 
@@ -536,11 +530,11 @@ bool ConvertNtReparseToString(const Byte *data, UInt32 size, UString &s)
   if (attr.Parse(data, size))
   {
     if (!attr.IsSymLink())
-      s.AddAscii("Junction: ");
+      s += "Junction: ";
     s += attr.GetPath();
     if (!attr.IsOkNamePair())
     {
-      s.AddAscii(" : ");
+      s += " : ";
       s += attr.PrintName;
     }
     return true;
@@ -557,7 +551,7 @@ bool ConvertNtReparseToString(const Byte *data, UInt32 size, UString &s)
 
   char hex[16];
   ConvertUInt32ToHex8Digits(tag, hex);
-  s.AddAscii(hex);
+  s += hex;
   s.Add_Space();
 
   data += 8;
@@ -565,8 +559,8 @@ bool ConvertNtReparseToString(const Byte *data, UInt32 size, UString &s)
   for (UInt32 i = 0; i < len; i++)
   {
     unsigned b = ((const Byte *)data)[i];
-    s += (wchar_t)GetHex((b >> 4) & 0xF);
-    s += (wchar_t)GetHex(b & 0xF);
+    s += (char)GetHex((b >> 4) & 0xF);
+    s += (char)GetHex(b & 0xF);
   }
   return true;
 }

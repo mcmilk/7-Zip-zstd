@@ -96,7 +96,7 @@ HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progr
 
 
   ProgressDialog.MainWindow = panel._mainWindow; // panel.GetParent()
-  ProgressDialog.MainTitle = L"7-Zip"; // LangString(IDS_APP_TITLE);
+  ProgressDialog.MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
   ProgressDialog.MainAddTitle = progressTitle + L' ';
 
   RINOK(Create(progressTitle, ProgressDialog.MainWindow));
@@ -138,7 +138,7 @@ void CPanel::DeleteItems(bool NON_CE_VAR(toRecycleBin))
       CDynamicBuffer<CHAR> buffer;
       FOR_VECTOR (i, indices)
       {
-        const AString path = GetSystemString(GetItemFullPath(indices[i]));
+        const AString path (GetSystemString(GetItemFullPath(indices[i])));
         buffer.AddData(path, path.Len() + 1);
       }
       *buffer.GetCurPtrAndGrow(1) = 0;
@@ -502,7 +502,7 @@ void CPanel::ChangeComment()
   UString name = GetItemRelPath2(realIndex);
   CComboDialog dlg;
   dlg.Title = name;
-  dlg.Title += L" : ";
+  dlg.Title += " : ";
   AddLangString(dlg.Title, IDS_COMMENT);
   dlg.Value = comment;
   LangString(IDS_COMMENT2, dlg.Static);

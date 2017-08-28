@@ -223,6 +223,7 @@ struct CDirRecord
 
   const bool GetPx(int skipSize, unsigned pxType, UInt32 &val) const
   {
+    val = 0;
     const Byte *p = NULL;
     unsigned len = 0;
     p = FindSuspRecord(skipSize, 'P', 'X', len);

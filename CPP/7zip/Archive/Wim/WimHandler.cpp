@@ -94,15 +94,6 @@ static void AddErrorMessage(AString &s, const char *message)
   s += message;
 }
 
-static void ConvertByteToHex(unsigned value, char *s)
-{
-  for (int i = 0; i < 2; i++)
-  {
-    unsigned t = value & 0xF;
-    value >>= 4;
-    s[1 - i] = (char)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
-  }
-}
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
@@ -177,17 +168,14 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       UInt32 ver2 = (_version >> 8) & 0xFF;
       UInt32 ver3 = (_version) & 0xFF;
 
-      char s[16];
-      ConvertUInt32ToString(ver1, s);
-      AString res = s;
+      AString res;
+      res.Add_UInt32(ver1);
       res += '.';
-      ConvertUInt32ToString(ver2, s);
-      res += s;
+      res.Add_UInt32(ver2);
       if (ver3 != 0)
       {
         res += '.';
-        ConvertUInt32ToString(ver3, s);
-        res += s;
+        res.Add_UInt32(ver3);
       }
       prop = res;
       break;
@@ -229,22 +217,16 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         const CHeader &h = _volumes[_firstVolumeIndex].Header;
         if (GetUi32(h.Guid) != 0)
         {
-          char temp[16 * 2 + 4];
-          int i;
-          for (i = 0; i < 4; i++)
-            ConvertByteToHex(h.Guid[i], temp + i * 2);
-          temp[i * 2] = 0;
-          AString s = temp;
+          char temp[64];
+          RawLeGuidToString(h.Guid, temp);
+          temp[8] = 0; // for reduced GUID
+          AString s (temp);
           const char *ext = ".wim";
           if (h.NumParts != 1)
           {
             s += '_';
             if (h.PartNumber != 1)
-            {
-              char sz[16];
-              ConvertUInt32ToString(h.PartNumber, sz);
-              s += sz;
-            }
+              s.Add_UInt32(h.PartNumber);
             ext = ".swm";
           }
           s += ext;
@@ -262,9 +244,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           AString s;
           if (h.PartNumber != 1)
           {
-            char sz[16];
-            ConvertUInt32ToString(h.PartNumber, sz);
-            s = sz;
+            s.Add_UInt32(h.PartNumber);
             s += '.';
           }
           s += "swm";
@@ -312,19 +292,15 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
       if (methodUnknown != 0)
       {
-        char temp[32];
-        ConvertUInt32ToString(methodUnknown, temp);
         res.Add_Space_if_NotEmpty();
-        res += temp;
+        res.Add_UInt32(methodUnknown);
         numMethods++;
       }
 
       if (numMethods == 1 && chunkSizeBits != 0)
       {
-        char temp[32];
-        temp[0] = ':';
-        ConvertUInt32ToString((UInt32)chunkSizeBits, temp + 1);
-        res += temp;
+        res += ':';
+        res.Add_UInt32((UInt32)chunkSizeBits);
       }
 
       prop = res;
@@ -391,7 +367,7 @@ static void MethodToProp(int method, int chunksSizeBits, NCOM::CPropVariant &pro
     if ((unsigned)method < ARRAY_SIZE(k_Methods))
       strcpy(temp, k_Methods[(unsigned)method]);
     else
-      ConvertUInt32ToString((unsigned)method, temp);
+      ConvertUInt32ToString((UInt32)(unsigned)method, temp);
     
     if (chunksSizeBits >= 0)
     {
@@ -436,9 +412,6 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           _db.GetItemPath(realIndex, _showImageNumber, prop);
         else
         {
-          char sz[16];
-          ConvertUInt32ToString(item.StreamIndex, sz);
-          AString s = sz;
           /*
           while (s.Len() < _nameLenForStreams)
             s = '0' + s;
@@ -448,7 +421,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
             s = (AString)("[Free]" STRING_PATH_SEPARATOR) + sz;
           else
           */
-          s = (AString)(FILES_DIR_NAME STRING_PATH_SEPARATOR) + sz;
+          AString s (FILES_DIR_NAME STRING_PATH_SEPARATOR);
+          s.Add_UInt32(item.StreamIndex);
           prop = s;
         }
         break;
@@ -874,9 +848,10 @@ public:
 
   UString GetNextName(UInt32 index) const
   {
-    wchar_t s[16];
-    ConvertUInt32ToString(index, s);
-    return _before + (UString)s + _after;
+    UString s = _before;
+    s.Add_UInt32(index);
+    s += _after;
+    return s;
   }
 };
 
@@ -970,11 +945,9 @@ STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCal
       
       if (_xmls.IsEmpty() || xml.Data != _xmls[0].Data)
       {
-        char sz[16];
-        ConvertUInt32ToString(xml.VolIndex, sz);
-        xml.FileName = L'[';
-        xml.FileName.AddAscii(sz);
-        xml.FileName.AddAscii("].xml");
+        xml.FileName = '[';
+        xml.FileName.Add_UInt32(xml.VolIndex);
+        xml.FileName += "].xml";
         _xmls.Add(xml);
       }
       

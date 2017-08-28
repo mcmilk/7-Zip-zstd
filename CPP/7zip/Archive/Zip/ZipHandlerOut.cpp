@@ -46,6 +46,30 @@ static bool IsSimpleAsciiString(const wchar_t *s)
   }
 }
 
+
+static int FindZipMethod(const char *s, const char * const *names, unsigned num)
+{
+  for (unsigned i = 0; i < num; i++)
+  {
+    const char *name = names[i];
+    if (name && StringsAreEqualNoCase_Ascii(s, name))
+      return i;
+  }
+  return -1;
+}
+
+static int FindZipMethod(const char *s)
+{
+  int k = FindZipMethod(s, kMethodNames1, kNumMethodNames1);
+  if (k >= 0)
+    return k;
+  k = FindZipMethod(s, kMethodNames2, kNumMethodNames2);
+  if (k >= 0)
+    return kMethodNames2Start + k;
+  return -1;
+}
+
+
 #define COM_TRY_BEGIN2 try {
 #define COM_TRY_END2 } \
 catch(const CSystemException &e) { return e.ErrorCode; } \
@@ -63,6 +87,7 @@ static HRESULT GetTime(IArchiveUpdateCallback *callback, int index, PROPID propI
   return S_OK;
 }
 
+
 STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *callback)
 {
@@ -75,31 +100,46 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   }
 
   CObjectVector<CUpdateItem> updateItems;
+  updateItems.ClearAndReserve(numItems);
+
   bool thereAreAesUpdates = false;
   UInt64 largestSize = 0;
   bool largestSizeDefined = false;
 
+  UString name;
+  CUpdateItem ui;
+
   for (UInt32 i = 0; i < numItems; i++)
   {
-    CUpdateItem ui;
     Int32 newData;
     Int32 newProps;
-    UInt32 indexInArchive;
+    UInt32 indexInArc;
+    
     if (!callback)
       return E_FAIL;
-    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProps, &indexInArchive));
+    
+    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProps, &indexInArc));
+    
+    name.Empty();
+    ui.Clear();
+
     ui.NewProps = IntToBool(newProps);
     ui.NewData = IntToBool(newData);
-    ui.IndexInArc = indexInArchive;
+    ui.IndexInArc = indexInArc;
     ui.IndexInClient = i;
-    bool existInArchive = (indexInArchive != (UInt32)(Int32)-1);
-    if (existInArchive && newData)
-      if (m_Items[indexInArchive].IsAesEncrypted())
+    
+    bool existInArchive = (indexInArc != (UInt32)(Int32)-1);
+    if (existInArchive)
+    {
+      const CItemEx &inputItem = m_Items[indexInArc];
+      if (inputItem.IsAesEncrypted())
         thereAreAesUpdates = true;
+      if (!IntToBool(newProps))
+        ui.IsDir = inputItem.IsDir();
+    }
 
     if (IntToBool(newProps))
     {
-      UString name;
       {
         NCOM::CPropVariant prop;
         RINOK(callback->GetProperty(i, kpidAttrib, &prop));
@@ -115,12 +155,15 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         NCOM::CPropVariant prop;
         RINOK(callback->GetProperty(i, kpidPath, &prop));
         if (prop.vt == VT_EMPTY)
-          name.Empty();
+        {
+          // name.Empty();
+        }
         else if (prop.vt != VT_BSTR)
           return E_INVALIDARG;
         else
           name = prop.bstrVal;
       }
+
       {
         NCOM::CPropVariant prop;
         RINOK(callback->GetProperty(i, kpidIsDir, &prop));
@@ -153,7 +196,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         FileTimeToDosTime(localFileTime, ui.Time);
       }
 
-      name = NItemName::MakeLegalName(name);
+      NItemName::ReplaceSlashes_OsToUnix(name);
+      
       bool needSlash = ui.IsDir;
       const wchar_t kSlash = L'/';
       if (!name.IsEmpty())
@@ -188,11 +232,37 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (ui.Name.Len() >= (1 << 16))
         return E_INVALIDARG;
 
-      ui.IndexInClient = i;
+      {
+        NCOM::CPropVariant prop;
+        RINOK(callback->GetProperty(i, kpidComment, &prop));
+        if (prop.vt == VT_EMPTY)
+        {
+          // ui.Comment.Free();
+        }
+        else if (prop.vt != VT_BSTR)
+          return E_INVALIDARG;
+        else
+        {
+          UString s = prop.bstrVal;
+          AString a;
+          if (ui.IsUtf8)
+            ConvertUnicodeToUTF8(s, a);
+          else
+          {
+            bool defaultCharWasUsed;
+            a = UnicodeStringToMultiByte(s, codePage, '_', defaultCharWasUsed);
+          }
+          if (a.Len() >= (1 << 16))
+            return E_INVALIDARG;
+          ui.Comment.CopyFrom((const Byte *)(const char *)a, a.Len());
+        }
+      }
+
+
       /*
       if (existInArchive)
       {
-        const CItemEx &itemInfo = m_Items[indexInArchive];
+        const CItemEx &itemInfo = m_Items[indexInArc];
         // ui.Commented = itemInfo.IsCommented();
         ui.Commented = false;
         if (ui.Commented)
@@ -205,6 +275,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         ui.Commented = false;
       */
     }
+    
+    
     if (IntToBool(newData))
     {
       UInt64 size = 0;
@@ -220,11 +292,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         largestSizeDefined = true;
       }
       ui.Size = size;
-
-      // ui.Size -= ui.Size / 2;
     }
+
     updateItems.Add(ui);
   }
+
 
   CMyComPtr<ICryptoGetTextPassword2> getTextPassword;
   {
@@ -261,16 +333,52 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
   }
 
-  Byte mainMethod;
-  if (m_MainMethod < 0)
-    mainMethod = (Byte)(((_props.Level == 0) ?
-        NFileHeader::NCompressionMethod::kStored :
-        NFileHeader::NCompressionMethod::kDeflated));
+  
+  int mainMethod = m_MainMethod;
+  
+  if (mainMethod < 0)
+  {
+    if (!_props._methods.IsEmpty())
+    {
+      const AString &methodName = _props._methods.Front().MethodName;
+      if (!methodName.IsEmpty())
+      {
+        mainMethod = FindZipMethod(methodName);
+        if (mainMethod < 0)
+        {
+          CMethodId methodId;
+          UInt32 numStreams;
+          if (!FindMethod(EXTERNAL_CODECS_VARS methodName, methodId, numStreams))
+            return E_NOTIMPL;
+          if (numStreams != 1)
+            return E_NOTIMPL;
+          if (methodId == kMethodId_BZip2)
+            mainMethod = NFileHeader::NCompressionMethod::kBZip2;
+          else
+          {
+            if (methodId < kMethodId_ZipBase)
+              return E_NOTIMPL;
+            methodId -= kMethodId_ZipBase;
+            if (methodId > 0xFF)
+              return E_NOTIMPL;
+            mainMethod = (int)methodId;
+          }
+        }
+      }
+    }
+  }
+
+  if (mainMethod < 0)
+    mainMethod = (Byte)(((_props.GetLevel() == 0) ?
+        NFileHeader::NCompressionMethod::kStore :
+        NFileHeader::NCompressionMethod::kDeflate));
   else
-    mainMethod = (Byte)m_MainMethod;
-  options.MethodSequence.Add(mainMethod);
-  if (mainMethod != NFileHeader::NCompressionMethod::kStored)
-    options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStored);
+    mainMethod = (Byte)mainMethod;
+  
+  options.MethodSequence.Add((Byte)mainMethod);
+  
+  if (mainMethod != NFileHeader::NCompressionMethod::kStore)
+    options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStore);
 
   return Update(
       EXTERNAL_CODECS_VARS
@@ -281,28 +389,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   COM_TRY_END2
 }
 
-struct CMethodIndexToName
-{
-  unsigned Method;
-  const char *Name;
-};
 
-static const CMethodIndexToName k_SupportedMethods[] =
-{
-  { NFileHeader::NCompressionMethod::kStored, "copy" },
-  { NFileHeader::NCompressionMethod::kDeflated, "deflate" },
-  { NFileHeader::NCompressionMethod::kDeflated64, "deflate64" },
-  { NFileHeader::NCompressionMethod::kBZip2, "bzip2" },
-  { NFileHeader::NCompressionMethod::kLZMA, "lzma" },
-  { NFileHeader::NCompressionMethod::kPPMd, "ppmd" }
-};
 
 STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   InitMethodProps();
-  #ifndef _7ZIP_ST
-  const UInt32 numProcessors = _props.NumThreads;
-  #endif
   
   for (UInt32 i = 0; i < numProps; i++)
   {
@@ -313,82 +404,27 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
 
     const PROPVARIANT &prop = values[i];
 
-    if (name[0] == L'x')
-    {
-      UInt32 level = 9;
-      RINOK(ParsePropToUInt32(name.Ptr(1), prop, level));
-      _props.Level = level;
-      _props.MethodInfo.AddProp_Level(level);
-    }
-    else if (name == L"m")
-    {
-      if (prop.vt == VT_BSTR)
-      {
-        UString m = prop.bstrVal, m2;
-        m.MakeLower_Ascii();
-        int colonPos = m.Find(L':');
-        if (colonPos >= 0)
-        {
-          m2 = m.Ptr(colonPos + 1);
-          m.DeleteFrom(colonPos);
-        }
-        unsigned k;
-        for (k = 0; k < ARRAY_SIZE(k_SupportedMethods); k++)
-        {
-          const CMethodIndexToName &pair = k_SupportedMethods[k];
-          if (m.IsEqualTo(pair.Name))
-          {
-            if (!m2.IsEmpty())
-            {
-              RINOK(_props.MethodInfo.ParseParamsFromString(m2));
-            }
-            m_MainMethod = pair.Method;
-            break;
-          }
-        }
-        if (k == ARRAY_SIZE(k_SupportedMethods))
-          return E_INVALIDARG;
-      }
-      else if (prop.vt == VT_UI4)
-      {
-        unsigned k;
-        for (k = 0; k < ARRAY_SIZE(k_SupportedMethods); k++)
-        {
-          unsigned method = k_SupportedMethods[k].Method;
-          if (prop.ulVal == method)
-          {
-            m_MainMethod = method;
-            break;
-          }
-        }
-        if (k == ARRAY_SIZE(k_SupportedMethods))
-          return E_INVALIDARG;
-      }
-      else
-        return E_INVALIDARG;
-    }
-    else if (name.IsPrefixedBy(L"em"))
+    if (name.IsEqualTo_Ascii_NoCase("em"))
     {
       if (prop.vt != VT_BSTR)
         return E_INVALIDARG;
       {
-        UString m = prop.bstrVal;
-        m.MakeLower_Ascii();
-        if (m.IsPrefixedBy(L"aes"))
+        const wchar_t *m = prop.bstrVal;
+        if (IsString1PrefixedByString2_NoCase_Ascii(m, "aes"))
         {
-          m.DeleteFrontal(3);
-          if (m == L"128")
+          m += 3;
+          if (StringsAreEqual_Ascii(m, "128"))
             _props.AesKeyMode = 1;
-          else if (m == L"192")
+          else if (StringsAreEqual_Ascii(m, "192"))
             _props.AesKeyMode = 2;
-          else if (m == L"256" || m.IsEmpty())
+          else if (StringsAreEqual_Ascii(m, "256") || m[0] == 0)
             _props.AesKeyMode = 3;
           else
             return E_INVALIDARG;
           _props.IsAesMode = true;
           m_ForceAesMode = true;
         }
-        else if (m == L"zipcrypto")
+        else if (StringsAreEqualNoCase_Ascii(m, "ZipCrypto"))
         {
           _props.IsAesMode = false;
           m_ForceAesMode = true;
@@ -396,13 +432,6 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
         else
           return E_INVALIDARG;
       }
-    }
-    else if (name.IsPrefixedBy(L"mt"))
-    {
-      #ifndef _7ZIP_ST
-      RINOK(ParseMtProp(name.Ptr(2), prop, numProcessors, _props.NumThreads));
-      _props.NumThreadsWasChanged = true;
-      #endif
     }
     else if (name.IsEqualTo("tc"))
     {
@@ -433,9 +462,39 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
     }
     else
     {
-      RINOK(_props.MethodInfo.ParseParamsFromPROPVARIANT(name, prop));
+      if (name.IsEqualTo_Ascii_NoCase("m") && prop.vt == VT_UI4)
+      {
+        UInt32 id = prop.ulVal;
+        if (id > 0xFF)
+          return E_INVALIDARG;
+        m_MainMethod = id;
+      }
+      else
+      {
+        RINOK(_props.SetProperty(name, prop));
+      }
+      // RINOK(_props.MethodInfo.ParseParamsFromPROPVARIANT(name, prop));
     }
   }
+
+  _props._methods.DeleteFrontal(_props.GetNumEmptyMethods());
+  if (_props._methods.Size() > 1)
+    return E_INVALIDARG;
+  if (_props._methods.Size() == 1)
+  {
+    const AString &methodName = _props._methods[0].MethodName;
+
+    if (!methodName.IsEmpty())
+    {
+      const char *end;
+      UInt32 id = ConvertStringToUInt32(methodName, &end);
+      if (*end == 0 && id <= 0xFF)
+        m_MainMethod = id;
+      else if (methodName.IsEqualTo_Ascii_NoCase("Copy")) // it's alias for "Store"
+        m_MainMethod = 0;
+    }
+  }
+  
   return S_OK;
 }
 

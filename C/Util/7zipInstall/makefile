@@ -1,5 +1,7 @@
 PROG = 7zipInstall.exe
 
+LIBS = $(LIBS) version.lib
+
 !IFDEF _64BIT_INSTALLER
 CFLAGS = $(CFLAGS) -D_64BIT_INSTALLER
 !ENDIF

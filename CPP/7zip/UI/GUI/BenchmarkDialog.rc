@@ -16,7 +16,7 @@
 #define gSpace 24
 
 #define g0xs 90
-#define g1xs 44
+#define g1xs 48
 #define g1x  (m + g0xs)
 #define gc2x  (g1x + g1xs + m)
 #define gc2xs 80
@@ -27,11 +27,14 @@
 #define sSpeed 60
 #define sUsage 60
 #define sRpu 60
+#define sFreq 34
 
 #define xRating (xs - m - m - sRating)
 #define xRpu (xRating - sRpu)
 #define xUsage (xRpu - sUsage)
 #define xSpeed (xUsage - sSpeed)
+
+#define xFreq (xUsage - sFreq)
 
 #define sLabel (xUsage - g4x)
 #define sTotalRating (sUsage + sRpu + sRating + m + m)
@@ -51,6 +54,8 @@
 #define GROUP_Y2_SIZE 32
 #endif
 
+#define g7xs bx1 - m - g0xs - g1xs - m
+
 IDD_BENCH  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE | WS_MINIMIZEBOX
 CAPTION "Benchmark"
 MY_FONT
@@ -64,12 +69,12 @@ BEGIN
   LTEXT  "&Dictionary size:", IDT_BENCH_DICTIONARY, m, m + 1, g0xs, 8
   COMBOBOX  IDC_BENCH_DICTIONARY, g1x, m, g1xs, 140, MY_COMBO
 
-  LTEXT  "Memory usage:", IDT_BENCH_MEMORY, gc2x, m + 1, gc2xs, 8
-  LTEXT  "", IDT_BENCH_MEMORY_VAL, gc2x + gc2xs, m + 1, 40, 8
+  LTEXT  "Memory usage:", IDT_BENCH_MEMORY, gc2x, m - 2, g7xs, 8
+  LTEXT  "", IDT_BENCH_MEMORY_VAL, gc2x, m + 8, g7xs, 8
 
-  LTEXT  "&Number of CPU threads:", IDT_BENCH_NUM_THREADS, m, 28, g0xs, 8
-  COMBOBOX  IDC_BENCH_NUM_THREADS, g1x, 27, g1xs, 140, MY_COMBO
-  LTEXT  "", IDT_BENCH_HARDWARE_THREADS, gc2x, 28, 40, 8
+  LTEXT  "&Number of CPU threads:", IDT_BENCH_NUM_THREADS, m, 30, g0xs, 8
+  COMBOBOX  IDC_BENCH_NUM_THREADS, g1x, 29, g1xs, 140, MY_COMBO
+  LTEXT  "", IDT_BENCH_HARDWARE_THREADS, gc2x, 32, g7xs, 8
 
   RTEXT  "CPU Usage", IDT_BENCH_USAGE_LABEL,    xUsage,  54, sUsage,  8
   RTEXT  "Speed", IDT_BENCH_SPEED,              xSpeed,  54, sSpeed,  8
@@ -111,7 +116,17 @@ BEGIN
   RTEXT  "", IDT_BENCH_TOTAL_RATING_VAL, xRating, 176, sRating, 8
 
   RTEXT  "", IDT_BENCH_CPU, m, 202, xc, 8
-  RTEXT  "", IDT_BENCH_VER, m, 216, xc, 8
+
+  RTEXT  "", IDT_BENCH_VER, m + xc - 80, 216, 80, 8
+
+  LTEXT  "", IDT_BENCH_CPU_FEATURE, m, 212, xc - 80, 26
+  LTEXT  "", IDT_BENCH_SYS1, m, 238, xc - 140, 8
+  LTEXT  "", IDT_BENCH_SYS2, m, 248, xc - 140, 8
+	
+  // LTEXT  "", IDT_BENCH_SYSTEM, m, 232, xc - 80, 8
+  // LTEXT  "", IDT_BENCH_FREQ_RES, m, 242, 80, 8
+  
+
   
   LTEXT  "Elapsed time:", IDT_BENCH_ELAPSED, m, 163, g2xs, 8
   LTEXT  "Size:", IDT_BENCH_SIZE,            m, 176, g2xs, 8
