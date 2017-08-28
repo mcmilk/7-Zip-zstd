@@ -40,7 +40,6 @@ using namespace NWindows;
 #define kArcIncludeSwitches  " -an -ai"
 #define kHashIncludeSwitches  " -i"
 #define kStopSwitchParsing  " --"
-#define kLargePagesDisable  " -slp-"
 
 static NCompression::CInfo m_RegistryInfo;
 extern HWND g_HWND;
@@ -96,8 +95,8 @@ static HRESULT Call7zGui(const UString &params,
 
 static void AddLagePagesSwitch(UString &params)
 {
-  if (!ReadLockMemoryEnable())
-    params += kLargePagesDisable;
+  if (ReadLockMemoryEnable())
+    params += " -slp";
 }
 
 class CRandNameGenerator
@@ -338,6 +337,7 @@ void Benchmark(bool totalMode)
   UString params ('b');
   if (totalMode)
     params += " -mm=*";
+  AddLagePagesSwitch(params);
   HRESULT result = Call7zGui(params, false, NULL);
   if (result != S_OK)
     ErrorMessageHRESULT(result);

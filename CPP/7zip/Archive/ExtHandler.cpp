@@ -461,8 +461,8 @@ bool CHeader::Parse(const Byte *p)
 
   if (Is64Bit())
   {
-    HI_32(150, NumBlocks);
-    // HI_32(154, NumBlocksSuper);
+    HI_32(0x150, NumBlocks);
+    // HI_32(0x154, NumBlocksSuper);
     HI_32(0x158, NumFreeBlocks);
   }
 

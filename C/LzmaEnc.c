@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2017-04-03 : Igor Pavlov : Public domain */
+2017-06-22 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -23,8 +23,8 @@
 static unsigned g_STAT_OFFSET = 0;
 #endif
 
-#define kMaxHistorySize ((UInt32)3 << 29)
-/* #define kMaxHistorySize ((UInt32)7 << 29) */
+#define kLzmaMaxHistorySize ((UInt32)3 << 29)
+/* #define kLzmaMaxHistorySize ((UInt32)7 << 29) */
 
 #define kBlockSizeMax ((1 << LZMA_NUM_BLOCK_SIZE_BITS) - 1)
 
@@ -62,14 +62,15 @@ void LzmaEncProps_Normalize(CLzmaEncProps *p)
   if (level < 0) level = 5;
   p->level = level;
   
-  if (p->dictSize == 0) p->dictSize = (level <= 5 ? (1 << (level * 2 + 14)) : (level == 6 ? (1 << 25) : (1 << 26)));
+  if (p->dictSize == 0) p->dictSize = (level <= 5 ? (1 << (level * 2 + 14)) : (level <= 7 ? (1 << 25) : (1 << 26)));
   if (p->dictSize > p->reduceSize)
   {
     unsigned i;
+    UInt32 reduceSize = (UInt32)p->reduceSize;
     for (i = 11; i <= 30; i++)
     {
-      if ((UInt32)p->reduceSize <= ((UInt32)2 << i)) { p->dictSize = ((UInt32)2 << i); break; }
-      if ((UInt32)p->reduceSize <= ((UInt32)3 << i)) { p->dictSize = ((UInt32)3 << i); break; }
+      if (reduceSize <= ((UInt32)2 << i)) { p->dictSize = ((UInt32)2 << i); break; }
+      if (reduceSize <= ((UInt32)3 << i)) { p->dictSize = ((UInt32)3 << i); break; }
     }
   }
 
@@ -445,7 +446,7 @@ SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
       || props.lp > LZMA_LP_MAX
       || props.pb > LZMA_PB_MAX
       || props.dictSize > ((UInt64)1 << kDicLogSizeMaxCompress)
-      || props.dictSize > kMaxHistorySize)
+      || props.dictSize > kLzmaMaxHistorySize)
     return SZ_ERROR_PARAM;
 
   p->dictSize = props.dictSize;
@@ -491,6 +492,15 @@ SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
 
   return SZ_OK;
 }
+
+
+void LzmaEnc_SetDataSize(CLzmaEncHandle pp, UInt64 expectedDataSiize)
+{
+  CLzmaEnc *p = (CLzmaEnc *)pp;
+  p->matchFinderBase.expectedDataSize = expectedDataSiize;
+}
+
+
 
 static const int kLiteralNextStates[kNumStates] = {0, 0, 0, 0, 1, 2, 3, 4,  5,  6,   4, 5};
 static const int kMatchNextStates[kNumStates]   = {7, 7, 7, 7, 7, 7, 7, 10, 10, 10, 10, 10};
@@ -1996,6 +2006,8 @@ static SRes LzmaEnc_Alloc(CLzmaEnc *p, UInt32 keepWindowSize, ISzAllocPtr alloc,
   {
     RINOK(MatchFinderMt_Create(&p->matchFinderMt, p->dictSize, beforeSize, p->numFastBytes, LZMA_MATCH_LEN_MAX, allocBig));
     p->matchFinderObj = &p->matchFinderMt;
+    p->matchFinderBase.bigHash = (Byte)(
+        (p->dictSize > kBigHashDicLimit && p->matchFinderBase.hashMask >= 0xFFFFFF) ? 1 : 0);
     MatchFinderMt_CreateVTable(&p->matchFinderMt, &p->matchFinder);
   }
   else
@@ -2135,6 +2147,7 @@ SRes LzmaEnc_MemPrepare(CLzmaEncHandle pp, const Byte *src, SizeT srcLen,
   LzmaEnc_SetInputBuf(p, src, srcLen);
   p->needInit = 1;
 
+  LzmaEnc_SetDataSize(pp, srcLen);
   return LzmaEnc_AllocAndInit(p, keepWindowSize, alloc, allocBig);
 }
 
@@ -2152,15 +2165,15 @@ void LzmaEnc_Finish(CLzmaEncHandle pp)
 
 typedef struct
 {
-  ISeqOutStream funcTable;
+  ISeqOutStream vt;
   Byte *data;
   SizeT rem;
   Bool overflow;
-} CSeqOutStreamBuf;
+} CLzmaEnc_SeqOutStreamBuf;
 
-static size_t MyWrite(const ISeqOutStream *pp, const void *data, size_t size)
+static size_t SeqOutStreamBuf_Write(const ISeqOutStream *pp, const void *data, size_t size)
 {
-  CSeqOutStreamBuf *p = CONTAINER_FROM_VTBL(pp, CSeqOutStreamBuf, funcTable);
+  CLzmaEnc_SeqOutStreamBuf *p = CONTAINER_FROM_VTBL(pp, CLzmaEnc_SeqOutStreamBuf, vt);
   if (p->rem < size)
   {
     size = p->rem;
@@ -2193,9 +2206,9 @@ SRes LzmaEnc_CodeOneMemBlock(CLzmaEncHandle pp, Bool reInit,
   CLzmaEnc *p = (CLzmaEnc *)pp;
   UInt64 nowPos64;
   SRes res;
-  CSeqOutStreamBuf outStream;
+  CLzmaEnc_SeqOutStreamBuf outStream;
 
-  outStream.funcTable.Write = MyWrite;
+  outStream.vt.Write = SeqOutStreamBuf_Write;
   outStream.data = dest;
   outStream.rem = *destLen;
   outStream.overflow = False;
@@ -2209,7 +2222,7 @@ SRes LzmaEnc_CodeOneMemBlock(CLzmaEncHandle pp, Bool reInit,
   LzmaEnc_InitPrices(p);
   nowPos64 = p->nowPos64;
   RangeEnc_Init(&p->rc);
-  p->rc.outStream = &outStream.funcTable;
+  p->rc.outStream = &outStream.vt;
 
   res = LzmaEnc_CodeOneBlock(p, True, desiredPackSize, *unpackSize);
   
@@ -2308,15 +2321,15 @@ SRes LzmaEnc_MemEncode(CLzmaEncHandle pp, Byte *dest, SizeT *destLen, const Byte
   SRes res;
   CLzmaEnc *p = (CLzmaEnc *)pp;
 
-  CSeqOutStreamBuf outStream;
+  CLzmaEnc_SeqOutStreamBuf outStream;
 
-  outStream.funcTable.Write = MyWrite;
+  outStream.vt.Write = SeqOutStreamBuf_Write;
   outStream.data = dest;
   outStream.rem = *destLen;
   outStream.overflow = False;
 
   p->writeEndMark = writeEndMark;
-  p->rc.outStream = &outStream.funcTable;
+  p->rc.outStream = &outStream.vt;
 
   res = LzmaEnc_MemPrepare(pp, src, srcLen, 0, alloc, allocBig);
   

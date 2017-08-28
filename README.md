@@ -44,7 +44,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 17.00 ZS v1.3.1 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov
+7-Zip 17.01 ZS v1.3.1 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov
 
 
 Libs:
@@ -139,7 +139,7 @@ Codecs:
 
 The output should look like this:
 ```
-7-Zip 17.00 beta (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2017-04-29
+7-Zip 17.01 beta (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2017-08-28
 
 
 Libs:
@@ -236,14 +236,14 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 17.00
+- 7-Zip ZS Version 17.01
   - [Brotli] Version 0.6.0
   - [Lizard] Version 1.0
   - [LZ4] Version 1.7.5
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.3.1
 
-/TR 2017-08-20
+/TR 2017-08-28
 
 [7-Zip]:http://www.7-zip.org/
 [lzip]:http://www.nongnu.org/lzip/

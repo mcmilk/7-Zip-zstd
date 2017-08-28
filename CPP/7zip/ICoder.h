@@ -104,24 +104,39 @@ namespace NCoderPropID
   enum EEnum
   {
     kDefaultProp = 0,
-    kDictionarySize,
-    kUsedMemorySize,
-    kOrder,
-    kBlockSize,
-    kPosStateBits,
-    kLitContextBits,
-    kLitPosBits,
-    kNumFastBytes,
-    kMatchFinder,
-    kMatchFinderCycles,
-    kNumPasses,
-    kAlgorithm,
-    kNumThreads,
-    kEndMarker,
-    kLevel,
-    kReduceSize // estimated size of data that will be compressed. Encoder can use this value to reduce dictionary size.
+    kDictionarySize,    // VT_UI4
+    kUsedMemorySize,    // VT_UI4
+    kOrder,             // VT_UI4
+    kBlockSize,         // VT_UI4 or VT_UI8
+    kPosStateBits,      // VT_UI4
+    kLitContextBits,    // VT_UI4
+    kLitPosBits,        // VT_UI4
+    kNumFastBytes,      // VT_UI4
+    kMatchFinder,       // VT_BSTR
+    kMatchFinderCycles, // VT_UI4
+    kNumPasses,         // VT_UI4
+    kAlgorithm,         // VT_UI4
+    kNumThreads,        // VT_UI4
+    kEndMarker,         // VT_BOOL
+    kLevel,             // VT_UI4
+    kReduceSize,        // VT_UI8 : it's estimated size of largest data stream that will be compressed
+                        //   encoder can use this value to reduce dictionary size and allocate data buffers
+
+    kExpectedDataSize,  // VT_UI8 : for ICompressSetCoderPropertiesOpt :
+                        //   it's estimated size of current data stream
+                        //   real data size can differ from that size
+                        //   encoder can use this value to optimize encoder initialization
+
+    kBlockSize2,        // VT_UI4 or VT_UI8
+    kCheckSize,         // VT_UI4 : size of digest in bytes
+    kFilter             // VT_BSTR
   };
 }
+
+CODER_INTERFACE(ICompressSetCoderPropertiesOpt, 0x1F)
+{
+  STDMETHOD(SetCoderPropertiesOpt)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps) PURE;
+};
 
 CODER_INTERFACE(ICompressSetCoderProperties, 0x20)
 {

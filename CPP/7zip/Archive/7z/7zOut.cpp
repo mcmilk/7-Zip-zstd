@@ -515,7 +515,7 @@ HRESULT COutArchive::EncodeStream(
   outFolders.FolderUnpackCRCs.Vals.Add(CrcCalc(data, data.Size()));
   // outFolders.NumUnpackStreamsVector.Add(1);
   UInt64 dataSize64 = data.Size();
-  UInt64 unpackSize;
+  UInt64 unpackSize = data.Size();
   RINOK(encoder.Encode(
       EXTERNAL_CODECS_LOC_VARS
       stream,

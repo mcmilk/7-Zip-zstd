@@ -196,6 +196,8 @@ HRESULT CDecoder::ExecuteFilter(const CFilter &f)
 
     default:
       _unsupportedFilter = true;
+      memset(_filterSrc, 0, f.Size);
+      // return S_OK;  // unrar
   }
 
   return WriteData(useDest ?
@@ -301,7 +303,11 @@ HRESULT CDecoder::AddFilter(CBitDecoder &_bitStream)
   UInt32 blockStart = ReadUInt32(_bitStream);
   f.Size = ReadUInt32(_bitStream);
 
-  // if (f.Size > ((UInt32)1 << 16)) _unsupportedFilter = true;
+  if (f.Size > ((UInt32)1 << 22))
+  {
+    _unsupportedFilter = true;
+    f.Size = 0;  // unrar 5.5.5
+  }
 
   f.Type = (Byte)_bitStream.ReadBits9fix(3);
   f.Channels = 0;

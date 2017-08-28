@@ -459,7 +459,16 @@ API_FUNC_IsArc IsArc_Zip(const Byte *p, size_t size)
       extraSize -= 4;
       p += 4;
       if (dataSize > extraSize)
-        return k_IsArc_Res_NO;
+      {
+        // It can be error on header.
+        // We want to support such rare case bad archives.
+        // We use additional checks to reduce false-positive probability.
+        if (nameSize == 0
+            || nameSize > (1 << 9)
+            || extraSize > (1 << 9))
+          return k_IsArc_Res_NO;
+        return k_IsArc_Res_YES;
+      }
       if (dataSize > size)
         return k_IsArc_Res_NEED_MORE;
       size -= dataSize;

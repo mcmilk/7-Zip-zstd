@@ -2489,7 +2489,7 @@ void CInArchive::DetectNsisType(const CBlockHeader &bh, const Byte *p)
           if (c2 == NS_3_CODE_VAR)
             // if (c2 <= NS_3_CODE_SKIP && c2 != NS_3_CODE_SHELL && c2 != 1)
           {
-            if ((strData[i+ 2] & 0x80) != 0)
+            if ((strData[i + 2] & 0x80) != 0)
             {
               // const char *p2 = (const char *)(strData + i + 1);
               // p2 = p2;
@@ -5048,6 +5048,12 @@ HRESULT CInArchive::Parse()
   DetectNsisType(bhEntries, _data + bhEntries.Offset);
 
   Decoder.IsNsisDeflate = (NsisType != k_NsisType_Nsis3);
+  
+  // some NSIS files (that are not detected as k_NsisType_Nsis3)
+  // use original (non-NSIS) Deflate
+  // How to detect these cases?
+
+  // Decoder.IsNsisDeflate = false;
 
 
   #ifdef NSIS_SCRIPT

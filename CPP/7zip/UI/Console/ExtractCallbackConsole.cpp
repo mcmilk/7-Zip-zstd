@@ -114,6 +114,39 @@ void Print_DirItemsStat(AString &s, const CDirItemsStat &st)
   }
 }
 
+
+void Print_DirItemsStat2(AString &s, const CDirItemsStat2 &st)
+{
+  Print_DirItemsStat(s, (CDirItemsStat &)st);
+  bool needLF = true;
+  if (st.Anti_NumDirs != 0)
+  {
+    if (needLF)
+      s.Add_LF();
+    needLF = false;
+    Print_UInt64_and_String(s, st.Anti_NumDirs, st.Anti_NumDirs == 1 ? "anti-folder" : "anti-folders");
+  }
+  if (st.Anti_NumFiles != 0)
+  {
+    if (needLF)
+      s.Add_LF();
+    else
+      s += ", ";
+    needLF = false;
+    Print_UInt64_and_String(s, st.Anti_NumFiles, st.Anti_NumFiles == 1 ? "anti-file" : "anti-files");
+  }
+  if (st.Anti_NumAltStreams != 0)
+  {
+    if (needLF)
+      s.Add_LF();
+    else
+      s += ", ";
+    needLF = false;
+    Print_UInt64_and_String(s, st.Anti_NumAltStreams, "anti-alternate-streams");
+  }
+}
+
+
 void CExtractScanConsole::PrintStat(const CDirItemsStat &st)
 {
   if (_so)

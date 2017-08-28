@@ -574,7 +574,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   }
   else if (!srcPanel.DoesItSupportOperations())
   {
-    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+    srcPanel.MessageBox_Error_UnsupportOperation();
     return;
   }
 
@@ -608,6 +608,8 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   UStringVector copyFolders;
   ReadCopyHistory(copyFolders);
   
+  bool useFullItemPaths = srcPanel.Is_IO_FS_Folder(); // maybe we need flat also here ??
+
   {
     CCopyDialog copyDialog;
 
@@ -626,14 +628,14 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   {
     if (destPath.IsEmpty())
     {
-      srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+      srcPanel.MessageBox_Error_UnsupportOperation();
       return;
     }
 
     UString correctName;
     if (!srcPanel.CorrectFsPath(destPath, correctName))
     {
-      srcPanel.MessageBoxError(E_INVALIDARG);
+      srcPanel.MessageBox_Error_HRESULT(E_INVALIDARG);
       return;
     }
 
@@ -647,7 +649,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     if (destPath.Len() > 0 && destPath[0] == '\\')
       if (destPath.Len() == 1 || destPath[1] != '\\')
       {
-        srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+        srcPanel.MessageBox_Error_UnsupportOperation();
         return;
       }
     #endif
@@ -658,7 +660,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     {
       if (NumPanels == 1 || CompareFileNames(destPath, srcPanel.GetFsPath()) == 0)
       {
-        srcPanel.MessageBoxMyError(L"Can not copy files onto itself");
+        srcPanel.MessageBox_Error(L"Can not copy files onto itself");
         return;
       }
 
@@ -674,7 +676,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
         destIsFsPath = true;
       else if (destPanel.IsFSDrivesFolder() || destPanel.IsRootFolder())
       {
-        srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+        srcPanel.MessageBox_Error_UnsupportOperation();
         return;
       }
     }
@@ -683,7 +685,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
       if (IsAltPathPrefix(us2fs(destPath)))
       {
         // we allow alt streams dest only to alt stream folder in second panel
-        srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+        srcPanel.MessageBox_Error_UnsupportOperation();
         return;
         /*
         FString basePath = us2fs(destPath);
@@ -704,7 +706,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
           int pos = destPath.ReverseFind_PathSepar();
           if (pos < 0)
           {
-            srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+            srcPanel.MessageBox_Error_UnsupportOperation();
             return;
           }
           {
@@ -713,7 +715,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
             UString name = destPath.Ptr(pos + 1);
             if (name.Find(L':') >= 0)
             {
-              srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+              srcPanel.MessageBox_Error_UnsupportOperation();
               return;
             }
             #endif
@@ -721,7 +723,8 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
             UString prefix = destPath.Left(pos + 1);
             if (!CreateComplexDir(us2fs(prefix)))
             {
-              srcPanel.MessageBoxError2Lines(prefix, GetLastError());
+              DWORD lastError = ::GetLastError();
+              srcPanel.MessageBox_Error_2Lines_Message_HRESULT(prefix, lastError);
               return;
             }
           }
@@ -732,7 +735,8 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
           NName::NormalizeDirPathPrefix(destPath);
           if (!CreateComplexDir(us2fs(destPath)))
           {
-            srcPanel.MessageBoxError2Lines(destPath, GetLastError());
+            DWORD lastError = ::GetLastError();
+            srcPanel.MessageBox_Error_2Lines_Message_HRESULT(destPath, lastError);
             return;
           }
         }
@@ -754,7 +758,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   bool useTemp = useSrcPanel && useDestPanel;
   if (useTemp && NumPanels == 1)
   {
-    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+    srcPanel.MessageBox_Error_UnsupportOperation();
     return;
   }
   
@@ -793,13 +797,25 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
   {
     UStringVector filePaths;
     UString folderPrefix;
+    
     if (useTemp)
       folderPrefix = fs2us(tempDirPrefix);
     else
       folderPrefix = srcPanel.GetFsPath();
+    
     filePaths.ClearAndReserve(indices.Size());
+    
     FOR_VECTOR (i, indices)
-      filePaths.AddInReserved(srcPanel.GetItemRelPath2(indices[i]));
+    {
+      UInt32 index = indices[i];
+      UString s;
+      if (useFullItemPaths)
+        s = srcPanel.GetItemRelPath2(index);
+      else
+        s = srcPanel.GetItemName_for_Copy(index);
+      filePaths.AddInReserved(s);
+    }
+    
     result = destPanel.CopyFrom(move, folderPrefix, filePaths, true, 0);
   }
   
@@ -812,7 +828,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     // srcPanel.InvalidateList(NULL, true);
 
     if (result != E_ABORT)
-      srcPanel.MessageBoxError(result);
+      srcPanel.MessageBox_Error_HRESULT(result);
     // return;
   }
 

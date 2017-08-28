@@ -1,5 +1,5 @@
 /* Xz.h - Xz interface
-2017-04-03 : Igor Pavlov : Public domain */
+2017-07-27 : Igor Pavlov : Public domain */
 
 #ifndef __XZ_H
 #define __XZ_H
@@ -50,6 +50,7 @@ typedef struct
 #define XzBlock_GetNumFilters(p) (((p)->flags & XZ_BF_NUM_FILTERS_MASK) + 1)
 #define XzBlock_HasPackSize(p)   (((p)->flags & XZ_BF_PACK_SIZE) != 0)
 #define XzBlock_HasUnpackSize(p) (((p)->flags & XZ_BF_UNPACK_SIZE) != 0)
+#define XzBlock_HasUnsupportedFlags(p) (((p)->flags & ~(XZ_BF_NUM_FILTERS_MASK | XZ_BF_PACK_SIZE | XZ_BF_UNPACK_SIZE)) != 0)
 
 SRes XzBlock_Parse(CXzBlock *p, const Byte *header);
 SRes XzBlock_ReadHeader(CXzBlock *p, ISeqInStream *inStream, Bool *isIndex, UInt32 *headerSizeRes);
@@ -60,7 +61,13 @@ SRes XzBlock_ReadHeader(CXzBlock *p, ISeqInStream *inStream, Bool *isIndex, UInt
 #define XZ_FOOTER_SIG_SIZE 2
 
 extern const Byte XZ_SIG[XZ_SIG_SIZE];
+
+/*
 extern const Byte XZ_FOOTER_SIG[XZ_FOOTER_SIG_SIZE];
+*/
+
+#define XZ_FOOTER_SIG_0 'Y'
+#define XZ_FOOTER_SIG_1 'Z'
 
 #define XZ_STREAM_FLAGS_SIZE 2
 #define XZ_STREAM_CRC_SIZE 4
@@ -106,7 +113,6 @@ typedef struct
 {
   CXzStreamFlags flags;
   size_t numBlocks;
-  size_t numBlocksAllocated;
   CXzBlockSizes *blocks;
   UInt64 startOffset;
 } CXzStream;
@@ -218,6 +224,9 @@ typedef struct
   CXzBlock block;
   CXzCheck check;
   CSha256 sha;
+
+  unsigned decodeOnlyOneBlock;
+
   Byte shaDigest[SHA256_DIGEST_SIZE];
   Byte buf[XZ_BLOCK_HEADER_SIZE_MAX];
 } CXzUnpacker;
@@ -258,7 +267,7 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
     const Byte *src, SizeT *srcLen, ECoderFinishMode finishMode,
     ECoderStatus *status);
 
-Bool XzUnpacker_IsStreamWasFinished(CXzUnpacker *p);
+Bool XzUnpacker_IsStreamWasFinished(const CXzUnpacker *p);
 
 /*
 Call XzUnpacker_GetExtraSize after XzUnpacker_Code function to detect real size of
@@ -268,7 +277,25 @@ XzUnpacker_Code() returns:
   res == SZ_ERROR_NO_ARCHIVE
 */
 
-UInt64 XzUnpacker_GetExtraSize(CXzUnpacker *p);
+UInt64 XzUnpacker_GetExtraSize(const CXzUnpacker *p);
+
+
+/*
+  for random block decoding:
+    XzUnpacker_Init();
+    set CXzUnpacker::streamFlags
+    XzUnpacker_PrepareToRandomBlockDecoding()
+    loop
+    {
+      XzUnpacker_Code()
+      XzUnpacker_IsBlockFinished()
+    }
+*/
+
+void XzUnpacker_PrepareToRandomBlockDecoding(CXzUnpacker *p);
+Bool XzUnpacker_IsBlockFinished(const CXzUnpacker *p);
+
+#define XzUnpacker_GetPackSizeForIndex(p) ((p)->packSize + (p)->blockHeaderSize + XzFlags_GetCheckSize((p)->streamFlags))
 
 EXTERN_C_END
 

@@ -173,7 +173,7 @@ private:
   #endif
   
   #ifdef RARVM_STANDARD_FILTERS
-  void ExecuteStandardFilter(unsigned filterIndex);
+  bool ExecuteStandardFilter(unsigned filterIndex);
   #endif
   
   Byte *Mem;

@@ -26,24 +26,25 @@ static void MyStrNCpy(char *dest, const char *src, unsigned size)
   }
 }
 
-static bool OctalToNumber(const char *srcString, unsigned size, UInt64 &res)
+static bool OctalToNumber(const char *srcString, unsigned size, UInt64 &res, bool allowEmpty = false)
 {
+  res = 0;
   char sz[32];
   MyStrNCpy(sz, srcString, size);
   sz[size] = 0;
   const char *end;
   unsigned i;
   for (i = 0; sz[i] == ' '; i++);
+  if (sz[i] == 0)
+    return allowEmpty;
   res = ConvertOctStringToUInt64(sz + i, &end);
-  if (end == sz + i)
-    return false;
   return (*end == ' ' || *end == 0);
 }
 
-static bool OctalToNumber32(const char *srcString, unsigned size, UInt32 &res)
+static bool OctalToNumber32(const char *srcString, unsigned size, UInt32 &res, bool allowEmpty = false)
 {
   UInt64 res64;
-  if (!OctalToNumber(srcString, size, res64))
+  if (!OctalToNumber(srcString, size, res64, allowEmpty))
     return false;
   res = (UInt32)res64;
   return (res64 <= 0xFFFFFFFF);
@@ -123,7 +124,8 @@ API_FUNC_IsArc IsArc_Tar(const Byte *p2, size_t size)
   p += NFileHeader::kNameSize;
 
   UInt32 mode;
-  CHECK(OctalToNumber32(p, 8, mode)); p += 8;
+  // we allow empty Mode value for LongName prefix items
+  CHECK(OctalToNumber32(p, 8, mode, true)); p += 8;
 
   // if (!OctalToNumber32(p, 8, item.UID)) item.UID = 0;
   p += 8;
@@ -194,7 +196,8 @@ static HRESULT GetNextItemReal(ISequentialInStream *stream, bool &filled, CItemE
       (item.Name.Len() == NFileHeader::kNameSize ||
        item.Name.Len() == NFileHeader::kNameSize - 1);
 
-  RIF(OctalToNumber32(p, 8, item.Mode)); p += 8;
+  // we allow empty Mode value for LongName prefix items
+  RIF(OctalToNumber32(p, 8, item.Mode, true)); p += 8;
 
   if (!OctalToNumber32(p, 8, item.UID)) item.UID = 0; p += 8;
   if (!OctalToNumber32(p, 8, item.GID)) item.GID = 0; p += 8;

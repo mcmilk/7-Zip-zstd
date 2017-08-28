@@ -172,6 +172,7 @@ class CArchiveExtractCallback:
   FString _dirPathPrefix_Full;
   NExtract::NPathMode::EEnum _pathMode;
   NExtract::NOverwriteMode::EEnum _overwriteMode;
+  bool _keepAndReplaceEmptyDirPrefixes; // replace them to "_";
 
   #ifndef _SFX
 
@@ -278,11 +279,13 @@ public:
 
   void InitForMulti(bool multiArchives,
       NExtract::NPathMode::EEnum pathMode,
-      NExtract::NOverwriteMode::EEnum overwriteMode)
+      NExtract::NOverwriteMode::EEnum overwriteMode,
+      bool keepAndReplaceEmptyDirPrefixes)
   {
     _multiArchives = multiArchives;
     _pathMode = pathMode;
     _overwriteMode = overwriteMode;
+    _keepAndReplaceEmptyDirPrefixes = keepAndReplaceEmptyDirPrefixes;
     NumFolders = NumFiles = NumAltStreams = UnpackSize = AltStreams_UnpackSize = 0;
   }
 

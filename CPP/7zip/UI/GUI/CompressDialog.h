@@ -137,6 +137,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   UString GetEncryptionMethodSpec();
 
   bool IsZipFormat();
+  bool IsXzFormat();
 
   void SetEncryptionMethod();
 
@@ -161,7 +162,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SetOrder();
   bool GetOrderMode();
 
-  void SetSolidBlockSize();
+  void SetSolidBlockSize(bool useDictionary = false);
   void SetNumThreads();
 
   UInt64 GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory);

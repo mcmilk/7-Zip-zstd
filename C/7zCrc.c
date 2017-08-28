@@ -1,5 +1,5 @@
 /* 7zCrc.c -- CRC32 init
-2017-04-03 : Igor Pavlov : Public domain */
+2017-06-06 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -86,8 +86,8 @@ void MY_FAST_CALL CrcGenerateTable()
   
       #ifdef MY_CPU_X86_OR_AMD64
       if (!CPU_Is_InOrder())
-        g_CrcUpdate = CrcUpdateT8;
       #endif
+        g_CrcUpdate = CrcUpdateT8;
     #endif
 
   #else
@@ -101,7 +101,7 @@ void MY_FAST_CALL CrcGenerateTable()
       g_CrcUpdate = CrcUpdateT4;
       #if CRC_NUM_TABLES >= 8
       g_CrcUpdateT8 = CrcUpdateT8;
-      // g_CrcUpdate = CrcUpdateT8;
+      g_CrcUpdate = CrcUpdateT8;
       #endif
     }
     else if (p[0] != 1 || p[1] != 2)
@@ -118,7 +118,7 @@ void MY_FAST_CALL CrcGenerateTable()
       g_CrcUpdate = CrcUpdateT1_BeT4;
       #if CRC_NUM_TABLES >= 8
       g_CrcUpdateT8 = CrcUpdateT1_BeT8;
-      // g_CrcUpdate = CrcUpdateT1_BeT8;
+      g_CrcUpdate = CrcUpdateT1_BeT8;
       #endif
     }
   }

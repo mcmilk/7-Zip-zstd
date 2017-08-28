@@ -40,6 +40,7 @@
   04  ICompressProgressInfo
   05  ICompressCoder
   18  ICompressCoder2
+  1F  ICompressSetCoderPropertiesOpt
   20  ICompressSetCoderProperties
   21  ICompressSetDecoderProperties //
   22  ICompressSetDecoderProperties2

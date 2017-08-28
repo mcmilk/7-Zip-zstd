@@ -383,7 +383,10 @@ static void SetMemoryLock()
     NSecurity::AddLockMemoryPrivilege();
 
   if (ReadLockMemoryEnable())
+  {
+    // note: child processes can inherit that Privilege
     g_LargePagesMode = NSecurity::EnablePrivilege_LockMemory();
+  }
 }
 
 bool g_SymLink_Supported = false;

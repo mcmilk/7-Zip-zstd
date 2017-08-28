@@ -155,7 +155,7 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
   
   #ifdef RARVM_STANDARD_FILTERS
   if (prg->StandardFilterIndex >= 0)
-    ExecuteStandardFilter(prg->StandardFilterIndex);
+    res = ExecuteStandardFilter(prg->StandardFilterIndex);
   else
   #endif
   {
@@ -880,10 +880,10 @@ static void E8E9Decode(Byte *data, UInt32 dataSize, UInt32 fileOffset, bool e9)
     if (((*data++) & cmpMask) == 0xE8)
     {
       UInt32 offset = curPos + fileOffset;
-      UInt32 addr = (Int32)GetValue32(data);
+      UInt32 addr = GetValue32(data);
       if (addr < kFileSize)
         SetValue32(data, addr - offset);
-      else if ((Int32)addr < 0 && (Int32)(addr + offset) >= 0)
+      else if ((addr & 0x80000000) != 0 && ((addr + offset) & 0x80000000) == 0)
         SetValue32(data, addr + kFileSize);
       data += 4;
       curPos += 4;
@@ -935,7 +935,7 @@ static void ItaniumDecode(Byte *data, UInt32 dataSize, UInt32 fileOffset)
 static void DeltaDecode(Byte *data, UInt32 dataSize, UInt32 numChannels)
 {
   UInt32 srcPos = 0;
-  UInt32 border = dataSize * 2;
+  const UInt32 border = dataSize * 2;
   for (UInt32 curChannel = 0; curChannel < numChannels; curChannel++)
   {
     Byte prevByte = 0;
@@ -947,12 +947,13 @@ static void DeltaDecode(Byte *data, UInt32 dataSize, UInt32 numChannels)
 static void RgbDecode(Byte *srcData, UInt32 dataSize, UInt32 width, UInt32 posR)
 {
   Byte *destData = srcData + dataSize;
-  const UInt32 numChannels = 3;
-  for (UInt32 curChannel = 0; curChannel < numChannels; curChannel++)
+  const UInt32 kNumChannels = 3;
+  
+  for (UInt32 curChannel = 0; curChannel < kNumChannels; curChannel++)
   {
     Byte prevByte = 0;
     
-    for (UInt32 i = curChannel; i < dataSize; i+= numChannels)
+    for (UInt32 i = curChannel; i < dataSize; i += kNumChannels)
     {
       unsigned int predicted;
       if (i < width)
@@ -978,7 +979,8 @@ static void RgbDecode(Byte *srcData, UInt32 dataSize, UInt32 width, UInt32 posR)
   }
   if (dataSize < 3)
     return;
-  for (UInt32 i = posR, border = dataSize - 2; i < border; i += 3)
+  const UInt32 border = dataSize - 2;
+  for (UInt32 i = posR; i < border; i += 3)
   {
     Byte g = destData[i + 1];
     destData[i    ] = (Byte)(destData[i    ] + g);
@@ -1064,11 +1066,11 @@ static UInt32 UpCaseDecode(Byte *data, UInt32 dataSize)
 }
 */
 
-void CVm::ExecuteStandardFilter(unsigned filterIndex)
+bool CVm::ExecuteStandardFilter(unsigned filterIndex)
 {
   UInt32 dataSize = R[4];
   if (dataSize >= kGlobalOffset)
-    return;
+    return false;
   EStandardFilter filterType = kStdFilters[filterIndex].Type;
 
   switch (filterType)
@@ -1077,42 +1079,59 @@ void CVm::ExecuteStandardFilter(unsigned filterIndex)
     case SF_E8E9:
       E8E9Decode(Mem, dataSize, R[6], (filterType == SF_E8E9));
       break;
+    
     case SF_ITANIUM:
       ItaniumDecode(Mem, dataSize, R[6]);
       break;
+    
     case SF_DELTA:
+    {
       if (dataSize >= kGlobalOffset / 2)
-        break;
+        return false;
+      UInt32 numChannels = R[0];
+      if (numChannels == 0 || numChannels > 1024) // unrar 5.5.5
+        return false;
       SetBlockPos(dataSize);
-      DeltaDecode(Mem, dataSize, R[0]);
+      DeltaDecode(Mem, dataSize, numChannels);
       break;
+    }
+    
     case SF_RGB:
-      if (dataSize >= kGlobalOffset / 2)
-        break;
-      {
-        UInt32 width = R[0];
-        if (width <= 3)
-          break;
-        SetBlockPos(dataSize);
-        RgbDecode(Mem, dataSize, width, R[1]);
-      }
-      break;
-    case SF_AUDIO:
-      if (dataSize >= kGlobalOffset / 2)
-        break;
+    {
+      if (dataSize >= kGlobalOffset / 2 || dataSize < 3) // unrar 5.5.5
+        return false;
+      UInt32 width = R[0];
+      UInt32 posR = R[1];
+      if (width < 3 || width - 3 > dataSize || posR > 2) // unrar 5.5.5
+        return false;
       SetBlockPos(dataSize);
-      AudioDecode(Mem, dataSize, R[0]);
+      RgbDecode(Mem, dataSize, width, posR);
       break;
+    }
+    
+    case SF_AUDIO:
+    {
+      if (dataSize >= kGlobalOffset / 2)
+        return false;
+      UInt32 numChannels = R[0];
+      if (numChannels == 0 || numChannels > 128) // unrar 5.5.5
+        return false;
+      SetBlockPos(dataSize);
+      AudioDecode(Mem, dataSize, numChannels);
+      break;
+    }
+    
     /*
     case SF_UPCASE:
       if (dataSize >= kGlobalOffset / 2)
-        break;
+        return false;
       UInt32 destSize = UpCaseDecode(Mem, dataSize);
       SetBlockSize(destSize);
       SetBlockPos(dataSize);
       break;
     */
   }
+  return true;
 }
 
 #endif

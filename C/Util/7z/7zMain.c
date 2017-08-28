@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2017-04-05 : Igor Pavlov : Public domain */
+2017-08-26 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -616,7 +616,14 @@ int MY_CDECL main(int numargs, char *args[])
           
           #ifdef USE_WINDOWS_FILE
           if (SzBitWithVals_Check(&db.Attribs, i))
-            SetFileAttributesW(destPath, db.Attribs.Vals[i]);
+          {
+            UInt32 attrib = db.Attribs.Vals[i];
+            /* p7zip stores posix attributes in high 16 bits and adds 0x8000 as marker.
+               We remove posix bits, if we detect posix mode field */
+            if ((attrib & 0xF0000000) != 0)
+              attrib &= 0x7FFF;
+            SetFileAttributesW(destPath, attrib);
+          }
           #endif
         }
         PrintLF();

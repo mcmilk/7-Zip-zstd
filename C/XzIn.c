@@ -1,5 +1,5 @@
 /* XzIn.c - Xz input
-2017-04-03 : Igor Pavlov : Public domain */
+2017-05-11 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -8,6 +8,12 @@
 #include "7zCrc.h"
 #include "CpuArch.h"
 #include "Xz.h"
+
+/*
+#define XZ_FOOTER_SIG_CHECK(p) (memcmp((p), XZ_FOOTER_SIG, XZ_FOOTER_SIG_SIZE) == 0)
+*/
+#define XZ_FOOTER_SIG_CHECK(p) ((p)[0] == XZ_FOOTER_SIG_0 && (p)[1] == XZ_FOOTER_SIG_1)
+
 
 SRes Xz_ReadHeader(CXzStreamFlags *p, ISeqInStream *inStream)
 {
@@ -28,7 +34,7 @@ SRes XzBlock_ReadHeader(CXzBlock *p, ISeqInStream *inStream, Bool *isIndex, UInt
   unsigned headerSize;
   *headerSizeRes = 0;
   RINOK(SeqInStream_ReadByte(inStream, &header[0]));
-  headerSize = ((unsigned)header[0] << 2) + 4;
+  headerSize = (unsigned)header[0];
   if (headerSize == 0)
   {
     *headerSizeRes = 1;
@@ -37,12 +43,13 @@ SRes XzBlock_ReadHeader(CXzBlock *p, ISeqInStream *inStream, Bool *isIndex, UInt
   }
 
   *isIndex = False;
+  headerSize = (headerSize << 2) + 4;
   *headerSizeRes = headerSize;
   RINOK(SeqInStream_Read(inStream, header + 1, headerSize - 1));
   return XzBlock_Parse(p, header);
 }
 
-#define ADD_SIZE_CHECH(size, val) \
+#define ADD_SIZE_CHECK(size, val) \
   { UInt64 newSize = size + (val); if (newSize < size) return XZ_SIZE_OVERFLOW; size = newSize; }
 
 UInt64 Xz_GetUnpackSize(const CXzStream *p)
@@ -50,7 +57,7 @@ UInt64 Xz_GetUnpackSize(const CXzStream *p)
   UInt64 size = 0;
   size_t i;
   for (i = 0; i < p->numBlocks; i++)
-    ADD_SIZE_CHECH(size, p->blocks[i].unpackSize);
+    ADD_SIZE_CHECK(size, p->blocks[i].unpackSize);
   return size;
 }
 
@@ -59,7 +66,7 @@ UInt64 Xz_GetPackSize(const CXzStream *p)
   UInt64 size = 0;
   size_t i;
   for (i = 0; i < p->numBlocks; i++)
-    ADD_SIZE_CHECH(size, (p->blocks[i].totalSize + 3) & ~(UInt64)3);
+    ADD_SIZE_CHECK(size, (p->blocks[i].totalSize + 3) & ~(UInt64)3);
   return size;
 }
 
@@ -96,9 +103,8 @@ static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAllocPt
   {
     size_t i;
     p->numBlocks = numBlocks;
-    p->numBlocksAllocated = numBlocks;
     p->blocks = ISzAlloc_Alloc(alloc, sizeof(CXzBlockSizes) * numBlocks);
-    if (p->blocks == 0)
+    if (!p->blocks)
       return SZ_ERROR_MEM;
     for (i = 0; i < numBlocks; i++)
     {
@@ -126,7 +132,7 @@ static SRes Xz_ReadIndex(CXzStream *p, ILookInStream *stream, UInt64 indexSize, 
   if (size != indexSize)
     return SZ_ERROR_UNSUPPORTED;
   buf = ISzAlloc_Alloc(alloc, size);
-  if (buf == 0)
+  if (!buf)
     return SZ_ERROR_MEM;
   res = LookInStream_Read2(stream, buf, size, SZ_ERROR_UNSUPPORTED);
   if (res == SZ_OK)
@@ -154,7 +160,7 @@ static SRes Xz_ReadBackward(CXzStream *p, ILookInStream *stream, Int64 *startOff
   pos -= XZ_STREAM_FOOTER_SIZE;
   RINOK(LookInStream_SeekRead_ForArc(stream, pos, buf, XZ_STREAM_FOOTER_SIZE));
   
-  if (memcmp(buf + 10, XZ_FOOTER_SIG, XZ_FOOTER_SIG_SIZE) != 0)
+  if (!XZ_FOOTER_SIG_CHECK(buf + 10))
   {
     UInt32 total = 0;
     pos += XZ_STREAM_FOOTER_SIZE;
@@ -187,7 +193,7 @@ static SRes Xz_ReadBackward(CXzStream *p, ILookInStream *stream, Int64 *startOff
       return SZ_ERROR_NO_ARCHIVE;
     pos -= XZ_STREAM_FOOTER_SIZE;
     RINOK(LookInStream_SeekRead_ForArc(stream, pos, buf, XZ_STREAM_FOOTER_SIZE));
-    if (memcmp(buf + 10, XZ_FOOTER_SIG, XZ_FOOTER_SIG_SIZE) != 0)
+    if (!XZ_FOOTER_SIG_CHECK(buf + 10))
       return SZ_ERROR_NO_ARCHIVE;
   }
   
@@ -262,7 +268,7 @@ UInt64 Xzs_GetUnpackSize(const CXzs *p)
   UInt64 size = 0;
   size_t i;
   for (i = 0; i < p->num; i++)
-    ADD_SIZE_CHECH(size, Xz_GetUnpackSize(&p->streams[i]));
+    ADD_SIZE_CHECK(size, Xz_GetUnpackSize(&p->streams[i]));
   return size;
 }
 
@@ -272,7 +278,7 @@ UInt64 Xzs_GetPackSize(const CXzs *p)
   UInt64 size = 0;
   size_t i;
   for (i = 0; i < p->num; i++)
-    ADD_SIZE_CHECH(size, Xz_GetTotalSize(&p->streams[i]));
+    ADD_SIZE_CHECK(size, Xz_GetTotalSize(&p->streams[i]));
   return size;
 }
 */
@@ -294,7 +300,7 @@ SRes Xzs_ReadBackward(CXzs *p, ILookInStream *stream, Int64 *startOffset, ICompr
     {
       size_t newNum = p->num + p->num / 4 + 1;
       Byte *data = (Byte *)ISzAlloc_Alloc(alloc, newNum * sizeof(CXzStream));
-      if (data == 0)
+      if (!data)
         return SZ_ERROR_MEM;
       p->numAllocated = newNum;
       if (p->num != 0)

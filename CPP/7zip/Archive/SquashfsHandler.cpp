@@ -60,6 +60,7 @@ UInt64 Get64b(const Byte *p, bool be) { return be ? GetBe64(p) : GetUi64(p); }
 static const UInt32 kSignature32_LE = 0x73717368;
 static const UInt32 kSignature32_BE = 0x68737173;
 static const UInt32 kSignature32_LZ = 0x71736873;
+static const UInt32 kSignature32_B2 = 0x73687371;
 
 #define kMethod_ZLIB 1
 #define kMethod_LZMA 2
@@ -225,6 +226,7 @@ struct CHeader
       case kSignature32_LE: break;
       case kSignature32_BE: be = true; break;
       case kSignature32_LZ: SeveralMethods = true; break;
+      case kSignature32_B2: SeveralMethods = true; be = true; break;
       default: return false;
     }
     GET_32 (4, NumInodes);
@@ -2258,7 +2260,8 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 static const Byte k_Signature[] = {
     4, 'h', 's', 'q', 's',
     4, 's', 'q', 's', 'h',
-    4, 's', 'h', 's', 'q' };
+    4, 's', 'h', 's', 'q',
+    4, 'q', 's', 'h', 's' };
 
 REGISTER_ARC_I(
   "SquashFS", "squashfs", 0, 0xD2,

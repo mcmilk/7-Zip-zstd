@@ -327,6 +327,7 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
   // CSelectedState selState;
   // SaveSelectedState(selState);
 
+  // FString dirPrefix2;
   FString dirPrefix;
   CTempDir tempDirectory;
 
@@ -337,6 +338,7 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
   {
     tempDirectory.Create(kTempDirPrefix);
     dirPrefix = tempDirectory.GetPath();
+    // dirPrefix2 = dirPrefix;
     NFile::NName::NormalizeDirPathPrefix(dirPrefix);
   }
 
@@ -345,6 +347,10 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
 
   {
     UStringVector names;
+
+    // names variable is     USED for drag and drop from 7-zip to Explorer or to 7-zip archive folder.
+    // names variable is NOT USED for drag and drop from 7-zip to 7-zip File System folder.
+
     FOR_VECTOR (i, indices)
     {
       UInt32 index = indices[i];
@@ -354,6 +360,23 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
       else
       {
         s = GetItemName(index);
+        /*
+        // We use (keepAndReplaceEmptyPrefixes = true) in CAgentFolder::Extract
+        // So the following code is not required.
+        // Maybe we also can change IFolder interface and send some flag also.
+  
+        if (s.IsEmpty())
+        {
+          // Correct_FsFile_Name("") returns "_".
+          // If extracting code removes empty folder prefixes from path (as it was in old version),
+          // Explorer can't find "_" folder in temp folder.
+          // We can ask Explorer to copy parent temp folder "7zE" instead.
+
+          names.Clear();
+          names.Add(dirPrefix2);
+          break;
+        }
+        */
         s = Get_Correct_FsFile_Name(s);
       }
       names.Add(fs2us(dirPrefix) + s);
@@ -408,7 +431,7 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
     // we ignore E_UNEXPECTED that is returned if we drag file to printer
     if (res != DRAGDROP_S_CANCEL && res != S_OK
         && res != E_UNEXPECTED)
-      MessageBoxError(res);
+      MessageBox_Error_HRESULT(res);
 
     res = dropSourceSpec->Result;
   }
@@ -422,10 +445,10 @@ void CPanel::OnDrag(LPNMLISTVIEW /* nmListView */)
   
   if (res != S_OK && res != E_ABORT)
   {
-    // we restore Notify before MessageBoxError. So we will se files selection
+    // we restore Notify before MessageBox_Error_HRESULT. So we will se files selection
     disableNotify.Restore();
     // SetFocusToList();
-    MessageBoxError(res);
+    MessageBox_Error_HRESULT(res);
   }
   if (res == S_OK && dropSourceSpec->Messages.IsEmpty() && !canceled)
     KillSelection();

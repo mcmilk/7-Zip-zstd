@@ -144,7 +144,8 @@ void CDecoder::ExecuteFilter(int tempFilterIndex, NVm::CBlockRef &outBlockRef)
   CFilter *filter = _filters[tempFilter->FilterIndex];
   if (!filter->IsSupported)
     _unsupportedFilter = true;
-  _vm.Execute(filter, tempFilter, outBlockRef, filter->GlobalData);
+  if (!_vm.Execute(filter, tempFilter, outBlockRef, filter->GlobalData))
+    _unsupportedFilter = true;
   delete tempFilter;
   _tempFilters[tempFilterIndex] = 0;
 }

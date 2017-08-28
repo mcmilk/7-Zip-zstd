@@ -269,7 +269,25 @@ UInt32 CItem::GetWinAttrib() const
     case NHostOS::kUnix:
       // do we need to clear 16 low bits in this case?
       if (FromCentral)
+      {
+        /*
+          Some programs write posix attributes in high 16 bits of ExternalAttrib
+          Also some programs can write additional marker flag:
+            0x8000 - p7zip
+            0x4000 - Zip in MacOS
+            no marker - Info-Zip
+
+          Client code has two options to detect posix field:
+            1) check 0x8000 marker. In that case we must add 0x8000 marker here.
+            2) check that high 4 bits (file type bits in posix field) of attributes are not zero.
+        */
+        
         winAttrib = ExternalAttrib & 0xFFFF0000;
+        
+        // #ifndef _WIN32
+        winAttrib |= 0x8000; // add posix mode marker
+        // #endif
+      }
       break;
   }
   if (IsDir()) // test it;

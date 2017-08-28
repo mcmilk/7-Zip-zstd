@@ -128,6 +128,15 @@ bool SetFileAttrib(CFSTR path, DWORD attrib)
   return false;
 }
 
+
+bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib)
+{
+  if ((attrib & 0xF0000000) != 0)
+    attrib &= 0x3FFF;
+  return SetFileAttrib(path, attrib);
+}
+
+
 bool RemoveDir(CFSTR path)
 {
   #ifndef _UNICODE

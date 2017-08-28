@@ -279,7 +279,9 @@ HRESULT Extract(
   CArchiveExtractCallback *ecs = new CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> ec(ecs);
   bool multi = (numArcs > 1);
-  ecs->InitForMulti(multi, options.PathMode, options.OverwriteMode);
+  ecs->InitForMulti(multi, options.PathMode, options.OverwriteMode,
+      false // keepEmptyDirParts
+      );
   #ifndef _SFX
   ecs->SetHashMethods(hash);
   #endif

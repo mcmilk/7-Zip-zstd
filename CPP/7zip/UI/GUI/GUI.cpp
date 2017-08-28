@@ -128,13 +128,20 @@ static int Main2()
 
   #if defined(_WIN32) && !defined(UNDER_CE)
   NSecurity::EnablePrivilege_SymLink();
+  #endif
+  
   #ifdef _7ZIP_LARGE_PAGES
   if (options.LargePages)
   {
     SetLargePageSize();
-    g_LargePagesMode = NSecurity::EnablePrivilege_LockMemory();
+    // note: this process also can inherit that Privilege from parent process
+    g_LargePagesMode =
+    #if defined(_WIN32) && !defined(UNDER_CE)
+      NSecurity::EnablePrivilege_LockMemory();
+    #else
+      true;
+    #endif
   }
-  #endif
   #endif
 
   CREATE_CODECS_OBJECT

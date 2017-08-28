@@ -21,7 +21,7 @@ struct CDirItemsStat
   
   UInt64 NumErrors;
   
-  UInt64 Get_NumItems() const { return NumDirs + NumFiles + NumAltStreams; }
+  // UInt64 Get_NumItems() const { return NumDirs + NumFiles + NumAltStreams; }
   UInt64 Get_NumDataItems() const { return NumFiles + NumAltStreams; }
   UInt64 GetTotalBytes() const { return FilesSize + AltStreamsSize; }
 
@@ -42,6 +42,30 @@ struct CDirItemsStat
       NumErrors(0)
     {}
 };
+
+
+struct CDirItemsStat2: public CDirItemsStat
+{
+  UInt64 Anti_NumDirs;
+  UInt64 Anti_NumFiles;
+  UInt64 Anti_NumAltStreams;
+  
+  // UInt64 Get_NumItems() const { return Anti_NumDirs + Anti_NumFiles + Anti_NumAltStreams + CDirItemsStat::Get_NumItems(); }
+  UInt64 Get_NumDataItems2() const { return Anti_NumFiles + Anti_NumAltStreams + CDirItemsStat::Get_NumDataItems(); }
+
+  bool IsEmpty() const { return CDirItemsStat::IsEmpty()
+        && 0 == Anti_NumDirs
+        && 0 == Anti_NumFiles
+        && 0 == Anti_NumAltStreams; }
+  
+  CDirItemsStat2():
+      Anti_NumDirs(0),
+      Anti_NumFiles(0),
+      Anti_NumAltStreams(0)
+    {}
+};
+
+
 
 #define INTERFACE_IDirItemsCallback(x) \
   virtual HRESULT ScanError(const FString &path, DWORD systemError) x; \

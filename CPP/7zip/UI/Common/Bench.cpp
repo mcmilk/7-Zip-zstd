@@ -2376,15 +2376,7 @@ static UInt32 GetNumThreadsNext(unsigned i, UInt32 numThreads)
 
 static bool AreSameMethodNames(const char *fullName, const char *shortName)
 {
-  for (;;)
-  {
-    char c2 = *shortName++;
-    if (c2 == 0)
-      return true;
-    char c1 = *fullName++;
-    if (MyCharLower_Ascii(c1) != MyCharLower_Ascii(c2))
-      return false;
-  }
+  return StringsAreEqualNoCase_Ascii(fullName, shortName);
 }
 
 
@@ -2545,27 +2537,24 @@ static const char * const k_PF[] =
 #endif
 
 
-static void PrintSize(AString &s, UInt64 ptr)
+static void PrintSize(AString &s, UInt64 v)
 {
-  UInt64 v = ptr;
-  UInt64 t = v >> 40;
-  UInt64 g = v >> 30;
-  UInt64 m = v >> 20;
-  UInt64 k = v >> 10;
-  UInt32 d = (UInt32)v;
   char c = 0;
-       if (t >= 1000) { d = (UInt32)t; c = 'T'; }
-  else if (g >= 1000) { d = (UInt32)g; c = 'G'; }
-  else if (m >= 1000) { d = (UInt32)m; c = 'M'; }
-  else if (k >= 10) { d = (UInt32)k; c = 'K'; }
-
-  s.Add_UInt32(d);
-  // s += ' ';
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'K';
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'M';
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'G';
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'T';
+  }}}}
+  else
+  {
+    PrintHex(s, v);
+    return;
+  }
+  char temp[32];
+  ConvertUInt64ToString(v, temp);
+  s += temp;
   if (c)
     s += c;
-
-  
-  // PrintHex(s, (DWORD_PTR)v);
 }
   
 
@@ -2631,12 +2620,19 @@ static void SysInfo_To_String(AString &s, const SYSTEM_INFO &si)
   s += " ";
 
   DWORD_PTR minAdd = (DWORD_PTR)si.lpMinimumApplicationAddress;
-  if (minAdd != (1 << 16))
+  UInt64 maxSize = (UInt64)(DWORD_PTR)si.lpMaximumApplicationAddress + 1;
+  const UInt32 kReserveSize = ((UInt32)1 << 16);
+  if (minAdd != kReserveSize)
   {
     PrintSize(s, minAdd);
     s += "-";
   }
-  PrintSize(s, (UInt64)(DWORD_PTR)si.lpMaximumApplicationAddress + 1);
+  else
+  {
+    if ((maxSize & (kReserveSize - 1)) == 0)
+      maxSize += kReserveSize;
+  }
+  PrintSize(s, maxSize);
 }
 
 #ifndef _WIN64
@@ -3006,26 +3002,34 @@ HRESULT Bench(
     UInt32 complexity = 10000;
     const UInt32 *checkSum = NULL;
     {
-      for (unsigned i = 0; i < ARRAY_SIZE(g_Hash); i++)
+      unsigned i;
+      for (i = 0; i < ARRAY_SIZE(g_Hash); i++)
       {
         const CBenchHash &h = g_Hash[i];
-        AString s (h.Name);
-        AString hProp;
-        int propPos = s.Find(':');
+        AString benchMethod (h.Name);
+        AString benchProps;
+        int propPos = benchMethod.Find(':');
         if (propPos >= 0)
         {
-          hProp = s.Ptr(propPos + 1);
-          s.DeleteFrom(propPos);
+          benchProps = benchMethod.Ptr(propPos + 1);
+          benchMethod.DeleteFrom(propPos);
         }
 
-        if (AreSameMethodNames(s, methodName))
+        if (AreSameMethodNames(benchMethod, methodName))
         {
-          complexity = h.Complex;
-          checkSum = &h.CheckSum;
-          if (method.PropsString.IsEqualTo_Ascii_NoCase(hProp))
-            break;
+          if (benchProps.IsEmpty()
+              || benchMethod.IsEqualTo_Ascii_NoCase("crc32") && benchProps == "8" && method.PropsString.IsEmpty()
+              || method.PropsString.IsPrefixedBy_Ascii_NoCase(benchProps))
+          {
+            complexity = h.Complex;
+            checkSum = &h.CheckSum;
+            if (method.PropsString.IsEqualTo_Ascii_NoCase(benchProps))
+              break;
+          }
         }
       }
+      if (i == ARRAY_SIZE(g_Hash))
+        return E_NOTIMPL;
     }
 
     f.NewLine();
@@ -3316,18 +3320,35 @@ HRESULT Bench(
     bool needSetComplexity = true;
     if (!methodName.IsEqualTo_Ascii_NoCase("LZMA"))
     {
-      for (unsigned i = 0; i < ARRAY_SIZE(g_Bench); i++)
+      unsigned i;
+      for (i = 0; i < ARRAY_SIZE(g_Bench); i++)
       {
         const CBenchMethod &h = g_Bench[i];
-        if (AreSameMethodNames(h.Name, methodName))
+        AString benchMethod (h.Name);
+        AString benchProps;
+        int propPos = benchMethod.Find(':');
+        if (propPos >= 0)
         {
-          callback.BenchProps.EncComplex = h.EncComplex;
-          callback.BenchProps.DecComplexCompr = h.DecComplexCompr;
-          callback.BenchProps.DecComplexUnc = h.DecComplexUnc;;
-          needSetComplexity = false;
-          break;
+          benchProps = benchMethod.Ptr(propPos + 1);
+          benchMethod.DeleteFrom(propPos);
+        }
+
+        if (AreSameMethodNames(benchMethod, methodName))
+        {
+          if (benchProps.IsEmpty()
+              || benchProps == "x5" && method.PropsString.IsEmpty()
+              || method.PropsString.IsPrefixedBy_Ascii_NoCase(benchProps))
+          {
+            callback.BenchProps.EncComplex = h.EncComplex;
+            callback.BenchProps.DecComplexCompr = h.DecComplexCompr;
+            callback.BenchProps.DecComplexUnc = h.DecComplexUnc;;
+            needSetComplexity = false;
+            break;
+          }
         }
       }
+      if (i == ARRAY_SIZE(g_Bench))
+        return E_NOTIMPL;
     }
     if (needSetComplexity)
       callback.BenchProps.SetLzmaCompexity();

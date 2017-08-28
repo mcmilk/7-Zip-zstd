@@ -16,6 +16,19 @@ namespace NCompress {
 namespace NXz {
 
 
+CXzUnpackerCPP::CXzUnpackerCPP(): InBuf(NULL), OutBuf(NULL)
+{
+  XzUnpacker_Construct(&p, &g_Alloc);
+}
+
+CXzUnpackerCPP::~CXzUnpackerCPP()
+{
+  XzUnpacker_Free(&p);
+  MidFree(InBuf);
+  MidFree(OutBuf);
+}
+
+
 void CStatInfo::Clear()
 {
   InSize = 0;
@@ -38,20 +51,6 @@ void CStatInfo::Clear()
   DataError = false;
   CrcError = false;
 }
-
-
-CXzUnpackerCPP::CXzUnpackerCPP(): InBuf(0), OutBuf(0)
-{
-  XzUnpacker_Construct(&p, &g_Alloc);
-}
-
-CXzUnpackerCPP::~CXzUnpackerCPP()
-{
-  XzUnpacker_Free(&p);
-  MidFree(InBuf);
-  MidFree(OutBuf);
-}
-
 
 
 HRESULT CDecoder::Decode(ISequentialInStream *seqInStream, ISequentialOutStream *outStream,
@@ -95,8 +94,12 @@ HRESULT CDecoder::Decode(ISequentialInStream *seqInStream, ISequentialOutStream 
     SizeT inLen = inSize - inPos;
     SizeT outLen = kOutBufSize - outPos;
     ECoderFinishMode finishMode = CODER_FINISH_ANY;
+
+    /*
+    // 17.01 : the code was disabled:
     if (inSize == 0)
       finishMode = CODER_FINISH_END;
+    */
 
     if (outSizeLimit)
     {

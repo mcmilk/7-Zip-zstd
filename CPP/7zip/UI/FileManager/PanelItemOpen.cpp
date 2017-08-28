@@ -559,11 +559,11 @@ HRESULT CPanel::OpenAsArc(IInStream *inStream,
       */
       /*
       if (!s.IsEmpty())
-        MessageBoxWarning(s);
+        MessageBox_Warning(s);
       else
       */
-      // after MessageBoxWarning it throws exception in nested archives in Debug Mode. why ?.
-        // MessageBoxWarning(L"test error");
+      // after MessageBox_Warning it throws exception in nested archives in Debug Mode. why ?.
+        // MessageBox_Warning(L"test error");
     }
   }
 
@@ -585,9 +585,10 @@ HRESULT CPanel::OpenAsArc_Msg(IInStream *inStream,
   if (res == E_ABORT)
     return res;
 
-  if (showErrorMessage && encrypted)
+  if (showErrorMessage)
+  if (encrypted || res != S_FALSE) // 17.01 : we show message also for (res != S_FALSE)
   {
-    UString message("Error");
+    UString message;
     if (res == S_FALSE)
     {
       message = MyFormatNew(
@@ -598,7 +599,7 @@ HRESULT CPanel::OpenAsArc_Msg(IInStream *inStream,
     }
     else
       message = HResultToMessage(res);
-    MessageBoxMyError(message);
+    MessageBox_Error(message);
   }
 
   return res;
@@ -799,6 +800,12 @@ void CApp::DiffFiles()
 {
   const CPanel &panel = GetFocusedPanel();
   
+  if (!panel.Is_IO_FS_Folder())
+  {
+    panel.MessageBox_Error_UnsupportOperation();
+    return;
+  }
+
   CRecordVector<UInt32> indices;
   panel.GetSelectedItemsIndices(indices);
 
@@ -811,6 +818,13 @@ void CApp::DiffFiles()
   else if (indices.Size() == 1 && NumPanels >= 2)
   {
     const CPanel &destPanel = Panels[1 - LastFocusedPanel];
+
+    if (!destPanel.Is_IO_FS_Folder())
+    {
+      panel.MessageBox_Error_UnsupportOperation();
+      return;
+    }
+
     path1 = panel.GetItemFullPath(indices[0]);
     CRecordVector<UInt32> indices2;
     destPanel.GetSelectedItemsIndices(indices2);
@@ -1061,7 +1075,7 @@ bool CPanel::IsVirus_Message(const UString &name)
   s.Add_LF(); s += name2;
   s.Add_LF(); s += name3;
 
-  MessageBoxMyError(s);
+  MessageBox_Error(s);
   return true;
 }
 
@@ -1095,7 +1109,7 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal, const wchar
         return;
       if (res != S_FALSE)
       {
-        MessageBoxError(res);
+        MessageBox_Error_HRESULT(res);
         return;
       }
     }
@@ -1130,7 +1144,7 @@ HRESULT CPanel::OnOpenItemChanged(UInt32 index, const wchar_t *fullFilePath,
 {
   if (!_folderOperations)
   {
-    MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+    MessageBox_Error_UnsupportOperation();
     return E_FAIL;
   }
 
@@ -1589,7 +1603,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
 
   if (!_folderOperations)
   {
-    MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+    MessageBox_Error_UnsupportOperation();
     return;
   }
 
@@ -1600,7 +1614,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   CTempDir tempDirectory;
   if (!tempDirectory.Create(kTempDirPrefix))
   {
-    MessageBoxLastError();
+    MessageBox_LastError();
     return;
   }
   
@@ -1729,7 +1743,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   if (result != S_OK)
   {
     if (result != E_ABORT)
-      MessageBoxError(result);
+      MessageBox_Error_HRESULT(result);
     return;
   }
 

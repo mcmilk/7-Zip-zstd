@@ -1363,7 +1363,7 @@ static const Byte kProps[] =
   kpidCharacts,
   kpidSymLink,
   kpidHardLink,
-  kpidCopyLink,
+  kpidCopyLink
 };
 
 
