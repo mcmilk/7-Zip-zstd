@@ -1,15 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">
-  <assemblyIdentity version="1.0.0.0" processorArchitecture="*" name="7-Zip.7-Zip.7zG" type="win32"/>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity version="1.0.0.0" processorArchitecture="*" name="7-Zip.7-Zip.7zG" type="win32" />
   <description>7-Zip GUI.</description>
-  <dependency>
-    <dependentAssembly>
-      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" publicKeyToken="6595b64144ccf1df" language="*" processorArchitecture="*" />
+  <dependency> 
+    <dependentAssembly> 
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*" />
     </dependentAssembly>
   </dependency>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings xmlns="urn:schemas-microsoft-com:asm.v3">
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>
+    </windowsSettings>
+    <windowsSettings xmlns="urn:schemas-microsoft-com:asm.v3">
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2,PerMonitor</dpiAwareness>
+    </windowsSettings>
+    <windowsSettings xmlns="urn:schemas-microsoft-com:asm.v3">
+      <gdiScaling xmlns="http://schemas.microsoft.com/SMI/2017/WindowsSettings">true</gdiScaling>
+    </windowsSettings>
+    <windowsSettings xmlns="urn:schemas-microsoft-com:asm.v3">
+      <printerDriverIsolation xmlns="http://schemas.microsoft.com/SMI/2011/WindowsSettings">true</printerDriverIsolation>
+    </windowsSettings>
+  </application>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
-        <requestedPrivileges> <requestedExecutionLevel level="asInvoker" uiAccess="false"/> </requestedPrivileges>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
     </security>
   </trustInfo>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
@@ -26,10 +42,4 @@
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
     </application>
   </compatibility>
-  <asmv3:application>
-    <asmv3:windowsSettings xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">
-      <dpiAware>True/PM</dpiAware>
-      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2,PerMonitor</dpiAwareness>
-    </asmv3:windowsSettings>
-  </asmv3:application>
 </assembly>
