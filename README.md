@@ -195,14 +195,24 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=zstd -mx..  ...
 7z a archiv.7z -m0=bcj -m1=zstd -mx21  2nd Slowest Mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=bcj -m1=zstd -mx22  Ultra Mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=bcj -m1=brotli -mxN  ...
+7z a archiv.7z -m0=bcj -m1=lizard -mxN  ...
+7z a archiv.7z -m0=bcj -m1=lz4 -mxN  ...
+7z a archiv.7z -m0=bcj -m1=lz5 -mxN  ...
 ```
 
 ## Codec Plugin for Total Commander
-- download [TotalCmd.7z](https://github.com/mcmilk/7-Zip-zstd/releases)
+- download [TotalCmd.7z]
 - install it, by replacing the files `tc7z.dll` and `tc7z64.dll` with the new ones
 - you can check the Total Commander Forum for more information about this [DLL Files](http://ghisler.ch/board/viewtopic.php?p=319216)
 - decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] ot the 7-Zip `.7z` format
   will work out of the box with Total Commander now :-)
+
+## Codec Plugin for Far Manager
+- download [Codecs.7z]
+- install it, by replacing the file `C:\Program Files\Far Manager\Plugins\ArcLite\7z.dll` with the one found in the [Codecs.7z] archive
+- it's named `7z-x64.dll` or `7z-x32.dll`, depending on your architecture
+- then restart the Far manager - and on next start, you will have support for 7-Zip Zstandard archives ;-)
 
 ## Benchmarks
 
@@ -253,3 +263,6 @@ You find this project useful, maybe you consider a donation ;-)
 [Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
 [ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/
+
+[Codecs.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
+[TotalCmd.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
