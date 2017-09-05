@@ -4,8 +4,8 @@
 This is the Github Page of [7-Zip] ZS with support of additional Codecs. The library used therefore is located here: [Multithreading Library](https://github.com/mcmilk/zstdmt)
 
 You can install it in two ways:
-1. full setup with additions within the GUI and an modified an Explorer context menu
-2. just the codec plugin, which goes to your existing [7-Zip] installation
+1. complete setup with additions within the GUI and a modified Explorer context menu
+2. only the codec plugin that goes to your existing [7-Zip] installation
 
 # Status
 
