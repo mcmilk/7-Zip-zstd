@@ -298,7 +298,7 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
   #endif
 
   HRESULT res = BindToPath(s, UString(), archiveIsOpened, encrypted);
-  RefreshListCtrl(UString(), -1, true, UStringVector());
+  RefreshListCtrl();
   return res;
 }
 
@@ -740,16 +740,19 @@ void CPanel::OpenParentFolder()
     }
   }
     
-  UStringVector selectedItems;
+  CSelectedState state;
+  state.FocusedName = focusedName;
+  state.FocusedName_Defined = true;
   /*
   if (!focusedName.IsEmpty())
-    selectedItems.Add(focusedName);
+    state.SelectedNames.Add(focusedName);
   */
   LoadFullPath();
   // ::SetCurrentDirectory(::_currentFolderPrefix);
-  RefreshListCtrl(focusedName, -1, true, selectedItems);
+  RefreshListCtrl(state);
   // _listView.EnsureVisible(_listView.GetFocusedItem(), false);
 }
+
 
 void CPanel::CloseOneLevel()
 {
@@ -783,7 +786,7 @@ void CPanel::OpenRootFolder()
   CDisableNotify disableNotify(*this);
   _parentFolders.Clear();
   SetToRootFolder();
-  RefreshListCtrl(UString(), -1, true, UStringVector());
+  RefreshListCtrl();
   // ::SetCurrentDirectory(::_currentFolderPrefix);
   /*
   BeforeChangeFolder();
@@ -847,7 +850,7 @@ void CPanel::OpenAltStreams()
       CDisableTimerProcessing disableTimerProcessing(*this);
       CDisableNotify disableNotify(*this);
       SetNewFolder(newFolder);
-      RefreshListCtrl(UString(), -1, true, UStringVector());
+      RefreshListCtrl();
       return;
     }
     return;

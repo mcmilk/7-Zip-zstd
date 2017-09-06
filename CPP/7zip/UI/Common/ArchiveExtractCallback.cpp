@@ -988,7 +988,7 @@ if (askExtractMode == NArchive::NExtract::NAskMode::kExtract && !_testMode)
         || !pathParts.IsEmpty()
         || !(_removePartsForAltStreams || _pathMode == NExtract::NPathMode::kNoPathsAlt))
     #endif
-      Correct_FsPath(_pathMode == NExtract::NPathMode::kAbsPaths, pathParts, _item.MainIsDir);
+      Correct_FsPath(_pathMode == NExtract::NPathMode::kAbsPaths, _keepAndReplaceEmptyDirPrefixes, pathParts, _item.MainIsDir);
 
     #ifdef SUPPORT_ALT_STREAMS
     
@@ -1542,7 +1542,7 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 opRes)
     NumFiles++;
 
   if (!_stdOutMode && _extractMode && _fi.AttribDefined)
-    SetFileAttrib(_diskFilePath, _fi.Attrib);
+    SetFileAttrib_PosixHighDetect(_diskFilePath, _fi.Attrib);
   
   RINOK(_extractCallback2->SetOperationResult(opRes, BoolToInt(_encrypted)));
   

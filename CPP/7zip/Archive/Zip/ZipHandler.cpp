@@ -564,7 +564,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         AString s2 = FlagsToString(g_HeaderCharacts, ARRAY_SIZE(g_HeaderCharacts), flags);
         if (!s2.IsEmpty())
         {
-          s.Add_OptSpaced(":");
+          if (!s.IsEmpty())
+            s.Add_OptSpaced(":");
           s.Add_OptSpaced(s2);
         }
       }

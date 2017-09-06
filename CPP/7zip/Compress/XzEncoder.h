@@ -16,24 +16,26 @@ namespace NXz {
 class CEncoder:
   public ICompressCoder,
   public ICompressSetCoderProperties,
+  public ICompressSetCoderPropertiesOpt,
   public CMyUnknownImp
 {
-  // CXzEncHandle _encoder;
+  CXzEncHandle _encoder;
 public:
-  CLzma2EncProps _lzma2Props;
-
   CXzProps xzProps;
-  CXzFilterProps filter;
 
-  MY_UNKNOWN_IMP2(ICompressCoder, ICompressSetCoderProperties)
+  MY_UNKNOWN_IMP3(
+      ICompressCoder,
+      ICompressSetCoderProperties,
+      ICompressSetCoderPropertiesOpt)
 
   void InitCoderProps();
-  
+  HRESULT SetCheckSize(UInt32 checkSizeInBytes);
   HRESULT SetCoderProp(PROPID propID, const PROPVARIANT &prop);
   
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
   STDMETHOD(SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
+  STDMETHOD(SetCoderPropertiesOpt)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
 
   CEncoder();
   virtual ~CEncoder();

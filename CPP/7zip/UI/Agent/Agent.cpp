@@ -1453,7 +1453,12 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
     pathMode = NExtract::NPathMode::kNoPathnames;
   */
 
-  extractCallbackSpec->InitForMulti(false, pathMode, overwriteMode);
+  extractCallbackSpec->InitForMulti(
+      false, // multiArchives
+      pathMode,
+      overwriteMode,
+      true  // keepEmptyDirPrefixes
+      );
 
   if (extractCallback2)
     extractCallback2->SetTotal(_agentSpec->GetArc().GetEstmatedPhySize());
@@ -1717,7 +1722,12 @@ STDMETHODIMP CAgent::Extract(
   COM_TRY_BEGIN
   CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
   CMyComPtr<IArchiveExtractCallback> extractCallback = extractCallbackSpec;
-  extractCallbackSpec->InitForMulti(false, pathMode, overwriteMode);
+  extractCallbackSpec->InitForMulti(
+      false, // multiArchives
+      pathMode,
+      overwriteMode,
+      true  // keepEmptyDirPrefixes
+      );
 
   CExtractNtOptions extractNtOptions;
   extractNtOptions.AltStreams.Val = true; // change it!!!

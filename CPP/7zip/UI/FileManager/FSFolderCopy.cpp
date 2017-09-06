@@ -31,7 +31,7 @@ extern bool g_IsNT;
 
 namespace NFsFolder {
 
-HRESULT CCopyStateIO::MyCopyFile(CFSTR inPath, CFSTR outPath)
+HRESULT CCopyStateIO::MyCopyFile(CFSTR inPath, CFSTR outPath, DWORD attrib)
 {
   ErrorFileIndex = -1;
   ErrorMessage.Empty();
@@ -86,6 +86,9 @@ HRESULT CCopyStateIO::MyCopyFile(CFSTR inPath, CFSTR outPath)
       }
     }
   }
+
+  if (attrib != INVALID_FILE_ATTRIBUTES)
+    SetFileAttrib(outPath, attrib);
 
   if (DeleteSrcFile)
   {
@@ -424,7 +427,9 @@ static HRESULT CopyFile_Ask(
       state2.DeleteSrcFile = state.MoveMode;
       state2.TotalSize = state.ProgressInfo.TotalSize;
       state2.StartPos = state.ProgressInfo.StartPos;
-      RINOK(state2.MyCopyFile(srcPath, destPathNew));
+
+      RINOK(state2.MyCopyFile(srcPath, destPathNew, srcFileInfo.Attrib));
+      
       if (state2.ErrorFileIndex >= 0)
       {
         if (state2.ErrorMessage.IsEmpty())

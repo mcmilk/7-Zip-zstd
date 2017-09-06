@@ -220,11 +220,12 @@ public:
 struct CSelectedState
 {
   int FocusedItem;
-  UString FocusedName;
   bool SelectFocused;
+  bool FocusedName_Defined;
+  UString FocusedName;
   UStringVector SelectedNames;
   
-  CSelectedState(): FocusedItem(-1), SelectFocused(false) {}
+  CSelectedState(): FocusedItem(-1), FocusedName_Defined(false), SelectFocused(true) {}
 };
 
 #ifdef UNDER_CE
@@ -326,9 +327,7 @@ private:
   void AddColumn(const CPropColumn &prop);
 
   void SetFocusedSelectedItem(int index, bool select);
-  HRESULT RefreshListCtrl(const UString &focusedName, int focusedPos, bool selectFocused,
-      const UStringVector &selectedNames);
-
+  
   void OnShiftSelectMessage();
   void OnArrowWithShift();
 
@@ -463,7 +462,7 @@ public:
   void GetSelectedNames(UStringVector &selectedNames);
   void SaveSelectedState(CSelectedState &s);
   HRESULT RefreshListCtrl(const CSelectedState &s);
-  HRESULT RefreshListCtrlSaveFocused();
+  HRESULT RefreshListCtrl_SaveFocused();
 
   bool GetItem_BoolProp(UInt32 itemIndex, PROPID propID) const;
   bool IsItem_Deleted(int itemIndex) const;
@@ -745,20 +744,20 @@ public:
 
   HRESULT RefreshListCtrl();
 
-  void MessageBoxInfo(LPCWSTR message, LPCWSTR caption);
-  void MessageBox(LPCWSTR message);
-  void MessageBoxWarning(LPCWSTR message);
-  void MessageBox(LPCWSTR message, LPCWSTR caption);
-  void MessageBoxMyError(LPCWSTR message);
-  void MessageBoxError(HRESULT errorCode, LPCWSTR caption);
-  void MessageBoxError(HRESULT errorCode);
-  void MessageBoxError2Lines(LPCWSTR message, HRESULT errorCode);
-  void MessageBoxLastError(LPCWSTR caption);
-  void MessageBoxLastError();
-
+  
+  // void MessageBox_Info(LPCWSTR message, LPCWSTR caption) const;
+  // void MessageBox_Warning(LPCWSTR message) const;
+  void MessageBox_Error_Caption(LPCWSTR message, LPCWSTR caption) const;
+  void MessageBox_Error(LPCWSTR message) const;
+  void MessageBox_Error_HRESULT_Caption(HRESULT errorCode, LPCWSTR caption) const;
+  void MessageBox_Error_HRESULT(HRESULT errorCode) const;
+  void MessageBox_Error_2Lines_Message_HRESULT(LPCWSTR message, HRESULT errorCode) const;
+  void MessageBox_LastError(LPCWSTR caption) const;
+  void MessageBox_LastError() const;
+  void MessageBox_Error_LangID(UINT resourceID) const;
+  void MessageBox_Error_UnsupportOperation() const;
   // void MessageBoxErrorForUpdate(HRESULT errorCode, UINT resourceID);
 
-  void MessageBoxErrorLang(UINT resourceID);
 
   void OpenAltStreams();
 

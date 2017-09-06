@@ -4,6 +4,9 @@
 
 #include "../../../C/Alloc.h"
 
+#include "../../Common/MyString.h"
+#include "../../Common/StringToInt.h"
+
 #include "../Common/CWrappers.h"
 #include "../Common/StreamUtils.h"
 
@@ -19,172 +22,224 @@ HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzm
 
 namespace NXz {
 
-extern "C" {
-
-static void *SzBigAlloc(ISzAllocPtr, size_t size) { return BigAlloc(size); }
-static void SzBigFree(ISzAllocPtr, void *address) { BigFree(address); }
-static const ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
-
-static void *SzAlloc(ISzAllocPtr, size_t size) { return MyAlloc(size); }
-static void SzFree(ISzAllocPtr, void *address) { MyFree(address); }
-static const ISzAlloc g_Alloc = { SzAlloc, SzFree };
-
-}
-
 void CEncoder::InitCoderProps()
 {
-  Lzma2EncProps_Init(&_lzma2Props);
   XzProps_Init(&xzProps);
-  XzFilterProps_Init(&filter);
-  
-  xzProps.lzma2Props = &_lzma2Props;
-  // xzProps.filterProps = (_filterId != 0 ? &filter : NULL);
-  xzProps.filterProps = NULL;
 }
 
 CEncoder::CEncoder()
 {
-  InitCoderProps();
+  XzProps_Init(&xzProps);
+  _encoder = NULL;
+  _encoder = XzEnc_Create(&g_Alloc, &g_BigAlloc);
+  if (!_encoder)
+    throw 1;
 }
 
 CEncoder::~CEncoder()
 {
+  if (_encoder)
+    XzEnc_Destroy(_encoder);
+}
+
+
+struct CMethodNamePair
+{
+  UInt32 Id;
+  const char *Name;
+};
+
+static const CMethodNamePair g_NamePairs[] =
+{
+  { XZ_ID_Delta, "Delta" },
+  { XZ_ID_X86, "BCJ" },
+  { XZ_ID_PPC, "PPC" },
+  { XZ_ID_IA64, "IA64" },
+  { XZ_ID_ARM, "ARM" },
+  { XZ_ID_ARMT, "ARMT" },
+  { XZ_ID_SPARC, "SPARC" }
+  // { XZ_ID_LZMA2, "LZMA2" }
+};
+
+static int FilterIdFromName(const wchar_t *name)
+{
+  for (unsigned i = 0; i < ARRAY_SIZE(g_NamePairs); i++)
+  {
+    const CMethodNamePair &pair = g_NamePairs[i];
+    if (StringsAreEqualNoCase_Ascii(name, pair.Name))
+      return (int)pair.Id;
+  }
+  return -1;
+}
+
+
+HRESULT CEncoder::SetCheckSize(UInt32 checkSizeInBytes)
+{
+  unsigned id;
+  switch (checkSizeInBytes)
+  {
+    case  0: id = XZ_CHECK_NO; break;
+    case  4: id = XZ_CHECK_CRC32; break;
+    case  8: id = XZ_CHECK_CRC64; break;
+    case 32: id = XZ_CHECK_SHA256; break;
+    default: return E_INVALIDARG;
+  }
+  xzProps.checkId = id;
+  return S_OK;
 }
 
 
 HRESULT CEncoder::SetCoderProp(PROPID propID, const PROPVARIANT &prop)
 {
-  return NLzma2::SetLzma2Prop(propID, prop, _lzma2Props);
+  if (propID == NCoderPropID::kNumThreads)
+  {
+    if (prop.vt != VT_UI4)
+      return E_INVALIDARG;
+    xzProps.numTotalThreads = (int)(prop.ulVal);
+    return S_OK;
+  }
+
+  if (propID == NCoderPropID::kCheckSize)
+  {
+    if (prop.vt != VT_UI4)
+      return E_INVALIDARG;
+    return SetCheckSize(prop.ulVal);
+  }
+
+  if (propID == NCoderPropID::kBlockSize2)
+  {
+    if (prop.vt == VT_UI4)
+      xzProps.blockSize = prop.ulVal;
+    else if (prop.vt == VT_UI8)
+      xzProps.blockSize = prop.uhVal.QuadPart;
+    else
+      return E_INVALIDARG;
+    return S_OK;
+  }
+
+  if (propID == NCoderPropID::kReduceSize)
+  {
+    if (prop.vt == VT_UI8)
+      xzProps.reduceSize = prop.uhVal.QuadPart;
+    else
+      return E_INVALIDARG;
+    return S_OK;
+  }
+ 
+  if (propID == NCoderPropID::kFilter)
+  {
+    if (prop.vt == VT_UI4)
+    {
+      UInt32 id32 = prop.ulVal;
+      if (id32 == XZ_ID_Delta)
+        return E_INVALIDARG;
+      xzProps.filterProps.id = prop.ulVal;
+    }
+    else
+    {
+      if (prop.vt != VT_BSTR)
+        return E_INVALIDARG;
+      
+      const wchar_t *name = prop.bstrVal;
+      const wchar_t *end;
+
+      UInt32 id32 = ConvertStringToUInt32(name, &end);
+      
+      if (end != name)
+        name = end;
+      else
+      {
+        if (IsString1PrefixedByString2_NoCase_Ascii(name, "Delta"))
+        {
+          name += 5; // strlen("Delta");
+          id32 = XZ_ID_Delta;
+        }
+        else
+        {
+          int filterId = FilterIdFromName(prop.bstrVal);
+          if (filterId < 0 /* || filterId == XZ_ID_LZMA2 */)
+            return E_INVALIDARG;
+          id32 = filterId;
+        }
+      }
+      
+      if (id32 == XZ_ID_Delta)
+      {
+        wchar_t c = *name;
+        if (c != '-' && c != ':')
+          return E_INVALIDARG;
+        name++;
+        UInt32 delta = ConvertStringToUInt32(name, &end);
+        if (end == name || *end != 0 || delta == 0 || delta > 256)
+          return E_INVALIDARG;
+        xzProps.filterProps.delta = delta;
+      }
+      
+      xzProps.filterProps.id = id32;
+    }
+    
+    return S_OK;
+  }
+
+  return NLzma2::SetLzma2Prop(propID, prop, xzProps.lzma2Props);
 }
+
 
 STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
     const PROPVARIANT *coderProps, UInt32 numProps)
 {
-  Lzma2EncProps_Init(&_lzma2Props);
+  XzProps_Init(&xzProps);
 
   for (UInt32 i = 0; i < numProps; i++)
   {
     RINOK(SetCoderProp(propIDs[i], coderProps[i]));
   }
+  
   return S_OK;
-  // return SResToHRESULT(Lzma2Enc_SetProps(_encoder, &lzma2Props));
+  // return SResToHRESULT(XzEnc_SetProps(_encoder, &xzProps));
 }
 
 
-
-STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
-    ISequentialOutStream *outStream, const UInt64 * /* inSize */, const UInt64 * /* outSize */,
-    ICompressProgressInfo *progress)
+STDMETHODIMP CEncoder::SetCoderPropertiesOpt(const PROPID *propIDs,
+    const PROPVARIANT *coderProps, UInt32 numProps)
 {
-  CSeqOutStreamWrap seqOutStream;
-  
-  seqOutStream.Init(outStream);
-  
-  // if (IntToBool(newData))
+  for (UInt32 i = 0; i < numProps; i++)
   {
-    /*
-    UInt64 size;
-    {
-      NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(0, kpidSize, &prop));
-      if (prop.vt != VT_UI8)
-        return E_INVALIDARG;
-      size = prop.uhVal.QuadPart;
-      RINOK(updateCallback->SetTotal(size));
-    }
-    */
-
-    /*
-    CLzma2EncProps lzma2Props;
-    Lzma2EncProps_Init(&lzma2Props);
-
-    lzma2Props.lzmaProps.level = GetLevel();
-    */
-
-    CSeqInStreamWrap seqInStream;
-    
-    seqInStream.Init(inStream);
-
-
-    /*
-    {
-      NCOM::CPropVariant prop = (UInt64)size;
-      RINOK(NCompress::NLzma2::SetLzma2Prop(NCoderPropID::kReduceSize, prop, lzma2Props));
-    }
-
-    FOR_VECTOR (i, _methods)
-    {
-      COneMethodInfo &m = _methods[i];
-      SetGlobalLevelAndThreads(m
-      #ifndef _7ZIP_ST
-      , _numThreads
-      #endif
-      );
-      {
-        FOR_VECTOR (j, m.Props)
-        {
-          const CProp &prop = m.Props[j];
-          RINOK(NCompress::NLzma2::SetLzma2Prop(prop.Id, prop.Value, lzma2Props));
-        }
-      }
-    }
-
-    #ifndef _7ZIP_ST
-    lzma2Props.numTotalThreads = _numThreads;
-    #endif
-
-    */
-
-    CCompressProgressWrap progressWrap;
-    
-    progressWrap.Init(progress);
-
-    xzProps.checkId = XZ_CHECK_CRC32;
-    // xzProps.checkId = XZ_CHECK_CRC64;
-    /*
-    CXzProps xzProps;
-    CXzFilterProps filter;
-    XzProps_Init(&xzProps);
-    XzFilterProps_Init(&filter);
-    xzProps.lzma2Props = &_lzma2Props;
-    */
-    /*
-    xzProps.filterProps = (_filterId != 0 ? &filter : NULL);
-    switch (_crcSize)
-    {
-      case  0: xzProps.checkId = XZ_CHECK_NO; break;
-      case  4: xzProps.checkId = XZ_CHECK_CRC32; break;
-      case  8: xzProps.checkId = XZ_CHECK_CRC64; break;
-      case 32: xzProps.checkId = XZ_CHECK_SHA256; break;
-      default: return E_INVALIDARG;
-    }
-    filter.id = _filterId;
-    if (_filterId == XZ_ID_Delta)
-    {
-      bool deltaDefined = false;
-      FOR_VECTOR (j, _filterMethod.Props)
-      {
-        const CProp &prop = _filterMethod.Props[j];
-        if (prop.Id == NCoderPropID::kDefaultProp && prop.Value.vt == VT_UI4)
-        {
-          UInt32 delta = (UInt32)prop.Value.ulVal;
-          if (delta < 1 || delta > 256)
-            return E_INVALIDARG;
-          filter.delta = delta;
-          deltaDefined = true;
-        }
-      }
-      if (!deltaDefined)
-        return E_INVALIDARG;
-    }
-    */
-    SRes res = Xz_Encode(&seqOutStream.vt, &seqInStream.vt, &xzProps, progress ? &progressWrap.vt : NULL);
-    /*
-    if (res == SZ_OK)
-      return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
-    */
-    return SResToHRESULT(res);
+    const PROPVARIANT &prop = coderProps[i];
+    PROPID propID = propIDs[i];
+    if (propID == NCoderPropID::kExpectedDataSize)
+      if (prop.vt == VT_UI8)
+        XzEnc_SetDataSize(_encoder, prop.uhVal.QuadPart);
   }
+  return S_OK;
+}
+
+
+#define RET_IF_WRAP_ERROR(wrapRes, sRes, sResErrorCode) \
+  if (wrapRes != S_OK /* && (sRes == SZ_OK || sRes == sResErrorCode) */) return wrapRes;
+
+STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
+{
+  CSeqInStreamWrap inWrap;
+  CSeqOutStreamWrap outWrap;
+  CCompressProgressWrap progressWrap;
+
+  inWrap.Init(inStream);
+  outWrap.Init(outStream);
+  progressWrap.Init(progress);
+
+  SRes res = XzEnc_SetProps(_encoder, &xzProps);
+  if (res == SZ_OK)
+    res = XzEnc_Encode(_encoder, &outWrap.vt, &inWrap.vt, progress ? &progressWrap.vt : NULL);
+
+  // SRes res = Xz_Encode(&outWrap.vt, &inWrap.vt, &xzProps, progress ? &progressWrap.vt : NULL);
+
+  RET_IF_WRAP_ERROR(inWrap.Res, res, SZ_ERROR_READ)
+  RET_IF_WRAP_ERROR(outWrap.Res, res, SZ_ERROR_WRITE)
+  RET_IF_WRAP_ERROR(progressWrap.Res, res, SZ_ERROR_PROGRESS)
+
+  return SResToHRESULT(res);
 }
   
 }}

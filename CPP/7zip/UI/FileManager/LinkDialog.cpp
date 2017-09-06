@@ -314,7 +314,7 @@ void CApp::Link()
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
-    srcPanel.MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+    srcPanel.MessageBox_Error_UnsupportOperation();
     return;
   }
   CRecordVector<UInt32> indices;
@@ -323,7 +323,7 @@ void CApp::Link()
     return;
   if (indices.Size() != 1)
   {
-    srcPanel.MessageBoxErrorLang(IDS_SELECT_ONE_FILE);
+    srcPanel.MessageBox_Error_LangID(IDS_SELECT_ONE_FILE);
     return;
   }
   int index = indices[0];

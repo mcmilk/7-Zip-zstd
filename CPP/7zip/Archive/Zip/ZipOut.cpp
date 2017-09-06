@@ -174,6 +174,9 @@ void COutArchive::WriteLocalHeader_Replace(CItemOut &item)
   {
     WriteDescriptor(item);
     m_OutBuffer.FlushWithCheck();
+    return;
+    // we don't replace local header, if we write Descriptor.
+    // so local header with Descriptor flag must be written to local header before.
   }
 
   const UInt64 nextPos = m_CurPos;

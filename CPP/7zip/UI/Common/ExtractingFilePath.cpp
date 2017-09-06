@@ -146,6 +146,9 @@ static void CorrectUnsupportedName(UString &name)
 static void Correct_PathPart(UString &s)
 {
   // "." and ".."
+  if (s.IsEmpty())
+    return;
+
   if (s[0] == '.' && (s[1] == 0 || s[1] == '.' && s[2] == 0))
     s.Empty();
   #ifdef _WIN32
@@ -172,7 +175,7 @@ UString Get_Correct_FsFile_Name(const UString &name)
 }
 
 
-void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir)
+void Correct_FsPath(bool absIsAllowed, bool keepAndReplaceEmptyPrefixes, UStringVector &parts, bool isDir)
 {
   unsigned i = 0;
 
@@ -181,6 +184,7 @@ void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir)
     #if defined(_WIN32) && !defined(UNDER_CE)
     bool isDrive = false;
     #endif
+    
     if (parts[0].IsEmpty())
     {
       i = 1;
@@ -191,7 +195,7 @@ void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir)
         if (parts.Size() > 2 && parts[2] == L"?")
         {
           i = 3;
-          if (parts.Size() > 3  && NWindows::NFile::NName::IsDrivePath2(parts[3]))
+          if (parts.Size() > 3 && NWindows::NFile::NName::IsDrivePath2(parts[3]))
           {
             isDrive = true;
             i = 4;
@@ -220,6 +224,9 @@ void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir)
     #endif
   }
 
+  if (i != 0)
+    keepAndReplaceEmptyPrefixes = false;
+
   for (; i < parts.Size();)
   {
     UString &s = parts[i];
@@ -228,15 +235,17 @@ void Correct_FsPath(bool absIsAllowed, UStringVector &parts, bool isDir)
 
     if (s.IsEmpty())
     {
-      if (isDir || i != parts.Size() - 1)
-      {
-        parts.Delete(i);
-        continue;
-      }
+      if (!keepAndReplaceEmptyPrefixes)
+        if (isDir || i != parts.Size() - 1)
+        {
+          parts.Delete(i);
+          continue;
+        }
       s = k_EmptyReplaceName;
     }
     else
     {
+      keepAndReplaceEmptyPrefixes = false;
       #ifdef _WIN32
       CorrectUnsupportedName(s);
       #endif

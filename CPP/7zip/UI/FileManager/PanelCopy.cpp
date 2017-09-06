@@ -101,7 +101,7 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
   {
     UString errorMessage = LangString(IDS_OPERATION_IS_NOT_SUPPORTED);
     if (options.showErrorMessages)
-      MessageBox(errorMessage);
+      MessageBox_Error(errorMessage);
     else if (messages != 0)
       messages->Add(errorMessage);
     return E_FAIL;
@@ -307,7 +307,7 @@ HRESULT CPanel::CopyFrom(bool moveMode, const UString &folderPrefix, const UStri
   {
     UString errorMessage = LangString(IDS_OPERATION_IS_NOT_SUPPORTED);
     if (showErrorMessages)
-      MessageBox(errorMessage);
+      MessageBox_Error(errorMessage);
     else if (messages != 0)
       messages->Add(errorMessage);
     return E_ABORT;
@@ -334,7 +334,7 @@ void CPanel::CopyFromNoAsk(const UStringVector &filePaths)
     // For Password:
     SetFocusToList();
     if (result != E_ABORT)
-      MessageBoxError(result);
+      MessageBox_Error_HRESULT(result);
     return;
   }
 

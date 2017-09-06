@@ -3,13 +3,11 @@
 #ifndef __XZ_DECODER_H
 #define __XZ_DECODER_H
 
-#include "../../Common/MyCom.h"
-#include "../ICoder.h"
-
 #include "../../../C/Xz.h"
 
+#include "../../Common/MyCom.h"
 
-// #include "../../Archive/XzHandler.h"
+#include "../ICoder.h"
 
 namespace NCompress {
 namespace NXz {

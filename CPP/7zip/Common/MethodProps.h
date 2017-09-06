@@ -4,6 +4,7 @@
 #define __7Z_METHOD_PROPS_H
 
 #include "../../Common/MyString.h"
+#include "../../Common/Defs.h"
 
 #include "../../Windows/Defs.h"
 
@@ -133,38 +134,50 @@ public:
     return 2;
   }
 
-  UInt32 Get_Lzma2_NumThreads(bool &fixedNumber) const
+  int Get_Xz_NumThreads(UInt32 &lzmaThreads) const
   {
-    fixedNumber = false;
+    lzmaThreads = 1;
     int numThreads = Get_NumThreads();
-    if (numThreads >= 0)
-    {
-      fixedNumber = true;
-      if (numThreads < 1) return 1;
-      const unsigned kNumLzma2ThreadsMax = 32;
-      if (numThreads > kNumLzma2ThreadsMax) return kNumLzma2ThreadsMax;
-      return numThreads;
-    }
-    return 1;
+    if (numThreads >= 0 && numThreads <= 1)
+      return 1;
+    if (Get_Lzma_Algo() != 0)
+      lzmaThreads = 2;
+    return numThreads;
   }
 
-  UInt64 Get_Lzma2_BlockSize() const
+  UInt64 GetProp_BlockSize(PROPID id) const
   {
-    int i = FindProp(NCoderPropID::kBlockSize);
+    int i = FindProp(id);
     if (i >= 0)
     {
       const NWindows::NCOM::CPropVariant &val = Props[i].Value;
-      if (val.vt == VT_UI4) return val.ulVal;
-      if (val.vt == VT_UI8) return val.uhVal.QuadPart;
+      if (val.vt == VT_UI4) { return val.ulVal; }
+      if (val.vt == VT_UI8) { return val.uhVal.QuadPart; }
     }
+    return 0;
+  }
 
-    UInt32 dictSize = Get_Lzma_DicSize();
-    UInt64 blockSize = (UInt64)dictSize << 2;
+  UInt64 Get_Xz_BlockSize() const
+  {
+    {
+      UInt64 blockSize1 = GetProp_BlockSize(NCoderPropID::kBlockSize);
+      UInt64 blockSize2 = GetProp_BlockSize(NCoderPropID::kBlockSize2);
+      UInt64 minSize = MyMin(blockSize1, blockSize2);
+      if (minSize != 0)
+        return minSize;
+      UInt64 maxSize = MyMax(blockSize1, blockSize2);
+      if (maxSize != 0)
+        return maxSize;
+    }
     const UInt32 kMinSize = (UInt32)1 << 20;
     const UInt32 kMaxSize = (UInt32)1 << 28;
+    UInt32 dictSize = Get_Lzma_DicSize();
+    UInt64 blockSize = (UInt64)dictSize << 2;
     if (blockSize < kMinSize) blockSize = kMinSize;
     if (blockSize > kMaxSize) blockSize = kMaxSize;
     if (blockSize < dictSize) blockSize = dictSize;
+    blockSize += (kMinSize - 1);
+    blockSize &= ~(UInt64)(kMinSize - 1);
     return blockSize;
   }
 

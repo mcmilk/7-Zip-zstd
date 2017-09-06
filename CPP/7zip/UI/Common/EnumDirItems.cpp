@@ -343,6 +343,7 @@ static HRESULT EnumerateAltStreams(
     const NWildcard::CCensorNode &curNode,
     int phyParent, int logParent, const FString &fullPath,
     const UStringVector &addArchivePrefix,  // prefix from curNode
+    bool addAllItems,
     CDirItems &dirItems)
 {
   NFind::CStreamEnumerator enumerator(fullPath);
@@ -363,6 +364,10 @@ static HRESULT EnumerateAltStreams(
     addArchivePrefixNew.Back() += reducedName;
     if (curNode.CheckPathToRoot(false, addArchivePrefixNew, true))
       continue;
+    if (!addAllItems)
+      if (!curNode.CheckPathToRoot(true, addArchivePrefixNew, true))
+        continue;
+
     NFind::CFileInfo fi2 = fi;
     fi2.Name += us2fs(reducedName);
     fi2.Size = si.Size;
@@ -413,6 +418,8 @@ static HRESULT EnumerateForItem(
   }
   int dirItemIndex = -1;
   
+  bool addAllSubStreams = false;
+
   if (curNode.CheckPathToRoot(true, addArchivePrefixNew, !fi.IsDir()))
   {
     int secureIndex = -1;
@@ -427,6 +434,8 @@ static HRESULT EnumerateForItem(
     dirItems.AddDirFileInfo(phyParent, logParent, secureIndex, fi);
     if (fi.IsDir())
       enterToSubFolders2 = true;
+
+    addAllSubStreams = true;
   }
 
   #ifndef UNDER_CE
@@ -434,7 +443,9 @@ static HRESULT EnumerateForItem(
   {
     RINOK(EnumerateAltStreams(fi, curNode, phyParent, logParent,
         phyPrefix + fi.Name,
-        addArchivePrefixNew, dirItems));
+        addArchivePrefixNew,
+        addAllSubStreams,
+        dirItems));
   }
 
   if (dirItemIndex >= 0)
@@ -643,7 +654,9 @@ static HRESULT EnumerateDirItems(
           UStringVector pathParts;
           pathParts.Add(fs2us(fi.Name));
           RINOK(EnumerateAltStreams(fi, curNode, phyParent, logParent,
-              fullPath, pathParts, dirItems));
+              fullPath, pathParts,
+              true, /* addAllSubStreams */
+              dirItems));
         }
         #endif
 

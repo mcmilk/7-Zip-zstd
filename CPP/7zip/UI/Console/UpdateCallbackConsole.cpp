@@ -241,6 +241,7 @@ static void PrintPropPair(AString &s, const char *name, UInt64 val)
 
 void PrintSize_bytes_Smart(AString &s, UInt64 val);
 void Print_DirItemsStat(AString &s, const CDirItemsStat &st);
+void Print_DirItemsStat2(AString &s, const CDirItemsStat2 &st);
 
 HRESULT CUpdateCallbackConsole::FinishScanning(const CDirItemsStat &st)
 {
@@ -399,10 +400,10 @@ HRESULT CUpdateCallbackConsole::Finalize()
 */
 
 
-void static PrintToDoStat(CStdOutStream *_so, const CDirItemsStat &stat, const char *name)
+void static PrintToDoStat(CStdOutStream *_so, const CDirItemsStat2 &stat, const char *name)
 {
   AString s;
-  Print_DirItemsStat(s, stat);
+  Print_DirItemsStat2(s, stat);
   *_so << name << ": " << s << endl;
 }
 

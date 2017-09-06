@@ -97,7 +97,6 @@ static const char * const kHelpString =
 #endif
 #endif
     " <command> [<switches>...] <archive_name> [<file_names>...]\n"
-    "       [<@listfiles...>]\n"
     "\n"
     "<Commands>\n"
     "  a : Add files to archive\n"
@@ -114,6 +113,7 @@ static const char * const kHelpString =
     "\n"
     "<Switches>\n"
     "  -- : Stop switches parsing\n"
+    "  @listfile : set path to listfile that contains file names\n"
     "  -ai[r[-|0]]{@listfile|!wildcard} : Include archives\n"
     "  -ax[r[-|0]]{@listfile|!wildcard} : eXclude archives\n"
     "  -ao{a|s|t|u} : set Overwrite mode\n"
@@ -548,6 +548,7 @@ int Main2(
   if (options.LargePages)
   {
     SetLargePageSize();
+    // note: this process also can inherit that Privilege from parent process
     g_LargePagesMode =
     #if defined(_WIN32) && !defined(UNDER_CE)
       NSecurity::EnablePrivilege_LockMemory();

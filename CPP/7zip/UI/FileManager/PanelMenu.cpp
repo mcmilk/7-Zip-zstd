@@ -661,7 +661,7 @@ bool CPanel::CheckBeforeUpdate(UINT resourceID)
 {
   if (!_folderOperations)
   {
-    MessageBoxErrorLang(IDS_OPERATION_IS_NOT_SUPPORTED);
+    MessageBox_Error_UnsupportOperation();
     // resourceID = resourceID;
     // MessageBoxErrorForUpdate(E_NOINTERFACE, resourceID);
     return false;
@@ -689,7 +689,7 @@ bool CPanel::CheckBeforeUpdate(UINT resourceID)
       s += _parentFolders[i - 1].VirtualPath;
     s.Add_LF();
     AddLangString(s, IDS_PROP_READ_ONLY);
-    MessageBoxMyError(s);
+    MessageBox_Error(s);
     return false;
   }
 

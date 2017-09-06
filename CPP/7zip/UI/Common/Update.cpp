@@ -657,38 +657,74 @@ static HRESULT Compress(
     FOR_VECTOR (i, updatePairs2)
     {
       const CUpdatePair2 &up = updatePairs2[i];
-      if (up.NewData)
+
+      // 17.01: anti-item is (up.NewData && (p.UseArcProps in most cases))
+
+      if (up.NewData && !up.UseArcProps)
       {
-        CDirItemsStat &stat = stat2.NewData;
-        const CDirItem &di = dirItems.Items[up.DirIndex];
-        if (di.IsDir())
-          stat.NumDirs++;
-        else if (di.IsAltStream)
+        if (up.ExistOnDisk())
         {
-          stat.NumAltStreams++;
-          stat.AltStreamsSize += di.Size;
-        }
-        else
-        {
-          stat.NumFiles++;
-          stat.FilesSize += di.Size;
+          CDirItemsStat2 &stat = stat2.NewData;
+          const CDirItem &di = dirItems.Items[up.DirIndex];
+          if (di.IsDir())
+          {
+            if (up.IsAnti)
+              stat.Anti_NumDirs++;
+            else
+              stat.NumDirs++;
+          }
+          else if (di.IsAltStream)
+          {
+            if (up.IsAnti)
+              stat.Anti_NumAltStreams++;
+            else
+            {
+              stat.NumAltStreams++;
+              stat.AltStreamsSize += di.Size;
+            }
+          }
+          else
+          {
+            if (up.IsAnti)
+              stat.Anti_NumFiles++;
+            else
+            {
+              stat.NumFiles++;
+              stat.FilesSize += di.Size;
+            }
+          }
         }
       }
       else if (up.ArcIndex >= 0)
       {
-        CDirItemsStat &stat = stat2.OldData;
+        CDirItemsStat2 &stat = *(up.NewData ? &stat2.NewData : &stat2.OldData);
         const CArcItem &ai = arcItems[up.ArcIndex];
         if (ai.IsDir)
-          stat.NumDirs++;
+        {
+          if (up.IsAnti)
+            stat.Anti_NumDirs++;
+          else
+            stat.NumDirs++;
+        }
         else if (ai.IsAltStream)
         {
-          stat.NumAltStreams++;
-          stat.AltStreamsSize += ai.Size;
+          if (up.IsAnti)
+            stat.Anti_NumAltStreams++;
+          else
+          {
+            stat.NumAltStreams++;
+            stat.AltStreamsSize += ai.Size;
+          }
         }
         else
         {
-          stat.NumFiles++;
-          stat.FilesSize += ai.Size;
+          if (up.IsAnti)
+            stat.Anti_NumFiles++;
+          else
+          {
+            stat.NumFiles++;
+            stat.FilesSize += ai.Size;
+          }
         }
       }
     }
@@ -1592,8 +1628,18 @@ HRESULT UpdateArchive(
       {
         if (processedItems[i] != 0 || dirItem.Size == 0)
         {
-          RINOK(callback->DeletingAfterArchiving(phyPath, false));
-          DeleteFileAlways(phyPath);
+          NFind::CFileInfo fileInfo;
+          if (fileInfo.Find(phyPath))
+          {
+            // maybe we must exclude also files with archive name: "a a.7z * -sdel"
+            if (fileInfo.Size == dirItem.Size
+                && CompareFileTime(&fileInfo.MTime, &dirItem.MTime) == 0
+                && CompareFileTime(&fileInfo.CTime, &dirItem.CTime) == 0)
+            {
+              RINOK(callback->DeletingAfterArchiving(phyPath, false));
+              DeleteFileAlways(phyPath);
+            }
+          }
         }
         else
         {

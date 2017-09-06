@@ -1025,7 +1025,7 @@ HRESULT CVirtFileSystem::FlushToDisk(bool closeLast)
     _numFlushed++;
     _fileIsOpen = false;
     if (file.AttribDefined)
-      NDir::SetFileAttrib(path, file.Attrib);
+      NDir::SetFileAttrib_PosixHighDetect(path, file.Attrib);
   }
   return S_OK;
 }

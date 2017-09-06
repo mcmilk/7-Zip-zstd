@@ -1,5 +1,5 @@
 /* LzFind.c -- Match finder for LZ algorithms
-2017-04-03 : Igor Pavlov : Public domain */
+2017-06-10 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -142,6 +142,7 @@ void MatchFinder_Construct(CMatchFinder *p)
   p->bufferBase = NULL;
   p->directInput = 0;
   p->hash = NULL;
+  p->expectedDataSize = (UInt64)(Int64)-1;
   MatchFinder_SetDefaultSettings(p);
 
   for (i = 0; i < 256; i++)
@@ -208,7 +209,11 @@ int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
         hs = (1 << 16) - 1;
       else
       {
-        hs = historySize - 1;
+        hs = historySize;
+        if (hs > p->expectedDataSize)
+          hs = (UInt32)p->expectedDataSize;
+        if (hs != 0)
+          hs--;
         hs |= (hs >> 1);
         hs |= (hs >> 2);
         hs |= (hs >> 4);
@@ -292,17 +297,33 @@ static void MatchFinder_SetLimits(CMatchFinder *p)
   p->posLimit = p->pos + limit;
 }
 
-void MatchFinder_Init_2(CMatchFinder *p, int readData)
+
+void MatchFinder_Init_LowHash(CMatchFinder *p)
 {
-  UInt32 i;
-  UInt32 *hash = p->hash;
-  UInt32 num = p->hashSizeSum;
-  for (i = 0; i < num; i++)
-    hash[i] = kEmptyHashValue;
-  
+  size_t i;
+  CLzRef *items = p->hash;
+  size_t numItems = p->fixedHashSize;
+  for (i = 0; i < numItems; i++)
+    items[i] = kEmptyHashValue;
+}
+
+
+void MatchFinder_Init_HighHash(CMatchFinder *p)
+{
+  size_t i;
+  CLzRef *items = p->hash + p->fixedHashSize;
+  size_t numItems = (size_t)p->hashMask + 1;
+  for (i = 0; i < numItems; i++)
+    items[i] = kEmptyHashValue;
+}
+
+
+void MatchFinder_Init_3(CMatchFinder *p, int readData)
+{
   p->cyclicBufferPos = 0;
   p->buffer = p->bufferBase;
-  p->pos = p->streamPos = p->cyclicBufferSize;
+  p->pos =
+  p->streamPos = p->cyclicBufferSize;
   p->result = SZ_OK;
   p->streamEndWasReached = 0;
   
@@ -312,10 +333,14 @@ void MatchFinder_Init_2(CMatchFinder *p, int readData)
   MatchFinder_SetLimits(p);
 }
 
+
 void MatchFinder_Init(CMatchFinder *p)
 {
-  MatchFinder_Init_2(p, True);
+  MatchFinder_Init_HighHash(p);
+  MatchFinder_Init_LowHash(p);
+  MatchFinder_Init_3(p, True);
 }
+
   
 static UInt32 MatchFinder_GetSubValue(CMatchFinder *p)
 {

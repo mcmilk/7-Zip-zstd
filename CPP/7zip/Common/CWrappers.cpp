@@ -28,13 +28,17 @@ HRESULT SResToHRESULT(SRes res) throw()
   switch (res)
   {
     case SZ_OK: return S_OK;
+    case SZ_ERROR_DATA: return S_FALSE;
+    case SZ_ERROR_CRC: return S_FALSE;
     case SZ_ERROR_MEM: return E_OUTOFMEMORY;
     case SZ_ERROR_PARAM: return E_INVALIDARG;
     case SZ_ERROR_PROGRESS: return E_ABORT;
-    case SZ_ERROR_DATA: return S_FALSE;
     case SZ_ERROR_UNSUPPORTED: return E_NOTIMPL;
-    // case SZ_ERROR_READ: return E_NOTIMPL;
+    // case SZ_ERROR_THREAD: return E_FAIL;
+    // case SZ_ERROR_READ: return E_FAIL;
   }
+  if (res < 0)
+    return res;
   return E_FAIL;
 }
 

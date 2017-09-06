@@ -17,13 +17,13 @@
 
 struct CArcToDoStat
 {
-  CDirItemsStat NewData;
-  CDirItemsStat OldData;
-  CDirItemsStat DeleteData;
+  CDirItemsStat2 NewData;
+  CDirItemsStat2 OldData;
+  CDirItemsStat2 DeleteData;
 
   UInt64 Get_NumDataItems_Total() const
   {
-    return NewData.Get_NumDataItems() + OldData.Get_NumDataItems();
+    return NewData.Get_NumDataItems2() + OldData.Get_NumDataItems2();
   }
 };
 

@@ -2171,6 +2171,7 @@ HRESULT Update(
             #endif
           }
 
+          curUnpackSize = sizeToEncode;
 
           HRESULT encodeRes = encoder.Encode(
               EXTERNAL_CODECS_LOC_VARS
@@ -2358,7 +2359,9 @@ HRESULT Update(
       inStreamSpec->Init(updateCallback, &indices[i], numSubFiles);
       
       unsigned startPackIndex = newDatabase.PackSizes.Size();
-      UInt64 curFolderUnpackSize;
+      UInt64 curFolderUnpackSize = totalSize;
+      // curFolderUnpackSize = (UInt64)(Int64)-1;
+      
       RINOK(encoder.Encode(
           EXTERNAL_CODECS_LOC_VARS
           solidInStream,

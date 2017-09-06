@@ -382,6 +382,6 @@ void CApp::CalculateCrc(const char *methodName)
   {
     unsigned srcPanelIndex = GetFocusedPanelIndex();
     CPanel &srcPanel = Panels[srcPanelIndex];
-    srcPanel.MessageBoxError(res);
+    srcPanel.MessageBox_Error_HRESULT(res);
   }
 }

@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2017-04-04 : Igor Pavlov : Public domain */
+2017-08-28 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -154,7 +154,7 @@ static WRes MyCreateDir(LPCWSTR name)
 }
 
 #define IS_SEPAR(c) (c == WCHAR_PATH_SEPARATOR)
-#define IS_LETTER_CHAR(c) ((c) >= 'a' && (c) <= 'z' || (c) >= 'A' && (c) <= 'Z')
+#define IS_LETTER_CHAR(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 #define IS_DRIVE_PATH(s) (IS_LETTER_CHAR(s[0]) && s[1] == ':' && IS_SEPAR(s[2]))
 
 static int ReverseFind_PathSepar(const wchar_t *s)
