@@ -117,11 +117,14 @@ OR:
 #define BROTLI_INLINE
 #endif
 #else  /* _MSC_VER */
-#  pragma warning(disable : 4100)
-#  pragma warning(disable : 4127)
-#  pragma warning(disable : 4389)
-#  pragma warning(disable : 4701)
 #define BROTLI_INLINE __forceinline
+
+/* disable some warnings */
+#pragma warning(disable : 4100)
+#pragma warning(disable : 4127)
+#pragma warning(disable : 4189)
+#pragma warning(disable : 4389)
+#pragma warning(disable : 4701)
 #endif  /* _MSC_VER */
 
 #if !defined(__cplusplus) && !defined(c_plusplus) && \

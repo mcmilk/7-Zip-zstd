@@ -1,7 +1,7 @@
 #define MY_VER_MAJOR 17
 #define MY_VER_MINOR 01
 #define MY_VER_BUILD 0
-#define MY_VERSION_NUMBERS "17.01 ZS v1.3.1 R1"
+#define MY_VERSION_NUMBERS "17.01 ZS v1.3.1 R2"
 #define MY_VERSION MY_VERSION_NUMBERS
 
 #ifdef MY_CPU_NAME
@@ -10,7 +10,7 @@
   #define MY_VERSION_CPU MY_VERSION
 #endif
 
-#define MY_DATE "2017-08-28"
+#define MY_DATE "2017-09-28"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
 #define MY_AUTHOR_NAME "Igor Pavlov, Tino Reichardt"
