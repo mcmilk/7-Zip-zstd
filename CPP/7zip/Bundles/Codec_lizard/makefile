@@ -36,9 +36,9 @@ ZSTD_OBJS = \
   $O\error_private.obj \
 
 ZSTDMT_OBJS = \
-  $O\threading.obj \
   $O\lizard-mt_common.obj \
   $O\lizard-mt_compress.obj \
   $O\lizard-mt_decompress.obj \
+  $O\zstd-mt_threading.obj \
 
 !include "../../7zip.mak"

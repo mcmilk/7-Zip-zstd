@@ -30,9 +30,9 @@ ZSTD_OBJS = \
   $O\xxhash.obj \
 
 ZSTDMT_OBJS = \
-  $O\threading.obj \
   $O\lz4-mt_common.obj \
   $O\lz4-mt_compress.obj \
   $O\lz4-mt_decompress.obj \
+  $O\zstd-mt_threading.obj \
 
 !include "../../7zip.mak"

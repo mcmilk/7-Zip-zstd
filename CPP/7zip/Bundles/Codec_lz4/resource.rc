@@ -1,6 +1,6 @@
 #include "../../../../C/7zVersionTr.h"
 #include "../../../../C/7zVersion.rc"
 
-MY_VERSION_INFO_DLL("7-Zip LZ4 Plugin v1.7.5", "Lz4")
+MY_VERSION_INFO_DLL("7-Zip LZ4 Plugin v1.8.0", "Lz4")
 
-101  ICON  "../../Archive/Icons/lz5.ico"
+101  ICON  "../../Archive/Icons/lz4.ico"
