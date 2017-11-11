@@ -260,6 +260,10 @@ void COutArchive::WriteFolder(const CFolder &folder)
     const CCoderInfo &coder = folder.Coders[i];
     {
       UInt64 id = coder.MethodID;
+	  if (id == 0x4F711FF) {
+		  // Radyx outputs LZMA2
+		  id = 0x21;
+	  }
       unsigned idSize;
       for (idSize = 1; idSize < sizeof(id); idSize++)
         if ((id >> (8 * idSize)) == 0)

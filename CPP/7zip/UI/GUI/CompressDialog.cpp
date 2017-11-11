@@ -110,6 +110,7 @@ enum EMethodID
   kLIZARD_M4,
   kLZMA,
   kLZMA2,
+  kRadyx,
   kPPMd,
   kBZip2,
   kDeflate,
@@ -130,6 +131,7 @@ static LPCSTR const kMethodsLongnames[] =
   , "Lizard, LIZv1 + Huffman"
   , "LZMA"
   , "LZMA2"
+  , "Radyx, LZMA2"
   , "PPMd"
   , "BZip2"
   , "Deflate"
@@ -150,6 +152,7 @@ static LPCSTR const kMethodsNames[] =
   , "Lizard"
   , "LZMA"
   , "LZMA2"
+  , "Radyx"
   , "PPMd"
   , "BZip2"
   , "Deflate"
@@ -197,6 +200,7 @@ static const EMethodID g_7zMethods[] =
   kLIZARD_M4,
   kLZMA2,
   kLZMA,
+  kRadyx,
   kPPMd,
   kDeflate,
   kDeflate64,
@@ -1016,7 +1020,10 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
       }
       
       case IDC_COMPRESS_ORDER:
-        return true;
+	  {
+		  SetMemoryUsage();
+		  return true;
+	  }
       
       case IDC_COMPRESS_SOLID:
       {
@@ -1457,7 +1464,46 @@ void CCompressDialog::SetDictionary()
       break;
     }
 
-    case kPPMd:
+	case kRadyx:
+	{
+		static const UInt32 kMinDicSize = (1 << 18);
+		if (defaultDict == (UInt32)(Int32)-1)
+		{
+			if (level >= 9) defaultDict = (1 << 27);
+			else if (level >= 7) defaultDict = (1 << 26);
+			else if (level >= 5) defaultDict = (1 << 25);
+			else if (level >= 3) defaultDict = (1 << 22);
+			else                 defaultDict = (kMinDicSize);
+		}
+
+		AddDictionarySize(kMinDicSize);
+		m_Dictionary.SetCurSel(0);
+
+		for (unsigned i = 21; i <= 31; i++)
+			for (unsigned j = 0; j < 2; j++)
+			{
+				UInt32 dict = ((UInt32)(2 + j) << (i - 1));
+
+				if (dict >
+#ifdef MY_CPU_64BIT
+				(3 << 29)
+#else
+					(1 << 27)
+#endif
+					)
+					continue;
+
+				AddDictionarySize(dict);
+				UInt64 decomprSize;
+				UInt64 requiredComprSize = GetMemoryUsage(dict, decomprSize);
+				if (dict <= defaultDict && (!maxRamSize_Defined || requiredComprSize <= maxRamSize))
+					m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
+			}
+
+		break;
+	}
+
+	case kPPMd:
     {
       if (defaultDict == (UInt32)(Int32)-1)
       {
@@ -1597,6 +1643,7 @@ void CCompressDialog::SetOrder()
   {
     case kLZMA:
     case kLZMA2:
+	case kRadyx:
     {
       if (defaultOrder == (UInt32)(Int32)-1)
         defaultOrder = (level >= 7) ? 64 : 32;
@@ -1604,10 +1651,10 @@ void CCompressDialog::SetOrder()
         for (unsigned j = 0; j < 2; j++)
         {
           UInt32 order = ((UInt32)(2 + j) << (i - 1));
-          if (order <= 256)
+          if (order <= (methodID == kRadyx ? 254U : 256U))
             AddOrder(order);
         }
-      AddOrder(273);
+      AddOrder((methodID == kRadyx) ? 254U : 273U);
       SetNearestSelectComboBox(m_Order, defaultOrder);
       break;
     }
@@ -1819,7 +1866,8 @@ void CCompressDialog::SetNumThreads()
     case kLIZARD_M4: numAlgoThreadsMax = 128; break;
     case kLZMA: numAlgoThreadsMax = 2; break;
     case kLZMA2: numAlgoThreadsMax = 32; break;
-    case kBZip2: numAlgoThreadsMax = 32; break;
+	case kRadyx: numAlgoThreadsMax = 32; break;
+	case kBZip2: numAlgoThreadsMax = 32; break;
   }
   if (IsZipFormat())
     numAlgoThreadsMax = 128;
@@ -1928,6 +1976,33 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory)
       decompressMemory = dict + (2 << 20);
       return size;
     }
+
+	case kRadyx:
+	{
+		size += dict * 5 + (1UL << 18);
+		if (dict >= (UInt32(1) << 26) || GetOrder() > 63) {
+			size += dict;
+			if (dict < (UInt32(1) << 27)) {
+				if (numThreads >= 3) {
+					size += (dict >> 9) + 64 * 1024;
+				}
+				else if (numThreads == 2) {
+					size += (dict >> 9) + 128 * 1024;
+				}
+				else if (numThreads == 1) {
+					size += (dict >> 8) + 128 * 1024;
+				}
+				else {
+					size += ((dict * 3) >> 8) < 384 * 1024 ? 384 * 1024 : ((dict * 3) >> 8);
+				}
+			}
+			else {
+				size += (dict >> 7) / (numThreads + 1);
+			}
+		}
+		decompressMemory = dict + (2 << 20);
+		return size;
+	}
 
     case kPPMd:
     {
