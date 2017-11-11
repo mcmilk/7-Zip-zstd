@@ -1651,10 +1651,10 @@ void CCompressDialog::SetOrder()
         for (unsigned j = 0; j < 2; j++)
         {
           UInt32 order = ((UInt32)(2 + j) << (i - 1));
-          if (order <= 256)
+          if (order <= (methodID == kRadyx ? 254U : 256U))
             AddOrder(order);
         }
-      AddOrder(273);
+      AddOrder((methodID == kRadyx) ? 254U : 273U);
       SetNearestSelectComboBox(m_Order, defaultOrder);
       break;
     }
