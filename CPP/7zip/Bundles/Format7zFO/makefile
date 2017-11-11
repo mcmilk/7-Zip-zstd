@@ -29,6 +29,8 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\Lz5Decoder.obj \
   $O\Lz5Encoder.obj \
   $O\Lz5Register.obj \
+  $O\RadyxEncoder.obj \
+  $O\RadyxRegister.obj \
   $O\ZstdDecoder.obj \
   $O\ZstdEncoder.obj \
   $O\ZstdRegister.obj \
@@ -71,6 +73,22 @@ LZ5_OBJS = \
   $O\lz5.obj \
   $O\lz5frame.obj \
   $O\lz5hc.obj \
+
+RADYX_OBJS = \
+  $O/AsyncWriter.obj \
+  $O/CoderInfo.obj \
+  $O/CompressedUint64.obj \
+  $O/Crc32.obj \
+  $O/Lzma2EncoderR.obj \
+  $O/Lzma2Options.obj \
+  $O/LzmaStates.obj \
+  $O/MatchTable.obj \
+  $O/MatchTableBuilder.obj \
+  $O/OutStream7z.obj \
+  $O/RadyxLzma2Enc.obj \
+  $O/RangeEncoder.obj \
+  $O/ThreadPool.obj \
+  $O/UnitCompressor.obj \
 
 ZSTD_OBJS = \
   $O\entropy_common.obj \

@@ -31,6 +31,7 @@ OBJS = \
   $(LIZARD_OBJS) \
   $(LZ4_OBJS) \
   $(LZ5_OBJS) \
+  $(RADYX_OBJS) \
   $(ZSTD_OBJS) \
   $(ZSTDMT_OBJS) \
   $(ASM_OBJS) \
@@ -208,6 +209,11 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 	$(COMPL_O2)
 !ENDIF
 
+!IFDEF RADYX_OBJS
+$(RADYX_OBJS): ../../../Radyx/$(*B).cpp
+	$(COMPL_O2)
+!ENDIF
+
 
 !ELSE
 
@@ -267,6 +273,8 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 {../../Compress}.cpp{$O}.obj::
 	$(COMPLB_O2)
 {../../Crypto}.cpp{$O}.obj::
+	$(COMPLB_O2)
+{../../../Radyx}.cpp{$O}.obj::
 	$(COMPLB_O2)
 {../../../../C}.c{$O}.obj::
 	$(COMPLB_O2)
