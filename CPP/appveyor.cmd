@@ -37,28 +37,22 @@ FOR /R .\ %%d IN (AMD64 O) DO rd /S /Q %%d 2>NUL
 set PATH=%OPATH%
 call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x32
-call build-x32.cmd
+call build-x32.cmd 2>%APPVEYOR_BUILD_FOLDER%\error-%VC%.txt 1>%APPVEYOR_BUILD_FOLDER%\output-%VC%.txt
 call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86_amd64
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x64
-call build-x64.cmd
+call build-x64.cmd 2>%APPVEYOR_BUILD_FOLDER%\error-%VC%.txt 1>%APPVEYOR_BUILD_FOLDER%\output-%VC%.txt
 goto %NEXT%
 
 :build_sdk
 set PATH=%OPATH%
 call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86
-REM call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /x86 /xp
-REM set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x32
-REM call build-x32.cmd
-REM call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /x64 /xp
-REM set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x64
-REM call build-x64.cmd
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /ia64 /xp
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-ia64
-call build-ia64.cmd
+call build-ia64.cmd 2>%APPVEYOR_BUILD_FOLDER%\error-%VC%.txt 1>%APPVEYOR_BUILD_FOLDER%\output-%VC%.txt
 goto %NEXT%
 
 :end
 cd %APPVEYOR_BUILD_FOLDER%
 set > env.txt
-7z a %APPVEYOR_PROJECT_NAME%-%APPVEYOR_BUILD_VERSION%.7z bin-* env.txt
+7z a %APPVEYOR_PROJECT_NAME%-%APPVEYOR_BUILD_VERSION%.7z bin-* *.txt
 
