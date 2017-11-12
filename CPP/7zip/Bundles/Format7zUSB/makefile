@@ -199,7 +199,7 @@ RADYX_OBJS = \
   $O\Radyx_CoderInfo.obj \
   $O\Radyx_CompressedUint64.obj \
   $O\Radyx_Crc32.obj \
-  $O\Radyx_Lzma2EncoderR.obj \
+  $O\Radyx_Lzma2Encoder.obj \
   $O\Radyx_Lzma2Options.obj \
   $O\Radyx_LzmaStates.obj \
   $O\Radyx_MatchTable.obj \
