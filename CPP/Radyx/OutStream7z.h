@@ -44,7 +44,7 @@ public:
 	OutputStream& Write(const char* s, size_t n);
 	void DisableExceptions() {}
 	void RestoreExceptions() {}
-	bool Fail() const noexcept {
+	bool Fail() const NOEXCEPT {
 		return failbit;
 	}
 	const UInt64* GetProcessed() const {

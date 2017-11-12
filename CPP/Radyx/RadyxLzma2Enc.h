@@ -40,7 +40,7 @@ public:
 	HRESULT Create(Lzma2Options& params, unsigned numThreads);
 	HRESULT Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
 		const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-	CoderInfo GetCoderInfo() const noexcept;
+	CoderInfo GetCoderInfo() const NOEXCEPT;
 	operator bool() {
 		return compressor.operator bool();
 	}

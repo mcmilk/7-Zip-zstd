@@ -39,7 +39,7 @@ const uint8_t Lzma2Encoder::kMatchNextStates[kNumStates] = { 7, 7, 7, 7, 7, 7, 7
 const uint8_t Lzma2Encoder::kRepNextStates[kNumStates] = { 8, 8, 8, 8, 8, 8, 8, 11, 11, 11, 11, 11 };
 const uint8_t Lzma2Encoder::kShortRepNextStates[kNumStates] = { 9, 9, 9, 9, 9, 9, 9, 11, 11, 11, 11, 11 };
 
-Lzma2Encoder::Lzma2Encoder() noexcept
+Lzma2Encoder::Lzma2Encoder() NOEXCEPT
 	: lc(3),
 	lp(0),
 	pb(2),
@@ -56,7 +56,7 @@ Lzma2Encoder::Lzma2Encoder() noexcept
 {
 }
 
-void Lzma2Encoder::LengthStates::Reset(unsigned fast_length) noexcept
+void Lzma2Encoder::LengthStates::Reset(unsigned fast_length) NOEXCEPT
 {
 	choice = RangeEncoder::kProbInitValue;
 	choice_2 = RangeEncoder::kProbInitValue;
@@ -72,7 +72,7 @@ void Lzma2Encoder::LengthStates::Reset(unsigned fast_length) noexcept
 	table_size = fast_length + 1 - kMatchLenMin;
 }
 
-void Lzma2Encoder::LengthStates::SetPrices(size_t pos_state) noexcept
+void Lzma2Encoder::LengthStates::SetPrices(size_t pos_state) NOEXCEPT
 {
 	unsigned prob = choice;
 	unsigned a0 = RangeEncoder::GetPrice0(prob);
@@ -93,7 +93,7 @@ void Lzma2Encoder::LengthStates::SetPrices(size_t pos_state) noexcept
 	counters[pos_state] = static_cast<unsigned>(table_size);
 }
 
-void Lzma2Encoder::EncoderStates::Reset(unsigned lc, unsigned lp, unsigned fast_length) noexcept
+void Lzma2Encoder::EncoderStates::Reset(unsigned lc, unsigned lp, unsigned fast_length) NOEXCEPT
 {
 	state = 0;
 	for (size_t i = 0; i < kNumReps; ++i) {
@@ -129,7 +129,7 @@ void Lzma2Encoder::EncoderStates::Reset(unsigned lc, unsigned lp, unsigned fast_
 	}
 }
 
-size_t Lzma2Encoder::GetUserDictionarySizeMax() noexcept
+size_t Lzma2Encoder::GetUserDictionarySizeMax() NOEXCEPT
 {
 	bool b = sizeof(size_t) > 4;
 	if (b) {
@@ -141,7 +141,7 @@ size_t Lzma2Encoder::GetUserDictionarySizeMax() noexcept
 	}
 }
 
-size_t Lzma2Encoder::GetDictionarySizeMax() noexcept
+size_t Lzma2Encoder::GetDictionarySizeMax() NOEXCEPT
 {
 	bool b = sizeof(size_t) > 4;
 	if (b) {
@@ -152,13 +152,13 @@ size_t Lzma2Encoder::GetDictionarySizeMax() noexcept
 	}
 }
 
-size_t Lzma2Encoder::GetMemoryUsage(const Lzma2Options& options) noexcept
+size_t Lzma2Encoder::GetMemoryUsage(const Lzma2Options& options) NOEXCEPT
 {
 	return sizeof(Lzma2Encoder) +
 		(options.encoder_mode != Lzma2Options::kFastMode) ? sizeof(OptimalNode) * kOptimizerBufferSize : 0;
 }
 
-uint8_t Lzma2Encoder::GetDictSizeProp(size_t dictionary_size) noexcept
+uint8_t Lzma2Encoder::GetDictSizeProp(size_t dictionary_size) NOEXCEPT
 {
 	uint8_t dict_size_prop = 0;
 	for (uint8_t bit = 11; bit < 32; ++bit) {
@@ -174,7 +174,7 @@ uint8_t Lzma2Encoder::GetDictSizeProp(size_t dictionary_size) noexcept
 	return dict_size_prop;
 }
 
-void Lzma2Encoder::Reset(size_t max_distance) noexcept
+void Lzma2Encoder::Reset(size_t max_distance) NOEXCEPT
 {
 	rc.Reset();
 	encoder_states.Reset(lc, lp, fast_length);
@@ -189,18 +189,18 @@ void Lzma2Encoder::Reset(size_t max_distance) noexcept
 // ****************************************
 // Distance slot functions based on fastpos.h from XZ
 
-unsigned Lzma2Encoder::FastDistShift(unsigned n) noexcept
+unsigned Lzma2Encoder::FastDistShift(unsigned n) NOEXCEPT
 {
 	return n * (kFastDistBits - 1);
 }
 
-unsigned Lzma2Encoder::FastDistResult(uint_fast32_t dist, unsigned n) noexcept
+unsigned Lzma2Encoder::FastDistResult(uint_fast32_t dist, unsigned n) NOEXCEPT
 {
 	return distance_table[dist >> FastDistShift(n)]
 		+ 2 * FastDistShift(n);
 }
 
-size_t Lzma2Encoder::GetDistSlot(uint_fast32_t distance) noexcept
+size_t Lzma2Encoder::GetDistSlot(uint_fast32_t distance) NOEXCEPT
 {
 	uint_fast32_t limit = UINT32_C(1) << kFastDistBits;
 	// If it is small enough, we can pick the result directly from
@@ -217,14 +217,14 @@ size_t Lzma2Encoder::GetDistSlot(uint_fast32_t distance) noexcept
 
 // ****************************************
 
-void Lzma2Encoder::UpdateLengthPrices(LengthStates &len_states) noexcept
+void Lzma2Encoder::UpdateLengthPrices(LengthStates &len_states) NOEXCEPT
 {
 	for (size_t pos_state = 0; pos_state <= pos_mask; ++pos_state) {
 		len_states.SetPrices(pos_state);
 	}
 }
 
-void Lzma2Encoder::FillAlignPrices() noexcept
+void Lzma2Encoder::FillAlignPrices() NOEXCEPT
 {
 	for (size_t i = 0; i < kAlignTableSize; ++i) {
 		align_prices[i] = rc.GetReverseTreePrice(encoder_states.dist_align_encoders, kNumAlignBits, i);
@@ -232,7 +232,7 @@ void Lzma2Encoder::FillAlignPrices() noexcept
 	align_price_count = 0;
 }
 
-void Lzma2Encoder::FillDistancesPrices() noexcept
+void Lzma2Encoder::FillDistancesPrices() NOEXCEPT
 {
 	static const size_t kLastLenToPosState = kNumLenToPosStates - 1;
 	for (size_t i = kStartPosModelIndex; i < kNumFullDistances; ++i) {
@@ -263,7 +263,7 @@ void Lzma2Encoder::FillDistancesPrices() noexcept
 	match_price_count = 0;
 }
 
-unsigned Lzma2Encoder::GetLiteralPrice(size_t index, size_t state, unsigned prev_symbol, uint_fast32_t symbol, unsigned match_byte) const noexcept
+unsigned Lzma2Encoder::GetLiteralPrice(size_t index, size_t state, unsigned prev_symbol, uint_fast32_t symbol, unsigned match_byte) const NOEXCEPT
 {
 	const RangeEncoder::Probability* prob_table = GetLiteralProbs(index, prev_symbol);
 	if (IsCharState(state)) {
@@ -278,7 +278,7 @@ unsigned Lzma2Encoder::GetLiteralPrice(size_t index, size_t state, unsigned prev
 	return GetLiteralPriceMatched(prob_table, symbol, match_byte);
 }
 
-void Lzma2Encoder::EncodeLiteral(size_t index, uint_fast32_t symbol, unsigned prev_symbol) noexcept
+void Lzma2Encoder::EncodeLiteral(size_t index, uint_fast32_t symbol, unsigned prev_symbol) NOEXCEPT
 {
 	rc.EncodeBit0(encoder_states.is_match[encoder_states.state][index & pos_mask]);
 	encoder_states.state = kLiteralNextStates[encoder_states.state];
@@ -291,7 +291,7 @@ void Lzma2Encoder::EncodeLiteral(size_t index, uint_fast32_t symbol, unsigned pr
 	} while (symbol < 0x10000);
 }
 
-void Lzma2Encoder::EncodeLiteralMatched(const uint8_t* data_block, size_t index, uint_fast32_t symbol) noexcept
+void Lzma2Encoder::EncodeLiteralMatched(const uint8_t* data_block, size_t index, uint_fast32_t symbol) NOEXCEPT
 {
 	rc.EncodeBit0(encoder_states.is_match[encoder_states.state][index & pos_mask]);
 	encoder_states.state = kLiteralNextStates[encoder_states.state];
@@ -308,7 +308,7 @@ void Lzma2Encoder::EncodeLiteralMatched(const uint8_t* data_block, size_t index,
 	} while (symbol < 0x10000);
 }
 
-void Lzma2Encoder::EncodeLength(LengthStates& len_prob_table, unsigned len, size_t pos_state) noexcept
+void Lzma2Encoder::EncodeLength(LengthStates& len_prob_table, unsigned len, size_t pos_state) NOEXCEPT
 {
 	len -= kMatchLenMin;
 	if (len < kLenNumLowSymbols) {
@@ -331,7 +331,7 @@ void Lzma2Encoder::EncodeLength(LengthStates& len_prob_table, unsigned len, size
 	}
 }
 
-void Lzma2Encoder::EncodeRepMatch(unsigned len, unsigned rep, size_t pos_state) noexcept
+void Lzma2Encoder::EncodeRepMatch(unsigned len, unsigned rep, size_t pos_state) NOEXCEPT
 {
 	rc.EncodeBit1(encoder_states.is_match[encoder_states.state][pos_state]);
 	rc.EncodeBit1(encoder_states.is_rep[encoder_states.state]);
@@ -365,7 +365,7 @@ void Lzma2Encoder::EncodeRepMatch(unsigned len, unsigned rep, size_t pos_state) 
 	}
 }
 
-void Lzma2Encoder::EncodeNormalMatch(unsigned len, uint_fast32_t dist, size_t pos_state) noexcept
+void Lzma2Encoder::EncodeNormalMatch(unsigned len, uint_fast32_t dist, size_t pos_state) NOEXCEPT
 {
 	rc.EncodeBit1(encoder_states.is_match[encoder_states.state][pos_state]);
 	rc.EncodeBit0(encoder_states.is_rep[encoder_states.state]);
@@ -393,12 +393,12 @@ void Lzma2Encoder::EncodeNormalMatch(unsigned len, uint_fast32_t dist, size_t po
 	++match_price_count;
 }
 
-uint8_t Lzma2Encoder::GetLcLpPbCode() noexcept
+uint8_t Lzma2Encoder::GetLcLpPbCode() NOEXCEPT
 {
 	return static_cast<uint8_t>((pb * 5 + lp) * 9 + lc);
 }
 
-void Lzma2Encoder::InitDistanceTable() noexcept
+void Lzma2Encoder::InitDistanceTable() NOEXCEPT
 {
 	distance_table[0] = 0;
 	distance_table[1] = 1;
@@ -419,7 +419,7 @@ size_t Lzma2Encoder::InitOptimizerPos0(const DataBlock& block,
 	MatchResult match,
 	size_t index,
 	RepDistances& reps,
-	OptimalArray& opt_buf) noexcept
+	OptimalArray& opt_buf) NOEXCEPT
 {
 	size_t max_length = std::min<size_t>(block.end - index, kMatchLenMax);
 	const uint8_t *data = block.data + index;
@@ -509,7 +509,7 @@ void Lzma2Encoder::InitMatchesPos0(const DataBlock& /*block*/,
 	size_t pos_state,
 	size_t len,
 	unsigned normal_match_price,
-	OptimalArray& opt_buf) noexcept
+	OptimalArray& opt_buf) NOEXCEPT
 {
 	if (static_cast<unsigned>(len) <= match.length) {
 		size_t distance = match.dist;
@@ -541,7 +541,7 @@ size_t Lzma2Encoder::InitMatchesPos0Best(const DataBlock& block,
 	size_t index,
 	size_t len,
 	unsigned normal_match_price,
-	OptimalArray& opt_buf) noexcept
+	OptimalArray& opt_buf) NOEXCEPT
 {
 	if (len <= match.length) {
 		size_t main_len = hash_chain->GetMatches(block, index, match_cycles, match, matches);
@@ -604,7 +604,7 @@ size_t Lzma2Encoder::OptimalParse(const DataBlock& block,
 	size_t cur,
 	size_t len_end,
 	RepDistances& reps,
-	OptimalArray& opt_buf) noexcept
+	OptimalArray& opt_buf) NOEXCEPT
 {
 	OptimalNode& cur_opt = opt_buf[cur];
 	size_t prev_index = cur_opt.prev_index;

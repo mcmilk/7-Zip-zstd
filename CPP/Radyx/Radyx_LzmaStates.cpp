@@ -3,7 +3,7 @@
 
 namespace Radyx {
 
-void LzmaStates::LengthStates::Reset(unsigned fast_length) noexcept
+void LzmaStates::LengthStates::Reset(unsigned fast_length) NOEXCEPT
 {
 	choice = RangeEncoder::kProbInitValue;
 	choice_2 = RangeEncoder::kProbInitValue;
@@ -19,7 +19,7 @@ void LzmaStates::LengthStates::Reset(unsigned fast_length) noexcept
 	table_size = fast_length + 1 - kMatchLenMin;
 }
 
-void LzmaStates::LengthStates::SetPrices(size_t pos_state) noexcept
+void LzmaStates::LengthStates::SetPrices(size_t pos_state) NOEXCEPT
 {
 	unsigned prob = choice;
 	unsigned a0 = RangeEncoder::GetPrice0(prob);
@@ -40,7 +40,7 @@ void LzmaStates::LengthStates::SetPrices(size_t pos_state) noexcept
 	counters[pos_state] = static_cast<unsigned>(table_size);
 }
 
-void LzmaStates::Reset(unsigned lc, unsigned lp, unsigned fast_length) noexcept
+void LzmaStates::Reset(unsigned lc, unsigned lp, unsigned fast_length) NOEXCEPT
 {
 	state = 0;
 	for (size_t i = 0; i < kNumReps; ++i) {

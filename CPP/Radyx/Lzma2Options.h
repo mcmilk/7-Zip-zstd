@@ -53,7 +53,7 @@ struct Lzma2Options
 	OptionalSetting<size_t> match_buffer_size;
 	unsigned block_overlap;
 	unsigned random_filter;
-	Lzma2Options() noexcept
+	Lzma2Options() NOEXCEPT
 		: lc(3),
 		lp(0),
 		pb(2),
@@ -66,7 +66,7 @@ struct Lzma2Options
 		match_buffer_size(0),
 		block_overlap(2),
 		random_filter(0) {}
-	void LoadCompressLevel() noexcept;
+	void LoadCompressLevel() NOEXCEPT;
 };
 
 }

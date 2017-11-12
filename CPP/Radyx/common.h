@@ -31,6 +31,19 @@
 
 namespace Radyx {
 
+/**
+ * define NOEXCEPT if supported
+ * - should work with clang, gcc and msvc
+#if defined(__clang__) && __has_feature(cxx_noexcept) || \
+    defined(__GXX_EXPERIMENTAL_CXX0X__) && __GNUC__ * 10 + __GNUC_MINOR__ >= 46 || \
+ */
+#if defined(_MSC_VER) && defined(_NOEXCEPT)
+#pragma warning(disable : 4512)
+#  define NOEXCEPT _NOEXCEPT
+#else
+#  define NOEXCEPT
+#endif
+
 extern volatile bool g_break;
 
 #ifdef USE_64BIT_FAST_INT

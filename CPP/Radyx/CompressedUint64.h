@@ -34,18 +34,18 @@ namespace Radyx {
 class CompressedUint64
 {
 public:
-	CompressedUint64(uint_least64_t u) noexcept;
-	CompressedUint64(const uint8_t* in_buffer, size_t byte_count) noexcept;
-	void operator=(uint_least64_t u) noexcept;
-	void operator=(const CompressedUint64& right) noexcept;
-	operator uint_least64_t() const noexcept;
-	const uint8_t* GetValue() const noexcept {
+	CompressedUint64(uint_least64_t u) NOEXCEPT;
+	CompressedUint64(const uint8_t* in_buffer, size_t byte_count) NOEXCEPT;
+	void operator=(uint_least64_t u) NOEXCEPT;
+	void operator=(const CompressedUint64& right) NOEXCEPT;
+	operator uint_least64_t() const NOEXCEPT;
+	const uint8_t* GetValue() const NOEXCEPT {
 		return value;
 	}
-	unsigned GetSize() const noexcept {
+	unsigned GetSize() const NOEXCEPT {
 		return size;
 	}
-	bool CheckEof() const noexcept {
+	bool CheckEof() const NOEXCEPT {
 		return size == 0;
 	}
 

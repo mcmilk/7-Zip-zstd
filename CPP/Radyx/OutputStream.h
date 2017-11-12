@@ -35,7 +35,7 @@ public:
 	virtual OutputStream& Write(const char* s, size_t n) = 0;
 	virtual void DisableExceptions() = 0;
 	virtual void RestoreExceptions() = 0;
-	virtual bool Fail() const noexcept = 0;
+	virtual bool Fail() const NOEXCEPT = 0;
 };
 
 #endif

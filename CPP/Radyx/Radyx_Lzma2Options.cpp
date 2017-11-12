@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Class:   Crc32
-//          Calculate CRC-32 values
-//          
+// Class: Lzma2Options
+//        Options for LZMA2 encoding
+//
 // Copyright 2015 Conor McCarthy
 //
 // This file is part of Radyx.
@@ -23,22 +23,35 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "common.h"
-#include "Crc32.h"
+#include "Lzma2Options.h"
 
 namespace Radyx {
 
-Crc32::init_ Crc32::initializer_;
-uint_fast32_t Crc32::crc_table[256];
+const uint8_t Lzma2Options::kDicSizeTable[10] = { 18, 18, 20, 22, 24, 25, 25, 26, 26, 27 };
 
-void Crc32::InitCrcTable() noexcept
+void Lzma2Options::LoadCompressLevel() NOEXCEPT
 {
-	for (uint_fast32_t i = 0; i < 256; ++i)
-	{
-		uint_fast32_t crc32 = i;
-		for (uint8_t c = 8; c; c--) {
-			crc32 = (crc32 & 1) ? UINT32_C(0xEDB88320) ^ (crc32 >> 1) : crc32 >> 1;
+	if (!dictionary_size.IsSet()) {
+		dictionary_size = size_t(1) << kDicSizeTable[compress_level];
+	}
+	if (!fast_length.IsSet()) {
+		fast_length = (compress_level > 5) ? 64 : 32;
+	}
+	if (!encoder_mode.IsSet()) {
+		if (compress_level < 5) {
+			encoder_mode = kFastMode;
 		}
-		crc_table[i] = crc32;
+		else if (compress_level >= 7) {
+			encoder_mode = kBestMode;
+		}
+	}
+	if (compress_level >= 7) {
+		if (!match_cycles.IsSet()) {
+			match_cycles = 8 + (compress_level - 7) * 4;
+		}
+		if (!second_dict_bits.IsSet()) {
+			second_dict_bits = compress_level * 2 - 2;
+		}
 	}
 }
 

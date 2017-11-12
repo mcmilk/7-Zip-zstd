@@ -43,17 +43,17 @@ class Lzma2Compressor : public CompressorInterface
 public:
 	Lzma2Compressor(const Lzma2Options& options);
 	virtual ~Lzma2Compressor();
-	size_t GetDictionarySize() const noexcept;
-	size_t GetMaxBufferOverrun() const noexcept;
-	inline unsigned GetEncodeWeight() const noexcept;
+	size_t GetDictionarySize() const NOEXCEPT;
+	size_t GetMaxBufferOverrun() const NOEXCEPT;
+	inline unsigned GetEncodeWeight() const NOEXCEPT;
 	size_t Compress(const DataBlock& data_block,
 		ThreadPool& threads,
 		OutputStream& out_stream,
 		ErrorCode& error_code,
 		Progress* progress = nullptr);
 	size_t Finalize(OutputStream& out_stream);
-	CoderInfo GetCoderInfo() const noexcept;
-	size_t GetMemoryUsage(unsigned thread_count) const noexcept;
+	CoderInfo GetCoderInfo() const NOEXCEPT;
+	size_t GetMemoryUsage(unsigned thread_count) const NOEXCEPT;
 
 private:
 	struct ThreadArgs
@@ -123,19 +123,19 @@ Lzma2Compressor<MatchTableT>::~Lzma2Compressor()
 }
 
 template<class MatchTableT>
-size_t Lzma2Compressor<MatchTableT>::GetDictionarySize() const noexcept
+size_t Lzma2Compressor<MatchTableT>::GetDictionarySize() const NOEXCEPT
 {
 	return match_table.GetDictionarySize();
 }
 
 template<class MatchTableT>
-size_t Lzma2Compressor<MatchTableT>::GetMaxBufferOverrun() const noexcept
+size_t Lzma2Compressor<MatchTableT>::GetMaxBufferOverrun() const NOEXCEPT
 {
 	return Lzma2Encoder::GetMatchLenMax();
 }
 
 template<class MatchTableT>
-unsigned Lzma2Compressor<MatchTableT>::GetEncodeWeight() const noexcept
+unsigned Lzma2Compressor<MatchTableT>::GetEncodeWeight() const NOEXCEPT
 {
 	if (options.encoder_mode == Lzma2Options::kFastMode) {
 		return 1;
@@ -254,14 +254,14 @@ size_t Lzma2Compressor<MatchTableT>::Finalize(OutputStream& out_stream)
 }
 
 template<class MatchTableT>
-CoderInfo Lzma2Compressor<MatchTableT>::GetCoderInfo() const noexcept
+CoderInfo Lzma2Compressor<MatchTableT>::GetCoderInfo() const NOEXCEPT
 {
 	uint8_t dict_size_prop = Lzma2Encoder::GetDictSizeProp(dictionary_max);
 	return CoderInfo(&dict_size_prop, 1, 0x21, 1, 1);
 }
 
 template<class MatchTableT>
-size_t Lzma2Compressor<MatchTableT>::GetMemoryUsage(unsigned thread_count) const noexcept
+size_t Lzma2Compressor<MatchTableT>::GetMemoryUsage(unsigned thread_count) const NOEXCEPT
 {
 	return match_table.GetMemoryUsage(thread_count) +
 		Lzma2Encoder::GetMemoryUsage(options) * thread_count;

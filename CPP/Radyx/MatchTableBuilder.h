@@ -46,16 +46,16 @@ public:
 	struct ListHead {
 		UintFast32 head;
 		UintFast32 count;
-		ListHead() noexcept {}
+		ListHead() NOEXCEPT {}
 	};
 
 	class HeadIndexes
 	{
 	public:
-		inline HeadIndexes(ListHead* head_table, size_t table_size, size_t block_size, unsigned thread_count) noexcept;
-		inline ptrdiff_t GetNextIndex() noexcept;
+		inline HeadIndexes(ListHead* head_table, size_t table_size, size_t block_size, unsigned thread_count) NOEXCEPT;
+		inline ptrdiff_t GetNextIndex() NOEXCEPT;
 	private:
-		inline size_t GetEndHeadIndex(ListHead* head_table, size_t end, size_t block_size, unsigned thread_count) noexcept;
+		inline size_t GetEndHeadIndex(ListHead* head_table, size_t end, size_t block_size, unsigned thread_count) NOEXCEPT;
 
 		std::atomic_ptrdiff_t front_index;
 		std::atomic_ptrdiff_t back_index;
@@ -74,10 +74,10 @@ public:
 		Progress* progress,
 		uint8_t start_depth,
 		uint8_t max_depth);
-	static size_t GetMaxBufferSize(size_t dictionary_size) noexcept {
+	static size_t GetMaxBufferSize(size_t dictionary_size) NOEXCEPT {
 		return dictionary_size / sizeof(StringMatch);
 	}
-	static size_t GetMemoryUsage(size_t match_buffer_size) noexcept {
+	static size_t GetMemoryUsage(size_t match_buffer_size) NOEXCEPT {
 		return match_buffer_size * sizeof(StringMatch);
 	}
 
@@ -112,7 +112,7 @@ private:
 		unsigned radix_16;
 	};
 
-	static inline void Copy2Bytes(uint8_t* dest, const uint8_t* src) noexcept;
+	static inline void Copy2Bytes(uint8_t* dest, const uint8_t* src) NOEXCEPT;
 
 	template<class MatchTableT>
 	void RecurseListsBuffered(const DataBlock& block,
@@ -121,45 +121,45 @@ private:
 		uint8_t depth,
 		uint8_t max_depth,
 		UintFast32 list_count,
-		size_t stack_base) noexcept;
+		size_t stack_base) NOEXCEPT;
 
 	template<class MatchTableT>
 	void RecurseLists8(const DataBlock& block,
 		MatchTableT& match_table,
 		size_t link,
 		UintFast32 count,
-		UintFast32 max_depth) noexcept;
+		UintFast32 max_depth) NOEXCEPT;
 
 	template<class MatchTableT>
 	void RecurseLists16(const DataBlock& block,
 		MatchTableT& match_table,
 		size_t link,
 		UintFast32 count,
-		UintFast32 max_depth) noexcept;
+		UintFast32 max_depth) NOEXCEPT;
 
 	template<class MatchTableT>
 	void RecurseListStack(const DataBlock& block,
 		MatchTableT& match_table,
 		size_t st_index,
-		UintFast32 max_depth) noexcept;
+		UintFast32 max_depth) NOEXCEPT;
 
 	UintFast32 RepeatCheck(StringMatch* match_buffer,
 		size_t index,
 		UintFast32 depth,
-		UintFast32 list_count) noexcept;
+		UintFast32 list_count) NOEXCEPT;
 
 	template<class MatchTableT>
 	UintFast32 RepeatCheck(MatchTableT& match_table,
 		size_t link,
 		UintFast32 depth,
-		UintFast32 list_count) noexcept;
+		UintFast32 list_count) NOEXCEPT;
 
 	void BruteForceBuffered(const DataBlock& block,
 		StringMatch* match_buffer,
 		size_t index,
 		size_t list_count,
 		size_t depth,
-		size_t max_depth) noexcept;
+		size_t max_depth) NOEXCEPT;
 
 	template<class MatchTableT>
 	void BruteForce(const DataBlock& block,
@@ -167,7 +167,7 @@ private:
 		size_t link,
 		size_t list_count,
 		UintFast32 depth,
-		UintFast32 max_depth) noexcept;
+		UintFast32 max_depth) NOEXCEPT;
 
 	// Fast-reset bool tables for recording initial radix value occurrence
 	FlagTable<UintFast32, 8> flag_table_8;
@@ -185,7 +185,7 @@ private:
 	MatchTableBuilder& operator=(MatchTableBuilder&&) = delete;
 };
 
-MatchTableBuilder::HeadIndexes::HeadIndexes(ListHead* head_table, size_t table_size, size_t block_size, unsigned thread_count) noexcept
+MatchTableBuilder::HeadIndexes::HeadIndexes(ListHead* head_table, size_t table_size, size_t block_size, unsigned thread_count) NOEXCEPT
 {
 	front_index = 0;
 	if (thread_count > 1) {
@@ -205,7 +205,7 @@ MatchTableBuilder::HeadIndexes::HeadIndexes(ListHead* head_table, size_t table_s
 }
 
 // Find an end point preceeded by a bunch of short lists
-size_t MatchTableBuilder::HeadIndexes::GetEndHeadIndex(ListHead* head_table, size_t end, size_t block_size, unsigned thread_count) noexcept
+size_t MatchTableBuilder::HeadIndexes::GetEndHeadIndex(ListHead* head_table, size_t end, size_t block_size, unsigned thread_count) NOEXCEPT
 {
 	UintFast32 max_count;
 	if (end <= MatchTableBuilder::kRadixTableSizeSmall) {
@@ -230,7 +230,7 @@ size_t MatchTableBuilder::HeadIndexes::GetEndHeadIndex(ListHead* head_table, siz
 }
 
 // Atomically take a list from the head table
-ptrdiff_t MatchTableBuilder::HeadIndexes::GetNextIndex() noexcept
+ptrdiff_t MatchTableBuilder::HeadIndexes::GetNextIndex() NOEXCEPT
 {
 	if (back_index > end_index) {
 		ptrdiff_t index = --back_index;
@@ -294,7 +294,7 @@ void MatchTableBuilder::RecurseLists(const DataBlock& block,
 	}
 }
 
-void MatchTableBuilder::Copy2Bytes(uint8_t* dest, const uint8_t* src) noexcept
+void MatchTableBuilder::Copy2Bytes(uint8_t* dest, const uint8_t* src) NOEXCEPT
 {
 #ifndef DISALLOW_UNALIGNED_ACCESS
 	(reinterpret_cast<uint16_t*>(dest))[0] = (reinterpret_cast<const uint16_t*>(src))[0];
@@ -313,7 +313,7 @@ void MatchTableBuilder::RecurseListsBuffered(const DataBlock& block,
 	uint8_t depth,
 	uint8_t max_depth,
 	UintFast32 list_count,
-	size_t stack_base) noexcept
+	size_t stack_base) NOEXCEPT
 {
 	// Faster than vector operator[] and possible because the vector is not reallocated in this method
 	StringMatch* match_buffer = match_buffer_.data();
@@ -522,7 +522,7 @@ void MatchTableBuilder::RecurseLists8(const DataBlock& block,
 	MatchTableT& match_table,
 	size_t link,
 	UintFast32 count,
-	UintFast32 max_depth) noexcept
+	UintFast32 max_depth) NOEXCEPT
 {
 	flag_table_8.Reset();
 	// Offset data pointer
@@ -577,7 +577,7 @@ void MatchTableBuilder::RecurseLists16(const DataBlock& block,
 	MatchTableT& match_table,
 	size_t link,
 	UintFast32 count,
-	UintFast32 max_depth) noexcept
+	UintFast32 max_depth) NOEXCEPT
 {
 	flag_table_8.Reset();
 	flag_table_16.Reset();
@@ -647,7 +647,7 @@ template<class MatchTableT>
 void MatchTableBuilder::RecurseListStack(const DataBlock& block,
 	MatchTableT& match_table,
 	size_t st_index,
-	UintFast32 max_depth) noexcept
+	UintFast32 max_depth) NOEXCEPT
 {
 	// Maximum depth at which lists will be sent to the buffered method.
 	UintFast32 max_buffered_depth = max_depth - std::min<UintFast32>(max_depth / 4 + 2, 8u);
@@ -796,7 +796,7 @@ template<class MatchTableT>
 UintFast32 MatchTableBuilder::RepeatCheck(MatchTableT& match_table,
 	size_t link,
 	UintFast32 depth,
-	UintFast32 list_count) noexcept
+	UintFast32 list_count) NOEXCEPT
 {
 	int_fast32_t n = list_count - 1;
 	int_fast32_t rpt = -1;
@@ -832,7 +832,7 @@ void MatchTableBuilder::BruteForce(const DataBlock& block,
 	size_t link,
 	size_t list_count,
 	UintFast32 depth,
-	UintFast32 max_depth) noexcept
+	UintFast32 max_depth) NOEXCEPT
 {
 	size_t buffer[kMaxBruteForceListSize + 1];
 	buffer[0] = link;

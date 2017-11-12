@@ -38,8 +38,8 @@ template<unsigned kTableBits2, unsigned kTableBits3, size_t kMatchLenMax>
 class HashChain
 {
 public:
-	HashChain(unsigned dictionary_bits_3) noexcept;
-	inline void Initialize(ptrdiff_t prev_index_) noexcept;
+	HashChain(unsigned dictionary_bits_3) NOEXCEPT;
+	inline void Initialize(ptrdiff_t prev_index_) NOEXCEPT;
 	template<class MatchCollection>
 	size_t GetMatches(const DataBlock& block,
 		ptrdiff_t index,
@@ -67,7 +67,7 @@ private:
 };
 
 template<unsigned kTableBits2, unsigned kTableBits3, size_t kMatchLenMax>
-HashChain<kTableBits2, kTableBits3, kMatchLenMax>::HashChain(unsigned dictionary_bits_3) noexcept
+HashChain<kTableBits2, kTableBits3, kMatchLenMax>::HashChain(unsigned dictionary_bits_3) NOEXCEPT
 	: hash_chain_3(new UintFast32[size_t(1) << dictionary_bits_3]),
 	chain_mask_3((1 << dictionary_bits_3) - 1)
 {
@@ -75,7 +75,7 @@ HashChain<kTableBits2, kTableBits3, kMatchLenMax>::HashChain(unsigned dictionary
 }
 
 template<unsigned kTableBits2, unsigned kTableBits3, size_t kMatchLenMax>
-inline void HashChain<kTableBits2, kTableBits3, kMatchLenMax>::Initialize(ptrdiff_t prev_index_) noexcept
+inline void HashChain<kTableBits2, kTableBits3, kMatchLenMax>::Initialize(ptrdiff_t prev_index_) NOEXCEPT
 {
 	prev_index = prev_index_;
 	// GCC is strict about passing a reference to fill()
@@ -84,12 +84,12 @@ inline void HashChain<kTableBits2, kTableBits3, kMatchLenMax>::Initialize(ptrdif
 	table_3.fill(n);
 }
 
-static inline size_t GetHash2(const uint8_t* data) noexcept
+static inline size_t GetHash2(const uint8_t* data) NOEXCEPT
 {
 	return Crc32::GetHash(data[0]) ^ data[1];
 }
 
-static inline size_t GetHash3(const uint8_t* data, size_t hash) noexcept
+static inline size_t GetHash3(const uint8_t* data, size_t hash) NOEXCEPT
 {
 	hash ^= size_t(data[2]) << 8;
 	return hash;

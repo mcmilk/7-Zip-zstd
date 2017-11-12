@@ -11,17 +11,17 @@ struct RepDistances
 		size_t rep_copier[kNumReps / 2];
 	};
 
-	uint_fast32_t& operator[](size_t index) noexcept {
+	uint_fast32_t& operator[](size_t index) NOEXCEPT {
 		return reps[index];
 	}
-	const uint_fast32_t& operator[](size_t index) const noexcept {
+	const uint_fast32_t& operator[](size_t index) const NOEXCEPT {
 		return reps[index];
 	}
-	inline void operator=(const RepDistances<kNumReps>& rvalue) noexcept;
+	inline void operator=(const RepDistances<kNumReps>& rvalue) NOEXCEPT;
 };
 
 template<size_t kNumReps>
-void RepDistances<kNumReps>::operator=(const RepDistances<kNumReps>& rvalue) noexcept
+void RepDistances<kNumReps>::operator=(const RepDistances<kNumReps>& rvalue) NOEXCEPT
 {
 	if (sizeof(rep_copier) == sizeof(reps)) {
 		rep_copier[0] = rvalue.rep_copier[0];

@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Class:   CoderInfo
-//          Information for defining the encoding used
-//
+// Class:   Crc32
+//          Calculate CRC-32 values
+//          
 // Copyright 2015 Conor McCarthy
 //
 // This file is part of Radyx.
@@ -22,24 +22,24 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "CoderInfo.h"
+#include "common.h"
+#include "Crc32.h"
 
 namespace Radyx {
 
-size_t CoderInfo::MethodId::GetIdString(IdString& str) const noexcept
+Crc32::init_ Crc32::initializer_;
+uint_fast32_t Crc32::crc_table[256];
+
+void Crc32::InitCrcTable() NOEXCEPT
 {
-	uint_least64_t id = method_id;
-	size_t length = 1;
-	for (; length < sizeof(id); ++length) {
-		if ((id >> (8u * length)) == 0) {
-			break;
+	for (uint_fast32_t i = 0; i < 256; ++i)
+	{
+		uint_fast32_t crc32 = i;
+		for (uint8_t c = 8; c; c--) {
+			crc32 = (crc32 & 1) ? UINT32_C(0xEDB88320) ^ (crc32 >> 1) : crc32 >> 1;
 		}
+		crc_table[i] = crc32;
 	}
-	for (ptrdiff_t i = length - 1; i >= 0; --i) {
-		str[i] = static_cast<uint8_t>(id & 0xFF);
-		id >>= 8;
-	}
-	return length;
 }
 
 }

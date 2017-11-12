@@ -30,18 +30,18 @@ namespace Radyx {
 class Crc32
 {
 public:
-	Crc32() noexcept : crc32(0xFFFFFFFF) {}
-	inline void Add(uint8_t byte) noexcept;
-	inline void Add(uint8_t* buffer, size_t count) noexcept;
-	operator uint_fast32_t() const noexcept {
+	Crc32() NOEXCEPT : crc32(0xFFFFFFFF) {}
+	inline void Add(uint8_t byte) NOEXCEPT;
+	inline void Add(uint8_t* buffer, size_t count) NOEXCEPT;
+	operator uint_fast32_t() const NOEXCEPT {
 		return crc32 ^ 0xFFFFFFFF;
 	}
-	static uint_fast32_t GetHash(uint8_t byte) noexcept {
+	static uint_fast32_t GetHash(uint8_t byte) NOEXCEPT {
 		return crc_table[byte];
 	}
 
 private:
-	static void InitCrcTable() noexcept;
+	static void InitCrcTable() NOEXCEPT;
 
 	static uint_fast32_t crc_table[256];
 	uint_fast32_t crc32;
@@ -49,16 +49,16 @@ private:
 	static class init_
 	{
 	public:
-		init_() noexcept { InitCrcTable(); }
+		init_() NOEXCEPT { InitCrcTable(); }
 	} initializer_;
 };
 
-void Crc32::Add(uint8_t byte) noexcept
+void Crc32::Add(uint8_t byte) NOEXCEPT
 {
 	crc32 = crc_table[(crc32 ^ byte) & 0xFF] ^ (crc32 >> 8);
 }
 
-void Crc32::Add(uint8_t* buffer, size_t count) noexcept
+void Crc32::Add(uint8_t* buffer, size_t count) NOEXCEPT
 {
 	for (size_t i = 0; i < count; ++i) {
 		Add(buffer[i]);
