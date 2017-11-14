@@ -101,7 +101,7 @@ template<class MatchTableT>
 Lzma2Compressor<MatchTableT>::Lzma2Compressor(const Lzma2Options& options_)
 	: match_table(std::min<size_t>(options_.dictionary_size, Lzma2Encoder::GetDictionarySizeMax()),
 		options_.match_buffer_size,
-		static_cast<uint8_t>(std::min(options_.fast_length, 0xFF)),
+		static_cast<uint8_t>(std::min<unsigned>(options_.fast_length, 0xFF)),
 		options_.random_filter),
 	options(options_),
 	dictionary_max(0),
