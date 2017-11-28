@@ -1977,13 +1977,13 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory)
       return size;
     }
 
-	case kRadyx:
-	{
-		size += dict * 5 + (1UL << 18) * numThreads;
-		UInt32 bufSize = 0;
-		UInt32 extraThreads = numThreads ? numThreads - 1 : 0;
-		if (dict >= (UInt32(1) << 26) || GetOrder() > 63) {
-			size += dict;
+	  case kRadyx:
+	  {
+		  size += dict * 5 + (1UL << 18) * numThreads;
+		  UInt32 bufSize = 0;
+		  UInt32 extraThreads = numThreads ? numThreads - 1 : 0;
+		  if (dict >= (UInt32(1) << 26) || GetOrder() > 63) {
+			  size += dict;
 			if (dict < (UInt32(1) << 27)) {
 				if (extraThreads >= 3) {
 					bufSize = (dict >> 9) + 64 * 1024;
@@ -1997,21 +1997,20 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory)
 				else {
 					bufSize = ((dict * 3) >> 8) < 384 * 1024 ? 384 * 1024 : ((dict * 3) >> 8);
 				}
-			}
-			else {
-				bufSize = (dict >> 7) / (extraThreads + 1);
-			}
-		}
-		else {
-			static const UInt32 kMatchBufferSize[4] = { 768 * 1024, 300 * 1024, 180 * 1024, 128 * 1024 };
-			bufSize = kMatchBufferSize[extraThreads > 3 ? 3 : extraThreads];
-			if (bufSize > dict)
-				bufSize = dict;
-		}
-		size += bufSize * 12;
-		decompressMemory = dict + (2 << 20);
-		return size;
-	}
+			} else {
+				  bufSize = (dict >> 7) / (extraThreads + 1);
+			  }
+		  }
+  		else {
+	  		static const UInt32 kMatchBufferSize[4] = { 768 * 1024, 300 * 1024, 180 * 1024, 128 * 1024 };
+		  	bufSize = kMatchBufferSize[extraThreads > 3 ? 3 : extraThreads];
+			  if (bufSize > dict)
+				  bufSize = dict;
+      }
+		  size += bufSize * 12;
+	  	decompressMemory = dict + (2 << 20);
+  		return size;
+  	}
 
     case kPPMd:
     {

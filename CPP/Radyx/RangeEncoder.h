@@ -42,34 +42,34 @@ public:
 	static const unsigned kNumMoveReducingBits = 4;
 	static const unsigned kNumBitPriceShiftBits = 4;
 
-	RangeEncoder() noexcept;
+	RangeEncoder() NOEXCEPT;
 	~RangeEncoder();
-	void SetOutputBuffer(uint8_t *out_buffer_, size_t chunk_size_) noexcept;
-	void Reset() noexcept;
-	inline void EncodeBit0(Probability &rprob) noexcept;
-	inline void EncodeBit1(Probability &rprob) noexcept;
-	inline void EncodeBit(Probability &rprob, unsigned bit) noexcept;
-	void EncodeBitTree(Probability *prob_table, unsigned bit_count, unsigned symbol) noexcept;
-	void EncodeBitTreeReverse(Probability *prob_table, unsigned bit_count, unsigned symbol) noexcept;
-	void EncodeDirect(unsigned value, unsigned bit_count) noexcept;
-	void Flush() noexcept;
-	static inline unsigned GetPrice(unsigned prob, unsigned symbol) noexcept;
-	static inline unsigned GetPrice0(unsigned prob) noexcept;
-	static inline unsigned GetPrice1(unsigned prob) noexcept;
-	static inline unsigned GetTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) noexcept;
-	static inline unsigned GetReverseTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) noexcept;
-	static inline unsigned GetDirectBitsPrice(size_t bit_count) noexcept;
+	void SetOutputBuffer(uint8_t *out_buffer_, size_t chunk_size_) NOEXCEPT;
+	void Reset() NOEXCEPT;
+	inline void EncodeBit0(Probability &rprob) NOEXCEPT;
+	inline void EncodeBit1(Probability &rprob) NOEXCEPT;
+	inline void EncodeBit(Probability &rprob, unsigned bit) NOEXCEPT;
+	void EncodeBitTree(Probability *prob_table, unsigned bit_count, unsigned symbol) NOEXCEPT;
+	void EncodeBitTreeReverse(Probability *prob_table, unsigned bit_count, unsigned symbol) NOEXCEPT;
+	void EncodeDirect(unsigned value, unsigned bit_count) NOEXCEPT;
+	void Flush() NOEXCEPT;
+	static inline unsigned GetPrice(unsigned prob, unsigned symbol) NOEXCEPT;
+	static inline unsigned GetPrice0(unsigned prob) NOEXCEPT;
+	static inline unsigned GetPrice1(unsigned prob) NOEXCEPT;
+	static inline unsigned GetTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) NOEXCEPT;
+	static inline unsigned GetReverseTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) NOEXCEPT;
+	static inline unsigned GetDirectBitsPrice(size_t bit_count) NOEXCEPT;
 
-	inline size_t GetOutIndex() const noexcept {
+	inline size_t GetOutIndex() const NOEXCEPT {
 		return out_index;
 	}
-	inline bool IsFull() const noexcept {
+	inline bool IsFull() const NOEXCEPT {
 		return out_index >= chunk_size;
 	}
 
 private:
-	static void InitPriceTable() noexcept;
-	void ShiftLow() noexcept;
+	static void InitPriceTable() NOEXCEPT;
+	void ShiftLow() NOEXCEPT;
 
 	static unsigned price_table[kBitModelTotal >> kNumMoveReducingBits];
 	uint8_t *out_buffer;
@@ -83,7 +83,7 @@ private:
 	static class init_
 	{
 	public:
-		init_() noexcept { InitPriceTable(); }
+		init_() NOEXCEPT { InitPriceTable(); }
 	} initializer_;
 
 	RangeEncoder(const RangeEncoder&) = delete;
@@ -92,7 +92,7 @@ private:
 	RangeEncoder& operator=(RangeEncoder&&) = delete;
 };
 
-void RangeEncoder::EncodeBit0(Probability &rprob) noexcept
+void RangeEncoder::EncodeBit0(Probability &rprob) NOEXCEPT
 {
 	unsigned prob = rprob;
 	range = (range >> kNumBitModelTotalBits) * prob;
@@ -104,7 +104,7 @@ void RangeEncoder::EncodeBit0(Probability &rprob) noexcept
 	}
 }
 
-void RangeEncoder::EncodeBit1(Probability &rprob) noexcept
+void RangeEncoder::EncodeBit1(Probability &rprob) NOEXCEPT
 {
 	unsigned prob = rprob;
 	uint_fast32_t new_bound = (range >> kNumBitModelTotalBits) * prob;
@@ -118,7 +118,7 @@ void RangeEncoder::EncodeBit1(Probability &rprob) noexcept
 	}
 }
 
-void RangeEncoder::EncodeBit(Probability &rprob, unsigned bit) noexcept
+void RangeEncoder::EncodeBit(Probability &rprob, unsigned bit) NOEXCEPT
 {
 	unsigned prob = rprob;
 	if (bit != 0) {
@@ -138,22 +138,22 @@ void RangeEncoder::EncodeBit(Probability &rprob, unsigned bit) noexcept
 	}
 }
 
-unsigned RangeEncoder::GetPrice(unsigned prob, unsigned symbol) noexcept
+unsigned RangeEncoder::GetPrice(unsigned prob, unsigned symbol) NOEXCEPT
 {
 	return price_table[(prob ^ (-static_cast<int>(symbol) & (kBitModelTotal - 1))) >> kNumMoveReducingBits];
 }
 
-unsigned RangeEncoder::GetPrice0(unsigned prob) noexcept
+unsigned RangeEncoder::GetPrice0(unsigned prob) NOEXCEPT
 {
 	return price_table[prob >> kNumMoveReducingBits];
 }
 
-unsigned RangeEncoder::GetPrice1(unsigned prob) noexcept
+unsigned RangeEncoder::GetPrice1(unsigned prob) NOEXCEPT
 {
 	return price_table[(prob ^ (kBitModelTotal - 1)) >> kNumMoveReducingBits];
 }
 
-unsigned RangeEncoder::GetTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) noexcept
+unsigned RangeEncoder::GetTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) NOEXCEPT
 {
 	unsigned price = 0;
 	symbol |= (size_t(1) << bit_count);
@@ -167,7 +167,7 @@ unsigned RangeEncoder::GetTreePrice(const Probability* prob_table, unsigned bit_
 	return price;
 }
 
-unsigned RangeEncoder::GetReverseTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) noexcept
+unsigned RangeEncoder::GetReverseTreePrice(const Probability* prob_table, unsigned bit_count, size_t symbol) NOEXCEPT
 {
 	unsigned price = 0;
 	size_t m = 1;
@@ -181,7 +181,7 @@ unsigned RangeEncoder::GetReverseTreePrice(const Probability* prob_table, unsign
 	return price;
 }
 
-unsigned RangeEncoder::GetDirectBitsPrice(size_t bit_count) noexcept
+unsigned RangeEncoder::GetDirectBitsPrice(size_t bit_count) NOEXCEPT
 {
 	return static_cast<unsigned>(bit_count) << kNumBitPriceShiftBits;
 }

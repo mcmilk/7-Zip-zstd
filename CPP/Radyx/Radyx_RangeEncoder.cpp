@@ -31,7 +31,7 @@ namespace Radyx {
 RangeEncoder::init_ RangeEncoder::initializer_;
 unsigned RangeEncoder::price_table[kBitModelTotal >> kNumMoveReducingBits];
 
-void RangeEncoder::InitPriceTable() noexcept
+void RangeEncoder::InitPriceTable() NOEXCEPT
 {
 	for (unsigned i = (1 << kNumMoveReducingBits) / 2; i < kBitModelTotal; i += (1 << kNumMoveReducingBits))
 	{
@@ -53,7 +53,7 @@ void RangeEncoder::InitPriceTable() noexcept
 	}
 }
 
-RangeEncoder::RangeEncoder() noexcept
+RangeEncoder::RangeEncoder() NOEXCEPT
 {
 	Reset();
 }
@@ -63,14 +63,14 @@ RangeEncoder::~RangeEncoder()
 {
 }
 
-void RangeEncoder::SetOutputBuffer(uint8_t *out_buffer_, size_t chunk_size_) noexcept
+void RangeEncoder::SetOutputBuffer(uint8_t *out_buffer_, size_t chunk_size_) NOEXCEPT
 {
 	out_buffer = out_buffer_;
 	chunk_size = chunk_size_;
 	out_index = 0;
 }
 
-void RangeEncoder::Reset() noexcept
+void RangeEncoder::Reset() NOEXCEPT
 {
 	low = 0;
 	range = UINT32_MAX;
@@ -78,7 +78,7 @@ void RangeEncoder::Reset() noexcept
 	cache = 0;
 }
 
-void RangeEncoder::ShiftLow() noexcept
+void RangeEncoder::ShiftLow() NOEXCEPT
 {
 	if (low < 0xFF000000 || low > 0xFFFFFFFF)
 	{
@@ -94,7 +94,7 @@ void RangeEncoder::ShiftLow() noexcept
 	low = (low << 8) & 0xFFFFFFFF;
 }
 
-void RangeEncoder::EncodeBitTree(Probability *probs, unsigned bit_count, unsigned symbol) noexcept
+void RangeEncoder::EncodeBitTree(Probability *probs, unsigned bit_count, unsigned symbol) NOEXCEPT
 {
 	assert(bit_count > 0);
 	size_t tree_index = 1;
@@ -106,7 +106,7 @@ void RangeEncoder::EncodeBitTree(Probability *probs, unsigned bit_count, unsigne
 	} while (bit_count != 0);
 }
 
-void RangeEncoder::EncodeBitTreeReverse(Probability *probs, unsigned bit_count, unsigned symbol) noexcept
+void RangeEncoder::EncodeBitTreeReverse(Probability *probs, unsigned bit_count, unsigned symbol) NOEXCEPT
 {
 	assert(bit_count != 0);
 	unsigned tree_index = 1;
@@ -118,7 +118,7 @@ void RangeEncoder::EncodeBitTreeReverse(Probability *probs, unsigned bit_count, 
 	} while (--bit_count != 0);
 }
 
-void RangeEncoder::EncodeDirect(unsigned value, unsigned bit_count) noexcept
+void RangeEncoder::EncodeDirect(unsigned value, unsigned bit_count) NOEXCEPT
 {
 	assert(bit_count > 0);
 	do {
@@ -132,7 +132,7 @@ void RangeEncoder::EncodeDirect(unsigned value, unsigned bit_count) noexcept
 	} while (bit_count != 0);
 }
 
-void RangeEncoder::Flush() noexcept
+void RangeEncoder::Flush() NOEXCEPT
 {
 	for (int i = 0; i < 5; ++i)
 		ShiftLow();

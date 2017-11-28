@@ -43,29 +43,29 @@ public:
 	static const size_t kMaxDictionary = size_t(1) << kLinkBits;
 
 	inline PackedMatchTable(size_t dictionary_size);
-	inline void InitMatchLink(size_t index, UintFast32 link) noexcept;
-	inline UintFast32 GetInitialMatchLink(size_t index) const noexcept;
-	inline UintFast32 GetMatchLink(size_t index) const noexcept;
-	inline UintFast32 GetMatchLength(size_t index) const noexcept;
-	inline UintFast32 GetMatchLinkAndLength(size_t index, uint8_t& length) const noexcept;
-	inline UintFast32 GetMatchLinkAndLength(size_t index, unsigned& length) const noexcept;
-	inline void SetMatchLink(size_t index, UintFast32 link, UintFast32 length) noexcept;
-	inline void SetMatchLength(size_t index, UintFast32 link, UintFast32 length) noexcept;
-	inline void SetMatchLinkAndLength(size_t index, UintFast32 link, uint8_t length) noexcept;
-	inline void SetMatchLinkAndLength(size_t index, UintFast32 link, UintFast32 length) noexcept;
-	inline void RestrictMatchLength(size_t index, UintFast32 length) noexcept;
-	inline size_t CalcMatchBufferSize(size_t block_size, unsigned extra_thread_count) const noexcept;
+	inline void InitMatchLink(size_t index, UintFast32 link) NOEXCEPT;
+	inline UintFast32 GetInitialMatchLink(size_t index) const NOEXCEPT;
+	inline UintFast32 GetMatchLink(size_t index) const NOEXCEPT;
+	inline UintFast32 GetMatchLength(size_t index) const NOEXCEPT;
+	inline UintFast32 GetMatchLinkAndLength(size_t index, uint8_t& length) const NOEXCEPT;
+	inline UintFast32 GetMatchLinkAndLength(size_t index, unsigned& length) const NOEXCEPT;
+	inline void SetMatchLink(size_t index, UintFast32 link, UintFast32 length) NOEXCEPT;
+	inline void SetMatchLength(size_t index, UintFast32 link, UintFast32 length) NOEXCEPT;
+	inline void SetMatchLinkAndLength(size_t index, UintFast32 link, uint8_t length) NOEXCEPT;
+	inline void SetMatchLinkAndLength(size_t index, UintFast32 link, UintFast32 length) NOEXCEPT;
+	inline void RestrictMatchLength(size_t index, UintFast32 length) NOEXCEPT;
+	inline size_t CalcMatchBufferSize(size_t block_size, unsigned extra_thread_count) const NOEXCEPT;
 
-	void SetNull(size_t index) noexcept {
+	void SetNull(size_t index) NOEXCEPT {
 		match_table[index] = kNullLink;
 	}
-	bool HaveMatch(size_t index) const noexcept {
+	bool HaveMatch(size_t index) const NOEXCEPT {
 		return match_table[index] != kNullLink;
 	}
-	UintFast32* GetBuffer(size_t index) noexcept {
+	UintFast32* GetBuffer(size_t index) NOEXCEPT {
 		return match_table.get() + index;
 	}
-	static inline size_t GetMemoryUsage(size_t dictionary_size) noexcept {
+	static inline size_t GetMemoryUsage(size_t dictionary_size) NOEXCEPT {
 		return dictionary_size * sizeof(UintFast32);
 	}
 
@@ -85,67 +85,67 @@ PackedMatchTable::PackedMatchTable(size_t dictionary_size) : match_table(new Uin
 	}
 }
 
-void PackedMatchTable::InitMatchLink(size_t index, UintFast32 link) noexcept
+void PackedMatchTable::InitMatchLink(size_t index, UintFast32 link) NOEXCEPT
 {
 	match_table[index] = link;
 }
 
-UintFast32 PackedMatchTable::GetInitialMatchLink(size_t index) const noexcept
+UintFast32 PackedMatchTable::GetInitialMatchLink(size_t index) const NOEXCEPT
 {
 	return match_table[index];
 }
 
-UintFast32 PackedMatchTable::GetMatchLink(size_t index) const noexcept
+UintFast32 PackedMatchTable::GetMatchLink(size_t index) const NOEXCEPT
 {
 	return match_table[index] & kMask;
 }
 
-UintFast32 PackedMatchTable::GetMatchLength(size_t index) const noexcept
+UintFast32 PackedMatchTable::GetMatchLength(size_t index) const NOEXCEPT
 {
 	return match_table[index] >> kLinkBits;
 }
 
-UintFast32 PackedMatchTable::GetMatchLinkAndLength(size_t index, uint8_t& length) const noexcept
+UintFast32 PackedMatchTable::GetMatchLinkAndLength(size_t index, uint8_t& length) const NOEXCEPT
 {
 	UintFast32 link = match_table[index];
 	length = static_cast<uint8_t>(link >> kLinkBits);
 	return link & kMask;
 }
 
-UintFast32 PackedMatchTable::GetMatchLinkAndLength(size_t index, unsigned& length) const noexcept
+UintFast32 PackedMatchTable::GetMatchLinkAndLength(size_t index, unsigned& length) const NOEXCEPT
 {
 	UintFast32 link = match_table[index];
 	length = static_cast<unsigned>(link >> kLinkBits);
 	return link & kMask;
 }
 
-void PackedMatchTable::SetMatchLink(size_t index, UintFast32 link, UintFast32 length) noexcept
+void PackedMatchTable::SetMatchLink(size_t index, UintFast32 link, UintFast32 length) NOEXCEPT
 {
 	match_table[index] = link | (length << kLinkBits);
 }
 
-void PackedMatchTable::SetMatchLength(size_t index, UintFast32 link, UintFast32 length) noexcept
+void PackedMatchTable::SetMatchLength(size_t index, UintFast32 link, UintFast32 length) NOEXCEPT
 {
 	match_table[index] = link | (length << kLinkBits);
 }
 
-void PackedMatchTable::SetMatchLinkAndLength(size_t index, UintFast32 link, uint8_t length) noexcept
+void PackedMatchTable::SetMatchLinkAndLength(size_t index, UintFast32 link, uint8_t length) NOEXCEPT
 {
 	match_table[index] = link | (static_cast<UintFast32>(length) << kLinkBits);
 }
 
-void PackedMatchTable::SetMatchLinkAndLength(size_t index, UintFast32 link, UintFast32 length) noexcept
+void PackedMatchTable::SetMatchLinkAndLength(size_t index, UintFast32 link, UintFast32 length) NOEXCEPT
 {
 	match_table[index] = link | (length << kLinkBits);
 }
 
-void PackedMatchTable::RestrictMatchLength(size_t index, UintFast32 length) noexcept
+void PackedMatchTable::RestrictMatchLength(size_t index, UintFast32 length) NOEXCEPT
 {
 	if (match_table[index] != kNullLink && (match_table[index] >> kLinkBits) > length)
 		match_table[index] = (match_table[index] & kMask) | (length << kLinkBits);
 }
 
-size_t PackedMatchTable::CalcMatchBufferSize(size_t block_size, unsigned extra_thread_count) const noexcept
+size_t PackedMatchTable::CalcMatchBufferSize(size_t block_size, unsigned extra_thread_count) const NOEXCEPT
 {
 	return std::min<size_t>(block_size,
 		kMatchBufferSize[std::min<size_t>(extra_thread_count, kMatchBufferSize.size() - 1)]);

@@ -37,7 +37,7 @@ void MatchTableBuilder::AllocateMatchBuffer(size_t match_buffer_size)
 UintFast32 MatchTableBuilder::RepeatCheck(StringMatch* match_buffer,
 	size_t index,
 	UintFast32 depth,
-	UintFast32 list_count) noexcept
+	UintFast32 list_count) NOEXCEPT
 {
 	int_fast32_t n = list_count - 1;
 	int_fast32_t rpt = -1;
@@ -69,7 +69,7 @@ void MatchTableBuilder::BruteForceBuffered(const DataBlock& block,
 	size_t index,
 	size_t list_count,
 	size_t depth,
-	size_t max_depth) noexcept
+	size_t max_depth) NOEXCEPT
 {
 	BruteForceMatch buffer[kMaxBruteForceListSize + 1];
 	const uint8_t* data_src = block.data + depth;

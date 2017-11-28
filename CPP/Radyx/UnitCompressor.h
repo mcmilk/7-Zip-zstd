@@ -45,13 +45,13 @@ public:
 	void Reset(bool do_bcj, bool async_read_);
 	size_t GetAvailableSpace() const;
 
-	uint8_t* GetAvailableBuffer() noexcept {
+	uint8_t* GetAvailableBuffer() NOEXCEPT {
 		return data_buffer[buffer_index].get() + block_end;
 	}
-	void AddByteCount(size_t count) noexcept {
+	void AddByteCount(size_t count) NOEXCEPT {
 		block_end += count;
 	}
-	void RemoveByteCount(size_t count) noexcept {
+	void RemoveByteCount(size_t count) NOEXCEPT {
 		block_end -= count;
 	}
 	void Compress(CompressorInterface& compressor,
@@ -63,24 +63,24 @@ public:
 	void CheckError() const;
 	inline void WaitCompletion();
 
-	bool Unprocessed() const noexcept {
+	bool Unprocessed() const NOEXCEPT {
 		return block_end > block_start - unprocessed;
 	}
-	size_t GetUnpackSize() const noexcept {
+	size_t GetUnpackSize() const NOEXCEPT {
 		return unpack_size;
 	}
-	size_t GetPackSize() const noexcept {
+	size_t GetPackSize() const NOEXCEPT {
 		return pack_size;
 	}
 #ifdef RADYX_BCJ
-	bool UsedBcj() const noexcept {
+	bool UsedBcj() const NOEXCEPT {
 		return bcj.get() != nullptr;
 	}
-	CoderInfo GetBcjCoderInfo() const noexcept {
+	CoderInfo GetBcjCoderInfo() const NOEXCEPT {
 		return bcj->GetCoderInfo();
 	}
 #endif
-	size_t GetMemoryUsage() const noexcept {
+	size_t GetMemoryUsage() const NOEXCEPT {
 		return dictionary_size * (1 + async_read);
 	}
 

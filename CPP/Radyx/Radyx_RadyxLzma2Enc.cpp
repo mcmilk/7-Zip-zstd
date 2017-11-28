@@ -152,7 +152,7 @@ STDMETHODIMP RadyxLzma2Enc::Code(ISequentialInStream *inStream, ISequentialOutSt
 	return err;
 }
 
-CoderInfo RadyxLzma2Enc::GetCoderInfo() const noexcept
+CoderInfo RadyxLzma2Enc::GetCoderInfo() const NOEXCEPT
 {
 	if (compressor) {
 		return compressor->GetCoderInfo();

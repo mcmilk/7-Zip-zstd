@@ -75,20 +75,20 @@ LZ5_OBJS = \
   $O\lz5hc.obj \
 
 RADYX_OBJS = \
-  $O/AsyncWriter.obj \
-  $O/CoderInfo.obj \
-  $O/CompressedUint64.obj \
-  $O/Crc32.obj \
-  $O/Lzma2EncoderR.obj \
-  $O/Lzma2Options.obj \
-  $O/LzmaStates.obj \
-  $O/MatchTable.obj \
-  $O/MatchTableBuilder.obj \
-  $O/OutStream7z.obj \
-  $O/RadyxLzma2Enc.obj \
-  $O/RangeEncoder.obj \
-  $O/ThreadPool.obj \
-  $O/UnitCompressor.obj \
+  $O\Radyx_AsyncWriter.obj \
+  $O\Radyx_CoderInfo.obj \
+  $O\Radyx_CompressedUint64.obj \
+  $O\Radyx_Crc32.obj \
+  $O\Radyx_Lzma2Encoder.obj \
+  $O\Radyx_Lzma2Options.obj \
+  $O\Radyx_LzmaStates.obj \
+  $O\Radyx_MatchTable.obj \
+  $O\Radyx_MatchTableBuilder.obj \
+  $O\Radyx_OutStream7z.obj \
+  $O\Radyx_RadyxLzma2Enc.obj \
+  $O\Radyx_RangeEncoder.obj \
+  $O\Radyx_ThreadPool.obj \
+  $O\Radyx_UnitCompressor.obj \
 
 ZSTD_OBJS = \
   $O\entropy_common.obj \

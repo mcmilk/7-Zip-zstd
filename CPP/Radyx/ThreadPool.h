@@ -66,7 +66,7 @@ public:
 	Thread& operator[](size_t index) {
 		return threads.get()[index];
 	}
-	unsigned GetCount() const noexcept {
+	unsigned GetCount() const NOEXCEPT {
 		return thread_count;
 	}
 

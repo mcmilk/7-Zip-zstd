@@ -34,17 +34,17 @@ template<class T, int kBits>
 class FlagTable
 {
 public:
-	FlagTable() noexcept;
-	bool IsSet(size_t index) const noexcept {
+	FlagTable() NOEXCEPT;
+	bool IsSet(size_t index) const NOEXCEPT {
 		return flag_table[index] == flag_value;
 	}
-	void Set(size_t index) noexcept {
+	void Set(size_t index) NOEXCEPT {
 		flag_table[index] = flag_value;
 	}
-	inline void Reset() noexcept;
+	inline void Reset() NOEXCEPT;
 
 private:
-	void InitTable() noexcept;
+	void InitTable() NOEXCEPT;
 
 	std::array<T, UINT32_C(1) << kBits> flag_table;
 	T flag_value;
@@ -56,14 +56,14 @@ private:
 };
 
 template<class T, int kBits>
-FlagTable<T, kBits>::FlagTable() noexcept : flag_value(0)
+FlagTable<T, kBits>::FlagTable() NOEXCEPT : flag_value(0)
 {
 	static_assert(T(T(0) - 1) > 0, "FlagTable must be used with unsigned types only.");
 	InitTable();
 }
 
 template<class T, int kBits>
-inline void FlagTable<T, kBits>::Reset() noexcept
+inline void FlagTable<T, kBits>::Reset() NOEXCEPT
 {
 	// Reset all bool values to false by incrementing the flag value
 	if (++flag_value == 0) {
@@ -74,7 +74,7 @@ inline void FlagTable<T, kBits>::Reset() noexcept
 }
 
 template<class T, int kBits>
-void FlagTable<T, kBits>::InitTable() noexcept
+void FlagTable<T, kBits>::InitTable() NOEXCEPT
 {
 	flag_table.fill(0);
 }

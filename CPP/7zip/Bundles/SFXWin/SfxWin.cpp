@@ -135,7 +135,13 @@ int APIENTRY WinMain2()
   }
 
   CCodecs *codecs = new CCodecs;
-  CMyComPtr<IUnknown> compressCodecsInfo = codecs;
+  CMyComPtr<
+    #ifdef EXTERNAL_CODECS
+    ICompressCodecsInfo
+    #else
+    IUnknown
+    #endif
+    > compressCodecsInfo = codecs;
   HRESULT result = codecs->Load();
   if (result != S_OK)
   {

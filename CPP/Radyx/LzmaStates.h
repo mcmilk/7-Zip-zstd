@@ -47,8 +47,8 @@ struct LzmaStates
 		RangeEncoder::Probability low[kNumPositionStatesMax << kLenNumLowBits];
 		RangeEncoder::Probability mid[kNumPositionStatesMax << kLenNumMidBits];
 		RangeEncoder::Probability high[kLenNumHighSymbols];
-		void Reset(unsigned fast_length) noexcept;
-		void SetPrices(size_t pos_state) noexcept;
+		void Reset(unsigned fast_length) NOEXCEPT;
+		void SetPrices(size_t pos_state) NOEXCEPT;
 	};
 
 	typedef RepDistances<kNumReps> LzmaRepDistances;
@@ -72,7 +72,7 @@ struct LzmaStates
 
 	RangeEncoder::Probability literal_probs[(kNumLiterals * kNumLitTables) << kLcLpMax];
 
-	void Reset(unsigned lc, unsigned lp, unsigned fast_length) noexcept;
+	void Reset(unsigned lc, unsigned lp, unsigned fast_length) NOEXCEPT;
 };
 
 }
