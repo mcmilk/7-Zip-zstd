@@ -31,7 +31,7 @@ const UInt32 kLenTableSize = 28;
 const UInt32 kMainTableSize = 256 + 1 + 1 + 1 + kNumReps + kNumLen2Symbols + kLenTableSize;
 const UInt32 kDistTableSize = 60;
 
-const int kNumAlignBits = 4;
+const unsigned kNumAlignBits = 4;
 const UInt32 kAlignTableSize = (1 << kNumAlignBits) + 1;
 
 const UInt32 kLevelTableSize = 20;
@@ -158,7 +158,7 @@ struct CTempFilter: public NVm::CProgramInitState
   }
 };
 
-const int kNumHuffmanBits = 15;
+const unsigned kNumHuffmanBits = 15;
 
 class CDecoder:
   public ICompressCoder,
@@ -192,6 +192,7 @@ class CDecoder:
   UInt32 _lastFilter;
 
   bool m_IsSolid;
+  bool _errorMode;
 
   bool _lzMode;
   bool _unsupportedFilter;
@@ -209,7 +210,7 @@ class CDecoder:
   HRESULT WriteDataToStream(const Byte *data, UInt32 size);
   HRESULT WriteData(const Byte *data, UInt32 size);
   HRESULT WriteArea(UInt32 startPtr, UInt32 endPtr);
-  void ExecuteFilter(int tempFilterIndex, NVm::CBlockRef &outBlockRef);
+  void ExecuteFilter(unsigned tempFilterIndex, NVm::CBlockRef &outBlockRef);
   HRESULT WriteBuf();
 
   void InitFilters();
@@ -217,7 +218,7 @@ class CDecoder:
   bool ReadVmCodeLZ();
   bool ReadVmCodePPM();
   
-  UInt32 ReadBits(int numBits);
+  UInt32 ReadBits(unsigned numBits);
 
   HRESULT InitPPM();
   int DecodePpmSymbol();

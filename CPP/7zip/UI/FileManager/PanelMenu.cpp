@@ -403,81 +403,116 @@ void CPanel::EditPaste()
   // InvokeSystemCommand("paste");
 }
 
+
+
+struct CFolderPidls
+{
+  LPITEMIDLIST parent;
+  CRecordVector<LPITEMIDLIST> items;
+
+  CFolderPidls(): parent(NULL) {}
+  ~CFolderPidls()
+  {
+    FOR_VECTOR (i, items)
+      CoTaskMemFree(items[i]);
+    CoTaskMemFree(parent);
+  }
+};
+
+
 HRESULT CPanel::CreateShellContextMenu(
     const CRecordVector<UInt32> &operatedIndices,
     CMyComPtr<IContextMenu> &systemContextMenu)
 {
   systemContextMenu.Release();
-  UString folderPath = GetFsPath();
+  const UString folderPath = GetFsPath();
 
   CMyComPtr<IShellFolder> desktopFolder;
   RINOK(::SHGetDesktopFolder(&desktopFolder));
   if (!desktopFolder)
   {
-    // ShowMessage("Failed to get Desktop folder.");
+    // ShowMessage("Failed to get Desktop folder");
     return E_FAIL;
   }
   
-  // Separate the file from the folder.
-
-  
-  // Get a pidl for the folder the file
-  // is located in.
-  LPITEMIDLIST parentPidl;
+  CFolderPidls pidls;
   DWORD eaten;
+
+  // if (folderPath.IsEmpty()), then ParseDisplayName returns pidls of "My Computer"
   RINOK(desktopFolder->ParseDisplayName(
-      GetParent(), 0, (wchar_t *)(const wchar_t *)folderPath,
-      &eaten, &parentPidl, 0));
+      GetParent(), NULL, (wchar_t *)(const wchar_t *)folderPath,
+      &eaten, &pidls.parent, NULL));
+
+  /*
+  STRRET pName;
+  res = desktopFolder->GetDisplayNameOf(pidls.parent,  SHGDN_NORMAL, &pName);
+  WCHAR dir[MAX_PATH];
+  if (!SHGetPathFromIDListW(pidls.parent, dir))
+    dir[0] = 0;
+  */
+
+  if (!pidls.parent)
+    return E_FAIL;
+
+  if (operatedIndices.IsEmpty())
+  {
+    // how to get IContextMenu, if there are no selected files?
+    return E_FAIL;
+
+    /*
+    xp64 :
+    1) we can't use GetUIObjectOf() with (numItems == 0), it throws exception
+    2) we can't use desktopFolder->GetUIObjectOf() with absolute pidls of folder
+        context menu items are different in that case:
+          "Open / Explorer" for folder
+          "Delete" for "My Computer" icon
+          "Preperties" for "System"
+    */
+    /*
+    parentFolder = desktopFolder;
+    pidls.items.AddInReserved(pidls.parent);
+    pidls.parent = NULL;
+    */
+
+    // CreateViewObject() doesn't show all context menu items
+    /*
+    HRESULT res = parentFolder->CreateViewObject(
+        GetParent(), IID_IContextMenu, (void**)&systemContextMenu);
+    */
+  }
   
-  // Get an IShellFolder for the folder
-  // the file is located in.
   CMyComPtr<IShellFolder> parentFolder;
-  RINOK(desktopFolder->BindToObject(parentPidl,
-      0, IID_IShellFolder, (void**)&parentFolder));
+  RINOK(desktopFolder->BindToObject(pidls.parent,
+      NULL, IID_IShellFolder, (void**)&parentFolder));
   if (!parentFolder)
   {
-    // ShowMessage("Invalid file name.");
+    // ShowMessage("Invalid file name");
     return E_FAIL;
   }
   
-  // Get a pidl for the file itself.
-  CRecordVector<LPITEMIDLIST> pidls;
-  pidls.ClearAndReserve(operatedIndices.Size());
+  pidls.items.ClearAndReserve(operatedIndices.Size());
   FOR_VECTOR (i, operatedIndices)
   {
     LPITEMIDLIST pidl;
-    UString fileName = GetItemRelPath2(operatedIndices[i]);
+    const UString fileName = GetItemRelPath2(operatedIndices[i]);
     RINOK(parentFolder->ParseDisplayName(GetParent(), 0,
-      (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
-    pidls.AddInReserved(pidl);
+        (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
+    pidls.items.AddInReserved(pidl);
   }
+  
+  // Get IContextMenu for items
 
-  ITEMIDLIST temp;
-  if (pidls.Size() == 0)
+  RINOK(parentFolder->GetUIObjectOf(GetParent(), pidls.items.Size(),
+      (LPCITEMIDLIST *)&pidls.items.Front(), IID_IContextMenu, 0, (void**)&systemContextMenu));
+  
+  if (!systemContextMenu)
   {
-    temp.mkid.cb = 0;
-    /*
-    LPITEMIDLIST pidl;
-    HRESULT result = parentFolder->ParseDisplayName(GetParent(), 0,
-      L"." WSTRING_PATH_SEPARATOR, &eaten, &pidl, 0);
-    if (result != NOERROR)
-      return;
-    */
-    pidls.Add(&temp);
-  }
-
-  // Get the IContextMenu for the file.
-  CMyComPtr<IContextMenu> cm;
-  RINOK( parentFolder->GetUIObjectOf(GetParent(), pidls.Size(),
-      (LPCITEMIDLIST *)&pidls.Front(), IID_IContextMenu, 0, (void**)&cm));
-  if (!cm)
-  {
-    // ShowMessage("Unable to get context menu interface.");
+    // ShowMessage("Unable to get context menu interface");
     return E_FAIL;
   }
-  systemContextMenu = cm;
   return S_OK;
 }
+
 
 void CPanel::CreateSystemMenu(HMENU menuSpec,
     const CRecordVector<UInt32> &operatedIndices,

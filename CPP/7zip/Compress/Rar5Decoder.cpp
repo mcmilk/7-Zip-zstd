@@ -421,7 +421,7 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
   Byte lens[kTablesSizesSum];
   unsigned i = 0;
   
-  while (i < kTablesSizesSum)
+  do
   {
     if (_bitStream._buf >= _bitStream._bufCheck2)
     {
@@ -439,34 +439,24 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
       return S_FALSE;
     else
     {
-      sym -= 16;
-      unsigned sh = ((sym & 1) << 2);
-      unsigned num = (unsigned)_bitStream.ReadBits9(3 + sh) + 3 + (sh << 1);
-      
+      unsigned num = ((sym - 16) & 1) * 4;
+      num += num + 3 + (unsigned)_bitStream.ReadBits9(num + 3);
       num += i;
       if (num > kTablesSizesSum)
         num = kTablesSizesSum;
-
-      if (sym < 2)
+      Byte v = 0;
+      if (sym < 16 + 2)
       {
         if (i == 0)
-        {
-          // return S_FALSE;
-          continue; // original unRAR
-        }
-        Byte v = lens[(size_t)i - 1];
-        do
-          lens[i++] = v;
-        while (i < num);
+          return S_FALSE;
+        v = lens[(size_t)i - 1];
       }
-      else
-      {
-        do
-          lens[i++] = 0;
-        while (i < num);
-      }
+      do
+        lens[i++] = v;
+      while (i < num);
     }
   }
+  while (i < kTablesSizesSum);
 
   if (_bitStream.IsBlockOverRead())
     return S_FALSE;

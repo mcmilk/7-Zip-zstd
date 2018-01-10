@@ -77,8 +77,6 @@ UString CVolSeqName::GetNextName()
   return UnchangedPart + ChangedPart;
 }
 
-static const UInt32 kBufSize = (1 << 20);
-
 class CThreadSplit: public CProgressThreadVirt
 {
   HRESULT ProcessVirt();
@@ -89,30 +87,84 @@ public:
   CRecordVector<UInt64> VolumeSizes;
 };
 
+
+class CPreAllocOutFile
+{
+  UInt64 _preAllocSize;
+public:
+  NIO::COutFile File;
+  UInt64 Written;
+  
+  CPreAllocOutFile(): _preAllocSize(0), Written(0) {}
+  
+  ~CPreAllocOutFile()
+  {
+    SetCorrectFileLength();
+  }
+
+  void PreAlloc(UInt64 preAllocSize)
+  {
+    _preAllocSize = 0;
+    if (File.SetLength(preAllocSize))
+      _preAllocSize = preAllocSize;
+    File.SeekToBegin();
+  }
+
+  bool Write(const void *data, UInt32 size, UInt32 &processedSize) throw()
+  {
+    bool res = File.Write(data, size, processedSize);
+    Written += processedSize;
+    return res;
+  }
+
+  void Close()
+  {
+    SetCorrectFileLength();
+    Written = 0;
+    _preAllocSize = 0;
+    File.Close();
+  }
+
+  void SetCorrectFileLength()
+  {
+    if (Written < _preAllocSize)
+    {
+      File.SetLength(Written);
+      _preAllocSize = 0;
+    }
+  }
+};
+
+
+static const UInt32 kBufSize = (1 << 20);
+
 HRESULT CThreadSplit::ProcessVirt()
 {
   NIO::CInFile inFile;
   if (!inFile.Open(FilePath))
     return GetLastError();
-  NIO::COutFile outFile;
-  CMyBuffer bufferObject;
-  if (!bufferObject.Allocate(kBufSize))
+
+  CPreAllocOutFile outFile;
+  
+  CMyBuffer buffer;
+  if (!buffer.Allocate(kBufSize))
     return E_OUTOFMEMORY;
-  Byte *buffer = (Byte *)(void *)bufferObject;
-  UInt64 curVolSize = 0;
+  
   CVolSeqName seqName;
   seqName.SetNumDigits(NumVolumes);
+  
   UInt64 length;
   if (!inFile.GetLength(length))
     return GetLastError();
   
   CProgressSync &sync = ProgressDialog.Sync;
   sync.Set_NumBytesTotal(length);
-  UInt64 pos = 0;
   
+  UInt64 pos = 0;
+  UInt64 prev = 0;
   UInt64 numFiles = 0;
   unsigned volIndex = 0;
-  
+
   for (;;)
   {
     UInt64 volSize;
@@ -121,45 +173,64 @@ HRESULT CThreadSplit::ProcessVirt()
     else
       volSize = VolumeSizes.Back();
     
-    UInt32 needSize = (UInt32)(MyMin((UInt64)kBufSize, volSize - curVolSize));
+    UInt32 needSize = kBufSize;
+    {
+      const UInt64 rem = volSize - outFile.Written;
+      if (needSize > rem)
+        needSize = (UInt32)rem;
+    }
     UInt32 processedSize;
     if (!inFile.Read(buffer, needSize, processedSize))
       return GetLastError();
     if (processedSize == 0)
-      break;
+      return S_OK;
     needSize = processedSize;
-    if (curVolSize == 0)
+  
+    if (outFile.Written == 0)
     {
       FString name = VolBasePath;
       name += '.';
       name += us2fs(seqName.GetNextName());
       sync.Set_FilePath(fs2us(name));
-      sync.Set_NumFilesCur(numFiles++);
-      if (!outFile.Create(name, false))
+      if (!outFile.File.Create(name, false))
       {
         HRESULT res = GetLastError();
         AddErrorPath(name);
         return res;
       }
+      UInt64 expectSize = volSize;
+      if (pos < length)
+      {
+        const UInt64 rem = length - pos;
+        if (expectSize > rem)
+          expectSize = rem;
+      }
+      outFile.PreAlloc(expectSize);
     }
+    
     if (!outFile.Write(buffer, needSize, processedSize))
       return GetLastError();
     if (needSize != processedSize)
       throw g_Message_FileWriteError;
-    curVolSize += processedSize;
-    if (curVolSize == volSize)
+    
+    pos += processedSize;
+    
+    if (outFile.Written == volSize)
     {
       outFile.Close();
+      sync.Set_NumFilesCur(++numFiles);
       if (volIndex < VolumeSizes.Size())
         volIndex++;
-      curVolSize = 0;
     }
-    pos += processedSize;
-    RINOK(sync.Set_NumBytesCur(pos));
+
+    if (pos - prev >= ((UInt32)1 << 22) || outFile.Written == 0)
+    {
+      RINOK(sync.Set_NumBytesCur(pos));
+      prev = pos;
+    }
   }
-  sync.Set_NumFilesCur(numFiles);
-  return S_OK;
 }
+
 
 void CApp::Split()
 {

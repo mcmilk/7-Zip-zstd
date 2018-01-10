@@ -162,8 +162,9 @@ void CDecoder::Hmac_Convert_32Bytes(Byte *data) const
 };
 
 
+static CKey g_Key;
+
 #ifndef _7ZIP_ST
-  static CKey g_Key;
   static NWindows::NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
   #define MT_LOCK NWindows::NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
 #else

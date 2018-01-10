@@ -124,6 +124,7 @@ enum Enum
   kTechMode,
   
   kShareForWrite,
+  kStopAfterOpenError,
   kCaseSensitive,
   kArcNameMode,
 
@@ -245,6 +246,7 @@ static const CSwitchForm kSwitchForms[] =
   { "slt" },
 
   { "ssw" },
+  { "sse" },
   { "ssc", NSwitchType::kMinus },
   { "sa",  NSwitchType::kChar, false, 1, k_ArcNameMode_PostCharSet },
   
@@ -1299,6 +1301,8 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
 
     if (parser[NKey::kShareForWrite].ThereIs)
       updateOptions.OpenShareForWrite = true;
+    if (parser[NKey::kStopAfterOpenError].ThereIs)
+      updateOptions.StopAfterOpenError = true;
 
     updateOptions.PathMode = censorPathMode;
 

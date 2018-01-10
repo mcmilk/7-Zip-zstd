@@ -377,11 +377,17 @@ static SRes SeqInFilter_Read(const ISeqInStream *pp, void *data, size_t *size)
 static void SeqInFilter_Construct(CSeqInFilter *p)
 {
   p->buf = NULL;
+  p->StateCoder.p = NULL;
   p->p.Read = SeqInFilter_Read;
 }
 
 static void SeqInFilter_Free(CSeqInFilter *p, ISzAllocPtr alloc)
 {
+  if (p->StateCoder.p)
+  {
+    p->StateCoder.Free(p->StateCoder.p, alloc);
+    p->StateCoder.p = NULL;
+  }
   if (p->buf)
   {
     ISzAlloc_Free(alloc, p->buf);

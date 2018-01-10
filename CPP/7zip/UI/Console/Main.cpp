@@ -150,6 +150,7 @@ static const char * const kHelpString =
     "  -spe : eliminate duplication of root folder for extract command\n"
     "  -spf : use fully qualified file paths\n"
     "  -ssc[-] : set sensitive case mode\n"
+    "  -sse : stop archive creating, if it can't open some input file\n"
     "  -ssw : compress shared files\n"
     "  -stl : set archive timestamp from the most recently modified file\n"
     "  -stm{HexMask} : set CPU thread affinity mask (hexadecimal number)\n"

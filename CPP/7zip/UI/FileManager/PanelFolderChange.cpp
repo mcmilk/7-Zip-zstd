@@ -827,7 +827,8 @@ void CPanel::OpenFolder(int index)
   SetNewFolder(newFolder);
   LoadFullPath();
   RefreshListCtrl();
-  _listView.SetItemState_Selected(_listView.GetFocusedItem());
+  // 17.02: fixed : now we don't select first item
+  // _listView.SetItemState_Selected(_listView.GetFocusedItem());
   _listView.EnsureVisible(_listView.GetFocusedItem(), false);
 }
 

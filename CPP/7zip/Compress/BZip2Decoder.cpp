@@ -411,9 +411,13 @@ SRes CBase::ReadBlock2()
         lens[state4] = (Byte)state3;
         state5 = 0;
       }
+      
+      // lbzip2 2.5 can produce dummy tree, where lens[i] = kMaxHuffmanLen
+      // BuildFull() returns error for such tree
       /*
       for (unsigned i = state4; i < kMaxAlphaSize; i++)
         lens[i] = 0;
+      if (!huffs[state2].Build(lens))
       */
       if (!huffs[state2].BuildFull(lens, state4))
         return SZ_ERROR_DATA;
@@ -474,7 +478,7 @@ SRes CBase::ReadBlock2()
         for (len = kNumTableBits + 1; val >= huff->_limits[len]; len++);
         /*
         if (len > kNumBitsMax)
-          return SZ_ERROR_DATA;
+          return SZ_ERROR_DATA; // that check is required, if NHuffman::Build() was used instead of BuildFull()
         */
         if (_numBits < len)
         {

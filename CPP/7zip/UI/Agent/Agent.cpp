@@ -1507,11 +1507,18 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
     
   #endif
 
-  HRESULT result = _agentSpec->GetArchive()->Extract(&realIndices.Front(),
-      realIndices.Size(), testMode, extractCallback);
-  if (result == S_OK)
-    result = extractCallbackSpec->SetDirsTimes();
-  return result;
+  {
+    CArchiveExtractCallback_Closer ecsCloser(extractCallbackSpec);
+    
+    HRESULT res = _agentSpec->GetArchive()->Extract(&realIndices.Front(),
+        realIndices.Size(), testMode, extractCallback);
+    
+    HRESULT res2 = ecsCloser.Close();
+    if (res == S_OK)
+      res = res2;
+    return res;
+  }
+
   COM_TRY_END
 }
 

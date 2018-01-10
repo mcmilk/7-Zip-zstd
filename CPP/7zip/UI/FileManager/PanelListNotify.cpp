@@ -702,6 +702,8 @@ void CPanel::Refresh_StatusBar()
 
   wchar_t temp[32];
   ConvertUInt32ToString(indices.Size(), temp);
+  wcscat(temp, L" / ");
+  ConvertUInt32ToString(_selectedStatusVector.Size(), temp + wcslen(temp));
 
   // UString s1 = MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, NumberToString(indices.Size()));
   // UString s1 = MyFormatNew(IDS_N_SELECTED_ITEMS, NumberToString(indices.Size()));

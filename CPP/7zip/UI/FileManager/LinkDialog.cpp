@@ -55,7 +55,8 @@ static bool GetSymLink(CFSTR path, CReparseAttr &attr)
   if (!file.DeviceIoControlOut(my_FSCTL_GET_REPARSE_POINT, buf, kBufSize, &returnedSize))
     return false;
   
-  if (!attr.Parse(buf, returnedSize))
+  DWORD errorCode = 0;
+  if (!attr.Parse(buf, returnedSize, errorCode))
     return false;
 
   CByteBuffer data2;
@@ -291,7 +292,8 @@ void CLinkDialog::OnButton_Link()
     }
     
     CReparseAttr attr;
-    if (!attr.Parse(data, data.Size()))
+    DWORD errorCode = 0;
+    if (!attr.Parse(data, data.Size(), errorCode))
     {
       ShowError(L"Internal conversion error");
       return;

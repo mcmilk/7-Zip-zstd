@@ -13,6 +13,7 @@
 namespace NCompress {
 namespace NShrink {
 
+static const UInt32 kEmpty = 256; // kNumItems;
 static const UInt32 kBufferSize = (1 << 18);
 static const unsigned kNumMinBits = 9;
 
@@ -34,20 +35,15 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   outBuffer.Init();
 
   {
-    unsigned i;
-    for (i = 0; i < 257; i++)
-      _parents[i] = (UInt16)i;
-    for (; i < kNumItems; i++)
-      _parents[i] = kNumItems;
-    for (i = 0; i < kNumItems; i++)
-      _suffixes[i] = 0;
+    for (unsigned i = 0; i < kNumItems; i++)
+      _parents[i] = kEmpty;
   }
 
-  UInt64 prevPos = 0, inPrev = 0;
+  UInt64 outPrev = 0, inPrev = 0;
   unsigned numBits = kNumMinBits;
   unsigned head = 257;
   int lastSym = -1;
-  Byte lastChar2 = 0;
+  Byte lastChar = 0;
   bool moreOut = false;
 
   HRESULT res = S_FALSE;
@@ -67,18 +63,22 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
         break;
       }
       eofCheck = true;
-      // Is specSym(=256) allowed after end of stream
-      // Do we need to read it here
+      // Is specSym(=256) allowed after end of stream ?
+      // Do we need to read it here ?
     }
 
     if (progress)
     {
-      if (nowPos - prevPos >= (1 << 18)
-          || _inProcessed - inPrev >= (1 << 20))
+      if (nowPos - outPrev >= (1 << 20) || _inProcessed - inPrev >= (1 << 20))
       {
-        prevPos = nowPos;
+        outPrev = nowPos;
         inPrev = _inProcessed;
-        RINOK(progress->SetRatioInfo(&_inProcessed, &nowPos));
+        res = progress->SetRatioInfo(&_inProcessed, &nowPos);
+        if (res != SZ_OK)
+        {
+          // break;
+          return res;
+        }
       }
     }
 
@@ -105,23 +105,30 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
         continue;
       }
       if (sym != 2)
-        break;
       {
+        break;
+        // continue; // info-zip just ignores such code
+      }
+      {
+        /*
+        ---------- Free leaf nodes ----------
+        Note : that code can mark _parents[lastSym] as free, and next
+        inserted node will be Orphan in that case.
+        */
+
         unsigned i;
-        for (i = 257; i < kNumItems; i++)
+        for (i = 256; i < kNumItems; i++)
           _stack[i] = 0;
         for (i = 257; i < kNumItems; i++)
         {
           unsigned par = _parents[i];
-          if (par != kNumItems)
+          if (par != kEmpty)
             _stack[par] = 1;
         }
         for (i = 257; i < kNumItems; i++)
           if (_stack[i] == 0)
-            _parents[i] = kNumItems;
-       
+            _parents[i] = kEmpty;
         head = 257;
-       
         continue;
       }
     }
@@ -137,26 +144,21 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     bool needPrev = false;
     if (head < kNumItems && lastSym >= 0)
     {
-      while (head < kNumItems && _parents[head] != kNumItems)
+      while (head < kNumItems && _parents[head] != kEmpty)
         head++;
       if (head < kNumItems)
       {
-        if (head == (unsigned)lastSym)
-        {
-          // we need to fix the code for that case
-          // _parents[head] is not allowed to link to itself
-          res = E_NOTIMPL;
-          break;
-        }
+        /*
+        if (head == lastSym), it updates Orphan to self-linked Orphan and creates two problems:
+            1) we must check _stack[i++] overflow in code that walks tree nodes.
+            2) self-linked node can not be removed. So such self-linked nodes can occupy all _parents items.
+        */
         needPrev = true;
         _parents[head] = (UInt16)lastSym;
-        _suffixes[head] = (Byte)lastChar2;
+        _suffixes[head] = (Byte)lastChar;
         head++;
       }
     }
-
-    if (_parents[sym] == kNumItems)
-      break;
 
     lastSym = sym;
     unsigned cur = sym;
@@ -166,10 +168,17 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     {
       _stack[i++] = _suffixes[cur];
       cur = _parents[cur];
+      // don't change that code:
+      // Orphan Check and self-linked Orphan check (_stack overflow check);
+      if (cur == kEmpty || i >= kNumItems)
+        break;
     }
     
+    if (cur == kEmpty || i >= kNumItems)
+      break;
+
     _stack[i++] = (Byte)cur;
-    lastChar2 = (Byte)cur;
+    lastChar = (Byte)cur;
 
     if (needPrev)
       _suffixes[(size_t)head - 1] = (Byte)cur;

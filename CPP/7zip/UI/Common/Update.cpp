@@ -735,6 +735,7 @@ static HRESULT Compress(
   CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
   
   updateCallbackSpec->ShareForWrite = options.OpenShareForWrite;
+  updateCallbackSpec->StopAfterOpenError = options.StopAfterOpenError;
   updateCallbackSpec->StdInMode = options.StdInMode;
   updateCallbackSpec->Callback = callback;
 

@@ -109,7 +109,8 @@ void CVersion::ToProp(NCOM::CPropVariant &prop)
   prop = sz;
 }
 
-static const unsigned kHeaderSize = 4 + 20;
+static const unsigned kCoffHeaderSize = 20;
+static const unsigned kPeHeaderSize = 4 + kCoffHeaderSize;
 static const unsigned k_OptHeader32_Size_MIN = 96;
 static const unsigned k_OptHeader64_Size_MIN = 112;
 
@@ -125,15 +126,14 @@ struct CHeader
   UInt16 OptHeaderSize;
   UInt16 Flags;
 
-  bool Parse(const Byte *p);
+  void ParseBase(const Byte *p);
+  bool ParseCoff(const Byte *p);
+  bool ParsePe(const Byte *p);
   bool IsDll() const { return (Flags & PE_IMAGE_FILE_DLL) != 0; }
 };
 
-bool CHeader::Parse(const Byte *p)
+void CHeader::ParseBase(const Byte *p)
 {
-  if (Get32(p) != k_Signature32)
-    return false;
-  p += 4;
   G16( 0, Machine);
   G16( 2, NumSections);
   G32( 4, Time);
@@ -141,6 +141,13 @@ bool CHeader::Parse(const Byte *p)
   G32(12, NumSymbols);
   G16(16, OptHeaderSize);
   G16(18, Flags);
+}
+
+bool CHeader::ParsePe(const Byte *p)
+{
+  if (Get32(p) != k_Signature32)
+    return false;
+  ParseBase(p + 4);
   return OptHeaderSize >= k_OptHeader32_Size_MIN;
 }
 
@@ -399,39 +406,67 @@ static const CUInt32PCharPair g_HeaderCharacts[] =
   { 15, "Big-Endian" }
 };
 
-static const CUInt32PCharPair g_DllCharacts[] =
+
+
+// IMAGE_DLLCHARACTERISTICS_* constants
+
+static const char * const g_DllCharacts[] =
 {
-  {  5, "HighEntropyVA" },
-  {  6, "Relocated" },
-  {  7, "Integrity" },
-  {  8, "NX-Compatible" },
-  {  9, "NoIsolation" },
-  { 10, "NoSEH" },
-  { 11, "NoBind" },
-  { 12, "AppContainer" },
-  { 13, "WDM" },
-  { 14, "GuardCF" },
-  { 15, "TerminalServerAware" }
+    NULL
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , "HighEntropyVA"
+  , "Relocated"
+  , "Integrity"
+  , "NX-Compatible"
+  , "NoIsolation"
+  , "NoSEH"
+  , "NoBind"
+  , "AppContainer"
+  , "WDM"
+  , "GuardCF"
+  , "TerminalServerAware"
 };
 
-static const CUInt32PCharPair g_SectFlags[] =
+
+// IMAGE_SCN_* constants:
+
+static const char * const g_SectFlags[] =
 {
-  {  3, "NoPad" },
-  {  5, "Code" },
-  {  6, "InitializedData" },
-  {  7, "UninitializedData" },
-  {  9, "Comments" },
-  { 11, "Remove" },
-  { 12, "COMDAT" },
-  { 15, "GP" },
-  { 24, "ExtendedRelocations" },
-  { 25, "Discardable" },
-  { 26, "NotCached" },
-  { 27, "NotPaged" },
-  { 28, "Shared" },
-  { 29, "Execute" },
-  { 30, "Read" },
-  { 31, "Write" }
+    NULL
+  , NULL
+  , NULL
+  , "NoPad"
+  , NULL
+  , "Code"
+  , "InitializedData"
+  , "UninitializedData"
+  , "Other"
+  , "Comments"
+  , NULL // OVER
+  , "Remove"
+  , "COMDAT"
+  , NULL
+  , "NO_DEFER_SPEC_EXC"
+  , "GP" // MEM_FARDATA
+  , NULL // SYSHEAP
+  , "PURGEABLE" // 16BIT
+  , "LOCKED"
+  , "PRELOAD"
+  , NULL
+  , NULL
+  , NULL
+  , NULL
+  , "ExtendedRelocations"
+  , "Discardable"
+  , "NotCached"
+  , "NotPaged"
+  , "Shared"
+  , "Execute"
+  , "Read"
+  , "Write"
 };
 
 static const CUInt32PCharPair g_MachinePairs[] =
@@ -699,7 +734,6 @@ class CHandler:
 {
   CMyComPtr<IInStream> _stream;
   CObjectVector<CSection> _sections;
-  UInt32 _peOffset;
   CHeader _header;
   UInt32 _totalSize;
   Int32 _mainSubfile;
@@ -720,9 +754,12 @@ class CHandler:
   bool _parseResources;
   bool _checksumError;
 
+  bool IsOpt() const { return _header.OptHeaderSize != 0; }
+
   COptHeader _optHeader;
 
   bool _allowTail;
+  bool _coffMode;
 
   HRESULT LoadDebugSections(IInStream *stream, bool &thereIsSection);
   HRESULT Open2(IInStream *stream, IArchiveOpenCallback *callback);
@@ -742,7 +779,10 @@ class CHandler:
   }
 
 public:
-  CHandler(): _allowTail(false) {}
+  CHandler(bool coffMode = false):
+        _coffMode(coffMode),
+        _allowTail(coffMode)
+        {}
 
   MY_UNKNOWN_IMP3(IInArchive, IInArchiveGetStream, IArchiveAllowTail)
   INTERFACE_IInArchive(;)
@@ -841,6 +881,34 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   NCOM::CPropVariant prop;
   switch (propID)
   {
+    case kpidPhySize: prop = _totalSize; break;
+    case kpidComment: if (!_versionFullString.IsEmpty()) prop = _versionFullString; break;
+    case kpidShortComment:
+      if (!_versionShortString.IsEmpty())
+        prop = _versionShortString;
+      else
+      {
+        PAIR_TO_PROP(g_MachinePairs, _header.Machine, prop);
+      }
+      break;
+
+    case kpidName: if (!_originalFilename.IsEmpty()) prop = _originalFilename; break;
+      
+    // case kpidIsSelfExe: prop = !_header.IsDll(); break;
+    // case kpidError:
+    case kpidWarning: if (_checksumError) prop = "Checksum error"; break;
+
+    case kpidCpu: PAIR_TO_PROP(g_MachinePairs, _header.Machine, prop); break;
+    case kpidMTime:
+    case kpidCTime: TimeToProp(_header.Time, prop); break;
+    case kpidCharacts: FLAGS_TO_PROP(g_HeaderCharacts, _header.Flags, prop); break;
+    case kpidMainSubfile: if (_mainSubfile >= 0) prop = (UInt32)_mainSubfile; break;
+    
+    default:
+    if (IsOpt())
+    switch (propID)
+    {
+
     case kpidSectAlign: prop = _optHeader.SectAlign; break;
     case kpidFileAlign: prop = _optHeader.FileAlign; break;
     case kpidLinkerVer:
@@ -857,37 +925,17 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidInitDataSize: prop = _optHeader.InitDataSize; break;
     case kpidUnInitDataSize: prop = _optHeader.UninitDataSize; break;
     case kpidImageSize: prop = _optHeader.ImageSize; break;
-    case kpidPhySize: prop = _totalSize; break;
     case kpidHeadersSize: prop = _optHeader.HeadersSize; break;
     case kpidChecksum: prop = _optHeader.CheckSum; break;
-    case kpidComment: if (!_versionFullString.IsEmpty()) prop = _versionFullString; break;
-    case kpidShortComment:
-      if (!_versionShortString.IsEmpty())
-        prop = _versionShortString;
-      else
-      {
-        PAIR_TO_PROP(g_MachinePairs, _header.Machine, prop);
-      }
-      break;
 
-    case kpidName: if (!_originalFilename.IsEmpty()) prop = _originalFilename; break;
     case kpidExtension:
       if (_header.IsDll())
         prop = _optHeader.IsSybSystem_EFI() ? "efi" : "dll";
       break;
-      
-    // case kpidIsSelfExe: prop = !_header.IsDll(); break;
 
-    // case kpidError:
-    case kpidWarning: if (_checksumError) prop = "Checksum error"; break;
-
-    case kpidCpu: PAIR_TO_PROP(g_MachinePairs, _header.Machine, prop); break;
     case kpidBit64: if (_optHeader.Is64Bit()) prop = true; break;
     case kpidSubSystem: TYPE_TO_PROP(g_SubSystems, _optHeader.SubSystem, prop); break;
 
-    case kpidMTime:
-    case kpidCTime: TimeToProp(_header.Time, prop); break;
-    case kpidCharacts: FLAGS_TO_PROP(g_HeaderCharacts, _header.Flags, prop); break;
     case kpidDllCharacts: FLAGS_TO_PROP(g_DllCharacts, _optHeader.DllCharacts, prop); break;
     case kpidStackReserve: prop = _optHeader.StackReserve; break;
     case kpidStackCommit: prop = _optHeader.StackCommit; break;
@@ -898,8 +946,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     // case kpidAddressOfEntryPoint: prop = _optHeader.AddressOfEntryPoint; break;
     // case kpidBaseOfCode: prop = _optHeader.BaseOfCode; break;
     // case kpidBaseOfData32: if (!_optHeader.Is64Bit()) prop = _optHeader.BaseOfData32; break;
-
-    case kpidMainSubfile: if (_mainSubfile >= 0) prop = (UInt32)_mainSubfile; break;
+  }
   }
   prop.Detach(value);
   return S_OK;
@@ -1056,7 +1103,24 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidMTime:
       case kpidCTime:
         TimeToProp(item.IsDebug ? item.Time : _header.Time, prop); break;
-      case kpidCharacts: if (item.IsRealSect) FLAGS_TO_PROP(g_SectFlags, item.Flags, prop); break;
+      case kpidCharacts:
+       if (item.IsRealSect)
+       {
+         UInt32 flags = item.Flags;
+         const UInt32 MY__IMAGE_SCN_ALIGN_MASK = 0x00F00000;
+         AString s = FlagsToString(g_SectFlags, ARRAY_SIZE(g_SectFlags), item.Flags & ~MY__IMAGE_SCN_ALIGN_MASK);
+         const UInt32 align = ((flags >> 20) & 0xF);
+         if (align != 0)
+         {
+           char sz[32];
+           ConvertUInt32ToString(1 << (align - 1), sz);
+           s.Add_Space();
+           s += "align_";
+           s += sz;
+         }
+         prop = s;
+       }
+       break;
       case kpidZerosTailIsAllowed: if (!item.IsRealSect) prop = true; break;
     }
   }
@@ -2114,6 +2178,23 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
   return S_OK;
 }
 
+
+bool CHeader::ParseCoff(const Byte *p)
+{
+  ParseBase(p);
+  if (PointerToSymbolTable < kCoffHeaderSize)
+    return false;
+  if (NumSymbols >= (1 << 24))
+    return false;
+  if (OptHeaderSize != 0 && OptHeaderSize < k_OptHeader32_Size_MIN)
+    return false;
+  for (unsigned i = 0; i < ARRAY_SIZE(g_MachinePairs); i++)
+    if (Machine == g_MachinePairs[i].Value)
+      return true;
+  return false;
+}
+
+
 static inline bool CheckPeOffset(UInt32 pe)
 {
   // ((pe & 7) == 0) is for most PE files. But there is unusual EFI-PE file that uses unaligned pe value.
@@ -2133,10 +2214,10 @@ API_FUNC_static_IsArc IsArc_Pe(const Byte *p, size_t size)
   UInt32 pe = Get32(p + 0x3C);
   if (!CheckPeOffset(pe))
     return k_IsArc_Res_NO;
-  if (pe + kHeaderSize > size)
+  if (pe + kPeHeaderSize > size)
     return k_IsArc_Res_NEED_MORE;
   CHeader header;
-  if (!header.Parse(p + pe))
+  if (!header.ParsePe(p + pe))
     return k_IsArc_Res_NO;
   return k_IsArc_Res_YES;
 }
@@ -2144,32 +2225,47 @@ API_FUNC_static_IsArc IsArc_Pe(const Byte *p, size_t size)
 
 HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 {
+  UInt32 coffOffset = 0;
+  if (_coffMode)
   {
-    Byte h[kStartSize];
-    _mainSubfile = -1;
-    RINOK(ReadStream_FALSE(stream, h, kStartSize));
-    if (h[0] != 'M' || h[1] != 'Z')
-      return S_FALSE;
-    /* most of PE files contain 0x0090 at offset 2.
-       But some rare PE files contain another values. So we don't use that check.
-       if (Get16(h + 2) != 0x90) return false; */
-    _peOffset = Get32(h + 0x3C);
-    if (!CheckPeOffset(_peOffset))
+    Byte h[kCoffHeaderSize];
+    RINOK(ReadStream_FALSE(stream, h, kCoffHeaderSize));
+    if (!_header.ParseCoff(h))
       return S_FALSE;
   }
+  else
   {
-    Byte h[kHeaderSize];
-    RINOK(stream->Seek(_peOffset, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream_FALSE(stream, h, kHeaderSize));
-    if (!_header.Parse(h))
-      return S_FALSE;
+    UInt32 _peOffset;
+    {
+      Byte h[kStartSize];
+      RINOK(ReadStream_FALSE(stream, h, kStartSize));
+      if (h[0] != 'M' || h[1] != 'Z')
+        return S_FALSE;
+        /* most of PE files contain 0x0090 at offset 2.
+        But some rare PE files contain another values. So we don't use that check.
+      if (Get16(h + 2) != 0x90) return false; */
+      _peOffset = Get32(h + 0x3C);
+      if (!CheckPeOffset(_peOffset))
+        return S_FALSE;
+      coffOffset = _peOffset + 4;
+    }
+    {
+      Byte h[kPeHeaderSize];
+      RINOK(stream->Seek(_peOffset, STREAM_SEEK_SET, NULL));
+      RINOK(ReadStream_FALSE(stream, h, kPeHeaderSize));
+      if (!_header.ParsePe(h))
+        return S_FALSE;
+    }
   }
 
-  UInt32 bufSize = _header.OptHeaderSize + (UInt32)_header.NumSections * kSectionSize;
-  _totalSize = _peOffset + kHeaderSize + bufSize;
+  const UInt32 optStart = coffOffset + kCoffHeaderSize;
+  const UInt32 bufSize = _header.OptHeaderSize + (UInt32)_header.NumSections * kSectionSize;
+  _totalSize = optStart + bufSize;
   CByteBuffer buffer(bufSize);
 
   RINOK(ReadStream_FALSE(stream, buffer, bufSize));
+  
+  if (_header.OptHeaderSize != 0)
   if (!_optHeader.Parse(buffer, _header.OptHeaderSize))
     return S_FALSE;
 
@@ -2207,7 +2303,9 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   for (i = 0; i < _sections.Size(); i++)
     _sections[i].UpdateTotalSize(_totalSize);
 
-  bool thereISDebug;
+  bool thereISDebug = false;
+  if (IsOpt())
+  {
   RINOK(LoadDebugSections(stream, thereISDebug));
 
   const CDirLink &certLink = _optHeader.DirItems[kDirLink_Certificate];
@@ -2256,8 +2354,9 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
         _totalSize += (UInt32)k;
     }
   }
+  }
 
-  if (_header.NumSymbols > 0 && _header.PointerToSymbolTable >= 512)
+  if (_header.NumSymbols > 0 && _header.PointerToSymbolTable >= optStart)
   {
     if (_header.NumSymbols >= (1 << 24))
       return S_FALSE;
@@ -2306,11 +2405,12 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   }
 
 
+  if (IsOpt())
   if (_optHeader.CheckSum != 0)
   {
     RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
     UInt32 checkSum = 0;
-    RINOK(CalcCheckSum(stream, _totalSize, _peOffset + kHeaderSize + k_CheckSum_Field_Offset, checkSum));
+    RINOK(CalcCheckSum(stream, _totalSize, optStart + k_CheckSum_Field_Offset, checkSum));
     _checksumError = (checkSum != _optHeader.CheckSum);
   }
 
@@ -2333,6 +2433,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
     const CSection &sect = _sections[i];
     CMixItem mixItem;
     mixItem.SectionIndex = i;
+    if (IsOpt())
     if (_parseResources && sect.Name == ".rsrc" && _items.IsEmpty())
     {
       const unsigned numMixItems = _mixItems.Size();
@@ -2480,6 +2581,8 @@ STDMETHODIMP CHandler::Close()
 {
   _totalSize = 0;
   _checksumError = false;
+  _mainSubfile = -1;
+
   _stream.Release();
   _sections.Clear();
   _mixItems.Clear();
@@ -2675,10 +2778,41 @@ REGISTER_ARC_I(
   0,
   NArcInfoFlags::kPreArc,
   IsArc_Pe)
- 
+
 }
 
+namespace NCoff {
 
+API_FUNC_static_IsArc IsArc_Coff(const Byte *p, size_t size)
+{
+  if (size < NPe::kCoffHeaderSize)
+    return k_IsArc_Res_NEED_MORE;
+  NPe::CHeader header;
+  if (!header.ParseCoff(p))
+    return k_IsArc_Res_NO;
+  return k_IsArc_Res_YES;
+}
+}
+
+/*
+static const Byte k_Signature[] =
+{
+    2, 0x4C, 0x01, // x86
+    2, 0x64, 0x86, // x64
+    2, 0x64, 0xAA  // ARM64
+};
+REGISTER_ARC_I_CLS(
+*/
+
+REGISTER_ARC_I_CLS_NO_SIG(
+  NPe::CHandler(true),
+  "COFF", "obj", 0, 0xC6,
+  // k_Signature,
+  0,
+  // NArcInfoFlags::kMultiSignature |
+  NArcInfoFlags::kStartOpen,
+  IsArc_Coff)
+}
 
 
 namespace NTe {

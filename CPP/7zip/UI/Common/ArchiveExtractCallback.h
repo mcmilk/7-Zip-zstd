@@ -249,7 +249,7 @@ class CArchiveExtractCallback:
   #endif
 
   void CreateComplexDirectory(const UStringVector &dirPathParts, FString &fullPath);
-  HRESULT GetTime(int index, PROPID propID, FILETIME &filetime, bool &filetimeIsDefined);
+  HRESULT GetTime(UInt32 index, PROPID propID, FILETIME &filetime, bool &filetimeIsDefined);
   HRESULT GetUnpackSize();
 
   HRESULT SendMessageError(const char *message, const FString &path);
@@ -343,8 +343,43 @@ public:
   }
   #endif
 
+  HRESULT CloseArc();
+
+private:
+  void ClearExtractedDirsInfo()
+  {
+    _extractedFolderPaths.Clear();
+    _extractedFolderIndices.Clear();
+  }
+
+  HRESULT CloseFile();
   HRESULT SetDirsTimes();
 };
+
+
+struct CArchiveExtractCallback_Closer
+{
+  CArchiveExtractCallback *_ref;
+  
+  CArchiveExtractCallback_Closer(CArchiveExtractCallback *ref): _ref(ref) {}
+  
+  HRESULT Close()
+  {
+    HRESULT res = S_OK;
+    if (_ref)
+    {
+      res = _ref->CloseArc();
+      _ref = NULL;
+    }
+    return res;
+  }
+  
+  ~CArchiveExtractCallback_Closer()
+  {
+    Close();
+  }
+};
+
 
 bool CensorNode_CheckPath(const NWildcard::CCensorNode &node, const CReadArcItem &item);
 

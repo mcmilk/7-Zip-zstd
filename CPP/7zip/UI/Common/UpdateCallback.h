@@ -136,6 +136,7 @@ public:
   const UString *Comment;
 
   bool ShareForWrite;
+  bool StopAfterOpenError;
   bool StdInMode;
 
   bool KeepOriginalItemNames;

@@ -95,6 +95,16 @@ void PrintSize_bytes_Smart(AString &s, UInt64 val)
   s += ')';
 }
 
+void PrintSize_bytes_Smart_comma(AString &s, UInt64 val)
+{
+  if (val == (UInt64)(Int64)-1)
+    return;
+  s += ", ";
+  PrintSize_bytes_Smart(s, val);
+}
+
+
+
 void Print_DirItemsStat(AString &s, const CDirItemsStat &st)
 {
   if (st.NumDirs != 0)
@@ -103,14 +113,12 @@ void Print_DirItemsStat(AString &s, const CDirItemsStat &st)
     s += ", ";
   }
   Print_UInt64_and_String(s, st.NumFiles, st.NumFiles == 1 ? "file" : "files");
-  s += ", ";
-  PrintSize_bytes_Smart(s, st.FilesSize);
+  PrintSize_bytes_Smart_comma(s, st.FilesSize);
   if (st.NumAltStreams != 0)
   {
     s.Add_LF();
     Print_UInt64_and_String(s, st.NumAltStreams, "alternate streams");
-    s += ", ";
-    PrintSize_bytes_Smart(s, st.AltStreamsSize);
+    PrintSize_bytes_Smart_comma(s, st.AltStreamsSize);
   }
 }
 
@@ -244,7 +252,7 @@ static const char * const kTab = "  ";
 static void PrintFileInfo(CStdOutStream *_so, const wchar_t *path, const FILETIME *ft, const UInt64 *size)
 {
   *_so << kTab << "Path:     " << path << endl;
-  if (size)
+  if (size && *size != (UInt64)(Int64)-1)
   {
     AString s;
     PrintSize_bytes_Smart(s, *size);

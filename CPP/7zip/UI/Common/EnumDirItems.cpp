@@ -386,15 +386,27 @@ HRESULT CDirItems::SetLinkInfo(CDirItem &dirItem, const NFind::CFileInfo &fi,
     return S_OK;
   const FString path = phyPrefix + fi.Name;
   CByteBuffer &buf = dirItem.ReparseData;
+  DWORD res = 0;
   if (NIO::GetReparseData(path, buf))
   {
     CReparseAttr attr;
-    if (attr.Parse(buf, buf.Size()))
+    if (attr.Parse(buf, buf.Size(), res))
       return S_OK;
+    // we ignore unknown reparse points
+    if (res != ERROR_INVALID_REPARSE_DATA)
+      res = 0;
   }
-  DWORD res = ::GetLastError();
+  else
+  {
+    res = ::GetLastError();
+    if (res == 0)
+      res = ERROR_INVALID_FUNCTION;
+  }
+
   buf.Free();
-  return AddError(path , res);
+  if (res == 0)
+    return S_OK;
+  return AddError(path, res);
 }
 
 #endif
@@ -865,7 +877,8 @@ void CDirItems::FillFixedReparse()
       continue;
     
     CReparseAttr attr;
-    if (!attr.Parse(item.ReparseData, item.ReparseData.Size()))
+    DWORD errorCode = 0;
+    if (!attr.Parse(item.ReparseData, item.ReparseData.Size(), errorCode))
       continue;
     if (attr.IsRelative())
       continue;

@@ -130,7 +130,7 @@ bool CDecoder::ReadTables(void)
   
   i = 0;
   
-  while (i < numLevels)
+  do
   {
     UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream);
     if (sym < kTableDirectLevels)
@@ -144,10 +144,7 @@ bool CDecoder::ReadTables(void)
       {
         unsigned num = ReadBits(2) + 3;
         if (i == 0)
-        {
-          // return false;
-          continue; // original unRAR
-        }
+          return false;
         num += i;
         if (num > numLevels)
         {
@@ -180,6 +177,10 @@ bool CDecoder::ReadTables(void)
       }
     }
   }
+  while (i < numLevels);
+
+  if (m_InBitStream.ExtraBitsWereRead())
+    return false;
 
   if (m_AudioMode)
     for (i = 0; i < m_NumChannels; i++)
@@ -244,6 +245,8 @@ bool CDecoder::DecodeMm(UInt32 pos)
   while (pos-- != 0)
   {
     UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
+    if (m_InBitStream.ExtraBitsWereRead())
+      return false;
     if (symbol >= 256)
       return symbol == 256;
     /*
@@ -264,6 +267,8 @@ bool CDecoder::DecodeLz(Int32 pos)
   while (pos > 0)
   {
     UInt32 sym = m_MainDecoder.Decode(&m_InBitStream);
+    if (m_InBitStream.ExtraBitsWereRead())
+      return false;
     UInt32 length, distance;
     if (sym < 256)
     {
@@ -389,15 +394,19 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       if (!DecodeLz((Int32)blockSize))
         return S_FALSE;
     }
+
+    if (m_InBitStream.ExtraBitsWereRead())
+      return S_FALSE;
+
     UInt64 globalPos = m_OutWindowStream.GetProcessedSize();
     pos = globalPos - blockStartPos;
     if (pos < blockSize)
       if (!ReadTables())
         return S_FALSE;
     pos = globalPos - startPos;
-    if (progress != 0)
+    if (progress)
     {
-      UInt64 packSize = m_InBitStream.GetProcessedSize();
+      const UInt64 packSize = m_InBitStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&packSize, &pos));
     }
   }

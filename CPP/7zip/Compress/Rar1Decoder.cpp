@@ -29,7 +29,7 @@ public:
 };
 */
 
-CDecoder::CDecoder(): m_IsSolid(false) { }
+CDecoder::CDecoder(): m_IsSolid(false), _errorMode(false) { }
 
 void CDecoder::InitStructures()
 {
@@ -406,9 +406,14 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   InitData();
   if (!m_IsSolid)
   {
+    _errorMode = false;
     InitStructures();
     InitHuff();
   }
+  
+  if (_errorMode)
+    return S_FALSE;
+    
   if (m_UnpackSize > 0)
   {
     GetFlagsBuf();
@@ -477,9 +482,9 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
-  catch(const CInBufferException &e) { return e.ErrorCode; }
-  catch(const CLzOutWindowException &e) { return e.ErrorCode; }
-  catch(...) { return S_FALSE; }
+  catch(const CInBufferException &e) { _errorMode = true; return e.ErrorCode; }
+  catch(const CLzOutWindowException &e) { _errorMode = true; return e.ErrorCode; }
+  catch(...) { _errorMode = true; return S_FALSE; }
 }
 
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)

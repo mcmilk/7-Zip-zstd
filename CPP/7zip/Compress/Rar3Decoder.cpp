@@ -94,7 +94,8 @@ CDecoder::CDecoder():
   _writtenFileSize(0),
   _vmData(0),
   _vmCode(0),
-  m_IsSolid(false)
+  m_IsSolid(false),
+  _errorMode(false)
 {
   Ppmd7_Construct(&_ppmd);
 }
@@ -135,7 +136,7 @@ HRESULT CDecoder::WriteArea(UInt32 startPtr, UInt32 endPtr)
   return WriteData(_window, endPtr);
 }
 
-void CDecoder::ExecuteFilter(int tempFilterIndex, NVm::CBlockRef &outBlockRef)
+void CDecoder::ExecuteFilter(unsigned tempFilterIndex, NVm::CBlockRef &outBlockRef)
 {
   CTempFilter *tempFilter = _tempFilters[tempFilterIndex];
   tempFilter->InitR[6] = (UInt32)_writtenFileSize;
@@ -405,7 +406,7 @@ bool CDecoder::ReadVmCodePPM()
 
 #define RIF(x) { if (!(x)) return S_FALSE; }
 
-UInt32 CDecoder::ReadBits(int numBits) { return m_InBitStream.BitDecoder.ReadBits(numBits); }
+UInt32 CDecoder::ReadBits(unsigned numBits) { return m_InBitStream.BitDecoder.ReadBits(numBits); }
 
 // ---------- PPM ----------
 
@@ -414,7 +415,7 @@ HRESULT CDecoder::InitPPM()
   unsigned maxOrder = (unsigned)ReadBits(7);
 
   bool reset = ((maxOrder & 0x20) != 0);
-  int maxMB = 0;
+  UInt32 maxMB = 0;
   if (reset)
     maxMB = (Byte)ReadBits(8);
   else
@@ -556,12 +557,13 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
   PrevAlignCount = 0;
 
   Byte levelLevels[kLevelTableSize];
-  Byte newLevels[kTablesSizesSum];
+  Byte lens[kTablesSizesSum];
 
   if (ReadBits(1) == 0)
     memset(m_LastLevels, 0, kTablesSizesSum);
 
-  int i;
+  unsigned i;
+
   for (i = 0; i < kLevelTableSize; i++)
   {
     UInt32 length = ReadBits(4);
@@ -579,39 +581,44 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
     }
     levelLevels[i] = (Byte)length;
   }
+  
   RIF(m_LevelDecoder.Build(levelLevels));
+  
   i = 0;
-  while (i < kTablesSizesSum)
+  
+  do
   {
     UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream.BitDecoder);
     if (sym < 16)
     {
-      newLevels[i] = Byte((sym + m_LastLevels[i]) & 15);
+      lens[i] = Byte((sym + m_LastLevels[i]) & 15);
       i++;
     }
     else if (sym > kLevelTableSize)
       return S_FALSE;
     else
     {
-      int num;
-      if (((sym - 16) & 1) == 0)
-        num = ReadBits(3) + 3;
-      else
-        num = ReadBits(7) + 11;
-      if (sym < 18)
+      unsigned num = ((sym - 16) & 1) * 4;
+      num += num + 3 + (unsigned)ReadBits(num + 3);
+      num += i;
+      if (num > kTablesSizesSum)
+        num = kTablesSizesSum;
+      Byte v = 0;
+      if (sym < 16 + 2)
       {
         if (i == 0)
           return S_FALSE;
-        for (; num > 0 && i < kTablesSizesSum; num--, i++)
-          newLevels[i] = newLevels[(size_t)i - 1];
+        v = lens[(size_t)i - 1];
       }
-      else
-      {
-        for (; num > 0 && i < kTablesSizesSum; num--)
-          newLevels[i++] = 0;
-      }
+      do
+        lens[i++] = v;
+      while (i < num);
     }
   }
+  while (i < kTablesSizesSum);
+
+  if (InputEofError())
+    return S_FALSE;
 
   TablesRead = true;
 
@@ -624,12 +631,12 @@ HRESULT CDecoder::ReadTables(bool &keepDecompressing)
   }
   */
 
-  RIF(m_MainDecoder.Build(&newLevels[0]));
-  RIF(m_DistDecoder.Build(&newLevels[kMainTableSize]));
-  RIF(m_AlignDecoder.Build(&newLevels[kMainTableSize + kDistTableSize]));
-  RIF(m_LenDecoder.Build(&newLevels[kMainTableSize + kDistTableSize + kAlignTableSize]));
+  RIF(m_MainDecoder.Build(&lens[0]));
+  RIF(m_DistDecoder.Build(&lens[kMainTableSize]));
+  RIF(m_AlignDecoder.Build(&lens[kMainTableSize + kDistTableSize]));
+  RIF(m_LenDecoder.Build(&lens[kMainTableSize + kDistTableSize + kAlignTableSize]));
 
-  memcpy(m_LastLevels, newLevels, kTablesSizesSum);
+  memcpy(m_LastLevels, lens, kTablesSizesSum);
 
   TablesOK = true;
 
@@ -769,7 +776,7 @@ HRESULT CDecoder::DecodeLZ(bool &keepDecompressing)
         if (sym2 >= kDistTableSize)
           return S_FALSE;
         rep0 = kDistStart[sym2];
-        int numBits = kDistDirectBits[sym2];
+        unsigned numBits = kDistDirectBits[sym2];
         if (sym2 >= (kNumAlignBits * 2) + 2)
         {
           if (numBits > kNumAlignBits)
@@ -835,7 +842,11 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
     PpmEscChar = 2;
     PpmError = true;
     InitFilters();
+    _errorMode = false;
   }
+
+  if (_errorMode)
+    return S_FALSE;
 
   if (!m_IsSolid || !TablesRead)
   {
@@ -915,8 +926,8 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     _unpackSize = outSize ? *outSize : (UInt64)(Int64)-1;
     return CodeReal(progress);
   }
-  catch(const CInBufferException &e)  { return e.ErrorCode; }
-  catch(...) { return S_FALSE; }
+  catch(const CInBufferException &e)  { _errorMode = true; return e.ErrorCode; }
+  catch(...) { _errorMode = true; return S_FALSE; }
   // CNewException is possible here. But probably CNewException is caused
   // by error in data stream.
 }

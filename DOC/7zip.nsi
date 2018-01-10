@@ -1,8 +1,8 @@
 ;--------------------------------
 ;Defines
 
-!define VERSION_MAJOR 17
-!define VERSION_MINOR 01
+!define VERSION_MAJOR 18
+!define VERSION_MINOR 00
 !define VERSION_POSTFIX_FULL " beta"
 !ifdef WIN64
 !ifdef IA64
