@@ -151,6 +151,25 @@ struct CIndexToPathPair
 
 #endif
 
+
+
+struct CDirPathTime
+{
+  FILETIME CTime;
+  FILETIME ATime;
+  FILETIME MTime;
+
+  bool CTimeDefined;
+  bool ATimeDefined;
+  bool MTimeDefined;
+
+  FString Path;
+  
+  bool SetDirTime();
+};
+
+
+
 class CArchiveExtractCallback:
   public IArchiveExtractCallback,
   public IArchiveExtractCallbackMessage,
@@ -241,8 +260,7 @@ class CArchiveExtractCallback:
   UInt64 _progressTotal;
   bool _progressTotal_Defined;
 
-  FStringVector _extractedFolderPaths;
-  CRecordVector<UInt32> _extractedFolderIndices;
+  CObjectVector<CDirPathTime> _extractedFolders;
 
   #if defined(_WIN32) && !defined(UNDER_CE) && !defined(_SFX)
   bool _saclEnabled;
@@ -348,8 +366,7 @@ public:
 private:
   void ClearExtractedDirsInfo()
   {
-    _extractedFolderPaths.Clear();
-    _extractedFolderIndices.Clear();
+    _extractedFolders.Clear();
   }
 
   HRESULT CloseFile();

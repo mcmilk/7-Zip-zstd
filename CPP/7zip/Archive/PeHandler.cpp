@@ -387,6 +387,10 @@ void CSection::Parse(const Byte *p)
   G32(36, Flags);
 }
 
+
+
+// IMAGE_FILE_*
+
 static const CUInt32PCharPair g_HeaderCharacts[] =
 {
   {  1, "Executable" },
@@ -406,9 +410,7 @@ static const CUInt32PCharPair g_HeaderCharacts[] =
   { 15, "Big-Endian" }
 };
 
-
-
-// IMAGE_DLLCHARACTERISTICS_* constants
+// IMAGE_DLLCHARACTERISTICS_*
 
 static const char * const g_DllCharacts[] =
 {
@@ -930,7 +932,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
     case kpidExtension:
       if (_header.IsDll())
-        prop = _optHeader.IsSybSystem_EFI() ? "efi" : "dll";
+        prop = "dll";
+      else if (_optHeader.IsSybSystem_EFI())
+        prop = "efi";
       break;
 
     case kpidBit64: if (_optHeader.Is64Bit()) prop = true; break;
@@ -1137,8 +1141,17 @@ HRESULT CHandler::LoadDebugSections(IInStream *stream, bool &thereIsSection)
     return S_OK;
   const unsigned kEntrySize = 28;
   UInt32 numItems = debugLink.Size / kEntrySize;
-  if (numItems * kEntrySize != debugLink.Size || numItems > 16)
+  if (numItems > 16)
     return S_FALSE;
+
+  // MAC's EFI file: numItems can be incorrect. Only first CDebugEntry entry is correct.
+  // debugLink.Size = kEntrySize + some_data, pointed by entry[0].
+  if (numItems * kEntrySize != debugLink.Size)
+  {
+    // return S_FALSE;
+    if (numItems > 1)
+      numItems = 1;
+  }
   
   UInt64 pa = 0;
   unsigned i;
@@ -2191,6 +2204,9 @@ bool CHeader::ParseCoff(const Byte *p)
   for (unsigned i = 0; i < ARRAY_SIZE(g_MachinePairs); i++)
     if (Machine == g_MachinePairs[i].Value)
       return true;
+  if (Machine == 0)
+    return true;
+
   return false;
 }
 

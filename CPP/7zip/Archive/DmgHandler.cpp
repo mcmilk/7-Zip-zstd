@@ -19,6 +19,7 @@
 
 #include "../Compress/BZip2Decoder.h"
 #include "../Compress/CopyCoder.h"
+#include "../Compress/LzfseDecoder.h"
 #include "../Compress/ZlibDecoder.h"
 
 #include "Common/OutStreamWithCRC.h"
@@ -121,6 +122,7 @@ enum
   METHOD_ADC    = 0x80000004,
   METHOD_ZLIB   = 0x80000005,
   METHOD_BZIP2  = 0x80000006,
+  METHOD_LZFSE  = 0x80000007,
   METHOD_COMMENT = 0x7FFFFFFE, // is used to comment "+beg" and "+end" in extra field.
   METHOD_END    = 0xFFFFFFFF
 };
@@ -276,6 +278,7 @@ void CMethods::GetString(AString &res) const
       case METHOD_ADC:    s = "ADC";   break;
       case METHOD_ZLIB:   s = "ZLIB";  break;
       case METHOD_BZIP2:  s = "BZip2"; break;
+      case METHOD_LZFSE:  s = "LZFSE"; break;
       default: ConvertUInt32ToString(type, buf); s = buf;
     }
     res.Add_OptSpaced(s);
@@ -307,6 +310,10 @@ static const CAppleName k_Names[] =
   { true,  "hfs",  "Apple_HFS" },
   { true,  "hfsx", "Apple_HFSX" },
   { true,  "ufs",  "Apple_UFS" },
+
+  // efi_sys partition is FAT32, but it's not main file. So we use (IsFs = false)
+  { false,  "efi_sys", "C12A7328-F81F-11D2-BA4B-00A0C93EC93B" },
+
   { false, "free", "Apple_Free" },
   { false, "ddm",  "DDM" },
   { false, NULL,   "Apple_partition_map" },
@@ -1247,6 +1254,11 @@ STDMETHODIMP CAdcDecoder::Code(ISequentialInStream *inStream,
 }
 
 
+
+
+
+
+
 STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
@@ -1291,6 +1303,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   CAdcDecoder *adcCoderSpec = new CAdcDecoder();
   CMyComPtr<ICompressCoder> adcCoder = adcCoderSpec;
+
+  NCompress::NLzfse::CDecoder *lzfseCoderSpec = new NCompress::NLzfse::CDecoder();
+  CMyComPtr<ICompressCoder> lzfseCoder = lzfseCoderSpec;
 
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
@@ -1419,6 +1434,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
                   opRes = NExtract::NOperationResult::kDataError;
               break;
             }
+
+            case METHOD_LZFSE:
+            {
+              res = lzfseCoder->Code(inStream, outStream, &block.PackSize, &block.UnpSize, progress);
+              break;
+            }
             
             default:
               opRes = NExtract::NOperationResult::kUnsupportedMethod;
@@ -1489,6 +1510,9 @@ class CInStream:
 
   CAdcDecoder *adcCoderSpec;
   CMyComPtr<ICompressCoder> adcCoder;
+
+  NCompress::NLzfse::CDecoder *lzfseCoderSpec;
+  CMyComPtr<ICompressCoder> lzfseCoder;
 
   CBufPtrSeqOutStream *outStreamSpec;
   CMyComPtr<ISequentialOutStream> outStream;
@@ -1651,6 +1675,15 @@ STDMETHODIMP CInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
             if (res == S_OK && bzip2CoderSpec->GetInputProcessedSize() != block.PackSize)
               res = S_FALSE;
             break;
+
+          case METHOD_LZFSE:
+            if (!lzfseCoder)
+            {
+              lzfseCoderSpec = new NCompress::NLzfse::CDecoder();
+              lzfseCoder = lzfseCoderSpec;
+            }
+            res = lzfseCoder->Code(inStream, outStream, &block.PackSize, &block.UnpSize, NULL);
+            break;
             
           default:
             return E_FAIL;
@@ -1738,6 +1771,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
       case METHOD_ADC:
       case METHOD_ZLIB:
       case METHOD_BZIP2:
+      case METHOD_LZFSE:
       case METHOD_END:
         break;
       default:

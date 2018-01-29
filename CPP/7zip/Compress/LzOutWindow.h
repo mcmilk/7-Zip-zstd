@@ -56,6 +56,39 @@ public:
     if (pos == _limitPos)
       FlushWithCheck();
   }
+
+  void PutBytes(const Byte *data, UInt32 size)
+  {
+    if (size == 0)
+      return;
+    UInt32 pos = _pos;
+    Byte *buf = _buf;
+    buf[pos++] = *data++;
+    size--;
+    for (;;)
+    {
+      UInt32 limitPos = _limitPos;
+      UInt32 rem = limitPos - pos;
+      if (rem == 0)
+      {
+        _pos = pos;
+        FlushWithCheck();
+        pos = _pos;
+        continue;
+      }
+      
+      if (size == 0)
+        break;
+      
+      if (rem > size)
+        rem = size;
+      size -= rem;
+      do
+        buf[pos++] = *data++;
+      while (--rem);
+    }
+    _pos = pos;
+  }
   
   Byte GetByte(UInt32 distance) const
   {

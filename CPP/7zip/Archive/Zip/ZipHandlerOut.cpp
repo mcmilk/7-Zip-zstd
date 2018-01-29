@@ -136,6 +136,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         thereAreAesUpdates = true;
       if (!IntToBool(newProps))
         ui.IsDir = inputItem.IsDir();
+      // ui.IsAltStream = inputItem.IsAltStream();
     }
 
     if (IntToBool(newProps))
@@ -174,6 +175,33 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         else
           ui.IsDir = (prop.boolVal != VARIANT_FALSE);
       }
+
+      /*
+      {
+        bool isAltStream = false;
+        {
+          NCOM::CPropVariant prop;
+          RINOK(callback->GetProperty(i, kpidIsAltStream, &prop));
+          if (prop.vt == VT_BOOL)
+            isAltStream = (prop.boolVal != VARIANT_FALSE);
+          else if (prop.vt != VT_EMPTY)
+            return E_INVALIDARG;
+        }
+      
+        if (isAltStream)
+        {
+          if (ui.IsDir)
+            return E_INVALIDARG;
+          int delim = name.ReverseFind(L':');
+          if (delim >= 0)
+          {
+            name.Delete(delim, 1);
+            name.Insert(delim, UString(k_SpecName_NTFS_STREAM));
+            ui.IsAltStream = true;
+          }
+        }
+      }
+      */
 
       {
         CPropVariant prop;

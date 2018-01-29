@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2017-07-27 : Igor Pavlov : Public domain */
+2018-01-21 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -742,7 +742,8 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
 
     srcRem = srcLenOrig - *srcLen;
 
-    if (srcRem == 0)
+    // XZ_STATE_BLOCK_FOOTER can transit to XZ_STATE_BLOCK_HEADER without input bytes
+    if (srcRem == 0 && p->state != XZ_STATE_BLOCK_FOOTER)
     {
       *status = CODER_STATUS_NEEDS_MORE_INPUT;
       return SZ_OK;
@@ -820,8 +821,13 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
 
       case XZ_STATE_BLOCK_FOOTER:
       {
-        if (((p->packSize + p->alignPos) & 3) != 0)
+        if ((((unsigned)p->packSize + p->alignPos) & 3) != 0)
         {
+          if (srcRem == 0)
+          {
+            *status = CODER_STATUS_NEEDS_MORE_INPUT;
+            return SZ_OK;
+          }
           (*srcLen)++;
           p->alignPos++;
           if (*src++ != 0)
@@ -833,6 +839,11 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
           UInt32 cur = checkSize - p->pos;
           if (cur != 0)
           {
+            if (srcRem == 0)
+            {
+              *status = CODER_STATUS_NEEDS_MORE_INPUT;
+              return SZ_OK;
+            }
             if (cur > srcRem)
               cur = (UInt32)srcRem;
             memcpy(p->buf + p->pos, src, cur);

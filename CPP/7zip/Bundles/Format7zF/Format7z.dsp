@@ -961,6 +961,24 @@ SOURCE=..\..\Compress\HuffmanDecoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Compress\LzfseDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzfseDecoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Compress\LzhDecoder.cpp
 # End Source File
 # Begin Source File

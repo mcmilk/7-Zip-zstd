@@ -5,13 +5,18 @@
 
   7-Zip Copyright (C) 1999-2018 Igor Pavlov.
 
-  Licenses for files are:
+  The licenses for files are:
 
-    1) CPP/7zip/Compress/Rar* files:  GNU LGPL + unRAR restriction
-    2) All other files:  GNU LGPL
+    1) CPP/7zip/Compress/Rar* files: the "GNU LGPL" with "unRAR license restriction"
+    2) CPP/7zip/Compress/LzfseDecoder.cpp: the "BSD 3-clause License"
+    3) Some files are "public domain" files, if "public domain" status is stated in source file.
+    4) the "GNU LGPL" for all other files. If there is no license information in 
+       some source file, that file is under the "GNU LGPL".
 
-  The GNU LGPL + unRAR restriction means that you must follow both 
-  GNU LGPL rules and unRAR restriction rules.
+  The "GNU LGPL" with "unRAR license restriction" means that you must follow both 
+  "GNU LGPL" rules and "unRAR license restriction" rules.
+
+
 
 
   GNU LGPL information
@@ -32,8 +37,41 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-  unRAR restriction
-  -----------------
+
+
+  BSD 3-clause License
+  --------------------
+
+    The "BSD 3-clause License" is used for the code in LzfseDecoder.cpp that implements LZFSE data decompression.
+    That code was derived from the code in the "LZFSE compression library" developed by Apple Inc,
+    that also uses the "BSD 3-clause License":
+
+    ----
+    Copyright (c) 2015-2016, Apple Inc. All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+    1.  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+    2.  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+        in the documentation and/or other materials provided with the distribution.
+
+    3.  Neither the name of the copyright holder(s) nor the names of any contributors may be used to endorse or promote products derived
+        from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    ----
+
+
+
+
+  unRAR license restriction
+  -------------------------
 
     The decompression engine for RAR archives was developed using source 
     code of unRAR program.

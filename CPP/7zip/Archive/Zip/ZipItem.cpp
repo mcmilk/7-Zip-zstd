@@ -20,6 +20,12 @@ namespace NZip {
 
 using namespace NFileHeader;
 
+
+/*
+const char *k_SpecName_NTFS_STREAM = "@@NTFS@STREAM@";
+const char *k_SpecName_MAC_RESOURCE_FORK = "@@MAC@RESOURCE-FORK@";
+*/
+
 static const CUInt32PCharPair g_ExtraTypes[] =
 {
   { NExtraID::kZip64, "Zip64" },

@@ -20,10 +20,13 @@ class CItemEx: public CItem
 {
 public:
   UInt32 LocalFullHeaderSize; // including Name and Extra
+  // int ParentOfAltStream; // -1, if not AltStream
   
   bool DescriptorWasRead;
 
-  CItemEx(): DescriptorWasRead(false) {}
+  CItemEx():
+    // ParentOfAltStream(-1),
+    DescriptorWasRead(false) {}
 
   UInt64 GetLocalFullSize() const
     { return LocalFullHeaderSize + GetPackSizeWithDescriptor(); }
