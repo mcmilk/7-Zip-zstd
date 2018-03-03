@@ -41,6 +41,7 @@ WIN_OBJS = \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
   $O\Synchronization.obj \
+  $O\System.obj \
 
 7ZIP_COMMON_OBJS = \
   $O\CreateCoder.obj \
@@ -117,7 +118,9 @@ C_OBJS = \
   $O\Delta.obj \
   $O\DllSecur.obj \
   $O\Lzma2Dec.obj \
+  $O\Lzma2DecMt.obj \
   $O\LzmaDec.obj \
+  $O\MtDec.obj \
   $O\Ppmd7.obj \
   $O\Ppmd7Dec.obj \
   $O\Sha256.obj \
@@ -125,5 +128,6 @@ C_OBJS = \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+!include "../../LzmaDec.mak"
 
 !include "../../7zip.mak"

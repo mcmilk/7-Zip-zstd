@@ -1691,7 +1691,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
               methodID += 2;
             else
               methodID += 3;
-            RINOK(CreateCoder(EXTERNAL_CODECS_VARS methodID, false, mi.Coder));
+            RINOK(CreateCoder_Id(EXTERNAL_CODECS_VARS methodID, false, mi.Coder));
           }
          
           if (mi.Coder == 0)

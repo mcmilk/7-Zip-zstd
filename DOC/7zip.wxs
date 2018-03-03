@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <?define VerMajor = "18" ?>
-<?define VerMinor = "01" ?>
+<?define VerMinor = "02" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "$(var.VerMajor)$(var.VerMinor)" ?>
@@ -103,6 +103,8 @@
     </Upgrade>
 
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" CompressionLevel="high" />
+
+    <Property Id="MSIRMSHUTDOWN" Value="2"/>
 
     <Property Id="INSTALLDIR">
       <RegistrySearch Id="My7zipPathLM"  Type="raw" Root="HKLM" Key="Software\7-Zip" Name="Path" />
@@ -294,6 +296,7 @@
               <File Id="ja.txt" Name="ja.txt" />
               <File Id="ka.txt" Name="ka.txt" />
               <File Id="kaa.txt" Name="kaa.txt" />
+              <File Id="kab.txt" Name="kab.txt" />
               <File Id="kk.txt" Name="kk.txt" />
               <File Id="ko.txt" Name="ko.txt" />
               <File Id="ku.txt" Name="ku.txt" />

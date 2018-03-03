@@ -25,6 +25,7 @@ extern const char * const kMethodNames2[kNumMethodNames2];
 
 class CHandler:
   public IInArchive,
+  // public IArchiveGetRawProps,
   public IOutArchive,
   public ISetProperties,
   PUBLIC_ISetCompressCodecsInfo
@@ -32,6 +33,7 @@ class CHandler:
 {
 public:
   MY_QUERYINTERFACE_BEGIN2(IInArchive)
+  // MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
   MY_QUERYINTERFACE_ENTRY(IOutArchive)
   MY_QUERYINTERFACE_ENTRY(ISetProperties)
   QUERY_ENTRY_ISetCompressCodecsInfo
@@ -39,6 +41,7 @@ public:
   MY_ADDREF_RELEASE
 
   INTERFACE_IInArchive(;)
+  // INTERFACE_IArchiveGetRawProps(;)
   INTERFACE_IOutArchive(;)
 
   STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
@@ -75,6 +78,10 @@ private:
     _forceCodePage = false;
     _specifiedCodePage = CP_OEMCP;
   }
+
+  // void MarkAltStreams(CObjectVector<CItemEx> &items);
+
+  HRESULT GetOutProperty(IArchiveUpdateCallback *callback, UInt32 callbackIndex, Int32 arcIndex, PROPID propID, PROPVARIANT *value);
 };
 
 }}

@@ -1,5 +1,5 @@
 /* Lzma2Enc.c -- LZMA2 Encoder
-2017-08-28 : Igor Pavlov : Public domain */
+2018-02-08 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -666,7 +666,7 @@ static SRes Lzma2Enc_MtCallback_Code(void *pp, unsigned coderIndex, unsigned out
 
   if (!dest)
   {
-    dest = ISzAlloc_Alloc(me->alloc, me->outBufSize);
+    dest = (Byte *)ISzAlloc_Alloc(me->alloc, me->outBufSize);
     if (!dest)
       return SZ_ERROR_MEM;
     me->outBufs[outBufIndex] = dest;
@@ -674,7 +674,8 @@ static SRes Lzma2Enc_MtCallback_Code(void *pp, unsigned coderIndex, unsigned out
 
   MtProgressThunk_CreateVTable(&progressThunk);
   progressThunk.mtProgress = &me->mtCoder.mtProgress;
-  progressThunk.index = coderIndex;
+  progressThunk.inSize = 0;
+  progressThunk.outSize = 0;
 
   res = Lzma2Enc_EncodeMt1(me,
       &me->coders[coderIndex],
@@ -720,10 +721,10 @@ SRes Lzma2Enc_Encode2(CLzma2EncHandle pp,
   CLzma2Enc *p = (CLzma2Enc *)pp;
 
   if (inStream && inData)
-    return E_INVALIDARG;
+    return SZ_ERROR_PARAM;
 
   if (outStream && outBuf)
-    return E_INVALIDARG;
+    return SZ_ERROR_PARAM;
 
   {
     unsigned i;

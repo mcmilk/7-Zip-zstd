@@ -1183,9 +1183,11 @@ static HRESULT MethodBench(
   COneMethodInfo method = method2;
   UInt64 methodId;
   UInt32 numStreams;
-  if (!FindMethod(
+  int codecIndex = FindMethod_Index(
       EXTERNAL_CODECS_LOC_VARS
-      method.MethodName, methodId, numStreams))
+      method.MethodName, true,
+      methodId, numStreams);
+  if (codecIndex < 0)
     return E_NOTIMPL;
   if (numStreams != 1)
     return E_INVALIDARG;
@@ -1222,7 +1224,7 @@ static HRESULT MethodBench(
 
     {
       CCreatedCoder cod;
-      RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS methodId, true, encoder._encoderFilter, cod));
+      RINOK(CreateCoder_Index(EXTERNAL_CODECS_LOC_VARS codecIndex, true, encoder._encoderFilter, cod));
       encoder._encoder = cod.Coder;
       if (!encoder._encoder && !encoder._encoderFilter)
         return E_NOTIMPL;
@@ -1239,7 +1241,7 @@ static HRESULT MethodBench(
     {
       CCreatedCoder cod;
       CMyComPtr<ICompressCoder> &decoder = encoder._decoders[j];
-      RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS methodId, false, encoder._decoderFilter, cod));
+      RINOK(CreateCoder_Id(EXTERNAL_CODECS_LOC_VARS methodId, false, encoder._decoderFilter, cod));
       decoder = cod.Coder;
       if (!encoder._decoderFilter && !decoder)
         return E_NOTIMPL;

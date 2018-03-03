@@ -112,7 +112,8 @@ static const CUInt32PCharPair g_HeaderCharacts[] =
   { 3, "Descriptor" },
   // { 5, "Patched" },
   { 6, kMethod_StrongCrypto },
-  { 11, "UTF8" }
+  { 11, "UTF8" },
+  { 14, "Alt" }
 };
 
 struct CIdToNamePair
@@ -169,6 +170,7 @@ static const Byte kProps[] =
   kpidUnpackVer,
   kpidVolumeIndex,
   kpidOffset
+  // kpidIsAltStream
 };
 
 static const Byte kArcProps[] =
@@ -307,6 +309,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           prop = true;
       break;
     }
+
+    // case kpidIsAltStream: prop = true; break;
   }
   prop.Detach(value);
   COM_TRY_END
@@ -333,6 +337,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       UString res;
       item.GetUnicodeString(res, item.Name, false, _forceCodePage, _specifiedCodePage);
       NItemName::ReplaceToOsSlashes_Remove_TailSlash(res);
+      /*
+      if (item.ParentOfAltStream >= 0)
+      {
+        const CItemEx &prevItem = m_Items[item.ParentOfAltStream];
+        UString prevName;
+        prevItem.GetUnicodeString(prevName, prevItem.Name, false, _forceCodePage, _specifiedCodePage);
+        NItemName::ReplaceToOsSlashes_Remove_TailSlash(prevName);
+        if (res.IsPrefixedBy(prevName))
+          if (IsString1PrefixedByString2(res.Ptr(prevName.Len()), k_SpecName_NTFS_STREAM))
+          {
+            res.Delete(prevName.Len(), (unsigned)strlen(k_SpecName_NTFS_STREAM));
+            res.Insert(prevName.Len(), L":");
+          }
+      }
+      */
       prop = res;
       break;
     }
@@ -596,6 +615,19 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidOffset:
       prop = item.LocalHeaderPos;
       break;
+
+    /*
+    case kpidIsAltStream:
+      prop = (bool)(item.ParentOfAltStream >= 0); // item.IsAltStream();
+      break;
+
+    case kpidName:
+      if (item.ParentOfAltStream >= 0)
+      {
+        // extract name of stream here
+      }
+      break;
+    */
   }
   
   prop.Detach(value);
@@ -603,6 +635,85 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
+
+
+/*
+STDMETHODIMP CHandler::GetNumRawProps(UInt32 *numProps)
+{
+  *numProps = 0;
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetRawPropInfo(UInt32 index, BSTR *name, PROPID *propID)
+{
+  UNUSED_VAR(index);
+  *propID = 0;
+  *name = 0;
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetParent(UInt32 index, UInt32 *parent, UInt32 *parentType)
+{
+  *parentType = NParentType::kDir;
+  *parent = (UInt32)(Int32)-1;
+  if (index >= m_Items.Size())
+    return S_OK;
+  const CItemEx &item = m_Items[index];
+
+  if (item.ParentOfAltStream >= 0)
+  {
+    *parentType = NParentType::kAltStream;
+    *parent = item.ParentOfAltStream;
+  }
+  return S_OK;
+}
+
+STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data, UInt32 *dataSize, UInt32 *propType)
+{
+  UNUSED_VAR(index);
+  UNUSED_VAR(propID);
+  *data = NULL;
+  *dataSize = 0;
+  *propType = 0;
+  return S_OK;
+}
+
+
+void CHandler::MarkAltStreams(CObjectVector<CItemEx> &items)
+{
+  int prevIndex = -1;
+  UString prevName;
+  UString name;
+
+  for (unsigned i = 0; i < items.Size(); i++)
+  {
+    CItemEx &item = m_Items[i];
+    if (item.IsAltStream())
+    {
+      if (prevIndex == -1)
+        continue;
+      if (prevName.IsEmpty())
+      {
+        const CItemEx &prevItem = m_Items[prevIndex];
+        prevItem.GetUnicodeString(prevName, prevItem.Name, false, _forceCodePage, _specifiedCodePage);
+        NItemName::ReplaceToOsSlashes_Remove_TailSlash(prevName);
+      }
+      name.Empty();
+      item.GetUnicodeString(name, item.Name, false, _forceCodePage, _specifiedCodePage);
+      NItemName::ReplaceToOsSlashes_Remove_TailSlash(name);
+      
+      if (name.IsPrefixedBy(prevName))
+        if (IsString1PrefixedByString2(name.Ptr(prevName.Len()), k_SpecName_NTFS_STREAM))
+          item.ParentOfAltStream = prevIndex;
+    }
+    else
+    {
+      prevIndex = i;
+      prevName.Empty();
+    }
+  }
+}
+*/
 
 STDMETHODIMP CHandler::Open(IInStream *inStream,
     const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback)
@@ -617,6 +728,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
       m_Items.Clear();
       m_Archive.ClearRefs(); // we don't want to clear error flags
     }
+    // MarkAltStreams(m_Items);
     return res;
   }
   catch(...) { Close(); throw; }
@@ -738,7 +850,7 @@ public:
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
     #ifndef _7ZIP_ST
-    UInt32 numThreads,
+    UInt32 numThreads, UInt64 memUsage,
     #endif
     Int32 &res);
 };
@@ -767,7 +879,7 @@ HRESULT CZipDecoder::Decode(
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
     #ifndef _7ZIP_ST
-    UInt32 numThreads,
+    UInt32 numThreads, UInt64 memUsage,
     #endif
     Int32 &res)
 {
@@ -962,7 +1074,7 @@ HRESULT CZipDecoder::Decode(
         szMethodID = kMethodId_ZipBase + (Byte)id;
       }
 
-      RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS szMethodID, false, mi.Coder));
+      RINOK(CreateCoder_Id(EXTERNAL_CODECS_LOC_VARS szMethodID, false, mi.Coder));
 
       if (!mi.Coder)
       {
@@ -974,16 +1086,7 @@ HRESULT CZipDecoder::Decode(
   }
 
   ICompressCoder *coder = methodItems[m].Coder;
-  
-  {
-    CMyComPtr<ICompressSetDecoderProperties2> setDecoderProperties;
-    coder->QueryInterface(IID_ICompressSetDecoderProperties2, (void **)&setDecoderProperties);
-    if (setDecoderProperties)
-    {
-      Byte properties = (Byte)item.Flags;
-      RINOK(setDecoderProperties->SetDecoderProperties2(&properties, 1));
-    }
-  }
+
   
   #ifndef _7ZIP_ST
   {
@@ -994,7 +1097,27 @@ HRESULT CZipDecoder::Decode(
       RINOK(setCoderMt->SetNumberOfThreads(numThreads));
     }
   }
+  // if (memUsage != 0)
+  {
+    CMyComPtr<ICompressSetMemLimit> setMemLimit;
+    coder->QueryInterface(IID_ICompressSetMemLimit, (void **)&setMemLimit);
+    if (setMemLimit)
+    {
+      RINOK(setMemLimit->SetMemLimit(memUsage));
+    }
+  }
   #endif
+
+  {
+    CMyComPtr<ICompressSetDecoderProperties2> setDecoderProperties;
+    coder->QueryInterface(IID_ICompressSetDecoderProperties2, (void **)&setDecoderProperties);
+    if (setDecoderProperties)
+    {
+      Byte properties = (Byte)item.Flags;
+      RINOK(setDecoderProperties->SetDecoderProperties2(&properties, 1));
+    }
+  }
+  
   
   CMyComPtr<ISequentialInStream> inStreamNew;
 
@@ -1319,7 +1442,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         m_Archive, item, realOutStream, extractCallback,
         progress,
         #ifndef _7ZIP_ST
-        _props._numThreads,
+        _props._numThreads, _props._memUsage,
         #endif
         res);
     

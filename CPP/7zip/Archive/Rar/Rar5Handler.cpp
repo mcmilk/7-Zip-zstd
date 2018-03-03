@@ -1086,7 +1086,7 @@ HRESULT CUnpacker::Create(DECL_EXTERNAL_CODECS_LOC_VARS const CItem &item, bool 
     if (!lzCoder)
     {
       const UInt32 methodID = 0x40305;
-      RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS methodID, false, lzCoder));
+      RINOK(CreateCoder_Id(EXTERNAL_CODECS_LOC_VARS methodID, false, lzCoder));
       if (!lzCoder)
         return E_NOTIMPL;
     }

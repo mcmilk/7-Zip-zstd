@@ -115,10 +115,11 @@ COMPLB    = $(CC) $(CFLAGS_O1) -Yu"StdAfx.h" -Fp$O/a.pch $<
 # COMPLB_O2 = $(CC) $(CFLAGS_O2) -Yu"StdAfx.h" -Fp$O/a.pch $<
 COMPLB_O2 = $(CC) $(CFLAGS_O2) $<
 
-CCOMPL_PCH  = $(CC) $(CFLAGS_O2) -Yc"Precomp.h" -Fp$O/a.pch $**
-CCOMPL_USE  = $(CC) $(CFLAGS_O2) -Yu"Precomp.h" -Fp$O/a.pch $**
-CCOMPL      = $(CC) $(CFLAGS_O2) $**
-CCOMPLB     = $(CC) $(CFLAGS_O2) $<
+CFLAGS_C_ALL = $(CFLAGS_O2) $(CFLAGS_C_SPEC)
+CCOMPL_PCH  = $(CC) $(CFLAGS_C_ALL) -Yc"Precomp.h" -Fp$O/a.pch $**
+CCOMPL_USE  = $(CC) $(CFLAGS_C_ALL) -Yu"Precomp.h" -Fp$O/a.pch $**
+CCOMPL      = $(CC) $(CFLAGS_C_ALL) $**
+CCOMPLB     = $(CC) $(CFLAGS_C_ALL) $<
 
 
 all: $(PROGPATH)

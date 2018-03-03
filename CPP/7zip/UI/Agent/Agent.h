@@ -253,8 +253,8 @@ public:
   IInArchive *GetArchive() const { if ( _archiveLink.Arcs.IsEmpty()) return 0; return GetArc().Archive; }
   bool CanUpdate() const;
 
-  bool Is_Attrib_ReadOnly() const 
-  { 
+  bool Is_Attrib_ReadOnly() const
+  {
     return _attrib != INVALID_FILE_ATTRIBUTES && (_attrib & FILE_ATTRIBUTE_READONLY);
   }
 

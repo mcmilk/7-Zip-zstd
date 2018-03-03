@@ -376,7 +376,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         {
           CMethodId methodId;
           UInt32 numStreams;
-          if (!FindMethod(EXTERNAL_CODECS_VARS methodName, methodId, numStreams))
+          if (FindMethod_Index(EXTERNAL_CODECS_VARS methodName, true,
+              methodId, numStreams) < 0)
             return E_NOTIMPL;
           if (numStreams != 1)
             return E_NOTIMPL;

@@ -969,6 +969,10 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
     }
   }
   while (Inline_MatchFinder_GetNumAvailableBytes(&_lzInWindow) != 0);
+  
+  if (_seqInStream.Res != S_OK)
+    return _seqInStream.Res;
+
   if (_lzInWindow.result != SZ_OK)
     return SResToHRESULT(_lzInWindow.result);
   return m_OutStream.Flush();

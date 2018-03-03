@@ -1,6 +1,17 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+18.02 beta     2018-03-03
+-------------------------
+- Asm\x86\LzmaDecOpt.asm: new optimized LZMA decoder written in asm 
+  for x64 with about 30% higher speed than main version of LZMA decoder written in C.
+- The speed for single-thread LZMA/LZMA2 decoder written in C was increased by 3%.
+- 7-Zip now can use multi-threading for 7z/LZMA2 decoding,
+  if there are multiple independent data chunks in LZMA2 stream.
+- 7-Zip now can use multi-threading for xz decoding,
+  if there are multiple blocks in xz stream.
+
+
 17.00 beta     2017-04-29
 -------------------------
 - NewHandler.h / NewHandler.cpp: 
