@@ -1207,7 +1207,7 @@ HRESULT CHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &value)
     const wchar_t *s = name.Ptr(1);
     if (*s == 0)
     {
-      s = NULL;
+      bool useStr = false;
       bool isSolid;
       switch (value.vt)
       {
@@ -1215,11 +1215,11 @@ HRESULT CHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &value)
         case VT_BOOL: isSolid = (value.boolVal != VARIANT_FALSE); break;
         case VT_BSTR:
           if (!StringToBool(value.bstrVal, isSolid))
-            s = value.bstrVal;
+            useStr = true;
           break;
         default: return E_INVALIDARG;
       }
-      if (!s)
+      if (!useStr)
       {
         _numSolidBytes = (isSolid ? XZ_PROPS__BLOCK_SIZE__SOLID : XZ_PROPS__BLOCK_SIZE__AUTO);
         return S_OK;

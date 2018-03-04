@@ -1,7 +1,7 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
-18.02 beta     2018-03-03
+18.03 beta     2018-03-04
 -------------------------
 - Asm\x86\LzmaDecOpt.asm: new optimized LZMA decoder written in asm 
   for x64 with about 30% higher speed than main version of LZMA decoder written in C.
