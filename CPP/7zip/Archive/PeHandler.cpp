@@ -2201,6 +2201,11 @@ bool CHeader::ParseCoff(const Byte *p)
     return false;
   if (OptHeaderSize != 0 && OptHeaderSize < k_OptHeader32_Size_MIN)
     return false;
+
+  // 18.04: we reduce false detections
+  if (NumSections == 0 && OptHeaderSize == 0)
+    return false;
+
   for (unsigned i = 0; i < ARRAY_SIZE(g_MachinePairs); i++)
     if (Machine == g_MachinePairs[i].Value)
       return true;

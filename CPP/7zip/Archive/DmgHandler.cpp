@@ -219,6 +219,7 @@ class CHandler:
   bool _masterCrcError;
   bool _headersError;
 
+  UInt32 _dataStartOffset;
   UInt64 _startPos;
   UInt64 _phySize;
 
@@ -333,6 +334,7 @@ static const Byte kProps[] =
   kpidCRC,
   kpidComment,
   kpidMethod
+  // kpidOffset
 };
 
 IMP_IInArchive_Props
@@ -631,17 +633,40 @@ bool CHandler::ParseBlob(const CByteBuffer &data)
 
 HRESULT CHandler::Open2(IInStream *stream)
 {
+  /*
+  - usual dmg contains Koly Header at the end:
+  - rare case dmg contains Koly Header at the start.
+  */
+
+  _dataStartOffset = 0;
   RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_startPos));
+
+  UInt64 fileSize = 0;
+  RINOK(stream->Seek(0, STREAM_SEEK_END, &fileSize));
+  RINOK(stream->Seek(_startPos, STREAM_SEEK_SET, NULL));
 
   Byte buf[HEADER_SIZE];
   RINOK(ReadStream_FALSE(stream, buf, HEADER_SIZE));
 
   UInt64 headerPos;
+  bool startKolyMode = false;
+
   if (IsKoly(buf))
+  {
+    // it can be normal koly-at-the-end or koly-at-the-start
     headerPos = _startPos;
+    if (_startPos <= (1 << 8))
+    {
+      // we want to support startKolyMode, even if there is
+      // some data before dmg file, like 128 bytes MacBin header
+      _dataStartOffset = HEADER_SIZE;
+      startKolyMode = true;
+    }
+  }
   else
   {
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &headerPos));
+    // we check only koly-at-the-end
+    headerPos = fileSize;
     if (headerPos < HEADER_SIZE)
       return S_FALSE;
     headerPos -= HEADER_SIZE;
@@ -667,24 +692,35 @@ HRESULT CHandler::Open2(IInStream *stream)
   // CChecksum dataForkChecksum;
   // dataForkChecksum.Parse(buf + 0x50);
 
-  _startPos = 0;
-
   UInt64 top = 0;
-  if (!dataForkPair.UpdateTop(headerPos, top)) return S_FALSE;
-  if (!xmlPair.UpdateTop(headerPos, top)) return S_FALSE;
-  if (!rsrcPair.UpdateTop(headerPos, top)) return S_FALSE;
+  UInt64 limit = startKolyMode ? fileSize : headerPos;
+
+  if (!dataForkPair.UpdateTop(limit, top)) return S_FALSE;
+  if (!xmlPair.UpdateTop(limit, top)) return S_FALSE;
+  if (!rsrcPair.UpdateTop(limit, top)) return S_FALSE;
 
   /* Some old dmg files contain garbage data in blobPair field.
      So we need to ignore such garbage case;
      And we still need to detect offset of start of archive for "parser" mode. */
 
-  bool useBlob = blobPair.UpdateTop(headerPos, top);
+  bool useBlob = blobPair.UpdateTop(limit, top);
 
-  _startPos = 0;
-  _phySize = headerPos + HEADER_SIZE;
 
-  if (top != headerPos)
+  if (startKolyMode)
+    _phySize = top;
+  else
   {
+    _phySize = headerPos + HEADER_SIZE;
+    _startPos = 0;
+    if (top != headerPos)
+    {
+      /*
+      if expected absolute offset is not equal to real header offset,
+      2 cases are possible:
+        - additional (unknown) headers
+        - archive with offset.
+       So we try to read XML with absolute offset to select from these two ways.
+      */
     CForkPair xmlPair2 = xmlPair;
     const char *sz = "<?xml version";
     const unsigned len = (unsigned)strlen(sz);
@@ -694,8 +730,10 @@ HRESULT CHandler::Open2(IInStream *stream)
     if (ReadData(stream, xmlPair2, buf2) != S_OK
         || memcmp(buf2, sz, len) != 0)
     {
+      // if absolute offset is not OK, probably it's archive with offset
       _startPos = headerPos - top;
       _phySize = top + HEADER_SIZE;
+    }
     }
   }
 
@@ -1041,6 +1079,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         break;
       }
 
+      /*
+      case kpidOffset:
+      {
+        prop = item.StartPos;
+        break;
+      }
+      */
+
       case kpidMethod:
       {
         CMethods m;
@@ -1384,7 +1430,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             break;
           }
 
-          RINOK(_inStream->Seek(_startPos + item.StartPos + block.PackPos, STREAM_SEEK_SET, NULL));
+          RINOK(_inStream->Seek(_startPos + _dataStartOffset + item.StartPos + block.PackPos, STREAM_SEEK_SET, NULL));
           streamSpec->Init(block.PackSize);
           bool realMethod = true;
           outStreamSpec->Init(block.UnpSize);
@@ -1781,7 +1827,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   
   spec->Stream = _inStream;
   spec->Size = spec->File->Size;
-  RINOK(spec->InitAndSeek(_startPos));
+  RINOK(spec->InitAndSeek(_startPos + _dataStartOffset));
   *stream = specStream.Detach();
   return S_OK;
   

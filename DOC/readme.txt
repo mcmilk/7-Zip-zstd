@@ -1,4 +1,4 @@
-7-Zip 18.03 Sources
+7-Zip 18.05 Sources
 -------------------
 
 7-Zip is a file archiver for Windows. 

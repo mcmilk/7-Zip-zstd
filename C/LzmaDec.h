@@ -1,5 +1,5 @@
 /* LzmaDec.h -- LZMA Decoder
-2018-02-06 : Igor Pavlov : Public domain */
+2018-04-21 : Igor Pavlov : Public domain */
 
 #ifndef __LZMA_DEC_H
 #define __LZMA_DEC_H
@@ -12,11 +12,13 @@ EXTERN_C_BEGIN
 /* _LZMA_PROB32 can increase the speed on some CPUs,
    but memory usage for CLzmaDec::probs will be doubled in that case */
 
+typedef
 #ifdef _LZMA_PROB32
-#define CLzmaProb UInt32
+  UInt32
 #else
-#define CLzmaProb UInt16
+  UInt16
 #endif
+  CLzmaProb;
 
 
 /* ---------- LZMA Properties ---------- */
@@ -76,8 +78,8 @@ typedef struct
 void LzmaDec_Init(CLzmaDec *p);
 
 /* There are two types of LZMA streams:
-     0) Stream with end mark. That end mark adds about 6 bytes to compressed size.
-     1) Stream without end mark. You must know exact uncompressed size to decompress such stream. */
+     - Stream with end mark. That end mark adds about 6 bytes to compressed size.
+     - Stream without end mark. You must know exact uncompressed size to decompress such stream. */
 
 typedef enum
 {
@@ -147,7 +149,7 @@ void LzmaDec_Free(CLzmaDec *p, ISzAllocPtr alloc);
    You must work with CLzmaDec variables directly in this interface.
 
    STEPS:
-     LzmaDec_Constr()
+     LzmaDec_Construct()
      LzmaDec_Allocate()
      for (each new stream)
      {

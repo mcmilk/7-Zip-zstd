@@ -3,7 +3,7 @@ MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) -DPROG_VARIANT_R
 
 !IFNDEF UNDER_CE
-CFLAGS = $(CFLAGS) -DWIN_LONG_PATH
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE
 !ENDIF
 
 COMMON_OBJS = \
@@ -33,6 +33,7 @@ WIN_OBJS = \
   $O\FileIO.obj \
   $O\FileLink.obj \
   $O\FileName.obj \
+  $O\FileSystem.obj \
   $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \

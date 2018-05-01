@@ -491,6 +491,14 @@ SOURCE=.\DialogSize.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\EditDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\EditDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\LinkDialog.cpp
 # End Source File
 # Begin Source File

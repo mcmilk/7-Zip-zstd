@@ -75,7 +75,6 @@ AR_OBJS = \
   $O\LzmaHandler.obj \
   $O\SplitHandler.obj \
   $O\XzHandler.obj \
-  $O\ZHandler.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
@@ -169,7 +168,6 @@ COMPRESS_OBJS = \
   $O\ShrinkDecoder.obj \
   $O\XzDecoder.obj \
   $O\XzEncoder.obj \
-  $O\ZDecoder.obj \
 
 CRYPTO_OBJS = \
   $O\7zAes.obj \

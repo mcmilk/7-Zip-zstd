@@ -625,6 +625,7 @@ void CPanel::FoldersHistory()
 {
   CListViewDialog listViewDialog;
   listViewDialog.DeleteIsAllowed = true;
+  listViewDialog.SelectFirst = true;
   LangString(IDS_FOLDERS_HISTORY, listViewDialog.Title);
   _appState->FolderHistory.GetList(listViewDialog.Strings);
   if (listViewDialog.Create(GetParent()) != IDOK)

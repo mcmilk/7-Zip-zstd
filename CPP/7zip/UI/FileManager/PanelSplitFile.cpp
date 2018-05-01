@@ -157,7 +157,7 @@ HRESULT CThreadSplit::ProcessVirt()
   if (!inFile.GetLength(length))
     return GetLastError();
   
-  CProgressSync &sync = ProgressDialog.Sync;
+  CProgressSync &sync = Sync;
   sync.Set_NumBytesTotal(length);
   
   UInt64 pos = 0;
@@ -306,7 +306,7 @@ void CApp::Split()
   CThreadSplit spliter;
   spliter.NumVolumes = numVolumes;
 
-  CProgressDialog &progressDialog = spliter.ProgressDialog;
+  CProgressDialog &progressDialog = spliter;
 
   UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);
   UString title = LangString(IDS_SPLITTING);
@@ -362,7 +362,7 @@ HRESULT CThreadCombine::ProcessVirt()
     return res;
   }
   
-  CProgressSync &sync = ProgressDialog.Sync;
+  CProgressSync &sync = Sync;
   sync.Set_NumBytesTotal(TotalSize);
   
   CMyBuffer bufferObject;
@@ -534,7 +534,7 @@ void CApp::Combine()
     return;
   }
   
-    CProgressDialog &progressDialog = combiner.ProgressDialog;
+    CProgressDialog &progressDialog = combiner;
     progressDialog.ShowCompressionInfo = false;
   
     UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);

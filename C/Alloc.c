@@ -1,5 +1,5 @@
 /* Alloc.c -- Memory allocation functions
-2018-03-01 : Igor Pavlov : Public domain */
+2018-04-27 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -283,7 +283,7 @@ const ISzAlloc g_BigAlloc = { SzBigAlloc, SzBigFree };
 #define MY_ALIGN_PTR_UP_PLUS(p, align) MY_ALIGN_PTR_DOWN(((char *)(p) + (align) + ADJUST_ALLOC_SIZE), align)
 
 
-#if (_POSIX_C_SOURCE >= 200112L)
+#if (_POSIX_C_SOURCE >= 200112L) && !defined(_WIN32)
   #define USE_posix_memalign
 #endif
 

@@ -13,6 +13,7 @@
 #include "../../../Windows/ErrorMsg.h"
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileMapping.h"
+#include "../../../Windows/MemoryLock.h"
 #include "../../../Windows/ProcessUtils.h"
 #include "../../../Windows/Synchronization.h"
 
@@ -94,6 +95,9 @@ static HRESULT Call7zGui(const UString &params,
 static void AddLagePagesSwitch(UString &params)
 {
   if (ReadLockMemoryEnable())
+  #ifndef UNDER_CE
+  if (NSecurity::Get_LargePages_RiskLevel() == 0)
+  #endif
     params += " -slp";
 }
 

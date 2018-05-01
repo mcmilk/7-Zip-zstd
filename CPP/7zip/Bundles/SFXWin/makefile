@@ -1,4 +1,6 @@
 PROG = 7z.sfx
+MY_FIXED = 1
+
 CFLAGS = $(CFLAGS) \
   -DNO_REGISTRY \
   -DEXTRACT_ONLY \

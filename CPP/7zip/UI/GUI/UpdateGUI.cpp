@@ -460,7 +460,7 @@ HRESULT UpdateGUI(
   tu.cmdArcPath = &cmdArcPath;
 
   tu.UpdateCallbackGUI = callback;
-  tu.UpdateCallbackGUI->ProgressDialog = &tu.ProgressDialog;
+  tu.UpdateCallbackGUI->ProgressDialog = &tu;
   tu.UpdateCallbackGUI->Init();
 
   UString title = LangString(IDS_PROGRESS_COMPRESSING);
@@ -476,10 +476,10 @@ HRESULT UpdateGUI(
 
   tu.WildcardCensor = &censor;
   tu.Options = &options;
-  tu.ProgressDialog.IconID = IDI_ICON;
+  tu.IconID = IDI_ICON;
 
   RINOK(tu.Create(title, hwndParent));
 
-  messageWasDisplayed = tu.ThreadFinishedOK && tu.ProgressDialog.MessagesDisplayed;
+  messageWasDisplayed = tu.ThreadFinishedOK && tu.MessagesDisplayed;
   return tu.Result;
 }

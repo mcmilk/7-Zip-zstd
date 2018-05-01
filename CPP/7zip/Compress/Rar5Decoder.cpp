@@ -72,6 +72,7 @@ CDecoder::CDecoder():
     _writtenFileSize(0),
     _dictSizeLog(0),
     _isSolid(false),
+    _solidAllowed(false),
     _wasInit(false),
     _inputBuf(NULL)
 {
@@ -334,58 +335,63 @@ HRESULT CDecoder::ReadTables(CBitDecoder &_bitStream)
 {
   if (_progress)
   {
-    UInt64 packSize = _bitStream.GetProcessedSize();
+    const UInt64 packSize = _bitStream.GetProcessedSize();
     RINOK(_progress->SetRatioInfo(&packSize, &_writtenFileSize));
   }
 
   _bitStream.AlignToByte();
   _bitStream.Prepare();
   
-  unsigned flags = _bitStream.ReadByteInAligned();
-  unsigned checkSum = _bitStream.ReadByteInAligned();
-  checkSum ^= flags;
-
-  UInt32 blockSize;
   {
+    unsigned flags = _bitStream.ReadByteInAligned();
+    unsigned checkSum = _bitStream.ReadByteInAligned();
+    checkSum ^= flags;
     unsigned num = (flags >> 3) & 3;
     if (num == 3)
       return S_FALSE;
-    blockSize = _bitStream.ReadByteInAligned();
-    if (num > 0)
+    UInt32 blockSize = _bitStream.ReadByteInAligned();
+    checkSum ^= blockSize;
+
+    if (num != 0)
     {
-      blockSize += (UInt32)_bitStream.ReadByteInAligned() << 8;
+      unsigned b = _bitStream.ReadByteInAligned();
+      checkSum ^= b;
+      blockSize += (UInt32)b << 8;
       if (num > 1)
-        blockSize += (UInt32)_bitStream.ReadByteInAligned() << 16;
+      {
+        b = _bitStream.ReadByteInAligned();
+        checkSum ^= b;
+        blockSize += (UInt32)b << 16;
+      }
     }
-  }
-
-  checkSum ^= blockSize ^ (blockSize >> 8) ^ (blockSize >> 16);
-  if ((Byte)checkSum != 0x5A)
-    return S_FALSE;
-
-  unsigned blockSizeBits7 = (flags & 7) + 1;
-
-  if (blockSize == 0 && blockSizeBits7 != 8)
-    return S_FALSE;
-
-  blockSize += (blockSizeBits7 >> 3);
-  blockSize--;
-
-  _bitStream._blockEndBits7 = (Byte)(blockSizeBits7 & 7);
-  _bitStream._blockEnd = _bitStream.GetProcessedSize_Round() + blockSize;
-
-  _bitStream.SetCheck2();
-
-  _isLastBlock = ((flags & 0x40) != 0);
-
-  if ((flags & 0x80) == 0)
-  {
-    if (!_tableWasFilled && blockSize != 0)
+    
+    if (checkSum != 0x5A)
       return S_FALSE;
-    return S_OK;
-  }
 
-  _tableWasFilled = false;
+    unsigned blockSizeBits7 = (flags & 7) + 1;
+    blockSize += (blockSizeBits7 >> 3);
+    if (blockSize == 0)
+      return S_FALSE;
+    blockSize--;
+    blockSizeBits7 &= 7;
+
+    _bitStream._blockEndBits7 = (Byte)blockSizeBits7;
+    _bitStream._blockEnd = _bitStream.GetProcessedSize_Round() + blockSize;
+    
+    _bitStream.SetCheck2();
+    
+    _isLastBlock = ((flags & 0x40) != 0);
+    
+    if ((flags & 0x80) == 0)
+    {
+      if (!_tableWasFilled)
+        if (blockSize != 0 || blockSizeBits7 != 0)
+          return S_FALSE;
+      return S_OK;
+    }
+    
+    _tableWasFilled = false;
+  }
 
   {
     Byte lens2[kLevelTableSize];
@@ -596,6 +602,10 @@ HRESULT CDecoder::DecodeLZ()
           }
         }
       }
+
+      // that check is not required, but it can help, if there is BUG in another code
+      if (!_tableWasFilled)
+        break; // return S_FALSE;
     }
 
     UInt32 sym = m_MainDecoder.Decode(&_bitStream);
@@ -797,7 +807,10 @@ HRESULT CDecoder::CodeReal()
   */
 
   if (res == S_OK)
+  {
+    _solidAllowed = true;
     res = res2;
+  }
      
   if (res == S_OK && _unpackSize_Defined && _writtenFileSize != _unpackSize)
     return S_FALSE;
@@ -817,6 +830,10 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 {
   try
   {
+    if (_isSolid && !_solidAllowed)
+      return S_FALSE;
+    _solidAllowed = false;
+
     if (_dictSizeLog >= sizeof(size_t) * 8)
       return E_NOTIMPL;
 

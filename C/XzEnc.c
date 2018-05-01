@@ -1,5 +1,5 @@
 /* XzEnc.c -- Xz Encode
-2018-02-21 : Igor Pavlov : Public domain */
+2018-04-28 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -1254,6 +1254,8 @@ SRes XzEnc_Encode(CXzEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStr
           && props->reduceSize >= progress2.inOffset)
         rem = props->reduceSize - progress2.inOffset;
       */
+
+      blockSizes.headerSize = 0; // for GCC
       
       RINOK(Xz_CompressBlock(
           &p->lzmaf_Items[0],

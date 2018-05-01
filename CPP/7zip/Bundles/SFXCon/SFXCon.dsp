@@ -117,10 +117,6 @@ SOURCE=..\..\Archive\Common\CoderMixer2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Common\HandlerOut.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Archive\Common\HandlerOut.h
 # End Source File
 # Begin Source File

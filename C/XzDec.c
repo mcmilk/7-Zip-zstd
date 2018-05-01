@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2018-02-28 : Igor Pavlov : Public domain */
+2018-04-24 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -2673,7 +2673,7 @@ SRes XzDecMt_Decode(CXzDecMtHandle pp,
        
         if (p->finishedDecoderIndex >= 0)
         {
-          CXzDecMtThread *coder = &p->coders[p->finishedDecoderIndex];
+          CXzDecMtThread *coder = &p->coders[(unsigned)p->finishedDecoderIndex];
           codeRes = coder->codeRes;
           dec = &coder->dec;
           status = coder->status;

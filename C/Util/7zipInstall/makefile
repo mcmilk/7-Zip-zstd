@@ -1,4 +1,5 @@
 PROG = 7zipInstall.exe
+MY_FIXED = 1
 
 LIBS = $(LIBS) version.lib
 

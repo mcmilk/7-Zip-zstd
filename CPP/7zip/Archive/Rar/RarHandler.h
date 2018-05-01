@@ -26,7 +26,7 @@ struct CInArcInfo
   UInt32 DataCRC;
   bool EndOfArchive_was_Read;
 
-  CInArcInfo(): EndFlags(0), EndOfArchive_was_Read(false) {}
+  CInArcInfo(): EndFlags(0), EndOfArchive_was_Read(false), VolNumber(0) {}
 
   UInt64 GetPhySize() const { return EndPos - StartPos; }
 

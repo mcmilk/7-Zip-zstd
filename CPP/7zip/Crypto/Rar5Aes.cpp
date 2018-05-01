@@ -30,14 +30,13 @@ CDecoder::CDecoder(): CAesCbcDecoder(kAesKeySize) {}
 
 static unsigned ReadVarInt(const Byte *p, unsigned maxSize, UInt64 *val)
 {
-  unsigned i;
   *val = 0;
 
-  for (i = 0; i < maxSize;)
+  for (unsigned i = 0; i < maxSize && i < 10;)
   {
     Byte b = p[i];
-    if (i < 10)
-      *val |= (UInt64)(b & 0x7F) << (7 * i++);
+    *val |= (UInt64)(b & 0x7F) << (7 * i);
+    i++;
     if ((b & 0x80) == 0)
       return i;
   }

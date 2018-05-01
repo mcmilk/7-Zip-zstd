@@ -34,6 +34,7 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
+  $O\MemoryLock.obj \
   $O\Menu.obj \
   $O\ProcessUtils.obj \
   $O\Registry.obj \

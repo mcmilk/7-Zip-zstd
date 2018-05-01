@@ -94,8 +94,8 @@ CDecoder::CDecoder():
   _writtenFileSize(0),
   _vmData(0),
   _vmCode(0),
-  m_IsSolid(false),
-  _errorMode(false)
+  _isSolid(false),
+  _solidAllowed(false)
 {
   Ppmd7_Construct(&_ppmd);
 }
@@ -829,7 +829,7 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
   _writtenFileSize = 0;
   _unsupportedFilter = false;
   
-  if (!m_IsSolid)
+  if (!_isSolid)
   {
     _lzSize = 0;
     _winPos = 0;
@@ -842,18 +842,23 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
     PpmEscChar = 2;
     PpmError = true;
     InitFilters();
-    _errorMode = false;
+    // _errorMode = false;
   }
 
+  /*
   if (_errorMode)
     return S_FALSE;
+  */
 
-  if (!m_IsSolid || !TablesRead)
+  if (!_isSolid || !TablesRead)
   {
     bool keepDecompressing;
     RINOK(ReadTables(keepDecompressing));
     if (!keepDecompressing)
+    {
+      _solidAllowed = true;
       return S_OK;
+    }
   }
 
   for (;;)
@@ -878,6 +883,9 @@ HRESULT CDecoder::CodeReal(ICompressProgressInfo *progress)
     if (!keepDecompressing)
       break;
   }
+
+  _solidAllowed = true;
+
   RINOK(WriteBuf());
   UInt64 packSize = m_InBitStream.BitDecoder.GetProcessedSize();
   RINOK(progress->SetRatioInfo(&packSize, &_writtenFileSize));
@@ -897,6 +905,10 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   {
     if (!inSize)
       return E_INVALIDARG;
+
+    if (_isSolid && !_solidAllowed)
+      return S_FALSE;
+    _solidAllowed = false;
 
     if (!_vmData)
     {
@@ -926,8 +938,8 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     _unpackSize = outSize ? *outSize : (UInt64)(Int64)-1;
     return CodeReal(progress);
   }
-  catch(const CInBufferException &e)  { _errorMode = true; return e.ErrorCode; }
-  catch(...) { _errorMode = true; return S_FALSE; }
+  catch(const CInBufferException &e)  { /* _errorMode = true; */ return e.ErrorCode; }
+  catch(...) { /* _errorMode = true; */ return S_FALSE; }
   // CNewException is possible here. But probably CNewException is caused
   // by error in data stream.
 }
@@ -936,7 +948,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   if (size < 1)
     return E_INVALIDARG;
-  m_IsSolid = ((data[0] & 1) != 0);
+  _isSolid = ((data[0] & 1) != 0);
   return S_OK;
 }
 
