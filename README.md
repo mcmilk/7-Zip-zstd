@@ -246,7 +246,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 17.01
+- 7-Zip ZS Version 18.05
   - [Brotli] Version 1.0.6
   - [Lizard] Version 1.0
   - [LZ4] Version 1.8.3
@@ -254,6 +254,11 @@ You find this project useful, maybe you consider a donation ;-)
   - [Zstandard] Version 1.3.6
 
 /TR 2018-10-21
+
+## Notes
+
+- if you want an code signed installer, you need to donate sth.
+- I know that Zstandard has some nice new features which are not included currently... I will think about it
 
 [7-Zip]:http://www.7-zip.org/
 [lzip]:http://www.nongnu.org/lzip/
