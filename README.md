@@ -139,8 +139,10 @@ Codecs:
 
 The output should look like this:
 ```
-7-Zip 18.05 ZS v1.3.6 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2018-10-21
+7-Zip 18.05 (x64) : Copyright (c) 1999-2018 Igor Pavlov : 2018-04-30
 
+Libs:
+ 0  C:\Program Files\7-Zip\7z.dll
 
 Libs:
  0  c:\Program Files\7-Zip\7z.dll
