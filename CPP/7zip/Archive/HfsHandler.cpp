@@ -317,11 +317,15 @@ public:
   // bool CaseSensetive;
   UString ResFileName;
 
+  UInt64 SpecOffset;
   UInt64 PhySize;
+  UInt64 PhySize2;
 
   void Clear()
   {
+    SpecOffset = 0;
     PhySize = 0;
+    PhySize2 = 0;
     HeadersError = false;
     ThereAreAltStreams = false;
     // CaseSensetive = false;
@@ -444,7 +448,7 @@ HRESULT CDatabase::ReadFile(const CFork &fork, CByteBuffer &buf, IInStream *inSt
         e.NumBlocks > fork.NumBlocks - curBlock ||
         e.NumBlocks > Header.NumBlocks - e.Pos)
       return S_FALSE;
-    RINOK(inStream->Seek((UInt64)e.Pos << Header.BlockSizeLog, STREAM_SEEK_SET, NULL));
+    RINOK(inStream->Seek(SpecOffset + ((UInt64)e.Pos << Header.BlockSizeLog), STREAM_SEEK_SET, NULL));
     RINOK(ReadStream_FALSE(inStream,
         (Byte *)buf + ((size_t)curBlock << Header.BlockSizeLog),
         (size_t)e.NumBlocks << Header.BlockSizeLog));
@@ -1154,13 +1158,36 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
 }
 
 static const unsigned kHeaderPadSize = (1 << 10);
+static const unsigned kMainHeaderSize = 512;
+static const unsigned kHfsHeaderSize = kHeaderPadSize + kMainHeaderSize;
+
+API_FUNC_static_IsArc IsArc_HFS(const Byte *p, size_t size)
+{
+  if (size < kHfsHeaderSize)
+    return k_IsArc_Res_NEED_MORE;
+  p += kHeaderPadSize;
+  if (p[0] == 'B' && p[1] == 'D')
+  {
+    if (p[0x7C] != 'H' || p[0x7C + 1] != '+')
+      return k_IsArc_Res_NO;
+  }
+  else
+  {
+    if (p[0] != 'H' || (p[1] != '+' && p[1] != 'X'))
+      return k_IsArc_Res_NO;
+    UInt32 version = Get16(p + 2);
+    if (version < 4 || version > 5)
+      return k_IsArc_Res_NO;
+  }
+  return k_IsArc_Res_YES;
+}
+}
 
 HRESULT CDatabase::Open2(IInStream *inStream, IArchiveOpenCallback *progress)
 {
   Clear();
-  static const unsigned kHeaderSize = kHeaderPadSize + 512;
-  Byte buf[kHeaderSize];
-  RINOK(ReadStream_FALSE(inStream, buf, kHeaderSize));
+  Byte buf[kHfsHeaderSize];
+  RINOK(ReadStream_FALSE(inStream, buf, kHfsHeaderSize));
   {
     for (unsigned i = 0; i < kHeaderPadSize; i++)
       if (buf[i] != 0)
@@ -1171,6 +1198,67 @@ HRESULT CDatabase::Open2(IInStream *inStream, IArchiveOpenCallback *progress)
 
   h.Header[0] = p[0];
   h.Header[1] = p[1];
+
+  if (p[0] == 'B' && p[1] == 'D')
+  {
+    /*
+    It's header for old HFS format.
+    We don't support old HFS format, but we support
+    special HFS volume that contains embedded HFS+ volume
+    */
+
+    if (p[0x7C] != 'H' || p[0x7C + 1] != '+')
+      return S_FALSE;
+
+    /*
+    h.CTime = Get32(p + 0x2);
+    h.MTime = Get32(p + 0x6);
+    
+    h.NumFiles = Get32(p + 0x54);
+    h.NumFolders = Get32(p + 0x58);
+    
+    if (h.NumFolders > ((UInt32)1 << 29) ||
+        h.NumFiles > ((UInt32)1 << 30))
+      return S_FALSE;
+    if (progress)
+    {
+      UInt64 numFiles = (UInt64)h.NumFiles + h.NumFolders + 1;
+      RINOK(progress->SetTotal(&numFiles, NULL));
+    }
+    h.NumFreeBlocks = Get16(p + 0x22);
+    */
+    
+    UInt32 blockSize = Get32(p + 0x14);
+    
+    {
+      unsigned i;
+      for (i = 9; ((UInt32)1 << i) != blockSize; i++)
+        if (i == 31)
+          return S_FALSE;
+      h.BlockSizeLog = i;
+    }
+    
+    h.NumBlocks = Get16(p + 0x12);
+    /*
+    we suppose that it has the follwing layout
+    {
+      start block with header
+      [h.NumBlocks]
+      end block with header
+    }
+    */
+    PhySize2 = ((UInt64)h.NumBlocks + 2) << h.BlockSizeLog;
+
+    UInt32 startBlock = Get16(p + 0x7C + 2);
+    UInt32 blockCount = Get16(p + 0x7C + 4);
+    SpecOffset = (UInt64)(1 + startBlock) << h.BlockSizeLog;
+    UInt64 phy = SpecOffset + ((UInt64)blockCount << h.BlockSizeLog);
+    if (PhySize2 < phy)
+      PhySize2 = phy;
+    RINOK(inStream->Seek(SpecOffset, STREAM_SEEK_SET, NULL));
+    RINOK(ReadStream_FALSE(inStream, buf, kHfsHeaderSize));
+  }
+
   if (p[0] != 'H' || (p[1] != '+' && p[1] != 'X'))
     return S_FALSE;
   h.Version = Get16(p + 2);
@@ -1330,7 +1418,14 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   {
     case kpidExtension: prop = Header.IsHfsX() ? "hfsx" : "hfs"; break;
     case kpidMethod: prop = Header.IsHfsX() ? "HFSX" : "HFS+"; break;
-    case kpidPhySize: prop = PhySize; break;
+    case kpidPhySize:
+    {
+      UInt64 v = SpecOffset + PhySize;
+      if (v < PhySize2)
+        v = PhySize2;
+      prop = v;
+      break;
+    }
     case kpidClusterSize: prop = (UInt32)1 << Header.BlockSizeLog; break;
     case kpidFreeSpace: prop = (UInt64)Header.GetFreeSize(); break;
     case kpidMTime: HfsTimeToProp(Header.MTime, prop); break;
@@ -1754,7 +1849,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           if (fork.Size == pos)
             break;
           const CExtent &e = fork.Extents[extentIndex];
-          RINOK(_stream->Seek((UInt64)e.Pos << Header.BlockSizeLog, STREAM_SEEK_SET, NULL));
+          RINOK(_stream->Seek(SpecOffset + ((UInt64)e.Pos << Header.BlockSizeLog), STREAM_SEEK_SET, NULL));
           UInt64 extentRem = (UInt64)e.NumBlocks << Header.BlockSizeLog;
           while (extentRem != 0)
           {
@@ -1865,6 +1960,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 }
 
 static const Byte k_Signature[] = {
+    2, 'B', 'D',
     4, 'H', '+', 0, 4,
     4, 'H', 'X', 0, 5 };
 
@@ -1873,6 +1969,6 @@ REGISTER_ARC_I(
   k_Signature,
   kHeaderPadSize,
   NArcInfoFlags::kMultiSignature,
-  NULL)
+  IsArc_HFS)
 
 }}

@@ -16,6 +16,7 @@
 #include "App.h"
 #include "FormatUtils.h"
 #include "LangUtils.h"
+#include "ListViewDialog.h"
 #include "MyLoadMenu.h"
 #include "PropertyName.h"
 
@@ -50,17 +51,40 @@ void CPanel::InvokeSystemCommand(const char *command)
   contextMenu->InvokeCommand(&ci);
 }
 
-static const char * const kSeparator = "----------------------------\n";
-static const char * const kSeparatorSmall = "----\n";
-static const char * const kPropValueSeparator = ": ";
+static const char * const kSeparator = "------------------------";
+static const char * const kSeparatorSmall = "----------------";
 
 extern UString ConvertSizeToString(UInt64 value) throw();
 bool IsSizeProp(UINT propID) throw();
 
 UString GetOpenArcErrorMessage(UInt32 errorFlags);
 
+
+static void AddListAscii(CListViewDialog &dialog, const char *s)
+{
+  dialog.Strings.Add((UString)s);
+  dialog.Values.AddNew();
+}
+
+static void AddSeparator(CListViewDialog &dialog)
+{
+  AddListAscii(dialog, kSeparator);
+}
+
+static void AddSeparatorSmall(CListViewDialog &dialog)
+{
+  AddListAscii(dialog, kSeparatorSmall);
+}
+
+static void AddPropertyPair(const UString &name, const UString &val, CListViewDialog &dialog)
+{
+  dialog.Strings.Add(name);
+  dialog.Values.Add(val);
+}
+
+
 static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
-    const NCOM::CPropVariant &prop, UString &s)
+    const NCOM::CPropVariant &prop, CListViewDialog &dialog)
 {
   if (prop.vt != VT_EMPTY)
   {
@@ -87,23 +111,16 @@ static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
 
     if (!val.IsEmpty())
     {
-      s += GetNameOfProperty(propID, nameBSTR);
-      s += kPropValueSeparator;
-      /*
-      if (propID == kpidComment)
-        s.Add_LF();
-      */
-      s += val;
-      s.Add_LF();
+      AddPropertyPair(GetNameOfProperty(propID, nameBSTR), val, dialog);
     }
   }
 }
 
 
-static void AddPropertyString(PROPID propID, UInt64 val, UString &s)
+static void AddPropertyString(PROPID propID, UInt64 val, CListViewDialog &dialog)
 {
   NCOM::CPropVariant prop = val;
-  AddPropertyString(propID, NULL, prop, s);
+  AddPropertyString(propID, NULL, prop, dialog);
 }
 
 
@@ -137,7 +154,9 @@ void CPanel::Properties()
   }
   
   {
-    UString message;
+    CListViewDialog message;
+    // message.DeleteIsAllowed = false;
+    // message.SelectFirst = false;
 
     CRecordVector<UInt32> operatedIndices;
     GetOperatedItemIndices(operatedIndices);
@@ -205,15 +224,12 @@ void CPanel::Properties()
                 }
               }
             }
-            message += GetNameOfProperty(propID, name);
-            message += kPropValueSeparator;
-            message += s.Ptr();
-            message.Add_LF();
+            AddPropertyPair(GetNameOfProperty(propID, name), (UString)s.Ptr(), message);
           }
         }
       }
 
-      message += kSeparator;
+      AddSeparator(message);
     }
     else if (operatedIndices.Size() >= 1)
     {
@@ -239,8 +255,7 @@ void CPanel::Properties()
       {
         wchar_t temp[32];
         ConvertUInt32ToString(operatedIndices.Size(), temp);
-        message += MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, temp);
-        message.Add_LF();
+        AddPropertyPair(L"", MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, temp), message);
       }
 
       if (numDirs != 0)
@@ -250,7 +265,7 @@ void CPanel::Properties()
       AddPropertyString(kpidSize, unpackSize, message);
       AddPropertyString(kpidPackSize, packSize, message);
 
-      message += kSeparator;
+      AddSeparator(message);
     }
 
         
@@ -309,7 +324,7 @@ void CPanel::Properties()
             {
               const int kNumSpecProps = ARRAY_SIZE(kSpecProps);
 
-              message += kSeparator;
+              AddSeparator(message);
               
               for (Int32 i = -(int)kNumSpecProps; i < (Int32)numProps; i++)
               {
@@ -334,7 +349,7 @@ void CPanel::Properties()
             UInt32 numProps;
             if (getProps->GetArcNumProps2(level, &numProps) == S_OK)
             {
-              message += kSeparatorSmall;
+              AddSeparatorSmall(message);
               for (Int32 i = 0; i < (Int32)numProps; i++)
               {
                 CMyComBSTR name;
@@ -352,9 +367,14 @@ void CPanel::Properties()
         }
       }
     }
-    ::MessageBoxW(*(this), message, LangString(IDS_PROPERTIES), MB_OK);
+
+    message.Title = LangString(IDS_PROPERTIES);
+    message.NumColumns = 2;
+    message.Create(GetParent());
   }
 }
+
+
 
 void CPanel::EditCut()
 {
@@ -403,81 +423,116 @@ void CPanel::EditPaste()
   // InvokeSystemCommand("paste");
 }
 
+
+
+struct CFolderPidls
+{
+  LPITEMIDLIST parent;
+  CRecordVector<LPITEMIDLIST> items;
+
+  CFolderPidls(): parent(NULL) {}
+  ~CFolderPidls()
+  {
+    FOR_VECTOR (i, items)
+      CoTaskMemFree(items[i]);
+    CoTaskMemFree(parent);
+  }
+};
+
+
 HRESULT CPanel::CreateShellContextMenu(
     const CRecordVector<UInt32> &operatedIndices,
     CMyComPtr<IContextMenu> &systemContextMenu)
 {
   systemContextMenu.Release();
-  UString folderPath = GetFsPath();
+  const UString folderPath = GetFsPath();
 
   CMyComPtr<IShellFolder> desktopFolder;
   RINOK(::SHGetDesktopFolder(&desktopFolder));
   if (!desktopFolder)
   {
-    // ShowMessage("Failed to get Desktop folder.");
+    // ShowMessage("Failed to get Desktop folder");
     return E_FAIL;
   }
   
-  // Separate the file from the folder.
-
-  
-  // Get a pidl for the folder the file
-  // is located in.
-  LPITEMIDLIST parentPidl;
+  CFolderPidls pidls;
   DWORD eaten;
+
+  // if (folderPath.IsEmpty()), then ParseDisplayName returns pidls of "My Computer"
   RINOK(desktopFolder->ParseDisplayName(
-      GetParent(), 0, (wchar_t *)(const wchar_t *)folderPath,
-      &eaten, &parentPidl, 0));
+      GetParent(), NULL, (wchar_t *)(const wchar_t *)folderPath,
+      &eaten, &pidls.parent, NULL));
+
+  /*
+  STRRET pName;
+  res = desktopFolder->GetDisplayNameOf(pidls.parent,  SHGDN_NORMAL, &pName);
+  WCHAR dir[MAX_PATH];
+  if (!SHGetPathFromIDListW(pidls.parent, dir))
+    dir[0] = 0;
+  */
+
+  if (!pidls.parent)
+    return E_FAIL;
+
+  if (operatedIndices.IsEmpty())
+  {
+    // how to get IContextMenu, if there are no selected files?
+    return E_FAIL;
+
+    /*
+    xp64 :
+    1) we can't use GetUIObjectOf() with (numItems == 0), it throws exception
+    2) we can't use desktopFolder->GetUIObjectOf() with absolute pidls of folder
+        context menu items are different in that case:
+          "Open / Explorer" for folder
+          "Delete" for "My Computer" icon
+          "Preperties" for "System"
+    */
+    /*
+    parentFolder = desktopFolder;
+    pidls.items.AddInReserved(pidls.parent);
+    pidls.parent = NULL;
+    */
+
+    // CreateViewObject() doesn't show all context menu items
+    /*
+    HRESULT res = parentFolder->CreateViewObject(
+        GetParent(), IID_IContextMenu, (void**)&systemContextMenu);
+    */
+  }
   
-  // Get an IShellFolder for the folder
-  // the file is located in.
   CMyComPtr<IShellFolder> parentFolder;
-  RINOK(desktopFolder->BindToObject(parentPidl,
-      0, IID_IShellFolder, (void**)&parentFolder));
+  RINOK(desktopFolder->BindToObject(pidls.parent,
+      NULL, IID_IShellFolder, (void**)&parentFolder));
   if (!parentFolder)
   {
-    // ShowMessage("Invalid file name.");
+    // ShowMessage("Invalid file name");
     return E_FAIL;
   }
   
-  // Get a pidl for the file itself.
-  CRecordVector<LPITEMIDLIST> pidls;
-  pidls.ClearAndReserve(operatedIndices.Size());
+  pidls.items.ClearAndReserve(operatedIndices.Size());
   FOR_VECTOR (i, operatedIndices)
   {
     LPITEMIDLIST pidl;
-    UString fileName = GetItemRelPath2(operatedIndices[i]);
+    const UString fileName = GetItemRelPath2(operatedIndices[i]);
     RINOK(parentFolder->ParseDisplayName(GetParent(), 0,
-      (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
-    pidls.AddInReserved(pidl);
+        (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
+    pidls.items.AddInReserved(pidl);
   }
+  
+  // Get IContextMenu for items
 
-  ITEMIDLIST temp;
-  if (pidls.Size() == 0)
+  RINOK(parentFolder->GetUIObjectOf(GetParent(), pidls.items.Size(),
+      (LPCITEMIDLIST *)&pidls.items.Front(), IID_IContextMenu, 0, (void**)&systemContextMenu));
+  
+  if (!systemContextMenu)
   {
-    temp.mkid.cb = 0;
-    /*
-    LPITEMIDLIST pidl;
-    HRESULT result = parentFolder->ParseDisplayName(GetParent(), 0,
-      L"." WSTRING_PATH_SEPARATOR, &eaten, &pidl, 0);
-    if (result != NOERROR)
-      return;
-    */
-    pidls.Add(&temp);
-  }
-
-  // Get the IContextMenu for the file.
-  CMyComPtr<IContextMenu> cm;
-  RINOK( parentFolder->GetUIObjectOf(GetParent(), pidls.Size(),
-      (LPCITEMIDLIST *)&pidls.Front(), IID_IContextMenu, 0, (void**)&cm));
-  if (!cm)
-  {
-    // ShowMessage("Unable to get context menu interface.");
+    // ShowMessage("Unable to get context menu interface");
     return E_FAIL;
   }
-  systemContextMenu = cm;
   return S_OK;
 }
+
 
 void CPanel::CreateSystemMenu(HMENU menuSpec,
     const CRecordVector<UInt32> &operatedIndices,

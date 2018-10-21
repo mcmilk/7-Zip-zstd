@@ -19,8 +19,8 @@ class CDecoder :
   public ICompressGetInStreamProcessedSize,
   public CMyUnknownImp
 {
-  UInt64 _inProcessed;
   bool _fullStreamMode;
+  UInt64 _inProcessed;
 
   UInt16 _parents[kNumItems];
   Byte _suffixes[kNumItems];

@@ -50,6 +50,17 @@ const UInt32 kNumSelectorsMax = (2 + (kBlockSizeMax / kGroupSize));
 
 const unsigned kRleModeRepSize = 4;
 
+/*
+The number of selectors stored in bzip2 block:
+(numSelectors <= 18001) - must work with any decoder.
+(numSelectors == 18002) - works with bzip2 1.0.6 decoder and all derived decoders.
+(numSelectors  > 18002)
+   7-Zip decoder doesn't support it.
+   bzip2 1.0.6 decoder can overflow selector[18002] arrays. But there are another
+               arrays after selector arrays. So the compiled code works.
+   lbzip2 2.5 encoder can write up to (18001 + 7) selectors.
+*/
+
 }}
 
 #endif

@@ -131,6 +131,7 @@ namespace NFileHeader
     const unsigned kDescriptorUsedMask = 1 << 3;
     const unsigned kStrongEncrypted = 1 << 6;
     const unsigned kUtf8 = 1 << 11;
+    const unsigned kAltStream = 1 << 14;
 
     const unsigned kImplodeDictionarySizeMask = 1 << 1;
     const unsigned kImplodeLiteralsOnMask     = 1 << 2;

@@ -43,6 +43,7 @@ AR_OBJS = \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \
+  $O\HandlerOut.obj \
   $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
   $O\ParseProperties.obj \
@@ -99,7 +100,9 @@ C_OBJS = \
   $O\CpuArch.obj \
   $O\Delta.obj \
   $O\Lzma2Dec.obj \
+  $O\Lzma2DecMt.obj \
   $O\LzmaDec.obj \
+  $O\MtDec.obj \
   $O\Ppmd7.obj \
   $O\Ppmd7Dec.obj \
   $O\Sha256.obj \
@@ -198,5 +201,6 @@ ZSTDMT_OBJS = \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+!include "../../LzmaDec.mak"
 
 !include "../../7zip.mak"

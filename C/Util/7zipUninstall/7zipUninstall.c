@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2017-04-04 : Igor Pavlov : Public domain */
+2018-03-01 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -546,7 +546,7 @@ static BOOL RemoveDir()
 #define k_Lang L"Lang"
 
 // NUM_LANG_TXT_FILES files are placed before en.ttt
-#define NUM_LANG_TXT_FILES 87
+#define NUM_LANG_TXT_FILES 88
 
 #ifdef _64BIT_INSTALLER
   #define NUM_EXTRA_FILES_64BIT 1
@@ -558,7 +558,7 @@ static BOOL RemoveDir()
 
 static const char * const k_Names =
   "af an ar ast az ba be bg bn br ca co cs cy da de el eo es et eu ext"
-  " fa fi fr fur fy ga gl gu he hi hr hu hy id io is it ja ka kaa kk ko ku ku-ckb ky"
+  " fa fi fr fur fy ga gl gu he hi hr hu hy id io is it ja ka kaa kab kk ko ku ku-ckb ky"
   " lij lt lv mk mn mng mng2 mr ms nb ne nl nn pa-in pl ps pt pt-br ro ru"
   " sa si sk sl sq sr-spc sr-spl sv ta th tr tt ug uk uz va vi yo zh-cn zh-tw"
   " en.ttt"

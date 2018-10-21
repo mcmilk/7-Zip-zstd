@@ -425,11 +425,27 @@ SOURCE=.\CompressDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\FileManager\EditDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\EditDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\ExtractDialog.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\ExtractDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\ListViewDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\ListViewDialog.h
 # End Source File
 # Begin Source File
 
@@ -975,6 +991,14 @@ SOURCE=..\..\..\Windows\Control\Static.h
 # End Group
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Clipboard.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Clipboard.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\COM.h
 # End Source File
 # Begin Source File
@@ -1048,6 +1072,14 @@ SOURCE=..\..\..\Windows\FileSystem.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\FileSystem.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryGlobal.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryGlobal.h
 # End Source File
 # Begin Source File
 

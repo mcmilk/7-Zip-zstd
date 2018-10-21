@@ -75,6 +75,7 @@ static void SetFileHeader(
     item.Name = ui.Name;
     item.Comment = ui.Comment;
     item.SetUtf8(ui.IsUtf8);
+    // item.SetFlag_AltStream(ui.IsAltStream);
     item.ExternalAttrib = ui.Attrib;
     item.Time = ui.Time;
     item.Ntfs_MTime = ui.Ntfs_MTime;
@@ -280,6 +281,7 @@ public:
   MY_UNKNOWN_IMP
   void Create(IProgress *progress, bool inSizeIsMain);
   void SetProgressOffset(UInt64 progressOffset);
+  void SetProgressOffset_NoLock(UInt64 progressOffset);
   HRESULT SetRatioInfo(unsigned index, const UInt64 *inSize, const UInt64 *outSize);
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
@@ -292,11 +294,16 @@ void CMtProgressMixer2::Create(IProgress *progress, bool inSizeIsMain)
   ProgressOffset = InSizes[0] = InSizes[1] = OutSizes[0] = OutSizes[1] = 0;
 }
 
+void CMtProgressMixer2::SetProgressOffset_NoLock(UInt64 progressOffset)
+{
+  InSizes[1] = OutSizes[1] = 0;
+  ProgressOffset = progressOffset;
+}
+
 void CMtProgressMixer2::SetProgressOffset(UInt64 progressOffset)
 {
   CriticalSection.Enter();
-  InSizes[1] = OutSizes[1] = 0;
-  ProgressOffset = progressOffset;
+  SetProgressOffset_NoLock(progressOffset);
   CriticalSection.Leave();
 }
 
@@ -384,6 +391,7 @@ static HRESULT UpdateItemOldData(
     item.Comment = ui.Comment;
     item.Name = ui.Name;
     item.SetUtf8(ui.IsUtf8);
+    // item.SetFlag_AltStream(ui.IsAltStream);
     item.Time = ui.Time;
     item.Ntfs_MTime = ui.Ntfs_MTime;
     item.Ntfs_ATime = ui.Ntfs_ATime;
@@ -602,8 +610,11 @@ static HRESULT Update2St(
   lps->InSize = unpackSizeTotal;
   lps->OutSize = packSizeTotal;
   RINOK(lps->SetCur());
+
   archive.WriteCentralDir(items, comment);
-  return S_OK;
+
+  lps->ProgressOffset += kCentralHeaderSize * updateItems.Size() + 1;
+  return lps->SetCur();
 }
 
 
@@ -897,7 +908,7 @@ static HRESULT Update2(
         {
           complexity += ui.Size;
           complexity += kLocalHeaderSize;
-          mtProgressMixerSpec->Mixer2->SetProgressOffset(complexity);
+          mtProgressMixerSpec->Mixer2->SetProgressOffset_NoLock(complexity);
           RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
           memRef2.Skip = true;
           continue;
@@ -1107,8 +1118,13 @@ static HRESULT Update2(
   }
   
   RINOK(mtCompressProgressMixer.SetRatioInfo(0, NULL, NULL));
+
   archive.WriteCentralDir(items, comment);
-  return S_OK;
+  
+  complexity += kCentralHeaderSize * updateItems.Size() + 1;
+  mtProgressMixerSpec->Mixer2->SetProgressOffset(complexity);
+  return mtCompressProgressMixer.SetRatioInfo(0, NULL, NULL);
+
   #endif
 }
 

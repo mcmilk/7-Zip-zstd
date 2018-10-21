@@ -1,10 +1,10 @@
-// CompressCall.cpp
+// CompressCall2.cpp
 
 #include "StdAfx.h"
 
 #include "../../../Common/MyException.h"
 
-#include "../../UI/common/ArchiveCommandLine.h"
+#include "../../UI/Common/EnumDirItems.h"
 
 #include "../../UI/GUI/BenchmarkDialog.h"
 #include "../../UI/GUI/ExtractGUI.h"
@@ -20,6 +20,7 @@ extern HWND g_HWND;
 #define MY_TRY_BEGIN  HRESULT result; try {
 #define MY_TRY_FINISH } \
   catch(CSystemException &e) { result = e.ErrorCode; } \
+  catch(UString &s) { ErrorMessage(s); result = E_FAIL; } \
   catch(...) { result = E_FAIL; } \
   if (result != S_OK && result != E_ABORT) \
     ErrorMessageHRESULT(result);

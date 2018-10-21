@@ -180,7 +180,7 @@ struct CItem
 
   AString Name;
 
-  int VolIndex;
+  unsigned VolIndex;
   int NextItem;
 
   UInt32 UnixMTime;

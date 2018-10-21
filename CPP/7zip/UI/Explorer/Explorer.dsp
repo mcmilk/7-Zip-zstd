@@ -479,6 +479,14 @@ SOURCE=..\..\..\Windows\MemoryGlobal.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\MemoryLock.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryLock.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Menu.cpp
 # End Source File
 # Begin Source File

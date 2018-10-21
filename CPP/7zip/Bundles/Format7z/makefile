@@ -122,10 +122,12 @@ C_OBJS = \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
   $O\Lzma2Dec.obj \
+  $O\Lzma2DecMt.obj \
   $O\Lzma2Enc.obj \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
   $O\MtCoder.obj \
+  $O\MtDec.obj \
   $O\Ppmd7.obj \
   $O\Ppmd7Dec.obj \
   $O\Ppmd7Enc.obj \
@@ -135,6 +137,7 @@ C_OBJS = \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+!include "../../LzmaDec.mak"
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\BrotliDecoder.obj \

@@ -15,13 +15,13 @@ You can install it in two ways:
 
 
 ## Codec overview
-1. [Zstandard] v1.3.2 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+1. [Zstandard] v1.3.6 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
-2. [Brotli] v.1.0.1 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
+2. [Brotli] v.1.0.6 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
    - Levels: 0..11
 
-3. [LZ4] v1.8.0 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
+3. [LZ4] v1.8.3 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
    - Levels: 1..12
 
 4. [LZ5] v1.5 is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
@@ -44,7 +44,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 17.01 ZS v1.3.2 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov
+7-Zip 17.01 ZS v1.3.6 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov
 
 
 Libs:
@@ -247,13 +247,13 @@ You find this project useful, maybe you consider a donation ;-)
 ## Version Information
 
 - 7-Zip ZS Version 17.01
-  - [Brotli] Version 1.0.1
+  - [Brotli] Version 1.0.6
   - [Lizard] Version 1.0
-  - [LZ4] Version 1.8.0
+  - [LZ4] Version 1.8.3
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.3.2
+  - [Zstandard] Version 1.3.6
 
-/TR 2017-10-31
+/TR 2018-10-21
 
 [7-Zip]:http://www.7-zip.org/
 [lzip]:http://www.nongnu.org/lzip/

@@ -1,6 +1,27 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+18.05          2018-04-30
+-------------------------
+- The speed for LZMA/LZMA2 compressing was increased 
+    by 8% for fastest/fast compression levels and 
+    by 3% for normal/maximum compression levels.
+- Previous versions of 7-Zip could work incorrectly in "Large memory pages" mode in
+  Windows 10 because of some BUG with "Large Pages" in Windows 10. 
+  Now 7-Zip doesn't use "Large Pages" on Windows 10 up to revision 1709 (16299).
+
+
+18.03 beta     2018-03-04
+-------------------------
+- Asm\x86\LzmaDecOpt.asm: new optimized LZMA decoder written in asm 
+  for x64 with about 30% higher speed than main version of LZMA decoder written in C.
+- The speed for single-thread LZMA/LZMA2 decoder written in C was increased by 3%.
+- 7-Zip now can use multi-threading for 7z/LZMA2 decoding,
+  if there are multiple independent data chunks in LZMA2 stream.
+- 7-Zip now can use multi-threading for xz decoding,
+  if there are multiple blocks in xz stream.
+
+
 17.00 beta     2017-04-29
 -------------------------
 - NewHandler.h / NewHandler.cpp: 

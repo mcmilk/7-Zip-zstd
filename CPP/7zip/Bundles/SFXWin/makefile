@@ -1,4 +1,6 @@
 PROG = 7z.sfx
+MY_FIXED = 1
+
 CFLAGS = $(CFLAGS) \
   -DNO_REGISTRY \
   -DEXTRACT_ONLY \
@@ -42,6 +44,7 @@ WIN_OBJS = \
   $O\Shell.obj \
   $O\System.obj \
   $O\Synchronization.obj \
+  $O\System.obj \
   $O\Window.obj \
 
 WIN_CTRL_OBJS = \
@@ -136,7 +139,9 @@ C_OBJS = \
   $O\Delta.obj \
   $O\DllSecur.obj \
   $O\Lzma2Dec.obj \
+  $O\Lzma2DecMt.obj \
   $O\LzmaDec.obj \
+  $O\MtDec.obj \
   $O\Ppmd7.obj \
   $O\Ppmd7Dec.obj \
   $O\Sha256.obj \
@@ -144,6 +149,7 @@ C_OBJS = \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+!include "../../LzmaDec.mak"
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdDecoder.obj \

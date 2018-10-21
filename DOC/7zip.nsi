@@ -1,8 +1,8 @@
 ;--------------------------------
 ;Defines
 
-!define VERSION_MAJOR 17
-!define VERSION_MINOR 01
+!define VERSION_MAJOR 18
+!define VERSION_MINOR 05
 !define VERSION_POSTFIX_FULL " ZS"
 !ifdef WIN64
 !ifdef IA64
@@ -220,6 +220,7 @@ Section
   File ja.txt
   File ka.txt
   File kaa.txt
+  File kab.txt
   File kk.txt
   File ko.txt
   File ku.txt
@@ -421,6 +422,7 @@ Section Uninstall
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ka.txt
   Delete $INSTDIR\Lang\kaa.txt
+  Delete $INSTDIR\Lang\kab.txt
   Delete $INSTDIR\Lang\kk.txt
   Delete $INSTDIR\Lang\ko.txt
   Delete $INSTDIR\Lang\ku.txt

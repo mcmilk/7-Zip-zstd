@@ -247,6 +247,7 @@ END
 #include "BrowseDialog.rc"
 #include "ComboDialog.rc"
 #include "CopyDialog.rc"
+#include "EditDialog.rc"
 #include "EditPage.rc"
 #include "FoldersPage.rc"
 #include "LangPage.rc"

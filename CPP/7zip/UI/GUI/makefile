@@ -36,6 +36,7 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
+  $O\Clipboard.obj \
   $O\CommonDialog.obj \
   $O\DLL.obj \
   $O\ErrorMsg.obj \
@@ -45,6 +46,7 @@ WIN_OBJS = \
   $O\FileLink.obj \
   $O\FileName.obj \
   $O\FileSystem.obj \
+  $O\MemoryGlobal.obj \
   $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
@@ -102,10 +104,12 @@ AR_COMMON_OBJS = \
   $O\OutStreamWithCRC.obj \
 
 FM_OBJS = \
+  $O\EditDialog.obj \
   $O\ExtractCallback.obj \
   $O\FormatUtils.obj \
   $O\HelpUtils.obj \
   $O\LangUtils.obj \
+  $O\ListViewDialog.obj \
   $O\OpenCallback.obj \
   $O\ProgramLocation.obj \
   $O\PropertyName.obj \

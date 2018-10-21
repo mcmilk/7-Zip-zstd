@@ -139,11 +139,10 @@ static unsigned ReadVarInt(const Byte *p, size_t maxSize, UInt64 *val)
 {
   *val = 0;
 
-  for (unsigned i = 0; i < maxSize;)
+  for (unsigned i = 0; i < maxSize && i < 10;)
   {
     Byte b = p[i];
-    if (i < 10)
-      *val |= (UInt64)(b & 0x7F) << (7 * i);
+    *val |= (UInt64)(b & 0x7F) << (7 * i);
     i++;
     if ((b & 0x80) == 0)
       return i;
@@ -1086,7 +1085,7 @@ HRESULT CUnpacker::Create(DECL_EXTERNAL_CODECS_LOC_VARS const CItem &item, bool 
     if (!lzCoder)
     {
       const UInt32 methodID = 0x40305;
-      RINOK(CreateCoder(EXTERNAL_CODECS_LOC_VARS methodID, false, lzCoder));
+      RINOK(CreateCoder_Id(EXTERNAL_CODECS_LOC_VARS methodID, false, lzCoder));
       if (!lzCoder)
         return E_NOTIMPL;
     }
@@ -1363,7 +1362,9 @@ static const Byte kProps[] =
   kpidCharacts,
   kpidSymLink,
   kpidHardLink,
-  kpidCopyLink
+  kpidCopyLink,
+
+  kpidVolumeIndex
 };
 
 
@@ -1794,6 +1795,18 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
     case kpidSplitBefore: prop = item.IsSplitBefore(); break;
     case kpidSplitAfter: prop = lastItem.IsSplitAfter(); break;
+
+    case kpidVolumeIndex:
+    {
+      if (item.VolIndex < _arcs.Size())
+      {
+        const CInArcInfo &arcInfo = _arcs[item.VolIndex].Info;
+        if (arcInfo.IsVolume())
+          prop = (UInt64)arcInfo.GetVolIndex();
+      }
+      break;
+    }
+
     case kpidCRC:
     {
       const CItem *item2 = (lastItem.IsSplitAfter() ? &item : &lastItem);

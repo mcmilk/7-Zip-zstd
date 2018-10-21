@@ -13,11 +13,11 @@ O=O
 !ENDIF
 
 !IF "$(CPU)" == "AMD64"
-MY_ML = ml64 -Dx64
+MY_ML = ml64 -Dx64 -WX
 !ELSEIF "$(CPU)" == "ARM"
-MY_ML = armasm
+MY_ML = armasm -WX
 !ELSE
-MY_ML = ml
+MY_ML = ml -WX
 !ENDIF
 
 
@@ -30,9 +30,9 @@ LFLAGS = $(LFLAGS) /ENTRY:mainACRTStartup
 !IFNDEF NEW_COMPILER
 LFLAGS = $(LFLAGS)
 !ENDIF
-# !IF "$(CPU)" != "ARM"
+!IF "$(CPU)" != "ARM" && "$(CPU)" != "ARM64"
 CFLAGS = $(CFLAGS) -Gr
-# !ENDIF
+!ENDIF
 LIBS = $(LIBS) user32.lib advapi32.lib shell32.lib
 !ENDIF
 
@@ -80,9 +80,11 @@ LFLAGS = $(LFLAGS) /LTCG /LARGEADDRESSAWARE
 !IFDEF DEF_FILE
 LFLAGS = $(LFLAGS) -DLL -DEF:$(DEF_FILE)
 !ELSE
-# !IF "$(CPU)" != "ARM"
+!IF defined(MY_FIXED) && "$(CPU)" != "ARM" && "$(CPU)" != "ARM64"
 LFLAGS = $(LFLAGS) /FIXED
-# !ENDIF
+!ELSE
+LFLAGS = $(LFLAGS) /FIXED:NO
+!ENDIF
 # /BASE:0x400000
 !ENDIF
 
@@ -113,10 +115,11 @@ COMPLB    = $(CC) $(CFLAGS_O1) -Yu"StdAfx.h" -Fp$O/a.pch $<
 # COMPLB_O2 = $(CC) $(CFLAGS_O2) -Yu"StdAfx.h" -Fp$O/a.pch $<
 COMPLB_O2 = $(CC) $(CFLAGS_O2) $<
 
-CCOMPL_PCH  = $(CC) $(CFLAGS_O2) -Yc"Precomp.h" -Fp$O/a.pch $**
-CCOMPL_USE  = $(CC) $(CFLAGS_O2) -Yu"Precomp.h" -Fp$O/a.pch $**
-CCOMPL      = $(CC) $(CFLAGS_O2) $**
-CCOMPLB     = $(CC) $(CFLAGS_O2) $<
+CFLAGS_C_ALL = $(CFLAGS_O2) $(CFLAGS_C_SPEC)
+CCOMPL_PCH  = $(CC) $(CFLAGS_C_ALL) -Yc"Precomp.h" -Fp$O/a.pch $**
+CCOMPL_USE  = $(CC) $(CFLAGS_C_ALL) -Yu"Precomp.h" -Fp$O/a.pch $**
+CCOMPL      = $(CC) $(CFLAGS_C_ALL) $**
+CCOMPLB     = $(CC) $(CFLAGS_C_ALL) $<
 
 
 all: $(PROGPATH)

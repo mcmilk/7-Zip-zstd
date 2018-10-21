@@ -1993,6 +1993,13 @@ HRESULT CVols::ParseArcName(IArchiveOpenVolumeCallback *volCallback)
     }
     else if (ext.IsEqualTo_Ascii_NoCase("exe"))
     {
+      /* possible cases:
+         - exe with zip inside
+         - sfx: a.exe, a.z02, a.z03,... , a.zip
+                a.exe is start volume.
+         - zip renamed to exe
+      */
+
       StartIsExe = true;
       BaseName = name;
       StartVolIndex = 0;
@@ -2000,7 +2007,22 @@ HRESULT CVols::ParseArcName(IArchiveOpenVolumeCallback *volCallback)
          We can open arc.zip, if it was requesed to open arc.exe.
          But it's possible that arc.exe and arc.zip are not parts of same archive.
          So we can disable such operation */
-      return S_FALSE; // don't open arc.zip instead of arc.exe
+
+      // 18.04: we still want to open zip renamed to exe.
+      /*
+      {
+        UString volName = name;
+        volName += IsUpperCase ? "Z01" : "z01";
+        {
+          CMyComPtr<IInStream> stream;
+          HRESULT res2 = volCallback->GetStream(volName, &stream);
+          if (res2 == S_OK)
+            DisableVolsSearch = true;
+        }
+      }
+      */
+      DisableVolsSearch = true;
+      return S_OK;
     }
     else if (ext[0] == 'z' || ext[0] == 'Z')
     {
@@ -2040,6 +2062,9 @@ HRESULT CVols::ParseArcName(IArchiveOpenVolumeCallback *volCallback)
 HRESULT CInArchive::ReadVols2(IArchiveOpenVolumeCallback *volCallback,
     unsigned start, int lastDisk, int zipDisk, unsigned numMissingVolsMax, unsigned &numMissingVols)
 {
+  if (Vols.DisableVolsSearch)
+    return S_OK;
+
   numMissingVols = 0;
 
   for (unsigned i = start;; i++)
@@ -2090,6 +2115,8 @@ HRESULT CInArchive::ReadVols2(IArchiveOpenVolumeCallback *volCallback,
       }
       if (res == S_FALSE || !stream)
       {
+        if (i == 1 && Vols.StartIsExe)
+          return S_OK;
         if (Vols.MissingName.IsEmpty())
           Vols.MissingName = volName;
         numMissingVols++;

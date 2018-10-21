@@ -19,6 +19,7 @@
 
 #include "../Compress/BZip2Decoder.h"
 #include "../Compress/CopyCoder.h"
+#include "../Compress/LzfseDecoder.h"
 #include "../Compress/ZlibDecoder.h"
 
 #include "Common/OutStreamWithCRC.h"
@@ -121,6 +122,7 @@ enum
   METHOD_ADC    = 0x80000004,
   METHOD_ZLIB   = 0x80000005,
   METHOD_BZIP2  = 0x80000006,
+  METHOD_LZFSE  = 0x80000007,
   METHOD_COMMENT = 0x7FFFFFFE, // is used to comment "+beg" and "+end" in extra field.
   METHOD_END    = 0xFFFFFFFF
 };
@@ -217,6 +219,7 @@ class CHandler:
   bool _masterCrcError;
   bool _headersError;
 
+  UInt32 _dataStartOffset;
   UInt64 _startPos;
   UInt64 _phySize;
 
@@ -276,6 +279,7 @@ void CMethods::GetString(AString &res) const
       case METHOD_ADC:    s = "ADC";   break;
       case METHOD_ZLIB:   s = "ZLIB";  break;
       case METHOD_BZIP2:  s = "BZip2"; break;
+      case METHOD_LZFSE:  s = "LZFSE"; break;
       default: ConvertUInt32ToString(type, buf); s = buf;
     }
     res.Add_OptSpaced(s);
@@ -307,6 +311,10 @@ static const CAppleName k_Names[] =
   { true,  "hfs",  "Apple_HFS" },
   { true,  "hfsx", "Apple_HFSX" },
   { true,  "ufs",  "Apple_UFS" },
+
+  // efi_sys partition is FAT32, but it's not main file. So we use (IsFs = false)
+  { false,  "efi_sys", "C12A7328-F81F-11D2-BA4B-00A0C93EC93B" },
+
   { false, "free", "Apple_Free" },
   { false, "ddm",  "DDM" },
   { false, NULL,   "Apple_partition_map" },
@@ -326,6 +334,7 @@ static const Byte kProps[] =
   kpidCRC,
   kpidComment,
   kpidMethod
+  // kpidOffset
 };
 
 IMP_IInArchive_Props
@@ -624,17 +633,40 @@ bool CHandler::ParseBlob(const CByteBuffer &data)
 
 HRESULT CHandler::Open2(IInStream *stream)
 {
+  /*
+  - usual dmg contains Koly Header at the end:
+  - rare case dmg contains Koly Header at the start.
+  */
+
+  _dataStartOffset = 0;
   RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_startPos));
+
+  UInt64 fileSize = 0;
+  RINOK(stream->Seek(0, STREAM_SEEK_END, &fileSize));
+  RINOK(stream->Seek(_startPos, STREAM_SEEK_SET, NULL));
 
   Byte buf[HEADER_SIZE];
   RINOK(ReadStream_FALSE(stream, buf, HEADER_SIZE));
 
   UInt64 headerPos;
+  bool startKolyMode = false;
+
   if (IsKoly(buf))
+  {
+    // it can be normal koly-at-the-end or koly-at-the-start
     headerPos = _startPos;
+    if (_startPos <= (1 << 8))
+    {
+      // we want to support startKolyMode, even if there is
+      // some data before dmg file, like 128 bytes MacBin header
+      _dataStartOffset = HEADER_SIZE;
+      startKolyMode = true;
+    }
+  }
   else
   {
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &headerPos));
+    // we check only koly-at-the-end
+    headerPos = fileSize;
     if (headerPos < HEADER_SIZE)
       return S_FALSE;
     headerPos -= HEADER_SIZE;
@@ -660,24 +692,35 @@ HRESULT CHandler::Open2(IInStream *stream)
   // CChecksum dataForkChecksum;
   // dataForkChecksum.Parse(buf + 0x50);
 
-  _startPos = 0;
-
   UInt64 top = 0;
-  if (!dataForkPair.UpdateTop(headerPos, top)) return S_FALSE;
-  if (!xmlPair.UpdateTop(headerPos, top)) return S_FALSE;
-  if (!rsrcPair.UpdateTop(headerPos, top)) return S_FALSE;
+  UInt64 limit = startKolyMode ? fileSize : headerPos;
+
+  if (!dataForkPair.UpdateTop(limit, top)) return S_FALSE;
+  if (!xmlPair.UpdateTop(limit, top)) return S_FALSE;
+  if (!rsrcPair.UpdateTop(limit, top)) return S_FALSE;
 
   /* Some old dmg files contain garbage data in blobPair field.
      So we need to ignore such garbage case;
      And we still need to detect offset of start of archive for "parser" mode. */
 
-  bool useBlob = blobPair.UpdateTop(headerPos, top);
+  bool useBlob = blobPair.UpdateTop(limit, top);
 
-  _startPos = 0;
-  _phySize = headerPos + HEADER_SIZE;
 
-  if (top != headerPos)
+  if (startKolyMode)
+    _phySize = top;
+  else
   {
+    _phySize = headerPos + HEADER_SIZE;
+    _startPos = 0;
+    if (top != headerPos)
+    {
+      /*
+      if expected absolute offset is not equal to real header offset,
+      2 cases are possible:
+        - additional (unknown) headers
+        - archive with offset.
+       So we try to read XML with absolute offset to select from these two ways.
+      */
     CForkPair xmlPair2 = xmlPair;
     const char *sz = "<?xml version";
     const unsigned len = (unsigned)strlen(sz);
@@ -687,8 +730,10 @@ HRESULT CHandler::Open2(IInStream *stream)
     if (ReadData(stream, xmlPair2, buf2) != S_OK
         || memcmp(buf2, sz, len) != 0)
     {
+      // if absolute offset is not OK, probably it's archive with offset
       _startPos = headerPos - top;
       _phySize = top + HEADER_SIZE;
+    }
     }
   }
 
@@ -1034,6 +1079,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         break;
       }
 
+      /*
+      case kpidOffset:
+      {
+        prop = item.StartPos;
+        break;
+      }
+      */
+
       case kpidMethod:
       {
         CMethods m;
@@ -1247,6 +1300,11 @@ STDMETHODIMP CAdcDecoder::Code(ISequentialInStream *inStream,
 }
 
 
+
+
+
+
+
 STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
@@ -1291,6 +1349,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   CAdcDecoder *adcCoderSpec = new CAdcDecoder();
   CMyComPtr<ICompressCoder> adcCoder = adcCoderSpec;
+
+  NCompress::NLzfse::CDecoder *lzfseCoderSpec = new NCompress::NLzfse::CDecoder();
+  CMyComPtr<ICompressCoder> lzfseCoder = lzfseCoderSpec;
 
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
@@ -1369,7 +1430,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             break;
           }
 
-          RINOK(_inStream->Seek(_startPos + item.StartPos + block.PackPos, STREAM_SEEK_SET, NULL));
+          RINOK(_inStream->Seek(_startPos + _dataStartOffset + item.StartPos + block.PackPos, STREAM_SEEK_SET, NULL));
           streamSpec->Init(block.PackSize);
           bool realMethod = true;
           outStreamSpec->Init(block.UnpSize);
@@ -1417,6 +1478,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
               if (res == S_OK)
                 if (bzip2CoderSpec->GetInputProcessedSize() != block.PackSize)
                   opRes = NExtract::NOperationResult::kDataError;
+              break;
+            }
+
+            case METHOD_LZFSE:
+            {
+              res = lzfseCoder->Code(inStream, outStream, &block.PackSize, &block.UnpSize, progress);
               break;
             }
             
@@ -1489,6 +1556,9 @@ class CInStream:
 
   CAdcDecoder *adcCoderSpec;
   CMyComPtr<ICompressCoder> adcCoder;
+
+  NCompress::NLzfse::CDecoder *lzfseCoderSpec;
+  CMyComPtr<ICompressCoder> lzfseCoder;
 
   CBufPtrSeqOutStream *outStreamSpec;
   CMyComPtr<ISequentialOutStream> outStream;
@@ -1651,6 +1721,15 @@ STDMETHODIMP CInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
             if (res == S_OK && bzip2CoderSpec->GetInputProcessedSize() != block.PackSize)
               res = S_FALSE;
             break;
+
+          case METHOD_LZFSE:
+            if (!lzfseCoder)
+            {
+              lzfseCoderSpec = new NCompress::NLzfse::CDecoder();
+              lzfseCoder = lzfseCoderSpec;
+            }
+            res = lzfseCoder->Code(inStream, outStream, &block.PackSize, &block.UnpSize, NULL);
+            break;
             
           default:
             return E_FAIL;
@@ -1738,6 +1817,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
       case METHOD_ADC:
       case METHOD_ZLIB:
       case METHOD_BZIP2:
+      case METHOD_LZFSE:
       case METHOD_END:
         break;
       default:
@@ -1747,7 +1827,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   
   spec->Stream = _inStream;
   spec->Size = spec->File->Size;
-  RINOK(spec->InitAndSeek(_startPos));
+  RINOK(spec->InitAndSeek(_startPos + _dataStartOffset));
   *stream = specStream.Detach();
   return S_OK;
   

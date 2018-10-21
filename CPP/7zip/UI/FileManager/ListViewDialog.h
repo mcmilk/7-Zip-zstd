@@ -15,16 +15,32 @@ class CListViewDialog: public NWindows::NControl::CModalDialog
   virtual bool OnInit();
   virtual bool OnSize(WPARAM wParam, int xSize, int ySize);
   virtual bool OnNotify(UINT controlID, LPNMHDR header);
+  void CopyToClipboard();
+  void DeleteItems();
+  void ShowItemInfo();
+  void OnEnter();
 public:
   UString Title;
+  
+  bool SelectFirst;
   bool DeleteIsAllowed;
   bool StringsWereChanged;
+  
   UStringVector Strings;
+  UStringVector Values;
+  
   int FocusedItemIndex;
+  unsigned NumColumns;
 
   INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_LISTVIEW, wndParent); }
 
-  CListViewDialog(): DeleteIsAllowed(false) {}
+  CListViewDialog():
+    SelectFirst(false),
+    DeleteIsAllowed(false),
+    StringsWereChanged(false),
+    FocusedItemIndex(-1),
+    NumColumns(1)
+    {}
 };
 
 #endif

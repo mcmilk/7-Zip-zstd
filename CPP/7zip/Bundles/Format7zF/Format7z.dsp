@@ -961,6 +961,24 @@ SOURCE=..\..\Compress\HuffmanDecoder.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Compress\LzfseDecoder.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\LzfseDecoder.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Compress\LzhDecoder.cpp
 # End Source File
 # Begin Source File
@@ -1787,6 +1805,26 @@ SOURCE=..\..\..\..\C\Lzma2Dec.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Lzma2DecMt.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Lzma2DecMt.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Lzma2Enc.c
 
 !IF  "$(CFG)" == "7z - Win32 Release"
@@ -1853,6 +1891,26 @@ SOURCE=..\..\..\..\C\MtCoder.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\MtCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\MtDec.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\MtDec.h
 # End Source File
 # Begin Source File
 

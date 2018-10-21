@@ -667,12 +667,27 @@ bool CTempFile::Remove()
 
 bool CTempFile::MoveTo(CFSTR name, bool deleteDestBefore)
 {
+  // DWORD attrib = 0;
   if (deleteDestBefore)
+  {
     if (NFind::DoesFileExist(name))
+    {
+      // attrib = NFind::GetFileAttrib(name);
       if (!DeleteFileAlways(name))
         return false;
+    }
+  }
   DisableDeleting();
   return MyMoveFile(_path, name);
+  
+  /*
+  if (attrib != INVALID_FILE_ATTRIBUTES && (attrib & FILE_ATTRIBUTE_READONLY))
+  {
+    DWORD attrib2 = NFind::GetFileAttrib(name);
+    if (attrib2 != INVALID_FILE_ATTRIBUTES)
+      SetFileAttrib(name, attrib2 | FILE_ATTRIBUTE_READONLY);
+  }
+  */
 }
 
 bool CTempDir::Create(CFSTR prefix)
