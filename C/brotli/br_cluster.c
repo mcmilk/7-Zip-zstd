@@ -8,12 +8,12 @@
 
 #include "./enc/cluster.h"
 
+#include "./common//platform.h"
 #include "types.h"
 #include "./enc/bit_cost.h"  /* BrotliPopulationCost */
 #include "./enc/fast_log.h"
 #include "./enc/histogram.h"
 #include "./enc/memory.h"
-#include "./enc/port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {

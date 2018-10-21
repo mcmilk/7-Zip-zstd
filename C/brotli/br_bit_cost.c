@@ -9,10 +9,10 @@
 #include "./enc/bit_cost.h"
 
 #include "./common//constants.h"
+#include "./common//platform.h"
 #include "types.h"
 #include "./enc/fast_log.h"
 #include "./enc/histogram.h"
-#include "./enc/port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
