@@ -44,7 +44,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 17.01 ZS v1.3.6 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov
+7-Zip 18.05 ZS v1.3.6 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2018-10-21
 
 
 Libs:
@@ -139,7 +139,7 @@ Codecs:
 
 The output should look like this:
 ```
-7-Zip 17.01 beta (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2017-08-28
+7-Zip 18.05 ZS v1.3.6 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2018-10-21
 
 
 Libs:

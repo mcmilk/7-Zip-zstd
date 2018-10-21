@@ -1,10 +1,10 @@
 PROG = 7z.dll
 DEF_FILE = ../../Archive/Archive2.def
 CFLAGS = $(CFLAGS) \
-  -DEXTERNAL_CODECS -DZSTD_LEGACY_SUPPORT -DNEED_7ZIP_GUID \
+  -DEXTERNAL_CODECS -DNEED_7ZIP_GUID -DZSTD_LEGACY_SUPPORT \
 
 !IFNDEF UNDER_CE
-CFLAGS = $(CFLAGS) -D_7ZIP_LARGE_PAGES
+CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID -D_7ZIP_LARGE_PAGES
 !ENDIF
 
 !include "Arc.mak"
@@ -34,27 +34,29 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdRegister.obj \
 
 BROTLI_OBJS = \
-  $O/br_dictionary.obj \
-  $O/br_bit_reader.obj \
-  $O/br_decode.obj \
-  $O/br_huffman.obj \
-  $O/br_state.obj \
   $O/br_backward_references.obj \
   $O/br_backward_references_hq.obj \
   $O/br_bit_cost.obj \
+  $O/br_bit_reader.obj \
   $O/br_block_splitter.obj \
   $O/br_brotli_bit_stream.obj \
   $O/br_cluster.obj \
   $O/br_compress_fragment.obj \
   $O/br_compress_fragment_two_pass.obj \
+  $O/br_decode.obj \
+  $O/br_dictionary.obj \
   $O/br_dictionary_hash.obj \
   $O/br_encode.obj \
+  $O/br_encoder_dict.obj \
   $O/br_entropy_encode.obj \
   $O/br_histogram.obj \
+  $O/br_huffman.obj \
   $O/br_literal_cost.obj \
   $O/br_memory.obj \
   $O/br_metablock.obj \
+  $O/br_state.obj \
   $O/br_static_dict.obj \
+  $O/br_transform.obj \
   $O/br_utf8_util.obj \
 
 LIZARD_OBJS = \
@@ -73,10 +75,12 @@ LZ5_OBJS = \
   $O\lz5hc.obj \
 
 ZSTD_OBJS = \
+  $O\debug.obj \
   $O\entropy_common.obj \
   $O\error_private.obj \
   $O\fse_compress.obj \
   $O\fse_decompress.obj \
+  $O\hist.obj \
   $O\huf_compress.obj \
   $O\huf_decompress.obj \
   $O\pool.obj \

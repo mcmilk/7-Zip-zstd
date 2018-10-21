@@ -27,13 +27,15 @@ LIZARD_OBJS = \
   $O/lizard_frame.obj \
 
 ZSTD_OBJS = \
-  $O\xxhash.obj \
+  $O\debug.obj \
   $O\entropy_common.obj \
-  $O\fse_decompress.obj \
+  $O\error_private.obj \
   $O\fse_compress.obj \
+  $O\fse_decompress.obj \
+  $O\hist.obj \
   $O\huf_compress.obj \
   $O\huf_decompress.obj \
-  $O\error_private.obj \
+  $O\xxhash.obj \
 
 ZSTDMT_OBJS = \
   $O\lizard-mt_common.obj \

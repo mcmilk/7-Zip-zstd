@@ -40,5 +40,6 @@ exit
 
 #  pragma warning(disable : 4100)
 #  pragma warning(disable : 4127)
+#  pragma warning(disable : 4295)
 #  pragma warning(disable : 4389)
 #  pragma warning(disable : 4701)
