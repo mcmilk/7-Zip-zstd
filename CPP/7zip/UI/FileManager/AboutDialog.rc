@@ -1,26 +1,26 @@
+#include <windows.h>
+#include <commctrl.h>
+#include <richedit.h>
 #include "AboutDialogRes.h"
-#include "../../GuiCommon.rc"
-#include "../../MyVersion.h"
+#include "..\..\GuiCommon.rc"
+#include "..\..\MyVersion.h"
 
-#define xc 144
-#define yc 144
+LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US
 
-#define y 93
+IDI_LOGO ICON "7zipLogo.ico"
 
-IDI_LOGO ICON "../../UI/FileManager/7zipLogo.ico"
-
-#ifndef SS_REALSIZEIMAGE
-#define SS_REALSIZEIMAGE 0x800
-#endif
-
-IDD_ABOUT DIALOG 0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
+IDD_ABOUT DIALOG DISCARDABLE 0, 0, 224, 132
+STYLE WS_POPUP|DS_MODALFRAME|DS_CENTER|WS_CAPTION|WS_SYSMENU
 CAPTION "About 7-Zip"
+FONT 8, "MS Shell Dlg"
 {
-  DEFPUSHBUTTON  "OK", IDOK, bx1, by, bxs, bys
-  PUSHBUTTON  "www.7-zip.org", IDB_ABOUT_HOMEPAGE, bx2, by, bxs, bys
-  ICON   IDI_LOGO, -1, m, m, 32, 32, SS_REALSIZEIMAGE,
-  LTEXT  "", IDT_ABOUT_VERSION, m, 54, xc, 8
-  LTEXT  "", IDT_ABOUT_DATE, m, 67, xc, 8
-  LTEXT  MY_COPYRIGHT, -1, m, 80, xc, 8
-  LTEXT  "7-Zip is free software", IDT_ABOUT_INFO, m, y, xc, (by - y - 1)
+  CONTROL "OK", IDOK, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP, 4, 112, 64, 16
+  CONTROL "www.7-zip.org", IDB_ABOUT_HOMEPAGE, "Button", WS_TABSTOP, 72, 112, 64, 16
+  CONTROL IDI_LOGO, -1, "Static", SS_ICON|SS_REALSIZEIMAGE, 8, 8, 32, 32
+  CONTROL "", IDT_ABOUT_VERSION, "Static", WS_GROUP, 8, 54, 208, 8
+  CONTROL "", IDT_ABOUT_DATE, "Static", WS_GROUP, 8, 67, 208, 8
+  CONTROL MY_COPYRIGHT_CR, -1, "Static", WS_GROUP, 8, 80, 208, 8
+  CONTROL "7-Zip is free software", IDT_ABOUT_INFO, "Static", WS_GROUP, 8, 93, 208, 19
+  CONTROL "7-Zip ZS Homepage", IDB_ABOUT_HOMEPAGE2, "Button", WS_TABSTOP, 140, 112, 76, 16
 }
+
