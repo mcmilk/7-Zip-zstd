@@ -1,6 +1,6 @@
 PROG = 7za.dll
 DEF_FILE = ../../Archive/Archive2.def
-CFLAGS = $(CFLAGS)
+CFLAGS = $(CFLAGS) -DZSTD_LEGACY_SUPPORT -DZSTD_MULTITHREAD
 
 COMMON_OBJS = \
   $O\CRC.obj \
@@ -240,9 +240,6 @@ ZSTDMT_OBJS = \
   $O\lz5-mt_common.obj \
   $O\lz5-mt_compress.obj \
   $O\lz5-mt_decompress.obj \
-  $O\zstd-mt_common.obj \
-  $O\zstd-mt_compress.obj \
-  $O\zstd-mt_decompress.obj \
   $O\zstd-mt_threading.obj \
 
 !include "../../7zip.mak"

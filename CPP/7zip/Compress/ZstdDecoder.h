@@ -1,10 +1,9 @@
-// (C) 2016 Tino Reichardt
+// (C) 2016 - 2018 Tino Reichardt
 
 #define ZSTD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
 #include "../../../C/Threads.h"
 #include "../../../C/zstd/zstd.h"
-#include "../../../C/zstdmt/zstd-mt.h"
 
 #include "../../Windows/System.h"
 #include "../../Common/Common.h"
@@ -14,16 +13,20 @@
 #include "../Common/RegisterCodec.h"
 #include "../Common/ProgressMt.h"
 
-struct ZstdStream {
-  ISequentialInStream *inStream;
-  ISequentialOutStream *outStream;
-  ICompressProgressInfo *progress;
-  UInt64 *processedIn;
-  UInt64 *processedOut;
-};
+/**
+ * possible return values @ 7zip:
+ * S_OK / S_FALSE
+ * E_NOTIMPL
+ * E_NOINTERFACE
+ * E_ABORT
+ * E_FAIL
+ * E_OUTOFMEMORY
+ * E_INVALIDARG
+ */
 
-extern int ZstdRead(void *Stream, ZSTDCB_Buffer * in);
-extern int ZstdWrite(void *Stream, ZSTDCB_Buffer * in);
+#define ZSTD_LEVEL_MIN      1
+#define ZSTD_LEVEL_MAX     22
+#define ZSTD_THREAD_MAX   128
 
 namespace NCompress {
 namespace NZSTD {
@@ -36,7 +39,7 @@ struct DProps
     memset(this, 0, sizeof (*this));
     _ver_major = ZSTD_VERSION_MAJOR;
     _ver_minor = ZSTD_VERSION_MINOR;
-    _level = 1;
+    _level = 3;
   }
 
   Byte _ver_major;
@@ -51,18 +54,21 @@ class CDecoder:public ICompressCoder,
   public CMyUnknownImp
 {
   CMyComPtr < ISequentialInStream > _inStream;
-
   DProps _props;
+
+  ZSTD_DCtx* _ctx;
+  void*  _srcBuf;
+  void*  _dstBuf;
+  size_t _srcBufSize;
+  size_t _dstBufSize;
 
   UInt64 _processedIn;
   UInt64 _processedOut;
-  UInt32 _inputSize;
   UInt32 _numThreads;
+  HANDLE _hMutex;
 
-  HRESULT CDecoder::ErrorOut(size_t code);
   HRESULT CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress);
   HRESULT SetOutStreamSizeResume(const UInt64 *outSize);
-
 public:
 
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)

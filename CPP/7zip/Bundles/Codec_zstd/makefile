@@ -1,6 +1,6 @@
 PROG = zstd-min.dll
 DEF_FILE = ../../Compress/Codec.def
-CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID
+CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID -DZSTD_MULTITHREAD
 
 7ZIP_COMMON_OBJS = \
   $O\StreamUtils.obj \
@@ -44,9 +44,6 @@ ZSTD_OBJS = \
   $O\zstd_opt.obj \
 
 ZSTDMT_OBJS = \
-  $O\zstd-mt_common.obj \
-  $O\zstd-mt_compress.obj \
-  $O\zstd-mt_decompress.obj \
   $O\zstd-mt_threading.obj \
 
 !include "../../7zip.mak"

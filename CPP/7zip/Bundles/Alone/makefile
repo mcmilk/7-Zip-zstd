@@ -3,7 +3,7 @@ MY_CONSOLE = 1
 CFLAGS = $(CFLAGS)
 
 !IFNDEF UNDER_CE
-CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DZSTD_MULTITHREAD
 !ENDIF
 
 
@@ -318,9 +318,6 @@ ZSTDMT_OBJS = \
   $O\lz5-mt_common.obj \
   $O\lz5-mt_compress.obj \
   $O\lz5-mt_decompress.obj \
-  $O\zstd-mt_common.obj \
-  $O\zstd-mt_compress.obj \
-  $O\zstd-mt_decompress.obj \
   $O\zstd-mt_threading.obj \
 
 !include "../../UI/Console/Console.mak"

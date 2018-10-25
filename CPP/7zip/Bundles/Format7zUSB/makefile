@@ -1,6 +1,6 @@
 PROG = 7zu.dll
 DEF_FILE = ../../Archive/Archive2.def
-CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID
+CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID -DZSTD_MULTITHREAD
 
 COMMON_OBJS = \
   $O\CRC.obj \
@@ -232,9 +232,6 @@ ZSTDMT_OBJS = \
   $O\lz5-mt_common.obj \
   $O\lz5-mt_compress.obj \
   $O\lz5-mt_decompress.obj \
-  $O\zstd-mt_common.obj \
-  $O\zstd-mt_compress.obj \
-  $O\zstd-mt_decompress.obj \
   $O\zstd-mt_threading.obj \
 
 !include "../../7zip.mak"

@@ -116,9 +116,6 @@ ZSTDMT_OBJS = \
   $O\lz5-mt_common.obj \
   $O\lz5-mt_compress.obj \
   $O\lz5-mt_decompress.obj \
-  $O\zstd-mt_common.obj \
-  $O\zstd-mt_compress.obj \
-  $O\zstd-mt_decompress.obj \
   $O\zstd-mt_threading.obj \
 
 !include "../../7zip.mak"
