@@ -133,12 +133,19 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     ReleaseMutex(_hMutex);
 
     for (;;) {
-      outBuff = { _dstBuf, _dstBufSize, 0 };
+      outBuff.dst = _dstBuf;
+      outBuff.size = _dstBufSize;
+      outBuff.pos = 0;
 
-      if (ZSTD_todo == ZSTD_e_continue)
-        inBuff = { _srcBuf, srcSize, 0 };
-      else
-        inBuff = { NULL, srcSize, 0 };
+      if (ZSTD_todo == ZSTD_e_continue) {
+        inBuff.src = _srcBuf;
+        inBuff.size = srcSize;
+        inBuff.pos = 0;
+      } else {
+        inBuff.src = 0;
+        inBuff.size = srcSize;
+        inBuff.pos = 0;
+      }
 
       err = ZSTD_compress_generic(_ctx, &outBuff, &inBuff, ZSTD_todo);
       if (ZSTD_isError(err)) return E_FAIL;

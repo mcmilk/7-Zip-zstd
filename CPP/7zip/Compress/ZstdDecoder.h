@@ -2,7 +2,6 @@
 
 #define ZSTD_STATIC_LINKING_ONLY
 #include "../../../C/Alloc.h"
-#include "../../../C/Threads.h"
 #include "../../../C/zstd/zstd.h"
 
 #include "../../Windows/System.h"
@@ -26,7 +25,7 @@
 
 #define ZSTD_LEVEL_MIN      1
 #define ZSTD_LEVEL_MAX     22
-#define ZSTD_THREAD_MAX   128
+#define ZSTD_THREAD_MAX   256
 
 namespace NCompress {
 namespace NZSTD {
@@ -64,8 +63,6 @@ class CDecoder:public ICompressCoder,
 
   UInt64 _processedIn;
   UInt64 _processedOut;
-  UInt32 _numThreads;
-  HANDLE _hMutex;
 
   HRESULT CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress);
   HRESULT SetOutStreamSizeResume(const UInt64 *outSize);
