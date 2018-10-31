@@ -152,6 +152,7 @@ C_OBJS = \
 !include "../../LzmaDec.mak"
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
+  $O\ZstdEncoder.obj \
   $O\ZstdDecoder.obj \
   $O\ZstdRegister.obj \
 

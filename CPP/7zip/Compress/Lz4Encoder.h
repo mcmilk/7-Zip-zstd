@@ -47,7 +47,6 @@ class CEncoder:
   UInt32 _numThreads;
 
   LZ4MT_CCtx *_ctx;
-  HRESULT CEncoder::ErrorOut(size_t code);
 
 public:
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)

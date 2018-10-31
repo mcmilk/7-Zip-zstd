@@ -83,18 +83,6 @@ CDecoder::~CDecoder()
 {
 }
 
-HRESULT CDecoder::ErrorOut(size_t code)
-{
-  const char *strError = LZ5MT_getErrorString(code);
-  wchar_t wstrError[200+5]; /* no malloc here, /TR */
-
-  mbstowcs(wstrError, strError, 200);
-  MessageBoxW(0, wstrError, L"7-Zip Zstandard", MB_ICONERROR | MB_OK);
-  MyFree(wstrError);
-
-  return S_FALSE;
-}
-
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 {
   DProps *pProps = (DProps *)prop;
@@ -162,7 +150,7 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   if (LZ5MT_isError(result)) {
     if (result == (size_t)-LZ5MT_error_canceled)
       return E_ABORT;
-    return ErrorOut(result);
+    return E_FAIL;
   }
 
   /* 4) free resources */
