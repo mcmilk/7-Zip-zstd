@@ -28,7 +28,7 @@
   #define _64BIT_INSTALLER 1
 #endif
 
-#define k_7zip_with_Ver_base L"7-Zip Zstandard " LLL(MY_VERSION)
+#define k_7zip_with_Ver_base L"7-Zip ZS " LLL(MY_VERSION)
 
 #ifdef _64BIT_INSTALLER
   #define k_7zip_with_Ver k_7zip_with_Ver_base L" (x64)"
