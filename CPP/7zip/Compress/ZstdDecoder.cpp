@@ -173,17 +173,17 @@ STDMETHODIMP CDecoder::SetInStream(ISequentialInStream * inStream)
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 /* numThreads */)
-{
-  return S_OK;
-}
-
 STDMETHODIMP CDecoder::ReleaseInStream()
 {
   _inStream.Release();
   return S_OK;
 }
 #endif
+
+STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 /* numThreads */)
+{
+  return S_OK;
+}
 
 HRESULT CDecoder::CodeResume(ISequentialOutStream * outStream, const UInt64 * outSize, ICompressProgressInfo * progress)
 {

@@ -41,4 +41,4 @@ STDMETHODIMP_(void) CXXH32Hasher::Final(Byte *digest) throw()
   SetUi32(digest, val);
 }
 
-REGISTER_HASHER(CXXH32Hasher, 0x202, "XXH32", 4)
+REGISTER_HASHER(CXXH32Hasher, 0x203, "XXH32", 4)
