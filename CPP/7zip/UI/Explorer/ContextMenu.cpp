@@ -221,14 +221,14 @@ struct CHashCommand
 
 static const CHashCommand g_HashCommands[] =
 {
-  { CZipContextMenu::kHash_CRC32,   "CRC-32",  "CRC32" },
-  { CZipContextMenu::kHash_CRC64,   "CRC-64",  "CRC64" },
-  { CZipContextMenu::kHash_SHA1,    "SHA-1",   "SHA1" },
-  { CZipContextMenu::kHash_SHA256,  "SHA-256", "SHA256" },
-  { CZipContextMenu::kHash_BLAKE2s, "BLAKE2s", "BLAKE2s" },
-  { CZipContextMenu::kHash_XXH32,   "XXH-32",  "XXH32" },
-  { CZipContextMenu::kHash_XXH64,   "XXH-64",  "XXH64" },
-  { CZipContextMenu::kHash_All,     "*",       "*" }
+  { CZipContextMenu::kHash_CRC32,    "CRC-32",   "CRC32" },
+  { CZipContextMenu::kHash_CRC64,    "CRC-64",   "CRC64" },
+  { CZipContextMenu::kHash_SHA1,     "SHA-1",    "SHA1" },
+  { CZipContextMenu::kHash_SHA256,   "SHA-256",  "SHA256" },
+  { CZipContextMenu::kHash_BLAKE2sp, "BLAKE2sp", "BLAKE2sp" },
+  { CZipContextMenu::kHash_XXH32,    "XXH-32",   "XXH32" },
+  { CZipContextMenu::kHash_XXH64,    "XXH-64",   "XXH64" },
+  { CZipContextMenu::kHash_All,      "*",        "*" }
 };
 
 static int FindCommand(CZipContextMenu::ECommandInternalID &id)
@@ -931,7 +931,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
       case kHash_CRC64:
       case kHash_SHA1:
       case kHash_SHA256:
-      case kHash_BLAKE2s:
+      case kHash_BLAKE2sp:
       case kHash_XXH32:
       case kHash_XXH64:
       case kHash_All:

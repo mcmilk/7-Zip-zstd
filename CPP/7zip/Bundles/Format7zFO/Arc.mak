@@ -1,5 +1,5 @@
 COMMON_OBJS = \
-  $O\Blake2sReg.obj \
+  $O\Blake2spReg.obj \
   $O\CRC.obj \
   $O\CrcReg.obj \
   $O\DynLimBuf.obj \
