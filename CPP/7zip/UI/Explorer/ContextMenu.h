@@ -34,6 +34,7 @@ public:
     kCompressToZipEmail,
     kHash_CRC32,
     kHash_CRC64,
+    kHash_MD5,
     kHash_SHA1,
     kHash_SHA256,
     kHash_BLAKE2sp,

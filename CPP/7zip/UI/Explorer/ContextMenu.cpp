@@ -223,6 +223,7 @@ static const CHashCommand g_HashCommands[] =
 {
   { CZipContextMenu::kHash_CRC32,    "CRC-32",   "CRC32" },
   { CZipContextMenu::kHash_CRC64,    "CRC-64",   "CRC64" },
+  { CZipContextMenu::kHash_MD5,      "MD5",      "MD5" },
   { CZipContextMenu::kHash_SHA1,     "SHA-1",    "SHA1" },
   { CZipContextMenu::kHash_SHA256,   "SHA-256",  "SHA256" },
   { CZipContextMenu::kHash_BLAKE2sp, "BLAKE2sp", "BLAKE2sp" },
@@ -934,6 +935,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
       case kHash_BLAKE2sp:
       case kHash_XXH32:
       case kHash_XXH64:
+      case kHash_MD5:
       case kHash_All:
       {
         for (unsigned i = 0; i < ARRAY_SIZE(g_HashCommands); i++)

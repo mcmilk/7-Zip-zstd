@@ -4,6 +4,7 @@ COMMON_OBJS = \
   $O\CrcReg.obj \
   $O\DynLimBuf.obj \
   $O\IntToString.obj \
+  $O\MD5Reg.obj \
   $O\MyMap.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
@@ -287,6 +288,7 @@ C_OBJS = \
   $O\XzDec.obj \
   $O\XzEnc.obj \
   $O\XzIn.obj \
+  $O\md5.obj \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
