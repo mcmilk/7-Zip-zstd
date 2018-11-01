@@ -36,6 +36,8 @@ public:
     kHash_CRC64,
     kHash_SHA1,
     kHash_SHA256,
+    kHash_XXH32,
+    kHash_XXH64,
     kHash_All
   };
   

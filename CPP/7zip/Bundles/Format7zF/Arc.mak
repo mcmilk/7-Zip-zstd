@@ -14,6 +14,8 @@ COMMON_OBJS = \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
   $O\Wildcard.obj \
+  $O\XXH32Reg.obj \
+  $O\XXH64Reg.obj \
   $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
 
