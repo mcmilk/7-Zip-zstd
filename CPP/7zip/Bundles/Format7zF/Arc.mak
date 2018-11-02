@@ -1,10 +1,11 @@
 COMMON_OBJS = \
-  $O\Blake2spReg.obj \
   $O\CRC.obj \
   $O\CrcReg.obj \
   $O\DynLimBuf.obj \
   $O\IntToString.obj \
-  $O\MD5Reg.obj \
+  $O\Md2Reg.obj \
+  $O\Md4Reg.obj \
+  $O\Md5Reg.obj \
   $O\MyMap.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
@@ -12,6 +13,8 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
+  $O\Sha384Reg.obj \
+  $O\Sha512Reg.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
@@ -253,7 +256,14 @@ CRYPTO_OBJS = \
   $O\ZipCrypto.obj \
   $O\ZipStrong.obj \
 
+HASHES_OBJS = \
+  $O\md2.obj \
+  $O\md4.obj \
+  $O\md5.obj \
+  $O\sha512.obj \
+
 C_OBJS = \
+  $O\sha512.obj \
   $O\7zBuf2.obj \
   $O\7zStream.obj \
   $O\Alloc.obj \
@@ -290,7 +300,6 @@ C_OBJS = \
   $O\XzDec.obj \
   $O\XzEnc.obj \
   $O\XzIn.obj \
-  $O\md5.obj \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"

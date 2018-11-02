@@ -1,15 +1,16 @@
-// XXH32Reg.cpp
+// XXH32Reg.cpp /TR 2018-11-02
 
 #include "StdAfx.h"
 
-#define XXH_STATIC_LINKING_ONLY
 #include "../../C/CpuArch.h"
+
+#define XXH_STATIC_LINKING_ONLY
 #include "../../C/zstd/xxhash.h"
 
 #include "../Common/MyCom.h"
-
 #include "../7zip/Common/RegisterCodec.h"
 
+// XXH32
 class CXXH32Hasher:
   public IHasher,
   public CMyUnknownImp
