@@ -192,7 +192,7 @@ void
 SHA512_Update (SHA512_CTX *m, const void *v, size_t len)
 {
     const unsigned char *p = v;
-    size_t old_sz = m->sz[0];
+    size_t old_sz = (size_t)m->sz[0];
     size_t offset;
 
     m->sz[0] += len * 8;
