@@ -263,7 +263,6 @@ HASHES_OBJS = \
   $O\sha512.obj \
 
 C_OBJS = \
-  $O\sha512.obj \
   $O\7zBuf2.obj \
   $O\7zStream.obj \
   $O\Alloc.obj \
