@@ -104,15 +104,19 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     if (!_dstBuf)
       return E_OUTOFMEMORY;
 
+    /* setup level */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_compressionLevel, _props._level);
     if (ZSTD_isError(err)) return E_FAIL;
 
+    /* setup thread count */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_nbWorkers, _numThreads);
     if (ZSTD_isError(err)) return E_FAIL;
 
+    /* set the content size flag */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_contentSizeFlag, 1);
     if (ZSTD_isError(err)) return E_FAIL;
 
+    /* todo: make this optional */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_enableLongDistanceMatching, 1);
     if (ZSTD_isError(err)) return E_FAIL;
   }
