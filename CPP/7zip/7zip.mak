@@ -33,6 +33,7 @@ OBJS = \
   $(LZ5_OBJS) \
   $(ZSTD_OBJS) \
   $(ZSTDMT_OBJS) \
+  $(FASTLZMA2_OBJS) \
   $(ASM_OBJS) \
   $O\resource.res \
 
@@ -208,6 +209,11 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 	$(COMPL_O2)
 !ENDIF
 
+!IFDEF FASTLZMA2_OBJS
+$(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
+	$(COMPL_O2) -DNO_XXHASH
+!ENDIF
+
 
 !ELSE
 
@@ -287,6 +293,8 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 	-I ../../../../C/lz4 \
 	-I ../../../../C/lz5 \
 	-I ../../../../C/zstd
+{../../../../C/fast-lzma2}.c{$O}.obj::
+	$(COMPLB_O2) -DNO_XXHASH
 
 !ENDIF
 
