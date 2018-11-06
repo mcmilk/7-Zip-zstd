@@ -4,7 +4,7 @@ set ROOT=%cd%\7zip
 if not defined OUTDIR set OUTDIR=%ROOT%\binIA64
 mkdir %OUTDIR%
 
-set OPTS=CPU=IA64 MY_STATIC_LINK=1 /NOLOGO
+set OPTS=CPU=IA64 MY_STATIC_LINK=1 /NOLOGO /TP
 set LFLAGS=/SUBSYSTEM:WINDOWS,"5.02"
 
 cd %ROOT%\Bundles\Format7zExtract
