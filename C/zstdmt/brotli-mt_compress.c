@@ -267,7 +267,7 @@ static void *pt_compress(void *arg)
 			uint8_t *obuf = (uint8_t*)wl->out.buf + 16;
 			wl->out.size -= 16;
 			rv = BrotliEncoderCompress(ctx->level,
-						   BROTLI_MAX_WINDOW_BITS,
+						   BROTLI_LARGE_MAX_WINDOW_BITS,
 						   BROTLI_MODE_GENERIC, in.size,
 						   ibuf, &wl->out.size, obuf);
 

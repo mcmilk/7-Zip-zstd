@@ -28,6 +28,7 @@ OBJS = \
   $(CRYPTO_OBJS) \
   $(C_OBJS) \
   $(BROTLI_OBJS) \
+  $(HASHES_OBJS) \
   $(LIZARD_OBJS) \
   $(LZ4_OBJS) \
   $(LZ5_OBJS) \
@@ -278,6 +279,8 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 	$(COMPLB_O2)
 {../../../../C/brotli}.c{$O}.obj::
 	$(COMPLB_O2)
+{../../../../C/hashes}.c{$O}.obj::
+	$(COMPLB_O2)
 {../../../../C/lizard}.c{$O}.obj::
 	$(COMPLB_O2)
 {../../../../C/lz4}.c{$O}.obj::
@@ -289,6 +292,7 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 {../../../../C/zstdmt}.c{$O}.obj::
 	$(COMPLB_O2) \
 	-I ../../../../C/brotli \
+	-I ../../../../C/hashes \
 	-I ../../../../C/lizard \
 	-I ../../../../C/lz4 \
 	-I ../../../../C/lz5 \

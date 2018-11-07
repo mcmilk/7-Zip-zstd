@@ -44,7 +44,6 @@ WIN_OBJS = \
   $O\Shell.obj \
   $O\System.obj \
   $O\Synchronization.obj \
-  $O\System.obj \
   $O\Window.obj \
 
 WIN_CTRL_OBJS = \
@@ -152,8 +151,8 @@ C_OBJS = \
 !include "../../LzmaDec.mak"
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
-  $O\ZstdEncoder.obj \
   $O\ZstdDecoder.obj \
+  $O\ZstdEncoder.obj \
   $O\ZstdRegister.obj \
 
 ZSTD_OBJS = \

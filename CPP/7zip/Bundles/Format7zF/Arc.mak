@@ -3,6 +3,9 @@ COMMON_OBJS = \
   $O\CrcReg.obj \
   $O\DynLimBuf.obj \
   $O\IntToString.obj \
+  $O\Md2Reg.obj \
+  $O\Md4Reg.obj \
+  $O\Md5Reg.obj \
   $O\MyMap.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
@@ -10,10 +13,14 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
+  $O\Sha384Reg.obj \
+  $O\Sha512Reg.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
   $O\Wildcard.obj \
+  $O\XXH32Reg.obj \
+  $O\XXH64Reg.obj \
   $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
 
@@ -248,6 +255,12 @@ CRYPTO_OBJS = \
   $O\WzAes.obj \
   $O\ZipCrypto.obj \
   $O\ZipStrong.obj \
+
+HASHES_OBJS = \
+  $O\md2.obj \
+  $O\md4.obj \
+  $O\md5.obj \
+  $O\sha512.obj \
 
 C_OBJS = \
   $O\7zBuf2.obj \

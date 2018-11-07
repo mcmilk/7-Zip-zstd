@@ -28,6 +28,9 @@ extern "C" {
 #if defined(_MSC_VER)   /* Visual Studio */
 #   include <stdlib.h>  /* _byteswap_ulong */
 #   include <intrin.h>  /* _byteswap_* */
+#   pragma warning(disable : 4389)  /* disable: C4389: '==' : signed/unsigned mismatch */
+#endif
+
 #endif
 #if defined(__GNUC__)
 #  define MEM_STATIC static __inline __attribute__((unused))

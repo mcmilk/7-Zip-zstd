@@ -84,11 +84,6 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
     ZSTD_resetDStream(_ctx);
   }
 
-// _processedOut += zOut.pos;
-// RINOK(ReadStream(inStream, _srcBuf, &size));
-// RINOK(WriteStream(outStream, _dstBuf, zOut.pos));
-// RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
-
   zIn.src = _srcBuf;
   zIn.size = _srcBufSize;
   zIn.pos = 0;
@@ -141,9 +136,10 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
         result = ZSTD_resetDStream(_ctx);
         if (ZSTD_isError(result))
           return E_FAIL;
+        /* read next input, or eof */
+        break;
       }
     } /* for() decompress */
-
 
     /* read next input */
     srcBufLen = _srcBufSize;
@@ -173,17 +169,17 @@ STDMETHODIMP CDecoder::SetInStream(ISequentialInStream * inStream)
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 /* numThreads */)
-{
-  return S_OK;
-}
-
 STDMETHODIMP CDecoder::ReleaseInStream()
 {
   _inStream.Release();
   return S_OK;
 }
 #endif
+
+STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 /* numThreads */)
+{
+  return S_OK;
+}
 
 HRESULT CDecoder::CodeResume(ISequentialOutStream * outStream, const UInt64 * outSize, ICompressProgressInfo * progress)
 {
