@@ -1028,7 +1028,7 @@ static size_t ExtendMatch(const FL2_matchTable* const tbl,
 {
     ptrdiff_t end_index = start_index + length;
     ptrdiff_t const dist = start_index - link;
-    while (end_index < limit && end_index - GetMatchLink(end_index) == dist) {
+    while (end_index < limit && end_index - (ptrdiff_t)GetMatchLink(end_index) == dist) {
         end_index += GetMatchLength(end_index);
     }
     if (end_index >= limit) {
