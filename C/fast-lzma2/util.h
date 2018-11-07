@@ -102,7 +102,6 @@ extern "C" {
 #elif defined(_MSC_VER)
 #  define UTIL_STATIC static __inline
 #  pragma warning(disable : 4996)  /* disable: C4996: 'strncpy': This function or variable may be unsafe. */
-#  pragma warning(disable : 4389)  /* disable: C4389: '==' : signed/unsigned mismatch */
 #else
 #  define UTIL_STATIC static  /* this version may generate warnings for unused static functions; disable the relevant warning */
 #endif
