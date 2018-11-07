@@ -2,6 +2,7 @@
 
 set ROOT=%cd%\7zip
 if not defined OUTDIR set OUTDIR=%ROOT%\bin32
+if not defined ERRFILE set ERRFILE=%cd%\error.txt
 mkdir %OUTDIR%
 
 set OPTS=MY_STATIC_LINK=1 /NOLOGO
@@ -76,6 +77,11 @@ cd %ROOT%\Bundles\Codec_zstdF
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ zstd-x32.dll" >> %ERRFILE%
 copy O\zstd.dll %OUTDIR%\zstd-x32.dll
+
+cd %ROOT%\Bundles\Codec_flzma2
+nmake %OPTS%
+IF %errorlevel% NEQ 0 echo "Error x32 @ flzma2-x32.dll" >> %ERRFILE%
+copy O\flzma2.dll %OUTDIR%\flzma2-x32.dll
 
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%

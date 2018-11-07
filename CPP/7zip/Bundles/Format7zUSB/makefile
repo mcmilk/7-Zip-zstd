@@ -155,6 +155,7 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdDecoder.obj \
   $O\ZstdEncoder.obj \
   $O\ZstdRegister.obj \
+  $O\FastLzma2Register.obj \
 
 BROTLI_OBJS = \
   $O/br_backward_references.obj \

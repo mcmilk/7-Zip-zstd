@@ -190,7 +190,9 @@ STDMETHODIMP CFastEncoder::SetCoderProperties(const PROPID *propIDs,
   if (lzma2Props.lzmaProps.pb >= 0)
     CHECK_F(FL2_CCtx_setParameter(_encoder, FL2_p_posBits, lzma2Props.lzmaProps.pb));
   FL2_CCtx_setParameter(_encoder, FL2_p_omitProperties, 1);
+#ifndef NO_XXHASH
   FL2_CCtx_setParameter(_encoder, FL2_p_doXXHash, 0);
+#endif
   return S_OK;
 }
 
