@@ -33,6 +33,9 @@ You can install it in two ways:
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
    - Levels 40..49 (LIZv1 + Huffman) give the best ratio, comparable to zlib and low levels of zstd/brotli, but with a faster decompression speed
 
+6. [Fast LZMA2] v0.9.2 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
+   - Levels: 1..9
+
 ## 7-Zip Zstandard Edition (full setup, with GUI and Explorer integration)
 
 ### Installation (via setup)
@@ -86,6 +89,7 @@ Codecs:
  0  ED  4F71106 LIZARD
  0  ED  4F71105 LZ5
  0  ED  4F71101 ZSTD
+ 0  ED       21 FLZMA2
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
 ```
@@ -114,6 +118,10 @@ Codecs:
 7z a archiv.7z -m0=lz5 -mx1   LZ5 Version 1.5 Fast mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=lz5 -mx..  ...
 7z a archiv.7z -m0=lz5 -mx16  LZ5 Version 1.5 Ultra Mode, with BCJ preprocessor on executables
+
+7z a archiv.7z -m0=flzma2 -mx1   Fast LZMA2 Fastest mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=flzma2 -mx..  ...
+7z a archiv.7z -m0=flzma2 -mx9   Fast LZMA2 Ultra Mode, with BCJ preprocessor on executables
 
 7z x -so test.tar.zstd | 7z l -si -ttar
 -> show contents of zstd compressed tar archiv test.tar.zstd
@@ -147,10 +155,11 @@ Libs:
 Libs:
  0  c:\Program Files\7-Zip\7z.dll
  1  c:\Program Files\7-Zip\Codecs\brotli-x64.dll
- 2  c:\Program Files\7-Zip\Codecs\lizard-x64.dll
- 3  c:\Program Files\7-Zip\Codecs\lz4-x64.dll
- 4  c:\Program Files\7-Zip\Codecs\lz5-x64.dll
- 5  c:\Program Files\7-Zip\Codecs\zstd-x64.dll
+ 2  c:\Program Files\7-Zip\Codecs\flzma2-x64.dll
+ 3  c:\Program Files\7-Zip\Codecs\lizard-x64.dll
+ 4  c:\Program Files\7-Zip\Codecs\lz4-x64.dll
+ 5  c:\Program Files\7-Zip\Codecs\lz5-x64.dll
+ 6  c:\Program Files\7-Zip\Codecs\zstd-x64.dll
 
 ...
 
@@ -179,10 +188,11 @@ Codecs:
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
  1  ED  4F71102 BROTLI
- 2  ED  4F71106 LIZARD
- 3  ED  4F71104 LZ4
- 4  ED  4F71105 LZ5
- 5  ED  4F71101 ZSTD
+ 2  ED       21 FLZMA2
+ 3  ED  4F71106 LIZARD
+ 4  ED  4F71104 LZ4
+ 5  ED  4F71105 LZ5
+ 6  ED  4F71101 ZSTD
 ```
 
 ### Usage (codec plugin)
@@ -201,6 +211,7 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=lizard -mxN  ...
 7z a archiv.7z -m0=bcj -m1=lz4 -mxN  ...
 7z a archiv.7z -m0=bcj -m1=lz5 -mxN  ...
+7z a archiv.7z -m0=bcj -m1=flzma2 -mxN  ...
 ```
 
 ## Codec Plugin for Total Commander
@@ -254,6 +265,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ4] Version 1.8.3
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.3.7
+  - [Fast LZMA2] Version 0.9.2
 
 /TR 2018-10-21
 
@@ -270,6 +282,7 @@ You find this project useful, maybe you consider a donation ;-)
 [Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
 [ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/
+[Fast LZMA2]:https://github.com/conor42/fast-lzma2
 
 [Codecs.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
 [TotalCmd.7z]:https://github.com/mcmilk/7-Zip-zstd/releases

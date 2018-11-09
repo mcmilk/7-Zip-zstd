@@ -77,6 +77,11 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error ia64 @ zstd-x64.dll" >> %ERRFILE%
 copy IA64\zstd.dll %OUTDIR%\zstd-x64.dll
 
+cd %ROOT%\Bundles\Codec_flzma2
+nmake %OPTS%
+IF %errorlevel% NEQ 0 echo "Error ia64 @ flzma2-x64.dll" >> %ERRFILE%
+copy IA64\flzma2.dll %OUTDIR%\flzma2-x64.dll
+
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error ia64 @ Install-x64.exe" >> %ERRFILE%
