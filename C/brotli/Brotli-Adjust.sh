@@ -36,10 +36,13 @@ sed -i 's|include "../common|include "./common/|g' *.c
 for f in *.c; do mv $f ../br_$f; done
 
 exit
-# and also disable these msc warnings:
 
-#  pragma warning(disable : 4100)
-#  pragma warning(disable : 4127)
-#  pragma warning(disable : 4295)
-#  pragma warning(disable : 4389)
-#  pragma warning(disable : 4701)
+# then put these to "port.h"
+
+/* disable some warnings /TR */
+#pragma warning(disable : 4100)
+#pragma warning(disable : 4127)
+#pragma warning(disable : 4189)
+#pragma warning(disable : 4295)
+#pragma warning(disable : 4389)
+#pragma warning(disable : 4701)
