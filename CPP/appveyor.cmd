@@ -23,16 +23,19 @@ goto build_sdk
 :vc11
 set VC=11.0
 set NEXT=vc12
+set CFLAGS=-Gw
 goto build_vc
 
 :vc12
 set VC=12.0
 set NEXT=end
+set CFLAGS=-Gw
 goto build_vc
 
 :vc14
 set VC=14.0
 set NEXT=end
+set CFLAGS=-Gw
 goto build_vc
 
 
