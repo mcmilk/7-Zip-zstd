@@ -51,6 +51,21 @@ class CEncoder:
   UInt32 _numThreads;
   HANDLE _hMutex;
 
+  /* zstd advanced compression options */
+  Int32 _Strategy;
+  Int32 _WindowLog;
+  Int32 _HashLog;
+  Int32 _ChainLog;
+  Int32 _SearchLog;
+  Int32 _SearchLength;
+  Int32 _TargetLen;
+  Int32 _OverlapLog;
+  Int32 _Long;
+  Int32 _LdmHashLog;
+  Int32 _LdmSearchLength;
+  Int32 _LdmBucketSizeLog;
+  Int32 _LdmHashEveryLog;
+
 public:
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)

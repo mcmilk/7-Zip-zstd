@@ -22,7 +22,20 @@ CEncoder::CEncoder():
   _dstBufSize(ZSTD_CStreamOutSize()),
   _processedIn(0),
   _processedOut(0),
-  _numThreads(NWindows::NSystem::GetNumberOfProcessors())
+  _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
+  _Long(1),
+  _Strategy(-1),
+  _WindowLog(-1),
+  _HashLog(-1),
+  _ChainLog(-1),
+  _SearchLog(-1),
+  _SearchLength(-1),
+  _TargetLen(-1),
+  _OverlapLog(-1),
+  _LdmHashLog(-1),
+  _LdmSearchLength(-1),
+  _LdmBucketSizeLog(-1),
+  _LdmHashEveryLog(-1)
 {
   _props.clear();
   _hMutex = CreateMutex(NULL, FALSE, NULL);
@@ -67,6 +80,103 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         SetNumberOfThreads(v);
         break;
       }
+
+    case NCoderPropID::kStrategy:
+      {
+        if (v < 1) v = 1;
+        if (v > 8) v = 8;
+        _Strategy = v;
+        break;
+      }
+    case NCoderPropID::kWindowLog:
+      {
+        if (v < ZSTD_WINDOWLOG_MIN) v = ZSTD_WINDOWLOG_MIN;
+        if (v > ZSTD_WINDOWLOG_MAX) v = ZSTD_WINDOWLOG_MAX;
+        _WindowLog = v;
+        break;
+      }
+    case NCoderPropID::kHashLog:
+      {
+        if (v < ZSTD_HASHLOG_MIN) v = ZSTD_HASHLOG_MIN;
+        if (v > ZSTD_HASHLOG_MAX) v = ZSTD_HASHLOG_MAX;
+        _HashLog = v;
+        break;
+      }
+    case NCoderPropID::kChainLog:
+      {
+        if (v < ZSTD_CHAINLOG_MIN) v = ZSTD_CHAINLOG_MIN;
+        if (v > ZSTD_CHAINLOG_MAX) v = ZSTD_CHAINLOG_MAX;
+        _ChainLog = v;
+        break;
+      }
+    case NCoderPropID::kSearchLog:
+      {
+        if (v < ZSTD_SEARCHLOG_MIN) v = ZSTD_SEARCHLOG_MIN;
+        if (v > ZSTD_SEARCHLOG_MAX) v = ZSTD_SEARCHLOG_MAX;
+        _SearchLog = v;
+        break;
+      }
+    case NCoderPropID::kSearchLength:
+      {
+        if (v < ZSTD_SEARCHLENGTH_MIN) v = ZSTD_SEARCHLENGTH_MIN;
+        if (v > ZSTD_SEARCHLENGTH_MAX) v = ZSTD_SEARCHLENGTH_MAX;
+        _SearchLength = v;
+        break;
+      }
+    case NCoderPropID::kTargetLen:
+      {
+        if (v < ZSTD_TARGETLENGTH_MIN) v = ZSTD_TARGETLENGTH_MIN;
+        if (v > ZSTD_TARGETLENGTH_MAX) v = ZSTD_TARGETLENGTH_MAX;
+        _TargetLen = 0;
+        break;
+      }
+    case NCoderPropID::kOverlapLog:
+      {
+        if (v < 0) v = 0; /* no overlap */
+        if (v > 9) v = 9; /* full size */
+        _OverlapLog = v;
+        break;
+      }
+    case NCoderPropID::kLong:
+      {
+        /* not exact like --long in zstd cli program */
+        if (v == 0) _Long = 0;      // disable
+        else if (v == 1) _Long = 1; // just enable
+        else if (v >= 10 && v <= ZSTD_WINDOWLOG_MAX) {
+         // enable and resize WindowLog
+         _Long = 1;
+         _WindowLog = v;
+        } else return E_INVALIDARG;
+        break;
+      }
+    case NCoderPropID::kLdmHashLog:
+      {
+        if (v < ZSTD_HASHLOG_MIN) v = ZSTD_HASHLOG_MIN;
+        if (v > ZSTD_HASHLOG_MAX) v = ZSTD_HASHLOG_MAX;
+        _LdmHashLog = v;
+        break;
+      }
+    case NCoderPropID::kLdmSearchLength:
+      {
+        if (v < ZSTD_LDM_MINMATCH_MIN) v = ZSTD_LDM_MINMATCH_MIN;
+        if (v > ZSTD_LDM_MINMATCH_MAX) v = ZSTD_LDM_MINMATCH_MAX;
+        _LdmSearchLength = v;
+        break;
+      }
+    case NCoderPropID::kLdmBucketSizeLog:
+      {
+        if (v < 1) v = 1;
+        if (v > ZSTD_LDM_BUCKETSIZELOG_MAX) v = ZSTD_LDM_BUCKETSIZELOG_MAX;
+        _LdmBucketSizeLog = v;
+        break;
+      }
+    case NCoderPropID::kLdmHashEveryLog:
+      {
+        if (v < 0) v = 0; /* 0 => automatic mode */
+        if (v > (ZSTD_WINDOWLOG_MAX - ZSTD_HASHLOG_MIN)) v = (ZSTD_WINDOWLOG_MAX - ZSTD_HASHLOG_MIN);
+        _LdmHashEveryLog = v;
+        break;
+      }
     default:
       {
         break;
@@ -106,19 +216,83 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
     /* setup level */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_compressionLevel, _props._level);
-    if (ZSTD_isError(err)) return E_FAIL;
+    if (ZSTD_isError(err)) return E_INVALIDARG;
 
     /* setup thread count */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_nbWorkers, _numThreads);
-    if (ZSTD_isError(err)) return E_FAIL;
+    if (ZSTD_isError(err)) return E_INVALIDARG;
 
     /* set the content size flag */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_contentSizeFlag, 1);
-    if (ZSTD_isError(err)) return E_FAIL;
+    if (ZSTD_isError(err)) return E_INVALIDARG;
 
-    /* todo: make this optional */
-    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_enableLongDistanceMatching, 1);
-    if (ZSTD_isError(err)) return E_FAIL;
+    /* set ldm */
+    if (_Long == 1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_enableLongDistanceMatching, _Long);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_Strategy != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_compressionStrategy, _Strategy);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_WindowLog != -1) {
+      if (_WindowLog > 27 && _Long == 0)
+        return E_INVALIDARG;
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_windowLog, _WindowLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_HashLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_hashLog, _HashLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_ChainLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_chainLog, _ChainLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_SearchLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_searchLog, _SearchLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_SearchLength != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_minMatch, _SearchLength);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_TargetLen != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_targetLength, _TargetLen);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_OverlapLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_overlapSizeLog, _OverlapLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_LdmHashLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmHashLog, _LdmHashLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_LdmSearchLength != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmMinMatch, _LdmSearchLength);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_LdmBucketSizeLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmBucketSizeLog, _LdmBucketSizeLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (_LdmHashEveryLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmHashEveryLog, _LdmHashEveryLog);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
   }
 
   for (;;) {
