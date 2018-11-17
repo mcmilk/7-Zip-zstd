@@ -3,7 +3,7 @@
 #define MY_VER_BUILD 0
 #define MY_VERSION_NUMBERS "1.3.7 R3"
 #define MY_VERSION         MY_VERSION_NUMBERS
-#define MY_DATE            "2018-10-28"
+#define MY_DATE            "2018-11-17"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
 #define MY_AUTHOR_NAME     "Tino Reichardt"

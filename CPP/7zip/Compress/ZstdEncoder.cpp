@@ -23,7 +23,7 @@ CEncoder::CEncoder():
   _processedIn(0),
   _processedOut(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
-  _Long(1),
+  _Long(-1),
   _Strategy(-1),
   _WindowLog(-1),
   _HashLog(-1),
@@ -139,14 +139,18 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
       }
     case NCoderPropID::kLong:
       {
-        /* not exact like --long in zstd cli program */
-        if (v == 0) _Long = 0;      // disable
-        else if (v == 1) _Long = 1; // just enable
-        else if (v >= 10 && v <= ZSTD_WINDOWLOG_MAX) {
-         // enable and resize WindowLog
-         _Long = 1;
-         _WindowLog = v;
-        } else return E_INVALIDARG;
+        /* exact like --long in zstd cli program */
+        if (v == 0) {
+          // m0=zstd:long:tlen=x
+          _Long = 1;
+          _WindowLog = 27;
+        } else if (v < 10) {
+          _Long = 1;
+          _WindowLog = 10;
+        } else if (v > ZSTD_WINDOWLOG_MAX) {
+          _Long = 1;
+          _WindowLog = ZSTD_WINDOWLOG_MAX;
+        }
         break;
       }
     case NCoderPropID::kLdmHashLog:
