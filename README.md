@@ -132,7 +132,8 @@ Codecs:
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
-![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods.png "Methods")
+![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods2.png "Methods")
+![Hashes](https://mcmilk.de/projects/7-Zip-zstd/Hashes.png "Hashes")
 
 ## Zstandard codec Plugin for Mainline 7-Zip
 
