@@ -140,15 +140,13 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
     case NCoderPropID::kLong:
       {
         /* exact like --long in zstd cli program */
+        _Long = 1;
         if (v == 0) {
           // m0=zstd:long:tlen=x
-          _Long = 1;
           _WindowLog = 27;
         } else if (v < 10) {
-          _Long = 1;
           _WindowLog = 10;
         } else if (v > ZSTD_WINDOWLOG_MAX) {
-          _Long = 1;
           _WindowLog = ZSTD_WINDOWLOG_MAX;
         }
         break;
@@ -230,6 +228,10 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_contentSizeFlag, 1);
     if (ZSTD_isError(err)) return E_INVALIDARG;
 
+    /* enable ldm for large windowlog values */
+    if (_WindowLog > 27 && _Long == 0)
+      _Long = 1;
+
     /* set ldm */
     if (_Long == 1) {
       err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_enableLongDistanceMatching, _Long);
@@ -242,8 +244,6 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     }
 
     if (_WindowLog != -1) {
-      if (_WindowLog > 27 && _Long == 0)
-        return E_INVALIDARG;
       err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_windowLog, _WindowLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
