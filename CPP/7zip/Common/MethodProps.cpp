@@ -281,6 +281,7 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_BSTR, "filter" },
   { VT_UI8, "memuse" },
   { VT_UI4, "strat" },
+  { VT_UI4, "fast" },
   { VT_UI4, "long" },
   { VT_UI4, "wlog" },
   { VT_UI4, "hlog" },

@@ -23,8 +23,9 @@ CEncoder::CEncoder():
   _processedIn(0),
   _processedOut(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
-  _Long(-1),
   _Strategy(-1),
+  _Long(-1),
+  _Level(ZSTD_CLEVEL_DEFAULT),
   _WindowLog(-1),
   _HashLog(-1),
   _ChainLog(-1),
@@ -62,30 +63,66 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
     UInt32 v = (UInt32)prop.ulVal;
     switch (propID)
     {
-    case NCoderPropID::kLevel:
-      {
-        if (prop.vt != VT_UI4)
-          return E_INVALIDARG;
-
-        /* level 1..22 */
-        _props._level = static_cast < Byte > (prop.ulVal);
-        Byte mylevel = static_cast < Byte > (ZSTD_LEVEL_MAX);
-        if (_props._level > mylevel)
-          _props._level = mylevel;
-
-        break;
-      }
     case NCoderPropID::kNumThreads:
       {
         SetNumberOfThreads(v);
         break;
       }
-
     case NCoderPropID::kStrategy:
       {
         if (v < 1) v = 1;
         if (v > 8) v = 8;
         _Strategy = v;
+        break;
+      }
+    case NCoderPropID::kLevel:
+      {
+        _Level = v;
+        if (v < 1) {
+          _Level = 1;
+        } else if ((Int32)v > ZSTD_maxCLevel()) {
+          _Level = ZSTD_maxCLevel();
+        }
+
+        /**
+         * zstd default levels: _Level => 1..ZSTD_maxCLevel()
+         */
+        _props._level = static_cast < Byte > (_Level);
+        break;
+      }
+    case NCoderPropID::kFast:
+      {
+        /* like --fast in zstd cli program */
+        UInt32 _Fast = v;
+
+        if (v < 1) {
+          _Fast = 1;
+        } else if (v > 64) {
+          _Fast = 64;
+        }
+
+        /**
+         * zstd fast levels:
+         * _Fast  => 1..ZSTD_minCLevel()  (_Level => _Fast + 32)
+         */
+        _props._level = static_cast < Byte > (_Fast + 32);
+
+        /* negative levels are the fast ones */
+        _Level = _Fast * -1;
+        break;
+      }
+    case NCoderPropID::kLong:
+      {
+        /* like --long in zstd cli program */
+        _Long = 1;
+        if (v == 0) {
+          // m0=zstd:long:tlen=x
+          _WindowLog = 27;
+        } else if (v < 10) {
+          _WindowLog = 10;
+        } else if (v > ZSTD_WINDOWLOG_MAX) {
+          _WindowLog = ZSTD_WINDOWLOG_MAX;
+        }
         break;
       }
     case NCoderPropID::kWindowLog:
@@ -135,20 +172,6 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         if (v < 0) v = 0; /* no overlap */
         if (v > 9) v = 9; /* full size */
         _OverlapLog = v;
-        break;
-      }
-    case NCoderPropID::kLong:
-      {
-        /* exact like --long in zstd cli program */
-        _Long = 1;
-        if (v == 0) {
-          // m0=zstd:long:tlen=x
-          _WindowLog = 27;
-        } else if (v < 10) {
-          _WindowLog = 10;
-        } else if (v > ZSTD_WINDOWLOG_MAX) {
-          _WindowLog = ZSTD_WINDOWLOG_MAX;
-        }
         break;
       }
     case NCoderPropID::kLdmHashLog:
@@ -217,7 +240,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       return E_OUTOFMEMORY;
 
     /* setup level */
-    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_compressionLevel, _props._level);
+    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_compressionLevel, (UInt32)_Level);
     if (ZSTD_isError(err)) return E_INVALIDARG;
 
     /* setup thread count */
@@ -233,7 +256,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       _Long = 1;
 
     /* set ldm */
-    if (_Long == 1) {
+    if (_Long != -1) {
       err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_enableLongDistanceMatching, _Long);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }

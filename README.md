@@ -268,7 +268,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Zstandard] Version 1.3.7
   - [Fast LZMA2] Version 0.9.2
 
-/TR 2018-11-16
+/TR 2018-11-25
 
 ## Notes
 

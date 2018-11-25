@@ -62,22 +62,22 @@ License:
 Zstandard library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 5 bytes. The data within that header
+This header is mandatory and must be exact 3 or 5 bytes. The data within that header
 is for informational purposes only and not used by the decoder. If the header
 is not there, or has another size, the decoder will not decompress the content.
 ``` C
- Byte _ver_major; // currently 1
- Byte _ver_minor; // currently 2
- Byte _level;     // currently 1..22
- Byte _reserved[2];
+ Byte _ver_major;   // currently 1
+ Byte _ver_minor;   // currently 2
+ Byte _level;       // currently 1..22 or 33..MaxFastLevel
+ Byte _reserved[2]; // not given in 3 byte header
 ```
 - this header holds some information about the version, which was
   used for creating that 7-Zip container data
 - _ver_major should contain the major release of zstd
 - _ver_minor should contain the major release of zstd
 - _level should contain the level, the data is packed with
-- the other two bytes should be set to zero currently and are
-  reserved for future use
+- negative fast level values are stored as fastlevel+32 (33 = fastlevel 1 and so on..)
+- the other two bytes, if present, should be set to zero currently and are reserved for future use
 
 Algorithm author: Yann Collet
 - Homepage: https://facebook.github.io/zstd/
@@ -164,22 +164,21 @@ License:
 LZ4 library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 5 bytes. The data within that header
+This header is mandatory and must be exact 3 or 5 bytes. The data within that header
 is for informational purposes only and not used by the decoder. If the header
 is not there, or has another size, the decoder will not decompress the content.
 ``` C
- Byte _ver_major;  // currently 1
- Byte _ver_minor;  // currently 7
- Byte _level;      // 1..12
- Byte _reserved[2];
+ Byte _ver_major;   // currently 1
+ Byte _ver_minor;   // currently 7
+ Byte _level;       // 1..12
+ Byte _reserved[2]; // not given in 3 byte header
 ```
 - this header holds some information about the version, which was
   used for creating that 7-Zip container data
 - _ver_major should contain the major release of LZ4
 - _ver_minor should contain the major release of LZ4
 - _level should contain the level, the data is packed with
-- the other two bytes should be set to zero currently and are
-  reserved for future use
+- the other two bytes, if present, should be set to zero currently and are reserved for future use
 
 Algorithm author: Yann Collet
 - Homepage: https://lz4.github.io/lz4/
@@ -215,22 +214,21 @@ License:
 LZ5 library is provided as open source software using the BSD license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 5 bytes. The data within that header
+This header is mandatory and must be exact 3 or 5 bytes. The data within that header
 is for informational purposes only and not used by the decoder. If the header
 is not there, or has another size, the decoder will not decompress the content.
 ``` C
- Byte _ver_major;  // currently 1
- Byte _ver_minor;  // currently 5
- Byte _level;      // 1..15
- Byte _reserved[2];
+ Byte _ver_major;   // currently 1
+ Byte _ver_minor;   // currently 5
+ Byte _level;       // 1..15
+ Byte _reserved[2]; // not given in 3 byte header
 ```
 - this header holds some information about the version, which was used for
   creating that 7-Zip container data
 - _ver_major should contain the major release of LZ5
 - _ver_minor should contain the major release of LZ5
 - _level should contain the level, the data is packed with
-- the other two bytes should be set to zero currently and are reserved for
-  future use
+- the other two bytes, if present, should be set to zero currently and are reserved for future use
 
 Algorithm author: Przemyslaw Skibinski
 - Homepage: https://github.com/inikep/lz5

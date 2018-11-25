@@ -507,7 +507,7 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
       else if (id == k_LZ4)
       {
         name = "LZ4";
-        if (propsSize == 5)
+        if (propsSize == 3 || propsSize == 5)
         {
           char *dest = s;
           *dest++ = 'v';
@@ -525,7 +525,7 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
       else if (id == k_LZ5)
       {
         name = "LZ5";
-        if (propsSize == 5)
+        if (propsSize == 3 || propsSize == 5)
         {
           char *dest = s;
           *dest++ = 'v';
@@ -543,9 +543,10 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
       else if (id == k_ZSTD)
       {
         name = "ZSTD";
-        if (propsSize == 5)
+        if (propsSize == 3 || propsSize == 5)
         {
           char *dest = s;
+          UInt32 l = props[2];
           *dest++ = 'v';
           ConvertUInt32ToString(props[0], dest);
           dest += MyStringLen(dest);
@@ -553,8 +554,14 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
           ConvertUInt32ToString(props[1], dest);
           dest += MyStringLen(dest);
           *dest++ = ',';
-          *dest++ = 'l';
-          ConvertUInt32ToString(props[2], dest);
+          if (l <= 22) {
+            *dest++ = 'l';
+            ConvertUInt32ToString(l, dest);
+          } else {
+            *dest++ = 'f';
+            *dest++ = 'l';
+            ConvertUInt32ToString(l - 32, dest);
+          }
           dest += MyStringLen(dest);
         }
       }

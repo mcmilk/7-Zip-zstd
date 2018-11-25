@@ -135,8 +135,9 @@ namespace NCoderPropID
 
     /* zstd props */
     kStrategy,          // VT_UI4 1=ZSTD_fast, 2=ZSTD_dfast, 3=ZSTD_greedy, 4=ZSTD_lazy, 5=ZSTD_lazy2, 6=ZSTD_btlazy2, 7=ZSTD_btopt, 8=ZSTD_btultra
-    kLong,              // VT_UI4 0=disable ldm (default: 27)
-    kWindowLog,         // VT_UI4 x32=10(1KiB)..30(1GiB)   x64=10(1KiB)..31(2GiB)
+    kFast,              // VT_UI4 The minimum fast is 1 and the maximum is 64 (default: unused)
+    kLong,              // VT_UI4 The minimum long is 10 (1KiB) and the maximum is 30 (1GiB) on x32 and 31 (2GiB) on x64
+    kWindowLog,         // VT_UI4 The minimum long is 10 (1KiB) and the maximum is 30 (1GiB) on x32 and 31 (2GiB) on x64
     kHashLog,           // VT_UI4 The minimum hlog is 6 (64 B) and the maximum is 26 (128 MiB).
     kChainLog,          // VT_UI4 The minimum clog is 6 (64 B) and the maximum is 28 (256 MiB)
     kSearchLog,         // VT_UI4 The minimum slog is 1 and the maximum is 26

@@ -28,7 +28,6 @@ struct CProps
   Byte _ver_major;
   Byte _ver_minor;
   Byte _level;
-  Byte _reserved[2];
 };
 
 class CEncoder:
@@ -53,6 +52,8 @@ class CEncoder:
 
   /* zstd advanced compression options */
   Int32 _Strategy;
+  Int32 _Long;
+  Int32 _Level;
   Int32 _WindowLog;
   Int32 _HashLog;
   Int32 _ChainLog;
@@ -60,7 +61,6 @@ class CEncoder:
   Int32 _SearchLength;
   Int32 _TargetLen;
   Int32 _OverlapLog;
-  Int32 _Long;
   Int32 _LdmHashLog;
   Int32 _LdmSearchLength;
   Int32 _LdmBucketSizeLog;
