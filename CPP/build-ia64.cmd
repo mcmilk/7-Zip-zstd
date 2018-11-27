@@ -22,16 +22,6 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error ia64 @ 7z.dll" >> %ERRFILE%
 copy IA64\7z.dll %OUTDIR%\7z.dll
 
-cd %ROOT%\Bundles\Format7zFO
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error ia64 @ 7zOrig.dll" >> %ERRFILE%
-copy IA64\7z.dll %OUTDIR%\7zOrig.dll
-
-cd %ROOT%\Bundles\Format7zUSB
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error ia64 @ 7zUSB.dll" >> %ERRFILE%
-copy IA64\7zu.dll %OUTDIR%\7zu-x64.dll
-
 cd %ROOT%\UI\FileManager
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error ia64 @ 7zFM.exe" >> %ERRFILE%
@@ -72,7 +62,7 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error ia64 @ lz5-x64.dll" >> %ERRFILE%
 copy IA64\lz5.dll %OUTDIR%\lz5-x64.dll
 
-cd %ROOT%\Bundles\Codec_zstdF
+cd %ROOT%\Bundles\Codec_zstd
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error ia64 @ zstd-x64.dll" >> %ERRFILE%
 copy IA64\zstd.dll %OUTDIR%\zstd-x64.dll

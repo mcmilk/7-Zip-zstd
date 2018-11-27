@@ -1,8 +1,6 @@
 PROG = 7zxa.dll
 DEF_FILE = ../../Archive/Archive2.def
-CFLAGS = $(CFLAGS) \
-  -DNEED_7ZIP_GUID \
-  -DEXTRACT_ONLY \
+CFLAGS = $(CFLAGS) -DEXTRACT_ONLY \
 
 COMMON_OBJS = \
   $O\CRC.obj \

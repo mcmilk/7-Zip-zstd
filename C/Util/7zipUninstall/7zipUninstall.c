@@ -62,7 +62,7 @@ static const WCHAR * const k_Reg_Path32 = L"Path"
   #define k_Reg_WOW_Flag_32 0
 #endif
 
-#define k_7zip_CLSID L"{23170F69-0803-278A-1000-000100020001}"
+#define k_7zip_CLSID L"{23170F69-20BB-278A-1000-000100020000}"
 
 static const WCHAR * const k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
 static const WCHAR * const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";

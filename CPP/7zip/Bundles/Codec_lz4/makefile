@@ -1,6 +1,6 @@
 PROG = lz4.dll
 DEF_FILE = ../../Compress/Codec.def
-CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID
+CFLAGS = $(CFLAGS)
 
 7ZIP_COMMON_OBJS = \
   $O\StreamUtils.obj \
