@@ -5,7 +5,7 @@ This is the Github Page of [7-Zip] ZS with support of additional Codecs. The lib
 
 You can install it in two ways:
 1. complete setup with additions within the GUI and a modified Explorer context menu
-2. only the codec plugin that goes to your existing [7-Zip] installation
+2. only the codec plugin that goes to your existing [7-Zip] installation (no GUI changes and no additional Hashers)
 
 # Status
 
@@ -43,16 +43,15 @@ You can install it in two ways:
 2. install it, like the default [7-Zip]
 3. use it ;)
 4. you may check, if the [7-Zip] can deal with [Zstandard] or other codecs via this command: `7z.exe i`
-5. the binaries within this installation are not binary compatible with [7-Zip]... use therefore the files from the `Codecs.7z` archive
 
 The output should look like this:
 ```
-7-Zip 18.05 ZS v1.3.7 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2018-10-21
-
+7-Zip 18.05 ZS v1.3.7 R3 (x64) : Copyright (c) 1999-2018 Igor Pavlov, 2016-2018 Tino Reichardt : 2018-11-27
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
-
+ 1  C:\Program Files\7-Zip-Zstandard\Codecs\Iso7z.64.dll
+ 
 Formats:
 ...
  0 CK            xz       xz txz (.tar) FD 7 z X Z 00
@@ -92,6 +91,21 @@ Codecs:
  0  ED       21 FLZMA2
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
+ 1 3ED  4F712FF RawSplitter
+
+Hashers:
+ 0    4        1 CRC32
+ 0   16      205 MD2
+ 0   16      206 MD4
+ 0   16      207 MD5
+ 0   20      201 SHA1
+ 0   32        A SHA256
+ 0   48      208 SHA384
+ 0   64      209 SHA512
+ 0    4      203 XXH32
+ 0    8      204 XXH64
+ 0    8        4 CRC64
+ 0   32      202 BLAKE2sp
 ```
 
 ### Usage and features of the full installation
@@ -198,7 +212,7 @@ Codecs:
 
 ### Usage (codec plugin)
 
-- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
+- compression and decompression for [Brotli], [Fast LZMA2], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
 - you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zst` are not covered by the plugins
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable the bcj2 filter via `-m0=bcj`,
   when using only the plugin dll's
@@ -223,9 +237,7 @@ Codecs:
   will work out of the box with Total Commander now :-)
 
 ## Codec Plugin for Far Manager
-- download [Codecs.7z]
-- install it, by replacing the file `C:\Program Files\Far Manager\Plugins\ArcLite\7z.dll` with the one found in the [Codecs.7z] archive
-- it's named `7z-x64.dll` or `7z-x32.dll`, depending on your architecture
+- copy the `7z.dll` file from `C:\Program Files\7-Zip-Zstandard\7z.dll` to `C:\Program Files\Far Manager\Plugins\ArcLite\7z.dll`
 - then restart the Far manager - and on next start, you will have support for 7-Zip Zstandard archives ;-)
 
 ## Benchmarks
@@ -236,6 +248,8 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 - the decompression benchmark is also done in RAM via: `7z t archiv.7z`
 - the tool for measuring the times is [wtime](https://github.com/mcmilk/wtime), together with some [scripts](https://github.com/mcmilk/7-Zip-Benchmarking)
 - the testfile is generated via [generate-mcorpus](https://github.com/mcmilk/7-Zip-Benchmarking/blob/master/generate-mcorpus)
+- please note, that the benchmarks are outdated now (new one will come, but it needs some time)
+
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-v120.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decomp-v120.png "Decompression Speed per Level")
 ![Memory at Compression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemCompr.png "Memory usage at Compression")
@@ -262,18 +276,17 @@ You find this project useful, maybe you consider a donation ;-)
 
 - 7-Zip ZS Version 18.05
   - [Brotli] Version 1.0.7
+  - [Fast LZMA2] Version 0.9.2
   - [Lizard] Version 1.0
   - [LZ4] Version 1.8.3
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.3.7
-  - [Fast LZMA2] Version 0.9.2
 
-/TR 2018-11-25
+/TR 2018-11-27
 
 ## Notes
 
 - if you want an code signed installer, you need to donate sth.
-- I know that Zstandard has some nice new features which are not included currently... I will think about it
 
 [7-Zip]:http://www.7-zip.org/
 [lzip]:http://www.nongnu.org/lzip/
