@@ -37,6 +37,11 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 {
   DProps *pProps = (DProps *)prop;
 
+#if DEBUG
+      printf("prop size =%u\n", size);
+      fflush(stdout);
+#endif
+
   switch (size) {
   case 3:
     memcpy(&_props, pProps, 3);
@@ -132,6 +137,10 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
       /* finished with buffer */
       if (zIn.pos == zIn.size)
         break;
+
+      /* end of frame, but more data there... */
+      if (result == 0 && zIn.pos != zIn.size)
+        continue;
 
       /* end of frame */
       if (result == 0) {
