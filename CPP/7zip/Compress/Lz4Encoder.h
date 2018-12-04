@@ -29,6 +29,7 @@ struct CProps
   Byte _ver_major;
   Byte _ver_minor;
   Byte _level;
+  Byte _reserved[2];
 };
 
 class CEncoder:
