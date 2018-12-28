@@ -15,7 +15,7 @@ You can install it in two ways:
 
 
 ## Codec overview
-1. [Zstandard] v1.3.7 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+1. [Zstandard] v1.3.8 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
 2. [Brotli] v.1.0.7 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 18.05 ZS v1.3.7 R3 (x64) : Copyright (c) 1999-2018 Igor Pavlov, 2016-2018 Tino Reichardt : 2018-11-27
+7-Zip 18.05 ZS v1.3.8 R1 (x64) : Copyright (c) 1999-2018 Igor Pavlov, 2016-2018 Tino Reichardt : 2018-12-28
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -280,9 +280,9 @@ You find this project useful, maybe you consider a donation ;-)
   - [Lizard] Version 1.0
   - [LZ4] Version 1.8.3
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.3.7
+  - [Zstandard] Version 1.3.8
 
-/TR 2018-11-27
+/TR 2018-12-28
 
 ## Notes
 
