@@ -23,20 +23,20 @@ CEncoder::CEncoder():
   _processedIn(0),
   _processedOut(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
-  _Strategy(-1),
   _Long(-1),
   _Level(ZSTD_CLEVEL_DEFAULT),
+  _Strategy(-1),
   _WindowLog(-1),
   _HashLog(-1),
   _ChainLog(-1),
   _SearchLog(-1),
-  _SearchLength(-1),
+  _MinMatch(-1),
   _TargetLen(-1),
   _OverlapLog(-1),
   _LdmHashLog(-1),
-  _LdmSearchLength(-1),
+  _LdmMinMatch(-1),
   _LdmBucketSizeLog(-1),
-  _LdmHashEveryLog(-1)
+  _LdmHashRateLog(-1)
 {
   _props.clear();
   _hMutex = CreateMutex(NULL, FALSE, NULL);
@@ -153,11 +153,11 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         _SearchLog = v;
         break;
       }
-    case NCoderPropID::kSearchLength:
+    case NCoderPropID::kMinMatch:
       {
-        if (v < ZSTD_SEARCHLENGTH_MIN) v = ZSTD_SEARCHLENGTH_MIN;
-        if (v > ZSTD_SEARCHLENGTH_MAX) v = ZSTD_SEARCHLENGTH_MAX;
-        _SearchLength = v;
+        if (v < ZSTD_MINMATCH_MIN) v = ZSTD_MINMATCH_MIN;
+        if (v > ZSTD_MINMATCH_MAX) v = ZSTD_MINMATCH_MAX;
+        _MinMatch = v;
         break;
       }
     case NCoderPropID::kTargetLen:
@@ -185,7 +185,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
       {
         if (v < ZSTD_LDM_MINMATCH_MIN) v = ZSTD_LDM_MINMATCH_MIN;
         if (v > ZSTD_LDM_MINMATCH_MAX) v = ZSTD_LDM_MINMATCH_MAX;
-        _LdmSearchLength = v;
+        _LdmMinMatch = v;
         break;
       }
     case NCoderPropID::kLdmBucketSizeLog:
@@ -195,11 +195,11 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         _LdmBucketSizeLog = v;
         break;
       }
-    case NCoderPropID::kLdmHashEveryLog:
+    case NCoderPropID::kLdmHashRateLog:
       {
         if (v < 0) v = 0; /* 0 => automatic mode */
         if (v > (ZSTD_WINDOWLOG_MAX - ZSTD_HASHLOG_MIN)) v = (ZSTD_WINDOWLOG_MAX - ZSTD_HASHLOG_MIN);
-        _LdmHashEveryLog = v;
+        _LdmHashRateLog = v;
         break;
       }
     default:
@@ -240,15 +240,15 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       return E_OUTOFMEMORY;
 
     /* setup level */
-    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_compressionLevel, (UInt32)_Level);
+    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_compressionLevel, (UInt32)_Level);
     if (ZSTD_isError(err)) return E_INVALIDARG;
 
     /* setup thread count */
-    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_nbWorkers, _numThreads);
+    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_nbWorkers, _numThreads);
     if (ZSTD_isError(err)) return E_INVALIDARG;
 
     /* set the content size flag */
-    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_contentSizeFlag, 1);
+    err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_contentSizeFlag, 1);
     if (ZSTD_isError(err)) return E_INVALIDARG;
 
     /* enable ldm for large windowlog values */
@@ -257,67 +257,67 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
     /* set ldm */
     if (_Long != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_enableLongDistanceMatching, _Long);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_enableLongDistanceMatching, _Long);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_Strategy != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_compressionStrategy, _Strategy);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_strategy, _Strategy);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_WindowLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_windowLog, _WindowLog);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_windowLog, _WindowLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_HashLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_hashLog, _HashLog);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_hashLog, _HashLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_ChainLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_chainLog, _ChainLog);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_chainLog, _ChainLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_SearchLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_searchLog, _SearchLog);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_searchLog, _SearchLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
-    if (_SearchLength != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_minMatch, _SearchLength);
+    if (_MinMatch != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_minMatch, _MinMatch);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_TargetLen != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_targetLength, _TargetLen);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_targetLength, _TargetLen);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_OverlapLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_overlapSizeLog, _OverlapLog);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_overlapLog, _OverlapLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_LdmHashLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmHashLog, _LdmHashLog);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_ldmHashLog, _LdmHashLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
-    if (_LdmSearchLength != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmMinMatch, _LdmSearchLength);
+    if (_LdmMinMatch != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_ldmMinMatch, _LdmMinMatch);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
     if (_LdmBucketSizeLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmBucketSizeLog, _LdmBucketSizeLog);
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_ldmBucketSizeLog, _LdmBucketSizeLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
-    if (_LdmHashEveryLog != -1) {
-      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_p_ldmHashEveryLog, _LdmHashEveryLog);
+    if (_LdmHashRateLog != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_ldmHashRateLog, _LdmHashRateLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
   }
@@ -352,7 +352,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
         inBuff.pos = 0;
       }
 
-      err = ZSTD_compress_generic(_ctx, &outBuff, &inBuff, ZSTD_todo);
+      err = ZSTD_compressStream2(_ctx, &outBuff, &inBuff, ZSTD_todo);
       if (ZSTD_isError(err)) return E_FAIL;
 
 #if DEBUG

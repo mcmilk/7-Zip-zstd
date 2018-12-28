@@ -141,13 +141,13 @@ namespace NCoderPropID
     kHashLog,           // VT_UI4 The minimum hlog is 6 (64 B) and the maximum is 26 (128 MiB).
     kChainLog,          // VT_UI4 The minimum clog is 6 (64 B) and the maximum is 28 (256 MiB)
     kSearchLog,         // VT_UI4 The minimum slog is 1 and the maximum is 26
-    kSearchLength,      // VT_UI4 The minimum slen is 3 and the maximum is 7.
+    kMinMatch,          // VT_UI4 The minimum slen is 3 and the maximum is 7.
     kTargetLen,         // VT_UI4 The minimum tlen is 0 and the maximum is 999.
     kOverlapLog,        // VT_UI4 The minimum ovlog is 0 and the maximum is 9.  (default: 6)
     kLdmHashLog,        // VT_UI4 The minimum ldmhlog is 6 and the maximum is 26 (default: 20).
     kLdmSearchLength,   // VT_UI4 The minimum ldmslen is 4 and the maximum is 4096 (default: 64).
     kLdmBucketSizeLog,  // VT_UI4 The minimum ldmblog is 0 and the maximum is 8 (default: 3).
-    kLdmHashEveryLog    // VT_UI4 The default value is wlog - ldmhlog.
+    kLdmHashRateLog    // VT_UI4 The default value is wlog - ldmhlog.
   };
 }
 
