@@ -2445,23 +2445,24 @@ void CInArchive::DetectNsisType(const CBlockHeader &bh, const Byte *p)
   bool strongPark = false;
   bool strongNsis = false;
 
+  if (NumStringChars > 2)
   {
     const Byte *strData = _data + _stringsPos;
     if (IsUnicode)
     {
-      UInt32 num = NumStringChars;
+      UInt32 num = NumStringChars - 2;
       for (UInt32 i = 0; i < num; i++)
       {
         if (Get16(strData + i * 2) == 0)
         {
           unsigned c2 = Get16(strData + 2 + i * 2);
+          // it can be TXT/RTF with marker char (1 or 2). so we must check next char
           // if (c2 <= NS_3_CODE_SKIP && c2 != NS_3_CODE_SHELL)
           if (c2 == NS_3_CODE_VAR)
           {
-            // it can be TXT/RTF string with marker char (1 or 2). so we must next char
-            // const wchar_t *p2 = (const wchar_t *)(strData + i * 2 + 2);
-            // p2 = p2;
-            if ((Get16(strData + 3 + i * 2) & 0x8000) != 0)
+            // 18.06: fixed: is it correct ?
+            // if ((Get16(strData + 3 + i * 2) & 0x8000) != 0)
+            if ((Get16(strData + 4 + i * 2) & 0x8080) == 0x8080)
             {
               NsisType = k_NsisType_Nsis3;
               strongNsis = true;
@@ -2478,7 +2479,7 @@ void CInArchive::DetectNsisType(const CBlockHeader &bh, const Byte *p)
     }
     else
     {
-      UInt32 num = NumStringChars;
+      UInt32 num = NumStringChars - 2;
       for (UInt32 i = 0; i < num; i++)
       {
         if (strData[i] == 0)

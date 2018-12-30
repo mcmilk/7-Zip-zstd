@@ -415,6 +415,8 @@ bool CInArchive::ReadHeaderReal(const Byte *p, unsigned size, CItem &item)
     if (size < 8)
       return false;
     item.PackSize |= ((UInt64)Get32(p) << 32);
+    if (item.PackSize >= ((UInt64)1 << 63))
+      return false;
     item.Size |= ((UInt64)Get32(p + 4) << 32);
     p += 8;
     size -= 8;
@@ -667,7 +669,8 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
         {
           if (processed < offset + 2)
             error = k_ErrorType_Corrupted;
-          ArcInfo.VolNumber = (UInt32)Get16(m_FileHeaderData + offset);
+          else
+            ArcInfo.VolNumber = (UInt32)Get16(m_FileHeaderData + offset);
         }
 
         ArcInfo.EndOfArchive_was_Read = true;

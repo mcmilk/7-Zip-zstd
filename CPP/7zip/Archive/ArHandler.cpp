@@ -170,8 +170,8 @@ static bool OctalToNumber32(const char *s, unsigned size, UInt32 &res)
   res = 0;
   char sz[32];
   size = RemoveTailSpaces(sz, s, size);
-  if (size == 0)
-    return true; // some items doesn't contaion any numbers
+  if (size == 0 || strcmp(sz, "-1") == 0)
+    return true; // some items don't contain any numbers
   const char *end;
   UInt64 res64 = ConvertOctStringToUInt64(sz, &end);
   if ((unsigned)(end - sz) != size)
@@ -185,8 +185,8 @@ static bool DecimalToNumber(const char *s, unsigned size, UInt64 &res)
   res = 0;
   char sz[32];
   size = RemoveTailSpaces(sz, s, size);
-  if (size == 0)
-    return true; // some items doesn't contaion any numbers
+  if (size == 0 || strcmp(sz, "-1") == 0)
+    return true; // some items don't contain any numbers
   const char *end;
   res = ConvertStringToUInt64(sz, &end);
   return ((unsigned)(end - sz) == size);

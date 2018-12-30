@@ -4,6 +4,7 @@
 
 #include "../../../C/Alloc.h"
 #include "../../../C/CpuArch.h"
+#include "../../../C/LzmaDec.h"
 #include "../../../C/Xz.h"
 
 #include "../../Common/ComTry.h"
@@ -24,7 +25,7 @@
 
 #include "../Compress/CopyCoder.h"
 #include "../Compress/ZlibDecoder.h"
-#include "../Compress/LzmaDecoder.h"
+// #include "../Compress/LzmaDecoder.h"
 
 namespace NArchive {
 namespace NSquashfs {
@@ -866,8 +867,8 @@ class CHandler:
   CBufPtrSeqOutStream *_outStreamSpec;
   CMyComPtr<ISequentialOutStream> _outStream;
 
-  NCompress::NLzma::CDecoder *_lzmaDecoderSpec;
-  CMyComPtr<ICompressCoder> _lzmaDecoder;
+  // NCompress::NLzma::CDecoder *_lzmaDecoderSpec;
+  // CMyComPtr<ICompressCoder> _lzmaDecoder;
 
   NCompress::NZlib::CDecoder *_zlibDecoderSpec;
   CMyComPtr<ICompressCoder> _zlibDecoder;
@@ -1155,12 +1156,13 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
     if (inSize != _zlibDecoderSpec->GetInputProcessedSize())
       return S_FALSE;
   }
+  /*
   else if (method == kMethod_LZMA)
   {
     if (!_lzmaDecoder)
     {
       _lzmaDecoderSpec = new NCompress::NLzma::CDecoder();
-      _lzmaDecoderSpec->FinishStream = true;
+      // _lzmaDecoderSpec->FinishStream = true;
       _lzmaDecoder = _lzmaDecoderSpec;
     }
     const UInt32 kPropsSize = LZMA_PROPS_SIZE + 8;
@@ -1187,6 +1189,7 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
     if (inSize != propsSize + _lzmaDecoderSpec->GetInputProcessedSize())
       return S_FALSE;
   }
+  */
   else
   {
     if (_inputBuffer.Size() < inSize)
@@ -1200,10 +1203,48 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
       if (!dest)
         return E_OUTOFMEMORY;
     }
+    
     SizeT destLen = outSizeMax, srcLen = inSize;
+
     if (method == kMethod_LZO)
     {
       RINOK(LzoDecode(dest, &destLen, _inputBuffer, &srcLen));
+    }
+    else if (method == kMethod_LZMA)
+    {
+      Byte props[5];
+      const Byte *src = _inputBuffer;
+
+      if (_noPropsLZMA)
+      {
+        props[0] = 0x5D;
+        SetUi32(&props[1], _h.BlockSize);
+      }
+      else
+      {
+        const UInt32 kPropsSize = LZMA_PROPS_SIZE + 8;
+        if (inSize < kPropsSize)
+          return S_FALSE;
+        memcpy(props, src, LZMA_PROPS_SIZE);
+        UInt64 outSize = GetUi64(src + LZMA_PROPS_SIZE);
+        if (outSize > outSizeMax)
+          return S_FALSE;
+        destLen = (SizeT)outSize;
+        src += kPropsSize;
+        inSize -= kPropsSize;
+        srcLen = inSize;
+      }
+
+      ELzmaStatus status;
+      SRes res = LzmaDecode(dest, &destLen,
+          src, &srcLen,
+          props, LZMA_PROPS_SIZE,
+          LZMA_FINISH_END,
+          &status, &g_Alloc);
+      if (res != 0)
+        return SResToHRESULT(res);
+      if (status != LZMA_STATUS_FINISHED_WITH_MARK)
+        return S_FALSE;
     }
     else
     {
@@ -1217,6 +1258,7 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
       if (status != CODER_STATUS_NEEDS_MORE_INPUT || !XzUnpacker_IsStreamWasFinished(&_xz))
         return S_FALSE;
     }
+    
     if (inSize != srcLen)
       return S_FALSE;
     if (outBuf)

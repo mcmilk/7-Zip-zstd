@@ -147,7 +147,7 @@ class CThreadCrc: public CProgressThreadVirt
 public:
   CDirEnumerator Enumerator;
   CHashBundle Hash;
-  FString FirstFilePath;
+  // FString FirstFilePath;
 
   void SetStatus(const UString &s);
   void AddErrorMessage(DWORD systemError, const FChar *name);
@@ -165,7 +165,7 @@ void CThreadCrc::ShowFinalResults(HWND hwnd)
   if (!ResultsWereShown)
   {
     ResultsWereShown = true;
-    ShowHashResults(Hash, fs2us(FirstFilePath), hwnd);
+    ShowHashResults(Hash, hwnd);
   }
 }
 
@@ -193,7 +193,7 @@ void CThreadCrc::SetStatus(const UString &s2)
 
 HRESULT CThreadCrc::ProcessVirt()
 {
-  Hash.Init();
+  // Hash.Init();
   
   CMyBuffer buf;
   if (!buf.Allocate(kBufSize))
@@ -289,7 +289,7 @@ HRESULT CThreadCrc::ProcessVirt()
       }
       if (isFirstFile)
       {
-        FirstFilePath = path;
+        Hash.FirstFileName = path;
         isFirstFile = false;
       }
       sync.Set_FilePath(fs2us(path));
@@ -370,8 +370,12 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
       methods.Add(methodName);
       RINOK(t.Hash.SetMethods(EXTERNAL_CODECS_VARS_G methods));
     }
+    
     FOR_VECTOR (i, indices)
       t.Enumerator.FilePaths.Add(us2fs(srcPanel.GetItemRelPath(indices[i])));
+
+    if (t.Enumerator.FilePaths.Size() == 1)
+      t.Hash.MainName = t.Enumerator.FilePaths[0];
 
     UString basePrefix = srcPanel.GetFsPath();
     UString basePrefix2 = basePrefix;

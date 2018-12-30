@@ -1,5 +1,5 @@
 /* Lzma2Dec.c -- LZMA2 Decoder
-2018-02-19 : Igor Pavlov : Public domain */
+2018-07-04 : Igor Pavlov : Public domain */
 
 /* #define SHOW_DEBUG_INFO */
 
@@ -169,7 +169,7 @@ static void LzmaDec_UpdateWithUncompressed(CLzmaDec *p, const Byte *src, SizeT s
   p->processedPos += (UInt32)size;
 }
 
-void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState);
+void LzmaDec_InitDicAndState(CLzmaDec *p, BoolInt initDic, BoolInt initState);
 
 
 SRes Lzma2Dec_DecodeToDic(CLzma2Dec *p, SizeT dicLimit,
@@ -232,7 +232,7 @@ SRes Lzma2Dec_DecodeToDic(CLzma2Dec *p, SizeT dicLimit,
 
         if (p->state == LZMA2_STATE_DATA)
         {
-          Bool initDic = (p->control == LZMA2_CONTROL_COPY_RESET_DIC);
+          BoolInt initDic = (p->control == LZMA2_CONTROL_COPY_RESET_DIC);
           LzmaDec_InitDicAndState(&p->decoder, initDic, False);
         }
 
@@ -254,8 +254,8 @@ SRes Lzma2Dec_DecodeToDic(CLzma2Dec *p, SizeT dicLimit,
 
         if (p->state == LZMA2_STATE_DATA)
         {
-          Bool initDic = (p->control >= 0xE0);
-          Bool initState = (p->control >= 0xA0);
+          BoolInt initDic = (p->control >= 0xE0);
+          BoolInt initState = (p->control >= 0xA0);
           LzmaDec_InitDicAndState(&p->decoder, initDic, initState);
           p->state = LZMA2_STATE_DATA_CONT;
         }

@@ -236,6 +236,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       prop = v;
       break;
     }
+
+    case kpidReadOnly:
+    {
+      if (!_db.CanUpdate())
+        prop = true;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;

@@ -1,5 +1,5 @@
 /* 7zArcIn.c -- 7z Input functions
-2017-04-03 : Igor Pavlov : Public domain */
+2018-07-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -1744,7 +1744,7 @@ size_t SzArEx_GetFullNameLen(const CSzArEx *p, size_t fileIndex)
 
 UInt16 *SzArEx_GetFullNameUtf16_Back(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
 {
-  Bool needSlash;
+  BoolInt needSlash;
   if (!p->FileNameOffsets)
   {
     *(--dest) = 0;

@@ -522,10 +522,9 @@ class CBenchProgressInfo:
 {
 public:
   CBenchProgressStatus *Status;
-  HRESULT Res;
   IBenchCallback *Callback;
 
-  CBenchProgressInfo(): Callback(0) {}
+  CBenchProgressInfo(): Callback(NULL) {}
   MY_UNKNOWN_IMP
   STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
@@ -758,7 +757,7 @@ struct CEncoderInfo
     fileData(NULL),
     CheckCrc_Enc(true),
     CheckCrc_Dec(true),
-    outStreamSpec(0), callback(0), printCallback(0), propStreamSpec(0) {}
+    outStreamSpec(NULL), callback(NULL), printCallback(NULL), propStreamSpec(NULL) {}
 
   #ifndef _7ZIP_ST
   
@@ -1144,7 +1143,7 @@ static const UInt32 kNumThreadsMax = (1 << 12);
 struct CBenchEncoders
 {
   CEncoderInfo *encoders;
-  CBenchEncoders(UInt32 num): encoders(0) { encoders = new CEncoderInfo[num]; }
+  CBenchEncoders(UInt32 num): encoders(NULL) { encoders = new CEncoderInfo[num]; }
   ~CBenchEncoders() { delete []encoders; }
 };
 
@@ -1545,7 +1544,7 @@ struct CFreqThreads
   CFreqInfo *Items;
   UInt32 NumThreads;
 
-  CFreqThreads(): Items(0), NumThreads(0) {}
+  CFreqThreads(): Items(NULL), NumThreads(0) {}
   void WaitAll()
   {
     for (UInt32 i = 0; i < NumThreads; i++)
@@ -1603,7 +1602,7 @@ struct CCrcThreads
   CCrcInfo *Items;
   UInt32 NumThreads;
 
-  CCrcThreads(): Items(0), NumThreads(0) {}
+  CCrcThreads(): Items(NULL), NumThreads(0) {}
   void WaitAll()
   {
     for (UInt32 i = 0; i < NumThreads; i++)
@@ -1885,7 +1884,50 @@ AString GetProcessThreadsInfo(const NSystem::CProcessAffinity &ti)
 }
 
 
+static void PrintSize(AString &s, UInt64 v)
+{
+  char c = 0;
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'K';
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'M';
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'G';
+  if ((v & 0x3FF) == 0) { v >>= 10; c = 'T';
+  }}}}
+  else
+  {
+    PrintHex(s, v);
+    return;
+  }
+  char temp[32];
+  ConvertUInt64ToString(v, temp);
+  s += temp;
+  if (c)
+    s += c;
+}
+
+
+#ifdef _7ZIP_LARGE_PAGES
+
 extern bool g_LargePagesMode;
+
+extern "C"
+{
+  extern SIZE_T g_LargePageSize;
+}
+
+void Add_LargePages_String(AString &s)
+{
+  if (g_LargePagesMode || g_LargePageSize != 0)
+  {
+    s += " (LP-";
+    PrintSize(s, g_LargePageSize);
+    if (!g_LargePagesMode)
+      s += "-NA";
+    s += ")";
+  }
+}
+
+#endif
+
 
 
 static void PrintRequirements(IBenchPrintCallback &f, const char *sizeString,
@@ -1898,8 +1940,15 @@ static void PrintRequirements(IBenchPrintCallback &f, const char *sizeString,
   else
     f.Print("      ?");
   f.Print(" MB");
-  if (g_LargePagesMode)
-    f.Print(" LP");
+  
+  #ifdef _7ZIP_LARGE_PAGES
+  {
+    AString s;
+    Add_LargePages_String(s);
+    f.Print(s);
+  }
+  #endif
+  
   f.Print(",  # ");
   f.Print(threadsString);
   PrintNumber(f, numThreads, 3);
@@ -2539,26 +2588,7 @@ static const char * const k_PF[] =
 #endif
 
 
-static void PrintSize(AString &s, UInt64 v)
-{
-  char c = 0;
-  if ((v & 0x3FF) == 0) { v >>= 10; c = 'K';
-  if ((v & 0x3FF) == 0) { v >>= 10; c = 'M';
-  if ((v & 0x3FF) == 0) { v >>= 10; c = 'G';
-  if ((v & 0x3FF) == 0) { v >>= 10; c = 'T';
-  }}}}
-  else
-  {
-    PrintHex(s, v);
-    return;
-  }
-  char temp[32];
-  ConvertUInt64ToString(v, temp);
-  s += temp;
-  if (c)
-    s += c;
-}
-  
+
 
 static void PrintPage(AString &s, UInt32 v)
 {
@@ -2707,8 +2737,9 @@ void GetCpuName(AString &s)
 
   #endif
 
-  if (g_LargePagesMode)
-    s += " (LP)";
+  #ifdef _7ZIP_LARGE_PAGES
+  Add_LargePages_String(s);
+  #endif
 }
 
 
@@ -2968,6 +2999,9 @@ HRESULT Bench(
       UInt64 start = ::GetTimeCount();
       UInt32 sum = (UInt32)start;
       sum = CountCpuFreq(sum, (UInt32)(numMilCommands * 1000000 / kNumFreqCommands), g_BenchCpuFreqTemp);
+      if (sum == 0xF1541213)
+        if (printCallback)
+          printCallback->Print("");
       const UInt64 realDelta = ::GetTimeCount() - start;
       start = realDelta;
       if (start == 0)
@@ -2984,7 +3018,7 @@ HRESULT Bench(
         else
         {
           // PrintNumber(*printCallback, start, 0);
-          PrintNumber(*printCallback, mipsVal, 5 + ((sum == 0xF1541213) ? 1 : 0));
+          PrintNumber(*printCallback, mipsVal, 5);
         }
       }
       /*

@@ -68,5 +68,10 @@ void GetSysInfo(AString &s1, AString &s2);
 void GetCpuName(AString &s);
 void GetCpuFeatures(AString &s);
 
+#ifdef _7ZIP_LARGE_PAGES
+void Add_LargePages_String(AString &s);
+#else
+// #define Add_LargePages_String
+#endif
 
 #endif

@@ -29,7 +29,7 @@ public:
   CMyComPtr<IFolderOperationsExtractCallback> ExtractCallback;
   
   CHashBundle Hash;
-  UString FirstFilePath;
+  // UString FirstFilePath;
 
   HRESULT Result;
 
@@ -48,7 +48,7 @@ void CPanelCopyThread::ShowFinalResults(HWND hwnd)
   if (!ResultsWereShown)
   {
     ResultsWereShown = true;
-    ShowHashResults(Hash, fs2us(FirstFilePath), hwnd);
+    ShowHashResults(Hash, hwnd);
   }
 }
   
@@ -100,7 +100,7 @@ HRESULT CPanelCopyThread::ProcessVirt()
     else if (options->testMode)
     {
       CProgressMessageBoxPair &pair = GetMessagePair(false); // GetMessagePair(ExtractCallbackSpec->Hash.NumErrors != 0);
-      AddHashBundleRes(pair.Message, Hash, FirstFilePath);
+      AddHashBundleRes(pair.Message, Hash);
     }
   }
 
@@ -158,7 +158,10 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
 
 
   if (indices.Size() == 1)
-    extracter.FirstFilePath = GetItemRelPath(indices[0]);
+  {
+    extracter.Hash.FirstFileName = GetItemRelPath(indices[0]);
+    extracter.Hash.MainName = extracter.Hash.FirstFileName;
+  }
 
   if (options.VirtFileSystem)
   {
@@ -186,7 +189,7 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options, const CRecordVector<UInt32> &ind
     extracter.ExtractCallbackSpec->SetHashCalc(&extracter.Hash);
   }
 
-  extracter.Hash.Init();
+  // extracter.Hash.Init();
 
   UString title;
   {

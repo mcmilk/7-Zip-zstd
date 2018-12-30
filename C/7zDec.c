@@ -1,5 +1,5 @@
 /* 7zDec.c -- Decoding from 7z folder
-2017-04-03 : Igor Pavlov : Public domain */
+2018-07-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -44,7 +44,7 @@ typedef struct
   const Byte *end;
   const Byte *begin;
   UInt64 processed;
-  Bool extra;
+  BoolInt extra;
   SRes res;
   const ILookInStream *inStream;
 } CByteInToLook;
@@ -269,7 +269,7 @@ static SRes SzDecodeCopy(UInt64 inSize, ILookInStream *inStream, Byte *outBuffer
   return SZ_OK;
 }
 
-static Bool IS_MAIN_METHOD(UInt32 m)
+static BoolInt IS_MAIN_METHOD(UInt32 m)
 {
   switch (m)
   {
@@ -286,7 +286,7 @@ static Bool IS_MAIN_METHOD(UInt32 m)
   return False;
 }
 
-static Bool IS_SUPPORTED_CODER(const CSzCoderInfo *c)
+static BoolInt IS_SUPPORTED_CODER(const CSzCoderInfo *c)
 {
   return
       c->NumStreams == 1

@@ -1475,6 +1475,21 @@ void CDatabase::ClearAndClose()
   InStream.Release();
 }
 
+
+static void CopyName(wchar_t *dest, const wchar_t *src)
+{
+  for (;;)
+  {
+    wchar_t c = *src++;
+    // 18.06
+    if (c == '\\' || c == '/')
+      c = '_';
+    *dest++ = c;
+    if (c == 0)
+      return;
+  }
+}
+
 void CDatabase::GetItemPath(unsigned index, NCOM::CPropVariant &path) const
 {
   const CItem *item = &Items[index];
@@ -1492,7 +1507,7 @@ void CDatabase::GetItemPath(unsigned index, NCOM::CPropVariant &path) const
       wchar_t *s = path.AllocBstr(data.Name.Len() + 1);
       s[0] = L':';
       if (!data.Name.IsEmpty())
-        MyStringCopy(s + 1, data.Name.GetRawPtr());
+        CopyName(s + 1, data.Name.GetRawPtr());
       return;
     }
 
@@ -1541,7 +1556,7 @@ void CDatabase::GetItemPath(unsigned index, NCOM::CPropVariant &path) const
     if (!name.IsEmpty())
     {
       size -= name.Len();
-      MyStringCopy(s + size, name.GetRawPtr());
+      CopyName(s + size, name.GetRawPtr());
     }
     s[--size] = ':';
     needColon = true;
@@ -1551,7 +1566,7 @@ void CDatabase::GetItemPath(unsigned index, NCOM::CPropVariant &path) const
     const UString2 &name = rec.FileNames[item->NameIndex].Name;
     unsigned len = name.Len();
     if (len != 0)
-      MyStringCopy(s + size - len, name.GetRawPtr());
+      CopyName(s + size - len, name.GetRawPtr());
     if (needColon)
       s[size] =  ':';
     size -= len;
@@ -1575,7 +1590,7 @@ void CDatabase::GetItemPath(unsigned index, NCOM::CPropVariant &path) const
         if (len != 0)
         {
           size -= len;
-          MyStringCopy(s + size, name.GetRawPtr());
+          CopyName(s + size, name.GetRawPtr());
         }
         s[size + len] = WCHAR_PATH_SEPARATOR;
         continue;

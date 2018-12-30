@@ -788,9 +788,21 @@ HRESULT CHandler::Open2(IInStream *stream)
     if (headSize != RSRC_HEAD_SIZE
         || footerOffset >= rsrcPair.Len
         || mainDataSize >= rsrcPair.Len
-        || footerOffset + footerSize != rsrcPair.Len
+        || footerOffset < mainDataSize
         || footerOffset != headSize + mainDataSize)
       return S_FALSE;
+
+    const UInt32 footerEnd = footerOffset + footerSize;
+    if (footerEnd != rsrcPair.Len)
+    {
+      // there is rare case dmg example, where there are 4 additional bytes
+      UInt64 rem = rsrcPair.Len - footerOffset;
+      if (rem < footerSize
+          || rem - footerSize != 4
+          || Get32(p + footerEnd) != 0)
+        return S_FALSE;
+    }
+  
     if (footerSize < 16)
       return S_FALSE;
     if (memcmp(p, p + footerOffset, 16) != 0)

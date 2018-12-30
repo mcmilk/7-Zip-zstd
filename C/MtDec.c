@@ -1,5 +1,5 @@
 /* MtDec.c -- Multi-thread Decoder
-2018-03-02 : Igor Pavlov : Public domain */
+2018-07-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -197,7 +197,7 @@ static SRes FullRead(ISeqInStream *stream, Byte *data, size_t *processedSize)
 }
 
 
-static SRes MtDec_GetError_Spec(CMtDec *p, UInt64 interruptIndex, Bool *wasInterrupted)
+static SRes MtDec_GetError_Spec(CMtDec *p, UInt64 interruptIndex, BoolInt *wasInterrupted)
 {
   SRes res;
   CriticalSection_Enter(&p->mtProgress.cs);
@@ -207,7 +207,7 @@ static SRes MtDec_GetError_Spec(CMtDec *p, UInt64 interruptIndex, Bool *wasInter
   return res;
 }
 
-static SRes MtDec_Progress_GetError_Spec(CMtDec *p, UInt64 inSize, UInt64 outSize, UInt64 interruptIndex, Bool *wasInterrupted)
+static SRes MtDec_Progress_GetError_Spec(CMtDec *p, UInt64 inSize, UInt64 outSize, UInt64 interruptIndex, BoolInt *wasInterrupted)
 {
   SRes res;
   CriticalSection_Enter(&p->mtProgress.cs);
@@ -271,9 +271,9 @@ static WRes ThreadFunc2(CMtDecThread *t)
   for (;;)
   {
     SRes res, codeRes;
-    Bool wasInterrupted, isAllocError, overflow, finish;
+    BoolInt wasInterrupted, isAllocError, overflow, finish;
     SRes threadingErrorSRes;
-    Bool needCode, needWrite, needContinue;
+    BoolInt needCode, needWrite, needContinue;
     
     size_t inDataSize_Start;
     UInt64 inDataSize;
@@ -289,7 +289,7 @@ static WRes ThreadFunc2(CMtDecThread *t)
     Byte *afterEndData = NULL;
     size_t afterEndData_Size = 0;
 
-    Bool canCreateNewThread = False;
+    BoolInt canCreateNewThread = False;
     // CMtDecCallbackInfo parse;
     CMtDecThread *nextThread;
 
@@ -629,7 +629,7 @@ static WRes ThreadFunc2(CMtDecThread *t)
 
     if (res == SZ_OK && needCode && codeRes == SZ_OK)
     {
-      Bool isStartBlock = True;
+      BoolInt isStartBlock = True;
       CMtDecBufLink *link = (CMtDecBufLink *)t->inBuf;
 
       for (;;)
@@ -691,9 +691,9 @@ static WRes ThreadFunc2(CMtDecThread *t)
     RINOK_THREAD(Event_Wait(&t->canWrite));
 
   {
-    Bool isErrorMode = False;
-    Bool canRecode = True;
-    Bool needWriteToStream = needWrite;
+    BoolInt isErrorMode = False;
+    BoolInt canRecode = True;
+    BoolInt needWriteToStream = needWrite;
 
     if (p->exitThread) return 0; // it's never executed in normal cases
 

@@ -155,6 +155,7 @@ void CInArchive::Close()
   HeadersError = false;
   HeadersWarning = false;
   ExtraMinorError = false;
+  
   UnexpectedEnd = false;
   LocalsWereRead = false;
   LocalsCenterMerged = false;
@@ -1729,6 +1730,9 @@ HRESULT CInArchive::FindCd(bool checkOffsetMode)
 HRESULT CInArchive::TryReadCd(CObjectVector<CItemEx> &items, const CCdInfo &cdInfo, UInt64 cdOffset, UInt64 cdSize)
 {
   items.Clear();
+  
+  // _startLocalFromCd_Disk = (UInt32)(Int32)-1;
+  // _startLocalFromCd_Offset = (UInt64)(Int64)-1;
 
   RINOK(SeekToVol(IsMultiVol ? cdInfo.CdDisk : -1, cdOffset));
 
@@ -1752,6 +1756,17 @@ HRESULT CInArchive::TryReadCd(CObjectVector<CItemEx> &items, const CCdInfo &cdIn
     {
       CItemEx cdItem;
       RINOK(ReadCdItem(cdItem));
+      
+      /*
+      if (cdItem.Disk < _startLocalFromCd_Disk ||
+          cdItem.Disk == _startLocalFromCd_Disk &&
+          cdItem.LocalHeaderPos < _startLocalFromCd_Offset)
+      {
+        _startLocalFromCd_Disk = cdItem.Disk;
+        _startLocalFromCd_Offset = cdItem.LocalHeaderPos;
+      }
+      */
+
       items.Add(cdItem);
     }
     if (Callback && (items.Size() & 0xFFF) == 0)
@@ -2509,6 +2524,8 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items)
         {
           ArcInfo.CdWasRead = true;
           ArcInfo.FirstItemRelatOffset = items[0].LocalHeaderPos;
+
+          // ArcInfo.FirstItemRelatOffset = _startLocalFromCd_Offset;
         }
       }
     }
@@ -2535,6 +2552,10 @@ HRESULT CInArchive::ReadHeaders(CObjectVector<CItemEx> &items)
     items.Clear();
     localsWereRead = true;
     
+    HeadersError = false;
+    HeadersWarning = false;
+    ExtraMinorError = false;
+
     // we can use any mode: with buffer and without buffer
     //   without buffer : skips packed data : fast for big files : slow for small files
     //   with    buffer : reads packed data : slow for big files : fast for small files

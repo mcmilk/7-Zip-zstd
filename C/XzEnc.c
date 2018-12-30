@@ -1,5 +1,5 @@
 /* XzEnc.c -- Xz Encode
-2018-04-28 : Igor Pavlov : Public domain */
+2018-07-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -814,7 +814,7 @@ static SRes Xz_CompressBlock(
     SRes res;
     Byte *outBuf = NULL;
     size_t outSize = 0;
-    Bool useStream = (fp || inStream);
+    BoolInt useStream = (fp || inStream);
     // useStream = True;
     
     if (!useStream)
@@ -940,7 +940,7 @@ typedef struct
   #ifndef _7ZIP_ST
   unsigned checkType;
   ISeqOutStream *outStream;
-  Bool mtCoder_WasConstructed;
+  BoolInt mtCoder_WasConstructed;
   CMtCoder mtCoder;
   CXzEncBlockInfo EncBlocks[MTCODER__BLOCKS_MAX];
   #endif

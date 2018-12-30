@@ -307,6 +307,7 @@ public:
 
   void ReplaceOneCharAtPos(unsigned pos, char c) { _chars[pos] = c; }
 
+  char *GetBuf() { return _chars; }
   /* GetBuf(minLen): provides the buffer that can store
      at least (minLen) characters and additional null terminator.
      9.35: GetBuf doesn't preserve old characters and terminator */

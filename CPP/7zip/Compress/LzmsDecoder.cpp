@@ -517,9 +517,9 @@ HRESULT CDecoder::CodeReal(const Byte *in, size_t inSize, Byte *_win, size_t out
         if (len > outSize - _pos)
           return S_FALSE;
 
-        if (dist > _pos)
-          return S_FALSE;
         size_t span = (size_t)1 << power;
+        if ((UInt64)dist + span > _pos)
+          return S_FALSE;
         Byte *dest = _win + _pos - span;
         const Byte *src = dest - dist;
         _pos += len;
