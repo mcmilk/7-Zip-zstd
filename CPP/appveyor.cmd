@@ -40,14 +40,19 @@ goto build_vc
 
 
 :build_vc
+FOR /R .\ %%d IN (ARM X64 O) DO rd /S /Q %%d 2>NUL
 set PATH=%OPATH%
-FOR /R .\ %%d IN (AMD64 O) DO rd /S /Q %%d 2>NUL
 call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x32
 call build-x32.cmd
+set PATH=%OPATH%
 call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86_amd64
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x64
 call build-x64.cmd
+set PATH=%OPATH%
+call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86_arm
+set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-arm
+call build-arm.cmd
 goto %NEXT%
 
 :build_sdk
