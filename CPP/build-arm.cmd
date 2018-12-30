@@ -22,25 +22,25 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x64 @ 7z.dll" >> %ERRFILE%
 copy arm\7z.dll %OUTDIR%\7z.dll
 
-cd %ROOT%\UI\FileManager
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error x64 @ 7zFM.exe" >> %ERRFILE%
-copy arm\7zFM.exe %OUTDIR%\7zFM.exe
+REM cd %ROOT%\UI\FileManager
+REM nmake %OPTS%
+REM IF %errorlevel% NEQ 0 echo "Error x64 @ 7zFM.exe" >> %ERRFILE%
+REM copy arm\7zFM.exe %OUTDIR%\7zFM.exe
 
-cd %ROOT%\UI\GUI
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error x64 @ 7zG.exe" >> %ERRFILE%
-copy arm\7zG.exe %OUTDIR%\7zG.exe
+REM cd %ROOT%\UI\GUI
+REM nmake %OPTS%
+REM IF %errorlevel% NEQ 0 echo "Error x64 @ 7zG.exe" >> %ERRFILE%
+REM copy arm\7zG.exe %OUTDIR%\7zG.exe
 
 cd %ROOT%\UI\Explorer
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x64 @ 7-zip.dll" >> %ERRFILE%
 copy arm\7-zip.dll %OUTDIR%\7-zip.dll
 
-cd %ROOT%\Bundles\SFXWin
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error x64 @ 7z.sfx" >> %ERRFILE%
-copy arm\7z.sfx %OUTDIR%\7z.sfx
+REM cd %ROOT%\Bundles\SFXWin
+REM nmake %OPTS%
+REM IF %errorlevel% NEQ 0 echo "Error x64 @ 7z.sfx" >> %ERRFILE%
+REM copy arm\7z.sfx %OUTDIR%\7z.sfx
 
 cd %ROOT%\Bundles\Codec_brotli
 nmake %OPTS%
@@ -72,15 +72,15 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x64 @ flzma2-arm.dll" >> %ERRFILE%
 copy arm\flzma2.dll %OUTDIR%\flzma2-arm.dll
 
-cd %ROOT%\..\..\C\Util\7zipInstall
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error x64 @ Install-arm.exe" >> %ERRFILE%
-copy arm\7zipInstall.exe %OUTDIR%\Install-arm.exe
+REM cd %ROOT%\..\..\C\Util\7zipInstall
+REM nmake %OPTS%
+REM IF %errorlevel% NEQ 0 echo "Error x64 @ Install-arm.exe" >> %ERRFILE%
+REM copy arm\7zipInstall.exe %OUTDIR%\Install-arm.exe
 
-cd %ROOT%\..\..\C\Util\7zipUninstall
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error x64 @ Uninstall.exe" >> %ERRFILE%
-copy arm\7zipUninstall.exe %OUTDIR%\Uninstall.exe
+REM cd %ROOT%\..\..\C\Util\7zipUninstall
+REM nmake %OPTS%
+REM IF %errorlevel% NEQ 0 echo "Error x64 @ Uninstall.exe" >> %ERRFILE%
+REM copy arm\7zipUninstall.exe %OUTDIR%\Uninstall.exe
 
 cd %ROOT%\UI\Console
 nmake %OPTS%
