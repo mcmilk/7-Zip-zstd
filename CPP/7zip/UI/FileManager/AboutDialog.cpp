@@ -27,7 +27,7 @@ static const UInt32 kLangIDs[] =
 bool CAboutDialog::OnInit()
 {
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
-  SetItemText(IDT_ABOUT_VERSION, UString("7-Zip ZS " MY_VERSION_CPU));
+  SetItemText(IDT_ABOUT_VERSION, UString("7-Zip " MY_VERSION_CPU));
   SetItemText(IDT_ABOUT_DATE, LLL(MY_DATE));
   
   LangSetWindowText(*this, IDD_ABOUT);
