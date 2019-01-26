@@ -12,6 +12,9 @@
 #include <unistd.h>
 #define USE_POSIX_TIME
 #define USE_POSIX_TIME2
+#else
+# define RtlGenRandom SystemFunction036
+extern "C" BOOLEAN NTAPI RtlGenRandom(PVOID RandomBuffer, ULONG RandomBufferLength);
 #endif
 
 #ifdef USE_POSIX_TIME
@@ -39,6 +42,8 @@ void CRandomGenerator::Init()
   HASH_UPD(w);
   w = ::GetCurrentThreadId();
   HASH_UPD(w);
+  if (RtlGenRandom(&w, sizeof(DWORD)))
+    HASH_UPD(w);
   #else
   pid_t pid = getpid();
   HASH_UPD(pid);

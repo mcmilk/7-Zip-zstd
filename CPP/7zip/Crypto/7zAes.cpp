@@ -151,21 +151,10 @@ void CBase::PrepareKey()
 
 #ifndef EXTRACT_ONLY
 
-/*
-STDMETHODIMP CEncoder::ResetSalt()
-{
-  _key.SaltSize = 4;
-  g_RandomGenerator.Generate(_key.Salt, _key.SaltSize);
-  return S_OK;
-}
-*/
-
 STDMETHODIMP CEncoder::ResetInitVector()
 {
-  for (unsigned i = 0; i < sizeof(_iv); i++)
-    _iv[i] = 0;
-  _ivSize = 8;
-  g_RandomGenerator.Generate(_iv, _ivSize);
+  _ivSize = sizeof(_iv);
+  g_RandomGenerator.Generate(_iv, sizeof(_iv));
   return S_OK;
 }
 
@@ -244,7 +233,6 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
   return (_key.NumCyclesPower <= k_NumCyclesPower_Supported_MAX
       || _key.NumCyclesPower == 0x3F) ? S_OK : E_NOTIMPL;
 }
-
 
 STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
