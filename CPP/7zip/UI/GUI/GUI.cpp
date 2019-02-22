@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
+#include "../../../../C/DllSecur.h"
+#endif
+
 #include "../../../Common/MyWindows.h"
 
 #include <shlwapi.h>
@@ -372,6 +376,10 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   // setlocale(LC_COLLATE, ".ACP");
   try
   {
+    #ifdef _WIN32
+    My_SetDefaultDllDirectories();
+    #endif
+
     return Main2();
   }
   catch(const CNewException &)

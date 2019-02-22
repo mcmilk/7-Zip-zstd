@@ -7,6 +7,7 @@
 
 #include "../../../Common/ComTry.h"
 #include "../../../Common/IntToString.h"
+#include "../../../Common/MyBuffer2.h"
 #include "../../../Common/UTFConvert.h"
 
 #include "../../../Windows/PropVariantUtils.h"
@@ -103,37 +104,6 @@ static const char * const g_LinkTypes[] =
 
 static const char g_ExtraTimeFlags[] = { 'u', 'M', 'C', 'A', 'n' };
 
-
-template <unsigned alignMask>
-struct CAlignedBuffer
-{
-  Byte *_buf;
-  Byte *_bufBase;
-  size_t _size;
-
-  CAlignedBuffer(): _buf(NULL), _bufBase(NULL), _size(0) {}
-  ~CAlignedBuffer() { ::MyFree(_bufBase); }
-public:
-  operator       Byte *()       { return _buf; }
-  operator const Byte *() const { return _buf; }
-
-  void AllocAtLeast(size_t size)
-  {
-    if (_buf && _size >= size)
-      return;
-    ::MyFree(_bufBase);
-    _buf = NULL;
-    _size = 0;
-    _bufBase = (Byte *)::MyAlloc(size + alignMask);
-   
-    if (_bufBase)
-    {
-      _size = size;
-      // _buf = (Byte *)(((uintptr_t)_bufBase + alignMask) & ~(uintptr_t)alignMask);
-         _buf = (Byte *)(((ptrdiff_t)_bufBase + alignMask) & ~(ptrdiff_t)alignMask);
-    }
-  }
-};
 
 static unsigned ReadVarInt(const Byte *p, size_t maxSize, UInt64 *val)
 {
@@ -578,7 +548,7 @@ STDMETHODIMP COutStreamWithHash::Write(const void *data, UInt32 size, UInt32 *pr
 
 class CInArchive
 {
-  CAlignedBuffer<AES_BLOCK_SIZE - 1> _buf;
+  CAlignedBuffer _buf;
   size_t _bufSize;
   size_t _bufPos;
   ISequentialInStream *_stream;
@@ -586,7 +556,7 @@ class CInArchive
   NCrypto::NRar5::CDecoder *m_CryptoDecoderSpec;
   CMyComPtr<ICompressFilter> m_CryptoDecoder;
 
-
+  CLASS_NO_COPY(CInArchive)
 
   HRESULT ReadStream_Check(void *data, size_t size);
 
@@ -609,6 +579,8 @@ public:
     size_t ExtraSize;
     UInt64 DataSize;
   };
+
+  CInArchive() {}
 
   HRESULT ReadBlockHeader(CHeader &h);
   bool ReadFileHeader(const CHeader &header, CItem &item);

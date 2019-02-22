@@ -85,13 +85,14 @@ HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 crc, UInt64 u
     return E_NOTIMPL;
   RINOK(ReadStream_FALSE(inStream, temp, 4));
   _remSize = GetUi32(temp);
-  const UInt32 kAlign = 16;
+  // const UInt32 kAlign = 16;
   if (_remSize < 16 || _remSize > (1 << 18))
     return E_NOTIMPL;
-  if (_remSize + kAlign > _buf.Size())
+  if (_remSize > _bufAligned.Size())
   {
-    _buf.Alloc(_remSize + kAlign);
-    _bufAligned = (Byte *)((ptrdiff_t)((Byte *)_buf + kAlign - 1) & ~(ptrdiff_t)(kAlign - 1));
+    _bufAligned.AllocAtLeast(_remSize);
+    if (!(Byte *)_bufAligned)
+      return E_OUTOFMEMORY;
   }
   return ReadStream_FALSE(inStream, _bufAligned, _remSize);
 }

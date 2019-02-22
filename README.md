@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 18.06 ZS v1.3.8 R1 (x64) : Copyright (c) 1999-2018 Igor Pavlov, 2016-2018 Tino Reichardt : 2018-12-30
+7-Zip 19.00 ZS v1.3.8 R1 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2019 Tino Reichardt : 2018-12-30
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -162,7 +162,7 @@ Hashers:
 
 The output should look like this:
 ```
-7-Zip 18.06 (x64) : Copyright (c) 1999-2018 Igor Pavlov : 2018-04-30
+7-Zip 19.00 (x64) : Copyright (c) 1999-2019 Igor Pavlov : 2018-04-30
 
 Libs:
  0  C:\Program Files\7-Zip\7z.dll
@@ -274,7 +274,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 18.06
+- 7-Zip ZS Version 19.00
   - [Brotli] Version 1.0.7
   - [Fast LZMA2] Version 0.9.2
   - [Lizard] Version 1.0
@@ -282,7 +282,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.3.8
 
-/TR 2018-12-30
+/TR 2019-02-22
 
 ## Notes
 

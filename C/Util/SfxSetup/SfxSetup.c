@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2018-08-04 : Igor Pavlov : Public domain */
+2019-02-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -379,7 +379,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
   if (res == SZ_OK)
   {
-    lookStream.buf = ISzAlloc_Alloc(&allocImp, kInputBufSize);
+    lookStream.buf = (Byte *)ISzAlloc_Alloc(&allocImp, kInputBufSize);
     if (!lookStream.buf)
       res = SZ_ERROR_MEM;
     else
@@ -420,7 +420,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       
       temp = path + pathLen;
       
-      SzArEx_GetFileNameUtf16(&db, i, temp);
+      SzArEx_GetFileNameUtf16(&db, i, (UInt16 *)temp);
       {
         res = SzArEx_Extract(&db, &lookStream.vt, i,
           &blockIndex, &outBuffer, &outBufferSize,
@@ -527,7 +527,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       {
         WCHAR *temp = path + pathLen;
         UInt32 j;
-        SzArEx_GetFileNameUtf16(&db, executeFileIndex, temp);
+        SzArEx_GetFileNameUtf16(&db, executeFileIndex, (UInt16 *)temp);
         for (j = 0; temp[j] != 0; j++)
           if (temp[j] == '/')
             temp[j] = CHAR_PATH_SEPARATOR;

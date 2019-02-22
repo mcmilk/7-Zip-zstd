@@ -1,5 +1,5 @@
 /* Bcj2Enc.c -- BCJ2 Encoder (Converter for x86 code)
-2018-07-04 : Igor Pavlov : Public domain */
+2019-02-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -253,7 +253,7 @@ void Bcj2Enc_Encode(CBcj2Enc *p)
     {
       const Byte *src = p->src;
       const Byte *srcLim = p->srcLim;
-      unsigned finishMode = p->finishMode;
+      EBcj2Enc_FinishMode finishMode = p->finishMode;
       
       p->src = p->temp;
       p->srcLim = p->temp + p->tempPos;

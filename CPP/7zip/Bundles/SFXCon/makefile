@@ -6,7 +6,6 @@ CFLAGS = $(CFLAGS) \
   -DEXTRACT_ONLY \
   -DNO_READ_FROM_CODER \
   -D_SFX \
-  -D_CONSOLE \
 
 CURRENT_OBJS = \
   $O\SfxCon.obj \

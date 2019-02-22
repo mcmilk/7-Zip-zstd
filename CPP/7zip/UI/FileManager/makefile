@@ -1,15 +1,6 @@
 PROG = 7zFM.exe
 CFLAGS = $(CFLAGS) \
-  -DLANG \
-  -DNEW_FOLDER_INTERFACE \
   -DEXTERNAL_CODECS \
-
-!IFDEF UNDER_CE
-LIBS = $(LIBS) ceshell.lib Commctrl.lib
-!ELSE
-LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib Mpr.lib Gdi32.lib
-CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE
-!ENDIF
 
 !include "FM.mak"
 
@@ -102,8 +93,9 @@ GUI_OBJS = \
 COMPRESS_OBJS = \
   $O\CopyCoder.obj \
 
-C_OBJS = \
+C_OBJS = $(C_OBJS) \
   $O\Alloc.obj \
+  $O\CpuArch.obj \
   $O\Sort.obj \
   $O\Threads.obj \
 

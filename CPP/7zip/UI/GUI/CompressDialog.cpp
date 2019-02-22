@@ -1275,7 +1275,7 @@ void CCompressDialog::SetMethod(int keepMethodId)
   bool isSfx = IsSFX();
   bool weUseSameMethod = false;
 
-#if 1
+#if 0
   {
   wchar_t buf[2000];
   wsprintf(buf, L"keep=%d level = %d method=%s", keepMethodId, defaultLevel, (LPCWSTR)defaultMethod);

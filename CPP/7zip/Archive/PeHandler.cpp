@@ -41,9 +41,8 @@ static const UInt32 k_Signature32 = 0x00004550;
 
 static HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 excludePos, UInt32 &res)
 {
-  const UInt32 kBufSizeMax = (UInt32)1 << 16;
-  UInt32 bufSize = MyMin(kBufSizeMax, size);
-  bufSize += (bufSize & 1);
+  const UInt32 kBufSizeMax = (UInt32)1 << 15;
+  UInt32 bufSize = kBufSizeMax;
   CByteBuffer buffer(bufSize);
   Byte *buf = buffer;
   UInt32 sum = 0;
@@ -58,9 +57,6 @@ static HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 exc
     size_t processed = rem;
     RINOK(ReadStream(stream, buf, &processed));
     
-    if ((processed & 1) != 0)
-      buf[processed] = 0;
-
     for (unsigned j = 0; j < 4; j++)
     {
       UInt32 e = excludePos + j;
@@ -72,11 +68,30 @@ static HRESULT CalcCheckSum(ISequentialInStream *stream, UInt32 size, UInt32 exc
       }
     }
 
-    for (size_t i = 0; i < processed; i += 2)
+    const unsigned kStep = (1 << 4);
     {
-      sum += Get16(buf + i);
-      sum = (sum + (sum >> 16)) & 0xFFFF;
+      for (size_t i = processed; (i & (kStep - 1)) != 0; i++)
+        buf[i] = 0;
     }
+    {
+      const Byte *buf2 = buf;
+      const Byte *bufLimit = buf + processed;
+      UInt64 sum2 = 0;
+      for (; buf2 < bufLimit; buf2 += kStep)
+      {
+        UInt64 sum3 = (UInt64)Get32(buf2)
+            + Get32(buf2 + 4)
+            + Get32(buf2 + 8)
+            + Get32(buf2 + 12);
+        sum2 += sum3;
+      }
+      sum2 = (UInt32)(sum2) + (UInt64)(sum2 >> 32);
+      UInt32 sum3 = ((UInt32)sum2 + (UInt32)(sum2 >> 32));
+      sum += (sum3 & 0xFFFF) + (sum3 >> 16);
+      sum = (sum & 0xFFFF) + (sum >> 16);
+      sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+
     pos += (UInt32)processed;
     if (rem != processed)
       break;

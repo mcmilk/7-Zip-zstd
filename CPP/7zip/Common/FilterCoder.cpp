@@ -7,6 +7,23 @@
 #include "FilterCoder.h"
 #include "StreamUtils.h"
 
+#ifdef _WIN32
+  #define alignedMidBuffer_Alloc g_MidAlloc
+#else
+  #define alignedMidBuffer_Alloc g_AlignedAlloc
+#endif
+
+CAlignedMidBuffer::~CAlignedMidBuffer()
+{
+  ISzAlloc_Free(&alignedMidBuffer_Alloc, _buf);
+}
+
+void CAlignedMidBuffer::AllocAligned(size_t size)
+{
+  ISzAlloc_Free(&alignedMidBuffer_Alloc, _buf);
+  _buf = (Byte *)ISzAlloc_Alloc(&alignedMidBuffer_Alloc, size);
+}
+
 /*
   AES filters need 16-bytes alignment for HARDWARE-AES instructions.
   So we call IFilter::Filter(, size), where (size != 16 * N) only for last data block.
@@ -36,7 +53,7 @@ HRESULT CFilterCoder::Alloc()
     size = kMinSize;
   if (!_buf || _bufSize != size)
   {
-    AllocAlignedMask(size, 16 - 1);
+    AllocAligned(size);
     if (!_buf)
       return E_OUTOFMEMORY;
     _bufSize = size;

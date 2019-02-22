@@ -1,6 +1,5 @@
 PROG = lzma.exe
 MY_CONSOLE = 1
-CFLAGS = $(CFLAGS)
 
 CURRENT_OBJS = \
   $O\LzmaAlone.obj \

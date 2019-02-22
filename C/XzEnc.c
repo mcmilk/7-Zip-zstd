@@ -1,5 +1,5 @@
 /* XzEnc.c -- Xz Encode
-2018-07-04 : Igor Pavlov : Public domain */
+2019-02-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -366,7 +366,7 @@ static SRes SeqInFilter_Read(const ISeqInStream *pp, void *data, size_t *size)
       SRes res;
       *size = sizeOriginal;
       res = p->StateCoder.Code2(p->StateCoder.p,
-          data, size,
+          (Byte *)data, size,
           p->buf + p->curPos, &srcLen,
           p->srcWasFinished, CODER_FINISH_ANY,
           &status);

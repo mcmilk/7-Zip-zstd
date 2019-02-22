@@ -2,6 +2,10 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
+#include "../../../../C/DllSecur.h"
+#endif
+
 #include "../../../Common/MyException.h"
 #include "../../../Common/StdOutStream.h"
 
@@ -63,6 +67,10 @@ int MY_CDECL main
   
   try
   {
+    #ifdef _WIN32
+    My_SetDefaultDllDirectories();
+    #endif
+
     res = Main2(
     #ifndef _WIN32
     numArgs, args

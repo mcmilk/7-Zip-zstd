@@ -7,6 +7,9 @@
 #include <shlwapi.h>
 
 #include "../../../../C/Alloc.h"
+#ifdef _WIN32
+#include "../../../../C/DllSecur.h"
+#endif
 
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
@@ -660,6 +663,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   {
     try
     {
+      #ifdef _WIN32
+      My_SetDefaultDllDirectories();
+      #endif
       return WinMain2(nCmdShow);
     }
     catch (...)

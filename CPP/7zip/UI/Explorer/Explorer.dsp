@@ -286,6 +286,15 @@ SOURCE=..\FileManager\RegistryUtils.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\C\CpuArch.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\CpuArch.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Threads.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File

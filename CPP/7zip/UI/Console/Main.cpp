@@ -87,7 +87,7 @@ static const char * const kHelpString =
     "a"
 #endif
 #endif
-    " <command> [<switches>...] <archive_name> [<file_names>...]\n"
+    " <command> [<switches>...] <archive_name> [<file_names>...] [@listfile]\n"
     "\n"
     "<Commands>\n"
     "  a : Add files to archive\n"
@@ -103,8 +103,7 @@ static const char * const kHelpString =
     "  x : eXtract files with full paths\n"
     "\n"
     "<Switches>\n"
-    "  -- : Stop switches parsing\n"
-    "  @listfile : set path to listfile that contains file names\n"
+    "  -- : Stop switches and @listfile parsing\n"
     "  -ai[r[-|0]]{@listfile|!wildcard} : Include archives\n"
     "  -ax[r[-|0]]{@listfile|!wildcard} : eXclude archives\n"
     "  -ao{a|s|t|u} : set Overwrite mode\n"

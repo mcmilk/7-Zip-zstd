@@ -6,6 +6,7 @@
 
 #include "../../../Common/ComTry.h"
 #include "../../../Common/IntToString.h"
+#include "../../../Common/MyBuffer2.h"
 #include "../../../Common/UTFConvert.h"
 
 #include "../../../Windows/PropVariantUtils.h"
@@ -136,8 +137,7 @@ class CInArchive
   NHeader::NBlock::CBlock m_BlockHeader;
   NCrypto::NRar3::CDecoder *m_RarAESSpec;
   CMyComPtr<ICompressFilter> m_RarAES;
-  CByteBuffer m_DecryptedData;
-  Byte *m_DecryptedDataAligned;
+  CAlignedBuffer m_DecryptedDataAligned;
   UInt32 m_DecryptedDataSize;
   bool m_CryptoMode;
   UInt32 m_CryptoPos;
@@ -553,11 +553,12 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
       m_RarAESSpec->SetPassword((const Byte *)buffer, len * 2);
 
       const UInt32 kDecryptedBufferSize = (1 << 12);
-      if (m_DecryptedData.Size() == 0)
+      if (m_DecryptedDataAligned.Size() == 0)
       {
-        const UInt32 kAlign = 16;
-        m_DecryptedData.Alloc(kDecryptedBufferSize + kAlign);
-        m_DecryptedDataAligned = (Byte *)((ptrdiff_t)((Byte *)m_DecryptedData + kAlign - 1) & ~(ptrdiff_t)(kAlign - 1));
+        // const UInt32 kAlign = 16;
+        m_DecryptedDataAligned.AllocAtLeast(kDecryptedBufferSize);
+        if (!m_DecryptedDataAligned.IsAllocated())
+          return E_OUTOFMEMORY;
       }
       RINOK(m_RarAES->Init());
       size_t decryptedDataSizeT = kDecryptedBufferSize;

@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2018-08-04 : Igor Pavlov : Public domain */
+2019-02-19 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -121,13 +121,51 @@ static void PrintErrorMessage(const char *s)
 }
 
 
+typedef DWORD (WINAPI * Func_GetFileVersionInfoSizeW)(LPCWSTR lptstrFilename, LPDWORD lpdwHandle);
+typedef BOOL (WINAPI * Func_GetFileVersionInfoW)(LPCWSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData);
+typedef BOOL (WINAPI * Func_VerQueryValueW)(const LPVOID pBlock, LPWSTR lpSubBlock, LPVOID * lplpBuffer, PUINT puLen);
+
+static HMODULE g_version_dll_hModule;
+
 static DWORD GetFileVersion(LPCWSTR s)
 {
   DWORD size = 0;
-  BYTE *vi = NULL;
+  void *vi = NULL;
   DWORD version = 0;
+
+  Func_GetFileVersionInfoSizeW my_GetFileVersionInfoSizeW;
+  Func_GetFileVersionInfoW my_GetFileVersionInfoW;
+  Func_VerQueryValueW my_VerQueryValueW;
+
+  if (!g_version_dll_hModule)
+  {
+    wchar_t buf[MAX_PATH + 100];
+    {
+      unsigned len = GetSystemDirectoryW(buf, MAX_PATH + 2);
+      if (len == 0 || len > MAX_PATH)
+        return 0;
+    }
+    {
+      unsigned pos = (unsigned)lstrlenW(buf);
+      if (buf[pos - 1] != '\\')
+        buf[pos++] = '\\';
+      lstrcpyW(buf + pos, L"version.dll");
+    }
+    g_version_dll_hModule = LoadLibraryW(buf);
+    if (!g_version_dll_hModule)
+      return 0;
+  }
+
+  my_GetFileVersionInfoSizeW = (Func_GetFileVersionInfoSizeW)GetProcAddress(g_version_dll_hModule, "GetFileVersionInfoSizeW");
+  my_GetFileVersionInfoW = (Func_GetFileVersionInfoW)GetProcAddress(g_version_dll_hModule, "GetFileVersionInfoW");
+  my_VerQueryValueW = (Func_VerQueryValueW)GetProcAddress(g_version_dll_hModule, "VerQueryValueW");
+
+  if (!my_GetFileVersionInfoSizeW
+     || !my_GetFileVersionInfoW
+     || !my_VerQueryValueW)
+    return 0;
   
-  size = GetFileVersionInfoSizeW(s, NULL);
+  size = my_GetFileVersionInfoSizeW(s, NULL);
   if (size == 0)
     return 0;
   
@@ -135,11 +173,11 @@ static DWORD GetFileVersion(LPCWSTR s)
   if (!vi)
     return 0;
   
-  if (GetFileVersionInfoW(s, 0, size, vi))
+  if (my_GetFileVersionInfoW(s, 0, size, vi))
   {
     VS_FIXEDFILEINFO *fi = NULL;
     UINT fiLen = 0;
-    if (VerQueryValueW(vi, L"\\", (LPVOID *)&fi, &fiLen))
+    if (my_VerQueryValueW(vi, L"\\", (LPVOID *)&fi, &fiLen))
       version = fi->dwFileVersionMS;
   }
   
@@ -1103,7 +1141,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 static BoolInt GetErrorMessage(DWORD errorCode, WCHAR *message)
 {
-  LPVOID msgBuf;
+  LPWSTR msgBuf;
   if (FormatMessageW(
           FORMAT_MESSAGE_ALLOCATE_BUFFER
         | FORMAT_MESSAGE_FROM_SYSTEM
@@ -1201,7 +1239,7 @@ if (res == SZ_OK)
 
   if (res == SZ_OK)
   {
-    lookStream.buf = ISzAlloc_Alloc(&allocImp, kInputBufSize);
+    lookStream.buf = (Byte *)ISzAlloc_Alloc(&allocImp, kInputBufSize);
     if (!lookStream.buf)
       res = SZ_ERROR_MEM;
     else
@@ -1272,7 +1310,7 @@ if (res == SZ_OK)
         
       temp = path + pathLen;
       
-      SzArEx_GetFileNameUtf16(&db, i, temp);
+      SzArEx_GetFileNameUtf16(&db, i, (UInt16 *)temp);
 
       if (!g_SilentMode)
         SetWindowTextW(g_InfoLine_HWND, temp);
