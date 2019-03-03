@@ -229,13 +229,13 @@ static const CHashCommand g_HashCommands[] =
   { CZipContextMenu::kHash_CRC64,    "CRC-64",   "CRC64" },
   { CZipContextMenu::kHash_XXH32,    "XXH-32",   "XXH32" },
   { CZipContextMenu::kHash_XXH64,    "XXH-64",   "XXH64" },
-  { CZipContextMenu::kHash_MD5,      "MD2",      "MD2" },
-  { CZipContextMenu::kHash_MD5,      "MD4",      "MD4" },
+  { CZipContextMenu::kHash_MD2,      "MD2",      "MD2" },
+  { CZipContextMenu::kHash_MD4,      "MD4",      "MD4" },
   { CZipContextMenu::kHash_MD5,      "MD5",      "MD5" },
   { CZipContextMenu::kHash_SHA1,     "SHA-1",    "SHA1" },
   { CZipContextMenu::kHash_SHA256,   "SHA-256",  "SHA256" },
-  { CZipContextMenu::kHash_SHA256,   "SHA-384",  "SHA384" },
-  { CZipContextMenu::kHash_SHA256,   "SHA-512",  "SHA512" },
+  { CZipContextMenu::kHash_SHA384,   "SHA-384",  "SHA384" },
+  { CZipContextMenu::kHash_SHA512,   "SHA-512",  "SHA512" },
   { CZipContextMenu::kHash_BLAKE2sp, "BLAKE2sp", "BLAKE2sp" },
   { CZipContextMenu::kHash_All,      "*",        "*" }
 };
