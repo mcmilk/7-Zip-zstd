@@ -291,11 +291,13 @@ static void *pt_compress(void *arg)
 		}
 
 		/* write skippable frame */
-		MEM_writeLE32((unsigned char *)wl->out.buf + 0,
-			      LZ4FMT_MAGIC_SKIPPABLE);
-		MEM_writeLE32((unsigned char *)wl->out.buf + 4, 4);
-		MEM_writeLE32((unsigned char *)wl->out.buf + 8, (U32) result);
-		wl->out.size = result + 12;
+		if (ctx->threads > 1) {
+			MEM_writeLE32((unsigned char *)wl->out.buf + 0,
+				      LZ4FMT_MAGIC_SKIPPABLE);
+			MEM_writeLE32((unsigned char *)wl->out.buf + 4, 4);
+			MEM_writeLE32((unsigned char *)wl->out.buf + 8, (U32) result);
+			wl->out.size = result + 12;
+		}
 
 		/* write result */
 		pthread_mutex_lock(&ctx->write_mutex);
