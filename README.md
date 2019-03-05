@@ -112,7 +112,7 @@ Hashers:
 
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
 - compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
-- included [lzip] decompression support, patch from: http://download.savannah.gnu.org/releases/lzip/7zip/
+- included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
 - right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
 - the FileManager ListBox will show more information about these codecs now
 
@@ -232,7 +232,7 @@ Codecs:
 ## Codec Plugin for Total Commander
 - download [TotalCmd.7z]
 - install it, by replacing the files `tc7z.dll` and `tc7z64.dll` with the new ones
-- you can check the Total Commander Forum for more information about this [DLL Files](http://ghisler.ch/board/viewtopic.php?p=319216)
+- you can check the Total Commander Forum for more information about this [DLL Files](https://ghisler.ch/board/viewtopic.php?p=319216)
 - decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] ot the 7-Zip `.7z` format
   will work out of the box with Total Commander now :-)
 
@@ -261,7 +261,7 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 
 ## Links
 
-- [7-Zip Homepage](http://www.7-zip.org/)
+- [7-Zip Homepage](https://www.7-zip.org/)
 - [7-Zip Zstandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
 - [Request for inclusion](https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/) into the mainline 7-Zip:
   - result, will currently not included :(
@@ -288,8 +288,8 @@ You find this project useful, maybe you consider a donation ;-)
 
 - if you want an code signed installer, you need to donate sth.
 
-[7-Zip]:http://www.7-zip.org/
-[lzip]:http://www.nongnu.org/lzip/
+[7-Zip]:https://www.7-zip.org/
+[lzip]:https://www.nongnu.org/lzip/
 [Brotli]:https://github.com/google/brotli/
 [LZ4]:https://github.com/lz4/lz4/
 [LZ5]:https://github.com/inikep/lz5/
