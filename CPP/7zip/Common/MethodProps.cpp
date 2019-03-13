@@ -253,6 +253,9 @@ struct CNameToPropID
   const char *Name;
 };
 
+
+// the following are related to NCoderPropID::EEnum values
+
 static const CNameToPropID g_NameToPropID[] =
 {
   { VT_UI4, "" },
@@ -275,7 +278,22 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_UI8, "expect" },
   { VT_UI4, "b" },
   { VT_UI4, "check" },
-  { VT_BSTR, "filter" }
+  { VT_BSTR, "filter" },
+  { VT_UI8, "memuse" },
+  { VT_UI4, "strat" },
+  { VT_UI4, "fast" },
+  { VT_UI4, "long" },
+  { VT_UI4, "wlog" },
+  { VT_UI4, "hlog" },
+  { VT_UI4, "clog" },
+  { VT_UI4, "slog" },
+  { VT_UI4, "slen" },
+  { VT_UI4, "tlen" },
+  { VT_UI4, "ovlog" },
+  { VT_UI4, "ldmhlog" },
+  { VT_UI4, "ldmslen" },
+  { VT_UI4, "ldmblog" },
+  { VT_UI4, "ldmhevery" }
 };
 
 static int FindPropIdExact(const UString &name)
@@ -293,6 +311,13 @@ static bool ConvertProperty(const PROPVARIANT &srcProp, VARTYPE varType, NCOM::C
     destProp = srcProp;
     return true;
   }
+
+  if (varType == VT_UI8 && srcProp.vt == VT_UI4)
+  {
+    destProp = (UInt64)srcProp.ulVal;
+    return true;
+  }
+
   if (varType == VT_BOOL)
   {
     bool res;

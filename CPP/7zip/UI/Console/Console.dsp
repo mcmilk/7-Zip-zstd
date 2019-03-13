@@ -417,6 +417,10 @@ SOURCE=..\..\..\Common\MyBuffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyBuffer2.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File
@@ -840,6 +844,15 @@ SOURCE=..\..\..\..\C\CpuArch.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\CpuArch.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\DllSecur.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\DllSecur.h
 # End Source File
 # Begin Source File
 

@@ -13,6 +13,8 @@
 #include "7zOut.h"
 #include "7zUpdate.h"
 
+#ifndef EXTRACT_ONLY
+
 using namespace NWindows;
 
 namespace NArchive {
@@ -41,9 +43,11 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
 
 HRESULT CHandler::PropsMethod_To_FullMethod(CMethodFull &dest, const COneMethodInfo &m)
 {
-  if (!FindMethod(
+  dest.CodecIndex = FindMethod_Index(
       EXTERNAL_CODECS_VARS
-      m.MethodName, dest.Id, dest.NumStreams))
+      m.MethodName, true,
+      dest.Id, dest.NumStreams);
+  if (dest.CodecIndex < 0)
     return E_INVALIDARG;
   (CProps &)dest = (CProps &)m;
   return S_OK;
@@ -262,6 +266,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (_inStream != 0)
     db = &_db;
   #endif
+
+  if (db && !db->CanUpdate())
+    return E_NOTIMPL;
 
   /*
   CMyComPtr<IArchiveGetRawProps> getRawProps;
@@ -700,10 +707,8 @@ static HRESULT ParseBond(UString &srcString, UInt32 &coder, UInt32 &stream)
   return S_OK;
 }
 
-void COutHandler::InitProps()
+void COutHandler::InitProps7z()
 {
-  CMultiMethodProps::Init();
-
   _removeSfxBlock = false;
   _compressHeaders = true;
   _encryptHeadersSpecified = false;
@@ -722,6 +727,14 @@ void COutHandler::InitProps()
   InitSolid();
   _useTypeSorting = false;
 }
+
+void COutHandler::InitProps()
+{
+  CMultiMethodProps::Init();
+  InitProps7z();
+}
+
+
 
 HRESULT COutHandler::SetSolidFromString(const UString &s)
 {
@@ -763,6 +776,10 @@ HRESULT COutHandler::SetSolidFromString(const UString &s)
       }
       _numSolidBytes = (v << numBits);
       _numSolidBytesDefined = true;
+      /*
+      if (_numSolidBytes == 0)
+        _numSolidFiles = 1;
+      */
     }
   }
   return S_OK;
@@ -811,7 +828,7 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
       return E_INVALIDARG;
     return SetSolidFromString(name);
   }
-  
+
   UInt32 number;
   int index = ParseStringToUInt32(name, number);
   // UString realName = name.Ptr(index);
@@ -922,3 +939,5 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
 }
 
 }}
+
+#endif

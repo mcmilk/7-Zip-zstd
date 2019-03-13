@@ -1217,7 +1217,12 @@ STDMETHODIMP CAgentFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   NWindows::NCOM::CPropVariant prop;
 
   if (propID == kpidReadOnly)
-    prop = _agentSpec->IsThereReadOnlyArc();
+  {
+    if (_agentSpec->Is_Attrib_ReadOnly())
+      prop = true;
+    else
+      prop = _agentSpec->IsThereReadOnlyArc();
+  }
   else if (_proxy2)
   {
     const CProxyDir2 &dir = _proxy2->Dirs[_proxyDirIndex];
@@ -1507,11 +1512,18 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
     
   #endif
 
-  HRESULT result = _agentSpec->GetArchive()->Extract(&realIndices.Front(),
-      realIndices.Size(), testMode, extractCallback);
-  if (result == S_OK)
-    result = extractCallbackSpec->SetDirsTimes();
-  return result;
+  {
+    CArchiveExtractCallback_Closer ecsCloser(extractCallbackSpec);
+    
+    HRESULT res = _agentSpec->GetArchive()->Extract(&realIndices.Front(),
+        realIndices.Size(), testMode, extractCallback);
+    
+    HRESULT res2 = ecsCloser.Close();
+    if (res == S_OK)
+      res = res2;
+    return res;
+  }
+
   COM_TRY_END
 }
 
@@ -1557,6 +1569,7 @@ STDMETHODIMP CAgent::Open(
 {
   COM_TRY_BEGIN
   _archiveFilePath = filePath;
+  _attrib = 0;
   NFile::NFind::CFileInfo fi;
   _isDeviceFile = false;
   if (!inStream)
@@ -1565,6 +1578,7 @@ STDMETHODIMP CAgent::Open(
       return ::GetLastError();
     if (fi.IsDir())
       return E_FAIL;
+    _attrib = fi.Attrib;
     _isDeviceFile = fi.IsDevice;
   }
   CArcInfoEx archiverInfo0, archiverInfo1;

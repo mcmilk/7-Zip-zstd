@@ -60,7 +60,6 @@ class CDecoder:public ICompressCoder,
   UInt32 _inputSize;
   UInt32 _numThreads;
 
-  HRESULT CDecoder::ErrorOut(size_t code);
   HRESULT CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress);
   HRESULT SetOutStreamSizeResume(const UInt64 *outSize);
 

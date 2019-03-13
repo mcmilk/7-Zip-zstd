@@ -1,9 +1,9 @@
-7-Zip 17.00 beta Sources
-------------------------
+7-Zip 19.00 Sources
+-------------------
 
 7-Zip is a file archiver for Windows. 
 
-7-Zip Copyright (C) 1999-2017 Igor Pavlov.
+7-Zip Copyright (C) 1999-2019 Igor Pavlov.
 
 
 License Info
@@ -44,28 +44,50 @@ LZMA SDK is written and placed in the public domain by Igor Pavlov.
 
 How to compile
 --------------
-To compile sources you need Visual C++ 6.0.
-For compiling some files you also need 
-new Platform SDK from Microsoft' Site:
-http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm
-or
-http://www.microsoft.com/msdownload/platformsdk/sdkupdate/XPSP2FULLInstall.htm
-or
-http://www.microsoft.com/msdownload/platformsdk/sdkupdate/
 
-If you use MSVC6, specify SDK directories at top of directories lists:
+To compile the sources to Windows binaries you need Visual Studio compiler and/or Windows SDK.
+You can use latest Windows Studio 2017 to compile binaries for x86, x64 and arm64 platforms.
+Also you can use old compilers for some platforms:
+  x86   : Visual C++ 6.0 with Platform SDK
+  x64   : Windows Server 2003 R2 Platform SDK
+  arm64 : Windows Studio 2017
+  arm   : Windows Studio 2017
+  ia64 (itanium)     : Windows Server 2003 R2 Platform SDK
+  arm for Windows CE : Standard SDK for Windows CE 5.0
+
+If you use MSVC6, specify also Platform SDK directories at top of directories lists:
 Tools / Options / Directories
   - Include files
   - Library files
 
-
-To compile 7-Zip for AMD64 and IA64 you need:
-  Windows Server 2003 SP1 Platform SDK from microsoft.com
-
 Also you need Microsoft Macro Assembler:
   - ml.exe for x86 
-  - ml64.exe for AMD64
-You can use ml.exe from Windows SDK for Windows Vista or some other version.
+  - ml64.exe for x64
+You can use ml.exe from Windows SDK for Windows Vista or some later versions.
+
+There are two ways to compile 7-Zip binaries:
+1) via makefile in command line.
+2) via dsp file in Visual Studio.
+
+The dsp file compiling can be used for development and debug purposes.
+The final 7-Zip binaries are compiled via makefiles, that provide best 
+optimization options.
+
+How to compile with makefile
+----------------------------
+
+Some macronames can be defined for compiling with makefile:
+
+PLATFORM
+  with possible values: x64, x86, arm64, arm, ia64
+
+OLD_COMPILER
+  for old VC compiler, like MSCV 6.0.
+
+MY_DYNAMIC_LINK
+  for dynamic linking to the run-time library (msvcrt.dll). 
+  The default makefile option is static linking to the run-time library.
+
 
 
 Compiling under Unix/Linux
@@ -123,7 +145,7 @@ Windows           common files for Windows related code
 
   Bundle          Modules that are bundles of other modules (files)
 
-    Alone         7za.exe: Standalone version of 7-Zip console that supports only 7z/xz/cab/zip/gzip/bzip2/lzip/tar
+    Alone         7za.exe: Standalone version of 7-Zip console that supports only 7z/xz/cab/zip/gzip/bzip2/tar.
     Alone7z       7zr.exe: Standalone version of 7-Zip console that supports only 7z (reduced version)
     Fm            Standalone version of 7-Zip File Manager
     Format7z            7za.dll:  .7z support

@@ -79,10 +79,10 @@ HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progr
 {
   UpdateCallbackSpec = new CUpdateCallback100Imp;
   UpdateCallback = UpdateCallbackSpec;
-  UpdateCallbackSpec->ProgressDialog = &ProgressDialog;
+  UpdateCallbackSpec->ProgressDialog = this;
 
-  ProgressDialog.WaitMode = true;
-  ProgressDialog.Sync.FinalMessage.ErrorMessage.Title = titleError;
+  WaitMode = true;
+  Sync.FinalMessage.ErrorMessage.Title = titleError;
   Result = S_OK;
 
   UpdateCallbackSpec->Init();
@@ -95,11 +95,11 @@ HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progr
   }
 
 
-  ProgressDialog.MainWindow = panel._mainWindow; // panel.GetParent()
-  ProgressDialog.MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
-  ProgressDialog.MainAddTitle = progressTitle + L' ';
+  MainWindow = panel._mainWindow; // panel.GetParent()
+  MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
+  MainAddTitle = progressTitle + L' ';
 
-  RINOK(Create(progressTitle, ProgressDialog.MainWindow));
+  RINOK(Create(progressTitle, MainWindow));
   return Result;
 }
 

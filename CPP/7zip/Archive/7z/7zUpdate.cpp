@@ -124,13 +124,13 @@ static int Parse_EXE(const Byte *buf, size_t size, CFilterMode *filterMode)
 #define ELF_DATA_2LSB 1
 #define ELF_DATA_2MSB 2
 
-static UInt16 Get16(const Byte *p, Bool be) { if (be) return (UInt16)GetBe16(p); return (UInt16)GetUi16(p); }
-static UInt32 Get32(const Byte *p, Bool be) { if (be) return GetBe32(p); return GetUi32(p); }
-// static UInt64 Get64(const Byte *p, Bool be) { if (be) return GetBe64(p); return GetUi64(p); }
+static UInt16 Get16(const Byte *p, BoolInt be) { if (be) return (UInt16)GetBe16(p); return (UInt16)GetUi16(p); }
+static UInt32 Get32(const Byte *p, BoolInt be) { if (be) return GetBe32(p); return GetUi32(p); }
+// static UInt64 Get64(const Byte *p, BoolInt be) { if (be) return GetBe64(p); return GetUi64(p); }
 
 static int Parse_ELF(const Byte *buf, size_t size, CFilterMode *filterMode)
 {
-  Bool /* is32, */ be;
+  BoolInt /* is32, */ be;
   UInt32 filterId;
 
   if (size < 512 || buf[6] != 1) /* ver */
@@ -200,7 +200,7 @@ static unsigned Parse_MACH(const Byte *buf, size_t size, CFilterMode *filterMode
   if (size < 512)
     return 0;
 
-  Bool /* mode64, */ be;
+  BoolInt /* mode64, */ be;
   switch (GetUi32(buf))
   {
     case MACH_SIG_BE_32: /* mode64 = False; */ be = True; break;
@@ -239,7 +239,7 @@ static unsigned Parse_MACH(const Byte *buf, size_t size, CFilterMode *filterMode
 
 #define RIFF_SIG 0x46464952
 
-static Bool Parse_WAV(const Byte *buf, size_t size, CFilterMode *filterMode)
+static BoolInt Parse_WAV(const Byte *buf, size_t size, CFilterMode *filterMode)
 {
   UInt32 subChunkSize, pos;
   if (size < 0x2C)
@@ -285,7 +285,7 @@ static Bool Parse_WAV(const Byte *buf, size_t size, CFilterMode *filterMode)
   return False;
 }
 
-static Bool ParseFile(const Byte *buf, size_t size, CFilterMode *filterMode)
+static BoolInt ParseFile(const Byte *buf, size_t size, CFilterMode *filterMode)
 {
   filterMode->Id = 0;
   filterMode->Delta = 0;
@@ -894,7 +894,7 @@ HRESULT CAnalysis::GetFilterGroup(UInt32 index, const CUpdateItem &ui, CFilterMo
           // RINOK(Callback->SetOperationResult2(index, NUpdate::NOperationResult::kOK));
           if (result == S_OK)
           {
-            Bool parseRes = ParseFile(Buffer, size, &filterModeTemp);
+            BoolInt parseRes = ParseFile(Buffer, size, &filterModeTemp);
             if (parseRes && filterModeTemp.Delta == 0)
             {
               filterModeTemp.SetDelta();
@@ -1507,7 +1507,8 @@ void CThreadDecoder::Execute()
 
       _7Z_DECODER_CRYPRO_VARS
       #ifndef _7ZIP_ST
-        , MtMode, NumThreads
+        , MtMode, NumThreads,
+        0 // MemUsage
       #endif
 
       );
@@ -1647,6 +1648,9 @@ HRESULT Update(
       
       for (CNum fi = db->FolderStartFileIndex[i]; indexInFolder < numUnpackStreams; fi++)
       {
+        if (fi >= db->Files.Size())
+          return E_FAIL;
+
         const CFileItem &file = db->Files[fi];
         if (file.HasStream)
         {
@@ -1696,13 +1700,14 @@ HRESULT Update(
 
   UInt64 inSizeForReduce = 0;
   {
+    bool isSolid = (numSolidFiles > 1 && options.NumSolidBytes != 0);
     FOR_VECTOR (i, updateItems)
     {
       const CUpdateItem &ui = updateItems[i];
       if (ui.NewData)
       {
         complexity += ui.Size;
-        if (numSolidFiles != 1)
+        if (isSolid)
           inSizeForReduce += ui.Size;
         else if (inSizeForReduce < ui.Size)
           inSizeForReduce = ui.Size;
@@ -2142,8 +2147,8 @@ HRESULT Update(
                   #ifndef _7ZIP_ST
                     , false // mtMode
                     , 1 // numThreads
+                    , 0 // memUsage
                   #endif
-
                 );
           
               RINOK(res);
@@ -2293,7 +2298,8 @@ HRESULT Update(
       continue;
     CRecordVector<CRefItem> refItems;
     refItems.ClearAndSetSize(numFiles);
-    bool sortByType = (options.UseTypeSorting && numSolidFiles > 1);
+    // bool sortByType = (options.UseTypeSorting && isSoid); // numSolidFiles > 1
+    bool sortByType = options.UseTypeSorting;
     
     unsigned i;
 

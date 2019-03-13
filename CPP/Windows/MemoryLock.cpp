@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../C/CpuArch.h"
+
 #include "MemoryLock.h"
 
 namespace NWindows {
@@ -65,6 +67,44 @@ bool EnablePrivilege(LPCTSTR privilegeName, bool enable)
   #endif
 
   return res;
+}
+
+
+
+typedef void (WINAPI * Func_RtlGetVersion) (OSVERSIONINFOEXW *);
+
+/*
+  We suppose that Window 10 works incorrectly with "Large Pages" at:
+    - Windows 10 1703 (15063)
+    - Windows 10 1709 (16299)
+
+    - Windows 10 1809 (17763) on some CPUs that have no 1 GB page support.
+         We need more information about that new BUG in Windows.
+*/
+
+unsigned Get_LargePages_RiskLevel()
+{
+  OSVERSIONINFOEXW vi;
+  HMODULE ntdll = ::GetModuleHandleW(L"ntdll.dll");
+  if (!ntdll)
+    return 0;
+  Func_RtlGetVersion func = (Func_RtlGetVersion)GetProcAddress(ntdll, "RtlGetVersion");
+  if (!func)
+    return 0;
+  func(&vi);
+  if (vi.dwPlatformId != VER_PLATFORM_WIN32_NT)
+    return 0;
+  if (vi.dwMajorVersion + vi.dwMinorVersion != 10)
+    return 0;
+  if (vi.dwBuildNumber <= 16299)
+    return 1;
+
+  #ifdef MY_CPU_X86_OR_AMD64
+  if (!CPU_IsSupported_PageGB())
+    return 1;
+  #endif
+
+  return 0;
 }
 
 #endif

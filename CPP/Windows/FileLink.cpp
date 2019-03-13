@@ -194,8 +194,9 @@ static void GetString(const Byte *p, unsigned len, UString &res)
   res.ReleaseBuf_SetLen(i);
 }
 
-bool CReparseAttr::Parse(const Byte *p, size_t size)
+bool CReparseAttr::Parse(const Byte *p, size_t size, DWORD &errorCode)
 {
+  errorCode = ERROR_INVALID_REPARSE_DATA;
   if (size < 8)
     return false;
   Tag = Get32(p);
@@ -209,8 +210,10 @@ bool CReparseAttr::Parse(const Byte *p, size_t size)
   */
   if (Tag != _my_IO_REPARSE_TAG_MOUNT_POINT &&
       Tag != _my_IO_REPARSE_TAG_SYMLINK)
-    // return true;
+  {
+    errorCode = ERROR_REPARSE_TAG_MISMATCH; // ERROR_REPARSE_TAG_INVALID
     return false;
+  }
 
   if (Get16(p + 6) != 0) // padding
     return false;
@@ -247,6 +250,7 @@ bool CReparseAttr::Parse(const Byte *p, size_t size)
   GetString(p + subOffs, subLen >> 1, SubsName);
   GetString(p + printOffs, printLen >> 1, PrintName);
 
+  errorCode = 0;
   return true;
 }
 

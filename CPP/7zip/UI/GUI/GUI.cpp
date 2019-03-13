@@ -2,11 +2,13 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
+#include "../../../../C/DllSecur.h"
+#endif
+
 #include "../../../Common/MyWindows.h"
 
 #include <shlwapi.h>
-
-#include "../../../../C/Alloc.h"
 
 #include "../../../Common/MyInitGuid.h"
 
@@ -16,9 +18,6 @@
 
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/NtCheck.h"
-#ifdef _WIN32
-#include "../../../Windows/MemoryLock.h"
-#endif
 
 #include "../Common/ArchiveCommandLine.h"
 #include "../Common/ExitCode.h"
@@ -36,8 +35,6 @@
 using namespace NWindows;
 
 HINSTANCE g_hInstance;
-
-bool g_LargePagesMode = false;
 
 #ifndef UNDER_CE
 
@@ -125,24 +122,6 @@ static int Main2()
 
   parser.Parse1(commandStrings, options);
   parser.Parse2(options);
-
-  #if defined(_WIN32) && !defined(UNDER_CE)
-  NSecurity::EnablePrivilege_SymLink();
-  #endif
-  
-  #ifdef _7ZIP_LARGE_PAGES
-  if (options.LargePages)
-  {
-    SetLargePageSize();
-    // note: this process also can inherit that Privilege from parent process
-    g_LargePagesMode =
-    #if defined(_WIN32) && !defined(UNDER_CE)
-      NSecurity::EnablePrivilege_LockMemory();
-    #else
-      true;
-    #endif
-  }
-  #endif
 
   CREATE_CODECS_OBJECT
 
@@ -397,13 +376,17 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   // setlocale(LC_COLLATE, ".ACP");
   try
   {
+    #ifdef _WIN32
+    My_SetDefaultDllDirectories();
+    #endif
+
     return Main2();
   }
   catch(const CNewException &)
   {
     return ShowMemErrorMessage();
   }
-  catch(const CArcCmdLineException &e)
+  catch(const CMessagePathException &e)
   {
     ErrorMessage(e);
     return NExitCode::kUserError;

@@ -6,7 +6,7 @@
 #include "../../7zVersion.rc"
 #include "resource.h"
 
-MY_VERSION_INFO(MY_VFT_APP, "7-Zip Installer Zstandard", "7zipInstall", "7zipInstall.exe")
+MY_VERSION_INFO(MY_VFT_APP, "7-Zip Installer ZS", "7zipInstall", "7zipInstall.exe")
 
 1  ICON "7zip.ico"
 
@@ -28,7 +28,7 @@ MY_VERSION_INFO(MY_VFT_APP, "7-Zip Installer Zstandard", "7zipInstall", "7zipIns
 
 IDD_INSTALL DIALOG 0, 0, xs, ys
 STYLE DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_VISIBLE
-CAPTION "Install 7-Zip Zstandard"
+CAPTION "Install 7-Zip ZS"
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT          "Destination folder:", IDT_EXTRACT_EXTRACT_TO, m, m, xc, 8

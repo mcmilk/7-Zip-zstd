@@ -161,7 +161,8 @@ bool CHeader::Parse(const Byte *p)
     return false;
 
   // we also support images that contain 0 in offset field.
-  bool isOkOffset = (codeOffset == 0 || (p[0] == 0xEB && p[1] == 0));
+  bool isOkOffset = (codeOffset == 0)
+      || (codeOffset == (p[0] == 0xEB ? 2 : 3));
 
   UInt16 numRootDirEntries = Get16(p + 17);
   if (numRootDirEntries == 0)
@@ -732,7 +733,13 @@ HRESULT CDatabase::Open()
   RINOK(OpenProgressFat());
 
   if ((Fat[0] & 0xFF) != Header.MediaType)
-     return S_FALSE;
+  {
+    // that case can mean error in FAT,
+    // but xdf file: (MediaType == 0xF0 && Fat[0] == 0xFF9)
+    // 19.00: so we use non-strict check
+    if ((Fat[0] & 0xFF) < 0xF0)
+      return S_FALSE;
+  }
 
   RINOK(ReadDir(-1, Header.RootCluster, 0));
 

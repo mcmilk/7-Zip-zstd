@@ -286,6 +286,15 @@ SOURCE=..\FileManager\RegistryUtils.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\C\CpuArch.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\CpuArch.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Threads.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -476,6 +485,14 @@ SOURCE=..\..\..\Windows\MemoryGlobal.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\MemoryGlobal.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryLock.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\MemoryLock.h
 # End Source File
 # Begin Source File
 

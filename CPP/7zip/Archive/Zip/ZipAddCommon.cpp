@@ -384,7 +384,7 @@ HRESULT CAddCommon::Compress(
               methodId = kMethodId_ZipBase + method;
               break;
           }
-          RINOK(CreateCoder(
+          RINOK(CreateCoder_Id(
               EXTERNAL_CODECS_LOC_VARS
               methodId, true, _compressEncoder));
           if (!_compressEncoder)

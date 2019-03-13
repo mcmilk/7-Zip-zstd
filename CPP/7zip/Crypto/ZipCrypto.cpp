@@ -49,7 +49,7 @@ HRESULT CEncoder::WriteHeader_Check16(ISequentialOutStream *outStream, UInt16 cr
      PKZIP 2.0+ used 1 byte CRC check. It's more secure.
      We also use 1 byte CRC. */
 
-  g_RandomGenerator.Generate(h, kHeaderSize - 1);
+  MY_RAND_GEN(h, kHeaderSize - 1);
   // h[kHeaderSize - 2] = (Byte)(crc);
   h[kHeaderSize - 1] = (Byte)(crc >> 8);
   

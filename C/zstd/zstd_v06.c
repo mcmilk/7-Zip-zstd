@@ -5,6 +5,7 @@
  * This source code is licensed under both the BSD-style license (found in the
  * LICENSE file in the root directory of this source tree) and the GPLv2 (found
  * in the COPYING file in the root directory of this source tree).
+ * You may select, at your option, one of the above-listed licenses.
  */
 
 
@@ -188,7 +189,7 @@ MEM_STATIC U32 MEM_swap32(U32 in)
 {
 #if defined(_MSC_VER)     /* Visual Studio */
     return _byteswap_ulong(in);
-#elif defined (__GNUC__)
+#elif defined (__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 403)
     return __builtin_bswap32(in);
 #else
     return  ((in << 24) & 0xff000000 ) |
@@ -202,7 +203,7 @@ MEM_STATIC U64 MEM_swap64(U64 in)
 {
 #if defined(_MSC_VER)     /* Visual Studio */
     return _byteswap_uint64(in);
-#elif defined (__GNUC__)
+#elif defined (__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 403)
     return __builtin_bswap64(in);
 #else
     return  ((in << 56) & 0xff00000000000000ULL) |
@@ -838,16 +839,6 @@ MEM_STATIC BITv06_DStream_status BITv06_reloadDStream(BITv06_DStream_t* bitD);
 MEM_STATIC unsigned BITv06_endOfDStream(const BITv06_DStream_t* bitD);
 
 
-/* Start by invoking BITv06_initDStream().
-*  A chunk of the bitStream is then stored into a local register.
-*  Local register size is 64-bits on 64-bits systems, 32-bits on 32-bits systems (size_t).
-*  You can then retrieve bitFields stored into the local register, **in reverse order**.
-*  Local register is explicitly reloaded from memory by the BITv06_reloadDStream() method.
-*  A reload guarantee a minimum of ((8*sizeof(bitD->bitContainer))-7) bits when its result is BITv06_DStream_unfinished.
-*  Otherwise, it can be less than that, so proceed accordingly.
-*  Checking if DStream has reached its end can be performed with BITv06_endOfDStream().
-*/
-
 
 /*-****************************************
 *  unsafe API
@@ -860,7 +851,7 @@ MEM_STATIC size_t BITv06_readBitsFast(BITv06_DStream_t* bitD, unsigned nbBits);
 /*-**************************************************************
 *  Internal functions
 ****************************************************************/
-MEM_STATIC unsigned BITv06_highbit32 (register U32 val)
+MEM_STATIC unsigned BITv06_highbit32 ( U32 val)
 {
 #   if defined(_MSC_VER)   /* Visual */
     unsigned long r=0;
@@ -928,13 +919,6 @@ MEM_STATIC size_t BITv06_initDStream(BITv06_DStream_t* bitD, const void* srcBuff
 }
 
 
-/*! BITv06_lookBits() :
- *  Provides next n bits from local register.
- *  local register is not modified.
- *  On 32-bits, maxNbBits==24.
- *  On 64-bits, maxNbBits==56.
- *  @return : value extracted
- */
  MEM_STATIC size_t BITv06_lookBits(const BITv06_DStream_t* bitD, U32 nbBits)
 {
     U32 const bitMask = sizeof(bitD->bitContainer)*8 - 1;
@@ -954,11 +938,6 @@ MEM_STATIC void BITv06_skipBits(BITv06_DStream_t* bitD, U32 nbBits)
     bitD->bitsConsumed += nbBits;
 }
 
-/*! BITv06_readBits() :
- *  Read (consume) next n bits from local register and update.
- *  Pay attention to not read more than nbBits contained into local register.
- *  @return : extracted value.
- */
 MEM_STATIC size_t BITv06_readBits(BITv06_DStream_t* bitD, U32 nbBits)
 {
     size_t const value = BITv06_lookBits(bitD, nbBits);
@@ -975,11 +954,6 @@ MEM_STATIC size_t BITv06_readBitsFast(BITv06_DStream_t* bitD, U32 nbBits)
     return value;
 }
 
-/*! BITv06_reloadDStream() :
-*   Refill `BITv06_DStream_t` from src buffer previously defined (see BITv06_initDStream() ).
-*   This function is safe, it guarantees it will not read beyond src buffer.
-*   @return : status of `BITv06_DStream_t` internal register.
-              if status == unfinished, internal register is filled with >= (sizeof(bitD->bitContainer)*8 - 7) bits */
 MEM_STATIC BITv06_DStream_status BITv06_reloadDStream(BITv06_DStream_t* bitD)
 {
     if (bitD->bitsConsumed > (sizeof(bitD->bitContainer)*8))  /* should never happen */
@@ -1101,55 +1075,6 @@ typedef struct
 static void     FSEv06_initDState(FSEv06_DState_t* DStatePtr, BITv06_DStream_t* bitD, const FSEv06_DTable* dt);
 
 static unsigned char FSEv06_decodeSymbol(FSEv06_DState_t* DStatePtr, BITv06_DStream_t* bitD);
-
-/*!
-Let's now decompose FSEv06_decompress_usingDTable() into its unitary components.
-You will decode FSE-encoded symbols from the bitStream,
-and also any other bitFields you put in, **in reverse order**.
-
-You will need a few variables to track your bitStream. They are :
-
-BITv06_DStream_t DStream;    // Stream context
-FSEv06_DState_t  DState;     // State context. Multiple ones are possible
-FSEv06_DTable*   DTablePtr;  // Decoding table, provided by FSEv06_buildDTable()
-
-The first thing to do is to init the bitStream.
-    errorCode = BITv06_initDStream(&DStream, srcBuffer, srcSize);
-
-You should then retrieve your initial state(s)
-(in reverse flushing order if you have several ones) :
-    errorCode = FSEv06_initDState(&DState, &DStream, DTablePtr);
-
-You can then decode your data, symbol after symbol.
-For information the maximum number of bits read by FSEv06_decodeSymbol() is 'tableLog'.
-Keep in mind that symbols are decoded in reverse order, like a LIFO stack (last in, first out).
-    unsigned char symbol = FSEv06_decodeSymbol(&DState, &DStream);
-
-You can retrieve any bitfield you eventually stored into the bitStream (in reverse order)
-Note : maximum allowed nbBits is 25, for 32-bits compatibility
-    size_t bitField = BITv06_readBits(&DStream, nbBits);
-
-All above operations only read from local register (which size depends on size_t).
-Refueling the register from memory is manually performed by the reload method.
-    endSignal = FSEv06_reloadDStream(&DStream);
-
-BITv06_reloadDStream() result tells if there is still some more data to read from DStream.
-BITv06_DStream_unfinished : there is still some data left into the DStream.
-BITv06_DStream_endOfBuffer : Dstream reached end of buffer. Its container may no longer be completely filled.
-BITv06_DStream_completed : Dstream reached its exact end, corresponding in general to decompression completed.
-BITv06_DStream_tooFar : Dstream went too far. Decompression result is corrupted.
-
-When reaching end of buffer (BITv06_DStream_endOfBuffer), progress slowly, notably if you decode multiple symbols per loop,
-to properly detect the exact end of stream.
-After each decoded symbol, check if DStream is fully consumed using this simple test :
-    BITv06_reloadDStream(&DStream) >= BITv06_DStream_completed
-
-When it's done, verify decompression is fully completed, by checking both DStream and the relevant states.
-Checking if DStream has reached its end is performed by :
-    BITv06_endOfDStream(&DStream);
-Check also the states. There might be some symbols left there, if some high probability ones (>50%) are possible.
-    FSEv06_endOfDState(&DState);
-*/
 
 
 /* *****************************************
@@ -1325,9 +1250,7 @@ const char* FSEv06_getErrorName(size_t code) { return ERR_getErrorName(code); }
 /* **************************************************************
 *  HUF Error Management
 ****************************************************************/
-unsigned HUFv06_isError(size_t code) { return ERR_isError(code); }
-
-const char* HUFv06_getErrorName(size_t code) { return ERR_getErrorName(code); }
+static unsigned HUFv06_isError(size_t code) { return ERR_isError(code); }
 
 
 /*-**************************************************************
@@ -2898,7 +2821,8 @@ struct ZSTDv06_DCtx_s
     BYTE headerBuffer[ZSTDv06_FRAMEHEADERSIZE_MAX];
 };  /* typedef'd to ZSTDv06_DCtx within "zstd_static.h" */
 
-size_t ZSTDv06_sizeofDCtx (void) { return sizeof(ZSTDv06_DCtx); }   /* non published interface */
+size_t ZSTDv06_sizeofDCtx (void); /* Hidden declaration */
+size_t ZSTDv06_sizeofDCtx (void) { return sizeof(ZSTDv06_DCtx); }
 
 size_t ZSTDv06_decompressBegin(ZSTDv06_DCtx* dctx)
 {
@@ -3097,7 +3021,7 @@ typedef struct
 
 /*! ZSTDv06_getcBlockSize() :
 *   Provides the size of compressed block from block header `src` */
-size_t ZSTDv06_getcBlockSize(const void* src, size_t srcSize, blockProperties_t* bpPtr)
+static size_t ZSTDv06_getcBlockSize(const void* src, size_t srcSize, blockProperties_t* bpPtr)
 {
     const BYTE* const in = (const BYTE* const)src;
     U32 cSize;
@@ -3116,6 +3040,7 @@ size_t ZSTDv06_getcBlockSize(const void* src, size_t srcSize, blockProperties_t*
 
 static size_t ZSTDv06_copyRawBlock(void* dst, size_t dstCapacity, const void* src, size_t srcSize)
 {
+    if (dst==NULL) return ERROR(dstSize_tooSmall);
     if (srcSize > dstCapacity) return ERROR(dstSize_tooSmall);
     memcpy(dst, src, srcSize);
     return srcSize;
@@ -3124,7 +3049,7 @@ static size_t ZSTDv06_copyRawBlock(void* dst, size_t dstCapacity, const void* sr
 
 /*! ZSTDv06_decodeLiteralsBlock() :
     @return : nb of bytes read from src (< srcSize ) */
-size_t ZSTDv06_decodeLiteralsBlock(ZSTDv06_DCtx* dctx,
+static size_t ZSTDv06_decodeLiteralsBlock(ZSTDv06_DCtx* dctx,
                           const void* src, size_t srcSize)   /* note : srcSize < BLOCKSIZE */
 {
     const BYTE* const istart = (const BYTE*) src;
@@ -3258,7 +3183,7 @@ size_t ZSTDv06_decodeLiteralsBlock(ZSTDv06_DCtx* dctx,
     @return : nb bytes read from src,
               or an error code if it fails, testable with ZSTDv06_isError()
 */
-size_t ZSTDv06_buildSeqTable(FSEv06_DTable* DTable, U32 type, U32 max, U32 maxLog,
+static size_t ZSTDv06_buildSeqTable(FSEv06_DTable* DTable, U32 type, U32 max, U32 maxLog,
                                  const void* src, size_t srcSize,
                                  const S16* defaultNorm, U32 defaultLog, U32 flagRepeatTable)
 {
@@ -3288,7 +3213,7 @@ size_t ZSTDv06_buildSeqTable(FSEv06_DTable* DTable, U32 type, U32 max, U32 maxLo
 }
 
 
-size_t ZSTDv06_decodeSeqHeaders(int* nbSeqPtr,
+static size_t ZSTDv06_decodeSeqHeaders(int* nbSeqPtr,
                              FSEv06_DTable* DTableLL, FSEv06_DTable* DTableML, FSEv06_DTable* DTableOffb, U32 flagRepeatTable,
                              const void* src, size_t srcSize)
 {
@@ -3433,7 +3358,7 @@ static void ZSTDv06_decodeSequence(seq_t* seq, seqState_t* seqState)
 }
 
 
-size_t ZSTDv06_execSequence(BYTE* op,
+static size_t ZSTDv06_execSequence(BYTE* op,
                                 BYTE* const oend, seq_t sequence,
                                 const BYTE** litPtr, const BYTE* const litLimit,
                                 const BYTE* const base, const BYTE* const vBase, const BYTE* const dictEnd)
@@ -4081,7 +4006,7 @@ size_t ZBUFFv06_decompressContinue(ZBUFFv06_DCtx* zbd,
                     if (ZSTDv06_isError(hSize)) return hSize;
                     if (toLoad > (size_t)(iend-ip)) {   /* not enough input to load full header */
                         memcpy(zbd->headerBuffer + zbd->lhSize, ip, iend-ip);
-                        zbd->lhSize += iend-ip; ip = iend; notDone = 0;
+                        zbd->lhSize += iend-ip;
                         *dstCapacityPtr = 0;
                         return (hSize - zbd->lhSize) + ZSTDv06_blockHeaderSize;   /* remaining header bytes + next block header */
                     }

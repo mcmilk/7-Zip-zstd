@@ -40,7 +40,6 @@ CHandler::CHandler()
   _crcSize = 4;
   
   #ifdef __7Z_SET_PROPERTIES
-  _numThreads = NSystem::GetNumberOfProcessors();
   _useMultiThreadMixer = true;
   #endif
   
@@ -235,6 +234,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       // if (_db.UnsupportedVersion) v |= kpv_ErrorFlags_Unsupported;
       if (_db.UnsupportedFeatureError) v |= kpv_ErrorFlags_UnsupportedFeature;
       prop = v;
+      break;
+    }
+
+    case kpidReadOnly:
+    {
+      if (!_db.CanUpdate())
+        prop = true;
       break;
     }
   }
@@ -508,7 +514,7 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
       else if (id == k_LZ4)
       {
         name = "LZ4";
-        if (propsSize == 5)
+        if (propsSize == 3 || propsSize == 5)
         {
           char *dest = s;
           *dest++ = 'v';
@@ -526,7 +532,7 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
       else if (id == k_LZ5)
       {
         name = "LZ5";
-        if (propsSize == 5)
+        if (propsSize == 3 || propsSize == 5)
         {
           char *dest = s;
           *dest++ = 'v';
@@ -544,9 +550,10 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
       else if (id == k_ZSTD)
       {
         name = "ZSTD";
-        if (propsSize == 5)
+        if (propsSize == 3 || propsSize == 5)
         {
           char *dest = s;
+          UInt32 l = props[2];
           *dest++ = 'v';
           ConvertUInt32ToString(props[0], dest);
           dest += MyStringLen(dest);
@@ -554,8 +561,14 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
           ConvertUInt32ToString(props[1], dest);
           dest += MyStringLen(dest);
           *dest++ = ',';
-          *dest++ = 'l';
-          ConvertUInt32ToString(props[2], dest);
+          if (l <= 22) {
+            *dest++ = 'l';
+            ConvertUInt32ToString(l, dest);
+          } else {
+            *dest++ = 'f';
+            *dest++ = 'l';
+            ConvertUInt32ToString(l - 32, dest);
+          }
           dest += MyStringLen(dest);
         }
       }
@@ -823,8 +836,8 @@ STDMETHODIMP CHandler::Close()
 STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   COM_TRY_BEGIN
-  const UInt32 numProcessors = NSystem::GetNumberOfProcessors();
-  _numThreads = numProcessors;
+  
+  InitCommon();
   _useMultiThreadMixer = true;
 
   for (UInt32 i = 0; i < numProps; i++)
@@ -843,13 +856,15 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
         RINOK(PROPVARIANT_to_bool(value, _useMultiThreadMixer));
         continue;
       }
-      if (name.IsPrefixedBy_Ascii_NoCase("mt"))
       {
-        RINOK(ParseMtProp(name.Ptr(2), value, numProcessors, _numThreads));
-        continue;
+        HRESULT hres;
+        if (SetCommonProperty(name, value, hres))
+        {
+          RINOK(hres);
+          continue;
+        }
       }
-      else
-        return E_INVALIDARG;
+      return E_INVALIDARG;
     }
   }
   return S_OK;

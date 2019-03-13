@@ -125,7 +125,8 @@ class CDecoder :
 
   UInt32 m_LastLength;
 
-  bool m_IsSolid;
+  bool _isSolid;
+  bool _solidAllowed;
   bool m_TablesOK;
   bool m_AudioMode;
 
@@ -158,14 +159,6 @@ public:
   CDecoder();
 
   MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
-
-  /*
-  void ReleaseStreams()
-  {
-    m_OutWindowStream.ReleaseStream();
-    m_InBitStream.ReleaseStream();
-  }
-  */
 
   STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);

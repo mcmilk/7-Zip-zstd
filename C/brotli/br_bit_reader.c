@@ -8,8 +8,8 @@
 
 #include "./dec/bit_reader.h"
 
+#include "./common/platform.h"
 #include "types.h"
-#include "./dec/port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {

@@ -80,7 +80,8 @@ static const UInt32 kHistorySize = 1 << 20;
 static const UInt32 kWindowReservSize = (1 << 22) + 256;
 
 CDecoder::CDecoder():
-  m_IsSolid(false),
+  _isSolid(false),
+  _solidAllowed(false),
   m_TablesOK(false)
 {
 }
@@ -130,7 +131,7 @@ bool CDecoder::ReadTables(void)
   
   i = 0;
   
-  while (i < numLevels)
+  do
   {
     UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream);
     if (sym < kTableDirectLevels)
@@ -144,10 +145,7 @@ bool CDecoder::ReadTables(void)
       {
         unsigned num = ReadBits(2) + 3;
         if (i == 0)
-        {
-          // return false;
-          continue; // original unRAR
-        }
+          return false;
         num += i;
         if (num > numLevels)
         {
@@ -180,6 +178,10 @@ bool CDecoder::ReadTables(void)
       }
     }
   }
+  while (i < numLevels);
+
+  if (m_InBitStream.ExtraBitsWereRead())
+    return false;
 
   if (m_AudioMode)
     for (i = 0; i < m_NumChannels; i++)
@@ -226,24 +228,14 @@ bool CDecoder::ReadLastTables()
   return true;
 }
 
-/*
-class CCoderReleaser
-{
-  CDecoder *m_Coder;
-public:
-  CCoderReleaser(CDecoder *coder): m_Coder(coder) {}
-  ~CCoderReleaser()
-  {
-    m_Coder->ReleaseStreams();
-  }
-};
-*/
 
 bool CDecoder::DecodeMm(UInt32 pos)
 {
   while (pos-- != 0)
   {
     UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
+    if (m_InBitStream.ExtraBitsWereRead())
+      return false;
     if (symbol >= 256)
       return symbol == 256;
     /*
@@ -264,6 +256,8 @@ bool CDecoder::DecodeLz(Int32 pos)
   while (pos > 0)
   {
     UInt32 sym = m_MainDecoder.Decode(&m_InBitStream);
+    if (m_InBitStream.ExtraBitsWereRead())
+      return false;
     UInt32 length, distance;
     if (sym < 256)
     {
@@ -338,8 +332,12 @@ bool CDecoder::DecodeLz(Int32 pos)
 HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
 {
-  if (inSize == NULL || outSize == NULL)
+  if (!inSize || !outSize)
     return E_INVALIDARG;
+
+  if (_isSolid && !_solidAllowed)
+    return S_FALSE;
+  _solidAllowed = false;
 
   if (!m_OutWindowStream.Create(kHistorySize))
     return E_OUTOFMEMORY;
@@ -351,12 +349,12 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   UInt64 pos = 0, unPackSize = *outSize;
   
   m_OutWindowStream.SetStream(outStream);
-  m_OutWindowStream.Init(m_IsSolid);
+  m_OutWindowStream.Init(_isSolid);
   m_InBitStream.SetStream(inStream);
   m_InBitStream.Init();
 
   // CCoderReleaser coderReleaser(this);
-  if (!m_IsSolid)
+  if (!_isSolid)
   {
     InitStructures();
     if (unPackSize == 0)
@@ -364,6 +362,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect;
         if (!ReadTables())
           return S_FALSE;
+      _solidAllowed = true;
       return S_OK;
     }
     ReadTables();
@@ -389,15 +388,19 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       if (!DecodeLz((Int32)blockSize))
         return S_FALSE;
     }
+
+    if (m_InBitStream.ExtraBitsWereRead())
+      return S_FALSE;
+
     UInt64 globalPos = m_OutWindowStream.GetProcessedSize();
     pos = globalPos - blockStartPos;
     if (pos < blockSize)
       if (!ReadTables())
         return S_FALSE;
     pos = globalPos - startPos;
-    if (progress != 0)
+    if (progress)
     {
-      UInt64 packSize = m_InBitStream.GetProcessedSize();
+      const UInt64 packSize = m_InBitStream.GetProcessedSize();
       RINOK(progress->SetRatioInfo(&packSize, &pos));
     }
   }
@@ -406,6 +409,9 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
 
   if (!ReadLastTables())
     return S_FALSE;
+
+  _solidAllowed = true;
+
   return m_OutWindowStream.Flush();
 }
 
@@ -422,7 +428,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   if (size < 1)
     return E_INVALIDARG;
-  m_IsSolid = ((data[0] & 1) != 0);
+  _isSolid = ((data[0] & 1) != 0);
   return S_OK;
 }
 

@@ -1,5 +1,5 @@
 /* Ppmd8.h -- PPMdI codec
-2017-04-03 : Igor Pavlov : Public domain
+2018-07-04 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -86,7 +86,7 @@ typedef struct
 } CPpmd8;
 
 void Ppmd8_Construct(CPpmd8 *p);
-Bool Ppmd8_Alloc(CPpmd8 *p, UInt32 size, ISzAllocPtr alloc);
+BoolInt Ppmd8_Alloc(CPpmd8 *p, UInt32 size, ISzAllocPtr alloc);
 void Ppmd8_Free(CPpmd8 *p, ISzAllocPtr alloc);
 void Ppmd8_Init(CPpmd8 *p, unsigned maxOrder, unsigned restoreMethod);
 #define Ppmd8_WasAllocated(p) ((p)->Base != NULL)
@@ -121,7 +121,7 @@ CPpmd_See *Ppmd8_MakeEscFreq(CPpmd8 *p, unsigned numMasked, UInt32 *scale);
 
 /* ---------- Decode ---------- */
 
-Bool Ppmd8_RangeDec_Init(CPpmd8 *p);
+BoolInt Ppmd8_RangeDec_Init(CPpmd8 *p);
 #define Ppmd8_RangeDec_IsFinishedOK(p) ((p)->Code == 0)
 int Ppmd8_DecodeSymbol(CPpmd8 *p); /* returns: -1 as EndMarker, -2 as DataError */
 

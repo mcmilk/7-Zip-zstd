@@ -96,7 +96,7 @@ STDMETHODIMP CBaseCoder::Init()
 HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
 {
   unsigned saltSize = _key.GetSaltSize();
-  g_RandomGenerator.Generate(_key.Salt, saltSize);
+  MY_RAND_GEN(_key.Salt, saltSize);
   Init2();
   RINOK(WriteStream(outStream, _key.Salt, saltSize));
   return WriteStream(outStream, _key.PwdVerifComputed, kPwdVerifSize);

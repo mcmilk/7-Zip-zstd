@@ -34,6 +34,7 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
+  $O\MemoryLock.obj \
   $O\Menu.obj \
   $O\ProcessUtils.obj \
   $O\Registry.obj \
@@ -67,6 +68,7 @@ FM_OBJS = \
   $O\RegistryUtils.obj \
 
 C_OBJS = \
+  $O\CpuArch.obj \
   $O\Threads.obj \
 
 !include "../../7zip.mak"

@@ -5,7 +5,7 @@ This is the Github Page of [7-Zip] ZS with support of additional Codecs. The lib
 
 You can install it in two ways:
 1. complete setup with additions within the GUI and a modified Explorer context menu
-2. only the codec plugin that goes to your existing [7-Zip] installation
+2. only the codec plugin that goes to your existing [7-Zip] installation (no GUI changes and no additional Hashers)
 
 # Status
 
@@ -15,13 +15,13 @@ You can install it in two ways:
 
 
 ## Codec overview
-1. [Zstandard] v1.3.1 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+1. [Zstandard] v1.3.8 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
-2. [Brotli] v.0.6.0 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
+2. [Brotli] v.1.0.7 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
    - Levels: 0..11
 
-3. [LZ4] v1.7.5 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
+3. [LZ4] v1.8.3 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
    - Levels: 1..12
 
 4. [LZ5] v1.5 is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
@@ -33,6 +33,9 @@ You can install it in two ways:
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
    - Levels 40..49 (LIZv1 + Huffman) give the best ratio, comparable to zlib and low levels of zstd/brotli, but with a faster decompression speed
 
+6. [Fast LZMA2] v0.9.2 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
+   - Levels: 1..9
+
 ## 7-Zip Zstandard Edition (full setup, with GUI and Explorer integration)
 
 ### Installation (via setup)
@@ -40,16 +43,15 @@ You can install it in two ways:
 2. install it, like the default [7-Zip]
 3. use it ;)
 4. you may check, if the [7-Zip] can deal with [Zstandard] or other codecs via this command: `7z.exe i`
-5. the binaries within this installation are not binary compatible with [7-Zip]... use therefore the files from the `Codecs.7z` archive
 
 The output should look like this:
 ```
-7-Zip 17.01 ZS v1.3.1 R1 (x64) : Copyright (c) 1999-2017 Igor Pavlov
-
+7-Zip 19.00 ZS v1.3.8 R2 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2019 Tino Reichardt : 2019-03-05
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
-
+ 1  C:\Program Files\7-Zip-Zstandard\Codecs\Iso7z.64.dll
+ 
 Formats:
 ...
  0 CK            xz       xz txz (.tar) FD 7 z X Z 00
@@ -86,15 +88,31 @@ Codecs:
  0  ED  4F71106 LIZARD
  0  ED  4F71105 LZ5
  0  ED  4F71101 ZSTD
+ 0  ED       21 FLZMA2
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
+ 1 3ED  4F712FF RawSplitter
+
+Hashers:
+ 0    4        1 CRC32
+ 0   16      205 MD2
+ 0   16      206 MD4
+ 0   16      207 MD5
+ 0   20      201 SHA1
+ 0   32        A SHA256
+ 0   48      208 SHA384
+ 0   64      209 SHA512
+ 0    4      203 XXH32
+ 0    8      204 XXH64
+ 0    8        4 CRC64
+ 0   32      202 BLAKE2sp
 ```
 
 ### Usage and features of the full installation
 
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
 - compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
-- included [lzip] decompression support, patch from: http://download.savannah.gnu.org/releases/lzip/7zip/
+- included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
 - right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
 - the FileManager ListBox will show more information about these codecs now
 
@@ -115,6 +133,10 @@ Codecs:
 7z a archiv.7z -m0=lz5 -mx..  ...
 7z a archiv.7z -m0=lz5 -mx16  LZ5 Version 1.5 Ultra Mode, with BCJ preprocessor on executables
 
+7z a archiv.7z -m0=flzma2 -mx1   Fast LZMA2 Fastest mode, with BCJ preprocessor on executables
+7z a archiv.7z -m0=flzma2 -mx..  ...
+7z a archiv.7z -m0=flzma2 -mx9   Fast LZMA2 Ultra Mode, with BCJ preprocessor on executables
+
 7z x -so test.tar.zstd | 7z l -si -ttar
 -> show contents of zstd compressed tar archiv test.tar.zstd
 
@@ -124,7 +146,8 @@ Codecs:
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
-![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods.png "Methods")
+![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods2.png "Methods")
+![Hashes](https://mcmilk.de/projects/7-Zip-zstd/Hashes.png "Hashes")
 
 ## Zstandard codec Plugin for Mainline 7-Zip
 
@@ -139,16 +162,19 @@ Codecs:
 
 The output should look like this:
 ```
-7-Zip 17.01 beta (x64) : Copyright (c) 1999-2017 Igor Pavlov : 2017-08-28
+7-Zip 19.00 (x64) : Copyright (c) 1999-2019 Igor Pavlov : 2018-04-30
 
+Libs:
+ 0  C:\Program Files\7-Zip\7z.dll
 
 Libs:
  0  c:\Program Files\7-Zip\7z.dll
  1  c:\Program Files\7-Zip\Codecs\brotli-x64.dll
- 2  c:\Program Files\7-Zip\Codecs\lizard-x64.dll
- 3  c:\Program Files\7-Zip\Codecs\lz4-x64.dll
- 4  c:\Program Files\7-Zip\Codecs\lz5-x64.dll
- 5  c:\Program Files\7-Zip\Codecs\zstd-x64.dll
+ 2  c:\Program Files\7-Zip\Codecs\flzma2-x64.dll
+ 3  c:\Program Files\7-Zip\Codecs\lizard-x64.dll
+ 4  c:\Program Files\7-Zip\Codecs\lz4-x64.dll
+ 5  c:\Program Files\7-Zip\Codecs\lz5-x64.dll
+ 6  c:\Program Files\7-Zip\Codecs\zstd-x64.dll
 
 ...
 
@@ -177,15 +203,16 @@ Codecs:
  0  ED  6F10701 7zAES
  0  ED  6F00181 AES256CBC
  1  ED  4F71102 BROTLI
- 2  ED  4F71106 LIZARD
- 3  ED  4F71104 LZ4
- 4  ED  4F71105 LZ5
- 5  ED  4F71101 ZSTD
+ 2  ED       21 FLZMA2
+ 3  ED  4F71106 LIZARD
+ 4  ED  4F71104 LZ4
+ 5  ED  4F71105 LZ5
+ 6  ED  4F71101 ZSTD
 ```
 
 ### Usage (codec plugin)
 
-- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
+- compression and decompression for [Brotli], [Fast LZMA2], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
 - you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zst` are not covered by the plugins
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable the bcj2 filter via `-m0=bcj`,
   when using only the plugin dll's
@@ -199,19 +226,18 @@ Codecs:
 7z a archiv.7z -m0=bcj -m1=lizard -mxN  ...
 7z a archiv.7z -m0=bcj -m1=lz4 -mxN  ...
 7z a archiv.7z -m0=bcj -m1=lz5 -mxN  ...
+7z a archiv.7z -m0=bcj -m1=flzma2 -mxN  ...
 ```
 
 ## Codec Plugin for Total Commander
 - download [TotalCmd.7z]
 - install it, by replacing the files `tc7z.dll` and `tc7z64.dll` with the new ones
-- you can check the Total Commander Forum for more information about this [DLL Files](http://ghisler.ch/board/viewtopic.php?p=319216)
+- you can check the Total Commander Forum for more information about this [DLL Files](https://ghisler.ch/board/viewtopic.php?p=319216)
 - decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] ot the 7-Zip `.7z` format
   will work out of the box with Total Commander now :-)
 
 ## Codec Plugin for Far Manager
-- download [Codecs.7z]
-- install it, by replacing the file `C:\Program Files\Far Manager\Plugins\ArcLite\7z.dll` with the one found in the [Codecs.7z] archive
-- it's named `7z-x64.dll` or `7z-x32.dll`, depending on your architecture
+- copy the `7z.dll` file from `C:\Program Files\7-Zip-Zstandard\7z.dll` to `C:\Program Files\Far Manager\Plugins\ArcLite\7z.dll`
 - then restart the Far manager - and on next start, you will have support for 7-Zip Zstandard archives ;-)
 
 ## Benchmarks
@@ -222,6 +248,8 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 - the decompression benchmark is also done in RAM via: `7z t archiv.7z`
 - the tool for measuring the times is [wtime](https://github.com/mcmilk/wtime), together with some [scripts](https://github.com/mcmilk/7-Zip-Benchmarking)
 - the testfile is generated via [generate-mcorpus](https://github.com/mcmilk/7-Zip-Benchmarking/blob/master/generate-mcorpus)
+- please note, that the benchmarks are outdated now (new one will come, but it needs some time)
+
 ![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-v120.png "Compression Speed vs Ratio")
 ![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decomp-v120.png "Decompression Speed per Level")
 ![Memory at Compression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemCompr.png "Memory usage at Compression")
@@ -233,7 +261,7 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 
 ## Links
 
-- [7-Zip Homepage](http://www.7-zip.org/)
+- [7-Zip Homepage](https://www.7-zip.org/)
 - [7-Zip Zstandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
 - [Request for inclusion](https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/) into the mainline 7-Zip:
   - result, will currently not included :(
@@ -246,23 +274,29 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 17.01
-  - [Brotli] Version 0.6.0
+- 7-Zip ZS Version 19.00
+  - [Brotli] Version 1.0.7
+  - [Fast LZMA2] Version 0.9.2
   - [Lizard] Version 1.0
-  - [LZ4] Version 1.7.5
+  - [LZ4] Version 1.8.3
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.3.1
+  - [Zstandard] Version 1.3.8
 
-/TR 2017-08-28
+/TR 2019-03-05
 
-[7-Zip]:http://www.7-zip.org/
-[lzip]:http://www.nongnu.org/lzip/
+## Notes
+
+- if you want an code signed installer, you need to donate sth.
+
+[7-Zip]:https://www.7-zip.org/
+[lzip]:https://www.nongnu.org/lzip/
 [Brotli]:https://github.com/google/brotli/
 [LZ4]:https://github.com/lz4/lz4/
 [LZ5]:https://github.com/inikep/lz5/
 [Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
 [ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/
+[Fast LZMA2]:https://github.com/conor42/fast-lzma2
 
 [Codecs.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
 [TotalCmd.7z]:https://github.com/mcmilk/7-Zip-zstd/releases

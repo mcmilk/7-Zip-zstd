@@ -10,10 +10,6 @@
 
 #include "../../../../C/CpuArch.h"
 
-#if defined( _7ZIP_LARGE_PAGES)
-#include "../../../../C/Alloc.h"
-#endif
-
 #include "../../../Common/MyInitGuid.h"
 
 #include "../../../Common/CommandLineParser.h"
@@ -25,13 +21,10 @@
 
 #include "../../../Windows/ErrorMsg.h"
 
-#ifdef _WIN32
-#include "../../../Windows/MemoryLock.h"
-#endif
-
 #include "../../../Windows/TimeUtils.h"
 
 #include "../Common/ArchiveCommandLine.h"
+#include "../Common/Bench.h"
 #include "../Common/ExitCode.h"
 #include "../Common/Extract.h"
 
@@ -64,8 +57,6 @@ using namespace NCommandLineParser;
 HINSTANCE g_hInstance = 0;
 #endif
 
-bool g_LargePagesMode = false;
-
 extern CStdOutStream *g_StdStream;
 extern CStdOutStream *g_ErrStream;
 
@@ -96,7 +87,7 @@ static const char * const kHelpString =
     "a"
 #endif
 #endif
-    " <command> [<switches>...] <archive_name> [<file_names>...]\n"
+    " <command> [<switches>...] <archive_name> [<file_names>...] [@listfile]\n"
     "\n"
     "<Commands>\n"
     "  a : Add files to archive\n"
@@ -112,8 +103,7 @@ static const char * const kHelpString =
     "  x : eXtract files with full paths\n"
     "\n"
     "<Switches>\n"
-    "  -- : Stop switches parsing\n"
-    "  @listfile : set path to listfile that contains file names\n"
+    "  -- : Stop switches and @listfile parsing\n"
     "  -ai[r[-|0]]{@listfile|!wildcard} : Include archives\n"
     "  -ax[r[-|0]]{@listfile|!wildcard} : eXclude archives\n"
     "  -ao{a|s|t|u} : set Overwrite mode\n"
@@ -150,6 +140,7 @@ static const char * const kHelpString =
     "  -spe : eliminate duplication of root folder for extract command\n"
     "  -spf : use fully qualified file paths\n"
     "  -ssc[-] : set sensitive case mode\n"
+    "  -sse : stop archive creating, if it can't open some input file\n"
     "  -ssw : compress shared files\n"
     "  -stl : set archive timestamp from the most recently modified file\n"
     "  -stm{HexMask} : set CPU thread affinity mask (hexadecimal number)\n"
@@ -243,7 +234,8 @@ static void PrintWarningsPaths(const CErrorPathCodes &pc, CStdOutStream &so)
 {
   FOR_VECTOR(i, pc.Paths)
   {
-    so << pc.Paths[i] << " : ";
+    so.NormalizePrint_UString(fs2us(pc.Paths[i]));
+    so << " : ";
     so << NError::MyFormatMessage(pc.Codes[i]) << endl;
   }
   so << "----------------" << endl;
@@ -382,6 +374,13 @@ static void PrintMemUsage(const char *s, UInt64 val)
   *g_StdStream << "    " << s << " Memory =";
   PrintNum(SHIFT_SIZE_VALUE(val, 20), 7);
   *g_StdStream << " MB";
+
+  #ifdef _7ZIP_LARGE_PAGES
+  AString lp;
+  Add_LargePages_String(lp);
+  if (!lp.IsEmpty())
+    *g_StdStream << lp;
+  #endif
 }
 
 EXTERN_C_BEGIN
@@ -523,6 +522,8 @@ int Main2(
 
   parser.Parse1(commandStrings, options);
 
+  g_StdOut.IsTerminalMode = options.IsStdOutTerminal;
+  g_StdErr.IsTerminalMode = options.IsStdErrTerminal;
 
   if (options.Number_for_Out != k_OutStream_stdout)
     g_StdStream = (options.Number_for_Out == k_OutStream_stderr ? &g_StdErr : NULL);
@@ -539,24 +540,6 @@ int Main2(
     ShowCopyrightAndHelp(g_StdStream, true);
     return 0;
   }
-
-  #if defined(_WIN32) && !defined(UNDER_CE)
-  NSecurity::EnablePrivilege_SymLink();
-  #endif
-  
-  #ifdef _7ZIP_LARGE_PAGES
-  if (options.LargePages)
-  {
-    SetLargePageSize();
-    // note: this process also can inherit that Privilege from parent process
-    g_LargePagesMode =
-    #if defined(_WIN32) && !defined(UNDER_CE)
-      NSecurity::EnablePrivilege_LockMemory();
-    #else
-      true;
-    #endif
-  }
-  #endif
 
   if (options.EnableHeaders)
     ShowCopyrightAndHelp(g_StdStream, false);
@@ -931,7 +914,7 @@ int Main2(
       {
         hashCalc = &hb;
         ThrowException_if_Error(hb.SetMethods(EXTERNAL_CODECS_VARS_L options.HashMethods));
-        hb.Init();
+        // hb.Init();
       }
       
       hresultMain = Extract(

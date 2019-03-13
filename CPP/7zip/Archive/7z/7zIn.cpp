@@ -1115,11 +1115,11 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(
         , dataAfterEnd_Error
         
         _7Z_DECODER_CRYPRO_VARS
-        #if !defined(_7ZIP_ST) && !defined(_SFX)
+        #if !defined(_7ZIP_ST)
           , false // mtMode
           , 1     // numThreads
+          , 0     // memUsage
         #endif
-
       );
     
     RINOK(result);
@@ -1465,21 +1465,24 @@ void CDbEx::FillLinks()
   }
 
   if (indexInFolder != 0)
+  {
     folderIndex++;
-  /*
-  if (indexInFolder != 0)
-    ThrowIncorrect();
-  */
+    // 18.06
+    ThereIsHeaderError = true;
+    // ThrowIncorrect();
+  }
   
   for (;;)
   {
     if (folderIndex >= NumFolders)
       return;
     FolderStartFileIndex[folderIndex] = i;
-    /*
     if (NumUnpackStreamsVector[folderIndex] != 0)
-      ThrowIncorrect();;
-    */
+    {
+      // 18.06
+      ThereIsHeaderError = true;
+      // ThrowIncorrect();
+    }
     folderIndex++;
   }
 }

@@ -5,6 +5,7 @@
  * This source code is licensed under both the BSD-style license (found in the
  * LICENSE file in the root directory of this source tree) and the GPLv2 (found
  * in the COPYING file in the root directory of this source tree).
+ * You may select, at your option, one of the above-listed licenses.
  */
 
 
@@ -735,18 +736,6 @@ MEM_STATIC BITv05_DStream_status BITv05_reloadDStream(BITv05_DStream_t* bitD);
 MEM_STATIC unsigned BITv05_endOfDStream(const BITv05_DStream_t* bitD);
 
 
-/*!
-* Start by invoking BITv05_initDStream().
-* A chunk of the bitStream is then stored into a local register.
-* Local register size is 64-bits on 64-bits systems, 32-bits on 32-bits systems (size_t).
-* You can then retrieve bitFields stored into the local register, **in reverse order**.
-* Local register is explicitly reloaded from memory by the BITv05_reloadDStream() method.
-* A reload guarantee a minimum of ((8*sizeof(size_t))-7) bits when its result is BITv05_DStream_unfinished.
-* Otherwise, it can be less than that, so proceed accordingly.
-* Checking if DStream has reached its end can be performed with BITv05_endOfDStream()
-*/
-
-
 /*-****************************************
 *  unsafe API
 ******************************************/
@@ -758,7 +747,7 @@ MEM_STATIC size_t BITv05_readBitsFast(BITv05_DStream_t* bitD, unsigned nbBits);
 /*-**************************************************************
 *  Helper functions
 ****************************************************************/
-MEM_STATIC unsigned BITv05_highbit32 (register U32 val)
+MEM_STATIC unsigned BITv05_highbit32 (U32 val)
 {
 #   if defined(_MSC_VER)   /* Visual */
     unsigned long r=0;
@@ -828,13 +817,6 @@ MEM_STATIC size_t BITv05_initDStream(BITv05_DStream_t* bitD, const void* srcBuff
     return srcSize;
 }
 
-/*!BITv05_lookBits
- * Provides next n bits from local register
- * local register is not modified (bits are still present for next read/look)
- * On 32-bits, maxNbBits==25
- * On 64-bits, maxNbBits==57
- * @return : value extracted
- */
 MEM_STATIC size_t BITv05_lookBits(BITv05_DStream_t* bitD, U32 nbBits)
 {
     const U32 bitMask = sizeof(bitD->bitContainer)*8 - 1;
@@ -854,12 +836,7 @@ MEM_STATIC void BITv05_skipBits(BITv05_DStream_t* bitD, U32 nbBits)
     bitD->bitsConsumed += nbBits;
 }
 
-/*!BITv05_readBits
- * Read next n bits from local register.
- * pay attention to not read more than nbBits contained into local register.
- * @return : extracted value.
- */
-MEM_STATIC size_t BITv05_readBits(BITv05_DStream_t* bitD, U32 nbBits)
+MEM_STATIC size_t BITv05_readBits(BITv05_DStream_t* bitD, unsigned nbBits)
 {
     size_t value = BITv05_lookBits(bitD, nbBits);
     BITv05_skipBits(bitD, nbBits);
@@ -868,7 +845,7 @@ MEM_STATIC size_t BITv05_readBits(BITv05_DStream_t* bitD, U32 nbBits)
 
 /*!BITv05_readBitsFast :
 *  unsafe version; only works only if nbBits >= 1 */
-MEM_STATIC size_t BITv05_readBitsFast(BITv05_DStream_t* bitD, U32 nbBits)
+MEM_STATIC size_t BITv05_readBitsFast(BITv05_DStream_t* bitD, unsigned nbBits)
 {
     size_t value = BITv05_lookBitsFast(bitD, nbBits);
     BITv05_skipBits(bitD, nbBits);
@@ -994,54 +971,6 @@ static unsigned char FSEv05_decodeSymbol(FSEv05_DState_t* DStatePtr, BITv05_DStr
 
 static unsigned FSEv05_endOfDState(const FSEv05_DState_t* DStatePtr);
 
-/*!
-Let's now decompose FSEv05_decompress_usingDTable() into its unitary components.
-You will decode FSEv05-encoded symbols from the bitStream,
-and also any other bitFields you put in, **in reverse order**.
-
-You will need a few variables to track your bitStream. They are :
-
-BITv05_DStream_t DStream;    // Stream context
-FSEv05_DState_t  DState;     // State context. Multiple ones are possible
-FSEv05_DTable*   DTablePtr;  // Decoding table, provided by FSEv05_buildDTable()
-
-The first thing to do is to init the bitStream.
-    errorCode = BITv05_initDStream(&DStream, srcBuffer, srcSize);
-
-You should then retrieve your initial state(s)
-(in reverse flushing order if you have several ones) :
-    errorCode = FSEv05_initDState(&DState, &DStream, DTablePtr);
-
-You can then decode your data, symbol after symbol.
-For information the maximum number of bits read by FSEv05_decodeSymbol() is 'tableLog'.
-Keep in mind that symbols are decoded in reverse order, like a LIFO stack (last in, first out).
-    unsigned char symbol = FSEv05_decodeSymbol(&DState, &DStream);
-
-You can retrieve any bitfield you eventually stored into the bitStream (in reverse order)
-Note : maximum allowed nbBits is 25, for 32-bits compatibility
-    size_t bitField = BITv05_readBits(&DStream, nbBits);
-
-All above operations only read from local register (which size depends on size_t).
-Refueling the register from memory is manually performed by the reload method.
-    endSignal = FSEv05_reloadDStream(&DStream);
-
-BITv05_reloadDStream() result tells if there is still some more data to read from DStream.
-BITv05_DStream_unfinished : there is still some data left into the DStream.
-BITv05_DStream_endOfBuffer : Dstream reached end of buffer. Its container may no longer be completely filled.
-BITv05_DStream_completed : Dstream reached its exact end, corresponding in general to decompression completed.
-BITv05_DStream_tooFar : Dstream went too far. Decompression result is corrupted.
-
-When reaching end of buffer (BITv05_DStream_endOfBuffer), progress slowly, notably if you decode multiple symbols per loop,
-to properly detect the exact end of stream.
-After each decoded symbol, check if DStream is fully consumed using this simple test :
-    BITv05_reloadDStream(&DStream) >= BITv05_DStream_completed
-
-When it's done, verify decompression is fully completed, by checking both DStream and the relevant states.
-Checking if DStream has reached its end is performed by :
-    BITv05_endOfDStream(&DStream);
-Check also the states. There might be some symbols left there, if some high probability ones (>50%) are possible.
-    FSEv05_endOfDState(&DState);
-*/
 
 
 /* *****************************************
@@ -1233,7 +1162,7 @@ MEM_STATIC unsigned FSEv05_endOfDState(const FSEv05_DState_t* DStatePtr)
 /* **************************************************************
 *  Complex types
 ****************************************************************/
-typedef U32 DTable_max_t[FSEv05_DTABLE_SIZE_U32(FSEv05_MAX_TABLELOG)];
+typedef unsigned DTable_max_t[FSEv05_DTABLE_SIZE_U32(FSEv05_MAX_TABLELOG)];
 
 
 /* **************************************************************
@@ -1295,6 +1224,7 @@ size_t FSEv05_buildDTable(FSEv05_DTable* dt, const short* normalizedCounter, uns
     if (tableLog > FSEv05_MAX_TABLELOG) return ERROR(tableLog_tooLarge);
 
     /* Init, lay down lowprob symbols */
+    memset(tableDecode, 0, sizeof(FSEv05_FUNCTION_TYPE) * (maxSymbolValue+1) );   /* useless init, but keep static analyzer happy, and we don't need to performance optimize legacy decoders */
     DTableH.tableLog = (U16)tableLog;
     for (s=0; s<=maxSymbolValue; s++) {
         if (normalizedCounter[s]==-1) {
@@ -2261,7 +2191,7 @@ static void HUFv05_fillDTableX4(HUFv05_DEltX4* DTable, const U32 targetLog,
     }
 }
 
-size_t HUFv05_readDTableX4 (U32* DTable, const void* src, size_t srcSize)
+size_t HUFv05_readDTableX4 (unsigned* DTable, const void* src, size_t srcSize)
 {
     BYTE weightList[HUFv05_MAX_SYMBOL_VALUE + 1];
     sortedSymbol_t sortedSymbol[HUFv05_MAX_SYMBOL_VALUE + 1];
@@ -2275,7 +2205,7 @@ size_t HUFv05_readDTableX4 (U32* DTable, const void* src, size_t srcSize)
     void* dtPtr = DTable;
     HUFv05_DEltX4* const dt = ((HUFv05_DEltX4*)dtPtr) + 1;
 
-    HUFv05_STATIC_ASSERT(sizeof(HUFv05_DEltX4) == sizeof(U32));   /* if compilation fails here, assertion is false */
+    HUFv05_STATIC_ASSERT(sizeof(HUFv05_DEltX4) == sizeof(unsigned));   /* if compilation fails here, assertion is false */
     if (memLog > HUFv05_ABSOLUTEMAX_TABLELOG) return ERROR(tableLog_tooLarge);
     //memset(weightList, 0, sizeof(weightList));   /* is not necessary, even though some analyzer complain ... */
 
@@ -2402,7 +2332,7 @@ static inline size_t HUFv05_decodeStreamX4(BYTE* p, BITv05_DStream_t* bitDPtr, B
 size_t HUFv05_decompress1X4_usingDTable(
           void* dst,  size_t dstSize,
     const void* cSrc, size_t cSrcSize,
-    const U32* DTable)
+    const unsigned* DTable)
 {
     const BYTE* const istart = (const BYTE*) cSrc;
     BYTE* const ostart = (BYTE*) dst;
@@ -2445,7 +2375,7 @@ size_t HUFv05_decompress1X4 (void* dst, size_t dstSize, const void* cSrc, size_t
 size_t HUFv05_decompress4X4_usingDTable(
           void* dst,  size_t dstSize,
     const void* cSrc, size_t cSrcSize,
-    const U32* DTable)
+    const unsigned* DTable)
 {
     if (cSrcSize < 10) return ERROR(corruption_detected);   /* strict minimum : jump table + 1 byte per stream */
 
@@ -2729,6 +2659,7 @@ struct ZSTDv05_DCtx_s
     BYTE headerBuffer[ZSTDv05_frameHeaderSize_max];
 };  /* typedef'd to ZSTDv05_DCtx within "zstd_static.h" */
 
+size_t ZSTDv05_sizeofDCtx (void); /* Hidden declaration */
 size_t ZSTDv05_sizeofDCtx (void) { return sizeof(ZSTDv05_DCtx); }
 
 size_t ZSTDv05_decompressBegin(ZSTDv05_DCtx* dctx)
@@ -2893,7 +2824,7 @@ static size_t ZSTDv05_decodeFrameHeader_Part2(ZSTDv05_DCtx* zc, const void* src,
 }
 
 
-size_t ZSTDv05_getcBlockSize(const void* src, size_t srcSize, blockProperties_t* bpPtr)
+static size_t ZSTDv05_getcBlockSize(const void* src, size_t srcSize, blockProperties_t* bpPtr)
 {
     const BYTE* const in = (const BYTE* const)src;
     BYTE headerFlags;
@@ -2916,6 +2847,7 @@ size_t ZSTDv05_getcBlockSize(const void* src, size_t srcSize, blockProperties_t*
 
 static size_t ZSTDv05_copyRawBlock(void* dst, size_t maxDstSize, const void* src, size_t srcSize)
 {
+    if (dst==NULL) return ERROR(dstSize_tooSmall);
     if (srcSize > maxDstSize) return ERROR(dstSize_tooSmall);
     memcpy(dst, src, srcSize);
     return srcSize;
@@ -2924,8 +2856,8 @@ static size_t ZSTDv05_copyRawBlock(void* dst, size_t maxDstSize, const void* src
 
 /*! ZSTDv05_decodeLiteralsBlock() :
     @return : nb of bytes read from src (< srcSize ) */
-size_t ZSTDv05_decodeLiteralsBlock(ZSTDv05_DCtx* dctx,
-                          const void* src, size_t srcSize)   /* note : srcSize < BLOCKSIZE */
+static size_t ZSTDv05_decodeLiteralsBlock(ZSTDv05_DCtx* dctx,
+                                    const void* src, size_t srcSize)   /* note : srcSize < BLOCKSIZE */
 {
     const BYTE* const istart = (const BYTE*) src;
 
@@ -3059,7 +2991,7 @@ size_t ZSTDv05_decodeLiteralsBlock(ZSTDv05_DCtx* dctx,
 }
 
 
-size_t ZSTDv05_decodeSeqHeaders(int* nbSeq, const BYTE** dumpsPtr, size_t* dumpsLengthPtr,
+static size_t ZSTDv05_decodeSeqHeaders(int* nbSeq, const BYTE** dumpsPtr, size_t* dumpsLengthPtr,
                          FSEv05_DTable* DTableLL, FSEv05_DTable* DTableML, FSEv05_DTable* DTableOffb,
                          const void* src, size_t srcSize, U32 flagStaticTable)
 {
@@ -3067,7 +2999,7 @@ size_t ZSTDv05_decodeSeqHeaders(int* nbSeq, const BYTE** dumpsPtr, size_t* dumps
     const BYTE* ip = istart;
     const BYTE* const iend = istart + srcSize;
     U32 LLtype, Offtype, MLtype;
-    U32 LLlog, Offlog, MLlog;
+    unsigned LLlog, Offlog, MLlog;
     size_t dumpsLength;
 
     /* check */
@@ -3125,7 +3057,7 @@ size_t ZSTDv05_decodeSeqHeaders(int* nbSeq, const BYTE** dumpsPtr, size_t* dumps
             break;
         case FSEv05_ENCODING_DYNAMIC :
         default :   /* impossible */
-            {   U32 max = MaxLL;
+            {   unsigned max = MaxLL;
                 headerSize = FSEv05_readNCount(norm, &max, &LLlog, ip, iend-ip);
                 if (FSEv05_isError(headerSize)) return ERROR(GENERIC);
                 if (LLlog > LLFSEv05Log) return ERROR(corruption_detected);
@@ -3149,7 +3081,7 @@ size_t ZSTDv05_decodeSeqHeaders(int* nbSeq, const BYTE** dumpsPtr, size_t* dumps
             break;
         case FSEv05_ENCODING_DYNAMIC :
         default :   /* impossible */
-            {   U32 max = MaxOff;
+            {   unsigned max = MaxOff;
                 headerSize = FSEv05_readNCount(norm, &max, &Offlog, ip, iend-ip);
                 if (FSEv05_isError(headerSize)) return ERROR(GENERIC);
                 if (Offlog > OffFSEv05Log) return ERROR(corruption_detected);
@@ -3173,7 +3105,7 @@ size_t ZSTDv05_decodeSeqHeaders(int* nbSeq, const BYTE** dumpsPtr, size_t* dumps
             break;
         case FSEv05_ENCODING_DYNAMIC :
         default :   /* impossible */
-            {   U32 max = MaxML;
+            {   unsigned max = MaxML;
                 headerSize = FSEv05_readNCount(norm, &max, &MLlog, ip, iend-ip);
                 if (FSEv05_isError(headerSize)) return ERROR(GENERIC);
                 if (MLlog > MLFSEv05Log) return ERROR(corruption_detected);
@@ -3368,14 +3300,14 @@ static size_t ZSTDv05_decompressSequences(
     BYTE* const ostart = (BYTE* const)dst;
     BYTE* op = ostart;
     BYTE* const oend = ostart + maxDstSize;
-    size_t errorCode, dumpsLength;
+    size_t errorCode, dumpsLength=0;
     const BYTE* litPtr = dctx->litPtr;
     const BYTE* const litEnd = litPtr + dctx->litSize;
-    int nbSeq;
-    const BYTE* dumps;
-    U32* DTableLL = dctx->LLTable;
-    U32* DTableML = dctx->MLTable;
-    U32* DTableOffb = dctx->OffTable;
+    int nbSeq=0;
+    const BYTE* dumps = NULL;
+    unsigned* DTableLL = dctx->LLTable;
+    unsigned* DTableML = dctx->MLTable;
+    unsigned* DTableOffb = dctx->OffTable;
     const BYTE* const base = (const BYTE*) (dctx->base);
     const BYTE* const vBase = (const BYTE*) (dctx->vBase);
     const BYTE* const dictEnd = (const BYTE*) (dctx->dictEnd);
@@ -3481,10 +3413,10 @@ static size_t ZSTDv05_decompress_continueDCtx(ZSTDv05_DCtx* dctx,
     BYTE* const oend = ostart + maxDstSize;
     size_t remainingSize = srcSize;
     blockProperties_t blockProperties;
+    memset(&blockProperties, 0, sizeof(blockProperties));
 
     /* Frame Header */
-    {
-        size_t frameHeaderSize;
+    {   size_t frameHeaderSize;
         if (srcSize < ZSTDv05_frameHeaderSize_min+ZSTDv05_blockHeaderSize) return ERROR(srcSize_wrong);
         frameHeaderSize = ZSTDv05_decodeFrameHeader_Part1(dctx, src, ZSTDv05_frameHeaderSize_min);
         if (ZSTDv05_isError(frameHeaderSize)) return frameHeaderSize;
@@ -3701,7 +3633,7 @@ static size_t ZSTDv05_loadEntropy(ZSTDv05_DCtx* dctx, const void* dict, size_t d
 {
     size_t hSize, offcodeHeaderSize, matchlengthHeaderSize, errorCode, litlengthHeaderSize;
     short offcodeNCount[MaxOff+1];
-    U32 offcodeMaxValue=MaxOff, offcodeLog;
+    unsigned offcodeMaxValue=MaxOff, offcodeLog;
     short matchlengthNCount[MaxML+1];
     unsigned matchlengthMaxValue = MaxML, matchlengthLog;
     short litlengthNCount[MaxLL+1];

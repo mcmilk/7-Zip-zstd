@@ -5,6 +5,7 @@
  * This source code is licensed under both the BSD-style license (found in the
  * LICENSE file in the root directory of this source tree) and the GPLv2 (found
  * in the COPYING file in the root directory of this source tree).
+ * You may select, at your option, one of the above-listed licenses.
  */
 
 #ifndef ZSTD_LEGACY_H
@@ -245,6 +246,7 @@ MEM_STATIC size_t ZSTD_freeLegacyStreamContext(void* legacyContext, U32 version)
 MEM_STATIC size_t ZSTD_initLegacyStream(void** legacyContext, U32 prevVersion, U32 newVersion,
                                         const void* dict, size_t dictSize)
 {
+    DEBUGLOG(5, "ZSTD_initLegacyStream for v0.%u", newVersion);
     if (prevVersion != newVersion) ZSTD_freeLegacyStreamContext(*legacyContext, prevVersion);
     switch(newVersion)
     {
@@ -303,6 +305,7 @@ MEM_STATIC size_t ZSTD_initLegacyStream(void** legacyContext, U32 prevVersion, U
 MEM_STATIC size_t ZSTD_decompressLegacyStream(void* legacyContext, U32 version,
                                               ZSTD_outBuffer* output, ZSTD_inBuffer* input)
 {
+    DEBUGLOG(5, "ZSTD_decompressLegacyStream for v0.%u", version);
     switch(version)
     {
         default :

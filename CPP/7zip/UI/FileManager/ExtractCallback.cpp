@@ -759,11 +759,15 @@ STDMETHODIMP CExtractCallbackImp::AskWrite(
       destPathResultTemp = fs2us(destPathSys);
     }
     else
+    {
+      if (NFind::DoesFileExist(destPathSys))
       if (!NDir::DeleteFileAlways(destPathSys))
+      if (GetLastError() != ERROR_FILE_NOT_FOUND)
       {
         RINOK(MessageError("can not delete output file", destPathSys));
         return E_ABORT;
       }
+    }
   }
   *writeAnswer = BoolToInt(true);
   return StringToBstr(destPathResultTemp, destPathResult);

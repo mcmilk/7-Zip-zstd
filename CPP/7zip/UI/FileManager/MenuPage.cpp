@@ -187,7 +187,7 @@ bool CMenuPage::OnInit()
 
     UString s = LangString(menuItem.ControlID);
     if (menuItem.Flag == kCRC)
-      s = "CRC SHA";
+      s = "HASH";
     if (menuItem.Flag == kOpenAs ||
         menuItem.Flag == kCRC)
       s += " >";

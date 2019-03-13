@@ -28,11 +28,13 @@ OBJS = \
   $(CRYPTO_OBJS) \
   $(C_OBJS) \
   $(BROTLI_OBJS) \
+  $(HASHES_OBJS) \
   $(LIZARD_OBJS) \
   $(LZ4_OBJS) \
   $(LZ5_OBJS) \
   $(ZSTD_OBJS) \
   $(ZSTDMT_OBJS) \
+  $(FASTLZMA2_OBJS) \
   $(ASM_OBJS) \
   $O\resource.res \
 
@@ -208,6 +210,11 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 	$(COMPL_O2)
 !ENDIF
 
+!IFDEF FASTLZMA2_OBJS
+$(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
+	$(COMPL_O2) -DNO_XXHASH
+!ENDIF
+
 
 !ELSE
 
@@ -272,6 +279,8 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 	$(COMPLB_O2)
 {../../../../C/brotli}.c{$O}.obj::
 	$(COMPLB_O2)
+{../../../../C/hashes}.c{$O}.obj::
+	$(COMPLB_O2)
 {../../../../C/lizard}.c{$O}.obj::
 	$(COMPLB_O2)
 {../../../../C/lz4}.c{$O}.obj::
@@ -283,10 +292,13 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 {../../../../C/zstdmt}.c{$O}.obj::
 	$(COMPLB_O2) \
 	-I ../../../../C/brotli \
+	-I ../../../../C/hashes \
 	-I ../../../../C/lizard \
 	-I ../../../../C/lz4 \
 	-I ../../../../C/lz5 \
 	-I ../../../../C/zstd
+{../../../../C/fast-lzma2}.c{$O}.obj::
+	$(COMPLB_O2) -DNO_XXHASH
 
 !ENDIF
 

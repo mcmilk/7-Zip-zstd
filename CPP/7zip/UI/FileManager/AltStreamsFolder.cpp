@@ -468,7 +468,7 @@ static HRESULT UpdateFile(NFsFolder::CCopyStateIO &state, CFSTR inPath, CFSTR ou
 {
   if (NFind::DoesFileOrDirExist(outPath))
   {
-    RINOK(SendMessageError(callback, NError::MyFormatMessage(ERROR_ALREADY_EXISTS), outPath));
+    RINOK(SendMessageError(callback, NError::MyFormatMessage(ERROR_ALREADY_EXISTS), FString(outPath)));
     CFileInfo fi;
     if (fi.Find(inPath))
     {

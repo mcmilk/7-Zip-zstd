@@ -1,6 +1,50 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+19.00          2019-02-21
+-------------------------
+- Encryption strength for 7z archives was increased:
+  the size of random initialization vector was increased from 64-bit to 128-bit,
+  and the pseudo-random number generator was improved.
+- Some bugs were fixed.
+
+
+18.06          2018-12-30
+-------------------------
+- The speed for LZMA/LZMA2 compressing was increased by 3-10%,
+  and there are minor changes in compression ratio.
+- Some bugs were fixed.
+- The bug in 7-Zip 18.02-18.05 was fixed:
+  There was memory leak in multithreading xz decoder - XzDecMt_Decode(),
+  if xz stream contains only one block.
+- 7-Zip 18.02-18.05 used only one CPU thread for bz2 archive creation.
+- The changes for MSVS compiler makefiles: 
+   - the makefiles now use "PLATFORM" macroname with values (x64, x86, arm64)
+     instead of "CPU" macroname with values (AMD64, ARM64).
+   - the makefiles by default now use static version of the run-time library.
+
+
+18.05          2018-04-30
+-------------------------
+- The speed for LZMA/LZMA2 compressing was increased 
+    by 8% for fastest/fast compression levels and 
+    by 3% for normal/maximum compression levels.
+- Previous versions of 7-Zip could work incorrectly in "Large memory pages" mode in
+  Windows 10 because of some BUG with "Large Pages" in Windows 10. 
+  Now 7-Zip doesn't use "Large Pages" on Windows 10 up to revision 1709 (16299).
+
+
+18.03 beta     2018-03-04
+-------------------------
+- Asm\x86\LzmaDecOpt.asm: new optimized LZMA decoder written in asm 
+  for x64 with about 30% higher speed than main version of LZMA decoder written in C.
+- The speed for single-thread LZMA/LZMA2 decoder written in C was increased by 3%.
+- 7-Zip now can use multi-threading for 7z/LZMA2 decoding,
+  if there are multiple independent data chunks in LZMA2 stream.
+- 7-Zip now can use multi-threading for xz decoding,
+  if there are multiple blocks in xz stream.
+
+
 17.00 beta     2017-04-29
 -------------------------
 - NewHandler.h / NewHandler.cpp: 

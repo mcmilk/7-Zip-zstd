@@ -1,14 +1,4 @@
 PROG = 7zFM.exe
-CFLAGS = $(CFLAGS) \
-  -DLANG \
-  -DNEW_FOLDER_INTERFACE \
-
-!IFDEF UNDER_CE
-LIBS = $(LIBS) ceshell.lib Commctrl.lib
-!ELSE
-LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib Mpr.lib Gdi32.lib
-CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE
-!ENDIF
 
 !include "../Format7zF/Arc.mak"
 
@@ -48,7 +38,6 @@ WIN_CTRL_OBJS = \
   $O\FileStreams.obj \
 
 UI_COMMON_OBJS = \
-  $O\ArchiveCommandLine.obj \
   $O\ArchiveExtractCallback.obj \
   $O\ArchiveName.obj \
   $O\ArchiveOpenCallback.obj \

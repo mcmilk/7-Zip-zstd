@@ -30,14 +30,13 @@ CDecoder::CDecoder(): CAesCbcDecoder(kAesKeySize) {}
 
 static unsigned ReadVarInt(const Byte *p, unsigned maxSize, UInt64 *val)
 {
-  unsigned i;
   *val = 0;
 
-  for (i = 0; i < maxSize;)
+  for (unsigned i = 0; i < maxSize && i < 10;)
   {
     Byte b = p[i];
-    if (i < 10)
-      *val |= (UInt64)(b & 0x7F) << (7 * i++);
+    *val |= (UInt64)(b & 0x7F) << (7 * i);
+    i++;
     if ((b & 0x80) == 0)
       return i;
   }
@@ -162,8 +161,9 @@ void CDecoder::Hmac_Convert_32Bytes(Byte *data) const
 };
 
 
+static CKey g_Key;
+
 #ifndef _7ZIP_ST
-  static CKey g_Key;
   static NWindows::NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
   #define MT_LOCK NWindows::NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
 #else

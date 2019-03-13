@@ -1112,18 +1112,6 @@ SOURCE=..\..\Compress\ShrinkDecoder.cpp
 SOURCE=..\..\Compress\ShrinkDecoder.h
 # End Source File
 # End Group
-# Begin Group "Z"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\ZDecoder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\ZDecoder.h
-# End Source File
-# End Group
 # Begin Group "BWT"
 
 # PROP Default_Filter ""
@@ -1651,10 +1639,6 @@ SOURCE=..\..\Archive\SplitHandler.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\XzHandler.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\ZHandler.cpp
 # End Source File
 # End Group
 # Begin Group "UI Common"
@@ -2516,6 +2500,15 @@ SOURCE=..\..\..\..\C\Delta.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\DllSecur.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\DllSecur.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\HuffEnc.c
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -2636,6 +2629,34 @@ SOURCE=..\..\..\..\C\Lzma2Dec.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Lzma2DecMt.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Lzma2DecMt.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Lzma2Enc.c
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -2745,6 +2766,34 @@ SOURCE=..\..\..\..\C\MtCoder.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\MtCoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\MtDec.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\MtDec.h
 # End Source File
 # Begin Source File
 

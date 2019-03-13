@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2017-08-28 : Igor Pavlov : Public domain */
+2019-02-19 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -48,7 +48,7 @@ static LPCWSTR const k_Reg_Software_7zip = L"Software\\7-Zip-Zstandard";
   #define _64BIT_INSTALLER 1
 #endif
 
-#define k_7zip_with_Ver_base L"7-Zip Zstandard " LLL(MY_VERSION)
+#define k_7zip_with_Ver_base L"7-Zip ZS " LLL(MY_VERSION)
 
 #ifdef _64BIT_INSTALLER
   #define k_7zip_with_Ver k_7zip_with_Ver_base L" (x64)"
@@ -82,16 +82,16 @@ static LPCWSTR const k_Reg_Path32 = L"Path"
   #define k_Reg_WOW_Flag_32 0
 #endif
 
-#define k_7zip_CLSID L"{23170F69-0803-278A-1000-000100020001}"
+#define k_7zip_CLSID L"{23170F69-20BB-278A-1000-000100020000}"
 
 static LPCWSTR const k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
 static LPCWSTR const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
 
 #define g_AllUsers True
 
-static Bool g_Install_was_Pressed;
-static Bool g_Finished;
-static Bool g_SilentMode;
+static BoolInt g_Install_was_Pressed;
+static BoolInt g_Finished;
+static BoolInt g_SilentMode;
 
 static HWND g_HWND;
 static HWND g_Path_HWND;
@@ -121,13 +121,51 @@ static void PrintErrorMessage(const char *s)
 }
 
 
+typedef DWORD (WINAPI * Func_GetFileVersionInfoSizeW)(LPCWSTR lptstrFilename, LPDWORD lpdwHandle);
+typedef BOOL (WINAPI * Func_GetFileVersionInfoW)(LPCWSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData);
+typedef BOOL (WINAPI * Func_VerQueryValueW)(const LPVOID pBlock, LPWSTR lpSubBlock, LPVOID * lplpBuffer, PUINT puLen);
+
+static HMODULE g_version_dll_hModule;
+
 static DWORD GetFileVersion(LPCWSTR s)
 {
   DWORD size = 0;
-  BYTE *vi = NULL;
+  void *vi = NULL;
   DWORD version = 0;
+
+  Func_GetFileVersionInfoSizeW my_GetFileVersionInfoSizeW;
+  Func_GetFileVersionInfoW my_GetFileVersionInfoW;
+  Func_VerQueryValueW my_VerQueryValueW;
+
+  if (!g_version_dll_hModule)
+  {
+    wchar_t buf[MAX_PATH + 100];
+    {
+      unsigned len = GetSystemDirectoryW(buf, MAX_PATH + 2);
+      if (len == 0 || len > MAX_PATH)
+        return 0;
+    }
+    {
+      unsigned pos = (unsigned)lstrlenW(buf);
+      if (buf[pos - 1] != '\\')
+        buf[pos++] = '\\';
+      lstrcpyW(buf + pos, L"version.dll");
+    }
+    g_version_dll_hModule = LoadLibraryW(buf);
+    if (!g_version_dll_hModule)
+      return 0;
+  }
+
+  my_GetFileVersionInfoSizeW = (Func_GetFileVersionInfoSizeW)GetProcAddress(g_version_dll_hModule, "GetFileVersionInfoSizeW");
+  my_GetFileVersionInfoW = (Func_GetFileVersionInfoW)GetProcAddress(g_version_dll_hModule, "GetFileVersionInfoW");
+  my_VerQueryValueW = (Func_VerQueryValueW)GetProcAddress(g_version_dll_hModule, "VerQueryValueW");
+
+  if (!my_GetFileVersionInfoSizeW
+     || !my_GetFileVersionInfoW
+     || !my_VerQueryValueW)
+    return 0;
   
-  size = GetFileVersionInfoSizeW(s, NULL);
+  size = my_GetFileVersionInfoSizeW(s, NULL);
   if (size == 0)
     return 0;
   
@@ -135,11 +173,11 @@ static DWORD GetFileVersion(LPCWSTR s)
   if (!vi)
     return 0;
   
-  if (GetFileVersionInfoW(s, 0, size, vi))
+  if (my_GetFileVersionInfoW(s, 0, size, vi))
   {
     VS_FIXEDFILEINFO *fi = NULL;
     UINT fiLen = 0;
-    if (VerQueryValueW(vi, L"\\", (LPVOID *)&fi, &fiLen))
+    if (my_VerQueryValueW(vi, L"\\", (LPVOID *)&fi, &fiLen))
       version = fi->dwFileVersionMS;
   }
   
@@ -270,7 +308,7 @@ static int MyRegistry_QueryString2(HKEY hKey, LPCWSTR keyName, LPCWSTR valName, 
   if (res != ERROR_SUCCESS)
     return False;
   {
-    Bool res2 = MyRegistry_QueryString(key, valName, dest);
+    BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
     RegCloseKey(key);
     return res2;
   }
@@ -343,7 +381,7 @@ static LONG MyRegistry_CreateKeyAndVal_32(HKEY parentKey, LPCWSTR keyName, LPCWS
 
 #define kSignatureSearchLimit (1 << 22)
 
-static Bool FindSignature(CSzFile *stream, UInt64 *resPos)
+static BoolInt FindSignature(CSzFile *stream, UInt64 *resPos)
 {
   Byte buf[kBufSize];
   size_t numPrevBytes = 0;
@@ -431,7 +469,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM data)
   return 0;
 }
 
-static Bool MyBrowseForFolder(HWND owner, LPCWSTR title, UINT ulFlags,
+static BoolInt MyBrowseForFolder(HWND owner, LPCWSTR title, UINT ulFlags,
     LPCWSTR initialFolder, LPWSTR resultPath)
 {
   WCHAR displayName[MAX_PATH];
@@ -694,7 +732,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
 
   for (; i < 3; i++)
   {
-    Bool isOK = True;
+    BoolInt isOK = True;
     WCHAR link[MAX_PATH + 40];
     WCHAR destPath[MAX_PATH + 40];
 
@@ -874,7 +912,7 @@ static void WriteShellEx()
 
 static const wchar_t *GetCmdParam(const wchar_t *s)
 {
-  Bool quoteMode = False;
+  BoolInt quoteMode = False;
   for (;; s++)
   {
     wchar_t c = *s;
@@ -988,7 +1026,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   if (path[0] == 0)
   {
     HKEY key = 0;
-    Bool ok = False;
+    BoolInt ok = False;
     LONG res = RegOpenKeyExW(HKEY_CURRENT_USER, k_Reg_Software_7zip, 0, KEY_READ | k_Reg_WOW_Flag, &key);
     if (res == ERROR_SUCCESS)
     {
@@ -1101,9 +1139,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 }
 
 
-static Bool GetErrorMessage(DWORD errorCode, WCHAR *message)
+static BoolInt GetErrorMessage(DWORD errorCode, WCHAR *message)
 {
-  LPVOID msgBuf;
+  LPWSTR msgBuf;
   if (FormatMessageW(
           FORMAT_MESSAGE_ALLOCATE_BUFFER
         | FORMAT_MESSAGE_FROM_SYSTEM
@@ -1201,7 +1239,7 @@ if (res == SZ_OK)
 
   if (res == SZ_OK)
   {
-    lookStream.buf = ISzAlloc_Alloc(&allocImp, kInputBufSize);
+    lookStream.buf = (Byte *)ISzAlloc_Alloc(&allocImp, kInputBufSize);
     if (!lookStream.buf)
       res = SZ_ERROR_MEM;
     else
@@ -1272,7 +1310,7 @@ if (res == SZ_OK)
         
       temp = path + pathLen;
       
-      SzArEx_GetFileNameUtf16(&db, i, temp);
+      SzArEx_GetFileNameUtf16(&db, i, (UInt16 *)temp);
 
       if (!g_SilentMode)
         SetWindowTextW(g_InfoLine_HWND, temp);
@@ -1313,7 +1351,7 @@ if (res == SZ_OK)
         }
 
         {
-          // Bool skipFile = False;
+          // BoolInt skipFile = False;
           
           wcscpy(origPath, path);
   

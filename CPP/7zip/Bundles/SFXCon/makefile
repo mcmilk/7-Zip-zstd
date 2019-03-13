@@ -1,10 +1,11 @@
 PROG = 7zCon.sfx
 MY_CONSOLE = 1
+MY_FIXED = 1
+
 CFLAGS = $(CFLAGS) \
   -DEXTRACT_ONLY \
   -DNO_READ_FROM_CODER \
   -D_SFX \
-  -D_CONSOLE \
 
 CURRENT_OBJS = \
   $O\SfxCon.obj \
@@ -118,7 +119,9 @@ C_OBJS = \
   $O\Delta.obj \
   $O\DllSecur.obj \
   $O\Lzma2Dec.obj \
+  $O\Lzma2DecMt.obj \
   $O\LzmaDec.obj \
+  $O\MtDec.obj \
   $O\Ppmd7.obj \
   $O\Ppmd7Dec.obj \
   $O\Sha256.obj \
@@ -126,23 +129,24 @@ C_OBJS = \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+!include "../../LzmaDec.mak"
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdDecoder.obj \
   $O\ZstdRegister.obj \
 
 ZSTD_OBJS = \
+  $O\debug.obj \
   $O\entropy_common.obj \
+  $O\error_private.obj \
   $O\fse_decompress.obj \
   $O\huf_decompress.obj \
-  $O\zstd_common.obj \
-  $O\zstd_decompress.obj \
-  $O\xxhash.obj \
-  $O\error_private.obj \
-
-ZSTDMT_OBJS = \
+  $O\pool.obj \
   $O\threading.obj \
-  $O\zstd-mt_common.obj \
-  $O\zstd-mt_decompress.obj \
+  $O\xxhash.obj \
+  $O\zstd_common.obj \
+  $O\zstd_ddict.obj \
+  $O\zstd_decompress_block.obj \
+  $O\zstd_decompress.obj \
 
 !include "../../7zip.mak"

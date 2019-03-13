@@ -1,8 +1,8 @@
 ;--------------------------------
 ;Defines
 
-!define VERSION_MAJOR 17
-!define VERSION_MINOR 01
+!define VERSION_MAJOR 19
+!define VERSION_MINOR 00
 !define VERSION_POSTFIX_FULL " ZS"
 !ifdef WIN64
 !ifdef IA64
@@ -30,7 +30,7 @@
 !define FM_LINK "7-Zip File Manager.lnk"
 !define HELP_LINK "7-Zip Help.lnk"
 
-!define CLSID_CONTEXT_MENU {23170F69-0803-278A-1000-000100020000}
+!define CLSID_CONTEXT_MENU {23170F69-40C1-278A-1000-000100020000}
 
 #!define NO_COMPRESSION
 
@@ -220,6 +220,7 @@ Section
   File ja.txt
   File ka.txt
   File kaa.txt
+  File kab.txt
   File kk.txt
   File ko.txt
   File ku.txt
@@ -421,6 +422,7 @@ Section Uninstall
   Delete $INSTDIR\Lang\ja.txt
   Delete $INSTDIR\Lang\ka.txt
   Delete $INSTDIR\Lang\kaa.txt
+  Delete $INSTDIR\Lang\kab.txt
   Delete $INSTDIR\Lang\kk.txt
   Delete $INSTDIR\Lang\ko.txt
   Delete $INSTDIR\Lang\ku.txt
@@ -534,7 +536,6 @@ Section Uninstall
   DeleteRegKey HKCR 7-Zip.hfs
   DeleteRegKey HKCR 7-Zip.iso
   DeleteRegKey HKCR 7-Zip.lha
-  DeleteRegKey HKCR 7-Zip.lz
   DeleteRegKey HKCR 7-Zip.lzh
   DeleteRegKey HKCR 7-Zip.lzma
   DeleteRegKey HKCR 7-Zip.ntfs
@@ -546,7 +547,6 @@ Section Uninstall
   DeleteRegKey HKCR 7-Zip.tar
   DeleteRegKey HKCR 7-Zip.taz
   DeleteRegKey HKCR 7-Zip.tgz
-  DeleteRegKey HKCR 7-Zip.tlz
   DeleteRegKey HKCR 7-Zip.tpz
   DeleteRegKey HKCR 7-Zip.txz
   DeleteRegKey HKCR 7-Zip.vhd

@@ -24,18 +24,6 @@ CEncoder::~CEncoder()
     LZ5MT_freeCCtx(_ctx);
 }
 
-HRESULT CEncoder::ErrorOut(size_t code)
-{
-  const char *strError = LZ5MT_getErrorString(code);
-  wchar_t wstrError[200+5]; /* no malloc here, /TR */
-
-  mbstowcs(wstrError, strError, 200);
-  MessageBoxW(0, wstrError, L"7-Zip Zstandard", MB_ICONERROR | MB_OK);
-  MyFree(wstrError);
-
-  return S_FALSE;
-}
-
 STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps)
 {
   _props.clear();
@@ -121,7 +109,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   if (LZ5MT_isError(result)) {
     if (result == (size_t)-LZ5MT_error_canceled)
       return E_ABORT;
-    return ErrorOut(result);
+    return E_FAIL;
   }
 
   return res;

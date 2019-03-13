@@ -1,7 +1,6 @@
 PROG = 7z.dll
 DEF_FILE = ../../Archive/Archive2.def
-CFLAGS = $(CFLAGS) \
-  -DEXTERNAL_CODECS -DZSTD_LEGACY_SUPPORT \
+CFLAGS = $(CFLAGS) -DEXTERNAL_CODECS -DZSTD_LEGACY_SUPPORT -DZSTD_MULTITHREAD
 
 !IFNDEF UNDER_CE
 CFLAGS = $(CFLAGS) -D_7ZIP_LARGE_PAGES
@@ -32,29 +31,32 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdDecoder.obj \
   $O\ZstdEncoder.obj \
   $O\ZstdRegister.obj \
+  $O\FastLzma2Register.obj \
 
 BROTLI_OBJS = \
-  $O/br_dictionary.obj \
-  $O/br_bit_reader.obj \
-  $O/br_decode.obj \
-  $O/br_huffman.obj \
-  $O/br_state.obj \
   $O/br_backward_references.obj \
   $O/br_backward_references_hq.obj \
   $O/br_bit_cost.obj \
+  $O/br_bit_reader.obj \
   $O/br_block_splitter.obj \
   $O/br_brotli_bit_stream.obj \
   $O/br_cluster.obj \
   $O/br_compress_fragment.obj \
   $O/br_compress_fragment_two_pass.obj \
+  $O/br_decode.obj \
+  $O/br_dictionary.obj \
   $O/br_dictionary_hash.obj \
   $O/br_encode.obj \
+  $O/br_encoder_dict.obj \
   $O/br_entropy_encode.obj \
   $O/br_histogram.obj \
+  $O/br_huffman.obj \
   $O/br_literal_cost.obj \
   $O/br_memory.obj \
   $O/br_metablock.obj \
+  $O/br_state.obj \
   $O/br_static_dict.obj \
+  $O/br_transform.obj \
   $O/br_utf8_util.obj \
 
 LIZARD_OBJS = \
@@ -73,18 +75,28 @@ LZ5_OBJS = \
   $O\lz5hc.obj \
 
 ZSTD_OBJS = \
-  $O\xxhash.obj \
+  $O\debug.obj \
   $O\entropy_common.obj \
-  $O\fse_decompress.obj \
-  $O\huf_decompress.obj \
-  $O\zstd_common.obj \
-  $O\zstd_decompress.obj \
-  $O\fse_compress.obj \
-  $O\huf_compress.obj \
-  $O\zstd_compress.obj \
   $O\error_private.obj \
-  $O\zstdmt_compress.obj \
+  $O\fse_compress.obj \
+  $O\fse_decompress.obj \
+  $O\hist.obj \
+  $O\huf_compress.obj \
+  $O\huf_decompress.obj \
   $O\pool.obj \
+  $O\threading.obj \
+  $O\xxhash.obj \
+  $O\zstd_common.obj \
+  $O\zstd_compress.obj \
+  $O\zstd_ddict.obj \
+  $O\zstd_decompress_block.obj \
+  $O\zstd_decompress.obj \
+  $O\zstd_double_fast.obj \
+  $O\zstd_fast.obj \
+  $O\zstd_lazy.obj \
+  $O\zstd_ldm.obj \
+  $O\zstdmt_compress.obj \
+  $O\zstd_opt.obj \
   $O\zstd_v01.obj \
   $O\zstd_v02.obj \
   $O\zstd_v03.obj \
@@ -94,7 +106,6 @@ ZSTD_OBJS = \
   $O\zstd_v07.obj \
 
 ZSTDMT_OBJS = \
-  $O\threading.obj \
   $O\brotli-mt_common.obj \
   $O\brotli-mt_compress.obj \
   $O\brotli-mt_decompress.obj \
@@ -107,8 +118,18 @@ ZSTDMT_OBJS = \
   $O\lz5-mt_common.obj \
   $O\lz5-mt_compress.obj \
   $O\lz5-mt_decompress.obj \
-  $O\zstd-mt_common.obj \
-  $O\zstd-mt_compress.obj \
-  $O\zstd-mt_decompress.obj \
+  $O\zstd-mt_threading.obj \
+
+FASTLZMA2_OBJS = \
+  $O\fl2_error_private.obj \
+  $O\fl2pool.obj \
+  $O\fl2threading.obj \
+  $O\fl2_common.obj \
+  $O\fl2_compress.obj \
+  $O\lzma2_enc.obj \
+  $O\radix_bitpack.obj \
+  $O\radix_mf.obj \
+  $O\radix_struct.obj \
+  $O\range_enc.obj \
 
 !include "../../7zip.mak"

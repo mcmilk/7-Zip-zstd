@@ -491,6 +491,14 @@ SOURCE=.\DialogSize.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\EditDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\EditDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\LinkDialog.cpp
 # End Source File
 # Begin Source File
@@ -704,7 +712,21 @@ SOURCE=..\..\..\..\C\Alloc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\CpuArch.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\CpuArch.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\DllSecur.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\DllSecur.h
 # End Source File
 # Begin Source File
 

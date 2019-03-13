@@ -32,6 +32,7 @@ struct CUpdateItem
   bool IsDir;
   bool NtfsTimeIsDefined;
   bool IsUtf8;
+  // bool IsAltStream;
   int IndexInArc;
   int IndexInClient;
   UInt32 Attrib;
@@ -50,12 +51,19 @@ struct CUpdateItem
     IsDir = false;
     NtfsTimeIsDefined = false;
     IsUtf8 = false;
+    // IsAltStream = false;
     Size = 0;
     Name.Empty();
     Comment.Free();
   }
 
-  CUpdateItem(): NtfsTimeIsDefined(false), IsUtf8(false), Size(0) {}
+  CUpdateItem():
+    IsDir(false),
+    NtfsTimeIsDefined(false),
+    IsUtf8(false),
+    // IsAltStream(false),
+    Size(0)
+    {}
 };
 
 HRESULT Update(

@@ -7,6 +7,9 @@
 #include <shlwapi.h>
 
 #include "../../../../C/Alloc.h"
+#ifdef _WIN32
+#include "../../../../C/DllSecur.h"
+#endif
 
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
@@ -383,6 +386,7 @@ static void SetMemoryLock()
     NSecurity::AddLockMemoryPrivilege();
 
   if (ReadLockMemoryEnable())
+  if (NSecurity::Get_LargePages_RiskLevel() == 0)
   {
     // note: child processes can inherit that Privilege
     g_LargePagesMode = NSecurity::EnablePrivilege_LockMemory();
@@ -659,6 +663,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   {
     try
     {
+      #ifdef _WIN32
+      My_SetDefaultDllDirectories();
+      #endif
       return WinMain2(nCmdShow);
     }
     catch (...)

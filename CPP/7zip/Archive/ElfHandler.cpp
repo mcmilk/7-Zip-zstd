@@ -567,6 +567,7 @@ static const char * const g_Machines[] =
 
 static const CUInt32PCharPair g_MachinePairs[] =
 {
+  { 243, "RISC-V" },
   { 47787, "Xilinx MicroBlaze" }
   // { 0x9026, "Alpha" }
 };

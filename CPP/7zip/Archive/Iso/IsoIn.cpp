@@ -180,7 +180,7 @@ UInt32 CInArchive::ReadDigits(int numDigits)
     Byte b = ReadByte();
     if (b < '0' || b > '9')
     {
-      if (b == 0) // it's bug in some CD's
+      if (b == 0 || b == ' ') // it's bug in some CD's
         b = '0';
       else
         throw CHeaderErrorException();

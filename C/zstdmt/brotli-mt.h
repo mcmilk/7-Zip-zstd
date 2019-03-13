@@ -32,8 +32,8 @@ extern "C" {
 #define BROTLIMT_MAGICNUMBER     0x5242U /* BR */
 #define BROTLIMT_MAGIC_SKIPPABLE 0x184D2A50U
 
-#define BROTLI_VERSION_MAJOR 0
-#define BROTLI_VERSION_MINOR 6
+#define BROTLI_VERSION_MAJOR 1
+#define BROTLI_VERSION_MINOR 0
 
 /* **************************************
  * Error Handling

@@ -671,7 +671,7 @@ void CHeader::SetDefaultFields(bool useLZX)
     ChunkSize = kChunkSize;
     ChunkSizeBits = kChunkSizeBits;
   }
-  g_RandomGenerator.Generate(Guid, 16);
+  MY_RAND_GEN(Guid, 16);
   PartNumber = 1;
   NumParts = 1;
   NumImages = 1;

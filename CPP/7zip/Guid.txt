@@ -49,6 +49,7 @@
   25  ICompressSetCoderMt
   26  ICompressSetFinishMode
   27  ICompressGetInStreamProcessedSize2
+  28  ICompressSetMemLimit
 
   30  ICompressGetSubStreamSize
   31  ICompressSetInStream
@@ -169,7 +170,8 @@ Handler GUIDs:
   10 lz5
   11 liz
 
-  C6 Lzip
+  C5 Lzip
+  C6 COFF
   C7 Ext
   C8 VMDK
   C9 VDI
