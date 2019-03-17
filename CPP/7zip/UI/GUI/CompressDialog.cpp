@@ -1410,7 +1410,7 @@ typedef enum {
 } FL2_strategy;
 
 typedef struct {
-  unsigned dictionaryLog;    /* largest match distance : larger == more compression, more memory needed during decompression; >= 27 == more memory, slower */
+  UInt32   dictionarySize;   /* largest match distance : larger == more compression, more memory needed during decompression; >= 27 == more memory per byte, slower */
   unsigned overlapFraction;  /* overlap between consecutive blocks in 1/16 units: larger == more compression, slower */
   unsigned chainLog;         /* fully searched segment : larger == more compression, slower, more memory; hybrid mode only (ultra) */
   unsigned searchLog;        /* nb of searches : larger == more compression, slower; hybrid mode only (ultra) */
@@ -1424,18 +1424,22 @@ typedef struct {
 
 #define FL2_MAX_7Z_CLEVEL 9
 
+#define MB *(1U<<20)
+
 static const FL2_compressionParameters FL2_7zCParameters[FL2_MAX_7Z_CLEVEL + 1] = {
-  { 0,0,0,0,0,0,0 },
-  { 20, 1, 7, 0, 6, 32, 1, 8, FL2_fast }, /* 1 */
-  { 20, 2, 7, 0, 12, 32, 1, 8, FL2_fast }, /* 2 */
-  { 21, 2, 7, 0, 16, 32, 1, 8, FL2_fast }, /* 3 */
-  { 20, 2, 7, 0, 16, 32, 1, 8, FL2_opt }, /* 4 */
-  { 24, 2, 9, 0, 40, 48, 1, 8, FL2_ultra }, /* 5 */
-  { 25, 2, 10, 0, 48, 64, 1, 8, FL2_ultra }, /* 6 */
-  { 26, 2, 11, 1, 60, 96, 1, 9, FL2_ultra }, /* 7 */
-  { 27, 2, 12, 2, 128, 128, 1, 10, FL2_ultra }, /* 8 */
-  { 27, 3, 14, 3, 252, 160, 0, 10, FL2_ultra } /* 9 */
+  { 0,0,0,0,0,0,0,0,FL2_fast },
+  { 1 MB, 1, 7, 0, 6, 32, 1, 4, FL2_fast }, /* 1 */
+  { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_fast }, /* 2 */
+  { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_opt }, /* 3 */
+  { 4 MB, 2, 7, 0, 14, 32, 1, 4, FL2_opt }, /* 4 */
+  { 16 MB, 2, 9, 0, 42, 48, 1, 4, FL2_ultra }, /* 5 */
+  { 32 MB, 2, 10, 0, 50, 64, 1, 4, FL2_ultra }, /* 6 */
+  { 64 MB, 2, 11, 1, 62, 96, 1, 3, FL2_ultra }, /* 7 */
+  { 64 MB, 4, 12, 2, 90, 273, 1, 3, FL2_ultra }, /* 8 */
+  { 128 MB, 2, 14, 3, 254, 273, 0, 2, FL2_ultra } /* 9 */
 };
+
+#undef MB
 
 #define RMF_BUILDER_SIZE (8 * 0x40100U)
 
@@ -1512,7 +1516,7 @@ void CCompressDialog::SetDictionary()
       if (level > FL2_MAX_7Z_CLEVEL)
         level = FL2_MAX_7Z_CLEVEL;
       if (defaultDict == (UInt32)(Int32)-1)
-        defaultDict = (UInt32)1 << FL2_7zCParameters[level].dictionaryLog;
+        defaultDict = FL2_7zCParameters[level].dictionarySize;
 
       m_Dictionary.SetCurSel(0);
 
@@ -2020,11 +2024,11 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory)
     {
       if (level > FL2_MAX_7Z_CLEVEL)
         level = FL2_MAX_7Z_CLEVEL;
-      size += dict * 5 + (1UL << 18) * numThreads;
-      unsigned depth = FL2_7zCParameters[level].searchDepth;
-      UInt32 bufSize = UInt32(1) << (FL2_7zCParameters[level].dictionaryLog - FL2_7zCParameters[level].bufferLog);
+      /* dual buffer is enabled in Lzma2Encoder.cpp so size is dict * 6 */
+      size += dict * 6 + (1UL << 18) * numThreads;
+      UInt32 bufSize = dict >> (12 - FL2_7zCParameters[level].bufferLog);
       size += (bufSize * 12 + RMF_BUILDER_SIZE) * numThreads;
-      if (dict > (UInt32(1) << 26) || depth > 63)
+      if (dict > (UInt32(1) << 26))
         size += dict;
       if (FL2_7zCParameters[level].strategy == FL2_ultra)
         size += (UInt32(4) << 14) + (UInt32(4) << FL2_7zCParameters[level].chainLog);

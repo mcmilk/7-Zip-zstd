@@ -212,7 +212,7 @@ $(ZSTDMT_OBJS): ../../../../C/zstdmt/$(*B).c
 
 !IFDEF FASTLZMA2_OBJS
 $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
-	$(COMPL_O2) -DNO_XXHASH
+	$(COMPL_O2) -DNO_XXHASH -DFL2_7ZIP_BUILD
 !ENDIF
 
 
@@ -298,7 +298,7 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 	-I ../../../../C/lz5 \
 	-I ../../../../C/zstd
 {../../../../C/fast-lzma2}.c{$O}.obj::
-	$(COMPLB_O2) -DNO_XXHASH
+	$(COMPLB_O2) -DNO_XXHASH -DFL2_7ZIP_BUILD
 
 !ENDIF
 

@@ -10,6 +10,7 @@ Public domain
 #include "mem.h"
 #include "data_block.h"
 #include "radix_mf.h"
+#include "atomic.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -19,14 +20,10 @@ extern "C" {
 
 #define LZMA2_END_MARKER '\0'
 #define LZMA_MIN_DICT_BITS 12
+#define ENC_MIN_BYTES_PER_THREAD 0x20000
 
-typedef struct FL2_lzmaEncoderCtx_s FL2_lzmaEncoderCtx;
 
-typedef enum {
-    FL2_fast,
-    FL2_opt,
-    FL2_ultra
-} FL2_strategy;
+typedef struct LZMA2_ECtx_s LZMA2_ECtx;
 
 typedef struct
 {
@@ -37,25 +34,28 @@ typedef struct
     unsigned match_cycles;
     FL2_strategy strategy;
     unsigned second_dict_bits;
-    unsigned random_filter;
+    unsigned reset_interval;
 } FL2_lzma2Parameters;
 
 
-FL2_lzmaEncoderCtx* FL2_lzma2Create();
+LZMA2_ECtx* LZMA2_createECtx(void);
 
-void FL2_lzma2Free(FL2_lzmaEncoderCtx* enc);
+void LZMA2_freeECtx(LZMA2_ECtx *const enc);
 
-int FL2_lzma2HashAlloc(FL2_lzmaEncoderCtx* enc, const FL2_lzma2Parameters* options);
+int LZMA2_hashAlloc(LZMA2_ECtx *const enc, const FL2_lzma2Parameters* const options);
 
-size_t FL2_lzma2Encode(FL2_lzmaEncoderCtx* enc,
-    FL2_matchTable* tbl,
-    const FL2_dataBlock block,
-    const FL2_lzma2Parameters* options,
-    FL2_progressFn progress, void* opaque, size_t base, U32 weight);
+size_t LZMA2_encode(LZMA2_ECtx *const enc,
+    FL2_matchTable* const tbl,
+    FL2_dataBlock const block,
+    const FL2_lzma2Parameters* const options,
+    int stream_prop,
+    FL2_atomic *const progress_in,
+    FL2_atomic *const progress_out,
+    int *const canceled);
 
-BYTE FL2_getDictSizeProp(size_t dictionary_size);
+BYTE LZMA2_getDictSizeProp(size_t const dictionary_size);
 
-size_t FL2_lzma2MemoryUsage(unsigned chain_log, FL2_strategy strategy, unsigned thread_count);
+size_t LZMA2_encMemoryUsage(unsigned const chain_log, FL2_strategy const strategy, unsigned const thread_count);
 
 #if defined (__cplusplus)
 }

@@ -18,18 +18,29 @@
 ***************************************/
 #include "mem.h"
 #include "compiler.h"
-#include "fl2_error_private.h"
 
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
+
+/*-****************************************
+*  Error codes handling
+******************************************/
+#define PREFIX(name) FL2_error_##name
+#define FL2_ERROR(name) ((size_t)-PREFIX(name))
+
+
+/*-*************************************
+*  Stream properties
+***************************************/
 #define FL2_PROP_HASH_BIT 7
 #define FL2_LZMA_PROP_MASK 0x3FU
 #ifndef NO_XXHASH
 #  define XXHASH_SIZEOF sizeof(XXH32_canonical_t)
 #endif
+
 
 /*-*************************************
 *  Debug
@@ -77,8 +88,8 @@ extern int g_debuglog_enable;
 #undef MAX
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
-#define CHECK_F(f) { size_t const errcod = f; if (ERR_isError(errcod)) return errcod; }  /* check and Forward error code */
-#define CHECK_E(f, e) { size_t const errcod = f; if (ERR_isError(errcod)) return FL2_ERROR(e); }  /* check and send Error code */
+#define CHECK_F(f) do { size_t const errcod = f; if (FL2_isError(errcod)) return errcod; } while(0)  /* check and Forward error code */
+#define CHECK_E(f, e) do { size_t const errcod = f; if (FL2_isError(errcod)) return FL2_ERROR(e); } while(0)  /* check and send Error code */
 
 MEM_STATIC U32 ZSTD_highbit32(U32 val)
 {
