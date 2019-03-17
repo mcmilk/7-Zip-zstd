@@ -33,7 +33,7 @@ You can install it in two ways:
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
    - Levels 40..49 (LIZv1 + Huffman) give the best ratio, comparable to zlib and low levels of zstd/brotli, but with a faster decompression speed
 
-6. [Fast LZMA2] v0.9.2 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
+6. [Fast LZMA2] v1.0.0 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
    - Levels: 1..9
 
 ## 7-Zip Zstandard Edition (full setup, with GUI and Explorer integration)
@@ -276,7 +276,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 - 7-Zip ZS Version 19.00
   - [Brotli] Version 1.0.7
-  - [Fast LZMA2] Version 0.9.2
+  - [Fast LZMA2] Version 1.0.0
   - [Lizard] Version 1.0
   - [LZ4] Version 1.8.3
   - [LZ5] Version 1.5
