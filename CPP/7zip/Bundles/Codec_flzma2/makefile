@@ -1,6 +1,6 @@
 PROG = flzma2.dll
 DEF_FILE = ../../Compress/Codec.def
-CFLAGS = $(CFLAGS) -DNEED_7ZIP_GUID -DNO_XXHASH
+CFLAGS = $(CFLAGS) -DNO_XXHASH
 
 7ZIP_COMMON_OBJS = \
   $O\CWrappers.obj \

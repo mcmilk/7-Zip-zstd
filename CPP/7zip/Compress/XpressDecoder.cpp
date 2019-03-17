@@ -33,10 +33,11 @@ struct CBitStream
       bs.Value = (bs.Value << 16) | GetUi16(in); \
       in += 2; bs.BitPos += 16; }
  
-const unsigned kNumHuffBits = 15;
-const unsigned kNumLenSlots = 16;
-const unsigned kNumPosSlots = 16;
-const unsigned kNumSyms = 256 + kNumPosSlots * kNumLenSlots;
+static const unsigned kNumHuffBits = 15;
+static const unsigned kNumLenBits = 4;
+static const unsigned kLenMask = (1 << kNumLenBits) - 1;
+static const unsigned kNumPosSlots = 16;
+static const unsigned kNumSyms = 256 + (kNumPosSlots << kNumLenBits);
 
 HRESULT Decode(const Byte *in, size_t inSize, Byte *out, size_t outSize)
 {
@@ -83,10 +84,10 @@ HRESULT Decode(const Byte *in, size_t inSize, Byte *out, size_t outSize)
     else
     {
       sym -= 256;
-      UInt32 dist = sym / kNumLenSlots;
-      UInt32 len = sym & (kNumLenSlots - 1);
+      UInt32 dist = sym >> kNumLenBits;
+      UInt32 len = sym & kLenMask;
       
-      if (len == kNumLenSlots - 1)
+      if (len == kLenMask)
       {
         if (in > lim)
           return S_FALSE;
@@ -99,7 +100,7 @@ HRESULT Decode(const Byte *in, size_t inSize, Byte *out, size_t outSize)
           in += 2;
         }
         else
-          len += kNumLenSlots - 1;
+          len += kLenMask;
       }
 
       bs.BitPos -= dist;
@@ -108,7 +109,7 @@ HRESULT Decode(const Byte *in, size_t inSize, Byte *out, size_t outSize)
 
       BIT_STREAM_NORMALIZE
       
-      if (len > outSize - pos)
+      if (len + 3 > outSize - pos)
         return S_FALSE;
       if (dist > pos)
         return S_FALSE;

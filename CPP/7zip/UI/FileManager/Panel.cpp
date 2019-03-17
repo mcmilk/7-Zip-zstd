@@ -879,8 +879,9 @@ void CPanel::AddToArchive()
 
   FOR_VECTOR (i, indices)
     names.Add(curPrefix + GetItemRelPath2(indices[i]));
-  bool fromPrev = (names.Size() > 1);
-  const UString arcName = CreateArchiveName(names.Front(), fromPrev, false);
+  
+  const UString arcName = CreateArchiveName(names);
+  
   HRESULT res = CompressFiles(destCurDirPrefix, arcName, L"",
       true, // addExtension
       names, false, true, false);

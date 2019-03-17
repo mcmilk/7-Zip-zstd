@@ -87,12 +87,16 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 {
   DProps *pProps = (DProps *)prop;
 
-  if (size != sizeof(DProps))
+  switch (size) {
+  case 3:
+    memcpy(&_props, pProps, 3);
+    return S_OK;
+  case 5:
+    memcpy(&_props, pProps, 5);
+    return S_OK;
+  default:
     return E_NOTIMPL;
-
-  memcpy(&_props, pProps, sizeof (DProps));
-
-  return S_OK;
+  }
 }
 
 STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)

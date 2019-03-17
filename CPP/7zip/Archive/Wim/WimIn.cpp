@@ -111,7 +111,9 @@ HRESULT CUnpacker::UnpackChunk(
     }
     else if (method == NMethod::kLZX)
     {
-      lzxDecoderSpec->SetExternalWindow(unpackBuf.Data, chunkSizeBits);
+      res = lzxDecoderSpec->SetExternalWindow(unpackBuf.Data, chunkSizeBits);
+      if (res != S_OK)
+        return E_NOTIMPL;
       lzxDecoderSpec->KeepHistoryForNext = false;
       lzxDecoderSpec->SetKeepHistory(false);
       res = lzxDecoderSpec->Code(packBuf.Data, inSize, (UInt32)outSize);
@@ -563,7 +565,13 @@ void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCO
       wchar_t *dest = s + size;
       meta += 2;
       for (unsigned i = 0; i < len; i++)
-        dest[i] = Get16(meta + i * 2);
+      {
+        wchar_t c = Get16(meta + i * 2);
+        // 18.06
+        if (c == CHAR_PATH_SEPARATOR || c == '/')
+          c = '_';
+        dest[i] = c;
+      }
     }
     if (index < 0)
       return;
@@ -866,7 +874,11 @@ HRESULT CDatabase::ParseImageDirs(CByteBuffer &buf, int parent)
   if (DirProcessed == DirSize - 8 && Get64(p + DirSize - 8) != 0)
     return S_OK;
 
-  return S_FALSE;
+  // 18.06: we support cases, when some old dism can capture images
+  // where DirProcessed much smaller than DirSize
+  HeadersError = true;
+  return S_OK;
+  // return S_FALSE;
 }
 
 

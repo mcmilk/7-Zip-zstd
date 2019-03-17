@@ -214,6 +214,12 @@ class CLocalItem
 public:
   UInt16 Flags;
   UInt16 Method;
+  
+  /*
+    Zip specification doesn't mention that ExtractVersion field uses HostOS subfield.
+    18.06: 7-Zip now doesn't use ExtractVersion::HostOS to detect codePage
+  */
+
   CVersion ExtractVersion;
 
   UInt64 Size;
@@ -309,7 +315,8 @@ public:
   UInt32 GetWinAttrib() const;
   bool GetPosixAttrib(UInt32 &attrib) const;
 
-  Byte GetHostOS() const { return FromCentral ? MadeByVersion.HostOS : ExtractVersion.HostOS; }
+  // 18.06: 0 instead of ExtractVersion.HostOS for local item
+  Byte GetHostOS() const { return FromCentral ? MadeByVersion.HostOS : (Byte)0; }
 
   void GetUnicodeString(UString &res, const AString &s, bool isComment, bool useSpecifiedCodePage, UINT codePage) const;
 
@@ -326,7 +333,10 @@ public:
   
   UINT GetCodePage() const
   {
-    Byte hostOS = GetHostOS();
+    // 18.06: now we use HostOS only from Central::MadeByVersion
+    if (!FromCentral)
+      return CP_OEMCP;
+    Byte hostOS = MadeByVersion.HostOS;
     return (UINT)((
            hostOS == NFileHeader::NHostOS::kFAT
         || hostOS == NFileHeader::NHostOS::kNTFS

@@ -102,7 +102,14 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
   // if (!allowAbsVolPaths)
   if (!IsSafePath(name2))
     return S_FALSE;
-  
+
+  // #ifdef _WIN32
+  // we don't want to support wildcards in names here here
+  if (name2.Find(L'?') >= 0 ||
+      name2.Find(L'*') >= 0)
+    return S_FALSE;
+  // #endif
+
   #endif
 
 

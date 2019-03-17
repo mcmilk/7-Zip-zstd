@@ -257,6 +257,16 @@ struct CDbEx: public CDatabase
     PhySize = 0;
   }
 
+  bool CanUpdate() const
+  {
+    if (ThereIsHeaderError
+        || UnexpectedEnd
+        || StartHeaderWasRecovered
+        || UnsupportedFeatureError)
+      return false;
+    return true;
+  }
+
   void FillLinks();
   
   UInt64 GetFolderStreamPos(CNum folderIndex, unsigned indexInFolder) const

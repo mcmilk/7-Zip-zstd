@@ -2,6 +2,11 @@
 
 #include "StdAfx.h"
 
+/*
+#include <stdio.h>
+#include <string.h>
+*/
+
 #include "../Common/MyCom.h"
 #ifndef _UNICODE
 #include "../Common/StringConvert.h"
@@ -114,9 +119,22 @@ UString CDrop::QueryFileName(UINT fileIndex)
 void CDrop::QueryFileNames(UStringVector &fileNames)
 {
   UINT numFiles = QueryCountOfFiles();
+  /*
+  char s[100];
+  sprintf(s, "QueryFileNames: %d files", numFiles);
+  OutputDebugStringA(s);
+  */
   fileNames.ClearAndReserve(numFiles);
   for (UINT i = 0; i < numFiles; i++)
-    fileNames.AddInReserved(QueryFileName(i));
+  {
+    const UString s2 = QueryFileName(i);
+    if (!s2.IsEmpty())
+      fileNames.AddInReserved(s2);
+    /*
+    OutputDebugStringW(L"file ---");
+    OutputDebugStringW(s2);
+    */
+  }
 }
 
 

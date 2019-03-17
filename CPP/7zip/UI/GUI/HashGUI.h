@@ -18,10 +18,10 @@ void AddValuePair(CPropNameValPairs &pairs, UINT resourceID, UInt64 value);
 void AddSizeValue(UString &s, UInt64 value);
 void AddSizeValuePair(CPropNameValPairs &pairs, UINT resourceID, UInt64 value);
 
-void AddHashBundleRes(CPropNameValPairs &s, const CHashBundle &hb, const UString &firstFileName);
-void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFileName);
+void AddHashBundleRes(CPropNameValPairs &s, const CHashBundle &hb);
+void AddHashBundleRes(UString &s, const CHashBundle &hb);
 
 void ShowHashResults(const CPropNameValPairs &propPairs, HWND hwnd);
-void ShowHashResults(const CHashBundle &hb, const UString &firstFileName, HWND hwnd);
+void ShowHashResults(const CHashBundle &hb, HWND hwnd);
 
 #endif

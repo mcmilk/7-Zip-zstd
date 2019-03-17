@@ -532,9 +532,8 @@ STDMETHODIMP CFSFolder::GetNumRawProps(UInt32 *numProps)
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetRawPropInfo(UInt32 index, BSTR *name, PROPID *propID)
+STDMETHODIMP CFSFolder::GetRawPropInfo(UInt32 /* index */, BSTR *name, PROPID *propID)
 {
-  index = index;
   *name = NULL;
   *propID = kpidNtReparse;
   return S_OK;

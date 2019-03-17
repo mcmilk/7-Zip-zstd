@@ -3,9 +3,8 @@ MY_CONSOLE = 1
 CFLAGS = $(CFLAGS)
 
 !IFNDEF UNDER_CE
-CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE -DZSTD_MULTITHREAD
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -D_7ZIP_LARGE_PAGES -DSUPPORT_DEVICE_FILE
 !ENDIF
-
 
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
@@ -291,6 +290,8 @@ ZSTD_OBJS = \
   $O\xxhash.obj \
   $O\zstd_common.obj \
   $O\zstd_compress.obj \
+  $O\zstd_ddict.obj \
+  $O\zstd_decompress_block.obj \
   $O\zstd_decompress.obj \
   $O\zstd_double_fast.obj \
   $O\zstd_fast.obj \

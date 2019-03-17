@@ -1,3 +1,16 @@
+CFLAGS = $(CFLAGS) \
+  -DLANG \
+  -DNEW_FOLDER_INTERFACE \
+
+!IFDEF UNDER_CE
+LIBS = $(LIBS) ceshell.lib Commctrl.lib
+!ELSE
+LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib Mpr.lib Gdi32.lib
+CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE
+LFLAGS = $(LFLAGS) /DELAYLOAD:mpr.dll 
+LIBS = $(LIBS) delayimp.lib 
+!ENDIF
+
 FM_OBJS = \
   $O\App.obj \
   $O\BrowseDialog.obj \
@@ -72,6 +85,9 @@ WIN_OBJS = $(WIN_OBJS) \
   $O\SecurityUtils.obj \
 
 !ENDIF
+
+C_OBJS = $(C_OBJS) \
+  $O\DllSecur.obj \
 
 AGENT_OBJS = \
   $O\Agent.obj \

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
-<?define VerMajor = "18" ?>
-<?define VerMinor = "05" ?>
+<?define VerMajor = "19" ?>
+<?define VerMinor = "00" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "$(var.VerMajor)$(var.VerMinor)" ?>
@@ -38,9 +38,9 @@
 <?endif ?>
 
 
-<?define ShellExtId = "{23170F69-0803-278A-1000-000100020000}" ?>
+<?define ShellExtId = "{23170F69-40C1-278A-1000-000100020000}" ?>
 
-<?define BaseId = "23170F69-0803-270$(var.CpuId)" ?>
+<?define BaseId = "23170F69-40C1-270$(var.CpuId)" ?>
 <?define BaseIdVer = "$(var.BaseId)-$(var.MmHex)-$(var.VerBuild)00" ?>
 <?define ProductId   = "$(var.BaseIdVer)01000000" ?>
 <?define PackageId   = "$(var.BaseIdVer)02000000" ?>

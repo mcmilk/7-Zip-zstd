@@ -1,5 +1,5 @@
 /* Ppmd8.c -- PPMdI codec
-2017-04-03 : Igor Pavlov : Public domain
+2018-07-04 : Igor Pavlov : Public domain
 This code is based on PPMd var.I (2002): Dmitry Shkarin : Public domain */
 
 #include "Precomp.h"
@@ -93,7 +93,7 @@ void Ppmd8_Free(CPpmd8 *p, ISzAllocPtr alloc)
   p->Base = 0;
 }
 
-Bool Ppmd8_Alloc(CPpmd8 *p, UInt32 size, ISzAllocPtr alloc)
+BoolInt Ppmd8_Alloc(CPpmd8 *p, UInt32 size, ISzAllocPtr alloc)
 {
   if (!p->Base || p->Size != size)
   {
@@ -605,7 +605,7 @@ static void RestoreModel(CPpmd8 *p, CTX_PTR c1
   }
 }
 
-static CTX_PTR CreateSuccessors(CPpmd8 *p, Bool skip, CPpmd_State *s1, CTX_PTR c)
+static CTX_PTR CreateSuccessors(CPpmd8 *p, BoolInt skip, CPpmd_State *s1, CTX_PTR c)
 {
   CPpmd_State upState;
   Byte flags;

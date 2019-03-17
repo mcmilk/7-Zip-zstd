@@ -91,6 +91,7 @@ HRESULT CCoder::CheckDataAfterEnd(bool &dataAfterEnd_Error /* , bool &InternalPa
   {
     CMyComPtr<ICompressGetInStreamProcessedSize2> getInStreamProcessedSize2;
     Coder2.QueryInterface(IID_ICompressGetInStreamProcessedSize2, (void **)&getInStreamProcessedSize2);
+    if (getInStreamProcessedSize2)
     FOR_VECTOR (i, PackSizePointers)
     {
       if (!PackSizePointers[i])

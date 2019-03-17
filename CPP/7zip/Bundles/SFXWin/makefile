@@ -152,29 +152,21 @@ C_OBJS = \
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdDecoder.obj \
-  $O\ZstdEncoder.obj \
   $O\ZstdRegister.obj \
 
 ZSTD_OBJS = \
   $O\debug.obj \
   $O\entropy_common.obj \
   $O\error_private.obj \
-  $O\fse_compress.obj \
   $O\fse_decompress.obj \
-  $O\hist.obj \
-  $O\huf_compress.obj \
   $O\huf_decompress.obj \
   $O\pool.obj \
   $O\threading.obj \
   $O\xxhash.obj \
   $O\zstd_common.obj \
-  $O\zstd_compress.obj \
+  $O\zstd_ddict.obj \
+  $O\zstd_decompress_block.obj \
   $O\zstd_decompress.obj \
-  $O\zstd_double_fast.obj \
-  $O\zstd_fast.obj \
-  $O\zstd_lazy.obj \
-  $O\zstd_ldm.obj \
-  $O\zstdmt_compress.obj \
-  $O\zstd_opt.obj \
+  
 
 !include "../../7zip.mak"

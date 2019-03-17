@@ -131,13 +131,7 @@ HRESULT CDecoder::Code(const CHeader &header, ISequentialOutStream *outStream,
   if (header.FilterID > 1)
     return E_NOTIMPL;
 
-  {
-    CMyComPtr<ICompressSetDecoderProperties2> setDecoderProperties;
-    _lzmaDecoder.QueryInterface(IID_ICompressSetDecoderProperties2, &setDecoderProperties);
-    if (!setDecoderProperties)
-      return E_NOTIMPL;
-    RINOK(setDecoderProperties->SetDecoderProperties2(header.LzmaProps, 5));
-  }
+  RINOK(_lzmaDecoderSpec->SetDecoderProperties2(header.LzmaProps, 5));
 
   bool filteredMode = (header.FilterID == 1);
 
@@ -357,24 +351,54 @@ API_FUNC_static_IsArc IsArc_Lzma86(const Byte *p, size_t size)
 }
 }
 
+
+
 STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCallback *)
 {
   Close();
   
-  const UInt32 kBufSize = 1 + 5 + 8 + 2;
+  const unsigned headerSize = GetHeaderSize();
+  const UInt32 kBufSize = 1 << 7;
   Byte buf[kBufSize];
-  
-  RINOK(ReadStream_FALSE(inStream, buf, kBufSize));
-  
+  size_t processedSize = kBufSize;
+  RINOK(ReadStream(inStream, buf, &processedSize));
+  if (processedSize < headerSize + 2)
+    return S_FALSE;
   if (!_header.Parse(buf, _lzma86))
     return S_FALSE;
-  const Byte *start = buf + GetHeaderSize();
+  const Byte *start = buf + headerSize;
   if (start[0] != 0 /* || (start[1] & 0x80) != 0 */ ) // empty stream with EOS is not 0x80
     return S_FALSE;
-  
+
   RINOK(inStream->Seek(0, STREAM_SEEK_END, &_packSize));
-  if (_packSize >= 24 && _header.Size == 0 && _header.FilterID == 0 && _header.LzmaProps[0] == 0)
+
+  SizeT srcLen = processedSize - headerSize;
+
+  if (srcLen > 10
+      && _header.Size == 0
+      // && _header.FilterID == 0
+      && _header.LzmaProps[0] == 0
+      )
     return S_FALSE;
+
+  CDecoder state;
+  const UInt32 outLimit = 1 << 11;
+  Byte outBuf[outLimit];
+
+  SizeT outSize = outLimit;
+  if (outSize > _header.Size)
+    outSize = (SizeT)_header.Size;
+  SizeT destLen = outSize;
+  ELzmaStatus status;
+  
+  SRes res = LzmaDecode(outBuf, &destLen, start, &srcLen,
+      _header.LzmaProps, 5, LZMA_FINISH_ANY,
+      &status, &g_Alloc);
+  
+  if (res != SZ_OK)
+    if (res != SZ_ERROR_INPUT_EOF)
+      return S_FALSE;
+
   _isArc = true;
   _stream = inStream;
   _seqStream = inStream;

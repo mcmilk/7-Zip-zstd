@@ -99,8 +99,10 @@ HRESULT CThreadExtracting::ProcessVirt()
   CDecompressStat Stat;
   
   #ifndef _SFX
+  /*
   if (HashBundle)
     HashBundle->Init();
+  */
   #endif
 
   HRESULT res = Extract(codecs,
@@ -119,7 +121,7 @@ HRESULT CThreadExtracting::ProcessVirt()
     {
       AddValuePair(Pairs, IDS_ARCHIVES_COLON, Stat.NumArchives);
       AddSizeValuePair(Pairs, IDS_PROP_PACKED_SIZE, Stat.PackSize);
-      AddHashBundleRes(Pairs, *HashBundle, UString());
+      AddHashBundleRes(Pairs, *HashBundle);
     }
     else if (Options->TestMode)
     {

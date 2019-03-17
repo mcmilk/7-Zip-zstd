@@ -37,10 +37,17 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 {
   DProps *pProps = (DProps *)prop;
 
+#if DEBUG
+      printf("prop size =%u\n", size);
+      fflush(stdout);
+#endif
+
   switch (size) {
   case 3:
+    memcpy(&_props, pProps, 3);
+    return S_OK;
   case 5:
-    memcpy(&_props, pProps, sizeof (DProps));
+    memcpy(&_props, pProps, 5);
     return S_OK;
   default:
     return E_NOTIMPL;
@@ -84,16 +91,16 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
     ZSTD_resetDStream(_ctx);
   }
 
-  zIn.src = _srcBuf;
-  zIn.size = _srcBufSize;
-  zIn.pos = 0;
-
   zOut.dst = _dstBuf;
   srcBufLen = _srcBufSize;
 
   /* read first input block */
   RINOK(ReadStream(inStream, _srcBuf, &srcBufLen));
   _processedIn += srcBufLen;
+
+  zIn.src = _srcBuf;
+  zIn.size = srcBufLen;
+  zIn.pos = 0;
 
   /* Main decompression Loop */
   for (;;) {
@@ -103,16 +110,16 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
       zOut.pos = 0;
 
       result = ZSTD_decompressStream(_ctx, &zOut, &zIn);
-      if (ZSTD_isError(result)) {
+      if (ZSTD_isError(result))
         return E_FAIL;
-      }
 
 #if DEBUG
-      printf("res       =%u\n", (unsigned)result);
-      printf("zIn.size  =%u\n", (unsigned)zIn.size);
-      printf("zIn.pos   =%u\n", (unsigned)zIn.pos);
-      printf("zOut.size =%u\n", (unsigned)zOut.size);
-      printf("zOut.pos  =%u\n", (unsigned)zOut.pos);
+      printf("res       = %u\n", (unsigned)result);
+      printf("zIn.size  = %u\n", (unsigned)zIn.size);
+      printf("zIn.pos   = %u\n", (unsigned)zIn.pos);
+      printf("zOut.size = %u\n", (unsigned)zOut.size);
+      printf("zOut.pos  = %u\n", (unsigned)zOut.pos);
+      printf("---------------------\n");
       fflush(stdout);
 #endif
 
@@ -120,12 +127,11 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
       if (zOut.pos) {
         RINOK(WriteStream(outStream, _dstBuf, zOut.pos));
         _processedOut += zOut.pos;
-        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
+        if (progress)
+        {
+          RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
+        }
       }
-
-      /* one more round */
-      if ((zIn.pos == zIn.size) && (result == 1) && zOut.pos)
-        continue;
 
       /* finished with buffer */
       if (zIn.pos == zIn.size)
@@ -136,6 +142,11 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
         result = ZSTD_resetDStream(_ctx);
         if (ZSTD_isError(result))
           return E_FAIL;
+
+        /* end of frame, but more data */
+        if (zIn.pos < zIn.size)
+          continue;
+
         /* read next input, or eof */
         break;
       }
@@ -145,6 +156,9 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
     srcBufLen = _srcBufSize;
     RINOK(ReadStream(inStream, _srcBuf, &srcBufLen));
     _processedIn += srcBufLen;
+#if DEBUG
+      printf("READ      = %u\n", (unsigned)srcBufLen);
+#endif
 
     /* finished */
     if (srcBufLen == 0)

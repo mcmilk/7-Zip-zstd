@@ -468,7 +468,7 @@ public:
   int ExludedItem;          // -1 : if there are no exclude items
   CUIntVector VirtualRoots; // we use them for old 1.10 WIM archives
 
-  bool ThereIsError() const { return RefCountError; }
+  bool ThereIsError() const { return RefCountError || HeadersError; }
 
   unsigned GetNumUserItemsInImage(unsigned imageIndex) const
   {
@@ -544,7 +544,10 @@ public:
     HeadersError = false;
   }
 
-  CDatabase(): RefCountError(false) {}
+  CDatabase():
+    RefCountError(false),
+    HeadersError(false)
+    {}
 
   void GetShortName(unsigned index, NWindows::NCOM::CPropVariant &res) const;
   void GetItemName(unsigned index1, NWindows::NCOM::CPropVariant &res) const;

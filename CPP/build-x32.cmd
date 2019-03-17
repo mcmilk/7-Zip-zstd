@@ -23,16 +23,6 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7z.dll" >> %ERRFILE%
 copy O\7z.dll %OUTDIR%\7z.dll
 
-cd %ROOT%\Bundles\Format7zFO
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error x32 @ 7zOrig.dll" >> %ERRFILE%
-copy O\7z.dll %OUTDIR%\7zOrig.dll
-
-cd %ROOT%\Bundles\Format7zUSB
-nmake %OPTS%
-IF %errorlevel% NEQ 0 echo "Error x32 @ 7zUSB.dll" >> %ERRFILE%
-copy O\7zu.dll %OUTDIR%\7zu-x32.dll
-
 cd %ROOT%\UI\FileManager
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7zFM.exe" >> %ERRFILE%
@@ -73,7 +63,7 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ lz5-x32.dll" >> %ERRFILE%
 copy O\lz5.dll %OUTDIR%\lz5-x32.dll
 
-cd %ROOT%\Bundles\Codec_zstdF
+cd %ROOT%\Bundles\Codec_zstd
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ zstd-x32.dll" >> %ERRFILE%
 copy O\zstd.dll %OUTDIR%\zstd-x32.dll

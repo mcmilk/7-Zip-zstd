@@ -24,6 +24,7 @@
 #include "../../../Windows/TimeUtils.h"
 
 #include "../Common/ArchiveCommandLine.h"
+#include "../Common/Bench.h"
 #include "../Common/ExitCode.h"
 #include "../Common/Extract.h"
 
@@ -56,8 +57,6 @@ using namespace NCommandLineParser;
 HINSTANCE g_hInstance = 0;
 #endif
 
-extern bool g_LargePagesMode;
-
 extern CStdOutStream *g_StdStream;
 extern CStdOutStream *g_ErrStream;
 
@@ -88,7 +87,7 @@ static const char * const kHelpString =
     "a"
 #endif
 #endif
-    " <command> [<switches>...] <archive_name> [<file_names>...]\n"
+    " <command> [<switches>...] <archive_name> [<file_names>...] [@listfile]\n"
     "\n"
     "<Commands>\n"
     "  a : Add files to archive\n"
@@ -104,8 +103,7 @@ static const char * const kHelpString =
     "  x : eXtract files with full paths\n"
     "\n"
     "<Switches>\n"
-    "  -- : Stop switches parsing\n"
-    "  @listfile : set path to listfile that contains file names\n"
+    "  -- : Stop switches and @listfile parsing\n"
     "  -ai[r[-|0]]{@listfile|!wildcard} : Include archives\n"
     "  -ax[r[-|0]]{@listfile|!wildcard} : eXclude archives\n"
     "  -ao{a|s|t|u} : set Overwrite mode\n"
@@ -236,7 +234,7 @@ static void PrintWarningsPaths(const CErrorPathCodes &pc, CStdOutStream &so)
 {
   FOR_VECTOR(i, pc.Paths)
   {
-    so.NormalizePrint_UString(pc.Paths[i]);
+    so.NormalizePrint_UString(fs2us(pc.Paths[i]));
     so << " : ";
     so << NError::MyFormatMessage(pc.Codes[i]) << endl;
   }
@@ -376,8 +374,13 @@ static void PrintMemUsage(const char *s, UInt64 val)
   *g_StdStream << "    " << s << " Memory =";
   PrintNum(SHIFT_SIZE_VALUE(val, 20), 7);
   *g_StdStream << " MB";
-  if (g_LargePagesMode)
-    *g_StdStream << " (LP)";
+
+  #ifdef _7ZIP_LARGE_PAGES
+  AString lp;
+  Add_LargePages_String(lp);
+  if (!lp.IsEmpty())
+    *g_StdStream << lp;
+  #endif
 }
 
 EXTERN_C_BEGIN
@@ -911,7 +914,7 @@ int Main2(
       {
         hashCalc = &hb;
         ThrowException_if_Error(hb.SetMethods(EXTERNAL_CODECS_VARS_L options.HashMethods));
-        hb.Init();
+        // hb.Init();
       }
       
       hresultMain = Extract(

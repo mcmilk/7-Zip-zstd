@@ -230,7 +230,7 @@ HRESULT HashCalc(
   unsigned i;
   CHashBundle hb;
   RINOK(hb.SetMethods(EXTERNAL_CODECS_LOC_VARS options.Methods));
-  hb.Init();
+  // hb.Init();
 
   hb.NumErrors = dirItems.Stat.NumErrors;
   

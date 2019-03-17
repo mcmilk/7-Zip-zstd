@@ -23,6 +23,7 @@
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
 
+#include "../../../Windows/ErrorMsg.h"
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileName.h"
 #ifdef _WIN32
@@ -39,7 +40,9 @@
 extern bool g_CaseSensitive;
 extern bool g_PathTrailReplaceMode;
 
+#ifdef _7ZIP_LARGE_PAGES
 bool g_LargePagesMode = false;
+#endif
 
 #ifdef UNDER_CE
 
@@ -410,8 +413,19 @@ static void AddToCensorFromListFile(
   UStringVector names;
   if (!NFind::DoesFileExist(us2fs(fileName)))
     throw CArcCmdLineException(kCannotFindListFile, fileName);
-  if (!ReadNamesFromListFile(us2fs(fileName), names, codePage))
+  DWORD lastError = 0;
+  if (!ReadNamesFromListFile2(us2fs(fileName), names, codePage, lastError))
+  {
+    if (lastError != 0)
+    {
+      UString m;
+      m = "The file operation error for listfile";
+      m.Add_LF();
+      m += NError::MyFormatMessage(lastError);
+      throw CArcCmdLineException(m, fileName);
+    }
     throw CArcCmdLineException(kIncorrectListFile, fileName);
+  }
   if (renamePairs)
   {
     if ((names.Size() & 1) != 0)

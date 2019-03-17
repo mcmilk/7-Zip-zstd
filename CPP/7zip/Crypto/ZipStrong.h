@@ -3,7 +3,7 @@
 #ifndef __CRYPTO_ZIP_STRONG_H
 #define __CRYPTO_ZIP_STRONG_H
 
-#include "../../Common/MyBuffer.h"
+#include "../../Common/MyBuffer2.h"
 
 #include "../IPassword.h"
 
@@ -35,8 +35,7 @@ class CBaseCoder:
 {
 protected:
   CKeyInfo _key;
-  CByteBuffer _buf;
-  Byte *_bufAligned;
+  CAlignedBuffer _bufAligned;
 public:
   STDMETHOD(Init)();
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
