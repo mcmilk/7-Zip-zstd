@@ -78,7 +78,8 @@ Public domain
 
 #define kChunkSize ((1UL << 16U) - 8192U)
 #define kSqrtChunkSize 239U
-#define kTempMinOutput (LZMA_REQUIRED_INPUT_MAX * 4U)
+#define kMaxMatchEncodeSize 20
+#define kTempMinOutput (kMaxMatchEncodeSize * 4U)
 #define kTempBufferSize (kTempMinOutput + kOptimizerBufferSize + kOptimizerBufferSize / 16U)
 #define kMaxChunkUncompressedSize ((1UL << 21U) - kMatchLenMax)
 #define kMaxChunkCompressedSize (1UL << 16U)

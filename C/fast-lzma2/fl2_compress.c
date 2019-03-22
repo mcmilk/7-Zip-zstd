@@ -446,7 +446,7 @@ static size_t FL2_beginFrame(FL2_CCtx* const cctx, size_t const dictReduce)
     if (FL2_initEncoders(cctx) != 0) /* Create hash objects together, leaving the (large) match table last */
         return FL2_ERROR(memory_allocation);
 
-    if (!cctx->matchTable) {
+    if (cctx->matchTable == NULL) {
         cctx->matchTable = RMF_createMatchTable(&cctx->params.rParams, dictReduce, cctx->jobCount);
         if (cctx->matchTable == NULL)
             return FL2_ERROR(memory_allocation);
@@ -938,7 +938,7 @@ static size_t FL2_compressStream_internal(FL2_CStream* const fcs, int const endi
 /* Copy the compressed output stored in the match table buffer.
  * One slice exists per thread.
  */
-static void FL2_copyCStreamOutput(FL2_CStream* fcs, FL2_outBuffer *output)
+FL2LIB_API size_t FL2LIB_CALL FL2_copyCStreamOutput(FL2_CStream* fcs, FL2_outBuffer *output)
 {
     for (; fcs->outThread < fcs->threadCount; ++fcs->outThread) {
         const BYTE* const outBuf = RMF_getTableAsOutputBuffer(fcs->matchTable, fcs->jobs[fcs->outThread].block.start) + fcs->outPos;
@@ -956,10 +956,11 @@ static void FL2_copyCStreamOutput(FL2_CStream* fcs, FL2_outBuffer *output)
 
         /* If the slice is not flushed, the output is full */
         if (fcs->outPos < fcs->jobs[fcs->outThread].cSize)
-            break;
+            return 1;
 
         fcs->outPos = 0;
     }
+	return 0;
 }
 
 static size_t FL2_compressStream_input(FL2_CStream* fcs, FL2_inBuffer* input)
@@ -999,8 +1000,10 @@ static size_t FL2_loopCheck(FL2_CStream* fcs, int unchanged)
 {
     if (unchanged) {
         ++fcs->loopCount;
-        if (fcs->loopCount > FL2_MAX_LOOPS)
+        if (fcs->loopCount > FL2_MAX_LOOPS) {
+            FL2_cancelCStream(fcs);
             return FL2_ERROR(buffer);
+        }
     }
     else {
         fcs->loopCount = 0;
@@ -1057,14 +1060,13 @@ FL2LIB_API size_t FL2LIB_CALL FL2_updateDictionary(FL2_CStream * fcs, size_t add
     return fcs->outThread < fcs->threadCount;
 }
 
-FL2LIB_API size_t FL2LIB_CALL FL2_getNextCStreamBuffer(FL2_CStream* fcs, FL2_cBuffer* cbuf)
+FL2LIB_API size_t FL2LIB_CALL FL2_getNextCompressedBuffer(FL2_CStream* fcs, FL2_cBuffer* cbuf)
 {
     cbuf->src = NULL;
     cbuf->size = 0;
 
 #ifndef FL2_SINGLETHREAD
-    FL2POOL_waitAll(fcs->compressThread, 0);
-    CHECK_F(fcs->asyncRes);
+	CHECK_F(FL2_waitCStream(fcs));
 #endif
 
     if (fcs->outThread < fcs->threadCount) {

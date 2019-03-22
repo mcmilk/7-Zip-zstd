@@ -197,7 +197,8 @@ FL2_matchTable* RMF_createMatchTable(const RMF_parameters* const p, size_t const
     size_t const table_bytes = is_struct ? ((dictionary_size + 3U) / 4U) * sizeof(RMF_unit)
 		: dictionary_size * sizeof(U32);
     FL2_matchTable* const tbl = malloc(sizeof(FL2_matchTable) + table_bytes - sizeof(U32));
-    if (!tbl) return NULL;
+    if (tbl == NULL)
+        return NULL;
 
     tbl->is_struct = is_struct;
     tbl->alloc_struct = is_struct;
@@ -707,7 +708,7 @@ BYTE* RMF_getTableAsOutputBuffer(FL2_matchTable* const tbl, size_t const index)
 size_t RMF_memoryUsage(size_t const dict_size, unsigned const buffer_log, unsigned const thread_count)
 {
     size_t size = (size_t)(4U + RMF_isStruct(dict_size)) * dict_size;
-    size_t const buf_size = dict_size >> buffer_log;
+    size_t const buf_size = dict_size >> (RMF_BUFFER_LOG_BASE - buffer_log);
     size += ((buf_size - 1) * sizeof(RMF_buildMatch) + sizeof(RMF_builder)) * thread_count;
     return size;
 }

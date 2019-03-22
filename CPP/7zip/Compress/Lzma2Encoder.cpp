@@ -272,9 +272,10 @@ HRESULT CFastEncoder::FastLzma2::WriteBuffers(ISequentialOutStream *outStream)
   size_t csize;
   for (;;) {
     FL2_cBuffer cbuf;
-    // Waits if compression in progress
-    csize = FL2_getNextCStreamBuffer(fcs, &cbuf);
-    CHECK_S(csize);
+	do {
+		csize = FL2_getNextCompressedBuffer(fcs, &cbuf);
+	} while (FL2_isTimedOut(csize));
+	CHECK_S(csize);
     if (csize == 0)
       break;
     HRESULT err = WriteStream(outStream, cbuf.src, cbuf.size);
