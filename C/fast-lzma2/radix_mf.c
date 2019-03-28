@@ -22,6 +22,9 @@
 #  pragma warning(disable : 4701) /* warning: 'rpt_head_next' may be used uninitialized in this function */
 #endif
 
+#define MATCH_BUFFER_SHIFT 8;
+#define MATCH_BUFFER_ELBOW_BITS 17
+#define MATCH_BUFFER_ELBOW (1UL << MATCH_BUFFER_ELBOW_BITS)
 #define MIN_MATCH_BUFFER_SIZE 256U /* min buffer size at least FL2_SEARCH_DEPTH_MAX + 2 for bounded build */
 #define MAX_MATCH_BUFFER_SIZE (1UL << 24) /* max buffer size constrained by 24-bit link values */
 
@@ -110,13 +113,35 @@ static RMF_parameters RMF_clampParams(RMF_parameters params)
         if (val<(min)) val=(min);        \
         else if (val>(max)) val=(max);   \
     }
+#   define MAXCLAMP(val,max) {      \
+        if (val>(max)) val=(max);   \
+    }
     CLAMP(params.dictionary_size, DICTIONARY_SIZE_MIN, MEM_64bits() ? DICTIONARY_SIZE_MAX_64 : DICTIONARY_SIZE_MAX_32);
-    CLAMP(params.match_buffer_log, RMF_BUFFER_LOG_MIN, RMF_BUFFER_LOG_MAX);
-    if (params.overlap_fraction > FL2_BLOCK_OVERLAP_MAX)
-        params.overlap_fraction = FL2_BLOCK_OVERLAP_MAX;
+    MAXCLAMP(params.match_buffer_resize, FL2_BUFFER_RESIZE_MAX);
+    MAXCLAMP(params.overlap_fraction, FL2_BLOCK_OVERLAP_MAX);
     CLAMP(params.depth, FL2_SEARCH_DEPTH_MIN, FL2_SEARCH_DEPTH_MAX);
     return params;
+#   undef MAXCLAMP
 #   undef CLAMP
+}
+
+static size_t RMF_calBufSize(size_t dictionary_size, unsigned buffer_resize)
+{
+    size_t buffer_size = dictionary_size >> MATCH_BUFFER_SHIFT;
+    if (buffer_size > MATCH_BUFFER_ELBOW) {
+        size_t extra = 0;
+        unsigned n = MATCH_BUFFER_ELBOW_BITS - 1;
+        for (; (4UL << n) <= buffer_size; ++n)
+            extra += MATCH_BUFFER_ELBOW >> 4;
+        if((3UL << n) <= buffer_size)
+            extra += MATCH_BUFFER_ELBOW >> 5;
+        buffer_size = MATCH_BUFFER_ELBOW + extra;
+    }
+    if (buffer_resize > 2)
+        buffer_size += buffer_size >> (4 - buffer_resize);
+    else if (buffer_resize < 2)
+        buffer_size -= buffer_size >> (buffer_resize + 1);
+    return buffer_size;
 }
 
 /* RMF_applyParameters_internal() :
@@ -134,7 +159,7 @@ static size_t RMF_applyParameters_internal(FL2_matchTable* const tbl, const RMF_
         || (params->dictionary_size == tbl->params.dictionary_size && is_struct > tbl->alloc_struct))
         return FL2_ERROR(parameter_unsupported);
 
-    size_t const match_buffer_size = params->dictionary_size >> params->match_buffer_log;
+    size_t const match_buffer_size = RMF_calBufSize(tbl->unreduced_dict_size, params->match_buffer_resize);
     tbl->params = *params;
     tbl->params.dictionary_size = dictionary_size;
     tbl->is_struct = is_struct;
@@ -161,13 +186,8 @@ static size_t RMF_applyParameters_internal(FL2_matchTable* const tbl, const RMF_
  */
 static void RMF_reduceDict(RMF_parameters* const params, size_t const dict_reduce)
 {
-    if (dict_reduce) {
-        for (size_t dict_size = params->dictionary_size; dict_size > DICTIONARY_SIZE_MIN && (dict_size >> 1) >= dict_reduce; dict_size >>= 1) {
-            /* Use unchanged match buffer size for reduced dict */
-            params->match_buffer_log = MAX(params->match_buffer_log - 1, RMF_BUFFER_LOG_MIN);
-        }
+    if (dict_reduce)
         params->dictionary_size = MIN(params->dictionary_size, MAX(dict_reduce, DICTIONARY_SIZE_MIN));
-    }
 }
 
 static void RMF_initListHeads(FL2_matchTable* const tbl)
@@ -187,6 +207,7 @@ static void RMF_initListHeads(FL2_matchTable* const tbl)
 FL2_matchTable* RMF_createMatchTable(const RMF_parameters* const p, size_t const dict_reduce, unsigned const thread_count)
 {
     RMF_parameters params = RMF_clampParams(*p);
+    size_t unreduced_dict_size = params.dictionary_size;
     RMF_reduceDict(&params, dict_reduce);
 
     int const is_struct = RMF_isStruct(params.dictionary_size);
@@ -195,7 +216,7 @@ FL2_matchTable* RMF_createMatchTable(const RMF_parameters* const p, size_t const
     DEBUGLOG(3, "RMF_createMatchTable : is_struct %d, dict %u", is_struct, (U32)dictionary_size);
 
     size_t const table_bytes = is_struct ? ((dictionary_size + 3U) / 4U) * sizeof(RMF_unit)
-		: dictionary_size * sizeof(U32);
+        : dictionary_size * sizeof(U32);
     FL2_matchTable* const tbl = malloc(sizeof(FL2_matchTable) + table_bytes - sizeof(U32));
     if (tbl == NULL)
         return NULL;
@@ -204,6 +225,7 @@ FL2_matchTable* RMF_createMatchTable(const RMF_parameters* const p, size_t const
     tbl->alloc_struct = is_struct;
     tbl->thread_count = thread_count + !thread_count;
     tbl->params = params;
+    tbl->unreduced_dict_size = unreduced_dict_size;
     tbl->builders = NULL;
 
     RMF_applyParameters_internal(tbl, &params);
@@ -298,7 +320,7 @@ typedef struct
 {
     size_t index;
     const BYTE* data_src;
-	union src_data_u src;
+    union src_data_u src;
 } BruteForceMatch;
 
 static void RMF_bruteForceBuffered(RMF_builder* const tbl,
@@ -705,10 +727,10 @@ BYTE* RMF_getTableAsOutputBuffer(FL2_matchTable* const tbl, size_t const index)
         return RMF_bitpackAsOutputBuffer(tbl, index);
 }
 
-size_t RMF_memoryUsage(size_t const dict_size, unsigned const buffer_log, unsigned const thread_count)
+size_t RMF_memoryUsage(size_t const dict_size, unsigned const buffer_resize, unsigned const thread_count)
 {
     size_t size = (size_t)(4U + RMF_isStruct(dict_size)) * dict_size;
-    size_t const buf_size = dict_size >> (RMF_BUFFER_LOG_BASE - buffer_log);
+    size_t const buf_size = RMF_calBufSize(dict_size, buffer_resize);
     size += ((buf_size - 1) * sizeof(RMF_buildMatch) + sizeof(RMF_builder)) * thread_count;
     return size;
 }

@@ -40,7 +40,6 @@ typedef struct
 {
 	BYTE *out_buffer;
 	size_t out_index;
-	size_t chunk_size;
 	U64 cache_size;
 	U64 low;
 	U32 range;
@@ -49,7 +48,7 @@ typedef struct
 
 void RC_reset(RangeEncoder* const rc);
 
-void RC_setOutputBuffer(RangeEncoder* const rc, BYTE *const out_buffer, size_t chunk_size);
+void RC_setOutputBuffer(RangeEncoder* const rc, BYTE *const out_buffer);
 
 void FORCE_NOINLINE RC_shiftLow(RangeEncoder* const rc);
 

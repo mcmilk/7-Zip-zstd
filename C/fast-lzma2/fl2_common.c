@@ -17,6 +17,7 @@
 #include "fast-lzma2.h"
 #include "fl2_errors.h"
 #include "fl2_internal.h"
+#include "lzma2_enc.h"
 
 
 /*-****************************************
@@ -32,7 +33,7 @@ FL2LIB_API const char* FL2LIB_CALL FL2_versionString(void) { return FL2_VERSION_
 ******************************************/
 FL2LIB_API size_t FL2LIB_CALL FL2_compressBound(size_t srcSize)
 {
-    return FL2_COMPRESSBOUND(srcSize);
+	return LZMA2_compressBound(srcSize);
 }
 
 /*-****************************************
@@ -84,6 +85,7 @@ FL2LIB_API const char* FL2LIB_CALL FL2_getErrorString(FL2_ErrorCode code)
     {
     case PREFIX(no_error): return "No error detected";
     case PREFIX(GENERIC):  return "Error (generic)";
+    case PREFIX(internal): return "Internal error (bug)";
     case PREFIX(corruption_detected): return "Corrupted block detected";
     case PREFIX(checksum_wrong): return "Restored data doesn't match checksum";
     case PREFIX(parameter_unsupported): return "Unsupported parameter";

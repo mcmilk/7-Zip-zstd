@@ -36,16 +36,16 @@
 #define FL2_MAX_CLEVEL      9
 
 static const FL2_compressionParameters FL2_defaultCParameters[FL2_MAX_CLEVEL + 1] = {
-    { 0,0,0,0,0,0,0,0,0 },
-    { 1 MB, 1, 7, 0, 6, 32, 1, 4, FL2_fast }, /* 1 */
-    { 2 MB, 2, 7, 0, 14, 32, 1, 4, FL2_fast }, /* 2 */
-    { 2 MB, 2, 7, 0, 14, 40, 1, 4, FL2_opt }, /* 3 */
-    { 4 MB, 2, 7, 0, 26, 40, 1, 4, FL2_opt }, /* 4 */
-    { 16 MB, 2, 8, 0, 42, 48, 1, 4, FL2_opt }, /* 5 */
-    { 16 MB, 2, 9, 1, 42, 48, 1, 4, FL2_ultra }, /* 6 */
-    { 32 MB, 2, 10, 1, 50, 64, 1, 4, FL2_ultra }, /* 7 */
-    { 64 MB, 2, 11, 2, 62, 96, 1, 3, FL2_ultra }, /* 8 */
-    { 64 MB, 4, 12, 3, 90, 273, 0, 3, FL2_ultra }, /* 9 */
+    { 0,0,0,0,0,0,0,0 },
+    { 1 MB, 1, 7, 0, 6, 32, 1, FL2_fast }, /* 1 */
+    { 2 MB, 2, 7, 0, 14, 32, 1, FL2_fast }, /* 2 */
+    { 2 MB, 2, 7, 0, 14, 40, 1, FL2_opt }, /* 3 */
+    { 8 MB, 2, 7, 0, 26, 40, 1, FL2_opt }, /* 4 */
+    { 16 MB, 2, 8, 0, 42, 48, 1, FL2_opt }, /* 5 */
+    { 16 MB, 2, 9, 1, 42, 48, 1, FL2_ultra }, /* 6 */
+    { 32 MB, 2, 10, 1, 50, 64, 1, FL2_ultra }, /* 7 */
+    { 64 MB, 2, 11, 2, 62, 96, 1, FL2_ultra }, /* 8 */
+    { 128 MB, 2, 12, 3, 90, 128, 1, FL2_ultra }, /* 9 */
 };
 
 #elif defined(FL2_7ZIP_BUILD)
@@ -54,16 +54,16 @@ static const FL2_compressionParameters FL2_defaultCParameters[FL2_MAX_CLEVEL + 1
 #define FL2_MAX_CLEVEL      9
 
 static const FL2_compressionParameters FL2_defaultCParameters[FL2_MAX_CLEVEL + 1] = {
-    { 0,0,0,0,0,0,0,0,0 },
-    { 1 MB, 1, 7, 0, 6, 32, 1, 4, FL2_fast }, /* 1 */
-    { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_fast }, /* 2 */
-    { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_opt }, /* 3 */
-    { 4 MB, 2, 7, 0, 14, 32, 1, 4, FL2_opt }, /* 4 */
-    { 16 MB, 2, 9, 0, 42, 48, 1, 4, FL2_ultra }, /* 5 */
-    { 32 MB, 2, 10, 0, 50, 64, 1, 4, FL2_ultra }, /* 6 */
-    { 64 MB, 2, 11, 1, 62, 96, 1, 3, FL2_ultra }, /* 7 */
-    { 64 MB, 4, 12, 2, 90, 273, 1, 3, FL2_ultra }, /* 8 */
-    { 128 MB, 2, 14, 3, 254, 273, 0, 2, FL2_ultra } /* 9 */
+    { 0,0,0,0,0,0,0,0 },
+    { 1 MB, 1, 7, 0, 6, 32, 1, FL2_fast }, /* 1 */
+    { 2 MB, 2, 7, 0, 10, 32, 1, FL2_fast }, /* 2 */
+    { 2 MB, 2, 7, 0, 10, 32, 1, FL2_opt }, /* 3 */
+    { 4 MB, 2, 7, 0, 14, 32, 1, FL2_opt }, /* 4 */
+    { 16 MB, 2, 9, 0, 42, 48, 1, FL2_ultra }, /* 5 */
+    { 32 MB, 2, 10, 0, 50, 64, 1, FL2_ultra }, /* 6 */
+    { 64 MB, 2, 11, 1, 62, 96, 1, FL2_ultra }, /* 7 */
+    { 64 MB, 4, 12, 2, 90, 273, 1, FL2_ultra }, /* 8 */
+    { 128 MB, 2, 14, 3, 254, 273, 0, FL2_ultra } /* 9 */
 };
 
 #else
@@ -72,33 +72,33 @@ static const FL2_compressionParameters FL2_defaultCParameters[FL2_MAX_CLEVEL + 1
 #define FL2_MAX_CLEVEL      10
 
 static const FL2_compressionParameters FL2_defaultCParameters[FL2_MAX_CLEVEL + 1] = {
-    { 0,0,0,0,0,0,0,0,0 },
-    { 1 MB, 1, 7, 0, 6, 32, 1, 4, FL2_fast }, /* 1 */
-    { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_fast }, /* 2 */
-    { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_opt }, /* 3 */
-    { 4 MB, 2, 7, 0, 26, 40, 1, 4, FL2_opt }, /* 4 */
-    { 8 MB, 2, 8, 0, 42, 48, 1, 4, FL2_opt }, /* 5 */
-    { 16 MB, 2, 9, 0, 42, 48, 1, 4, FL2_ultra }, /* 6 */
-    { 32 MB, 2, 10, 0, 50, 64, 1, 4, FL2_ultra }, /* 7 */
-    { 64 MB, 2, 11, 1, 62, 96, 1, 3, FL2_ultra }, /* 8 */
-    { 64 MB, 4, 12, 2, 90, 273, 1, 3, FL2_ultra }, /* 9 */
-    { 128 MB, 2, 14, 3, 254, 273, 0, 2, FL2_ultra } /* 10 */
+    { 0,0,0,0,0,0,0,0 },
+    { 1 MB, 1, 7, 0, 6, 32, 1, FL2_fast }, /* 1 */
+    { 2 MB, 2, 7, 0, 10, 32, 1, FL2_fast }, /* 2 */
+    { 2 MB, 2, 7, 0, 10, 32, 1, FL2_opt }, /* 3 */
+    { 4 MB, 2, 7, 0, 26, 40, 1, FL2_opt }, /* 4 */
+    { 8 MB, 2, 8, 0, 42, 48, 1, FL2_opt }, /* 5 */
+    { 16 MB, 2, 9, 0, 42, 48, 1, FL2_ultra }, /* 6 */
+    { 32 MB, 2, 10, 0, 50, 64, 1, FL2_ultra }, /* 7 */
+    { 64 MB, 2, 11, 1, 62, 96, 1, FL2_ultra }, /* 8 */
+    { 64 MB, 4, 12, 2, 90, 273, 1, FL2_ultra }, /* 9 */
+    { 128 MB, 2, 14, 3, 254, 273, 0, FL2_ultra } /* 10 */
 };
 
 #endif
 
 static const FL2_compressionParameters FL2_highCParameters[FL2_MAX_HIGH_CLEVEL + 1] = {
-    { 0,0,0,0,0,0,0,0,0 },
-    { 1 MB, 4, 9, 2, 254, 273, 0, 4, FL2_ultra }, /* 1 */
-    { 2 MB, 4, 10, 2, 254, 273, 0, 4, FL2_ultra }, /* 2 */
-    { 4 MB, 4, 11, 2, 254, 273, 0, 4, FL2_ultra }, /* 3 */
-    { 8 MB, 4, 12, 2, 254, 273, 0, 4, FL2_ultra }, /* 4 */
-    { 16 MB, 4, 13, 3, 254, 273, 0, 4, FL2_ultra }, /* 5 */
-    { 32 MB, 4, 14, 3, 254, 273, 0, 4, FL2_ultra }, /* 6 */
-    { 64 MB, 4, 14, 4, 254, 273, 0, 4, FL2_ultra }, /* 7 */
-    { 128 MB, 4, 14, 4, 254, 273, 0, 4, FL2_ultra }, /* 8 */
-    { 256 MB, 4, 14, 5, 254, 273, 0, 3, FL2_ultra }, /* 9 */
-    { 512 MB, 4, 14, 5, 254, 273, 0, 2, FL2_ultra } /* 10 */
+    { 0,0,0,0,0,0,0,0 },
+    { 1 MB, 4, 9, 2, 254, 273, 0, FL2_ultra }, /* 1 */
+    { 2 MB, 4, 10, 2, 254, 273, 0, FL2_ultra }, /* 2 */
+    { 4 MB, 4, 11, 2, 254, 273, 0, FL2_ultra }, /* 3 */
+    { 8 MB, 4, 12, 2, 254, 273, 0, FL2_ultra }, /* 4 */
+    { 16 MB, 4, 13, 3, 254, 273, 0, FL2_ultra }, /* 5 */
+    { 32 MB, 4, 14, 3, 254, 273, 0, FL2_ultra }, /* 6 */
+    { 64 MB, 4, 14, 4, 254, 273, 0, FL2_ultra }, /* 7 */
+    { 128 MB, 4, 14, 4, 254, 273, 0, FL2_ultra }, /* 8 */
+    { 256 MB, 4, 14, 5, 254, 273, 0, FL2_ultra }, /* 9 */
+    { 512 MB, 4, 14, 5, 254, 273, 0, FL2_ultra } /* 10 */
 };
 
 #undef MB
@@ -126,7 +126,7 @@ static void FL2_fillParameters(FL2_CCtx* const cctx, const FL2_compressionParame
 
     RMF_parameters* const rParams = &cctx->params.rParams;
     rParams->dictionary_size = MIN(params->dictionarySize, FL2_DICTSIZE_MAX); /* allows for reduced dict in 32-bit version */
-    rParams->match_buffer_log = RMF_BUFFER_LOG_BASE - params->bufferLog;
+    rParams->match_buffer_resize = FL2_BUFFER_RESIZE_DEFAULT;
     rParams->overlap_fraction = params->overlapFraction;
     rParams->divide_and_conquer = params->divideAndConquer;
     rParams->depth = params->searchDepth;
@@ -666,7 +666,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_CCtx_setParameter(FL2_CCtx* cctx, FL2_cParamet
     case FL2_p_dictionarySize:
         CLAMPCHECK(value, FL2_DICTSIZE_MIN, FL2_DICTSIZE_MAX);
         cctx->params.rParams.dictionary_size = value;
-        break;
+		break;
 
     case FL2_p_overlapFraction:
         MAXCHECK(value, FL2_BLOCK_OVERLAP_MAX);
@@ -679,9 +679,9 @@ FL2LIB_API size_t FL2LIB_CALL FL2_CCtx_setParameter(FL2_CCtx* cctx, FL2_cParamet
         cctx->params.cParams.reset_interval = (unsigned)value;
         break;
 
-    case FL2_p_bufferLog:
-        MAXCHECK(value, FL2_BUFFER_SIZE_LOG_MAX);
-        cctx->params.rParams.match_buffer_log = RMF_BUFFER_LOG_BASE - (unsigned)value;
+    case FL2_p_bufferResize:
+        MAXCHECK(value, FL2_BUFFER_RESIZE_MAX);
+        cctx->params.rParams.match_buffer_resize = (unsigned)value;
         break;
 
     case FL2_p_hybridChainLog:
@@ -781,8 +781,8 @@ FL2LIB_API size_t FL2LIB_CALL FL2_CCtx_getParameter(FL2_CCtx* cctx, FL2_cParamet
     case FL2_p_resetInterval:
         return cctx->params.cParams.reset_interval;
 
-    case FL2_p_bufferLog:
-        return RMF_BUFFER_LOG_BASE - cctx->params.rParams.match_buffer_log;
+    case FL2_p_bufferResize:
+        return cctx->params.rParams.match_buffer_resize;
 
     case FL2_p_hybridChainLog:
         return cctx->params.cParams.second_dict_bits;
@@ -1253,12 +1253,12 @@ FL2LIB_API size_t FL2LIB_CALL FL2_getLevelParameters(int compressionLevel, int h
     return FL2_error_no_error;
 }
 
-static size_t FL2_memoryUsage_internal(size_t const dictionarySize, unsigned const bufferLog,
+static size_t FL2_memoryUsage_internal(size_t const dictionarySize, unsigned const bufferResize,
     unsigned const chainLog,
     FL2_strategy const strategy,
     unsigned const nbThreads)
 {
-    return RMF_memoryUsage(dictionarySize, bufferLog, nbThreads)
+    return RMF_memoryUsage(dictionarySize, bufferResize, nbThreads)
         + LZMA2_encMemoryUsage(chainLog, strategy, nbThreads);
 }
 
@@ -1276,7 +1276,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_estimateCCtxSize_byParams(const FL2_compressio
 {
     nbThreads = FL2_checkNbThreads(nbThreads);
     return FL2_memoryUsage_internal(params->dictionarySize,
-        params->bufferLog,
+        FL2_BUFFER_RESIZE_DEFAULT,
         params->chainLog,
         params->strategy,
         nbThreads);
@@ -1285,7 +1285,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_estimateCCtxSize_byParams(const FL2_compressio
 FL2LIB_API size_t FL2LIB_CALL FL2_estimateCCtxSize_usingCCtx(const FL2_CCtx * cctx)
 {
     return FL2_memoryUsage_internal(cctx->params.rParams.dictionary_size,
-        cctx->params.rParams.match_buffer_log,
+        cctx->params.rParams.match_buffer_resize,
         cctx->params.cParams.second_dict_bits,
         cctx->params.cParams.strategy,
         cctx->jobCount) + DICT_memUsage(&cctx->buf);

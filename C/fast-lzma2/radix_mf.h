@@ -24,14 +24,10 @@ typedef struct FL2_matchTable_s FL2_matchTable;
 
 #define RMF_MIN_BYTES_PER_THREAD 1024
 
-#define RMF_BUFFER_LOG_BASE 12
-#define RMF_BUFFER_LOG_MIN 6
-#define RMF_BUFFER_LOG_MAX 12
-
 typedef struct
 {
     size_t dictionary_size;
-    unsigned match_buffer_log;
+    unsigned match_buffer_resize;
     unsigned overlap_fraction;
     unsigned divide_and_conquer;
     unsigned depth;
@@ -56,7 +52,7 @@ void RMF_resetIncompleteBuild(FL2_matchTable* const tbl);
 int RMF_integrityCheck(const FL2_matchTable* const tbl, const BYTE* const data, size_t const index, size_t const end, unsigned const max_depth);
 void RMF_limitLengths(FL2_matchTable* const tbl, size_t const index);
 BYTE* RMF_getTableAsOutputBuffer(FL2_matchTable* const tbl, size_t const index);
-size_t RMF_memoryUsage(size_t const dict_size, unsigned const buffer_log, unsigned const thread_count);
+size_t RMF_memoryUsage(size_t const dict_size, unsigned const buffer_resize, unsigned const thread_count);
 
 #if defined (__cplusplus)
 }

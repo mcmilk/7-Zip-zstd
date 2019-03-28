@@ -19,8 +19,7 @@ extern "C" {
 #define kFastDistBits 12U
 
 #define LZMA2_END_MARKER '\0'
-#define LZMA_MIN_DICT_BITS 12
-#define ENC_MIN_BYTES_PER_THREAD 0x20000
+#define ENC_MIN_BYTES_PER_THREAD 0x1C000 /* Enough for 8 threads, 1 Mb dict, 2/16 overlap */
 
 
 typedef struct LZMA2_ECtx_s LZMA2_ECtx;
@@ -54,6 +53,8 @@ size_t LZMA2_encode(LZMA2_ECtx *const enc,
     int *const canceled);
 
 BYTE LZMA2_getDictSizeProp(size_t const dictionary_size);
+
+size_t LZMA2_compressBound(size_t src_size);
 
 size_t LZMA2_encMemoryUsage(unsigned const chain_log, FL2_strategy const strategy, unsigned const thread_count);
 

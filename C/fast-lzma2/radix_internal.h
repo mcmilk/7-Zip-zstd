@@ -96,6 +96,7 @@ struct FL2_matchTable_s
     int is_struct;
     int alloc_struct;
     unsigned thread_count;
+    size_t unreduced_dict_size;
     size_t progress;
     RMF_parameters params;
     RMF_builder** builders;

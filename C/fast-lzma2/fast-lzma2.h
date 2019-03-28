@@ -124,7 +124,6 @@ FL2LIB_API unsigned long long FL2LIB_CALL FL2_findDecompressedSize(const void *s
 
 
 /*======  Helper functions  ======*/
-#define FL2_COMPRESSBOUND(srcSize)   ((srcSize) + (((srcSize) + 0xFFF) / 0x1000) * 3 + 6)  /*!< calculates the maximum size of data stored in a sequence of uncompressed chunks */
 FL2LIB_API size_t      FL2LIB_CALL FL2_compressBound(size_t srcSize); /*!< maximum compressed size in worst case scenario */
 FL2LIB_API unsigned    FL2LIB_CALL FL2_isError(size_t code);          /*!< tells if a `size_t` function result is an error code */
 FL2LIB_API unsigned    FL2LIB_CALL FL2_isTimedOut(size_t code);       /*!< tells if a `size_t` function result is the timeout code */
@@ -461,8 +460,9 @@ FL2LIB_API size_t FL2LIB_CALL FL2_decompressStream(FL2_DStream* fds, FL2_outBuff
 #define FL2_BLOCK_OVERLAP_MAX 14
 #define FL2_RESET_INTERVAL_MIN 1
 #define FL2_RESET_INTERVAL_MAX 16  /* small enough to fit FL2_DICTSIZE_MAX * FL2_RESET_INTERVAL_MAX in 32-bit size_t */
-#define FL2_BUFFER_SIZE_LOG_MIN 0
-#define FL2_BUFFER_SIZE_LOG_MAX 6
+#define FL2_BUFFER_RESIZE_MIN 0
+#define FL2_BUFFER_RESIZE_MAX 4
+#define FL2_BUFFER_RESIZE_DEFAULT 2
 #define FL2_CHAINLOG_MIN       4
 #define FL2_CHAINLOG_MAX       14
 #define FL2_HYBRIDCYCLES_MIN    1
@@ -486,15 +486,13 @@ typedef enum {
 } FL2_strategy;
 
 typedef struct {
-    size_t   dictionarySize;   /* largest match distance : larger == more compression, more memory needed during decompression; >= 27 == more memory per byte, slower */
+    size_t   dictionarySize;   /* largest match distance : larger == more compression, more memory needed during decompression; > 64Mb == more memory per byte, slower */
     unsigned overlapFraction;  /* overlap between consecutive blocks in 1/16 units: larger == more compression, slower */
     unsigned chainLog;         /* HC3 sliding window : larger == more compression, slower; hybrid mode only (ultra) */
     unsigned cyclesLog;        /* nb of searches : larger == more compression, slower; hybrid mode only (ultra) */
     unsigned searchDepth;      /* maximum depth for resolving string matches : larger == more compression, slower */
-    unsigned fastLength;       /* acceptable match size for parser : larger == more compression, slower; fast bytes parameter from 7-zip */
+    unsigned fastLength;       /* acceptable match size for parser : larger == more compression, slower; fast bytes parameter from 7-Zip */
     unsigned divideAndConquer; /* split long chains of 2-byte matches into shorter chains with a small overlap : faster, somewhat less compression; enabled by default */
-    unsigned bufferLog;        /* buffer size for processing match chains is (dictionarySize >> (12 - bufferLog)) : affects compression when divideAndConquer enabled; */
-                               /* when divideAndConquer disabled, affects speed in a hardware-dependent manner */
     FL2_strategy strategy;     /* encoder strategy : fast, optimized or ultra (hybrid) */
 } FL2_compressionParameters;
 
@@ -521,11 +519,12 @@ typedef enum {
     FL2_p_resetInterval,    /* For multithreaded decompression. A dictionary reset will occur
                              * after each dictionarySize * resetInterval bytes of input.
                              * Default = 4 */
-    FL2_p_bufferLog,        /* Buffering speeds up the matchfinder. Buffer size is 
-                             * (dictionarySize >> (12 - bufferLog)) * 12 bytes. Higher number = slower,
-                             * better compression, higher memory usage. A CPU with a large memory cache
+    FL2_p_bufferResize,     /* Buffering speeds up the matchfinder. Buffer resize determines the percentage of
+                             * the normal buffer size used, which depends on dictionary size.
+                             * 0=50, 1=75, 2=100, 3=150, 4=200. Higher number = slower, better
+                             * compression, higher memory usage. A CPU with a large memory cache
                              * may make effective use of a larger buffer.
-                             * Default = 4 */
+                             * Default = 2 */
     FL2_p_hybridChainLog,   /* Size of the hybrid mode HC3 hash chain, as a power of 2.
                              * Resulting table size is (1 << (chainLog+2)) bytes.
                              * Larger tables result in better and slower compression.

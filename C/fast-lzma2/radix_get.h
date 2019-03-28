@@ -101,9 +101,7 @@ RMF_match RMF_getMatch(FL2_dataBlock block,
         size_t const length = GetMatchLength(tbl->table, index);
         size_t const dist = index - link - 1;
 
-        if (length > block.end - index) 
-            match.length = (U32)(block.end - index);
-        else if (length == max_depth || length == STRUCTURED_MAX_LENGTH /* from HandleRepeat */)
+        if (length == max_depth || length == STRUCTURED_MAX_LENGTH /* from HandleRepeat */)
             match.length = (U32)RMF_structuredExtendMatch(block.data, tbl->table, index, block.end, link, length);
         else
             match.length = (U32)length;
@@ -125,9 +123,7 @@ RMF_match RMF_getMatch(FL2_dataBlock block,
         link &= RADIX_LINK_MASK;
         size_t const dist = index - link - 1;
 
-        if (length > block.end - index)
-            match.length = (U32)(block.end - index);
-        else if (length == max_depth || length == BITPACK_MAX_LENGTH /* from HandleRepeat */)
+        if (length == max_depth || length == BITPACK_MAX_LENGTH /* from HandleRepeat */)
             match.length = (U32)RMF_bitpackExtendMatch(block.data, tbl->table, index, block.end, link, length);
         else
             match.length = (U32)length;
@@ -162,9 +158,7 @@ RMF_match RMF_getNextMatch(FL2_dataBlock block,
         if (link - 1 == GetMatchLink(tbl->table, index - 1))
             return match;
 
-        if (length > block.end - index)
-            match.length = (U32)(block.end - index);
-        else if (length == max_depth || length == STRUCTURED_MAX_LENGTH /* from HandleRepeat */)
+        if (length == max_depth || length == STRUCTURED_MAX_LENGTH /* from HandleRepeat */)
             match.length = (U32)RMF_structuredExtendMatch(block.data, tbl->table, index, block.end, link, length);
         else
             match.length = (U32)length;
@@ -190,9 +184,7 @@ RMF_match RMF_getNextMatch(FL2_dataBlock block,
         if (link - 1 == (tbl->table[index - 1] & RADIX_LINK_MASK))
             return match;
 
-        if (length > block.end - index)
-            match.length = (U32)(block.end - index);
-        else if (length == max_depth || length == BITPACK_MAX_LENGTH /* from HandleRepeat */)
+        if (length == max_depth || length == BITPACK_MAX_LENGTH /* from HandleRepeat */)
             match.length = (U32)RMF_bitpackExtendMatch(block.data, tbl->table, index, block.end, link, length);
         else
             match.length = (U32)length;
