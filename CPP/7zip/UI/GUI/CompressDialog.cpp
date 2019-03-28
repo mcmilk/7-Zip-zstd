@@ -1410,33 +1410,34 @@ typedef enum {
 } FL2_strategy;
 
 typedef struct {
-  UInt32   dictionarySize;   /* largest match distance : larger == more compression, more memory needed during decompression; >= 27 == more memory per byte, slower */
+  UInt32   dictionarySize;   /* largest match distance : larger == more compression, more memory needed during decompression; > 64Mb == more memory per byte, slower */
   unsigned overlapFraction;  /* overlap between consecutive blocks in 1/16 units: larger == more compression, slower */
-  unsigned chainLog;         /* fully searched segment : larger == more compression, slower, more memory; hybrid mode only (ultra) */
-  unsigned searchLog;        /* nb of searches : larger == more compression, slower; hybrid mode only (ultra) */
-  unsigned searchDepth;      /* maximum depth for resolving string matches : larger == more compression, slower; >= 64 == more memory, slower */
-  unsigned fastLength;       /* acceptable match size for parser, not less than searchDepth : larger == more compression, slower; fast bytes parameter from 7-zip */
+  unsigned chainLog;         /* HC3 sliding window : larger == more compression, slower; hybrid mode only (ultra) */
+  unsigned cyclesLog;        /* nb of searches : larger == more compression, slower; hybrid mode only (ultra) */
+  unsigned searchDepth;      /* maximum depth for resolving string matches : larger == more compression, slower */
+  unsigned fastLength;       /* acceptable match size for parser : larger == more compression, slower; fast bytes parameter from 7-Zip */
   unsigned divideAndConquer; /* split long chains of 2-byte matches into shorter chains with a small overlap : faster, somewhat less compression; enabled by default */
-  unsigned bufferLog;        /* buffer size for processing match chains is (dictionaryLog - bufferLog) : when divideAndConquer enabled, affects compression; */
-                             /* when divideAndConquer disabled, affects speed in a hardware-dependent manner */
   FL2_strategy strategy;     /* encoder strategy : fast, optimized or ultra (hybrid) */
 } FL2_compressionParameters;
 
 #define FL2_MAX_7Z_CLEVEL 9
+#define MATCH_BUFFER_SHIFT 8;
+#define MATCH_BUFFER_ELBOW_BITS 17
+#define MATCH_BUFFER_ELBOW (1UL << MATCH_BUFFER_ELBOW_BITS)
 
 #define MB *(1U<<20)
 
 static const FL2_compressionParameters FL2_7zCParameters[FL2_MAX_7Z_CLEVEL + 1] = {
-  { 0,0,0,0,0,0,0,0,FL2_fast },
-  { 1 MB, 1, 7, 0, 6, 32, 1, 4, FL2_fast }, /* 1 */
-  { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_fast }, /* 2 */
-  { 2 MB, 2, 7, 0, 10, 32, 1, 4, FL2_opt }, /* 3 */
-  { 4 MB, 2, 7, 0, 14, 32, 1, 4, FL2_opt }, /* 4 */
-  { 16 MB, 2, 9, 0, 42, 48, 1, 4, FL2_ultra }, /* 5 */
-  { 32 MB, 2, 10, 0, 50, 64, 1, 4, FL2_ultra }, /* 6 */
-  { 64 MB, 2, 11, 1, 62, 96, 1, 3, FL2_ultra }, /* 7 */
-  { 64 MB, 4, 12, 2, 90, 273, 1, 3, FL2_ultra }, /* 8 */
-  { 128 MB, 2, 14, 3, 254, 273, 0, 2, FL2_ultra } /* 9 */
+  { 0,0,0,0,0,0,0,FL2_fast },
+  { 1 MB, 1, 7, 0, 6, 32, 1, FL2_fast }, /* 1 */
+  { 2 MB, 2, 7, 0, 10, 32, 1, FL2_fast }, /* 2 */
+  { 2 MB, 2, 7, 0, 10, 32, 1, FL2_opt }, /* 3 */
+  { 4 MB, 2, 7, 0, 14, 32, 1, FL2_opt }, /* 4 */
+  { 16 MB, 2, 9, 0, 42, 48, 1, FL2_ultra }, /* 5 */
+  { 32 MB, 2, 10, 0, 50, 64, 1, FL2_ultra }, /* 6 */
+  { 64 MB, 2, 11, 1, 62, 96, 1, FL2_ultra }, /* 7 */
+  { 64 MB, 4, 12, 2, 90, 273, 1, FL2_ultra }, /* 8 */
+  { 128 MB, 2, 14, 3, 254, 273, 0, FL2_ultra } /* 9 */
 };
 
 #undef MB
@@ -2026,7 +2027,16 @@ UInt64 CCompressDialog::GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory)
         level = FL2_MAX_7Z_CLEVEL;
       /* dual buffer is enabled in Lzma2Encoder.cpp so size is dict * 6 */
       size += dict * 6 + (1UL << 18) * numThreads;
-      UInt32 bufSize = dict >> (12 - FL2_7zCParameters[level].bufferLog);
+      UInt32 bufSize = dict >> MATCH_BUFFER_SHIFT;
+      if (bufSize > MATCH_BUFFER_ELBOW) {
+        UInt32 extra = 0;
+        unsigned n = MATCH_BUFFER_ELBOW_BITS - 1;
+        for (; (4UL << n) <= bufSize; ++n)
+          extra += MATCH_BUFFER_ELBOW >> 4;
+        if ((3UL << n) <= bufSize)
+          extra += MATCH_BUFFER_ELBOW >> 5;
+        bufSize = MATCH_BUFFER_ELBOW + extra;
+      }
       size += (bufSize * 12 + RMF_BUILDER_SIZE) * numThreads;
       if (dict > (UInt32(1) << 26))
         size += dict;
