@@ -120,7 +120,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 
   return SResToHRESULT(res);
 }
-  
+
 static HRESULT TranslateError(size_t res)
 {
   if (FL2_getErrorCode(res) == FL2_error_memory_allocation)
@@ -181,7 +181,7 @@ HRESULT CFastEncoder::FastLzma2::SetCoderProperties(const PROPID *propIDs, const
   if (!dictSize) {
     dictSize = (UInt32)FL2_CCtx_getParameter(fcs, FL2_p_dictionarySize);
   }
-  size_t reduceSize = lzma2Props.lzmaProps.reduceSize;
+  UInt64 reduceSize = lzma2Props.lzmaProps.reduceSize;
   reduceSize += (reduceSize < (UInt64)-1); /* prevent extra buffer shift after read */
   dictSize = (UInt32)min(dictSize, reduceSize);
   dictSize = max(dictSize, FL2_DICTSIZE_MIN);
@@ -242,9 +242,12 @@ HRESULT CFastEncoder::FastLzma2::AddByteCount(size_t count, ISequentialOutStream
     CHECK_H(WaitAndReport(res, progress));
     if (res != 0)
       CHECK_H(WriteBuffers(outStream));
-    do {
+    res = FL2_getDictionaryBuffer(fcs, &dict);
+    while (FL2_isTimedOut(res)) {
+      if (!UpdateProgress(progress))
+        return S_FALSE;
       res = FL2_getDictionaryBuffer(fcs, &dict);
-    } while (FL2_isTimedOut(res));
+    }
     CHECK_S(res);
     dict_pos = 0;
   }
@@ -272,10 +275,10 @@ HRESULT CFastEncoder::FastLzma2::WriteBuffers(ISequentialOutStream *outStream)
   size_t csize;
   for (;;) {
     FL2_cBuffer cbuf;
-	do {
-		csize = FL2_getNextCompressedBuffer(fcs, &cbuf);
-	} while (FL2_isTimedOut(csize));
-	CHECK_S(csize);
+    do {
+      csize = FL2_getNextCompressedBuffer(fcs, &cbuf);
+    } while (FL2_isTimedOut(csize));
+    CHECK_S(csize);
     if (csize == 0)
       break;
     HRESULT err = WriteStream(outStream, cbuf.src, cbuf.size);
