@@ -6,3 +6,19 @@
 *.pch
 *.exp
 *.lib
+
+# fast-lzma2 dir junction
+C/fast-lzma2/.gitattributes
+C/fast-lzma2/.gitignore
+C/fast-lzma2/README.md
+C/fast-lzma2/*.txt
+C/fast-lzma2/lzma_dec*
+C/fast-lzma2/lzma2_dec*
+C/fast-lzma2/xx*
+C/fast-lzma2/fl2_decompress*
+C/fast-lzma2/bench
+C/fast-lzma2/build
+C/fast-lzma2/dll
+C/fast-lzma2/doc
+C/fast-lzma2/tests
+C/fast-lzma2/.git
