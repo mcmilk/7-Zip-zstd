@@ -10,6 +10,7 @@
 #include "../Common/StreamUtils.h"
 
 #include "Lzma2Encoder.h"
+#pragma warning(disable : 4127)
 
 namespace NCompress {
 
