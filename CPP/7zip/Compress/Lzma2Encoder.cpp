@@ -121,6 +121,10 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   return SResToHRESULT(res);
 }
 
+
+// Fast LZMA2 encoder
+
+
 static HRESULT TranslateError(size_t res)
 {
   if (FL2_getErrorCode(res) == FL2_error_memory_allocation)
@@ -298,7 +302,7 @@ HRESULT CFastEncoder::FastLzma2::End(ISequentialOutStream *outStream, ICompressP
   size_t res = FL2_endStream(fcs, nullptr);
   CHECK_H(WaitAndReport(res, progress));
   while (res) {
-    WriteBuffers(outStream);
+    CHECK_H(WriteBuffers(outStream));
     res = FL2_endStream(fcs, nullptr);
     CHECK_H(WaitAndReport(res, progress));
   }
