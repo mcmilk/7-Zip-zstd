@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 19.00 ZS v1.3.8 R2 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2019 Tino Reichardt : 2019-03-05
+7-Zip 19.00 ZS v1.3.8 R3 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2019 Tino Reichardt : 2019-03-05
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -282,7 +282,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.3.8
 
-/TR 2019-03-05
+/TR 2019-03-29
 
 ## Notes
 
