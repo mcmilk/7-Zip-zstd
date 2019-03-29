@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
+ * Modified for FL2 by Conor McCarthy
  *
  * This source code is licensed under both the BSD-style license (found in the
  * LICENSE file in the root directory of this source tree) and the GPLv2 (found
@@ -8,13 +9,15 @@
  * You may select, at your option, one of the above-listed licenses.
  */
 
-#ifndef ZSTD_COMPILER_H
-#define ZSTD_COMPILER_H
+#ifndef FL2_COMPILER_H
+#define FL2_COMPILER_H
 
 /*-*******************************************************
 *  Compiler specifics
 *********************************************************/
 /* force inlining */
+
+#if !defined(FL2_NO_INLINE)
 #if defined (__GNUC__) || defined(__cplusplus) || defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
 #  define INLINE_KEYWORD inline
 #else
@@ -27,6 +30,13 @@
 #  define FORCE_INLINE_ATTR __forceinline
 #else
 #  define FORCE_INLINE_ATTR
+#endif
+
+#else
+
+#define INLINE_KEYWORD
+#define FORCE_INLINE_ATTR
+
 #endif
 
 /**
@@ -54,24 +64,69 @@
 
 /* force no inlining */
 #ifdef _MSC_VER
-#  define FORCE_NOINLINE static __declspec(noinline)
+#  define FORCE_NOINLINE __declspec(noinline)
 #else
 #  ifdef __GNUC__
-#    define FORCE_NOINLINE static __attribute__((__noinline__))
+#    define FORCE_NOINLINE __attribute__((__noinline__))
 #  else
-#    define FORCE_NOINLINE static
+#    define FORCE_NOINLINE
 #  endif
 #endif
 
-/* prefetch */
-#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86))  /* _mm_prefetch() is not defined outside of x86/x64 */
-#  include <mmintrin.h>   /* https://msdn.microsoft.com/fr-fr/library/84szxsww(v=vs.90).aspx */
-#  define PREFETCH(ptr)   _mm_prefetch((const char*)ptr, _MM_HINT_T0)
-#elif defined(__GNUC__)
-#  define PREFETCH(ptr)   __builtin_prefetch(ptr, 0, 0)
-#else
-#  define PREFETCH(ptr)   /* disabled */
+/* target attribute */
+#ifndef __has_attribute
+  #define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */
 #endif
+#if defined(__GNUC__)
+#  define TARGET_ATTRIBUTE(target) __attribute__((__target__(target)))
+#else
+#  define TARGET_ATTRIBUTE(target)
+#endif
+
+/* Enable runtime BMI2 dispatch based on the CPU.
+ * Enabled for clang & gcc >=4.8 on x86 when BMI2 isn't enabled by default.
+ */
+#ifndef DYNAMIC_BMI2
+  #if ((defined(__clang__) && __has_attribute(__target__)) \
+      || (defined(__GNUC__) \
+          && (__GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)))) \
+      && (defined(__x86_64__) || defined(_M_X86)) \
+      && !defined(__BMI2__)
+  #  define DYNAMIC_BMI2 1
+  #else
+  #  define DYNAMIC_BMI2 0
+  #endif
+#endif
+
+/* prefetch
+ * can be disabled, by declaring NO_PREFETCH build macro */
+#if defined(NO_PREFETCH)
+#  define PREFETCH_L1(ptr)  (void)(ptr)  /* disabled */
+#  define PREFETCH_L2(ptr)  (void)(ptr)  /* disabled */
+#else
+#  if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86))  /* _mm_prefetch() is not defined outside of x86/x64 */
+#    include <mmintrin.h>   /* https://msdn.microsoft.com/fr-fr/library/84szxsww(v=vs.90).aspx */
+#    define PREFETCH_L1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
+#    define PREFETCH_L2(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T1)
+#  elif defined(__GNUC__) && ( (__GNUC__ >= 4) || ( (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1) ) )
+#    define PREFETCH_L1(ptr)  __builtin_prefetch((ptr), 0 /* rw==read */, 3 /* locality */)
+#    define PREFETCH_L2(ptr)  __builtin_prefetch((ptr), 0 /* rw==read */, 2 /* locality */)
+#  else
+#    define PREFETCH_L1(ptr) (void)(ptr)  /* disabled */
+#    define PREFETCH_L2(ptr) (void)(ptr)  /* disabled */
+#  endif
+#endif  /* NO_PREFETCH */
+
+#define CACHELINE_SIZE 64
+
+#define PREFETCH_AREA(p, s)  {            \
+    const char* const _ptr = (const char*)(p);  \
+    size_t const _size = (size_t)(s);     \
+    size_t _pos;                          \
+    for (_pos=0; _pos<_size; _pos+=CACHELINE_SIZE) {  \
+        PREFETCH_L2(_ptr + _pos);         \
+    }                                     \
+}
 
 /* disable warnings */
 #ifdef _MSC_VER    /* Visual Studio */
@@ -83,4 +138,4 @@
 #  pragma warning(disable : 4324)        /* disable: C4324: padded structure */
 #endif
 
-#endif /* ZSTD_COMPILER_H */
+#endif /* FL2_COMPILER_H */

@@ -9,7 +9,7 @@
 */
 
 #include "mem.h"          /* U32, U64 */
-#include "fl2threading.h"
+#include "fl2_threading.h"
 #include "fl2_internal.h"
 #include "radix_internal.h"
 
@@ -34,7 +34,7 @@ typedef struct FL2_matchTable_s FL2_matchTable;
 
 #define SetMatchLength(index, link, length) ((RMF_unit*)tbl->table)[(index) >> UNIT_BITS].lengths[(index) & UNIT_MASK] = (BYTE)(length)
 
-#define SetMatchLinkAndLength(index, link, length) { size_t i_ = (index) >> UNIT_BITS, u_ = (index) & UNIT_MASK; ((RMF_unit*)tbl->table)[i_].links[u_] = (U32)(link); ((RMF_unit*)tbl->table)[i_].lengths[u_] = (BYTE)(length); }
+#define SetMatchLinkAndLength(index, link, length) do { size_t i_ = (index) >> UNIT_BITS, u_ = (index) & UNIT_MASK; ((RMF_unit*)tbl->table)[i_].links[u_] = (U32)(link); ((RMF_unit*)tbl->table)[i_].lengths[u_] = (BYTE)(length); } while(0)
 
 #define SetNull(index) ((RMF_unit*)tbl->table)[(index) >> UNIT_BITS].links[(index) & UNIT_MASK] = RADIX_NULL_LINK
 

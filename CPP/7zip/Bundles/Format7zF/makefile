@@ -121,15 +121,16 @@ ZSTDMT_OBJS = \
   $O\zstd-mt_threading.obj \
 
 FASTLZMA2_OBJS = \
-  $O\fl2_error_private.obj \
-  $O\fl2pool.obj \
-  $O\fl2threading.obj \
+  $O\dict_buffer.obj \
   $O\fl2_common.obj \
   $O\fl2_compress.obj \
+  $O\fl2_pool.obj \
+  $O\fl2_threading.obj \
   $O\lzma2_enc.obj \
   $O\radix_bitpack.obj \
   $O\radix_mf.obj \
   $O\radix_struct.obj \
   $O\range_enc.obj \
+  $O\util.obj \
 
 !include "../../7zip.mak"

@@ -28,21 +28,23 @@ extern "C" {
  *         only static linking is allowed
  ******************************************/
 typedef enum {
-  FL2_error_no_error = 0,
-  FL2_error_GENERIC  = 1,
-  FL2_error_internal = 2,
-  FL2_error_corruption_detected = 3,
-  FL2_error_checksum_wrong      = 4,
+  FL2_error_no_error                = 0,
+  FL2_error_GENERIC                 = 1,
+  FL2_error_internal                = 2,
+  FL2_error_corruption_detected     = 3,
+  FL2_error_checksum_wrong          = 4,
   FL2_error_parameter_unsupported   = 5,
   FL2_error_parameter_outOfBound    = 6,
-  FL2_error_stage_wrong       = 7,
-  FL2_error_init_missing      = 8,
-  FL2_error_memory_allocation = 9,
-  FL2_error_dstSize_tooSmall = 10,
-  FL2_error_srcSize_wrong    = 11,
-  FL2_error_write_failed     = 12,
-  FL2_error_canceled         = 13,
-  FL2_error_maxCode = 20  /* never EVER use this value directly, it can change in future versions! Use FL2_isError() instead */
+  FL2_error_lclpMax_exceeded        = 7,
+  FL2_error_stage_wrong             = 8,
+  FL2_error_init_missing            = 9,
+  FL2_error_memory_allocation       = 10,
+  FL2_error_dstSize_tooSmall        = 11,
+  FL2_error_srcSize_wrong           = 12,
+  FL2_error_canceled                = 13,
+  FL2_error_buffer                  = 14,
+  FL2_error_timedOut                = 15,
+  FL2_error_maxCode                 = 20  /* never EVER use this value directly, it can change in future versions! Use FL2_isError() instead */
 } FL2_ErrorCode;
 
 /*! FL2_getErrorCode() :

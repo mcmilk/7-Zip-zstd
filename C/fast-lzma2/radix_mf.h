@@ -20,16 +20,15 @@ extern "C" {
 
 typedef struct FL2_matchTable_s FL2_matchTable;
 
-#define OVERLAP_FROM_DICT_LOG(d, o) (((size_t)1 << ((d) - 4)) * (o))
+#define OVERLAP_FROM_DICT_SIZE(d, o) (((d) >> 4) * (o))
 
 #define RMF_MIN_BYTES_PER_THREAD 1024
 
 typedef struct
 {
-    unsigned dictionary_log;
-    unsigned match_buffer_log;
+    size_t dictionary_size;
+    unsigned match_buffer_resize;
     unsigned overlap_fraction;
-    unsigned block_size_log;
     unsigned divide_and_conquer;
     unsigned depth;
 #ifdef RMF_REFERENCE
@@ -42,16 +41,18 @@ void RMF_freeMatchTable(FL2_matchTable* const tbl);
 BYTE RMF_compatibleParameters(const FL2_matchTable* const tbl, const RMF_parameters* const params, size_t const dict_reduce);
 size_t RMF_applyParameters(FL2_matchTable* const tbl, const RMF_parameters* const params, size_t const dict_reduce);
 size_t RMF_threadCount(const FL2_matchTable * const tbl);
-size_t RMF_initTable(FL2_matchTable* const tbl, const void* const data, size_t const start, size_t const end);
+void RMF_initProgress(FL2_matchTable * const tbl);
+size_t RMF_initTable(FL2_matchTable* const tbl, const void* const data, size_t const end);
 int RMF_buildTable(FL2_matchTable* const tbl,
 	size_t const job,
     unsigned const multi_thread,
-    FL2_dataBlock const block,
-    FL2_progressFn progress, void* opaque, U32 weight, size_t init_done);
+    FL2_dataBlock const block);
+void RMF_cancelBuild(FL2_matchTable* const tbl);
+void RMF_resetIncompleteBuild(FL2_matchTable* const tbl);
 int RMF_integrityCheck(const FL2_matchTable* const tbl, const BYTE* const data, size_t const index, size_t const end, unsigned const max_depth);
 void RMF_limitLengths(FL2_matchTable* const tbl, size_t const index);
 BYTE* RMF_getTableAsOutputBuffer(FL2_matchTable* const tbl, size_t const index);
-size_t RMF_memoryUsage(unsigned const dict_log, unsigned const buffer_log, unsigned const depth, unsigned thread_count);
+size_t RMF_memoryUsage(size_t const dict_size, unsigned const buffer_resize, unsigned const thread_count);
 
 #if defined (__cplusplus)
 }
