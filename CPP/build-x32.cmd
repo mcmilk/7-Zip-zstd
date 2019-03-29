@@ -11,93 +11,93 @@ set LFLAGS=/SUBSYSTEM:WINDOWS,"5.01"
 cd %ROOT%\Bundles\Format7zExtract
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7zxa.dll" >> %ERRFILE%
-copy x86\7zxa.dll %OUTDIR%\7zxa.dll
+copy o\7zxa.dll %OUTDIR%\7zxa.dll
 
 cd %ROOT%\Bundles\Format7z
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7za.dll" >> %ERRFILE%
-copy x86\7za.dll %OUTDIR%\7za.dll
+copy o\7za.dll %OUTDIR%\7za.dll
 
 cd %ROOT%\Bundles\Format7zF
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7z.dll" >> %ERRFILE%
-copy x86\7z.dll %OUTDIR%\7z.dll
+copy o\7z.dll %OUTDIR%\7z.dll
 
 cd %ROOT%\UI\FileManager
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7zFM.exe" >> %ERRFILE%
-copy x86\7zFM.exe %OUTDIR%\7zFM.exe
+copy o\7zFM.exe %OUTDIR%\7zFM.exe
 
 cd %ROOT%\UI\GUI
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7zG.exe" >> %ERRFILE%
-copy x86\7zG.exe %OUTDIR%\7zG.exe
+copy o\7zG.exe %OUTDIR%\7zG.exe
 
 cd %ROOT%\UI\Explorer
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7-zip.dll" >> %ERRFILE%
-copy x86\7-zip.dll %OUTDIR%\7-zip.dll
+copy o\7-zip.dll %OUTDIR%\7-zip.dll
 
 cd %ROOT%\Bundles\SFXWin
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7z.sfx" >> %ERRFILE%
-copy x86\7z.sfx %OUTDIR%\7z.sfx
+copy o\7z.sfx %OUTDIR%\7z.sfx
 
 cd %ROOT%\Bundles\Codec_brotli
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ brotli-x32.dll" >> %ERRFILE%
-copy x86\brotli.dll %OUTDIR%\brotli-x32.dll
+copy o\brotli.dll %OUTDIR%\brotli-x32.dll
 
 cd %ROOT%\Bundles\Codec_lizard
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ lizard-x32.dll" >> %ERRFILE%
-copy x86\lizard.dll %OUTDIR%\lizard-x32.dll
+copy o\lizard.dll %OUTDIR%\lizard-x32.dll
 
 cd %ROOT%\Bundles\Codec_lz4
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ lz4-x32.dll" >> %ERRFILE%
-copy x86\lz4.dll %OUTDIR%\lz4-x32.dll
+copy o\lz4.dll %OUTDIR%\lz4-x32.dll
 
 cd %ROOT%\Bundles\Codec_lz5
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ lz5-x32.dll" >> %ERRFILE%
-copy x86\lz5.dll %OUTDIR%\lz5-x32.dll
+copy o\lz5.dll %OUTDIR%\lz5-x32.dll
 
 cd %ROOT%\Bundles\Codec_zstd
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ zstd-x32.dll" >> %ERRFILE%
-copy x86\zstd.dll %OUTDIR%\zstd-x32.dll
+copy o\zstd.dll %OUTDIR%\zstd-x32.dll
 
 cd %ROOT%\Bundles\Codec_flzma2
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ flzma2-x32.dll" >> %ERRFILE%
-copy x86\flzma2.dll %OUTDIR%\flzma2-x32.dll
+copy o\flzma2.dll %OUTDIR%\flzma2-x32.dll
 
 cd %ROOT%\..\..\C\Util\7zipInstall
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ Install-x32.exe" >> %ERRFILE%
-copy x86\7zipInstall.exe %OUTDIR%\Install-x32.exe
+copy o\7zipInstall.exe %OUTDIR%\Install-x32.exe
 
 cd %ROOT%\..\..\C\Util\7zipUninstall
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ Uninstall.exe" >> %ERRFILE%
-copy x86\7zipUninstall.exe %OUTDIR%\Uninstall.exe
+copy o\7zipUninstall.exe %OUTDIR%\Uninstall.exe
 
 set LFLAGS=/SUBSYSTEM:CONSOLE,"5.01"
 cd %ROOT%\UI\Console
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7z.exe" >> %ERRFILE%
-copy x86\7z.exe %OUTDIR%\7z.exe
+copy o\7z.exe %OUTDIR%\7z.exe
 
 cd %ROOT%\Bundles\SFXCon
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7zCon.sfx" >> %ERRFILE%
-copy x86\7zCon.sfx %OUTDIR%\7zCon.sfx
+copy o\7zCon.sfx %OUTDIR%\7zCon.sfx
 
 cd %ROOT%\Bundles\Alone
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x32 @ 7za.exe" >> %ERRFILE%
-copy x86\7za.exe %OUTDIR%\7za.exe
+copy o\7za.exe %OUTDIR%\7za.exe
 
 :ende
 cd %ROOT%\..

@@ -1,7 +1,7 @@
 @echo off
 
 ren Asm\arm arm_
-FOR /R .\ %%d IN (arm x64 x86) DO rd /S /Q %%d 2>NUL
+FOR /R .\ %%d IN (arm x64 o) DO rd /S /Q %%d 2>NUL
 ren Asm\arm_ arm
 
 del "CPP\7zip\*.7z" 2>NUL
