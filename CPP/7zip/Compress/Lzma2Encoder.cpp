@@ -146,6 +146,9 @@ static HRESULT TranslateError(size_t res)
 
 #define CHECK_P(f) if (FL2_isError(f)) return E_INVALIDARG;  /* check and convert error code */
 
+#define MIN_BLOCK_SIZE (1U << 20)
+#define MAX_BLOCK_SIZE (1U << 28)
+
 CFastEncoder::FastLzma2::FastLzma2()
   : fcs(NULL),
   dict_pos(0)
@@ -203,6 +206,18 @@ HRESULT CFastEncoder::FastLzma2::SetCoderProperties(const PROPID *propIDs, const
     CHECK_P(FL2_CCtx_setParameter(fcs, FL2_p_literalPosBits, lzma2Props.lzmaProps.lp));
   if (lzma2Props.lzmaProps.pb >= 0)
     CHECK_P(FL2_CCtx_setParameter(fcs, FL2_p_posBits, lzma2Props.lzmaProps.pb));
+  if (lzma2Props.blockSize == 0)
+    lzma2Props.blockSize = min(max(MIN_BLOCK_SIZE, dictSize * 4U), MAX_BLOCK_SIZE);
+  else if (lzma2Props.blockSize == LZMA2_ENC_PROPS__BLOCK_SIZE__SOLID)
+    lzma2Props.blockSize = 0;
+  unsigned r = 0;
+  if (lzma2Props.blockSize != 0) {
+    r = 1;
+    // Do not exceed the block size. TODO: the lib should support setting a value instead of a multiplier.
+    while (r < FL2_RESET_INTERVAL_MAX && (r + 1) * (UInt64)dictSize <= lzma2Props.blockSize)
+      ++r;
+  }
+  CHECK_P(FL2_CCtx_setParameter(fcs, FL2_p_resetInterval, r));
   FL2_CCtx_setParameter(fcs, FL2_p_omitProperties, 1);
   FL2_setCStreamTimeout(fcs, 500);
   return S_OK;
