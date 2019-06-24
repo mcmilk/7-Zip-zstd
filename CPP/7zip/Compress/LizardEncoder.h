@@ -24,7 +24,7 @@ struct CProps
     memset(this, 0, sizeof (*this));
     _ver_major = LIZARD_VERSION_MAJOR;
     _ver_minor = LIZARD_VERSION_MINOR;
-    _level = 3;
+    _level = LIZARDMT_LEVEL_MIN;
   }
 
   Byte _ver_major;
