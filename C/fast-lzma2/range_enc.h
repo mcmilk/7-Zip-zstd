@@ -16,9 +16,9 @@ extern "C" {
 #endif
 
 #ifdef LZMA_ENC_PROB32
-typedef U32 Probability;
+typedef U32 LZMA2_prob;
 #else
-typedef U16 Probability;
+typedef U16 LZMA2_prob;
 #endif
 
 #define kNumTopBits 24U
@@ -44,27 +44,27 @@ typedef struct
 	U64 low;
 	U32 range;
 	BYTE cache;
-} RangeEncoder;
+} RC_encoder;
 
-void RC_reset(RangeEncoder* const rc);
+void RC_reset(RC_encoder* const rc);
 
-void RC_setOutputBuffer(RangeEncoder* const rc, BYTE *const out_buffer);
+void RC_setOutputBuffer(RC_encoder* const rc, BYTE *const out_buffer);
 
-void FORCE_NOINLINE RC_shiftLow(RangeEncoder* const rc);
+void FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc);
 
-void RC_encodeBitTree(RangeEncoder* const rc, Probability *const probs, unsigned bit_count, unsigned symbol);
+void RC_encodeBitTree(RC_encoder* const rc, LZMA2_prob *const probs, unsigned bit_count, unsigned symbol);
 
-void RC_encodeBitTreeReverse(RangeEncoder* const rc, Probability *const probs, unsigned bit_count, unsigned symbol);
+void RC_encodeBitTreeReverse(RC_encoder* const rc, LZMA2_prob *const probs, unsigned bit_count, unsigned symbol);
 
-void FORCE_NOINLINE RC_encodeDirect(RangeEncoder* const rc, unsigned value, unsigned bit_count);
+void FORCE_NOINLINE RC_encodeDirect(RC_encoder* const rc, unsigned value, unsigned bit_count);
 
 HINT_INLINE
-void RC_encodeBit0(RangeEncoder* const rc, Probability *const rprob)
+void RC_encodeBit0(RC_encoder* const rc, LZMA2_prob *const rprob)
 {
 	unsigned prob = *rprob;
     rc->range = (rc->range >> kNumBitModelTotalBits) * prob;
 	prob += (kBitModelTotal - prob) >> kNumMoveBits;
-	*rprob = (Probability)prob;
+	*rprob = (LZMA2_prob)prob;
 	if (rc->range < kTopValue) {
         rc->range <<= 8;
 		RC_shiftLow(rc);
@@ -72,14 +72,14 @@ void RC_encodeBit0(RangeEncoder* const rc, Probability *const rprob)
 }
 
 HINT_INLINE
-void RC_encodeBit1(RangeEncoder* const rc, Probability *const rprob)
+void RC_encodeBit1(RC_encoder* const rc, LZMA2_prob *const rprob)
 {
 	unsigned prob = *rprob;
 	U32 new_bound = (rc->range >> kNumBitModelTotalBits) * prob;
     rc->low += new_bound;
     rc->range -= new_bound;
 	prob -= prob >> kNumMoveBits;
-	*rprob = (Probability)prob;
+	*rprob = (LZMA2_prob)prob;
 	if (rc->range < kTopValue) {
         rc->range <<= 8;
 		RC_shiftLow(rc);
@@ -87,7 +87,7 @@ void RC_encodeBit1(RangeEncoder* const rc, Probability *const rprob)
 }
 
 HINT_INLINE
-void RC_encodeBit(RangeEncoder* const rc, Probability *const rprob, unsigned const bit)
+void RC_encodeBit(RC_encoder* const rc, LZMA2_prob *const rprob, unsigned const bit)
 {
 	unsigned prob = *rprob;
 	if (bit != 0) {
@@ -100,7 +100,7 @@ void RC_encodeBit(RangeEncoder* const rc, Probability *const rprob, unsigned con
         rc->range = (rc->range >> kNumBitModelTotalBits) * prob;
 		prob += (kBitModelTotal - prob) >> kNumMoveBits;
 	}
-	*rprob = (Probability)prob;
+	*rprob = (LZMA2_prob)prob;
 	if (rc->range < kTopValue) {
         rc->range <<= 8;
 		RC_shiftLow(rc);
@@ -117,7 +117,7 @@ void RC_encodeBit(RangeEncoder* const rc, Probability *const rprob, unsigned con
 #define kMinLitPrice 8U
 
 HINT_INLINE
-unsigned RC_getTreePrice(const Probability* const prob_table, unsigned bit_count, size_t symbol)
+unsigned RC_getTreePrice(const LZMA2_prob* const prob_table, unsigned bit_count, size_t symbol)
 {
 	unsigned price = 0;
     symbol |= ((size_t)1 << bit_count);
@@ -132,7 +132,7 @@ unsigned RC_getTreePrice(const Probability* const prob_table, unsigned bit_count
 }
 
 HINT_INLINE
-unsigned RC_getReverseTreePrice(const Probability* const prob_table, unsigned bit_count, size_t symbol)
+unsigned RC_getReverseTreePrice(const LZMA2_prob* const prob_table, unsigned bit_count, size_t symbol)
 {
     unsigned prob = prob_table[1];
     size_t bit = symbol & 1;
@@ -149,7 +149,7 @@ unsigned RC_getReverseTreePrice(const Probability* const prob_table, unsigned bi
 }
 
 HINT_INLINE
-void RC_flush(RangeEncoder* const rc)
+void RC_flush(RC_encoder* const rc)
 {
     for (int i = 0; i < 5; ++i)
         RC_shiftLow(rc);

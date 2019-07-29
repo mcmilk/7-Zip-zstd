@@ -49,9 +49,9 @@ static size_t RMF_bitpackExtendMatch(const BYTE* const data,
     return end_index - start_index;
 }
 
-#define GetMatchLink(table, index) ((const RMF_unit*)(table))[(index) >> UNIT_BITS].links[(index) & UNIT_MASK]
+#define GetMatchLink(table, pos) ((const RMF_unit*)(table))[(pos) >> UNIT_BITS].links[(pos) & UNIT_MASK]
 
-#define GetMatchLength(table, index) ((const RMF_unit*)(table))[(index) >> UNIT_BITS].lengths[(index) & UNIT_MASK]
+#define GetMatchLength(table, pos) ((const RMF_unit*)(table))[(pos) >> UNIT_BITS].lengths[(pos) & UNIT_MASK]
 
 static size_t RMF_structuredExtendMatch(const BYTE* const data,
     const U32* const table,
@@ -86,11 +86,11 @@ RMF_match RMF_getMatch(FL2_dataBlock block,
     FL2_matchTable* tbl,
     unsigned max_depth,
     int structTbl,
-    size_t index)
+    size_t pos)
 {
     if (structTbl)
     {
-        U32 const link = GetMatchLink(tbl->table, index);
+        U32 const link = GetMatchLink(tbl->table, pos);
 
         RMF_match match;
         match.length = 0;
@@ -98,11 +98,11 @@ RMF_match RMF_getMatch(FL2_dataBlock block,
         if (link == RADIX_NULL_LINK)
             return match;
 
-        size_t const length = GetMatchLength(tbl->table, index);
-        size_t const dist = index - link - 1;
+        size_t const length = GetMatchLength(tbl->table, pos);
+        size_t const dist = pos - link - 1;
 
         if (length == max_depth || length == STRUCTURED_MAX_LENGTH /* from HandleRepeat */)
-            match.length = (U32)RMF_structuredExtendMatch(block.data, tbl->table, index, block.end, link, length);
+            match.length = (U32)RMF_structuredExtendMatch(block.data, tbl->table, pos, block.end, link, length);
         else
             match.length = (U32)length;
 
@@ -111,7 +111,7 @@ RMF_match RMF_getMatch(FL2_dataBlock block,
         return match;
     }
     else {
-        U32 link = tbl->table[index];
+        U32 link = tbl->table[pos];
 
         RMF_match match;
         match.length = 0;
@@ -121,10 +121,10 @@ RMF_match RMF_getMatch(FL2_dataBlock block,
 
         size_t const length = link >> RADIX_LINK_BITS;
         link &= RADIX_LINK_MASK;
-        size_t const dist = index - link - 1;
+        size_t const dist = pos - link - 1;
 
         if (length == max_depth || length == BITPACK_MAX_LENGTH /* from HandleRepeat */)
-            match.length = (U32)RMF_bitpackExtendMatch(block.data, tbl->table, index, block.end, link, length);
+            match.length = (U32)RMF_bitpackExtendMatch(block.data, tbl->table, pos, block.end, link, length);
         else
             match.length = (U32)length;
 
@@ -139,11 +139,11 @@ RMF_match RMF_getNextMatch(FL2_dataBlock block,
     FL2_matchTable* tbl,
     unsigned max_depth,
     int structTbl,
-    size_t index)
+    size_t pos)
 {
     if (structTbl)
     {
-        U32 const link = GetMatchLink(tbl->table, index);
+        U32 const link = GetMatchLink(tbl->table, pos);
 
         RMF_match match;
         match.length = 0;
@@ -151,15 +151,15 @@ RMF_match RMF_getNextMatch(FL2_dataBlock block,
         if (link == RADIX_NULL_LINK)
             return match;
 
-        size_t const length = GetMatchLength(tbl->table, index);
-        size_t const dist = index - link - 1;
+        size_t const length = GetMatchLength(tbl->table, pos);
+        size_t const dist = pos - link - 1;
 
         /* same distance, one byte shorter */
-        if (link - 1 == GetMatchLink(tbl->table, index - 1))
+        if (link - 1 == GetMatchLink(tbl->table, pos - 1))
             return match;
 
         if (length == max_depth || length == STRUCTURED_MAX_LENGTH /* from HandleRepeat */)
-            match.length = (U32)RMF_structuredExtendMatch(block.data, tbl->table, index, block.end, link, length);
+            match.length = (U32)RMF_structuredExtendMatch(block.data, tbl->table, pos, block.end, link, length);
         else
             match.length = (U32)length;
 
@@ -168,7 +168,7 @@ RMF_match RMF_getNextMatch(FL2_dataBlock block,
         return match;
     }
     else {
-        U32 link = tbl->table[index];
+        U32 link = tbl->table[pos];
 
         RMF_match match;
         match.length = 0;
@@ -178,14 +178,14 @@ RMF_match RMF_getNextMatch(FL2_dataBlock block,
 
         size_t const length = link >> RADIX_LINK_BITS;
         link &= RADIX_LINK_MASK;
-        size_t const dist = index - link - 1;
+        size_t const dist = pos - link - 1;
 
         /* same distance, one byte shorter */
-        if (link - 1 == (tbl->table[index - 1] & RADIX_LINK_MASK))
+        if (link - 1 == (tbl->table[pos - 1] & RADIX_LINK_MASK))
             return match;
 
         if (length == max_depth || length == BITPACK_MAX_LENGTH /* from HandleRepeat */)
-            match.length = (U32)RMF_bitpackExtendMatch(block.data, tbl->table, index, block.end, link, length);
+            match.length = (U32)RMF_bitpackExtendMatch(block.data, tbl->table, pos, block.end, link, length);
         else
             match.length = (U32)length;
 

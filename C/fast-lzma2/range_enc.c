@@ -63,12 +63,12 @@ void RC_printPriceTable()
     memset(table0, 0, sizeof(table0));
     memset(table1, 0, sizeof(table1));
     memset(count, 0, sizeof(count));
-    for (Probability i = 31; i <= kBitModelTotal - 31; ++i) {
-        RangeEncoder rc;
+    for (LZMA2_prob i = 31; i <= kBitModelTotal - 31; ++i) {
+        RC_encoder rc;
         RC_reset(&rc);
         RC_setOutputBuffer(&rc, buf);
         for (unsigned j = 0; j < test_size; ++j) {
-            Probability prob = i;
+            LZMA2_prob prob = i;
             RC_encodeBit0(&rc, &prob);
         }
         RC_flush(&rc);
@@ -76,7 +76,7 @@ void RC_printPriceTable()
         RC_reset(&rc);
         RC_setOutputBuffer(&rc, buf);
         for (unsigned j = 0; j < test_size; ++j) {
-            Probability prob = i;
+            LZMA2_prob prob = i;
             RC_encodeBit1(&rc, &prob);
         }
         RC_flush(&rc);
@@ -104,13 +104,13 @@ void RC_printPriceTable()
 
 #endif
 
-void RC_setOutputBuffer(RangeEncoder* const rc, BYTE *const out_buffer)
+void RC_setOutputBuffer(RC_encoder* const rc, BYTE *const out_buffer)
 {
     rc->out_buffer = out_buffer;
     rc->out_index = 0;
 }
 
-void RC_reset(RangeEncoder* const rc)
+void RC_reset(RC_encoder* const rc)
 {
     rc->low = 0;
     rc->range = (U32)-1;
@@ -120,7 +120,7 @@ void RC_reset(RangeEncoder* const rc)
 
 #ifdef __64BIT__
 
-void FORCE_NOINLINE RC_shiftLow(RangeEncoder* const rc)
+void FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc)
 {
     U64 low = rc->low;
     rc->low = (U32)(low << 8);
@@ -143,7 +143,7 @@ void FORCE_NOINLINE RC_shiftLow(RangeEncoder* const rc)
 
 #else
 
-void FORCE_NOINLINE RC_shiftLow(RangeEncoder* const rc)
+void FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc)
 {
     U32 low = (U32)rc->low;
     unsigned high = (unsigned)(rc->low >> 32);
@@ -165,7 +165,7 @@ void FORCE_NOINLINE RC_shiftLow(RangeEncoder* const rc)
 
 #endif
 
-void RC_encodeBitTree(RangeEncoder* const rc, Probability *const probs, unsigned bit_count, unsigned symbol)
+void RC_encodeBitTree(RC_encoder* const rc, LZMA2_prob *const probs, unsigned bit_count, unsigned symbol)
 {
     assert(bit_count > 1);
     --bit_count;
@@ -180,7 +180,7 @@ void RC_encodeBitTree(RangeEncoder* const rc, Probability *const probs, unsigned
     } while (bit_count != 0);
 }
 
-void RC_encodeBitTreeReverse(RangeEncoder* const rc, Probability *const probs, unsigned bit_count, unsigned symbol)
+void RC_encodeBitTreeReverse(RC_encoder* const rc, LZMA2_prob *const probs, unsigned bit_count, unsigned symbol)
 {
     assert(bit_count != 0);
     unsigned bit = symbol & 1;
@@ -194,7 +194,7 @@ void RC_encodeBitTreeReverse(RangeEncoder* const rc, Probability *const probs, u
 	}
 }
 
-void FORCE_NOINLINE RC_encodeDirect(RangeEncoder* const rc, unsigned value, unsigned bit_count)
+void FORCE_NOINLINE RC_encodeDirect(RC_encoder* const rc, unsigned value, unsigned bit_count)
 {
 	assert(bit_count > 0);
 	do {

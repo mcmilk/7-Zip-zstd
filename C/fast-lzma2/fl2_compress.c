@@ -294,7 +294,7 @@ static size_t FL2_compressCurBlock_blocking(FL2_CCtx* const cctx, int const stre
     cctx->jobs[nbThreads - 1].block.end = cctx->curBlock.end;
 
     /* initialize to length 2 */
-    cctx->matchTable->progress = RMF_initTable(cctx->matchTable, cctx->curBlock.data, cctx->curBlock.end);
+    RMF_initTable(cctx->matchTable, cctx->curBlock.data, cctx->curBlock.end);
 
     if (cctx->canceled) {
         RMF_resetIncompleteBuild(cctx->matchTable);
@@ -666,7 +666,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_CCtx_setParameter(FL2_CCtx* cctx, FL2_cParamet
     case FL2_p_dictionarySize:
         CLAMPCHECK(value, FL2_DICTSIZE_MIN, FL2_DICTSIZE_MAX);
         cctx->params.rParams.dictionary_size = value;
-		break;
+        break;
 
     case FL2_p_overlapFraction:
         MAXCHECK(value, FL2_BLOCK_OVERLAP_MAX);
@@ -960,7 +960,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_copyCStreamOutput(FL2_CStream* fcs, FL2_outBuf
 
         fcs->outPos = 0;
     }
-	return 0;
+    return 0;
 }
 
 static size_t FL2_compressStream_input(FL2_CStream* fcs, FL2_inBuffer* input)
@@ -1066,7 +1066,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_getNextCompressedBuffer(FL2_CStream* fcs, FL2_
     cbuf->size = 0;
 
 #ifndef FL2_SINGLETHREAD
-	CHECK_F(FL2_waitCStream(fcs));
+    CHECK_F(FL2_waitCStream(fcs));
 #endif
 
     if (fcs->outThread < fcs->threadCount) {
