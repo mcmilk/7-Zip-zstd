@@ -15,7 +15,7 @@ You can install it in two ways:
 
 
 ## Codec overview
-1. [Zstandard] v1.4.0 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+1. [Zstandard] v1.4.2 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
 2. [Brotli] v.1.0.7 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
@@ -33,7 +33,7 @@ You can install it in two ways:
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
    - Levels 40..49 (LIZv1 + Huffman) give the best ratio, comparable to zlib and low levels of zstd/brotli, but with a faster decompression speed
 
-6. [Fast LZMA2] v1.0.0 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
+6. [Fast LZMA2] v1.0.1 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
    - Levels: 1..9
 
 ## 7-Zip Zstandard Edition (full setup, with GUI and Explorer integration)
@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 19.00 ZS v1.4.0 R3 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2019 Tino Reichardt : 2019-03-05
+7-Zip 19.00 ZS v1.4.2 R3 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2019 Tino Reichardt : 2019-03-05
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -276,13 +276,13 @@ You find this project useful, maybe you consider a donation ;-)
 
 - 7-Zip ZS Version 19.00
   - [Brotli] Version 1.0.7
-  - [Fast LZMA2] Version 1.0.0
+  - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 1.0
   - [LZ4] Version 1.9.1
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.4.0
+  - [Zstandard] Version 1.4.2
 
-/TR 2019-05-04
+/TR 2019-07-29
 
 ## Notes
 

@@ -88,6 +88,8 @@ ZSTD_OBJS = \
   $O\xxhash.obj \
   $O\zstd_common.obj \
   $O\zstd_compress.obj \
+  $O\zstd_compress_literals.obj \
+  $O\zstd_compress_sequences.obj \
   $O\zstd_ddict.obj \
   $O\zstd_decompress_block.obj \
   $O\zstd_decompress.obj \
