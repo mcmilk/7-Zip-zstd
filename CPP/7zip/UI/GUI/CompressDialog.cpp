@@ -120,7 +120,7 @@ enum EMethodID
 
 static LPCSTR const kMethodsLongnames[] =
 {
-    "Copy"
+    "Copy [std]"
   , "Zstandard"
   , "Brotli"
   , "LZ4"
@@ -129,14 +129,14 @@ static LPCSTR const kMethodsLongnames[] =
   , "Lizard, LIZv1"
   , "Lizard, FastLZ4 + Huffman"
   , "Lizard, LIZv1 + Huffman"
-  , "LZMA"
-  , "LZMA2"
-  , "LZMA2, Fast"
-  , "PPMd"
-  , "BZip2"
-  , "Deflate"
-  , "Deflate64"
-  , "PPMd"
+  , "LZMA [std]"
+  , "LZMA2 [std]"
+  , "LZMA2, Fast [std]"
+  , "PPMd [std]"
+  , "BZip2 [std]"
+  , "Deflate [std]"
+  , "Deflate64 [std]"
+  , "PPMd [std]"
 };
 
 static LPCSTR const kMethodsNames[] =
