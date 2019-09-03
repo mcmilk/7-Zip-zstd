@@ -3,10 +3,11 @@
 set ROOT=%cd%\7zip
 if not defined OUTDIR set OUTDIR=%ROOT%\bin64
 if not defined ERRFILE set ERRFILE=%cd%\error.txt
+if not defined SUBSYS set SUBSYS="5.01"
 mkdir %OUTDIR%
 
 set OPTS=PLATFORM=x64 MY_STATIC_LINK=1 /NOLOGO
-set LFLAGS=/SUBSYSTEM:WINDOWS,"5.02"
+set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
 
 cd %ROOT%\Bundles\Format7zExtract
 nmake %OPTS%
@@ -83,7 +84,7 @@ nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x64 @ Uninstall.exe" >> %ERRFILE%
 copy X64\7zipUninstall.exe %OUTDIR%\Uninstall.exe
 
-set LFLAGS=/SUBSYSTEM:CONSOLE,"5.02"
+set LFLAGS=/SUBSYSTEM:CONSOLE,%SUBSYS%
 cd %ROOT%\UI\Console
 nmake %OPTS%
 IF %errorlevel% NEQ 0 echo "Error x64 @ 7z.exe" >> %ERRFILE%
