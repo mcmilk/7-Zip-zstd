@@ -1,6 +1,6 @@
 #include "../../../../C/7zVersionTr.h"
 #include "../../../../C/7zVersion.rc"
 
-MY_VERSION_INFO_DLL("7-Zip ZS Plugin v1.4.2", "zstd")
+MY_VERSION_INFO_DLL("7-Zip ZS Plugin v1.4.3", "zstd")
 
 101  ICON  "../../Archive/Icons/zst.ico"
