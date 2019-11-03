@@ -21,7 +21,7 @@ You can install it in two ways:
 2. [Brotli] v.1.0.7 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
    - Levels: 0..11
 
-3. [LZ4] v1.9.1 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
+3. [LZ4] v1.9.2 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
    - Levels: 1..12
 
 4. [LZ5] v1.5 is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
@@ -278,7 +278,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Brotli] Version 1.0.7
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 1.0
-  - [LZ4] Version 1.9.1
+  - [LZ4] Version 1.9.2
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.4.3
 

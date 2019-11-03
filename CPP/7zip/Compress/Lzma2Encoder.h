@@ -67,8 +67,8 @@ class CFastEncoder :
     FL2_dictBuffer dict;
     size_t dict_pos;
 
-    //FastLzma2(const FastLzma2&) = delete;
-    //FastLzma2& operator=(const FastLzma2&) = delete;
+    FastLzma2(const FastLzma2&) = delete;
+    FastLzma2& operator=(const FastLzma2&) = delete;
   };
 
   FastLzma2 _encoder;

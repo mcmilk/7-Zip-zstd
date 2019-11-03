@@ -17,7 +17,7 @@ REM sdk71: ia builds
 REM vc10: win2k builds
 REM vc14: >= winxp builds
 REM /TR 2019-09-07
-goto sdk71
+goto vc14
 
 :sdk71
 set VC=sdk71
@@ -28,7 +28,7 @@ goto build_sdk
 set VC=10.0
 set NEXT=vc14
 set CFLAGS=
-goto build_xp
+goto build_vc
 
 :vc11
 set VC=11.0
@@ -57,20 +57,6 @@ set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-ia64
 call build-ia64.cmd
 goto %NEXT%
 
-:build_xp
-FOR /R .\ %%d IN (ARM X64 O) DO rd /S /Q %%d 2>NUL
-set SUBSYS="4.00"
-set PATH=%OPATH%
-call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86
-set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x32-xp
-call build-x32.cmd
-set PATH=%OPATH%
-call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86_amd64
-set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x64-xp
-call build-x64.cmd
-set SUBSYS=
-goto %NEXT%
-
 :build_vc
 FOR /R .\ %%d IN (ARM X64 O) DO rd /S /Q %%d 2>NUL
 set PATH=%OPATH%
@@ -91,4 +77,3 @@ goto %NEXT%
 cd %APPVEYOR_BUILD_FOLDER%
 set > env.txt
 7z a %APPVEYOR_PROJECT_NAME%-%APPVEYOR_BUILD_VERSION%.7z bin-* *.txt
-
