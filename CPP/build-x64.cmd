@@ -3,7 +3,7 @@
 set ROOT=%cd%\7zip
 if not defined OUTDIR set OUTDIR=%ROOT%\bin64
 if not defined ERRFILE set ERRFILE=%cd%\error.txt
-if not defined SUBSYS set SUBSYS="5.01"
+if not defined SUBSYS set SUBSYS="5.02"
 mkdir %OUTDIR%
 
 set OPTS=PLATFORM=x64 MY_STATIC_LINK=1 /NOLOGO

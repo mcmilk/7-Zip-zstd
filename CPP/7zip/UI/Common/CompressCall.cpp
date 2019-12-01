@@ -229,21 +229,33 @@ HRESULT CompressFiles(
     index = FindRegistryFormatAlways(arcType);
     if (index >= 0)
     {
-      char temp[32];
+      char temp[256];
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
 
       if (!fo.Method.IsEmpty())
       {
         params += " -m0=";
         params += fo.Method;
+      }
 
+      if (fo.Level)
+      {
         params += " -mx=";
         ConvertUInt64ToString(fo.Level, temp);
         params += temp;
+      }
 
+      if (fo.NumThreads)
+      {
         params += " -mmt=";
         ConvertUInt64ToString(fo.NumThreads, temp);
         params += temp;
+      }
+
+      if (!fo.Options.IsEmpty())
+      {
+        params += " -m";
+        params += fo.Options;
       }
     }
   }

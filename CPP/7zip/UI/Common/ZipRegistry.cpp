@@ -160,6 +160,7 @@ static LPCTSTR const kBlockSize = TEXT("BlockSize");
 static LPCTSTR const kNumThreads = TEXT("NumThreads");
 static LPCWSTR const kMethod = L"Method";
 static LPCWSTR const kOptions = L"Options";
+static LPCWSTR const kSplitVolume = L"SplitVolume";
 static LPCWSTR const kEncryptionMethod = L"EncryptionMethod";
 
 static LPCTSTR const kNtSecur = TEXT("Security");
@@ -233,6 +234,7 @@ void CInfo::Save() const
 
       SetRegString(fk, kMethod, fo.Method);
       SetRegString(fk, kOptions, fo.Options);
+      SetRegString(fk, kSplitVolume, fo.SplitVolume);
       SetRegString(fk, kEncryptionMethod, fo.EncryptionMethod);
     }
   }
@@ -274,8 +276,9 @@ void CInfo::Load()
         fo.FormatID = formatIDs[i];
         if (fk.Open(optionsKey, fo.FormatID, KEY_READ) == ERROR_SUCCESS)
         {
-          GetRegString(fk, kOptions, fo.Options);
           GetRegString(fk, kMethod, fo.Method);
+          GetRegString(fk, kOptions, fo.Options);
+          GetRegString(fk, kSplitVolume, fo.SplitVolume);
           GetRegString(fk, kEncryptionMethod, fo.EncryptionMethod);
 
           GetRegUInt32(fk, kLevel, fo.Level);
