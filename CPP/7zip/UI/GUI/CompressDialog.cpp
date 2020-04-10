@@ -33,8 +33,6 @@ extern bool g_IsNT;
 #include "CompressDialogRes.h"
 #include "ExtractRes.h"
 
-#define DLGDBG 0
-
 #ifdef LANG
 static const UInt32 kLangIDs[] =
 {
@@ -264,7 +262,7 @@ struct CFormatInfo
   bool EncryptFileNames;
 };
 
-#if DLGDBG
+#if 0
 void ShowInfo(LPCWSTR str, ...)
 {
   wchar_t buf[4000];
@@ -274,10 +272,7 @@ void ShowInfo(LPCWSTR str, ...)
   va_end(args);
   ShowErrorMessage(NULL, buf);
 }
-#else
-#define ShowInfo(x, ...)
 #endif
-
 
 #define METHODS_PAIR(x) ARRAY_SIZE(x), x
 
@@ -938,12 +933,10 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
 
       case IDC_COMPRESS_FORMAT:
       {
-        //ShowInfo(L"FORMAT level=%d method=%d format=%d", GetLevel(), GetMethodID(), GetFormatIndex());
         bool isSFX = IsSFX();
         SaveOptionsInMem();
         m_Solid.ResetContent();
         SetLevel();
-        SetMethod(GetMethodID());
         SetSolidBlockSize();
         SetNumThreads();
         SetParams();
@@ -951,12 +944,12 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         SetArchiveName2(isSFX);
         SetEncryptionMethod();
         SetMemoryUsage();
+        SetMethod(GetMethodID());
         return true;
       }
       
       case IDC_COMPRESS_LEVEL:
       {
-        //ShowInfo(L"LEVEL level=%d method=%d format=%d", GetLevel(), GetMethodID(), GetFormatIndex());
         {
           const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
           int index = FindRegistryFormatAlways(ai.Name);
@@ -973,7 +966,6 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
       
       case IDC_COMPRESS_METHOD:
       {
-        //ShowInfo(L"METHOD level=%d method=%d format=%d", GetLevel(), GetMethodID(), GetFormatIndex());
         SetMethod(GetMethodID());
         SetDictionary();
         SetOrder();
@@ -1216,7 +1208,7 @@ void CCompressDialog::SetLevel()
     }
   }
 
-  ShowInfo(L"SetLevel() methodID=%d level=%d start=%d end=%d", GetMethodID(), level, LevelsStart, LevelsEnd);
+  // ShowInfo(L"SetLevel() methodID=%d level=%d start=%d end=%d", GetMethodID(), level, LevelsStart, LevelsEnd);
   SetNearestSelectComboBox(m_Level, level);
 
   return;
@@ -1234,7 +1226,6 @@ void CCompressDialog::SetMethod(int keepMethodId)
   int mID = GetMethodID();
   static int mID_old = 0;
 
-  ShowInfo(L"SetMethod level=%d method=%d methodPrev=%d", GetLevel(), mID, mID_old);
   if (mID != mID_old) {
     mID_old = mID;
     SetLevel();

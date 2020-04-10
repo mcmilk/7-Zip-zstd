@@ -252,15 +252,22 @@ HRESULT CompressFiles(
         params += temp;
       }
 
+#if 0
+      // need to split the extra Options /TR 2020-04-10
       if (!fo.Options.IsEmpty())
       {
         params += " -m";
         params += fo.Options;
       }
+
+      if (!fo.SplitVolume.IsEmpty())
+      {
+        params += " -v";
+        params += fo.SplitVolume;
+      }
+#endif
     }
   }
-  // for testing current params, /TR 2017-05-18
-  // ErrorMessage(params);
 
   if (email)
     params += kEmailSwitch;
@@ -290,6 +297,8 @@ HRESULT CompressFiles(
     arcName);
   }
   
+  // for testing current params, /TR 2017-05-18
+  // ErrorMessage(params);
   return Call7zGui(params,
       // (arcPathPrefix.IsEmpty()? 0: (LPCWSTR)arcPathPrefix),
       waitFinish, &event);
