@@ -51,7 +51,7 @@ struct writelist {
 
 struct LZ5MT_CCtx_s {
 
-	/* level: 1..22 */
+	/* level: 1..LZ5MT_LEVEL_MAX */
 	int level;
 
 	/* threads: 1..LZ5MT_THREAD_MAX */
@@ -111,7 +111,7 @@ LZ5MT_CCtx *LZ5MT_createCCtx(int threads, int level, int inputsize)
 	if (inputsize)
 		ctx->inputsize = inputsize;
 	else
-		ctx->inputsize = 1024 * 64;
+		ctx->inputsize = 1024 * 1024 * 4;
 
 	/* setup ctx */
 	ctx->level = level;

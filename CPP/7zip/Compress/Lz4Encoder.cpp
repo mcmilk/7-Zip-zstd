@@ -1,4 +1,4 @@
-// (C) 2016 Tino Reichardt
+// (C) 2016 - 2020 Tino Reichardt
 
 #include "StdAfx.h"
 #include "Lz4Encoder.h"
@@ -40,7 +40,6 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         if (prop.vt != VT_UI4)
           return E_INVALIDARG;
 
-        /* level 1..22 */
         _props._level = static_cast < Byte > (prop.ulVal);
         Byte mylevel = static_cast < Byte > (LZ4MT_LEVEL_MAX);
         if (_props._level > mylevel)

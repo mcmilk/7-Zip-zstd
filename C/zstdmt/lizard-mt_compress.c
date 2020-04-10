@@ -51,7 +51,7 @@ struct writelist {
 
 struct LIZARDMT_CCtx_s {
 
-	/* level: 1..22 */
+	/* level: 1..LIZARDMT_LEVEL_MAX */
 	int level;
 
 	/* threads: 1..LIZARDMT_THREAD_MAX */
@@ -111,7 +111,7 @@ LIZARDMT_CCtx *LIZARDMT_createCCtx(int threads, int level, int inputsize)
 	if (inputsize)
 		ctx->inputsize = inputsize;
 	else
-		ctx->inputsize = 1024 * 1024;
+		ctx->inputsize = 1024 * 1024 * 4;
 
 	/* setup ctx */
 	ctx->level = level;
