@@ -51,7 +51,7 @@ struct writelist {
 
 struct LZ4MT_CCtx_s {
 
-	/* level: 1..22 */
+	/* level: 1..LZ4MT_LEVEL_MAX */
 	int level;
 
 	/* threads: 1..LZ4MT_THREAD_MAX */
@@ -111,7 +111,9 @@ LZ4MT_CCtx *LZ4MT_createCCtx(int threads, int level, int inputsize)
 	if (inputsize)
 		ctx->inputsize = inputsize;
 	else
-		ctx->inputsize = 1024 * 64;
+		ctx->inputsize = 1024 * 1024 * 4;
+
+	/* printf("XX level=%d threads=%d inputsize=%d\n", level, threads, inputsize); */
 
 	/* setup ctx */
 	ctx->level = level;
@@ -260,7 +262,7 @@ static void *pt_compress(void *arg)
 			pthread_mutex_unlock(&ctx->read_mutex);
 			return (void *)mt_error(rv);
 		}
-		
+
 		/* eof */
 		if (in.size == 0 && ctx->frames > 0) {
 			free(in.buf);
@@ -277,26 +279,48 @@ static void *pt_compress(void *arg)
 		pthread_mutex_unlock(&ctx->read_mutex);
 
 		/* compress whole frame */
-		result =
-		    LZ4F_compressFrame((unsigned char *)wl->out.buf + 12,
-				       wl->out.size - 12, in.buf, in.size,
-				       &w->zpref);
-		if (LZ4F_isError(result)) {
-			pthread_mutex_lock(&ctx->write_mutex);
-			list_move(&wl->node, &ctx->writelist_free);
-			pthread_mutex_unlock(&ctx->write_mutex);
-			/* user can lookup that code */
-			lz4mt_errcode = result;
-			return (void *)ERROR(compression_library);
-		}
+		if (ctx->threads != 1) {
+			/* with SKIPPABLE frame info */
+			result =
+			    LZ4F_compressFrame((unsigned char *)wl->out.buf +
+					       12, wl->out.size - 12, in.buf,
+					       in.size, &w->zpref);
 
-		/* write skippable frame */
-		if (ctx->threads > 1) {
+			if (LZ4F_isError(result)) {
+				pthread_mutex_lock(&ctx->write_mutex);
+				list_move(&wl->node, &ctx->writelist_free);
+				pthread_mutex_unlock(&ctx->write_mutex);
+
+				/* user can lookup that code */
+				lz4mt_errcode = result;
+				return (void *)ERROR(compression_library);
+			}
+
+			/* write skippable frame */
 			MEM_writeLE32((unsigned char *)wl->out.buf + 0,
 				      LZ4FMT_MAGIC_SKIPPABLE);
 			MEM_writeLE32((unsigned char *)wl->out.buf + 4, 4);
-			MEM_writeLE32((unsigned char *)wl->out.buf + 8, (U32) result);
+			MEM_writeLE32((unsigned char *)wl->out.buf + 8,
+				      (U32) result);
 			wl->out.size = result + 12;
+		} else {
+			/* WITHOUT SKIPPABLE frame info */
+			result =
+			    LZ4F_compressFrame((unsigned char *)wl->out.buf,
+					       wl->out.size, in.buf, in.size,
+					       &w->zpref);
+
+			if (LZ4F_isError(result)) {
+				pthread_mutex_lock(&ctx->write_mutex);
+				list_move(&wl->node, &ctx->writelist_free);
+				pthread_mutex_unlock(&ctx->write_mutex);
+
+				/* user can lookup that code */
+				lz4mt_errcode = result;
+				return (void *)ERROR(compression_library);
+			}
+
+			wl->out.size = result;
 		}
 
 		/* write result */
@@ -351,7 +375,7 @@ size_t LZ4MT_compressCCtx(LZ4MT_CCtx * ctx, LZ4MT_RdWr_t * rdwr)
 		free(wl);
 	}
 
-	return (size_t) retval_of_thread;
+	return (size_t)retval_of_thread;
 }
 
 /* returns current uncompressed data size */
