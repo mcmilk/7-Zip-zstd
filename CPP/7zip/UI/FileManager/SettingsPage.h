@@ -9,7 +9,6 @@
 class CSettingsPage: public NWindows::NControl::CPropertyPage
 {
   bool _wasChanged;
-
   bool _largePages_wasChanged;
 
   // void EnableSubItems();

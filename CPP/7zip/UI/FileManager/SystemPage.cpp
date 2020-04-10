@@ -35,11 +35,11 @@ static const UInt32 kLangIDs[] =
 CSysString CModifiedExtInfo::GetString() const
 {
   if (State == kExtState_7Zip)
-    return TEXT("7-Zip");
+    return TEXT("7-Zip ZS");
   if (State == kExtState_Clear)
     return TEXT("");
   if (Other7Zip)
-    return TEXT("[7-Zip]");
+    return TEXT("[7-Zip ZS]");
   return ProgramKey;
 };
 
@@ -319,7 +319,7 @@ LONG CSystemPage::OnApply()
   _needSave = false;
   
   if (res != 0)
-    MessageBoxW(*this, NError::MyFormatMessage(res), L"7-Zip", MB_ICONERROR);
+    MessageBoxW(*this, NError::MyFormatMessage(res), L"7-Zip ZS", MB_ICONERROR);
   
   return PSNRET_NOERROR;
 }
