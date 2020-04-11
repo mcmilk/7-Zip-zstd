@@ -1,7 +1,7 @@
 @echo off
 
 set ROOT=%cd%\7zip
-if not defined OUTDIR set OUTDIR=%ROOT%\binArm
+if not defined OUTDIR  set OUTDIR=%ROOT%\binArm
 if not defined ERRFILE set ERRFILE=%cd%\error.txt
 mkdir %OUTDIR%
 

@@ -51,6 +51,7 @@ goto build_vc
 
 :build_sdk
 set PATH=%OPATH%
+set SUBSYS="5.01"
 call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /Release /ia64 /xp
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-ia64
@@ -60,14 +61,17 @@ goto %NEXT%
 :build_vc
 FOR /R .\ %%d IN (ARM X64 O) DO rd /S /Q %%d 2>NUL
 set PATH=%OPATH%
+set SUBSYS="5.01"
 call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x32
 call build-x32.cmd
 set PATH=%OPATH%
+set SUBSYS="5.02"
 call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86_amd64
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-x64
 call build-x64.cmd
 set PATH=%OPATH%
+set SUBSYS="6.02"
 call "C:\Program Files (x86)\Microsoft Visual Studio %VC%\VC\vcvarsall.bat" x86_arm
 set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-arm
 call build-arm.cmd
