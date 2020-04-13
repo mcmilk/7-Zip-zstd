@@ -66,6 +66,7 @@ FM_OBJS = \
   $O\LangUtils.obj \
   $O\ProgramLocation.obj \
   $O\RegistryUtils.obj \
+  $O\StringUtils.obj \
 
 C_OBJS = \
   $O\CpuArch.obj \
