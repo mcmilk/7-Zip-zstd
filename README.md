@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 19.00 ZS v1.4.4 R3 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2019 Tino Reichardt : 2019-03-05
+7-Zip 19.00 ZS v1.4.4 R3 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2020 Tino Reichardt : 2020-04-13
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -113,8 +113,9 @@ Hashers:
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
 - compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
 - included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
-- right click and _"Add to xy.7z"_ will use the last selected method (codec, level and threads)
-- the FileManager ListBox will show more information about these codecs now
+- explorer context menu: _"Add to xy.7z"_ will use all parameters of the last "Add to Archive" compression dialog (this includes: method, level, dictionary, blocksize, threads and paramters input box)
+- squashfs files with LZ4 or Zstandard compression can be handled
+- by default, several history settings aren't stored by default, look [here](https://sourceforge.net/p/sevenzip/discussion/45797/thread/dc2ac53d/?limit=25) for some info about that, you can restore 7-Zip original behavior via `tools->options->settings`
 
 ```
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
@@ -282,7 +283,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.4.4
 
-/TR 2019-11-13
+/TR 2020-04-13
 
 ## Notes
 
