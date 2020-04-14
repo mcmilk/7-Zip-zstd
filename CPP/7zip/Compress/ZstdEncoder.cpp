@@ -1,8 +1,8 @@
-// (C) 2016 - 2018 Tino Reichardt
+// (C) 2016 - 2020 Tino Reichardt
 
 #define DEBUG 0
 
-#if DEBUG
+#if 0
 #include <stdio.h>
 #endif
 
@@ -349,7 +349,22 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       }
 
       err = ZSTD_compressStream2(_ctx, &outBuff, &inBuff, ZSTD_todo);
-      if (ZSTD_isError(err)) return E_FAIL;
+      if (ZSTD_isError(err)) {
+        switch (ZSTD_getErrorCode(err)) {
+          /* @Igor: would be nice, if we have an API to store the errmsg */
+          case ZSTD_error_memory_allocation:
+            return E_OUTOFMEMORY;
+          case ZSTD_error_version_unsupported:
+          case ZSTD_error_frameParameter_unsupported:
+            return E_NOTIMPL;
+          case ZSTD_error_frameParameter_windowTooLarge:
+          case ZSTD_error_parameter_unsupported:
+          case ZSTD_error_parameter_outOfBound:
+            return E_INVALIDARG;
+          default:
+            return E_FAIL;
+        }
+      }
 
 #if DEBUG
       printf("err=%u ", (unsigned)err);

@@ -1,4 +1,4 @@
-// (C) 2016 - 2018 Tino Reichardt
+// (C) 2016 - 2020 Tino Reichardt
 
 #define DEBUG 0
 
@@ -110,8 +110,22 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
       zOut.pos = 0;
 
       result = ZSTD_decompressStream(_ctx, &zOut, &zIn);
-      if (ZSTD_isError(result))
-        return E_FAIL;
+      if (ZSTD_isError(result)) {
+        switch (ZSTD_getErrorCode(result)) {
+          /* @Igor: would be nice, if we have an API to store the errmsg */
+          case ZSTD_error_memory_allocation:
+            return E_OUTOFMEMORY;
+          case ZSTD_error_version_unsupported:
+          case ZSTD_error_frameParameter_unsupported:
+            return E_NOTIMPL;
+          case ZSTD_error_frameParameter_windowTooLarge:
+          case ZSTD_error_parameter_unsupported:
+          case ZSTD_error_parameter_outOfBound:
+            return E_INVALIDARG;
+          default:
+            return E_FAIL;
+        }
+      }
 
 #if DEBUG
       printf("res       = %u\n", (unsigned)result);
