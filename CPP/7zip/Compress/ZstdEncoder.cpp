@@ -39,7 +39,6 @@ CEncoder::CEncoder():
   _LdmHashRateLog(-1)
 {
   _props.clear();
-  _hMutex = CreateMutex(NULL, FALSE, NULL);
 }
 
 CEncoder::~CEncoder()
@@ -48,7 +47,6 @@ CEncoder::~CEncoder()
     ZSTD_freeCCtx(_ctx);
     MyFree(_srcBuf);
     MyFree(_dstBuf);
-    CloseHandle(_hMutex);
   }
 }
 
@@ -333,9 +331,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       ZSTD_todo = ZSTD_e_end;
 
     /* compress data */
-    WaitForSingleObject(_hMutex, INFINITE);
     _processedIn += srcSize;
-    ReleaseMutex(_hMutex);
 
     for (;;) {
       outBuff.dst = _dstBuf;
@@ -369,10 +365,8 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       /* write output */
       if (outBuff.pos) {
         RINOK(WriteStream(outStream, _dstBuf, outBuff.pos));
-        WaitForSingleObject(_hMutex, INFINITE);
         _processedOut += outBuff.pos;
         RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
-        ReleaseMutex(_hMutex);
       }
 
       /* done */

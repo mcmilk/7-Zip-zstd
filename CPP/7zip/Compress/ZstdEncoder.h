@@ -49,7 +49,6 @@ class CEncoder:
   UInt64 _processedIn;
   UInt64 _processedOut;
   UInt32 _numThreads;
-  HANDLE _hMutex;
 
   /* zstd advanced compression options */
   Int32 _Long;
