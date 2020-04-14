@@ -115,7 +115,7 @@ Hashers:
 - included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
 - explorer context menu: _"Add to xy.7z"_ will use all parameters of the last "Add to Archive" compression dialog (this includes: method, level, dictionary, blocksize, threads and paramters input box)
 - squashfs files with LZ4 or Zstandard compression can be handled
-- by default, several history settings aren't stored by default, look [here](https://sourceforge.net/p/sevenzip/discussion/45797/thread/dc2ac53d/?limit=25) for some info about that, you can restore 7-Zip original behavior via `tools->options->settings`
+- several history settings aren't stored by default, look [here](https://sourceforge.net/p/sevenzip/discussion/45797/thread/dc2ac53d/?limit=25) for some info about that, you can restore original 7-Zip behavior via `tools->options->settings`
 
 ```
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
@@ -149,6 +149,7 @@ Hashers:
 ![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
 ![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods2.png "Methods")
 ![Hashes](https://mcmilk.de/projects/7-Zip-zstd/Hashes.png "Hashes")
+![Settings](https://mcmilk.de/projects/7-Zip-zstd/Settings.png "Settings for storing the history within the registry.")
 
 ## Zstandard codec Plugin for Mainline 7-Zip
 
