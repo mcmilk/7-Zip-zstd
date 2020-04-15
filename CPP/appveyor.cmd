@@ -18,7 +18,6 @@ goto build_vs2017
 set VC=15.0
 set PATH=%OPATH%
 set SUBSYS="5.01"
-set OPTS=MY_STATIC_LINK=1 /NOLOGO
 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x86
 call build-it.cmd
 
