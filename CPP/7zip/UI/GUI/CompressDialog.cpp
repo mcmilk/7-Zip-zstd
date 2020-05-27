@@ -936,6 +936,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         bool isSFX = IsSFX();
         SaveOptionsInMem();
         m_Solid.ResetContent();
+        SetMethod(GetMethodID());
         SetLevel();
         SetSolidBlockSize();
         SetNumThreads();
