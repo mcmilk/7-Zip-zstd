@@ -221,7 +221,7 @@ HRESULT CompressFiles(
   params += kIncludeSwitch;
   RINOK(CreateMap(names, fileMapping, event, params));
 
-  if (!arcType.IsEmpty())
+  if (!arcType.IsEmpty() && arcType == L"7z")
   {
     int index;
     params += kArchiveTypeSwitch;
