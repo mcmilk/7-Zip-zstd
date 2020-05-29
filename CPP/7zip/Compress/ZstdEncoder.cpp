@@ -114,12 +114,17 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         /* like --long in zstd cli program */
         _Long = 1;
         if (v == 0) {
-          // m0=zstd:long:tlen=x
+          // m0=zstd:long:tlen=x -> long=default
           _WindowLog = 27;
-        } else if (v < 10) {
-          _WindowLog = 10;
+        } else if (v < ZSTD_WINDOWLOG_MIN) {
+          // m0=zstd:long=9 -> long=10
+          _WindowLog = ZSTD_WINDOWLOG_MIN;
         } else if (v > ZSTD_WINDOWLOG_MAX) {
+          // m0=zstd:long=33 -> long=max
           _WindowLog = ZSTD_WINDOWLOG_MAX;
+        } else {
+          // m0=zstd:long=15 -> long=value
+          _WindowLog = v;
         }
         break;
       }
