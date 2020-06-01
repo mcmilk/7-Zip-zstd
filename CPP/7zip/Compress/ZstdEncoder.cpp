@@ -1,7 +1,5 @@
 // (C) 2016 - 2020 Tino Reichardt
 
-#define DEBUG 0
-
 #if 0
 #include <stdio.h>
 #endif
@@ -371,7 +369,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
         }
       }
 
-#if DEBUG
+#if 0
       printf("err=%u ", (unsigned)err);
       printf("srcSize=%u ", (unsigned)srcSize);
       printf("todo=%u\n", ZSTD_todo);
@@ -379,6 +377,8 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       printf("inBuff.pos=%u\n", (unsigned)inBuff.pos);
       printf("outBuff.size=%u ", (unsigned)outBuff.size);
       printf("outBuff.pos=%u\n\n", (unsigned)outBuff.pos);
+      printf("_processedIn=%u ", (unsigned)_processedIn);
+      printf("_processedOut=%u\n", (unsigned)_processedOut);
       fflush(stdout);
 #endif
 
@@ -386,8 +386,10 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       if (outBuff.pos) {
         RINOK(WriteStream(outStream, _dstBuf, outBuff.pos));
         _processedOut += outBuff.pos;
-        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
       }
+
+      if (progress)
+        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
 
       /* done */
       if (ZSTD_todo == ZSTD_e_end && err == 0)
