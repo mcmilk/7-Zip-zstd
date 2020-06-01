@@ -938,6 +938,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         m_Solid.ResetContent();
         SetMethod(GetMethodID());
         SetLevel();
+        SetMethod(GetMethodID());
         SetSolidBlockSize();
         SetNumThreads();
         SetParams();
@@ -945,19 +946,11 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         SetArchiveName2(isSFX);
         SetEncryptionMethod();
         SetMemoryUsage();
-        SetMethod(GetMethodID());
         return true;
       }
       
       case IDC_COMPRESS_LEVEL:
       {
-        {
-          const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-          int index = FindRegistryFormatAlways(ai.Name);
-          NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-          fo.ResetForLevelChange();
-        }
-
         SetSolidBlockSize();
         SetNumThreads();
         CheckSFXNameChange();
@@ -967,7 +960,13 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
       
       case IDC_COMPRESS_METHOD:
       {
-        SetMethod(GetMethodID());
+        {
+          const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+          int index = FindRegistryFormatAlways(ai.Name);
+          NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+          fo.ResetForLevelChange();
+        }
+
         SetDictionary();
         SetOrder();
         SetSolidBlockSize();
