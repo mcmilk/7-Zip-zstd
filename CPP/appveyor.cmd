@@ -8,6 +8,12 @@ REM Microsoft Visual Studio 2015 (VC=14.0)
 REM Microsoft Visual Studio 2017 (VC=15.0)
 REM Microsoft Visual Studio 2019 (VC=16.0)
 
+REM Microsoft Visual Studio 2019 /SUBSYSTEM version numbers:
+REM             MIN                                  STANDARD
+REM CONSOLE     5.01 (x86) 5.02 (x64) 6.02 (ARM)     6.00 (x86, x64) 6.02 (ARM)
+REM WINDOWS     5.01 (x86) 5.02 (x64) 6.02 (ARM)     6.00 (x86, x64) 6.02 (ARM)
+
+
 REM to many vcvarsall.cmd calls will blow it up!
 set OPATH=%PATH%
 set ERRFILE=%APPVEYOR_BUILD_FOLDER%\error.txt
