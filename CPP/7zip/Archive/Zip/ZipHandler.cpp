@@ -87,7 +87,9 @@ const char * const kMethodNames1[kNumMethodNames1] =
 
 const char * const kMethodNames2[kNumMethodNames2] =
 {
-    "xz"
+    "zstd"
+  , NULL
+  , "xz"
   , "Jpeg"
   , "WavPack"
   , "PPMd"
