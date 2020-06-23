@@ -23,6 +23,7 @@
 #include "../../Compress/PpmdZip.h"
 #include "../../Compress/ShrinkDecoder.h"
 #include "../../Compress/XzDecoder.h"
+#include "../../Compress/ZstdDecoder.h"
 
 #include "../../Crypto/WzAes.h"
 #include "../../Crypto/ZipCrypto.h"
@@ -746,6 +747,32 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
+class CZstdDecoder:
+  public ICompressCoder,
+  public CMyUnknownImp
+{
+  NCompress::NZSTD::CDecoder *DecoderSpec;
+  CMyComPtr<ICompressCoder> Decoder;
+public:
+  CZstdDecoder();
+  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
+
+  MY_UNKNOWN_IMP
+};
+
+CZstdDecoder::CZstdDecoder()
+{
+  DecoderSpec = new NCompress::NZSTD::CDecoder;
+  Decoder = DecoderSpec;
+}
+
+HRESULT CZstdDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+{
+  return Decoder->Code(inStream, outStream, NULL, outSize, progress);
+}
+
 
 class CLzmaDecoder:
   public ICompressCoder,
@@ -1059,6 +1086,8 @@ HRESULT CZipDecoder::Decode(
       lzmaDecoderSpec = new CLzmaDecoder;
       mi.Coder = lzmaDecoderSpec;
     }
+    else if (id ==NFileHeader::NCompressionMethod::kZstd)
+      mi.Coder = new CZstdDecoder();
     else if (id == NFileHeader::NCompressionMethod::kXz)
       mi.Coder = new NCompress::NXz::CComDecoder;
     else if (id == NFileHeader::NCompressionMethod::kPPMd)
