@@ -18,7 +18,7 @@ You can install it in two ways:
 1. [Zstandard] v1.4.5 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
-2. [Brotli] v.1.0.7 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
+2. [Brotli] v.1.0.9 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
    - Levels: 0..11
 
 3. [LZ4] v1.9.2 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
@@ -277,14 +277,14 @@ You find this project useful, maybe you consider a donation ;-)
 ## Version Information
 
 - 7-Zip ZS Version 19.00
-  - [Brotli] Version 1.0.7
+  - [Brotli] Version 1.0.9
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 1.0
   - [LZ4] Version 1.9.2
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.4.5
 
-/TR 2020-06-03
+/TR 2020-10-03
 
 ## Notes
 
