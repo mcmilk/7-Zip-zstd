@@ -284,7 +284,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.4.5
 
-/TR 2020-10-03
+/TR 2020-10-16
 
 ## Notes
 

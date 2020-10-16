@@ -312,7 +312,7 @@ HRESULT HashCalc(
 
 static inline char GetHex(unsigned v)
 {
-  return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10)));
+  return (char)((v < 10) ? ('0' + v) : ('a' + (v - 10)));
 }
 
 void AddHashHexToString(char *dest, const Byte *data, UInt32 size)
