@@ -18,6 +18,7 @@
 #include "../../Compress/LzmaEncoder.h"
 #include "../../Compress/PpmdZip.h"
 #include "../../Compress/XzEncoder.h"
+#include "../../Compress/ZstdEncoder.h"
 
 #include "../Common/InStreamWithCRC.h"
 
@@ -179,6 +180,7 @@ HRESULT CAddCommon::Set_Pre_CompressionResult(bool inSeqMode, bool outSeqMode, U
     case NCompressionMethod::kXz   : ver = NCompressionMethod::kExtractVersion_Xz; break;
     case NCompressionMethod::kPPMd : ver = NCompressionMethod::kExtractVersion_PPMd; break;
     case NCompressionMethod::kBZip2: ver = NCompressionMethod::kExtractVersion_BZip2; break;
+    case NCompressionMethod::kZstd: ver = NCompressionMethod::kExtractVersion_Zstd; break;
     case NCompressionMethod::kLZMA :
     {
       ver = NCompressionMethod::kExtractVersion_LZMA;
@@ -355,6 +357,12 @@ HRESULT CAddCommon::Compress(
             _compressExtractVersion = NCompressionMethod::kExtractVersion_LZMA;
             _lzmaEncoder = new CLzmaEncoder();
             _compressEncoder = _lzmaEncoder;
+          }
+          else if (method == NCompressionMethod::kZstd)
+          {
+            _compressExtractVersion = NCompressionMethod::kExtractVersion_Zstd;
+            NCompress::NZSTD::CEncoder *encoder = new NCompress::NZSTD::CEncoder();
+            _compressEncoder = encoder;
           }
           else if (method == NCompressionMethod::kXz)
           {
