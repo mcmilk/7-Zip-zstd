@@ -74,6 +74,9 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   BROTLIMT_RdWr_t rdwr;
   size_t result;
   HRESULT res = S_OK;
+  
+  _processedIn = 0;
+  _processedOut = 0;
 
   struct BrotliStream Rd;
   Rd.inStream = inStream;
@@ -82,10 +85,10 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   Rd.processedOut = &_processedOut;
 
   struct BrotliStream Wr;
-  if (_processedIn == 0)
+//  if (_processedIn == 0)
     Wr.progress = progress;
-  else
-    Wr.progress = 0;
+//  else
+//    Wr.progress = 0;
   Wr.inStream = inStream;
   Wr.outStream = outStream;
   Wr.processedIn = &_processedIn;
