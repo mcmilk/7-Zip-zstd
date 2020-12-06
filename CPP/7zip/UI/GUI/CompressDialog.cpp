@@ -968,6 +968,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
           fo.ResetForLevelChange();
         }
 
+        SetLevel();
         SetDictionary();
         SetOrder();
         SetSolidBlockSize();
@@ -1223,6 +1224,7 @@ static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s)
 
 void CCompressDialog::SetMethod(int keepMethodId)
 {
+  /*
   UInt32 level = GetLevel2();
   int mID = GetMethodID();
   static int mID_old = 0;
@@ -1238,6 +1240,7 @@ void CCompressDialog::SetMethod(int keepMethodId)
     SetOrder();
     return;
   }
+  */
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
   int index = FindRegistryFormat(ai.Name);
