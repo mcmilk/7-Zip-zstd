@@ -227,6 +227,9 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   ZSTD_inBuffer inBuff;
   size_t err, srcSize;
 
+  _processedIn = 0;
+  _processedOut = 0;
+
   if (!_ctx) {
     _ctx = ZSTD_createCCtx();
     if (!_ctx)
