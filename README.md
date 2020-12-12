@@ -267,6 +267,7 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 - [7-Zip Zstandard Homepage](https://mcmilk.de/projects/7-Zip-zstd/)
 - [Request for inclusion](https://sourceforge.net/p/sevenzip/discussion/45797/thread/a7e4f3f3/) into the mainline 7-Zip:
   - result, will currently not included :(
+- [p7zip Homepage with Zstd](https://github.com/jinfeihan57/p7zip)
 
 ## Donate
 
