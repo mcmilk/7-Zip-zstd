@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 19.00 ZS v1.4.5 R4 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2020 Tino Reichardt : 2020-12-17
+7-Zip 19.00 ZS v1.4.5 R4 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2020 Tino Reichardt : 2020-12-19
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -112,6 +112,7 @@ Hashers:
 
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
 - compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
+- handling of ZIP files with [Zstandard] compression
 - included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
 - explorer context menu: _"Add to xy.7z"_ will use all parameters of the last "Add to Archive" compression dialog (this includes: method, level, dictionary, blocksize, threads and paramters input box)
 - squashfs files with LZ4 or Zstandard compression can be handled
@@ -285,7 +286,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.4.5
 
-/TR 2020-12-17
+/TR 2020-12-19
 
 ## Notes
 
