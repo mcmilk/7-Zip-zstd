@@ -103,6 +103,7 @@ ZSTD_OBJS = \
   $O\zstd_fast.obj \
   $O\zstd_lazy.obj \
   $O\zstd_ldm.obj \
+  $O\zstd_trace.obj \
   $O\zstdmt_compress.obj \
   $O\zstd_opt.obj \
   $O\zstd_v01.obj \
