@@ -14,7 +14,6 @@ class CSplitDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CComboBox _volumeCombo;
   virtual void OnOK();
   virtual bool OnInit();
-  virtual bool OnSize(WPARAM wParam, int xSize, int ySize);
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   void OnButtonSetPath();
 public:

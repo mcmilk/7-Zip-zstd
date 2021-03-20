@@ -18,6 +18,13 @@
 #define g2xs (xc - g1xs - gSpace)
 #define g2xs2 (g2xs - m - m)
 
+#define bxsOpen 30
+#define xsSpace 4
+
+#define e7zYbase 58
+#define newControlHeight 42
+#define newControlHeight2 58
+
 #undef GROUP_Y_SIZE
 #ifdef UNDER_CE
 #define GROUP_Y_SIZE 8
@@ -29,30 +36,38 @@ IDD_EXTRACT  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "Extract"
 BEGIN
   LTEXT     "E&xtract to:", IDT_EXTRACT_EXTRACT_TO, m, m, xc, 8
-  COMBOBOX  IDC_EXTRACT_PATH, m, m + 12, xc - bxsDots - 12, 100, MY_COMBO_WITH_EDIT
-  PUSHBUTTON  "...", IDB_EXTRACT_SET_PATH, xs - m - bxsDots, m + 12 - 2, bxsDots, bys, WS_GROUP
+  COMBOBOX  IDC_EXTRACT_PATH, m, m + 12, xc - bxsDots - xsSpace - bxsOpen - xsSpace, 160, MY_COMBO_WITH_EDIT
+  PUSHBUTTON  "...", IDB_EXTRACT_SET_PATH, xs - m - bxsDots - xsSpace - bxsOpen, m + 12 - 1, bxsDots, bys-1, WS_GROUP
+  PUSHBUTTON  "&Open", IDC_EXTRACT_BUTTON_OPEN_PATH, xs - m - bxsOpen, m + 12 - 1, bxsOpen, bys-1, WS_GROUP
 
   CONTROL   "", IDX_EXTRACT_NAME_ENABLE, MY_CHECKBOX, m, m + 34, 12, 10
-  EDITTEXT  IDE_EXTRACT_NAME, m + 12 + 2, m + 32, g1xs - 12 - 2, 14, ES_AUTOHSCROLL
+  EDITTEXT  IDE_EXTRACT_NAME, m + 12 + 2, m + 32, xc - 12 - 2, 14, ES_AUTOHSCROLL
 
-  LTEXT     "Path mode:", IDT_EXTRACT_PATH_MODE, m, m + 52, g1xs, 8
-  COMBOBOX  IDC_EXTRACT_PATH_MODE, m, m + 64, g1xs, 140, MY_COMBO
+  LTEXT       "",    IDC_STATIC_EXTRACT_FREE_SPACE,     m, e7zYbase, xc, 8
+  GROUPBOX    "After extraction completes successfully", IDC_GUI_AFTER_EXTRACT,    m, e7zYbase+12, xc, 27
+    CONTROL  "O&pen output folder", IDC_EXTRACT_CHECK_OPEN_OUTPUT_FOLDER, MY_CHECKBOX, 14, e7zYbase+24, 100, 10
+    CONTROL   "&Delete source archives", IDC_CHECK_DELETE_SOURCE_FILE, MY_CHECKBOX, 125, e7zYbase+24, 120, 10
+
+  LTEXT     "Path mode:", IDT_EXTRACT_PATH_MODE, m, m + 52 + newControlHeight, g1xs, 8
+  COMBOBOX  IDC_EXTRACT_PATH_MODE, m, m + 64 + newControlHeight, g1xs, 140, MY_COMBO
 
   CONTROL   "Eliminate duplication of root folder", IDX_EXTRACT_ELIM_DUP, MY_CHECKBOX,
-            m, m + 84, g1xs, 10
+            //m, m + 84, g1xs, 10
+            m, m + 84 + newControlHeight, g1xs, 10
 
-  LTEXT     "Overwrite mode:", IDT_EXTRACT_OVERWRITE_MODE, m, m + 104, g1xs, 8
-  COMBOBOX  IDC_EXTRACT_OVERWRITE_MODE, m, m + 116, g1xs, 140, MY_COMBO
+  LTEXT     "Overwrite mode:", IDT_EXTRACT_OVERWRITE_MODE, m, m + 104 + newControlHeight, g1xs, 8
+  COMBOBOX  IDC_EXTRACT_OVERWRITE_MODE, m, m + 116 + newControlHeight, g1xs, 140, MY_COMBO
 
 
-  GROUPBOX  "Password", IDG_PASSWORD, g2x, m + 36, g2xs, GROUP_Y_SIZE
-  EDITTEXT  IDE_EXTRACT_PASSWORD, g2x2, m + 50, g2xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL
-  CONTROL   "Show Password", IDX_PASSWORD_SHOW, MY_CHECKBOX, g2x2, m + 72, g2xs2, 10
+  GROUPBOX  "Password", IDG_PASSWORD, g2x, m + 36 + newControlHeight2, g2xs, GROUP_Y_SIZE
+  EDITTEXT  IDE_EXTRACT_PASSWORD, g2x2, m + 50 + newControlHeight2, g2xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  CONTROL   "Show Password", IDX_PASSWORD_SHOW, MY_CHECKBOX, g2x2, m + 72 + newControlHeight2, g2xs2, 10
 
 //  CONTROL   "Restore alternate data streams", IDX_EXTRACT_ALT_STREAMS, MY_CHECKBOX,
 //            g2x, m + 104, g2xs, 10
   CONTROL   "Restore file security", IDX_EXTRACT_NT_SECUR, MY_CHECKBOX,
-            g2x, m + 104, g2xs, 10
+            //g2x, m + 104, g2xs, 10
+            g2x, m + 100 + newControlHeight2, g2xs, 10
   
   DEFPUSHBUTTON  "OK",     IDOK,     bx3, by, bxs, bys, WS_GROUP
   PUSHBUTTON     "Cancel", IDCANCEL, bx2, by, bxs, bys

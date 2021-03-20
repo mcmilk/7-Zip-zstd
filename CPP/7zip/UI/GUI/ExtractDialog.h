@@ -7,6 +7,7 @@
 
 #include "../../../Windows/Control/ComboBox.h"
 #include "../../../Windows/Control/Edit.h"
+#include "../../../Windows/Control/Static.h"
 
 #include "../Common/ExtractMode.h"
 
@@ -31,6 +32,8 @@ namespace NExtractionDialog
   */
 }
 
+void StartApplication(const UString &dir, const UString &path);
+
 class CExtractDialog: public NWindows::NControl::CModalDialog
 {
   #ifdef NO_REGISTRY
@@ -45,6 +48,7 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CComboBox _pathMode;
   NWindows::NControl::CComboBox _overwriteMode;
   #endif
+  NWindows::NControl::CStatic _freeSpace;
 
   #ifndef _SFX
   // int GetFilesMode() const;
@@ -58,6 +62,8 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   virtual bool OnInit();
   virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
   virtual void OnOK();
+  void OnButtonOpenPath();
+  virtual bool OnCommand(int code, int itemID, LPARAM lParam);
   
   #ifndef NO_REGISTRY
 
@@ -67,6 +73,7 @@ class CExtractDialog: public NWindows::NControl::CModalDialog
   
   #endif
   
+  void ShowPathFreeSpace(UString & strPath);
   bool IsShowPasswordChecked() const { return IsButtonCheckedBool(IDX_PASSWORD_SHOW); }
 public:
   // bool _enableSelectedFilesButton;
@@ -83,6 +90,9 @@ public:
   bool OverwriteMode_Force;
   NExtract::NPathMode::EEnum PathMode;
   NExtract::NOverwriteMode::EEnum OverwriteMode;
+
+  bool m_bOpenOutputFolder;
+  bool m_bDeleteSourceFile;
 
   #ifndef _SFX
   // CBoolPair AltStreams;
@@ -103,7 +113,8 @@ public:
 
   CExtractDialog():
     PathMode_Force(false),
-    OverwriteMode_Force(false)
+    OverwriteMode_Force(false),
+    m_bOpenOutputFolder(false), m_bDeleteSourceFile(false)
   {
     ElimDup.Val = true;
   }

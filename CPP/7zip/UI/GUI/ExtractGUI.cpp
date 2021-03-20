@@ -15,6 +15,7 @@
 #include "../FileManager/LangUtils.h"
 #include "../FileManager/resourceGui.h"
 #include "../FileManager/OverwriteDialogRes.h"
+#include "../FileManager/ViewSettings.h"
 
 #include "../Common/ArchiveExtractCallback.h"
 #include "../Common/PropIDUtils.h"
@@ -33,6 +34,8 @@
 using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
+
+extern bool g_bProcessError;
 
 static const wchar_t * const kIncorrectOutDir = L"Incorrect output directory path";
 
@@ -169,7 +172,11 @@ HRESULT ExtractGUI(
     CExtractCallbackImp *extractCallback,
     HWND hwndParent)
 {
+  bool openOutputFolder = false;
+  bool deleteSourceFile = false;
+
   messageWasDisplayed = false;
+  g_bProcessError = false;
 
   CThreadExtracting extracter;
   extracter.codecs = codecs;
@@ -221,6 +228,9 @@ HRESULT ExtractGUI(
       options.OverwriteMode = dialog.OverwriteMode;
       options.PathMode = dialog.PathMode;
       options.ElimDup = dialog.ElimDup;
+
+      openOutputFolder = dialog.m_bOpenOutputFolder;
+      deleteSourceFile = dialog.m_bDeleteSourceFile;
       
       #ifndef _SFX
       // options.NtOptions.AltStreams = dialog.AltStreams;
@@ -276,5 +286,34 @@ HRESULT ExtractGUI(
 
   RINOK(extracter.Create(title, hwndParent));
   messageWasDisplayed = extracter.ThreadFinishedOK && extracter.MessagesDisplayed;
+
+  if (extracter.ThreadFinishedOK && !g_bProcessError)
+  {
+    if (openOutputFolder)
+    {
+      StartApplication(options.OutputDir, options.OutputDir);
+    }
+    if (deleteSourceFile)
+    {
+      DWORD	dwAttr;
+      UString strFilePath;
+      for (unsigned i = 0; i < archivePathsFull.Size(); i++)
+      {
+        strFilePath = archivePathsFull[i];
+        dwAttr = GetFileAttributesW(strFilePath);
+
+        if ((dwAttr != INVALID_FILE_ATTRIBUTES)
+          && (dwAttr & FILE_ATTRIBUTE_ARCHIVE))
+        {
+          if (dwAttr & FILE_ATTRIBUTE_READONLY)
+          {
+            dwAttr &= (~FILE_ATTRIBUTE_READONLY);
+            SetFileAttributesW(strFilePath, dwAttr);
+          }
+          ::DeleteFileW(strFilePath);
+        }
+      }
+    }
+  }
   return extracter.Result;
 }

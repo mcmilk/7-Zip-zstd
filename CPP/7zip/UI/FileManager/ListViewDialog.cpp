@@ -126,6 +126,11 @@ bool CListViewDialog::OnInit()
     _listView.SetColumnWidthAuto(1);
   StringsWereChanged = false;
 
+  RECT rc;
+  GetWindowRect(&rc);
+  m_sizeMinWindow.cx = (RECT_SIZE_X(rc))*3/4;
+  m_sizeMinWindow.cy = (RECT_SIZE_Y(rc))*3/4;
+
   NormalizeSize();
   return CModalDialog::OnInit();
 }
@@ -146,7 +151,9 @@ bool CListViewDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   rect.top = y - my;
   InvalidateRect(&rect);
   */
-  InvalidateRect(NULL);
+
+  MoveItem(IDCANCEL, x, y, bx1, by, false);
+  MoveItem(IDOK, x - mx - bx2, y, bx2, by, false);
 
   MoveItem(IDCANCEL, x, y, bx1, by);
   MoveItem(IDOK, x - mx - bx2, y, bx2, by);
@@ -154,7 +161,8 @@ bool CListViewDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   if (wParam == SIZE_MAXSHOW || wParam == SIZE_MAXIMIZED || wParam == SIZE_MAXHIDE)
     mx = 0;
   */
-  _listView.Move(mx, my, xSize - mx * 2, y - my * 2);
+  _listView.Move(mx, my, xSize - mx * 2, y - my * 2, false);
+  InvalidateRect(NULL);
   return false;
 }
 
@@ -318,4 +326,23 @@ void CListViewDialog::OnOK()
 {
   FocusedItemIndex = _listView.GetFocusedItem();
   CModalDialog::OnOK();
+}
+
+bool CListViewDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  switch(message)
+  {
+  case WM_GETMINMAXINFO:
+    {
+      return OnGetMinMaxInfo((PMINMAXINFO)lParam);
+    }
+  }
+  return CModalDialog::OnMessage(message, wParam, lParam);
+}
+
+bool CListViewDialog::OnGetMinMaxInfo(PMINMAXINFO pMMI)
+{
+  pMMI->ptMinTrackSize.x = m_sizeMinWindow.cx;
+  pMMI->ptMinTrackSize.y = m_sizeMinWindow.cy;
+  return false;
 }

@@ -40,8 +40,9 @@ BEGIN \
             VALUE "InternalName", intName \
             VALUE "LegalCopyright", MY_COPYRIGHT \
             VALUE "OriginalFilename", origName \
-            VALUE "ProductName", "7-Zip ZS" \
+            VALUE "ProductName", MY_7ZIP_NAME \
             VALUE "ProductVersion", MY_VERSION \
+            VALUE "SpecialBuild", MY_EASY7ZIP_SPECIAL_BUILD \
         END \
     END \
     BLOCK "VarFileInfo" \

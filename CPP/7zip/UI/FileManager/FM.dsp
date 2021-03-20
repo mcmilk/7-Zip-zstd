@@ -463,6 +463,14 @@ SOURCE=.\AboutDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\AboutEasy7ZipDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\AboutEasy7ZipDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\BrowseDialog.cpp
 # End Source File
 # Begin Source File

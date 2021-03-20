@@ -1,0 +1,2 @@
+#define IDD_ABOUT_EASY_7ZIP             515
+#define IDC_ABOUT_BUTTON_EASY7ZIP_HOMEPAGE       1001

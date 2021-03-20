@@ -112,4 +112,10 @@ void ReadCopyHistory(UStringVector &folders);
 
 void AddUniqueStringToHeadOfList(UStringVector &list, const UString &s);
 
+void SaveOptOpenOutputFolder(bool bOpen);
+bool ReadOptOpenOutputFolder();
+
+void SaveOptClose7Zip(bool bClose7Zip);
+bool ReadOptClose7Zip();
+
 #endif

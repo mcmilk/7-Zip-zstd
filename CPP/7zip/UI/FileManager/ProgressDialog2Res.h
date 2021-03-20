@@ -3,6 +3,7 @@
 
 #define IDS_CLOSE                  408
 #define IDS_CONTINUE               411
+#define IDS_CANCEL				   415
 
 #define IDB_PROGRESS_BACKGROUND    444
 #define IDS_PROGRESS_FOREGROUND    445
@@ -25,6 +26,7 @@
 #define IDL_PROGRESS_MESSAGES      101
 #define IDT_PROGRESS_FILE_NAME     102
 #define IDT_PROGRESS_STATUS        103
+#define IDC_PROGRESS_PERCENT       104
 
 #define IDT_PROGRESS_PACKED_VAL    110
 #define IDT_PROGRESS_FILES_VAL     111

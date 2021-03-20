@@ -11,6 +11,7 @@
 #include "../Common/CompressCall.h"
 
 #include "AboutDialog.h"
+#include "AboutEasy7ZipDialog.h"
 #include "App.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
@@ -729,6 +730,12 @@ bool OnMenuCommand(HWND hWnd, int id)
     case IDM_ABOUT:
     {
       CAboutDialog dialog;
+      dialog.Create(hWnd);
+      break;
+    }
+    case IDM_ABOUT_EASY_7ZIP:
+    {
+      CAboutEasy7ZipDialog dialog;
       dialog.Create(hWnd);
       break;
     }

@@ -1,18 +1,54 @@
 #include "CopyDialogRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 320
-#define yc 144
+#define xc 340
+#define yc 190
 
-#define y 40
+#define y 78
+
+#define OPEN_XS 28
+#define FILENAME_XS 40
+#define SPACE_XS 4
+
+#define FILENAME_X (xs - m - FILENAME_XS)
+#define OPEN_X (FILENAME_X - OPEN_XS - SPACE_XS)
+#define DOTS_X (OPEN_X - bxsDots - SPACE_XS)
+#define PATH_Y (m + 12)
+#define PATH_XS (DOTS_X - m - SPACE_XS)
+
+#define FREE_SPACE_Y (PATH_Y + 15)
+
+#define AFTER_EXTRACTION_Y (FREE_SPACE_Y + 12)
+
+#define OPTION_SPACE 10
+
+#define OPEN_OUTPUT_FOLDER_X (m + 6)
+#define OPEN_OUTPUT_FOLDER_XS 80
+#define OPEN_OUTPUT_FOLDER_Y (AFTER_EXTRACTION_Y + 12)
+
+#define DELETE_SOURCE_X (OPEN_OUTPUT_FOLDER_X + OPEN_OUTPUT_FOLDER_XS + OPTION_SPACE)
+#define DELETE_SOURCE_XS 88
+
+#define CLOSE_7ZIP_X (DELETE_SOURCE_X + DELETE_SOURCE_XS + OPTION_SPACE)
+#define CLOSE_7ZIP_XS 54
+
+#define INFO_Y (AFTER_EXTRACTION_Y + 27 + 4)
+#define INFO_YS (by - m - 12 - 15 - 12 - 27 - 4 - 1)
 
 IDD_COPY  DIALOG  0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
 CAPTION "Copy"
 {
-  LTEXT       "",    IDT_COPY, m, m, xc, 8
-  COMBOBOX           IDC_COPY, m, 20, xc - bxsDots - m, 65, MY_COMBO_WITH_EDIT
-  PUSHBUTTON  "...", IDB_COPY_SET_PATH, xs - m - bxsDots, 18, bxsDots, bys, WS_GROUP
-  LTEXT       "",    IDT_COPY_INFO, m, y, xc, by - y - 1, SS_NOPREFIX | SS_LEFTNOWORDWRAP
+  LTEXT       "",    IDT_COPY,   m, m, xc, 9
+  COMBOBOX           IDC_COPY,                      m, PATH_Y, PATH_XS, 160, MY_COMBO_WITH_EDIT
+    PUSHBUTTON  "...", IDB_COPY_SET_PATH,                 DOTS_X, PATH_Y - 1, bxsDots, bys - 1, WS_GROUP
+    PUSHBUTTON  "&Open", IDC_COPY_OPEN_PATH,              OPEN_X, PATH_Y - 1, OPEN_XS, bys - 1, WS_GROUP
+    PUSHBUTTON  "&Filename", IDC_COPY_ADD_FILE_NAME,      FILENAME_X, PATH_Y - 1, FILENAME_XS, bys - 1, WS_GROUP
+  LTEXT       "",    IDC_FREE_SPACE,     m, FREE_SPACE_Y, xc, 9
+  GROUPBOX    "After extraction completes successfully", IDC_AFTER_EXTRACT,    m, AFTER_EXTRACTION_Y, xc, 27
+    CONTROL   "O&pen output folder", IDC_CHECK_OPEN_OUTPUT_FOLDER, MY_CHECKBOX,      OPEN_OUTPUT_FOLDER_X, OPEN_OUTPUT_FOLDER_Y, OPEN_OUTPUT_FOLDER_XS, 10
+    CONTROL   "&Delete source archive", IDC_CHECK_DELETE_SOURCE_FILE, MY_CHECKBOX,       DELETE_SOURCE_X, OPEN_OUTPUT_FOLDER_Y, DELETE_SOURCE_XS, 10
+    CONTROL   "&Close 7-Zip", IDC_CHECK_CLOSE_7ZIP, MY_CHECKBOX,                      CLOSE_7ZIP_X, OPEN_OUTPUT_FOLDER_Y, CLOSE_7ZIP_XS, 10
+  LTEXT       "",    IDT_COPY_INFO,     m, INFO_Y, xc, INFO_YS, SS_NOPREFIX | SS_LEFTNOWORDWRAP
   OK_CANCEL
 }
 

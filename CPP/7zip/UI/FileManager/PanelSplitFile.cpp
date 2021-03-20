@@ -494,6 +494,9 @@ void CApp::Combine()
     AddInfoFileName(info, fs2us(combiner.Names.Back()));
   }
   
+  bool openOutputFolder;
+  bool deleteSourceFile;
+  bool close7Zip;
   {
     CCopyDialog copyDialog;
     copyDialog.Value = path;
@@ -502,9 +505,13 @@ void CApp::Combine()
     copyDialog.Title += srcPanel.GetItemRelPath(index);
     LangString(IDS_COMBINE_TO, copyDialog.Static);
     copyDialog.Info = info;
+    copyDialog.m_currentFolderPrefix = srcPanel.GetItemFullPath(index);
     if (copyDialog.Create(srcPanel.GetParent()) != IDOK)
       return;
     path = copyDialog.Value;
+    openOutputFolder = copyDialog.m_bOpenOutputFolder;
+    deleteSourceFile = copyDialog.m_bDeleteSourceFile;
+    close7Zip = copyDialog.m_bClose7Zip;
   }
 
   NName::NormalizeDirPathPrefix(path);
@@ -552,6 +559,37 @@ void CApp::Combine()
     
     if (combiner.Create(title, _window) != 0)
       return;
+
+
+    if (openOutputFolder)
+    {
+      StartApplicationDontWait(path, path, (HWND)_window);
+    }
+    if (deleteSourceFile)
+    {
+      DWORD	dwAttr;
+      UString strFilePath;
+      for (i = 0; i < combiner.Names.Size(); i++)
+      {
+        strFilePath = srcPath + combiner.Names[i];
+        dwAttr = GetFileAttributesW(strFilePath);
+
+        if ((dwAttr != INVALID_FILE_ATTRIBUTES)
+          && (dwAttr & FILE_ATTRIBUTE_ARCHIVE))
+        {
+          if (dwAttr & FILE_ATTRIBUTE_READONLY)
+          {
+            dwAttr &= (~FILE_ATTRIBUTE_READONLY);
+            SetFileAttributesW(strFilePath, dwAttr);
+          }
+          ::DeleteFileW(strFilePath);
+        }
+      }
+    }
+    if (close7Zip)
+    {
+      PostMessage (_window, WM_CLOSE, 0, 0);
+    }
   }
   RefreshTitleAlways();
 

@@ -9,16 +9,19 @@
 #include "../../../Windows/ErrorMsg.h"
 
 #include "../GUI/ExtractRes.h"
+#include "resourceGui.h"
 
 #include "LangUtils.h"
 
 #include "DialogSize.h"
 #include "ProgressDialog2.h"
 #include "ProgressDialog2Res.h"
+#include "ProgressDialog2IconRes.h"
 
 using namespace NWindows;
 
 extern HINSTANCE g_hInstance;
+bool g_bProcessError = false;
 
 static const UINT_PTR kTimerID = 3;
 
@@ -66,6 +69,37 @@ static const UInt32 kLangIDs_Colon[] =
 
 #endif
 
+//////////////////
+
+#define	WM_TRAY_ICON_NOTIFY			(WM_APP+10)
+#define ID_SYSTRAY_ICON                 100
+
+BOOL SetSysTray(HWND hDlg,
+        DWORD dwMessage,
+        UINT uID,
+        UINT uFlags,
+        UINT uCallbackMessage,
+        HICON hIcon,
+        const wchar_t * pszTip)
+{
+  NOTIFYICONDATAW		tnd;
+
+  ZeroMemory(&tnd, sizeof(NOTIFYICONDATAW));
+  
+  tnd.cbSize				= sizeof(NOTIFYICONDATAW);
+  tnd.hWnd				= hDlg;
+  tnd.uID					= uID;
+  tnd.uFlags				= uFlags;
+  tnd.uCallbackMessage	= uCallbackMessage;
+  tnd.hIcon				= hIcon;
+
+  if (pszTip != NULL && *pszTip != 0)
+  {
+    ::lstrcpynW(tnd.szTip, pszTip, sizeof(tnd.szTip) / sizeof(WCHAR));
+  }
+  
+  return Shell_NotifyIconW(dwMessage, &tnd);
+}
 
 #define UNDEFINED_VAL ((UInt64)(Int64)-1)
 #define INIT_AS_UNDEFINED(v) v = UNDEFINED_VAL;
@@ -241,6 +275,13 @@ CProgressDialog::CProgressDialog():
    CompressingMode(true),
    MainWindow(0)
 {
+  for (int i = 0; i < 15; i++)
+  {
+    m_hIconSysTrayArray[i] = NULL;
+  }
+  m_nSysTrayIconArrayID = -1;
+  m_hSysTrayMenu = NULL;
+
   _isDir = false;
 
   _numMessages = 0;
@@ -375,6 +416,7 @@ bool CProgressDialog::OnInit()
   LangString(IDS_PROGRESS_FOREGROUND, _foreground_String);
   LangString(IDS_CONTINUE, _continue_String);
   LangString(IDS_PROGRESS_PAUSED, _paused_String);
+  LangString(IDS_CANCEL, cancelString);
 
   SetText(_title);
   SetPauseText();
@@ -415,6 +457,11 @@ bool CProgressDialog::OnInit()
 
   SetTaskbarProgressState();
 
+  RECT rc;
+  GetWindowRect(&rc);
+  m_sizeMinWindow.cx = (RECT_SIZE_X(rc))*2/3;
+  m_sizeMinWindow.cy = (RECT_SIZE_Y(rc))*3/4;
+
   return CModalDialog::OnInit();
 }
 
@@ -447,8 +494,6 @@ bool CProgressDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
     sStep = r.top - my;
   }
 
-  InvalidateRect(NULL);
-
   int xSizeClient = xSize - mx * 2;
 
   {
@@ -461,9 +506,17 @@ bool CProgressDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
 
   int yPos = ySize - my - _buttonSizeY;
 
-  ChangeSubWindowSizeX(GetItem(IDT_PROGRESS_STATUS), xSize - mx * 2);
-  ChangeSubWindowSizeX(GetItem(IDT_PROGRESS_FILE_NAME), xSize - mx * 2);
-  ChangeSubWindowSizeX(GetItem(IDC_PROGRESS1), xSize - mx * 2);
+  ChangeSubWindowSizeX(GetItem(IDT_PROGRESS_STATUS), xSize - mx * 2, false);
+  {
+    int percent_width;
+    RECT rect;
+    GetClientRectOfItem(IDC_PROGRESS_PERCENT, rect);
+    percent_width = rect.right - rect.left;
+    MoveItem(IDC_PROGRESS_PERCENT, xSize - mx - percent_width, rect.top, percent_width, rect.bottom - rect.top, false);
+
+    ChangeSubWindowSizeX(GetItem(IDT_PROGRESS_FILE_NAME), xSize - (mx * 2) - percent_width, false);
+  }
+  ChangeSubWindowSizeX(GetItem(IDC_PROGRESS1), xSize - mx * 2, false);
 
   int bSizeX = _buttonSizeX;
   int mx2 = mx;
@@ -495,17 +548,17 @@ bool CProgressDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
         xx -= bSizeX;
     }
 
-    _messageList.Move(mx, y, xx, ySize2);
+    _messageList.Move(mx, y, xx, ySize2, false);
   }
 
   {
     int xPos = xSize - mx;
     xPos -= bSizeX;
-    MoveItem(IDCANCEL, xPos, yPos, bSizeX, _buttonSizeY);
+    MoveItem(IDCANCEL, xPos, yPos, bSizeX, _buttonSizeY, false);
     xPos -= (mx2 + bSizeX);
-    MoveItem(IDB_PAUSE, xPos, yPos, bSizeX, _buttonSizeY);
+    MoveItem(IDB_PAUSE, xPos, yPos, bSizeX, _buttonSizeY, false);
     xPos -= (mx2 + bSizeX);
-    MoveItem(IDB_PROGRESS_BACKGROUND, xPos, yPos, bSizeX, _buttonSizeY);
+    MoveItem(IDB_PROGRESS_BACKGROUND, xPos, yPos, bSizeX, _buttonSizeY, false);
   }
 
   int valueSize;
@@ -546,8 +599,8 @@ bool CProgressDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
         yPos = my;
       x = mx + gSize + padSize;
     }
-    MoveItem(kIDs[i], x, yPos, labelSize, sY);
-    MoveItem(kIDs[i + 1], x + labelSize, yPos, valueSize, sY);
+    MoveItem(kIDs[i], x, yPos, labelSize, sY, false);
+    MoveItem(kIDs[i + 1], x + labelSize, yPos, valueSize, sY, false);
     yPos += sStep;
   }
   return false;
@@ -675,6 +728,39 @@ static UInt64 MyMultAndDiv(UInt64 mult1, UInt64 mult2, UInt64 divider)
   return res;
 }
 
+void CProgressDialog::UpdateSysTrayIcon(bool bAddIcon, bool bUpdateTip)
+{
+  int nNewIconID = (_prevPercentValue / 7) % 15;
+  bool bUpdateIcon = nNewIconID > m_nSysTrayIconArrayID;
+
+  if (bUpdateIcon || bUpdateTip || bAddIcon)
+  {
+    wchar_t szTip[64];
+    ConvertUInt64ToString(_prevPercentValue, szTip);
+    lstrcatW(szTip, L"%");
+/*
+#ifdef _DEBUG
+wchar_t szDebug[1024];
+swprintf(szDebug, 1024, L"Percent: %d;   Icon: %d\n", _prevPercentValue, nNewIconID);
+OutputDebugStringW(szDebug);
+#endif
+*/
+    UINT uFlags = NIF_TIP;
+    if (bUpdateIcon)
+    {
+      uFlags |= NIF_ICON;
+    }
+    if (!SetSysTray(_window, NIM_MODIFY, ID_SYSTRAY_ICON, uFlags, 0, m_hIconSysTrayArray[nNewIconID], szTip))
+    {
+      SetSysTray(_window, NIM_DELETE, ID_SYSTRAY_ICON, 0, 0, NULL, NULL);
+      SetSysTray(_window, NIM_ADD, ID_SYSTRAY_ICON, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_TRAY_ICON_NOTIFY, 
+        m_hIconSysTrayArray[nNewIconID], szTip);
+    }
+
+    m_nSysTrayIconArrayID = nNewIconID;
+  }
+}
+
 void CProgressDialog::UpdateStatInfo(bool showAll)
 {
   UInt64 total, completed, totalFiles, completedFiles, inSize, outSize;
@@ -728,6 +814,37 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
 
   ShowSize(IDT_PROGRESS_TOTAL_VAL, total, _totalBytes_Prev);
 
+  {
+    bool bPercentChanged = false;
+    UInt64 percent = 0;
+    {
+      if (IS_DEFINED_VAL(progressTotal))
+      {
+        percent = progressCompleted * 100;
+        if (progressTotal != 0)
+          percent /= progressTotal;
+      }
+    }
+    if (percent != _prevPercentValue)
+    {
+      _prevPercentValue = percent;
+      bPercentChanged = true;
+    }
+    if (bPercentChanged || titleFileName_Changed)	SetTitleText();
+    if (bPercentChanged)
+    {
+      wchar_t szPercent[32];
+      ConvertUInt64ToString(percent, szPercent);
+      lstrcatW(szPercent, L"%");
+      SetItemText(IDC_PROGRESS_PERCENT, szPercent);
+
+      if (!_foreground && m_hIconSysTrayArray[0] != NULL)
+      { // background
+        UpdateSysTrayIcon(false, true);
+      }
+    }
+  }
+
   _elapsedTime += (curTime - _prevTime);
   _prevTime = curTime;
   UInt64 elapsedSec = _elapsedTime / 1000;
@@ -741,7 +858,6 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
     SetItemText(IDT_PROGRESS_ELAPSED_VAL, s);
   }
 
-  bool needSetTitle = false;
   if (elapsedChanged || showAll)
   {
     if (numErrors > _numPostedMessages)
@@ -808,23 +924,6 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
         }
       }
     }
-
-    {
-      UInt64 percent = 0;
-      {
-        if (IS_DEFINED_VAL(progressTotal))
-        {
-          percent = progressCompleted * 100;
-          if (progressTotal != 0)
-            percent /= progressTotal;
-        }
-      }
-      if (percent != _prevPercentValue)
-      {
-        _prevPercentValue = percent;
-        needSetTitle = true;
-      }
-    }
     
     {
       wchar_t s[64];
@@ -871,9 +970,6 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
       }
     }
   }
-
-  if (needSetTitle || titleFileName_Changed)
-    SetTitleText();
 
   if (status_Changed)
   {
@@ -993,7 +1089,7 @@ bool CProgressDialog::OnExternalCloseMessage()
     MessagesDisplayed = true;
     if (fm.ErrorMessage.Title.IsEmpty())
       fm.ErrorMessage.Title = "7-Zip";
-    MessageBoxW(*this, fm.ErrorMessage.Message, fm.ErrorMessage.Title, MB_ICONERROR);
+    MessageBoxW(*this, fm.ErrorMessage.Message, fm.ErrorMessage.Title, MB_OK | MB_ICONINFORMATION);
   }
   else if (!thereAreMessages)
   {
@@ -1018,10 +1114,56 @@ bool CProgressDialog::OnExternalCloseMessage()
   return true;
 }
 
+bool CProgressDialog::CreateSysTrayMenu()
+{
+  if (m_hSysTrayMenu != NULL) return true;
+
+  m_hSysTrayMenu = CreatePopupMenu();
+  AppendMenuW(m_hSysTrayMenu, MF_STRING, IDB_PROGRESS_BACKGROUND, _foreground_String);
+  AppendMenuW(m_hSysTrayMenu, MF_STRING, IDB_PAUSE, Sync.Get_Paused() ? _continue_String : _pause_String);
+  AppendMenuW(m_hSysTrayMenu, MF_STRING, IDCANCEL, cancelString);
+  return m_hSysTrayMenu != NULL;
+}
+
+bool CProgressDialog::OnTrayNotification(LPARAM lParam)
+{
+    switch (lParam)
+  {
+  case WM_RBUTTONUP:
+    if (CreateSysTrayMenu())
+    {
+      POINT   point;
+      ::GetCursorPos(&point);
+      ::TrackPopupMenu(m_hSysTrayMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, point.x, point.y, 0, _window, NULL);
+
+      // BUGFIX: See "PRB: Menus for Notification Icons Don't Work Correctly"
+      ::PostMessage(_window, WM_NULL, 0, 0);
+    }
+    break;
+
+  case WM_LBUTTONUP:
+    OnPriorityButton();
+    break;
+
+  default:
+    break;
+  }
+
+  return false;
+}
+
 bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
   switch (message)
   {
+    case WM_GETMINMAXINFO:
+    {
+      return OnGetMinMaxInfo((PMINMAXINFO)lParam);
+    }
+    case WM_TRAY_ICON_NOTIFY:
+    {
+      return OnTrayNotification(lParam);
+    }
     case kCloseMessage:
     {
       KillTimer(_timer);
@@ -1030,6 +1172,29 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
       {
         _externalCloseMessageWasReceived = true;
         break;
+      }
+      if (!_foreground)
+      { // background
+        SetSysTray(_window, NIM_DELETE, ID_SYSTRAY_ICON, 0, 0, NULL, NULL);
+//#ifndef _SFX
+        if (MainWindow != 0)
+        {
+          ShowWindow(MainWindow, SW_SHOW);
+        }
+//#endif
+      }
+      if (m_hIconSysTrayArray[0] != NULL)
+      {
+        for (int i = 0; i < 15; i++)
+        {
+          DestroyIcon(m_hIconSysTrayArray[i]);
+          m_hIconSysTrayArray[i] = NULL;
+        }
+      }
+      if (m_hSysTrayMenu != NULL)
+      {
+        ::DestroyMenu(m_hSysTrayMenu);
+        m_hSysTrayMenu = NULL;
       }
       return OnExternalCloseMessage();
     }
@@ -1043,6 +1208,13 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     */
   }
   return CModalDialog::OnMessage(message, wParam, lParam);
+}
+
+bool CProgressDialog::OnGetMinMaxInfo(PMINMAXINFO pMMI)
+{
+  pMMI->ptMinTrackSize.x = m_sizeMinWindow.cx;
+  pMMI->ptMinTrackSize.y = m_sizeMinWindow.cy;
+  return false;
 }
 
 void CProgressDialog::SetTitleText()
@@ -1089,8 +1261,15 @@ void CProgressDialog::SetTitleText()
 
 void CProgressDialog::SetPauseText()
 {
-  SetItemText(IDB_PAUSE, Sync.Get_Paused() ? _continue_String : _pause_String);
+  LPCWSTR pszText = (Sync.Get_Paused() ? _continue_String : _pause_String);
+
+  SetItemText(IDB_PAUSE, pszText);
   SetTitleText();
+
+  if (m_hSysTrayMenu != NULL)
+  {
+    ModifyMenuW(m_hSysTrayMenu, IDB_PAUSE, MF_BYCOMMAND, IDB_PAUSE, pszText);
+  }
 }
 
 void CProgressDialog::OnPauseButton()
@@ -1113,11 +1292,53 @@ void CProgressDialog::SetPriorityText()
   SetTitleText();
 }
 
+bool CProgressDialog::LoadSysTrayIcons()
+{
+  if (m_hIconSysTrayArray[0] != NULL) return true;
+
+  int id = IDI_SYSTRAY_0;
+  for (int n=0; n<15; n++, id++)
+  {
+  m_hIconSysTrayArray[n] = (HICON)LoadImage(g_hInstance, MAKEINTRESOURCE(id), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  }
+
+  return m_hIconSysTrayArray[0] != NULL;
+}
+
 void CProgressDialog::OnPriorityButton()
 {
   _foreground = !_foreground;
   #ifndef UNDER_CE
   SetPriorityClass(GetCurrentProcess(), _foreground ? NORMAL_PRIORITY_CLASS: IDLE_PRIORITY_CLASS);
+  if (_foreground)
+  {
+    if (m_hIconSysTrayArray[0] != NULL)
+    {
+//#ifndef _SFX
+      if (MainWindow != 0)
+      {
+        ShowWindow(MainWindow, SW_SHOW);
+      }
+//#endif
+      Show(SW_SHOW);
+      SetSysTray(_window, NIM_DELETE, ID_SYSTRAY_ICON, 0, 0, NULL, NULL);
+    }
+  }
+  else
+  { // background
+    if (LoadSysTrayIcons())
+    {
+//#ifndef _SFX
+      if (MainWindow != 0)
+      {
+        ShowWindow(MainWindow, SW_HIDE);
+      }
+//#endif
+      Show(SW_HIDE);
+
+      UpdateSysTrayIcon(true, true);
+    }
+  }
   #endif
   SetPriorityText();
 }
@@ -1174,6 +1395,8 @@ void CProgressDialog::UpdateMessagesDialog()
   }
   if (!messages.IsEmpty())
   {
+    g_bProcessError = true;
+
     FOR_VECTOR (i, messages)
       AddMessage(messages[i]);
     if (_numAutoSizeMessages < 256 || GetNumDigits(_numPostedMessages) > GetNumDigits(_numAutoSizeMessages))
@@ -1204,11 +1427,11 @@ bool CProgressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
       if (!paused)
         OnPauseButton();
       _inCancelMessageBox = true;
-      int res = ::MessageBoxW(*this, LangString(IDS_PROGRESS_ASK_CANCEL), _title, MB_YESNOCANCEL);
+      int res = ::MessageBoxW(*this, LangString(IDS_PROGRESS_ASK_CANCEL), _title, MB_YESNO | MB_ICONQUESTION);
       _inCancelMessageBox = false;
       if (!paused)
         OnPauseButton();
-      if (res == IDCANCEL || res == IDNO)
+      if (res == IDNO)
       {
         if (_externalCloseMessageWasReceived)
           OnExternalCloseMessage();

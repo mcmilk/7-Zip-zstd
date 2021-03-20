@@ -429,7 +429,14 @@ public:
   void Delete(unsigned index) throw();
   void Delete(unsigned index, unsigned count) throw();
   void DeleteFrontal(unsigned num) throw();
-  void DeleteBack() { _chars[--_len] = 0; }
+  //void DeleteBack() { _chars[--_len] = 0; }
+  void DeleteBack()
+  {
+    if (_len >= 1)
+    {
+      _chars[--_len] = 0;
+    }
+  }
   void DeleteFrom(unsigned index)
   {
     if (index < _len)
@@ -608,6 +615,7 @@ public:
 
   void Add_UInt32(UInt32 v);
 
+  UString Mid(unsigned startIndex) const { return Mid(startIndex, _len - startIndex); }
   UString Mid(unsigned startIndex, unsigned count) const { return UString(count, _chars + startIndex); }
   UString Left(unsigned count) const { return UString(count, *this); }
 
@@ -671,7 +679,13 @@ public:
   void Delete(unsigned index) throw();
   void Delete(unsigned index, unsigned count) throw();
   void DeleteFrontal(unsigned num) throw();
-  void DeleteBack() { _chars[--_len] = 0; }
+  void DeleteBack()
+  {
+    if (_len >= 1)
+    {
+      _chars[--_len] = 0;
+    }
+  }
   void DeleteFrom(unsigned index)
   {
     if (index < _len)

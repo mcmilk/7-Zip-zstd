@@ -114,6 +114,7 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
   UString _pause_String;
   UString _continue_String;
   UString _paused_String;
+  UString cancelString;
 
   int _buttonSizeX;
   int _buttonSizeY;
@@ -121,6 +122,10 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
   UINT_PTR _timer;
 
   UString _title;
+
+  HICON m_hIconSysTrayArray [15];
+  int m_nSysTrayIconArrayID;
+  HMENU m_hSysTrayMenu;
 
   class CU64ToI32Converter
   {
@@ -192,6 +197,12 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
   bool _inCancelMessageBox;
   bool _externalCloseMessageWasReceived;
 
+  SIZE m_sizeMinWindow;
+
+  bool CreateSysTrayMenu();
+  bool LoadSysTrayIcons();
+  void UpdateSysTrayIcon(bool bAddIcon, bool bUpdateTip);
+
 
   #ifdef __ITaskbarList3_INTERFACE_DEFINED__
   void SetTaskbarProgressState(TBPFLAG tbpFlags)
@@ -222,6 +233,8 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
   void OnPriorityButton();
   bool OnButtonClicked(int buttonID, HWND buttonHWND);
   bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
+  bool OnGetMinMaxInfo(PMINMAXINFO pMMI);
+  bool OnTrayNotification(LPARAM lParam);
 
   void SetTitleText();
   void ShowSize(int id, UInt64 val, UInt64 &prev);

@@ -1,0 +1,16 @@
+#include "AboutEasy7ZipDialogRes.h"
+#include "../../GuiCommon.rc"
+#include "../../MyVersion.h"
+
+#define xc 165
+#define yc 85
+
+IDD_ABOUT_EASY_7ZIP DIALOG 0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
+CAPTION "About Easy 7-Zip"
+{
+  DEFPUSHBUTTON  "OK", IDOK, bx1, by, bxs, bys
+  PUSHBUTTON  MY_EASY7ZIP_HOMEPAGE, IDC_ABOUT_BUTTON_EASY7ZIP_HOMEPAGE, bx2, by, bxs, bys
+  LTEXT  MY_EASY7ZIP_7ZIP_VERSION, -1, m, m, xc, 8
+  LTEXT  MY_EASY7ZIP_COPYRIGHT, -1, m, m + 8 + 4, xc, 8
+  LTEXT  "Easy 7-Zip is a free software made by James Hoo. The software was built based on 7-Zip 16.04,\nported to 19.00 by treysis (2021).", -1, m, m + 8 + 4 + 8 + 12, xc, (yc - bys - 36)
+}

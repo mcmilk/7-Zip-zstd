@@ -49,31 +49,6 @@ bool CSplitDialog::OnInit()
   return CModalDialog::OnInit();
 }
 
-bool CSplitDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
-{
-  int mx, my;
-  GetMargins(8, mx, my);
-  int bx1, bx2, by;
-  GetItemSizes(IDCANCEL, bx1, by);
-  GetItemSizes(IDOK, bx2, by);
-  int yPos = ySize - my - by;
-  int xPos = xSize - mx - bx1;
-
-  InvalidateRect(NULL);
-
-  {
-    RECT r;
-    GetClientRectOfItem(IDB_SPLIT_PATH, r);
-    int bx = RECT_SIZE_X(r);
-    MoveItem(IDB_SPLIT_PATH, xSize - mx - bx, r.top, bx, RECT_SIZE_Y(r));
-    ChangeSubWindowSizeX(_pathCombo, xSize - mx - mx - bx - mx);
-  }
-
-  MoveItem(IDCANCEL, xPos, yPos, bx1, by);
-  MoveItem(IDOK, xPos - mx - bx2, yPos, bx2, by);
-
-  return false;
-}
 
 bool CSplitDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 {

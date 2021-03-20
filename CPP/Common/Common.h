@@ -25,6 +25,7 @@ you can change this h file or h files included in this file.
 // NewHandler.h and NewHandler.cpp redefine operator new() to throw exceptions, if compiled with old MSVC compilers
 #include "NewHandler.h"
 
+#include <stdio.h>
 
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))

@@ -133,7 +133,7 @@ public:
   bool Move(int x, int y, int width, int height, bool repaint = true)
     { return BOOLToBool(::MoveWindow(_window, x, y, width, height, BoolToBOOL(repaint))); }
 
-  bool ChangeSubWindowSizeX(HWND hwnd, int xSize)
+  bool ChangeSubWindowSizeX(HWND hwnd, int xSize, bool repaint = true)
   {
     RECT rect;
     ::GetWindowRect(hwnd, &rect);
@@ -141,7 +141,7 @@ public:
     p1.x = rect.left;
     p1.y = rect.top;
     ScreenToClient(&p1);
-    return BOOLToBool(::MoveWindow(hwnd, p1.x, p1.y, xSize, rect.bottom - rect.top, TRUE));
+    return BOOLToBool(::MoveWindow(hwnd, p1.x, p1.y, xSize, rect.bottom - rect.top, BoolToBOOL(repaint)));
   }
 
   void ScreenToClient(RECT *rect)

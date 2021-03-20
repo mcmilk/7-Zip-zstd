@@ -38,7 +38,7 @@
 #define g4xs (xc - gSize - gSpace)
 #define g4xs2 (g4xs - m - m)
 
-#define yOpt 80
+#define yOpt (80+1)
 
 #define xArcFolderOffs 40
 
@@ -52,15 +52,15 @@
 #define GROUP_Y_SIZE_ENCRYPT 128
 #endif
 
-#define yPsw (yOpt + GROUP_Y_SIZE + 8)
+#define yPsw (yOpt + GROUP_Y_SIZE + 8 + 2)
 
 IDD_COMPRESS  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "Add to Archive"
 BEGIN
   LTEXT     "", IDT_COMPRESS_ARCHIVE_FOLDER, m + xArcFolderOffs, m, xc - xArcFolderOffs, 8
   LTEXT    "&Archive:", IDT_COMPRESS_ARCHIVE, m, 12, xArcFolderOffs, 8
-  COMBOBOX  IDC_COMPRESS_ARCHIVE, m + xArcFolderOffs, 18, xc - bxsDots - 12 - xArcFolderOffs, 126, MY_COMBO_WITH_EDIT
-  PUSHBUTTON  "...", IDB_COMPRESS_SET_ARCHIVE, xs - m - bxsDots, 16, bxsDots, bys, WS_GROUP
+  COMBOBOX  IDC_COMPRESS_ARCHIVE, m + xArcFolderOffs, 18, xc - bxsDots - 4 - xArcFolderOffs, 160, MY_COMBO_WITH_EDIT
+  PUSHBUTTON  "...", IDB_COMPRESS_SET_ARCHIVE, xs - m - bxsDots, 16+1, bxsDots, bys-1, WS_GROUP
 
   LTEXT     "Archive &format:", IDT_COMPRESS_FORMAT,      m,  41, g0xs, 8
   COMBOBOX  IDC_COMPRESS_FORMAT, g1x, 39, g1xs, 80, MY_COMBO | CBS_SORT

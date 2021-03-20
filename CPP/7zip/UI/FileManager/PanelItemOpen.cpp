@@ -951,7 +951,7 @@ static HRESULT StartApplication(const UString &dir, const UString &path, HWND wi
   return S_OK;
 }
 
-static void StartApplicationDontWait(const UString &dir, const UString &path, HWND window)
+void StartApplicationDontWait(const UString &dir, const UString &path, HWND window)
 {
   CProcess process;
   StartApplication(dir, path, window, process);

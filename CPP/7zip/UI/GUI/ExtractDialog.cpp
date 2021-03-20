@@ -18,6 +18,8 @@
 #include "../FileManager/LangUtils.h"
 #include "../FileManager/resourceGui.h"
 
+#include "../FileManager/ViewSettings.h"
+
 #include "ExtractDialog.h"
 #include "ExtractDialogRes.h"
 #include "ExtractRes.h"
@@ -88,7 +90,7 @@ static const UInt32 kLangIDs[] =
 // static const int kWildcardsButtonIndex = 2;
 
 #ifndef NO_REGISTRY
-static const unsigned kHistorySize = 16;
+static const unsigned kHistorySize = 30;
 #endif
 
 #ifndef _SFX
@@ -133,6 +135,21 @@ void CExtractDialog::GetButton_Bools(UINT id, CBoolPair &b1, CBoolPair &b2)
 
 #endif
 
+void StartApplication(const UString &dir, const UString &path)
+{
+  SHELLEXECUTEINFOW execInfo;
+  ZeroMemory(&execInfo, sizeof(execInfo));
+  execInfo.cbSize = sizeof(execInfo);
+  execInfo.fMask = SEE_MASK_FLAG_DDEWAIT;
+  execInfo.hwnd = NULL;
+  execInfo.lpVerb = NULL;
+  execInfo.lpFile = path;
+  execInfo.lpParameters = NULL;
+  execInfo.lpDirectory = dir.IsEmpty() ? NULL : (LPCWSTR)dir;
+  execInfo.nShow = SW_SHOWNORMAL;
+  ShellExecuteExW(&execInfo);
+}
+
 bool CExtractDialog::OnInit()
 {
   #ifdef LANG
@@ -158,6 +175,9 @@ bool CExtractDialog::OnInit()
   _passwordControl.SetPasswordChar(TEXT('*'));
   _pathName.Attach(GetItem(IDE_EXTRACT_NAME));
   #endif
+
+  _freeSpace.Attach(GetItem(IDC_STATIC_EXTRACT_FREE_SPACE));
+  _freeSpace.SetText(L"");
 
   #ifdef NO_REGISTRY
   
@@ -207,6 +227,7 @@ bool CExtractDialog::OnInit()
   #endif
 
   _path.SetText(pathPrefix);
+  ShowPathFreeSpace(pathPrefix);
 
   #ifndef NO_REGISTRY
   for (unsigned i = 0; i < _info.Paths.Size() && i < kHistorySize; i++)
@@ -221,13 +242,16 @@ bool CExtractDialog::OnInit()
   */
 
   #ifndef _SFX
+  m_bOpenOutputFolder = ReadOptOpenOutputFolder();
+  CheckButton(IDC_EXTRACT_CHECK_OPEN_OUTPUT_FOLDER, m_bOpenOutputFolder);
+  #endif
 
+  #ifndef _SFX
   _pathMode.Attach(GetItem(IDC_EXTRACT_PATH_MODE));
   _overwriteMode.Attach(GetItem(IDC_EXTRACT_OVERWRITE_MODE));
 
   AddComboItems(_pathMode, kPathMode_IDs, ARRAY_SIZE(kPathMode_IDs), kPathModeButtonsVals, PathMode);
   AddComboItems(_overwriteMode, kOverwriteMode_IDs, ARRAY_SIZE(kOverwriteMode_IDs), kOverwriteButtonsVals, OverwriteMode);
-
   #endif
 
   HICON icon = LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_ICON));
@@ -258,6 +282,17 @@ bool CExtractDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
     case IDB_EXTRACT_SET_PATH:
       OnButtonSetPath();
       return true;
+    case IDC_EXTRACT_BUTTON_OPEN_PATH:
+      OnButtonOpenPath();
+      return true;
+    case IDC_EXTRACT_CHECK_OPEN_OUTPUT_FOLDER:
+      m_bOpenOutputFolder = IsButtonCheckedBool(IDC_EXTRACT_CHECK_OPEN_OUTPUT_FOLDER);
+      return true;
+    #ifndef _SFX
+    case IDC_CHECK_DELETE_SOURCE_FILE:
+      m_bDeleteSourceFile = IsButtonCheckedBool(IDC_CHECK_DELETE_SOURCE_FILE);
+      return true;
+    #endif
     #ifndef _SFX
     case IDX_EXTRACT_NAME_ENABLE:
       ShowItem_Bool(IDE_EXTRACT_NAME, IsButtonCheckedBool(IDX_EXTRACT_NAME_ENABLE));
@@ -284,6 +319,7 @@ void CExtractDialog::OnButtonSetPath()
   _path.SetCurSel(-1);
   #endif
   _path.SetText(resultPath);
+  ShowPathFreeSpace(resultPath);
 }
 
 void AddUniqueString(UStringVector &list, const UString &s)
@@ -296,6 +332,9 @@ void AddUniqueString(UStringVector &list, const UString &s)
 
 void CExtractDialog::OnOK()
 {
+  #ifndef _SFX
+  SaveOptOpenOutputFolder(m_bOpenOutputFolder);
+  #endif
   #ifndef _SFX
   int pathMode2 = kPathModeButtonsVals[_pathMode.GetCurSel()];
   if (PathMode != NExtract::NPathMode::kCurPaths ||
@@ -416,3 +455,143 @@ void CExtractDialog::OnHelp()
   CModalDialog::OnHelp();
 }
 #endif
+
+BOOL IsDirectory(const wchar_t * lpszPathFile)
+{
+  DWORD	dwAttr;
+
+  dwAttr = GetFileAttributesW(lpszPathFile);
+  return (dwAttr != (DWORD)-1) && (dwAttr & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+void CExtractDialog::OnButtonOpenPath()
+{
+  UString currentPath;
+  _path.GetText(currentPath);
+
+  if (IsDirectory(currentPath))
+  {
+    StartApplication(currentPath, currentPath);
+  }
+  else
+  {
+    wchar_t szMsg[1024];
+    wsprintfW(szMsg, L"Folder \"%s\" is not available yet.\n\n"
+      L"Note: the program will create the folder automatically when extracting.", (LPCWSTR)currentPath);
+    MessageBoxW((HWND)_window, szMsg, L"7-Zip", MB_ICONEXCLAMATION);
+  }
+}
+
+static int MakeByteSizeString64(wchar_t * lpszBuf, size_t ccBuf, unsigned __int64 n64Byte)
+{
+  int nRet = 0;
+
+  if (n64Byte < 1000ui64)
+  {
+    // < 1K
+    nRet = swprintf(lpszBuf, ccBuf, 
+      L"%I64d B", n64Byte);
+  }
+  else if (n64Byte < 1024000ui64) // 1024 * 1000
+  {
+    // 1K <= n64Byte < 1M
+    nRet = swprintf(lpszBuf, ccBuf, 
+      L"%.1f KB", (double)n64Byte / 1024.0);
+  }
+  else if (n64Byte < 1048576000ui64) //  1024 * 1024 * 1000
+  {
+    // 1M <= n64Byte < 1G
+    nRet = swprintf(lpszBuf, ccBuf, 
+      L"%.2f MB", (double)n64Byte / 1048576.0); // 1024 * 1024
+  }
+  else if (n64Byte < 1073741824000ui64) //  1024 * 1024 * 1024 * 1000
+  {
+    // 1 G <= n64Byte < 1T
+    nRet = swprintf(lpszBuf, ccBuf, 
+      L"%.2f GB", (double)n64Byte / 1073741824.0); // 1024.0F * 1024.0F * 1024.0F
+  }
+  else
+  {
+    // n64Byte >= 1T
+    nRet = swprintf(lpszBuf, ccBuf, 
+      L"%.2f TB", (double)n64Byte / 1099511627776.0);
+                  // 1024.0F * 1024.0F * 1024.0F * 1024.0F
+  }
+  return nRet;
+}
+
+void CExtractDialog::ShowPathFreeSpace(UString & strPath)
+{
+  bool bBadPath;
+  UString strText;
+
+  strText.Empty();
+
+  bBadPath = false;
+  strPath.Trim();
+  for (; !IsDirectory(strPath); )
+  {
+    int n = strPath.ReverseFind(L'\\');
+    if (n == -1)
+    {
+      bBadPath = true;
+      break;
+    }
+    else
+    {
+      strPath.ReleaseBuf_SetEnd(n);
+    }
+  }
+  if (!bBadPath)
+  {
+    unsigned __int64 n64FreeBytesAvailable;
+    unsigned __int64 n64TotalNumberOfBytes;
+    unsigned __int64 n64TotalNumberOfFreeBytes;
+
+    if (GetDiskFreeSpaceExW(strPath, (PULARGE_INTEGER)&n64FreeBytesAvailable, 
+      (PULARGE_INTEGER)&n64TotalNumberOfBytes, (PULARGE_INTEGER)&n64TotalNumberOfFreeBytes))
+    {
+      wchar_t szFreeBytes[1024];
+      wchar_t szTotalBytes[1024];
+      MakeByteSizeString64(szFreeBytes, 1024-4, n64TotalNumberOfFreeBytes);
+      MakeByteSizeString64(szTotalBytes, 1024-4, n64TotalNumberOfBytes);
+      int nLen = swprintf(strText.GetBuf(1024), 1024-4,  L"%s Free (Total: %s)", szFreeBytes, szTotalBytes);
+      strText.ReleaseBuf_SetEnd(nLen);
+    }
+  }
+  _freeSpace.SetText(strText);
+}
+
+
+bool CExtractDialog::OnCommand(int code, int itemID, LPARAM lParam)
+{
+  if (itemID == IDC_EXTRACT_PATH)
+  {
+#ifdef NO_REGISTRY
+    if (code == EN_CHANGE)
+#else
+    if (code == CBN_EDITCHANGE)
+#endif
+    {
+      UString strPath;
+      _path.GetText(strPath);
+
+      ShowPathFreeSpace(strPath);
+      return true;
+    }
+#ifndef NO_REGISTRY
+    else if (code == CBN_SELCHANGE)
+    {
+      int nSel = _path.GetCurSel();
+      if (nSel != CB_ERR)
+      {
+        UString strPath;
+        _path.GetLBText(nSel, strPath);
+        ShowPathFreeSpace(strPath);
+      }
+      return true;
+    }
+#endif
+  }
+  return CModalDialog::OnCommand(code, itemID, lParam);
+}

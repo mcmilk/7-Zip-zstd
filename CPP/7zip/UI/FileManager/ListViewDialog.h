@@ -19,6 +19,9 @@ class CListViewDialog: public NWindows::NControl::CModalDialog
   void DeleteItems();
   void ShowItemInfo();
   void OnEnter();
+  bool OnGetMinMaxInfo(PMINMAXINFO pMMI);
+protected:
+  SIZE m_sizeMinWindow;
 public:
   UString Title;
   
@@ -40,7 +43,8 @@ public:
     StringsWereChanged(false),
     FocusedItemIndex(-1),
     NumColumns(1)
-    {}
+    { m_sizeMinWindow.cx = 0; m_sizeMinWindow.cy = 0; }
+  virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
 };
 
 #endif

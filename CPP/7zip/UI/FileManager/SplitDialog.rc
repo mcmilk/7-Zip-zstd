@@ -4,7 +4,7 @@
 #define xc 288
 #define yc 96
 
-IDD_SPLIT  DIALOG  0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
+IDD_SPLIT  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "Split File"
 BEGIN
   LTEXT       "&Split to:", IDT_SPLIT_PATH, m, m, xc, 8

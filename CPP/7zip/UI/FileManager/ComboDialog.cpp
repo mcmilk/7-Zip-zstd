@@ -39,24 +39,6 @@ bool CComboDialog::OnInit()
   return CModalDialog::OnInit();
 }
 
-bool CComboDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
-{
-  int mx, my;
-  GetMargins(8, mx, my);
-  int bx1, bx2, by;
-  GetItemSizes(IDCANCEL, bx1, by);
-  GetItemSizes(IDOK, bx2, by);
-  int y = ySize - my - by;
-  int x = xSize - mx - bx1;
-
-  InvalidateRect(NULL);
-
-  MoveItem(IDCANCEL, x, y, bx1, by);
-  MoveItem(IDOK, x - mx - bx2, y, bx2, by);
-  ChangeSubWindowSizeX(_comboBox, xSize - mx * 2);
-  return false;
-}
-
 void CComboDialog::OnOK()
 {
   _comboBox.GetText(Value);

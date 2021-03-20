@@ -39,6 +39,8 @@
 
 #define yc (z0 + z0s + bys)
 
+#define percent_width 23
+
 
 DIALOG_ID  DIALOG  0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
 CAPTION "Progress"
@@ -70,7 +72,9 @@ CAPTION "Progress"
   RTEXT  "",  IDT_PROGRESS_PACKED_VAL,    x3, y3, x3s, MY_TEXT_NOPREFIX
 
   LTEXT  "", IDT_PROGRESS_STATUS, m, z3, xc, MY_TEXT_NOPREFIX
-  CONTROL  "", IDT_PROGRESS_FILE_NAME, "Static", SS_NOPREFIX | SS_LEFTNOWORDWRAP, m, z2, xc, z2s
+  CONTROL  "", IDT_PROGRESS_FILE_NAME, "Static", SS_NOPREFIX | SS_LEFTNOWORDWRAP, m, z2, xc - percent_width, z2s
+  RTEXT  "", IDC_PROGRESS_PERCENT, m + xc - percent_width, z2, percent_width, z2s, SS_NOPREFIX | SS_CENTERIMAGE
+
   
   CONTROL  "Progress1", IDC_PROGRESS1, "msctls_progress32", PBS_SMOOTH | WS_BORDER, m, z1, xc, z1s
 

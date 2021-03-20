@@ -7,8 +7,11 @@
 
 MY_VERSION_INFO_APP("7z SFX", "7z.sfx")
 
-#define xc 240
-#define yc 64
+#define xc 270
+#define yc 75
+
+#define bxsOpen 30
+#define xsSpace 4
 
 IDI_ICON ICON "7z.ico"
 
@@ -16,9 +19,12 @@ IDD_EXTRACT  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "7-Zip self-extracting archive"
 BEGIN
   LTEXT          "E&xtract to:", IDT_EXTRACT_EXTRACT_TO, m, m, xc, 8
-  EDITTEXT       IDC_EXTRACT_PATH, m, 21, xc - bxsDots - 12, 14, ES_AUTOHSCROLL
-  PUSHBUTTON     "...", IDB_EXTRACT_SET_PATH, xs - m - bxsDots, 20, bxsDots, bys, WS_GROUP
-  DEFPUSHBUTTON  "Extract", IDOK,     bx2, by, bxs, bys, WS_GROUP
+  EDITTEXT       IDC_EXTRACT_PATH, m, m + 12 - 1, xc - bxsDots - xsSpace - bxsOpen - xsSpace, 14, ES_AUTOHSCROLL
+  PUSHBUTTON     "...", IDB_EXTRACT_SET_PATH, xs - m - bxsDots - xsSpace - bxsOpen, m + 12 - 1, bxsDots, bys-1, WS_GROUP
+  PUSHBUTTON     "&Open", IDC_EXTRACT_BUTTON_OPEN_PATH, xs - m - bxsOpen, m + 12 - 1, bxsOpen, bys-1, WS_GROUP
+  LTEXT          "",    IDC_STATIC_EXTRACT_FREE_SPACE, m, m + 12 + 14 + 1, xc, 8
+  CONTROL        "O&pen output folder after extracting", IDC_EXTRACT_CHECK_OPEN_OUTPUT_FOLDER, MY_CHECKBOX, m, m + 12 + 14 + 1 + 8 + 6, xc, 10
+  DEFPUSHBUTTON  "&Extract", IDOK,     bx2, by, bxs, bys, WS_GROUP
   PUSHBUTTON     "Cancel",  IDCANCEL, bx1, by, bxs, bys
 END
 

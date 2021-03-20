@@ -103,6 +103,7 @@
 
 #define IDM_HELP_CONTENTS        960
 #define IDM_ABOUT                961
+#define IDM_ABOUT_EASY_7ZIP      962
 
 #define IDS_OPTIONS                     2100
 

@@ -55,6 +55,12 @@ bool CMessagesDialog::OnInit()
 
   _messageList.SetColumnWidthAuto(0);
   _messageList.SetColumnWidthAuto(1);
+
+  RECT rc;
+  GetWindowRect(&rc);
+  m_sizeMinWindow.cx = (RECT_SIZE_X(rc))*3/4;
+  m_sizeMinWindow.cy = (RECT_SIZE_Y(rc))*3/4;
+
   NormalizeSize();
   return CModalDialog::OnInit();
 }
@@ -68,9 +74,27 @@ bool CMessagesDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   int y = ySize - my - by;
   int x = xSize - mx - bx;
 
+  MoveItem(IDOK, x, y, bx, by, false);
+  _messageList.Move(mx, my, xSize - mx * 2, y - my * 2, false);
   InvalidateRect(NULL);
+  return false;
+}
 
-  MoveItem(IDOK, x, y, bx, by);
-  _messageList.Move(mx, my, xSize - mx * 2, y - my * 2);
+bool CMessagesDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  switch(message)
+  {
+  case WM_GETMINMAXINFO:
+    {
+      return OnGetMinMaxInfo((PMINMAXINFO)lParam);
+    }
+  }
+  return CModalDialog::OnMessage(message, wParam, lParam);
+}
+
+bool CMessagesDialog::OnGetMinMaxInfo(PMINMAXINFO pMMI)
+{
+  pMMI->ptMinTrackSize.x = m_sizeMinWindow.cx;
+  pMMI->ptMinTrackSize.y = m_sizeMinWindow.cy;
   return false;
 }
