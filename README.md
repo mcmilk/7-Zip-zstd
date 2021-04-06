@@ -24,10 +24,10 @@ You can install it in two ways:
 3. [LZ4] v1.9.3 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
    - Levels: 1..12
 
-4. [LZ5] v1.5 is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression.
+4. [LZ5] v1.5 is a modification of LZ4 which was meant for a better ratio at cost of slower compression and decompression. It's superseded by [Lizard] now.
    - Levels: 1..15
 
-5. [Lizard] v1.0 is an efficient compressor with very fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
+5. [Lizard] v1.0 is an efficient compressor with fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
    - Levels 10..19 (fastLZ4) are designed to give about 10% better decompression speed than LZ4
    - Levels 20..29 (LIZv1) are designed to give better ratio than LZ4 keeping 75% decompression speed
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 19.00 ZS v1.4.9 R1 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2021 Tino Reichardt : 2021-03-17
+7-Zip 19.00 ZS v1.4.9 R2 (x64) : Copyright (c) 1999-2019 Igor Pavlov, 2016-2021 Tino Reichardt : 2021-04-06
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -94,6 +94,7 @@ Codecs:
  1 3ED  4F712FF RawSplitter
 
 Hashers:
+ 0   32      20A BLAKE3
  0    4        1 CRC32
  0   16      205 MD2
  0   16      206 MD4
@@ -117,6 +118,7 @@ Hashers:
 - explorer context menu: _"Add to xy.7z"_ will use all parameters of the last "Add to Archive" compression dialog (this includes: method, level, dictionary, blocksize, threads and paramters input box)
 - squashfs files with LZ4 or Zstandard compression can be handled
 - several history settings aren't stored by default, look [here](https://sourceforge.net/p/sevenzip/discussion/45797/thread/dc2ac53d/?limit=25) for some info about that, you can restore original 7-Zip behavior via `tools->options->settings`
+- these hashes can be calculated: CRC32, CRC64, MD2, MD4, MD5, SHA1, SHA256, SHA384, SHA512, XXH32, XXH64, BLAKE2sp, BLAKE3 (lowercase or uppercase)
 
 ```
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
@@ -285,8 +287,9 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ4] Version 1.9.3
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.4.9
+  - [BLAKE3] Version 0.3.7
 
-/TR 2021-03-17
+/TR 2021-04-06
 
 ## Notes
 
@@ -295,6 +298,7 @@ You find this project useful, maybe you consider a donation ;-)
 [7-Zip]:https://www.7-zip.org/
 [lzip]:https://www.nongnu.org/lzip/
 [Brotli]:https://github.com/google/brotli/
+[BLAKE3]:https://github.com/BLAKE3-team/BLAKE3
 [LZ4]:https://github.com/lz4/lz4/
 [LZ5]:https://github.com/inikep/lz5/
 [Zstandard]:https://github.com/facebook/zstd/
