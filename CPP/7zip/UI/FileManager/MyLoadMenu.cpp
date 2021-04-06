@@ -588,7 +588,8 @@ bool ExecuteFileCommand(int id)
     case IDM_SHA384: g_App.CalculateCrc("SHA384"); break;
     case IDM_SHA512: g_App.CalculateCrc("SHA512"); break;
     case IDM_BLAKE2sp: g_App.CalculateCrc("BLAKE2sp"); break;
-    
+    case IDM_BLAKE3: g_App.CalculateCrc("BLAKE3"); break;
+
     case IDM_DIFF: g_App.DiffFiles(); break;
     case IDM_SPLIT: g_App.Split(); break;
     case IDM_COMBINE: g_App.Combine(); break;

@@ -33,6 +33,7 @@
 #define IDM_SHA384               111
 #define IDM_SHA512               112
 #define IDM_BLAKE2sp             113
+#define IDM_BLAKE3               114
 
 #define IDM_OPEN                 540
 #define IDM_OPEN_INSIDE          541

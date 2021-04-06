@@ -237,6 +237,7 @@ static const CHashCommand g_HashCommands[] =
   { CZipContextMenu::kHash_SHA384,   "SHA-384",  "SHA384" },
   { CZipContextMenu::kHash_SHA512,   "SHA-512",  "SHA512" },
   { CZipContextMenu::kHash_BLAKE2sp, "BLAKE2sp", "BLAKE2sp" },
+  { CZipContextMenu::kHash_BLAKE3,   "BLAKE3",   "BLAKE3" },
   { CZipContextMenu::kHash_All,      "*",        "*" }
 };
 
@@ -951,6 +952,7 @@ STDMETHODIMP CZipContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO commandInfo)
       case kHash_SHA384:
       case kHash_SHA512:
       case kHash_BLAKE2sp:
+      case kHash_BLAKE3:
       case kHash_All:
       {
         for (unsigned i = 0; i < ARRAY_SIZE(g_HashCommands); i++)

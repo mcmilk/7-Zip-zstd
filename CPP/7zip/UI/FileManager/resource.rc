@@ -50,6 +50,7 @@ BEGIN
       MENUITEM "SHA-384",                   IDM_SHA384
       MENUITEM "SHA-512",                   IDM_SHA512
       MENUITEM "Blake2sp",                  IDM_BLAKE2sp
+      MENUITEM "Blake3",                    IDM_BLAKE3
       MENUITEM "*",                         IDM_HASH_ALL
     END
     MENUITEM "Di&ff",                       IDM_DIFF

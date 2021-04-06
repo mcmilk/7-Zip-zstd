@@ -44,6 +44,7 @@ public:
     kHash_SHA384,
     kHash_SHA512,
     kHash_BLAKE2sp,
+    kHash_BLAKE3,
     kHash_All
   };
   

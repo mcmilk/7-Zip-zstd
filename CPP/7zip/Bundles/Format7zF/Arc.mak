@@ -1,4 +1,5 @@
 COMMON_OBJS = \
+  $O\Blake3Reg.obj \
   $O\CRC.obj \
   $O\CrcReg.obj \
   $O\DynLimBuf.obj \
@@ -257,6 +258,7 @@ CRYPTO_OBJS = \
   $O\ZipStrong.obj \
 
 HASHES_OBJS = \
+  $O\blake3.obj \
   $O\md2.obj \
   $O\md4.obj \
   $O\md5.obj \
