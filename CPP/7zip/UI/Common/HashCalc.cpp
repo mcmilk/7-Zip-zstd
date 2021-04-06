@@ -9,6 +9,10 @@
 #include "../../Common/FileStreams.h"
 #include "../../Common/StreamUtils.h"
 
+#ifdef WANT_OPTIONAL_LOWERCASE
+#include "../FileManager/RegistryUtils.h"
+#endif
+
 #include "EnumDirItems.h"
 #include "HashCalc.h"
 
@@ -309,10 +313,15 @@ HRESULT HashCalc(
   return callback->AfterLastFile(hb);
 }
 
-
 static inline char GetHex(unsigned v)
 {
-  return (char)((v < 10) ? ('0' + v) : ('a' + (v - 10)));
+#ifdef WANT_OPTIONAL_LOWERCASE
+  if (WantLowercaseHashes())
+  {
+    return (char)((v < 10) ? ('0' + v) : ('a' + (v - 10)));
+  }
+#endif
+  return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10)));
 }
 
 void AddHashHexToString(char *dest, const Byte *data, UInt32 size)

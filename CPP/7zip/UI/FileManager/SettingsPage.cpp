@@ -30,7 +30,8 @@ static const UInt32 kLangIDs[] =
   IDX_SETTINGS_WANT_ARC_HISTORY,
   IDX_SETTINGS_WANT_PATH_HISTORY,
   IDX_SETTINGS_WANT_COPY_HISTORY,
-  IDX_SETTINGS_WANT_FOLDER_HISTORY
+  IDX_SETTINGS_WANT_FOLDER_HISTORY,
+  IDX_SETTINGS_LOWERCASE_HASHES
 };
 
 #define kSettingsTopic "FM/options.htm#settings"
@@ -66,6 +67,7 @@ bool CSettingsPage::OnInit()
   CheckButton(IDX_SETTINGS_WANT_PATH_HISTORY, st.PathHistory);
   CheckButton(IDX_SETTINGS_WANT_COPY_HISTORY, st.CopyHistory);
   CheckButton(IDX_SETTINGS_WANT_FOLDER_HISTORY, st.FolderHistory);
+  CheckButton(IDX_SETTINGS_LOWERCASE_HASHES, st.LowercaseHashes);
   // EnableSubItems();
 
   return CPropertyPage::OnInit();
@@ -93,6 +95,7 @@ LONG CSettingsPage::OnApply()
     st.PathHistory = IsButtonCheckedBool(IDX_SETTINGS_WANT_PATH_HISTORY);
     st.CopyHistory = IsButtonCheckedBool(IDX_SETTINGS_WANT_COPY_HISTORY);
     st.FolderHistory = IsButtonCheckedBool(IDX_SETTINGS_WANT_FOLDER_HISTORY);
+    st.LowercaseHashes = IsButtonCheckedBool(IDX_SETTINGS_LOWERCASE_HASHES);
     // st.Underline = IsButtonCheckedBool(IDX_SETTINGS_UNDERLINE);
     
     st.ShowSystemMenu = IsButtonCheckedBool(IDX_SETTINGS_SHOW_SYSTEM_MENU);
@@ -142,6 +145,7 @@ bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
     case IDX_SETTINGS_WANT_PATH_HISTORY:
     case IDX_SETTINGS_WANT_COPY_HISTORY:
     case IDX_SETTINGS_WANT_FOLDER_HISTORY:
+    case IDX_SETTINGS_LOWERCASE_HASHES:
       _wasChanged = true;
       break;
 
