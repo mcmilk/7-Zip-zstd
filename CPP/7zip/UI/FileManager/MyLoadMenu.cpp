@@ -124,7 +124,7 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
   CMenu menu;
   menu.Attach(menuLoc);
   
-  for (int i = 0;; i++)
+  for (unsigned i = 0;; i++)
   {
     CMenuItem item;
     item.fMask = Get_fMask_for_String() | MIIM_SUBMENU | MIIM_ID;
@@ -214,7 +214,7 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
 
 static CMenu g_FileMenu;
 
-struct CFileMenuDestroyer
+static struct CFileMenuDestroyer
 {
   ~CFileMenuDestroyer() { if ((HMENU)g_FileMenu != 0) g_FileMenu.Destroy(); }
 } g_FileMenuDestroyer;
@@ -461,6 +461,22 @@ void OnMenuUnActivating(HWND hWnd, HMENU hMenu, int id)
 }
 */
 
+static const unsigned g_Zvc_IDs[] =
+{
+  IDM_VER_EDIT,
+  IDM_VER_COMMIT,
+  IDM_VER_REVERT,
+  IDM_VER_DIFF
+};
+
+static const char * const g_Zvc_Strings[] =
+{
+    "Ver Edit (&1)"
+  , "Ver Commit"
+  , "Ver Revert"
+  , "Ver Diff (&0)"
+};
+
 void CFileMenu::Load(HMENU hMenu, unsigned startPos)
 {
   CMenu destMenu;
@@ -468,7 +484,7 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
 
   UString diffPath;
   ReadRegDiff(diffPath);
-  
+
   unsigned numRealItems = startPos;
   
   for (unsigned i = 0;; i++)
@@ -544,11 +560,47 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
         numRealItems = startPos;
     }
   }
+
+  UString vercPath;
+  if (!diffPath.IsEmpty() && isFsFolder && allAreFiles && numItems == 1)
+    ReadReg_VerCtrlPath(vercPath);
+  
+  if (!vercPath.IsEmpty())
+  {
+    NFile::NFind::CFileInfo fi;
+    if (fi.Find(FilePath) && fi.Size < ((UInt32)1 << 31) && !fi.IsDir())
+    {
+      for (unsigned k = 0; k < ARRAY_SIZE(g_Zvc_IDs); k++)
+      {
+        const unsigned id = g_Zvc_IDs[k];
+        if (fi.IsReadOnly())
+        {
+          if (id == IDM_VER_COMMIT ||
+              id == IDM_VER_REVERT ||
+              id == IDM_VER_DIFF)
+            continue;
+        }
+        else
+        {
+          if (id == IDM_VER_EDIT)
+            continue;
+        }
+        
+        CMenuItem item;
+        UString s (g_Zvc_Strings[k]);
+        if (destMenu.AppendItem(MF_STRING, id, s))
+        {
+          startPos++;
+          numRealItems = startPos;
+        }
+      }
+    }
+  }
   
   destMenu.RemoveAllItemsFrom(numRealItems);
 }
 
-bool ExecuteFileCommand(int id)
+bool ExecuteFileCommand(unsigned id)
 {
   if (id >= kMenuCmdID_Plugin_Start)
   {
@@ -582,6 +634,13 @@ bool ExecuteFileCommand(int id)
     case IDM_SHA256: g_App.CalculateCrc("SHA256"); break;
     
     case IDM_DIFF: g_App.DiffFiles(); break;
+
+    case IDM_VER_EDIT:
+    case IDM_VER_COMMIT:
+    case IDM_VER_REVERT:
+    case IDM_VER_DIFF:
+        g_App.VerCtrl(id); break;
+
     case IDM_SPLIT: g_App.Split(); break;
     case IDM_COMBINE: g_App.Combine(); break;
     case IDM_PROPERTIES: g_App.Properties(); break;
@@ -604,7 +663,7 @@ static void MyBenchmark(bool totalMode)
   Benchmark(totalMode);
 }
 
-bool OnMenuCommand(HWND hWnd, int id)
+bool OnMenuCommand(HWND hWnd, unsigned id)
 {
   if (ExecuteFileCommand(id))
     return true;

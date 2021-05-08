@@ -31,7 +31,7 @@ bool CLang::OpenFromString(const AString &s2)
 
   for (const char *p = kLangSignature;; i++)
   {
-    Byte c = *p++;
+    Byte c = (Byte)(*p++);
     if (c == 0)
       break;
     if (s[i] != c)
@@ -122,10 +122,10 @@ bool CLang::Open(CFSTR fileName, const char *id)
     return false;
   
   AString s;
-  unsigned len = (unsigned)length;
+  const unsigned len = (unsigned)length;
   char *p = s.GetBuf(len);
-  UInt32 processed;
-  if (!file.Read(p, len, processed))
+  size_t processed;
+  if (!file.ReadFull(p, len, processed))
     return false;
   file.Close();
   if (len != processed)
@@ -159,5 +159,5 @@ const wchar_t *CLang::Get(UInt32 id) const throw()
   int index = _ids.FindInSorted(id);
   if (index < 0)
     return NULL;
-  return _text + (size_t)_offsets[index];
+  return _text + (size_t)_offsets[(unsigned)index];
 }

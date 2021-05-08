@@ -23,14 +23,14 @@
     ((UInt32)((const Byte *)(p))[1] <<  8) | \
              ((const Byte *)(p))[2] )
 
-#define Get16(p) GetBe16(p)
+// #define Get16(p) GetBe16(p)
 #define Get24(p) GetBe24(p)
 #define Get32(p) GetBe32(p)
 
 namespace NArchive {
 namespace NFlv {
 
-static const UInt32 kFileSizeMax = (UInt32)1 << 30;
+// static const UInt32 kFileSizeMax = (UInt32)1 << 30;
 static const UInt32 kNumChunksMax = (UInt32)1 << 23;
 
 static const UInt32 kTagHeaderSize = 11;

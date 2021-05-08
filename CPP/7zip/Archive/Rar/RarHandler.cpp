@@ -466,7 +466,7 @@ bool CInArchive::ReadHeaderReal(const Byte *p, unsigned size, CItem &item)
     for (unsigned i = 0; i < sizeof(item.Salt); i++)
       item.Salt[i] = p[i];
     p += sizeof(item.Salt);
-    size -= sizeof(item.Salt);
+    size -= (unsigned)sizeof(item.Salt);
   }
 
   // some rar archives have HasExtTime flag without field.
@@ -526,31 +526,36 @@ HRESULT CInArchive::GetNextItem(CItem &item, ICryptoGetTextPassword *getTextPass
       }
       // m_RarAESSpec->SetRar350Mode(ArcInfo.IsEncryptOld());
 
-      // Salt
-      const UInt32 kSaltSize = 8;
-      Byte salt[kSaltSize];
-      if (!ReadBytesAndTestSize(salt, kSaltSize))
-        return S_FALSE;
-      m_Position += kSaltSize;
-      RINOK(m_RarAESSpec->SetDecoderProperties2(salt, kSaltSize))
-      // Password
-      CMyComBSTR password;
-      RINOK(getTextPassword->CryptoGetTextPassword(&password))
-      unsigned len = 0;
-      if (password)
-        len = MyStringLen(password);
-      if (len > kPasswordLen_MAX)
-        len = kPasswordLen_MAX;
-
-      CByteArr buffer(len * 2);
-      for (unsigned i = 0; i < len; i++)
       {
-        wchar_t c = password[i];
-        ((Byte *)buffer)[i * 2] = (Byte)c;
-        ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
+        // Salt
+        const UInt32 kSaltSize = 8;
+        Byte salt[kSaltSize];
+        if (!ReadBytesAndTestSize(salt, kSaltSize))
+          return S_FALSE;
+        m_Position += kSaltSize;
+        RINOK(m_RarAESSpec->SetDecoderProperties2(salt, kSaltSize))
       }
 
-      m_RarAESSpec->SetPassword((const Byte *)buffer, len * 2);
+      {
+        // Password
+        CMyComBSTR_Wipe password;
+        RINOK(getTextPassword->CryptoGetTextPassword(&password))
+        unsigned len = 0;
+        if (password)
+          len = MyStringLen(password);
+        if (len > kPasswordLen_MAX)
+          len = kPasswordLen_MAX;
+        
+        CByteBuffer_Wipe buffer(len * 2);
+        for (unsigned i = 0; i < len; i++)
+        {
+          wchar_t c = password[i];
+          ((Byte *)buffer)[i * 2] = (Byte)c;
+          ((Byte *)buffer)[i * 2 + 1] = (Byte)(c >> 8);
+        }
+        
+        m_RarAESSpec->SetPassword((const Byte *)buffer, len * 2);
+      }
 
       const UInt32 kDecryptedBufferSize = (1 << 12);
       if (m_DecryptedDataAligned.Size() == 0)
@@ -1621,7 +1626,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
       // if (getTextPassword)
       {
-        CMyComBSTR password;
+        CMyComBSTR_Wipe password;
         RINOK(getTextPassword->CryptoGetTextPassword(&password));
         
         if (item.UnPackVersion >= 29)
@@ -1631,7 +1636,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             len = MyStringLen(password);
           if (len > kPasswordLen_MAX)
             len = kPasswordLen_MAX;
-          CByteArr buffer(len * 2);
+          CByteBuffer_Wipe buffer(len * 2);
           for (unsigned k = 0; k < len; k++)
           {
             wchar_t c = password[k];
@@ -1642,13 +1647,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         }
         else
         {
-          AString oemPassword;
+          AString_Wipe oemPassword;
           if (password)
           {
-            UString unicode = (LPCOLESTR)password;
+            UString_Wipe unicode;
+            unicode.SetFromBstr(password);
             if (unicode.Len() > kPasswordLen_MAX)
               unicode.DeleteFrom(kPasswordLen_MAX);
-            oemPassword = UnicodeStringToMultiByte(unicode, CP_OEMCP);
+            UnicodeStringToMultiByte2(oemPassword, unicode, CP_OEMCP);
           }
           rar20CryptoDecoderSpec->SetPassword((const Byte *)(const char *)oemPassword, oemPassword.Len());
         }

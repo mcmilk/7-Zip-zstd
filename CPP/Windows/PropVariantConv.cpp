@@ -1,4 +1,4 @@
-// PropVariantConvert.cpp
+// PropVariantConv.cpp
 
 #include "StdAfx.h"
 
@@ -86,7 +86,7 @@ bool ConvertUtcFileTimeToString(const FILETIME &ft, wchar_t *dest, int level) th
   bool res = ConvertUtcFileTimeToString(ft, s, level);
   for (unsigned i = 0;; i++)
   {
-    unsigned char c = s[i];
+    Byte c = (Byte)s[i];
     dest[i] = c;
     if (c == 0)
       break;

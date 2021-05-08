@@ -8,6 +8,8 @@
 
 #include "ExtractingFilePath.h"
 
+extern
+bool g_PathTrailReplaceMode;
 bool g_PathTrailReplaceMode =
     #ifdef _WIN32
       true
@@ -17,6 +19,7 @@ bool g_PathTrailReplaceMode =
     ;
 
 
+#ifdef _WIN32
 static void ReplaceIncorrectChars(UString &s)
 {
   {
@@ -31,7 +34,10 @@ static void ReplaceIncorrectChars(UString &s)
           ||
           #endif
           c == WCHAR_PATH_SEPARATOR)
-        s.ReplaceOneCharAtPos(i, '_');
+        s.ReplaceOneCharAtPos(i,
+          '_' // default
+          // (wchar_t)(0xf000 + c) // 21.02 debug: WSL encoding for unsupported characters
+          );
     }
   }
   
@@ -72,8 +78,7 @@ static void ReplaceIncorrectChars(UString &s)
     }
   }
 }
-
-#ifdef _WIN32
+#endif
 
 /* WinXP-64 doesn't support ':', '\\' and '/' symbols in name of alt stream.
    But colon in postfix ":$DATA" is allowed.
@@ -97,6 +102,8 @@ void Correct_AltStream_Name(UString &s)
   if (s.IsEmpty())
     s = '_';
 }
+
+#ifdef _WIN32
 
 static const unsigned g_ReservedWithNum_Index = 4;
 
@@ -149,7 +156,7 @@ static void Correct_PathPart(UString &s)
   if (s.IsEmpty())
     return;
 
-  if (s[0] == '.' && (s[1] == 0 || s[1] == '.' && s[2] == 0))
+  if (s[0] == '.' && (s[1] == 0 || (s[1] == '.' && s[2] == 0)))
     s.Empty();
   #ifdef _WIN32
   else

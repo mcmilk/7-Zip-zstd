@@ -56,9 +56,9 @@ HRESULT CThreadUpdating::ProcessVirt()
       ei, UpdateCallbackGUI, UpdateCallbackGUI, needSetPath);
   FinalMessage.ErrorMessage.Message = ei.Message.Ptr();
   ErrorPaths = ei.FileNames;
-  if (ei.SystemError != S_OK && ei.SystemError != E_FAIL && ei.SystemError != E_ABORT)
-    return ei.SystemError;
-  return res;
+  if (res != S_OK)
+    return res;
+  return HRESULT_FROM_WIN32(ei.SystemError);
 }
 
 static void AddProp(CObjectVector<CProperty> &properties, const char *name, const UString &value)

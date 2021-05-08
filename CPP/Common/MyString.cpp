@@ -237,11 +237,25 @@ bool UString::IsPrefixedBy_Ascii_NoCase(const char *s) const throw()
   }
 }
 
+bool StringsAreEqual_Ascii(const char *u, const char *a) throw()
+{
+  for (;;)
+  {
+    char c = *a;
+    if (c != *u)
+      return false;
+    if (c == 0)
+      return true;
+    a++;
+    u++;
+  }
+}
+
 bool StringsAreEqual_Ascii(const wchar_t *u, const char *a) throw()
 {
   for (;;)
   {
-    unsigned char c = *a;
+    unsigned char c = (unsigned char)*a;
     if (c != *u)
       return false;
     if (c == 0)
@@ -632,9 +646,8 @@ AString &AString::operator+=(const AString &s)
 
 void AString::Add_UInt32(UInt32 v)
 {
-  char sz[16];
-  ConvertUInt32ToString(v, sz);
-  (*this) += sz;
+  Grow(10);
+  _len = (unsigned)(ConvertUInt32ToString(v, _chars + _len) - _chars);
 }
 
 void AString::SetFrom(const char *s, unsigned len) // no check
@@ -835,7 +848,7 @@ void AString::Replace(char oldChar, char newChar) throw()
   char *chars = _chars;
   while ((unsigned)pos < _len)
   {
-    pos = Find(oldChar, pos);
+    pos = Find(oldChar, (unsigned)pos);
     if (pos < 0)
       break;
     chars[(unsigned)pos] = newChar;
@@ -857,11 +870,11 @@ void AString::Replace(const AString &oldString, const AString &newString)
   int pos = 0;
   while ((unsigned)pos < _len)
   {
-    pos = Find(oldString, pos);
+    pos = Find(oldString, (unsigned)pos);
     if (pos < 0)
       break;
-    Delete(pos, oldLen);
-    Insert(pos, newString);
+    Delete((unsigned)pos, oldLen);
+    Insert((unsigned)pos, newString);
     pos += newLen;
     // number++;
   }
@@ -1150,9 +1163,31 @@ void UString::SetFrom(const wchar_t *s, unsigned len) // no check
   _len = len;
 }
 
-void UString::SetFromBstr(BSTR s)
+void UString::SetFromBstr(LPCOLESTR s)
 {
-  unsigned len = ::SysStringLen(s);
+  unsigned len = ::SysStringLen((BSTR)(void *)(s));
+
+  /*
+  #if WCHAR_MAX > 0xffff
+  size_t num_wchars = 0;
+  for (size_t i = 0; i < len;)
+  {
+    wchar_t c = s[i++];
+    if (c >= 0xd800 && c < 0xdc00 && i + 1 != len)
+    {
+      wchar_t c2 = s[i];
+      if (c2 >= 0xdc00 && c2 < 0x10000)
+      {
+        c = 0x10000 + ((c & 0x3ff) << 10) + (c2 & 0x3ff);
+        i++;
+      }
+    }
+    num_wchars++;
+  }
+  len = num_wchars;
+  #endif
+  */
+
   if (len > _limit)
   {
     wchar_t *newBuf = MY_STRING_NEW_wchar_t(len + 1);
@@ -1161,8 +1196,33 @@ void UString::SetFromBstr(BSTR s)
     _limit = len;
   }
   _len = len;
+
+  /*
+  #if WCHAR_MAX > 0xffff
+
+  wchar_t *chars = _chars;
+  for (size_t i = 0; i <= len; i++)
+  {
+    wchar_t c = *s++;
+    if (c >= 0xd800 && c < 0xdc00 && i + 1 != len)
+    {
+      wchar_t c2 = *s;
+      if (c2 >= 0xdc00 && c2 < 0x10000)
+      {
+        s++;
+        c = 0x10000 + ((c & 0x3ff) << 10) + (c2 & 0x3ff);
+      }
+    }
+    chars[i] = c;
+  }
+
+  #else
+  */
+
   // if (s)
     wmemcpy(_chars, s, len + 1);
+  
+  // #endif
 }
 
 UString &UString::operator=(const char *s)
@@ -1229,9 +1289,8 @@ UString &UString::operator+=(const char *s)
 
 void UString::Add_UInt32(UInt32 v)
 {
-  char sz[16];
-  ConvertUInt32ToString(v, sz);
-  (*this) += sz;
+  Grow(10);
+  _len = (unsigned)(ConvertUInt32ToString(v, _chars + _len) - _chars);
 }
 
 
@@ -1341,7 +1400,7 @@ void UString::InsertAtFront(wchar_t c)
 }
 
 /*
-void UString::Insert(unsigned index, wchar_t c)
+void UString::Insert_wchar_t(unsigned index, wchar_t c)
 {
   InsertSpace(index, 1);
   _chars[index] = c;
@@ -1409,7 +1468,7 @@ void UString::Replace(wchar_t oldChar, wchar_t newChar) throw()
   wchar_t *chars = _chars;
   while ((unsigned)pos < _len)
   {
-    pos = Find(oldChar, pos);
+    pos = Find(oldChar, (unsigned)pos);
     if (pos < 0)
       break;
     chars[(unsigned)pos] = newChar;
@@ -1431,11 +1490,11 @@ void UString::Replace(const UString &oldString, const UString &newString)
   int pos = 0;
   while ((unsigned)pos < _len)
   {
-    pos = Find(oldString, pos);
+    pos = Find(oldString, (unsigned)pos);
     if (pos < 0)
       break;
-    Delete(pos, oldLen);
-    Insert(pos, newString);
+    Delete((unsigned)pos, oldLen);
+    Insert((unsigned)pos, newString);
     pos += newLen;
     // number++;
   }
@@ -1609,6 +1668,8 @@ int MyStringCompareNoCase(const char *s1, const char *s2)
 }
 */
 
+#if !defined(USE_UNICODE_FSTRING) || !defined(_UNICODE)
+
 static inline UINT GetCurrentCodePage()
 {
   #if defined(UNDER_CE) || !defined(_WIN32)
@@ -1617,6 +1678,8 @@ static inline UINT GetCurrentCodePage()
   return ::AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   #endif
 }
+
+#endif
 
 #ifdef USE_UNICODE_FSTRING
 
@@ -1637,9 +1700,9 @@ FString fas2fs(const AString &s)
   return MultiByteToUnicodeString(s, GetCurrentCodePage());
 }
 
-#endif
+#endif //  _UNICODE
 
-#else
+#else // USE_UNICODE_FSTRING
 
 UString fs2us(const FChar *s)
 {
@@ -1656,4 +1719,4 @@ FString us2fs(const wchar_t *s)
   return UnicodeStringToMultiByte(s, GetCurrentCodePage());
 }
 
-#endif
+#endif // USE_UNICODE_FSTRING

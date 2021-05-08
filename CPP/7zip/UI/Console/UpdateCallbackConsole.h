@@ -56,7 +56,8 @@ public:
       StdOutMode(false),
       NeedFlush(false),
       PercentsNameLevel(1),
-      LogLevel(0)
+      LogLevel(0),
+      NumNonOpenFiles(0)
       {}
   
   void SetWindowWidth(unsigned width) { _percent.MaxLen = width - 1; }
@@ -82,9 +83,9 @@ public:
       _percent.ClosePrint(false);
   }
 
-
   CErrorPathCodes FailedFiles;
   CErrorPathCodes ScanErrors;
+  UInt64 NumNonOpenFiles;
 
   HRESULT PrintProgress(const wchar_t *name, const char *command, bool showInLog);
 
@@ -95,21 +96,23 @@ class CUpdateCallbackConsole: public IUpdateCallbackUI2, public CCallbackConsole
   // void PrintPropPair(const char *name, const wchar_t *val);
 
 public:
+  bool DeleteMessageWasShown;
+
   #ifndef _NO_CRYPTO
   bool PasswordIsDefined;
   UString Password;
   bool AskPassword;
   #endif
 
-  bool DeleteMessageWasShown;
-
-  CUpdateCallbackConsole()
-      : DeleteMessageWasShown(false)
+  CUpdateCallbackConsole():
+      DeleteMessageWasShown(false)
       #ifndef _NO_CRYPTO
       , PasswordIsDefined(false)
       , AskPassword(false)
       #endif
       {}
+
+  virtual ~CUpdateCallbackConsole() {}
   
   /*
   void Init(CStdOutStream *outStream)

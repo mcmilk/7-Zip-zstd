@@ -34,13 +34,16 @@ static const UInt32 kLangIDs[] =
 
 CSysString CModifiedExtInfo::GetString() const
 {
+  const char *s;
   if (State == kExtState_7Zip)
-    return TEXT("7-Zip");
-  if (State == kExtState_Clear)
-    return TEXT("");
-  if (Other7Zip)
-    return TEXT("[7-Zip]");
-  return ProgramKey;
+    s = "7-Zip";
+  else if (State == kExtState_Clear)
+    s = "";
+  else if (Other7Zip)
+    s = "[7-Zip]";
+  else
+    return ProgramKey;
+  return CSysString (s);
 };
 
 
@@ -197,14 +200,14 @@ bool CSystemPage::OnInit()
   ci.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_SUBITEM;
   ci.cx = 128;
   ci.fmt = LVCFMT_CENTER;
-  ci.pszText = (WCHAR *)(const WCHAR *)s;
+  ci.pszText = s.Ptr_non_const();
   ci.iSubItem = 1;
   _listView.InsertColumn(1, &ci);
 
   #if NUM_EXT_GROUPS > 1
   {
     LangString(IDS_SYSTEM_ALL_USERS, s);
-    ci.pszText = (WCHAR *)(const WCHAR *)s;
+    ci.pszText = s.Ptr_non_const();
     ci.iSubItem = 2;
     _listView.InsertColumn(2, &ci);
   }
@@ -225,7 +228,7 @@ bool CSystemPage::OnInit()
     // ListView always uses internal iImage that is 0 by default?
     // so we always use LVIF_IMAGE.
     item.iImage = -1;
-    item.pszText = (wchar_t *)(const wchar_t *)(LPCWSTR)extInfo.Ext;
+    item.pszText = extInfo.Ext.Ptr_non_const();
 
     CAssoc assoc;
     const CPluginToIcon &plug = extInfo.Plugins[0];

@@ -159,7 +159,7 @@ inline wchar_t MyCharUpper(wchar_t c) throw()
       return (wchar_t)MyCharUpper_WIN(c);
     #endif
   #else
-    return (wchar_t)towupper(c);
+    return (wchar_t)towupper((wint_t)c);
   #endif
 }
 
@@ -207,6 +207,7 @@ int MyStringCompareNoCase(const wchar_t *s1, const wchar_t *s2) throw();
 
 // ---------- ASCII ----------
 // char values in ASCII strings must be less then 128
+bool StringsAreEqual_Ascii(const char *u, const char *a) throw();
 bool StringsAreEqual_Ascii(const wchar_t *u, const char *a) throw();
 bool StringsAreEqualNoCase_Ascii(const char *s1, const char *s2) throw();
 bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const char *s2) throw();
@@ -231,7 +232,7 @@ bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const wchar_t *s2) throw();
   cls &operator=(const t *); \
   cls &operator+=(t); \
   cls &operator+=(const t *); \
-  FORBID_STRING_OPS_2(cls, t); \
+  FORBID_STRING_OPS_2(cls, t) \
 
 /*
   cls &operator+(t); \
@@ -266,7 +267,7 @@ class AString
   AString(const AString &s, char c); // it's for String + char
   AString(const char *s1, unsigned num1, const char *s2, unsigned num2);
 
-  friend AString operator+(const AString &s, char c) { return AString(s, c); } ;
+  friend AString operator+(const AString &s, char c) { return AString(s, c); }
   // friend AString operator+(char c, const AString &s); // is not supported
 
   friend AString operator+(const AString &s1, const AString &s2);
@@ -300,6 +301,7 @@ public:
   void Empty() { _len = 0; _chars[0] = 0; }
 
   operator const char *() const { return _chars; }
+  char *Ptr_non_const() const { return _chars; }
   const char *Ptr() const { return _chars; }
   const char *Ptr(unsigned pos) const { return _chars + pos; }
   const char *RightPtr(unsigned num) const { return _chars + _len - num; }
@@ -438,7 +440,29 @@ public:
       _chars[index] = 0;
     }
   }
+  
+  void Wipe_and_Empty()
+  {
+    if (_chars)
+    {
+      memset(_chars, 0, (_limit + 1) * sizeof(*_chars));
+      _len = 0;
+    }
+  }
 };
+
+
+class AString_Wipe: public AString
+{
+  CLASS_NO_COPY(AString_Wipe)
+public:
+  AString_Wipe(): AString() {}
+  // AString_Wipe(const AString &s): AString(s) {}
+  // AString_Wipe &operator=(const AString &s) { AString::operator=(s); return *this; }
+  // AString_Wipe &operator=(const char *s) { AString::operator=(s); return *this; }
+  ~AString_Wipe() { Wipe_and_Empty(); }
+};
+
 
 bool operator<(const AString &s1, const AString &s2);
 bool operator>(const AString &s1, const AString &s2);
@@ -500,7 +524,7 @@ class UString
   UString(const UString &s, wchar_t c); // it's for String + char
   UString(const wchar_t *s1, unsigned num1, const wchar_t *s2, unsigned num2);
 
-  friend UString operator+(const UString &s, wchar_t c) { return UString(s, c); } ;
+  friend UString operator+(const UString &s, wchar_t c) { return UString(s, c); }
   // friend UString operator+(wchar_t c, const UString &s); // is not supported
 
   friend UString operator+(const UString &s1, const UString &s2);
@@ -539,6 +563,7 @@ public:
   void Empty() { _len = 0; _chars[0] = 0; }
 
   operator const wchar_t *() const { return _chars; }
+  wchar_t *Ptr_non_const() const { return _chars; }
   const wchar_t *Ptr() const { return _chars; }
   const wchar_t *Ptr(unsigned pos) const { return _chars + pos; }
   const wchar_t *RightPtr(unsigned num) const { return _chars + _len - num; }
@@ -578,7 +603,7 @@ public:
   UString &operator=(const wchar_t *s);
   UString &operator=(const UString &s);
   void SetFrom(const wchar_t *s, unsigned len); // no check
-  void SetFromBstr(BSTR s);
+  void SetFromBstr(LPCOLESTR s);
   UString &operator=(const char *s);
   UString &operator=(const AString &s) { return operator=(s.Ptr()); }
 
@@ -659,7 +684,7 @@ public:
   }
 
   void InsertAtFront(wchar_t c);
-  // void Insert(unsigned index, wchar_t c);
+  // void Insert_wchar_t(unsigned index, wchar_t c);
   void Insert(unsigned index, const wchar_t *s);
   void Insert(unsigned index, const UString &s);
 
@@ -680,7 +705,29 @@ public:
       _chars[index] = 0;
     }
   }
+  
+  void Wipe_and_Empty()
+  {
+    if (_chars)
+    {
+      memset(_chars, 0, (_limit + 1) * sizeof(*_chars));
+      _len = 0;
+    }
+  }
 };
+
+
+class UString_Wipe: public UString
+{
+  CLASS_NO_COPY(UString_Wipe)
+public:
+  UString_Wipe(): UString() {}
+  // UString_Wipe(const UString &s): UString(s) {}
+  // UString_Wipe &operator=(const UString &s) { UString::operator=(s); return *this; }
+  // UString_Wipe &operator=(const wchar_t *s) { UString::operator=(s); return *this; }
+  ~UString_Wipe() { Wipe_and_Empty(); }
+};
+
 
 bool operator<(const UString &s1, const UString &s2);
 bool operator>(const UString &s1, const UString &s2);
@@ -865,4 +912,21 @@ typedef const FChar *CFSTR;
 
 typedef CObjectVector<FString> FStringVector;
 
+#endif
+
+
+
+#if defined(_WIN32)
+  // #include <wchar.h>
+  // WCHAR_MAX is defined as ((wchar_t)-1)
+  #define _WCHART_IS_16BIT 1
+#elif (defined(WCHAR_MAX) && (WCHAR_MAX <= 0xffff)) \
+   || (defined(__SIZEOF_WCHAR_T__) && (__SIZEOF_WCHAR_T__ == 2))
+  #define _WCHART_IS_16BIT 1
+#endif
+
+#if WCHAR_PATH_SEPARATOR == L'\\'
+// WSL scheme
+#define WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT  ((wchar_t)((unsigned)(0xF000) + (unsigned)'\\'))
+// #define WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT  '_'
 #endif

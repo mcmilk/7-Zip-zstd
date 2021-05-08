@@ -6,6 +6,11 @@
 
 #ifdef _WIN32
 #include <Psapi.h>
+#else
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <sys/times.h>
 #endif
 
 #include "../../../../C/CpuArch.h"
@@ -15,12 +20,13 @@
 #include "../../../Common/CommandLineParser.h"
 #include "../../../Common/IntToString.h"
 #include "../../../Common/MyException.h"
+#include "../../../Common/StdInStream.h"
+#include "../../../Common/StdOutStream.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
 #include "../../../Common/UTFConvert.h"
 
 #include "../../../Windows/ErrorMsg.h"
-
 #include "../../../Windows/TimeUtils.h"
 
 #include "../Common/ArchiveCommandLine.h"
@@ -37,11 +43,10 @@
 #include "BenchCon.h"
 #include "ConsoleClose.h"
 #include "ExtractCallbackConsole.h"
+#include "HashCon.h"
 #include "List.h"
 #include "OpenCallbackConsole.h"
 #include "UpdateCallbackConsole.h"
-
-#include "HashCon.h"
 
 #ifdef PROG_VARIANT_R
 #include "../../../../C/7zVersion.h"
@@ -66,27 +71,30 @@ extern const CCodecInfo *g_Codecs[];
 extern unsigned g_NumHashers;
 extern const CHasherInfo *g_Hashers[];
 
-static const char * const kCopyrightString = "\n7-Zip"
-  #ifndef EXTERNAL_CODECS
-    #ifdef PROG_VARIANT_R
-      " (r)"
-    #else
-      " (a)"
-    #endif
-  #endif
 
+#if defined(PROG_VARIANT_Z)
+  #define PROG_POSTFIX      "z"
+  #define PROG_POSTFIX_2  " (z)"
+#elif defined(PROG_VARIANT_R)
+  #define PROG_POSTFIX      "r"
+  #define PROG_POSTFIX_2  " (r)"
+#elif !defined(EXTERNAL_CODECS)
+  #define PROG_POSTFIX      "a"
+  #define PROG_POSTFIX_2  " (a)"
+#else
+  #define PROG_POSTFIX    ""
+  #define PROG_POSTFIX_2  ""
+#endif
+
+
+static const char * const kCopyrightString = "\n7-Zip"
+  PROG_POSTFIX_2
   " " MY_VERSION_CPU
-  " : " MY_COPYRIGHT_DATE "\n\n";
+  " : " MY_COPYRIGHT_DATE "\n";
 
 static const char * const kHelpString =
     "Usage: 7z"
-#ifndef EXTERNAL_CODECS
-#ifdef PROG_VARIANT_R
-    "r"
-#else
-    "a"
-#endif
-#endif
+    PROG_POSTFIX
     " <command> [<switches>...] <archive_name> [<file_names>...] [@listfile]\n"
     "\n"
     "<Commands>\n"
@@ -141,6 +149,7 @@ static const char * const kHelpString =
     "  -spf : use fully qualified file paths\n"
     "  -ssc[-] : set sensitive case mode\n"
     "  -sse : stop archive creating, if it can't open some input file\n"
+    "  -ssp : do not change Last Access Time of source files while archiving\n"
     "  -ssw : compress shared files\n"
     "  -stl : set archive timestamp from the most recently modified file\n"
     "  -stm{HexMask} : set CPU thread affinity mask (hexadecimal number)\n"
@@ -163,6 +172,7 @@ static const char * const kUnsupportedArcTypeMessage = "Unsupported archive type
 
 #define kDefaultSfxModule "7zCon.sfx"
 
+MY_ATTR_NORETURN
 static void ShowMessageAndThrowException(LPCSTR message, NExitCode::EEnum code)
 {
   if (g_ErrStream)
@@ -170,15 +180,109 @@ static void ShowMessageAndThrowException(LPCSTR message, NExitCode::EEnum code)
   throw code;
 }
 
-#ifndef _WIN32
-static void GetArguments(int numArgs, const char *args[], UStringVector &parts)
+
+#ifdef _WIN32
+#define ShowProgInfo(so)
+#else
+static void ShowProgInfo(CStdOutStream *so)
 {
-  parts.Clear();
-  for (int i = 0; i < numArgs; i++)
+  if (!so)
+    return;
+
+  *so
+  
+  /*
+  #ifdef __DATE__
+      << " " << __DATE__
+  #endif
+  #ifdef __TIME__
+      << " " << __TIME__
+  #endif
+  */
+
+  #ifdef __VERSION__
+     << " compiler: " << __VERSION__
+  #endif
+
+  #ifdef __GNUC__
+     << " GCC " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__
+  #endif
+
+  #ifdef __clang__
+     << " CLANG " << __clang_major__ << "." << __clang_minor__
+  #endif
+
+  #ifdef __xlC__
+      << " XLC " << (__xlC__ >> 8) << "." << (__xlC__ & 0xFF)
+    #ifdef __xlC_ver__
+      << "." << (__xlC_ver__ >> 8) << "." << (__xlC_ver__ & 0xFF)
+    #endif
+  #endif
+
+  #ifdef _MSC_VER
+     << " MSC " << _MSC_VER
+  #endif
+  
+  #ifdef __ARM_FEATURE_CRC32
+     << " CRC32"
+  #endif
+
+  << " " << (unsigned)(sizeof(void *)) * 8 << "-bit"
+
+  #ifdef __ILP32__
+    << " ILP32"
+  #endif
+  
+  #ifdef __ARM_ARCH
+  << " arm_v:" << __ARM_ARCH
+  #ifdef __ARM_ARCH_ISA_THUMB
+  << " thumb:" << __ARM_ARCH_ISA_THUMB
+  #endif
+  #endif
+
+
+  #ifdef ENV_HAVE_LOCALE
+  << " locale=" << GetLocale()
+  #endif
+  #ifndef _WIN32
+  << " UTF8=" << (IsNativeUTF8() ? "+" : "-")
+  << " use-UTF8=" << (g_ForceToUTF8 ? "+" : "-")
+  << " wchar_t=" << (unsigned)(sizeof(wchar_t)) * 8 << "-bit"
+  << " Files=" << (unsigned)(sizeof(off_t)) * 8 << "-bit"
+  #endif
+  ;
+  
   {
-    UString s = MultiByteToUnicodeString(args[i]);
-    parts.Add(s);
+    const UInt32 numCpus = NWindows::NSystem::GetNumberOfProcessors();
+    *so << " Threads:" << numCpus;
   }
+
+  {
+    AString s;
+    GetCpuName(s);
+    s.Trim();
+    *so << ", " << s;
+  }
+
+  #ifdef _7ZIP_ASM
+  *so << ",ASM";
+  #endif
+  
+  #if (defined MY_CPU_X86_OR_AMD64 || defined(MY_CPU_ARM_OR_ARM64))
+  if (CPU_IsSupported_AES()) *so << ",AES";
+  #endif
+  
+  #ifdef MY_CPU_ARM_OR_ARM64
+  if (CPU_IsSupported_CRC32()) *so << ",CRC32";
+  #if defined(_WIN32)
+  if (CPU_IsSupported_CRYPTO()) *so << ",CRYPTO";
+  #else
+  if (CPU_IsSupported_SHA1()) *so << ",SHA1";
+  if (CPU_IsSupported_SHA2()) *so << ",SHA2";
+  #endif
+  #endif
+
+  *so << endl;
 }
 #endif
 
@@ -188,6 +292,8 @@ static void ShowCopyrightAndHelp(CStdOutStream *so, bool needHelp)
     return;
   *so << kCopyrightString;
   // *so << "# CPUs: " << (UInt64)NWindows::NSystem::GetNumberOfProcessors() << endl;
+  ShowProgInfo(so);
+  *so << endl;
   if (needHelp)
     *so << kHelpString;
 }
@@ -211,7 +317,7 @@ static void PrintUInt32(CStdOutStream &so, UInt32 val, unsigned size)
 static void PrintLibIndex(CStdOutStream &so, int libIndex)
 {
   if (libIndex >= 0)
-    PrintUInt32(so, libIndex, 2);
+    PrintUInt32(so, (UInt32)libIndex, 2);
   else
     so << "  ";
   so << ' ';
@@ -329,7 +435,6 @@ static void ThrowException_if_Error(HRESULT res)
     throw CSystemException(res);
 }
 
-
 static void PrintNum(UInt64 val, unsigned numDigits, char c = ' ')
 {
   char temp[64];
@@ -340,6 +445,8 @@ static void PrintNum(UInt64 val, unsigned numDigits, char c = ' ')
     *--p = c;
   *g_StdStream << p;
 }
+
+#ifdef _WIN32
 
 static void PrintTime(const char *s, UInt64 val, UInt64 total)
 {
@@ -427,19 +534,19 @@ static void PrintStat()
 
     HMODULE kern = ::GetModuleHandleW(L"kernel32.dll");
     Func_GetProcessMemoryInfo my_GetProcessMemoryInfo = (Func_GetProcessMemoryInfo)
-        ::GetProcAddress(kern, "K32GetProcessMemoryInfo");
+        (void *)::GetProcAddress(kern, "K32GetProcessMemoryInfo");
     if (!my_GetProcessMemoryInfo)
     {
       HMODULE lib = LoadLibraryW(L"Psapi.dll");
       if (lib)
-        my_GetProcessMemoryInfo = (Func_GetProcessMemoryInfo)::GetProcAddress(lib, "GetProcessMemoryInfo");
+        my_GetProcessMemoryInfo = (Func_GetProcessMemoryInfo)(void *)::GetProcAddress(lib, "GetProcessMemoryInfo");
     }
     if (my_GetProcessMemoryInfo)
       memDefined = my_GetProcessMemoryInfo(GetCurrentProcess(), &m, sizeof(m));
     // FreeLibrary(lib);
 
     Func_QueryProcessCycleTime my_QueryProcessCycleTime = (Func_QueryProcessCycleTime)
-        ::GetProcAddress(kern, "QueryProcessCycleTime");
+        (void *)::GetProcAddress(kern, "QueryProcessCycleTime");
     if (my_QueryProcessCycleTime)
       cycleDefined = my_QueryProcessCycleTime(GetCurrentProcess(), &cycleTime);
   }
@@ -455,18 +562,32 @@ static void PrintStat()
   
   PrintTime("Kernel ", kernelTime, totalTime);
 
+  const UInt64 processTime = kernelTime + userTime;
+  
   #ifndef UNDER_CE
   if (cycleDefined)
   {
-    *g_StdStream << " ";
-    PrintNum(cycleTime / 1000000, 22);
+    *g_StdStream << "    Cnt:";
+    PrintNum(cycleTime / 1000000, 15);
     *g_StdStream << " MCycles";
   }
   #endif
 
   PrintTime("User   ", userTime, totalTime);
+
+  #ifndef UNDER_CE
+  if (cycleDefined)
+  {
+    *g_StdStream << "    Freq (cnt/ptime):";
+    UInt64 us = processTime / 10;
+    if (us == 0)
+      us = 1;
+    PrintNum(cycleTime / us, 6);
+    *g_StdStream << " MHz";
+  }
+  #endif
   
-  PrintTime("Process", kernelTime + userTime, totalTime);
+  PrintTime("Process", processTime, totalTime);
   #ifndef UNDER_CE
   if (memDefined) PrintMemUsage("Virtual ", m.PeakPagefileUsage);
   #endif
@@ -475,9 +596,95 @@ static void PrintStat()
   #ifndef UNDER_CE
   if (memDefined) PrintMemUsage("Physical", m.PeakWorkingSetSize);
   #endif
+}
+
+
+#else  // ! _WIN32
+
+static UInt64 Get_timeofday_us()
+{
+  struct timeval now;
+  if (gettimeofday(&now, 0 ) == 0)
+    return (UInt64)now.tv_sec * 1000000 + (UInt64)now.tv_usec;
+  return 0;
+}
+
+static void PrintTime(const char *s, UInt64 val, UInt64 total_us, UInt64 kFreq)
+{
+  *g_StdStream << endl << s << " Time =";
+
+  {
+    UInt64 sec, ms;
+    
+    if (kFreq == 0)
+    {
+      sec = val / 1000000;
+      ms  = val % 1000000 / 1000;
+    }
+    else
+    {
+      sec = val / kFreq;
+      ms = (UInt32)((val - (sec * kFreq)) * 1000 / kFreq);
+    }
+    
+    PrintNum(sec, 6);
+    *g_StdStream << '.';
+    PrintNum(ms, 3, '0');
+  }
   
+  if (total_us == 0)
+    return;
+
+  UInt64 percent = 0;
+  if (kFreq == 0)
+    percent = val * 100 / total_us;
+  else
+  {
+    const UInt64 kMaxVal = (UInt64)(Int64)-1;
+    UInt32 m = 100000000;
+    for (;;)
+    {
+      if (m == 0 || kFreq == 0)
+        break;
+      if (kMaxVal / m > val &&
+        kMaxVal / kFreq > total_us)
+        break;
+      if (val > m)
+        val >>= 1;
+      else
+        m >>= 1;
+      if (kFreq > total_us)
+        kFreq >>= 1;
+      else
+        total_us >>= 1;
+    }
+    const UInt64 total = kFreq * total_us;
+    if (total != 0)
+      percent = val * m / total;
+  }
+  *g_StdStream << " =";
+  PrintNum(percent, 5);
+  *g_StdStream << '%';
+}
+
+static void PrintStat(UInt64 startTime)
+{
+  tms t;
+  /* clock_t res = */ times(&t);
+  const UInt64 totalTime = Get_timeofday_us() - startTime;
+  const UInt64 kFreq = (UInt64)sysconf(_SC_CLK_TCK);
+  PrintTime("Kernel ", (UInt64)t.tms_stime, totalTime, kFreq);
+  PrintTime("User   ", (UInt64)t.tms_utime, totalTime, kFreq);
+  PrintTime("Process", (UInt64)t.tms_utime + (UInt64)t.tms_stime, totalTime, kFreq);
+  PrintTime("Global ", totalTime, totalTime, 0);
   *g_StdStream << endl;
 }
+
+#endif // ! _WIN32
+
+
+
+
 
 static void PrintHexId(CStdOutStream &so, UInt64 id)
 {
@@ -486,15 +693,37 @@ static void PrintHexId(CStdOutStream &so, UInt64 id)
   PrintStringRight(so, s, 8);
 }
 
+#ifndef _WIN32
+void Set_ModuleDirPrefix_From_ProgArg0(const char *s);
+#endif
 
+int Main2(
+  #ifndef _WIN32
+  int numArgs, char *args[]
+  #endif
+);
 int Main2(
   #ifndef _WIN32
   int numArgs, char *args[]
   #endif
 )
 {
+  #if defined(MY_CPU_SIZEOF_POINTER)
+    { unsigned k = sizeof(void *); if (k != MY_CPU_SIZEOF_POINTER) throw "incorrect MY_CPU_PTR_SIZE"; }
+  #endif
+
   #if defined(_WIN32) && !defined(UNDER_CE)
   SetFileApisToOEM();
+  #endif
+
+  #ifdef ENV_HAVE_LOCALE
+  // printf("\nBefore SetLocale() : %s\n", IsNativeUtf8() ? "NATIVE UTF-8" : "IS NOT NATIVE UTF-8");
+  MY_SetLocale();
+  // printf("\nAfter  SetLocale() : %s\n", IsNativeUtf8() ? "NATIVE UTF-8" : "IS NOT NATIVE UTF-8");
+  #endif
+
+  #ifndef _WIN32
+  UInt64 startTime = Get_timeofday_us();
   #endif
 
   UStringVector commandStrings;
@@ -502,7 +731,24 @@ int Main2(
   #ifdef _WIN32
   NCommandLineParser::SplitCommandLine(GetCommandLineW(), commandStrings);
   #else
-  GetArguments(numArgs, args, commandStrings);
+  {
+    if (numArgs > 0)
+      Set_ModuleDirPrefix_From_ProgArg0(args[0]);
+
+    for (int i = 0; i < numArgs; i++)
+    {
+      AString a (args[i]);
+      /*
+      printf("\n%d %s :", i, a.Ptr());
+      for (unsigned k = 0; k < a.Len(); k++)
+        printf(" %2x", (unsigned)(Byte)a[k]);
+      */
+      const UString s = MultiByteToUnicodeString(a);
+      commandStrings.Add(s);
+    }
+    // printf("\n");
+  }
+
   #endif
 
   #ifndef UNDER_CE
@@ -542,9 +788,52 @@ int Main2(
   }
 
   if (options.EnableHeaders)
+  {
     ShowCopyrightAndHelp(g_StdStream, false);
+    if (!parser.Parse1Log.IsEmpty())
+      *g_StdStream << parser.Parse1Log;
+  }
 
   parser.Parse2(options);
+
+  {
+    int cp = options.ConsoleCodePage;
+    
+    int stdout_cp = cp;
+    int stderr_cp = cp;
+    int stdin_cp = cp;
+
+    /*
+    // these cases are complicated.
+    // maybe we must use CRT functions instead of console WIN32.
+    // different Windows/CRT versions also can work different ways.
+    // so the following code was not enabled:
+    if (cp == -1)
+    {
+      // we set CodePage only if stream is attached to terminal
+      // maybe we should set CodePage even if is not terminal?
+      #ifdef _WIN32
+      {
+        UINT ccp = GetConsoleOutputCP();
+        if (ccp != 0)
+        {
+          if (options.IsStdOutTerminal) stdout_cp = ccp;
+          if (options.IsStdErrTerminal) stderr_cp = ccp;
+        }
+      }
+      if (options.IsInTerminal)
+      {
+        UINT ccp = GetConsoleCP();
+        if (ccp != 0) stdin_cp = ccp;
+      }
+      #endif
+    }
+    */
+    
+    if (stdout_cp != -1) g_StdOut.CodePage = stdout_cp;
+    if (stderr_cp != -1) g_StdErr.CodePage = stderr_cp;
+    if (stdin_cp != -1) g_StdIn.CodePage = stdin_cp;
+  }
 
   unsigned percentsNameLevel = 1;
   if (options.LogLevel == 0 || options.Number_for_Percents != options.Number_for_Out)
@@ -559,13 +848,13 @@ int Main2(
     #if !defined(UNDER_CE)
     CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
     if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo))
-      consoleWidth = consoleInfo.dwSize.X;
+      consoleWidth = (unsigned)consoleInfo.dwSize.X;
     #endif
     
     #else
     
     struct winsize w;
-    if (ioctl(0, TIOCGWINSZ, &w) == )
+    if (ioctl(0, TIOCGWINSZ, &w) == 0)
       consoleWidth = w.ws_col;
     
     #endif
@@ -576,6 +865,19 @@ int Main2(
   codecs->CaseSensitiveChange = options.CaseSensitiveChange;
   codecs->CaseSensitive = options.CaseSensitive;
   ThrowException_if_Error(codecs->Load());
+
+  #ifdef EXTERNAL_CODECS
+  {
+    UString s;
+    codecs->GetCodecsErrorMessage(s);
+    if (!s.IsEmpty())
+    {
+      CStdOutStream &so = (g_StdStream ? *g_StdStream : g_StdOut);
+      so << endl << s << endl;
+    }
+  }
+  #endif
+
 
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
 
@@ -640,14 +942,14 @@ int Main2(
     so << endl << "Libs:" << endl;
     for (i = 0; i < codecs->Libs.Size(); i++)
     {
-      PrintLibIndex(so, i);
+      PrintLibIndex(so, (int)i);
       so << ' ' << codecs->Libs[i].Path << endl;
     }
     #endif
 
     so << endl << "Formats:" << endl;
     
-    const char * const kArcFlags = "KSNFMGOPBELH";
+    const char * const kArcFlags = "KSNFMGOPBELHX";
     const unsigned kNumArcFlags = (unsigned)strlen(kArcFlags);
     
     for (i = 0; i < codecs->Formats.Size(); i++)
@@ -804,6 +1106,7 @@ int Main2(
         options.Properties, options.NumIterations, (FILE *)so);
     if (hresultMain == S_FALSE)
     {
+      so << endl;
       if (g_ErrStream)
         *g_ErrStream << "\nDecoding ERROR\n";
       retCode = NExitCode::kFatalError;
@@ -863,7 +1166,7 @@ int Main2(
       }
     }
 
-    if (hresultMain == S_OK)
+    if (hresultMain == S_OK) {
     if (isExtractGroupCommand)
     {
       CExtractCallbackConsole *ecs = new CExtractCallbackConsole;
@@ -992,7 +1295,7 @@ int Main2(
       if (isError)
         retCode = NExitCode::kFatalError;
       
-      if (so)
+      if (so) {
       if (ecs->NumArcsWithError != 0 || ecs->NumFileErrors != 0)
       {
         // if (ecs->NumArchives > 1)
@@ -1023,8 +1326,9 @@ int Main2(
           PrintHashStat(*so, hb);
         }
       }
+      } // if (so)
     }
-    else
+    else // if_(!isExtractGroupCommand)
     {
       UInt64 numErrors = 0;
       UInt64 numWarnings = 0;
@@ -1060,7 +1364,8 @@ int Main2(
           g_StdOut << endl << "Errors: " << numErrors << endl;
         retCode = NExitCode::kFatalError;
       }
-    }
+    } // if_(isExtractGroupCommand)
+    } // if_(hresultMain == S_OK)
   }
   else if (options.Command.IsFromUpdateGroup())
   {
@@ -1146,7 +1451,11 @@ int Main2(
     ShowMessageAndThrowException(kUserErrorMessage, NExitCode::kUserError);
 
   if (options.ShowTime && g_StdStream)
-    PrintStat();
+    PrintStat(
+      #ifndef _WIN32
+        startTime
+      #endif
+    );
 
   ThrowException_if_Error(hresultMain);
 

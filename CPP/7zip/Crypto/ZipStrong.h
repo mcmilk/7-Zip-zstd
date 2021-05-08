@@ -27,6 +27,12 @@ struct CKeyInfo
   UInt32 KeySize;
   
   void SetPassword(const Byte *data, UInt32 size);
+
+  ~CKeyInfo() { Wipe(); }
+  void Wipe()
+  {
+    MY_memset_0_ARRAY(MasterKey);
+  }
 };
 
 class CBaseCoder:
@@ -57,6 +63,12 @@ public:
     // Padding is to align to blockSize of cipher.
     // Change it, if is not AES
     return kAesPadAllign - (packSize32 & (kAesPadAllign - 1));
+  }
+
+  ~CDecoder() { Wipe(); }
+  void Wipe()
+  {
+    MY_memset_0_ARRAY(_iv);
   }
 };
 

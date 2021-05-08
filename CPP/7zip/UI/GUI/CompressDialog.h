@@ -108,6 +108,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CEdit _password1Control;
   NWindows::NControl::CEdit _password2Control;
   NWindows::NControl::CComboBox _encryptionMethod;
+  int _default_encryptionMethod_Index;
 
   NCompression::CInfo m_RegistryInfo;
 

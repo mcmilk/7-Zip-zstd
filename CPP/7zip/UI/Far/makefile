@@ -20,7 +20,6 @@ CURRENT_OBJS = \
   $O\PluginWrite.obj \
   $O\ProgressBox.obj \
   $O\UpdateCallbackFar.obj \
-  $O\UTFConvert.obj \
 
 COMMON_OBJS = \
   $O\IntToString.obj \
@@ -29,6 +28,7 @@ COMMON_OBJS = \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\MyVector.obj \
+  $O\UTFConvert.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \

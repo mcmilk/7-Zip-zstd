@@ -23,6 +23,7 @@ WIN_OBJS = $(WIN_OBJS) \
   $O\PropVariantConv.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
+  $O\SystemInfo.obj \
   $O\Shell.obj \
   $O\Window.obj \
 

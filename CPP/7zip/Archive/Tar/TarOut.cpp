@@ -62,7 +62,7 @@ static void WriteOctal_12_Signed(char *s, Int64 val)
 {
   if (val >= 0)
   {
-    WriteOctal_12(s, val);
+    WriteOctal_12(s, (UInt64)val);
     return;
   }
   s[0] = s[1] = s[2] = s[3] = (char)(Byte)0xFF;

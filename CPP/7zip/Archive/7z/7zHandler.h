@@ -129,6 +129,10 @@ public:
   DECL_ISetCompressCodecsInfo
 
   CHandler();
+  ~CHandler()
+  {
+    Close();
+  }
 
 private:
   CMyComPtr<IInStream> _inStream;
@@ -137,7 +141,7 @@ private:
   #ifndef _NO_CRYPTO
   bool _isEncrypted;
   bool _passwordIsDefined;
-  UString _password;
+  UString _password; // _Wipe
   #endif
 
   #ifdef EXTRACT_ONLY

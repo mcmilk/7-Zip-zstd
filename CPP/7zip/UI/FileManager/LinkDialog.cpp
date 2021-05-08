@@ -36,46 +36,50 @@ static const UInt32 kLangIDs[] =
   IDR_LINK_TYPE_HARD,
   IDR_LINK_TYPE_SYM_FILE,
   IDR_LINK_TYPE_SYM_DIR,
-  IDR_LINK_TYPE_JUNCTION
+  IDR_LINK_TYPE_JUNCTION,
+  IDR_LINK_TYPE_WSL
 };
 #endif
 
-static bool GetSymLink(CFSTR path, CReparseAttr &attr)
-{
-  NIO::CInFile file;
-  if (!file.Open(path,
-      FILE_SHARE_READ,
-      OPEN_EXISTING,
-      FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS))
-    return false;
 
-  const unsigned kBufSize = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
-  CByteArr buf(kBufSize);
-  DWORD returnedSize;
-  if (!file.DeviceIoControlOut(my_FSCTL_GET_REPARSE_POINT, buf, kBufSize, &returnedSize))
+static bool GetSymLink(CFSTR path, CReparseAttr &attr, UString &errorMessage)
+{
+  CByteBuffer buf;
+  if (!NIO::GetReparseData(path, buf, NULL))
     return false;
   
-  DWORD errorCode = 0;
-  if (!attr.Parse(buf, returnedSize, errorCode))
+  if (!attr.Parse(buf, buf.Size()))
+  {
+    SetLastError(attr.ErrorCode);
     return false;
+  }
 
   CByteBuffer data2;
-  if (!FillLinkData(data2, attr.GetPath(), attr.IsSymLink()))
+  if (!FillLinkData(data2, attr.GetPath(),
+      !attr.IsMountPoint(), attr.IsSymLink_WSL()))
+  {
+    errorMessage = "Cannot reproduce reparse point";
     return false;
+  }
     
-  if (data2.Size() != returnedSize ||
-      memcmp(data2, buf, returnedSize) != 0)
+  if (data2.Size() != buf.Size() ||
+      memcmp(data2, buf, buf.Size()) != 0)
+  {
+    errorMessage = "mismatch for reproduced reparse point";
     return false;
+  }
 
   return true;
 }
+
 
 static const int k_LinkType_Buttons[] =
 {
   IDR_LINK_TYPE_HARD,
   IDR_LINK_TYPE_SYM_FILE,
   IDR_LINK_TYPE_SYM_DIR,
-  IDR_LINK_TYPE_JUNCTION
+  IDR_LINK_TYPE_JUNCTION,
+  IDR_LINK_TYPE_WSL
 };
 
 void CLinkDialog::Set_LinkType_Radio(int idb)
@@ -104,16 +108,33 @@ bool CLinkDialog::OnInit()
       if (fi.HasReparsePoint())
       {
         CReparseAttr attr;
-        bool res = GetSymLink(us2fs(FilePath), attr);
+        UString error;
+        bool res = GetSymLink(us2fs(FilePath), attr, error);
+        if (!res && error.IsEmpty())
+        {
+          DWORD lastError = GetLastError();
+          if (lastError != 0)
+            error = NError::MyFormatMessage(lastError);
+        }
         
-        UString s = attr.PrintName;
+        UString s = attr.GetPath();
+        if (!attr.IsSymLink_WSL())
         if (!attr.IsOkNamePair())
         {
           s += " : ";
-          s += attr.SubsName;
+          s += attr.PrintName;
         }
+
         if (!res)
+        {
           s.Insert(0, L"ERROR: ");
+          if (!error.IsEmpty())
+          {
+            s += " : ";
+            s += error;
+          }
+        }
+
         
         SetItemText(IDT_LINK_PATH_TO_CUR, s);
         
@@ -121,11 +142,13 @@ bool CLinkDialog::OnInit()
         _pathFromCombo.SetText(FilePath);
         _pathToCombo.SetText(destPath);
         
-        if (res)
+        // if (res)
         {
           if (attr.IsMountPoint())
             linkType = IDR_LINK_TYPE_JUNCTION;
-          if (attr.IsSymLink())
+          else if (attr.IsSymLink_WSL())
+            linkType = IDR_LINK_TYPE_WSL;
+          else if (attr.IsSymLink_Win())
           {
             linkType =
               fi.IsDir() ?
@@ -140,6 +163,7 @@ bool CLinkDialog::OnInit()
       }
       else
       {
+        // no ReparsePoint
         _pathFromCombo.SetText(AnotherPath);
         _pathToCombo.SetText(FilePath);
         if (fi.IsDir())
@@ -258,15 +282,18 @@ void CLinkDialog::OnButton_Link()
   }
 
   NFind::CFileInfo info1, info2;
-  bool finded1 = info1.Find(us2fs(from));
-  bool finded2 = info2.Find(us2fs(to));
+  const bool finded1 = info1.Find(us2fs(from));
+  const bool finded2 = info2.Find(us2fs(to));
 
-  bool isDirLink = (
+  const bool isDirLink = (
       idb == IDR_LINK_TYPE_SYM_DIR ||
       idb == IDR_LINK_TYPE_JUNCTION);
 
-  if (finded1 && info1.IsDir() != isDirLink ||
-      finded2 && info2.IsDir() != isDirLink)
+  const bool isWSL = (idb == IDR_LINK_TYPE_WSL);
+
+  if (!isWSL)
+  if ((finded1 && info1.IsDir() != isDirLink) ||
+      (finded2 && info2.IsDir() != isDirLink))
   {
     ShowError(L"Incorrect link type");
     return;
@@ -282,25 +309,41 @@ void CLinkDialog::OnButton_Link()
   }
   else
   {
-    bool isSymLink = (idb != IDR_LINK_TYPE_JUNCTION);
+    if (finded1 && !info1.IsDir() && !info1.HasReparsePoint() && info1.Size != 0)
+    {
+      UString s ("WARNING: reparse point will hide the data of existing file");
+      s.Add_LF();
+      s += from;
+      ShowError(s);
+      return;
+    }
+
+    const bool isSymLink = (idb != IDR_LINK_TYPE_JUNCTION);
     
     CByteBuffer data;
-    if (!FillLinkData(data, to, isSymLink))
+    if (!FillLinkData(data, to, isSymLink, isWSL))
     {
       ShowError(L"Incorrect link");
       return;
     }
     
     CReparseAttr attr;
-    DWORD errorCode = 0;
-    if (!attr.Parse(data, data.Size(), errorCode))
+    if (!attr.Parse(data, data.Size()))
     {
       ShowError(L"Internal conversion error");
       return;
     }
-    
-    
-    if (!NIO::SetReparseData(us2fs(from), isDirLink, data, (DWORD)data.Size()))
+
+    bool res;
+    if (to.IsEmpty())
+    {
+      // res = NIO::SetReparseData(us2fs(from), isDirLink, NULL, 0);
+      res = NIO::DeleteReparseData(us2fs(from));
+    }
+    else
+      res = NIO::SetReparseData(us2fs(from), isDirLink, data, (DWORD)data.Size());
+
+    if (!res)
     {
       ShowLastErrorMessage();
       return;
@@ -349,6 +392,8 @@ void CApp::Link()
 
   if (dlg.Create(srcPanel.GetParent()) != IDOK)
     return;
+
+  // fix it: we should refresh panel with changed link
 
   RefreshTitleAlways();
 }

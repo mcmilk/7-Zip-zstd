@@ -13,7 +13,7 @@ namespace NTar {
 struct CUpdateItem
 {
   int IndexInArc;
-  int IndexInClient;
+  unsigned IndexInClient;
   UInt64 Size;
   Int64 MTime;
   UInt32 Mode;
@@ -30,8 +30,11 @@ struct CUpdateItem
 HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     const CObjectVector<CItemEx> &inputItems,
     const CObjectVector<CUpdateItem> &updateItems,
-    UINT codePage,
+    UINT codePage, unsigned utfFlags,
     IArchiveUpdateCallback *updateCallback);
+
+HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID propId, AString &res,
+    UINT codePage, unsigned utfFlags, bool convertSlash);
 
 }}
 

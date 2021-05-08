@@ -4,6 +4,8 @@
  
 #include "StdAfx.h"
 
+#include <stdlib.h>
+
 #include "Rar2Decoder.h"
 
 namespace NCompress {
@@ -77,7 +79,7 @@ Byte CFilter::Decode(int &channelDelta, Byte deltaByte)
 
 static const UInt32 kHistorySize = 1 << 20;
 
-static const UInt32 kWindowReservSize = (1 << 22) + 256;
+// static const UInt32 kWindowReservSize = (1 << 22) + 256;
 
 CDecoder::CDecoder():
   _isSolid(false),
@@ -209,6 +211,7 @@ bool CDecoder::ReadLastTables()
   // + 2 works for: return 0xFF; in CInBuffer::ReadByte.
   if (m_InBitStream.GetProcessedSize() + 7 <= m_PackSize) // test it: probably incorrect;
   // if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect;
+  {
     if (m_AudioMode)
     {
       UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
@@ -225,6 +228,7 @@ bool CDecoder::ReadLastTables()
       if (sym >= kMainTableSize)
         return false;
     }
+  }
   return true;
 }
 

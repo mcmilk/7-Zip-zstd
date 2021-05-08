@@ -25,8 +25,8 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
   return S_OK;
 }
 
-HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID propId,
-    AString &res, UINT codePage, bool convertSlash = false)
+HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID propId, AString &res,
+    UINT codePage, unsigned utfFlags, bool convertSlash)
 {
   NCOM::CPropVariant prop;
   RINOK(callback->GetProperty(index, propId, &prop));
@@ -39,7 +39,7 @@ HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID pro
 
     if (codePage == CP_UTF8)
     {
-      ConvertUnicodeToUTF8(s, res);
+      ConvertUnicodeToUTF8_Flags(s, res, utfFlags);
       // if (!ConvertUnicodeToUTF8(s, res)) // return E_INVALIDARG;
     }
     else
@@ -56,8 +56,8 @@ HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID pro
 
 static int CompareUpdateItems(void *const *p1, void *const *p2, void *)
 {
-  const CUpdateItem &u1 = *(*((const CUpdateItem **)p1));
-  const CUpdateItem &u2 = *(*((const CUpdateItem **)p2));
+  const CUpdateItem &u1 = *(*((const CUpdateItem *const *)p1));
+  const CUpdateItem &u2 = *(*((const CUpdateItem *const *)p2));
   if (!u1.NewProps)
   {
     if (u2.NewProps)
@@ -78,8 +78,15 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if ((_stream && (_error != k_ErrorType_OK || _warning /* || _isSparse */)) || _seqStream)
     return E_NOTIMPL;
   CObjectVector<CUpdateItem> updateItems;
-  UINT codePage = (_forceCodePage ? _specifiedCodePage : _openCodePage);
-  
+  const UINT codePage = (_forceCodePage ? _specifiedCodePage : _openCodePage);
+  const unsigned utfFlags = g_Unicode_To_UTF8_Flags;
+  /*
+  // for debug only:
+  unsigned utfFlags = 0;
+  utfFlags |= UTF_FLAG__TO_UTF8__EXTRACT_BMP_ESCAPE;
+  utfFlags |= UTF_FLAG__TO_UTF8__SURROGATE_ERROR;
+  */
+
   for (UInt32 i = 0; i < numItems; i++)
   {
     CUpdateItem ui;
@@ -94,7 +101,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     
     ui.NewProps = IntToBool(newProps);
     ui.NewData = IntToBool(newData);
-    ui.IndexInArc = indexInArc;
+    ui.IndexInArc = (int)indexInArc;
     ui.IndexInClient = i;
 
     if (IntToBool(newProps))
@@ -138,11 +145,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
           ui.MTime = NTime::FileTimeToUnixTime64(prop.filetime);
       }
       
-      RINOK(GetPropString(callback, i, kpidPath, ui.Name, codePage, true));
+      RINOK(GetPropString(callback, i, kpidPath, ui.Name, codePage, utfFlags, true));
       if (ui.IsDir && !ui.Name.IsEmpty() && ui.Name.Back() != '/')
         ui.Name += '/';
-      RINOK(GetPropString(callback, i, kpidUser, ui.User, codePage));
-      RINOK(GetPropString(callback, i, kpidGroup, ui.Group, codePage));
+      RINOK(GetPropString(callback, i, kpidUser, ui.User, codePage, utfFlags, false));
+      RINOK(GetPropString(callback, i, kpidGroup, ui.Group, codePage, utfFlags, false));
     }
 
     if (IntToBool(newData))
@@ -168,7 +175,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     updateItems.Sort(CompareUpdateItems, NULL);
   }
   
-  return UpdateArchive(_stream, outStream, _items, updateItems, codePage, callback);
+  return UpdateArchive(_stream, outStream, _items, updateItems, codePage, utfFlags, callback);
   
   COM_TRY_END
 }

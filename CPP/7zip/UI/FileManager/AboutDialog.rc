@@ -18,7 +18,7 @@ CAPTION "About 7-Zip"
 {
   DEFPUSHBUTTON  "OK", IDOK, bx1, by, bxs, bys
   PUSHBUTTON  "www.7-zip.org", IDB_ABOUT_HOMEPAGE, bx2, by, bxs, bys
-  ICON   IDI_LOGO, -1, m, m, 32, 32, SS_REALSIZEIMAGE,
+  ICON   IDI_LOGO, -1, m, m, 32, 32, SS_REALSIZEIMAGE
   LTEXT  "", IDT_ABOUT_VERSION, m, 54, xc, 8
   LTEXT  "", IDT_ABOUT_DATE, m, 67, xc, 8
   LTEXT  MY_COPYRIGHT, -1, m, 80, xc, 8

@@ -26,8 +26,8 @@ bool AutoRenamePath(FString &path)
   FString extension;
   if (dotPos > slashPos + 1)
   {
-    name.DeleteFrom(dotPos);
-    extension = path.Ptr(dotPos);
+    name.DeleteFrom((unsigned)dotPos);
+    extension = path.Ptr((unsigned)dotPos);
   }
   name += '_';
   

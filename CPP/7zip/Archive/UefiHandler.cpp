@@ -52,7 +52,7 @@ static const Byte k_IntelMeSignature[] =
   0x5A, 0xA5, 0xF0, 0x0F
 };
 
-bool IsIntelMe(const Byte *p)
+static bool IsIntelMe(const Byte *p)
 {
   return memcmp(p, k_IntelMeSignature, sizeof(k_IntelMeSignature)) == 0;
 }
@@ -318,19 +318,19 @@ static const CUInt32PCharPair g_FFS_FILE_ATTRIBUTES[] =
 
 // SECTION_TYPE
 
-#define SECTION_ALL 0x00
+// #define SECTION_ALL 0x00
 
 #define SECTION_COMPRESSION  0x01
 #define SECTION_GUID_DEFINED 0x02
 
 // Leaf section Type values
-#define SECTION_PE32      0x10
-#define SECTION_PIC       0x11
-#define SECTION_TE        0x12
+// #define SECTION_PE32      0x10
+// #define SECTION_PIC       0x11
+// #define SECTION_TE        0x12
 #define SECTION_DXE_DEPEX 0x13
 #define SECTION_VERSION   0x14
 #define SECTION_USER_INTERFACE 0x15
-#define SECTION_COMPATIBILITY16 0x16
+// #define SECTION_COMPATIBILITY16 0x16
 #define SECTION_FIRMWARE_VOLUME_IMAGE 0x17
 #define SECTION_FREEFORM_SUBTYPE_GUID 0x18
 #define SECTION_RAW       0x19
@@ -471,7 +471,7 @@ public:
   
   bool Parse(const Byte *p)
   {
-    int i;
+    unsigned i;
     for (i = 0; i < kFileHeaderSize; i++)
       if (p[i] != 0xFF)
         break;
@@ -719,11 +719,11 @@ class CHandler:
   
   HRESULT ParseIntelMe(int bufIndex, UInt32 posBase,
       UInt32 exactSize, UInt32 limitSize,
-      int parent, int method, int level);
+      int parent, int method, unsigned level);
 
   HRESULT ParseVolume(int bufIndex, UInt32 posBase,
       UInt32 exactSize, UInt32 limitSize,
-      int parent, int method, int level);
+      int parent, int method, unsigned level);
 
   HRESULT OpenCapsule(IInStream *stream);
   HRESULT OpenFv(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback);
@@ -857,13 +857,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 #ifdef SHOW_DEBUG_INFO
-static void PrintLevel(int level)
+static void PrintLevel(unsigned level)
 {
   PRF(printf("\n"));
-  for (int i = 0; i < level; i++)
+  for (unsigned i = 0; i < level; i++)
     PRF(printf("  "));
 }
-static void MyPrint(UInt32 posBase, UInt32 size, int level, const char *name)
+static void MyPrint(UInt32 posBase, UInt32 size, unsigned level, const char *name)
 {
   PrintLevel(level);
   PRF(printf("%s, pos = %6x, size = %6x", name, posBase, size));
@@ -1312,7 +1312,7 @@ bool CVolFfsHeader::Parse(const Byte *p)
 HRESULT CHandler::ParseVolume(
     int bufIndex, UInt32 posBase,
     UInt32 exactSize, UInt32 limitSize,
-    int parent, int method, int level)
+    int parent, int method, unsigned level)
 {
   if (level > kLevelMax)
     return S_FALSE;
@@ -1333,7 +1333,7 @@ HRESULT CHandler::ParseVolume(
     if (!Is_FF_Stream(p + kFfsGuidOffset, 16))
       item.SetGuid(p + kFfsGuidOffset);
     // if (item.Name.IsEmpty())
-      item.Name += "[VOL]";
+    item.Name += "[VOL]";
     AddItem(item);
     return S_OK;
   }
@@ -1512,7 +1512,7 @@ static const char * const kRegionName[] =
 HRESULT CHandler::ParseIntelMe(
     int bufIndex, UInt32 posBase,
     UInt32 exactSize, UInt32 limitSize,
-    int parent, int method, int level)
+    int parent, int method, unsigned level)
 {
   UNUSED_VAR(limitSize)
   level++;

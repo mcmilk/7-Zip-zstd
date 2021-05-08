@@ -13,7 +13,6 @@
 
 #include "ChmIn.h"
 
-#define Get16(p) GetUi16(p)
 #define Get32(p) GetUi32(p)
 #define Get64(p) GetUi64(p)
 
@@ -117,7 +116,7 @@ UString CSectionInfo::GetMethodName() const
   if (!IsLzx())
   {
     UString temp;
-    if (ConvertUTF8ToUnicode(Name, temp))
+    ConvertUTF8ToUnicode(Name, temp);
       s += temp;
     s += ": ";
   }

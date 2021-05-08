@@ -263,7 +263,7 @@ public:
   ~CDecoder();
 
   HRESULT Code(const Byte *in, size_t inSize, Byte *out, size_t outSize);
-  const size_t GetUnpackSize() const { return _pos; }
+  size_t GetUnpackSize() const { return _pos; }
 };
 
 }}

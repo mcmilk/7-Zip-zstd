@@ -48,6 +48,7 @@
 const int kParentFolderID = 100;
 
 const int kParentIndex = -1;
+const UInt32 kParentIndex_UInt32 = (UInt32)(Int32)kParentIndex;
 
 #if !defined(_WIN32) || defined(UNDER_CE)
 #define ROOT_FS_FOLDER L"\\"
@@ -225,7 +226,7 @@ struct CSelectedState
   UString FocusedName;
   UStringVector SelectedNames;
   
-  CSelectedState(): FocusedItem(-1), FocusedName_Defined(false), SelectFocused(true) {}
+  CSelectedState(): FocusedItem(-1), SelectFocused(true), FocusedName_Defined(false) {}
 };
 
 #ifdef UNDER_CE
@@ -262,6 +263,23 @@ struct CCopyToOptions
       {}
 };
   
+
+
+struct COpenResult
+{
+  // bool needOpenArc;
+  // out:
+  bool ArchiveIsOpened;
+  bool Encrypted;
+  UString ErrorMessage;
+
+  COpenResult():
+      // needOpenArc(false),
+      ArchiveIsOpened(false), Encrypted(false) {}
+};
+
+
+
 
 class CPanel: public NWindows::NControl::CWindow2
 {
@@ -403,7 +421,7 @@ public:
     }
   }
 
-  HWND GetParent();
+  HWND GetParent() const;
 
   UInt32 GetRealIndex(const LVITEMW &item) const
   {
@@ -483,7 +501,7 @@ public:
   // PanelFolderChange.cpp
 
   void SetToRootFolder();
-  HRESULT BindToPath(const UString &fullPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted); // can be prefix
+  HRESULT BindToPath(const UString &fullPath, const UString &arcFormat, COpenResult &openRes); // can be prefix
   HRESULT BindToPathAndRefresh(const UString &path);
   void OpenDrivesFolder();
   
@@ -507,7 +525,8 @@ public:
       CPanelCallback *panelCallback,
       CAppState *appState,
       bool needOpenArc,
-      bool &archiveIsOpened, bool &encrypted);
+      COpenResult &openRes);
+
   void SetFocusToList();
   void SetFocusToLastRememberedItem();
 
@@ -515,32 +534,35 @@ public:
   void SaveListViewInfo();
 
   CPanel() :
-      // _virtualMode(flase),
+      _thereAre_ListView_Items(false),
       _exStyle(0),
       _showDots(false),
       _showRealFileIcons(false),
-      _needSaveInfo(false),
-      _startGroupSelect(0),
-      _selectionIsDefined(false),
+      // _virtualMode(flase),
+      _enableItemChangeNotify(true),
+      _mySelectMode(false),
+      _timestampLevel(kTimestampPrintLevel_MIN),
+
+      _thereAreDeletedItems(false),
+      _markDeletedItems(true),
+      PanelCreated(false),
+
       _ListViewMode(3),
+      _xSize(300),
+
       _flatMode(false),
       _flatModeForDisk(false),
       _flatModeForArc(false),
-      PanelCreated(false),
-      _thereAre_ListView_Items(false),
 
       // _showNtfsStrems_Mode(false),
       // _showNtfsStrems_ModeForDisk(false),
       // _showNtfsStrems_ModeForArc(false),
 
-      _xSize(300),
-      _mySelectMode(false),
-      _thereAreDeletedItems(false),
-      _markDeletedItems(true),
-      _enableItemChangeNotify(true),
       _dontShowMode(false),
 
-      _timestampLevel(kTimestampPrintLevel_MIN)
+      _needSaveInfo(false),
+      _startGroupSelect(0),
+      _selectionIsDefined(false)
   {}
 
   void SetExtendedStyle()
@@ -590,8 +612,8 @@ public:
       CMyComPtr<IContextMenu> &systemContextMenu,
       bool programMenu);
   void CreateFileMenu(HMENU menu);
-  bool InvokePluginCommand(int id);
-  bool InvokePluginCommand(int id, IContextMenu *sevenZipContextMenu,
+  bool InvokePluginCommand(unsigned id);
+  bool InvokePluginCommand(unsigned id, IContextMenu *sevenZipContextMenu,
       IContextMenu *systemContextMenu);
 
   void InvokeSystemCommand(const char *command);
@@ -737,9 +759,6 @@ public:
     }
   };
 
-  // bool _passwordIsDefined;
-  // UString _password;
-
   void InvalidateList() { _listView.InvalidateRect(NULL, true); }
 
   HRESULT RefreshListCtrl();
@@ -773,17 +792,21 @@ public:
       const CTempFileInfo &tempFileInfo,
       const UString &virtualFilePath,
       const UString &arcFormat,
-      bool &encrypted);
+      COpenResult &openRes);
 
   HRESULT OpenAsArc_Msg(IInStream *inStream,
       const CTempFileInfo &tempFileInfo,
       const UString &virtualFilePath,
-      const UString &arcFormat,
-      bool &encrypted,
-      bool showErrorMessage);
+      const UString &arcFormat
+      // , bool showErrorMessage
+      );
   
-  HRESULT OpenAsArc_Name(const UString &relPath, const UString &arcFormat, bool &encrypted, bool showErrorMessage);
-  HRESULT OpenAsArc_Index(int index, const wchar_t *type /* = NULL */, bool showErrorMessage);
+  HRESULT OpenAsArc_Name(const UString &relPath, const UString &arcFormat
+      // , bool showErrorMessage
+      );
+  HRESULT OpenAsArc_Index(int index, const wchar_t *type /* = NULL */
+      // , bool showErrorMessage
+      );
   
   void OpenItemInArchive(int index, bool tryInternal, bool tryExternal,
       bool editMode, bool useEditor, const wchar_t *type = NULL);

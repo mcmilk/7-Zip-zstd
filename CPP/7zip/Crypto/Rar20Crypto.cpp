@@ -54,7 +54,7 @@ void CData::SetPassword(const Byte *data, unsigned size)
   Keys[3] = 0xA4E7F123L;
   
   Byte psw[128];
-  memset(psw, 0, sizeof(psw));
+  MY_memset_0_ARRAY(psw);
   if (size != 0)
   {
     if (size >= sizeof(psw))

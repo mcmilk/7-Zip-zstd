@@ -67,7 +67,7 @@ STDMETHODIMP CLimitedInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *new
   }
   if (offset < 0)
     return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
-  _virtPos = offset;
+  _virtPos = (UInt64)offset;
   if (newPosition)
     *newPosition = _virtPos;
   return S_OK;
@@ -115,7 +115,7 @@ STDMETHODIMP CClusterInStream::Read(void *data, UInt32 size, UInt32 *processedSi
 
     _curRem = blockSize - offsetInBlock;
     
-    for (int i = 1; i < 64 && (virtBlock + i) < (UInt32)Vector.Size() && phyBlock + i == Vector[virtBlock + i]; i++)
+    for (unsigned i = 1; i < 64 && (virtBlock + i) < (UInt32)Vector.Size() && phyBlock + i == Vector[virtBlock + i]; i++)
       _curRem += (UInt32)1 << BlockSizeLog;
   }
   
@@ -143,9 +143,9 @@ STDMETHODIMP CClusterInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *new
     return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
   if (_virtPos != (UInt64)offset)
     _curRem = 0;
-  _virtPos = offset;
+  _virtPos = (UInt64)offset;
   if (newPosition)
-    *newPosition = offset;
+    *newPosition = (UInt64)offset;
   return S_OK;
 }
 
@@ -203,7 +203,7 @@ STDMETHODIMP CExtentsStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
   }
   if (offset < 0)
     return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
-  _virtPos = offset;
+  _virtPos = (UInt64)offset;
   if (newPosition)
     *newPosition = _virtPos;
   return S_OK;
@@ -268,10 +268,10 @@ STDMETHODIMP CTailInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPos
   }
   if (offset < 0)
     return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
-  _virtPos = offset;
+  _virtPos = (UInt64)offset;
   if (newPosition)
     *newPosition = _virtPos;
-  return Stream->Seek(Offset + _virtPos, STREAM_SEEK_SET, NULL);
+  return Stream->Seek((Int64)(Offset + _virtPos), STREAM_SEEK_SET, NULL);
 }
 
 STDMETHODIMP CLimitedCachedInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
@@ -325,7 +325,7 @@ STDMETHODIMP CLimitedCachedInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt6
   }
   if (offset < 0)
     return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
-  _virtPos = offset;
+  _virtPos = (UInt64)offset;
   if (newPosition)
     *newPosition = _virtPos;
   return S_OK;
@@ -354,10 +354,10 @@ STDMETHODIMP CTailOutStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
   }
   if (offset < 0)
     return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
-  _virtPos = offset;
+  _virtPos = (UInt64)offset;
   if (newPosition)
     *newPosition = _virtPos;
-  return Stream->Seek(Offset + _virtPos, STREAM_SEEK_SET, NULL);
+  return Stream->Seek((Int64)(Offset + _virtPos), STREAM_SEEK_SET, NULL);
 }
 
 STDMETHODIMP CTailOutStream::SetSize(UInt64 newSize)

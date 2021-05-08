@@ -158,7 +158,7 @@ HRESULT CEncoder::CreateMixerCoder(
     {
       RINOK(CreateCoder_Index(
         EXTERNAL_CODECS_LOC_VARS
-        methodFull.CodecIndex, true, cod));
+        (unsigned)methodFull.CodecIndex, true, cod));
     }
     else
     {
@@ -215,7 +215,7 @@ HRESULT CEncoder::CreateMixerCoder(
     if (cryptoSetPassword)
     {
       const unsigned sizeInBytes = _options.Password.Len() * 2;
-      CByteBuffer buffer(sizeInBytes);
+      CByteBuffer_Wipe buffer(sizeInBytes);
       for (unsigned i = 0; i < _options.Password.Len(); i++)
       {
         wchar_t c = _options.Password[i];
@@ -249,11 +249,12 @@ public:
 
 STDMETHODIMP CSequentialOutTempBufferImp2::Write(const void *data, UInt32 size, UInt32 *processed)
 {
-  if (!_buf->Write(data, size))
+  HRESULT res  = _buf->Write_HRESULT(data, size);
+  if (res != S_OK)
   {
     if (processed)
       *processed = 0;
-    return E_FAIL;
+    return res;
   }
   if (processed)
     *processed = size;
@@ -309,7 +310,7 @@ HRESULT CEncoder::Encode(
     RINOK(CreateMixerCoder(EXTERNAL_CODECS_LOC_VARS inSizeForReduce));
   }
   
-  _mixer->ReInit();
+  RINOK(_mixer->ReInit2());
 
   CMtEncMultiProgress *mtProgressSpec = NULL;
   CMyComPtr<ICompressProgressInfo> mtProgress;
@@ -478,7 +479,7 @@ HRESULT CEncoder::Encode(
       unpackSize = streamSize;
     }
     else
-      streamSize = _mixer->GetBondStreamSize(bond);
+      streamSize = _mixer->GetBondStreamSize((unsigned)bond);
     coderUnpackSizes.Add(streamSize);
   }
   
@@ -609,13 +610,13 @@ HRESULT CEncoder::EncoderConstr()
       int bond = _bindInfo.FindBond_for_PackStream(outIndex);
       if (bond >= 0)
       {
-        ci = _bindInfo.Bonds[bond].UnpackIndex;
+        ci = _bindInfo.Bonds[(unsigned)bond].UnpackIndex;
         continue;
       }
       
       int si = _bindInfo.FindStream_in_PackStreams(outIndex);
       if (si >= 0)
-        _bindInfo.PackStreams.MoveToFront(si);
+        _bindInfo.PackStreams.MoveToFront((unsigned)si);
       break;
     }
   }

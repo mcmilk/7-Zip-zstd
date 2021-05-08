@@ -29,7 +29,7 @@ static const CVKeyPropIDPair g_VKeyPropIDPairs[] =
 
 static int FindVKeyPropIDPair(WORD vKey)
 {
-  for (int i = 0; i < ARRAY_SIZE(g_VKeyPropIDPairs); i++)
+  for (unsigned i = 0; i < ARRAY_SIZE(g_VKeyPropIDPairs); i++)
     if (g_VKeyPropIDPairs[i].VKey == vKey)
       return i;
   return -1;

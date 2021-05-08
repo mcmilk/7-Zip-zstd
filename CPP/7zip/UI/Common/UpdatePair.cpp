@@ -42,7 +42,9 @@ static const char * const k_Duplicate_inArc_Message = "Duplicate filename in arc
 static const char * const k_Duplicate_inDir_Message = "Duplicate filename on disk:";
 static const char * const k_NotCensoredCollision_Message = "Internal file name collision (file on disk, file in archive):";
 
-static void ThrowError(const char *message, const UString &s1, const UString &s2)
+MY_ATTR_NORETURN
+static
+void ThrowError(const char *message, const UString &s1, const UString &s2)
 {
   UString m (message);
   m.Add_LF(); m += s1;
@@ -144,18 +146,18 @@ void GetUpdatePairInfoList(
     
     if (dirIndex < numDirItems)
     {
-      dirIndex2 = dirIndices[dirIndex];
-      di = &dirItems.Items[dirIndex2];
+      dirIndex2 = (int)dirIndices[dirIndex];
+      di = &dirItems.Items[(unsigned)dirIndex2];
     }
 
     if (arcIndex < numArcItems)
     {
-      arcIndex2 = arcIndices[arcIndex];
-      ai = &arcItems[arcIndex2];
+      arcIndex2 = (int)arcIndices[arcIndex];
+      ai = &arcItems[(unsigned)arcIndex2];
       compareResult = 1;
       if (dirIndex < numDirItems)
       {
-        compareResult = CompareFileNames(dirNames[dirIndex2], ai->Name);
+        compareResult = CompareFileNames(dirNames[(unsigned)dirIndex2], ai->Name);
         if (compareResult == 0)
         {
           if (di->IsDir() != ai->IsDir)
@@ -166,7 +168,7 @@ void GetUpdatePairInfoList(
     
     if (compareResult < 0)
     {
-      name = &dirNames[dirIndex2];
+      name = &dirNames[(unsigned)dirIndex2];
       pair.State = NUpdateArchive::NPairState::kOnlyOnDisk;
       pair.DirIndex = dirIndex2;
       dirIndex++;
@@ -184,9 +186,9 @@ void GetUpdatePairInfoList(
     {
       int dupl = duplicatedArcItem[arcIndex];
       if (dupl != 0)
-        ThrowError(k_Duplicate_inArc_Message, ai->Name, arcItems[arcIndices[arcIndex + dupl]].Name);
+        ThrowError(k_Duplicate_inArc_Message, ai->Name, arcItems[arcIndices[(unsigned)((int)arcIndex + dupl)]].Name);
 
-      name = &dirNames[dirIndex2];
+      name = &dirNames[(unsigned)dirIndex2];
       if (!ai->Censored)
         ThrowError(k_NotCensoredCollision_Message, *name, ai->Name);
       
@@ -222,7 +224,7 @@ void GetUpdatePairInfoList(
     }
     else
     {
-      prevHostFile = updatePairs.Size();
+      prevHostFile = (int)updatePairs.Size();
       prevHostName = name;
     }
     

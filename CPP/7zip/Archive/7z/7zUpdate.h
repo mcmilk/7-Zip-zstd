@@ -31,7 +31,7 @@ struct CTreeFolder
 struct CUpdateItem
 {
   int IndexInArchive;
-  int IndexInClient;
+  unsigned IndexInClient;
   
   UInt64 CTime;
   UInt64 ATime;

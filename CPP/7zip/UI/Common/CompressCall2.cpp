@@ -6,6 +6,8 @@
 
 #include "../../UI/Common/EnumDirItems.h"
 
+#include "../../UI/FileManager/LangUtils.h"
+
 #include "../../UI/GUI/BenchmarkDialog.h"
 #include "../../UI/GUI/ExtractGUI.h"
 #include "../../UI/GUI/UpdateGUI.h"

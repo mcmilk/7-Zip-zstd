@@ -89,21 +89,23 @@ public:
   STDMETHOD(Drop)(IDataObject * dataObject, DWORD keyState, POINTL pt, DWORD *effect);
 
   CDropTarget():
-      TargetPanelIndex(-1),
-      SrcPanelIndex(-1),
-      m_IsAppTarget(false),
-      m_Panel(0),
-      App(0),
-      m_PanelDropIsAllowed(false),
-      m_DropIsAllowed(false),
       m_SelectionIndex(-1),
+      m_DropIsAllowed(false),
+      m_PanelDropIsAllowed(false),
       m_SubFolderIndex(-1),
-      m_SetPathIsOK(false) {}
+      m_Panel(NULL),
+      m_IsAppTarget(false),
+      m_SetPathIsOK(false),
+      App(NULL),
+      SrcPanelIndex(-1),
+      TargetPanelIndex(-1)
+      {}
 
   CApp *App;
   int SrcPanelIndex;              // index of D&D source_panel
   int TargetPanelIndex;           // what panel to use as target_panel of Application
 };
+
 
 class CApp
 {
@@ -173,8 +175,8 @@ public:
   void OnSetSameFolder(int srcPanelIndex);
   void OnSetSubFolder(int srcPanelIndex);
 
-  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat, bool needOpenArc, bool &archiveIsOpened, bool &encrypted);
-  HRESULT Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, bool &archiveIsOpened, bool &encrypted);
+  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat, bool needOpenArc, COpenResult &openRes);
+  HRESULT Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, COpenResult &openRes);
   void Read();
   void Save();
   void Release();
@@ -196,7 +198,12 @@ public:
   void Delete(bool toRecycleBin) { GetFocusedPanel().DeleteItems(toRecycleBin); }
   HRESULT CalculateCrc2(const UString &methodName);
   void CalculateCrc(const char *methodName);
+
+  void DiffFiles(const UString &path1, const UString &path2);
   void DiffFiles();
+  
+  void VerCtrl(unsigned id);
+
   void Split();
   void Combine();
   void Properties() { GetFocusedPanel().Properties(); }

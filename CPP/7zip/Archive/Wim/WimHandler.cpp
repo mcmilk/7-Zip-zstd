@@ -350,7 +350,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-void GetFileTime(const Byte *p, NCOM::CPropVariant &prop)
+static void GetFileTime(const Byte *p, NCOM::CPropVariant &prop)
 {
   prop.vt = VT_FILETIME;
   prop.filetime.dwLowDateTime = Get32(p);

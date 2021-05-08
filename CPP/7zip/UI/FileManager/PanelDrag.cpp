@@ -190,7 +190,7 @@ public:
   HRESULT Result;
   UStringVector Messages;
 
-  CDropSource(): NeedPostCopy(false), Panel(0), Result(S_OK), m_Effect(DROPEFFECT_NONE) {}
+  CDropSource(): m_Effect(DROPEFFECT_NONE), Panel(NULL), NeedPostCopy(false), Result(S_OK) {}
 };
 
 STDMETHODIMP CDropSource::QueryContinueDrag(BOOL escapePressed, DWORD keyState)
@@ -300,7 +300,7 @@ static bool CopyNamesToHGlobal(NMemory::CGlobal &hgDrop, const UStringVector &na
     dropFiles->pt.y = 0;
     dropFiles->pFiles = sizeof(DROPFILES);
     dropFiles->fWide = TRUE;
-    WCHAR *p = (WCHAR *)((BYTE *)dropFiles + sizeof(DROPFILES));
+    WCHAR *p = (WCHAR *) (void *) ((BYTE *)dropFiles + sizeof(DROPFILES));
     for (i = 0; i < names.Size(); i++)
     {
       const UString &s = names[i];

@@ -50,6 +50,7 @@
   26  ICompressSetFinishMode
   27  ICompressGetInStreamProcessedSize2
   28  ICompressSetMemLimit
+  29  ICompressReadUnusedFromInBuf
 
   30  ICompressGetSubStreamSize
   31  ICompressSetInStream
@@ -166,6 +167,7 @@ Handler GUIDs:
   0C xz
   0D ppmd
 
+  C5 Base64
   C6 COFF
   C7 Ext
   C8 VMDK

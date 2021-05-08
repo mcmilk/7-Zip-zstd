@@ -76,11 +76,12 @@ static HRESULT Call7zGui(const UString &params,
   imageName += k7zGui;
 
   CProcess process;
-  WRes res = process.Create(imageName, params, NULL); // curDir);
-  if (res != 0)
+  const WRes wres = process.Create(imageName, params, NULL); // curDir);
+  if (wres != 0)
   {
-    ErrorMessageHRESULT(res, imageName);
-    return res;
+    HRESULT hres = HRESULT_FROM_WIN32(wres);
+    ErrorMessageHRESULT(hres, imageName);
+    return hres;
   }
   if (waitFinish)
     process.Wait();
@@ -130,12 +131,11 @@ static HRESULT CreateMap(const UStringVector &names,
   for (;;)
   {
     random.GenerateName(mappingName, "7zMap");
-
-    WRes res = fileMapping.Create(PAGE_READWRITE, totalSize, GetSystemString(mappingName));
-    if (fileMapping.IsCreated() && res == 0)
+    const WRes wres = fileMapping.Create(PAGE_READWRITE, totalSize, GetSystemString(mappingName));
+    if (fileMapping.IsCreated() && wres == 0)
       break;
-    if (res != ERROR_ALREADY_EXISTS)
-      return res;
+    if (wres != ERROR_ALREADY_EXISTS)
+      return HRESULT_FROM_WIN32(wres);
     fileMapping.Close();
   }
   
@@ -143,11 +143,11 @@ static HRESULT CreateMap(const UStringVector &names,
   for (;;)
   {
     random.GenerateName(eventName, "7zEvent");
-    WRes res = event.CreateWithName(false, GetSystemString(eventName));
-    if (event.IsCreated() && res == 0)
+    const WRes wres = event.CreateWithName(false, GetSystemString(eventName));
+    if (event.IsCreated() && wres == 0)
       break;
-    if (res != ERROR_ALREADY_EXISTS)
-      return res;
+    if (wres != ERROR_ALREADY_EXISTS)
+      return HRESULT_FROM_WIN32(wres);
     event.Close();
   }
 

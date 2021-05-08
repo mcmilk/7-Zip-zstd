@@ -32,7 +32,7 @@ static void x86_Filter(Byte *data, UInt32 size, UInt32 processedSize, UInt32 tra
   
   for (UInt32 i = 0;;)
   {
-    const Byte *p = data + i;
+    Byte *p = data + i;
     for (;;)
     {
       if (*p++ == 0xE8) break;
@@ -46,13 +46,13 @@ static void x86_Filter(Byte *data, UInt32 size, UInt32 processedSize, UInt32 tra
     if (i > size)
       break;
     {
-      Int32 v = GetUi32(p);
+      Int32 v = (Int32)GetUi32(p);
       Int32 pos = (Int32)((Int32)1 - (Int32)(processedSize + i));
       i += 4;
       if (v >= pos && v < (Int32)translationSize)
       {
-        v += (v >= 0 ? pos : translationSize);
-        SetUi32(p, v);
+        v += (v >= 0 ? pos : (Int32)translationSize);
+        SetUi32(p, (UInt32)v);
       }
     }
   }
@@ -63,15 +63,15 @@ static void x86_Filter(Byte *data, UInt32 size, UInt32 processedSize, UInt32 tra
 
 CDecoder::CDecoder(bool wimMode):
     _win(NULL),
-    _keepHistory(false),
     _skipByte(false),
-    _wimMode(wimMode),
-    _numDictBits(15),
     _unpackBlockSize(0),
-    _x86_buf(NULL),
-    _x86_translationSize(0),
     KeepHistoryForNext(true),
     NeedAlloc(true),
+    _keepHistory(false),
+    _wimMode(wimMode),
+    _numDictBits(15),
+    _x86_buf(NULL),
+    _x86_translationSize(0),
     _unpackedData(NULL)
 {
 }

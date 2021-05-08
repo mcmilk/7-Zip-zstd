@@ -4,6 +4,7 @@
 #define __MY_COM_H
 
 #include "MyWindows.h"
+#include "MyTypes.h"
 
 #ifndef RINOK
 #define RINOK(x) { HRESULT __result_ = (x); if (__result_ != S_OK) return __result_; }
@@ -81,7 +82,7 @@ inline HRESULT StringToBstr(LPCOLESTR src, BSTR *bstr)
 class CMyComBSTR
 {
   BSTR m_str;
-
+  CLASS_NO_COPY(CMyComBSTR)
 public:
   CMyComBSTR(): m_str(NULL) {}
   ~CMyComBSTR() { ::SysFreeString(m_str); }
@@ -89,13 +90,23 @@ public:
   operator LPCOLESTR() const { return m_str; }
   // operator bool() const { return m_str != NULL; }
   // bool operator!() const { return m_str == NULL; }
+
+  void Wipe_and_Free()
+  {
+    if (m_str)
+    {
+      memset(m_str, 0, ::SysStringLen(m_str) * sizeof(*m_str));
+      Empty();
+    }
+  }
+
 private:
   // operator BSTR() const { return m_str; }
 
   CMyComBSTR(LPCOLESTR src) { m_str = ::SysAllocString(src); }
   // CMyComBSTR(int nSize) { m_str = ::SysAllocStringLen(NULL, nSize); }
   // CMyComBSTR(int nSize, LPCOLESTR sz) { m_str = ::SysAllocStringLen(sz, nSize);  }
-  CMyComBSTR(const CMyComBSTR& src) { m_str = src.MyCopy(); }
+  // CMyComBSTR(const CMyComBSTR& src) { m_str = src.MyCopy(); }
   
   /*
   CMyComBSTR(REFGUID src)
@@ -107,6 +118,7 @@ private:
   }
   */
   
+  /*
   CMyComBSTR& operator=(const CMyComBSTR& src)
   {
     if (m_str != src.m_str)
@@ -117,6 +129,7 @@ private:
     }
     return *this;
   }
+  */
   
   CMyComBSTR& operator=(LPCOLESTR src)
   {
@@ -158,6 +171,15 @@ private:
 };
 
 
+class CMyComBSTR_Wipe: public CMyComBSTR
+{
+  CLASS_NO_COPY(CMyComBSTR_Wipe)
+public:
+  CMyComBSTR_Wipe(): CMyComBSTR() {}
+  ~CMyComBSTR_Wipe() { Wipe_and_Free(); }
+};
+
+
 
 /*
   If CMyUnknownImp doesn't use virtual destructor, the code size is smaller.
@@ -168,17 +190,24 @@ private:
       virtual ~class_1();
     In that case, class_1::Release() calls correct destructor of class_2.
 
-  Also you can use virtual ~CMyUnknownImp(), if you want to disable warning
+  We use virtual ~CMyUnknownImp() to disable warning
     "class has virtual functions, but destructor is not virtual".
+
+  also we can use virtual ~IUnknown() {} in MyWindows.h
 */
 
 class CMyUnknownImp
 {
+  CLASS_NO_COPY(CMyUnknownImp)
 public:
   ULONG __m_RefCount;
   CMyUnknownImp(): __m_RefCount(0) {}
 
-  // virtual
+  #ifdef _WIN32
+  #if defined(__GNUC__) || defined(__clang__)
+  virtual // to disable GCC/CLANG varnings
+  #endif
+  #endif
   ~CMyUnknownImp() {}
 };
 

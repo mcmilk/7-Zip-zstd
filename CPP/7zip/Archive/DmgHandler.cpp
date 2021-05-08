@@ -33,99 +33,22 @@
 #define Get32(p) GetBe32(p)
 #define Get64(p) GetBe64(p)
 
-static const Byte k_Base64Table[256] =
-{
-  66,77,77,77,77,77,77,77,77,65,65,77,77,65,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  65,77,77,77,77,77,77,77,77,77,77,62,77,77,77,63,
-  52,53,54,55,56,57,58,59,60,61,77,77,77,64,77,77,
-  77, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
-  15,16,17,18,19,20,21,22,23,24,25,77,77,77,77,77,
-  77,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
-  41,42,43,44,45,46,47,48,49,50,51,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,
-  77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77
-};
-
-static Byte *Base64ToBin(Byte *dest, const char *src)
-{
-  UInt32 val = 1;
-  
-  for (;;)
-  {
-    UInt32 c = k_Base64Table[(Byte)(*src++)];
-
-    if (c < 64)
-    {
-      val = (val << 6) | c;
-      if ((val & ((UInt32)1 << 24)) == 0)
-        continue;
-      dest[0] = (Byte)(val >> 16);
-      dest[1] = (Byte)(val >> 8);
-      dest[2] = (Byte)(val);
-      dest += 3;
-      val = 1;
-      continue;
-    }
-    
-    if (c == 65) // space
-      continue;
-    
-    if (c == 64) // '='
-      break;
-    
-    if (c == 66 && val == 1) // end of string
-      return dest;
-    
-    return NULL;
-  }
-
-  if (val < (1 << 12))
-    return NULL;
-
-  if (val & (1 << 18))
-  {
-    *dest++ = (Byte)(val >> 10);
-    *dest++ = (Byte)(val >> 2);
-  }
-  else if (k_Base64Table[(Byte)(*src++)] != 64) // '='
-    return NULL;
-  else
-    *dest++ = (Byte)(val >> 4);
-
-  for (;;)
-  {
-    Byte c = k_Base64Table[(Byte)(*src++)];
-    if (c == 65) // space
-      continue;
-    if (c == 66) // end of string
-      return dest;
-    return NULL;
-  }
-}
-
+Byte *Base64ToBin(Byte *dest, const char *src);
 
 namespace NArchive {
 namespace NDmg {
 
-enum
-{
-  METHOD_ZERO_0 = 0,
-  METHOD_COPY   = 1,
-  METHOD_ZERO_2 = 2, // without file CRC calculation
-  METHOD_ADC    = 0x80000004,
-  METHOD_ZLIB   = 0x80000005,
-  METHOD_BZIP2  = 0x80000006,
-  METHOD_LZFSE  = 0x80000007,
-  METHOD_COMMENT = 0x7FFFFFFE, // is used to comment "+beg" and "+end" in extra field.
-  METHOD_END    = 0xFFFFFFFF
-};
+
+static const UInt32  METHOD_ZERO_0  = 0;
+static const UInt32  METHOD_COPY    = 1;
+static const UInt32  METHOD_ZERO_2  = 2; // without file CRC calculation
+static const UInt32  METHOD_ADC     = 0x80000004;
+static const UInt32  METHOD_ZLIB    = 0x80000005;
+static const UInt32  METHOD_BZIP2   = 0x80000006;
+static const UInt32  METHOD_LZFSE   = 0x80000007;
+static const UInt32  METHOD_COMMENT = 0x7FFFFFFE; // is used to comment "+beg" and "+end" in extra field.
+static const UInt32  METHOD_END     = 0xFFFFFFFF;
+
 
 struct CBlock
 {
@@ -266,7 +189,7 @@ void CMethods::GetString(AString &res) const
   
   for (i = 0; i < Types.Size(); i++)
   {
-    UInt32 type = Types[i];
+    const UInt32 type = Types[i];
     if (type == METHOD_COMMENT || type == METHOD_END)
       continue;
     char buf[16];
@@ -407,6 +330,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidWarning:
       if (_masterCrcError)
         prop = "Master CRC error";
+      break;
 
     case kpidWarningFlags:
     {
@@ -727,7 +651,8 @@ HRESULT CHandler::Open2(IInStream *stream)
     if (xmlPair2.Len > len)
       xmlPair2.Len = len;
     CByteBuffer buf2;
-    if (ReadData(stream, xmlPair2, buf2) != S_OK
+    if (xmlPair2.Len < len
+        || ReadData(stream, xmlPair2, buf2) != S_OK
         || memcmp(buf2, sz, len) != 0)
     {
       // if absolute offset is not OK, probably it's archive with offset
@@ -1054,7 +979,9 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
+#ifdef DMG_SHOW_RAW
 #define RAW_PREFIX "raw" STRING_PATH_SEPARATOR
+#endif
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
@@ -1608,7 +1535,7 @@ public:
 };
 
 
-unsigned FindBlock(const CRecordVector<CBlock> &blocks, UInt64 pos)
+static unsigned FindBlock(const CRecordVector<CBlock> &blocks, UInt64 pos)
 {
   unsigned left = 0, right = blocks.Size();
   for (;;)
@@ -1762,8 +1689,8 @@ STDMETHODIMP CInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   }
 
   const CBlock &block = File->Blocks[_latestBlock];
-  UInt64 offset = _virtPos - block.UnpPos;
-  UInt64 rem = block.UnpSize - offset;
+  const UInt64 offset = _virtPos - block.UnpPos;
+  const UInt64 rem = block.UnpSize - offset;
   if (size > rem)
     size = (UInt32)rem;
   
@@ -1777,7 +1704,7 @@ STDMETHODIMP CInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   else if (block.IsZeroMethod())
     memset(data, 0, size);
   else if (size != 0)
-    memcpy(data, _chunks[_latestChunk].Buf + offset, size);
+    memcpy(data, _chunks[_latestChunk].Buf + (size_t)offset, size);
   
   _virtPos += size;
   if (processedSize)

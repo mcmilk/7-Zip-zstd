@@ -35,7 +35,7 @@ struct CCompressionMethodMode: public CBaseProps
 {
   CRecordVector<Byte> MethodSequence;
   bool PasswordIsDefined;
-  AString Password;
+  AString Password; // _Wipe
 
   UInt64 _dataSizeReduce;
   bool _dataSizeReduceDefined;
@@ -47,6 +47,8 @@ struct CCompressionMethodMode: public CBaseProps
     _dataSizeReduceDefined = false;
     _dataSizeReduce = 0;
   }
+
+  ~CCompressionMethodMode() { Password.Wipe_and_Empty(); }
 };
 
 }}

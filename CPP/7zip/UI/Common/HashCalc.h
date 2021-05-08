@@ -62,6 +62,8 @@ struct CHashBundle: public IHashCalc
     NumDirs = NumFiles = NumAltStreams = FilesSize = AltStreamsSize = NumErrors = 0;
   }
 
+  virtual ~CHashBundle() {};
+
   void InitForNewFile();
   void Update(const void *data, UInt32 size);
   void SetSize(UInt64 size);
@@ -90,12 +92,20 @@ struct IHashCallbackUI: public IDirItemsCallback
 struct CHashOptions
 {
   UStringVector Methods;
+  bool PreserveATime;
   bool OpenShareForWrite;
   bool StdInMode;
   bool AltStreamsMode;
+  CBoolPair SymLinks;
+
   NWildcard::ECensorPathMode PathMode;
  
-  CHashOptions(): StdInMode(false), OpenShareForWrite(false), AltStreamsMode(false), PathMode(NWildcard::k_RelatPath) {};
+  CHashOptions():
+      PreserveATime(false),
+      OpenShareForWrite(false),
+      StdInMode(false),
+      AltStreamsMode(false),
+      PathMode(NWildcard::k_RelatPath) {};
 };
 
 HRESULT HashCalc(

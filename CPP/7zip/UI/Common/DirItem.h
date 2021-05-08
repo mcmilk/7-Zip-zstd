@@ -3,6 +3,10 @@
 #ifndef __DIR_ITEM_H
 #define __DIR_ITEM_H
 
+#ifdef _WIN32
+#include "../../../Common/MyLinux.h"
+#endif
+
 #include "../../../Common/MyString.h"
 
 #include "../../../Windows/FileFind.h"
@@ -84,13 +88,18 @@ struct CDirItem
   FILETIME MTime;
   UString Name;
   
-  #if defined(_WIN32) && !defined(UNDER_CE)
-  // UString ShortName;
+  #ifndef UNDER_CE
   CByteBuffer ReparseData;
-  CByteBuffer ReparseData2; // fixed (reduced) absolute links
 
+  #ifdef _WIN32
+  // UString ShortName;
+  CByteBuffer ReparseData2; // fixed (reduced) absolute links for WIM format
   bool AreReparseData() const { return ReparseData.Size() != 0 || ReparseData2.Size() != 0; }
-  #endif
+  #else
+  bool AreReparseData() const { return ReparseData.Size() != 0; }
+  #endif // _WIN32
+
+  #endif // !UNDER_CE
   
   UInt32 Attrib;
   int PhyParent;
@@ -100,8 +109,22 @@ struct CDirItem
   bool IsAltStream;
   
   CDirItem(): PhyParent(-1), LogParent(-1), SecureIndex(-1), IsAltStream(false) {}
-  bool IsDir() const { return (Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0 ; }
+  
+  bool IsDir() const { return (Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0; }
+  bool IsReadOnly() const { return (Attrib & FILE_ATTRIBUTE_READONLY) != 0; }
+  bool Has_Attrib_ReparsePoint() const { return (Attrib & FILE_ATTRIBUTE_REPARSE_POINT) != 0; }
+
+  #ifdef _WIN32
+  UInt32 GetPosixAttrib() const
+  {
+    UInt32 v = IsDir() ? MY_LIN_S_IFDIR : MY_LIN_S_IFREG;
+    v |= (IsReadOnly() ? 0555 : 0777);
+    return v;
+  }
+  #endif
 };
+
+
 
 class CDirItems
 {
@@ -117,16 +140,14 @@ public:
   CObjectVector<CDirItem> Items;
 
   bool SymLinks;
-
   bool ScanAltStreams;
   
   CDirItemsStat Stat;
 
-  #ifndef UNDER_CE
+  #if !defined(UNDER_CE)
   HRESULT SetLinkInfo(CDirItem &dirItem, const NWindows::NFile::NFind::CFileInfo &fi,
       const FString &phyPrefix);
   #endif
-
 
   #if defined(_WIN32) && !defined(UNDER_CE)
 
@@ -136,6 +157,7 @@ public:
   bool ReadSecure;
   
   HRESULT AddSecurityItem(const FString &path, int &secureIndex);
+  HRESULT FillFixedReparse();
 
   #endif
 
@@ -157,6 +179,9 @@ public:
 
   unsigned AddPrefix(int phyParent, int logParent, const UString &prefix);
   void DeleteLastPrefix();
+
+  // HRESULT EnumerateOneDir(const FString &phyPrefix, CObjectVector<NWindows::NFile::NFind::CDirEntry> &files);
+  HRESULT EnumerateOneDir(const FString &phyPrefix, CObjectVector<NWindows::NFile::NFind::CFileInfo> &files);
   
   HRESULT EnumerateItems2(
     const FString &phyPrefix,
@@ -164,12 +189,9 @@ public:
     const FStringVector &filePaths,
     FStringVector *requestedPaths);
 
-  #if defined(_WIN32) && !defined(UNDER_CE)
-  void FillFixedReparse();
-  #endif
-
   void ReserveDown();
 };
+
 
 struct CArcItem
 {

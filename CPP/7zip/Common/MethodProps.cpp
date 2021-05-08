@@ -184,10 +184,12 @@ class CCoderProps
   unsigned _numProps;
   unsigned _numPropsMax;
 public:
-  CCoderProps(unsigned numPropsMax)
+  CCoderProps(unsigned numPropsMax):
+      _propIDs(NULL),
+      _props(NULL),
+      _numProps(0),
+      _numPropsMax(numPropsMax)
   {
-    _numPropsMax = numPropsMax;
-    _numProps = 0;
     _propIDs = new PROPID[numPropsMax];
     _props = new NCOM::CPropVariant[numPropsMax];
   }
@@ -214,7 +216,15 @@ void CCoderProps::AddProp(const CProp &prop)
 
 HRESULT CProps::SetCoderProps(ICompressSetCoderProperties *scp, const UInt64 *dataSizeReduce) const
 {
-  CCoderProps coderProps(Props.Size() + (dataSizeReduce ? 1 : 0));
+  return SetCoderProps_DSReduce_Aff(scp, dataSizeReduce, NULL);
+}
+
+HRESULT CProps::SetCoderProps_DSReduce_Aff(
+    ICompressSetCoderProperties *scp,
+    const UInt64 *dataSizeReduce,
+    const UInt64 *affinity) const
+{
+  CCoderProps coderProps(Props.Size() + (dataSizeReduce ? 1 : 0) + (affinity ? 1 : 0) );
   FOR_VECTOR (i, Props)
     coderProps.AddProp(Props[i]);
   if (dataSizeReduce)
@@ -224,27 +234,34 @@ HRESULT CProps::SetCoderProps(ICompressSetCoderProperties *scp, const UInt64 *da
     prop.Value = *dataSizeReduce;
     coderProps.AddProp(prop);
   }
+  if (affinity)
+  {
+    CProp prop;
+    prop.Id = NCoderPropID::kAffinity;
+    prop.Value = *affinity;
+    coderProps.AddProp(prop);
+  }
   return coderProps.SetProps(scp);
 }
 
 
 int CMethodProps::FindProp(PROPID id) const
 {
-  for (int i = Props.Size() - 1; i >= 0; i--)
-    if (Props[i].Id == id)
+  for (int i = (int)Props.Size() - 1; i >= 0; i--)
+    if (Props[(unsigned)i].Id == id)
       return i;
   return -1;
 }
 
-int CMethodProps::GetLevel() const
+unsigned CMethodProps::GetLevel() const
 {
   int i = FindProp(NCoderPropID::kLevel);
   if (i < 0)
     return 5;
-  if (Props[i].Value.vt != VT_UI4)
+  if (Props[(unsigned)i].Value.vt != VT_UI4)
     return 9;
-  UInt32 level = Props[i].Value.ulVal;
-  return level > 9 ? 9 : (int)level;
+  UInt32 level = Props[(unsigned)i].Value.ulVal;
+  return level > 9 ? 9 : (unsigned)level;
 }
 
 struct CNameToPropID
@@ -286,7 +303,7 @@ static int FindPropIdExact(const UString &name)
 {
   for (unsigned i = 0; i < ARRAY_SIZE(g_NameToPropID); i++)
     if (StringsAreEqualNoCase_Ascii(name, g_NameToPropID[i].Name))
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -346,8 +363,8 @@ static void SplitParam(const UString &param, UString &name, UString &value)
   int eqPos = param.Find(L'=');
   if (eqPos >= 0)
   {
-    name.SetFrom(param, eqPos);
-    value = param.Ptr(eqPos + 1);
+    name.SetFrom(param, (unsigned)eqPos);
+    value = param.Ptr((unsigned)(eqPos + 1));
     return;
   }
   unsigned i;
@@ -382,7 +399,7 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
     return E_INVALIDARG;
   const CNameToPropID &nameToPropID = g_NameToPropID[(unsigned)index];
   CProp prop;
-  prop.Id = index;
+  prop.Id = (unsigned)index;
 
   if (IsLogSizeProp(prop.Id))
   {
@@ -463,7 +480,7 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
     return E_INVALIDARG;
   const CNameToPropID &nameToPropID = g_NameToPropID[(unsigned)index];
   CProp prop;
-  prop.Id = index;
+  prop.Id = (unsigned)index;
   
   if (IsLogSizeProp(prop.Id))
   {
@@ -485,14 +502,14 @@ HRESULT COneMethodInfo::ParseMethodFromString(const UString &s)
   {
     UString temp = s;
     if (splitPos >= 0)
-      temp.DeleteFrom(splitPos);
+      temp.DeleteFrom((unsigned)splitPos);
     if (!temp.IsAscii())
       return E_INVALIDARG;
     MethodName.SetFromWStr_if_Ascii(temp);
   }
   if (splitPos < 0)
     return S_OK;
-  PropsString = s.Ptr(splitPos + 1);
+  PropsString = s.Ptr((unsigned)(splitPos + 1));
   return ParseParamsFromString(PropsString);
 }
 

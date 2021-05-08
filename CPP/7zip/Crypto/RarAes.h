@@ -44,6 +44,15 @@ public:
   HRESULT SetDecoderProperties2(const Byte *data, UInt32 size);
 
   CDecoder();
+
+  ~CDecoder() { Wipe(); }
+  void Wipe()
+  {
+    _password.Wipe();
+    MY_memset_0_ARRAY(_salt);
+    MY_memset_0_ARRAY(_key);
+    MY_memset_0_ARRAY(_iv);
+  }
   // void SetRar350Mode(bool rar350Mode) { _rar350Mode = rar350Mode; }
 };
 

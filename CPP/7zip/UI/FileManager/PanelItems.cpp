@@ -87,7 +87,7 @@ static int GetColumnAlign(PROPID propID, VARTYPE varType)
 
 static int ItemProperty_Compare_NameFirst(void *const *a1, void *const *a2, void * /* param */)
 {
-  return (*(*((const CPropColumn **)a1))).Compare_NameFirst(*(*((const CPropColumn **)a2)));
+  return (*(*((const CPropColumn *const *)a1))).Compare_NameFirst(*(*((const CPropColumn *const *)a2)));
 }
 
 HRESULT CPanel::InitColumns()
@@ -154,6 +154,21 @@ HRESULT CPanel::InitColumns()
       prop.IsRawProp = false;
       _columns.Add(prop);
     }
+
+    /*
+    {
+      // debug column
+      CPropColumn prop;
+      prop.Type = VT_BSTR;
+      prop.ID = 2000;
+      prop.Name = "Debug";
+      prop.Order = -1;
+      prop.IsVisible = true;
+      prop.Width = 300;
+      prop.IsRawProp = false;
+      _columns.Add(prop);
+    }
+    */
   }
 
   if (_folderRawProps)
@@ -174,7 +189,7 @@ HRESULT CPanel::InitColumns()
       prop.Name = GetNameOfProperty(propID, name);
       prop.Order = -1;
       prop.IsVisible = GetColumnVisible(propID, isFsFolder);
-      prop.Width = GetColumnWidth(propID, VT_BSTR);;
+      prop.Width = GetColumnWidth(propID, VT_BSTR);
       prop.IsRawProp = true;
       _columns.Add(prop);
     }
@@ -250,7 +265,7 @@ HRESULT CPanel::InitColumns()
   /* There are restrictions in ListView control:
      1) main column (kpidName) must have (LV_COLUMNW::iSubItem = 0)
         So we need special sorting for columns.
-     2) when we add new column, LV_COLUMNW::iOrder can not be larger than already inserted columns)
+     2) when we add new column, LV_COLUMNW::iOrder cannot be larger than already inserted columns)
         So we set column order after all columns are added.
   */
   newColumns.Sort(ItemProperty_Compare_NameFirst, NULL);
@@ -435,10 +450,26 @@ void CPanel::SetFocusedSelectedItem(int index, bool select)
 #endif
 
 
+  
+/*
+
+extern UInt32 g_NumGroups;
+extern DWORD g_start_tick;
+extern DWORD g_prev_tick;
+extern DWORD g_Num_SetItemText;
+extern UInt32 g_NumMessages;
+*/
+
 HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
 {
   if (!_folder)
     return S_OK;
+
+  /*
+  g_start_tick = GetTickCount();
+  g_Num_SetItemText = 0;
+  g_NumMessages = 0;
+  */
 
   _dontShowMode = false;
   LoadFullPathAndShow();
@@ -545,6 +576,8 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
 
   Print_OnNotify("===== Before Load");
 
+  // #define USE_EMBED_ITEM
+
   if (showDots)
   {
     UString itemName ("..");
@@ -555,8 +588,11 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
     int subItem = 0;
     item.iSubItem = subItem++;
     item.lParam = kParentIndex;
-    // item.pszText = const_cast<wchar_t *>((const wchar_t *)itemName);
+    #ifdef USE_EMBED_ITEM
+    item.pszText = const_cast<wchar_t *>((const wchar_t *)itemName);
+    #else
     item.pszText = LPSTR_TEXTCALLBACKW;
+    #endif
     UInt32 attrib = FILE_ATTRIBUTE_DIRECTORY;
     item.iImage = _extToIconMap.GetIconIndex(attrib, itemName);
     if (item.iImage < 0)
@@ -591,10 +627,8 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
     if (state.FocusedName_Defined || !state.SelectedNames.IsEmpty())
     {
       relPath.Empty();
-
       // relPath += GetItemPrefix(i);
-      // change it (_flatMode)
-      if (i != kParentIndex && _flatMode)
+      if (_flatMode)
       {
         const wchar_t *prefix = NULL;
         if (_folderGetItemName)
@@ -672,8 +706,11 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
     else
     */
     {
-      // item.pszText = const_cast<wchar_t *>((const wchar_t *)name);
+      #ifdef USE_EMBED_ITEM
+      item.pszText = const_cast<wchar_t *>((const wchar_t *)name);
+      #else
       item.pszText = LPSTR_TEXTCALLBACKW;
+      #endif
       /* LPSTR_TEXTCALLBACKW works, but in some cases there are problems,
       since we block notify handler.
       LPSTR_TEXTCALLBACKW can be 2-3 times faster for loading in this loop. */

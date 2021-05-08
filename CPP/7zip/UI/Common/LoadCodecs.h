@@ -132,7 +132,8 @@ struct CArcInfoEx
   bool Flags_BackwardOpen() const { return (Flags & NArcInfoFlags::kBackwardOpen) != 0; }
   bool Flags_PreArc() const { return (Flags & NArcInfoFlags::kPreArc) != 0; }
   bool Flags_PureStartOpen() const { return (Flags & NArcInfoFlags::kPureStartOpen) != 0; }
-  
+  bool Flags_ByExtOnlyOpen() const { return (Flags & NArcInfoFlags::kByExtOnlyOpen) != 0; }
+
   UString GetMainExt() const
   {
     if (Exts.IsEmpty())
@@ -227,6 +228,13 @@ struct CCodecLib
 
 #endif
 
+struct CCodecError
+{
+  FString Path;
+  HRESULT ErrorCode;
+  AString Message;
+  CCodecError(): ErrorCode(0) {}
+};
 
 class CCodecs:
   #ifdef EXTERNAL_CODECS
@@ -243,7 +251,9 @@ public:
   
   CObjectVector<CCodecLib> Libs;
   FString MainDll_ErrorPath;
-
+  CObjectVector<CCodecError> Errors;
+  
+  void AddLastError(const FString &path);
   void CloseLibs();
 
   class CReleaser
@@ -272,7 +282,7 @@ public:
 
   HRESULT CreateArchiveHandler(const CArcInfoEx &ai, bool outHandler, void **archive) const
   {
-    return Libs[ai.LibIndex].CreateObject(&ai.ClassID, outHandler ? &IID_IOutArchive : &IID_IInArchive, (void **)archive);
+    return Libs[(unsigned)ai.LibIndex].CreateObject(&ai.ClassID, outHandler ? &IID_IOutArchive : &IID_IInArchive, (void **)archive);
   }
   
   #endif
@@ -306,11 +316,11 @@ public:
  
   const wchar_t *GetFormatNamePtr(int formatIndex) const
   {
-    return formatIndex < 0 ? L"#" : (const wchar_t *)Formats[formatIndex].Name;
+    return formatIndex < 0 ? L"#" : (const wchar_t *)Formats[(unsigned)formatIndex].Name;
   }
 
   HRESULT Load();
-  
+
   #ifndef _SFX
   int FindFormatForArchiveName(const UString &arcPath) const;
   int FindFormatForExtension(const UString &ext) const;
@@ -351,6 +361,8 @@ public:
   UInt64 GetHasherId(UInt32 index);
   AString GetHasherName(UInt32 index);
   UInt32 GetHasherDigestSize(UInt32 index);
+
+  void GetCodecsErrorMessage(UString &s);
 
   #endif
 
@@ -399,7 +411,7 @@ public:
       if (!arc.UpdateEnabled)
         continue;
       if (arc.Name.IsEqualTo_NoCase(name))
-        return i;
+        return (int)i;
     }
     return -1;
   }

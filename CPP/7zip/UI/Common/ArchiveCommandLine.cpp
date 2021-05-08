@@ -19,6 +19,7 @@
 #include "../../../../C/Alloc.h"
 #endif
 
+#include "../../../Common/IntToString.h"
 #include "../../../Common/ListFileUtils.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
@@ -26,6 +27,7 @@
 #include "../../../Windows/ErrorMsg.h"
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileName.h"
+#include "../../../Windows/System.h"
 #ifdef _WIN32
 #include "../../../Windows/FileMapping.h"
 #include "../../../Windows/MemoryLock.h"
@@ -41,8 +43,18 @@ extern bool g_CaseSensitive;
 extern bool g_PathTrailReplaceMode;
 
 #ifdef _7ZIP_LARGE_PAGES
+extern
+bool g_LargePagesMode;
 bool g_LargePagesMode = false;
 #endif
+
+/*
+#ifdef ENV_HAVE_LSTAT
+EXTERN_C_BEGIN
+extern int global_use_lstat;
+EXTERN_C_END
+#endif
+*/
 
 #ifdef UNDER_CE
 
@@ -50,13 +62,18 @@ bool g_LargePagesMode = false;
 
 #else
 
-#if _MSC_VER >= 1400
-#define MY_isatty_fileno(x) _isatty(_fileno(x))
-#else
-#define MY_isatty_fileno(x) isatty(fileno(x))
-#endif
-
-#define MY_IS_TERMINAL(x) (MY_isatty_fileno(x) != 0);
+// #define MY_isatty_fileno(x) (isatty(fileno(x)))
+// #define MY_IS_TERMINAL(x) (MY_isatty_fileno(x) != 0);
+static inline bool MY_IS_TERMINAL(FILE *x)
+{
+  return (
+    #if defined(_MSC_VER) && (_MSC_VER >= 1400)
+      _isatty(_fileno(x))
+    #else
+      isatty(fileno(x))
+    #endif
+      != 0);
+}
 
 #endif
 
@@ -73,8 +90,6 @@ static bool StringToUInt32(const wchar_t *s, UInt32 &v)
   return *end == 0;
 }
 
-
-int g_CodePage = -1;
 
 namespace NKey {
 enum Enum
@@ -127,6 +142,7 @@ enum Enum
   kConsoleCharSet,
   kTechMode,
   
+  kPreserveATime,
   kShareForWrite,
   kStopAfterOpenError,
   kCaseSensitive,
@@ -137,6 +153,7 @@ enum Enum
   kFullPathMode,
   
   kHardLinks,
+  kSymLinks_AllowDangerous,
   kSymLinks,
   kNtSecurity,
   
@@ -164,7 +181,7 @@ static const char * const k_ArcNameMode_PostCharSet = "sea";
 
 static const char * const k_Stream_PostCharSet = "012";
 
-static inline const EArcNameMode ParseArcNameMode(int postCharIndex)
+static inline EArcNameMode ParseArcNameMode(int postCharIndex)
 {
   switch (postCharIndex)
   {
@@ -182,12 +199,15 @@ namespace NRecursedPostCharIndex {
   };
 }
 
-static const char kImmediateNameID = '!';
-static const char kMapNameID = '#';
-static const char kFileListID = '@';
+// static const char
+#define kImmediateNameID '!'
+#ifdef _WIN32
+#define kMapNameID '#'
+#endif
+#define kFileListID '@'
 
-static const char kSomeCludePostStringMinSize = 2; // at least <@|!><N>ame must be
-static const char kSomeCludeAfterRecursedPostStringMinSize = 2; // at least <@|!><N>ame must be
+static const Byte kSomeCludePostStringMinSize = 2; // at least <@|!><N>ame must be
+static const Byte kSomeCludeAfterRecursedPostStringMinSize = 2; // at least <@|!><N>ame must be
 
 static const char * const kOverwritePostCharSet = "asut";
 
@@ -199,80 +219,95 @@ static const NExtract::NOverwriteMode::EEnum k_OverwriteModes[] =
   NExtract::NOverwriteMode::kRenameExisting
 };
 
+
+
+#define SWFRM_3(t, mu, mi) t, mu, mi, NULL
+
+#define SWFRM_1(t) SWFRM_3(t, false, 0)
+#define SWFRM_SIMPLE SWFRM_1(NSwitchType::kSimple)
+#define SWFRM_MINUS  SWFRM_1(NSwitchType::kMinus)
+#define SWFRM_STRING SWFRM_1(NSwitchType::kString)
+
+#define SWFRM_STRING_SINGL(mi) SWFRM_3(NSwitchType::kString, false, mi)
+#define SWFRM_STRING_MULT(mi)  SWFRM_3(NSwitchType::kString, true, mi)
+
+
 static const CSwitchForm kSwitchForms[] =
 {
-  { "?" },
-  { "h" },
-  { "-help" },
+  { "?", SWFRM_SIMPLE },
+  { "h", SWFRM_SIMPLE },
+  { "-help", SWFRM_SIMPLE },
   
-  { "ba" },
-  { "bd" },
-  { "bt" },
-  { "bb", NSwitchType::kString, false, 0 },
+  { "ba", SWFRM_SIMPLE },
+  { "bd", SWFRM_SIMPLE },
+  { "bt", SWFRM_SIMPLE },
+  { "bb", SWFRM_STRING_SINGL(0) },
 
   { "bso", NSwitchType::kChar, false, 1, k_Stream_PostCharSet },
   { "bse", NSwitchType::kChar, false, 1, k_Stream_PostCharSet },
   { "bsp", NSwitchType::kChar, false, 1, k_Stream_PostCharSet },
   
-  { "y" },
+  { "y", SWFRM_SIMPLE },
   
-  { "ad" },
+  { "ad", SWFRM_SIMPLE },
   { "ao", NSwitchType::kChar, false, 1, kOverwritePostCharSet},
 
-  { "t",  NSwitchType::kString, false, 1 },
-  { "stx", NSwitchType::kString, true, 1 },
+  { "t",  SWFRM_STRING_SINGL(1) },
+  { "stx", SWFRM_STRING_MULT(1) },
   
-  { "m",  NSwitchType::kString, true, 1 },
-  { "o",  NSwitchType::kString, false, 1 },
-  { "w",  NSwitchType::kString },
+  { "m",  SWFRM_STRING_MULT(1) },
+  { "o",  SWFRM_STRING_SINGL(1) },
+  { "w",  SWFRM_STRING },
 
-  { "i",  NSwitchType::kString, true, kSomeCludePostStringMinSize},
-  { "x",  NSwitchType::kString, true, kSomeCludePostStringMinSize},
-  { "ai", NSwitchType::kString, true, kSomeCludePostStringMinSize},
-  { "ax", NSwitchType::kString, true, kSomeCludePostStringMinSize},
-  { "an" },
+  { "i",  SWFRM_STRING_MULT(kSomeCludePostStringMinSize) },
+  { "x",  SWFRM_STRING_MULT(kSomeCludePostStringMinSize) },
+  { "ai", SWFRM_STRING_MULT(kSomeCludePostStringMinSize) },
+  { "ax", SWFRM_STRING_MULT(kSomeCludePostStringMinSize) },
+  { "an", SWFRM_SIMPLE },
   
-  { "u",  NSwitchType::kString, true, 1},
-  { "v",  NSwitchType::kString, true, 1},
+  { "u",  SWFRM_STRING_MULT(1) },
+  { "v",  SWFRM_STRING_MULT(1) },
   { "r",  NSwitchType::kChar, false, 0, kRecursedPostCharSet },
   
-  { "stm", NSwitchType::kString },
-  { "sfx", NSwitchType::kString },
-  { "seml", NSwitchType::kString, false, 0},
-  { "scrc", NSwitchType::kString, true, 0 },
+  { "stm", SWFRM_STRING },
+  { "sfx", SWFRM_STRING },
+  { "seml", SWFRM_STRING_SINGL(0) },
+  { "scrc", SWFRM_STRING_MULT(0) },
   
-  { "si", NSwitchType::kString },
-  { "so" },
+  { "si", SWFRM_STRING },
+  { "so", SWFRM_SIMPLE },
 
-  { "slp", NSwitchType::kString },
-  { "scs", NSwitchType::kString },
-  { "scc", NSwitchType::kString },
-  { "slt" },
+  { "slp", SWFRM_STRING },
+  { "scs", SWFRM_STRING },
+  { "scc", SWFRM_STRING },
+  { "slt", SWFRM_SIMPLE },
 
-  { "ssw" },
-  { "sse" },
-  { "ssc", NSwitchType::kMinus },
+  { "ssp", SWFRM_SIMPLE },
+  { "ssw", SWFRM_SIMPLE },
+  { "sse", SWFRM_SIMPLE },
+  { "ssc", SWFRM_MINUS },
   { "sa",  NSwitchType::kChar, false, 1, k_ArcNameMode_PostCharSet },
   
-  { "spd" },
-  { "spe", NSwitchType::kMinus },
-  { "spf", NSwitchType::kString, false, 0 },
+  { "spd", SWFRM_SIMPLE },
+  { "spe", SWFRM_MINUS },
+  { "spf", SWFRM_STRING_SINGL(0) },
   
-  { "snh", NSwitchType::kMinus },
-  { "snl", NSwitchType::kMinus },
-  { "sni" },
+  { "snh", SWFRM_MINUS },
+  { "snld", SWFRM_MINUS },
+  { "snl", SWFRM_MINUS },
+  { "sni", SWFRM_SIMPLE },
   
-  { "sns", NSwitchType::kMinus },
-  { "snr" },
-  { "snc" },
+  { "sns", SWFRM_MINUS },
+  { "snr", SWFRM_SIMPLE },
+  { "snc", SWFRM_SIMPLE },
   
-  { "snt", NSwitchType::kMinus },
+  { "snt", SWFRM_MINUS },
   
-  { "sdel" },
-  { "stl" }
+  { "sdel", SWFRM_SIMPLE },
+  { "stl", SWFRM_SIMPLE }
 
   #ifndef _NO_CRYPTO
-  , { "p",  NSwitchType::kString }
+  , { "p", SWFRM_STRING }
   #endif
 };
 
@@ -281,7 +316,7 @@ static const unsigned kMinNonSwitchWords = 1;
 static const unsigned kCommandIndex = 0;
 
 // static const char * const kUserErrorMessage  = "Incorrect command line";
-static const char * const kCannotFindListFile = "Cannot find listfile";
+// static const char * const kCannotFindListFile = "Cannot find listfile";
 static const char * const kIncorrectListFile = "Incorrect item in listfile.\nCheck charset encoding and -scs switch.";
 static const char * const kTerminalOutError = "I won't write compressed data to a terminal";
 static const char * const kSameTerminalError = "I won't write data and program's messages to same stream";
@@ -295,8 +330,9 @@ bool CArcCommand::IsFromExtractGroup() const
     case NCommandType::kExtract:
     case NCommandType::kExtractFull:
       return true;
+    default:
+      return false;
   }
-  return false;
 }
 
 NExtract::NPathMode::EEnum CArcCommand::GetPathMode() const
@@ -306,8 +342,9 @@ NExtract::NPathMode::EEnum CArcCommand::GetPathMode() const
     case NCommandType::kTest:
     case NCommandType::kExtractFull:
       return NExtract::NPathMode::kFullPaths;
+    default:
+      return NExtract::NPathMode::kNoPaths;
   }
-  return NExtract::NPathMode::kNoPaths;
 }
 
 bool CArcCommand::IsFromUpdateGroup() const
@@ -319,8 +356,9 @@ bool CArcCommand::IsFromUpdateGroup() const
     case NCommandType::kDelete:
     case NCommandType::kRename:
       return true;
+    default:
+      return false;
   }
-  return false;
 }
 
 static NRecursedType::EEnum GetRecursedTypeFromIndex(int index)
@@ -376,6 +414,8 @@ static void AddNameToCensor(NWildcard::CCensor &censor,
     case NRecursedType::kRecursed:
       recursed = true;
       break;
+    default:
+      break;
   }
   censor.AddPreItem(include, name, recursed, wildcardMatching);
 }
@@ -408,11 +448,13 @@ static void AddRenamePair(CObjectVector<CRenamePair> *renamePairs,
 static void AddToCensorFromListFile(
     CObjectVector<CRenamePair> *renamePairs,
     NWildcard::CCensor &censor,
-    LPCWSTR fileName, bool include, NRecursedType::EEnum type, bool wildcardMatching, Int32 codePage)
+    LPCWSTR fileName, bool include, NRecursedType::EEnum type, bool wildcardMatching, UInt32 codePage)
 {
   UStringVector names;
-  if (!NFind::DoesFileExist(us2fs(fileName)))
+  /*
+  if (!NFind::DoesFileExist_FollowLink(us2fs(fileName)))
     throw CArcCmdLineException(kCannotFindListFile, fileName);
+  */
   DWORD lastError = 0;
   if (!ReadNamesFromListFile2(us2fs(fileName), names, codePage, lastError))
   {
@@ -449,7 +491,7 @@ static void AddToCensorFromNonSwitchesStrings(
     int stopSwitchIndex,
     NRecursedType::EEnum type,
     bool wildcardMatching,
-    bool thereAreSwitchIncludes, Int32 codePage)
+    bool thereAreSwitchIncludes, UInt32 codePage)
 {
   if ((renamePairs || nonSwitchStrings.Size() == startIndex) && !thereAreSwitchIncludes)
     AddNameToCensor(censor, UString(kUniversalWildcard), true, type,
@@ -459,7 +501,7 @@ static void AddToCensorFromNonSwitchesStrings(
   int oldIndex = -1;
   
   if (stopSwitchIndex < 0)
-    stopSwitchIndex = nonSwitchStrings.Size();
+    stopSwitchIndex = (int)nonSwitchStrings.Size();
 
   for (unsigned i = startIndex; i < nonSwitchStrings.Size(); i++)
   {
@@ -471,11 +513,11 @@ static void AddToCensorFromNonSwitchesStrings(
     else if (renamePairs)
     {
       if (oldIndex == -1)
-        oldIndex = i;
+        oldIndex = (int)i;
       else
       {
         // NRecursedType::EEnum type is used for global wildcard (-i! switches)
-        AddRenamePair(renamePairs, nonSwitchStrings[oldIndex], s, NRecursedType::kNonRecursed, wildcardMatching);
+        AddRenamePair(renamePairs, nonSwitchStrings[(unsigned)oldIndex], s, NRecursedType::kNonRecursed, wildcardMatching);
         // AddRenamePair(renamePairs, nonSwitchStrings[oldIndex], s, type);
         oldIndex = -1;
       }
@@ -486,7 +528,7 @@ static void AddToCensorFromNonSwitchesStrings(
   
   if (oldIndex != -1)
   {
-    throw CArcCmdLineException("There is no second file name for rename pair:", nonSwitchStrings[oldIndex]);
+    throw CArcCmdLineException("There is no second file name for rename pair:", nonSwitchStrings[(unsigned)oldIndex]);
   }
 }
 
@@ -517,23 +559,23 @@ static const char *ParseMapWithPaths(
   int pos = s.Find(L':');
   if (pos < 0)
     return k_IncorrectMapCommand;
-  int pos2 = s.Find(L':', pos + 1);
+  int pos2 = s.Find(L':', (unsigned)(pos + 1));
   if (pos2 < 0)
     return k_IncorrectMapCommand;
 
-  CEventSetEnd eventSetEnd((const wchar_t *)s + ((unsigned)pos2 + 1));
-  s.DeleteFrom(pos2);
+  CEventSetEnd eventSetEnd((const wchar_t *)s + (unsigned)(pos2 + 1));
+  s.DeleteFrom((unsigned)pos2);
   UInt32 size;
-  if (!StringToUInt32(s.Ptr(pos + 1), size)
+  if (!StringToUInt32(s.Ptr((unsigned)(pos + 1)), size)
       || size < sizeof(wchar_t)
       || size > ((UInt32)1 << 31)
       || size % sizeof(wchar_t) != 0)
     return "Unsupported Map data size";
 
-  s.DeleteFrom(pos);
+  s.DeleteFrom((unsigned)pos);
   CFileMapping map;
   if (map.Open(FILE_MAP_READ, GetSystemString(s)) != 0)
-    return "Can not open mapping";
+    return "Cannot open mapping";
   LPVOID data = map.Map(FILE_MAP_READ, 0, size);
   if (!data)
     return "MapViewOfFile error";
@@ -569,7 +611,7 @@ static void AddSwitchWildcardsToCensor(
     const UStringVector &strings, bool include,
     NRecursedType::EEnum commonRecursedType,
     bool wildcardMatching,
-    Int32 codePage)
+    UInt32 codePage)
 {
   const char *errorMessage = NULL;
   unsigned i;
@@ -667,9 +709,9 @@ static bool ParseUpdateCommandString2(const UString &command,
     if (i >= command.Len())
       return false;
     c = command[i];
-    if (c < '0' || c >= '0' + kNumUpdatePairActions)
+    if (c < '0' || c >= (wchar_t)('0' + kNumUpdatePairActions))
       return false;
-    unsigned actionPos = c - '0';
+    unsigned actionPos = (unsigned)(c - '0');
     actionSet.StateActions[(unsigned)statePos] = (NUpdateArchive::NPairAction::EEnum)(actionPos);
     if (kUpdatePairStateNotSupportedActions[(unsigned)statePos] == (int)actionPos)
       return false;
@@ -791,8 +833,8 @@ static void SetMethodOptions(const CParser &parser, CObjectVector<CProperty> &pr
       int index = prop.Name.Find(L'=');
       if (index >= 0)
       {
-        prop.Value = prop.Name.Ptr(index + 1);
-        prop.Name.DeleteFrom(index);
+        prop.Value = prop.Name.Ptr((unsigned)(index + 1));
+        prop.Name.DeleteFrom((unsigned)index);
       }
       properties.Add(prop);
     }
@@ -803,13 +845,24 @@ static void SetMethodOptions(const CParser &parser, CObjectVector<CProperty> &pr
 static inline void SetStreamMode(const CSwitchResult &sw, unsigned &res)
 {
   if (sw.ThereIs)
-    res = sw.PostCharIndex;
+    res = (unsigned)sw.PostCharIndex;
 }
+
+
+#if defined(_WIN32) && !defined(UNDER_CE)
+static void PrintHex(UString &s, UInt64 v)
+{
+  char temp[32];
+  ConvertUInt64ToHex(v, temp);
+  s += temp;
+}
+#endif
 
 
 void CArcCmdLineParser::Parse1(const UStringVector &commandStrings,
     CArcCmdLineOptions &options)
 {
+  Parse1Log.Empty();
   if (!parser.ParseStrings(kSwitchForms, ARRAY_SIZE(kSwitchForms), commandStrings))
     throw CArcCmdLineException(parser.ErrorMessage, parser.ErrorLine);
 
@@ -879,14 +932,16 @@ void CArcCmdLineParser::Parse1(const UStringVector &commandStrings,
     
     #ifdef _7ZIP_LARGE_PAGES
     if (slp >
-          #ifndef UNDER_CE
+          #if defined(_WIN32) && !defined(UNDER_CE)
             (unsigned)NSecurity::Get_LargePages_RiskLevel()
           #else
             0
           #endif
         )
     {
+      #ifdef _WIN32 // change it !
       SetLargePageSize();
+      #endif
       // note: this process also can inherit that Privilege from parent process
       g_LargePagesMode =
       #if defined(_WIN32) && !defined(UNDER_CE)
@@ -906,32 +961,83 @@ void CArcCmdLineParser::Parse1(const UStringVector &commandStrings,
     const UString &s = parser[NKey::kAffinity].PostStrings[0];
     if (!s.IsEmpty())
     {
-      UInt32 v = 0;
       AString a;
       a.SetFromWStr_if_Ascii(s);
-      if (!a.IsEmpty())
+      Parse1Log += "Set process affinity mask: ";
+
+      #ifdef _WIN32
+
+      UInt64 v = 0;
       {
         const char *end;
-        v = ConvertHexStringToUInt32(a, &end);
+        v = ConvertHexStringToUInt64(a, &end);
         if (*end != 0)
           a.Empty();
       }
       if (a.IsEmpty())
         throw CArcCmdLineException("Unsupported switch postfix -stm", s);
+
+      {
+        #ifndef _WIN64
+        if (v >= ((UInt64)1 << 32))
+          throw CArcCmdLineException("unsupported value -stm", s);
+        #endif
+        {
+          PrintHex(Parse1Log, v);
+          if (!SetProcessAffinityMask(GetCurrentProcess(), (DWORD_PTR)v))
+          {
+            DWORD lastError = GetLastError();
+            Parse1Log += " : ERROR : ";
+            Parse1Log += NError::MyFormatMessage(lastError);
+          }
+        }
+      }
       
-      #ifdef _WIN32
-      SetProcessAffinityMask(GetCurrentProcess(), v);
-      #endif
+      #else // _WIN32
+      
+      {
+        Parse1Log += a;
+        NSystem::CProcessAffinity aff;
+        aff.CpuZero();
+        for (unsigned i = 0; i < a.Len(); i++)
+        {
+          char c = a[i];
+          unsigned v;
+               if (c >= '0' && c <= '9') v =      (unsigned)(c - '0');
+          else if (c >= 'A' && c <= 'F') v = 10 + (unsigned)(c - 'A');
+          else if (c >= 'a' && c <= 'f') v = 10 + (unsigned)(c - 'a');
+          else
+            throw CArcCmdLineException("Unsupported switch postfix -stm", s);
+          for (unsigned k = 0; k < 4; k++)
+          {
+            const unsigned cpu = (a.Len() - 1 - i) * 4 + k;
+            if (v & ((unsigned)1 << k))
+              aff.CpuSet(cpu);
+          }
+        }
+        
+        if (!aff.SetProcAffinity())
+        {
+          DWORD lastError = GetLastError();
+          Parse1Log += " : ERROR : ";
+          Parse1Log += NError::MyFormatMessage(lastError);
+        }
+      }
+      #endif // _WIN32
+
+      Parse1Log.Add_LF();
     }
   }
 
   #endif
 }
 
+
+
 struct CCodePagePair
 {
   const char *Name;
-  Int32 CodePage;
+  UInt32 CodePage;
 };
 
 static const unsigned kNumByteOnlyCodePages = 3;
@@ -964,7 +1070,7 @@ static Int32 FindCharset(const NCommandLineParser::CParser &parser, unsigned key
       throw CArcCmdLineException("Unsupported charset:", name);
     const CCodePagePair &pair = g_CodePagePairs[i];
     if (name.IsEqualTo(pair.Name))
-      return pair.CodePage;
+      return (Int32)pair.CodePage;
   }
 }
 
@@ -1023,8 +1129,9 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
   if (parser[NKey::kDisableWildcardParsing].ThereIs)
     wildcardMatching = false;
 
-  g_CodePage = FindCharset(parser, NKey::kConsoleCharSet, true, -1);
-  Int32 codePage = FindCharset(parser, NKey::kListfileCharSet, false, CP_UTF8);
+  options.ConsoleCodePage = FindCharset(parser, NKey::kConsoleCharSet, true, -1);
+
+  UInt32 codePage = (UInt32)FindCharset(parser, NKey::kListfileCharSet, false, CP_UTF8);
 
   bool thereAreSwitchIncludes = false;
   
@@ -1097,6 +1204,30 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
   SetBoolPair(parser, NKey::kHardLinks, options.HardLinks);
   SetBoolPair(parser, NKey::kSymLinks, options.SymLinks);
 
+  CBoolPair symLinks_AllowDangerous;
+  SetBoolPair(parser, NKey::kSymLinks_AllowDangerous, symLinks_AllowDangerous);
+  
+
+  /*
+  bool supportSymLink = options.SymLinks.Val;
+  
+  if (!options.SymLinks.Def)
+  {
+    if (isExtractOrList)
+      supportSymLink = true;
+    else
+      supportSymLink = false;
+  }
+
+  #ifdef ENV_HAVE_LSTAT
+  if (supportSymLink)
+    global_use_lstat = 1;
+  else
+    global_use_lstat = 0;
+  #endif
+  */
+
+
   if (isExtractOrList)
   {
     CExtractOptionsBase &eo = options.ExtractOptions;
@@ -1116,6 +1247,8 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
       nt.SymLinks = options.SymLinks;
       if (!options.SymLinks.Def)
         nt.SymLinks.Val = true;
+
+      nt.SymLinks_AllowDangerous = symLinks_AllowDangerous;
 
       nt.ReplaceColonForAltStream = parser[NKey::kReplaceColonForAltStream].ThereIs;
       nt.WriteToAltStreamIfColon = parser[NKey::kWriteToAltStreamIfColon].ThereIs;
@@ -1174,6 +1307,9 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
       if (parser[NKey::kOutputDir].ThereIs)
       {
         eo.OutputDir = us2fs(parser[NKey::kOutputDir].PostStrings[0]);
+        #ifdef _WIN32
+          NFile::NName::NormalizeDirSeparators(eo.OutputDir);
+        #endif
         NFile::NName::NormalizeDirPathPrefix(eo.OutputDir);
       }
 
@@ -1213,6 +1349,8 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
     
     updateOptions.MethodMode.Properties = options.Properties;
 
+    if (parser[NKey::kPreserveATime].ThereIs)
+      updateOptions.PreserveATime = true;
     if (parser[NKey::kShareForWrite].ThereIs)
       updateOptions.OpenShareForWrite = true;
     if (parser[NKey::kStopAfterOpenError].ThereIs)
@@ -1270,7 +1408,7 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
     if (curCommandIndex < numNonSwitchStrings)
     {
       if (!StringToUInt32(nonSwitchStrings[curCommandIndex], options.NumIterations))
-        throw CArcCmdLineException("Incorrect Number of benmchmark iterations", nonSwitchStrings[curCommandIndex]);
+        throw CArcCmdLineException("Incorrect number of benchmark iterations", nonSwitchStrings[curCommandIndex]);
       curCommandIndex++;
     }
   }
@@ -1282,10 +1420,13 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
     CHashOptions &hashOptions = options.HashOptions;
     hashOptions.PathMode = censorPathMode;
     hashOptions.Methods = options.HashMethods;
+    if (parser[NKey::kPreserveATime].ThereIs)
+      hashOptions.PreserveATime = true;
     if (parser[NKey::kShareForWrite].ThereIs)
       hashOptions.OpenShareForWrite = true;
     hashOptions.StdInMode = options.StdInMode;
     hashOptions.AltStreamsMode = options.AltStreams.Val;
+    hashOptions.SymLinks = options.SymLinks;
   }
   else if (options.Command.CommandType == NCommandType::kInfo)
   {
@@ -1293,3 +1434,45 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
   else
     throw 20150919;
 }
+
+
+
+#ifndef _WIN32
+
+static AString g_ModuleDirPrefix;
+
+void Set_ModuleDirPrefix_From_ProgArg0(const char *s);
+void Set_ModuleDirPrefix_From_ProgArg0(const char *s)
+{
+  AString a (s);
+  int sep = a.ReverseFind_PathSepar();
+  a.DeleteFrom((unsigned)(sep + 1));
+  g_ModuleDirPrefix = a;
+}
+
+namespace NWindows {
+namespace NDLL {
+
+FString GetModuleDirPrefix();
+FString GetModuleDirPrefix()
+{
+  FString s;
+
+  s = g_ModuleDirPrefix;
+  if (s.IsEmpty())
+    s = FTEXT(".") FSTRING_PATH_SEPARATOR;
+  return s;
+  /*
+  setenv("_7ZIP_HOME_DIR", "/test/", 0);
+  const char *home = getenv("_7ZIP_HOME_DIR");
+  if (home)
+    s = home;
+  else
+    s = FTEXT(".") FSTRING_PATH_SEPARATOR;
+  return s;
+  */
+}
+
+}}
+
+#endif // ! _WIN32

@@ -64,16 +64,16 @@ enum FilterType
 static const size_t kWriteStep = (size_t)1 << 22;
 
 CDecoder::CDecoder():
-    _window(NULL),
-    _winPos(0),
-    _winSizeAllocated(0),
-    _lzSize(0),
-    _lzEnd(0),
-    _writtenFileSize(0),
-    _dictSizeLog(0),
     _isSolid(false),
     _solidAllowed(false),
     _wasInit(false),
+    _dictSizeLog(0),
+    _window(NULL),
+    _winPos(0),
+    _lzSize(0),
+    _lzEnd(0),
+    _writtenFileSize(0),
+    _winSizeAllocated(0),
     _inputBuf(NULL)
 {
 }

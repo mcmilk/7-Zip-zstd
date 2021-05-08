@@ -78,7 +78,7 @@ static bool GetPassword(CStdOutStream *outStream, UString &psw)
   DWORD mode = 0;
   if (console != INVALID_HANDLE_VALUE && console != 0)
     if (GetConsoleMode(console, &mode))
-      wasChanged = (SetConsoleMode(console, mode & ~ENABLE_ECHO_INPUT) != 0);
+      wasChanged = (SetConsoleMode(console, mode & ~(DWORD)ENABLE_ECHO_INPUT) != 0);
   bool res = g_StdIn.ScanUStringUntilNewLine(psw);
   if (wasChanged)
     SetConsoleMode(console, mode);

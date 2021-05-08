@@ -321,7 +321,7 @@ CProgressThreadVirt::Create()
 CProgressThreadVirt::Process()
 {
   {
-    ProcessVirt(); // virtual function that must implement real work
+    Result = ProcessVirt(); // virtual function that must implement real work
   }
   if (exceptions) or FinalMessage.ErrorMessage.Message
   {

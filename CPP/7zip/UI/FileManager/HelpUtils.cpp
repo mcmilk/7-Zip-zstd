@@ -4,7 +4,7 @@
 
 #include "HelpUtils.h"
 
-#if defined(UNDER_CE) || !defined(_WIN32)
+#if defined(UNDER_CE) || !defined(_WIN32) /* || !defined(_MSC_VER) */
 
 void ShowHelpWindow(LPCSTR)
 {

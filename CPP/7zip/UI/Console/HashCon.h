@@ -38,7 +38,7 @@ public:
       PrintName(true)
     {}
   
-  ~CHashCallbackConsole() { }
+  virtual ~CHashCallbackConsole() {}
 
   INTERFACE_IHashCallbackUI(;)
 };

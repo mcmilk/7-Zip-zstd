@@ -41,6 +41,7 @@ static UInt16 g_LzhCrc16Table[256];
 
 #define CRC16_UPDATE_BYTE(crc, b) (g_LzhCrc16Table[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
 
+UInt32 LzhCrc16Update(UInt32 crc, const void *data, size_t size);
 UInt32 LzhCrc16Update(UInt32 crc, const void *data, size_t size)
 {
   const Byte *p = (const Byte *)data;
@@ -83,13 +84,7 @@ struct CExtension
   AString GetString() const
   {
     AString s;
-    for (size_t i = 0; i < Data.Size(); i++)
-    {
-      char c = (char)Data[i];
-      if (c == 0)
-        break;
-      s += c;
-    }
+    s.SetFrom_CalcLen((const char *)(const Byte *)Data, (unsigned)Data.Size());
     return s;
   }
 };
@@ -184,11 +179,13 @@ struct CItem
         return i;
     return -1;
   }
+  
   bool GetUnixTime(UInt32 &value) const
   {
     value = 0;
     int index = FindExt(kExtIdUnixTime);
-    if (index < 0)
+    if (index < 0
+        || Extensions[index].Data.Size() < 4)
     {
       if (Level == 2)
       {
@@ -220,13 +217,14 @@ struct CItem
 
   AString GetName() const
   {
-    AString dirName (GetDirName());
+    AString s (GetDirName());
     const char kDirSeparator = '\\';
     // check kDirSeparator in Linux
-    dirName.Replace((char)(unsigned char)0xFF, kDirSeparator);
-    if (!dirName.IsEmpty() && dirName.Back() != kDirSeparator)
-      dirName += kDirSeparator;
-    return dirName + GetFileName();
+    s.Replace((char)(unsigned char)0xFF, kDirSeparator);
+    if (!s.IsEmpty() && s.Back() != kDirSeparator)
+      s += kDirSeparator;
+    s += GetFileName();
+    return s;
   }
 };
 
@@ -332,7 +330,7 @@ static HRESULT GetNextItem(ISequentialInStream *stream, bool &filled, CItem &ite
         return S_FALSE;
       CExtension ext;
       RINOK(ReadStream_FALSE(stream, &ext.Type, 1))
-      nextSize -= 3;
+      nextSize = (UInt16)(nextSize - 3);
       ext.Data.Alloc(nextSize);
       RINOK(ReadStream_FALSE(stream, (Byte *)ext.Data, nextSize))
       item.Extensions.Add(ext);

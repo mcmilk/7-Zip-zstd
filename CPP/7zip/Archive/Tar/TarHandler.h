@@ -48,6 +48,8 @@ private:
   UInt32 _curCodePage;
   UInt32 _openCodePage;
 
+  CEncodingCharacts _encodingCharacts;
+
   NCompress::CCopyCoder *copyCoderSpec;
   CMyComPtr<ICompressCoder> copyCoder;
 

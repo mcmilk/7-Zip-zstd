@@ -131,7 +131,8 @@ namespace NCoderPropID
     kBlockSize2,        // VT_UI4 or VT_UI8
     kCheckSize,         // VT_UI4 : size of digest in bytes
     kFilter,            // VT_BSTR
-    kMemUse             // VT_UI8
+    kMemUse,            // VT_UI8
+    kAffinity           // VT_UI8
   };
 }
 
@@ -195,6 +196,22 @@ CODER_INTERFACE(ICompressGetInStreamProcessedSize2, 0x27)
 CODER_INTERFACE(ICompressSetMemLimit, 0x28)
 {
   STDMETHOD(SetMemLimit)(UInt64 memUsage) PURE;
+};
+
+
+/*
+  ICompressReadUnusedFromInBuf is supported by ICoder object
+  call ReadUnusedFromInBuf() after ICoder::Code(inStream, ...).
+  ICoder::Code(inStream, ...) decodes data, and the ICoder object is allowed
+  to read from inStream to internal buffers more data than minimal data required for decoding.
+  So we can call ReadUnusedFromInBuf() from same ICoder object to read unused input
+  data from the internal buffer.
+  in ReadUnusedFromInBuf(): the Coder is not allowed to use (ISequentialInStream *inStream) object, that was sent to ICoder::Code().
+*/
+
+CODER_INTERFACE(ICompressReadUnusedFromInBuf, 0x29)
+{
+  STDMETHOD(ReadUnusedFromInBuf)(void *data, UInt32 size, UInt32 *processedSize) PURE;
 };
 
 
@@ -284,8 +301,24 @@ CODER_INTERFACE(ICompressSetInStreamSize2, 0x39)
 
 /*
   ICompressFilter
-  Filter() converts as most as possible bytes
+  Filter() converts as most as possible bytes required for fast processing.
+     Some filters have (smallest_fast_block).
+     For example, (smallest_fast_block == 16) for AES CBC/CTR filters.
+     If data stream is not finished, caller must call Filter() for larger block:
+     where (size >= smallest_fast_block).
+     if (size >= smallest_fast_block)
+     {
+       The filter can leave some bytes at the end of data without conversion:
+       if there are data alignment reasons or speed reasons.
+       The caller must read additional data from stream and call Filter() again.
+     }
+     If data stream was finished, caller can call Filter() for (size < smallest_fast_block)
+
+     data : must be aligned for at least 16 bytes for some filters (AES)
+
      returns: (outSize):
+       if (outSize == 0) : Filter have not converted anything.
+           So the caller can stop processing, if data stream was finished.
        if (outSize <= size) : Filter have converted outSize bytes
        if (outSize >  size) : Filter have not converted anything.
            and it needs at least outSize bytes to convert one block

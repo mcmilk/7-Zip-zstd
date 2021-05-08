@@ -4,12 +4,14 @@
 #define __ARCHIVE_EXTRACT_CALLBACK_H
 
 #include "../../../Common/MyCom.h"
+#include "../../../Common/MyLinux.h"
 #include "../../../Common/Wildcard.h"
 
 #include "../../IPassword.h"
 
 #include "../../Common/FileStreams.h"
 #include "../../Common/ProgressUtils.h"
+#include "../../Common/StreamObjects.h"
 
 #include "../../Archive/IArchive.h"
 
@@ -52,6 +54,7 @@ struct CExtractNtOptions
 {
   CBoolPair NtSecurity;
   CBoolPair SymLinks;
+  CBoolPair SymLinks_AllowDangerous;
   CBoolPair HardLinks;
   CBoolPair AltStreams;
   bool ReplaceColonForAltStream;
@@ -64,9 +67,10 @@ struct CExtractNtOptions
       WriteToAltStreamIfColon(false)
   {
     SymLinks.Val = true;
+    SymLinks_AllowDangerous.Val = false;
     HardLinks.Val = true;
     AltStreams.Val = true;
-    
+
     PreAllocateOutFile =
       #ifdef _WIN32
         true;
@@ -165,9 +169,35 @@ struct CDirPathTime
 
   FString Path;
   
-  bool SetDirTime();
+  bool SetDirTime() const;
 };
 
+
+#ifdef SUPPORT_LINKS
+
+struct CLinkInfo
+{
+  // bool isCopyLink;
+  bool isHardLink;
+  bool isJunction;
+  bool isRelative;
+  bool isWSL;
+  UString linkPath;
+  
+  void Clear()
+  {
+    // IsCopyLink = false;
+    isHardLink = false;
+    isJunction = false;
+    isRelative = false;
+    isWSL = false;
+    linkPath.Empty();
+  }
+
+  bool Parse(const Byte *data, size_t dataSize, bool isLinuxData);
+};
+
+#endif // SUPPORT_LINKS
 
 
 class CArchiveExtractCallback:
@@ -225,14 +255,52 @@ class CArchiveExtractCallback:
     bool ATimeDefined;
     bool MTimeDefined;
     bool AttribDefined;
+
+    bool IsReparse() const
+    {
+      return (AttribDefined && (Attrib & FILE_ATTRIBUTE_REPARSE_POINT) != 0);
+    }
+    
+    bool IsLinuxSymLink() const
+    {
+      return (AttribDefined && MY_LIN_S_ISLNK(Attrib >> 16));
+    }
+
+    void SetFromPosixAttrib(UInt32 a)
+    {
+      // here we set only part of combined attribute required by SetFileAttrib() call
+      #ifdef _WIN32
+      // Windows sets FILE_ATTRIBUTE_NORMAL, if we try to set 0 as attribute.
+      Attrib = MY_LIN_S_ISDIR(a) ?
+          FILE_ATTRIBUTE_DIRECTORY :
+          FILE_ATTRIBUTE_ARCHIVE;
+      if ((a & 0222) == 0) // (& S_IWUSR) in p7zip
+        Attrib |= FILE_ATTRIBUTE_READONLY;
+      #else
+      Attrib = (a << 16) | FILE_ATTRIBUTE_UNIX_EXTENSION;
+      #endif
+      AttribDefined = true;
+    }
   } _fi;
+
+  bool _is_SymLink_in_Data;
+  bool _is_SymLink_in_Data_Linux; // false = WIN32, true = LINUX
+
+  bool _fileWasExtracted;
 
   UInt32 _index;
   UInt64 _curSize;
   bool _curSizeDefined;
   bool _fileLengthWasSet;
+  UInt64 _fileLength_that_WasSet;
+
   COutFileStream *_outFileStreamSpec;
   CMyComPtr<ISequentialOutStream> _outFileStream;
+
+  CByteBuffer _outMemBuf;
+  CBufPtrSeqOutStream *_bufPtrSeqOutStream_Spec;
+  CMyComPtr<ISequentialOutStream> _bufPtrSeqOutStream;
+
 
   #ifndef _SFX
   
@@ -261,6 +329,10 @@ class CArchiveExtractCallback:
   bool _progressTotal_Defined;
 
   CObjectVector<CDirPathTime> _extractedFolders;
+  
+  #ifndef _WIN32
+  // CObjectVector<NWindows::NFile::NDir::CDelayedSymLink> _delayedSymLinks;
+  #endif
 
   #if defined(_WIN32) && !defined(UNDER_CE) && !defined(_SFX)
   bool _saclEnabled;
@@ -272,7 +344,7 @@ class CArchiveExtractCallback:
 
   HRESULT SendMessageError(const char *message, const FString &path);
   HRESULT SendMessageError_with_LastError(const char *message, const FString &path);
-  HRESULT SendMessageError2(const char *message, const FString &path1, const FString &path2);
+  HRESULT SendMessageError2(HRESULT errorCode, const char *message, const FString &path1, const FString &path2);
 
 public:
 
@@ -335,10 +407,12 @@ public:
 
 private:
   CHardLinks _hardLinks;
-  UString linkPath;
+  CLinkInfo _link;
 
   // FString _CopyFile_Path;
   // HRESULT MyCopyFile(ISequentialOutStream *outStream);
+  HRESULT Link(const FString &fullProcessedPath);
+  HRESULT ReadLink();
 
 public:
   // call PrepareHardLinks() after Init()
@@ -367,10 +441,33 @@ private:
   void ClearExtractedDirsInfo()
   {
     _extractedFolders.Clear();
+    #ifndef _WIN32
+    // _delayedSymLinks.Clear();
+    #endif
   }
 
+  HRESULT Read_fi_Props();
+  void CorrectPathParts();
+  void CreateFolders();
+  
+  bool _isRenamed;
+  HRESULT CheckExistFile(FString &fullProcessedPath, bool &needExit);
+  HRESULT GetExtractStream(CMyComPtr<ISequentialOutStream> &outStreamLoc, bool &needExit);
+
   HRESULT CloseFile();
+  HRESULT CloseReparseAndFile();
+  HRESULT CloseReparseAndFile2();
   HRESULT SetDirsTimes();
+
+  const void *NtReparse_Data;
+  UInt32 NtReparse_Size;
+
+  #ifdef SUPPORT_LINKS
+  HRESULT SetFromLinkPath(
+      const FString &fullProcessedPath,
+      const CLinkInfo &linkInfo,
+      bool &linkWasSet);
+  #endif
 };
 
 

@@ -39,9 +39,16 @@ DEFINE_GUID(CLSID_CZipContextMenu,
 
 using namespace NWindows;
 
+extern
+HINSTANCE g_hInstance;
 HINSTANCE g_hInstance = 0;
+
+extern
+HWND g_HWND;
 HWND g_HWND = 0;
 
+extern
+LONG g_DllRefCount;
 LONG g_DllRefCount = 0; // Reference count of this DLL.
 
 
@@ -91,7 +98,18 @@ STDMETHODIMP CShellExtClassFactory::LockServer(BOOL /* fLock */)
 }
 
 
+#if defined(_UNICODE) && !defined(_WIN64) && !defined(UNDER_CE)
 #define NT_CHECK_FAIL_ACTION return FALSE;
+#endif
+
+extern "C"
+BOOL WINAPI DllMain(
+  #ifdef UNDER_CE
+  HANDLE hInstance
+  #else
+  HINSTANCE hInstance
+  #endif
+  , DWORD dwReason, LPVOID);
 
 extern "C"
 BOOL WINAPI DllMain(

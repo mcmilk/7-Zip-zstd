@@ -38,8 +38,9 @@ struct CDecoder
       XzDecMt_Destroy(xz);
   }
 
-  /* Decode() can return ERROR code only if there is progress or stream error.
-     Decode() returns S_OK in case of xz decoding error, but DecodeRes and CStatInfo contain error information */
+  /* Decode() can return S_OK, if there is data after good xz streams, and that data is not new xz stream.
+     check also (Stat.DataAfterEnd) flag */
+
   HRESULT Decode(ISequentialInStream *seqInStream, ISequentialOutStream *outStream,
       const UInt64 *outSizeLimit, bool finishStream, ICompressProgressInfo *compressProgress);
 };

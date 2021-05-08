@@ -51,6 +51,18 @@ int CProxyArc::FindSubDir(unsigned dirIndex, const wchar_t *name) const
   return FindSubDir(dirIndex, name, insertPos);
 }
 
+static const wchar_t *AllocStringAndCopy(const wchar_t *s, size_t len)
+{
+  wchar_t *p = new wchar_t[len + 1];
+  MyStringCopy(p, s);
+  return p;
+}
+
+static const wchar_t *AllocStringAndCopy(const UString &s)
+{
+  return AllocStringAndCopy(s, s.Len());
+}
+                         
 unsigned CProxyArc::AddDir(unsigned dirIndex, int arcIndex, const UString &name)
 {
   unsigned insertPos;
@@ -70,8 +82,7 @@ unsigned CProxyArc::AddDir(unsigned dirIndex, int arcIndex, const UString &name)
   CProxyDir &item = Dirs.AddNew();
 
   item.NameLen = name.Len();
-  item.Name = new wchar_t[item.NameLen + 1];
-  MyStringCopy((wchar_t *)item.Name, name);
+  item.Name = AllocStringAndCopy(name);
 
   item.ArcIndex = arcIndex;
   item.ParentDir = dirIndex;
@@ -248,6 +259,10 @@ HRESULT CProxyArc::Load(const CArc &arc, IProgress *progress)
     unsigned len = 0;
     bool isPtrName = false;
 
+    #if WCHAR_PATH_SEPARATOR != L'/'
+    wchar_t replaceFromChar = 0;
+    #endif
+
     #if defined(MY_CPU_LE) && defined(_WIN32)
     // it works only if (sizeof(wchar_t) == 2)
     if (arc.GetRawProps)
@@ -263,6 +278,9 @@ HRESULT CProxyArc::Load(const CArc &arc, IProgress *progress)
         len = size / 2 - 1;
         s = (const wchar_t *)p;
         isPtrName = true;
+        #if WCHAR_PATH_SEPARATOR != L'/'
+        replaceFromChar = L'\\';
+        #endif
       }
     }
     if (!s)
@@ -309,9 +327,17 @@ HRESULT CProxyArc::Load(const CArc &arc, IProgress *progress)
 
     for (unsigned j = 0; j < len; j++)
     {
-      wchar_t c = s[j];
+      const wchar_t c = s[j];
       if (c == WCHAR_PATH_SEPARATOR || c == L'/')
       {
+        #if WCHAR_PATH_SEPARATOR != L'/'
+        if (c == replaceFromChar)
+        {
+          // s.ReplaceOneCharAtPos(j, WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT);
+          continue;
+        }
+        #endif
+
         const unsigned kLevelLimit = 1 << 10;
         if (numLevels <= kLevelLimit)
         {
@@ -351,9 +377,8 @@ HRESULT CProxyArc::Load(const CArc &arc, IProgress *progress)
       f.Name = s;
     else
     {
-      f.Name = new wchar_t[f.NameLen + 1];
+      f.Name = AllocStringAndCopy(s, f.NameLen);
       f.NeedDeleteName = true;
-      MyStringCopy((wchar_t *)f.Name, s);
     }
 
     if (isDir)
@@ -382,15 +407,15 @@ void CProxyArc2::GetDirPathParts(int dirIndex, UStringVector &pathParts, bool &i
   
   isAltStreamDir = false;
   
-  if (dirIndex == k_Proxy2_RootDirIndex)
+  if (dirIndex == (int)k_Proxy2_RootDirIndex)
     return;
-  if (dirIndex == k_Proxy2_AltRootDirIndex)
+  if (dirIndex == (int)k_Proxy2_AltRootDirIndex)
   {
     isAltStreamDir = true;
     return;
   }
 
-  while (dirIndex >= k_Proxy2_NumRootDirs)
+  while (dirIndex >= (int)k_Proxy2_NumRootDirs)
   {
     const CProxyDir2 &dir = Dirs[dirIndex];
     const CProxyFile2 &file = Files[dir.ArcIndex];
@@ -608,9 +633,8 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
       tempAString = (const char *)p;
       ConvertUTF8ToUnicode(tempAString, tempUString);
       file.NameLen = tempUString.Len();
-      file.Name = new wchar_t[file.NameLen + 1];
+      file.Name = AllocStringAndCopy(tempUString);
       file.NeedDeleteName = true;
-      wmemcpy((wchar_t *)file.Name, tempUString.Ptr(), file.NameLen + 1);
     }
     else
     {
@@ -624,9 +648,8 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
       else
         return E_FAIL;
       file.NameLen = MyStringLen(s);
-      file.Name = new wchar_t[file.NameLen + 1];
+      file.Name = AllocStringAndCopy(s, file.NameLen);
       file.NeedDeleteName = true;
-      wmemcpy((wchar_t *)file.Name, s, file.NameLen + 1);
     }
     
     UInt32 parent = (UInt32)(Int32)-1;

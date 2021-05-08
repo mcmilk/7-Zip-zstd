@@ -36,7 +36,7 @@ enum EType
   k_Type_Msp,
   k_Type_Doc,
   k_Type_Ppt,
-  k_Type_Xls,
+  k_Type_Xls
 };
 
 static const char * const kExtensions[] =
@@ -51,10 +51,10 @@ static const char * const kExtensions[] =
 
 namespace NFatID
 {
-  static const UInt32 kFree       = 0xFFFFFFFF;
+  // static const UInt32 kFree       = 0xFFFFFFFF;
   static const UInt32 kEndOfChain = 0xFFFFFFFE;
-  static const UInt32 kFatSector  = 0xFFFFFFFD;
-  static const UInt32 kMatSector  = 0xFFFFFFFC;
+  // static const UInt32 kFatSector  = 0xFFFFFFFD;
+  // static const UInt32 kMatSector  = 0xFFFFFFFC;
   static const UInt32 kMaxValue   = 0xFFFFFFFA;
 }
 
@@ -62,9 +62,9 @@ namespace NItemType
 {
   static const Byte kEmpty = 0;
   static const Byte kStorage = 1;
-  static const Byte kStream = 2;
-  static const Byte kLockBytes = 3;
-  static const Byte kProperty = 4;
+  // static const Byte kStream = 2;
+  // static const Byte kLockBytes = 3;
+  // static const Byte kProperty = 4;
   static const Byte kRootStorage = 5;
 }
 
@@ -298,7 +298,7 @@ static bool CompoundMsiNameToFileName(const UString &name, UString &res)
   for (unsigned i = 0; i < name.Len(); i++)
   {
     wchar_t c = name[i];
-    if (c < k_Msi_StartUnicodeChar || c > k_Msi_StartUnicodeChar + k_Msi_UnicodeRange)
+    if (c < (wchar_t)k_Msi_StartUnicodeChar || c > (wchar_t)(k_Msi_StartUnicodeChar + k_Msi_UnicodeRange))
       return false;
     /*
     if (i == 0)
@@ -578,11 +578,10 @@ HRESULT CDatabase::Open(IInStream *inStream)
     {
       // bool isThereExt = (msiName.Find(L'.') >= 0);
       bool isMsiSpec = (msiName[0] == k_Msi_SpecChar);
-      if (msiName.Len() >= 4 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(4), ".cab")
-          || !isMsiSpec && msiName.Len() >= 3 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(3), "exe")
-          // || !isMsiSpec && !isThereExt
+      if ((msiName.Len() >= 4 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(4), ".cab"))
+          || (!isMsiSpec && msiName.Len() >= 3 && StringsAreEqualNoCase_Ascii(msiName.RightPtr(3), "exe"))
+          // || (!isMsiSpec && !isThereExt)
           )
-
       {
         numCabs++;
         MainSubfile = i;

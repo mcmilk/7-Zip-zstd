@@ -46,6 +46,7 @@ static const Byte  kProps[] =
   kpidName
 };
 
+UString RootFolder_GetName_Computer(int &iconIndex);
 UString RootFolder_GetName_Computer(int &iconIndex)
 {
   #ifdef USE_WIN_PATHS
@@ -56,12 +57,14 @@ UString RootFolder_GetName_Computer(int &iconIndex)
   return LangString(IDS_COMPUTER);
 }
 
+UString RootFolder_GetName_Network(int &iconIndex);
 UString RootFolder_GetName_Network(int &iconIndex)
 {
   iconIndex = GetIconIndexForCSIDL(CSIDL_NETWORK);
   return LangString(IDS_NETWORK);
 }
 
+UString RootFolder_GetName_Documents(int &iconIndex);
 UString RootFolder_GetName_Documents(int &iconIndex)
 {
   iconIndex = GetIconIndexForCSIDL(CSIDL_PERSONAL);
@@ -120,7 +123,7 @@ STDMETHODIMP CRootFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIA
 typedef BOOL (WINAPI *SHGetSpecialFolderPathWp)(HWND hwnd, LPWSTR pszPath, int csidl, BOOL fCreate);
 typedef BOOL (WINAPI *SHGetSpecialFolderPathAp)(HWND hwnd, LPSTR pszPath, int csidl, BOOL fCreate);
 
-UString GetMyDocsPath()
+static UString GetMyDocsPath()
 {
   UString us;
   WCHAR s[MAX_PATH + 1];
@@ -136,7 +139,7 @@ UString GetMyDocsPath()
   else
   {
     SHGetSpecialFolderPathAp getA = (SHGetSpecialFolderPathAp)
-        ::GetProcAddress(::GetModuleHandleA("shell32.dll"), "SHGetSpecialFolderPathA");
+        (void *)::GetProcAddress(::GetModuleHandleA("shell32.dll"), "SHGetSpecialFolderPathA");
     CHAR s2[MAX_PATH + 1];
     if (getA && getA(0, s2, CSIDL_PERSONAL, FALSE))
       us = GetUnicodeString(s2);

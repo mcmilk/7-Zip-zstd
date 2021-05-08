@@ -309,11 +309,14 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
     case kpidMethod:
     {
-      UInt32 realFolderIndex = item.GetFolderIndex(db.Folders.Size());
-      const CFolder &folder = db.Folders[realFolderIndex];
-      char s[kMethodNameBufSize];;
-      SetMethodName(s, folder.GetMethod(), folder.MethodMinor);
-      prop = s;
+      const int realFolderIndex = item.GetFolderIndex(db.Folders.Size());
+      if (realFolderIndex >= 0)
+      {
+        const CFolder &folder = db.Folders[(unsigned)realFolderIndex];
+        char s[kMethodNameBufSize];;
+        SetMethodName(s, folder.GetMethod(), folder.MethodMinor);
+        prop = s;
+      }
       break;
     }
 
@@ -341,7 +344,8 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
 
   CInArchive archive;
   CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
-  callback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
+  if (callback)
+    callback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
   
   CMyComPtr<IInStream> nextStream = inStream;
   bool prevChecked = false;
@@ -420,7 +424,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
         }
       }
 
-      RINOK(callback->SetCompleted(&numItems, NULL));
+      if (callback)
+      {
+        RINOK(callback->SetCompleted(&numItems, NULL));
+      }
         
       nextStream = NULL;
       
@@ -1007,7 +1014,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       continue;
     }
     
-    unsigned startIndex2 = m_Database.FolderStartFileIndex[folderIndex];
+    const unsigned startIndex2 = m_Database.FolderStartFileIndex[(unsigned)folderIndex];
     unsigned startIndex = startIndex2;
     extractStatuses.Clear();
     for (; startIndex < index; startIndex++)
@@ -1037,8 +1044,10 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     CFolderOutStream *cabFolderOutStream = new CFolderOutStream;
     CMyComPtr<ISequentialOutStream> outStream(cabFolderOutStream);
 
-    unsigned folderIndex2 = item.GetFolderIndex(db.Folders.Size());
-    const CFolder &folder = db.Folders[folderIndex2];
+    const int folderIndex2 = item.GetFolderIndex(db.Folders.Size());
+    if (folderIndex2 < 0)
+      return E_FAIL;
+    const CFolder &folder = db.Folders[(unsigned)folderIndex2];
 
     cabFolderOutStream->Init(&m_Database, &extractStatuses, startIndex2,
         curUnpack, extractCallback, testMode);
@@ -1107,12 +1116,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         }
 
         const CDatabaseEx &db2 = m_Database.Volumes[volIndex];
-        const CFolder &folder2 = db2.Folders[locFolderIndex];
+        if (locFolderIndex < 0)
+          return E_FAIL;
+        const CFolder &folder2 = db2.Folders[(unsigned)locFolderIndex];
         
         if (bl == 0)
         {
           cabBlockInStreamSpec->ReservedSize = db2.ArcInfo.GetDataBlockReserveSize();
-          RINOK(db2.Stream->Seek(db2.StartPosition + folder2.DataStart, STREAM_SEEK_SET, NULL));
+          RINOK(db2.Stream->Seek((Int64)(db2.StartPosition + folder2.DataStart), STREAM_SEEK_SET, NULL));
         }
         
         if (bl == folder2.NumDataBlocks)
@@ -1242,7 +1253,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     if (res != S_OK || cabFolderOutStream->NeedMoreWrite())
     {
-      RINOK(cabFolderOutStream->FlushCorrupted(folderIndex2));
+      RINOK(cabFolderOutStream->FlushCorrupted((unsigned)folderIndex2));
     }
 
     totalUnPacked += curUnpack;

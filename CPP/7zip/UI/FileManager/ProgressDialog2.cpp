@@ -536,10 +536,10 @@ bool CProgressDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   labelSize = gSize - valueSize;
 
   yPos = my;
-  for (int i = 0; i < ARRAY_SIZE(kIDs); i += 2)
+  for (unsigned i = 0; i < ARRAY_SIZE(kIDs); i += 2)
   {
     int x = mx;
-    const int kNumColumn1Items = 5 * 2;
+    const unsigned kNumColumn1Items = 5 * 2;
     if (i >= kNumColumn1Items)
     {
       if (i == kNumColumn1Items)
@@ -583,6 +583,7 @@ void CProgressDialog::SetProgressPos(UInt64 pos)
 
 #define UINT_TO_STR_2(val) { s[0] = (wchar_t)('0' + (val) / 10); s[1] = (wchar_t)('0' + (val) % 10); s += 2; }
 
+void GetTimeString(UInt64 timeValue, wchar_t *s);
 void GetTimeString(UInt64 timeValue, wchar_t *s)
 {
   UInt64 hours = timeValue / 3600;
@@ -892,8 +893,8 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
       int slashPos = _filePath.ReverseFind_PathSepar();
       if (slashPos >= 0)
       {
-        s1.SetFrom(_filePath, slashPos + 1);
-        s2 = _filePath.Ptr(slashPos + 1);
+        s1.SetFrom(_filePath, (unsigned)(slashPos + 1));
+        s2 = _filePath.Ptr((unsigned)(slashPos + 1));
       }
       else
         s2 = _filePath;
@@ -942,7 +943,7 @@ INT_PTR CProgressDialog::Create(const UString &title, NWindows::CThread &thread,
       CWaitCursor waitCursor;
       HANDLE h[] = { thread, _createDialogEvent };
       
-      WRes res2 = WaitForMultipleObjects(ARRAY_SIZE(h), h, FALSE, kCreateDelay);
+      DWORD res2 = WaitForMultipleObjects(ARRAY_SIZE(h), h, FALSE, kCreateDelay);
       if (res2 == WAIT_OBJECT_0 && !Sync.ThereIsMessage())
         return 0;
     }
@@ -954,9 +955,8 @@ INT_PTR CProgressDialog::Create(const UString &title, NWindows::CThread &thread,
   {
     _wasCreated = true;
     _dialogCreatedEvent.Set();
-    res = res;
   }
-  thread.Wait();
+  thread.Wait_Close();
   if (!MessagesDisplayed)
     MessageBoxW(wndParent, L"Progress Error", L"7-Zip", MB_ICONERROR);
   return res;

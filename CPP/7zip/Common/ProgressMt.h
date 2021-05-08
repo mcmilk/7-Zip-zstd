@@ -19,9 +19,9 @@ class CMtCompressProgressMixer
   UInt64 TotalOutSize;
 public:
   NWindows::NSynchronization::CCriticalSection CriticalSection;
-  void Init(int numItems, ICompressProgressInfo *progress);
-  void Reinit(int index);
-  HRESULT SetRatioInfo(int index, const UInt64 *inSize, const UInt64 *outSize);
+  void Init(unsigned numItems, ICompressProgressInfo *progress);
+  void Reinit(unsigned index);
+  HRESULT SetRatioInfo(unsigned index, const UInt64 *inSize, const UInt64 *outSize);
 };
 
 class CMtCompressProgress:
@@ -29,9 +29,9 @@ class CMtCompressProgress:
   public CMyUnknownImp
 {
   CMtCompressProgressMixer *_progress;
-  int _index;
+  unsigned _index;
 public:
-  void Init(CMtCompressProgressMixer *progress, int index)
+  void Init(CMtCompressProgressMixer *progress, unsigned index)
   {
     _progress = progress;
     _index = index;

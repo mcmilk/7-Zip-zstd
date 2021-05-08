@@ -69,6 +69,7 @@ HRESULT CExtractScanConsole::ScanError(const FString &path, DWORD systemError)
 }
 
 
+void Print_UInt64_and_String(AString &s, UInt64 val, const char *name);
 void Print_UInt64_and_String(AString &s, UInt64 val, const char *name)
 {
   char temp[32];
@@ -78,6 +79,7 @@ void Print_UInt64_and_String(AString &s, UInt64 val, const char *name)
   s += name;
 }
 
+void PrintSize_bytes_Smart(AString &s, UInt64 val);
 void PrintSize_bytes_Smart(AString &s, UInt64 val)
 {
   Print_UInt64_and_String(s, val, "bytes");
@@ -96,7 +98,7 @@ void PrintSize_bytes_Smart(AString &s, UInt64 val)
   s += ')';
 }
 
-void PrintSize_bytes_Smart_comma(AString &s, UInt64 val)
+static void PrintSize_bytes_Smart_comma(AString &s, UInt64 val)
 {
   if (val == (UInt64)(Int64)-1)
     return;
@@ -106,6 +108,7 @@ void PrintSize_bytes_Smart_comma(AString &s, UInt64 val)
 
 
 
+void Print_DirItemsStat(AString &s, const CDirItemsStat &st);
 void Print_DirItemsStat(AString &s, const CDirItemsStat &st)
 {
   if (st.NumDirs != 0)
@@ -124,6 +127,7 @@ void Print_DirItemsStat(AString &s, const CDirItemsStat &st)
 }
 
 
+void Print_DirItemsStat2(AString &s, const CDirItemsStat2 &st);
 void Print_DirItemsStat2(AString &s, const CDirItemsStat2 &st)
 {
   Print_DirItemsStat(s, (CDirItemsStat &)st);
@@ -184,9 +188,9 @@ static const char * const kTestString    =  "T";
 static const char * const kExtractString =  "-";
 static const char * const kSkipString    =  ".";
 
-// static const char * const kCantAutoRename = "can not create file with auto name\n";
-// static const char * const kCantRenameFile = "can not rename existing file\n";
-// static const char * const kCantDeleteOutputFile = "can not delete output file ";
+// static const char * const kCantAutoRename = "cannot create file with auto name\n";
+// static const char * const kCantRenameFile = "cannot rename existing file\n";
+// static const char * const kCantDeleteOutputFile = "cannot delete output file ";
 
 static const char * const kMemoryExceptionMessage = "Can't allocate required memory!";
 
@@ -394,6 +398,7 @@ STDMETHODIMP CExtractCallbackConsole::MessageError(const wchar_t *message)
   return CheckBreak2();
 }
 
+void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &dest);
 void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &dest)
 {
   dest.Empty();
@@ -436,7 +441,7 @@ void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &dest)
     else
     {
       dest += "Error #";
-      dest.Add_UInt32(opRes);
+      dest.Add_UInt32((UInt32)opRes);
     }
 }
 
@@ -566,6 +571,7 @@ static AString GetOpenArcErrorMessage(UInt32 errorFlags)
   return s;
 }
 
+void PrintErrorFlags(CStdOutStream &so, const char *s, UInt32 errorFlags);
 void PrintErrorFlags(CStdOutStream &so, const char *s, UInt32 errorFlags)
 {
   if (errorFlags == 0)
@@ -573,7 +579,7 @@ void PrintErrorFlags(CStdOutStream &so, const char *s, UInt32 errorFlags)
   so << s << endl << GetOpenArcErrorMessage(errorFlags) << endl;
 }
 
-void Add_Messsage_Pre_ArcType(UString &s, const char *pre, const wchar_t *arcType)
+static void Add_Messsage_Pre_ArcType(UString &s, const char *pre, const wchar_t *arcType)
 {
   s.Add_LF();
   s += pre;
@@ -582,6 +588,7 @@ void Add_Messsage_Pre_ArcType(UString &s, const char *pre, const wchar_t *arcTyp
   s += "] archive";
 }
 
+void Print_ErrorFormatIndex_Warning(CStdOutStream *_so, const CCodecs *codecs, const CArc &arc);
 void Print_ErrorFormatIndex_Warning(CStdOutStream *_so, const CCodecs *codecs, const CArc &arc)
 {
   const CArcErrorInfo &er = arc.ErrorInfo;
@@ -596,7 +603,7 @@ void Print_ErrorFormatIndex_Warning(CStdOutStream *_so, const CCodecs *codecs, c
   }
   else
   {
-    Add_Messsage_Pre_ArcType(s, "Can not open the file", codecs->GetFormatNamePtr(er.ErrorFormatIndex));
+    Add_Messsage_Pre_ArcType(s, "Cannot open the file", codecs->GetFormatNamePtr(er.ErrorFormatIndex));
     Add_Messsage_Pre_ArcType(s, "The file is open", codecs->GetFormatNamePtr(arc.FormatIndex));
   }
   
@@ -806,7 +813,9 @@ HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
   else
   {
     NumArcsWithError++;
-    if (result == E_ABORT || result == ERROR_DISK_FULL)
+    if (result == E_ABORT
+        || result == HRESULT_FROM_WIN32(ERROR_DISK_FULL)
+        )
       return result;
     
     if (_se)

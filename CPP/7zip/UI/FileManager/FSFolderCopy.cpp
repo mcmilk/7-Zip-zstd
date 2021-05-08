@@ -4,7 +4,7 @@
 
 #include "../../../Common/MyWindows.h"
 
-#include <Winbase.h>
+#include <WinBase.h>
 
 #include "../../../Common/Defs.h"
 #include "../../../Common/StringConvert.h"
@@ -397,8 +397,8 @@ static HRESULT CopyFile_Ask(
   {
     RINOK(SendMessageError(state.Callback,
         state.MoveMode ?
-          "can not move file onto itself" :
-          "can not copy file onto itself"
+          "Cannot move file onto itself" :
+          "Cannot copy file onto itself"
         , destPath));
     return E_ABORT;
   }
@@ -497,8 +497,8 @@ static HRESULT CopyFolder(
   {
     RINOK(SendMessageError(state.Callback,
         state.MoveMode ?
-          "can not copy folder onto itself" :
-          "can not move folder onto itself"
+          "Cannot copy folder onto itself" :
+          "Cannot move folder onto itself"
         , destPath));
     return E_ABORT;
   }
@@ -513,7 +513,7 @@ static HRESULT CopyFolder(
 
   if (!CreateComplexDir(destPath))
   {
-    RINOK(SendMessageError(state.Callback, "can not create folder", destPath));
+    RINOK(SendMessageError(state.Callback, "Cannot create folder", destPath));
     return E_ABORT;
   }
 
@@ -547,7 +547,7 @@ static HRESULT CopyFolder(
   {
     if (!RemoveDir(srcPath))
     {
-      RINOK(SendMessageError(state.Callback, "can not remove folder", srcPath));
+      RINOK(SendMessageError(state.Callback, "Cannot remove folder", srcPath));
       return E_ABORT;
     }
   }
@@ -566,7 +566,7 @@ STDMETHODIMP CFSFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
   if (destPath.IsEmpty())
     return E_INVALIDARG;
 
-  bool isAltDest = NName::IsAltPathPrefix(destPath);;
+  bool isAltDest = NName::IsAltPathPrefix(destPath);
   bool isDirectPath = (!isAltDest && !IsPathSepar(destPath.Back()));
 
   if (isDirectPath)

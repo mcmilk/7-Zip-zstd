@@ -58,6 +58,7 @@ namespace NFileHeader
     const char kGnu_LongLink = 'K';
     const char kGnu_LongName = 'L';
     const char kSparse       = 'S';
+    const char kLabel        = 'V';
     const char kDumpDir      = 'D'; /* GNUTYPE_DUMPDIR.
       data: list of files created by the --incremental (-G) option
       Each file name is preceded by either

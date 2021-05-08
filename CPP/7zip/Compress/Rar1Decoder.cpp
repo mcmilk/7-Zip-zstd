@@ -239,6 +239,7 @@ HRESULT CDecoder::LongLZ()
   oldAvr3 = AvrLn3;
   
   if (len != 1 && len != 4)
+  {
     if (len == 0 && dist <= MaxDist3)
     {
       AvrLn3++;
@@ -246,6 +247,7 @@ HRESULT CDecoder::LongLZ()
     }
     else if (AvrLn3 > 0)
       AvrLn3--;
+  }
   
   len += 3;
   
@@ -254,7 +256,7 @@ HRESULT CDecoder::LongLZ()
   if (dist <= 256)
     len += 8;
   
-  if (oldAvr3 > 0xb0 || AvrPlc >= 0x2a00 && oldAvr2 < 0x40)
+  if (oldAvr3 > 0xb0 || (AvrPlc >= 0x2a00 && oldAvr2 < 0x40))
     MaxDist3 = 0x7f00;
   else
     MaxDist3 = 0x2001;
@@ -412,7 +414,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
 
     {
       // InitStructures
-      for (int i = 0; i < kNumRepDists; i++)
+      for (unsigned i = 0; i < kNumRepDists; i++)
         m_RepDists[i] = 0;
       m_RepDistPtr = 0;
       LastLength = 0;

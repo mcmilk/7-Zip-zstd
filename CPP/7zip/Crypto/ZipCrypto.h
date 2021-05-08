@@ -51,7 +51,12 @@ public:
   STDMETHOD(Init)();
   STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
   
-  virtual ~CCipher() {}
+  virtual ~CCipher()
+  {
+    Key0 = KeyMem0 =
+    Key1 = KeyMem1 =
+    Key2 = KeyMem2 = 0;
+  }
 };
 
 class CEncoder: public CCipher

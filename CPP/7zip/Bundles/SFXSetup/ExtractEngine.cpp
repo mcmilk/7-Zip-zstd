@@ -18,8 +18,8 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
 
-static LPCSTR const kCantFindArchive = "Can not find archive file";
-static LPCSTR const kCantOpenArchive = "Can not open the file as archive";
+static LPCSTR const kCantFindArchive = "Cannot find archive file";
+static LPCSTR const kCantOpenArchive = "Cannot open the file as archive";
 
 struct CThreadExtracting
 {

@@ -12,16 +12,22 @@ O=o
 !ENDIF
 !ENDIF
 
+!IF "$(CC)" != "clang-cl"
 # CFLAGS = $(CFLAGS) -FAsc -Fa$O/asm/
+!ENDIF
 
 
 !IF "$(PLATFORM)" == "x64"
-MY_ML = ml64 -Dx64 -WX
+MY_ML = ml64 -WX
+#-Dx64
 !ELSEIF "$(PLATFORM)" == "arm"
 MY_ML = armasm -WX
 !ELSE
 MY_ML = ml -WX
+# -DABI_CDECL
 !ENDIF
+
+# MY_ML = "$(MY_ML) -Fl$O\asm\
 
 
 !IFDEF UNDER_CE
@@ -47,6 +53,34 @@ COMPL_ASM = $(MY_ML) -c -Fo$O/ $**
 
 CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -W4 -WX -EHsc -Gy -GR- -GF
 
+!IF "$(CC)" == "clang-cl"
+
+CFLAGS = $(CFLAGS) \
+  -Werror \
+  -Wextra \
+  -Wall \
+  -Weverything \
+  -Wno-extra-semi-stmt \
+  -Wno-extra-semi \
+  -Wno-zero-as-null-pointer-constant \
+  -Wno-sign-conversion \
+  -Wno-old-style-cast \
+  -Wno-reserved-id-macro \
+  -Wno-deprecated-dynamic-exception-spec \
+  -Wno-language-extension-token \
+  -Wno-global-constructors \
+  -Wno-non-virtual-dtor \
+  -Wno-deprecated-copy-dtor \
+  -Wno-exit-time-destructors \
+  -Wno-switch-enum \
+  -Wno-covered-switch-default \
+  -Wno-nonportable-system-include-path \
+  -Wno-c++98-compat-pedantic \
+  -Wno-cast-qual \
+  -Wc++11-extensions \
+
+!ENDIF
+
 !IFDEF MY_DYNAMIC_LINK
 CFLAGS = $(CFLAGS) -MD
 !ELSE
@@ -55,10 +89,15 @@ CFLAGS = $(CFLAGS) -MT
 !ENDIF
 !ENDIF
 
+
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS)
+
 !IFNDEF OLD_COMPILER
 CFLAGS = $(CFLAGS) -GS- -Zc:forScope -Zc:wchar_t
 !IFNDEF UNDER_CE
-CFLAGS = $(CFLAGS) -MP2
+!IF "$(CC)" != "clang-cl"
+CFLAGS = $(CFLAGS) -MP4
+!ENDIF
 !IFNDEF PLATFORM
 # CFLAGS = $(CFLAGS) -arch:IA32
 !ENDIF
@@ -134,6 +173,11 @@ CCOMPL_USE  = $(CC) $(CFLAGS_C_ALL) -Yu"Precomp.h" -Fp$O/a.pch $**
 CCOMPL      = $(CC) $(CFLAGS_C_ALL) $**
 CCOMPLB     = $(CC) $(CFLAGS_C_ALL) $<
 
+!IF "$(CC)" == "clang-cl"
+COMPL  = $(COMPL) -FI StdAfx.h
+COMPLB = $(COMPLB) -FI StdAfx.h
+CCOMPL_USE = $(CCOMPL_USE) -FI Precomp.h
+!ENDIF
 
 all: $(PROGPATH)
 

@@ -4,7 +4,7 @@
 
 #include "../../../Common/MyWindows.h"
 
-#include <tlhelp32.h>
+#include <TlHelp32.h>
 
 #include "../../../Common/IntToString.h"
 
@@ -222,14 +222,14 @@ static void My_GetProcessFileName(HANDLE hProcess, UString &path)
   
   const char *func_name = "GetProcessImageFileNameW";
   Func_GetProcessImageFileNameW my_func = (Func_GetProcessImageFileNameW)
-    ::GetProcAddress(::GetModuleHandleA("kernel32.dll"), func_name);
+    (void *)::GetProcAddress(::GetModuleHandleA("kernel32.dll"), func_name);
   
   if (!my_func)
   {
     if (!g_Psapi_dll_module)
       g_Psapi_dll_module = LoadLibraryW(L"Psapi.dll");
     if (g_Psapi_dll_module)
-      my_func = (Func_GetProcessImageFileNameW)::GetProcAddress(g_Psapi_dll_module, func_name);
+      my_func = (Func_GetProcessImageFileNameW)(void *)::GetProcAddress(g_Psapi_dll_module, func_name);
   }
   
   if (my_func)
@@ -319,7 +319,7 @@ public:
   {
     #ifndef UNDER_CE
 
-    Func_GetProcessId func = (Func_GetProcessId)::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "GetProcessId");
+    Func_GetProcessId func = (Func_GetProcessId)(void *)::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "GetProcessId");
     if (func)
     {
       DWORD id = func(h);
@@ -349,7 +349,7 @@ public:
     GetSnapshot(sps);
 
     const int separ = Path.ReverseFind_PathSepar();
-    const UString mainName = Path.Ptr(separ + 1);
+    const UString mainName = Path.Ptr((unsigned)(separ + 1));
     if (mainName.IsEmpty())
       needFindProcessByPath = false;
 
@@ -444,14 +444,16 @@ public:
   }
 };
 
+void GetFolderError(CMyComPtr<IFolderFolder> &folder, UString &s);
+
 
 HRESULT CPanel::OpenAsArc(IInStream *inStream,
     const CTempFileInfo &tempFileInfo,
     const UString &virtualFilePath,
     const UString &arcFormat,
-    bool &encrypted)
+    COpenResult &openRes)
 {
-  encrypted = false;
+  openRes.Encrypted = false;
   CFolderLink folderLink;
   (CTempFileInfo &)folderLink = tempFileInfo;
   
@@ -468,21 +470,18 @@ HRESULT CPanel::OpenAsArc(IInStream *inStream,
 
   folderLink.VirtualPath = virtualFilePath;
 
-  CMyComPtr<IFolderFolder> newFolder;
-
-  // _passwordIsDefined = false;
-  // _password.Empty();
-
-  NDLL::CLibrary library;
-
-  UString password;
-  RINOK(OpenFileFolderPlugin(inStream,
+  CFfpOpen ffp;
+  HRESULT res = ffp.OpenFileFolderPlugin(inStream,
       folderLink.FilePath.IsEmpty() ? us2fs(virtualFilePath) : folderLink.FilePath,
-      arcFormat,
-      &library, &newFolder, GetParent(), encrypted, password));
+      arcFormat, GetParent());
+
+  openRes.Encrypted = ffp.Encrypted;
+  openRes.ErrorMessage = ffp.ErrorMessage;
+
+  RINOK(res);
  
-  folderLink.Password = password;
-  folderLink.UsePassword = encrypted;
+  folderLink.Password = ffp.Password;
+  folderLink.UsePassword = ffp.Encrypted;
 
   if (_folder)
     folderLink.ParentFolderPath = GetFolderPath(_folder);
@@ -497,75 +496,24 @@ HRESULT CPanel::OpenAsArc(IInStream *inStream,
 
   ReleaseFolder();
   _library.Free();
-  SetNewFolder(newFolder);
-  _library.Attach(library.Detach());
+  SetNewFolder(ffp.Folder);
+  _library.Attach(ffp.Library.Detach());
 
   _flatMode = _flatModeForArc;
 
-  CMyComPtr<IGetFolderArcProps> getFolderArcProps;
-  _folder.QueryInterface(IID_IGetFolderArcProps, &getFolderArcProps);
   _thereAreDeletedItems = false;
   
-  if (getFolderArcProps)
-  {
-    CMyComPtr<IFolderArcProps> arcProps;
-    getFolderArcProps->GetFolderArcProps(&arcProps);
-    if (arcProps)
-    {
-      /*
-      UString s;
-      UInt32 numLevels;
-      if (arcProps->GetArcNumLevels(&numLevels) != S_OK)
-        numLevels = 0;
-      for (UInt32 level2 = 0; level2 <= numLevels; level2++)
-      {
-        UInt32 level = numLevels - level2;
-        PROPID propIDs[] = { kpidError, kpidPath, kpidType, kpidErrorType } ;
-        UString values[4];
-        for (Int32 i = 0; i < 4; i++)
-        {
-          CMyComBSTR name;
-          NCOM::CPropVariant prop;
-          if (arcProps->GetArcProp(level, propIDs[i], &prop) != S_OK)
-            continue;
-          if (prop.vt != VT_EMPTY)
-            values[i] = (prop.vt == VT_BSTR) ? prop.bstrVal : L"?";
-        }
-        UString s2;
-        if (!values[3].IsEmpty())
-        {
-          s2 = "Can not open the file as [" + values[3] + "] archive";
-          if (level2 != 0)
-            s2 += "\nThe file is open as [" + values[2] + "] archive";
-        }
-        if (!values[0].IsEmpty())
-        {
-          if (!s2.IsEmpty())
-            s2.Add_LF();
-          s2 += "[";
-          s2 += values[2];
-          s2 += "] Error: ";
-          s2 += values[0];
-        }
-        if (!s2.IsEmpty())
-        {
-          if (!s.IsEmpty())
-            s += "--------------------\n";
-          s += values[1];
-          s.Add_LF();
-          s += s2;
-        }
-      }
-      */
-      /*
-      if (!s.IsEmpty())
-        MessageBox_Warning(s);
-      else
-      */
-      // after MessageBox_Warning it throws exception in nested archives in Debug Mode. why ?.
-        // MessageBox_Warning(L"test error");
-    }
-  }
+  if (!openRes.ErrorMessage.IsEmpty())
+    MessageBox_Error(openRes.ErrorMessage);
+  /*
+  UString s;
+  GetFolderError(_folder, s);
+  if (!s.IsEmpty())
+    MessageBox_Error(s);
+  */
+  // we don't show error here by some reasons:
+  // after MessageBox_Warning it throws exception in nested archives in Debug Mode. why ?.
+  // MessageBox_Warning(L"test error");
 
   return S_OK;
 }
@@ -574,25 +522,28 @@ HRESULT CPanel::OpenAsArc(IInStream *inStream,
 HRESULT CPanel::OpenAsArc_Msg(IInStream *inStream,
     const CTempFileInfo &tempFileInfo,
     const UString &virtualFilePath,
-    const UString &arcFormat,
-    bool &encrypted,
-    bool showErrorMessage)
+    const UString &arcFormat
+    // , bool &encrypted
+    // , bool showErrorMessage
+    )
 {
-  HRESULT res = OpenAsArc(inStream, tempFileInfo, virtualFilePath, arcFormat, encrypted);
+  COpenResult opRes;
+
+  HRESULT res = OpenAsArc(inStream, tempFileInfo, virtualFilePath, arcFormat, opRes);
   
   if (res == S_OK)
     return res;
   if (res == E_ABORT)
     return res;
 
-  if (showErrorMessage)
-  if (encrypted || res != S_FALSE) // 17.01 : we show message also for (res != S_FALSE)
+  // if (showErrorMessage)
+  if (opRes.Encrypted || res != S_FALSE) // 17.01 : we show message also for (res != S_FALSE)
   {
     UString message;
     if (res == S_FALSE)
     {
       message = MyFormatNew(
-          encrypted ?
+          opRes.Encrypted ?
             IDS_CANT_OPEN_ENCRYPTED_ARCHIVE :
             IDS_CANT_OPEN_ARCHIVE,
           virtualFilePath);
@@ -606,23 +557,28 @@ HRESULT CPanel::OpenAsArc_Msg(IInStream *inStream,
 }
 
 
-HRESULT CPanel::OpenAsArc_Name(const UString &relPath, const UString &arcFormat, bool &encrypted, bool showErrorMessage)
+HRESULT CPanel::OpenAsArc_Name(const UString &relPath, const UString &arcFormat
+    // , bool &encrypted,
+    // , bool showErrorMessage
+    )
 {
   CTempFileInfo tfi;
   tfi.RelPath = relPath;
   tfi.FolderPath = us2fs(GetFsPath());
   const UString fullPath = GetFsPath() + relPath;
   tfi.FilePath = us2fs(fullPath);
-  return OpenAsArc_Msg(NULL, tfi, fullPath, arcFormat, encrypted, showErrorMessage);
+  return OpenAsArc_Msg(NULL, tfi, fullPath, arcFormat /* , encrypted, showErrorMessage */);
 }
 
 
-HRESULT CPanel::OpenAsArc_Index(int index, const wchar_t *type, bool showErrorMessage)
+HRESULT CPanel::OpenAsArc_Index(int index, const wchar_t *type
+    // , bool showErrorMessage
+    )
 {
   CDisableTimerProcessing disableTimerProcessing1(*this);
   CDisableNotify disableNotify(*this);
-  bool encrypted;
-  HRESULT res = OpenAsArc_Name(GetItemRelPath2(index), type ? type : L"", encrypted, showErrorMessage);
+
+  HRESULT res = OpenAsArc_Name(GetItemRelPath2(index), type ? type : L"" /* , encrypted, showErrorMessage */);
   if (res != S_OK)
   {
     RefreshTitle(true); // in case of error we must refresh changed title of 7zFM
@@ -677,16 +633,24 @@ static const char * const kStartExtensions =
   " msi doc dot xls ppt pps wps wpt wks xlr wdb vsd pub"
 
   " docx docm dotx dotm xlsx xlsm xltx xltm xlsb xps"
-  " xlam pptx pptm potx potm ppam ppsx ppsm xsn"
+  " xlam pptx pptm potx potm ppam ppsx ppsm vsdx xsn"
   " mpp"
   " msg"
   " dwf"
 
   " flv swf"
   
+  " epub"
   " odt ods"
   " wb3"
   " pdf"
+  " ps"
+  " txt"
+  " xml xsd xsl xslt hxk hxc htm html xhtml xht mht mhtml htw asp aspx css cgi jsp shtml"
+  " h hpp hxx c cpp cxx m mm go swift"
+  " awk sed hta js json php php3 php4 php5 phptml pl pm py pyo rb tcl ts vbs"
+  " asm"
+  " mak clw csproj vcproj sln dsp dsw"
   " ";
 
 static bool FindExt(const char *p, const UString &name)
@@ -724,6 +688,7 @@ static bool DoItemAlwaysStart(const UString &name)
 UString GetQuotedString(const UString &s);
 
 
+void SplitCmdLineSmart(const UString &cmd, UString &prg, UString &params);
 void SplitCmdLineSmart(const UString &cmd, UString &prg, UString &params)
 {
   params.Empty();
@@ -734,11 +699,11 @@ void SplitCmdLineSmart(const UString &cmd, UString &prg, UString &params)
     int pos = prg.Find(L'"', 1);
     if (pos >= 0)
     {
-      if ((unsigned)pos + 1 == prg.Len() || prg[pos + 1] == ' ')
+      if ((unsigned)(pos + 1) == prg.Len() || prg[pos + 1] == ' ')
       {
-        params = prg.Ptr(pos + 1);
+        params = prg.Ptr((unsigned)(pos + 1));
         params.Trim();
-        prg.DeleteFrom(pos);
+        prg.DeleteFrom((unsigned)pos);
         prg.DeleteFrontal(1);
       }
     }
@@ -841,6 +806,11 @@ void CApp::DiffFiles()
   else
     return;
 
+  DiffFiles(path1, path2);
+}
+
+void CApp::DiffFiles(const UString &path1, const UString &path2)
+{
   UString command;
   ReadRegDiff(command);
   if (command.IsEmpty())
@@ -894,7 +864,7 @@ static HRESULT StartApplication(const UString &dir, const UString &path, HWND wi
     execInfo.nShow = SW_SHOWNORMAL;
     execInfo.hProcess = 0;
     ShellExecuteExWP shellExecuteExW = (ShellExecuteExWP)
-    ::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "ShellExecuteExW");
+    (void *)::GetProcAddress(::GetModuleHandleW(L"shell32.dll"), "ShellExecuteExW");
     if (!shellExecuteExW)
       return 0;
     shellExecuteExW(&execInfo);
@@ -985,7 +955,7 @@ void CPanel::OpenFolderExternal(int index)
     int pos = prefix.ReverseFind_PathSepar();
     if (pos < 0)
       return;
-    prefix.DeleteFrom(pos + 1);
+    prefix.DeleteFrom((unsigned)(pos + 1));
     path = prefix;
   }
   else
@@ -1102,7 +1072,9 @@ void CPanel::OpenItem(int index, bool tryInternal, bool tryExternal, const wchar
   if (tryInternal)
     if (!tryExternal || !DoItemAlwaysStart(name))
     {
-      HRESULT res = OpenAsArc_Index(index, type, true);
+      HRESULT res = OpenAsArc_Index(index, type
+          // , true
+          );
       disableNotify.Restore(); // we must restore to allow text notification update
       InvalidateList();
       if (res == S_OK || res == E_ABORT)
@@ -1299,7 +1271,7 @@ static THREAD_FUNC_DECL MyThreadFunction(void *param)
     {
       handles.Add(g_ExitEventLauncher._exitEvent);
       
-      DWORD waitResult = ::WaitForMultipleObjects(handles.Size(), &handles.Front(), FALSE, INFINITE);
+      DWORD waitResult = WaitForMultiObj_Any_Infinite(handles.Size(), &handles.Front());
       
       waitResult -= WAIT_OBJECT_0;
       
@@ -1451,8 +1423,8 @@ static void ReadZoneFile(CFSTR fileName, CByteBuffer &buf)
   if (fileSize == 0 || fileSize >= ((UInt32)1 << 20))
     return;
   buf.Alloc((size_t)fileSize);
-  UInt32 processed;
-  if (file.Read(buf, (UInt32)fileSize, processed) && processed == fileSize)
+  size_t processed;
+  if (file.ReadFull(buf, (size_t)fileSize, processed) && processed == fileSize)
     return;
   buf.Free();
 }
@@ -1644,8 +1616,9 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
         subSeqStream.QueryInterface(IID_IInStream, &subStream);
         if (subStream)
         {
-          bool encrypted;
-          HRESULT res = OpenAsArc_Msg(subStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted, true);
+          HRESULT res = OpenAsArc_Msg(subStream, tempFileInfo, fullVirtPath, type ? type : L""
+              // , true // showErrorMessage
+              );
           if (res == S_OK)
           {
             tempDirectory.DisableDeleting();
@@ -1757,9 +1730,12 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
       CBufInStream *bufInStreamSpec = new CBufInStream;
       CMyComPtr<IInStream> bufInStream = bufInStreamSpec;
       bufInStreamSpec->Init(file.Data, streamSize, virtFileSystem);
-      bool encrypted;
 
-      HRESULT res = OpenAsArc_Msg(bufInStream, tempFileInfo, fullVirtPath, type ? type : L"", encrypted, true);
+      HRESULT res = OpenAsArc_Msg(bufInStream, tempFileInfo, fullVirtPath, type ? type : L""
+          // , encrypted
+          // , true // showErrorMessage
+          );
+
       if (res == S_OK)
       {
         tempDirectory.DisableDeleting();
@@ -1782,7 +1758,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   #if defined(_WIN32) && !defined(UNDER_CE)
   if (zoneBuf.Size() != 0)
   {
-    if (NFind::DoesFileExist(tempFilePath))
+    if (NFind::DoesFileExist_Raw(tempFilePath))
     {
       WriteZoneFile(tempFilePath + k_ZoneId_StreamName, zoneBuf);
     }
@@ -1792,8 +1768,10 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
 
   if (tryAsArchive)
   {
-    bool encrypted;
-    HRESULT res = OpenAsArc_Msg(NULL, tempFileInfo, fullVirtPath, type ? type : L"", encrypted, true);
+    HRESULT res = OpenAsArc_Msg(NULL, tempFileInfo, fullVirtPath, type ? type : L""
+        // , encrypted
+        // , true // showErrorMessage
+        );
     if (res == S_OK)
     {
       tempDirectory.DisableDeleting();

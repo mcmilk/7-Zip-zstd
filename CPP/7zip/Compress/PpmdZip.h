@@ -8,9 +8,9 @@
 
 #include "../../Common/MyCom.h"
 
-#include "../Common/CWrappers.h"
-
 #include "../ICoder.h"
+
+#include "../Common/CWrappers.h"
 
 namespace NCompress {
 namespace NPpmdZip {
@@ -21,7 +21,7 @@ struct CBuf
 {
   Byte *Buf;
   
-  CBuf(): Buf(0) {}
+  CBuf(): Buf(NULL) {}
   ~CBuf() { ::MidFree(Buf); }
   bool Alloc()
   {
@@ -52,7 +52,7 @@ public:
   STDMETHOD(SetFinishMode)(UInt32 finishMode);
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
 
-  CDecoder(bool fullFileMode);
+  CDecoder(bool fullFileMode = true);
   ~CDecoder();
 };
 

@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gz /MT /W4 /WX /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MT /W4 /WX /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W4 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W4 /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # SUBTRACT CPP /WX
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
@@ -95,7 +95,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /Yu"StdAfx.h" /FD /c
-# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_CONSOLE" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
+# ADD CPP /nologo /Gz /MD /W4 /WX /GX /O1 /I "..\..\..\\" /D "NDEBUG" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -122,7 +122,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "EXCLUDE_COM" /D "NO_REGISTRY" /D "_MBCS" /Yu"StdAfx.h" /FD /GZ /c
-# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
+# ADD CPP /nologo /Gz /MDd /W4 /WX /Gm /GX /ZI /Od /I "..\..\..\\" /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_CONSOLE" /D "WIN_LONG_PATH" /D "_7ZIP_LARGE_PAGES" /D "SUPPORT_DEVICE_FILE" /Yu"StdAfx.h" /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -350,7 +350,15 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Sha1Prepare.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Sha1Reg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Sha256Prepare.cpp
 # End Source File
 # Begin Source File
 
@@ -387,10 +395,6 @@ SOURCE=..\..\..\Common\StringToInt.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\StringToInt.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\Common\Types.h
 # End Source File
 # Begin Source File
 
@@ -526,6 +530,14 @@ SOURCE=..\..\..\Windows\PropVariantUtils.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Registry.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\Registry.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Synchronization.cpp
 # End Source File
 # Begin Source File
@@ -539,6 +551,14 @@ SOURCE=..\..\..\Windows\System.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\System.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\SystemInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\SystemInfo.h
 # End Source File
 # Begin Source File
 
@@ -999,14 +1019,6 @@ SOURCE=..\..\Compress\LzmaRegister.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\Compress\PpmdContext.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\PpmdDecode.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Compress\PpmdDecoder.cpp
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -1029,10 +1041,6 @@ SOURCE=..\..\Compress\PpmdDecoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\PpmdDecoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\PpmdEncode.h
 # End Source File
 # Begin Source File
 
@@ -1062,14 +1070,6 @@ SOURCE=..\..\Compress\PpmdEncoder.h
 # Begin Source File
 
 SOURCE=..\..\Compress\PpmdRegister.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\PpmdSubAlloc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\PpmdType.h
 # End Source File
 # Begin Source File
 
@@ -1454,10 +1454,6 @@ SOURCE=..\..\Archive\Zip\ZipItem.cpp
 # Begin Source File
 
 SOURCE=..\..\Archive\Zip\ZipItem.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Archive\Zip\ZipItemEx.h
 # End Source File
 # Begin Source File
 
@@ -2223,6 +2219,10 @@ SOURCE=..\..\..\..\C\7zStream.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zTypes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Aes.c
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -2981,6 +2981,11 @@ SOURCE=..\..\..\..\C\Sha1.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Sha1Opt.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Sha256.c
 
 !IF  "$(CFG)" == "Alone - Win32 Release"
@@ -3006,6 +3011,11 @@ SOURCE=..\..\..\..\C\Sha256.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Sha256.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha256Opt.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
@@ -3062,10 +3072,6 @@ SOURCE=..\..\..\..\C\Threads.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Threads.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Types.h
 # End Source File
 # End Group
 # End Target

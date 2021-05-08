@@ -208,7 +208,7 @@ enum
    Posix name can be after or before Win32 name
 */
 
-static const Byte kFileNameType_Posix     = 0; // for hard links
+// static const Byte kFileNameType_Posix     = 0; // for hard links
 static const Byte kFileNameType_Win32     = 1; // after Dos name
 static const Byte kFileNameType_Dos       = 2; // short name
 static const Byte kFileNameType_Win32Dos  = 3; // short and full name are same
@@ -386,8 +386,8 @@ struct CAttr
 
 static int CompareAttr(void *const *elem1, void *const *elem2, void *)
 {
-  const CAttr &a1 = *(*((const CAttr **)elem1));
-  const CAttr &a2 = *(*((const CAttr **)elem2));
+  const CAttr &a1 = *(*((const CAttr *const *)elem1));
+  const CAttr &a2 = *(*((const CAttr *const *)elem2));
   RINOZ(MyCompare(a1.Type, a2.Type));
   if (a1.Name.IsEmpty())
   {
@@ -717,12 +717,16 @@ static size_t Lznt1Dec(Byte *dest, size_t outBufLim, size_t destLen, const Byte 
             UInt32 dist = (v >> (16 - numDistBits));
             if (dist >= sbOffset)
               return 0;
-            Int32 offs = -1 - dist;
-            Byte *p = dest + destSize;
-            for (UInt32 t = 0; t < len; t++)
-              p[t] = p[t + offs];
+            const size_t offs = 1 + dist;
+            Byte *p = dest + destSize - offs;
             destSize += len;
             sbOffset += len;
+            const Byte *lim = p + len;
+            p[offs] = *p; ++p;
+            p[offs] = *p; ++p;
+            do
+              p[offs] = *p;
+            while (++p != lim);
           }
         }
       }
@@ -1094,7 +1098,7 @@ struct CMftRec
 void CMftRec::ParseDataNames()
 {
   DataRefs.Clear();
-  DataAttrs.Sort(CompareAttr, 0);
+  DataAttrs.Sort(CompareAttr, NULL);
 
   for (unsigned i = 0; i < DataAttrs.Size();)
   {
@@ -2188,7 +2192,7 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
       *data = (const wchar_t *)EmptyString;
     else
       *data = s->GetRawPtr();
-    *dataSize = (s->Len() + 1) * sizeof(wchar_t);
+    *dataSize = (s->Len() + 1) * (UInt32)sizeof(wchar_t);
     *propType = PROP_DATA_TYPE_wchar_t_PTR_Z_LE;
     #endif
     return S_OK;

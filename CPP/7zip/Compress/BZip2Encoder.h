@@ -53,7 +53,7 @@ public:
       unsigned numNewBits = MyMin(numBits, _bitPos);
       numBits -= numNewBits;
       
-      _curByte <<= numNewBits;
+      _curByte = (Byte)(_curByte << numNewBits);
       UInt32 newBits = value >> numBits;
       _curByte |= Byte(newBits);
       value -= (newBits << numBits);
@@ -134,10 +134,10 @@ public:
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
   HRESULT Create();
   void FinishStream(bool needLeave);
-  DWORD ThreadFunc();
+  THREAD_FUNC_RET_TYPE ThreadFunc();
   #endif
 
-  CThreadInfo(): m_BlockSorterIndex(0), m_Block(0) {}
+  CThreadInfo(): m_Block(NULL), m_BlockSorterIndex(NULL)  {}
   ~CThreadInfo() { Free(); }
   bool Alloc();
   void Free();
@@ -149,11 +149,13 @@ struct CEncProps
 {
   UInt32 BlockSizeMult;
   UInt32 NumPasses;
+  UInt64 Affinity;
   
   CEncProps()
   {
     BlockSizeMult = (UInt32)(Int32)-1;
     NumPasses = (UInt32)(Int32)-1;
+    Affinity = 0;
   }
   void Normalize(int level);
   bool DoOptimizeNumTables() const { return NumPasses > 1; }

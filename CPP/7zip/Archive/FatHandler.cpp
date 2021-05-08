@@ -682,7 +682,7 @@ HRESULT CDatabase::Open()
       RINOK(ReadStream_FALSE(InStream, byteBuf, readSize));
       NumCurUsedBytes += readSize;
 
-      const UInt32 *src = (const UInt32 *)(const Byte *)byteBuf;
+      const UInt32 *src = (const UInt32 *)(const void *)(const Byte *)byteBuf;
       UInt32 *dest = Fat + i;
       if (numFreeClustersDefined)
         for (UInt32 j = 0; j < size; j++)

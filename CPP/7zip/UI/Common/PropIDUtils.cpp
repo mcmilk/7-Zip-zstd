@@ -14,8 +14,10 @@
 
 #include "PropIDUtils.h"
 
+#ifndef _SFX
 #define Get16(x) GetUi16(x)
 #define Get32(x) GetUi32(x)
+#endif
 
 using namespace NWindows;
 
@@ -63,9 +65,9 @@ static void ConvertPosixAttribToString(char *s, UInt32 a) throw()
     s[8 - i] = MY_ATTR_CHAR(a, i + 1, 'w');
     s[9 - i] = MY_ATTR_CHAR(a, i + 0, 'x');
   }
-  if ((a & 0x800) != 0) s[3] = ((a & (1 << 6)) ? 's' : 'S');
-  if ((a & 0x400) != 0) s[6] = ((a & (1 << 3)) ? 's' : 'S');
-  if ((a & 0x200) != 0) s[9] = ((a & (1 << 0)) ? 't' : 'T');
+  if ((a & 0x800) != 0) s[3] = ((a & (1 << 6)) ? 's' : 'S'); // S_ISUID
+  if ((a & 0x400) != 0) s[6] = ((a & (1 << 3)) ? 's' : 'S'); // S_ISGID
+  if ((a & 0x200) != 0) s[9] = ((a & (1 << 0)) ? 't' : 'T'); // S_ISVTX
   s[10] = 0;
   
   a &= ~(UInt32)0xFFFF;
@@ -213,12 +215,12 @@ void ConvertPropertyToString2(UString &dest, const PROPVARIANT &prop, PROPID pro
   dest = temp;
 }
 
+#ifndef _SFX
+
 static inline unsigned GetHex(unsigned v)
 {
   return (v < 10) ? ('0' + v) : ('A' + (v - 10));
 }
-
-#ifndef _SFX
 
 static inline void AddHexToString(AString &res, unsigned v)
 {
@@ -272,7 +274,7 @@ static int FindPairIndex(const CSecID2Name * pairs, unsigned num, UInt32 id)
 {
   for (unsigned i = 0; i < num; i++)
     if (pairs[i].n == id)
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -479,11 +481,16 @@ static void ParseAcl(AString &s, const Byte *p, UInt32 size, const char *strName
   */
 }
 
+/*
 #define MY_SE_OWNER_DEFAULTED       (0x0001)
 #define MY_SE_GROUP_DEFAULTED       (0x0002)
+*/
 #define MY_SE_DACL_PRESENT          (0x0004)
+/*
 #define MY_SE_DACL_DEFAULTED        (0x0008)
+*/
 #define MY_SE_SACL_PRESENT          (0x0010)
+/*
 #define MY_SE_SACL_DEFAULTED        (0x0020)
 #define MY_SE_DACL_AUTO_INHERIT_REQ (0x0100)
 #define MY_SE_SACL_AUTO_INHERIT_REQ (0x0200)
@@ -493,6 +500,7 @@ static void ParseAcl(AString &s, const Byte *p, UInt32 size, const char *strName
 #define MY_SE_SACL_PROTECTED        (0x2000)
 #define MY_SE_RM_CONTROL_VALID      (0x4000)
 #define MY_SE_SELF_RELATIVE         (0x8000)
+*/
 
 void ConvertNtSecureToString(const Byte *data, UInt32 size, AString &s)
 {
@@ -590,25 +598,45 @@ static const CSecID2Name k_ReparseTags[] =
   { 0x80000014, "NFS" },
   { 0x80000015, "FILE_PLACEHOLDER" },
   { 0x80000016, "DFM" },
-  { 0x80000017, "WOF" }
+  { 0x80000017, "WOF" },
+  { 0x80000018, "WCI" },
+  { 0x8000001B, "APPEXECLINK" },
+  { 0xA000001D, "LX_SYMLINK" },
+  { 0x80000023, "AF_UNIX" },
+  { 0x80000024, "LX_FIFO" },
+  { 0x80000025, "LX_CHR" },
+  { 0x80000026, "LX_BLK" }
 };
 
 bool ConvertNtReparseToString(const Byte *data, UInt32 size, UString &s)
 {
   s.Empty();
   NFile::CReparseAttr attr;
-  DWORD errorCode = 0;
-  if (attr.Parse(data, size, errorCode))
+
+  if (attr.Parse(data, size))
   {
-    if (!attr.IsSymLink())
-      s += "Junction: ";
-    s += attr.GetPath();
-    if (!attr.IsOkNamePair())
+    if (attr.IsSymLink_WSL())
     {
-      s += " : ";
-      s += attr.PrintName;
+      s += "WSL: ";
+      s += attr.GetPath();
     }
+    else
+    {
+      if (!attr.IsSymLink_Win())
+        s += "Junction: ";
+      s += attr.GetPath();
+      if (s.IsEmpty())
+        s += "Link: ";
+      if (!attr.IsOkNamePair())
+      {
+        s += " : ";
+        s += attr.PrintName;
+      }
+    }
+    if (attr.MinorError)
+      s += " : MINOR_ERROR";
     return true;
+    // s += " "; // for debug
   }
 
   if (size < 8)
@@ -651,7 +679,7 @@ bool ConvertNtReparseToString(const Byte *data, UInt32 size, UString &s)
     
     for (UInt32 i = 0; i < len; i++)
     {
-      if (i >= 8)
+      if (i >= 16)
       {
         s += "...";
         break;

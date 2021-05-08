@@ -28,6 +28,7 @@
 
 using namespace NWindows;
 
+void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance);
 void OptionsDialog(HWND hwndOwner, HINSTANCE /* hInstance */)
 {
   CSystemPage systemPage;

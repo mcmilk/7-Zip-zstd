@@ -275,7 +275,7 @@ struct CItem
 
   CItem(): UseAttr(false), UseInlineData(false) {}
   bool IsDir() const { return Type == RECORD_TYPE_FOLDER; }
-  const CFork &GetFork(bool isResource) const { return (CFork  & )*(isResource ? &ResourceFork: &DataFork ); }
+  const CFork &GetFork(bool isResource) const { return (const CFork & )*(isResource ? &ResourceFork: &DataFork ); }
 };
 
 struct CAttr
@@ -320,12 +320,14 @@ public:
   UInt64 SpecOffset;
   UInt64 PhySize;
   UInt64 PhySize2;
+  UInt64 ArcFileSize;
 
   void Clear()
   {
     SpecOffset = 0;
     PhySize = 0;
     PhySize2 = 0;
+    ArcFileSize = 0;
     HeadersError = false;
     ThereAreAltStreams = false;
     // CaseSensetive = false;
@@ -440,7 +442,10 @@ HRESULT CDatabase::ReadFile(const CFork &fork, CByteBuffer &buf, IInStream *inSt
 {
   if (fork.NumBlocks >= Header.NumBlocks)
     return S_FALSE;
-  size_t totalSize = (size_t)fork.NumBlocks << Header.BlockSizeLog;
+  if ((ArcFileSize >> Header.BlockSizeLog) + 1 < fork.NumBlocks)
+    return S_FALSE;
+
+  const size_t totalSize = (size_t)fork.NumBlocks << Header.BlockSizeLog;
   if ((totalSize >> Header.BlockSizeLog) != fork.NumBlocks)
     return S_FALSE;
   buf.Alloc(totalSize);
@@ -473,20 +478,36 @@ struct CNodeDescriptor
   // Byte Height;
   unsigned NumRecords;
 
-  bool CheckNumRecords(unsigned nodeSizeLog)
-  {
-    return (kNodeDescriptor_Size + ((UInt32)NumRecords + 1) * 2 <= ((UInt32)1 << nodeSizeLog));
-  }
-  void Parse(const Byte *p);
+  bool Parse(const Byte *p, unsigned nodeSizeLog);
 };
 
-void CNodeDescriptor::Parse(const Byte *p)
+
+bool CNodeDescriptor::Parse(const Byte *p, unsigned nodeSizeLog)
 {
   fLink = Get32(p);
   // bLink = Get32(p + 4);
   Kind = p[8];
   // Height = p[9];
   NumRecords = Get16(p + 10);
+
+  const size_t nodeSize = (size_t)1 << nodeSizeLog;
+  if (kNodeDescriptor_Size + ((UInt32)NumRecords + 1) * 2 > nodeSize)
+    return false;
+  const size_t limit = nodeSize - ((UInt32)NumRecords + 1) * 2;
+
+  p += nodeSize - 2;
+
+  for (unsigned i = 0; i < NumRecords; i++)
+  {
+    const UInt32 offs = Get16(p);
+    p -= 2;
+    const UInt32 offsNext = Get16(p);
+    if (offs < kNodeDescriptor_Size
+        || offs >= offsNext
+        || offsNext > limit)
+      return false;
+  }
+  return true;
 }
 
 struct CHeaderRec
@@ -576,7 +597,7 @@ HRESULT CDatabase::LoadExtentFile(const CFork &fork, IInStream *inStream, CObjec
   if (node == 0)
     return S_OK;
 
-  CByteBuffer usedBuf(hr.TotalNodes);
+  CByteArr usedBuf(hr.TotalNodes);
   memset(usedBuf, 0, hr.TotalNodes);
 
   while (node != 0)
@@ -585,10 +606,9 @@ HRESULT CDatabase::LoadExtentFile(const CFork &fork, IInStream *inStream, CObjec
       return S_FALSE;
     usedBuf[node] = 1;
 
-    size_t nodeOffset = (size_t)node << hr.NodeSizeLog;
+    const size_t nodeOffset = (size_t)node << hr.NodeSizeLog;
     CNodeDescriptor desc;
-    desc.Parse(p + nodeOffset);
-    if (!desc.CheckNumRecords(hr.NodeSizeLog))
+    if (!desc.Parse(p + nodeOffset, hr.NodeSizeLog))
       return S_FALSE;
     if (desc.Kind != kNodeType_Leaf)
       return S_FALSE;
@@ -597,18 +617,16 @@ HRESULT CDatabase::LoadExtentFile(const CFork &fork, IInStream *inStream, CObjec
 
     for (unsigned i = 0; i < desc.NumRecords; i++)
     {
-      const UInt32 nodeSize = (UInt32)1 << hr.NodeSizeLog;
-      const UInt32 offs = Get16(p + nodeOffset + nodeSize - (i + 1) * 2);
-      const UInt32 offsNext = Get16(p + nodeOffset + nodeSize - (i + 2) * 2);
-      if (offs > nodeSize || offsNext > nodeSize)
-        return S_FALSE;
-      UInt32 recSize = offsNext - offs;
+      const UInt32 nodeSize = (1 << hr.NodeSizeLog);
+      const Byte *r = p + nodeOffset + nodeSize - i * 2;
+      const UInt32 offs = Get16(r - 2);
+      UInt32 recSize = Get16(r - 4) - offs;
       const unsigned kKeyLen = 10;
 
       if (recSize != 2 + kKeyLen + kNumFixedExtents * 8)
         return S_FALSE;
 
-      const Byte *r = p + nodeOffset + offs;
+      r = p + nodeOffset + offs;
       if (Get16(r) != kKeyLen)
         return S_FALSE;
       
@@ -717,7 +735,7 @@ HRESULT CDatabase::LoadAttrs(const CFork &fork, IInStream *inStream, IArchiveOpe
   if (node == 0)
     return S_OK;
   
-  CByteBuffer usedBuf(hr.TotalNodes);
+  CByteArr usedBuf(hr.TotalNodes);
   memset(usedBuf, 0, hr.TotalNodes);
 
   CFork resFork;
@@ -728,10 +746,9 @@ HRESULT CDatabase::LoadAttrs(const CFork &fork, IInStream *inStream, IArchiveOpe
       return S_FALSE;
     usedBuf[node] = 1;
     
-    size_t nodeOffset = (size_t)node << hr.NodeSizeLog;
+    const size_t nodeOffset = (size_t)node << hr.NodeSizeLog;
     CNodeDescriptor desc;
-    desc.Parse(p + nodeOffset);
-    if (!desc.CheckNumRecords(hr.NodeSizeLog))
+    if (!desc.Parse(p + nodeOffset, hr.NodeSizeLog))
       return S_FALSE;
     if (desc.Kind != kNodeType_Leaf)
       return S_FALSE;
@@ -739,19 +756,14 @@ HRESULT CDatabase::LoadAttrs(const CFork &fork, IInStream *inStream, IArchiveOpe
     for (unsigned i = 0; i < desc.NumRecords; i++)
     {
       const UInt32 nodeSize = (1 << hr.NodeSizeLog);
-      const UInt32 offs = Get16(p + nodeOffset + nodeSize - (i + 1) * 2);
-      const UInt32 offsNext = Get16(p + nodeOffset + nodeSize - (i + 2) * 2);
-      UInt32 recSize = offsNext - offs;
-      if (offs >= nodeSize
-          || offsNext > nodeSize
-          || offsNext < offs)
-        return S_FALSE;
-
+      const Byte *r = p + nodeOffset + nodeSize - i * 2;
+      const UInt32 offs = Get16(r - 2);
+      UInt32 recSize = Get16(r - 4) - offs;
       const unsigned kHeadSize = 14;
       if (recSize < kHeadSize)
         return S_FALSE;
 
-      const Byte *r = p + nodeOffset + offs;
+      r = p + nodeOffset + offs;
       UInt32 keyLen = Get16(r);
 
       // UInt16 pad = Get16(r + 2);
@@ -805,7 +817,7 @@ HRESULT CDatabase::LoadAttrs(const CFork &fork, IInStream *inStream, IArchiveOpe
 
       if (progress && (i & 0xFFF) == 0)
       {
-        UInt64 numFiles = 0;
+        const UInt64 numFiles = 0;
         RINOK(progress->SetCompleted(&numFiles, NULL));
       }
     }
@@ -873,13 +885,6 @@ bool CDatabase::Parse_decmpgfs(const CAttr &attr, CItem &item, bool &skip)
 
 HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents> *overflowExtentsArray, IInStream *inStream, IArchiveOpenCallback *progress)
 {
-  unsigned reserveSize = (unsigned)(Header.NumFolders + 1 + Header.NumFiles);
-  Items.ClearAndReserve(reserveSize);
-  Refs.ClearAndReserve(reserveSize);
-
-  CRecordVector<CIdIndexPair> IdToIndexMap;
-  IdToIndexMap.ClearAndReserve(reserveSize);
-
   CByteBuffer buf;
   RINOK(ReadFile(fork, buf, inStream));
   const Byte *p = (const Byte *)buf;
@@ -888,10 +893,24 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
   // nodeDesc.Parse(p);
   CHeaderRec hr;
   RINOK(hr.Parse2(buf));
-  
+
+  CRecordVector<CIdIndexPair> IdToIndexMap;
+
+  const unsigned reserveSize = (unsigned)(Header.NumFolders + 1 + Header.NumFiles);
+
+  const unsigned kBasicRecSize = 0x58;
+  const unsigned kMinRecSize = kBasicRecSize + 10;
+
+  if ((UInt64)reserveSize * kMinRecSize < buf.Size())
+  {
+    Items.ClearAndReserve(reserveSize);
+    Refs.ClearAndReserve(reserveSize);
+    IdToIndexMap.ClearAndReserve(reserveSize);
+  }
+ 
   // CaseSensetive = (Header.IsHfsX() && hr.KeyCompareType == 0xBC);
 
-  CByteBuffer usedBuf(hr.TotalNodes);
+  CByteArr usedBuf(hr.TotalNodes);
   memset(usedBuf, 0, hr.TotalNodes);
 
   CFork resFork;
@@ -908,8 +927,7 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
     
     const size_t nodeOffset = (size_t)node << hr.NodeSizeLog;
     CNodeDescriptor desc;
-    desc.Parse(p + nodeOffset);
-    if (!desc.CheckNumRecords(hr.NodeSizeLog))
+    if (!desc.Parse(p + nodeOffset, hr.NodeSizeLog))
       return S_FALSE;
     if (desc.Kind != kNodeType_Leaf)
       return S_FALSE;
@@ -917,16 +935,13 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
     for (unsigned i = 0; i < desc.NumRecords; i++)
     {
       const UInt32 nodeSize = (1 << hr.NodeSizeLog);
-      const UInt32 offs = Get16(p + nodeOffset + nodeSize - (i + 1) * 2);
-      const UInt32 offsNext = Get16(p + nodeOffset + nodeSize - (i + 2) * 2);
-      UInt32 recSize = offsNext - offs;
-      if (offs >= nodeSize
-          || offsNext > nodeSize
-          || offsNext < offs
-          || recSize < 6)
+      const Byte *r = p + nodeOffset + nodeSize - i * 2;
+      const UInt32 offs = Get16(r - 2);
+      UInt32 recSize = Get16(r - 4) - offs;
+      if (recSize < 6)
         return S_FALSE;
 
-      const Byte *r = p + nodeOffset + offs;
+      r = p + nodeOffset + offs;
       UInt32 keyLen = Get16(r);
       UInt32 parentID = Get32(r + 2);
       if (keyLen < 6 || (keyLen & 1) != 0 || keyLen + 2 > recSize)
@@ -952,7 +967,6 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
           type != RECORD_TYPE_FILE)
         continue;
 
-      const unsigned kBasicRecSize = 0x58;
       if (recSize < kBasicRecSize)
         return S_FALSE;
 
@@ -1042,7 +1056,7 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
       }
       if (progress && (Items.Size() & 0xFFF) == 0)
       {
-        UInt64 numItems = Items.Size();
+        const UInt64 numItems = Items.Size();
         RINOK(progress->SetCompleted(&numItems, NULL));
       }
     }
@@ -1286,9 +1300,12 @@ HRESULT CDatabase::Open2(IInStream *inStream, IArchiveOpenCallback *progress)
   if (h.NumFolders > ((UInt32)1 << 29) ||
       h.NumFiles > ((UInt32)1 << 30))
     return S_FALSE;
+
+  RINOK(inStream->Seek(0, STREAM_SEEK_END, &ArcFileSize));
+
   if (progress)
   {
-    UInt64 numFiles = (UInt64)h.NumFiles + h.NumFolders + 1;
+    const UInt64 numFiles = (UInt64)h.NumFiles + h.NumFolders + 1;
     RINOK(progress->SetTotal(&numFiles, NULL));
   }
 
@@ -1311,13 +1328,6 @@ HRESULT CDatabase::Open2(IInStream *inStream, IArchiveOpenCallback *progress)
   for (i = 0; i < 6; i++)
     h.FinderInfo[i] = Get32(p + 0x50 + i * 4);
   h.VolID = Get64(p + 0x68);
-  */
-
-  /*
-  UInt64 endPos;
-  RINOK(inStream->Seek(0, STREAM_SEEK_END, &endPos));
-  if ((endPos >> h.BlockSizeLog) < h.NumBlocks)
-    return S_FALSE;
   */
 
   ResFileName = kResFileName;
@@ -1499,7 +1509,7 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
     else
       s = &Items[ref.ItemIndex].Name;
     *data = (const wchar_t *)(*s);
-    *dataSize = (s->Len() + 1) * sizeof(wchar_t);
+    *dataSize = (s->Len() + 1) * (UInt32)sizeof(wchar_t);
     *propType = PROP_DATA_TYPE_wchar_t_PTR_Z_LE;
     return S_OK;
   }
@@ -1700,7 +1710,7 @@ HRESULT CHandler::ExtractZlibFile(
     }
     
     outPos += blockSize;
-    UInt64 progressPos = progressStart + outPos;
+    const UInt64 progressPos = progressStart + outPos;
     RINOK(extractCallback->SetCompleted(&progressPos));
   }
 
@@ -1884,7 +1894,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             }
             pos += cur;
             extentRem -= cur;
-            UInt64 processed = currentTotalSize + pos;
+            const UInt64 processed = currentTotalSize + pos;
             RINOK(extractCallback->SetCompleted(&processed));
           }
         }

@@ -618,13 +618,15 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       _items.DeleteFrontal(1);
       for (unsigned i = 0; i < _items.Size(); i++)
         if (_items[i].Name.IsPrefixedBy("data.tar."))
+        {
           if (_mainSubfile < 0)
-            _mainSubfile = i;
+            _mainSubfile = (int)i;
           else
           {
             _mainSubfile = -1;
             break;
           }
+        }
     }
     else
     {
@@ -845,7 +847,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 }
 
 REGISTER_ARC_I(
-  "Ar", "ar a deb lib", 0, 0xEC,
+  "Ar", "ar a deb udeb lib", 0, 0xEC,
   kSignature,
   0,
   0,

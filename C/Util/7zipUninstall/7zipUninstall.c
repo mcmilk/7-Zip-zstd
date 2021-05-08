@@ -1,14 +1,14 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2019-02-02 : Igor Pavlov : Public domain */
+2021-02-23 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
-
-#define SZ_ERROR_ABORT 100
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
 #pragma warning(disable : 4011) // vs2010: identifier truncated to _CRT_SECURE_CPP_OVERLOAD_SECURE
 #endif
+
+// #define SZ_ERROR_ABORT 100
 
 #include <windows.h>
 #include <ShlObj.h>
@@ -20,7 +20,9 @@
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
 
-// static const WCHAR * const k_7zip = L"7-Zip";
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+// static LPCWSTR const k_7zip = L"7-Zip";
 
 // #define _64BIT_INSTALLER 1
 
@@ -31,18 +33,33 @@
 #define k_7zip_with_Ver_base L"7-Zip " LLL(MY_VERSION)
 
 #ifdef _64BIT_INSTALLER
-  #define k_7zip_with_Ver k_7zip_with_Ver_base L" (x64)"
+
+  // #define USE_7ZIP_32_DLL
+
+  #if defined(_M_ARM64) || defined(_M_ARM)
+    #define k_Postfix  L" (arm64)"
+  #else
+    #define k_Postfix  L" (x64)"
+    #define USE_7ZIP_32_DLL
+  #endif
 #else
-  #define k_7zip_with_Ver k_7zip_with_Ver_base
+  #if defined(_M_ARM64) || defined(_M_ARM)
+    #define k_Postfix  L" (arm)"
+  #else
+    // #define k_Postfix  L" (x86)"
+    #define k_Postfix
+  #endif
 #endif
 
-// static const WCHAR * const k_7zip_with_Ver_str = k_7zip_with_Ver;
+#define k_7zip_with_Ver  k_7zip_with_Ver_base k_Postfix 
 
-static const WCHAR * const k_Reg_Software_7zip = L"Software\\7-Zip";
+static LPCWSTR const k_7zip_with_Ver_Uninstall = k_7zip_with_Ver L" Uninstall";
 
-static const WCHAR * const k_Reg_Path = L"Path";
+static LPCWSTR const k_Reg_Software_7zip = L"Software\\7-Zip";
+
+static LPCWSTR const k_Reg_Path = L"Path";
  
-static const WCHAR * const k_Reg_Path32 = L"Path"
+static LPCWSTR const k_Reg_Path32 = L"Path"
   #ifdef _64BIT_INSTALLER
     L"64"
   #else
@@ -64,8 +81,8 @@ static const WCHAR * const k_Reg_Path32 = L"Path"
 
 #define k_7zip_CLSID L"{23170F69-40C1-278A-1000-000100020000}"
 
-static const WCHAR * const k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
-static const WCHAR * const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
+static LPCWSTR const k_Reg_CLSID_7zip = L"CLSID\\" k_7zip_CLSID;
+static LPCWSTR const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\InprocServer32";
 
 
 #define g_AllUsers True
@@ -79,9 +96,12 @@ static HWND g_Path_HWND;
 static HWND g_InfoLine_HWND;
 static HWND g_Progress_HWND;
 
-typedef WINADVAPI LONG (APIENTRY *Func_RegDeleteKeyExW)(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved);
+// WINADVAPI
+typedef LONG (APIENTRY *Func_RegDeleteKeyExW)(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved);
 static Func_RegDeleteKeyExW func_RegDeleteKeyExW;
 
+static WCHAR cmd[MAX_PATH + 4];
+static WCHAR cmdError[MAX_PATH + 4];
 static WCHAR path[MAX_PATH * 2 + 40];
 static WCHAR workDir[MAX_PATH + 10];
 static WCHAR modulePath[MAX_PATH + 10];
@@ -90,9 +110,46 @@ static WCHAR tempPath[MAX_PATH * 2 + 40];
 static WCHAR cmdLine[MAX_PATH * 3 + 40];
 static WCHAR copyPath[MAX_PATH * 2 + 40];
 
-static const WCHAR * const kUninstallExe = L"Uninstall.exe";
+static LPCWSTR const kUninstallExe = L"Uninstall.exe";
 
 #define MAKE_CHAR_UPPER(c) ((((c) >= 'a' && (c) <= 'z') ? (c) -= 0x20 : (c)))
+
+
+static void CpyAscii(wchar_t *dest, const char *s)
+{
+  for (;;)
+  {
+    Byte b = (Byte)*s++;
+    *dest++ = b;
+    if (b == 0)
+      return;
+  }
+}
+
+static void CatAscii(wchar_t *dest, const char *s)
+{
+  dest += wcslen(dest);
+  CpyAscii(dest, s);
+}
+
+static void PrintErrorMessage(const char *s1, const wchar_t *s2)
+{
+  WCHAR m[MAX_PATH + 512];
+  m[0] = 0;
+  CatAscii(m, "ERROR:");
+  if (s1)
+  {
+    CatAscii(m, "\n");
+    CatAscii(m, s1);
+  }
+  if (s2)
+  {
+    CatAscii(m, "\n");
+    wcscat(m, s2);
+  }
+  MessageBoxW(g_HWND, m, k_7zip_with_Ver_Uninstall, MB_ICONERROR | MB_OK);
+}
+
 
 static BoolInt AreStringsEqual_NoCase(const wchar_t *s1, const wchar_t *s2)
 {
@@ -171,7 +228,7 @@ static LONG MyRegistry_DeleteKey(HKEY parentKey, LPCWSTR name)
   #endif
 }
 
-#ifdef _64BIT_INSTALLER
+#ifdef USE_7ZIP_32_DLL
 
 static int MyRegistry_QueryString2_32(HKEY hKey, LPCWSTR keyName, LPCWSTR valName, LPWSTR dest)
 {
@@ -295,7 +352,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
       continue;
 
     NormalizePrefix(link);
-    wcscat(link, L"7-Zip\\");
+    CatAscii(link, "7-Zip\\");
     
     {
       const size_t baseLen = wcslen(link);
@@ -304,13 +361,13 @@ static void SetShellProgramsGroup(HWND hwndOwner)
 
       for (k = 0; k < 2; k++)
       {
-        wcscpy(link + baseLen, k == 0 ?
-            L"7-Zip File Manager.lnk" :
-            L"7-Zip Help.lnk");
+        CpyAscii(link + baseLen, k == 0 ?
+            "7-Zip File Manager.lnk" :
+            "7-Zip Help.lnk");
         wcscpy(destPath, path);
-        wcscat(destPath, k == 0 ?
-            L"7zFM.exe" :
-            L"7-zip.chm");
+        CatAscii(destPath, k == 0 ?
+            "7zFM.exe" :
+            "7-zip.chm");
         
         if (CreateShellLink(link, destPath) == S_OK)
         {
@@ -331,20 +388,20 @@ static void SetShellProgramsGroup(HWND hwndOwner)
 }
 
 
-static const WCHAR * const k_ShellEx_Items[] =
+static LPCSTR const k_ShellEx_Items[] =
 {
-    L"*\\shellex\\ContextMenuHandlers"
-  , L"Directory\\shellex\\ContextMenuHandlers"
-  , L"Folder\\shellex\\ContextMenuHandlers"
-  , L"Directory\\shellex\\DragDropHandlers"
-  , L"Drive\\shellex\\DragDropHandlers"
+    "*\\shellex\\ContextMenuHandlers"
+  , "Directory\\shellex\\ContextMenuHandlers"
+  , "Folder\\shellex\\ContextMenuHandlers"
+  , "Directory\\shellex\\DragDropHandlers"
+  , "Drive\\shellex\\DragDropHandlers"
 };
 
-static const WCHAR * const k_Shell_Approved = L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved";
+static LPCWSTR const k_Shell_Approved = L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved";
 
-static const WCHAR * const k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\7zFM.exe";
+static LPCWSTR const k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\7zFM.exe";
 #define k_REG_Uninstall L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
-static const WCHAR * const k_Uninstall_7zip = k_REG_Uninstall L"7-Zip";
+static LPCWSTR const k_Uninstall_7zip = k_REG_Uninstall L"7-Zip";
 
 
 static BoolInt AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix, const wchar_t *name)
@@ -370,11 +427,11 @@ static void WriteCLSID()
 
       {
         unsigned i;
-        for (i = 0; i < sizeof(k_ShellEx_Items) / sizeof(k_ShellEx_Items[0]); i++)
+        for (i = 0; i < ARRAY_SIZE(k_ShellEx_Items); i++)
         {
           WCHAR destPath[MAX_PATH];
-          wcscpy(destPath, k_ShellEx_Items[i]);
-          wcscat(destPath, L"\\7-Zip");
+          CpyAscii(destPath, k_ShellEx_Items[i]);
+          CatAscii(destPath, "\\7-Zip");
           
           MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, destPath);
         }
@@ -393,7 +450,7 @@ static void WriteCLSID()
   }
 
   
-  #ifdef _64BIT_INSTALLER
+  #ifdef USE_7ZIP_32_DLL
   
   if (MyRegistry_QueryString2_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc, NULL, s))
   {
@@ -407,11 +464,11 @@ static void WriteCLSID()
 
       {
         unsigned i;
-        for (i = 0; i < sizeof(k_ShellEx_Items) / sizeof(k_ShellEx_Items[0]); i++)
+        for (i = 0; i < ARRAY_SIZE(k_ShellEx_Items); i++)
         {
           WCHAR destPath[MAX_PATH];
-          wcscpy(destPath, k_ShellEx_Items[i]);
-          wcscat(destPath, L"\\7-Zip");
+          CpyAscii(destPath, k_ShellEx_Items[i]);
+          CatAscii(destPath, "\\7-Zip");
           
           MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, destPath);
         }
@@ -444,17 +501,27 @@ static void WriteCLSID()
 
 static const wchar_t *GetCmdParam(const wchar_t *s)
 {
+  unsigned pos = 0;
   BoolInt quoteMode = False;
   for (;; s++)
   {
     wchar_t c = *s;
+    if (c == 0 || (c == L' ' && !quoteMode))
+      break;
     if (c == L'\"')
+    {
       quoteMode = !quoteMode;
-    else if (c == 0 || (c == L' ' && !quoteMode))
-      return s;
+      continue;
+    }
+    if (pos >= ARRAY_SIZE(cmd) - 1)
+      exit(1);
+    cmd[pos++] = c;
   }
+  cmd[pos] = 0;
+  return s;
 }
 
+/*
 static void RemoveQuotes(wchar_t *s)
 {
   const wchar_t *src = s;
@@ -468,6 +535,7 @@ static void RemoveQuotes(wchar_t *s)
       return;
   }
 }
+*/
 
 static BoolInt DoesFileOrDirExist()
 {
@@ -489,7 +557,7 @@ static BOOL RemoveFileAfterReboot()
   return RemoveFileAfterReboot2(path);
 }
 
-#define IS_LIMIT_CHAR(c) (c == 0 || c == ' ')
+// #define IS_LIMIT_CHAR(c) (c == 0 || c == ' ')
 
 static BoolInt IsThereSpace(const wchar_t *s)
 {
@@ -507,10 +575,10 @@ static void AddPathParam(wchar_t *dest, const wchar_t *src)
 {
   BoolInt needQuote = IsThereSpace(src);
   if (needQuote)
-    wcscat(dest, L"\"");
+    CatAscii(dest, "\"");
   wcscat(dest, src);
   if (needQuote)
-    wcscat(dest, L"\"");
+    CatAscii(dest, "\"");
 }
 
 
@@ -543,12 +611,12 @@ static BOOL RemoveDir()
 
 
 
-#define k_Lang L"Lang"
+#define k_Lang "Lang"
 
 // NUM_LANG_TXT_FILES files are placed before en.ttt
-#define NUM_LANG_TXT_FILES 88
+#define NUM_LANG_TXT_FILES 92
 
-#ifdef _64BIT_INSTALLER
+#ifdef USE_7ZIP_32_DLL
   #define NUM_EXTRA_FILES_64BIT 1
 #else
   #define NUM_EXTRA_FILES_64BIT 0
@@ -560,7 +628,7 @@ static const char * const k_Names =
   "af an ar ast az ba be bg bn br ca co cs cy da de el eo es et eu ext"
   " fa fi fr fur fy ga gl gu he hi hr hu hy id io is it ja ka kaa kab kk ko ku ku-ckb ky"
   " lij lt lv mk mn mng mng2 mr ms nb ne nl nn pa-in pl ps pt pt-br ro ru"
-  " sa si sk sl sq sr-spc sr-spl sv ta th tr tt ug uk uz va vi yo zh-cn zh-tw"
+  " sa si sk sl sq sr-spc sr-spl sv sw ta tg th tk tr tt ug uk uz uz-cyrl va vi yo zh-cn zh-tw"
   " en.ttt"
   " descript.ion"
   " History.txt"
@@ -573,7 +641,7 @@ static const char * const k_Names =
   " 7zG.exe"
   " 7z.dll"
   " 7zFM.exe"
-  #ifdef _64BIT_INSTALLER
+  #ifdef USE_7ZIP_32_DLL
   " 7-zip32.dll"
   #endif
   " 7-zip.dll"
@@ -628,7 +696,7 @@ static int Install()
       temp = path + pathLen;
       
       if (i <= NUM_LANG_TXT_FILES)
-        wcscpy(temp, k_Lang L"\\");
+        CpyAscii(temp, k_Lang "\\");
       
       {
         WCHAR *dest = temp + wcslen(temp);
@@ -648,7 +716,7 @@ static int Install()
       }
 
       if (i < NUM_LANG_TXT_FILES)
-        wcscat(temp, L".txt");
+        CatAscii(temp, ".txt");
   
       if (!g_SilentMode)
         SetWindowTextW(g_InfoLine_HWND, temp);
@@ -673,7 +741,7 @@ static int Install()
       }
     }
 
-    wcscpy(path + pathLen, k_Lang);
+    CpyAscii(path + pathLen, k_Lang);
     RemoveDir();
 
     path[pathLen] = 0;
@@ -706,8 +774,8 @@ static int Install()
     WCHAR m[MAX_PATH + 100];
     m[0] = 0;
     if (winRes == 0 || !GetErrorMessage(winRes, m))
-      wcscpy(m, L"ERROR");
-    MessageBoxW(g_HWND, m, L"Error", MB_ICONERROR | MB_OK);
+      CpyAscii(m, "ERROR");
+    PrintErrorMessage("System ERROR:", m);
   }
   
   return 1;
@@ -720,7 +788,7 @@ static void OnClose()
   {
     if (MessageBoxW(g_HWND,
         L"Do you want to cancel uninstallation?",
-        k_7zip_with_Ver,
+        k_7zip_with_Ver_Uninstall,
         MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON2) != IDYES)
       return;
   }
@@ -739,7 +807,7 @@ static INT_PTR CALLBACK MyDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
       g_InfoLine_HWND = GetDlgItem(hwnd, IDT_CUR_FILE);
       g_Progress_HWND = GetDlgItem(hwnd, IDC_PROGRESS);
 
-      SetWindowTextW(hwnd, k_7zip_with_Ver L" Uninstall");
+      SetWindowTextW(hwnd, k_7zip_with_Ver_Uninstall);
       SetDlgItemTextW(hwnd, IDE_EXTRACT_PATH, path);
 
       ShowWindow(g_Progress_HWND, SW_HIDE);
@@ -759,7 +827,7 @@ static INT_PTR CALLBACK MyDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
           }
           if (!g_Install_was_Pressed)
           {
-            SendMessage(hwnd, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hwnd, IDCANCEL), TRUE);
+            SendMessage(hwnd, WM_NEXTDLGCTL, (WPARAM)(void *)GetDlgItem(hwnd, IDCANCEL), TRUE);
             
             EnableWindow(g_Path_HWND, FALSE);
             EnableWindow(GetDlgItem(hwnd, IDOK), FALSE);
@@ -822,7 +890,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
   {
     const wchar_t *s = GetCommandLineW();
-    
+
     #ifndef UNDER_CE
     s = GetCmdParam(s);
     #endif
@@ -844,32 +912,47 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
       {
         const wchar_t *s2 = GetCmdParam(s);
-        if (s[0] == '/')
+        BoolInt error = True;
+        if (cmd[0] == '/')
         {
-          if (s[1] == 'S' && IS_LIMIT_CHAR(s[2]))
-            g_SilentMode = True;
-          else if (s[1] == 'N' && IS_LIMIT_CHAR(s[2]))
-            useTemp = False;
-          else if (s[1] == 'D' && s[2] == '=')
+          if (cmd[1] == 'S')
           {
-            size_t num;
-            s += 3;
-            num = s2 - s;
-            if (num <= MAX_PATH)
+            if (cmd[2] == 0)
             {
-              wcsncpy(workDir, s, num);
-              workDir[num] = 0;
-              RemoveQuotes(workDir);
-              useTemp = False;
+              g_SilentMode = True;
+              error = False;
             }
+          }
+          else if (cmd[1] == 'N')
+          {
+            if (cmd[2] == 0)
+            {
+              useTemp = False;
+              error = False;
+            }
+          }
+          else if (cmd[1] == 'D' && cmd[2] == '=')
+          {
+            wcscpy(workDir, cmd + 3);
+            // RemoveQuotes(workDir);
+            useTemp = False;
+            error = False;
           }
         }
         s = s2;
+        if (error && cmdError[0] == 0)
+          wcscpy(cmdError, cmd);
       }
     }
+
+    if (cmdError[0] != 0)
+    {
+      if (!g_SilentMode)
+        PrintErrorMessage("Unsupported command:", cmdError);
+      return 1;
+    }
   }
-
-
+  
   {
     wchar_t *name;
     DWORD len = GetModuleFileNameW(NULL, modulePath, MAX_PATH);
@@ -925,7 +1008,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       
       for (i = 0; i < 100; i++, d += GetTickCount())
       {
-        wcscpy(path + pathLen, L"7z");
+        CpyAscii(path + pathLen, "7z");
         
         {
           wchar_t *s = path + wcslen(path);
@@ -944,7 +1027,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
           continue;
         if (CreateDirectoryW(path, NULL))
         {
-          wcscat(path, WSTRING_PATH_SEPARATOR);
+          CatAscii(path, STRING_PATH_SEPARATOR);
           wcscpy(tempPath, path);
           break;
         }
@@ -955,7 +1038,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       if (tempPath[0] != 0)
       {
         wcscpy(copyPath, tempPath);
-        wcscat(copyPath, L"Uninst.exe"); // we need not "Uninstall.exe" here
+        CatAscii(copyPath, "Uninst.exe"); // we need not "Uninstall.exe" here
         
         if (CopyFileW(modulePath, copyPath, TRUE))
         {
@@ -969,7 +1052,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             
             // maybe CreateProcess supports path with spaces even without quotes.
             AddPathParam(cmdLine, copyPath);
-            wcscat(cmdLine, L" /N /D=");
+            CatAscii(cmdLine, " /N /D=");
             AddPathParam(cmdLine, modulePrefix);
             
             if (cmdParams[0] != 0 && wcslen(cmdParams) < MAX_PATH * 2 + 10)
@@ -1066,7 +1149,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             SetDlgItemTextW(g_HWND, IDOK, L"Close");
             EnableWindow(GetDlgItem(g_HWND, IDOK), TRUE);
             EnableWindow(GetDlgItem(g_HWND, IDCANCEL), FALSE);
-            SendMessage(g_HWND, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(g_HWND, IDOK), TRUE);
+            SendMessage(g_HWND, WM_NEXTDLGCTL, (WPARAM)(void *)GetDlgItem(g_HWND, IDOK), TRUE);
           }
         }
       }

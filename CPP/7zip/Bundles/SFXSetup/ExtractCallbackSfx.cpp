@@ -15,8 +15,8 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
 
-static LPCSTR const kCantDeleteFile = "Can not delete output file";
-static LPCSTR const kCantOpenFile = "Can not open output file";
+static LPCSTR const kCantDeleteFile = "Cannot delete output file";
+static LPCSTR const kCantOpenFile = "Cannot open output file";
 static LPCSTR const kUnsupportedMethod = "Unsupported Method";
 
 void CExtractCallbackImp::Init(IInArchive *archiveHandler,

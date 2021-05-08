@@ -31,6 +31,7 @@ WIN_OBJS = \
   $O\PropVariantConv.obj \
   $O\Registry.obj \
   $O\System.obj \
+  $O\SystemInfo.obj \
   $O\TimeUtils.obj \
 
 7ZIP_COMMON_OBJS = \

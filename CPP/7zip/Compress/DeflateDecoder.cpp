@@ -9,8 +9,8 @@ namespace NDeflate {
 namespace NDecoder {
 
 CCoder::CCoder(bool deflate64Mode):
-    _deflate64Mode(deflate64Mode),
     _deflateNSIS(false),
+    _deflate64Mode(deflate64Mode),
     _keepHistory(false),
     _needFinishInput(false),
     _needInitInStream(true),
@@ -408,9 +408,25 @@ STDMETHODIMP CCoder::SetFinishMode(UInt32 finishMode)
 
 STDMETHODIMP CCoder::GetInStreamProcessedSize(UInt64 *value)
 {
-  if (!value)
-    return E_INVALIDARG;
-  *value = m_InBitStream.GetProcessedSize();
+  *value = m_InBitStream.GetStreamSize();
+  return S_OK;
+}
+
+
+STDMETHODIMP CCoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *processedSize)
+{
+  AlignToByte();
+  UInt32 i = 0;
+  if (!m_InBitStream.ExtraBitsWereRead())
+  {
+    for (i = 0; i < size; i++)
+    {
+      if (!m_InBitStream.ReadAlignedByte_FromBuf(((Byte *)data)[i]))
+        break;
+    }
+  }
+  if (processedSize)
+    *processedSize = i;
   return S_OK;
 }
 

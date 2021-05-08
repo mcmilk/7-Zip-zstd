@@ -107,33 +107,61 @@ static void ConvertMethodIdToString(AString &res, UInt64 id)
   res += s + len - ConvertMethodIdToString_Back(s + len, id);
 }
 
-static unsigned GetStringForSizeValue(char *s, UInt32 val)
+
+static char *GetStringForSizeValue(char *s, UInt32 val)
 {
   unsigned i;
   for (i = 0; i <= 31; i++)
     if (((UInt32)1 << i) == val)
     {
-      if (i < 10)
+      if (i >= 10)
       {
-        s[0] = (char)('0' + i);
-        s[1] = 0;
-        return 1;
+        *s++= (char)('0' + i / 10);
+        i %= 10;
       }
-           if (i < 20) { s[0] = '1'; s[1] = (char)('0' + i - 10); }
-      else if (i < 30) { s[0] = '2'; s[1] = (char)('0' + i - 20); }
-      else             { s[0] = '3'; s[1] = (char)('0' + i - 30); }
-      s[2] = 0;
-      return 2;
+      *s++ = (char)('0' + i);
+      *s = 0;
+      return s;
     }
+  
   char c = 'b';
   if      ((val & ((1 << 20) - 1)) == 0) { val >>= 20; c = 'm'; }
   else if ((val & ((1 << 10) - 1)) == 0) { val >>= 10; c = 'k'; }
-  ::ConvertUInt32ToString(val, s);
-  unsigned pos = MyStringLen(s);
-  s[pos++] = c;
-  s[pos] = 0;
-  return pos;
+  s = ConvertUInt32ToString(val, s);
+  *s++ = c;
+  *s = 0;
+  return s;
 }
+
+
+static void GetLzma2String(char *s, unsigned d)
+{
+  if (d > 40)
+  {
+    *s = 0;
+    return;
+    // s = MyStpCpy(s, "unsup");
+  }
+  else if ((d & 1) == 0)
+    d = (d >> 1) + 12;
+  else
+  {
+    // s = GetStringForSizeValue(s, (UInt32)3 << ((d >> 1) + 11));
+    d = (d >> 1) + 1;
+    char c = 'k';
+    if (d >= 10)
+    {
+      c = 'm';
+      d -= 10;
+    }
+    s = ConvertUInt32ToString((UInt32)3 << d, s);
+    *s++ = c;
+    *s = 0;
+    return;
+  }
+  ConvertUInt32ToString(d, s);
+}
+
 
 /*
 static inline void AddHexToString(UString &res, Byte value)
@@ -147,8 +175,7 @@ static char *AddProp32(char *s, const char *name, UInt32 v)
 {
   *s++ = ':';
   s = MyStpCpy(s, name);
-  ::ConvertUInt32ToString(v, s);
-  return s + MyStringLen(s);
+  return ConvertUInt32ToString(v, s);
 }
  
 void CHandler::AddMethodName(AString &s, UInt64 id)
@@ -184,10 +211,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         if (id == k_LZMA2)
         {
           s += "LZMA2:";
-          if ((pm.Lzma2Prop & 1) == 0)
-            ConvertUInt32ToString((pm.Lzma2Prop >> 1) + 12, temp);
-          else
-            GetStringForSizeValue(temp, 3 << ((pm.Lzma2Prop >> 1) + 11));
+          GetLzma2String(temp, pm.Lzma2Prop);
           s += temp;
         }
         else if (id == k_LZMA)
@@ -244,14 +268,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       break;
     }
   }
-  prop.Detach(value);
-  return S_OK;
+  return prop.Detach(value);
   #ifndef _SFX
   COM_TRY_END
   #endif
 }
 
-static void SetFileTimeProp_From_UInt64Def(PROPVARIANT *prop, const CUInt64DefVector &v, int index)
+static void SetFileTimeProp_From_UInt64Def(PROPVARIANT *prop, const CUInt64DefVector &v, unsigned index)
 {
   UInt64 value;
   if (v.GetItem(index, value))
@@ -416,7 +439,7 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
         if (propsSize == 5)
         {
           UInt32 dicSize = GetUi32((const Byte *)props + 1);
-          char *dest = s + GetStringForSizeValue(s, dicSize);
+          char *dest = GetStringForSizeValue(s, dicSize);
           UInt32 d = props[0];
           if (d != 0x5D)
           {
@@ -434,24 +457,16 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
       {
         name = "LZMA2";
         if (propsSize == 1)
-        {
-          Byte d = props[0];
-          if ((d & 1) == 0)
-            ConvertUInt32ToString((UInt32)((d >> 1) + 12), s);
-          else
-            GetStringForSizeValue(s, 3 << ((d >> 1) + 11));
-        }
+          GetLzma2String(s, props[0]);
       }
       else if (id == k_PPMD)
       {
         name = "PPMD";
         if (propsSize == 5)
         {
-          Byte order = *props;
           char *dest = s;
           *dest++ = 'o';
-          ConvertUInt32ToString(order, dest);
-          dest += MyStringLen(dest);
+          dest = ConvertUInt32ToString(*props, dest);
           dest = MyStpCpy(dest, ":mem");
           GetStringForSizeValue(dest, GetUi32(props + 1));
         }
@@ -534,7 +549,7 @@ HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
-  PropVariant_Clear(value);
+  RINOK(PropVariant_Clear(value));
   // COM_TRY_BEGIN
   // NCOM::CPropVariant prop;
   
@@ -637,7 +652,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     
     #endif
   }
-  // prop.Detach(value);
+  // return prop.Detach(value);
   return S_OK;
   // COM_TRY_END
 }
@@ -708,7 +723,7 @@ STDMETHODIMP CHandler::Close()
   #ifndef _NO_CRYPTO
   _isEncrypted = false;
   _passwordIsDefined = false;
-  _password.Empty();
+  _password.Wipe_and_Empty();
   #endif
   return S_OK;
   COM_TRY_END

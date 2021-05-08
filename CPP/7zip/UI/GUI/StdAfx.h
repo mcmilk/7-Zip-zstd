@@ -11,9 +11,9 @@
 
 // #include "../../../Common/MyWindows.h"
 
-// #include <commctrl.h>
+// #include <CommCtrl.h>
 // #include <ShlObj.h>
-// #include <shlwapi.h>
+// #include <Shlwapi.h>
 
 // #define printf(x) NO_PRINTF_(x)
 // #define sprintf(x) NO_SPRINTF_(x)

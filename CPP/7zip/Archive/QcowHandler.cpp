@@ -8,6 +8,7 @@
 
 #include "../../Common/ComTry.h"
 #include "../../Common/IntToString.h"
+#include "../../Common/MyBuffer2.h"
 
 #include "../../Windows/PropVariant.h"
 
@@ -31,13 +32,21 @@ namespace NQcow {
   
 static const Byte k_Signature[] = SIGNATURE;
 
+/*
+VA to PA maps:
+  high bits (L1) :              : in L1 Table : the reference to L1 Table
+  mid bits  (L2) : _numMidBits  : in L2 Table : the reference to cluster
+  low bits       : _clusterBits
+*/
+
 class CHandler: public CHandlerImg
 {
   unsigned _clusterBits;
   unsigned _numMidBits;
   UInt64 _compressedFlag;
 
-  CObjectVector<CByteBuffer> _tables;
+  CObjArray2<UInt32> _dir;
+  CAlignedBuffer _table;
   UInt64 _cacheCluster;
   CByteBuffer _cache;
   CByteBuffer _cacheCompressed;
@@ -63,7 +72,7 @@ class CHandler: public CHandlerImg
   UInt32 _version;
   UInt32 _cryptMethod;
   
-  HRESULT Seek(UInt64 offset)
+  HRESULT Seek2(UInt64 offset)
   {
     _posInArc = offset;
     return Stream->Seek(offset, STREAM_SEEK_SET, NULL);
@@ -72,7 +81,7 @@ class CHandler: public CHandlerImg
   HRESULT InitAndSeek()
   {
     _virtPos = 0;
-    return Seek(0);
+    return Seek2(0);
   }
 
   HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openCallback);
@@ -85,10 +94,15 @@ public:
 };
 
 
+static const UInt32 kEmptyDirItem = (UInt32)0 - 1;
+
 STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
 {
   if (processedSize)
     *processedSize = 0;
+
+  // printf("\nRead _virtPos = %6d  size = %6d\n", (UInt32)_virtPos, size);
+
   if (_virtPos >= _size)
     return S_OK;
   {
@@ -101,9 +115,9 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
  
   for (;;)
   {
-    UInt64 cluster = _virtPos >> _clusterBits;
-    size_t clusterSize = (size_t)1 << _clusterBits;
-    size_t lowBits = (size_t)_virtPos & (clusterSize - 1);
+    const UInt64 cluster = _virtPos >> _clusterBits;
+    const size_t clusterSize = (size_t)1 << _clusterBits;
+    const size_t lowBits = (size_t)_virtPos & (clusterSize - 1);
     {
       size_t rem = clusterSize - lowBits;
       if (size > rem)
@@ -113,21 +127,19 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
     if (cluster == _cacheCluster)
     {
       memcpy(data, _cache + lowBits, size);
-      _virtPos += size;
-      if (processedSize)
-        *processedSize = size;
-      return S_OK;
+      break;
     }
     
-    UInt64 high = cluster >> _numMidBits;
+    const UInt64 high = cluster >> _numMidBits;
  
-    if (high < _tables.Size())
+    if (high < _dir.Size())
     {
-      const CByteBuffer &buffer = _tables[(unsigned)high];
+      const UInt32 tabl = _dir[(unsigned)high];
     
-      if (buffer.Size() != 0)
+      if (tabl != kEmptyDirItem)
       {
-        size_t midBits = (size_t)cluster & (((size_t)1 << _numMidBits) - 1);
+        const Byte *buffer = _table + ((size_t)tabl << (_numMidBits + 3));
+        const size_t midBits = (size_t)cluster & (((size_t)1 << _numMidBits) - 1);
         const Byte *p = (const Byte *)buffer + (midBits << 3);
         UInt64 v = Get64(p);
         
@@ -137,19 +149,32 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
           {
             if (_version <= 1)
               return E_FAIL;
-            unsigned numOffsetBits = (62 - (_clusterBits - 8));
-            UInt64 offset = v & (((UInt64)1 << 62) - 1);
+
+            /*
+            the example of table record for 12-bit clusters (4KB uncompressed).
+             2 bits : isCompressed status
+             4 bits : num_sectors_minus1; packSize = (num_sectors_minus1 + 1) * 512;
+                      it uses one additional bit over unpacked cluster_bits
+            49 bits : offset of 512-sector
+             9 bits : offset in 512-sector
+            */
+
+            const unsigned numOffsetBits = (62 - (_clusterBits - 9 + 1));
+            const UInt64 offset = v & (((UInt64)1 << 62) - 1);
             const size_t dataSize = ((size_t)(offset >> numOffsetBits) + 1) << 9;
-            offset &= ((UInt64)1 << numOffsetBits) - 1;
-            UInt64 sectorOffset = offset >> 9 << 9;
-            UInt64 offset2inCache = sectorOffset - _comprPos;
+            UInt64 sectorOffset = offset & (((UInt64)1 << numOffsetBits) - (1 << 9));
+            const UInt64 offset2inCache = sectorOffset - _comprPos;
             
+            // _comprPos is aligned for 512-bytes
+            // we try to use previous _cacheCompressed that contains compressed data
+            // that was read for previous unpacking
+
             if (sectorOffset >= _comprPos && offset2inCache < _comprSize)
             {
               if (offset2inCache != 0)
               {
                 _comprSize -= (size_t)offset2inCache;
-                memmove(_cacheCompressed, _cacheCompressed + offset2inCache, _comprSize);
+                memmove(_cacheCompressed, _cacheCompressed + (size_t)offset2inCache, _comprSize);
                 _comprPos = sectorOffset;
               }
               sectorOffset += _comprSize;
@@ -160,25 +185,27 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
               _comprSize = 0;
             }
             
-            // printf("\nDeflate");
-            if (sectorOffset != _posInArc)
+            if (dataSize > _comprSize)
             {
-              // printf("\nDeflate %12I64x %12I64x\n", sectorOffset, sectorOffset - _posInArc);
-              RINOK(Seek(sectorOffset));
+              if (sectorOffset != _posInArc)
+              {
+                // printf("\nDeflate-Seek %12I64x %12I64x\n", sectorOffset, sectorOffset - _posInArc);
+                RINOK(Seek2(sectorOffset));
+              }
+              if (_cacheCompressed.Size() < dataSize)
+                return E_FAIL;
+              const size_t dataSize3 = dataSize - _comprSize;
+              size_t dataSize2 = dataSize3;
+              // printf("\n\n=======\nReadStream = %6d _comprPos = %6d \n", (UInt32)dataSize2, (UInt32)_comprPos);
+              RINOK(ReadStream(Stream, _cacheCompressed + _comprSize, &dataSize2));
+              _posInArc += dataSize2;
+              if (dataSize2 != dataSize3)
+                return E_FAIL;
+              _comprSize += dataSize2;
             }
             
-            if (_cacheCompressed.Size() < dataSize)
-              return E_FAIL;
-            size_t dataSize3 = dataSize - _comprSize;
-            size_t dataSize2 = dataSize3;
-            RINOK(ReadStream(Stream, _cacheCompressed + _comprSize, &dataSize2));
-            _posInArc += dataSize2;
-            if (dataSize2 != dataSize3)
-              return E_FAIL;
-            _comprSize += dataSize2;
-            
             const size_t kSectorMask = (1 << 9) - 1;
-            size_t offsetInSector = ((size_t)offset & kSectorMask);
+            const size_t offsetInSector = ((size_t)offset & kSectorMask);
             _bufInStreamSpec->Init(_cacheCompressed + offsetInSector, dataSize - offsetInSector);
             
             _cacheCluster = (UInt64)(Int64)-1;
@@ -187,7 +214,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
             _bufOutStreamSpec->Init(_cache, clusterSize);
             
             // Do we need to use smaller block than clusterSize for last cluster?
-            UInt64 blockSize64 = clusterSize;
+            const UInt64 blockSize64 = clusterSize;
             HRESULT res = _deflateDecoderSpec->Code(_bufInStream, _bufOutStream, NULL, &blockSize64, NULL);
 
             /*
@@ -206,10 +233,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
             continue;
             /*
             memcpy(data, _cache + lowBits, size);
-            _virtPos += size;
-            if (processedSize)
-              *processedSize = size;
-            return S_OK;
+            break;
             */
           }
 
@@ -221,7 +245,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
             if (v != _posInArc)
             {
               // printf("\n%12I64x\n", v - _posInArc);
-              RINOK(Seek(v));
+              RINOK(Seek2(v));
             }
             HRESULT res = Stream->Read(data, size, &size);
             _posInArc += size;
@@ -235,11 +259,13 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
     }
     
     memset(data, 0, size);
-    _virtPos += size;
-    if (processedSize)
-      *processedSize = size;
-    return S_OK;
+    break;
   }
+
+  _virtPos += size;
+  if (processedSize)
+    *processedSize = size;
+  return S_OK;
 }
 
 
@@ -347,8 +373,8 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
   const UInt64 backOffset = Get64(buf + 8);
   // UInt32 backSize = Get32(buf + 0x10);
   
-  UInt64 l1Offset = 0;
-  UInt32 l1Size = 0;
+  UInt64 l1Offset;
+  UInt32 l1Size;
 
   if (_version == 1)
   {
@@ -364,8 +390,8 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
     l1Offset = Get64(buf + 0x28);
     if (l1Offset < 0x30)
       return S_FALSE;
-    unsigned numBits2 = (_clusterBits + _numMidBits);
-    UInt64 l1Size64 = (_size + (((UInt64)1 << numBits2) - 1)) >> numBits2;
+    const unsigned numBits2 = (_clusterBits + _numMidBits);
+    const UInt64 l1Size64 = (_size + (((UInt64)1 << numBits2) - 1)) >> numBits2;
     if (l1Size64 > ((UInt32)1 << 31))
       return S_FALSE;
     l1Size = (UInt32)l1Size64;
@@ -381,8 +407,8 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
     l1Size = Get32(buf + 0x24);
     l1Offset = Get64(buf + 0x28); // must be aligned for cluster
     
-    UInt64 refOffset = Get64(buf + 0x30); // must be aligned for cluster
-    UInt32 refClusters = Get32(buf + 0x38);
+    const UInt64 refOffset = Get64(buf + 0x30); // must be aligned for cluster
+    const UInt32 refClusters = Get32(buf + 0x38);
     
     // UInt32 numSnapshots = Get32(buf + 0x3C);
     // UInt64 snapshotsOffset = Get64(buf + 0x40); // must be aligned for cluster
@@ -393,14 +419,14 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 
     if (refClusters != 0)
     {
-      size_t numBytes = refClusters << _clusterBits;
+      const size_t numBytes = refClusters << _clusterBits;
       /*
       CByteBuffer refs;
       refs.Alloc(numBytes);
       RINOK(stream->Seek(refOffset, STREAM_SEEK_SET, NULL));
       RINOK(ReadStream_FALSE(stream, refs, numBytes));
       */
-      UInt64 end = refOffset + numBytes;
+      const UInt64 end = refOffset + numBytes;
       if (_phySize < end)
         _phySize = end;
       /*
@@ -426,7 +452,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 
   CByteBuffer table;
   {
-    size_t t1SizeBytes = (size_t)l1Size << 3;
+    const size_t t1SizeBytes = (size_t)l1Size << 3;
     if ((t1SizeBytes >> 3) != l1Size)
       return S_FALSE;
     table.Alloc(t1SizeBytes);
@@ -442,41 +468,72 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
     }
   }
 
-  if (openCallback)
-  {
-    UInt64 totalBytes = (UInt64)l1Size << (_numMidBits + 3);
-    RINOK(openCallback->SetTotal(NULL, &totalBytes));
-  }
-
   _compressedFlag = (_version <= 1) ? ((UInt64)1 << 63) : ((UInt64)1 << 62);
   const UInt64 offsetMask = _compressedFlag - 1;
 
-  for (UInt32 i = 0; i < l1Size; i++)
+  UInt32 numTables = 0;
+  UInt32 i;
+  
+  for (i = 0; i < l1Size; i++)
   {
-    if (openCallback)
-    {
-      UInt64 numBytes = (UInt64)i << (_numMidBits + 3);
-      RINOK(openCallback->SetCompleted(NULL, &numBytes));
-    }
+    const UInt64 v = Get64((const Byte *)table + (size_t)i * 8) & offsetMask;
+    if (v != 0)
+      numTables++;
+  }
 
-    CByteBuffer &buf2 = _tables.AddNew();
-    
+  if (numTables != 0)
+  {
+    const size_t size = (size_t)numTables << (_numMidBits + 3);
+    if (size >> (_numMidBits + 3) != numTables)
+      return E_OUTOFMEMORY;
+    _table.Alloc(size);
+    if (!_table.IsAllocated())
+      return E_OUTOFMEMORY;
+  }
+
+  _dir.SetSize(l1Size);
+
+  UInt32 curTable = 0;
+
+  if (openCallback)
+  {
+    const UInt64 totalBytes = (UInt64)numTables << (_numMidBits + 3);
+    RINOK(openCallback->SetTotal(NULL, &totalBytes));
+  }
+
+  for (i = 0; i < l1Size; i++)
+  {
+    Byte *buf2;
+    const size_t midSize = (size_t)1 << (_numMidBits + 3);
+   
     {
-      UInt64 v = Get64((const Byte *)table + (size_t)i * 8);
-      v &= offsetMask;
+      const UInt64 v = Get64((const Byte *)table + (size_t)i * 8) & offsetMask;
       if (v == 0)
+      {
+        _dir[i] = kEmptyDirItem;
         continue;
-      
-      buf2.Alloc((size_t)1 << (_numMidBits + 3));
-      RINOK(stream->Seek(v, STREAM_SEEK_SET, NULL));
-      RINOK(ReadStream_FALSE(stream, buf2, clusterSize));
+      }
 
-      const UInt64 end = v + clusterSize;
+      _dir[i] = curTable;
+      const size_t tableOffset = ((size_t)curTable << (_numMidBits + 3));
+      buf2 = (Byte *)_table + tableOffset;
+      curTable++;
+
+      if (openCallback && (tableOffset & 0xFFFFF) == 0)
+      {
+        const UInt64 numBytes = tableOffset;
+        RINOK(openCallback->SetCompleted(NULL, &numBytes));
+      }
+      
+      RINOK(stream->Seek(v, STREAM_SEEK_SET, NULL));
+      RINOK(ReadStream_FALSE(stream, buf2, midSize));
+
+      const UInt64 end = v + midSize;
       if (_phySize < end)
         _phySize = end;
     }
 
-    for (size_t k = 0; k < clusterSize; k += 8)
+    for (size_t k = 0; k < midSize; k += 8)
     {
       const UInt64 v = Get64((const Byte *)buf2 + (size_t)k);
       if (v == 0)
@@ -519,11 +576,14 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
         }
       }
       
-      UInt64 end = offset + dataSize;
+      const UInt64 end = offset + dataSize;
       if (_phySize < end)
         _phySize = end;
     }
   }
+
+  if (curTable != numTables)
+    return E_FAIL;
 
   if (_cryptMethod != 0)
     _unsupported = true;
@@ -538,7 +598,8 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 
 STDMETHODIMP CHandler::Close()
 {
-  _tables.Clear();
+  _table.Free();
+  _dir.Free();
   _phySize = 0;
   _size = 0;
 
@@ -588,7 +649,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
       _deflateDecoderSpec->Set_NeedFinishInput(true);
     }
     
-    size_t clusterSize = (size_t)1 << _clusterBits;
+    const size_t clusterSize = (size_t)1 << _clusterBits;
     _cache.AllocAtLeast(clusterSize);
     _cacheCompressed.AllocAtLeast(clusterSize * 2);
   }

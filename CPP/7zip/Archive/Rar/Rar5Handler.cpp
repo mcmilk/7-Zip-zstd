@@ -124,19 +124,13 @@ static unsigned ReadVarInt(const Byte *p, size_t maxSize, UInt64 *val)
 bool CLinkInfo::Parse(const Byte *p, unsigned size)
 {
   const Byte *pStart = p;
-  unsigned num = ReadVarInt(p, size, &Type);
-  if (num == 0) return false; p += num; size -= num;
-  
-  num = ReadVarInt(p, size, &Flags);
-  if (num == 0) return false; p += num; size -= num;
-
+  unsigned num;
   UInt64 len;
-  num = ReadVarInt(p, size, &len);
-  if (num == 0) return false; p += num; size -= num;
-
+  num = ReadVarInt(p, size, &Type);  if (num == 0) { return false; }  p += num; size -= num;
+  num = ReadVarInt(p, size, &Flags); if (num == 0) { return false; }  p += num; size -= num;
+  num = ReadVarInt(p, size, &len);   if (num == 0) { return false; }  p += num; size -= num;
   if (size != len)
     return false;
-
   NameLen = (unsigned)len;
   NameOffset = (unsigned)(p - pStart);
   return true;
@@ -319,10 +313,10 @@ bool CCryptoInfo::Parse(const Byte *p, size_t size)
   Cnt = 0;
 
   unsigned num = ReadVarInt(p, size, &Algo);
-  if (num == 0) return false; p += num; size -= num;
+  if (num == 0) { return false; }  p += num; size -= num;
   
   num = ReadVarInt(p, size, &Flags);
-  if (num == 0) return false; p += num; size -= num;
+  if (num == 0) { return false; }  p += num; size -= num;
 
   if (size > 0)
     Cnt = p[0];
@@ -344,10 +338,10 @@ bool CItem::FindExtra_Version(UInt64 &version) const
 
   UInt64 flags;
   unsigned num = ReadVarInt(p, size, &flags);
-  if (num == 0) return false; p += num; size -= num;
+  if (num == 0) { return false; }  p += num; size -= num;
   
   num = ReadVarInt(p, size, &version);
-  if (num == 0) return false; p += num; size -= num;
+  if (num == 0) { return false; }  p += num; size -= num;
 
   return size == 0;
 }
@@ -406,8 +400,8 @@ void CItem::Link_to_Prop(unsigned linkType, NWindows::NCOM::CPropVariant &prop) 
   s.SetFrom_CalcLen((const char *)(Extra + link.NameOffset), link.NameLen);
 
   UString unicode;
-  if (ConvertUTF8ToUnicode(s, unicode))
-    prop = NItemName::GetOsPath(unicode);
+  ConvertUTF8ToUnicode(s, unicode);
+  prop = NItemName::GetOsPath(unicode);
 }
 
 bool CItem::GetAltStreamName(AString &name) const
@@ -596,11 +590,12 @@ public:
 
 static HRESULT MySetPassword(ICryptoGetTextPassword *getTextPassword, NCrypto::NRar5::CDecoder *cryptoDecoderSpec)
 {
-  CMyComBSTR password;
+  CMyComBSTR_Wipe password;
   RINOK(getTextPassword->CryptoGetTextPassword(&password));
-  AString utf8;
+  AString_Wipe utf8;
   const unsigned kPasswordLen_MAX = 127;
-  UString unicode = (LPCOLESTR)password;
+  UString_Wipe unicode;
+  unicode.SetFromBstr(password);
   if (unicode.Len() > kPasswordLen_MAX)
     unicode.DeleteFrom(kPasswordLen_MAX);
   ConvertUnicodeToUTF8(unicode, utf8);
@@ -1153,7 +1148,7 @@ HRESULT CUnpacker::Code(const CItem &item, const CItem &lastItem, UInt64 packSiz
   }
   else
   {
-    res = res;
+    // res = res;
   }
 
   if (isCryptoMode)
@@ -1434,8 +1429,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
           AString s;
           s.SetFrom_CalcLen((const char *)(const Byte *)cmt, (unsigned)cmt.Size());
           UString unicode;
-          if (ConvertUTF8ToUnicode(s, unicode))
-            prop = unicode;
+          ConvertUTF8ToUnicode(s, unicode);
+          prop = unicode;
         }
       }
       break;
@@ -1686,13 +1681,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         if (name[0] != ':')
           s += ':';
         s += name;
-        if (!ConvertUTF8ToUnicode(s, unicodeName))
-          break;
+        ConvertUTF8ToUnicode(s, unicodeName);
       }
       else
       {
-        if (!ConvertUTF8ToUnicode(item.Name, unicodeName))
-          break;
+        ConvertUTF8ToUnicode(item.Name, unicodeName);
+
         if (item.Version_Defined)
         {
           char temp[32];
@@ -1752,8 +1746,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         {
           name.DeleteFrontal(1);
           UString unicodeName;
-          if (ConvertUTF8ToUnicode(name, unicodeName))
-            prop = unicodeName;
+          ConvertUTF8ToUnicode(name, unicodeName);
+          prop = unicodeName;
         }
       }
       break;

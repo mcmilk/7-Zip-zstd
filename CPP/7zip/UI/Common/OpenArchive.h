@@ -88,9 +88,9 @@ struct COpenType
   COpenType():
       FormatIndex(-1),
       Recursive(true),
-      EachPos(false),
       CanReturnArc(true),
       CanReturnParser(false),
+      EachPos(false),
       // SkipSfxStub(true),
       // ExeAsUnknown(true),
       ZerosTailIsAllowed(false),
@@ -121,7 +121,7 @@ struct COpenOptions
   IInStream *stream;
   ISequentialInStream *seqStream;
   IArchiveOpenCallback *callback;
-  COpenCallbackImp *callbackSpec;
+  COpenCallbackImp *callbackSpec; // it's used for SFX only
   OPEN_PROPS_DECL
   // bool openOnlySpecifiedByExtension,
 
@@ -286,7 +286,7 @@ public:
   UString filePath;
   UString DefaultName;
   int FormatIndex; // - 1 means Parser.
-  int SubfileIndex;
+  UInt32 SubfileIndex; // (UInt32)(Int32)-1; means no subfile
   FILETIME MTime;
   bool MTimeDefined;
   
@@ -302,7 +302,7 @@ public:
   UInt64 GetEstmatedPhySize() const { return PhySizeDefined ? PhySize : FileSize; }
 
   UInt64 ArcStreamOffset; // offset of stream that is open by Archive Handler
-  Int64 GetGlobalOffset() const { return ArcStreamOffset + Offset; } // it's global offset of archive
+  Int64 GetGlobalOffset() const { return (Int64)ArcStreamOffset + Offset; } // it's global offset of archive
 
   // AString ErrorFlagsText;
 
@@ -396,6 +396,13 @@ struct CArchiveLink
   IInArchive *GetArchive() const { return Arcs.Back().Archive; }
   IArchiveGetRawProps *GetArchiveGetRawProps() const { return Arcs.Back().GetRawProps; }
   IArchiveGetRootProps *GetArchiveGetRootProps() const { return Arcs.Back().GetRootProps; }
+
+  /*
+  Open() opens archive and COpenOptions::callback
+  Open2() uses COpenCallbackImp that implements Volumes and password callback
+  Open3() calls Open2() and callbackUI->Open_Finished();
+  Open_Strict() returns S_FALSE also in case, if there is non-open expected nested archive.
+  */
 
   HRESULT Open(COpenOptions &options);
   HRESULT Open2(COpenOptions &options, IOpenCallbackUI *callbackUI);

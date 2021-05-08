@@ -3,11 +3,10 @@
 #ifndef __CRYPTO_RAR5_AES_H
 #define __CRYPTO_RAR5_AES_H
 
-#include "../../../C/Aes.h"
+#include "../../../C/Sha256.h"
 
 #include "../../Common/MyBuffer.h"
 
-#include "HmacSha256.h"
 #include "MyAes.h"
 
 namespace NCrypto {
@@ -50,6 +49,17 @@ struct CKey
   }
   
   CKey();
+
+  void Wipe()
+  {
+    _password.Wipe();
+    MY_memset_0_ARRAY(_salt);
+    MY_memset_0_ARRAY(_key);
+    MY_memset_0_ARRAY(_check_Calced);
+    MY_memset_0_ARRAY(_hashKey);
+  }
+
+  ~CKey() { Wipe(); }
 };
 
 

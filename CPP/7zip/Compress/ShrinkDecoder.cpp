@@ -160,7 +160,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       }
     }
 
-    lastSym = sym;
+    lastSym = (int)sym;
     unsigned cur = sym;
     unsigned i = 0;
     

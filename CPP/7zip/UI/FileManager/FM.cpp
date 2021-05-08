@@ -4,7 +4,7 @@
 
 #include "../../../Common/MyWindows.h"
 
-#include <shlwapi.h>
+#include <Shlwapi.h>
 
 #include "../../../../C/Alloc.h"
 #ifdef _WIN32
@@ -40,19 +40,24 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NFind;
 
-#define MAX_LOADSTRING 100
+// #define MAX_LOADSTRING 100
 
-#define MENU_HEIGHT 26
-
+extern
 bool g_RAM_Size_Defined;
-bool g_LargePagesMode = false;
-bool g_OpenArchive = false;
+bool g_RAM_Size_Defined;
+
+static bool g_LargePagesMode = false;
+// static bool g_OpenArchive = false;
 
 static bool g_Maximized = false;
 
+extern
+UInt64 g_RAM_Size;
 UInt64 g_RAM_Size;
 
 #ifdef _WIN32
+extern
+HINSTANCE g_hInstance;
 HINSTANCE g_hInstance;
 #endif
 
@@ -66,6 +71,8 @@ void FreeGlobalCodecs();
 
 #ifndef UNDER_CE
 
+extern
+DWORD g_ComCtl32Version;
 DWORD g_ComCtl32Version;
 
 static DWORD GetDllVersion(LPCTSTR dllName)
@@ -74,7 +81,7 @@ static DWORD GetDllVersion(LPCTSTR dllName)
   HINSTANCE hinstDll = LoadLibrary(dllName);
   if (hinstDll)
   {
-    DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
+    DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)(void *)GetProcAddress(hinstDll, "DllGetVersion");
     if (pDllGetVersion)
     {
       DLLVERSIONINFO dvi;
@@ -93,19 +100,19 @@ static DWORD GetDllVersion(LPCTSTR dllName)
 
 bool g_IsSmallScreen = false;
 
+extern
+bool g_LVN_ITEMACTIVATE_Support;
 bool g_LVN_ITEMACTIVATE_Support = true;
 // LVN_ITEMACTIVATE replaces both NM_DBLCLK & NM_RETURN
 // Windows 2000
 // NT/98 + IE 3 (g_ComCtl32Version >= 4.70)
 
 
-const int kNumDefaultPanels = 1;
+static const int kNumDefaultPanels = 1;
+static const int kSplitterWidth = 4;
+static const int kSplitterRateMax = 1 << 16;
+static const int kPanelSizeMin = 120;
 
-const int kSplitterWidth = 4;
-int kSplitterRateMax = 1 << 16;
-int kPanelSizeMin = 120;
-
-// bool OnMenuCommand(HWND hWnd, int id);
 
 class CSplitterPos
 {
@@ -343,7 +350,7 @@ typedef BOOL (WINAPI *Func_IsWow64Process)(HANDLE, PBOOL);
 static void Set_Wow64()
 {
   g_Is_Wow64 = false;
-  Func_IsWow64Process fnIsWow64Process = (Func_IsWow64Process)GetProcAddress(
+  Func_IsWow64Process fnIsWow64Process = (Func_IsWow64Process)(void *)GetProcAddress(
       GetModuleHandleA("kernel32.dll"), "IsWow64Process");
   if (fnIsWow64Process)
   {
@@ -356,6 +363,7 @@ static void Set_Wow64()
 #endif
 
 
+bool IsLargePageSupported();
 bool IsLargePageSupported()
 {
   #ifdef _WIN64
@@ -383,7 +391,7 @@ static void SetMemoryLock()
   if (!IsLargePageSupported())
     return;
   // if (ReadLockMemoryAdd())
-    NSecurity::AddLockMemoryPrivilege();
+  NSecurity::AddLockMemoryPrivilege();
 
   if (ReadLockMemoryEnable())
   if (NSecurity::Get_LargePages_RiskLevel() == 0)
@@ -393,6 +401,8 @@ static void SetMemoryLock()
   }
 }
 
+extern
+bool g_SymLink_Supported;
 bool g_SymLink_Supported = false;
 
 static void Set_SymLink_Supported()
@@ -443,7 +453,9 @@ static void ErrorMessage(const char *s)
 }
 
 
+#if defined(_UNICODE) && !defined(_WIN64) && !defined(UNDER_CE)
 #define NT_CHECK_FAIL_ACTION ErrorMessage("Unsupported Windows version"); return 1;
+#endif
 
 static int WINAPI WinMain2(int nCmdShow)
 {
@@ -756,12 +768,12 @@ static void ExecuteCommand(UINT commandID)
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-  int wmId, wmEvent;
   switch (message)
   {
     case WM_COMMAND:
-      wmId    = LOWORD(wParam);
-      wmEvent = HIWORD(wParam);
+    {
+      unsigned wmId    = LOWORD(wParam);
+      unsigned wmEvent = HIWORD(wParam);
       if ((HWND) lParam != NULL && wmEvent != 0)
         break;
       if (wmId >= kMenuCmdID_Toolbar_Start && wmId < kMenuCmdID_Toolbar_End)
@@ -772,6 +784,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       if (OnMenuCommand(hWnd, wmId))
         return 0;
       break;
+    }
     case WM_INITMENUPOPUP:
       OnMenuActivating(hWnd, HMENU(wParam), LOWORD(lParam));
       break;
@@ -837,9 +850,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
       g_App.CreateDragTarget();
       
-      bool archiveIsOpened;
-      bool encrypted;
-      bool needOpenFile = false;
+      COpenResult openRes;
+      bool needOpenArc = false;
 
       UString fullPath = g_MainPath;
       if (!fullPath.IsEmpty() /* && g_OpenArchive */)
@@ -850,29 +862,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
           if (NFile::NName::GetFullPath(us2fs(fullPath), fullPathF))
             fullPath = fs2us(fullPathF);
         }
-        if (NFile::NFind::DoesFileExist(us2fs(fullPath)))
-          needOpenFile = true;
+        if (NFile::NFind::DoesFileExist_FollowLink(us2fs(fullPath)))
+          needOpenArc = true;
       }
       
       HRESULT res = g_App.Create(hWnd, fullPath, g_ArcFormat, xSizes,
-          needOpenFile,
-          archiveIsOpened, encrypted);
+          needOpenArc,
+          openRes);
 
       if (res == E_ABORT)
         return -1;
       
-      if (needOpenFile && !archiveIsOpened || res != S_OK)
+      if ((needOpenArc && !openRes.ArchiveIsOpened) || res != S_OK)
       {
         UString m ("Error");
         if (res == S_FALSE || res == S_OK)
         {
-          m = MyFormatNew(encrypted ?
+          m = MyFormatNew(openRes.Encrypted ?
                 IDS_CANT_OPEN_ENCRYPTED_ARCHIVE :
                 IDS_CANT_OPEN_ARCHIVE,
               fullPath);
         }
         else if (res != S_OK)
           m = HResultToMessage(res);
+        if (!openRes.ErrorMessage.IsEmpty())
+        {
+          m.Add_LF();
+          m += openRes.ErrorMessage;
+        }
         ErrorMessage(m);
         return -1;
       }
@@ -954,7 +971,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       g_Panel[1]._listView.MoveWindow(xSize - xWidth, 0, xWidth, ySize);
       */
       return 0;
-      break;
+      // break;
     }
     
     case WM_SETFOCUS:

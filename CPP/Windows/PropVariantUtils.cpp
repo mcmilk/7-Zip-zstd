@@ -128,7 +128,7 @@ void FlagsToProp(const CUInt32PCharPair *pairs, unsigned num, UInt32 flags, NCOM
 }
 
 
-AString Flags64ToString(const CUInt32PCharPair *pairs, unsigned num, UInt64 flags)
+static AString Flags64ToString(const CUInt32PCharPair *pairs, unsigned num, UInt64 flags)
 {
   AString s;
   for (unsigned i = 0; i < num; i++)

@@ -235,13 +235,13 @@ namespace NFileType
 namespace NFlags
 {
   const Byte kGarbled  = 1 << 0;
-  const Byte kAnsiPage = 1 << 1; // or (OLD_SECURED_FLAG) obsolete
+  // const Byte kAnsiPage = 1 << 1; // or (OLD_SECURED_FLAG) obsolete
   const Byte kVolume   = 1 << 2;
   const Byte kExtFile  = 1 << 3;
-  const Byte kPathSym  = 1 << 4;
-  const Byte kBackup   = 1 << 5; // obsolete
-  const Byte kSecured  = 1 << 6;
-  const Byte kDualName = 1 << 7;
+  // const Byte kPathSym  = 1 << 4;
+  // const Byte kBackup   = 1 << 5; // obsolete
+  // const Byte kSecured  = 1 << 6;
+  // const Byte kDualName = 1 << 7;
 }
 
 namespace NHostOS
@@ -375,6 +375,32 @@ HRESULT CArcHeader::Parse(const Byte *p, unsigned size)
   return S_OK;
 }
 
+
+struct CExtendedInfo
+{
+  UInt64 Size;
+  bool CrcError;
+  
+  void Clear()
+  {
+    Size = 0;
+    CrcError = false;
+  }
+  void ParseToPropVar(NCOM::CPropVariant &prop) const
+  {
+    if (Size != 0)
+    {
+       AString s;
+       s += "Extended:";
+       s.Add_UInt32((UInt32)Size);
+       if (CrcError)
+         s += ":CRC_ERROR";
+       prop = s;
+    }
+  }
+};
+
+
 struct CItem
 {
   AString Name;
@@ -399,6 +425,8 @@ struct CItem
   // Byte LastChapter;
   
   UInt64 DataPosition;
+
+  CExtendedInfo ExtendedInfo;
   
   bool IsEncrypted() const { return (Flags & NFlags::kGarbled) != 0; }
   bool IsDir() const { return (FileType == NFileType::kDirectory); }
@@ -462,7 +490,7 @@ enum EErrorType
 {
   k_ErrorType_OK,
   k_ErrorType_Corrupted,
-  k_ErrorType_UnexpectedEnd,
+  k_ErrorType_UnexpectedEnd
 };
 
 class CArc
@@ -476,19 +504,22 @@ public:
   UInt64 NumFiles;
   CArcHeader Header;
 
+  CExtendedInfo ExtendedInfo;
+
   HRESULT Open();
   HRESULT GetNextItem(CItem &item, bool &filled);
   void Close()
   {
     IsArc = false;
     Error = k_ErrorType_OK;
+    ExtendedInfo.Clear();
   }
 private:
-  UInt32 _blockSize;
-  Byte _block[kBlockSizeMax + 4];
+  unsigned _blockSize;
+  CByteBuffer _block;
 
-  HRESULT ReadBlock(bool &filled, bool readSignature);
-  HRESULT SkipExtendedHeaders();
+  HRESULT ReadBlock(bool &filled, CExtendedInfo *extendedInfo);
+  HRESULT SkipExtendedHeaders(CExtendedInfo &extendedInfo);
   HRESULT Read(void *data, size_t *size);
 };
 
@@ -503,14 +534,14 @@ HRESULT CArc::Read(void *data, size_t *size)
   { size_t _processed_ = (_size_); RINOK(Read(_dest_, &_processed_)); \
   if (_processed_ != (_size_)) { Error = k_ErrorType_UnexpectedEnd; return S_OK; } }
 
-HRESULT CArc::ReadBlock(bool &filled, bool readSignature)
+HRESULT CArc::ReadBlock(bool &filled, CExtendedInfo *extendedInfo)
 {
   Error = k_ErrorType_OK;
   filled = false;
   Byte buf[4];
-  unsigned signSize = readSignature ? 2 : 0;
+  const unsigned signSize = extendedInfo ? 0 : 2;
   READ_STREAM(buf, signSize + 2)
-  if (readSignature)
+  if (!extendedInfo)
     if (buf[0] != kSig0 || buf[1] != kSig1)
     {
       Error = k_ErrorType_Corrupted;
@@ -519,28 +550,48 @@ HRESULT CArc::ReadBlock(bool &filled, bool readSignature)
   _blockSize = Get16(buf + signSize);
   if (_blockSize == 0) // end of archive
     return S_OK;
-  if (_blockSize < kBlockSizeMin ||
-      _blockSize > kBlockSizeMax)
+
+  if (!extendedInfo)
+    if (_blockSize < kBlockSizeMin || _blockSize > kBlockSizeMax)
+    {
+      Error = k_ErrorType_Corrupted;
+      return S_OK;
+    }
+
+  const size_t readSize = _blockSize + 4;
+  if (readSize > _block.Size())
   {
-    Error = k_ErrorType_Corrupted;
-    return S_OK;
+    // extended data size is limited by (64 KB)
+    // _blockSize is less than 64 KB
+    const size_t upSize = (_blockSize > kBlockSizeMax ? (1 << 16) : kBlockSizeMax);
+    _block.Alloc(upSize + 4);
   }
-  READ_STREAM(_block, _blockSize + 4);
+
+  if (extendedInfo)
+    extendedInfo->Size += _blockSize;
+
+  READ_STREAM(_block, readSize);
   if (Get32(_block + _blockSize) != CrcCalc(_block, _blockSize))
   {
-    Error = k_ErrorType_Corrupted;
-    return S_OK;
+    if (extendedInfo)
+      extendedInfo->CrcError = true;
+    else
+    {
+      Error = k_ErrorType_Corrupted;
+      return S_OK;
+    }
   }
   filled = true;
   return S_OK;
 }
 
-HRESULT CArc::SkipExtendedHeaders()
+HRESULT CArc::SkipExtendedHeaders(CExtendedInfo &extendedInfo)
 {
+  extendedInfo.Clear();
   for (UInt32 i = 0;; i++)
   {
     bool filled;
-    RINOK(ReadBlock(filled, false));
+    RINOK(ReadBlock(filled, &extendedInfo));
     if (!filled)
       return S_OK;
     if (Callback && (i & 0xFF) == 0)
@@ -551,17 +602,17 @@ HRESULT CArc::SkipExtendedHeaders()
 HRESULT CArc::Open()
 {
   bool filled;
-  RINOK(ReadBlock(filled, true));
+  RINOK(ReadBlock(filled, NULL)); // (extendedInfo = NULL)
   if (!filled)
     return S_FALSE;
   RINOK(Header.Parse(_block, _blockSize));
   IsArc = true;
-  return SkipExtendedHeaders();
+  return SkipExtendedHeaders(ExtendedInfo);
 }
 
 HRESULT CArc::GetNextItem(CItem &item, bool &filled)
 {
-  RINOK(ReadBlock(filled, true));
+  RINOK(ReadBlock(filled, NULL)); // (extendedInfo = NULL)
   if (!filled)
     return S_OK;
   filled = false;
@@ -576,7 +627,7 @@ HRESULT CArc::GetNextItem(CItem &item, bool &filled)
     extraData = GetUi32(_block + pos);
   */
 
-  RINOK(SkipExtendedHeaders());
+  RINOK(SkipExtendedHeaders(item.ExtendedInfo));
   filled = true;
   return S_OK;
 }
@@ -603,7 +654,8 @@ static const Byte kArcProps[] =
   kpidCTime,
   kpidMTime,
   kpidHostOS,
-  kpidComment
+  kpidComment,
+  kpidCharacts
 };
 
 static const Byte kProps[] =
@@ -619,7 +671,8 @@ static const Byte kProps[] =
   kpidCRC,
   kpidMethod,
   kpidHostOS,
-  kpidComment
+  kpidComment,
+  kpidCharacts
 };
 
 IMP_IInArchive_Props
@@ -671,10 +724,14 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       {
         case k_ErrorType_UnexpectedEnd: v |= kpv_ErrorFlags_UnexpectedEnd; break;
         case k_ErrorType_Corrupted: v |= kpv_ErrorFlags_HeadersError; break;
+        case k_ErrorType_OK:
+        default:
+          break;
       }
       prop = v;
       break;
     }
+    case kpidCharacts: _arc.ExtendedInfo.ParseToPropVar(prop); break;
   }
   prop.Detach(value);
   return S_OK;
@@ -706,6 +763,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidHostOS:  SetHostOS(item.HostOS, prop); break;
     case kpidMTime:  SetTime(item.MTime, prop); break;
     case kpidComment:  SetUnicodeString(item.Comment, prop); break;
+    case kpidCharacts: item.ExtendedInfo.ParseToPropVar(prop); break;
   }
   prop.Detach(value);
   return S_OK;

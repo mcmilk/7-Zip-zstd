@@ -9,6 +9,7 @@
 namespace NCrypto {
 namespace NSha256 {
 
+const unsigned kBlockSize = SHA256_BLOCK_SIZE;
 const unsigned kDigestSize = SHA256_DIGEST_SIZE;
 
 class CHmac
@@ -19,7 +20,6 @@ public:
   void SetKey(const Byte *key, size_t keySize);
   void Update(const Byte *data, size_t dataSize) { Sha256_Update(&_sha, data, dataSize); }
   void Final(Byte *mac);
-  // void Final(Byte *mac, size_t macSize);
 };
 
 }}

@@ -51,10 +51,10 @@ struct CChs
   bool Check() const { return GetSector() > 0; }
 };
 
-#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 
 // Chs in some MBRs contains only low bits of "Cyl number". So we disable check.
 /*
+#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
 static int CompareChs(const CChs &c1, const CChs &c2)
 {
   RINOZ(MyCompare(c1.GetCyl(), c2.GetCyl()));

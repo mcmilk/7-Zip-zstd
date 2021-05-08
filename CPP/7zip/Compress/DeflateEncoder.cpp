@@ -36,7 +36,7 @@ static const UInt32 kMatchArrayLimit = kMatchArraySize - kMatchMaxLen * 4 * size
 static const UInt32 kBlockUncompressedSizeThreshold = kMaxUncompressedBlockSize -
     kMatchMaxLen - kNumOpts;
 
-static const unsigned kMaxCodeBitLength = 11;
+// static const unsigned kMaxCodeBitLength = 11;
 static const unsigned kMaxLevelBitLength = 7;
 
 static const Byte kNoLiteralStatPrice = 11;
@@ -89,7 +89,7 @@ void CEncProps::Normalize()
   if (algo < 0) algo = (level < 5 ? 0 : 1);
   if (fb < 0) fb = (level < 7 ? 32 : (level < 9 ? 64 : 128));
   if (btMode < 0) btMode = (algo == 0 ? 0 : 1);
-  if (mc == 0) mc = (16 + (fb >> 1));
+  if (mc == 0) mc = (16 + ((unsigned)fb >> 1));
   if (numPasses == (UInt32)(Int32)-1) numPasses = (level < 7 ? 1 : (level < 9 ? 3 : 10));
 }
 
@@ -100,7 +100,7 @@ void CCoder::SetProps(const CEncProps *props2)
 
   m_MatchFinderCycles = props.mc;
   {
-    unsigned fb = props.fb;
+    unsigned fb = (unsigned)props.fb;
     if (fb < kMatchMinLen)
       fb = kMatchMinLen;
     if (fb > m_MatchMaxLen)
@@ -125,12 +125,12 @@ void CCoder::SetProps(const CEncProps *props2)
 }
 
 CCoder::CCoder(bool deflate64Mode):
-  m_Deflate64Mode(deflate64Mode),
-  m_OnePosMatchesMemory(0),
-  m_DistanceMemory(0),
+  m_Values(NULL),
+  m_OnePosMatchesMemory(NULL),
+  m_DistanceMemory(NULL),
   m_Created(false),
-  m_Values(0),
-  m_Tables(0)
+  m_Deflate64Mode(deflate64Mode),
+  m_Tables(NULL)
 {
   m_MatchMaxLen = deflate64Mode ? kMatchMaxLen64 : kMatchMaxLen32;
   m_NumLenCombinations = deflate64Mode ? kNumLenSymbols64 : kNumLenSymbols32;
@@ -213,10 +213,10 @@ HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs, const PROPVARIA
     switch (propID)
     {
       case NCoderPropID::kNumPasses: props.numPasses = v; break;
-      case NCoderPropID::kNumFastBytes: props.fb = v; break;
+      case NCoderPropID::kNumFastBytes: props.fb = (int)v; break;
       case NCoderPropID::kMatchFinderCycles: props.mc = v; break;
-      case NCoderPropID::kAlgorithm: props.algo = v; break;
-      case NCoderPropID::kLevel: props.Level = v; break;
+      case NCoderPropID::kAlgorithm: props.algo = (int)v; break;
+      case NCoderPropID::kLevel: props.Level = (int)v; break;
       case NCoderPropID::kNumThreads: break;
       default: return E_INVALIDARG;
     }
@@ -595,7 +595,7 @@ NO_INLINE void CCoder::MakeTables(unsigned maxHuffLen)
   Huffman_Generate(distFreqs, distCodes, m_NewLevels.distLevels, kDistTableSize64, maxHuffLen);
 }
 
-NO_INLINE UInt32 Huffman_GetPrice(const UInt32 *freqs, const Byte *lens, UInt32 num)
+static NO_INLINE UInt32 Huffman_GetPrice(const UInt32 *freqs, const Byte *lens, UInt32 num)
 {
   UInt32 price = 0;
   UInt32 i;
@@ -604,7 +604,7 @@ NO_INLINE UInt32 Huffman_GetPrice(const UInt32 *freqs, const Byte *lens, UInt32 
   return price;
 }
 
-NO_INLINE UInt32 Huffman_GetPrice_Spec(const UInt32 *freqs, const Byte *lens, UInt32 num, const Byte *extraBits, UInt32 extraBase)
+static NO_INLINE UInt32 Huffman_GetPrice_Spec(const UInt32 *freqs, const Byte *lens, UInt32 num, const Byte *extraBits, UInt32 extraBase)
 {
   return Huffman_GetPrice(freqs, lens, num) +
     Huffman_GetPrice(freqs + extraBase, extraBits, num - extraBase);
@@ -629,8 +629,9 @@ NO_INLINE void CCoder::TryBlock()
   {
     if (m_OptimumCurrentIndex == m_OptimumEndIndex)
     {
-      if (m_Pos >= kMatchArrayLimit || BlockSizeRes >= blockSize || !m_SecondPass &&
-          ((Inline_MatchFinder_GetNumAvailableBytes(&_lzInWindow) == 0) || m_ValueIndex >= m_ValueBlockSize))
+      if (m_Pos >= kMatchArrayLimit
+          || BlockSizeRes >= blockSize
+          || (!m_SecondPass && ((Inline_MatchFinder_GetNumAvailableBytes(&_lzInWindow) == 0) || m_ValueIndex >= m_ValueBlockSize)))
         break;
     }
     UInt32 pos;
@@ -688,7 +689,7 @@ NO_INLINE void CCoder::SetPrices(const CLevels &levels)
   }
 }
 
-NO_INLINE void Huffman_ReverseBits(UInt32 *codes, const Byte *lens, UInt32 num)
+static NO_INLINE void Huffman_ReverseBits(UInt32 *codes, const Byte *lens, UInt32 num)
 {
   for (UInt32 i = 0; i < num; i++)
   {

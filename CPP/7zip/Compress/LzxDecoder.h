@@ -30,7 +30,7 @@ public:
     _extraSize = 0;
   }
 
-  size_t GetRem() const { return _bufLim + 1 - _buf; }
+  size_t GetRem() const { return (size_t)(_bufLim + 1 - _buf); }
   bool WasExtraReadError_Fast() const { return _extraSize > 4; }
 
   bool WasFinishedOK() const
@@ -238,7 +238,7 @@ public:
   
   bool WasBlockFinished() const { return _unpackBlockSize == 0; }
   const Byte *GetUnpackData() const { return _unpackedData; }
-  const UInt32 GetUnpackSize() const { return _pos - _writePos; }
+  UInt32 GetUnpackSize() const { return _pos - _writePos; }
 };
 
 }}

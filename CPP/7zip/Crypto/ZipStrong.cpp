@@ -26,10 +26,12 @@ static const UInt16 kAES128 = 0x660E;
 
 static void DeriveKey2(const Byte *digest, Byte c, Byte *dest)
 {
+  MY_ALIGN (16)
   Byte buf[64];
   memset(buf, c, 64);
   for (unsigned i = 0; i < NSha1::kDigestSize; i++)
     buf[i] ^= digest[i];
+  MY_ALIGN (16)
   NSha1::CContext sha;
   sha.Init();
   sha.Update(buf, 64);
@@ -38,8 +40,10 @@ static void DeriveKey2(const Byte *digest, Byte c, Byte *dest)
  
 static void DeriveKey(NSha1::CContext &sha, Byte *key)
 {
+  MY_ALIGN (16)
   Byte digest[NSha1::kDigestSize];
   sha.Final(digest);
+  MY_ALIGN (16)
   Byte temp[NSha1::kDigestSize * 2];
   DeriveKey2(digest, 0x36, temp);
   DeriveKey2(digest, 0x5C, temp + NSha1::kDigestSize);
@@ -48,6 +52,7 @@ static void DeriveKey(NSha1::CContext &sha, Byte *key)
 
 void CKeyInfo::SetPassword(const Byte *data, UInt32 size)
 {
+  MY_ALIGN (16)
   NSha1::CContext sha;
   sha.Init();
   sha.Update(data, size);
@@ -103,21 +108,21 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
   if (_remSize < 16)
     return E_NOTIMPL;
   Byte *p = _bufAligned;
-  UInt16 format = GetUi16(p);
+  const unsigned format = GetUi16(p);
   if (format != 3)
     return E_NOTIMPL;
-  UInt16 algId = GetUi16(p + 2);
+  unsigned algId = GetUi16(p + 2);
   if (algId < kAES128)
     return E_NOTIMPL;
   algId -= kAES128;
   if (algId > 2)
     return E_NOTIMPL;
-  UInt16 bitLen = GetUi16(p + 4);
-  UInt16 flags = GetUi16(p + 6);
+  const unsigned bitLen = GetUi16(p + 4);
+  const unsigned flags = GetUi16(p + 6);
   if (algId * 64 + 128 != bitLen)
     return E_NOTIMPL;
   _key.KeySize = 16 + algId * 8;
-  bool cert = ((flags & 2) != 0);
+  const bool cert = ((flags & 2) != 0);
 
   if ((flags & 0x4000) != 0)
   {
@@ -198,7 +203,7 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
 
   UInt32 validSize = GetUi16(p2);
   p2 += 2;
-  const size_t validOffset = p2 - p;
+  const size_t validOffset = (size_t)(p2 - p);
   if ((validSize & 0xF) != 0 || validOffset + validSize != _remSize)
     return E_NOTIMPL;
 
@@ -214,7 +219,9 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
         return S_OK; // passwOK = false;
   }
 
+  MY_ALIGN (16)
   Byte fileKey[32];
+  MY_ALIGN (16)
   NSha1::CContext sha;
   sha.Init();
   sha.Update(_iv, _ivSize);

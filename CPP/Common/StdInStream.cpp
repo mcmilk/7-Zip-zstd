@@ -2,7 +2,9 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
 #include <tchar.h>
+#endif
 
 #include "StdInStream.h"
 #include "StringConvert.h"
@@ -14,14 +16,18 @@
 
 #define kFileOpenMode TEXT("r")
 
-extern int g_CodePage;
-
 CStdInStream g_StdIn(stdin);
 
 bool CStdInStream::Open(LPCTSTR fileName) throw()
 {
   Close();
-  _stream = _tfopen(fileName, kFileOpenMode);
+  _stream =
+    #ifdef _WIN32
+      _tfopen
+    #else
+      fopen
+    #endif
+      (fileName, kFileOpenMode);
   _streamIsOpen = (_stream != 0);
   return _streamIsOpen;
 }
@@ -56,7 +62,7 @@ bool CStdInStream::ScanUStringUntilNewLine(UString &dest)
   dest.Empty();
   AString s;
   bool res = ScanAStringUntilNewLine(s);
-  int codePage = g_CodePage;
+  int codePage = CodePage;
   if (codePage == -1)
     codePage = CP_OEMCP;
   if (codePage == CP_UTF8)

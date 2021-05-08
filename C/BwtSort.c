@@ -1,5 +1,5 @@
 /* BwtSort.c -- BWT block sorting
-2018-07-04 : Igor Pavlov : Public domain */
+2021-04-01 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -60,7 +60,7 @@ SortGroup - is recursive Range-Sort function with HeapSort optimization for smal
 returns: 1 - if there are groups, 0 - no more groups
 */
 
-UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 groupOffset, UInt32 groupSize, int NumRefBits, UInt32 *Indices
+static UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 groupOffset, UInt32 groupSize, int NumRefBits, UInt32 *Indices
   #ifndef BLOCK_SORT_USE_HEAP_SORT
   , UInt32 left, UInt32 range
   #endif
@@ -116,7 +116,7 @@ UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 group
     }
     
     HeapSort(temp, groupSize);
-    mask = ((1 << NumRefBits) - 1);
+    mask = (((UInt32)1 << NumRefBits) - 1);
     thereAreGroups = 0;
     
     group = groupOffset;

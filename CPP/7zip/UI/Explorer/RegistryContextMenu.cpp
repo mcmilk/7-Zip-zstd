@@ -59,14 +59,16 @@ static const bool k_shellex_Statuses[2][4] =
 #else
 */
 
-typedef WINADVAPI LONG (APIENTRY *Func_RegDeleteKeyExW)(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved);
+typedef
+// WINADVAPI
+LONG (APIENTRY *Func_RegDeleteKeyExW)(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved);
 static Func_RegDeleteKeyExW func_RegDeleteKeyExW;
 
 static void Init_RegDeleteKeyExW()
 {
   if (!func_RegDeleteKeyExW)
     func_RegDeleteKeyExW = (Func_RegDeleteKeyExW)
-      GetProcAddress(GetModuleHandleW(L"advapi32.dll"), "RegDeleteKeyExW");
+      (void *)GetProcAddress(GetModuleHandleW(L"advapi32.dll"), "RegDeleteKeyExW");
 }
 
 #define INIT_REG_WOW if (wow != 0) Init_RegDeleteKeyExW();
@@ -80,12 +82,12 @@ static LONG MyRegistry_DeleteKey(HKEY parentKey, LPCTSTR name, UInt32 wow)
   
   /*
   #ifdef _WIN64
-    return RegDeleteKeyExW
+  return RegDeleteKeyExW
   #else
   */
-    if (!func_RegDeleteKeyExW)
-      return E_NOTIMPL;
-    return func_RegDeleteKeyExW
+  if (!func_RegDeleteKeyExW)
+    return E_NOTIMPL;
+  return func_RegDeleteKeyExW
   // #endif
       (parentKey, GetUnicodeString(name), wow, 0);
 }

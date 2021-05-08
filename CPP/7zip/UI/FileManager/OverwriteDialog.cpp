@@ -57,8 +57,8 @@ void COverwriteDialog::SetFileInfoControl(int textID, int iconID,
 
   const UString &fileName = fileInfo.Name;
   int slashPos = fileName.ReverseFind_PathSepar();
-  UString s1 = fileName.Left(slashPos + 1);
-  UString s2 = fileName.Ptr(slashPos + 1);
+  UString s1 = fileName.Left((unsigned)(slashPos + 1));
+  UString s2 = fileName.Ptr((unsigned)(slashPos + 1));
 
   ReduceString(s1);
   ReduceString(s2);
@@ -103,6 +103,22 @@ bool COverwriteDialog::OnInit()
   SetFileInfoControl(IDT_OVERWRITE_OLD_FILE_SIZE_TIME, IDI_OVERWRITE_OLD_FILE, OldFileInfo);
   SetFileInfoControl(IDT_OVERWRITE_NEW_FILE_SIZE_TIME, IDI_OVERWRITE_NEW_FILE, NewFileInfo);
   NormalizePosition();
+
+  if (!ShowExtraButtons)
+  {
+    HideItem(IDB_YES_TO_ALL);
+    HideItem(IDB_NO_TO_ALL);
+    HideItem(IDB_AUTO_RENAME);
+  }
+
+  if (DefaultButton_is_NO)
+  {
+    PostMsg(DM_SETDEFID, IDNO);
+    HWND h = GetItem(IDNO);
+    PostMsg(WM_NEXTDLGCTL, (WPARAM)h, TRUE);
+    // ::SetFocus(h);
+  }
+
   return CModalDialog::OnInit();
 }
 

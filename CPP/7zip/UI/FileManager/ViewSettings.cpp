@@ -193,14 +193,14 @@ void CWindowInfo::Read(bool &windowPosDefined, bool &panelInfoDefined)
 }
 
 
-void SaveUi32Val(const TCHAR *name, UInt32 value)
+static void SaveUi32Val(const TCHAR *name, UInt32 value)
 {
   CKey key;
   key.Create(HKEY_CURRENT_USER, kCUBasePath);
   key.SetValue(name, value);
 }
 
-bool ReadUi32Val(const TCHAR *name, UInt32 &value)
+static bool ReadUi32Val(const TCHAR *name, UInt32 &value)
 {
   CKey key;
   if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)

@@ -117,7 +117,7 @@ void CApp::SetListSettings()
 
 HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat,
     bool needOpenArc,
-    bool &archiveIsOpened, bool &encrypted)
+    COpenResult &openRes)
 {
   if (Panels[panelIndex].PanelCreated)
     return S_OK;
@@ -138,7 +138,7 @@ HRESULT CApp::CreateOnePanel(int panelIndex, const UString &mainPath, const UStr
   return Panels[panelIndex].Create(_window, _window,
       id, path, arcFormat, &m_PanelCallbackImp[panelIndex], &AppState,
       needOpenArc,
-      archiveIsOpened, encrypted);
+      openRes);
 }
 
 
@@ -282,7 +282,7 @@ void CApp::SaveToolbarChanges()
 }
 
 
-HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, bool &archiveIsOpened, bool &encrypted)
+HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, COpenResult &openRes)
 {
   _window.Attach(hwnd);
 
@@ -334,21 +334,19 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
     {
       if (NumPanels == 1)
         Panels[panelIndex]._xSize = xSizes[0] + xSizes[1];
-      bool archiveIsOpened2 = false;
-      bool encrypted2 = false;
+      
+      COpenResult openRes2;
       UString path;
       if (isMainPanel)
         path = mainPath;
       
       RINOK(CreateOnePanel(panelIndex, path, arcFormat,
           isMainPanel && needOpenArc,
-          archiveIsOpened2, encrypted2));
+          *(isMainPanel ? &openRes : &openRes2)));
       
       if (isMainPanel)
       {
-        archiveIsOpened = archiveIsOpened2;
-        encrypted = encrypted2;
-        if (needOpenArc && !archiveIsOpened2)
+        if (needOpenArc && !openRes.ArchiveIsOpened)
           return S_OK;
       }
     }
@@ -365,10 +363,10 @@ HRESULT CApp::SwitchOnOffOnePanel()
   if (NumPanels == 1)
   {
     NumPanels++;
-    bool archiveIsOpened, encrypted;
+    COpenResult openRes;
     RINOK(CreateOnePanel(1 - LastFocusedPanel, UString(), UString(),
         false, // needOpenArc
-        archiveIsOpened, encrypted));
+        openRes));
     Panels[1 - LastFocusedPanel].Enable(true);
     Panels[1 - LastFocusedPanel].Show(SW_SHOWNORMAL);
   }
@@ -414,13 +412,13 @@ void CApp::Release()
 
 // reduces path to part that exists on disk (or root prefix of path)
 // output path is normalized (with WCHAR_PATH_SEPARATOR)
-static void ReducePathToRealFileSystemPath(UString &path)
+static void Reduce_Path_To_RealFileSystemPath(UString &path)
 {
   unsigned prefixSize = GetRootPrefixSize(path);
 
   while (!path.IsEmpty())
   {
-    if (NFind::DoesDirExist(us2fs(path)))
+    if (NFind::DoesDirExist_FollowLink(us2fs(path)))
     {
       NName::NormalizeDirPathPrefix(path);
       break;
@@ -431,10 +429,10 @@ static void ReducePathToRealFileSystemPath(UString &path)
       path.Empty();
       break;
     }
-    path.DeleteFrom(pos + 1);
+    path.DeleteFrom((unsigned)(pos + 1));
     if ((unsigned)pos + 1 == prefixSize)
       break;
-    path.DeleteFrom(pos);
+    path.DeleteFrom((unsigned)pos);
   }
 }
 
@@ -443,7 +441,7 @@ static void ReducePathToRealFileSystemPath(UString &path)
 static bool CheckFolderPath(const UString &path)
 {
   UString pathReduced = path;
-  ReducePathToRealFileSystemPath(pathReduced);
+  Reduce_Path_To_RealFileSystemPath(pathReduced);
   return (pathReduced == path);
 }
 */
@@ -463,6 +461,7 @@ static void AddValuePair1(UString &s, UINT resourceID, UInt64 size)
   s.Add_LF();
 }
 
+void AddValuePair2(UString &s, UINT resourceID, UInt64 num, UInt64 size);
 void AddValuePair2(UString &s, UINT resourceID, UInt64 num, UInt64 size)
 {
   if (num == 0)
@@ -601,7 +600,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
         return;
       destPath = destPanel.GetFsPath();
       if (NumPanels == 1)
-        ReducePathToRealFileSystemPath(destPath);
+        Reduce_Path_To_RealFileSystemPath(destPath);
     }
   }
   
@@ -660,7 +659,7 @@ void CApp::OnCopy(bool move, bool copyToSame, int srcPanelIndex)
     {
       if (NumPanels == 1 || CompareFileNames(destPath, srcPanel.GetFsPath()) == 0)
       {
-        srcPanel.MessageBox_Error(L"Can not copy files onto itself");
+        srcPanel.MessageBox_Error(L"Cannot copy files onto itself");
         return;
       }
 
@@ -882,9 +881,11 @@ void CApp::OnSetSubFolder(int srcPanelIndex)
       return;
     if (!newFolder)
     {
-      const UString parentPrefix = srcPanel.GetParentDirPrefix();
-      bool archiveIsOpened, encrypted;
-      destPanel.BindToPath(parentPrefix, UString(), archiveIsOpened, encrypted);
+      {
+        const UString parentPrefix = srcPanel.GetParentDirPrefix();
+        COpenResult openRes;
+        destPanel.BindToPath(parentPrefix, UString(), openRes);
+      }
       destPanel.RefreshListCtrl();
       return;
     }
@@ -936,7 +937,7 @@ void CApp::OnNotify(int /* ctrlID */, LPNMHDR pnmh)
       g_ToolTipBuffer.Empty();
       SetButtonText((int)info->hdr.idFrom, g_ToolTipBuffer);
       g_ToolTipBufferSys = GetSystemString(g_ToolTipBuffer);
-      info->lpszText = (LPTSTR)(LPCTSTR)g_ToolTipBufferSys;
+      info->lpszText = g_ToolTipBufferSys.Ptr_non_const();
       return;
     }
     #ifndef _UNICODE
@@ -946,7 +947,7 @@ void CApp::OnNotify(int /* ctrlID */, LPNMHDR pnmh)
       info->hinst = 0;
       g_ToolTipBuffer.Empty();
       SetButtonText((int)info->hdr.idFrom, g_ToolTipBuffer);
-      info->lpszText = (LPWSTR)(LPCWSTR)g_ToolTipBuffer;
+      info->lpszText = g_ToolTipBuffer.Ptr_non_const();
       return;
     }
     #endif
@@ -971,7 +972,7 @@ void CApp::RefreshTitlePanel(unsigned panelIndex, bool always)
   RefreshTitle(always);
 }
 
-void AddUniqueStringToHead(UStringVector &list, const UString &s)
+static void AddUniqueStringToHead(UStringVector &list, const UString &s)
 {
   for (unsigned i = 0; i < list.Size();)
     if (s.IsEqualTo_NoCase(list[i]))

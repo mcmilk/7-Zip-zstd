@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include "../../Windows/FileFind.h"
 #endif
 
 #ifdef SUPPORT_DEVICE_FILE
@@ -15,22 +16,26 @@
 
 #include "FileStreams.h"
 
-static inline HRESULT ConvertBoolToHRESULT(bool result)
+static inline HRESULT GetLastError_HRESULT()
 {
-  #ifdef _WIN32
-  if (result)
-    return S_OK;
   DWORD lastError = ::GetLastError();
   if (lastError == 0)
     return E_FAIL;
   return HRESULT_FROM_WIN32(lastError);
-  #else
-  return result ? S_OK: E_FAIL;
-  #endif
+}
+
+static inline HRESULT ConvertBoolToHRESULT(bool result)
+{
+  if (result)
+    return S_OK;
+  return GetLastError_HRESULT();
 }
 
 
+#ifdef SUPPORT_DEVICE_FILE
 static const UInt32 kClusterSize = 1 << 18;
+#endif
+
 CInFileStream::CInFileStream():
   #ifdef SUPPORT_DEVICE_FILE
   VirtPos(0),
@@ -111,7 +116,7 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
       if (alignedPos != PhyPos)
       {
         UInt64 realNewPosition;
-        bool result = File.Seek(alignedPos, FILE_BEGIN, realNewPosition);
+        bool result = File.Seek((Int64)alignedPos, FILE_BEGIN, realNewPosition);
         if (!result)
           return ConvertBoolToHRESULT(result);
         PhyPos = realNewPosition;
@@ -140,7 +145,7 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     if (VirtPos != PhyPos)
     {
       UInt64 realNewPosition;
-      bool result = File.Seek(VirtPos, FILE_BEGIN, realNewPosition);
+      bool result = File.Seek((Int64)VirtPos, FILE_BEGIN, realNewPosition);
       if (!result)
         return ConvertBoolToHRESULT(result);
       PhyPos = VirtPos = realNewPosition;
@@ -149,7 +154,7 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   #endif
 
   UInt32 realProcessedSize;
-  bool result = File.ReadPart(data, size, realProcessedSize);
+  const bool result = File.ReadPart(data, size, realProcessedSize);
   if (processedSize)
     *processedSize = realProcessedSize;
 
@@ -161,33 +166,27 @@ STDMETHODIMP CInFileStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   if (result)
     return S_OK;
 
+  #else // USE_WIN_FILE
+  
+  if (processedSize)
+    *processedSize = 0;
+  const ssize_t res = File.read_part(data, (size_t)size);
+  if (res != -1)
   {
-    DWORD error = ::GetLastError();
+    if (processedSize)
+      *processedSize = (UInt32)res;
+    return S_OK;
+  }
+  #endif // USE_WIN_FILE
 
+  {
+    const DWORD error = ::GetLastError();
     if (Callback)
       return Callback->InFileStream_On_Error(CallbackRef, error);
     if (error == 0)
       return E_FAIL;
-
     return HRESULT_FROM_WIN32(error);
   }
-
-  #else
-  
-  if (processedSize)
-    *processedSize = 0;
-  ssize_t res = File.Read(data, (size_t)size);
-  if (res == -1)
-  {
-    if (Callback)
-      return Callback->InFileStream_On_Error(CallbackRef, E_FAIL);
-    return E_FAIL;
-  }
-  if (processedSize)
-    *processedSize = (UInt32)res;
-  return S_OK;
-
-  #endif
 }
 
 #ifdef UNDER_CE
@@ -228,7 +227,7 @@ STDMETHODIMP CStdInFileStream::Read(void *data, UInt32 size, UInt32 *processedSi
   }
   while (res < 0 && (errno == EINTR));
   if (res == -1)
-    return E_FAIL;
+    return GetLastError_HRESULT();
   if (processedSize)
     *processedSize = (UInt32)res;
   return S_OK;
@@ -257,9 +256,9 @@ STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPos
     }
     if (offset < 0)
       return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
-    VirtPos = offset;
+    VirtPos = (UInt64)offset;
     if (newPosition)
-      *newPosition = offset;
+      *newPosition = (UInt64)offset;
     return S_OK;
   }
   #endif
@@ -277,9 +276,9 @@ STDMETHODIMP CInFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPos
   
   #else
   
-  off_t res = File.Seek((off_t)offset, seekOrigin);
+  off_t res = File.seek((off_t)offset, (int)seekOrigin);
   if (res == -1)
-    return E_FAIL;
+    return GetLastError_HRESULT();
   if (newPosition)
     *newPosition = (UInt64)res;
   return S_OK;
@@ -306,7 +305,7 @@ STDMETHODIMP CInFileStream::GetProps(UInt64 *size, FILETIME *cTime, FILETIME *aT
     if (attrib) *attrib = info.dwFileAttributes;
     return S_OK;
   }
-  return GetLastError();
+  return GetLastError_HRESULT();
 }
 
 STDMETHODIMP CInFileStream::GetProps2(CStreamFileProps *props)
@@ -325,7 +324,71 @@ STDMETHODIMP CInFileStream::GetProps2(CStreamFileProps *props)
     props->MTime = info.ftLastWriteTime;
     return S_OK;
   }
-  return GetLastError();
+  return GetLastError_HRESULT();
+}
+
+#elif !defined(_WIN32)
+
+STDMETHODIMP CInFileStream::GetProps(UInt64 *size, FILETIME *cTime, FILETIME *aTime, FILETIME *mTime, UInt32 *attrib)
+{
+  struct stat st;
+  if (File.my_fstat(&st) != 0)
+    return GetLastError_HRESULT();
+
+  if (size) *size = (UInt64)st.st_size;
+  #ifdef __APPLE__
+  if (cTime) NWindows::NFile::NFind::timespec_To_FILETIME(st.st_ctimespec, *cTime);
+  if (aTime) NWindows::NFile::NFind::timespec_To_FILETIME(st.st_atimespec, *aTime);
+  if (mTime) NWindows::NFile::NFind::timespec_To_FILETIME(st.st_mtimespec, *mTime);
+  #else
+  if (cTime) NWindows::NFile::NFind::timespec_To_FILETIME(st.st_ctim, *cTime);
+  if (aTime) NWindows::NFile::NFind::timespec_To_FILETIME(st.st_atim, *aTime);
+  if (mTime) NWindows::NFile::NFind::timespec_To_FILETIME(st.st_mtim, *mTime);
+  #endif
+  if (attrib) *attrib = NWindows::NFile::NFind::Get_WinAttribPosix_From_PosixMode(st.st_mode);
+
+  return S_OK;
+}
+
+// #include <stdio.h>
+
+STDMETHODIMP CInFileStream::GetProps2(CStreamFileProps *props)
+{
+  struct stat st;
+  if (File.my_fstat(&st) != 0)
+    return GetLastError_HRESULT();
+
+  props->Size = (UInt64)st.st_size;
+  /*
+    dev_t stat::st_dev:
+       GCC:Linux  long unsigned int :  __dev_t
+       Mac:       int
+  */
+  props->VolID = (UInt64)(Int64)st.st_dev;
+  props->FileID_Low = st.st_ino;
+  props->FileID_High = 0;
+  props->NumLinks = (UInt32)st.st_nlink; // we reduce to UInt32 from (nlink_t) that is (unsigned long)
+  props->Attrib = NWindows::NFile::NFind::Get_WinAttribPosix_From_PosixMode(st.st_mode);
+
+  #ifdef __APPLE__
+  NWindows::NFile::NFind::timespec_To_FILETIME(st.st_ctimespec, props->CTime);
+  NWindows::NFile::NFind::timespec_To_FILETIME(st.st_atimespec, props->ATime);
+  NWindows::NFile::NFind::timespec_To_FILETIME(st.st_mtimespec, props->MTime);
+  #else
+  NWindows::NFile::NFind::timespec_To_FILETIME(st.st_ctim, props->CTime);
+  NWindows::NFile::NFind::timespec_To_FILETIME(st.st_atim, props->ATime);
+  NWindows::NFile::NFind::timespec_To_FILETIME(st.st_mtim, props->MTime);
+  #endif
+
+  /*
+  printf("\nGetProps2() NumLinks=%d = st_dev=%d st_ino = %d\n"
+      , (unsigned)(props->NumLinks)
+      , (unsigned)(st.st_dev)
+      , (unsigned)(st.st_ino)
+      );
+  */
+
+  return S_OK;
 }
 
 #endif
@@ -343,7 +406,7 @@ STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *proces
   #ifdef USE_WIN_FILE
 
   UInt32 realProcessedSize;
-  bool result = File.Write(data, size, realProcessedSize);
+  const bool result = File.Write(data, size, realProcessedSize);
   ProcessedSize += realProcessedSize;
   if (processedSize)
     *processedSize = realProcessedSize;
@@ -353,12 +416,13 @@ STDMETHODIMP COutFileStream::Write(const void *data, UInt32 size, UInt32 *proces
   
   if (processedSize)
     *processedSize = 0;
-  ssize_t res = File.Write(data, (size_t)size);
-  if (res == -1)
-    return E_FAIL;
+  size_t realProcessedSize;
+  const ssize_t res = File.write_full(data, (size_t)size, realProcessedSize);
+  ProcessedSize += realProcessedSize;
   if (processedSize)
-    *processedSize = (UInt32)res;
-  ProcessedSize += res;
+    *processedSize = (UInt32)realProcessedSize;
+  if (res == -1)
+    return GetLastError_HRESULT();
   return S_OK;
   
   #endif
@@ -379,9 +443,9 @@ STDMETHODIMP COutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPo
   
   #else
   
-  off_t res = File.Seek((off_t)offset, seekOrigin);
+  off_t res = File.seek((off_t)offset, (int)seekOrigin);
   if (res == -1)
-    return E_FAIL;
+    return GetLastError_HRESULT();
   if (newPosition)
     *newPosition = (UInt64)res;
   return S_OK;
@@ -403,8 +467,11 @@ STDMETHODIMP COutFileStream::SetSize(UInt64 newSize)
   
   #else
   
-  return E_FAIL;
-  
+  // SetLength() uses ftruncate() that doesn't change file offset
+  if (!File.SetLength(newSize))
+    return GetLastError_HRESULT();
+  return S_OK;
+
   #endif
 }
 
@@ -462,7 +529,7 @@ STDMETHODIMP CStdOutFileStream::Write(const void *data, UInt32 size, UInt32 *pro
   while (res < 0 && (errno == EINTR));
   
   if (res == -1)
-    return E_FAIL;
+    return GetLastError_HRESULT();
 
   _size += (size_t)res;
   if (processedSize)

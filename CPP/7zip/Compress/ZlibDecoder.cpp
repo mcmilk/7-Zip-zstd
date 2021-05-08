@@ -15,6 +15,7 @@ namespace NZlib {
 #define ADLER_MOD 65521
 #define ADLER_LOOP_MAX 5550
 
+UInt32 Adler32_Update(UInt32 adler, const Byte *buf, size_t size);
 UInt32 Adler32_Update(UInt32 adler, const Byte *buf, size_t size)
 {
   UInt32 a = adler & 0xFFFF;

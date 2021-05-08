@@ -26,11 +26,15 @@ will not work at NT 4.0, if cbSize is set as sizeof(MENUITEMINFO*).
 So we use size of old version of structure. */
 
 #if defined(UNDER_CE) || defined(_WIN64) || (WINVER < 0x0500)
+  #ifndef _UNICODE
   #define my_compatib_MENUITEMINFOA_size  sizeof(MENUITEMINFOA)
+  #endif
   #define my_compatib_MENUITEMINFOW_size  sizeof(MENUITEMINFOW)
 #else
   #define MY_STRUCT_SIZE_BEFORE(structname, member) ((UINT)(UINT_PTR)((LPBYTE)(&((structname*)0)->member) - (LPBYTE)(structname*)0))
+  #ifndef _UNICODE
   #define my_compatib_MENUITEMINFOA_size MY_STRUCT_SIZE_BEFORE(MENUITEMINFOA, hbmpItem)
+  #endif
   #define my_compatib_MENUITEMINFOW_size MY_STRUCT_SIZE_BEFORE(MENUITEMINFOW, hbmpItem)
 #endif
 
@@ -145,7 +149,7 @@ bool CMenu::SetItem(UINT itemIndex, bool byPosition, const CMenuItem &item)
     if (item.IsString())
     {
       s = GetSystemString(item.StringValue);
-      si.dwTypeData = (LPTSTR)(LPCTSTR)s;
+      si.dwTypeData = s.Ptr_non_const();
     }
     return SetItemInfo(itemIndex, byPosition, &si);
   }
@@ -155,7 +159,7 @@ bool CMenu::SetItem(UINT itemIndex, bool byPosition, const CMenuItem &item)
     MENUITEMINFOW si;
     ConvertItemToSysForm(item, si);
     if (item.IsString())
-      si.dwTypeData = (LPWSTR)(LPCWSTR)item.StringValue;
+      si.dwTypeData = item.StringValue.Ptr_non_const();
     return SetItemInfo(itemIndex, byPosition, &si);
   }
 }
@@ -171,7 +175,7 @@ bool CMenu::InsertItem(UINT itemIndex, bool byPosition, const CMenuItem &item)
     if (item.IsString())
     {
       s = GetSystemString(item.StringValue);
-      si.dwTypeData = (LPTSTR)(LPCTSTR)s;
+      si.dwTypeData = s.Ptr_non_const();
     }
     return InsertItem(itemIndex, byPosition, &si);
   }
@@ -181,7 +185,7 @@ bool CMenu::InsertItem(UINT itemIndex, bool byPosition, const CMenuItem &item)
     MENUITEMINFOW si;
     ConvertItemToSysForm(item, si);
     if (item.IsString())
-      si.dwTypeData = (LPWSTR)(LPCWSTR)item.StringValue;
+      si.dwTypeData = item.StringValue.Ptr_non_const();
     #ifdef UNDER_CE
     UINT flags = (item.fType & MFT_SEPARATOR) ? MF_SEPARATOR : MF_STRING;
     UINT id = item.wID;

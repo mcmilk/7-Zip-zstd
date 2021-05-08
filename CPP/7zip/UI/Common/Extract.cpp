@@ -7,6 +7,7 @@
 #include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/FileDir.h"
+#include "../../../Windows/ErrorMsg.h"
 #include "../../../Windows/PropVariant.h"
 #include "../../../Windows/PropVariantConv.h"
 
@@ -18,6 +19,19 @@
 using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
+
+
+static void SetErrorMessage(const char *message,
+    const FString &path, HRESULT errorCode,
+    UString &s)
+{
+  s = message;
+  s += " : ";
+  s += NError::MyFormatMessage(errorCode);
+  s += " : ";
+  s += fs2us(path);
+}
+
 
 static HRESULT DecompressArchive(
     CCodecs *codecs,
@@ -47,7 +61,7 @@ static HRESULT DecompressArchive(
     // So it extracts different archives to one folder.
     // We will use top level archive name
     const CArc &arc0 = arcLink.Arcs[0];
-    if (StringsAreEqualNoCase_Ascii(codecs->Formats[arc0.FormatIndex].Name, "pe"))
+    if (arc0.FormatIndex >= 0 && StringsAreEqualNoCase_Ascii(codecs->Formats[(unsigned)arc0.FormatIndex].Name, "pe"))
       replaceName = arc0.DefaultName;
   }
 
@@ -164,11 +178,8 @@ static HRESULT DecompressArchive(
   */
   else if (!CreateComplexDir(outDir))
   {
-    HRESULT res = ::GetLastError();
-    if (res == S_OK)
-      res = E_FAIL;
-    errorMessage = "Can not create output directory: ";
-    errorMessage += fs2us(outDir);
+    const HRESULT res = GetLastError_noZero_HRESULT();
+    SetErrorMessage("Cannot create output directory", outDir, res, errorMessage);
     return res;
   }
 
@@ -221,6 +232,7 @@ static HRESULT DecompressArchive(
    Sorted list for file paths was sorted with case insensitive compare function.
    But FindInSorted function did binary search via case sensitive compare function */
 
+int Find_FileName_InSortedVector(const UStringVector &fileName, const UString &name);
 int Find_FileName_InSortedVector(const UStringVector &fileName, const UString &name)
 {
   unsigned left = 0, right = fileName.Size();
@@ -230,7 +242,7 @@ int Find_FileName_InSortedVector(const UStringVector &fileName, const UString &n
     const UString &midValue = fileName[mid];
     int compare = CompareFileNames(name, midValue);
     if (compare == 0)
-      return mid;
+      return (int)mid;
     if (compare < 0)
       right = mid;
     else
@@ -238,6 +250,8 @@ int Find_FileName_InSortedVector(const UStringVector &fileName, const UString &n
   }
   return -1;
 }
+
+
 
 HRESULT Extract(
     CCodecs *codecs,
@@ -268,11 +282,19 @@ HRESULT Extract(
     fi.Size = 0;
     if (!options.StdInMode)
     {
-      const FString &arcPath = us2fs(arcPaths[i]);
-      if (!fi.Find(arcPath))
-        throw "there is no such archive";
+      const FString arcPath = us2fs(arcPaths[i]);
+      if (!fi.Find_FollowLink(arcPath))
+      {
+        const HRESULT errorCode = GetLastError_noZero_HRESULT();
+        SetErrorMessage("Cannot find archive file", arcPath, errorCode, errorMessage);
+        return errorCode;
+      }
       if (fi.IsDir())
-        throw "can't decompress folder";
+      {
+        HRESULT errorCode = E_FAIL;
+        SetErrorMessage("The item is a directory", arcPath, errorCode, errorMessage);
+        return errorCode;
+      }
     }
     arcSizes.Add(fi.Size);
     totalPackSize += fi.Size;
@@ -314,8 +336,12 @@ HRESULT Extract(
     }
     else
     {
-      if (!fi.Find(us2fs(arcPath)) || fi.IsDir())
-        throw "there is no such archive";
+      if (!fi.Find_FollowLink(us2fs(arcPath)) || fi.IsDir())
+      {
+        const HRESULT errorCode = GetLastError_noZero_HRESULT();
+        SetErrorMessage("Cannot find archive file", us2fs(arcPath), errorCode, errorMessage);
+        return errorCode;
+      }
     }
 
     /*
@@ -379,12 +405,7 @@ HRESULT Extract(
     {
       thereAreNotOpenArcs = true;
       if (!options.StdInMode)
-      {
-        NFind::CFileInfo fi2;
-        if (fi2.Find(us2fs(arcPath)))
-          if (!fi2.IsDir())
-            totalPackProcessed += fi2.Size;
-      }
+        totalPackProcessed += fi.Size;
       continue;
     }
 
@@ -397,7 +418,7 @@ HRESULT Extract(
       // numArcs = arcPaths.Size();
       if (arcLink.VolumePaths.Size() != 0)
       {
-        Int64 correctionSize = arcLink.VolumesSize;
+        Int64 correctionSize = (Int64)arcLink.VolumesSize;
         FOR_VECTOR (v, arcLink.VolumePaths)
         {
           int index = Find_FileName_InSortedVector(arcPathsFull, arcLink.VolumePaths[v]);
@@ -415,7 +436,7 @@ HRESULT Extract(
           Int64 newPackSize = (Int64)totalPackSize + correctionSize;
           if (newPackSize < 0)
             newPackSize = 0;
-          totalPackSize = newPackSize;
+          totalPackSize = (UInt64)newPackSize;
           RINOK(extractCallback->SetTotal(totalPackSize));
         }
       }

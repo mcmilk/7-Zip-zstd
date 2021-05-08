@@ -5,6 +5,7 @@
 #include "../../../../C/7zCrc.h"
 
 #include "../../../Common/AutoPtr.h"
+// #include "../../../Common/UTFConvert.h"
 
 #include "../../Common/StreamObjects.h"
 
@@ -196,7 +197,7 @@ void COutArchive::WriteNumber(UInt64 value)
       break;
     }
     firstByte |= mask;
-    mask >>= 1;
+    mask = (Byte)(mask >> 1);
   }
   WriteByte(firstByte);
   for (; i > 0; i--)
@@ -206,9 +207,9 @@ void COutArchive::WriteNumber(UInt64 value)
   }
 }
 
-static UInt32 GetBigNumberSize(UInt64 value)
+static unsigned GetBigNumberSize(UInt64 value)
 {
-  int i;
+  unsigned i;
   for (i = 1; i < 9; i++)
     if (value < (((UInt64)1 << (i * 7))))
       break;
@@ -264,18 +265,18 @@ void COutArchive::WriteFolder(const CFolder &folder)
       for (idSize = 1; idSize < sizeof(id); idSize++)
         if ((id >> (8 * idSize)) == 0)
           break;
-      idSize &= 0xF;
+      // idSize &= 0xF; // idSize is smaller than 16 already
       Byte temp[16];
       for (unsigned t = idSize; t != 0; t--, id >>= 8)
         temp[t] = (Byte)(id & 0xFF);
   
-      Byte b = (Byte)(idSize);
-      bool isComplex = !coder.IsSimpleCoder();
+      unsigned b = idSize;
+      const bool isComplex = !coder.IsSimpleCoder();
       b |= (isComplex ? 0x10 : 0);
 
-      size_t propsSize = coder.Props.Size();
+      const size_t propsSize = coder.Props.Size();
       b |= ((propsSize != 0) ? 0x20 : 0);
-      temp[0] = b;
+      temp[0] = (Byte)b;
       WriteBytes(temp, idSize + 1);
       if (isComplex)
       {
@@ -309,7 +310,7 @@ void COutArchive::WriteBoolVector(const CBoolVector &boolVector)
   {
     if (boolVector[i])
       b |= mask;
-    mask >>= 1;
+    mask = (Byte)(mask >> 1);
     if (mask == 0)
     {
       WriteByte(b);
@@ -476,7 +477,7 @@ void COutArchive::WriteAlignedBools(const CBoolVector &v, unsigned numDefined, B
 {
   const unsigned bvSize = (numDefined == v.Size()) ? 0 : Bv_GetSizeInBytes(v);
   const UInt64 dataSize = ((UInt64)numDefined << itemSizeShifts) + bvSize + 2;
-  SkipToAligned(3 + (unsigned)bvSize + (unsigned)GetBigNumberSize(dataSize), itemSizeShifts);
+  SkipToAligned(3 + bvSize + GetBigNumberSize(dataSize), itemSizeShifts);
 
   WriteByte(type);
   WriteNumber(dataSize);
@@ -545,7 +546,39 @@ void COutArchive::WriteHeader(
 
   WriteByte(NID::kHeader);
 
-  // Archive Properties
+  /*
+  {
+    // It's example for per archive properies writing
+  
+    WriteByte(NID::kArchiveProperties);
+
+    // you must use random 40-bit number that will identify you
+    // then you can use same kDeveloperID for any properties and methods
+    const UInt64 kDeveloperID = 0x123456789A; // change that value to real random 40-bit number
+
+    #define GENERATE_7Z_ID(developerID, subID) (((UInt64)0x3F << 56) | ((UInt64)developerID << 16) | subID)
+
+    {
+      const UInt64 kSubID = 0x1; // you can use small number for subID
+      const UInt64 kID = GENERATE_7Z_ID(kDeveloperID, kSubID);
+      WriteNumber(kID);
+      const unsigned kPropsSize = 3; // it's example size
+      WriteNumber(kPropsSize);
+      for (unsigned i = 0; i < kPropsSize; i++)
+        WriteByte((Byte)(i & 0xFF));
+    }
+    {
+      const UInt64 kSubID = 0x2; // you can use small number for subID
+      const UInt64 kID = GENERATE_7Z_ID(kDeveloperID, kSubID);
+      WriteNumber(kID);
+      const unsigned kPropsSize = 5; // it's example size
+      WriteNumber(kPropsSize);
+      for (unsigned i = 0; i < kPropsSize; i++)
+        WriteByte((Byte)(i + 16));
+    }
+    WriteByte(NID::kEnd);
+  }
+  */
 
   if (db.Folders.Size() > 0)
   {
@@ -637,7 +670,15 @@ void COutArchive::WriteHeader(
       const UString &name = db.Names[i];
       if (!name.IsEmpty())
         numDefined++;
-      namesDataSize += (name.Len() + 1) * 2;
+      const size_t numUtfChars =
+      /*
+      #if WCHAR_MAX > 0xffff
+        Get_Num_Utf16_chars_from_wchar_string(name.Ptr());
+      #else
+      */
+        name.Len();
+      // #endif
+      namesDataSize += (numUtfChars + 1) * 2;
     }
     
     if (numDefined > 0)
@@ -654,6 +695,25 @@ void COutArchive::WriteHeader(
         for (unsigned t = 0; t <= name.Len(); t++)
         {
           wchar_t c = name[t];
+
+          /*
+          #if WCHAR_MAX > 0xffff
+          if (c >= 0x10000)
+          {
+            c -= 0x10000;
+            if (c < (1 << 20))
+            {
+              unsigned c0 = 0xd800 + ((c >> 10) & 0x3FF);
+              WriteByte((Byte)c0);
+              WriteByte((Byte)(c0 >> 8));
+              c = 0xdc00 + (c & 0x3FF);
+            }
+            else
+              c = '_'; // we change character unsupported by UTF16
+          }
+          #endif
+          */
+  
           WriteByte((Byte)c);
           WriteByte((Byte)(c >> 8));
         }
@@ -855,7 +915,7 @@ HRESULT COutArchive::WriteDatabase(
     h.NextHeaderSize = headerSize;
     h.NextHeaderCRC = headerCRC;
     h.NextHeaderOffset = headerOffset;
-    RINOK(Stream->Seek(_prefixHeaderPos, STREAM_SEEK_SET, NULL));
+    RINOK(Stream->Seek((Int64)_prefixHeaderPos, STREAM_SEEK_SET, NULL));
     return WriteStartHeader(h);
   }
 }

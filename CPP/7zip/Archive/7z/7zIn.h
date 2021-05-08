@@ -174,13 +174,14 @@ struct CDatabase: public CFolders
   HRESULT GetPath_Prop(unsigned index, PROPVARIANT *path) const throw();
 };
 
+
 struct CInArchiveInfo
 {
   CArchiveVersion Version;
-  UInt64 StartPosition;
-  UInt64 StartPositionAfterHeader;
-  UInt64 DataStartPosition;
-  UInt64 DataStartPosition2;
+  UInt64 StartPosition;               // in stream
+  UInt64 StartPositionAfterHeader;    // in stream
+  UInt64 DataStartPosition;           // in stream
+  UInt64 DataStartPosition2;          // in stream. it's for headers
   CRecordVector<UInt64> FileInfoPopIDs;
   
   void Clear()
@@ -193,6 +194,7 @@ struct CInArchiveInfo
   }
 };
 
+
 struct CDbEx: public CDatabase
 {
   CInArchiveInfo ArcInfo;
@@ -202,6 +204,7 @@ struct CDbEx: public CDatabase
 
   UInt64 HeadersSize;
   UInt64 PhySize;
+  // UInt64 EndHeaderOffset; // relative to position after StartHeader (32 bytes)
 
   /*
   CRecordVector<size_t> SecureOffsets;
@@ -255,6 +258,7 @@ struct CDbEx: public CDatabase
 
     HeadersSize = 0;
     PhySize = 0;
+    // EndHeaderOffset = 0;
   }
 
   bool CanUpdate() const
@@ -348,6 +352,8 @@ class CInArchive
  
   UInt64 _arhiveBeginStreamPosition;
   UInt64 _fileEndPosition;
+
+  UInt64 _rangeLimit; // relative to position after StartHeader (32 bytes)
 
   Byte _header[kHeaderSize];
 

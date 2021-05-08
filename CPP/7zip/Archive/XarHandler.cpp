@@ -82,11 +82,13 @@ struct CFile
 
   int Parent;
 
-  CFile(): IsDir(false), HasData(false), ModeDefined(false), Sha1IsDefined(false),
-      /* packSha1IsDefined(false), */
-      Parent(-1),
+  CFile():
       Size(0), PackSize(0), Offset(0),
-      CTime(0), MTime(0), ATime(0), Mode(0) {}
+      CTime(0), MTime(0), ATime(0), Mode(0),
+      IsDir(false), HasData(false), ModeDefined(false), Sha1IsDefined(false),
+      /* packSha1IsDefined(false), */
+      Parent(-1)
+      {}
 
   bool IsCopyMethod() const
   {
@@ -435,8 +437,8 @@ static void Utf8StringToProp(const AString &s, NCOM::CPropVariant &prop)
   if (!s.IsEmpty())
   {
     UString us;
-    if (ConvertUTF8ToUnicode(s, us))
-      prop = us;
+    ConvertUTF8ToUnicode(s, us);
+    prop = us;
   }
 }
 

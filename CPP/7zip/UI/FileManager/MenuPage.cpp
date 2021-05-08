@@ -152,7 +152,7 @@ bool CMenuPage::OnInit()
         );
 
 
-    if (!NFile::NFind::DoesFileExist(path))
+    if (!NFile::NFind::DoesFileExist_Raw(path))
     {
       path.Empty();
       EnableItem(dll.ctrl, false);

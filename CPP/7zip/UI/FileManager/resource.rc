@@ -167,7 +167,7 @@ BEGIN
 
   IDS_FILE_EXIST  "File {0} is already exist"
   IDS_WANT_UPDATE_MODIFIED_FILE  "File '{0}' was modified.\nDo you want to update it in the archive?"
-  IDS_CANNOT_UPDATE_FILE   "Can not update file\n'{0}'"
+  IDS_CANNOT_UPDATE_FILE   "Cannot update file\n'{0}'"
   IDS_CANNOT_START_EDITOR  "Cannot start editor."
   IDS_VIRUS                "The file looks like a virus (the file name contains long spaces in name)."
   IDS_MESSAGE_UNSUPPORTED_OPERATION_FOR_LONG_PATH_FOLDER "The operation cannot be called from a folder that has a long path."
@@ -238,8 +238,8 @@ BEGIN
   IDS_COMBINE_TO  "&Combine to:"
   IDS_COMBINING   "Combining..."
   IDS_COMBINE_SELECT_ONE_FILE  "Select only first part of split file"
-  IDS_COMBINE_CANT_DETECT_SPLIT_FILE  "Can not detect file as split file"
-  IDS_COMBINE_CANT_FIND_MORE_THAN_ONE_PART  "Can not find more than one part of split file"
+  IDS_COMBINE_CANT_DETECT_SPLIT_FILE  "Cannot detect file as split file"
+  IDS_COMBINE_CANT_FIND_MORE_THAN_ONE_PART  "Cannot find more than one part of split file"
 
 END
 

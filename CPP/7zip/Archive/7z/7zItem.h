@@ -50,7 +50,7 @@ public:
   {
     FOR_VECTOR(i, PackStreams)
       if (PackStreams[i] == packStream)
-        return i;
+        return (int)i;
     return -1;
   }
 
@@ -58,7 +58,7 @@ public:
   {
     FOR_VECTOR(i, Bonds)
       if (Bonds[i].PackIndex == packStream)
-        return i;
+        return (int)i;
     return -1;
   }
   

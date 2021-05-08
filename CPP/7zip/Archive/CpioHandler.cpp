@@ -131,7 +131,7 @@ enum EErrorType
 {
   k_ErrorType_OK,
   k_ErrorType_Corrupted,
-  k_ErrorType_UnexpectedEnd,
+  k_ErrorType_UnexpectedEnd
 };
 
 struct CInArchive
@@ -218,7 +218,7 @@ API_FUNC_static_IsArc IsArc_Cpio(const Byte *p, size_t size)
     {
       if (size < k_OctRecord_Size)
         return k_IsArc_Res_NEED_MORE;
-      for (int i = 6; i < k_OctRecord_Size; i++)
+      for (unsigned i = 6; i < k_OctRecord_Size; i++)
       {
         char c = p[i];
         if (c < '0' || c > '7')
@@ -231,7 +231,7 @@ API_FUNC_static_IsArc IsArc_Cpio(const Byte *p, size_t size)
     {
       if (size < k_HexRecord_Size)
         return k_IsArc_Res_NEED_MORE;
-      for (int i = 6; i < k_HexRecord_Size; i++)
+      for (unsigned i = 6; i < k_HexRecord_Size; i++)
       {
         char c = p[i];
         if ((c < '0' || c > '9') &&
@@ -268,7 +268,9 @@ API_FUNC_static_IsArc IsArc_Cpio(const Byte *p, size_t size)
     if (nameSize > (1 << 8))
       return k_IsArc_Res_NO;
   }
-  if (numLinks == 0 || numLinks >= (1 << 10))
+  // 20.03: some cpio files have (numLinks == 0).
+  // if (numLinks == 0) return k_IsArc_Res_NO;
+  if (numLinks >= (1 << 10))
     return k_IsArc_Res_NO;
   if (nameSize == 0 || nameSize > kNameSizeMax)
     return k_IsArc_Res_NO;
@@ -462,6 +464,9 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       {
         case k_ErrorType_UnexpectedEnd: v |= kpv_ErrorFlags_UnexpectedEnd; break;
         case k_ErrorType_Corrupted: v |= kpv_ErrorFlags_HeadersError; break;
+        case k_ErrorType_OK:
+        default:
+          break;
       }
       prop = v;
       break;
@@ -565,23 +570,30 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
     {
       // Read tailing zeros.
       // Most of cpio files use 512-bytes aligned zeros
-      UInt64 pos = arc.Processed;
-      const UInt32 kTailSize_MAX = 1 << 9;
+      // rare case: 4K/8K aligment is possible also
+      const unsigned kTailSize_MAX = 1 << 9;
       Byte buf[kTailSize_MAX];
       
-      UInt32 rem = (kTailSize_MAX - (UInt32)pos) & (kTailSize_MAX - 1);
-      if (rem != 0)
+      unsigned pos = (unsigned)arc.Processed & (kTailSize_MAX - 1);
+      if (pos != 0) // use this check to support 512 bytes alignment only
+      for (;;)
       {
-        rem++; // we need to see that it's end of file
+        unsigned rem = kTailSize_MAX - pos;
         size_t processed = rem;
-        RINOK(ReadStream(stream, buf, &processed));
-        if (processed < rem)
-        {
-          unsigned i;
-          for (i = 0; i < processed && buf[i] == 0; i++);
-          if (i == processed)
-            _phySize += processed;
-        }
+        RINOK(ReadStream(stream, buf + pos, &processed));
+        if (processed != rem)
+          break;
+        
+        for (; pos < kTailSize_MAX && buf[pos] == 0; pos++)
+        {}
+        if (pos != kTailSize_MAX)
+          break;
+        _phySize += processed;
+        pos = 0;
+
+        //       use break to support 512   bytes alignment zero tail
+        // don't use break to support 512*n bytes alignment zero tail
+        break;
       }
     }
     
@@ -622,7 +634,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       UString res;
       bool needConvert = true;
       #ifdef _WIN32
-      if (ConvertUTF8ToUnicode(item.Name, res))
+      // if (
+      ConvertUTF8ToUnicode(item.Name, res);
+      // )
         needConvert = false;
       #endif
       if (needConvert)

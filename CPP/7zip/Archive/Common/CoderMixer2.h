@@ -107,7 +107,7 @@ struct CBindInfo
   {
     FOR_VECTOR (i, Bonds)
       if (Bonds[i].PackIndex == packStream)
-        return i;
+        return (int)i;
     return -1;
   }
 
@@ -115,7 +115,7 @@ struct CBindInfo
   {
     FOR_VECTOR (i, Bonds)
       if (Bonds[i].UnpackIndex == unpackStream)
-        return i;
+        return (int)i;
     return -1;
   }
 
@@ -144,7 +144,7 @@ struct CBindInfo
   {
     FOR_VECTOR(i, PackStreams)
       if (PackStreams[i] == streamIndex)
-        return i;
+        return (int)i;
     return -1;
   }
 
@@ -251,6 +251,7 @@ public:
       // , InternalPackSizeError(false)
       {}
 
+  virtual ~CMixer() {};
   /*
   Sequence of calling:
 
@@ -279,7 +280,7 @@ public:
   virtual void AddCoder(const CCreatedCoder &cod) = 0;
   virtual CCoder &GetCoder(unsigned index) = 0;
   virtual void SelectMainCoder(bool useFirst) = 0;
-  virtual void ReInit() = 0;
+  virtual HRESULT ReInit2() = 0;
   virtual void SetCoderInfo(unsigned coderIndex, const UInt64 *unpackSize, const UInt64 * const *packSizes, bool finish) = 0;
   virtual HRESULT Code(
       ISequentialInStream * const *inStreams,
@@ -322,6 +323,8 @@ class CMixerST:
   public CMixer,
   public CMyUnknownImp
 {
+  CLASS_NO_COPY(CMixerST)
+
   HRESULT GetInStream2(ISequentialInStream * const *inStreams, /* const UInt64 * const *inSizes, */
       UInt32 outStreamIndex, ISequentialInStream **inStreamRes);
   HRESULT GetInStream(ISequentialInStream * const *inStreams, /* const UInt64 * const *inSizes, */
@@ -345,7 +348,7 @@ public:
   virtual void AddCoder(const CCreatedCoder &cod);
   virtual CCoder &GetCoder(unsigned index);
   virtual void SelectMainCoder(bool useFirst);
-  virtual void ReInit();
+  virtual HRESULT ReInit2();
   virtual void SetCoderInfo(unsigned coderIndex, const UInt64 *unpackSize, const UInt64 * const *packSizes, bool finish)
     { _coders[coderIndex].SetCoderInfo(unpackSize, packSizes, finish); }
   virtual HRESULT Code(
@@ -402,7 +405,7 @@ public:
   };
 
   CCoderMT(): EncodeMode(false) {}
-  ~CCoderMT() { CVirtThread::WaitThreadFinish(); }
+  virtual ~CCoderMT() { CVirtThread::WaitThreadFinish(); }
   
   void Code(ICompressProgressInfo *progress);
 };
@@ -413,11 +416,14 @@ class CMixerMT:
   public CMixer,
   public CMyUnknownImp
 {
+  CLASS_NO_COPY(CMixerMT)
+
   CObjectVector<CStreamBinder> _streamBinders;
 
   HRESULT Init(ISequentialInStream * const *inStreams, ISequentialOutStream * const *outStreams);
   HRESULT ReturnIfError(HRESULT code);
 
+  // virtual ~CMixerMT() {};
 public:
   CObjectVector<CCoderMT> _coders;
 
@@ -427,7 +433,7 @@ public:
   virtual void AddCoder(const CCreatedCoder &cod);
   virtual CCoder &GetCoder(unsigned index);
   virtual void SelectMainCoder(bool useFirst);
-  virtual void ReInit();
+  virtual HRESULT ReInit2();
   virtual void SetCoderInfo(unsigned coderIndex, const UInt64 *unpackSize, const UInt64 * const *packSizes, bool finish)
     { _coders[coderIndex].SetCoderInfo(unpackSize, packSizes, finish); }
   virtual HRESULT Code(

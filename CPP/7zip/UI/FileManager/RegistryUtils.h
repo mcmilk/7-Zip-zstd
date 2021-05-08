@@ -15,6 +15,8 @@ void ReadRegEditor(bool useEditor, UString &path);
 void SaveRegDiff(const UString &path);
 void ReadRegDiff(UString &path);
 
+void ReadReg_VerCtrlPath(UString &path);
+
 struct CFmSettings
 {
   bool ShowDots;

@@ -57,18 +57,20 @@ struct CCompressionMethodMode
   #endif
   
   bool PasswordIsDefined;
-  UString Password;
+  UString Password; // _Wipe
 
   bool IsEmpty() const { return (Methods.IsEmpty() && !PasswordIsDefined); }
   CCompressionMethodMode():
-      DefaultMethod_was_Inserted(false),
-      Filter_was_Inserted(false),
-      PasswordIsDefined(false)
+        DefaultMethod_was_Inserted(false)
+      , Filter_was_Inserted(false)
       #ifndef _7ZIP_ST
       , NumThreads(1)
       , MultiThreadMixer(true)
       #endif
+      , PasswordIsDefined(false)
   {}
+
+  ~CCompressionMethodMode() { Password.Wipe_and_Empty(); }
 };
 
 }}

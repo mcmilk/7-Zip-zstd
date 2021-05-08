@@ -54,17 +54,17 @@ public:
   CZipContextMenu();
   ~CZipContextMenu();
 
-private:
-
   struct CCommandMapItem
   {
     ECommandInternalID CommandInternalID;
     UString Verb;
-    UString HelpString;
+    // UString HelpString;
     UString Folder;
     UString ArcName;
     UString ArcType;
   };
+
+private:
 
   bool _isMenuForFM;
   UStringVector _fileNames;
@@ -78,7 +78,8 @@ private:
 
   HRESULT GetFileNames(LPDATAOBJECT dataObject, UStringVector &fileNames);
   int FindVerb(const UString &verb);
-  bool FillCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &commandMapItem);
+  void FillCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &cmi);
+  void AddCommand(ECommandInternalID id, UString &mainString, CCommandMapItem &cmi);
   void AddMapItem_ForSubMenu(const char *ver);
 };
 

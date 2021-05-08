@@ -95,43 +95,39 @@ public:
     MovePos(numBits);
     return res;
   }
-};
 
-const UInt32 kTopValue = (1 << 24);
-const UInt32 kBot = (1 << 15);
-
-struct CRangeDecoder
-{
-  IPpmd7_RangeDec vt;
-  UInt32 Range;
-  UInt32 Code;
-  UInt32 Low;
-  CBitDecoder BitDecoder;
-  SRes Res;
-
-public:
-  void InitRangeCoder()
+  UInt32 ReadBits_upto8(unsigned numBits)
   {
-    Code = 0;
-    Low = 0;
-    Range = 0xFFFFFFFF;
-    for (int i = 0; i < 4; i++)
-      Code = (Code << 8) | BitDecoder.ReadBits(8);
-  }
-
-  void Normalize()
-  {
-    while ((Low ^ (Low + Range)) < kTopValue ||
-       Range < kBot && ((Range = (0 - Low) & (kBot - 1)), 1))
+    if (_bitPos < numBits)
     {
-      Code = (Code << 8) | BitDecoder.Stream.ReadByte();
-      Range <<= 8;
-      Low <<= 8;
+      _bitPos += 8;
+      _value = (_value << 8) | Stream.ReadByte();
     }
+    _bitPos -= numBits;
+    UInt32 res = _value >> _bitPos;
+    _value = _value & ((1 << _bitPos) - 1);
+    return res;
   }
 
-  CRangeDecoder() throw();
+  Byte ReadByteFromAligned()
+  {
+    if (_bitPos == 0)
+      return Stream.ReadByte();
+    unsigned bitsPos = _bitPos - 8;
+    Byte b = (Byte)(_value >> bitsPos);
+    _value = _value & ((1 << bitsPos) - 1);
+    _bitPos = bitsPos;
+    return b;
+  }
 };
+
+
+struct CByteIn
+{
+  IByteIn IByteIn_obj;
+  CBitDecoder BitDecoder;
+};
+
 
 struct CFilter: public NVm::CProgram
 {
@@ -165,7 +161,7 @@ class CDecoder:
   public ICompressSetDecoderProperties2,
   public CMyUnknownImp
 {
-  CRangeDecoder m_InBitStream;
+  CByteIn m_InBitStream;
   Byte *_window;
   UInt32 _winPos;
   UInt32 _wrPtr;
@@ -174,6 +170,7 @@ class CDecoder:
   UInt64 _writtenFileSize; // if it's > _unpackSize, then _unpackSize only written
   ISequentialOutStream *_outStream;
   NHuffman::CDecoder<kNumHuffmanBits, kMainTableSize> m_MainDecoder;
+  UInt32 kDistStart[kDistTableSize];
   NHuffman::CDecoder<kNumHuffmanBits, kDistTableSize> m_DistDecoder;
   NHuffman::CDecoder<kNumHuffmanBits, kAlignTableSize> m_AlignDecoder;
   NHuffman::CDecoder<kNumHuffmanBits, kLenTableSize> m_LenDecoder;
@@ -223,7 +220,7 @@ class CDecoder:
   UInt32 ReadBits(unsigned numBits);
 
   HRESULT InitPPM();
-  int DecodePpmSymbol();
+  // int DecodePpmSymbol();
   HRESULT DecodePPM(Int32 num, bool &keepDecompressing);
 
   HRESULT ReadTables(bool &keepDecompressing);
@@ -245,10 +242,10 @@ public:
 
   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 
-  void CopyBlock(UInt32 distance, UInt32 len)
+  void CopyBlock(UInt32 dist, UInt32 len)
   {
     _lzSize += len;
-    UInt32 pos = (_winPos - distance - 1) & kWindowMask;
+    UInt32 pos = (_winPos - dist - 1) & kWindowMask;
     Byte *window = _window;
     UInt32 winPos = _winPos;
     if (kWindowSize - winPos > len && kWindowSize - pos > len)
@@ -273,12 +270,11 @@ public:
   
   void PutByte(Byte b)
   {
-    _window[_winPos] = b;
-    _winPos = (_winPos + 1) & kWindowMask;
+    UInt32 wp = _winPos;
+    _window[wp] = b;
+    _winPos = (wp + 1) & kWindowMask;
     _lzSize++;
   }
-
-
 };
 
 }}

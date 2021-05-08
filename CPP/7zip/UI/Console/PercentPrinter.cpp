@@ -143,7 +143,7 @@ void CPercentPrinter::Print()
 
     _tempU = FileName;
     _so->Normalize_UString(_tempU);
-    StdOut_Convert_UString_to_AString(_tempU, _temp);
+    _so->Convert_UString_to_AString(_tempU, _temp);
     if (_s.Len() + _temp.Len() > MaxLen)
     {
       unsigned len = FileName.Len();
@@ -157,7 +157,7 @@ void CPercentPrinter::Print()
         _tempU.Delete(len / 2, _tempU.Len() - len);
         _tempU.Insert(len / 2, L" . ");
         _so->Normalize_UString(_tempU);
-        StdOut_Convert_UString_to_AString(_tempU, _temp);
+        _so->Convert_UString_to_AString(_tempU, _temp);
         if (_s.Len() + _temp.Len() <= MaxLen)
           break;
       }

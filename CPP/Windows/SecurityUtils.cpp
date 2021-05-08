@@ -34,7 +34,7 @@ bool MyLookupAccountSid(LPCTSTR systemName, PSID sid,
   
 static void SetLsaString(LPWSTR src, PLSA_UNICODE_STRING dest)
 {
-  int len = (int)wcslen(src);
+  size_t len = (size_t)wcslen(src);
   dest->Length = (USHORT)(len * sizeof(WCHAR));
   dest->MaximumLength = (USHORT)((len + 1) * sizeof(WCHAR));
   dest->Buffer = src;

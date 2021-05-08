@@ -24,6 +24,21 @@ static UString GetQuotedString(const UString &s)
 
 WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
 {
+  /*
+  OutputDebugStringW(L"CProcess::Create");
+  OutputDebugStringW(imageName);
+  if (params)
+  {
+    OutputDebugStringW(L"params:");
+    OutputDebugStringW(params);
+  }
+  if (curDir)
+  {
+    OutputDebugStringW(L"cur dir:");
+    OutputDebugStringW(curDir);
+  }
+  */
+
   Close();
   const UString params2 =
       #ifndef UNDER_CE
@@ -52,7 +67,8 @@ WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
     CSysString curDirA;
     if (curDir != 0)
       curDirA = GetSystemString(curDir);
-    result = ::CreateProcessA(NULL, (LPSTR)(LPCSTR)GetSystemString(params2),
+    const AString s = GetSystemString(params2);
+    result = ::CreateProcessA(NULL, s.Ptr_non_const(),
         NULL, NULL, FALSE, 0, NULL, ((curDir != 0) ? (LPCSTR)curDirA: 0), &si, &pi);
   }
   else
@@ -67,8 +83,8 @@ WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
     si.cbReserved2 = 0;
     si.lpReserved2 = 0;
     
-    result = CreateProcessW(imageName, (LPWSTR)(LPCWSTR)params2,
-        NULL, NULL, FALSE, 0, NULL, (LPWSTR)curDir, &si, &pi);
+    result = CreateProcessW(imageName, params2.Ptr_non_const(),
+        NULL, NULL, FALSE, 0, NULL, curDir, &si, &pi);
   }
   if (result == 0)
     return ::GetLastError();

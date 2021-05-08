@@ -41,7 +41,7 @@ namespace NVmdk {
 static const Byte k_Signature[] = SIGNATURE;
 
 static const UInt32 k_Flags_NL         = (UInt32)1 << 0;
-static const UInt32 k_Flags_RGD        = (UInt32)1 << 1;
+// static const UInt32 k_Flags_RGD        = (UInt32)1 << 1;
 static const UInt32 k_Flags_ZeroGrain  = (UInt32)1 << 2;
 static const UInt32 k_Flags_Compressed = (UInt32)1 << 16;
 static const UInt32 k_Flags_Marker     = (UInt32)1 << 17;
@@ -855,11 +855,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     }
     
     case kpidId:
+    {
       if (desc && !desc->CID.IsEmpty())
       {
         prop = desc->CID;
-        break;
       }
+      break;
+    }
 
     case kpidName:
     {

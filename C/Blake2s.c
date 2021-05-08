@@ -1,5 +1,5 @@
 /* Blake2s.c -- BLAKE2s and BLAKE2sp Hash
-2015-06-30 : Igor Pavlov : Public domain
+2021-02-09 : Igor Pavlov : Public domain
 2015 : Samuel Neves : Public domain */
 
 #include <string.h>
@@ -34,7 +34,7 @@ static const Byte k_Blake2s_Sigma[BLAKE2S_NUM_ROUNDS][16] =
 };
 
 
-void Blake2s_Init0(CBlake2s *p)
+static void Blake2s_Init0(CBlake2s *p)
 {
   unsigned i;
   for (i = 0; i < 8; i++)

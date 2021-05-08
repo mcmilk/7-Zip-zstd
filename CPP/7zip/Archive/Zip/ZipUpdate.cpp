@@ -62,6 +62,21 @@ static void AddAesExtra(CItem &item, Byte aesKeyMode, UInt16 method)
 }
 
 
+static void Copy_From_UpdateItem_To_ItemOut(const CUpdateItem &ui, CItemOut &item)
+{
+  item.Name = ui.Name;
+  item.Name_Utf = ui.Name_Utf;
+  item.Comment = ui.Comment;
+  item.SetUtf8(ui.IsUtf8);
+  // item.SetFlag_AltStream(ui.IsAltStream);
+  // item.ExternalAttrib = ui.Attrib;
+  item.Time = ui.Time;
+  item.Ntfs_MTime = ui.Ntfs_MTime;
+  item.Ntfs_ATime = ui.Ntfs_ATime;
+  item.Ntfs_CTime = ui.Ntfs_CTime;
+  item.NtfsTimeIsDefined = ui.NtfsTimeIsDefined;
+}
+
 static void SetFileHeader(
     const CCompressionMethodMode &options,
     const CUpdateItem &ui,
@@ -69,22 +84,15 @@ static void SetFileHeader(
     CItemOut &item)
 {
   item.Size = ui.Size;
-  bool isDir = ui.IsDir;
+  const bool isDir = ui.IsDir;
 
   item.ClearFlags();
 
   if (ui.NewProps)
   {
-    item.Name = ui.Name;
-    item.Comment = ui.Comment;
-    item.SetUtf8(ui.IsUtf8);
+    Copy_From_UpdateItem_To_ItemOut(ui, item);
     // item.SetFlag_AltStream(ui.IsAltStream);
     item.ExternalAttrib = ui.Attrib;
-    item.Time = ui.Time;
-    item.Ntfs_MTime = ui.Ntfs_MTime;
-    item.Ntfs_ATime = ui.Ntfs_ATime;
-    item.Ntfs_CTime = ui.Ntfs_CTime;
-    item.NtfsTimeIsDefined = ui.NtfsTimeIsDefined;
   }
   /*
   else
@@ -148,6 +156,35 @@ static void SetItemInfoFromCompressingResult(const CCompressingResult &compressi
 
 #ifndef _7ZIP_ST
 
+struct CMtSem
+{
+  NWindows::NSynchronization::CSemaphore Semaphore;
+  NWindows::NSynchronization::CCriticalSection CS;
+  CIntVector Indexes;
+  int Head;
+
+  void ReleaseItem(unsigned index)
+  {
+    {
+      CCriticalSectionLock lock(CS);
+      Indexes[index] = Head;
+      Head = (int)index;
+    }
+    Semaphore.Release();
+  }
+
+  int GetFreeItem()
+  {
+    int i;
+    {
+      CCriticalSectionLock lock(CS);
+      i = Head;
+      Head = Indexes[(unsigned)i];
+    }
+    return i;
+  }
+};
+
 static THREAD_FUNC_DECL CoderThread(void *threadCoderInfo);
 
 struct CThreadInfo
@@ -156,7 +193,9 @@ struct CThreadInfo
 
   NWindows::CThread Thread;
   NWindows::NSynchronization::CAutoResetEvent CompressEvent;
-  NWindows::NSynchronization::CAutoResetEvent CompressionCompletedEvent;
+  CMtSem *MtSem;
+  unsigned ThreadIndex;
+
   bool ExitThread;
 
   CMtCompressProgress *ProgressSpec;
@@ -177,34 +216,43 @@ struct CThreadInfo
   UInt32 FileTime;
   UInt64 ExpectedDataSize;
 
-  CThreadInfo(const CCompressionMethodMode &options):
+  CThreadInfo():
       ExitThread(false),
-      ProgressSpec(0),
-      OutStreamSpec(0),
-      Coder(options),
+      ProgressSpec(NULL),
+      OutStreamSpec(NULL),
       InSeqMode(false),
       OutSeqMode(false),
       FileTime(0),
       ExpectedDataSize((UInt64)(Int64)-1)
   {}
+
+  void SetOptions(const CCompressionMethodMode &options)
+  {
+    Coder.SetOptions(options);
+  }
   
   HRESULT CreateEvents()
   {
-    RINOK(CompressEvent.CreateIfNotCreated());
-    return CompressionCompletedEvent.CreateIfNotCreated();
+    WRes wres = CompressEvent.CreateIfNotCreated_Reset();
+    return HRESULT_FROM_WIN32(wres);
   }
-  HRes CreateThread() { return Thread.Create(CoderThread, this); }
+  
+  HRESULT CreateThread()
+  {
+    WRes wres = Thread.Create(CoderThread, this);
+    return HRESULT_FROM_WIN32(wres);
+  }
 
   void WaitAndCode();
-  void StopWaitClose()
+
+  void StopWait_Close()
   {
     ExitThread = true;
-    if (OutStreamSpec != 0)
+    if (OutStreamSpec)
       OutStreamSpec->StopWriting(E_ABORT);
     if (CompressEvent.IsCreated())
       CompressEvent.Set();
-    Thread.Wait();
-    Thread.Close();
+    Thread.Wait_Close();
   }
 };
 
@@ -215,7 +263,7 @@ void CThreadInfo::WaitAndCode()
     CompressEvent.Lock();
     if (ExitThread)
       return;
-    
+
     Result = Coder.Compress(
         EXTERNAL_CODECS_LOC_VARS
         InStream, OutStream,
@@ -224,7 +272,8 @@ void CThreadInfo::WaitAndCode()
     
     if (Result == S_OK && Progress)
       Result = Progress->SetRatioInfo(&CompressingResult.UnpackSize, &CompressingResult.PackSize);
-    CompressionCompletedEvent.Set();
+    
+    MtSem->ReleaseItem(ThreadIndex);
   }
 }
 
@@ -241,7 +290,7 @@ public:
   ~CThreads()
   {
     FOR_VECTOR (i, Threads)
-      Threads[i].StopWaitClose();
+      Threads[i].StopWait_Close();
   }
 };
 
@@ -253,7 +302,8 @@ struct CMemBlocks2: public CMemLockBlocks
   bool Finished;
   CCompressingResult CompressingResult;
   
-  CMemBlocks2(): Skip(false), InSeqMode(false), PreDescriptorMode(false), Finished(false) {}
+  CMemBlocks2(): Skip(false), InSeqMode(false), PreDescriptorMode(false), Finished(false),
+    CompressingResult() {}
 };
 
 class CMemRefs
@@ -359,7 +409,6 @@ STDMETHODIMP CMtProgressMixer::SetRatioInfo(const UInt64 *inSize, const UInt64 *
 
 #endif
 
-
 static HRESULT UpdateItemOldData(
     COutArchive &archive,
     CInArchive *inArchive,
@@ -385,21 +434,11 @@ static HRESULT UpdateItemOldData(
     if (item.HasDescriptor())
       return E_NOTIMPL;
     
-    // use old name size.
-    
     // we keep ExternalAttrib and some another properties from old archive
     // item.ExternalAttrib = ui.Attrib;
-
     // if we don't change Comment, we keep Comment from OldProperties
-    item.Comment = ui.Comment;
-    item.Name = ui.Name;
-    item.SetUtf8(ui.IsUtf8);
+    Copy_From_UpdateItem_To_ItemOut(ui, item);
     // item.SetFlag_AltStream(ui.IsAltStream);
-    item.Time = ui.Time;
-    item.Ntfs_MTime = ui.Ntfs_MTime;
-    item.Ntfs_ATime = ui.Ntfs_ATime;
-    item.Ntfs_CTime = ui.Ntfs_CTime;
-    item.NtfsTimeIsDefined = ui.NtfsTimeIsDefined;
 
     item.CentralExtra.RemoveUnknownSubBlocks();
     item.LocalExtra.RemoveUnknownSubBlocks();
@@ -452,16 +491,16 @@ static void UpdatePropsFromStream(CUpdateItem &item, ISequentialInStream *fileIn
 
   FILETIME cTime, aTime, mTime;
   UInt64 size;
-  // UInt32 attrib;
-  if (getProps->GetProps(&size, &cTime, &aTime, &mTime, NULL) != S_OK)
+  UInt32 attrib;
+  if (getProps->GetProps(&size, &cTime, &aTime, &mTime, &attrib) != S_OK)
     return;
   
   if (size != item.Size && size != (UInt64)(Int64)-1)
   {
-    Int64 newComplexity = totalComplexity + ((Int64)size - (Int64)item.Size);
+    const Int64 newComplexity = (Int64)totalComplexity + ((Int64)size - (Int64)item.Size);
     if (newComplexity > 0)
     {
-      totalComplexity = newComplexity;
+      totalComplexity = (UInt64)newComplexity;
       updateCallback->SetTotal(totalComplexity);
     }
     item.Size = size;
@@ -481,7 +520,7 @@ static void UpdatePropsFromStream(CUpdateItem &item, ISequentialInStream *fileIn
   if (!IsZero_FILETIME(cTime)) item.Ntfs_CTime = cTime;
   if (!IsZero_FILETIME(aTime)) item.Ntfs_ATime = aTime;
 
-  // item.Attrib = attrib;
+  item.Attrib = attrib;
 }
 
 
@@ -501,7 +540,8 @@ static HRESULT Update2St(
   CMyComPtr<ICompressProgressInfo> progress = lps;
   lps->Init(updateCallback, true);
 
-  CAddCommon compressor(*options);
+  CAddCommon compressor;
+  compressor.SetOptions(*options);
   
   CObjectVector<CItemOut> items;
   UInt64 unpackSizeTotal = 0, packSizeTotal = 0;
@@ -519,7 +559,7 @@ static HRESULT Update2St(
     {
       // Note: for (ui.NewProps && !ui.NewData) it copies Props from old archive,
       // But we will rewrite all important properties later. But we can keep some properties like Comment
-      itemEx = inputItems[ui.IndexInArc];
+      itemEx = inputItems[(unsigned)ui.IndexInArc];
       if (inArchive->ReadLocalItemAfterCdItemFull(itemEx) != S_OK)
         return E_NOTIMPL;
       (CItem &)item = itemEx;
@@ -659,7 +699,7 @@ static HRESULT Update2(
     }
     else
     {
-      CItemEx inputItem = inputItems[ui.IndexInArc];
+      CItemEx inputItem = inputItems[(unsigned)ui.IndexInArc];
       if (inArchive->ReadLocalItemAfterCdItemFull(inputItem) != S_OK)
         return E_NOTIMPL;
       complexity += inputItem.GetLocalFullSize();
@@ -686,7 +726,8 @@ static HRESULT Update2(
     options2._methods.AddNew();
   }
 
-  CAddCommon compressor(options2);
+  CAddCommon compressor;
+  compressor.SetOptions(options2);
   
   complexity = 0;
   
@@ -715,21 +756,32 @@ static HRESULT Update2(
 
   UInt32 numThreads = options._numThreads;
 
-  const UInt32 kNumMaxThreads = 64;
-  if (numThreads > kNumMaxThreads)
-    numThreads = kNumMaxThreads;
-  if (numThreads > MAXIMUM_WAIT_OBJECTS) // is 64 in Windows (is it 64 in all versions?)
+  {
+    const UInt32 kNumMaxThreads =
+      #ifdef _WIN32
+        64; // _WIN32 supports only 64 threads in one group. So no need for more threads here
+      #else
+        128;
+      #endif
+    if (numThreads > kNumMaxThreads)
+      numThreads = kNumMaxThreads;
+  }
+  /*
+  if (numThreads > MAXIMUM_WAIT_OBJECTS) // is 64 in Windows
     numThreads = MAXIMUM_WAIT_OBJECTS;
+  */
   if (numThreads < 1)
     numThreads = 1;
 
-  const size_t kMemPerThread = (1 << 25);
+  const size_t kMemPerThread = (size_t)1 << 25;
   const size_t kBlockSize = 1 << 16;
 
   bool mtMode = (numThreads > 1);
 
   if (numFilesToCompress <= 1)
     mtMode = false;
+
+  // mtMode = true; // debug: to test mtMode
 
   if (!mtMode)
   {
@@ -788,7 +840,7 @@ static HRESULT Update2(
         if (t > numThreads)
           t = numThreads;
         oneMethodMain->AddProp_NumThreads(t);
-        numXzThreads = t;
+        numXzThreads = (int)t;
       }
       numThreads /= (unsigned)numXzThreads;
     }
@@ -830,8 +882,16 @@ static HRESULT Update2(
   CMemBlockManagerMt memManager(kBlockSize);
   CMemRefs refs(&memManager);
 
+  CMtSem mtSem;
   CThreads threads;
-  CRecordVector<HANDLE> compressingCompletedEvents;
+  mtSem.Head = -1;
+  mtSem.Indexes.ClearAndSetSize(numThreads);
+  {
+    WRes wres = mtSem.Semaphore.Create(0, numThreads);
+    if (wres != 0)
+      return HRESULT_FROM_WIN32(wres);
+  }
+
   CUIntVector threadIndices;  // list threads in order of updateItems
 
   {
@@ -840,26 +900,32 @@ static HRESULT Update2(
       refs.Refs.Add(CMemBlocks2());
 
     for (i = 0; i < numThreads; i++)
-      threads.Threads.Add(CThreadInfo(options2));
+    {
+      threads.Threads.AddNew();
+      // mtSem.Indexes[i] = -1; // actually we don't use these values
+    }
 
     for (i = 0; i < numThreads; i++)
     {
       CThreadInfo &threadInfo = threads.Threads[i];
+      threadInfo.SetOptions(options2);                ;
       #ifdef EXTERNAL_CODECS
       threadInfo.__externalCodecs = __externalCodecs;
       #endif
       RINOK(threadInfo.CreateEvents());
       threadInfo.OutStreamSpec = new COutMemStream(&memManager);
-      RINOK(threadInfo.OutStreamSpec->CreateEvents());
+      RINOK(threadInfo.OutStreamSpec->CreateEvents(SYNC_WFMO(&memManager.Synchro)));
       threadInfo.OutStream = threadInfo.OutStreamSpec;
       threadInfo.IsFree = true;
       threadInfo.ProgressSpec = new CMtCompressProgress();
       threadInfo.Progress = threadInfo.ProgressSpec;
-      threadInfo.ProgressSpec->Init(&mtCompressProgressMixer, (int)i);
+      threadInfo.ProgressSpec->Init(&mtCompressProgressMixer, i);
       threadInfo.InSeqMode = false;
       threadInfo.OutSeqMode = false;
       threadInfo.FileTime = 0;
       threadInfo.ExpectedDataSize = (UInt64)(Int64)-1;
+      threadInfo.ThreadIndex = i;
+      threadInfo.MtSem = &mtSem;
       RINOK(threadInfo.CreateThread());
     }
   }
@@ -890,7 +956,7 @@ static HRESULT Update2(
       }
       else
       {
-        itemEx = inputItems[ui.IndexInArc];
+        itemEx = inputItems[(unsigned)ui.IndexInArc];
         if (inArchive->ReadLocalItemAfterCdItemFull(itemEx) != S_OK)
           return E_NOTIMPL;
         (CItem &)item = itemEx;
@@ -958,10 +1024,9 @@ static HRESULT Update2(
           threadInfo.OutSeqMode = outSeqMode;
           threadInfo.FileTime = ui.Time; // FileTime is used for ZipCrypto only in seqMode
           threadInfo.ExpectedDataSize = ui.Size;
-          
+
           threadInfo.CompressEvent.Set();
           
-          compressingCompletedEvents.Add(threadInfo.CompressionCompletedEvent);
           threadIndices.Add(k);
         }
       }
@@ -982,7 +1047,7 @@ static HRESULT Update2(
     
     if (!ui.NewProps || !ui.NewData)
     {
-      itemEx = inputItems[ui.IndexInArc];
+      itemEx = inputItems[(unsigned)ui.IndexInArc];
       if (inArchive->ReadLocalItemAfterCdItemFull(itemEx) != S_OK)
         return E_NOTIMPL;
       (CItem &)item = itemEx;
@@ -1004,7 +1069,7 @@ static HRESULT Update2(
         if (memRef.Finished)
         {
           if (lastRealStreamItemIndex < (int)itemIndex)
-            lastRealStreamItemIndex = itemIndex;
+            lastRealStreamItemIndex = (int)itemIndex;
 
           SetFileHeader(options, ui, memRef.CompressingResult.DescriptorMode, item);
 
@@ -1030,7 +1095,7 @@ static HRESULT Update2(
           {
             // LocalHeader was not written for current itemIndex still
 
-            lastRealStreamItemIndex = itemIndex;
+            lastRealStreamItemIndex = (int)itemIndex;
 
             // thread was started before for that item already, and memRef.SeqMode was set
 
@@ -1060,24 +1125,30 @@ static HRESULT Update2(
             }
           }
 
-          DWORD result = ::WaitForMultipleObjects(compressingCompletedEvents.Size(),
-              &compressingCompletedEvents.Front(), FALSE, INFINITE);
-          if (result == WAIT_FAILED)
-          {
-            DWORD lastError = GetLastError();
-            return lastError != 0 ? lastError : E_FAIL;
-          }
-          
-          unsigned t = (unsigned)(result - WAIT_OBJECT_0);
-          if (t >= compressingCompletedEvents.Size())
+          WRes wres = mtSem.Semaphore.Lock();
+          if (wres != 0)
+            return HRESULT_FROM_WIN32(wres);
+
+          int ti = mtSem.GetFreeItem();
+          if (ti < 0)
             return E_FAIL;
 
-          CThreadInfo &threadInfo = threads.Threads[threadIndices[t]];
+          CThreadInfo &threadInfo = threads.Threads[(unsigned)ti];
           threadInfo.InStream.Release();
           threadInfo.IsFree = true;
           RINOK(threadInfo.Result);
+
+          unsigned t = 0;
+
+          for (;;)
+          {
+            if (t == threadIndices.Size())
+              return E_FAIL;
+            if (threadIndices[t] == (unsigned)ti)
+              break;
+            t++;
+          }
           threadIndices.Delete(t);
-          compressingCompletedEvents.Delete(t);
           
           if (t == 0)
           {
@@ -1187,7 +1258,7 @@ HRESULT CCacheOutStream::Init(ISequentialOutStream *seqStream, IOutStream *strea
   {
     RINOK(_stream->Seek(0, STREAM_SEEK_CUR, &_virtPos));
     RINOK(_stream->Seek(0, STREAM_SEEK_END, &_virtSize));
-    RINOK(_stream->Seek(_virtPos, STREAM_SEEK_SET, &_virtPos));
+    RINOK(_stream->Seek((Int64)_virtPos, STREAM_SEEK_SET, &_virtPos));
   }
   _phyPos = _virtPos;
   _phySize = _virtSize;
@@ -1204,7 +1275,7 @@ HRESULT CCacheOutStream::MyWrite(size_t size)
     {
       if (!_stream)
         return E_FAIL;
-      RINOK(_stream->Seek(_cachedPos, STREAM_SEEK_SET, &_phyPos));
+      RINOK(_stream->Seek((Int64)_cachedPos, STREAM_SEEK_SET, &_phyPos));
     }
     size_t pos = (size_t)_cachedPos & kCacheMask;
     size_t curSize = MyMin(kCacheSize - pos, _cachedSize);
@@ -1233,7 +1304,7 @@ CCacheOutStream::~CCacheOutStream()
     if (_virtSize != _phySize)
       _stream->SetSize(_virtSize);
     if (_virtPos != _phyPos)
-      _stream->Seek(_virtPos, STREAM_SEEK_SET, NULL);
+      _stream->Seek((Int64)_virtPos, STREAM_SEEK_SET, NULL);
   }
   ::MidFree(_cache);
 }
@@ -1332,9 +1403,9 @@ STDMETHODIMP CCacheOutStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newP
   }
   if (offset < 0)
     return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
-  _virtPos = offset;
+  _virtPos = (UInt64)offset;
   if (newPosition)
-    *newPosition = offset;
+    *newPosition = (UInt64)offset;
   return S_OK;
 }
 
@@ -1391,7 +1462,7 @@ HRESULT Update(
       {
         IInStream *baseStream = inArchive->GetBaseStream();
         RINOK(baseStream->Seek(0, STREAM_SEEK_SET, NULL));
-        RINOK(NCompress::CopyStream_ExactSize(baseStream, seqOutStream, inArchive->ArcInfo.Base, NULL));
+        RINOK(NCompress::CopyStream_ExactSize(baseStream, seqOutStream, (UInt64)inArchive->ArcInfo.Base, NULL));
       }
     }
 
@@ -1412,7 +1483,7 @@ HRESULT Update(
     {
       IInStream *baseStream = inArchive->GetBaseStream();
       RINOK(baseStream->Seek(inArchive->ArcInfo.Base, STREAM_SEEK_SET, NULL));
-      UInt64 embStubSize = inArchive->ArcInfo.MarkerPos2 - inArchive->ArcInfo.Base;
+      const UInt64 embStubSize = (UInt64)((Int64)inArchive->ArcInfo.MarkerPos2 - inArchive->ArcInfo.Base);
       RINOK(NCompress::CopyStream_ExactSize(baseStream, outStream, embStubSize, NULL));
       outArchive.MoveCurPos(embStubSize);
     }

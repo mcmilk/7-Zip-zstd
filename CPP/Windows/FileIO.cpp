@@ -6,8 +6,20 @@
 #include "../../C/Alloc.h"
 #endif
 
+// #include <stdio.h>
+
 #include "FileIO.h"
 #include "FileName.h"
+
+HRESULT GetLastError_noZero_HRESULT()
+{
+  DWORD res = ::GetLastError();
+  if (res == 0)
+    return E_FAIL;
+  return HRESULT_FROM_WIN32(res);
+}
+
+#ifdef _WIN32
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -78,6 +90,42 @@ bool CFileBase::Create(CFSTR path, DWORD desiredAccess,
     }
     #endif
   }
+  
+  /*
+  #ifndef UNDER_CE
+  #ifndef _SFX
+  if (_handle == INVALID_HANDLE_VALUE)
+  {
+    // it's debug hack to open symbolic links in Windows XP and WSL links in Windows 10
+    DWORD lastError = GetLastError();
+    if (lastError == ERROR_CANT_ACCESS_FILE)
+    {
+      CByteBuffer buf;
+      if (NIO::GetReparseData(path, buf, NULL))
+      {
+        CReparseAttr attr;
+        if (attr.Parse(buf, buf.Size()))
+        {
+          FString dirPrefix, fileName;
+          if (NDir::GetFullPathAndSplit(path, dirPrefix, fileName))
+          {
+            FString fullPath;
+            if (GetFullPath(dirPrefix, us2fs(attr.GetPath()), fullPath))
+            {
+              // FIX IT: recursion levels must be restricted
+              return Create(fullPath, desiredAccess,
+                shareMode, creationDisposition, flagsAndAttributes);
+            }
+          }
+        }
+      }
+      SetLastError(lastError);
+    }
+  }
+  #endif
+  #endif
+  */
+
   return (_handle != INVALID_HANDLE_VALUE);
 }
 
@@ -136,7 +184,7 @@ bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition
 
 bool CFileBase::Seek(UInt64 position, UInt64 &newPosition) const throw()
 {
-  return Seek(position, FILE_BEGIN, newPosition);
+  return Seek((Int64)position, FILE_BEGIN, newPosition);
 }
 
 bool CFileBase::SeekToBegin() const throw()
@@ -258,7 +306,7 @@ void CInFile::CalcDeviceSize(CFSTR s)
 
   if (GetPartitionInfo(&partInfo))
   {
-    Size = partInfo.PartitionLength.QuadPart;
+    Size = (UInt64)partInfo.PartitionLength.QuadPart;
     SizeDefined = true;
     needCorrectSize = false;
     if ((s)[0] == '\\' && (s)[1] == '\\' && (s)[2] == '.' && (s)[3] == '\\' && (s)[5] == ':' && (s)[6] == 0)
@@ -277,7 +325,7 @@ void CInFile::CalcDeviceSize(CFSTR s)
     my_DISK_GEOMETRY_EX geomEx;
     SizeDefined = GetGeometryEx(&geomEx);
     if (SizeDefined)
-      Size = geomEx.DiskSize.QuadPart;
+      Size = (UInt64)geomEx.DiskSize.QuadPart;
     else
     {
       DISK_GEOMETRY geom;
@@ -285,7 +333,7 @@ void CInFile::CalcDeviceSize(CFSTR s)
       if (!SizeDefined)
         SizeDefined = GetCdRomGeometry(&geom);
       if (SizeDefined)
-        Size = geom.Cylinders.QuadPart * geom.TracksPerCylinder * geom.SectorsPerTrack * geom.BytesPerSector;
+        Size = (UInt64)geom.Cylinders.QuadPart * geom.TracksPerCylinder * geom.SectorsPerTrack * geom.BytesPerSector;
     }
   }
   
@@ -310,7 +358,24 @@ void CInFile::CalcDeviceSize(CFSTR s)
 
 bool CInFile::Open(CFSTR fileName, DWORD shareMode, DWORD creationDisposition, DWORD flagsAndAttributes)
 {
-  bool res = Create(fileName, GENERIC_READ, shareMode, creationDisposition, flagsAndAttributes);
+  DWORD desiredAccess = GENERIC_READ;
+  
+  #ifdef _WIN32
+  if (PreserveATime)
+    desiredAccess |= FILE_WRITE_ATTRIBUTES;
+  #endif
+  
+  bool res = Create(fileName, desiredAccess, shareMode, creationDisposition, flagsAndAttributes);
+
+  #ifdef _WIN32
+  if (res && PreserveATime)
+  {
+    FILETIME ft;
+    ft.dwHighDateTime = ft.dwLowDateTime = 0xFFFFFFFF;
+    ::SetFileTime(_handle, NULL, &ft, NULL);
+  }
+  #endif
+
   MY_DEVICE_EXTRA_CODE
   return res;
 }
@@ -330,7 +395,7 @@ bool CInFile::Open(CFSTR fileName)
 // for 32 MB (maybe also for 16 MB).
 // And message can be "Network connection was lost"
 
-static UInt32 kChunkSizeMax = (1 << 22);
+static const UInt32 kChunkSizeMax = (1 << 22);
 
 bool CInFile::Read1(void *data, UInt32 size, UInt32 &processedSize) throw()
 {
@@ -354,6 +419,26 @@ bool CInFile::Read(void *data, UInt32 size, UInt32 &processedSize) throw()
   {
     UInt32 processedLoc = 0;
     bool res = ReadPart(data, size, processedLoc);
+    processedSize += processedLoc;
+    if (!res)
+      return false;
+    if (processedLoc == 0)
+      return true;
+    data = (void *)((unsigned char *)data + processedLoc);
+    size -= processedLoc;
+  }
+  while (size > 0);
+  return true;
+}
+
+bool CInFile::ReadFull(void *data, size_t size, size_t &processedSize) throw()
+{
+  processedSize = 0;
+  do
+  {
+    UInt32 processedLoc = 0;
+    const UInt32 sizeLoc = (size > kChunkSizeMax ? (UInt32)kChunkSizeMax : (UInt32)size);
+    const bool res = Read1(data, sizeLoc, processedLoc);
     processedSize += processedLoc;
     if (!res)
       return false;
@@ -430,3 +515,216 @@ bool COutFile::SetLength(UInt64 length) throw()
 }
 
 }}}
+
+#else // _WIN32
+
+
+// POSIX
+
+#include <fcntl.h>
+#include <unistd.h>
+
+namespace NWindows {
+namespace NFile {
+
+namespace NDir {
+bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime);
+}
+
+namespace NIO {
+
+bool CFileBase::OpenBinary(const char *name, int flags)
+{
+  #ifdef O_BINARY
+  flags |= O_BINARY;
+  #endif
+
+  Close();
+  _handle = ::open(name, flags, 0666);
+  return _handle != -1;
+}
+
+bool CFileBase::Close()
+{
+  if (_handle == -1)
+    return true;
+  if (close(_handle) != 0)
+    return false;
+  _handle = -1;
+  return true;
+}
+
+bool CFileBase::GetLength(UInt64 &length) const
+{
+  const off_t curPos = seek(0, SEEK_CUR);
+  if (curPos == -1)
+    return false;
+  const off_t lengthTemp = seek(0, SEEK_END);
+  seek(curPos, SEEK_SET);
+  length = (UInt64)lengthTemp;
+  return (lengthTemp != -1);
+}
+
+off_t CFileBase::seek(off_t distanceToMove, int moveMethod) const
+{
+  // printf("\nCFileBase::seek() moveMethod = %d, distanceToMove = %lld", moveMethod, (long long)distanceToMove);
+  // off_t res = ::lseek(_handle, distanceToMove, moveMethod);
+  return ::lseek(_handle, distanceToMove, moveMethod);
+  // printf(" res = %lld", (long long)res);
+  // return res;
+}
+
+off_t CFileBase::seekToBegin() const throw()
+{
+  return seek(0, SEEK_SET);
+}
+
+/*
+bool CFileBase::SeekToBegin() const throw()
+{
+  return (::seek(0, SEEK_SET) != -1);
+}
+*/
+
+
+/////////////////////////
+// CInFile
+
+bool CInFile::Open(const char *name)
+{
+  return CFileBase::OpenBinary(name, O_RDONLY);
+}
+
+bool CInFile::OpenShared(const char *name, bool)
+{
+  return Open(name);
+}
+
+/*
+On Linux (32-bit and 64-bit):
+read(), write() (and similar system calls) will transfer at most
+0x7ffff000 = (2GiB - 4 KiB) bytes, returning the number of bytes actually transferred.
+*/
+
+static const size_t kChunkSizeMax = ((size_t)1 << 22);
+
+ssize_t CInFile::read_part(void *data, size_t size) throw()
+{
+  if (size > kChunkSizeMax)
+    size = kChunkSizeMax;
+  return ::read(_handle, data, size);
+}
+
+bool CInFile::ReadFull(void *data, size_t size, size_t &processed) throw()
+{
+  processed = 0;
+  do
+  {
+    const ssize_t res = read_part(data, size);
+    if (res < 0)
+      return false;
+    if (res == 0)
+      break;
+    data = (void *)((unsigned char *)data + (size_t)res);
+    size -= (size_t)res;
+    processed += (size_t)res;
+  }
+  while (size > 0);
+  return true;
+}
+
+
+/////////////////////////
+// COutFile
+
+bool COutFile::Create(const char *name, bool createAlways)
+{
+  Path = name; // change it : set it only if open is success.
+  if (createAlways)
+  {
+    Close();
+    _handle = ::creat(name, 0666);
+    return _handle != -1;
+  }
+  return OpenBinary(name, O_CREAT | O_EXCL | O_WRONLY);
+}
+
+bool COutFile::Open(const char *name, DWORD creationDisposition)
+{
+  UNUSED_VAR(creationDisposition) // FIXME
+  return Create(name, false);
+}
+
+ssize_t COutFile::write_part(const void *data, size_t size) throw()
+{
+  if (size > kChunkSizeMax)
+    size = kChunkSizeMax;
+  return ::write(_handle, data, size);
+}
+
+ssize_t COutFile::write_full(const void *data, size_t size, size_t &processed) throw()
+{
+  processed = 0;
+  do
+  {
+    const ssize_t res = write_part(data, size);
+    if (res < 0)
+      return res;
+    if (res == 0)
+      break;
+    data = (const void *)((const unsigned char *)data + (size_t)res);
+    size -= (size_t)res;
+    processed += (size_t)res;
+  }
+  while (size > 0);
+  return (ssize_t)processed;
+}
+
+bool COutFile::SetLength(UInt64 length) throw()
+{
+  const off_t len2 = (off_t)length;
+  if ((Int64)length != len2)
+  {
+    SetLastError(EFBIG);
+    return false;
+  }
+  int iret = ftruncate(_handle, len2);
+  return (iret == 0);
+}
+
+bool COutFile::Close()
+{
+  bool res = CFileBase::Close();
+  if (!res)
+    return res;
+  if (CTime_defined || ATime_defined || MTime_defined)
+  {
+    /* bool res2 = */ NWindows::NFile::NDir::SetDirTime(Path,
+        CTime_defined ? &CTime : NULL,
+        ATime_defined ? &ATime : NULL,
+        MTime_defined ? &MTime : NULL);
+  }
+  return res;
+}
+
+bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime) throw()
+{
+  // On some OS (cygwin, MacOSX ...), you must close the file before updating times
+  // return true;
+
+  if (cTime) { CTime = *cTime; CTime_defined = true; } else CTime_defined = false;
+  if (aTime) { ATime = *aTime; ATime_defined = true; } else ATime_defined = false;
+  if (mTime) { MTime = *mTime; MTime_defined = true; } else MTime_defined = false;
+  return true;
+}
+
+bool COutFile::SetMTime(const FILETIME *mTime) throw()
+{
+  if (mTime) { MTime = *mTime; MTime_defined = true; } else MTime_defined = false;
+  return true;
+}
+
+}}}
+
+
+#endif

@@ -34,11 +34,12 @@ struct CUpdateItem
   bool IsUtf8;
   // bool IsAltStream;
   int IndexInArc;
-  int IndexInClient;
+  unsigned IndexInClient;
   UInt32 Attrib;
   UInt32 Time;
   UInt64 Size;
   AString Name;
+  CByteBuffer Name_Utf;    // for Info-Zip (kIzUnicodeName) Extra
   CByteBuffer Comment;
   // bool Commented;
   // CUpdateRange CommentRange;
@@ -54,6 +55,7 @@ struct CUpdateItem
     // IsAltStream = false;
     Size = 0;
     Name.Empty();
+    Name_Utf.Free();
     Comment.Free();
   }
 

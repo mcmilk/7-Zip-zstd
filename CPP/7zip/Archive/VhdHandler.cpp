@@ -248,7 +248,7 @@ class CHandler: public CHandlerImg
   }
 
   void Reset_PosInArc() { _posInArc = (UInt64)0 - 1; }
-  HRESULT Seek(UInt64 offset);
+  HRESULT Seek2(UInt64 offset);
   HRESULT InitAndSeek();
   HRESULT ReadPhy(UInt64 offset, void *data, UInt32 size);
 
@@ -316,7 +316,7 @@ public:
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
-HRESULT CHandler::Seek(UInt64 offset) { return Stream->Seek(_startOffset + offset, STREAM_SEEK_SET, NULL); }
+HRESULT CHandler::Seek2(UInt64 offset) { return Stream->Seek(_startOffset + offset, STREAM_SEEK_SET, NULL); }
 
 HRESULT CHandler::InitAndSeek()
 {
@@ -327,7 +327,7 @@ HRESULT CHandler::InitAndSeek()
   _virtPos = _posInArc = 0;
   BitMapTag = kUnusedBlock;
   BitMap.Alloc(Dyn.NumBitMapSectors() << kSectorSize_Log);
-  return Seek(0);
+  return Seek2(0);
 }
 
 HRESULT CHandler::ReadPhy(UInt64 offset, void *data, UInt32 size)
@@ -337,7 +337,7 @@ HRESULT CHandler::ReadPhy(UInt64 offset, void *data, UInt32 size)
   if (offset != _posInArc)
   {
     _posInArc = offset;
-    RINOK(Seek(offset));
+    RINOK(Seek2(offset));
   }
   HRESULT res = ReadStream_FALSE(Stream, data, size);
   if (res == S_OK)

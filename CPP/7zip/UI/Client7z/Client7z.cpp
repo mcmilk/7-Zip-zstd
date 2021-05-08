@@ -28,10 +28,12 @@
 #include "../../../../C/7zVersion.h"
 
 #ifdef _WIN32
+extern
+HINSTANCE g_hInstance;
 HINSTANCE g_hInstance = 0;
 #endif
 
-// Tou can find the list of all GUIDs in Guid.txt file.
+// You can find the list of all GUIDs in Guid.txt file.
 // use another CLSIDs, if you want to support other formats (zip, rar, ...).
 // {23170F69-40C1-278A-1000-000110070000}
 
@@ -47,7 +49,11 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
 
+#ifdef _WIN32
 #define kDllName "7z.dll"
+#else
+#define kDllName "7z.so"
+#endif
 
 static const char * const kCopyrightString =
   "\n"
@@ -383,7 +389,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     {
       if (!DeleteFileAlways(fullProcessedPath))
       {
-        PrintError("Can not delete output file", fullProcessedPath);
+        PrintError("Cannot delete output file", fullProcessedPath);
         return E_ABORT;
       }
     }
@@ -392,7 +398,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     CMyComPtr<ISequentialOutStream> outStreamLoc(_outFileStreamSpec);
     if (!_outFileStreamSpec->Open(fullProcessedPath, CREATE_ALWAYS))
     {
-      PrintError("Can not open output file", fullProcessedPath);
+      PrintError("Cannot open output file", fullProcessedPath);
       return E_ABORT;
     }
     _outFileStream = outStreamLoc;
@@ -556,7 +562,11 @@ public:
   FStringVector FailedFiles;
   CRecordVector<HRESULT> FailedCodes;
 
-  CArchiveUpdateCallback(): PasswordIsDefined(false), AskPassword(false), DirItems(0) {};
+  CArchiveUpdateCallback():
+      DirItems(NULL),
+      PasswordIsDefined(false),
+      AskPassword(false)
+      {}
 
   ~CArchiveUpdateCallback() { Finilize(); }
   HRESULT Finilize();
@@ -726,11 +736,17 @@ STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32 *passwordIsDef
 
 // Main function
 
+#if defined(_UNICODE) && !defined(_WIN64) && !defined(UNDER_CE)
 #define NT_CHECK_FAIL_ACTION PrintError("Unsupported Windows version"); return 1;
+#endif
 
 int MY_CDECL main(int numArgs, const char *args[])
 {
   NT_CHECK
+
+  #ifdef ENV_HAVE_LOCALE
+  MY_SetLocale();
+  #endif
 
   PrintStringLn(kCopyrightString);
 
@@ -740,55 +756,96 @@ int MY_CDECL main(int numArgs, const char *args[])
     return 0;
   }
 
-  if (numArgs < 3)
-  {
-    PrintError(kIncorrectCommand);
-    return 1;
-  }
+  FString dllPrefix;
 
-  
-  NDLL::CLibrary lib;
-  if (!lib.Load(NDLL::GetModuleDirPrefix() + FTEXT(kDllName)))
+  #ifdef _WIN32
+  dllPrefix = NDLL::GetModuleDirPrefix();
+  #else
   {
-    PrintError("Can not load 7-zip library");
+    AString s (args[0]);
+    int sep = s.ReverseFind_PathSepar();
+    s.DeleteFrom(sep + 1);
+    dllPrefix = s;
+  }
+  #endif
+
+  NDLL::CLibrary lib;
+  if (!lib.Load(dllPrefix + FTEXT(kDllName)))
+  {
+    PrintError("Cannot load 7-zip library");
     return 1;
   }
 
   Func_CreateObject createObjectFunc = (Func_CreateObject)lib.GetProc("CreateObject");
   if (!createObjectFunc)
   {
-    PrintError("Can not get CreateObject");
+    PrintError("Cannot get CreateObject");
     return 1;
   }
 
-  char c;
+  char c = 0;
+  UString password;
+  bool passwordIsDefined = false;
+  CObjectVector<FString> params;
+
+  for (int curCmd = 1; curCmd < numArgs; curCmd++)
   {
-    AString command (args[1]);
-    if (command.Len() != 1)
+    AString a(args[curCmd]);
+
+    if (!a.IsEmpty())
+    {
+      if (a[0] == '-')
+      {
+        if (!passwordIsDefined && a[1] == 'p')
+        {
+          password = GetUnicodeString(a.Ptr(2));
+          passwordIsDefined = true;
+          continue;
+        }
+      }
+      else
+      {
+        if (c)
+        {
+          params.Add(CmdStringToFString(a));
+          continue;
+        }
+        if (a.Len() == 1)
+        {
+          c = (char)MyCharLower_Ascii(a[0]);
+          continue;
+        }
+      }
+    }
     {
       PrintError(kIncorrectCommand);
       return 1;
     }
-    c = (char)MyCharLower_Ascii(command[0]);
   }
 
-  FString archiveName = CmdStringToFString(args[2]);
+  if (!c || params.Size() < 1)
+  {
+    PrintError(kIncorrectCommand);
+    return 1;
+  }
+
+  const FString &archiveName = params[0];
   
   if (c == 'a')
   {
     // create archive command
-    if (numArgs < 4)
+    if (params.Size() < 2)
     {
       PrintError(kIncorrectCommand);
       return 1;
     }
     CObjectVector<CDirItem> dirItems;
     {
-      int i;
-      for (i = 3; i < numArgs; i++)
+      unsigned i;
+      for (i = 1; i < params.Size(); i++)
       {
         CDirItem di;
-        FString name = CmdStringToFString(args[i]);
+        const FString &name = params[i];
         
         NFind::CFileInfo fi;
         if (!fi.Find(name))
@@ -819,15 +876,15 @@ int MY_CDECL main(int numArgs, const char *args[])
     CMyComPtr<IOutArchive> outArchive;
     if (createObjectFunc(&CLSID_Format, &IID_IOutArchive, (void **)&outArchive) != S_OK)
     {
-      PrintError("Can not get class object");
+      PrintError("Cannot get class object");
       return 1;
     }
 
     CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
     CMyComPtr<IArchiveUpdateCallback2> updateCallback(updateCallbackSpec);
     updateCallbackSpec->Init(&dirItems);
-    // updateCallbackSpec->PasswordIsDefined = true;
-    // updateCallbackSpec->Password = L"1";
+    updateCallbackSpec->PasswordIsDefined = passwordIsDefined;
+    updateCallbackSpec->Password = password;
 
     /*
     {
@@ -874,7 +931,7 @@ int MY_CDECL main(int numArgs, const char *args[])
   }
   else
   {
-    if (numArgs != 3)
+    if (params.Size() != 1)
     {
       PrintError(kIncorrectCommand);
       return 1;
@@ -895,7 +952,7 @@ int MY_CDECL main(int numArgs, const char *args[])
     CMyComPtr<IInArchive> archive;
     if (createObjectFunc(&CLSID_Format, &IID_IInArchive, (void **)&archive) != S_OK)
     {
-      PrintError("Can not get class object");
+      PrintError("Cannot get class object");
       return 1;
     }
     
@@ -904,21 +961,20 @@ int MY_CDECL main(int numArgs, const char *args[])
     
     if (!fileSpec->Open(archiveName))
     {
-      PrintError("Can not open archive file", archiveName);
+      PrintError("Cannot open archive file", archiveName);
       return 1;
     }
 
     {
       CArchiveOpenCallback *openCallbackSpec = new CArchiveOpenCallback;
       CMyComPtr<IArchiveOpenCallback> openCallback(openCallbackSpec);
-      openCallbackSpec->PasswordIsDefined = false;
-      // openCallbackSpec->PasswordIsDefined = true;
-      // openCallbackSpec->Password = L"1";
+      openCallbackSpec->PasswordIsDefined = passwordIsDefined;
+      openCallbackSpec->Password = password;
       
       const UInt64 scanSize = 1 << 23;
       if (archive->Open(file, &scanSize, openCallback) != S_OK)
       {
-        PrintError("Can not open file as archive", archiveName);
+        PrintError("Cannot open file as archive", archiveName);
         return 1;
       }
     }
@@ -957,9 +1013,8 @@ int MY_CDECL main(int numArgs, const char *args[])
       CArchiveExtractCallback *extractCallbackSpec = new CArchiveExtractCallback;
       CMyComPtr<IArchiveExtractCallback> extractCallback(extractCallbackSpec);
       extractCallbackSpec->Init(archive, FString()); // second parameter is output folder path
-      extractCallbackSpec->PasswordIsDefined = false;
-      // extractCallbackSpec->PasswordIsDefined = true;
-      // extractCallbackSpec->Password = "1";
+      extractCallbackSpec->PasswordIsDefined = passwordIsDefined;
+      extractCallbackSpec->Password = password;
 
       /*
       const wchar_t *names[] =

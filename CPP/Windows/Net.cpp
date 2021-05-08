@@ -35,11 +35,11 @@ DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCEW netResour
 }
 #endif
 
-static void SetComplexString(bool &defined, CSysString &destString, LPCTSTR srsString)
+static void SetComplexString(bool &defined, CSysString &destString, LPCTSTR srcString)
 {
-  defined = (srsString != 0);
+  defined = (srcString != 0);
   if (defined)
-    destString = srsString;
+    destString = srcString;
   else
     destString.Empty();
 }
@@ -59,9 +59,9 @@ static void ConvertNETRESOURCEToCResource(const NETRESOURCE &netResource, CResou
 static void SetComplexString2(LPTSTR *destString, bool defined, const CSysString &srcString)
 {
   if (defined)
-    *destString = (TCHAR *)(const TCHAR *)srcString;
+    *destString = srcString.Ptr_non_const();
   else
-    *destString = 0;
+    *destString = NULL;
 }
 
 static void ConvertCResourceToNETRESOURCE(const CResource &resource, NETRESOURCE &netResource)
@@ -78,11 +78,11 @@ static void ConvertCResourceToNETRESOURCE(const CResource &resource, NETRESOURCE
 
 #ifndef _UNICODE
 
-static void SetComplexString(bool &defined, UString &destString, LPCWSTR srsString)
+static void SetComplexString(bool &defined, UString &destString, LPCWSTR src)
 {
-  defined = (srsString != 0);
+  defined = (src != NULL);
   if (defined)
-    destString = srsString;
+    destString = src;
   else
     destString.Empty();
 }
@@ -102,9 +102,9 @@ static void ConvertNETRESOURCEToCResource(const NETRESOURCEW &netResource, CReso
 static void SetComplexString2(LPWSTR *destString, bool defined, const UString &srcString)
 {
   if (defined)
-    *destString = (WCHAR *)(const WCHAR *)srcString;
+    *destString = srcString.Ptr_non_const();
   else
-    *destString = 0;
+    *destString = NULL;
 }
 
 static void ConvertCResourceToNETRESOURCE(const CResourceW &resource, NETRESOURCEW &netResource)
@@ -141,10 +141,8 @@ static void ConvertResourceToResourceW(const CResource &resource, CResourceW &re
 DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, const CResource *resource)
 {
   NETRESOURCE netResource;
-  LPNETRESOURCE pointer;
-  if (resource == 0)
-    pointer = 0;
-  else
+  LPNETRESOURCE pointer = NULL;
+  if (resource)
   {
     ConvertCResourceToNETRESOURCE(*resource, netResource);
     pointer = &netResource;
@@ -158,21 +156,17 @@ DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, const CResourceW *resour
   if (g_IsNT)
   {
     NETRESOURCEW netResource;
-    LPNETRESOURCEW pointer;
-    if (resource == 0)
-      pointer = 0;
-    else
+    LPNETRESOURCEW pointer = NULL;
+    if (resource)
     {
       ConvertCResourceToNETRESOURCE(*resource, netResource);
       pointer = &netResource;
     }
     return Open(scope, type, usage, pointer);
   }
-  CResource *pointer;
   CResource resourceA;
-  if (resource == 0)
-    pointer = 0;
-  else
+  CResource *pointer = NULL;
+  if (resource)
   {
     ConvertResourceWToResource(*resource, resourceA);
     pointer = &resourceA;
@@ -206,7 +200,7 @@ DWORD CEnum::Next(CResource &resource)
 {
   const DWORD kBufferSize = 16384;
   CByteArr byteBuffer(kBufferSize);
-  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(byteBuffer);
+  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (void *) (BYTE *)(byteBuffer);
   ZeroMemory(lpnrLocal, kBufferSize);
   DWORD bufferSize = kBufferSize;
   DWORD numEntries = 1;
@@ -226,7 +220,7 @@ DWORD CEnum::Next(CResourceW &resource)
   {
     const DWORD kBufferSize = 16384;
     CByteArr byteBuffer(kBufferSize);
-    LPNETRESOURCEW lpnrLocal = (LPNETRESOURCEW) (BYTE *)(byteBuffer);
+    LPNETRESOURCEW lpnrLocal = (LPNETRESOURCEW) (void *) (BYTE *)(byteBuffer);
     ZeroMemory(lpnrLocal, kBufferSize);
     DWORD bufferSize = kBufferSize;
     DWORD numEntries = 1;
@@ -250,7 +244,7 @@ DWORD GetResourceParent(const CResource &resource, CResource &parentResource)
 {
   const DWORD kBufferSize = 16384;
   CByteArr byteBuffer(kBufferSize);
-  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(byteBuffer);
+  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (void *) (BYTE *)(byteBuffer);
   ZeroMemory(lpnrLocal, kBufferSize);
   DWORD bufferSize = kBufferSize;
   NETRESOURCE netResource;
@@ -269,7 +263,7 @@ DWORD GetResourceParent(const CResourceW &resource, CResourceW &parentResource)
   {
     const DWORD kBufferSize = 16384;
     CByteArr byteBuffer(kBufferSize);
-    LPNETRESOURCEW lpnrLocal = (LPNETRESOURCEW) (BYTE *)(byteBuffer);
+    LPNETRESOURCEW lpnrLocal = (LPNETRESOURCEW) (void *) (BYTE *)(byteBuffer);
     ZeroMemory(lpnrLocal, kBufferSize);
     DWORD bufferSize = kBufferSize;
     NETRESOURCEW netResource;
@@ -293,7 +287,7 @@ DWORD GetResourceInformation(const CResource &resource,
 {
   const DWORD kBufferSize = 16384;
   CByteArr byteBuffer(kBufferSize);
-  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (BYTE *)(byteBuffer);
+  LPNETRESOURCE lpnrLocal = (LPNETRESOURCE) (void *) (BYTE *)(byteBuffer);
   ZeroMemory(lpnrLocal, kBufferSize);
   DWORD bufferSize = kBufferSize;
   NETRESOURCE netResource;
@@ -317,7 +311,7 @@ DWORD GetResourceInformation(const CResourceW &resource,
   {
     const DWORD kBufferSize = 16384;
     CByteArr byteBuffer(kBufferSize);
-    LPNETRESOURCEW lpnrLocal = (LPNETRESOURCEW) (BYTE *)(byteBuffer);
+    LPNETRESOURCEW lpnrLocal = (LPNETRESOURCEW) (void *) (BYTE *)(byteBuffer);
     ZeroMemory(lpnrLocal, kBufferSize);
     DWORD bufferSize = kBufferSize;
     NETRESOURCEW netResource;

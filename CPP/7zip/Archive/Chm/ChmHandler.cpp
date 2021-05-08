@@ -145,10 +145,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidMethod:
     {
       if (!item.IsDir())
+      {
         if (item.Section == 0)
           prop = "Copy";
         else if (item.Section < m_Database.Sections.Size())
           prop = m_Database.Sections[(unsigned)item.Section].GetMethodName();
+      }
       break;
     }
     case kpidBlock:

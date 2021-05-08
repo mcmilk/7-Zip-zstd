@@ -89,7 +89,7 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   }
   */
 
-  if (numItems == 0)
+  if (numItems <= 0)
     return NFileOperationReturnCode::kError;
 
   if (_agent->IsThereReadOnlyArc())
@@ -104,14 +104,18 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   NCompression::CInfo compressionInfo;
   compressionInfo.Load();
 
-  int methodIndex = 0;
-  int i;
-  for (i = ARRAY_SIZE(g_MethodMap) - 1; i >= 0; i--)
+  unsigned methodIndex = 0;
+
+  unsigned i;
+  for (i = ARRAY_SIZE(g_MethodMap); i != 0;)
+  {
+    i--;
     if (compressionInfo.Level >= g_MethodMap[i])
     {
       methodIndex = i;
       break;
     }
+  }
 
   const int kMethodRadioIndex = 2;
   const int kModeRadioIndex = kMethodRadioIndex + 7;
@@ -200,10 +204,10 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   
   UStringVector fileNames;
   fileNames.ClearAndReserve(numItems);
-  for (i = 0; i < numItems; i++)
+  for (i = 0; i < (unsigned)numItems; i++)
     fileNames.AddInReserved(MultiByteToUnicodeString(panelItems[i].FindData.cFileName, CP_OEMCP));
   CObjArray<const wchar_t *> fileNamePointers(numItems);
-  for (i = 0; i < numItems; i++)
+  for (i = 0; i < (unsigned)numItems; i++)
     fileNamePointers[i] = fileNames[i];
 
   CMyComPtr<IOutFolderArchive> outArchive;
@@ -459,29 +463,36 @@ HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems)
     const int kMethodRadioIndex = kArchiveNameIndex + 2;
     const int kModeRadioIndex = kMethodRadioIndex + 7;
 
-
-    char updateAddToArchiveString[512];
+    // char updateAddToArchiveString[512];
+    AString str1;
     {
       const CArcInfoEx &arcInfo = codecs->Formats[archiverIndex];
       const AString s (UnicodeStringToMultiByte(arcInfo.Name, CP_OEMCP));
+      str1 = g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive);
+      str1.Replace(AString ("%s"), s);
+      /*
       sprintf(updateAddToArchiveString,
         g_StartupInfo.GetMsgString(NMessageID::kUpdateAddToArchive), (const char *)s);
+      */
     }
 
-    int methodIndex = 0;
-    int i;
-    for (i = ARRAY_SIZE(g_MethodMap) - 1; i >= 0; i--)
+    unsigned methodIndex = 0;
+    unsigned i;
+    for (i = ARRAY_SIZE(g_MethodMap); i != 0;)
+    {
+      i--;
       if (compressionInfo.Level >= g_MethodMap[i])
       {
         methodIndex = i;
         break;
       }
+    }
 
     const struct CInitDialogItem initItems[]=
     {
       { DI_DOUBLEBOX, 3, 1, 72, kYSize - 2, false, false, 0, false, NMessageID::kUpdateTitle, NULL, NULL },
 
-      { DI_TEXT, 5, 2, 0, 0, false, false, 0, false, -1, updateAddToArchiveString, NULL },
+      { DI_TEXT, 5, 2, 0, 0, false, false, 0, false, -1, str1, NULL },
       
       { DI_EDIT, 5, 3, 70, 3, true, false, DIF_HISTORY, false, -1, archiveNameA, kArchiveHistoryKeyName},
       // { DI_EDIT, 5, 3, 70, 3, true, false, 0, false, -1, arcName, NULL},

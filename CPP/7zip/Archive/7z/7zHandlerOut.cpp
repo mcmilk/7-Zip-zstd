@@ -111,7 +111,7 @@ HRESULT CHandler::SetMainMethod(
   }
 
   const UInt64 kSolidBytes_Min = (1 << 24);
-  const UInt64 kSolidBytes_Max = ((UInt64)1 << 32) - 1;
+  const UInt64 kSolidBytes_Max = ((UInt64)1 << 32);
 
   bool needSolid = false;
   
@@ -140,26 +140,52 @@ HRESULT CHandler::SetMainMethod(
       case k_LZMA2: dicSize = oneMethodInfo.Get_Lzma_DicSize(); break;
       case k_PPMD: dicSize = oneMethodInfo.Get_Ppmd_MemSize(); break;
       case k_Deflate: dicSize = (UInt32)1 << 15; break;
+      case k_Deflate64: dicSize = (UInt32)1 << 16; break;
       case k_BZip2: dicSize = oneMethodInfo.Get_BZip2_BlockSize(); break;
       default: continue;
     }
-    
-    _numSolidBytes = (UInt64)dicSize << 7;
-    if (_numSolidBytes < kSolidBytes_Min) _numSolidBytes = kSolidBytes_Min;
-    if (_numSolidBytes > kSolidBytes_Max) _numSolidBytes = kSolidBytes_Max;
+
+    if (methodFull.Id == k_LZMA2)
+    {
+      // he we calculate default chunk Size for LZMA2 as defined in LZMA2 encoder code
+      UInt64 cs = (UInt64)dicSize << 2;
+      const UInt32 kMinSize = (UInt32)1 << 20;
+      const UInt32 kMaxSize = (UInt32)1 << 28;
+      if (cs < kMinSize) cs = kMinSize;
+      if (cs > kMaxSize) cs = kMaxSize;
+      if (cs < dicSize) cs = dicSize;
+      cs += (kMinSize - 1);
+      cs &= ~(UInt64)(kMinSize - 1);
+      // we want to use at least 64 chunks (threads) per one solid block.
+      _numSolidBytes = cs << 6;
+      const UInt64 kSolidBytes_Lzma2_Max = ((UInt64)1 << 34);
+      if (_numSolidBytes > kSolidBytes_Lzma2_Max)
+        _numSolidBytes = kSolidBytes_Lzma2_Max;
+    }
+    else
+    {
+      _numSolidBytes = (UInt64)dicSize << 7;
+      if (_numSolidBytes > kSolidBytes_Max)
+        _numSolidBytes = kSolidBytes_Max;
+    }
+
+    if (_numSolidBytes < kSolidBytes_Min)
+      _numSolidBytes = kSolidBytes_Min;
     _numSolidBytesDefined = true;
   }
 
   if (!_numSolidBytesDefined)
+  {
     if (needSolid)
       _numSolidBytes = kSolidBytes_Max;
     else
       _numSolidBytes = 0;
+  }
   _numSolidBytesDefined = true;
   return S_OK;
 }
 
-static HRESULT GetTime(IArchiveUpdateCallback *updateCallback, int index, PROPID propID, UInt64 &ft, bool &ftDefined)
+static HRESULT GetTime(IArchiveUpdateCallback *updateCallback, unsigned index, PROPID propID, UInt64 &ft, bool &ftDefined)
 {
   // ft = 0;
   // ftDefined = false;
@@ -289,8 +315,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   bool need_CTime = (Write_CTime.Def && Write_CTime.Val);
   bool need_ATime = (Write_ATime.Def && Write_ATime.Val);
-  bool need_MTime = (Write_MTime.Def && Write_MTime.Val || !Write_MTime.Def);
-  bool need_Attrib = (Write_Attrib.Def && Write_Attrib.Val || !Write_Attrib.Def);
+  bool need_MTime = (Write_MTime.Def ? Write_MTime.Val : true);
+  bool need_Attrib = (Write_Attrib.Def ? Write_Attrib.Val : true);
   
   if (db && !db->Files.IsEmpty())
   {
@@ -313,7 +339,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     CUpdateItem ui;
     ui.NewProps = IntToBool(newProps);
     ui.NewData = IntToBool(newData);
-    ui.IndexInArchive = indexInArchive;
+    ui.IndexInArchive = (int)indexInArchive;
     ui.IndexInClient = i;
     ui.IsAnti = false;
     ui.Size = 0;
@@ -322,23 +348,23 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     // bool isAltStream = false;
     if (ui.IndexInArchive != -1)
     {
-      if (db == 0 || (unsigned)ui.IndexInArchive >= db->Files.Size())
+      if (!db || (unsigned)ui.IndexInArchive >= db->Files.Size())
         return E_INVALIDARG;
-      const CFileItem &fi = db->Files[ui.IndexInArchive];
+      const CFileItem &fi = db->Files[(unsigned)ui.IndexInArchive];
       if (!ui.NewProps)
       {
-        _db.GetPath(ui.IndexInArchive, name);
+        _db.GetPath((unsigned)ui.IndexInArchive, name);
       }
       ui.IsDir = fi.IsDir;
       ui.Size = fi.Size;
       // isAltStream = fi.IsAltStream;
-      ui.IsAnti = db->IsItemAnti(ui.IndexInArchive);
+      ui.IsAnti = db->IsItemAnti((unsigned)ui.IndexInArchive);
       
       if (!ui.NewProps)
       {
-        ui.CTimeDefined = db->CTime.GetItem(ui.IndexInArchive, ui.CTime);
-        ui.ATimeDefined = db->ATime.GetItem(ui.IndexInArchive, ui.ATime);
-        ui.MTimeDefined = db->MTime.GetItem(ui.IndexInArchive, ui.MTime);
+        ui.CTimeDefined = db->CTime.GetItem((unsigned)ui.IndexInArchive, ui.CTime);
+        ui.ATimeDefined = db->ATime.GetItem((unsigned)ui.IndexInArchive, ui.ATime);
+        ui.MTimeDefined = db->MTime.GetItem((unsigned)ui.IndexInArchive, ui.MTime);
       }
     }
 
@@ -570,10 +596,10 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   updateCallback->QueryInterface(IID_ICryptoGetTextPassword2, (void **)&getPassword2);
 
   methodMode.PasswordIsDefined = false;
-  methodMode.Password.Empty();
+  methodMode.Password.Wipe_and_Empty();
   if (getPassword2)
   {
-    CMyComBSTR password;
+    CMyComBSTR_Wipe password;
     Int32 passwordIsDefined;
     RINOK(getPassword2->CryptoGetTextPassword2(&passwordIsDefined, &password));
     methodMode.PasswordIsDefined = IntToBool(passwordIsDefined);
@@ -751,7 +777,7 @@ HRESULT COutHandler::SetSolidFromString(const UString &s)
       _solidExtension = true;
       continue;
     }
-    i += (int)(end - start);
+    i += (unsigned)(end - start);
     if (i == s2.Len())
       return E_INVALIDARG;
     wchar_t c = s2[i++];
@@ -829,7 +855,7 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
   }
 
   UInt32 number;
-  int index = ParseStringToUInt32(name, number);
+  unsigned index = ParseStringToUInt32(name, number);
   // UString realName = name.Ptr(index);
   if (index == 0)
   {

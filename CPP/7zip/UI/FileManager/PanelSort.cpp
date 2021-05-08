@@ -95,7 +95,7 @@ void CPanel::SetSortRawStatus()
 }
 
 
-int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
+static int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
   if (lpData == 0)
     return 0;
@@ -182,7 +182,7 @@ int CALLBACK CompareItems2(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
   return prop1.Compare(prop2);
 }
 
-
+int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData);
 int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData)
 {
   if (lpData == 0) return 0;

@@ -167,6 +167,7 @@ STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *message)
   return CheckBreak2();
 }
 
+void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &s);
 void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &s)
 {
   s.Empty();

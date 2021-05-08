@@ -73,8 +73,18 @@ struct CBitDecoder
   */
 
   SRes ReadByte(int &b);
+
+  CBitDecoder():
+    _buf(NULL),
+    _lim(NULL)
+  {
+    InitBitDecoder();
+  }
 };
 
+
+// 19.03: we allow additional 8 selectors to support files created by lbzip2.
+const UInt32 kNumSelectorsMax_Decoder = kNumSelectorsMax + 8;
 
 struct CBase: public CBitDecoder
 {
@@ -100,7 +110,7 @@ struct CBase: public CBitDecoder
 
 private:
   CMtf8Decoder mtf;
-  Byte selectors[kNumSelectorsMax];
+  Byte selectors[kNumSelectorsMax_Decoder];
   CHuffmanDecoder huffs[kNumTablesMax];
 
   Byte lens[kMaxAlphaSize];
@@ -188,6 +198,7 @@ class CDecoder :
   public ICompressCoder,
   public ICompressSetFinishMode,
   public ICompressGetInStreamProcessedSize,
+  public ICompressReadUnusedFromInBuf,
 
   #ifndef NO_READ_FROM_CODER
   public ICompressSetInStream,
@@ -293,6 +304,8 @@ public:
 
   void InitInputBuffer()
   {
+    // We use InitInputBuffer() before stream init.
+    // So don't read from stream here
     _inProcessed = 0;
     Base._buf = _inBuf;
     Base._lim = _inBuf;
@@ -302,7 +315,12 @@ public:
   UInt64 GetInputProcessedSize() const
   {
     // for NSIS case : we need also look the number of bits in bitDecoder
-    return _inProcessed + (Base._buf - _inBuf);
+    return _inProcessed + (size_t)(Base._buf - _inBuf);
+  }
+
+  UInt64 GetInStreamSize() const
+  {
+    return _inProcessed + (size_t)(Base._buf - _inBuf) - (Base._numBits >> 3);
   }
 
   UInt64 GetOutProcessedSize() const { return _outWritten + _outPos; }
@@ -324,6 +342,7 @@ public:
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetFinishMode)
   MY_QUERYINTERFACE_ENTRY(ICompressGetInStreamProcessedSize)
+  MY_QUERYINTERFACE_ENTRY(ICompressReadUnusedFromInBuf)
 
   #ifndef NO_READ_FROM_CODER
   MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)
@@ -344,6 +363,7 @@ public:
 
   STDMETHOD(SetFinishMode)(UInt32 finishMode);
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
+  STDMETHOD(ReadUnusedFromInBuf)(void *data, UInt32 size, UInt32 *processedSize);
 
   UInt64 GetNumStreams() const { return Base.NumStreams; }
   UInt64 GetNumBlocks() const { return Base.NumBlocks; }

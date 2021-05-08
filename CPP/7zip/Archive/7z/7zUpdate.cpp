@@ -55,8 +55,8 @@ struct CFilterMode
 #define PE_SIG 0x00004550
 #define PE_OptHeader_Magic_32 0x10B
 #define PE_OptHeader_Magic_64 0x20B
-#define PE_SectHeaderSize 40
-#define PE_SECT_EXECUTE 0x20000000
+// #define PE_SectHeaderSize 40
+// #define PE_SECT_EXECUTE 0x20000000
 
 static int Parse_EXE(const Byte *buf, size_t size, CFilterMode *filterMode)
 {
@@ -254,10 +254,12 @@ static BoolInt Parse_WAV(const Byte *buf, size_t size, CFilterMode *filterMode)
   if (subChunkSize < 0x10 || subChunkSize > 0x12 || GetUi16(buf + 0x14) != 1)
     return False;
   
-  unsigned numChannels = GetUi16(buf + 0x16);
-  unsigned bitsPerSample = GetUi16(buf + 0x22);
-
-  if ((bitsPerSample & 0x7) != 0 || bitsPerSample >= 256 || numChannels >= 256)
+  const unsigned numChannels = GetUi16(buf + 0x16);
+  const unsigned bitsPerSample = GetUi16(buf + 0x22);
+  if ((bitsPerSample & 0x7) != 0)
+    return False;
+  const UInt32 delta = (UInt32)numChannels * (bitsPerSample >> 3);
+  if (delta == 0 || delta > 256)
     return False;
 
   pos = 0x14 + subChunkSize;
@@ -271,9 +273,6 @@ static BoolInt Parse_WAV(const Byte *buf, size_t size, CFilterMode *filterMode)
     subChunkSize = GetUi32(buf + pos + 4);
     if (GetUi32(buf + pos) == WAV_SUBCHUNK_data)
     {
-      unsigned delta = numChannels * (bitsPerSample >> 3);
-      if (delta >= 256)
-        return False;
       filterMode->Id = k_Delta;
       filterMode->Delta = delta;
       return True;
@@ -418,7 +417,7 @@ static unsigned Get_FilterGroup_for_Folder(
 static HRESULT WriteRange(IInStream *inStream, ISequentialOutStream *outStream,
     UInt64 position, UInt64 size, ICompressProgressInfo *progress)
 {
-  RINOK(inStream->Seek(position, STREAM_SEEK_SET, 0));
+  RINOK(inStream->Seek((Int64)position, STREAM_SEEK_SET, 0));
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<CLimitedSequentialInStream> inStreamLimited(streamSpec);
   streamSpec->SetStream(inStream);
@@ -642,13 +641,13 @@ struct CRefItem
     if (sortByType)
     {
       int slashPos = ui.Name.ReverseFind_PathSepar();
-      NamePos = slashPos + 1;
+      NamePos = (unsigned)(slashPos + 1);
       int dotPos = ui.Name.ReverseFind_Dot();
       if (dotPos <= slashPos)
         ExtensionPos = ui.Name.Len();
       else
       {
-        ExtensionPos = dotPos + 1;
+        ExtensionPos = (unsigned)(dotPos + 1);
         if (ExtensionPos != ui.Name.Len())
         {
           AString s;
@@ -836,7 +835,7 @@ HRESULT CAnalysis::GetFilterGroup(UInt32 index, const CUpdateItem &ui, CFilterMo
     {
       const wchar_t *ext;
       if (dotPos > slashPos)
-        ext = ui.Name.Ptr(dotPos + 1);
+        ext = ui.Name.Ptr((unsigned)(dotPos + 1));
       else
         ext = ui.Name.RightPtr(0);
       
@@ -1071,12 +1070,12 @@ static HRESULT MakeExeMethod(CCompressionMethodMode &mode,
             if (alignBits != 0)
             {
               if (alignBits > 2 || filterMode.Id == k_Delta)
-                nextMethod.AddProp32(NCoderPropID::kPosStateBits, alignBits);
+                nextMethod.AddProp32(NCoderPropID::kPosStateBits, (unsigned)alignBits);
               unsigned lc = 0;
               if (alignBits < 3)
-                lc = 3 - alignBits;
+                lc = (unsigned)(3 - alignBits);
               nextMethod.AddProp32(NCoderPropID::kLitContextBits, lc);
-              nextMethod.AddProp32(NCoderPropID::kLitPosBits, alignBits);
+              nextMethod.AddProp32(NCoderPropID::kLitPosBits, (unsigned)alignBits);
             }
           }
         }
@@ -1453,7 +1452,7 @@ public:
 
   UInt64 StartPos;
   const CFolders *Folders;
-  int FolderIndex;
+  unsigned FolderIndex;
 
   // bool send_UnpackSize;
   // UInt64 UnpackSize;
@@ -1609,7 +1608,10 @@ HRESULT Update(
 
   CRecordVector<CFilterMode2> filters;
   CObjectVector<CSolidGroup> groups;
+  
+  #ifndef _7ZIP_ST
   bool thereAreRepacks = false;
+  #endif
 
   bool useFilters = options.UseFilters;
   if (useFilters)
@@ -1636,7 +1638,7 @@ HRESULT Update(
     {
       int index = updateItems[i].IndexInArchive;
       if (index != -1)
-        fileIndexToUpdateIndexMap[(unsigned)index] = i;
+        fileIndexToUpdateIndexMap[(unsigned)index] = (int)i;
     }
 
     for (i = 0; i < db->NumFolders; i++)
@@ -1656,7 +1658,7 @@ HRESULT Update(
         {
           indexInFolder++;
           int updateIndex = fileIndexToUpdateIndexMap[fi];
-          if (updateIndex >= 0 && !updateItems[updateIndex].NewData)
+          if (updateIndex >= 0 && !updateItems[(unsigned)updateIndex].NewData)
           {
             numCopyItems++;
             repackSize += file.Size;
@@ -1688,7 +1690,9 @@ HRESULT Update(
         complexity += db->GetFolderFullPackSize(i);
       else
       {
+        #ifndef _7ZIP_ST
         thereAreRepacks = true;
+        #endif
         complexity += repackSize;
         if (inSizeForReduce2 < repackSize)
           inSizeForReduce2 = repackSize;
@@ -1727,10 +1731,12 @@ HRESULT Update(
   #ifndef _7ZIP_ST
   
   CStreamBinder sb;
+  /*
   if (options.MultiThreadMixer)
   {
     RINOK(sb.CreateEvents());
   }
+  */
   
   #endif
 
@@ -1742,7 +1748,9 @@ HRESULT Update(
     #ifdef EXTERNAL_CODECS
     threadDecoder.__externalCodecs = __externalCodecs;
     #endif
-    RINOK(threadDecoder.Create());
+    WRes wres = threadDecoder.Create();
+    if (wres != 0)
+      return HRESULT_FROM_WIN32(wres);
   }
   #endif
 
@@ -1887,7 +1895,7 @@ HRESULT Update(
         if (ui.HasStream())
           continue;
       }
-      else if (ui.IndexInArchive != -1 && db->Files[ui.IndexInArchive].HasStream)
+      else if (ui.IndexInArchive != -1 && db->Files[(unsigned)ui.IndexInArchive].HasStream)
         continue;
       /*
       if (ui.TreeFolderIndex >= 0)
@@ -1912,8 +1920,8 @@ HRESULT Update(
       }
       else
       {
-        GetFile(*db, ui.IndexInArchive, file, file2);
-        db->GetPath(ui.IndexInArchive, name);
+        GetFile(*db, (unsigned)ui.IndexInArchive, file, file2);
+        db->GetPath((unsigned)ui.IndexInArchive, name);
       }
       
       /*
@@ -2065,7 +2073,7 @@ HRESULT Update(
           {
             indexInFolder++;
             int updateIndex = fileIndexToUpdateIndexMap[fi];
-            if (updateIndex >= 0 && !updateItems[updateIndex].NewData)
+            if (updateIndex >= 0 && !updateItems[(unsigned)updateIndex].NewData)
               needExtract = true;
             // decodeSize += file.Size;
           }
@@ -2099,8 +2107,8 @@ HRESULT Update(
             {
               repackBase = threadDecoder.FosSpec;
               CMyComPtr<ISequentialOutStream> sbOutStream;
-              sb.CreateStreams(&sbInStream, &sbOutStream);
-              sb.ReInit();
+              sb.CreateStreams2(sbInStream, sbOutStream);
+              RINOK(sb.Create_ReInit());
               
               threadDecoder.FosSpec->_stream = sbOutStream;
               
@@ -2171,7 +2179,9 @@ HRESULT Update(
             #ifndef _7ZIP_ST
             if (options.MultiThreadMixer)
             {
-              threadDecoder.Start();
+              WRes wres = threadDecoder.Start();
+              if (wres != 0)
+                return HRESULT_FROM_WIN32(wres);
             }
             #endif
           }
@@ -2197,7 +2207,11 @@ HRESULT Update(
             inStreamSizeCount.Release();
             sbInStream.Release();
             
-            threadDecoder.WaitExecuteFinish();
+            {
+              WRes wres = threadDecoder.WaitExecuteFinish();
+              if (wres != 0)
+                return HRESULT_FROM_WIN32(wres);
+            }
             
             HRESULT decodeRes = threadDecoder.Result;
             // if (res == k_My_HRESULT_CRC_ERROR)
@@ -2259,7 +2273,7 @@ HRESULT Update(
           int updateIndex = fileIndexToUpdateIndexMap[fi];
           if (updateIndex >= 0)
           {
-            const CUpdateItem &ui = updateItems[updateIndex];
+            const CUpdateItem &ui = updateItems[(unsigned)updateIndex];
             if (ui.NewData)
               continue;
 
@@ -2347,7 +2361,7 @@ HRESULT Update(
         {
           int slashPos = ui.Name.ReverseFind_PathSepar();
           int dotPos = ui.Name.ReverseFind_Dot();
-          const wchar_t *ext = ui.Name.Ptr(dotPos <= slashPos ? ui.Name.Len() : dotPos + 1);
+          const wchar_t *ext = ui.Name.Ptr(dotPos <= slashPos ? ui.Name.Len() : (unsigned)(dotPos + 1));
           if (numSubFiles == 0)
             prevExtension = ext;
           else if (!StringsAreEqualNoCase(ext, prevExtension))
@@ -2403,8 +2417,8 @@ HRESULT Update(
         }
         else
         {
-          GetFile(*db, ui.IndexInArchive, file, file2);
-          db->GetPath(ui.IndexInArchive, name);
+          GetFile(*db, (unsigned)ui.IndexInArchive, file, file2);
+          db->GetPath((unsigned)ui.IndexInArchive, name);
         }
         if (file2.IsAnti || file.IsDir)
           return E_FAIL;

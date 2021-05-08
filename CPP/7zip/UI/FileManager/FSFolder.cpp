@@ -115,15 +115,15 @@ HRESULT CFsFolderStat::Enumerate()
   const unsigned len = Path.Len();
   CEnumerator enumerator;
   enumerator.SetDirPrefix(Path);
-  CFileInfo fi;
+  CDirEntry fi;
   while (enumerator.Next(fi))
   {
     if (fi.IsDir())
     {
+      NumFolders++;
       Path.DeleteFrom(len);
       Path += fi.Name;
       RINOK(Enumerate());
-      NumFolders++;
     }
     else
     {
@@ -136,6 +136,7 @@ HRESULT CFsFolderStat::Enumerate()
 
 #ifndef UNDER_CE
 
+bool MyGetCompressedFileSizeW(CFSTR path, UInt64 &size);
 bool MyGetCompressedFileSizeW(CFSTR path, UInt64 &size)
 {
   DWORD highPart;
@@ -171,7 +172,7 @@ bool MyGetCompressedFileSizeW(CFSTR path, UInt64 &size)
 
 HRESULT CFSFolder::LoadSubItems(int dirItem, const FString &relPrefix)
 {
-  unsigned startIndex = Folders.Size();
+  const unsigned startIndex = Folders.Size();
   {
     CEnumerator enumerator;
     enumerator.SetDirPrefix(_path + relPrefix);
@@ -261,7 +262,7 @@ HRESULT CFSFolder::LoadSubItems(int dirItem, const FString &relPrefix)
   if (!_flatMode)
     return S_OK;
 
-  unsigned endIndex = Folders.Size();
+  const unsigned endIndex = Folders.Size();
   for (unsigned i = startIndex; i < endIndex; i++)
     LoadSubItems(i, Folders[i]);
   return S_OK;
@@ -293,8 +294,9 @@ bool CFSFolder::LoadComments()
     return false;
   AString s;
   char *p = s.GetBuf((unsigned)(size_t)len);
-  UInt32 processedSize;
-  file.Read(p, (UInt32)len, processedSize);
+  size_t processedSize;
+  if (!file.ReadFull(p, (unsigned)(size_t)len, processedSize))
+    return false;
   s.ReleaseBuf_CalcLen((unsigned)(size_t)len);
   if (processedSize != len)
     return false;
@@ -506,7 +508,7 @@ STDMETHODIMP CFSFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *va
       {
         int pos = comment.Find((wchar_t)4);
         if (pos >= 0)
-          comment.DeleteFrom(pos);
+          comment.DeleteFrom((unsigned)pos);
         prop = comment;
       }
       break;
@@ -784,7 +786,7 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
     return E_FAIL;
   FString parentPath = _path.Left(pos);
   pos = parentPath.ReverseFind_PathSepar();
-  parentPath.DeleteFrom(pos + 1);
+  parentPath.DeleteFrom((unsigned)(pos + 1));
 
   if (NName::IsDrivePath_SuperAllowed(parentPath))
   {

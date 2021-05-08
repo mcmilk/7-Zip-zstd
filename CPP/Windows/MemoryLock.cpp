@@ -75,11 +75,11 @@ typedef void (WINAPI * Func_RtlGetVersion) (OSVERSIONINFOEXW *);
 
 /*
   We suppose that Window 10 works incorrectly with "Large Pages" at:
-    - Windows 10 1703 (15063)
-    - Windows 10 1709 (16299)
-
-    - Windows 10 1809 (17763) on some CPUs that have no 1 GB page support.
-         We need more information about that new BUG in Windows.
+    - Windows 10 1703 (15063) : incorrect allocating after VirtualFree()
+    - Windows 10 1709 (16299) : incorrect allocating after VirtualFree()
+    - Windows 10 1809 (17763) : the failures for blocks of 1 GiB and larger,
+                                if CPU doesn't support 1 GB pages.
+  Windows 10 1903 (18362) probably works correctly.
 */
 
 unsigned Get_LargePages_RiskLevel()
@@ -88,7 +88,7 @@ unsigned Get_LargePages_RiskLevel()
   HMODULE ntdll = ::GetModuleHandleW(L"ntdll.dll");
   if (!ntdll)
     return 0;
-  Func_RtlGetVersion func = (Func_RtlGetVersion)GetProcAddress(ntdll, "RtlGetVersion");
+  Func_RtlGetVersion func = (Func_RtlGetVersion)(void *)GetProcAddress(ntdll, "RtlGetVersion");
   if (!func)
     return 0;
   func(&vi);
@@ -100,7 +100,7 @@ unsigned Get_LargePages_RiskLevel()
     return 1;
 
   #ifdef MY_CPU_X86_OR_AMD64
-  if (!CPU_IsSupported_PageGB())
+  if (vi.dwBuildNumber < 18362 && !CPU_IsSupported_PageGB())
     return 1;
   #endif
 

@@ -4,14 +4,19 @@
 
 #include "../../C/CpuArch.h"
 
-#include "../Windows/FileIO.h"
-
 #include "ListFileUtils.h"
 #include "MyBuffer.h"
 #include "StringConvert.h"
 #include "UTFConvert.h"
 
-static const char kQuoteChar = '\"';
+#include "../Windows/FileIO.h"
+
+#define CSysInFile NWindows::NFile::NIO::CInFile
+#define MY_GET_LAST_ERROR ::GetLastError()
+
+
+#define kQuoteChar '\"'
+
 
 static void AddName(UStringVector &strings, UString &s)
 {
@@ -25,19 +30,37 @@ static void AddName(UStringVector &strings, UString &s)
     strings.Add(s);
 }
 
+
+static bool My_File_Read(CSysInFile &file, void *data, size_t size, DWORD &lastError)
+{
+  size_t processed;
+  if (!file.ReadFull(data, size, processed))
+  {
+    lastError = MY_GET_LAST_ERROR;
+    return false;
+  }
+  if (processed != size)
+  {
+    lastError = 1; // error: size of listfile was changed
+    return false;
+  }
+  return true;
+}
+
+
 bool ReadNamesFromListFile2(CFSTR fileName, UStringVector &strings, UINT codePage, DWORD &lastError)
 {
   lastError = 0;
-  NWindows::NFile::NIO::CInFile file;
+  CSysInFile file;
   if (!file.Open(fileName))
   {
-    lastError = ::GetLastError();
+    lastError = MY_GET_LAST_ERROR;
     return false;
   }
   UInt64 fileSize;
   if (!file.GetLength(fileSize))
   {
-    lastError = ::GetLastError();
+    lastError = MY_GET_LAST_ERROR;
     return false;
   }
   if (fileSize >= ((UInt32)1 << 31) - 32)
@@ -48,16 +71,12 @@ bool ReadNamesFromListFile2(CFSTR fileName, UStringVector &strings, UINT codePag
     if ((fileSize & 1) != 0)
       return false;
     CByteArr buf((size_t)fileSize);
-    UInt32 processed;
-    if (!file.Read(buf, (UInt32)fileSize, processed))
-    {
-      lastError = ::GetLastError();
+
+    if (!My_File_Read(file, buf, (size_t)fileSize, lastError))
       return false;
-    }
-    if (processed != fileSize)
-      return false;
+
     file.Close();
-    unsigned num = (unsigned)fileSize / 2;
+    const unsigned num = (unsigned)fileSize / 2;
     wchar_t *p = u.GetBuf(num);
     if (codePage == MY__CP_UTF16)
       for (unsigned i = 0; i < num; i++)
@@ -82,22 +101,21 @@ bool ReadNamesFromListFile2(CFSTR fileName, UStringVector &strings, UINT codePag
   {
     AString s;
     char *p = s.GetBuf((unsigned)fileSize);
-    UInt32 processed;
-    if (!file.Read(p, (UInt32)fileSize, processed))
-    {
-      lastError = ::GetLastError();
+
+    if (!My_File_Read(file, p, (size_t)fileSize, lastError))
       return false;
-    }
-    if (processed != fileSize)
-      return false;
+
     file.Close();
-    s.ReleaseBuf_CalcLen((unsigned)processed);
-    if (s.Len() != processed)
+    s.ReleaseBuf_CalcLen((unsigned)fileSize);
+    if (s.Len() != fileSize)
       return false;
     
     // #ifdef CP_UTF8
     if (codePage == CP_UTF8)
     {
+      // we must check UTF8 here, if convert function doesn't check
+      if (!CheckUTF8_AString(s))
+        return false;
       if (!ConvertUTF8ToUnicode(s, u))
         return false;
     }

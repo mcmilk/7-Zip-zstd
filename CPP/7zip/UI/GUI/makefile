@@ -55,6 +55,7 @@ WIN_OBJS = \
   $O\Shell.obj \
   $O\Synchronization.obj \
   $O\System.obj \
+  $O\SystemInfo.obj \
   $O\TimeUtils.obj \
   $O\Window.obj \
 

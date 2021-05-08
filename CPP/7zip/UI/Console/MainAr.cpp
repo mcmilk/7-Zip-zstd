@@ -19,7 +19,11 @@
 
 using namespace NWindows;
 
+extern
+CStdOutStream *g_StdStream;
 CStdOutStream *g_StdStream = NULL;
+extern
+CStdOutStream *g_ErrStream;
 CStdOutStream *g_ErrStream = NULL;
 
 extern int Main2(
@@ -48,7 +52,9 @@ static void PrintError(const char *message)
     *g_ErrStream << "\n\n" << message << endl;
 }
 
+#if defined(_WIN32) && defined(_UNICODE) && !defined(_WIN64) && !defined(UNDER_CE)
 #define NT_CHECK_FAIL_ACTION *g_StdStream << "Unsupported Windows version"; return NExitCode::kFatalError;
+#endif
 
 int MY_CDECL main
 (

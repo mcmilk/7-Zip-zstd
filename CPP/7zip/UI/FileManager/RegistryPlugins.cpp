@@ -62,7 +62,7 @@ static bool ReadPluginInfo(CPluginInfo &pluginInfo, bool needCheckDll)
   else
   {
     pluginInfo.ClassIDDefined = true;
-    pluginInfo.ClassID = *(const GUID *)prop.bstrVal;
+    pluginInfo.ClassID = *(const GUID *)(const void *)prop.bstrVal;
   }
   prop.Clear();
   
@@ -75,7 +75,7 @@ static bool ReadPluginInfo(CPluginInfo &pluginInfo, bool needCheckDll)
   else
   {
     pluginInfo.OptionsClassIDDefined = true;
-    pluginInfo.OptionsClassID = *(const GUID *)prop.bstrVal;
+    pluginInfo.OptionsClassID = *(const GUID *)(const void *)prop.bstrVal;
   }
   prop.Clear();
 

@@ -149,7 +149,7 @@ struct CDirRecord
   }
 
 
-  const bool GetSymLink(int skipSize, AString &link) const
+  bool GetSymLink(int skipSize, AString &link) const
   {
     link.Empty();
     const Byte *p = NULL;
@@ -208,7 +208,7 @@ struct CDirRecord
     return true;
   }
 
-  static const bool GetLe32Be32(const Byte *p, UInt32 &dest)
+  static bool GetLe32Be32(const Byte *p, UInt32 &dest)
   {
     UInt32 v1 = GetUi32(p);
     UInt32 v2 = GetBe32(p + 4);
@@ -221,7 +221,7 @@ struct CDirRecord
   }
 
 
-  const bool GetPx(int skipSize, unsigned pxType, UInt32 &val) const
+  bool GetPx(int skipSize, unsigned pxType, UInt32 &val) const
   {
     val = 0;
     const Byte *p = NULL;
@@ -237,7 +237,7 @@ struct CDirRecord
   }
 
   /*
-  const bool GetTf(int skipSize, unsigned pxType, CRecordingDateTime &t) const
+  bool GetTf(int skipSize, unsigned pxType, CRecordingDateTime &t) const
   {
     const Byte *p = NULL;
     unsigned len = 0;

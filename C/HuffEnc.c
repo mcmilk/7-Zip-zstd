@@ -1,5 +1,5 @@
 /* HuffEnc.c -- functions for Huffman encoding
-2017-04-03 : Igor Pavlov : Public domain */
+2021-02-09 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -8,7 +8,7 @@
 
 #define kMaxLen 16
 #define NUM_BITS 10
-#define MASK ((1 << NUM_BITS) - 1)
+#define MASK (((unsigned)1 << NUM_BITS) - 1)
 
 #define NUM_COUNTERS 64
 

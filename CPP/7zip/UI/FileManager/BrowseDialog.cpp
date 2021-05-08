@@ -4,7 +4,7 @@
 
 #include "../../../Common/MyWindows.h"
 
-#include <commctrl.h>
+#include <CommCtrl.h>
 
 #ifndef UNDER_CE
 #include "../../../Windows/CommonDialog.h"
@@ -139,7 +139,7 @@ public:
   UStringVector Filters;
   UString FilterDescription;
 
-  CBrowseDialog(): FolderMode(false), _showDots(false), ShowAllFiles(true) {}
+  CBrowseDialog(): _showDots(false), FolderMode(false), ShowAllFiles(true) {}
   void SetFilter(const UString &s);
   INT_PTR Create(HWND parent = 0) { return CModalDialog::Create(IDD_BROWSE, parent); }
   int CompareItems(LPARAM lParam1, LPARAM lParam2);
@@ -235,7 +235,7 @@ bool CBrowseDialog::OnInit()
     column.fmt = LVCFMT_RIGHT;
     column.cx = 100;
     const UString s = LangString(IDS_PROP_SIZE);
-    column.pszText = (wchar_t *)(const wchar_t *)s;
+    column.pszText = s.Ptr_non_const();
     _list.InsertColumn(2, &column);
   }
 
@@ -476,7 +476,7 @@ bool CBrowseDialog::GetParentPath(const UString &path, UString &parentPrefix, US
     return false;
   int pos = s.ReverseFind_PathSepar();
   parentPrefix.SetFrom(s, pos + 1);
-  name = s.Ptr(pos + 1);
+  name = s.Ptr((unsigned)(pos + 1));
   return true;
 }
 
@@ -604,7 +604,7 @@ HRESULT CBrowseDialog::Reload(const UString &pathPrefix, const UString &selected
     int subItem = 0;
     item.iSubItem = subItem++;
     item.lParam = kParentIndex;
-    item.pszText = (wchar_t *)(const wchar_t *)itemName;
+    item.pszText = itemName.Ptr_non_const();
     item.iImage = _extToIconMap.GetIconIndex(FILE_ATTRIBUTE_DIRECTORY, DirPrefix);
     if (item.iImage < 0)
       item.iImage = 0;
@@ -626,7 +626,7 @@ HRESULT CBrowseDialog::Reload(const UString &pathPrefix, const UString &selected
     int subItem = 0;
     item.iSubItem = subItem++;
     item.lParam = i;
-    item.pszText = (wchar_t *)(const wchar_t *)name;
+    item.pszText = name.Ptr_non_const();
 
     const UString fullPath = DirPrefix + name;
     #ifndef UNDER_CE
@@ -953,7 +953,7 @@ bool CorrectFsPath(const UString &relBase, const UString &path2, UString &result
     if (path.Back() == WCHAR_PATH_SEPARATOR)
     {
       path.DeleteBack();
-      result.Insert(0, WCHAR_PATH_SEPARATOR);;
+      result.Insert(0, WCHAR_PATH_SEPARATOR);
     }
     int pos = path.ReverseFind(WCHAR_PATH_SEPARATOR) + 1;
     UString cur = path.Ptr(pos);

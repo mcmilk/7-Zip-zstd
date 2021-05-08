@@ -17,7 +17,7 @@ static const UInt64 k_UInt64_max = UINT64_CONST(0xFFFFFFFFFFFFFFFF);
       if (c < '0' || c > '9') { if (end) *end = s; return res; } \
       if (res > (k_ ## uintType ## _max) / 10) return 0; \
       res *= 10; \
-      unsigned v = (c - '0'); \
+      unsigned v = (unsigned)(c - '0'); \
       if (res > (k_ ## uintType ## _max) - v) return 0; \
       res += v; }}
 

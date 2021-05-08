@@ -12,15 +12,12 @@ specified in "A Password Based File Encryption Utility":
 #ifndef __CRYPTO_WZ_AES_H
 #define __CRYPTO_WZ_AES_H
 
-#include "../../../C/Aes.h"
-
 #include "../../Common/MyBuffer.h"
-#include "../../Common/MyCom.h"
 
-#include "../ICoder.h"
 #include "../IPassword.h"
 
 #include "HmacSha1.h"
+#include "MyAes.h"
 
 namespace NCrypto {
 namespace NWzAes {
@@ -64,18 +61,33 @@ struct CKeyInfo
   unsigned GetNumSaltWords() const { return (KeySizeMode + 1); }
 
   CKeyInfo(): KeySizeMode(kKeySizeMode_AES256) {}
+
+  void Wipe()
+  {
+    Password.Wipe();
+    MY_memset_0_ARRAY(Salt);
+    MY_memset_0_ARRAY(PwdVerifComputed);
+  }
+
+  ~CKeyInfo() { Wipe(); }
 };
 
+/*
 struct CAesCtr2
 {
   unsigned pos;
-  unsigned offset;
-  UInt32 aes[4 + AES_NUM_IVMRK_WORDS + 3];
+  CAlignedBuffer aes;
+  UInt32 *Aes() { return (UInt32 *)(Byte *)aes; }
+
+  // unsigned offset;
+  // UInt32 aes[4 + AES_NUM_IVMRK_WORDS + 3];
+  // UInt32 *Aes() { return aes + offset; }
   CAesCtr2();
 };
 
 void AesCtr2_Init(CAesCtr2 *p);
 void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size);
+*/
 
 class CBaseCoder:
   public ICompressFilter,
@@ -84,8 +96,21 @@ class CBaseCoder:
 {
 protected:
   CKeyInfo _key;
-  NSha1::CHmac _hmac;
-  CAesCtr2 _aes;
+
+  // NSha1::CHmac _hmac;
+  // NSha1::CHmac *Hmac() { return &_hmac; }
+  CAlignedBuffer _hmacBuf;
+  NSha1::CHmac *Hmac() { return (NSha1::CHmac *)(void *)(Byte *)_hmacBuf; }
+
+  // CAesCtr2 _aes;
+  CAesCoder *_aesCoderSpec;
+  CMyComPtr<ICompressFilter> _aesCoder;
+  CBaseCoder():
+    _hmacBuf(sizeof(NSha1::CHmac))
+  {
+    _aesCoderSpec = new CAesCoder(true, 32, true);
+    _aesCoder =  _aesCoderSpec;
+  }
 
   void Init2();
 public:

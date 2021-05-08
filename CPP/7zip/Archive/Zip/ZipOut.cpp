@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/7zCrc.h"
+
 #include "../../Common/OffsetStream.h"
 
 #include "ZipOut.h"
@@ -23,7 +25,7 @@ HRESULT COutArchive::Create(IOutStream *outStream)
 
 void COutArchive::SeekToCurPos()
 {
-  HRESULT res = m_Stream->Seek(m_Base + m_CurPos, STREAM_SEEK_SET, NULL);
+  HRESULT res = m_Stream->Seek((Int64)(m_Base + m_CurPos), STREAM_SEEK_SET, NULL);
   if (res != S_OK)
     throw CSystemException(res);
 }
@@ -97,6 +99,17 @@ void COutArchive::WriteCommonItemInfo(const CLocalItem &item, bool isZip64)
 #define WRITE_32_VAL_SPEC(__v, __isZip64) Write32((__isZip64) ? 0xFFFFFFFF : (UInt32)(__v));
 
 
+void COutArchive::WriteUtfName(const CItemOut &item)
+{
+  if (item.Name_Utf.Size() == 0)
+    return;
+  Write16(NFileHeader::NExtraID::kIzUnicodeName);
+  Write16((UInt16)(5 + item.Name_Utf.Size()));
+  Write8(1); // (1 = version) of that extra field
+  Write32(CrcCalc(item.Name.Ptr(), item.Name.Len()));
+  WriteBytes(item.Name_Utf, (UInt16)item.Name_Utf.Size());
+}
+
 void COutArchive::WriteLocalHeader(CItemOut &item, bool needCheck)
 {
   m_LocalHeaderPos = m_CurPos;
@@ -109,7 +122,10 @@ void COutArchive::WriteLocalHeader(CItemOut &item, bool needCheck)
   if (needCheck && m_IsZip64)
     isZip64 = true;
 
-  const UInt32 localExtraSize = (UInt32)((isZip64 ? (4 + 8 + 8): 0) + item.LocalExtra.GetSize());
+  const UInt32 localExtraSize = (UInt32)(
+      (isZip64 ? (4 + 8 + 8): 0)
+      + item.Get_UtfName_ExtraSize()
+      + item.LocalExtra.GetSize());
   if ((UInt16)localExtraSize != localExtraSize)
     throw CSystemException(E_FAIL);
   if (needCheck && m_ExtraSize != localExtraSize)
@@ -151,6 +167,8 @@ void COutArchive::WriteLocalHeader(CItemOut &item, bool needCheck)
     Write64(size);
     Write64(packSize);
   }
+
+  WriteUtfName(item);
 
   WriteExtra(item.LocalExtra);
 
@@ -230,14 +248,19 @@ void COutArchive::WriteCentralHeader(const CItemOut &item)
 
   Write16((UInt16)item.Name.Len());
   
-  UInt16 zip64ExtraSize = (UInt16)((isUnPack64 ? 8: 0) + (isPack64 ? 8: 0) + (isPosition64 ? 8: 0));
+  const UInt16 zip64ExtraSize = (UInt16)((isUnPack64 ? 8: 0) + (isPack64 ? 8: 0) + (isPosition64 ? 8: 0));
   const UInt16 kNtfsExtraSize = 4 + 2 + 2 + (3 * 8);
-  const UInt16 centralExtraSize = (UInt16)(
-      (isZip64 ? 4 + zip64ExtraSize : 0) +
-      (item.NtfsTimeIsDefined ? 4 + kNtfsExtraSize : 0) +
-      item.CentralExtra.GetSize());
+  const size_t centralExtraSize =
+      (isZip64 ? 4 + zip64ExtraSize : 0)
+      + (item.NtfsTimeIsDefined ? 4 + kNtfsExtraSize : 0)
+      + item.Get_UtfName_ExtraSize()
+      + item.CentralExtra.GetSize();
 
-  Write16(centralExtraSize); // test it;
+  const UInt16 centralExtraSize16 = (UInt16)centralExtraSize;
+  if (centralExtraSize16 != centralExtraSize)
+    throw CSystemException(E_FAIL);
+
+  Write16(centralExtraSize16);
 
   const UInt16 commentSize = (UInt16)item.Comment.Size();
   
@@ -271,6 +294,8 @@ void COutArchive::WriteCentralHeader(const CItemOut &item)
     WriteNtfsTime(item.Ntfs_ATime);
     WriteNtfsTime(item.Ntfs_CTime);
   }
+
+  WriteUtfName(item);
   
   WriteExtra(item.CentralExtra);
   if (commentSize != 0)

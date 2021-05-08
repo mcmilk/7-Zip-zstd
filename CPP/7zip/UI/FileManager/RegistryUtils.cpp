@@ -22,6 +22,7 @@ static LPCWSTR const kLangValueName = L"Lang";
 static LPCWSTR const kViewer = L"Viewer";
 static LPCWSTR const kEditor = L"Editor";
 static LPCWSTR const kDiff = L"Diff";
+static LPCWSTR const kVerCtrlPath = L"7vc";
 
 static LPCTSTR const kShowDots = TEXT("ShowDots");
 static LPCTSTR const kShowRealFileIcons = TEXT("ShowRealFileIcons");
@@ -62,6 +63,8 @@ void ReadRegEditor(bool useEditor, UString &path) { ReadCuString(kCU_FMPath, use
 
 void SaveRegDiff(const UString &path) { SaveCuString(kCU_FMPath, kDiff, path); }
 void ReadRegDiff(UString &path) { ReadCuString(kCU_FMPath, kDiff, path); }
+
+void ReadReg_VerCtrlPath(UString &path) { ReadCuString(kCU_FMPath, kVerCtrlPath, path); }
 
 static void Save7ZipOption(LPCTSTR value, bool enabled)
 {
