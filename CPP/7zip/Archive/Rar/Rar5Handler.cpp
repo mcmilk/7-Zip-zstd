@@ -1000,7 +1000,7 @@ bool CInArchive::ReadFileHeader(const CHeader &header, CItem &item)
 struct CLinkFile
 {
   unsigned Index;
-  unsigned NumLinks;
+  unsigned NumLinks; // the number of links to Data
   CByteBuffer Data;
   HRESULT Res;
   bool crcOK;
@@ -1015,7 +1015,7 @@ struct CUnpacker
   CMyComPtr<ICompressCoder> copyCoder;
   
   CMyComPtr<ICompressCoder> LzCoders[2];
-  bool NeedClearSolid[2];
+  bool SolidAllowed;
 
   CFilterCoder *filterStreamSpec;
   CMyComPtr<ISequentialInStream> filterStream;
@@ -1032,7 +1032,7 @@ struct CUnpacker
 
   CLinkFile *linkFile;
 
-  CUnpacker(): linkFile(NULL) { NeedClearSolid[0] = NeedClearSolid[1] = true; }
+  CUnpacker(): linkFile(NULL) { SolidAllowed = false; }
 
   HRESULT Create(DECL_EXTERNAL_CODECS_LOC_VARS const CItem &item, bool isSolid, bool &wrongPassword);
 
@@ -1142,7 +1142,9 @@ HRESULT CUnpacker::Code(const CItem &item, const CItem &lastItem, UInt64 packSiz
   if (method > kLzMethodMax)
     return E_NOTIMPL;
 
-  if (linkFile && !lastItem.Is_UnknownSize())
+  bool needBuf = (linkFile && linkFile->NumLinks != 0);
+
+  if (needBuf && !lastItem.Is_UnknownSize())
   {
     size_t dataSize = (size_t)lastItem.Size;
     if (dataSize != lastItem.Size)
@@ -1167,15 +1169,15 @@ HRESULT CUnpacker::Code(const CItem &item, const CItem &lastItem, UInt64 packSiz
   ICompressCoder *commonCoder = (method == 0) ? copyCoder : LzCoders[item.IsService() ? 1 : 0];
 
   outStreamSpec->SetStream(realOutStream);
-  outStreamSpec->Init(lastItem, (linkFile ? (Byte *)linkFile->Data : NULL));
-
-  NeedClearSolid[item.IsService() ? 1 : 0] = false;
+  outStreamSpec->Init(lastItem, (needBuf ? (Byte *)linkFile->Data : NULL));
 
   HRESULT res = S_OK;
   if (packSize != 0 || lastItem.Is_UnknownSize() || lastItem.Size != 0)
   {
     res = commonCoder->Code(inStream, outStream, &packSize,
       lastItem.Is_UnknownSize() ? NULL : &lastItem.Size, progress);
+    if (!item.IsService())
+      SolidAllowed = true;
   }
   else
   {
@@ -1210,7 +1212,9 @@ HRESULT CUnpacker::Code(const CItem &item, const CItem &lastItem, UInt64 packSiz
   {
     linkFile->Res = res;
     linkFile->crcOK = isCrcOK;
-    if (!lastItem.Is_UnknownSize() && processedSize != lastItem.Size)
+    if (needBuf
+        && !lastItem.Is_UnknownSize()
+        && processedSize != lastItem.Size)
       linkFile->Data.ChangeSize_KeepData((size_t)processedSize, (size_t)processedSize);
   }
 
@@ -2578,6 +2582,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   const Byte kStatus_Skip = 1 << 1;
   const Byte kStatus_Link = 1 << 2;
 
+  /*
+    In original RAR:
+    1) service streams are not allowed to be solid,
+        and solid flag must be ignored for service streams.
+    2) If RAR creates new solid block and first file in solid block is Link file,
+         then it can clear solid flag for Link file and
+         clear solid flag for first non-Link file after Link file.
+  */
+
   CObjectVector<CLinkFile> linkFiles;
 
   {
@@ -2603,13 +2616,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         
         if (ref.Link >= 0)
         {
-          if (!testMode)
+          // 18.06 fixed: we use links for Test mode too
+          // if (!testMode)
           {
             if ((unsigned)ref.Link < index)
             {
               const CRefItem &linkRef = _refs[(unsigned)ref.Link];
               const CItem &linkItem = _items[linkRef.Item];
-              if (linkItem.IsSolid() && linkItem.Size <= k_CopyLinkFile_MaxSize)
+              if (linkItem.IsSolid())
+              if (testMode || linkItem.Size <= k_CopyLinkFile_MaxSize)
               {
                 if (extractStatuses[(unsigned)ref.Link] == 0)
                 {
@@ -2664,18 +2679,24 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     {
       unsigned solidLimit = 0;
 
-      FOR_VECTOR(i, _refs)
+      FOR_VECTOR (i, _refs)
       {
         if ((extractStatuses[i] & kStatus_Link) == 0)
           continue;
+
+        // We use CLinkFile for testMode too.
+        // So we can show errors for copy files.
+        // if (!testMode)
+        {
+          CLinkFile &linkFile = linkFiles.AddNew();
+          linkFile.Index = i;
+        }
+
         const CItem &item = _items[_refs[i].Item];
         /*
         if (item.IsService())
           continue;
         */
-        
-        CLinkFile &linkFile = linkFiles.AddNew();
-        linkFile.Index = i;
         
         if (item.IsSolid())
         {
@@ -2707,6 +2728,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         solidLimit = i + 1;
       }
 
+      if (!testMode)
       for (UInt32 t = 0; t < numItems; t++)
       {
         unsigned index = allFilesMode ? t : indices[t];
@@ -2748,7 +2770,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   // bool needClearSolid = true;
 
-  FOR_VECTOR(i, _refs)
+  FOR_VECTOR (i, _refs)
   {
     if (extractStatuses[i] == 0)
       continue;
@@ -2761,15 +2783,19 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     
     CMyComPtr<ISequentialOutStream> realOutStream;
 
+    // isExtract means that we don't skip that item. So we need read data.
+
+    bool isExtract = ((extractStatuses[i] & kStatus_Extract) != 0);
     Int32 askMode =
-        ((extractStatuses[i] & kStatus_Extract) != 0) ? (testMode ?
+        isExtract ? (testMode ?
           NExtract::NAskMode::kTest :
           NExtract::NAskMode::kExtract) :
           NExtract::NAskMode::kSkip;
 
     unpacker.linkFile = NULL;
 
-    if (((extractStatuses[i] & kStatus_Link) != 0))
+    // if (!testMode)
+    if ((extractStatuses[i] & kStatus_Link) != 0)
     {
       int bufIndex = FindLinkBuf(linkFiles, i);
       if (bufIndex < 0)
@@ -2791,13 +2817,12 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
 
-    bool isSolid;
+    bool isSolid = false;
+    if (!item->IsService())
     {
-      bool &needClearSolid = unpacker.NeedClearSolid[item->IsService() ? 1 : 0];
-      isSolid = (item->IsSolid() && !needClearSolid);
-      if (item->IsService())
-        isSolid = false;
-      needClearSolid = !item->IsSolid();
+      if (item->IsSolid())
+        isSolid = unpacker.SolidAllowed;
+      unpacker.SolidAllowed = isSolid;
     }
 
     if (item->IsDir())
@@ -2826,9 +2851,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           curUnpackSize = 0;
         curPackSize = GetPackSize(index2);
       }
-      else if ((unsigned)index2 < index)
-        bufIndex = FindLinkBuf(linkFiles, index2);
+      else
+      {
+        if ((unsigned)index2 < index)
+          bufIndex = FindLinkBuf(linkFiles, index2);
+      }
     }
+
+    bool needCallback = true;
 
     if (!realOutStream)
     {
@@ -2836,8 +2866,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         if (item->NeedUse_as_CopyLink_or_HardLink())
         {
+          Int32 opRes = NExtract::NOperationResult::kOK;
+          if (bufIndex >= 0)
+          {
+            const CLinkFile &linkFile = linkFiles[bufIndex];
+            opRes = DecoderRes_to_OpRes(linkFile.Res, linkFile.crcOK);
+          }
+
           RINOK(extractCallback->PrepareOperation(askMode));
-          RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+          RINOK(extractCallback->SetOperationResult(opRes));
           continue;
         }
       }
@@ -2846,10 +2883,10 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         if (item->IsService())
           continue;
 
-        if (item->NeedUse_as_HardLink())
-          continue;
+        needCallback = false;
 
-        bool needDecode = false;
+        if (!item->NeedUse_as_HardLink())
+        if (index2 < 0)
 
         for (unsigned n = i + 1; n < _refs.Size(); n++)
         {
@@ -2860,41 +2897,56 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             break;
           if (extractStatuses[i] != 0)
           {
-            needDecode = true;
+            needCallback = true;
             break;
           }
         }
         
-        if (!needDecode)
-          continue;
-    
         askMode = NExtract::NAskMode::kSkip;
       }
     }
 
-    RINOK(extractCallback->PrepareOperation(askMode));
+    if (needCallback)
+    {
+      RINOK(extractCallback->PrepareOperation(askMode));
+    }
 
     if (bufIndex >= 0)
     {
       CLinkFile &linkFile = linkFiles[bufIndex];
-      if (linkFile.NumLinks == 0)
-        return E_FAIL;
-      if (realOutStream)
+     
+      if (isExtract)
       {
-        RINOK(CopyData_with_Progress(linkFile.Data, linkFile.Data.Size(), realOutStream, progress));
+        if (linkFile.NumLinks == 0)
+          return E_FAIL;
+       
+        if (needCallback)
+        if (realOutStream)
+        {
+          RINOK(CopyData_with_Progress(linkFile.Data, linkFile.Data.Size(), realOutStream, progress));
+        }
+      
+        if (--linkFile.NumLinks == 0)
+          linkFile.Data.Free();
       }
-      if (--linkFile.NumLinks == 0)
-        linkFile.Data.Free();
-      RINOK(extractCallback->SetOperationResult(DecoderRes_to_OpRes(linkFile.Res, linkFile.crcOK)));
+      
+      if (needCallback)
+      {
+        RINOK(extractCallback->SetOperationResult(DecoderRes_to_OpRes(linkFile.Res, linkFile.crcOK)));
+      }
       continue;
     }
 
+    if (!needCallback)
+      continue;
+    
     if (item->NeedUse_as_CopyLink())
     {
-      RINOK(extractCallback->SetOperationResult(
-          realOutStream ?
-            NExtract::NOperationResult::kUnsupportedMethod:
-            NExtract::NOperationResult::kOK));
+      int opRes = realOutStream ?
+          NExtract::NOperationResult::kUnsupportedMethod:
+          NExtract::NOperationResult::kOK;
+      realOutStream.Release();
+      RINOK(extractCallback->SetOperationResult(opRes));
       continue;
     }
 
@@ -2941,7 +2993,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   }
 
   {
-    FOR_VECTOR(i, linkFiles)
+    FOR_VECTOR (i, linkFiles)
       if (linkFiles[i].NumLinks != 0)
         return E_FAIL;
   }

@@ -27,6 +27,7 @@ class CHashCallbackGUI: public CProgressThreadVirt, public IHashCallbackUI
   UInt64 NumFiles;
   bool _curIsFolder;
   UString FirstFileName;
+  // UString MainPath;
 
   CPropNameValPairs PropNameValPairs;
 
@@ -71,9 +72,9 @@ void AddSizeValue(UString &s, UInt64 value)
   if (value >= (1 << 10))
   {
     char c;
-    if (value >= ((UInt64)10 << 30)) { value >>= 30; c = 'G'; }
-    if (value >= (10 << 20)) { value >>= 20; c = 'M'; }
-    else                     { value >>= 10; c = 'K'; }
+          if (value >= ((UInt64)10 << 30)) { value >>= 30; c = 'G'; }
+    else  if (value >=         (10 << 20)) { value >>= 20; c = 'M'; }
+    else                                   { value >>= 10; c = 'K'; }
     char sz[32];
     ConvertUInt64ToString(value, sz);
     s += " (";
@@ -192,19 +193,25 @@ static void AddHashResString(CPropNameValPairs &s, const CHasherState &h, unsign
 }
 
 
-void AddHashBundleRes(CPropNameValPairs &s, const CHashBundle &hb, const UString &firstFileName)
+void AddHashBundleRes(CPropNameValPairs &s, const CHashBundle &hb)
 {
   if (hb.NumErrors != 0)
     AddValuePair(s, IDS_PROP_NUM_ERRORS, hb.NumErrors);
-  
-  if (hb.NumFiles == 1 && hb.NumDirs == 0 && !firstFileName.IsEmpty())
+
+  if (hb.NumFiles == 1 && hb.NumDirs == 0 && !hb.FirstFileName.IsEmpty())
   {
     CProperty &pair = s.AddNew();
     LangString(IDS_PROP_NAME, pair.Name);
-    pair.Value = firstFileName;
+    pair.Value = hb.FirstFileName;
   }
   else
   {
+    if (!hb.MainName.IsEmpty())
+    {
+      CProperty &pair = s.AddNew();
+      LangString(IDS_PROP_NAME, pair.Name);
+      pair.Value = hb.MainName;
+    }
     if (hb.NumDirs != 0)
       AddValuePair(s, IDS_PROP_FOLDERS, hb.NumDirs);
     AddValuePair(s, IDS_PROP_FILES, hb.NumFiles);
@@ -240,10 +247,10 @@ void AddHashBundleRes(CPropNameValPairs &s, const CHashBundle &hb, const UString
 }
 
 
-void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFileName)
+void AddHashBundleRes(UString &s, const CHashBundle &hb)
 {
   CPropNameValPairs pairs;
-  AddHashBundleRes(pairs, hb, firstFileName);
+  AddHashBundleRes(pairs, hb);
   
   FOR_VECTOR (i, pairs)
   {
@@ -263,9 +270,11 @@ void AddHashBundleRes(UString &s, const CHashBundle &hb, const UString &firstFil
 }
 
 
-HRESULT CHashCallbackGUI::AfterLastFile(const CHashBundle &hb)
+HRESULT CHashCallbackGUI::AfterLastFile(CHashBundle &hb)
 {
-  AddHashBundleRes(PropNameValPairs, hb, FirstFileName);
+  hb.FirstFileName = FirstFileName;
+  // MainPath
+  AddHashBundleRes(PropNameValPairs, hb);
   
   CProgressSync &sync = Sync;
   sync.Set_NumFilesCur(hb.NumFiles);
@@ -335,10 +344,10 @@ void ShowHashResults(const CPropNameValPairs &propPairs, HWND hwnd)
 }
 
 
-void ShowHashResults(const CHashBundle &hb, const UString &firstFileName, HWND hwnd)
+void ShowHashResults(const CHashBundle &hb, HWND hwnd)
 {
   CPropNameValPairs propPairs;
-  AddHashBundleRes(propPairs, hb, firstFileName);
+  AddHashBundleRes(propPairs, hb);
   ShowHashResults(propPairs, hwnd);
 }
 

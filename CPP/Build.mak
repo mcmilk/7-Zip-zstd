@@ -4,19 +4,20 @@ LIBS = $(LIBS) oleaut32.lib ole32.lib
 CFLAGS = $(CFLAGS) -DUNICODE -D_UNICODE
 !ENDIF
 
-# CFLAGS = $(CFLAGS) -FAsc -Fa$O/Asm/
-
 !IFNDEF O
-!IFDEF CPU
-O=$(CPU)
+!IFDEF PLATFORM
+O=$(PLATFORM)
 !ELSE
-O=O
+O=o
 !ENDIF
 !ENDIF
 
-!IF "$(CPU)" == "AMD64"
+# CFLAGS = $(CFLAGS) -FAsc -Fa$O/asm/
+
+
+!IF "$(PLATFORM)" == "x64"
 MY_ML = ml64 -Dx64 -WX
-!ELSEIF "$(CPU)" == "ARM"
+!ELSEIF "$(PLATFORM)" == "arm"
 MY_ML = armasm -WX
 !ELSE
 MY_ML = ml -WX
@@ -29,16 +30,16 @@ RFLAGS = $(RFLAGS) -dUNDER_CE
 LFLAGS = $(LFLAGS) /ENTRY:mainACRTStartup
 !ENDIF
 !ELSE
-!IFNDEF NEW_COMPILER
+!IFDEF OLD_COMPILER
 LFLAGS = $(LFLAGS) -OPT:NOWIN98
 !ENDIF
-!IF "$(CPU)" != "ARM" && "$(CPU)" != "ARM64"
+!IF "$(PLATFORM)" != "arm" && "$(PLATFORM)" != "arm64"
 CFLAGS = $(CFLAGS) -Gr
 !ENDIF
 LIBS = $(LIBS) user32.lib advapi32.lib shell32.lib
 !ENDIF
 
-!IF "$(CPU)" == "ARM"
+!IF "$(PLATFORM)" == "arm"
 COMPL_ASM = $(MY_ML) $** $O/$(*B).obj
 !ELSE
 COMPL_ASM = $(MY_ML) -c -Fo$O/ $**
@@ -46,19 +47,19 @@ COMPL_ASM = $(MY_ML) -c -Fo$O/ $**
 
 CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -W4 -WX -EHsc -Gy -GR- -GF
 
-!IFDEF MY_STATIC_LINK
+!IFDEF MY_DYNAMIC_LINK
+CFLAGS = $(CFLAGS) -MD
+!ELSE
 !IFNDEF MY_SINGLE_THREAD
 CFLAGS = $(CFLAGS) -MT
 !ENDIF
-!ELSE
-CFLAGS = $(CFLAGS) -MD
 !ENDIF
 
-!IFDEF NEW_COMPILER
+!IFNDEF OLD_COMPILER
 CFLAGS = $(CFLAGS) -GS- -Zc:forScope -Zc:wchar_t
 !IFNDEF UNDER_CE
 CFLAGS = $(CFLAGS) -MP2
-!IFNDEF CPU
+!IFNDEF PLATFORM
 # CFLAGS = $(CFLAGS) -arch:IA32
 !ENDIF
 !ENDIF
@@ -66,7 +67,13 @@ CFLAGS = $(CFLAGS) -MP2
 CFLAGS = $(CFLAGS)
 !ENDIF
 
-!IF "$(CPU)" == "AMD64"
+!IFNDEF UNDER_CE
+!IF "$(PLATFORM)" == "arm"
+CFLAGS = $(CFLAGS) -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+!ENDIF
+!ENDIF
+
+!IF "$(PLATFORM)" == "x64"
 CFLAGS_O1 = $(CFLAGS) -O1
 !ELSE
 CFLAGS_O1 = $(CFLAGS) -O1
@@ -82,7 +89,7 @@ LFLAGS = $(LFLAGS) /LARGEADDRESSAWARE
 !IFDEF DEF_FILE
 LFLAGS = $(LFLAGS) -DLL -DEF:$(DEF_FILE)
 !ELSE
-!IF defined(MY_FIXED) && "$(CPU)" != "ARM" && "$(CPU)" != "ARM64"
+!IF defined(MY_FIXED) && "$(PLATFORM)" != "arm" && "$(PLATFORM)" != "arm64"
 LFLAGS = $(LFLAGS) /FIXED
 !ELSE
 LFLAGS = $(LFLAGS) /FIXED:NO
@@ -91,7 +98,7 @@ LFLAGS = $(LFLAGS) /FIXED:NO
 !ENDIF
 
 
-# !IF "$(CPU)" == "AMD64"
+# !IF "$(PLATFORM)" == "x64"
 
 !IFDEF SUB_SYS_VER
 
@@ -131,10 +138,10 @@ clean:
 
 $O:
 	if not exist "$O" mkdir "$O"
-$O/Asm:
-	if not exist "$O/Asm" mkdir "$O/Asm"
+$O/asm:
+	if not exist "$O/asm" mkdir "$O/asm"
 
-$(PROGPATH): $O $O/Asm $(OBJS) $(DEF_FILE)
+$(PROGPATH): $O $O/asm $(OBJS) $(DEF_FILE)
 	link $(LFLAGS) -out:$(PROGPATH) $(OBJS) $(LIBS)
 
 !IFNDEF NO_DEFAULT_RES

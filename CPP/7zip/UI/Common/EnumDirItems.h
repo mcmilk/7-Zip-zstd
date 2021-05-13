@@ -22,6 +22,7 @@ HRESULT EnumerateItems(
 struct CMessagePathException: public UString
 {
   CMessagePathException(const char *a, const wchar_t *u = NULL);
+  CMessagePathException(const wchar_t *a, const wchar_t *u = NULL);
 };
 
 

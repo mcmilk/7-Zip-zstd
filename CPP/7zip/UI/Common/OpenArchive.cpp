@@ -563,6 +563,8 @@ HRESULT CArc::GetItemPathToParent(UInt32 index, UInt32 parent, UStringVector &pa
     UInt32 parentType = 0;
     RINOK(GetRawProps->GetParent(curIndex, &curParent, &parentType));
 
+    // 18.06: fixed : we don't want to split name to parts
+    /*
     if (parentType != NParentType::kAltStream)
     {
       for (;;)
@@ -576,6 +578,7 @@ HRESULT CArc::GetItemPathToParent(UInt32 index, UInt32 parent, UStringVector &pa
         s.DeleteFrom(pos);
       }
     }
+    */
     
     parts.Insert(0, s);
 
@@ -2013,7 +2016,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
     }
     else
     {
-      const CArcInfoEx &ai = op.codecs->Formats[formatIndex];
+      const CArcInfoEx &ai = op.codecs->Formats[(unsigned)formatIndex];
       if (ai.FindExtension(extension) >= 0)
       {
         if (ai.Flags_FindSignature() && searchMarkerInHandler)

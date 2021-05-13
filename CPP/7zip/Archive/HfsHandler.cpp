@@ -419,7 +419,13 @@ void CDatabase::GetItemPath(unsigned index, NWindows::NCOM::CPropVariant &path) 
     const wchar_t *src = (const wchar_t *)*s;
     wchar_t *dest = p + len;
     for (unsigned j = 0; j < curLen; j++)
-      dest[j] = src[j];
+    {
+      wchar_t c = src[j];
+      // 18.06
+      if (c == CHAR_PATH_SEPARATOR || c == '/')
+        c = '_';
+      dest[j] = c;
+    }
     
     if (len == 0)
       break;

@@ -288,29 +288,27 @@ void CArchivePath::ParseFromPath(const UString &path, EArcNameMode mode)
   
   if (mode == k_ArcNameMode_Add)
     return;
-  if (mode == k_ArcNameMode_Exact)
-  {
-    BaseExtension.Empty();
-    return;
-  }
   
-  int dotPos = Name.ReverseFind_Dot();
-  if (dotPos < 0)
-    return;
-  if ((unsigned)dotPos == Name.Len() - 1)
+  if (mode != k_ArcNameMode_Exact)
   {
-    Name.DeleteBack();
-    BaseExtension.Empty();
-    return;
+    int dotPos = Name.ReverseFind_Dot();
+    if (dotPos < 0)
+      return;
+    if ((unsigned)dotPos == Name.Len() - 1)
+      Name.DeleteBack();
+    else
+    {
+      const UString ext = Name.Ptr(dotPos + 1);
+      if (BaseExtension.IsEqualTo_NoCase(ext))
+      {
+        BaseExtension = ext;
+        Name.DeleteFrom(dotPos);
+        return;
+      }
+    }
   }
-  const UString ext = Name.Ptr(dotPos + 1);
-  if (BaseExtension.IsEqualTo_NoCase(ext))
-  {
-    BaseExtension = ext;
-    Name.DeleteFrom(dotPos);
-  }
-  else
-    BaseExtension.Empty();
+
+  BaseExtension.Empty();
 }
 
 UString CArchivePath::GetFinalPath() const
@@ -327,6 +325,7 @@ UString CArchivePath::GetFinalPath() const
 UString CArchivePath::GetFinalVolPath() const
 {
   UString path = GetPathWithoutExt();
+  // if BaseExtension is empty, we must ignore VolExtension also.
   if (!BaseExtension.IsEmpty())
   {
     path += '.';
@@ -1166,7 +1165,7 @@ HRESULT UpdateArchive(
         {
           errorInfo.SystemError = ERROR_ACCESS_DENIED;
           errorInfo.Message = "The file is read-only";
-          errorInfo.FileNames.Add(arcPath);
+          errorInfo.FileNames.Add(us2fs(arcPath));
           return errorInfo.Get_HRESULT_Error();
         }
 
@@ -1377,6 +1376,31 @@ HRESULT UpdateArchive(
 
   unsigned ci;
 
+
+  // self including protection
+  if (options.DeleteAfterCompressing)
+  {
+    for (ci = 0; ci < options.Commands.Size(); ci++)
+    {
+      CArchivePath &ap = options.Commands[ci].ArchivePath;
+      const FString path = us2fs(ap.GetFinalPath());
+      // maybe we must compare absolute paths path here
+      FOR_VECTOR (i, dirItems.Items)
+      {
+        const FString phyPath = dirItems.GetPhyPath(i);
+        if (phyPath == path)
+        {
+          UString s;
+          s = "It is not allowed to include archive to itself";
+          s.Add_LF();
+          s += path;
+          throw s;
+        }
+      }
+    }
+  }
+
+
   for (ci = 0; ci < options.Commands.Size(); ci++)
   {
     CArchivePath &ap = options.Commands[ci].ArchivePath;
@@ -1562,26 +1586,39 @@ HRESULT UpdateArchive(
     }
 
     CCurrentDirRestorer curDirRestorer;
+
+    AStringVector paths;
+    AStringVector names;
     
     for (i = 0; i < fullPaths.Size(); i++)
     {
       const UString arcPath2 = fs2us(fullPaths[i]);
       const UString fileName = ExtractFileNameFromPath(arcPath2);
-      const AString path (GetAnsiString(arcPath2));
-      const AString name (GetAnsiString(fileName));
+      paths.Add(GetAnsiString(arcPath2));
+      names.Add(GetAnsiString(fileName));
+      // const AString path (GetAnsiString(arcPath2));
+      // const AString name (GetAnsiString(fileName));
       // Warning!!! MAPISendDocuments function changes Current directory
       // fnSend(0, ";", (LPSTR)(LPCSTR)path, (LPSTR)(LPCSTR)name, 0);
+    }
 
-      MapiFileDesc f;
+    CRecordVector<MapiFileDesc> files;
+    files.ClearAndSetSize(paths.Size());
+    
+    for (i = 0; i < paths.Size(); i++)
+    {
+      MapiFileDesc &f = files[i];
       memset(&f, 0, sizeof(f));
       f.nPosition = 0xFFFFFFFF;
-      f.lpszPathName = (char *)(const char *)path;
-      f.lpszFileName = (char *)(const char *)name;
-      
+      f.lpszPathName = (char *)(const char *)paths[i];
+      f.lpszFileName = (char *)(const char *)names[i];
+    }
+
+    {
       MapiMessage m;
       memset(&m, 0, sizeof(m));
-      m.nFileCount = 1;
-      m.lpFiles = &f;
+      m.nFileCount = files.Size();
+      m.lpFiles = &files.Front();
       
       const AString addr (GetAnsiString(options.EMailAddress));
       MapiRecipDesc rec;

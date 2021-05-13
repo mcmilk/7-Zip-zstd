@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2017-08-28 : Igor Pavlov : Public domain */
+2018-08-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -89,9 +89,9 @@ static LPCWSTR const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\\Inpro
 
 #define g_AllUsers True
 
-static Bool g_Install_was_Pressed;
-static Bool g_Finished;
-static Bool g_SilentMode;
+static BoolInt g_Install_was_Pressed;
+static BoolInt g_Finished;
+static BoolInt g_SilentMode;
 
 static HWND g_HWND;
 static HWND g_Path_HWND;
@@ -270,7 +270,7 @@ static int MyRegistry_QueryString2(HKEY hKey, LPCWSTR keyName, LPCWSTR valName, 
   if (res != ERROR_SUCCESS)
     return False;
   {
-    Bool res2 = MyRegistry_QueryString(key, valName, dest);
+    BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
     RegCloseKey(key);
     return res2;
   }
@@ -343,7 +343,7 @@ static LONG MyRegistry_CreateKeyAndVal_32(HKEY parentKey, LPCWSTR keyName, LPCWS
 
 #define kSignatureSearchLimit (1 << 22)
 
-static Bool FindSignature(CSzFile *stream, UInt64 *resPos)
+static BoolInt FindSignature(CSzFile *stream, UInt64 *resPos)
 {
   Byte buf[kBufSize];
   size_t numPrevBytes = 0;
@@ -431,7 +431,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM data)
   return 0;
 }
 
-static Bool MyBrowseForFolder(HWND owner, LPCWSTR title, UINT ulFlags,
+static BoolInt MyBrowseForFolder(HWND owner, LPCWSTR title, UINT ulFlags,
     LPCWSTR initialFolder, LPWSTR resultPath)
 {
   WCHAR displayName[MAX_PATH];
@@ -694,7 +694,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
 
   for (; i < 3; i++)
   {
-    Bool isOK = True;
+    BoolInt isOK = True;
     WCHAR link[MAX_PATH + 40];
     WCHAR destPath[MAX_PATH + 40];
 
@@ -874,7 +874,7 @@ static void WriteShellEx()
 
 static const wchar_t *GetCmdParam(const wchar_t *s)
 {
-  Bool quoteMode = False;
+  BoolInt quoteMode = False;
   for (;; s++)
   {
     wchar_t c = *s;
@@ -988,7 +988,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   if (path[0] == 0)
   {
     HKEY key = 0;
-    Bool ok = False;
+    BoolInt ok = False;
     LONG res = RegOpenKeyExW(HKEY_CURRENT_USER, k_Reg_Software_7zip, 0, KEY_READ | k_Reg_WOW_Flag, &key);
     if (res == ERROR_SUCCESS)
     {
@@ -1101,7 +1101,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 }
 
 
-static Bool GetErrorMessage(DWORD errorCode, WCHAR *message)
+static BoolInt GetErrorMessage(DWORD errorCode, WCHAR *message)
 {
   LPVOID msgBuf;
   if (FormatMessageW(
@@ -1313,7 +1313,7 @@ if (res == SZ_OK)
         }
 
         {
-          // Bool skipFile = False;
+          // BoolInt skipFile = False;
           
           wcscpy(origPath, path);
   

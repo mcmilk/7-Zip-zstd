@@ -599,8 +599,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
     case kpidHostOS:
     {
-      const Byte hostOS = item.GetHostOS();
-      TYPE_TO_PROP(kHostOS, hostOS, prop);
+      if (item.FromCentral)
+      {
+        // 18.06: now we use HostOS only from Central::MadeByVersion
+        const Byte hostOS = item.MadeByVersion.HostOS;
+        TYPE_TO_PROP(kHostOS, hostOS, prop);
+      }
       break;
     }
     

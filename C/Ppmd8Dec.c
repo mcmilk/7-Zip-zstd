@@ -1,5 +1,5 @@
 /* Ppmd8Dec.c -- PPMdI Decoder
-2017-04-03 : Igor Pavlov : Public domain
+2018-07-04 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -11,7 +11,7 @@ This code is based on:
 #define kTop (1 << 24)
 #define kBot (1 << 15)
 
-Bool Ppmd8_RangeDec_Init(CPpmd8 *p)
+BoolInt Ppmd8_RangeDec_Init(CPpmd8 *p)
 {
   unsigned i;
   p->Low = 0;

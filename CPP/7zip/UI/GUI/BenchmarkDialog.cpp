@@ -324,7 +324,6 @@ static void PrintSize_MB(UString &s, UInt64 size)
   s += kMB;
 }
 
-extern bool g_LargePagesMode;
 
 UInt32 CBenchmarkDialog::OnChangeDictionary()
 {
@@ -338,8 +337,14 @@ UInt32 CBenchmarkDialog::OnChangeDictionary()
     s += " / ";
     PrintSize_MB(s, ramSize);
   }
-  if (g_LargePagesMode)
-    s += " LP";
+
+  #ifdef _7ZIP_LARGE_PAGES
+  {
+    AString s2;
+    Add_LargePages_String(s2);
+    s += s2;
+  }
+  #endif
 
   SetItemText(IDT_BENCH_MEMORY_VAL, s);
 

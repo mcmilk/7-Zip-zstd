@@ -332,7 +332,7 @@ void CHashCallbackConsole::PrintProperty(const char *name, UInt64 value)
   *_so << name << s << endl;
 }
 
-HRESULT CHashCallbackConsole::AfterLastFile(const CHashBundle &hb)
+HRESULT CHashCallbackConsole::AfterLastFile(CHashBundle &hb)
 {
   ClosePercents2();
   

@@ -1182,7 +1182,9 @@ if (askExtractMode == NArchive::NExtract::NAskMode::kExtract && !_testMode)
           bool needDelete = true;
           if (needDelete)
           {
+            if (NFind::DoesFileExist(fullProcessedPath))
             if (!DeleteFileAlways(fullProcessedPath))
+            if (GetLastError() != ERROR_FILE_NOT_FOUND)
             {
               RINOK(SendMessageError_with_LastError(kCantDeleteOutputFile, fullProcessedPath));
               return S_OK;
@@ -1368,12 +1370,34 @@ if (askExtractMode == NArchive::NExtract::NAskMode::kExtract && !_testMode)
             // UInt64 ticks = GetCpuTicks();
             bool res = _outFileStreamSpec->File.SetLength(_curSize);
             _fileLengthWasSet = res;
-            _outFileStreamSpec->File.SeekToBegin();
+
             // ticks = GetCpuTicks() - ticks;
             // printf("\nticks = %10d\n", (unsigned)ticks);
             if (!res)
             {
               RINOK(SendMessageError_with_LastError(kCantSetFileLen, fullProcessedPath));
+            }
+
+            /*
+            _outFileStreamSpec->File.Close();
+            ticks = GetCpuTicks() - ticks;
+            printf("\nticks = %10d\n", (unsigned)ticks);
+            return S_FALSE;
+            */
+
+            /*
+              File.SetLength() on FAT (xp64): is fast, but then File.Close() can be slow,
+              if we don't write any data.
+              File.SetLength() for remote share file (exFAT) can be slow in some cases,
+              and the Windows can return "network error" after 1 minute,
+              while remote file still can grow.
+              We need some way to detect such bad cases and disable PreAllocateOutFile mode.
+            */
+
+            res = _outFileStreamSpec->File.SeekToBegin();
+            if (!res)
+            {
+              RINOK(SendMessageError_with_LastError("Can not seek to begin of file", fullProcessedPath));
             }
           }
 

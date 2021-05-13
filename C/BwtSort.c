@@ -1,5 +1,5 @@
 /* BwtSort.c -- BWT block sorting
-2017-04-03 : Igor Pavlov : Public domain */
+2018-07-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -448,7 +448,7 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
 
       groupSize = ((Indices[i] & ~0xC0000000) >> kNumBitsMax);
       {
-      Bool finishedGroup = ((Indices[i] & 0x80000000) == 0);
+      BoolInt finishedGroup = ((Indices[i] & 0x80000000) == 0);
       if ((Indices[i] & 0x40000000) != 0)
       {
         groupSize += ((Indices[(size_t)i + 1] >> kNumBitsMax) << kNumExtra0Bits);

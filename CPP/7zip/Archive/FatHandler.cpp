@@ -161,7 +161,8 @@ bool CHeader::Parse(const Byte *p)
     return false;
 
   // we also support images that contain 0 in offset field.
-  bool isOkOffset = (codeOffset == 0 || (p[0] == 0xEB && p[1] == 0));
+  bool isOkOffset = (codeOffset == 0)
+      || (codeOffset == (p[0] == 0xEB ? 2 : 3));
 
   UInt16 numRootDirEntries = Get16(p + 17);
   if (numRootDirEntries == 0)

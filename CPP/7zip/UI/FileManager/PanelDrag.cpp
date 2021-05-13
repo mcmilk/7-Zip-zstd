@@ -940,8 +940,10 @@ void CPanel::CompressDropFiles(const UStringVector &fileNames, const UString &fo
       if (IsFolderInTemp(folderPath2F))
         folderPath2 = ROOT_FS_FOLDER;
     }
-    const UString archiveName = CreateArchiveName(fileNames.Front(), (fileNames.Size() > 1), false);
-    CompressFiles(folderPath2, archiveName, L"",
+    
+    const UString arcName = CreateArchiveName(fileNames);
+    
+    CompressFiles(folderPath2, arcName, L"",
       true, // addExtension
       fileNames,
       false, // email

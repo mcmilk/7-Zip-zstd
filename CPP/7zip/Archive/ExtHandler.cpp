@@ -1596,6 +1596,17 @@ STDMETHODIMP CHandler::Close()
 }
 
 
+static void ChangeSeparatorsInName(char *s, unsigned num)
+{
+  for (unsigned i = 0; i < num; i++)
+  {
+    char c = s[i];
+    if (c == CHAR_PATH_SEPARATOR || c == '/')
+      s[i] = '_';
+  }
+}
+
+
 void CHandler::GetPath(unsigned index, AString &s) const
 {
   s.Empty();
@@ -1612,6 +1623,8 @@ void CHandler::GetPath(unsigned index, AString &s) const
     if (!s.IsEmpty())
       s.InsertAtFront(CHAR_PATH_SEPARATOR);
     s.Insert(0, item.Name);
+    // 18.06
+    ChangeSeparatorsInName(s.GetBuf(), item.Name.Len());
 
     if (item.ParentNode == k_INODE_ROOT)
       return;

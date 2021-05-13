@@ -1,6 +1,21 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+18.06          2018-12-30
+-------------------------
+- The speed for LZMA/LZMA2 compressing was increased by 3-10%,
+  and there are minor changes in compression ratio.
+- Some bugs were fixed.
+- The bug in 7-Zip 18.02-18.05 was fixed:
+  There was memory leak in multithreading xz decoder - XzDecMt_Decode(),
+  if xz stream contains only one block.
+- 7-Zip 18.02-18.05 used only one CPU thread for bz2 archive creation.
+- The changes for MSVS compiler makefiles: 
+   - the makefiles now use "PLATFORM" macroname with values (x64, x86, arm64)
+     instead of "CPU" macroname with values (AMD64, ARM64).
+   - the makefiles by default now use static version of the run-time library.
+
+
 18.05          2018-04-30
 -------------------------
 - The speed for LZMA/LZMA2 compressing was increased 

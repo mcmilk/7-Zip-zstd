@@ -1084,3 +1084,13 @@ CMessagePathException::CMessagePathException(const char *a, const wchar_t *u)
     (*this) += u;
   }
 }
+
+CMessagePathException::CMessagePathException(const wchar_t *a, const wchar_t *u)
+{
+  (*this) += a;
+  if (u)
+  {
+    Add_LF();
+    (*this) += u;
+  }
+}

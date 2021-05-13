@@ -40,7 +40,10 @@ static const Byte kHostOS =
   #endif
 
 static const Byte kMadeByHostOS = kHostOS;
-static const Byte kExtractHostOS = kHostOS;
+
+// 18.06: now we always write zero to high byte of ExtractVersion field.
+// Previous versions of p7zip wrote (NFileHeader::NHostOS::kUnix) there, that is not correct
+static const Byte kExtractHostOS = 0;
 
 static const Byte kMethodForDirectory = NFileHeader::NCompressionMethod::kStore;
 

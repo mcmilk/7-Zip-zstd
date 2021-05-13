@@ -1072,18 +1072,24 @@ HRESULT ListArchives(CCodecs *codecs,
           errorCode = ERROR_FILE_NOT_FOUND;
         lastError = HRESULT_FROM_WIN32(lastError);;
         g_StdOut.Flush();
-        *g_ErrStream << endl << kError << NError::MyFormatMessage(errorCode) << endl;
-        g_ErrStream->NormalizePrint_UString(arcPath);
-        *g_ErrStream << endl << endl;
+        if (g_ErrStream)
+        {
+          *g_ErrStream << endl << kError << NError::MyFormatMessage(errorCode) << endl;
+          g_ErrStream->NormalizePrint_UString(arcPath);
+          *g_ErrStream << endl << endl;
+        }
         numErrors++;
         continue;
       }
       if (fi.IsDir())
       {
         g_StdOut.Flush();
-        *g_ErrStream << endl << kError;
-        g_ErrStream->NormalizePrint_UString(arcPath);
-        *g_ErrStream << " is not a file" << endl << endl;
+        if (g_ErrStream)
+        {
+          *g_ErrStream << endl << kError;
+          g_ErrStream->NormalizePrint_UString(arcPath);
+          *g_ErrStream << " is not a file" << endl << endl;
+        }
         numErrors++;
         continue;
       }
@@ -1133,24 +1139,28 @@ HRESULT ListArchives(CCodecs *codecs,
     {
       if (result == E_ABORT)
         return result;
-      g_StdOut.Flush();
-      *g_ErrStream << endl << kError;
-      g_ErrStream->NormalizePrint_UString(arcPath);
-      *g_ErrStream << " : ";
-      if (result == S_FALSE)
-      {
-        Print_OpenArchive_Error(*g_ErrStream, codecs, arcLink);
-      }
-      else
-      {
+      if (result != S_FALSE)
         lastError = result;
-        *g_ErrStream << "opening : ";
-        if (result == E_OUTOFMEMORY)
-          *g_ErrStream << "Can't allocate required memory";
+      g_StdOut.Flush();
+      if (g_ErrStream)
+      {
+        *g_ErrStream << endl << kError;
+        g_ErrStream->NormalizePrint_UString(arcPath);
+        *g_ErrStream << " : ";
+        if (result == S_FALSE)
+        {
+          Print_OpenArchive_Error(*g_ErrStream, codecs, arcLink);
+        }
         else
-          *g_ErrStream << NError::MyFormatMessage(result);
+        {
+          *g_ErrStream << "opening : ";
+          if (result == E_OUTOFMEMORY)
+            *g_ErrStream << "Can't allocate required memory";
+          else
+            *g_ErrStream << NError::MyFormatMessage(result);
+        }
+        *g_ErrStream << endl;
       }
-      *g_ErrStream << endl;
       numErrors++;
       continue;
     }

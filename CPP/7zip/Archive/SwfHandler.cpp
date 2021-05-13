@@ -46,7 +46,7 @@ static const Byte SWF_COMPRESSED_LZMA = 'Z';
 static const Byte SWF_MIN_COMPRESSED_ZLIB_VER = 6;
 static const Byte SWF_MIN_COMPRESSED_LZMA_VER = 13;
 
-static const Byte kVerLim = 20;
+static const Byte kVerLim = 64;
 
 API_FUNC_static_IsArc IsArc_Swf(const Byte *p, size_t size)
 {

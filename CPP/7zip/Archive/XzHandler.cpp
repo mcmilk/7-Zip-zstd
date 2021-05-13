@@ -488,7 +488,7 @@ HRESULT CHandler::Open2(IInStream *inStream, /* UInt32 flags, */ IArchiveOpenCal
 
     {
       CXzBlock block;
-      Bool isIndex;
+      BoolInt isIndex;
       UInt32 headerSizeRes;
       SRes res2 = XzBlock_ReadHeader(&block, &inStreamWrap.vt, &isIndex, &headerSizeRes);
       if (res2 == SZ_OK && !isIndex)
@@ -820,7 +820,7 @@ static HRESULT DecodeBlock(CXzUnpackerCPP2 &xzu,
 
     packRem -= inLen;
   
-    Bool blockFinished = XzUnpacker_IsBlockFinished(&xzu.p);
+    BoolInt blockFinished = XzUnpacker_IsBlockFinished(&xzu.p);
 
     if ((inLen == 0 && outLen == 0) || blockFinished)
     {

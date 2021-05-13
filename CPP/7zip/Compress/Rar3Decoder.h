@@ -189,6 +189,7 @@ class CDecoder:
   NVm::CVm _vm;
   CRecordVector<CFilter *> _filters;
   CRecordVector<CTempFilter *>  _tempFilters;
+  unsigned _numEmptyTempFilters;
   UInt32 _lastFilter;
 
   bool _isSolid;

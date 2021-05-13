@@ -446,6 +446,14 @@ void CCoder::SetOutStreamSizeResume(const UInt64 *outSize)
 
 STDMETHODIMP CCoder::SetOutStreamSize(const UInt64 *outSize)
 {
+  /*
+    18.06:
+    We want to support GetInputProcessedSize() before CCoder::Read()
+    So we call m_InBitStream.Init() even before buffer allocations
+    m_InBitStream.Init() just sets variables to default values
+    But later we will call m_InBitStream.Init() again with real buffer pointers
+  */
+  m_InBitStream.Init();
   _needInitInStream = true;
   SetOutStreamSizeResume(outSize);
   return S_OK;

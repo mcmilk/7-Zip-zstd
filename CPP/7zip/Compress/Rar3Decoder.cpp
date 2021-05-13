@@ -148,7 +148,8 @@ void CDecoder::ExecuteFilter(unsigned tempFilterIndex, NVm::CBlockRef &outBlockR
   if (!_vm.Execute(filter, tempFilter, outBlockRef, filter->GlobalData))
     _unsupportedFilter = true;
   delete tempFilter;
-  _tempFilters[tempFilterIndex] = 0;
+  _tempFilters[tempFilterIndex] = NULL;
+  _numEmptyTempFilters++;
 }
 
 HRESULT CDecoder::WriteBuf()
@@ -225,6 +226,7 @@ HRESULT CDecoder::WriteBuf()
 void CDecoder::InitFilters()
 {
   _lastFilter = 0;
+  _numEmptyTempFilters = 0;
   unsigned i;
   for (i = 0; i < _tempFilters.Size(); i++)
     delete _tempFilters[i];
@@ -274,24 +276,27 @@ bool CDecoder::AddVmCode(UInt32 firstByte, UInt32 codeSize)
     filter->ExecCount++;
   }
 
-  unsigned numEmptyItems = 0;
+  if (_numEmptyTempFilters != 0)
   {
-    FOR_VECTOR (i, _tempFilters)
+    unsigned num = _tempFilters.Size();
+    CTempFilter **tempFilters = &_tempFilters.Front();
+    
+    unsigned w = 0;
+    for (unsigned i = 0; i < num; i++)
     {
-      _tempFilters[i - numEmptyItems] = _tempFilters[i];
-      if (!_tempFilters[i])
-        numEmptyItems++;
-      if (numEmptyItems != 0)
-        _tempFilters[i] = NULL;
+      CTempFilter *tf = tempFilters[i];
+      if (tf)
+        tempFilters[w++] = tf;
     }
+
+    _tempFilters.DeleteFrom(w);
+    _numEmptyTempFilters = 0;
   }
-  if (numEmptyItems == 0)
-  {
-    _tempFilters.Add(NULL);
-    numEmptyItems = 1;
-  }
+  
+  if (_tempFilters.Size() > MAX_UNPACK_FILTERS)
+    return false;
   CTempFilter *tempFilter = new CTempFilter;
-  _tempFilters[_tempFilters.Size() - numEmptyItems] = tempFilter;
+  _tempFilters.Add(tempFilter);
   tempFilter->FilterIndex = filterIndex;
  
   UInt32 blockStart = inp.ReadEncodedUInt32();

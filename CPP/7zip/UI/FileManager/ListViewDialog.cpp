@@ -213,6 +213,12 @@ void CListViewDialog::ShowItemInfo()
     if (index < Values.Size())
       dlg.Text = Values[index];
   }
+  
+  #ifdef _WIN32
+  if (dlg.Text.Find(L'\r') < 0)
+    dlg.Text.Replace(L"\n", L"\r\n");
+  #endif
+
   dlg.Create(*this);
 }
 

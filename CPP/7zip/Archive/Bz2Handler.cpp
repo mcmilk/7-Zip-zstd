@@ -366,7 +366,13 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         return E_INVALIDARG;
       size = prop.uhVal.QuadPart;
     }
-    return UpdateArchive(size, outStream, _props, updateCallback);
+
+    CMethodProps props2 = _props;
+    #ifndef _7ZIP_ST
+    props2.AddProp_NumThreads(_props._numThreads);
+    #endif
+
+    return UpdateArchive(size, outStream, props2, updateCallback);
   }
 
   if (indexInArchive != 0)

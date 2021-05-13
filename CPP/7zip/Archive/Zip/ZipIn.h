@@ -250,6 +250,9 @@ class CInArchive
   UInt64 _streamPos;
   UInt64 _cnt;
 
+  // UInt32 _startLocalFromCd_Disk;
+  // UInt64 _startLocalFromCd_Offset;
+
   size_t GetAvail() const { return _bufCached - _bufPos; }
 
   void InitBuf() { _bufPos = 0; _bufCached = 0; }
@@ -383,6 +386,9 @@ public:
 
   UInt64 GetEmbeddedStubSize() const
   {
+    // it's possible that first item in CD doesn refers to first local item
+    // so FirstItemRelatOffset is not first local item
+
     if (ArcInfo.CdWasRead)
       return ArcInfo.FirstItemRelatOffset;
     if (IsMultiVol)

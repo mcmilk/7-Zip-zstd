@@ -443,14 +443,14 @@ HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, EErro
       case 'X':
       {
         // pax Extended Header
-        if (item.Name.IsPrefixedBy("PaxHeader/"))
+        if (item.Name.IsPrefixedBy("PaxHeader/")
+            || item.Name.Find("PaxHeaders.4467/") >= 0)
         {
           RINOK(ReadDataToString(stream, item, pax, error));
           if (error != k_ErrorType_OK)
             return S_OK;
           continue;
         }
-       
         break;
       }
       case NFileHeader::NLinkFlag::kDumpDir:
@@ -488,7 +488,11 @@ HRESULT ReadItem(ISequentialInStream *stream, bool &filled, CItemEx &item, EErro
       if (ParsePaxLongName(pax, name))
         item.Name = name;
       else
-        error = k_ErrorType_Warning;
+      {
+        // no "path" property is allowed in pax4467
+        // error = k_ErrorType_Warning;
+      }
+      pax.Empty();
     }
 
     return S_OK;

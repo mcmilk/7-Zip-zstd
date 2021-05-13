@@ -582,7 +582,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       }
     }
     
-    const UString &fileName = _fileNames.Front();
+    // const UString &fileName = _fileNames.Front();
     
     if (needExtract)
     {
@@ -639,12 +639,8 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       }
     }
     
-    UString arcName;
-    if (_fileNames.Size() == 1)
-      arcName = CreateArchiveName(fi0, false);
-    else
-      arcName = CreateArchiveName(fileName, _fileNames.Size() > 1, false);
-    
+    const UString arcName = CreateArchiveName(_fileNames, _fileNames.Size() == 1 ? &fi0 : NULL);
+
     UString arcName7z = arcName;
     arcName7z += ".7z";
     UString arcNameZip = arcName;

@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2018-03-01 : Igor Pavlov : Public domain */
+2018-08-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -70,9 +70,9 @@ static const WCHAR * const k_Reg_CLSID_7zip_Inproc = L"CLSID\\" k_7zip_CLSID L"\
 
 #define g_AllUsers True
 
-static Bool g_Install_was_Pressed;
-static Bool g_Finished;
-static Bool g_SilentMode;
+static BoolInt g_Install_was_Pressed;
+static BoolInt g_Finished;
+static BoolInt g_SilentMode;
 
 static HWND g_HWND;
 static HWND g_Path_HWND;
@@ -94,7 +94,7 @@ static const WCHAR * const kUninstallExe = L"Uninstall.exe";
 
 #define MAKE_CHAR_UPPER(c) ((((c) >= 'a' && (c) <= 'z') ? (c) -= 0x20 : (c)))
 
-static Bool AreStringsEqual_NoCase(const wchar_t *s1, const wchar_t *s2)
+static BoolInt AreStringsEqual_NoCase(const wchar_t *s1, const wchar_t *s2)
 {
   for (;;)
   {
@@ -107,7 +107,7 @@ static Bool AreStringsEqual_NoCase(const wchar_t *s1, const wchar_t *s2)
   }
 }
 
-static Bool IsString1PrefixedByString2_NoCase(const wchar_t *s1, const wchar_t *s2)
+static BoolInt IsString1PrefixedByString2_NoCase(const wchar_t *s1, const wchar_t *s2)
 {
   for (;;)
   {
@@ -149,7 +149,7 @@ static int MyRegistry_QueryString2(HKEY hKey, LPCWSTR keyName, LPCWSTR valName, 
   if (res != ERROR_SUCCESS)
     return False;
   {
-    Bool res2 = MyRegistry_QueryString(key, valName, dest);
+    BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
     RegCloseKey(key);
     return res2;
   }
@@ -180,7 +180,7 @@ static int MyRegistry_QueryString2_32(HKEY hKey, LPCWSTR keyName, LPCWSTR valNam
   if (res != ERROR_SUCCESS)
     return False;
   {
-    Bool res2 = MyRegistry_QueryString(key, valName, dest);
+    BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
     RegCloseKey(key);
     return res2;
   }
@@ -283,7 +283,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
 
   for (; i < 3; i++)
   {
-    // Bool isOK = True;
+    // BoolInt isOK = True;
     WCHAR link[MAX_PATH + 40];
     WCHAR destPath[MAX_PATH + 40];
 
@@ -300,7 +300,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
     {
       const size_t baseLen = wcslen(link);
       unsigned k;
-      Bool needDelete = False;
+      BoolInt needDelete = False;
 
       for (k = 0; k < 2; k++)
       {
@@ -347,7 +347,7 @@ static const WCHAR * const k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\Cur
 static const WCHAR * const k_Uninstall_7zip = k_REG_Uninstall L"7-Zip";
 
 
-static Bool AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix, const wchar_t *name)
+static BoolInt AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix, const wchar_t *name)
 {
   if (!IsString1PrefixedByString2_NoCase(s, prefix))
     return False;
@@ -444,7 +444,7 @@ static void WriteCLSID()
 
 static const wchar_t *GetCmdParam(const wchar_t *s)
 {
-  Bool quoteMode = False;
+  BoolInt quoteMode = False;
   for (;; s++)
   {
     wchar_t c = *s;
@@ -469,7 +469,7 @@ static void RemoveQuotes(wchar_t *s)
   }
 }
 
-static Bool DoesFileOrDirExist()
+static BoolInt DoesFileOrDirExist()
 {
   return (GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES);
 }
@@ -491,7 +491,7 @@ static BOOL RemoveFileAfterReboot()
 
 #define IS_LIMIT_CHAR(c) (c == 0 || c == ' ')
 
-static Bool IsThereSpace(const wchar_t *s)
+static BoolInt IsThereSpace(const wchar_t *s)
 {
   for (;;)
   {
@@ -505,7 +505,7 @@ static Bool IsThereSpace(const wchar_t *s)
 
 static void AddPathParam(wchar_t *dest, const wchar_t *src)
 {
-  Bool needQuote = IsThereSpace(src);
+  BoolInt needQuote = IsThereSpace(src);
   if (needQuote)
     wcscat(dest, L"\"");
   wcscat(dest, src);
@@ -515,7 +515,7 @@ static void AddPathParam(wchar_t *dest, const wchar_t *src)
 
 
 
-static Bool GetErrorMessage(DWORD errorCode, WCHAR *message)
+static BoolInt GetErrorMessage(DWORD errorCode, WCHAR *message)
 {
   LPVOID msgBuf;
   if (FormatMessageW(
@@ -586,7 +586,7 @@ static int Install()
   SRes res = SZ_OK;
   WRes winRes = 0;
   
-  // Bool needReboot = False;
+  // BoolInt needReboot = False;
   const size_t pathLen = wcslen(path);
 
   if (!g_SilentMode)
@@ -805,7 +805,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     lpCmdLine, int nCmdShow)
 {
   const wchar_t *cmdParams;
-  Bool useTemp = True;
+  BoolInt useTemp = True;
 
   UNUSED_VAR(hPrevInstance)
   UNUSED_VAR(lpCmdLine)
@@ -1005,7 +1005,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   if (path[0] == 0)
   {
     HKEY key = 0;
-    Bool ok = False;
+    BoolInt ok = False;
     LONG res = RegOpenKeyExW(HKEY_CURRENT_USER, k_Reg_Software_7zip, 0, KEY_READ | k_Reg_WOW_Flag, &key);
     if (res == ERROR_SUCCESS)
     {

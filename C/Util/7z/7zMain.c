@@ -1,5 +1,5 @@
 /* 7zMain.c - Test application for 7z Decoder
-2018-04-19 : Igor Pavlov : Public domain */
+2018-08-04 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -354,7 +354,7 @@ static void PrintError(char *s)
   PrintLF();
 }
 
-static void GetAttribString(UInt32 wa, Bool isDir, char *s)
+static void GetAttribString(UInt32 wa, BoolInt isDir, char *s)
 {
   #ifdef USE_WINDOWS_FILE
   s[0] = (char)(((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || isDir) ? 'D' : '.');

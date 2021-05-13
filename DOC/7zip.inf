@@ -10,8 +10,8 @@ AppName = "7-Zip"
 InstallDir = %CE1%\%AppName%
 
 [Strings]
-AppVer = "18.05"
-AppDate = "2018-04-30"
+AppVer = "18.06"
+AppDate = "2018-12-30"
 
 [CEDevice]
 ; ProcessorType = 2577 ; ARM
