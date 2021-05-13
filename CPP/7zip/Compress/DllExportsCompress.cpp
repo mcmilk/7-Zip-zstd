@@ -27,6 +27,16 @@ void RegisterHasher(const CHasherInfo *hashInfo) throw()
 }
 
 #ifdef _WIN32
+
+extern "C"
+BOOL WINAPI DllMain(
+  #ifdef UNDER_CE
+  HANDLE
+  #else
+  HINSTANCE
+  #endif
+  , DWORD /* dwReason */, LPVOID /*lpReserved*/);
+
 extern "C"
 BOOL WINAPI DllMain(
   #ifdef UNDER_CE
@@ -42,6 +52,7 @@ BOOL WINAPI DllMain(
 
 STDAPI CreateCoder(const GUID *clsid, const GUID *iid, void **outObject);
 
+STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject);
 STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 {
   return CreateCoder(clsid, iid, outObject);

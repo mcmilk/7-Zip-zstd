@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../Common/ComTry.h"
+#include "../../../Common/MyLinux.h"
 #include "../../../Common/StringConvert.h"
 
 #include "../../../Windows/PropVariant.h"
@@ -221,16 +222,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidSymLink:
         if (_archive.IsSusp)
         {
-          UString s;
           UInt32 mode;
           if (item.GetPx(_archive.SuspSkipSize, k_Px_Mode, mode))
           {
-            if (((mode >> 12) & 0xF) == 10)
+            if (MY_LIN_S_ISLNK(mode))
             {
               AString s8;
               if (item.GetSymLink(_archive.SuspSkipSize, s8))
               {
-                s = MultiByteToUnicodeString(s8, CP_OEMCP);
+                UString s = MultiByteToUnicodeString(s8, CP_OEMCP);
                 prop = s;
               }
             }

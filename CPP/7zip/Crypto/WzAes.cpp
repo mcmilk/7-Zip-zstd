@@ -16,9 +16,6 @@ Note: you must include MyAes.cpp to project to initialize AES tables
 #include "RandGen.h"
 #include "WzAes.h"
 
-// define it if you don't want to use speed-optimized version of NSha1::Pbkdf2Hmac
-// #define _NO_WZAES_OPTIMIZATIONS
-
 namespace NCrypto {
 namespace NWzAes {
 
@@ -30,6 +27,7 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 {
   if (size > kPasswordSizeMax)
     return E_INVALIDARG;
+  _key.Password.Wipe();
   _key.Password.CopyFrom(data, (size_t)size);
   return S_OK;
 }
@@ -40,52 +38,25 @@ void CBaseCoder::Init2()
   Byte dk[dkSizeMax32 * 4];
 
   const unsigned keySize = _key.GetKeySize();
-  const unsigned dkSize = 2 * keySize + kPwdVerifSize;
+  const unsigned dkSize = 2 * keySize + ((kPwdVerifSize + 3) & ~(unsigned)3);
   
   // for (unsigned ii = 0; ii < 1000; ii++)
   {
-    #ifdef _NO_WZAES_OPTIMIZATIONS
-
     NSha1::Pbkdf2Hmac(
         _key.Password, _key.Password.Size(),
         _key.Salt, _key.GetSaltSize(),
         kNumKeyGenIterations,
         dk, dkSize);
-
-    #else
-
-    UInt32 dk32[dkSizeMax32];
-    const unsigned dkSize32 = (dkSize + 3) / 4;
-    UInt32 salt[kSaltSizeMax / 4];
-    unsigned numSaltWords = _key.GetNumSaltWords();
-    
-    for (unsigned i = 0; i < numSaltWords; i++)
-    {
-      const Byte *src = _key.Salt + i * 4;
-      salt[i] = GetBe32(src);
-    }
-
-    NSha1::Pbkdf2Hmac32(
-        _key.Password, _key.Password.Size(),
-        salt, numSaltWords,
-        kNumKeyGenIterations,
-        dk32, dkSize32);
-    
-    /*
-    for (unsigned j = 0; j < dkSize; j++)
-      dk[j] = (Byte)(dk32[j / 4] >> (24 - 8 * (j & 3)));
-    */
-    for (unsigned j = 0; j < dkSize32; j++)
-      SetBe32(dk + j * 4, dk32[j]);
-    
-    #endif
   }
 
-  _hmac.SetKey(dk + keySize, keySize);
+  Hmac()->SetKey(dk + keySize, keySize);
   memcpy(_key.PwdVerifComputed, dk + 2 * keySize, kPwdVerifSize);
 
-  Aes_SetKey_Enc(_aes.aes + _aes.offset + 8, dk, keySize);
-  AesCtr2_Init(&_aes);
+  // Aes_SetKey_Enc(_aes.Aes() + 8, dk, keySize);
+  // AesCtr2_Init(&_aes);
+  _aesCoderSpec->SetKeySize(keySize);
+  if (_aesCoderSpec->SetKey(dk, keySize) != S_OK) throw 2;
+  if (_aesCoderSpec->Init() != S_OK) throw 3;
 }
 
 STDMETHODIMP CBaseCoder::Init()
@@ -104,8 +75,9 @@ HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
 
 HRESULT CEncoder::WriteFooter(ISequentialOutStream *outStream)
 {
-  Byte mac[kMacSize];
-  _hmac.Final(mac, kMacSize);
+  MY_ALIGN (16)
+  UInt32 mac[NSha1::kNumDigestWords];
+  Hmac()->Final((Byte *)mac);
   return WriteStream(outStream, mac, kMacSize);
 }
 
@@ -150,34 +122,41 @@ bool CDecoder::Init_and_CheckPassword()
 HRESULT CDecoder::CheckMac(ISequentialInStream *inStream, bool &isOK)
 {
   isOK = false;
+  MY_ALIGN (16)
   Byte mac1[kMacSize];
   RINOK(ReadStream_FAIL(inStream, mac1, kMacSize));
-  Byte mac2[kMacSize];
-  _hmac.Final(mac2, kMacSize);
-  isOK = CompareArrays(mac1, mac2, kMacSize);
+  MY_ALIGN (16)
+  UInt32 mac2[NSha1::kNumDigestWords];
+  Hmac()->Final((Byte *)mac2);
+  isOK = CompareArrays(mac1, (const Byte *)mac2, kMacSize);
   return S_OK;
 }
 
-CAesCtr2::CAesCtr2()
+/*
+
+CAesCtr2::CAesCtr2():
+    aes((4 + AES_NUM_IVMRK_WORDS) * 4)
 {
-  offset = ((0 - (unsigned)(ptrdiff_t)aes) & 0xF) / sizeof(UInt32);
+  // offset = ((0 - (unsigned)(ptrdiff_t)aes) & 0xF) / sizeof(UInt32);
+  // first 16 bytes are buffer for last block data.
+  // so the ivAES is aligned for (Align + 16).
 }
 
 void AesCtr2_Init(CAesCtr2 *p)
 {
-  UInt32 *ctr = p->aes + p->offset + 4;
+  UInt32 *ctr = p->Aes() + 4;
   unsigned i;
   for (i = 0; i < 4; i++)
     ctr[i] = 0;
   p->pos = AES_BLOCK_SIZE;
 }
 
-/* (size != 16 * N) is allowed only for last call */
+// (size != 16 * N) is allowed only for last call
 
 void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size)
 {
   unsigned pos = p->pos;
-  UInt32 *buf32 = p->aes + p->offset;
+  UInt32 *buf32 = p->Aes();
   if (size == 0)
     return;
   
@@ -188,6 +167,8 @@ void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size)
       *data++ ^= buf[pos++];
     while (--size != 0 && pos != AES_BLOCK_SIZE);
   }
+
+  // (size == 0 || pos == AES_BLOCK_SIZE)
   
   if (size >= 16)
   {
@@ -196,8 +177,10 @@ void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size)
     size2 <<= 4;
     data += size2;
     size -= size2;
-    pos = AES_BLOCK_SIZE;
+    // (pos == AES_BLOCK_SIZE)
   }
+
+  // (size < 16)
   
   if (size != 0)
   {
@@ -215,20 +198,26 @@ void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size)
   
   p->pos = pos;
 }
+*/
 
 /* (size != 16 * N) is allowed only for last Filter() call */
 
 STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
 {
-  AesCtr2_Code(&_aes, data, size);
-  _hmac.Update(data, size);
+  // AesCtr2_Code(&_aes, data, size);
+  size = _aesCoder->Filter(data, size);
+  Hmac()->Update(data, size);
   return size;
 }
 
 STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
 {
-  _hmac.Update(data, size);
-  AesCtr2_Code(&_aes, data, size);
+  if (size >= 16)
+    size &= ~(UInt32)15;
+  
+  Hmac()->Update(data, size);
+  // AesCtr2_Code(&_aes, data, size);
+  size = _aesCoder->Filter(data, size);
   return size;
 }
 

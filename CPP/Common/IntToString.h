@@ -5,11 +5,13 @@
 
 #include "MyTypes.h"
 
-void ConvertUInt32ToString(UInt32 value, char *s) throw();
-void ConvertUInt64ToString(UInt64 value, char *s) throw();
+// return: the pointer to the "terminating" null character after written characters
 
-void ConvertUInt32ToString(UInt32 value, wchar_t *s) throw();
-void ConvertUInt64ToString(UInt64 value, wchar_t *s) throw();
+char * ConvertUInt32ToString(UInt32 value, char *s) throw();
+char * ConvertUInt64ToString(UInt64 value, char *s) throw();
+
+wchar_t * ConvertUInt32ToString(UInt32 value, wchar_t *s) throw();
+wchar_t * ConvertUInt64ToString(UInt64 value, wchar_t *s) throw();
 
 void ConvertUInt64ToOct(UInt64 value, char *s) throw();
 

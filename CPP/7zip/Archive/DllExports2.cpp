@@ -22,11 +22,24 @@
 
 #include "IArchive.h"
 
-HINSTANCE g_hInstance;
-
-#define NT_CHECK_FAIL_ACTION return FALSE;
 
 #ifdef _WIN32
+
+#if defined(_UNICODE) && !defined(_WIN64) && !defined(UNDER_CE)
+#define NT_CHECK_FAIL_ACTION return FALSE;
+#endif
+
+HINSTANCE g_hInstance;
+
+extern "C"
+BOOL WINAPI DllMain(
+  #ifdef UNDER_CE
+  HANDLE
+  #else
+  HINSTANCE
+  #endif
+  hInstance, DWORD dwReason, LPVOID /*lpReserved*/);
+
 extern "C"
 BOOL WINAPI DllMain(
   #ifdef UNDER_CE
@@ -50,7 +63,22 @@ BOOL WINAPI DllMain(
   */
   return TRUE;
 }
-#endif
+
+#else //  _WIN32
+
+#include "../../Common/StringConvert.h"
+// #include <stdio.h>
+
+// STDAPI LibStartup();
+static __attribute__((constructor)) void Init_ForceToUTF8();
+static __attribute__((constructor)) void Init_ForceToUTF8()
+{
+  g_ForceToUTF8 = IsNativeUTF8();
+  // printf("\nDLLExports2.cpp::Init_ForceToUTF8 =%d\n", g_ForceToUTF8 ? 1 : 0);
+}
+
+#endif // _WIN32
+
 
 DEFINE_GUID(CLSID_CArchiveHandler,
     k_7zip_GUID_Data1,
@@ -62,6 +90,7 @@ STDAPI CreateCoder(const GUID *clsid, const GUID *iid, void **outObject);
 STDAPI CreateHasher(const GUID *clsid, IHasher **hasher);
 STDAPI CreateArchiver(const GUID *clsid, const GUID *iid, void **outObject);
 
+STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject);
 STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 {
   // COM_TRY_BEGIN
@@ -76,16 +105,20 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
   // COM_TRY_END
 }
 
+STDAPI SetLargePageMode();
 STDAPI SetLargePageMode()
 {
   #if defined(_7ZIP_LARGE_PAGES)
+  #ifdef _WIN32
   SetLargePageSize();
+  #endif
   #endif
   return S_OK;
 }
 
 extern bool g_CaseSensitive;
 
+STDAPI SetCaseSensitive(Int32 caseSensitive);
 STDAPI SetCaseSensitive(Int32 caseSensitive)
 {
   g_CaseSensitive = (caseSensitive != 0);
@@ -96,6 +129,7 @@ STDAPI SetCaseSensitive(Int32 caseSensitive)
 
 CExternalCodecs g_ExternalCodecs;
 
+STDAPI SetCodecs(ICompressCodecsInfo *compressCodecsInfo);
 STDAPI SetCodecs(ICompressCodecsInfo *compressCodecsInfo)
 {
   COM_TRY_BEGIN
@@ -114,6 +148,7 @@ STDAPI SetCodecs(ICompressCodecsInfo *compressCodecsInfo)
 
 #else
 
+STDAPI SetCodecs(ICompressCodecsInfo *);
 STDAPI SetCodecs(ICompressCodecsInfo *)
 {
   return S_OK;

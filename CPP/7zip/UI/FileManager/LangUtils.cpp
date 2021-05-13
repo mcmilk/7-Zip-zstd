@@ -23,6 +23,7 @@ static CLang g_Lang;
 static bool g_Loaded = false;
 static NSynchronization::CCriticalSection g_CriticalSection;
 
+bool LangOpen(CLang &lang, CFSTR fileName);
 bool LangOpen(CLang &lang, CFSTR fileName)
 {
   return lang.Open(fileName, "7-Zip");
@@ -145,7 +146,7 @@ static const char * const kLangs =
   "it.ja.ko.nl.no.=nb.=nn.pl.pt.-br.rm.ro.ru.sr.=hr.-spl.-spc.sk.sq.sv.th.tr."
   "ur.id.uk.be.sl.et.lv.lt.tg.fa.vi.hy.az.eu.hsb.mk."
   "st.ts.tn.ve.xh.zu.af.ka.fo.hi.mt.se.ga.yi.ms.kk."
-  "ky.sw.tk.uz.tt.bn.pa.-in.gu.or.ta.te.kn.ml.as.mr.sa."
+  "ky.sw.tk.uz.-latn.-cyrl.tt.bn.pa.-in.gu.or.ta.te.kn.ml.as.mr.sa."
   "mn.=mn.=mng.bo.cy.kh.lo.my.gl.kok..sd.syr.si..iu.am.tzm."
   "ks.ne.fy.ps.tl.dv..ff.ha..yo.qu.st.ba.lb.kl."
   "ig.kr.om.ti.gn..la.so.ii..arn..moh..br.."

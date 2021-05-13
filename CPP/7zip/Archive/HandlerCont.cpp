@@ -269,7 +269,7 @@ HRESULT ReadZeroTail(ISequentialInStream *stream, bool &areThereNonZeros, UInt64
   for (;;)
   {
     UInt32 size = 0;
-    HRESULT(stream->Read(buf, kBufSize, &size));
+    RINOK(stream->Read(buf, kBufSize, &size));
     if (size == 0)
       return S_OK;
     for (UInt32 i = 0; i < size; i++)

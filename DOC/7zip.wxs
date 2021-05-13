@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
-<?define VerMajor = "19" ?>
-<?define VerMinor = "00" ?>
+<?define VerMajor = "21" ?>
+<?define VerMinor = "02" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>
 <?define MmHex = "$(var.VerMajor)$(var.VerMinor)" ?>
@@ -330,13 +330,17 @@
               <File Id="sr_spl.txt" Name="sr-spl.txt" />
               <File Id="sr_spc.txt" Name="sr-spc.txt" />
               <File Id="sv.txt" Name="sv.txt" />
+              <File Id="sw.txt" Name="sw.txt" />
               <File Id="ta.txt" Name="ta.txt" />
+              <File Id="tg.txt" Name="tg.txt" />
               <File Id="th.txt" Name="th.txt" />
+              <File Id="tk.txt" Name="tk.txt" />
               <File Id="tr.txt" Name="tr.txt" />
               <File Id="tt.txt" Name="tt.txt" />
               <File Id="ug.txt" Name="ug.txt" />
               <File Id="uk.txt" Name="uk.txt" />
               <File Id="uz.txt" Name="uz.txt" />
+              <File Id="uz_cyrl.txt" Name="uz-cyrl.txt" />
               <File Id="va.txt" Name="va.txt" />
               <File Id="vi.txt" Name="vi.txt" />
               <File Id="yo.txt" Name="yo.txt" />

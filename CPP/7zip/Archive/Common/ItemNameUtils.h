@@ -13,7 +13,7 @@ void ReplaceSlashes_OsToUnix(UString &name);
 UString GetOsPath(const UString &name);
 UString GetOsPath_Remove_TailSlash(const UString &name);
   
-void ReplaceToOsSlashes_Remove_TailSlash(UString &name);
+void ReplaceToOsSlashes_Remove_TailSlash(UString &name, bool useBackslashReplacement = false);
   
 bool HasTailSlash(const AString &name, UINT codePage);
   

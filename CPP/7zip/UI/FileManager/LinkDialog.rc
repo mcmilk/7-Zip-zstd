@@ -2,7 +2,7 @@
 #include "../../GuiCommon.rc"
 
 #define xc 288
-#define yc 200
+#define yc 214
 
 #undef xRadioSize 
 #define xRadioSize xc - m - 2
@@ -20,7 +20,7 @@ BEGIN
 
   LTEXT       "", IDT_LINK_PATH_TO_CUR, m, 78, xc, 8
 
-  GROUPBOX    "Link Type", IDG_LINK_TYPE, m, 104, xc, 76
+  GROUPBOX    "Link Type", IDG_LINK_TYPE, m, 104, xc, 90
 
   CONTROL    "Hard Link", IDR_LINK_TYPE_HARD, "Button", BS_AUTORADIOBUTTON | WS_GROUP,
              m + m, 120, xRadioSize, 10
@@ -30,6 +30,8 @@ BEGIN
              m + m, 148, xRadioSize, 10
   CONTROL    "Directory Junction", IDR_LINK_TYPE_JUNCTION, "Button", BS_AUTORADIOBUTTON,
              m + m, 162, xRadioSize, 10
+  CONTROL    "WSL", IDR_LINK_TYPE_WSL, "Button", BS_AUTORADIOBUTTON,
+             m + m, 176, xRadioSize, 10
 
   DEFPUSHBUTTON  "Link",   IDB_LINK_LINK, bx2, by, bxs, bys
   PUSHBUTTON     "Cancel", IDCANCEL,      bx1, by, bxs, bys

@@ -11,19 +11,23 @@
 #include "RegisterCodec.h"
 
 static const unsigned kNumCodecsMax = 64;
+extern
+unsigned g_NumCodecs;
 unsigned g_NumCodecs = 0;
+extern
+const CCodecInfo *g_Codecs[];
 const CCodecInfo *g_Codecs[kNumCodecsMax];
 
 // We use g_ExternalCodecs in other stages.
-/*
 #ifdef EXTERNAL_CODECS
+/*
 extern CExternalCodecs g_ExternalCodecs;
 #define CHECK_GLOBAL_CODECS \
     if (!__externalCodecs || !__externalCodecs->IsSet()) __externalCodecs = &g_ExternalCodecs;
-#endif
 */
-
 #define CHECK_GLOBAL_CODECS
+#endif
+
 
 void RegisterCodec(const CCodecInfo *codecInfo) throw()
 {
@@ -32,7 +36,11 @@ void RegisterCodec(const CCodecInfo *codecInfo) throw()
 }
 
 static const unsigned kNumHashersMax = 16;
+extern
+unsigned g_NumHashers;
 unsigned g_NumHashers = 0;
+extern
+const CHasherInfo *g_Hashers[];
 const CHasherInfo *g_Hashers[kNumHashersMax];
 
 void RegisterHasher(const CHasherInfo *hashInfo) throw()
@@ -164,7 +172,7 @@ int FindMethod_Index(
     {
       methodId = codec.Id;
       numStreams = codec.NumStreams;
-      return i;
+      return (int)i;
     }
   }
   
@@ -181,7 +189,7 @@ int FindMethod_Index(
       {
         methodId = codec.Id;
         numStreams = codec.NumStreams;
-        return g_NumCodecs + i;
+        return (int)(g_NumCodecs + i);
       }
     }
   
@@ -200,7 +208,7 @@ static int FindMethod_Index(
   {
     const CCodecInfo &codec = *g_Codecs[i];
     if (codec.Id == methodId && (encode ? codec.CreateEncoder : codec.CreateDecoder))
-      return i;
+      return (int)i;
   }
   
   #ifdef EXTERNAL_CODECS
@@ -212,7 +220,7 @@ static int FindMethod_Index(
     {
       const CCodecInfoEx &codec = __externalCodecs->Codecs[i];
       if (codec.Id == methodId && (encode ? codec.EncoderIsAssigned : codec.DecoderIsAssigned))
-        return g_NumCodecs + i;
+        return (int)(g_NumCodecs + i);
     }
   
   #endif
@@ -441,7 +449,7 @@ HRESULT CreateCoder_Id(
   int index = FindMethod_Index(EXTERNAL_CODECS_LOC_VARS methodId, encode);
   if (index < 0)
     return S_OK;
-  return CreateCoder_Index(EXTERNAL_CODECS_LOC_VARS index, encode, filter, cod);
+  return CreateCoder_Index(EXTERNAL_CODECS_LOC_VARS (unsigned)index, encode, filter, cod);
 }
 
 

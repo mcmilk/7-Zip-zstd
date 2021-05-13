@@ -15,7 +15,7 @@
 namespace NArchive {
 namespace NZip {
 
-const unsigned kNumMethodNames1 = NFileHeader::NCompressionMethod::kLZMA + 1;
+const unsigned kNumMethodNames1 = NFileHeader::NCompressionMethod::kZstdPk + 1;
 const unsigned kMethodNames2Start = NFileHeader::NCompressionMethod::kZstd;
 const unsigned kNumMethodNames2 = NFileHeader::NCompressionMethod::kWzAES + 1 - kMethodNames2Start;
 

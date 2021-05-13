@@ -10,6 +10,30 @@
 #define ARCHIVE_INTERFACE_SUB(i, base, x) DECL_INTERFACE_SUB(i, base, 6, x)
 #define ARCHIVE_INTERFACE(i, x) ARCHIVE_INTERFACE_SUB(i, IUnknown, x)
 
+/*
+How the function in 7-Zip returns object for output parameter via pointer
+
+1) The caller sets the value of variable before function call:
+  PROPVARIANT  :  vt = VT_EMPTY
+  BSTR         :  NULL
+  IUnknown* and derived interfaces  :  NULL
+  another scalar types  :  any non-initialized value is allowed
+
+2) The callee in current 7-Zip code now can free input object for output parameter:
+  PROPVARIANT   : the callee calls VariantClear(propvaiant_ptr) for input
+                  value stored in variable
+  another types : the callee ignores stored value.
+
+3) The callee writes new value to variable for output parameter and
+  returns execution to caller.
+
+4) The caller must free or release object returned by the callee:
+  PROPVARIANT   : VariantClear(&propvaiant)
+  BSTR          : SysFreeString(bstr)
+  IUnknown* and derived interfaces  :  if (ptr) ptr->Relase()
+*/
+
+
 namespace NFileTimeType
 {
   enum EEnum
@@ -34,6 +58,7 @@ namespace NArcInfoFlags
   const UInt32 kPreArc          = 1 << 9;  // such archive can be stored before real archive (like SFX stub)
   const UInt32 kSymLinks        = 1 << 10; // the handler supports symbolic links
   const UInt32 kHardLinks       = 1 << 11; // the handler supports hard links
+  const UInt32 kByExtOnlyOpen   = 1 << 12; // call handler only if file extension matches
 }
 
 namespace NArchive
@@ -106,7 +131,7 @@ namespace NArchive
       enum
       {
         kOK = 0
-        , // kError
+        // , kError
       };
     }
   }
@@ -137,13 +162,13 @@ IArchiveExtractCallback::GetStream()
   Int32 askExtractMode  (Extract::NAskMode)
     if (askMode != NExtract::NAskMode::kExtract)
     {
-      then the callee can not real stream: (*inStream == NULL)
+      then the callee doesn't write data to stream: (*outStream == NULL)
     }
   
   Out:
-      (*inStream == NULL) - for directories
-      (*inStream == NULL) - if link (hard link or symbolic link) was created
-      if (*inStream == NULL && askMode == NExtract::NAskMode::kExtract)
+      (*outStream == NULL) - for directories
+      (*outStream == NULL) - if link (hard link or symbolic link) was created
+      if (*outStream == NULL && askMode == NExtract::NAskMode::kExtract)
       {
         then the caller must skip extracting of that file.
       }

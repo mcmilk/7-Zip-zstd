@@ -153,7 +153,7 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *
 
     SizeT inProcessed = _inLim - _inPos;
     ELzmaStatus status;
-    
+
     SRes res = LzmaDec_DecodeToDic(&_state, dicPos + size, _inBuf + _inPos, &inProcessed, finishMode, &status);
 
     _lzmaStatus = status;
@@ -183,7 +183,10 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *
       if (needStop)
       {
         if (res != 0)
+        {
+          // return SResToHRESULT(res);
           return S_FALSE;
+        }
 
         if (status == LZMA_STATUS_FINISHED_WITH_MARK)
         {

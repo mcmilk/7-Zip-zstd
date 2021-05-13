@@ -50,6 +50,7 @@ static const Byte kArcProps[] =
 {
   kpidMethod,
   kpidSolid,
+  kpidBit64,
   kpidHeadersSize,
   kpidEmbeddedStubSize,
   kpidSubType
@@ -134,6 +135,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       break;
     }
 
+    case kpidBit64: if (_archive.Is64Bit) prop = true; break;
     case kpidMethod: prop = _methodString; break;
     case kpidSolid: prop = _archive.IsSolid; break;
     case kpidOffset: prop = _archive.StartOffset; break;

@@ -19,6 +19,7 @@ void CBZip2Crc::InitTable()
   }
 }
 
+static
 class CBZip2CrcTableInit
 {
 public:

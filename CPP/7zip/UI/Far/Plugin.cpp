@@ -197,10 +197,12 @@ void CPlugin::EnterToDirectory(const UString &dirName)
     s = "..";
   _folder->BindToFolder(s, &newFolder);
   if (!newFolder)
+  {
     if (dirName.IsEmpty())
       return;
     else
       throw 40325;
+  }
   _folder = newFolder;
 }
 
@@ -457,7 +459,7 @@ static AString PropToString2(const NCOM::CPropVariant &prop, PROPID propID)
   return s;
 }
 
-static void AddPropertyString(InfoPanelLine *lines, int &numItems, PROPID propID, const wchar_t *name,
+static void AddPropertyString(InfoPanelLine *lines, unsigned &numItems, PROPID propID, const wchar_t *name,
     const NCOM::CPropVariant &prop)
 {
   if (prop.vt != VT_EMPTY)
@@ -472,7 +474,7 @@ static void AddPropertyString(InfoPanelLine *lines, int &numItems, PROPID propID
   }
 }
 
-static void InsertSeparator(InfoPanelLine *lines, int &numItems)
+static void InsertSeparator(InfoPanelLine *lines, unsigned &numItems)
 {
   if (numItems < kNumInfoLinesMax)
   {
@@ -528,7 +530,7 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
   MyStringCopy(m_InfoLines[1].Text, g_StartupInfo.GetMsgString(NMessageID::kArchiveType));
   MyStringCopy(m_InfoLines[1].Data, (const char *)UnicodeStringToMultiByte(_archiveTypeName, CP_OEMCP));
 
-  int numItems = 2;
+  unsigned numItems = 2;
 
   {
     CMyComPtr<IFolderProperties> folderProperties;

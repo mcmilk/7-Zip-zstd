@@ -481,6 +481,10 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Sha256Prepare.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\StdInStream.cpp
 # End Source File
 # Begin Source File
@@ -885,6 +889,11 @@ SOURCE=..\..\..\..\C\Sha256.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Sha256.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha256Opt.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 

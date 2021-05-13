@@ -4,6 +4,7 @@
 
 #include "../../../Common/ComTry.h"
 #include "../../../Common/IntToString.h"
+#include "../../../Common/MyBuffer2.h"
 #include "../../../Common/StringToInt.h"
 #include "../../../Common/UTFConvert.h"
 #include "../../../Common/Wildcard.h"
@@ -93,9 +94,15 @@ struct CMetaItem
   CByteBuffer Reparse;
 
   unsigned GetNumAltStreams() const { return AltStreams.Size() - NumSkipAltStreams; }
-  CMetaItem(): UpdateIndex(-1), HashIndex(-1), SecurityId(-1),
-      FileID(0), VolID(0),
-      Skip(false), NumSkipAltStreams(0) {}
+  CMetaItem():
+        UpdateIndex(-1)
+      , HashIndex(-1)
+      , FileID(0)
+      , VolID(0)
+      , SecurityId(-1)
+      , Skip(false)
+      , NumSkipAltStreams(0)
+      {}
 };
 
 
@@ -320,20 +327,23 @@ class CInStreamWithSha1:
 {
   CMyComPtr<ISequentialInStream> _stream;
   UInt64 _size;
-  NCrypto::NSha1::CContext _sha;
+  // NCrypto::NSha1::CContext _sha;
+  CAlignedBuffer _sha;
+  CSha1 *Sha() { return (CSha1 *)(void *)(Byte *)_sha; }
 public:
   MY_UNKNOWN_IMP1(IInStream)
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 
+  CInStreamWithSha1(): _sha(sizeof(CSha1)) {}
   void SetStream(ISequentialInStream *stream) { _stream = stream;  }
   void Init()
   {
     _size = 0;
-    _sha.Init();
+    Sha1_Init(Sha());
   }
   void ReleaseStream() { _stream.Release(); }
   UInt64 GetSize() const { return _size; }
-  void Final(Byte *digest) { _sha.Final(digest); }
+  void Final(Byte *digest) { Sha1_Final(Sha(), digest); }
 };
 
 STDMETHODIMP CInStreamWithSha1::Read(void *data, UInt32 size, UInt32 *processedSize)
@@ -341,7 +351,7 @@ STDMETHODIMP CInStreamWithSha1::Read(void *data, UInt32 size, UInt32 *processedS
   UInt32 realProcessedSize;
   HRESULT result = _stream->Read(data, size, &realProcessedSize);
   _size += realProcessedSize;
-  _sha.Update((const Byte *)data, realProcessedSize);
+  Sha1_Update(Sha(), (const Byte *)data, realProcessedSize);
   if (processedSize)
     *processedSize = realProcessedSize;
   return result;
@@ -427,9 +437,9 @@ static size_t WriteItem(const CStreamInfo *streams, const CMetaItem &item, Byte 
   Set16(p + 0x64, (UInt16)fileNameLen);
   unsigned i;
   for (i = 0; i * 2 < fileNameLen; i++)
-    Set16(p + kDirRecordSize + i * 2, item.Name[i]);
+    Set16(p + kDirRecordSize + i * 2, (UInt16)item.Name[i]);
   for (i = 0; i * 2 < shortNameLen; i++)
-    Set16(p + kDirRecordSize + fileNameLen2 + i * 2, item.ShortName[i]);
+    Set16(p + kDirRecordSize + fileNameLen2 + i * 2, (UInt16)item.ShortName[i]);
   
   if (item.GetNumAltStreams() == 0)
   {
@@ -468,7 +478,7 @@ static size_t WriteItem(const CStreamInfo *streams, const CMetaItem &item, Byte 
         memcpy(p + 0x10, streams[ss.HashIndex].Hash, kHashSize);
       Set16(p + 0x24, (UInt16)fileNameLen);
       for (i = 0; i * 2 < fileNameLen; i++)
-        Set16(p + 0x26 + i * 2, ss.Name[i]);
+        Set16(p + 0x26 + i * 2, (UInt16)ss.Name[i]);
       totalLen += curLen;
       p += curLen;
     }
@@ -690,7 +700,7 @@ static void AddTrees(CObjectVector<CDir> &trees, CObjectVector<CMetaItem> &metaI
 }
 
 
-#define IS_LETTER_CHAR(c) ((c) >= 'a' && (c) <= 'z' || (c) >= 'A' && (c) <= 'Z')
+#define IS_LETTER_CHAR(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 
 
 
@@ -1024,7 +1034,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
       
       imageIndex = (int)val - 1;
       if (imageIndex < (int)isChangedImage.Size())
-        if (!isChangedImage[imageIndex])
+       if (!isChangedImage[imageIndex])
           return E_FAIL;
 
       AddTrees(trees, db.MetaItems, ri, imageIndex);
@@ -1079,7 +1089,27 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
           fileName.Empty();
         }
         else
+        {
+          /*
+          #if WCHAR_MAX > 0xffff
+          if (c >= 0x10000)
+          {
+            c -= 0x10000;
+
+            if (c < (1 << 20))
+            {
+              wchar_t c0 = 0xd800 + ((c >> 10) & 0x3FF);
+              fileName += c0;
+              c = 0xdc00 + (c & 0x3FF);
+            }
+            else
+              c = '_'; // we change character unsupported by UTF16
+          }
+          #endif
+          */
+
           fileName += c;
+        }
       }
 
       if (isAltStream)
@@ -1838,7 +1868,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
     if (_xmls.Size() == 1)
     {
       const CWimXml &_oldXml = _xmls[0];
-      if ((int)i < _oldXml.Images.Size())
+      if (i < _oldXml.Images.Size())
       {
         // int ttt = _oldXml.Images[i].ItemIndexInXml;
         item = _oldXml.Xml.Root.SubItems[_oldXml.Images[i].ItemIndexInXml];
@@ -1880,7 +1910,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outSeqStream, UInt32 nu
     CByteArr xmlBuf(xmlSize);
     Set16((Byte *)xmlBuf, 0xFEFF);
     for (i = 0; i < (unsigned)utf16.Len(); i++)
-      Set16((Byte *)xmlBuf + 2 + i * 2, utf16[i]);
+      Set16((Byte *)xmlBuf + 2 + i * 2, (UInt16)utf16[i]);
     RINOK(WriteStream(outStream, (const Byte *)xmlBuf, xmlSize));
   }
   

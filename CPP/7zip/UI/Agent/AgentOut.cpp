@@ -166,7 +166,7 @@ struct CDirItemsCallback_AgentOut: public IDirItemsCallback
   IFolderArchiveUpdateCallback *FolderArchiveUpdateCallback;
   HRESULT ErrorCode;
   
-  CDirItemsCallback_AgentOut(): ErrorCode(S_OK), FolderArchiveUpdateCallback(NULL) {}
+  CDirItemsCallback_AgentOut(): FolderArchiveUpdateCallback(NULL), ErrorCode(S_OK) {}
 
   HRESULT ScanError(const FString &name, DWORD systemError)
   {

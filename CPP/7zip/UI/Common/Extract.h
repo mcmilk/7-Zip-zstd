@@ -53,10 +53,10 @@ struct CExtractOptions: public CExtractOptionsBase
   #endif
 
   CExtractOptions():
-      TestMode(false),
       StdInMode(false),
       StdOutMode(false),
-      YesToAll(false)
+      YesToAll(false),
+      TestMode(false)
       {}
 };
 

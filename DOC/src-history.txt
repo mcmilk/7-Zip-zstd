@@ -1,6 +1,56 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+21.02 alpha    2021-05-06
+-------------------------
+- 7-Zip now writes additional field for filename in UTF-8 encoding to zip archives.
+  It allows to extract correct file name from zip archives on different systems.
+- The command line version of 7-Zip for macOS was released.
+- The speed for LZMA and LZMA2 decompression in arm64 versions for macOS and Linux 
+  was increased by 20%-60%.
+- Some changes and improvements in ZIP, TAR and NSIS code.
+
+
+21.01 alpha    2021-03-09
+-------------------------
+- The command line version of 7-Zip for Linux was released.
+- The improvements for speed of ARM64 version using hardware CPU instructions 
+  for AES, CRC-32, SHA-1 and SHA-256.
+- The bug in versions 18.02 - 21.00 was fixed:
+  7-Zip could not correctly extract some ZIP archives created with xz compression method.
+- Some bugs were fixed.
+
+
+20.02 alpha    2020-08-08
+-------------------------
+- The default number of LZMA2 chunks per solid block in 7z archive was increased to 64.
+  It allows to increase the compression speed for big 7z archives, if there is a big number 
+  of CPU cores and threads.
+- The speed of PPMd compressing/decompressing was increased for 7z/ZIP/RAR archives.
+- The new -ssp switch. If the switch -ssp is specified, 7-Zip doesn't allow the system 
+  to modify "Last Access Time" property of source files for archiving and hashing operations. 
+- Some bugs were fixed.
+
+
+20.00 alpha    2020-02-06
+-------------------------
+- 7-Zip now supports new optional match finders for LZMA/LZMA2 compression: bt5 and hc5, 
+  that can work faster than bt4 and hc4 match finders for the data with big redundancy.
+- The compression ratio was improved for Fast and Fastest compression levels with the 
+  following default settings:
+   - Fastest level (-mx1) : hc5 match finder with 256 KB dictionary.
+   - Fast    level (-mx3) : hc5 match finder with 4 MB dictionary.
+- Minor speed optimizations in multithreaded LZMA/LZMA2 compression for Normal/Maximum/Ultra 
+  compression levels.
+- bzip2 decoding code was updated to support bzip2 archives, created by lbzip2 program.
+
+
+19.02          2019-09-05
+-------------------------
+- Support for SHA-1/SHA-256 optimized code in 
+  Sha1Opt.c, Sha256Opt.c, Sha256Opt.asm, Sha1Opt.asm.
+
+
 19.00          2019-02-21
 -------------------------
 - Encryption strength for 7z archives was increased:

@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"C:\Program Files\7-Zip\7z.dll" /opt:NOWIN98
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"C:\Util\7z.dll" /opt:NOWIN98
 # SUBTRACT LINK32 /pdb:none /debug
 
 !ELSEIF  "$(CFG)" == "7z - Win32 Debug"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"C:\Program Files\7-Zip\7z.dll" /pdbtype:sept /ignore:4033
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"C:\Util\7z.dll" /pdbtype:sept /ignore:4033
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -347,7 +347,15 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Sha1Prepare.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Sha1Reg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Sha256Prepare.cpp
 # End Source File
 # Begin Source File
 
@@ -1060,6 +1068,16 @@ SOURCE=..\..\Compress\ZDecoder.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\7zAes.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1068,6 +1086,16 @@ SOURCE=..\..\Crypto\7zAes.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\7zAesRegister.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1090,6 +1118,16 @@ SOURCE=..\..\Crypto\HmacSha1.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\HmacSha256.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1098,6 +1136,16 @@ SOURCE=..\..\Crypto\HmacSha256.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\MyAes.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1106,6 +1154,16 @@ SOURCE=..\..\Crypto\MyAes.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\MyAesReg.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1164,6 +1222,16 @@ SOURCE=..\..\Crypto\Rar20Crypto.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\Rar5Aes.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1172,6 +1240,16 @@ SOURCE=..\..\Crypto\Rar5Aes.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\RarAes.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1184,6 +1262,16 @@ SOURCE=..\..\Crypto\Sha1Cls.h
 # Begin Source File
 
 SOURCE=..\..\Crypto\WzAes.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1938,6 +2026,22 @@ SOURCE=..\..\..\..\C\Ppmd7.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\Ppmd7aDec.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Ppmd7Dec.c
 
 !IF  "$(CFG)" == "7z - Win32 Release"
@@ -2651,6 +2755,10 @@ SOURCE=..\..\Archive\ArjHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\Base64Handler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Bz2Handler.cpp
 # End Source File
 # Begin Source File
@@ -2997,6 +3105,68 @@ InputName=AesOpt
 
 "$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	ml.exe -c -omf -WX -W3 -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\Asm\x86\Sha1Opt.asm
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# Begin Custom Build
+OutDir=.\Release
+InputPath=..\..\..\..\Asm\x86\Sha1Opt.asm
+InputName=Sha1Opt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# Begin Custom Build
+OutDir=.\Debug
+InputPath=..\..\..\..\Asm\x86\Sha1Opt.asm
+InputName=Sha1Opt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -omf -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\Asm\x86\Sha256Opt.asm
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# Begin Custom Build
+OutDir=.\Release
+InputPath=..\..\..\..\Asm\x86\Sha256Opt.asm
+InputName=Sha256Opt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -Fo$(OutDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# Begin Custom Build
+OutDir=.\Debug
+InputPath=..\..\..\..\Asm\x86\Sha256Opt.asm
+InputName=Sha256Opt
+
+"$(OutDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	ml.exe -c -omf -Fo$(OutDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 

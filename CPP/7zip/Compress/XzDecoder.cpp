@@ -34,7 +34,7 @@ static HRESULT SResToHRESULT_Code(SRes res) throw()
 HRESULT CDecoder::Decode(ISequentialInStream *seqInStream, ISequentialOutStream *outStream,
     const UInt64 *outSizeLimit, bool finishStream, ICompressProgressInfo *progress)
 {
-  MainDecodeSRes = S_OK;
+  MainDecodeSRes = SZ_OK;
   MainDecodeSRes_wasUsed = false;
   XzStatInfo_Clear(&Stat);
 
@@ -95,7 +95,7 @@ HRESULT CDecoder::Decode(ISequentialInStream *seqInStream, ISequentialOutStream 
   RET_IF_WRAP_ERROR(progressWrap.Res, res, SZ_ERROR_PROGRESS)
   RET_IF_WRAP_ERROR_CONFIRMED(inWrap.Res, res, SZ_ERROR_READ)
 
-  // return E_OUTOFMEMORY;
+  // return E_OUTOFMEMORY; // for debug check
 
   MainDecodeSRes_wasUsed = true;
 

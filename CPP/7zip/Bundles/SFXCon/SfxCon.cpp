@@ -13,8 +13,10 @@
 
 #ifdef _WIN32
 #include "../../../Windows/DLL.h"
-#include "../../../Windows/FileDir.h"
+#else
+#include "../../../Common/StringConvert.h"
 #endif
+#include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileName.h"
 
 #include "../../UI/Common/ExitCode.h"
@@ -82,14 +84,20 @@ static const char kImmediateNameID = '!';
 static const char kSomeCludePostStringMinSize = 2; // at least <@|!><N>ame must be
 static const char kSomeCludeAfterRecursedPostStringMinSize = 2; // at least <@|!><N>ame must be
 */
+
+#define SWFRM_3(t, mu, mi) t, mu, mi, NULL
+#define SWFRM_1(t)     SWFRM_3(t, false, 0)
+#define SWFRM_SIMPLE   SWFRM_1(NSwitchType::kSimple)
+#define SWFRM_STRING_SINGL(mi) SWFRM_3(NSwitchType::kString, false, mi)
+
 static const CSwitchForm kSwitchForms[kNumSwitches] =
 {
-  { "?",  NSwitchType::kSimple },
-  { "H",  NSwitchType::kSimple },
-  { "BD", NSwitchType::kSimple },
-  { "Y",  NSwitchType::kSimple },
-  { "P",  NSwitchType::kString, false, 1 },
-  { "O",  NSwitchType::kString, false, 1 },
+  { "?",  SWFRM_SIMPLE },
+  { "H",  SWFRM_SIMPLE },
+  { "BD", SWFRM_SIMPLE },
+  { "Y",  SWFRM_SIMPLE },
+  { "P",  SWFRM_STRING_SINGL(1) },
+  { "O",  SWFRM_STRING_SINGL(1) },
 };
 
 static const int kNumCommandForms = 3;
@@ -103,7 +111,6 @@ static const NRecursedType::EEnum kCommandRecursedDefault[kNumCommandForms] =
 // static const bool kAddRecursedDefault = false;
 
 static const char * const kUniversalWildcard = "*";
-static const int kCommandIndex = 0;
 
 static const char * const kHelpString =
     "\nUsage: 7zSFX [<command>] [<switches>...] [<file_name>...]\n"
@@ -152,7 +159,7 @@ struct CArchiveCommand
   NRecursedType::EEnum DefaultRecursedType() const;
 };
 
-bool ParseArchiveCommand(const UString &commandString, CArchiveCommand &command)
+static bool ParseArchiveCommand(const UString &commandString, CArchiveCommand &command)
 {
   UString s = commandString;
   s.MakeLower_Ascii();
@@ -172,17 +179,19 @@ NRecursedType::EEnum CArchiveCommand::DefaultRecursedType() const
   return kCommandRecursedDefault[CommandType];
 }
 
-void PrintHelp(void)
+static void PrintHelp(void)
 {
   g_StdOut << kHelpString;
 }
 
+MY_ATTR_NORETURN
 static void ShowMessageAndThrowException(const char *message, NExitCode::EEnum code)
 {
   g_StdOut << message << endl;
   throw code;
 }
 
+MY_ATTR_NORETURN
 static void PrintHelpAndExit() // yyy
 {
   PrintHelp();
@@ -218,7 +227,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
   return true;
 }
 
-void AddCommandLineWildcardToCensor(NWildcard::CCensor &wildcardCensor,
+static void AddCommandLineWildcardToCensor(NWildcard::CCensor &wildcardCensor,
     const UString &name, bool include, NRecursedType::EEnum type)
 {
   if (!AddNameToCensor(wildcardCensor, name, include, type))
@@ -227,7 +236,7 @@ void AddCommandLineWildcardToCensor(NWildcard::CCensor &wildcardCensor,
 
 
 #ifndef _WIN32
-static void GetArguments(int numArgs, const char *args[], UStringVector &parts)
+static void GetArguments(int numArgs, char *args[], UStringVector &parts)
 {
   parts.Clear();
   for (int i = 0; i < numArgs; i++)
@@ -238,9 +247,15 @@ static void GetArguments(int numArgs, const char *args[], UStringVector &parts)
 }
 #endif
 
+
 int Main2(
   #ifndef _WIN32
-  int numArgs, const char *args[]
+  int numArgs, char *args[]
+  #endif
+);
+int Main2(
+  #ifndef _WIN32
+  int numArgs, char *args[]
   #endif
 )
 {
@@ -253,6 +268,10 @@ int Main2(
   SetFileApisToOEM();
   #endif
   
+  #ifdef ENV_HAVE_LOCALE
+  MY_SetLocale();
+  #endif
+
   g_StdOut << kCopyrightString;
 
   UStringVector commandStrings;
@@ -277,7 +296,10 @@ int Main2(
 
   #else
 
-  UString arcPath = commandStrings.Front();
+  if (commandStrings.IsEmpty())
+    return NExitCode::kFatalError;
+
+  const FString arcPath = us2fs(commandStrings.Front());
 
   #endif
 
@@ -356,7 +378,7 @@ int Main2(
   if (passwordEnabled)
     password = parser[NKey::kPassword].PostStrings[0];
 
-  if (!NFind::DoesFileExist(arcPath))
+  if (!NFind::DoesFileExist_FollowLink(arcPath))
     throw kCantFindSFX;
   
   FString outputDir;

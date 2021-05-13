@@ -57,6 +57,15 @@ public:
     ISzAlloc_Free(&g_AlignedAlloc, _data);
   }
 
+  CAlignedBuffer(size_t size): _size(0)
+  {
+    _data = NULL;
+    _data = (Byte *)ISzAlloc_Alloc(&g_AlignedAlloc, size);
+    if (!_data)
+      throw 1;
+    _size = size;
+  }
+
   void Free()
   {
     ISzAlloc_Free(&g_AlignedAlloc, _data);

@@ -17,6 +17,10 @@ int FindSepar(const FChar *s) throw();
 void NormalizeDirPathPrefix(FString &dirPath); // ensures that it ended with '\\', if dirPath is not epmty
 void NormalizeDirPathPrefix(UString &dirPath);
 
+#ifdef _WIN32
+void NormalizeDirSeparators(FString &s);
+#endif
+
 bool IsDrivePath(const wchar_t *s) throw();  // first 3 chars are drive chars like "a:\\"
 
 bool IsAltPathPrefix(CFSTR s) throw(); /* name: */

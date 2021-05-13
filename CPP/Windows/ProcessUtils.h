@@ -3,7 +3,7 @@
 #ifndef __WINDOWS_PROCESS_UTILS_H
 #define __WINDOWS_PROCESS_UTILS_H
 
-#include <psapi.h>
+#include <Psapi.h>
 
 #include "../Common/MyString.h"
 

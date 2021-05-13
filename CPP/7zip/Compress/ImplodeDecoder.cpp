@@ -83,8 +83,8 @@ static const UInt32 kHistorySize = (1 << kNumDistDirectBitsBig) * kDistTableSize
 
 
 CCoder::CCoder():
-  _fullStreamMode(false),
-  _flags(0)
+  _flags(0),
+  _fullStreamMode(false)
 {}
 
 

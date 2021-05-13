@@ -280,7 +280,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 19.00
+- 7-Zip ZS Version 21.02
   - [Brotli] Version 1.0.9
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 1.0
@@ -289,7 +289,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Zstandard] Version 1.4.9
   - [BLAKE3] Version 0.3.7
 
-/TR 2021-04-06
+/TR 2021-05-13
 
 ## Notes
 

@@ -776,21 +776,21 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
 
 static UInt16 Read16(CInBuffer &stream)
 {
-  UInt16 res = 0;
-  for (int i = 0; i < 2; i++)
+  UInt32 res = 0;
+  for (unsigned i = 0; i < 2; i++)
   {
     Byte b;
     if (!stream.ReadByte(b))
       throw 1;
-    res |= (UInt16)b << (i * 8);
+    res |= (UInt32)b << (i * 8);
   }
-  return res;
+  return (UInt16)res;
 }
 
 static UInt32 Read32(CInBuffer &stream)
 {
   UInt32 res = 0;
-  for (int i = 0; i < 4; i++)
+  for (unsigned i = 0; i < 4; i++)
   {
     Byte b;
     if (!stream.ReadByte(b))
@@ -826,7 +826,7 @@ UInt32 CBitReader::ReadBits(unsigned numBits)
       res <<= numBits;
       NumBits -= numBits;
       res |= (Val >> NumBits);
-      Val &= (1 << NumBits) - 1;
+      Val = (Byte)(Val & (((unsigned)1 << NumBits) - 1));
       break;
     }
     else

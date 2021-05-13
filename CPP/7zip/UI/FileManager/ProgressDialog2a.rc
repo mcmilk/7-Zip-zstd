@@ -44,7 +44,7 @@ DIALOG_ID  DIALOG  0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
 CAPTION "Progress"
 {
   DEFPUSHBUTTON  "&Background", IDB_PROGRESS_BACKGROUND, bx3, by, bxs, bys
-  PUSHBUTTON     "&Pause",      IDB_PAUSE                bx2, by, bxs, bys
+  PUSHBUTTON     "&Pause",      IDB_PAUSE,               bx2, by, bxs, bys
   PUSHBUTTON     "Cancel",      IDCANCEL,                bx1, by, bxs, bys
 
   LTEXT  "Elapsed time:",      IDT_PROGRESS_ELAPSED,   m, y0, x0s, 8

@@ -41,7 +41,7 @@ unsigned CModelDecoder::Decode(CRangeDecoder *rc)
   unsigned res = Vals[--i];
   
   do
-    Freqs[i] += kUpdateStep;
+    Freqs[i] = (UInt16)(Freqs[i] + kUpdateStep);
   while (i--);
   
   if (Freqs[0] > kFreqSumMax)
@@ -72,7 +72,7 @@ unsigned CModelDecoder::Decode(CRangeDecoder *rc)
       i = NumItems - 1;
       do
       {
-        Freqs[i] >>= 1;
+        Freqs[i] = (UInt16)(Freqs[i] >> 1);
         if (Freqs[i] <= Freqs[(size_t)i + 1])
           Freqs[i] = (UInt16)(Freqs[(size_t)i + 1] + 1);
       }

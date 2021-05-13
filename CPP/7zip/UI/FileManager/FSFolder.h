@@ -203,7 +203,7 @@ struct CCopyStateIO
   int ErrorFileIndex;
   UString ErrorMessage;
 
-  CCopyStateIO(): DeleteSrcFile(false), TotalSize(0), StartPos(0) {}
+  CCopyStateIO(): TotalSize(0), StartPos(0), DeleteSrcFile(false) {}
 
   HRESULT MyCopyFile(CFSTR inPath, CFSTR outPath, DWORD attrib = INVALID_FILE_ATTRIBUTES);
 };

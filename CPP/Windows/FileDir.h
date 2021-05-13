@@ -17,6 +17,8 @@ bool GetSystemDir(FString &path);
 bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime);
 
 
+#ifdef _WIN32
+
 bool SetFileAttrib(CFSTR path, DWORD attrib);
 
 /*
@@ -25,6 +27,8 @@ bool SetFileAttrib(CFSTR path, DWORD attrib);
   SetFileAttrib_PosixHighDetect() tries to detect posix field, and it extracts only attribute
   bits that are related to current system only.
 */
+
+#endif
 
 bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib);
 
@@ -61,7 +65,7 @@ bool GetCurrentDir(FString &resultPath);
 
 bool MyGetTempPath(FString &resultPath);
 
-class CTempFile
+class CTempFile  MY_UNCOPYABLE
 {
   bool _mustBeDeleted;
   FString _path;
@@ -76,7 +80,9 @@ public:
   bool MoveTo(CFSTR name, bool deleteDestBefore);
 };
 
-class CTempDir
+
+#ifdef _WIN32
+class CTempDir  MY_UNCOPYABLE
 {
   bool _mustBeDeleted;
   FString _path;
@@ -88,9 +94,11 @@ public:
   bool Create(CFSTR namePrefix) ;
   bool Remove();
 };
+#endif
+
 
 #if !defined(UNDER_CE)
-class CCurrentDirRestorer
+class CCurrentDirRestorer  MY_UNCOPYABLE
 {
   FString _path;
 public:

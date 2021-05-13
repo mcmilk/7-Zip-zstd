@@ -86,47 +86,47 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream, ISequentialOutStr
 {
   RINOK(Init_and_Alloc());
   
+  UInt64 prev = 0;
   UInt64 nowPos64 = 0;
   bool inputFinished = false;
   UInt32 pos = 0;
 
   while (!outSize || nowPos64 < *outSize)
   {
-    UInt32 endPos = pos;
-    
     if (!inputFinished)
     {
       size_t processedSize = _bufSize - pos;
       RINOK(ReadStream(inStream, _buf + pos, &processedSize));
-      endPos = pos + (UInt32)processedSize;
-      inputFinished = (endPos != _bufSize);
+      pos += (UInt32)processedSize;
+      inputFinished = (pos != _bufSize);
     }
 
-    pos = Filter->Filter(_buf, endPos);
+    if (pos == 0)
+      return S_OK;
+
+    UInt32 filtered = Filter->Filter(_buf, pos);
     
-    if (pos > endPos)
+    if (filtered > pos)
     {
       // AES
-      if (!inputFinished || pos > _bufSize)
+      if (!inputFinished || filtered > _bufSize)
         return E_FAIL;
       if (!_encodeMode)
         return S_FALSE;
       
+      Byte *buf = _buf;
       do
-        _buf[endPos] = 0;
-      while (++endPos != pos);
+        buf[pos] = 0;
+      while (++pos != filtered);
       
-      if (pos != Filter->Filter(_buf, pos))
+      if (filtered != Filter->Filter(buf, filtered))
         return E_FAIL;
     }
 
-    if (endPos == 0)
-      return S_OK;
-
-    UInt32 size = (pos != 0 ? pos : endPos);
+    UInt32 size = (filtered != 0 ? filtered : pos);
     if (outSize)
     {
-      UInt64 remSize = *outSize - nowPos64;
+      const UInt64 remSize = *outSize - nowPos64;
       if (size > remSize)
         size = (UInt32)remSize;
     }
@@ -134,16 +134,17 @@ STDMETHODIMP CFilterCoder::Code(ISequentialInStream *inStream, ISequentialOutStr
     RINOK(WriteStream(outStream, _buf, size));
     nowPos64 += size;
 
-    if (pos == 0)
+    if (filtered == 0)
       return S_OK;
+    pos -= filtered;
+    for (UInt32 i = 0; i < pos; i++)
+      _buf[i] = _buf[filtered++];
 
-    if (progress)
+    if (progress && (nowPos64 - prev) >= (1 << 22))
+    {
+      prev = nowPos64;
       RINOK(progress->SetRatioInfo(&nowPos64, &nowPos64));
-
-    UInt32 i = 0;
-    while (pos < endPos)
-      _buf[i++] = _buf[pos++];
-    pos = i;
+    }
   }
 
   return S_OK;

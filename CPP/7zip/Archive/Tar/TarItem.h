@@ -4,6 +4,7 @@
 #define __ARCHIVE_TAR_ITEM_H
 
 #include "../../../Common/MyLinux.h"
+#include "../../../Common/UTFConvert.h"
 
 #include "../Common/ItemNameUtils.h"
 
@@ -108,7 +109,51 @@ struct CItem
   }
 
   UInt64 GetPackSizeAligned() const { return (PackSize + 0x1FF) & (~((UInt64)0x1FF)); }
+
+  bool IsThereWarning() const
+  {
+    // that Header Warning is possible if (Size != 0) for dir item
+    return (PackSize < Size) && (LinkFlag == NFileHeader::NLinkFlag::kDirectory);
+  }
 };
+
+
+
+struct CEncodingCharacts
+{
+  bool IsAscii;
+  // bool Oem_Checked;
+  // bool Oem_Ok;
+  // bool Utf_Checked;
+  CUtf8Check UtfCheck;
+  
+  void Clear()
+  {
+    IsAscii = true;
+    // Oem_Checked = false;
+    // Oem_Ok = false;
+    // Utf_Checked = false;
+    UtfCheck.Clear();
+  }
+
+  void Update(const CEncodingCharacts &ec)
+  {
+    if (!ec.IsAscii)
+      IsAscii = false;
+
+    // if (ec.Utf_Checked)
+    {
+      UtfCheck.Update(ec.UtfCheck);
+      // Utf_Checked = true;
+    }
+  }
+
+  CEncodingCharacts() { Clear(); }
+  void Check(const AString &s);
+  AString GetCharactsString() const;
+};
+
+
 
 struct CItemEx: public CItem
 {
@@ -116,6 +161,8 @@ struct CItemEx: public CItem
   unsigned HeaderSize;
   bool NameCouldBeReduced;
   bool LinkNameCouldBeReduced;
+
+  CEncodingCharacts EncodingCharacts;
 
   UInt64 GetDataPosition() const { return HeaderPos + HeaderSize; }
   UInt64 GetFullSize() const { return HeaderSize + PackSize; }

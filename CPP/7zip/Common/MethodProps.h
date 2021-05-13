@@ -53,20 +53,21 @@ struct CProps
     prop.Value = s;
   }
 
-  HRESULT SetCoderProps(ICompressSetCoderProperties *scp, const UInt64 *dataSizeReduce) const;
+  HRESULT SetCoderProps(ICompressSetCoderProperties *scp, const UInt64 *dataSizeReduce = NULL) const;
+  HRESULT SetCoderProps_DSReduce_Aff(ICompressSetCoderProperties *scp, const UInt64 *dataSizeReduce, const UInt64 *affinity) const;
 };
 
 class CMethodProps: public CProps
 {
   HRESULT SetParam(const UString &name, const UString &value);
 public:
-  int GetLevel() const;
+  unsigned GetLevel() const;
   int Get_NumThreads() const
   {
     int i = FindProp(NCoderPropID::kNumThreads);
     if (i >= 0)
-      if (Props[i].Value.vt == VT_UI4)
-        return (int)Props[i].Value.ulVal;
+      if (Props[(unsigned)i].Value.vt == VT_UI4)
+        return (int)Props[(unsigned)i].Value.ulVal;
     return -1;
   }
 
@@ -75,9 +76,9 @@ public:
     res = 0;
     int i = FindProp(NCoderPropID::kDictionarySize);
     if (i >= 0)
-      if (Props[i].Value.vt == VT_UI4)
+      if (Props[(unsigned)i].Value.vt == VT_UI4)
       {
-        res = Props[i].Value.ulVal;
+        res = Props[(unsigned)i].Value.ulVal;
         return true;
       }
     return false;
@@ -89,8 +90,8 @@ public:
   {
     int i = FindProp(NCoderPropID::kAlgorithm);
     if (i >= 0)
-      if (Props[i].Value.vt == VT_UI4)
-        return Props[i].Value.ulVal;
+      if (Props[(unsigned)i].Value.vt == VT_UI4)
+        return Props[(unsigned)i].Value.ulVal;
     return GetLevel() >= 5 ? 1 : 0;
   }
 
@@ -98,10 +99,14 @@ public:
   {
     int i = FindProp(NCoderPropID::kDictionarySize);
     if (i >= 0)
-      if (Props[i].Value.vt == VT_UI4)
-        return Props[i].Value.ulVal;
-    int level = GetLevel();
-    return level <= 5 ? (1 << (level * 2 + 14)) : (level == 6 ? (1 << 25) : (1 << 26));
+      if (Props[(unsigned)i].Value.vt == VT_UI4)
+        return Props[(unsigned)i].Value.ulVal;
+    unsigned level = GetLevel();
+    return
+        ( level <= 3 ? (1 << (level * 2 + 16)) :
+        ( level <= 6 ? (1 << (level + 19)) :
+        ( level <= 7 ? (1 << 25) : (1 << 26)
+        )));
   }
 
   bool Get_Lzma_Eos() const
@@ -109,7 +114,7 @@ public:
     int i = FindProp(NCoderPropID::kEndMarker);
     if (i >= 0)
     {
-      const NWindows::NCOM::CPropVariant &val = Props[i].Value;
+      const NWindows::NCOM::CPropVariant &val = Props[(unsigned)i].Value;
       if (val.vt == VT_BOOL)
         return VARIANT_BOOLToBool(val.boolVal);
     }
@@ -150,7 +155,7 @@ public:
     int i = FindProp(id);
     if (i >= 0)
     {
-      const NWindows::NCOM::CPropVariant &val = Props[i].Value;
+      const NWindows::NCOM::CPropVariant &val = Props[(unsigned)i].Value;
       if (val.vt == VT_UI4) { return val.ulVal; }
       if (val.vt == VT_UI8) { return val.uhVal.QuadPart; }
     }
@@ -191,8 +196,8 @@ public:
       fixedNumber = true;
       if (numThreads < 1) return 1;
       const unsigned kNumBZip2ThreadsMax = 64;
-      if (numThreads > kNumBZip2ThreadsMax) return kNumBZip2ThreadsMax;
-      return numThreads;
+      if ((unsigned)numThreads > kNumBZip2ThreadsMax) return kNumBZip2ThreadsMax;
+      return (unsigned)numThreads;
     }
     return 1;
   }
@@ -201,16 +206,16 @@ public:
   {
     int i = FindProp(NCoderPropID::kDictionarySize);
     if (i >= 0)
-      if (Props[i].Value.vt == VT_UI4)
+      if (Props[(unsigned)i].Value.vt == VT_UI4)
       {
-        UInt32 blockSize = Props[i].Value.ulVal;
+        UInt32 blockSize = Props[(unsigned)i].Value.ulVal;
         const UInt32 kDicSizeMin = 100000;
         const UInt32 kDicSizeMax = 900000;
         if (blockSize < kDicSizeMin) blockSize = kDicSizeMin;
         if (blockSize > kDicSizeMax) blockSize = kDicSizeMax;
         return blockSize;
       }
-    int level = GetLevel();
+    unsigned level = GetLevel();
     return 100000 * (level >= 5 ? 9 : (level >= 1 ? level * 2 - 1: 1));
   }
 
@@ -218,10 +223,10 @@ public:
   {
     int i = FindProp(NCoderPropID::kUsedMemorySize);
     if (i >= 0)
-      if (Props[i].Value.vt == VT_UI4)
-        return Props[i].Value.ulVal;
-    int level = GetLevel();
-    return level >= 9 ? (192 << 20) : ((UInt32)1 << (level + 19));
+      if (Props[(unsigned)i].Value.vt == VT_UI4)
+        return Props[(unsigned)i].Value.ulVal;
+    unsigned level = GetLevel();
+    return ((UInt32)1 << (level + 19));
   }
 
   void AddProp_Level(UInt32 level)

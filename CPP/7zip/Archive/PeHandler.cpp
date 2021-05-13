@@ -363,8 +363,8 @@ struct CSection
 
   CSection(): IsRealSect(false), IsDebug(false), IsAdditionalSection(false) {}
 
-  const UInt32 GetSizeExtract() const { return PSize; }
-  const UInt32 GetSizeMin() const { return MyMin(PSize, VSize); }
+  UInt32 GetSizeExtract() const { return PSize; }
+  UInt32 GetSizeMin() const { return MyMin(PSize, VSize); }
 
   void UpdateTotalSize(UInt32 &totalSize) const
   {
@@ -768,15 +768,15 @@ class CHandler:
   bool _oneLang;
   UString _resourcesPrefix;
   CUsedBitmap _usedRes;
-  bool _parseResources;
+  // bool _parseResources;
   bool _checksumError;
 
   bool IsOpt() const { return _header.OptHeaderSize != 0; }
 
   COptHeader _optHeader;
 
-  bool _allowTail;
   bool _coffMode;
+  bool _allowTail;
 
   HRESULT LoadDebugSections(IInStream *stream, bool &thereIsSection);
   HRESULT Open2(IInStream *stream, IArchiveOpenCallback *callback);
@@ -2005,10 +2005,12 @@ HRESULT CHandler::OpenResources(unsigned sectionIndex, IInStream *stream, IArchi
         const UInt32 mask = ((UInt32)1 << numBits) - 1;
         const size_t end = (size_t)((sect.VSize + mask) & (UInt32)~mask);
         if (end > sect.VSize)
+        {
           if (end <= sect.PSize)
             fileSize = end;
           else
             fileSize = sect.PSize;
+        }
       }
     }
 
@@ -2459,7 +2461,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       return S_FALSE;
   }
 
-  _parseResources = true;
+  bool _parseResources = true;
   // _parseResources = false;
 
   UInt64 mainSize = 0, mainSize2 = 0;
@@ -2467,11 +2469,11 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   for (i = 0; i < _sections.Size(); i++)
   {
     const CSection &sect = _sections[i];
-    CMixItem mixItem;
-    mixItem.SectionIndex = i;
     if (IsOpt())
-    if (_parseResources && sect.Name == ".rsrc" && _items.IsEmpty())
+    if (_parseResources && sect.Name == ".rsrc")
     {
+      // 20.01: we try to parse only first copy of .rsrc section.
+      _parseResources = false;
       const unsigned numMixItems = _mixItems.Size();
       HRESULT res = OpenResources(i, stream, callback);
       if (res == S_OK)
@@ -2483,6 +2485,8 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
           const CResItem &item = _items[j];
           if (item.Enabled)
           {
+            CMixItem mixItem;
+            mixItem.SectionIndex = i;
             mixItem.ResourceIndex = j;
             if (item.IsRcDataOrUnknown())
             {
@@ -2531,6 +2535,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       _mixItems.DeleteFrom(numMixItems);
       CloseResources();
     }
+
     if (sect.IsAdditionalSection)
     {
       if (sect.PSize >= mainSize)
@@ -2542,6 +2547,9 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       else if (sect.PSize >= mainSize2)
         mainSize2 = sect.PSize;
     }
+    
+    CMixItem mixItem;
+    mixItem.SectionIndex = i;
     _mixItems.Add(mixItem);
   }
   
@@ -3017,7 +3025,7 @@ static const Byte kProps[] =
 
 enum
 {
-  kpidSubSystem = kpidUserDefined,
+  kpidSubSystem = kpidUserDefined
   // , kpidImageBase
 };
 

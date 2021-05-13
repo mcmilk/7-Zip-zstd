@@ -7,6 +7,7 @@
 #include "../../../C/CpuArch.h"
 
 #include "HuffmanDecoder.h"
+#include "XpressDecoder.h"
 
 namespace NCompress {
 namespace NXpress {

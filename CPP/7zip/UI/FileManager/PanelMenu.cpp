@@ -25,6 +25,8 @@
 
 using namespace NWindows;
 
+extern
+LONG g_DllRefCount;
 LONG g_DllRefCount = 0;
 
 static const UINT kSevenZipStartMenuID = kMenuCmdID_Plugin_Start;
@@ -99,18 +101,25 @@ static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
       if (flags != 0)
         val = GetOpenArcErrorMessage(flags);
     }
+
     if (val.IsEmpty())
-    if ((prop.vt == VT_UI8 || prop.vt == VT_UI4 || prop.vt == VT_UI2) && IsSizeProp(propID))
     {
-      UInt64 v = 0;
-      ConvertPropVariantToUInt64(prop, v);
-      val = ConvertSizeToString(v);
+      if ((prop.vt == VT_UI8 || prop.vt == VT_UI4 || prop.vt == VT_UI2) && IsSizeProp(propID))
+      {
+        UInt64 v = 0;
+        ConvertPropVariantToUInt64(prop, v);
+        val = ConvertSizeToString(v);
+      }
+      else
+        ConvertPropertyToString2(val, prop, propID);
     }
-    else
-      ConvertPropertyToString2(val, prop, propID);
 
     if (!val.IsEmpty())
     {
+      if (propID == kpidErrorType)
+      {
+        AddPropertyPair(L"Open WARNING:", L"Cannot open the file as expected archive type", dialog);
+      }
       AddPropertyPair(GetNameOfProperty(propID, nameBSTR), val, dialog);
     }
   }
@@ -247,7 +256,7 @@ void CPanel::Properties()
         {
           numDirs++;
           numDirs += GetItem_UInt64Prop(index, kpidNumSubDirs);
-          numFiles += GetItem_UInt64Prop(index, kpidNumSubFiles);;
+          numFiles += GetItem_UInt64Prop(index, kpidNumSubFiles);
         }
         else
           numFiles++;
@@ -343,7 +352,7 @@ void CPanel::Properties()
             }
           }
           
-          if (level2 != numLevels - 1)
+          if (level2 < numLevels - 1)
           {
             UInt32 level = numLevels - 1 - level2;
             UInt32 numProps;
@@ -365,6 +374,28 @@ void CPanel::Properties()
             }
           }
         }
+        
+        {
+          // we ERROR message for NonOpen level
+              bool needSep = true;
+              const int kNumSpecProps = ARRAY_SIZE(kSpecProps);
+              for (Int32 i = -(int)kNumSpecProps; i < 0; i++)
+              {
+                CMyComBSTR name;
+                PROPID propID = kSpecProps[i + kNumSpecProps];
+                NCOM::CPropVariant prop;
+                if (getProps->GetArcProp(numLevels, propID, &prop) != S_OK)
+                  continue;
+                if (needSep)
+                {
+                  AddSeparator(message);
+                  AddSeparator(message);
+                  needSep = false;
+                }
+                AddPropertyString(propID, name, prop, message);
+              }
+        }
+
       }
     }
 
@@ -460,7 +491,7 @@ HRESULT CPanel::CreateShellContextMenu(
 
   // if (folderPath.IsEmpty()), then ParseDisplayName returns pidls of "My Computer"
   RINOK(desktopFolder->ParseDisplayName(
-      GetParent(), NULL, (wchar_t *)(const wchar_t *)folderPath,
+      GetParent(), NULL, folderPath.Ptr_non_const(),
       &eaten, &pidls.parent, NULL));
 
   /*
@@ -516,14 +547,14 @@ HRESULT CPanel::CreateShellContextMenu(
     LPITEMIDLIST pidl;
     const UString fileName = GetItemRelPath2(operatedIndices[i]);
     RINOK(parentFolder->ParseDisplayName(GetParent(), 0,
-        (wchar_t *)(const wchar_t *)fileName, &eaten, &pidl, 0));
+        fileName.Ptr_non_const(), &eaten, &pidl, 0));
     pidls.items.AddInReserved(pidl);
   }
   
   // Get IContextMenu for items
 
   RINOK(parentFolder->GetUIObjectOf(GetParent(), pidls.items.Size(),
-      (LPCITEMIDLIST *)&pidls.items.Front(), IID_IContextMenu, 0, (void**)&systemContextMenu));
+      (LPCITEMIDLIST *)(void *)&pidls.items.Front(), IID_IContextMenu, 0, (void**)&systemContextMenu));
   
   if (!systemContextMenu)
   {
@@ -533,6 +564,99 @@ HRESULT CPanel::CreateShellContextMenu(
   return S_OK;
 }
 
+// #define SHOW_DEBUG_FM_CTX_MENU
+
+#ifdef SHOW_DEBUG_FM_CTX_MENU
+
+#include <stdio.h>
+
+// #include Common/IntToString.h"
+
+static void PrintHex(UString &s, UInt32 v)
+{
+  char sz[32];
+  ConvertUInt32ToHex(v, sz);
+  s += sz;
+}
+
+static void PrintContextStr(UString &s, IContextMenu *ctxm, unsigned i, unsigned id, const char *name)
+{
+  s += " | ";
+  name = name;
+  // s += name;
+  // s += ": ";
+
+  UString s1;
+  {
+    char buf[256];
+    buf[0] = 0;
+    HRESULT res = ctxm->GetCommandString(i, id,
+        NULL, buf, ARRAY_SIZE(buf) - 1);
+    if (res != S_OK)
+    {
+      PrintHex(s1, res);
+      s1.Add_Space();
+    }
+    s1 += GetUnicodeString(buf);
+  }
+
+  UString s2;
+  {
+    wchar_t buf2[256];
+    buf2[0] = 0;
+    HRESULT res = ctxm->GetCommandString(i, id | GCS_UNICODE,
+        NULL, (char *)buf2, ARRAY_SIZE(buf2) - 1);
+    if (res != S_OK)
+    {
+      PrintHex(s2, res);
+      s2.Add_Space();
+    }
+    s2 += buf2;
+  }
+  
+  s += s1;
+  if (s2.Compare(s1) != 0)
+  {
+    s += " Unicode: ";
+    s += s2;
+  }
+}
+
+
+static void PrintAllContextItems(IContextMenu *ctxm, unsigned num)
+{
+  for (unsigned i = 0; i < num; i++)
+  {
+    UString s;
+    s.Add_UInt32(i);
+    s += ": ";
+
+    /*
+    UString valid;
+    {
+      char name[256];
+      HRESULT res = ctxm->GetCommandString(i, GCS_VALIDATEA,
+        NULL, name, ARRAY_SIZE(name) - 1);
+      
+      if (res == S_OK)
+      {
+        // valid = "valid";
+      }
+      else if (res == S_FALSE)
+        valid = "non-valid";
+      else
+        PrintHex(valid, res);
+    }
+    s += valid;
+    */
+
+    PrintContextStr(s, ctxm, i, GCS_VALIDATEA, "valid");
+    PrintContextStr(s, ctxm, i, GCS_VERBA, "v");
+    PrintContextStr(s, ctxm, i, GCS_HELPTEXTA, "h");
+    OutputDebugStringW(s);
+  }
+}
+#endif
 
 void CPanel::CreateSystemMenu(HMENU menuSpec,
     const CRecordVector<UInt32> &operatedIndices,
@@ -542,14 +666,16 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
 
   CreateShellContextMenu(operatedIndices, systemContextMenu);
 
-  if (systemContextMenu == 0)
+  if (!systemContextMenu)
     return;
   
+  /*
   // Set up a CMINVOKECOMMANDINFO structure.
   CMINVOKECOMMANDINFO ci;
   ZeroMemory(&ci, sizeof(ci));
   ci.cbSize = sizeof(CMINVOKECOMMANDINFO);
   ci.hwnd = GetParent();
+  */
   
   /*
   if (Sender == GoBtn)
@@ -578,7 +704,7 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
   {
     // HMENU hMenu = CreatePopupMenu();
     CMenu popupMenu;
-    // CMenuDestroyer menuDestroyer(popupMenu);
+    CMenuDestroyer menuDestroyer(popupMenu);
     if (!popupMenu.CreatePopup())
       throw 210503;
 
@@ -592,17 +718,21 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
     // commented out but you can uncommnent this
     // line to show the extended context menu.
     // Flags |= 0x00000080;
-    systemContextMenu->QueryContextMenu(hMenu, 0, kSystemStartMenuID, 0x7FFF, Flags);
-    
+    HRESULT res = systemContextMenu->QueryContextMenu(hMenu, 0, kSystemStartMenuID, 0x7FFF, Flags);
 
+    if (SUCCEEDED(res))
     {
+      #ifdef SHOW_DEBUG_FM_CTX_MENU
+      PrintAllContextItems(systemContextMenu, (unsigned)res);
+      #endif
+      
       CMenu menu;
       menu.Attach(menuSpec);
       CMenuItem menuItem;
       menuItem.fMask = MIIM_SUBMENU | MIIM_TYPE | MIIM_ID;
       menuItem.fType = MFT_STRING;
       menuItem.hSubMenu = popupMenu.Detach();
-      // menuDestroyer.Disable();
+      menuDestroyer.Disable();
       LangString(IDS_SYSTEM, menuItem.StringValue);
       menu.InsertItem(0, true, menuItem);
     }
@@ -648,8 +778,6 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
   // CMenuDestroyer menuDestroyer(menu);
   // menu.CreatePopup();
 
-  bool sevenZipMenuCreated = false;
-
   CZipContextMenu *contextMenuSpec = new CZipContextMenu;
   CMyComPtr<IContextMenu> contextMenu = contextMenuSpec;
   // if (contextMenu.CoCreateInstance(CLSID_CZipContextMenu, IID_IContextMenu) == S_OK)
@@ -674,9 +802,24 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
     {
       HRESULT res = contextMenu->QueryContextMenu(menu, 0, kSevenZipStartMenuID,
           kSystemStartMenuID - 1, 0);
-      sevenZipMenuCreated = (HRESULT_SEVERITY(res) == SEVERITY_SUCCESS);
+      bool sevenZipMenuCreated = SUCCEEDED(res);
       if (sevenZipMenuCreated)
-        sevenZipContextMenu = contextMenu;
+      {
+        // if (res != 0)
+        {
+          // some "non-good" implementation of QueryContextMenu() could add some items to menu, but it return 0.
+          // so we still allow these items
+          sevenZipContextMenu = contextMenu;
+          #ifdef SHOW_DEBUG_FM_CTX_MENU
+          PrintAllContextItems(contextMenu, (unsigned)res);
+          #endif
+        }
+      }
+      else
+      {
+        // MessageBox_Error_HRESULT_Caption(res, L"QueryContextMenu");
+      }
+
       // int code = HRESULT_CODE(res);
       // int nextItemID = code;
     }
@@ -795,6 +938,9 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
 
   fm.isAltStreamsSupported = false;
   
+  if (fm.numItems == 1)
+    fm.FilePath = GetItemFullPath(operatedIndices[0]);
+
   if (_folderAltStreams)
   {
     if (operatedIndices.Size() <= 1)
@@ -818,7 +964,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   fm.Load(menu, menu.GetItemCount());
 }
 
-bool CPanel::InvokePluginCommand(int id)
+bool CPanel::InvokePluginCommand(unsigned id)
 {
   return InvokePluginCommand(id, _sevenZipContextMenu, _systemContextMenu);
 }
@@ -827,15 +973,15 @@ bool CPanel::InvokePluginCommand(int id)
 #define use_CMINVOKECOMMANDINFOEX
 #endif
 
-bool CPanel::InvokePluginCommand(int id,
+bool CPanel::InvokePluginCommand(unsigned id,
     IContextMenu *sevenZipContextMenu, IContextMenu *systemContextMenu)
 {
   UInt32 offset;
   bool isSystemMenu = (id >= kSystemStartMenuID);
   if (isSystemMenu)
-    offset = id  - kSystemStartMenuID;
+    offset = id - kSystemStartMenuID;
   else
-    offset = id  - kSevenZipStartMenuID;
+    offset = id - kSevenZipStartMenuID;
 
   #ifdef use_CMINVOKECOMMANDINFOEX
     CMINVOKECOMMANDINFOEX
@@ -856,16 +1002,29 @@ bool CPanel::InvokePluginCommand(int id,
   commandInfo.hwnd = GetParent();
   commandInfo.lpVerb = (LPCSTR)(MAKEINTRESOURCE(offset));
   commandInfo.lpParameters = NULL;
-  const CSysString currentFolderSys (GetSystemString(_currentFolderPrefix));
-  commandInfo.lpDirectory = (LPCSTR)(LPCTSTR)(currentFolderSys);
+  // 19.01: fixed CSysString to AString
+  // MSDN suggest to send NULL: lpDirectory: This member is always NULL for menu items inserted by a Shell extension.
+  const AString currentFolderA (GetAnsiString(_currentFolderPrefix));
+  commandInfo.lpDirectory = (LPCSTR)(currentFolderA);
   commandInfo.nShow = SW_SHOW;
   
   #ifdef use_CMINVOKECOMMANDINFOEX
   
   commandInfo.lpParametersW = NULL;
   commandInfo.lpTitle = "";
-  commandInfo.lpVerbW = (LPCWSTR)(MAKEINTRESOURCEW(offset));
-  UString currentFolderUnicode = _currentFolderPrefix;
+
+  /*
+  system ContextMenu handler supports ContextMenu subhandlers.
+  so InvokeCommand() converts (command_offset) from global number to subhandler number.
+  XP-64 / win10:
+      system ContextMenu converts (command_offset) in lpVerb only,
+      and it keeps lpVerbW unchanged.
+      also explorer.exe sends 0 in lpVerbW.
+  We try to keep compatibility with Windows Explorer here.
+  */
+  commandInfo.lpVerbW = NULL;
+
+  const UString currentFolderUnicode = _currentFolderPrefix;
   commandInfo.lpDirectoryW = currentFolderUnicode;
   commandInfo.lpTitleW = L"";
   // commandInfo.ptInvoke.x = xPos;
@@ -885,6 +1044,8 @@ bool CPanel::InvokePluginCommand(int id,
     KillSelection();
     return true;
   }
+  else
+    MessageBox_Error_HRESULT_Caption(result, L"InvokeCommand");
   return false;
 }
 
@@ -947,22 +1108,22 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
   CMyComPtr<IContextMenu> systemContextMenu;
   CreateFileMenu(menu, sevenZipContextMenu, systemContextMenu, false);
 
-  int result = menu.Track(TPM_LEFTALIGN
+  unsigned id = menu.Track(TPM_LEFTALIGN
       #ifndef UNDER_CE
       | TPM_RIGHTBUTTON
       #endif
       | TPM_RETURNCMD | TPM_NONOTIFY,
     xPos, yPos, _listView);
 
-  if (result == 0)
+  if (id == 0)
     return true;
 
-  if (result >= kMenuCmdID_Plugin_Start)
+  if (id >= kMenuCmdID_Plugin_Start)
   {
-    InvokePluginCommand(result, sevenZipContextMenu, systemContextMenu);
+    InvokePluginCommand(id, sevenZipContextMenu, systemContextMenu);
     return true;
   }
-  if (ExecuteFileCommand(result))
+  if (ExecuteFileCommand(id))
     return true;
   return true;
 }

@@ -135,6 +135,7 @@ public:
   int CommentIndex;
   const UString *Comment;
 
+  bool PreserveATime;
   bool ShareForWrite;
   bool StopAfterOpenError;
   bool StdInMode;
@@ -152,9 +153,9 @@ public:
   bool IsDir(const CUpdatePair2 &up) const
   {
     if (up.DirIndex >= 0)
-      return DirItems->Items[up.DirIndex].IsDir();
+      return DirItems->Items[(unsigned)up.DirIndex].IsDir();
     else if (up.ArcIndex >= 0)
-      return (*ArcItems)[up.ArcIndex].IsDir;
+      return (*ArcItems)[(unsigned)up.ArcIndex].IsDir;
     return false;
   }
 };

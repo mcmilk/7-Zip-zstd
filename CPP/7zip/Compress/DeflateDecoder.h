@@ -25,6 +25,7 @@ class CCoder:
   public ICompressCoder,
   public ICompressSetFinishMode,
   public ICompressGetInStreamProcessedSize,
+  public ICompressReadUnusedFromInBuf,
   #ifndef NO_READ_FROM_CODER
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
@@ -103,6 +104,7 @@ public:
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetFinishMode)
   MY_QUERYINTERFACE_ENTRY(ICompressGetInStreamProcessedSize)
+  MY_QUERYINTERFACE_ENTRY(ICompressReadUnusedFromInBuf)
 
   #ifndef NO_READ_FROM_CODER
   MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)
@@ -119,6 +121,7 @@ public:
 
   STDMETHOD(SetFinishMode)(UInt32 finishMode);
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
+  STDMETHOD(ReadUnusedFromInBuf)(void *data, UInt32 size, UInt32 *processedSize);
 
   STDMETHOD(SetInStream)(ISequentialInStream *inStream);
   STDMETHOD(ReleaseInStream)();
@@ -141,7 +144,10 @@ public:
   }
   bool InputEofError() const { return m_InBitStream.ExtraBitsWereRead(); }
 
+  // size of used real data from input stream
   UInt64 GetStreamSize() const { return m_InBitStream.GetStreamSize(); }
+
+  // size of virtual input stream processed
   UInt64 GetInputProcessedSize() const { return m_InBitStream.GetProcessedSize(); }
 };
 

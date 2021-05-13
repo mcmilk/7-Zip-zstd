@@ -92,7 +92,7 @@ STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **in
   FString fullPath;
   if (!NFile::NName::GetFullPath(_folderPrefix, us2fs(name), fullPath))
     return S_FALSE;
-  if (!_fileInfo.Find(fullPath))
+  if (!_fileInfo.Find_FollowLink(fullPath))
     return S_FALSE;
   if (_fileInfo.IsDir())
     return S_FALSE;

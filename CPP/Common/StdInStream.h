@@ -13,8 +13,14 @@ class CStdInStream
   FILE *_stream;
   bool _streamIsOpen;
 public:
-  CStdInStream(): _stream(0), _streamIsOpen(false) {};
-  CStdInStream(FILE *stream): _stream(stream), _streamIsOpen(false) {};
+  int CodePage;
+
+  CStdInStream(FILE *stream = NULL):
+      _stream(stream),
+      _streamIsOpen(false),
+      CodePage(-1)
+      {};
+
   ~CStdInStream() { Close(); }
 
   bool Open(LPCTSTR fileName) throw();

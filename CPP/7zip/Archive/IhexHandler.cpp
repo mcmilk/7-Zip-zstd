@@ -121,9 +121,9 @@ static int Parse(const Byte *p)
 #define kType_Data 0
 #define kType_Eof  1
 #define kType_Seg  2
-#define kType_CsIp 3
+// #define kType_CsIp 3
 #define kType_High 4
-#define kType_Ip32 5
+// #define kType_Ip32 5
 
 #define kType_MAX  5
 

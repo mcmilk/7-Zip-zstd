@@ -32,6 +32,9 @@ class CExtractScanConsole: public IDirItemsCallback
   }
 
 public:
+
+  virtual ~CExtractScanConsole() {}
+
   void Init(CStdOutStream *outStream, CStdOutStream *errorStream, CStdOutStream *percentStream)
   {
     _so = outStream;

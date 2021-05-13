@@ -179,8 +179,8 @@ HRESULT CMultiMethodProps::SetProperty(const wchar_t *nameSpec, const PROPVARIAN
   }
   if (number > 64)
     return E_FAIL;
-  for (int j = _methods.Size(); j <= (int)number; j++)
-    _methods.Add(COneMethodInfo());
+  for (unsigned j = _methods.Size(); j <= number; j++)
+    _methods.AddNew();
   return _methods[number].ParseMethodFromPROPVARIANT(realName, value);
 }
 

@@ -351,7 +351,7 @@ class CInArchive
   UInt64 _processedProgressBytes;
 
   UInt64 _fileNameLengthTotal;
-  int _numRefs;
+  unsigned _numRefs;
   UInt32 _numExtents;
   UInt64 _inlineExtentsSize;
   bool CheckExtent(int volIndex, int partitionRef, UInt32 blockPos, UInt32 len) const;

@@ -39,7 +39,7 @@ public:
     {
       if (numBits < _bitPos)
       {
-        _curByte |= (value & ((1 << numBits) - 1)) << (8 - _bitPos);
+        _curByte |= (Byte)((value & ((1 << numBits) - 1)) << (8 - _bitPos));
         _bitPos -= numBits;
         return;
       }

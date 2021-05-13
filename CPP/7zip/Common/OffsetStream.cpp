@@ -10,7 +10,7 @@ HRESULT COffsetOutStream::Init(IOutStream *stream, UInt64 offset)
 {
   _offset = offset;
   _stream = stream;
-  return _stream->Seek(offset, STREAM_SEEK_SET, NULL);
+  return _stream->Seek((Int64)offset, STREAM_SEEK_SET, NULL);
 }
 
 STDMETHODIMP COffsetOutStream::Write(const void *data, UInt32 size, UInt32 *processedSize)

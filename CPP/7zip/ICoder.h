@@ -132,6 +132,7 @@ namespace NCoderPropID
     kCheckSize,         // VT_UI4 : size of digest in bytes
     kFilter,            // VT_BSTR
     kMemUse,            // VT_UI8
+    kAffinity,          // VT_UI8
 
     /* zstd props */
     kStrategy,          // VT_UI4 1=ZSTD_fast, 2=ZSTD_dfast, 3=ZSTD_greedy, 4=ZSTD_lazy, 5=ZSTD_lazy2, 6=ZSTD_btlazy2, 7=ZSTD_btopt, 8=ZSTD_btultra
@@ -147,7 +148,7 @@ namespace NCoderPropID
     kLdmHashLog,        // VT_UI4 The minimum ldmhlog is 6 and the maximum is 26 (default: 20).
     kLdmSearchLength,   // VT_UI4 The minimum ldmslen is 4 and the maximum is 4096 (default: 64).
     kLdmBucketSizeLog,  // VT_UI4 The minimum ldmblog is 0 and the maximum is 8 (default: 3).
-    kLdmHashRateLog    // VT_UI4 The default value is wlog - ldmhlog.
+    kLdmHashRateLog     // VT_UI4 The default value is wlog - ldmhlog.
   };
 }
 
@@ -211,6 +212,22 @@ CODER_INTERFACE(ICompressGetInStreamProcessedSize2, 0x27)
 CODER_INTERFACE(ICompressSetMemLimit, 0x28)
 {
   STDMETHOD(SetMemLimit)(UInt64 memUsage) PURE;
+};
+
+
+/*
+  ICompressReadUnusedFromInBuf is supported by ICoder object
+  call ReadUnusedFromInBuf() after ICoder::Code(inStream, ...).
+  ICoder::Code(inStream, ...) decodes data, and the ICoder object is allowed
+  to read from inStream to internal buffers more data than minimal data required for decoding.
+  So we can call ReadUnusedFromInBuf() from same ICoder object to read unused input
+  data from the internal buffer.
+  in ReadUnusedFromInBuf(): the Coder is not allowed to use (ISequentialInStream *inStream) object, that was sent to ICoder::Code().
+*/
+
+CODER_INTERFACE(ICompressReadUnusedFromInBuf, 0x29)
+{
+  STDMETHOD(ReadUnusedFromInBuf)(void *data, UInt32 size, UInt32 *processedSize) PURE;
 };
 
 
@@ -300,8 +317,24 @@ CODER_INTERFACE(ICompressSetInStreamSize2, 0x39)
 
 /*
   ICompressFilter
-  Filter() converts as most as possible bytes
+  Filter() converts as most as possible bytes required for fast processing.
+     Some filters have (smallest_fast_block).
+     For example, (smallest_fast_block == 16) for AES CBC/CTR filters.
+     If data stream is not finished, caller must call Filter() for larger block:
+     where (size >= smallest_fast_block).
+     if (size >= smallest_fast_block)
+     {
+       The filter can leave some bytes at the end of data without conversion:
+       if there are data alignment reasons or speed reasons.
+       The caller must read additional data from stream and call Filter() again.
+     }
+     If data stream was finished, caller can call Filter() for (size < smallest_fast_block)
+
+     data : must be aligned for at least 16 bytes for some filters (AES)
+
      returns: (outSize):
+       if (outSize == 0) : Filter have not converted anything.
+           So the caller can stop processing, if data stream was finished.
        if (outSize <= size) : Filter have converted outSize bytes
        if (outSize >  size) : Filter have not converted anything.
            and it needs at least outSize bytes to convert one block

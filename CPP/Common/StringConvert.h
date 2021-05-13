@@ -85,4 +85,26 @@ inline AString GetOemString(const UString &u)
 AString SystemStringToOemString(const CSysString &src);
 #endif
 
+
+#ifdef _WIN32
+/* we don't need locale functions in Windows
+   but we can define ENV_HAVE_LOCALE here for debug purposes */
+// #define ENV_HAVE_LOCALE
+#else
+#define ENV_HAVE_LOCALE
+#endif
+
+#ifdef ENV_HAVE_LOCALE
+void MY_SetLocale();
+const char *GetLocale(void);
+#endif
+
+#if !defined(_WIN32) || defined(ENV_HAVE_LOCALE)
+bool IsNativeUTF8();
+#endif
+
+#ifndef _WIN32
+extern bool g_ForceToUTF8;
+#endif
+
 #endif

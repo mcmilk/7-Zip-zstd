@@ -3,6 +3,10 @@
 
 #include "StdAfx.h"
 
+#ifdef __clang__
+  #pragma clang diagnostic ignored "-Wmissing-prototypes"
+#endif
+
 #include "../../../Common/MyWindows.h"
 
 #include "../../../Common/MyInitGuid.h"
@@ -39,7 +43,9 @@ const char *g_PluginName_for_Error = "7-Zip";
 
 }
 
+#if defined(_UNICODE) && !defined(_WIN64) && !defined(UNDER_CE)
 #define NT_CHECK_FAIL_ACTION return FALSE;
+#endif
 
 BOOL WINAPI DllMain(
   #ifdef UNDER_CE

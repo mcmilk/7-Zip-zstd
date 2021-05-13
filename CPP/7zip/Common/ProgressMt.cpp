@@ -4,12 +4,12 @@
 
 #include "ProgressMt.h"
 
-void CMtCompressProgressMixer::Init(int numItems, ICompressProgressInfo *progress)
+void CMtCompressProgressMixer::Init(unsigned numItems, ICompressProgressInfo *progress)
 {
   NWindows::NSynchronization::CCriticalSectionLock lock(CriticalSection);
   InSizes.Clear();
   OutSizes.Clear();
-  for (int i = 0; i < numItems; i++)
+  for (unsigned i = 0; i < numItems; i++)
   {
     InSizes.Add(0);
     OutSizes.Add(0);
@@ -19,23 +19,23 @@ void CMtCompressProgressMixer::Init(int numItems, ICompressProgressInfo *progres
   _progress = progress;
 }
 
-void CMtCompressProgressMixer::Reinit(int index)
+void CMtCompressProgressMixer::Reinit(unsigned index)
 {
   NWindows::NSynchronization::CCriticalSectionLock lock(CriticalSection);
   InSizes[index] = 0;
   OutSizes[index] = 0;
 }
 
-HRESULT CMtCompressProgressMixer::SetRatioInfo(int index, const UInt64 *inSize, const UInt64 *outSize)
+HRESULT CMtCompressProgressMixer::SetRatioInfo(unsigned index, const UInt64 *inSize, const UInt64 *outSize)
 {
   NWindows::NSynchronization::CCriticalSectionLock lock(CriticalSection);
-  if (inSize != 0)
+  if (inSize)
   {
     UInt64 diff = *inSize - InSizes[index];
     InSizes[index] = *inSize;
     TotalInSize += diff;
   }
-  if (outSize != 0)
+  if (outSize)
   {
     UInt64 diff = *outSize - OutSizes[index];
     OutSizes[index] = *outSize;

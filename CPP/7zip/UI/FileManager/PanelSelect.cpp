@@ -193,7 +193,7 @@ void CPanel::SelectByType(bool selectMode)
     else
     {
       UString mask ('*');
-      mask += name.Ptr(pos);
+      mask += name.Ptr((unsigned)pos);
       FOR_VECTOR (i, _selectedStatusVector)
         if (IsItem_Folder(i) == isItemFolder && DoesWildcardMatchName(mask, GetItemName(i)))
           _selectedStatusVector[i] = selectMode;
@@ -241,6 +241,9 @@ void CPanel::InvertSelection()
 void CPanel::KillSelection()
 {
   SelectAll(false);
+  // ver 20.01: now we don't like that focused will be selected item.
+  //   So the following code was disabled:
+  /*
   if (!_mySelectMode)
   {
     int focused = _listView.GetFocusedItem();
@@ -254,6 +257,7 @@ void CPanel::KillSelection()
       _listView.SetItemState_Selected(focused);
     }
   }
+  */
 }
 
 void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)

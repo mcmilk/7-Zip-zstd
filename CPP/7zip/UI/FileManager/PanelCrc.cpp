@@ -383,7 +383,7 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
     {
       int pos = basePrefix2.ReverseFind_PathSepar();
       if (pos >= 0)
-        basePrefix2.DeleteFrom(pos + 1);
+        basePrefix2.DeleteFrom((unsigned)(pos + 1));
     }
 
     t.Enumerator.BasePrefix = us2fs(basePrefix);

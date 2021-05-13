@@ -34,7 +34,7 @@ UInt32 CMemBitDecoder::ReadBits(unsigned numBits)
     if (numBits <= avail)
     {
       _bitPos += numBits;
-      return res | (b >> (avail - numBits)) & ((1 << numBits) - 1);
+      return res | ((b >> (avail - numBits)) & ((1 << numBits) - 1));
     }
     numBits -= avail;
     res |= (UInt32)(b & ((1 << avail) - 1)) << numBits;

@@ -289,21 +289,19 @@ public:
   bool MultiArcMode;
 
   CExtractCallbackImp():
+    #ifndef _SFX
+    _hashCalc(NULL),
+    #endif
+    ProcessAltStreams(true),
+    StreamMode(false),
+    OverwriteMode(NExtract::NOverwriteMode::kAsk),
     #ifndef _NO_CRYPTO
     PasswordIsDefined(false),
     PasswordWasAsked(false),
     #endif
-    OverwriteMode(NExtract::NOverwriteMode::kAsk),
-    StreamMode(false),
-    ProcessAltStreams(true),
-    
     _totalFilesDefined(false),
     _totalBytesDefined(false),
     MultiArcMode(false)
-    
-    #ifndef _SFX
-    , _hashCalc(NULL)
-    #endif
     {}
    
   ~CExtractCallbackImp();

@@ -11,6 +11,8 @@
 #include "../../../../C/7zCrc.h"
 #include "../../../../C/CpuArch.h"
 
+// #include "../../../Common/UTFConvert.h"
+
 #include "../../Common/StreamObjects.h"
 #include "../../Common/StreamUtils.h"
 
@@ -32,6 +34,7 @@ using namespace NCOM;
 namespace NArchive {
 namespace N7z {
 
+unsigned BoolVector_CountSum(const CBoolVector &v);
 unsigned BoolVector_CountSum(const CBoolVector &v)
 {
   unsigned sum = 0;
@@ -59,9 +62,13 @@ static void BoolVector_Fill_False(CBoolVector &v, unsigned size)
 class CInArchiveException {};
 class CUnsupportedFeatureException: public CInArchiveException {};
 
+MY_ATTR_NORETURN
 static void ThrowException() { throw CInArchiveException(); }
+MY_ATTR_NORETURN
 static inline void ThrowEndOfData()   { ThrowException(); }
+MY_ATTR_NORETURN
 static inline void ThrowUnsupported() { throw CUnsupportedFeatureException(); }
+MY_ATTR_NORETURN
 static inline void ThrowIncorrect()   { ThrowException(); }
 
 class CStreamSwitch
@@ -328,7 +335,7 @@ HRESULT CInArchive::FindAndReadSignature(IInStream *stream, const UInt64 *search
       {
         memcpy(_header, p, kHeaderSize);
         _arhiveBeginStreamPosition += offset + pos;
-        return stream->Seek(_arhiveBeginStreamPosition + kHeaderSize, STREAM_SEEK_SET, NULL);
+        return stream->Seek((Int64)(_arhiveBeginStreamPosition + kHeaderSize), STREAM_SEEK_SET, NULL);
       }
     }
     
@@ -344,7 +351,7 @@ HRESULT CInArchive::Open(IInStream *stream, const UInt64 *searchHeaderSizeLimit)
   Close();
   RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_arhiveBeginStreamPosition))
   RINOK(stream->Seek(0, STREAM_SEEK_END, &_fileEndPosition))
-  RINOK(stream->Seek(_arhiveBeginStreamPosition, STREAM_SEEK_SET, NULL))
+  RINOK(stream->Seek((Int64)_arhiveBeginStreamPosition, STREAM_SEEK_SET, NULL))
   RINOK(FindAndReadSignature(stream, searchHeaderSizeLimit));
   _stream = stream;
   return S_OK;
@@ -478,7 +485,7 @@ void CDatabase::GetPath(unsigned index, UString &path) const
 
   #if defined(_WIN32) && defined(MY_CPU_LE)
   
-  wmemcpy(s, (const wchar_t *)p, size);
+  wmemcpy(s, (const wchar_t *)(const void *)p, size);
   
   #else
 
@@ -506,10 +513,27 @@ HRESULT CDatabase::GetPath_Prop(unsigned index, PROPVARIANT *path) const throw()
   if (size >= (1 << 14))
     return S_OK;
 
+  // (size) includes null terminator
+
+  /*
+  #if WCHAR_MAX > 0xffff
+  
+  const Byte *p = ((const Byte *)NamesBuf + offset * 2);
+  size = Utf16LE__Get_Num_WCHARs(p, size - 1);
+  // (size) doesn't include null terminator
+  RINOK(PropVarEm_Alloc_Bstr(path, (unsigned)size));
+  wchar_t *s = path->bstrVal;
+  wchar_t *sEnd = Utf16LE__To_WCHARs_Sep(p, size, s);
+  *sEnd = 0;
+  if (s + size != sEnd) return E_FAIL;
+
+  #else
+  */
+
   RINOK(PropVarEm_Alloc_Bstr(path, (unsigned)size - 1));
   wchar_t *s = path->bstrVal;
-
   const Byte *p = ((const Byte *)NamesBuf + offset * 2);
+  // Utf16LE__To_WCHARs_Sep(p, size, s);
 
   for (size_t i = 0; i < size; i++)
   {
@@ -518,9 +542,13 @@ HRESULT CDatabase::GetPath_Prop(unsigned index, PROPVARIANT *path) const throw()
     #if WCHAR_PATH_SEPARATOR != L'/'
     if (c == L'/')
       c = WCHAR_PATH_SEPARATOR;
+    else if (c == L'\\')
+      c = WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT; // WSL scheme
     #endif
     *s++ = c;
   }
+
+  // #endif
 
   return S_OK;
 
@@ -673,7 +701,7 @@ void CInArchive::ReadUnpackInfo(
     {
       UInt32 indexOfMainStream = 0;
       UInt32 numPackStreams = 0;
-      folders.FoCodersDataOffset[fo] = _inByteBack->GetPtr() - startBufPtr;
+      folders.FoCodersDataOffset[fo] = (size_t)(_inByteBack->GetPtr() - startBufPtr);
 
       CNum numInStreams = 0;
       CNum numCoders = inByte->ReadNum();
@@ -794,10 +822,10 @@ void CInArchive::ReadUnpackInfo(
       folders.FoToMainUnpackSizeIndex[fo] = (Byte)indexOfMainStream;
     }
     
-    size_t dataSize = _inByteBack->GetPtr() - startBufPtr;
+    const size_t dataSize = (size_t)(_inByteBack->GetPtr() - startBufPtr);
     folders.FoToCoderUnpackSizes[fo] = numCodersOutStreams;
     folders.FoStartPackStreamIndex[fo] = packStreamIndex;
-    folders.FoCodersDataOffset[fo] = _inByteBack->GetPtr() - startBufPtr;
+    folders.FoCodersDataOffset[fo] = (size_t)(_inByteBack->GetPtr() - startBufPtr);
     folders.CodersData.CopyFrom(startBufPtr, dataSize);
 
     // if (folders.NumPackStreams != packStreamIndex) ThrowUnsupported();
@@ -962,6 +990,8 @@ void CInArchive::ReadSubStreamsInfo(
   }
 }
 
+
+
 void CInArchive::ReadStreamsInfo(
     const CObjectVector<CByteBuffer> *dataVector,
     UInt64 &dataOffset,
@@ -974,7 +1004,11 @@ void CInArchive::ReadStreamsInfo(
   if (type == NID::kPackInfo)
   {
     dataOffset = ReadNumber();
+    if (dataOffset > _rangeLimit)
+      ThrowIncorrect();
     ReadPackInfo(folders);
+    if (folders.PackPositions[folders.NumPackStreams] > _rangeLimit - dataOffset)
+      ThrowIncorrect();
     type = ReadID();
   }
 
@@ -1029,7 +1063,7 @@ void CInArchive::ReadBoolVector(unsigned numItems, CBoolVector &v)
       mask = 0x80;
     }
     p[i] = ((b & mask) != 0);
-    mask >>= 1;
+    mask = (Byte)(mask >> 1);
   }
 }
 
@@ -1090,8 +1124,8 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(
   for (CNum i = 0; i < folders.NumFolders; i++)
   {
     CByteBuffer &data = dataVector.AddNew();
-    UInt64 unpackSize64 = folders.GetFolderUnpackSize(i);
-    size_t unpackSize = (size_t)unpackSize64;
+    const UInt64 unpackSize64 = folders.GetFolderUnpackSize(i);
+    const size_t unpackSize = (size_t)unpackSize64;
     if (unpackSize != unpackSize64)
       ThrowUnsupported();
     data.Alloc(unpackSize);
@@ -1106,7 +1140,7 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(
         EXTERNAL_CODECS_LOC_VARS
         _stream, baseOffset + dataOffset,
         folders, i,
-        NULL, // *unpackSize
+        NULL, // &unpackSize64
         
         outStream,
         NULL, // *compressProgress
@@ -1127,6 +1161,9 @@ HRESULT CInArchive::ReadAndDecodePackedStreams(
     if (dataAfterEnd_Error)
       ThereIsHeaderError = true;
     
+    if (unpackSize != outStreamSpec->GetPos())
+      ThrowIncorrect();
+
     if (folders.FolderCRCs.ValidAndDefined(i))
       if (CrcCalc(data, unpackSize) != folders.FolderCRCs.Vals[i])
         ThrowIncorrect();
@@ -1226,8 +1263,8 @@ HRESULT CInArchive::ReadHeader(
         unsigned i;
         for (i = 0; i < numFiles; i++)
         {
-          size_t curRem = (rem - pos) / 2;
-          const UInt16 *buf = (const UInt16 *)(db.NamesBuf + pos);
+          const size_t curRem = (rem - pos) / 2;
+          const UInt16 *buf = (const UInt16 *)(const void *)(db.NamesBuf + pos);
           size_t j;
           for (j = 0; j < curRem && buf[j] != 0; j++);
           if (j == curRem)
@@ -1519,13 +1556,13 @@ HRESULT CInArchive::ReadDatabase2(
     const unsigned kCheckSize = 512;
     Byte buf[kCheckSize];
     RINOK(_stream->Seek(0, STREAM_SEEK_END, &fileSize));
-    UInt64 rem = fileSize - cur;
+    const UInt64 rem = fileSize - cur;
     unsigned checkSize = kCheckSize;
     if (rem < kCheckSize)
       checkSize = (unsigned)(rem);
     if (checkSize < 3)
       return S_FALSE;
-    RINOK(_stream->Seek(fileSize - checkSize, STREAM_SEEK_SET, NULL));
+    RINOK(_stream->Seek((Int64)(fileSize - checkSize), STREAM_SEEK_SET, NULL));
     RINOK(ReadStream_FALSE(_stream, buf, (size_t)checkSize));
 
     if (buf[checkSize - 1] != 0)
@@ -1534,8 +1571,8 @@ HRESULT CInArchive::ReadDatabase2(
     unsigned i;
     for (i = checkSize - 2;; i--)
     {
-      if (buf[i] == NID::kEncodedHeader && buf[i + 1] == NID::kPackInfo ||
-          buf[i] == NID::kHeader && buf[i + 1] == NID::kMainStreamsInfo)
+      if ((buf[i] == NID::kEncodedHeader && buf[i + 1] == NID::kPackInfo) ||
+          (buf[i] == NID::kHeader        && buf[i + 1] == NID::kMainStreamsInfo))
         break;
       if (i == 0)
         return S_FALSE;
@@ -1543,7 +1580,7 @@ HRESULT CInArchive::ReadDatabase2(
     nextHeaderSize = checkSize - i;
     nextHeaderOffset = rem - nextHeaderSize;
     nextHeaderCRC = CrcCalc(buf + i, (size_t)nextHeaderSize);
-    RINOK(_stream->Seek(cur, STREAM_SEEK_SET, NULL));
+    RINOK(_stream->Seek((Int64)cur, STREAM_SEEK_SET, NULL));
     db.StartHeaderWasRecovered = true;
   }
   else
@@ -1560,25 +1597,32 @@ HRESULT CInArchive::ReadDatabase2(
   if ((Int64)nextHeaderOffset < 0 ||
       nextHeaderSize > ((UInt64)1 << 62))
     return S_FALSE;
+
+  HeadersSize = kHeaderSize;
+
   if (nextHeaderSize == 0)
   {
     if (nextHeaderOffset != 0)
       return S_FALSE;
     db.IsArc = true;
+    db.HeadersSize = HeadersSize;
     return S_OK;
   }
   
   if (!db.StartHeaderWasRecovered)
     db.IsArc = true;
   
-  HeadersSize += kHeaderSize + nextHeaderSize;
+  HeadersSize += nextHeaderSize;
+  // db.EndHeaderOffset = nextHeaderOffset;
+  _rangeLimit = nextHeaderOffset;
+
   db.PhySize = kHeaderSize + nextHeaderOffset + nextHeaderSize;
   if (_fileEndPosition - db.ArcInfo.StartPositionAfterHeader < nextHeaderOffset + nextHeaderSize)
   {
     db.UnexpectedEnd = true;
     return S_FALSE;
   }
-  RINOK(_stream->Seek(nextHeaderOffset, STREAM_SEEK_CUR, NULL));
+  RINOK(_stream->Seek((Int64)nextHeaderOffset, STREAM_SEEK_CUR, NULL));
 
   size_t nextHeaderSize_t = (size_t)nextHeaderSize;
   if (nextHeaderSize_t != nextHeaderSize)

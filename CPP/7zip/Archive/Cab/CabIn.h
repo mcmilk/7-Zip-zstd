@@ -100,7 +100,7 @@ struct CDatabase
   
   int GetNumberOfNewFolders() const
   {
-    int res = Folders.Size();
+    int res = (int)Folders.Size();
     if (IsTherePrevFolder())
       res--;
     return res;

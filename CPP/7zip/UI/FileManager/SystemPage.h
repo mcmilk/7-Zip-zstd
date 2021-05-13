@@ -90,7 +90,7 @@ class CSystemPage: public NWindows::NControl::CPropertyPage
 
   bool _needSave;
 
-  const HKEY GetHKey(unsigned
+  HKEY GetHKey(unsigned
       #if NUM_EXT_GROUPS != 1
         group
       #endif

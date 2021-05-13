@@ -51,7 +51,7 @@ CDynLimBuf & CDynLimBuf::operator+=(char c) throw()
     _chars = newBuf;
     _size = n;
   }
-  _chars[_pos++] = c;
+  _chars[_pos++] = (Byte)c;
   return *this;
 }
 

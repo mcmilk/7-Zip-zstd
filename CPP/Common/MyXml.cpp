@@ -7,9 +7,9 @@
 static bool IsValidChar(char c)
 {
   return
-    c >= 'a' && c <= 'z' ||
-    c >= 'A' && c <= 'Z' ||
-    c >= '0' && c <= '9' ||
+    (c >= 'a' && c <= 'z') ||
+    (c >= 'A' && c <= 'Z') ||
+    (c >= '0' && c <= '9') ||
     c == '-';
 }
 
@@ -24,7 +24,7 @@ int CXmlItem::FindProp(const char *propName) const throw()
 {
   FOR_VECTOR (i, Props)
     if (Props[i].Name == propName)
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -32,7 +32,7 @@ AString CXmlItem::GetPropVal(const char *propName) const
 {
   int index = FindProp(propName);
   if (index >= 0)
-    return Props[index].Value;
+    return Props[(unsigned)index].Value;
   return AString();
 }
 
@@ -45,7 +45,7 @@ int CXmlItem::FindSubTag(const char *tag) const throw()
 {
   FOR_VECTOR (i, SubItems)
     if (SubItems[i].IsTagged(tag))
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -75,7 +75,7 @@ AString CXmlItem::GetSubStringForTag(const char *tag) const
 {
   int index = FindSubTag(tag);
   if (index >= 0)
-    return SubItems[index].GetSubString();
+    return SubItems[(unsigned)index].GetSubString();
   return AString();
 }
 

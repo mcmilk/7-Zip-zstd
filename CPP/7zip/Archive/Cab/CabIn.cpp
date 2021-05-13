@@ -114,8 +114,8 @@ HRESULT CSignatureFinder::Find()
       Byte b = Signature[0];
       for (;;)
       {
-        if (*p == b) break; p++;
-        if (*p == b) break; p++;
+        if (*p == b) { break; }  p++;
+        if (*p == b) { break; }  p++;
       }
       Pos = (UInt32)(p - Buf);
       if (End - Pos < _HeaderSize)
@@ -311,7 +311,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
   {
     // printf("\n!!! Seek Error !!!!\n");
     // fflush(stdout);
-    RINOK(db.Stream->Seek(db.StartPosition + ai.FileHeadersOffset, STREAM_SEEK_SET, NULL));
+    RINOK(db.Stream->Seek((Int64)(db.StartPosition + ai.FileHeadersOffset), STREAM_SEEK_SET, NULL));
     limitedStreamSpec->Init(ai.Size - ai.FileHeadersOffset);
     _inBuffer.Init();
   }

@@ -274,7 +274,7 @@ void CApp::Split()
   NFind::CFileInfo fileInfo;
   if (!fileInfo.Find(us2fs(srcPath + itemName)))
   {
-    srcPanel.MessageBox_Error(L"Can not find file");
+    srcPanel.MessageBox_Error(L"Cannot find file");
     return;
   }
   if (fileInfo.Size <= splitDialog.VolumeSizes.Front())

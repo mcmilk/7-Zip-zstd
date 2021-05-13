@@ -27,8 +27,10 @@ CCodecs *g_CodecsObj;
 
 #ifdef EXTERNAL_CODECS
   CExternalCodecs g_ExternalCodecs;
-  CCodecs::CReleaser g_CodecsReleaser;
+  static CCodecs::CReleaser g_CodecsReleaser;
 #else
+  extern
+  CMyComPtr<IUnknown> g_CodecsRef;
   CMyComPtr<IUnknown> g_CodecsRef;
 #endif
 
@@ -1245,7 +1247,7 @@ STDMETHODIMP CAgentFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
         // case kpidName:         prop = dir.Name; break;
       // case kpidPath:         prop = _proxy2->GetFullPathPrefix(_proxyDirIndex); break;
       case kpidType: prop = UString("7-Zip.") + _agentSpec->ArchiveType; break;
-      case kpidCRC: if (dir.CrcIsDefined) prop = dir.Crc; break;
+      case kpidCRC: if (dir.CrcIsDefined) { prop = dir.Crc; } break;
     }
     
   }
@@ -1533,8 +1535,8 @@ STDMETHODIMP CAgentFolder::Extract(const UInt32 *indices,
 CAgent::CAgent():
     _proxy(NULL),
     _proxy2(NULL),
-    _isDeviceFile(false),
-    _updatePathPrefix_is_AltFolder(false)
+    _updatePathPrefix_is_AltFolder(false),
+    _isDeviceFile(false)
 {
 }
 
@@ -1611,23 +1613,29 @@ STDMETHODIMP CAgent::Open(
   options.filePath = _archiveFilePath;
   options.callback = openArchiveCallback;
 
-  RINOK(_archiveLink.Open(options));
+  HRESULT res = _archiveLink.Open(options);
 
-  CArc &arc = _archiveLink.Arcs.Back();
-  if (!inStream)
+  if (!_archiveLink.Arcs.IsEmpty())
   {
-    arc.MTimeDefined = !fi.IsDevice;
-    arc.MTime = fi.MTime;
+    CArc &arc = _archiveLink.Arcs.Back();
+    if (!inStream)
+    {
+      arc.MTimeDefined = !fi.IsDevice;
+      arc.MTime = fi.MTime;
+    }
+    
+    ArchiveType = GetTypeOfArc(arc);
+    if (archiveType)
+    {
+      RINOK(StringToBstr(ArchiveType, archiveType));
+    }
   }
 
-  ArchiveType = GetTypeOfArc(arc);
-  if (archiveType)
-  {
-    RINOK(StringToBstr(ArchiveType, archiveType));
-  }
-  return S_OK;
+  return res;
+
   COM_TRY_END
 }
+
 
 STDMETHODIMP CAgent::ReOpen(IArchiveOpenCallback *openArchiveCallback)
 {
@@ -1717,7 +1725,10 @@ HRESULT CAgent::ReadItems()
 STDMETHODIMP CAgent::BindToRootFolder(IFolderFolder **resultFolder)
 {
   COM_TRY_BEGIN
-  RINOK(ReadItems());
+  if (!_archiveLink.Arcs.IsEmpty())
+  {
+    RINOK(ReadItems());
+  }
   CAgentFolder *folderSpec = new CAgentFolder;
   CMyComPtr<IFolderFolder> rootFolder = folderSpec;
   folderSpec->Init(_proxy, _proxy2, k_Proxy_RootDirIndex, /* NULL, */ this);
@@ -1813,6 +1824,20 @@ STDMETHODIMP CAgent::GetArcProp(UInt32 level, PROPID propID, PROPVARIANT *value)
         if (_archiveLink.NonOpen_ErrorInfo.ErrorFormatIndex >= 0)
           prop = g_CodecsObj->Formats[_archiveLink.NonOpen_ErrorInfo.ErrorFormatIndex].Name;
         break;
+      case kpidErrorFlags:
+      {
+        UInt32 flags = _archiveLink.NonOpen_ErrorInfo.GetErrorFlags();
+        if (flags != 0)
+          prop = flags;
+        break;
+      }
+      case kpidWarningFlags:
+      {
+        UInt32 flags = _archiveLink.NonOpen_ErrorInfo.GetWarningFlags();
+        if (flags != 0)
+          prop = flags;
+        break;
+      }
     }
   }
   else
@@ -1822,7 +1847,10 @@ STDMETHODIMP CAgent::GetArcProp(UInt32 level, PROPID propID, PROPVARIANT *value)
     {
       case kpidType: prop = GetTypeOfArc(arc); break;
       case kpidPath: prop = arc.Path; break;
-      case kpidErrorType: if (arc.ErrorInfo.ErrorFormatIndex >= 0) prop = g_CodecsObj->Formats[arc.ErrorInfo.ErrorFormatIndex].Name; break;
+      case kpidErrorType:
+        if (arc.ErrorInfo.ErrorFormatIndex >= 0)
+          prop = g_CodecsObj->Formats[arc.ErrorInfo.ErrorFormatIndex].Name;
+        break;
       case kpidErrorFlags:
       {
         UInt32 flags = arc.ErrorInfo.GetErrorFlags();

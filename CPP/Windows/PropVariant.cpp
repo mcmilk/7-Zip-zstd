@@ -278,7 +278,8 @@ HRESULT CPropVariant::Attach(PROPVARIANT *pSrc) throw()
   HRESULT hr = Clear();
   if (FAILED(hr))
     return hr;
-  memcpy(this, pSrc, sizeof(PROPVARIANT));
+  // memcpy((PROPVARIANT *)this, pSrc, sizeof(PROPVARIANT));
+  *(PROPVARIANT *)this = *pSrc;
   pSrc->vt = VT_EMPTY;
   return S_OK;
 }
@@ -291,7 +292,8 @@ HRESULT CPropVariant::Detach(PROPVARIANT *pDest) throw()
     if (FAILED(hr))
       return hr;
   }
-  memcpy(pDest, this, sizeof(PROPVARIANT));
+  // memcpy(pDest, this, sizeof(PROPVARIANT));
+  *pDest = *(PROPVARIANT *)this;
   vt = VT_EMPTY;
   return S_OK;
 }

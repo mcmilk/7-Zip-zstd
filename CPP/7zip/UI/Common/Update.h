@@ -18,7 +18,7 @@ enum EArcNameMode
 {
   k_ArcNameMode_Smart,
   k_ArcNameMode_Exact,
-  k_ArcNameMode_Add,
+  k_ArcNameMode_Add
 };
 
 struct CArchivePath
@@ -91,6 +91,7 @@ struct CUpdateOptions
   bool SfxMode;
   FString SfxModule;
   
+  bool PreserveATime;
   bool OpenShareForWrite;
   bool StopAfterOpenError;
 
@@ -104,7 +105,7 @@ struct CUpdateOptions
 
   FString WorkingDir;
   NWildcard::ECensorPathMode PathMode;
-  UString AddPathPrefix;
+  // UString AddPathPrefix;
 
   CBoolPair NtSecurity;
   CBoolPair AltStreams;
@@ -122,20 +123,26 @@ struct CUpdateOptions
 
   CUpdateOptions():
     UpdateArchiveItself(true),
+    ArcNameMode(k_ArcNameMode_Smart),
+
     SfxMode(false),
-    StdInMode(false),
-    StdOutMode(false),
-    EMailMode(false),
-    EMailRemoveAfter(false),
+
+    PreserveATime(false),
     OpenShareForWrite(false),
     StopAfterOpenError(false),
-    ArcNameMode(k_ArcNameMode_Smart),
+
+    StdInMode(false),
+    StdOutMode(false),
+
+    EMailMode(false),
+    EMailRemoveAfter(false),
+    
     PathMode(NWildcard::k_RelatPath),
     
     DeleteAfterCompressing(false),
     SetArcMTime(false)
 
-      {};
+    {};
 
   void SetActionCommand_Add()
   {
@@ -150,7 +157,7 @@ struct CUpdateOptions
 
 struct CUpdateErrorInfo
 {
-  DWORD SystemError;
+  DWORD SystemError; // it's DWORD (WRes) only;
   AString Message;
   FStringVector FileNames;
 
@@ -158,6 +165,7 @@ struct CUpdateErrorInfo
   HRESULT Get_HRESULT_Error() const { return SystemError == 0 ? E_FAIL : HRESULT_FROM_WIN32(SystemError); }
   void SetFromLastError(const char *message);
   HRESULT SetFromLastError(const char *message, const FString &fileName);
+  HRESULT SetFromError_DWORD(const char *message, const FString &fileName, DWORD error);
 
   CUpdateErrorInfo(): SystemError(0) {};
 };

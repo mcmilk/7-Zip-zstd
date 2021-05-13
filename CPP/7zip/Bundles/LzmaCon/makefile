@@ -15,23 +15,24 @@ COMMON_OBJS = \
   $O\CrcReg.obj \
   $O\IntToString.obj \
   $O\MyString.obj \
+  $O\MyVector.obj \
   $O\NewHandler.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
-  $O\MyVector.obj
 
 WIN_OBJS = \
   $O\FileIO.obj \
   $O\PropVariant.obj \
-  $O\System.obj
+  $O\Registry.obj \
+  $O\System.obj \
+  $O\SystemInfo.obj \
 
 7ZIP_COMMON_OBJS = \
-  $O\CWrappers.obj \
   $O\CreateCoder.obj \
+  $O\CWrappers.obj \
   $O\FileStreams.obj \
   $O\FilterCoder.obj \
   $O\MethodProps.obj \
-  $O\OutBuffer.obj \
   $O\StreamUtils.obj \
 
 UI_COMMON_OBJS = \

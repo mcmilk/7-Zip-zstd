@@ -12,7 +12,7 @@ struct CProxyFile
   bool NeedDeleteName;
   
   CProxyFile(): Name(NULL), NameLen(0), NeedDeleteName(false)  {}
-  ~CProxyFile() { if (NeedDeleteName) delete [](wchar_t *)Name; }
+  ~CProxyFile() { if (NeedDeleteName) delete [](wchar_t *)(void *)Name; } // delete [](wchar_t *)Name;
 };
 
 const unsigned k_Proxy_RootDirIndex = 0;
@@ -35,7 +35,7 @@ struct CProxyDir
   bool CrcIsDefined;
 
   CProxyDir(): Name(NULL), NameLen(0), ParentDir(-1) {};
-  ~CProxyDir() { delete [](wchar_t *)Name; }
+  ~CProxyDir() { delete [](wchar_t *)(void *)Name; }
 
   void Clear();
   bool IsLeaf() const { return ArcIndex >= 0; }
@@ -93,7 +93,7 @@ struct CProxyFile2
   ~CProxyFile2()
   {
     if (NeedDeleteName)
-      delete [](wchar_t *)Name;
+      delete [](wchar_t *)(void *)Name;
   }
 };
 

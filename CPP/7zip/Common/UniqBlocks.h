@@ -19,7 +19,7 @@ struct CUniqBlocks
 
   bool IsOnlyEmpty() const
   {
-    return (Bufs.Size() == 0 || Bufs.Size() == 1 && Bufs[0].Size() == 0);
+    return (Bufs.Size() == 0 || (Bufs.Size() == 1 && Bufs[0].Size() == 0));
   }
 };
 

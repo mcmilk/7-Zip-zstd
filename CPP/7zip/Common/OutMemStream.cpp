@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+// #include <stdio.h>
+
 #include "OutMemStream.h"
 
 void COutMemStream::Free()
@@ -34,11 +36,12 @@ HRESULT COutMemStream::WriteToRealStream()
   return S_OK;
 }
 
+
 STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
 {
   if (_realStreamMode)
     return OutSeqStream->Write(data, size, processedSize);
-  if (processedSize != 0)
+  if (processedSize)
     *processedSize = 0;
   while (size != 0)
   {
@@ -49,7 +52,7 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
       if (size < curSize)
         curSize = size;
       memcpy(p, data, curSize);
-      if (processedSize != 0)
+      if (processedSize)
         *processedSize += (UInt32)curSize;
       data = (const void *)((const Byte *)data + curSize);
       size -= (UInt32)curSize;
@@ -65,8 +68,14 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
       }
       continue;
     }
-    HANDLE events[3] = { StopWritingEvent, WriteToRealStreamEvent, /* NoLockEvent, */ _memManager->Semaphore };
-    DWORD waitResult = ::WaitForMultipleObjects((Blocks.LockMode ? 3 : 2), events, FALSE, INFINITE);
+
+    const NWindows::NSynchronization::CHandle_WFMO events[3] =
+      { StopWritingEvent, WriteToRealStreamEvent, /* NoLockEvent, */ _memManager->Semaphore };
+    const DWORD waitResult = NWindows::NSynchronization::WaitForMultiObj_Any_Infinite(
+        ((Blocks.LockMode /* && _memManager->Semaphore.IsCreated() */) ? 3 : 2), events);
+    
+    // printf("\n 1- outMemStream %d\n", waitResult - WAIT_OBJECT_0);
+
     switch (waitResult)
     {
       case (WAIT_OBJECT_0 + 0):
@@ -77,27 +86,34 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
         RINOK(WriteToRealStream());
         UInt32 processedSize2;
         HRESULT res = OutSeqStream->Write(data, size, &processedSize2);
-        if (processedSize != 0)
+        if (processedSize)
           *processedSize += processedSize2;
         return res;
       }
-      /*
       case (WAIT_OBJECT_0 + 2):
       {
         // it has bug: no write.
+        /*
         if (!Blocks.SwitchToNoLockMode(_memManager))
           return E_FAIL;
+        */
         break;
       }
-      */
-      case (WAIT_OBJECT_0 + 2):
-        break;
       default:
+      {
+        if (waitResult == WAIT_FAILED)
+        {
+          DWORD res = ::GetLastError();
+          if (res != 0)
+            return HRESULT_FROM_WIN32(res);
+        }
         return E_FAIL;
+      }
     }
-    Blocks.Blocks.Add(_memManager->AllocateBlock());
-    if (Blocks.Blocks.Back() == 0)
+    void *p = _memManager->AllocateBlock();
+    if (!p)
       return E_FAIL;
+    Blocks.Blocks.Add(p);
   }
   return S_OK;
 }

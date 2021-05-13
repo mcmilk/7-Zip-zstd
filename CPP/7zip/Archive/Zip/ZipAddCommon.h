@@ -28,9 +28,15 @@ struct CCompressingResult
   Byte ExtractVersion;
   bool DescriptorMode;
   bool LzmaEos;
+
+  CCompressingResult()
+  {
+    // for GCC:
+    UnpackSize = 0;
+  }
 };
 
-class CAddCommon
+class CAddCommon  MY_UNCOPYABLE
 {
   CCompressionMethodMode _options;
   NCompress::CCopyCoder *_copyCoderSpec;
@@ -50,7 +56,9 @@ class CAddCommon
   
   HRESULT CalcStreamCRC(ISequentialInStream *inStream, UInt32 &resultCRC);
 public:
-  CAddCommon(const CCompressionMethodMode &options);
+  // CAddCommon(const CCompressionMethodMode &options);
+  CAddCommon();
+  void SetOptions(const CCompressionMethodMode &options);
   ~CAddCommon();
 
   HRESULT Set_Pre_CompressionResult(bool inSeqMode, bool outSeqMode, UInt64 unpackSize,

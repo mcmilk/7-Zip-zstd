@@ -58,7 +58,7 @@ CEnumFormatEtc::~CEnumFormatEtc()
     for (ULONG i = 0; i < m_NumFormats; i++)
       if (m_Formats[i].ptd)
         CoTaskMemFree(m_Formats[i].ptd);
-      delete[]m_Formats;
+    delete []m_Formats;
   }
 }
 

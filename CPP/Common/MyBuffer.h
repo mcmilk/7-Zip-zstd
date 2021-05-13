@@ -4,6 +4,7 @@
 #define __COMMON_MY_BUFFER_H
 
 #include "Defs.h"
+#include "MyTypes.h"
 
 /* 7-Zip now uses CBuffer only as CByteBuffer.
    So there is no need to use MY_ARRAY_NEW macro in CBuffer code. */
@@ -91,6 +92,12 @@ public:
     _size = newSize;
   }
 
+  void Wipe()
+  {
+    if (_size != 0)
+      memset(_items, 0, _size * sizeof(T));
+  }
+
   CBuffer& operator=(const CBuffer &buffer)
   {
     if (&buffer != this)
@@ -125,6 +132,17 @@ bool operator!=(const CBuffer<T>& b1, const CBuffer<T>& b2)
 // typedef CBuffer<char> CCharBuffer;
 // typedef CBuffer<wchar_t> CWCharBuffer;
 typedef CBuffer<unsigned char> CByteBuffer;
+
+
+class CByteBuffer_Wipe: public CByteBuffer
+{
+  CLASS_NO_COPY(CByteBuffer_Wipe)
+public:
+  // CByteBuffer_Wipe(): CBuffer<unsigned char>() {}
+  CByteBuffer_Wipe(size_t size): CBuffer<unsigned char>(size) {}
+  ~CByteBuffer_Wipe() { Wipe(); }
+};
+
 
 
 template <class T> class CObjArray

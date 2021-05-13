@@ -73,15 +73,15 @@ static bool DoesNameContainWildcard_SkipRoot(const UString &path)
   return DoesNameContainWildcard(path.Ptr(NName::GetRootPrefixSize(path)));
 }
 
-HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bool &archiveIsOpened, bool &encrypted)
+HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, COpenResult &openRes)
 {
   UString path = fullPath;
   #ifdef _WIN32
   path.Replace(L'/', WCHAR_PATH_SEPARATOR);
   #endif
 
-  archiveIsOpened = false;
-  encrypted = false;
+  openRes.ArchiveIsOpened = false;
+  openRes.Encrypted = false;
   
   CDisableTimerProcessing disableTimerProcessing(*this);
   CDisableNotify disableNotify(*this);
@@ -169,7 +169,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
           pos++;
         #endif
 
-        sysPath.DeleteFrom(pos);
+        sysPath.DeleteFrom((unsigned)pos);
       }
     }
     
@@ -218,7 +218,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
         tfi.RelPath = fs2us(fileName);
         tfi.FolderPath = dirPrefix;
         tfi.FilePath = us2fs(sysPath);
-        res = OpenAsArc(NULL, tfi, sysPath, arcFormat, encrypted);
+        res = OpenAsArc(NULL, tfi, sysPath, arcFormat, openRes);
       }
       
       if (res == S_FALSE)
@@ -226,7 +226,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
       else
       {
         RINOK(res);
-        archiveIsOpened = true;
+        openRes.ArchiveIsOpened = true;
         _parentFolders.Back().ParentFolderPath = fs2us(dirPrefix);
         path.DeleteFrontal(sysPath.Len());
         if (!path.IsEmpty() && IS_PATH_SEPAR(path[0]))
@@ -252,7 +252,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
       unsigned skipLen = s.Len();
       if (slashPos >= 0)
       {
-        s.DeleteFrom(slashPos);
+        s.DeleteFrom((unsigned)slashPos);
         skipLen = slashPos + 1;
       }
 
@@ -266,7 +266,7 @@ HRESULT CPanel::BindToPath(const UString &fullPath, const UString &arcFormat, bo
         if (pos >= 0)
         {
           UString baseName = s;
-          baseName.DeleteFrom(pos);
+          baseName.DeleteFrom((unsigned)pos);
           if (_folderAltStreams->BindToAltStreams(baseName, &newFolder) == S_OK && newFolder)
             curPos += pos + 1;
         }
@@ -286,7 +286,7 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
 {
   CDisableTimerProcessing disableTimerProcessing(*this);
   CDisableNotify disableNotify(*this);
-  bool archiveIsOpened, encrypted;
+  COpenResult openRes;
   UString s = path;
   
   #ifdef _WIN32
@@ -297,7 +297,7 @@ HRESULT CPanel::BindToPathAndRefresh(const UString &path)
     }
   #endif
 
-  HRESULT res = BindToPath(s, UString(), archiveIsOpened, encrypted);
+  HRESULT res = BindToPath(s, UString(), openRes);
   RefreshListCtrl();
   return res;
 }
@@ -484,7 +484,7 @@ void CPanel::AddComboBoxItem(const UString &name, int iconIndex, int indent, boo
     item.mask |= (CBEIF_IMAGE | CBEIF_SELECTEDIMAGE);
   item.iItem = -1;
   item.iIndent = indent;
-  item.pszText = (LPWSTR)(LPCWSTR)name;
+  item.pszText = name.Ptr_non_const();
   _headerComboBox.InsertItem(&item);
   
   #endif
@@ -559,7 +559,6 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
 
     case CBN_SELENDOK:
     {
-      code = code;
       int index = _headerComboBox.GetCurSel();
       if (index >= 0)
       {
@@ -664,7 +663,7 @@ UString CPanel::GetParentDirPrefix() const
       {
         int pos = s.ReverseFind_PathSepar();
         if (pos >= 0)
-          s.DeleteFrom(pos + 1);
+          s.DeleteFrom((unsigned)(pos + 1));
       }
     }
   }
@@ -700,7 +699,7 @@ void CPanel::OpenParentFolder()
         if (pos >= 0)
         {
           parentFolderPrefix = focusedName;
-          parentFolderPrefix.DeleteFrom(pos + 1);
+          parentFolderPrefix.DeleteFrom((unsigned)(pos + 1));
           focusedName.DeleteFrontal(pos + 1);
         }
       }
@@ -734,9 +733,8 @@ void CPanel::OpenParentFolder()
     if (needSetFolder)
     {
       {
-        bool archiveIsOpened;
-        bool encrypted;
-        BindToPath(parentFolderPrefix, UString(), archiveIsOpened, encrypted);
+        COpenResult openRes;
+        BindToPath(parentFolderPrefix, UString(), openRes);
       }
     }
   }
@@ -822,7 +820,12 @@ void CPanel::OpenFolder(int index)
     return;
   }
   CMyComPtr<IFolderFolder> newFolder;
-  _folder->BindToFolder(index, &newFolder);
+  HRESULT res = _folder->BindToFolder(index, &newFolder);
+  if (res != 0)
+  {
+    MessageBox_Error_HRESULT(res);
+    return;
+  }
   if (!newFolder)
     return;
   SetNewFolder(newFolder);

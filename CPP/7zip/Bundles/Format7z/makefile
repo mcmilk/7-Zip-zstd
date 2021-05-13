@@ -132,13 +132,13 @@ C_OBJS = \
   $O\Ppmd7.obj \
   $O\Ppmd7Dec.obj \
   $O\Ppmd7Enc.obj \
-  $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
 !include "../../LzmaDec.mak"
+!include "../../Sha256.mak"
 
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\BrotliDecoder.obj \

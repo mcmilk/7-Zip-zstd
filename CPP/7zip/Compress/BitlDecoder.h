@@ -38,7 +38,18 @@ public:
     _value = 0;
   }
 
-  UInt64 GetStreamSize() const { return _stream.GetStreamSize(); }
+  // the size of portion data in real stream that was already read from this object.
+  // it doesn't include unused data in BitStream object buffer (up to 4 bytes)
+  // it doesn't include unused data in TInByte buffers
+  // it doesn't include virtual Extra bytes after the end of real stream data
+  UInt64 GetStreamSize() const
+  {
+    return ExtraBitsWereRead() ?
+        _stream.GetStreamSize():
+        GetProcessedSize();
+  }
+
+  // the size of virtual data that was read from this object.
   UInt64 GetProcessedSize() const { return _stream.GetProcessedSize() - ((kNumBigValueBits - _bitPos) >> 3); }
 
   bool ThereAreDataInBitsBuffer() const { return this->_bitPos != kNumBigValueBits; }
@@ -138,6 +149,17 @@ public:
     Byte b = (Byte)(_normalValue & 0xFF);
     MovePos(8);
     return b;
+  }
+
+  // call it only if the object is aligned for byte.
+  MY_FORCE_INLINE
+  bool ReadAlignedByte_FromBuf(Byte &b)
+  {
+    if (this->_bitPos == kNumBigValueBits)
+      return this->_stream.ReadByte_FromBuf(b);
+    b = (Byte)(_normalValue & 0xFF);
+    MovePos(8);
+    return true;
   }
 };
 

@@ -123,7 +123,7 @@ static void x86_Filter(Byte *data, UInt32 size, Int32 *history)
   
   for (;;)
   {
-    const Byte *p = data + (UInt32)i;
+    Byte *p = data + (UInt32)i;
 
     for (;;)
     {
@@ -198,7 +198,7 @@ static void x86_Filter(Byte *data, UInt32 size, Int32 *history)
 
     Int32 *target;
     {
-      const Byte *p2 = p + codeLen;
+      Byte *p2 = p + codeLen;
       UInt32 n = GetUi32(p2);
       if (i - last_x86_pos <= maxTransOffset)
       {
@@ -208,7 +208,7 @@ static void x86_Filter(Byte *data, UInt32 size, Int32 *history)
       target = history + (((UInt32)i + n) & 0xFFFF);
     }
 
-    i += codeLen + sizeof(UInt32) - 1;
+    i += (Int32)(codeLen + sizeof(UInt32) - 1);
 
     if (i - *target <= k_x86_WindowSize)
       last_x86_pos = i;
@@ -220,7 +220,7 @@ static void x86_Filter(Byte *data, UInt32 size, Int32 *history)
 
 
 
-static const int kLenIdNeedInit = -2;
+// static const int kLenIdNeedInit = -2;
 
 CDecoder::CDecoder():
   _x86_history(NULL)
@@ -232,7 +232,7 @@ CDecoder::~CDecoder()
   ::MidFree(_x86_history);
 }
 
-#define RIF(x) { if (!(x)) return false; }
+// #define RIF(x) { if (!(x)) return false; }
 
 #define LIMIT_CHECK if (_bs._buf < _rc.cur) return S_FALSE;
 // #define LIMIT_CHECK
@@ -539,8 +539,8 @@ HRESULT CDecoder::CodeReal(const Byte *in, size_t inSize, Byte *_win, size_t out
   _rc.Normalize();
   if (_rc.code != 0)
     return S_FALSE;
-  if (_rc.cur > _bs._buf ||
-      _rc.cur == _bs._buf && _bs._bitPos != 0)
+  if (_rc.cur > _bs._buf
+      || (_rc.cur == _bs._buf && _bs._bitPos != 0))
     return S_FALSE;
 
   /*

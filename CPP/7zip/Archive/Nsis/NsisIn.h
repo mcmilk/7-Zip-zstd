@@ -34,6 +34,11 @@ namespace NFlags
   const UInt32 kSilent = 2;
   const UInt32 kNoCrc = 4;
   const UInt32 kForceCrc = 8;
+  // NSISBI fork flags:
+  const UInt32 k_BI_LongOffset = 16;
+  const UInt32 k_BI_ExternalFileSupport = 32;
+  const UInt32 k_BI_ExternalFile = 64;
+  const UInt32 k_BI_IsStubInstaller = 128;
 }
 
 struct CFirstHeader
@@ -58,11 +63,7 @@ struct CBlockHeader
   UInt32 Offset;
   UInt32 Num;
 
-  void Parse(const Byte *p)
-  {
-    Offset = GetUi32(p);
-    Num = GetUi32(p + 4);
-  }
+  void Parse(const Byte *p, unsigned bhoSize);
 };
 
 struct CItem
@@ -159,6 +160,7 @@ public:
   CByteBuffer _data;
   CObjectVector<CItem> Items;
   bool IsUnicode;
+  bool Is64Bit;
 private:
   UInt32 _stringsPos;     // relative to _data
   UInt32 NumStringChars;
@@ -170,7 +172,6 @@ private:
   ENsisType NsisType;
   bool IsNsis200; // NSIS 2.03 and before
   bool IsNsis225; // NSIS 2.25 and before
-  
   bool LogCmdIsEnabled;
   int BadCmd; // -1: no bad command; in another cases lowest bad command id
 

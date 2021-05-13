@@ -3,12 +3,35 @@
 #ifndef __WINDOWS_FILE_FIND_H
 #define __WINDOWS_FILE_FIND_H
 
+#ifndef _WIN32
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#endif
+
 #include "../Common/MyString.h"
+#include "../Common/MyWindows.h"
 #include "Defs.h"
 
 namespace NWindows {
 namespace NFile {
 namespace NFind {
+
+// bool DoesFileExist(CFSTR name, bool followLink);
+bool DoesFileExist_Raw(CFSTR name);
+bool DoesFileExist_FollowLink(CFSTR name);
+bool DoesDirExist(CFSTR name, bool followLink);
+
+inline bool DoesDirExist(CFSTR name)
+  { return DoesDirExist(name, false); }
+inline bool DoesDirExist_FollowLink(CFSTR name)
+  { return DoesDirExist(name, true); }
+
+// it's always _Raw
+bool DoesFileOrDirExist(CFSTR name);
+
+DWORD GetFileAttrib(CFSTR path);
+
 
 namespace NAttributes
 {
@@ -33,6 +56,7 @@ public:
   bool IsAltStream;
   bool IsDevice;
 
+  #ifdef _WIN32
   /*
   #ifdef UNDER_CE
   DWORD ObjectID;
@@ -40,11 +64,24 @@ public:
   UINT32 ReparseTag;
   #endif
   */
+  #else
+  dev_t dev;
+  ino_t ino;
+  nlink_t nlink;
+  mode_t mode;
+  // bool Use_lstat;
+  #endif
 
   CFileInfoBase() { ClearBase(); }
   void ClearBase() throw();
-
-  void SetAsDir() { Attrib = FILE_ATTRIBUTE_DIRECTORY; }
+  
+  void SetAsDir()
+  {
+    Attrib = FILE_ATTRIBUTE_DIRECTORY;
+    #ifndef _WIN32
+    Attrib |= (FILE_ATTRIBUTE_UNIX_EXTENSION + (S_IFDIR << 16));
+    #endif
+  }
 
   bool IsArchived() const { return MatchesMask(FILE_ATTRIBUTE_ARCHIVE); }
   bool IsCompressed() const { return MatchesMask(FILE_ATTRIBUTE_COMPRESSED); }
@@ -58,6 +95,14 @@ public:
   bool IsSparse() const { return MatchesMask(FILE_ATTRIBUTE_SPARSE_FILE); }
   bool IsSystem() const { return MatchesMask(FILE_ATTRIBUTE_SYSTEM); }
   bool IsTemporary() const { return MatchesMask(FILE_ATTRIBUTE_TEMPORARY); }
+
+  #ifndef _WIN32
+  bool IsPosixLink() const
+  {
+    const UInt32 mod = Attrib >> 16;
+    return S_ISLNK(mod);
+  }
+  #endif
 };
 
 struct CFileInfo: public CFileInfoBase
@@ -68,10 +113,22 @@ struct CFileInfo: public CFileInfoBase
   #endif
 
   bool IsDots() const throw();
-  bool Find(CFSTR path);
+  bool Find(CFSTR path, bool followLink = false);
+  bool Find_FollowLink(CFSTR path) { return Find(path, true); }
+
+  #ifdef _WIN32
+  bool Fill_From_ByHandleFileInfo(CFSTR path);
+  // bool FollowReparse(CFSTR path, bool isDir);
+  #else
+  bool Find_DontFill_Name(CFSTR path, bool followLink = false);
+  void SetFrom_stat(const struct stat &st);
+  #endif
 };
 
-class CFindFileBase
+
+#ifdef _WIN32
+
+class CFindFileBase  MY_UNCOPYABLE
 {
 protected:
   HANDLE _handle;
@@ -108,26 +165,21 @@ public:
   bool FindNext(CStreamInfo &streamInfo);
 };
 
-class CStreamEnumerator
+class CStreamEnumerator  MY_UNCOPYABLE
 {
   CFindStream _find;
   FString _filePath;
 
-  bool NextAny(CFileInfo &fileInfo);
+  bool NextAny(CFileInfo &fileInfo, bool &found);
 public:
   CStreamEnumerator(const FString &filePath): _filePath(filePath) {}
   bool Next(CStreamInfo &streamInfo, bool &found);
 };
 
-#endif
+#endif // defined(_WIN32) && !defined(UNDER_CE)
 
-bool DoesFileExist(CFSTR name);
-bool DoesDirExist(CFSTR name);
-bool DoesFileOrDirExist(CFSTR name);
 
-DWORD GetFileAttrib(CFSTR path);
-
-class CEnumerator
+class CEnumerator  MY_UNCOPYABLE
 {
   CFindFile _findFile;
   FString _wildcard;
@@ -139,7 +191,8 @@ public:
   bool Next(CFileInfo &fileInfo, bool &found);
 };
 
-class CFindChangeNotification
+
+class CFindChangeNotification  MY_UNCOPYABLE
 {
   HANDLE _handle;
 public:
@@ -155,6 +208,71 @@ public:
 #ifndef UNDER_CE
 bool MyGetLogicalDriveStrings(CObjectVector<FString> &driveStrings);
 #endif
+
+typedef CFileInfo CDirEntry;
+
+
+#else // WIN32
+
+
+struct CDirEntry
+{
+  ino_t iNode;
+  #if !defined(_AIX)
+  Byte Type;
+  #endif
+  FString Name;
+
+  #if !defined(_AIX)
+  bool IsDir() const
+  {
+    // DT_DIR is
+    return Type == DT_DIR;
+  }
+  #endif
+
+  bool IsDots() const throw();
+};
+
+class CEnumerator  MY_UNCOPYABLE
+{
+  DIR *_dir;
+  FString _wildcard;
+
+  bool NextAny(CDirEntry &fileInfo, bool &found);
+public:
+  CEnumerator(): _dir(NULL) {}
+  ~CEnumerator();
+  void SetDirPrefix(const FString &dirPrefix);
+
+  bool Next(CDirEntry &fileInfo, bool &found);
+  bool Fill_FileInfo(const CDirEntry &de, CFileInfo &fileInfo, bool followLink);
+};
+
+/*
+inline UInt32 Get_WinAttrib_From_PosixMode(UInt32 mode)
+{
+  UInt32 attrib = S_ISDIR(mode) ?
+    FILE_ATTRIBUTE_DIRECTORY :
+    FILE_ATTRIBUTE_ARCHIVE;
+  if ((st.st_mode & 0222) == 0) // check it !!!
+    attrib |= FILE_ATTRIBUTE_READONLY;
+  return attrib;
+}
+*/
+
+UInt32 Get_WinAttribPosix_From_PosixMode(UInt32 mode);
+
+// UInt32 Get_WinAttrib_From_stat(const struct stat &st);
+#if defined(_AIX)
+  #define MY_ST_TIMESPEC st_timespec
+#else
+  #define MY_ST_TIMESPEC timespec
+#endif
+
+void timespec_To_FILETIME(const MY_ST_TIMESPEC &ts, FILETIME &ft);
+
+#endif // WIN32
 
 }}}
 

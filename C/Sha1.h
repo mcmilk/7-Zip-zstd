@@ -1,5 +1,5 @@
 /* Sha1.h -- SHA-1 Hash
-2016-05-20 : Igor Pavlov : Public domain */
+2021-02-08 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_SHA1_H
 #define __7Z_SHA1_H
@@ -14,24 +14,62 @@ EXTERN_C_BEGIN
 #define SHA1_BLOCK_SIZE   (SHA1_NUM_BLOCK_WORDS * 4)
 #define SHA1_DIGEST_SIZE  (SHA1_NUM_DIGEST_WORDS * 4)
 
+typedef void (MY_FAST_CALL *SHA1_FUNC_UPDATE_BLOCKS)(UInt32 state[5], const Byte *data, size_t numBlocks);
+
+/*
+  if (the system supports different SHA1 code implementations)
+  {
+    (CSha1::func_UpdateBlocks) will be used
+    (CSha1::func_UpdateBlocks) can be set by
+       Sha1_Init()        - to default (fastest)
+       Sha1_SetFunction() - to any algo
+  }
+  else
+  {
+    (CSha1::func_UpdateBlocks) is ignored.
+  }
+*/
+
 typedef struct
 {
-  UInt32 state[SHA1_NUM_DIGEST_WORDS];
+  SHA1_FUNC_UPDATE_BLOCKS func_UpdateBlocks;
   UInt64 count;
-  UInt32 buffer[SHA1_NUM_BLOCK_WORDS];
+  UInt64 __pad_2[2];
+  UInt32 state[SHA1_NUM_DIGEST_WORDS];
+  UInt32 __pad_3[3];
+  Byte buffer[SHA1_BLOCK_SIZE];
 } CSha1;
 
-void Sha1_Init(CSha1 *p);
 
-void Sha1_GetBlockDigest(CSha1 *p, const UInt32 *data, UInt32 *destDigest);
+#define SHA1_ALGO_DEFAULT 0
+#define SHA1_ALGO_SW      1
+#define SHA1_ALGO_HW      2
+
+/*
+Sha1_SetFunction()
+return:
+  0 - (algo) value is not supported, and func_UpdateBlocks was not changed
+  1 - func_UpdateBlocks was set according (algo) value.
+*/
+
+BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo);
+
+void Sha1_InitState(CSha1 *p);
+void Sha1_Init(CSha1 *p);
 void Sha1_Update(CSha1 *p, const Byte *data, size_t size);
 void Sha1_Final(CSha1 *p, Byte *digest);
 
-void Sha1_Update_Rar(CSha1 *p, Byte *data, size_t size /* , int rar350Mode */);
+void Sha1_PrepareBlock(const CSha1 *p, Byte *block, unsigned size);
+void Sha1_GetBlockDigest(const CSha1 *p, const Byte *data, Byte *destDigest);
 
-void Sha1_32_PrepareBlock(const CSha1 *p, UInt32 *block, unsigned size);
-void Sha1_32_Update(CSha1 *p, const UInt32 *data, size_t size);
-void Sha1_32_Final(CSha1 *p, UInt32 *digest);
+// void MY_FAST_CALL Sha1_UpdateBlocks(UInt32 state[5], const Byte *data, size_t numBlocks);
+
+/*
+call Sha1Prepare() once at program start.
+It prepares all supported implementations, and detects the fastest implementation.
+*/
+
+void Sha1Prepare(void);
 
 EXTERN_C_END
 

@@ -18,12 +18,12 @@ struct CUpdatePair2
 
   bool IsMainRenameItem;
 
-  void SetAs_NoChangeArcItem(int arcIndex)
+  void SetAs_NoChangeArcItem(unsigned arcIndex) // int
   {
     NewData = NewProps = false;
     UseArcProps = true;
     IsAnti = false;
-    ArcIndex = arcIndex;
+    ArcIndex = (int)arcIndex;
   }
 
   bool ExistOnDisk() const { return DirIndex != -1; }

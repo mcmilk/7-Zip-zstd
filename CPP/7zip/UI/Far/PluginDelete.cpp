@@ -4,6 +4,9 @@
 
 #include <stdio.h>
 
+#include "../../../Common/StringConvert.h"
+#include "FarUtils.h"
+
 #include "Messages.h"
 #include "Plugin.h"
 #include "UpdateCallbackFar.h"
@@ -28,16 +31,37 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
       g_StartupInfo.GetMsgString(NMessageID::kDeleteDelete),
       g_StartupInfo.GetMsgString(NMessageID::kDeleteCancel)
     };
-    char msg[1024];
+
+    // char msg[1024];
+    AString str1;
+
     if (numItems == 1)
     {
-      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteFile), panelItems[0].FindData.cFileName);
-      msgItems[1] = msg;
+      str1 = g_StartupInfo.GetMsgString(NMessageID::kDeleteFile);
+      AString name (panelItems[0].FindData.cFileName);
+      const unsigned kSizeLimit = 48;
+      if (name.Len() > kSizeLimit)
+      {
+        UString s = MultiByteToUnicodeString(name, CP_OEMCP);
+        ReduceString(s, kSizeLimit);
+        name = UnicodeStringToMultiByte(s, CP_OEMCP);
+      }
+      str1.Replace(AString ("%.40s"), name);
+      msgItems[1] = str1;
+      // sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteFile), panelItems[0].FindData.cFileName);
+      // msgItems[2] = msg;
     }
     else if (numItems > 1)
     {
-      sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles), numItems);
-      msgItems[1] = msg;
+      str1 = g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles);
+      {
+        AString n;
+        n.Add_UInt32(numItems);
+        str1.Replace(AString ("%d"), n);
+      }
+      msgItems[1] = str1;
+      // sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles), numItems);
+      // msgItems[1] = msg;
     }
     if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems, ARRAY_SIZE(msgItems), 2) != 0)
       return (FALSE);

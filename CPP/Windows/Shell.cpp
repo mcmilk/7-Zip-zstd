@@ -192,7 +192,7 @@ bool BrowseForFolder(LPBROWSEINFO browseInfo, CSysString &resultPath)
 }
 
 
-int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
+static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
 {
   #ifndef UNDER_CE
   switch (uMsg)
@@ -221,7 +221,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM da
 }
 
 
-bool BrowseForFolder(HWND owner, LPCTSTR title, UINT ulFlags,
+static bool BrowseForFolder(HWND owner, LPCTSTR title, UINT ulFlags,
     LPCTSTR initialFolder, CSysString &resultPath)
 {
   CSysString displayName;
@@ -275,7 +275,7 @@ bool GetPathFromIDList(LPCITEMIDLIST itemIDList, UString &path)
 
 typedef LPITEMIDLIST (WINAPI * SHBrowseForFolderWP)(LPBROWSEINFOW lpbi);
 
-bool BrowseForFolder(LPBROWSEINFOW browseInfo, UString &resultPath)
+static bool BrowseForFolder(LPBROWSEINFOW browseInfo, UString &resultPath)
 {
   NWindows::NCOM::CComInitializer comInitializer;
   SHBrowseForFolderWP shBrowseForFolderW = (SHBrowseForFolderWP)
@@ -290,7 +290,7 @@ bool BrowseForFolder(LPBROWSEINFOW browseInfo, UString &resultPath)
   return GetPathFromIDList(itemIDList, resultPath);
 }
 
-
+static
 int CALLBACK BrowseCallbackProc2(HWND hwnd, UINT uMsg, LPARAM /* lp */, LPARAM data)
 {
   switch (uMsg)

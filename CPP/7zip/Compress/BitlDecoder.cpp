@@ -8,6 +8,7 @@ namespace NBitl {
 
 Byte kInvertTable[256];
 
+static
 struct CInverterTableInitializer
 {
   CInverterTableInitializer()

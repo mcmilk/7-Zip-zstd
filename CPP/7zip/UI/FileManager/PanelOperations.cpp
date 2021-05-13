@@ -48,9 +48,7 @@ public:
   CMyComPtr<IProgress> UpdateCallback;
   CUpdateCallback100Imp *UpdateCallbackSpec;
   
-  HRESULT Result;
-
-  CThreadFolderOperations(EFolderOpType opType): OpType(opType), Result(E_FAIL) {}
+  CThreadFolderOperations(EFolderOpType opType): OpType(opType) {}
   HRESULT DoOperation(CPanel &panel, const UString &progressTitle, const UString &titleError);
 };
   
@@ -60,18 +58,14 @@ HRESULT CThreadFolderOperations::ProcessVirt()
   switch (OpType)
   {
     case FOLDER_TYPE_CREATE_FOLDER:
-      Result = FolderOperations->CreateFolder(Name, UpdateCallback);
-      break;
+      return FolderOperations->CreateFolder(Name, UpdateCallback);
     case FOLDER_TYPE_DELETE:
-      Result = FolderOperations->Delete(&Indices.Front(), Indices.Size(), UpdateCallback);
-      break;
+      return FolderOperations->Delete(&Indices.Front(), Indices.Size(), UpdateCallback);
     case FOLDER_TYPE_RENAME:
-      Result = FolderOperations->Rename(Index, Name, UpdateCallback);
-      break;
+      return FolderOperations->Rename(Index, Name, UpdateCallback);
     default:
-      Result = E_FAIL;
+      return E_FAIL;
   }
-  return Result;
 }
 
 
@@ -83,7 +77,6 @@ HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progr
 
   WaitMode = true;
   Sync.FinalMessage.ErrorMessage.Title = titleError;
-  Result = S_OK;
 
   UpdateCallbackSpec->Init();
 
@@ -93,7 +86,6 @@ HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progr
     UpdateCallbackSpec->PasswordIsDefined = fl.UsePassword;
     UpdateCallbackSpec->Password = fl.Password;
   }
-
 
   MainWindow = panel._mainWindow; // panel.GetParent()
   MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
@@ -274,9 +266,9 @@ BOOL CPanel::OnBeginLabelEdit(LV_DISPINFOW * lpnmh)
   return FALSE;
 }
 
-bool IsCorrectFsName(const UString &name)
+static bool IsCorrectFsName(const UString &name)
 {
-  const UString lastPart = name.Ptr(name.ReverseFind_PathSepar() + 1);
+  const UString lastPart = name.Ptr((unsigned)(name.ReverseFind_PathSepar() + 1));
   return
       lastPart != L"." &&
       lastPart != L"..";
@@ -410,7 +402,7 @@ void CPanel::CreateFolder()
   {
     int pos = newName.Find(WCHAR_PATH_SEPARATOR);
     if (pos >= 0)
-      newName.DeleteFrom(pos);
+      newName.DeleteFrom((unsigned)(pos));
     if (!_mySelectMode)
       state.SelectedNames.Clear();
     state.FocusedName = newName;
@@ -461,7 +453,7 @@ void CPanel::CreateFile()
   }
   int pos = newName.Find(WCHAR_PATH_SEPARATOR);
   if (pos >= 0)
-    newName.DeleteFrom(pos);
+    newName.DeleteFrom((unsigned)pos);
   if (!_mySelectMode)
     state.SelectedNames.Clear();
   state.FocusedName = newName;

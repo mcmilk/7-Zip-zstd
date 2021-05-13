@@ -18,7 +18,6 @@
 
 #include "HandlerCont.h"
 
-#define Get16(p) GetUi16(p)
 #define Get32(p) GetUi32(p)
 #define Get64(p) GetUi64(p)
 
@@ -87,7 +86,7 @@ class CHandler: public CHandlerImg
 
   Byte Guids[kNumGuids][16];
 
-  HRESULT Seek(UInt64 offset)
+  HRESULT Seek2(UInt64 offset)
   {
     _posInArc = offset;
     return Stream->Seek(offset, STREAM_SEEK_SET, NULL);
@@ -96,7 +95,7 @@ class CHandler: public CHandlerImg
   HRESULT InitAndSeek()
   {
     _virtPos = 0;
-    return Seek(0);
+    return Seek2(0);
   }
 
   HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openCallback);
@@ -143,7 +142,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
         offset += lowBits;
         if (offset != _posInArc)
         {
-          RINOK(Seek(offset));
+          RINOK(Seek2(offset));
         }
         HRESULT res = Stream->Read(data, size, &size);
         _posInArc += size;

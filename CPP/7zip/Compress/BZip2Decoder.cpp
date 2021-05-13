@@ -20,7 +20,6 @@
 #define PRIN(s)
 #define PRIN_VAL(s, val)
 
-#define PRIN_MT(s) PRIN("    " s)
 
 #include "../../../C/Alloc.h"
 
@@ -183,10 +182,10 @@ SRes CBase::ReadStreamSignature2()
     unsigned b;
     READ_BITS_8(b, 8);
 
-    if (   state2 == 0 && b != kArSig0
-        || state2 == 1 && b != kArSig1
-        || state2 == 2 && b != kArSig2
-        || state2 == 3 && (b <= kArSig3 || b > kArSig3 + kBlockSizeMultMax))
+    if (   (state2 == 0 && b != kArSig0)
+        || (state2 == 1 && b != kArSig1)
+        || (state2 == 2 && b != kArSig2)
+        || (state2 == 3 && (b <= kArSig3 || b > kArSig3 + kBlockSizeMultMax)))
       return SZ_ERROR_DATA;
     state2++;
 
@@ -342,7 +341,11 @@ SRes CBase::ReadBlock2()
     state2 = 0x543210;
     state3 = 0;
     state4 = 0;
-    if (numSelectors == 0 || numSelectors > kNumSelectorsMax)
+    // lbzip2 can write small number of additional selectors,
+    // 20.01: we allow big number of selectors here like bzip2-1.0.8
+    if (numSelectors == 0
+      // || numSelectors > kNumSelectorsMax_Decoder
+      )
       return SZ_ERROR_DATA;
   }
 
@@ -365,9 +368,18 @@ SRes CBase::ReadBlock2()
       UInt32 mask = ((UInt32)1 << ((state4 + 1) * kMtfBits)) - 1;
       state4 = 0;
       state2 = ((state2 << kMtfBits) & mask) | (state2 & ~mask) | tmp;
-      selectors[state3] = (Byte)tmp;
+      // 20.01: here we keep compatibility with bzip2-1.0.8 decoder:
+      if (state3 < kNumSelectorsMax)
+        selectors[state3] = (Byte)tmp;
     }
     while (++state3 < numSelectors);
+
+    // we allowed additional dummy selector records filled above to support lbzip2's archives.
+    // but we still don't allow to use these additional dummy selectors in the code bellow
+    // bzip2 1.0.8 decoder also has similar restriction.
+
+    if (numSelectors > kNumSelectorsMax)
+      numSelectors = kNumSelectorsMax;
 
     state = STATE_LEVELS;
     state2 = 0;
@@ -412,14 +424,15 @@ SRes CBase::ReadBlock2()
         state5 = 0;
       }
       
+      // 19.03: we use Build() instead of BuildFull() to support lbzip2 archives
       // lbzip2 2.5 can produce dummy tree, where lens[i] = kMaxHuffmanLen
       // BuildFull() returns error for such tree
-      /*
       for (unsigned i = state4; i < kMaxAlphaSize; i++)
         lens[i] = 0;
       if (!huffs[state2].Build(lens))
-      */
+      /*
       if (!huffs[state2].BuildFull(lens, state4))
+      */
         return SZ_ERROR_DATA;
       state3 = 0;
     }
@@ -476,10 +489,11 @@ SRes CBase::ReadBlock2()
         val = VAL >> (32 - kMaxHuffmanLen);
         unsigned len;
         for (len = kNumTableBits + 1; val >= huff->_limits[len]; len++);
-        /*
+        
+        // 19.03: we use that check to support partial trees created Build() for lbzip2 archives
         if (len > kNumBitsMax)
           return SZ_ERROR_DATA; // that check is required, if NHuffman::Build() was used instead of BuildFull()
-        */
+
         if (_numBits < len)
         {
           SAVE_LOCAL
@@ -769,7 +783,7 @@ Byte * CSpecState::Decode(Byte *data, size_t size) throw()
       continue;
     }
 
-    reps = b;
+    reps = (int)b;
     while (reps)
     {
       reps--;
@@ -802,7 +816,7 @@ Byte * CSpecState::Decode(Byte *data, size_t size) throw()
       _randToGo--;
     }
 
-    reps = b;
+    reps = (int)b;
   }
 
   _tPos = tPos;
@@ -857,7 +871,7 @@ HRESULT CDecoder::DecodeBlock(const CBlockProps &props)
     }
 
     TICKS_START
-    const size_t processed = block.Decode(data, size) - data;
+    const size_t processed = (size_t)(block.Decode(data, size) - data);
     TICKS_UPDATE(2)
 
     _outPosTotal += processed;
@@ -879,11 +893,12 @@ HRESULT CDecoder::DecodeBlock(const CBlockProps &props)
 
 
 CDecoder::CDecoder():
-    _inBuf(NULL),
     _outBuf(NULL),
-    _counters(NULL),
     FinishMode(false),
-    _outSizeDefined(false)
+    _outSizeDefined(false),
+    _counters(NULL),
+    _inBuf(NULL),
+    _inProcessed(0)
 {
   #ifndef _7ZIP_ST
   MtMode = false;
@@ -909,9 +924,8 @@ CDecoder::~CDecoder()
     ScoutEvent.Set();
 
     PRIN("\nThread.Wait()()");
-    Thread.Wait();
+    Thread.Wait_Close();
     PRIN("\n after Thread.Wait()()");
-    Thread.Close();
 
     // if (ScoutRes != S_OK) throw ScoutRes;
   }
@@ -929,7 +943,7 @@ HRESULT CDecoder::ReadInput()
   if (Base._buf != Base._lim || _inputFinished || _inputRes != S_OK)
     return _inputRes;
 
-  _inProcessed += (Base._buf - _inBuf);
+  _inProcessed += (size_t)(Base._buf - _inBuf);
   Base._buf = _inBuf;
   Base._lim = _inBuf;
   UInt32 size = 0;
@@ -1138,7 +1152,11 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
         if (useMt)
         {
           PRIN("DecoderEvent.Lock()");
-          RINOK(DecoderEvent.Lock());
+          {
+            WRes wres = DecoderEvent.Lock();
+            if (wres != 0)
+              return HRESULT_FROM_WIN32(wres);
+          }
           NeedWaitScout = false;
           PRIN("-- DecoderEvent.Lock()");
           props = _block.Props;
@@ -1186,7 +1204,11 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
         */
         
         PRIN("ScoutEvent.Set()");
-        RINOK(ScoutEvent.Set());
+        {
+          WRes wres = ScoutEvent.Set();
+          if (wres != 0)
+            return HRESULT_FROM_WIN32(wres);
+        }
         NeedWaitScout = true;
       }
       #endif
@@ -1219,14 +1241,17 @@ bool CDecoder::CreateInputBufer()
     _inBuf = (Byte *)MidAlloc(kInBufSize);
     if (!_inBuf)
       return false;
+    Base._buf = _inBuf;
+    Base._lim = _inBuf;
   }
   if (!_counters)
   {
-    _counters = (UInt32 *)::BigAlloc((256 + kBlockSizeMax) * sizeof(UInt32)
+    const size_t size = (256 + kBlockSizeMax) * sizeof(UInt32)
       #ifdef BZIP2_BYTE_MODE
         + kBlockSizeMax
       #endif
-        + 256);
+        + 256;
+    _counters = (UInt32 *)::BigAlloc(size);
     if (!_counters)
       return false;
     Base.Counters = _counters;
@@ -1266,13 +1291,18 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   }
   */
 
-  InitOutSize(outSize);
-
   _inputFinished = false;
   _inputRes = S_OK;
   _writeRes = S_OK;
 
   try {
+
+  InitOutSize(outSize);
+  
+  // we can request data from InputBuffer after Code().
+  // so we init InputBuffer before any function return.
+
+  InitInputBuffer();
 
   if (!CreateInputBufer())
     return E_OUTOFMEMORY;
@@ -1286,7 +1316,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 
   Base.InStream = inStream;
   
-  InitInputBuffer();
+  // InitInputBuffer();
   
   _outStream = outStream;
   _outWritten = 0;
@@ -1323,23 +1353,43 @@ STDMETHODIMP CDecoder::SetFinishMode(UInt32 finishMode)
 
 STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
 {
-  *value = GetInputProcessedSize();
+  *value = GetInStreamSize();
+  return S_OK;
+}
+
+
+STDMETHODIMP CDecoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *processedSize)
+{
+  Base.AlignToByte();
+  UInt32 i;
+  for (i = 0; i < size; i++)
+  {
+    int b;
+    Base.ReadByte(b);
+    if (b < 0)
+      break;
+    ((Byte *)data)[i] = (Byte)b;
+  }
+  if (processedSize)
+    *processedSize = i;
   return S_OK;
 }
 
 
 #ifndef _7ZIP_ST
 
-#define RINOK_THREAD(x) { WRes __result_ = (x); if (__result_ != 0) return __result_; }
+#define PRIN_MT(s) PRIN("    " s)
+
+// #define RINOK_THREAD(x) { WRes __result_ = (x); if (__result_ != 0) return __result_; }
 
 static THREAD_FUNC_DECL RunScout2(void *p) { ((CDecoder *)p)->RunScout(); return 0; }
 
 HRESULT CDecoder::CreateThread()
 {
-  RINOK_THREAD(DecoderEvent.CreateIfNotCreated());
-  RINOK_THREAD(ScoutEvent.CreateIfNotCreated());
-  RINOK_THREAD(Thread.Create(RunScout2, this));
-  return S_OK;
+  WRes             wres = DecoderEvent.CreateIfNotCreated_Reset();
+  if (wres == 0) { wres = ScoutEvent.CreateIfNotCreated_Reset();
+  if (wres == 0) { wres = Thread.Create(RunScout2, this); }}
+  return HRESULT_FROM_WIN32(wres);
 }
 
 void CDecoder::RunScout()
@@ -1512,10 +1562,12 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 {
   InitOutSize(outSize);
 
+  InitInputBuffer();
+  
   if (!CreateInputBufer())
     return E_OUTOFMEMORY;
 
-  InitInputBuffer();
+  // InitInputBuffer();
 
   StartNewStream();
 

@@ -56,7 +56,7 @@ bool CInBufferBase::ReadBlock()
   #endif
   if (_wasFinished)
     return false;
-  _processedSize += (_buf - _bufBase);
+  _processedSize += (size_t)(_buf - _bufBase);
   _buf = _bufBase;
   _bufLim = _bufBase;
   UInt32 processed;
@@ -100,7 +100,7 @@ size_t CInBufferBase::ReadBytes(Byte *buf, size_t size)
   size_t num = 0;
   for (;;)
   {
-    const size_t rem = _bufLim - _buf;
+    const size_t rem = (size_t)(_bufLim - _buf);
     if (size <= rem)
     {
       if (size != 0)
@@ -148,7 +148,7 @@ size_t CInBufferBase::Skip(size_t size)
   size_t processed = 0;
   for (;;)
   {
-    size_t rem = (_bufLim - _buf);
+    const size_t rem = (size_t)(_bufLim - _buf);
     if (rem >= size)
     {
       _buf += size;

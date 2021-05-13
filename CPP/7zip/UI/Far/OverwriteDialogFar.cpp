@@ -26,7 +26,7 @@ struct CFileInfoStrings
   AString Time;
 };
 
-void SetFileInfoStrings(const CFileInfo &fileInfo,
+static void SetFileInfoStrings(const CFileInfo &fileInfo,
     CFileInfoStrings &fileInfoStrings)
 {
   char buffer[256];

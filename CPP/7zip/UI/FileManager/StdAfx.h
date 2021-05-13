@@ -14,8 +14,8 @@
 
 // #include "../../../Common/MyWindows.h"
 
-// #include <commctrl.h>
+// #include <CommCtrl.h>
 // #include <ShlObj.h>
-// #include <shlwapi.h>
+// #include <Shlwapi.h>
 
 #endif

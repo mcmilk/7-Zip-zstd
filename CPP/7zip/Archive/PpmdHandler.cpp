@@ -1,5 +1,5 @@
 /* PpmdHandler.cpp -- PPMd format handler
-2015-11-30 : Igor Pavlov : Public domain
+2020 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.H (2001) / var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -59,7 +59,7 @@ struct CItem
   unsigned Restor;
 
   HRESULT ReadHeader(ISequentialInStream *s, UInt32 &headerSize);
-  bool IsSupported() const { return Ver == 7 || (Ver == 8 && Restor <= 1); }
+  bool IsSupported() const { return Ver == 7 || (Ver == 8 && Restor < PPMD8_RESTORE_METHOD_UNSUPPPORTED); }
 };
 
 HRESULT CItem::ReadHeader(ISequentialInStream *s, UInt32 &headerSize)
@@ -218,91 +218,11 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-static const UInt32 kTopValue = (1 << 24);
-static const UInt32 kBot = (1 << 15);
 
-struct CRangeDecoder
-{
-  IPpmd7_RangeDec vt;
-  UInt32 Range;
-  UInt32 Code;
-  UInt32 Low;
-  CByteInBufWrap *Stream;
-
-public:
-  bool Init()
-  {
-    Code = 0;
-    Low = 0;
-    Range = 0xFFFFFFFF;
-    for (int i = 0; i < 4; i++)
-      Code = (Code << 8) | Stream->ReadByte();
-    return Code < 0xFFFFFFFF;
-  }
-
-  void Normalize()
-  {
-    while ((Low ^ (Low + Range)) < kTopValue ||
-       Range < kBot && ((Range = (0 - Low) & (kBot - 1)), 1))
-    {
-      Code = (Code << 8) | Stream->ReadByte();
-      Range <<= 8;
-      Low <<= 8;
-    }
-  }
-
-  CRangeDecoder();
-};
-
-
-extern "C" {
-
-#define GET_RangeDecoder CRangeDecoder *p = CONTAINER_FROM_VTBL(pp, CRangeDecoder, vt);
-
-static UInt32 Range_GetThreshold(const IPpmd7_RangeDec *pp, UInt32 total)
-{
-  GET_RangeDecoder
-  return p->Code / (p->Range /= total);
-}
-
-static void Range_Decode(const IPpmd7_RangeDec *pp, UInt32 start, UInt32 size)
-{
-  GET_RangeDecoder
-  start *= p->Range;
-  p->Low += start;
-  p->Code -= start;
-  p->Range *= size;
-  p->Normalize();
-}
-
-static UInt32 Range_DecodeBit(const IPpmd7_RangeDec *pp, UInt32 size0)
-{
-  GET_RangeDecoder
-  if (p->Code / (p->Range >>= 14) < size0)
-  {
-    Range_Decode(&p->vt, 0, size0);
-    return 0;
-  }
-  else
-  {
-    Range_Decode(&p->vt, size0, (1 << 14) - size0);
-    return 1;
-  }
-}
-
-}
-
-CRangeDecoder::CRangeDecoder()
-{
-  vt.GetThreshold = Range_GetThreshold;
-  vt.Decode = Range_Decode;
-  vt.DecodeBit = Range_DecodeBit;
-}
 
 struct CPpmdCpp
 {
   unsigned Ver;
-  CRangeDecoder _rc;
   CPpmd7 _ppmd7;
   CPpmd8 _ppmd8;
   
@@ -339,20 +259,20 @@ struct CPpmdCpp
   {
     if (Ver == 7)
     {
-      _rc.Stream = inStream;
-      return _rc.Init();
+      _ppmd7.rc.dec.Stream = &inStream->vt;
+      return (Ppmd7a_RangeDec_Init(&_ppmd7.rc.dec) != 0);
     }
     else
     {
       _ppmd8.Stream.In = &inStream->vt;
-      return Ppmd8_RangeDec_Init(&_ppmd8) != 0;
+      return Ppmd8_Init_RangeDec(&_ppmd8) != 0;
     }
   }
 
   bool IsFinishedOK()
   {
     if (Ver == 7)
-      return Ppmd7z_RangeDec_IsFinishedOK(&_rc);
+      return Ppmd7z_RangeDec_IsFinishedOK(&_ppmd7.rc.dec);
     return Ppmd8_RangeDec_IsFinishedOK(&_ppmd8);
   }
 };
@@ -416,14 +336,15 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       size_t i;
       int sym = 0;
 
+      Byte *buf = outBuf.Buf;
       if (ppmd.Ver == 7)
       {
         for (i = 0; i < kBufSize; i++)
         {
-          sym = Ppmd7_DecodeSymbol(&ppmd._ppmd7, &ppmd._rc.vt);
+          sym = Ppmd7a_DecodeSymbol(&ppmd._ppmd7);
           if (inBuf.Extra || sym < 0)
             break;
-          outBuf.Buf[i] = (Byte)sym;
+          buf[i] = (Byte)sym;
         }
       }
       else
@@ -433,7 +354,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           sym = Ppmd8_DecodeSymbol(&ppmd._ppmd8);
           if (inBuf.Extra || sym < 0)
             break;
-          outBuf.Buf[i] = (Byte)sym;
+          buf[i] = (Byte)sym;
         }
       }
 

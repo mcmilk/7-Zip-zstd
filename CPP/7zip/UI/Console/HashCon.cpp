@@ -222,7 +222,8 @@ void CHashCallbackConsole::PrintResultLine(UInt64 fileSize,
     s[0] = 0;
     if (showHash)
       AddHashHexToString(s, h.Digests[digestIndex], h.DigestSize);
-    SetSpacesAndNul(s + strlen(s), (int)GetColumnWidth(h.DigestSize) - (int)strlen(s));
+    const unsigned pos = (unsigned)strlen(s);
+    SetSpacesAndNul(s + pos, GetColumnWidth(h.DigestSize) - pos);
     if (i != 0)
       _s.Add_Space();
     _s += s;
@@ -235,20 +236,15 @@ void CHashCallbackConsole::PrintResultLine(UInt64 fileSize,
     char s[kSizeField_Len + 32];
     char *p = s;
     
+    SetSpacesAndNul(s, kSizeField_Len);
     if (showHash)
     {
       p = s + kSizeField_Len;
       ConvertUInt64ToString(fileSize, p);
-      int numSpaces = kSizeField_Len - (int)strlen(p);
+      int numSpaces = (int)kSizeField_Len - (int)strlen(p);
       if (numSpaces > 0)
-      {
         p -= (unsigned)numSpaces;
-        for (unsigned i = 0; i < (unsigned)numSpaces; i++)
-          p[i] = ' ';
-      }
     }
-    else
-      SetSpacesAndNul(s, kSizeField_Len);
     
     _s += p;
   }

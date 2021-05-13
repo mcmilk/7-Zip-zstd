@@ -240,7 +240,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
             mainIndex = -1;
             break;
           }
-          mainIndex = i;
+          mainIndex = (int)i;
         }
       }
       if (mainIndex >= 0)

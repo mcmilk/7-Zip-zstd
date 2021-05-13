@@ -28,6 +28,13 @@ class CData
   void UpdateKeys(const Byte *data);
   void CryptBlock(Byte *buf, bool encrypt);
 public:
+  ~CData() { Wipe(); }
+  void Wipe()
+  {
+    MY_memset_0_ARRAY(SubstTable);
+    MY_memset_0_ARRAY(Keys);
+  }
+
   void EncryptBlock(Byte *buf) { CryptBlock(buf, true); }
   void DecryptBlock(Byte *buf) { CryptBlock(buf, false); }
   void SetPassword(const Byte *password, unsigned passwordLen);

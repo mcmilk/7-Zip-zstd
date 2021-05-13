@@ -28,7 +28,7 @@ void UpdateProduce(
     {
       case NPairAction::kIgnore:
         if (pair.ArcIndex >= 0 && callback)
-          callback->ShowDeleteFile(pair.ArcIndex);
+          callback->ShowDeleteFile((unsigned)pair.ArcIndex);
         continue;
 
       case NPairAction::kCopy:
@@ -43,7 +43,7 @@ void UpdateProduce(
                 1) no such alt stream in Disk
                 2) there is Host file in disk
             */
-            if (updatePairs[pair.HostIndex].DirIndex >= 0)
+            if (updatePairs[(unsigned)pair.HostIndex].DirIndex >= 0)
               continue;
           }
         }

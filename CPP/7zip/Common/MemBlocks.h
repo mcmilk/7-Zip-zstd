@@ -15,10 +15,10 @@ class CMemBlockManager
   size_t _blockSize;
   void *_headFree;
 public:
-  CMemBlockManager(size_t blockSize = (1 << 20)): _data(0), _blockSize(blockSize), _headFree(0) {}
+  CMemBlockManager(size_t blockSize = (1 << 20)): _data(NULL), _blockSize(blockSize), _headFree(NULL) {}
   ~CMemBlockManager() { FreeSpace(); }
 
-  bool AllocateSpace(size_t numBlocks);
+  bool AllocateSpace_bool(size_t numBlocks);
   void FreeSpace();
   size_t GetBlockSize() const { return _blockSize; }
   void *AllocateBlock();
@@ -30,17 +30,18 @@ class CMemBlockManagerMt: public CMemBlockManager
 {
   NWindows::NSynchronization::CCriticalSection _criticalSection;
 public:
-  NWindows::NSynchronization::CSemaphore Semaphore;
+  SYNC_OBJ_DECL(Synchro);
+  NWindows::NSynchronization::CSemaphore_WFMO Semaphore;
 
   CMemBlockManagerMt(size_t blockSize = (1 << 20)): CMemBlockManager(blockSize) {}
   ~CMemBlockManagerMt() { FreeSpace(); }
 
-  HRes AllocateSpace(size_t numBlocks, size_t numNoLockBlocks = 0);
+  HRes AllocateSpace(size_t numBlocks, size_t numNoLockBlocks);
   HRes AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks = 0);
   void FreeSpace();
   void *AllocateBlock();
   void FreeBlock(void *p, bool lockMode = true);
-  HRes ReleaseLockedBlocks(int number) { return Semaphore.Release(number); }
+  // WRes ReleaseLockedBlocks_WRes(unsigned number) { return Semaphore.Release(number); }
 };
 
 
@@ -63,8 +64,8 @@ struct CMemLockBlocks: public CMemBlocks
 
   CMemLockBlocks(): LockMode(true) {};
   void Free(CMemBlockManagerMt *memManager);
-  void FreeBlock(int index, CMemBlockManagerMt *memManager);
-  HRes SwitchToNoLockMode(CMemBlockManagerMt *memManager);
+  void FreeBlock(unsigned index, CMemBlockManagerMt *memManager);
+  // HRes SwitchToNoLockMode(CMemBlockManagerMt *memManager);
   void Detach(CMemLockBlocks &blocks, CMemBlockManagerMt *memManager);
 };
 

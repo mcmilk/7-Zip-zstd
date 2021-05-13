@@ -56,8 +56,8 @@ struct CItem
     if (ContinuedFromPrev())
       return 0;
     if (ContinuedToNext())
-      return numFolders - 1;
-    return FolderIndex;
+      return (int)numFolders - 1;
+    return (int)FolderIndex;
   }
 };
 

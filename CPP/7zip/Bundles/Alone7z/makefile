@@ -1,6 +1,8 @@
 PROG = 7zr.exe
-CFLAGS = $(CFLAGS) \
-  -DPROG_VARIANT_R \
+
+# USE_C_AES = 1
+
+CFLAGS = $(CFLAGS) -DPROG_VARIANT_R
 
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
@@ -33,8 +35,10 @@ WIN_OBJS = \
   $O\MemoryLock.obj \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
+  $O\Registry.obj \
   $O\Synchronization.obj \
   $O\System.obj \
+  $O\SystemInfo.obj \
   $O\TimeUtils.obj \
 
 7ZIP_COMMON_OBJS = \
@@ -136,7 +140,6 @@ C_OBJS = \
   $O\LzmaEnc.obj \
   $O\MtCoder.obj \
   $O\MtDec.obj \
-  $O\Sha256.obj \
   $O\Sort.obj \
   $O\Threads.obj \
   $O\Xz.obj \
@@ -150,5 +153,6 @@ C_OBJS = \
 !include "../../Crc.mak"
 !include "../../Crc64.mak"
 !include "../../LzmaDec.mak"
+!include "../../Sha256.mak"
 
 !include "../../7zip.mak"

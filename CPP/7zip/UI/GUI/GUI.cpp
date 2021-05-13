@@ -8,7 +8,7 @@
 
 #include "../../../Common/MyWindows.h"
 
-#include <shlwapi.h>
+#include <Shlwapi.h>
 
 #include "../../../Common/MyInitGuid.h"
 
@@ -34,10 +34,14 @@
 
 using namespace NWindows;
 
+extern
+HINSTANCE g_hInstance;
 HINSTANCE g_hInstance;
 
 #ifndef UNDER_CE
 
+extern
+DWORD g_ComCtl32Version;
 DWORD g_ComCtl32Version;
 
 static DWORD GetDllVersion(LPCTSTR dllName)
@@ -46,7 +50,7 @@ static DWORD GetDllVersion(LPCTSTR dllName)
   HINSTANCE hinstDll = LoadLibrary(dllName);
   if (hinstDll)
   {
-    DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
+    DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)(void *)GetProcAddress(hinstDll, "DllGetVersion");
     if (pDllGetVersion)
     {
       DLLVERSIONINFO dvi;
@@ -63,6 +67,8 @@ static DWORD GetDllVersion(LPCTSTR dllName)
 
 #endif
 
+extern
+bool g_LVN_ITEMACTIVATE_Support;
 bool g_LVN_ITEMACTIVATE_Support = true;
 
 static void ErrorMessage(LPCWSTR message)
@@ -90,7 +96,7 @@ static int ShowMemErrorMessage()
 
 static int ShowSysErrorMessage(DWORD errorCode)
 {
-  if (errorCode == E_OUTOFMEMORY)
+  if ((HRESULT)errorCode == E_OUTOFMEMORY)
     return ShowMemErrorMessage();
   ErrorMessage(HResultToMessage(errorCode));
   return NExitCode::kFatalError;
@@ -128,7 +134,17 @@ static int Main2()
   codecs->CaseSensitiveChange = options.CaseSensitiveChange;
   codecs->CaseSensitive = options.CaseSensitive;
   ThrowException_if_Error(codecs->Load());
-  
+
+  #ifdef EXTERNAL_CODECS
+  {
+    UString s;
+    codecs->GetCodecsErrorMessage(s);
+    if (!s.IsEmpty())
+      MessageBoxW(0, s, L"7-Zip", MB_ICONERROR);
+  }
+  #endif
+
+ 
   bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
   
   if (codecs->Formats.Size() == 0 &&
@@ -343,7 +359,9 @@ static int Main2()
   return 0;
 }
 
+#if defined(_UNICODE) && !defined(_WIN64) && !defined(UNDER_CE)
 #define NT_CHECK_FAIL_ACTION ErrorMessage("Unsupported Windows version"); return NExitCode::kFatalError;
+#endif
 
 int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   #ifdef UNDER_CE

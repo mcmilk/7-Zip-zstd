@@ -32,6 +32,11 @@ public:
     { return LocalFullHeaderSize + GetPackSizeWithDescriptor(); }
   UInt64 GetDataPosition() const
     { return LocalHeaderPos + LocalFullHeaderSize; }
+
+  bool IsBadDescriptor() const
+  {
+    return !FromCentral && FromLocal && HasDescriptor() && !DescriptorWasRead;
+  }
 };
 
 
@@ -282,6 +287,7 @@ class CInArchive
   HRESULT SeekToVol(int volIndex, UInt64 offset);
 
   HRESULT ReadFromCache(Byte *data, unsigned size, unsigned &processed);
+  HRESULT ReadFromCache_FALSE(Byte *data, unsigned size);
 
   HRESULT ReadVols2(IArchiveOpenVolumeCallback *volCallback,
       unsigned start, int lastDisk, int zipDisk, unsigned numMissingVolsMax, unsigned &numMissingVols);
@@ -305,7 +311,7 @@ class CInArchive
 
   bool ReadFileName(unsigned nameSize, AString &dest);
 
-  bool ReadExtra(unsigned extraSize, CExtraBlock &extra,
+  bool ReadExtra(const CLocalItem &item, unsigned extraSize, CExtraBlock &extra,
       UInt64 &unpackSize, UInt64 &packSize, UInt64 &localOffset, UInt32 &disk);
   bool ReadLocalItem(CItemEx &item);
   HRESULT FindDescriptor(CItemEx &item, unsigned numFiles);
@@ -325,6 +331,9 @@ public:
   
   bool IsArc;
   bool IsZip64;
+
+  bool IsApk;
+  bool IsCdUnsorted;
   
   bool HeadersError;
   bool HeadersWarning;
@@ -345,14 +354,19 @@ public:
 
   CVols Vols;
  
-  CInArchive(): Stream(NULL), StartStream(NULL), Callback(NULL), IsArcOpen(false) {}
+  CInArchive():
+      IsArcOpen(false),
+      Stream(NULL),
+      StartStream(NULL),
+      Callback(NULL)
+      {}
 
   UInt64 GetPhySize() const
   {
     if (IsMultiVol)
       return ArcInfo.FinishPos;
     else
-      return ArcInfo.FinishPos - ArcInfo.Base;
+      return (UInt64)((Int64)ArcInfo.FinishPos - ArcInfo.Base);
   }
 
   UInt64 GetOffset() const
@@ -360,7 +374,7 @@ public:
     if (IsMultiVol)
       return 0;
     else
-      return ArcInfo.Base;
+      return (UInt64)ArcInfo.Base;
   }
 
   
@@ -393,7 +407,7 @@ public:
       return ArcInfo.FirstItemRelatOffset;
     if (IsMultiVol)
       return 0;
-    return ArcInfo.MarkerPos2 - ArcInfo.Base;
+    return (UInt64)((Int64)ArcInfo.MarkerPos2 - ArcInfo.Base);
   }
 
 
@@ -412,7 +426,9 @@ public:
        || ArcInfo.Base < 0
        || (Int64)ArcInfo.MarkerPos2 < ArcInfo.Base
        || ArcInfo.ThereIsTail
-       || GetEmbeddedStubSize() != 0)
+       || GetEmbeddedStubSize() != 0
+       || IsApk
+       || IsCdUnsorted)
       return false;
    
     // 7-zip probably can update archives with embedded stubs.

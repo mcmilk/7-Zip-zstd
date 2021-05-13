@@ -74,12 +74,17 @@ public:
     _subArchiveMode = false;
   }
   */
-  void LoadFileInfo(const FString &folderPrefix, const FString &fileName)
+  
+  HRESULT LoadFileInfo2(const FString &folderPrefix, const FString &fileName)
   {
     _folderPrefix = folderPrefix;
-    if (!_fileInfo.Find(_folderPrefix + fileName))
-      throw 1;
+    if (!_fileInfo.Find_FollowLink(_folderPrefix + fileName))
+    {
+      return GetLastError_noZero_HRESULT();
+    }
+    return S_OK;
   }
+
   void ShowMessage(const UInt64 *completed);
 
   INT_PTR StartProgressDialog(const UString &title, NWindows::CThread &thread)

@@ -6,6 +6,8 @@
 
 #include "../../MyVersion.h"
 
+#include "../Common/LoadCodecs.h"
+
 #include "AboutDialog.h"
 #include "PropertyNameRes.h"
 
@@ -24,8 +26,20 @@ static const UInt32 kLangIDs[] =
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
 
+extern CCodecs *g_CodecsObj;
+
 bool CAboutDialog::OnInit()
 {
+  #ifdef EXTERNAL_CODECS
+  if (g_CodecsObj)
+  {
+    UString s;
+    g_CodecsObj->GetCodecsErrorMessage(s);
+    if (!s.IsEmpty())
+      MessageBoxW(GetParent(), s, L"7-Zip", MB_ICONERROR);
+  }
+  #endif
+
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
   SetItemText(IDT_ABOUT_VERSION, UString("7-Zip " MY_VERSION_CPU));
   SetItemText(IDT_ABOUT_DATE, LLL(MY_DATE));

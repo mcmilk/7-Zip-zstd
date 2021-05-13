@@ -701,6 +701,10 @@ SOURCE=..\..\..\Common\NewHandler.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Sha256Prepare.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\StringConvert.cpp
 # End Source File
 # Begin Source File
@@ -956,6 +960,11 @@ SOURCE=..\..\..\..\C\Ppmd7Dec.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Sha256.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha256Opt.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File

@@ -2,6 +2,9 @@
 
 #include "StdAfx.h"
 
+#include "../../../C/CpuArch.h"
+#include "../../../C/RotateDefs.h"
+
 #include "RarAes.h"
 #include "Sha1Cls.h"
 
@@ -71,6 +74,7 @@ void CDecoder::SetPassword(const Byte *data, unsigned size)
   }
   if (!_needCalc && !same)
     _needCalc = true;
+  _password.Wipe();
   _password.CopyFrom(data, (size_t)size);
 }
 
@@ -79,8 +83,43 @@ STDMETHODIMP CDecoder::Init()
   CalcKey();
   RINOK(SetKey(_key, kAesKeySize));
   RINOK(SetInitVector(_iv, AES_BLOCK_SIZE));
-  return CAesCbcCoder::Init();
+  return CAesCoder::Init();
 }
+
+
+// if (password_size_in_bytes + SaltSize > 64),
+// the original rar code updates password_with_salt buffer
+// with some generated data from SHA1 code.
+ 
+// #define RAR_SHA1_REDUCE
+
+#ifdef RAR_SHA1_REDUCE
+  #define kNumW 16
+  #define WW(i) W[(i)&15]
+#else
+  #define kNumW 80
+  #define WW(i) W[i]
+#endif
+
+static void UpdatePswDataSha1(Byte *data)
+{
+  UInt32 W[kNumW];
+  size_t i;
+  
+  for (i = 0; i < SHA1_NUM_BLOCK_WORDS; i++)
+    W[i] = GetBe32(data + i * 4);
+  
+  for (i = 16; i < 80; i++)
+  {
+    WW(i) = rotlFixed(WW((i)-3) ^ WW((i)-8) ^ WW((i)-14) ^ WW((i)-16), 1);
+  }
+  
+  for (i = 0; i < SHA1_NUM_BLOCK_WORDS; i++)
+  {
+    SetUi32(data + i * 4, W[kNumW - SHA1_NUM_BLOCK_WORDS + i]);
+  }
+}
+
 
 void CDecoder::CalcKey()
 {
@@ -102,20 +141,42 @@ void CDecoder::CalcKey()
     rawSize += kSaltSize;
   }
   
+  MY_ALIGN (16)
   NSha1::CContext sha;
   sha.Init();
   
+  MY_ALIGN (16)
   Byte digest[NSha1::kDigestSize];
   // rar reverts hash for sha.
   const UInt32 kNumRounds = ((UInt32)1 << 18);
+  UInt32 pos = 0;
   UInt32 i;
   for (i = 0; i < kNumRounds; i++)
   {
-    sha.UpdateRar(buf, rawSize /* , _rar350Mode */);
+    sha.Update(buf, rawSize);
+    // if (_rar350Mode)
+    {
+      const UInt32 kBlockSize = 64;
+      const UInt32 endPos = (pos + (UInt32)rawSize) & ~(kBlockSize - 1);
+      if (endPos > pos + kBlockSize)
+      {
+        UInt32 curPos = pos & ~(kBlockSize - 1);
+        curPos += kBlockSize;
+        do
+        {
+          UpdatePswDataSha1(buf + (curPos - pos));
+          curPos += kBlockSize;
+        }
+        while (curPos != endPos);
+      }
+    }
+    pos += (UInt32)rawSize;
     Byte pswNum[3] = { (Byte)i, (Byte)(i >> 8), (Byte)(i >> 16) };
-    sha.UpdateRar(pswNum, 3 /* , _rar350Mode */);
+    sha.Update(pswNum, 3);
+    pos += 3;
     if (i % (kNumRounds / 16) == 0)
     {
+      MY_ALIGN (16)
       NSha1::CContext shaTemp = sha;
       shaTemp.Final(digest);
       _iv[i / (kNumRounds / 16)] = (Byte)digest[4 * 4 + 3];

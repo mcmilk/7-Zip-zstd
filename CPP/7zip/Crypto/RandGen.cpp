@@ -19,7 +19,7 @@
 
 #ifdef USE_STATIC_RtlGenRandom
 
-#include <ntsecapi.h>
+// #include <NTSecAPI.h>
 
 EXTERN_C_BEGIN
 #ifndef RtlGenRandom
@@ -59,6 +59,7 @@ EXTERN_C_END
 
 void CRandomGenerator::Init()
 {
+  MY_ALIGN (16)
   CSha256 hash;
   Sha256_Init(&hash);
 
@@ -68,6 +69,7 @@ void CRandomGenerator::Init()
   #ifndef UNDER_CE
   const unsigned kNumIterations_Small = 100;
   const unsigned kBufSize = 32;
+  MY_ALIGN (16)
   Byte buf[kBufSize];
   #endif
 
@@ -98,7 +100,7 @@ void CRandomGenerator::Init()
     if (hModule)
     {
       // SystemFunction036() is real name of RtlGenRandom() function
-      Func_RtlGenRandom my_RtlGenRandom = (Func_RtlGenRandom)GetProcAddress(hModule, "SystemFunction036");
+      Func_RtlGenRandom my_RtlGenRandom = (Func_RtlGenRandom)(void *)GetProcAddress(hModule, "SystemFunction036");
       if (my_RtlGenRandom)
       {
         if (my_RtlGenRandom(buf, kBufSize))
@@ -126,11 +128,11 @@ void CRandomGenerator::Init()
     {
       do
       {
-        int n = read(f, buf, numBytes);
+        ssize_t n = read(f, buf, numBytes);
         if (n <= 0)
           break;
-        Sha256_Update(&hash, buf, n);
-        numBytes -= n;
+        Sha256_Update(&hash, buf, (size_t)n);
+        numBytes -= (unsigned)n;
       }
       while (numBytes);
       close(f);
@@ -211,6 +213,7 @@ void CRandomGenerator::Generate(Byte *data, unsigned size)
     Init();
   while (size != 0)
   {
+    MY_ALIGN (16)
     CSha256 hash;
     
     Sha256_Init(&hash);
@@ -221,6 +224,7 @@ void CRandomGenerator::Generate(Byte *data, unsigned size)
     UInt32 salt = 0xF672ABD1;
     HASH_UPD(salt);
     Sha256_Update(&hash, _buff, SHA256_DIGEST_SIZE);
+    MY_ALIGN (16)
     Byte buff[SHA256_DIGEST_SIZE];
     Sha256_Final(&hash, buff);
     for (unsigned i = 0; i < SHA256_DIGEST_SIZE && size != 0; i++, size--)

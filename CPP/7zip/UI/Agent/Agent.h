@@ -292,7 +292,7 @@ public:
           s2 += "Warning: The archive is open with offset";
         else
         {
-          s2 += "Can not open the file as [";
+          s2 += "Cannot open the file as [";
           s2 += g_CodecsObj->GetFormatNamePtr(arc.ErrorInfo.ErrorFormatIndex);
           s2 += "] archive";
         }

@@ -11,110 +11,82 @@ namespace NSha1 {
 
 void CHmac::SetKey(const Byte *key, size_t keySize)
 {
-  Byte keyTemp[kBlockSize];
+  MY_ALIGN (16)
+  UInt32 temp[SHA1_NUM_BLOCK_WORDS];
   size_t i;
   
-  for (i = 0; i < kBlockSize; i++)
-    keyTemp[i] = 0;
+  for (i = 0; i < SHA1_NUM_BLOCK_WORDS; i++)
+    temp[i] = 0;
   
   if (keySize > kBlockSize)
   {
     _sha.Init();
     _sha.Update(key, keySize);
-    _sha.Final(keyTemp);
+    _sha.Final((Byte *)temp);
   }
   else
-    for (i = 0; i < keySize; i++)
-      keyTemp[i] = key[i];
+    memcpy(temp, key, keySize);
   
-  for (i = 0; i < kBlockSize; i++)
-    keyTemp[i] ^= 0x36;
-  
-  _sha.Init();
-  _sha.Update(keyTemp, kBlockSize);
-  
-  for (i = 0; i < kBlockSize; i++)
-    keyTemp[i] ^= 0x36 ^ 0x5C;
-
-  _sha2.Init();
-  _sha2.Update(keyTemp, kBlockSize);
-}
-
-void CHmac::Final(Byte *mac, size_t macSize)
-{
-  Byte digest[kDigestSize];
-  _sha.Final(digest);
-  _sha2.Update(digest, kDigestSize);
-  _sha2.Final(digest);
-  for (size_t i = 0; i < macSize; i++)
-    mac[i] = digest[i];
-}
-
-
-void CHmac32::SetKey(const Byte *key, size_t keySize)
-{
-  UInt32 keyTemp[kNumBlockWords];
-  size_t i;
-  
-  for (i = 0; i < kNumBlockWords; i++)
-    keyTemp[i] = 0;
-  
-  if (keySize > kBlockSize)
-  {
-    CContext sha;
-    sha.Init();
-    sha.Update(key, keySize);
-    Byte digest[kDigestSize];
-    sha.Final(digest);
-    
-    for (i = 0 ; i < kNumDigestWords; i++)
-      keyTemp[i] = GetBe32(digest + i * 4 + 0);
-  }
-  else
-    for (i = 0; i < keySize; i++)
-      keyTemp[i / 4] |= (key[i] << (24 - 8 * (i & 3)));
-  
-  for (i = 0; i < kNumBlockWords; i++)
-    keyTemp[i] ^= 0x36363636;
+  for (i = 0; i < SHA1_NUM_BLOCK_WORDS; i++)
+    temp[i] ^= 0x36363636;
   
   _sha.Init();
-  _sha.Update(keyTemp, kNumBlockWords);
+  _sha.Update((const Byte *)temp, kBlockSize);
   
-  for (i = 0; i < kNumBlockWords; i++)
-    keyTemp[i] ^= 0x36363636 ^ 0x5C5C5C5C;
-  
+  for (i = 0; i < SHA1_NUM_BLOCK_WORDS; i++)
+    temp[i] ^= 0x36363636 ^ 0x5C5C5C5C;
+
   _sha2.Init();
-  _sha2.Update(keyTemp, kNumBlockWords);
+  _sha2.Update((const Byte *)temp, kBlockSize);
 }
 
-void CHmac32::Final(UInt32 *mac, size_t macSize)
+
+void CHmac::Final(Byte *mac)
 {
-  UInt32 digest[kNumDigestWords];
-  _sha.Final(digest);
-  _sha2.Update(digest, kNumDigestWords);
-  _sha2.Final(digest);
-  for (size_t i = 0; i < macSize; i++)
-    mac[i] = digest[i];
+  _sha.Final(mac);
+  _sha2.Update(mac, kDigestSize);
+  _sha2.Final(mac);
 }
 
-void CHmac32::GetLoopXorDigest(UInt32 *mac, UInt32 numIteration)
-{
-  UInt32 block[kNumBlockWords];
-  UInt32 block2[kNumBlockWords];
-  
-  _sha.PrepareBlock(block, kNumDigestWords);
-  _sha2.PrepareBlock(block2, kNumDigestWords);
 
-  for (unsigned s = 0; s < kNumDigestWords; s++)
-    block[s] = mac[s];
+void CHmac::GetLoopXorDigest1(void *mac, UInt32 numIteration)
+{
+  MY_ALIGN (16)  UInt32 block [SHA1_NUM_BLOCK_WORDS];
+  MY_ALIGN (16)  UInt32 block2[SHA1_NUM_BLOCK_WORDS];
+  MY_ALIGN (16)  UInt32 mac2  [SHA1_NUM_BLOCK_WORDS];
   
+  _sha. PrepareBlock((Byte *)block,  SHA1_DIGEST_SIZE);
+  _sha2.PrepareBlock((Byte *)block2, SHA1_DIGEST_SIZE);
+
+  block[0] = ((const UInt32 *)mac)[0];
+  block[1] = ((const UInt32 *)mac)[1];
+  block[2] = ((const UInt32 *)mac)[2];
+  block[3] = ((const UInt32 *)mac)[3];
+  block[4] = ((const UInt32 *)mac)[4];
+
+  mac2[0] = block[0];
+  mac2[1] = block[1];
+  mac2[2] = block[2];
+  mac2[3] = block[3];
+  mac2[4] = block[4];
+
   for (UInt32 i = 0; i < numIteration; i++)
   {
-    _sha.GetBlockDigest(block, block2);
-    _sha2.GetBlockDigest(block2, block);
-    for (unsigned s = 0; s < kNumDigestWords; s++)
-      mac[s] ^= block[s];
+    _sha. GetBlockDigest((const Byte *)block,  (Byte *)block2);
+    _sha2.GetBlockDigest((const Byte *)block2, (Byte *)block);
+
+    mac2[0] ^= block[0];
+    mac2[1] ^= block[1];
+    mac2[2] ^= block[2];
+    mac2[3] ^= block[3];
+    mac2[4] ^= block[4];
   }
+
+  ((UInt32 *)mac)[0] = mac2[0];
+  ((UInt32 *)mac)[1] = mac2[1];
+  ((UInt32 *)mac)[2] = mac2[2];
+  ((UInt32 *)mac)[3] = mac2[3];
+  ((UInt32 *)mac)[4] = mac2[4];
 }
 
 }}

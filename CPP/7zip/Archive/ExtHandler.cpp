@@ -99,6 +99,8 @@ static UInt32 Crc16Calc(Byte const *data, size_t size)
 
 
 #define EXT4_GOOD_OLD_INODE_SIZE 128
+#define EXT_NODE_SIZE_MIN 128
+
 
 // inodes numbers
  
@@ -436,9 +438,9 @@ bool CHeader::Parse(const Byte *p)
     LE_16 (0x58, InodeSize);
     if (FirstInode < k_INODE_GOOD_OLD_FIRST)
       return false;
-    if (InodeSize > (UInt32)1 << BlockBits)
-      return false;
-    if (GetLog(InodeSize) < 0)
+    if (InodeSize > ((UInt32)1 << BlockBits)
+        || InodeSize < EXT_NODE_SIZE_MIN
+        || GetLog(InodeSize) < 0)
       return false;
   }
 
@@ -603,7 +605,7 @@ struct CExtent
     if (Len > (UInt32)0x8000)
     {
       IsInited = false;
-      Len -= (UInt32)0x8000;
+      Len = (UInt16)(Len - (UInt32)0x8000);
     }
     LE_32 (0x08, PhyStart);
     UInt16 hi;
@@ -628,8 +630,8 @@ struct CNode
   int DirIndex;       // in _dirs[]
 
   UInt16 Mode;
-  UInt16 Uid;
-  UInt16 Gid;
+  UInt32 Uid; // fixed 21.02
+  UInt32 Gid; // fixed 21.02
   // UInt16 Checksum;
   
   UInt64 FileSize;
@@ -730,6 +732,8 @@ bool CNode::Parse(const Byte *p, const CHeader &_h)
 
   if (_h.InodeSize > 128)
   {
+    // InodeSize is power of 2, so the following check is not required:
+    // if (_h.InodeSize < 128 + 2) return false;
     UInt16 extra_isize;
     LE_16 (0x80, extra_isize);
     if (128 + extra_isize > _h.InodeSize)
@@ -842,7 +846,7 @@ class CHandler:
   }
 
   
-  const int GetParentAux(const CItem &item) const
+  int GetParentAux(const CItem &item) const
   {
     if (item.Node < _h.FirstInode && _auxSysIndex >= 0)
       return _auxSysIndex;
@@ -931,7 +935,7 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned iNodeDir)
       return S_FALSE;
     
     if (_isUTF)
-      _isUTF = CheckUTF8(item.Name);
+      _isUTF = CheckUTF8_AString(item.Name);
 
     if (iNode == 0)
     {
@@ -1201,7 +1205,7 @@ HRESULT CHandler::Open2(IInStream *inStream)
       UInt32 numNodes = _h.InodesPerGroup;
       if (numNodes > _h.NumInodes)
         numNodes = _h.NumInodes;
-      size_t nodesDataSize = (size_t)numNodes * _h.InodeSize;
+      const size_t nodesDataSize = (size_t)numNodes * _h.InodeSize;
       
       if (nodesDataSize / _h.InodeSize != numNodes)
         return S_FALSE;
@@ -1213,7 +1217,7 @@ HRESULT CHandler::Open2(IInStream *inStream)
           return S_FALSE;
       }
       
-      UInt32 numReserveInodes = _h.NumInodes - _h.NumFreeInodes + 1;
+      const UInt32 numReserveInodes = _h.NumInodes - _h.NumFreeInodes + 1;
       // numReserveInodes = _h.NumInodes + 1;
       if (numReserveInodes != 0)
       {
@@ -1348,7 +1352,8 @@ HRESULT CHandler::Open2(IInStream *inStream)
       RINOK(CheckProgress());
     }
 
-    if (_nodes[_refs[k_INODE_ROOT]].ParentNode != k_INODE_ROOT)
+    int ref = _refs[k_INODE_ROOT];
+    if (ref < 0 || _nodes[ref].ParentNode != k_INODE_ROOT)
       return S_FALSE;
   }
 
