@@ -107,7 +107,7 @@ bool ReadNamesFromListFile2(CFSTR fileName, UStringVector &strings, UINT codePag
   }
 
   const wchar_t kGoodBOM = 0xFEFF;
-  const wchar_t kBadBOM  = 0xFFFE;
+  // const wchar_t kBadBOM  = 0xFFFE;
   
   UString s;
   unsigned i = 0;
@@ -115,8 +115,10 @@ bool ReadNamesFromListFile2(CFSTR fileName, UStringVector &strings, UINT codePag
   for (; i < u.Len(); i++)
   {
     wchar_t c = u[i];
+    /*
     if (c == kGoodBOM || c == kBadBOM)
       return false;
+    */
     if (c == '\n' || c == 0xD)
     {
       AddName(strings, s);

@@ -134,6 +134,7 @@ COMPRESS_OBJS = \
 C_OBJS = \
   $O\Alloc.obj \
   $O\CpuArch.obj \
+  $O\DllSecur.obj \
   $O\Sort.obj \
   $O\Threads.obj \
 

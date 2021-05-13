@@ -355,7 +355,9 @@ HRESULT CDecoder::Decode(
 
   unsigned i;
 
+  #if !defined(_7ZIP_ST)
   bool mt_wasUsed = false;
+  #endif
 
   for (i = 0; i < folderInfo.Coders.Size(); i++)
   {

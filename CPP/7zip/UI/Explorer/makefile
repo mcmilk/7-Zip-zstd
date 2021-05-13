@@ -68,6 +68,7 @@ FM_OBJS = \
   $O\RegistryUtils.obj \
 
 C_OBJS = \
+  $O\CpuArch.obj \
   $O\Threads.obj \
 
 !include "../../7zip.mak"

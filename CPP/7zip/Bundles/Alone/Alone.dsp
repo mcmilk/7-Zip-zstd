@@ -2496,6 +2496,15 @@ SOURCE=..\..\..\..\C\Delta.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\DllSecur.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\DllSecur.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\HuffEnc.c
 
 !IF  "$(CFG)" == "Alone - Win32 Release"

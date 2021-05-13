@@ -1,5 +1,5 @@
 /* CpuArch.h -- CPU specific code
-2018-07-04 : Igor Pavlov : Public domain */
+2018-02-18 : Igor Pavlov : Public domain */
 
 #ifndef __CPU_ARCH_H
 #define __CPU_ARCH_H
@@ -327,6 +327,7 @@ int x86cpuid_GetFirm(const Cx86cpuid *p);
 
 BoolInt CPU_Is_InOrder();
 BoolInt CPU_Is_Aes_Supported();
+BoolInt CPU_IsSupported_PageGB();
 
 #endif
 

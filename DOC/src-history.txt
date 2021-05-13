@@ -1,6 +1,14 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+19.00          2019-02-21
+-------------------------
+- Encryption strength for 7z archives was increased:
+  the size of random initialization vector was increased from 64-bit to 128-bit,
+  and the pseudo-random number generator was improved.
+- Some bugs were fixed.
+
+
 18.06          2018-12-30
 -------------------------
 - The speed for LZMA/LZMA2 compressing was increased by 3-10%,

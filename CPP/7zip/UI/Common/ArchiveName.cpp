@@ -99,9 +99,28 @@ UString CreateArchiveName(const UStringVector &paths, const NFind::CFileInfo *fi
     name = Get_Correct_FsFile_Name(fs2us(CreateArchiveName2(us2fs(paths.Front()), fromPrev, keepName)));
   }
 
+  UStringVector names;
+
+  {
+    FOR_VECTOR (i, paths)
+    {
+      NFind::CFileInfo fi2;
+      const NFind::CFileInfo *fp;
+      if (fi && paths.Size() == 1)
+        fp = fi;
+      else
+      {
+        if (!fi2.Find(us2fs(paths[i])))
+          continue;
+        fp = &fi2;
+      }
+      names.Add(fs2us(fp->Name));
+    }
+  }
+
   UString postfix;
   UInt32 index = 1;
-  
+
   for (;;)
   {
     // we don't want cases when we include archive to itself.
@@ -113,22 +132,10 @@ UString CreateArchiveName(const UStringVector &paths, const NFind::CFileInfo *fi
     const UString name2_wim = name2 + L".wim";
     
     unsigned i = 0;
-    
-    for (i = 0; i < paths.Size(); i++)
-    {
-      const UString &fn = paths[i];
-      NFind::CFileInfo fi2;
 
-      const NFind::CFileInfo *fp;
-      if (fi && paths.Size() == 1)
-        fp = fi;
-      else
-      {
-        if (!fi2.Find(us2fs(fn)))
-          continue;
-        fp = &fi2;
-      }
-      const UString fname = fs2us(fp->Name);
+    for (i = 0; i < names.Size(); i++)
+    {
+      const UString &fname = names[i];
       if (   0 == CompareFileNames(fname, name2_zip)
           || 0 == CompareFileNames(fname, name2_7z)
           || 0 == CompareFileNames(fname, name2_tar)
@@ -136,7 +143,7 @@ UString CreateArchiveName(const UStringVector &paths, const NFind::CFileInfo *fi
         break;
     }
     
-    if (i == paths.Size())
+    if (i == names.Size())
       break;
     index++;
     postfix = "_";

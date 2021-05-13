@@ -1,5 +1,5 @@
 /* CpuArch.c -- CPU specific code
-2018-07-04: Igor Pavlov : Public domain */
+2018-02-18: Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -195,6 +195,24 @@ BoolInt CPU_Is_Aes_Supported()
   if (!x86cpuid_CheckAndRead(&p))
     return False;
   return (p.c >> 25) & 1;
+}
+
+BoolInt CPU_IsSupported_PageGB()
+{
+  Cx86cpuid cpuid;
+  if (!x86cpuid_CheckAndRead(&cpuid))
+    return False;
+  {
+    UInt32 d[4] = { 0 };
+    MyCPUID(0x80000000, &d[0], &d[1], &d[2], &d[3]);
+    if (d[0] < 0x80000001)
+      return False;
+  }
+  {
+    UInt32 d[4] = { 0 };
+    MyCPUID(0x80000001, &d[0], &d[1], &d[2], &d[3]);
+    return (d[3] >> 26) & 1;
+  }
 }
 
 #endif

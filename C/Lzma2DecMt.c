@@ -1,5 +1,5 @@
 /* Lzma2DecMt.c -- LZMA2 Decoder Multi-thread
-2018-07-04 : Igor Pavlov : Public domain */
+2019-02-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -265,7 +265,7 @@ static void Lzma2DecMt_MtCallback_Parse(void *obj, unsigned coderIndex, CMtDecCa
     t->outPreSize = 0;
     // t->blockWasFinished = False;
     // t->finishedWithMark = False;
-    t->parseStatus = LZMA_STATUS_NOT_SPECIFIED;
+    t->parseStatus = (ELzma2ParseStatus)LZMA_STATUS_NOT_SPECIFIED;
     t->state = MTDEC_PARSE_CONTINUE;
 
     t->inCodeSize = 0;

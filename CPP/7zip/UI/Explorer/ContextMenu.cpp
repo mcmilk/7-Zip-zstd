@@ -120,7 +120,11 @@ HRESULT CZipContextMenu::InitContextMenu(const wchar_t * /* folder */, const wch
   _isMenuForFM = true;
   _fileNames.Clear();
   for (UInt32 i = 0; i < numFiles; i++)
+  {
+    // MessageBoxW(0, names[i], NULL, 0);
+    // OutputDebugStringW(names[i]);
     _fileNames.Add(names[i]);
+  }
   _dropMode = false;
   return S_OK;
 }
@@ -422,6 +426,13 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
       UINT commandIDFirst, UINT commandIDLast, UINT flags)
 {
   // OutputDebugStringA("QueryContextMenu");
+
+  /*
+  for (UInt32 i = 0; i < _fileNames.Size(); i++)
+  {
+    OutputDebugStringW(_fileNames[i]);
+  }
+  */
 
   LoadLangOneTime();
   if (_fileNames.Size() == 0)

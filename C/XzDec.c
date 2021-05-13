@@ -1,5 +1,5 @@
 /* XzDec.c -- Xz Decode
-2018-12-29 : Igor Pavlov : Public domain */
+2019-02-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -245,7 +245,7 @@ SRes BraState_SetFromMethod(IStateCoder *p, UInt64 id, int encodeMode, ISzAllocP
   CBraState *decoder;
   if (id < XZ_ID_Delta || id > XZ_ID_SPARC)
     return SZ_ERROR_UNSUPPORTED;
-  decoder = p->p;
+  decoder = (CBraState *)p->p;
   if (!decoder)
   {
     decoder = (CBraState *)ISzAlloc_Alloc(alloc, sizeof(CBraState));
@@ -400,7 +400,7 @@ static SRes Lzma2State_Code2(void *pp, Byte *dest, SizeT *destLen, const Byte *s
     res = Lzma2Dec_DecodeToBuf(&spec->decoder, dest, destLen, src, srcLen, (ELzmaFinishMode)finishMode, &status2);
   // *wasFinished = (status2 == LZMA_STATUS_FINISHED_WITH_MARK);
   // ECoderStatus values are identical to ELzmaStatus values of LZMA2 decoder
-  *status = status2;
+  *status = (ECoderStatus)status2;
   return res;
 }
 

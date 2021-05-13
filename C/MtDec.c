@@ -1,5 +1,5 @@
 /* MtDec.c -- Multi-thread Decoder
-2018-07-04 : Igor Pavlov : Public domain */
+2019-02-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -88,12 +88,13 @@ static WRes ArEvent_OptCreate_And_Reset(CEvent *p)
 }
 
 
-
-typedef struct
+struct __CMtDecBufLink
 {
-  void *next;
+  struct __CMtDecBufLink *next;
   void *pad[3];
-} CMtDecBufLink;
+};
+
+typedef struct __CMtDecBufLink CMtDecBufLink;
 
 #define MTDEC__LINK_DATA_OFFSET sizeof(CMtDecBufLink)
 #define MTDEC__DATA_PTR_FROM_LINK(link) ((Byte *)(link) + MTDEC__LINK_DATA_OFFSET)

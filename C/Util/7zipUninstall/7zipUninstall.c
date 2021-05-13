@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2018-08-04 : Igor Pavlov : Public domain */
+2019-02-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -517,7 +517,7 @@ static void AddPathParam(wchar_t *dest, const wchar_t *src)
 
 static BoolInt GetErrorMessage(DWORD errorCode, WCHAR *message)
 {
-  LPVOID msgBuf;
+  LPWSTR msgBuf;
   if (FormatMessageW(
           FORMAT_MESSAGE_ALLOCATE_BUFFER
         | FORMAT_MESSAGE_FROM_SYSTEM

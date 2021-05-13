@@ -791,20 +791,24 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 void CHandler::AddCommentString(const char *name, UInt32 pos)
 {
   UString s;
-  const Byte *buf = _bufs[0];
   if (pos < _h.HeaderSize)
     return;
-  for (UInt32 i = pos;; i += 2)
+  if (pos >= _h.OffsetToCapsuleBody)
+    return;
+  UInt32 limit = (_h.OffsetToCapsuleBody - pos) & ~(UInt32)1;
+  const Byte *buf = _bufs[0] + pos;
+  for (UInt32 i = 0;;)
   {
-    if (s.Len() > (1 << 16) || i >= _h.OffsetToCapsuleBody)
+    if (s.Len() > (1 << 16) || i >= limit)
       return;
     wchar_t c = Get16(buf + i);
+    i += 2;
     if (c == 0)
     {
-      i += 2;
-      if (i >= _h.OffsetToCapsuleBody)
+      if (i >= limit)
         return;
       c = Get16(buf + i);
+      i += 2;
       if (c == 0)
         break;
       s.Add_LF();

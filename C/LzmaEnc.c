@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2018-12-29: Igor Pavlov : Public domain */
+2019-01-10: Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -1497,9 +1497,9 @@ static unsigned GetOptimum(CLzmaEnc *p, UInt32 position)
 
     // here we can allow skip_items in p->opt, if we don't check (nextOpt->price < kInfinityPrice)
     // 18.new.06
-    if (nextOpt->price < kInfinityPrice
+    if ((nextOpt->price < kInfinityPrice
         // && !IsLitState(state)
-        && matchByte == curByte
+        && matchByte == curByte)
         || litPrice > nextOpt->price
         )
       litPrice = 0;

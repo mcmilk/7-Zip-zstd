@@ -733,7 +733,13 @@ HRESULT CDatabase::Open()
   RINOK(OpenProgressFat());
 
   if ((Fat[0] & 0xFF) != Header.MediaType)
-     return S_FALSE;
+  {
+    // that case can mean error in FAT,
+    // but xdf file: (MediaType == 0xF0 && Fat[0] == 0xFF9)
+    // 19.00: so we use non-strict check
+    if ((Fat[0] & 0xFF) < 0xF0)
+      return S_FALSE;
+  }
 
   RINOK(ReadDir(-1, Header.RootCluster, 0));
 
