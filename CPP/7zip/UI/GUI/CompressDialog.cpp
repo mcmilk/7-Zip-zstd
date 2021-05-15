@@ -190,6 +190,7 @@ static const EMethodID g_Lz5Methods[] =
 
 static const EMethodID g_7zMethods[] =
 {
+  kCopy,
   kZSTD,
   kBROTLI,
   kLZ4,
@@ -219,6 +220,7 @@ static const EMethodID g_7zSfxMethods[] =
 
 static const EMethodID g_ZipMethods[] =
 {
+  kCopy,
   kDeflate,
   kDeflate64,
   kBZip2,
@@ -317,7 +319,7 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "zstd", /* 6 */
-    (1 << 0) | (1 << 1) | (1 << 5) | (1 << 11) | (1 << 17) | (1 << 22),
+    (1 << 1) | (1 << 3) | (1 << 5) | (1 << 11) | (1 << 17) | (1 << 22),
     METHODS_PAIR(g_ZstdMethods),
     false, false, true, false, false, false
   },
@@ -335,13 +337,13 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "LZ4", /* 9 */
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 12),
+    (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 12),
     METHODS_PAIR(g_Lz4Methods),
     false, false, true, false, false, false
   },
   {
     "LZ5", /* 10 */
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15),
+    (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15),
     METHODS_PAIR(g_Lz5Methods),
     false, false, true, false, false, false
   },
@@ -1129,16 +1131,21 @@ void CCompressDialog::SetLevel()
 {
   UInt32 level = GetLevel2();
   UInt32 LevelsMask;
-  UInt32 LevelsStart = 0;
+  UInt32 LevelsStart = 1;
   UInt32 LevelsEnd = 22;
   UInt32 langID = 0;
   unsigned i, ir;
 
-  if (GetMethodID() == kZSTD)
+  if (GetMethodID() == kCopy) {
+    LevelsStart = 0;
+    LevelsEnd = 0;
+    LevelsMask = g_Formats[0].LevelsMask;
+  } else if (GetMethodID() == kZSTD) {
     LevelsMask = g_Formats[6].LevelsMask;
-  else if (GetMethodID() == kBROTLI)
+  } else if (GetMethodID() == kBROTLI) {
+    LevelsStart = 0;
     LevelsMask = g_Formats[7].LevelsMask;
-  else if (GetMethodID() == kLIZARD_M1) {
+  } else if (GetMethodID() == kLIZARD_M1) {
     LevelsMask = g_Formats[8].LevelsMask;
     LevelsStart = 10;
     LevelsEnd = 19;
