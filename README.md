@@ -260,6 +260,13 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 ![Memory at Compression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemCompr.png "Memory usage at Compression")
 ![Memory at Decompression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemDecomp.png "Memory usage at Decompression")
 
+
+## Themes
+
+- FileManager Toolbar Icon Theme: Glyfz 2016 by AlexGal [homepage](https://www.deviantart.com/alexgal23)
+- File Types Icon Theme: Windows 10 by masamunecyrus [homepage](https://www.deviantart.com/masamunecyrus)
+- Additional icons file types created by Mr4Mike4 [homepage](https://github.com/Mr4Mike4)
+
 ## License and redistribution
 
 - the same as the Mainline [7-Zip], which means GNU LGPL
