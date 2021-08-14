@@ -267,9 +267,10 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 - File Types Icon Theme: Windows 10 by masamunecyrus [homepage](https://www.deviantart.com/masamunecyrus)
 - Additional icons file types created by Mr4Mike4 [homepage](https://github.com/Mr4Mike4)
 
-## License and redistribution
+## License and Redistribution
 
-- the same as the Mainline [7-Zip], which means GNU LGPL
+- The same as the Mainline [7-Zip], which means most of the code is GNU LGPL v2.1-or-later
+- Read [COPYING](COPYING) for more details
 
 ## Links
 
