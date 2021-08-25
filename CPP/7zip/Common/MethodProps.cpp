@@ -297,6 +297,8 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_UI4, "check" },
   { VT_BSTR, "filter" },
   { VT_UI8, "memuse" },
+  { VT_UI8, "aff" },
+  // zstd props
   { VT_UI4, "strat" },
   { VT_UI4, "fast" },
   { VT_UI4, "long" },
