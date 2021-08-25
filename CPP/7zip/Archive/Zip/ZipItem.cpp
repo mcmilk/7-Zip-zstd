@@ -37,6 +37,7 @@ static const CUInt32PCharPair g_ExtraTypes[] =
   { NExtraID::kUnix3Extra, "ux" },
   { NExtraID::kIzUnicodeComment, "uc" },
   { NExtraID::kIzUnicodeName, "up" },
+  { NExtraID::kIzNtSecurityDescriptor, "SD" },
   { NExtraID::kWzAES, "WzAES" },
   { NExtraID::kApkAlign, "ApkAlign" }
 };

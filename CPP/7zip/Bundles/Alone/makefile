@@ -1,6 +1,7 @@
 PROG = 7za.exe
 # USE_C_AES = 1
 # USE_C_SHA = 1
+# USE_C_LZFINDOPT = 1
 
 MY_CONSOLE = 1
 CFLAGS = $(CFLAGS) -DZSTD_MULTITHREAD
@@ -15,6 +16,7 @@ COMMON_OBJS = \
   $O\CrcReg.obj \
   $O\IntToString.obj \
   $O\ListFileUtils.obj \
+  $O\LzFindPrepare.obj \
   $O\NewHandler.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
@@ -352,6 +354,7 @@ FASTLZMA2_OBJS = \
 !include "../../Aes.mak"
 !include "../../Crc.mak"
 !include "../../Crc64.mak"
+!include "../../LzFindOpt.mak"
 !include "../../LzmaDec.mak"
 !include "../../Sha1.mak"
 !include "../../Sha256.mak"

@@ -1,5 +1,5 @@
 /* MtCoder.c -- Multi-thread Coder
-2021-02-09 : Igor Pavlov : Public domain */
+2021-07-12 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -495,12 +495,7 @@ SRes MtCoder_Code(CMtCoder *p)
 
   {
     RINOK_THREAD(ArEvent_OptCreate_And_Reset(&p->readEvent));
-
-    if (Semaphore_IsCreated(&p->blocksSemaphore))
-    {
-      RINOK_THREAD(Semaphore_Close(&p->blocksSemaphore));
-    }
-    RINOK_THREAD(Semaphore_Create(&p->blocksSemaphore, numBlocksMax, numBlocksMax));
+    RINOK_THREAD(Semaphore_OptCreateInit(&p->blocksSemaphore, numBlocksMax, numBlocksMax));
   }
 
   for (i = 0; i < MTCODER__BLOCKS_MAX - 1; i++)

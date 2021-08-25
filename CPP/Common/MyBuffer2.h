@@ -25,6 +25,19 @@ public:
   operator const Byte *() const { return _data; }
   size_t Size() const { return _size; }
 
+  void Alloc(size_t size)
+  {
+    if (!_data || size != _size)
+    {
+      ::MidFree(_data);
+      _size = 0;
+      _data = NULL;
+      _data = (Byte *)::MidAlloc(size);
+      if (_data)
+        _size = size;
+    }
+  }
+
   void AllocAtLeast(size_t size)
   {
     if (!_data || size > _size)
@@ -104,6 +117,23 @@ public:
     }
   }
 };
+
+/*
+  CMidAlignedBuffer must return aligned pointer.
+   - in Windows it uses CMidBuffer(): MidAlloc() : VirtualAlloc()
+       VirtualAlloc(): Memory allocated is automatically initialized to zero.
+       MidAlloc(0) returns NULL
+   - in non-Windows systems it uses g_AlignedAlloc.
+     g_AlignedAlloc::Alloc(size = 0) can return non NULL.
+*/
+
+typedef
+#ifdef _WIN32
+  CMidBuffer
+#else
+  CAlignedBuffer
+#endif
+  CMidAlignedBuffer;
 
 
 #endif

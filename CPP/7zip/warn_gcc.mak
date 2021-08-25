@@ -42,6 +42,10 @@ CFLAGS_WARN_GCC_9 = \
 
 #  -Wno-sign-conversion \
 
+CFLAGS_WARN_GCC_10 = $(CFLAGS_WARN_GCC_9) \
+  -Wmaybe-uninitialized \
+  -Wmisleading-indentation \
+
 CFLAGS_WARN_GCC_PPMD_UNALIGNED = \
   -Wno-strict-aliasing \
 

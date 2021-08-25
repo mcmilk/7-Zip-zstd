@@ -59,7 +59,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIA
   for (UInt32 i = 0; i < numProps; i++)
   {
     const PROPVARIANT &prop = coderProps[i];
-    PROPID propID = propIDs[i];
+    const PROPID propID = propIDs[i];
     if (propID > NCoderPropID::kReduceSize)
       continue;
     if (propID == NCoderPropID::kReduceSize)
@@ -68,16 +68,50 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIA
         props.ReduceSize = (UInt32)prop.uhVal.QuadPart;
       continue;
     }
+
+    if (propID == NCoderPropID::kUsedMemorySize)
+    {
+      // here we have selected (4 GiB - 1 KiB) as replacement for (4 GiB) MEM_SIZE.
+      const UInt32 kPpmd_Default_4g = (UInt32)0 - ((UInt32)1 << 10);
+      UInt32 v;
+      if (prop.vt == VT_UI8)
+      {
+        // 21.03 : we support 64-bit values (for 4 GiB value)
+        const UInt64 v64 = prop.uhVal.QuadPart;
+        if (v64 > ((UInt64)1 << 32))
+          return E_INVALIDARG;
+        if (v64 == ((UInt64)1 << 32))
+          v = kPpmd_Default_4g;
+        else
+          v = (UInt32)v64;
+      }
+      else if (prop.vt == VT_UI4)
+        v = (UInt32)prop.ulVal;
+      else
+        return E_INVALIDARG;
+      if (v > PPMD7_MAX_MEM_SIZE)
+        v = kPpmd_Default_4g;
+
+      /* here we restrict MEM_SIZE for Encoder.
+         It's for better performance of encoding and decoding.
+         The Decoder still supports more MEM_SIZE values. */
+      if (v < ((UInt32)1 << 16) || (v & 3) != 0)
+        return E_INVALIDARG;
+      // if (v < PPMD7_MIN_MEM_SIZE) return E_INVALIDARG; // (1 << 11)
+      /*
+        Supported MEM_SIZE range :
+        [ (1 << 11) , 0xFFFFFFFF - 12 * 3 ] - current 7-Zip's Ppmd7 constants
+        [ 1824      , 0xFFFFFFFF          ] - real limits of Ppmd7 code
+      */
+      props.MemSize = v;
+      continue;
+    }
+
     if (prop.vt != VT_UI4)
       return E_INVALIDARG;
     UInt32 v = (UInt32)prop.ulVal;
     switch (propID)
     {
-      case NCoderPropID::kUsedMemorySize:
-        if (v < (1 << 16) || v > PPMD7_MAX_MEM_SIZE || (v & 3) != 0)
-          return E_INVALIDARG;
-        props.MemSize = v;
-        break;
       case NCoderPropID::kOrder:
         if (v < 2 || v > 32)
           return E_INVALIDARG;

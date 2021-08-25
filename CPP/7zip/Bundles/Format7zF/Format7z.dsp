@@ -267,6 +267,10 @@ SOURCE=..\..\..\Common\IntToString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\LzFindPrepare.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyBuffer.h
 # End Source File
 # Begin Source File
@@ -1866,6 +1870,22 @@ SOURCE=..\..\..\..\C\LzFindMt.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\LzFindMt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindOpt.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

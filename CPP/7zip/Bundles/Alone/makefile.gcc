@@ -110,6 +110,7 @@ COMMON_OBJS = \
   $O/CrcReg.o \
   $O/IntToString.o \
   $O/ListFileUtils.o \
+  $O/LzFindPrepare.o \
   $O/MyString.o \
   $O/NewHandler.o \
   $O/StdInStream.o \
@@ -283,6 +284,7 @@ C_OBJS = \
   $O/Delta.o \
   $O/HuffEnc.o \
   $O/LzFind.o \
+  $O/LzFindOpt.o \
   $O/Lzma2Dec.o \
   $O/Lzma2DecMt.o \
   $O/Lzma2Enc.o \

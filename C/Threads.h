@@ -1,5 +1,5 @@
 /* Threads.h -- multithreading library
-2021-04-25 : Igor Pavlov : Public domain */
+2021-07-12 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_THREADS_H
 #define __7Z_THREADS_H
@@ -8,14 +8,18 @@
 #include <Windows.h>
 #else
 
-#if !defined(__APPLE__) && !defined(_AIX)
+#if defined(__linux__)
+#if !defined(__APPLE__) && !defined(_AIX) && !defined(__ANDROID__)
 #ifndef _7ZIP_AFFINITY_DISABLE
 #define _7ZIP_AFFINITY_SUPPORTED
+// #pragma message(" ==== _7ZIP_AFFINITY_SUPPORTED")
 // #define _GNU_SOURCE
+#endif
 #endif
 #endif
 
 #include <pthread.h>
+
 #endif
 
 #include "7zTypes.h"
@@ -122,6 +126,7 @@ typedef HANDLE CSemaphore;
 #define Semaphore_Close(p) HandlePtr_Close(p)
 #define Semaphore_Wait(p) Handle_WaitObject(*(p))
 WRes Semaphore_Create(CSemaphore *p, UInt32 initCount, UInt32 maxCount);
+WRes Semaphore_OptCreateInit(CSemaphore *p, UInt32 initCount, UInt32 maxCount);
 WRes Semaphore_ReleaseN(CSemaphore *p, UInt32 num);
 WRes Semaphore_Release1(CSemaphore *p);
 
@@ -172,6 +177,7 @@ typedef struct _CSemaphore
 #define Semaphore_IsCreated(p) ((p)->_created)
 
 WRes Semaphore_Create(CSemaphore *p, UInt32 initCount, UInt32 maxCount);
+WRes Semaphore_OptCreateInit(CSemaphore *p, UInt32 initCount, UInt32 maxCount);
 WRes Semaphore_ReleaseN(CSemaphore *p, UInt32 num);
 #define Semaphore_Release1(p) Semaphore_ReleaseN(p, 1)
 WRes Semaphore_Wait(CSemaphore *p);

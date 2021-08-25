@@ -274,15 +274,24 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream, UInt32 inputPro
         sym = m_DistDecoder.Decode(&m_InBitStream);
         if (sym >= _numDistLevels)
           return S_FALSE;
-        UInt32 distance = kDistStart[sym] + m_InBitStream.ReadBits(kDistDirectBits[sym]);
-        if (!m_OutWindowStream.CopyBlock(distance, locLen))
+        sym = kDistStart[sym] + m_InBitStream.ReadBits(kDistDirectBits[sym]);
+        /*
+        if (sym >= 4)
+        {
+          // sym &= 31;
+          const unsigned numDirectBits = (unsigned)(((sym >> 1) - 1));
+          sym = (2 | (sym & 1)) << numDirectBits;
+          sym += m_InBitStream.ReadBits(numDirectBits);
+        }
+        */
+        if (!m_OutWindowStream.CopyBlock(sym, locLen))
           return S_FALSE;
         curSize -= locLen;
         len -= locLen;
         if (len != 0)
         {
           _remainLen = (Int32)len;
-          _rep0 = distance;
+          _rep0 = sym;
           break;
         }
       }

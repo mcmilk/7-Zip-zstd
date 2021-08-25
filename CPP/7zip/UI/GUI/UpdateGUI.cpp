@@ -142,7 +142,7 @@ static void SetOutProperties(
     UInt32 level,
     bool setMethod,
     const UString &method,
-    UInt32 dictionary,
+    UInt64 dict64,
     bool orderMode,
     UInt32 order,
     bool solidIsSpecified, UInt64 solidBlockSize,
@@ -157,13 +157,13 @@ static void SetOutProperties(
   {
     if (!method.IsEmpty())
       AddProp(properties, is7z ? "0": "m", method);
-    if (dictionary != (UInt32)(Int32)-1)
+    if (dict64 != (UInt64)(Int64)-1)
     {
       AString name;
       if (is7z)
         name = "0";
       name += (orderMode ? "mem" : "d");
-      AddProp(properties, name, GetNumInBytesString(dictionary));
+      AddProp(properties, name, GetNumInBytesString(dict64));
     }
     if (order != (UInt32)(Int32)-1)
     {
@@ -389,7 +389,7 @@ static HRESULT ShowDialog(
       di.Level,
       !methodOverride,
       di.Method,
-      di.Dictionary,
+      di.Dict64,
       di.OrderMode, di.Order,
       di.SolidIsSpecified, di.SolidBlockSize,
       di.MultiThreadIsAllowed, di.NumThreads,

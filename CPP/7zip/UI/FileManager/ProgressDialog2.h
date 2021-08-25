@@ -169,7 +169,9 @@ class CProgressDialog: public NWindows::NControl::CModalDialog
   UInt64 _processed_Prev;
   UInt64 _packed_Prev;
   UInt64 _ratio_Prev;
+
   UString _filesStr_Prev;
+  UString _filesTotStr_Prev;
 
   unsigned _prevSpeed_MoveBits;
   UInt64 _prevSpeed;

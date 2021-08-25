@@ -1164,6 +1164,10 @@ SOURCE=..\..\..\Windows\SystemInfo.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\Thread.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\TimeUtils.cpp
 # End Source File
 # Begin Source File

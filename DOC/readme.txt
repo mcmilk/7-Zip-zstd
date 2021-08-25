@@ -1,4 +1,4 @@
-7-Zip 21.02 Sources
+7-Zip 21.03 Sources
 -------------------
 
 7-Zip is a file archiver for Windows. 
@@ -42,11 +42,11 @@ You can download LZMA SDK from:
 LZMA SDK is written and placed in the public domain by Igor Pavlov.
 
 
-How to compile
---------------
+How to compile in Windows
+-------------------------
 
 To compile the sources to Windows binaries you need Visual Studio compiler and/or Windows SDK.
-You can use latest Windows Studio 2017 to compile binaries for x86, x64 and arm64 platforms.
+You can use latest Windows Studio 2017/2019 to compile binaries for x86, x64 and arm64 platforms.
 Also you can use old compilers for some platforms:
   x86   : Visual C++ 6.0 with Platform SDK
   x64   : Windows Server 2003 R2 Platform SDK
@@ -73,6 +73,7 @@ The dsp file compiling can be used for development and debug purposes.
 The final 7-Zip binaries are compiled via makefiles, that provide best 
 optimization options.
 
+
 How to compile with makefile
 ----------------------------
 
@@ -90,10 +91,78 @@ MY_DYNAMIC_LINK
 
 
 
-Compiling under Unix/Linux
---------------------------
-Check this site for Posix/Linux version:
-http://sourceforge.net/projects/p7zip/
+Compiling 7-Zip for Unix/Linux
+------------------------------
+
+There are several otpions to compile 7-Zip with different compilers: gcc and clang.
+Also 7-Zip code contains two versions for some critical parts of code: in C and in Assembeler.
+So if you compile the version with Assembeler code, you will get faster 7-Zip binary.
+
+7-Zip's assembler code uses the following syntax for different platforms:
+
+1) x86 and x86-64 (AMD64): MASM syntax. 
+   There are 2 programs that supports MASM syntax in Linux.
+'    'Asmc Macro Assembler and JWasm. But JWasm now doesn't support some 
+      cpu instructions used in 7-Zip.
+   So you must install Asmc Macro Assembler in Linux, if you want to compile fastest version
+   of 7-Zip  x86 and x86-64:
+     https://github.com/nidud/asmc
+
+2) arm64: GNU assembler for ARM64 with preprocessor. 
+   That systax of that arm64 assembler code in 7-Zip is supported by GCC and CLANG for ARM64.
+
+There are different binaries that can be compiled from 7-Zip source.
+There are 2 main files in folder for compiling:
+  makefile        - that can be used for compiling Windows version of 7-Zip with nmake command
+  makefile.gcc    - that can be used for compiling Linux/macOS versions of 7-Zip with make command
+
+At first you must change the current folder to folder that contains `makefile.gcc`:
+
+  cd CPP/7zip/Bundles/Alone2
+
+Then you can compile `makefile.gcc` with the command:
+
+  make -j -f makefile.gcc
+
+Also there are additional "*.mak" files in folder "CPP/7zip/" that can be used to compile 
+7-Zip binaries with optimized code and optimzing options.
+
+To compile with GCC without assembler:
+  cd CPP/7zip/Bundles/Alone2
+  make -j -f ../../cmpl_gcc.mak
+
+To compile with CLANG without assembler:
+  make -j -f ../../cmpl_clang.mak
+
+To compile 7-Zip for x86-64 with asmc assembler:
+  make -j -f ../../cmpl_gcc_x64.mak
+
+To compile 7-Zip for arm64 with assembler:
+  make -j -f ../../cmpl_gcc_arm64.mak
+
+To compile 7-Zip for arm64 for macOS:
+  make -j -f ../../cmpl_mac_arm64.mak
+
+Also you can change some compiler options in the mak files:
+  cmpl_gcc.mak
+  var_gcc.mak
+  warn_gcc.mak
+
+
+7-Zip and p7zip
+===============
+Now there are two different ports of 7-Zip for Linux/macOS:
+
+1) p7zip - another port of 7-Zip for Linux, made by an independent developer.
+   The latest version of p7zip now is 16.02, and that p7zip 16.02 is outdated now.
+   http://sourceforge.net/projects/p7zip/ 
+
+2) 7-Zip for Linux/macOS - this package - it's new code with all changes from latest 7-Zip for Windows.
+
+These two ports are not identical. 
+Note also that some Linux specific things can be implemented better in p7zip than in new 7-Zip for Linux.
+
+
 
 
 Notes:
@@ -127,7 +196,7 @@ DOC                Documentation
   7zip.wix       - installer script for WIX
 
 
-Asm - Source code in Assembler (optimized code for CRC calculation and Intel-AES encryption)
+Asm - Source code in Assembler : optimized code for CRC, SHA, AES, LZMA decoding.
 
 C   - Source code in C
 
@@ -146,6 +215,7 @@ Windows           common files for Windows related code
   Bundle          Modules that are bundles of other modules (files)
 
     Alone         7za.exe: Standalone version of 7-Zip console that supports only 7z/xz/cab/zip/gzip/bzip2/tar.
+    Alone2        7zz.exe: Standalone version of 7-Zip console that supports all formats.
     Alone7z       7zr.exe: Standalone version of 7-Zip console that supports only 7z (reduced version)
     Fm            Standalone version of 7-Zip File Manager
     Format7z            7za.dll:  .7z support

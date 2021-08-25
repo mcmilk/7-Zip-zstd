@@ -212,6 +212,10 @@ SOURCE=..\..\..\Common\IntToString.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\LzFindPrepare.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyCom.h
 # End Source File
 # Begin Source File
@@ -313,6 +317,14 @@ SOURCE=..\..\Common\MethodProps.cpp
 # Begin Source File
 
 SOURCE=..\..\Common\MethodProps.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\StreamObjects.h
 # End Source File
 # Begin Source File
 
@@ -438,6 +450,11 @@ SOURCE=..\..\..\..\C\LzFindMt.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\LzFindMt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\LzFindOpt.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 

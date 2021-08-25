@@ -15,6 +15,7 @@ COMPRESS_OBJS = \
 
 C_OBJS = \
   $O\Alloc.obj \
+  $O\CpuArch.obj \
   $O\Threads.obj \
   $O\LzFind.obj \
   $O\LzFindMt.obj \
@@ -48,4 +49,6 @@ FASTLZMA2_OBJS = \
   $O\range_enc.obj \
   $O\util.obj \
 
+!include "../../Crc.mak"
+!include "../../LzFindOpt.mak"
 !include "../../7zip.mak"

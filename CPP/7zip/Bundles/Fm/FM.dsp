@@ -1016,6 +1016,11 @@ SOURCE=..\..\..\..\C\LzFindMt.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\LzFindOpt.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Lzma2Dec.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -1511,6 +1516,10 @@ SOURCE=..\..\..\Common\ListFileUtils.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\ListFileUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\LzFindPrepare.cpp
 # End Source File
 # Begin Source File
 

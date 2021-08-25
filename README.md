@@ -167,7 +167,7 @@ Hashers:
 
 The output should look like this:
 ```
-7-Zip 21.02 (x64) : Copyright (c) 1999-2021 Igor Pavlov : 2021-05-06
+7-Zip 21.03 (x64) : Copyright (c) 1999-2021 Igor Pavlov : 2021-05-06
 
 Libs:
  0  C:\Program Files\7-Zip\7z.dll
@@ -288,7 +288,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 21.02
+- 7-Zip ZS Version 21.03
   - [Brotli] Version 1.0.9
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 1.0
@@ -297,7 +297,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Zstandard] Version 1.5.0
   - [BLAKE3] Version 0.3.7
 
-/TR 2021-05-16
+/TR 2021-08-26
 
 ## Notes
 

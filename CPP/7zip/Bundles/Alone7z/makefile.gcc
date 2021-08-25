@@ -27,6 +27,7 @@ else
 
 MT_OBJS = \
   $O/LzFindMt.o \
+  $O/LzFindOpt.o \
   $O/StreamBinder.o \
   $O/Synchronization.o \
   $O/VirtThread.o \
@@ -110,6 +111,7 @@ COMMON_OBJS = \
   $O/CrcReg.o \
   $O/IntToString.o \
   $O/ListFileUtils.o \
+  $O/LzFindPrepare.o \
   $O/MyString.o \
   $O/MyVector.o \
   $O/NewHandler.o \

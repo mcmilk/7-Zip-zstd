@@ -20,13 +20,13 @@ STDMETHODIMP COffsetOutStream::Write(const void *data, UInt32 size, UInt32 *proc
 
 STDMETHODIMP COffsetOutStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
 {
-  UInt64 absoluteNewPosition;
   if (seekOrigin == STREAM_SEEK_SET)
   {
     if (offset < 0)
       return HRESULT_WIN32_ERROR_NEGATIVE_SEEK;
     offset += _offset;
   }
+  UInt64 absoluteNewPosition = 0; // =0 for gcc-10
   HRESULT result = _stream->Seek(offset, seekOrigin, &absoluteNewPosition);
   if (newPosition)
     *newPosition = absoluteNewPosition - _offset;
