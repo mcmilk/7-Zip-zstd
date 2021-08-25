@@ -193,7 +193,12 @@ static int Main2()
   
   if (options.Command.CommandType == NCommandType::kBenchmark)
   {
-    HRESULT res = Benchmark(EXTERNAL_CODECS_VARS_L options.Properties);
+    HRESULT res = Benchmark(
+        EXTERNAL_CODECS_VARS_L
+        options.Properties,
+        options.NumIterations_Defined ?
+          options.NumIterations :
+          k_NumBenchIterations_Default);
     /*
     if (res == S_FALSE)
     {

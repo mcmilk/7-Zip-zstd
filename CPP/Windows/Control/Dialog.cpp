@@ -26,6 +26,14 @@ static INT_PTR APIENTRY DialogProcedure(HWND dialogHWND, UINT message, WPARAM wP
     return FALSE;
   if (message == WM_INITDIALOG)
     dialog->Attach(dialogHWND);
+
+  /* MSDN: The dialog box procedure should return
+       TRUE  - if it processed the message
+       FALSE - if it did not process the message
+     If the dialog box procedure returns FALSE,
+     the dialog manager performs the default dialog operation in response to the message.
+  */
+
   try { return BoolToBOOL(dialog->OnMessage(message, wParam, lParam)); }
   catch(...) { return TRUE; }
 }
@@ -39,6 +47,7 @@ bool CDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     case WM_NOTIFY: return OnNotify((UINT)wParam, (LPNMHDR) lParam);
     case WM_TIMER: return OnTimer(wParam, lParam);
     case WM_SIZE: return OnSize(wParam, LOWORD(lParam), HIWORD(lParam));
+    case WM_DESTROY: return OnDestroy();
     case WM_HELP: OnHelp(); return true;
     /*
         OnHelp(

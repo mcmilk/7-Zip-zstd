@@ -112,12 +112,34 @@ HRESULT SetLzmaProp(PROPID propID, const PROPVARIANT &prop, CLzmaEncProps &ep)
     return S_OK;
   }
 
+  if (propID == NCoderPropID::kDictionarySize)
+  {
+    if (prop.vt == VT_UI8)
+    {
+      // 21.03 : we support 64-bit VT_UI8 for dictionary and (dict == 4 GiB)
+      const UInt64 v = prop.uhVal.QuadPart;
+      if (v > ((UInt64)1 << 32))
+        return E_INVALIDARG;
+      UInt32 dict;
+      if (v == ((UInt64)1 << 32))
+        dict = (UInt32)(Int32)-1;
+      else
+        dict = (UInt32)v;
+      ep.dictSize = dict;
+      return S_OK;
+    }
+  }
+
   if (prop.vt != VT_UI4)
     return E_INVALIDARG;
   UInt32 v = prop.ulVal;
   switch (propID)
   {
-    case NCoderPropID::kDefaultProp: if (v > 31) return E_INVALIDARG; ep.dictSize = (UInt32)1 << (unsigned)v; break;
+    case NCoderPropID::kDefaultProp:
+      if (v > 32)
+        return E_INVALIDARG;
+      ep.dictSize = (v == 32) ? (UInt32)(Int32)-1 : (UInt32)1 << (unsigned)v;
+      break;
     SET_PROP_32(kLevel, level)
     SET_PROP_32(kNumFastBytes, fb)
     SET_PROP_32U(kMatchFinderCycles, mc)

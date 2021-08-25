@@ -272,7 +272,11 @@ void Benchmark(bool totalMode)
     prop.Value = "*";
     props.Add(prop);
   }
-  result = Benchmark(EXTERNAL_CODECS_VARS_L props, g_HWND);
+  result = Benchmark(
+      EXTERNAL_CODECS_VARS_L
+      props,
+      k_NumBenchIterations_Default,
+      g_HWND);
   
   MY_TRY_FINISH
 }

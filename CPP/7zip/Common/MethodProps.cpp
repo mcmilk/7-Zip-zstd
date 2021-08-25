@@ -99,41 +99,65 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 default
 }
 
 
+static HRESULT SetLogSizeProp(UInt64 number, NCOM::CPropVariant &destProp)
+{
+  if (number >= 64)
+    return E_INVALIDARG;
+  UInt32 val32;
+  if (number < 32)
+    val32 = (UInt32)1 << (unsigned)number;
+  /*
+  else if (number == 32 && reduce_4GB_to_32bits)
+    val32 = (UInt32)(Int32)-1;
+  */
+  else
+  {
+    destProp = (UInt64)((UInt64)1 << (unsigned)number);
+    return S_OK;
+  }
+  destProp = (UInt32)val32;
+  return S_OK;
+}
+
+
 static HRESULT StringToDictSize(const UString &s, NCOM::CPropVariant &destProp)
 {
+  /* if (reduce_4GB_to_32bits) we can reduce (4 GiB) property to (4 GiB - 1).
+     to fit the value to UInt32 for clients that do not support 64-bit values */
+
   const wchar_t *end;
-  UInt32 number = ConvertStringToUInt32(s, &end);
-  unsigned numDigits = (unsigned)(end - s.Ptr());
+  const UInt64 number = ConvertStringToUInt64(s, &end);
+  const unsigned numDigits = (unsigned)(end - s.Ptr());
   if (numDigits == 0 || s.Len() > numDigits + 1)
     return E_INVALIDARG;
   
   if (s.Len() == numDigits)
-  {
-    if (number >= 64)
-      return E_INVALIDARG;
-    if (number < 32)
-      destProp = (UInt32)((UInt32)1 << (unsigned)number);
-    else
-      destProp = (UInt64)((UInt64)1 << (unsigned)number);
-    return S_OK;
-  }
+    return SetLogSizeProp(number, destProp);
   
   unsigned numBits;
   
   switch (MyCharLower_Ascii(s[numDigits]))
   {
-    case 'b': destProp = number; return S_OK;
+    case 'b': numBits =  0; break;
     case 'k': numBits = 10; break;
     case 'm': numBits = 20; break;
     case 'g': numBits = 30; break;
     default: return E_INVALIDARG;
   }
   
-  if (number < ((UInt32)1 << (32 - numBits)))
-    destProp = (UInt32)(number << numBits);
+  const UInt64 range4g = ((UInt64)1 << (32 - numBits));
+  if (number < range4g)
+    destProp = (UInt32)((UInt32)number << numBits);
+  /*
+  else if (number == range4g && reduce_4GB_to_32bits)
+    destProp = (UInt32)(Int32)-1;
+  */
+  else if (numBits == 0)
+    destProp = (UInt64)number;
+  else if (number >= ((UInt64)1 << (64 - numBits)))
+    return E_INVALIDARG;
   else
     destProp = (UInt64)((UInt64)number << numBits);
-  
   return S_OK;
 }
 
@@ -141,16 +165,8 @@ static HRESULT StringToDictSize(const UString &s, NCOM::CPropVariant &destProp)
 static HRESULT PROPVARIANT_to_DictSize(const PROPVARIANT &prop, NCOM::CPropVariant &destProp)
 {
   if (prop.vt == VT_UI4)
-  {
-    UInt32 v = prop.ulVal;
-    if (v >= 64)
-      return E_INVALIDARG;
-    if (v < 32)
-      destProp = (UInt32)((UInt32)1 << (unsigned)v);
-    else
-      destProp = (UInt64)((UInt64)1 << (unsigned)v);
-    return S_OK;
-  }
+    return SetLogSizeProp(prop.ulVal, destProp);
+
   if (prop.vt == VT_BSTR)
   {
     UString s;

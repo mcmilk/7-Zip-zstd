@@ -12,11 +12,11 @@
 
 #else
 
+#include <unistd.h>
 #include <sys/utsname.h>
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #elif !defined(_AIX)
-
 
 #include <sys/auxv.h>
 
@@ -25,12 +25,55 @@
 #endif
 #endif
 
+#ifdef __linux__
+#include "../Windows/FileIO.h"
 #endif
+
+#endif // WIN32
 
 #include "SystemInfo.h"
 #include "System.h"
 
 using namespace NWindows;
+
+#ifdef __linux__
+
+static bool ReadFile_to_Buffer(CFSTR fileName, CByteBuffer &buf)
+{
+  NWindows::NFile::NIO::CInFile file;
+  if (!file.Open(fileName))
+    return false;
+  /*
+  UInt64 size;
+  if (!file.GetLength(size))
+  {
+    // GetLength() doesn't work "/proc/cpuinfo"
+    return false;
+  }
+  if (size >= ((UInt32)1 << 29))
+    return false;
+  */
+  size_t size = 0;
+  size_t addSize = ((size_t)1 << 12);
+  for (;;)
+  {
+    // printf("\nsize = %d\n", (unsigned)size);
+    buf.ChangeSize_KeepData(size + addSize, size);
+    size_t processed;
+    if (!file.ReadFull(buf + size, addSize, processed))
+      return false;
+    if (processed == 0)
+    {
+      buf.ChangeSize_KeepData(size, size);
+      return true;
+    }
+    size += processed;
+    addSize *= 2;
+  }
+}
+
+#endif
+
 
 #ifndef __APPLE__
 static void PrintHex(AString &s, UInt64 v)
@@ -56,7 +99,7 @@ static void PrintCpuChars(AString &s, UInt32 v)
 }
 
 
-static void x86cpuid_to_String(const Cx86cpuid &c, AString &s)
+static void x86cpuid_to_String(const Cx86cpuid &c, AString &s, AString &ver)
 {
   s.Empty();
 
@@ -87,13 +130,10 @@ static void x86cpuid_to_String(const Cx86cpuid &c, AString &s)
     s.Trim();
   }
 
-  s.Add_Space_if_NotEmpty();
   {
     char temp[32];
     ConvertUInt32ToHex(c.ver, temp);
-    s += '(';
-    s += temp;
-    s += ')';
+    ver += temp;
   }
 }
 
@@ -402,18 +442,52 @@ void GetSysInfo(AString &s1, AString &s2)
 
 
 void GetCpuName(AString &s);
-void GetCpuName(AString &s)
+
+static void AddBracedString(AString &dest, AString &src)
 {
-  s.Empty();
+  if (!src.IsEmpty())
+  {
+    AString s;
+    s += '(';
+    s += src;
+    s += ')';
+    dest.Add_OptSpaced(s);
+  }
+}
+
+struct CCpuName
+{
+  AString CpuName;
+  AString Revision;
+  AString Microcode;
+  AString LargePages;
+
+  void Fill();
+
+  void Get_Revision_Microcode_LargePages(AString &s)
+  {
+    s.Empty();
+    AddBracedString(s, Revision);
+    AddBracedString(s, Microcode);
+    s.Add_OptSpaced(LargePages);
+  }
+};
+
+void CCpuName::Fill()
+{
+  CpuName.Empty();
+  Revision.Empty();
+  Microcode.Empty();
+  LargePages.Empty();
+
+  AString &s = CpuName;
 
   #ifdef MY_CPU_X86_OR_AMD64
   {
     Cx86cpuid cpuid;
     if (x86cpuid_CheckAndRead(&cpuid))
     {
-      AString s2;
-      x86cpuid_to_String(cpuid, s2);
-      s += s2;
+      x86cpuid_to_String(cpuid, s, Revision);
     }
     else
     {
@@ -484,11 +558,10 @@ void GetCpuName(AString &s)
       }
       if (res[0] == ERROR_SUCCESS || res[1] == ERROR_SUCCESS)
       {
-        s.Add_OptSpaced("(");
         for (int i = 0; i < 2; i++)
         {
           if (i == 1)
-            s += "->";
+            Microcode += "->";
           if (res[i] != ERROR_SUCCESS)
             continue;
           const CByteBuffer &buf = bufs[i];
@@ -497,13 +570,12 @@ void GetCpuName(AString &s)
             UInt32 high = GetUi32(buf);
             if (high != 0)
             {
-              PrintHex(s, high);
-              s += ".";
+              PrintHex(Microcode, high);
+              Microcode += ".";
             }
-            PrintHex(s, GetUi32(buf + 4));
+            PrintHex(Microcode, GetUi32(buf + 4));
           }
         }
-        s += ")";
       }
     }
   }
@@ -511,7 +583,7 @@ void GetCpuName(AString &s)
 
 
   #ifdef _7ZIP_LARGE_PAGES
-  Add_LargePages_String(s);
+  Add_LargePages_String(LargePages);
   #endif
 }
 
@@ -532,13 +604,10 @@ void AddCpuFeatures(AString &s)
       // s += TypeToString2(k_PF, ARRAY_SIZE(k_PF), i);
     }
   }
-  s.Add_Space_if_NotEmpty();
-  s += "f:";
+  s.Add_OptSpaced("f:");
   PrintHex(s, flags);
   
-  #else //  _WIN32
-
-  #ifdef __APPLE__
+  #elif defined(__APPLE__)
   {
     UInt32 v = 0;
     if (My_sysctlbyname_Get_UInt32("hw.pagesize", &v) == 0)
@@ -549,10 +618,46 @@ void AddCpuFeatures(AString &s)
     }
   }
 
-  #elif !defined(_AIX)
+  #else
 
-  s.Add_Space_if_NotEmpty();
-  s += "hwcap:";
+  const long v = sysconf(_SC_PAGESIZE);
+  if (v != -1)
+  {
+    s.Add_Space_if_NotEmpty();
+    s += "PageSize:";
+    s.Add_UInt32((UInt32)(v >> 10));
+    s += "KB";
+  }
+
+  #if !defined(_AIX)
+
+  #ifdef __linux__
+
+  CByteBuffer buf;
+  if (ReadFile_to_Buffer("/sys/kernel/mm/transparent_hugepage/enabled", buf))
+  // if (ReadFile_to_Buffer("/proc/cpuinfo", buf))
+  {
+    s.Add_OptSpaced("THP:");
+    AString s2;
+    s2.SetFrom_CalcLen((const char *)(const void *)(const Byte *)buf, (unsigned)buf.Size());
+    const int pos = s2.Find('[');
+    if (pos >= 0)
+    {
+      const int pos2 = s2.Find(']', pos + 1);
+      if (pos2 >= 0)
+      {
+        s2.DeleteFrom(pos2);
+        s2.DeleteFrontal(pos + 1);
+      }
+    }
+    s += s2;
+  }
+  // else throw CSystemException(MY_SRes_HRESULT_FROM_WRes(errno));
+
+  #endif
+
+
+  s.Add_OptSpaced("hwcap:");
   {
     unsigned long h = getauxval(AT_HWCAP);
     PrintHex(s, h);
@@ -561,6 +666,9 @@ void AddCpuFeatures(AString &s)
     if (h & HWCAP_SHA1)   s += ":SHA1";
     if (h & HWCAP_SHA2)   s += ":SHA2";
     if (h & HWCAP_AES)    s += ":AES";
+    if (h & HWCAP_ASIMD)  s += ":ASIMD";
+    #elif defined(MY_CPU_ARM)
+    if (h & HWCAP_NEON)   s += ":NEON";
     #endif
   }
 
@@ -580,9 +688,8 @@ void AddCpuFeatures(AString &s)
       #endif
     }
   }
-
-  #endif
-  #endif //  _WIN32
+  #endif // _AIX
+  #endif // _WIN32
 }
 
 
@@ -609,11 +716,11 @@ static BOOL My_RtlGetVersion(OSVERSIONINFOEXW *vi)
 #endif
 
 
-void GetSystemInfoText(AString &sRes)
+void GetOsInfoText(AString &sRes)
 {
-  {
-    {
-      AString s;
+  sRes.Empty();
+    AString s;
+
     #ifdef _WIN32
     #ifndef UNDER_CE
       // OSVERSIONINFO vi;
@@ -634,16 +741,16 @@ void GetSystemInfoText(AString &sRes)
           s += " SP:"; s.Add_UInt32(vi.wServicePackMajor);
           s += "."; s.Add_UInt32(vi.wServicePackMinor);
         }
-        s += " Suite:"; PrintHex(s, vi.wSuiteMask);
-        s += " Type:"; s.Add_UInt32(vi.wProductType);
+        // s += " Suite:"; PrintHex(s, vi.wSuiteMask);
+        // s += " Type:"; s.Add_UInt32(vi.wProductType);
         // s += " "; s += GetOemString(vi.szCSDVersion);
       }
+      /*
       {
-        s += " OEMCP:";
-        s.Add_UInt32(GetOEMCP());
-        s += " ACP:";
-        s.Add_UInt32(GetACP());
+        s += " OEMCP:"; s.Add_UInt32(GetOEMCP());
+        s += " ACP:";   s.Add_UInt32(GetACP());
       }
+      */
     #endif
     #else // _WIN32
 
@@ -666,8 +773,14 @@ void GetSystemInfoText(AString &sRes)
     #endif  // _WIN32
 
     sRes += s;
-    sRes.Add_LF();
-  }
+}
+
+
+
+void GetSystemInfoText(AString &sRes)
+{
+  GetOsInfoText(sRes);
+  sRes.Add_LF();
 
     {
       AString s, s1, s2;
@@ -712,5 +825,73 @@ void GetSystemInfoText(AString &sRes)
     }
     #endif
     */
+}
+
+
+void GetCpuName(AString &s);
+void GetCpuName(AString &s)
+{
+  CCpuName cpuName;
+  cpuName.Fill();
+  s = cpuName.CpuName;
+  AString s2;
+  cpuName.Get_Revision_Microcode_LargePages(s2);
+  s.Add_OptSpaced(s2);
+}
+
+
+void GetCpuName_MultiLine(AString &s);
+void GetCpuName_MultiLine(AString &s)
+{
+  CCpuName cpuName;
+  cpuName.Fill();
+  s = cpuName.CpuName;
+  AString s2;
+  cpuName.Get_Revision_Microcode_LargePages(s2);
+  if (!s2.IsEmpty())
+  {
+    s.Add_LF();
+    s += s2;
   }
+}
+
+void GetCompiler(AString &s)
+{
+  #ifdef __VERSION__
+    s += __VERSION__;
+  #endif
+
+  #ifdef __GNUC__
+    s += " GCC ";
+    s.Add_UInt32(__GNUC__);
+    s += '.';
+    s.Add_UInt32(__GNUC_MINOR__);
+    s += '.';
+    s.Add_UInt32(__GNUC_PATCHLEVEL__);
+  #endif
+
+  #ifdef __clang__
+    s += " CLANG ";
+    s.Add_UInt32(__clang_major__);
+    s += '.';
+    s.Add_UInt32(__clang_minor__);
+  #endif
+
+  #ifdef __xlC__
+    s += " XLC ";
+    s.Add_UInt32(__xlC__ >> 8);
+    s += '.';
+    s.Add_UInt32(__xlC__ & 0xFF);
+    #ifdef __xlC_ver__
+      s += '.';
+      s.Add_UInt32(__xlC_ver__ >> 8);
+      s += '.';
+      s.Add_UInt32(__xlC_ver__ & 0xFF);
+    #endif
+  #endif
+
+  #ifdef _MSC_VER
+    s += " MSC ";
+    s.Add_UInt32(_MSC_VER);
+  #endif
 }

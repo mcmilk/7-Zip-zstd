@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include <wchar.h>
+// #include <stdio.h>
 
 #ifndef _UNICODE
 #include "../Common/StringConvert.h"
@@ -17,12 +18,27 @@ namespace NWindows {
 namespace NRegistry {
 
 #define MYASSERT(expr) // _ASSERTE(expr)
+#define MY_ASSUME(expr)
+
+/*
+static void Error()
+{
+  #ifdef _CONSOLE
+  printf("\nregistry error\n");
+  #else
+  MessageBoxW(0, L"registry error", L"", 0);
+  // exit(1);
+  #endif
+}
+
+#define MY_ASSUME(expr) { if (!(expr)) Error(); }
+*/
 
 LONG CKey::Create(HKEY parentKey, LPCTSTR keyName,
     LPTSTR keyClass, DWORD options, REGSAM accessMask,
     LPSECURITY_ATTRIBUTES securityAttributes, LPDWORD disposition) throw()
 {
-  MYASSERT(parentKey != NULL);
+  MY_ASSUME(parentKey != NULL);
   DWORD dispositionReal;
   HKEY key = NULL;
   LONG res = RegCreateKeyEx(parentKey, keyName, 0, keyClass,
@@ -39,7 +55,7 @@ LONG CKey::Create(HKEY parentKey, LPCTSTR keyName,
 
 LONG CKey::Open(HKEY parentKey, LPCTSTR keyName, REGSAM accessMask) throw()
 {
-  MYASSERT(parentKey != NULL);
+  MY_ASSUME(parentKey != NULL);
   HKEY key = NULL;
   LONG res = RegOpenKeyEx(parentKey, keyName, 0, accessMask, &key);
   if (res == ERROR_SUCCESS)
@@ -66,7 +82,7 @@ LONG CKey::Close() throw()
 // winNT to be deleted must not have subkeys
 LONG CKey::DeleteSubKey(LPCTSTR subKeyName) throw()
 {
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   return RegDeleteKey(_object, subKeyName);
 }
 
@@ -101,14 +117,14 @@ static inline bool UINT32ToBool(UInt32 value) {  return (value != 0); }
 
 LONG CKey::DeleteValue(LPCTSTR name) throw()
 {
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   return ::RegDeleteValue(_object, name);
 }
 
 #ifndef _UNICODE
 LONG CKey::DeleteValue(LPCWSTR name)
 {
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   if (g_IsNT)
     return ::RegDeleteValueW(_object, name);
   return DeleteValue(name == 0 ? 0 : (LPCSTR)GetSystemString(name));
@@ -117,7 +133,7 @@ LONG CKey::DeleteValue(LPCWSTR name)
 
 LONG CKey::SetValue(LPCTSTR name, UInt32 value) throw()
 {
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   return RegSetValueEx(_object, name, 0, REG_DWORD,
       (const BYTE *)&value, sizeof(UInt32));
 }
@@ -130,7 +146,7 @@ LONG CKey::SetValue(LPCTSTR name, bool value) throw()
 LONG CKey::SetValue(LPCTSTR name, LPCTSTR value) throw()
 {
   MYASSERT(value != NULL);
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   return RegSetValueEx(_object, name, 0, REG_SZ,
       (const BYTE *)value, ((DWORD)lstrlen(value) + 1) * sizeof(TCHAR));
 }
@@ -139,7 +155,7 @@ LONG CKey::SetValue(LPCTSTR name, LPCTSTR value) throw()
 LONG CKey::SetValue(LPCTSTR name, const CSysString &value)
 {
   MYASSERT(value != NULL);
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   return RegSetValueEx(_object, name, NULL, REG_SZ,
       (const BYTE *)(const TCHAR *)value, (value.Len() + 1) * sizeof(TCHAR));
 }
@@ -150,7 +166,7 @@ LONG CKey::SetValue(LPCTSTR name, const CSysString &value)
 LONG CKey::SetValue(LPCWSTR name, LPCWSTR value)
 {
   MYASSERT(value != NULL);
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   if (g_IsNT)
     return RegSetValueExW(_object, name, 0, REG_SZ,
       (const BYTE * )value, (DWORD)((wcslen(value) + 1) * sizeof(wchar_t)));
@@ -164,7 +180,7 @@ LONG CKey::SetValue(LPCWSTR name, LPCWSTR value)
 LONG CKey::SetValue(LPCTSTR name, const void *value, UInt32 size) throw()
 {
   MYASSERT(value != NULL);
-  MYASSERT(_object != NULL);
+  MY_ASSUME(_object != NULL);
   return RegSetValueEx(_object, name, 0, REG_BINARY,
       (const BYTE *)value, size);
 }

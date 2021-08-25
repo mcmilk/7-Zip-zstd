@@ -1,5 +1,5 @@
 /* Sha1.c -- SHA-1 Hash
-2021-04-01 : Igor Pavlov : Public domain
+2021-07-13 : Igor Pavlov : Public domain
 This code is based on public domain code of Steve Reid from Wei Dai's Crypto++ library. */
 
 #include "Precomp.h"
@@ -34,7 +34,7 @@ This code is based on public domain code of Steve Reid from Wei Dai's Crypto++ l
   #endif
 #elif defined(MY_CPU_ARM_OR_ARM64)
   #ifdef _MSC_VER
-    #if _MSC_VER >= 1910
+    #if _MSC_VER >= 1910 && _MSC_VER >= 1929 && _MSC_FULL_VER >= 192930037
       #define _SHA_SUPPORTED
     #endif
   #elif defined(__clang__)
@@ -435,7 +435,37 @@ void Sha1Prepare()
   #endif
   {
     // printf("\n========== HW SHA1 ======== \n");
-    f = f_hw = Sha1_UpdateBlocks_HW;
+    #if defined(MY_CPU_ARM_OR_ARM64) && defined(_MSC_VER)
+    /* there was bug in MSVC compiler for ARM64 -O2 before version VS2019 16.10 (19.29.30037).
+       It generated incorrect SHA-1 code.
+       21.03 : we test sha1-hardware code at runtime initialization */
+
+      #pragma message("== SHA1 code: MSC compiler : failure-check code was inserted")
+
+      UInt32 state[5] = { 0, 1, 2, 3, 4 } ;
+      Byte data[64];
+      unsigned i;
+      for (i = 0; i < sizeof(data); i += 2)
+      {
+        data[i    ] = (Byte)(i);
+        data[i + 1] = (Byte)(i + 1);
+      }
+
+      Sha1_UpdateBlocks_HW(state, data, sizeof(data) / 64);
+    
+      if (   state[0] != 0x9acd7297
+          || state[1] != 0x4624d898
+          || state[2] != 0x0bf079f0
+          || state[3] != 0x031e61b3
+          || state[4] != 0x8323fe20)
+      {
+        // printf("\n========== SHA-1 hardware version failure ======== \n");
+      }
+      else
+    #endif
+      {
+        f = f_hw = Sha1_UpdateBlocks_HW;
+      }
   }
   g_FUNC_UPDATE_BLOCKS    = f;
   g_FUNC_UPDATE_BLOCKS_HW = f_hw;

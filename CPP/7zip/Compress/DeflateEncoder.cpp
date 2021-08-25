@@ -44,7 +44,9 @@ static const Byte kNoLenStatPrice = 11;
 static const Byte kNoPosStatPrice = 6;
 
 static Byte g_LenSlots[kNumLenSymbolsMax];
-static Byte g_FastPos[1 << 9];
+
+#define kNumLogBits 9    // do not change it
+static Byte g_FastPos[1 << kNumLogBits];
 
 class CFastPosInit
 {
@@ -60,7 +62,7 @@ public:
         g_LenSlots[c] = (Byte)i;
     }
     
-    const unsigned kFastSlots = 18;
+    const unsigned kFastSlots = kNumLogBits * 2;
     unsigned c = 0;
     for (Byte slotFast = 0; slotFast < kFastSlots; slotFast++)
     {
@@ -73,13 +75,23 @@ public:
 
 static CFastPosInit g_FastPosInit;
 
-
 inline UInt32 GetPosSlot(UInt32 pos)
 {
+  /*
   if (pos < 0x200)
     return g_FastPos[pos];
   return g_FastPos[pos >> 8] + 16;
+  */
+  // const unsigned zz = (pos < ((UInt32)1 << (kNumLogBits))) ? 0 : 8;
+  /*
+  const unsigned zz = (kNumLogBits - 1) &
+      ((UInt32)0 - (((((UInt32)1 << kNumLogBits) - 1) - pos) >> 31));
+  */
+  const unsigned zz = (kNumLogBits - 1) &
+      (((((UInt32)1 << kNumLogBits) - 1) - pos) >> (31 - 3));
+  return g_FastPos[pos >> zz] + (zz * 2);
 }
+
 
 void CEncProps::Normalize()
 {
@@ -253,13 +265,13 @@ NO_INLINE void CCoder::GetMatches()
 
   UInt32 distanceTmp[kMatchMaxLen * 2 + 3];
   
-  UInt32 numPairs = (_btMode) ?
+  const UInt32 numPairs = (UInt32)((_btMode ?
       Bt3Zip_MatchFinder_GetMatches(&_lzInWindow, distanceTmp):
-      Hc3Zip_MatchFinder_GetMatches(&_lzInWindow, distanceTmp);
+      Hc3Zip_MatchFinder_GetMatches(&_lzInWindow, distanceTmp)) - distanceTmp);
 
   *m_MatchDistances = (UInt16)numPairs;
    
-  if (numPairs > 0)
+  if (numPairs != 0)
   {
     UInt32 i;
     for (i = 0; i < numPairs; i += 2)

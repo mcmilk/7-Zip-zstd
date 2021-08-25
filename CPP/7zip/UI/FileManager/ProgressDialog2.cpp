@@ -348,7 +348,9 @@ bool CProgressDialog::OnInit()
   INIT_AS_UNDEFINED(_processed_Prev);
   INIT_AS_UNDEFINED(_packed_Prev);
   INIT_AS_UNDEFINED(_ratio_Prev);
+  
   _filesStr_Prev.Empty();
+  _filesTotStr_Prev.Empty();
 
   _foreground = true;
 
@@ -423,13 +425,14 @@ static const UINT kIDs[] =
   IDT_PROGRESS_ELAPSED,   IDT_PROGRESS_ELAPSED_VAL,
   IDT_PROGRESS_REMAINING, IDT_PROGRESS_REMAINING_VAL,
   IDT_PROGRESS_FILES,     IDT_PROGRESS_FILES_VAL,
-  IDT_PROGRESS_RATIO,     IDT_PROGRESS_RATIO_VAL,
+  0,                      IDT_PROGRESS_FILES_TOTAL,
   IDT_PROGRESS_ERRORS,    IDT_PROGRESS_ERRORS_VAL,
   
   IDT_PROGRESS_TOTAL,     IDT_PROGRESS_TOTAL_VAL,
   IDT_PROGRESS_SPEED,     IDT_PROGRESS_SPEED_VAL,
   IDT_PROGRESS_PROCESSED, IDT_PROGRESS_PROCESSED_VAL,
-  IDT_PROGRESS_PACKED,    IDT_PROGRESS_PACKED_VAL
+  IDT_PROGRESS_PACKED,    IDT_PROGRESS_PACKED_VAL,
+  IDT_PROGRESS_RATIO,     IDT_PROGRESS_RATIO_VAL
 };
 
 bool CProgressDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
@@ -546,6 +549,7 @@ bool CProgressDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
         yPos = my;
       x = mx + gSize + padSize;
     }
+    if (kIDs[i] != 0)
     MoveItem(kIDs[i], x, yPos, labelSize, sY);
     MoveItem(kIDs[i + 1], x + labelSize, yPos, valueSize, sY);
     yPos += sStep;
@@ -617,6 +621,7 @@ static void ConvertSizeToString(UInt64 v, wchar_t *s)
     s += MyStringLen(s);
     *s++ = ' ';
     *s++ = c;
+    *s++ = 'B';
     *s++ = 0;
   }
 }
@@ -829,16 +834,24 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
     
     {
       wchar_t s[64];
+      
       ConvertUInt64ToString(completedFiles, s);
-      if (IS_DEFINED_VAL(totalFiles))
-      {
-        MyStringCat(s, L" / ");
-        ConvertUInt64ToString(totalFiles, s + MyStringLen(s));
-      }
       if (_filesStr_Prev != s)
       {
         _filesStr_Prev = s;
         SetItemText(IDT_PROGRESS_FILES_VAL, s);
+      }
+      
+      s[0] = 0;
+      if (IS_DEFINED_VAL(totalFiles))
+      {
+        MyStringCopy(s, L" / ");
+        ConvertUInt64ToString(totalFiles, s + MyStringLen(s));
+      }
+      if (_filesTotStr_Prev != s)
+      {
+        _filesTotStr_Prev = s;
+        SetItemText(IDT_PROGRESS_FILES_TOTAL, s);
       }
     }
     
@@ -1024,8 +1037,13 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   {
     case kCloseMessage:
     {
-      KillTimer(_timer);
-      _timer = 0;
+      if (_timer)
+      {
+        /* 21.03 : KillTimer(kTimerID) instead of KillTimer(_timer).
+           But (_timer == kTimerID) in Win10. So it worked too */
+        KillTimer(kTimerID);
+        _timer = 0;
+      }
       if (_inCancelMessageBox)
       {
         _externalCloseMessageWasReceived = true;

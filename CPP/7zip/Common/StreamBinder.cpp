@@ -52,9 +52,9 @@ HRESULT CStreamBinder::Create_ReInit()
   RINOK(Event__Create_or_Reset(_canRead_Event));
   // RINOK(Event__Create_or_Reset(_canWrite_Event));
 
-  _canWrite_Semaphore.Close();
+  // _canWrite_Semaphore.Close();
   // we need at least 3 items of maxCount: 1 for normal unlock in Read(), 2 items for unlock in CloseRead_CallOnce()
-  _canWrite_Semaphore.Create(0, 3);
+  _canWrite_Semaphore.OptCreateInit(0, 3);
 
   // _readingWasClosed = false;
   _readingWasClosed2 = false;

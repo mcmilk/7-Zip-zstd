@@ -136,8 +136,11 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
   {
     case kCloseMessage:
     {
-      KillTimer(_timer);
-      _timer = 0;
+      if (_timer)
+      {
+        KillTimer(kTimerID);
+        _timer = 0;
+      }
       if (_inCancelMessageBox)
       {
         _externalCloseMessageWasReceived = true;

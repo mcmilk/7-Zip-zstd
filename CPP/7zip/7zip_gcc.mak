@@ -2,7 +2,7 @@
 # USE_ASM = 1
 # IS_X64 = 1
 # MY_ARCH =
-
+# USE_ASM=
 
 MY_ARCH_2 = $(MY_ARCH)
 
@@ -22,6 +22,8 @@ CFLAGS_BASE_LIST = -c
 CFLAGS_BASE = -O2 $(CFLAGS_BASE_LIST) $(CFLAGS_WARN_WALL) $(CFLAGS_WARN) \
  -DNDEBUG -D_REENTRANT -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE \
  -fPIC
+
+# -D_7ZIP_AFFINITY_DISABLE
 
 
 ifdef SystemDrive
@@ -185,6 +187,8 @@ $O/IntToString.o: ../../../Common/IntToString.cpp
 $O/Lang.o: ../../../Common/Lang.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/ListFileUtils.o: ../../../Common/ListFileUtils.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/LzFindPrepare.o: ../../../Common/LzFindPrepare.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/MyMap.o: ../../../Common/MyMap.cpp
 	$(CXX) $(CXXFLAGS) $<
@@ -1095,6 +1099,7 @@ $O/XzCrc64.o: ../../../../C/XzCrc64.c
 ifdef USE_ASM
 ifdef IS_X64
 USE_X86_ASM=1
+USE_X64_ASM=1
 else
 ifdef IS_X86
 USE_X86_ASM=1
@@ -1126,6 +1131,13 @@ $O/AesOpt.o: ../../../../C/AesOpt.c
 	$(CC) $(CFLAGS) $<
 endif
 
+ifdef USE_X64_ASM
+$O/LzFindOpt.o: ../../../../Asm/x86/LzFindOpt.asm
+	$(MY_ASM) $(AFLAGS) $<
+else
+$O/LzFindOpt.o: ../../../../C/LzFindOpt.c
+	$(CC) $(CFLAGS) $<
+endif
 
 ifdef USE_LZMA_DEC_ASM
 

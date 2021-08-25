@@ -1,6 +1,7 @@
 PROG = 7za.exe
 # USE_C_AES = 1
 # USE_C_SHA = 1
+# USE_C_LZFINDOPT = 1
 
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
@@ -8,6 +9,7 @@ COMMON_OBJS = \
   $O\CrcReg.obj \
   $O\IntToString.obj \
   $O\ListFileUtils.obj \
+  $O\LzFindPrepare.obj \
   $O\NewHandler.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
@@ -217,6 +219,7 @@ C_OBJS = \
 !include "../../Aes.mak"
 !include "../../Crc.mak"
 !include "../../Crc64.mak"
+!include "../../LzFindOpt.mak"
 !include "../../LzmaDec.mak"
 !include "../../Sha1.mak"
 !include "../../Sha256.mak"

@@ -109,6 +109,7 @@ struct CArcCmdLineOptions
 
   // Benchmark
   UInt32 NumIterations;
+  bool NumIterations_Defined;
 
   CArcCmdLineOptions():
       HelpMode(false),

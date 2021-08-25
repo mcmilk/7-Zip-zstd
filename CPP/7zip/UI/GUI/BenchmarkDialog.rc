@@ -23,25 +23,29 @@
 
 #define g4x (m + m)
 
-#define sRating 60
-#define sSpeed 60
-#define sUsage 60
-#define sRpu 60
-#define sFreq 34
+#define sRating 58
+#define sSpeed  60
+#define sUsage  46
+#define sRpu    58
+#define sSize   52
+// #define sFreq 34
 
 #define xRating (xs - m - m - sRating)
 #define xRpu (xRating - sRpu)
 #define xUsage (xRpu - sUsage)
 #define xSpeed (xUsage - sSpeed)
+#define xSize (xSpeed - sSize)
 
-#define xFreq (xUsage - sFreq)
+// #define xFreq (xUsage - sFreq)
 
-#define sLabel (xUsage - g4x)
+#define sLabel (xSize - g4x)
 #define sTotalRating (sUsage + sRpu + sRating + m + m)
 #define xTotalRating (xs - m - sTotalRating)
 
-#define g2xs 58
-#define g3xs 36
+#define sPasses 60
+
+#define g2xs 60
+#define g3xs 64
 #define g3x (m + g2xs)
 
 #undef GROUP_Y_SIZE
@@ -56,7 +60,10 @@
 
 #define g7xs bx1 - m - g0xs - g1xs - m
 
-IDD_BENCH  DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE | WS_MINIMIZEBOX
+#define sLog 140 + 0
+
+// MY_MODAL_DIALOG_STYLE
+IDD_BENCH  DIALOG  0, 0, xs + sLog, ys  MY_MODAL_RESIZE_DIALOG_STYLE | WS_MINIMIZEBOX
 CAPTION "Benchmark"
 MY_FONT
 BEGIN
@@ -70,71 +77,79 @@ BEGIN
   COMBOBOX  IDC_BENCH_DICTIONARY, g1x, m, g1xs, 140, MY_COMBO
 
   LTEXT  "Memory usage:", IDT_BENCH_MEMORY, gc2x, m - 2, g7xs, 8
-  LTEXT  "", IDT_BENCH_MEMORY_VAL, gc2x, m + 8, g7xs, 8
+  LTEXT  "", IDT_BENCH_MEMORY_VAL, gc2x, m + 8, g7xs, MY_TEXT_NOPREFIX
 
   LTEXT  "&Number of CPU threads:", IDT_BENCH_NUM_THREADS, m, 30, g0xs, 8
   COMBOBOX  IDC_BENCH_NUM_THREADS, g1x, 29, g1xs, 140, MY_COMBO
-  LTEXT  "", IDT_BENCH_HARDWARE_THREADS, gc2x, 32, g7xs, 8
+  LTEXT  "", IDT_BENCH_HARDWARE_THREADS, gc2x, 30, g7xs, MY_TEXT_NOPREFIX
 
-  RTEXT  "CPU Usage", IDT_BENCH_USAGE_LABEL,    xUsage,  54, sUsage,  8
-  RTEXT  "Speed", IDT_BENCH_SPEED,              xSpeed,  54, sSpeed,  8
-  RTEXT  "Rating / Usage", IDT_BENCH_RPU_LABEL, xRpu,    54, sRpu,    8
-  RTEXT  "Rating", IDT_BENCH_RATING_LABEL,      xRating, 54, sRating, 8
+  RTEXT  "Size", IDT_BENCH_SIZE,                xSize,   54, sSize,   MY_TEXT_NOPREFIX
+  RTEXT  "CPU Usage", IDT_BENCH_USAGE_LABEL,    xUsage,  54, sUsage,  MY_TEXT_NOPREFIX
+  RTEXT  "Speed", IDT_BENCH_SPEED,              xSpeed,  54, sSpeed,  MY_TEXT_NOPREFIX
+  RTEXT  "Rating / Usage", IDT_BENCH_RPU_LABEL, xRpu,    54, sRpu,    MY_TEXT_NOPREFIX
+  RTEXT  "Rating", IDT_BENCH_RATING_LABEL,      xRating, 54, sRating, MY_TEXT_NOPREFIX
   
   GROUPBOX  "Compressing", IDG_BENCH_COMPRESSING, m, 64, xc, GROUP_Y_SIZE
  
-  LTEXT  "Current", IDT_BENCH_CURRENT,   g4x,      76, sLabel,  8
-  RTEXT  "", IDT_BENCH_COMPRESS_USAGE1,  xUsage,   76, sUsage,  8
-  RTEXT  "", IDT_BENCH_COMPRESS_SPEED1,  xSpeed,   76, sSpeed,  8
-  RTEXT  "", IDT_BENCH_COMPRESS_RPU1,    xRpu,     76, sRpu,    8
-  RTEXT  "", IDT_BENCH_COMPRESS_RATING1, xRating,  76, sRating, 8
+  LTEXT  "Current", IDT_BENCH_CURRENT,   g4x,      76, sLabel,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_SIZE1,   xSize,    76, sSize,   MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_USAGE1,  xUsage,   76, sUsage,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_SPEED1,  xSpeed,   76, sSpeed,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_RPU1,    xRpu,     76, sRpu,    MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_RATING1, xRating,  76, sRating, MY_TEXT_NOPREFIX
   
-  LTEXT  "Resulting", IDT_BENCH_RESULTING, g4x,    89, sLabel,  8
-  RTEXT  "", IDT_BENCH_COMPRESS_USAGE2,  xUsage,   89, sUsage,  8
-  RTEXT  "", IDT_BENCH_COMPRESS_SPEED2,  xSpeed,   89, sSpeed,  8
-  RTEXT  "", IDT_BENCH_COMPRESS_RPU2,    xRpu,     89, sRpu,    8
-  RTEXT  "", IDT_BENCH_COMPRESS_RATING2, xRating,  89, sRating, 8
+  LTEXT  "Resulting", IDT_BENCH_RESULTING, g4x,    89, sLabel,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_SIZE2,   xSize,    89, sSize,   MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_USAGE2,  xUsage,   89, sUsage,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_SPEED2,  xSpeed,   89, sSpeed,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_RPU2,    xRpu,     89, sRpu,    MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_COMPRESS_RATING2, xRating,  89, sRating, MY_TEXT_NOPREFIX
   
   GROUPBOX  "Decompressing", IDG_BENCH_DECOMPRESSING, m, 111, xc, GROUP_Y_SIZE
 
-  LTEXT  "Current", IDT_BENCH_CURRENT2,  g4x,     123, sLabel,  8
-  RTEXT  "", IDT_BENCH_DECOMPR_USAGE1,   xUsage,  123, sUsage,  8
-  RTEXT  "", IDT_BENCH_DECOMPR_SPEED1,   xSpeed,  123, sSpeed,  8
-  RTEXT  "", IDT_BENCH_DECOMPR_RPU1,     xRpu,    123, sRpu,    8
-  RTEXT  "", IDT_BENCH_DECOMPR_RATING1,  xRating, 123, sRating, 8
+  LTEXT  "Current", IDT_BENCH_CURRENT2,  g4x,     123, sLabel,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_SIZE1,    xSize,   123, sSize,   MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_USAGE1,   xUsage,  123, sUsage,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_SPEED1,   xSpeed,  123, sSpeed,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_RPU1,     xRpu,    123, sRpu,    MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_RATING1,  xRating, 123, sRating, MY_TEXT_NOPREFIX
   
-  LTEXT  "Resulting", IDT_BENCH_RESULTING2, g4x,  136, sLabel,  8
-  RTEXT  "", IDT_BENCH_DECOMPR_USAGE2,   xUsage,  136, sUsage,  8
-  RTEXT  "", IDT_BENCH_DECOMPR_SPEED2,   xSpeed,  136, sSpeed,  8
-  RTEXT  "", IDT_BENCH_DECOMPR_RPU2,     xRpu,    136, sRpu,    8
-  RTEXT  "", IDT_BENCH_DECOMPR_RATING2,  xRating, 136, sRating, 8
+  LTEXT  "Resulting", IDT_BENCH_RESULTING2, g4x,  136, sLabel,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_SIZE2,    xSize,   136, sSize,   MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_USAGE2,   xUsage,  136, sUsage,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_SPEED2,   xSpeed,  136, sSpeed,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_RPU2,     xRpu,    136, sRpu,    MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_DECOMPR_RATING2,  xRating, 136, sRating, MY_TEXT_NOPREFIX
   
+  RTEXT  "", IDT_BENCH_ERROR_MESSAGE, m, 155, xc, MY_TEXT_NOPREFIX
+
   GROUPBOX  "Total Rating", IDG_BENCH_TOTAL_RATING, xTotalRating, 163, sTotalRating, GROUP_Y2_SIZE
 
-  RTEXT  "", IDT_BENCH_TOTAL_USAGE_VAL,  xUsage,  176, sUsage,  8
-  RTEXT  "", IDT_BENCH_TOTAL_RPU_VAL,    xRpu,    176, sRpu,    8
-  RTEXT  "", IDT_BENCH_TOTAL_RATING_VAL, xRating, 176, sRating, 8
+  RTEXT  "", IDT_BENCH_TOTAL_USAGE_VAL,  xUsage,  176, sUsage,  MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_TOTAL_RPU_VAL,    xRpu,    176, sRpu,    MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_TOTAL_RATING_VAL, xRating, 176, sRating, MY_TEXT_NOPREFIX
 
-  RTEXT  "", IDT_BENCH_CPU, m, 202, xc, 8
 
-  RTEXT  "", IDT_BENCH_VER, m + xc - 100, 216, 100, 8
+  // RTEXT  "", IDT_BENCH_CPU, m + sPasses, 202, xc - sPasses, 16, SS_NOPREFIX
+  RTEXT  "", IDT_BENCH_CPU, m + 0, 202, xc - 0, 16, SS_NOPREFIX
+  RTEXT  "", IDT_BENCH_VER, m + xc - 100, 222, 100, MY_TEXT_NOPREFIX
 
-  LTEXT  "", IDT_BENCH_CPU_FEATURE, m, 228, xc - 100, 8
-  LTEXT  "", IDT_BENCH_SYS1, m, 238, xc - 140, 8
-  LTEXT  "", IDT_BENCH_SYS2, m, 248, xc - 140, 8
-	
-  // LTEXT  "", IDT_BENCH_SYSTEM, m, 232, xc - 80, 8
-  // LTEXT  "", IDT_BENCH_FREQ_RES, m, 242, 80, 8
-  
+  LTEXT  "", IDT_BENCH_CPU_FEATURE, m, 222, xc - 100, 16, SS_NOPREFIX // - 100
+  LTEXT  "", IDT_BENCH_SYS1, m, 238, xc - 140, MY_TEXT_NOPREFIX
+  LTEXT  "", IDT_BENCH_SYS2, m, 248, xc - 140, MY_TEXT_NOPREFIX
+
+  LTEXT  "", IDT_BENCH_LOG, m + xc + m, m, sLog - m, yc, SS_LEFTNOWORDWRAP | SS_NOPREFIX
 
   
   LTEXT  "Elapsed time:", IDT_BENCH_ELAPSED, m, 163, g2xs, 8
-  LTEXT  "Size:", IDT_BENCH_SIZE,            m, 176, g2xs, 8
-  LTEXT  "Passes:", IDT_BENCH_PASSES,        m, 189, g2xs, 8
+//  LTEXT  "Size:", IDT_BENCH_SIZE,            m, 176, g2xs, 8
+  LTEXT  "Passes:", IDT_BENCH_PASSES,        m, 176, g2xs, 8
+  COMBOBOX  IDC_BENCH_NUM_PASSES, 					 m, 187, sPasses, 140, MY_COMBO
 
-  RTEXT  "", IDT_BENCH_ELAPSED_VAL,        g3x, 163, g3xs, 8
-  RTEXT  "", IDT_BENCH_SIZE_VAL,           g3x, 176, g3xs, 8
-  RTEXT  "", IDT_BENCH_PASSES_VAL,         g3x, 189, g3xs, 8
+  RTEXT  "", IDT_BENCH_ELAPSED_VAL,        g3x, 163, g3xs, MY_TEXT_NOPREFIX
+  // RTEXT  "", IDT_BENCH_SIZE_VAL,           g3x, 176, g3xs, MY_TEXT_NOPREFIX
+  RTEXT  "", IDT_BENCH_PASSES_VAL,         g3x, 176, g3xs, MY_TEXT_NOPREFIX
+
 END
 
 #ifdef UNDER_CE

@@ -1,5 +1,5 @@
 /* 7zTypes.h -- Basic types
-2021-04-25 : Igor Pavlov : Public domain */
+2021-07-13 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_TYPES_H
 #define __7Z_TYPES_H
@@ -62,6 +62,8 @@ typedef int SRes;
 typedef unsigned WRes;
 #define MY_SRes_HRESULT_FROM_WRes(x) HRESULT_FROM_WIN32(x)
 
+// #define MY_HRES_ERROR__INTERNAL_ERROR  MY_SRes_HRESULT_FROM_WRes(ERROR_INTERNAL_ERROR)
+
 #else // _WIN32
 
 // #define ENV_HAVE_LSTAT
@@ -95,6 +97,7 @@ typedef int WRes;
 #define ERROR_DIRECTORY                  267L
 #define ERROR_TOO_MANY_POSTS             298L
 
+#define ERROR_INTERNAL_ERROR             1359L
 #define ERROR_INVALID_REPARSE_DATA       4392L
 #define ERROR_REPARSE_TAG_INVALID        4393L
 #define ERROR_REPARSE_TAG_MISMATCH       4394L
@@ -205,6 +208,8 @@ typedef size_t SIZE_T;
 
 #endif //  _WIN32
 
+
+#define MY_HRES_ERROR__INTERNAL_ERROR  ((HRESULT)0x8007054FL)
 
 
 #ifdef _SZ_NO_INT_64

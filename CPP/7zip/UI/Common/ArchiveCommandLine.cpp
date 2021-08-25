@@ -1405,11 +1405,13 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
   else if (options.Command.CommandType == NCommandType::kBenchmark)
   {
     options.NumIterations = 1;
+    options.NumIterations_Defined = false;
     if (curCommandIndex < numNonSwitchStrings)
     {
       if (!StringToUInt32(nonSwitchStrings[curCommandIndex], options.NumIterations))
         throw CArcCmdLineException("Incorrect number of benchmark iterations", nonSwitchStrings[curCommandIndex]);
       curCommandIndex++;
+      options.NumIterations_Defined = true;
     }
   }
   else if (options.Command.CommandType == NCommandType::kHash)

@@ -19,7 +19,7 @@ static const UInt32 kLangIDs[] =
   IDT_ABOUT_INFO
 };
 
-#define kHomePageURL TEXT("http://www.7-zip.org/")
+#define kHomePageURL TEXT("https://www.7-zip.org/")
 #define kHelpTopic "start.htm"
 
 #define LLL_(quote) L##quote

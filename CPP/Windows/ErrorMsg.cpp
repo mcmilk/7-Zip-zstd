@@ -19,6 +19,14 @@ namespace NError {
 
 static bool MyFormatMessage(DWORD errorCode, UString &message)
 {
+  #ifndef _SFX
+  if ((HRESULT)errorCode == MY_HRES_ERROR__INTERNAL_ERROR)
+  {
+    message = "Internal Error: The failure in hardware (RAM or CPU), OS or program";
+    return true;
+  }
+  #endif
+
   #ifdef _WIN32
   
   LPVOID msgBuf;

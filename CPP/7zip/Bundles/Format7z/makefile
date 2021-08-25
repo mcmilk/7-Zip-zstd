@@ -8,6 +8,7 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\CrcReg.obj \
   $O\IntToString.obj \
+  $O\LzFindPrepare.obj \
   $O\NewHandler.obj \
   $O\MyString.obj \
   $O\Sha256Reg.obj \
@@ -137,6 +138,7 @@ C_OBJS = \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"
+!include "../../LzFindOpt.mak"
 !include "../../LzmaDec.mak"
 !include "../../Sha256.mak"
 

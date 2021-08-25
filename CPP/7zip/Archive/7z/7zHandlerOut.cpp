@@ -133,7 +133,7 @@ HRESULT CHandler::SetMainMethod(
     if (_numSolidBytesDefined)
       continue;
 
-    UInt32 dicSize;
+    UInt64 dicSize;
     switch (methodFull.Id)
     {
       case k_LZMA:

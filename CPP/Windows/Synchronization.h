@@ -153,6 +153,10 @@ public:
   {
     return Semaphore_Create(&_object, initCount, maxCount);
   }
+  WRes OptCreateInit(UInt32 initCount, UInt32 maxCount)
+  {
+    return Semaphore_OptCreateInit(&_object, initCount, maxCount);
+  }
   WRes Release() { return Semaphore_Release1(&_object); }
   WRes Release(UInt32 releaseCount) { return Semaphore_ReleaseN(&_object, releaseCount); }
   WRes Lock() { return Semaphore_Wait(&_object); }

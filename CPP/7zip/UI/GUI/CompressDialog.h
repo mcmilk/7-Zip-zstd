@@ -42,7 +42,7 @@ namespace NCompressDialog
 
     UInt32 Level;
     UString Method;
-    UInt32 Dictionary;
+    UInt64 Dict64;
     bool OrderMode;
     UInt32 Order;
     UString Options;
@@ -79,7 +79,8 @@ namespace NCompressDialog
         DeleteAfterCompressing(false),
         FormatIndex(-1)
     {
-      Level = Dictionary = Order = UInt32(-1);
+      Level = Order = (UInt32)(Int32)-1;
+      Dict64 = (UInt64)(Int64)(-1);
       OrderMode = false;
       Method.Empty();
       Options.Empty();
@@ -87,6 +88,7 @@ namespace NCompressDialog
     }
   };
 }
+
 
 class CCompressDialog: public NWindows::NControl::CModalDialog
 {
@@ -142,17 +144,19 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 
   void SetEncryptionMethod();
 
-  void AddDictionarySize(UInt32 size);
+  void AddDict2(size_t sizeReal, size_t sizeShow);
+  void AddDict(size_t size);
   
   void SetDictionary();
 
   UInt32 GetComboValue(NWindows::NControl::CComboBox &c, int defMax = 0);
+  UInt64 GetComboValue_64(NWindows::NControl::CComboBox &c, int defMax = 0);
 
   UInt32 GetLevel()  { return GetComboValue(m_Level); }
   UInt32 GetLevelSpec()  { return GetComboValue(m_Level, 1); }
   UInt32 GetLevel2();
-  UInt32 GetDictionary() { return GetComboValue(m_Dictionary); }
-  UInt32 GetDictionarySpec() { return GetComboValue(m_Dictionary, 1); }
+  UInt64 GetDict() { return GetComboValue_64(m_Dictionary); }
+  UInt64 GetDictSpec() { return GetComboValue_64(m_Dictionary, 1); }
   UInt32 GetOrder() { return GetComboValue(m_Order); }
   UInt32 GetOrderSpec() { return GetComboValue(m_Order, 1); }
   UInt32 GetNumThreadsSpec() { return GetComboValue(m_NumThreads, 1); }
@@ -166,8 +170,10 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   void SetSolidBlockSize(bool useDictionary = false);
   void SetNumThreads();
 
-  UInt64 GetMemoryUsage(UInt32 dict, UInt64 &decompressMemory);
-  UInt64 GetMemoryUsage(UInt64 &decompressMemory);
+  UInt64 GetMemoryUsage_Dict_DecompMem(UInt64 dict, UInt64 &decompressMemory);
+  UInt64 GetMemoryUsage_DecompMem(UInt64 &decompressMemory);
+  UInt64 GetMemoryUsageComp_Dict(UInt64 dict64);
+
   void PrintMemUsage(UINT res, UInt64 value);
   void SetMemoryUsage();
   void SetParams();
@@ -195,6 +201,11 @@ public:
   }
 
   CCompressDialog(): CurrentDirWasChanged(false) {};
+
+  void MessageBoxError(LPCWSTR message)
+  {
+    MessageBoxW(*this, message, L"7-Zip", MB_ICONERROR);
+  }
 
 protected:
 

@@ -3,6 +3,7 @@ COMMON_OBJS = \
   $O\CrcReg.obj \
   $O\DynLimBuf.obj \
   $O\IntToString.obj \
+  $O\LzFindPrepare.obj \
   $O\MyMap.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
@@ -287,6 +288,7 @@ C_OBJS = \
 !include "../../Aes.mak"
 !include "../../Crc.mak"
 !include "../../Crc64.mak"
+!include "../../LzFindOpt.mak"
 !include "../../LzmaDec.mak"
 !include "../../Sha1.mak"
 !include "../../Sha256.mak"
