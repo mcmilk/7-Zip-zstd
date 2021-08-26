@@ -331,6 +331,11 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_UI4, "ldmhevery" }
 };
 
+#if defined(static_assert) || (__STDC_VERSION >= 201112L) || (_MSC_VER >= 1900)
+  static_assert(ARRAY_SIZE(g_NameToPropID) == NCoderPropID::kEndOfProp,
+    "g_NameToPropID doesn't match NCoderPropID enum");
+#endif
+
 static int FindPropIdExact(const UString &name)
 {
   for (unsigned i = 0; i < ARRAY_SIZE(g_NameToPropID); i++)
