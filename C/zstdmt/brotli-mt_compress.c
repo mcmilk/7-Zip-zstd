@@ -58,6 +58,8 @@ struct BROTLIMT_CCtx_s {
 	/* should be used for read from input */
 	int inputsize;
 
+	int lgwin;
+
 	/* statistic */
 	size_t insize;
 	size_t outsize;
@@ -87,7 +89,7 @@ struct BROTLIMT_CCtx_s {
  * Compression
  ****************************************/
 
-BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize)
+BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize, int lgwin)
 {
 	BROTLIMT_CCtx *ctx;
 	int t;
@@ -110,6 +112,8 @@ BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize)
 		ctx->inputsize = inputsize;
 	else
 		ctx->inputsize = 1024 * 1024 * (level ? level : 1);
+
+	ctx->lgwin = lgwin;
 
 	/* setup ctx */
 	ctx->level = level;
@@ -269,7 +273,7 @@ static void *pt_compress(void *arg)
 			uint8_t *obuf = (uint8_t*)wl->out.buf + 16;
 			wl->out.size -= 16;
 			rv = BrotliEncoderCompress(ctx->level,
-						   BROTLI_MAX_WINDOW_BITS,
+						   ctx->lgwin,
 						   BROTLI_MODE_GENERIC, in.size,
 						   ibuf, &wl->out.size, obuf);
 

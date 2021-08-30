@@ -12,8 +12,10 @@ CEncoder::CEncoder():
   _processedIn(0),
   _processedOut(0),
   _inputSize(0),
-  _ctx(NULL),
-  _numThreads(NWindows::NSystem::GetNumberOfProcessors())
+  _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
+  _Long(-1),
+  _WindowLog(-1),
+  _ctx(NULL)
 {
   _props.clear();
 }
@@ -50,6 +52,37 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
     case NCoderPropID::kNumThreads:
       {
         SetNumberOfThreads(v);
+        break;
+      }
+    case NCoderPropID::kLong:
+      {
+        /* like --long in zstd cli program */
+        _Long = 1;
+        if (v == 0) {
+          if (prop.vt == VT_EMPTY) {
+            // m0=brotli:long -> long=default
+            _WindowLog = BROTLI_MAX_WINDOW_BITS; //BROTLI_DEFAULT_WINDOW;
+          } else {
+            // m0=brotli:long=0 -> long=auto
+            _WindowLog = 0;
+          }
+        } else if (v < BROTLI_MIN_WINDOW_BITS) {
+          // m0=brotli:long=9 -> long=10
+          _WindowLog = BROTLI_MIN_WINDOW_BITS;
+        } else if (v > BROTLI_LARGE_MAX_WINDOW_BITS) {
+          // m0=brotli:long=33 -> long=max
+          _WindowLog = BROTLI_LARGE_MAX_WINDOW_BITS;
+        } else {
+          // m0=brotli:long=15 -> long=value
+          _WindowLog = v;
+        }
+        break;
+      }
+    case NCoderPropID::kWindowLog:
+      {
+        if (v < BROTLI_MIN_WINDOW_BITS) v = BROTLI_MIN_WINDOW_BITS;
+        if (v > BROTLI_MAX_WINDOW_BITS) v = BROTLI_MAX_WINDOW_BITS;
+        _WindowLog = v;
         break;
       }
     default:
@@ -102,11 +135,12 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
   /* 2) create compression context, if needed */
   if (!_ctx)
-    _ctx = BROTLIMT_createCCtx(_numThreads, _props._level, _inputSize);
+    _ctx = BROTLIMT_createCCtx(_numThreads, _props._level, _inputSize, 
+      _WindowLog >= 0 ? _WindowLog : BROTLI_MAX_WINDOW_BITS);
   if (!_ctx)
     return S_FALSE;
 
-  /* 3) compress */
+  /* 4) compress */
   result = BROTLIMT_compressCCtx(_ctx, &rdwr);
   if (BROTLIMT_isError(result)) {
     if (result == (size_t)-BROTLIMT_error_canceled)

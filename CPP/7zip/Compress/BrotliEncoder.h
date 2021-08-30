@@ -45,6 +45,9 @@ class CEncoder:
   UInt32 _inputSize;
   UInt32 _numThreads;
 
+  Int32 _Long;
+  Int32 _WindowLog;
+
   BROTLIMT_CCtx *_ctx;
 
 public:
