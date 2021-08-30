@@ -98,7 +98,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)
 {
   const UInt32 kNumThreadsMax = BROTLIMT_THREAD_MAX;
-  if (numThreads < 1) numThreads = 1;
+  if (numThreads < 0) numThreads = 0;
   if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   _numThreads = numThreads;
   return S_OK;

@@ -45,9 +45,15 @@ class CEncoder:
   UInt32 _inputSize;
   UInt32 _numThreads;
 
+  Int32 _Long;
+  Int32 _WindowLog;
+
   BROTLIMT_CCtx *_ctx;
 
 public:
+
+  UInt64 unpackSize;
+
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
   MY_QUERYINTERFACE_ENTRY(ICompressSetCoderProperties)
