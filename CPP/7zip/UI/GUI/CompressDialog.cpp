@@ -2178,7 +2178,7 @@ UInt64 CCompressDialog::GetMemoryUsage_Dict_DecompMem(UInt64 dict64, UInt64 &dec
     }
   }
 
-  return (UInt64)(Int64)-1;
+  return 0;
 }
 
 UInt64 CCompressDialog::GetMemoryUsage_DecompMem(UInt64 &decompressMemory)
