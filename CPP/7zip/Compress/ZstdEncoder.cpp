@@ -1,9 +1,5 @@
 // (C) 2016 - 2020 Tino Reichardt
 
-#if 0
-#include <stdio.h>
-#endif
-
 #include "StdAfx.h"
 #include "ZstdEncoder.h"
 #include "ZstdDecoder.h"
@@ -371,19 +367,6 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
             return E_FAIL;
         }
       }
-
-#if 0
-      printf("err=%u ", (unsigned)err);
-      printf("srcSize=%u ", (unsigned)srcSize);
-      printf("todo=%u\n", ZSTD_todo);
-      printf("inBuff.size=%u ", (unsigned)inBuff.size);
-      printf("inBuff.pos=%u\n", (unsigned)inBuff.pos);
-      printf("outBuff.size=%u ", (unsigned)outBuff.size);
-      printf("outBuff.pos=%u\n\n", (unsigned)outBuff.pos);
-      printf("_processedIn=%u ", (unsigned)_processedIn);
-      printf("_processedOut=%u\n", (unsigned)_processedOut);
-      fflush(stdout);
-#endif
 
       /* write output */
       if (outBuff.pos) {
