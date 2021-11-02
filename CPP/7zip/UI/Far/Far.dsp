@@ -118,6 +118,14 @@ SOURCE=..\..\..\Common\CRC.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\DynLimBuf.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\DynLimBuf.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\IntToString.cpp
 # End Source File
 # Begin Source File
@@ -430,6 +438,14 @@ SOURCE=..\Common\HandlerLoader.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Common\HashCalc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\Common\HashCalc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\LoadCodecs.cpp
 # End Source File
 # Begin Source File
@@ -622,6 +638,14 @@ SOURCE=..\..\Common\LimitedStreams.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MethodProps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MethodProps.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\ProgressUtils.cpp
 # End Source File
 # Begin Source File
@@ -710,6 +734,14 @@ SOURCE=..\..\..\..\C\Threads.h
 # Begin Group "Arc Common"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp

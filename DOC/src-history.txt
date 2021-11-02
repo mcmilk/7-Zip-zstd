@@ -1,6 +1,21 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+21.04 beta     2021-11-02
+-------------------------
+- 7-Zip now reduces the number of working CPU threads for compression,
+  if RAM size is not enough for compression with big LZMA2 dictionary.
+- 7-Zip now can create and check "file.sha256" and "file.sha1" text files 
+  that contain the list of file names and SHA-1 / SHA-256 checksums in format 
+  compatible with sha1sum/sha256sum programs.
+
+
+21.03 beta     2021-07-20
+-------------------------
+- The maximum dictionary size for LZMA/LZMA2 compressing was increased to 4 GB (3840 MiB).
+- Minor speed optimizations in LZMA/LZMA2 compressing.
+
+
 21.02 alpha    2021-05-06
 -------------------------
 - 7-Zip now writes additional field for filename in UTF-8 encoding to zip archives.

@@ -9,6 +9,7 @@
 #include "StdAfx.h"
 
 #include "../../../Common/MyWindows.h"
+// #include "../../../Common/IntToString.h"
 
 #include <OleCtl.h>
 
@@ -52,7 +53,8 @@ LONG g_DllRefCount;
 LONG g_DllRefCount = 0; // Reference count of this DLL.
 
 
-// #define ODS(sz) OutputDebugString(L#sz)
+// #define ODS(sz) OutputDebugStringW(L#sz)
+#define ODS(sz)
 
 class CShellExtClassFactory:
   public IClassFactory,
@@ -71,7 +73,12 @@ public:
 STDMETHODIMP CShellExtClassFactory::CreateInstance(LPUNKNOWN pUnkOuter,
     REFIID riid, void **ppvObj)
 {
-  // ODS("CShellExtClassFactory::CreateInstance()\r\n");
+  ODS("CShellExtClassFactory::CreateInstance()\r\n");
+  /*
+  char s[64];
+  ConvertUInt32ToHex(riid.Data1, s);
+  OutputDebugStringA(s);
+  */
   *ppvObj = NULL;
   if (pUnkOuter)
     return CLASS_E_NOAGGREGATION;
@@ -123,12 +130,12 @@ BOOL WINAPI DllMain(
   if (dwReason == DLL_PROCESS_ATTACH)
   {
     g_hInstance = (HINSTANCE)hInstance;
-    // ODS("In DLLMain, DLL_PROCESS_ATTACH\r\n");
+    ODS("In DLLMain, DLL_PROCESS_ATTACH\r\n");
     NT_CHECK
   }
   else if (dwReason == DLL_PROCESS_DETACH)
   {
-    // ODS("In DLLMain, DLL_PROCESS_DETACH\r\n");
+    ODS("In DLLMain, DLL_PROCESS_DETACH\r\n");
   }
   return TRUE;
 }
@@ -138,13 +145,19 @@ BOOL WINAPI DllMain(
 
 STDAPI DllCanUnloadNow(void)
 {
-  // ODS("In DLLCanUnloadNow\r\n");
+  ODS("In DLLCanUnloadNow\r\n");
+  /*
+  if (g_DllRefCount == 0)
+    ODS( "g_DllRefCount == 0");
+  else
+    ODS( "g_DllRefCount != 0");
+  */
   return (g_DllRefCount == 0 ? S_OK : S_FALSE);
 }
 
 STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 {
-  // ODS("In DllGetClassObject\r\n");
+  ODS("In DllGetClassObject\r\n");
   *ppv = NULL;
   if (IsEqualIID(rclsid, CLSID_CZipContextMenu))
   {
@@ -168,6 +181,7 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 
 static BOOL RegisterServer()
 {
+  ODS("RegisterServer\r\n");
   FString modulePath;
   if (!NDLL::MyGetModuleFileName(modulePath))
     return FALSE;
@@ -197,6 +211,7 @@ static BOOL RegisterServer()
       key.SetValue(k_Clsid, k_ShellExtName);
   }
   
+  ODS("RegisterServer :: return TRUE");
   return TRUE;
 }
 

@@ -100,6 +100,7 @@ COMMON_OBJS = \
   $O/CommandLineParser.o \
   $O/CRC.o \
   $O/CrcReg.o \
+  $O/DynLimBuf.o \
   $O/IntToString.o \
   $O/ListFileUtils.o \
   $O/NewHandler.o \
@@ -148,6 +149,9 @@ WIN_OBJS = \
 COMPRESS_OBJS = \
   $O/CopyCoder.o \
 
+AR_COMMON_OBJS = \
+  $O/ItemNameUtils.o \
+
 C_OBJS = \
   $O/Alloc.o \
   $O/CpuArch.o \
@@ -163,6 +167,7 @@ OBJS = \
   $(WIN_OBJS) \
   $(SYS_OBJS) \
   $(COMPRESS_OBJS) \
+  $(AR_COMMON_OBJS) \
   $(7ZIP_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
   $(CONSOLE_OBJS) \

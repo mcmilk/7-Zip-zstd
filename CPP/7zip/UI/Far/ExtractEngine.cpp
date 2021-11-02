@@ -130,6 +130,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
 static const char * const kTestString    =  "Testing";
 static const char * const kExtractString =  "Extracting";
 static const char * const kSkipString    =  "Skipping";
+static const char * const kReadString    =  "Reading";
 
 STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /* isFolder */, Int32 askExtractMode, const UInt64 * /* position */)
 {
@@ -143,6 +144,7 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /*
     case NArchive::NExtract::NAskMode::kExtract: s = kExtractString; break;
     case NArchive::NExtract::NAskMode::kTest:    s = kTestString; break;
     case NArchive::NExtract::NAskMode::kSkip:    s = kSkipString; break;
+    case NArchive::NExtract::NAskMode::kReadExternal: s = kReadString; break;
     default: s = "???"; // return E_FAIL;
   };
 

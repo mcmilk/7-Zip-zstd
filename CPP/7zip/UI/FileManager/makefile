@@ -5,6 +5,7 @@ CFLAGS = $(CFLAGS) \
 !include "FM.mak"
 
 COMMON_OBJS = \
+  $O\DynLimBuf.obj \
   $O\IntToString.obj \
   $O\Lang.obj \
   $O\MyString.obj \
@@ -92,6 +93,10 @@ GUI_OBJS = \
 
 COMPRESS_OBJS = \
   $O\CopyCoder.obj \
+
+AR_COMMON_OBJS = \
+  $O\ItemNameUtils.obj \
+
 
 C_OBJS = $(C_OBJS) \
   $O\Alloc.obj \

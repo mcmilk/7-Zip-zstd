@@ -686,9 +686,14 @@ struct CArchiveItemProperty
   VARTYPE Type;
 };
 
-static inline char GetHex(Byte value)
+static inline char GetHex_Upper(unsigned v)
 {
-  return (char)((value < 10) ? ('0' + value) : ('A' + (value - 10)));
+  return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10)));
+}
+
+static inline char GetHex_Lower(unsigned v)
+{
+  return (char)((v < 10) ? ('0' + v) : ('a' + (v - 10)));
 }
 
 HRESULT CPlugin::ShowAttributesWindow()
@@ -810,11 +815,21 @@ HRESULT CPlugin::ShowAttributesWindow()
           }
           else
           {
+            const bool needUpper = (dataSize <= 8)
+                && (property.ID == kpidCRC || property.ID == kpidChecksum);
             for (UInt32 k = 0; k < dataSize; k++)
             {
-              Byte b = ((const Byte *)data)[k];
-              s += GetHex((Byte)((b >> 4) & 0xF));
-              s += GetHex((Byte)(b & 0xF));
+              unsigned b = ((const Byte *)data)[k];
+              if (needUpper)
+              {
+                s += GetHex_Upper((b >> 4) & 0xF);
+                s += GetHex_Upper(b & 0xF);
+              }
+              else
+              {
+                s += GetHex_Lower((b >> 4) & 0xF);
+                s += GetHex_Lower(b & 0xF);
+              }
             }
           }
         }

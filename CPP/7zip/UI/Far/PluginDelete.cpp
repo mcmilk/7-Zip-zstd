@@ -17,7 +17,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
 {
   if (numItems == 0)
     return FALSE;
-  if (_agent->IsThereReadOnlyArc())
+  if (_agent->IsThere_ReadOnlyArc())
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return FALSE;

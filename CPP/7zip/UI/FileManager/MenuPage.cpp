@@ -63,7 +63,8 @@ static const CContextMenuItem kMenuItems[] =
   { IDS_CONTEXT_COMPRESS_TO_EMAIL, kCompressToZipEmail },
   #endif
 
-  { IDS_PROP_CHECKSUM, kCRC }
+  { IDS_PROP_CHECKSUM, kCRC },
+  { IDS_PROP_CHECKSUM, kCRC_Cascaded },
 };
 
 
@@ -188,8 +189,11 @@ bool CMenuPage::OnInit()
     UString s = LangString(menuItem.ControlID);
     if (menuItem.Flag == kCRC)
       s = "CRC SHA";
-    if (menuItem.Flag == kOpenAs ||
-        menuItem.Flag == kCRC)
+    else if (menuItem.Flag == kCRC_Cascaded)
+      s = "7-Zip > CRC SHA";
+    if (menuItem.Flag == kOpenAs
+        || menuItem.Flag == kCRC
+        || menuItem.Flag == kCRC_Cascaded)
       s += " >";
 
     switch (menuItem.ControlID)

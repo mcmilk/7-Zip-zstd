@@ -1076,6 +1076,14 @@ SOURCE=..\..\..\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\DynLimBuf.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\DynLimBuf.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Exception.h
 # End Source File
 # Begin Source File
@@ -1419,6 +1427,10 @@ SOURCE=..\Explorer\ContextMenuFlags.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\Explorer\MyExplorerCommand.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\Explorer\RegistryContextMenu.cpp
 # End Source File
 # Begin Source File
@@ -1489,6 +1501,18 @@ SOURCE=..\..\IStream.h
 # Begin Source File
 
 SOURCE=..\..\PropID.h
+# End Source File
+# End Group
+# Begin Group "ArchiveCommon"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.h
 # End Source File
 # End Group
 # Begin Source File

@@ -108,6 +108,7 @@ COMMON_OBJS = \
   $O/CommandLineParser.o \
   $O/CRC.o \
   $O/CrcReg.o \
+  $O/DynLimBuf.o \
   $O/IntToString.o \
   $O/ListFileUtils.o \
   $O/LzFindPrepare.o \

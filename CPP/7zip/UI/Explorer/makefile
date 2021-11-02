@@ -65,6 +65,7 @@ FM_OBJS = \
   $O\HelpUtils.obj \
   $O\LangUtils.obj \
   $O\ProgramLocation.obj \
+  $O\PropertyName.obj \
   $O\RegistryUtils.obj \
 
 C_OBJS = \

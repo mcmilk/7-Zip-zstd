@@ -217,6 +217,7 @@ static const char * const kIncorrectCommand = "incorrect command";
 static const char * const kTestingString    =  "Testing     ";
 static const char * const kExtractingString =  "Extracting  ";
 static const char * const kSkippingString   =  "Skipping    ";
+static const char * const kReadingString    =  "Reading     ";
 
 static const char * const kUnsupportedMethod = "Unsupported Method";
 static const char * const kCRCFailed = "CRC Failed";
@@ -419,6 +420,9 @@ STDMETHODIMP CArchiveExtractCallback::PrepareOperation(Int32 askExtractMode)
     case NArchive::NExtract::NAskMode::kExtract:  Print(kExtractingString); break;
     case NArchive::NExtract::NAskMode::kTest:  Print(kTestingString); break;
     case NArchive::NExtract::NAskMode::kSkip:  Print(kSkippingString); break;
+    case NArchive::NExtract::NAskMode::kReadExternal: Print(kReadingString); break;
+    default:
+      Print("??? "); break;
   };
   Print(_filePath);
   return S_OK;

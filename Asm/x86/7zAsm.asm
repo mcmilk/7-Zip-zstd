@@ -1,5 +1,5 @@
 ; 7zAsm.asm -- ASM macros
-; 2021-07-13 : Igor Pavlov : Public domain
+; 2021-08-29 : Igor Pavlov : Public domain
 
 ifdef RAX
   x64 equ 1
@@ -27,6 +27,8 @@ else
 endif
 endif
 
+OPTION PROLOGUE:NONE 
+OPTION EPILOGUE:NONE
 
 MY_ASM_START macro
   ifdef x64

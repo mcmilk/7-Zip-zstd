@@ -31,6 +31,7 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
+  $O\Clipboard.obj \
   $O\CommonDialog.obj \
   $O\DLL.obj \
   $O\ErrorMsg.obj \
@@ -38,6 +39,7 @@ WIN_OBJS = \
   $O\FileFind.obj \
   $O\FileIO.obj \
   $O\FileName.obj \
+  $O\MemoryGlobal.obj \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
   $O\ResourceString.obj \

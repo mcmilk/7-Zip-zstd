@@ -24,6 +24,7 @@ GUI_OBJS = \
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
+  $O\DynLimBuf.obj \
   $O\IntToString.obj \
   $O\Lang.obj \
   $O\ListFileUtils.obj \
@@ -102,6 +103,7 @@ UI_COMMON_OBJS = \
   $O\ZipRegistry.obj \
 
 AR_COMMON_OBJS = \
+  $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
 
 FM_OBJS = \

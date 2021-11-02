@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2021-02-23 : Igor Pavlov : Public domain */
+2021-09-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -926,6 +926,9 @@ static void WriteShellEx()
       wcscpy(destPath + 1, path);
       CatAscii(destPath, "Uninstall.exe\"");
       MyRegistry_SetString(destKey, L"UninstallString", destPath);
+
+      CatAscii(destPath, " /S");
+      MyRegistry_SetString(destKey, L"QuietUninstallString", destPath);
       
       MyRegistry_SetDWORD(destKey, L"NoModify", 1);
       MyRegistry_SetDWORD(destKey, L"NoRepair", 1);
