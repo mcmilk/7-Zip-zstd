@@ -73,6 +73,7 @@ LOCAL_FLAGS = \
 CONSOLE_OBJS = \
   $O/BenchCon.o \
   $O/ConsoleClose.o \
+  $O/DynLimBuf.o \
   $O/ExtractCallbackConsole.o \
   $O/HashCon.o \
   $O/List.o \

@@ -8,6 +8,7 @@ COMMON_OBJS = \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
   $O\CrcReg.obj \
+  $O\DynLimBuf.obj \
   $O\IntToString.obj \
   $O\ListFileUtils.obj \
   $O\LzFindPrepare.obj \

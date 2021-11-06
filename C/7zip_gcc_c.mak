@@ -174,6 +174,8 @@ $O/LzFind.o: ../../../C/LzFind.c
 # ifdef MT_FILES
 $O/LzFindMt.o: ../../../C/LzFindMt.c
 	$(CC) $(CFLAGS) $<
+$O/LzFindOpt.o: ../../../C/LzFindOpt.c
+	$(CC) $(CFLAGS) $<
 
 $O/Threads.o: ../../../C/Threads.c
 	$(CC) $(CFLAGS) $<

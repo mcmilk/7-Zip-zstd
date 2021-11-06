@@ -290,6 +290,14 @@ SOURCE=..\..\..\Common\DynamicBuffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\DynLimBuf.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\DynLimBuf.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\IntToString.cpp
 # End Source File
 # Begin Source File
