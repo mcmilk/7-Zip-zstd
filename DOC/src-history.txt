@@ -1,6 +1,19 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+21.06          2021-11-24
+-------------------------
+- Bug in LZMA encoder in file LzmaEnc.c was fixed:
+  LzmaEnc_MemEncode(), LzmaEncode() and LzmaCompress() could work incorrectly, 
+    if size value for output buffer is smaller than size required for all compressed data.
+  LzmaEnc_Encode() could work incorrectly,
+    if callback ISeqOutStream::Write() doesn't write all compressed data.
+  NCompress::NLzma::CEncoder::Code() could work incorrectly,
+    if callback ISequentialOutStream::Write() returns error code.
+- Bug in versions 21.00-21.05 was fixed:
+  7-Zip didn't set attributes of directories during archive extracting.
+
+
 21.04 beta     2021-11-02
 -------------------------
 - 7-Zip now reduces the number of working CPU threads for compression,

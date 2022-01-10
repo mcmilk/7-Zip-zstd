@@ -82,14 +82,14 @@ enum
   EW_READENVSTR,        // ReadEnvStr, ExpandEnvStrings
   EW_INTCMP,            // IntCmp, IntCmpU
   EW_INTOP,             // IntOp
-  EW_INTFMT,            // IntFmt
+  EW_INTFMT,            // IntFmt/Int64Fmt
   EW_PUSHPOP,           // Push/Pop/Exchange
   EW_FINDWINDOW,        // FindWindow
   EW_SENDMESSAGE,       // SendMessage
   EW_ISWINDOW,          // IsWindow
   EW_GETDLGITEM,        // GetDlgItem
   EW_SETCTLCOLORS,      // SetCtlColors
-  EW_SETBRANDINGIMAGE,  // SetBrandingImage
+  EW_SETBRANDINGIMAGE,  // SetBrandingImage / LoadAndSetImage
   EW_CREATEFONT,        // CreateFont
   EW_SHOWWINDOW,        // ShowWindow, EnableWindow, HideWindow
   EW_SHELLEXEC,         // ExecShell
@@ -131,15 +131,29 @@ enum
   EW_SECTIONSET,        // Get*, Set*
   EW_INSTTYPESET,       // InstTypeSetText, InstTypeGetText, SetCurInstType, GetCurInstType
 
+  /*
+  // before v3.06 nsis it was so:
   // instructions not actually implemented in exehead, but used in compiler.
   EW_GETLABELADDR,      // both of these get converted to EW_ASSIGNVAR
   EW_GETFUNCTIONADDR,
+  */
+  
+  // v3.06 and later it was changed to:
+  EW_GETOSINFO,
+  EW_RESERVEDOPCODE,
   
   EW_LOCKWINDOW,        // LockWindow
   
   // 2 unicode commands available only in Unicode archive
   EW_FPUTWS,            // FileWriteUTF16LE, FileWriteWord
   EW_FGETWS,            // FileReadUTF16LE, FileReadWord
+
+  /*
+  // since v3.06 the fllowing IDs codes was moved here:
+  // Opcodes listed here are not actually used in exehead. No exehead opcodes should be present after these!
+  EW_GETLABELADDR,      // --> EW_ASSIGNVAR
+  EW_GETFUNCTIONADDR,   // --> EW_ASSIGNVAR
+  */
 
   // The following IDs are not IDs in real order.
   // We just need some IDs to translate eny extended layout to main layout.
@@ -194,20 +208,20 @@ static const CCommandInfo k_Commands[kNumCmds] =
   { 3 }, // ReadEnvStr, ExpandEnvStrings
   { 6 }, // "IntCmp" },
   { 4 }, // "IntOp" },
-  { 3 }, // "IntFmt" },
+  { 4 }, // "IntFmt" }, EW_INTFMT
   { 6 }, // Push, Pop, Exch // it must be 3 params. But some multi-command write garbage.
   { 5 }, // "FindWindow" },
   { 6 }, // "SendMessage" },
   { 3 }, // "IsWindow" },
   { 3 }, // "GetDlgItem" },
   { 2 }, // "SetCtlColors" },
-  { 3 }, // "SetBrandingImage" },
+  { 4 }, // "SetBrandingImage" } // LoadAndSetImage
   { 5 }, // "CreateFont" },
   { 4 }, // ShowWindow, EnableWindow, HideWindow
   { 6 }, // "ExecShell" },
   { 3 }, // "Exec" }, // Exec, ExecWait
   { 3 }, // "GetFileTime" },
-  { 3 }, // "GetDLLVersion" },
+  { 4 }, // "GetDLLVersion" },
   { 6 }, // RegDLL, UnRegDLL, CallInstDLL // it must be 5 params. But some multi-command write garbage.
   { 6 }, // "CreateShortCut" },
   { 4 }, // "CopyFiles" },
@@ -229,10 +243,14 @@ static const CCommandInfo k_Commands[kNumCmds] =
   { 4 }, // "WriteUninstaller" },
   { 5 }, // "Section" },  // ***
   { 4 }, // InstTypeSetText, InstTypeGetText, SetCurInstType, GetCurInstType
-  { 6 }, // "GetLabelAddr" },
-  { 2 }, // "GetFunctionAddress" },
+  
+  // { 6 }, // "GetLabelAddr" }, // before 3.06
+  { 6 }, // "GetOsInfo" }, GetKnownFolderPath, ReadMemory, // v3.06+
+  
+  { 2 }, // "GetFunctionAddress" }, // before 3.06
+
   { 1 }, // "LockWindow" },
-  { 3 }, // "FileWrite" }, // FileWriteUTF16LE, FileWriteWord
+  { 4 }, // "FileWrite" }, // FileWriteUTF16LE, FileWriteWord
   { 4 }, // "FileRead" }, // FileReadUTF16LE, FileReadWord
   
   { 2 }, // "Log" }, // LogSet, LogText
@@ -274,9 +292,9 @@ static const char * const k_CommandNames[kNumCmds] =
   , NULL // StrCpy, GetCurrentAddress
   , "StrCmp"
   , NULL // ReadEnvStr, ExpandEnvStrings
-  , "IntCmp"
+  , NULL // IntCmp / Int64Cmp / EW_INTCMP
   , "IntOp"
-  , "IntFmt"
+  , NULL // IntFmt / Int64Fmt / EW_INTFMT
   , NULL // Push, Pop, Exch // it must be 3 params. But some multi-command write garbage.
   , "FindWindow"
   , "SendMessage"
@@ -311,8 +329,10 @@ static const char * const k_CommandNames[kNumCmds] =
   , "WriteUninstaller"
   , "Section"  // ***
   , NULL // InstTypeSetText, InstTypeGetText, SetCurInstType, GetCurInstType
-  , "GetLabelAddr"
+  
+  , NULL // "GetOsInfo" // , "GetLabelAddr" //
   , "GetFunctionAddress"
+  
   , "LockWindow"
   , "FileWrite" // FileWriteUTF16LE, FileWriteWord
   , "FileRead" // FileReadUTF16LE, FileReadWord
@@ -1715,7 +1735,10 @@ static bool StringToUInt32(const char *s, UInt32 &res)
   return (*end == 0);
 }
 
-static const unsigned k_CtlColors_Size = 24;
+static const unsigned k_CtlColors32_Size = 24;
+static const unsigned k_CtlColors64_Size = 28;
+
+#define GET_CtlColors_SIZE(is64) ((is64) ? k_CtlColors64_Size : k_CtlColors32_Size)
 
 struct CNsis_CtlColors
 {
@@ -1725,16 +1748,27 @@ struct CNsis_CtlColors
   UInt32 bkb; // HBRUSH
   Int32 bkmode;
   Int32 flags;
+  UInt32 bkb_hi32;
 
-  void Parse(const Byte *p);
+  void Parse(const Byte *p, bool is64);
 };
 
-void CNsis_CtlColors::Parse(const Byte *p)
+void CNsis_CtlColors::Parse(const Byte *p, bool is64)
 {
   text = Get32(p);
   bkc = Get32(p + 4);
-  lbStyle = Get32(p + 8);
-  bkb = Get32(p + 12);
+  if (is64)
+  {
+    bkb = Get32(p + 8);
+    bkb_hi32 = Get32(p + 12);
+    lbStyle = Get32(p + 16);
+    p += 4;
+  }
+  else
+  {
+    lbStyle = Get32(p + 8);
+    bkb = Get32(p + 12);
+  }
   bkmode = (Int32)Get32(p + 16);
   flags = (Int32)Get32(p + 20);
 }
@@ -2427,11 +2461,22 @@ void CInArchive::FindBadCmd(const CBlockHeader &bh, const Byte *p)
     if (BadCmd >= 0 && id >= (unsigned)BadCmd)
       continue;
     unsigned i;
-    if (id == EW_GETLABELADDR ||
-        id == EW_GETFUNCTIONADDR)
+    if (IsNsis3_OrHigher())
     {
-      BadCmd = id;
-      continue;
+      if (id == EW_RESERVEDOPCODE)
+      {
+        BadCmd = id;
+        continue;
+      }
+    }
+    else
+    {
+      // if (id == EW_GETLABELADDR || id == EW_GETFUNCTIONADDR)
+      if (id == EW_RESERVEDOPCODE || id == EW_GETOSINFO)
+      {
+        BadCmd = id;
+        continue;
+      }
     }
     for (i = 6; i != 0; i--)
     {
@@ -3148,7 +3193,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         && CompareCommands(p, k_InitPluginDir_Commands, ARRAY_SIZE(k_InitPluginDir_Commands)))
     {
       InitPluginsDir_Start = kkk;
-      InitPluginsDir_End = kkk + ARRAY_SIZE(k_InitPluginDir_Commands);
+      InitPluginsDir_End = (int)(kkk + ARRAY_SIZE(k_InitPluginDir_Commands));
       labels[kkk] |= CMD_REF_InitPluginDir;
       break;
     }
@@ -3369,7 +3414,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         #ifdef NSIS_SCRIPT
         s += isSetOutPath ? "SetOutPath" : "CreateDirectory";
         AddParam(params[0]);
-        if (params[2] != 0)
+        if (params[2] != 0) // 2.51+ & 3.0b3+
         {
           SmallSpaceComment();
           s += "CreateRestrictedDirectory";
@@ -4017,7 +4062,12 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 
       case EW_INTCMP:
       {
-        if (params[5] != 0)
+        s += "Int";
+        const UInt32 param5 = params[5];
+        if (param5 & 0x8000)
+          s += "64"; // v3.03+
+        s += "Cmp";
+        if (IsNsis3_OrHigher() ? (param5 & 1) : (param5 != 0))
           s += 'U';
         AddParams(params, 2);
         Add_GotoVar1(params[2]);
@@ -4029,13 +4079,13 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       case EW_INTOP:
       {
         AddParam_Var(params[0]);
-        const char * const kOps = "+-*/|&^!|&%<>"; // NSIS 2.01+
+        const char * const kOps = "+-*/|&^!|&%<>>"; // NSIS 2.01+
                         // "+-*/|&^!|&%";   // NSIS 2.0b4+
                         // "+-*/|&^~!|&%";  // NSIS old
-        UInt32 opIndex = params[3];
-        char c = (opIndex < 13) ? kOps[opIndex] : '?';
-        char c2 = (opIndex < 8 || opIndex == 10) ? (char)0 : c;
-        int numOps = (opIndex == 7) ? 1 : 2;
+        const UInt32 opIndex = params[3];
+        const char c = (opIndex < 14) ? kOps[opIndex] : '?';
+        const char c2 = (opIndex < 8 || opIndex == 10) ? (char)0 : c;
+        const int numOps = (opIndex == 7) ? 1 : 2;
         AddParam(params[1]);
         if (numOps == 2 && c == '^' && IsDirectString_Equal(params[2], "0xFFFFFFFF"))
           s += " ~    ;";
@@ -4043,6 +4093,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         s += c;
         if (numOps != 1)
         {
+          if (opIndex == 13) // v3.03+ : operation ">>>"
+            s += c;
           if (c2 != 0)
             s += c2;
           AddParam(params[2]);
@@ -4052,6 +4104,10 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 
       case EW_INTFMT:
       {
+        if (params[3])
+          s += "Int64Fmt";  // v3.03+
+        else
+          s += "IntFmt";
         AddParam_Var(params[0]);
         AddParams(params + 1, 2);
         break;
@@ -4172,7 +4228,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         
         if (_size < bhCtlColors.Offset
            || _size - bhCtlColors.Offset < offset
-           || _size - bhCtlColors.Offset - offset < k_CtlColors_Size)
+           || _size - bhCtlColors.Offset - offset < GET_CtlColors_SIZE(Is64Bit))
         {
           AddError("bad offset");
           break;
@@ -4180,7 +4236,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 
         const Byte *p2 = _data + bhCtlColors.Offset + offset;
         CNsis_CtlColors colors;
-        colors.Parse(p2);
+        colors.Parse(p2, Is64Bit);
 
         if ((colors.flags & kColorsFlags_BK_SYS) != 0 ||
             (colors.flags & kColorsFlags_TEXT_SYS) != 0)
@@ -4214,6 +4270,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         break;
       }
 
+      // case EW_LOADANDSETIMAGE:
       case EW_SETBRANDINGIMAGE:
       {
         s += " /IMGID=";
@@ -4312,6 +4369,9 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       case EW_GETFILETIME:
       case EW_GETDLLVERSION:
       {
+        if (commandId == EW_GETDLLVERSION)
+          if (params[3] == 2)
+            s += " /ProductVersion";  // v3.08+
         AddParam(params[2]);
         AddParam_Var(params[0]);
         AddParam_Var(params[1]);
@@ -4354,11 +4414,15 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       case EW_CREATESHORTCUT:
       {
         unsigned numParams;
+        #define IsNsis3d0b3_OrHigher() 0 // change it
+        const unsigned v3_0b3 = IsNsis3d0b3_OrHigher();
         for (numParams = 6; numParams > 2; numParams--)
           if (params[numParams - 1] != 0)
             break;
 
-        UInt32 spec = params[4];
+        const UInt32 spec = params[4];
+        const unsigned sw_shift = v3_0b3 ? 12 : 8;
+        const UInt32 sw_mask = v3_0b3 ? 0x7000 : 0x7F;
         if (spec & 0x8000) // NSIS 3.0b0
           s += " /NoWorkingDir";
 
@@ -4366,16 +4430,16 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         if (numParams <= 4)
           break;
 
-        UInt32 icon = (spec & 0xFF);
+        UInt32 icon = (spec & (v3_0b3 ? 0xFFF : 0xFF));
         Space();
         if (icon != 0)
           Add_UInt(icon);
         else
           AddQuotes();
 
-        if ((spec >> 8) == 0 && numParams < 6)
+        if ((spec >> sw_shift) == 0 && numParams < 6)
           break;
-        UInt32 sw = (spec >> 8) & 0x7F;
+        UInt32 sw = (spec >> sw_shift) & sw_mask;
         Space();
         // NSIS encoder replaces these names:
         if (sw == MY__SW_SHOWMINNOACTIVE)
@@ -4485,6 +4549,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           s += "Key";
           if (params[4] & 2)
             s += " /ifempty";
+          // TODO: /ifnosubkeys, /ifnovalues
         }
         AddRegRoot(params[1]);
         AddParam(params[2]);
@@ -4507,6 +4572,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         }
         if (params[4] == 1 && params[5] == 2)
           s2 = "ExpandStr";
+        if (params[4] == 3 && params[5] == 7)
+          s2 = "MultiStr"; // v3.02+
         if (s2)
           s += s2;
         AddRegRoot(params[0]);
@@ -4627,6 +4694,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           s += (params[2] == 0) ? "UTF16LE" : "Word";
         else if (params[2] != 0)
           s += "Byte";
+        if (params[2] == 0 && params[3])
+          s += " /BOM"; // v3.0b3+
         AddParam_Var(params[0]);
         AddParam(params[1]);
         break;
@@ -4753,6 +4822,34 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         AddParams(params, numQwParams);
         if (params[2] == 0)
           AddParam_Var(params[1]);
+        break;
+      }
+
+      case EW_GETOSINFO:
+      {
+        if (IsNsis3_OrHigher())
+        {
+          // v3.06+
+          if (params[3] == 0) // GETOSINFO_KNOWNFOLDER
+          {
+            s += "GetKnownFolderPath";
+            AddParam_Var(params[1]);
+            AddParam(params[2]);
+            break;
+          }
+          else if (params[3] == 1) // GETOSINFO_READMEMORY
+          {
+            s += "ReadMemory";
+            AddParam_Var(params[1]);
+            AddParam(params[2]);
+            AddParam(params[4]);
+            // if (params[2] == "0") AddCommentAndString("GetWinVer");
+          }
+          else
+            s += "GetOsInfo";
+          break;
+        }
+        s += "GetLabelAddr"; //  before v3.06+
         break;
       }
       
@@ -5111,8 +5208,12 @@ HRESULT CInArchive::Parse()
   }
 
   AddLF();
-  if (IsUnicode)
+  if (Is64Bit)
+    AddStringLF("Target AMD64-Unicode"); // TODO: Read PE machine type and use the correct CPU type
+  else if (IsUnicode)
     AddStringLF("Unicode true");
+  else if (IsNsis3_OrHigher())
+    AddStringLF("Unicode false"); // Unicode is the default in 3.07+
 
   if (Method != NMethodType::kCopy)
   {

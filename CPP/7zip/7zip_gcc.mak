@@ -10,6 +10,7 @@ MY_ASM = jwasm
 MY_ASM = asmc
 
 PROGPATH = $(O)/$(PROG)
+PROGPATH_STATIC = $(O)/$(PROG)s
 
 
 ifneq ($(CC), xlc)
@@ -88,7 +89,7 @@ endif
 
 
 PROGPATH = $(O)/$(PROG)$(SHARED_EXT)
-
+PROGPATH_STATIC = $(O)/$(PROG)s$(SHARED_EXT)
 	
 ifdef IS_MINGW
 
@@ -114,7 +115,7 @@ LIB2 = -lpthread -ldl
 
 
 
-DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(OBJS)
+DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(PROGPATH_STATIC) $(OBJS)
 
 endif
 
@@ -150,13 +151,23 @@ CXX_WARN_FLAGS =
 
 CXXFLAGS = $(MY_ARCH_2) $(LOCAL_FLAGS) $(CXXFLAGS_BASE2) $(CFLAGS_BASE) $(CXXFLAGS_EXTRA) $(CC_SHARED) -o $@ $(CXX_WARN_FLAGS)
 
-all: $(O) $(PROGPATH)
+STATIC_TARGET=
+ifdef COMPL_STATIC
+STATIC_TARGET=$(PROGPATH_STATIC)
+endif
+
+
+all: $(O) $(PROGPATH) $(STATIC_TARGET)
 
 $(O):
 	$(MY_MKDIR) $(O)
 
+LFLAGS_ALL = -s $(MY_ARCH_2) $(LDFLAGS) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
 $(PROGPATH): $(OBJS)
-	$(CXX) -o $(PROGPATH) -s $(MY_ARCH_2) $(LDFLAGS) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
+	$(CXX) -o $(PROGPATH) $(LFLAGS_ALL)
+
+$(PROGPATH_STATIC): $(OBJS)
+	$(CXX) -static -o $(PROGPATH_STATIC) $(LFLAGS_ALL)
 
 #	-s strips debug sections from executable in GCC
 
