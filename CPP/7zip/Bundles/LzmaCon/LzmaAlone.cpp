@@ -515,7 +515,7 @@ static int main2(int numArgs, const char *args[])
   
   if (inStreamSpec)
   {
-    if (!inStreamSpec->File.GetLength(fileSize))
+    if (!inStreamSpec->GetLength(fileSize))
       throw "Cannot get file length";
     fileSizeDefined = true;
     if (!stdOutMode)

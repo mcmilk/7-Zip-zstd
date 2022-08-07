@@ -209,8 +209,8 @@ int CHandler::FindInsertPos(const CParseItem &item) const
   unsigned left = 0, right = _items.Size();
   while (left != right)
   {
-    unsigned mid = (left + right) / 2;
-    const CParseItem & midItem = _items[mid];
+    const unsigned mid = (unsigned)(((size_t)left + (size_t)right) / 2);
+    const CParseItem &midItem = _items[mid];
     if (item.Offset < midItem.Offset)
       right = mid;
     else if (item.Offset > midItem.Offset)
@@ -262,8 +262,8 @@ void CHandler::AddUnknownItem(UInt64 next)
 void CHandler::AddItem(const CParseItem &item)
 {
   AddUnknownItem(item.Offset);
-  int pos = FindInsertPos(item);
-  if (pos >= 0)
+  const int pos = FindInsertPos(item);
+  if (pos != -1)
   {
     _items.Insert((unsigned)pos, item);
     UInt64 next = item.Offset + item.Size;
@@ -482,7 +482,7 @@ HRESULT Archive_IsItem_Deleted(IInArchive *arc, UInt32 index, bool &result) thro
   return Archive_GetItemBoolProp(arc, index, kpidIsDeleted, result);
 }
 
-static HRESULT Archive_GetArcBoolProp(IInArchive *arc, PROPID propid, bool &result) throw()
+static HRESULT Archive_GetArcProp_Bool(IInArchive *arc, PROPID propid, bool &result) throw()
 {
   NCOM::CPropVariant prop;
   result = false;
@@ -532,7 +532,7 @@ static HRESULT Archive_GetArcProp_Int(IInArchive *arc, PROPID propid, Int64 &res
 
 #ifndef _SFX
 
-HRESULT CArc::GetItemPathToParent(UInt32 index, UInt32 parent, UStringVector &parts) const
+HRESULT CArc::GetItem_PathToParent(UInt32 index, UInt32 parent, UStringVector &parts) const
 {
   if (!GetRawProps)
     return E_FAIL;
@@ -616,7 +616,7 @@ HRESULT CArc::GetItemPathToParent(UInt32 index, UInt32 parent, UStringVector &pa
 
 
 
-HRESULT CArc::GetItemPath(UInt32 index, UString &result) const
+HRESULT CArc::GetItem_Path(UInt32 index, UString &result) const
 {
   #ifdef MY_CPU_LE
   if (GetRawProps)
@@ -752,13 +752,13 @@ HRESULT CArc::GetItemPath(UInt32 index, UString &result) const
   }
   
   if (result.IsEmpty())
-    return GetDefaultItemPath(index, result);
+    return GetItem_DefaultPath(index, result);
 
   Convert_UnicodeEsc16_To_UnicodeEscHigh(result);
   return S_OK;
 }
 
-HRESULT CArc::GetDefaultItemPath(UInt32 index, UString &result) const
+HRESULT CArc::GetItem_DefaultPath(UInt32 index, UString &result) const
 {
   result.Empty();
   bool isDir;
@@ -779,9 +779,9 @@ HRESULT CArc::GetDefaultItemPath(UInt32 index, UString &result) const
   return S_OK;
 }
 
-HRESULT CArc::GetItemPath2(UInt32 index, UString &result) const
+HRESULT CArc::GetItem_Path2(UInt32 index, UString &result) const
 {
-  RINOK(GetItemPath(index, result));
+  RINOK(GetItem_Path(index, result));
   if (Ask_Deleted)
   {
     bool isDeleted = false;
@@ -833,7 +833,7 @@ HRESULT CArc::GetItem(UInt32 index, CReadArcItem &item) const
   RINOK(Archive_IsItem_Dir(Archive, index, item.IsDir));
   item.MainIsDir = item.IsDir;
 
-  RINOK(GetItemPath2(index, item.Path));
+  RINOK(GetItem_Path2(index, item.Path));
 
   #ifndef _SFX
   UInt32 mainIndex = index;
@@ -885,7 +885,7 @@ HRESULT CArc::GetItem(UInt32 index, CReadArcItem &item) const
         }
         else
         {
-          RINOK(GetItemPath2(parentIndex, item.MainPath));
+          RINOK(GetItem_Path2(parentIndex, item.MainPath));
           RINOK(Archive_IsItem_Dir(Archive, parentIndex, item.MainIsDir));
         }
       }
@@ -911,7 +911,7 @@ HRESULT CArc::GetItem(UInt32 index, CReadArcItem &item) const
   #ifndef _SFX
   if (item._use_baseParentFolder_mode)
   {
-    RINOK(GetItemPathToParent(mainIndex, (unsigned)item._baseParentFolder, item.PathParts));
+    RINOK(GetItem_PathToParent(mainIndex, (unsigned)item._baseParentFolder, item.PathParts));
     
     #ifdef SUPPORT_ALT_STREAMS
     if ((item.WriteToAltStreamIfColon || needFindAltStream) && !item.PathParts.IsEmpty())
@@ -970,7 +970,7 @@ static HRESULT Archive_GetItem_Size(IInArchive *archive, UInt32 index, UInt64 &s
 
 #endif
 
-HRESULT CArc::GetItemSize(UInt32 index, UInt64 &size, bool &defined) const
+HRESULT CArc::GetItem_Size(UInt32 index, UInt64 &size, bool &defined) const
 {
   NCOM::CPropVariant prop;
   defined = false;
@@ -989,24 +989,52 @@ HRESULT CArc::GetItemSize(UInt32 index, UInt64 &size, bool &defined) const
   return S_OK;
 }
 
-HRESULT CArc::GetItemMTime(UInt32 index, FILETIME &ft, bool &defined) const
+HRESULT CArc::GetItem_MTime(UInt32 index, CArcTime &at) const
 {
+  at.Clear();
   NCOM::CPropVariant prop;
-  defined = false;
-  ft.dwHighDateTime = ft.dwLowDateTime = 0;
   RINOK(Archive->GetProperty(index, kpidMTime, &prop));
+  
   if (prop.vt == VT_FILETIME)
   {
-    ft = prop.filetime;
-    defined = true;
+    /*
+    // for debug
+    if (FILETIME_IsZero(prop.at) && MTime.Def)
+    {
+      at = MTime;
+      return S_OK;
+    }
+    */
+    at.Set_From_Prop(prop);
+    if (at.Prec == 0)
+    {
+      // (at.Prec == 0) before version 22.
+      // so kpidTimeType is required for that code
+      prop.Clear();
+      RINOK(Archive->GetProperty(index, kpidTimeType, &prop));
+      if (prop.vt == VT_UI4)
+      {
+        UInt32 val = prop.ulVal;
+        if (val == NFileTimeType::kWindows)
+          val = k_PropVar_TimePrec_100ns;
+        /*
+        else if (val > k_PropVar_TimePrec_1ns)
+        {
+          val = k_PropVar_TimePrec_100ns;
+          // val = k_PropVar_TimePrec_1ns;
+          // return E_FAIL; // for debug
+        }
+        */
+        at.Prec = (UInt16)val;
+      }
+    }
+    return S_OK;
   }
-  else if (prop.vt != VT_EMPTY)
+  
+  if (prop.vt != VT_EMPTY)
     return E_FAIL;
-  else if (MTimeDefined)
-  {
-    ft = MTime;
-    defined = true;
-  }
+  if (MTime.Def)
+    at = MTime;
   return S_OK;
 }
 
@@ -1019,6 +1047,7 @@ static inline bool TestSignature(const Byte *p1, const Byte *p2, size_t size)
       return false;
   return true;
 }
+
 
 static void MakeCheckOrder(CCodecs *codecs,
     CIntVector &orderIndices, unsigned numTypes, CIntVector &orderIndices2,
@@ -1034,7 +1063,7 @@ static void MakeCheckOrder(CCodecs *codecs,
     {
       if (ai.Signatures.IsEmpty())
       {
-        if (dataSize != 0) // 21.04: no Sinature means Empty Signature
+        if (dataSize != 0) // 21.04: no Signature means Empty Signature
           continue;
       }
       else
@@ -1229,7 +1258,7 @@ void CArcErrorInfo::ClearErrors()
 HRESULT CArc::ReadBasicProps(IInArchive *archive, UInt64 startPos, HRESULT openRes)
 {
   // OkPhySize_Defined = false;
-  PhySizeDefined = false;
+  PhySize_Defined = false;
   PhySize = 0;
   Offset = 0;
   AvailPhySize = FileSize - startPos;
@@ -1262,12 +1291,12 @@ HRESULT CArc::ReadBasicProps(IInArchive *archive, UInt64 startPos, HRESULT openR
   
   if (openRes == S_OK || ErrorInfo.IsArc_After_NonOpen())
   {
-    RINOK(Archive_GetArcProp_UInt(archive, kpidPhySize, PhySize, PhySizeDefined));
+    RINOK(Archive_GetArcProp_UInt(archive, kpidPhySize, PhySize, PhySize_Defined));
     /*
     RINOK(Archive_GetArcProp_UInt(archive, kpidOkPhySize, OkPhySize, OkPhySize_Defined));
     if (!OkPhySize_Defined)
     {
-      OkPhySize_Defined = PhySizeDefined;
+      OkPhySize_Defined = PhySize_Defined;
       OkPhySize = PhySize;
     }
     */
@@ -1277,7 +1306,7 @@ HRESULT CArc::ReadBasicProps(IInArchive *archive, UInt64 startPos, HRESULT openR
 
     Int64 globalOffset = (Int64)startPos + Offset;
     AvailPhySize = (UInt64)((Int64)FileSize - globalOffset);
-    if (PhySizeDefined)
+    if (PhySize_Defined)
     {
       UInt64 endPos = (UInt64)(globalOffset + (Int64)PhySize);
       if (endPos < FileSize)
@@ -1378,9 +1407,9 @@ static HRESULT ReadParseItemProps(IInArchive *archive, const CArcInfoEx &ai, NAr
   pi.FileTime_Defined = false;
   pi.ArcType = ai.Name;
   
-  RINOK(Archive_GetArcBoolProp(archive, kpidIsNotArcType, pi.IsNotArcType));
+  RINOK(Archive_GetArcProp_Bool(archive, kpidIsNotArcType, pi.IsNotArcType));
 
-  // RINOK(Archive_GetArcBoolProp(archive, kpidIsSelfExe, pi.IsSelfExe));
+  // RINOK(Archive_GetArcProp_Bool(archive, kpidIsSelfExe, pi.IsSelfExe));
   pi.IsSelfExe = ai.Flags_PreArc();
   
   {
@@ -1584,7 +1613,7 @@ static HRESULT OpenArchiveSpec(IInArchive *archive, bool needPhySize,
       return S_OK;
 
     bool phySizeCantBeDetected = false;
-    RINOK(Archive_GetArcBoolProp(archive, kpidPhySizeCantBeDetected, phySizeCantBeDetected));
+    RINOK(Archive_GetArcProp_Bool(archive, kpidPhySizeCantBeDetected, phySizeCantBeDetected));
 
     if (!phySizeCantBeDetected)
     {
@@ -1724,7 +1753,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
         const CArcInfoEx &ai = op.codecs->Formats[i];
 
         if (IgnoreSplit || !op.openType.CanReturnArc)
-          if (ai.IsSplit())
+          if (ai.Is_Split())
             continue;
         if (op.excludedFormats->FindInSorted((int)i) >= 0)
           continue;
@@ -1736,8 +1765,8 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
 
         if (ai.FindExtension(extension) >= 0
             #ifndef _SFX
-            || (isZip && StringsAreEqualNoCase_Ascii(ai.Name, "zip"))
-            || (isRar && StringsAreEqualNoCase_Ascii(ai.Name, "rar"))
+            || (isZip && ai.Is_Zip())
+            || (isRar && ai.Is_Rar())
             #endif
             )
         {
@@ -1811,11 +1840,27 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
           
           /*
           check type order:
-            1) matched extension, no signuature
-            2) matched extension, matched signuature
+            0) matched_extension && Backward
+            1) matched_extension && (no_signuature || SignatureOffset != 0)
+            2) matched_extension && (matched_signature)
             // 3) no signuature
             // 4) matched signuature
           */
+          // we move index from orderIndices to orderIndices2 for priority handlers.
+
+          for (unsigned i = 0; i < numFinded; i++)
+          {
+            const int index = orderIndices[i];
+            if (index < 0)
+              continue;
+            const CArcInfoEx &ai = op.codecs->Formats[(unsigned)index];
+            if (ai.Flags_BackwardOpen())
+            {
+              // backward doesn't need start signatures
+              orderIndices2.Add(index);
+              orderIndices[i] = -1;
+            }
+          }
 
           MakeCheckOrder(op.codecs, orderIndices, numFinded, orderIndices2, NULL, 0);
           MakeCheckOrder(op.codecs, orderIndices, numFinded, orderIndices2, byteBuffer, processedSize);
@@ -1906,6 +1951,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
       // OutputDebugStringW(ai.Name);
       if (i >= numMainTypes)
       {
+        // here we allow mismatched extension only for backward handlers
         if (!ai.Flags_BackwardOpen()
             // && !ai.Flags_PureStartOpen()
             )
@@ -2125,7 +2171,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
       
       const CArcInfoEx &ai = op.codecs->Formats[form];
       
-      if (ai.IsSplit())
+      if (ai.Is_Split())
       {
         splitIndex = (int)form;
         continue;
@@ -2234,7 +2280,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
       
       // bool needScan = false;
 
-      if (!PhySizeDefined)
+      if (!PhySize_Defined)
       {
         // it's for Z format
         pi.LenIsUnknown = true;
@@ -2726,14 +2772,14 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
             }
             continue;
           }
-          if (!ErrorInfo.IsArc_After_NonOpen() || !PhySizeDefined || PhySize == 0)
+          if (!ErrorInfo.IsArc_After_NonOpen() || !PhySize_Defined || PhySize == 0)
             continue;
         }
         else
         {
-          if (PhySizeDefined && PhySize == 0)
+          if (PhySize_Defined && PhySize == 0)
           {
-            PRF(printf("  phySizeDefined && PhySize == 0 "));
+            PRF(printf("  phySize_Defined && PhySize == 0 "));
             // we skip that epmty archive case with unusual unexpected (PhySize == 0) from Code function.
             continue;
           }
@@ -2754,10 +2800,10 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
         else if (Offset != 0)
           return E_FAIL;
 
-        UInt64 arcRem = FileSize - pi.Offset;
+        const UInt64 arcRem = FileSize - pi.Offset;
         UInt64 phySize = arcRem;
-        bool phySizeDefined = PhySizeDefined;
-        if (phySizeDefined)
+        const bool phySize_Defined = PhySize_Defined;
+        if (phySize_Defined)
         {
           if (pi.Offset + PhySize > FileSize)
           {
@@ -2783,7 +2829,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
         bool needScan = false;
 
  
-        if (isOpen && !phySizeDefined)
+        if (isOpen && !phySize_Defined)
         {
           // it's for Z format, or bzip2,gz,xz with phySize that was not detected
           pi.LenIsUnknown = true;
@@ -2802,7 +2848,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
 
         /*
         if (needSkipFullArc)
-          if (pi.Offset == 0 && phySizeDefined && pi.Size >= fileSize)
+          if (pi.Offset == 0 && phySize_Defined && pi.Size >= fileSize)
             continue;
         */
         if (pi.Offset == 0 && !pi.LenIsUnknown && pi.Size >= FileSize)
@@ -2830,7 +2876,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
        
         RINOK(ReadParseItemProps(archive, ai, pi));
 
-        if (pi.Offset < startArcPos && !mode.EachPos /* && phySizeDefined */)
+        if (pi.Offset < startArcPos && !mode.EachPos /* && phySize_Defined */)
         {
           /* It's for DMG format.
           This code deletes all previous items that are included to current item */
@@ -2849,7 +2895,7 @@ HRESULT CArc::OpenStream2(const COpenOptions &op)
         }
         
 
-        if (isOpen && mode.CanReturnArc && phySizeDefined)
+        if (isOpen && mode.CanReturnArc && phySize_Defined)
         {
           // if (pi.Offset + pi.Size >= fileSize)
           bool openCur = false;
@@ -2993,12 +3039,12 @@ HRESULT CArc::OpenStream(const COpenOptions &op)
     Archive->QueryInterface(IID_IArchiveGetRawProps, (void **)&GetRawProps);
     Archive->QueryInterface(IID_IArchiveGetRootProps, (void **)&GetRootProps);
 
-    RINOK(Archive_GetArcBoolProp(Archive, kpidIsTree, IsTree));
-    RINOK(Archive_GetArcBoolProp(Archive, kpidIsDeleted, Ask_Deleted));
-    RINOK(Archive_GetArcBoolProp(Archive, kpidIsAltStream, Ask_AltStream));
-    RINOK(Archive_GetArcBoolProp(Archive, kpidIsAux, Ask_Aux));
-    RINOK(Archive_GetArcBoolProp(Archive, kpidINode, Ask_INode));
-    RINOK(Archive_GetArcBoolProp(Archive, kpidReadOnly, IsReadOnly));
+    RINOK(Archive_GetArcProp_Bool(Archive, kpidIsTree, IsTree));
+    RINOK(Archive_GetArcProp_Bool(Archive, kpidIsDeleted, Ask_Deleted));
+    RINOK(Archive_GetArcProp_Bool(Archive, kpidIsAltStream, Ask_AltStream));
+    RINOK(Archive_GetArcProp_Bool(Archive, kpidIsAux, Ask_Aux));
+    RINOK(Archive_GetArcProp_Bool(Archive, kpidINode, Ask_INode));
+    RINOK(Archive_GetArcProp_Bool(Archive, kpidReadOnly, IsReadOnly));
 
     const UString fileName = ExtractFileNameFromPath(Path);
     UString extension;
@@ -3092,7 +3138,7 @@ HRESULT CArc::OpenStreamOrFile(COpenOptions &op)
       FOR_VECTOR (i, op.codecs->Formats)
       {
         const CArcInfoEx &ai = op.codecs->Formats[i];
-        if (ai.IsSplit())
+        if (ai.Is_Split())
           continue;
         UString path3 = path2;
         path3 += '.';
@@ -3299,7 +3345,7 @@ HRESULT CArchiveLink::Open(COpenOptions &op)
       break;
     
     CArc arc2;
-    RINOK(arc.GetItemPath(mainSubfile, arc2.Path));
+    RINOK(arc.GetItem_Path(mainSubfile, arc2.Path));
 
     bool zerosTailIsAllowed;
     RINOK(Archive_GetItemBoolProp(arc.Archive, mainSubfile, kpidZerosTailIsAllowed, zerosTailIsAllowed));
@@ -3343,7 +3389,7 @@ HRESULT CArchiveLink::Open(COpenOptions &op)
       break;
     }
     RINOK(result);
-    RINOK(arc.GetItemMTime(mainSubfile, arc2.MTime, arc2.MTimeDefined));
+    RINOK(arc.GetItem_MTime(mainSubfile, arc2.MTime));
     Arcs.Add(arc2);
   }
   IsOpen = !Arcs.IsEmpty();

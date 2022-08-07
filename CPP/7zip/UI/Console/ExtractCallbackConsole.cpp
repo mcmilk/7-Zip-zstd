@@ -56,6 +56,9 @@ HRESULT CExtractScanConsole::ScanProgress(const CDirItemsStat &st, const FString
 
 HRESULT CExtractScanConsole::ScanError(const FString &path, DWORD systemError)
 {
+  // 22.00:
+  // ScanErrors.AddError(path, systemError);
+
   ClosePercentsAndFlush();
   
   if (_se)
@@ -66,6 +69,10 @@ HRESULT CExtractScanConsole::ScanError(const FString &path, DWORD systemError)
     _se->Flush();
   }
   return HRESULT_FROM_WIN32(systemError);
+
+  // 22.00: commented
+  // CommonError(path, systemError, true);
+  // return S_OK;
 }
 
 

@@ -378,6 +378,7 @@ public:
   void Add_Space_if_NotEmpty();
   void Add_OptSpaced(const char *s);
   void Add_LF();
+  void Add_Slash();
   void Add_PathSepar() { operator+=(CHAR_PATH_SEPARATOR); }
 
   AString &operator+=(const char *s);
@@ -386,12 +387,12 @@ public:
   void Add_UInt32(UInt32 v);
   void Add_UInt64(UInt64 v);
 
+  void AddFrom(const char *s, unsigned len); // no check
   void SetFrom(const char *s, unsigned len); // no check
   void SetFrom_CalcLen(const char *s, unsigned len);
 
   AString Mid(unsigned startIndex, unsigned count) const { return AString(count, _chars + startIndex); }
   AString Left(unsigned count) const { return AString(count, *this); }
-
   // void MakeUpper() { MyStringUpper(_chars); }
   // void MakeLower() { MyStringLower(_chars); }
   void MakeLower_Ascii() { MyStringLower_Ascii(_chars); }

@@ -384,16 +384,16 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   CObjectVector<CUpdateItem> updateItems;
 
-  bool need_CTime = (Write_CTime.Def && Write_CTime.Val);
-  bool need_ATime = (Write_ATime.Def && Write_ATime.Val);
-  bool need_MTime = (Write_MTime.Def ? Write_MTime.Val : true);
+  bool need_CTime = (TimeOptions.Write_CTime.Def && TimeOptions.Write_CTime.Val);
+  bool need_ATime = (TimeOptions.Write_ATime.Def && TimeOptions.Write_ATime.Val);
+  bool need_MTime = (TimeOptions.Write_MTime.Def ? TimeOptions.Write_MTime.Val : true);
   bool need_Attrib = (Write_Attrib.Def ? Write_Attrib.Val : true);
   
   if (db && !db->Files.IsEmpty())
   {
-    if (!Write_CTime.Def) need_CTime = !db->CTime.Defs.IsEmpty();
-    if (!Write_ATime.Def) need_ATime = !db->ATime.Defs.IsEmpty();
-    if (!Write_MTime.Def) need_MTime = !db->MTime.Defs.IsEmpty();
+    if (!TimeOptions.Write_CTime.Def) need_CTime = !db->CTime.Defs.IsEmpty();
+    if (!TimeOptions.Write_ATime.Def) need_ATime = !db->ATime.Defs.IsEmpty();
+    if (!TimeOptions.Write_MTime.Def) need_MTime = !db->MTime.Defs.IsEmpty();
     if (!Write_Attrib.Def) need_Attrib = !db->Attrib.Defs.IsEmpty();
   }
 
@@ -719,6 +719,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   int level = GetLevel();
 
   CUpdateOptions options;
+  options.Need_CTime = need_CTime;
+  options.Need_ATime = need_ATime;
+  options.Need_MTime = need_MTime;
+  options.Need_Attrib = need_Attrib;
+
   options.Method = &methodMode;
   options.HeaderMethod = (_compressHeaders || encryptHeaders) ? &headerMethod : NULL;
   options.UseFilters = (level != 0 && _autoFilter && !methodMode.Filter_was_Inserted);
@@ -817,9 +822,7 @@ void COutHandler::InitProps7z()
   _encryptHeaders = false;
   // _useParents = false;
   
-  Write_CTime.Init();
-  Write_ATime.Init();
-  Write_MTime.Init();
+  TimeOptions.Init();
   Write_Attrib.Init();
 
   _useMultiThreadMixer = true;
@@ -954,10 +957,20 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
       return S_OK;
     }
     
-    if (name.IsEqualTo("tc")) return PROPVARIANT_to_BoolPair(value, Write_CTime);
-    if (name.IsEqualTo("ta")) return PROPVARIANT_to_BoolPair(value, Write_ATime);
-    if (name.IsEqualTo("tm")) return PROPVARIANT_to_BoolPair(value, Write_MTime);
-    
+    {
+      bool processed;
+      RINOK(TimeOptions.Parse(name, value, processed));
+      if (processed)
+      {
+        if (   TimeOptions.Prec != (UInt32)(Int32)-1
+            && TimeOptions.Prec != k_PropVar_TimePrec_0
+            && TimeOptions.Prec != k_PropVar_TimePrec_HighPrec
+            && TimeOptions.Prec != k_PropVar_TimePrec_100ns)
+          return E_INVALIDARG;
+        return S_OK;
+      }
+    }
+
     if (name.IsEqualTo("tr")) return PROPVARIANT_to_BoolPair(value, Write_Attrib);
     
     if (name.IsEqualTo("mtf")) return PROPVARIANT_to_bool(value, _useMultiThreadMixer);

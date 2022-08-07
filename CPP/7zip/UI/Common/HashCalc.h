@@ -16,6 +16,12 @@ const unsigned k_HashCalc_DigestSize_Max = 64;
 const unsigned k_HashCalc_ExtraSize = 8;
 const unsigned k_HashCalc_NumGroups = 4;
 
+/*
+  if (size <= 8) : upper case : reversed byte order : it shows 32-bit/64-bit number, if data contains little-endian number
+  if (size >  8) : lower case : original byte order (as big-endian byte sequence)
+*/
+void HashHexToString(char *dest, const Byte *data, UInt32 size);
+
 enum
 {
   k_HashCalc_Index_Current,

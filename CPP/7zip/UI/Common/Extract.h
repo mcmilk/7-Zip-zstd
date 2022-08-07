@@ -25,6 +25,7 @@ struct CExtractOptionsBase
   bool OverwriteMode_Force;
   NExtract::NPathMode::EEnum PathMode;
   NExtract::NOverwriteMode::EEnum OverwriteMode;
+  NExtract::NZoneIdMode::EEnum ZoneMode;
   
   FString OutputDir;
   CExtractNtOptions NtOptions;
@@ -36,7 +37,8 @@ struct CExtractOptionsBase
       PathMode_Force(false),
       OverwriteMode_Force(false),
       PathMode(NExtract::NPathMode::kFullPaths),
-      OverwriteMode(NExtract::NOverwriteMode::kAsk)
+      OverwriteMode(NExtract::NOverwriteMode::kAsk),
+      ZoneMode(NExtract::NZoneIdMode::kNone)
       {}
 };
 

@@ -29,6 +29,7 @@ static bool GetColumnVisible(PROPID propID, bool isFsFolder)
     switch (propID)
     {
       case kpidATime:
+      case kpidChangeTime:
       case kpidAttrib:
       case kpidPackSize:
       case kpidINode:
@@ -56,6 +57,7 @@ static int GetColumnAlign(PROPID propID, VARTYPE varType)
     case kpidCTime:
     case kpidATime:
     case kpidMTime:
+    case kpidChangeTime:
       return LVCFMT_LEFT;
   }
   
@@ -201,7 +203,7 @@ HRESULT CPanel::InitColumns()
   for (i = 0; i < _listViewInfo.Columns.Size(); i++)
   {
     const CColumnInfo &columnInfo = _listViewInfo.Columns[i];
-    int index = _columns.FindItem_for_PropID(columnInfo.PropID);
+    const int index = _columns.FindItem_for_PropID(columnInfo.PropID);
     if (index >= 0)
     {
       CPropColumn &item = _columns[index];
@@ -650,7 +652,7 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
       relPath += name;
       if (relPath == state.FocusedName)
         cursorIndex = listViewItemCount;
-      if (state.SelectedNames.FindInSorted(relPath) >= 0)
+      if (state.SelectedNames.FindInSorted(relPath) != -1)
         selected = true;
     }
     

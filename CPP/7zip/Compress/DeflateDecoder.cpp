@@ -426,7 +426,6 @@ STDMETHODIMP CCoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *proces
 {
   AlignToByte();
   UInt32 i = 0;
-  if (!m_InBitStream.ExtraBitsWereRead())
   {
     for (i = 0; i < size; i++)
     {

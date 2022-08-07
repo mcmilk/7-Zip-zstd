@@ -23,6 +23,11 @@
 using namespace NWindows;
 
 namespace NArchive {
+
+namespace NFat {
+API_FUNC_IsArc IsArc_Fat(const Byte *p, size_t size);
+}
+
 namespace NGpt {
 
 #define SIGNATURE { 'E', 'F', 'I', ' ', 'P', 'A', 'R', 'T', 0, 0, 1, 0 }
@@ -51,6 +56,7 @@ struct CPartition
   UInt64 FirstLba;
   UInt64 LastLba;
   UInt64 Flags;
+  const char *Ext; // detected later
   Byte Name[kNameLen * 2];
 
   bool IsUnused() const
@@ -73,6 +79,7 @@ struct CPartition
     LastLba = Get64(p + 40);
     Flags = Get64(p + 48);
     memcpy(Name, p + 56, kNameLen * 2);
+    Ext = NULL;
   }
 };
 
@@ -252,6 +259,28 @@ HRESULT CHandler::Open2(IInStream *stream)
   return S_OK;
 }
 
+
+
+static const unsigned k_Ntfs_Fat_HeaderSize = 512;
+
+static const Byte k_NtfsSignature[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' ', 0 };
+
+static bool IsNtfs(const Byte *p)
+{
+  if (p[0x1FE] != 0x55 || p[0x1FF] != 0xAA)
+    return false;
+  if (memcmp(p + 3, k_NtfsSignature, ARRAY_SIZE(k_NtfsSignature)) != 0)
+    return false;
+  switch (p[0])
+  {
+    case 0xE9: /* codeOffset = 3 + (Int16)Get16(p + 1); */ break;
+    case 0xEB: if (p[2] != 0x90) return false; /* codeOffset = 2 + (int)(signed char)p[1]; */ break;
+    default: return false;
+  }
+  return true;
+}
+
+
 STDMETHODIMP CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
     IArchiveOpenCallback * /* openArchiveCallback */)
@@ -260,6 +289,42 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   Close();
   RINOK(Open2(stream));
   _stream = stream;
+
+  FOR_VECTOR (fileIndex, _items)
+  {
+    CPartition &item = _items[fileIndex];
+    const int typeIndex = FindPartType(item.Type);
+    if (typeIndex < 0)
+      continue;
+    const CPartType &t = kPartTypes[(unsigned)typeIndex];
+    if (t.Ext)
+    {
+      item.Ext = t.Ext;
+      continue;
+    }
+    if (t.Type && IsString1PrefixedByString2_NoCase_Ascii(t.Type, "Windows"))
+    {
+      CMyComPtr<ISequentialInStream> inStream;
+      if (GetStream(fileIndex, &inStream) == S_OK && inStream)
+      {
+        Byte temp[k_Ntfs_Fat_HeaderSize];
+        if (ReadStream_FAIL(inStream, temp, k_Ntfs_Fat_HeaderSize) == S_OK)
+        {
+          if (IsNtfs(temp))
+          {
+            item.Ext = "ntfs";
+            continue;
+          }
+          if (NFat::IsArc_Fat(temp, k_Ntfs_Fat_HeaderSize) == k_IsArc_Res_YES)
+          {
+            item.Ext = "fat";
+            continue;
+          }
+        }
+      }
+    }
+  }
+
   return S_OK;
   COM_TRY_END
 }
@@ -355,13 +420,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
       {
         s += '.';
-        const char *ext = NULL;
-        int typeIndex = FindPartType(item.Type);
-        if (typeIndex >= 0)
-          ext = kPartTypes[(unsigned)typeIndex].Ext;
-        if (!ext)
-          ext = "img";
-        s += ext;
+        s += (item.Ext ? item.Ext : "img");
       }
       prop = s;
       break;
@@ -375,7 +434,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       char s[48];
       const char *res;
-      int typeIndex = FindPartType(item.Type);
+      const int typeIndex = FindPartType(item.Type);
       if (typeIndex >= 0 && kPartTypes[(unsigned)typeIndex].Type)
         res = kPartTypes[(unsigned)typeIndex].Type;
       else

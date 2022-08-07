@@ -74,7 +74,9 @@ static void Copy_From_UpdateItem_To_ItemOut(const CUpdateItem &ui, CItemOut &ite
   item.Ntfs_MTime = ui.Ntfs_MTime;
   item.Ntfs_ATime = ui.Ntfs_ATime;
   item.Ntfs_CTime = ui.Ntfs_CTime;
-  item.NtfsTimeIsDefined = ui.NtfsTimeIsDefined;
+
+  item.Write_UnixTime = ui.Write_UnixTime;
+  item.Write_NtfsTime = ui.Write_NtfsTime;
 }
 
 static void SetFileHeader(
@@ -476,12 +478,9 @@ static void WriteDirHeader(COutArchive &archive, const CCompressionMethodMode *o
 }
 
 
-static inline bool IsZero_FILETIME(const FILETIME &ft)
-{
-  return (ft.dwHighDateTime == 0 && ft.dwLowDateTime == 0);
-}
-
-static void UpdatePropsFromStream(CUpdateItem &item, ISequentialInStream *fileInStream,
+static void UpdatePropsFromStream(
+    const CUpdateOptions &options,
+    CUpdateItem &item, ISequentialInStream *fileInStream,
     IArchiveUpdateCallback *updateCallback, UInt64 &totalComplexity)
 {
   CMyComPtr<IStreamGetProps> getProps;
@@ -505,23 +504,84 @@ static void UpdatePropsFromStream(CUpdateItem &item, ISequentialInStream *fileIn
     }
     item.Size = size;
   }
-  
-  if (!IsZero_FILETIME(mTime))
-  {
-    item.Ntfs_MTime = mTime;
-    FILETIME loc = { 0, 0 };
-    if (FileTimeToLocalFileTime(&mTime, &loc))
-    {
-      item.Time = 0;
-      NTime::FileTimeToDosTime(loc, item.Time);
-    }
-  }
 
-  if (!IsZero_FILETIME(cTime)) item.Ntfs_CTime = cTime;
-  if (!IsZero_FILETIME(aTime)) item.Ntfs_ATime = aTime;
+  if (options.Write_MTime)
+    if (!FILETIME_IsZero(mTime))
+    {
+      item.Ntfs_MTime = mTime;
+      NTime::UtcFileTime_To_LocalDosTime(mTime, item.Time);
+    }
+
+  if (options.Write_CTime) if (!FILETIME_IsZero(cTime)) item.Ntfs_CTime = cTime;
+  if (options.Write_ATime) if (!FILETIME_IsZero(aTime)) item.Ntfs_ATime = aTime;
 
   item.Attrib = attrib;
 }
+
+
+/*
+static HRESULT ReportProps(
+    IArchiveUpdateCallbackArcProp *reportArcProp,
+    UInt32 index,
+    const CItemOut &item,
+    bool isAesMode)
+{
+  PROPVARIANT prop;
+  prop.vt = VT_EMPTY;
+  prop.wReserved1 = 0;
+  
+  NCOM::PropVarEm_Set_UInt64(&prop, item.Size);
+  RINOK(reportArcProp->ReportProp(NEventIndexType::kOutArcIndex, index, kpidSize, &prop));
+  
+  NCOM::PropVarEm_Set_UInt64(&prop, item.PackSize);
+  RINOK(reportArcProp->ReportProp(NEventIndexType::kOutArcIndex, index, kpidPackSize, &prop));
+
+  if (!isAesMode)
+  {
+    NCOM::PropVarEm_Set_UInt32(&prop, item.Crc);
+    RINOK(reportArcProp->ReportProp(NEventIndexType::kOutArcIndex, index, kpidCRC, &prop));
+  }
+
+  RINOK(reportArcProp->ReportFinished(NEventIndexType::kOutArcIndex, index, NUpdate::NOperationResult::kOK));
+
+  // if (opCallback) RINOK(opCallback->ReportOperation(NEventIndexType::kOutArcIndex, index, NUpdateNotifyOp::kOpFinished))
+
+  return S_OK;
+}
+*/
+
+/*
+struct CTotalStats
+{
+  UInt64 Size;
+  UInt64 PackSize;
+
+  void UpdateWithItem(const CItemOut &item)
+  {
+    Size += item.Size;
+    PackSize += item.PackSize;
+  }
+};
+
+static HRESULT ReportArcProps(IArchiveUpdateCallbackArcProp *reportArcProp,
+    CTotalStats &st)
+{
+  PROPVARIANT prop;
+  prop.vt = VT_EMPTY;
+  prop.wReserved1 = 0;
+  {
+    NWindows::NCOM::PropVarEm_Set_UInt64(&prop, st.Size);
+    RINOK(reportArcProp->ReportProp(
+      NEventIndexType::kArcProp, 0, kpidSize, &prop));
+  }
+  {
+    NWindows::NCOM::PropVarEm_Set_UInt64(&prop, st.PackSize);
+    RINOK(reportArcProp->ReportProp(
+      NEventIndexType::kArcProp, 0, kpidPackSize, &prop));
+  }
+  return S_OK;
+}
+*/
 
 
 static HRESULT Update2St(
@@ -530,11 +590,14 @@ static HRESULT Update2St(
     CInArchive *inArchive,
     const CObjectVector<CItemEx> &inputItems,
     CObjectVector<CUpdateItem> &updateItems,
+    const CUpdateOptions &updateOptions,
     const CCompressionMethodMode *options, bool outSeqMode,
     const CByteBuffer *comment,
     IArchiveUpdateCallback *updateCallback,
     UInt64 &totalComplexity,
-    IArchiveUpdateCallbackFile *opCallback)
+    IArchiveUpdateCallbackFile *opCallback
+    // , IArchiveUpdateCallbackArcProp *reportArcProp
+    )
 {
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
@@ -575,7 +638,8 @@ static HRESULT Update2St(
       }
       else
       {
-        CMyComPtr<ISequentialInStream> fileInStream;
+       CMyComPtr<ISequentialInStream> fileInStream;
+       {
         HRESULT res = updateCallback->GetStream(ui.IndexInClient, &fileInStream);
         if (res == S_FALSE)
         {
@@ -596,7 +660,7 @@ static HRESULT Update2St(
         }
         // seqMode = true; // to test seqMode
 
-        UpdatePropsFromStream(ui, fileInStream, updateCallback, totalComplexity);
+        UpdatePropsFromStream(updateOptions, ui, fileInStream, updateCallback, totalComplexity);
 
         CCompressingResult compressingResult;
         
@@ -629,10 +693,11 @@ static HRESULT Update2St(
         SetItemInfoFromCompressingResult(compressingResult, options->IsRealAesMode(), options->AesKeyMode, item);
 
         archive.WriteLocalHeader_Replace(item);
-
-        RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
-        unpackSizeTotal += item.Size;
-        packSizeTotal += item.PackSize;
+       }
+       // if (reportArcProp) RINOK(ReportProps(reportArcProp, ui.IndexInClient, item, options->IsRealAesMode()))
+       RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
+       unpackSizeTotal += item.Size;
+       packSizeTotal += item.PackSize;
       }
     }
     else
@@ -656,6 +721,14 @@ static HRESULT Update2St(
 
   archive.WriteCentralDir(items, comment);
 
+  /*
+  CTotalStats stat;
+  stat.Size = unpackSizeTotal;
+  stat.PackSize = packSizeTotal;
+  if (reportArcProp)
+    RINOK(ReportArcProps(reportArcProp, stat))
+  */
+
   lps->ProgressOffset += kCentralHeaderSize * updateItems.Size() + 1;
   return lps->SetCur();
 }
@@ -667,12 +740,18 @@ static HRESULT Update2(
     CInArchive *inArchive,
     const CObjectVector<CItemEx> &inputItems,
     CObjectVector<CUpdateItem> &updateItems,
+    const CUpdateOptions &updateOptions,
     const CCompressionMethodMode &options, bool outSeqMode,
     const CByteBuffer *comment,
     IArchiveUpdateCallback *updateCallback)
 {
   CMyComPtr<IArchiveUpdateCallbackFile> opCallback;
   updateCallback->QueryInterface(IID_IArchiveUpdateCallbackFile, (void **)&opCallback);
+
+  /*
+  CMyComPtr<IArchiveUpdateCallbackArcProp> reportArcProp;
+  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackArcProp, (void **)&reportArcProp);
+  */
 
   bool unknownComplexity = false;
   UInt64 complexity = 0;
@@ -901,10 +980,22 @@ static HRESULT Update2(
     return Update2St(
         EXTERNAL_CODECS_LOC_VARS
         archive, inArchive,
-        inputItems, updateItems, &options2, outSeqMode, comment, updateCallback, totalComplexity, opCallback);
+        inputItems, updateItems,
+        updateOptions,
+        &options2, outSeqMode,
+        comment, updateCallback, totalComplexity,
+        opCallback
+        // , reportArcProp
+        );
 
 
   #ifndef _7ZIP_ST
+
+  /*
+  CTotalStats stat;
+  stat.Size = 0;
+  stat.PackSize = 0;
+  */
 
   CObjectVector<CItemOut> items;
 
@@ -1021,7 +1112,7 @@ static HRESULT Update2(
         RINOK(res);
         if (!fileInStream)
           return E_INVALIDARG;
-        UpdatePropsFromStream(ui, fileInStream, updateCallback, totalComplexity);
+        UpdatePropsFromStream(updateOptions, ui, fileInStream, updateCallback, totalComplexity);
         RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
       }
 
@@ -1122,6 +1213,13 @@ static HRESULT Update2(
           memRef.WriteToStream(memManager.GetBlockSize(), outStream);
           archive.MoveCurPos(item.PackSize);
           memRef.FreeOpt(&memManager);
+          /*
+          if (reportArcProp)
+          {
+            stat.UpdateWithItem(item);
+            RINOK(ReportProps(reportArcProp, ui.IndexInClient, item, options.IsRealAesMode()));
+          }
+          */
         }
         else
         {
@@ -1202,6 +1300,14 @@ static HRESULT Update2(
                 options.IsRealAesMode(), options.AesKeyMode, item);
 
             archive.WriteLocalHeader_Replace(item);
+
+            /*
+            if (reportArcProp)
+            {
+              stat.UpdateWithItem(item);
+              RINOK(ReportProps(reportArcProp, ui.IndexInClient, item, options.IsRealAesMode()));
+            }
+            */
           }
           else
           {
@@ -1230,7 +1336,14 @@ static HRESULT Update2(
   RINOK(mtCompressProgressMixer.SetRatioInfo(0, NULL, NULL));
 
   archive.WriteCentralDir(items, comment);
-  
+
+  /*
+  if (reportArcProp)
+  {
+    RINOK(ReportArcProps(reportArcProp, stat));
+  }
+  */
+
   complexity += kCentralHeaderSize * updateItems.Size() + 1;
   mtProgressMixerSpec->Mixer2->SetProgressOffset(complexity);
   return mtCompressProgressMixer.SetRatioInfo(0, NULL, NULL);
@@ -1472,6 +1585,7 @@ HRESULT Update(
     CObjectVector<CUpdateItem> &updateItems,
     ISequentialOutStream *seqOutStream,
     CInArchive *inArchive, bool removeSfx,
+    const CUpdateOptions &updateOptions,
     const CCompressionMethodMode &compressionMethodMode,
     IArchiveUpdateCallback *updateCallback)
 {
@@ -1529,6 +1643,7 @@ HRESULT Update(
       EXTERNAL_CODECS_LOC_VARS
       outArchive, inArchive,
       inputItems, updateItems,
+      updateOptions,
       compressionMethodMode, outSeqMode,
       inArchive ? &inArchive->ArcInfo.Comment : NULL,
       updateCallback);

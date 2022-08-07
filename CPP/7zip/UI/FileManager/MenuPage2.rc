@@ -1,6 +1,8 @@
 #include "../GUI/ExtractDialogRes.h"
 
-#define y 82
+#define y 96
+
+#define zoneX 90
 
 CAPTION "7-Zip"
 BEGIN
@@ -10,8 +12,17 @@ BEGIN
   CONTROL  "Icons in context menu", IDX_SYSTEM_ICON_IN_MENU, MY_CHECKBOX, m, m + 42, xc, 10
   CONTROL   "Eliminate duplication of root folder", IDX_EXTRACT_ELIM_DUP, MY_CHECKBOX, m, m + 56, xc, 10
 
-  LTEXT    "Context menu items:", IDT_SYSTEM_CONTEXT_MENU_ITEMS, m, m + 70, xc, 8
+  LTEXT    "Propagate Zone.Id stream:", IDT_SYSTEM_ZONE, m, m + 70, xc - zoneX, 8
+  COMBOBOX  IDC_SYSTEM_ZONE, m + xc - zoneX, m + 70 - 2, zoneX, 50, MY_COMBO
+
+  LTEXT    "Context menu items:", IDT_SYSTEM_CONTEXT_MENU_ITEMS, m, m + 84, xc, 8
   CONTROL  "List", IDL_SYSTEM_OPTIONS, "SysListView32",
            LVS_REPORT | LVS_SINGLESEL | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP,
            m, m + y, xc, yc - y
+END
+
+
+STRINGTABLE
+BEGIN
+    IDT_ZONE_FOR_OFFICE "For Office files"
 END

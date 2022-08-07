@@ -81,7 +81,6 @@ COMMON_OBJS_2 = \
 WIN_OBJS_2 = \
   $O/ErrorMsg.o \
   $O/FileLink.o \
-  $O/PropVariantConv.o \
   $O/SystemInfo.o \
 
 7ZIP_COMMON_OBJS_2 = \

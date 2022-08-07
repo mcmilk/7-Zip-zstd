@@ -5,6 +5,12 @@
 #include <wchar.h>
 // #include <stdio.h>
 
+#ifndef _WIN32
+#include <grp.h>
+#include <pwd.h>
+#include "../../../Common/UTFConvert.h"
+#endif
+
 #include "../../../Common/Wildcard.h"
 
 #include "../../../Windows/FileDir.h"
@@ -23,32 +29,60 @@ using namespace NWindows;
 using namespace NFile;
 using namespace NName;
 
+
+static bool FindFile_KeepDots(NFile::NFind::CFileInfo &fi, const FString &path, bool followLink)
+{
+  const bool res = fi.Find(path, followLink);
+  if (!res)
+    return res;
+  if (path.IsEmpty())
+    return res;
+  // we keep name "." and "..", if it's without tail slash
+  const FChar *p = path.RightPtr(1);
+  if (*p != '.')
+    return res;
+  if (p != path.Ptr())
+  {
+    FChar c = p[-1];
+    if (!IS_PATH_SEPAR(c))
+    {
+      if (c != '.')
+        return res;
+      p--;
+      if (p != path.Ptr())
+      {
+        c = p[-1];
+        if (!IS_PATH_SEPAR(c))
+          return res;
+      }
+    }
+  }
+  fi.Name = p;
+  return res;
+}
+
+
 void CDirItems::AddDirFileInfo(int phyParent, int logParent, int secureIndex,
     const NFind::CFileInfo &fi)
 {
-  CDirItem di;
-  di.Size = fi.Size;
-  di.CTime = fi.CTime;
-  di.ATime = fi.ATime;
-  di.MTime = fi.MTime;
-  di.Attrib = fi.Attrib;
-  di.IsAltStream = fi.IsAltStream;
+  /*
+  CDirItem di(fi);
   di.PhyParent = phyParent;
   di.LogParent = logParent;
   di.SecureIndex = secureIndex;
-  di.Name = fs2us(fi.Name);
-  #if defined(_WIN32) && !defined(UNDER_CE)
-  // di.ShortName = fs2us(fi.ShortName);
-  #endif
   Items.Add(di);
+  */
+  VECTOR_ADD_NEW_OBJECT (Items, CDirItem(fi, phyParent, logParent, secureIndex))
   
   if (fi.IsDir())
     Stat.NumDirs++;
+ #ifdef _WIN32
   else if (fi.IsAltStream)
   {
     Stat.NumAltStreams++;
     Stat.AltStreamsSize += fi.Size;
   }
+ #endif
   else
   {
     Stat.NumFiles++;
@@ -148,9 +182,13 @@ CDirItems::CDirItems():
     ScanAltStreams(false)
     , ExcludeDirItems(false)
     , ExcludeFileItems(false)
-    #ifdef _USE_SECURITY_CODE
+    , ShareForWrite(false)
+   #ifdef _USE_SECURITY_CODE
     , ReadSecure(false)
-    #endif
+   #endif
+   #ifndef _WIN32
+    , StoreOwnerName(true)
+   #endif
     , Callback(NULL)
 {
   #ifdef _USE_SECURITY_CODE
@@ -379,7 +417,7 @@ HRESULT CDirItems::EnumerateItems2(
     const FString &filePath = filePaths[i];
     NFind::CFileInfo fi;
     const FString phyPath = phyPrefix + filePath;
-    if (!fi.Find(phyPath  FOLLOW_LINK_PARAM))
+    if (!FindFile_KeepDots(fi, phyPath  FOLLOW_LINK_PARAM))
     {
       RINOK(AddError(phyPath));
       continue;
@@ -658,15 +696,14 @@ static HRESULT EnumerateForItem(
     if (!enterToSubFolders)
       return S_OK;
 
-    #ifndef _WIN32
+   #ifndef _WIN32
     if (fi.IsPosixLink())
     {
       // here we can try to resolve posix link
       // if the link to dir, then can we follow it
       return S_OK; // we don't follow posix link
     }
-    #endif
-
+   #else
     if (dirItems.SymLinks && fi.HasReparsePoint())
     {
       /* 20.03: in SymLinks mode: we don't enter to directory that
@@ -677,6 +714,7 @@ static HRESULT EnumerateForItem(
       */
       return S_OK;
     }
+   #endif
     nextNode = &curNode;
   }
   
@@ -826,7 +864,7 @@ static HRESULT EnumerateDirItems(
         }
         else
         #endif
-        if (!fi.Find(fullPath  FOLLOW_LINK_PARAM2))
+        if (!FindFile_KeepDots(fi, fullPath  FOLLOW_LINK_PARAM2))
         {
           RINOK(dirItems.AddError(fullPath));
           continue;
@@ -914,15 +952,14 @@ static HRESULT EnumerateDirItems(
         }
         else
         {
-          #ifndef _WIN32
+         #ifndef _WIN32
           if (fi.IsPosixLink())
           {
             // here we can try to resolve posix link
             // if the link to dir, then can we follow it
             continue; // we don't follow posix link
           }
-          #endif
-
+         #else
           if (dirItems.SymLinks)
           {
             if (fi.HasReparsePoint())
@@ -932,6 +969,7 @@ static HRESULT EnumerateDirItems(
               continue;
             }
           }
+         #endif
           nextNode = &curNode;
           newParts.Add(name); // don't change it to fi.Name. It's for shortnames support
         }
@@ -973,7 +1011,7 @@ static HRESULT EnumerateDirItems(
         }
         else
         {
-          if (!fi.Find(fullPath  FOLLOW_LINK_PARAM2))
+          if (!FindFile_KeepDots(fi, fullPath  FOLLOW_LINK_PARAM2))
           {
             if (!nextNode.AreThereIncludeItems())
               continue;
@@ -1136,13 +1174,16 @@ HRESULT EnumerateItems(
   }
   dirItems.ReserveDown();
 
-  #if defined(_WIN32) && !defined(UNDER_CE)
+ #if defined(_WIN32) && !defined(UNDER_CE)
   RINOK(dirItems.FillFixedReparse());
-  #endif
+ #endif
+
+ #ifndef _WIN32
+  RINOK(dirItems.FillDeviceSizes());
+ #endif
 
   return S_OK;
 }
-
 
 
 #if defined(_WIN32) && !defined(UNDER_CE)
@@ -1281,6 +1322,148 @@ HRESULT CDirItems::FillFixedReparse()
 #endif
 
 
+#ifndef _WIN32
+
+HRESULT CDirItems::FillDeviceSizes()
+{
+  {
+    FOR_VECTOR (i, Items)
+    {
+      CDirItem &item = Items[i];
+      
+      if (S_ISBLK(item.mode) && item.Size == 0)
+      {
+        const FString phyPath = GetPhyPath(i);
+        NIO::CInFile inFile;
+        inFile.PreserveATime = true;
+        if (inFile.OpenShared(phyPath, ShareForWrite)) // fixme: OpenShared ??
+        {
+          UInt64 size = 0;
+          if (inFile.GetLength(size))
+            item.Size = size;
+        }
+      }
+      if (StoreOwnerName)
+      {
+        OwnerNameMap.Add_UInt32(item.uid);
+        OwnerGroupMap.Add_UInt32(item.gid);
+      }
+    }
+  }
+
+  if (StoreOwnerName)
+  {
+    UString u;
+    AString a;
+    {
+      FOR_VECTOR (i, OwnerNameMap.Numbers)
+      {
+        // 200K/sec speed
+        u.Empty();
+        const passwd *pw = getpwuid(OwnerNameMap.Numbers[i]);
+        if (pw)
+        {
+          a = pw->pw_name;
+          ConvertUTF8ToUnicode(a, u);
+        }
+        OwnerNameMap.Strings.Add(u);
+      }
+    }
+    {
+      FOR_VECTOR (i, OwnerGroupMap.Numbers)
+      {
+        u.Empty();
+        const group *gr = getgrgid(OwnerGroupMap.Numbers[i]);
+        if (gr)
+        {
+          // printf("\ngetgrgid %d %s\n", OwnerGroupMap.Numbers[i], gr->gr_name);
+          a = gr->gr_name;
+          ConvertUTF8ToUnicode(a, u);
+        }
+        OwnerGroupMap.Strings.Add(u);
+      }
+    }
+    
+    FOR_VECTOR (i, Items)
+    {
+      CDirItem &item = Items[i];
+      {
+        const int index = OwnerNameMap.Find(item.uid);
+        if (index < 0) throw 1;
+        item.OwnerNameIndex = index;
+      }
+      {
+        const int index = OwnerGroupMap.Find(item.gid);
+        if (index < 0) throw 1;
+        item.OwnerGroupIndex = index;
+      }
+    }
+  }
+      
+
+  // if (NeedOwnerNames)
+  {
+    /*
+    {
+      for (unsigned i = 0 ; i < 10000; i++)
+      {
+        const passwd *pw = getpwuid(i);
+        if (pw)
+        {
+          UString u;
+          ConvertUTF8ToUnicode(AString(pw->pw_name), u);
+          OwnerNameMap.Add(i, u);
+          OwnerNameMap.Add(i, u);
+          OwnerNameMap.Add(i, u);
+        }
+        const group *gr = getgrgid(i);
+        if (gr)
+        {
+          // we can use utf-8 here.
+          UString u;
+          ConvertUTF8ToUnicode(AString(gr->gr_name), u);
+          OwnerGroupMap.Add(i, u);
+        }
+      }
+    }
+    */
+    /*
+    {
+      FOR_VECTOR (i, OwnerNameMap.Strings)
+      {
+        AString s;
+        ConvertUnicodeToUTF8(OwnerNameMap.Strings[i], s);
+        printf("\n%5d %s", (unsigned)OwnerNameMap.Numbers[i], s.Ptr());
+      }
+    }
+    {
+      printf("\n\n=========Groups\n");
+      FOR_VECTOR (i, OwnerGroupMap.Strings)
+      {
+        AString s;
+        ConvertUnicodeToUTF8(OwnerGroupMap.Strings[i], s);
+        printf("\n%5d %s", (unsigned)OwnerGroupMap.Numbers[i], s.Ptr());
+      }
+    }
+    */
+  }
+      /*
+      for (unsigned i = 0 ; i < 100000000; i++)
+      {
+        // const passwd *pw = getpwuid(1000);
+        // pw = pw;
+        int pos = OwnerNameMap.Find(1000);
+        if (pos < 0 - (int)i)
+          throw 1;
+      }
+      */
+
+  return S_OK;
+}
+
+#endif
+
+
 
 static const char * const kCannotFindArchive = "Cannot find archive";
 
@@ -1351,11 +1534,18 @@ HRESULT EnumerateDirItemsAndSort(
 
 #ifdef _WIN32
 
+static bool IsDotsName(const wchar_t *s)
+{
+  return s[0] == '.' && (s[1] == 0 || (s[1] == '.' && s[2] == 0));
+}
+
 // This code converts all short file names to long file names.
 
 static void ConvertToLongName(const UString &prefix, UString &name)
 {
-  if (name.IsEmpty() || DoesNameContainWildcard(name))
+  if (name.IsEmpty()
+      || DoesNameContainWildcard(name)
+      || IsDotsName(name))
     return;
   NFind::CFileInfo fi;
   const FString path (us2fs(prefix + name));

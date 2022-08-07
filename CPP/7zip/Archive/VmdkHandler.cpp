@@ -138,7 +138,7 @@ static bool Str_to_ValName(const AString &s, AString &name, AString &val)
   int eq = s.Find('=');
   if (eq < 0 || (qu >= 0 && eq > qu))
     return false;
-  name = s.Left(eq);
+  name.SetFrom(s.Ptr(), eq);
   name.Trim();
   val = s.Ptr(eq + 1);
   val.Trim();

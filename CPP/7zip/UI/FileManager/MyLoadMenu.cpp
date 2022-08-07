@@ -380,7 +380,8 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
           kTimestampPrintLevel_MIN,
           kTimestampPrintLevel_SEC,
           // 1,2,3,4,5,6,
-          kTimestampPrintLevel_NTFS
+          kTimestampPrintLevel_NTFS,
+          kTimestampPrintLevel_NS
         };
 
         unsigned last = kMenuID_Time;

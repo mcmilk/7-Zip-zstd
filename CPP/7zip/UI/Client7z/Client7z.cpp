@@ -33,17 +33,29 @@ HINSTANCE g_hInstance;
 HINSTANCE g_hInstance = 0;
 #endif
 
-// You can find the list of all GUIDs in Guid.txt file.
-// use another CLSIDs, if you want to support other formats (zip, rar, ...).
-// {23170F69-40C1-278A-1000-000110070000}
+// You can find full list of all GUIDs supported by 7-Zip in Guid.txt file.
+// 7z format GUID: {23170F69-40C1-278A-1000-000110070000}
 
-DEFINE_GUID(CLSID_CFormat7z,
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00);
-DEFINE_GUID(CLSID_CFormatXz,
-  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x0C, 0x00, 0x00);
+#define DEFINE_GUID_ARC(name, id) DEFINE_GUID(name, \
+  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, id, 0x00, 0x00);
 
-#define CLSID_Format CLSID_CFormat7z
-// #define CLSID_Format CLSID_CFormatXz
+enum
+{
+  kId_Zip = 1,
+  kId_BZip2 = 2,
+  kId_7z = 7,
+  kId_Xz = 0xC,
+  kId_Tar = 0xEE,
+  kId_GZip = 0xEF
+};
+
+// use another id, if you want to support other formats (zip, Xz, ...).
+// DEFINE_GUID_ARC (CLSID_Format, kId_Zip)
+// DEFINE_GUID_ARC (CLSID_Format, kId_BZip2)
+// DEFINE_GUID_ARC (CLSID_Format, kId_Xz)
+// DEFINE_GUID_ARC (CLSID_Format, kId_Tar)
+// DEFINE_GUID_ARC (CLSID_Format, kId_GZip)
+DEFINE_GUID_ARC (CLSID_Format, kId_7z)
 
 using namespace NWindows;
 using namespace NFile;
@@ -229,6 +241,86 @@ static const char * const kIsNotArc = "Is not archive";
 static const char * const kHeadersError = "Headers Error";
 
 
+struct CArcTime
+{
+  FILETIME FT;
+  UInt16 Prec;
+  Byte Ns100;
+  bool Def;
+
+  CArcTime()
+  {
+    Clear();
+  }
+
+  void Clear()
+  {
+    FT.dwHighDateTime = FT.dwLowDateTime = 0;
+    Prec = 0;
+    Ns100 = 0;
+    Def = false;
+  }
+
+  bool IsZero() const
+  {
+    return FT.dwLowDateTime == 0 && FT.dwHighDateTime == 0 && Ns100 == 0;
+  }
+
+  int GetNumDigits() const
+  {
+    if (Prec == k_PropVar_TimePrec_Unix ||
+        Prec == k_PropVar_TimePrec_DOS)
+      return 0;
+    if (Prec == k_PropVar_TimePrec_HighPrec)
+      return 9;
+    if (Prec == k_PropVar_TimePrec_0)
+      return 7;
+    int digits = (int)Prec - (int)k_PropVar_TimePrec_Base;
+    if (digits < 0)
+      digits = 0;
+    return digits;
+  }
+
+  void Write_To_FiTime(CFiTime &dest) const
+  {
+   #ifdef _WIN32
+    dest = FT;
+   #else
+    if (FILETIME_To_timespec(FT, dest))
+    if ((Prec == k_PropVar_TimePrec_Base + 8 ||
+         Prec == k_PropVar_TimePrec_Base + 9)
+        && Ns100 != 0)
+    {
+      dest.tv_nsec += Ns100;
+    }
+   #endif
+  }
+
+  void Set_From_Prop(const PROPVARIANT &prop)
+  {
+    FT = prop.filetime;
+    unsigned prec = 0;
+    unsigned ns100 = 0;
+    const unsigned prec_Temp = prop.wReserved1;
+    if (prec_Temp != 0
+        && prec_Temp <= k_PropVar_TimePrec_1ns
+        && prop.wReserved3 == 0)
+    {
+      const unsigned ns100_Temp = prop.wReserved2;
+      if (ns100_Temp < 100)
+      {
+        ns100 = ns100_Temp;
+        prec = prec_Temp;
+      }
+    }
+    Prec = (UInt16)prec;
+    Ns100 = (Byte)ns100;
+    Def = true;
+  }
+};
+
+
+
 class CArchiveExtractCallback:
   public IArchiveExtractCallback,
   public ICryptoGetTextPassword,
@@ -257,11 +349,10 @@ private:
   bool _extractMode;
   struct CProcessedFileInfo
   {
-    FILETIME MTime;
+    CArcTime MTime;
     UInt32 Attrib;
     bool isDir;
-    bool AttribDefined;
-    bool MTimeDefined;
+    bool Attrib_Defined;
   } _processedFileInfo;
 
   COutFileStream *_outFileStreamSpec;
@@ -328,32 +419,31 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index,
     if (prop.vt == VT_EMPTY)
     {
       _processedFileInfo.Attrib = 0;
-      _processedFileInfo.AttribDefined = false;
+      _processedFileInfo.Attrib_Defined = false;
     }
     else
     {
       if (prop.vt != VT_UI4)
         return E_FAIL;
       _processedFileInfo.Attrib = prop.ulVal;
-      _processedFileInfo.AttribDefined = true;
+      _processedFileInfo.Attrib_Defined = true;
     }
   }
 
   RINOK(IsArchiveItemFolder(_archiveHandler, index, _processedFileInfo.isDir));
 
   {
+    _processedFileInfo.MTime.Clear();
     // Get Modified Time
     NCOM::CPropVariant prop;
     RINOK(_archiveHandler->GetProperty(index, kpidMTime, &prop));
-    _processedFileInfo.MTimeDefined = false;
     switch (prop.vt)
     {
       case VT_EMPTY:
         // _processedFileInfo.MTime = _utcMTimeDefault;
         break;
       case VT_FILETIME:
-        _processedFileInfo.MTime = prop.filetime;
-        _processedFileInfo.MTimeDefined = true;
+        _processedFileInfo.MTime.Set_From_Prop(prop);
         break;
       default:
         return E_FAIL;
@@ -483,12 +573,16 @@ STDMETHODIMP CArchiveExtractCallback::SetOperationResult(Int32 operationResult)
 
   if (_outFileStream)
   {
-    if (_processedFileInfo.MTimeDefined)
-      _outFileStreamSpec->SetMTime(&_processedFileInfo.MTime);
+    if (_processedFileInfo.MTime.Def)
+    {
+      CFiTime ft;
+      _processedFileInfo.MTime.Write_To_FiTime(ft);
+      _outFileStreamSpec->SetMTime(&ft);
+    }
     RINOK(_outFileStreamSpec->Close());
   }
   _outFileStream.Release();
-  if (_extractMode && _processedFileInfo.AttribDefined)
+  if (_extractMode && _processedFileInfo.Attrib_Defined)
     SetFileAttrib_PosixHighDetect(_diskFilePath, _processedFileInfo.Attrib);
   PrintNewLine();
   return S_OK;
@@ -513,17 +607,14 @@ STDMETHODIMP CArchiveExtractCallback::CryptoGetTextPassword(BSTR *password)
 //////////////////////////////////////////////////////////////
 // Archive Creating callback class
 
-struct CDirItem
+struct CDirItem: public NWindows::NFile::NFind::CFileInfoBase
 {
-  UInt64 Size;
-  FILETIME CTime;
-  FILETIME ATime;
-  FILETIME MTime;
-  UString Name;
-  FString FullPath;
-  UInt32 Attrib;
+  UString Path_For_Handler;
+  FString FullPath; // for filesystem
 
-  bool isDir() const { return (Attrib & FILE_ATTRIBUTE_DIRECTORY) != 0 ; }
+  CDirItem(const NWindows::NFile::NFind::CFileInfo &fi):
+      CFileInfoBase(fi)
+    {}
 };
 
 class CArchiveUpdateCallback:
@@ -618,16 +709,17 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
   }
 
   {
-    const CDirItem &dirItem = (*DirItems)[index];
+    const CDirItem &di = (*DirItems)[index];
     switch (propID)
     {
-      case kpidPath:  prop = dirItem.Name; break;
-      case kpidIsDir:  prop = dirItem.isDir(); break;
-      case kpidSize:  prop = dirItem.Size; break;
-      case kpidAttrib:  prop = dirItem.Attrib; break;
-      case kpidCTime:  prop = dirItem.CTime; break;
-      case kpidATime:  prop = dirItem.ATime; break;
-      case kpidMTime:  prop = dirItem.MTime; break;
+      case kpidPath:  prop = di.Path_For_Handler; break;
+      case kpidIsDir:  prop = di.IsDir(); break;
+      case kpidSize:  prop = di.Size; break;
+      case kpidCTime:  PropVariant_SetFrom_FiTime(prop, di.CTime); break;
+      case kpidATime:  PropVariant_SetFrom_FiTime(prop, di.ATime); break;
+      case kpidMTime:  PropVariant_SetFrom_FiTime(prop, di.MTime); break;
+      case kpidAttrib:  prop = (UInt32)di.GetWinAttrib(); break;
+      case kpidPosixAttrib: prop = (UInt32)di.GetPosixAttrib(); break;
     }
   }
   prop.Detach(value);
@@ -657,9 +749,9 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream
   RINOK(Finilize());
 
   const CDirItem &dirItem = (*DirItems)[index];
-  GetStream2(dirItem.Name);
+  GetStream2(dirItem.Path_For_Handler);
  
-  if (dirItem.isDir())
+  if (dirItem.IsDir())
     return S_OK;
 
   {
@@ -848,7 +940,6 @@ int MY_CDECL main(int numArgs, const char *args[])
       unsigned i;
       for (i = 1; i < params.Size(); i++)
       {
-        CDirItem di;
         const FString &name = params[i];
         
         NFind::CFileInfo fi;
@@ -857,13 +948,10 @@ int MY_CDECL main(int numArgs, const char *args[])
           PrintError("Can't find file", name);
           return 1;
         }
+
+        CDirItem di(fi);
         
-        di.Attrib = fi.Attrib;
-        di.Size = fi.Size;
-        di.CTime = fi.CTime;
-        di.ATime = fi.ATime;
-        di.MTime = fi.MTime;
-        di.Name = fs2us(name);
+        di.Path_For_Handler = fs2us(name);
         di.FullPath = name;
         dirItems.Add(di);
       }
@@ -894,12 +982,14 @@ int MY_CDECL main(int numArgs, const char *args[])
     {
       const wchar_t *names[] =
       {
+        L"m",
         L"s",
         L"x"
       };
       const unsigned kNumProps = ARRAY_SIZE(names);
       NCOM::CPropVariant values[kNumProps] =
       {
+        L"lzma",
         false,    // solid mode OFF
         (UInt32)9 // compression level = 9 - ultra
       };
@@ -910,7 +1000,11 @@ int MY_CDECL main(int numArgs, const char *args[])
         PrintError("ISetProperties unsupported");
         return 1;
       }
-      RINOK(setProperties->SetProperties(names, values, kNumProps));
+      if (setProperties->SetProperties(names, values, kNumProps) != S_OK)
+      {
+        PrintError("SetProperties() error");
+        return 1;
+      }
     }
     */
     
@@ -1035,7 +1129,13 @@ int MY_CDECL main(int numArgs, const char *args[])
       CMyComPtr<ISetProperties> setProperties;
       archive->QueryInterface(IID_ISetProperties, (void **)&setProperties);
       if (setProperties)
-        setProperties->SetProperties(names, values, kNumProps);
+      {
+        if (setProperties->SetProperties(names, values, kNumProps) != S_OK)
+        {
+          PrintError("SetProperties() error");
+          return 1;
+        }
+      }
       */
 
       HRESULT result = archive->Extract(NULL, (UInt32)(Int32)(-1), false, extractCallback);

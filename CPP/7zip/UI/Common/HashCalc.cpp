@@ -15,6 +15,7 @@
 #include "../../Common/StreamUtils.h"
 
 #include "../../Archive/Common/ItemNameUtils.h"
+#include "../../Archive/IArchive.h"
 
 #include "EnumDirItems.h"
 #include "HashCalc.h"
@@ -309,8 +310,6 @@ static unsigned GetColumnWidth(unsigned digestSize)
 }
 
 
-void HashHexToString(char *dest, const Byte *data, UInt32 size);
-
 static void AddHashResultLine(
     AString &_s,
     // bool showHash,
@@ -463,10 +462,7 @@ HRESULT HashCalc(
   {
     CDirItem di;
     di.Size = (UInt64)(Int64)-1;
-    di.Attrib = 0;
-    di.MTime.dwLowDateTime = 0;
-    di.MTime.dwHighDateTime = 0;
-    di.CTime = di.ATime = di.MTime;
+    di.SetAsFile();
     dirItems.Items.Add(di);
   }
   else
@@ -477,6 +473,8 @@ HRESULT HashCalc(
     dirItems.ScanAltStreams = options.AltStreamsMode;
     dirItems.ExcludeDirItems = censor.ExcludeDirItems;
     dirItems.ExcludeFileItems = censor.ExcludeFileItems;
+
+    dirItems.ShareForWrite = options.OpenShareForWrite;
 
     HRESULT res = EnumerateItems(censor,
         options.PathMode,
@@ -498,14 +496,16 @@ HRESULT HashCalc(
   // hb.Init();
 
   hb.NumErrors = dirItems.Stat.NumErrors;
-  
+
+  UInt64 totalSize = 0;
   if (options.StdInMode)
   {
     RINOK(callback->SetNumFiles(1));
   }
   else
   {
-    RINOK(callback->SetTotal(dirItems.Stat.GetTotalBytes()));
+    totalSize = dirItems.Stat.GetTotalBytes();
+    RINOK(callback->SetTotal(totalSize));
   }
 
   const UInt32 kBufSize = 1 << 15;
@@ -537,7 +537,9 @@ HRESULT HashCalc(
     {
       path = dirItems.GetLogPath(i);
       const CDirItem &di = dirItems.Items[i];
+     #ifdef _WIN32
       isAltStream = di.IsAltStream;
+     #endif
 
       #ifndef UNDER_CE
       // if (di.AreReparseData())
@@ -551,7 +553,7 @@ HRESULT HashCalc(
       #endif
       {
         CInFileStream *inStreamSpec = new CInFileStream;
-        inStreamSpec->File.PreserveATime = options.PreserveATime;
+        inStreamSpec->Set_PreserveATime(options.PreserveATime);
         inStream = inStreamSpec;
         isDir = di.IsDir();
         if (!isDir)
@@ -565,6 +567,20 @@ HRESULT HashCalc(
               return res;
             continue;
           }
+          if (!options.StdInMode)
+          {
+            UInt64 curSize = 0;
+            if (inStreamSpec->GetSize(&curSize) == S_OK)
+            {
+              if (curSize > di.Size)
+              {
+                totalSize += curSize - di.Size;
+                RINOK(callback->SetTotal(totalSize));
+                // printf("\ntotal = %d MiB\n", (unsigned)(totalSize >> 20));
+              }
+            }
+          }
+          // inStreamSpec->ReloadProps();
         }
       }
     }
@@ -580,6 +596,7 @@ HRESULT HashCalc(
       {
         if ((step & 0xFF) == 0)
         {
+          // printf("\ncompl = %d\n", (unsigned)(completeValue >> 20));
           RINOK(callback->SetCompleted(&completeValue));
         }
         UInt32 size;
@@ -1679,8 +1696,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (_isArc && !CanUpdate())
     return E_NOTIMPL;
 
-  // const UINT codePage = CP_UTF8; // // (_forceCodePage ? _specifiedCodePage : _openCodePage);
-  // const unsigned utfFlags = g_Unicode_To_UTF8_Flags;
+  /*
+  CMyComPtr<IArchiveUpdateCallbackArcProp> reportArcProp;
+  callback->QueryInterface(IID_IArchiveUpdateCallbackArcProp, (void **)&reportArcProp);
+  */
+
   CObjectVector<CUpdateItem> updateItems;
 
   UInt64 complexity = 0;
@@ -1827,6 +1847,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     if (ui.NewData)
     {
       UInt64 currentComplexity = ui.Size;
+      UInt64 fileSize = 0;
+
       CMyComPtr<ISequentialInStream> fileInStream;
       bool needWrite = true;
       {
@@ -1840,6 +1862,15 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
           
           if (fileInStream)
           {
+            CMyComPtr<IStreamGetSize> streamGetSize;
+            fileInStream->QueryInterface(IID_IStreamGetSize, (void **)&streamGetSize);
+            if (streamGetSize)
+            {
+              UInt64 size;
+              if (streamGetSize->GetSize(&size) == S_OK)
+                currentComplexity = size;
+            }
+            /*
             CMyComPtr<IStreamGetProps> getProps;
             fileInStream->QueryInterface(IID_IStreamGetProps, (void **)&getProps);
             if (getProps)
@@ -1852,6 +1883,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
                 // item.MTime = NWindows::NTime::FileTimeToUnixTime64(mTime);;
               }
             }
+            */
           }
           else
           {
@@ -1865,7 +1897,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       
       if (needWrite && fileInStream && !isDir)
       {
-        UInt64 fileSize = 0;
         for (UInt32 step = 0;; step++)
         {
           if ((step & 0xFF) == 0)
@@ -1901,6 +1932,36 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
 
       complexity += currentComplexity;
+
+      /*
+      if (reportArcProp)
+      {
+        PROPVARIANT prop;
+        prop.vt = VT_EMPTY;
+        prop.wReserved1 = 0;
+          
+        NCOM::PropVarEm_Set_UInt64(&prop, fileSize);
+        RINOK(reportArcProp->ReportProp(NArchive::NEventIndexType::kOutArcIndex, ui.IndexInClient, kpidSize, &prop));
+
+        for (unsigned k = 0; k < hb.Hashers.Size(); k++)
+        {
+          const CHasherState &hs = hb.Hashers[k];
+
+          if (hs.DigestSize == 4 && hs.Name.IsEqualTo_Ascii_NoCase("crc32"))
+          {
+            NCOM::PropVarEm_Set_UInt32(&prop, GetUi32(hs.Digests[k_HashCalc_Index_Current]));
+            RINOK(reportArcProp->ReportProp(NArchive::NEventIndexType::kOutArcIndex, ui.IndexInClient, kpidCRC, &prop));
+          }
+          else
+          {
+            RINOK(reportArcProp->ReportRawProp(NArchive::NEventIndexType::kOutArcIndex, ui.IndexInClient,
+              kpidChecksum, hs.Digests[k_HashCalc_Index_Current],
+              hs.DigestSize, NPropDataType::kRaw));
+          }
+          RINOK(reportArcProp->ReportFinished(NArchive::NEventIndexType::kOutArcIndex, ui.IndexInClient, NArchive::NUpdate::NOperationResult::kOK));
+        }
+      }
+      */
       RINOK(callback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
     }
     else

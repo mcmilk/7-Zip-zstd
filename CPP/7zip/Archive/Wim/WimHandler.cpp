@@ -355,6 +355,7 @@ static void GetFileTime(const Byte *p, NCOM::CPropVariant &prop)
   prop.vt = VT_FILETIME;
   prop.filetime.dwLowDateTime = Get32(p);
   prop.filetime.dwHighDateTime = Get32(p + 4);
+  prop.Set_FtPrec(k_PropVar_TimePrec_100ns);
 }
 
 
@@ -842,7 +843,7 @@ public:
     int dotPos = name.ReverseFind_Dot();
     if (dotPos < 0)
       dotPos = name.Len();
-    _before = name.Left(dotPos);
+    _before.SetFrom(name.Ptr(), dotPos);
     _after = name.Ptr(dotPos);
   }
 

@@ -35,7 +35,7 @@ you can change this h file or h files included in this file.
    So we can use MY_ARRAY_NEW macro instead of new[] operator. */
 
 #if defined(_MSC_VER) && (_MSC_VER == 1200) && !defined(_WIN64)
-  #define MY_ARRAY_NEW(p, T, size) p = new T[(size > (unsigned)0xFFFFFFFF / sizeof(T)) ? (unsigned)0xFFFFFFFF / sizeof(T) : size];
+  #define MY_ARRAY_NEW(p, T, size) p = new T[((size) > (unsigned)0xFFFFFFFF / sizeof(T)) ? (unsigned)0xFFFFFFFF / sizeof(T) : (size)];
 #else
   #define MY_ARRAY_NEW(p, T, size) p = new T[size];
 #endif

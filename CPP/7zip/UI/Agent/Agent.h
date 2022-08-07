@@ -58,7 +58,7 @@ class CAgentFolder:
   public IArchiveFolder,
   public IArchiveFolderInternal,
   public IInArchiveGetStream,
-  // public IFolderSetReplaceAltStreamCharsMode,
+  public IFolderSetZoneIdMode,
 #ifdef NEW_FOLDER_INTERFACE
   public IFolderOperations,
   public IFolderSetFlatMode,
@@ -78,7 +78,7 @@ public:
     MY_QUERYINTERFACE_ENTRY(IArchiveFolder)
     MY_QUERYINTERFACE_ENTRY(IArchiveFolderInternal)
     MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
-    // MY_QUERYINTERFACE_ENTRY(IFolderSetReplaceAltStreamCharsMode)
+    MY_QUERYINTERFACE_ENTRY(IFolderSetZoneIdMode)
   #ifdef NEW_FOLDER_INTERFACE
     MY_QUERYINTERFACE_ENTRY(IFolderOperations)
     MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
@@ -92,7 +92,7 @@ public:
   void GetRealIndices(const UInt32 *indices, UInt32 numItems,
       bool includeAltStreams, bool includeFolderSubItemsInFlatMode, CUIntVector &realIndices) const;
 
-  // INTERFACE_FolderSetReplaceAltStreamCharsMode(;)
+  INTERFACE_IFolderSetZoneIdMode(;)
 
   INTERFACE_FolderFolder(;)
   INTERFACE_FolderAltStreams(;)
@@ -123,6 +123,7 @@ public:
       _isAltStreamFolder(false),
       _flatMode(false),
       _loadAltStreams(false) // _loadAltStreams alt streams works in flat mode, but we don't use it now
+      , _zoneMode(NExtract::NZoneIdMode::kNone)
       /* , _replaceAltStreamCharsMode(0) */
       {}
 
@@ -169,6 +170,7 @@ public:
   bool _flatMode;
   bool _loadAltStreams; // in Flat mode
   // Int32 _replaceAltStreamCharsMode;
+  NExtract::NZoneIdMode::EEnum _zoneMode;
 };
 
 class CAgent:

@@ -162,7 +162,10 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       numLetters++;
     }
   }
-  else if (ext.Len() >= 2 && StringsAreEqual_Ascii(ext2.RightPtr(2), "01"))
+  else if (ext2.Len() >= 2 && (
+         StringsAreEqual_Ascii(ext2.RightPtr(2), "01")
+      || StringsAreEqual_Ascii(ext2.RightPtr(2), "00")
+      ))
   {
     while (numLetters < ext2.Len())
     {
@@ -170,7 +173,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
         break;
       numLetters++;
     }
-    if (numLetters != ext.Len())
+    if (numLetters != ext2.Len())
       return S_FALSE;
   }
   else

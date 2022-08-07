@@ -322,8 +322,8 @@ static const Byte kProps[] =
   kpidSize,
   kpidMTime,
   kpidPosixAttrib,
-  kpidUser,
-  kpidGroup
+  kpidUserId,
+  kpidGroupId
 };
 
 IMP_IInArchive_Props
@@ -734,15 +734,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidMTime:
     {
       if (item.MTime != 0)
-      {
-        FILETIME fileTime;
-        NTime::UnixTimeToFileTime(item.MTime, fileTime);
-        prop = fileTime;
-      }
+        PropVariant_SetFrom_UnixTime(prop, item.MTime);
       break;
     }
-    case kpidUser: if (item.User != 0) prop = item.User; break;
-    case kpidGroup: if (item.Group != 0) prop = item.Group; break;
+    case kpidUserId: if (item.User != 0) prop = item.User; break;
+    case kpidGroupId: if (item.Group != 0) prop = item.Group; break;
     case kpidPosixAttrib:
       if (item.TextFileIndex < 0)
         prop = item.Mode;

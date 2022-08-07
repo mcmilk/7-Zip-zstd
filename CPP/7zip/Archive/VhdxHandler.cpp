@@ -171,6 +171,20 @@ struct CHeader
   UInt64 LogOffset;
   CGuid Guids[3];
 
+  bool IsEqualTo(const CHeader &h) const
+  {
+    if (SequenceNumber != h.SequenceNumber)
+      return false;
+    if (LogLength != h.LogLength)
+      return false;
+    if (LogOffset != h.LogOffset)
+      return false;
+    for (unsigned i = 0; i < 3; i++)
+      if (!Guids[i].IsEqualTo(h.Guids[i]))
+        return false;
+    return true;
+  };
+
   bool Parse(Byte *p);
 };
 
@@ -1174,7 +1188,18 @@ HRESULT CHandler::Open3()
   unsigned mainIndex;
        if (headers[0].SequenceNumber > headers[1].SequenceNumber) mainIndex = 0;
   else if (headers[0].SequenceNumber < headers[1].SequenceNumber) mainIndex = 1;
-  else return S_FALSE;
+  else
+  {
+    /* Disk2vhd v2.02 can create image with 2 full copies of headers.
+       It's violation of VHDX specification:
+          "A header is current if it is the only valid header
+           or if it is valid and its SequenceNumber field is
+           greater than the other header's SequenceNumber".
+       but we support such Disk2vhd archives. */
+    if (!headers[0].IsEqualTo(headers[1]))
+      return S_FALSE;
+    mainIndex = 0;
+  }
 
   const CHeader &h = headers[mainIndex];
   Header = h;
@@ -1567,6 +1592,7 @@ static void AddComment_BlockSize(UString &s, const char *name, unsigned logSize)
 
 void CHandler::AddComment(UString &s) const
 {
+  AddComment_UInt64(s, "VirtualDiskSize", Meta.VirtualDiskSize);
   AddComment_UInt64(s, "PhysicalSize", _phySize);
 
   if (!_errorMessage.IsEmpty())

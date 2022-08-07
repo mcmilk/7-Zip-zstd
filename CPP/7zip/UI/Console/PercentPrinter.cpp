@@ -63,7 +63,8 @@ void CPercentPrinter::GetPercents()
   {
     char c = '%';
     UInt64 val = 0;
-    if (Total == (UInt64)(Int64)-1)
+    if (Total == (UInt64)(Int64)-1 ||
+        (Total == 0 && Completed != 0))
     {
       val = Completed >> 20;
       c = 'M';

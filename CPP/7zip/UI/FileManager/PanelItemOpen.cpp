@@ -1403,7 +1403,7 @@ static THREAD_FUNC_DECL MyThreadFunction(void *param)
 }
 
 
-
+/*
 #if defined(_WIN32) && !defined(UNDER_CE)
 static const FChar * const k_ZoneId_StreamName = FTEXT(":Zone.Identifier");
 #endif
@@ -1441,6 +1441,7 @@ static bool WriteZoneFile(CFSTR fileName, const CByteBuffer &buf)
 }
 
 #endif
+*/
 
 /*
 class CBufSeqOutStream_WithFile:
@@ -1654,6 +1655,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     password = fl.Password;
   }
 
+  /*
   #if defined(_WIN32) && !defined(UNDER_CE)
   CByteBuffer zoneBuf;
   #ifndef _UNICODE
@@ -1666,16 +1668,25 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
       ReadZoneFile(fl.FilePath + k_ZoneId_StreamName, zoneBuf);
   }
   #endif
+  */
 
 
   CVirtFileSystem *virtFileSystemSpec = NULL;
   CMyComPtr<ISequentialOutStream> virtFileSystem;
 
-  bool isAltStream = IsItem_AltStream(index);
+  const bool isAltStream = IsItem_AltStream(index);
 
   CCopyToOptions options;
   options.includeAltStreams = true;
   options.replaceAltStreamChars = isAltStream;
+  {
+    // CContextMenuInfo ci;
+    // ci.Load();
+    // if (ci.WriteZone != (UInt32)(Int32)-1)
+    // we use kAll when we unpack just one file.
+    options.ZoneIdMode = NExtract::NZoneIdMode::kAll;
+    options.NeedRegistryZone = false;
+  }
   
   if (tryAsArchive)
   {
@@ -1706,7 +1717,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   options.folder = fs2us(tempDirNorm);
   options.showErrorMessages = true;
 
-  HRESULT result = CopyTo(options, indices, &messages, usePassword, password);
+  const HRESULT result = CopyTo(options, indices, &messages, usePassword, password);
 
   if (_parentFolders.Size() > 0)
   {
@@ -1759,6 +1770,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
   }
 
 
+  /*
   #if defined(_WIN32) && !defined(UNDER_CE)
   if (zoneBuf.Size() != 0)
   {
@@ -1768,6 +1780,7 @@ void CPanel::OpenItemInArchive(int index, bool tryInternal, bool tryExternal, bo
     }
   }
   #endif
+  */
 
 
   if (tryAsArchive)

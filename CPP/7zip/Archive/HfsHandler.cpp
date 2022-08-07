@@ -240,7 +240,7 @@ struct CItem
   UInt32 ID;
   UInt32 CTime;
   UInt32 MTime;
-  // UInt32 AttrMTime;
+  UInt32 AttrMTime;
   UInt32 ATime;
   // UInt32 BackupDate;
 
@@ -1000,7 +1000,7 @@ HRESULT CDatabase::LoadCatalog(const CFork &fork, const CObjectVector<CIdExtents
 
       item.CTime = Get32(r + 0xC);
       item.MTime = Get32(r + 0x10);
-      // item.AttrMTime = Get32(r + 0x14);
+      item.AttrMTime = Get32(r + 0x14);
       item.ATime = Get32(r + 0x18);
       // item.BackupDate = Get32(r + 0x1C);
       
@@ -1404,6 +1404,7 @@ static const Byte kProps[] =
   kpidCTime,
   kpidMTime,
   kpidATime,
+  kpidChangeTime,
   kpidPosixAttrib
 };
 
@@ -1421,9 +1422,11 @@ IMP_IInArchive_ArcProps
 
 static void HfsTimeToProp(UInt32 hfsTime, NWindows::NCOM::CPropVariant &prop)
 {
+  if (hfsTime == 0)
+    return;
   FILETIME ft;
   HfsTimeToFileTime(hfsTime, ft);
-  prop = ft;
+  prop.SetAsTimeFrom_FT_Prec(ft, k_PropVar_TimePrec_Base);
 }
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
@@ -1447,10 +1450,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidMTime: HfsTimeToProp(Header.MTime, prop); break;
     case kpidCTime:
     {
-      FILETIME localFt, ft;
-      HfsTimeToFileTime(Header.CTime, localFt);
-      if (LocalFileTimeToFileTime(&localFt, &ft))
-        prop = ft;
+      if (Header.CTime != 0)
+      {
+        FILETIME localFt, ft;
+        HfsTimeToFileTime(Header.CTime, localFt);
+        if (LocalFileTimeToFileTime(&localFt, &ft))
+          prop.SetAsTimeFrom_FT_Prec(ft, k_PropVar_TimePrec_Base);
+      }
       break;
     }
     case kpidIsTree: prop = true; break;
@@ -1578,6 +1584,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidCTime: HfsTimeToProp(item.CTime, prop); break;
     case kpidMTime: HfsTimeToProp(item.MTime, prop); break;
     case kpidATime: HfsTimeToProp(item.ATime, prop); break;
+    case kpidChangeTime: HfsTimeToProp(item.AttrMTime, prop); break;
 
     case kpidPosixAttrib: if (ref.AttrIndex < 0) prop = (UInt32)item.FileMode; break;
   }

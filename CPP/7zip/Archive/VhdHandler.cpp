@@ -921,7 +921,8 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
     CLimitedInStream *streamSpec = new CLimitedInStream;
     CMyComPtr<ISequentialInStream> streamTemp = streamSpec;
     streamSpec->SetStream(Stream);
-    streamSpec->InitAndSeek(0, Footer.CurrentSize);
+    // fixme : check (startOffset = 0)
+    streamSpec->InitAndSeek(_startOffset, Footer.CurrentSize);
     RINOK(streamSpec->SeekToStart());
     *stream = streamTemp.Detach();
     return S_OK;

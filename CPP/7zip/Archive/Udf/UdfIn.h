@@ -243,7 +243,7 @@ struct CItem
   UInt64 NumLogBlockRecorded;
   CTime ATime;
   CTime MTime;
-  // CTime AttrtTime;
+  CTime AttribTime; // Attribute time : most recent date and time of the day of file creation or modification of the attributes of.
   // UInt32 CheckPoint;
   // CLongAllocDesc ExtendedAttrIcb;
   // CRegId ImplId;

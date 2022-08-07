@@ -24,6 +24,7 @@ WIN_OBJS = \
   $O\FileIO.obj \
   $O\FileName.obj \
   $O\PropVariant.obj \
+  $O\PropVariantConv.obj \
   $O\PropVariantUtils.obj \
   $O\Synchronization.obj \
   $O\System.obj \
@@ -53,6 +54,7 @@ WIN_OBJS = \
   $O\VirtThread.obj \
 
 AR_OBJS = \
+  $O\ApfsHandler.obj \
   $O\ApmHandler.obj \
   $O\ArHandler.obj \
   $O\ArjHandler.obj \
@@ -72,6 +74,7 @@ AR_OBJS = \
   $O\HandlerCont.obj \
   $O\HfsHandler.obj \
   $O\IhexHandler.obj \
+  $O\LpHandler.obj \
   $O\LzhHandler.obj \
   $O\LzmaHandler.obj \
   $O\MachoHandler.obj \
@@ -83,6 +86,7 @@ AR_OBJS = \
   $O\PpmdHandler.obj \
   $O\QcowHandler.obj \
   $O\RpmHandler.obj \
+  $O\SparseHandler.obj \
   $O\SplitHandler.obj \
   $O\SquashfsHandler.obj \
   $O\SwfHandler.obj \

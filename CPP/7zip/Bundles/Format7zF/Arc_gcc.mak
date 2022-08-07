@@ -59,6 +59,7 @@ WIN_OBJS = \
   $O/FileIO.o \
   $O/FileName.o \
   $O/PropVariant.o \
+  $O/PropVariantConv.o \
   $O/PropVariantUtils.o \
   $O/System.o \
   $O/TimeUtils.o \
@@ -82,6 +83,7 @@ WIN_OBJS = \
   $O/UniqBlocks.o \
 
 AR_OBJS = \
+  $O/ApfsHandler.o \
   $O/ApmHandler.o \
   $O/ArHandler.o \
   $O/ArjHandler.o \
@@ -101,6 +103,7 @@ AR_OBJS = \
   $O/HandlerCont.o \
   $O/HfsHandler.o \
   $O/IhexHandler.o \
+  $O/LpHandler.o \
   $O/LzhHandler.o \
   $O/LzmaHandler.o \
   $O/MachoHandler.o \
@@ -112,6 +115,7 @@ AR_OBJS = \
   $O/PpmdHandler.o \
   $O/QcowHandler.o \
   $O/RpmHandler.o \
+  $O/SparseHandler.o \
   $O/SplitHandler.o \
   $O/SquashfsHandler.o \
   $O/SwfHandler.o \

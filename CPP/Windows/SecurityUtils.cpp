@@ -2,8 +2,6 @@
 
 #include "StdAfx.h"
 
-#include "../Common/MyString.h"
-
 #include "SecurityUtils.h"
 
 namespace NWindows {

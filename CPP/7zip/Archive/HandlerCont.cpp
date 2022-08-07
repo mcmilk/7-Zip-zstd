@@ -14,6 +14,10 @@
 
 namespace NArchive {
 
+namespace NExt {
+API_FUNC_IsArc IsArc_Ext(const Byte *p, size_t size);
+}
+
 STDMETHODIMP CHandlerCont::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
@@ -132,11 +136,12 @@ STDMETHODIMP CHandlerImg::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosit
 }
 
 static const Byte k_GDP_Signature[] = { 'E', 'F', 'I', ' ', 'P', 'A', 'R', 'T' };
-
+// static const Byte k_Ext_Signature[] = { 0x53, 0xEF };
+// static const unsigned k_Ext_Signature_offset = 0x438;
 
 static const char *GetImgExt(ISequentialInStream *stream)
 {
-  const size_t kHeaderSize = 1 << 10;
+  const size_t kHeaderSize = 1 << 11;
   Byte buf[kHeaderSize];
   if (ReadStream_FAIL(stream, buf, kHeaderSize) == S_OK)
   {
@@ -146,6 +151,8 @@ static const char *GetImgExt(ISequentialInStream *stream)
         return "gpt";
       return "mbr";
     }
+    if (NExt::IsArc_Ext(buf, kHeaderSize) == k_IsArc_Res_YES)
+      return "ext";
   }
   return NULL;
 }
@@ -208,6 +215,33 @@ STDMETHODIMP CHandlerImg::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
+
+class CHandlerImgProgress:
+  public ICompressProgressInfo,
+  public CMyUnknownImp
+{
+public:
+  CHandlerImg &Handler;
+  CMyComPtr<ICompressProgressInfo> _ratioProgress;
+
+  CHandlerImgProgress(CHandlerImg &handler) : Handler(handler) {}
+
+  // MY_UNKNOWN_IMP1(ICompressProgressInfo)
+  MY_UNKNOWN_IMP
+
+  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
+};
+
+
+STDMETHODIMP CHandlerImgProgress::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+{
+  UInt64 inSize2;
+  if (Handler.Get_PackSizeProcessed(inSize2))
+    inSize = &inSize2;
+  return _ratioProgress->SetRatioInfo(inSize, outSize);
+}
+  
+
 STDMETHODIMP CHandlerImg::Extract(const UInt32 *indices, UInt32 numItems,
     Int32 testMode, IArchiveExtractCallback *extractCallback)
 {
@@ -227,10 +261,6 @@ STDMETHODIMP CHandlerImg::Extract(const UInt32 *indices, UInt32 numItems,
     return S_OK;
   RINOK(extractCallback->PrepareOperation(askMode));
 
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
-  lps->Init(extractCallback, false);
-
   int opRes = NExtract::NOperationResult::kDataError;
   
   ClearStreamVars();
@@ -242,6 +272,19 @@ STDMETHODIMP CHandlerImg::Extract(const UInt32 *indices, UInt32 numItems,
 
   if (hres == S_OK && inStream)
   {
+    CLocalProgress *lps = new CLocalProgress;
+    CMyComPtr<ICompressProgressInfo> progress = lps;
+    lps->Init(extractCallback, false);
+    
+    if (Init_PackSizeProcessed())
+    {
+      CHandlerImgProgress *imgProgressSpec = new CHandlerImgProgress(*this);
+      CMyComPtr<ICompressProgressInfo> imgProgress = imgProgressSpec;
+      imgProgressSpec->_ratioProgress = progress;
+      progress.Release();
+      progress = imgProgress;
+    }
+
     NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder();
     CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
 

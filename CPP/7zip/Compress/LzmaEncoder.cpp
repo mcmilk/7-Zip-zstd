@@ -9,13 +9,14 @@
 
 #include "LzmaEncoder.h"
 
-#include "../../Common/IntToString.h"
-#include "../../Windows/TimeUtils.h"
-
 // #define LOG_LZMA_THREADS
 
 #ifdef LOG_LZMA_THREADS
+
 #include <stdio.h>
+
+#include "../../Common/IntToString.h"
+#include "../../Windows/TimeUtils.h"
 
 EXTERN_C_BEGIN
 void LzmaEnc_GetLzThreads(CLzmaEncHandle pp, HANDLE lz_threads[2]);

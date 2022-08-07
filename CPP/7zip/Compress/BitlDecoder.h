@@ -155,6 +155,10 @@ public:
   MY_FORCE_INLINE
   bool ReadAlignedByte_FromBuf(Byte &b)
   {
+    if (this->_stream.NumExtraBytes != 0)
+      if (this->_stream.NumExtraBytes >= 4
+          || kNumBigValueBits - this->_bitPos <= (this->_stream.NumExtraBytes << 3))
+        return false;
     if (this->_bitPos == kNumBigValueBits)
       return this->_stream.ReadByte_FromBuf(b);
     b = (Byte)(_normalValue & 0xFF);

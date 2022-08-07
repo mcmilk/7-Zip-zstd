@@ -652,11 +652,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidMTime:
     {
       if (item.MTime != 0)
-      {
-        FILETIME utc;
-        NTime::UnixTimeToFileTime(item.MTime, utc);
-        prop = utc;
-      }
+        PropVariant_SetFrom_UnixTime(prop, item.MTime);
       break;
     }
     case kpidPosixAttrib: prop = item.Mode; break;

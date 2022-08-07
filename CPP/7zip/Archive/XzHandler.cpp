@@ -1089,7 +1089,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
-  *timeType = NFileTimeType::kUnix;
+  *timeType = GET_FileTimeType_NotDefined_for_GetFileTimeType;
+  // *timeType = NFileTimeType::kUnix;
   return S_OK;
 }
 
@@ -1136,7 +1137,6 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (prop.vt != VT_UI8)
         return E_INVALIDARG;
       dataSize = prop.uhVal.QuadPart;
-      RINOK(updateCallback->SetTotal(dataSize));
     }
 
     NCompress::NXz::CEncoder *encoderSpec = new NCompress::NXz::CEncoder;
@@ -1266,15 +1266,28 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
     }
 
-    CMyComPtr<ISequentialInStream> fileInStream;
-    RINOK(updateCallback->GetStream(0, &fileInStream));
-
-    CLocalProgress *lps = new CLocalProgress;
-    CMyComPtr<ICompressProgressInfo> progress = lps;
-    lps->Init(updateCallback, true);
-
-    RINOK(encoderSpec->Code(fileInStream, outStream, NULL, NULL, progress));
-
+    {
+      CMyComPtr<ISequentialInStream> fileInStream;
+      RINOK(updateCallback->GetStream(0, &fileInStream));
+      if (!fileInStream)
+        return S_FALSE;
+      {
+        CMyComPtr<IStreamGetSize> streamGetSize;
+        fileInStream.QueryInterface(IID_IStreamGetSize, &streamGetSize);
+        if (streamGetSize)
+        {
+          UInt64 size;
+          if (streamGetSize->GetSize(&size) == S_OK)
+            dataSize = size;
+        }
+      }
+      RINOK(updateCallback->SetTotal(dataSize));
+      CLocalProgress *lps = new CLocalProgress;
+      CMyComPtr<ICompressProgressInfo> progress = lps;
+      lps->Init(updateCallback, true);
+      RINOK(encoderSpec->Code(fileInStream, outStream, NULL, NULL, progress));
+    }
+      
     return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
   }
 
@@ -1415,9 +1428,9 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
 
 REGISTER_ARC_IO(
   "xz", "xz txz", "* .tar", 0xC,
-  XZ_SIG,
-  0,
-  NArcInfoFlags::kKeepName,
-  NULL)
+  XZ_SIG, 0
+  , NArcInfoFlags::kKeepName
+  , 0
+  , NULL)
 
 }}

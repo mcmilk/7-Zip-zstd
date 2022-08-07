@@ -133,4 +133,11 @@ STREAM_INTERFACE(IStreamGetProps2, 0x09)
   STDMETHOD(GetProps2)(CStreamFileProps *props) PURE;
 };
 
+
+STREAM_INTERFACE(IStreamGetProp, 0x0a)
+{
+  STDMETHOD(GetProperty)(PROPID propID, PROPVARIANT *value) PURE;
+  STDMETHOD(ReloadProps)() PURE;
+};
+
 #endif

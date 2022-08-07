@@ -18,7 +18,6 @@ WIN_OBJS = $(WIN_OBJS) \
   $O\FileLink.obj \
   $O\FileSystem.obj \
   $O\MemoryLock.obj \
-  $O\PropVariantConv.obj \
   $O\Registry.obj \
   $O\SystemInfo.obj \
 

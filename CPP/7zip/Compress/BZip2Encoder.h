@@ -129,7 +129,7 @@ public:
   // it's not member of this thread. We just need one event per thread
   NWindows::NSynchronization::CAutoResetEvent CanWriteEvent;
 
-  UInt64 m_PackSize;
+  UInt64 m_UnpackSize;
 
   Byte MtPad[1 << 8]; // It's pad for Multi-Threading. Must be >= Cache_Line_Size.
   HRESULT Create();
@@ -194,6 +194,10 @@ public:
   #else
   CThreadInfo ThreadsInfo;
   #endif
+
+  UInt64 NumBlocks;
+
+  UInt64 GetInProcessedSize() const { return m_InStream.GetProcessedSize(); }
 
   UInt32 ReadRleBlock(Byte *buf);
   void WriteBytes(const Byte *data, UInt32 sizeInBits, Byte lastByte);

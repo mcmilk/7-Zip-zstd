@@ -129,6 +129,7 @@ private:
 
   HBITMAP _bitmap;
   CBoolPair _elimDup;
+  UInt32 _writeZone;
 
   bool IsSeparator;
   bool IsRoot;

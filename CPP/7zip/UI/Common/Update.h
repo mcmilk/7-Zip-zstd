@@ -112,6 +112,9 @@ struct CUpdateOptions
   CBoolPair HardLinks;
   CBoolPair SymLinks;
 
+  CBoolPair StoreOwnerId;
+  CBoolPair StoreOwnerName;
+
   bool DeleteAfterCompressing;
 
   bool SetArcMTime;

@@ -567,9 +567,12 @@ void CDatabase::GetItemPath(unsigned index1, bool showImageNumber, NWindows::NCO
       for (unsigned i = 0; i < len; i++)
       {
         wchar_t c = Get16(meta + i * 2);
-        // 18.06
-        if (c == CHAR_PATH_SEPARATOR || c == '/')
-          c = '_';
+        if (c == L'/')
+          c = L'_';
+        #if WCHAR_PATH_SEPARATOR != L'/'
+        else if (c == L'\\')
+          c = WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT; // 22.00 : WSL scheme
+        #endif
         dest[i] = c;
       }
     }

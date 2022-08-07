@@ -98,8 +98,8 @@ THREAD_FUNC_RET_TYPE CThreadInfo::ThreadFunc()
     bool needLeave = true;
     try
     {
-      UInt32 blockSize = Encoder->ReadRleBlock(m_Block);
-      m_PackSize = Encoder->m_InStream.GetProcessedSize();
+      const UInt32 blockSize = Encoder->ReadRleBlock(m_Block);
+      m_UnpackSize = Encoder->m_InStream.GetProcessedSize();
       m_BlockIndex = Encoder->NextBlockIndex;
       if (++Encoder->NextBlockIndex == Encoder->NumThreads)
         Encoder->NextBlockIndex = 0;
@@ -222,7 +222,8 @@ UInt32 CEncoder::ReadRleBlock(Byte *buffer)
   Byte prevByte;
   if (m_InStream.ReadByte(prevByte))
   {
-    UInt32 blockSize = _props.BlockSizeMult * kBlockSizeStep - 1;
+    NumBlocks++;
+    const UInt32 blockSize = _props.BlockSizeMult * kBlockSizeStep - 1;
     unsigned numReps = 1;
     buffer[i++] = prevByte;
     while (i < blockSize) // "- 1" to support RLE
@@ -722,8 +723,8 @@ HRESULT CThreadInfo::EncodeBlock3(UInt32 blockSize)
 
     if (Encoder->Progress)
     {
-      UInt64 unpackSize = Encoder->m_OutStream.GetProcessedSize();
-      res = Encoder->Progress->SetRatioInfo(&m_PackSize, &unpackSize);
+      const UInt64 packSize = Encoder->m_OutStream.GetProcessedSize();
+      res = Encoder->Progress->SetRatioInfo(&m_UnpackSize, &packSize);
     }
 
     Encoder->ThreadsInfo[blockIndex].CanWriteEvent.Set();
@@ -744,6 +745,7 @@ void CEncoder::WriteBytes(const Byte *data, UInt32 sizeInBits, Byte lastByte)
 HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
     const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
 {
+  NumBlocks = 0;
   #ifndef _7ZIP_ST
   Progress = progress;
   RINOK(Create());
@@ -831,9 +833,9 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       RINOK(ti.EncodeBlock3(blockSize));
       if (progress)
       {
-        UInt64 packSize = m_InStream.GetProcessedSize();
-        UInt64 unpackSize = m_OutStream.GetProcessedSize();
-        RINOK(progress->SetRatioInfo(&packSize, &unpackSize));
+        const UInt64 unpackSize = m_InStream.GetProcessedSize();
+        const UInt64 packSize = m_OutStream.GetProcessedSize();
+        RINOK(progress->SetRatioInfo(&unpackSize, &packSize));
       }
     }
   }
@@ -845,7 +847,10 @@ HRESULT CEncoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   WriteByte(kFinSig5);
 
   WriteCrc(CombinedCrc.GetDigest());
-  return Flush();
+  RINOK(Flush());
+  if (!m_InStream.WasFinished())
+    return E_FAIL;
+  return S_OK;
 }
 
 STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,

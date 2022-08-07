@@ -27,11 +27,17 @@ static void UdfTimeToFileTime(const CTime &t, NWindows::NCOM::CPropVariant &prop
     return;
   if (t.IsLocal())
     numSecs -= (Int64)((Int32)t.GetMinutesOffset() * 60);
-  FILETIME ft;
-  UInt64 v = (((numSecs * 100 + d[9]) * 100 + d[10]) * 100 + d[11]) * 10;
-  ft.dwLowDateTime = (UInt32)v;
-  ft.dwHighDateTime = (UInt32)(v >> 32);
-  prop = ft;
+  const UInt32 m0 = d[9];
+  const UInt32 m1 = d[10];
+  const UInt32 m2 = d[11];
+  unsigned numDigits = 0;
+  UInt64 v = numSecs * 10000000;
+  if (m0 < 100 && m1 < 100 && m2 < 100)
+  {
+    v += m0 * 100000 + m1 * 1000 + m2 * 10;
+    numDigits = 6;
+  }
+  prop.SetAsTimeFrom_Ft64_Prec(v, k_PropVar_TimePrec_Base + numDigits);
 }
 
 static const Byte kProps[] =
@@ -41,7 +47,8 @@ static const Byte kProps[] =
   kpidSize,
   kpidPackSize,
   kpidMTime,
-  kpidATime
+  kpidATime,
+  kpidChangeTime
 };
 
 static const Byte kArcProps[] =
@@ -205,6 +212,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidPackSize:  if (!item.IsDir()) prop = (UInt64)item.NumLogBlockRecorded * vol.BlockSize; break;
       case kpidMTime:  UdfTimeToFileTime(item.MTime, prop); break;
       case kpidATime:  UdfTimeToFileTime(item.ATime, prop); break;
+      case kpidChangeTime:  UdfTimeToFileTime(item.AttribTime, prop); break;
     }
   }
   prop.Detach(value);

@@ -38,9 +38,11 @@ namespace NFileTimeType
 {
   enum EEnum
   {
-    kWindows,
+    kNotDefined = -1,
+    kWindows = 0,
     kUnix,
-    kDOS
+    kDOS,
+    k1ns
   };
 }
 
@@ -60,7 +62,30 @@ namespace NArcInfoFlags
   const UInt32 kHardLinks       = 1 << 11; // the handler supports hard links
   const UInt32 kByExtOnlyOpen   = 1 << 12; // call handler only if file extension matches
   const UInt32 kHashHandler     = 1 << 13; // the handler contains the hashes (checksums)
+  const UInt32 kCTime           = 1 << 14;
+  const UInt32 kCTime_Default   = 1 << 15;
+  const UInt32 kATime           = 1 << 16;
+  const UInt32 kATime_Default   = 1 << 17;
+  const UInt32 kMTime           = 1 << 18;
+  const UInt32 kMTime_Default   = 1 << 19;
+  // const UInt32 kTTime_Reserved         = 1 << 20;
+  // const UInt32 kTTime_Reserved_Default = 1 << 21;
 }
+
+namespace NArcInfoTimeFlags
+{
+  const unsigned kTime_Prec_Mask_bit_index = 0;
+  const unsigned kTime_Prec_Mask_num_bits = 26;
+
+  const unsigned kTime_Prec_Default_bit_index = 27;
+  const unsigned kTime_Prec_Default_num_bits = 5;
+}
+
+#define TIME_PREC_TO_ARC_FLAGS_MASK(x) \
+  ((UInt32)1 << (NArcInfoTimeFlags::kTime_Prec_Mask_bit_index + (x)))
+
+#define TIME_PREC_TO_ARC_FLAGS_TIME_DEFAULT(x) \
+  ((UInt32)(x) << NArcInfoTimeFlags::kTime_Prec_Default_bit_index)
 
 namespace NArchive
 {
@@ -79,8 +104,8 @@ namespace NArchive
       kSignatureOffset, // VT_UI4
       kAltStreams,      // VT_BOOL
       kNtSecure,        // VT_BOOL
-      kFlags            // VT_UI4
-      // kVersion          // VT_UI4 ((VER_MAJOR << 8) | VER_MINOR)
+      kFlags,           // VT_UI4
+      kTimeFlags        // VT_UI4
     };
   }
 
@@ -123,6 +148,7 @@ namespace NArchive
       kInArcIndex,
       kBlockIndex,
       kOutArcIndex
+      // kArcProp
     };
   }
   
@@ -133,7 +159,8 @@ namespace NArchive
       enum
       {
         kOK = 0
-        // , kError
+        // kError = 1,
+        // kError_FileChanged
       };
     }
   }
@@ -461,9 +488,10 @@ namespace NUpdateNotifyOp
     kSkip,
     kDelete,
     kHeader,
-    kHashRead
-
-    // kNumDefined
+    kHashRead,
+    kInFileChanged
+    // , kOpFinished
+    // , kNumDefined
   };
 };
 
@@ -491,6 +519,20 @@ ARCHIVE_INTERFACE(IArchiveGetDiskProperty, 0x84)
 {
   INTERFACE_IArchiveGetDiskProperty(PURE);
 };
+
+/*
+#define INTERFACE_IArchiveUpdateCallbackArcProp(x) \
+  STDMETHOD(ReportProp)(UInt32 indexType, UInt32 index, PROPID propID, const PROPVARIANT *value) x; \
+  STDMETHOD(ReportRawProp)(UInt32 indexType, UInt32 index, PROPID propID, const void *data, UInt32 dataSize, UInt32 propType) x; \
+  STDMETHOD(ReportFinished)(UInt32 indexType, UInt32 index, Int32 opRes) x; \
+  STDMETHOD(DoNeedArcProp)(PROPID propID, Int32 *answer) x; \
+ 
+
+ARCHIVE_INTERFACE(IArchiveUpdateCallbackArcProp, 0x85)
+{
+  INTERFACE_IArchiveUpdateCallbackArcProp(PURE);
+};
+*/
 
 /*
 UpdateItems()
@@ -636,9 +678,40 @@ extern "C"
 
   typedef HRESULT (WINAPI *Func_SetCaseSensitive)(Int32 caseSensitive);
   typedef HRESULT (WINAPI *Func_SetLargePageMode)();
+  // typedef HRESULT (WINAPI *Func_SetClientVersion)(UInt32 version);
 
   typedef IOutArchive * (*Func_CreateOutArchive)();
   typedef IInArchive * (*Func_CreateInArchive)();
 }
+
+
+/*
+  if there is no time in archive, external MTime of archive
+  will be used instead of _item.Time from archive.
+  For 7-zip before 22.00 we need to return some supported value.
+  But (kpidTimeType > kDOS) is not allowed in 7-Zip before 22.00.
+  So we return highest precision value supported by old 7-Zip.
+  new 7-Zip 22.00 doesn't use that value in usual cases.
+*/
+
+
+#define DECLARE_AND_SET_CLIENT_VERSION_VAR
+#define GET_FileTimeType_NotDefined_for_GetFileTimeType \
+      NFileTimeType::kWindows
+
+/*
+extern UInt32 g_ClientVersion;
+
+#define GET_CLIENT_VERSION(major, minor)  \
+  ((UInt32)(((UInt32)(major) << 16) | (UInt32)(minor)))
+
+#define DECLARE_AND_SET_CLIENT_VERSION_VAR \
+  UInt32 g_ClientVersion = GET_CLIENT_VERSION(MY_VER_MAJOR, MY_VER_MINOR);
+
+#define GET_FileTimeType_NotDefined_for_GetFileTimeType \
+      ((UInt32)(g_ClientVersion >= GET_CLIENT_VERSION(22, 0) ? \
+        (UInt32)(Int32)NFileTimeType::kNotDefined : \
+        NFileTimeType::kWindows))
+*/
 
 #endif
