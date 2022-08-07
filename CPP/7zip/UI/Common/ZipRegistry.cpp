@@ -2,13 +2,14 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/CpuArch.h"
+
 #include "../../../Common/IntToString.h"
+#include "../../../Common/StringToInt.h"
 
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/Registry.h"
 #include "../../../Windows/Synchronization.h"
-
-#include "../FileManager/RegistryUtils.h"
 
 #include "ZipRegistry.h"
 
@@ -69,7 +70,6 @@ void CInfo::Save() const
   CS_LOCK
   CKey key;
   CreateMainKey(key, kKeyName);
-  UStringVector Empty;
 
   if (PathMode_Force)
     key.SetValue(kExtractMode, (UInt32)PathMode);
@@ -83,10 +83,7 @@ void CInfo::Save() const
   Key_Set_BoolPair(key, kShowPassword, ShowPassword);
 
   key.RecurseDeleteKey(kPathHistory);
-  if (WantPathHistory())
-    key.SetValue_Strings(kPathHistory, Paths);
-  else
-    key.SetValue_Strings(kPathHistory, Empty);
+  key.SetValue_Strings(kPathHistory, Paths);
 }
 
 void Save_ShowPassword(bool showPassword)
@@ -166,7 +163,6 @@ static LPCTSTR const kBlockSize = TEXT("BlockSize");
 static LPCTSTR const kNumThreads = TEXT("NumThreads");
 static LPCWSTR const kMethod = L"Method";
 static LPCWSTR const kOptions = L"Options";
-static LPCWSTR const kSplitVolume = L"SplitVolume";
 static LPCWSTR const kEncryptionMethod = L"EncryptionMethod";
 
 static LPCTSTR const kNtSecur = TEXT("Security");
@@ -202,9 +198,15 @@ static void GetRegUInt32(CKey &key, LPCTSTR name, UInt32 &value)
     value = (UInt32)(Int32)-1;
 }
 
+static LPCWSTR const kMemUse = L"MemUse"
+    #if defined(MY_CPU_SIZEOF_POINTER) && (MY_CPU_SIZEOF_POINTER == 4)
+      L"32";
+    #else
+      L"64";
+    #endif
+
 void CInfo::Save() const
 {
-  UStringVector Empty;
   CS_LOCK
 
   CKey key;
@@ -221,11 +223,7 @@ void CInfo::Save() const
   key.SetValue(kShowPassword, ShowPassword);
   key.SetValue(kEncryptHeaders, EncryptHeaders);
   key.RecurseDeleteKey(kArcHistory);
-
-  if (WantArcHistory())
-    key.SetValue_Strings(kArcHistory, ArcPaths);
-  else
-    key.SetValue_Strings(kArcHistory, Empty);
+  key.SetValue_Strings(kArcHistory, ArcPaths);
 
   key.RecurseDeleteKey(kOptionsKeyName);
   {
@@ -245,8 +243,8 @@ void CInfo::Save() const
 
       SetRegString(fk, kMethod, fo.Method);
       SetRegString(fk, kOptions, fo.Options);
-      SetRegString(fk, kSplitVolume, fo.SplitVolume);
       SetRegString(fk, kEncryptionMethod, fo.EncryptionMethod);
+      SetRegString(fk, kMemUse, fo.MemUse);
     }
   }
 }
@@ -289,8 +287,8 @@ void CInfo::Load()
         {
           GetRegString(fk, kMethod, fo.Method);
           GetRegString(fk, kOptions, fo.Options);
-          GetRegString(fk, kSplitVolume, fo.SplitVolume);
           GetRegString(fk, kEncryptionMethod, fo.EncryptionMethod);
+          GetRegString(fk, kMemUse, fo.MemUse);
 
           GetRegUInt32(fk, kLevel, fo.Level);
           GetRegUInt32(fk, kDictionary, fo.Dictionary);
@@ -311,6 +309,116 @@ void CInfo::Load()
   key.GetValue_IfOk(kShowPassword, ShowPassword);
   key.GetValue_IfOk(kEncryptHeaders, EncryptHeaders);
 }
+
+
+static bool ParseMemUse(const wchar_t *s, CMemUse &mu)
+{
+  mu.Clear();
+
+  bool percentMode = false;
+  {
+    const wchar_t c = *s;
+    if (MyCharLower_Ascii(c) == 'p')
+    {
+      percentMode = true;
+      s++;
+    }
+  }
+  const wchar_t *end;
+  UInt64 number = ConvertStringToUInt64(s, &end);
+  if (end == s)
+    return false;
+  
+  wchar_t c = *end;
+
+  if (percentMode)
+  {
+    if (c != 0)
+      return false;
+    mu.IsPercent = true;
+    mu.Val = number;
+    return true;
+  }
+
+  if (c == 0)
+  {
+    mu.Val = number;
+    return true;
+  }
+
+  c = MyCharLower_Ascii(c);
+
+  const wchar_t c1 = end[1];
+  
+  if (c == '%')
+  {
+    if (c1 != 0)
+      return false;
+    mu.IsPercent = true;
+    mu.Val = number;
+    return true;
+  }
+
+  if (c == 'b')
+  {
+    if (c1 != 0)
+      return false;
+    mu.Val = number;
+    return true;
+  }
+  
+  if (c1 != 0)
+    if (MyCharLower_Ascii(c1) != 'b' || end[2] != 0)
+      return false;
+  
+  unsigned numBits;
+  switch (c)
+  {
+    case 'k': numBits = 10; break;
+    case 'm': numBits = 20; break;
+    case 'g': numBits = 30; break;
+    case 't': numBits = 40; break;
+    default: return false;
+  }
+  if (number >= ((UInt64)1 << (64 - numBits)))
+    return false;
+  mu.Val = number << numBits;
+  return true;
+}
+
+
+void CMemUse::Parse(const UString &s)
+{
+  IsDefined = ParseMemUse(s, *this);
+}
+
+/*
+void MemLimit_Save(const UString &s)
+{
+  CS_LOCK
+  CKey key;
+  CreateMainKey(key, kKeyName);
+  SetRegString(key, kMemUse, s);
+}
+
+bool MemLimit_Load(NCompression::CMemUse &mu)
+{
+  mu.Clear();
+  UString a;
+  {
+    CS_LOCK
+    CKey key;
+    if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
+      return false;
+    if (key.QueryValue(kMemUse, a) != ERROR_SUCCESS)
+      return false;
+  }
+  if (a.IsEmpty())
+    return false;
+  mu.Parse(a);
+  return mu.IsDefined;
+}
+*/
 
 }
 

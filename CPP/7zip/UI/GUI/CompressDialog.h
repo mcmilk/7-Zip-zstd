@@ -38,6 +38,8 @@ namespace NCompressDialog
     UInt64 SolidBlockSize;
     UInt32 NumThreads;
 
+    NCompression::CMemUse MemUsage;
+
     CRecordVector<UInt64> VolumeSizes;
 
     UInt32 Level;
@@ -104,7 +106,10 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CComboBox m_Order;
   NWindows::NControl::CComboBox m_Solid;
   NWindows::NControl::CComboBox m_NumThreads;
+  NWindows::NControl::CComboBox m_MemUse;
   NWindows::NControl::CComboBox m_Volume;
+
+  UStringVector _memUse_Strings;
 
   NWindows::NControl::CDialogChildControl m_Params;
 
@@ -130,10 +135,9 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   UString StartDirPrefix;
 
   bool _ramSize_Defined;
-  UInt64 _ramSize;
+  UInt64 _ramSize;         // full RAM size avail
+  UInt64 _ramSize_Reduced; // full for 64-bit and reduced for 32-bit
   UInt64 _ramUsage_Auto;
-  UInt64 _ramUsage_Limit;
-
 
   void CheckButton_TwoBools(UINT id, const CBoolPair &b1, const CBoolPair &b2);
   void GetButton_Bools(UINT id, CBoolPair &b1, CBoolPair &b2);
@@ -256,6 +260,10 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
     EnableMultiCombo(IDC_COMPRESS_THREADS);
   }
 
+  int AddMemComboItem(UInt64 val, bool isPercent = false, bool isDefault = false);
+  void SetMemUseCombo();
+  UString Get_MemUse_Spec();
+  UInt64 Get_MemUse_Bytes();
 
   UInt64 GetMemoryUsage_Dict_DecompMem(UInt64 dict, UInt64 &decompressMemory);
   UInt64 GetMemoryUsage_Threads_Dict_DecompMem(UInt32 numThreads, UInt64 dict, UInt64 &decompressMemory);

@@ -5,6 +5,7 @@ MY_ASM = jwasm
 MY_ASM = asmc
 
 PROGPATH = $(O)/$(PROG)
+PROGPATH_STATIC = $(O)/$(PROG)s
 
 
 # for object file
@@ -53,7 +54,7 @@ endif
 
 
 PROGPATH = $(O)/$(PROG)$(SHARED_EXT)
-
+PROGPATH_STATIC = $(O)/$(PROG)s$(SHARED_EXT)
 	
 ifndef O
 O=_o
@@ -82,7 +83,7 @@ MY_MKDIR=mkdir -p
 # LOCAL_LIBS_DLL=$(LOCAL_LIBS) -ldl
 LIB2 = -lpthread -ldl
 
-DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(OBJS)
+DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(PROGPATH_STATIC) $(OBJS)
 
 endif
 
@@ -108,14 +109,23 @@ CXX_WARN_FLAGS =
 
 CXXFLAGS = $(LOCAL_FLAGS) $(CXXFLAGS_BASE2) $(CFLAGS_BASE) $(CXXFLAGS_EXTRA) $(CC_SHARED) -o $@ $(CXX_WARN_FLAGS)
 
-all: $(O) $(PROGPATH)
+STATIC_TARGET=
+ifdef COMPL_STATIC
+STATIC_TARGET=$(PROGPATH_STATIC)
+endif
+
+
+all: $(O) $(PROGPATH) $(STATIC_TARGET)
 
 $(O):
 	$(MY_MKDIR) $(O)
 
+LFLAGS_ALL = -s $(MY_ARCH_2) $(LDFLAGS) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
 $(PROGPATH): $(OBJS)
-	$(CXX) -s -o $(PROGPATH) $(MY_ARCH_2) $(LDFLAGS) $(OBJS) $(MY_LIBS) $(LIB2)
+	$(CXX) -o $(PROGPATH) $(LFLAGS_ALL)
 
+$(PROGPATH_STATIC): $(OBJS)
+	$(CXX) -static -o $(PROGPATH_STATIC) $(LFLAGS_ALL)
 
 
 ifndef NO_DEFAULT_RES
