@@ -1,4 +1,4 @@
-7-Zip 21.05 Sources
+7-Zip 21.07 Sources
 -------------------
 
 7-Zip is a file archiver for Windows. 
@@ -147,6 +147,28 @@ Also you can change some compiler options in the mak files:
   cmpl_gcc.mak
   var_gcc.mak
   warn_gcc.mak
+
+makefile.gcc supports some variables that can change compile options
+
+USE_JWASM=1
+  use JWasm assembler instead of Asmc.
+  Note that JWasm doesn't support AES instructions. So AES code from C version AesOpt.c 
+  will be used instead of assembler code from AesOpt.asm.
+
+DISABLE_RAR=1
+  removes whole RAR related code from compilation.
+
+DISABLE_RAR_COMPRESS=1
+  removes "not fully free" code of RAR decompression codecs from compilation.
+
+RAR decompression codecs in 7-Zip code has some additional license restrictions, 
+that can be treated as not fully compatible with free-software licenses.
+DISABLE_RAR_COMPRESS=1 allows to exclude such "not-fully-free" RAR code from compilation.
+if DISABLE_RAR_COMPRESS=1 is specified, 7-zip will not be able to decompress files 
+from rar archives, but 7-zip still will be able to open rar archives to get list of 
+files or to extract files that are stored without compression.
+if DISABLE_RAR=1 is specified, 7-zip will not be able to work with RAR archives.
+
 
 
 7-Zip and p7zip

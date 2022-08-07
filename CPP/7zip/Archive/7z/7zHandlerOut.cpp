@@ -130,8 +130,10 @@ HRESULT CHandler::SetMainMethod(CCompressionMethodMode &methodMode)
     CMethodFull &methodFull = methodMode.Methods.AddNew();
     RINOK(PropsMethod_To_FullMethod(methodFull, oneMethodInfo));
 
+    #ifndef _7ZIP_ST
     methodFull.Set_NumThreads = true;
     methodFull.NumThreads = methodMode.NumThreads;
+    #endif
 
     if (methodFull.Id != k_Copy)
       needSolid = true;

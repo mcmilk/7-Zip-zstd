@@ -213,7 +213,7 @@ void CStartupInfo::RestoreScreen(HANDLE handle)
 
 CSysString CStartupInfo::GetFullKeyName(const char *keyName) const
 {
-  AString s = m_RegistryPath;
+  AString s (m_RegistryPath);
   if (keyName && *keyName)
   {
     s += kRegistryKeyDelimiter;
