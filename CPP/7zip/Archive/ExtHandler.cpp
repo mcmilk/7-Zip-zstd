@@ -935,7 +935,10 @@ HRESULT CHandler::ParseDir(const Byte *p, size_t size, unsigned iNodeDir)
       return S_FALSE;
     
     if (_isUTF)
-      _isUTF = CheckUTF8_AString(item.Name);
+    {
+      // 21.07 : we force UTF8
+      // _isUTF = CheckUTF8_AString(item.Name);
+    }
 
     if (iNode == 0)
     {
@@ -1835,7 +1838,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     
     case kpidRevision: prop = _h.RevLevel; break;
 
-    case kpidINodeSize: prop = _h.InodeSize; break;
+    case kpidINodeSize: prop = (UInt32)_h.InodeSize; break;
 
     case kpidId:
     {

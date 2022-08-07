@@ -1,6 +1,14 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+21.07          2021-12-26
+-------------------------
+- The sorting order of files in archives was slightly changed to be more consistent
+  for cases where the name of some directory is the same as the prefix part of the name
+  of another directory or file.
+- TAR archives created by 7-Zip now are more consistent with archives created by GNU TAR program.
+
+
 21.06          2021-11-24
 -------------------------
 - Bug in LZMA encoder in file LzmaEnc.c was fixed:

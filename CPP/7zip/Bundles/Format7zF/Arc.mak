@@ -89,6 +89,7 @@ AR_OBJS = \
   $O\UefiHandler.obj \
   $O\VdiHandler.obj \
   $O\VhdHandler.obj \
+  $O\VhdxHandler.obj \
   $O\VmdkHandler.obj \
   $O\XarHandler.obj \
   $O\XzHandler.obj \

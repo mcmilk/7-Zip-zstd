@@ -2929,6 +2929,10 @@ SOURCE=..\..\Archive\VhdHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\VhdxHandler.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\VmdkHandler.cpp
 # End Source File
 # Begin Source File

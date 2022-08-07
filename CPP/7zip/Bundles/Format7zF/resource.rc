@@ -33,5 +33,5 @@ MY_VERSION_INFO_DLL("7z Plugin" , "7z")
 
 STRINGTABLE
 BEGIN
-  100 "7z:0 zip:1 rar:3 001:9 cab:7 iso:8 xz:23 txz:23 lzma:16 tar:13 cpio:12 bz2:2 bzip2:2 tbz2:2 tbz:2 gz:14 gzip:14 tgz:14 tpz:14 z:5 taz:5 lzh:6 lha:6 rpm:10 deb:11 arj:4 vhd:20 wim:15 swm:15 esd:15 fat:21 ntfs:22 dmg:17 hfs:18 xar:19 squashfs:24"
+  100 "7z:0 zip:1 rar:3 001:9 cab:7 iso:8 xz:23 txz:23 lzma:16 tar:13 cpio:12 bz2:2 bzip2:2 tbz2:2 tbz:2 gz:14 gzip:14 tgz:14 tpz:14 z:5 taz:5 lzh:6 lha:6 rpm:10 deb:11 arj:4 vhd:20 vhdx:20 wim:15 swm:15 esd:15 fat:21 ntfs:22 dmg:17 hfs:18 xar:19 squashfs:24"
 END
