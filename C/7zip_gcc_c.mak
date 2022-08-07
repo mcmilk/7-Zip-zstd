@@ -16,12 +16,32 @@ CFLAGS_BASE = $(MY_ARCH_2) -O2 $(CFLAGS_BASE_LIST) -Wall -Werror -Wextra $(CFLAG
  -DNDEBUG -D_REENTRANT -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
 
 
-LDFLAGS_STATIC = -DNDEBUG
-# -static
-
 ifdef SystemDrive
 IS_MINGW = 1
+else
+ifdef SYSTEMDRIVE
+# ifdef OS
+IS_MINGW = 1
 endif
+endif
+
+ifdef IS_MINGW
+LDFLAGS_STATIC_2 = -static
+else
+ifndef DEF_FILE
+ifndef IS_NOT_STANDALONE
+ifndef MY_DYNAMIC_LINK
+ifneq ($(CC), clang)
+LDFLAGS_STATIC_2 =
+# -static
+# -static-libstdc++ -static-libgcc
+endif
+endif
+endif
+endif
+endif
+
+LDFLAGS_STATIC = -DNDEBUG $(LDFLAGS_STATIC_2)
 
 ifdef DEF_FILE
 
@@ -62,15 +82,22 @@ endif
 
 ifdef IS_MINGW
 
+ifdef MSYSTEM
+RM = rm -f
+MY_MKDIR=mkdir -p
+DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(PROGPATH_STATIC) $(OBJS)
+else
 RM = del
 MY_MKDIR=mkdir
-LIB2 = -loleaut32 -luuid -ladvapi32 -lUser32
+DEL_OBJ_EXE = -$(RM) $(O)\*.o $(O)\$(PROG).exe $(O)\$(PROG).dll
+endif
 
+
+LIB2 = -lOle32 -loleaut32 -luuid -ladvapi32 -lUser32
 
 CXXFLAGS_EXTRA = -DUNICODE -D_UNICODE
 # -Wno-delete-non-virtual-dtor
 
-DEL_OBJ_EXE = -$(RM) $(O)\*.o $(O)\$(PROG).exe $(O)\$(PROG).dll
  
 else
 
@@ -306,7 +333,10 @@ $O/7zMain.o: ../../../C/Util/7z/7zMain.c
 	$(CC) $(CFLAGS) $<
 $O/LzmaUtil.o: ../../../C/Util/Lzma/LzmaUtil.c
 	$(CC) $(CFLAGS) $<
-
+$O/7zipInstall.o: ../../../C/Util/7zipInstall/7zipInstall.c
+	$(CC) $(CFLAGS) $<
+$O/7zipUninstall.o: ../../../C/Util/7zipUninstall/7zipUninstall.c
+	$(CC) $(CFLAGS) $<
 
 
 clean:

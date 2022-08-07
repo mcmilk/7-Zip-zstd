@@ -2847,6 +2847,10 @@ SOURCE=..\..\Archive\HfsHandler.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Archive\HfsHandler.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\IArchive.h
 # End Source File
 # Begin Source File

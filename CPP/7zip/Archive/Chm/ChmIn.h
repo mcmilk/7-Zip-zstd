@@ -126,6 +126,7 @@ struct CLzxInfo
   CLzxInfo():
       Version(0),
       ResetIntervalBits(0),
+      WindowSizeBits(0),
       CacheSize(0)
       {}
 

@@ -292,6 +292,7 @@ static const CFormatInfo g_Formats[] =
     "Tar",
     (1 << 0),
     METHODS_PAIR(g_TarMethods),
+    0
     // kFF_Time_Unix | kFF_Time_Win // | kFF_Time_1ns
   },
   {
@@ -596,7 +597,6 @@ void CCompressDialog::EnableMultiCombo(unsigned id)
 }
 
 static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s);
-static void FormatOptions_To_String(const NCompression::CFormatOptions &fo, AString &s);
 
 static void Combine_Two_BoolPairs(const CBoolPair &b1, const CBoolPair &b2, CBool1 &res)
 {
@@ -607,7 +607,7 @@ static void Combine_Two_BoolPairs(const CBoolPair &b1, const CBoolPair &b2, CBoo
 }
 
 #define SET_GUI_BOOL(name) \
-      Combine_Two_BoolPairs(Info. ## name, m_RegistryInfo. ## name, name)
+      Combine_Two_BoolPairs(Info. name, m_RegistryInfo. name, name)
 
 
 static void Set_Final_BoolPairs(
@@ -630,7 +630,7 @@ static void Set_Final_BoolPairs(
 }
 
 #define SET_FINAL_BOOL_PAIRS(name) \
-    Set_Final_BoolPairs(name, Info. ## name, m_RegistryInfo. ## name)
+    Set_Final_BoolPairs(name, Info. name, m_RegistryInfo. name)
 
 void CCompressDialog::FormatChanged(bool isChanged)
 {
@@ -2711,7 +2711,7 @@ void CCompressDialog::ShowOptionsString()
   NCompression::CFormatOptions &fo = Get_FormatOptions();
 
   AString s;
-  if (fo.TimePrec != -1)
+  if (fo.IsSet_TimePrec())
   {
     s.Add_OptSpaced("tp");
     s.Add_UInt32(fo.TimePrec);

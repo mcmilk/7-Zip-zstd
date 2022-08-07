@@ -3,12 +3,20 @@ include ../../LzmaDec_gcc.mak
 LOCAL_FLAGS_ST =
 MT_OBJS =
 
+ifdef SystemDrive
+IS_MINGW = 1
+else
+ifdef SYSTEMDRIVE
+# ifdef OS
+IS_MINGW = 1
+endif
+endif
 
 ifdef ST_MODE
 
 LOCAL_FLAGS_ST = -D_7ZIP_ST
 
-ifdef SystemDrive
+ifdef IS_MINGW
 MT_OBJS = \
   $O/Threads.o \
 

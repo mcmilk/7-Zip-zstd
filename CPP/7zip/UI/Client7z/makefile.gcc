@@ -6,6 +6,16 @@ IS_NOT_STANDALONE = 1
 
 
 ifdef SystemDrive
+IS_MINGW = 1
+else
+ifdef SYSTEMDRIVE
+# ifdef OS
+IS_MINGW = 1
+endif
+endif
+
+
+ifdef IS_MINGW
 
 SYS_OBJS = \
   $O/resource.o \

@@ -8,9 +8,13 @@
 // #include <grp.h>
 // #include <pwd.h>
 
-// for major minor:
-// BSD: <sys/types.h>
+// for major()/minor():
+#if defined(__FreeBSD__) || defined(BSD)
+#include <sys/types.h>
+#else
 #include <sys/sysmacros.h>
+#endif
+
 #endif
 
 #ifndef _7ZIP_ST

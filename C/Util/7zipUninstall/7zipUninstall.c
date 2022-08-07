@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2021-11-24 : Igor Pavlov : Public domain */
+2022-07-15 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -16,6 +16,10 @@
 #include "../../7zVersion.h"
 
 #include "resource.h"
+
+#if defined(__GNUC__) && (__GNUC__ >= 8)
+  #pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
