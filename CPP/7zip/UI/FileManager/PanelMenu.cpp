@@ -111,7 +111,7 @@ static void AddPropertyString(PROPID propID, const wchar_t *nameBSTR,
         val = ConvertSizeToString(v);
       }
       else
-        ConvertPropertyToString2(val, prop, propID);
+        ConvertPropertyToString2(val, prop, propID, 9); // we send 9 - is ns precision
     }
 
     if (!val.IsEmpty())

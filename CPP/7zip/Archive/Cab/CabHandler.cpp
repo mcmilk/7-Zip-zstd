@@ -295,15 +295,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
     case kpidMTime:
     {
-      FILETIME localFileTime, utcFileTime;
-      if (NTime::DosTimeToFileTime(item.Time, localFileTime))
-      {
-        if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
-          utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-      }
-      else
-        utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-      prop = utcFileTime;
+      PropVariant_SetFrom_DosTime(prop, item.Time);
       break;
     }
 

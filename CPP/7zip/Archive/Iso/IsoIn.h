@@ -127,17 +127,18 @@ struct CDateTime
   bool NotSpecified() const { return Year == 0 && Month == 0 && Day == 0 &&
       Hour == 0 && Minute == 0 && Second == 0 && GmtOffset == 0; }
 
-  bool GetFileTime(FILETIME &ft) const
+  bool GetFileTime(NWindows::NCOM::CPropVariant &prop) const
   {
-    UInt64 value;
-    bool res = NWindows::NTime::GetSecondsSince1601(Year, Month, Day, Hour, Minute, Second, value);
+    UInt64 v;
+    const bool res = NWindows::NTime::GetSecondsSince1601(Year, Month, Day, Hour, Minute, Second, v);
     if (res)
     {
-      value -= (Int64)((Int32)GmtOffset * 15 * 60);
-      value *= 10000000;
+      v -= (Int64)((Int32)GmtOffset * 15 * 60);
+      v *= 10000000;
+      if (Hundredths < 100)
+        v += (UInt32)Hundredths * 100000;
+      prop.SetAsTimeFrom_Ft64_Prec(v, k_PropVar_TimePrec_Base + 2);
     }
-    ft.dwLowDateTime = (DWORD)value;
-    ft.dwHighDateTime = (DWORD)(value >> 32);
     return res;
   }
 };

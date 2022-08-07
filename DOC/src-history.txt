@@ -1,6 +1,12 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+22.00          2022-06-16
+-------------------------
+- 7-Zip interfaces now support high precision (1 ns) timestamps with reserved
+  fields of tagPROPVARIANT (VT_FILETIME).
+
+
 21.07          2021-12-26
 -------------------------
 - The sorting order of files in archives was slightly changed to be more consistent

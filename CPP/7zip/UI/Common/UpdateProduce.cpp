@@ -63,6 +63,8 @@ void UpdateProduce(
         break;
     }
 
+    up2.IsSameTime = ((unsigned)pair.State == NUpdateArchive::NPairState::kSameFiles);
+
     operationChain.Add(up2);
   }
   

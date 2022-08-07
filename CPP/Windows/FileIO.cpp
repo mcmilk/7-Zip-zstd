@@ -8,6 +8,14 @@
 
 // #include <stdio.h>
 
+/*
+#ifndef _WIN32
+// for ioctl BLKGETSIZE64
+#include <sys/ioctl.h>
+#include <linux/fs.h>
+#endif
+*/
+
 #include "FileIO.h"
 #include "FileName.h"
 
@@ -615,7 +623,7 @@ namespace NWindows {
 namespace NFile {
 
 namespace NDir {
-bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime);
+bool SetDirTime(CFSTR path, const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime);
 }
 
 namespace NIO {
@@ -629,6 +637,19 @@ bool CFileBase::OpenBinary(const char *name, int flags)
   Close();
   _handle = ::open(name, flags, 0666);
   return _handle != -1;
+
+  /*
+  if (_handle == -1)
+    return false;
+  if (IsString1PrefixedByString2(name, "/dev/"))
+  {
+    // /dev/sda
+    // IsDeviceFile = true; // for debug
+    // SizeDefined = false;
+    // SizeDefined = (GetDeviceSize_InBytes(Size) == 0);
+  }
+  return true;
+  */
 }
 
 bool CFileBase::Close()
@@ -638,6 +659,10 @@ bool CFileBase::Close()
   if (close(_handle) != 0)
     return false;
   _handle = -1;
+  /*
+  IsDeviceFile = false;
+  SizeDefined = false;
+  */
   return true;
 }
 
@@ -651,15 +676,35 @@ bool CFileBase::GetLength(UInt64 &length) const
   const off_t lengthTemp = seek(0, SEEK_END);
   seek(curPos, SEEK_SET);
   length = (UInt64)lengthTemp;
+
+  /*
+  // 22.00:
+  if (lengthTemp == 1)
+  if (IsDeviceFile && SizeDefined)
+  {
+    length = Size;
+    return true;
+  }
+  */
+
   return (lengthTemp != -1);
 }
 
 off_t CFileBase::seek(off_t distanceToMove, int moveMethod) const
 {
+  /*
+  if (IsDeviceFile && SizeDefined && moveMethod == SEEK_END)
+  {
+    printf("\n seek : IsDeviceFile moveMethod = %d distanceToMove = %ld\n", moveMethod, distanceToMove);
+    distanceToMove += Size;
+    moveMethod = SEEK_SET;
+  }
+  */
+
   // printf("\nCFileBase::seek() moveMethod = %d, distanceToMove = %lld", moveMethod, (long long)distanceToMove);
   // off_t res = ::lseek(_handle, distanceToMove, moveMethod);
+  // printf("\n lseek : moveMethod = %d distanceToMove = %ld\n", moveMethod, distanceToMove);
   return ::lseek(_handle, distanceToMove, moveMethod);
-  // printf(" res = %lld", (long long)res);
   // return res;
 }
 
@@ -693,6 +738,28 @@ bool CInFile::OpenShared(const char *name, bool)
 {
   return Open(name);
 }
+
+
+/*
+int CFileBase::my_ioctl_BLKGETSIZE64(unsigned long long *numBlocks)
+{
+  // we can read "/sys/block/sda/size" "/sys/block/sda/sda1/size" - partition
+  // #include <linux/fs.h>
+  return ioctl(_handle, BLKGETSIZE64, numBlocks);
+  // in block size
+}
+
+int CFileBase::GetDeviceSize_InBytes(UInt64 &size)
+{
+  size = 0;
+  unsigned long long numBlocks;
+  int res = my_ioctl_BLKGETSIZE64(&numBlocks);
+  if (res == 0)
+    size = numBlocks; // another blockSize s possible?
+  printf("\nGetDeviceSize_InBytes res = %d, size = %lld\n", res, (long long)size);
+  return res;
+}
+*/
 
 /*
 On Linux (32-bit and 64-bit):
@@ -802,7 +869,7 @@ bool COutFile::Close()
   return res;
 }
 
-bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime) throw()
+bool COutFile::SetTime(const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime) throw()
 {
   // On some OS (cygwin, MacOSX ...), you must close the file before updating times
   // return true;
@@ -811,9 +878,22 @@ bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILET
   if (aTime) { ATime = *aTime; ATime_defined = true; } else ATime_defined = false;
   if (mTime) { MTime = *mTime; MTime_defined = true; } else MTime_defined = false;
   return true;
+
+  /*
+  struct timespec times[2];
+  UNUSED_VAR(cTime)
+  if (!aTime && !mTime)
+    return true;
+  bool needChange;
+  needChange  = FiTime_To_timespec(aTime, times[0]);
+  needChange |= FiTime_To_timespec(mTime, times[1]);
+  if (!needChange)
+    return true;
+  return futimens(_handle, times) == 0;
+  */
 }
 
-bool COutFile::SetMTime(const FILETIME *mTime) throw()
+bool COutFile::SetMTime(const CFiTime *mTime) throw()
 {
   if (mTime) { MTime = *mTime; MTime_defined = true; } else MTime_defined = false;
   return true;

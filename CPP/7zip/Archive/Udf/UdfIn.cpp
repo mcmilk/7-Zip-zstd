@@ -333,7 +333,7 @@ void CItem::Parse(const Byte *p)
   NumLogBlockRecorded = Get64(p + 64);
   ATime.Parse(p + 72);
   MTime.Parse(p + 84);
-  // AttrtTime.Parse(p + 96);
+  AttribTime.Parse(p + 96);
   // CheckPoint = Get32(p + 108);
   // ExtendedAttrIcb.Parse(p + 112);
   // ImplId.Parse(p + 128);

@@ -111,13 +111,13 @@ static int GetLog(UInt32 num)
 
 static const UInt32 kHeaderSize = 512;
 
-API_FUNC_static_IsArc IsArc_Fat(const Byte *p, size_t size)
+API_FUNC_IsArc IsArc_Fat(const Byte *p, size_t size);
+API_FUNC_IsArc IsArc_Fat(const Byte *p, size_t size)
 {
   if (size < kHeaderSize)
     return k_IsArc_Res_NEED_MORE;
   CHeader h;
   return h.Parse(p) ? k_IsArc_Res_YES : k_IsArc_Res_NO;
-}
 }
 
 bool CHeader::Parse(const Byte *p)
@@ -846,17 +846,18 @@ static const CStatProp kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_WITH_NAME
 
+
 static void FatTimeToProp(UInt32 dosTime, UInt32 ms10, NWindows::NCOM::CPropVariant &prop)
 {
   FILETIME localFileTime, utc;
-  if (NWindows::NTime::DosTimeToFileTime(dosTime, localFileTime))
+  if (NWindows::NTime::DosTime_To_FileTime(dosTime, localFileTime))
     if (LocalFileTimeToFileTime(&localFileTime, &utc))
     {
       UInt64 t64 = (((UInt64)utc.dwHighDateTime) << 32) + utc.dwLowDateTime;
       t64 += ms10 * 100000;
       utc.dwLowDateTime = (DWORD)t64;
       utc.dwHighDateTime = (DWORD)(t64 >> 32);
-      prop = utc;
+      prop.SetAsTimeFrom_FT_Prec(utc, k_PropVar_TimePrec_Base + 2);
     }
 }
 
@@ -892,7 +893,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidPhySize: prop = PhySize; break;
     case kpidFreeSpace: prop = (UInt64)NumFreeClusters << Header.ClusterSizeLog; break;
     case kpidHeadersSize: prop = GetHeadersSize(); break;
-    case kpidMTime: if (VolItemDefined) FatTimeToProp(VolItem.MTime, 0, prop); break;
+    case kpidMTime: if (VolItemDefined) PropVariant_SetFrom_DosTime(prop, VolItem.MTime); break;
     case kpidShortComment:
     case kpidVolumeName: if (VolItemDefined) prop = VolItem.GetVolName(); break;
     case kpidNumFats: if (Header.NumFats != 2) prop = Header.NumFats; break;
@@ -920,9 +921,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPath: prop = GetItemPath(index); break;
     case kpidShortName: prop = item.GetShortName(); break;
     case kpidIsDir: prop = item.IsDir(); break;
-    case kpidMTime: FatTimeToProp(item.MTime, 0, prop); break;
+    case kpidMTime: PropVariant_SetFrom_DosTime(prop, item.MTime); break;
     case kpidCTime: FatTimeToProp(item.CTime, item.CTime2, prop); break;
-    case kpidATime: FatTimeToProp(((UInt32)item.ADate << 16), 0, prop); break;
+    case kpidATime: PropVariant_SetFrom_DosTime(prop, ((UInt32)item.ADate << 16)); break;
     case kpidAttrib: prop = (UInt32)item.Attrib; break;
     case kpidSize: if (!item.IsDir()) prop = item.Size; break;
     case kpidPackSize: if (!item.IsDir()) prop = Header.GetFilePackSize(item.Size); break;

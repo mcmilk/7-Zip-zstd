@@ -84,6 +84,11 @@ struct CResetTable
   // unsigned BlockSizeBits;
   CRecordVector<UInt64> ResetOffsets;
   
+  CResetTable():
+      UncompressedSize(0),
+      CompressedSize(0)
+      {}
+
   bool GetCompressedSizeOfBlocks(UInt64 blockIndex, UInt32 numBlocks, UInt64 &size) const
   {
     if (blockIndex >= ResetOffsets.Size())
@@ -117,6 +122,12 @@ struct CLzxInfo
   UInt32 CacheSize;
   
   CResetTable ResetTable;
+
+  CLzxInfo():
+      Version(0),
+      ResetIntervalBits(0),
+      CacheSize(0)
+      {}
 
   unsigned GetNumDictBits() const
   {

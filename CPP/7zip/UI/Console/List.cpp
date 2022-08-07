@@ -124,6 +124,13 @@ static const char * const kPropIdToName[] =
   , "Read-only"
   , "Out Name"
   , "Copy Link"
+  , "ArcFileName"
+  , "IsHash"
+  , "Metadata Changed"
+  , "User ID"
+  , "Group ID"
+  , "Device Major"
+  , "Device Minor"
 };
 
 static const char kEmptyAttribChar = '.';
@@ -303,21 +310,17 @@ struct CListUInt64Def
   void Add(const CListUInt64Def &v) { if (v.Def) Add(v.Val); }
 };
 
-struct CListFileTimeDef
-{
-  FILETIME Val;
-  bool Def;
 
-  CListFileTimeDef(): Def(false) { Val.dwLowDateTime = 0; Val.dwHighDateTime = 0; }
+struct CListFileTimeDef: public CArcTime
+{
   void Update(const CListFileTimeDef &t)
   {
-    if (t.Def && (!Def || CompareFileTime(&Val, &t.Val) < 0))
-    {
-      Val = t.Val;
-      Def = true;
-    }
+    if (t.Def && (!Def || CompareWith(t) < 0))
+      (*this) = t;
   }
 };
+
+
 
 struct CListStat
 {
@@ -493,12 +496,24 @@ void CFieldPrinter::PrintTitleLines()
   g_StdOut << LinesString;
 }
 
-static void PrintTime(char *dest, const FILETIME *ft)
+static void PrintTime(char *dest, const CListFileTimeDef &t, bool showNS)
 {
   *dest = 0;
-  if (ft->dwLowDateTime == 0 && ft->dwHighDateTime == 0)
+  if (t.IsZero())
     return;
-  ConvertUtcFileTimeToString(*ft, dest, kTimestampPrintLevel_SEC);
+  int prec = kTimestampPrintLevel_SEC;
+  if (showNS)
+  {
+    prec = kTimestampPrintLevel_NTFS;
+    if (t.Prec != 0)
+    {
+      prec = t.GetNumDigits();
+      if (prec < kTimestampPrintLevel_DAY)
+        prec = kTimestampPrintLevel_NTFS;
+    }
+  }
+
+  ConvertUtcFileTimeToString2(t.FT, t.Ns100, dest, prec);
 }
 
 #ifndef _SFX
@@ -631,7 +646,13 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &st)
       {
         case kpidSize: if (st.Size.Def) prop = st.Size.Val; break;
         case kpidPackSize: if (st.PackSize.Def) prop = st.PackSize.Val; break;
-        case kpidMTime: if (st.MTime.Def) prop = st.MTime.Val; break;
+        case kpidMTime:
+        {
+          const CListFileTimeDef &mtime = st.MTime;
+          if (mtime.Def)
+            prop.SetAsTimeFrom_FT_Prec_Ns100(mtime.FT, mtime.Prec, mtime.Ns100);
+          break;
+        }
         default:
           RINOK(Arc->Archive->GetProperty(index, f.PropID, &prop));
       }
@@ -653,7 +674,9 @@ HRESULT CFieldPrinter::PrintItemInfo(UInt32 index, const CListStat &st)
       }
       else if (prop.vt == VT_FILETIME)
       {
-        PrintTime(temp + tempPos, &prop.filetime);
+        CListFileTimeDef t;
+        t.Set_From_Prop(prop);
+        PrintTime(temp + tempPos, t, techMode);
         if (techMode)
           g_StdOut << temp + tempPos;
         else
@@ -726,7 +749,7 @@ void CFieldPrinter::PrintSum(const CListStat &st, UInt64 numDirs, const char *st
       char s[64];
       s[0] = 0;
       if (st.MTime.Def)
-        PrintTime(s, &st.MTime.Val);
+        PrintTime(s, st.MTime, false); // showNS
       PrintString(f.TextAdjustment, f.Width, s);
     }
     else if (f.PropID == kpidPath)
@@ -770,16 +793,14 @@ static HRESULT GetUInt64Value(IInArchive *archive, UInt32 index, PROPID propID, 
 
 static HRESULT GetItemMTime(IInArchive *archive, UInt32 index, CListFileTimeDef &t)
 {
-  t.Val.dwLowDateTime = 0;
-  t.Val.dwHighDateTime = 0;
-  t.Def = false;
+  /* maybe we could call CArc::GetItemMTime(UInt32 index, CArcTime &ft, bool &defined) here
+     that can set default timestamp, if not defined */
+  t.Clear();
+  // t.Def = false;
   CPropVariant prop;
   RINOK(archive->GetProperty(index, kpidMTime, &prop));
   if (prop.vt == VT_FILETIME)
-  {
-    t.Val = prop.filetime;
-    t.Def = true;
-  }
+    t.Set_From_Prop(prop);
   else if (prop.vt != VT_EMPTY)
     return E_FAIL;
   return S_OK;
@@ -879,7 +900,8 @@ static void PrintPropPair(CStdOutStream &so, const char *name, const wchar_t *va
 static void PrintPropertyPair2(CStdOutStream &so, PROPID propID, const wchar_t *name, const CPropVariant &prop)
 {
   UString s;
-  ConvertPropertyToString2(s, prop, propID);
+  const int levelTopLimit = 9; // 1ns level
+  ConvertPropertyToString2(s, prop, propID, levelTopLimit);
   if (!s.IsEmpty())
   {
     AString nameA;
@@ -1249,7 +1271,7 @@ HRESULT ListArchives(
       if (NConsoleClose::TestBreakSignal())
         return E_ABORT;
 
-      HRESULT res = arc.GetItemPath2(i, fp.FilePath);
+      HRESULT res = arc.GetItem_Path2(i, fp.FilePath);
 
       if (stdInMode && res == E_INVALIDARG)
         break;

@@ -885,11 +885,7 @@ IMP_IInArchive_ArcProps_WITH_NAME
 static void TimeToProp(UInt32 unixTime, NCOM::CPropVariant &prop)
 {
   if (unixTime != 0)
-  {
-    FILETIME ft;
-    NTime::UnixTimeToFileTime(unixTime, ft);
-    prop = ft;
-  }
+    PropVariant_SetFrom_UnixTime(prop, unixTime);
 }
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)

@@ -17,7 +17,6 @@
 
 #include "../Common/StringConvert.h"
 #include "../Common/C_FileIO.h"
-#include "TimeUtils.h"
 #endif
 
 #include "FileDir.h"
@@ -31,6 +30,30 @@ extern bool g_IsNT;
 using namespace NWindows;
 using namespace NFile;
 using namespace NName;
+
+#ifndef _WIN32
+
+static bool FiTime_To_timespec(const CFiTime *ft, timespec &ts)
+{
+  if (ft)
+  {
+    ts = *ft;
+    return true;
+  }
+  // else
+  {
+    ts.tv_sec = 0;
+    ts.tv_nsec =
+    #ifdef UTIME_OMIT
+      UTIME_OMIT; // -2 keep old timesptamp
+    #else
+      // UTIME_NOW; -1 // set to the current time
+      0;
+    #endif
+    return false;
+  }
+}
+#endif
 
 namespace NWindows {
 namespace NFile {
@@ -86,7 +109,7 @@ bool GetSystemDir(FString &path)
 #endif // UNDER_CE
 
 
-bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime)
+bool SetDirTime(CFSTR path, const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime)
 {
   #ifndef _UNICODE
   if (!g_IsNT)
@@ -920,39 +943,11 @@ bool GetCurrentDir(FString &path)
   // #define UTIME_OMIT -2
 #endif
 
-static bool FILETME_To_timespec(const FILETIME *ft, timespec &ts)
-{
-  if (ft)
-  {
-    const Int64 sec = NTime::FileTimeToUnixTime64(*ft);
-    // time_t is long
-    const time_t sec2 = (time_t)sec;
-    if (sec2 == sec)
-    {
-      ts.tv_sec = sec2;
-      const UInt64 winTime = (((UInt64)ft->dwHighDateTime) << 32) + ft->dwLowDateTime;
-      ts.tv_nsec = (long)((winTime % 10000000) * 100);
-      return true;
-    }
-  }
-  // else
-  {
-    ts.tv_sec = 0;
-    ts.tv_nsec =
-    #ifdef UTIME_OMIT
-      UTIME_OMIT; // keep old timesptamp
-    #else
-      // UTIME_NOW; // set to the current time
-      0;
-    #endif
-    return false;
-  }
-}
 
 
 
 
-bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime)
+bool SetDirTime(CFSTR path, const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime)
 {
   // need testing
   /*
@@ -998,12 +993,18 @@ bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const 
   UNUSED_VAR(cTime)
   
   bool needChange;
-  needChange  = FILETME_To_timespec(aTime, times[0]);
-  needChange |= FILETME_To_timespec(mTime, times[1]);
+  needChange  = FiTime_To_timespec(aTime, times[0]);
+  needChange |= FiTime_To_timespec(mTime, times[1]);
+
+  /*
+  if (mTime)
+  {
+    printf("\n time = %ld.%9ld\n", mTime->tv_sec, mTime->tv_nsec);
+  }
+  */
 
   if (!needChange)
     return true;
-
   const int flags = 0; // follow link
     // = AT_SYMLINK_NOFOLLOW; // don't follow link
   return utimensat(AT_FDCWD, path, times, flags) == 0;
@@ -1039,6 +1040,10 @@ static C_umask g_umask;
 #define TRACE_chmod(s, mode) \
   PRF(printf("\n chmod(%s, %o)\n", (const char *)path, (unsigned)(mode)));
 
+int my_chown(CFSTR path, uid_t owner, gid_t group)
+{
+  return chown(path, owner, group);
+}
 
 bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib)
 {

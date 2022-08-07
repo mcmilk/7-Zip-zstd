@@ -343,6 +343,8 @@ struct CHeader
   bool UseGdtChecksum() const { return (FeatureRoCompat & RO_COMPAT_GDT_CSUM) != 0; }
   bool UseMetadataChecksum() const { return (FeatureRoCompat & RO_COMPAT_METADATA_CSUM) != 0; }
 
+  UInt64 GetPhySize() const { return NumBlocks << BlockBits; }
+
   bool Parse(const Byte *p);
 };
 
@@ -638,7 +640,7 @@ struct CNode
   CExtTime MTime;
   CExtTime ATime;
   CExtTime CTime;
-  // CExtTime InodeChangeTime;
+  CExtTime ChangeTime;
   // CExtTime DTime;
 
   UInt64 NumBlocks;
@@ -674,14 +676,14 @@ bool CNode::Parse(const Byte *p, const CHeader &_h)
   ATime.Extra = 0;
   CTime.Extra = 0;
   CTime.Val = 0;
-  // InodeChangeTime.Extra = 0;
+  ChangeTime.Extra = 0;
   // DTime.Extra = 0;
 
   LE_16 (0x00, Mode);
   LE_16 (0x02, Uid);
   LE_32 (0x04, FileSize);
   LE_32 (0x08, ATime.Val);
-  // LE_32 (0x0C, InodeChangeTime.Val);
+  LE_32 (0x0C, ChangeTime.Val);
   LE_32 (0x10, MTime.Val);
   // LE_32 (0x14, DTime.Val);
   LE_16 (0x18, Gid);
@@ -742,7 +744,7 @@ bool CNode::Parse(const Byte *p, const CHeader &_h)
     {
       // UInt16 checksumUpper;
       // LE_16 (0x82, checksumUpper);
-      // LE_32 (0x84, InodeChangeTime.Extra);
+      LE_32 (0x84, ChangeTime.Extra);
       LE_32 (0x88, MTime.Extra);
       LE_32 (0x8C, ATime.Extra);
       LE_32 (0x90, CTime.Val);
@@ -1148,7 +1150,7 @@ HRESULT CHandler::Open2(IInStream *inStream)
     }
 
     _isArc = true;
-    _phySize = _h.NumBlocks << _h.BlockBits;
+    _phySize = _h.GetPhySize();
 
     if (_openCallback)
     {
@@ -1744,8 +1746,8 @@ static const UInt32 kProps[] =
   kpidLinks,
   kpidSymLink,
   kpidCharacts,
-  kpidUser,
-  kpidGroup
+  kpidUserId,
+  kpidGroupId
 };
 
 
@@ -1792,11 +1794,7 @@ static void StringToProp(bool isUTF, const char *s, unsigned size, NCOM::CPropVa
 static void UnixTimeToProp(UInt32 val, NCOM::CPropVariant &prop)
 {
   if (val != 0)
-  {
-    FILETIME ft;
-    NTime::UnixTimeToFileTime(val, ft);
-    prop = ft;
-  }
+    PropVariant_SetFrom_UnixTime(prop, val);
 }
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
@@ -1988,15 +1986,19 @@ static void ExtTimeToProp(const CExtTime &t, NCOM::CPropVariant &prop)
     return;
 
   FILETIME ft;
+  unsigned low100ns = 0;
   // if (t.Extra != 0)
   {
     // 1901-2446 :
     Int64 v = (Int64)(Int32)t.Val;
     v += (UInt64)(t.Extra & 3) << 32;  // 2 low bits are offset for main timestamp
-    UInt64 ft64 = NTime::UnixTime64ToFileTime64(v);
+    UInt64 ft64 = NTime::UnixTime64_To_FileTime64(v);
     const UInt32 ns = (t.Extra >> 2);
     if (ns < 1000000000)
+    {
       ft64 += ns / 100;
+      low100ns = (unsigned)(ns % 100);
+    }
     ft.dwLowDateTime = (DWORD)ft64;
     ft.dwHighDateTime = (DWORD)(ft64 >> 32);
   }
@@ -2011,7 +2013,7 @@ static void ExtTimeToProp(const CExtTime &t, NCOM::CPropVariant &prop)
     // NTime::UnixTimeToFileTime(t.Val, ft); // for
   }
   */
-  prop = ft;
+  prop.SetAsTimeFrom_FT_Prec_Ns100(ft, k_PropVar_TimePrec_1ns, low100ns);
 }
 
 
@@ -2103,10 +2105,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidCTime: ExtTimeToProp(node.CTime, prop); break;
     case kpidATime: ExtTimeToProp(node.ATime, prop); break;
     // case kpidDTime: ExtTimeToProp(node.DTime, prop); break;
-    // case kpidChangeTime: ExtTimeToProp(node.InodeChangeTime, prop); break;
-
-    case kpidUser: prop = (UInt32)node.Uid; break;
-    case kpidGroup: prop = (UInt32)node.Gid; break;
+    case kpidChangeTime: ExtTimeToProp(node.ChangeTime, prop); break;
+    case kpidUserId: prop = (UInt32)node.Uid; break;
+    case kpidGroupId: prop = (UInt32)node.Gid; break;
     case kpidLinks: prop = node.NumLinks; break;
     case kpidINode: prop = (UInt32)item.Node; break;
     case kpidStreamId: if (!isDir) prop = (UInt32)item.Node; break;
@@ -2827,16 +2828,28 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 }
 
 
-API_FUNC_static_IsArc IsArc_Ext(const Byte *p, size_t size)
+API_FUNC_IsArc IsArc_Ext_PhySize(const Byte *p, size_t size, UInt64 *phySize);
+API_FUNC_IsArc IsArc_Ext_PhySize(const Byte *p, size_t size, UInt64 *phySize)
 {
+  if (phySize)
+    *phySize = 0;
   if (size < kHeaderSize)
     return k_IsArc_Res_NEED_MORE;
   CHeader h;
   if (!h.Parse(p + kHeaderDataOffset))
     return k_IsArc_Res_NO;
+  if (phySize)
+    *phySize = h.GetPhySize();
   return k_IsArc_Res_YES;
 }
+
+
+API_FUNC_IsArc IsArc_Ext(const Byte *p, size_t size);
+API_FUNC_IsArc IsArc_Ext(const Byte *p, size_t size)
+{
+  return IsArc_Ext_PhySize(p, size, NULL);
 }
+
 
 static const Byte k_Signature[] = { 0x53, 0xEF };
 

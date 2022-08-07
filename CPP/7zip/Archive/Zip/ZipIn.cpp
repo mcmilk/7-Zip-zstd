@@ -1045,9 +1045,24 @@ bool CInArchive::ReadExtra(const CLocalItem &item, unsigned extraSize, CExtraBlo
       
         if (cdItem)
         {
-          if (isOK && ZIP64_IS_32_MAX(cdItem->LocalHeaderPos))
-            { if (size < 8) isOK = false; else { size -= 8; cdItem->LocalHeaderPos = ReadUInt64(); }}
-          
+          if (isOK)
+          {
+            if (ZIP64_IS_32_MAX(cdItem->LocalHeaderPos))
+              { if (size < 8) isOK = false; else { size -= 8; cdItem->LocalHeaderPos = ReadUInt64(); }}
+            /*
+            else if (size == 8)
+            {
+              size -= 8;
+              const UInt64 v = ReadUInt64();
+              // soong_zip, an AOSP tool (written in the Go) writes incorrect value.
+              // we can ignore that minor error here
+              if (v != cdItem->LocalHeaderPos)
+                isOK = false; // ignore error
+              // isOK = false; // force error
+            }
+            */
+          }
+         
           if (isOK && ZIP64_IS_16_MAX(cdItem->Disk))
             { if (size < 4) isOK = false; else { size -= 4; cdItem->Disk = ReadUInt32(); }}
         }
@@ -1926,7 +1941,7 @@ static int FindItem(const CObjectVector<CItemEx> &items, const CItemEx &item)
   {
     if (left >= right)
       return -1;
-    const unsigned index = (left + right) / 2;
+    const unsigned index = (unsigned)(((size_t)left + (size_t)right) / 2);
     const CItemEx &item2 = items[index];
     if (item.Disk < item2.Disk)
       right = index;

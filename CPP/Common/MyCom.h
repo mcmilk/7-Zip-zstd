@@ -67,6 +67,7 @@ public:
   template <class Q>
   HRESULT QueryInterface(REFGUID iid, Q** pp) const throw()
   {
+    // if (*pp) throw 20220216; // for debug
     return _p->QueryInterface(iid, (void**)pp);
   }
 };

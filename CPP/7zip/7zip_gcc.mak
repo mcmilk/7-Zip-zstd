@@ -382,6 +382,8 @@ $O/VirtThread.o: ../../Common/VirtThread.cpp
 	$(CXX) $(CXXFLAGS) $<
 
 
+$O/ApfsHandler.o: ../../Archive/ApfsHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
 $O/ApmHandler.o: ../../Archive/ApmHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/ArchiveExports.o: ../../Archive/ArchiveExports.cpp
@@ -389,6 +391,8 @@ $O/ArchiveExports.o: ../../Archive/ArchiveExports.cpp
 $O/ArHandler.o: ../../Archive/ArHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/ArjHandler.o: ../../Archive/ArjHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/AvbHandler.o: ../../Archive/AvbHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/Base64Handler.o: ../../Archive/Base64Handler.cpp
 	$(CXX) $(CXXFLAGS) $<
@@ -426,6 +430,8 @@ $O/HfsHandler.o: ../../Archive/HfsHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/IhexHandler.o: ../../Archive/IhexHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
+$O/LpHandler.o: ../../Archive/LpHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
 $O/LzhHandler.o: ../../Archive/LzhHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/LzmaHandler.o: ../../Archive/LzmaHandler.cpp
@@ -447,6 +453,8 @@ $O/PpmdHandler.o: ../../Archive/PpmdHandler.cpp
 $O/QcowHandler.o: ../../Archive/QcowHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/RpmHandler.o: ../../Archive/RpmHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/SparseHandler.o: ../../Archive/SparseHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/SplitHandler.o: ../../Archive/SplitHandler.cpp
 	$(CXX) $(CXXFLAGS) $<

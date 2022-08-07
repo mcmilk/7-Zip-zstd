@@ -244,6 +244,9 @@ struct CCopyToOptions
   bool replaceAltStreamChars;
   bool showErrorMessages;
 
+  bool NeedRegistryZone;
+  NExtract::NZoneIdMode::EEnum ZoneIdMode;
+
   UString folder;
 
   UStringVector hashMethods;
@@ -258,6 +261,8 @@ struct CCopyToOptions
       includeAltStreams(true),
       replaceAltStreamChars(false),
       showErrorMessages(false),
+      NeedRegistryZone(true),
+      ZoneIdMode(NExtract::NZoneIdMode::kNone),
       VirtFileSystemSpec(NULL),
       VirtFileSystem(NULL)
       {}

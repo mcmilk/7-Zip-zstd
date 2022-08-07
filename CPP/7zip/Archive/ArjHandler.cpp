@@ -682,15 +682,7 @@ static void SetTime(UInt32 dosTime, NCOM::CPropVariant &prop)
 {
   if (dosTime == 0)
     return;
-  FILETIME localFileTime, utc;
-  if (NTime::DosTimeToFileTime(dosTime, localFileTime))
-  {
-    if (!LocalFileTimeToFileTime(&localFileTime, &utc))
-      utc.dwHighDateTime = utc.dwLowDateTime = 0;
-  }
-  else
-    utc.dwHighDateTime = utc.dwLowDateTime = 0;
-  prop = utc;
+  PropVariant_SetFrom_DosTime(prop, dosTime);
 }
 
 static void SetHostOS(Byte hostOS, NCOM::CPropVariant &prop)

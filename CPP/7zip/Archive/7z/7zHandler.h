@@ -49,9 +49,8 @@ public:
   bool _encryptHeaders;
   // bool _useParents; 9.26
 
-  CBoolPair Write_CTime;
-  CBoolPair Write_ATime;
-  CBoolPair Write_MTime;
+  CHandlerTimeOptions TimeOptions;
+
   CBoolPair Write_Attrib;
 
   bool _useMultiThreadMixer;

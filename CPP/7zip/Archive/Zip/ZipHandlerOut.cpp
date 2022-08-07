@@ -30,7 +30,7 @@ namespace NZip {
 
 STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
-  *timeType = NFileTimeType::kDOS;
+  *timeType = TimeOptions.Prec;
   return S_OK;
 }
 
@@ -207,26 +207,57 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
       */
 
+      // 22.00 : kpidTimeType is useless here : the code was disabled
+      /*
       {
         CPropVariant prop;
         RINOK(callback->GetProperty(i, kpidTimeType, &prop));
         if (prop.vt == VT_UI4)
-          ui.NtfsTimeIsDefined = (prop.ulVal == NFileTimeType::kWindows);
+          ui.NtfsTime_IsDefined = (prop.ulVal == NFileTimeType::kWindows);
         else
-          ui.NtfsTimeIsDefined = m_WriteNtfsTimeExtra;
+          ui.NtfsTime_IsDefined = _Write_NtfsTime;
       }
-      RINOK(GetTime(callback, i, kpidMTime, ui.Ntfs_MTime));
-      RINOK(GetTime(callback, i, kpidATime, ui.Ntfs_ATime));
-      RINOK(GetTime(callback, i, kpidCTime, ui.Ntfs_CTime));
+      */
 
+      if (TimeOptions.Write_MTime.Val) RINOK (GetTime (callback, i, kpidMTime, ui.Ntfs_MTime));
+      if (TimeOptions.Write_ATime.Val) RINOK (GetTime (callback, i, kpidATime, ui.Ntfs_ATime));
+      if (TimeOptions.Write_CTime.Val) RINOK (GetTime (callback, i, kpidCTime, ui.Ntfs_CTime));
+
+      if (TimeOptions.Prec != k_PropVar_TimePrec_DOS)
       {
-        FILETIME localFileTime = { 0, 0 };
-        if (ui.Ntfs_MTime.dwHighDateTime != 0 ||
-            ui.Ntfs_MTime.dwLowDateTime != 0)
-          if (!FileTimeToLocalFileTime(&ui.Ntfs_MTime, &localFileTime))
-            return E_INVALIDARG;
-        FileTimeToDosTime(localFileTime, ui.Time);
+        if (TimeOptions.Prec == k_PropVar_TimePrec_Unix ||
+            TimeOptions.Prec == k_PropVar_TimePrec_Base)
+          ui.Write_UnixTime = ! FILETIME_IsZero (ui.Ntfs_MTime);
+        else
+        {
+          /*
+          // if we want to store zero timestamps as zero timestamp, use the following:
+            ui.Write_NtfsTime =
+            _Write_MTime ||
+            _Write_ATime ||
+            _Write_CTime;
+          */
+          
+          // We treat zero timestamp as no timestamp
+          ui.Write_NtfsTime =
+            ! FILETIME_IsZero (ui.Ntfs_MTime) ||
+            ! FILETIME_IsZero (ui.Ntfs_ATime) ||
+            ! FILETIME_IsZero (ui.Ntfs_CTime);
+        }
       }
+
+      /*
+        how 0 in dos time works:
+            win10 explorer extract : some random date 1601-04-25.
+            winrar 6.10 : write time.
+            7zip : MTime of archive is used
+          how 0 in tar works:
+            winrar 6.10 : 1970
+        0 in dos field can show that there is no timestamp.
+        we write correct 1970-01-01 in dos field, to support correct extraction in Win10.
+      */
+
+      UtcFileTime_To_LocalDosTime(ui.Ntfs_MTime, ui.Time);
 
       NItemName::ReplaceSlashes_OsToUnix(name);
       
@@ -441,11 +472,21 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (mainMethod != NFileHeader::NCompressionMethod::kStore)
     options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStore);
 
+  CUpdateOptions uo;
+  uo.Write_MTime = TimeOptions.Write_MTime.Val;
+  uo.Write_ATime = TimeOptions.Write_ATime.Val;
+  uo.Write_CTime = TimeOptions.Write_CTime.Val;
+  /*
+  uo.Write_NtfsTime = _Write_NtfsTime &&
+    (_Write_MTime || _Write_ATime  || _Write_CTime);
+  uo.Write_UnixTime = _Write_UnixTime;
+  */
+
   return Update(
       EXTERNAL_CODECS_VARS
       m_Items, updateItems, outStream,
       m_Archive.IsOpen() ? &m_Archive : NULL, _removeSfxBlock,
-      options, callback);
+      uo, options, callback);
  
   COM_TRY_END2
 }
@@ -494,10 +535,9 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
           return E_INVALIDARG;
       }
     }
-    else if (name.IsEqualTo("tc"))
-    {
-      RINOK(PROPVARIANT_to_bool(prop, m_WriteNtfsTimeExtra));
-    }
+    
+
+   
     else if (name.IsEqualTo("cl"))
     {
       RINOK(PROPVARIANT_to_bool(prop, m_ForceLocal));
@@ -532,7 +572,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
       }
       else
       {
-        RINOK(_props.SetProperty(name, prop));
+        bool processed = false;
+        RINOK(TimeOptions.Parse(name, prop, processed));
+        if (!processed)
+        {
+          RINOK(_props.SetProperty(name, prop));
+        }
       }
       // RINOK(_props.MethodInfo.ParseParamsFromPROPVARIANT(name, prop));
     }

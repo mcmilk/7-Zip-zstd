@@ -12,6 +12,8 @@
 
 #include "../../Common/FileStreams.h"
 
+#include "../../Archive/Common/ItemNameUtils.h"
+
 #include "Agent.h"
 #include "UpdateCallbackAgent.h"
 
@@ -67,8 +69,8 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
     unsigned arcIndex = item.SubFiles[i];
     const CProxyFile &fileItem = agent->_proxy->Files[arcIndex];
     CArcItem ai;
-    RINOK(agent->GetArc().GetItemMTime(arcIndex, ai.MTime, ai.MTimeDefined));
-    RINOK(agent->GetArc().GetItemSize(arcIndex, ai.Size, ai.SizeDefined));
+    RINOK(agent->GetArc().GetItem_MTime(arcIndex, ai.MTime));
+    RINOK(agent->GetArc().GetItem_Size(arcIndex, ai.Size, ai.Size_Defined));
     ai.IsDir = false;
     ai.Name = prefix + fileItem.Name;
     ai.Censored = true; // test it
@@ -83,9 +85,9 @@ static HRESULT EnumerateArchiveItems(CAgent *agent,
     if (dirItem.IsLeaf())
     {
       CArcItem ai;
-      RINOK(agent->GetArc().GetItemMTime(dirItem.ArcIndex, ai.MTime, ai.MTimeDefined));
+      RINOK(agent->GetArc().GetItem_MTime(dirItem.ArcIndex, ai.MTime));
       ai.IsDir = true;
-      ai.SizeDefined = false;
+      ai.Size_Defined = false;
       ai.Name = fullName;
       ai.Censored = true; // test it
       ai.IndexInServer = dirItem.ArcIndex;
@@ -111,18 +113,18 @@ static HRESULT EnumerateArchiveItems2(const CAgent *agent,
     ai.IndexInServer = arcIndex;
     ai.Name = prefix + file.Name;
     ai.Censored = true; // test it
-    RINOK(agent->GetArc().GetItemMTime(arcIndex, ai.MTime, ai.MTimeDefined));
+    RINOK(agent->GetArc().GetItem_MTime(arcIndex, ai.MTime));
     ai.IsDir = file.IsDir();
-    ai.SizeDefined = false;
+    ai.Size_Defined = false;
     ai.IsAltStream = file.IsAltStream;
     if (!ai.IsDir)
     {
-      RINOK(agent->GetArc().GetItemSize(arcIndex, ai.Size, ai.SizeDefined));
+      RINOK(agent->GetArc().GetItem_Size(arcIndex, ai.Size, ai.Size_Defined));
       ai.IsDir = false;
     }
     arcItems.Add(ai);
     
-    if (file.AltDirIndex >= 0)
+    if (file.AltDirIndex != -1)
     {
       RINOK(EnumerateArchiveItems2(agent, file.AltDirIndex, ai.Name + L':', arcItems));
     }
@@ -264,10 +266,13 @@ STDMETHODIMP CAgent::DoOperation(
     #endif
   }
 
-  NFileTimeType::EEnum fileTimeType;
+  NFileTimeType::EEnum fileTimeType = NFileTimeType::kNotDefined;
   UInt32 value;
   RINOK(outArchive->GetFileTimeType(&value));
-
+  // we support any future fileType here.
+  // 22.00:
+  fileTimeType = (NFileTimeType::EEnum)value;
+  /*
   switch (value)
   {
     case NFileTimeType::kWindows:
@@ -276,8 +281,11 @@ STDMETHODIMP CAgent::DoOperation(
       fileTimeType = NFileTimeType::EEnum(value);
       break;
     default:
+    {
       return E_FAIL;
+    }
   }
+  */
 
 
   CObjectVector<CArcItem> arcItems;
@@ -389,11 +397,11 @@ STDMETHODIMP CAgent::DoOperation(
       FOR_VECTOR(i, updatePairs2)
       {
         const CUpdatePair2 &up = updatePairs2[i];
-        if (up.DirIndex >= 0 && up.NewData)
+        if (up.DirIndex != -1 && up.NewData)
         {
-          const CDirItem &di = dirItems.Items[up.DirIndex];
+          const CDirItem &di = dirItems.Items[(unsigned)up.DirIndex];
           if (!di.IsDir() && di.Size == 0)
-            processedItems[up.DirIndex] = 1;
+            processedItems[(unsigned)up.DirIndex] = 1;
         }
       }
     }
@@ -452,7 +460,7 @@ STDMETHODIMP CAgent::DeleteItems(ISequentialOutStream *outArchiveStream,
     if (curIndex < realIndices.Size())
       if (realIndices[curIndex] == i)
       {
-        RINOK(GetArc().GetItemPath2(i, deletePath));
+        RINOK(GetArc().GetItem_Path2(i, deletePath));
         RINOK(updateCallback100->DeleteOperation(deletePath));
         
         curIndex++;
@@ -548,11 +556,14 @@ HRESULT CAgent::RenameItem(ISequentialOutStream *outArchiveStream,
       true, // includeFolderSubItemsInFlatMode
       realIndices);
 
-  int mainRealIndex = _agentFolder->GetRealIndex(indices[0]);
-
-  UString fullPrefix = _agentFolder->GetFullPrefix(indices[0]);
-  UString oldItemPath = fullPrefix + _agentFolder->GetName(indices[0]);
-  UString newItemPath = fullPrefix + newItemName;
+  const UInt32 ind0 = indices[0];
+  const int mainRealIndex = _agentFolder->GetRealIndex(ind0);
+  const UString fullPrefix = _agentFolder->GetFullPrefix(ind0);
+  UString name = _agentFolder->GetName(ind0);
+  // 22.00 : we normalize name
+  NArchive::NItemName::NormalizeSlashes_in_FileName_for_OsPath(name);
+  const UString oldItemPath = fullPrefix + name;
+  const UString newItemPath = fullPrefix + newItemName;
 
   UStringVector newNames;
 
@@ -568,10 +579,10 @@ HRESULT CAgent::RenameItem(ISequentialOutStream *outArchiveStream,
       if (realIndices[curIndex] == i)
       {
         up2.NewProps = true;
-        RINOK(GetArc().IsItemAnti(i, up2.IsAnti)); // it must work without that line too.
+        RINOK(GetArc().IsItem_Anti(i, up2.IsAnti)); // it must work without that line too.
 
         UString oldFullPath;
-        RINOK(GetArc().GetItemPath2(i, oldFullPath));
+        RINOK(GetArc().GetItem_Path2(i, oldFullPath));
 
         if (!IsPath1PrefixedByPath2(oldFullPath, oldItemPath))
           return E_INVALIDARG;

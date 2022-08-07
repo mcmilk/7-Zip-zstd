@@ -52,7 +52,7 @@ public:
             ext.IsEqualTo_Ascii_NoCase("r01"))
         {
           _changed = ext;
-          _before = name.Left(dotPos + 1);
+          _before.SetFrom(name.Ptr(), dotPos + 1);
           return true;
         }
       }
@@ -60,16 +60,23 @@ public:
 
     if (newStyle)
     {
-      unsigned i = base.Len();
+      unsigned k = base.Len();
+
+      for (; k != 0; k--)
+        if (IsDigit(base[k - 1]))
+          break;
+
+      unsigned i = k;
 
       for (; i != 0; i--)
         if (!IsDigit(base[i - 1]))
           break;
 
-      if (i != base.Len())
+      if (i != k)
       {
-        _before = base.Left(i);
-        _changed = base.Ptr(i);
+        _before.SetFrom(base.Ptr(), i);
+        _changed.SetFrom(base.Ptr(i), k - i);
+        _after.Insert(0, base.Ptr(k));
         return true;
       }
     }
