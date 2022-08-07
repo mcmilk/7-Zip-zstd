@@ -345,6 +345,10 @@ SOURCE=..\..\..\Windows\Registry.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\SecurityUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
 # Begin Source File

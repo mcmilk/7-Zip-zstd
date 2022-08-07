@@ -8,6 +8,16 @@ DEF_FILE = ../../Archive/Archive2.def
 include Arc_gcc.mak
 
 ifdef SystemDrive
+IS_MINGW = 1
+else
+ifdef SYSTEMDRIVE
+# ifdef OS
+IS_MINGW = 1
+endif
+endif
+
+
+ifdef IS_MINGW
 
 LOCAL_FLAGS_WIN = \
   -D_7ZIP_LARGE_PAGES \

@@ -7,4 +7,4 @@ MY_VERSION_INFO_DLL("7-Zip Shell Extension", "7-zip")
 1 24 MOVEABLE PURE "7-zip.dll.manifest"
 #endif
 
-IDI_ICON ICON "..\FileManager\FM.ico"
+IDI_ICON ICON "../FileManager/FM.ico"
