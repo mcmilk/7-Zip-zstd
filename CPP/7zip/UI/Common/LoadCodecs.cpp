@@ -415,6 +415,7 @@ HRESULT CCodecs::LoadFormats()
   Func_GetHandlerProperty getProp = NULL;
   MY_GET_FUNC_LOC (getProp2, Func_GetHandlerProperty2, lib.GetProc("GetHandlerProperty2"));
   MY_GET_FUNC_LOC (getIsArc, Func_GetIsArc, lib.GetProc("GetIsArc"));
+  MY_GET_FUNC_LOC (getFormatLevelMask, Func_GetFormatLevelMask, lib.GetProc("GetFormatLevelMask"));
   
   UInt32 numFormats = 1;
 
@@ -473,7 +474,7 @@ HRESULT CCodecs::LoadFormats()
           item.Flags |= kArcFlagsPars[j + 1];
       }
     }
-
+    
     {
       bool defined = false;
       RINOK(GetProp_UInt32(getProp, getProp2, i, NArchive::NHandlerPropID::kTimeFlags, item.TimeFlags, defined));
@@ -497,6 +498,9 @@ HRESULT CCodecs::LoadFormats()
 
     if (getIsArc)
       getIsArc(i, &item.IsArcFunc);
+
+    if (getFormatLevelMask)
+      getFormatLevelMask(i, &item.LevelsMask);
 
     Formats.Add(item);
   }
