@@ -294,7 +294,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Lizard] Version 1.0
   - [LZ4] Version 1.9.4
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.5.0
+  - [Zstandard] Version 1.5.2
   - [BLAKE3] Version 0.3.7
 
 /TR 2022-08-07
