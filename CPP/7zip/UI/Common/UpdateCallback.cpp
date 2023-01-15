@@ -79,7 +79,7 @@ CArchiveUpdateCallback::CArchiveUpdateCallback():
     StoreNtSecurity(false),
     StoreHardLinks(false),
     StoreSymLinks(false),
-
+    
    #ifndef _WIN32
     StoreOwnerId(false),
     StoreOwnerName(false),
@@ -92,7 +92,9 @@ CArchiveUpdateCallback::CArchiveUpdateCallback():
     Need_LatestMTime(false),
     LatestMTime_Defined(false),
     
-    ProcessedItemsStatuses(NULL)
+    ProcessedItemsStatuses(NULL),
+    VolNumberAfterExt(false),
+    DigitCount(2)
 {
   #ifdef _USE_SECURITY_CODE
   _saclEnabled = InitLocalPrivileges();
@@ -158,7 +160,6 @@ STDMETHODIMP CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 index,
   return S_OK;
   COM_TRY_END
 }
-
 
 STDMETHODIMP CArchiveUpdateCallback::GetRootProp(PROPID propID, PROPVARIANT *value)
 {
@@ -482,7 +483,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
     #if defined(_WIN32)
       case kpidIsAltStream:  prop = di.IsAltStream; break;
       // case kpidShortName:  prop = di.ShortName; break;
-    #else
+        #else
 
       case kpidDeviceMajor:
         /*
@@ -511,9 +512,9 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
         if (di.OwnerGroupIndex >= 0)
           prop = DirItems->OwnerGroupMap.Strings[(unsigned)di.OwnerGroupIndex];
         break;
-     #endif
+        #endif
+      }
     }
-  }
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
@@ -907,12 +908,31 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOu
   char temp[16];
   ConvertUInt32ToString(index + 1, temp);
   FString res (temp);
-  while (res.Len() < 2)
+  while (res.Len() < DigitCount)
     res.InsertAtFront(FTEXT('0'));
   FString fileName = VolName;
-  fileName += '.';
-  fileName += res;
-  fileName += VolExt;
+  if (VolNumberAfterExt)
+  {
+    if (!VolPrefix.IsEmpty())
+      fileName += VolPrefix;
+    fileName += VolExt;
+    if (!VolPostfix.IsEmpty())
+      fileName += VolPostfix;
+    else
+      fileName += '.';
+    fileName += res;
+  }
+  else
+  {
+    if (!VolPrefix.IsEmpty())
+      fileName += VolPrefix;
+    else
+      fileName += '.';
+    fileName += res;
+    if (!VolPostfix.IsEmpty())
+      fileName += VolPostfix;
+    fileName += VolExt;
+  }
   COutFileStream *streamSpec = new COutFileStream;
   CMyComPtr<ISequentialOutStream> streamLoc(streamSpec);
   if (!streamSpec->Create(fileName, false))

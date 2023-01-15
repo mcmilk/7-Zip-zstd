@@ -102,7 +102,7 @@ typedef struct __CMtDecBufLink CMtDecBufLink;
 
 
 
-static THREAD_FUNC_DECL ThreadFunc(void *pp);
+static MY_NO_INLINE THREAD_FUNC_DECL ThreadFunc(void *pp);
 
 
 static WRes MtDecThread_CreateEvents(CMtDecThread *t)
