@@ -288,16 +288,16 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 21.03
+- 7-Zip ZS Version 22.01
   - [Brotli] Version 1.0.9
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 1.0
   - [LZ4] Version 1.9.4
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.5.0
+  - [Zstandard] Version 1.5.2
   - [BLAKE3] Version 0.3.7
 
-/TR 2022-08-07
+/TR 2023-01-15
 
 ## Notes
 
