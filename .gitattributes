@@ -7,7 +7,6 @@
 *.bmp binary
 
 # Visual Studio
-*.rc text eol=crlf
 *.dsp text eol=crlf
 *.dsw text eol=crlf
 *.manifest text eol=crlf
