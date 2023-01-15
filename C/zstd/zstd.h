@@ -18,6 +18,10 @@ extern "C" {
 #include <limits.h>   /* INT_MAX */
 #include <stddef.h>   /* size_t */
 
+/* disable some warnings /TR */
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4701)
+#pragma warning(disable : 4703)
 
 /* =====   ZSTDLIB_API : control library symbols visibility   ===== */
 #ifndef ZSTDLIB_VISIBLE
