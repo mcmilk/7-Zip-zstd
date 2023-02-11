@@ -13,5 +13,6 @@ exit
 # then put these to "zstd.h"
 
 /* disable some warnings /TR */
-#pragma warning(disable : 4701)
-#pragma warning(disable : 4703)
+#if defined(_MSC_VER)
+#pragma warning(disable : 4090)
+#endif
