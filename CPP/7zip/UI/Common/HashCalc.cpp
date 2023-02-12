@@ -21,6 +21,10 @@
 #include "../FileManager/RegistryUtils.h"
 #endif
 
+#ifdef WANT_OPTIONAL_LOWERCASE
+#include "../FileManager/RegistryUtils.h"
+#endif
+
 #include "EnumDirItems.h"
 #include "HashCalc.h"
 
