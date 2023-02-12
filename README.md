@@ -15,7 +15,7 @@ You can install it in two ways:
 
 
 ## Codec overview
-1. [Zstandard] v1.5.2 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+1. [Zstandard] v1.5.4 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
 2. [Brotli] v.1.0.9 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 22.01 ZS v1.5.2 R1 (x64) : Copyright (c) 1999-2022 Igor Pavlov, 2016-2022 Tino Reichardt : 2022-08-07
+7-Zip 22.01 ZS v1.5.4 R1 (x64) : Copyright (c) 1999-2022 Igor Pavlov, 2016-2022 Tino Reichardt : 2022-08-07
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -112,7 +112,7 @@ Hashers:
 ### Usage and features of the full installation
 
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
-- compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
+- compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zstd`) files
 - handling of ZIP files with [Zstandard] compression
 - included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
 - explorer context menu: _"Add to xy.7z"_ will use all parameters of the last "Add to Archive" compression dialog (this includes: method, level, dictionary, blocksize, threads and paramters input box)
@@ -218,7 +218,7 @@ Codecs:
 ### Usage (codec plugin)
 
 - compression and decompression for [Brotli], [Fast LZMA2], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
-- you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zst` are not covered by the plugins
+- you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zstd` are not covered by the plugins
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable the bcj2 filter via `-m0=bcj`,
   when using only the plugin dll's
 - so the usage should look like this:
@@ -294,10 +294,10 @@ You find this project useful, maybe you consider a donation ;-)
   - [Lizard] Version 1.0
   - [LZ4] Version 1.9.4
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.5.2
+  - [Zstandard] Version 1.5.4
   - [BLAKE3] Version 0.3.7
 
-/TR 2023-01-15
+/TR 2023-02-12
 
 ## Notes
 
