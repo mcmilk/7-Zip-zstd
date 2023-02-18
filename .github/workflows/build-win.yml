@@ -6,13 +6,12 @@
 # 15.0 https://learn.microsoft.com/en-us/visualstudio/releases/2017/vs2017-compatibility-vs
 # 16.0 https://learn.microsoft.com/en-us/visualstudio/releases/2019/compatibility
 # 17.0 https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility
-# -> take 16.0 for now /TR
+# -> we take 16.0 for now /TR
 ########################################################################################
 
 name: Build Windows binaries
 on: [push, pull_request]
 
-# runs-on: windows-latest -> VS 17.0
 
 jobs:
   build:
@@ -39,167 +38,150 @@ jobs:
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.3
-        with:
-          vs-version: 16.11
 
       - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.arch }}
 
-      - name: Compile ${{ matrix.arch }}
+      - name: Compiling ${{ matrix.arch }}
         shell: cmd
         run: |
-          set APPVEYOR_BUILD_FOLDER=%cd%
-          set CLOUD=TRUE
-          set VC=17.0
+          set WDIR=%cd%
           set PLATFORM=${{matrix.platform}}
           set SUBSYS=${{matrix.subsys}}
-          set DEBUG=${{ matrix.debug }}
-          echo "********"
-          echo "APPVEYOR_BUILD_FOLDER: %APPVEYOR_BUILD_FOLDER%"
-          echo "Platform: %PLATFORM%"
-          echo "SUBSYS: %SUBSYS%"
-          echo "Build: %DEBUG%"
-          echo "GithubAction: %CLOUD%"
-          cd cpp
-          @echo off
-
-          set ROOT=%cd%\7zip
-          set OUTDIR=%APPVEYOR_BUILD_FOLDER%\build\bin-%VC%-%PLATFORM%
-          set ERRFILE=%APPVEYOR_BUILD_FOLDER%\build\bin-%VC%-%PLATFORM%.log
+          set ROOT=%cd%\CPP\7zip
+          set OUTDIR=%WDIR%\build\bin-%PLATFORM%
           set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
 
-          set > %APPVEYOR_BUILD_FOLDER%\build\env-%VC%-%PLATFORM%.txt
+          echo "********"
+          echo "Working Dir: %WDIR%"
+          echo "Platform:    %PLATFORM%"
+          echo "SUBSYS:      %SUBSYS%"
+
+          @echo off
+
+          set > %WDIR%\build\env-%PLATFORM%.txt
           mkdir %OUTDIR%
 
           cd %ROOT%\Bundles\Format7zExtract
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 echo "Error @ 7zxa.dll" >> %ERRFILE%
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7zxa.dll %OUTDIR%\7zxa.dll
 
           cd %ROOT%\Bundles\Format7z
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7za.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7za.dll %OUTDIR%\7za.dll
 
           cd %ROOT%\Bundles\Format7zF
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7z.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7z.dll %OUTDIR%\7z.dll
 
           cd %ROOT%\UI\FileManager
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7zFM.exe" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7zFM.exe %OUTDIR%\7zFM.exe
 
           cd %ROOT%\UI\GUI
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7zG.exe" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7zG.exe %OUTDIR%\7zG.exe
 
           cd %ROOT%\UI\Explorer
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7-zip.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7-zip.dll %OUTDIR%\7-zip.dll
 
           cd %ROOT%\Bundles\SFXWin
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7z.sfx" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7z.sfx %OUTDIR%\7z.sfx
 
           cd %ROOT%\Bundles\Codec_brotli
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ brotli.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\brotli.dll %OUTDIR%\brotli.dll
 
           cd %ROOT%\Bundles\Codec_lizard
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ lizard.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\lizard.dll %OUTDIR%\lizard.dll
 
           cd %ROOT%\Bundles\Codec_lz4
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ lz4.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\lz4.dll %OUTDIR%\lz4.dll
 
           cd %ROOT%\Bundles\Codec_lz5
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ lz5.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\lz5.dll %OUTDIR%\lz5.dll
 
           cd %ROOT%\Bundles\Codec_zstd
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ zstd.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\zstd.dll %OUTDIR%\zstd.dll
 
           cd %ROOT%\Bundles\Codec_flzma2
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ flzma2.dll" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\flzma2.dll %OUTDIR%\flzma2.dll
 
           cd %ROOT%\..\..\C\Util\7zipInstall
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ Install.exe" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7zipInstall.exe %OUTDIR%\Install.exe
 
           cd %ROOT%\..\..\C\Util\7zipUninstall
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ Uninstall.exe" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7zipUninstall.exe %OUTDIR%\Uninstall.exe
 
           set LFLAGS=/SUBSYSTEM:CONSOLE,%SUBSYS%
           cd %ROOT%\UI\Console
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7z.exe" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7z.exe %OUTDIR%\7z.exe
 
           cd %ROOT%\Bundles\SFXCon
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7zCon.sfx" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7zCon.sfx %OUTDIR%\7zCon.sfx
 
           cd %ROOT%\Bundles\Alone
           nmake %OPTS%
-          IF %errorlevel% NEQ 0 (
-            echo "Error @ 7za.exe" >> %ERRFILE%
-            exit -1 )
+          IF %errorlevel% NEQ 0 EXIT 1
           copy %PLATFORM%\7za.exe %OUTDIR%\7za.exe
+
+          REM Will be by the do-release action
+          copy %WDIR%\.github\workflows\do-release.cmd %WDIR%\build\do-release.cmd
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          # A file, directory or wildcard pattern that describes what to upload
-          path: ${{ github.workspace }}/build/**/*
+          path: ${{ github.workspace }}\build\**\*
+
+  do-release:
+    runs-on: windows-2019
+    needs: build
+    steps:
+    - uses: actions/download-artifact@v3
+
+    - name: Generate binaries for release
+      shell: cmd
+      run: |
+        cd artifact
+        do-release.cmd
+
+    - uses: geekyeggo/delete-artifact@v2
+      with:
+          name: artifact
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: 7-Zip ZS Release binaries
+        path: |
+          artifact\*.exe
+          artifact\*.7z
