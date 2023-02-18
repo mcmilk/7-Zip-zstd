@@ -883,7 +883,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     CMenu menu;
     menu.Attach(hMenu);
     menuDestroyer.Disable();
-    MyAddSubMenu(_commandMap, kMainVerb, menu, indexMenu++, currentCommandID++, (UString)"7-Zip ZS",
+    MyAddSubMenu(_commandMap, kCheckSumCascadedVerb, menu, indexMenu++, currentCommandID++, (UString)"7-Zip ZS",
         popupMenu, // popupMenu.Detach(),
         bitmap);
   }
