@@ -112,6 +112,12 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\Lz4Register.obj \
   $O\LizardDecoder.obj \
   $O\LizardRegister.obj \
+  $O\liz_entropy_common.obj \
+  $O\liz_fse_compress.obj \
+  $O\liz_fse_decompress.obj \
+  $O\liz_huf_compress.obj \
+  $O\liz_huf_decompress.obj \
+  $O\liz_xxhash.obj \
   $O\Lz5Decoder.obj \
   $O\Lz5Register.obj \
   $O\ZstdDecoder.obj \
