@@ -6,21 +6,23 @@
 
 namespace NCommandLineParser {
 
-bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
+static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
 {
   unsigned qcount = 0, bcount = 0;
-  wchar_t c; const wchar_t *s = src.Ptr();
+  wchar_t c; const wchar_t *f, *b;
 
-  dest1.Empty();
+  dest.Empty();
+
+  // skip spaces:
+  while (isblank(*s)) { s++; };
+  b = f = s;
 
   while ((c = *s++) != 0)
   {
     switch (c)
     {
       case L'\\':
-        // a backslash - firstly add it as a regular char, 
-        // we'll delete escaped later (if followed by quote):
-        dest1 += c;
+        // a backslash - count them up to quote-char or regular char 
         bcount++;
       break;
       case L'"':
@@ -28,8 +30,8 @@ bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
         if (!(bcount & 1))
         {
           // preceded by an even number of '\', this is half that
-          // number of '\' (delete bcount/2 chars):
-          dest1.DeleteFrom(dest1.Len() - bcount/2);
+          // number of '\':
+          dest.AddFrom(f, (unsigned)(s - f - bcount/2 - 1)); f = s;
           // count quote chars:
           qcount++;
         }
@@ -37,8 +39,8 @@ bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
         {
           // preceded by an odd number of '\', this is half that
           // number of '\' followed by an escaped '"':
-          dest1.DeleteFrom(dest1.Len() - bcount/2 - 1);
-          dest1 += L'"';
+          dest.AddFrom(f, (unsigned)(s - f - bcount/2 - 2)); f = s;
+          dest += L'"';
         }
         bcount = 0;
         // now count the number of consecutive quotes (inclusive
@@ -48,10 +50,11 @@ bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
           s++;
           if (++qcount == 3)
           {
-            dest1 += L'"';
-            qcount = 0;
+            dest += L'"';
+            qcount = 1;
           }
         }
+        f = s;
         if (qcount == 2)
           qcount = 0;
       break;
@@ -61,37 +64,50 @@ bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
         if (!qcount)
         {
           // end of argument:
-          bcount = 0;
+          dest.AddFrom(f, (unsigned)(s - f - 1)); f = s;
           // skip to the next one:
           while (isblank(*s)) { s++; };
+          bcount = 0;
           goto done;
         }
       // no break - a space as regular char:
       default:
-        // a regular character
-        dest1 += c;
+        // a regular character, reset backslash counter
         bcount = 0;
     }
   }
   s--; // back to NTS-zero char
+  dest.AddFrom(f, (unsigned)(s - f));
 done:
-  dest2 = s;
-  return (dest1.Len() || src[0]);
+  // remaining part if argument was found, otherwise NULL:
+  return (dest.Len() || *b) ? s : NULL;
 }
 
-void SplitCommandLine(const UString &s, UStringVector &parts)
+bool SplitCommandLine(const UString& src, UString& dest1, UString& dest2)
 {
-  UString sTemp (s);
-  sTemp.Trim();
+  const wchar_t *s = src.Ptr();
+  s = _SplitCommandLine(s, dest1);
+  if (s) {
+    dest2 = s;
+    return true;
+  } else {
+    dest2.Empty();
+    return false;
+  }
+}
+
+void SplitCommandLine(const UString &src, UStringVector &parts)
+{
+  const wchar_t *s = src.Ptr();
   parts.Clear();
   for (;;)
   {
-    UString s1, s2;
-    if (SplitCommandLine(sTemp, s1, s2))
+    UString s1;
+    s = _SplitCommandLine(s, s1);
+    if (s)
       parts.Add(s1);
-    if (s2.IsEmpty())
+    if (!s || !*s)
       break;
-    sTemp = s2;
   }
 }
 
