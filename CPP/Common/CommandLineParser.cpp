@@ -51,7 +51,7 @@ static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
           if (++qcount == 3)
           {
             dest += L'"';
-            qcount = 1;
+            qcount = 0;
           }
         }
         f = s;
