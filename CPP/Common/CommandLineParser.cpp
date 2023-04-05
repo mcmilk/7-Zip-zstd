@@ -6,108 +6,41 @@
 
 namespace NCommandLineParser {
 
-static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
+bool SplitCommandLine(const UString &src, UString &dest1, UString &dest2)
 {
-  unsigned qcount = 0, bcount = 0;
-  wchar_t c; const wchar_t *f, *b;
-
-  dest.Empty();
-
-  // skip spaces:
-  while (isblank(*s)) { s++; };
-  b = f = s;
-
-  while ((c = *s++) != 0)
+  dest1.Empty();
+  dest2.Empty();
+  bool quoteMode = false;
+  unsigned i;
+  for (i = 0; i < src.Len(); i++)
   {
-    switch (c)
+    wchar_t c = src[i];
+    if ((c == L' ' || c == L'\t') && !quoteMode)
     {
-      case L'\\':
-        // a backslash - count them up to quote-char or regular char 
-        bcount++;
-      break;
-      case L'"':
-        // check quote char is escaped:
-        if (!(bcount & 1))
-        {
-          // preceded by an even number of '\', this is half that
-          // number of '\':
-          dest.AddFrom(f, (unsigned)(s - f - bcount/2 - 1)); f = s;
-          // count quote chars:
-          qcount++;
-        }
-        else
-        {
-          // preceded by an odd number of '\', this is half that
-          // number of '\' followed by an escaped '"':
-          dest.AddFrom(f, (unsigned)(s - f - bcount/2 - 2)); f = s;
-          dest += L'"';
-        }
-        bcount = 0;
-        // now count the number of consecutive quotes (inclusive
-        // the quote that lead us here):
-        while (*s == L'"')
-        {
-          s++;
-          if (++qcount == 3)
-          {
-            dest += L'"';
-            qcount = 0;
-          }
-        }
-        f = s;
-        if (qcount == 2)
-          qcount = 0;
-      break;
-      case L' ':
-      case L'\t':
-        // a space (end of arg or regular char):
-        if (!qcount)
-        {
-          // end of argument:
-          dest.AddFrom(f, (unsigned)(s - f - 1)); f = s;
-          // skip to the next one:
-          while (isblank(*s)) { s++; };
-          bcount = 0;
-          goto done;
-        }
-      // no break - a space as regular char:
-      default:
-        // a regular character, reset backslash counter
-        bcount = 0;
+      dest2 = src.Ptr(i + 1);
+      return i != 0;
     }
+    if (c == L'\"')
+      quoteMode = !quoteMode;
+    else
+      dest1 += c;
   }
-  s--; // back to NTS-zero char
-  dest.AddFrom(f, (unsigned)(s - f));
-done:
-  // remaining part if argument was found, otherwise NULL:
-  return (dest.Len() || *b) ? s : NULL;
+  return i != 0;
 }
 
-bool SplitCommandLine(const UString& src, UString& dest1, UString& dest2)
+void SplitCommandLine(const UString &s, UStringVector &parts)
 {
-  const wchar_t *s = src.Ptr();
-  s = _SplitCommandLine(s, dest1);
-  if (s) {
-    dest2 = s;
-    return true;
-  } else {
-    dest2.Empty();
-    return false;
-  }
-}
-
-void SplitCommandLine(const UString &src, UStringVector &parts)
-{
-  const wchar_t *s = src.Ptr();
+  UString sTemp (s);
+  sTemp.Trim();
   parts.Clear();
   for (;;)
   {
-    UString s1;
-    s = _SplitCommandLine(s, s1);
-    if (s)
+    UString s1, s2;
+    if (SplitCommandLine(sTemp, s1, s2))
       parts.Add(s1);
-    if (!s || !*s)
+    if (s2.IsEmpty())
       break;
+    sTemp = s2;
   }
 }
 
