@@ -14,6 +14,7 @@
 /*-*******************************************************
 *  Dependencies
 *********************************************************/
+#include "allocations.h"  /* ZSTD_customMalloc, ZSTD_customFree */
 #include "zstd_deps.h"   /* ZSTD_memcpy, ZSTD_memmove, ZSTD_memset */
 #include "cpu.h"         /* bmi2 */
 #include "mem.h"         /* low level memory routines */
