@@ -70,6 +70,7 @@ AR_OBJS = \
   $O\ArHandler.obj \
   $O\ArjHandler.obj \
   $O\Base64Handler.obj \
+  $O\BrotliHandler.obj \
   $O\Bz2Handler.obj \
   $O\ComHandler.obj \
   $O\CpioHandler.obj \
