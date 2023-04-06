@@ -994,9 +994,6 @@ typedef const FChar *CFSTR;
 
 typedef CObjectVector<FString> FStringVector;
 
-#endif
-
-
 
 #if defined(_WIN32)
   // #include <wchar.h>
@@ -1011,4 +1008,8 @@ typedef CObjectVector<FString> FStringVector;
 // WSL scheme
 #define WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT  ((wchar_t)((unsigned)(0xF000) + (unsigned)'\\'))
 // #define WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT  '_'
+#endif
+
+UString GetQuotedString(const UString &s);
+
 #endif

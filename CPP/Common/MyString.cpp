@@ -1803,3 +1803,13 @@ FString us2fs(const wchar_t *s)
 }
 
 #endif // USE_UNICODE_FSTRING
+
+// ----------------------------------------
+
+UString GetQuotedString(const UString &s)
+{
+  UString s2 ('\"');
+  s2 += s;
+  s2 += '\"';
+  return s2;
+}

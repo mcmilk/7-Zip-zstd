@@ -685,9 +685,6 @@ static bool DoItemAlwaysStart(const UString &name)
   return FindExt(kStartExtensions, name);
 }
 
-UString GetQuotedString(const UString &s);
-
-
 void SplitCmdLineSmart(const UString &cmd, UString &prg, UString &params);
 void SplitCmdLineSmart(const UString &cmd, UString &prg, UString &params)
 {
