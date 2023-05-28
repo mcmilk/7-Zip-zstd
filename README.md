@@ -56,7 +56,7 @@ Formats:
 ...
  0 CK            xz       xz txz (.tar) FD 7 z X Z 00
  0               Z        z taz (.tar)  1F 9D
- 0 CK            zstd     zst tzst (.tar) 0 x F D 2 F B 5 2 5 . . 0 x F D 2 F B 5 2 8 00
+ 0 CK            zstd     zst zstd tzst (.tar) tzstd (.tar) 0 x F D 2 F B 5 2 5 . . 0 x F D 2 F B 5 2 8 00
  0 C   F         7z       7z            7 z BC AF ' 1C
  0     F         Cab      cab           M S C F 00 00 00 00
 ...
