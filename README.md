@@ -148,8 +148,8 @@ Hashers:
 -> show contents of lzip compressed tar archive test.tar.lz
 ```
 
-![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
-![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
+![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archive Dialog with ZSTD options")
+![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archive")
 ![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods2.png "Methods")
 ![Hashes](https://mcmilk.de/projects/7-Zip-zstd/Hashes.png "Hashes")
 ![Settings](https://mcmilk.de/projects/7-Zip-zstd/Settings.png "Settings for storing the history within the registry.")
@@ -158,7 +158,7 @@ Hashers:
 
 ### Installation (via plugin)
 
-1. download the `Codecs.7z` archiv from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases), this archive holds binaries, which are compatible with the Mainline version of [7-Zip]
+1. download the `Codecs.7z` archive from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases), this archive holds binaries, which are compatible with the Mainline version of [7-Zip]
 2. create a new directory named `Codecs` and put in there the zstd-x32.dll or the zstd-x64.dll, depending on your [7-Zip] installation
    - normally, the x32 should go to: "C:\Program Files (x86)\7-Zip\Codecs"
    - the x64 version should go in here: "C:\Program Files\7-Zip\Codecs"
