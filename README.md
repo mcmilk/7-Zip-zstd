@@ -56,7 +56,7 @@ Formats:
 ...
  0 CK            xz       xz txz (.tar) FD 7 z X Z 00
  0               Z        z taz (.tar)  1F 9D
- 0 CK            zstd     zst tzstd (.tar) 0 x F D 2 F B 5 2 5 . . 0 x F D 2 F B 5 2 8 00
+ 0 CK            zstd     zst zstd tzst (.tar) tzstd (.tar) 0 x F D 2 F B 5 2 5 . . 0 x F D 2 F B 5 2 8 00
  0 C   F         7z       7z            7 z BC AF ' 1C
  0     F         Cab      cab           M S C F 00 00 00 00
 ...
@@ -112,7 +112,7 @@ Hashers:
 ### Usage and features of the full installation
 
 - compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
-- compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zstd`) files
+- compression and decompression of [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
 - handling of ZIP files with [Zstandard] compression
 - included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
 - explorer context menu: _"Add to xy.7z"_ will use all parameters of the last "Add to Archive" compression dialog (this includes: method, level, dictionary, blocksize, threads and paramters input box)
@@ -141,15 +141,15 @@ Hashers:
 7z a archiv.7z -m0=flzma2 -mx..  ...
 7z a archiv.7z -m0=flzma2 -mx9   Fast LZMA2 Ultra Mode, with BCJ preprocessor on executables
 
-7z x -so test.tar.zstd | 7z l -si -ttar
--> show contents of zstd compressed tar archiv test.tar.zstd
+7z x -so test.tar.zst | 7z l -si -ttar
+-> show contents of zstd compressed tar archive test.tar.zst
 
 7z x -so test.tar.lz | 7z l -si -ttar
--> show contents of lzip compressed tar archiv test.tar.lz
+-> show contents of lzip compressed tar archive test.tar.lz
 ```
 
-![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
-![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
+![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archive Dialog with ZSTD options")
+![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archive")
 ![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods2.png "Methods")
 ![Hashes](https://mcmilk.de/projects/7-Zip-zstd/Hashes.png "Hashes")
 ![Settings](https://mcmilk.de/projects/7-Zip-zstd/Settings.png "Settings for storing the history within the registry.")
@@ -158,7 +158,7 @@ Hashers:
 
 ### Installation (via plugin)
 
-1. download the `Codecs.7z` archiv from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases), this archive holds binaries, which are compatible with the Mainline version of [7-Zip]
+1. download the `Codecs.7z` archive from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases), this archive holds binaries, which are compatible with the Mainline version of [7-Zip]
 2. create a new directory named `Codecs` and put in there the zstd-x32.dll or the zstd-x64.dll, depending on your [7-Zip] installation
    - normally, the x32 should go to: "C:\Program Files (x86)\7-Zip\Codecs"
    - the x64 version should go in here: "C:\Program Files\7-Zip\Codecs"
@@ -218,7 +218,7 @@ Codecs:
 ### Usage (codec plugin)
 
 - compression and decompression for [Brotli], [Fast LZMA2], [Lizard], [LZ4], [LZ5] and [Zstandard] within the 7-Zip container format
-- you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zstd` are not covered by the plugins
+- you can only create `.7z` files, the files like `.lz4`, `.lz5` and `.zst` are not covered by the plugins
 - when compressing binaries (*.exe, *.dll), you have to explicitly disable the bcj2 filter via `-m0=bcj`,
   when using only the plugin dll's
 - so the usage should look like this:
