@@ -57,4 +57,4 @@ STDMETHODIMP_(void) CCksumHasher::Final(Byte *digest) throw()
   SetUi32(digest, val);
 }
 
-REGISTER_HASHER(CCksumHasher, 0x203, "CKSUM", 4)
+REGISTER_HASHER(CCksumHasher, 0x202, "CKSUM", 4)

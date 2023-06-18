@@ -242,13 +242,16 @@ static const CHashCommand g_HashCommands[] =
   { CZipContextMenu::kHash_MD4,      "MD4",      "MD4" },
   { CZipContextMenu::kHash_MD5,      "MD5",      "MD5" },
   { CZipContextMenu::kHash_SHA1,     "SHA-1",    "SHA1" },
-  { CZipContextMenu::kHash_SHA256,   "SHA-256",  "SHA256" },
-  { CZipContextMenu::kHash_SHA384,   "SHA-384",  "SHA384" },
-  { CZipContextMenu::kHash_SHA512,   "SHA-512",  "SHA512" },
+  { CZipContextMenu::kHash_SHA256,   "SHA2-256", "SHA256" },
+  { CZipContextMenu::kHash_SHA384,   "SHA2-384", "SHA384" },
+  { CZipContextMenu::kHash_SHA512,   "SHA2-512", "SHA512" },
   { CZipContextMenu::kHash_BLAKE2sp, "BLAKE2sp", "BLAKE2sp" },
   { CZipContextMenu::kHash_BLAKE3,   "BLAKE3",   "BLAKE3" },
+  { CZipContextMenu::kHash_SHA256,   "SHA3-256", "SHA3-256" },
+  { CZipContextMenu::kHash_SHA384,   "SHA3-384", "SHA3-384" },
+  { CZipContextMenu::kHash_SHA512,   "SHA3-512", "SHA3-512" },
   { CZipContextMenu::kHash_All,      "*",        "*" },
-  { CZipContextMenu::kHash_Generate_SHA256, "SHA-256 -> file.sha256", "SHA256" },
+  { CZipContextMenu::kHash_Generate_SHA256, "SHA2-256 -> file.sha256", "SHA256" },
   { CZipContextMenu::kHash_TestArc, "Checksum : Test", "Hash" }
 };
 
@@ -966,7 +969,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
           name += ".sha256";
           cmi.Folder = fs2us(folderPrefix);
           cmi.ArcName = name;
-          s = "SHA-256 -> ";
+          s = "SHA2-256 -> ";
           s += name;
         }
         else if (hc.CommandInternalID == kHash_TestArc)
@@ -1231,6 +1234,9 @@ HRESULT CZipContextMenu::InvokeCommandCommon(const CCommandMapItem &cmi)
       case kHash_SHA512:
       case kHash_BLAKE2sp:
       case kHash_BLAKE3:
+      case kHash_SHA3_256:
+      case kHash_SHA3_384:
+      case kHash_SHA3_512:
       case kHash_All:
       case kHash_Generate_SHA256:
       case kHash_TestArc:

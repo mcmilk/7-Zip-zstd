@@ -59,6 +59,9 @@ public:
     kHash_SHA512,
     kHash_BLAKE2sp,
     kHash_BLAKE3,
+    kHash_SHA3_256,
+    kHash_SHA3_384,
+    kHash_SHA3_512,
     kHash_All,
     kHash_Generate_SHA256,
     kHash_TestArc
