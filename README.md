@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 22.01 ZS v1.5.5 R1 (x64) : Copyright (c) 1999-2022 Igor Pavlov, 2016-2022 Tino Reichardt : 2022-08-07
+7-Zip 22.01 ZS v1.5.5 R3 (x64) : Copyright (c) 1999-2022 Igor Pavlov, 2016-2023 Tino Reichardt : 2023-06-18
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -62,40 +62,41 @@ Formats:
 ...
 
 Codecs:
- 0 4ED  303011B BCJ2
- 0  ED  3030103 BCJ
- 0  ED  3030205 PPC
- 0  ED  3030401 IA64
- 0  ED  3030501 ARM
- 0  ED  3030701 ARMT
- 0  ED  3030805 SPARC
- 0  ED    20302 Swap2
- 0  ED    20304 Swap4
- 0  ED    40202 BZip2
- 0  ED        0 Copy
- 0  ED    40109 Deflate64
- 0  ED    40108 Deflate
- 0  ED        3 Delta
- 0  ED       21 LZMA2
- 0  ED    30101 LZMA
- 0  ED    30401 PPMD
- 0   D    40301 Rar1
- 0   D    40302 Rar2
- 0   D    40303 Rar3
- 0   D    40305 Rar5
- 0  ED  4F71102 BROTLI
- 0  ED  4F71104 LZ4
- 0  ED  4F71106 LIZARD
- 0  ED  4F71105 LZ5
- 0  ED  4F71101 ZSTD
- 0  ED       21 FLZMA2
- 0  ED  6F10701 7zAES
- 0  ED  6F00181 AES256CBC
- 1 3ED  4F712FF RawSplitter
+ 0 4ED   303011B BCJ2
+ 0  EDF  3030103 BCJ
+ 0  EDF  3030205 PPC
+ 0  EDF  3030401 IA64
+ 0  EDF  3030501 ARM
+ 0  EDF  3030701 ARMT
+ 0  EDF  3030805 SPARC
+ 0  EDF    20302 Swap2
+ 0  EDF    20304 Swap4
+ 0  ED     40202 BZip2
+ 0  ED         0 Copy
+ 0  ED     40109 Deflate64
+ 0  ED     40108 Deflate
+ 0  EDF        3 Delta
+ 0  ED        21 LZMA2
+ 0  ED     30101 LZMA
+ 0  ED     30401 PPMD
+ 0   D     40301 Rar1
+ 0   D     40302 Rar2
+ 0   D     40303 Rar3
+ 0   D     40305 Rar5
+ 0  ED   4F71102 BROTLI
+ 0  ED   4F71104 LZ4
+ 0  ED   4F71106 LIZARD
+ 0  ED   4F71105 LZ5
+ 0  ED   4F71101 ZSTD
+ 0  ED        21 FLZMA2
+ 0  EDF  6F10701 7zAES
+ 0  EDF  6F00181 AES256CBC
 
 Hashers:
- 0   32      20A BLAKE3
+ 0   32      202 BLAKE2sp
+ 0   32      204 BLAKE3
  0    4        1 CRC32
+ 0    8        4 CRC64
  0   16      205 MD2
  0   16      206 MD4
  0   16      207 MD5
@@ -103,10 +104,11 @@ Hashers:
  0   32        A SHA256
  0   48      208 SHA384
  0   64      209 SHA512
- 0    4      203 XXH32
- 0    8      204 XXH64
- 0    8        4 CRC64
- 0   32      202 BLAKE2sp
+ 0   32      20A SHA3-256
+ 0   48      20B SHA3-384
+ 0   64      20C SHA3-512
+ 0    4      20D XXH32
+ 0    8      20E XXH64
 ```
 
 ### Usage and features of the full installation
@@ -297,7 +299,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Zstandard] Version 1.5.5
   - [BLAKE3] Version 0.3.7
 
-/TR 2023-04-05
+/TR 2023-06-18
 
 ## Notes
 
