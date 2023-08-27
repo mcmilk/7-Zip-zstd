@@ -37,7 +37,7 @@ UString HResultToMessage(HRESULT errorCode);
 
 class CThreadUpdating: public CProgressThreadVirt
 {
-  HRESULT ProcessVirt();
+  HRESULT ProcessVirt() Z7_override;
 public:
   CCodecs *codecs;
   const CObjectVector<COpenType> *formatIndices;
@@ -185,7 +185,7 @@ static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
       property.Name = s;
     else
     {
-      property.Name.SetFrom(s, index);
+      property.Name.SetFrom(s, (unsigned)index);
       property.Value = s.Ptr(index + 1);
     }
     properties.Add(property);
@@ -222,6 +222,16 @@ static void SetOutProperties(
       name += (di.OrderMode ? "mem" : "d");
       AddProp_Size(properties, name, di.Dict64);
     }
+    /*
+    if (di.Dict64_Chain != (UInt64)(Int64)-1)
+    {
+      AString name;
+      if (is7z)
+        name = "0";
+      name += "dc";
+      AddProp_Size(properties, name, di.Dict64_Chain);
+    }
+    */
     if (di.Order != (UInt32)(Int32)-1)
     {
       AString name;
@@ -287,17 +297,17 @@ static const C_UpdateMode_ToAction_Pair g_UpdateMode_Pairs[] =
 
 static int FindActionSet(const NUpdateArchive::CActionSet &actionSet)
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(g_UpdateMode_Pairs); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_UpdateMode_Pairs); i++)
     if (actionSet.IsEqualTo(*g_UpdateMode_Pairs[i].ActionSet))
-      return i;
+      return (int)i;
   return -1;
 }
 
 static int FindUpdateMode(NCompressDialog::NUpdateMode::EEnum mode)
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(g_UpdateMode_Pairs); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_UpdateMode_Pairs); i++)
     if (mode == g_UpdateMode_Pairs[i].UpdateMode)
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -365,10 +375,14 @@ static HRESULT ShowDialog(
     }
   }
 
-  
+
+  /*
+  // v23: we restore current dir in dialog code
   #if defined(_WIN32) && !defined(UNDER_CE)
   CCurrentDirRestorer curDirRestorer;
   #endif
+  */
+
   CCompressDialog dialog;
   NCompressDialog::CInfo &di = dialog.Info;
   dialog.ArcFormats = &codecs->Formats;
@@ -453,9 +467,11 @@ static HRESULT ShowDialog(
   if (di.PreserveATime.Def)
     options.PreserveATime = di.PreserveATime.Val;
  
+  /*
   #if defined(_WIN32) && !defined(UNDER_CE)
   curDirRestorer.NeedRestore = dialog.CurrentDirWasChanged;
   #endif
+  */
   
   options.VolumesSizes = di.VolumeSizes;
   /*
@@ -539,7 +555,7 @@ HRESULT UpdateGUI(
   bool needSetPath  = true;
   if (showDialog)
   {
-    RINOK(ShowDialog(codecs, censor.CensorPaths, options, callback, hwndParent));
+    RINOK(ShowDialog(codecs, censor.CensorPaths, options, callback, hwndParent))
     needSetPath = false;
   }
   if (options.SfxMode && options.SfxModule.IsEmpty())
@@ -582,7 +598,7 @@ HRESULT UpdateGUI(
   tu.Options = &options;
   tu.IconID = IDI_ICON;
 
-  RINOK(tu.Create(title, hwndParent));
+  RINOK(tu.Create(title, hwndParent))
 
   messageWasDisplayed = tu.ThreadFinishedOK && tu.MessagesDisplayed;
   return tu.Result;

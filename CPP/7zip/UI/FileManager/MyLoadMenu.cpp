@@ -17,14 +17,15 @@
 #include "MyLoadMenu.h"
 #include "RegistryUtils.h"
 
+#include "PropertyNameRes.h"
 #include "resource.h"
 
 using namespace NWindows;
 
-static const UINT kOpenBookmarkMenuID = 830;
-static const UINT kSetBookmarkMenuID = 810;
-static const UINT kMenuID_Time_Parent = 760;
-static const UINT kMenuID_Time = 761;
+static const UINT k_MenuID_OpenBookmark = 830;
+static const UINT k_MenuID_SetBookmark = 810;
+static const UINT k_MenuID_TimePopup = IDM_VIEW_TIME_POPUP;
+static const UINT k_MenuID_Time = IDM_VIEW_TIME;
 
 extern HINSTANCE g_hInstance;
 
@@ -34,35 +35,45 @@ extern void OptionsDialog(HWND hwndOwner, HINSTANCE hInstance);
 
 enum
 {
-  kMenuIndex_File = 0,
-  kMenuIndex_Edit,
-  kMenuIndex_View,
-  kMenuIndex_Bookmarks
+  k_MenuIndex_File = 0,
+  k_MenuIndex_Edit,
+  k_MenuIndex_View,
+  k_MenuIndex_Bookmarks
 };
 
-static const UInt32 kTopMenuLangIDs[] = { 500, 501, 502, 503, 504, 505 };
+#ifdef Z7_LANG
+static const UInt32 k_LangID_TopMenuItems[] =
+{
+  IDM_FILE,
+  IDM_EDIT,
+  IDM_VIEW,
+  IDM_FAVORITES,
+  IDM_TOOLS,
+  IDM_HELP
+};
 
-static const UInt32 kAddToFavoritesLangID = 800;
-static const UInt32 kToolbarsLangID = 733;
+static const UInt32 k_LangID_Toolbars = IDM_VIEW_TOOLBARS;
+static const UInt32 k_LangID_AddToFavorites = IDM_ADD_TO_FAVORITES;
 
 static const CIDLangPair kIDLangPairs[] =
 {
-  { IDCLOSE, 557 },
-  { IDM_VIEW_ARANGE_BY_NAME, 1004 },
-  { IDM_VIEW_ARANGE_BY_TYPE, 1020 },
-  { IDM_VIEW_ARANGE_BY_DATE, 1012 },
-  { IDM_VIEW_ARANGE_BY_SIZE, 1007 }
+  { IDCLOSE, 557 }, // IDM_EXIT
+  { IDM_VIEW_ARANGE_BY_NAME, IDS_PROP_NAME },
+  { IDM_VIEW_ARANGE_BY_TYPE, IDS_PROP_FILE_TYPE },
+  { IDM_VIEW_ARANGE_BY_DATE, IDS_PROP_MTIME },
+  { IDM_VIEW_ARANGE_BY_SIZE, IDS_PROP_SIZE }
 };
 
 static int FindLangItem(unsigned controlID)
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(kIDLangPairs); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(kIDLangPairs); i++)
     if (kIDLangPairs[i].ControlID == controlID)
-      return i;
+      return (int)i;
   return -1;
 }
+#endif
 
-static int GetSortControlID(PROPID propID)
+static unsigned GetSortControlID(PROPID propID)
 {
   switch (propID)
   {
@@ -72,54 +83,55 @@ static int GetSortControlID(PROPID propID)
     case kpidSize:       return IDM_VIEW_ARANGE_BY_SIZE;
     case kpidNoProperty: return IDM_VIEW_ARANGE_NO_SORT;
   }
-  return -1;
+  return IDM_VIEW_ARANGE_BY_NAME;
+  // IDM_VIEW_ARANGE_NO_SORT;
+  // return -1;
 }
 
 /*
-static bool g_IsNew_fMask = true;
+#if _MSC_VER > 1400
+// GetVersion was declared deprecated
+#pragma warning(disable : 4996)
+#endif
 
-class CInit_fMask
+static bool g_IsNew_fMask = false;
+static class CInit_fMask
 {
 public:
   CInit_fMask()
   {
-    g_IsNew_fMask = false;
-    OSVERSIONINFO vi;
-    vi.dwOSVersionInfoSize = sizeof(vi);
-    if (::GetVersionEx(&vi))
-    {
-      g_IsNew_fMask = (vi.dwMajorVersion > 4 ||
-        (vi.dwMajorVersion == 4 && vi.dwMinorVersion > 0));
-    }
-    g_IsNew_fMask = false;
+    DWORD v = GetVersion();
+    v = ((v & 0xff) << 8) | ((v >> 8) & 0xFF);
+    g_IsNew_fMask = (v > 0x400); // (win98/win2000) or newer
   }
 } g_Init_fMask;
-
-// it's hack for supporting Windows NT
-// constants are from WinUser.h
-
-#if (WINVER < 0x0500)
-#define MIIM_STRING      0x00000040
-#define MIIM_BITMAP      0x00000080
-#define MIIM_FTYPE       0x00000100
-#endif
-
 static UINT Get_fMask_for_String()
-{
-  return g_IsNew_fMask ? MIIM_STRING : MIIM_TYPE;
-}
-
+  { return g_IsNew_fMask ? MIIM_STRING : MIIM_TYPE; }
 static UINT Get_fMask_for_FType_and_String()
-{
-  return g_IsNew_fMask ? (MIIM_STRING | MIIM_FTYPE) : MIIM_TYPE;
-}
+  { return g_IsNew_fMask ? (MIIM_STRING | MIIM_FTYPE) : MIIM_TYPE; }
 */
 
+/*
+We can use new MIIM_STRING / MIIM_FTYPE flags in the following conditions:
+  1) we run at new Windows (win98/win2000) or newer
+  2) also we probably must set MENUITEMINFO::cbSize as sizeof of full
+     (MENUITEMINFO) that was compiled with (WINVER >= 0x0500)
+But it's simpler to use old MIIM_TYPE without these complex checks.
+*/
+
+// /*
 static inline UINT Get_fMask_for_String() { return MIIM_TYPE; }
 static inline UINT Get_fMask_for_FType_and_String() { return MIIM_TYPE; }
+// */
 
+static bool Is_MenuItem_TimePopup(const CMenuItem &item)
+{
+  return item.wID == k_MenuID_TimePopup ||
+    item.StringValue.IsPrefixedBy_Ascii_NoCase("20");
+}
 
-static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
+#ifdef Z7_LANG
+static void MyChangeMenu(HMENU menuLoc, unsigned menuID, unsigned level, unsigned menuIndex)
 {
   CMenu menu;
   menu.Attach(menuLoc);
@@ -127,55 +139,90 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
   for (unsigned i = 0;; i++)
   {
     CMenuItem item;
-    item.fMask = Get_fMask_for_String() | MIIM_SUBMENU | MIIM_ID;
-    item.fType = MFT_STRING;
+    /* here we can use
+         Get_fMask_for_String() or
+         Get_fMask_for_FType_and_String()
+       We want to change only String of menu item.
+       It's not required to change (fType) of menu item.
+       We can look (fType) to check for SEPARATOR item.
+       But String of separator is empty and (wID == 0).
+       So we can check for SEPARATOR without (fType) requesting.
+       So it's enough to use Get_fMask_for_String() here */
+    item.fMask =
+        Get_fMask_for_String()
+        // Get_fMask_for_FType_and_String()
+        | MIIM_SUBMENU | MIIM_ID;
     if (!menu.GetItem(i, true, item))
       break;
     {
       UString newString;
       if (item.hSubMenu)
       {
-        UInt32 langID = 0;
-        if (level == 1 && menuIndex == kMenuIndex_Bookmarks)
-          langID = kAddToFavoritesLangID;
-        else
+        /* in win10:
+           MENU+POPUP:
+             (wID == item.hSubMenu)
+           MENUEX+POPUP where ID is not set:
+             (wID == 0)
+           MENU+SEPARATOR
+             (wID == 0)
+        */
+        UInt32 langID = item.wID;
+        if (langID >= (1 << 16))
         {
-          MyChangeMenu(item.hSubMenu, level + 1, i);
-          if (level == 1 && menuIndex == kMenuIndex_View)
-          {
-            if (item.wID == kMenuID_Time_Parent || item.StringValue.IsPrefixedBy_Ascii_NoCase("20"))
-              continue;
-            else
-              langID = kToolbarsLangID;
-          }
-          else if (level == 0 && i < ARRAY_SIZE(kTopMenuLangIDs))
-            langID = kTopMenuLangIDs[i];
-          else
-            continue;
+          // here we try to exclude the case (wID == item.hSubMenu) if (MENU+POPUP)
+          continue;
         }
-        
+        if (langID == 0)
+        {
+          if (level == 0)
+          {
+            if (i < Z7_ARRAY_SIZE(k_LangID_TopMenuItems))
+              langID = k_LangID_TopMenuItems[i];
+          }
+          else if (level == 1)
+          {
+            if (menuID == IDM_FAVORITES || (menuID == 0 && menuIndex == k_MenuIndex_Bookmarks))
+              langID = k_LangID_AddToFavorites;
+            else if (menuID == IDM_VIEW || (menuID == 0 && menuIndex == k_MenuIndex_View))
+            {
+              if (Is_MenuItem_TimePopup(item))
+                langID = k_MenuID_TimePopup;
+              else
+                langID = k_LangID_Toolbars;
+            }
+          }
+        }
+        if (langID == k_MenuID_TimePopup)
+          continue;
+        if (langID != k_LangID_AddToFavorites)
+          MyChangeMenu(item.hSubMenu, langID, level + 1, i);
+        if (langID == 0)
+          continue;
         LangString_OnlyFromLangFile(langID, newString);
-        
         if (newString.IsEmpty())
           continue;
       }
       else
       {
+        if (item.fMask & (MIIM_TYPE | MIIM_FTYPE))
         if (item.IsSeparator())
           continue;
-        int langPos = FindLangItem(item.wID);
-
+        if (item.StringValue.IsEmpty())
+          continue;
+        const int langPos = FindLangItem(item.wID);
         // we don't need lang change for CRC items!!!
+        const UInt32 langID = langPos >= 0 ? kIDLangPairs[langPos].LangID : item.wID;
+        if (langID == 0)
+          continue;
 
-        UInt32 langID = langPos >= 0 ? kIDLangPairs[langPos].LangID : item.wID;
-        
-        if (langID == IDM_OPEN_INSIDE_ONE || langID == IDM_OPEN_INSIDE_PARSER)
+        if (langID == IDM_OPEN_INSIDE_ONE ||
+            langID == IDM_OPEN_INSIDE_PARSER)
         {
           LangString_OnlyFromLangFile(IDM_OPEN_INSIDE, newString);
           if (newString.IsEmpty())
             continue;
           newString.Replace(L"&", L"");
-          int tabPos = newString.Find(L"\t");
+          const int tabPos = newString.Find(L"\t");
           if (tabPos >= 0)
             newString.DeleteFrom(tabPos);
           newString += (langID == IDM_OPEN_INSIDE_ONE ? " *" : " #");
@@ -186,37 +233,40 @@ static void MyChangeMenu(HMENU menuLoc, int level, int menuIndex)
           if (newString.IsEmpty())
             continue;
           newString.Replace(L"&", L"");
-          int tabPos = newString.Find(L"\t");
+          const int tabPos = newString.Find(L"\t");
           if (tabPos >= 0)
             newString.DeleteFrom(tabPos);
           newString += " 2";
         }
         else
+        {
           LangString_OnlyFromLangFile(langID, newString);
+        }
 
         if (newString.IsEmpty())
           continue;
 
-        int tabPos = item.StringValue.ReverseFind(L'\t');
+        const int tabPos = item.StringValue.ReverseFind(L'\t');
         if (tabPos >= 0)
           newString += item.StringValue.Ptr(tabPos);
       }
 
       {
         item.StringValue = newString;
+        // we want to change only String
         item.fMask = Get_fMask_for_String();
-        item.fType = MFT_STRING;
         menu.SetItem(i, true, item);
       }
     }
   }
 }
+#endif
 
 static CMenu g_FileMenu;
 
 static struct CFileMenuDestroyer
 {
-  ~CFileMenuDestroyer() { if ((HMENU)g_FileMenu != 0) g_FileMenu.Destroy(); }
+  ~CFileMenuDestroyer() { if ((HMENU)g_FileMenu) g_FileMenu.Destroy(); }
 } g_FileMenuDestroyer;
 
 
@@ -224,6 +274,12 @@ static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec);
 
 static void CopyPopMenu_IfRequired(CMenuItem &item)
 {
+  /* if (item.hSubMenu) is defined
+  {
+    - it creates new (popup) menu
+    - it copies menu items from old item.hSubMenu menu to new (popup) menu
+    - it sets item.hSubMenu to handle of created (popup) menu
+  } */
   if (item.hSubMenu)
   {
     CMenu popup;
@@ -233,64 +289,91 @@ static void CopyPopMenu_IfRequired(CMenuItem &item)
   }
 }
 
+/* destMenuSpec must be non-NULL handle to created empty popup menu */
 static void CopyMenu(HMENU srcMenuSpec, HMENU destMenuSpec)
 {
   CMenu srcMenu;
   srcMenu.Attach(srcMenuSpec);
   CMenu destMenu;
   destMenu.Attach(destMenuSpec);
-  int startPos = 0;
-  for (int i = 0;; i++)
+  unsigned startPos = 0;
+  for (unsigned i = 0;; i++)
   {
     CMenuItem item;
     item.fMask = MIIM_SUBMENU | MIIM_STATE | MIIM_ID | Get_fMask_for_FType_and_String();
-    item.fType = MFT_STRING;
-
     if (!srcMenu.GetItem(i, true, item))
       break;
-
     CopyPopMenu_IfRequired(item);
     if (destMenu.InsertItem(startPos, true, item))
       startPos++;
   }
 }
 
-void MyLoadMenu()
-{
-  HMENU baseMenu;
 
+/* use for (needResetMenu):
+    false : for call from program window creation code
+    true  : for another calls : (from Options language change)
+*/
+void MyLoadMenu(bool needResetMenu)
+{
   #ifdef UNDER_CE
 
-  HMENU oldMenu = g_App._commandBar.GetMenu(0);
+  const HMENU oldMenu = g_App._commandBar.GetMenu(0);
   if (oldMenu)
     ::DestroyMenu(oldMenu);
   /* BOOL b = */ g_App._commandBar.InsertMenubar(g_hInstance, IDM_MENU, 0);
-  baseMenu = g_App._commandBar.GetMenu(0);
+  const HMENU baseMenu = g_App._commandBar.GetMenu(0);
   // if (startInit)
-  // SetIdsForSubMenes(baseMenu, 0, 0);
+  // SetIdsForSubMenus(baseMenu, 0, 0);
   if (!g_LangID.IsEmpty())
     MyChangeMenu(baseMenu, 0, 0);
   g_App._commandBar.DrawMenuBar(0);
  
-  #else
+  #else // UNDER_CE
 
-  HWND hWnd = g_HWND;
-  HMENU oldMenu = ::GetMenu(hWnd);
-  ::SetMenu(hWnd, ::LoadMenu(g_hInstance, MAKEINTRESOURCE(IDM_MENU)));
-  ::DestroyMenu(oldMenu);
-  baseMenu = ::GetMenu(hWnd);
+  const HWND hWnd = g_HWND;
+  bool menuWasChanged = false;
+  /*
+     We must reload to english default menu for at least two cases:
+     - if some submenu was changed (File or another submenu can be changed after menu activating).
+     - for change from non-english lang to another partial non-english lang,
+       where we still need some english strings.
+     But we reload menu to default menu everytime except of program starting stage.
+     That scheme is simpler than complex checks for exact conditions for menu reload.
+  */
+  if (needResetMenu)
+  {
+    const HMENU oldMenu = ::GetMenu(hWnd);
+    const HMENU newMenu = ::LoadMenu(g_hInstance, MAKEINTRESOURCE(IDM_MENU));
+    // docs for SetMenu(): the window is redrawn to reflect the menu change.
+    if (newMenu && ::SetMenu(hWnd, newMenu))
+      ::DestroyMenu(oldMenu);
+    menuWasChanged = true;
+  }
+  const HMENU baseMenu = ::GetMenu(hWnd);
   // if (startInit)
-  // SetIdsForSubMenes(baseMenu, 0, 0);
-  if (!g_LangID.IsEmpty())
-    MyChangeMenu(baseMenu, 0, 0);
-  ::DrawMenuBar(hWnd);
-
+  // SetIdsForSubMenus(baseMenu, 0, 0);
+  #ifdef Z7_LANG
+  if (!g_Lang.IsEmpty()) // !g_LangID.IsEmpty() &&
+  {
+    MyChangeMenu(baseMenu, 0, 0, 0);
+    menuWasChanged = true;
+  }
   #endif
 
-  if ((HMENU)g_FileMenu != 0)
-    g_FileMenu.Destroy();
-  g_FileMenu.CreatePopup();
-  CopyMenu(::GetSubMenu(baseMenu, 0), g_FileMenu);
+  if (menuWasChanged)
+    ::DrawMenuBar(hWnd);
+
+  #endif // UNDER_CE
+
+  // menuWasChanged = false; // for debug
+  if (menuWasChanged || !(HMENU)g_FileMenu)
+  {
+    if ((HMENU)g_FileMenu)
+      g_FileMenu.Destroy();
+    g_FileMenu.CreatePopup();
+    CopyMenu(::GetSubMenu(baseMenu, k_MenuIndex_File), g_FileMenu);
+  }
 }
 
 void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
@@ -306,14 +389,14 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
   if (::GetSubMenu(mainMenu, position) != hMenu)
     return;
   
-  if (position == kMenuIndex_File)
+  if (position == k_MenuIndex_File)
   {
     CMenu menu;
     menu.Attach(hMenu);
     menu.RemoveAllItems();
     g_App.GetFocusedPanel().CreateFileMenu(hMenu);
   }
-  else if (position == kMenuIndex_Edit)
+  else if (position == k_MenuIndex_Edit)
   {
     /*
     CMenu menu;
@@ -323,16 +406,20 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     menu.EnableItem(IDM_EDIT_PASTE, IsClipboardFormatAvailableHDROP() ? MF_ENABLED : MF_GRAYED);
     */
   }
-  else if (position == kMenuIndex_View)
+  else if (position == k_MenuIndex_View)
   {
     // View;
     CMenu menu;
     menu.Attach(hMenu);
-    menu.CheckRadioItem(IDM_VIEW_LARGE_ICONS, IDM_VIEW_DETAILS,
-      IDM_VIEW_LARGE_ICONS + g_App.GetListViewMode(), MF_BYCOMMAND);
+    menu.CheckRadioItem(
+        IDM_VIEW_LARGE_ICONS, IDM_VIEW_DETAILS,
+        IDM_VIEW_LARGE_ICONS + g_App.GetListViewMode(), MF_BYCOMMAND);
 
-    menu.CheckRadioItem(IDM_VIEW_ARANGE_BY_NAME, IDM_VIEW_ARANGE_NO_SORT,
-        GetSortControlID(g_App.GetSortID()), MF_BYCOMMAND);
+    menu.CheckRadioItem(
+        IDM_VIEW_ARANGE_BY_NAME,
+        IDM_VIEW_ARANGE_NO_SORT,
+        GetSortControlID(g_App.GetSortID()),
+        MF_BYCOMMAND);
     
     menu.CheckItemByID(IDM_VIEW_TWO_PANELS, g_App.NumPanels == 2);
     menu.CheckItemByID(IDM_VIEW_FLAT_VIEW, g_App.GetFlatMode());
@@ -344,16 +431,14 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     // menu.CheckItemByID(IDM_VIEW_SHOW_STREAMS, g_App.Get_ShowNtfsStrems_Mode());
     // menu.CheckItemByID(IDM_VIEW_SHOW_DELETED, g_App.ShowDeletedFiles);
 
-    for (int i = 0;; i++)
+    for (unsigned i = 0;; i++)
     {
       CMenuItem item;
       item.fMask = Get_fMask_for_String() | MIIM_SUBMENU | MIIM_ID;
       item.fType = MFT_STRING;
       if (!menu.GetItem(i, true, item))
         break;
-      if (item.hSubMenu && (item.wID == kMenuID_Time_Parent
-          || item.StringValue.IsPrefixedBy_Ascii_NoCase("20")
-          ))
+      if (item.hSubMenu && Is_MenuItem_TimePopup(item))
       {
         FILETIME ft;
         NTime::GetCurUtcFileTime(ft);
@@ -367,11 +452,11 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
 
         item.fMask = Get_fMask_for_String() | MIIM_ID;
         item.fType = MFT_STRING;
-        item.wID = kMenuID_Time_Parent;
+        item.wID = k_MenuID_TimePopup;
         menu.SetItem(i, true, item);
 
         CMenu subMenu;
-        subMenu.Attach(menu.GetSubMenu(i));
+        subMenu.Attach(menu.GetSubMenu((int)i));
         subMenu.RemoveAllItems();
         
         const int k_TimeLevels[] =
@@ -384,16 +469,16 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
           kTimestampPrintLevel_NS
         };
 
-        unsigned last = kMenuID_Time;
+        unsigned last = k_MenuID_Time;
         unsigned selectedCommand = 0;
         g_App._timestampLevels.Clear();
-        unsigned id = kMenuID_Time;
+        unsigned id = k_MenuID_Time;
         
-        for (unsigned k = 0; k < ARRAY_SIZE(k_TimeLevels); k++)
+        for (unsigned k = 0; k < Z7_ARRAY_SIZE(k_TimeLevels); k++)
         {
           wchar_t s[64];
           s[0] = 0;
-          int timestampLevel = k_TimeLevels[k];
+          const int timestampLevel = k_TimeLevels[k];
           if (ConvertUtcFileTimeToString(ft, s, timestampLevel))
           {
             if (subMenu.AppendItem(MF_STRING, id, s))
@@ -407,11 +492,11 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
           }
         }
         if (selectedCommand != 0)
-          menu.CheckRadioItem(kMenuID_Time, last, selectedCommand, MF_BYCOMMAND);
+          menu.CheckRadioItem(k_MenuID_Time, last, selectedCommand, MF_BYCOMMAND);
       }
     }
   }
-  else if (position == kMenuIndex_Bookmarks)
+  else if (position == k_MenuIndex_Bookmarks)
   {
     CMenu menu;
     menu.Attach(hMenu);
@@ -419,17 +504,17 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
     CMenu subMenu;
     subMenu.Attach(menu.GetSubMenu(0));
     subMenu.RemoveAllItems();
-    int i;
+    unsigned i;
     
     for (i = 0; i < 10; i++)
     {
       UString s = LangString(IDS_BOOKMARK);
       s.Add_Space();
-      char c = (char)(L'0' + i);
+      const char c = (char)(L'0' + i);
       s += c;
       s += "\tAlt+Shift+";
       s += c;
-      subMenu.AppendItem(MF_STRING, kSetBookmarkMenuID + i, s);
+      subMenu.AppendItem(MF_STRING, k_MenuID_SetBookmark + i, s);
     }
 
     menu.RemoveAllItemsFrom(2);
@@ -448,7 +533,7 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
         s = '-';
       s += "\tAlt+";
       s += (char)('0' + i);
-      menu.AppendItem(MF_STRING, kOpenBookmarkMenuID + i, s);
+      menu.AppendItem(MF_STRING, k_MenuID_OpenBookmark + i, s);
     }
   }
 }
@@ -596,7 +681,7 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
     NFile::NFind::CFileInfo fi;
     if (fi.Find(FilePath) && fi.Size < ((UInt32)1 << 31) && !fi.IsDir())
     {
-      for (unsigned k = 0; k < ARRAY_SIZE(g_Zvc_IDs); k++)
+      for (unsigned k = 0; k < Z7_ARRAY_SIZE(g_Zvc_IDs); k++)
       {
         const unsigned id = g_Zvc_IDs[k];
         if (fi.IsReadOnly())
@@ -756,7 +841,7 @@ bool OnMenuCommand(HWND hWnd, unsigned id)
         g_App.SetListViewMode(index);
         /*
         CMenu menu;
-        menu.Attach(::GetSubMenu(::GetMenu(hWnd), kMenuIndex_View));
+        menu.Attach(::GetSubMenu(::GetMenu(hWnd), k_MenuIndex_View));
         menu.CheckRadioItem(IDM_VIEW_LARGE_ICONS, IDM_VIEW_DETAILS,
             id, MF_BYCOMMAND);
         */
@@ -811,20 +896,19 @@ bool OnMenuCommand(HWND hWnd, unsigned id)
     }
     default:
     {
-      if (id >= kOpenBookmarkMenuID && id <= kOpenBookmarkMenuID + 9)
+      if (id >= k_MenuID_OpenBookmark && id <= k_MenuID_OpenBookmark + 9)
       {
-        g_App.OpenBookmark(id - kOpenBookmarkMenuID);
+        g_App.OpenBookmark(id - k_MenuID_OpenBookmark);
         return true;
       }
-      else if (id >= kSetBookmarkMenuID && id <= kSetBookmarkMenuID + 9)
+      else if (id >= k_MenuID_SetBookmark && id <= k_MenuID_SetBookmark + 9)
       {
-        g_App.SetBookmark(id - kSetBookmarkMenuID);
+        g_App.SetBookmark(id - k_MenuID_SetBookmark);
         return true;
       }
-      else if (id >= kMenuID_Time && (unsigned)id <= kMenuID_Time + g_App._timestampLevels.Size())
+      else if (id >= k_MenuID_Time && (unsigned)id < k_MenuID_Time + g_App._timestampLevels.Size())
       {
-        unsigned index = id - kMenuID_Time;
-        g_App.SetTimestampLevel(g_App._timestampLevels[index]);
+        g_App.SetTimestampLevel(g_App._timestampLevels[id - k_MenuID_Time]);
         return true;
       }
       return false;

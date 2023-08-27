@@ -12,10 +12,27 @@ BEGIN
 //  VK_F7,   IDM_CREATE_FOLDER,    VIRTKEY, NOINVERT
 END
 
+// for MENUEX:
+// /*
+#define MY_MENUITEM_SEPARATOR  MENUITEM "", 0, MFT_SEPARATOR
+#define MY_MFT_MENUBREAK       MFT_MENUBREAK
+#define MY_MFT_MENUBARBREAK    MFT_MENUBARBREAK
+#define MY_MFS_CHECKED         MFT_STRING, MFS_CHECKED
+#define MY_MENUITEM_ID(x)      , x
+// */
 
-IDM_MENU MENU
+// for MENU:
+/*
+#define MY_MENUITEM_SEPARATOR  MENUITEM SEPARATOR
+#define MY_MFT_MENUBREAK       MENUBREAK
+#define MY_MFT_MENUBARBREAK    MENUBARBREAK
+#define MY_MFS_CHECKED         CHECKED
+#define MY_MENUITEM_ID(x)
+*/
+
+IDM_MENU MENUEX
 BEGIN
-  POPUP "&File"
+  POPUP "&File" MY_MENUITEM_ID(IDM_FILE)
   BEGIN
     MENUITEM "&Open\tEnter",                IDM_OPEN
     MENUITEM "Open &Inside\tCtrl+PgDn",     IDM_OPEN_INSIDE
@@ -24,19 +41,19 @@ BEGIN
     MENUITEM "Open O&utside\tShift+Enter",  IDM_OPEN_OUTSIDE
     MENUITEM "&View\tF3",                   IDM_FILE_VIEW
     MENUITEM "&Edit\tF4",                   IDM_FILE_EDIT
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "Rena&me\tF2",                 IDM_RENAME
     MENUITEM "&Copy To...\tF5",             IDM_COPY_TO
     MENUITEM "&Move To...\tF6",             IDM_MOVE_TO
     MENUITEM "&Delete\tDel",                IDM_DELETE
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "&Split file...",              IDM_SPLIT
     MENUITEM "Com&bine files...",           IDM_COMBINE
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "P&roperties\tAlt+Enter",      IDM_PROPERTIES
     MENUITEM "Comme&nt...\tCtrl+Z",         IDM_COMMENT
     // MENUITEM "Calculate checksum",          IDM_CRC
-    POPUP "CRC"
+    POPUP "CRC" MY_MENUITEM_ID(0)
     BEGIN
       MENUITEM "CRC-32",                    IDM_CRC32
       MENUITEM "CRC-64",                    IDM_CRC64
@@ -45,55 +62,56 @@ BEGIN
       MENUITEM "*",                         IDM_HASH_ALL
     END
     MENUITEM "Di&ff",                       IDM_DIFF
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "Create Folder\tF7",           IDM_CREATE_FOLDER
     MENUITEM "Create File\tCtrl+N",         IDM_CREATE_FILE
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "&Link...",                    IDM_LINK
     MENUITEM "&Alternate streams",          IDM_ALT_STREAMS
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "E&xit\tAlt+F4",               IDCLOSE
   END
-  POPUP "&Edit"
+  POPUP "&Edit" MY_MENUITEM_ID(IDM_EDIT)
   BEGIN
     // MENUITEM "Cu&t\tCtrl+X",                IDM_EDIT_CUT, GRAYED
     // MENUITEM "&Copy\tCtrl+C",               IDM_EDIT_COPY, GRAYED
     // MENUITEM "&Paste\tCtrl+V",              IDM_EDIT_PASTE, GRAYED
-    // MENUITEM SEPARATOR
+    // MY_MENUITEM_SEPARATOR
     MENUITEM "Select &All\tShift+[Grey +]", IDM_SELECT_ALL
     MENUITEM "Deselect All\tShift+[Grey -]", IDM_DESELECT_ALL
     MENUITEM "&Invert Selection\tGrey *",   IDM_INVERT_SELECTION
     MENUITEM "Select...\tGrey +",           IDM_SELECT
     MENUITEM "Deselect...\tGrey -",         IDM_DESELECT
+    MENUITEM "", 0, MY_MFT_MENUBARBREAK
     MENUITEM "Select by Type\tAlt+[Grey+]", IDM_SELECT_BY_TYPE
     MENUITEM "Deselect by Type\tAlt+[Grey -]", IDM_DESELECT_BY_TYPE
   END
-  POPUP "&View"
+  POPUP "&View" MY_MENUITEM_ID(IDM_VIEW)
   BEGIN
     MENUITEM "Lar&ge Icons\tCtrl+1",        IDM_VIEW_LARGE_ICONS
     MENUITEM "S&mall Icons\tCtrl+2",        IDM_VIEW_SMALL_ICONS
     MENUITEM "&List\tCtrl+3",               IDM_VIEW_LIST
-    MENUITEM "&Details\tCtrl+4",            IDM_VIEW_DETAILS, CHECKED
-    MENUITEM SEPARATOR
+    MENUITEM "&Details\tCtrl+4",            IDM_VIEW_DETAILS, MY_MFS_CHECKED
+    MY_MENUITEM_SEPARATOR
     MENUITEM "Name\tCtrl+F3",               IDM_VIEW_ARANGE_BY_NAME
     MENUITEM "Type\tCtrl+F4",               IDM_VIEW_ARANGE_BY_TYPE
     MENUITEM "Date\tCtrl+F5",               IDM_VIEW_ARANGE_BY_DATE
     MENUITEM "Size\tCtrl+F6",               IDM_VIEW_ARANGE_BY_SIZE
     MENUITEM "Unsorted\tCtrl+F7",           IDM_VIEW_ARANGE_NO_SORT
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "Flat View",                   IDM_VIEW_FLAT_VIEW
     MENUITEM "&2 Panels\tF9",               IDM_VIEW_TWO_PANELS
 
-    POPUP "2017"
+    POPUP "2017" MY_MENUITEM_ID(IDM_VIEW_TIME_POPUP)
     BEGIN
       MENUITEM "Time",                      IDM_VIEW_TIME
     END
 
-    POPUP "Toolbars"
+    POPUP "Toolbars" MY_MENUITEM_ID(IDM_VIEW_TOOLBARS)
     BEGIN
       MENUITEM "Archive Toolbar",           IDM_VIEW_ARCHIVE_TOOLBAR
       MENUITEM "Standard Toolbar",          IDM_VIEW_STANDARD_TOOLBAR
-      MENUITEM SEPARATOR
+      MY_MENUITEM_SEPARATOR
       MENUITEM "Large Buttons",             IDM_VIEW_TOOLBARS_LARGE_BUTTONS
       MENUITEM "Show Buttons Text",         IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT
     END
@@ -107,29 +125,29 @@ BEGIN
     // MENUITEM "Show deleted files",          IDM_VIEW_SHOW_DELETED
 
   END
-  POPUP "F&avorites"
+  POPUP "F&avorites" MY_MENUITEM_ID(IDM_FAVORITES)
   BEGIN
-    POPUP "&Add folder to Favorites as"
+    POPUP "&Add folder to Favorites as" MY_MENUITEM_ID(IDM_ADD_TO_FAVORITES)
     BEGIN
-        MENUITEM SEPARATOR
+        MY_MENUITEM_SEPARATOR
     END
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
   END
-  POPUP "&Tools"
+  POPUP "&Tools" MY_MENUITEM_ID(IDM_TOOLS)
   BEGIN
     MENUITEM "&Options...",                 IDM_OPTIONS
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
     MENUITEM "&Benchmark",                  IDM_BENCHMARK
   #ifdef UNDER_CE
     MENUITEM "Benchmark 2",                 IDM_BENCHMARK2
   #endif
   #ifndef UNDER_CE
   END
-  POPUP "&Help"
+  POPUP "&Help" MY_MENUITEM_ID(IDM_HELP)
   BEGIN
     MENUITEM "&Contents...\tF1",            IDM_HELP_CONTENTS
   #endif
-    MENUITEM SEPARATOR
+    MY_MENUITEM_SEPARATOR
   MENUITEM "&About 7-Zip...",               IDM_ABOUT
   END
 END
@@ -172,7 +190,7 @@ BEGIN
   IDS_VIRUS                "The file looks like a virus (the file name contains long spaces in name)."
   IDS_MESSAGE_UNSUPPORTED_OPERATION_FOR_LONG_PATH_FOLDER "The operation cannot be called from a folder that has a long path."
   IDS_SELECT_ONE_FILE      "You must select one file"
-  IDS_SELECT_FILES         "You must select one or more files"
+  // IDS_SELECT_FILES         "You must select one or more files"
   IDS_TOO_MANY_ITEMS       "Too many items"
 
   IDS_COPY      "Copy"

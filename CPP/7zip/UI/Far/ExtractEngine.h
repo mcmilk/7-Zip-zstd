@@ -1,7 +1,7 @@
 // ExtractEngine.h
 
-#ifndef __EXTRACT_ENGINE_H
-#define __EXTRACT_ENGINE_H
+#ifndef ZIP7_INC_EXTRACT_ENGINE_H
+#define ZIP7_INC_EXTRACT_ENGINE_H
 
 #include "../../../Common/MyCom.h"
 #include "../../../Common/MyString.h"
@@ -11,26 +11,14 @@
 
 #include "ProgressBox.h"
 
-class CExtractCallbackImp:
-  public IFolderArchiveExtractCallback,
-  public IFolderArchiveExtractCallback2,
-  public ICryptoGetTextPassword,
-  public CMyUnknownImp
-{
-public:
-  MY_UNKNOWN_IMP2(ICryptoGetTextPassword, IFolderArchiveExtractCallback2)
+Z7_CLASS_IMP_COM_3(
+  CExtractCallbackImp
+  , IFolderArchiveExtractCallback
+  , IFolderArchiveExtractCallback2
+  , ICryptoGetTextPassword
+)
+  Z7_IFACE_COM7_IMP(IProgress)
 
-  // IProgress
-  STDMETHOD(SetTotal)(UInt64 size);
-  STDMETHOD(SetCompleted)(const UInt64 *completeValue);
-
-  INTERFACE_IFolderArchiveExtractCallback(;)
-  INTERFACE_IFolderArchiveExtractCallback2(;)
-
-  // ICryptoGetTextPassword
-  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
-
-private:
   UString m_CurrentFilePath;
 
   CProgressBox *_percent;
@@ -47,8 +35,6 @@ private:
   */
   void AddErrorMessage(LPCTSTR message);
 public:
-  // CExtractCallbackImp() {}
-  ~CExtractCallbackImp();
   void Init(UINT codePage,
       CProgressBox *progressBox,
       bool passwordIsDefined, const UString &password);

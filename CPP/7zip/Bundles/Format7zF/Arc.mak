@@ -111,7 +111,6 @@ AR_COMMON_OBJS = \
   $O\HandlerOut.obj \
   $O\ParseProperties.obj \
 
-
 7Z_OBJS = \
   $O\7zCompressionMode.obj \
   $O\7zDecode.obj \
@@ -235,7 +234,6 @@ COMPRESS_OBJS = \
   $O\ZlibEncoder.obj \
   $O\ZDecoder.obj \
 
-
 CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
@@ -251,7 +249,6 @@ CRYPTO_OBJS = \
   $O\WzAes.obj \
   $O\ZipCrypto.obj \
   $O\ZipStrong.obj \
-
 
 C_OBJS = \
   $O\7zBuf2.obj \
@@ -284,6 +281,7 @@ C_OBJS = \
   $O\Ppmd8Dec.obj \
   $O\Ppmd8Enc.obj \
   $O\Sort.obj \
+  $O\SwapBytes.obj \
   $O\Threads.obj \
   $O\Xz.obj \
   $O\XzDec.obj \

@@ -1,7 +1,7 @@
 // ZipUpdate.h
 
-#ifndef __ZIP_UPDATE_H
-#define __ZIP_UPDATE_H
+#ifndef ZIP7_INC_ZIP_UPDATE_H
+#define ZIP7_INC_ZIP_UPDATE_H
 
 #include "../../ICoder.h"
 #include "../IArchive.h"
@@ -20,8 +20,8 @@ struct CUpdateRange
   UInt64 Position;
   UInt64 Size;
   
-  // CUpdateRange() {};
-  CUpdateRange(UInt64 position, UInt64 size): Position(position), Size(size) {};
+  // CUpdateRange() {}
+  CUpdateRange(UInt64 position, UInt64 size): Position(position), Size(size) {}
 };
 */
 
@@ -34,6 +34,7 @@ struct CUpdateItem
   bool Write_UnixTime;
   // bool Write_UnixTime_ATime;
   bool IsUtf8;
+  bool Size_WasSetFromStream;
   // bool IsAltStream;
   int IndexInArc;
   unsigned IndexInClient;
@@ -57,6 +58,7 @@ struct CUpdateItem
     Write_UnixTime = false;
 
     IsUtf8 = false;
+    Size_WasSetFromStream = false;
     // IsAltStream = false;
     Time = 0;
     Size = 0;
@@ -74,6 +76,7 @@ struct CUpdateItem
     Write_NtfsTime(false),
     Write_UnixTime(false),
     IsUtf8(false),
+    Size_WasSetFromStream(false),
     // IsAltStream(false),
     Time(0),
     Size(0)

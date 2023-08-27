@@ -100,9 +100,9 @@ static int ComparePairItems(const CTextPair &p1, const CTextPair &p2)
 static int ComparePairItems(void *const *a1, void *const *a2, void * /* param */)
   { return ComparePairItems(**(const CTextPair *const *)a1, **(const CTextPair *const *)a2); }
 
-void CPairsStorage::Sort() { Pairs.Sort(ComparePairItems, 0); }
+void CPairsStorage::Sort() { Pairs.Sort(ComparePairItems, NULL); }
 
-int CPairsStorage::FindID(const UString &id, int &insertPos) const
+int CPairsStorage::FindID(const UString &id, unsigned &insertPos) const
 {
   unsigned left = 0, right = Pairs.Size();
   while (left != right)
@@ -112,7 +112,7 @@ int CPairsStorage::FindID(const UString &id, int &insertPos) const
     if (compResult == 0)
     {
       insertPos = mid; // to disable GCC warning
-      return mid;
+      return (int)mid;
     }
     if (compResult < 0)
       right = mid;
@@ -125,13 +125,13 @@ int CPairsStorage::FindID(const UString &id, int &insertPos) const
 
 int CPairsStorage::FindID(const UString &id) const
 {
-  int pos;
+  unsigned pos;
   return FindID(id, pos);
 }
 
 void CPairsStorage::AddPair(const CTextPair &pair)
 {
-  int insertPos;
+  unsigned insertPos;
   const int pos = FindID(pair.ID, insertPos);
   if (pos >= 0)
     Pairs[pos] = pair;
@@ -143,7 +143,7 @@ void CPairsStorage::DeletePair(const UString &id)
 {
   const int pos = FindID(id);
   if (pos >= 0)
-    Pairs.Delete(pos);
+    Pairs.Delete((unsigned)pos);
 }
 
 bool CPairsStorage::GetValue(const UString &id, UString &value) const
@@ -185,7 +185,7 @@ void CPairsStorage::SaveToString(UString &text) const
     text += pair.ID;
     if (multiWord)
       text += '\"';
-    text += ' ';
+    text.Add_Space();
     text += pair.Value;
     text += '\x0D';
     text.Add_LF();

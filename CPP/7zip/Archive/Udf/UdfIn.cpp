@@ -27,9 +27,9 @@
 #define Get32(p) GetUi32(p)
 #define Get64(p) GetUi64(p)
 
-#define G16(_offs_, dest) dest = Get16(p + (_offs_));
-#define G32(_offs_, dest) dest = Get32(p + (_offs_));
-#define G64(_offs_, dest) dest = Get64(p + (_offs_));
+#define G16(_offs_, dest) dest = Get16(p + (_offs_))
+#define G32(_offs_, dest) dest = Get32(p + (_offs_))
+#define G64(_offs_, dest) dest = Get64(p + (_offs_))
 
 namespace NArchive {
 namespace NUdf {
@@ -50,7 +50,7 @@ static const UInt64 kInlineExtentsSizeMax = (UInt64)1 << 33;
 #define kCrc16Poly 0x1021
 static UInt16 g_Crc16Table[256];
 
-static void MY_FAST_CALL Crc16GenerateTable(void)
+static void Z7_FASTCALL Crc16GenerateTable(void)
 {
   UInt32 i;
   for (i = 0; i < 256; i++)
@@ -62,7 +62,7 @@ static void MY_FAST_CALL Crc16GenerateTable(void)
   }
 }
 
-static UInt32 MY_FAST_CALL Crc16Calc(const void *data, size_t size)
+static UInt32 Z7_FASTCALL Crc16Calc(const void *data, size_t size)
 {
   UInt32 v = CRC16_INIT_VAL;
   const Byte *p = (const Byte *)data;
@@ -176,7 +176,7 @@ void CRegId::AddUdfVersionTo(UString &s) const
     char temp[16];
     ConvertUInt32ToHex(major, temp);
     s += temp;
-    s += '.';
+    s.Add_Dot();
     ConvertUInt32ToHex8Digits(minor, temp);
     s += &temp[8 - 2];
   }
@@ -346,7 +346,7 @@ HRESULT CInArchive::Read(unsigned volIndex, unsigned partitionRef, UInt32 blockP
   const CLogVol &vol = LogVols[volIndex];
   const CPartition &partition = Partitions[vol.PartitionMaps[partitionRef].PartitionIndex];
   UInt64 offset = ((UInt64)partition.Pos << SecLogSize) + (UInt64)blockPos * vol.BlockSize;
-  RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
+  RINOK(InStream_SeekSet(_stream, offset))
   offset += len;
   UpdatePhySize(offset);
   const HRESULT res = ReadStream_FALSE(_stream, buf, len);
@@ -375,7 +375,7 @@ HRESULT CInArchive::ReadFromFile(unsigned volIndex, const CItem &item, CByteBuff
   {
     const CMyExtent &e = item.Extents[i];
     const UInt32 len = e.GetLen();
-    RINOK(Read(volIndex, e.PartitionRef, e.Pos, len, (Byte *)buf + pos));
+    RINOK(Read(volIndex, e.PartitionRef, e.Pos, len, (Byte *)buf + pos))
     pos += len;
   }
   return S_OK;
@@ -447,6 +447,19 @@ void CItem::Parse(const Byte *p)
 
 
 // ECMA 4/14.4
+// UDF 2.3.4
+
+/*
+File Characteristics:
+Deleted bit:
+  ECMA: If set to ONE, shall mean this File Identifier Descriptor
+        identifies a file that has been deleted;
+  UDF:  If the space for the file or directory is deallocated,
+        the implementation shall set the ICB field to zero.
+    ECMA 167 4/8.6 requires that the File Identifiers of all FIDs in a directory shall be unique.
+    The implementations shall follow these rules when a Deleted bit is set:
+    rewrire the compression ID of the File Identifier: 8 -> 254, 16 -> 255.
+*/
 
 struct CFileId
 {
@@ -456,7 +469,10 @@ struct CFileId
   CDString Id;
   CLongAllocDesc Icb;
 
-  bool IsItLinkParent() const { return (FileCharacteristics & FILEID_CHARACS_Parent) != 0; }
+  bool IsItLink_Dir    () const { return (FileCharacteristics & FILEID_CHARACS_Dir)     != 0; }
+  bool IsItLink_Deleted() const { return (FileCharacteristics & FILEID_CHARACS_Deleted) != 0; }
+  bool IsItLink_Parent () const { return (FileCharacteristics & FILEID_CHARACS_Parent)  != 0; }
+
   size_t Parse(const Byte *p, size_t size);
 };
 
@@ -466,10 +482,13 @@ size_t CFileId::Parse(const Byte *p, size_t size)
   if (size < 38)
     return 0;
   CTag tag;
-  RINOK(tag.Parse(p, size));
+  if (tag.Parse(p, size) != S_OK)
+    return 0;
   if (tag.Id != DESC_TYPE_FileId)
     return 0;
   // FileVersion = Get16(p + 16);
+  // UDF: There shall be only one version of a file as specified below with the value being set to 1.
+
   FileCharacteristics = p[18];
   const unsigned idLen = p[19];
   Icb.Parse(p + 20);
@@ -490,10 +509,10 @@ size_t CFileId::Parse(const Byte *p, size_t size)
 
 
 
-HRESULT CInArchive::ReadFileItem(unsigned volIndex, unsigned fsIndex, const CLongAllocDesc &lad, int numRecurseAllowed)
+HRESULT CInArchive::ReadFileItem(unsigned volIndex, unsigned fsIndex, const CLongAllocDesc &lad, bool isDir, int numRecurseAllowed)
 {
   if (Files.Size() % 100 == 0)
-    RINOK(_progress->SetCompleted(Files.Size(), _processedProgressBytes));
+    RINOK(_progress->SetCompleted(Files.Size(), _processedProgressBytes))
   if (numRecurseAllowed-- == 0)
     return S_FALSE;
   CFile &file = Files.Back();
@@ -510,15 +529,15 @@ HRESULT CInArchive::ReadFileItem(unsigned volIndex, unsigned fsIndex, const CLon
   {
     if (value == kRecursedErrorValue)
       return S_FALSE;
-    file.ItemIndex = value;
+    file.ItemIndex = (int)(Int32)value;
   }
   else
   {
     value = Items.Size();
-    file.ItemIndex = (int)value;
+    file.ItemIndex = (int)(Int32)value;
     if (partition.Map.Set(key, kRecursedErrorValue))
       return S_FALSE;
-    RINOK(ReadItem(volIndex, fsIndex, lad, numRecurseAllowed));
+    RINOK(ReadItem(volIndex, (int)fsIndex, lad, isDir, numRecurseAllowed))
     if (!partition.Map.Set(key, value))
       return S_FALSE;
   }
@@ -528,7 +547,7 @@ HRESULT CInArchive::ReadFileItem(unsigned volIndex, unsigned fsIndex, const CLon
 
 // (fsIndex = -1) means that it's metadata file
 
-HRESULT CInArchive::ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDesc &lad, int numRecurseAllowed)
+HRESULT CInArchive::ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDesc &lad, bool isDir, int numRecurseAllowed)
 {
   if (Items.Size() >= kNumItemsMax)
     return S_FALSE;
@@ -541,11 +560,11 @@ HRESULT CInArchive::ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDes
     return S_FALSE;
 
   CByteBuffer buf(size);
-  RINOK(ReadLad(volIndex, lad, buf));
+  RINOK(ReadLad(volIndex, lad, buf))
 
   CTag tag;
   const Byte *p = buf;
-  RINOK(tag.Parse(p, size));
+  RINOK(tag.Parse(p, size))
 
   item.IsExtended = (tag.Id == DESC_TYPE_ExtendedFile);
   const size_t kExtendOffset = item.IsExtended ? 40 : 0;
@@ -638,6 +657,9 @@ HRESULT CInArchive::ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDes
     }
   }
 
+  if (isDir != item.IcbTag.IsDir())
+    return S_FALSE;
+
   if (item.IcbTag.IsDir())
   {
     if (fsIndex < 0)
@@ -646,7 +668,7 @@ HRESULT CInArchive::ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDes
     if (!item.CheckChunkSizes() || !CheckItemExtents(volIndex, item))
       return S_FALSE;
     CByteBuffer buf2;
-    RINOK(ReadFromFile(volIndex, item, buf2));
+    RINOK(ReadFromFile(volIndex, item, buf2))
     item.Size = 0;
     item.Extents.ClearAndFree();
     item.InlineData.Free();
@@ -663,7 +685,10 @@ HRESULT CInArchive::ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDes
         p2 += cur;
         size2 -= cur;
       }
-      if (!fileId.IsItLinkParent())
+      if (fileId.IsItLink_Parent())
+        continue;
+      if (fileId.IsItLink_Deleted())
+        continue;
       {
         CFile file;
         // file.FileVersion = fileId.FileVersion;
@@ -679,7 +704,8 @@ HRESULT CInArchive::ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDes
         if (Files.Size() >= kNumFilesMax)
           return S_FALSE;
         Files.Add(file);
-        RINOK(ReadFileItem(volIndex, fsIndex, fileId.Icb, numRecurseAllowed));
+        RINOK(ReadFileItem(volIndex, (unsigned)fsIndex, fileId.Icb,
+            fileId.IsItLink_Dir(), numRecurseAllowed))
       }
     }
   }
@@ -702,7 +728,7 @@ HRESULT CInArchive::FillRefs(CFileSet &fs, unsigned fileIndex, int parent, int n
 {
   if ((_numRefs & 0xFFF) == 0)
   {
-    RINOK(_progress->SetCompleted());
+    RINOK(_progress->SetCompleted())
   }
   if (numRecurseAllowed-- == 0)
     return S_FALSE;
@@ -712,12 +738,12 @@ HRESULT CInArchive::FillRefs(CFileSet &fs, unsigned fileIndex, int parent, int n
   CRef ref;
   ref.FileIndex = fileIndex;
   ref.Parent = parent;
-  parent = fs.Refs.Size();
+  parent = (int)fs.Refs.Size();
   fs.Refs.Add(ref);
   const CItem &item = Items[Files[fileIndex].ItemIndex];
   FOR_VECTOR (i, item.SubFiles)
   {
-    RINOK(FillRefs(fs, item.SubFiles[i], parent, numRecurseAllowed));
+    RINOK(FillRefs(fs, item.SubFiles[i], parent, numRecurseAllowed))
   }
   return S_OK;
 }
@@ -727,9 +753,9 @@ API_FUNC_IsArc IsArc_Udf(const Byte *p, size_t size)
 {
   UInt32 res = k_IsArc_Res_NO;
   unsigned SecLogSize;
-  for (SecLogSize = 11;; SecLogSize -= 3)
+  for (SecLogSize = 11;; SecLogSize -= 2)
   {
-    if (SecLogSize < 8)
+    if (SecLogSize < 9)
       return res;
     const UInt32 offset = (UInt32)256 << SecLogSize;
     const UInt32 bufSize = (UInt32)1 << SecLogSize;
@@ -754,7 +780,7 @@ HRESULT CInArchive::Open2()
 {
   Clear();
   UInt64 fileSize;
-  RINOK(_stream->Seek(0, STREAM_SEEK_END, &fileSize));
+  RINOK(InStream_GetSize_SeekToEnd(_stream, fileSize))
   FileSize = fileSize;
 
   // Some UDFs contain additional pad zeros (2 KB).
@@ -765,7 +791,7 @@ HRESULT CInArchive::Open2()
   const size_t kBufSize = 1 << 14;
   Byte buf[kBufSize];
   size_t readSize = (fileSize < kBufSize) ? (size_t)fileSize : kBufSize;
-  RINOK(_stream->Seek(fileSize - readSize, STREAM_SEEK_SET, NULL));
+  RINOK(InStream_SeekSet(_stream, fileSize - readSize))
   RINOK(ReadStream(_stream, buf, &readSize));
   size_t i = readSize;
   for (;;)
@@ -785,20 +811,29 @@ HRESULT CInArchive::Open2()
   extentVDS.Parse(buf + i + 16);
   */
 
+  /*
+  An Anchor Volume Descriptor Pointer structure shall be recorded in at
+  least 2 of the following 3 locations on the media:
+      Logical Sector 256.
+      Logical Sector (N - 256).
+      N
+  */
+
   const size_t kBufSize = 1 << 11;
   Byte buf[kBufSize];
   
-  for (SecLogSize = 11;; SecLogSize -= 3)
+  for (SecLogSize = 11;; SecLogSize -= 2)
   {
-    if (SecLogSize < 8)
+    // Windows 10 uses unusual (SecLogSize = 9)
+    if (SecLogSize < 9)
       return S_FALSE;
     const UInt32 offset = (UInt32)256 << SecLogSize;
     if (offset >= fileSize)
       continue;
-    RINOK(_stream->Seek(offset, STREAM_SEEK_SET, NULL));
+    RINOK(InStream_SeekSet(_stream, offset))
     const size_t bufSize = (size_t)1 << SecLogSize;
     size_t readSize = bufSize;
-    RINOK(ReadStream(_stream, buf, &readSize));
+    RINOK(ReadStream(_stream, buf, &readSize))
     if (readSize == bufSize)
     {
       CTag tag;
@@ -834,15 +869,15 @@ HRESULT CInArchive::Open2()
     const size_t bufSize = (size_t)1 << SecLogSize;
     {
       const UInt64 offs = ((UInt64)extentVDS.Pos + location) << SecLogSize;
-      RINOK(_stream->Seek(offs, STREAM_SEEK_SET, NULL));
+      RINOK(InStream_SeekSet(_stream, offs))
       const HRESULT res = ReadStream_FALSE(_stream, buf, bufSize);
       if (res == S_FALSE && offs + bufSize > FileSize)
         UnexpectedEnd = true;
-      RINOK(res);
+      RINOK(res)
     }
 
     CTag tag;
-    RINOK(tag.Parse(buf, bufSize));
+    RINOK(tag.Parse(buf, bufSize))
 
     if (tag.Id == DESC_TYPE_Terminating)
       break;
@@ -1086,14 +1121,26 @@ HRESULT CInArchive::Open2()
         RINOK(ReadItem(volIndex,
             -1, // (fsIndex = -1) means that it's metadata
             lad,
-            1)); // numRecurseAllowed
+            false, // isDir
+            1)) // numRecurseAllowed
       }
       {
         const CItem &item = Items.Back();
         if (!CheckItemExtents(volIndex, item))
           return S_FALSE;
         if (item.Extents.Size() != 1)
-          return S_FALSE;
+        {
+          if (item.Extents.Size() < 1)
+            return S_FALSE;
+          /* Windows 10 writes empty record item.Extents[1].
+             we ignore such extent here */
+          for (unsigned k = 1; k < item.Extents.Size(); k++)
+          {
+            const CMyExtent &e = item.Extents[k];
+            if (e.GetLen() != 0)
+              return S_FALSE;
+          }
+        }
 
         const CMyExtent &e = item.Extents[0];
         const CPartition &part = Partitions[pm.PartitionIndex];
@@ -1126,7 +1173,7 @@ HRESULT CInArchive::Open2()
     }
   }
 
-  RINOK(_progress->SetTotal(totalSize));
+  RINOK(_progress->SetTotal(totalSize))
 
   PRF(printf("\n Read files"));
 
@@ -1143,12 +1190,12 @@ HRESULT CInArchive::Open2()
       if (nextExtent.GetLen() < 512)
         return S_FALSE;
       CByteBuffer buf2(nextExtent.GetLen());
-      RINOK(ReadLad(volIndex, nextExtent, buf2));
+      RINOK(ReadLad(volIndex, nextExtent, buf2))
       const Byte *p = buf2;
       const size_t size = nextExtent.GetLen();
 
       CTag tag;
-      RINOK(tag.Parse(p, size));
+      RINOK(tag.Parse(p, size))
 
       /*
       // commented in 22.01
@@ -1191,8 +1238,10 @@ HRESULT CInArchive::Open2()
       CFileSet &fs = vol.FileSets[fsIndex];
       const unsigned fileIndex = Files.Size();
       Files.AddNew();
-      RINOK(ReadFileItem(volIndex, fsIndex, fs.RootDirICB, kNumRecursionLevelsMax));
-      RINOK(FillRefs(fs, fileIndex, -1, kNumRecursionLevelsMax));
+      RINOK(ReadFileItem(volIndex, fsIndex, fs.RootDirICB,
+          true, // isDir
+          kNumRecursionLevelsMax))
+      RINOK(FillRefs(fs, fileIndex, -1, kNumRecursionLevelsMax))
     }
   }
 
@@ -1248,7 +1297,7 @@ HRESULT CInArchive::Open2()
     UInt64 rem = fileSize - PhySize;
     const size_t secSize = (size_t)1 << SecLogSize;
 
-    RINOK(_stream->Seek(PhySize, STREAM_SEEK_SET, NULL));
+    RINOK(InStream_SeekSet(_stream, PhySize))
 
     // some UDF images contain ZEROs before "Anchor Volume Descriptor Pointer" at the end
 
@@ -1261,7 +1310,7 @@ HRESULT CInArchive::Open2()
       if (readSize > rem)
         readSize = (size_t)rem;
       
-      RINOK(ReadStream(_stream, buf, &readSize));
+      RINOK(ReadStream(_stream, buf, &readSize))
       
       if (readSize == 0)
         break;
@@ -1270,8 +1319,9 @@ HRESULT CInArchive::Open2()
       if (readSize == secSize /* && NoEndAnchor */)
       {
         CTag tag;
-        if (tag.Parse(buf, readSize) == S_OK &&
-            tag.Id == DESC_TYPE_AnchorVolPtr)
+        if (tag.Parse(buf, readSize) == S_OK
+            && tag.Id == DESC_TYPE_AnchorVolPtr
+            && Get32(buf + 12) == (UInt32)((fileSize - rem) >> SecLogSize))
         {
           NoEndAnchor = false;
           rem -= readSize;
@@ -1443,7 +1493,7 @@ static const char * const g_OsIds_Unix[] =
   , "NetBSD"
 };
 
-static void AddOs_Class_Id(UString &s, const char *p)
+static void AddOs_Class_Id(UString &s, const Byte *p)
 {
   // UDF 2.1.5.3 Implementation Identifier Suffix
   // Appendix 6.3 Operating System Identifiers.
@@ -1451,7 +1501,7 @@ static void AddOs_Class_Id(UString &s, const char *p)
   if (osClass != 0)
   {
     s += "::";
-    s += TypeToString(g_OsClasses, ARRAY_SIZE(g_OsClasses), osClass);
+    s += TypeToString(g_OsClasses, Z7_ARRAY_SIZE(g_OsClasses), osClass);
   }
   const Byte osId = p[1];
   if (osId != 0)
@@ -1459,7 +1509,7 @@ static void AddOs_Class_Id(UString &s, const char *p)
     s += "::";
     if (osClass == 4) // unix
     {
-      s += TypeToString(g_OsIds_Unix, ARRAY_SIZE(g_OsIds_Unix), osId);
+      s += TypeToString(g_OsIds_Unix, Z7_ARRAY_SIZE(g_OsIds_Unix), osId);
     }
     else
       s.Add_UInt32(osId);
@@ -1552,7 +1602,7 @@ UString CInArchive::GetComment() const
         AddComment_RegId(s, "ContentsId", part.ContentsId);
         AddComment_RegId_Impl(s, "ImplementationId", part.ImplId);
         AddComment_PropName(s, "AccessType");
-        s += TypeToString(g_PartitionTypes, ARRAY_SIZE(g_PartitionTypes), part.AccessType);
+        s += TypeToString(g_PartitionTypes, Z7_ARRAY_SIZE(g_PartitionTypes), part.AccessType);
         s.Add_LF();
       }
       AddComment_UInt64(s, "Size", (UInt64)part.Len << SecLogSize);
@@ -1663,7 +1713,7 @@ UString CInArchive::GetItemPath(unsigned volIndex, unsigned fsIndex, unsigned re
     // we break on root file (that probably has empty name)
     if (ref.Parent < 0)
       break;
-    refIndex = ref.Parent;
+    refIndex = (unsigned)ref.Parent;
     UpdateWithName(name, GetSpecName(Files[ref.FileIndex].GetName()));
   }
 

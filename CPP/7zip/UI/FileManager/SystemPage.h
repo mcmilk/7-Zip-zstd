@@ -1,7 +1,7 @@
 // SystemPage.h
  
-#ifndef __SYSTEM_PAGE_H
-#define __SYSTEM_PAGE_H
+#ifndef ZIP7_INC_SYSTEM_PAGE_H
+#define ZIP7_INC_SYSTEM_PAGE_H
 
 #include "../../../Windows/Control/ImageList.h"
 #include "../../../Windows/Control/ListView.h"
@@ -49,7 +49,7 @@ struct CModifiedExtInfo: public NRegistryAssoc::CShellExtInfo
       }
     }
     OldState = State;
-  };
+  }
 };
 
 struct CAssoc
@@ -116,11 +116,11 @@ public:
   
   CSystemPage(): WasChanged(false) {}
 
-  virtual bool OnInit();
-  virtual void OnNotifyHelp();
-  virtual bool OnNotify(UINT controlID, LPNMHDR lParam);
-  virtual LONG OnApply();
-  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
+  virtual bool OnInit() Z7_override;
+  virtual void OnNotifyHelp() Z7_override;
+  virtual bool OnNotify(UINT controlID, LPNMHDR lParam) Z7_override;
+  virtual LONG OnApply() Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
 };
 
 #endif

@@ -1,7 +1,7 @@
 // SettingsPage.h
  
-#ifndef __SETTINGS_PAGE_H
-#define __SETTINGS_PAGE_H
+#ifndef ZIP7_INC_SETTINGS_PAGE_H
+#define ZIP7_INC_SETTINGS_PAGE_H
 
 #include "../../../Windows/Control/PropertyPage.h"
 #include "../../../Windows/Control/ComboBox.h"
@@ -22,11 +22,11 @@ class CSettingsPage: public NWindows::NControl::CPropertyPage
   */
 
   // void EnableSubItems();
-  // bool OnCommand(int code, int itemID, LPARAM param);
-  bool OnButtonClicked(int buttonID, HWND buttonHWND);
-  virtual bool OnInit();
-  virtual void OnNotifyHelp();
-  virtual LONG OnApply();
+  // bool OnCommand(unsigned code, unsigned itemID, LPARAM param) Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
+  virtual bool OnInit() Z7_override;
+  virtual void OnNotifyHelp() Z7_override;
+  virtual LONG OnApply() Z7_override;
 public:
 };
 

@@ -1,7 +1,7 @@
 // Archive/CabHeader.h
 
-#ifndef __ARCHIVE_CAB_HEADER_H
-#define __ARCHIVE_CAB_HEADER_H
+#ifndef ZIP7_INC_ARCHIVE_CAB_HEADER_H
+#define ZIP7_INC_ARCHIVE_CAB_HEADER_H
 
 #include "../../../Common/MyTypes.h"
 

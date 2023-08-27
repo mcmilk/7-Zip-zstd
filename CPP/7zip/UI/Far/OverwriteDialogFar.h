@@ -1,7 +1,7 @@
 // OverwriteDialogFar.h
 
-#ifndef __OVERWRITE_DIALOG_FAR_H
-#define __OVERWRITE_DIALOG_FAR_H
+#ifndef ZIP7_INC_OVERWRITE_DIALOG_FAR_H
+#define ZIP7_INC_OVERWRITE_DIALOG_FAR_H
 
 #include "../../../Common/MyString.h"
 #include "../../../Common/MyTypes.h"

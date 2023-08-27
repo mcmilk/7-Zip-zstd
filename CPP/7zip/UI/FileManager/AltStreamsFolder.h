@@ -1,7 +1,7 @@
 // AltStreamsFolder.h
 
-#ifndef __ALT_STREAMS_FOLDER_H
-#define __ALT_STREAMS_FOLDER_H
+#ifndef ZIP7_INC_ALT_STREAMS_FOLDER_H
+#define ZIP7_INC_ALT_STREAMS_FOLDER_H
 
 #include "../../../Common/MyCom.h"
 
@@ -24,12 +24,12 @@ struct CAltStream
 };
 
 
-class CAltStreamsFolder:
+class CAltStreamsFolder Z7_final:
   public IFolderFolder,
   public IFolderCompare,
-  #ifdef USE_UNICODE_FSTRING
+ #ifdef USE_UNICODE_FSTRING
   public IFolderGetItemName,
-  #endif
+ #endif
   public IFolderWasChanged,
   public IFolderOperations,
   // public IFolderOperationsDeleteToRecycleBin,
@@ -37,35 +37,29 @@ class CAltStreamsFolder:
   public IFolderGetSystemIconIndex,
   public CMyUnknownImp
 {
-public:
-  MY_QUERYINTERFACE_BEGIN2(IFolderFolder)
-    MY_QUERYINTERFACE_ENTRY(IFolderCompare)
+  Z7_COM_QI_BEGIN2(IFolderFolder)
+    Z7_COM_QI_ENTRY(IFolderCompare)
     #ifdef USE_UNICODE_FSTRING
-    MY_QUERYINTERFACE_ENTRY(IFolderGetItemName)
+    Z7_COM_QI_ENTRY(IFolderGetItemName)
     #endif
-    MY_QUERYINTERFACE_ENTRY(IFolderWasChanged)
-    // MY_QUERYINTERFACE_ENTRY(IFolderOperationsDeleteToRecycleBin)
-    MY_QUERYINTERFACE_ENTRY(IFolderOperations)
-    MY_QUERYINTERFACE_ENTRY(IFolderClone)
-    MY_QUERYINTERFACE_ENTRY(IFolderGetSystemIconIndex)
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
+    Z7_COM_QI_ENTRY(IFolderWasChanged)
+    // Z7_COM_QI_ENTRY(IFolderOperationsDeleteToRecycleBin)
+    Z7_COM_QI_ENTRY(IFolderOperations)
+    Z7_COM_QI_ENTRY(IFolderClone)
+    Z7_COM_QI_ENTRY(IFolderGetSystemIconIndex)
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
 
+  Z7_IFACE_COM7_IMP(IFolderFolder)
+  Z7_IFACE_COM7_IMP(IFolderCompare)
+ #ifdef USE_UNICODE_FSTRING
+  Z7_IFACE_COM7_IMP(IFolderGetItemName)
+ #endif
+  Z7_IFACE_COM7_IMP(IFolderWasChanged)
+  Z7_IFACE_COM7_IMP(IFolderOperations)
+  Z7_IFACE_COM7_IMP(IFolderClone)
+  Z7_IFACE_COM7_IMP(IFolderGetSystemIconIndex)
 
-  INTERFACE_FolderFolder(;)
-  INTERFACE_FolderOperations(;)
-
-  STDMETHOD_(Int32, CompareItems)(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw);
-
-  #ifdef USE_UNICODE_FSTRING
-  INTERFACE_IFolderGetItemName(;)
-  #endif
-  STDMETHOD(WasChanged)(Int32 *wasChanged);
-  STDMETHOD(Clone)(IFolderFolder **resultFolder);
-
-  STDMETHOD(GetSystemIconIndex)(UInt32 index, Int32 *iconIndex);
-
-private:
   FString _pathBaseFile;  // folder
   FString _pathPrefix;    // folder:
   
@@ -80,8 +74,6 @@ private:
 public:
   // path must be with ':' at tail
   HRESULT Init(const FString &path /* , IFolderFolder *parentFolder */);
-
-  CAltStreamsFolder() {}
 
   void GetFullPath(const CAltStream &item, FString &path) const
   {

@@ -1,7 +1,7 @@
 // LzxDecoder.h
 
-#ifndef __LZX_DECODER_H
-#define __LZX_DECODER_H
+#ifndef ZIP7_INC_LZX_DECODER_H
+#define ZIP7_INC_LZX_DECODER_H
 
 #include "../../../C/CpuArch.h"
 
@@ -167,10 +167,9 @@ public:
 };
 
 
-class CDecoder:
-  public IUnknown,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_0(
+  CDecoder
+)
   CBitDecoder _bitStream;
   Byte *_win;
   UInt32 _pos;
@@ -219,8 +218,6 @@ private:
 public:
   CDecoder(bool wimMode = false);
   ~CDecoder();
-
-  MY_UNKNOWN_IMP
 
   HRESULT SetExternalWindow(Byte *win, unsigned numDictBits)
   {

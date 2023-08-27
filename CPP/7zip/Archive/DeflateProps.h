@@ -1,6 +1,6 @@
 // DeflateProps.h
 
-#ifndef __DEFLATE_PROPS_H
-#define __DEFLATE_PROPS_H
+#ifndef ZIP7_INC_DEFLATE_PROPS_H
+#define ZIP7_INC_DEFLATE_PROPS_H
 
 #endif

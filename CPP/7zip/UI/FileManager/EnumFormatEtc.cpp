@@ -3,28 +3,27 @@
 #include "StdAfx.h"
 
 #include "EnumFormatEtc.h"
+#include "../../IDecl.h"
 #include "MyCom2.h"
 
-class CEnumFormatEtc :
-public IEnumFORMATETC,
-public CMyUnknownImp
+class CEnumFormatEtc Z7_final:
+  public IEnumFORMATETC,
+  public CMyUnknownImp
 {
-public:
-  MY_UNKNOWN_IMP1_MT(IEnumFORMATETC)
+  Z7_COM_UNKNOWN_IMP_1_MT(IEnumFORMATETC)
     
-  STDMETHOD(Next)(ULONG celt, FORMATETC *rgelt, ULONG *pceltFetched);
-  STDMETHOD(Skip)(ULONG celt);
-  STDMETHOD(Reset)(void);
-  STDMETHOD(Clone)(IEnumFORMATETC **ppEnumFormatEtc);
-  
-  CEnumFormatEtc(const FORMATETC *pFormatEtc, ULONG numFormats);
-  ~CEnumFormatEtc();
-  
-private:
+  STDMETHOD(Next)(ULONG celt, FORMATETC *rgelt, ULONG *pceltFetched) Z7_override;
+  STDMETHOD(Skip)(ULONG celt) Z7_override;
+  STDMETHOD(Reset)(void) Z7_override;
+  STDMETHOD(Clone)(IEnumFORMATETC **ppEnumFormatEtc) Z7_override;
+
   LONG m_RefCount;
   ULONG m_NumFormats;
   FORMATETC *m_Formats;
   ULONG m_Index;
+public:
+  CEnumFormatEtc(const FORMATETC *pFormatEtc, ULONG numFormats);
+  ~CEnumFormatEtc();
 };
 
 static void DeepCopyFormatEtc(FORMATETC *dest, const FORMATETC *src)
@@ -62,10 +61,10 @@ CEnumFormatEtc::~CEnumFormatEtc()
   }
 }
 
-STDMETHODIMP CEnumFormatEtc::Next(ULONG celt, FORMATETC *pFormatEtc, ULONG *pceltFetched)
+Z7_COMWF_B CEnumFormatEtc::Next(ULONG celt, FORMATETC *pFormatEtc, ULONG *pceltFetched)
 {
   ULONG copied  = 0;
-  if (celt == 0 || pFormatEtc == 0)
+  if (celt == 0 || !pFormatEtc)
     return E_INVALIDARG;
   while (m_Index < m_NumFormats && copied < celt)
   {
@@ -73,24 +72,24 @@ STDMETHODIMP CEnumFormatEtc::Next(ULONG celt, FORMATETC *pFormatEtc, ULONG *pcel
     copied++;
     m_Index++;
   }
-  if (pceltFetched != 0)
+  if (pceltFetched)
     *pceltFetched = copied;
   return (copied == celt) ? S_OK : S_FALSE;
 }
 
-STDMETHODIMP CEnumFormatEtc::Skip(ULONG celt)
+Z7_COMWF_B CEnumFormatEtc::Skip(ULONG celt)
 {
   m_Index += celt;
   return (m_Index <= m_NumFormats) ? S_OK : S_FALSE;
 }
 
-STDMETHODIMP CEnumFormatEtc::Reset(void)
+Z7_COMWF_B CEnumFormatEtc::Reset(void)
 {
   m_Index = 0;
   return S_OK;
 }
 
-STDMETHODIMP CEnumFormatEtc::Clone(IEnumFORMATETC ** ppEnumFormatEtc)
+Z7_COMWF_B CEnumFormatEtc::Clone(IEnumFORMATETC ** ppEnumFormatEtc)
 {
   HRESULT hResult = CreateEnumFormatEtc(m_NumFormats, m_Formats, ppEnumFormatEtc);
   if (hResult == S_OK)
@@ -101,7 +100,7 @@ STDMETHODIMP CEnumFormatEtc::Clone(IEnumFORMATETC ** ppEnumFormatEtc)
 // replacement for SHCreateStdEnumFmtEtc
 HRESULT CreateEnumFormatEtc(UINT numFormats, const FORMATETC *formats, IEnumFORMATETC **enumFormat)
 {
-  if (numFormats == 0 || formats == 0 || enumFormat == 0)
+  if (numFormats == 0 || !formats || !enumFormat)
     return E_INVALIDARG;
   *enumFormat = new CEnumFormatEtc(formats, numFormats);
   return (*enumFormat) ? S_OK : E_OUTOFMEMORY;

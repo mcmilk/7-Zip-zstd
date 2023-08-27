@@ -1,7 +1,7 @@
 // RarVol.h
 
-#ifndef __ARCHIVE_RAR_VOL_H
-#define __ARCHIVE_RAR_VOL_H
+#ifndef ZIP7_INC_ARCHIVE_RAR_VOL_H
+#define ZIP7_INC_ARCHIVE_RAR_VOL_H
 
 #include "../../../Common/StringConvert.h"
 
@@ -22,7 +22,7 @@ class CVolumeName
   UString _changed;
   UString _after;
 public:
-  CVolumeName(): _needChangeForNext(true) {};
+  CVolumeName(): _needChangeForNext(true) {}
 
   bool InitName(const UString &name, bool newStyle = true)
   {
@@ -52,7 +52,7 @@ public:
             ext.IsEqualTo_Ascii_NoCase("r01"))
         {
           _changed = ext;
-          _before.SetFrom(name.Ptr(), dotPos + 1);
+          _before.SetFrom(name.Ptr(), (unsigned)dotPos + 1);
           return true;
         }
       }
@@ -83,7 +83,7 @@ public:
     
     _after.Empty();
     _before = base;
-    _before += '.';
+    _before.Add_Dot();
     _changed = "r00";
     _needChangeForNext = false;
     return true;

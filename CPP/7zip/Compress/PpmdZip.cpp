@@ -24,8 +24,8 @@ CDecoder::~CDecoder()
   Ppmd8_Free(&_ppmd, &g_BigAlloc);
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   // try {
 
@@ -44,10 +44,10 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     if (_inStream.Extra)
       return S_FALSE;
     
-    UInt32 val = GetUi16(buf);
-    unsigned order = (val & 0xF) + 1;
-    UInt32 mem = ((val >> 4) & 0xFF) + 1;
-    unsigned restor = (val >> 12);
+    const UInt32 val = GetUi16(buf);
+    const unsigned order = (val & 0xF) + 1;
+    const UInt32 mem = ((val >> 4) & 0xFF) + 1;
+    const unsigned restor = (val >> 12);
     if (order < 2 || restor > 2)
       return S_FALSE;
     
@@ -94,12 +94,12 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     }
     while (buf != lim);
     
-    size_t cur = (size_t)(buf - _outStream.Buf);
+    const size_t cur = (size_t)(buf - _outStream.Buf);
     processedSize += cur;
 
-    RINOK(WriteStream(outStream, _outStream.Buf, cur));
+    RINOK(WriteStream(outStream, _outStream.Buf, cur))
 
-    RINOK(_inStream.Res);
+    RINOK(_inStream.Res)
     if (_inStream.Extra)
       return S_FALSE;
 
@@ -114,18 +114,18 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     if (progress)
     {
       const UInt64 inProccessed = _inStream.GetProcessed();
-      RINOK(progress->SetRatioInfo(&inProccessed, &processedSize));
+      RINOK(progress->SetRatioInfo(&inProccessed, &processedSize))
     }
   }
   
-  RINOK(_inStream.Res);
+  RINOK(_inStream.Res)
   
   if (_fullFileMode)
   {
     if (!wasFinished)
     {
-      int res = Ppmd8_DecodeSymbol(&_ppmd);
-      RINOK(_inStream.Res);
+      const int res = Ppmd8_DecodeSymbol(&_ppmd);
+      RINOK(_inStream.Res)
       if (_inStream.Extra || res != -1)
         return S_FALSE;
     }
@@ -142,13 +142,13 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 }
 
 
-STDMETHODIMP CDecoder::SetFinishMode(UInt32 finishMode)
+Z7_COM7F_IMF(CDecoder::SetFinishMode(UInt32 finishMode))
 {
   _fullFileMode = (finishMode != 0);
   return S_OK;
 }
 
-STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
+Z7_COM7F_IMF(CDecoder::GetInStreamProcessedSize(UInt64 *value))
 {
   *value = _inStream.GetProcessed();
   return S_OK;
@@ -184,14 +184,14 @@ CEncoder::~CEncoder()
   Ppmd8_Free(&_ppmd, &g_BigAlloc);
 }
 
-STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *coderProps, UInt32 numProps)
+Z7_COM7F_IMF(CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *coderProps, UInt32 numProps))
 {
   int level = -1;
   CEncProps props;
   for (UInt32 i = 0; i < numProps; i++)
   {
     const PROPVARIANT &prop = coderProps[i];
-    PROPID propID = propIDs[i];
+    const PROPID propID = propIDs[i];
     if (propID > NCoderPropID::kReduceSize)
       continue;
     if (propID == NCoderPropID::kReduceSize)
@@ -203,7 +203,7 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIA
     }
     if (prop.vt != VT_UI4)
       return E_INVALIDARG;
-    UInt32 v = (UInt32)prop.ulVal;
+    const UInt32 v = (UInt32)prop.ulVal;
     switch (propID)
     {
       case NCoderPropID::kUsedMemorySize:
@@ -238,8 +238,8 @@ CEncoder::CEncoder()
   Ppmd8_Construct(&_ppmd);
 }
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+      const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress))
 {
   if (!_inStream.Alloc())
     return E_OUTOFMEMORY;
@@ -251,21 +251,21 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   _outStream.Stream = outStream;
   _outStream.Init();
 
-  Ppmd8_Init_RangeEnc(&_ppmd);
+  Ppmd8_Init_RangeEnc(&_ppmd)
   Ppmd8_Init(&_ppmd, (unsigned)_props.Order, (unsigned)_props.Restor);
 
   {
-    UInt32 val = (UInt32)(((unsigned)_props.Order - 1) + ((_props.MemSizeMB - 1) << 4) + ((unsigned)_props.Restor << 12));
+    const UInt32 val = (UInt32)(((unsigned)_props.Order - 1) + ((_props.MemSizeMB - 1) << 4) + ((unsigned)_props.Restor << 12));
     _outStream.WriteByte((Byte)(val & 0xFF));
     _outStream.WriteByte((Byte)(val >> 8));
   }
-  RINOK(_outStream.Res);
+  RINOK(_outStream.Res)
 
   UInt64 processed = 0;
   for (;;)
   {
     UInt32 size;
-    RINOK(inStream->Read(_inStream.Buf, kBufSize, &size));
+    RINOK(inStream->Read(_inStream.Buf, kBufSize, &size))
     if (size == 0)
     {
       Ppmd8_EncodeSymbol(&_ppmd, -1);
@@ -284,12 +284,12 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
     }
     while (++buf != lim);
 
-    RINOK(_outStream.Res);
+    RINOK(_outStream.Res)
 
     if (progress)
     {
       const UInt64 outProccessed = _outStream.GetProcessed();
-      RINOK(progress->SetRatioInfo(&processed, &outProccessed));
+      RINOK(progress->SetRatioInfo(&processed, &outProccessed))
     }
   }
 }

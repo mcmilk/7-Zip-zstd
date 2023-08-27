@@ -207,7 +207,7 @@ static const Byte *Base64_SkipSpaces(const Byte *p, size_t size)
   {
     if (size == 0)
       return p;
-    UInt32 c = k_Base64Table[(Byte)(*p++)];
+    const UInt32 c = k_Base64Table[(Byte)(*p++)];
     size--;
     if (c == k_Code_Space)
       continue;
@@ -225,7 +225,7 @@ Byte *Base64ToBin(Byte *dest, const char *src)
   
   for (;;)
   {
-    UInt32 c = k_Base64Table[(Byte)(*src++)];
+    const UInt32 c = k_Base64Table[(Byte)(*src++)];
 
     if (c < 64)
     {
@@ -266,7 +266,7 @@ Byte *Base64ToBin(Byte *dest, const char *src)
 
   for (;;)
   {
-    Byte c = k_Base64Table[(Byte)(*src++)];
+    const Byte c = k_Base64Table[(Byte)(*src++)];
     if (c == k_Code_Space)
       continue;
     if (c == k_Code_Zero)
@@ -279,18 +279,13 @@ Byte *Base64ToBin(Byte *dest, const char *src)
 namespace NArchive {
 namespace NBase64 {
 
-class CHandler:
-  public IInArchive,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_0
+
   bool _isArc;
   UInt64 _phySize;
   size_t _size;
   EBase64Res _sres;
   CByteBuffer _data;
-public:
-  MY_UNKNOWN_IMP1(IInArchive)
-  INTERFACE_IInArchive(;)
 };
 
 static const Byte kProps[] =
@@ -302,13 +297,13 @@ static const Byte kProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_NO_Table
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = 1;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   NWindows::NCOM::CPropVariant prop;
   switch (propID)
@@ -328,7 +323,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value))
 {
   // COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -349,22 +344,22 @@ static HRESULT ReadStream_OpenProgress(ISequentialInStream *stream, void *data, 
   while (size != 0)
   {
     const UInt32 kBlockSize = ((UInt32)1 << 24);
-    UInt32 curSize = (size < kBlockSize) ? (UInt32)size : kBlockSize;
+    const UInt32 curSize = (size < kBlockSize) ? (UInt32)size : kBlockSize;
     UInt32 processedSizeLoc;
-    RINOK(stream->Read(data, curSize, &processedSizeLoc));
+    RINOK(stream->Read(data, curSize, &processedSizeLoc))
     if (processedSizeLoc == 0)
       return E_FAIL;
     data = (void *)((Byte *)data + processedSizeLoc);
     size -= processedSizeLoc;
     bytes += processedSizeLoc;
     const UInt64 files = 1;
-    RINOK(openCallback->SetCompleted(&files, &bytes));
+    RINOK(openCallback->SetCompleted(&files, &bytes))
   }
   return S_OK;
 }
 
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *openCallback)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *openCallback))
 {
   COM_TRY_BEGIN
   {
@@ -373,7 +368,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
       const unsigned kStartSize = 1 << 12;
       _data.Alloc(kStartSize);
       size_t size = kStartSize;
-      RINOK(ReadStream(stream, _data, &size));
+      RINOK(ReadStream(stream, _data, &size))
       UInt32 isArcRes = IsArc_Base64(_data, size);
       if (isArcRes == k_IsArc_Res_NO)
         return S_FALSE;
@@ -381,7 +376,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
     _isArc = true;
 
     UInt64 packSize64;
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &packSize64));
+    RINOK(InStream_GetSize_SeekToEnd(stream, packSize64))
 
     if (packSize64 == 0)
       return S_FALSE;
@@ -393,16 +388,16 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
 
     for (;;)
     {
-      RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+      RINOK(InStream_SeekSet(stream, 0))
       
       _data.Alloc(curSize);
-      RINOK(ReadStream_OpenProgress(stream, _data, curSize, openCallback));
+      RINOK(ReadStream_OpenProgress(stream, _data, curSize, openCallback))
       
       const Byte *srcEnd;
       Byte *dest;
       _sres = Base64ToBin(_data, curSize, &srcEnd, &dest);
-      _size = dest - _data;
-      size_t mainSize = srcEnd - _data;
+      _size = (size_t)(dest - _data);
+      const size_t mainSize = (size_t)(srcEnd - _data);
       _phySize = mainSize;
       if (_sres == k_Base64_RES_UnexpectedChar)
         break;
@@ -431,7 +426,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _phySize = 0;
   _size = 0;
@@ -442,19 +437,16 @@ STDMETHODIMP CHandler::Close()
 }
 
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
-  if (allFilesMode)
-    numItems = 1;
   if (numItems == 0)
     return S_OK;
-  if (numItems != 1 || *indices != 0)
+  if (numItems != (UInt32)(Int32)-1 && (numItems != 1 || indices[0] != 0))
     return E_INVALIDARG;
 
-  RINOK(extractCallback->SetTotal(_size));
+  RINOK(extractCallback->SetTotal(_size))
 
   CLocalProgress *lps = new CLocalProgress;
   CMyComPtr<ICompressProgressInfo> progress = lps;
@@ -462,14 +454,14 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   {
     lps->InSize = lps->OutSize = 0;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
 
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
     
-    RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
+    RINOK(extractCallback->GetStream(0, &realOutStream, askMode))
     
     if (!testMode && !realOutStream)
       return S_OK;
@@ -478,7 +470,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     if (realOutStream)
     {
-      RINOK(WriteStream(realOutStream, (const Byte *)_data, _size));
+      RINOK(WriteStream(realOutStream, (const Byte *)_data, _size))
       realOutStream.Release();
     }
   
@@ -492,7 +484,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         opRes = NExtract::NOperationResult::kDataError;
     }
 
-    RINOK(extractCallback->SetOperationResult(opRes));
+    RINOK(extractCallback->SetOperationResult(opRes))
   }
   
   lps->InSize = _phySize;
@@ -503,9 +495,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 }
 
 REGISTER_ARC_I_NO_SIG(
-  "Base64", "b64", 0, 0xC5,
+  "Base64", "b64", NULL, 0xC5,
   0,
-  NArcInfoFlags::kKeepName | NArcInfoFlags::kStartOpen | NArcInfoFlags::kByExtOnlyOpen,
+    NArcInfoFlags::kKeepName
+  | NArcInfoFlags::kStartOpen
+  | NArcInfoFlags::kByExtOnlyOpen,
   IsArc_Base64)
 
 }}

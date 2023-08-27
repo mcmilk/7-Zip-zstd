@@ -1,7 +1,7 @@
 // TarItem.h
 
-#ifndef __ARCHIVE_TAR_ITEM_H
-#define __ARCHIVE_TAR_ITEM_H
+#ifndef ZIP7_INC_ARCHIVE_TAR_ITEM_H
+#define ZIP7_INC_ARCHIVE_TAR_ITEM_H
 
 #include "../../../Common/MyLinux.h"
 #include "../../../Common/UTFConvert.h"
@@ -143,7 +143,7 @@ struct CItem
   {
     memcpy(Magic, posixMode ?
         NFileHeader::NMagic::k_Posix_ustar_00 :
-        NFileHeader::NMagic::k_GNU_ustar__,
+        NFileHeader::NMagic::k_GNU_ustar,
         8);
   }
 
@@ -172,7 +172,7 @@ struct CItem
 
   void Set_LinkFlag_for_File(UInt32 mode)
   {
-    Byte lf = NFileHeader::NLinkFlag::kNormal;
+    char                            lf = NFileHeader::NLinkFlag::kNormal;
          if (MY_LIN_S_ISCHR(mode))  lf = NFileHeader::NLinkFlag::kCharacter;
     else if (MY_LIN_S_ISBLK(mode))  lf = NFileHeader::NLinkFlag::kBlock;
     else if (MY_LIN_S_ISFIFO(mode)) lf = NFileHeader::NLinkFlag::kFIFO;
@@ -225,7 +225,7 @@ struct CItem
   bool IsMagic_ustar_5chars() const
   {
     for (unsigned i = 0; i < 5; i++)
-      if (Magic[i] != NFileHeader::NMagic::k_GNU_ustar__[i])
+      if (Magic[i] != NFileHeader::NMagic::k_GNU_ustar[i])
         return false;
     return true;
   }
@@ -241,7 +241,7 @@ struct CItem
   bool IsMagic_GNU() const
   {
     for (unsigned i = 0; i < 8; i++)
-      if (Magic[i] != NFileHeader::NMagic::k_GNU_ustar__[i])
+      if (Magic[i] != NFileHeader::NMagic::k_GNU_ustar[i])
         return false;
     return true;
   }

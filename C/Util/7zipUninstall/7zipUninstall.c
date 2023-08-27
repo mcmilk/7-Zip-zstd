@@ -3,40 +3,64 @@
 
 #include "Precomp.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
-#pragma warning(disable : 4011) // vs2010: identifier truncated to _CRT_SECURE_CPP_OVERLOAD_SECURE
-#endif
-
 // #define SZ_ERROR_ABORT 100
 
-#include <windows.h>
+#include "../../7zWindows.h"
+
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
+#endif
+
+#ifdef Z7_OLD_WIN_SDK
+struct IShellView;
+#define SHFOLDERAPI  EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
+SHFOLDERAPI SHGetFolderPathW(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath);
+#define BIF_NEWDIALOGSTYLE     0x0040   // Use the new dialog layout with the ability to resize
+typedef enum {
+    SHGFP_TYPE_CURRENT  = 0,   // current value for user, verify it exists
+    SHGFP_TYPE_DEFAULT  = 1,   // default value, may not exist
+} SHGFP_TYPE;
+#endif
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <shlobj.h>
+#else
 #include <ShlObj.h>
+#endif
 
 #include "../../7zVersion.h"
 
 #include "resource.h"
 
-#if defined(__GNUC__) && (__GNUC__ >= 8)
-  #pragma GCC diagnostic ignored "-Wcast-function-type"
+#if (defined(__GNUC__) && (__GNUC__ >= 8)) || defined(__clang__)
+  // #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
+
+#if defined(_MSC_VER) && _MSC_VER > 1920
+#define MY_CAST_FUNC  (void *)
+// #pragma warning(disable : 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'void (__cdecl *)()'
+#else
+#define MY_CAST_FUNC
+#endif
+
 
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define wcscat lstrcatW
+#define wcslen (size_t)lstrlenW
+#define wcscpy lstrcpyW
 
 // static LPCWSTR const k_7zip = L"7-Zip";
 
-// #define _64BIT_INSTALLER 1
+// #define Z7_64BIT_INSTALLER 1
 
 #ifdef _WIN64
-  #define _64BIT_INSTALLER 1
+  #define Z7_64BIT_INSTALLER 1
 #endif
 
 #define k_7zip_with_Ver_base L"7-Zip " LLL(MY_VERSION)
 
-#ifdef _64BIT_INSTALLER
+#ifdef Z7_64BIT_INSTALLER
 
   // #define USE_7ZIP_32_DLL
 
@@ -64,14 +88,14 @@ static LPCWSTR const k_Reg_Software_7zip = L"Software\\7-Zip";
 static LPCWSTR const k_Reg_Path = L"Path";
  
 static LPCWSTR const k_Reg_Path32 = L"Path"
-  #ifdef _64BIT_INSTALLER
+  #ifdef Z7_64BIT_INSTALLER
     L"64"
   #else
     L"32"
   #endif
   ;
 
-#if defined(_64BIT_INSTALLER) && !defined(_WIN64)
+#if defined(Z7_64BIT_INSTALLER) && !defined(_WIN64)
   #define k_Reg_WOW_Flag KEY_WOW64_64KEY
 #else
   #define k_Reg_WOW_Flag 0
@@ -116,14 +140,14 @@ static WCHAR copyPath[MAX_PATH * 2 + 40];
 
 static LPCWSTR const kUninstallExe = L"Uninstall.exe";
 
-#define MAKE_CHAR_UPPER(c) ((((c) >= 'a' && (c) <= 'z') ? (c) -= 0x20 : (c)))
+#define MAKE_CHAR_UPPER(c) ((((c) >= 'a' && (c) <= 'z') ? (c) - 0x20 : (c)))
 
 
 static void CpyAscii(wchar_t *dest, const char *s)
 {
   for (;;)
   {
-    Byte b = (Byte)*s++;
+    const Byte b = (Byte)*s++;
     *dest++ = b;
     if (b == 0)
       return;
@@ -173,7 +197,7 @@ static BoolInt IsString1PrefixedByString2_NoCase(const wchar_t *s1, const wchar_
   for (;;)
   {
     wchar_t c1;
-    wchar_t c2 = *s2++;
+    const wchar_t c2 = *s2++;
     if (c2 == 0)
       return True;
     c1 = *s1++;
@@ -184,7 +208,7 @@ static BoolInt IsString1PrefixedByString2_NoCase(const wchar_t *s1, const wchar_
 
 static void NormalizePrefix(WCHAR *s)
 {
-  size_t len = wcslen(s);
+  const size_t len = wcslen(s);
   if (len != 0)
     if (s[len - 1] != WCHAR_PATH_SEPARATOR)
     {
@@ -197,7 +221,7 @@ static int MyRegistry_QueryString(HKEY hKey, LPCWSTR name, LPWSTR dest)
 {
   DWORD cnt = MAX_PATH * sizeof(name[0]);
   DWORD type = 0;
-  LONG res = RegQueryValueExW(hKey, name, NULL, &type, (LPBYTE)dest, (DWORD *)&cnt);
+  const LONG res = RegQueryValueExW(hKey, name, NULL, &type, (LPBYTE)dest, &cnt);
   if (type != REG_SZ)
     return False;
   return res == ERROR_SUCCESS;
@@ -206,11 +230,11 @@ static int MyRegistry_QueryString(HKEY hKey, LPCWSTR name, LPWSTR dest)
 static int MyRegistry_QueryString2(HKEY hKey, LPCWSTR keyName, LPCWSTR valName, LPWSTR dest)
 {
   HKEY key = 0;
-  LONG res = RegOpenKeyExW(hKey, keyName, 0, KEY_READ | k_Reg_WOW_Flag, &key);
+  const LONG res = RegOpenKeyExW(hKey, keyName, 0, KEY_READ | k_Reg_WOW_Flag, &key);
   if (res != ERROR_SUCCESS)
     return False;
   {
-    BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
+    const BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
     RegCloseKey(key);
     return res2;
   }
@@ -237,11 +261,11 @@ static LONG MyRegistry_DeleteKey(HKEY parentKey, LPCWSTR name)
 static int MyRegistry_QueryString2_32(HKEY hKey, LPCWSTR keyName, LPCWSTR valName, LPWSTR dest)
 {
   HKEY key = 0;
-  LONG res = RegOpenKeyExW(hKey, keyName, 0, KEY_READ | k_Reg_WOW_Flag_32, &key);
+  const LONG res = RegOpenKeyExW(hKey, keyName, 0, KEY_READ | k_Reg_WOW_Flag_32, &key);
   if (res != ERROR_SUCCESS)
     return False;
   {
-    BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
+    const BoolInt res2 = MyRegistry_QueryString(key, valName, dest);
     RegCloseKey(key);
     return res2;
   }
@@ -282,7 +306,7 @@ static void MyReg_DeleteVal_Path_if_Equal(HKEY hKey, LPCWSTR name)
 static void SetRegKey_Path2(HKEY parentKey)
 {
   HKEY key = 0;
-  LONG res = MyRegistry_OpenKey_ReadWrite(parentKey, k_Reg_Software_7zip, &key);
+  const LONG res = MyRegistry_OpenKey_ReadWrite(parentKey, k_Reg_Software_7zip, &key);
   if (res == ERROR_SUCCESS)
   {
     MyReg_DeleteVal_Path_if_Equal(key, k_Reg_Path32);
@@ -293,7 +317,7 @@ static void SetRegKey_Path2(HKEY parentKey)
   }
 }
 
-static void SetRegKey_Path()
+static void SetRegKey_Path(void)
 {
   SetRegKey_Path2(HKEY_CURRENT_USER);
   SetRegKey_Path2(HKEY_LOCAL_MACHINE);
@@ -426,7 +450,7 @@ static BoolInt AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix,
   return AreStringsEqual_NoCase(s + wcslen(prefix), name);
 }
 
-static void WriteCLSID()
+static void WriteCLSID(void)
 {
   WCHAR s[MAX_PATH + 30];
   
@@ -435,14 +459,14 @@ static void WriteCLSID()
     if (AreEqual_Path_PrefixName(s, path, L"7-zip.dll"))
     {
       {
-        LONG res = MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
+        const LONG res = MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
         if (res == ERROR_SUCCESS)
           MyRegistry_DeleteKey(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip);
       }
 
       {
         unsigned i;
-        for (i = 0; i < ARRAY_SIZE(k_ShellEx_Items); i++)
+        for (i = 0; i < Z7_ARRAY_SIZE(k_ShellEx_Items); i++)
         {
           WCHAR destPath[MAX_PATH];
           CpyAscii(destPath, k_ShellEx_Items[i]);
@@ -454,7 +478,7 @@ static void WriteCLSID()
 
       {
         HKEY destKey = 0;
-        LONG res = MyRegistry_OpenKey_ReadWrite(HKEY_LOCAL_MACHINE, k_Shell_Approved, &destKey);
+        const LONG res = MyRegistry_OpenKey_ReadWrite(HKEY_LOCAL_MACHINE, k_Shell_Approved, &destKey);
         if (res == ERROR_SUCCESS)
         {
           RegDeleteValueW(destKey, k_7zip_CLSID);
@@ -472,14 +496,14 @@ static void WriteCLSID()
     if (AreEqual_Path_PrefixName(s, path, L"7-zip32.dll"))
     {
       {
-        LONG res = MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
+        const LONG res = MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip_Inproc);
         if (res == ERROR_SUCCESS)
           MyRegistry_DeleteKey_32(HKEY_CLASSES_ROOT, k_Reg_CLSID_7zip);
       }
 
       {
         unsigned i;
-        for (i = 0; i < ARRAY_SIZE(k_ShellEx_Items); i++)
+        for (i = 0; i < Z7_ARRAY_SIZE(k_ShellEx_Items); i++)
         {
           WCHAR destPath[MAX_PATH];
           CpyAscii(destPath, k_ShellEx_Items[i]);
@@ -491,7 +515,7 @@ static void WriteCLSID()
 
       {
         HKEY destKey = 0;
-        LONG res = MyRegistry_OpenKey_ReadWrite_32(HKEY_LOCAL_MACHINE, k_Shell_Approved, &destKey);
+        const LONG res = MyRegistry_OpenKey_ReadWrite_32(HKEY_LOCAL_MACHINE, k_Shell_Approved, &destKey);
         if (res == ERROR_SUCCESS)
         {
           RegDeleteValueW(destKey, k_7zip_CLSID);
@@ -526,7 +550,7 @@ static const wchar_t *GetCmdParam(const wchar_t *s)
   BoolInt quoteMode = False;
   for (;; s++)
   {
-    wchar_t c = *s;
+    const wchar_t c = *s;
     if (c == 0 || (c == L' ' && !quoteMode))
       break;
     if (c == L'\"')
@@ -534,7 +558,7 @@ static const wchar_t *GetCmdParam(const wchar_t *s)
       quoteMode = !quoteMode;
       continue;
     }
-    if (pos >= ARRAY_SIZE(cmd) - 1)
+    if (pos >= Z7_ARRAY_SIZE(cmd) - 1)
       exit(1);
     cmd[pos++] = c;
   }
@@ -558,7 +582,7 @@ static void RemoveQuotes(wchar_t *s)
 }
 */
 
-static BoolInt DoesFileOrDirExist()
+static BoolInt DoesFileOrDirExist(void)
 {
   return (GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES);
 }
@@ -573,7 +597,7 @@ static BOOL RemoveFileAfterReboot2(const WCHAR *s)
   #endif
 }
 
-static BOOL RemoveFileAfterReboot()
+static BOOL RemoveFileAfterReboot(void)
 {
   return RemoveFileAfterReboot2(path);
 }
@@ -584,7 +608,7 @@ static BoolInt IsThereSpace(const wchar_t *s)
 {
   for (;;)
   {
-    wchar_t c = *s++;
+    const wchar_t c = *s++;
     if (c == 0)
       return False;
     if (c == ' ')
@@ -594,7 +618,7 @@ static BoolInt IsThereSpace(const wchar_t *s)
 
 static void AddPathParam(wchar_t *dest, const wchar_t *src)
 {
-  BoolInt needQuote = IsThereSpace(src);
+  const BoolInt needQuote = IsThereSpace(src);
   if (needQuote)
     CatAscii(dest, "\"");
   wcscat(dest, src);
@@ -618,9 +642,9 @@ static BoolInt GetErrorMessage(DWORD errorCode, WCHAR *message)
   return True;
 }
 
-static BOOL RemoveDir()
+static BOOL RemoveDir(void)
 {
-  DWORD attrib = GetFileAttributesW(path);
+  const DWORD attrib = GetFileAttributesW(path);
   if (attrib == INVALID_FILE_ATTRIBUTES)
     return TRUE;
   if (RemoveDirectoryW(path))
@@ -670,7 +694,7 @@ static const char * const k_Names =
 
 
 
-static int Install()
+static int Install(void)
 {
   SRes res = SZ_OK;
   WRes winRes = 0;
@@ -724,7 +748,7 @@ static int Install()
 
         for (;;)
         {
-          char c = *curName;
+          const char c = *curName;
           if (c == 0)
             break;
           curName++;
@@ -743,7 +767,7 @@ static int Install()
         SetWindowTextW(g_InfoLine_HWND, temp);
 
       {
-        DWORD attrib = GetFileAttributesW(path);
+        const DWORD attrib = GetFileAttributesW(path);
         if (attrib == INVALID_FILE_ATTRIBUTES)
           continue;
         if (attrib & FILE_ATTRIBUTE_READONLY)
@@ -803,7 +827,7 @@ static int Install()
 }
 
 
-static void OnClose()
+static void OnClose(void)
 {
   if (g_Install_was_Pressed && !g_Finished)
   {
@@ -817,7 +841,13 @@ static void OnClose()
   g_HWND = NULL;
 }
 
-static INT_PTR CALLBACK MyDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+static
+#ifdef Z7_OLD_WIN_SDK
+  BOOL
+#else
+  INT_PTR
+#endif
+CALLBACK MyDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   UNUSED_VAR(lParam)
 
@@ -905,7 +935,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   #endif
 
   #ifndef UNDER_CE
-  func_RegDeleteKeyExW = (Func_RegDeleteKeyExW)
+  func_RegDeleteKeyExW = (Func_RegDeleteKeyExW) MY_CAST_FUNC
       GetProcAddress(GetModuleHandleW(L"advapi32.dll"), "RegDeleteKeyExW");
   #endif
 
@@ -976,7 +1006,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   
   {
     wchar_t *name;
-    DWORD len = GetModuleFileNameW(NULL, modulePath, MAX_PATH);
+    const DWORD len = GetModuleFileNameW(NULL, modulePath, MAX_PATH);
     if (len == 0 || len > MAX_PATH)
       return 1;
 
@@ -987,7 +1017,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       wchar_t *s = modulePrefix;
       for (;;)
       {
-        wchar_t c = *s++;
+        const wchar_t c = *s++;
         if (c == 0)
           break;
         if (c == WCHAR_PATH_SEPARATOR)
@@ -1037,7 +1067,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
           unsigned k;
           for (k = 0; k < 8; k++)
           {
-            unsigned t = value & 0xF;
+            const unsigned t = value & 0xF;
             value >>= 4;
             s[7 - k] = (wchar_t)((t < 10) ? ('0' + t) : ('A' + (t - 10)));
           }
@@ -1134,7 +1164,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       return 1;
 
     {
-      HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
+      const HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
       // SendMessage(g_HWND, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)hIcon);
       SendMessage(g_HWND, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)hIcon);
     }

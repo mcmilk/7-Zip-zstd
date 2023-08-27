@@ -20,7 +20,7 @@ using namespace NWindows;
 namespace NArchive {
 namespace NTar {
 
-STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
+Z7_COM7F_IMF(CHandler::GetFileTimeType(UInt32 *type))
 {
   UInt32 t = NFileTimeType::kUnix;
   const UInt32 prec = _handlerTimeOptions.Prec;
@@ -55,7 +55,7 @@ HRESULT GetPropString(IArchiveUpdateCallback *callback, UInt32 index, PROPID pro
     UINT codePage, unsigned utfFlags, bool convertSlash)
 {
   NCOM::CPropVariant prop;
-  RINOK(callback->GetProperty(index, propId, &prop));
+  RINOK(callback->GetProperty(index, propId, &prop))
   
   if (prop.vt == VT_BSTR)
   {
@@ -94,7 +94,7 @@ static HRESULT GetTime(UInt32 i, UInt32 pid, IArchiveUpdateCallback *callback,
 {
   pt.Clear();
   NCOM::CPropVariant prop;
-  RINOK(callback->GetProperty(i, pid, &prop));
+  RINOK(callback->GetProperty(i, pid, &prop))
   return Prop_To_PaxTime(prop, pt);
 }
 
@@ -125,7 +125,7 @@ static HRESULT GetDevice(IArchiveUpdateCallback *callback, UInt32 i,
 {
   defined = false;
   NWindows::NCOM::CPropVariant prop;
-  RINOK(callback->GetProperty(i, pid, &prop));
+  RINOK(callback->GetProperty(i, pid, &prop))
   if (prop.vt == VT_EMPTY)
     return S_OK;
   if (prop.vt == VT_UI4)
@@ -147,7 +147,7 @@ static HRESULT GetUser(IArchiveUpdateCallback *callback, UInt32 i,
   bool isSet = false;
   {
     NWindows::NCOM::CPropVariant prop;
-    RINOK(callback->GetProperty(i, pidId, &prop));
+    RINOK(callback->GetProperty(i, pidId, &prop))
     if (prop.vt == VT_UI4)
     {
       isSet = true;
@@ -160,7 +160,7 @@ static HRESULT GetUser(IArchiveUpdateCallback *callback, UInt32 i,
   }
   {
     NWindows::NCOM::CPropVariant prop;
-    RINOK(callback->GetProperty(i, pidName, &prop));
+    RINOK(callback->GetProperty(i, pidName, &prop))
     if (prop.vt == VT_BSTR)
     {
       const UString s = prop.bstrVal;
@@ -181,8 +181,8 @@ static HRESULT GetUser(IArchiveUpdateCallback *callback, UInt32 i,
 
 
 
-STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
-    IArchiveUpdateCallback *callback)
+Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
+    IArchiveUpdateCallback *callback))
 {
   COM_TRY_BEGIN
 
@@ -196,8 +196,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   /*
   // for debug only:
   unsigned utfFlags = 0;
-  utfFlags |= UTF_FLAG__TO_UTF8__EXTRACT_BMP_ESCAPE;
-  utfFlags |= UTF_FLAG__TO_UTF8__SURROGATE_ERROR;
+  utfFlags |= Z7_UTF_FLAG_TO_UTF8_EXTRACT_BMP_ESCAPE;
+  utfFlags |= Z7_UTF_FLAG_TO_UTF8_SURROGATE_ERROR;
   */
 
   for (UInt32 i = 0; i < numItems; i++)
@@ -210,7 +210,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     if (!callback)
       return E_FAIL;
     
-    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProps, &indexInArc));
+    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProps, &indexInArc))
     
     ui.NewProps = IntToBool(newProps);
     ui.NewData = IntToBool(newData);
@@ -221,7 +221,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     {
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidIsDir, &prop));
+        RINOK(callback->GetProperty(i, kpidIsDir, &prop))
         if (prop.vt == VT_EMPTY)
           ui.IsDir = false;
         else if (prop.vt != VT_BOOL)
@@ -232,7 +232,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidPosixAttrib, &prop));
+        RINOK(callback->GetProperty(i, kpidPosixAttrib, &prop))
         if (prop.vt == VT_EMPTY)
           ui.Mode =
                 MY_LIN_S_IRWXO
@@ -255,25 +255,25 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (_handlerTimeOptions.Write_CTime.Val)
         RINOK(GetTime(i, kpidCTime, callback, ui.PaxTimes.CTime))
 
-      RINOK(GetPropString(callback, i, kpidPath, ui.Name, codePage, utfFlags, true));
+      RINOK(GetPropString(callback, i, kpidPath, ui.Name, codePage, utfFlags, true))
       if (ui.IsDir && !ui.Name.IsEmpty() && ui.Name.Back() != '/')
         ui.Name += '/';
       // ui.Name += '/'; // for debug
 
       if (_posixMode)
       {
-        RINOK(GetDevice(callback, i, kpidDeviceMajor, ui.DeviceMajor, ui.DeviceMajor_Defined));
-        RINOK(GetDevice(callback, i, kpidDeviceMinor, ui.DeviceMinor, ui.DeviceMinor_Defined));
+        RINOK(GetDevice(callback, i, kpidDeviceMajor, ui.DeviceMajor, ui.DeviceMajor_Defined))
+        RINOK(GetDevice(callback, i, kpidDeviceMinor, ui.DeviceMinor, ui.DeviceMinor_Defined))
       }
 
-      RINOK(GetUser(callback, i, kpidUser,  kpidUserId,  ui.User,  ui.UID, codePage, utfFlags));
-      RINOK(GetUser(callback, i, kpidGroup, kpidGroupId, ui.Group, ui.GID, codePage, utfFlags));
+      RINOK(GetUser(callback, i, kpidUser,  kpidUserId,  ui.User,  ui.UID, codePage, utfFlags))
+      RINOK(GetUser(callback, i, kpidGroup, kpidGroupId, ui.Group, ui.GID, codePage, utfFlags))
     }
 
     if (IntToBool(newData))
     {
       NCOM::CPropVariant prop;
-      RINOK(callback->GetProperty(i, kpidSize, &prop));
+      RINOK(callback->GetProperty(i, kpidSize, &prop))
       if (prop.vt != VT_UI8)
         return E_INVALIDARG;
       ui.Size = prop.uhVal.QuadPart;

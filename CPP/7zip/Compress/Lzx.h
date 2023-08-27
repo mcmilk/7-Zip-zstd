@@ -1,7 +1,9 @@
 // Lzx.h
 
-#ifndef __COMPRESS_LZX_H
-#define __COMPRESS_LZX_H
+#ifndef ZIP7_INC_COMPRESS_LZX_H
+#define ZIP7_INC_COMPRESS_LZX_H
+
+#include "../../Common/MyTypes.h"
 
 namespace NCompress {
 namespace NLzx {

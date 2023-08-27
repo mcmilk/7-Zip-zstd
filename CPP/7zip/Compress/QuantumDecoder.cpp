@@ -33,12 +33,12 @@ void CModelDecoder::Init(unsigned numItems)
 
 unsigned CModelDecoder::Decode(CRangeDecoder *rc)
 {
-  UInt32 threshold = rc->GetThreshold(Freqs[0]);
+  const UInt32 threshold = rc->GetThreshold(Freqs[0]);
   unsigned i;
   for (i = 1; Freqs[i] > threshold; i++);
   
   rc->Decode(Freqs[i], Freqs[(size_t)i - 1], Freqs[0]);
-  unsigned res = Vals[--i];
+  const unsigned res = Vals[--i];
   
   do
     Freqs[i] = (UInt16)(Freqs[i] + kUpdateStep);
@@ -55,8 +55,8 @@ unsigned CModelDecoder::Decode(CRangeDecoder *rc)
         for (unsigned j = i + 1; j < NumItems; j++)
           if (Freqs[i] < Freqs[j])
           {
-            UInt16 tmpFreq = Freqs[i];
-            Byte tmpVal = Vals[i];
+            const UInt16 tmpFreq = Freqs[i];
+            const Byte tmpVal = Vals[i];
             Freqs[i] = Freqs[j];
             Vals[i] = Vals[j];
             Freqs[j] = tmpFreq;
@@ -90,7 +90,7 @@ void CDecoder::Init()
   unsigned i;
   for (i = 0; i < kNumLitSelectors; i++)
     m_Literals[i].Init(kNumLitSymbols);
-  unsigned numItems = (_numDictBits == 0 ? 1 : (_numDictBits << 1));
+  const unsigned numItems = (_numDictBits == 0 ? 1 : (_numDictBits << 1));
   const unsigned kNumPosSymbolsMax[kNumMatchSelectors] = { 24, 36, 42 };
   for (i = 0; i < kNumMatchSelectors; i++)
     m_PosSlot[i].Init(MyMin(numItems, kNumPosSymbolsMax[i]));
@@ -116,7 +116,7 @@ HRESULT CDecoder::CodeSpec(const Byte *inData, size_t inSize, UInt32 outSize)
     
     if (selector < kNumLitSelectors)
     {
-      Byte b = (Byte)((selector << (8 - kNumLitSelectorBits)) + m_Literals[selector].Decode(&rc));
+      const Byte b = (Byte)((selector << (8 - kNumLitSelectorBits)) + m_Literals[selector].Decode(&rc));
       _outWindow.PutByte(b);
       outSize--;
     }
@@ -131,7 +131,7 @@ HRESULT CDecoder::CodeSpec(const Byte *inData, size_t inSize, UInt32 outSize)
         if (lenSlot >= kNumSimpleLenSlots)
         {
           lenSlot -= 2;
-          unsigned numDirectBits = (unsigned)(lenSlot >> 2);
+          const unsigned numDirectBits = (unsigned)(lenSlot >> 2);
           len += ((4 | (lenSlot & 3)) << numDirectBits) - 2;
           if (numDirectBits < 6)
             len += rc.Stream.ReadBits(numDirectBits);
@@ -174,8 +174,8 @@ HRESULT CDecoder::Code(const Byte *inData, size_t inSize,
     if (!keepHistory)
       Init();
     
-    HRESULT res = CodeSpec(inData, inSize, outSize);
-    HRESULT res2 = _outWindow.Flush();
+    const HRESULT res = CodeSpec(inData, inSize, outSize);
+    const HRESULT res2 = _outWindow.Flush();
     return res != S_OK ? res : res2;
   }
   catch(const CLzOutWindowException &e) { return e.ErrorCode; }

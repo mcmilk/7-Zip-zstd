@@ -20,6 +20,7 @@
 
 using namespace NWindows;
 
+#ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
   IDX_SETTINGS_SHOW_DOTS,
@@ -32,6 +33,7 @@ static const UInt32 kLangIDs[] =
   IDX_SETTINGS_LARGE_PAGES
   // , IDT_COMPRESS_MEMORY
 };
+#endif
 
 #define kSettingsTopic "FM/options.htm#settings"
 
@@ -112,7 +114,9 @@ bool CSettingsPage::OnInit()
   _memCombo.Attach(GetItem(IDC_SETTINGS_MEM));
   */
 
-  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+#ifdef Z7_LANG
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
+#endif
 
   CFmSettings st;
   st.Load();
@@ -225,7 +229,7 @@ LONG CSettingsPage::OnApply()
   {
     if (IsLargePageSupported())
     {
-      bool enable = IsButtonCheckedBool(IDX_SETTINGS_LARGE_PAGES);
+      const bool enable = IsButtonCheckedBool(IDX_SETTINGS_LARGE_PAGES);
       NSecurity::EnablePrivilege_LockMemory(enable);
       SaveLockMemoryEnable(enable);
     }
@@ -301,7 +305,7 @@ void CSettingsPage::OnNotifyHelp()
 }
 
 /*
-bool CSettingsPage::OnCommand(int code, int itemID, LPARAM param)
+bool CSettingsPage::OnCommand(unsigned code, unsigned itemID, LPARAM param)
 {
   if (code == CBN_SELCHANGE)
   {
@@ -319,7 +323,7 @@ bool CSettingsPage::OnCommand(int code, int itemID, LPARAM param)
 }
 */
 
-bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CSettingsPage::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {

@@ -67,8 +67,9 @@ static Func_RegDeleteKeyExW func_RegDeleteKeyExW;
 static void Init_RegDeleteKeyExW()
 {
   if (!func_RegDeleteKeyExW)
-    func_RegDeleteKeyExW = (Func_RegDeleteKeyExW)
-      (void *)GetProcAddress(GetModuleHandleW(L"advapi32.dll"), "RegDeleteKeyExW");
+    func_RegDeleteKeyExW = Z7_GET_PROC_ADDRESS(
+    Func_RegDeleteKeyExW, GetModuleHandleW(L"advapi32.dll"),
+        "RegDeleteKeyExW");
 }
 
 #define INIT_REG_WOW if (wow != 0) Init_RegDeleteKeyExW();
@@ -205,7 +206,7 @@ LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow)
   if (setMode)
   for (unsigned i = 0; i < 2; i++)
   {
-    for (unsigned k = 0; k < ARRAY_SIZE(k_shellex_Prefixes); k++)
+    for (unsigned k = 0; k < Z7_ARRAY_SIZE(k_shellex_Prefixes); k++)
     {
       CSysString s (k_shellex_Prefixes[k]);
       s += (i == 0 ? k_KeyPostfix_ContextMenu : k_KeyPostfix_DragDrop);

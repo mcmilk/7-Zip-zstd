@@ -28,9 +28,7 @@ using namespace NWindows;
 namespace NArchive {
 namespace NQcow {
 
-#define SIGNATURE { 'Q', 'F', 'I', 0xFB, 0, 0, 0 }
-  
-static const Byte k_Signature[] = SIGNATURE;
+static const Byte k_Signature[] =  { 'Q', 'F', 'I', 0xFB, 0, 0, 0 };
 
 /*
 VA to PA maps:
@@ -39,8 +37,12 @@ VA to PA maps:
   low bits       : _clusterBits
 */
 
-class CHandler: public CHandlerImg
+Z7_class_CHandler_final: public CHandlerImg
 {
+  Z7_IFACE_COM7_IMP(IInArchive_Img)
+  Z7_IFACE_COM7_IMP(IInArchiveGetStream)
+  Z7_IFACE_COM7_IMP(ISequentialInStream)
+
   unsigned _clusterBits;
   unsigned _numMidBits;
   UInt64 _compressedFlag;
@@ -75,7 +77,7 @@ class CHandler: public CHandlerImg
   HRESULT Seek2(UInt64 offset)
   {
     _posInArc = offset;
-    return Stream->Seek(offset, STREAM_SEEK_SET, NULL);
+    return InStream_SeekSet(Stream, offset);
   }
 
   HRESULT InitAndSeek()
@@ -84,19 +86,13 @@ class CHandler: public CHandlerImg
     return Seek2(0);
   }
 
-  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openCallback);
-
-public:
-  INTERFACE_IInArchive_Img(;)
-
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openCallback) Z7_override;
 };
 
 
 static const UInt32 kEmptyDirItem = (UInt32)0 - 1;
 
-STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CHandler::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   if (processedSize)
     *processedSize = 0;
@@ -190,14 +186,14 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
               if (sectorOffset != _posInArc)
               {
                 // printf("\nDeflate-Seek %12I64x %12I64x\n", sectorOffset, sectorOffset - _posInArc);
-                RINOK(Seek2(sectorOffset));
+                RINOK(Seek2(sectorOffset))
               }
               if (_cacheCompressed.Size() < dataSize)
                 return E_FAIL;
               const size_t dataSize3 = dataSize - _comprSize;
               size_t dataSize2 = dataSize3;
               // printf("\n\n=======\nReadStream = %6d _comprPos = %6d \n", (UInt32)dataSize2, (UInt32)_comprPos);
-              RINOK(ReadStream(Stream, _cacheCompressed + _comprSize, &dataSize2));
+              RINOK(ReadStream(Stream, _cacheCompressed + _comprSize, &dataSize2))
               _posInArc += dataSize2;
               if (dataSize2 != dataSize3)
                 return E_FAIL;
@@ -215,7 +211,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
             
             // Do we need to use smaller block than clusterSize for last cluster?
             const UInt64 blockSize64 = clusterSize;
-            HRESULT res = _deflateDecoderSpec->Code(_bufInStream, _bufOutStream, NULL, &blockSize64, NULL);
+            HRESULT res = _deflateDecoder->Code(_bufInStream, _bufOutStream, NULL, &blockSize64, NULL);
 
             /*
             if (_bufOutStreamSpec->GetPos() != clusterSize)
@@ -227,7 +223,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
                   || _bufOutStreamSpec->GetPos() != clusterSize)
                 res = S_FALSE;
 
-            RINOK(res);
+            RINOK(res)
             _cacheCluster = cluster;
             
             continue;
@@ -245,7 +241,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
             if (v != _posInArc)
             {
               // printf("\n%12I64x\n", v - _posInArc);
-              RINOK(Seek2(v));
+              RINOK(Seek2(v))
             }
             HRESULT res = Stream->Read(data, size, &size);
             _posInArc += size;
@@ -285,7 +281,7 @@ static const Byte kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -322,7 +318,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidErrorFlags:
     {
       UInt32 v = 0;
-      if (!_isArc) v |= kpv_ErrorFlags_IsNotArc;;
+      if (!_isArc) v |= kpv_ErrorFlags_IsNotArc;
       if (_unsupported) v |= kpv_ErrorFlags_UnsupportedMethod;
       // if (_headerError) v |= kpv_ErrorFlags_HeadersError;
       if (!Stream && v == 0 && _isArc)
@@ -339,7 +335,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -361,7 +357,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 {
   const unsigned kHeaderSize = 18 * 4;
   Byte buf[kHeaderSize];
-  RINOK(ReadStream_FALSE(stream, buf, kHeaderSize));
+  RINOK(ReadStream_FALSE(stream, buf, kHeaderSize))
 
   if (memcmp(buf, k_Signature, 4) != 0)
     return S_FALSE;
@@ -423,7 +419,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
       /*
       CByteBuffer refs;
       refs.Alloc(numBytes);
-      RINOK(stream->Seek(refOffset, STREAM_SEEK_SET, NULL));
+      RINOK(InStream_SeekSet(stream, refOffset))
       RINOK(ReadStream_FALSE(stream, refs, numBytes));
       */
       const UInt64 end = refOffset + numBytes;
@@ -456,8 +452,8 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
     if ((t1SizeBytes >> 3) != l1Size)
       return S_FALSE;
     table.Alloc(t1SizeBytes);
-    RINOK(stream->Seek(l1Offset, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream_FALSE(stream, table, t1SizeBytes));
+    RINOK(InStream_SeekSet(stream, l1Offset))
+    RINOK(ReadStream_FALSE(stream, table, t1SizeBytes))
     
     {
       UInt64 end = l1Offset + t1SizeBytes;
@@ -498,7 +494,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
   if (openCallback)
   {
     const UInt64 totalBytes = (UInt64)numTables << (_numMidBits + 3);
-    RINOK(openCallback->SetTotal(NULL, &totalBytes));
+    RINOK(openCallback->SetTotal(NULL, &totalBytes))
   }
 
   for (i = 0; i < l1Size; i++)
@@ -522,11 +518,11 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
       if (openCallback && (tableOffset & 0xFFFFF) == 0)
       {
         const UInt64 numBytes = tableOffset;
-        RINOK(openCallback->SetCompleted(NULL, &numBytes));
+        RINOK(openCallback->SetCompleted(NULL, &numBytes))
       }
       
-      RINOK(stream->Seek(v, STREAM_SEEK_SET, NULL));
-      RINOK(ReadStream_FALSE(stream, buf2, midSize));
+      RINOK(InStream_SeekSet(stream, v))
+      RINOK(ReadStream_FALSE(stream, buf2, midSize))
 
       const UInt64 end = v + midSize;
       if (_phySize < end)
@@ -596,7 +592,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 }
 
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _table.Free();
   _dir.Free();
@@ -617,7 +613,7 @@ STDMETHODIMP CHandler::Close()
 }
 
 
-STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
   *stream = NULL;
@@ -655,7 +651,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
   }
     
   CMyComPtr<ISequentialInStream> streamTemp = this;
-  RINOK(InitAndSeek());
+  RINOK(InitAndSeek())
   *stream = streamTemp.Detach();
   return S_OK;
   COM_TRY_END

@@ -20,8 +20,10 @@
 #include "MyLoadMenu.h"
 #include "PropertyName.h"
 
-#include "resource.h"
 #include "PropertyNameRes.h"
+#include "resource.h"
+
+// #define SHOW_DEBUG_PANEL_MENU
 
 using namespace NWindows;
 
@@ -32,13 +34,33 @@ LONG g_DllRefCount = 0;
 static const UINT kSevenZipStartMenuID = kMenuCmdID_Plugin_Start;
 static const UINT kSystemStartMenuID = kMenuCmdID_Plugin_Start + 400;
 
+
+#ifdef SHOW_DEBUG_PANEL_MENU
+static void Print_Ptr(void *p, const char *s)
+{
+  char temp[32];
+  ConvertUInt64ToHex((UInt64)(void *)p, temp);
+  AString m;
+  m += temp;
+  m.Add_Space();
+  m += s;
+  OutputDebugStringA(m);
+}
+#define ODS(sz) { Print_Ptr(this, sz); }
+#define ODS_U(s) { OutputDebugStringW(s); }
+#else
+#define ODS(sz)
+#define ODS_U(s)
+#endif
+
+
 void CPanel::InvokeSystemCommand(const char *command)
 {
   NCOM::CComInitializer comInitializer;
   if (!IsFsOrPureDrivesFolder())
     return;
   CRecordVector<UInt32> operatedIndices;
-  GetOperatedItemIndices(operatedIndices);
+  Get_ItemIndices_Operated(operatedIndices);
   if (operatedIndices.IsEmpty())
     return;
   CMyComPtr<IContextMenu> contextMenu;
@@ -173,7 +195,7 @@ void CPanel::Properties()
     // message.SelectFirst = false;
 
     CRecordVector<UInt32> operatedIndices;
-    GetOperatedItemIndices(operatedIndices);
+    Get_ItemIndices_Operated(operatedIndices);
     
     if (operatedIndices.Size() == 1)
     {
@@ -346,7 +368,7 @@ void CPanel::Properties()
             UInt32 numProps;
             if (getProps->GetArcNumProps(level, &numProps) == S_OK)
             {
-              const int kNumSpecProps = ARRAY_SIZE(kSpecProps);
+              const int kNumSpecProps = Z7_ARRAY_SIZE(kSpecProps);
 
               AddSeparator(message);
               
@@ -357,7 +379,7 @@ void CPanel::Properties()
                 VARTYPE vt;
                 if (i < 0)
                   propID = kSpecProps[i + kNumSpecProps];
-                else if (getProps->GetArcPropInfo(level, i, &name, &propID, &vt) != S_OK)
+                else if (getProps->GetArcPropInfo(level, (UInt32)i, &name, &propID, &vt) != S_OK)
                   continue;
                 NCOM::CPropVariant prop;
                 if (getProps->GetArcProp(level, propID, &prop) != S_OK)
@@ -369,12 +391,12 @@ void CPanel::Properties()
           
           if (level2 < numLevels - 1)
           {
-            UInt32 level = numLevels - 1 - level2;
+            const UInt32 level = numLevels - 1 - level2;
             UInt32 numProps;
             if (getProps->GetArcNumProps2(level, &numProps) == S_OK)
             {
               AddSeparatorSmall(message);
-              for (Int32 i = 0; i < (Int32)numProps; i++)
+              for (UInt32 i = 0; i < numProps; i++)
               {
                 CMyComBSTR name;
                 PROPID propID;
@@ -393,11 +415,11 @@ void CPanel::Properties()
         {
           // we ERROR message for NonOpen level
               bool needSep = true;
-              const int kNumSpecProps = ARRAY_SIZE(kSpecProps);
+              const int kNumSpecProps = Z7_ARRAY_SIZE(kSpecProps);
               for (Int32 i = -(int)kNumSpecProps; i < 0; i++)
               {
                 CMyComBSTR name;
-                PROPID propID = kSpecProps[i + kNumSpecProps];
+                const PROPID propID = kSpecProps[i + kNumSpecProps];
                 NCOM::CPropVariant prop;
                 if (getProps->GetArcProp(numLevels, propID, &prop) != S_OK)
                   continue;
@@ -440,7 +462,7 @@ void CPanel::EditCopy()
   */
   UString s;
   CRecordVector<UInt32> indices;
-  GetSelectedItemsIndices(indices);
+  Get_ItemIndices_Selected(indices);
   FOR_VECTOR (i, indices)
   {
     if (i != 0)
@@ -486,15 +508,25 @@ struct CFolderPidls
 };
 
 
+static HRESULT ShellFolder_ParseDisplayName(IShellFolder *shellFolder,
+    HWND hwnd, const UString &path, LPITEMIDLIST *ppidl)
+{
+  ULONG eaten = 0;
+  return shellFolder->ParseDisplayName(hwnd, NULL,
+      path.Ptr_non_const(), &eaten, ppidl, NULL);
+}
+
+
 HRESULT CPanel::CreateShellContextMenu(
     const CRecordVector<UInt32> &operatedIndices,
     CMyComPtr<IContextMenu> &systemContextMenu)
 {
+  ODS("==== CPanel::CreateShellContextMenu");
   systemContextMenu.Release();
-  const UString folderPath = GetFsPath();
+  UString folderPath = GetFsPath();
 
   CMyComPtr<IShellFolder> desktopFolder;
-  RINOK(::SHGetDesktopFolder(&desktopFolder));
+  RINOK(::SHGetDesktopFolder(&desktopFolder))
   if (!desktopFolder)
   {
     // ShowMessage("Failed to get Desktop folder");
@@ -502,23 +534,36 @@ HRESULT CPanel::CreateShellContextMenu(
   }
   
   CFolderPidls pidls;
-  DWORD eaten;
-
+  // NULL is allowed for parentHWND in ParseDisplayName()
+  const HWND parentHWND_for_ParseDisplayName = GetParent();
   // if (folderPath.IsEmpty()), then ParseDisplayName returns pidls of "My Computer"
-  RINOK(desktopFolder->ParseDisplayName(
-      GetParent(), NULL, folderPath.Ptr_non_const(),
-      &eaten, &pidls.parent, NULL));
-
-  /*
-  STRRET pName;
-  res = desktopFolder->GetDisplayNameOf(pidls.parent,  SHGDN_NORMAL, &pName);
-  WCHAR dir[MAX_PATH];
-  if (!SHGetPathFromIDListW(pidls.parent, dir))
-    dir[0] = 0;
-  */
-
+  /* win10: ParseDisplayName() supports folder path with tail slash
+    ParseDisplayName() returns {
+      E_INVALIDARG         : path with super path prefix "\\\\?\\"
+      ERROR_FILE_NOT_FOUND : path for network share (\\server\path1\long path2") larger than MAX_PATH
+    } */
+  const HRESULT res = ShellFolder_ParseDisplayName(desktopFolder,
+      parentHWND_for_ParseDisplayName,
+      folderPath, &pidls.parent);
+  if (res != S_OK)
+  {
+    ODS_U(folderPath);
+    if (res != E_INVALIDARG)
+      return res;
+    if (!NFile::NName::If_IsSuperPath_RemoveSuperPrefix(folderPath))
+      return res;
+    RINOK(ShellFolder_ParseDisplayName(desktopFolder,
+        parentHWND_for_ParseDisplayName,
+        folderPath, &pidls.parent))
+  }
   if (!pidls.parent)
     return E_FAIL;
+
+  /*
+  UString path2;
+  NShell::GetPathFromIDList(pidls.parent, path2);
+  ODS_U(path2);
+  */
 
   if (operatedIndices.IsEmpty())
   {
@@ -549,28 +594,37 @@ HRESULT CPanel::CreateShellContextMenu(
   
   CMyComPtr<IShellFolder> parentFolder;
   RINOK(desktopFolder->BindToObject(pidls.parent,
-      NULL, IID_IShellFolder, (void**)&parentFolder));
+      NULL, IID_IShellFolder, (void**)&parentFolder))
   if (!parentFolder)
-  {
-    // ShowMessage("Invalid file name");
     return E_FAIL;
-  }
+
+  ODS("==== CPanel::CreateShellContextMenu pidls START");
   
   pidls.items.ClearAndReserve(operatedIndices.Size());
+  UString fileName;
   FOR_VECTOR (i, operatedIndices)
   {
-    LPITEMIDLIST pidl;
-    const UString fileName = GetItemRelPath2(operatedIndices[i]);
-    RINOK(parentFolder->ParseDisplayName(GetParent(), 0,
-        fileName.Ptr_non_const(), &eaten, &pidl, 0));
+    fileName.Empty();
+    Add_ItemRelPath2_To_String(operatedIndices[i], fileName);
+    /* ParseDisplayName() in win10 returns:
+         E_INVALIDARG : if empty name, or path with dots only: "." , ".."
+         HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) : if there is no such file
+    */
+    LPITEMIDLIST pidl = NULL;
+    RINOK(ShellFolder_ParseDisplayName(parentFolder,
+        parentHWND_for_ParseDisplayName,
+        fileName, &pidl))
+    if (!pidl)
+      return E_FAIL;
     pidls.items.AddInReserved(pidl);
   }
-  
-  // Get IContextMenu for items
 
-  RINOK(parentFolder->GetUIObjectOf(GetParent(), pidls.items.Size(),
-      (LPCITEMIDLIST *)(void *)&pidls.items.Front(), IID_IContextMenu, 0, (void**)&systemContextMenu));
-  
+  ODS("==== CPanel::CreateShellContextMenu pidls END");
+  // Get IContextMenu for items
+  RINOK(parentFolder->GetUIObjectOf(GetParent(),
+      pidls.items.Size(), (LPCITEMIDLIST *)(void *)&pidls.items.Front(),
+      IID_IContextMenu, NULL, (void**)&systemContextMenu))
+  ODS("==== CPanel::CreateShellContextMenu GetUIObjectOf finished");
   if (!systemContextMenu)
   {
     // ShowMessage("Unable to get context menu interface");
@@ -579,13 +633,10 @@ HRESULT CPanel::CreateShellContextMenu(
   return S_OK;
 }
 
+
 // #define SHOW_DEBUG_FM_CTX_MENU
 
 #ifdef SHOW_DEBUG_FM_CTX_MENU
-
-#include <stdio.h>
-
-// #include Common/IntToString.h"
 
 static void PrintHex(UString &s, UInt32 v)
 {
@@ -597,16 +648,14 @@ static void PrintHex(UString &s, UInt32 v)
 static void PrintContextStr(UString &s, IContextMenu *ctxm, unsigned i, unsigned id, const char *name)
 {
   s += " | ";
-  name = name;
-  // s += name;
-  // s += ": ";
-
+  s += name;
+  s += ": ";
   UString s1;
   {
     char buf[256];
     buf[0] = 0;
-    HRESULT res = ctxm->GetCommandString(i, id,
-        NULL, buf, ARRAY_SIZE(buf) - 1);
+    const HRESULT res = ctxm->GetCommandString(i, id,
+        NULL, buf, Z7_ARRAY_SIZE(buf) - 1);
     if (res != S_OK)
     {
       PrintHex(s1, res);
@@ -614,13 +663,12 @@ static void PrintContextStr(UString &s, IContextMenu *ctxm, unsigned i, unsigned
     }
     s1 += GetUnicodeString(buf);
   }
-
   UString s2;
   {
     wchar_t buf2[256];
     buf2[0] = 0;
-    HRESULT res = ctxm->GetCommandString(i, id | GCS_UNICODE,
-        NULL, (char *)buf2, ARRAY_SIZE(buf2) - 1);
+    const HRESULT res = ctxm->GetCommandString(i, id | GCS_UNICODE,
+        NULL, (char *)buf2, Z7_ARRAY_SIZE(buf2) - sizeof(wchar_t));
     if (res != S_OK)
     {
       PrintHex(s2, res);
@@ -628,7 +676,6 @@ static void PrintContextStr(UString &s, IContextMenu *ctxm, unsigned i, unsigned
     }
     s2 += buf2;
   }
-  
   s += s1;
   if (s2.Compare(s1) != 0)
   {
@@ -637,7 +684,6 @@ static void PrintContextStr(UString &s, IContextMenu *ctxm, unsigned i, unsigned
   }
 }
 
-
 static void PrintAllContextItems(IContextMenu *ctxm, unsigned num)
 {
   for (unsigned i = 0; i < num; i++)
@@ -645,35 +691,18 @@ static void PrintAllContextItems(IContextMenu *ctxm, unsigned num)
     UString s;
     s.Add_UInt32(i);
     s += ": ";
-
-    /*
-    UString valid;
-    {
-      char name[256];
-      HRESULT res = ctxm->GetCommandString(i, GCS_VALIDATEA,
-        NULL, name, ARRAY_SIZE(name) - 1);
-      
-      if (res == S_OK)
-      {
-        // valid = "valid";
-      }
-      else if (res == S_FALSE)
-        valid = "non-valid";
-      else
-        PrintHex(valid, res);
-    }
-    s += valid;
-    */
-
     PrintContextStr(s, ctxm, i, GCS_VALIDATEA, "valid");
-    PrintContextStr(s, ctxm, i, GCS_VERBA, "v");
-    PrintContextStr(s, ctxm, i, GCS_HELPTEXTA, "h");
+    PrintContextStr(s, ctxm, i, GCS_VERBA, "verb");
+    PrintContextStr(s, ctxm, i, GCS_HELPTEXTA, "helptext");
     OutputDebugStringW(s);
   }
 }
+
 #endif
 
+
 void CPanel::CreateSystemMenu(HMENU menuSpec,
+    bool showExtendedVerbs,
     const CRecordVector<UInt32> &operatedIndices,
     CMyComPtr<IContextMenu> &systemContextMenu)
 {
@@ -722,19 +751,13 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
     CMenuDestroyer menuDestroyer(popupMenu);
     if (!popupMenu.CreatePopup())
       throw 210503;
-
-    HMENU hMenu = popupMenu;
-
-    DWORD Flags = CMF_EXPLORE;
-    // Optionally the shell will show the extended
-    // context menu on some operating systems when
-    // the shift key is held down at the time the
-    // context menu is invoked. The following is
-    // commented out but you can uncommnent this
-    // line to show the extended context menu.
-    // Flags |= 0x00000080;
-    HRESULT res = systemContextMenu->QueryContextMenu(hMenu, 0, kSystemStartMenuID, 0x7FFF, Flags);
-
+    const HMENU hMenu = popupMenu;
+    DWORD flags = CMF_EXPLORE;
+    if (showExtendedVerbs)
+      flags |= Z7_WIN_CMF_EXTENDEDVERBS;
+    ODS("=== systemContextMenu->QueryContextMenu START");
+    const HRESULT res = systemContextMenu->QueryContextMenu(hMenu, 0, kSystemStartMenuID, 0x7FFF, flags);
+    ODS("=== systemContextMenu->QueryContextMenu END");
     if (SUCCEEDED(res))
     {
       #ifdef SHOW_DEBUG_FM_CTX_MENU
@@ -779,11 +802,13 @@ void CPanel::CreateSystemMenu(HMENU menuSpec,
 
 void CPanel::CreateFileMenu(HMENU menuSpec)
 {
-  CreateFileMenu(menuSpec, _sevenZipContextMenu, _systemContextMenu, true);
+  CreateFileMenu(menuSpec, _sevenZipContextMenu, _systemContextMenu, true); // programMenu
 }
 
 void CPanel::CreateSevenZipMenu(HMENU menuSpec,
+    bool showExtendedVerbs,
     const CRecordVector<UInt32> &operatedIndices,
+    int firstDirIndex,
     CMyComPtr<IContextMenu> &sevenZipContextMenu)
 {
   sevenZipContextMenu.Release();
@@ -802,22 +827,23 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
     if (contextMenu.QueryInterface(IID_IInitContextMenu, &initContextMenu) != S_OK)
       return;
     */
-    UString currentFolderUnicode = GetFsPath();
-    UStringVector names;
-    unsigned i;
-    for (i = 0; i < operatedIndices.Size(); i++)
-      names.Add(currentFolderUnicode + GetItemRelPath2(operatedIndices[i]));
-    CRecordVector<const wchar_t *> namePointers;
-    for (i = 0; i < operatedIndices.Size(); i++)
-      namePointers.Add(names[i]);
-    
-    // NFile::NDirectory::MySetCurrentDirectory(currentFolderUnicode);
-    if (contextMenuSpec->InitContextMenu(currentFolderUnicode, &namePointers.Front(),
-        operatedIndices.Size()) == S_OK)
+    ODS("=== FileName List Add START")
+    // for (unsigned y = 0; y < 10000; y++, contextMenuSpec->_fileNames.Clear())
+    GetFilePaths(operatedIndices, contextMenuSpec->_fileNames);
+    ODS("=== FileName List Add END")
+    contextMenuSpec->Init_For_7zFM();
+    contextMenuSpec->_attribs.FirstDirIndex = firstDirIndex;
     {
-      HRESULT res = contextMenu->QueryContextMenu(menu, 0, kSevenZipStartMenuID,
-          kSystemStartMenuID - 1, 0);
-      bool sevenZipMenuCreated = SUCCEEDED(res);
+      DWORD flags = CMF_EXPLORE;
+      if (showExtendedVerbs)
+        flags |= Z7_WIN_CMF_EXTENDEDVERBS;
+      const HRESULT res = contextMenu->QueryContextMenu(menu,
+          0, // indexMenu
+          kSevenZipStartMenuID, // first
+          kSystemStartMenuID - 1, // last
+          flags);
+      ODS("=== contextMenu->QueryContextMenu END")
+      const bool sevenZipMenuCreated = SUCCEEDED(res);
       if (sevenZipMenuCreated)
       {
         // if (res != 0)
@@ -834,7 +860,6 @@ void CPanel::CreateSevenZipMenu(HMENU menuSpec,
       {
         // MessageBox_Error_HRESULT_Caption(res, L"QueryContextMenu");
       }
-
       // int code = HRESULT_CODE(res);
       // int nextItemID = code;
     }
@@ -917,19 +942,22 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   sevenZipContextMenu.Release();
   systemContextMenu.Release();
 
+  const bool showExtendedVerbs = IsKeyDown(VK_SHIFT);
+
   CRecordVector<UInt32> operatedIndices;
-  GetOperatedItemIndices(operatedIndices);
+  Get_ItemIndices_Operated(operatedIndices);
+  const int firstDirIndex = FindDir_InOperatedList(operatedIndices);
 
   CMenu menu;
   menu.Attach(menuSpec);
 
   if (!IsArcFolder())
   {
-    CreateSevenZipMenu(menu, operatedIndices, sevenZipContextMenu);
+    CreateSevenZipMenu(menu, showExtendedVerbs, operatedIndices, firstDirIndex, sevenZipContextMenu);
     // CreateSystemMenu is very slow if you call it inside ZIP archive with big number of files
     // Windows probably can parse items inside ZIP archive.
     if (g_App.ShowSystemMenu)
-      CreateSystemMenu(menu, operatedIndices, systemContextMenu);
+      CreateSystemMenu(menu, showExtendedVerbs, operatedIndices, systemContextMenu);
   }
 
   /*
@@ -937,19 +965,13 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
     menu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)0);
   */
 
-  unsigned i;
-  for (i = 0; i < operatedIndices.Size(); i++)
-    if (IsItem_Folder(operatedIndices[i]))
-      break;
-  bool allAreFiles = (i == operatedIndices.Size());
-
   CFileMenu fm;
   
   fm.readOnly = IsThereReadOnlyFolder();
   fm.isHashFolder = IsHashFolder();
   fm.isFsFolder = Is_IO_FS_Folder();
   fm.programMenu = programMenu;
-  fm.allAreFiles = allAreFiles;
+  fm.allAreFiles = (firstDirIndex == -1);
   fm.numItems = operatedIndices.Size();
 
   fm.isAltStreamsSupported = false;
@@ -961,7 +983,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   {
     if (operatedIndices.Size() <= 1)
     {
-      Int32 realIndex = -1;
+      UInt32 realIndex = (UInt32)(Int32)-1;
       if (operatedIndices.Size() == 1)
         realIndex = operatedIndices[0];
       Int32 val = 0;
@@ -977,7 +999,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
       fm.isAltStreamsSupported = IsFolder_with_FsItems();
   }
 
-  fm.Load(menu, menu.GetItemCount());
+  fm.Load(menu, (unsigned)menu.GetItemCount());
 }
 
 bool CPanel::InvokePluginCommand(unsigned id)
@@ -987,6 +1009,7 @@ bool CPanel::InvokePluginCommand(unsigned id)
 
 #if defined(_MSC_VER) && !defined(UNDER_CE)
 #define use_CMINVOKECOMMANDINFOEX
+/* CMINVOKECOMMANDINFOEX depends from (_WIN32_IE >= 0x0400) */
 #endif
 
 bool CPanel::InvokePluginCommand(unsigned id,
@@ -1096,7 +1119,7 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
   */
 
   CRecordVector<UInt32> operatedIndices;
-  GetOperatedItemIndices(operatedIndices);
+  Get_ItemIndices_Operated(operatedIndices);
 
   // negative x,y are possible for multi-screen modes.
   // x=-1 && y=-1 for keyboard call (SHIFT+F10 and others).
@@ -1130,9 +1153,9 @@ bool CPanel::OnContextMenu(HANDLE windowHandle, int xPos, int yPos)
 
   CMyComPtr<IContextMenu> sevenZipContextMenu;
   CMyComPtr<IContextMenu> systemContextMenu;
-  CreateFileMenu(menu, sevenZipContextMenu, systemContextMenu, false);
+  CreateFileMenu(menu, sevenZipContextMenu, systemContextMenu, false); // programMenu
 
-  unsigned id = menu.Track(TPM_LEFTALIGN
+  const unsigned id = (unsigned)menu.Track(TPM_LEFTALIGN
       #ifndef UNDER_CE
       | TPM_RIGHTBUTTON
       #endif

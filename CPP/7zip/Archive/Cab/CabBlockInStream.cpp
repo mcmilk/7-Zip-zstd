@@ -18,7 +18,7 @@ bool CCabBlockInStream::Create()
 {
   if (!_buf)
     _buf = (Byte *)::MyAlloc(kBlockSize);
-  return _buf != 0;
+  return _buf != NULL;
 }
 
 CCabBlockInStream::~CCabBlockInStream()
@@ -60,7 +60,7 @@ HRESULT CCabBlockInStream::PreRead(ISequentialInStream *stream, UInt32 &packSize
   unpackSize = GetUi16(header + 6);
   if (packSize > kBlockSize - _size)
     return S_FALSE;
-  RINOK(ReadStream_FALSE(stream, _buf + _size, packSize));
+  RINOK(ReadStream_FALSE(stream, _buf + _size, packSize))
   
   if (MsZip)
   {
@@ -82,7 +82,7 @@ HRESULT CCabBlockInStream::PreRead(ISequentialInStream *stream, UInt32 &packSize
   return S_OK;
 }
 
-STDMETHODIMP CCabBlockInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CCabBlockInStream::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   if (size != 0)
   {

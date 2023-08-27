@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<?define VerMajor = "22" ?>
+<?define VerMajor = "23" ?>
 <?define VerMinor = "01" ?>
 <?define VerBuild = "00" ?>
 <?define MmVer = "$(var.VerMajor).$(var.VerMinor)" ?>

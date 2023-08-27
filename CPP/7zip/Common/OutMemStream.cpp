@@ -31,13 +31,13 @@ void COutMemStream::DetachData(CMemLockBlocks &blocks)
 
 HRESULT COutMemStream::WriteToRealStream()
 {
-  RINOK(Blocks.WriteToStream(_memManager->GetBlockSize(), OutSeqStream));
+  RINOK(Blocks.WriteToStream(_memManager->GetBlockSize(), OutSeqStream))
   Blocks.Free(_memManager);
   return S_OK;
 }
 
 
-STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(COutMemStream::Write(const void *data, UInt32 size, UInt32 *processedSize))
 {
   if (_realStreamMode)
     return OutSeqStream->Write(data, size, processedSize);
@@ -58,7 +58,7 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
       size -= (UInt32)curSize;
       _curBlockPos += curSize;
 
-      UInt64 pos64 = GetPos();
+      const UInt64 pos64 = GetPos();
       if (pos64 > Blocks.TotalSize)
         Blocks.TotalSize = pos64;
       if (_curBlockPos == _memManager->GetBlockSize())
@@ -83,9 +83,9 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
       case (WAIT_OBJECT_0 + 1):
       {
         _realStreamMode = true;
-        RINOK(WriteToRealStream());
+        RINOK(WriteToRealStream())
         UInt32 processedSize2;
-        HRESULT res = OutSeqStream->Write(data, size, &processedSize2);
+        const HRESULT res = OutSeqStream->Write(data, size, &processedSize2);
         if (processedSize)
           *processedSize += processedSize2;
         return res;
@@ -103,7 +103,7 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
       {
         if (waitResult == WAIT_FAILED)
         {
-          DWORD res = ::GetLastError();
+          const DWORD res = ::GetLastError();
           if (res != 0)
             return HRESULT_FROM_WIN32(res);
         }
@@ -118,7 +118,7 @@ STDMETHODIMP COutMemStream::Write(const void *data, UInt32 size, UInt32 *process
   return S_OK;
 }
 
-STDMETHODIMP COutMemStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+Z7_COM7F_IMF(COutMemStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition))
 {
   if (_realStreamMode)
   {
@@ -145,7 +145,7 @@ STDMETHODIMP COutMemStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPos
   return S_OK;
 }
 
-STDMETHODIMP COutMemStream::SetSize(UInt64 newSize)
+Z7_COM7F_IMF(COutMemStream::SetSize(UInt64 newSize))
 {
   if (_realStreamMode)
   {

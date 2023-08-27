@@ -1,11 +1,11 @@
 PROG = 7z.dll
 DEF_FILE = ../Archive.def
 CFLAGS = $(CFLAGS) \
-  -DEXTERNAL_CODECS \
+  -DZ7_EXTERNAL_CODECS \
 
 AR_OBJS = \
   $O\ArchiveExports.obj \
-  $O\DllExports.obj \
+  $O\DllExports2.obj \
 
 7Z_OBJS = \
   $O\7zCompressionMode.obj \
@@ -34,7 +34,6 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
-  $O\DLL.obj \
   $O\FileDir.obj \
   $O\FileFind.obj \
   $O\FileIO.obj \
@@ -61,6 +60,7 @@ WIN_OBJS = \
 
 COMPRESS_OBJS = \
   $O\CopyCoder.obj \
+  $O\CodecExports.obj \
 
 AR_COMMON_OBJS = \
   $O\CoderMixer2.obj \

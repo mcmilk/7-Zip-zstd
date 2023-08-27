@@ -1,5 +1,5 @@
 /* Sha1.c -- SHA-1 Hash
-2021-07-13 : Igor Pavlov : Public domain
+2023-04-02 : Igor Pavlov : Public domain
 This code is based on public domain code of Steve Reid from Wei Dai's Crypto++ library. */
 
 #include "Precomp.h"
@@ -17,48 +17,48 @@ This code is based on public domain code of Steve Reid from Wei Dai's Crypto++ l
 #ifdef MY_CPU_X86_OR_AMD64
   #ifdef _MSC_VER
     #if _MSC_VER >= 1200
-      #define _SHA_SUPPORTED
+      #define Z7_COMPILER_SHA1_SUPPORTED
     #endif
   #elif defined(__clang__)
     #if (__clang_major__ >= 8) // fix that check
-      #define _SHA_SUPPORTED
+      #define Z7_COMPILER_SHA1_SUPPORTED
     #endif
   #elif defined(__GNUC__)
     #if (__GNUC__ >= 8) // fix that check
-      #define _SHA_SUPPORTED
+      #define Z7_COMPILER_SHA1_SUPPORTED
     #endif
   #elif defined(__INTEL_COMPILER)
     #if (__INTEL_COMPILER >= 1800) // fix that check
-      #define _SHA_SUPPORTED
+      #define Z7_COMPILER_SHA1_SUPPORTED
     #endif
   #endif
 #elif defined(MY_CPU_ARM_OR_ARM64)
   #ifdef _MSC_VER
     #if _MSC_VER >= 1910 && _MSC_VER >= 1929 && _MSC_FULL_VER >= 192930037
-      #define _SHA_SUPPORTED
+      #define Z7_COMPILER_SHA1_SUPPORTED
     #endif
   #elif defined(__clang__)
     #if (__clang_major__ >= 8) // fix that check
-      #define _SHA_SUPPORTED
+      #define Z7_COMPILER_SHA1_SUPPORTED
     #endif
   #elif defined(__GNUC__)
     #if (__GNUC__ >= 6) // fix that check
-      #define _SHA_SUPPORTED
+      #define Z7_COMPILER_SHA1_SUPPORTED
     #endif
   #endif
 #endif
 
-void MY_FAST_CALL Sha1_UpdateBlocks(UInt32 state[5], const Byte *data, size_t numBlocks);
+void Z7_FASTCALL Sha1_UpdateBlocks(UInt32 state[5], const Byte *data, size_t numBlocks);
 
-#ifdef _SHA_SUPPORTED
-  void MY_FAST_CALL Sha1_UpdateBlocks_HW(UInt32 state[5], const Byte *data, size_t numBlocks);
+#ifdef Z7_COMPILER_SHA1_SUPPORTED
+  void Z7_FASTCALL Sha1_UpdateBlocks_HW(UInt32 state[5], const Byte *data, size_t numBlocks);
 
-  static SHA1_FUNC_UPDATE_BLOCKS g_FUNC_UPDATE_BLOCKS = Sha1_UpdateBlocks;
-  static SHA1_FUNC_UPDATE_BLOCKS g_FUNC_UPDATE_BLOCKS_HW;
+  static SHA1_FUNC_UPDATE_BLOCKS g_SHA1_FUNC_UPDATE_BLOCKS = Sha1_UpdateBlocks;
+  static SHA1_FUNC_UPDATE_BLOCKS g_SHA1_FUNC_UPDATE_BLOCKS_HW;
 
-  #define UPDATE_BLOCKS(p) p->func_UpdateBlocks
+  #define SHA1_UPDATE_BLOCKS(p) p->func_UpdateBlocks
 #else
-  #define UPDATE_BLOCKS(p) Sha1_UpdateBlocks
+  #define SHA1_UPDATE_BLOCKS(p) Sha1_UpdateBlocks
 #endif
 
 
@@ -66,16 +66,16 @@ BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo)
 {
   SHA1_FUNC_UPDATE_BLOCKS func = Sha1_UpdateBlocks;
   
-  #ifdef _SHA_SUPPORTED
+  #ifdef Z7_COMPILER_SHA1_SUPPORTED
     if (algo != SHA1_ALGO_SW)
     {
       if (algo == SHA1_ALGO_DEFAULT)
-        func = g_FUNC_UPDATE_BLOCKS;
+        func = g_SHA1_FUNC_UPDATE_BLOCKS;
       else
       {
         if (algo != SHA1_ALGO_HW)
           return False;
-        func = g_FUNC_UPDATE_BLOCKS_HW;
+        func = g_SHA1_FUNC_UPDATE_BLOCKS_HW;
         if (!func)
           return False;
       }
@@ -91,21 +91,22 @@ BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo)
 
 
 /* define it for speed optimization */
-// #define _SHA1_UNROLL
+// #define Z7_SHA1_UNROLL
 
 // allowed unroll steps: (1, 2, 4, 5, 20)
 
-#ifdef _SHA1_UNROLL
+#undef Z7_SHA1_BIG_W
+#ifdef Z7_SHA1_UNROLL
   #define STEP_PRE  20
   #define STEP_MAIN 20
 #else
-  #define _SHA1_BIG_W
+  #define Z7_SHA1_BIG_W
   #define STEP_PRE  5
   #define STEP_MAIN 5
 #endif
 
 
-#ifdef _SHA1_BIG_W
+#ifdef Z7_SHA1_BIG_W
   #define kNumW 80
   #define w(i) W[i]
 #else
@@ -150,11 +151,11 @@ BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo)
 */
 
 #define M5(i, fx, wx0, wx1) \
-    T5 ( a,b,c,d,e, fx, wx0((i)  ) ); \
-    T5 ( e,a,b,c,d, fx, wx1((i)+1) ); \
-    T5 ( d,e,a,b,c, fx, wx1((i)+2) ); \
-    T5 ( c,d,e,a,b, fx, wx1((i)+3) ); \
-    T5 ( b,c,d,e,a, fx, wx1((i)+4) ); \
+    T5 ( a,b,c,d,e, fx, wx0((i)  ) ) \
+    T5 ( e,a,b,c,d, fx, wx1((i)+1) ) \
+    T5 ( d,e,a,b,c, fx, wx1((i)+2) ) \
+    T5 ( c,d,e,a,b, fx, wx1((i)+3) ) \
+    T5 ( b,c,d,e,a, fx, wx1((i)+4) ) \
 
 #define R5(i, fx, wx) \
     M5 ( i, fx, wx, wx) \
@@ -163,17 +164,17 @@ BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo)
 #if STEP_PRE > 5
 
   #define R20_START \
-    R5 (  0, f0, w0); \
-    R5 (  5, f0, w0); \
-    R5 ( 10, f0, w0); \
-    M5 ( 15, f0, w0, w1); \
+    R5 (  0, f0, w0) \
+    R5 (  5, f0, w0) \
+    R5 ( 10, f0, w0) \
+    M5 ( 15, f0, w0, w1) \
   
   #elif STEP_PRE == 5
   
   #define R20_START \
     { size_t i; for (i = 0; i < 15; i += STEP_PRE) \
-      { R5(i, f0, w0); } } \
-    M5 ( 15, f0, w0, w1); \
+      { R5(i, f0, w0) } } \
+    M5 ( 15, f0, w0, w1) \
 
 #else
 
@@ -187,8 +188,8 @@ BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo)
 
   #define R20_START \
     { size_t i; for (i = 0; i < 16; i += STEP_PRE) \
-      { R_PRE(i, f0, w0); } } \
-    R4 ( 16, f0, w1); \
+      { R_PRE(i, f0, w0) } } \
+    R4 ( 16, f0, w1) \
 
 #endif
 
@@ -197,10 +198,10 @@ BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo)
 #if STEP_MAIN > 5
 
   #define R20(ii, fx) \
-    R5 ( (ii)     , fx, w1); \
-    R5 ( (ii) + 5 , fx, w1); \
-    R5 ( (ii) + 10, fx, w1); \
-    R5 ( (ii) + 15, fx, w1); \
+    R5 ( (ii)     , fx, w1) \
+    R5 ( (ii) + 5 , fx, w1) \
+    R5 ( (ii) + 10, fx, w1) \
+    R5 ( (ii) + 15, fx, w1) \
 
 #else
 
@@ -216,7 +217,7 @@ BoolInt Sha1_SetFunction(CSha1 *p, unsigned algo)
 
   #define R20(ii, fx)  \
     { size_t i; for (i = (ii); i < (ii) + 20; i += STEP_MAIN) \
-      { R_MAIN(i, fx, w1); } } \
+      { R_MAIN(i, fx, w1) } } \
 
 #endif
 
@@ -235,8 +236,8 @@ void Sha1_InitState(CSha1 *p)
 void Sha1_Init(CSha1 *p)
 {
   p->func_UpdateBlocks =
-  #ifdef _SHA_SUPPORTED
-      g_FUNC_UPDATE_BLOCKS;
+  #ifdef Z7_COMPILER_SHA1_SUPPORTED
+      g_SHA1_FUNC_UPDATE_BLOCKS;
   #else
       NULL;
   #endif
@@ -244,8 +245,8 @@ void Sha1_Init(CSha1 *p)
 }
 
 
-MY_NO_INLINE
-void MY_FAST_CALL Sha1_UpdateBlocks(UInt32 state[5], const Byte *data, size_t numBlocks)
+Z7_NO_INLINE
+void Z7_FASTCALL Sha1_UpdateBlocks(UInt32 state[5], const Byte *data, size_t numBlocks)
 {
   UInt32 a, b, c, d, e;
   UInt32 W[kNumW];
@@ -266,9 +267,9 @@ void MY_FAST_CALL Sha1_UpdateBlocks(UInt32 state[5], const Byte *data, size_t nu
   #endif
 
   R20_START
-  R20(20, f1);
-  R20(40, f2);
-  R20(60, f3);
+  R20(20, f1)
+  R20(40, f2)
+  R20(60, f3)
 
   a += state[0];
   b += state[1];
@@ -288,7 +289,7 @@ void MY_FAST_CALL Sha1_UpdateBlocks(UInt32 state[5], const Byte *data, size_t nu
 }
 
 
-#define Sha1_UpdateBlock(p) UPDATE_BLOCKS(p)(p->state, p->buffer, 1)
+#define Sha1_UpdateBlock(p) SHA1_UPDATE_BLOCKS(p)(p->state, p->buffer, 1)
 
 void Sha1_Update(CSha1 *p, const Byte *data, size_t size)
 {
@@ -318,7 +319,7 @@ void Sha1_Update(CSha1 *p, const Byte *data, size_t size)
   }
   {
     size_t numBlocks = size >> 6;
-    UPDATE_BLOCKS(p)(p->state, data, numBlocks);
+    SHA1_UPDATE_BLOCKS(p)(p->state, data, numBlocks);
     size &= 0x3F;
     if (size == 0)
       return;
@@ -361,18 +362,18 @@ void Sha1_Final(CSha1 *p, Byte *digest)
   memset(&p->buffer[pos], 0, (64 - 8) - pos);
 
   {
-    UInt64 numBits = (p->count << 3);
-    SetBe32(p->buffer + 64 - 8, (UInt32)(numBits >> 32));
-    SetBe32(p->buffer + 64 - 4, (UInt32)(numBits));
+    const UInt64 numBits = (p->count << 3);
+    SetBe32(p->buffer + 64 - 8, (UInt32)(numBits >> 32))
+    SetBe32(p->buffer + 64 - 4, (UInt32)(numBits))
   }
   
   Sha1_UpdateBlock(p);
 
-  SetBe32(digest,      p->state[0]);
-  SetBe32(digest + 4,  p->state[1]);
-  SetBe32(digest + 8,  p->state[2]);
-  SetBe32(digest + 12, p->state[3]);
-  SetBe32(digest + 16, p->state[4]);
+  SetBe32(digest,      p->state[0])
+  SetBe32(digest + 4,  p->state[1])
+  SetBe32(digest + 8,  p->state[2])
+  SetBe32(digest + 12, p->state[3])
+  SetBe32(digest + 16, p->state[4])
   
 
 
@@ -384,10 +385,10 @@ void Sha1_Final(CSha1 *p, Byte *digest)
 void Sha1_PrepareBlock(const CSha1 *p, Byte *block, unsigned size)
 {
   const UInt64 numBits = (p->count + size) << 3;
-  SetBe32(&((UInt32 *)(void *)block)[SHA1_NUM_BLOCK_WORDS - 2], (UInt32)(numBits >> 32));
-  SetBe32(&((UInt32 *)(void *)block)[SHA1_NUM_BLOCK_WORDS - 1], (UInt32)(numBits));
+  SetBe32(&((UInt32 *)(void *)block)[SHA1_NUM_BLOCK_WORDS - 2], (UInt32)(numBits >> 32))
+  SetBe32(&((UInt32 *)(void *)block)[SHA1_NUM_BLOCK_WORDS - 1], (UInt32)(numBits))
   // SetBe32((UInt32 *)(block + size), 0x80000000);
-  SetUi32((UInt32 *)(void *)(block + size), 0x80);
+  SetUi32((UInt32 *)(void *)(block + size), 0x80)
   size += 4;
   while (size != (SHA1_NUM_BLOCK_WORDS - 2) * 4)
   {
@@ -407,19 +408,19 @@ void Sha1_GetBlockDigest(const CSha1 *p, const Byte *data, Byte *destDigest)
   st[3] = p->state[3];
   st[4] = p->state[4];
   
-  UPDATE_BLOCKS(p)(st, data, 1);
+  SHA1_UPDATE_BLOCKS(p)(st, data, 1);
 
-  SetBe32(destDigest + 0    , st[0]);
-  SetBe32(destDigest + 1 * 4, st[1]);
-  SetBe32(destDigest + 2 * 4, st[2]);
-  SetBe32(destDigest + 3 * 4, st[3]);
-  SetBe32(destDigest + 4 * 4, st[4]);
+  SetBe32(destDigest + 0    , st[0])
+  SetBe32(destDigest + 1 * 4, st[1])
+  SetBe32(destDigest + 2 * 4, st[2])
+  SetBe32(destDigest + 3 * 4, st[3])
+  SetBe32(destDigest + 4 * 4, st[4])
 }
 
 
-void Sha1Prepare()
+void Sha1Prepare(void)
 {
-  #ifdef _SHA_SUPPORTED
+  #ifdef Z7_COMPILER_SHA1_SUPPORTED
   SHA1_FUNC_UPDATE_BLOCKS f, f_hw;
   f = Sha1_UpdateBlocks;
   f_hw = NULL;
@@ -467,7 +468,31 @@ void Sha1Prepare()
         f = f_hw = Sha1_UpdateBlocks_HW;
       }
   }
-  g_FUNC_UPDATE_BLOCKS    = f;
-  g_FUNC_UPDATE_BLOCKS_HW = f_hw;
+  g_SHA1_FUNC_UPDATE_BLOCKS    = f;
+  g_SHA1_FUNC_UPDATE_BLOCKS_HW = f_hw;
   #endif
 }
+
+#undef kNumW
+#undef w
+#undef w0
+#undef w1
+#undef f0
+#undef f1
+#undef f2
+#undef f3
+#undef T1
+#undef T5
+#undef M5
+#undef R1
+#undef R2
+#undef R4
+#undef R5
+#undef R20_START
+#undef R_PRE
+#undef R_MAIN
+#undef STEP_PRE
+#undef STEP_MAIN
+#undef Z7_SHA1_BIG_W
+#undef Z7_SHA1_UNROLL
+#undef Z7_COMPILER_SHA1_SUPPORTED

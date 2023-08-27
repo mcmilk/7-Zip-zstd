@@ -1,7 +1,7 @@
 // RegistryContextMenu.h
 
-#ifndef __REGISTRY_CONTEXT_MENU_H
-#define __REGISTRY_CONTEXT_MENU_H
+#ifndef ZIP7_INC_REGISTRY_CONTEXT_MENU_H
+#define ZIP7_INC_REGISTRY_CONTEXT_MENU_H
 
 #ifndef UNDER_CE
 

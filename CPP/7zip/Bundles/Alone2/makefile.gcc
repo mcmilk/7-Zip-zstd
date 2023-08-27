@@ -4,7 +4,7 @@ PROG = 7zz
 # USE_ASM = 1
 # ST_MODE = 1
 
-CONSOLE_VARIANT_FLAGS=-DPROG_VARIANT_Z
+CONSOLE_VARIANT_FLAGS=-DZ7_PROG_VARIANT_Z
 
 include ../Format7zF/Arc_gcc.mak
 
@@ -20,9 +20,9 @@ endif
 ifdef IS_MINGW
 
 LOCAL_FLAGS_SYS = \
-  -D_7ZIP_LARGE_PAGES \
-  -DWIN_LONG_PATH \
-  -DSUPPORT_DEVICE_FILE \
+  -DZ7_LARGE_PAGES \
+  -DZ7_LONG_PATH \
+  -DZ7_DEVICE_FILE \
 
 SYS_OBJS = \
   $O/FileSystem.o \
@@ -95,6 +95,7 @@ WIN_OBJS_2 = \
 7ZIP_COMMON_OBJS_2 = \
   $O/FilePathAutoRename.o \
   $O/FileStreams.o \
+  $O/MultiOutStream.o \
 
 OBJS = \
   $(ARC_OBJS) \

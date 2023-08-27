@@ -1,7 +1,7 @@
 // Crypto/ZipStrong.h
 
-#ifndef __CRYPTO_ZIP_STRONG_H
-#define __CRYPTO_ZIP_STRONG_H
+#ifndef ZIP7_INC_CRYPTO_ZIP_STRONG_H
+#define ZIP7_INC_CRYPTO_ZIP_STRONG_H
 
 #include "../../Common/MyBuffer2.h"
 
@@ -28,34 +28,29 @@ struct CKeyInfo
   
   void SetPassword(const Byte *data, UInt32 size);
 
-  ~CKeyInfo() { Wipe(); }
   void Wipe()
   {
-    MY_memset_0_ARRAY(MasterKey);
+    Z7_memset_0_ARRAY(MasterKey);
   }
 };
 
-class CBaseCoder:
-  public CAesCbcDecoder,
-  public ICryptoSetPassword
-{
-protected:
-  CKeyInfo _key;
-  CAlignedBuffer _bufAligned;
-public:
-  STDMETHOD(Init)();
-  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
-};
 
 const unsigned kAesPadAllign = AES_BLOCK_SIZE;
 
-class CDecoder: public CBaseCoder
-{
+Z7_CLASS_IMP_COM_2(
+  CDecoder
+  , ICompressFilter
+  , ICryptoSetPassword
+)
+  CAesCbcDecoder *_cbcDecoder;
+  CMyComPtr<ICompressFilter> _aesFilter;
+  CKeyInfo _key;
+  CAlignedBuffer _bufAligned;
+
   UInt32 _ivSize;
   Byte _iv[16];
   UInt32 _remSize;
 public:
-  MY_UNKNOWN_IMP1(ICryptoSetPassword)
   HRESULT ReadHeader(ISequentialInStream *inStream, UInt32 crc, UInt64 unpackSize);
   HRESULT Init_and_CheckPassword(bool &passwOK);
   UInt32 GetPadSize(UInt32 packSize32) const
@@ -64,11 +59,12 @@ public:
     // Change it, if is not AES
     return kAesPadAllign - (packSize32 & (kAesPadAllign - 1));
   }
-
+  CDecoder();
   ~CDecoder() { Wipe(); }
   void Wipe()
   {
-    MY_memset_0_ARRAY(_iv);
+    Z7_memset_0_ARRAY(_iv);
+    _key.Wipe();
   }
 };
 

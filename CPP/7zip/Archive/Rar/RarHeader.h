@@ -1,7 +1,7 @@
 // Archive/RarHeader.h
 
-#ifndef __ARCHIVE_RAR_HEADER_H
-#define __ARCHIVE_RAR_HEADER_H
+#ifndef ZIP7_INC_ARCHIVE_RAR_HEADER_H
+#define ZIP7_INC_ARCHIVE_RAR_HEADER_H
 
 #include "../../../Common/MyTypes.h"
 

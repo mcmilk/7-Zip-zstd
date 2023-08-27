@@ -1,19 +1,21 @@
 // OutMemStream.h
 
-#ifndef __OUT_MEM_STREAM_H
-#define __OUT_MEM_STREAM_H
+#ifndef ZIP7_INC_OUT_MEM_STREAM_H
+#define ZIP7_INC_OUT_MEM_STREAM_H
 
 #include "../../Common/MyCom.h"
 
 #include "MemBlocks.h"
 
-class COutMemStream:
-  public IOutStream,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_1(
+  COutMemStream
+  , IOutStream
+)
+  Z7_IFACE_COM7_IMP(ISequentialOutStream)
+
   CMemBlockManagerMt *_memManager;
-  unsigned _curBlockIndex;
   size_t _curBlockPos;
+  unsigned _curBlockIndex;
   bool _realStreamMode;
 
   bool _unlockEventWasSent;
@@ -24,14 +26,13 @@ class COutMemStream:
   HRESULT StopWriteResult;
   CMemLockBlocks Blocks;
 
-  UInt64 GetPos() const { return (UInt64)_curBlockIndex * _memManager->GetBlockSize() + _curBlockPos; }
-
   CMyComPtr<ISequentialOutStream> OutSeqStream;
   CMyComPtr<IOutStream> OutStream;
 
+  UInt64 GetPos() const { return (UInt64)_curBlockIndex * _memManager->GetBlockSize() + _curBlockPos; }
+
 public:
 
-  
   HRes CreateEvents(SYNC_PARAM_DECL(synchro))
   {
     WRes wres = StopWritingEvent.CreateIfNotCreated_Reset(SYNC_WFMO(synchro));
@@ -98,12 +99,6 @@ public:
     StopWriteResult = res;
     StopWritingEvent.Set();
   }
-
-  MY_UNKNOWN_IMP
-
-  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
-  STDMETHOD(SetSize)(UInt64 newSize);
 };
 
 #endif

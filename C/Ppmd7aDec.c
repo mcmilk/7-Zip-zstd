@@ -1,5 +1,5 @@
 /* Ppmd7aDec.c -- PPMd7a (PPMdH) Decoder
-2021-04-13 : Igor Pavlov : Public domain
+2023-04-02 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.H (2001): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -8,8 +8,8 @@ This code is based on:
 
 #include "Ppmd7.h"
 
-#define kTop (1 << 24)
-#define kBot (1 << 15)
+#define kTop ((UInt32)1 << 24)
+#define kBot ((UInt32)1 << 15)
 
 #define READ_BYTE(p) IByteIn_Read((p)->Stream)
 
@@ -37,9 +37,9 @@ BoolInt Ppmd7a_RangeDec_Init(CPpmd7_RangeDec *p)
 
 #define R (&p->rc.dec)
 
-MY_FORCE_INLINE
-// MY_NO_INLINE
-static void RangeDec_Decode(CPpmd7 *p, UInt32 start, UInt32 size)
+Z7_FORCE_INLINE
+// Z7_NO_INLINE
+static void Ppmd7a_RD_Decode(CPpmd7 *p, UInt32 start, UInt32 size)
 {
   start *= R->Range;
   R->Low += start;
@@ -48,9 +48,9 @@ static void RangeDec_Decode(CPpmd7 *p, UInt32 start, UInt32 size)
   RC_NORM_LOCAL(R)
 }
 
-#define RC_Decode(start, size) RangeDec_Decode(p, start, size);
-#define RC_DecodeFinal(start, size) RC_Decode(start, size) RC_NORM_REMOTE(R)
-#define RC_GetThreshold(total) (R->Code / (R->Range /= (total)))
+#define RC_Decode(start, size)  Ppmd7a_RD_Decode(p, start, size);
+#define RC_DecodeFinal(start, size)  RC_Decode(start, size)  RC_NORM_REMOTE(R)
+#define RC_GetThreshold(total)  (R->Code / (R->Range /= (total)))
 
 
 #define CTX(ref) ((CPpmd7_Context *)Ppmd7_GetContext(p, ref))
@@ -70,7 +70,7 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
     CPpmd_State *s = Ppmd7_GetStats(p, p->MinContext);
     unsigned i;
     UInt32 count, hiCnt;
-    UInt32 summFreq = p->MinContext->Union2.SummFreq;
+    const UInt32 summFreq = p->MinContext->Union2.SummFreq;
 
     if (summFreq > R->Range)
       return PPMD7_SYM_ERROR;
@@ -81,7 +81,7 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
     if ((Int32)(count -= s->Freq) < 0)
     {
       Byte sym;
-      RC_DecodeFinal(0, s->Freq);
+      RC_DecodeFinal(0, s->Freq)
       p->FoundState = s;
       sym = s->Symbol;
       Ppmd7_Update1_0(p);
@@ -96,7 +96,7 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
       if ((Int32)(count -= (++s)->Freq) < 0)
       {
         Byte sym;
-        RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq);
+        RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq)
         p->FoundState = s;
         sym = s->Symbol;
         Ppmd7_Update1(p);
@@ -109,10 +109,10 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
       return PPMD7_SYM_ERROR;
     
     hiCnt -= count;
-    RC_Decode(hiCnt, summFreq - hiCnt);
+    RC_Decode(hiCnt, summFreq - hiCnt)
 
     p->HiBitsFlag = PPMD7_HiBitsFlag_3(p->FoundState->Symbol);
-    PPMD_SetAllBitsIn256Bytes(charMask);
+    PPMD_SetAllBitsIn256Bytes(charMask)
     // i = p->MinContext->NumStats - 1;
     // do { MASK((--s)->Symbol) = 0; } while (--i);
     {
@@ -176,7 +176,7 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
     R->Range = (R->Range & ~((UInt32)PPMD_BIN_SCALE - 1)) - size0;
     RC_NORM_LOCAL(R)
     
-    PPMD_SetAllBitsIn256Bytes(charMask);
+    PPMD_SetAllBitsIn256Bytes(charMask)
     MASK(Ppmd7Context_OneState(p->MinContext)->Symbol) = 0;
     p->PrevSuccess = 0;
   }
@@ -245,13 +245,13 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
         {
           count -= s->Freq & (unsigned)(MASK((s)->Symbol)); s++; if ((Int32)count < 0) break;
           // count -= s->Freq & (unsigned)(MASK((s)->Symbol)); s++; if ((Int32)count < 0) break;
-        };
+        }
       }
       s--;
-      RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq);
+      RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq)
 
       // new (see->Summ) value can overflow over 16-bits in some rare cases
-      Ppmd_See_Update(see);
+      Ppmd_See_UPDATE(see)
       p->FoundState = s;
       sym = s->Symbol;
       Ppmd7_Update2(p);
@@ -261,7 +261,7 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
     if (count >= freqSum)
       return PPMD7_SYM_ERROR;
     
-    RC_Decode(hiCnt, freqSum - hiCnt);
+    RC_Decode(hiCnt, freqSum - hiCnt)
 
     // We increase (see->Summ) for sum of Freqs of all non_Masked symbols.
     // new (see->Summ) value can overflow over 16-bits in some rare cases
@@ -277,3 +277,19 @@ int Ppmd7a_DecodeSymbol(CPpmd7 *p)
     while (s != s2);
   }
 }
+
+#undef kTop
+#undef kBot
+#undef READ_BYTE
+#undef RC_NORM_BASE
+#undef RC_NORM_1
+#undef RC_NORM
+#undef RC_NORM_LOCAL
+#undef RC_NORM_REMOTE
+#undef R
+#undef RC_Decode
+#undef RC_DecodeFinal
+#undef RC_GetThreshold
+#undef CTX
+#undef SUCCESSOR
+#undef MASK

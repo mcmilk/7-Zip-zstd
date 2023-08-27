@@ -1,7 +1,7 @@
 // CompressDialog.h
 
-#ifndef __COMPRESS_DIALOG_H
-#define __COMPRESS_DIALOG_H
+#ifndef ZIP7_INC_COMPRESS_DIALOG_H
+#define ZIP7_INC_COMPRESS_DIALOG_H
 
 #include "../../../Common/Wildcard.h"
 
@@ -45,6 +45,7 @@ namespace NCompressDialog
     UInt32 Level;
     UString Method;
     UInt64 Dict64;
+    // UInt64 Dict64_Chain;
     bool OrderMode;
     UInt32 Order;
     UString Options;
@@ -93,6 +94,7 @@ namespace NCompressDialog
       NumThreads = (UInt32)(Int32)-1;
       SolidIsSpecified = false;
       Dict64 = (UInt64)(Int64)(-1);
+      // Dict64_Chain = (UInt64)(Int64)(-1);
       OrderMode = false;
       Method.Empty();
       Options.Empty();
@@ -144,11 +146,14 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   NWindows::NControl::CComboBox m_Level;
   NWindows::NControl::CComboBox m_Method;
   NWindows::NControl::CComboBox m_Dictionary;
+  // NWindows::NControl::CComboBox m_Dictionary_Chain;
   NWindows::NControl::CComboBox m_Order;
   NWindows::NControl::CComboBox m_Solid;
   NWindows::NControl::CComboBox m_NumThreads;
   NWindows::NControl::CComboBox m_MemUse;
   NWindows::NControl::CComboBox m_Volume;
+
+  int _dictionaryCombo_left;
 
   UStringVector _memUse_Strings;
 
@@ -163,6 +168,7 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
 
   int _auto_MethodId;
   UInt32 _auto_Dict; // (UInt32)(Int32)-1 means unknown
+  UInt32 _auto_Dict_Chain; // (UInt32)(Int32)-1 means unknown
   UInt32 _auto_Order;
   UInt64 _auto_Solid;
   UInt32 _auto_NumThreads;
@@ -201,7 +207,7 @@ public:
   void CheckSFXNameChange();
   void SetArchiveName2(bool prevWasSFX);
   
-  int GetStaticFormatIndex();
+  unsigned GetStaticFormatIndex();
 
   void SetNearestSelectComboBox(NWindows::NControl::CComboBox &comboBox, UInt32 value);
 
@@ -224,6 +230,7 @@ public:
   {
     SetDictionary2();
     EnableMultiCombo(IDC_COMPRESS_DICTIONARY);
+    // EnableMultiCombo(IDC_COMPRESS_DICTIONARY2);
     SetOrder2();
     EnableMultiCombo(IDC_COMPRESS_ORDER);
   }
@@ -243,6 +250,7 @@ public:
 
   int AddDict2(size_t sizeReal, size_t sizeShow);
   int AddDict(size_t size);
+  // int AddDict_Chain(size_t size);
  
   void SetDictionary2();
 
@@ -254,6 +262,8 @@ public:
   UInt32 GetLevel2();
   
   UInt64 GetDictSpec() { return GetComboValue_64(m_Dictionary, 1); }
+  // UInt64 GetDictChainSpec() { return GetComboValue_64(m_Dictionary_Chain, 1); }
+  
   UInt64 GetDict2()
   {
     UInt64 num = GetDictSpec();
@@ -319,6 +329,8 @@ public:
 
   void PrintMemUsage(UINT res, UInt64 value);
   void SetMemoryUsage();
+  void Print_Params();
+
   void SetParams();
 
   void SaveOptionsInMem();
@@ -328,7 +340,9 @@ public:
 
   unsigned GetFormatIndex();
   bool SetArcPathFields(const UString &path, UString &name, bool always);
-  bool GetFinalPath_Smart(UString &resPath);
+  bool SetArcPathFields(const UString &path);
+  bool GetFinalPath_Smart(UString &resPath) const;
+  void ArcPath_WasChanged(const UString &newPath);
 
   void CheckSFXControlsEnable();
   // void CheckVolumeEnable();
@@ -339,11 +353,12 @@ public:
   bool IsSFX();
   void OnButtonSFX();
 
-  virtual bool OnInit();
-  virtual bool OnCommand(int code, int itemID, LPARAM lParam);
-  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
-  virtual void OnOK();
-  virtual void OnHelp();
+  virtual bool OnInit() Z7_override;
+  virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam) Z7_override;
+  virtual bool OnCommand(unsigned code, unsigned itemID, LPARAM lParam) Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
+  virtual void OnOK() Z7_override;
+  virtual void OnHelp() Z7_override;
 
   void MessageBoxError(LPCWSTR message)
   {
@@ -361,15 +376,14 @@ public:
 
   NCompressDialog::CInfo Info;
   UString OriginalFileName; // for bzip2, gzip2
-  bool CurrentDirWasChanged;
 
-  INT_PTR Create(HWND wndParent = 0)
+  INT_PTR Create(HWND wndParent = NULL)
   {
     BIG_DIALOG_SIZE(400, 320);
     return CModalDialog::Create(SIZED_DIALOG(IDD_COMPRESS), wndParent);
   }
 
-  CCompressDialog(): CurrentDirWasChanged(false) {};
+  CCompressDialog() {}
 };
 
 
@@ -383,10 +397,10 @@ class COptionsDialog: public NWindows::NControl::CModalDialog
     bool DefaultVal;
     CBoolPair BoolPair;
     
-    int Id;
-    int Set_Id;
+    unsigned Id;
+    unsigned Set_Id;
 
-    void SetIDs(int id, int set_Id)
+    void SetIDs(unsigned id, unsigned set_Id)
     {
       Id = id;
       Set_Id = set_Id;
@@ -442,15 +456,15 @@ class COptionsDialog: public NWindows::NControl::CModalDialog
   void On_CheckBoxSet_Prec_Clicked();
   void On_CheckBoxSet_Clicked(const CBoolBox &bb);
 
-  virtual bool OnInit();
-  virtual bool OnCommand(int code, int itemID, LPARAM lParam);
-  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
-  virtual void OnOK();
-  virtual void OnHelp();
+  virtual bool OnInit() Z7_override;
+  virtual bool OnCommand(unsigned code, unsigned itemID, LPARAM lParam) Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
+  virtual void OnOK() Z7_override;
+  virtual void OnHelp() Z7_override;
 
 public:
 
-  INT_PTR Create(HWND wndParent = 0)
+  INT_PTR Create(HWND wndParent = NULL)
   {
     BIG_DIALOG_SIZE(240, 232);
     return CModalDialog::Create(SIZED_DIALOG(IDD_COMPRESS_OPTIONS), wndParent);
@@ -461,7 +475,7 @@ public:
       // , TimePrec(0)
       {
         Reset_TimePrec();
-      };
+      }
 };
 
 #endif

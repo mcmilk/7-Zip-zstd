@@ -2,8 +2,8 @@
 // According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
-#ifndef __COMPRESS_RAR5_DECODER_H
-#define __COMPRESS_RAR5_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_RAR5_DECODER_H
+#define ZIP7_INC_COMPRESS_RAR5_DECODER_H
 
 #include "../../../C/CpuArch.h"
 
@@ -18,7 +18,6 @@
 
 namespace NCompress {
 namespace NRar5 {
-
 
 /*
 struct CInBufferException: public CSystemException
@@ -55,7 +54,7 @@ public:
         _bufCheck2 = _buf;
       else
       {
-        UInt64 delta = _blockEnd - processed;
+        const UInt64 delta = _blockEnd - processed;
         if ((size_t)(_bufCheck - _buf) > delta)
           _bufCheck2 = _buf + (size_t)delta;
       }
@@ -64,7 +63,7 @@ public:
 
   bool IsBlockOverRead() const
   {
-    UInt64 v = GetProcessedSize_Round();
+    const UInt64 v = GetProcessedSize_Round();
     if (v < _blockEnd)
       return false;
     if (v > _blockEnd)
@@ -113,8 +112,8 @@ public:
   bool InputEofError() const { return ExtraBitsWereRead(); }
 
   unsigned GetProcessedBits7() const { return _bitPos; }
-  UInt64 GetProcessedSize_Round() const { return _processedSize + (_buf - _bufBase); }
-  UInt64 GetProcessedSize() const { return _processedSize + (_buf - _bufBase) + ((_bitPos + 7) >> 3); }
+  UInt64 GetProcessedSize_Round() const { return _processedSize + (size_t)(_buf - _bufBase); }
+  UInt64 GetProcessedSize() const { return _processedSize + (size_t)(_buf - _bufBase) + ((_bitPos + 7) >> 3); }
 
   void AlignToByte()
   {
@@ -157,7 +156,7 @@ public:
   {
     const Byte *buf = _buf;
     UInt32 v = ((UInt32)buf[0] << 8) | (UInt32)buf[1];
-    UInt32 mask = ((1 << numBits) - 1);
+    const UInt32 mask = ((1 << numBits) - 1);
     numBits += _bitPos;
     v >>= (16 - numBits);
     _buf = buf + (numBits >> 3);
@@ -167,7 +166,7 @@ public:
 
   UInt32 ReadBits32(unsigned numBits)
   {
-    UInt32 mask = ((1 << numBits) - 1);
+    const UInt32 mask = ((1 << numBits) - 1);
     numBits += _bitPos;
     const Byte *buf = _buf;
     UInt32 v = GetBe32(buf);
@@ -205,11 +204,11 @@ const unsigned kTablesSizesSum = kMainTableSize + kDistTableSize + kAlignTableSi
 
 const unsigned kNumHuffmanBits = 15;
 
-class CDecoder:
-  public ICompressCoder,
-  public ICompressSetDecoderProperties2,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_2(
+  CDecoder
+  , ICompressCoder
+  , ICompressSetDecoderProperties2
+)
   bool _useAlignBits;
   bool _isLastBlock;
   bool _unpackSize_Defined;
@@ -293,13 +292,6 @@ class CDecoder:
 public:
   CDecoder();
   ~CDecoder();
-
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 };
 
 }}

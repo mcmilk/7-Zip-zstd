@@ -1,7 +1,7 @@
 // FoldersPage.h
  
-#ifndef __FOLDERS_PAGE_H
-#define __FOLDERS_PAGE_H
+#ifndef ZIP7_INC_FOLDERS_PAGE_H
+#define ZIP7_INC_FOLDERS_PAGE_H
 
 #include "../../../Windows/Control/PropertyPage.h"
 
@@ -22,11 +22,11 @@ class CFoldersPage : public NWindows::NControl::CPropertyPage
   int GetWorkMode() const;
   void GetWorkDir(NWorkDir::CInfo &workDirInfo);
   // bool WasChanged();
-  virtual bool OnInit();
-  virtual bool OnCommand(int code, int itemID, LPARAM lParam);
-  virtual void OnNotifyHelp();
-  virtual LONG OnApply();
-  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
+  virtual bool OnInit() Z7_override;
+  virtual bool OnCommand(unsigned code, unsigned itemID, LPARAM lParam) Z7_override;
+  virtual void OnNotifyHelp() Z7_override;
+  virtual LONG OnApply() Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
 };
 
 #endif

@@ -1,9 +1,11 @@
 // WimHandler.h
 
-#ifndef __ARCHIVE_WIM_HANDLER_H
-#define __ARCHIVE_WIM_HANDLER_H
+#ifndef ZIP7_INC_ARCHIVE_WIM_HANDLER_H
+#define ZIP7_INC_ARCHIVE_WIM_HANDLER_H
 
 #include "../../../Common/MyCom.h"
+
+#include "../Common/HandlerOut.h"
 
 #include "WimIn.h"
 
@@ -12,15 +14,13 @@ namespace NWim {
 
 static const Int32 kNumImagesMaxUpdate = (1 << 10);
 
-class CHandler:
-  public IInArchive,
-  public IArchiveGetRawProps,
-  public IArchiveGetRootProps,
-  public IArchiveKeepModeForNextOpen,
-  public ISetProperties,
-  public IOutArchive,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_5(
+    IArchiveGetRawProps
+  , IArchiveGetRootProps
+  , IArchiveKeepModeForNextOpen
+  , ISetProperties
+  , IOutArchive
+)
   CDatabase _db;
   UInt32 _version;
   bool _isOldVersion;
@@ -49,11 +49,14 @@ class CHandler:
   UInt64 _phySize;
   int _firstVolumeIndex;
 
+  CHandlerTimeOptions _timeOptions;
+
   void InitDefaults()
   {
     _set_use_ShowImageNumber = false;
     _set_showImageNumber = false;
     _defaultImageNumber = -1;
+    _timeOptions.Init();
   }
 
   bool IsUpdateSupported() const
@@ -83,19 +86,6 @@ class CHandler:
   HRESULT        GetTime(IArchiveUpdateCallback *callback, UInt32 callbackIndex, Int32 arcIndex, PROPID propID, FILETIME &ft);
 public:
   CHandler();
-  MY_UNKNOWN_IMP6(
-      IInArchive,
-      IArchiveGetRawProps,
-      IArchiveGetRootProps,
-      IArchiveKeepModeForNextOpen,
-      ISetProperties,
-      IOutArchive)
-  INTERFACE_IInArchive(;)
-  INTERFACE_IArchiveGetRawProps(;)
-  INTERFACE_IArchiveGetRootProps(;)
-  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
-  STDMETHOD(KeepModeForNextOpen)();
-  INTERFACE_IOutArchive(;)
 };
 
 }}

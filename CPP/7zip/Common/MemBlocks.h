@@ -1,7 +1,7 @@
 // MemBlocks.h
 
-#ifndef __MEM_BLOCKS_H
-#define __MEM_BLOCKS_H
+#ifndef ZIP7_INC_MEM_BLOCKS_H
+#define ZIP7_INC_MEM_BLOCKS_H
 
 #include "../../Common/MyVector.h"
 
@@ -30,7 +30,7 @@ class CMemBlockManagerMt: public CMemBlockManager
 {
   NWindows::NSynchronization::CCriticalSection _criticalSection;
 public:
-  SYNC_OBJ_DECL(Synchro);
+  SYNC_OBJ_DECL(Synchro)
   NWindows::NSynchronization::CSemaphore_WFMO Semaphore;
 
   CMemBlockManagerMt(size_t blockSize = (1 << 20)): CMemBlockManager(blockSize) {}
@@ -62,7 +62,7 @@ struct CMemLockBlocks: public CMemBlocks
 {
   bool LockMode;
 
-  CMemLockBlocks(): LockMode(true) {};
+  CMemLockBlocks(): LockMode(true) {}
   void Free(CMemBlockManagerMt *memManager);
   void FreeBlock(unsigned index, CMemBlockManagerMt *memManager);
   // HRes SwitchToNoLockMode(CMemBlockManagerMt *memManager);

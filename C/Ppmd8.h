@@ -1,11 +1,11 @@
 /* Ppmd8.h -- Ppmd8 (PPMdI) compression codec
-2021-04-13 : Igor Pavlov : Public domain
+2023-04-02 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
 
-#ifndef __PPMD8_H
-#define __PPMD8_H
+#ifndef ZIP7_INC_PPMD8_H
+#define ZIP7_INC_PPMD8_H
 
 #include "Ppmd.h"
 
@@ -87,8 +87,8 @@ typedef struct
   UInt32 Low;
   union
   {
-    IByteIn *In;
-    IByteOut *Out;
+    IByteInPtr In;
+    IByteOutPtr Out;
   } Stream;
 
   Byte Indx2Units[PPMD_NUM_INDEXES + 2]; // +2 for alignment

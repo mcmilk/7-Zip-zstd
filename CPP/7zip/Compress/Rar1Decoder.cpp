@@ -39,7 +39,7 @@ static const UInt32 kHistorySize = (1 << 16);
 CDecoder::CDecoder():
    _isSolid(false),
    _solidAllowed(false)
-   { }
+   {}
 
 UInt32 CDecoder::ReadBits(unsigned numBits) { return m_InBitStream.ReadBits(numBits); }
 
@@ -73,8 +73,8 @@ UInt32 CDecoder::DecodeNum(const Byte *numTab)
 
   for (;;)
   {
-    UInt32 num = numTab[i];
-    UInt32 cur = num << (kNumBits - i);
+    const UInt32 num = numTab[i];
+    const UInt32 cur = num << (kNumBits - i);
     if (val < cur)
       break;
     i++;
@@ -126,7 +126,7 @@ HRESULT CDecoder::ShortLZ()
       return CopyBlock(dist, len);
     }
 
-    UInt32 saveLen = len;
+    const UInt32 saveLen = len;
     dist = m_RepDists[(m_RepDistPtr - (len - 9)) & 3];
     
     len = DecodeNum(PosL1);
@@ -342,9 +342,9 @@ HRESULT CDecoder::HuffDecode()
 void CDecoder::GetFlagsBuf()
 {
   UInt32 flags, newFlagsPlace;
-  UInt32 flagsPlace = DecodeNum(PosHf2); // [0, 256]
+  const UInt32 flagsPlace = DecodeNum(PosHf2); // [0, 256]
 
-  if (flagsPlace >= ARRAY_SIZE(ChSetC))
+  if (flagsPlace >= Z7_ARRAY_SIZE(ChSetC))
     return;
 
   for (;;)
@@ -362,15 +362,15 @@ void CDecoder::GetFlagsBuf()
 }
 
 
-void CDecoder::CorrHuff(UInt32 *CharSet,UInt32 *NumToPlace)
+void CDecoder::CorrHuff(UInt32 *CharSet, UInt32 *NumToPlace)
 {
   int i;
   for (i = 7; i >= 0; i--)
-    for (int j = 0; j < 32; j++, CharSet++)
-      *CharSet = (*CharSet & ~0xff) | i;
+    for (unsigned j = 0; j < 32; j++, CharSet++)
+      *CharSet = (*CharSet & ~(UInt32)0xff) | (unsigned)i;
   memset(NumToPlace, 0, sizeof(NToPl));
   for (i = 6; i >= 0; i--)
-    NumToPlace[i] = (7 - i) * 32;
+    NumToPlace[i] = (7 - (unsigned)i) * 32;
 }
 
 
@@ -459,7 +459,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
         FlagBuf <<= 1;
         if (Nlzb > Nhfb)
         {
-          RINOK(LongLZ());
+          RINOK(LongLZ())
           continue;
         }
       }
@@ -476,7 +476,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
         if ((FlagBuf & 0x80) == 0)
         {
           FlagBuf <<= 1;
-          RINOK(ShortLZ());
+          RINOK(ShortLZ())
           continue;
         }
         
@@ -484,13 +484,13 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
         
         if (Nlzb <= Nhfb)
         {
-          RINOK(LongLZ());
+          RINOK(LongLZ())
           continue;
         }
       }
     }
 
-    RINOK(HuffDecode());
+    RINOK(HuffDecode())
   }
   
   _solidAllowed = true;
@@ -498,8 +498,8 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
 }
 
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
   catch(const CInBufferException &e) { return e.ErrorCode; }
@@ -507,7 +507,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   catch(...) { return S_FALSE; }
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
+Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
 {
   if (size < 1)
     return E_INVALIDARG;

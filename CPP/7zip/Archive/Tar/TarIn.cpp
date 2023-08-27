@@ -14,8 +14,8 @@
 
 #define NUM_UNROLL_BYTES (8 * 4)
 
-MY_NO_INLINE static bool IsBufNonZero(const void *data, size_t size);
-MY_NO_INLINE static bool IsBufNonZero(const void *data, size_t size)
+Z7_NO_INLINE static bool IsBufNonZero(const void *data, size_t size);
+Z7_NO_INLINE static bool IsBufNonZero(const void *data, size_t size)
 {
   const Byte *p = (const Byte *)data;
 
@@ -159,7 +159,7 @@ API_FUNC_IsArc IsArc_Tar(const Byte *p2, size_t size)
 
   UInt32 mode;
   // we allow empty Mode value for LongName prefix items
-  CHECK(OctalToNumber32(p, mode, true)); p += 8;
+  CHECK(OctalToNumber32(p, mode, true)) p += 8;
 
   // if (!OctalToNumber32(p, item.UID)) item.UID = 0;
   p += 8;
@@ -170,9 +170,9 @@ API_FUNC_IsArc IsArc_Tar(const Byte *p2, size_t size)
   Int64 time;
   UInt32 checkSum;
   bool isBin;
-  CHECK(ParseSize(p, packSize, isBin)); p += 12;
-  CHECK(ParseInt64_MTime(p, time, isBin)); p += 12;
-  CHECK(OctalToNumber32(p, checkSum));
+  CHECK(ParseSize(p, packSize, isBin)) p += 12;
+  CHECK(ParseInt64_MTime(p, time, isBin)) p += 12;
+  CHECK(OctalToNumber32(p, checkSum))
   return k_IsArc_Res_YES;
 }
 
@@ -188,7 +188,7 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
   for (;;)
   {
     size_t processedSize = NFileHeader::kRecordSize;
-    RINOK(ReadStream(SeqStream, buf, &processedSize));
+    RINOK(ReadStream(SeqStream, buf, &processedSize))
     if (processedSize == 0)
     {
       if (!thereAreEmptyRecords)
@@ -220,7 +220,7 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
     thereAreEmptyRecords = true;
     if (OpenCallback)
     {
-      RINOK(Progress(item, 0));
+      RINOK(Progress(item, 0))
     }
   }
   if (thereAreEmptyRecords)
@@ -243,19 +243,19 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
   */
 
   // we allow empty Mode value for LongName prefix items
-  RIF(OctalToNumber32(p, item.Mode, true)); p += 8;
+  RIF(OctalToNumber32(p, item.Mode, true)) p += 8;
 
   if (!OctalToNumber32(p, item.UID)) { item.UID = 0; }  p += 8;
   if (!OctalToNumber32(p, item.GID)) { item.GID = 0; }  p += 8;
 
-  RIF(ParseSize(p, item.PackSize, item.PackSize_IsBin));
+  RIF(ParseSize(p, item.PackSize, item.PackSize_IsBin))
   item.Size = item.PackSize;
   item.Size_IsBin = item.PackSize_IsBin;
   p += 12;
-  RIF(ParseInt64_MTime(p, item.MTime, item.MTime_IsBin)); p += 12;
+  RIF(ParseInt64_MTime(p, item.MTime, item.MTime_IsBin)) p += 12;
   
   UInt32 checkSum;
-  RIF(OctalToNumber32(p, checkSum));
+  RIF(OctalToNumber32(p, checkSum))
   memset(p, ' ', 8); p += 8;
 
   item.LinkFlag = *p++;
@@ -273,8 +273,8 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
   ReadString(p, NFileHeader::kUserNameSize, item.User); p += NFileHeader::kUserNameSize;
   ReadString(p, NFileHeader::kGroupNameSize, item.Group); p += NFileHeader::kGroupNameSize;
 
-  item.DeviceMajor_Defined = (p[0] != 0); if (item.DeviceMajor_Defined) { RIF(OctalToNumber32(p, item.DeviceMajor)); } p += 8;
-  item.DeviceMinor_Defined = (p[0] != 0); if (item.DeviceMinor_Defined) { RIF(OctalToNumber32(p, item.DeviceMinor)); } p += 8;
+  item.DeviceMajor_Defined = (p[0] != 0); if (item.DeviceMajor_Defined) { RIF(OctalToNumber32(p, item.DeviceMajor)) } p += 8;
+  item.DeviceMinor_Defined = (p[0] != 0); if (item.DeviceMinor_Defined) { RIF(OctalToNumber32(p, item.DeviceMinor)) } p += 8;
 
   if (p[0] != 0
       && item.IsMagic_ustar_5chars()
@@ -338,7 +338,7 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
     Byte isExtended = (Byte)buf[482];
     if (isExtended != 0 && isExtended != 1)
       return S_OK;
-    RIF(ParseSize(buf + 483, item.Size, item.Size_IsBin));
+    RIF(ParseSize(buf + 483, item.Size, item.Size_IsBin))
     UInt64 min = 0;
     for (unsigned i = 0; i < 4; i++)
     {
@@ -350,8 +350,8 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
         break;
       }
       CSparseBlock sb;
-      RIF(ParseSize(p, sb.Offset));
-      RIF(ParseSize(p + 12, sb.Size));
+      RIF(ParseSize(p, sb.Offset))
+      RIF(ParseSize(p + 12, sb.Size))
       item.SparseBlocks.Add(sb);
       if (sb.Offset < min || sb.Offset > item.Size)
         return S_OK;
@@ -367,7 +367,7 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
     while (isExtended != 0)
     {
       size_t processedSize = NFileHeader::kRecordSize;
-      RINOK(ReadStream(SeqStream, buf, &processedSize));
+      RINOK(ReadStream(SeqStream, buf, &processedSize))
       if (processedSize != NFileHeader::kRecordSize)
       {
         error = k_ErrorType_UnexpectedEnd;
@@ -378,7 +378,7 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
 
       if (OpenCallback)
       {
-        RINOK(Progress(item, 0));
+        RINOK(Progress(item, 0))
       }
 
       isExtended = (Byte)buf[21 * 24];
@@ -394,8 +394,8 @@ HRESULT CArchive::GetNextItemReal(CItemEx &item)
           break;
         }
         CSparseBlock sb;
-        RIF(ParseSize(p, sb.Offset));
-        RIF(ParseSize(p + 12, sb.Size));
+        RIF(ParseSize(p, sb.Offset))
+        RIF(ParseSize(p + 12, sb.Size))
         item.SparseBlocks.Add(sb);
         if (sb.Offset < min || sb.Offset > item.Size)
           return S_OK;
@@ -459,7 +459,7 @@ HRESULT CArchive::ReadDataToBuffer(const CItemEx &item,
       error = k_ErrorType_UnexpectedEnd;
       return res;
     }
-    RINOK(res);
+    RINOK(res)
 
     packSize -= size;
    
@@ -492,7 +492,7 @@ HRESULT CArchive::ReadDataToBuffer(const CItemEx &item,
 
   if (InStream)
   {
-    RINOK(InStream->Seek((Int64)packSize, STREAM_SEEK_CUR, NULL));
+    RINOK(InStream->Seek((Int64)packSize, STREAM_SEEK_CUR, NULL))
     return S_OK;
   }
   const unsigned kBufSize = 1 << 15;
@@ -502,7 +502,7 @@ HRESULT CArchive::ReadDataToBuffer(const CItemEx &item,
   {
     if (OpenCallback)
     {
-      RINOK(Progress(item, pos));
+      RINOK(Progress(item, pos))
     }
 
     unsigned size = kBufSize;
@@ -590,8 +590,8 @@ static bool ParsePaxTime(const AString &src, CPaxTime &pt, bool &doubleTagError)
     if (sec >= ((UInt64)1 << 63))
       return false;
     if (isNegative)
-      sec = -(Int64)sec;
-    pt.Sec = sec;
+      sec = (UInt64)-(Int64)sec;
+    pt.Sec = (Int64)sec;
   }
   if (*end == 0)
   {
@@ -617,10 +617,10 @@ static bool ParsePaxTime(const AString &src, CPaxTime &pt, bool &doubleTagError)
     if (i < kNsDigits)
     {
       ns *= 10;
-      ns += c - '0';
+      ns += (unsigned)(c - '0');
     }
   }
-  pt.NumDigits = (i < kNsDigits ? i : kNsDigits);
+  pt.NumDigits = (int)(i < kNsDigits ? i : kNsDigits);
   while (i < kNsDigits)
   {
     ns *= 10;
@@ -690,7 +690,7 @@ bool CPaxInfo::ParsePax(const CTempBuffer &tb, bool isFile)
       return false;
 
     name.SetFrom(s + offset, i - offset);
-    val.SetFrom(s + i + 1, size - 1 - (i + 1));
+    val.SetFrom(s + i + 1, (unsigned)(size - 1 - (i + 1)));
     
     bool parsed = false;
     if (isFile)
@@ -822,29 +822,34 @@ HRESULT CArchive::ReadItem2(CItemEx &item)
   PaxBuf.Init();
   PaxBuf_global.Init();
   
-  for (unsigned recordIndex = 0;; recordIndex++)
+  UInt64 numExtraRecords = 0;
+
+  for (;;)
   {
     if (OpenCallback)
     {
-      RINOK(Progress(item, 0));
+      RINOK(Progress(item, 0))
     }
 
-    RINOK(GetNextItemReal(item));
+    RINOK(GetNextItemReal(item))
 
     // NumRecords++;
 
     if (!filled)
     {
       if (error == k_ErrorType_OK)
-      if (item.LongName_WasUsed ||
-          item.LongLink_WasUsed ||
-          item.Num_Pax_Records != 0)
+      if (numExtraRecords != 0
+          || item.LongName_WasUsed
+          || item.LongLink_WasUsed
+          || item.Num_Pax_Records != 0)
         error = k_ErrorType_Corrupted;
+      return S_OK;
     }
-    
     if (error != k_ErrorType_OK)
       return S_OK;
-    
+
+    numExtraRecords++;
+
     const char lf = item.LinkFlag;
     if (lf == NFileHeader::NLinkFlag::kGnu_LongName ||
         lf == NFileHeader::NLinkFlag::kGnu_LongLink)
@@ -874,7 +879,7 @@ HRESULT CArchive::ReadItem2(CItemEx &item)
       */
 
       const unsigned kLongNameSizeMax = (unsigned)1 << 14;
-      RINOK(ReadDataToBuffer(item, *tb, kLongNameSizeMax));
+      RINOK(ReadDataToBuffer(item, *tb, kLongNameSizeMax))
       if (error != k_ErrorType_OK)
         return S_OK;
 
@@ -921,7 +926,7 @@ HRESULT CArchive::ReadItem2(CItemEx &item)
 
       CTempBuffer *tb = (lf == NFileHeader::NLinkFlag::kGlobal ? &PaxBuf_global : &PaxBuf);
 
-      RINOK(ReadDataToBuffer(item, *tb, kParsingPaxSizeMax));
+      RINOK(ReadDataToBuffer(item, *tb, kParsingPaxSizeMax))
       if (error != k_ErrorType_OK)
         return S_OK;
 
@@ -951,12 +956,19 @@ HRESULT CArchive::ReadItem2(CItemEx &item)
         }
         else
           _is_PaxGlobal_Error = true;
-        if (isStartHeader)
+        
+        if (isStartHeader
+            && item.Num_Pax_Records == 1
+            && numExtraRecords == 1)
         {
           // we skip global pax header info after parsing
           item.HeaderPos += item.HeaderSize;
           item.HeaderSize = 0;
+          item.Num_Pax_Records = 0;
+          numExtraRecords = 0;
         }
+        else
+          _is_PaxGlobal_Error = true;
       }
       continue;
     }
@@ -1071,7 +1083,7 @@ HRESULT CArchive::ReadItem(CItemEx &item)
   if (error != k_ErrorType_OK)
     _error = error;
   
-  RINOK(res);
+  RINOK(res)
 
   if (filled)
   {

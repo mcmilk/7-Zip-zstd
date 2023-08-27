@@ -20,12 +20,12 @@ using namespace NFile;
 using namespace NDir;
 using namespace NFar;
 
-// This function is unused
+// This function is used by CAgentFolder
+int CompareFileNames_ForFolderList(const wchar_t *s1, const wchar_t *s2);
 int CompareFileNames_ForFolderList(const wchar_t *s1, const wchar_t *s2)
 {
   return MyStringCompareNoCase(s1, s2);
 }
-
 
 CPlugin::CPlugin(const FString &fileName, CAgent *agent, UString archiveTypeName):
     _agent(agent),
@@ -72,7 +72,7 @@ static void CopyStrLimited(char *dest, const AString &src, unsigned len)
   dest[len] = 0;
 }
 
-#define COPY_STR_LIMITED(dest, src) CopyStrLimited(dest, src, ARRAY_SIZE(dest))
+#define COPY_STR_LIMITED(dest, src) CopyStrLimited(dest, src, Z7_ARRAY_SIZE(dest))
 
 void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
 {
@@ -156,7 +156,7 @@ int CPlugin::GetFindData(PluginPanelItem **panelItems, int *itemsNumber, int opM
       g_StartupInfo.GetMsgString(NMessageID::kWaitTitle),
         g_StartupInfo.GetMsgString(NMessageID::kReadingList)
     };
-    g_StartupInfo.ShowMessage(0, NULL, msgItems, ARRAY_SIZE(msgItems), 0);
+    g_StartupInfo.ShowMessage(0, NULL, msgItems, Z7_ARRAY_SIZE(msgItems), 0);
     */
   }
 
@@ -177,7 +177,7 @@ int CPlugin::GetFindData(PluginPanelItem **panelItems, int *itemsNumber, int opM
     delete [](*panelItems);
     throw;
   }
-  *itemsNumber = numItems;
+  *itemsNumber = (int)numItems;
   return(TRUE);
 }
 
@@ -291,7 +291,7 @@ static int FindPropNameID(PROPID propID)
 {
   if (propID > NMessageID::k_Last_PropId_supported_by_plugin)
     return -1;
-  return NMessageID::kNoProperty + propID;
+  return NMessageID::kNoProperty + (int)propID;
 }
 
 /*
@@ -324,7 +324,7 @@ static CPropertyIDInfo kPropertyIDInfos[] =
   // { kpidType, L"Type" }
 };
 
-static const int kNumPropertyIDInfos = ARRAY_SIZE(kPropertyIDInfos);
+static const int kNumPropertyIDInfos = Z7_ARRAY_SIZE(kPropertyIDInfos);
 
 static int FindPropertyInfo(PROPID propID)
 {
@@ -395,7 +395,7 @@ static AString ConvertSizeToString(UInt64 value)
   char s[32];
   ConvertUInt64ToString(value, s);
   unsigned i = MyStringLen(s);
-  unsigned pos = ARRAY_SIZE(s);
+  unsigned pos = Z7_ARRAY_SIZE(s);
   s[--pos] = 0;
   while (i > 3)
   {
@@ -597,7 +597,7 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
                   case -2: propID = kpidType; break;
                   case -1: propID = kpidError; break;
                   default:
-                    if (getProps->GetArcPropInfo(level, i, &name, &propID, &vt) != S_OK)
+                    if (getProps->GetArcPropInfo(level, (UInt32)i, &name, &propID, &vt) != S_OK)
                       continue;
                 }
                 NCOM::CPropVariant prop;
@@ -619,7 +619,7 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
                 CMyComBSTR name;
                 PROPID propID;
                 VARTYPE vt;
-                if (getProps->GetArcPropInfo2(level, i, &name, &propID, &vt) != S_OK)
+                if (getProps->GetArcPropInfo2(level, (UInt32)i, &name, &propID, &vt) != S_OK)
                   continue;
                 NCOM::CPropVariant prop;
                 if (getProps->GetArcProp2(level, propID, &prop) != S_OK)
@@ -636,7 +636,7 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
   //m_InfoLines[1].Separator = 0;
 
   info->InfoLines = m_InfoLines;
-  info->InfoLinesNumber = numItems;
+  info->InfoLinesNumber = (int)numItems;
 
   
   info->DescrFiles = NULL;
@@ -654,19 +654,19 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
   AddColumn(kpidATime);
   AddColumn(kpidAttrib);
   
-  _PanelMode.ColumnTypes = (char *)(const char *)PanelModeColumnTypes;
-  _PanelMode.ColumnWidths = (char *)(const char *)PanelModeColumnWidths;
-  _PanelMode.ColumnTitles = NULL;
-  _PanelMode.FullScreen = TRUE;
-  _PanelMode.DetailedStatus = FALSE;
-  _PanelMode.AlignExtensions = FALSE;
-  _PanelMode.CaseConversion = FALSE;
-  _PanelMode.StatusColumnTypes = "N";
-  _PanelMode.StatusColumnWidths = "0";
-  _PanelMode.Reserved[0] = 0;
-  _PanelMode.Reserved[1] = 0;
+  _panelMode.ColumnTypes = (char *)(const char *)PanelModeColumnTypes;
+  _panelMode.ColumnWidths = (char *)(const char *)PanelModeColumnWidths;
+  _panelMode.ColumnTitles = NULL;
+  _panelMode.FullScreen = TRUE;
+  _panelMode.DetailedStatus = FALSE;
+  _panelMode.AlignExtensions = FALSE;
+  _panelMode.CaseConversion = FALSE;
+  _panelMode.StatusColumnTypes = "N";
+  _panelMode.StatusColumnWidths = "0";
+  _panelMode.Reserved[0] = 0;
+  _panelMode.Reserved[1] = 0;
 
-  info->PanelModesArray = &_PanelMode;
+  info->PanelModesArray = &_panelMode;
   info->PanelModesNumber = 1;
   */
 
@@ -704,18 +704,18 @@ HRESULT CPlugin::ShowAttributesWindow()
   if (strcmp(pluginPanelItem.FindData.cFileName, "..") == 0 &&
         NFind::NAttributes::IsDir(pluginPanelItem.FindData.dwFileAttributes))
     return S_FALSE;
-  int itemIndex = (int)pluginPanelItem.UserData;
+  const UInt32 itemIndex = (UInt32)pluginPanelItem.UserData;
 
   CObjectVector<CArchiveItemProperty> properties;
   UInt32 numProps;
-  RINOK(_folder->GetNumberOfProperties(&numProps));
+  RINOK(_folder->GetNumberOfProperties(&numProps))
   unsigned i;
   for (i = 0; i < numProps; i++)
   {
     CMyComBSTR name;
     PROPID propID;
     VARTYPE vt;
-    RINOK(_folder->GetPropertyInfo(i, &name, &propID, &vt));
+    RINOK(_folder->GetPropertyInfo(i, &name, &propID, &vt))
     CArchiveItemProperty prop;
     prop.Type = vt;
     prop.ID = propID;
@@ -743,7 +743,7 @@ HRESULT CPlugin::ShowAttributesWindow()
   {
     const CArchiveItemProperty &property = properties[i];
 
-    int startY = kStartY + values.Size();
+    const int startY = kStartY + (int)values.Size();
 
     {
       CInitDialogItem idi =
@@ -755,7 +755,7 @@ HRESULT CPlugin::ShowAttributesWindow()
     }
     
     NCOM::CPropVariant prop;
-    RINOK(_folder->GetProperty(itemIndex, property.ID, &prop));
+    RINOK(_folder->GetProperty(itemIndex, property.ID, &prop))
     values.Add(PropToString(prop, property.ID));
     
     {
@@ -834,7 +834,7 @@ HRESULT CPlugin::ShowAttributesWindow()
           }
         }
 
-        int startY = kStartY + values.Size();
+        const int startY = kStartY + (int)values.Size();
 
         {
           CInitDialogItem idi =
@@ -856,14 +856,14 @@ HRESULT CPlugin::ShowAttributesWindow()
     }
   }
 
-  unsigned numLines = values.Size();
+  const unsigned numLines = values.Size();
   for (i = 0; i < numLines; i++)
   {
     CInitDialogItem &idi = initDialogItems[1 + i * 2 + 1];
     idi.DataString = values[i];
   }
   
-  unsigned numDialogItems = initDialogItems.Size();
+  const unsigned numDialogItems = initDialogItems.Size();
   
   CObjArray<FarDialogItem> dialogItems(numDialogItems);
   g_StartupInfo.InitDialogItems(&initDialogItems.Front(), dialogItems, numDialogItems);
@@ -884,14 +884,14 @@ HRESULT CPlugin::ShowAttributesWindow()
   for (i = 0; i < numLines; i++)
   {
     FarDialogItem &dialogItem = dialogItems[1 + i * 2 + 1];
-    unsigned len = (int)strlen(dialogItem.Data);
+    const unsigned len = (unsigned)strlen(dialogItem.Data);
     if (len > maxLen2)
       maxLen2 = len;
-    dialogItem.X1 = maxLen + kSpace;
+    dialogItem.X1 = (int)(maxLen + kSpace);
   }
   
-  size = numLines + 6;
-  xSize = maxLen + kSpace + maxLen2 + 5;
+  size = (int)numLines + 6;
+  xSize = (int)(maxLen + kSpace + maxLen2 + 5);
   FarDialogItem &firstDialogItem = dialogItems[0];
   firstDialogItem.Y2 = size - 2;
   firstDialogItem.X2 = xSize - 4;
@@ -926,7 +926,7 @@ int CPlugin::ProcessKey(int key, unsigned int controlState)
     PanelInfo panelInfo;
     g_StartupInfo.ControlGetActivePanelInfo(panelInfo);
     GetFilesReal(panelInfo.SelectedItems,
-        panelInfo.SelectedItemsNumber, FALSE,
+        (unsigned)panelInfo.SelectedItemsNumber, FALSE,
         UnicodeStringToMultiByte(fs2us(folderPath), CP_OEMCP), OPM_SILENT, true);
     g_StartupInfo.Control(this, FCTL_UPDATEPANEL, NULL);
     g_StartupInfo.Control(this, FCTL_REDRAWPANEL, NULL);

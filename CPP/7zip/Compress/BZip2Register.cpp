@@ -5,7 +5,7 @@
 #include "../Common/RegisterCodec.h"
 
 #include "BZip2Decoder.h"
-#if !defined(EXTRACT_ONLY) && !defined(BZIP2_EXTRACT_ONLY)
+#if !defined(Z7_EXTRACT_ONLY) && !defined(Z7_BZIP2_EXTRACT_ONLY)
 #include "BZip2Encoder.h"
 #endif
 
@@ -14,7 +14,7 @@ namespace NBZip2 {
 
 REGISTER_CODEC_CREATE(CreateDec, CDecoder)
 
-#if !defined(EXTRACT_ONLY) && !defined(BZIP2_EXTRACT_ONLY)
+#if !defined(Z7_EXTRACT_ONLY) && !defined(Z7_BZIP2_EXTRACT_ONLY)
 REGISTER_CODEC_CREATE(CreateEnc, CEncoder)
 #else
 #define CreateEnc NULL

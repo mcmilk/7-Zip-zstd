@@ -67,9 +67,9 @@ static UInt64 MyMultAndDiv(UInt64 mult1, UInt64 mult2, UInt64 divider)
 
 static void GetTimeString(UInt64 timeValue, char *s)
 {
-  UInt64 hours = timeValue / 3600;
+  const UInt64 hours = timeValue / 3600;
   UInt32 seconds = (UInt32)(timeValue - hours * 3600);
-  UInt32 minutes = seconds / 60;
+  const UInt32 minutes = seconds / 60;
   seconds %= 60;
   if (hours > 99)
   {
@@ -78,11 +78,11 @@ static void GetTimeString(UInt64 timeValue, char *s)
   }
   else
   {
-    UInt32 hours32 = (UInt32)hours;
-    UINT_TO_STR_2(hours32);
+    const UInt32 hours32 = (UInt32)hours;
+    UINT_TO_STR_2(hours32)
   }
-  *s++ = ':'; UINT_TO_STR_2(minutes);
-  *s++ = ':'; UINT_TO_STR_2(seconds);
+  *s++ = ':'; UINT_TO_STR_2(minutes)
+  *s++ = ':'; UINT_TO_STR_2(seconds)
   *s = 0;
 }
 
@@ -280,10 +280,10 @@ void CProgressBox::Print()
     else
     */
     {
-      int slashPos = FileName.ReverseFind_PathSepar();
+      const int slashPos = FileName.ReverseFind_PathSepar();
       if (slashPos >= 0)
       {
-        _name1U.SetFrom(FileName, slashPos + 1);
+        _name1U.SetFrom(FileName, (unsigned)(slashPos + 1));
         _name2U = FileName.Ptr(slashPos + 1);
       }
       else
@@ -295,7 +295,7 @@ void CProgressBox::Print()
   
   {
     const char *strings[] = { _title, _timeStr, _files, _sizesStr, Command, _name1, _name2, _perc };
-    NFar::g_StartupInfo.ShowMessage(FMSG_LEFTALIGN, NULL, strings, ARRAY_SIZE(strings), 0);
+    NFar::g_StartupInfo.ShowMessage(FMSG_LEFTALIGN, NULL, strings, Z7_ARRAY_SIZE(strings), 0);
   }
 
   _wasPrinted = true;

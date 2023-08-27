@@ -3,6 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../C/CpuArch.h"
+#include "../../../C/SwapBytes.h"
 
 #include "../../Common/ComTry.h"
 #include "../../Common/IntToString.h"
@@ -15,15 +16,13 @@
 
 #include "HandlerCont.h"
 
-static UInt32 Get32(const Byte *p, bool be) { if (be) return GetBe32(p); return GetUi32(p); }
-
 using namespace NWindows;
 using namespace NCOM;
 
 namespace NArchive {
 namespace NMub {
 
-#define MACH_CPU_ARCH_ABI64 (1 << 24)
+#define MACH_CPU_ARCH_ABI64 ((UInt32)1 << 24)
 #define MACH_CPU_TYPE_386    7
 #define MACH_CPU_TYPE_ARM   12
 #define MACH_CPU_TYPE_SPARC 14
@@ -43,13 +42,15 @@ struct CItem
   UInt32 SubType;
   UInt32 Offset;
   UInt32 Size;
-  // UInt32 Align;
+  UInt32 Align;
 };
 
-static const UInt32 kNumFilesMax = 10;
+static const UInt32 kNumFilesMax = 6;
 
-class CHandler: public CHandlerCont
+Z7_class_CHandler_final: public CHandlerCont
 {
+  Z7_IFACE_COM7_IMP(IInArchive_Cont)
+
   // UInt64 _startPos;
   UInt64 _phySize;
   UInt32 _numItems;
@@ -58,16 +59,13 @@ class CHandler: public CHandlerCont
 
   HRESULT Open2(IInStream *stream);
 
-  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const
+  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const Z7_override
   {
     const CItem &item = _items[index];
     pos = item.Offset;
     size = item.Size;
     return NExtract::NOperationResult::kOK;
   }
-
-public:
-  INTERFACE_IInArchive_Cont(;)
 };
 
 static const Byte kArcProps[] =
@@ -77,13 +75,16 @@ static const Byte kArcProps[] =
 
 static const Byte kProps[] =
 {
-  kpidSize
+  kpidPath,
+  kpidSize,
+  kpidOffset,
+  kpidClusterSize // Align
 };
 
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   PropVariant_Clear(value);
   switch (propID)
@@ -94,7 +95,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   PropVariant_Clear(value);
   const CItem &item = _items[index];
@@ -103,7 +104,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidExtension:
     {
       char temp[32];
-      const char *ext = 0;
+      const char *ext = NULL;
       switch (item.Type)
       {
         case MACH_CPU_TYPE_386:   ext = "x86";   break;
@@ -117,13 +118,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           temp[0] = 'c';
           temp[1] = 'p';
           temp[2] = 'u';
-          ConvertUInt32ToString(item.Type & ~MACH_CPU_ARCH_ABI64, temp + 3);
+          char *p = ConvertUInt32ToString(item.Type & ~MACH_CPU_ARCH_ABI64, temp + 3);
           if (item.Type & MACH_CPU_ARCH_ABI64)
-            MyStringCopy(temp + MyStringLen(temp), "_64");
+            MyStringCopy(p, "_64");
           break;
       }
       if (ext)
-        strcpy(temp, ext);
+        MyStringCopy(temp, ext);
       if (item.SubType != 0)
       if ((item.Type != MACH_CPU_TYPE_386 &&
            item.Type != MACH_CPU_TYPE_AMD64)
@@ -140,32 +141,45 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidPackSize:
       PropVarEm_Set_UInt64(value, item.Size);
       break;
+    case kpidOffset:
+      PropVarEm_Set_UInt64(value, item.Offset);
+      break;
+    case kpidClusterSize:
+      PropVarEm_Set_UInt32(value, (UInt32)1 << item.Align);
+      break;
   }
   return S_OK;
 }
 
 HRESULT CHandler::Open2(IInStream *stream)
 {
-  // RINOK(stream->Seek(0, STREAM_SEEK_CUR, &_startPos));
+  // RINOK(InStream_GetPos(stream, _startPos));
 
-  const UInt32 kHeaderSize = 8;
-  const UInt32 kRecordSize = 5 * 4;
+  const UInt32 kHeaderSize = 2;
+  const UInt32 kRecordSize = 5;
   const UInt32 kBufSize = kHeaderSize + kNumFilesMax * kRecordSize;
-  Byte buf[kBufSize];
-  size_t processed = kBufSize;
-  RINOK(ReadStream(stream, buf, &processed));
+  UInt32 buf[kBufSize];
+  size_t processed = kBufSize * 4;
+  RINOK(ReadStream(stream, buf, &processed))
+  processed >>= 2;
   if (processed < kHeaderSize)
     return S_FALSE;
   
   bool be;
-  switch (GetBe32(buf))
+  switch (buf[0])
   {
-    case 0xCAFEBABE: be = true; break;
-    case 0xB9FAF10E: be = false; break;
+    case Z7_CONV_BE_TO_NATIVE_CONST32(0xCAFEBABE): be = true; break;
+    case Z7_CONV_BE_TO_NATIVE_CONST32(0xB9FAF10E): be = false; break;
     default: return S_FALSE;
   }
   _bigEndian = be;
-  UInt32 num = Get32(buf + 4, be);
+  if (
+      #if defined(MY_CPU_BE)
+        !
+      #endif
+        be)
+    z7_SwapBytes4(&buf[1], processed - 1);
+  const UInt32 num = buf[1];
   if (num > kNumFilesMax || processed < kHeaderSize + num * kRecordSize)
     return S_FALSE;
   if (num == 0)
@@ -174,13 +188,14 @@ HRESULT CHandler::Open2(IInStream *stream)
 
   for (UInt32 i = 0; i < num; i++)
   {
-    const Byte *p = buf + kHeaderSize + i * kRecordSize;
+    const UInt32 *p = buf + kHeaderSize + i * kRecordSize;
     CItem &sb = _items[i];
-    sb.Type = Get32(p, be);
-    sb.SubType = Get32(p + 4, be);
-    sb.Offset = Get32(p + 8, be);
-    sb.Size = Get32(p + 12, be);
-    UInt32 align = Get32(p + 16, be);
+    sb.Type = p[0];
+    sb.SubType = p[1];
+    sb.Offset = p[2];
+    sb.Size = p[3];
+    const UInt32 align = p[4];
+    sb.Align = align;
     if (align > 31)
       return S_FALSE;
     if (sb.Offset < kHeaderSize + num * kRecordSize)
@@ -189,7 +204,7 @@ HRESULT CHandler::Open2(IInStream *stream)
         (sb.SubType & ~MACH_CPU_SUBTYPE_LIB64) >= 0x100)
       return S_FALSE;
 
-    UInt64 endPos = (UInt64)sb.Offset + sb.Size;
+    const UInt64 endPos = (UInt64)sb.Offset + sb.Size;
     if (endPosMax < endPos)
       endPosMax = endPos;
   }
@@ -198,9 +213,9 @@ HRESULT CHandler::Open2(IInStream *stream)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream,
+Z7_COM7F_IMF(CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback * /* openArchiveCallback */)
+    IArchiveOpenCallback * /* openArchiveCallback */))
 {
   COM_TRY_BEGIN
   Close();
@@ -215,7 +230,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _stream.Release();
   _numItems = 0;
@@ -223,7 +238,7 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _numItems;
   return S_OK;
@@ -236,7 +251,7 @@ static const Byte k_Signature[] = {
     4, 0xB9, 0xFA, 0xF1, 0x0E };
 
 REGISTER_ARC_I(
-  "Mub", "mub", 0, 0xE2,
+  "Mub", "mub", NULL, 0xE2,
   k_Signature,
   0,
   NArcInfoFlags::kMultiSignature,

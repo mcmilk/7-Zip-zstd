@@ -1,7 +1,7 @@
 // Crypto/Sha1Cls.h
 
-#ifndef __CRYPTO_SHA1_CLS_H
-#define __CRYPTO_SHA1_CLS_H
+#ifndef ZIP7_INC_CRYPTO_SHA1_CLS_H
+#define ZIP7_INC_CRYPTO_SHA1_CLS_H
 
 #include "../../../C/Sha1.h"
 

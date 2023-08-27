@@ -1,7 +1,7 @@
 // RarItem.h
 
-#ifndef __ARCHIVE_RAR_ITEM_H
-#define __ARCHIVE_RAR_ITEM_H
+#ifndef ZIP7_INC_ARCHIVE_RAR_ITEM_H
+#define ZIP7_INC_ARCHIVE_RAR_ITEM_H
 
 #include "../../../Common/StringConvert.h"
 

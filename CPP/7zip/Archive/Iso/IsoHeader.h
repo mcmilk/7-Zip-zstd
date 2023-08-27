@@ -1,7 +1,7 @@
 // Archive/IsoHeader.h
 
-#ifndef __ARCHIVE_ISO_HEADER_H
-#define __ARCHIVE_ISO_HEADER_H
+#ifndef ZIP7_INC_ARCHIVE_ISO_HEADER_H
+#define ZIP7_INC_ARCHIVE_ISO_HEADER_H
 
 #include "../../../Common/MyTypes.h"
 

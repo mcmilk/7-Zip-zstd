@@ -152,6 +152,10 @@ SOURCE=..\..\7zVersion.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\7zWindows.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Bcj2.c
 # End Source File
 # Begin Source File
@@ -218,6 +222,10 @@ SOURCE=..\..\LzmaDec.h
 # Begin Group "Spec"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Compiler.h
+# End Source File
 # Begin Source File
 
 SOURCE=.\Precomp.c

@@ -54,7 +54,7 @@ struct CChs
 
 // Chs in some MBRs contains only low bits of "Cyl number". So we disable check.
 /*
-#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
+#define RINOZ(x) { int _t_ = (x); if (_t_ != 0) return _t_; }
 static int CompareChs(const CChs &c1, const CChs &c2)
 {
   RINOZ(MyCompare(c1.GetCyl(), c2.GetCyl()));
@@ -67,9 +67,9 @@ void CChs::ToString(NCOM::CPropVariant &prop) const
 {
   AString s;
   s.Add_UInt32(GetCyl());
-  s += '-';
+  s.Add_Minus();
   s.Add_UInt32(Head);
-  s += '-';
+  s.Add_Minus();
   s.Add_UInt32(GetSector());
   prop = s;
 }
@@ -132,17 +132,25 @@ struct CPartType
 
 #define kFat "fat"
 
+/*
+if we use "format" command in Windows 10 for existing partition:
+  - if we format to ExFAT, it sets type=7
+  - if we format to UDF, it doesn't change type from previous value.
+*/
+  
+static const unsigned kType_Windows_NTFS = 7;
+
 static const CPartType kPartTypes[] =
 {
   { 0x01, kFat, "FAT12" },
   { 0x04, kFat, "FAT16 DOS 3.0+" },
-  { 0x05, 0, "Extended" },
+  { 0x05, NULL, "Extended" },
   { 0x06, kFat, "FAT16 DOS 3.31+" },
   { 0x07, "ntfs", "NTFS" },
   { 0x0B, kFat, "FAT32" },
   { 0x0C, kFat, "FAT32-LBA" },
   { 0x0E, kFat, "FAT16-LBA" },
-  { 0x0F, 0, "Extended-LBA" },
+  { 0x0F, NULL, "Extended-LBA" },
   { 0x11, kFat, "FAT12-Hidden" },
   { 0x14, kFat, "FAT16-Hidden < 32 MB" },
   { 0x16, kFat, "FAT16-Hidden >= 32 MB" },
@@ -150,23 +158,23 @@ static const CPartType kPartTypes[] =
   { 0x1C, kFat, "FAT32-LBA-Hidden" },
   { 0x1E, kFat, "FAT16-LBA-WIN95-Hidden" },
   { 0x27, "ntfs", "NTFS-WinRE" },
-  { 0x82, 0, "Solaris x86 / Linux swap" },
-  { 0x83, 0, "Linux" },
+  { 0x82, NULL, "Solaris x86 / Linux swap" },
+  { 0x83, NULL, "Linux" },
   { 0x8E, "lvm", "Linux LVM" },
-  { 0xA5, 0, "BSD slice" },
-  { 0xBE, 0, "Solaris 8 boot" },
-  { 0xBF, 0, "New Solaris x86" },
-  { 0xC2, 0, "Linux-Hidden" },
-  { 0xC3, 0, "Linux swap-Hidden" },
-  { 0xEE, 0, "GPT" },
-  { 0xEE, 0, "EFI" }
+  { 0xA5, NULL, "BSD slice" },
+  { 0xBE, NULL, "Solaris 8 boot" },
+  { 0xBF, NULL, "New Solaris x86" },
+  { 0xC2, NULL, "Linux-Hidden" },
+  { 0xC3, NULL, "Linux swap-Hidden" },
+  { 0xEE, NULL, "GPT" },
+  { 0xEE, NULL, "EFI" }
 };
 
 static int FindPartType(UInt32 type)
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(kPartTypes); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(kPartTypes); i++)
     if (kPartTypes[i].Id == type)
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -174,17 +182,27 @@ struct CItem
 {
   bool IsReal;
   bool IsPrim;
+  bool WasParsed;
+  const char *FileSystem;
   UInt64 Size;
   CPartition Part;
+
+  CItem():
+      WasParsed(false),
+      FileSystem(NULL)
+      {}
 };
 
-class CHandler: public CHandlerCont
+
+Z7_class_CHandler_final: public CHandlerCont
 {
+  Z7_IFACE_COM7_IMP(IInArchive_Cont)
+
   CObjectVector<CItem> _items;
   UInt64 _totalSize;
   CByteBuffer _buffer;
 
-  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const
+  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const Z7_override Z7_final
   {
     const CItem &item = _items[index];
     pos = item.Part.GetPos();
@@ -193,8 +211,6 @@ class CHandler: public CHandlerCont
   }
 
   HRESULT ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsigned level);
-public:
-  INTERFACE_IInArchive_Cont(;)
 };
 
 HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsigned level)
@@ -212,8 +228,8 @@ HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsi
     UInt64 newPos = (UInt64)lba << 9;
     if (newPos + 512 > _totalSize)
       return S_FALSE;
-    RINOK(stream->Seek(newPos, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream_FALSE(stream, buf, kSectorSize));
+    RINOK(InStream_SeekSet(stream, newPos))
+    RINOK(ReadStream_FALSE(stream, buf, kSectorSize))
     
     if (buf[0x1FE] != 0x55 || buf[0x1FF] != 0xAA)
       return S_FALSE;
@@ -293,14 +309,87 @@ HRESULT CHandler::ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, unsi
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream,
+
+static bool Is_Ntfs(const Byte *p)
+{
+  if (p[0x1FE] != 0x55 || p[0x1FF] != 0xAA)
+    return false;
+  // int codeOffset = 0;
+  switch (p[0])
+  {
+    case 0xE9: /* codeOffset = 3 + (Int16)Get16(p + 1); */ break;
+    case 0xEB: if (p[2] != 0x90) return false; /* codeOffset = 2 + (int)(signed char)p[1]; */ break;
+    default: return false;
+  }
+  return memcmp(p + 3, "NTFS    ", 8) == 0;
+}
+
+static bool Is_ExFat(const Byte *p)
+{
+  if (p[0x1FE] != 0x55 || p[0x1FF] != 0xAA)
+    return false;
+  if (p[0] != 0xEB || p[1] != 0x76 || p[2] != 0x90)
+    return false;
+  return memcmp(p + 3, "EXFAT   ", 8) == 0;
+}
+
+static bool AllAreZeros(const Byte *p, size_t size)
+{
+  for (size_t i = 0; i < size; i++)
+    if (p[i] != 0)
+      return false;
+  return true;
+}
+
+static const UInt32 k_Udf_StartPos = 0x8000;
+static const Byte k_Udf_Signature[] = { 0, 'B', 'E', 'A', '0', '1', 1, 0 };
+
+static bool Is_Udf(const Byte *p)
+{
+  return memcmp(p + k_Udf_StartPos, k_Udf_Signature, sizeof(k_Udf_Signature)) == 0;
+}
+
+
+static const char *GetFileSystem(
+    ISequentialInStream *stream, UInt64 partitionSize)
+{
+  const size_t kHeaderSize = 1 << 9;
+  if (partitionSize >= kHeaderSize)
+  {
+    Byte buf[kHeaderSize];
+    if (ReadStream_FAIL(stream, buf, kHeaderSize) == S_OK)
+    {
+      // NTFS is expected default filesystem for (Type == 7)
+      if (Is_Ntfs(buf))
+        return "NTFS";
+      if (Is_ExFat(buf))
+        return "exFAT";
+      const size_t kHeaderSize2 = k_Udf_StartPos + (1 << 9);
+      if (partitionSize >= kHeaderSize2)
+      {
+        if (AllAreZeros(buf, kHeaderSize))
+        {
+          CByteBuffer buffer(kHeaderSize2);
+          // memcpy(buffer, buf, kHeaderSize);
+          if (ReadStream_FAIL(stream, buffer + kHeaderSize, kHeaderSize2 - kHeaderSize) == S_OK)
+            if (Is_Udf(buffer))
+              return "UDF";
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback * /* openArchiveCallback */)
+    IArchiveOpenCallback * /* openArchiveCallback */))
 {
   COM_TRY_BEGIN
   Close();
-  RINOK(stream->Seek(0, STREAM_SEEK_END, &_totalSize));
-  RINOK(ReadTables(stream, 0, 0, 0));
+  RINOK(InStream_GetSize_SeekToEnd(stream, _totalSize))
+  RINOK(ReadTables(stream, 0, 0, 0))
   if (_items.IsEmpty())
     return S_FALSE;
   UInt32 lbaLimit = _items.Back().Part.GetLimit();
@@ -313,18 +402,32 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     n.IsReal = false;
     _items.Add(n);
   }
+
+  FOR_VECTOR (i, _items)
+  {
+    CItem &item = _items[i];
+    if (item.Part.Type != kType_Windows_NTFS)
+      continue;
+    if (InStream_SeekSet(stream, item.Part.GetPos()) != S_OK)
+      continue;
+    item.FileSystem = GetFileSystem(stream, item.Size);
+    item.WasParsed = true;
+  }
+
   _stream = stream;
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+
+Z7_COM7F_IMF(CHandler::Close())
 {
   _totalSize = 0;
   _items.Clear();
   _stream.Release();
   return S_OK;
 }
+
 
 enum
 {
@@ -347,7 +450,7 @@ static const CStatProp kProps[] =
 IMP_IInArchive_Props_WITH_NAME
 IMP_IInArchive_ArcProps_NO_Table
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   NCOM::CPropVariant prop;
   switch (propID)
@@ -363,10 +466,10 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
             mainIndex = -1;
             break;
           }
-          mainIndex = i;
+          mainIndex = (int)i;
         }
       if (mainIndex >= 0)
-        prop = (UInt32)mainIndex;
+        prop = (UInt32)(Int32)mainIndex;
       break;
     }
     case kpidPhySize: prop = _totalSize; break;
@@ -375,13 +478,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -396,11 +499,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       s.Add_UInt32(index);
       if (item.IsReal)
       {
-        s += '.';
+        s.Add_Dot();
         const char *ext = NULL;
-        int typeIndex = FindPartType(part.Type);
-        if (typeIndex >= 0)
-          ext = kPartTypes[(unsigned)typeIndex].Ext;
+        if (item.FileSystem)
+        {
+          ext = "";
+          AString fs (item.FileSystem);
+          fs.MakeLower_Ascii();
+          s += fs;
+        }
+        else if (!item.WasParsed)
+        {
+          const int typeIndex = FindPartType(part.Type);
+          if (typeIndex >= 0)
+            ext = kPartTypes[(unsigned)typeIndex].Ext;
+        }
         if (!ext)
           ext = "img";
         s += ext;
@@ -414,9 +527,18 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         char s[32];
         ConvertUInt32ToString(part.Type, s);
         const char *res = s;
-        int typeIndex = FindPartType(part.Type);
-        if (typeIndex >= 0 && kPartTypes[(unsigned)typeIndex].Name)
-          res = kPartTypes[(unsigned)typeIndex].Name;
+        if (item.FileSystem)
+        {
+          // strcat(s, "-");
+          // strcpy(s, item.FileSystem);
+          res = item.FileSystem;
+        }
+        else if (!item.WasParsed)
+        {
+          const int typeIndex = FindPartType(part.Type);
+          if (typeIndex >= 0 && kPartTypes[(unsigned)typeIndex].Name)
+            res = kPartTypes[(unsigned)typeIndex].Name;
+        }
         prop = res;
       }
       break;
@@ -437,7 +559,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   // 2, { 0x55, 0x1FF },
 
 REGISTER_ARC_I_NO_SIG(
-  "MBR", "mbr", 0, 0xDB,
+  "MBR", "mbr", NULL, 0xDB,
   0,
   NArcInfoFlags::kPureStartOpen,
   NULL)

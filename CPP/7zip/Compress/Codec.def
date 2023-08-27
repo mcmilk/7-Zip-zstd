@@ -4,3 +4,4 @@ EXPORTS
   GetMethodProperty PRIVATE
   CreateDecoder PRIVATE
   CreateEncoder PRIVATE
+  GetModuleProp PRIVATE

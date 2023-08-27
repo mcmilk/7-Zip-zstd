@@ -34,8 +34,8 @@ bool CMemBlockManager::AllocateSpace_bool(size_t numBlocks)
 void CMemBlockManager::FreeSpace()
 {
   ::MidFree(_data);
-  _data = 0;
-  _headFree= 0;
+  _data = NULL;
+  _headFree= NULL;
 }
 
 void *CMemBlockManager::AllocateBlock()
@@ -157,7 +157,7 @@ HRESULT CMemBlocks::WriteToStream(size_t blockSize, ISequentialOutStream *outStr
       curSize = (size_t)totalSize;
     if (blockIndex >= Blocks.Size())
       return E_FAIL;
-    RINOK(WriteStream(outStream, Blocks[blockIndex], curSize));
+    RINOK(WriteStream(outStream, Blocks[blockIndex], curSize))
     totalSize -= curSize;
   }
   return S_OK;
@@ -207,7 +207,7 @@ void CMemLockBlocks::Detach(CMemLockBlocks &blocks, CMemBlockManagerMt *memManag
       blocks.Blocks.Add(Blocks[i]);
     else
       FreeBlock(i, memManager);
-    Blocks[i] = 0;
+    Blocks[i] = NULL;
     totalSize += blockSize;
   }
   blocks.TotalSize = TotalSize;

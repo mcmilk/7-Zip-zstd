@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 
-#ifndef _7ZIP_ST
+#ifndef Z7_ST
 #include "../../../Windows/Synchronization.h"
 #endif
 
@@ -16,7 +16,7 @@
 using namespace NWindows;
 using namespace NFar;
 
-#ifndef _7ZIP_ST
+#ifndef Z7_ST
 static NSynchronization::CCriticalSection g_CriticalSection;
 #define MT_LOCK NSynchronization::CCriticalSectionLock lock(g_CriticalSection);
 #else
@@ -31,10 +31,6 @@ static HRESULT CheckBreak2()
 
 extern void PrintMessage(const char *message);
 
-CExtractCallbackImp::~CExtractCallbackImp()
-{
-}
-
 void CExtractCallbackImp::Init(
     UINT codePage,
     CProgressBox *progressBox,
@@ -47,7 +43,7 @@ void CExtractCallbackImp::Init(
   _percent = progressBox;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
+Z7_COM7F_IMF(CExtractCallbackImp::SetTotal(UInt64 size))
 {
   MT_LOCK
 
@@ -59,7 +55,7 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UInt64 size)
   return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
+Z7_COM7F_IMF(CExtractCallbackImp::SetCompleted(const UInt64 *completeValue))
 {
   MT_LOCK
 
@@ -72,15 +68,15 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UInt64 *completeValue)
   return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallbackImp::AskOverwrite(
+Z7_COM7F_IMF(CExtractCallbackImp::AskOverwrite(
     const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
     const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
-    Int32 *answer)
+    Int32 *answer))
 {
   MT_LOCK
 
   NOverwriteDialog::CFileInfo oldFileInfo, newFileInfo;
-  oldFileInfo.TimeIsDefined = (existTime != 0);
+  oldFileInfo.TimeIsDefined = (existTime != NULL);
   if (oldFileInfo.TimeIsDefined)
     oldFileInfo.Time = *existTime;
   oldFileInfo.SizeIsDefined = (existSize != NULL);
@@ -88,7 +84,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
     oldFileInfo.Size = *existSize;
   oldFileInfo.Name = existName;
 
-  newFileInfo.TimeIsDefined = (newTime != 0);
+  newFileInfo.TimeIsDefined = (newTime != NULL);
   if (newFileInfo.TimeIsDefined)
     newFileInfo.Time = *newTime;
   newFileInfo.SizeIsDefined = (newSize != NULL);
@@ -99,7 +95,7 @@ STDMETHODIMP CExtractCallbackImp::AskOverwrite(
   NOverwriteDialog::NResult::EEnum result =
     NOverwriteDialog::Execute(oldFileInfo, newFileInfo);
   
-  switch (result)
+  switch ((int)result)
   {
   case NOverwriteDialog::NResult::kCancel:
     // *answer = NOverwriteAnswer::kCancel;
@@ -132,7 +128,7 @@ static const char * const kExtractString =  "Extracting";
 static const char * const kSkipString    =  "Skipping";
 static const char * const kReadString    =  "Reading";
 
-STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /* isFolder */, Int32 askExtractMode, const UInt64 * /* position */)
+Z7_COM7F_IMF(CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /* isFolder */, Int32 askExtractMode, const UInt64 * /* position */))
 {
   MT_LOCK
 
@@ -146,7 +142,7 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /*
     case NArchive::NExtract::NAskMode::kSkip:    s = kSkipString; break;
     case NArchive::NExtract::NAskMode::kReadExternal: s = kReadString; break;
     default: s = "???"; // return E_FAIL;
-  };
+  }
 
   if (_percent)
   {
@@ -158,7 +154,7 @@ STDMETHODIMP CExtractCallbackImp::PrepareOperation(const wchar_t *name, Int32 /*
   return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallbackImp::MessageError(const wchar_t *message)
+Z7_COM7F_IMF(CExtractCallbackImp::MessageError(const wchar_t *message))
 {
   MT_LOCK
 
@@ -199,7 +195,7 @@ void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &s)
       }
       if (messageID != 0)
       {
-        s = g_StartupInfo.GetMsgString(messageID);
+        s = g_StartupInfo.GetMsgString((int)messageID);
         s.Replace((AString)" '%s'", AString());
       }
       else if (opRes == NArchive::NExtract::NOperationResult::kUnavailable)
@@ -217,13 +213,13 @@ void SetExtractErrorMessage(Int32 opRes, Int32 encrypted, AString &s)
       else
       {
         s = "Error #";
-        s.Add_UInt32(opRes);
+        s.Add_UInt32((UInt32)opRes);
       }
     }
   }
 }
 
-STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 opRes, Int32 encrypted)
+Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(Int32 opRes, Int32 encrypted))
 {
   MT_LOCK
 
@@ -248,7 +244,7 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(Int32 opRes, Int32 encrypte
 }
 
 
-STDMETHODIMP CExtractCallbackImp::ReportExtractResult(Int32 opRes, Int32 encrypted, const wchar_t *name)
+Z7_COM7F_IMF(CExtractCallbackImp::ReportExtractResult(Int32 opRes, Int32 encrypted, const wchar_t *name))
 {
   MT_LOCK
 
@@ -265,13 +261,13 @@ STDMETHODIMP CExtractCallbackImp::ReportExtractResult(Int32 opRes, Int32 encrypt
 
 extern HRESULT GetPassword(UString &password);
 
-STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR *password)
+Z7_COM7F_IMF(CExtractCallbackImp::CryptoGetTextPassword(BSTR *password))
 {
   MT_LOCK
 
   if (!m_PasswordIsDefined)
   {
-    RINOK(GetPassword(m_Password));
+    RINOK(GetPassword(m_Password))
     m_PasswordIsDefined = true;
   }
   return StringToBstr(m_Password, password);

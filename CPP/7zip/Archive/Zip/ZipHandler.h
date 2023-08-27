@@ -1,7 +1,7 @@
 // Zip/Handler.h
 
-#ifndef __ZIP_HANDLER_H
-#define __ZIP_HANDLER_H
+#ifndef ZIP7_INC_ZIP_HANDLER_H
+#define ZIP7_INC_ZIP_HANDLER_H
 
 #include "../../../Common/DynamicBuffer.h"
 #include "../../ICoder.h"
@@ -23,46 +23,43 @@ extern const char * const kMethodNames1[kNumMethodNames1];
 extern const char * const kMethodNames2[kNumMethodNames2];
 
 
-class CHandler:
+class CHandler Z7_final:
   public IInArchive,
   // public IArchiveGetRawProps,
   public IOutArchive,
   public ISetProperties,
-  PUBLIC_ISetCompressCodecsInfo
+  Z7_PUBLIC_ISetCompressCodecsInfo_IFEC
   public CMyUnknownImp
 {
-public:
-  MY_QUERYINTERFACE_BEGIN2(IInArchive)
-  // MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
-  MY_QUERYINTERFACE_ENTRY(IOutArchive)
-  MY_QUERYINTERFACE_ENTRY(ISetProperties)
-  QUERY_ENTRY_ISetCompressCodecsInfo
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
+  Z7_COM_QI_BEGIN2(IInArchive)
+  // Z7_COM_QI_ENTRY(IArchiveGetRawProps)
+  Z7_COM_QI_ENTRY(IOutArchive)
+  Z7_COM_QI_ENTRY(ISetProperties)
+  Z7_COM_QI_ENTRY_ISetCompressCodecsInfo_IFEC
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
 
-  INTERFACE_IInArchive(;)
-  // INTERFACE_IArchiveGetRawProps(;)
-  INTERFACE_IOutArchive(;)
-
-  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
-
+  Z7_IFACE_COM7_IMP(IInArchive)
+  // Z7_IFACE_COM7_IMP(IArchiveGetRawProps)
+  Z7_IFACE_COM7_IMP(IOutArchive)
+  Z7_IFACE_COM7_IMP(ISetProperties)
   DECL_ISetCompressCodecsInfo
 
-  CHandler();
 private:
   CObjectVector<CItemEx> m_Items;
   CInArchive m_Archive;
 
   CBaseProps _props;
+  CHandlerTimeOptions TimeOptions;
 
   int m_MainMethod;
   bool m_ForceAesMode;
-  
-  CHandlerTimeOptions TimeOptions;
-  
+
   bool _removeSfxBlock;
   bool m_ForceLocal;
   bool m_ForceUtf8;
+  bool _force_SeqOutMode; // for creation
+  bool _force_OpenSeq;
   bool _forceCodePage;
   UInt32 _specifiedCodePage;
 
@@ -71,13 +68,15 @@ private:
   void InitMethodProps()
   {
     _props.Init();
-    m_MainMethod = -1;
-    m_ForceAesMode = false;
     TimeOptions.Init();
     TimeOptions.Prec = k_PropVar_TimePrec_0;
+    m_MainMethod = -1;
+    m_ForceAesMode = false;
     _removeSfxBlock = false;
     m_ForceLocal = false;
     m_ForceUtf8 = false;
+    _force_SeqOutMode = false;
+    _force_OpenSeq = false;
     _forceCodePage = false;
     _specifiedCodePage = CP_OEMCP;
   }
@@ -85,6 +84,9 @@ private:
   // void MarkAltStreams(CObjectVector<CItemEx> &items);
 
   HRESULT GetOutProperty(IArchiveUpdateCallback *callback, UInt32 callbackIndex, Int32 arcIndex, PROPID propID, PROPVARIANT *value);
+
+public:
+  CHandler();
 };
 
 }}

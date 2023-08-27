@@ -1,7 +1,7 @@
 // Archive/ChmIn.h
 
-#ifndef __ARCHIVE_CHM_IN_H
-#define __ARCHIVE_CHM_IN_H
+#ifndef ZIP7_INC_ARCHIVE_CHM_IN_H
+#define ZIP7_INC_ARCHIVE_CHM_IN_H
 
 #include "../../../Common/MyBuffer.h"
 #include "../../../Common/MyString.h"
@@ -59,7 +59,7 @@ struct CDatabase
   {
     FOR_VECTOR (i, Items)
       if (Items[i].Name == name)
-        return i;
+        return (int)i;
     return -1;
   }
 

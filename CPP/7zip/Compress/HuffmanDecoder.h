@@ -1,7 +1,7 @@
 // Compress/HuffmanDecoder.h
 
-#ifndef __COMPRESS_HUFFMAN_DECODER_H
-#define __COMPRESS_HUFFMAN_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_HUFFMAN_DECODER_H
+#define ZIP7_INC_COMPRESS_HUFFMAN_DECODER_H
 
 #include "../../Common/MyTypes.h"
 
@@ -141,7 +141,7 @@ public:
 
   
   template <class TBitDecoder>
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 Decode(TBitDecoder *bitStream) const
   {
     UInt32 val = bitStream->GetValue(kNumBitsMax);
@@ -166,7 +166,7 @@ public:
 
   
   template <class TBitDecoder>
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 DecodeFull(TBitDecoder *bitStream) const
   {
     UInt32 val = bitStream->GetValue(kNumBitsMax);

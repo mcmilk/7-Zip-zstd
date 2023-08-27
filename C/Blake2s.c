@@ -1,6 +1,8 @@
 /* Blake2s.c -- BLAKE2s and BLAKE2sp Hash
-2021-02-09 : Igor Pavlov : Public domain
+2023-03-04 : Igor Pavlov : Public domain
 2015 : Samuel Neves : Public domain */
+
+#include "Precomp.h"
 
 #include <string.h>
 
@@ -78,21 +80,21 @@ static void Blake2s_Compress(CBlake2s *p)
     a += b + m[sigma[2*i+1]];  d ^= a; d = rotr32(d,  8);  c += d;  b ^= c; b = rotr32(b,  7); \
 
   #define R(r) \
-    G(r,0,v[ 0],v[ 4],v[ 8],v[12]); \
-    G(r,1,v[ 1],v[ 5],v[ 9],v[13]); \
-    G(r,2,v[ 2],v[ 6],v[10],v[14]); \
-    G(r,3,v[ 3],v[ 7],v[11],v[15]); \
-    G(r,4,v[ 0],v[ 5],v[10],v[15]); \
-    G(r,5,v[ 1],v[ 6],v[11],v[12]); \
-    G(r,6,v[ 2],v[ 7],v[ 8],v[13]); \
-    G(r,7,v[ 3],v[ 4],v[ 9],v[14]); \
+    G(r,0,v[ 0],v[ 4],v[ 8],v[12]) \
+    G(r,1,v[ 1],v[ 5],v[ 9],v[13]) \
+    G(r,2,v[ 2],v[ 6],v[10],v[14]) \
+    G(r,3,v[ 3],v[ 7],v[11],v[15]) \
+    G(r,4,v[ 0],v[ 5],v[10],v[15]) \
+    G(r,5,v[ 1],v[ 6],v[11],v[12]) \
+    G(r,6,v[ 2],v[ 7],v[ 8],v[13]) \
+    G(r,7,v[ 3],v[ 4],v[ 9],v[14]) \
 
   {
     unsigned r;
     for (r = 0; r < BLAKE2S_NUM_ROUNDS; r++)
     {
       const Byte *sigma = k_Blake2s_Sigma[r];
-      R(r);
+      R(r)
     }
     /* R(0); R(1); R(2); R(3); R(4); R(5); R(6); R(7); R(8); R(9); */
   }
@@ -130,7 +132,7 @@ static void Blake2s_Update(CBlake2s *p, const Byte *data, size_t size)
     }
 
     memcpy(p->buf + pos, data, rem);
-    Blake2s_Increment_Counter(S, BLAKE2S_BLOCK_SIZE);
+    Blake2s_Increment_Counter(S, BLAKE2S_BLOCK_SIZE)
     Blake2s_Compress(p);
     p->bufPos = 0;
     data += rem;
@@ -143,13 +145,15 @@ static void Blake2s_Final(CBlake2s *p, Byte *digest)
 {
   unsigned i;
 
-  Blake2s_Increment_Counter(S, (UInt32)p->bufPos);
-  Blake2s_Set_LastBlock(p);
+  Blake2s_Increment_Counter(S, (UInt32)p->bufPos)
+  Blake2s_Set_LastBlock(p)
   memset(p->buf + p->bufPos, 0, BLAKE2S_BLOCK_SIZE - p->bufPos);
   Blake2s_Compress(p);
 
   for (i = 0; i < 8; i++)
-    SetUi32(digest + sizeof(p->h[i]) * i, p->h[i]);
+  {
+    SetUi32(digest + sizeof(p->h[i]) * i, p->h[i])
+  }
 }
 
 
@@ -242,3 +246,5 @@ void Blake2sp_Final(CBlake2sp *p, Byte *digest)
 
   Blake2s_Final(&R, digest);
 }
+
+#undef rotr32

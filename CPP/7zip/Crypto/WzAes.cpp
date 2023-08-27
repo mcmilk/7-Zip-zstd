@@ -23,7 +23,7 @@ const unsigned kAesKeySizeMax = 32;
 
 static const UInt32 kNumKeyGenIterations = 1000;
 
-STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
+Z7_COM7F_IMF(CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size))
 {
   if (size > kPasswordSizeMax)
     return E_INVALIDARG;
@@ -34,6 +34,7 @@ STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
 
 void CBaseCoder::Init2()
 {
+  _hmacOverCalc = 0;
   const unsigned dkSizeMax32 = (2 * kAesKeySizeMax + kPwdVerifSize + 3) / 4;
   Byte dk[dkSizeMax32 * 4];
 
@@ -59,7 +60,7 @@ void CBaseCoder::Init2()
   if (_aesCoderSpec->Init() != S_OK) throw 3;
 }
 
-STDMETHODIMP CBaseCoder::Init()
+Z7_COM7F_IMF(CBaseCoder::Init())
 {
   return S_OK;
 }
@@ -69,7 +70,7 @@ HRESULT CEncoder::WriteHeader(ISequentialOutStream *outStream)
   unsigned saltSize = _key.GetSaltSize();
   MY_RAND_GEN(_key.Salt, saltSize);
   Init2();
-  RINOK(WriteStream(outStream, _key.Salt, saltSize));
+  RINOK(WriteStream(outStream, _key.Salt, saltSize))
   return WriteStream(outStream, _key.PwdVerifComputed, kPwdVerifSize);
 }
 
@@ -82,7 +83,7 @@ HRESULT CEncoder::WriteFooter(ISequentialOutStream *outStream)
 }
 
 /*
-STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
+Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
 {
   if (size != 1)
     return E_INVALIDARG;
@@ -93,10 +94,10 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 
 HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream)
 {
-  unsigned saltSize = _key.GetSaltSize();
-  unsigned extraSize = saltSize + kPwdVerifSize;
+  const unsigned saltSize = _key.GetSaltSize();
+  const unsigned extraSize = saltSize + kPwdVerifSize;
   Byte temp[kSaltSizeMax + kPwdVerifSize];
-  RINOK(ReadStream_FAIL(inStream, temp, extraSize));
+  RINOK(ReadStream_FAIL(inStream, temp, extraSize))
   unsigned i;
   for (i = 0; i < saltSize; i++)
     _key.Salt[i] = temp[i];
@@ -124,11 +125,13 @@ HRESULT CDecoder::CheckMac(ISequentialInStream *inStream, bool &isOK)
   isOK = false;
   MY_ALIGN (16)
   Byte mac1[kMacSize];
-  RINOK(ReadStream_FAIL(inStream, mac1, kMacSize));
+  RINOK(ReadStream_FAIL(inStream, mac1, kMacSize))
   MY_ALIGN (16)
   UInt32 mac2[NSha1::kNumDigestWords];
   Hmac()->Final((Byte *)mac2);
   isOK = CompareArrays(mac1, (const Byte *)mac2, kMacSize);
+  if (_hmacOverCalc)
+    isOK = false;
   return S_OK;
 }
 
@@ -202,7 +205,7 @@ void AesCtr2_Code(CAesCtr2 *p, Byte *data, SizeT size)
 
 /* (size != 16 * N) is allowed only for last Filter() call */
 
-STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
+Z7_COM7F_IMF2(UInt32, CEncoder::Filter(Byte *data, UInt32 size))
 {
   // AesCtr2_Code(&_aes, data, size);
   size = _aesCoder->Filter(data, size);
@@ -210,14 +213,18 @@ STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
   return size;
 }
 
-STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
+Z7_COM7F_IMF2(UInt32, CDecoder::Filter(Byte *data, UInt32 size))
 {
   if (size >= 16)
     size &= ~(UInt32)15;
-  
-  Hmac()->Update(data, size);
+  if (_hmacOverCalc < size)
+  {
+    Hmac()->Update(data + _hmacOverCalc, size - _hmacOverCalc);
+    _hmacOverCalc = size;
+  }
   // AesCtr2_Code(&_aes, data, size);
   size = _aesCoder->Filter(data, size);
+  _hmacOverCalc -= size;
   return size;
 }
 

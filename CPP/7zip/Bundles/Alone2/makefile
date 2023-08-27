@@ -1,7 +1,7 @@
 PROG = 7zz.exe
 # USE_C_AES = 1
 # USE_C_SHA = 1
-CFLAGS = $(CFLAGS) -DPROG_VARIANT_Z
+CFLAGS = $(CFLAGS) -DZ7_PROG_VARIANT_Z
 
 !include "../Format7zF/Arc.mak"
 !include "../../UI/Console/Console.mak"
@@ -24,5 +24,6 @@ WIN_OBJS = $(WIN_OBJS) \
 7ZIP_COMMON_OBJS = $(7ZIP_COMMON_OBJS) \
   $O\FilePathAutoRename.obj \
   $O\FileStreams.obj \
+  $O\MultiOutStream.obj \
 
 !include "../../7zip.mak"

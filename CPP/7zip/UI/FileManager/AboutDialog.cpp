@@ -14,10 +14,12 @@
 #include "HelpUtils.h"
 #include "LangUtils.h"
 
+#ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
   IDT_ABOUT_INFO
 };
+#endif
 
 #define kHomePageURL TEXT("https://www.7-zip.org/")
 #define kHelpTopic "start.htm"
@@ -29,7 +31,7 @@ extern CCodecs *g_CodecsObj;
 
 bool CAboutDialog::OnInit()
 {
-  #ifdef EXTERNAL_CODECS
+  #ifdef Z7_EXTERNAL_CODECS
   if (g_CodecsObj)
   {
     UString s;
@@ -39,11 +41,13 @@ bool CAboutDialog::OnInit()
   }
   #endif
 
-  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+  #ifdef Z7_LANG
+  LangSetWindowText(*this, IDD_ABOUT);
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
+  #endif
   SetItemText(IDT_ABOUT_VERSION, UString("7-Zip " MY_VERSION_CPU));
   SetItemText(IDT_ABOUT_DATE, LLL(MY_DATE));
   
-  LangSetWindowText(*this, IDD_ABOUT);
   NormalizePosition();
   return CModalDialog::OnInit();
 }
@@ -53,7 +57,7 @@ void CAboutDialog::OnHelp()
   ShowHelpWindow(kHelpTopic);
 }
 
-bool CAboutDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CAboutDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   LPCTSTR url;
   switch (buttonID)

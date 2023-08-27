@@ -104,4 +104,6 @@ BEGIN
   IDS_PROP_GROUP_ID     "Group ID"
   IDS_PROP_DEVICE_MAJOR "Device Major"
   IDS_PROP_DEVICE_MINOR "Device Minor"
+  IDS_PROP_DEV_MAJOR    "Dev Major"
+  IDS_PROP_DEV_MINOR    "Dev Minor"
 END

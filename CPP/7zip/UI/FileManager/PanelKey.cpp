@@ -29,9 +29,9 @@ static const CVKeyPropIDPair g_VKeyPropIDPairs[] =
 
 static int FindVKeyPropIDPair(WORD vKey)
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(g_VKeyPropIDPairs); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_VKeyPropIDPairs); i++)
     if (g_VKeyPropIDPairs[i].VKey == vKey)
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -43,17 +43,18 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     _panelCallback->OnTab();
     return false;
   }
-  bool alt = IsKeyDown(VK_MENU);
-  bool ctrl = IsKeyDown(VK_CONTROL);
-  // bool leftCtrl = IsKeyDown(VK_LCONTROL);
-  bool rightCtrl = IsKeyDown(VK_RCONTROL);
-  bool shift = IsKeyDown(VK_SHIFT);
+  const bool alt = IsKeyDown(VK_MENU);
+  const bool ctrl = IsKeyDown(VK_CONTROL);
+  // const bool leftCtrl = IsKeyDown(VK_LCONTROL);
+  const bool rightCtrl = IsKeyDown(VK_RCONTROL);
+  const bool shift = IsKeyDown(VK_SHIFT);
   result = 0;
 
-  if (keyDownInfo->wVKey >= '0' && keyDownInfo->wVKey <= '9' &&
+  if (keyDownInfo->wVKey >= '0' &&
+      keyDownInfo->wVKey <= '9' &&
       (rightCtrl || alt))
   {
-    int index = keyDownInfo->wVKey - '0';
+    const unsigned index = (unsigned)(keyDownInfo->wVKey - '0');
     if (shift)
     {
       SetBookmark(index);
@@ -67,7 +68,8 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
   }
 
   if ((keyDownInfo->wVKey == VK_F2 ||
-    keyDownInfo->wVKey == VK_F1) && alt && !ctrl && !shift)
+       keyDownInfo->wVKey == VK_F1)
+       && alt && !ctrl && !shift)
   {
     _panelCallback->SetFocusToPath(keyDownInfo->wVKey == VK_F1 ? 0 : 1);
     return true;
@@ -80,7 +82,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
 
   if (keyDownInfo->wVKey >= VK_F3 && keyDownInfo->wVKey <= VK_F12 && ctrl)
   {
-    int index = FindVKeyPropIDPair(keyDownInfo->wVKey);
+    const int index = FindVKeyPropIDPair(keyDownInfo->wVKey);
     if (index >= 0)
       SortItemsWithPropID(g_VKeyPropIDPairs[index].PropID);
   }
@@ -313,6 +315,14 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
         return true;
       }
       return false;
+    case 'W':
+      if (ctrl)
+      {
+        // SendMessage();
+        PostMessage(g_HWND, WM_COMMAND, IDCLOSE, 0);
+        return true;
+      }
+      return false;
     case 'Z':
       if (ctrl)
       {
@@ -326,7 +336,7 @@ bool CPanel::OnKeyDown(LPNMLVKEYDOWN keyDownInfo, LRESULT &result)
     case '4':
       if (ctrl)
       {
-        int styleIndex = keyDownInfo->wVKey - '1';
+        const unsigned styleIndex = (unsigned)(keyDownInfo->wVKey - '1');
         SetListViewMode(styleIndex);
         return true;
       }

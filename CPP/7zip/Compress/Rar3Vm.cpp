@@ -29,8 +29,8 @@ UInt32 CMemBitDecoder::ReadBits(unsigned numBits)
   UInt32 res = 0;
   for (;;)
   {
-    unsigned b = _bitPos < _bitSize ? (unsigned)_data[_bitPos >> 3] : 0;
-    unsigned avail = (unsigned)(8 - (_bitPos & 7));
+    const unsigned b = _bitPos < _bitSize ? (unsigned)_data[_bitPos >> 3] : 0;
+    const unsigned avail = (unsigned)(8 - (_bitPos & 7));
     if (numBits <= avail)
     {
       _bitPos += numBits;
@@ -46,8 +46,8 @@ UInt32 CMemBitDecoder::ReadBit() { return ReadBits(1); }
 
 UInt32 CMemBitDecoder::ReadEncodedUInt32()
 {
-  unsigned v = (unsigned)ReadBits(2);
-  UInt32 res = ReadBits(4 << v);
+  const unsigned v = (unsigned)ReadBits(2);
+  UInt32 res = ReadBits(4u << v);
   if (v == 1 && res < 16)
     res = 0xFFFFFF00 | (res << 4) | ReadBits(4);
   return res;
@@ -57,7 +57,13 @@ namespace NVm {
 
 static const UInt32 kStackRegIndex = kNumRegs - 1;
 
-#ifdef RARVM_VM_ENABLE
+#ifdef Z7_RARVM_VM_ENABLE
+
+#if   defined(Z7_GCC_VERSION)   && (Z7_GCC_VERSION   >= 40400) \
+   || defined(Z7_CLANG_VERSION) && (Z7_CLANG_VERSION >= 30000)
+// enumeration values not explicitly handled in switch
+#pragma GCC diagnostic ignored "-Wswitch-enum"
+#endif
 
 static const UInt32 FLAG_C = 1;
 static const UInt32 FLAG_Z = 2;
@@ -144,7 +150,7 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
   R[kNumRegs] = 0;
   Flags = 0;
 
-  UInt32 globalSize = MyMin((UInt32)initState->GlobalData.Size(), kGlobalSize);
+  const UInt32 globalSize = MyMin((UInt32)initState->GlobalData.Size(), kGlobalSize);
   if (globalSize != 0)
     memcpy(Mem + kGlobalOffset, &initState->GlobalData[0], globalSize);
   UInt32 staticSize = MyMin((UInt32)prg->StaticData.Size(), kGlobalSize - globalSize);
@@ -153,13 +159,13 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
 
   bool res = true;
   
-  #ifdef RARVM_STANDARD_FILTERS
+  #ifdef Z7_RARVM_STANDARD_FILTERS
   if (prg->StandardFilterIndex >= 0)
-    res = ExecuteStandardFilter(prg->StandardFilterIndex);
+    res = ExecuteStandardFilter((unsigned)prg->StandardFilterIndex);
   else
   #endif
   {
-    #ifdef RARVM_VM_ENABLE
+    #ifdef Z7_RARVM_VM_ENABLE
     res = ExecuteCode(prg);
     if (!res)
     {
@@ -192,7 +198,7 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
   return res;
 }
 
-#ifdef RARVM_VM_ENABLE
+#ifdef Z7_RARVM_VM_ENABLE
 
 #define SET_IP(IP) \
   if ((IP) >= numCommands) return true; \
@@ -200,7 +206,7 @@ bool CVm::Execute(CProgram *prg, const CProgramInitState *initState,
   cmd = commands + (IP);
 
 #define GET_FLAG_S_B(res) (((res) & 0x80) ? FLAG_S : 0)
-#define SET_IP_OP1 { UInt32 val = GetOperand32(&cmd->Op1); SET_IP(val); }
+#define SET_IP_OP1 { const UInt32 val = GetOperand32(&cmd->Op1); SET_IP(val) }
 #define FLAGS_UPDATE_SZ Flags = res == 0 ? FLAG_Z : res & FLAG_S
 #define FLAGS_UPDATE_SZ_B Flags = (res & 0xFF) == 0 ? FLAG_Z : GET_FLAG_S_B(res)
 
@@ -220,6 +226,7 @@ void CVm::SetOperand32(const COperand *op, UInt32 val)
   {
     case OP_TYPE_REG: R[op->Data] = val; return;
     case OP_TYPE_REGMEM: SetValue32(&Mem[(op->Base + R[op->Data]) & kSpaceMask], val); return;
+    default: break;
   }
 }
 
@@ -228,7 +235,7 @@ Byte CVm::GetOperand8(const COperand *op) const
   switch (op->Type)
   {
     case OP_TYPE_REG: return (Byte)R[op->Data];
-    case OP_TYPE_REGMEM: return Mem[(op->Base + R[op->Data]) & kSpaceMask];;
+    case OP_TYPE_REGMEM: return Mem[(op->Base + R[op->Data]) & kSpaceMask];
     default: return (Byte)op->Data;
   }
 }
@@ -239,6 +246,7 @@ void CVm::SetOperand8(const COperand *op, Byte val)
   {
     case OP_TYPE_REG: R[op->Data] = (R[op->Data] & 0xFFFFFF00) | val; return;
     case OP_TYPE_REGMEM: Mem[(op->Base + R[op->Data]) & kSpaceMask] = val; return;
+    default: break;
   }
 }
 
@@ -262,7 +270,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
   Int32 maxOpCount = 25000000;
   const CCommand *commands = &prg->Commands[0];
   const CCommand *cmd = commands;
-  UInt32 numCommands = prg->Commands.Size();
+  const UInt32 numCommands = prg->Commands.Size();
   if (numCommands == 0)
     return false;
 
@@ -278,152 +286,152 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_CMP:
         {
-          UInt32 v1 = GetOperand32(&cmd->Op1);
-          UInt32 res = v1 - GetOperand32(&cmd->Op2);
+          const UInt32 v1 = GetOperand32(&cmd->Op1);
+          const UInt32 res = v1 - GetOperand32(&cmd->Op2);
           Flags = res == 0 ? FLAG_Z : (res > v1) | (res & FLAG_S);
         }
         break;
       case CMD_CMPB:
         {
-          Byte v1 = GetOperand8(&cmd->Op1);
-          Byte res = (Byte)((v1 - GetOperand8(&cmd->Op2)) & 0xFF);
+          const Byte v1 = GetOperand8(&cmd->Op1);
+          const Byte res = (Byte)((v1 - GetOperand8(&cmd->Op2)) & 0xFF);
           Flags = res == 0 ? FLAG_Z : (res > v1) | GET_FLAG_S_B(res);
         }
         break;
       case CMD_ADD:
         {
-          UInt32 v1 = GetOperand32(&cmd->Op1);
-          UInt32 res = v1 + GetOperand32(&cmd->Op2);
+          const UInt32 v1 = GetOperand32(&cmd->Op1);
+          const UInt32 res = v1 + GetOperand32(&cmd->Op2);
           SetOperand32(&cmd->Op1, res);
           Flags = (res < v1) | (res == 0 ? FLAG_Z : (res & FLAG_S));
         }
         break;
       case CMD_ADDB:
         {
-          Byte v1 = GetOperand8(&cmd->Op1);
-          Byte res = (Byte)((v1 + GetOperand8(&cmd->Op2)) & 0xFF);
+          const Byte v1 = GetOperand8(&cmd->Op1);
+          const Byte res = (Byte)((v1 + GetOperand8(&cmd->Op2)) & 0xFF);
           SetOperand8(&cmd->Op1, (Byte)res);
           Flags = (res < v1) | (res == 0 ? FLAG_Z : GET_FLAG_S_B(res));
         }
         break;
       case CMD_ADC:
         {
-          UInt32 v1 = GetOperand(cmd->ByteMode, &cmd->Op1);
-          UInt32 FC = (Flags & FLAG_C);
+          const UInt32 v1 = GetOperand(cmd->ByteMode, &cmd->Op1);
+          const UInt32 FC = (Flags & FLAG_C);
           UInt32 res = v1 + GetOperand(cmd->ByteMode, &cmd->Op2) + FC;
           if (cmd->ByteMode)
             res &= 0xFF;
           SetOperand(cmd->ByteMode, &cmd->Op1, res);
-          Flags = (res < v1 || res == v1 && FC) | (res == 0 ? FLAG_Z : (res & FLAG_S));
+          Flags = (res < v1 || (res == v1 && FC)) | (res == 0 ? FLAG_Z : (res & FLAG_S));
         }
         break;
       case CMD_SUB:
         {
-          UInt32 v1 = GetOperand32(&cmd->Op1);
-          UInt32 res = v1 - GetOperand32(&cmd->Op2);
+          const UInt32 v1 = GetOperand32(&cmd->Op1);
+          const UInt32 res = v1 - GetOperand32(&cmd->Op2);
           SetOperand32(&cmd->Op1, res);
           Flags = res == 0 ? FLAG_Z : (res > v1) | (res & FLAG_S);
         }
         break;
       case CMD_SUBB:
         {
-          UInt32 v1 = GetOperand8(&cmd->Op1);
-          UInt32 res = v1 - GetOperand8(&cmd->Op2);
+          const UInt32 v1 = GetOperand8(&cmd->Op1);
+          const UInt32 res = v1 - GetOperand8(&cmd->Op2);
           SetOperand8(&cmd->Op1, (Byte)res);
           Flags = res == 0 ? FLAG_Z : (res > v1) | (res & FLAG_S);
         }
         break;
       case CMD_SBB:
         {
-          UInt32 v1 = GetOperand(cmd->ByteMode, &cmd->Op1);
-          UInt32 FC = (Flags & FLAG_C);
+          const UInt32 v1 = GetOperand(cmd->ByteMode, &cmd->Op1);
+          const UInt32 FC = (Flags & FLAG_C);
           UInt32 res = v1 - GetOperand(cmd->ByteMode, &cmd->Op2) - FC;
           // Flags = res == 0 ? FLAG_Z : (res > v1 || res == v1 && FC) | (res & FLAG_S);
           if (cmd->ByteMode)
             res &= 0xFF;
           SetOperand(cmd->ByteMode, &cmd->Op1, res);
-          Flags = (res > v1 || res == v1 && FC) | (res == 0 ? FLAG_Z : (res & FLAG_S));
+          Flags = (res > v1 || (res == v1 && FC)) | (res == 0 ? FLAG_Z : (res & FLAG_S));
         }
         break;
       case CMD_INC:
         {
-          UInt32 res = GetOperand32(&cmd->Op1) + 1;
+          const UInt32 res = GetOperand32(&cmd->Op1) + 1;
           SetOperand32(&cmd->Op1, res);
           FLAGS_UPDATE_SZ;
         }
         break;
       case CMD_INCB:
         {
-          Byte res = (Byte)(GetOperand8(&cmd->Op1) + 1);
-          SetOperand8(&cmd->Op1, res);;
+          const Byte res = (Byte)(GetOperand8(&cmd->Op1) + 1);
+          SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
         break;
       case CMD_DEC:
         {
-          UInt32 res = GetOperand32(&cmd->Op1) - 1;
+          const UInt32 res = GetOperand32(&cmd->Op1) - 1;
           SetOperand32(&cmd->Op1, res);
           FLAGS_UPDATE_SZ;
         }
         break;
       case CMD_DECB:
         {
-          Byte res = (Byte)(GetOperand8(&cmd->Op1) - 1);
-          SetOperand8(&cmd->Op1, res);;
+          const Byte res = (Byte)(GetOperand8(&cmd->Op1) - 1);
+          SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
         break;
       case CMD_XOR:
         {
-          UInt32 res = GetOperand32(&cmd->Op1) ^ GetOperand32(&cmd->Op2);
+          const UInt32 res = GetOperand32(&cmd->Op1) ^ GetOperand32(&cmd->Op2);
           SetOperand32(&cmd->Op1, res);
           FLAGS_UPDATE_SZ;
         }
         break;
       case CMD_XORB:
         {
-          Byte res = (Byte)(GetOperand8(&cmd->Op1) ^ GetOperand8(&cmd->Op2));
+          const Byte res = (Byte)(GetOperand8(&cmd->Op1) ^ GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
         break;
       case CMD_AND:
         {
-          UInt32 res = GetOperand32(&cmd->Op1) & GetOperand32(&cmd->Op2);
+          const UInt32 res = GetOperand32(&cmd->Op1) & GetOperand32(&cmd->Op2);
           SetOperand32(&cmd->Op1, res);
           FLAGS_UPDATE_SZ;
         }
         break;
       case CMD_ANDB:
         {
-          Byte res = (Byte)(GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2));
+          const Byte res = (Byte)(GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
         break;
       case CMD_OR:
         {
-          UInt32 res = GetOperand32(&cmd->Op1) | GetOperand32(&cmd->Op2);
+          const UInt32 res = GetOperand32(&cmd->Op1) | GetOperand32(&cmd->Op2);
           SetOperand32(&cmd->Op1, res);
           FLAGS_UPDATE_SZ;
         }
         break;
       case CMD_ORB:
         {
-          Byte res = (Byte)(GetOperand8(&cmd->Op1) | GetOperand8(&cmd->Op2));
+          const Byte res = (Byte)(GetOperand8(&cmd->Op1) | GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
           FLAGS_UPDATE_SZ_B;
         }
         break;
       case CMD_TEST:
         {
-          UInt32 res = GetOperand32(&cmd->Op1) & GetOperand32(&cmd->Op2);
+          const UInt32 res = GetOperand32(&cmd->Op1) & GetOperand32(&cmd->Op2);
           FLAGS_UPDATE_SZ;
         }
         break;
       case CMD_TESTB:
         {
-          Byte res = (Byte)(GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2));
+          const Byte res = (Byte)(GetOperand8(&cmd->Op1) & GetOperand8(&cmd->Op2));
           FLAGS_UPDATE_SZ_B;
         }
         break;
@@ -432,14 +440,14 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_NEG:
         {
-          UInt32 res = 0 - GetOperand32(&cmd->Op1);
+          const UInt32 res = 0 - GetOperand32(&cmd->Op1);
           SetOperand32(&cmd->Op1, res);
           Flags = res == 0 ? FLAG_Z : FLAG_C | (res & FLAG_S);
         }
         break;
       case CMD_NEGB:
         {
-          Byte res = (Byte)(0 - GetOperand8(&cmd->Op1));
+          const Byte res = (Byte)(0 - GetOperand8(&cmd->Op1));
           SetOperand8(&cmd->Op1, res);
           Flags = res == 0 ? FLAG_Z : FLAG_C | GET_FLAG_S_B(res);
         }
@@ -447,115 +455,115 @@ bool CVm::ExecuteCode(const CProgram *prg)
 
       case CMD_SHL:
         {
-          UInt32 v1 = GetOperand32(&cmd->Op1);
-          int v2 = (int)GetOperand32(&cmd->Op2);
-          UInt32 res = v1 << v2;
+          const UInt32 v1 = GetOperand32(&cmd->Op1);
+          const int v2 = (int)GetOperand32(&cmd->Op2);
+          const UInt32 res = v1 << v2;
           SetOperand32(&cmd->Op1, res);
           Flags = (res == 0 ? FLAG_Z : (res & FLAG_S)) | ((v1 << (v2 - 1)) & 0x80000000 ? FLAG_C : 0);
         }
         break;
       case CMD_SHLB:
         {
-          Byte v1 = GetOperand8(&cmd->Op1);
-          int v2 = (int)GetOperand8(&cmd->Op2);
-          Byte res = (Byte)(v1 << v2);
+          const Byte v1 = GetOperand8(&cmd->Op1);
+          const int v2 = (int)GetOperand8(&cmd->Op2);
+          const Byte res = (Byte)(v1 << v2);
           SetOperand8(&cmd->Op1, res);
           Flags = (res == 0 ? FLAG_Z : GET_FLAG_S_B(res)) | ((v1 << (v2 - 1)) & 0x80 ? FLAG_C : 0);
         }
         break;
       case CMD_SHR:
         {
-          UInt32 v1 = GetOperand32(&cmd->Op1);
-          int v2 = (int)GetOperand32(&cmd->Op2);
-          UInt32 res = v1 >> v2;
+          const UInt32 v1 = GetOperand32(&cmd->Op1);
+          const int v2 = (int)GetOperand32(&cmd->Op2);
+          const UInt32 res = v1 >> v2;
           SetOperand32(&cmd->Op1, res);
           Flags = (res == 0 ? FLAG_Z : (res & FLAG_S)) | ((v1 >> (v2 - 1)) & FLAG_C);
         }
         break;
       case CMD_SHRB:
         {
-          Byte v1 = GetOperand8(&cmd->Op1);
-          int v2 = (int)GetOperand8(&cmd->Op2);
-          Byte res = (Byte)(v1 >> v2);
+          const Byte v1 = GetOperand8(&cmd->Op1);
+          const int v2 = (int)GetOperand8(&cmd->Op2);
+          const Byte res = (Byte)(v1 >> v2);
           SetOperand8(&cmd->Op1, res);
           Flags = (res == 0 ? FLAG_Z : GET_FLAG_S_B(res)) | ((v1 >> (v2 - 1)) & FLAG_C);
         }
         break;
       case CMD_SAR:
         {
-          UInt32 v1 = GetOperand32(&cmd->Op1);
-          int v2 = (int)GetOperand32(&cmd->Op2);
-          UInt32 res = UInt32(((Int32)v1) >> v2);
+          const UInt32 v1 = GetOperand32(&cmd->Op1);
+          const int v2 = (int)GetOperand32(&cmd->Op2);
+          const UInt32 res = UInt32(((Int32)v1) >> v2);
           SetOperand32(&cmd->Op1, res);
           Flags= (res == 0 ? FLAG_Z : (res & FLAG_S)) | ((v1 >> (v2 - 1)) & FLAG_C);
         }
         break;
       case CMD_SARB:
         {
-          Byte v1 = GetOperand8(&cmd->Op1);
-          int v2 = (int)GetOperand8(&cmd->Op2);
-          Byte res = (Byte)(((signed char)v1) >> v2);
+          const Byte v1 = GetOperand8(&cmd->Op1);
+          const int v2 = (int)GetOperand8(&cmd->Op2);
+          const Byte res = (Byte)(((signed char)v1) >> v2);
           SetOperand8(&cmd->Op1, res);
           Flags= (res == 0 ? FLAG_Z : GET_FLAG_S_B(res)) | ((v1 >> (v2 - 1)) & FLAG_C);
         }
         break;
 
       case CMD_JMP:
-        SET_IP_OP1;
+        SET_IP_OP1
         continue;
       case CMD_JZ:
         if ((Flags & FLAG_Z) != 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
       case CMD_JNZ:
         if ((Flags & FLAG_Z) == 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
       case CMD_JS:
         if ((Flags & FLAG_S) != 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
       case CMD_JNS:
         if ((Flags & FLAG_S) == 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
       case CMD_JB:
         if ((Flags & FLAG_C) != 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
       case CMD_JBE:
         if ((Flags & (FLAG_C | FLAG_Z)) != 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
       case CMD_JA:
         if ((Flags & (FLAG_C | FLAG_Z)) == 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
       case CMD_JAE:
         if ((Flags & FLAG_C) == 0)
         {
-          SET_IP_OP1;
+          SET_IP_OP1
           continue;
         }
         break;
@@ -571,7 +579,7 @@ bool CVm::ExecuteCode(const CProgram *prg)
       case CMD_CALL:
         R[kStackRegIndex] -= 4;
         SetValue32(&Mem[R[kStackRegIndex] & kSpaceMask], (UInt32)(cmd - commands + 1));
-        SET_IP_OP1;
+        SET_IP_OP1
         continue;
 
       case CMD_PUSHA:
@@ -604,29 +612,29 @@ bool CVm::ExecuteCode(const CProgram *prg)
         break;
       case CMD_XCHG:
         {
-          UInt32 v1 = GetOperand(cmd->ByteMode, &cmd->Op1);
+          const UInt32 v1 = GetOperand(cmd->ByteMode, &cmd->Op1);
           SetOperand(cmd->ByteMode, &cmd->Op1, GetOperand(cmd->ByteMode, &cmd->Op2));
           SetOperand(cmd->ByteMode, &cmd->Op2, v1);
         }
         break;
       case CMD_MUL:
         {
-          UInt32 res = GetOperand32(&cmd->Op1) * GetOperand32(&cmd->Op2);
+          const UInt32 res = GetOperand32(&cmd->Op1) * GetOperand32(&cmd->Op2);
           SetOperand32(&cmd->Op1, res);
         }
         break;
       case CMD_MULB:
         {
-          Byte res = (Byte)(GetOperand8(&cmd->Op1) * GetOperand8(&cmd->Op2));
+          const Byte res = (Byte)(GetOperand8(&cmd->Op1) * GetOperand8(&cmd->Op2));
           SetOperand8(&cmd->Op1, res);
         }
         break;
       case CMD_DIV:
         {
-          UInt32 divider = GetOperand(cmd->ByteMode, &cmd->Op2);
+          const UInt32 divider = GetOperand(cmd->ByteMode, &cmd->Op2);
           if (divider != 0)
           {
-            UInt32 res = GetOperand(cmd->ByteMode, &cmd->Op1) / divider;
+            const UInt32 res = GetOperand(cmd->ByteMode, &cmd->Op1) / divider;
             SetOperand(cmd->ByteMode, &cmd->Op1, res);
           }
         }
@@ -636,8 +644,8 @@ bool CVm::ExecuteCode(const CProgram *prg)
         {
           if (R[kStackRegIndex] >= kSpaceSize)
             return true;
-          UInt32 ip = GetValue32(&Mem[R[kStackRegIndex] & kSpaceMask]);
-          SET_IP(ip);
+          const UInt32 ip = GetValue32(&Mem[R[kStackRegIndex] & kSpaceMask]);
+          SET_IP(ip)
           R[kStackRegIndex] += 4;
           continue;
         }
@@ -695,7 +703,7 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
   
   if (inp.ReadBit())
   {
-    UInt32 dataSize = inp.ReadEncodedUInt32() + 1;
+    const UInt32 dataSize = inp.ReadEncodedUInt32() + 1;
     for (UInt32 i = 0; inp.Avail() && i < dataSize; i++)
       StaticData.Add((Byte)inp.ReadBits(8));
   }
@@ -705,28 +713,30 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
     Commands.Add(CCommand());
     CCommand *cmd = &Commands.Back();
     
+    unsigned opCode;
     if (inp.ReadBit() == 0)
-      cmd->OpCode = (ECommand)inp.ReadBits(3);
+      opCode = inp.ReadBits(3);
     else
-      cmd->OpCode = (ECommand)(8 + inp.ReadBits(5));
-
-    if (kCmdFlags[(unsigned)cmd->OpCode] & CF_BYTEMODE)
+      opCode = 8 + inp.ReadBits(5);
+    cmd->OpCode = (ECommand)opCode;
+    const unsigned cmdFlags = kCmdFlags[opCode];
+    if (cmdFlags & CF_BYTEMODE)
       cmd->ByteMode = (inp.ReadBit()) ? true : false;
     else
       cmd->ByteMode = 0;
     
-    int opNum = (kCmdFlags[(unsigned)cmd->OpCode] & CF_OPMASK);
+    const unsigned opNum = (cmdFlags & CF_OPMASK);
     
-    if (opNum > 0)
+    if (opNum)
     {
       DecodeArg(inp, cmd->Op1, cmd->ByteMode);
       if (opNum == 2)
         DecodeArg(inp, cmd->Op2, cmd->ByteMode);
       else
       {
-        if (cmd->Op1.Type == OP_TYPE_INT && (kCmdFlags[(unsigned)cmd->OpCode] & (CF_JUMP | CF_PROC)))
+        if (cmd->Op1.Type == OP_TYPE_INT && (cmdFlags & (CF_JUMP | CF_PROC)))
         {
-          int dist = cmd->Op1.Data;
+          Int32 dist = (Int32)cmd->Op1.Data;
           if (dist >= 256)
             dist -= 256;
           else
@@ -739,7 +749,7 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
               dist -= 16;
             dist += Commands.Size() - 1;
           }
-          cmd->Op1.Data = dist;
+          cmd->Op1.Data = (UInt32)dist;
         }
       }
     }
@@ -763,6 +773,7 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
         case CMD_SHR: cmd->OpCode = CMD_SHRB; break;
         case CMD_SAR: cmd->OpCode = CMD_SARB; break;
         case CMD_MUL: cmd->OpCode = CMD_MULB; break;
+        default: break;
       }
     }
   }
@@ -771,7 +782,7 @@ void CProgram::ReadProgram(const Byte *code, UInt32 codeSize)
 #endif
 
 
-#ifdef RARVM_STANDARD_FILTERS
+#ifdef Z7_RARVM_STANDARD_FILTERS
 
 enum EStandardFilter
 {
@@ -803,12 +814,13 @@ kStdFilters[]=
 
 static int FindStandardFilter(const Byte *code, UInt32 codeSize)
 {
-  UInt32 crc = CrcCalc(code, codeSize);
-  for (unsigned i = 0; i < ARRAY_SIZE(kStdFilters); i++)
+  // return -1; // for debug VM execution
+  const UInt32 crc = CrcCalc(code, codeSize);
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(kStdFilters); i++)
   {
     const CStandardFilterSignature &sfs = kStdFilters[i];
     if (sfs.CRC == crc && sfs.Length == codeSize)
-      return i;
+      return (int)i;
   }
   return -1;
 }
@@ -820,11 +832,11 @@ bool CProgram::PrepareProgram(const Byte *code, UInt32 codeSize)
 {
   IsSupported = false;
 
-  #ifdef RARVM_VM_ENABLE
+  #ifdef Z7_RARVM_VM_ENABLE
   Commands.Clear();
   #endif
   
-  #ifdef RARVM_STANDARD_FILTERS
+  #ifdef Z7_RARVM_STANDARD_FILTERS
   StandardFilterIndex = -1;
   #endif
 
@@ -838,20 +850,20 @@ bool CProgram::PrepareProgram(const Byte *code, UInt32 codeSize)
   {
     IsSupported = true;
     isOK = true;
-    #ifdef RARVM_STANDARD_FILTERS
+    #ifdef Z7_RARVM_STANDARD_FILTERS
     StandardFilterIndex = FindStandardFilter(code, codeSize);
     if (StandardFilterIndex >= 0)
       return true;
     #endif
   
-    #ifdef RARVM_VM_ENABLE
+    #ifdef Z7_RARVM_VM_ENABLE
     ReadProgram(code + 1, codeSize - 1);
     #else
     IsSupported = false;
     #endif
   }
   
-  #ifdef RARVM_VM_ENABLE
+  #ifdef Z7_RARVM_VM_ENABLE
   Commands.Add(CCommand());
   Commands.Back().OpCode = CMD_RET;
   #endif
@@ -865,7 +877,7 @@ void CVm::SetMemory(UInt32 pos, const Byte *data, UInt32 dataSize)
     memmove(Mem + pos, data, MyMin(dataSize, kSpaceSize - pos));
 }
 
-#ifdef RARVM_STANDARD_FILTERS
+#ifdef Z7_RARVM_STANDARD_FILTERS
 
 static void E8E9Decode(Byte *data, UInt32 dataSize, UInt32 fileOffset, bool e9)
 {
@@ -873,7 +885,7 @@ static void E8E9Decode(Byte *data, UInt32 dataSize, UInt32 fileOffset, bool e9)
     return;
   dataSize -= 4;
   const UInt32 kFileSize = 0x1000000;
-  Byte cmpMask = (Byte)(e9 ? 0xFE : 0xFF);
+  const Byte cmpMask = (Byte)(e9 ? 0xFE : 0xFF);
   for (UInt32 curPos = 0; curPos < dataSize;)
   {
     curPos++;
@@ -921,7 +933,7 @@ static void ItaniumDecode(Byte *data, UInt32 dataSize, UInt32 fileOffset)
           raw &= ~(kMask << m);
           raw |= (v << m);
           // p[0] = (Byte)raw; p[1] = (Byte)(raw >> 8); p[2] = (Byte)(raw >> 16);
-          SetUi32(p, raw);
+          SetUi32(p, raw)
         }
       }
       while (++m <= 4);
@@ -960,12 +972,12 @@ static void RgbDecode(Byte *srcData, UInt32 dataSize, UInt32 width, UInt32 posR)
         predicted = prevByte;
       else
       {
-        unsigned int upperLeftByte = destData[i - width];
-        unsigned int upperByte = destData[i - width + 3];
+        const unsigned int upperLeftByte = destData[i - width];
+        const unsigned int upperByte = destData[i - width + 3];
         predicted = prevByte + upperByte - upperLeftByte;
-        int pa = abs((int)(predicted - prevByte));
-        int pb = abs((int)(predicted - upperByte));
-        int pc = abs((int)(predicted - upperLeftByte));
+        const int pa = abs((int)(predicted - prevByte));
+        const int pb = abs((int)(predicted - upperByte));
+        const int pc = abs((int)(predicted - upperLeftByte));
         if (pa <= pb && pa <= pc)
           predicted = prevByte;
         else
@@ -982,11 +994,13 @@ static void RgbDecode(Byte *srcData, UInt32 dataSize, UInt32 width, UInt32 posR)
   const UInt32 border = dataSize - 2;
   for (UInt32 i = posR; i < border; i += 3)
   {
-    Byte g = destData[i + 1];
+    const Byte g = destData[i + 1];
     destData[i    ] = (Byte)(destData[i    ] + g);
     destData[i + 2] = (Byte)(destData[i + 2] + g);
   }
 }
+
+#define my_abs(x) (unsigned)abs(x)
 
 static void AudioDecode(Byte *srcData, UInt32 dataSize, UInt32 numChannels)
 {
@@ -1001,34 +1015,34 @@ static void AudioDecode(Byte *srcData, UInt32 dataSize, UInt32 numChannels)
     for (UInt32 i = curChannel, byteCount = 0; i < dataSize; i += numChannels, byteCount++)
     {
       D3 = D2;
-      D2 = prevDelta - D1;
-      D1 = prevDelta;
+      D2 = (Int32)prevDelta - D1;
+      D1 = (Int32)prevDelta;
       
-      UInt32 predicted = 8 * prevByte + K1 * D1 + K2 * D2 + K3 * D3;
+      UInt32 predicted = (UInt32)((Int32)(8 * prevByte) + K1 * D1 + K2 * D2 + K3 * D3);
       predicted = (predicted >> 3) & 0xFF;
       
-      UInt32 curByte = *(srcData++);
+      const UInt32 curByte = *(srcData++);
       
       predicted -= curByte;
       destData[i] = (Byte)predicted;
       prevDelta = (UInt32)(Int32)(signed char)(predicted - prevByte);
       prevByte = predicted;
       
-      Int32 D = ((Int32)(signed char)curByte) << 3;
+      const Int32 D = ((Int32)(signed char)curByte) << 3;
       
-      dif[0] += abs(D);
-      dif[1] += abs(D - D1);
-      dif[2] += abs(D + D1);
-      dif[3] += abs(D - D2);
-      dif[4] += abs(D + D2);
-      dif[5] += abs(D - D3);
-      dif[6] += abs(D + D3);
+      dif[0] += my_abs(D);
+      dif[1] += my_abs(D - D1);
+      dif[2] += my_abs(D + D1);
+      dif[3] += my_abs(D - D2);
+      dif[4] += my_abs(D + D2);
+      dif[5] += my_abs(D - D3);
+      dif[6] += my_abs(D + D3);
       
       if ((byteCount & 0x1F) == 0)
       {
         UInt32 minDif = dif[0], numMinDif = 0;
         dif[0] = 0;
-        for (unsigned j = 1; j < ARRAY_SIZE(dif); j++)
+        for (unsigned j = 1; j < Z7_ARRAY_SIZE(dif); j++)
         {
           if (dif[j] < minDif)
           {
@@ -1068,7 +1082,7 @@ static UInt32 UpCaseDecode(Byte *data, UInt32 dataSize)
 
 bool CVm::ExecuteStandardFilter(unsigned filterIndex)
 {
-  UInt32 dataSize = R[4];
+  const UInt32 dataSize = R[4];
   if (dataSize >= kGlobalOffset)
     return false;
   EStandardFilter filterType = kStdFilters[filterIndex].Type;
@@ -1088,7 +1102,7 @@ bool CVm::ExecuteStandardFilter(unsigned filterIndex)
     {
       if (dataSize >= kGlobalOffset / 2)
         return false;
-      UInt32 numChannels = R[0];
+      const UInt32 numChannels = R[0];
       if (numChannels == 0 || numChannels > 1024) // unrar 5.5.5
         return false;
       SetBlockPos(dataSize);
@@ -1100,8 +1114,8 @@ bool CVm::ExecuteStandardFilter(unsigned filterIndex)
     {
       if (dataSize >= kGlobalOffset / 2 || dataSize < 3) // unrar 5.5.5
         return false;
-      UInt32 width = R[0];
-      UInt32 posR = R[1];
+      const UInt32 width = R[0];
+      const UInt32 posR = R[1];
       if (width < 3 || width - 3 > dataSize || posR > 2) // unrar 5.5.5
         return false;
       SetBlockPos(dataSize);
@@ -1113,7 +1127,7 @@ bool CVm::ExecuteStandardFilter(unsigned filterIndex)
     {
       if (dataSize >= kGlobalOffset / 2)
         return false;
-      UInt32 numChannels = R[0];
+      const UInt32 numChannels = R[0];
       if (numChannels == 0 || numChannels > 128) // unrar 5.5.5
         return false;
       SetBlockPos(dataSize);

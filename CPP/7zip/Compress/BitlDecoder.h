@@ -1,7 +1,7 @@
 // BitlDecoder.h -- the Least Significant Bit of byte is First
 
-#ifndef __BITL_DECODER_H
-#define __BITL_DECODER_H
+#ifndef ZIP7_INC_BITL_DECODER_H
+#define ZIP7_INC_BITL_DECODER_H
 
 #include "../IStream.h"
 
@@ -54,14 +54,14 @@ public:
 
   bool ThereAreDataInBitsBuffer() const { return this->_bitPos != kNumBigValueBits; }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   void Normalize()
   {
     for (; _bitPos >= 8; _bitPos -= 8)
       _value = ((UInt32)_stream.ReadByte() << (kNumBigValueBits - _bitPos)) | _value;
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
@@ -102,7 +102,7 @@ public:
     _normalValue = 0;
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   void Normalize()
   {
     for (; this->_bitPos >= 8; this->_bitPos -= 8)
@@ -113,21 +113,21 @@ public:
     }
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 GetValue(unsigned numBits)
   {
     Normalize();
     return ((this->_value >> (8 - this->_bitPos)) & kMask) >> (kNumValueBits - numBits);
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   void MovePos(unsigned numBits)
   {
     this->_bitPos += numBits;
     _normalValue >>= numBits;
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
@@ -138,10 +138,10 @@ public:
 
   void AlignToByte() { MovePos((32 - this->_bitPos) & 7); }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   Byte ReadDirectByte() { return this->_stream.ReadByte(); }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   Byte ReadAlignedByte()
   {
     if (this->_bitPos == kNumBigValueBits)
@@ -152,7 +152,7 @@ public:
   }
 
   // call it only if the object is aligned for byte.
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   bool ReadAlignedByte_FromBuf(Byte &b)
   {
     if (this->_stream.NumExtraBytes != 0)

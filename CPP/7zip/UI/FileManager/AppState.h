@@ -1,7 +1,7 @@
 // AppState.h
 
-#ifndef __APP_STATE_H
-#define __APP_STATE_H
+#ifndef ZIP7_INC_APP_STATE_H
+#define ZIP7_INC_APP_STATE_H
 
 #include "../../../Windows/Synchronization.h"
 

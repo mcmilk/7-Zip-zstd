@@ -1,8 +1,8 @@
 // HmacSha1.h
 // Implements HMAC-SHA-1 (RFC2104, FIPS-198)
 
-#ifndef __CRYPTO_HMAC_SHA1_H
-#define __CRYPTO_HMAC_SHA1_H
+#ifndef ZIP7_INC_CRYPTO_HMAC_SHA1_H
+#define ZIP7_INC_CRYPTO_HMAC_SHA1_H
 
 #include "Sha1Cls.h"
 

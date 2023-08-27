@@ -7,35 +7,30 @@
 #include "../Common/MyCom.h"
 
 #include "../7zip/Common/RegisterCodec.h"
-
 #include "../7zip/Compress/BZip2Crc.h"
 
-class CCksumHasher:
-  public IHasher,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CCksumHasher
+  , IHasher
+)
   CBZip2Crc _crc;
   UInt64 _size;
-  Byte mtDummy[1 << 7];
-  
 public:
+  // Byte _mtDummy[1 << 7];
   CCksumHasher()
   {
     _crc.Init(0);
     _size = 0;
   }
-
-  MY_UNKNOWN_IMP1(IHasher)
-  INTERFACE_IHasher(;)
 };
 
-STDMETHODIMP_(void) CCksumHasher::Init() throw()
+Z7_COM7F_IMF2(void, CCksumHasher::Init())
 {
   _crc.Init(0);
   _size = 0;
 }
 
-STDMETHODIMP_(void) CCksumHasher::Update(const void *data, UInt32 size) throw()
+Z7_COM7F_IMF2(void, CCksumHasher::Update(const void *data, UInt32 size))
 {
   _size += size;
   CBZip2Crc crc = _crc;
@@ -44,7 +39,7 @@ STDMETHODIMP_(void) CCksumHasher::Update(const void *data, UInt32 size) throw()
   _crc = crc;
 }
 
-STDMETHODIMP_(void) CCksumHasher::Final(Byte *digest) throw()
+Z7_COM7F_IMF2(void, CCksumHasher::Final(Byte *digest))
 {
   UInt64 size = _size;
   CBZip2Crc crc = _crc;
@@ -54,7 +49,7 @@ STDMETHODIMP_(void) CCksumHasher::Final(Byte *digest) throw()
     size >>= 8;
   }
   const UInt32 val = crc.GetDigest();
-  SetUi32(digest, val);
+  SetUi32(digest, val)
 }
 
 REGISTER_HASHER(CCksumHasher, 0x203, "CKSUM", 4)

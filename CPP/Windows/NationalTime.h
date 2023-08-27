@@ -1,7 +1,7 @@
 // Windows/NationalTime.h
 
-#ifndef __WINDOWS_NATIONAL_TIME_H
-#define __WINDOWS_NATIONAL_TIME_H
+#ifndef ZIP7_INC_WINDOWS_NATIONAL_TIME_H
+#define ZIP7_INC_WINDOWS_NATIONAL_TIME_H
 
 #include "../Common/MyString.h"
 

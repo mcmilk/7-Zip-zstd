@@ -32,7 +32,7 @@ namespace NCompress {
 namespace NBZip2 {
 
 // #undef NO_INLINE
-#define NO_INLINE MY_NO_INLINE
+#define NO_INLINE Z7_NO_INLINE
 
 #define BZIP2_BYTE_MODE
 
@@ -169,7 +169,7 @@ enum EState
 SRes CBitDecoder::ReadByte(int &b)
 {
   b = -1;
-  READ_BITS_8(b, 8);
+  READ_BITS_8(b, 8)
   return SZ_OK;
 }
 
@@ -180,7 +180,7 @@ SRes CBase::ReadStreamSignature2()
   for (;;)
   {
     unsigned b;
-    READ_BITS_8(b, 8);
+    READ_BITS_8(b, 8)
 
     if (   (state2 == 0 && b != kArSig0)
         || (state2 == 1 && b != kArSig1)
@@ -230,7 +230,7 @@ SRes CBase::ReadBlockSignature2()
   while (state2 < 10)
   {
     unsigned b;
-    READ_BITS_8(b, 8);
+    READ_BITS_8(b, 8)
     temp[state2] = (Byte)b;
     state2++;
   }
@@ -285,7 +285,7 @@ SRes CBase::ReadBlock2()
   {
     if (Props.randMode)
     {
-      READ_BIT(Props.randMode);
+      READ_BIT(Props.randMode)
     }
     state = STATE_ORIG_BITS;
     // g_Tick = GetCpuTicks();
@@ -293,7 +293,7 @@ SRes CBase::ReadBlock2()
 
   if (state == STATE_ORIG_BITS)
   {
-    READ_BITS(Props.origPtr, kNumOrigBits);
+    READ_BITS(Props.origPtr, kNumOrigBits)
     if (Props.origPtr >= blockSizeMax)
       return SZ_ERROR_DATA;
     state = STATE_IN_USE;
@@ -303,7 +303,7 @@ SRes CBase::ReadBlock2()
 
   if (state == STATE_IN_USE)
   {
-    READ_BITS(state2, 16);
+    READ_BITS(state2, 16)
     state = STATE_IN_USE2;
     state3 = 0;
     numInUse = 0;
@@ -316,7 +316,7 @@ SRes CBase::ReadBlock2()
       if (state2 & ((UInt32)0x8000 >> (state3 >> 4)))
       {
         unsigned b;
-        READ_BIT(b);
+        READ_BIT(b)
         if (b)
           mtf.Add(numInUse++, (Byte)state3);
       }
@@ -328,7 +328,7 @@ SRes CBase::ReadBlock2()
   
   if (state == STATE_NUM_TABLES)
   {
-    READ_BITS_8(numTables, kNumTablesBits);
+    READ_BITS_8(numTables, kNumTablesBits)
     state = STATE_NUM_SELECTORS;
     if (numTables < kNumTablesMin || numTables > kNumTablesMax)
       return SZ_ERROR_DATA;
@@ -336,7 +336,7 @@ SRes CBase::ReadBlock2()
   
   if (state == STATE_NUM_SELECTORS)
   {
-    READ_BITS(numSelectors, kNumSelectorsBits);
+    READ_BITS(numSelectors, kNumSelectorsBits)
     state = STATE_SELECTORS;
     state2 = 0x543210;
     state3 = 0;
@@ -358,7 +358,7 @@ SRes CBase::ReadBlock2()
       for (;;)
       {
         unsigned b;
-        READ_BIT(b);
+        READ_BIT(b)
         if (!b)
           break;
         if (++state4 >= numTables)
@@ -392,7 +392,7 @@ SRes CBase::ReadBlock2()
     {
       if (state3 == 0)
       {
-        READ_BITS_8(state3, kNumLevelsBits);
+        READ_BITS_8(state3, kNumLevelsBits)
         state4 = 0;
         state5 = 0;
       }
@@ -407,14 +407,14 @@ SRes CBase::ReadBlock2()
           if (state5 == 0)
           {
             unsigned b;
-            READ_BIT(b);
+            READ_BIT(b)
             if (!b)
               break;
           }
 
           state5 = 1;
           unsigned b;
-          READ_BIT(b);
+          READ_BIT(b)
 
           state5 = 0;
           state3++;
@@ -573,8 +573,8 @@ SRes CBase::ReadBlock2()
 
         // UInt32 b = (UInt32)mtf.GetAndMove((unsigned)sym);
 
-        const unsigned lim = sym >> MTF_MOVS;
-        const unsigned pos = (sym & MTF_MASK) << 3;
+        const unsigned lim = sym >> Z7_MTF_MOVS;
+        const unsigned pos = (sym & Z7_MTF_MASK) << 3;
         CMtfVar next = mtf.Buf[lim];
         CMtfVar prev = (next >> pos) & 0xFF;
         
@@ -593,7 +593,7 @@ SRes CBase::ReadBlock2()
           {
             CMtfVar n0 = *m;
             *m = (n0 << 8) | prev;
-            prev = (n0 >> (MTF_MASK << 3));
+            prev = (n0 >> (Z7_MTF_MASK << 3));
           }
           while (++m != mLim);
         }
@@ -879,7 +879,7 @@ HRESULT CDecoder::DecodeBlock(const CBlockProps &props)
     
     if (processed >= size)
     {
-      RINOK(Flush());
+      RINOK(Flush())
     }
     
     if (block.Finished())
@@ -900,7 +900,7 @@ CDecoder::CDecoder():
     _inBuf(NULL),
     _inProcessed(0)
 {
-  #ifndef _7ZIP_ST
+  #ifndef Z7_ST
   MtMode = false;
   NeedWaitScout = false;
   // ScoutRes = S_OK;
@@ -912,7 +912,7 @@ CDecoder::~CDecoder()
 {
   PRIN("\n~CDecoder()");
 
-  #ifndef _7ZIP_ST
+  #ifndef Z7_ST
   
   if (Thread.IsCreated())
   {
@@ -966,7 +966,7 @@ HRESULT CDecoder::ReadStreamSignature()
 {
   for (;;)
   {
-    RINOK(ReadInput());
+    RINOK(ReadInput())
     SRes res = Base.ReadStreamSignature2();
     if (res != SZ_OK)
       return S_FALSE;
@@ -992,7 +992,7 @@ HRESULT CDecoder::ReadBlockSignature()
 {
   for (;;)
   {
-    RINOK(ReadInput());
+    RINOK(ReadInput())
     
     SRes res = Base.ReadBlockSignature2();
     
@@ -1015,7 +1015,7 @@ HRESULT CDecoder::ReadBlock()
 {
   for (;;)
   {
-    RINOK(ReadInput());
+    RINOK(ReadInput())
 
     SRes res = Base.ReadBlock2();
 
@@ -1036,18 +1036,18 @@ HRESULT CDecoder::ReadBlock()
 HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
 {
   {
-    #ifndef _7ZIP_ST
+    #ifndef Z7_ST
     _block.StopScout = false;
     #endif
   }
 
-  RINOK(StartRead());
+  RINOK(StartRead())
 
   UInt64 inPrev = 0;
   UInt64 outPrev = 0;
 
   {
-    #ifndef _7ZIP_ST
+    #ifndef Z7_ST
     CWaitScout_Releaser waitScout_Releaser(this);
 
     bool useMt = false;
@@ -1072,7 +1072,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
         const UInt64 outCur = GetOutProcessedSize();
         if (packPos - inPrev >= kProgressStep || outCur - outPrev >= kProgressStep)
         {
-          RINOK(progress->SetRatioInfo(&packPos, &outCur));
+          RINOK(progress->SetRatioInfo(&packPos, &outCur))
           inPrev = packPos;
           outPrev = outCur;
         }
@@ -1083,7 +1083,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
           return nextRes;
 
       if (
-          #ifndef _7ZIP_ST
+          #ifndef Z7_ST
           !useMt &&
           #endif
           !wasFinished && Base.state == STATE_BLOCK_SIGNATURE)
@@ -1125,7 +1125,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
 
         wasFinished = false;
 
-        #ifndef _7ZIP_ST
+        #ifndef Z7_ST
         if (MtMode)
         if (props.blockSize != 0)
         {
@@ -1136,7 +1136,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
             if (!Thread.IsCreated())
             {
               PRIN("=== MT_MODE");
-              RINOK(CreateThread());
+              RINOK(CreateThread())
             }
             useMt = true;
           }
@@ -1148,7 +1148,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
       {
         crc = nextCrc;
         
-        #ifndef _7ZIP_ST
+        #ifndef Z7_ST
         if (useMt)
         {
           PRIN("DecoderEvent.Lock()");
@@ -1165,7 +1165,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
             crc = _block.Crc;
           packPos = _block.PackPos;
           wasFinished = _block.WasFinished;
-          RINOK(_block.Res);
+          RINOK(_block.Res)
         }
         else
         #endif
@@ -1175,7 +1175,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
 
           TICKS_START
           Base.Props.randMode = 1;
-          RINOK(ReadBlock());
+          RINOK(ReadBlock())
           TICKS_UPDATE(0)
           
           props = Base.Props;
@@ -1190,7 +1190,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
         TICKS_UPDATE(1)
       }
       
-      #ifndef _7ZIP_ST
+      #ifndef Z7_ST
       if (useMt && !wasFinished)
       {
         /*
@@ -1216,7 +1216,7 @@ HRESULT CDecoder::DecodeStreams(ICompressProgressInfo *progress)
       if (props.blockSize == 0)
         continue;
 
-      RINOK(DecodeBlock(props));
+      RINOK(DecodeBlock(props))
 
       if (!_blockFinished)
         return nextRes;
@@ -1278,8 +1278,8 @@ void CDecoder::InitOutSize(const UInt64 *outSize)
 }
 
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   /*
   {
@@ -1344,21 +1344,21 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 }
 
 
-STDMETHODIMP CDecoder::SetFinishMode(UInt32 finishMode)
+Z7_COM7F_IMF(CDecoder::SetFinishMode(UInt32 finishMode))
 {
   FinishMode = (finishMode != 0);
   return S_OK;
 }
 
 
-STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
+Z7_COM7F_IMF(CDecoder::GetInStreamProcessedSize(UInt64 *value))
 {
   *value = GetInStreamSize();
   return S_OK;
 }
 
 
-STDMETHODIMP CDecoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CDecoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *processedSize))
 {
   Base.AlignToByte();
   UInt32 i;
@@ -1376,7 +1376,7 @@ STDMETHODIMP CDecoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *proc
 }
 
 
-#ifndef _7ZIP_ST
+#ifndef Z7_ST
 
 #define PRIN_MT(s) PRIN("    " s)
 
@@ -1397,9 +1397,9 @@ void CDecoder::RunScout()
   for (;;)
   {
     {
-      PRIN_MT("ScoutEvent.Lock()");
+      PRIN_MT("ScoutEvent.Lock()")
       WRes wres = ScoutEvent.Lock();
-      PRIN_MT("-- ScoutEvent.Lock()");
+      PRIN_MT("-- ScoutEvent.Lock()")
       if (wres != 0)
       {
         // ScoutRes = wres;
@@ -1461,7 +1461,7 @@ void CDecoder::RunScout()
 
           res = ReadBlock();
           
-          PRIN_MT("-- Base.ReadBlock");
+          PRIN_MT("-- Base.ReadBlock")
           if (res != S_OK)
             break;
           block.Props = Base.Props;
@@ -1505,13 +1505,13 @@ void CDecoder::RunScout()
       
     if (res != S_OK)
     {
-      PRIN_MT("error");
+      PRIN_MT("error")
       block.Res = res;
       block.WasFinished = true;
     }
 
     block.PackPos = GetInputProcessedSize();
-    PRIN_MT("DecoderEvent.Set()");
+    PRIN_MT("DecoderEvent.Set()")
     WRes wres = DecoderEvent.Set();
     if (wres != 0)
     {
@@ -1522,7 +1522,7 @@ void CDecoder::RunScout()
 }
 
 
-STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)
+Z7_COM7F_IMF(CDecoder::SetNumberOfThreads(UInt32 numThreads))
 {
   MtMode = (numThreads > 1);
 
@@ -1538,10 +1538,10 @@ STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)
 
 
 
-#ifndef NO_READ_FROM_CODER
+#ifndef Z7_NO_READ_FROM_CODER
 
 
-STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream)
+Z7_COM7F_IMF(CDecoder::SetInStream(ISequentialInStream *inStream))
 {
   Base.InStreamRef = inStream;
   Base.InStream = inStream;
@@ -1549,7 +1549,7 @@ STDMETHODIMP CDecoder::SetInStream(ISequentialInStream *inStream)
 }
 
 
-STDMETHODIMP CDecoder::ReleaseInStream()
+Z7_COM7F_IMF(CDecoder::ReleaseInStream())
 {
   Base.InStreamRef.Release();
   Base.InStream = NULL;
@@ -1558,7 +1558,7 @@ STDMETHODIMP CDecoder::ReleaseInStream()
 
 
 
-STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
+Z7_COM7F_IMF(CDecoder::SetOutStreamSize(const UInt64 *outSize))
 {
   InitOutSize(outSize);
 
@@ -1583,7 +1583,7 @@ STDMETHODIMP CDecoder::SetOutStreamSize(const UInt64 *outSize)
 
 
 
-STDMETHODIMP CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   *processedSize = 0;
 
@@ -1689,7 +1689,7 @@ STDMETHODIMP CDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
 
 // ---------- NSIS ----------
 
-STDMETHODIMP CNsisDecoder::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CNsisDecoder::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   *processedSize = 0;
 

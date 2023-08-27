@@ -1,7 +1,7 @@
 // ZipOut.h
 
-#ifndef __ZIP_OUT_H
-#define __ZIP_OUT_H
+#ifndef ZIP7_INC_ZIP_OUT_H
+#define ZIP7_INC_ZIP_OUT_H
 
 #include "../../../Common/MyCom.h"
 
@@ -74,6 +74,10 @@ class COutArchive
 
   void SeekToCurPos();
 public:
+  CMyComPtr<IStreamSetRestriction> SetRestriction;
+
+  HRESULT ClearRestriction();
+  HRESULT SetRestrictionFromCurrent();
   HRESULT Create(IOutStream *outStream);
   
   UInt64 GetCurPos() const { return m_CurPos; }
@@ -88,7 +92,7 @@ public:
 
   void WriteDescriptor(const CItemOut &item);
 
-  void WriteCentralDir(const CObjectVector<CItemOut> &items, const CByteBuffer *comment);
+  HRESULT WriteCentralDir(const CObjectVector<CItemOut> &items, const CByteBuffer *comment);
 
   void CreateStreamForCompressing(CMyComPtr<IOutStream> &outStream);
   void CreateStreamForCopying(CMyComPtr<ISequentialOutStream> &outStream);

@@ -1,13 +1,13 @@
 // FileFolderPluginOpen.h
 
-#ifndef __FILE_FOLDER_PLUGIN_OPEN_H
-#define __FILE_FOLDER_PLUGIN_OPEN_H
+#ifndef ZIP7_INC_FILE_FOLDER_PLUGIN_OPEN_H
+#define ZIP7_INC_FILE_FOLDER_PLUGIN_OPEN_H
 
 #include "../../../Windows/DLL.h"
 
 struct CFfpOpen
 {
-  CLASS_NO_COPY(CFfpOpen)
+  Z7_CLASS_NO_COPY(CFfpOpen)
 public:
   // out:
   bool Encrypted;

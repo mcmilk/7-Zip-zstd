@@ -1,10 +1,11 @@
 // RegistryPlugins.h
 
-#ifndef __REGISTRY_PLUGINS_H
-#define __REGISTRY_PLUGINS_H
+#ifndef ZIP7_INC_REGISTRY_PLUGINS_H
+#define ZIP7_INC_REGISTRY_PLUGINS_H
 
 #include "../../../Common/MyString.h"
 
+/*
 enum EPluginType
 {
   kPluginTypeFF = 0
@@ -12,21 +13,17 @@ enum EPluginType
 
 struct CPluginInfo
 {
-  FString FilePath;
   EPluginType Type;
-  UString Name;
-  CLSID ClassID;
-  CLSID OptionsClassID;
-  bool ClassIDDefined;
-  bool OptionsClassIDDefined;
-
-  // CSysString Extension;
-  // CSysString AddExtension;
-  // bool UpdateEnabled;
-  // bool KeepName;
+  // bool ClassID_Defined;
+  // bool OptionsClassID_Defined;
+  // FString FilePath;
+  // UString Name;
+  // CLSID ClassID;
+  // CLSID OptionsClassID;
 };
 
-void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins);
-void ReadFileFolderPluginInfoList(CObjectVector<CPluginInfo> &plugins);
+// void ReadPluginInfoList(CObjectVector<CPluginInfo> &plugins);
+// void ReadFileFolderPluginInfoList(CObjectVector<CPluginInfo> &plugins);
+*/
 
 #endif

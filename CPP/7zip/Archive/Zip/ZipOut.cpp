@@ -12,6 +12,20 @@
 namespace NArchive {
 namespace NZip {
 
+HRESULT COutArchive::ClearRestriction()
+{
+  if (SetRestriction)
+    return SetRestriction->SetRestriction(0, 0);
+  return S_OK;
+}
+
+HRESULT COutArchive::SetRestrictionFromCurrent()
+{
+  if (SetRestriction)
+    return SetRestriction->SetRestriction(m_Base + m_CurPos, (UInt64)(Int64)-1);
+  return S_OK;
+}
+
 HRESULT COutArchive::Create(IOutStream *outStream)
 {
   m_CurPos = 0;
@@ -97,7 +111,7 @@ void COutArchive::WriteCommonItemInfo(const CLocalItem &item, bool isZip64)
 }
 
 
-#define WRITE_32_VAL_SPEC(__v, __isZip64) Write32((__isZip64) ? 0xFFFFFFFF : (UInt32)(__v));
+#define WRITE_32_VAL_SPEC(_v_, _isZip64_) Write32((_isZip64_) ? 0xFFFFFFFF : (UInt32)(_v_));
 
 
 void COutArchive::WriteUtfName(const CItemOut &item)
@@ -192,8 +206,8 @@ void COutArchive::WriteLocalHeader(CItemOut &item, bool needCheck)
     size = 0;
   }
   
-  WRITE_32_VAL_SPEC(packSize, isZip64);
-  WRITE_32_VAL_SPEC(size, isZip64);
+  WRITE_32_VAL_SPEC(packSize, isZip64)
+  WRITE_32_VAL_SPEC(size, isZip64)
 
   Write16((UInt16)item.Name.Len());
 
@@ -249,19 +263,19 @@ void COutArchive::WriteLocalHeader_Replace(CItemOut &item)
 void COutArchive::WriteDescriptor(const CItemOut &item)
 {
   Byte buf[kDataDescriptorSize64];
-  SetUi32(buf, NSignature::kDataDescriptor);
-  SetUi32(buf + 4, item.Crc);
+  SetUi32(buf, NSignature::kDataDescriptor)
+  SetUi32(buf + 4, item.Crc)
   unsigned descriptorSize;
   if (m_IsZip64)
   {
-    SetUi64(buf + 8, item.PackSize);
-    SetUi64(buf + 16, item.Size);
+    SetUi64(buf + 8, item.PackSize)
+    SetUi64(buf + 16, item.Size)
     descriptorSize = kDataDescriptorSize64;
   }
   else
   {
-    SetUi32(buf + 8, (UInt32)item.PackSize);
-    SetUi32(buf + 12, (UInt32)item.Size);
+    SetUi32(buf + 8, (UInt32)item.PackSize)
+    SetUi32(buf + 12, (UInt32)item.Size)
     descriptorSize = kDataDescriptorSize32;
   }
   WriteBytes(buf, descriptorSize);
@@ -283,8 +297,8 @@ void COutArchive::WriteCentralHeader(const CItemOut &item)
   WriteCommonItemInfo(item, isZip64);
   Write32(item.Crc);
 
-  WRITE_32_VAL_SPEC(item.PackSize, isPack64);
-  WRITE_32_VAL_SPEC(item.Size, isUnPack64);
+  WRITE_32_VAL_SPEC(item.PackSize, isPack64)
+  WRITE_32_VAL_SPEC(item.Size, isUnPack64)
 
   Write16((UInt16)item.Name.Len());
   
@@ -306,10 +320,10 @@ void COutArchive::WriteCentralHeader(const CItemOut &item)
   const UInt16 commentSize = (UInt16)item.Comment.Size();
   
   Write16(commentSize);
-  Write16(0); // DiskNumberStart;
+  Write16(0); // DiskNumberStart
   Write16(item.InternalAttrib);
   Write32(item.ExternalAttrib);
-  WRITE_32_VAL_SPEC(item.LocalHeaderPos, isPosition64);
+  WRITE_32_VAL_SPEC(item.LocalHeaderPos, isPosition64)
   WriteBytes((const char *)item.Name, item.Name.Len());
   
   if (isZip64)
@@ -332,8 +346,10 @@ void COutArchive::WriteCentralHeader(const CItemOut &item)
     WriteBytes(item.Comment, commentSize);
 }
 
-void COutArchive::WriteCentralDir(const CObjectVector<CItemOut> &items, const CByteBuffer *comment)
+HRESULT COutArchive::WriteCentralDir(const CObjectVector<CItemOut> &items, const CByteBuffer *comment)
 {
+  RINOK(ClearRestriction())
+  
   const UInt64 cdOffset = GetCurPos();
   FOR_VECTOR (i, items)
     WriteCentralHeader(items[i]);
@@ -357,8 +373,8 @@ void COutArchive::WriteCentralDir(const CObjectVector<CItemOut> &items, const CB
 
     Write16(45); // made by version
     Write16(45); // extract version
-    Write32(0); // ThisDiskNumber = 0;
-    Write32(0); // StartCentralDirectoryDiskNumber;;
+    Write32(0); // ThisDiskNumber
+    Write32(0); // StartCentralDirectoryDiskNumber
     Write64((UInt64)items.Size());
     Write64((UInt64)items.Size());
     Write64((UInt64)cdSize);
@@ -373,19 +389,20 @@ void COutArchive::WriteCentralDir(const CObjectVector<CItemOut> &items, const CB
   }
   
   Write32(NSignature::kEcd);
-  Write16(0); // ThisDiskNumber = 0;
-  Write16(0); // StartCentralDirectoryDiskNumber;
+  Write16(0); // ThisDiskNumber
+  Write16(0); // StartCentralDirectoryDiskNumber
   Write16((UInt16)(items64 ? 0xFFFF: items.Size()));
   Write16((UInt16)(items64 ? 0xFFFF: items.Size()));
   
-  WRITE_32_VAL_SPEC(cdSize, cdSize64);
-  WRITE_32_VAL_SPEC(cdOffset, cdOffset64);
+  WRITE_32_VAL_SPEC(cdSize, cdSize64)
+  WRITE_32_VAL_SPEC(cdOffset, cdOffset64)
 
   const UInt16 commentSize = (UInt16)(comment ? comment->Size() : 0);
   Write16((UInt16)commentSize);
   if (commentSize != 0)
     WriteBytes((const Byte *)*comment, commentSize);
   m_OutBuffer.FlushWithCheck();
+  return S_OK;
 }
 
 void COutArchive::CreateStreamForCompressing(CMyComPtr<IOutStream> &outStream)

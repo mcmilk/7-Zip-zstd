@@ -1,7 +1,7 @@
 // MessagesDialog.h
 
-#ifndef __MESSAGES_DIALOG_H
-#define __MESSAGES_DIALOG_H
+#ifndef ZIP7_INC_MESSAGES_DIALOG_H
+#define ZIP7_INC_MESSAGES_DIALOG_H
 
 #include "../../../Windows/Control/Dialog.h"
 #include "../../../Windows/Control/ListView.h"
@@ -14,12 +14,12 @@ class CMessagesDialog: public NWindows::NControl::CModalDialog
   
   void AddMessageDirect(LPCWSTR message);
   void AddMessage(LPCWSTR message);
-  virtual bool OnInit();
-  virtual bool OnSize(WPARAM wParam, int xSize, int ySize);
+  virtual bool OnInit() Z7_override;
+  virtual bool OnSize(WPARAM wParam, int xSize, int ySize) Z7_override;
 public:
   const UStringVector *Messages;
   
-  INT_PTR Create(HWND parent = 0) { return CModalDialog::Create(IDD_MESSAGES, parent); }
+  INT_PTR Create(HWND parent = NULL) { return CModalDialog::Create(IDD_MESSAGES, parent); }
 };
 
 #endif

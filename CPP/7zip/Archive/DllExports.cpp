@@ -2,10 +2,11 @@
 
 #include "StdAfx.h"
 
-#if defined(_7ZIP_LARGE_PAGES)
+#if defined(Z7_LARGE_PAGES)
 #include "../../../C/Alloc.h"
 #endif
 
+#include "../../Common/MyWindows.h"
 #include "../../Common/MyInitGuid.h"
 
 #include "../../Common/ComTry.h"
@@ -20,22 +21,23 @@
 
 #include "IArchive.h"
 
+static
 HINSTANCE g_hInstance;
 
 #define NT_CHECK_FAIL_ACTION return FALSE;
 
-extern "C"
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
+extern "C" BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/);
+extern "C" BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
   if (dwReason == DLL_PROCESS_ATTACH)
   {
     g_hInstance = hInstance;
-    NT_CHECK;
+    NT_CHECK
   }
   return TRUE;
 }
 
-DEFINE_GUID(CLSID_CArchiveHandler,
+Z7_DEFINE_GUID(CLSID_CArchiveHandler,
     k_7zip_GUID_Data1,
     k_7zip_GUID_Data2,
     k_7zip_GUID_Data3_Common,
@@ -50,7 +52,7 @@ STDAPI CreateObject(const GUID *clsid, const GUID *iid, void **outObject)
 
 STDAPI SetLargePageMode()
 {
-  #if defined(_7ZIP_LARGE_PAGES)
+  #if defined(Z7_LARGE_PAGES)
   SetLargePageSize();
   #endif
   return S_OK;
@@ -64,7 +66,7 @@ STDAPI SetCaseSensitive(Int32 caseSensitive)
   return S_OK;
 }
 
-#ifdef EXTERNAL_CODECS
+#ifdef Z7_EXTERNAL_CODECS
 
 CExternalCodecs g_ExternalCodecs;
 

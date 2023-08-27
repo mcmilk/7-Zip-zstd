@@ -42,11 +42,11 @@ struct CHeader
   {
     // G16 (4, major_version);
     // G16 (6, minor_version);
-    G16 (8, file_hdr_sz);
-    G16 (10, chunk_hdr_sz);
-    G32 (12, BlockSize);
-    G32 (16, NumBlocks);
-    G32 (20, NumChunks);
+    G16 (8, file_hdr_sz)
+    G16 (10, chunk_hdr_sz)
+    G32 (12, BlockSize)
+    G32 (16, NumBlocks)
+    G32 (20, NumChunks)
     // G32 (24, image_checksum);
   }
 };
@@ -58,9 +58,9 @@ struct CHeader
 #define CHUNK_TYPE_DONT_CARE  0xCAC3
 #define CHUNK_TYPE_CRC32      0xCAC4
 
-#define MY__CHUNK_TYPE_FILL       0
-#define MY__CHUNK_TYPE_DONT_CARE  1
-#define MY__CHUNK_TYPE_RAW__START 2
+#define MY_CHUNK_TYPE_FILL       0
+#define MY_CHUNK_TYPE_DONT_CARE  1
+#define MY_CHUNK_TYPE_RAW_START 2
 
 static const char * const g_Methods[] =
 {
@@ -82,8 +82,13 @@ struct CChunk
 static const Byte k_Signature[] = { 0x3a, 0xff, 0x26, 0xed, 1, 0 };
 
 
-class CHandler: public CHandlerImg
+Z7_class_CHandler_final: public CHandlerImg
 {
+  Z7_IFACE_COM7_IMP(IInArchive_Img)
+
+  Z7_IFACE_COM7_IMP(IInArchiveGetStream)
+  Z7_IFACE_COM7_IMP(ISequentialInStream)
+
   CRecordVector<CChunk> Chunks;
   UInt64 _virtSize_fromChunks;
   unsigned _blockSizeLog;
@@ -101,7 +106,7 @@ class CHandler: public CHandlerImg
   HRESULT Seek2(UInt64 offset)
   {
     _posInArc = offset;
-    return Stream->Seek(offset, STREAM_SEEK_SET, NULL);
+    return InStream_SeekSet(Stream, offset);
   }
 
   void InitSeekPositions()
@@ -115,25 +120,19 @@ class CHandler: public CHandlerImg
   }
 
   // virtual functions
-  bool Init_PackSizeProcessed()
+  bool Init_PackSizeProcessed() Z7_override
   {
     _packSizeProcessed = 0;
     return true;
   }
-  bool Get_PackSizeProcessed(UInt64 &size)
+  bool Get_PackSizeProcessed(UInt64 &size) Z7_override
   {
     size = _packSizeProcessed;
     return true;
   }
 
-  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openCallback);
+  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openCallback) Z7_override;
   HRESULT ReadPhy(UInt64 offset, void *data, UInt32 size, UInt32 &processed);
-
-public:
-  INTERFACE_IInArchive_Img(;)
-
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 
@@ -154,7 +153,7 @@ static const Byte kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -193,7 +192,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -228,7 +227,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
   CHeader h;
   {
     Byte buf[kHeaderSize];
-    RINOK(ReadStream_FALSE(stream, buf, kHeaderSize));
+    RINOK(ReadStream_FALSE(stream, buf, kHeaderSize))
     if (memcmp(buf, k_Signature, 6) != 0)
       return S_FALSE;
     h.Parse(buf);
@@ -262,13 +261,13 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
       const UInt32 mask = ((UInt32)1 << 16) - 1;
       if ((i & mask) == mask && openCallback)
       {
-        RINOK(openCallback->SetCompleted(NULL, &offset));
+        RINOK(openCallback->SetCompleted(NULL, &offset))
       }
     }
     Byte buf[kChunkHeaderSize];
     {
       size_t processed = kChunkHeaderSize;
-      RINOK(ReadStream(stream, buf, &processed));
+      RINOK(ReadStream(stream, buf, &processed))
       if (kChunkHeaderSize != processed)
       {
         offset += kChunkHeaderSize;
@@ -301,7 +300,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
         return S_FALSE;
       {
         size_t processed = kFillSize;
-        RINOK(ReadStream(stream, c.Fill, &processed));
+        RINOK(ReadStream(stream, c.Fill, &processed))
         if (kFillSize != processed)
           break;
       }
@@ -316,15 +315,15 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
       {
         if (size != 0)
           return S_FALSE;
-        c.PhyOffset = MY__CHUNK_TYPE_DONT_CARE;
+        c.PhyOffset = MY_CHUNK_TYPE_DONT_CARE;
       }
       else if (type == CHUNK_TYPE_FILL)
       {
         if (size != kFillSize)
           return S_FALSE;
-        c.PhyOffset = MY__CHUNK_TYPE_FILL;
+        c.PhyOffset = MY_CHUNK_TYPE_FILL;
         size_t processed = kFillSize;
-        RINOK(ReadStream(stream, c.Fill, &processed));
+        RINOK(ReadStream(stream, c.Fill, &processed))
         if (kFillSize != processed)
           break;
       }
@@ -343,7 +342,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
       virtBlock += numBlocks;
       Chunks.AddInReserved(c);
       if (type == CHUNK_TYPE_RAW)
-        RINOK(stream->Seek(offset, STREAM_SEEK_SET, NULL));
+        RINOK(InStream_SeekSet(stream, offset))
     }
   }
 
@@ -367,7 +366,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openCallback)
 }
 
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   Chunks.Clear();
   _isArc = false;
@@ -388,7 +387,7 @@ STDMETHODIMP CHandler::Close()
 }
 
 
-STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
   *stream = NULL;
@@ -436,7 +435,7 @@ HRESULT CHandler::ReadPhy(UInt64 offset, void *data, UInt32 size, UInt32 &proces
 }
 
 
-STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CHandler::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   if (processedSize)
     *processedSize = 0;
@@ -486,7 +485,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
 
   const UInt64 phyOffset = c.PhyOffset;
   
-  if (phyOffset >= MY__CHUNK_TYPE_RAW__START)
+  if (phyOffset >= MY_CHUNK_TYPE_RAW_START)
   {
     UInt32 processed = 0;
     const HRESULT res = ReadPhy(phyOffset + offset, data, size, processed);
@@ -496,9 +495,9 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
     return res;
   }
 
-  unsigned b = 0;
+  Byte b = 0;
   
-  if (phyOffset == MY__CHUNK_TYPE_FILL)
+  if (phyOffset == MY_CHUNK_TYPE_FILL)
   {
     const Byte b0 = c.Fill [0];
     const Byte b1 = c.Fill [1];
@@ -528,7 +527,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
     }
     b = b0;
   }
-  else if (phyOffset != MY__CHUNK_TYPE_DONT_CARE)
+  else if (phyOffset != MY_CHUNK_TYPE_DONT_CARE)
     return S_FALSE;
   
   memset(data, b, size);

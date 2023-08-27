@@ -1,7 +1,7 @@
 // ZipAddCommon.h
 
-#ifndef __ZIP_ADD_COMMON_H
-#define __ZIP_ADD_COMMON_H
+#ifndef ZIP7_INC_ZIP_ADD_COMMON_H
+#define ZIP7_INC_ZIP_ADD_COMMON_H
 
 #include "../../ICoder.h"
 #include "../../IProgress.h"
@@ -68,7 +68,8 @@ public:
       DECL_EXTERNAL_CODECS_LOC_VARS
       ISequentialInStream *inStream, IOutStream *outStream,
       bool inSeqMode, bool outSeqMode,
-      UInt32 fileTime, UInt64 expectedDataSize,
+      UInt32 fileTime,
+      UInt64 expectedDataSize, bool expectedDataSize_IsConfirmed,
       ICompressProgressInfo *progress, CCompressingResult &opRes);
 };
 

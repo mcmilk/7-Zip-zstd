@@ -64,11 +64,10 @@ struct CItem2
   bool IsAudio() const { return Type == kType_Audio; }
 };
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
-{
+
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+  IInArchiveGetStream
+)
   CMyComPtr<IInStream> _stream;
   CObjectVector<CItem2> _items2;
   CByteBuffer _metadata;
@@ -77,10 +76,6 @@ class CHandler:
 
   HRESULT Open2(IInStream *stream, IArchiveOpenCallback *callback);
   // AString GetComment();
-public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
 static const Byte kProps[] =
@@ -141,7 +136,7 @@ static const char * const g_Rates[4] =
   , "44 kHz"
 };
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   NWindows::NCOM::CPropVariant prop;
   const CItem2 &item = _items2[index];
@@ -252,7 +247,7 @@ AString CHandler::GetComment()
 }
 */
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   // COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -271,7 +266,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 {
   const UInt32 kHeaderSize = 13;
   Byte header[kHeaderSize];
-  RINOK(ReadStream_FALSE(stream, header, kHeaderSize));
+  RINOK(ReadStream_FALSE(stream, header, kHeaderSize))
   if (header[0] != 'F' ||
       header[1] != 'L' ||
       header[2] != 'V' ||
@@ -358,7 +353,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
         item2.Props = props;
         item2.NumChunks = 1;
         item2.SameSubTypes = true;
-        lasts[item.Type] = _items2.Add(item2);
+        lasts[item.Type] = (int)_items2.Add(item2);
       }
       else
       {
@@ -420,7 +415,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCallback *callback)
+Z7_COM7F_IMF(CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCallback *callback))
 {
   COM_TRY_BEGIN
   Close();
@@ -441,7 +436,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCal
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _phySize = 0;
   _stream.Release();
@@ -450,17 +445,17 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _items2.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items2.Size();
   if (numItems == 0)
@@ -480,32 +475,32 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     lps->InSize = lps->OutSize = totalSize;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
     CMyComPtr<ISequentialOutStream> outStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    UInt32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CItem2 &item = _items2[index];
-    RINOK(extractCallback->GetStream(index, &outStream, askMode));
+    RINOK(extractCallback->GetStream(index, &outStream, askMode))
     totalSize += item.Size;
     if (!testMode && !outStream)
       continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
     if (outStream)
     {
-      RINOK(WriteStream(outStream, item.BufSpec->Buf, item.BufSpec->Buf.Size()));
+      RINOK(WriteStream(outStream, item.BufSpec->Buf, item.BufSpec->Buf.Size()))
     }
-    RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+    RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 index, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
-  *stream = 0;
+  *stream = NULL;
   CBufInStream *streamSpec = new CBufInStream;
   CMyComPtr<ISequentialInStream> streamTemp = streamSpec;
   streamSpec->Init(_items2[index].BufSpec);
@@ -517,7 +512,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 static const Byte k_Signature[] = { 'F', 'L', 'V', 1, };
 
 REGISTER_ARC_I(
-  "FLV", "flv", 0, 0xD6,
+  "FLV", "flv", NULL, 0xD6,
   k_Signature,
   0,
   0,

@@ -1,7 +1,7 @@
 // MyExplorerCommand.h
 
-#ifndef __MY_EXPLORER_COMMAND_H
-#define __MY_EXPLORER_COMMAND_H
+#ifndef ZIP7_INC_MY_EXPLORER_COMMAND_H
+#define ZIP7_INC_MY_EXPLORER_COMMAND_H
 
 #if _MSC_VER >= 1910
 #define USE_SYS_shobjidl_core
@@ -17,7 +17,9 @@
     ShObjIdl.h      : old Windows SDK
     ShObjIdl_core.h : new Windows 10 SDK */
 
+#ifndef Z7_OLD_WIN_SDK
 #include <ShObjIdl.h>
+#endif
 
 #ifndef __IShellItem_INTERFACE_DEFINED__
 #define __IShellItem_INTERFACE_DEFINED__

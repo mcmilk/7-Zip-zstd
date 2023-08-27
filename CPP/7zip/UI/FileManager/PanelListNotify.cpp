@@ -289,8 +289,8 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
     const void *data;
     UInt32 dataSize;
     UInt32 propType;
-    RINOK(_folderRawProps->GetRawProp(realIndex, propID, &data, &dataSize, &propType));
-    unsigned limit = item.cchTextMax - 1;
+    RINOK(_folderRawProps->GetRawProp(realIndex, propID, &data, &dataSize, &propType))
+    const unsigned limit = (unsigned)item.cchTextMax - 1;
     if (dataSize == 0)
     {
       text[0] = 0;
@@ -425,11 +425,11 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
       if (name)
       {
         unsigned dest = 0;
-        unsigned limit = item.cchTextMax - 1;
+        const unsigned limit = (unsigned)item.cchTextMax - 1;
         
         for (unsigned i = 0; dest < limit;)
         {
-          wchar_t c = name[i++];
+          const wchar_t c = name[i++];
           if (c == 0)
             break;
           text[dest++] = c;
@@ -488,10 +488,10 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
       if (name)
       {
         unsigned dest = 0;
-        unsigned limit = item.cchTextMax - 1;
+        const unsigned limit = (unsigned)item.cchTextMax - 1;
         for (unsigned i = 0; dest < limit;)
         {
-          wchar_t c = name[i++];
+          const wchar_t c = name[i++];
           if (c == 0)
             break;
           text[dest++] = c;
@@ -502,7 +502,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
     }
   }
   
-  HRESULT res = _folder->GetProperty(realIndex, propID, &prop);
+  const HRESULT res = _folder->GetProperty(realIndex, propID, &prop);
   
   if (res != S_OK)
   {
@@ -517,7 +517,7 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
   }
   else if (prop.vt == VT_BSTR)
   {
-    unsigned limit = item.cchTextMax - 1;
+    const unsigned limit = (unsigned)item.cchTextMax - 1;
     const wchar_t *src = prop.bstrVal;
     unsigned i;
     for (i = 0; i < limit; i++)
@@ -535,10 +535,10 @@ LRESULT CPanel::SetItemText(LVITEMW &item)
     char temp[64];
     ConvertPropertyToShortString2(temp, prop, propID, _timestampLevel);
     unsigned i;
-    unsigned limit = item.cchTextMax - 1;
+    const unsigned limit = (unsigned)item.cchTextMax - 1;
     for (i = 0; i < limit; i++)
     {
-      wchar_t c = (Byte)temp[i];
+      const wchar_t c = (Byte)temp[i];
       if (c == 0)
         break;
       text[i] = c;
@@ -555,11 +555,11 @@ extern DWORD g_ComCtl32Version;
 
 void CPanel::OnItemChanged(NMLISTVIEW *item)
 {
-  int index = (int)item->lParam;
+  const unsigned index = (unsigned)item->lParam;
   if (index == kParentIndex)
     return;
-  bool oldSelected = (item->uOldState & LVIS_SELECTED) != 0;
-  bool newSelected = (item->uNewState & LVIS_SELECTED) != 0;
+  const bool oldSelected = (item->uOldState & LVIS_SELECTED) != 0;
+  const bool newSelected = (item->uNewState & LVIS_SELECTED) != 0;
   // Don't change this code. It works only with such check
   if (oldSelected != newSelected)
     _selectedStatusVector[index] = newSelected;
@@ -712,7 +712,13 @@ bool CPanel::OnNotifyList(LPNMHDR header, LRESULT &result)
     }
     case LVN_BEGINDRAG:
     {
-      OnDrag((LPNMLISTVIEW)header);
+      OnDrag((LPNMLISTVIEW)header, false);
+      Post_Refresh_StatusBar();
+      break;
+    }
+    case LVN_BEGINRDRAG:
+    {
+      OnDrag((LPNMLISTVIEW)header, true);
       Post_Refresh_StatusBar();
       break;
     }
@@ -739,7 +745,7 @@ bool CPanel::OnCustomDraw(LPNMLVCUSTOMDRAW lplvcd, LRESULT &result)
     lplvcd->clrTextBk = GetBkColorForItem(lplvcd->nmcd.dwItemSpec,
     lplvcd->nmcd.lItemlParam);
     */
-    int realIndex = (int)lplvcd->nmcd.lItemlParam;
+    const unsigned realIndex = (unsigned)lplvcd->nmcd.lItemlParam;
     lplvcd->clrTextBk = _listView.GetBkColor();
     if (_mySelectMode)
     {
@@ -793,40 +799,44 @@ void CPanel::Refresh_StatusBar()
   // DWORD dw = GetTickCount();
 
   CRecordVector<UInt32> indices;
-  GetOperatedItemIndices(indices);
+  Get_ItemIndices_Operated(indices);
 
-  wchar_t temp[32];
-  ConvertUInt32ToString(indices.Size(), temp);
-  wcscat(temp, L" / ");
-  ConvertUInt32ToString(_selectedStatusVector.Size(), temp + wcslen(temp));
-
-  // UString s1 = MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, NumberToString(indices.Size()));
-  // UString s1 = MyFormatNew(IDS_N_SELECTED_ITEMS, NumberToString(indices.Size()));
-  _statusBar.SetText(0, MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, temp));
-  // _statusBar.SetText(0, MyFormatNew(IDS_N_SELECTED_ITEMS, NumberToString(indices.Size())));
-
-  wchar_t selectSizeString[32];
-  selectSizeString[0] = 0;
-
-  if (indices.Size() > 0)
   {
-    // for (unsigned ttt = 0; ttt < 1000; ttt++) {
-    UInt64 totalSize = 0;
-    FOR_VECTOR (i, indices)
-      totalSize += GetItemSize(indices[i]);
-    ConvertSizeToString(totalSize, selectSizeString);
-    // }
-  }
-  _statusBar.SetText(1, selectSizeString);
+    UString s;
+    s.Add_UInt32(indices.Size());
+    s += " / ";
+    s.Add_UInt32(_selectedStatusVector.Size());
 
-  int focusedItem = _listView.GetFocusedItem();
+    // UString s1 = MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, NumberToString(indices.Size()));
+    // UString s1 = MyFormatNew(IDS_N_SELECTED_ITEMS, NumberToString(indices.Size()));
+    _statusBar.SetText(0, MyFormatNew(g_App.LangString_N_SELECTED_ITEMS, s));
+    // _statusBar.SetText(0, MyFormatNew(IDS_N_SELECTED_ITEMS, NumberToString(indices.Size())));
+  }
+
+  {
+    wchar_t selectSizeString[32];
+    selectSizeString[0] = 0;
+    
+    if (indices.Size() > 0)
+    {
+      // for (unsigned ttt = 0; ttt < 1000; ttt++) {
+      UInt64 totalSize = 0;
+      FOR_VECTOR (i, indices)
+        totalSize += GetItemSize(indices[i]);
+      ConvertSizeToString(totalSize, selectSizeString);
+      // }
+    }
+    _statusBar.SetText(1, selectSizeString);
+  }
+
+  const int focusedItem = _listView.GetFocusedItem();
   wchar_t sizeString[32];
   sizeString[0] = 0;
   wchar_t dateString[32];
   dateString[0] = 0;
   if (focusedItem >= 0 && _listView.GetSelectedCount() > 0)
   {
-    int realIndex = GetRealItemIndex(focusedItem);
+    const unsigned realIndex = GetRealItemIndex(focusedItem);
     if (realIndex != kParentIndex)
     {
       ConvertSizeToString(GetItemSize(realIndex), sizeString);

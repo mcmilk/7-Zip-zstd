@@ -24,35 +24,9 @@ void SplitStringToTwoStrings(const UString &src, UString &dest1, UString &dest2)
   }
 }
 
-void SplitString(const UString &srcString, UStringVector &destStrings)
-{
-  destStrings.Clear();
-  unsigned len = srcString.Len();
-  if (len == 0)
-    return;
-  UString s;
-  for (unsigned i = 0; i < len; i++)
-  {
-    wchar_t c = srcString[i];
-    if (c == ' ')
-    {
-      if (!s.IsEmpty())
-      {
-        destStrings.Add(s);
-        s.Empty();
-      }
-    }
-    else
-      s += c;
-  }
-  if (!s.IsEmpty())
-    destStrings.Add(s);
-}
-
 /*
 UString JoinStrings(const UStringVector &srcStrings)
 {
-
   UString s;
   FOR_VECTOR (i, srcStrings)
   {

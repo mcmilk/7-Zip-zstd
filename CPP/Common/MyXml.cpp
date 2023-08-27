@@ -81,7 +81,7 @@ AString CXmlItem::GetSubStringForTag(const char *tag) const
 
 const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
 {
-  SKIP_SPACES(s);
+  SKIP_SPACES(s)
 
   const char *beg = s;
   for (;;)
@@ -102,7 +102,7 @@ const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
   IsTag = true;
 
   s++;
-  SKIP_SPACES(s);
+  SKIP_SPACES(s)
 
   beg = s;
   for (;; s++)
@@ -115,11 +115,11 @@ const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
   for (;;)
   {
     beg = s;
-    SKIP_SPACES(s);
+    SKIP_SPACES(s)
     if (*s == '/')
     {
       s++;
-      // SKIP_SPACES(s);
+      // SKIP_SPACES(s)
       if (*s != '>')
         return NULL;
       return s + 1;
@@ -132,7 +132,7 @@ const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
       SubItems.Clear();
       for (;;)
       {
-        SKIP_SPACES(s);
+        SKIP_SPACES(s)
         if (s[0] == '<' && s[1] == '/')
           break;
         CXmlItem &item = SubItems.AddNew();
@@ -168,11 +168,11 @@ const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
       return NULL;
     prop.Name.SetFrom(beg, (unsigned)(s - beg));
     
-    SKIP_SPACES(s);
+    SKIP_SPACES(s)
     if (*s != '=')
       return NULL;
     s++;
-    SKIP_SPACES(s);
+    SKIP_SPACES(s)
     if (*s != '\"')
       return NULL;
     s++;
@@ -194,7 +194,7 @@ const char * CXmlItem::ParseItem(const char *s, int numAllowedLevels)
 
 static const char * SkipHeader(const char *s, const char *startString, const char *endString)
 {
-  SKIP_SPACES(s);
+  SKIP_SPACES(s)
   if (IsString1PrefixedByString2(s, startString))
   {
     s = strstr(s, endString);
@@ -215,7 +215,7 @@ void CXmlItem::AppendTo(AString &s) const
     FOR_VECTOR (i, Props)
     {
       const CXmlProp &prop = Props[i];
-      s += ' ';
+      s.Add_Space();
       s += prop.Name;
       s += '=';
       s += '\"';
@@ -228,7 +228,7 @@ void CXmlItem::AppendTo(AString &s) const
   {
     const CXmlItem &item = SubItems[i];
     if (i != 0 && !SubItems[i - 1].IsTag)
-      s += ' ';
+      s.Add_Space();
     item.AppendTo(s);
   }
   if (IsTag)
@@ -248,7 +248,7 @@ bool CXml::Parse(const char *s)
   s = Root.ParseItem(s, 1000);
   if (!s || !Root.IsTag)
     return false;
-  SKIP_SPACES(s);
+  SKIP_SPACES(s)
   return *s == 0;
 }
 

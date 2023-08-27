@@ -1,7 +1,7 @@
 // UpdateCallbackGUI2.h
 
-#ifndef __UPDATE_CALLBACK_GUI2_H
-#define __UPDATE_CALLBACK_GUI2_H
+#ifndef ZIP7_INC_UPDATE_CALLBACK_GUI2_H
+#define ZIP7_INC_UPDATE_CALLBACK_GUI2_H
 
 #include "../FileManager/ProgressDialog2.h"
 
@@ -23,7 +23,6 @@ public:
       NumFiles(0)
       {}
   
-  // ~CUpdateCallbackGUI2();
   void Init();
 
   CProgressDialog *ProgressDialog;

@@ -1,7 +1,7 @@
 // QuantumDecoder.h
 
-#ifndef __COMPRESS_QUANTUM_DECODER_H
-#define __COMPRESS_QUANTUM_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_QUANTUM_DECODER_H
+#define ZIP7_INC_COMPRESS_QUANTUM_DECODER_H
 
 #include "../../Common/MyCom.h"
 
@@ -142,10 +142,9 @@ public:
 };
 
 
-class CDecoder:
-  public IUnknown,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_0(
+  CDecoder
+)
   CLzOutWindow _outWindow;
   unsigned _numDictBits;
 
@@ -157,17 +156,12 @@ class CDecoder:
   void Init();
   HRESULT CodeSpec(const Byte *inData, size_t inSize, UInt32 outSize);
 public:
-
-  MY_UNKNOWN_IMP
-
   HRESULT Code(const Byte *inData, size_t inSize,
       ISequentialOutStream *outStream, UInt32 outSize,
       bool keepHistory);
-
   HRESULT SetParams(unsigned numDictBits);
-  
+
   CDecoder(): _numDictBits(0) {}
-  virtual ~CDecoder() {}
 };
 
 }}

@@ -18,18 +18,17 @@
 #define Get32(p) GetBe32(p)
 #define Get64(p) GetBe64(p)
 
-#define G32(_offs_, dest) dest = Get32(p + (_offs_));
-#define G64(_offs_, dest) dest = Get64(p + (_offs_));
+#define G32(_offs_, dest) dest = Get32(p + (_offs_))
+#define G64(_offs_, dest) dest = Get64(p + (_offs_))
 
 using namespace NWindows;
 
 namespace NArchive {
 namespace NVhd {
 
-#define SIGNATURE { 'c', 'o', 'n', 'e', 'c', 't', 'i', 'x', 0, 0 }
-  
 static const unsigned kSignatureSize = 10;
-static const Byte kSignature[kSignatureSize] = SIGNATURE;
+static const Byte kSignature[kSignatureSize] =
+  { 'c', 'o', 'n', 'e', 'c', 't', 'i', 'x', 0, 0 };
 
 static const UInt32 kUnusedBlock = 0xFFFFFFFF;
 
@@ -74,7 +73,7 @@ struct CFooter
 
 void CFooter::AddTypeString(AString &s) const
 {
-  if (Type < ARRAY_SIZE(kDiskTypes))
+  if (Type < Z7_ARRAY_SIZE(kDiskTypes))
     s += kDiskTypes[Type];
   else
     s.Add_UInt32(Type);
@@ -214,7 +213,7 @@ bool CDynHeader::Parse(const Byte *p)
   return CheckBlock(p, 1024, 0x24, 0x240 + 8 * 24);
 }
 
-class CHandler: public CHandlerImg
+Z7_class_CHandler_final: public CHandlerImg
 {
   UInt64 _posInArcLimit;
   UInt64 _startOffset;
@@ -247,7 +246,6 @@ class CHandler: public CHandlerImg
       _phySize = value;
   }
 
-  void Reset_PosInArc() { _posInArc = (UInt64)0 - 1; }
   HRESULT Seek2(UInt64 offset);
   HRESULT InitAndSeek();
   HRESULT ReadPhy(UInt64 offset, void *data, UInt32 size);
@@ -303,26 +301,26 @@ class CHandler: public CHandlerImg
 
   HRESULT Open3();
   HRESULT Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback *openArchiveCallback, unsigned level);
-  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openArchiveCallback)
+  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openArchiveCallback) Z7_override
   {
     return Open2(stream, NULL, openArchiveCallback, 0);
   }
-  void CloseAtError();
+  void CloseAtError() Z7_override;
 
 public:
-  INTERFACE_IInArchive_Img(;)
+  Z7_IFACE_COM7_IMP(IInArchive_Img)
 
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  Z7_IFACE_COM7_IMP(IInArchiveGetStream)
+  Z7_IFACE_COM7_IMP(ISequentialInStream)
 };
 
-HRESULT CHandler::Seek2(UInt64 offset) { return Stream->Seek(_startOffset + offset, STREAM_SEEK_SET, NULL); }
+HRESULT CHandler::Seek2(UInt64 offset) { return InStream_SeekSet(Stream, _startOffset + offset); }
 
 HRESULT CHandler::InitAndSeek()
 {
   if (ParentStream)
   {
-    RINOK(Parent->InitAndSeek());
+    RINOK(Parent->InitAndSeek())
   }
   _virtPos = _posInArc = 0;
   BitMapTag = kUnusedBlock;
@@ -337,7 +335,7 @@ HRESULT CHandler::ReadPhy(UInt64 offset, void *data, UInt32 size)
   if (offset != _posInArc)
   {
     _posInArc = offset;
-    RINOK(Seek2(offset));
+    RINOK(Seek2(offset))
   }
   HRESULT res = ReadStream_FALSE(Stream, data, size);
   if (res == S_OK)
@@ -352,10 +350,10 @@ HRESULT CHandler::Open3()
   // Fixed archive uses only footer
 
   UInt64 startPos;
-  RINOK(Stream->Seek(0, STREAM_SEEK_CUR, &startPos));
+  RINOK(InStream_GetPos(Stream, startPos))
   _startOffset = startPos;
   Byte header[kHeaderSize];
-  RINOK(ReadStream_FALSE(Stream, header, kHeaderSize));
+  RINOK(ReadStream_FALSE(Stream, header, kHeaderSize))
   bool headerIsOK = Footer.Parse(header);
   _size = Footer.CurrentSize;
 
@@ -372,15 +370,15 @@ HRESULT CHandler::Open3()
   }
 
   UInt64 fileSize;
-  RINOK(Stream->Seek(0, STREAM_SEEK_END, &fileSize));
+  RINOK(InStream_GetSize_SeekToEnd(Stream, fileSize))
   if (fileSize < kHeaderSize)
     return S_FALSE;
 
   const UInt32 kDynSize = 1024;
   Byte buf[kDynSize];
 
-  RINOK(Stream->Seek(fileSize - kHeaderSize, STREAM_SEEK_SET, NULL));
-  RINOK(ReadStream_FALSE(Stream, buf, kHeaderSize));
+  RINOK(InStream_SeekSet(Stream, fileSize - kHeaderSize))
+  RINOK(ReadStream_FALSE(Stream, buf, kHeaderSize))
 
   if (!headerIsOK)
   {
@@ -389,6 +387,7 @@ HRESULT CHandler::Open3()
     _size = Footer.CurrentSize;
     if (Footer.ThereIsDynamic())
       return S_FALSE; // we can't open Dynamic Archive backward.
+    // fixed archive
     _posInArcLimit = Footer.CurrentSize;
     _phySize = Footer.CurrentSize + kHeaderSize;
     _startOffset = fileSize - kHeaderSize - Footer.CurrentSize;
@@ -407,7 +406,7 @@ HRESULT CHandler::Open3()
     _phySize = fileSize - _startOffset;
   }
 
-  RINOK(ReadPhy(Footer.DataOffset, buf, kDynSize));
+  RINOK(ReadPhy(Footer.DataOffset, buf, kDynSize))
   if (!Dyn.Parse(buf))
     return S_FALSE;
 
@@ -430,7 +429,7 @@ HRESULT CHandler::Open3()
         unsigned len = (locator.DataLen >> 1);
         {
           wchar_t *s = tempString.GetBuf(len);
-          RINOK(ReadPhy(locator.DataOffset, nameBuf, locator.DataLen));
+          RINOK(ReadPhy(locator.DataOffset, nameBuf, locator.DataLen))
           unsigned j;
           for (j = 0; j < len; j++)
           {
@@ -467,7 +466,7 @@ HRESULT CHandler::Open3()
 
   while ((UInt32)Bat.Size() < Dyn.NumBlocks)
   {
-    RINOK(ReadPhy(Dyn.TableOffset + (UInt64)Bat.Size() * 4, buf, kSectorSize));
+    RINOK(ReadPhy(Dyn.TableOffset + (UInt64)Bat.Size() * 4, buf, kSectorSize))
     UpdatePhySize(Dyn.TableOffset + kSectorSize);
     for (UInt32 j = 0; j < kSectorSize; j += 4)
     {
@@ -495,7 +494,7 @@ HRESULT CHandler::Open3()
     return S_OK;
   }
 
-  RINOK(ReadPhy(_phySize, buf, kHeaderSize));
+  RINOK(ReadPhy(_phySize, buf, kHeaderSize))
   if (memcmp(header, buf, kHeaderSize) == 0)
   {
     _posInArcLimit = _phySize;
@@ -511,7 +510,7 @@ HRESULT CHandler::Open3()
     for (i = 0; i < kSectorSize && buf[i] == 0; i++);
     if (i == kSectorSize)
     {
-      RINOK(ReadPhy(_phySize + kSectorSize, buf, kHeaderSize));
+      RINOK(ReadPhy(_phySize + kSectorSize, buf, kHeaderSize))
       if (memcmp(header, buf, kHeaderSize) == 0)
       {
         _phySize += kSectorSize;
@@ -527,7 +526,7 @@ HRESULT CHandler::Open3()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CHandler::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   if (processedSize)
     *processedSize = 0;
@@ -540,9 +539,40 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
   }
   if (size == 0)
     return S_OK;
-  UInt32 blockIndex = (UInt32)(_virtPos >> Dyn.BlockSizeLog);
-  UInt32 blockSectIndex = Bat[blockIndex];
-  UInt32 blockSize = (UInt32)1 << Dyn.BlockSizeLog;
+
+  if (Footer.IsFixed())
+  {
+    if (_virtPos > _posInArcLimit)
+      return S_FALSE;
+    {
+      const UInt64 rem = _posInArcLimit - _virtPos;
+      if (size > rem)
+        size = (UInt32)rem;
+    }
+    HRESULT res = S_OK;
+    if (_virtPos != _posInArc)
+    {
+      _posInArc = _virtPos;
+      res = Seek2(_virtPos);
+    }
+    if (res == S_OK)
+    {
+      UInt32 processedSize2 = 0;
+      res = Stream->Read(data, size, &processedSize2);
+      if (processedSize)
+        *processedSize = processedSize2;
+      _posInArc += processedSize2;
+    }
+    if (res != S_OK)
+      Reset_PosInArc();
+    return res;
+  }
+
+  const UInt32 blockIndex = (UInt32)(_virtPos >> Dyn.BlockSizeLog);
+  if (blockIndex >= Bat.Size())
+    return E_FAIL; // it's some unexpected case
+  const UInt32 blockSectIndex = Bat[blockIndex];
+  const UInt32 blockSize = (UInt32)1 << Dyn.BlockSizeLog;
   UInt32 offsetInBlock = (UInt32)_virtPos & (blockSize - 1);
   size = MyMin(blockSize - offsetInBlock, size);
 
@@ -551,7 +581,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
   {
     if (ParentStream)
     {
-      RINOK(ParentStream->Seek(_virtPos, STREAM_SEEK_SET, NULL));
+      RINOK(InStream_SeekSet(ParentStream, _virtPos))
       res = ParentStream->Read(data, size, &size);
     }
     else
@@ -559,23 +589,23 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
   }
   else
   {
-    UInt64 newPos = (UInt64)blockSectIndex << kSectorSize_Log;
+    const UInt64 newPos = (UInt64)blockSectIndex << kSectorSize_Log;
     if (BitMapTag != blockIndex)
     {
-      RINOK(ReadPhy(newPos, BitMap, (UInt32)BitMap.Size()));
+      RINOK(ReadPhy(newPos, BitMap, (UInt32)BitMap.Size()))
       BitMapTag = blockIndex;
     }
-    RINOK(ReadPhy(newPos + BitMap.Size() + offsetInBlock, data, size));
+    RINOK(ReadPhy(newPos + BitMap.Size() + offsetInBlock, data, size))
     for (UInt32 cur = 0; cur < size;)
     {
       const UInt32 rem = MyMin(0x200 - (offsetInBlock & 0x1FF), size - cur);
-      UInt32 bmi = offsetInBlock >> kSectorSize_Log;
+      const UInt32 bmi = offsetInBlock >> kSectorSize_Log;
       if (((BitMap[bmi >> 3] >> (7 - (bmi & 7))) & 1) == 0)
       {
         if (ParentStream)
         {
-          RINOK(ParentStream->Seek(_virtPos + cur, STREAM_SEEK_SET, NULL));
-          RINOK(ReadStream_FALSE(ParentStream, (Byte *)data + cur, rem));
+          RINOK(InStream_SeekSet(ParentStream, _virtPos + cur))
+          RINOK(ReadStream_FALSE(ParentStream, (Byte *)data + cur, rem))
         }
         else
         {
@@ -651,10 +681,10 @@ static void StringToAString(char *dest, UInt32 val)
 {
   for (int i = 24; i >= 0; i -= 8)
   {
-    Byte b = (Byte)((val >> i) & 0xFF);
+    const Byte b = (Byte)((val >> i) & 0xFF);
     if (b < 0x20 || b > 0x7F)
       break;
-    *dest++ = b;
+    *dest++ = (char)b;
   }
   *dest = 0;
 }
@@ -669,7 +699,7 @@ static void ConvertByteToHex(unsigned value, char *s)
   }
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -705,7 +735,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       res.Trim();
       res.Add_Space();
       res.Add_UInt32(Footer.CreatorVersion >> 16);
-      res += '.';
+      res.Add_Dot();
       res.Add_UInt32(Footer.CreatorVersion & 0xFFFF);
       prop = res;
       break;
@@ -776,7 +806,7 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
   if (level > (1 << 12)) // Maybe we need to increase that limit
     return S_FALSE;
   
-  RINOK(Open3());
+  RINOK(Open3())
   
   NumLevels = 1;
   if (child && memcmp(child->Dyn.ParentId, Footer.Id, 16) != 0)
@@ -800,9 +830,10 @@ HRESULT CHandler::Open2(IInStream *stream, CHandler *child, IArchiveOpenCallback
   
   Dyn.RelativeNameWasUsed = useRelative;
 
-  CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
-  openArchiveCallback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
-
+  Z7_DECL_CMyComPtr_QI_FROM(
+      IArchiveOpenVolumeCallback,
+      openVolumeCallback, openArchiveCallback)
+  
   if (openVolumeCallback)
   {
     CMyComPtr<IInStream> nextStream;
@@ -881,13 +912,13 @@ void CHandler::CloseAtError()
   // _unexpectedEnd = false;
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   CloseAtError();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -912,7 +943,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
 }
 
 
-STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
   *stream = NULL;
@@ -923,14 +954,14 @@ STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **strea
     streamSpec->SetStream(Stream);
     // fixme : check (startOffset = 0)
     streamSpec->InitAndSeek(_startOffset, Footer.CurrentSize);
-    RINOK(streamSpec->SeekToStart());
+    RINOK(streamSpec->SeekToStart())
     *stream = streamTemp.Detach();
     return S_OK;
   }
   if (!Footer.ThereIsDynamic() || !AreParentsOK())
     return S_FALSE;
   CMyComPtr<ISequentialInStream> streamTemp = this;
-  RINOK(InitAndSeek());
+  RINOK(InitAndSeek())
   *stream = streamTemp.Detach();
   return S_OK;
   COM_TRY_END

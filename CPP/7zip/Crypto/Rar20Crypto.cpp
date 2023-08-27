@@ -54,7 +54,7 @@ void CData::SetPassword(const Byte *data, unsigned size)
   Keys[3] = 0xA4E7F123L;
   
   Byte psw[128];
-  MY_memset_0_ARRAY(psw);
+  Z7_memset_0_ARRAY(psw);
   if (size != 0)
   {
     if (size >= sizeof(psw))
@@ -99,22 +99,22 @@ void CData::CryptBlock(Byte *buf, bool encrypt)
     B = D; D = TB;
   }
 
-  SetUi32(buf +  0, C ^ Keys[0]);
-  SetUi32(buf +  4, D ^ Keys[1]);
-  SetUi32(buf +  8, A ^ Keys[2]);
-  SetUi32(buf + 12, B ^ Keys[3]);
+  SetUi32(buf +  0, C ^ Keys[0])
+  SetUi32(buf +  4, D ^ Keys[1])
+  SetUi32(buf +  8, A ^ Keys[2])
+  SetUi32(buf + 12, B ^ Keys[3])
 
   UpdateKeys(encrypt ? buf : inBuf);
 }
 
-STDMETHODIMP CDecoder::Init()
+Z7_COM7F_IMF(CDecoder::Init())
 {
   return S_OK;
 }
 
 static const UInt32 kBlockSize = 16;
 
-STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
+Z7_COM7F_IMF2(UInt32, CDecoder::Filter(Byte *data, UInt32 size))
 {
   if (size == 0)
     return 0;

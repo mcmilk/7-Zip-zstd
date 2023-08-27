@@ -10,7 +10,7 @@ namespace NArchive {
 namespace NCab {
 
 REGISTER_ARC_I(
-  "Cab", "cab", 0, 8,
+  "Cab", "cab", NULL, 8,
   NHeader::kMarker,
   0,
   NArcInfoFlags::kFindSignature,

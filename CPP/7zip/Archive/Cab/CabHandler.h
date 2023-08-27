@@ -1,7 +1,7 @@
 // CabHandler.h
 
-#ifndef __CAB_HANDLER_H
-#define __CAB_HANDLER_H
+#ifndef ZIP7_INC_CAB_HANDLER_H
+#define ZIP7_INC_CAB_HANDLER_H
 
 #include "../../../Common/MyCom.h"
 
@@ -12,16 +12,8 @@
 namespace NArchive {
 namespace NCab {
 
-class CHandler:
-  public IInArchive,
-  public CMyUnknownImp
-{
-public:
-  MY_UNKNOWN_IMP1(IInArchive)
+Z7_CLASS_IMP_CHandler_IInArchive_0
 
-  INTERFACE_IInArchive(;)
-
-private:
   CMvDatabaseEx m_Database;
   UString _errorMessage;
   bool _isArc;

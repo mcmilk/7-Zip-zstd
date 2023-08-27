@@ -50,7 +50,7 @@ HRESULT Decode(const Byte *in, size_t inSize, Byte *out, size_t outSize)
     Byte levels[kNumSyms];
     for (unsigned i = 0; i < kNumSyms / 2; i++)
     {
-      Byte b = in[i];
+      const Byte b = in[i];
       levels[(size_t)i * 2] = (Byte)(b & 0xF);
       levels[(size_t)i * 2 + 1] = (Byte)(b >> 4);
     }
@@ -64,7 +64,7 @@ HRESULT Decode(const Byte *in, size_t inSize, Byte *out, size_t outSize)
   const Byte *lim = in + inSize - 1;
 
   in += kNumSyms / 2;
-  bs.Value = (GetUi16(in) << 16) | GetUi16(in + 2);
+  bs.Value = ((UInt32)GetUi16(in) << 16) | GetUi16(in + 2);
   in += 4;
   bs.BitPos = 32;
 

@@ -1,6 +1,28 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+23.01          2023-06-20
+-------------------------
+- All external macros for compiling C/C++ code of 7-Zip now have Z7_ prefix.
+- 7-Zip COM interfaces now use new macros that allow to declare and implement COM interface.
+- The code has been modified to compile with the maximum diagnostic warning level:
+    -Wall in MSVC and -Weverything in CLANG.
+  And some warning types are disabled in 2 files:
+    - C/Compiler.h for C/C++ code warnings.
+    - CPP/Common/Common.h for C++ code warnings.
+- Linux/macOS versions of 7-Zip: IUnknown interface in new code doesn't use 
+  virtual destructor that was used in previous 7-Zip and p7zip:
+     // virtual ~IUnknown() {}
+  So 7-Zip's dynamically linked shared libraries (codecs) are not compatible 
+  between new 7-Zip for Linux/macOS and old 7-Zip (and p7zip).
+- Some optimizations in filters code: BCJ, BCJ2, Swap* and opthers.
+- If 7-Zip uses BCJ2 filter for big datasets compressing, it can use additional temp 
+  files in system's TEMP folder. 7-Zip uses temp file for additional compressed 
+  data stream, if size of such compressed stream is larger than predefined limit: 
+  16 MiB in 32-bit version, 4 GiB in 64-bit version.
+- Some bugs were fixed.
+
+   
 22.00          2022-06-16
 -------------------------
 - 7-Zip interfaces now support high precision (1 ns) timestamps with reserved

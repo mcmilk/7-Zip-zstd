@@ -28,7 +28,7 @@ using namespace NTime;
 namespace NArchive {
 namespace NZip {
 
-STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
+Z7_COM7F_IMF(CHandler::GetFileTimeType(UInt32 *timeType))
 {
   *timeType = TimeOptions.Prec;
   return S_OK;
@@ -79,7 +79,7 @@ static HRESULT GetTime(IArchiveUpdateCallback *callback, unsigned index, PROPID 
 {
   filetime.dwHighDateTime = filetime.dwLowDateTime = 0;
   NCOM::CPropVariant prop;
-  RINOK(callback->GetProperty(index, propID, &prop));
+  RINOK(callback->GetProperty(index, propID, &prop))
   if (prop.vt == VT_FILETIME)
     filetime = prop.filetime;
   else if (prop.vt != VT_EMPTY)
@@ -88,8 +88,8 @@ static HRESULT GetTime(IArchiveUpdateCallback *callback, unsigned index, PROPID 
 }
 
 
-STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
-    IArchiveUpdateCallback *callback)
+Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
+    IArchiveUpdateCallback *callback))
 {
   COM_TRY_BEGIN2
   
@@ -122,7 +122,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     if (!callback)
       return E_FAIL;
     
-    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProps, &indexInArc));
+    RINOK(callback->GetUpdateItemInfo(i, &newData, &newProps, &indexInArc))
     
     name.Empty();
     ui.Clear();
@@ -147,7 +147,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     {
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidAttrib, &prop));
+        RINOK(callback->GetProperty(i, kpidAttrib, &prop))
         if (prop.vt == VT_EMPTY)
           ui.Attrib = 0;
         else if (prop.vt != VT_UI4)
@@ -158,7 +158,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidPath, &prop));
+        RINOK(callback->GetProperty(i, kpidPath, &prop))
         if (prop.vt == VT_EMPTY)
         {
           // name.Empty();
@@ -171,7 +171,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidIsDir, &prop));
+        RINOK(callback->GetProperty(i, kpidIsDir, &prop))
         if (prop.vt == VT_EMPTY)
           ui.IsDir = false;
         else if (prop.vt != VT_BOOL)
@@ -219,9 +219,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       }
       */
 
-      if (TimeOptions.Write_MTime.Val) RINOK (GetTime (callback, i, kpidMTime, ui.Ntfs_MTime));
-      if (TimeOptions.Write_ATime.Val) RINOK (GetTime (callback, i, kpidATime, ui.Ntfs_ATime));
-      if (TimeOptions.Write_CTime.Val) RINOK (GetTime (callback, i, kpidCTime, ui.Ntfs_CTime));
+      if (TimeOptions.Write_MTime.Val) RINOK (GetTime (callback, i, kpidMTime, ui.Ntfs_MTime))
+      if (TimeOptions.Write_ATime.Val) RINOK (GetTime (callback, i, kpidATime, ui.Ntfs_ATime))
+      if (TimeOptions.Write_CTime.Val) RINOK (GetTime (callback, i, kpidCTime, ui.Ntfs_CTime))
 
       if (TimeOptions.Prec != k_PropVar_TimePrec_DOS)
       {
@@ -325,7 +325,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidComment, &prop));
+        RINOK(callback->GetProperty(i, kpidComment, &prop))
         if (prop.vt == VT_EMPTY)
         {
           // ui.Comment.Free();
@@ -374,7 +374,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
       if (!ui.IsDir)
       {
         NCOM::CPropVariant prop;
-        RINOK(callback->GetProperty(i, kpidSize, &prop));
+        RINOK(callback->GetProperty(i, kpidSize, &prop))
         if (prop.vt != VT_UI8)
           return E_INVALIDARG;
         size = prop.uhVal.QuadPart;
@@ -396,18 +396,18 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   }
   CCompressionMethodMode options;
   (CBaseProps &)options = _props;
-  options._dataSizeReduce = largestSize;
-  options._dataSizeReduceDefined = largestSizeDefined;
+  options.DataSizeReduce = largestSize;
+  options.DataSizeReduce_Defined = largestSizeDefined;
 
-  options.PasswordIsDefined = false;
+  options.Password_Defined = false;
   options.Password.Wipe_and_Empty();
   if (getTextPassword)
   {
     CMyComBSTR_Wipe password;
     Int32 passwordIsDefined;
-    RINOK(getTextPassword->CryptoGetTextPassword2(&passwordIsDefined, &password));
-    options.PasswordIsDefined = IntToBool(passwordIsDefined);
-    if (options.PasswordIsDefined)
+    RINOK(getTextPassword->CryptoGetTextPassword2(&passwordIsDefined, &password))
+    options.Password_Defined = IntToBool(passwordIsDefined);
+    if (options.Password_Defined)
     {
       if (!m_ForceAesMode)
         options.IsAesMode = thereAreAesUpdates;
@@ -439,8 +439,9 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         {
           CMethodId methodId;
           UInt32 numStreams;
+          bool isFilter;
           if (FindMethod_Index(EXTERNAL_CODECS_VARS methodName, true,
-              methodId, numStreams) < 0)
+              methodId, numStreams, isFilter) < 0)
             return E_NOTIMPL;
           if (numStreams != 1)
             return E_NOTIMPL;
@@ -472,6 +473,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (mainMethod != NFileHeader::NCompressionMethod::kStore)
     options.MethodSequence.Add(NFileHeader::NCompressionMethod::kStore);
 
+  options.Force_SeqOutMode = _force_SeqOutMode;
+
   CUpdateOptions uo;
   uo.Write_MTime = TimeOptions.Write_MTime.Val;
   uo.Write_ATime = TimeOptions.Write_ATime.Val;
@@ -493,7 +496,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
 
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
+Z7_COM7F_IMF(CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps))
 {
   InitMethodProps();
   
@@ -540,26 +543,34 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
    
     else if (name.IsEqualTo("cl"))
     {
-      RINOK(PROPVARIANT_to_bool(prop, m_ForceLocal));
+      RINOK(PROPVARIANT_to_bool(prop, m_ForceLocal))
       if (m_ForceLocal)
         m_ForceUtf8 = false;
     }
     else if (name.IsEqualTo("cu"))
     {
-      RINOK(PROPVARIANT_to_bool(prop, m_ForceUtf8));
+      RINOK(PROPVARIANT_to_bool(prop, m_ForceUtf8))
       if (m_ForceUtf8)
         m_ForceLocal = false;
     }
     else if (name.IsEqualTo("cp"))
     {
       UInt32 cp = CP_OEMCP;
-      RINOK(ParsePropToUInt32(L"", prop, cp));
+      RINOK(ParsePropToUInt32(L"", prop, cp))
       _forceCodePage = true;
       _specifiedCodePage = cp;
     }
     else if (name.IsEqualTo("rsfx"))
     {
-      RINOK(PROPVARIANT_to_bool(prop, _removeSfxBlock));
+      RINOK(PROPVARIANT_to_bool(prop, _removeSfxBlock))
+    }
+    else if (name.IsEqualTo("rws"))
+    {
+      RINOK(PROPVARIANT_to_bool(prop, _force_SeqOutMode))
+    }
+    else if (name.IsEqualTo("ros"))
+    {
+      RINOK(PROPVARIANT_to_bool(prop, _force_OpenSeq))
     }
     else
     {
@@ -573,10 +584,10 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
       else
       {
         bool processed = false;
-        RINOK(TimeOptions.Parse(name, prop, processed));
+        RINOK(TimeOptions.Parse(name, prop, processed))
         if (!processed)
         {
-          RINOK(_props.SetProperty(name, prop));
+          RINOK(_props.SetProperty(name, prop))
         }
       }
       // RINOK(_props.MethodInfo.ParseParamsFromPROPVARIANT(name, prop));

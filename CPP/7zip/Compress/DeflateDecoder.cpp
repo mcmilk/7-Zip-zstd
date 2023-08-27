@@ -83,7 +83,7 @@ bool CCoder::ReadTables(void)
   m_FinalBlock = (ReadBits(kFinalBlockFieldSize) == NFinalBlockField::kFinalBlock);
   if (m_InBitStream.ExtraBitsWereRead())
     return false;
-  UInt32 blockType = ReadBits(kBlockTypeFieldSize);
+  const UInt32 blockType = ReadBits(kBlockTypeFieldSize);
   if (blockType > NBlockType::kDynamicHuffman)
     return false;
   if (m_InBitStream.ExtraBitsWereRead())
@@ -109,9 +109,9 @@ bool CCoder::ReadTables(void)
   }
   else
   {
-    unsigned numLitLenLevels = ReadBits(kNumLenCodesFieldSize) + kNumLitLenCodesMin;
+    const unsigned numLitLenLevels = ReadBits(kNumLenCodesFieldSize) + kNumLitLenCodesMin;
     _numDistLevels = ReadBits(kNumDistCodesFieldSize) + kNumDistCodesMin;
-    unsigned numLevelCodes = ReadBits(kNumLevelCodesFieldSize) + kNumLevelCodesMin;
+    const unsigned numLevelCodes = ReadBits(kNumLevelCodesFieldSize) + kNumLevelCodesMin;
 
     if (!_deflate64Mode)
       if (_numDistLevels > kDistTableSize32)
@@ -120,7 +120,7 @@ bool CCoder::ReadTables(void)
     Byte levelLevels[kLevelTableSize];
     for (unsigned i = 0; i < kLevelTableSize; i++)
     {
-      unsigned position = kCodeLengthAlphabetOrder[i];
+      const unsigned position = kCodeLengthAlphabetOrder[i];
       if (i < numLevelCodes)
         levelLevels[position] = (Byte)ReadBits(kLevelFieldSize);
       else
@@ -130,7 +130,7 @@ bool CCoder::ReadTables(void)
     if (m_InBitStream.ExtraBitsWereRead())
       return false;
 
-    RIF(m_LevelDecoder.Build(levelLevels));
+    RIF(m_LevelDecoder.Build(levelLevels))
     
     Byte tmpLevels[kFixedMainTableSize + kFixedDistTableSize];
     if (!DecodeLevels(tmpLevels, numLitLenLevels + _numDistLevels))
@@ -143,7 +143,7 @@ bool CCoder::ReadTables(void)
     memcpy(levels.litLenLevels, tmpLevels, numLitLenLevels);
     memcpy(levels.distLevels, tmpLevels + numLitLenLevels, _numDistLevels);
   }
-  RIF(m_MainDecoder.Build(levels.litLenLevels));
+  RIF(m_MainDecoder.Build(levels.litLenLevels))
   return m_DistDecoder.Build(levels.distLevels);
 }
 
@@ -174,7 +174,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream, UInt32 inputPro
     if (!_keepHistory)
       if (!m_OutWindowStream.Create(_deflate64Mode ? kHistorySize64: kHistorySize32))
         return E_OUTOFMEMORY;
-    RINOK(InitInStream(_needInitInStream));
+    RINOK(InitInStream(_needInitInStream))
     m_OutWindowStream.Init(_keepHistory);
   
     m_FinalBlock = false;
@@ -185,7 +185,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream, UInt32 inputPro
   while (_remainLen > 0 && curSize > 0)
   {
     _remainLen--;
-    Byte b = m_OutWindowStream.GetByte(_rep0);
+    const Byte b = m_OutWindowStream.GetByte(_rep0);
     m_OutWindowStream.PutByte(b);
     curSize--;
   }
@@ -314,7 +314,7 @@ HRESULT CCoder::CodeSpec(UInt32 curSize, bool finishInputStream, UInt32 inputPro
 }
 
 
-#ifdef _NO_EXCEPTIONS
+#ifdef Z7_NO_EXCEPTIONS
 
 #define DEFLATE_TRY_BEGIN
 #define DEFLATE_TRY_END(res)
@@ -361,7 +361,7 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream, ICompressProgressInfo 
     if (!finishInputStream && curSize == 0)
       break;
     
-    RINOK(CodeSpec(curSize, finishInputStream, progress ? kInputProgressLimit : 0));
+    RINOK(CodeSpec(curSize, finishInputStream, progress ? kInputProgressLimit : 0))
     
     if (_remainLen == kLenIdFinished)
       break;
@@ -370,7 +370,7 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream, ICompressProgressInfo 
     {
       const UInt64 inSize = m_InBitStream.GetProcessedSize() - inStart;
       const UInt64 nowPos64 = GetOutProcessedCur();
-      RINOK(progress->SetRatioInfo(&inSize, &nowPos64));
+      RINOK(progress->SetRatioInfo(&inSize, &nowPos64))
     }
   }
   
@@ -392,12 +392,12 @@ HRESULT CCoder::CodeReal(ISequentialOutStream *outStream, ICompressProgressInfo 
 }
 
 
-HRESULT CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   SetInStream(inStream);
   SetOutStreamSize(outSize);
-  HRESULT res = CodeReal(outStream, progress);
+  const HRESULT res = CodeReal(outStream, progress);
   ReleaseInStream();
   /*
   if (res == S_OK)
@@ -408,21 +408,21 @@ HRESULT CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStr
 }
 
 
-STDMETHODIMP CCoder::SetFinishMode(UInt32 finishMode)
+Z7_COM7F_IMF(CCoder::SetFinishMode(UInt32 finishMode))
 {
   Set_NeedFinishInput(finishMode != 0);
   return S_OK;
 }
 
 
-STDMETHODIMP CCoder::GetInStreamProcessedSize(UInt64 *value)
+Z7_COM7F_IMF(CCoder::GetInStreamProcessedSize(UInt64 *value))
 {
   *value = m_InBitStream.GetStreamSize();
   return S_OK;
 }
 
 
-STDMETHODIMP CCoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CCoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *processedSize))
 {
   AlignToByte();
   UInt32 i = 0;
@@ -439,7 +439,7 @@ STDMETHODIMP CCoder::ReadUnusedFromInBuf(void *data, UInt32 size, UInt32 *proces
 }
 
 
-STDMETHODIMP CCoder::SetInStream(ISequentialInStream *inStream)
+Z7_COM7F_IMF(CCoder::SetInStream(ISequentialInStream *inStream))
 {
   m_InStreamRef = inStream;
   m_InBitStream.SetStream(inStream);
@@ -447,7 +447,7 @@ STDMETHODIMP CCoder::SetInStream(ISequentialInStream *inStream)
 }
 
 
-STDMETHODIMP CCoder::ReleaseInStream()
+Z7_COM7F_IMF(CCoder::ReleaseInStream())
 {
   m_InStreamRef.Release();
   return S_OK;
@@ -468,7 +468,7 @@ void CCoder::SetOutStreamSizeResume(const UInt64 *outSize)
 }
 
 
-STDMETHODIMP CCoder::SetOutStreamSize(const UInt64 *outSize)
+Z7_COM7F_IMF(CCoder::SetOutStreamSize(const UInt64 *outSize))
 {
   /*
     18.06:
@@ -484,9 +484,9 @@ STDMETHODIMP CCoder::SetOutStreamSize(const UInt64 *outSize)
 }
 
 
-#ifndef NO_READ_FROM_CODER
+#ifndef Z7_NO_READ_FROM_CODER
 
-STDMETHODIMP CCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CCoder::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   HRESULT res;
 
@@ -517,7 +517,7 @@ STDMETHODIMP CCoder::Read(void *data, UInt32 size, UInt32 *processedSize)
   DEFLATE_TRY_END(res)
 
   {
-    HRESULT res2 = Flush();
+    const HRESULT res2 = Flush();
     if (res2 != S_OK)
       res = res2;
   }

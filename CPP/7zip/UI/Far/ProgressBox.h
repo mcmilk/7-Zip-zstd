@@ -1,7 +1,7 @@
 // ProgressBox.h
 
-#ifndef __PROGRESS_BOX_H
-#define __PROGRESS_BOX_H
+#ifndef ZIP7_INC_PROGRESS_BOX_H
+#define ZIP7_INC_PROGRESS_BOX_H
 
 #include "../../../Common/MyString.h"
 #include "../../../Common/MyTypes.h"

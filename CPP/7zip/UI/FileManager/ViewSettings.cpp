@@ -36,7 +36,8 @@ static NSynchronization::CCriticalSection g_CS;
 #define Set32(p, v) SetUi32(((Byte *)p), v)
 #define SetBool(p, v) Set32(p, ((v) ? 1 : 0))
 
-#define Get32(p, dest) dest = GetUi32((const Byte *)p)
+#define Get32(p, dest) dest = GetUi32((const Byte *)p);
+#define Get32_LONG(p, dest) dest = (LONG)GetUi32((const Byte *)p);
 #define GetBool(p, dest) dest = (GetUi32(p) != 0);
 
 /*
@@ -57,16 +58,16 @@ void CListViewInfo::Save(const UString &id) const
   const UInt32 dataSize = kListViewHeaderSize + kColumnInfoSize * Columns.Size();
   CByteArr buf(dataSize);
 
-  Set32(buf, kListViewVersion);
-  Set32(buf + 4, SortID);
-  SetBool(buf + 8, Ascending);
+  Set32(buf, kListViewVersion)
+  Set32(buf + 4, SortID)
+  SetBool(buf + 8, Ascending)
   FOR_VECTOR (i, Columns)
   {
     const CColumnInfo &column = Columns[i];
     Byte *p = buf + kListViewHeaderSize + i * kColumnInfoSize;
-    Set32(p, column.PropID);
-    SetBool(p + 4, column.IsVisible);
-    Set32(p + 8, column.Width);
+    Set32(p, column.PropID)
+    SetBool(p + 4, column.IsVisible)
+    Set32(p + 8, column.Width)
   }
   {
     NSynchronization::CCriticalSectionLock lock(g_CS);
@@ -92,11 +93,11 @@ void CListViewInfo::Read(const UString &id)
   if (size < kListViewHeaderSize)
     return;
   UInt32 version;
-  Get32(buf, version);
+  Get32(buf, version)
   if (version != kListViewVersion)
     return;
-  Get32(buf + 4, SortID);
-  GetBool(buf + 8, Ascending);
+  Get32(buf + 4, SortID)
+  GetBool(buf + 8, Ascending)
 
   IsLoaded = true;
 
@@ -109,9 +110,9 @@ void CListViewInfo::Read(const UString &id)
   {
     CColumnInfo column;
     const Byte *p = buf + kListViewHeaderSize + i * kColumnInfoSize;
-    Get32(p, column.PropID);
-    GetBool(p + 4, column.IsVisible);
-    Get32(p + 8, column.Width);
+    Get32(p, column.PropID)
+    GetBool(p + 4, column.IsVisible)
+    Get32(p + 8, column.Width)
     Columns.AddInReserved(column);
   }
 }
@@ -142,18 +143,18 @@ void CWindowInfo::Save() const
   key.Create(HKEY_CURRENT_USER, kCUBasePath);
   {
     Byte buf[kWindowPositionHeaderSize];
-    Set32(buf,      rect.left);
-    Set32(buf +  4, rect.top);
-    Set32(buf +  8, rect.right);
-    Set32(buf + 12, rect.bottom);
-    SetBool(buf + 16, maximized);
+    Set32(buf,      (UInt32)rect.left)
+    Set32(buf +  4, (UInt32)rect.top)
+    Set32(buf +  8, (UInt32)rect.right)
+    Set32(buf + 12, (UInt32)rect.bottom)
+    SetBool(buf + 16, maximized)
     key.SetValue(kPositionValueName, buf, kWindowPositionHeaderSize);
   }
   {
     Byte buf[kPanelsInfoHeaderSize];
-    Set32(buf,      numPanels);
-    Set32(buf +  4, currentPanel);
-    Set32(buf +  8, splitterPos);
+    Set32(buf,      numPanels)
+    Set32(buf +  4, currentPanel)
+    Set32(buf +  8, splitterPos)
     key.SetValue(kPanelsInfoValueName, buf, kPanelsInfoHeaderSize);
   }
 }
@@ -175,18 +176,18 @@ void CWindowInfo::Read(bool &windowPosDefined, bool &panelInfoDefined)
   CByteBuffer buf;
   if (QueryBuf(key, kPositionValueName, buf, kWindowPositionHeaderSize))
   {
-    Get32(buf,      rect.left);
-    Get32(buf +  4, rect.top);
-    Get32(buf +  8, rect.right);
-    Get32(buf + 12, rect.bottom);
-    GetBool(buf + 16, maximized);
+    Get32_LONG(buf,      rect.left)
+    Get32_LONG(buf +  4, rect.top)
+    Get32_LONG(buf +  8, rect.right)
+    Get32_LONG(buf + 12, rect.bottom)
+    GetBool(buf + 16, maximized)
     windowPosDefined = true;
   }
   if (QueryBuf(key, kPanelsInfoValueName, buf, kPanelsInfoHeaderSize))
   {
-    Get32(buf,      numPanels);
-    Get32(buf +  4, currentPanel);
-    Get32(buf +  8, splitterPos);
+    Get32(buf,      numPanels)
+    Get32(buf +  4, currentPanel)
+    Get32(buf +  8, splitterPos)
     panelInfoDefined = true;
   }
   return;

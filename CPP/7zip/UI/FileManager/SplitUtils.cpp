@@ -74,7 +74,7 @@ static const char * const k_Sizes[] =
 
 void AddVolumeItems(NWindows::NControl::CComboBox &combo)
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(k_Sizes); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(k_Sizes); i++)
     combo.AddString(CSysString(k_Sizes[i]));
 }
 

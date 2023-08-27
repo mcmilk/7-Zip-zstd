@@ -71,12 +71,12 @@ HRESULT CUpdateCallbackAgent::Finalize()
 
 HRESULT CUpdateCallbackAgent::OpenFileError(const FString &path, DWORD systemError)
 {
-  HRESULT hres = HRESULT_FROM_WIN32(systemError);
+  const HRESULT hres = HRESULT_FROM_WIN32(systemError);
   // if (systemError == ERROR_SHARING_VIOLATION)
   {
     if (Callback2)
     {
-      RINOK(Callback2->OpenFileError(fs2us(path), hres));
+      RINOK(Callback2->OpenFileError(fs2us(path), hres))
       return S_FALSE;
     }
     
@@ -86,7 +86,7 @@ HRESULT CUpdateCallbackAgent::OpenFileError(const FString &path, DWORD systemErr
       s += NError::MyFormatMessage(systemError);
       s += ": ";
       s += fs2us(path);
-      RINOK(Callback->UpdateErrorMessage(s));
+      RINOK(Callback->UpdateErrorMessage(s))
       return S_FALSE;
     }
   }
@@ -96,13 +96,13 @@ HRESULT CUpdateCallbackAgent::OpenFileError(const FString &path, DWORD systemErr
 
 HRESULT CUpdateCallbackAgent::ReadingFileError(const FString &path, DWORD systemError)
 {
-  HRESULT hres = HRESULT_FROM_WIN32(systemError);
+  const HRESULT hres = HRESULT_FROM_WIN32(systemError);
 
   // if (systemError == ERROR_SHARING_VIOLATION)
   {
     if (Callback2)
     {
-      RINOK(Callback2->ReadingFileError(fs2us(path), hres));
+      RINOK(Callback2->ReadingFileError(fs2us(path), hres))
     }
     else if (Callback)
     {
@@ -110,7 +110,7 @@ HRESULT CUpdateCallbackAgent::ReadingFileError(const FString &path, DWORD system
       s += NError::MyFormatMessage(systemError);
       s += ": ";
       s += fs2us(path);
-      RINOK(Callback->UpdateErrorMessage(s));
+      RINOK(Callback->UpdateErrorMessage(s))
     }
   }
   // FailedFiles.Add(name);
@@ -164,12 +164,12 @@ HRESULT CUpdateCallbackAgent::ReportUpdateOperation(UInt32 op, const wchar_t *na
 
 /*
 HRESULT CUpdateCallbackAgent::SetPassword(const UString &
-    #ifndef _NO_CRYPTO
+    #ifndef Z7_NO_CRYPTO
     password
     #endif
     )
 {
-  #ifndef _NO_CRYPTO
+  #ifndef Z7_NO_CRYPTO
   PasswordIsDefined = true;
   Password = password;
   #endif

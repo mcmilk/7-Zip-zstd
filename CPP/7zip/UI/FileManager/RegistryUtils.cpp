@@ -137,6 +137,11 @@ void CFmSettings::Load()
 {
   ShowDots = false;
   ShowRealFileIcons = false;
+  /* if (FullRow == false), we can use mouse click on another columns
+     to select group of files. We need to implement additional
+     way to select files in any column as in Explorer.
+     Then we can enable (FullRow == true) default mode. */
+  // FullRow = true;
   FullRow = false;
   ShowGrid = false;
   SingleClick = false;

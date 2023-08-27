@@ -78,11 +78,11 @@ void CDecoder::SetPassword(const Byte *data, unsigned size)
   _password.CopyFrom(data, (size_t)size);
 }
 
-STDMETHODIMP CDecoder::Init()
+Z7_COM7F_IMF(CDecoder::Init())
 {
   CalcKey();
-  RINOK(SetKey(_key, kAesKeySize));
-  RINOK(SetInitVector(_iv, AES_BLOCK_SIZE));
+  RINOK(SetKey(_key, kAesKeySize))
+  RINOK(SetInitVector(_iv, AES_BLOCK_SIZE))
   return CAesCoder::Init();
 }
 
@@ -116,7 +116,7 @@ static void UpdatePswDataSha1(Byte *data)
   
   for (i = 0; i < SHA1_NUM_BLOCK_WORDS; i++)
   {
-    SetUi32(data + i * 4, W[kNumW - SHA1_NUM_BLOCK_WORDS + i]);
+    SetUi32(data + i * 4, W[kNumW - SHA1_NUM_BLOCK_WORDS + i])
   }
 }
 

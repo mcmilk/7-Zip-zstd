@@ -8,7 +8,7 @@
 #include "ListViewDialog.h"
 #include "RegistryUtils.h"
 
-#ifdef LANG
+#ifdef Z7_LANG
 #include "LangUtils.h"
 #endif
 
@@ -26,14 +26,14 @@ static void ListView_GetSelected(NControl::CListView &listView, CUIntVector &vec
     index = listView.GetNextSelectedItem(index);
     if (index < 0)
       break;
-    vector.Add(index);
+    vector.Add((unsigned)index);
   }
 }
 
 
 bool CListViewDialog::OnInit()
 {
-  #ifdef LANG
+  #ifdef Z7_LANG
   LangSetDlgItems(*this, NULL, 0);
   #endif
   _listView.Attach(GetItem(IDL_LISTVIEW));
@@ -227,17 +227,17 @@ void CListViewDialog::DeleteItems()
 {
   for (;;)
   {
-    int index = _listView.GetNextSelectedItem(-1);
+    const int index = _listView.GetNextSelectedItem(-1);
     if (index < 0)
       break;
     StringsWereChanged = true;
-    _listView.DeleteItem(index);
+    _listView.DeleteItem((unsigned)index);
     if ((unsigned)index < Strings.Size())
-      Strings.Delete(index);
+      Strings.Delete((unsigned)index);
     if ((unsigned)index < Values.Size())
-      Values.Delete(index);
+      Values.Delete((unsigned)index);
   }
-  int focusedIndex = _listView.GetFocusedItem();
+  const int focusedIndex = _listView.GetFocusedItem();
   if (focusedIndex >= 0)
     _listView.SetItemState_FocusedSelected(focusedIndex);
   _listView.SetColumnWidthAuto(0);

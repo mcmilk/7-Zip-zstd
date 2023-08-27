@@ -49,13 +49,13 @@ static UInt64 Get64b(const Byte *p, bool be) { return be ? GetBe64(p) : GetUi64(
 #define Get32(p) Get32b(p, be)
 #define Get64(p) Get64b(p, be)
 
-#define LE_16(offs, dest) dest = GetUi16(p + (offs));
-#define LE_32(offs, dest) dest = GetUi32(p + (offs));
-#define LE_64(offs, dest) dest = GetUi64(p + (offs));
+#define LE_16(offs, dest) dest = GetUi16(p + (offs))
+#define LE_32(offs, dest) dest = GetUi32(p + (offs))
+#define LE_64(offs, dest) dest = GetUi64(p + (offs))
 
-#define GET_16(offs, dest) dest = Get16(p + (offs));
-#define GET_32(offs, dest) dest = Get32(p + (offs));
-#define GET_64(offs, dest) dest = Get64(p + (offs));
+#define GET_16(offs, dest) dest = Get16(p + (offs))
+#define GET_32(offs, dest) dest = Get32(p + (offs))
+#define GET_64(offs, dest) dest = Get64(p + (offs))
 
 static const UInt32 kSignature32_LE = 0x73717368;
 static const UInt32 kSignature32_BE = 0x68737173;
@@ -831,11 +831,10 @@ struct CFrag
   UInt32 Size;
 };
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
-{
+
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+  IInArchiveGetStream
+)
   CRecordVector<CItem> _items;
   CRecordVector<CNode> _nodes;
   CRecordVector<UInt32> _nodesPos;
@@ -893,7 +892,7 @@ class CHandler:
 
   HRESULT Seek2(UInt64 offset)
   {
-    return _stream->Seek(offset, STREAM_SEEK_SET, NULL);
+    return InStream_SeekSet(_stream, offset);
   }
 
   HRESULT Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool *outBufWasWritten, UInt32 *outBufWasWrittenSize,
@@ -906,8 +905,8 @@ class CHandler:
   HRESULT ScanInodes(UInt64 ptr);
   HRESULT ReadUids(UInt64 start, UInt32 num, CByteBuffer &ids);
   HRESULT Open2(IInStream *inStream);
-  AString GetPath(int index) const;
-  bool GetPackSize(int index, UInt64 &res, bool fillOffsets);
+  AString GetPath(unsigned index) const;
+  bool GetPackSize(unsigned index, UInt64 &res, bool fillOffsets);
 
 public:
   CHandler();
@@ -916,12 +915,9 @@ public:
     XzUnpacker_Free(&_xz);
   }
 
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
-
   HRESULT ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize);
 };
+
 
 CHandler::CHandler()
 {
@@ -1044,7 +1040,7 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
       }
       
       srcRem--;
-      back = (b >> 2) + (*src++ << 2);
+      back = (b >> 2) + ((UInt32)*src++ << 2);
       len = 2;
       if (mode == 4)
       {
@@ -1086,8 +1082,8 @@ static HRESULT LzoDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *src
         back += ((bOld & 8) << 11);
         if (back == 0)
         {
-          *destLen = dest - destStart;
-          *srcLen = src - srcStart;
+          *destLen = (size_t)(dest - destStart);
+          *srcLen = (size_t)(src - srcStart);
           return S_OK;
         }
         back += (1 << 14) - 1;
@@ -1137,16 +1133,16 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
   if (_h.SeveralMethods)
   {
     Byte b;
-    RINOK(ReadStream_FALSE(_stream, &b, 1));
-    RINOK(_stream->Seek(-1, STREAM_SEEK_CUR, NULL));
+    RINOK(ReadStream_FALSE(_stream, &b, 1))
+    RINOK(_stream->Seek(-1, STREAM_SEEK_CUR, NULL))
     method = (b == 0x5D ? kMethod_LZMA : kMethod_ZLIB);
   }
 
   if (method == kMethod_ZLIB && _needCheckLzma)
   {
     Byte b;
-    RINOK(ReadStream_FALSE(_stream, &b, 1));
-    RINOK(_stream->Seek(-1, STREAM_SEEK_CUR, NULL));
+    RINOK(ReadStream_FALSE(_stream, &b, 1))
+    RINOK(_stream->Seek(-1, STREAM_SEEK_CUR, NULL))
     if (b == 0)
     {
       _noPropsLZMA = true;
@@ -1162,7 +1158,7 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
       _zlibDecoderSpec = new NCompress::NZlib::CDecoder();
       _zlibDecoder = _zlibDecoderSpec;
     }
-    RINOK(_zlibDecoder->Code(_limitedInStream, outStream, NULL, NULL, NULL));
+    RINOK(_zlibDecoder->Code(_limitedInStream, outStream, NULL, NULL, NULL))
     if (inSize != _zlibDecoderSpec->GetInputProcessedSize())
       return S_FALSE;
   }
@@ -1204,7 +1200,7 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
   {
     if (_inputBuffer.Size() < inSize)
       _inputBuffer.Alloc(inSize);
-    RINOK(ReadStream_FALSE(_stream, _inputBuffer, inSize));
+    RINOK(ReadStream_FALSE(_stream, _inputBuffer, inSize))
 
     Byte *dest = outBuf;
     if (!outBuf)
@@ -1218,7 +1214,7 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
 
     if (method == kMethod_LZO)
     {
-      RINOK(LzoDecode(dest, &destLen, _inputBuffer, &srcLen));
+      RINOK(LzoDecode(dest, &destLen, _inputBuffer, &srcLen))
     }
     else if (method == kMethod_LZMA)
     {
@@ -1228,7 +1224,7 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
       if (_noPropsLZMA)
       {
         props[0] = 0x5D;
-        SetUi32(&props[1], _h.BlockSize);
+        SetUi32(&props[1], _h.BlockSize)
       }
       else
       {
@@ -1289,7 +1285,7 @@ HRESULT CHandler::ReadMetadataBlock(UInt32 &packSize)
   const unsigned offset = _h.NeedCheckData() ? 3 : 2;
   if (offset > packSize)
     return S_FALSE;
-  RINOK(ReadStream_FALSE(_stream, temp, offset));
+  RINOK(ReadStream_FALSE(_stream, temp, offset))
   // if (NeedCheckData && Major < 4) checkByte must be = 0xFF
   const bool be = _h.be;
   UInt32 size = Get16(temp);
@@ -1303,7 +1299,7 @@ HRESULT CHandler::ReadMetadataBlock(UInt32 &packSize)
   if (isCompressed)
   {
     _limitedInStreamSpec->Init(size);
-    RINOK(Decompress(_dynOutStream, NULL, NULL, NULL, size, kMetadataBlockSize));
+    RINOK(Decompress(_dynOutStream, NULL, NULL, NULL, size, kMetadataBlockSize))
   }
   else
   {
@@ -1311,7 +1307,7 @@ HRESULT CHandler::ReadMetadataBlock(UInt32 &packSize)
     Byte *buf = _dynOutStreamSpec->GetBufPtrForWriting(size);
     if (!buf)
       return E_OUTOFMEMORY;
-    RINOK(ReadStream_FALSE(_stream, buf, size));
+    RINOK(ReadStream_FALSE(_stream, buf, size))
     _dynOutStreamSpec->UpdateSize(size);
   }
   return S_OK;
@@ -1330,7 +1326,7 @@ HRESULT CHandler::ReadData(CData &data, UInt64 start, UInt64 end)
   if (end < start || end - start >= ((UInt64)1 << 32))
     return S_FALSE;
   const UInt32 size = (UInt32)(end - start);
-  RINOK(Seek2(start));
+  RINOK(Seek2(start))
   _dynOutStreamSpec->Init();
   UInt32 packPos = 0;
   while (packPos != size)
@@ -1340,7 +1336,7 @@ HRESULT CHandler::ReadData(CData &data, UInt64 start, UInt64 end)
     if (packPos > size)
       return S_FALSE;
     UInt32 packSize = size - packPos;
-    RINOK(ReadMetadataBlock(packSize));
+    RINOK(ReadMetadataBlock(packSize))
     {
       const size_t tSize = _dynOutStreamSpec->GetSize();
       if (tSize != (UInt32)tSize)
@@ -1466,7 +1462,7 @@ HRESULT CHandler::OpenDir(int parent, UInt32 startBlock, UInt32 offset, unsigned
         UInt64 numFiles = _items.Size();
         if ((numFiles & 0xFFFF) == 0)
         {
-          RINOK(_openCallback->SetCompleted(&numFiles, NULL));
+          RINOK(_openCallback->SetCompleted(&numFiles, NULL))
         }
       }
       
@@ -1521,13 +1517,13 @@ HRESULT CHandler::OpenDir(int parent, UInt32 startBlock, UInt32 offset, unsigned
     }
   }
 
-  int startItemIndex = _items.Size() - tempItems.Size();
+  const unsigned startItemIndex = _items.Size() - tempItems.Size();
   FOR_VECTOR (i, tempItems)
   {
     const CTempItem &tempItem = tempItems[i];
-    int index = startItemIndex + i;
+    const unsigned index = startItemIndex + i;
     CItem &item = _items[index];
-    RINOK(OpenDir(index, tempItem.StartBlock, tempItem.Offset, level + 1, item.Node));
+    RINOK(OpenDir((int)index, tempItem.StartBlock, tempItem.Offset, level + 1, item.Node))
   }
 
   return S_OK;
@@ -1539,7 +1535,7 @@ HRESULT CHandler::ReadUids(UInt64 start, UInt32 num, CByteBuffer &ids)
   ids.Alloc(size);
   if (num == 0)
     return S_OK;
-  RINOK(Seek2(start));
+  RINOK(Seek2(start))
   return ReadStream_FALSE(_stream, ids, size);
 }
 
@@ -1547,7 +1543,7 @@ HRESULT CHandler::Open2(IInStream *inStream)
 {
   {
     Byte buf[kHeaderSize3];
-    RINOK(ReadStream_FALSE(inStream, buf, kHeaderSize3));
+    RINOK(ReadStream_FALSE(inStream, buf, kHeaderSize3))
     if (!_h.Parse(buf))
       return S_FALSE;
     if (!_h.IsSupported())
@@ -1580,15 +1576,15 @@ HRESULT CHandler::Open2(IInStream *inStream)
     const UInt32 numBlocks = (_h.NumFrags + (1 << fragPtrsInBlockLog) - 1) >> fragPtrsInBlockLog;
     const size_t numBlocksBytes = (size_t)numBlocks << (2 + bigFrag);
     CByteBuffer data(numBlocksBytes);
-    RINOK(Seek2(_h.FragTable));
-    RINOK(ReadStream_FALSE(inStream, data, numBlocksBytes));
+    RINOK(Seek2(_h.FragTable))
+    RINOK(ReadStream_FALSE(inStream, data, numBlocksBytes))
     const bool be = _h.be;
     
     for (UInt32 i = 0; i < numBlocks; i++)
     {
       const UInt64 offset = bigFrag ? Get64(data + i * 8) : Get32(data + i * 4);
-      RINOK(Seek2(offset));
-      RINOK(ReadMetadataBlock2());
+      RINOK(Seek2(offset))
+      RINOK(ReadMetadataBlock2())
       const UInt32 unpackSize = (UInt32)_dynOutStreamSpec->GetSize();
       if (unpackSize != kMetadataBlockSize)
         if (i != numBlocks - 1 || unpackSize != ((_h.NumFrags << (3 + bigFrag)) & (kMetadataBlockSize - 1)))
@@ -1617,8 +1613,8 @@ HRESULT CHandler::Open2(IInStream *inStream)
       return S_FALSE;
   }
 
-  RINOK(ReadData(_inodesData, _h.InodeTable, _h.DirTable));
-  RINOK(ReadData(_dirs, _h.DirTable, _h.FragTable));
+  RINOK(ReadData(_inodesData, _h.InodeTable, _h.DirTable))
+  RINOK(ReadData(_dirs, _h.DirTable, _h.FragTable))
 
   UInt64 absOffset = _h.RootInode >> 16;
   if (absOffset >= ((UInt64)1 << 32))
@@ -1663,12 +1659,12 @@ HRESULT CHandler::Open2(IInStream *inStream)
       return S_FALSE;
   }
   int rootNodeIndex;
-  RINOK(OpenDir(-1, (UInt32)absOffset, (UInt32)_h.RootInode & 0xFFFF, 0, rootNodeIndex));
+  RINOK(OpenDir(-1, (UInt32)absOffset, (UInt32)_h.RootInode & 0xFFFF, 0, rootNodeIndex))
 
   if (_h.Major < 4)
   {
-    RINOK(ReadUids(_h.UidTable, _h.NumUids, _uids));
-    RINOK(ReadUids(_h.GidTable, _h.NumGids, _gids));
+    RINOK(ReadUids(_h.UidTable, _h.NumUids, _uids))
+    RINOK(ReadUids(_h.GidTable, _h.NumGids, _gids))
   }
   else
   {
@@ -1677,29 +1673,29 @@ HRESULT CHandler::Open2(IInStream *inStream)
 
     const UInt32 numBlocks = (size + kMetadataBlockSize - 1) / kMetadataBlockSize;
     const UInt32 numBlocksBytes = numBlocks << 3;
-    CByteBuffer data;
-    data.Alloc(numBlocksBytes);
-    RINOK(Seek2(_h.UidTable));
-    RINOK(ReadStream_FALSE(inStream, data, numBlocksBytes));
+    CByteBuffer data(numBlocksBytes);
+    RINOK(Seek2(_h.UidTable))
+    RINOK(ReadStream_FALSE(inStream, data, numBlocksBytes))
 
     for (UInt32 i = 0; i < numBlocks; i++)
     {
       const UInt64 offset = GetUi64(data + i * 8);
-      RINOK(Seek2(offset));
+      RINOK(Seek2(offset))
       // RINOK(ReadMetadataBlock(NULL, _uids + kMetadataBlockSize * i, packSize, unpackSize));
-      RINOK(ReadMetadataBlock2());
+      RINOK(ReadMetadataBlock2())
       const size_t unpackSize = _dynOutStreamSpec->GetSize();
-      if (unpackSize != kMetadataBlockSize)
-        if (i != numBlocks - 1 || unpackSize != (size & (kMetadataBlockSize - 1)))
-          return S_FALSE;
-      memcpy(_uids + kMetadataBlockSize * i, _dynOutStreamSpec->GetBuffer(), unpackSize);
+      const UInt32 remSize = (i == numBlocks - 1)  ?
+          (size & (kMetadataBlockSize - 1)) : kMetadataBlockSize;
+      if (unpackSize != remSize)
+        return S_FALSE;
+      memcpy(_uids + kMetadataBlockSize * i, _dynOutStreamSpec->GetBuffer(), remSize);
     }
   }
 
   {
     const UInt32 alignSize = 1 << 12;
     Byte buf[alignSize];
-    RINOK(Seek2(_h.Size));
+    RINOK(Seek2(_h.Size))
     UInt32 rem = (UInt32)(0 - _h.Size) & (alignSize - 1);
     _sizeCalculated = _h.Size;
     if (rem != 0)
@@ -1716,23 +1712,24 @@ HRESULT CHandler::Open2(IInStream *inStream)
   return S_OK;
 }
 
-AString CHandler::GetPath(int index) const
+AString CHandler::GetPath(unsigned index) const
 {
   unsigned len = 0;
-  int indexMem = index;
+  const unsigned indexMem = index;
   const bool be = _h.be;
-  do
+  for (;;)
   {
     const CItem &item = _items[index];
-    index = item.Parent;
     const Byte *p = _dirs.Data + item.Ptr;
-    unsigned size = (_h.IsOldVersion() ? (unsigned)p[2] : (unsigned)Get16(p + 6)) + 1;
+    const unsigned size = (_h.IsOldVersion() ? (unsigned)p[2] : (unsigned)Get16(p + 6)) + 1;
     p += _h.GetFileNameOffset();
     unsigned i;
     for (i = 0; i < size && p[i]; i++);
     len += i + 1;
+    index = (unsigned)item.Parent;
+    if (item.Parent < 0)
+      break;
   }
-  while (index >= 0);
   len--;
 
   AString path;
@@ -1741,22 +1738,22 @@ AString CHandler::GetPath(int index) const
   for (;;)
   {
     const CItem &item = _items[index];
-    index = item.Parent;
     const Byte *p = _dirs.Data + item.Ptr;
-    unsigned size = (_h.IsOldVersion() ? (unsigned)p[2] : (unsigned)Get16(p + 6)) + 1;
+    const unsigned size = (_h.IsOldVersion() ? (unsigned)p[2] : (unsigned)Get16(p + 6)) + 1;
     p += _h.GetFileNameOffset();
     unsigned i;
     for (i = 0; i < size && p[i]; i++);
     dest -= i;
     memcpy(dest, p, i);
-    if (index < 0)
+    index = (unsigned)item.Parent;
+    if (item.Parent < 0)
       break;
     *(--dest) = CHAR_PATH_SEPARATOR;
   }
   return path;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *callback)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *callback))
 {
   COM_TRY_BEGIN
   {
@@ -1784,7 +1781,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _openCodePage = CP_UTF8;
   _sizeCalculated = 0;
@@ -1800,8 +1797,8 @@ STDMETHODIMP CHandler::Close()
   _inodesData.Clear();
   _dirs.Clear();
 
-  // _uids.Free();
-  // _gids.Free();;
+  _uids.Free();
+  _gids.Free();
 
   _cachedBlock.Free();
   ClearCache();
@@ -1809,7 +1806,7 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-bool CHandler::GetPackSize(int index, UInt64 &totalPack, bool fillOffsets)
+bool CHandler::GetPackSize(unsigned index, UInt64 &totalPack, bool fillOffsets)
 {
   totalPack = 0;
   const CItem &item = _items[index];
@@ -1818,7 +1815,7 @@ bool CHandler::GetPackSize(int index, UInt64 &totalPack, bool fillOffsets)
   const Byte *p = _inodesData.Data + ptr;
   const bool be = _h.be;
 
-  UInt32 type = node.Type;
+  const UInt32 type = node.Type;
   UInt32 offset;
   if (node.IsLink() || node.FileSize == 0)
   {
@@ -1826,7 +1823,7 @@ bool CHandler::GetPackSize(int index, UInt64 &totalPack, bool fillOffsets)
     return true;
   }
 
-  UInt32 numBlocks = (UInt32)node.GetNumBlocks(_h);
+  const UInt32 numBlocks = (UInt32)node.GetNumBlocks(_h);
 
   if (fillOffsets)
   {
@@ -1896,13 +1893,13 @@ bool CHandler::GetPackSize(int index, UInt64 &totalPack, bool fillOffsets)
 }
 
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -1919,7 +1916,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       else
       {
         s = NULL;
-        if (_h.Method < ARRAY_SIZE(k_Methods))
+        if (_h.Method < Z7_ARRAY_SIZE(k_Methods))
           s = k_Methods[_h.Method];
         if (!s)
         {
@@ -1937,7 +1934,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         res += "-LZMA";
       res.Add_Space();
       res.Add_UInt32(_h.Major);
-      res += '.';
+      res.Add_Dot();
       res.Add_UInt32(_h.Minor);
       prop = res;
       break;
@@ -1979,7 +1976,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -2043,40 +2040,29 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     }
     case kpidPosixAttrib:
     {
-      if (node.Type != 0 && node.Type < ARRAY_SIZE(k_TypeToMode))
+      if (node.Type != 0 && node.Type < Z7_ARRAY_SIZE(k_TypeToMode))
         prop = (UInt32)(node.Mode & 0xFFF) | k_TypeToMode[node.Type];
       break;
     }
     case kpidUserId:
-    {
-      const UInt32 offset = (UInt32)node.Uid * 4;
-      if (offset < _uids.Size())
-        prop = (UInt32)Get32(_uids + offset);
-      break;
-    }
     case kpidGroupId:
     {
-      if (_h.Major < 4)
+      UInt32 id = node.Uid;
+      const CByteBuffer *ids = &_uids;
+      if (propID == kpidGroupId)
       {
-        if (node.Gid == _h.GetSpecGuidIndex())
+        id = node.Gid;
+        if (_h.Major < 4)
         {
-          const UInt32 offset = (UInt32)node.Uid * 4;
-          if (offset < _uids.Size())
-            prop = (UInt32)Get32(_uids + offset);
-        }
-        else
-        {
-          const UInt32 offset = (UInt32)node.Gid * 4;
-          if (offset < _gids.Size())
-            prop = (UInt32)Get32(_gids + offset);
+          if (id == _h.GetSpecGuidIndex())
+            id = node.Uid;
+          else
+            ids = &_gids;
         }
       }
-      else
-      {
-        const UInt32 offset = (UInt32)node.Gid * 4;
-        if (offset < _uids.Size())
-          prop = (UInt32)Get32(_uids + offset);
-      }
+      const UInt32 offset = (UInt32)id * 4;
+      if (offset < ids->Size())
+        prop = (UInt32)Get32(*ids + offset);
       break;
     }
     /*
@@ -2093,7 +2079,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
 class CSquashfsInStream: public CCachedInStream
 {
-  HRESULT ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize);
+  HRESULT ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize) Z7_override;
 public:
   CHandler *Handler;
 };
@@ -2139,7 +2125,7 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
       packBlockSize != _cachedPackBlockSize)
   {
     ClearCache();
-    RINOK(Seek2(blockOffset));
+    RINOK(Seek2(blockOffset))
     _limitedInStreamSpec->Init(packBlockSize);
     
     if (compressed)
@@ -2148,7 +2134,7 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
       bool outBufWasWritten;
       UInt32 outBufWasWrittenSize;
       HRESULT res = Decompress(_outStream, _cachedBlock, &outBufWasWritten, &outBufWasWrittenSize, packBlockSize, _h.BlockSize);
-      RINOK(res);
+      RINOK(res)
       if (outBufWasWritten)
         _cachedUnpackBlockSize = outBufWasWrittenSize;
       else
@@ -2158,7 +2144,7 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
     {
       if (packBlockSize > _h.BlockSize)
         return S_FALSE;
-      RINOK(ReadStream_FALSE(_limitedInStream, _cachedBlock, packBlockSize));
+      RINOK(ReadStream_FALSE(_limitedInStream, _cachedBlock, packBlockSize))
       _cachedUnpackBlockSize = packBlockSize;
     }
     _cachedBlockStartPos = blockOffset;
@@ -2171,11 +2157,11 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -2204,21 +2190,21 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
     lps->InSize = totalPackSize;
     lps->OutSize = totalSize;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
     CMyComPtr<ISequentialOutStream> outStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    UInt32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CItem &item = _items[index];
     const CNode &node = _nodes[item.Node];
-    RINOK(extractCallback->GetStream(index, &outStream, askMode));
+    RINOK(extractCallback->GetStream(index, &outStream, askMode))
     // const Byte *p = _data + item.Offset;
 
     if (node.IsDir())
     {
-      RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->PrepareOperation(askMode))
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
       continue;
     }
     UInt64 unpackSize = node.GetSize();
@@ -2229,7 +2215,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     if (!testMode && !outStream)
       continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
 
     int res = NExtract::NOperationResult::kDataError;
     {
@@ -2243,7 +2229,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       }
       else
       {
-        RINOK(hres);
+        RINOK(hres)
         {
           hres = copyCoder->Code(inSeqStream, outStream, NULL, NULL, progress);
           if (hres == S_OK)
@@ -2257,13 +2243,13 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           }
           else if (hres != S_FALSE)
           {
-            RINOK(hres);
+            RINOK(hres)
           }
         }
       }
     }
 
-    RINOK(extractCallback->SetOperationResult(res));
+    RINOK(extractCallback->SetOperationResult(res))
   }
   
   return S_OK;
@@ -2271,7 +2257,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 }
 
 
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 index, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
 
@@ -2331,7 +2317,7 @@ static const Byte k_Signature[] = {
     4, 'q', 's', 'h', 's' };
 
 REGISTER_ARC_I(
-  "SquashFS", "squashfs", 0, 0xD2,
+  "SquashFS", "squashfs", NULL, 0xD2,
   k_Signature,
   0,
   NArcInfoFlags::kMultiSignature,

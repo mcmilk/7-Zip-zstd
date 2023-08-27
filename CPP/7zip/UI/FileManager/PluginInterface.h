@@ -1,31 +1,32 @@
 // PluginInterface.h
 
-#ifndef __PLUGIN_INTERFACE_H
-#define __PLUGIN_INTERFACE_H
+#ifndef ZIP7_INC_PLUGIN_INTERFACE_H
+#define ZIP7_INC_PLUGIN_INTERFACE_H
 
 /*
-#include "../../../Common/Types.h"
+#include "../../../../C/7zTypes.h"
 #include "../../IDecl.h"
 
-#define PLUGIN_INTERFACE(i, x) DECL_INTERFACE(i, 0x0A, x)
+#define Z7_IFACE_CONSTR_PLUGIN(i, n) \
+  Z7_DECL_IFACE_7ZIP(i, 0x0A, n) \
+  { Z7_IFACE_COM7_PURE(i) };
 
-PLUGIN_INTERFACE(IInitContextMenu, 0x00)
-{
-  STDMETHOD(InitContextMenu)(const wchar_t *folder, const wchar_t * const *names, UInt32 numFiles) PURE;
-};
+#define Z7_IFACEM_IInitContextMenu(x) \
+  x(InitContextMenu(const wchar_t *folder, const wchar_t * const *names, UInt32 numFiles)) \
 
-PLUGIN_INTERFACE(IPluginOptionsCallback, 0x01)
-{
-  STDMETHOD(GetProgramFolderPath)(BSTR *value) PURE;
-  STDMETHOD(GetProgramPath)(BSTR *value) PURE;
-  STDMETHOD(GetRegistryCUPath)(BSTR *value) PURE;
-};
+Z7_IFACE_CONSTR_PLUGIN(IInitContextMenu, 0x00)
 
-PLUGIN_INTERFACE(IPluginOptions, 0x02)
-{
-  STDMETHOD(PluginOptions)(HWND hWnd, IPluginOptionsCallback *callback) PURE;
-  // STDMETHOD(GetFileExtensions)(BSTR *extensions) PURE;
-};
+#define Z7_IFACEM_IPluginOptionsCallback(x) \
+  x(GetProgramFolderPath(BSTR *value)) \
+  x(GetProgramPath(BSTR *value)) \
+  x(GetRegistryCUPath(BSTR *value)) \
+
+Z7_IFACE_CONSTR_PLUGIN(IPluginOptionsCallback, 0x01)
+
+#define Z7_IFACEM_IPluginOptions(x) \
+  x(PluginOptions(HWND hWnd, IPluginOptionsCallback *callback)) \
+  // x(GetFileExtensions(BSTR *extensions))
+
+Z7_IFACE_CONSTR_PLUGIN(IPluginOptions, 0x02)
 */
-
 #endif

@@ -198,7 +198,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     while (i);
   }
   
-  RINOK(outBuffer.Flush());
+  RINOK(outBuffer.Flush())
 
   if (res == S_OK)
     if (_fullStreamMode)
@@ -216,8 +216,8 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
 }
 
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
   // catch(const CInBufferException &e) { return e.ErrorCode; }
@@ -227,14 +227,14 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
 }
 
 
-STDMETHODIMP CDecoder::SetFinishMode(UInt32 finishMode)
+Z7_COM7F_IMF(CDecoder::SetFinishMode(UInt32 finishMode))
 {
   _fullStreamMode = (finishMode != 0);
   return S_OK;
 }
 
 
-STDMETHODIMP CDecoder::GetInStreamProcessedSize(UInt64 *value)
+Z7_COM7F_IMF(CDecoder::GetInStreamProcessedSize(UInt64 *value))
 {
   *value = _inProcessed;
   return S_OK;

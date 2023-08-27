@@ -1,7 +1,7 @@
 // DeflateConst.h
 
-#ifndef __DEFLATE_CONST_H
-#define __DEFLATE_CONST_H
+#ifndef ZIP7_INC_DEFLATE_CONST_H
+#define ZIP7_INC_DEFLATE_CONST_H
 
 namespace NCompress {
 namespace NDeflate {

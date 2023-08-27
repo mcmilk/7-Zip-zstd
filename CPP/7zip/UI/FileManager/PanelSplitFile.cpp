@@ -30,7 +30,7 @@ struct CVolSeqName
 {
   UString UnchangedPart;
   UString ChangedPart;
-  CVolSeqName(): ChangedPart("000") {};
+  CVolSeqName(): ChangedPart("000") {}
 
   void SetNumDigits(UInt64 numVolumes)
   {
@@ -64,13 +64,13 @@ UString CVolSeqName::GetNextName()
 {
   for (int i = (int)ChangedPart.Len() - 1; i >= 0; i--)
   {
-    wchar_t c = ChangedPart[i];
+    const wchar_t c = ChangedPart[i];
     if (c != L'9')
     {
-      ChangedPart.ReplaceOneCharAtPos(i, (wchar_t)(c + 1));
+      ChangedPart.ReplaceOneCharAtPos((unsigned)i, (wchar_t)(c + 1));
       break;
     }
-    ChangedPart.ReplaceOneCharAtPos(i, L'0');
+    ChangedPart.ReplaceOneCharAtPos((unsigned)i, L'0');
     if (i == 0)
       ChangedPart.InsertAtFront(L'1');
   }
@@ -79,7 +79,7 @@ UString CVolSeqName::GetNextName()
 
 class CThreadSplit: public CProgressThreadVirt
 {
-  HRESULT ProcessVirt();
+  HRESULT ProcessVirt() Z7_override;
 public:
   FString FilePath;
   FString VolBasePath;
@@ -142,7 +142,7 @@ HRESULT CThreadSplit::ProcessVirt()
 {
   NIO::CInFile inFile;
   if (!inFile.Open(FilePath))
-    return GetLastError();
+    return GetLastError_noZero_HRESULT();
 
   CPreAllocOutFile outFile;
   
@@ -155,7 +155,7 @@ HRESULT CThreadSplit::ProcessVirt()
   
   UInt64 length;
   if (!inFile.GetLength(length))
-    return GetLastError();
+    return GetLastError_noZero_HRESULT();
   
   CProgressSync &sync = Sync;
   sync.Set_NumBytesTotal(length);
@@ -181,7 +181,7 @@ HRESULT CThreadSplit::ProcessVirt()
     }
     UInt32 processedSize;
     if (!inFile.Read(buffer, needSize, processedSize))
-      return GetLastError();
+      return GetLastError_noZero_HRESULT();
     if (processedSize == 0)
       return S_OK;
     needSize = processedSize;
@@ -189,12 +189,12 @@ HRESULT CThreadSplit::ProcessVirt()
     if (outFile.Written == 0)
     {
       FString name = VolBasePath;
-      name += '.';
+      name.Add_Dot();
       name += us2fs(seqName.GetNextName());
       sync.Set_FilePath(fs2us(name));
       if (!outFile.File.Create(name, false))
       {
-        HRESULT res = GetLastError();
+        const HRESULT res = GetLastError_noZero_HRESULT();
         AddErrorPath(name);
         return res;
       }
@@ -209,7 +209,7 @@ HRESULT CThreadSplit::ProcessVirt()
     }
     
     if (!outFile.Write(buffer, needSize, processedSize))
-      return GetLastError();
+      return GetLastError_noZero_HRESULT();
     if (needSize != processedSize)
       throw g_Message_FileWriteError;
     
@@ -225,7 +225,7 @@ HRESULT CThreadSplit::ProcessVirt()
 
     if (pos - prev >= ((UInt32)1 << 22) || outFile.Written == 0)
     {
-      RINOK(sync.Set_NumBytesCur(pos));
+      RINOK(sync.Set_NumBytesCur(pos))
       prev = pos;
     }
   }
@@ -234,7 +234,7 @@ HRESULT CThreadSplit::ProcessVirt()
 
 void CApp::Split()
 {
-  int srcPanelIndex = GetFocusedPanelIndex();
+  const unsigned srcPanelIndex = GetFocusedPanelIndex();
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.Is_IO_FS_Folder())
   {
@@ -242,7 +242,7 @@ void CApp::Split()
     return;
   }
   CRecordVector<UInt32> indices;
-  srcPanel.GetOperatedItemIndices(indices);
+  srcPanel.Get_ItemIndices_Operated(indices);
   if (indices.IsEmpty())
     return;
   if (indices.Size() != 1)
@@ -250,7 +250,7 @@ void CApp::Split()
     srcPanel.MessageBox_Error_LangID(IDS_SELECT_ONE_FILE);
     return;
   }
-  int index = indices[0];
+  const unsigned index = indices[0];
   if (srcPanel.IsItem_Folder(index))
   {
     srcPanel.MessageBox_Error_LangID(IDS_SELECT_ONE_FILE);
@@ -258,7 +258,7 @@ void CApp::Split()
   }
   const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
+  const UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
   unsigned destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
   CPanel &destPanel = Panels[destPanelIndex];
@@ -297,7 +297,7 @@ void CApp::Split()
   NName::NormalizeDirPathPrefix(path);
   if (!CreateComplexDir(us2fs(path)))
   {
-    DWORD lastError = ::GetLastError();
+    const HRESULT lastError = GetLastError_noZero_HRESULT();
     srcPanel.MessageBox_Error_2Lines_Message_HRESULT(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, path), lastError);
     return;
   }
@@ -308,8 +308,8 @@ void CApp::Split()
 
   CProgressDialog &progressDialog = spliter;
 
-  UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);
-  UString title = LangString(IDS_SPLITTING);
+  const UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);
+  const UString title = LangString(IDS_SPLITTING);
 
   progressDialog.ShowCompressionInfo = false;
 
@@ -344,7 +344,7 @@ void CApp::Split()
 
 class CThreadCombine: public CProgressThreadVirt
 {
-  HRESULT ProcessVirt();
+  HRESULT ProcessVirt() Z7_override;
 public:
   FString InputDirPrefix;
   FStringVector Names;
@@ -357,7 +357,7 @@ HRESULT CThreadCombine::ProcessVirt()
   NIO::COutFile outFile;
   if (!outFile.Create(OutputPath, false))
   {
-    HRESULT res = GetLastError();
+    const HRESULT res = GetLastError_noZero_HRESULT();
     AddErrorPath(OutputPath);
     return res;
   }
@@ -376,7 +376,7 @@ HRESULT CThreadCombine::ProcessVirt()
     const FString nextName = InputDirPrefix + Names[i];
     if (!inFile.Open(nextName))
     {
-      HRESULT res = GetLastError();
+      const HRESULT res = GetLastError_noZero_HRESULT();
       AddErrorPath(nextName);
       return res;
     }
@@ -386,23 +386,23 @@ HRESULT CThreadCombine::ProcessVirt()
       UInt32 processedSize;
       if (!inFile.Read(buffer, kBufSize, processedSize))
       {
-        HRESULT res = GetLastError();
+        const HRESULT res = GetLastError_noZero_HRESULT();
         AddErrorPath(nextName);
         return res;
       }
       if (processedSize == 0)
         break;
-      UInt32 needSize = processedSize;
+      const UInt32 needSize = processedSize;
       if (!outFile.Write(buffer, needSize, processedSize))
       {
-        HRESULT res = GetLastError();
+        const HRESULT res = GetLastError_noZero_HRESULT();
         AddErrorPath(OutputPath);
         return res;
       }
       if (needSize != processedSize)
         throw g_Message_FileWriteError;
       pos += processedSize;
-      RINOK(sync.Set_NumBytesCur(pos));
+      RINOK(sync.Set_NumBytesCur(pos))
     }
   }
   return S_OK;
@@ -418,7 +418,7 @@ static void AddInfoFileName(UString &dest, const UString &name)
 
 void CApp::Combine()
 {
-  int srcPanelIndex = GetFocusedPanelIndex();
+  const unsigned srcPanelIndex = GetFocusedPanelIndex();
   CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
@@ -426,10 +426,10 @@ void CApp::Combine()
     return;
   }
   CRecordVector<UInt32> indices;
-  srcPanel.GetOperatedItemIndices(indices);
+  srcPanel.Get_ItemIndices_Operated(indices);
   if (indices.IsEmpty())
     return;
-  int index = indices[0];
+  const unsigned index = indices[0];
   if (indices.Size() != 1 || srcPanel.IsItem_Folder(index))
   {
     srcPanel.MessageBox_Error_LangID(IDS_COMBINE_SELECT_ONE_FILE);
@@ -510,7 +510,7 @@ void CApp::Combine()
   NName::NormalizeDirPathPrefix(path);
   if (!CreateComplexDir(us2fs(path)))
   {
-    DWORD lastError = ::GetLastError();
+    const HRESULT lastError = GetLastError_noZero_HRESULT();
     srcPanel.MessageBox_Error_2Lines_Message_HRESULT(MyFormatNew(IDS_CANNOT_CREATE_FOLDER, path), lastError);
     return;
   }
@@ -537,8 +537,8 @@ void CApp::Combine()
     CProgressDialog &progressDialog = combiner;
     progressDialog.ShowCompressionInfo = false;
   
-    UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);
-    UString title = LangString(IDS_COMBINING);
+    const UString progressWindowTitle ("7-Zip"); // LangString(IDS_APP_TITLE, 0x03000000);
+    const UString title = LangString(IDS_COMBINING);
     
     progressDialog.MainWindow = _window;
     progressDialog.MainTitle = progressWindowTitle;

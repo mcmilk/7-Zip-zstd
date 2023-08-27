@@ -15,7 +15,7 @@ void CPanel::OnShiftSelectMessage()
 {
   if (!_mySelectMode)
     return;
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
   if (!_selectionIsDefined)
@@ -26,7 +26,7 @@ void CPanel::OnShiftSelectMessage()
   int numItems = _listView.GetItemCount();
   for (int i = 0; i < numItems; i++)
   {
-    int realIndex = GetRealItemIndex(i);
+    const unsigned realIndex = GetRealItemIndex(i);
     if (realIndex == kParentIndex)
       continue;
     if (i >= startItem && i <= finishItem)
@@ -44,10 +44,10 @@ void CPanel::OnArrowWithShift()
 {
   if (!_mySelectMode)
     return;
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int realIndex = GetRealItemIndex(focusedItem);
+  const unsigned realIndex = GetRealItemIndex(focusedItem);
   
   if (_selectionIsDefined)
   {
@@ -84,11 +84,11 @@ void CPanel::OnInsert()
   // _listView.SetItemState_Selected(focusedItem);
   */
 
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
   
-  int realIndex = GetRealItemIndex(focusedItem);
+  const unsigned realIndex = GetRealItemIndex(focusedItem);
   if (realIndex != kParentIndex)
   {
     bool isSelected = !_selectedStatusVector[realIndex];
@@ -109,10 +109,10 @@ void CPanel::OnInsert()
 /*
 void CPanel::OnUpWithShift()
 {
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int index = GetRealItemIndex(focusedItem);
+  const int index = GetRealItemIndex(focusedItem);
   if (index == kParentIndex)
     return;
   _selectedStatusVector[index] = !_selectedStatusVector[index];
@@ -121,10 +121,10 @@ void CPanel::OnUpWithShift()
 
 void CPanel::OnDownWithShift()
 {
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int index = GetRealItemIndex(focusedItem);
+  const int index = GetRealItemIndex(focusedItem);
   if (index == kParentIndex)
     return;
   _selectedStatusVector[index] = !_selectedStatusVector[index];
@@ -141,7 +141,7 @@ void CPanel::UpdateSelection()
     int numItems = _listView.GetItemCount();
     for (int i = 0; i < numItems; i++)
     {
-      int realIndex = GetRealItemIndex(i);
+      const unsigned realIndex = GetRealItemIndex(i);
       if (realIndex != kParentIndex)
         _listView.SetItemState_Selected(i, _selectedStatusVector[realIndex]);
     }
@@ -168,10 +168,10 @@ void CPanel::SelectSpec(bool selectMode)
 
 void CPanel::SelectByType(bool selectMode)
 {
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int realIndex = GetRealItemIndex(focusedItem);
+  const unsigned realIndex = GetRealItemIndex(focusedItem);
   UString name = GetItemName(realIndex);
   bool isItemFolder = IsItem_Folder(realIndex);
 
@@ -214,10 +214,12 @@ void CPanel::InvertSelection()
 {
   if (!_mySelectMode)
   {
+    /*
     unsigned numSelected = 0;
     FOR_VECTOR (i, _selectedStatusVector)
       if (_selectedStatusVector[i])
         numSelected++;
+    */
     // 17.02: fixed : now we invert item even, if single item is selected
     /*
     if (numSelected == 1)
@@ -225,7 +227,7 @@ void CPanel::InvertSelection()
       int focused = _listView.GetFocusedItem();
       if (focused >= 0)
       {
-        int realIndex = GetRealItemIndex(focused);
+        const unsigned realIndex = GetRealItemIndex(focused);
         if (realIndex >= 0)
           if (_selectedStatusVector[realIndex])
             _selectedStatusVector[realIndex] = false;
@@ -251,7 +253,7 @@ void CPanel::KillSelection()
     {
       // CPanel::OnItemChanged notify for LVIS_SELECTED change doesn't work here. Why?
       // so we change _selectedStatusVector[realIndex] here.
-      int realIndex = GetRealItemIndex(focused);
+      const unsigned realIndex = GetRealItemIndex(focused);
       if (realIndex != kParentIndex)
         _selectedStatusVector[realIndex] = true;
       _listView.SetItemState_Selected(focused);
@@ -273,19 +275,19 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
   if ((itemActivate->uKeyFlags & LVKF_SHIFT) != 0)
   {
     // int focusedIndex = _listView.GetFocusedItem();
-    int focusedIndex = _startGroupSelect;
+    const int focusedIndex = _startGroupSelect;
     if (focusedIndex < 0)
       return;
-    int startItem = MyMin(focusedIndex, indexInList);
-    int finishItem = MyMax(focusedIndex, indexInList);
+    const int startItem = MyMin(focusedIndex, indexInList);
+    const int finishItem = MyMax(focusedIndex, indexInList);
 
-    int numItems = _listView.GetItemCount();
+    const int numItems = _listView.GetItemCount();
     for (int i = 0; i < numItems; i++)
     {
-      int realIndex = GetRealItemIndex(i);
+      const unsigned realIndex = GetRealItemIndex(i);
       if (realIndex == kParentIndex)
         continue;
-      bool selected = (i >= startItem && i <= finishItem);
+      const bool selected = (i >= startItem && i <= finishItem);
       if (_selectedStatusVector[realIndex] != selected)
       {
         _selectedStatusVector[realIndex] = selected;
@@ -301,7 +303,7 @@ void CPanel::OnLeftClick(MY_NMLISTVIEW_NMITEMACTIVATE *itemActivate)
     #ifndef UNDER_CE
     if ((itemActivate->uKeyFlags & LVKF_CONTROL) != 0)
     {
-      int realIndex = GetRealItemIndex(indexInList);
+      const unsigned realIndex = GetRealItemIndex(indexInList);
       if (realIndex != kParentIndex)
       {
         _selectedStatusVector[realIndex] = !_selectedStatusVector[realIndex];

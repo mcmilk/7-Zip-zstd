@@ -1,7 +1,7 @@
 // BitmDecoder.h -- the Most Significant Bit of byte is First
 
-#ifndef __BITM_DECODER_H
-#define __BITM_DECODER_H
+#ifndef ZIP7_INC_BITM_DECODER_H
+#define ZIP7_INC_BITM_DECODER_H
 
 #include "../IStream.h"
 
@@ -47,28 +47,28 @@ public:
     return (_stream.NumExtraBytes > 4);
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   void Normalize()
   {
     for (; _bitPos >= 8; _bitPos -= 8)
       _value = (_value << 8) | _stream.ReadByte();
   }
 
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 GetValue(unsigned numBits) const
   {
     // return (_value << _bitPos) >> (kNumBigValueBits - numBits);
     return ((_value >> (8 - _bitPos)) & kMask) >> (kNumValueBits - numBits);
   }
 
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   void MovePos(unsigned numBits)
   {
     _bitPos += numBits;
     Normalize();
   }
 
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     UInt32 res = GetValue(numBits);
@@ -91,7 +91,7 @@ public:
 
   void AlignToByte() { MovePos((kNumBigValueBits - _bitPos) & 7); }
 
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 ReadAlignBits() { return ReadBits((kNumBigValueBits - _bitPos) & 7); }
 };
 

@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <string.h>
+
 #include "../../../C/CpuArch.h"
 
 #include "HmacSha256.h"

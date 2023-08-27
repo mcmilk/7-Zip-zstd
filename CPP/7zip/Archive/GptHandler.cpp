@@ -30,10 +30,9 @@ API_FUNC_IsArc IsArc_Fat(const Byte *p, size_t size);
 
 namespace NGpt {
 
-#define SIGNATURE { 'E', 'F', 'I', ' ', 'P', 'A', 'R', 'T', 0, 0, 1, 0 }
-  
 static const unsigned k_SignatureSize = 12;
-static const Byte k_Signature[k_SignatureSize] = SIGNATURE;
+static const Byte k_Signature[k_SignatureSize] =
+    { 'E', 'F', 'I', ' ', 'P', 'A', 'R', 'T', 0, 0, 1, 0 };
 
 static const UInt32 kSectorSize = 512;
 
@@ -93,29 +92,29 @@ struct CPartType
 
 static const CPartType kPartTypes[] =
 {
-  // { 0x0, 0, "Unused" },
+  // { 0x0, NULL, "Unused" },
 
-  { 0x21686148, 0, "BIOS Boot" },
+  { 0x21686148, NULL, "BIOS Boot" },
 
-  { 0xC12A7328, 0, "EFI System" },
-  { 0x024DEE41, 0, "MBR" },
+  { 0xC12A7328, NULL, "EFI System" },
+  { 0x024DEE41, NULL, "MBR" },
       
-  { 0xE3C9E316, 0, "Windows MSR" },
-  { 0xEBD0A0A2, 0, "Windows BDP" },
-  { 0x5808C8AA, 0, "Windows LDM Metadata" },
-  { 0xAF9B60A0, 0, "Windows LDM Data" },
-  { 0xDE94BBA4, 0, "Windows Recovery" },
-  // { 0x37AFFC90, 0, "IBM GPFS" },
-  // { 0xE75CAF8F, 0, "Windows Storage Spaces" },
+  { 0xE3C9E316, NULL, "Windows MSR" },
+  { 0xEBD0A0A2, NULL, "Windows BDP" },
+  { 0x5808C8AA, NULL, "Windows LDM Metadata" },
+  { 0xAF9B60A0, NULL, "Windows LDM Data" },
+  { 0xDE94BBA4, NULL, "Windows Recovery" },
+  // { 0x37AFFC90, NULL, "IBM GPFS" },
+  // { 0xE75CAF8F, NULL, "Windows Storage Spaces" },
 
-  { 0x0FC63DAF, 0, "Linux Data" },
-  { 0x0657FD6D, 0, "Linux Swap" },
+  { 0x0FC63DAF, NULL, "Linux Data" },
+  { 0x0657FD6D, NULL, "Linux Swap" },
 
-  { 0x83BD6B9D, 0, "FreeBSD Boot" },
-  { 0x516E7CB4, 0, "FreeBSD Data" },
-  { 0x516E7CB5, 0, "FreeBSD Swap" },
+  { 0x83BD6B9D, NULL, "FreeBSD Boot" },
+  { 0x516E7CB4, NULL, "FreeBSD Data" },
+  { 0x516E7CB5, NULL, "FreeBSD Swap" },
   { 0x516E7CB6, "ufs", "FreeBSD UFS" },
-  { 0x516E7CB8, 0, "FreeBSD Vinum" },
+  { 0x516E7CB8, NULL, "FreeBSD Vinum" },
   { 0x516E7CB8, "zfs", "FreeBSD ZFS" },
 
   { 0x48465300, "hfsx", "HFS+" },
@@ -124,10 +123,10 @@ static const CPartType kPartTypes[] =
 
 static int FindPartType(const Byte *guid)
 {
-  UInt32 val = Get32(guid);
-  for (unsigned i = 0; i < ARRAY_SIZE(kPartTypes); i++)
+  const UInt32 val = Get32(guid);
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(kPartTypes); i++)
     if (kPartTypes[i].Id == val)
-      return i;
+      return (int)i;
   return -1;
 }
 
@@ -139,8 +138,10 @@ static void RawLeGuidToString_Upper(const Byte *g, char *s)
 }
 
 
-class CHandler: public CHandlerCont
+Z7_class_CHandler_final: public CHandlerCont
 {
+  Z7_IFACE_COM7_IMP(IInArchive_Cont)
+
   CRecordVector<CPartition> _items;
   UInt64 _totalSize;
   Byte Guid[16];
@@ -149,23 +150,20 @@ class CHandler: public CHandlerCont
 
   HRESULT Open2(IInStream *stream);
 
-  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const
+  virtual int GetItem_ExtractInfo(UInt32 index, UInt64 &pos, UInt64 &size) const Z7_override
   {
     const CPartition &item = _items[index];
     pos = item.GetPos();
     size = item.GetSize();
     return NExtract::NOperationResult::kOK;
   }
-
-public:
-  INTERFACE_IInArchive_Cont(;)
 };
 
 
 HRESULT CHandler::Open2(IInStream *stream)
 {
   _buffer.Alloc(kSectorSize * 2);
-  RINOK(ReadStream_FALSE(stream, _buffer, kSectorSize * 2));
+  RINOK(ReadStream_FALSE(stream, _buffer, kSectorSize * 2))
   
   const Byte *buf = _buffer;
   if (buf[0x1FE] != 0x55 || buf[0x1FF] != 0xAA)
@@ -180,24 +178,24 @@ HRESULT CHandler::Open2(IInStream *stream)
     if (headerSize > kSectorSize)
       return S_FALSE;
     UInt32 crc = Get32(buf + 0x10);
-    SetUi32(_buffer + kSectorSize + 0x10, 0);
+    SetUi32(_buffer + kSectorSize + 0x10, 0)
     if (CrcCalc(_buffer + kSectorSize, headerSize) != crc)
       return S_FALSE;
   }
   // UInt32 reserved = Get32(buf + 0x14);
-  UInt64 curLba = Get64(buf + 0x18);
+  const UInt64 curLba = Get64(buf + 0x18);
   if (curLba != 1)
     return S_FALSE;
-  UInt64 backupLba = Get64(buf + 0x20);
+  const UInt64 backupLba = Get64(buf + 0x20);
   // UInt64 firstUsableLba = Get64(buf + 0x28);
   // UInt64 lastUsableLba = Get64(buf + 0x30);
   memcpy(Guid, buf + 0x38, 16);
-  UInt64 tableLba = Get64(buf + 0x48);
+  const UInt64 tableLba = Get64(buf + 0x48);
   if (tableLba < 2)
     return S_FALSE;
-  UInt32 numEntries = Get32(buf + 0x50);
-  UInt32 entrySize = Get32(buf + 0x54); // = 128 usually
-  UInt32 entriesCrc = Get32(buf + 0x58);
+  const UInt32 numEntries = Get32(buf + 0x50);
+  const UInt32 entrySize = Get32(buf + 0x54); // = 128 usually
+  const UInt32 entriesCrc = Get32(buf + 0x58);
   
   if (entrySize < 128
       || entrySize > (1 << 12)
@@ -206,12 +204,12 @@ HRESULT CHandler::Open2(IInStream *stream)
       || tableLba >= ((UInt64)1 << (64 - 10)))
     return S_FALSE;
   
-  UInt32 tableSize = entrySize * numEntries;
-  UInt32 tableSizeAligned = (tableSize + kSectorSize - 1) & ~(kSectorSize - 1);
+  const UInt32 tableSize = entrySize * numEntries;
+  const UInt32 tableSizeAligned = (tableSize + kSectorSize - 1) & ~(kSectorSize - 1);
   _buffer.Alloc(tableSizeAligned);
-  UInt64 tableOffset = tableLba * kSectorSize;
-  RINOK(stream->Seek(tableOffset, STREAM_SEEK_SET, NULL));
-  RINOK(ReadStream_FALSE(stream, _buffer, tableSizeAligned));
+  const UInt64 tableOffset = tableLba * kSectorSize;
+  RINOK(InStream_SeekSet(stream, tableOffset))
+  RINOK(ReadStream_FALSE(stream, _buffer, tableSizeAligned))
   
   if (CrcCalc(_buffer, tableSize) != entriesCrc)
     return S_FALSE;
@@ -238,7 +236,7 @@ HRESULT CHandler::Open2(IInStream *stream)
 
   {
     UInt64 fileEnd;
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &fileEnd));
+    RINOK(InStream_GetSize_SeekToEnd(stream, fileEnd))
     
     if (_totalSize < fileEnd)
     {
@@ -246,7 +244,7 @@ HRESULT CHandler::Open2(IInStream *stream)
       const UInt64 kRemMax = 1 << 22;
       if (rem <= kRemMax)
       {
-        RINOK(stream->Seek(_totalSize, STREAM_SEEK_SET, NULL));
+        RINOK(InStream_SeekSet(stream, _totalSize))
         bool areThereNonZeros = false;
         UInt64 numZeros = 0;
         if (ReadZeroTail(stream, areThereNonZeros, numZeros, kRemMax) == S_OK)
@@ -269,7 +267,7 @@ static bool IsNtfs(const Byte *p)
 {
   if (p[0x1FE] != 0x55 || p[0x1FF] != 0xAA)
     return false;
-  if (memcmp(p + 3, k_NtfsSignature, ARRAY_SIZE(k_NtfsSignature)) != 0)
+  if (memcmp(p + 3, k_NtfsSignature, Z7_ARRAY_SIZE(k_NtfsSignature)) != 0)
     return false;
   switch (p[0])
   {
@@ -281,13 +279,13 @@ static bool IsNtfs(const Byte *p)
 }
 
 
-STDMETHODIMP CHandler::Open(IInStream *stream,
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback * /* openArchiveCallback */)
+    IArchiveOpenCallback * /* openArchiveCallback */))
 {
   COM_TRY_BEGIN
   Close();
-  RINOK(Open2(stream));
+  RINOK(Open2(stream))
   _stream = stream;
 
   FOR_VECTOR (fileIndex, _items)
@@ -305,7 +303,9 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     if (t.Type && IsString1PrefixedByString2_NoCase_Ascii(t.Type, "Windows"))
     {
       CMyComPtr<ISequentialInStream> inStream;
-      if (GetStream(fileIndex, &inStream) == S_OK && inStream)
+      if (
+          // ((IInArchiveGetStream *)this)->
+          GetStream(fileIndex, &inStream) == S_OK && inStream)
       {
         Byte temp[k_Ntfs_Fat_HeaderSize];
         if (ReadStream_FAIL(inStream, temp, k_Ntfs_Fat_HeaderSize) == S_OK)
@@ -329,7 +329,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _totalSize = 0;
   memset(Guid, 0, sizeof(Guid));
@@ -356,7 +356,7 @@ static const Byte kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -382,13 +382,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -414,12 +414,12 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         }
         if (!s2.IsEmpty())
         {
-          s += '.';
+          s.Add_Dot();
           s += s2;
         }
       }
       {
-        s += '.';
+        s.Add_Dot();
         s += (item.Ext ? item.Ext : "img");
       }
       prop = s;

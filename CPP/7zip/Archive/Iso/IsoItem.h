@@ -1,7 +1,7 @@
 // Archive/IsoItem.h
 
-#ifndef __ARCHIVE_ISO_ITEM_H
-#define __ARCHIVE_ISO_ITEM_H
+#ifndef ZIP7_INC_ARCHIVE_ISO_ITEM_H
+#define ZIP7_INC_ARCHIVE_ISO_ITEM_H
 
 #include "../../../../C/CpuArch.h"
 
@@ -31,7 +31,7 @@ struct CRecordingDateTime
     const bool res = NWindows::NTime::GetSecondsSince1601(Year + 1900, Month, Day, Hour, Minute, Second, v);
     if (res)
     {
-      v -= (Int64)((Int32)GmtOffset * 15 * 60);
+      v = (UInt64)((Int64)v - (Int64)((Int32)GmtOffset * 15 * 60));
       v *= 10000000;
       prop.SetAsTimeFrom_Ft64_Prec(v, k_PropVar_TimePrec_Base);
     }
@@ -101,29 +101,29 @@ struct CDirRecord
   {
     lenRes = 0;
     if (SystemUse.Size() < skipSize)
-      return 0;
+      return NULL;
     const Byte *p = (const Byte *)SystemUse + skipSize;
     unsigned rem = (unsigned)(SystemUse.Size() - skipSize);
     while (rem >= 5)
     {
       unsigned len = p[2];
       if (len < 3 || len > rem)
-        return 0;
+        return NULL;
       if (p[0] == id0 && p[1] == id1 && p[3] == 1)
       {
         if (len < 4)
-          return 0; // Check it
+          return NULL; // Check it
         lenRes = len - 4;
         return p + 4;
       }
       p += len;
       rem -= len;
     }
-    return 0;
+    return NULL;
   }
 
   
-  const Byte* GetNameCur(bool checkSusp, int skipSize, unsigned &nameLenRes) const
+  const Byte* GetNameCur(bool checkSusp, unsigned skipSize, unsigned &nameLenRes) const
   {
     const Byte *res = NULL;
     unsigned len = 0;
@@ -148,7 +148,7 @@ struct CDirRecord
   }
 
 
-  bool GetSymLink(int skipSize, AString &link) const
+  bool GetSymLink(unsigned skipSize, AString &link) const
   {
     link.Empty();
     const Byte *p = NULL;
@@ -185,13 +185,13 @@ struct CDirRecord
 
       for (unsigned i = 0; i < cl; i++)
       {
-        char c = p[i];
+        const Byte c = p[i];
         if (c == 0)
         {
           break;
           // return false;
         }
-        link += c;
+        link += (char)c;
       }
 
       p += cl;
@@ -220,7 +220,7 @@ struct CDirRecord
   }
 
 
-  bool GetPx(int skipSize, unsigned pxType, UInt32 &val) const
+  bool GetPx(unsigned skipSize, unsigned pxType, UInt32 &val) const
   {
     val = 0;
     const Byte *p = NULL;
@@ -229,7 +229,7 @@ struct CDirRecord
     if (!p)
       return false;
     // px.Clear();
-    if (len < ((unsigned)pxType + 1) * 8)
+    if (len < (pxType + 1) * 8)
       return false;
 
     return GetLe32Be32(p + pxType * 8, val);
@@ -302,7 +302,7 @@ struct CDirRecord
   bool CheckSusp(unsigned &startPos) const
   {
     const Byte *p = (const Byte *)SystemUse;
-    unsigned len = (int)SystemUse.Size();
+    const size_t len = SystemUse.Size();
     const unsigned kMinLen = 7;
     if (len < kMinLen)
       return false;

@@ -2,15 +2,15 @@
 // According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
-#ifndef __COMPRESS_RAR3_VM_H
-#define __COMPRESS_RAR3_VM_H
+#ifndef ZIP7_INC_COMPRESS_RAR3_VM_H
+#define ZIP7_INC_COMPRESS_RAR3_VM_H
 
 #include "../../../C/CpuArch.h"
 
 #include "../../Common/MyVector.h"
 
-#define RARVM_STANDARD_FILTERS
-// #define RARVM_VM_ENABLE
+#define Z7_RARVM_STANDARD_FILTERS
+// #define Z7_RARVM_VM_ENABLE
 
 namespace NCompress {
 namespace NRar3 {
@@ -37,7 +37,7 @@ public:
 namespace NVm {
 
 inline UInt32 GetValue32(const void *addr) { return GetUi32(addr); }
-inline void SetValue32(void *addr, UInt32 value) { SetUi32(addr, value); }
+inline void SetValue32(void *addr, UInt32 value) { SetUi32(addr, value) }
 
 const unsigned kNumRegBits = 3;
 const UInt32 kNumRegs = 1 << kNumRegBits;
@@ -58,7 +58,7 @@ namespace NGlobalOffset
 }
 
 
-#ifdef RARVM_VM_ENABLE
+#ifdef Z7_RARVM_VM_ENABLE
 
 enum ECommand
 {
@@ -104,14 +104,14 @@ struct CBlockRef
 
 class CProgram
 {
-  #ifdef RARVM_VM_ENABLE
+  #ifdef Z7_RARVM_VM_ENABLE
   void ReadProgram(const Byte *code, UInt32 codeSize);
 public:
   CRecordVector<CCommand> Commands;
   #endif
   
 public:
-  #ifdef RARVM_STANDARD_FILTERS
+  #ifdef Z7_RARVM_STANDARD_FILTERS
   int StandardFilterIndex;
   #endif
   
@@ -150,7 +150,7 @@ class CVm
     if (byteMode)
       *(Byte *)addr = (Byte)value;
     else
-      SetUi32(addr, value);
+      SetUi32(addr, value)
   }
 
   UInt32 GetFixedGlobalValue32(UInt32 globalOffset) { return GetValue(false, &Mem[kGlobalOffset + globalOffset]); }
@@ -162,7 +162,7 @@ public:
 
 private:
 
-  #ifdef RARVM_VM_ENABLE
+  #ifdef Z7_RARVM_VM_ENABLE
   UInt32 GetOperand32(const COperand *op) const;
   void SetOperand32(const COperand *op, UInt32 val);
   Byte GetOperand8(const COperand *op) const;
@@ -172,7 +172,7 @@ private:
   bool ExecuteCode(const CProgram *prg);
   #endif
   
-  #ifdef RARVM_STANDARD_FILTERS
+  #ifdef Z7_RARVM_STANDARD_FILTERS
   bool ExecuteStandardFilter(unsigned filterIndex);
   #endif
   

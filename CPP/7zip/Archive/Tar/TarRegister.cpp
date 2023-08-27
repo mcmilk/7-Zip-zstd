@@ -12,7 +12,7 @@ namespace NTar {
 static const Byte k_Signature[] = { 'u', 's', 't', 'a', 'r' };
 
 REGISTER_ARC_IO(
-  "tar", "tar ova", 0, 0xEE,
+  "tar", "tar ova", NULL, 0xEE,
   k_Signature,
   NFileHeader::kUstarMagic_Offset,
     NArcInfoFlags::kStartOpen

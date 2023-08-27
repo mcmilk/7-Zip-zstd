@@ -1,5 +1,5 @@
 /* Ppmd8Dec.c -- Ppmd8 (PPMdI) Decoder
-2021-04-13 : Igor Pavlov : Public domain
+2023-04-02 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -8,8 +8,8 @@ This code is based on:
 
 #include "Ppmd8.h"
 
-#define kTop (1 << 24)
-#define kBot (1 << 15)
+#define kTop ((UInt32)1 << 24)
+#define kBot ((UInt32)1 << 15)
 
 #define READ_BYTE(p) IByteIn_Read((p)->Stream.In)
 
@@ -37,9 +37,9 @@ BoolInt Ppmd8_Init_RangeDec(CPpmd8 *p)
 
 #define R p
 
-MY_FORCE_INLINE
-// MY_NO_INLINE
-static void RangeDec_Decode(CPpmd8 *p, UInt32 start, UInt32 size)
+Z7_FORCE_INLINE
+// Z7_NO_INLINE
+static void Ppmd8_RD_Decode(CPpmd8 *p, UInt32 start, UInt32 size)
 {
   start *= R->Range;
   R->Low += start;
@@ -48,13 +48,13 @@ static void RangeDec_Decode(CPpmd8 *p, UInt32 start, UInt32 size)
   RC_NORM_LOCAL(R)
 }
 
-#define RC_Decode(start, size) RangeDec_Decode(p, start, size);
-#define RC_DecodeFinal(start, size) RC_Decode(start, size) RC_NORM_REMOTE(R)
-#define RC_GetThreshold(total) (R->Code / (R->Range /= (total)))
+#define RC_Decode(start, size)  Ppmd8_RD_Decode(p, start, size);
+#define RC_DecodeFinal(start, size)  RC_Decode(start, size)  RC_NORM_REMOTE(R)
+#define RC_GetThreshold(total)  (R->Code / (R->Range /= (total)))
 
 
 #define CTX(ref) ((CPpmd8_Context *)Ppmd8_GetContext(p, ref))
-typedef CPpmd8_Context * CTX_PTR;
+// typedef CPpmd8_Context * CTX_PTR;
 #define SUCCESSOR(p) Ppmd_GET_SUCCESSOR(p)
 void Ppmd8_UpdateModel(CPpmd8 *p);
 
@@ -81,7 +81,7 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
     if ((Int32)(count -= s->Freq) < 0)
     {
       Byte sym;
-      RC_DecodeFinal(0, s->Freq);
+      RC_DecodeFinal(0, s->Freq)
       p->FoundState = s;
       sym = s->Symbol;
       Ppmd8_Update1_0(p);
@@ -96,7 +96,7 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
       if ((Int32)(count -= (++s)->Freq) < 0)
       {
         Byte sym;
-        RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq);
+        RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq)
         p->FoundState = s;
         sym = s->Symbol;
         Ppmd8_Update1(p);
@@ -109,10 +109,10 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
       return PPMD8_SYM_ERROR;
 
     hiCnt -= count;
-    RC_Decode(hiCnt, summFreq - hiCnt);
+    RC_Decode(hiCnt, summFreq - hiCnt)
     
     
-    PPMD_SetAllBitsIn256Bytes(charMask);
+    PPMD_SetAllBitsIn256Bytes(charMask)
     // i = p->MinContext->NumStats - 1;
     // do { MASK((--s)->Symbol) = 0; } while (--i);
     {
@@ -152,7 +152,7 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
       // Ppmd8_UpdateBin(p);
       {
         unsigned freq = s->Freq;
-        CTX_PTR c = CTX(SUCCESSOR(s));
+        CPpmd8_Context *c = CTX(SUCCESSOR(s));
         sym = s->Symbol;
         p->FoundState = s;
         p->PrevSuccess = 1;
@@ -176,7 +176,7 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
     R->Range = (R->Range & ~((UInt32)PPMD_BIN_SCALE - 1)) - size0;
     RC_NORM_LOCAL(R)
     
-    PPMD_SetAllBitsIn256Bytes(charMask);
+    PPMD_SetAllBitsIn256Bytes(charMask)
     MASK(Ppmd8Context_OneState(p->MinContext)->Symbol) = 0;
     p->PrevSuccess = 0;
   }
@@ -227,7 +227,7 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
     see = Ppmd8_MakeEscFreq(p, numMasked, &freqSum);
     freqSum += hiCnt;
     freqSum2 = freqSum;
-    PPMD8_CORRECT_SUM_RANGE(R, freqSum2);
+    PPMD8_CORRECT_SUM_RANGE(R, freqSum2)
 
 
     count = RC_GetThreshold(freqSum2);
@@ -235,7 +235,7 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
     if (count < hiCnt)
     {
       Byte sym;
-      // Ppmd_See_Update(see); // new (see->Summ) value can overflow over 16-bits in some rare cases
+      // Ppmd_See_UPDATE(see) // new (see->Summ) value can overflow over 16-bits in some rare cases
       s = Ppmd8_GetStats(p, p->MinContext);
       hiCnt = count;
 
@@ -248,10 +248,10 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
         }
       }
       s--;
-      RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq);
+      RC_DecodeFinal((hiCnt - count) - s->Freq, s->Freq)
 
       // new (see->Summ) value can overflow over 16-bits in some rare cases
-      Ppmd_See_Update(see);
+      Ppmd_See_UPDATE(see)
       p->FoundState = s;
       sym = s->Symbol;
       Ppmd8_Update2(p);
@@ -261,7 +261,7 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
     if (count >= freqSum2)
       return PPMD8_SYM_ERROR;
     
-    RC_Decode(hiCnt, freqSum2 - hiCnt);
+    RC_Decode(hiCnt, freqSum2 - hiCnt)
     
     // We increase (see->Summ) for sum of Freqs of all non_Masked symbols.
     // new (see->Summ) value can overflow over 16-bits in some rare cases
@@ -277,3 +277,19 @@ int Ppmd8_DecodeSymbol(CPpmd8 *p)
     while (s != s2);
   }
 }
+
+#undef kTop
+#undef kBot
+#undef READ_BYTE
+#undef RC_NORM_BASE
+#undef RC_NORM_1
+#undef RC_NORM
+#undef RC_NORM_LOCAL
+#undef RC_NORM_REMOTE
+#undef R
+#undef RC_Decode
+#undef RC_DecodeFinal
+#undef RC_GetThreshold
+#undef CTX
+#undef SUCCESSOR
+#undef MASK

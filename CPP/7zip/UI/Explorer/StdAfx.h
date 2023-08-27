@@ -1,14 +1,6 @@
 // StdAfx.h
 
-#ifndef __STDAFX_H
-#define __STDAFX_H
-
-// #define _WIN32_WINNT 0x0400
-#define _WIN32_WINNT 0x0500
-#define WINVER _WIN32_WINNT
-
-#include "../../../Common/Common.h"
-
-#include <ShlObj.h>
-
+#if _MSC_VER >= 1800
+#pragma warning(disable : 4464) // relative include path contains '..'
 #endif
+#include "../FileManager/StdAfx.h"
