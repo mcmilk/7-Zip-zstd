@@ -154,7 +154,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
 {
   const UInt32 kNumThreadsMax = BROTLIMT_THREAD_MAX;
-  if (numThreads < 1) numThreads = 1;
+  if (numThreads < 0) numThreads = 0;
   if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   _numThreads = numThreads;
   return S_OK;
