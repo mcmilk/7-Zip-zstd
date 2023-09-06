@@ -101,7 +101,7 @@ typedef struct BROTLIMT_CCtx_s BROTLIMT_CCtx;
  * @inputsize - if zero, becomes some optimal value for the level
  *            - if nonzero, the given value is taken
  */
-BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize, int lgwin);
+BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, uint64_t unpackSize, int level, int inputsize, int lgwin);
 
 /**
  * 2) threaded compression

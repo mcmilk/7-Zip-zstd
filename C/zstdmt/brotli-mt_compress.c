@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "encode.h"
+#include "common/constants.h"
 
 #include "brotli-mt.h"
 #include "memmt.h"
@@ -52,8 +53,11 @@ struct BROTLIMT_CCtx_s {
 	/* levels: 1..BROTLIMT_LEVEL_MAX */
 	int level;
 
-	/* threads: 1..BROTLIMT_THREAD_MAX */
+	/* threads: 0..BROTLIMT_THREAD_MAX */
 	int threads;
+
+	/* size of file/stream to compress if known */
+	uint64_t unpackSize;
 
 	/* should be used for read from input */
 	int inputsize;
@@ -89,7 +93,7 @@ struct BROTLIMT_CCtx_s {
  * Compression
  ****************************************/
 
-BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize, int lgwin)
+BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, uint64_t unpackSize, int level, int inputsize, int lgwin)
 {
 	BROTLIMT_CCtx *ctx;
 	int t;
@@ -100,7 +104,7 @@ BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize, int lg
 		return 0;
 
 	/* check threads value */
-	if (threads < 1 || threads > BROTLIMT_THREAD_MAX)
+	if (threads < 0 || threads > BROTLIMT_THREAD_MAX)
 		return 0;
 
 	/* check level */
@@ -118,27 +122,32 @@ BROTLIMT_CCtx *BROTLIMT_createCCtx(int threads, int level, int inputsize, int lg
 	/* setup ctx */
 	ctx->level = level;
 	ctx->threads = threads;
+	ctx->unpackSize = unpackSize;
 	ctx->insize = 0;
 	ctx->outsize = 0;
 	ctx->frames = 0;
 	ctx->curframe = 0;
 
-	pthread_mutex_init(&ctx->read_mutex, NULL);
-	pthread_mutex_init(&ctx->write_mutex, NULL);
+	if (threads) {
+		pthread_mutex_init(&ctx->read_mutex, NULL);
+		pthread_mutex_init(&ctx->write_mutex, NULL);
 
-	/* free -> busy -> out -> free -> ... */
-	INIT_LIST_HEAD(&ctx->writelist_free);	/* free, can be used */
-	INIT_LIST_HEAD(&ctx->writelist_busy);	/* busy */
-	INIT_LIST_HEAD(&ctx->writelist_done);	/* can be written */
+		/* free -> busy -> out -> free -> ... */
+		INIT_LIST_HEAD(&ctx->writelist_free);	/* free, can be used */
+		INIT_LIST_HEAD(&ctx->writelist_busy);	/* busy */
+		INIT_LIST_HEAD(&ctx->writelist_done);	/* can be written */
 
-	ctx->cwork = (cwork_t *) malloc(sizeof(cwork_t) * threads);
-	if (!ctx->cwork)
-		goto err_cwork;
+		ctx->cwork = (cwork_t *) malloc(sizeof(cwork_t) * threads);
+		if (!ctx->cwork)
+			goto err_cwork;
 
-	for (t = 0; t < threads; t++) {
-		cwork_t *w = &ctx->cwork[t];
-		w->ctx = ctx;
-	}
+		for (t = 0; t < threads; t++) {
+			cwork_t *w = &ctx->cwork[t];
+			w->ctx = ctx;
+		}
+	} else {
+		ctx->cwork = NULL;
+	}		
 
 	return ctx;
 
@@ -323,6 +332,119 @@ static void *pt_compress(void *arg)
 	return 0;
 }
 
+/* single threaded (standard brotli stream, without header/mt-frames) */
+static size_t st_compress(void *arg)
+{
+	BROTLIMT_CCtx *ctx = (BROTLIMT_CCtx *) arg;
+	BrotliEncoderOperation brop = BROTLI_OPERATION_PROCESS;
+	BROTLIMT_Buffer Out;
+	BROTLIMT_Buffer *out = &Out;
+	BROTLIMT_Buffer In;
+	BROTLIMT_Buffer *in = &In;
+	BrotliEncoderState *state;
+	const uint8_t* next_in;
+	uint8_t* next_out;
+	int rv;
+	size_t retval = 0;
+
+	/* allocate space for input buffer (default 1M * level) */
+	in->allocated = ctx->inputsize;
+	in->buf = malloc(in->allocated);
+	if (!in->buf)
+		return MT_ERROR(memory_allocation);
+	next_in = in->buf;
+	in->size = 0;
+
+	/* allocate space for output buffer */
+	out->allocated = out->size = ctx->inputsize / 4;
+	out->buf = malloc(out->size);
+	if (!out->buf) {
+		free(in->buf);
+		return MT_ERROR(memory_allocation);
+	}
+	next_out = out->buf;
+
+	state = BrotliEncoderCreateInstance(NULL, NULL, NULL);
+	if (!state) {
+		free(in->buf);
+		free(out->buf);
+		return MT_ERROR(memory_allocation);
+	}
+
+	BrotliEncoderSetParameter(state, BROTLI_PARAM_QUALITY, (uint32_t)ctx->level);
+	if (ctx->lgwin > 0) {
+		/* Specified by user. */
+		/* Do not enable "large-window" extension, if not required. */
+		if (ctx->lgwin > BROTLI_MAX_WINDOW_BITS) {
+			BrotliEncoderSetParameter(state, BROTLI_PARAM_LARGE_WINDOW, 1u);
+		}
+		BrotliEncoderSetParameter(state, BROTLI_PARAM_LGWIN, (uint32_t)ctx->lgwin);
+	} else {
+	  /* 0, or not specified by user; could be chosen by compressor. */
+	  uint32_t lgwin = 24 /* DEFAULT_LGWIN */;
+	  /* Use file size to limit lgwin. */
+	  if (ctx->unpackSize >= 0) {
+	    lgwin = BROTLI_MIN_WINDOW_BITS;
+	    while (BROTLI_MAX_BACKWARD_LIMIT(lgwin) <
+	           (uint64_t)ctx->unpackSize) {
+	      lgwin++;
+	      if (lgwin == BROTLI_MAX_WINDOW_BITS) break;
+	    }
+	  }
+	  BrotliEncoderSetParameter(state, BROTLI_PARAM_LGWIN, lgwin);
+	}
+	if (ctx->unpackSize > 0) {
+		uint32_t size_hint = ctx->unpackSize < (1 << 30) ?
+	    (uint32_t)ctx->unpackSize : (1u << 30);
+		BrotliEncoderSetParameter(state, BROTLI_PARAM_SIZE_HINT, size_hint);
+	}
+
+	while (1) {
+		if (in->size == 0 && brop != BROTLI_OPERATION_FINISH) {
+			in->size = in->allocated;
+			rv = ctx->fn_read(ctx->arg_read, in);
+			if (rv != 0) {
+				retval = mt_error(rv);
+				goto done;
+			}
+			if (in->size == 0) {
+				brop = BROTLI_OPERATION_FINISH; // eof
+			}
+			next_in = in->buf;
+		}
+
+		if (!BrotliEncoderCompressStream(state, brop, &in->size, &next_in, &out->size, &next_out, 0)) {
+			retval = MT_ERROR(frame_compress);
+			goto done;
+		}
+		if (out->size == 0) {
+			out->size = next_out - (uint8_t*)out->buf;
+			rv = ctx->fn_write(ctx->arg_write, out);
+			if (rv != 0) {
+				retval = mt_error(rv);
+				goto done;
+			}
+			next_out = out->buf;
+			out->size = out->allocated;
+		}
+		if (BrotliEncoderIsFinished(state)) {
+			out->size = next_out - (uint8_t*)out->buf;
+			rv = ctx->fn_write(ctx->arg_write, out);
+			if (rv != 0) {
+				retval = mt_error(rv);
+				goto done;
+			}
+			break;
+		}
+	}
+
+ done:
+		free(in->buf);
+		free(out->buf);
+		BrotliEncoderDestroyInstance(state);
+		return retval;
+}
+
 size_t BROTLIMT_compressCCtx(BROTLIMT_CCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 {
 	int t;
@@ -336,6 +458,12 @@ size_t BROTLIMT_compressCCtx(BROTLIMT_CCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	ctx->fn_write = rdwr->fn_write;
 	ctx->arg_read = rdwr->arg_read;
 	ctx->arg_write = rdwr->arg_write;
+
+	/* single threaded brotli (no header, no mt-frames) */
+	if (ctx->threads == 0) {
+		/* decompress single threaded */
+		return st_compress(ctx);
+	}
 
 	/* start all workers */
 	for (t = 0; t < ctx->threads; t++) {
@@ -398,9 +526,11 @@ void BROTLIMT_freeCCtx(BROTLIMT_CCtx * ctx)
 	if (!ctx)
 		return;
 
-	pthread_mutex_destroy(&ctx->read_mutex);
-	pthread_mutex_destroy(&ctx->write_mutex);
-	free(ctx->cwork);
+	if (ctx->threads) {
+		pthread_mutex_destroy(&ctx->read_mutex);
+		pthread_mutex_destroy(&ctx->write_mutex);
+		free(ctx->cwork);
+	}
 	free(ctx);
 	ctx = 0;
 
