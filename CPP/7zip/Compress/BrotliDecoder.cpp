@@ -100,6 +100,10 @@ STDMETHODIMP CDecoder::SetNumberOfThreads(UInt32 numThreads)
   const UInt32 kNumThreadsMax = BROTLIMT_THREAD_MAX;
   if (numThreads < 0) numThreads = 0;
   if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
+  // if single-threaded, retain artificial number set in BrotliHandler (always prefer .br format):
+  if (_numThreads == 0 && numThreads == 1) {
+    numThreads = 0;
+  }
   _numThreads = numThreads;
   return S_OK;
 }
