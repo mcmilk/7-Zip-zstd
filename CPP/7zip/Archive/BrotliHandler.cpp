@@ -173,6 +173,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   NCompress::NBROTLI::CDecoder *decoderSpec = new NCompress::NBROTLI::CDecoder;
   decoderSpec->SetNumberOfThreads(0); /* .br - single threaded processing (without header/mt-frames) */
+  if (_props._numThreads_WasForced) {
+    decoderSpec->SetNumberOfThreads(_props._numThreads); // translate to decoder (important for -mmt>=2 to use brotli-mt)
+  }
   CMyComPtr<ICompressCoder> decoder = decoderSpec;
   decoderSpec->SetInStream(_seqStream);
 

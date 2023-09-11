@@ -122,7 +122,7 @@ static bool ReadPathFromRegistry(HKEY baseKey, LPCWSTR value, FString &path)
 #endif // EXTERNAL_CODECS
 
 
-static const unsigned kNumArcsMax = 64;
+static const unsigned kNumArcsMax = 72;
 static unsigned g_NumArcs = 0;
 static const CArcInfo *g_Arcs[kNumArcsMax];
 
