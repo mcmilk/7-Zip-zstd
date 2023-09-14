@@ -286,6 +286,7 @@ static HRESULT UpdateArchive(
   CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
   localProgressSpec->Init(updateCallback, true);
   NCompress::NZSTD::CEncoder *encoderSpec = new NCompress::NZSTD::CEncoder;
+  encoderSpec->unpackSize = unpackSize;
   CMyComPtr<ICompressCoder> encoder = encoderSpec;
   RINOK(props.SetCoderProps(encoderSpec, NULL));
   RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));

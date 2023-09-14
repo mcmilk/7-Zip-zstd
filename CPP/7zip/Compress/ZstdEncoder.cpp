@@ -30,7 +30,8 @@ CEncoder::CEncoder():
   _LdmHashLog(-1),
   _LdmMinMatch(-1),
   _LdmBucketSizeLog(-1),
-  _LdmHashRateLog(-1)
+  _LdmHashRateLog(-1),
+  unpackSize(0)
 {
   _props.clear();
 }
@@ -250,6 +251,11 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     /* set the content size flag */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_contentSizeFlag, 1);
     if (ZSTD_isError(err)) return E_INVALIDARG;
+
+    if (unpackSize) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_srcSizeHint, (int)(unpackSize <= INT_MAX ? unpackSize : INT_MAX));
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
 
     /* enable ldm for large windowlog values */
     if (_WindowLog > 27 && _Long == 0)

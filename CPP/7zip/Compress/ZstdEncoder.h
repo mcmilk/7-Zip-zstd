@@ -67,6 +67,9 @@ class CEncoder:
   Int32 _LdmHashRateLog;
 
 public:
+
+  UInt64 unpackSize;
+
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
   MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
   MY_QUERYINTERFACE_ENTRY(ICompressSetCoderProperties)
