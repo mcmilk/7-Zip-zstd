@@ -68,6 +68,8 @@ class CEncoder:
 
 public:
 
+  int dictIDFlag;
+  int checksumFlag;
   UInt64 unpackSize;
 
   MY_QUERYINTERFACE_BEGIN2(ICompressCoder)

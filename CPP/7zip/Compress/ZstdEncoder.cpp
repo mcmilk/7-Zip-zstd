@@ -31,6 +31,8 @@ CEncoder::CEncoder():
   _LdmMinMatch(-1),
   _LdmBucketSizeLog(-1),
   _LdmHashRateLog(-1),
+  dictIDFlag(-1),
+  checksumFlag(-1),
   unpackSize(0)
 {
   _props.clear();
@@ -252,6 +254,15 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_contentSizeFlag, 1);
     if (ZSTD_isError(err)) return E_INVALIDARG;
 
+    if (dictIDFlag != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_dictIDFlag, dictIDFlag);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+    if (checksumFlag != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_checksumFlag, checksumFlag);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
     if (unpackSize) {
       err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_srcSizeHint, (int)(unpackSize <= INT_MAX ? unpackSize : INT_MAX));
       if (ZSTD_isError(err)) return E_INVALIDARG;
@@ -326,6 +337,12 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_ldmHashRateLog, _LdmHashRateLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
+
+    //err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_literalCompressionMode, (int)ZSTD_ps_auto);
+    //if (ZSTD_isError(err)) return E_INVALIDARG;
+
+    //err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_enableDedicatedDictSearch, 1);
+    //if (ZSTD_isError(err)) return E_INVALIDARG;
   }
 
   for (;;) {

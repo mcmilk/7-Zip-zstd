@@ -286,6 +286,9 @@ static HRESULT UpdateArchive(
   CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
   localProgressSpec->Init(updateCallback, true);
   NCompress::NZSTD::CEncoder *encoderSpec = new NCompress::NZSTD::CEncoder;
+  // by zstd archive type store dictID and checksum (similar to zstd client)
+  encoderSpec->dictIDFlag = 1;
+  encoderSpec->checksumFlag = 1;
   encoderSpec->unpackSize = unpackSize;
   CMyComPtr<ICompressCoder> encoder = encoderSpec;
   RINOK(props.SetCoderProps(encoderSpec, NULL));
