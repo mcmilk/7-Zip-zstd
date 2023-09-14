@@ -263,7 +263,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
 
-    if (unpackSize) {
+    if (unpackSize && unpackSize != (UInt64)(Int64)-1) { // size is known
       err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_srcSizeHint, (int)(unpackSize <= INT_MAX ? unpackSize : INT_MAX));
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
