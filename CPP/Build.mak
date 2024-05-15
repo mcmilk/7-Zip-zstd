@@ -1,7 +1,8 @@
 LIBS = $(LIBS) oleaut32.lib ole32.lib
 
+# CFLAGS = $(CFLAGS) -DZ7_NO_UNICODE
 !IFNDEF MY_NO_UNICODE
-CFLAGS = $(CFLAGS) -DUNICODE -D_UNICODE
+# CFLAGS = $(CFLAGS) -DUNICODE -D_UNICODE
 !ENDIF
 
 !IF "$(CC)" != "clang-cl"
@@ -21,10 +22,14 @@ O=o
 # CFLAGS = $(CFLAGS) -FAsc -Fa$O/asm/
 !ENDIF
 
+# LFLAGS = $(LFLAGS) /guard:cf
+
 
 !IF "$(PLATFORM)" == "x64"
 MY_ML = ml64 -WX
 #-Dx64
+!ELSEIF "$(PLATFORM)" == "arm64"
+MY_ML = armasm64
 !ELSEIF "$(PLATFORM)" == "arm"
 MY_ML = armasm -WX
 !ELSE
@@ -52,6 +57,8 @@ LIBS = $(LIBS) user32.lib advapi32.lib shell32.lib
 
 !IF "$(PLATFORM)" == "arm"
 COMPL_ASM = $(MY_ML) $** $O/$(*B).obj
+!ELSEIF "$(PLATFORM)" == "arm64"
+COMPL_ASM = $(MY_ML) $** $O/$(*B).obj
 !ELSE
 COMPL_ASM = $(MY_ML) -c -Fo$O/ $**
 !ENDIF
@@ -75,7 +82,8 @@ CFLAGS = $(CFLAGS) \
 
 !ENDIF
 
-!IFDEF MY_DYNAMIC_LINK
+# !IFDEF MY_DYNAMIC_LINK
+!IF "$(MY_DYNAMIC_LINK)" != ""
 CFLAGS = $(CFLAGS) -MD
 !ELSE
 !IFNDEF MY_SINGLE_THREAD
@@ -169,6 +177,15 @@ LFLAGS = $(LFLAGS) /SUBSYSTEM:windows,$(MY_SUB_SYS_VER)
 !ENDIF
 
 
+!IF "$(PLATFORM)" == "arm64"
+CLANG_FLAGS_TARGET = --target=arm64-pc-windows-msvc
+!ENDIF
+
+COMPL_CLANG_SPEC=clang-cl $(CLANG_FLAGS_TARGET)
+COMPL_ASM_CLANG = $(COMPL_CLANG_SPEC) -nologo -c -Fo$O/ $(CFLAGS_WARN_LEVEL) -WX $**
+# COMPL_C_CLANG   = $(COMPL_CLANG_SPEC) $(CFLAGS_O2)
+
+
 PROGPATH = $O\$(PROG)
 
 COMPL_O1   = $(CC) $(CFLAGS_O1) $**
@@ -224,6 +241,6 @@ predef: empty.c
 predef2: A.cpp
 	$(COMPL)   -EP -Zc:preprocessor -PD
 predef3: A.cpp
-	$(COMPL)   -E -dM 
+	$(COMPL)   -E -dM
 predef4: A.cpp
 	$(COMPL_O2)   -E

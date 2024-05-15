@@ -36,7 +36,7 @@ struct CInitDialogItem
   int X1,Y1,X2,Y2;
   bool Focus;
   bool Selected;
-  unsigned int Flags; //FarDialogItemFlags Flags;
+  UInt32 Flags; //FarDialogItemFlags Flags;
   bool DefaultButton;
   int DataMessageId;
   const char *DataString;
@@ -60,7 +60,7 @@ public:
       const char *pluginNameForRegistry);
   const char *GetMsgString(int messageId);
   
-  int ShowMessage(unsigned int flags, const char *helpTopic,
+  int ShowMessage(UInt32 flags, const char *helpTopic,
       const char **items, unsigned numItems, int numButtons);
   int ShowWarningWithOk(const char **items, unsigned numItems);
  
@@ -112,7 +112,7 @@ public:
       int x,
       int y,
       int maxHeight,
-      unsigned int flags,
+      unsigned flags,
       const char *title,
       const char *aBottom,
       const char *helpTopic,
@@ -121,14 +121,14 @@ public:
       FarMenuItem *items,
       unsigned numItems);
   int Menu(
-      unsigned int flags,
+      unsigned flags,
       const char *title,
       const char *helpTopic,
       FarMenuItem *items,
       unsigned numItems);
 
   int Menu(
-      unsigned int flags,
+      unsigned flags,
       const char *title,
       const char *helpTopic,
       const AStringVector &items,

@@ -2,15 +2,15 @@
 
 #define y 96
 
-#define zoneX 90
+#define zoneX 100
 
 CAPTION "7-Zip"
 BEGIN
-  CONTROL  "Integrate 7-Zip to shell context menu", IDX_SYSTEM_INTEGRATE_TO_MENU, MY_CHECKBOX, m, m, xc, 10
-  CONTROL  "(32-bit)", IDX_SYSTEM_INTEGRATE_TO_MENU_2, MY_CHECKBOX, m, m + 14, xc, 10
-  CONTROL  "Cascaded context menu", IDX_SYSTEM_CASCADED_MENU, MY_CHECKBOX, m, m + 28, xc, 10
-  CONTROL  "Icons in context menu", IDX_SYSTEM_ICON_IN_MENU, MY_CHECKBOX, m, m + 42, xc, 10
-  CONTROL   "Eliminate duplication of root folder", IDX_EXTRACT_ELIM_DUP, MY_CHECKBOX, m, m + 56, xc, 10
+  MY_CONTROL_CHECKBOX ( "Integrate 7-Zip to shell context menu", IDX_SYSTEM_INTEGRATE_TO_MENU, m, m, xc)
+  MY_CONTROL_CHECKBOX ( "(32-bit)", IDX_SYSTEM_INTEGRATE_TO_MENU_2, m, m + 14, xc)
+  MY_CONTROL_CHECKBOX ( "Cascaded context menu", IDX_SYSTEM_CASCADED_MENU, m, m + 28, xc)
+  MY_CONTROL_CHECKBOX ( "Icons in context menu", IDX_SYSTEM_ICON_IN_MENU, m, m + 42, xc)
+  MY_CONTROL_CHECKBOX ( "Eliminate duplication of root folder", IDX_EXTRACT_ELIM_DUP, m, m + 56, xc)
 
   LTEXT    "Propagate Zone.Id stream:", IDT_SYSTEM_ZONE, m, m + 70, xc - zoneX, 8
   COMBOBOX  IDC_SYSTEM_ZONE, m + xc - zoneX, m + 70 - 2, zoneX, 50, MY_COMBO

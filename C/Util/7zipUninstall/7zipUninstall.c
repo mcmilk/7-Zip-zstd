@@ -1,10 +1,11 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2022-07-15 : Igor Pavlov : Public domain */
+2024-03-21 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
 // #define SZ_ERROR_ABORT 100
 
+#include "../../7zTypes.h"
 #include "../../7zWindows.h"
 
 #if defined(_MSC_VER) && _MSC_VER < 1600
@@ -31,16 +32,7 @@ typedef enum {
 
 #include "resource.h"
 
-#if (defined(__GNUC__) && (__GNUC__ >= 8)) || defined(__clang__)
-  // #pragma GCC diagnostic ignored "-Wcast-function-type"
-#endif
 
-#if defined(_MSC_VER) && _MSC_VER > 1920
-#define MY_CAST_FUNC  (void *)
-// #pragma warning(disable : 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'void (__cdecl *)()'
-#else
-#define MY_CAST_FUNC
-#endif
 
 
 #define LLL_(quote) L##quote
@@ -101,10 +93,12 @@ static LPCWSTR const k_Reg_Path32 = L"Path"
   #define k_Reg_WOW_Flag 0
 #endif
 
+#ifdef USE_7ZIP_32_DLL
 #ifdef _WIN64
   #define k_Reg_WOW_Flag_32 KEY_WOW64_32KEY
 #else
   #define k_Reg_WOW_Flag_32 0
+#endif
 #endif
 
 #define k_7zip_CLSID L"{23170F69-40C1-278A-1000-000100020000}"
@@ -124,9 +118,19 @@ static HWND g_Path_HWND;
 static HWND g_InfoLine_HWND;
 static HWND g_Progress_HWND;
 
-// WINADVAPI
+// RegDeleteKeyExW is supported starting from win2003sp1/xp-pro-x64
+// Z7_WIN32_WINNT_MIN < 0x0600  // Vista
+#if !defined(Z7_WIN32_WINNT_MIN) \
+    || Z7_WIN32_WINNT_MIN  < 0x0502  /* < win2003 */ \
+    || Z7_WIN32_WINNT_MIN == 0x0502 && !defined(_M_AMD64)
+#define Z7_USE_DYN_RegDeleteKeyExW
+#endif
+
+#ifdef Z7_USE_DYN_RegDeleteKeyExW
+Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
 typedef LONG (APIENTRY *Func_RegDeleteKeyExW)(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved);
 static Func_RegDeleteKeyExW func_RegDeleteKeyExW;
+#endif
 
 static WCHAR cmd[MAX_PATH + 4];
 static WCHAR cmdError[MAX_PATH + 4];
@@ -247,13 +251,18 @@ static LONG MyRegistry_OpenKey_ReadWrite(HKEY parentKey, LPCWSTR name, HKEY *des
 
 static LONG MyRegistry_DeleteKey(HKEY parentKey, LPCWSTR name)
 {
-  #if k_Reg_WOW_Flag != 0
-    if (func_RegDeleteKeyExW)
-      return func_RegDeleteKeyExW(parentKey, name, k_Reg_WOW_Flag, 0);
-    return E_FAIL;
-  #else
+#if k_Reg_WOW_Flag != 0
+#ifdef Z7_USE_DYN_RegDeleteKeyExW
+    if (!func_RegDeleteKeyExW)
+      return E_FAIL;
+    return func_RegDeleteKeyExW
+#else
+    return      RegDeleteKeyExW
+#endif
+      (parentKey, name, k_Reg_WOW_Flag, 0);
+#else
     return RegDeleteKeyW(parentKey, name);
-  #endif
+#endif
 }
 
 #ifdef USE_7ZIP_32_DLL
@@ -278,13 +287,18 @@ static LONG MyRegistry_OpenKey_ReadWrite_32(HKEY parentKey, LPCWSTR name, HKEY *
 
 static LONG MyRegistry_DeleteKey_32(HKEY parentKey, LPCWSTR name)
 {
-  #if k_Reg_WOW_Flag_32 != 0
-    if (func_RegDeleteKeyExW)
-      return func_RegDeleteKeyExW(parentKey, name, k_Reg_WOW_Flag_32, 0);
-    return E_FAIL;
-  #else
+#if k_Reg_WOW_Flag_32 != 0
+#ifdef Z7_USE_DYN_RegDeleteKeyExW
+    if (!func_RegDeleteKeyExW)
+      return E_FAIL;
+    return func_RegDeleteKeyExW
+#else
+    return      RegDeleteKeyExW
+#endif
+      (parentKey, name, k_Reg_WOW_Flag_32, 0);
+#else
     return RegDeleteKeyW(parentKey, name);
-  #endif
+#endif
 }
 
 #endif
@@ -930,14 +944,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   UNUSED_VAR(lpCmdLine)
   UNUSED_VAR(nCmdShow)
 
-  #ifndef UNDER_CE
+#ifndef UNDER_CE
   CoInitialize(NULL);
-  #endif
+#endif
 
-  #ifndef UNDER_CE
-  func_RegDeleteKeyExW = (Func_RegDeleteKeyExW) MY_CAST_FUNC
-      GetProcAddress(GetModuleHandleW(L"advapi32.dll"), "RegDeleteKeyExW");
-  #endif
+#ifndef UNDER_CE
+#ifdef Z7_USE_DYN_RegDeleteKeyExW
+   func_RegDeleteKeyExW =
+  (Func_RegDeleteKeyExW) Z7_CAST_FUNC_C GetProcAddress(GetModuleHandleW(L"advapi32.dll"),
+       "RegDeleteKeyExW");
+#endif
+#endif
 
   {
     const wchar_t *s = GetCommandLineW();

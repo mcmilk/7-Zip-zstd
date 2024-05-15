@@ -287,14 +287,12 @@ HRESULT CDirItems::EnumerateOneDir(const FString &phyPrefix, CObjectVector<NFind
   
   CObjectVector<NFind::CDirEntry> entries;
 
-  for (unsigned ttt = 0; ; ttt++)
+  for (;;)
   {
     bool found;
     NFind::CDirEntry de;
     if (!enumerator.Next(de, found))
-    {
       return AddError(phyPrefix);
-    }
     if (!found)
       break;
     entries.Add(de);

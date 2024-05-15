@@ -661,6 +661,18 @@ SOURCE=..\..\UI\FileManager\BrowseDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\FileManager\BrowseDialog2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\BrowseDialog2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\BrowseDialog2Res.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\FileManager\ComboDialog.cpp
 # End Source File
 # Begin Source File
@@ -702,6 +714,18 @@ SOURCE=..\..\UI\FileManager\ListViewDialog.cpp
 # Begin Source File
 
 SOURCE=..\..\UI\FileManager\ListViewDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\MemDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\MemDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\UI\FileManager\MemDialogRes.h
 # End Source File
 # Begin Source File
 

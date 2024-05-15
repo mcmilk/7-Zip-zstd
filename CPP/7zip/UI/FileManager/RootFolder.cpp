@@ -124,13 +124,20 @@ Z7_COM7F_IMF(CRootFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIA
   return S_OK;
 }
 
+#if !defined(Z7_WIN32_WINNT_MIN) || Z7_WIN32_WINNT_MIN < 0x0400  // nt4
+#define Z7_USE_DYN_SHGetSpecialFolderPath
+#endif
+
+#ifdef Z7_USE_DYN_SHGetSpecialFolderPath
 typedef BOOL (WINAPI *Func_SHGetSpecialFolderPathW)(HWND hwnd, LPWSTR pszPath, int csidl, BOOL fCreate);
 typedef BOOL (WINAPI *Func_SHGetSpecialFolderPathA)(HWND hwnd, LPSTR pszPath, int csidl, BOOL fCreate);
+#endif
 
 static UString GetMyDocsPath()
 {
   UString us;
   WCHAR s[MAX_PATH + 1];
+#ifdef Z7_USE_DYN_SHGetSpecialFolderPath
 #ifdef UNDER_CE
   #define shell_name TEXT("coredll.dll")
 #else
@@ -139,16 +146,25 @@ static UString GetMyDocsPath()
   Func_SHGetSpecialFolderPathW getW = Z7_GET_PROC_ADDRESS(
   Func_SHGetSpecialFolderPathW, GetModuleHandle(shell_name),
       "SHGetSpecialFolderPathW");
-  if (getW && getW(NULL, s, CSIDL_PERSONAL, FALSE))
+  if (getW && getW
+#else
+  if (SHGetSpecialFolderPathW
+#endif
+      (NULL, s, CSIDL_PERSONAL, FALSE))
     us = s;
   #ifndef _UNICODE
   else
   {
+    CHAR s2[MAX_PATH + 1];
+#ifdef Z7_USE_DYN_SHGetSpecialFolderPath
     Func_SHGetSpecialFolderPathA getA = Z7_GET_PROC_ADDRESS(
     Func_SHGetSpecialFolderPathA, ::GetModuleHandleA("shell32.dll"),
         "SHGetSpecialFolderPathA");
-    CHAR s2[MAX_PATH + 1];
-    if (getA && getA(NULL, s2, CSIDL_PERSONAL, FALSE))
+    if (getA && getA
+#else
+    if (SHGetSpecialFolderPathA
+#endif
+      (NULL, s2, CSIDL_PERSONAL, FALSE))
       us = GetUnicodeString(s2);
   }
   #endif

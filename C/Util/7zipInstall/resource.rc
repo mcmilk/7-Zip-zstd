@@ -1,5 +1,6 @@
-#include <winnt.h>
-#include <WinUser.h>
+#include <windows.h>
+// #include <winnt.h>
+// #include <WinUser.h>
 #include <CommCtrl.h>
 
 #define USE_COPYRIGHT_CR

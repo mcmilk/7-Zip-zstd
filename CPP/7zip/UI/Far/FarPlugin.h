@@ -7,7 +7,7 @@ const int kInfoPanelLineSize = 80;
 // #define __FAR_PLUGIN_H
 
 #ifdef UNDER_CE
-typedef struct _CHAR_INFO {
+typedef struct {
     union {
         WCHAR UnicodeChar;
         CHAR   AsciiChar;
@@ -29,9 +29,9 @@ typedef struct _CHAR_INFO {
 #endif
 #endif
 
-  #if _MSC_VER
+  // #if _MSC_VER
     #define _export
-  #endif
+  // #endif
 
 #define NM 260
 
@@ -82,7 +82,7 @@ typedef int (WINAPI *FARAPIMENU)(
   int X,
   int Y,
   int MaxHeight,
-  unsigned int Flags,
+  unsigned Flags,
   char *Title,
   char *Bottom,
   char *HelpTopic,
@@ -122,7 +122,7 @@ enum {
 
 typedef int (WINAPI *FARAPIMESSAGE)(
   INT_PTR PluginNumber,
-  unsigned int Flags,
+  unsigned Flags,
   const char *HelpTopic,
   const char * const *Items,
   int ItemsNumber,
@@ -177,7 +177,7 @@ struct FarDialogItem
     int ListPos;
     CHAR_INFO *VBuf;
   };
-  unsigned int Flags;
+  unsigned Flags;
   int DefaultButton;
   char Data[512];
 };
@@ -495,7 +495,7 @@ enum OPERATION_MODES {
 EXTERN_C_BEGIN
 
   void   WINAPI _export ClosePluginW(HANDLE hPlugin);
-  int    WINAPI _export CompareW(HANDLE hPlugin,const struct PluginPanelItem *Item1,const struct PluginPanelItem *Item2,unsigned int Mode);
+  int    WINAPI _export CompareW(HANDLE hPlugin,const struct PluginPanelItem *Item1,const struct PluginPanelItem *Item2,unsigned Mode);
   int    WINAPI _export ConfigureW(int ItemNumber);
   int    WINAPI _export DeleteFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
   void   WINAPI _export ExitFARW(void);
@@ -515,7 +515,7 @@ EXTERN_C_BEGIN
   int    WINAPI _export ProcessEditorInputW(const INPUT_RECORD *Rec);
   int    WINAPI _export ProcessEventW(HANDLE hPlugin,int Event,void *Param);
   int    WINAPI _export ProcessHostFileW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
-  int    WINAPI _export ProcessKeyW(HANDLE hPlugin,int Key,unsigned int ControlState);
+  int    WINAPI _export ProcessKeyW(HANDLE hPlugin,int Key,unsigned ControlState);
   int    WINAPI _export ProcessSynchroEventW(int Event,void *Param);
   int    WINAPI _export ProcessViewerEventW(int Event,void *Param);
   int    WINAPI _export PutFilesW(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,const wchar_t *SrcPath,int OpMode);
@@ -528,7 +528,7 @@ EXTERN_C_END
 EXTERN_C_BEGIN
 
   void   WINAPI _export ClosePlugin(HANDLE hPlugin);
-  int    WINAPI _export Compare(HANDLE hPlugin,const struct PluginPanelItem *Item1,const struct PluginPanelItem *Item2,unsigned int Mode);
+  int    WINAPI _export Compare(HANDLE hPlugin,const struct PluginPanelItem *Item1,const struct PluginPanelItem *Item2,unsigned Mode);
   int    WINAPI _export Configure(int ItemNumber);
   int    WINAPI _export DeleteFiles(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
   void   WINAPI _export ExitFAR(void);
@@ -541,14 +541,14 @@ EXTERN_C_BEGIN
   void   WINAPI _export GetPluginInfo(struct PluginInfo *Info);
   int    WINAPI _export GetVirtualFindData(HANDLE hPlugin,struct PluginPanelItem **pPanelItem,int *pItemsNumber,const char *Path);
   int    WINAPI _export MakeDirectory(HANDLE hPlugin,char *Name,int OpMode);
-  HANDLE WINAPI _export OpenFilePlugin(char *Name,const unsigned char *Data,int DataSize);
+  HANDLE WINAPI _export OpenFilePlugin(char *Name,const BYTE *Data,int DataSize);
   HANDLE WINAPI _export OpenPlugin(int OpenFrom,INT_PTR Item);
   int    WINAPI _export ProcessDialogEvent(int Event,void *Param);
   int    WINAPI _export ProcessEditorEvent(int Event,void *Param);
   int    WINAPI _export ProcessEditorInput(const INPUT_RECORD *Rec);
   int    WINAPI _export ProcessEvent(HANDLE hPlugin,int Event,void *Param);
   int    WINAPI _export ProcessHostFile(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int OpMode);
-  int    WINAPI _export ProcessKey(HANDLE hPlugin,int Key,unsigned int ControlState);
+  int    WINAPI _export ProcessKey(HANDLE hPlugin,int Key,unsigned ControlState);
   int    WINAPI _export ProcessViewerEvent(int Event,void *Param);
   int    WINAPI _export PutFiles(HANDLE hPlugin,struct PluginPanelItem *PanelItem,int ItemsNumber,int Move,int OpMode);
   int    WINAPI _export SetDirectory(HANDLE hPlugin,const char *Dir,int OpMode);

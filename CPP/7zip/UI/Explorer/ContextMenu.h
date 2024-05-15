@@ -87,8 +87,10 @@ public:
     kCompressToZipEmail,
     kHash_CRC32,
     kHash_CRC64,
+    kHash_XXH64,
     kHash_SHA1,
     kHash_SHA256,
+    kHash_BLAKE2SP,
     kHash_All,
     kHash_Generate_SHA256,
     kHash_TestArc

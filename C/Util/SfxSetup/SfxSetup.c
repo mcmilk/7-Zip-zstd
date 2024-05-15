@@ -1,5 +1,5 @@
 /* SfxSetup.c - 7z SFX Setup
-2019-02-02 : Igor Pavlov : Public domain */
+2024-01-24 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -278,10 +278,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   #ifdef _CONSOLE
   SetConsoleCtrlHandler(HandlerRoutine, TRUE);
   #else
-  UNUSED_VAR(hInstance);
-  UNUSED_VAR(hPrevInstance);
-  UNUSED_VAR(lpCmdLine);
-  UNUSED_VAR(nCmdShow);
+  UNUSED_VAR(hInstance)
+  UNUSED_VAR(hPrevInstance)
+  UNUSED_VAR(lpCmdLine)
+  UNUSED_VAR(nCmdShow)
   #endif
 
   CrcGenerateTable();
@@ -516,12 +516,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         #endif
         
         {
-          const SRes res2 = File_Close(&outFile);
+          const WRes res2 = File_Close(&outFile);
           if (res != SZ_OK)
             break;
-          if (res2 != SZ_OK)
+          if (res2 != 0)
           {
-            res = res2;
+            errorMessage = "Can't close output file";
+            res = SZ_ERROR_FAIL;
             break;
           }
         }

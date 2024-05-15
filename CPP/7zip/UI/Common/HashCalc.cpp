@@ -249,12 +249,12 @@ static void CSum_Name_OriginalToEscape(const AString &src, AString &dest)
     char c = src[i++];
     if (c == '\n')
     {
-      dest += '\\';
+      dest.Add_Char('\\');
       c = 'n';
     }
     else if (c == '\\')
-      dest += '\\';
-    dest += c;
+      dest.Add_Char('\\');
+    dest.Add_Char(c);
   }
 }
 
@@ -287,7 +287,7 @@ static bool CSum_Name_EscapeToOriginal(const char *s, AString &dest)
         isOK = false;
       }
     }
-    dest += c;
+    dest.Add_Char(c);
   }
   return isOK;
 }
@@ -403,7 +403,7 @@ static void WriteLine(CDynLimBuf &hashFileString,
   }
   
   if (isDir && !esc.IsEmpty() && esc.Back() != '/')
-    esc += '/';
+    esc.Add_Slash();
   
   if (tagMode)
   {
@@ -461,8 +461,8 @@ HRESULT HashCalc(
   if (options.StdInMode)
   {
     CDirItem di;
-    di.Size = (UInt64)(Int64)-1;
-    di.SetAsFile();
+    if (!di.SetAs_StdInFile())
+      return GetLastError_noZero_HRESULT();
     dirItems.Items.Add(di);
   }
   else
@@ -531,7 +531,19 @@ HRESULT HashCalc(
     
     if (options.StdInMode)
     {
+#if 1
       inStream = new CStdInFileStream;
+#else
+      if (!CreateStdInStream(inStream))
+      {
+        const DWORD lastError = ::GetLastError();
+        const HRESULT res = callback->OpenFileError(FString("stdin"), lastError);
+        hb.NumErrors++;
+        if (res != S_FALSE && res != S_OK)
+          return res;
+        continue;
+      }
+#endif
     }
     else
     {
@@ -561,7 +573,7 @@ HRESULT HashCalc(
           const FString phyPath = dirItems.GetPhyPath(i);
           if (!inStreamSpec->OpenShared(phyPath, options.OpenShareForWrite))
           {
-            HRESULT res = callback->OpenFileError(phyPath, ::GetLastError());
+            const HRESULT res = callback->OpenFileError(phyPath, ::GetLastError());
             hb.NumErrors++;
             if (res != S_FALSE)
               return res;
@@ -645,51 +657,40 @@ HRESULT HashCalc(
 }
 
 
-static inline char GetHex_Upper(unsigned v)
+void HashHexToString(char *dest, const Byte *data, size_t size)
 {
-  return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10)));
-}
-
-static inline char GetHex_Lower(unsigned v)
-{
-  return (char)((v < 10) ? ('0' + v) : ('a' + (v - 10)));
-}
-
-void HashHexToString(char *dest, const Byte *data, UInt32 size)
-{
-  dest[size * 2] = 0;
-  
   if (!data)
   {
-    for (UInt32 i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
       dest[0] = ' ';
       dest[1] = ' ';
       dest += 2;
     }
+    *dest = 0;
     return;
   }
   
-  if (size <= 8)
+  if (size > 8)
+    ConvertDataToHex_Lower(dest, data, size);
+  else if (size == 0)
   {
-    dest += size * 2;
-    for (UInt32 i = 0; i < size; i++)
-    {
-      const unsigned b = data[i];
-      dest -= 2;
-      dest[0] = GetHex_Upper((b >> 4) & 0xF);
-      dest[1] = GetHex_Upper(b & 0xF);
-    }
+    *dest = 0;
+    return;
   }
   else
   {
-    for (UInt32 i = 0; i < size; i++)
+    const char *dest_start = dest;
+    dest += size * 2;
+    *dest = 0;
+    do
     {
-      const unsigned b = data[i];
-      dest[0] = GetHex_Lower((b >> 4) & 0xF);
-      dest[1] = GetHex_Lower(b & 0xF);
-      dest += 2;
+      const size_t b = *data++;
+      dest -= 2;
+      dest[0] = GET_HEX_CHAR_UPPER(b >> 4);
+      dest[1] = GET_HEX_CHAR_UPPER(b & 15);
     }
+    while (dest != dest_start);
   }
 }
 
@@ -720,31 +721,6 @@ void CHasherState::WriteToString(unsigned digestIndex, char *s) const
 
 namespace NHash {
 
-static size_t ParseHexString(const char *s, Byte *dest) throw()
-{
-  size_t num;
-  for (num = 0;; num++, s += 2)
-  {
-    unsigned c = (Byte)s[0];
-    unsigned v0;
-         if (c >= '0' && c <= '9') v0 =      (c - '0');
-    else if (c >= 'A' && c <= 'F') v0 = 10 + (c - 'A');
-    else if (c >= 'a' && c <= 'f') v0 = 10 + (c - 'a');
-    else
-      return num;
-    c = (Byte)s[1];
-    unsigned v1;
-         if (c >= '0' && c <= '9') v1 =      (c - '0');
-    else if (c >= 'A' && c <= 'F') v1 = 10 + (c - 'A');
-    else if (c >= 'a' && c <= 'f') v1 = 10 + (c - 'a');
-    else
-      return num;
-    if (dest)
-      dest[num] = (Byte)(v1 | (v0 << 4));
-  }
-}
-
-
 #define IsWhite(c) ((c) == ' ' || (c) == '\t')
 
 bool CHashPair::IsDir() const
@@ -753,7 +729,7 @@ bool CHashPair::IsDir() const
     return false;
   // here we expect that Dir items contain only zeros or no Hash
   for (size_t i = 0; i < Hash.Size(); i++)
-    if (Hash[i] != 0)
+    if (Hash.ConstData()[i] != 0)
       return false;
   return true;
 }
@@ -854,10 +830,11 @@ bool CHashPair::Parse(const char *s)
     s++;
     escape = true;
   }
+  Escape = escape;
   
   // const char *kMethod = GetMethod_from_FileName(s);
   // if (kMethod)
-  if (ParseHexString(s, NULL) < 4)
+  if ((size_t)(FindNonHexChar(s) - s) < 4)
   {
     // BSD-style checksum line
     {
@@ -903,10 +880,10 @@ bool CHashPair::Parse(const char *s)
   }
 
   {
-    const size_t num = ParseHexString(s, NULL);
-    Hash.Alloc(num);
-    ParseHexString(s, Hash);
-    const size_t numChars = num * 2;
+    const size_t numChars = (size_t)(FindNonHexChar(s) - s) & ~(size_t)1;
+    Hash.Alloc(numChars / 2);
+    if ((size_t)(ParseHexString(s, Hash) - Hash) != numChars / 2)
+      throw 101;
     HashString.SetFrom(s, (unsigned)numChars);
     s += numChars;
   }
@@ -1091,7 +1068,7 @@ static void Add_OptSpace_String(UString &dest, const char *src)
 
 Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
-  NWindows::NCOM::CPropVariant prop;
+  NCOM::CPropVariant prop;
   switch (propID)
   {
     case kpidPhySize: if (_phySize != 0) prop = _phySize; break;
@@ -1125,7 +1102,7 @@ Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
         Add_OptSpace_String(s, "PGP");
         if (!_pgpMethod.IsEmpty())
         {
-          s += ":";
+          s.Add_Colon();
           s += _pgpMethod;
         }
       }
@@ -1146,6 +1123,7 @@ Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
           prop = true;
       break;
     }
+    default: break;
   }
   prop.Detach(value);
   return S_OK;
@@ -1155,8 +1133,8 @@ Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   // COM_TRY_BEGIN
-  NWindows::NCOM::CPropVariant prop;
-  CHashPair &hp = HashPairs[index];
+  NCOM::CPropVariant prop;
+  const CHashPair &hp = HashPairs[index];
   switch (propID)
   {
     case kpidIsDir:
@@ -1169,9 +1147,17 @@ Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       UString path;
       hp.Get_UString_Path(path);
 
-      NArchive::NItemName::ReplaceToOsSlashes_Remove_TailSlash(path,
-          true); // useBackslashReplacement
-
+      bool useBackslashReplacement = true;
+      if (_supportWindowsBackslash && !hp.Escape && path.Find(L"\\\\") < 0)
+      {
+#if WCHAR_PATH_SEPARATOR == L'/'
+        path.Replace(L'\\', L'/');
+#else
+        useBackslashReplacement = false;
+#endif
+      }
+      NArchive::NItemName::ReplaceToOsSlashes_Remove_TailSlash(
+          path, useBackslashReplacement);
       prop = path;
       break;
     }
@@ -1195,6 +1181,7 @@ Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         prop = hp.Method;
       break;
     }
+    default: break;
   }
   prop.Detach(value);
   return S_OK;
@@ -1248,7 +1235,7 @@ Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
     bool cr_lf_Mode = false;
     {
       for (size_t i = 0; i < buf.Size(); i++)
-        if (buf[i] == 0)
+        if (buf.ConstData()[i] == 0)
         {
           zeroMode = true;
           break;
@@ -1510,15 +1497,14 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   if (!buf.Alloc(kBufSize))
     return E_OUTOFMEMORY;
 
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
+  CMyComPtr2_Create<ICompressProgressInfo, CLocalProgress> lps;
   lps->Init(extractCallback, false);
-  lps->InSize = lps->OutSize = 0;
 
-  UInt32 i;
-  for (i = 0; i < numItems; i++)
+  for (UInt32 i = 0;; i++)
   {
     RINOK(lps->SetCur())
+    if (i >= numItems)
+      break;
     const UInt32 index = allFilesMode ? i : indices[i];
 
     CHashPair &hp = HashPairs[index];
@@ -1549,7 +1535,7 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
        Attrib and security of output file */
     askMode = NArchive::NExtract::NAskMode::kReadExternal;
 
-    extractCallback->PrepareOperation(askMode);
+    RINOK(extractCallback->PrepareOperation(askMode))
     
     const bool isAltStream = false;
 
@@ -1598,7 +1584,7 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       {
         if ((step & 0xFF) == 0)
         {
-          RINOK(progress->SetRatioInfo(NULL, &fileSize))
+          RINOK(lps.Interface()->SetRatioInfo(NULL, &fileSize))
         }
         UInt32 size;
         RINOK(inStream->Read(buf, kBufSize, &size))
@@ -1643,8 +1629,7 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     RINOK(extractCallback->SetOperationResult(opRes))
   }
 
-  return lps->SetCur();
-
+  return S_OK;
   COM_TRY_END
 }
 
@@ -1805,8 +1790,7 @@ Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   RINOK(hb.SetMethods(EXTERNAL_CODECS_LOC_VARS methods))
 
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
+  CMyComPtr2_Create<ICompressProgressInfo, CLocalProgress> lps;
   lps->Init(callback, true);
 
   const UInt32 kBufSize = 1 << 15;
@@ -1830,7 +1814,6 @@ Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (options.HashMode_OnlyHash.Val && updateItems.Size() != 1)
     options.HashMode_OnlyHash.Val = false;
 
-  lps->OutSize = 0;
   complexity = 0;
 
   for (i = 0; i < updateItems.Size(); i++)
@@ -1884,7 +1867,7 @@ Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
               if (getProps->GetProps(&size2, NULL, NULL, &mTime, NULL) == S_OK)
               {
                 currentComplexity = size2;
-                // item.MTime = NWindows::NTime::FileTimeToUnixTime64(mTime);;
+                // item.MTime = NTime::FileTimeToUnixTime64(mTime);;
               }
             }
             */
@@ -1905,7 +1888,7 @@ Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         {
           if ((step & 0xFF) == 0)
           {
-            RINOK(progress->SetRatioInfo(&fileSize, NULL))
+            RINOK(lps.Interface()->SetRatioInfo(&fileSize, NULL))
             // RINOK(callback->SetCompleted(&completeValue));
           }
           UInt32 size;
@@ -2026,6 +2009,9 @@ HRESULT CHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &value)
       return E_INVALIDARG;
     return S_OK;
   }
+
+  if (name.IsEqualTo("backslash"))
+    return PROPVARIANT_to_bool(value, _supportWindowsBackslash);
 
   if (name.IsPrefixedBy_Ascii_NoCase("crc"))
   {

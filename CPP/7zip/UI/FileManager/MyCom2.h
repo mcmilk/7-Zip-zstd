@@ -5,20 +5,11 @@
 
 #include "../../../Common/MyCom.h"
 
-#define Z7_COM_ADDREF_RELEASE_MT \
-  private: \
-  STDMETHOD_(ULONG, AddRef)() Z7_override Z7_final \
-    { return (ULONG)InterlockedIncrement((LONG *)&_m_RefCount); } \
-  STDMETHOD_(ULONG, Release)() Z7_override Z7_final \
-    { const LONG v = InterlockedDecrement((LONG *)&_m_RefCount); \
-      if (v != 0) return (ULONG)v; \
-      delete this; return 0; }
-
 #define Z7_COM_UNKNOWN_IMP_SPEC_MT2(i1, i) \
   Z7_COM_QI_BEGIN \
   Z7_COM_QI_ENTRY_UNKNOWN(i1) \
   i \
-  Z7_COM_QI_END \
+  Z7_COM_QI_END_MT \
   Z7_COM_ADDREF_RELEASE_MT
 
 

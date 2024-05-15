@@ -171,7 +171,7 @@ bool CSystemPage::OnInit()
 
   _listView.SetImageList(_imageList, LVSIL_SMALL);
 
-  _listView.InsertColumn(0, LangString(IDS_PROP_FILE_TYPE), 72);
+  _listView.InsertColumn(0, LangString(IDS_PROP_FILE_TYPE), 80);
 
   UString s;
 
@@ -206,7 +206,7 @@ bool CSystemPage::OnInit()
 
   LV_COLUMNW ci;
   ci.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_SUBITEM;
-  ci.cx = 128;
+  ci.cx = 152;
   ci.fmt = LVCFMT_CENTER;
   ci.pszText = s.Ptr_non_const();
   ci.iSubItem = 1;

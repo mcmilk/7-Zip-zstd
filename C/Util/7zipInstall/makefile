@@ -19,9 +19,6 @@ C_OBJS = \
   $O\7zAlloc.obj \
   $O\7zArcIn.obj \
   $O\7zBuf.obj \
-  $O\7zBuf2.obj \
-  $O\7zCrc.obj \
-  $O\7zCrcOpt.obj \
   $O\7zFile.obj \
   $O\7zDec.obj \
   $O\7zStream.obj \
@@ -34,7 +31,11 @@ C_OBJS = \
 OBJS = \
   $(MAIN_OBJS) \
   $(C_OBJS) \
+  $(ASM_OBJS) \
   $O\resource.res
+
+!include "../../../CPP/7zip/Crc.mak"
+# !include "../../../CPP/7zip/LzmaDec.mak"
 
 !include "../../../CPP/Build.mak"
 
@@ -42,3 +43,5 @@ $(MAIN_OBJS): $(*B).c
 	$(COMPL_O1)
 $(C_OBJS): ../../$(*B).c
 	$(COMPL_O1)
+
+!include "../../Asm_c.mak"

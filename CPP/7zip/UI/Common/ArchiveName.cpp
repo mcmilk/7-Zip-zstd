@@ -158,7 +158,7 @@ UString CreateArchiveName(
   baseName = name;
   if (!simple_IsAllowed)
   {
-    HeapSort(&ids.Front(), ids.Size());
+    HeapSort(ids.NonConstData(), ids.Size());
     UInt32 v = 2;
     const unsigned num = ids.Size();
     for (unsigned i = 0; i < num; i++)
@@ -169,7 +169,7 @@ UString CreateArchiveName(
       if (id == v)
         v = id + 1;
     }
-    name += '_';
+    name.Add_Char('_');
     name.Add_UInt32(v);
   }
   return name;

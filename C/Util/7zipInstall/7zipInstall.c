@@ -1,5 +1,5 @@
 /* 7zipInstall.c - 7-Zip Installer
-2023-04-04 : Igor Pavlov : Public domain */
+2024-04-05 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -10,6 +10,8 @@
 #if defined(_MSC_VER) && _MSC_VER < 1600
 #pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
 #endif
+
+Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
 
 #ifdef Z7_OLD_WIN_SDK
 struct IShellView;
@@ -39,16 +41,6 @@ typedef enum {
 
 #if (defined(__GNUC__) && (__GNUC__ >= 8)) || defined(__clang__)
   // #pragma GCC diagnostic ignored "-Wcast-function-type"
-#endif
-
-#if defined(__clang__) || defined(__GNUC__)
-typedef void (*Z7_voidFunction)(void);
-#define MY_CAST_FUNC (Z7_voidFunction)
-#elif defined(_MSC_VER) && _MSC_VER > 1920
-#define MY_CAST_FUNC  (void *)
-// #pragma warning(disable : 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'void (__cdecl *)()'
-#else
-#define MY_CAST_FUNC
 #endif
 
 #define LLL_(quote) L##quote
@@ -118,10 +110,12 @@ static LPCWSTR const k_Reg_Path32 = L"Path"
   #define k_Reg_WOW_Flag 0
 #endif
 
+#ifdef USE_7ZIP_32_DLL
 #ifdef _WIN64
   #define k_Reg_WOW_Flag_32 KEY_WOW64_32KEY
 #else
   #define k_Reg_WOW_Flag_32 0
+#endif
 #endif
 
 #define k_7zip_CLSID L"{23170F69-40C1-278A-1000-000100020000}"
@@ -219,11 +213,11 @@ static DWORD GetFileVersion(LPCWSTR s)
       return 0;
   }
 
-  my_GetFileVersionInfoSizeW = (Func_GetFileVersionInfoSizeW) MY_CAST_FUNC GetProcAddress(g_version_dll_hModule,
+  my_GetFileVersionInfoSizeW = (Func_GetFileVersionInfoSizeW) Z7_CAST_FUNC_C GetProcAddress(g_version_dll_hModule,
     "GetFileVersionInfoSizeW");
-  my_GetFileVersionInfoW = (Func_GetFileVersionInfoW) MY_CAST_FUNC GetProcAddress(g_version_dll_hModule,
+  my_GetFileVersionInfoW = (Func_GetFileVersionInfoW) Z7_CAST_FUNC_C GetProcAddress(g_version_dll_hModule,
     "GetFileVersionInfoW");
-  my_VerQueryValueW = (Func_VerQueryValueW) MY_CAST_FUNC GetProcAddress(g_version_dll_hModule,
+  my_VerQueryValueW = (Func_VerQueryValueW) Z7_CAST_FUNC_C GetProcAddress(g_version_dll_hModule,
     "VerQueryValueW");
 
   if (!my_GetFileVersionInfoSizeW
@@ -1102,7 +1096,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   {
     BOOL isWow64 = FALSE;
     const Func_IsWow64Process func_IsWow64Process = (Func_IsWow64Process)
-        MY_CAST_FUNC GetProcAddress(GetModuleHandleW(L"kernel32.dll"),
+        Z7_CAST_FUNC_C GetProcAddress(GetModuleHandleW(L"kernel32.dll"),
         "IsWow64Process");
     
     if (func_IsWow64Process)
@@ -1111,7 +1105,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     if (!isWow64)
     {
       if (!g_SilentMode)
-        PrintErrorMessage("This installation requires Windows " MY_CPU_NAME, NULL);
+        PrintErrorMessage("This installation requires Windows "
+          #ifdef MY_CPU_X86_OR_AMD64
+            "x64"
+          #else
+            "64-bit"
+          #endif
+            , NULL);
       return 1;
     }
   }

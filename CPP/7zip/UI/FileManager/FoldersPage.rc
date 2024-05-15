@@ -1,7 +1,7 @@
 #include "FoldersPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 240
+#define xc OPTIONS_PAGE_XC_SIZE
 #define yc 100
 
 IDD_FOLDERS  MY_PAGE

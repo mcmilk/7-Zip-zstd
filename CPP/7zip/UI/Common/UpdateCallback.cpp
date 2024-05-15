@@ -7,18 +7,12 @@
 #ifndef _WIN32
 // #include <grp.h>
 // #include <pwd.h>
-/*
-inclusion of <sys/sysmacros.h> by <sys/types.h> is deprecated since glibc 2.25.
-Since glibc 2.3.3, macros have been aliases for three GNU-specific
-functions: gnu_dev_makedev(), gnu_dev_major(), and gnu_dev_minor()
-*/
 // for major()/minor():
+#if defined(__APPLE__) || defined(__DragonFly__) || \
+    defined(BSD) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/types.h>
-#if defined(__FreeBSD__) || defined(BSD) || defined(__APPLE__)
 #else
-#ifndef major
 #include <sys/sysmacros.h>
-#endif
 #endif
 
 #endif // _WIN32
@@ -176,6 +170,7 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetRootProp(PROPID propID, PROPVARIANT *val
     case kpidATime:  if (ParentDirItem) PropVariant_SetFrom_FiTime(prop, ParentDirItem->ATime); break;
     case kpidMTime:  if (ParentDirItem) PropVariant_SetFrom_FiTime(prop, ParentDirItem->MTime); break;
     case kpidArcFileName:  if (!ArcFileName.IsEmpty()) prop = ArcFileName; break;
+    default: break;
   }
   prop.Detach(value);
   return S_OK;
@@ -454,6 +449,7 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
     {
       case kpidSize:  prop = (UInt64)0; break;
       case kpidIsAnti:  prop = true; break;
+      default: break;
     }
   }
   else if (propID == kpidPath && up.NewNameIndex >= 0)
@@ -481,8 +477,8 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
       case kpidCTime:  PropVariant_SetFrom_FiTime(prop, di.CTime); break;
       case kpidATime:  PropVariant_SetFrom_FiTime(prop, di.ATime); break;
       case kpidMTime:  PropVariant_SetFrom_FiTime(prop, di.MTime); break;
-      case kpidAttrib:  prop = (UInt32)di.GetWinAttrib(); break;
-      case kpidPosixAttrib: prop = (UInt32)di.GetPosixAttrib(); break;
+      case kpidAttrib:  /* if (di.Attrib_IsDefined) */ prop = (UInt32)di.GetWinAttrib(); break;
+      case kpidPosixAttrib: /* if (di.Attrib_IsDefined) */ prop = (UInt32)di.GetPosixAttrib(); break;
     
     #if defined(_WIN32)
       case kpidIsAltStream:  prop = di.IsAltStream; break;
@@ -526,6 +522,7 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
           prop = DirItems->OwnerGroupMap.Strings[(unsigned)di.OwnerGroupIndex];
         break;
      #endif
+      default: break;
     }
   }
   prop.Detach(value);
@@ -594,8 +591,14 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream2(UInt32 index, ISequentialInStrea
         mode != NUpdateNotifyOp::kUpdate)
       return S_OK;
 
+#if 1
     CStdInFileStream *inStreamSpec = new CStdInFileStream;
     CMyComPtr<ISequentialInStream> inStreamLoc(inStreamSpec);
+#else
+    CMyComPtr<ISequentialInStream> inStreamLoc;
+    if (!CreateStdInStream(inStreamLoc))
+      return GetLastError_noZero_HRESULT();
+#endif
     *inStream = inStreamLoc.Detach();
   }
   else
@@ -950,7 +953,7 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOu
   fileName += VolExt;
   COutFileStream *streamSpec = new COutFileStream;
   CMyComPtr<ISequentialOutStream> streamLoc(streamSpec);
-  if (!streamSpec->Create(fileName, false))
+  if (!streamSpec->Create_NEW(fileName))
     return GetLastError_noZero_HRESULT();
   *volumeStream = streamLoc.Detach();
   return S_OK;

@@ -1,19 +1,37 @@
 // #define g1xs 60
+// #include "MemDialogRes.h"
+
+#define save_y 144
+#define spin_y (save_y + 12)
+#define spin_x_size 50
 
 CAPTION "Settings"
-BEGIN 
-  CONTROL  "Show "".."" item",      IDX_SETTINGS_SHOW_DOTS,            MY_CHECKBOX, m,  8, xc, 10
-  CONTROL  "Show real file &icons", IDX_SETTINGS_SHOW_REAL_FILE_ICONS, MY_CHECKBOX, m, 22, xc, 10
-  CONTROL  "&Full row select",      IDX_SETTINGS_FULL_ROW,             MY_CHECKBOX, m, 36, xc, 10
-  CONTROL  "Show &grid lines",      IDX_SETTINGS_SHOW_GRID,            MY_CHECKBOX, m, 50, xc, 10
-  CONTROL  "&Single-click to open an item", IDX_SETTINGS_SINGLE_CLICK, MY_CHECKBOX, m, 64, xc, 10
-  CONTROL  "&Alternative selection mode", IDX_SETTINGS_ALTERNATIVE_SELECTION, MY_CHECKBOX, m, 78, xc, 10
+BEGIN
+  MY_CONTROL_CHECKBOX ( "Show "".."" item",      IDX_SETTINGS_SHOW_DOTS,            m,  8, xc)
+  MY_CONTROL_CHECKBOX ( "Show real file &icons", IDX_SETTINGS_SHOW_REAL_FILE_ICONS, m, 22, xc)
+  MY_CONTROL_CHECKBOX ( "&Full row select",      IDX_SETTINGS_FULL_ROW,             m, 36, xc)
+  MY_CONTROL_CHECKBOX ( "Show &grid lines",      IDX_SETTINGS_SHOW_GRID,            m, 50, xc)
+  MY_CONTROL_CHECKBOX ( "&Single-click to open an item", IDX_SETTINGS_SINGLE_CLICK, m, 64, xc)
+  MY_CONTROL_CHECKBOX ( "&Alternative selection mode", IDX_SETTINGS_ALTERNATIVE_SELECTION, m, 78, xc)
 
-  CONTROL  "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     MY_CHECKBOX, m, 100, xc, 10
+  MY_CONTROL_CHECKBOX ( "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     m, 100, xc)
 
-  CONTROL  "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        MY_CHECKBOX, m, 122, xc, 10
+  MY_CONTROL_CHECKBOX ( "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        m, 122, xc)
+
+  LTEXT "Maximum amount of RAM memory usage allowed to unpack archives:",
+        IDT_MEM_USAGE_EXTRACT, m, save_y, xc, 8
+  MY_CONTROL_CHECKBOX_COLON(IDX_SETTINGS_MEM_SET, m + 10, spin_y + 1)
+  MY_CONTROL_EDIT_WITH_SPIN(
+      IDE_SETTINGS_MEM_SPIN_EDIT,
+      IDC_SETTINGS_MEM_SPIN,
+      "4", m + 30, spin_y, spin_x_size)
+  LTEXT "GB", IDT_SETTINGS_MEM_GB, m + 30 + spin_x_size + 8, spin_y + 2, xc - m - 30 - spin_x_size - 8, 8
 
   // LTEXT     "Memory usage for Compressing:", IDT_COMPRESS_MEMORY, m, 140, xc, 8
   // COMBOBOX  IDC_SETTINGS_MEM, m , 152, g1xs, yc - 152, MY_COMBO
   // LTEXT     "/ RAM", IDT_SETTINGS_MEM_RAM, m + g1xs + m, 154, xc - g1xs - m, MY_TEXT_NOPREFIX
 END
+
+#undef save_y
+#undef spin_y
+#undef spin_x_size

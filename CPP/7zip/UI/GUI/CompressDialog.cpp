@@ -18,6 +18,7 @@
 #include "../FileManager/HelpUtils.h"
 #include "../FileManager/PropertyName.h"
 #include "../FileManager/SplitUtils.h"
+#include "../FileManager/resourceGui.h"
 
 #include "../Explorer/MyMessages.h"
 
@@ -1015,41 +1016,34 @@ static bool IsAsciiString(const UString &s)
 
 static void AddSize_MB(UString &s, UInt64 size)
 {
+  s.Add_LF();
   const UInt64 v2 = size + ((UInt32)1 << 20) - 1;
-  if (size <= v2)
-    size = v2;
+  if (size < v2)
+      size = v2;
   s.Add_UInt64(size >> 20);
-  s += " MB";
+  s += " MB : ";
 }
 
+static void AddSize_MB_id(UString &s, UInt64 size, UInt32 id)
+{
+  AddSize_MB(s, size);
+  AddLangString(s, id);
+}
 
 void SetErrorMessage_MemUsage(UString &s, UInt64 reqSize, UInt64 ramSize, UInt64 ramLimit, const UString &usageString);
 void SetErrorMessage_MemUsage(UString &s, UInt64 reqSize, UInt64 ramSize, UInt64 ramLimit, const UString &usageString)
 {
-  s += "The operation was blocked by 7-Zip";
+  AddLangString(s, IDS_MEM_OPERATION_BLOCKED);
   s.Add_LF();
-  s += "The operation can require big amount of RAM (memory):";
-  s.Add_LF();
+  AddLangString(s, IDS_MEM_REQUIRES_BIG_MEM);
   s.Add_LF();
   AddSize_MB(s, reqSize);
-
-  if (!usageString.IsEmpty())
-  {
-    s += " : ";
-    s += usageString;
-  }
-
-  s.Add_LF();
-  AddSize_MB(s, ramSize);
-  s += " : RAM";
-
+  s += usageString;
+  AddSize_MB_id(s, ramSize, IDS_MEM_RAM_SIZE);
   // if (ramLimit != 0)
   {
-    s.Add_LF();
-    AddSize_MB(s, ramLimit);
-    s += " : 7-Zip limit";
+    AddSize_MB_id(s, ramLimit, IDS_MEM_USAGE_LIMIT_SET_BY_7ZIP);
   }
-  
   s.Add_LF();
   s.Add_LF();
   AddLangString(s, IDS_MEM_ERROR);
@@ -1095,10 +1089,16 @@ void CCompressDialog::OnOK()
       const UInt64 limit = Get_MemUse_Bytes();
       if (memUsage > limit)
       {
-        UString s;
-        UString s2 = LangString(IDT_COMPRESS_MEMORY);
+        UString s2;
+        LangString_OnlyFromLangFile(IDS_MEM_REQUIRED_MEM_SIZE, s2);
         if (s2.IsEmpty())
-          GetItemText(IDT_COMPRESS_MEMORY, s2);
+        {
+          s2 = LangString(IDT_COMPRESS_MEMORY);
+          if (s2.IsEmpty())
+            GetItemText(IDT_COMPRESS_MEMORY, s2);
+          s2.RemoveChar(L':');
+        }
+        UString s;
         SetErrorMessage_MemUsage(s, memUsage, _ramSize, limit, s2);
         MessageBoxError(s);
         return;
@@ -1823,8 +1823,8 @@ static int Combo_AddDict2(NWindows::NControl::CComboBox &cb, size_t sizeReal, si
   s.Add_UInt64(sizeShow >> moveBits);
   s.Add_Space();
   if (c != 0)
-    s += c;
-  s += 'B';
+    s.Add_Char(c);
+  s.Add_Char('B');
   if (sizeReal == k_Auto_Dict)
     Modify_Auto(s);
   const int index = (int)ComboBox_AddStringAscii(cb, s);
@@ -2394,8 +2394,8 @@ static void Add_Size(AString &s, UInt64 val)
   s.Add_UInt64(val >> moveBits);
   s.Add_Space();
   if (moveBits != 0)
-    s += c;
-  s += 'B';
+    s.Add_Char(c);
+  s.Add_Char('B');
 }
 
 
@@ -2714,8 +2714,8 @@ static void AddMemSize(UString &res, UInt64 size)
   res.Add_UInt64(size >> moveBits);
   res.Add_Space();
   if (moveBits != 0)
-    res += c;
-  res += 'B';
+    res.Add_Char(c);
+  res.Add_Char('B');
 }
 
 
@@ -2727,7 +2727,7 @@ int CCompressDialog::AddMemComboItem(UInt64 val, bool isPercent, bool isDefault)
   {
     UString s;
     s.Add_UInt64(val);
-    s += '%';
+    s.Add_Char('%');
     if (isDefault)
       sUser = k_Auto_Prefix;
     else
@@ -3510,7 +3510,7 @@ void COptionsDialog::SetPrec()
       // defaultPrec = kTimePrec_Unix;
       // flags = (UInt32)1 << kTimePrec_Unix;
 
-      s += ":";
+      s.Add_Colon();
       if (methodID >= 0 && (unsigned)methodID < Z7_ARRAY_SIZE(kMethodsNames))
         s += kMethodsNames[methodID];
       if (methodID == kPosix)

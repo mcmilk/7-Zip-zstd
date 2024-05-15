@@ -346,7 +346,7 @@ static HANDLE MyOpenFilePlugin(const char *name, bool isAbortCodeSupported)
   return MyOpenFilePluginW(GetUnicodeString(name, codePage), isAbortCodeSupported);
 }
 
-EXTERN_C HANDLE WINAPI OpenFilePlugin(char *name, const unsigned char * /* data */, int /* dataSize */)
+EXTERN_C HANDLE WINAPI OpenFilePlugin(char *name, const Byte * /* data */, int /* dataSize */)
 {
   MY_TRY_BEGIN
   // OutputDebugStringA("--- OpenFilePlugin");
@@ -360,7 +360,7 @@ EXTERN_C HANDLE WINAPI OpenFilePlugin(char *name, const unsigned char * /* data 
 }
 
 /*
-EXTERN_C HANDLE WINAPI OpenFilePluginW(const wchar_t *name,const unsigned char *Data,int DataSize,int OpMode)
+EXTERN_C HANDLE WINAPI OpenFilePluginW(const wchar_t *name,const Byte *Data,int DataSize,int OpMode)
 {
   MY_TRY_BEGIN
   if (name == NULL || (!g_Options.Enabled))
@@ -553,7 +553,7 @@ EXTERN_C int WINAPI DeleteFiles(HANDLE plugin, PluginPanelItem *panelItems, int 
   MY_TRY_END2("DeleteFiles", FALSE)
 }
 
-EXTERN_C int WINAPI ProcessKey(HANDLE plugin, int key, unsigned int controlState)
+EXTERN_C int WINAPI ProcessKey(HANDLE plugin, int key, unsigned controlState)
 {
   MY_TRY_BEGIN
   /* FIXME: after folder creation with F7, it doesn't reload new file list

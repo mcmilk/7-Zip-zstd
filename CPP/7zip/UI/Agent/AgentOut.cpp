@@ -326,16 +326,15 @@ Z7_COM7F_IMF(CAgent::DoOperation(
   
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
-  CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
-  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec );
+  CMyComPtr2_Create<IArchiveUpdateCallback, CArchiveUpdateCallback> updateCallback;
 
-  updateCallbackSpec->DirItems = &dirItems;
-  updateCallbackSpec->ArcItems = &arcItems;
-  updateCallbackSpec->UpdatePairs = &updatePairs2;
+  updateCallback->DirItems = &dirItems;
+  updateCallback->ArcItems = &arcItems;
+  updateCallback->UpdatePairs = &updatePairs2;
   
-  SetInArchiveInterfaces(this, updateCallbackSpec);
+  SetInArchiveInterfaces(this, updateCallback.ClsPtr());
   
-  updateCallbackSpec->Callback = &updateCallbackAgent;
+  updateCallback->Callback = &updateCallbackAgent;
 
   CByteBuffer processedItems;
   if (processedPaths)
@@ -344,7 +343,7 @@ Z7_COM7F_IMF(CAgent::DoOperation(
     processedItems.Alloc(num);
     for (unsigned i = 0; i < num; i++)
       processedItems[i] = 0;
-    updateCallbackSpec->ProcessedItemsStatuses = processedItems;
+    updateCallback->ProcessedItemsStatuses = processedItems;
   }
 
   Z7_DECL_CMyComPtr_QI_FROM(
@@ -367,7 +366,7 @@ Z7_COM7F_IMF(CAgent::DoOperation(
       {
         FOR_VECTOR (i, m_PropValues)
           propValues[i] = m_PropValues[i];
-        RINOK(setProperties->SetProperties(&names.Front(), propValues, names.Size()))
+        RINOK(setProperties->SetProperties(names.ConstData(), propValues, names.Size()))
       }
       catch(...)
       {
@@ -382,15 +381,14 @@ Z7_COM7F_IMF(CAgent::DoOperation(
 
   if (sfxModule != NULL)
   {
-    CInFileStream *sfxStreamSpec = new CInFileStream;
-    CMyComPtr<IInStream> sfxStream(sfxStreamSpec);
-    if (!sfxStreamSpec->Open(us2fs(sfxModule)))
+    CMyComPtr2_Create<IInStream, CInFileStream> sfxStream;
+    if (!sfxStream->Open(us2fs(sfxModule)))
       return E_FAIL;
       // throw "Can't open sfx module";
     RINOK(NCompress::CopyStream(sfxStream, outArchiveStream, NULL))
   }
 
-  HRESULT res = outArchive->UpdateItems(outArchiveStream, updatePairs2.Size(), updateCallback);
+  const HRESULT res = outArchive->UpdateItems(outArchiveStream, updatePairs2.Size(), updateCallback);
   if (res == S_OK && processedPaths)
   {
     {
@@ -443,8 +441,7 @@ Z7_COM7F_IMF(CAgent::DeleteItems(ISequentialOutStream *outArchiveStream,
   CRecordVector<CUpdatePair2> updatePairs;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
-  CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
-  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
+  CMyComPtr2_Create<IArchiveUpdateCallback, CArchiveUpdateCallback> updateCallback;
   
   CUIntVector realIndices;
   _agentFolder->GetRealIndices(indices, numItems,
@@ -472,11 +469,11 @@ Z7_COM7F_IMF(CAgent::DeleteItems(ISequentialOutStream *outArchiveStream,
     up2.SetAs_NoChangeArcItem(i);
     updatePairs.Add(up2);
   }
-  updateCallbackSpec->UpdatePairs = &updatePairs;
+  updateCallback->UpdatePairs = &updatePairs;
 
-  SetInArchiveInterfaces(this, updateCallbackSpec);
+  SetInArchiveInterfaces(this, updateCallback.ClsPtr());
 
-  updateCallbackSpec->Callback = &updateCallbackAgent;
+  updateCallback->Callback = &updateCallbackAgent;
   return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
 
@@ -489,8 +486,7 @@ HRESULT CAgent::CreateFolder(ISequentialOutStream *outArchiveStream,
   CDirItems dirItems;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
-  CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
-  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
+  CMyComPtr2_Create<IArchiveUpdateCallback, CArchiveUpdateCallback> updateCallback;
 
   UInt32 numItemsInArchive;
   RINOK(GetArchive()->GetNumberOfItems(&numItemsInArchive))
@@ -526,11 +522,11 @@ HRESULT CAgent::CreateFolder(ISequentialOutStream *outArchiveStream,
 
   dirItems.Items.Add(di);
 
-  updateCallbackSpec->Callback = &updateCallbackAgent;
-  updateCallbackSpec->DirItems = &dirItems;
-  updateCallbackSpec->UpdatePairs = &updatePairs;
+  updateCallback->Callback = &updateCallbackAgent;
+  updateCallback->DirItems = &dirItems;
+  updateCallback->UpdatePairs = &updatePairs;
   
-  SetInArchiveInterfaces(this, updateCallbackSpec);
+  SetInArchiveInterfaces(this, updateCallback.ClsPtr());
   
   return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
@@ -549,8 +545,7 @@ HRESULT CAgent::RenameItem(ISequentialOutStream *outArchiveStream,
   CRecordVector<CUpdatePair2> updatePairs;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
-  CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
-  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
+  CMyComPtr2_Create<IArchiveUpdateCallback, CArchiveUpdateCallback> updateCallback;
   
   CUIntVector realIndices;
   _agentFolder->GetRealIndices(indices, numItems,
@@ -596,11 +591,11 @@ HRESULT CAgent::RenameItem(ISequentialOutStream *outArchiveStream,
     updatePairs.Add(up2);
   }
   
-  updateCallbackSpec->Callback = &updateCallbackAgent;
-  updateCallbackSpec->UpdatePairs = &updatePairs;
-  updateCallbackSpec->NewNames = &newNames;
+  updateCallback->Callback = &updateCallbackAgent;
+  updateCallback->UpdatePairs = &updatePairs;
+  updateCallback->NewNames = &newNames;
 
-  SetInArchiveInterfaces(this, updateCallbackSpec);
+  SetInArchiveInterfaces(this, updateCallback.ClsPtr());
 
   return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
@@ -620,8 +615,7 @@ HRESULT CAgent::CommentItem(ISequentialOutStream *outArchiveStream,
   CRecordVector<CUpdatePair2> updatePairs;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
-  CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
-  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
+  CMyComPtr2_Create<IArchiveUpdateCallback, CArchiveUpdateCallback> updateCallback;
   
   const int mainRealIndex = _agentFolder->GetRealIndex(indices[0]);
 
@@ -642,12 +636,12 @@ HRESULT CAgent::CommentItem(ISequentialOutStream *outArchiveStream,
     updatePairs.Add(up2);
   }
   
-  updateCallbackSpec->Callback = &updateCallbackAgent;
-  updateCallbackSpec->UpdatePairs = &updatePairs;
-  updateCallbackSpec->CommentIndex = mainRealIndex;
-  updateCallbackSpec->Comment = &newName;
+  updateCallback->Callback = &updateCallbackAgent;
+  updateCallback->UpdatePairs = &updatePairs;
+  updateCallback->CommentIndex = mainRealIndex;
+  updateCallback->Comment = &newName;
 
-  SetInArchiveInterfaces(this, updateCallbackSpec);
+  SetInArchiveInterfaces(this, updateCallback.ClsPtr());
 
   return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
@@ -664,8 +658,7 @@ HRESULT CAgent::UpdateOneFile(ISequentialOutStream *outArchiveStream,
   CDirItems dirItems;
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
-  CArchiveUpdateCallback *updateCallbackSpec = new CArchiveUpdateCallback;
-  CMyComPtr<IArchiveUpdateCallback> updateCallback(updateCallbackSpec);
+  CMyComPtr2_Create<IArchiveUpdateCallback, CArchiveUpdateCallback> updateCallback;
   
   UInt32 realIndex;
   {
@@ -702,13 +695,13 @@ HRESULT CAgent::UpdateOneFile(ISequentialOutStream *outArchiveStream,
     }
     updatePairs.Add(up2);
   }
-  updateCallbackSpec->DirItems = &dirItems;
-  updateCallbackSpec->Callback = &updateCallbackAgent;
-  updateCallbackSpec->UpdatePairs = &updatePairs;
+  updateCallback->DirItems = &dirItems;
+  updateCallback->Callback = &updateCallbackAgent;
+  updateCallback->UpdatePairs = &updatePairs;
  
-  SetInArchiveInterfaces(this, updateCallbackSpec);
+  SetInArchiveInterfaces(this, updateCallback.ClsPtr());
   
-  updateCallbackSpec->KeepOriginalItemNames = true;
+  updateCallback->KeepOriginalItemNames = true;
   return CommonUpdate(outArchiveStream, updatePairs.Size(), updateCallback);
 }
 

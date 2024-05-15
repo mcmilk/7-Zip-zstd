@@ -475,6 +475,14 @@ SOURCE=.\BrowseDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\BrowseDialog2.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\BrowseDialog2.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\ComboDialog.cpp
 # End Source File
 # Begin Source File
@@ -516,6 +524,14 @@ SOURCE=.\ListViewDialog.cpp
 # Begin Source File
 
 SOURCE=.\ListViewDialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MemDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MemDialog.h
 # End Source File
 # Begin Source File
 
@@ -707,6 +723,10 @@ SOURCE=..\..\..\..\C\7zTypes.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zVersion.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\7zWindows.h
 # End Source File
 # Begin Source File
@@ -739,6 +759,10 @@ SOURCE=..\..\..\..\C\DllSecur.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\DllSecur.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Precomp.h
 # End Source File
 # Begin Source File
 
@@ -1068,7 +1092,15 @@ SOURCE=..\..\..\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\AutoPtr.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Common.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Common0.h
 # End Source File
 # Begin Source File
 

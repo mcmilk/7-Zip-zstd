@@ -51,7 +51,7 @@ UString GetQuotedString(const UString &s)
 {
   UString s2 ('\"');
   s2 += s;
-  s2 += '\"';
+  s2.Add_Char('\"');
   return s2;
 }
 
@@ -155,14 +155,14 @@ static HRESULT CreateMap(const UStringVector &names,
     event.Close();
   }
 
-  params += '#';
+  params.Add_Char('#');
   params += mappingName;
-  params += ':';
+  params.Add_Colon();
   char temp[32];
   ConvertUInt64ToString(totalSize, temp);
   params += temp;
   
-  params += ':';
+  params.Add_Colon();
   params += eventName;
 
   LPVOID data = fileMapping.Map(FILE_MAP_WRITE, 0, totalSize);

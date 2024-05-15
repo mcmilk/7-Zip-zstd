@@ -195,6 +195,10 @@ SOURCE=..\..\Archive\Icons\z.ico
 
 SOURCE=..\..\Archive\Icons\zip.ico
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Icons\zst.ico
+# End Source File
 # End Group
 # Begin Source File
 
@@ -231,7 +235,15 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\Common\AutoPtr.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\Common.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Common0.h
 # End Source File
 # Begin Source File
 
@@ -400,6 +412,10 @@ SOURCE=..\..\..\Common\Wildcard.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\Wildcard.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Xxh64Reg.cpp
 # End Source File
 # Begin Source File
 
@@ -1068,6 +1084,14 @@ SOURCE=..\..\Compress\ZDecoder.cpp
 # Begin Source File
 
 SOURCE=..\..\Compress\ZDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ZstdDecoder.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Compress\ZstdDecoder.h
 # End Source File
 # End Group
 # Begin Group "Crypto"
@@ -2253,6 +2277,46 @@ SOURCE=..\..\..\..\C\Threads.c
 
 SOURCE=..\..\..\..\C\Threads.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Xxh64.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Xxh64.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\ZstdDec.c
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\ZstdDec.h
+# End Source File
 # End Group
 # Begin Group "Archive"
 
@@ -2994,6 +3058,10 @@ SOURCE=..\..\Archive\XzHandler.h
 # Begin Source File
 
 SOURCE=..\..\Archive\ZHandler.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\ZstdHandler.cpp
 # End Source File
 # End Group
 # Begin Group "7zip"

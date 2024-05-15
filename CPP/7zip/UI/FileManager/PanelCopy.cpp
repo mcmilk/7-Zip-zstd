@@ -102,7 +102,7 @@ HRESULT CPanelCopyThread::ProcessVirt()
     NExtract::NPathMode::EEnum pathMode =
         NExtract::NPathMode::kCurPaths;
         // NExtract::NPathMode::kFullPathnames;
-    result2 = archiveFolder->Extract(&Indices.Front(), Indices.Size(),
+    result2 = archiveFolder->Extract(Indices.ConstData(), Indices.Size(),
         BoolToInt(options->includeAltStreams),
         BoolToInt(options->replaceAltStreamChars),
         pathMode, NExtract::NOverwriteMode::kAsk,
@@ -111,7 +111,7 @@ HRESULT CPanelCopyThread::ProcessVirt()
   else
     result2 = FolderOperations->CopyTo(
       BoolToInt(options->moveMode),
-      &Indices.Front(), Indices.Size(),
+      Indices.ConstData(), Indices.Size(),
       BoolToInt(options->includeAltStreams),
       BoolToInt(options->replaceAltStreamChars),
       options->folder, ExtractCallback);
@@ -316,7 +316,7 @@ struct CThreadUpdate
       Result = FolderOperations->CopyFrom(
         MoveMode,
         FolderPrefix,
-        &FileNamePointers.Front(),
+        FileNamePointers.ConstData(),
         FileNamePointers.Size(),
         UpdateCallback);
     }

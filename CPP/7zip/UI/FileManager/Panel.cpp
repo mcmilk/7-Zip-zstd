@@ -48,7 +48,6 @@ static DWORD kStyles[4] = { LVS_ICON, LVS_SMALLICON, LVS_LIST, LVS_REPORT };
 // static const int kCreateFolderID = 101;
 
 extern HINSTANCE g_hInstance;
-extern DWORD g_ComCtl32Version;
 
 void CPanel::Release()
 {
@@ -449,9 +448,9 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
     // {VIEW_NEWFOLDER, kCreateFolderID, TBSTATE_ENABLED, BTNS_BUTTON, 0L, 0},
   };
 
-  #ifndef UNDER_CE
+#ifdef Z7_USE_DYN_ComCtl32Version
   if (g_ComCtl32Version >= MAKELONG(71, 4))
-  #endif
+#endif
   {
     icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
     icex.dwICC  = ICC_COOL_CLASSES | ICC_BAR_CLASSES;
@@ -982,8 +981,8 @@ static UString GetSubFolderNameForExtract2(const UString &arcPath)
 
 int CPanel::FindDir_InOperatedList(const CRecordVector<UInt32> &operatedIndices) const
 {
-  const bool *isDirVector = &_isDirVector.Front();
-  const UInt32 *indices = &operatedIndices.Front();
+  const bool *isDirVector = _isDirVector.ConstData();
+  const UInt32 *indices = operatedIndices.ConstData();
   const unsigned numItems = operatedIndices.Size();
   for (unsigned i = 0; i < numItems; i++)
     if (isDirVector[indices[i]])
@@ -997,7 +996,7 @@ void CPanel::GetFilePaths(const CRecordVector<UInt32> &operatedIndices, UStringV
   paths.ClearAndReserve(operatedIndices.Size());
   UString path = GetFsPath();
   const unsigned prefixLen = path.Len();
-  const UInt32 *indices = &operatedIndices.Front();
+  const UInt32 *indices = operatedIndices.ConstData();
   const unsigned numItems = operatedIndices.Size();
   // for (unsigned y = 0; y < 10000; y++, paths.Clear())
   for (unsigned i = 0; i < numItems; i++)
@@ -1030,7 +1029,7 @@ void CPanel::ExtractArchives()
   if (indices.Size() == 1)
     outFolder += GetSubFolderNameForExtract2(GetItemRelPath(indices[0]));
   else
-    outFolder += '*';
+    outFolder.Add_Char('*');
   outFolder.Add_PathSepar();
   
   CContextMenuInfo ci;

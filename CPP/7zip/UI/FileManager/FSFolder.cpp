@@ -45,7 +45,7 @@ typedef struct _IO_STATUS_BLOCK {
 
 #include "SysIconUtils.h"
 
-#if _WIN32_WINNT < 0x0501
+#if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0501
 #ifdef _APISETFILE_
 // Windows SDK 8.1 defines in fileapi.h the function GetCompressedFileSizeW only if _WIN32_WINNT >= 0x0501
 // But real support version for that function is NT 3.1 (probably)
@@ -63,6 +63,7 @@ using namespace NDir;
 using namespace NName;
 
 #ifndef USE_UNICODE_FSTRING
+int CompareFileNames_ForFolderList(const FChar *s1, const FChar *s2);
 int CompareFileNames_ForFolderList(const FChar *s1, const FChar *s2)
 {
   return CompareFileNames_ForFolderList(fs2us(s1), fs2us(s2));
@@ -119,7 +120,7 @@ HRESULT CFSFolder::Init(const FString &path /* , IFolderFolder *parentFolder */)
     CFindFile findFile;
     CFileInfo fi;
     FString path2 = _path;
-    path2 += '*'; // CHAR_ANY_MASK;
+    path2.Add_Char('*'); // CHAR_ANY_MASK;
     if (!findFile.FindFirst(path2, fi))
       return lastError;
   }
@@ -357,7 +358,7 @@ bool CFSFolder::SaveComments()
       attrib = fi.Attrib;
   }
   NIO::COutFile file;
-  if (!file.CreateAlways(path, attrib))
+  if (!file.Create_ALWAYS_with_Attribs(path, attrib))
     return false;
   UInt32 processed;
   file.Write(utf, utf.Len(), processed);
@@ -467,7 +468,7 @@ typedef enum
 Z7_WIN_FILE_INFORMATION_CLASS;
 
 
-#if (_WIN32_WINNT >= 0x0500) && !defined(_M_IA64)
+#if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0500) && !defined(_M_IA64)
 #define Z7_WIN_NTSTATUS  NTSTATUS
 #define Z7_WIN_IO_STATUS_BLOCK  IO_STATUS_BLOCK
 #else
@@ -495,6 +496,7 @@ EXTERN_C_END
 static Func_NtQueryInformationFile f_NtQueryInformationFile;
 static bool g_NtQueryInformationFile_WasRequested = false;
 
+Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
 
 void CFSFolder::ReadChangeTime(CDirItem &di)
 {
@@ -907,7 +909,7 @@ Z7_COM7F_IMF(CFSFolder::BindToParentFolder(IFolderFolder **resultFolder))
   int pos = _path.ReverseFind_PathSepar();
   if (pos < 0 || pos != (int)_path.Len() - 1)
     return E_FAIL;
-  FString parentPath = _path.Left(pos);
+  FString parentPath = _path.Left((unsigned)pos);
   pos = parentPath.ReverseFind_PathSepar();
   parentPath.DeleteFrom((unsigned)(pos + 1));
 
@@ -1071,7 +1073,7 @@ Z7_COM7F_IMF(CFSFolder::CreateFile(const wchar_t *name, IProgress * /* progress 
   FString absPath;
   GetAbsPath(name, absPath);
   NIO::COutFile outFile;
-  if (!outFile.Create(absPath, false))
+  if (!outFile.Create_NEW(absPath))
     return GetLastError_noZero_HRESULT();
   return S_OK;
 }

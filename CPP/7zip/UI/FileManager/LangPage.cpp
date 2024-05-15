@@ -16,7 +16,7 @@
 using namespace NWindows;
 
 
-static const unsigned k_NumLangLines_EN = 429;
+static const unsigned k_NumLangLines_EN = 443;
 
 #ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
@@ -50,7 +50,7 @@ static void NativeLangString(UString &dest, const wchar_t *s)
 {
   dest += " (";
   dest += s;
-  dest += ')';
+  dest.Add_Char(')');
 }
 
 bool LangOpen(CLang &lang, CFSTR fileName);

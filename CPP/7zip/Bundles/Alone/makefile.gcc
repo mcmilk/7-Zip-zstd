@@ -1,17 +1,12 @@
 PROG = 7za
 
+CONSOLE_VARIANT_FLAGS=-DZ7_PROG_VARIANT_A
+ZIP_FLAGS=-DZ7_ZIP_LZFSE_DISABLE
 
 
 # IS_X64 = 1
 # USE_ASM = 1
 # ST_MODE = 1
-
-include ../../LzmaDec_gcc.mak
-
-
-LOCAL_FLAGS_ST =
-MT_OBJS =
-
 
 ifdef SystemDrive
 IS_MINGW = 1
@@ -21,6 +16,13 @@ ifdef SYSTEMDRIVE
 IS_MINGW = 1
 endif
 endif
+
+include ../../LzmaDec_gcc.mak
+
+
+LOCAL_FLAGS_ST =
+MT_OBJS =
+
 
 ifdef ST_MODE
 
@@ -36,13 +38,14 @@ else
 
 MT_OBJS = \
   $O/LzFindMt.o \
-  $O/StreamBinder.o \
-  $O/Synchronization.o \
-  $O/VirtThread.o \
+  $O/LzFindOpt.o \
+  $O/Threads.o \
   $O/MemBlocks.o \
   $O/OutMemStream.o \
   $O/ProgressMt.o \
-  $O/Threads.o \
+  $O/StreamBinder.o \
+  $O/Synchronization.o \
+  $O/VirtThread.o \
 
 endif
 
@@ -53,9 +56,10 @@ LOCAL_FLAGS_SYS =
 ifdef IS_MINGW
 
 LOCAL_FLAGS_SYS = \
-  -DZ7_LARGE_PAGES \
-  -DZ7_LONG_PATH \
   -DZ7_DEVICE_FILE \
+
+#  -DZ7_LARGE_PAGES \
+#  -DZ7_LONG_PATH \
 
 SYS_OBJS = \
   $O/FileSystem.o \
@@ -75,7 +79,6 @@ endif
 LOCAL_FLAGS = \
   $(LOCAL_FLAGS_ST) \
   $(LOCAL_FLAGS_SYS) \
-
 
 
 CONSOLE_OBJS = \
@@ -122,21 +125,21 @@ COMMON_OBJS = \
   $O/ListFileUtils.o \
   $O/LzFindPrepare.o \
   $O/MyString.o \
+  $O/MyVector.o \
   $O/NewHandler.o \
-  $O/StdInStream.o \
-  $O/StdOutStream.o \
   $O/Sha1Prepare.o \
   $O/Sha1Reg.o \
   $O/Sha256Prepare.o \
   $O/Sha256Reg.o \
+  $O/StdInStream.o \
+  $O/StdOutStream.o \
   $O/StringConvert.o \
   $O/StringToInt.o \
   $O/UTFConvert.o \
-  $O/MyVector.o \
   $O/Wildcard.o \
+  $O/Xxh64Reg.o \
   $O/XzCrc64Init.o \
   $O/XzCrc64Reg.o \
-
 
 WIN_OBJS = \
   $O/ErrorMsg.o \
@@ -151,7 +154,6 @@ WIN_OBJS = \
   $O/System.o \
   $O/SystemInfo.o \
   $O/TimeUtils.o \
-
 
 7ZIP_COMMON_OBJS = \
   $O/CreateCoder.o \
@@ -179,6 +181,7 @@ AR_OBJS = \
   $O/LzmaHandler.o \
   $O/SplitHandler.o \
   $O/XzHandler.o \
+  $O/ZstdHandler.o \
 
 AR_COMMON_OBJS = \
   $O/CoderMixer2.o \
@@ -269,6 +272,10 @@ COMPRESS_OBJS = \
   $O/ShrinkDecoder.o \
   $O/XzDecoder.o \
   $O/XzEncoder.o \
+  $O/ZstdDecoder.o \
+
+#  $O/LzfseDecoder.o \
+#  $O/ZstdRegister.o
 
 CRYPTO_OBJS = \
   $O/7zAes.o \
@@ -283,7 +290,11 @@ CRYPTO_OBJS = \
   $O/ZipStrong.o \
 
 C_OBJS = \
+  $O/7zCrc.o \
+  $O/7zCrcOpt.o \
   $O/7zStream.o \
+  $O/Aes.o \
+  $O/AesOpt.o \
   $O/Alloc.o \
   $O/Bcj2.o \
   $O/Bcj2Enc.o \
@@ -295,7 +306,6 @@ C_OBJS = \
   $O/Delta.o \
   $O/HuffEnc.o \
   $O/LzFind.o \
-  $O/LzFindOpt.o \
   $O/Lzma2Dec.o \
   $O/Lzma2DecMt.o \
   $O/Lzma2Enc.o \
@@ -309,22 +319,21 @@ C_OBJS = \
   $O/Ppmd8.o \
   $O/Ppmd8Dec.o \
   $O/Ppmd8Enc.o \
+  $O/Sha1.o \
+  $O/Sha1Opt.o \
+  $O/Sha256.o \
+  $O/Sha256Opt.o \
   $O/Sort.o \
   $O/SwapBytes.o \
+  $O/Xxh64.o \
   $O/Xz.o \
   $O/XzDec.o \
   $O/XzEnc.o \
   $O/XzIn.o \
   $O/XzCrc64.o \
   $O/XzCrc64Opt.o \
-  $O/7zCrc.o \
-  $O/7zCrcOpt.o \
-  $O/Aes.o \
-  $O/AesOpt.o \
-  $O/Sha256.o \
-  $O/Sha256Opt.o \
-  $O/Sha1.o \
-  $O/Sha1Opt.o \
+  $O/ZstdDec.o \
+
 
 OBJS = \
   $(LZMA_DEC_OPT_OBJS) \
