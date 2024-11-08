@@ -1,6 +1,16 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+24.07          2024-06-19
+-------------------------
+- Changes in files:
+    Asm/x86/Sha256Opt.asm
+    Asm/x86/Sha1Opt.asm
+  Now it uses "READONLY" flag for constant array segment.
+  It fixes an issue where ".rodata" section in 7-Zip for x86/x64 Linux had a "WRITE" attribute.
+- The bug was fixed: 7-Zip could crash for some incorrect ZSTD archives.
+
+
 24.06          2024-05-26
 -------------------------
 - The bug was fixed: 7-Zip could not unpack some ZSTD archives.

@@ -1039,6 +1039,9 @@ void CArcCmdLineParser::Parse1(const UStringVector &commandStrings,
   options.TechMode = parser[NKey::kTechMode].ThereIs;
   options.ShowTime = parser[NKey::kShowTime].ThereIs;
 
+  if (parser[NKey::kDisablePercents].ThereIs)
+    options.DisablePercents = true;
+
   if (parser[NKey::kDisablePercents].ThereIs
       || options.StdOutMode
       || !options.IsStdOutTerminal)

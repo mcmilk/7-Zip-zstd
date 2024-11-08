@@ -939,7 +939,8 @@ void CBrowseDialog2::OnDelete(/* bool toRecycleBin */)
       s.Add_LF();
       s += s2;
     }
-    if (::MessageBoxW((HWND)*this, s, LangString(titleID), MB_OKCANCEL | MB_ICONQUESTION) != IDOK)
+    if (::MessageBoxW((HWND)*this, s, LangString(titleID),
+        MB_YESNOCANCEL | MB_ICONQUESTION) != IDYES)
       return;
   }
 
