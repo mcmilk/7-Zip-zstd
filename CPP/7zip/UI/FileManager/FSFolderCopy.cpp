@@ -515,8 +515,22 @@ static HRESULT CopyFile_Ask(
       RINOK(state.ProgressInfo.ProgressResult)
       if (!res)
       {
+        const DWORD errorCode = GetLastError();
+        UString errorMessage = NError::MyFormatMessage(Return_LastError_or_FAIL());
+        if (errorCode == ERROR_INVALID_PARAMETER)
+        {
+          NFind::CFileInfo fi;
+          if (fi.Find(srcPath) &&
+              fi.Size > (UInt32)(Int32)-1)
+          {
+            // bool isFsDetected = false;
+            // if (NSystem::Is_File_LimitedBy_4GB(destPathNew, isFsDetected) || !isFsDetected)
+              errorMessage += " File size exceeds 4 GB";
+          }
+        }
+
         // GetLastError() is ERROR_REQUEST_ABORTED in case of PROGRESS_CANCEL.
-        RINOK(SendMessageError(state.Callback, GetLastErrorMessage(), destPathNew))
+        RINOK(SendMessageError(state.Callback, errorMessage, destPathNew))
         return E_ABORT;
       }
       state.ProgressInfo.StartPos += state.ProgressInfo.FileSize;

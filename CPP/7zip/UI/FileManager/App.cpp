@@ -782,6 +782,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
   if (useSrcPanel)
   {
     CCopyToOptions options;
+    // options.src_Is_IO_FS_Folder = useFullItemPaths;
     options.folder = useTemp ? fs2us(tempDirPrefix) : destPath;
     options.moveMode = move;
     options.includeAltStreams = true;

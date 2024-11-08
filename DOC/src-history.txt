@@ -1,6 +1,17 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+24.08          2024-08-11
+-------------------------
+- The bug in 7-Zip 24.00-24.07 was fixed:
+  For creating a zip archive: 7-Zip could write extra zero bytes after the end of the archive,
+  if a file included to archive cannot be compressed to a size smaller than original.
+  The created zip archive is correct except for the useless zero bytes after the end of the archive.
+  When unpacking such a zip archive, 7-Zip displays a warning:
+    "WARNING: There are data after the end of archive".
+- Some bugs were fixed.
+
+
 24.07          2024-06-19
 -------------------------
 - Changes in files:

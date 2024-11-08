@@ -1606,7 +1606,23 @@ HRESULT UpdateArchive(
       
       if (!MyMoveFile(tempPath, us2fs(arcPath)))
       {
-        errorInfo.SetFromLastError("cannot move the file", tempPath);
+        errorInfo.SystemError = ::GetLastError();
+        errorInfo.Message = "cannot move the file";
+        if (errorInfo.SystemError == ERROR_INVALID_PARAMETER)
+        {
+          NFind::CFileInfo fi;
+          if (fi.Find(tempPath) &&
+              fi.Size > (UInt32)(Int32)-1)
+          {
+            // bool isFsDetected = false;
+            // if (NSystem::Is_File_LimitedBy_4GB(us2fs(arcPath), isFsDetected) || !isFsDetected)
+            {
+              errorInfo.Message.Add_LF();
+              errorInfo.Message += "Archive file size exceeds 4 GB";
+            }
+          }
+        }
+        errorInfo.FileNames.Add(tempPath);
         errorInfo.FileNames.Add(us2fs(arcPath));
         return errorInfo.Get_HRESULT_Error();
       }

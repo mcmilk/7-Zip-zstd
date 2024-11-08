@@ -157,6 +157,31 @@ bool MyGetDiskFreeSpace(CFSTR rootPath, UInt64 &clusterSize, UInt64 &totalSize, 
 
 #endif
 
+/*
+bool Is_File_LimitedBy_4GB(CFSTR _path, bool &isFsDetected)
+{
+  isFsDetected = false;
+  FString path (_path);
+  path.DeleteFrom(NName::GetRootPrefixSize(path));
+  // GetVolumeInformation supports super paths.
+  // NName::If_IsSuperPath_RemoveSuperPrefix(path);
+  if (!path.IsEmpty())
+  {
+    DWORD volumeSerialNumber, maximumComponentLength, fileSystemFlags;
+    UString volName, fileSystemName;
+    if (MyGetVolumeInformation(path, volName,
+        &volumeSerialNumber, &maximumComponentLength, &fileSystemFlags,
+        fileSystemName))
+    {
+      isFsDetected = true;
+      if (fileSystemName.IsPrefixedBy_Ascii_NoCase("fat"))
+        return true;
+    }
+  }
+  return false;
+}
+*/
+
 }}}
 
 #endif

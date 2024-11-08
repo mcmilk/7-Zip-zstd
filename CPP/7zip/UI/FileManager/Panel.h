@@ -147,11 +147,11 @@ public:
 struct CTempFileInfo
 {
   UInt32 FileIndex;  // index of file in folder
+  bool NeedDelete;
   UString RelPath;   // Relative path of file from Folder
   FString FolderPath;
   FString FilePath;
   NWindows::NFile::NFind::CFileInfo FileInfo;
-  bool NeedDelete;
 
   CTempFileInfo(): FileIndex((UInt32)(Int32)-1), NeedDelete(false) {}
   void DeleteDirAndFile() const
@@ -171,15 +171,15 @@ struct CTempFileInfo
 
 struct CFolderLink: public CTempFileInfo
 {
+  bool IsVirtual;
+  bool UsePassword;
   NWindows::NDLL::CLibrary Library;
   CMyComPtr<IFolderFolder> ParentFolder; // can be NULL, if parent is FS folder (in _parentFolders[0])
   UString ParentFolderPath; // including tail slash (doesn't include paths parts of parent in next level)
-  bool UsePassword;
   UString Password;
-  bool IsVirtual;
 
   UString VirtualPath; // without tail slash
-  CFolderLink(): UsePassword(false), IsVirtual(false) {}
+  CFolderLink(): IsVirtual(false), UsePassword(false) {}
 
   bool WasChanged(const NWindows::NFile::NFind::CFileInfo &newFileInfo) const
   {
@@ -310,7 +310,7 @@ struct COpenResult
 
 class CPanel Z7_final: public NWindows::NControl::CWindow2
 {
-  CExtToIconMap _extToIconMap;
+  // CExtToIconMap _extToIconMap;
   UINT _baseID;
   unsigned _comboBoxID;
   UINT _statusBarID;
@@ -324,7 +324,7 @@ class CPanel Z7_final: public NWindows::NControl::CWindow2
   virtual void OnDestroy() Z7_override;
   virtual bool OnNotify(UINT controlID, LPNMHDR lParam, LRESULT &result) Z7_override;
 
-  void AddComboBoxItem(const UString &name, int iconIndex, int indent, bool addToList);
+  void AddComboBoxItem(const UString &name, int iconIndex, unsigned indent, bool addToList);
 
   bool OnComboBoxCommand(UINT code, LPARAM param, LRESULT &result);
   
@@ -355,7 +355,7 @@ public:
   HWND _mainWindow;
   CPanelCallback *_panelCallback;
 
-  void SysIconsWereChanged() { _extToIconMap.Clear(); }
+  // void SysIconsWereChanged() { _extToIconMap.Clear(); }
 
   void DeleteItems(bool toRecycleBin);
   void CreateFolder();

@@ -534,7 +534,8 @@ bool FindExt(const char *p, const UString &name, CStringFinder &finder);
 bool FindExt(const char *p, const UString &name, CStringFinder &finder)
 {
   const int dotPos = name.ReverseFind_Dot();
-  if (dotPos < 0 || dotPos == (int)name.Len() - 1)
+  int len = (int)name.Len() - (dotPos + 1);
+  if (len == 0 || len > 32 || dotPos < 0)
     return false;
   return finder.FindWord_In_LowCaseAsciiList_NoCase(p, name.Ptr(dotPos + 1));
 }

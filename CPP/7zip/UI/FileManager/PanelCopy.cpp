@@ -189,7 +189,9 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options,
 
   extracter.ExtractCallbackSpec = new CExtractCallbackImp;
   extracter.ExtractCallback = extracter.ExtractCallbackSpec;
-
+  extracter.ExtractCallbackSpec->Src_Is_IO_FS_Folder =
+      IsFSFolder() || IsAltStreamsFolder();
+      // options.src_Is_IO_FS_Folder;
   extracter.options = &options;
   extracter.ExtractCallbackSpec->ProgressDialog = &extracter;
   extracter.CompressingMode = false;

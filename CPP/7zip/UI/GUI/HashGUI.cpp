@@ -66,28 +66,6 @@ void AddValuePair(CPropNameValPairs &pairs, UINT resourceID, UInt64 value)
 }
 
 
-void AddSizeValue(UString &s, UInt64 value)
-{
-  {
-    wchar_t sz[32];
-    ConvertUInt64ToString(value, sz);
-    s += MyFormatNew(IDS_FILE_SIZE, sz);
-  }
-  if (value >= (1 << 10))
-  {
-    char c;
-          if (value >= ((UInt64)10 << 30)) { value >>= 30; c = 'G'; }
-    else  if (value >=         (10 << 20)) { value >>= 20; c = 'M'; }
-    else                                   { value >>= 10; c = 'K'; }
-    
-    s += " (";
-    s.Add_UInt64(value);
-    s.Add_Space();
-    s += (wchar_t)c;
-    s += "iB)";
-  }
-}
-
 void AddSizeValuePair(CPropNameValPairs &pairs, UINT resourceID, UInt64 value)
 {
   CProperty &pair = pairs.AddNew();

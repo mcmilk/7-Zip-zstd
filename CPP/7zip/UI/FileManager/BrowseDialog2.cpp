@@ -356,8 +356,8 @@ bool CBrowseDialog2::OnInit()
 #endif
   }
 
-  _list.SetImageList(GetSysImageList(true), LVSIL_SMALL);
-  _list.SetImageList(GetSysImageList(false), LVSIL_NORMAL);
+  _list.SetImageList(Shell_Get_SysImageList_smallIcons(true), LVSIL_SMALL);
+  _list.SetImageList(Shell_Get_SysImageList_smallIcons(false), LVSIL_NORMAL);
 
   unsigned columnIndex = 0;
   _list.InsertColumn(columnIndex++, LangString(IDS_PROP_NAME), 100);
@@ -1639,15 +1639,15 @@ HRESULT CBrowseDialog2::Reload(const UString &pathPrefix, const UStringVector &s
     #ifndef UNDER_CE
     if (isDrive)
     {
-      if (GetRealIconIndex(fi.Name + FCHAR_PATH_SEPARATOR, FILE_ATTRIBUTE_DIRECTORY, item.iImage) == 0)
-        item.iImage = 0;
+      item.iImage = Shell_GetFileInfo_SysIconIndex_for_Path(
+          fi.Name + FCHAR_PATH_SEPARATOR,
+          FILE_ATTRIBUTE_DIRECTORY);
     }
     else
     #endif
       item.iImage = _extToIconMap.GetIconIndex(fi.Attrib, fullPath);
     if (item.iImage < 0)
-      item.iImage = 0;
-
+        item.iImage = 0;
     _list.InsertItem(&item);
     wchar_t s[64];
     {
@@ -1662,7 +1662,6 @@ HRESULT CBrowseDialog2::Reload(const UString &pathPrefix, const UStringVector &s
               );
       _list.SetSubItem(index, subItem++, s);
     }
-
     {
       s[0] = 0;
       Browse_ConvertSizeToString(bi, s);
