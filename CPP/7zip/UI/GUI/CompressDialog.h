@@ -141,6 +141,15 @@ struct CBool1
 
 class CCompressDialog: public NWindows::NControl::CModalDialog
 {
+public:
+  CBool1 SymLinks;
+  CBool1 HardLinks;
+  CBool1 AltStreams;
+  CBool1 NtSecurity;
+  CBool1 PreserveATime;
+private:
+  bool _ramSize_Defined;
+
   NWindows::NControl::CComboBox m_ArchivePath;
   NWindows::NControl::CComboBox m_Format;
   NWindows::NControl::CComboBox m_Level;
@@ -179,19 +188,12 @@ class CCompressDialog: public NWindows::NControl::CModalDialog
   UString DirPrefix;
   UString StartDirPrefix;
 
-  bool _ramSize_Defined;
-  UInt64 _ramSize;         // full RAM size avail
-  UInt64 _ramSize_Reduced; // full for 64-bit and reduced for 32-bit
+  size_t _ramSize;         // full RAM size avail
+  size_t _ramSize_Reduced; // full for 64-bit and reduced for 32-bit
   UInt64 _ramUsage_Auto;
 
 public:
   NCompression::CInfo m_RegistryInfo;
-
-  CBool1 SymLinks;
-  CBool1 HardLinks;
-  CBool1 AltStreams;
-  CBool1 NtSecurity;
-  CBool1 PreserveATime;
 
   void SetArchiveName(const UString &name);
   int FindRegistryFormat(const UString &name);

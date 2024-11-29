@@ -58,8 +58,12 @@ BEGIN
       MENUITEM "CRC-32",                    IDM_CRC32
       MENUITEM "CRC-64",                    IDM_CRC64
       MENUITEM "XXH64",                     IDM_XXH64
+      MENUITEM "MD5",                       IDM_MD5
       MENUITEM "SHA-1",                     IDM_SHA1
       MENUITEM "SHA-256",                   IDM_SHA256
+      MENUITEM "SHA-384",                   IDM_SHA384
+      MENUITEM "SHA-512",                   IDM_SHA512
+      MENUITEM "SHA3-256",                  IDM_SHA3_256
       MENUITEM "BLAKE2sp",                  IDM_BLAKE2SP
       MENUITEM "*",                         IDM_HASH_ALL
     END
@@ -202,7 +206,7 @@ BEGIN
   IDS_COPY_TO   "Copy to:"
   IDS_MOVE_TO   "Move to:"
   IDS_COPYING   "Copying..."
-  IDS_MOVING    "Moving..."
+//  IDS_MOVING    "Moving..."
   IDS_RENAMING  "Renaming..."
 
   IDS_OPERATION_IS_NOT_SUPPORTED  "Operation is not supported."

@@ -161,7 +161,7 @@ bool CSettingsPage::OnInit()
     needSetCur = false;
   }
   {
-    _ramSize = (UInt64)(sizeof(size_t)) << 29;
+    _ramSize = (size_t)sizeof(size_t) << 29;
     _ramSize_Defined = NSystem::GetRamSize(_ramSize);
     UString s;
     if (_ramSize_Defined)
@@ -198,10 +198,10 @@ bool CSettingsPage::OnInit()
 
 
   {
-    UInt64 ramSize = (UInt64)sizeof(size_t) << 29;
+    size_t ramSize = (size_t)sizeof(size_t) << 29;
     const bool ramSize_defined = NWindows::NSystem::GetRamSize(ramSize);
     // ramSize *= 10; // for debug
-    UInt64 ramSize_GB = (ramSize + (1u << 29)) >> 30;
+    UInt32 ramSize_GB = (UInt32)(((UInt64)ramSize + (1u << 29)) >> 30);
     if (ramSize_GB == 0)
       ramSize_GB = 1;
     UString s ("GB");

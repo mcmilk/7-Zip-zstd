@@ -785,7 +785,7 @@ void CPanel::Refresh_StatusBar()
     wchar_t selectSizeString[32];
     selectSizeString[0] = 0;
     
-    if (indices.Size() > 0)
+    if (!indices.IsEmpty())
     {
       // for (unsigned ttt = 0; ttt < 1000; ttt++) {
       UInt64 totalSize = 0;

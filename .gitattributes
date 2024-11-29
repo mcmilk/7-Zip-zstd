@@ -1,0 +1,20 @@
+
+# default
+* text=auto
+
+# leave unmodified
+*.ico binary
+*.bmp binary
+
+# Visual Studio
+*.dsp text eol=crlf
+*.dsw text eol=crlf
+*.manifest text eol=crlf
+
+# Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.hhp text eol=crlf
+*.inf text eol=crlf
+*.nsi text eol=crlf
+*.wxs text eol=crlf

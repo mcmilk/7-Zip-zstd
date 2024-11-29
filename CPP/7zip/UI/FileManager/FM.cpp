@@ -63,8 +63,8 @@ bool g_LargePagesMode = false;
 static bool g_Maximized = false;
 
 extern
-UInt64 g_RAM_Size;
-UInt64 g_RAM_Size;
+size_t g_RAM_Size;
+size_t g_RAM_Size;
 
 #ifdef _WIN32
 extern
@@ -1025,8 +1025,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       break;
     }
 
-    case WM_DESTROY:
+    case WM_CLOSE:
     {
+      // why do we use WA_INACTIVE here ?
+      SendMessage(hWnd, WM_ACTIVATE, MAKEWPARAM(WA_INACTIVE, 0), (LPARAM)hWnd);
+      g_ExitEventLauncher.Exit(false);
       // ::DragAcceptFiles(hWnd, FALSE);
       RevokeDragDrop(hWnd);
       g_App._dropTarget.Release();
@@ -1034,12 +1037,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       if (g_WindowWasCreated)
         g_App.Save();
     
-      g_App.Release();
+      g_App.ReleaseApp();
       
       if (g_WindowWasCreated)
         SaveWindowInfo(hWnd);
 
       g_ExitEventLauncher.Exit(true);
+      // default DefWindowProc will call DestroyWindow / WM_DESTROY
+      break;
+    }
+
+    case WM_DESTROY:
+    {
       PostQuitMessage(0);
       break;
     }

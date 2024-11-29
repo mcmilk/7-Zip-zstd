@@ -764,8 +764,12 @@ bool ExecuteFileCommand(unsigned id)
     case IDM_CRC32: g_App.CalculateCrc("CRC32"); break;
     case IDM_CRC64: g_App.CalculateCrc("CRC64"); break;
     case IDM_XXH64: g_App.CalculateCrc("XXH64"); break;
+    case IDM_MD5: g_App.CalculateCrc("MD5"); break;
     case IDM_SHA1: g_App.CalculateCrc("SHA1"); break;
     case IDM_SHA256: g_App.CalculateCrc("SHA256"); break;
+    case IDM_SHA384: g_App.CalculateCrc("SHA384"); break;
+    case IDM_SHA512: g_App.CalculateCrc("SHA512"); break;
+    case IDM_SHA3_256: g_App.CalculateCrc("SHA3-256"); break;
     case IDM_BLAKE2SP: g_App.CalculateCrc("BLAKE2sp"); break;
     
     case IDM_DIFF: g_App.DiffFiles(); break;
@@ -807,8 +811,8 @@ bool OnMenuCommand(HWND hWnd, unsigned id)
   {
     // File
     case IDCLOSE:
-      SendMessage(hWnd, WM_ACTIVATE, MAKEWPARAM(WA_INACTIVE, 0), (LPARAM)hWnd);
-      g_ExitEventLauncher.Exit(false);
+      // SendMessage(hWnd, WM_ACTIVATE, MAKEWPARAM(WA_INACTIVE, 0), (LPARAM)hWnd);
+      // g_ExitEventLauncher.Exit(false);
       SendMessage(hWnd, WM_CLOSE, 0, 0);
       break;
     

@@ -81,15 +81,15 @@ void CListViewInfo::Read(const UString &id)
 {
   Clear();
   CByteBuffer buf;
-  UInt32 size;
   {
     NSynchronization::CCriticalSectionLock lock(g_CS);
     CKey key;
     if (key.Open(HKEY_CURRENT_USER, kCulumnsKeyName, KEY_READ) != ERROR_SUCCESS)
       return;
-    if (key.QueryValue(GetSystemString(id), buf, size) != ERROR_SUCCESS)
+    if (key.QueryValue_Binary(GetSystemString(id), buf) != ERROR_SUCCESS)
       return;
   }
+  unsigned size = (unsigned)buf.Size();
   if (size < kListViewHeaderSize)
     return;
   UInt32 version;
@@ -104,7 +104,9 @@ void CListViewInfo::Read(const UString &id)
   size -= kListViewHeaderSize;
   if (size % kColumnInfoSize != 0)
     return;
-  unsigned numItems = size / kColumnInfoSize;
+  if (size > 1000 * kColumnInfoSize)
+    return;
+  const unsigned numItems = size / kColumnInfoSize;
   Columns.ClearAndReserve(numItems);
   for (unsigned i = 0; i < numItems; i++)
   {
@@ -161,8 +163,7 @@ void CWindowInfo::Save() const
 
 static bool QueryBuf(CKey &key, LPCTSTR name, CByteBuffer &buf, UInt32 dataSize)
 {
-  UInt32 size;
-  return key.QueryValue(name, buf, size) == ERROR_SUCCESS && size == dataSize;
+  return key.QueryValue_Binary(name, buf) == ERROR_SUCCESS && buf.Size() == dataSize;
 }
 
 void CWindowInfo::Read(bool &windowPosDefined, bool &panelInfoDefined)
@@ -206,7 +207,7 @@ static bool ReadUi32Val(const TCHAR *name, UInt32 &value)
   CKey key;
   if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
     return false;
-  return key.QueryValue(name, value) == ERROR_SUCCESS;
+  return key.GetValue_UInt32_IfOk(name, value) == ERROR_SUCCESS;
 }
 
 void SaveToolbarsMask(UInt32 toolbarMask)
@@ -229,7 +230,7 @@ void CListMode::Save() const
 {
   UInt32 t = 0;
   for (int i = 0; i < 2; i++)
-    t |= ((Panels[i]) & 0xFF) << (i * 8);
+    t |= (Panels[i] & 0xFF) << (i * 8);
   SaveUi32Val(kListMode, t);
 }
 
@@ -241,7 +242,7 @@ void CListMode::Read()
     return;
   for (int i = 0; i < 2; i++)
   {
-    Panels[i] = (t & 0xFF);
+    Panels[i] = t & 0xFF;
     t >>= 8;
   }
 }

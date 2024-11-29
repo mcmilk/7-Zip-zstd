@@ -61,9 +61,9 @@ struct CBenchPassResult
 {
   CTotalBenchRes Enc;
   CTotalBenchRes Dec;
-  #ifdef PRINT_ITER_TIME
+#ifdef PRINT_ITER_TIME
   DWORD Ticks;
-  #endif
+#endif
   // CBenchInfo EncInfo; // for debug
   // CBenchPassResult() {};
 };
@@ -97,21 +97,9 @@ struct CTotalBenchRes2: public CTotalBenchRes
 struct CSyncData
 {
   UInt32 NumPasses_Finished;
-
-  // UInt64 NumEncProgress; // for debug
-  // UInt64 NumDecProgress; // for debug
-  // CBenchInfo EncInfo; // for debug
-
-  CTotalBenchRes2 Enc_BenchRes_1;
-  CTotalBenchRes2 Enc_BenchRes;
-
-  CTotalBenchRes2 Dec_BenchRes_1;
-  CTotalBenchRes2 Dec_BenchRes;
-
-  #ifdef PRINT_ITER_TIME
+#ifdef PRINT_ITER_TIME
   DWORD TotalTicks;
-  #endif
-
+#endif
   int RatingVector_DeletedIndex;
   // UInt64 RatingVector_NumDeleted;
 
@@ -123,6 +111,16 @@ struct CSyncData
   bool NeedPrint_Dec_1;
   bool NeedPrint_Dec;
   bool NeedPrint_Tot; // intermediate Total was updated after current pass
+
+  // UInt64 NumEncProgress; // for debug
+  // UInt64 NumDecProgress; // for debug
+  // CBenchInfo EncInfo; // for debug
+
+  CTotalBenchRes2 Enc_BenchRes_1;
+  CTotalBenchRes2 Enc_BenchRes;
+
+  CTotalBenchRes2 Dec_BenchRes_1;
+  CTotalBenchRes2 Dec_BenchRes;
 
   void Init();
 };
@@ -161,30 +159,30 @@ void CSyncData::Init()
 struct CBenchProgressSync
 {
   bool Exit; // GUI asks BenchThread to Exit, and BenchThread reads that variable
+  bool TextWasChanged;
+
   UInt32 NumThreads;
   UInt64 DictSize;
   UInt32 NumPasses_Limit;
   int Level;
-  
-  // must be written by benchmark thread, read by GUI thread */
-  CSyncData sd;
-  CRecordVector<CBenchPassResult> RatingVector;
-
-  NWindows::NSynchronization::CCriticalSection CS;
 
   AString Text;
-  bool TextWasChanged;
 
   /* BenchFinish_Task_HRESULT    - for result from benchmark code
      BenchFinish_Thread_HRESULT  - for Exceptions and service errors
              these arreos must be shown even if user escapes benchmark */
-
   HRESULT BenchFinish_Task_HRESULT;
   HRESULT BenchFinish_Thread_HRESULT;
 
   UInt32 NumFreqThreadsPrev;
   UString FreqString_Sync;
   UString FreqString_GUI;
+
+  // must be written by benchmark thread, read by GUI thread */
+  CRecordVector<CBenchPassResult> RatingVector;
+  CSyncData sd;
+
+  NWindows::NSynchronization::CCriticalSection CS;
 
   CBenchProgressSync()
   {
@@ -258,6 +256,19 @@ struct CThreadBenchmark
 class CBenchmarkDialog:
   public NWindows::NControl::CModalDialog
 {
+  bool _finishTime_WasSet;
+  
+  bool WasStopped_in_GUI;
+  bool ExitWasAsked_in_GUI;
+  bool NeedRestart;
+
+  bool RamSize_Defined;
+
+public:
+  bool TotalMode;
+
+private:
+
   NWindows::NControl::CComboBox m_Dictionary;
   NWindows::NControl::CComboBox m_NumThreads;
   NWindows::NControl::CComboBox m_NumPasses;
@@ -266,17 +277,11 @@ class CBenchmarkDialog:
 
   UInt32 _startTime;
   UInt32 _finishTime;
-  bool _finishTime_WasSet;
-  
-  bool WasStopped_in_GUI;
-  bool ExitWasAsked_in_GUI;
-  bool NeedRestart;
 
   CMyFont _font;
 
-  UInt64 RamSize;
-  UInt64 RamSize_Limit;
-  bool RamSize_Defined;
+  size_t RamSize;
+  size_t RamSize_Limit;
 
   UInt32 NumPasses_Finished_Prev;
 
@@ -330,7 +335,6 @@ class CBenchmarkDialog:
 public:
   CBenchProgressSync Sync;
 
-  bool TotalMode;
   CObjectVector<CProperty> Props;
 
   CSysString Bench2Text;
@@ -339,11 +343,11 @@ public:
   CThreadBenchmark _threadBenchmark;
 
   CBenchmarkDialog():
-      _timer(0),
       WasStopped_in_GUI(false),
       ExitWasAsked_in_GUI(false),
       NeedRestart(false),
-      TotalMode(false)
+      TotalMode(false),
+      _timer(0)
       {}
 
   ~CBenchmarkDialog() Z7_DESTRUCTOR_override;
@@ -504,7 +508,8 @@ bool CBenchmarkDialog::OnInit()
         SetItemTextA(IDT_BENCH_SYS2, s2);
     }
     {
-      GetCpuName_MultiLine(s);
+      AString registers;
+      GetCpuName_MultiLine(s, registers);
       SetItemTextA(IDT_BENCH_CPU, s);
     }
     {

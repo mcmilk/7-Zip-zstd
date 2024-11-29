@@ -109,7 +109,7 @@ public:
   HRESULT Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, COpenResult &openRes);
   void Read();
   void Save();
-  void Release();
+  void ReleaseApp();
 
   // void SetFocus(int panelIndex) { Panels[panelIndex].SetFocusToList(); }
   void SetFocusToLastItem() { Panels[LastFocusedPanel].SetFocusToLastRememberedItem(); }

@@ -57,8 +57,11 @@ WIN_OBJS = \
 7ZIP_COMMON_OBJS = \
   $O/FileStreams.o \
 
+C_OBJS = \
+  $O/Alloc.o \
 
 OBJS = \
+  $(C_OBJS) \
   $(COMMON_OBJS) \
   $(WIN_OBJS) \
   $(SYS_OBJS) \
