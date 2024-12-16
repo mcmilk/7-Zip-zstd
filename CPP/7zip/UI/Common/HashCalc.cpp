@@ -653,15 +653,17 @@ static inline char GetHex_Upper(unsigned v)
 {
 #ifdef WANT_OPTIONAL_LOWERCASE
   if (WantLowercaseHashes())
-  {
     return (char)((v < 10) ? ('0' + v) : ('a' + (v - 10)));
-  }
 #endif
   return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10)));
 }
 
 static inline char GetHex_Lower(unsigned v)
 {
+#ifdef WANT_OPTIONAL_LOWERCASE
+  if (!WantLowercaseHashes())
+    return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10)));
+#endif
   return (char)((v < 10) ? ('0' + v) : ('a' + (v - 10)));
 }
 
@@ -805,18 +807,10 @@ static const char *SkipWhite(const char *s)
 
 static const char * const k_CsumMethodNames[] =
 {
-    "sha256"
-  , "sha224"
-//  , "sha512/224"
-//  , "sha512/256"
-  , "sha512"
-  , "sha384"
-  , "sha1"
-  , "md5"
-  , "blake2b"
-  , "crc64"
-  , "crc32"
-  , "cksum"
+ "sha3-512", "sha3-384", "sha3-256",
+ "sha512", "sha384", "sha256", "sha224",
+ "sha1", "md5", "blake2b",
+ "crc32", "crc64" , "cksum"
 };
 
 static UString GetMethod_from_FileName(const UString &name)
@@ -1419,7 +1413,8 @@ static bool CheckDigests(const Byte *a, const Byte *b, size_t size)
 static void AddDefaultMethod(UStringVector &methods, unsigned size)
 {
   const char *m = NULL;
-       if (size == 32) m = "sha256";
+       if (size == 64) m = "sha512";
+  else if (size == 32) m = "sha256";
   else if (size == 20) m = "sha1";
   else if (size == 16) m = "md5";
   else if (size ==  8) m = "crc64";
@@ -2096,11 +2091,11 @@ void Codecs_AddHashArcHandler(CCodecs *codecs)
   
     // ubuntu uses "SHA256SUMS" file
     item.AddExts(UString (
-        "sha256 sha512 sha224 sha384 sha1 sha md5"
-        // "b2sum"
-        " crc32 crc64"
-        " asc"
-        " cksum"
+        "sha3-512 sha3-384 sha3-256 "
+        "sha512 sha384 sha256 sha224 "
+        "sha1 sha md5 "
+        "crc32 crc64 "
+        "asc cksum"
         ),
         UString());
 

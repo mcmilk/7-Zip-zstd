@@ -1,0 +1,187 @@
+
+########################################################################################
+# overview for supported targets:
+# 12.0 https://learn.microsoft.com/en-us/visualstudio/releases/2013/vs2013-compatibility-vs
+# 14.0 https://learn.microsoft.com/en-us/visualstudio/releases/2015/vs2015-compatibility-vs
+# 15.0 https://learn.microsoft.com/en-us/visualstudio/releases/2017/vs2017-compatibility-vs
+# 16.0 https://learn.microsoft.com/en-us/visualstudio/releases/2019/compatibility
+# 17.0 https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility
+# -> we take 16.0 for now /TR
+########################################################################################
+
+name: Build Windows binaries
+on: [push, pull_request]
+
+
+jobs:
+  build:
+    runs-on: windows-2019
+
+    strategy:
+      matrix:
+        arch: [ amd64, amd64_x86, amd64_arm, amd64_arm64 ]
+        include:
+          - arch: amd64_x86
+            subsys: "5.01"
+            platform: "x86"
+          - arch: amd64
+            subsys: "5.02"
+            platform: "x64"
+          - arch: amd64_arm
+            subsys: "6.02"
+            platform: "arm"
+          - arch: amd64_arm64
+            subsys: "6.02"
+            platform: "arm64"
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.3
+
+      - name: Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Compiling ${{ matrix.arch }}
+        shell: cmd
+        run: |
+          set WDIR=%cd%
+          set PLATFORM=${{matrix.platform}}
+          set SUBSYS=${{matrix.subsys}}
+          set ROOT=%cd%\CPP\7zip
+          set OUTDIR=%WDIR%\build\bin-%PLATFORM%
+          set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
+
+          echo "********"
+          echo "Working Dir: %WDIR%"
+          echo "Platform:    %PLATFORM%"
+          echo "SUBSYS:      %SUBSYS%"
+
+          @echo off
+
+          set > %WDIR%\build\env-%PLATFORM%.txt
+          mkdir %OUTDIR%
+
+          cd %ROOT%\Bundles\Format7zExtract
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7zxa.dll %OUTDIR%\7zxa.dll
+
+          cd %ROOT%\Bundles\Format7z
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7za.dll %OUTDIR%\7za.dll
+
+          cd %ROOT%\Bundles\Format7zF
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7z.dll %OUTDIR%\7z.dll
+
+          cd %ROOT%\UI\FileManager
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7zFM.exe %OUTDIR%\7zFM.exe
+
+          cd %ROOT%\UI\GUI
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7zG.exe %OUTDIR%\7zG.exe
+
+          cd %ROOT%\UI\Explorer
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7-zip.dll %OUTDIR%\7-zip.dll
+
+          cd %ROOT%\Bundles\SFXWin
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7z.sfx %OUTDIR%\7z.sfx
+
+          cd %ROOT%\Bundles\Codec_brotli
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\brotli.dll %OUTDIR%\brotli.dll
+
+          cd %ROOT%\Bundles\Codec_lizard
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\lizard.dll %OUTDIR%\lizard.dll
+
+          cd %ROOT%\Bundles\Codec_lz4
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\lz4.dll %OUTDIR%\lz4.dll
+
+          cd %ROOT%\Bundles\Codec_lz5
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\lz5.dll %OUTDIR%\lz5.dll
+
+          cd %ROOT%\Bundles\Codec_zstd
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\zstd.dll %OUTDIR%\zstd.dll
+
+          cd %ROOT%\Bundles\Codec_flzma2
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\flzma2.dll %OUTDIR%\flzma2.dll
+
+          cd %ROOT%\..\..\C\Util\7zipInstall
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7zipInstall.exe %OUTDIR%\Install.exe
+
+          cd %ROOT%\..\..\C\Util\7zipUninstall
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7zipUninstall.exe %OUTDIR%\Uninstall.exe
+
+          set LFLAGS=/SUBSYSTEM:CONSOLE,%SUBSYS%
+          cd %ROOT%\UI\Console
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7z.exe %OUTDIR%\7z.exe
+
+          cd %ROOT%\Bundles\SFXCon
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7zCon.sfx %OUTDIR%\7zCon.sfx
+
+          cd %ROOT%\Bundles\Alone
+          nmake %OPTS%
+          IF %errorlevel% NEQ 0 EXIT 1
+          copy %PLATFORM%\7za.exe %OUTDIR%\7za.exe
+
+          REM Will be by the do-release action
+          copy %WDIR%\.github\workflows\do-release.cmd %WDIR%\build\do-release.cmd
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}\build\**\*
+
+  do-release:
+    runs-on: windows-2019
+    needs: build
+    steps:
+    - uses: actions/download-artifact@v3
+
+    - name: Generate binaries for release
+      shell: cmd
+      run: |
+        cd artifact
+        do-release.cmd
+
+    - uses: geekyeggo/delete-artifact@v2
+      with:
+          name: artifact
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: 7-Zip ZS Release binaries
+        path: |
+          artifact\*.exe
+          artifact\*.7z

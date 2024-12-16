@@ -17,6 +17,7 @@ REM WINDOWS     5.01 (x86) 5.02 (x64) 6.02 (ARM)     6.00 (x86, x64) 6.02 (ARM)
 REM to many vcvarsall.cmd calls will blow it up!
 set OPATH=%PATH%
 set ERRFILE=%APPVEYOR_BUILD_FOLDER%\error.txt
+set VCVARSALL="C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
 cd %APPVEYOR_BUILD_FOLDER%\CPP
 
 goto build_vs2019
@@ -25,22 +26,22 @@ goto build_vs2019
 set VC=16.0
 set PATH=%OPATH%
 set SUBSYS="5.01"
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86
+call %VCVARSALL% x86
 call build-it.cmd
 
 set PATH=%OPATH%
 set SUBSYS="5.02"
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+call %VCVARSALL% x64
 call build-it.cmd
 
 set PATH=%OPATH%
 set SUBSYS="6.02"
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64_arm
+call %VCVARSALL% x64_arm
 call build-it.cmd
 
 set PATH=%OPATH%
 set SUBSYS="6.02"
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64_arm64
+call %VCVARSALL% x64_arm64
 call build-it.cmd
 
 goto end
@@ -48,3 +49,6 @@ goto end
 :end
 cd %APPVEYOR_BUILD_FOLDER%
 7z a %APPVEYOR_PROJECT_NAME%-%APPVEYOR_BUILD_VERSION%.7z bin-* *.txt
+
+echo done
+REM pause

@@ -11,6 +11,8 @@
 #include "../../../Windows/Registry.h"
 #include "../../../Windows/Synchronization.h"
 
+#include "../FileManager/RegistryUtils.h"
+
 #include "ZipRegistry.h"
 
 using namespace NWindows;
@@ -103,6 +105,7 @@ void CInfo::Save() const
   CS_LOCK
   CKey key;
   CreateMainKey(key, kKeyName);
+  UStringVector Empty;
 
   if (PathMode_Force)
     key.SetValue(kExtractMode, (UInt32)PathMode);
@@ -116,7 +119,10 @@ void CInfo::Save() const
   Key_Set_BoolPair(key, kShowPassword, ShowPassword);
 
   key.RecurseDeleteKey(kPathHistory);
-  key.SetValue_Strings(kPathHistory, Paths);
+  if (WantPathHistory())
+    key.SetValue_Strings(kPathHistory, Paths);
+  else
+    key.SetValue_Strings(kPathHistory, Empty);
 }
 
 void Save_ShowPassword(bool showPassword)
@@ -233,6 +239,7 @@ static LPCWSTR const kMemUse = L"MemUse"
 
 void CInfo::Save() const
 {
+  UStringVector Empty;
   CS_LOCK
 
   CKey key;
@@ -250,7 +257,11 @@ void CInfo::Save() const
   key.SetValue(kShowPassword, ShowPassword);
   key.SetValue(kEncryptHeaders, EncryptHeaders);
   key.RecurseDeleteKey(kArcHistory);
-  key.SetValue_Strings(kArcHistory, ArcPaths);
+
+  if (WantArcHistory())
+    key.SetValue_Strings(kArcHistory, ArcPaths);
+  else
+    key.SetValue_Strings(kArcHistory, Empty);
 
   key.RecurseDeleteKey(kOptionsKeyName);
   {

@@ -15,13 +15,13 @@ You can install it in two ways:
 
 
 ## Codec overview
-1. [Zstandard] v1.5.0 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
+1. [Zstandard] v1.5.5 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
 
 2. [Brotli] v.1.0.9 is a generic-purpose lossless compression algorithm that compresses data using a combination of a modern variant of the LZ77 algorithm, Huffman coding and 2nd order context modeling, with a compression ratio comparable to the best currently available general-purpose compression methods. It is similar in speed with deflate but offers more dense compression.
    - Levels: 0..11
 
-3. [LZ4] v1.9.3 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
+3. [LZ4] v1.9.4 is lossless compression algorithm, providing compression speed at 400 MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder, with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression derivative, called LZ4_HC, is available, trading customizable CPU time for compression ratio.
    - Levels: 1..12
 
 4. [LZ5] v1.5 is a modification of LZ4 which was meant for a better ratio at cost of slower compression and decompression. It's superseded by [Lizard] now.
@@ -46,7 +46,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 19.00 ZS v1.5.0 R1 (x64) : Copyright (c) 1999-2021 Igor Pavlov, 2016-2021 Tino Reichardt : 2021-05-15
+7-Zip 22.01 ZS v1.5.5 R3 (x64) : Copyright (c) 1999-2022 Igor Pavlov, 2016-2023 Tino Reichardt : 2023-06-18
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -56,46 +56,47 @@ Formats:
 ...
  0 CK            xz       xz txz (.tar) FD 7 z X Z 00
  0               Z        z taz (.tar)  1F 9D
- 0 CK            zstd     zst tzstd (.tar) 0 x F D 2 F B 5 2 5 . . 0 x F D 2 F B 5 2 8 00
+ 0 CK            zstd     zst zstd tzst (.tar) tzstd (.tar) 0 x F D 2 F B 5 2 5 . . 0 x F D 2 F B 5 2 8 00
  0 C   F         7z       7z            7 z BC AF ' 1C
  0     F         Cab      cab           M S C F 00 00 00 00
 ...
 
 Codecs:
- 0 4ED  303011B BCJ2
- 0  ED  3030103 BCJ
- 0  ED  3030205 PPC
- 0  ED  3030401 IA64
- 0  ED  3030501 ARM
- 0  ED  3030701 ARMT
- 0  ED  3030805 SPARC
- 0  ED    20302 Swap2
- 0  ED    20304 Swap4
- 0  ED    40202 BZip2
- 0  ED        0 Copy
- 0  ED    40109 Deflate64
- 0  ED    40108 Deflate
- 0  ED        3 Delta
- 0  ED       21 LZMA2
- 0  ED    30101 LZMA
- 0  ED    30401 PPMD
- 0   D    40301 Rar1
- 0   D    40302 Rar2
- 0   D    40303 Rar3
- 0   D    40305 Rar5
- 0  ED  4F71102 BROTLI
- 0  ED  4F71104 LZ4
- 0  ED  4F71106 LIZARD
- 0  ED  4F71105 LZ5
- 0  ED  4F71101 ZSTD
- 0  ED       21 FLZMA2
- 0  ED  6F10701 7zAES
- 0  ED  6F00181 AES256CBC
- 1 3ED  4F712FF RawSplitter
+ 0 4ED   303011B BCJ2
+ 0  EDF  3030103 BCJ
+ 0  EDF  3030205 PPC
+ 0  EDF  3030401 IA64
+ 0  EDF  3030501 ARM
+ 0  EDF  3030701 ARMT
+ 0  EDF  3030805 SPARC
+ 0  EDF    20302 Swap2
+ 0  EDF    20304 Swap4
+ 0  ED     40202 BZip2
+ 0  ED         0 Copy
+ 0  ED     40109 Deflate64
+ 0  ED     40108 Deflate
+ 0  EDF        3 Delta
+ 0  ED        21 LZMA2
+ 0  ED     30101 LZMA
+ 0  ED     30401 PPMD
+ 0   D     40301 Rar1
+ 0   D     40302 Rar2
+ 0   D     40303 Rar3
+ 0   D     40305 Rar5
+ 0  ED   4F71102 BROTLI
+ 0  ED   4F71104 LZ4
+ 0  ED   4F71106 LIZARD
+ 0  ED   4F71105 LZ5
+ 0  ED   4F71101 ZSTD
+ 0  ED        21 FLZMA2
+ 0  EDF  6F10701 7zAES
+ 0  EDF  6F00181 AES256CBC
 
 Hashers:
- 0   32      20A BLAKE3
+ 0   32      202 BLAKE2sp
+ 0   32      204 BLAKE3
  0    4        1 CRC32
+ 0    8        4 CRC64
  0   16      205 MD2
  0   16      206 MD4
  0   16      207 MD5
@@ -103,10 +104,11 @@ Hashers:
  0   32        A SHA256
  0   48      208 SHA384
  0   64      209 SHA512
- 0    4      203 XXH32
- 0    8      204 XXH64
- 0    8        4 CRC64
- 0   32      202 BLAKE2sp
+ 0   32      20A SHA3-256
+ 0   48      20B SHA3-384
+ 0   64      20C SHA3-512
+ 0    4      20D XXH32
+ 0    8      20E XXH64
 ```
 
 ### Usage and features of the full installation
@@ -141,15 +143,15 @@ Hashers:
 7z a archiv.7z -m0=flzma2 -mx..  ...
 7z a archiv.7z -m0=flzma2 -mx9   Fast LZMA2 Ultra Mode, with BCJ preprocessor on executables
 
-7z x -so test.tar.zstd | 7z l -si -ttar
--> show contents of zstd compressed tar archiv test.tar.zstd
+7z x -so test.tar.zst | 7z l -si -ttar
+-> show contents of zstd compressed tar archive test.tar.zst
 
 7z x -so test.tar.lz | 7z l -si -ttar
--> show contents of lzip compressed tar archiv test.tar.lz
+-> show contents of lzip compressed tar archive test.tar.lz
 ```
 
-![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archiv Dialog with ZSTD options")
-![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archiv")
+![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archive Dialog with ZSTD options")
+![File Manager](https://mcmilk.de/projects/7-Zip-zstd/Fileman.png "File Manager with the Listing of an Archive")
 ![Methods](https://mcmilk.de/projects/7-Zip-zstd/Methods2.png "Methods")
 ![Hashes](https://mcmilk.de/projects/7-Zip-zstd/Hashes.png "Hashes")
 ![Settings](https://mcmilk.de/projects/7-Zip-zstd/Settings.png "Settings for storing the history within the registry.")
@@ -158,7 +160,7 @@ Hashers:
 
 ### Installation (via plugin)
 
-1. download the `Codecs.7z` archiv from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases), this archive holds binaries, which are compatible with the Mainline version of [7-Zip]
+1. download the `Codecs.7z` archive from here [7-Zip ZS Releases](https://github.com/mcmilk/7-Zip-zstd/releases), this archive holds binaries, which are compatible with the Mainline version of [7-Zip]
 2. create a new directory named `Codecs` and put in there the zstd-x32.dll or the zstd-x64.dll, depending on your [7-Zip] installation
    - normally, the x32 should go to: "C:\Program Files (x86)\7-Zip\Codecs"
    - the x64 version should go in here: "C:\Program Files\7-Zip\Codecs"
@@ -288,16 +290,16 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 21.03
+- 7-Zip ZS Version 22.01
   - [Brotli] Version 1.0.9
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 1.0
-  - [LZ4] Version 1.9.3
+  - [LZ4] Version 1.9.4
   - [LZ5] Version 1.5
-  - [Zstandard] Version 1.5.0
+  - [Zstandard] Version 1.5.5
   - [BLAKE3] Version 0.3.7
 
-/TR 2021-08-26
+/TR 2023-06-18
 
 ## Notes
 

@@ -112,6 +112,12 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\Lz4Register.obj \
   $O\LizardDecoder.obj \
   $O\LizardRegister.obj \
+  $O\liz_entropy_common.obj \
+  $O\liz_fse_compress.obj \
+  $O\liz_fse_decompress.obj \
+  $O\liz_huf_compress.obj \
+  $O\liz_huf_decompress.obj \
+  $O\liz_xxhash.obj \
   $O\Lz5Decoder.obj \
   $O\Lz5Register.obj \
   $O\ZstdDecoder.obj \
@@ -187,7 +193,6 @@ ZSTD_OBJS = \
   $O\zstd_fast.obj \
   $O\zstd_lazy.obj \
   $O\zstd_ldm.obj \
-  $O\zstd_trace.obj \
   $O\zstdmt_compress.obj \
   $O\zstd_opt.obj \
   $O\zstd_v01.obj \

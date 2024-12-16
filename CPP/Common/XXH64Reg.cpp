@@ -41,4 +41,4 @@ STDMETHODIMP_(void) CXXH64Hasher::Final(Byte *digest) throw()
   UInt64 val = XXH64_digest(_ctx);
   SetUi64(digest, val);
 }
-REGISTER_HASHER(CXXH64Hasher, 0x204, "XXH64", 8)
+REGISTER_HASHER(CXXH64Hasher, 0x20e, "XXH64", 8)

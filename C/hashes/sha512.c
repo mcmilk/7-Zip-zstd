@@ -1,5 +1,7 @@
 
 /*
+ * Taken from lib/crypto/* of samba-4.5.8.tar.gz.
+ *
  * Copyright (c) 2006, 2010 Kungliga Tekniska Högskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
  * All rights reserved.
@@ -32,8 +34,7 @@
  * SUCH DAMAGE.
  */
 
-#include "hash.h"
-#include "sha.h"
+#include "sha512.h"
 
 #define Ch(x,y,z) (((x) & (y)) ^ ((~(x)) & (z)))
 #define Maj(x,y,z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))

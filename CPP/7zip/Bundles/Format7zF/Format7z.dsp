@@ -165,7 +165,7 @@ SOURCE=..\..\Archive\Icons\split.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Archive\Icons\squashfs.ico
+SOURCE=..\..\Archive\Icons\sqfs.ico
 # End Source File
 # Begin Source File
 

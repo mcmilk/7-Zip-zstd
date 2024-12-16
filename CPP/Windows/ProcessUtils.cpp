@@ -12,16 +12,6 @@ extern bool g_IsNT;
 
 namespace NWindows {
 
-#ifndef UNDER_CE
-static UString GetQuotedString(const UString &s)
-{
-  UString s2 ('\"');
-  s2 += s;
-  s2 += '\"';
-  return s2;
-}
-#endif
-
 WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
 {
   /*

@@ -366,7 +366,7 @@ static void SetShellProgramsGroup(HWND hwndOwner)
       for (k = 0; k < 2; k++)
       {
         CpyAscii(link + baseLen, k == 0 ?
-            "7-Zip File Manager.lnk" :
+            "7-Zip ZS File Manager.lnk" :
             "7-Zip Help.lnk");
         wcscpy(destPath, path);
         CatAscii(destPath, k == 0 ?
@@ -659,6 +659,8 @@ static const char * const k_Names =
   " 7z.sfx"
   " 7zCon.sfx"
   " 7z.exe"
+  " 7za.exe"
+  " 7za.dll"
   " 7zG.exe"
   " 7z.dll"
   " 7zFM.exe"

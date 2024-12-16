@@ -1,5 +1,7 @@
 
 /*
+ * Taken from lib/crypto/* of samba-4.5.8.tar.gz.
+ *
  * Copyright (c) 1995 - 2001 Kungliga Tekniska Högskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
  * All rights reserved.
@@ -56,6 +58,10 @@ typedef struct hc_sha512state SHA512_CTX;
 void SHA512_Init (SHA512_CTX *);
 void SHA512_Update (SHA512_CTX *, const void *, size_t);
 void SHA512_Final (void *, SHA512_CTX *);
+
+/*
+ * SHA-2 384
+ */
 
 #define SHA384_DIGEST_LENGTH 48
 

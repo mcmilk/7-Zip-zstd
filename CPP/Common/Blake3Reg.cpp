@@ -40,4 +40,4 @@ STDMETHODIMP_(void) CBLAKE3Hasher::Final(Byte *digest) throw()
 {
   blake3_hasher_finalize(&_ctx, digest, BLAKE3_OUT_LEN);
 }
-REGISTER_HASHER(CBLAKE3Hasher, 0x20a, "BLAKE3", BLAKE3_OUT_LEN)
+REGISTER_HASHER(CBLAKE3Hasher, 0x204, "BLAKE3", BLAKE3_OUT_LEN)

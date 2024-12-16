@@ -49,7 +49,7 @@
     #endif
 #endif
 #include "lizard_compress_lz4.h"
-#include "../zstd/huf.h"
+#include "huf.h"
 
 
 /* *************************************
@@ -145,7 +145,7 @@ FORCE_INLINE int Lizard_writeStream(int useHuff, Lizard_stream_t* ctx, BYTE* str
         int useHuffBuf;
         if (*op + 6 > oend) { LIZARD_LOG_COMPRESS("*op[%p] + 6 > oend[%p]\n", *op, oend); return -1; }
 
-        useHuffBuf = ((size_t)(oend - (*op + 6)) < HUF_compressBound(streamLen)); 
+        useHuffBuf = ((size_t)(oend - (*op + 6)) < LIZ_HUF_compressBound(streamLen)); 
         if (useHuffBuf) {
             if (streamLen > LIZARD_BLOCK_SIZE) { LIZARD_LOG_COMPRESS("streamLen[%d] > LIZARD_BLOCK_SIZE\n", streamLen); return -1; }
             ctx->comprStreamLen = (U32)HUF_compress(ctx->huffBase, ctx->huffEnd - ctx->huffBase, streamPtr, streamLen);
@@ -153,7 +153,7 @@ FORCE_INLINE int Lizard_writeStream(int useHuff, Lizard_stream_t* ctx, BYTE* str
             ctx->comprStreamLen = (U32)HUF_compress(*op + 6, oend - (*op + 6), streamPtr, streamLen);
         }
 
-        if (!HUF_isError(ctx->comprStreamLen)) {
+        if (!LIZ_HUF_isError(ctx->comprStreamLen)) {
             if (ctx->comprStreamLen > 0 && (LIZARD_MINIMAL_HUFF_GAIN(ctx->comprStreamLen) < streamLen)) { /* compressible */
                 MEM_writeLE24(*op, streamLen);
                 MEM_writeLE24(*op+3, ctx->comprStreamLen);
@@ -165,7 +165,7 @@ FORCE_INLINE int Lizard_writeStream(int useHuff, Lizard_stream_t* ctx, BYTE* str
                 LIZARD_LOG_COMPRESS("HUF_compress streamLen=%d comprStreamLen=%d\n", (int)streamLen, (int)ctx->comprStreamLen);
                 return 1;
             } else { LIZARD_LOG_COMPRESS("HUF_compress ERROR comprStreamLen=%d streamLen=%d\n", (int)ctx->comprStreamLen, (int)streamLen); }
-        } else { LIZARD_LOG_COMPRESS("HUF_compress ERROR %d: %s\n", (int)ctx->comprStreamLen, HUF_getErrorName(ctx->comprStreamLen)); }
+        } else { LIZARD_LOG_COMPRESS("HUF_compress ERROR %d: %s\n", (int)ctx->comprStreamLen, LIZ_HUF_getErrorName(ctx->comprStreamLen)); }
 #else
         LIZARD_LOG_COMPRESS("compiled with LIZARD_NO_HUFFMAN\n");
         (void)ctx;
@@ -392,6 +392,7 @@ Lizard_stream_t* Lizard_initStream(Lizard_stream_t* ctx, int compressionLevel)
 Lizard_stream_t* Lizard_createStream(int compressionLevel) 
 { 
     Lizard_stream_t* ctx = Lizard_initStream(NULL, compressionLevel);
+    if (ctx) ctx->base = NULL;
     return ctx; 
 }
 
@@ -429,7 +430,7 @@ int Lizard_loadDict(Lizard_stream_t* Lizard_streamPtr, const char* dictionary, i
         dictionary += dictSize - LIZARD_DICT_SIZE;
         dictSize = LIZARD_DICT_SIZE;
     }
-    Lizard_init (ctxPtr, (const BYTE*)dictionary);
+    Lizard_init(ctxPtr, (const BYTE*)dictionary);
     if (dictSize >= HASH_UPDATE_LIMIT) Lizard_Insert (ctxPtr, (const BYTE*)dictionary + (dictSize - (HASH_UPDATE_LIMIT-1)));
     ctxPtr->end = (const BYTE*)dictionary + dictSize;
     return dictSize;
@@ -550,8 +551,8 @@ int Lizard_compress_continue (Lizard_stream_t* ctxPtr,
                                             const char* source, char* dest,
                                             int inputSize, int maxOutputSize)
 {
-    /* auto-init if forgotten */
-    if (ctxPtr->base == NULL) Lizard_init (ctxPtr, (const BYTE*) source);
+    /* auto-init if required */
+    if (ctxPtr->base == NULL) Lizard_init(ctxPtr, (const BYTE*) source);
 
     /* Check overflow */
     if ((size_t)(ctxPtr->end - ctxPtr->base) > 2 GB) {
@@ -586,7 +587,7 @@ int Lizard_compress_extState (void* state, const char* src, char* dst, int srcSi
 
     /* initialize stream */
     Lizard_initStream(ctx, compressionLevel);
-    Lizard_init ((Lizard_stream_t*)state, (const BYTE*)src);
+    Lizard_init((Lizard_stream_t*)state, (const BYTE*)src);
 
     return Lizard_compress_generic (state, src, dst, srcSize, maxDstSize);
 }

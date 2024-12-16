@@ -628,6 +628,7 @@ public:
   UString &operator=(char c) { return (*this)=((wchar_t)(unsigned char)c); }
   UString &operator=(const wchar_t *s);
   UString &operator=(const UString &s);
+  void AddFrom(const wchar_t *s, unsigned len); // no check
   void SetFrom(const wchar_t *s, unsigned len); // no check
   void SetFromBstr(LPCOLESTR s);
   UString &operator=(const char *s);
@@ -993,9 +994,6 @@ typedef const FChar *CFSTR;
 
 typedef CObjectVector<FString> FStringVector;
 
-#endif
-
-
 
 #if defined(_WIN32)
   // #include <wchar.h>
@@ -1010,4 +1008,8 @@ typedef CObjectVector<FString> FStringVector;
 // WSL scheme
 #define WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT  ((wchar_t)((unsigned)(0xF000) + (unsigned)'\\'))
 // #define WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT  '_'
+#endif
+
+UString GetQuotedString(const UString &s);
+
 #endif
