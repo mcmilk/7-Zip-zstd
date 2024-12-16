@@ -12,31 +12,28 @@ EXTERN_C_END
 #include "../7zip/Common/RegisterCodec.h"
 
 // BLAKE3
-class CBLAKE3Hasher:
-  public IHasher,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CBLAKE3Hasher
+  , IHasher
+)
   blake3_hasher _ctx;
   Byte mtDummy[1 << 7];
 
 public:
   CBLAKE3Hasher() { blake3_hasher_init(&_ctx); }
-
-  MY_UNKNOWN_IMP1(IHasher)
-  INTERFACE_IHasher(;)
 };
 
-STDMETHODIMP_(void) CBLAKE3Hasher::Init() throw()
+Z7_COM7F_IMF2(void, CBLAKE3Hasher::Init())
 {
   blake3_hasher_init(&_ctx);
 }
 
-STDMETHODIMP_(void) CBLAKE3Hasher::Update(const void *data, UInt32 size) throw()
+Z7_COM7F_IMF2(void, CBLAKE3Hasher::Update(const void *data, UInt32 size))
 {
   blake3_hasher_update(&_ctx, data, size);
 }
 
-STDMETHODIMP_(void) CBLAKE3Hasher::Final(Byte *digest) throw()
+Z7_COM7F_IMF2(void, CBLAKE3Hasher::Final(Byte *digest))
 {
   blake3_hasher_finalize(&_ctx, digest, BLAKE3_OUT_LEN);
 }

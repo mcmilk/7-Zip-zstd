@@ -533,10 +533,6 @@ UpdateItems()
 
 Z7_IFACE_CONSTR_ARCHIVE(IOutArchive, 0xA0)
 
-ARCHIVE_INTERFACE(IMultiVolumeOutArchive, 0xFF)
-{
-  STDMETHOD(GetMultiArchiveNameFmt)(PROPVARIANT* nameMod, PROPVARIANT* prefix, PROPVARIANT* postfix, BOOL* numberAfterExt, UInt32* digitCount) PURE;
-};
 
 /*
 ISetProperties::SetProperties()

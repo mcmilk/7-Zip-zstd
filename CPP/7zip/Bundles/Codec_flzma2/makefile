@@ -14,6 +14,7 @@ COMPRESS_OBJS = \
   $O\DllExportsCompress.obj \
 
 C_OBJS = \
+  $O\7zStream.obj \
   $O\Alloc.obj \
   $O\CpuArch.obj \
   $O\Threads.obj \

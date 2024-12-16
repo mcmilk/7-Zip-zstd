@@ -4,7 +4,7 @@
 #include "ZstdEncoder.h"
 #include "ZstdDecoder.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 namespace NCompress {
 namespace NZSTD {
 
@@ -30,7 +30,10 @@ CEncoder::CEncoder():
   _LdmHashLog(-1),
   _LdmMinMatch(-1),
   _LdmBucketSizeLog(-1),
-  _LdmHashRateLog(-1)
+  _LdmHashRateLog(-1),
+  dictIDFlag(-1),
+  checksumFlag(-1),
+  unpackSize(0)
 {
   _props.clear();
 }
@@ -44,7 +47,7 @@ CEncoder::~CEncoder()
   }
 }
 
-STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps)
+Z7_COM7F_IMF(CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps))
 {
   _props.clear();
 
@@ -209,14 +212,14 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
   return S_OK;
 }
 
-STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream * outStream)
+Z7_COM7F_IMF(CEncoder::WriteCoderProperties(ISequentialOutStream * outStream))
 {
   return WriteStream(outStream, &_props, sizeof (_props));
 }
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
+Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream,
   ISequentialOutStream *outStream, const UInt64 * /*inSize*/ ,
-  const UInt64 * /*outSize */, ICompressProgressInfo *progress)
+  const UInt64 * /*outSize */, ICompressProgressInfo *progress))
 {
   ZSTD_EndDirective ZSTD_todo = ZSTD_e_continue;
   ZSTD_outBuffer outBuff;
@@ -250,6 +253,20 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
     /* set the content size flag */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_contentSizeFlag, 1);
     if (ZSTD_isError(err)) return E_INVALIDARG;
+
+    if (dictIDFlag != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_dictIDFlag, dictIDFlag);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+    if (checksumFlag != -1) {
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_checksumFlag, checksumFlag);
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
+
+    if (unpackSize && unpackSize != (UInt64)(Int64)-1) { // size is known
+      err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_srcSizeHint, (int)(unpackSize <= INT_MAX ? unpackSize : INT_MAX));
+      if (ZSTD_isError(err)) return E_INVALIDARG;
+    }
 
     /* enable ldm for large windowlog values */
     if (_WindowLog > 27 && _Long == 0)
@@ -320,13 +337,19 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
       err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_ldmHashRateLog, _LdmHashRateLog);
       if (ZSTD_isError(err)) return E_INVALIDARG;
     }
+
+    //err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_literalCompressionMode, (int)ZSTD_ps_auto);
+    //if (ZSTD_isError(err)) return E_INVALIDARG;
+
+    //err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_enableDedicatedDictSearch, 1);
+    //if (ZSTD_isError(err)) return E_INVALIDARG;
   }
 
   for (;;) {
 
     /* read input */
     srcSize = _srcBufSize;
-    RINOK(ReadStream(inStream, _srcBuf, &srcSize));
+    RINOK(ReadStream(inStream, _srcBuf, &srcSize))
 
     /* eof */
     if (srcSize == 0)
@@ -370,12 +393,12 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
       /* write output */
       if (outBuff.pos) {
-        RINOK(WriteStream(outStream, _dstBuf, outBuff.pos));
+        RINOK(WriteStream(outStream, _dstBuf, outBuff.pos))
         _processedOut += outBuff.pos;
       }
 
       if (progress)
-        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
+        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut))
 
       /* done */
       if (ZSTD_todo == ZSTD_e_end && err == 0)
@@ -388,7 +411,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   }
 }
 
-STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
+Z7_COM7F_IMF(CEncoder::SetNumberOfThreads(UInt32 numThreads))
 {
   const UInt32 kNumThreadsMax = ZSTD_THREAD_MAX;
   if (numThreads < 1) numThreads = 1;

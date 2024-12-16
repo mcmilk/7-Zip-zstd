@@ -390,7 +390,6 @@ static const CFormatInfo g_Formats[] =
     METHODS_PAIR(g_XzMethods),
     kFF_Solid | kFF_MultiThread | kFF_MemUse
   },
-  /*
   {
     "zstd",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 11) | (1 << 17) | (1 << 22),
@@ -3117,7 +3116,7 @@ UInt64 CCompressDialog::GetMemoryUsage_Threads_Dict_DecompMem(UInt32 numThreads,
 {
   decompressMemory = (UInt64)(Int64)-1;
 
-  const UInt32 level = GetLevel2();
+  UInt32 level = GetLevel2();
   if (level == 0 && !Get_ArcInfoEx().Is_Zstd())
   {
     decompressMemory = (1 << 20);

@@ -406,7 +406,7 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_UI8, "memuse" },
   { VT_UI8, "aff" },
   { VT_UI4, "offset" },
-  { VT_UI4, "zhb" }
+  { VT_UI4, "zhb" },
   // zstd props
   { VT_UI4, "strat" },
   { VT_UI4, "fast" },
@@ -424,7 +424,7 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_UI4, "ldmhevery" }
 };
 
-#if defined(static_assert) || (__STDC_VERSION >= 201112L) || (_MSC_VER >= 1900)
+#if defined(static_assert) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)) || (_MSC_VER >= 1900)
   static_assert(Z7_ARRAY_SIZE(g_NameToPropID) == NCoderPropID::k_NUM_DEFINED,
     "g_NameToPropID doesn't match NCoderPropID enum");
 #endif

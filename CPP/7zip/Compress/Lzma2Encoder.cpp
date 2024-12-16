@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../C/Alloc.h"
-
+#include "../../../C/Lzma2Enc.h"
 #include "../../../C/fast-lzma2/fl2_errors.h"
 
 #include "../Common/CWrappers.h"
@@ -126,10 +126,7 @@ Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   return SResToHRESULT(res);
 }
 
-
 // Fast LZMA2 encoder
-
-
 static HRESULT TranslateError(size_t res)
 {
   if (FL2_getErrorCode(res) == FL2_error_memory_allocation)
@@ -213,7 +210,7 @@ HRESULT CFastEncoder::FastLzma2::SetCoderProperties(const PROPID *propIDs, const
     CHECK_P(FL2_CCtx_setParameter(fcs, FL2_p_posBits, lzma2Props.lzmaProps.pb));
   if (lzma2Props.blockSize == 0)
     lzma2Props.blockSize = min(max(MIN_BLOCK_SIZE, dictSize * 4U), MAX_BLOCK_SIZE);
-  else if (lzma2Props.blockSize == LZMA2_ENC_PROPS__BLOCK_SIZE__SOLID)
+  else if (lzma2Props.blockSize == LZMA2_ENC_PROPS_BLOCK_SIZE_SOLID)
     lzma2Props.blockSize = 0;
   unsigned r = 0;
   if (lzma2Props.blockSize != 0) {
@@ -334,25 +331,14 @@ void CFastEncoder::FastLzma2::Cancel()
   FL2_cancelCStream(fcs);
 }
 
-CFastEncoder::CFastEncoder()
-{
-}
-
-CFastEncoder::~CFastEncoder()
-{
-}
-
-
-STDMETHODIMP CFastEncoder::SetCoderProperties(const PROPID *propIDs,
-  const PROPVARIANT *coderProps, UInt32 numProps)
+Z7_COM7F_IMF(CFastEncoder::SetCoderProperties(const PROPID *propIDs,
+  const PROPVARIANT *coderProps, UInt32 numProps))
 {
   return _encoder.SetCoderProperties(propIDs, coderProps, numProps);
 }
 
-
 #define LZMA2_DIC_SIZE_FROM_PROP(p) (((UInt32)2 | ((p) & 1)) << ((p) / 2 + 11))
-
-STDMETHODIMP CFastEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
+Z7_COM7F_IMF(CFastEncoder::WriteCoderProperties(ISequentialOutStream *outStream))
 {
   Byte prop;
   unsigned i;
@@ -365,8 +351,8 @@ STDMETHODIMP CFastEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 }
 
 
-STDMETHODIMP CFastEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-  const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CFastEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+  const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress))
 {
   CHECK_H(_encoder.Begin());
   size_t inSize;
