@@ -234,6 +234,7 @@ static const CAppleName k_Names[] =
   { true,  "hfs",  "Apple_HFS" },
   { true,  "hfsx", "Apple_HFSX" },
   { true,  "ufs",  "Apple_UFS" },
+  { true,  "apfs", "Apple_APFS" },
 
   // efi_sys partition is FAT32, but it's not main file. So we use (IsFs = false)
   { false,  "efi_sys", "C12A7328-F81F-11D2-BA4B-00A0C93EC93B" },
@@ -1062,6 +1063,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
               subName.DeleteFrom(pos1);
           }
         }
+        else
+          subName = item.Name; // new apfs dmg can be without braces
         subName.Trim();
         if (!subName.IsEmpty())
         {

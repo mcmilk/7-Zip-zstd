@@ -360,7 +360,7 @@ void CInArchive::ReadName(const Byte *p, unsigned nameSize, CItem &item)
 static int ReadTime(const Byte *p, unsigned size, Byte mask, CRarTime &rarTime)
 {
   rarTime.LowSecond = (Byte)(((mask & 4) != 0) ? 1 : 0);
-  unsigned numDigits = (mask & 3);
+  const unsigned numDigits = (mask & 3);
   rarTime.SubTime[0] =
   rarTime.SubTime[1] =
   rarTime.SubTime[2] = 0;
@@ -405,8 +405,8 @@ bool CInArchive::ReadHeaderReal(const Byte *p, unsigned size, CItem &item)
 
   item.MTime.LowSecond = 0;
   item.MTime.SubTime[0] =
-      item.MTime.SubTime[1] =
-      item.MTime.SubTime[2] = 0;
+  item.MTime.SubTime[1] =
+  item.MTime.SubTime[2] = 0;
 
   p += kFileHeaderSize;
   size -= kFileHeaderSize;
@@ -941,31 +941,32 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   return S_OK;
 }
 
-static bool RarTimeToFileTime(const CRarTime &rarTime, FILETIME &result)
+static bool RarTimeToFileTime(const CRarTime &rarTime, FILETIME &ft)
 {
-  if (!NTime::DosTimeToFileTime(rarTime.DosTime, result))
+  if (!NTime::DosTime_To_FileTime(rarTime.DosTime, ft))
     return false;
-  UInt64 value =  (((UInt64)result.dwHighDateTime) << 32) + result.dwLowDateTime;
-  value += (UInt64)rarTime.LowSecond * 10000000;
-  value += ((UInt64)rarTime.SubTime[2] << 16) +
-    ((UInt64)rarTime.SubTime[1] << 8) +
-    ((UInt64)rarTime.SubTime[0]);
-  result.dwLowDateTime = (DWORD)value;
-  result.dwHighDateTime = DWORD(value >> 32);
+  UInt64 v = (((UInt64)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
+  v += (UInt32)rarTime.LowSecond * 10000000;
+  v +=
+      ((UInt32)rarTime.SubTime[2] << 16) +
+      ((UInt32)rarTime.SubTime[1] << 8) +
+      ((UInt32)rarTime.SubTime[0]);
+  ft.dwLowDateTime = (DWORD)v;
+  ft.dwHighDateTime = (DWORD)(v >> 32);
   return true;
 }
 
 static void RarTimeToProp(const CRarTime &rarTime, NCOM::CPropVariant &prop)
 {
-  FILETIME localFileTime, utcFileTime;
-  if (RarTimeToFileTime(rarTime, localFileTime))
-  {
-    if (!LocalFileTimeToFileTime(&localFileTime, &utcFileTime))
-      utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-  }
+  FILETIME localFileTime, utc;
+  if (RarTimeToFileTime(rarTime, localFileTime)
+      && LocalFileTimeToFileTime(&localFileTime, &utc))
+    prop.SetAsTimeFrom_FT_Prec(utc, k_PropVar_TimePrec_100ns);
+  /*
   else
-    utcFileTime.dwHighDateTime = utcFileTime.dwLowDateTime = 0;
-  prop = utcFileTime;
+    utc.dwHighDateTime = utc.dwLowDateTime = 0;
+  // prop.SetAsTimeFrom_FT_Prec(utc, k_PropVar_TimePrec_100ns);
+  */
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)

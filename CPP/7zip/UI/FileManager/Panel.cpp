@@ -20,6 +20,7 @@
 
 #include "../Common/ArchiveName.h"
 #include "../Common/CompressCall.h"
+#include "../Common/ZipRegistry.h"
 
 #include "../Agent/IFolderArchive.h"
 
@@ -797,6 +798,18 @@ bool CPanel::IsArcFolder() const
   return GetFolderTypeID().IsPrefixedBy_Ascii_NoCase("7-Zip");
 }
 
+bool CPanel::IsHashFolder() const
+{
+  if (_folder)
+  {
+    NCOM::CPropVariant prop;
+    if (_folder->GetFolderProperty(kpidIsHash, &prop) == S_OK)
+      if (prop.vt == VT_BOOL)
+        return VARIANT_BOOLToBool(prop.boolVal);
+  }
+  return false;
+}
+
 UString CPanel::GetFsPath() const
 {
   if (IsFSDrivesFolder() && !IsDeviceDrivesPrefix() && !IsSuperDrivesPrefix())
@@ -959,9 +972,13 @@ void CPanel::ExtractArchives()
     outFolder += '*';
   outFolder.Add_PathSepar();
   
+  CContextMenuInfo ci;
+  ci.Load();
+
   ::ExtractArchives(paths, outFolder
       , true // showDialog
       , false // elimDup
+      , ci.WriteZone
       );
 }
 

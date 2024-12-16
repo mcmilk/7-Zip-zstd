@@ -20,7 +20,6 @@ WIN_OBJS = $(WIN_OBJS) \
   $O\MemoryLock.obj \
   $O\Menu.obj \
   $O\ProcessUtils.obj \
-  $O\PropVariantConv.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
   $O\SystemInfo.obj \

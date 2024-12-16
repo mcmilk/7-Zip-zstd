@@ -305,29 +305,91 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 }
 
 
+/*
+static HRESULT ReportItemProp(IArchiveUpdateCallbackArcProp *reportArcProp, PROPID propID, const PROPVARIANT *value)
+{
+  return reportArcProp->ReportProp(NEventIndexType::kOutArcIndex, 0, propID, value);
+}
+
+static HRESULT ReportArcProp(IArchiveUpdateCallbackArcProp *reportArcProp, PROPID propID, const PROPVARIANT *value)
+{
+  return reportArcProp->ReportProp(NEventIndexType::kArcProp, 0, propID, value);
+}
+
+static HRESULT ReportArcProps(IArchiveUpdateCallbackArcProp *reportArcProp,
+    const UInt64 *unpackSize,
+    const UInt64 *numBlocks)
+{
+  NCOM::CPropVariant sizeProp;
+  if (unpackSize)
+  {
+    sizeProp = *unpackSize;
+    RINOK(ReportItemProp(reportArcProp, kpidSize, &sizeProp));
+    RINOK(reportArcProp->ReportFinished(NEventIndexType::kOutArcIndex, 0, NArchive::NUpdate::NOperationResult::kOK));
+  }
+ 
+  if (unpackSize)
+  {
+    RINOK(ReportArcProp(reportArcProp, kpidSize, &sizeProp));
+  }
+  if (numBlocks)
+  {
+    NCOM::CPropVariant prop;
+    prop = *numBlocks;
+    RINOK(ReportArcProp(reportArcProp, kpidNumBlocks, &prop));
+  }
+  return S_OK;
+}
+*/
 
 static HRESULT UpdateArchive(
     UInt64 unpackSize,
     ISequentialOutStream *outStream,
     const CProps &props,
-    IArchiveUpdateCallback *updateCallback)
+    IArchiveUpdateCallback *updateCallback
+    // , ArchiveUpdateCallbackArcProp *reportArcProp
+    )
 {
-  RINOK(updateCallback->SetTotal(unpackSize));
-  CMyComPtr<ISequentialInStream> fileInStream;
-  RINOK(updateCallback->GetStream(0, &fileInStream));
-  CLocalProgress *localProgressSpec = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
-  localProgressSpec->Init(updateCallback, true);
-  NCompress::NBZip2::CEncoder *encoderSpec = new NCompress::NBZip2::CEncoder;
-  CMyComPtr<ICompressCoder> encoder = encoderSpec;
-  RINOK(props.SetCoderProps(encoderSpec, NULL));
-  RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));
+  {
+    CMyComPtr<ISequentialInStream> fileInStream;
+    RINOK(updateCallback->GetStream(0, &fileInStream));
+    if (!fileInStream)
+      return S_FALSE;
+    {
+      CMyComPtr<IStreamGetSize> streamGetSize;
+      fileInStream.QueryInterface(IID_IStreamGetSize, &streamGetSize);
+      if (streamGetSize)
+      {
+        UInt64 size;
+        if (streamGetSize->GetSize(&size) == S_OK)
+          unpackSize = size;
+      }
+    }
+    RINOK(updateCallback->SetTotal(unpackSize));
+    CLocalProgress *localProgressSpec = new CLocalProgress;
+    CMyComPtr<ICompressProgressInfo> localProgress = localProgressSpec;
+    localProgressSpec->Init(updateCallback, true);
+    {
+      NCompress::NBZip2::CEncoder *encoderSpec = new NCompress::NBZip2::CEncoder;
+      CMyComPtr<ICompressCoder> encoder = encoderSpec;
+      RINOK(props.SetCoderProps(encoderSpec, NULL));
+      RINOK(encoder->Code(fileInStream, outStream, NULL, NULL, localProgress));
+      /*
+      if (reportArcProp)
+      {
+        unpackSize = encoderSpec->GetInProcessedSize();
+        RINOK(ReportArcProps(reportArcProp, &unpackSize, &encoderSpec->NumBlocks));
+      }
+      */
+    }
+  }
   return updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK);
 }
 
-STDMETHODIMP CHandler::GetFileTimeType(UInt32 *type)
+STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
 {
-  *type = NFileTimeType::kUnix;
+  *timeType = GET_FileTimeType_NotDefined_for_GetFileTimeType;
+  // *timeType = NFileTimeType::kUnix;
   return S_OK;
 }
 
@@ -345,6 +407,11 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     return E_FAIL;
   RINOK(updateCallback->GetUpdateItemInfo(0, &newData, &newProps, &indexInArchive));
  
+  /*
+  CMyComPtr<IArchiveUpdateCallbackArcProp> reportArcProp;
+  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackArcProp, (void **)&reportArcProp);
+  */
+
   if (IntToBool(newProps))
   {
     {
@@ -396,6 +463,8 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
 
   return NCompress::CopyStream(_stream, outStream, progress);
 
+  // return ReportArcProps(reportArcProp, NULL, NULL);
+
   COM_TRY_END
 }
 
@@ -410,7 +479,8 @@ REGISTER_ARC_IO(
   "bzip2", "bz2 bzip2 tbz2 tbz", "* * .tar .tar", 2,
   k_Signature,
   0,
-  NArcInfoFlags::kKeepName,
-  IsArc_BZip2)
+  NArcInfoFlags::kKeepName
+  , 0
+  , IsArc_BZip2)
 
 }}

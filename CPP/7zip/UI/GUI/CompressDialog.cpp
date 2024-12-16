@@ -11,9 +11,12 @@
 #include "../../../Windows/FileName.h"
 #include "../../../Windows/System.h"
 
+#include "../../Common/MethodProps.h"
+
 #include "../FileManager/BrowseDialog.h"
 #include "../FileManager/FormatUtils.h"
 #include "../FileManager/HelpUtils.h"
+#include "../FileManager/PropertyName.h"
 #include "../FileManager/SplitUtils.h"
 
 #include "../Explorer/MyMessages.h"
@@ -34,6 +37,9 @@ extern bool g_IsNT;
 #include "ExtractRes.h"
 
 #ifdef LANG
+
+// #define IDS_OPTIONS 2100
+
 static const UInt32 kLangIDs[] =
 {
   IDT_COMPRESS_ARCHIVE,
@@ -46,6 +52,8 @@ static const UInt32 kLangIDs[] =
   IDT_COMPRESS_SOLID,
   IDT_COMPRESS_THREADS,
   IDT_COMPRESS_PARAMETERS,
+  
+  IDB_COMPRESS_OPTIONS, // IDS_OPTIONS
 
   IDG_COMPRESS_OPTIONS,
   IDX_COMPRESS_SFX,
@@ -54,11 +62,6 @@ static const UInt32 kLangIDs[] =
 
   IDT_COMPRESS_MEMORY,
   IDT_COMPRESS_MEMORY_DE,
-
-  IDX_COMPRESS_NT_SYM_LINKS,
-  IDX_COMPRESS_NT_HARD_LINKS,
-  IDX_COMPRESS_NT_ALT_STREAMS,
-  IDX_COMPRESS_NT_SECUR,
 
   IDG_COMPRESS_ENCRYPTION,
   IDT_COMPRESS_ENCRYPTION_METHOD,
@@ -69,7 +72,7 @@ static const UInt32 kLangIDs[] =
   IDX_PASSWORD_SHOW,
 
   IDT_SPLIT_TO_VOLUMES,
-  IDT_COMPRESS_PATH_MODE
+  IDT_COMPRESS_PATH_MODE,
 };
 #endif
 
@@ -80,155 +83,89 @@ using namespace NDir;
 
 static const unsigned kHistorySize = 20;
 
-static const UInt32 kNoSolidBlockSize = 0;
-static const UInt32 kSolidBlockSize = 64;
+static const UInt32 kSolidLog_NoSolid = 0;
+static const UInt32 kSolidLog_FullSolid = 64;
 
 static const UInt32 kLzmaMaxDictSize = (UInt32)15 << 28;
 
 static LPCSTR const kExeExt = ".exe";
 
-#define k7zFormat "7z"
-
 static const UInt32 g_Levels[] =
 {
   IDS_METHOD_STORE,
   IDS_METHOD_FASTEST,
+  0,
   IDS_METHOD_FAST,
+  0,
   IDS_METHOD_NORMAL,
+  0,
   IDS_METHOD_MAXIMUM,
+  0,
   IDS_METHOD_ULTRA
 };
 
 enum EMethodID
 {
   kCopy,
-  kZSTD,
-  kBROTLI,
-  kLZ4,
-  kLZ5,
-  kLIZARD_M1,
-  kLIZARD_M2,
-  kLIZARD_M3,
-  kLIZARD_M4,
   kLZMA,
   kLZMA2,
-  kFLZMA2,
   kPPMd,
   kBZip2,
   kDeflate,
   kDeflate64,
-  kPPMdZip
-};
-
-static LPCSTR const kMethodsLongnames[] =
-{
-    "Copy [std]"
-  , "Zstandard"
-  , "Brotli"
-  , "LZ4"
-  , "LZ5"
-  , "Lizard, FastLZ4"
-  , "Lizard, LIZv1"
-  , "Lizard, FastLZ4 + Huffman"
-  , "Lizard, LIZv1 + Huffman"
-  , "LZMA [std]"
-  , "LZMA2 [std]"
-  , "LZMA2, Fast [std]"
-  , "PPMd [std]"
-  , "BZip2 [std]"
-  , "Deflate [std]"
-  , "Deflate64 [std]"
-  , "PPMd [std]"
+  kPPMdZip,
+  kSha256,
+  kSha1,
+  kCrc32,
+  kCrc64,
+  kGnu,
+  kPosix
 };
 
 static LPCSTR const kMethodsNames[] =
 {
     "Copy"
-  , "zstd"
-  , "Brotli"
-  , "LZ4"
-  , "LZ5"
-  , "Lizard"
-  , "Lizard"
-  , "Lizard"
-  , "Lizard"
   , "LZMA"
   , "LZMA2"
-  , "FLZMA2"
   , "PPMd"
   , "BZip2"
   , "Deflate"
   , "Deflate64"
   , "PPMd"
-};
-
-static const EMethodID g_ZstdMethods[] =
-{
-  kZSTD
-};
-
-static const EMethodID g_BrotliMethods[] =
-{
-  kBROTLI
-};
-
-static const EMethodID g_LizardMethods[] =
-{
-  kLIZARD_M1,
-  kLIZARD_M2,
-  kLIZARD_M3,
-  kLIZARD_M4
-};
-
-static const EMethodID g_Lz4Methods[] =
-{
-  kLZ4
-};
-
-static const EMethodID g_Lz5Methods[] =
-{
-  kLZ5
+  , "SHA256"
+  , "SHA1"
+  , "CRC32"
+  , "CRC64"
+  , "GNU"
+  , "POSIX"
 };
 
 static const EMethodID g_7zMethods[] =
 {
-  kCopy,
-  kZSTD,
-  kBROTLI,
-  kLZ4,
-  kLZ5,
-  kLIZARD_M1,
-  kLIZARD_M2,
-  kLIZARD_M3,
-  kLIZARD_M4,
-  kFLZMA2,
   kLZMA2,
   kLZMA,
   kPPMd,
-  kDeflate,
-  kDeflate64,
   kBZip2
+  , kDeflate
+  , kDeflate64
+  , kCopy
 };
 
 static const EMethodID g_7zSfxMethods[] =
 {
   kCopy,
-  kZSTD,
   kLZMA,
   kLZMA2,
-  kFLZMA2,
   kPPMd
 };
 
 static const EMethodID g_ZipMethods[] =
 {
-  kCopy,
   kDeflate,
   kDeflate64,
   kBZip2,
   kLZMA,
-  kPPMdZip,
-  kZSTD
+  kPPMdZip
 };
 
 static const EMethodID g_GZipMethods[] =
@@ -252,120 +189,124 @@ static const EMethodID g_SwfcMethods[] =
   // kLZMA
 };
 
+static const EMethodID g_TarMethods[] =
+{
+  kGnu,
+  kPosix
+};
+
+static const EMethodID g_HashMethods[] =
+{
+    kSha256
+  , kSha1
+  // , kCrc32
+  // , kCrc64
+};
+
+static const UInt32 kFF_Filter      = 1 << 0;
+static const UInt32 kFF_Solid       = 1 << 1;
+static const UInt32 kFF_MultiThread = 1 << 2;
+static const UInt32 kFF_Encrypt     = 1 << 3;
+static const UInt32 kFF_EncryptFileNames  = 1 << 4;
+static const UInt32 kFF_MemUse      = 1 << 5;
+static const UInt32 kFF_SFX         = 1 << 6;
+
+/*
+static const UInt32 kFF_Time_Win  = 1 << 10;
+static const UInt32 kFF_Time_Unix = 1 << 11;
+static const UInt32 kFF_Time_DOS  = 1 << 12;
+static const UInt32 kFF_Time_1ns  = 1 << 13;
+*/
+
 struct CFormatInfo
 {
   LPCSTR Name;
   UInt32 LevelsMask;
   unsigned NumMethods;
-  const EMethodID *MathodIDs;
-  bool Filter;
-  bool Solid;
-  bool MultiThread;
-  bool SFX;
+  const EMethodID *MethodIDs;
 
-  bool Encrypt;
-  bool EncryptFileNames;
+  UInt32 Flags;
+
+  bool Filter_() const { return (Flags & kFF_Filter) != 0; }
+  bool Solid_() const { return (Flags & kFF_Solid) != 0; }
+  bool MultiThread_() const { return (Flags & kFF_MultiThread) != 0; }
+  bool Encrypt_() const { return (Flags & kFF_Encrypt) != 0; }
+  bool EncryptFileNames_() const { return (Flags & kFF_EncryptFileNames) != 0; }
+  bool MemUse_() const { return (Flags & kFF_MemUse) != 0; }
+  bool SFX_() const { return (Flags & kFF_SFX) != 0; }
 };
-
-#if 0
-void ShowInfo(LPCWSTR str, ...)
-{
-  wchar_t buf[4000];
-  va_list args;
-  va_start(args, str);
-  wvsprintf(buf, str, args);
-  va_end(args);
-  ShowErrorMessage(NULL, buf);
-}
-#endif
 
 #define METHODS_PAIR(x) ARRAY_SIZE(x), x
 
 static const CFormatInfo g_Formats[] =
 {
   {
-    "", /* 0 */
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
-    0, 0,
-    false, false, false, false, false, false
+    "",
+    // (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    ((UInt32)1 << 10) - 1,
+    // (UInt32)(Int32)-1,
+    0, NULL,
+    kFF_MultiThread | kFF_MemUse
   },
   {
-    k7zFormat, /* 1 */
+    "7z",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_7zMethods),
-    true, true, true, true, true, true
+    kFF_Filter | kFF_Solid | kFF_MultiThread | kFF_Encrypt |
+    kFF_EncryptFileNames | kFF_MemUse | kFF_SFX
+    // | kFF_Time_Win
   },
   {
-    "Zip", /* 2 */
+    "Zip",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_ZipMethods),
-    false, false, true, false, true, false
+    kFF_MultiThread | kFF_Encrypt | kFF_MemUse
+    // | kFF_Time_Win | kFF_Time_Unix | kFF_Time_DOS
   },
   {
-    "GZip", /* 3 */
+    "GZip",
     (1 << 1) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_GZipMethods),
-    false, false, false, false, false, false
+    kFF_MemUse
+    // | kFF_Time_Unix
   },
   {
-    "BZip2", /* 4 */
+    "BZip2",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_BZip2Methods),
-    false, false, true, false, false, false
+    kFF_MultiThread | kFF_MemUse
   },
   {
-    "xz", /* 5 */
+    "xz",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_XzMethods),
-    false, true, true, false, false, false
+    kFF_Solid | kFF_MultiThread | kFF_MemUse
   },
   {
-    "zstd", /* 6 */
-    (1 << 1) | (1 << 3) | (1 << 5) | (1 << 11) | (1 << 17) | (1 << 22),
-    METHODS_PAIR(g_ZstdMethods),
-    false, false, true, false, false, false
-  },
-  {
-    "Brotli", /* 7 */
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 11),
-    METHODS_PAIR(g_BrotliMethods),
-    false, false, true, false, false, false
-  },
-  {
-    "Lizard", /* 8 */
-    (1 << 10) | (1 << 11) | (1 << 13) | (1 << 15) | (1 << 17) | (1 << 19),
-    METHODS_PAIR(g_LizardMethods),
-    false, false, true, false, false, false
-  },
-  {
-    "LZ4", /* 9 */
-    (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 12),
-    METHODS_PAIR(g_Lz4Methods),
-    false, false, true, false, false, false
-  },
-  {
-    "LZ5", /* 10 */
-    (1 << 1) | (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15),
-    METHODS_PAIR(g_Lz5Methods),
-    false, false, true, false, false, false
-  },
-  {
-    "Swfc", /* 11 */
+    "Swfc",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_SwfcMethods),
-    false, false, true, false, false, false
+    0
   },
   {
-    "Tar", /* 12 */
+    "Tar",
     (1 << 0),
-    0, 0,
-    false, false, false, false, false, false
+    METHODS_PAIR(g_TarMethods),
+    0
+    // kFF_Time_Unix | kFF_Time_Win // | kFF_Time_1ns
   },
   {
-    "wim", /* 13 */
+    "wim",
     (1 << 0),
-    0, 0,
-    false, false, false, false, false, false
+    0, NULL,
+    0
+    // | kFF_Time_Win
+  },
+  {
+    "Hash",
+    (0 << 0),
+    METHODS_PAIR(g_HashMethods),
+    0
   }
 };
 
@@ -375,23 +316,6 @@ static bool IsMethodSupportedBySfx(int methodID)
     if (methodID == g_7zSfxMethods[i])
       return true;
   return false;
-}
-
-static bool GetMaxRamSizeForProgram(UInt64 &ramSize, UInt64 &size)
-{
-  size = (UInt64)(sizeof(size_t)) << 29;
-  bool ramSize_Defined = NSystem::GetRamSize(size);
-  ramSize = size;
-  size = size / 16 * 15;
-  const UInt64 kMinSysSize = (1 << 24);
-  if (size <= kMinSysSize)
-    size = 0;
-  else
-    size -= kMinSysSize;
-  const UInt64 kMinUseSize = (1 << 24);
-  if (size < kMinUseSize)
-    size = kMinUseSize;
-  return ramSize_Defined;
 }
 
 
@@ -405,7 +329,7 @@ static const
   NCompressDialog::NUpdateMode::kFresh,
   NCompressDialog::NUpdateMode::kSync
 };
-
+  
 static const UInt32 k_UpdateMode_IDs[] =
 {
   IDS_COMPRESS_UPDATE_MODE_ADD,
@@ -432,29 +356,61 @@ static const UInt32 k_PathMode_IDs[] =
 };
 
 void AddComboItems(NControl::CComboBox &combo, const UInt32 *langIDs, unsigned numItems, const int *values, int curVal);
-bool GetBoolsVal(const CBoolPair &b1, const CBoolPair &b2);
 
-void CCompressDialog::CheckButton_TwoBools(UINT id, const CBoolPair &b1, const CBoolPair &b2)
+void CCompressDialog::SetMethods(const CObjectVector<CCodecInfoUser> &userCodecs)
 {
-  CheckButton(id, GetBoolsVal(b1, b2));
+  ExternalMethods.Clear();
+  {
+    FOR_VECTOR (i, userCodecs)
+    {
+      const CCodecInfoUser &c = userCodecs[i];
+      if (!c.EncoderIsAssigned
+          || !c.IsFilter_Assigned
+          || c.IsFilter
+          || c.NumStreams != 1)
+        continue;
+      unsigned k;
+      for (k = 0; k < ARRAY_SIZE(g_7zMethods); k++)
+        if (c.Name.IsEqualTo_Ascii_NoCase(kMethodsNames[g_7zMethods[k]]))
+          break;
+      if (k != ARRAY_SIZE(g_7zMethods))
+        continue;
+      ExternalMethods.Add(c.Name);
+    }
+  }
 }
-
-void CCompressDialog::GetButton_Bools(UINT id, CBoolPair &b1, CBoolPair &b2)
-{
-  bool val = IsButtonCheckedBool(id);
-  bool oldVal = GetBoolsVal(b1, b2);
-  if (val != oldVal)
-    b1.Def = b2.Def = true;
-  b1.Val = b2.Val = val;
-}
-
+                                         
 
 bool CCompressDialog::OnInit()
 {
   #ifdef LANG
   LangSetWindowText(*this, IDD_COMPRESS);
   LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+  // LangSetDlgItemText(*this, IDB_COMPRESS_OPTIONS, IDS_OPTIONS); // IDG_COMPRESS_OPTIONS
   #endif
+
+  {
+    UInt64 size = (UInt64)(sizeof(size_t)) << 29;
+    _ramSize_Defined = NSystem::GetRamSize(size);
+    // size = (UInt64)3 << 62; // for debug only;
+    _ramSize = size;
+    const UInt64 kMinUseSize = (1 << 26);
+    if (size < kMinUseSize)
+      size = kMinUseSize;
+
+    unsigned bits = sizeof(size_t) * 8;
+    if (bits == 32)
+    {
+      const UInt32 limit2 = (UInt32)7 << 28;
+      if (size > limit2)
+        size = limit2;
+    }
+
+    _ramSize_Reduced = size;
+
+    // 80% - is auto usage limit in handlers
+    _ramUsage_Auto = Calc_From_Val_Percents(size, 80);
+  }
 
   _password1Control.Attach(GetItem(IDE_COMPRESS_PASSWORD1));
   _password2Control.Attach(GetItem(IDE_COMPRESS_PASSWORD2));
@@ -465,14 +421,14 @@ bool CCompressDialog::OnInit()
 
   m_ArchivePath.Attach(GetItem(IDC_COMPRESS_ARCHIVE));
   m_Format.Attach(GetItem(IDC_COMPRESS_FORMAT));
-  m_Method.Attach(GetItem(IDC_COMPRESS_METHOD));
   m_Level.Attach(GetItem(IDC_COMPRESS_LEVEL));
+  m_Method.Attach(GetItem(IDC_COMPRESS_METHOD));
   m_Dictionary.Attach(GetItem(IDC_COMPRESS_DICTIONARY));
-
   m_Order.Attach(GetItem(IDC_COMPRESS_ORDER));
   m_Solid.Attach(GetItem(IDC_COMPRESS_SOLID));
   m_NumThreads.Attach(GetItem(IDC_COMPRESS_THREADS));
-
+  m_MemUse.Attach(GetItem(IDC_COMPRESS_MEM_USE));
+  
   m_UpdateMode.Attach(GetItem(IDC_COMPRESS_UPDATE_MODE));
   m_PathMode.Attach(GetItem(IDC_COMPRESS_PATH_MODE));
 
@@ -484,12 +440,7 @@ bool CCompressDialog::OnInit()
   m_RegistryInfo.Load();
   CheckButton(IDX_PASSWORD_SHOW, m_RegistryInfo.ShowPassword);
   CheckButton(IDX_COMPRESS_ENCRYPT_FILE_NAMES, m_RegistryInfo.EncryptHeaders);
-
-  CheckButton_TwoBools(IDX_COMPRESS_NT_SYM_LINKS,   Info.SymLinks,   m_RegistryInfo.SymLinks);
-  CheckButton_TwoBools(IDX_COMPRESS_NT_HARD_LINKS,  Info.HardLinks,  m_RegistryInfo.HardLinks);
-  CheckButton_TwoBools(IDX_COMPRESS_NT_ALT_STREAMS, Info.AltStreams, m_RegistryInfo.AltStreams);
-  CheckButton_TwoBools(IDX_COMPRESS_NT_SECUR,       Info.NtSecurity, m_RegistryInfo.NtSecurity);
-
+  
   UpdatePasswordControl();
 
   {
@@ -522,11 +473,7 @@ bool CCompressDialog::OnInit()
     StartDirPrefix = DirPrefix;
     SetArchiveName(fileName);
   }
-
-  SetMethod();
-  SetLevel();
-  SetParams();
-
+  
   for (unsigned i = 0; i < m_RegistryInfo.ArcPaths.Size() && i < kHistorySize; i++)
     m_ArchivePath.AddString(m_RegistryInfo.ArcPaths[i]);
 
@@ -536,8 +483,6 @@ bool CCompressDialog::OnInit()
   AddComboItems(m_PathMode, k_PathMode_IDs, ARRAY_SIZE(k_PathMode_IDs),
       k_PathMode_Vals, Info.PathMode);
 
-  SetSolidBlockSize();
-  SetNumThreads();
 
   TCHAR s[32] = { TEXT('/'), TEXT(' '), 0 };
   ConvertUInt32ToString(NSystem::GetNumberOfProcessors(), s + 2);
@@ -546,15 +491,30 @@ bool CCompressDialog::OnInit()
   CheckButton(IDX_COMPRESS_SHARED, Info.OpenShareForWrite);
   CheckButton(IDX_COMPRESS_DEL, Info.DeleteAfterCompressing);
 
-  CheckControlsEnable();
+  FormatChanged(false); // isChanged
 
-  SetEncryptionMethod();
-  SetMemoryUsage();
+  // OnButtonSFX();
 
   NormalizePosition();
 
   return CModalDialog::OnInit();
 }
+
+/*
+namespace NCompressDialog
+{
+  bool CInfo::GetFullPathName(UString &result) const
+  {
+    #ifndef UNDER_CE
+    // NDirectory::MySetCurrentDirectory(CurrentDirPrefix);
+    #endif
+    FString resultF;
+    bool res = MyGetFullPathName(us2fs(ArchiveName), resultF);
+    result = fs2us(resultF);
+    return res;
+  }
+}
+*/
 
 void CCompressDialog::UpdatePasswordControl()
 {
@@ -593,6 +553,13 @@ bool CCompressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
       UpdatePasswordControl();
       return true;
     }
+    case IDB_COMPRESS_OPTIONS:
+    {
+      COptionsDialog dialog(this);
+      if (dialog.Create(*this) == IDOK)
+        ShowOptionsString();
+      return true;
+    }
   }
   return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }
@@ -600,10 +567,10 @@ bool CCompressDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 void CCompressDialog::CheckSFXControlsEnable()
 {
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
-  bool enable = fi.SFX;
+  bool enable = fi.SFX_();
   if (enable)
   {
-    int methodID = GetMethodID();
+    const int methodID = GetMethodID();
     enable = (methodID == -1 || IsMethodSupportedBySfx(methodID));
   }
   if (!enable)
@@ -611,48 +578,128 @@ void CCompressDialog::CheckSFXControlsEnable()
   EnableItem(IDX_COMPRESS_SFX, enable);
 }
 
-void CCompressDialog::CheckControlsEnable()
+/*
+void CCompressDialog::CheckVolumeEnable()
 {
-  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
-  Info.SolidIsSpecified = fi.Solid;
-  bool multiThreadEnable = fi.MultiThread;
-  Info.MultiThreadIsAllowed = multiThreadEnable;
-  Info.EncryptHeadersIsAllowed = fi.EncryptFileNames;
+  bool isSFX = IsSFX();
+  m_Volume.Enable(!isSFX);
+  if (isSFX)
+    m_Volume.SetText(TEXT(""));
+}
+*/
 
+void CCompressDialog::EnableMultiCombo(unsigned id)
+{
+  NWindows::NControl::CComboBox combo;
+  combo.Attach(GetItem(id));
+  const bool enable = (combo.GetCount() > 1);
+  EnableItem(id, enable);
+}
+
+static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s);
+
+static void Combine_Two_BoolPairs(const CBoolPair &b1, const CBoolPair &b2, CBool1 &res)
+{
+  if (!b1.Def && b2.Def)
+    res.Val = b2.Val;
+  else
+    res.Val = b1.Val;
+}
+
+#define SET_GUI_BOOL(name) \
+      Combine_Two_BoolPairs(Info. name, m_RegistryInfo. name, name)
+
+
+static void Set_Final_BoolPairs(
+    const CBool1 &gui,
+    CBoolPair &cmd,
+    CBoolPair &reg)
+{
+  if (!cmd.Def)
+  {
+    reg.Val = gui.Val;
+    reg.Def = gui.Val;
+  }
+  if (gui.Supported)
+  {
+    cmd.Val = gui.Val;
+    cmd.Def = gui.Val;
+  }
+  else
+    cmd.Init();
+}
+
+#define SET_FINAL_BOOL_PAIRS(name) \
+    Set_Final_BoolPairs(name, Info. name, m_RegistryInfo. name)
+
+void CCompressDialog::FormatChanged(bool isChanged)
+{
+  SetLevel();
+  SetSolidBlockSize();
+  SetParams();
+  SetMemUseCombo();
+  SetNumThreads();
+
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  Info.SolidIsSpecified = fi.Solid_();
+  Info.EncryptHeadersIsAllowed = fi.EncryptFileNames_();
+  
+  /*
+  const bool multiThreadEnable = fi.MultiThread;
+  Info.MultiThreadIsAllowed = multiThreadEnable;
   EnableItem(IDC_COMPRESS_SOLID, fi.Solid);
   EnableItem(IDC_COMPRESS_THREADS, multiThreadEnable);
+  const bool methodEnable = (fi.MethodIDs != NULL);
+  EnableItem(IDC_COMPRESS_METHOD, methodEnable);
+  EnableMultiCombo(IDC_COMPRESS_DICTIONARY, methodEnable);
+  EnableItem(IDC_COMPRESS_ORDER, methodEnable);
+  */
 
   CheckSFXControlsEnable();
 
   {
-    const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+    if (!isChanged)
+    {
+      SET_GUI_BOOL (SymLinks);
+      SET_GUI_BOOL (HardLinks);
+      SET_GUI_BOOL (AltStreams);
+      SET_GUI_BOOL (NtSecurity);
+      SET_GUI_BOOL (PreserveATime);
+    }
 
-    ShowItem_Bool(IDX_COMPRESS_NT_SYM_LINKS, ai.Flags_SymLinks());
-    ShowItem_Bool(IDX_COMPRESS_NT_HARD_LINKS, ai.Flags_HardLinks());
-    ShowItem_Bool(IDX_COMPRESS_NT_ALT_STREAMS, ai.Flags_AltStreams());
-    ShowItem_Bool(IDX_COMPRESS_NT_SECUR, ai.Flags_NtSecure());
+    PreserveATime.Supported = true;
 
-    ShowItem_Bool(IDG_COMPRESS_NTFS,
-           ai.Flags_SymLinks()
-        || ai.Flags_HardLinks()
-        || ai.Flags_AltStreams()
-        || ai.Flags_NtSecure());
+    {
+      const CArcInfoEx &ai = Get_ArcInfoEx();
+      SymLinks.Supported   = ai.Flags_SymLinks();
+      HardLinks.Supported  = ai.Flags_HardLinks();
+      AltStreams.Supported = ai.Flags_AltStreams();
+      NtSecurity.Supported = ai.Flags_NtSecurity();
+    }
+
+    ShowOptionsString();
   }
+  // CheckVolumeEnable();
 
-  EnableItem(IDG_COMPRESS_ENCRYPTION, fi.Encrypt);
+  const bool encrypt = fi.Encrypt_();
+  EnableItem(IDG_COMPRESS_ENCRYPTION, encrypt);
 
-  EnableItem(IDT_PASSWORD_ENTER, fi.Encrypt);
-  EnableItem(IDT_PASSWORD_REENTER, fi.Encrypt);
-  EnableItem(IDE_COMPRESS_PASSWORD1, fi.Encrypt);
-  EnableItem(IDE_COMPRESS_PASSWORD2, fi.Encrypt);
-  EnableItem(IDX_PASSWORD_SHOW, fi.Encrypt);
+  EnableItem(IDT_PASSWORD_ENTER, encrypt);
+  EnableItem(IDT_PASSWORD_REENTER, encrypt);
+  EnableItem(IDE_COMPRESS_PASSWORD1, encrypt);
+  EnableItem(IDE_COMPRESS_PASSWORD2, encrypt);
+  EnableItem(IDX_PASSWORD_SHOW, encrypt);
 
-  EnableItem(IDT_COMPRESS_ENCRYPTION_METHOD, fi.Encrypt);
-  EnableItem(IDC_COMPRESS_ENCRYPTION_METHOD, fi.Encrypt);
-  EnableItem(IDX_COMPRESS_ENCRYPT_FILE_NAMES, fi.EncryptFileNames);
+  EnableItem(IDT_COMPRESS_ENCRYPTION_METHOD, encrypt);
+  EnableItem(IDC_COMPRESS_ENCRYPTION_METHOD, encrypt);
+  EnableItem(IDX_COMPRESS_ENCRYPT_FILE_NAMES, fi.EncryptFileNames_());
 
-  ShowItem_Bool(IDX_COMPRESS_ENCRYPT_FILE_NAMES, fi.EncryptFileNames);
+  ShowItem_Bool(IDX_COMPRESS_ENCRYPT_FILE_NAMES, fi.EncryptFileNames_());
+
+  SetEncryptionMethod();
+  SetMemoryUsage();
 }
+
 
 bool CCompressDialog::IsSFX()
 {
@@ -693,6 +740,8 @@ void CCompressDialog::OnButtonSFX()
     }
     SetArchiveName2(false); // it's for OnInit
   }
+
+  // CheckVolumeEnable();
 }
 
 bool CCompressDialog::GetFinalPath_Smart(UString &resPath)
@@ -787,9 +836,10 @@ static bool IsAsciiString(const UString &s)
 
 static void AddSize_MB(UString &s, UInt64 size)
 {
-  char temp[32];
-  ConvertUInt64ToString((size + (1 << 20) - 1) >> 20, temp);
-  s += temp;
+  const UInt64 v2 = size + ((UInt32)1 << 20) - 1;
+  if (size <= v2)
+    size = v2;
+  s.Add_UInt64(size >> 20);
   s += " MB";
 }
 
@@ -813,7 +863,7 @@ void SetErrorMessage_MemUsage(UString &s, UInt64 reqSize, UInt64 ramSize, UInt64
   AddSize_MB(s, ramSize);
   s += " : RAM";
 
-  if (ramLimit != 0)
+  // if (ramLimit != 0)
   {
     s.Add_LF();
     AddSize_MB(s, ramLimit);
@@ -822,7 +872,7 @@ void SetErrorMessage_MemUsage(UString &s, UInt64 reqSize, UInt64 ramSize, UInt64
   
   s.Add_LF();
   s.Add_LF();
-  s += LangString(IDS_MEM_ERROR);
+  AddLangString(s, IDS_MEM_ERROR);
 }
 
 
@@ -858,20 +908,21 @@ void CCompressDialog::OnOK()
   }
 
   {
-    UInt64 ramSize;
-    UInt64 maxRamSize;
-    const bool maxRamSize_Defined = GetMaxRamSizeForProgram(ramSize, maxRamSize);
     UInt64 decompressMem;
     const UInt64 memUsage = GetMemoryUsage_DecompMem(decompressMem);
-    if (maxRamSize_Defined && memUsage > maxRamSize)
+    if (memUsage != (UInt64)(Int64)-1)
     {
-      UString s;
-      UString s2 = LangString(IDT_COMPRESS_MEMORY);
-      if (s2.IsEmpty())
-        GetItemText(IDT_COMPRESS_MEMORY, s2);
-      SetErrorMessage_MemUsage(s, memUsage, ramSize, maxRamSize, s2);
-      MessageBoxError(s);
-      return;
+      const UInt64 limit = Get_MemUse_Bytes();
+      if (memUsage > limit)
+      {
+        UString s;
+        UString s2 = LangString(IDT_COMPRESS_MEMORY);
+        if (s2.IsEmpty())
+          GetItemText(IDT_COMPRESS_MEMORY, s2);
+        SetErrorMessage_MemUsage(s, memUsage, _ramSize, limit, s2);
+        MessageBoxError(s);
+        return;
+      }
     }
   }
 
@@ -883,12 +934,12 @@ void CCompressDialog::OnOK()
       ShowErrorMessage(*this, k_IncorrectPathMessage);
       return;
     }
-
+    
     m_RegistryInfo.ArcPaths.Clear();
     AddUniqueString(m_RegistryInfo.ArcPaths, s);
     Info.ArcPath = s;
   }
-
+  
   Info.UpdateMode = (NCompressDialog::NUpdateMode::EEnum)k_UpdateMode_Vals[m_UpdateMode.GetCurSel()];;
   Info.PathMode = (NWildcard::ECensorPathMode)k_PathMode_Vals[m_PathMode.GetCurSel()];
 
@@ -898,8 +949,21 @@ void CCompressDialog::OnOK()
   Info.OrderMode = GetOrderMode();
   Info.NumThreads = GetNumThreadsSpec();
 
+  Info.MemUsage.Clear();
   {
-    UInt32 solidLogSize = GetBlockSizeSpec();
+    const UString mus = Get_MemUse_Spec();
+    if (!mus.IsEmpty())
+    {
+      NCompression::CMemUse mu;
+      mu.Parse(mus);
+      if (mu.IsDefined)
+        Info.MemUsage = mu;
+    }
+  }
+
+  {
+    // Info.SolidIsSpecified = g_Formats[GetStaticFormatIndex()].Solid;
+    const UInt32 solidLogSize = GetBlockSizeSpec();
     Info.SolidBlockSize = 0;
     if (solidLogSize == (UInt32)(Int32)-1)
       Info.SolidIsSpecified = false;
@@ -919,27 +983,45 @@ void CCompressDialog::OnOK()
   m_RegistryInfo.EncryptHeaders =
     Info.EncryptHeaders = IsButtonCheckedBool(IDX_COMPRESS_ENCRYPT_FILE_NAMES);
 
-  GetButton_Bools(IDX_COMPRESS_NT_SYM_LINKS,   Info.SymLinks,   m_RegistryInfo.SymLinks);
-  GetButton_Bools(IDX_COMPRESS_NT_HARD_LINKS,  Info.HardLinks,  m_RegistryInfo.HardLinks);
-  GetButton_Bools(IDX_COMPRESS_NT_ALT_STREAMS, Info.AltStreams, m_RegistryInfo.AltStreams);
-  GetButton_Bools(IDX_COMPRESS_NT_SECUR,       Info.NtSecurity, m_RegistryInfo.NtSecurity);
+
+  /* (Info) is for saving to registry:
+     (CBoolPair::Val) will be set as (false), if it was (false)
+       in registry at dialog creation, and user didn't click checkbox.
+     in another case (CBoolPair::Val) will be set as (true) */
 
   {
-    const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-    if (!ai.Flags_SymLinks()) Info.SymLinks.Val = false;
-    if (!ai.Flags_HardLinks()) Info.HardLinks.Val = false;
-    if (!ai.Flags_AltStreams()) Info.AltStreams.Val = false;
-    if (!ai.Flags_NtSecure()) Info.NtSecurity.Val = false;
+    /* Info properties could be for another archive types.
+       so we disable unsupported properties in Info */
+    // const CArcInfoEx &ai = Get_ArcInfoEx();
+
+    SET_FINAL_BOOL_PAIRS (SymLinks);
+    SET_FINAL_BOOL_PAIRS (HardLinks);
+    SET_FINAL_BOOL_PAIRS (AltStreams);
+    SET_FINAL_BOOL_PAIRS (NtSecurity);
+
+    SET_FINAL_BOOL_PAIRS (PreserveATime);
+  }
+
+  {
+    const NCompression::CFormatOptions &fo = Get_FormatOptions();
+
+    Info.TimePrec = fo.TimePrec;
+    Info.MTime = fo.MTime;
+    Info.CTime = fo.CTime;
+    Info.ATime = fo.ATime;
+    Info.SetArcMTime = fo.SetArcMTime;
   }
 
   m_Params.GetText(Info.Options);
-  m_Volume.GetText(Info.SplitVolume);
-  Info.SplitVolume.Trim();
+  
+  UString volumeString;
+  m_Volume.GetText(volumeString);
+  volumeString.Trim();
   Info.VolumeSizes.Clear();
-
-  if (!Info.SplitVolume.IsEmpty())
+  
+  if (!volumeString.IsEmpty())
   {
-    if (!ParseVolumeSizes(Info.SplitVolume, Info.VolumeSizes))
+    if (!ParseVolumeSizes(volumeString, Info.VolumeSizes))
     {
       ShowErrorMessageHwndRes(*this, IDS_INCORRECT_VOLUME_SIZE);
       return;
@@ -952,7 +1034,7 @@ void CCompressDialog::OnOK()
         wchar_t s[32];
         ConvertUInt64ToString(volumeSize, s);
         if (::MessageBoxW(*this, MyFormatNew(IDS_SPLIT_CONFIRM, s),
-            L"7-Zip ZS", MB_YESNOCANCEL | MB_ICONQUESTION) != IDYES)
+            L"7-Zip", MB_YESNOCANCEL | MB_ICONQUESTION) != IDYES)
           return;
       }
     }
@@ -965,16 +1047,16 @@ void CCompressDialog::OnOK()
     sTemp.Trim();
     AddUniqueString(m_RegistryInfo.ArcPaths, sTemp);
   }
-
+  
   if (m_RegistryInfo.ArcPaths.Size() > kHistorySize)
     m_RegistryInfo.ArcPaths.DeleteBack();
-
+  
   if (Info.FormatIndex >= 0)
     m_RegistryInfo.ArcType = (*ArcFormats)[Info.FormatIndex].Name;
   m_RegistryInfo.ShowPassword = IsShowPasswordChecked();
 
   m_RegistryInfo.Save();
-
+  
   CModalDialog::OnOK();
 }
 
@@ -996,29 +1078,35 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         // we can 't change m_ArchivePath in that handler !
         DirPrefix.Empty();
         SetItemText(IDT_COMPRESS_ARCHIVE_FOLDER, DirPrefix);
+
+        /*
+        UString path;
+        m_ArchivePath.GetText(path);
+        m_ArchivePath.SetText(L"");
+        if (IsAbsolutePath(path))
+        {
+          UString fileName;
+          SetArcPathFields(path, fileName);
+          SetArchiveName(fileName);
+        }
+        */
         return true;
       }
-
+      
       case IDC_COMPRESS_FORMAT:
       {
-        bool isSFX = IsSFX();
+        const bool isSFX = IsSFX();
         SaveOptionsInMem();
-        m_Solid.ResetContent();
-        SetMethod(GetMethodID());
-        SetLevel();
-        SetMethod(GetMethodID());
-        SetSolidBlockSize();
-        SetNumThreads();
-        SetParams();
-        CheckControlsEnable();
+        FormatChanged(true); // isChanged
         SetArchiveName2(isSFX);
-        SetEncryptionMethod();
-        SetMemoryUsage();
         return true;
       }
       
       case IDC_COMPRESS_LEVEL:
       {
+        Get_FormatOptions().ResetForLevelChange();
+
+        SetMethod();
         SetSolidBlockSize();
         SetNumThreads();
         CheckSFXNameChange();
@@ -1028,44 +1116,41 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
       
       case IDC_COMPRESS_METHOD:
       {
-        {
-          const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-          int index = FindRegistryFormatAlways(ai.Name);
-          NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-          fo.ResetForLevelChange();
-        }
-
-        SetLevel();
-        SetDictionary();
-        SetOrder();
+        MethodChanged();
         SetSolidBlockSize();
         SetNumThreads();
         CheckSFXNameChange();
         SetMemoryUsage();
+        if (Get_ArcInfoEx().Flags_HashHandler())
+          SetArchiveName2(false);
+
         return true;
       }
-
+      
       case IDC_COMPRESS_DICTIONARY:
       {
-        UInt32 blockSizeLog = GetBlockSizeSpec();
-        if (blockSizeLog != (UInt32)(Int32)-1
-            && blockSizeLog != kNoSolidBlockSize
-            && blockSizeLog != kSolidBlockSize)
+        /* we want to change the reported threads for Auto line
+           and keep selected NumThreads option
+           So we save selected NumThreads option in memory */
+        SaveOptionsInMem();
+        const UInt32 blockSizeLog = GetBlockSizeSpec();
+        if (// blockSizeLog != (UInt32)(Int32)-1 &&
+               blockSizeLog != kSolidLog_NoSolid
+            && blockSizeLog != kSolidLog_FullSolid)
         {
-          const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-          int index = FindRegistryFormatAlways(ai.Name);
-          NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-          fo.Reset_BlockLogSize();
-          SetSolidBlockSize(true);
+          Get_FormatOptions().Reset_BlockLogSize();
+          // SetSolidBlockSize(true);
         }
 
+        SetSolidBlockSize();
+        SetNumThreads(); // we want to change the reported threads for Auto line only
         SetMemoryUsage();
         return true;
       }
-
+      
       case IDC_COMPRESS_ORDER:
         return true;
-
+      
       case IDC_COMPRESS_SOLID:
       {
         SetMemoryUsage();
@@ -1077,6 +1162,18 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
         SetMemoryUsage();
         return true;
       }
+      
+      case IDC_COMPRESS_MEM_USE:
+      {
+        /* we want to change the reported threads for Auto line
+           and keep selected NumThreads option
+           So we save selected NumThreads option in memory */
+        SaveOptionsInMem();
+
+        SetNumThreads(); // we want to change the reported threads for Auto line only
+        SetMemoryUsage();
+        return true;
+      }
     }
   }
   return CModalDialog::OnCommand(code, itemID, lParam);
@@ -1084,7 +1181,7 @@ bool CCompressDialog::OnCommand(int code, int itemID, LPARAM lParam)
 
 void CCompressDialog::CheckSFXNameChange()
 {
-  bool isSFX = IsSFX();
+  const bool isSFX = IsSFX();
   CheckSFXControlsEnable();
   if (isSFX != IsSFX())
     SetArchiveName2(isSFX);
@@ -1142,10 +1239,22 @@ void CCompressDialog::SetArchiveName(const UString &name)
   else
   {
     fileName += '.';
-    fileName += ai.GetMainExt();
+    UString ext = ai.GetMainExt();
+    if (ai.Flags_HashHandler())
+    {
+      UString estimatedName;
+      GetMethodSpec(estimatedName);
+      if (!estimatedName.IsEmpty())
+      {
+        ext = estimatedName;
+        ext.MakeLower_Ascii();
+      }
+    }
+    fileName += ext;
   }
   m_ArchivePath.SetText(fileName);
 }
+
 
 int CCompressDialog::FindRegistryFormat(const UString &name)
 {
@@ -1158,7 +1267,8 @@ int CCompressDialog::FindRegistryFormat(const UString &name)
   return -1;
 }
 
-int CCompressDialog::FindRegistryFormatAlways(const UString &name)
+
+unsigned CCompressDialog::FindRegistryFormat_Always(const UString &name)
 {
   int index = FindRegistryFormat(name);
   if (index < 0)
@@ -1170,9 +1280,17 @@ int CCompressDialog::FindRegistryFormatAlways(const UString &name)
   return index;
 }
 
+
+NCompression::CFormatOptions &CCompressDialog::Get_FormatOptions()
+{
+  const CArcInfoEx &ai = Get_ArcInfoEx();
+  return m_RegistryInfo.Formats[FindRegistryFormat_Always(ai.Name)];
+}
+
+
 int CCompressDialog::GetStaticFormatIndex()
 {
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+  const CArcInfoEx &ai = Get_ArcInfoEx();
   for (unsigned i = 0; i < ARRAY_SIZE(g_Formats); i++)
     if (ai.Name.IsEqualTo_Ascii_NoCase(g_Formats[i].Name))
       return i;
@@ -1191,204 +1309,164 @@ void CCompressDialog::SetNearestSelectComboBox(NControl::CComboBox &comboBox, UI
     comboBox.SetCurSel(0);
 }
 
-void CCompressDialog::SetLevel()
+void CCompressDialog::SetLevel2()
 {
-  UInt32 level = GetLevel2();
-  UInt32 LevelsMask;
-  UInt32 LevelsStart = 1;
-  UInt32 LevelsEnd = 22;
-  UInt32 langID = 0;
-  unsigned i, ir;
-
-  if (GetMethodID() == kCopy) {
-    LevelsStart = 0;
-    LevelsEnd = 0;
-    LevelsMask = g_Formats[0].LevelsMask;
-  } else if (GetMethodID() == kZSTD) {
-    LevelsMask = g_Formats[6].LevelsMask;
-  } else if (GetMethodID() == kBROTLI) {
-    LevelsStart = 0;
-    LevelsMask = g_Formats[7].LevelsMask;
-  } else if (GetMethodID() == kLIZARD_M1) {
-    LevelsMask = g_Formats[8].LevelsMask;
-    LevelsStart = 10;
-    LevelsEnd = 19;
-  } else if (GetMethodID() == kLIZARD_M2) {
-    LevelsMask = g_Formats[8].LevelsMask;
-    LevelsStart = 20;
-    LevelsEnd = 29;
-  } else if (GetMethodID() == kLIZARD_M3) {
-    LevelsMask = g_Formats[8].LevelsMask;
-    LevelsStart = 30;
-    LevelsEnd = 39;
-  } else if (GetMethodID() == kLIZARD_M4) {
-    LevelsMask = g_Formats[8].LevelsMask;
-    LevelsStart = 40;
-    LevelsEnd = 49;
-  } else if (GetMethodID() == kLZ4)
-    LevelsMask = g_Formats[9].LevelsMask;
-  else if (GetMethodID() == kLZ5)
-    LevelsMask = g_Formats[10].LevelsMask;
-  else
-    LevelsMask = g_Formats[GetStaticFormatIndex()].LevelsMask;
-
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+  m_Level.ResetContent();
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+  const CArcInfoEx &ai = Get_ArcInfoEx();
+  UInt32 level = 5;
   {
     int index = FindRegistryFormat(ai.Name);
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      if (fo.Level <= 49)
+      if (fo.Level <= 9)
         level = fo.Level;
-      else
+      else if (fo.Level == (UInt32)(Int32)-1)
         level = 5;
+      else
+        level = 9;
     }
   }
-
-  m_Level.ResetContent();
-  for (i = LevelsStart; i <= LevelsEnd; i++)
+  
+  for (unsigned i = 0; i < sizeof(UInt32) * 8; i++)
   {
-    TCHAR s[40];
-    TCHAR t[50] = { TEXT('L'), TEXT('e'), TEXT('v'), TEXT('e'), TEXT('l'), TEXT(' '), 0 };
-
-    // lizard needs extra handling
-    if (GetMethodID() >= kLIZARD_M1 && GetMethodID() <= kLIZARD_M4) {
-      ir = i;
-      if (ir % 10 == 0) langID = 0;
-      while (ir > 19) { ir -= 10; }
-    } else {
-      ir = i;
-    }
-
-    // max reached
-    if (LevelsMask < (UInt32)(1 << ir))
-      break;
-
-    if ((LevelsMask & (1 << ir)) != 0)
+    const UInt32 mask = (UInt32)1 << i;
+    if ((fi.LevelsMask & mask) != 0)
     {
-      ConvertUInt32ToString(i, s);
-      lstrcat(t, s);
-      lstrcat(t, TEXT(" ("));
-      lstrcat(t, LangString(g_Levels[langID]));
-      lstrcat(t, TEXT(")"));
-      int index = (int)m_Level.AddString(t);
-      m_Level.SetItemData(index, i);
-      langID++;
-    } else {
-      ConvertUInt32ToString(i, s);
-      lstrcat(t, s);
-      int index = (int)m_Level.AddString(t);
+      UInt32 langID = g_Levels[i];
+      UString s;
+      s.Add_UInt32(i);
+      s += " - ";
+      s += LangString(langID);
+      int index = (int)m_Level.AddString(s);
       m_Level.SetItemData(index, i);
     }
+    if (fi.LevelsMask <= mask)
+      break;
   }
-
-  // ShowInfo(L"SetLevel() methodID=%d level=%d start=%d end=%d", GetMethodID(), level, LevelsStart, LevelsEnd);
   SetNearestSelectComboBox(m_Level, level);
-
-  return;
 }
+
 
 static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s)
 {
   return cb.AddString((CSysString)s);
 }
 
+// static const char *k_Auto = "- "; // "auto : ";
 
-void CCompressDialog::SetMethod(int keepMethodId)
+static void Modify_Auto(AString &s)
 {
-  /*
-  UInt32 level = GetLevel2();
-  int mID = GetMethodID();
-  static int mID_old = 0;
+  s.Insert(0, "*  ");
+  // s += " -";
+}
 
-  if (mID != mID_old) {
-    mID_old = mID;
-    SetLevel();
-  }
-
-  if (level == 0)
-  {
-    SetDictionary();
-    SetOrder();
-    return;
-  }
-  */
+void CCompressDialog::SetMethod2(int keepMethodId)
+{
+  m_Method.ResetContent();
+  _auto_MethodId = -1;
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  int index = FindRegistryFormat(ai.Name);
-  UString defaultMethod;
-  int defaultLevel = 5;
-  if (index >= 0) {
-    const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-    defaultMethod = fo.Method;
-    defaultLevel = fo.Level;
+  const CArcInfoEx &ai = Get_ArcInfoEx();
+  if (GetLevel() == 0 && !ai.Flags_HashHandler())
+  {
+    if (!ai.Is_Tar())
+    {
+      MethodChanged();
+      return;
+    }
   }
-
-  bool isSfx = IsSFX();
+  UString defaultMethod;
+  {
+    const int index = FindRegistryFormat(ai.Name);
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      defaultMethod = fo.Method;
+    }
+  }
+  const bool isSfx = IsSFX();
   bool weUseSameMethod = false;
 
-  m_Method.ResetContent();
-  for (unsigned m = 0; m < fi.NumMethods; m++)
+  const bool is7z = ai.Is_7z();
+  
+  for (unsigned m = 0;; m++)
   {
-    EMethodID methodID = fi.MathodIDs[m];
+    int methodID;
+    const char *method;
+    if (m < fi.NumMethods)
+    {
+      methodID = fi.MethodIDs[m];
+      method = kMethodsNames[methodID];
+      if (is7z)
+      if (methodID == kCopy
+          || methodID == kDeflate
+          || methodID == kDeflate64
+          )
+        continue;
+    }
+    else
+    {
+      if (!is7z)
+        break;
+      unsigned extIndex = m - fi.NumMethods;
+      if (extIndex >= ExternalMethods.Size())
+        break;
+      methodID = ARRAY_SIZE(kMethodsNames) + extIndex;
+      method = ExternalMethods[extIndex].Ptr();
+    }
     if (isSfx)
       if (!IsMethodSupportedBySfx(methodID))
         continue;
 
-    const char *methodLong = kMethodsLongnames[methodID];
-    const char *method = kMethodsNames[methodID];
-    int itemIndex = (int)ComboBox_AddStringAscii(m_Method, methodLong);
-    m_Method.SetItemData(itemIndex, methodID);
-
-    if (keepMethodId == methodID) {
-      weUseSameMethod = true;
+    AString s (method);
+    int writtenMethodId = methodID;
+    if (m == 0)
+    {
+      _auto_MethodId = methodID;
+      writtenMethodId = -1;
+      Modify_Auto(s);
+    }
+    const int itemIndex = (int)ComboBox_AddStringAscii(m_Method, s);
+    m_Method.SetItemData(itemIndex, writtenMethodId);
+    if (keepMethodId == methodID)
+    {
       m_Method.SetCurSel(itemIndex);
+      weUseSameMethod = true;
       continue;
     }
-
-    // Lizard :/
-    if (defaultMethod.IsEqualTo_Ascii_NoCase("lizard") && keepMethodId == -1) {
-      if (defaultLevel >= 10 && defaultLevel <= 19) m_Method.SetCurSel(kLIZARD_M1 - 1);
-      if (defaultLevel >= 20 && defaultLevel <= 29) m_Method.SetCurSel(kLIZARD_M2 - 1);
-      if (defaultLevel >= 30 && defaultLevel <= 39) m_Method.SetCurSel(kLIZARD_M3 - 1);
-      if (defaultLevel >= 40 && defaultLevel <= 49) m_Method.SetCurSel(kLIZARD_M4 - 1);
-    }
-
-    if ((defaultMethod.IsEqualTo_Ascii_NoCase(method) || m == 0) && !weUseSameMethod) {
+    if ((defaultMethod.IsEqualTo_Ascii_NoCase(method) || m == 0) && !weUseSameMethod)
       m_Method.SetCurSel(itemIndex);
-    }
   }
-
-  if (!weUseSameMethod) {
-    SetDictionary();
-    SetOrder();
-  }
+  
+  if (!weUseSameMethod)
+    MethodChanged();
 }
+
+
 
 bool CCompressDialog::IsZipFormat()
 {
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  return ai.Name.IsEqualTo_Ascii_NoCase("zip");
+  return Get_ArcInfoEx().Is_Zip();
 }
 
 bool CCompressDialog::IsXzFormat()
 {
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  return ai.Name.IsEqualTo_Ascii_NoCase("xz");
+  return Get_ArcInfoEx().Is_Xz();
 }
 
 void CCompressDialog::SetEncryptionMethod()
 {
   _encryptionMethod.ResetContent();
   _default_encryptionMethod_Index = -1;
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  if (ai.Name.IsEqualTo_Ascii_NoCase("7z"))
+  const CArcInfoEx &ai = Get_ArcInfoEx();
+  if (ai.Is_7z())
   {
     ComboBox_AddStringAscii(_encryptionMethod, "AES-256");
     _encryptionMethod.SetCurSel(0);
     _default_encryptionMethod_Index = 0;
   }
-  else if (ai.Name.IsEqualTo_Ascii_NoCase("zip"))
+  else if (ai.Is_Zip())
   {
     int index = FindRegistryFormat(ai.Name);
     UString encryptionMethod;
@@ -1409,20 +1487,62 @@ void CCompressDialog::SetEncryptionMethod()
   }
 }
 
-int CCompressDialog::GetMethodID()
+
+int CCompressDialog::GetMethodID_RAW()
 {
   if (m_Method.GetCount() <= 0)
     return -1;
-  return (int)(UInt32)m_Method.GetItemData_of_CurSel();
+  return (int)(Int32)(UInt32)m_Method.GetItemData_of_CurSel();
 }
+
+int CCompressDialog::GetMethodID()
+{
+  int raw = GetMethodID_RAW();
+  if (raw < 0)
+    return _auto_MethodId;
+  return raw;
+}
+
+
+UString CCompressDialog::GetMethodSpec(UString &estimatedName)
+{
+  estimatedName.Empty();
+  if (m_Method.GetCount() < 1)
+    return estimatedName;
+  const int methodIdRaw = GetMethodID_RAW();
+  int methodId = methodIdRaw;
+  if (methodIdRaw < 0)
+    methodId = _auto_MethodId;
+  UString s;
+  if (methodId >= 0)
+  {
+    if ((unsigned)methodId < ARRAY_SIZE(kMethodsNames))
+      estimatedName = kMethodsNames[methodId];
+    else
+      estimatedName = ExternalMethods[methodId - ARRAY_SIZE(kMethodsNames)];
+    if (methodIdRaw >= 0)
+      s = estimatedName;
+  }
+  return s;
+}
+
 
 UString CCompressDialog::GetMethodSpec()
 {
-  UString s;
-  if (m_Method.GetCount() > 1)
-    s = kMethodsNames[GetMethodID()];
+  UString estimatedName;
+  UString s = GetMethodSpec(estimatedName);
   return s;
 }
+
+bool CCompressDialog::IsMethodEqualTo(const UString &s)
+{
+  UString estimatedName;
+  const UString shortName = GetMethodSpec(estimatedName);
+  if (s.IsEmpty())
+    return shortName.IsEmpty();
+  return s.IsEqualTo_NoCase(estimatedName);
+}
+
 
 UString CCompressDialog::GetEncryptionMethodSpec()
 {
@@ -1436,101 +1556,65 @@ UString CCompressDialog::GetEncryptionMethodSpec()
   return s;
 }
 
-void CCompressDialog::AddDict2(size_t sizeReal, size_t sizeShow)
+static const size_t k_Auto_Dict = (size_t)0 - 1;
+
+
+int CCompressDialog::AddDict2(size_t sizeReal, size_t sizeShow)
 {
-  Byte c = 0;
+  char c = 0;
   unsigned moveBits = 0;
-  if ((sizeShow & 0xFFFFF) == 0)    { moveBits = 20; c = 'M'; }
-  else if ((sizeShow & 0x3FF) == 0) { moveBits = 10; c = 'K'; }
-  TCHAR s[32];
-  ConvertUInt64ToString(sizeShow >> moveBits, s);
-  unsigned pos = MyStringLen(s);
-  s[pos++] = ' ';
+       if ((sizeShow & 0xFFFFF) == 0) { moveBits = 20; c = 'M'; }
+  else if ((sizeShow &   0x3FF) == 0) { moveBits = 10; c = 'K'; }
+  AString s;
+  s.Add_UInt64(sizeShow >> moveBits);
+  s.Add_Space();
   if (moveBits != 0)
-    s[pos++] = c;
-  s[pos++] = 'B';
-  s[pos++] = 0;
-  const int index = (int)m_Dictionary.AddString(s);
+    s += c;
+  s += 'B';
+  if (sizeReal == k_Auto_Dict)
+    Modify_Auto(s);
+  const int index = (int)ComboBox_AddStringAscii(m_Dictionary, s);
   m_Dictionary.SetItemData(index, sizeReal);
+  return index;
 }
 
 
-void CCompressDialog::AddDict(size_t size)
+int CCompressDialog::AddDict(size_t size)
 {
-  AddDict2(size, size);
+  return AddDict2(size, size);
 }
 
-typedef enum {
-  FL2_fast,
-  FL2_opt,
-  FL2_ultra
-} FL2_strategy;
 
-typedef struct {
-  UInt32   dictionarySize;   /* largest match distance : larger == more compression, more memory needed during decompression; > 64Mb == more memory per byte, slower */
-  unsigned overlapFraction;  /* overlap between consecutive blocks in 1/16 units: larger == more compression, slower */
-  unsigned chainLog;         /* HC3 sliding window : larger == more compression, slower; hybrid mode only (ultra) */
-  unsigned cyclesLog;        /* nb of searches : larger == more compression, slower; hybrid mode only (ultra) */
-  unsigned searchDepth;      /* maximum depth for resolving string matches : larger == more compression, slower */
-  unsigned fastLength;       /* acceptable match size for parser : larger == more compression, slower; fast bytes parameter from 7-Zip */
-  unsigned divideAndConquer; /* split long chains of 2-byte matches into shorter chains with a small overlap : faster, somewhat less compression; enabled by default */
-  FL2_strategy strategy;     /* encoder strategy : fast, optimized or ultra (hybrid) */
-} FL2_compressionParameters;
-
-#define FL2_MAX_7Z_CLEVEL 9
-#define MATCH_BUFFER_SHIFT 8;
-#define MATCH_BUFFER_ELBOW_BITS 17
-#define MATCH_BUFFER_ELBOW (1UL << MATCH_BUFFER_ELBOW_BITS)
-
-#define MB *(1U<<20)
-
-static const FL2_compressionParameters FL2_7zCParameters[FL2_MAX_7Z_CLEVEL + 1] = {
-  { 0,0,0,0,0,0,0,FL2_fast },
-  { 1 MB, 1, 7, 0, 6, 32, 1, FL2_fast }, /* 1 */
-  { 2 MB, 2, 7, 0, 10, 32, 1, FL2_fast }, /* 2 */
-  { 2 MB, 2, 7, 0, 10, 32, 1, FL2_opt }, /* 3 */
-  { 4 MB, 2, 7, 0, 14, 32, 1, FL2_opt }, /* 4 */
-  { 16 MB, 2, 9, 0, 42, 48, 1, FL2_ultra }, /* 5 */
-  { 32 MB, 2, 10, 0, 50, 64, 1, FL2_ultra }, /* 6 */
-  { 64 MB, 2, 11, 1, 62, 96, 1, FL2_ultra }, /* 7 */
-  { 64 MB, 4, 12, 2, 90, 273, 1, FL2_ultra }, /* 8 */
-  { 128 MB, 2, 14, 3, 254, 273, 0, FL2_ultra } /* 9 */
-};
-
-#undef MB
-
-#define RMF_BUILDER_SIZE (8 * 0x40100U)
-
-void CCompressDialog::SetDictionary()
+void CCompressDialog::SetDictionary2()
 {
   m_Dictionary.ResetContent();
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  const int index = FindRegistryFormat(ai.Name);
+  // _auto_Dict = (UInt32)1 << 24; // we can use this dictSize to calculate _auto_Solid for unknown method for 7z
+  _auto_Dict = (UInt32)(Int32)-1; // for debug:
+
+  const CArcInfoEx &ai = Get_ArcInfoEx();
   UInt32 defaultDict = (UInt32)(Int32)-1;
-  
-  if (index >= 0)
   {
-    const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-    if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()))
-      defaultDict = fo.Dictionary;
+    const int index = FindRegistryFormat(ai.Name);
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      if (IsMethodEqualTo(fo.Method))
+        defaultDict = fo.Dictionary;
+    }
   }
   
   const int methodID = GetMethodID();
-  UInt32 level = GetLevel2();
+  const UInt32 level = GetLevel2();
   if (methodID < 0)
     return;
-  UInt64 ramSize;
-  UInt64 maxRamSize;
-  const bool maxRamSize_Defined = GetMaxRamSizeForProgram(ramSize, maxRamSize);
   
   switch (methodID)
   {
     case kLZMA:
     case kLZMA2:
     {
-      if (defaultDict == (UInt32)(Int32)-1)
       {
-        defaultDict =
+        _auto_Dict =
             ( level <= 3 ? ((UInt32)1 << (level * 2 + 16)) :
             ( level <= 6 ? ((UInt32)1 << (level + 19)) :
             ( level <= 7 ? ((UInt32)1 << 25) : ((UInt32)1 << 26)
@@ -1538,12 +1622,13 @@ void CCompressDialog::SetDictionary()
       }
 
       // we use threshold 3.75 GiB to switch to kLzmaMaxDictSize.
-      if (defaultDict >= ((UInt32)15 << 28))
+      if (defaultDict != (UInt32)(Int32)-1
+          && defaultDict >= ((UInt32)15 << 28))
         defaultDict = kLzmaMaxDictSize;
       
       const size_t kLzmaMaxDictSize_Up = (size_t)1 << (20 + sizeof(size_t) / 4 * 6);
       
-      int curSel = 0;
+      int curSel = AddDict2(k_Auto_Dict, _auto_Dict);
 
       for (unsigned i = (16 - 1) * 2; i <= (32 - 1) * 2; i++)
       {
@@ -1558,65 +1643,36 @@ void CCompressDialog::SetDictionary()
         if (dict_up >= kLzmaMaxDictSize)
           dict = kLzmaMaxDictSize; // we reduce dictionary
         
-        AddDict(dict);
+        const int index = AddDict(dict);
         // AddDict2(dict, dict_up); // for debug : we show 4 GB
 
-        const UInt64 memUsage = GetMemoryUsageComp_Dict(dict);
-        if (dict <= defaultDict && (!maxRamSize_Defined || memUsage <= maxRamSize))
-          curSel = m_Dictionary.GetCount() - 1;
+        // const UInt32 numThreads = 2;
+        // const UInt64 memUsage = GetMemoryUsageComp_Threads_Dict(numThreads, dict);
+        if (defaultDict != (UInt32)(Int32)-1)
+          if (dict <= defaultDict || curSel <= 0)
+          // if (!maxRamSize_Defined || memUsage <= maxRamSize)
+            curSel = index;
         if (dict_up >= kLzmaMaxDictSize_Up)
           break;
       }
       
       m_Dictionary.SetCurSel(curSel);
-      // SetNearestSelectComboBox(m_Dictionary, defaultDict);
-      break;
-    }
-
-    case kFLZMA2:
-    {
-      static const UInt32 kMinDicSize = (1 << 20);
-      level += !level;
-      if (level > FL2_MAX_7Z_CLEVEL)
-        level = FL2_MAX_7Z_CLEVEL;
-      if (defaultDict == (UInt32)(Int32)-1)
-        defaultDict = FL2_7zCParameters[level].dictionarySize;
-
-      m_Dictionary.SetCurSel(0);
-
-      for (unsigned i = 20; i <= 31; i++) {
-        UInt32 dict = (UInt32)1 << i;
-
-        if (dict >
-          #ifdef MY_CPU_64BIT
-            (1 << 30)
-          #else
-            (1 << 27)
-          #endif
-          )
-          continue;
-
-        AddDict(dict);
-        const UInt64 memUsage = GetMemoryUsageComp_Dict(dict);
-        if (dict <= defaultDict && (!maxRamSize_Defined || memUsage <= maxRamSize))
-          m_Dictionary.SetCurSel(m_Dictionary.GetCount() - 1);
-      }
-
       break;
     }
     
     case kPPMd:
     {
-      if (defaultDict == (UInt32)(Int32)-1)
-        defaultDict = (UInt32)1 << (level + 19);
+      _auto_Dict = (UInt32)1 << (level + 19);
 
       const UInt32 kPpmd_Default_4g = (UInt32)0 - ((UInt32)1 << 10);
       const size_t kPpmd_MaxDictSize_Up = (size_t)1 << (29 + sizeof(size_t) / 8);
 
-      if (defaultDict >= ((UInt32)15 << 28)) // threshold
+      if (defaultDict != (UInt32)(Int32)-1
+          && defaultDict >= ((UInt32)15 << 28)) // threshold
         defaultDict = kPpmd_Default_4g;
 
-      int curSel = 0;
+      int curSel = AddDict2(k_Auto_Dict, _auto_Dict);
+
       for (unsigned i = (20 - 1) * 2; i <= (32 - 1) * 2; i++)
       {
         if (i == (20 - 1) * 2 + 1)
@@ -1627,36 +1683,38 @@ void CCompressDialog::SetDictionary()
         if (dict_up >= kPpmd_Default_4g)
           dict = kPpmd_Default_4g;
 
-        AddDict2(dict, dict_up);
+        const int index = AddDict2(dict, dict_up);
         // AddDict2((UInt32)((UInt32)0 - 2), dict_up); // for debug
         // AddDict(dict_up); // for debug
-        const UInt64 memUsage = GetMemoryUsageComp_Dict(dict);
-        if (dict <= defaultDict && (!maxRamSize_Defined || memUsage <= maxRamSize))
-          curSel = m_Dictionary.GetCount() - 1;
+        // const UInt64 memUsage = GetMemoryUsageComp_Threads_Dict(1, dict);
+        if (defaultDict != (UInt32)(Int32)-1)
+          if (dict <= defaultDict || curSel <= 0)
+            // if (!maxRamSize_Defined || memUsage <= maxRamSize)
+            curSel = index;
         if (dict_up >= kPpmd_MaxDictSize_Up)
           break;
       }
       m_Dictionary.SetCurSel(curSel);
-      // SetNearestSelectComboBox(m_Dictionary, defaultDict);
       break;
     }
 
     case kPPMdZip:
     {
-      if (defaultDict == (UInt32)(Int32)-1)
-        defaultDict = (UInt32)1 << (level + 19);
+      _auto_Dict = (UInt32)1 << (level + 19);
       
-      int curSel = 0;
+      int curSel = AddDict2(k_Auto_Dict, _auto_Dict);
+
       for (unsigned i = 20; i <= 28; i++)
       {
         const UInt32 dict = (UInt32)1 << i;
-        AddDict(dict);
-        const UInt64 memUsage = GetMemoryUsageComp_Dict(dict);
-        if ((dict <= defaultDict && (!maxRamSize_Defined || memUsage <= maxRamSize)))
-          curSel = m_Dictionary.GetCount() - 1;
+        const int index = AddDict(dict);
+        // const UInt64 memUsage = GetMemoryUsageComp_Threads_Dict(1, dict);
+        if (defaultDict != (UInt32)(Int32)-1)
+          if (dict <= defaultDict || curSel <= 0)
+            // if (!maxRamSize_Defined || memUsage <= maxRamSize)
+            curSel = index;
       }
       m_Dictionary.SetCurSel(curSel);
-      // SetNearestSelectComboBox(m_Dictionary, defaultDict);
       break;
     }
 
@@ -1664,30 +1722,41 @@ void CCompressDialog::SetDictionary()
     case kDeflate64:
     {
       const UInt32 dict = (methodID == kDeflate ? (UInt32)(1 << 15) : (UInt32)(1 << 16));
-      AddDict(dict);
+      _auto_Dict = dict;
+      AddDict2(k_Auto_Dict, _auto_Dict);
       m_Dictionary.SetCurSel(0);
+      // EnableItem(IDC_COMPRESS_DICTIONARY, false);
       break;
     }
     
     case kBZip2:
     {
-      if (defaultDict == (UInt32)(Int32)-1)
       {
-             if (level >= 5) defaultDict = (900 << 10);
-        else if (level >= 3) defaultDict = (500 << 10);
-        else                 defaultDict = (100 << 10);
+             if (level >= 5) _auto_Dict = (900 << 10);
+        else if (level >= 3) _auto_Dict = (500 << 10);
+        else                 _auto_Dict = (100 << 10);
       }
+
+      int curSel = AddDict2(k_Auto_Dict, _auto_Dict);
       
-      int curSel = 0;
       for (unsigned i = 1; i <= 9; i++)
       {
         const UInt32 dict = ((UInt32)i * 100) << 10;
         AddDict(dict);
         // AddDict2(i * 100000, dict);
-        if (i <= defaultDict / 100000)
-          curSel = m_Dictionary.GetCount() - 1;
+        if (defaultDict != (UInt32)(Int32)-1)
+          if (i <= defaultDict / 100000 || curSel <= 0)
+            curSel = m_Dictionary.GetCount() - 1;
       }
       m_Dictionary.SetCurSel(curSel);
+      break;
+    }
+
+    case kCopy:
+    {
+      _auto_Dict = 0;
+      AddDict(0);
+      m_Dictionary.SetCurSel(0);
       break;
     }
   }
@@ -1707,6 +1776,9 @@ UInt64 CCompressDialog::GetComboValue_64(NWindows::NControl::CComboBox &c, int d
   if (c.GetCount() <= defMax)
     return (UInt64)(Int64)-1;
   // LRESULT is signed. so we cast it to unsigned size_t at first:
+  LRESULT val = c.GetItemData_of_CurSel();
+  if (val == (LPARAM)(INT_PTR)(-1))
+    return (UInt64)(Int64)-1;
   return (UInt64)(size_t)c.GetItemData_of_CurSel();
 }
 
@@ -1718,119 +1790,140 @@ UInt32 CCompressDialog::GetLevel2()
   return level;
 }
 
+
 int CCompressDialog::AddOrder(UInt32 size)
 {
-  TCHAR s[32];
+  char s[32];
   ConvertUInt32ToString(size, s);
-  int index = (int)m_Order.AddString(s);
+  int index = (int)ComboBox_AddStringAscii(m_Order, s);
   m_Order.SetItemData(index, size);
   return index;
 }
 
-void CCompressDialog::SetOrder()
+int CCompressDialog::AddOrder_Auto()
+{
+  AString s;
+  s.Add_UInt32(_auto_Order);
+  Modify_Auto(s);
+  int index = (int)ComboBox_AddStringAscii(m_Order, s);
+  m_Order.SetItemData(index, (LPARAM)(INT_PTR)(-1));
+  return index;
+}
+
+void CCompressDialog::SetOrder2()
 {
   m_Order.ResetContent();
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
-  int index = FindRegistryFormat(ai.Name);
+  
+  _auto_Order = 1;
+
+  const CArcInfoEx &ai = Get_ArcInfoEx();
   UInt32 defaultOrder = (UInt32)(Int32)-1;
 
-  if (index >= 0)
   {
-    const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-    if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()))
-      defaultOrder = fo.Order;
+    const int index = FindRegistryFormat(ai.Name);
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      if (IsMethodEqualTo(fo.Method))
+        defaultOrder = fo.Order;
+    }
   }
 
-  int methodID = GetMethodID();
-  UInt32 level = GetLevel2();
+  const int methodID = GetMethodID();
+  const UInt32 level = GetLevel2();
   if (methodID < 0)
     return;
-
+  
   switch (methodID)
   {
     case kLZMA:
     case kLZMA2:
-    case kFLZMA2:
     {
-      if (defaultOrder == (UInt32)(Int32)-1) {
-        if (methodID == kFLZMA2)
-          defaultOrder = FL2_7zCParameters[level].fastLength;
-        else
-          defaultOrder = (level >= 7) ? 64 : 32;
-      }
-      for (unsigned i = 3; i <= 8; i++)
-        for (unsigned j = 0; j < 2; j++)
-        {
-          UInt32 order = ((UInt32)(2 + j) << (i - 1));
-          if (order <= 256)
-            AddOrder(order);
-        }
-      AddOrder(273);
-      SetNearestSelectComboBox(m_Order, defaultOrder);
-      break;
-    }
-
-    case kPPMd:
-    {
-      if (defaultOrder == (UInt32)(Int32)-1)
+      _auto_Order = (level < 7 ? 32 : 64);
+      int curSel = AddOrder_Auto();
+      for (unsigned i = 2 * 2; i < 8 * 2; i++)
       {
-             if (level >= 9) defaultOrder = 32;
-        else if (level >= 7) defaultOrder = 16;
-        else if (level >= 5) defaultOrder = 6;
-        else                 defaultOrder = 4;
+        UInt32 order = ((UInt32)(2 + (i & 1)) << (i / 2));
+        if (order > 256)
+          order = 273;
+        const int index = AddOrder(order);
+        if (defaultOrder != (UInt32)(Int32)-1)
+          if (order <= defaultOrder || curSel <= 0)
+            curSel = index;
       }
-
-      AddOrder(2);
-      AddOrder(3);
-
-      for (unsigned i = 2; i < 8; i++)
-        for (unsigned j = 0; j < 4; j++)
-        {
-          UInt32 order = (4 + j) << (i - 2);
-          if (order < 32)
-            AddOrder(order);
-        }
-
-      AddOrder(32);
-      SetNearestSelectComboBox(m_Order, defaultOrder);
+      m_Order.SetCurSel(curSel);
       break;
     }
 
     case kDeflate:
     case kDeflate64:
     {
-      if (defaultOrder == (UInt32)(Int32)-1)
       {
-             if (level >= 9) defaultOrder = 128;
-        else if (level >= 7) defaultOrder = 64;
-        else                 defaultOrder = 32;
+             if (level >= 9) _auto_Order = 128;
+        else if (level >= 7) _auto_Order = 64;
+        else                 _auto_Order = 32;
       }
-
-      for (unsigned i = 3; i <= 8; i++)
-        for (unsigned j = 0; j < 2; j++)
-        {
-          UInt32 order = ((UInt32)(2 + j) << (i - 1));;
-          if (order <= 256)
-            AddOrder(order);
-        }
-
-      AddOrder(methodID == kDeflate64 ? 257 : 258);
-      SetNearestSelectComboBox(m_Order, defaultOrder);
+      int curSel = AddOrder_Auto();
+      for (unsigned i = 2 * 2; i < 8 * 2; i++)
+      {
+        UInt32 order = ((UInt32)(2 + (i & 1)) << (i / 2));
+        if (order > 256)
+          order = (methodID == kDeflate64 ? 257 : 258);
+        const int index = AddOrder(order);
+        if (defaultOrder != (UInt32)(Int32)-1)
+          if (order <= defaultOrder || curSel <= 0)
+            curSel = index;
+      }
+      
+      m_Order.SetCurSel(curSel);
       break;
     }
+   
+    case kPPMd:
+    {
+      {
+             if (level >= 9) _auto_Order = 32;
+        else if (level >= 7) _auto_Order = 16;
+        else if (level >= 5) _auto_Order = 6;
+        else                 _auto_Order = 4;
+      }
+      
+      int curSel = AddOrder_Auto();
 
-    case kBZip2:
+      for (unsigned i = 0;; i++)
+      {
+        UInt32 order = i + 2;
+        if (i >= 2)
+          order = (4 + ((i - 2) & 3)) << ((i - 2) / 4);
+        const int index = AddOrder(order);
+        if (defaultOrder != (UInt32)(Int32)-1)
+          if (order <= defaultOrder || curSel <= 0)
+            curSel = index;
+        if (order >= 32)
+          break;
+      }
+      m_Order.SetCurSel(curSel);
       break;
+    }
 
     case kPPMdZip:
     {
-      if (defaultOrder == (UInt32)(Int32)-1)
-        defaultOrder = level + 3;
+      _auto_Order = level + 3;
+      int curSel = AddOrder_Auto();
       for (unsigned i = 2; i <= 16; i++)
-        AddOrder(i);
-      SetNearestSelectComboBox(m_Order, defaultOrder);
+      {
+        const int index = AddOrder(i);
+        if (defaultOrder != (UInt32)(Int32)-1)
+          if (i <= defaultOrder || curSel <= 0)
+            curSel = index;
+      }
+      m_Order.SetCurSel(curSel);
       break;
     }
+    
+    // case kBZip2:
+    default:
+      break;
   }
 }
 
@@ -1861,50 +1954,63 @@ static UInt64 Get_Lzma2_ChunkSize(UInt64 dict)
 }
 
 
-void CCompressDialog::SetSolidBlockSize(bool useDictionary)
+static void Add_Size(AString &s, UInt64 val)
+{
+  unsigned moveBits = 0;
+  char c = 0;
+       if ((val & 0x3FFFFFFF) == 0) { moveBits = 30; c = 'G'; }
+  else if ((val &    0xFFFFF) == 0) { moveBits = 20; c = 'M'; }
+  else if ((val &      0x3FF) == 0) { moveBits = 10; c = 'K'; }
+  s.Add_UInt64(val >> moveBits);
+  s.Add_Space();
+  if (moveBits != 0)
+    s += c;
+  s += 'B';
+}
+
+
+void CCompressDialog::SetSolidBlockSize2()
 {
   m_Solid.ResetContent();
+  _auto_Solid = 1 << 20;
+
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
-  if (!fi.Solid)
+  if (!fi.Solid_())
     return;
 
-  UInt32 level = GetLevel2();
+  const UInt32 level = GetLevel2();
   if (level == 0)
     return;
 
-  UInt64 dict = GetDictSpec();
+  UInt64 dict = GetDict2();
   if (dict == (UInt64)(Int64)-1)
-    dict = 1;
+  {
+    dict = 1 << 25; // default dict for unknown methods
+    // return;
+  }
+
 
   UInt32 defaultBlockSize = (UInt32)(Int32)-1;
 
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+  const CArcInfoEx &ai = Get_ArcInfoEx();
 
-  if (useDictionary)
+  /*
+  if (usePrevDictionary)
     defaultBlockSize = GetBlockSizeSpec();
   else
+  */
   {
-    int index = FindRegistryFormat(ai.Name);
+    const int index = FindRegistryFormat(ai.Name);
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()))
+      if (IsMethodEqualTo(fo.Method))
         defaultBlockSize = fo.BlockLogSize;
     }
   }
 
-  bool is7z = ai.Name.IsEqualTo_Ascii_NoCase("7z");
+  const bool is7z = ai.Is_7z();
 
-  {
-    UString s ('-');
-    if (is7z)
-      LangString(IDS_COMPRESS_NON_SOLID, s);
-    int index = (int)m_Solid.AddString(s);
-    m_Solid.SetItemData(index, (UInt32)kNoSolidBlockSize);
-    if (defaultBlockSize == kNoSolidBlockSize)
-      m_Solid.SetCurSel(0);
-  }
-  
   const UInt64 cs = Get_Lzma2_ChunkSize(dict);
 
   // Solid Block Size
@@ -1914,107 +2020,385 @@ void CCompressDialog::SetSolidBlockSize(bool useDictionary)
   {
     // we use same default block sizes as defined in 7z encoder
     UInt64 kMaxSize = (UInt64)1 << 32;
-    if (GetMethodID() == kLZMA2)
+    const int methodId = GetMethodID();
+    if (methodId == kLZMA2)
     {
       blockSize = cs << 6;
       kMaxSize = (UInt64)1 << 34;
     }
     else
-      blockSize = (UInt64)dict << 7;
+    {
+      UInt64 dict2 = dict;
+      if (methodId == kBZip2)
+      {
+        dict2 /= 100000;
+        if (dict2 < 1)
+          dict2 = 1;
+        dict2 *= 100000;
+      }
+      blockSize = dict2 << 7;
+    }
 
     const UInt32 kMinSize = (UInt32)1 << 24;
     if (blockSize < kMinSize) blockSize = kMinSize;
     if (blockSize > kMaxSize) blockSize = kMaxSize;
   }
+
+  _auto_Solid = blockSize;
+
+  int curSel;
+  {
+    AString s;
+    Add_Size(s, _auto_Solid);
+    Modify_Auto(s);
+    int index = (int)ComboBox_AddStringAscii(m_Solid, s);
+    m_Solid.SetItemData(index, (UInt32)(Int32)-1);
+    curSel = index;
+  }
+
+  if (is7z)
+  {
+    UString s ('-');
+    // kSolidLog_NoSolid = 0 for xz means default blockSize
+    if (is7z)
+      LangString(IDS_COMPRESS_NON_SOLID, s);
+    const int index = (int)m_Solid.AddString(s);
+    m_Solid.SetItemData(index, (UInt32)kSolidLog_NoSolid);
+    if (defaultBlockSize == kSolidLog_NoSolid)
+      curSel = index;
+  }
   
   for (unsigned i = 20; i <= 36; i++)
   {
-    if (defaultBlockSize == (UInt32)(Int32)-1 && ((UInt64)1 << i) >= blockSize)
-      defaultBlockSize = i;
-
-    TCHAR s[32];
-    char post;
-    ConvertUInt32ToString(1 << (i % 10), s);
-         if (i < 20) post = 'K';
-    else if (i < 30) post = 'M';
-    else             post = 'G';
-    unsigned pos = (unsigned)lstrlen(s);
-    s[pos++] = ' ';
-    s[pos++] = post;
-    s[pos++] = 'B';
-    s[pos] = 0;
-    int index = (int)m_Solid.AddString(s);
+    AString s;
+    Add_Size(s, (UInt64)1 << i);
+    const int index = (int)ComboBox_AddStringAscii(m_Solid, s);
     m_Solid.SetItemData(index, (UInt32)i);
+    if (defaultBlockSize != (UInt32)(Int32)-1)
+      if (i <= defaultBlockSize || index <= 1)
+        curSel = index;
   }
-
+  
   {
-    int index = (int)m_Solid.AddString(LangString(IDS_COMPRESS_SOLID));
-    m_Solid.SetItemData(index, kSolidBlockSize);
+    const int index = (int)m_Solid.AddString(LangString(IDS_COMPRESS_SOLID));
+    m_Solid.SetItemData(index, kSolidLog_FullSolid);
+    if (defaultBlockSize == kSolidLog_FullSolid)
+      curSel = index;
   }
 
-  if (defaultBlockSize == (UInt32)(Int32)-1)
-    defaultBlockSize = kSolidBlockSize;
-  if (defaultBlockSize != kNoSolidBlockSize)
-    SetNearestSelectComboBox(m_Solid, defaultBlockSize);
+  m_Solid.SetCurSel(curSel);
 }
 
-void CCompressDialog::SetNumThreads()
-{
-  m_NumThreads.ResetContent();
 
+void CCompressDialog::SetNumThreads2()
+{
+  _auto_NumThreads = 1;
+
+  m_NumThreads.ResetContent();
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
-  if (!fi.MultiThread)
+  if (!fi.MultiThread_())
     return;
 
-  UInt32 numHardwareThreads = NSystem::GetNumberOfProcessors();
-  // numHardwareThreads = 64;
+  const UInt32 numHardwareThreads = NSystem::GetNumberOfProcessors();
+    // 64; // for debug:
 
   UInt32 defaultValue = numHardwareThreads;
+  bool useAutoThreads = true;
 
   {
-    const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+    const CArcInfoEx &ai = Get_ArcInfoEx();
     int index = FindRegistryFormat(ai.Name);
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      if (fo.Method.IsEqualTo_NoCase(GetMethodSpec()) && fo.NumThreads != (UInt32)(Int32)-1)
+      if (IsMethodEqualTo(fo.Method) && fo.NumThreads != (UInt32)(Int32)-1)
+      {
         defaultValue = fo.NumThreads;
+        useAutoThreads = false;
+      }
     }
   }
 
-  UInt32 numAlgoThreadsMax = 1;
-  int methodID = GetMethodID();
+  UInt32 numAlgoThreadsMax = numHardwareThreads * 2;
+  const int methodID = GetMethodID();
   switch (methodID)
   {
-    case kZSTD: numAlgoThreadsMax = 128; break;
-    case kBROTLI: numAlgoThreadsMax = 128; break;
-    case kLZ4: numAlgoThreadsMax = 128; break;
-    case kLZ5: numAlgoThreadsMax = 128; break;
-    case kLIZARD_M1: numAlgoThreadsMax = 128; break;
-    case kLIZARD_M2: numAlgoThreadsMax = 128; break;
-    case kLIZARD_M3: numAlgoThreadsMax = 128; break;
-    case kLIZARD_M4: numAlgoThreadsMax = 128; break;
     case kLZMA: numAlgoThreadsMax = 2; break;
     case kLZMA2: numAlgoThreadsMax = 256; break;
-    case kFLZMA2: numAlgoThreadsMax = 128; break;
     case kBZip2: numAlgoThreadsMax = 32; break;
+    case kCopy:
+    case kPPMd:
+    case kDeflate:
+    case kDeflate64:
+    case kPPMdZip:
+      numAlgoThreadsMax = 1;
   }
-  if (IsZipFormat())
-    numAlgoThreadsMax = 128;
+  const bool isZip = IsZipFormat();
+  if (isZip)
+  {
+    numAlgoThreadsMax =
+      #ifdef _WIN32
+        64; // _WIN32 supports only 64 threads in one group. So no need for more threads here
+      #else
+        128;
+      #endif
+  }
+
+  UInt32 autoThreads = numHardwareThreads;
+  if (autoThreads > numAlgoThreadsMax)
+    autoThreads = numAlgoThreadsMax;
+
+  const UInt64 memUse_Limit = Get_MemUse_Bytes();
+
+  if (autoThreads > 1 && _ramSize_Defined)
+  {
+    if (isZip)
+    {
+      for (; autoThreads > 1; autoThreads--)
+      {
+        const UInt64 dict64 = GetDict2();
+        UInt64 decompressMemory;
+        const UInt64 usage = GetMemoryUsage_Threads_Dict_DecompMem(autoThreads, dict64, decompressMemory);
+        if (usage <= memUse_Limit)
+          break;
+      }
+    }
+    else if (methodID == kLZMA2)
+    {
+      const UInt64 dict64 = GetDict2();
+      const UInt32 numThreads1 = (GetLevel2() >= 5 ? 2 : 1);
+      UInt32 numBlockThreads = autoThreads / numThreads1;
+      for (; numBlockThreads > 1; numBlockThreads--)
+      {
+        autoThreads = numBlockThreads * numThreads1;
+        UInt64 decompressMemory;
+        const UInt64 usage = GetMemoryUsage_Threads_Dict_DecompMem(autoThreads, dict64, decompressMemory);
+        if (usage <= memUse_Limit)
+          break;
+      }
+      autoThreads = numBlockThreads * numThreads1;
+    }
+  }
+
+  _auto_NumThreads = autoThreads;
+
+  int curSel = -1;
+  {
+    AString s;
+    s.Add_UInt32(autoThreads);
+    Modify_Auto(s);
+    int index = (int)ComboBox_AddStringAscii(m_NumThreads, s);
+    m_NumThreads.SetItemData(index, (LPARAM)(INT_PTR)(-1));
+    // m_NumThreads.SetItemData(index, autoThreads);
+    if (useAutoThreads)
+      curSel = index;
+  }
+
+  if (numAlgoThreadsMax != autoThreads || autoThreads != 1)
   for (UInt32 i = 1; i <= numHardwareThreads * 2 && i <= numAlgoThreadsMax; i++)
   {
-    TCHAR s[32];
+    char s[32];
     ConvertUInt32ToString(i, s);
-    int index = (int)m_NumThreads.AddString(s);
+    int index = (int)ComboBox_AddStringAscii(m_NumThreads, s);
     m_NumThreads.SetItemData(index, (UInt32)i);
+    if (!useAutoThreads && i == defaultValue)
+      curSel = index;
   }
-  SetNearestSelectComboBox(m_NumThreads, defaultValue);
+ 
+  m_NumThreads.SetCurSel(curSel);
 }
 
 
+static void AddMemSize(UString &res, UInt64 size)
+{
+  char c;
+  unsigned moveBits = 0;
+  if (size >= ((UInt64)1 << 31) && (size & 0x3FFFFFFF) == 0)
+    { moveBits = 30; c = 'G'; }
+  else // if (size >= ((UInt32)1 << 21) && (size & 0xFFFFF) == 0)
+    { moveBits = 20; c = 'M'; }
+  // else { moveBits = 10; c = 'K'; }
+  res.Add_UInt64(size >> moveBits);
+  res.Add_Space();
+  if (moveBits != 0)
+    res += c;
+  res += 'B';
+}
+
+
+int CCompressDialog::AddMemComboItem(UInt64 val, bool isPercent, bool isDefault)
+{
+  UString sUser;
+  UString sRegistry;
+  if (isPercent)
+  {
+    UString s;
+    s.Add_UInt64(val);
+    s += '%';
+    if (isDefault)
+      sUser = "* ";
+    else
+      sRegistry = s;
+    sUser += s;
+  }
+  else
+  {
+    AddMemSize(sUser, val);
+    sRegistry = sUser;
+    for (;;)
+    {
+      int pos = sRegistry.Find(L' ');
+      if (pos < 0)
+        break;
+      sRegistry.Delete(pos);
+    }
+    if (!sRegistry.IsEmpty())
+      if (sRegistry.Back() == 'B')
+        sRegistry.DeleteBack();
+  }
+  const unsigned dataIndex = _memUse_Strings.Add(sRegistry);
+  const int index = (int)m_MemUse.AddString(sUser);
+  m_MemUse.SetItemData(index, dataIndex);
+  return index;
+}
+
+
+
+void CCompressDialog::SetMemUseCombo()
+{
+  _memUse_Strings.Clear();
+  m_MemUse.ResetContent();
+  const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
+
+  {
+    const bool enable = fi.MemUse_();
+    ShowItem_Bool(IDT_COMPRESS_MEMORY, enable);
+    ShowItem_Bool(IDT_COMPRESS_MEMORY_VALUE, enable);
+    ShowItem_Bool(IDT_COMPRESS_MEMORY_DE, enable);
+    ShowItem_Bool(IDT_COMPRESS_MEMORY_DE_VALUE, enable);
+    ShowItem_Bool(IDC_COMPRESS_MEM_USE, enable);
+    EnableItem(IDC_COMPRESS_MEM_USE, enable);
+    if (!enable)
+      return;
+  }
+
+  UInt64 curMem_Bytes = 0;
+  UInt64 curMem_Percents = 0;
+  bool needSetCur_Bytes = false;
+  bool needSetCur_Percents = false;
+  {
+    const NCompression::CFormatOptions &fo = Get_FormatOptions();
+    if (!fo.MemUse.IsEmpty())
+    {
+      NCompression::CMemUse mu;
+      mu.Parse(fo.MemUse);
+      if (mu.IsDefined)
+      {
+        if (mu.IsPercent)
+        {
+          curMem_Percents = mu.Val;
+          needSetCur_Percents = true;
+        }
+        else
+        {
+          curMem_Bytes = mu.GetBytes(_ramSize_Reduced);
+          needSetCur_Bytes = true;
+        }
+      }
+    }
+  }
+
+  
+  // 80% - is auto usage limit in handlers
+  AddMemComboItem(80, true, true);
+  m_MemUse.SetCurSel(0);
+
+  {
+    for (unsigned i = 10;; i += 10)
+    {
+      UInt64 size = i;
+      if (i > 100)
+        size = (UInt64)(Int64)-1;
+      if (needSetCur_Percents && size >= curMem_Percents)
+      {
+        const int index = AddMemComboItem(curMem_Percents, true);
+        m_MemUse.SetCurSel(index);
+        needSetCur_Percents = false;
+        if (size == curMem_Percents)
+          continue;
+      }
+      if (size == (UInt64)(Int64)-1)
+        break;
+      AddMemComboItem(size, true);
+    }
+  }
+  {
+    for (unsigned i = (27) * 2;; i++)
+    {
+      UInt64 size = (UInt64)(2 + (i & 1)) << (i / 2);
+      if (i > (20 + sizeof(size_t) * 3 - 1) * 2)
+        size = (UInt64)(Int64)-1;
+      if (needSetCur_Bytes && size >= curMem_Bytes)
+      {
+        const int index = AddMemComboItem(curMem_Bytes);
+        m_MemUse.SetCurSel(index);
+        needSetCur_Bytes = false;
+        if (size == curMem_Bytes)
+          continue;
+      }
+      if (size == (UInt64)(Int64)-1)
+        break;
+      AddMemComboItem(size);
+    }
+  }
+}
+
+
+UString CCompressDialog::Get_MemUse_Spec()
+{
+  if (m_MemUse.GetCount() < 1)
+    return UString();
+  return _memUse_Strings[(unsigned)m_MemUse.GetItemData_of_CurSel()];
+}
+
+
+UInt64 CCompressDialog::Get_MemUse_Bytes()
+{
+  const UString mus = Get_MemUse_Spec();
+  NCompression::CMemUse mu;
+  if (!mus.IsEmpty())
+  {
+    mu.Parse(mus);
+    if (mu.IsDefined)
+      return mu.GetBytes(_ramSize_Reduced);
+  }
+  return _ramUsage_Auto; // _ramSize_Reduced; // _ramSize;;
+}
+
+
+
+UInt64 CCompressDialog::GetMemoryUsage_DecompMem(UInt64 &decompressMemory)
+{
+  return GetMemoryUsage_Dict_DecompMem(GetDict2(), decompressMemory);
+}
+
+UInt64 CCompressDialog::GetMemoryUsageComp_Threads_Dict(UInt32 numThreads, UInt64 dict64)
+{
+  UInt64 decompressMemory;
+  return GetMemoryUsage_Threads_Dict_DecompMem(numThreads, dict64, decompressMemory);
+}
+
 UInt64 CCompressDialog::GetMemoryUsage_Dict_DecompMem(UInt64 dict64, UInt64 &decompressMemory)
 {
-  decompressMemory = UInt64(Int64(-1));
+  return GetMemoryUsage_Threads_Dict_DecompMem(GetNumThreads2(), dict64, decompressMemory);
+}
+
+UInt64 CCompressDialog::GetMemoryUsage_Threads_Dict_DecompMem(UInt32 numThreads, UInt64 dict64, UInt64 &decompressMemory)
+{
+  decompressMemory = (UInt64)(Int64)-1;
+  if (dict64 == (UInt64)(Int64)-1)
+    return (UInt64)(Int64)-1;
+
   UInt32 level = GetLevel2();
   if (level == 0)
   {
@@ -2024,23 +2408,27 @@ UInt64 CCompressDialog::GetMemoryUsage_Dict_DecompMem(UInt64 dict64, UInt64 &dec
   UInt64 size = 0;
 
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
-  if (fi.Filter && level >= 9)
+  if (fi.Filter_() && level >= 9)
     size += (12 << 20) * 2 + (5 << 20);
-  UInt32 numThreads = GetNumThreads2();
+  // UInt32 numThreads = GetNumThreads2();
+  
+  UInt32 numMainZipThreads = 1;
 
   if (IsZipFormat())
   {
     UInt32 numSubThreads = 1;
     if (GetMethodID() == kLZMA && numThreads > 1 && level >= 5)
       numSubThreads = 2;
-    UInt32 numMainThreads = numThreads / numSubThreads;
-    if (numMainThreads > 1)
-      size += (UInt64)numMainThreads << 25;
+    numMainZipThreads = numThreads / numSubThreads;
+    if (numMainZipThreads > 1)
+      size += (UInt64)numMainZipThreads * ((size_t)sizeof(size_t) << 23);
+    else
+      numMainZipThreads = 1;
   }
-
-  int methidId = GetMethodID();
-
-  switch (methidId)
+  
+  const int methodId = GetMethodID();
+  
+  switch (methodId)
   {
     case kLZMA:
     case kLZMA2:
@@ -2074,9 +2462,9 @@ UInt64 CCompressDialog::GetMemoryUsage_Dict_DecompMem(UInt64 dict64, UInt64 &dec
       
       UInt32 numBlockThreads = numThreads / numThreads1;
     
-      UInt64 chunkSize = 0;
+      UInt64 chunkSize = 0; // it's solid chunk
 
-      if (methidId != kLZMA && numBlockThreads != 1)
+      if (methodId != kLZMA && numBlockThreads != 1)
       {
         chunkSize = Get_Lzma2_ChunkSize(dict);
 
@@ -2085,12 +2473,12 @@ UInt64 CCompressDialog::GetMemoryUsage_Dict_DecompMem(UInt64 dict64, UInt64 &dec
           UInt32 blockSizeLog = GetBlockSizeSpec();
           if (blockSizeLog != (UInt32)(Int32)-1)
           {
-            if (blockSizeLog == kSolidBlockSize)
+            if (blockSizeLog == kSolidLog_FullSolid)
             {
               numBlockThreads = 1;
               chunkSize = 0;
             }
-            else if (blockSizeLog != kNoSolidBlockSize)
+            else if (blockSizeLog != kSolidLog_NoSolid)
               chunkSize = (UInt64)1 << blockSizeLog;
           }
         }
@@ -2109,88 +2497,79 @@ UInt64 CCompressDialog::GetMemoryUsage_Dict_DecompMem(UInt64 dict64, UInt64 &dec
       else
       {
         size += numBlockThreads * (size1 + chunkSize);
-        UInt64 numPackChunks = numBlockThreads + (numBlockThreads / 4) + 2;
+        UInt32 numPackChunks = numBlockThreads + (numBlockThreads / 8) + 1;
+        if (chunkSize < ((UInt32)1 << 26)) numBlockThreads++;
+        if (chunkSize < ((UInt32)1 << 24)) numBlockThreads++;
+        if (chunkSize < ((UInt32)1 << 22)) numBlockThreads++;
         size += numPackChunks * chunkSize;
       }
 
       decompressMemory = dict + (2 << 20);
       return size;
     }
-
-    case kFLZMA2:
-    {
-      const UInt32 dict = (dict64 >= kLzmaMaxDictSize ? kLzmaMaxDictSize : (UInt32)dict64);
-      if (level > FL2_MAX_7Z_CLEVEL)
-        level = FL2_MAX_7Z_CLEVEL;
-      /* dual buffer is enabled in Lzma2Encoder.cpp so size is dict * 6 */
-      size += dict * 6 + (1UL << 18) * numThreads;
-      UInt32 bufSize = dict >> MATCH_BUFFER_SHIFT;
-      if (bufSize > MATCH_BUFFER_ELBOW) {
-        UInt32 extra = 0;
-        unsigned n = MATCH_BUFFER_ELBOW_BITS - 1;
-        for (; (4UL << n) <= bufSize; ++n)
-          extra += MATCH_BUFFER_ELBOW >> 4;
-        if ((3UL << n) <= bufSize)
-          extra += MATCH_BUFFER_ELBOW >> 5;
-        bufSize = MATCH_BUFFER_ELBOW + extra;
-      }
-      size += (bufSize * 12 + RMF_BUILDER_SIZE) * numThreads;
-      if (dict > (UInt32(1) << 26))
-        size += dict;
-      if (FL2_7zCParameters[level].strategy == FL2_ultra)
-        size += (UInt32(4) << 14) + (UInt32(4) << FL2_7zCParameters[level].chainLog);
-      decompressMemory = dict + (2 << 20);
-      return size;
-    }
-
+  
     case kPPMd:
     {
       decompressMemory = dict64 + (2 << 20);
       return size + decompressMemory;
     }
-
+    
     case kDeflate:
     case kDeflate64:
     {
-      /*
-      UInt32 order = GetOrder();
-      if (order == (UInt32)(Int32)-1)
-        order = 32;
-      */
-      if (level >= 7)
-        size += (1 << 20);
-      size += 3 << 20;
+      UInt64 size1 = 3 << 20;
+      // if (level >= 7)
+        size1 += (1 << 20);
+      size += size1 * numMainZipThreads;
       decompressMemory = (2 << 20);
       return size;
     }
-
+    
     case kBZip2:
     {
       decompressMemory = (7 << 20);
       UInt64 memForOneThread = (10 << 20);
       return size + memForOneThread * numThreads;
     }
-
+    
     case kPPMdZip:
     {
       decompressMemory = dict64 + (2 << 20);
       return size + (UInt64)decompressMemory * numThreads;
     }
   }
-
+  
   return (UInt64)(Int64)-1;
 }
 
-UInt64 CCompressDialog::GetMemoryUsage_DecompMem(UInt64 &decompressMemory)
+
+
+static void AddMemUsage(UString &s, UInt64 v)
 {
-  return GetMemoryUsage_Dict_DecompMem(GetDict(), decompressMemory);
+  const char *post;
+  if (v <= ((UInt64)16 << 30))
+  {
+    v = (v + (1 << 20) - 1) >> 20;
+    post = "MB";
+  }
+  else if (v <= ((UInt64)64 << 40))
+  {
+    v = (v + (1 << 30) - 1) >> 30;
+    post = "GB";
+  }
+  else
+  {
+    const UInt64 v2 = v + ((UInt64)1 << 40) - 1;
+    if (v <= v2)
+      v = v2;
+    v >>= 40;
+    post = "TB";
+  }
+  s.Add_UInt64(v);
+  s.Add_Space();
+  s += post;
 }
 
-UInt64 CCompressDialog::GetMemoryUsageComp_Dict(UInt64 dict64)
-{
-  UInt64 decompressMemory;
-  return GetMemoryUsage_Dict_DecompMem(dict64, decompressMemory);
-}
 
 void CCompressDialog::PrintMemUsage(UINT res, UInt64 value)
 {
@@ -2199,22 +2578,35 @@ void CCompressDialog::PrintMemUsage(UINT res, UInt64 value)
     SetItemText(res, TEXT("?"));
     return;
   }
-  TCHAR s[32];
-  if (value <= ((UInt64)16 << 30))
+  UString s;
+  AddMemUsage(s, value);
+  if (res == IDT_COMPRESS_MEMORY_VALUE)
   {
-    value = (value + (1 << 20) - 1) >> 20;
-    ConvertUInt64ToString(value, s);
-    lstrcat(s, TEXT(" MB"));
-  }
-  else
-  {
-    value = (value + (1 << 30) - 1) >> 30;
-    ConvertUInt64ToString(value, s);
-    lstrcat(s, TEXT(" GB"));
+    const UString mus = Get_MemUse_Spec();
+    NCompression::CMemUse mu;
+    if (!mus.IsEmpty())
+      mu.Parse(mus);
+    if (mu.IsDefined)
+    {
+      s += " / ";
+      AddMemUsage(s, mu.GetBytes(_ramSize_Reduced));
+    }
+    else if (_ramSize_Defined)
+    {
+      s += " / ";
+      AddMemUsage(s, _ramUsage_Auto);
+    }
+
+    if (_ramSize_Defined)
+    {
+      s += " / ";
+      AddMemUsage(s, _ramSize);
+    }
   }
   SetItemText(res, s);
 }
 
+    
 void CCompressDialog::SetMemoryUsage()
 {
   UInt64 decompressMem;
@@ -2225,34 +2617,31 @@ void CCompressDialog::SetMemoryUsage()
 
 void CCompressDialog::SetParams()
 {
-  const CArcInfoEx &ai = (*ArcFormats)[GetFormatIndex()];
+  const CArcInfoEx &ai = Get_ArcInfoEx();
   m_Params.SetText(TEXT(""));
   const int index = FindRegistryFormat(ai.Name);
   if (index >= 0)
   {
     const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
     m_Params.SetText(fo.Options);
-    m_Volume.SetText(fo.SplitVolume);
   }
 }
 
 void CCompressDialog::SaveOptionsInMem()
 {
-  const CArcInfoEx &ai = (*ArcFormats)[Info.FormatIndex];
-  const int index = FindRegistryFormatAlways(ai.Name);
+  /* these options are for (Info.FormatIndex).
+     If it's called just after format changing,
+     then it's format that was selected before format changing
+     So we store previous format properties */
+
   m_Params.GetText(Info.Options);
-  m_Volume.GetText(Info.SplitVolume);
   Info.Options.Trim();
-  Info.SplitVolume.Trim();
+
+  const CArcInfoEx &ai = (*ArcFormats)[Info.FormatIndex];
+  const unsigned index = FindRegistryFormat_Always(ai.Name);
   NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
   fo.Options = Info.Options;
-  fo.SplitVolume = Info.SplitVolume;
   fo.Level = GetLevelSpec();
-  fo.Order = GetOrderSpec();
-  fo.Method = GetMethodSpec();
-  fo.EncryptionMethod = GetEncryptionMethodSpec();
-  fo.NumThreads = GetNumThreadsSpec();
-  fo.BlockLogSize = GetBlockSizeSpec();
   {
     const UInt64 dict64 = GetDictSpec();
     UInt32 dict32;
@@ -2274,9 +2663,521 @@ void CCompressDialog::SaveOptionsInMem()
     }
     fo.Dictionary = dict32;
   }
+
+  fo.Order = GetOrderSpec();
+  fo.Method = GetMethodSpec();
+  fo.EncryptionMethod = GetEncryptionMethodSpec();
+  fo.NumThreads = GetNumThreadsSpec();
+  fo.BlockLogSize = GetBlockSizeSpec();
+  fo.MemUse = Get_MemUse_Spec();
 }
+
 
 unsigned CCompressDialog::GetFormatIndex()
 {
   return (unsigned)m_Format.GetItemData_of_CurSel();
+}
+
+
+
+static void AddText_from_BoolPair(AString &s, const char *name, const CBoolPair &bp)
+{
+  if (bp.Def)
+  {
+    s.Add_OptSpaced(name);
+    if (!bp.Val)
+      s += "-";
+  }
+  /*
+  else if (bp.Val)
+  {
+    s.Add_OptSpaced("[");
+    s += name;
+    s += "]";
+  }
+  */
+}
+
+
+static void AddText_from_Bool1(AString &s, const char *name, const CBool1 &b)
+{
+  if (b.Supported && b.Val)
+    s.Add_OptSpaced(name);
+}
+
+
+void CCompressDialog::ShowOptionsString()
+{
+  NCompression::CFormatOptions &fo = Get_FormatOptions();
+
+  AString s;
+  if (fo.IsSet_TimePrec())
+  {
+    s.Add_OptSpaced("tp");
+    s.Add_UInt32(fo.TimePrec);
+  }
+  AddText_from_BoolPair(s, "tm", fo.MTime);
+  AddText_from_BoolPair(s, "tc", fo.CTime);
+  AddText_from_BoolPair(s, "ta", fo.ATime);
+  AddText_from_BoolPair(s, "-stl", fo.SetArcMTime);
+
+  // const CArcInfoEx &ai = Get_ArcInfoEx();
+  AddText_from_Bool1(s, "SL",  SymLinks);
+  AddText_from_Bool1(s, "HL",  HardLinks);
+  AddText_from_Bool1(s, "AS",  AltStreams);
+  AddText_from_Bool1(s, "Sec", NtSecurity);
+
+  // AddText_from_Bool1(s, "Preserve", PreserveATime);
+  
+  SetItemText(IDT_COMPRESS_OPTIONS, GetUnicodeString(s));
+}
+
+
+
+
+
+// ---------- OPTIONS ----------
+
+
+void COptionsDialog::CheckButton_Bool1(UINT id, const CBool1 &b1)
+{
+  CheckButton(id, b1.Val);
+}
+
+void COptionsDialog::GetButton_Bool1(UINT id, CBool1 &b1)
+{
+  b1.Val = IsButtonCheckedBool(id);
+}
+
+
+void COptionsDialog::CheckButton_BoolBox(
+    bool supported, const CBoolPair &b2, CBoolBox &bb)
+{
+  const bool isSet = b2.Def;
+  const bool val = isSet ? b2.Val : bb.DefaultVal;
+
+  bb.IsSupported = supported;
+
+  CheckButton (bb.Set_Id, isSet);
+  ShowItem_Bool (bb.Set_Id, supported);
+  CheckButton (bb.Id, val);
+  EnableItem (bb.Id, isSet);
+  ShowItem_Bool (bb.Id, supported);
+}
+
+void COptionsDialog::GetButton_BoolBox(CBoolBox &bb)
+{
+  // we save value for invisible buttons too
+  bb.BoolPair.Val = IsButtonCheckedBool (bb.Id);
+  bb.BoolPair.Def = IsButtonCheckedBool (bb.Set_Id);
+}
+
+
+void COptionsDialog::Store_TimeBoxes()
+{
+  TimePrec = GetPrecSpec();
+  GetButton_BoolBox (MTime);
+  GetButton_BoolBox (CTime);
+  GetButton_BoolBox (ATime);
+  GetButton_BoolBox (ZTime);
+}
+
+
+UInt32 COptionsDialog::GetComboValue(NWindows::NControl::CComboBox &c, int defMax)
+{
+  if (c.GetCount() <= defMax)
+    return (UInt32)(Int32)-1;
+  return (UInt32)c.GetItemData_of_CurSel();
+}
+
+static const unsigned kTimePrec_Win  = 0;
+static const unsigned kTimePrec_Unix = 1;
+static const unsigned kTimePrec_DOS  = 2;
+static const unsigned kTimePrec_1ns  = 3;
+
+static void AddTimeOption(UString &s, UInt32 val, const UString &unit, const char *sys = NULL)
+{
+  // s += " : ";
+  {
+    AString s2;
+    s2.Add_UInt32(val);
+    s += s2;
+  }
+  s.Add_Space();
+  s += unit;
+  if (sys)
+  {
+    s += " : ";
+    s += sys;
+  }
+}
+
+int COptionsDialog::AddPrec(unsigned prec, bool isDefault)
+{
+  UString s;
+  UInt32 writePrec = prec;
+  if (isDefault)
+  {
+    // s += "* ";
+    // writePrec = (UInt32)(Int32)-1;
+  }
+       if (prec == kTimePrec_Win)  AddTimeOption(s, 100, NsString, "Windows");
+  else if (prec == kTimePrec_Unix) AddTimeOption(s, 1, SecString, "Unix");
+  else if (prec == kTimePrec_DOS)  AddTimeOption(s, 2, SecString, "DOS");
+  else if (prec == kTimePrec_1ns)  AddTimeOption(s, 1, NsString, "Linux");
+  else if (prec == k_PropVar_TimePrec_Base) AddTimeOption(s, 1, SecString);
+  else if (prec >= k_PropVar_TimePrec_Base)
+  {
+    UInt32 d = 1;
+    for (unsigned i = prec; i < k_PropVar_TimePrec_Base + 9; i++)
+      d *= 10;
+    AddTimeOption(s, d, NsString);
+  }
+  else
+    s.Add_UInt32(prec);
+  const int index = (int)m_Prec.AddString(s);
+  m_Prec.SetItemData(index, writePrec);
+  return index;
+}
+
+
+void COptionsDialog::SetPrec()
+{
+  // const CFormatInfo &fi = g_Formats[cd->GetStaticFormatIndex()];
+  const CArcInfoEx &ai = cd->Get_ArcInfoEx();
+
+  // UInt32 flags = fi.Flags;
+
+  UInt32 flags = ai.Get_TimePrecFlags();
+  UInt32 defaultPrec = ai.Get_DefaultTimePrec();
+  if (defaultPrec != 0)
+    flags |= ((UInt32)1 << defaultPrec);
+
+  // const NCompression::CFormatOptions &fo = cd->Get_FormatOptions();
+
+  // unsigned defaultPrec = kTimePrec_Win;
+
+  if (ai.Is_GZip())
+    defaultPrec = kTimePrec_Unix;
+
+  {
+    UString s;
+    s += GetNameOfProperty(kpidType, L"type");
+    s += ": ";
+    s += ai.Name;
+    if (ai.Is_Tar())
+    {
+      const int methodID = cd->GetMethodID();
+      
+      // for debug
+      // defaultPrec = kTimePrec_Unix;
+      // flags = (UInt32)1 << kTimePrec_Unix;
+
+      s += ":";
+      if (methodID >= 0 && (unsigned)methodID < ARRAY_SIZE(kMethodsNames))
+        s += kMethodsNames[methodID];
+      if (methodID == kPosix)
+      {
+        // for debug
+        // flags |= (UInt32)1 << kTimePrec_Win;
+        // flags |= (UInt32)1 << kTimePrec_1ns;
+      }
+    }
+    else
+    {
+      // if (is_for_MethodChanging) return;
+    }
+    
+    SetItemText(IDT_COMPRESS_TIME_INFO, s);
+  }
+
+  m_Prec.ResetContent();
+  _auto_Prec = defaultPrec;
+
+  unsigned selectedPrec = defaultPrec;
+  {
+    // if (TimePrec >= kTimePrec_Win && TimePrec <= kTimePrec_DOS)
+    if ((Int32)TimePrec >= 0)
+      selectedPrec = TimePrec;
+  }
+
+  int curSel = -1;
+  int defaultPrecIndex = -1;
+  for (unsigned prec = 0;
+      // prec <= k_PropVar_TimePrec_HighPrec;
+      prec <= k_PropVar_TimePrec_1ns;
+      prec++)
+  {
+    if (((flags >> prec) & 1) == 0)
+      continue;
+    const bool isDefault = (defaultPrec == prec);
+    const int index = AddPrec(prec, isDefault);
+    if (isDefault)
+      defaultPrecIndex = index;
+    if (selectedPrec == prec)
+      curSel = index;
+  }
+
+  if (curSel < 0 && selectedPrec > kTimePrec_DOS)
+    curSel = AddPrec(selectedPrec, false); // isDefault
+  if (curSel < 0)
+    curSel = defaultPrecIndex;
+  if (curSel >= 0)
+    m_Prec.SetCurSel(curSel);
+
+  {
+    const bool isSet = IsSet_TimePrec();
+    const int count = m_Prec.GetCount();
+    const bool showPrec = (count != 0);
+    ShowItem_Bool(IDC_COMPRESS_TIME_PREC, showPrec);
+    ShowItem_Bool(IDT_COMPRESS_TIME_PREC, showPrec);
+    EnableItem(IDC_COMPRESS_TIME_PREC, isSet && (count > 1));
+
+    CheckButton(IDX_COMPRESS_PREC_SET, isSet);
+    const bool setIsSupported = isSet || (count > 1);
+    EnableItem(IDX_COMPRESS_PREC_SET, setIsSupported);
+    ShowItem_Bool(IDX_COMPRESS_PREC_SET, setIsSupported);
+  }
+
+  SetTimeMAC();
+}
+
+
+void COptionsDialog::SetTimeMAC()
+{
+  const CArcInfoEx &ai = cd->Get_ArcInfoEx();
+
+  const
+  bool m_allow = ai.Flags_MTime();
+  bool c_allow = ai.Flags_CTime();
+  bool a_allow = ai.Flags_ATime();
+
+  if (ai.Is_Tar())
+  {
+    const int methodID = cd->GetMethodID();
+    c_allow = false;
+    a_allow = false;
+    if (methodID == kPosix)
+    {
+      // c_allow = true; // do we need it as change time ?
+      a_allow = true;
+    }
+  }
+
+  if (ai.Is_Zip())
+  {
+    // const int methodID = GetMethodID();
+    UInt32 prec = GetPrec();
+    if (prec == (UInt32)(Int32)-1)
+      prec = _auto_Prec;
+    if (prec != kTimePrec_Win)
+    {
+      c_allow = false;
+      a_allow = false;
+    }
+  }
+
+  
+  /*
+  MTime.DefaultVal = true;
+  CTime.DefaultVal = false;
+  ATime.DefaultVal = false;
+  */
+
+  MTime.DefaultVal = ai.Flags_MTime_Default();
+  CTime.DefaultVal = ai.Flags_CTime_Default();
+  ATime.DefaultVal = ai.Flags_ATime_Default();
+  
+  ZTime.DefaultVal = false;
+
+  const NCompression::CFormatOptions &fo = cd->Get_FormatOptions();
+  
+  CheckButton_BoolBox (m_allow, fo.MTime, MTime );
+  CheckButton_BoolBox (c_allow, fo.CTime, CTime );
+  CheckButton_BoolBox (a_allow, fo.ATime, ATime );
+  CheckButton_BoolBox (true, fo.SetArcMTime, ZTime);
+
+  if (m_allow && !fo.MTime.Def)
+  {
+    const bool isSingleFile = ai.Flags_KeepName();
+    if (!isSingleFile)
+    {
+      // we can hide changing checkboxes for MTime here:
+      ShowItem_Bool (MTime.Set_Id, false);
+      EnableItem (MTime.Id, false);
+    }
+  }
+  // On_CheckBoxSet_Prec_Clicked();
+  // const bool isSingleFile = ai.Flags_KeepName();
+  // mtime for Gz can be
+}
+
+
+
+void COptionsDialog::On_CheckBoxSet_Prec_Clicked()
+{
+  const bool isSet = IsButtonCheckedBool(IDX_COMPRESS_PREC_SET);
+  if (!isSet)
+  {
+    // We save current MAC boxes to memory before SetPrec()
+    Store_TimeBoxes();
+    Reset_TimePrec();
+    SetPrec();
+  }
+  EnableItem(IDC_COMPRESS_TIME_PREC, isSet);
+}
+
+void COptionsDialog::On_CheckBoxSet_Clicked(const CBoolBox &bb)
+{
+  const bool isSet = IsButtonCheckedBool(bb.Set_Id);
+  if (!isSet)
+    CheckButton(bb.Id, bb.DefaultVal);
+  EnableItem(bb.Id, isSet);
+}
+
+
+
+
+#ifdef LANG
+static const UInt32 kLangIDs_Options[] =
+{
+  IDX_COMPRESS_NT_SYM_LINKS,
+  IDX_COMPRESS_NT_HARD_LINKS,
+  IDX_COMPRESS_NT_ALT_STREAMS,
+  IDX_COMPRESS_NT_SECUR,
+
+  IDG_COMPRESS_TIME,
+  IDT_COMPRESS_TIME_PREC,
+  IDX_COMPRESS_MTIME,
+  IDX_COMPRESS_CTIME,
+  IDX_COMPRESS_ATIME,
+  IDX_COMPRESS_ZTIME,
+  IDX_COMPRESS_PRESERVE_ATIME
+};
+#endif
+
+
+bool COptionsDialog::OnInit()
+{
+  #ifdef LANG
+  LangSetWindowText(*this, IDB_COMPRESS_OPTIONS); // IDS_OPTIONS
+  LangSetDlgItems(*this, kLangIDs_Options, ARRAY_SIZE(kLangIDs_Options));
+  // LangSetDlgItemText(*this, IDB_COMPRESS_TIME_DEFAULT, IDB_COMPRESS_TIME_DEFAULT);
+  // LangSetDlgItemText(*this, IDX_COMPRESS_TIME_DEFAULT, IDX_COMPRESS_TIME_DEFAULT);
+  #endif
+
+  LangString(IDS_COMPRESS_SEC, SecString);
+  if (SecString.IsEmpty())
+    SecString = "sec";
+  LangString(IDS_COMPRESS_NS, NsString);
+  if (NsString.IsEmpty())
+    NsString = "ns";
+
+  {
+    // const CArcInfoEx &ai = cd->Get_ArcInfoEx();
+    
+    ShowItem_Bool ( IDX_COMPRESS_NT_SYM_LINKS,    cd->SymLinks.Supported);
+    ShowItem_Bool ( IDX_COMPRESS_NT_HARD_LINKS,   cd->HardLinks.Supported);
+    ShowItem_Bool ( IDX_COMPRESS_NT_ALT_STREAMS,  cd->AltStreams.Supported);
+    ShowItem_Bool ( IDX_COMPRESS_NT_SECUR,        cd->NtSecurity.Supported);
+
+    ShowItem_Bool ( IDG_COMPRESS_NTFS,
+           cd->SymLinks.Supported
+        || cd->HardLinks.Supported
+        || cd->AltStreams.Supported
+        || cd->NtSecurity.Supported);
+  }
+
+   /* we read property from two sources:
+       1) command line  : (Info)
+       2) registry      : (m_RegistryInfo)
+     (Info) has priority, if both are no defined */
+
+  CheckButton_Bool1 ( IDX_COMPRESS_NT_SYM_LINKS,   cd->SymLinks);
+  CheckButton_Bool1 ( IDX_COMPRESS_NT_HARD_LINKS,  cd->HardLinks);
+  CheckButton_Bool1 ( IDX_COMPRESS_NT_ALT_STREAMS, cd->AltStreams);
+  CheckButton_Bool1 ( IDX_COMPRESS_NT_SECUR,       cd->NtSecurity);
+
+  CheckButton_Bool1 (IDX_COMPRESS_PRESERVE_ATIME, cd->PreserveATime);
+
+  m_Prec.Attach (GetItem(IDC_COMPRESS_TIME_PREC));
+
+  MTime.SetIDs ( IDX_COMPRESS_MTIME, IDX_COMPRESS_MTIME_SET);
+  CTime.SetIDs ( IDX_COMPRESS_CTIME, IDX_COMPRESS_CTIME_SET);
+  ATime.SetIDs ( IDX_COMPRESS_ATIME, IDX_COMPRESS_ATIME_SET);
+  ZTime.SetIDs ( IDX_COMPRESS_ZTIME, IDX_COMPRESS_ZTIME_SET);
+
+  {
+    const NCompression::CFormatOptions &fo = cd->Get_FormatOptions();
+    TimePrec = fo.TimePrec;
+    MTime.BoolPair = fo.MTime;
+    CTime.BoolPair = fo.CTime;
+    ATime.BoolPair = fo.ATime;
+    ZTime.BoolPair = fo.SetArcMTime;
+  }
+  
+  SetPrec();
+
+  NormalizePosition();
+
+  return CModalDialog::OnInit();
+}
+
+
+bool COptionsDialog::OnCommand(int code, int itemID, LPARAM lParam)
+{
+  if (code == CBN_SELCHANGE)
+  {
+    switch (itemID)
+    {
+      case IDC_COMPRESS_TIME_PREC:
+      {
+        Store_TimeBoxes();
+        SetTimeMAC(); // for zip/tar
+        return true;
+      }
+    }
+  }
+  return CModalDialog::OnCommand(code, itemID, lParam);
+}
+
+
+bool COptionsDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+{
+  switch (buttonID)
+  {
+    case IDX_COMPRESS_PREC_SET:  { On_CheckBoxSet_Prec_Clicked(); return true; }
+    case IDX_COMPRESS_MTIME_SET: { On_CheckBoxSet_Clicked (MTime); return true; }
+    case IDX_COMPRESS_CTIME_SET: { On_CheckBoxSet_Clicked (CTime); return true; }
+    case IDX_COMPRESS_ATIME_SET: { On_CheckBoxSet_Clicked (ATime); return true; }
+    case IDX_COMPRESS_ZTIME_SET: { On_CheckBoxSet_Clicked (ZTime); return true; }
+  }
+  return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
+}
+
+
+void COptionsDialog::OnOK()
+{
+  GetButton_Bool1 (IDX_COMPRESS_NT_SYM_LINKS,   cd->SymLinks);
+  GetButton_Bool1 (IDX_COMPRESS_NT_HARD_LINKS,  cd->HardLinks);
+  GetButton_Bool1 (IDX_COMPRESS_NT_ALT_STREAMS, cd->AltStreams);
+  GetButton_Bool1 (IDX_COMPRESS_NT_SECUR,       cd->NtSecurity);
+  GetButton_Bool1 (IDX_COMPRESS_PRESERVE_ATIME, cd->PreserveATime);
+
+  Store_TimeBoxes();
+  {
+    NCompression::CFormatOptions &fo = cd->Get_FormatOptions();
+    fo.TimePrec = TimePrec;
+    fo.MTime = MTime.BoolPair;
+    fo.CTime = CTime.BoolPair;
+    fo.ATime = ATime.BoolPair;
+    fo.SetArcMTime = ZTime.BoolPair;
+  }
+
+  CModalDialog::OnOK();
+}
+
+void COptionsDialog::OnHelp()
+{
+  ShowHelpWindow(kHelpTopic);
 }

@@ -34,7 +34,8 @@ STDMETHODIMP COpenCallbackImp::SetCompleted(const UInt64 *files, const UInt64 *b
   return Callback->Open_SetCompleted(files, bytes);
   COM_TRY_END
 }
-  
+
+ 
 STDMETHODIMP COpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
@@ -48,13 +49,14 @@ STDMETHODIMP COpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT *value)
   else
     switch (propID)
     {
-      case kpidName:  prop = _fileInfo.Name; break;
+      case kpidName:  prop = fs2us(_fileInfo.Name); break;
       case kpidIsDir:  prop = _fileInfo.IsDir(); break;
       case kpidSize:  prop = _fileInfo.Size; break;
-      case kpidAttrib:  prop = (UInt32)_fileInfo.Attrib; break;
-      case kpidCTime:  prop = _fileInfo.CTime; break;
-      case kpidATime:  prop = _fileInfo.ATime; break;
-      case kpidMTime:  prop = _fileInfo.MTime; break;
+      case kpidAttrib:  prop = (UInt32)_fileInfo.GetWinAttrib(); break;
+      case kpidPosixAttrib:  prop = (UInt32)_fileInfo.GetPosixAttrib(); break;
+      case kpidCTime:  PropVariant_SetFrom_FiTime(prop, _fileInfo.CTime); break;
+      case kpidATime:  PropVariant_SetFrom_FiTime(prop, _fileInfo.ATime); break;
+      case kpidMTime:  PropVariant_SetFrom_FiTime(prop, _fileInfo.MTime); break;
     }
   prop.Detach(value);
   return S_OK;
@@ -103,12 +105,20 @@ STDMETHODIMP COpenCallbackImp::GetStream(const wchar_t *name, IInStream **inStre
   if (!IsSafePath(name2))
     return S_FALSE;
 
-  // #ifdef _WIN32
-  // we don't want to support wildcards in names here here
-  if (name2.Find(L'?') >= 0 ||
-      name2.Find(L'*') >= 0)
+  #ifdef _WIN32
+  /* WIN32 allows wildcards in Find() function
+     and doesn't allow wildcard in File.Open()
+     so we can work without the following wildcard check here */
+  if (name2.Find(L'*') >= 0)
     return S_FALSE;
-  // #endif
+  {
+    int startPos = 0;
+    if (name2.IsPrefixedBy_Ascii_NoCase("\\\\?\\"))
+      startPos = 3;
+    if (name2.Find(L'?', startPos) >= 0)
+      return S_FALSE;
+  }
+  #endif
 
   #endif
 

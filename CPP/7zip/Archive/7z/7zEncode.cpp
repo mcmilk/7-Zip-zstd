@@ -175,12 +175,16 @@ HRESULT CEncoder::CreateMixerCoder(
     CMyComPtr<IUnknown> encoderCommon = cod.Coder ? (IUnknown *)cod.Coder : (IUnknown *)cod.Coder2;
    
     #ifndef _7ZIP_ST
+    if (methodFull.Set_NumThreads)
     {
       CMyComPtr<ICompressSetCoderMt> setCoderMt;
       encoderCommon.QueryInterface(IID_ICompressSetCoderMt, &setCoderMt);
       if (setCoderMt)
       {
-        RINOK(setCoderMt->SetNumberOfThreads(_options.NumThreads));
+        RINOK(setCoderMt->SetNumberOfThreads(
+            /* _options.NumThreads */
+            methodFull.NumThreads
+            ));
       }
     }
     #endif

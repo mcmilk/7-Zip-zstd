@@ -51,7 +51,7 @@ struct CArcCmdLineOptions
   bool HelpMode;
 
   // bool LargePages;
-  bool CaseSensitiveChange;
+  bool CaseSensitive_Change;
   bool CaseSensitive;
 
   bool IsInTerminal;
@@ -66,6 +66,8 @@ struct CArcCmdLineOptions
   bool TechMode;
   bool ShowTime;
 
+  AString ListFields;
+
   int ConsoleCodePage;
 
   NWildcard::CCensor Censor;
@@ -79,6 +81,7 @@ struct CArcCmdLineOptions
   #endif
 
   UStringVector HashMethods;
+  // UString HashFilePath;
 
   bool AppendName;
   // UStringVector ArchivePathsSorted;
@@ -94,6 +97,9 @@ struct CArcCmdLineOptions
   CBoolPair AltStreams;
   CBoolPair HardLinks;
   CBoolPair SymLinks;
+  
+  CBoolPair StoreOwnerId;
+  CBoolPair StoreOwnerName;
 
   CUpdateOptions UpdateOptions;
   CHashOptions HashOptions;
@@ -114,7 +120,7 @@ struct CArcCmdLineOptions
   CArcCmdLineOptions():
       HelpMode(false),
       // LargePages(false),
-      CaseSensitiveChange(false),
+      CaseSensitive_Change(false),
       CaseSensitive(false),
 
       IsInTerminal(false),

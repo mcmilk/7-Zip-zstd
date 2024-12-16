@@ -487,22 +487,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidHostOS:  PAIR_TO_PROP(g_OsPairs, item.OsId, prop); break;
     case kpidMTime:
     {
-      FILETIME utc;
       UInt32 unixTime;
       if (item.GetUnixTime(unixTime))
-        NTime::UnixTimeToFileTime(unixTime, utc);
+        PropVariant_SetFrom_UnixTime(prop, unixTime);
       else
-      {
-        FILETIME localFileTime;
-        if (DosTimeToFileTime(item.ModifiedTime, localFileTime))
-        {
-          if (!LocalFileTimeToFileTime(&localFileTime, &utc))
-            utc.dwHighDateTime = utc.dwLowDateTime = 0;
-        }
-        else
-          utc.dwHighDateTime = utc.dwLowDateTime = 0;
-      }
-      prop = utc;
+        PropVariant_SetFrom_DosTime(prop, item.ModifiedTime);
       break;
     }
     // case kpidAttrib:  prop = (UInt32)item.Attributes; break;

@@ -278,7 +278,7 @@ static void SetFileTimeProp_From_UInt64Def(PROPVARIANT *prop, const CUInt64DefVe
 {
   UInt64 value;
   if (v.GetItem(index, value))
-    PropVarEm_Set_FileTime64(prop, value);
+    PropVarEm_Set_FileTime64_Prec(prop, value, k_PropVar_TimePrec_100ns);
 }
 
 bool CHandler::IsFolderEncrypted(CNum folderIndex) const

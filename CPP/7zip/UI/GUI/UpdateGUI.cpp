@@ -61,7 +61,54 @@ HRESULT CThreadUpdating::ProcessVirt()
   return HRESULT_FROM_WIN32(ei.SystemError);
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, const char *name, const UString &value)
+
+// parse command line properties
+
+static bool ParseProp_Time_BoolPair(const CProperty &prop, const char *name, CBoolPair &bp)
+{
+  if (!prop.Name.IsPrefixedBy_Ascii_NoCase(name))
+    return false;
+  const UString rem = prop.Name.Ptr((unsigned)strlen(name));
+  UString val = prop.Value;
+  if (!rem.IsEmpty())
+  {
+    if (!val.IsEmpty())
+      return true;
+    val = rem;
+  }
+  bool res;
+  if (StringToBool(val, res))
+  {
+    bp.Val = res;
+    bp.Def = true;
+  }
+  return true;
+}
+
+static void ParseProp(
+    const CProperty &prop,
+    NCompressDialog::CInfo &di)
+{
+  if (ParseProp_Time_BoolPair(prop, "tm", di.MTime)) return;
+  if (ParseProp_Time_BoolPair(prop, "tc", di.CTime)) return;
+  if (ParseProp_Time_BoolPair(prop, "ta", di.ATime)) return;
+}
+
+static void ParseProperties(
+    const CObjectVector<CProperty> &properties,
+    NCompressDialog::CInfo &di)
+{
+  FOR_VECTOR (i, properties)
+  {
+    ParseProp(properties[i], di);
+  }
+}
+
+
+
+
+
+static void AddProp_UString(CObjectVector<CProperty> &properties, const char *name, const UString &value)
 {
   CProperty prop;
   prop.Name = name;
@@ -69,22 +116,43 @@ static void AddProp(CObjectVector<CProperty> &properties, const char *name, cons
   properties.Add(prop);
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, const char *name, UInt32 value)
+static void AddProp_UInt32(CObjectVector<CProperty> &properties, const char *name, UInt32 value)
 {
-  char tmp[32];
-  ConvertUInt64ToString(value, tmp);
-  AddProp(properties, name, UString(tmp));
+  UString s;
+  s.Add_UInt32(value);
+  AddProp_UString(properties, name, s);
 }
 
-static void AddProp(CObjectVector<CProperty> &properties, const char *name, bool value)
+static void AddProp_bool(CObjectVector<CProperty> &properties, const char *name, bool value)
 {
-  AddProp(properties, name, UString(value ? "on": "off"));
+  AddProp_UString(properties, name, UString(value ? "on": "off"));
 }
 
-static bool IsThereMethodOverride(bool is7z, const UString &propertiesString)
+
+static void AddProp_BoolPair(CObjectVector<CProperty> &properties,
+    const char *name, const CBoolPair &bp)
 {
-  UStringVector strings;
-  SplitString(propertiesString, strings);
+  if (bp.Def)
+    AddProp_bool(properties, name, bp.Val);
+}
+
+
+
+static void SplitOptionsToStrings(const UString &src, UStringVector &strings)
+{
+  SplitString(src, strings);
+  FOR_VECTOR (i, strings)
+  {
+    UString &s = strings[i];
+    if (s.Len() > 2
+        && s[0] == '-'
+        && MyCharLower_Ascii(s[1]) == 'm')
+      s.DeleteFrontal(2);
+  }
+}
+
+static bool IsThereMethodOverride(bool is7z, const UStringVector &strings)
+{
   FOR_VECTOR (i, strings)
   {
     const UString &s = strings[i];
@@ -106,15 +174,13 @@ static bool IsThereMethodOverride(bool is7z, const UString &propertiesString)
 }
 
 static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
-    const UString &propertiesString)
+    const UStringVector &strings)
 {
-  UStringVector strings;
-  SplitString(propertiesString, strings);
   FOR_VECTOR (i, strings)
   {
     const UString &s = strings[i];
     CProperty property;
-    int index = s.Find(L'=');
+    const int index = s.Find(L'=');
     if (index < 0)
       property.Name = s;
     else
@@ -126,65 +192,84 @@ static void ParseAndAddPropertires(CObjectVector<CProperty> &properties,
   }
 }
 
-static UString GetNumInBytesString(UInt64 v)
+
+static void AddProp_Size(CObjectVector<CProperty> &properties, const char *name, const UInt64 size)
 {
-  char s[32];
-  ConvertUInt64ToString(v, s);
-  size_t len = MyStringLen(s);
-  s[len++] = 'B';
-  s[len] = '\0';
-  return UString(s);
+  UString s;
+  s.Add_UInt64(size);
+  s += 'b';
+  AddProp_UString(properties, name, s);
 }
+
 
 static void SetOutProperties(
     CObjectVector<CProperty> &properties,
+    const NCompressDialog::CInfo &di,
     bool is7z,
-    UInt32 level,
-    bool setMethod,
-    const UString &method,
-    UInt64 dict64,
-    bool orderMode,
-    UInt32 order,
-    bool solidIsSpecified, UInt64 solidBlockSize,
-    bool multiThreadIsAllowed, UInt32 numThreads,
-    const UString &encryptionMethod,
-    bool encryptHeadersIsAllowed, bool encryptHeaders,
-    bool /* sfxMode */)
+    bool setMethod)
 {
-  if (level != (UInt32)(Int32)-1)
-    AddProp(properties, "x", (UInt32)level);
+  if (di.Level != (UInt32)(Int32)-1)
+    AddProp_UInt32(properties, "x", (UInt32)di.Level);
   if (setMethod)
   {
-    if (!method.IsEmpty())
-      AddProp(properties, is7z ? "0": "m", method);
-    if (dict64 != (UInt64)(Int64)-1)
+    if (!di.Method.IsEmpty())
+      AddProp_UString(properties, is7z ? "0": "m", di.Method);
+    if (di.Dict64 != (UInt64)(Int64)-1)
     {
       AString name;
       if (is7z)
         name = "0";
-      name += (orderMode ? "mem" : "d");
-      AddProp(properties, name, GetNumInBytesString(dict64));
+      name += (di.OrderMode ? "mem" : "d");
+      AddProp_Size(properties, name, di.Dict64);
     }
-    if (order != (UInt32)(Int32)-1)
+    if (di.Order != (UInt32)(Int32)-1)
     {
       AString name;
       if (is7z)
         name = "0";
-      name += (orderMode ? "o" : "fb");
-      AddProp(properties, name, (UInt32)order);
+      name += (di.OrderMode ? "o" : "fb");
+      AddProp_UInt32(properties, name, (UInt32)di.Order);
     }
   }
     
-  if (!encryptionMethod.IsEmpty())
-    AddProp(properties, "em", encryptionMethod);
+  if (!di.EncryptionMethod.IsEmpty())
+    AddProp_UString(properties, "em", di.EncryptionMethod);
 
-  if (encryptHeadersIsAllowed)
-    AddProp(properties, "he", encryptHeaders);
-  if (solidIsSpecified)
-    AddProp(properties, "s", GetNumInBytesString(solidBlockSize));
-  if (multiThreadIsAllowed)
-    AddProp(properties, "mt", numThreads);
+  if (di.EncryptHeadersIsAllowed)
+    AddProp_bool(properties, "he", di.EncryptHeaders);
+
+  if (di.SolidIsSpecified)
+    AddProp_Size(properties, "s", di.SolidBlockSize);
+  
+  if (
+      // di.MultiThreadIsAllowed &&
+      di.NumThreads != (UInt32)(Int32)-1)
+    AddProp_UInt32(properties, "mt", di.NumThreads);
+  
+  const NCompression::CMemUse &memUse = di.MemUsage;
+  if (memUse.IsDefined)
+  {
+    const char *kMemUse = "memuse";
+    if (memUse.IsPercent)
+    {
+      UString s;
+      // s += 'p'; // for debug: alternate percent method
+      s.Add_UInt64(memUse.Val);
+      s += '%';
+      AddProp_UString(properties, kMemUse, s);
+    }
+    else
+      AddProp_Size(properties, kMemUse, memUse.Val);
+  }
+
+  AddProp_BoolPair(properties, "tm", di.MTime);
+  AddProp_BoolPair(properties, "tc", di.CTime);
+  AddProp_BoolPair(properties, "ta", di.ATime);
+
+  if (di.TimePrec != (UInt32)(Int32)-1)
+    AddProp_UInt32(properties, "tp", di.TimePrec);
 }
+
 
 struct C_UpdateMode_ToAction_Pair
 {
@@ -287,6 +372,11 @@ static HRESULT ShowDialog(
   CCompressDialog dialog;
   NCompressDialog::CInfo &di = dialog.Info;
   dialog.ArcFormats = &codecs->Formats;
+  {
+    CObjectVector<CCodecInfoUser> userCodecs;
+    codecs->Get_CodecsInfoUser_Vector(userCodecs);
+    dialog.SetMethods(userCodecs);
+  }
 
   if (options.MethodMode.Type_Defined)
     di.FormatIndex = options.MethodMode.Type.FormatIndex;
@@ -299,9 +389,13 @@ static HRESULT ShowDialog(
     if (!oneFile && ai.Flags_KeepName())
       continue;
     if ((int)i != di.FormatIndex)
+    {
+      if (ai.Flags_HashHandler())
+        continue;
       if (ai.Name.IsEqualTo_Ascii_NoCase("swfc"))
         if (!oneFile || name.Len() < 4 || !StringsAreEqualNoCase_Ascii(name.RightPtr(4), ".swf"))
           continue;
+    }
     dialog.ArcIndices.Add(i);
   }
   if (dialog.ArcIndices.IsEmpty())
@@ -325,6 +419,10 @@ static HRESULT ShowDialog(
   di.HardLinks = options.HardLinks;
   di.AltStreams = options.AltStreams;
   di.NtSecurity = options.NtSecurity;
+  if (options.SetArcMTime)
+    di.SetArcMTime.SetTrueTrue();
+  if (options.PreserveATime)
+    di.PreserveATime.SetTrueTrue();
   
   if (callback->PasswordIsDefined)
     di.Password = callback->Password;
@@ -340,6 +438,8 @@ static HRESULT ShowDialog(
     di.UpdateMode = g_UpdateMode_Pairs[(unsigned)index].UpdateMode;
   }
 
+  ParseProperties(options.MethodMode.Properties, di);
+
   if (dialog.Create(hwndParent) != IDOK)
     return E_ABORT;
 
@@ -349,6 +449,9 @@ static HRESULT ShowDialog(
   options.HardLinks = di.HardLinks;
   options.AltStreams = di.AltStreams;
   options.NtSecurity = di.NtSecurity;
+  options.SetArcMTime = di.SetArcMTime.Val;
+  if (di.PreserveATime.Def)
+    options.PreserveATime = di.PreserveATime.Val;
  
   #if defined(_WIN32) && !defined(UNDER_CE)
   curDirRestorer.NeedRestore = dialog.CurrentDirWasChanged;
@@ -378,27 +481,21 @@ static HRESULT ShowDialog(
   if (callback->PasswordIsDefined)
     callback->Password = di.Password;
 
+  // we clear command line options, and fill options form Dialog
   options.MethodMode.Properties.Clear();
 
-  bool is7z = archiverInfo.Name.IsEqualTo_Ascii_NoCase("7z");
-  bool methodOverride = IsThereMethodOverride(is7z, di.Options);
+  const bool is7z = archiverInfo.Is_7z();
 
-  SetOutProperties(
-      options.MethodMode.Properties,
+  UStringVector optionStrings;
+  SplitOptionsToStrings(di.Options, optionStrings);
+  const bool methodOverride = IsThereMethodOverride(is7z, optionStrings);
+
+  SetOutProperties(options.MethodMode.Properties, di,
       is7z,
-      di.Level,
-      !methodOverride,
-      di.Method,
-      di.Dict64,
-      di.OrderMode, di.Order,
-      di.SolidIsSpecified, di.SolidBlockSize,
-      di.MultiThreadIsAllowed, di.NumThreads,
-      di.EncryptionMethod,
-      di.EncryptHeadersIsAllowed, di.EncryptHeaders,
-      di.SFXMode);
+      !methodOverride); // setMethod
   
   options.OpenShareForWrite = di.OpenShareForWrite;
-  ParseAndAddPropertires(options.MethodMode.Properties, di.Options);
+  ParseAndAddPropertires(options.MethodMode.Properties, optionStrings);
 
   if (di.SFXMode)
     options.SfxMode = true;
@@ -464,6 +561,13 @@ HRESULT UpdateGUI(
   tu.UpdateCallbackGUI->Init();
 
   UString title = LangString(IDS_PROGRESS_COMPRESSING);
+  if (!formatIndices.IsEmpty())
+  {
+    const int fin = formatIndices[0].FormatIndex;
+    if (fin >= 0)
+      if (codecs->Formats[fin].Flags_HashHandler())
+        title = LangString(IDS_CHECKSUM_CALCULATING);
+  }
 
   /*
   if (hwndParent != 0)

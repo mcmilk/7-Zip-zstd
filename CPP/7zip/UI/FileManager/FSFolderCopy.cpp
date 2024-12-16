@@ -29,6 +29,9 @@ using namespace NFind;
 extern bool g_IsNT;
 #endif
 
+#define MY_CAST_FUNC  (void(*)())
+// #define MY_CAST_FUNC
+
 namespace NFsFolder {
 
 HRESULT CCopyStateIO::MyCopyFile(CFSTR inPath, CFSTR outPath, DWORD attrib)
@@ -245,7 +248,9 @@ void CCopyState::Prepare()
   my_CopyFileExA = NULL;
   if (!g_IsNT)
   {
-    my_CopyFileExA = (Func_CopyFileExA)::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "CopyFileExA");
+    my_CopyFileExA = (Func_CopyFileExA)
+      MY_CAST_FUNC
+      ::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "CopyFileExA");
   }
   else
   #endif
@@ -473,7 +478,10 @@ static HRESULT CopyFile_Ask(
 
 static FString CombinePath(const FString &folderPath, const FString &fileName)
 {
-  return folderPath + FCHAR_PATH_SEPARATOR + fileName;
+  FString s (folderPath);
+  s.Add_PathSepar(); // FCHAR_PATH_SEPARATOR
+  s += fileName;
+  return s;
 }
 
 static bool IsDestChild(const FString &src, const FString &dest)

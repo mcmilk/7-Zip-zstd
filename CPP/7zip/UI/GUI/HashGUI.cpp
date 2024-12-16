@@ -75,11 +75,10 @@ void AddSizeValue(UString &s, UInt64 value)
           if (value >= ((UInt64)10 << 30)) { value >>= 30; c = 'G'; }
     else  if (value >=         (10 << 20)) { value >>= 20; c = 'M'; }
     else                                   { value >>= 10; c = 'K'; }
-    char sz[32];
-    ConvertUInt64ToString(value, sz);
+    
     s += " (";
-    s += sz;
-    s += " ";
+    s.Add_UInt64(value);
+    s.Add_Space();
     s += (wchar_t)c;
     s += "iB)";
   }
@@ -174,10 +173,12 @@ HRESULT CHashCallbackGUI::SetOperationResult(UInt64 /* fileSize */, const CHashB
   return CheckBreak();
 }
 
+static const unsigned k_DigestStringSize = k_HashCalc_DigestSize_Max * 2 + k_HashCalc_ExtraSize * 2 + 16;
+
 static void AddHashString(CProperty &s, const CHasherState &h, unsigned digestIndex)
 {
-  char temp[k_HashCalc_DigestSize_Max * 2 + 4];
-  AddHashHexToString(temp, h.Digests[digestIndex], h.DigestSize);
+  char temp[k_DigestStringSize];
+  h.WriteToString(digestIndex, temp);
   s.Value = temp;
 }
 

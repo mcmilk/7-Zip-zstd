@@ -587,6 +587,8 @@ HRESULT CInArchive::Open2()
   for (MainVolDescIndex = VolDescs.Size() - 1; MainVolDescIndex > 0; MainVolDescIndex--)
     if (VolDescs[MainVolDescIndex].IsJoliet())
       break;
+  /* FIXME: some volume can contain Rock Ridge, that is better than
+     Joliet volume. So we need some way to detect such case */
   // MainVolDescIndex = 0; // to read primary volume
   const CVolumeDescriptor &vd = VolDescs[MainVolDescIndex];
   if (vd.LogicalBlockSize != kBlockSize)

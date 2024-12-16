@@ -215,11 +215,7 @@ class CHandler: public CHandlerCont
   void SetTime(NCOM::CPropVariant &prop) const
   {
     if (_time_Defined && _buildTime != 0)
-    {
-      FILETIME ft;
-      NTime::UnixTimeToFileTime(_buildTime, ft);
-      prop = ft;
-    }
+      PropVariant_SetFrom_UnixTime(prop, _buildTime);
   }
 
   void SetStringProp(const AString &s, NCOM::CPropVariant &prop) const

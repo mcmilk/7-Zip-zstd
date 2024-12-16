@@ -27,11 +27,30 @@ bool ParseSizeString(const wchar_t *s, const PROPVARIANT &prop, UInt64 percentsB
   else if (prop.vt != VT_EMPTY)
     return false;
 
+  bool percentMode = false;
+  {
+    const wchar_t c = *s;
+    if (MyCharLower_Ascii(c) == 'p')
+    {
+      percentMode = true;
+      s++;
+    }
+  }
+
   const wchar_t *end;
-  UInt64 v = ConvertStringToUInt64(s, &end);
+  const UInt64 v = ConvertStringToUInt64(s, &end);
   if (s == end)
     return false;
-  wchar_t c = *end;
+  const wchar_t c = *end;
+
+  if (percentMode)
+  {
+    if (c != 0)
+      return false;
+    res = Calc_From_Val_Percents(percentsBase, v);
+    return true;
+  }
+
   if (c == 0)
   {
     res = v;
@@ -42,7 +61,7 @@ bool ParseSizeString(const wchar_t *s, const PROPVARIANT &prop, UInt64 percentsB
 
   if (c == '%')
   {
-    res = percentsBase / 100 * v;
+    res = Calc_From_Val_Percents(percentsBase, v);
     return true;
   }
 
@@ -56,7 +75,7 @@ bool ParseSizeString(const wchar_t *s, const PROPVARIANT &prop, UInt64 percentsB
     case 't': numBits = 40; break;
     default: return false;
   }
-  UInt64 val2 = v << numBits;
+  const UInt64 val2 = v << numBits;
   if ((val2 >> numBits) != v)
     return false;
   res = val2;
@@ -70,15 +89,22 @@ bool CCommonMethodProps::SetCommonProperty(const UString &name, const PROPVARIAN
   if (name.IsPrefixedBy_Ascii_NoCase("mt"))
   {
     #ifndef _7ZIP_ST
-    hres = ParseMtProp(name.Ptr(2), value, _numProcessors, _numThreads);
+    _numThreads = _numProcessors;
+    _numThreads_WasForced = false;
+    hres = ParseMtProp2(name.Ptr(2), value, _numThreads, _numThreads_WasForced);
+    // "mt" means "_numThreads_WasForced = false" here
     #endif
     return true;
   }
   
   if (name.IsPrefixedBy_Ascii_NoCase("memuse"))
   {
-    if (!ParseSizeString(name.Ptr(6), value, _memAvail, _memUsage))
+    UInt64 v;
+    if (!ParseSizeString(name.Ptr(6), value, _memAvail, v))
       hres = E_INVALIDARG;
+    _memUsage_Decompress = v;
+    _memUsage_Compress = v;
+    _memUsage_WasSet = true;
     return true;
   }
 
@@ -88,7 +114,7 @@ bool CCommonMethodProps::SetCommonProperty(const UString &name, const PROPVARIAN
 
 #ifndef EXTRACT_ONLY
 
-static void SetMethodProp32(COneMethodInfo &m, PROPID propID, UInt32 value)
+static void SetMethodProp32(CMethodProps &m, PROPID propID, UInt32 value)
 {
   if (m.FindProp(propID) < 0)
     m.AddProp32(propID, value);
@@ -102,11 +128,31 @@ void CMultiMethodProps::SetGlobalLevelTo(COneMethodInfo &oneMethodInfo) const
 }
 
 #ifndef _7ZIP_ST
-void CMultiMethodProps::SetMethodThreadsTo(COneMethodInfo &oneMethodInfo, UInt32 numThreads)
+
+static void SetMethodProp32_Replace(CMethodProps &m, PROPID propID, UInt32 value)
+{
+  const int i = m.FindProp(propID);
+  if (i >= 0)
+  {
+    NWindows::NCOM::CPropVariant &val = m.Props[(unsigned)i].Value;
+    val = (UInt32)value;
+    return;
+  }
+  m.AddProp32(propID, value);
+}
+
+void CMultiMethodProps::SetMethodThreadsTo_IfNotFinded(CMethodProps &oneMethodInfo, UInt32 numThreads)
 {
   SetMethodProp32(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
 }
-#endif
+
+void CMultiMethodProps::SetMethodThreadsTo_Replace(CMethodProps &oneMethodInfo, UInt32 numThreads)
+{
+  SetMethodProp32_Replace(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
+}
+
+#endif // _7ZIP_ST
+
 
 void CMultiMethodProps::InitMulti()
 {
@@ -194,39 +240,72 @@ void CSingleMethodProps::Init()
 }
 
 
+HRESULT CSingleMethodProps::SetProperty(const wchar_t *name2, const PROPVARIANT &value)
+{
+  // processed = false;
+  UString name = name2;
+  name.MakeLower_Ascii();
+  if (name.IsEmpty())
+    return E_INVALIDARG;
+  if (name.IsPrefixedBy_Ascii_NoCase("x"))
+  {
+    UInt32 a = 9;
+    RINOK(ParsePropToUInt32(name.Ptr(1), value, a));
+    _level = a;
+    AddProp_Level(a);
+    // processed = true;
+    return S_OK;
+  }
+  {
+    HRESULT hres;
+    if (SetCommonProperty(name, value, hres))
+    {
+      // processed = true;
+      return S_OK;
+    }
+  }
+  RINOK(ParseMethodFromPROPVARIANT(name, value));
+  return S_OK;
+}
+
+
 HRESULT CSingleMethodProps::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   Init();
   
   for (UInt32 i = 0; i < numProps; i++)
   {
-    UString name = names[i];
-    name.MakeLower_Ascii();
-    if (name.IsEmpty())
-      return E_INVALIDARG;
-    const PROPVARIANT &value = values[i];
-    if (name[0] == L'x')
-    {
-      UInt32 a = 9;
-      RINOK(ParsePropToUInt32(name.Ptr(1), value, a));
-      _level = a;
-      AddProp_Level(a);
-      continue;
-    }
-    {
-      HRESULT hres;
-      if (SetCommonProperty(name, value, hres))
-      {
-        RINOK(hres)
-        continue;
-      }
-    }
-    RINOK(ParseMethodFromPROPVARIANT(names[i], value));
+    RINOK(SetProperty(names[i], values[i]));
   }
 
   return S_OK;
 }
 
 #endif
+
+
+static HRESULT PROPVARIANT_to_BoolPair(const PROPVARIANT &prop, CBoolPair &dest)
+{
+  RINOK(PROPVARIANT_to_bool(prop, dest.Val));
+  dest.Def = true;
+  return S_OK;
+}
+
+HRESULT CHandlerTimeOptions::Parse(const UString &name, const PROPVARIANT &prop, bool &processed)
+{
+  processed = true;
+  if (name.IsEqualTo_Ascii_NoCase("tm")) { return PROPVARIANT_to_BoolPair(prop, Write_MTime); }
+  if (name.IsEqualTo_Ascii_NoCase("ta")) { return PROPVARIANT_to_BoolPair(prop, Write_ATime); }
+  if (name.IsEqualTo_Ascii_NoCase("tc")) { return PROPVARIANT_to_BoolPair(prop, Write_CTime); }
+  if (name.IsPrefixedBy_Ascii_NoCase("tp"))
+  {
+    UInt32 v = 0;
+    RINOK(ParsePropToUInt32(name.Ptr(2), prop, v));
+    Prec = v;
+    return S_OK;
+  }
+  processed = false;
+  return S_OK;
+}
 
 }

@@ -773,6 +773,10 @@ SOURCE=..\..\..\..\C\7zCrcOpt.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zTypes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Alloc.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -869,6 +873,14 @@ SOURCE=..\..\..\Common\CommandLineParser.h
 # Begin Source File
 
 SOURCE=..\..\..\Common\CRC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\DynLimBuf.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\DynLimBuf.h
 # End Source File
 # Begin Source File
 
@@ -1188,11 +1200,31 @@ SOURCE=..\..\..\Windows\Window.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\Archive\Common\ItemNameUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\ItemNameUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Archive\Common\OutStreamWithCRC.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Archive\Common\OutStreamWithCRC.h
+# End Source File
+# End Group
+# Begin Group "7-Zip"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Archive\IArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\ICoder.h
 # End Source File
 # End Group
 # End Target

@@ -9,6 +9,15 @@ CONSOLE_VARIANT_FLAGS=-DPROG_VARIANT_Z
 include ../Format7zF/Arc_gcc.mak
 
 ifdef SystemDrive
+IS_MINGW = 1
+else
+ifdef SYSTEMDRIVE
+# ifdef OS
+IS_MINGW = 1
+endif
+endif
+
+ifdef IS_MINGW
 
 LOCAL_FLAGS_SYS = \
   -D_7ZIP_LARGE_PAGES \
@@ -81,7 +90,6 @@ COMMON_OBJS_2 = \
 WIN_OBJS_2 = \
   $O/ErrorMsg.o \
   $O/FileLink.o \
-  $O/PropVariantConv.o \
   $O/SystemInfo.o \
 
 7ZIP_COMMON_OBJS_2 = \

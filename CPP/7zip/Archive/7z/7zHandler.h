@@ -49,9 +49,8 @@ public:
   bool _encryptHeaders;
   // bool _useParents; 9.26
 
-  CBoolPair Write_CTime;
-  CBoolPair Write_ATime;
-  CBoolPair Write_MTime;
+  CHandlerTimeOptions TimeOptions;
+
   CBoolPair Write_Attrib;
 
   bool _useMultiThreadMixer;
@@ -158,12 +157,7 @@ private:
 
   HRESULT PropsMethod_To_FullMethod(CMethodFull &dest, const COneMethodInfo &m);
   HRESULT SetHeaderMethod(CCompressionMethodMode &headerMethod);
-  HRESULT SetMainMethod(CCompressionMethodMode &method
-      #ifndef _7ZIP_ST
-      , UInt32 numThreads
-      #endif
-      );
-
+  HRESULT SetMainMethod(CCompressionMethodMode &method);
 
   #endif
 

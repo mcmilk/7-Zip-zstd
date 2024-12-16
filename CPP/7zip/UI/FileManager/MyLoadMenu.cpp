@@ -380,7 +380,8 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
           kTimestampPrintLevel_MIN,
           kTimestampPrintLevel_SEC,
           // 1,2,3,4,5,6,
-          kTimestampPrintLevel_NTFS
+          kTimestampPrintLevel_NTFS,
+          kTimestampPrintLevel_NS
         };
 
         unsigned last = kMenuID_Time;
@@ -486,6 +487,8 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
   ReadRegDiff(diffPath);
 
   unsigned numRealItems = startPos;
+
+  const bool isBigScreen = NControl::IsDialogSizeOK(40, 200, g_HWND);
   
   for (unsigned i = 0;; i++)
   {
@@ -536,14 +539,37 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
             disable = true;
         }
       }
+      
+      if (isHashFolder)
+      {
+        switch (item.wID)
+        {
+          case IDM_OPEN:
+          case IDM_OPEN_INSIDE:
+          case IDM_OPEN_INSIDE_ONE:
+          case IDM_OPEN_INSIDE_PARSER:
+          case IDM_OPEN_OUTSIDE:
+          case IDM_FILE_VIEW:
+          case IDM_FILE_EDIT:
+          // case IDM_RENAME:
+          case IDM_COPY_TO:
+          case IDM_MOVE_TO:
+          // case IDM_DELETE:
+          case IDM_COMMENT:
+          case IDM_CREATE_FOLDER:
+          case IDM_CREATE_FILE:
+          case IDM_LINK:
+          case IDM_DIFF:
+            disable = true;
+        }
+      }
+
 
       if (item.wID == IDM_LINK && numItems != 1)
         disable = true;
 
       if (item.wID == IDM_ALT_STREAMS)
         disable = !isAltStreamsSupported;
-
-      bool isBigScreen = NControl::IsDialogSizeOK(40, 200);
 
       if (!isBigScreen && (disable || item.IsSeparator()))
         continue;

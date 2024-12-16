@@ -1,11 +1,5 @@
 // (C) 2016 - 2020 Tino Reichardt
 
-#define DEBUG 0
-
-#if DEBUG
-#include <stdio.h>
-#endif
-
 #include "StdAfx.h"
 #include "ZstdDecoder.h"
 
@@ -36,11 +30,6 @@ CDecoder::~CDecoder()
 STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size)
 {
   DProps *pProps = (DProps *)prop;
-
-#if DEBUG
-      printf("prop size =%u\n", size);
-      fflush(stdout);
-#endif
 
   switch (size) {
   case 3:
@@ -131,16 +120,6 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
         }
       }
 
-#if DEBUG
-      printf("res       = %u\n", (unsigned)result);
-      printf("zIn.size  = %u\n", (unsigned)zIn.size);
-      printf("zIn.pos   = %u\n", (unsigned)zIn.pos);
-      printf("zOut.size = %u\n", (unsigned)zOut.size);
-      printf("zOut.pos  = %u\n", (unsigned)zOut.pos);
-      printf("---------------------\n");
-      fflush(stdout);
-#endif
-
       /* write decompressed result */
       if (zOut.pos) {
         RINOK(WriteStream(outStream, _dstBuf, zOut.pos));
@@ -174,9 +153,6 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
     srcBufLen = _srcBufSize;
     RINOK(ReadStream(inStream, _srcBuf, &srcBufLen));
     _processedIn += srcBufLen;
-#if DEBUG
-      printf("READ      = %u\n", (unsigned)srcBufLen);
-#endif
 
     /* finished */
     if (srcBufLen == 0)

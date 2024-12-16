@@ -30,6 +30,8 @@
 #include "../Common/MyString.h"
 #include "../Common/MyBuffer.h"
 
+#include "../Windows/TimeUtils.h"
+
 #include "Defs.h"
 
 HRESULT GetLastError_noZero_HRESULT();
@@ -94,6 +96,12 @@ struct CReparseAttr
   UString GetPath() const;
 };
 
+#ifdef _WIN32
+#define CFiInfo BY_HANDLE_FILE_INFORMATION
+#define ST_MTIME(st) (st).ftLastWriteTime
+#else
+#define CFiInfo stat
+#endif
 
 #ifdef _WIN32
 
@@ -141,6 +149,8 @@ public:
 
   CFileBase(): _handle(INVALID_HANDLE_VALUE), PreserveATime(false) {};
   ~CFileBase() { Close(); }
+
+  HANDLE GetHandle() const { return _handle; }
 
   bool Close() throw();
 
@@ -213,6 +223,15 @@ public:
 
   #ifndef UNDER_CE
 
+  bool Open_for_ReadAttributes(CFSTR fileName)
+  {
+    return Create(fileName, FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS);
+    // we must use (FILE_FLAG_BACKUP_SEMANTICS) to open handle of directory.
+  }
+
   bool OpenReparse(CFSTR fileName)
   {
     // 17.02 fix: to support Windows XP compatibility junctions:
@@ -240,12 +259,14 @@ public:
   bool Create(CFSTR fileName, bool createAlways);
   bool CreateAlways(CFSTR fileName, DWORD flagsAndAttributes);
 
-  bool SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime) throw();
-  bool SetMTime(const FILETIME *mTime) throw();
+  bool SetTime(const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime) throw();
+  bool SetMTime(const CFiTime *mTime) throw();
   bool WritePart(const void *data, UInt32 size, UInt32 &processedSize) throw();
   bool Write(const void *data, UInt32 size, UInt32 &processedSize) throw();
+  bool WriteFull(const void *data, size_t size) throw();
   bool SetEndOfFile() throw();
   bool SetLength(UInt64 length) throw();
+  bool SetLength_KeepPosition(UInt64 length) throw();
 };
 
 }
@@ -268,6 +289,12 @@ class CFileBase
 protected:
   int _handle;
 
+  /*
+  bool IsDeviceFile;
+  bool SizeDefined;
+  UInt64 Size; // it can be larger than real available size
+  */
+
   bool OpenBinary(const char *name, int flags);
 public:
   bool PreserveATime;
@@ -278,8 +305,14 @@ public:
   bool GetLength(UInt64 &length) const;
   off_t seek(off_t distanceToMove, int moveMethod) const;
   off_t seekToBegin() const throw();
+  off_t seekToCur() const throw();
   // bool SeekToBegin() throw();
   int my_fstat(struct stat *st) const  { return fstat(_handle, st); }
+  /*
+  int my_ioctl_BLKGETSIZE64(unsigned long long *val);
+  int GetDeviceSize_InBytes(UInt64 &size);
+  void CalcDeviceSize(CFSTR s);
+  */
 };
 
 class CInFile: public CFileBase
@@ -298,9 +331,9 @@ class COutFile: public CFileBase
   bool ATime_defined;
   bool MTime_defined;
 
-  FILETIME CTime;
-  FILETIME ATime;
-  FILETIME MTime;
+  CFiTime CTime;
+  CFiTime ATime;
+  CFiTime MTime;
 
   AString Path;
   ssize_t write_part(const void *data, size_t size) throw();
@@ -315,9 +348,23 @@ public:
   bool Create(const char *name, bool createAlways);
   bool Open(const char *name, DWORD creationDisposition);
   ssize_t write_full(const void *data, size_t size, size_t &processed) throw();
+
+  bool WriteFull(const void *data, size_t size) throw()
+  {
+    size_t processed;
+    ssize_t res = write_full(data, size, processed);
+    if (res == -1)
+      return false;
+    return processed == size;
+  }
+
   bool SetLength(UInt64 length) throw();
-  bool SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime) throw();
-  bool SetMTime(const FILETIME *mTime) throw();
+  bool SetLength_KeepPosition(UInt64 length) throw()
+  {
+    return SetLength(length);
+  }
+  bool SetTime(const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime) throw();
+  bool SetMTime(const CFiTime *mTime) throw();
 };
 
 }

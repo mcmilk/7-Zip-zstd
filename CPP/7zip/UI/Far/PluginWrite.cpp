@@ -81,18 +81,17 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   struct PluginPanelItem *panelItems, int numItems,
   int moveMode, int opMode)
 {
-  /*
-  if (moveMode != 0)
+  if (moveMode != 0
+      && _agent->_isHashHandler)
   {
     g_StartupInfo.ShowMessage(NMessageID::kMoveIsNotSupported);
     return NFileOperationReturnCode::kError;
   }
-  */
 
   if (numItems <= 0)
     return NFileOperationReturnCode::kError;
 
-  if (_agent->IsThereReadOnlyArc())
+  if (_agent->IsThere_ReadOnlyArc())
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return NFileOperationReturnCode::kError;
@@ -231,8 +230,11 @@ NFileOperationReturnCode::EEnum CPlugin::PutFiles(
   updateCallbackSpec->PasswordIsDefined = PasswordIsDefined;
   updateCallbackSpec->Password = Password;
 
-  if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
-    return NFileOperationReturnCode::kError;
+  if (!_agent->_isHashHandler)
+  {
+    if (SetOutProperties(outArchive, compressionInfo.Level) != S_OK)
+      return NFileOperationReturnCode::kError;
+  }
 
   /*
   outArchive->SetFolder(_folder);
@@ -726,7 +728,7 @@ static const char * const k_CreateFolder_History = "NewFolder"; // we use defaul
 
 HRESULT CPlugin::CreateFolder()
 {
-  if (_agent->IsThereReadOnlyArc())
+  if (_agent->IsThere_ReadOnlyArc())
   {
     g_StartupInfo.ShowMessage(NMessageID::kUpdateNotSupportedForThisArchive);
     return TRUE;

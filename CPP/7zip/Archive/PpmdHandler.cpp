@@ -174,7 +174,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
     {
       // time can be in Unix format ???
       FILETIME utc;
-      if (NTime::DosTimeToFileTime(_item.Time, utc))
+      if (NTime::DosTime_To_FileTime(_item.Time, utc))
         prop = utc;
       break;
     }

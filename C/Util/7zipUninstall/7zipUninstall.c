@@ -1,5 +1,5 @@
 /* 7zipUninstall.c - 7-Zip Uninstaller
-2021-02-23 : Igor Pavlov : Public domain */
+2022-07-15 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -16,6 +16,10 @@
 #include "../../7zVersion.h"
 
 #include "resource.h"
+
+#if defined(__GNUC__) && (__GNUC__ >= 8)
+  #pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
@@ -51,7 +55,7 @@
   #endif
 #endif
 
-#define k_7zip_with_Ver  k_7zip_with_Ver_base k_Postfix 
+#define k_7zip_with_Ver  k_7zip_with_Ver_base k_Postfix
 
 static LPCWSTR const k_7zip_with_Ver_Uninstall = k_7zip_with_Ver L" Uninstall";
 
@@ -404,6 +408,17 @@ static LPCWSTR const k_AppPaths_7zFm = L"Software\\Microsoft\\Windows\\CurrentVe
 static LPCWSTR const k_Uninstall_7zip = k_REG_Uninstall L"7-Zip-Zstandard";
 
 
+static void RemoveQuotes(wchar_t *s)
+{
+  const size_t len = wcslen(s);
+  size_t i;
+  if (len == 0 || s[0] != '\"' || s[len - 1] != '\"')
+    return;
+  for (i = 0; i < len; i++)
+    s[i] = s[i + 1];
+  s[len - 2] = 0;
+}
+
 static BoolInt AreEqual_Path_PrefixName(const wchar_t *s, const wchar_t *prefix, const wchar_t *name)
 {
   if (!IsString1PrefixedByString2_NoCase(s, prefix))
@@ -490,12 +505,18 @@ static void WriteCLSID()
 
 
   if (MyRegistry_QueryString2(HKEY_LOCAL_MACHINE, k_AppPaths_7zFm, NULL, s))
+  {
+    // RemoveQuotes(s);
     if (AreEqual_Path_PrefixName(s, path, L"7zFM.exe"))
       MyRegistry_DeleteKey(HKEY_LOCAL_MACHINE, k_AppPaths_7zFm);
+  }
 
   if (MyRegistry_QueryString2(HKEY_LOCAL_MACHINE, k_Uninstall_7zip, L"UninstallString", s))
+  {
+    RemoveQuotes(s);
     if (AreEqual_Path_PrefixName(s, path, kUninstallExe))
       MyRegistry_DeleteKey(HKEY_LOCAL_MACHINE, k_Uninstall_7zip);
+  }
 }
 
 

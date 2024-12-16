@@ -1,5 +1,5 @@
-/* 7zipInstall.c - 7-Zip-Zstandard Installer
-2021-02-23 : Igor Pavlov : Public domain */
+/* 7zipInstall.c - 7-Zip Installer
+2022-07-15 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -21,6 +21,10 @@
 #include "../../DllSecur.h"
 
 #include "resource.h"
+
+#if defined(__GNUC__) && (__GNUC__ >= 8)
+  #pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 
 #define LLL_(quote) L##quote
 #define LLL(quote) LLL_(quote)
@@ -70,7 +74,7 @@ static LPCWSTR const k_Reg_Software_7zip = L"Software\\7-Zip-Zstandard";
   #endif
 #endif
 
-#define k_7zip_with_Ver  k_7zip_with_Ver_base k_Postfix 
+#define k_7zip_with_Ver  k_7zip_with_Ver_base k_Postfix
 
 
 static LPCWSTR const k_7zip_with_Ver_str = k_7zip_with_Ver;
@@ -926,6 +930,9 @@ static void WriteShellEx()
       wcscpy(destPath + 1, path);
       CatAscii(destPath, "Uninstall.exe\"");
       MyRegistry_SetString(destKey, L"UninstallString", destPath);
+
+      CatAscii(destPath, " /S");
+      MyRegistry_SetString(destKey, L"QuietUninstallString", destPath);
       
       MyRegistry_SetDWORD(destKey, L"NoModify", 1);
       MyRegistry_SetDWORD(destKey, L"NoRepair", 1);

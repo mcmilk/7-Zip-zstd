@@ -278,7 +278,7 @@ struct CSiAttr
 {
   UInt64 CTime;
   UInt64 MTime;
-  // UInt64 ThisRecMTime;
+  UInt64 ThisRecMTime;
   UInt64 ATime;
   UInt32 Attrib;
 
@@ -300,7 +300,7 @@ bool CSiAttr::Parse(const Byte *p, unsigned size)
     return false;
   G64(p + 0x00, CTime);
   G64(p + 0x08, MTime);
-  // G64(p + 0x10, ThisRecMTime);
+  G64(p + 0x10, ThisRecMTime);
   G64(p + 0x18, ATime);
   G32(p + 0x20, Attrib);
   SecurityId = 0;
@@ -2301,6 +2301,7 @@ static const Byte kProps[] =
   kpidMTime,
   kpidCTime,
   kpidATime,
+  kpidChangeTime,
   kpidAttrib,
   kpidLinks,
   kpidINode,
@@ -2577,7 +2578,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     case kpidMTime: NtfsTimeToProp(rec.SiAttr.MTime, prop); break;
     case kpidCTime: NtfsTimeToProp(rec.SiAttr.CTime, prop); break;
     case kpidATime: NtfsTimeToProp(rec.SiAttr.ATime, prop); break;
-    // case kpidRecMTime: if (fn) NtfsTimeToProp(rec.SiAttr.ThisRecMTime, prop); break;
+    case kpidChangeTime: NtfsTimeToProp(rec.SiAttr.ThisRecMTime, prop); break;
 
     /*
     case kpidMTime2: if (fn) NtfsTimeToProp(fn->MTime, prop); break;

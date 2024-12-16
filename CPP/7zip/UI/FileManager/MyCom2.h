@@ -7,8 +7,9 @@
 
 #define MY_ADDREF_RELEASE_MT \
 STDMETHOD_(ULONG, AddRef)() { InterlockedIncrement((LONG *)&__m_RefCount); return __m_RefCount; } \
-STDMETHOD_(ULONG, Release)() { InterlockedDecrement((LONG *)&__m_RefCount); if (__m_RefCount != 0) \
-  return __m_RefCount; delete this; return 0; }
+STDMETHOD_(ULONG, Release)() { InterlockedDecrement((LONG *)&__m_RefCount); \
+  if (__m_RefCount != 0) return __m_RefCount; \
+  delete this; return 0; }
 
 #define MY_UNKNOWN_IMP_SPEC_MT2(i1, i) \
   MY_QUERYINTERFACE_BEGIN \
@@ -34,6 +35,14 @@ STDMETHOD_(ULONG, Release)() { InterlockedDecrement((LONG *)&__m_RefCount); if (
   MY_QUERYINTERFACE_ENTRY(i1) \
   MY_QUERYINTERFACE_ENTRY(i2) \
   MY_QUERYINTERFACE_ENTRY(i3) \
+  )
+
+#define MY_UNKNOWN_IMP4_MT(i1, i2, i3, i4) MY_UNKNOWN_IMP_SPEC_MT2( \
+  i1, \
+  MY_QUERYINTERFACE_ENTRY(i1) \
+  MY_QUERYINTERFACE_ENTRY(i2) \
+  MY_QUERYINTERFACE_ENTRY(i3) \
+  MY_QUERYINTERFACE_ENTRY(i4) \
   )
 
 #endif

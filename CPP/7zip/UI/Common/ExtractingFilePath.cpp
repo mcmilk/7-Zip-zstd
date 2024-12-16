@@ -34,10 +34,19 @@ static void ReplaceIncorrectChars(UString &s)
           ||
           #endif
           c == WCHAR_PATH_SEPARATOR)
+      {
+       #if WCHAR_PATH_SEPARATOR != L'/'
+        // 22.00 : WSL replacement for backslash
+        if (c == WCHAR_PATH_SEPARATOR)
+          c = WCHAR_IN_FILE_NAME_BACKSLASH_REPLACEMENT;
+        else
+       #endif
+          c = '_';
         s.ReplaceOneCharAtPos(i,
-          '_' // default
+          c
           // (wchar_t)(0xf000 + c) // 21.02 debug: WSL encoding for unsupported characters
           );
+      }
     }
   }
   

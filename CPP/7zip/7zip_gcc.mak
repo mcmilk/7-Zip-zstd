@@ -3,13 +3,18 @@
 # IS_X64 = 1
 # MY_ARCH =
 # USE_ASM=
+# USE_JWASM=1
 
 MY_ARCH_2 = $(MY_ARCH)
 
-MY_ASM = jwasm
 MY_ASM = asmc
+ifdef USE_JWASM
+MY_ASM = jwasm
+endif
+
 
 PROGPATH = $(O)/$(PROG)
+PROGPATH_STATIC = $(O)/$(PROG)s
 
 
 ifneq ($(CC), xlc)
@@ -28,6 +33,11 @@ CFLAGS_BASE = -O2 $(CFLAGS_BASE_LIST) $(CFLAGS_WARN_WALL) $(CFLAGS_WARN) \
 
 ifdef SystemDrive
 IS_MINGW = 1
+else
+ifdef SYSTEMDRIVE
+# ifdef OS
+IS_MINGW = 1
+endif
 endif
 
 ifdef IS_MINGW
@@ -88,23 +98,34 @@ endif
 
 
 PROGPATH = $(O)/$(PROG)$(SHARED_EXT)
-
+PROGPATH_STATIC = $(O)/$(PROG)s$(SHARED_EXT)
 	
 ifdef IS_MINGW
 
+ifdef MSYSTEM
+RM = rm -f
+MY_MKDIR=mkdir -p
+DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(PROGPATH_STATIC) $(OBJS)
+LIB_HTMLHELP=-lhtmlhelp
+else
 RM = del
 MY_MKDIR=mkdir
-LIB2 = -loleaut32 -luuid -ladvapi32 -lUser32
+DEL_OBJ_EXE = -$(RM) $(O)\*.o $(O)\$(PROG).exe $(O)\$(PROG).dll
+endif
+
+LIB2_GUI = -lOle32 -lGdi32 -lComctl32 -lComdlg32 $(LIB_HTMLHELP)
+LIB2 = -loleaut32 -luuid -ladvapi32 -lUser32 $(LIB2_GUI)
 
 CXXFLAGS_EXTRA = -DUNICODE -D_UNICODE
 # -Wno-delete-non-virtual-dtor
 
-DEL_OBJ_EXE = -$(RM) $(O)\*.o $(O)\$(PROG).exe $(O)\$(PROG).dll
  
 else
 
 RM = rm -f
 MY_MKDIR=mkdir -p
+DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(PROGPATH_STATIC) $(OBJS)
+
 # CFLAGS_BASE := $(CFLAGS_BASE) -D_7ZIP_ST
 # CXXFLAGS_EXTRA = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
 
@@ -112,9 +133,6 @@ MY_MKDIR=mkdir -p
 # LOCAL_LIBS_DLL=$(LOCAL_LIBS) -ldl
 LIB2 = -lpthread -ldl
 
-
-
-DEL_OBJ_EXE = -$(RM) $(PROGPATH) $(OBJS)
 
 endif
 
@@ -124,9 +142,19 @@ CFLAGS = $(MY_ARCH_2) $(LOCAL_FLAGS) $(CFLAGS_BASE2) $(CFLAGS_BASE) $(CC_SHARED)
 
 
 ifdef IS_MINGW
-AFLAGS_ABI = -coff -DABI_CDECL
-AFLAGS = $(AFLAGS_ABI) -Fo$(O)/$(basename $(<F)).o
+
+ifdef IS_X64
+AFLAGS_ABI = -win64
 else
+AFLAGS_ABI = -coff -DABI_CDECL
+# -DABI_CDECL
+# -DABI_LINUX
+# -DABI_CDECL
+endif
+AFLAGS = -nologo $(AFLAGS_ABI) -Fo$(O)/$(basename $(<F)).o
+
+else  # IS_MINGW
+
 ifdef IS_X64
 AFLAGS_ABI = -elf64 -DABI_LINUX
 else
@@ -135,8 +163,11 @@ AFLAGS_ABI = -elf -DABI_LINUX -DABI_CDECL
 # -DABI_LINUX
 # -DABI_CDECL
 endif
-AFLAGS = $(AFLAGS_ABI) -Fo$(O)/
-endif
+AFLAGS = -nologo $(AFLAGS_ABI) -Fo$(O)/
+
+endif  # IS_MINGW
+
+
 
 ifdef USE_ASM
 CONSOLE_ASM_FLAGS=-D_7ZIP_ASM
@@ -150,13 +181,23 @@ CXX_WARN_FLAGS =
 
 CXXFLAGS = $(MY_ARCH_2) $(LOCAL_FLAGS) $(CXXFLAGS_BASE2) $(CFLAGS_BASE) $(CXXFLAGS_EXTRA) $(CC_SHARED) -o $@ $(CXX_WARN_FLAGS)
 
-all: $(O) $(PROGPATH)
+STATIC_TARGET=
+ifdef COMPL_STATIC
+STATIC_TARGET=$(PROGPATH_STATIC)
+endif
+
+
+all: $(O) $(PROGPATH) $(STATIC_TARGET)
 
 $(O):
 	$(MY_MKDIR) $(O)
 
+LFLAGS_ALL = -s $(MY_ARCH_2) $(LDFLAGS) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
 $(PROGPATH): $(OBJS)
-	$(CXX) -o $(PROGPATH) -s $(MY_ARCH_2) $(LDFLAGS) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
+	$(CXX) -o $(PROGPATH) $(LFLAGS_ALL)
+
+$(PROGPATH_STATIC): $(OBJS)
+	$(CXX) -static -o $(PROGPATH_STATIC) $(LFLAGS_ALL)
 
 #	-s strips debug sections from executable in GCC
 
@@ -366,6 +407,8 @@ $O/VirtThread.o: ../../Common/VirtThread.cpp
 	$(CXX) $(CXXFLAGS) $<
 
 
+$O/ApfsHandler.o: ../../Archive/ApfsHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
 $O/ApmHandler.o: ../../Archive/ApmHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/ArchiveExports.o: ../../Archive/ArchiveExports.cpp
@@ -373,6 +416,8 @@ $O/ArchiveExports.o: ../../Archive/ArchiveExports.cpp
 $O/ArHandler.o: ../../Archive/ArHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/ArjHandler.o: ../../Archive/ArjHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/AvbHandler.o: ../../Archive/AvbHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/Base64Handler.o: ../../Archive/Base64Handler.cpp
 	$(CXX) $(CXXFLAGS) $<
@@ -410,6 +455,8 @@ $O/HfsHandler.o: ../../Archive/HfsHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/IhexHandler.o: ../../Archive/IhexHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
+$O/LpHandler.o: ../../Archive/LpHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
 $O/LzhHandler.o: ../../Archive/LzhHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/LzmaHandler.o: ../../Archive/LzmaHandler.cpp
@@ -432,6 +479,8 @@ $O/QcowHandler.o: ../../Archive/QcowHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/RpmHandler.o: ../../Archive/RpmHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
+$O/SparseHandler.o: ../../Archive/SparseHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
 $O/SplitHandler.o: ../../Archive/SplitHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/SquashfsHandler.o: ../../Archive/SquashfsHandler.cpp
@@ -443,6 +492,8 @@ $O/UefiHandler.o: ../../Archive/UefiHandler.cpp
 $O/VdiHandler.o: ../../Archive/VdiHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/VhdHandler.o: ../../Archive/VhdHandler.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/VhdxHandler.o: ../../Archive/VhdxHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/VmdkHandler.o: ../../Archive/VmdkHandler.cpp
 	$(CXX) $(CXXFLAGS) $<
@@ -985,6 +1036,8 @@ $O/TextPairs.o: ../../UI/FileManager/TextPairs.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/UpdateCallback100.o: ../../UI/FileManager/UpdateCallback100.cpp
 	$(CXX) $(CXXFLAGS) $<
+$O/VerCtrl.o: ../../UI/FileManager/VerCtrl.cpp
+	$(CXX) $(CXXFLAGS) $<
 $O/ViewSettings.o: ../../UI/FileManager/ViewSettings.cpp
 	$(CXX) $(CXXFLAGS) $<
 
@@ -1112,12 +1165,15 @@ $O/7zCrcOpt.o: ../../../../Asm/x86/7zCrcOpt.asm
 	$(MY_ASM) $(AFLAGS) $<
 $O/XzCrc64Opt.o: ../../../../Asm/x86/XzCrc64Opt.asm
 	$(MY_ASM) $(AFLAGS) $<
-$O/AesOpt.o: ../../../../Asm/x86/AesOpt.asm
-	$(MY_ASM) $(AFLAGS) $<
 $O/Sha1Opt.o: ../../../../Asm/x86/Sha1Opt.asm
 	$(MY_ASM) $(AFLAGS) $<
 $O/Sha256Opt.o: ../../../../Asm/x86/Sha256Opt.asm
 	$(MY_ASM) $(AFLAGS) $<
+
+ifndef USE_JWASM
+USE_X86_ASM_AES=1
+endif
+
 else
 $O/7zCrcOpt.o: ../../../../C/7zCrcOpt.c
 	$(CC) $(CFLAGS) $<
@@ -1127,9 +1183,17 @@ $O/Sha1Opt.o: ../../../../C/Sha1Opt.c
 	$(CC) $(CFLAGS) $<
 $O/Sha256Opt.o: ../../../../C/Sha256Opt.c
 	$(CC) $(CFLAGS) $<
+endif
+
+
+ifdef USE_X86_ASM_AES
+$O/AesOpt.o: ../../../../Asm/x86/AesOpt.asm
+	$(MY_ASM) $(AFLAGS) $<
+else
 $O/AesOpt.o: ../../../../C/AesOpt.c
 	$(CC) $(CFLAGS) $<
 endif
+
 
 ifdef USE_X64_ASM
 $O/LzFindOpt.o: ../../../../Asm/x86/LzFindOpt.asm

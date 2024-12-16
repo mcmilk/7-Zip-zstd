@@ -27,11 +27,17 @@ static void UdfTimeToFileTime(const CTime &t, NWindows::NCOM::CPropVariant &prop
     return;
   if (t.IsLocal())
     numSecs -= (Int64)((Int32)t.GetMinutesOffset() * 60);
-  FILETIME ft;
-  UInt64 v = (((numSecs * 100 + d[9]) * 100 + d[10]) * 100 + d[11]) * 10;
-  ft.dwLowDateTime = (UInt32)v;
-  ft.dwHighDateTime = (UInt32)(v >> 32);
-  prop = ft;
+  const UInt32 m0 = d[9];
+  const UInt32 m1 = d[10];
+  const UInt32 m2 = d[11];
+  unsigned numDigits = 0;
+  UInt64 v = numSecs * 10000000;
+  if (m0 < 100 && m1 < 100 && m2 < 100)
+  {
+    v += m0 * 100000 + m1 * 1000 + m2 * 10;
+    numDigits = 6;
+  }
+  prop.SetAsTimeFrom_Ft64_Prec(v, k_PropVar_TimePrec_Base + numDigits);
 }
 
 static const Byte kProps[] =
@@ -41,14 +47,23 @@ static const Byte kProps[] =
   kpidSize,
   kpidPackSize,
   kpidMTime,
-  kpidATime
+  kpidATime,
+  kpidCTime,
+  kpidChangeTime,
+  // kpidUserId,
+  // kpidGroupId,
+  // kpidPosixAttrib,
+  kpidLinks
 };
 
 static const Byte kArcProps[] =
 {
-  kpidComment,
+  kpidUnpackVer,
   kpidClusterSize,
-  kpidCTime
+  kpidSectorSize,
+  kpidCTime,
+  kpidMTime,
+  kpidComment
 };
 
 IMP_IInArchive_Props
@@ -62,6 +77,18 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   {
     case kpidPhySize: prop = _archive.PhySize; break;
 
+    case kpidUnpackVer:
+    {
+      if (_archive.LogVols.Size() == 1)
+      {
+        UString s;
+        const CLogVol &vol = _archive.LogVols[0];
+        vol.DomainId.AddUdfVersionTo(s);
+        if (!s.IsEmpty())
+          prop = s;
+      }
+      break;
+    }
     case kpidComment:
     {
       UString comment = _archive.GetComment();
@@ -83,12 +110,21 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       }
       break;
 
+    case kpidSectorSize: prop = ((UInt32)1 << _archive.SecLogSize); break;
+
     case kpidCTime:
       if (_archive.LogVols.Size() == 1)
       {
         const CLogVol &vol = _archive.LogVols[0];
         if (vol.FileSets.Size() >= 1)
-          UdfTimeToFileTime(vol.FileSets[0].RecodringTime, prop);
+          UdfTimeToFileTime(vol.FileSets[0].RecordingTime, prop);
+      }
+      break;
+    case kpidMTime:
+      if (_archive.PrimeVols.Size() == 1)
+      {
+        const CPrimeVol &pv = _archive.PrimeVols[0];
+        UdfTimeToFileTime(pv.RecordingTime, prop);
       }
       break;
 
@@ -153,6 +189,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
     {
       const CLogVol &vol = _archive.LogVols[volIndex];
       bool showFileSetName = (vol.FileSets.Size() > 1);
+      // showFileSetName = true; // for debug
       FOR_VECTOR (fsIndex, vol.FileSets)
       {
         const CFileSet &fs = vol.FileSets[fsIndex];
@@ -205,6 +242,15 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       case kpidPackSize:  if (!item.IsDir()) prop = (UInt64)item.NumLogBlockRecorded * vol.BlockSize; break;
       case kpidMTime:  UdfTimeToFileTime(item.MTime, prop); break;
       case kpidATime:  UdfTimeToFileTime(item.ATime, prop); break;
+      case kpidCTime:
+        if (item.IsExtended)
+            UdfTimeToFileTime(item.CreateTime, prop);
+        break;
+      case kpidChangeTime:  UdfTimeToFileTime(item.AttribTime, prop); break;
+      // case kpidUserId: prop = item.Uid; break;
+      // case kpidGroupId: prop = item.Gid; break;
+      // case kpidPosixAttrib: prop = (UInt32)item.Permissions; break;
+      case kpidLinks: prop = (UInt32)item.FileLinkCount; break;
     }
   }
   prop.Detach(value);
@@ -247,7 +293,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     if (size < len)
       return S_FALSE;
       
-    int partitionIndex = vol.PartitionMaps[extent.PartitionRef].PartitionIndex;
+    const unsigned partitionIndex = vol.PartitionMaps[extent.PartitionRef].PartitionIndex;
     UInt32 logBlockNumber = extent.Pos;
     const CPartition &partition = _archive.Partitions[partitionIndex];
     UInt64 offset = ((UInt64)partition.Pos << _archive.SecLogSize) +

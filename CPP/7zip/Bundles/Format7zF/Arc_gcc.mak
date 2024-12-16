@@ -3,12 +3,20 @@ include ../../LzmaDec_gcc.mak
 LOCAL_FLAGS_ST =
 MT_OBJS =
 
+ifdef SystemDrive
+IS_MINGW = 1
+else
+ifdef SYSTEMDRIVE
+# ifdef OS
+IS_MINGW = 1
+endif
+endif
 
 ifdef ST_MODE
 
 LOCAL_FLAGS_ST = -D_7ZIP_ST
 
-ifdef SystemDrive
+ifdef IS_MINGW
 MT_OBJS = \
   $O/Threads.o \
 
@@ -59,6 +67,7 @@ WIN_OBJS = \
   $O/FileIO.o \
   $O/FileName.o \
   $O/PropVariant.o \
+  $O/PropVariantConv.o \
   $O/PropVariantUtils.o \
   $O/System.o \
   $O/TimeUtils.o \
@@ -82,6 +91,7 @@ WIN_OBJS = \
   $O/UniqBlocks.o \
 
 AR_OBJS = \
+  $O/ApfsHandler.o \
   $O/ApmHandler.o \
   $O/ArHandler.o \
   $O/ArjHandler.o \
@@ -101,6 +111,7 @@ AR_OBJS = \
   $O/HandlerCont.o \
   $O/HfsHandler.o \
   $O/IhexHandler.o \
+  $O/LpHandler.o \
   $O/LzhHandler.o \
   $O/LzmaHandler.o \
   $O/MachoHandler.o \
@@ -112,12 +123,14 @@ AR_OBJS = \
   $O/PpmdHandler.o \
   $O/QcowHandler.o \
   $O/RpmHandler.o \
+  $O/SparseHandler.o \
   $O/SplitHandler.o \
   $O/SquashfsHandler.o \
   $O/SwfHandler.o \
   $O/UefiHandler.o \
   $O/VdiHandler.o \
   $O/VhdHandler.o \
+  $O/VhdxHandler.o \
   $O/VmdkHandler.o \
   $O/XarHandler.o \
   $O/XzHandler.o \
@@ -175,9 +188,13 @@ NSIS_OBJS = \
   $O/NsisIn.o \
   $O/NsisRegister.o \
 
+ifndef DISABLE_RAR
 RAR_OBJS = \
   $O/RarHandler.o \
   $O/Rar5Handler.o \
+
+endif
+
 
 TAR_OBJS = \
   $O/TarHandler.o \
@@ -245,12 +262,6 @@ COMPRESS_OBJS = \
   $O/PpmdRegister.o \
   $O/PpmdZip.o \
   $O/QuantumDecoder.o \
-  $O/Rar1Decoder.o \
-  $O/Rar2Decoder.o \
-  $O/Rar3Decoder.o \
-  $O/Rar3Vm.o \
-  $O/Rar5Decoder.o \
-  $O/RarCodecsRegister.o \
   $O/ShrinkDecoder.o \
   $O/XpressDecoder.o \
   $O/XzDecoder.o \
@@ -259,6 +270,20 @@ COMPRESS_OBJS = \
   $O/ZlibEncoder.o \
   $O/ZDecoder.o \
 
+ifdef DISABLE_RAR
+DISABLE_RAR_COMPRESS=1
+endif
+
+ifndef DISABLE_RAR_COMPRESS
+COMPRESS_OBJS += \
+  $O/Rar1Decoder.o \
+  $O/Rar2Decoder.o \
+  $O/Rar3Decoder.o \
+  $O/Rar3Vm.o \
+  $O/Rar5Decoder.o \
+  $O/RarCodecsRegister.o \
+
+endif
 
 CRYPTO_OBJS = \
   $O/7zAes.o \
@@ -269,12 +294,17 @@ CRYPTO_OBJS = \
   $O/MyAesReg.o \
   $O/Pbkdf2HmacSha1.o \
   $O/RandGen.o \
-  $O/Rar20Crypto.o \
-  $O/Rar5Aes.o \
-  $O/RarAes.o \
   $O/WzAes.o \
   $O/ZipCrypto.o \
   $O/ZipStrong.o \
+
+ifndef DISABLE_RAR
+CRYPTO_OBJS += \
+  $O/Rar20Crypto.o \
+  $O/Rar5Aes.o \
+  $O/RarAes.o \
+
+endif
 
 
 C_OBJS = \
@@ -323,7 +353,7 @@ C_OBJS = \
   $O/Sha1Opt.o \
 
 ARC_OBJS = \
-	$(LZMA_DEC_OPT_OBJS) \
+  $(LZMA_DEC_OPT_OBJS) \
   $(C_OBJS) \
   $(MT_OBJS) \
   $(COMMON_OBJS) \

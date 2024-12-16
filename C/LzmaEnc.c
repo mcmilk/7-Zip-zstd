@@ -1,5 +1,5 @@
 /* LzmaEnc.c -- LZMA Encoder
-2021-07-10: Igor Pavlov : Public domain */
+2022-07-15: Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -668,12 +668,11 @@ static int RangeEnc_Alloc(CRangeEnc *p, ISzAllocPtr alloc)
 static void RangeEnc_Free(CRangeEnc *p, ISzAllocPtr alloc)
 {
   ISzAlloc_Free(alloc, p->bufBase);
-  p->bufBase = 0;
+  p->bufBase = NULL;
 }
 
 static void RangeEnc_Init(CRangeEnc *p)
 {
-  /* Stream.Init(); */
   p->range = 0xFFFFFFFF;
   p->cache = 0;
   p->low = 0;
@@ -687,12 +686,12 @@ static void RangeEnc_Init(CRangeEnc *p)
 
 MY_NO_INLINE static void RangeEnc_FlushStream(CRangeEnc *p)
 {
-  size_t num;
-  if (p->res != SZ_OK)
-    return;
-  num = (size_t)(p->buf - p->bufBase);
-  if (num != ISeqOutStream_Write(p->outStream, p->bufBase, num))
-    p->res = SZ_ERROR_WRITE;
+  const size_t num = (size_t)(p->buf - p->bufBase);
+  if (p->res == SZ_OK)
+  {
+    if (num != ISeqOutStream_Write(p->outStream, p->bufBase, num))
+      p->res = SZ_ERROR_WRITE;
+  }
   p->processed += num;
   p->buf = p->bufBase;
 }
@@ -2946,9 +2945,12 @@ static size_t SeqOutStreamBuf_Write(const ISeqOutStream *pp, const void *data, s
     size = p->rem;
     p->overflow = True;
   }
-  memcpy(p->data, data, size);
-  p->rem -= size;
-  p->data += size;
+  if (size != 0)
+  {
+    memcpy(p->data, data, size);
+    p->rem -= size;
+    p->data += size;
+  }
   return size;
 }
 
@@ -2968,6 +2970,7 @@ const Byte *LzmaEnc_GetCurBuf(CLzmaEncHandle pp)
 }
 
 
+// (desiredPackSize == 0) is not allowed
 SRes LzmaEnc_CodeOneMemBlock(CLzmaEncHandle pp, BoolInt reInit,
     Byte *dest, size_t *destLen, UInt32 desiredPackSize, UInt32 *unpackSize)
 {
@@ -2988,14 +2991,10 @@ SRes LzmaEnc_CodeOneMemBlock(CLzmaEncHandle pp, BoolInt reInit,
   if (reInit)
     LzmaEnc_Init(p);
   LzmaEnc_InitPrices(p);
-
-  nowPos64 = p->nowPos64;
   RangeEnc_Init(&p->rc);
   p->rc.outStream = &outStream.vt;
-
-  if (desiredPackSize == 0)
-    return SZ_ERROR_OUTPUT_EOF;
-
+  nowPos64 = p->nowPos64;
+  
   res = LzmaEnc_CodeOneBlock(p, desiredPackSize, *unpackSize);
   
   *unpackSize = (UInt32)(p->nowPos64 - nowPos64);

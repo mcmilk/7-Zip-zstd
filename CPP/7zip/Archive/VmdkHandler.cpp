@@ -138,7 +138,7 @@ static bool Str_to_ValName(const AString &s, AString &name, AString &val)
   int eq = s.Find('=');
   if (eq < 0 || (qu >= 0 && eq > qu))
     return false;
-  name = s.Left(eq);
+  name.SetFrom(s.Ptr(), eq);
   name.Trim();
   val = s.Ptr(eq + 1);
   val.Trim();
@@ -1430,7 +1430,6 @@ HRESULT CExtent::Open3(IInStream *stream, IArchiveOpenCallback *openCallback,
 STDMETHODIMP CHandler::Close()
 {
   _phySize = 0;
-  _size = 0;
   
   _cacheCluster = (UInt64)(Int64)-1;
   _cacheExtent = (unsigned)(int)-1;
@@ -1450,8 +1449,10 @@ STDMETHODIMP CHandler::Close()
   _descriptorBuf.Free();
   _descriptor.Clear();
 
-  _imgExt = NULL;
-  Stream.Release(); // Stream vriable is unused
+  // CHandlerImg:
+  Clear_HandlerImg_Vars();
+  Stream.Release();
+
   _extents.Clear();
   return S_OK;
 }

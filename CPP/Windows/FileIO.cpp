@@ -8,6 +8,14 @@
 
 // #include <stdio.h>
 
+/*
+#ifndef _WIN32
+// for ioctl BLKGETSIZE64
+#include <sys/ioctl.h>
+#include <linux/fs.h>
+#endif
+*/
+
 #include "FileIO.h"
 #include "FileName.h"
 
@@ -139,11 +147,6 @@ bool CFileBase::Close() throw()
   return true;
 }
 
-bool CFileBase::GetPosition(UInt64 &position) const throw()
-{
-  return Seek(0, FILE_CURRENT, position);
-}
-
 bool CFileBase::GetLength(UInt64 &length) const throw()
 {
   #ifdef SUPPORT_DEVICE_FILE
@@ -154,13 +157,64 @@ bool CFileBase::GetLength(UInt64 &length) const throw()
   }
   #endif
 
-  DWORD sizeHigh;
-  DWORD sizeLow = ::GetFileSize(_handle, &sizeHigh);
-  if (sizeLow == 0xFFFFFFFF)
+  DWORD high = 0;
+  const DWORD low = ::GetFileSize(_handle, &high);
+  if (low == INVALID_FILE_SIZE)
     if (::GetLastError() != NO_ERROR)
       return false;
-  length = (((UInt64)sizeHigh) << 32) + sizeLow;
+  length = (((UInt64)high) << 32) + low;
   return true;
+
+  /*
+  LARGE_INTEGER fileSize;
+  // GetFileSizeEx() is unsupported in 98/ME/NT, and supported in Win2000+
+  if (!GetFileSizeEx(_handle, &fileSize))
+    return false;
+  length = (UInt64)fileSize.QuadPart;
+  return true;
+  */
+}
+
+
+/* Specification for SetFilePointer():
+   
+   If a new file pointer is a negative value,
+   {
+     the function fails,
+     the file pointer is not moved,
+     the code returned by GetLastError() is ERROR_NEGATIVE_SEEK.
+   }
+
+   If the hFile handle is opened with the FILE_FLAG_NO_BUFFERING flag set
+   {
+     an application can move the file pointer only to sector-aligned positions.
+     A sector-aligned position is a position that is a whole number multiple of
+     the volume sector size.
+     An application can obtain a volume sector size by calling the GetDiskFreeSpace.
+   }
+
+   It is not an error to set a file pointer to a position beyond the end of the file.
+   The size of the file does not increase until you call the SetEndOfFile, WriteFile, or WriteFileEx function.
+
+   If the return value is INVALID_SET_FILE_POINTER and if lpDistanceToMoveHigh is non-NULL,
+   an application must call GetLastError to determine whether or not the function has succeeded or failed.
+*/
+
+bool CFileBase::GetPosition(UInt64 &position) const throw()
+{
+  LONG high = 0;
+  const DWORD low = ::SetFilePointer(_handle, 0, &high, FILE_CURRENT);
+  if (low == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
+  {
+    // for error case we can set (position)  to (-1) or (0) or leave (position) unchanged.
+    // position = (UInt64)(Int64)-1; // for debug
+    position = 0;
+    return false;
+  }
+  position = (((UInt64)(UInt32)high) << 32) + low;
+  return true;
+  // we don't want recursed GetPosition()
+  // return Seek(0, FILE_CURRENT, position);
 }
 
 bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition) const throw()
@@ -174,10 +228,18 @@ bool CFileBase::Seek(Int64 distanceToMove, DWORD moveMethod, UInt64 &newPosition
   #endif
 
   LONG high = (LONG)(distanceToMove >> 32);
-  DWORD low = ::SetFilePointer(_handle, (LONG)(distanceToMove & 0xFFFFFFFF), &high, moveMethod);
-  if (low == 0xFFFFFFFF)
-    if (::GetLastError() != NO_ERROR)
+  const DWORD low = ::SetFilePointer(_handle, (LONG)(distanceToMove & 0xFFFFFFFF), &high, moveMethod);
+  if (low == INVALID_SET_FILE_POINTER)
+  {
+    const DWORD lastError = ::GetLastError();
+    if (lastError != NO_ERROR)
+    {
+      // 21.07: we set (newPosition) to real position even after error.
+      GetPosition(newPosition);
+      SetLastError(lastError); // restore LastError
       return false;
+    }
+  }
   newPosition = (((UInt64)(UInt32)high) << 32) + low;
   return true;
 }
@@ -189,8 +251,8 @@ bool CFileBase::Seek(UInt64 position, UInt64 &newPosition) const throw()
 
 bool CFileBase::SeekToBegin() const throw()
 {
-  UInt64 newPosition;
-  return Seek(0, newPosition);
+  UInt64 newPosition = 0;
+  return Seek(0, newPosition) && (newPosition == 0);
 }
 
 bool CFileBase::SeekToEnd(UInt64 &newPosition) const throw()
@@ -498,7 +560,24 @@ bool COutFile::Write(const void *data, UInt32 size, UInt32 &processedSize) throw
     data = (const void *)((const unsigned char *)data + processedLoc);
     size -= processedLoc;
   }
-  while (size > 0);
+  while (size != 0);
+  return true;
+}
+
+bool COutFile::WriteFull(const void *data, size_t size) throw()
+{
+  do
+  {
+    UInt32 processedLoc = 0;
+    const UInt32 sizeCur = (size > kChunkSizeMax ? kChunkSizeMax : (UInt32)size);
+    if (!WritePart(data, sizeCur, processedLoc))
+      return false;
+    if (processedLoc == 0)
+      return (size == 0);
+    data = (const void *)((const unsigned char *)data + processedLoc);
+    size -= processedLoc;
+  }
+  while (size != 0);
   return true;
 }
 
@@ -512,6 +591,22 @@ bool COutFile::SetLength(UInt64 length) throw()
   if (newPosition != length)
     return false;
   return SetEndOfFile();
+}
+
+bool COutFile::SetLength_KeepPosition(UInt64 length) throw()
+{
+  UInt64 currentPos = 0;
+  if (!GetPosition(currentPos))
+    return false;
+  DWORD lastError = 0;
+  const bool result = SetLength(length);
+  if (!result)
+    lastError = GetLastError();
+  UInt64 currentPos2;
+  const bool result2 = Seek(currentPos, currentPos2);
+  if (lastError != 0)
+    SetLastError(lastError);
+  return (result && result2);
 }
 
 }}}
@@ -528,7 +623,7 @@ namespace NWindows {
 namespace NFile {
 
 namespace NDir {
-bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime);
+bool SetDirTime(CFSTR path, const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime);
 }
 
 namespace NIO {
@@ -542,6 +637,19 @@ bool CFileBase::OpenBinary(const char *name, int flags)
   Close();
   _handle = ::open(name, flags, 0666);
   return _handle != -1;
+
+  /*
+  if (_handle == -1)
+    return false;
+  if (IsString1PrefixedByString2(name, "/dev/"))
+  {
+    // /dev/sda
+    // IsDeviceFile = true; // for debug
+    // SizeDefined = false;
+    // SizeDefined = (GetDeviceSize_InBytes(Size) == 0);
+  }
+  return true;
+  */
 }
 
 bool CFileBase::Close()
@@ -551,32 +659,63 @@ bool CFileBase::Close()
   if (close(_handle) != 0)
     return false;
   _handle = -1;
+  /*
+  IsDeviceFile = false;
+  SizeDefined = false;
+  */
   return true;
 }
 
 bool CFileBase::GetLength(UInt64 &length) const
 {
-  const off_t curPos = seek(0, SEEK_CUR);
+  length = 0;
+  // length = (UInt64)(Int64)-1; // for debug
+  const off_t curPos = seekToCur();
   if (curPos == -1)
     return false;
   const off_t lengthTemp = seek(0, SEEK_END);
   seek(curPos, SEEK_SET);
   length = (UInt64)lengthTemp;
+
+  /*
+  // 22.00:
+  if (lengthTemp == 1)
+  if (IsDeviceFile && SizeDefined)
+  {
+    length = Size;
+    return true;
+  }
+  */
+
   return (lengthTemp != -1);
 }
 
 off_t CFileBase::seek(off_t distanceToMove, int moveMethod) const
 {
+  /*
+  if (IsDeviceFile && SizeDefined && moveMethod == SEEK_END)
+  {
+    printf("\n seek : IsDeviceFile moveMethod = %d distanceToMove = %ld\n", moveMethod, distanceToMove);
+    distanceToMove += Size;
+    moveMethod = SEEK_SET;
+  }
+  */
+
   // printf("\nCFileBase::seek() moveMethod = %d, distanceToMove = %lld", moveMethod, (long long)distanceToMove);
   // off_t res = ::lseek(_handle, distanceToMove, moveMethod);
+  // printf("\n lseek : moveMethod = %d distanceToMove = %ld\n", moveMethod, distanceToMove);
   return ::lseek(_handle, distanceToMove, moveMethod);
-  // printf(" res = %lld", (long long)res);
   // return res;
 }
 
 off_t CFileBase::seekToBegin() const throw()
 {
   return seek(0, SEEK_SET);
+}
+
+off_t CFileBase::seekToCur() const throw()
+{
+  return seek(0, SEEK_CUR);
 }
 
 /*
@@ -599,6 +738,28 @@ bool CInFile::OpenShared(const char *name, bool)
 {
   return Open(name);
 }
+
+
+/*
+int CFileBase::my_ioctl_BLKGETSIZE64(unsigned long long *numBlocks)
+{
+  // we can read "/sys/block/sda/size" "/sys/block/sda/sda1/size" - partition
+  // #include <linux/fs.h>
+  return ioctl(_handle, BLKGETSIZE64, numBlocks);
+  // in block size
+}
+
+int CFileBase::GetDeviceSize_InBytes(UInt64 &size)
+{
+  size = 0;
+  unsigned long long numBlocks;
+  int res = my_ioctl_BLKGETSIZE64(&numBlocks);
+  if (res == 0)
+    size = numBlocks; // another blockSize s possible?
+  printf("\nGetDeviceSize_InBytes res = %d, size = %lld\n", res, (long long)size);
+  return res;
+}
+*/
 
 /*
 On Linux (32-bit and 64-bit):
@@ -688,6 +849,7 @@ bool COutFile::SetLength(UInt64 length) throw()
     SetLastError(EFBIG);
     return false;
   }
+  // The value of the seek pointer shall not be modified by a call to ftruncate().
   int iret = ftruncate(_handle, len2);
   return (iret == 0);
 }
@@ -707,7 +869,7 @@ bool COutFile::Close()
   return res;
 }
 
-bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime) throw()
+bool COutFile::SetTime(const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime) throw()
 {
   // On some OS (cygwin, MacOSX ...), you must close the file before updating times
   // return true;
@@ -716,9 +878,22 @@ bool COutFile::SetTime(const FILETIME *cTime, const FILETIME *aTime, const FILET
   if (aTime) { ATime = *aTime; ATime_defined = true; } else ATime_defined = false;
   if (mTime) { MTime = *mTime; MTime_defined = true; } else MTime_defined = false;
   return true;
+
+  /*
+  struct timespec times[2];
+  UNUSED_VAR(cTime)
+  if (!aTime && !mTime)
+    return true;
+  bool needChange;
+  needChange  = FiTime_To_timespec(aTime, times[0]);
+  needChange |= FiTime_To_timespec(mTime, times[1]);
+  if (!needChange)
+    return true;
+  return futimens(_handle, times) == 0;
+  */
 }
 
-bool COutFile::SetMTime(const FILETIME *mTime) throw()
+bool COutFile::SetMTime(const CFiTime *mTime) throw()
 {
   if (mTime) { MTime = *mTime; MTime_defined = true; } else MTime_defined = false;
   return true;

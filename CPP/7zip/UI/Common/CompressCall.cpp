@@ -35,12 +35,16 @@ using namespace NWindows;
 
 #define k7zGui  "7zG.exe"
 
+// 21.07 : we can disable wildcard
+// #define ISWITCH_NO_WILDCARD_POSTFIX "w-"
+#define ISWITCH_NO_WILDCARD_POSTFIX
+
 #define kShowDialogSwitch  " -ad"
 #define kEmailSwitch  " -seml."
-#define kIncludeSwitch  " -i"
 #define kArchiveTypeSwitch  " -t"
-#define kArcIncludeSwitches  " -an -ai"
-#define kHashIncludeSwitches  " -i"
+#define kIncludeSwitch  " -i" ISWITCH_NO_WILDCARD_POSTFIX
+#define kArcIncludeSwitches  " -an -ai" ISWITCH_NO_WILDCARD_POSTFIX
+#define kHashIncludeSwitches  kIncludeSwitch
 #define kStopSwitchParsing  " --"
 
 static NCompression::CInfo m_RegistryInfo;
@@ -330,7 +334,7 @@ static void ExtractGroupCommand(const UStringVector &arcPaths, UString &params, 
     ErrorMessageHRESULT(result);
 }
 
-void ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bool showDialog, bool elimDup)
+void ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bool showDialog, bool elimDup, UInt32 writeZone)
 {
   MY_TRY_BEGIN
   UString params ('x');
@@ -341,28 +345,67 @@ void ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bo
   }
   if (elimDup)
     params += " -spe";
+  if (writeZone != (UInt32)(Int32)-1)
+  {
+    params += " -snz";
+    params.Add_UInt32(writeZone);
+  }
   if (showDialog)
     params += kShowDialogSwitch;
   ExtractGroupCommand(arcPaths, params, false);
   MY_TRY_FINISH_VOID
 }
 
-void TestArchives(const UStringVector &arcPaths)
+
+void TestArchives(const UStringVector &arcPaths, bool hashMode)
 {
   MY_TRY_BEGIN
   UString params ('t');
+  if (hashMode)
+  {
+    params += kArchiveTypeSwitch;
+    params += "hash";
+  }
   ExtractGroupCommand(arcPaths, params, false);
   MY_TRY_FINISH_VOID
 }
 
-void CalcChecksum(const UStringVector &paths, const UString &methodName)
+
+void CalcChecksum(const UStringVector &paths,
+    const UString &methodName,
+    const UString &arcPathPrefix,
+    const UString &arcFileName)
 {
   MY_TRY_BEGIN
+
+  if (!arcFileName.IsEmpty())
+  {
+    CompressFiles(
+      arcPathPrefix,
+      arcFileName,
+      UString("hash"),
+      false, // addExtension,
+      paths,
+      false, // email,
+      false, // showDialog,
+      false  // waitFinish
+      );
+    return;
+  }
+
   UString params ('h');
   if (!methodName.IsEmpty())
   {
     params += " -scrc";
     params += methodName;
+    /*
+    if (!arcFileName.IsEmpty())
+    {
+      // not used alternate method of generating file
+      params += " -scrf=";
+      params += GetQuotedString(arcPathPrefix + arcFileName);
+    }
+    */
   }
   ExtractGroupCommand(paths, params, true);
   MY_TRY_FINISH_VOID

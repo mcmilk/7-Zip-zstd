@@ -148,7 +148,8 @@ namespace NCoderPropID
     kLdmHashLog,        // VT_UI4 The minimum ldmhlog is 6 and the maximum is 26 (default: 20).
     kLdmSearchLength,   // VT_UI4 The minimum ldmslen is 4 and the maximum is 4096 (default: 64).
     kLdmBucketSizeLog,  // VT_UI4 The minimum ldmblog is 0 and the maximum is 8 (default: 3).
-    kLdmHashRateLog     // VT_UI4 The default value is wlog - ldmhlog.
+    kLdmHashRateLog,    // VT_UI4 The default value is wlog - ldmhlog.
+    kEndOfProp
   };
 }
 
@@ -410,7 +411,8 @@ namespace NMethodPropID
     kDescription,
     kDecoderIsAssigned,
     kEncoderIsAssigned,
-    kDigestSize
+    kDigestSize,
+    kIsFilter
   };
 }
 

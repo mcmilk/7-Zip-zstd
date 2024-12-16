@@ -56,6 +56,9 @@ HRESULT CExtractScanConsole::ScanProgress(const CDirItemsStat &st, const FString
 
 HRESULT CExtractScanConsole::ScanError(const FString &path, DWORD systemError)
 {
+  // 22.00:
+  // ScanErrors.AddError(path, systemError);
+
   ClosePercentsAndFlush();
   
   if (_se)
@@ -66,6 +69,10 @@ HRESULT CExtractScanConsole::ScanError(const FString &path, DWORD systemError)
     _se->Flush();
   }
   return HRESULT_FROM_WIN32(systemError);
+
+  // 22.00: commented
+  // CommonError(path, systemError, true);
+  // return S_OK;
 }
 
 
@@ -187,6 +194,7 @@ static NSynchronization::CCriticalSection g_CriticalSection;
 static const char * const kTestString    =  "T";
 static const char * const kExtractString =  "-";
 static const char * const kSkipString    =  ".";
+static const char * const kReadString    =  "H";
 
 // static const char * const kCantAutoRename = "cannot create file with auto name\n";
 // static const char * const kCantRenameFile = "cannot rename existing file\n";
@@ -317,7 +325,7 @@ STDMETHODIMP CExtractCallbackConsole::AskOverwrite(
   return CheckBreak2();
 }
 
-STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, Int32 /* isFolder */, Int32 askExtractMode, const UInt64 *position)
+STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, Int32 isFolder, Int32 askExtractMode, const UInt64 *position)
 {
   MT_LOCK
   
@@ -331,6 +339,7 @@ STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, Int3
     case NArchive::NExtract::NAskMode::kExtract: s = kExtractString; break;
     case NArchive::NExtract::NAskMode::kTest:    s = kTestString; break;
     case NArchive::NExtract::NAskMode::kSkip:    s = kSkipString; requiredLevel = 2; break;
+    case NArchive::NExtract::NAskMode::kReadExternal: s = kReadString; requiredLevel = 0; break;
     default: s = "???"; requiredLevel = 2;
   };
 
@@ -350,6 +359,12 @@ STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, Int3
     {
       _tempU = name;
       _so->Normalize_UString(_tempU);
+      // 21.04
+      if (isFolder)
+      {
+        if (!_tempU.IsEmpty() && _tempU.Back() != WCHAR_PATH_SEPARATOR)
+          _tempU.Add_PathSepar();
+      }
     }
     _so->PrintUString(_tempU, _tempA);
     if (position)

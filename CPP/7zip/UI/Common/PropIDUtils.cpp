@@ -136,10 +136,37 @@ void ConvertPropertyToShortString2(char *dest, const PROPVARIANT &prop, PROPID p
   if (prop.vt == VT_FILETIME)
   {
     const FILETIME &ft = prop.filetime;
-    if ((ft.dwHighDateTime == 0 &&
-         ft.dwLowDateTime == 0))
+    unsigned ns100 = 0;
+    int numDigits = kTimestampPrintLevel_NTFS;
+    const unsigned prec = prop.wReserved1;
+    const unsigned ns100_Temp = prop.wReserved2;
+    if (prec != 0
+        && prec <= k_PropVar_TimePrec_1ns
+        && ns100_Temp < 100
+        && prop.wReserved3 == 0)
+    {
+      ns100 = ns100_Temp;
+      if (prec == k_PropVar_TimePrec_Unix ||
+          prec == k_PropVar_TimePrec_DOS)
+        numDigits = 0;
+      else if (prec == k_PropVar_TimePrec_HighPrec)
+        numDigits = 9;
+      else
+      {
+        numDigits = (int)prec - (int)k_PropVar_TimePrec_Base;
+        if (
+            // numDigits < kTimestampPrintLevel_DAY // for debuf
+            numDigits < kTimestampPrintLevel_SEC
+            )
+
+          numDigits = kTimestampPrintLevel_NTFS;
+      }
+    }
+    if (ft.dwHighDateTime == 0 && ft.dwLowDateTime == 0 && ns100 == 0)
       return;
-    ConvertUtcFileTimeToString(prop.filetime, dest, level);
+    if (level > numDigits)
+      level = numDigits;
+    ConvertUtcFileTimeToString2(ft, ns100, dest, level);
     return;
   }
 
@@ -198,6 +225,24 @@ void ConvertPropertyToShortString2(char *dest, const PROPVARIANT &prop, PROPID p
       ConvertUInt64ToHex(v, dest + 2);
       return;
     }
+
+    /*
+    case kpidDevice:
+    {
+      UInt64 v = 0;
+      if (prop.vt == VT_UI4)
+        v = prop.ulVal;
+      else if (prop.vt == VT_UI8)
+        v = (UInt64)prop.uhVal.QuadPart;
+      else
+        break;
+      ConvertUInt32ToString(MY_dev_major(v), dest);
+      dest += strlen(dest);
+      *dest++ = ',';
+      ConvertUInt32ToString(MY_dev_minor(v), dest);
+      return;
+    }
+    */
   }
   
   ConvertPropVariantToShortString(prop, dest);

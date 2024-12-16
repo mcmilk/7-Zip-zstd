@@ -1591,14 +1591,14 @@ STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
 static void TimeRecordToProp(const CItem &item, unsigned stampIndex, NCOM::CPropVariant &prop)
 {
   unsigned size;
-  int offset = item.FindExtra(NExtraID::kTime, size);
+  const int offset = item.FindExtra(NExtraID::kTime, size);
   if (offset < 0)
     return;
 
   const Byte *p = item.Extra + (unsigned)offset;
   UInt64 flags;
   {
-    unsigned num = ReadVarInt(p, size, &flags);
+    const unsigned num = ReadVarInt(p, size, &flags);
     if (num == 0)
       return;
     p += num;
@@ -1610,8 +1610,8 @@ static void TimeRecordToProp(const CItem &item, unsigned stampIndex, NCOM::CProp
   
   unsigned numStamps = 0;
   unsigned curStamp = 0;
-  unsigned i;
-  for (i = 0; i < 3; i++)
+
+  for (unsigned i = 0; i < 3; i++)
     if ((flags & (NTimeRecord::NFlags::kMTime << i)) != 0)
     {
       if (i == stampIndex)
@@ -1620,20 +1620,28 @@ static void TimeRecordToProp(const CItem &item, unsigned stampIndex, NCOM::CProp
     }
 
   FILETIME ft;
-  
+
+  unsigned timePrec = 0;
+  unsigned ns100 = 0;
+
   if ((flags & NTimeRecord::NFlags::kUnixTime) != 0)
   {
     curStamp *= 4;
     if (curStamp + 4 > size)
       return;
-    const Byte *p2 = p + curStamp;
-    UInt64 val = NTime::UnixTimeToFileTime64(Get32(p2));
+    p += curStamp;
+    UInt64 val = NTime::UnixTime_To_FileTime64(Get32(p));
     numStamps *= 4;
+    timePrec = k_PropVar_TimePrec_Unix;
     if ((flags & NTimeRecord::NFlags::kUnixNs) != 0 && numStamps * 2 <= size)
     {
-      const UInt32 ns = Get32(p2 + numStamps) & 0x3FFFFFFF;
+      const UInt32 ns = Get32(p + numStamps) & 0x3FFFFFFF;
       if (ns < 1000000000)
+      {
         val += ns / 100;
+        ns100 = (unsigned)(ns % 100);
+        timePrec = k_PropVar_TimePrec_1ns;
+      }
     }
     ft.dwLowDateTime = (DWORD)val;
     ft.dwHighDateTime = (DWORD)(val >> 32);
@@ -1643,12 +1651,12 @@ static void TimeRecordToProp(const CItem &item, unsigned stampIndex, NCOM::CProp
     curStamp *= 8;
     if (curStamp + 8 > size)
       return;
-    const Byte *p2 = p + curStamp;
-    ft.dwLowDateTime = Get32(p2);
-    ft.dwHighDateTime = Get32(p2 + 4);
+    p += curStamp;
+    ft.dwLowDateTime = Get32(p);
+    ft.dwHighDateTime = Get32(p + 4);
   }
   
-  prop = ft;
+  prop.SetAsTimeFrom_FT_Prec_Ns100(ft, timePrec, ns100);
 }
 
 
@@ -1715,21 +1723,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     {
       TimeRecordToProp(item, NTimeRecord::k_Index_MTime, prop);
       if (prop.vt == VT_EMPTY && item.Has_UnixMTime())
-      {
-        FILETIME ft;
-        NWindows::NTime::UnixTimeToFileTime(item.UnixMTime, ft);
-        prop = ft;
-      }
+        PropVariant_SetFrom_UnixTime(prop, item.UnixMTime);
       if (prop.vt == VT_EMPTY && ref.Parent >= 0)
       {
         const CItem &baseItem = _items[_refs[ref.Parent].Item];
         TimeRecordToProp(baseItem, NTimeRecord::k_Index_MTime, prop);
         if (prop.vt == VT_EMPTY && baseItem.Has_UnixMTime())
-        {
-          FILETIME ft;
-          NWindows::NTime::UnixTimeToFileTime(baseItem.UnixMTime, ft);
-          prop = ft;
-        }
+          PropVariant_SetFrom_UnixTime(prop, baseItem.UnixMTime);
       }
       break;
     }

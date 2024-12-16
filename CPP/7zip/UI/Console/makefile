@@ -5,6 +5,7 @@ CFLAGS = $(CFLAGS)  \
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
   $O\CRC.obj \
+  $O\DynLimBuf.obj \
   $O\IntToString.obj \
   $O\ListFileUtils.obj \
   $O\NewHandler.obj \
@@ -48,6 +49,7 @@ WIN_OBJS = \
   $O\UniqBlocks.obj \
 
 AR_COMMON_OBJS = \
+  $O\ItemNameUtils.obj \
   $O\OutStreamWithCRC.obj \
 
 COMPRESS_OBJS = \

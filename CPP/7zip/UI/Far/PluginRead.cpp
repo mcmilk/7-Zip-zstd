@@ -37,6 +37,12 @@ HRESULT CPlugin::ExtractFiles(
     const UString &destPath,
     bool passwordIsDefined, const UString &password)
 {
+  if (_agent->_isHashHandler)
+  {
+    g_StartupInfo.ShowMessage(NMessageID::kMoveIsNotSupported);
+    return NFileOperationReturnCode::kError;
+  }
+
   CScreenRestorer screenRestorer;
   CProgressBox progressBox;
   CProgressBox *progressBoxPointer = NULL;

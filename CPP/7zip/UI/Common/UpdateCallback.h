@@ -40,11 +40,18 @@ struct CArcToDoStat
   virtual HRESULT ReadingFileError(const FString &path, DWORD systemError) x; \
   virtual HRESULT SetOperationResult(Int32 opRes) x; \
   virtual HRESULT ReportExtractResult(Int32 opRes, Int32 isEncrypted, const wchar_t *name) x; \
-  virtual HRESULT ReportUpdateOpeartion(UInt32 op, const wchar_t *name, bool isDir) x; \
+  virtual HRESULT ReportUpdateOperation(UInt32 op, const wchar_t *name, bool isDir) x; \
   /* virtual HRESULT SetPassword(const UString &password) x; */ \
   virtual HRESULT CryptoGetTextPassword2(Int32 *passwordIsDefined, BSTR *password) x; \
   virtual HRESULT CryptoGetTextPassword(BSTR *password) x; \
   virtual HRESULT ShowDeleteFile(const wchar_t *name, bool isDir) x; \
+
+  /*
+  virtual HRESULT ReportProp(UInt32 indexType, UInt32 index, PROPID propID, const PROPVARIANT *value) x; \
+  virtual HRESULT ReportRawProp(UInt32 indexType, UInt32 index, PROPID propID, const void *data, UInt32 dataSize, UInt32 propType) x; \
+  virtual HRESULT ReportFinished(UInt32 indexType, UInt32 index, Int32 opRes) x; \
+  */
+ 
   /* virtual HRESULT CloseProgress() { return S_OK; } */
 
 struct IUpdateCallbackUI
@@ -70,6 +77,7 @@ struct CKeyKeyValPair
 class CArchiveUpdateCallback:
   public IArchiveUpdateCallback2,
   public IArchiveUpdateCallbackFile,
+  // public IArchiveUpdateCallbackArcProp,
   public IArchiveExtractCallbackMessage,
   public IArchiveGetRawProps,
   public IArchiveGetRootProps,
@@ -87,9 +95,12 @@ class CArchiveUpdateCallback:
   UInt32 _hardIndex_From;
   UInt32 _hardIndex_To;
 
+  void UpdateProcessedItemStatus(unsigned dirIndex);
+
 public:
   MY_QUERYINTERFACE_BEGIN2(IArchiveUpdateCallback2)
     MY_QUERYINTERFACE_ENTRY(IArchiveUpdateCallbackFile)
+    // MY_QUERYINTERFACE_ENTRY(IArchiveUpdateCallbackArcProp)
     MY_QUERYINTERFACE_ENTRY(IArchiveExtractCallbackMessage)
     MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
     MY_QUERYINTERFACE_ENTRY(IArchiveGetRootProps)
@@ -104,6 +115,7 @@ public:
 
   INTERFACE_IArchiveUpdateCallback2(;)
   INTERFACE_IArchiveUpdateCallbackFile(;)
+  // INTERFACE_IArchiveUpdateCallbackArcProp(;)
   INTERFACE_IArchiveExtractCallbackMessage(;)
   INTERFACE_IArchiveGetRawProps(;)
   INTERFACE_IArchiveGetRootProps(;)
@@ -113,14 +125,16 @@ public:
 
   CRecordVector<UInt32> _openFiles_Indexes;
   FStringVector _openFiles_Paths;
+  // CRecordVector< CInFileStream* > _openFiles_Streams;
 
   bool AreAllFilesClosed() const { return _openFiles_Indexes.IsEmpty(); }
   virtual HRESULT InFileStream_On_Error(UINT_PTR val, DWORD error);
-  virtual void InFileStream_On_Destroy(UINT_PTR val);
+  virtual void InFileStream_On_Destroy(CInFileStream *stream, UINT_PTR val);
 
   CRecordVector<UInt64> VolumesSizes;
   FString VolName;
   FString VolExt;
+  UString ArcFileName; // without path prefix
 
   IUpdateCallbackUI *Callback;
 
@@ -145,7 +159,20 @@ public:
   bool StoreHardLinks;
   bool StoreSymLinks;
 
+  bool StoreOwnerId;
+  bool StoreOwnerName;
+
+  /*
+  bool Need_ArcMTime_Report;
+  bool ArcMTime_WasReported;
+  CArcTime Reported_ArcMTime;
+  */
+  bool Need_LatestMTime;
+  bool LatestMTime_Defined;
+  CFiTime LatestMTime;
+
   Byte *ProcessedItemsStatuses;
+
 
 
   CArchiveUpdateCallback();

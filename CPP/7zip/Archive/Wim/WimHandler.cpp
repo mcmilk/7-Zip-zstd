@@ -355,6 +355,7 @@ static void GetFileTime(const Byte *p, NCOM::CPropVariant &prop)
   prop.vt = VT_FILETIME;
   prop.filetime.dwLowDateTime = Get32(p);
   prop.filetime.dwHighDateTime = Get32(p + 4);
+  prop.Set_FtPrec(k_PropVar_TimePrec_100ns);
 }
 
 
@@ -842,7 +843,7 @@ public:
     int dotPos = name.ReverseFind_Dot();
     if (dotPos < 0)
       dotPos = name.Len();
-    _before = name.Left(dotPos);
+    _before.SetFrom(name.Ptr(), dotPos);
     _after = name.Ptr(dotPos);
   }
 
@@ -877,8 +878,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCal
         curStream = inStream;
       else
       {
-        UString fullName = seqName.GetNextName(i);
-        HRESULT result = openVolumeCallback->GetStream(fullName, &curStream);
+        if (!openVolumeCallback)
+          continue;
+        const UString fullName = seqName.GetNextName(i);
+        const HRESULT result = openVolumeCallback->GetStream(fullName, &curStream);
         if (result == S_FALSE)
           continue;
         if (result != S_OK)
@@ -1206,6 +1209,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
       UInt32 image = 9;
       RINOK(ParsePropToUInt32(L"", prop, image));
       _defaultImageNumber = image;
+    }
+    else if (name.IsPrefixedBy_Ascii_NoCase("mt"))
+    {
+    }
+    else if (name.IsPrefixedBy_Ascii_NoCase("memuse"))
+    {
     }
     else
       return E_INVALIDARG;

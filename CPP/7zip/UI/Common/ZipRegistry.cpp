@@ -2,13 +2,14 @@
 
 #include "StdAfx.h"
 
+#include "../../../../C/CpuArch.h"
+
 #include "../../../Common/IntToString.h"
+#include "../../../Common/StringToInt.h"
 
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/Registry.h"
 #include "../../../Windows/Synchronization.h"
-
-#include "../FileManager/RegistryUtils.h"
 
 #include "ZipRegistry.h"
 
@@ -32,10 +33,43 @@ static LONG CreateMainKey(CKey &key, LPCTSTR keyName)
   return key.Create(HKEY_CURRENT_USER, GetKeyPath(keyName));
 }
 
+static void Key_Set_UInt32(CKey &key, LPCTSTR name, UInt32 value)
+{
+  if (value == (UInt32)(Int32)-1)
+    key.DeleteValue(name);
+  else
+    key.SetValue(name, value);
+}
+
+
+static void Key_Get_UInt32(CKey &key, LPCTSTR name, UInt32 &value)
+{
+  if (key.QueryValue(name, value) != ERROR_SUCCESS)
+    value = (UInt32)(Int32)-1;
+}
+
+
 static void Key_Set_BoolPair(CKey &key, LPCTSTR name, const CBoolPair &b)
 {
   if (b.Def)
     key.SetValue(name, b.Val);
+}
+
+static void Key_Set_bool_if_Changed(CKey &key, LPCTSTR name, bool val)
+{
+  bool oldVal = false;
+  if (key.GetValue_IfOk(name, oldVal) == ERROR_SUCCESS)
+    if (val == oldVal)
+      return;
+  key.SetValue(name, val);
+}
+
+static void Key_Set_BoolPair_Delete_IfNotDef(CKey &key, LPCTSTR name, const CBoolPair &b)
+{
+  if (b.Def)
+    Key_Set_bool_if_Changed(key, name, b.Val);
+  else
+    key.DeleteValue(name);
 }
 
 static void Key_Get_BoolPair(CKey &key, LPCTSTR name, CBoolPair &b)
@@ -69,7 +103,6 @@ void CInfo::Save() const
   CS_LOCK
   CKey key;
   CreateMainKey(key, kKeyName);
-  UStringVector Empty;
 
   if (PathMode_Force)
     key.SetValue(kExtractMode, (UInt32)PathMode);
@@ -83,10 +116,7 @@ void CInfo::Save() const
   Key_Set_BoolPair(key, kShowPassword, ShowPassword);
 
   key.RecurseDeleteKey(kPathHistory);
-  if (WantPathHistory())
-    key.SetValue_Strings(kPathHistory, Paths);
-  else
-    key.SetValue_Strings(kPathHistory, Empty);
+  key.SetValue_Strings(kPathHistory, Paths);
 }
 
 void Save_ShowPassword(bool showPassword)
@@ -166,25 +196,23 @@ static LPCTSTR const kBlockSize = TEXT("BlockSize");
 static LPCTSTR const kNumThreads = TEXT("NumThreads");
 static LPCWSTR const kMethod = L"Method";
 static LPCWSTR const kOptions = L"Options";
-static LPCWSTR const kSplitVolume = L"SplitVolume";
 static LPCWSTR const kEncryptionMethod = L"EncryptionMethod";
 
 static LPCTSTR const kNtSecur = TEXT("Security");
 static LPCTSTR const kAltStreams = TEXT("AltStreams");
 static LPCTSTR const kHardLinks = TEXT("HardLinks");
 static LPCTSTR const kSymLinks = TEXT("SymLinks");
+static LPCTSTR const kPreserveATime = TEXT("PreserveATime");
+
+static LPCTSTR const kTimePrec = TEXT("TimePrec");
+static LPCTSTR const kMTime = TEXT("MTime");
+static LPCTSTR const kATime = TEXT("ATime");
+static LPCTSTR const kCTime = TEXT("CTime");
+static LPCTSTR const kSetArcMTime = TEXT("SetArcMTime");
 
 static void SetRegString(CKey &key, LPCWSTR name, const UString &value)
 {
   if (value.IsEmpty())
-    key.DeleteValue(name);
-  else
-    key.SetValue(name, value);
-}
-
-static void SetRegUInt32(CKey &key, LPCTSTR name, UInt32 value)
-{
-  if (value == (UInt32)(Int32)-1)
     key.DeleteValue(name);
   else
     key.SetValue(name, value);
@@ -196,24 +224,25 @@ static void GetRegString(CKey &key, LPCWSTR name, UString &value)
     value.Empty();
 }
 
-static void GetRegUInt32(CKey &key, LPCTSTR name, UInt32 &value)
-{
-  if (key.QueryValue(name, value) != ERROR_SUCCESS)
-    value = (UInt32)(Int32)-1;
-}
+static LPCWSTR const kMemUse = L"MemUse"
+    #if defined(MY_CPU_SIZEOF_POINTER) && (MY_CPU_SIZEOF_POINTER == 4)
+      L"32";
+    #else
+      L"64";
+    #endif
 
 void CInfo::Save() const
 {
-  UStringVector Empty;
   CS_LOCK
 
   CKey key;
   CreateMainKey(key, kKeyName);
 
-  Key_Set_BoolPair(key, kNtSecur, NtSecurity);
-  Key_Set_BoolPair(key, kAltStreams, AltStreams);
-  Key_Set_BoolPair(key, kHardLinks, HardLinks);
-  Key_Set_BoolPair(key, kSymLinks, SymLinks);
+  Key_Set_BoolPair_Delete_IfNotDef (key, kNtSecur, NtSecurity);
+  Key_Set_BoolPair_Delete_IfNotDef (key, kAltStreams, AltStreams);
+  Key_Set_BoolPair_Delete_IfNotDef (key, kHardLinks, HardLinks);
+  Key_Set_BoolPair_Delete_IfNotDef (key, kSymLinks, SymLinks);
+  Key_Set_BoolPair_Delete_IfNotDef (key, kPreserveATime, PreserveATime);
   
   key.SetValue(kShowPassword, ShowPassword);
   key.SetValue(kLevel, (UInt32)Level);
@@ -221,11 +250,7 @@ void CInfo::Save() const
   key.SetValue(kShowPassword, ShowPassword);
   key.SetValue(kEncryptHeaders, EncryptHeaders);
   key.RecurseDeleteKey(kArcHistory);
-
-  if (WantArcHistory())
-    key.SetValue_Strings(kArcHistory, ArcPaths);
-  else
-    key.SetValue_Strings(kArcHistory, Empty);
+  key.SetValue_Strings(kArcHistory, ArcPaths);
 
   key.RecurseDeleteKey(kOptionsKeyName);
   {
@@ -237,16 +262,22 @@ void CInfo::Save() const
       CKey fk;
       fk.Create(optionsKey, fo.FormatID);
       
-      SetRegUInt32(fk, kLevel, fo.Level);
-      SetRegUInt32(fk, kDictionary, fo.Dictionary);
-      SetRegUInt32(fk, kOrder, fo.Order);
-      SetRegUInt32(fk, kBlockSize, fo.BlockLogSize);
-      SetRegUInt32(fk, kNumThreads, fo.NumThreads);
-
       SetRegString(fk, kMethod, fo.Method);
       SetRegString(fk, kOptions, fo.Options);
-      SetRegString(fk, kSplitVolume, fo.SplitVolume);
       SetRegString(fk, kEncryptionMethod, fo.EncryptionMethod);
+      SetRegString(fk, kMemUse, fo.MemUse);
+
+      Key_Set_UInt32(fk, kLevel, fo.Level);
+      Key_Set_UInt32(fk, kDictionary, fo.Dictionary);
+      Key_Set_UInt32(fk, kOrder, fo.Order);
+      Key_Set_UInt32(fk, kBlockSize, fo.BlockLogSize);
+      Key_Set_UInt32(fk, kNumThreads, fo.NumThreads);
+
+      Key_Set_UInt32(fk, kTimePrec, fo.TimePrec);
+      Key_Set_BoolPair_Delete_IfNotDef (fk, kMTime, fo.MTime);
+      Key_Set_BoolPair_Delete_IfNotDef (fk, kATime, fo.ATime);
+      Key_Set_BoolPair_Delete_IfNotDef (fk, kCTime, fo.CTime);
+      Key_Set_BoolPair_Delete_IfNotDef (fk, kSetArcMTime, fo.SetArcMTime);
     }
   }
 }
@@ -271,6 +302,7 @@ void CInfo::Load()
   Key_Get_BoolPair(key, kAltStreams, AltStreams);
   Key_Get_BoolPair(key, kHardLinks, HardLinks);
   Key_Get_BoolPair(key, kSymLinks, SymLinks);
+  Key_Get_BoolPair(key, kPreserveATime, PreserveATime);
 
   key.GetValue_Strings(kArcHistory, ArcPaths);
   
@@ -289,14 +321,20 @@ void CInfo::Load()
         {
           GetRegString(fk, kMethod, fo.Method);
           GetRegString(fk, kOptions, fo.Options);
-          GetRegString(fk, kSplitVolume, fo.SplitVolume);
           GetRegString(fk, kEncryptionMethod, fo.EncryptionMethod);
+          GetRegString(fk, kMemUse, fo.MemUse);
 
-          GetRegUInt32(fk, kLevel, fo.Level);
-          GetRegUInt32(fk, kDictionary, fo.Dictionary);
-          GetRegUInt32(fk, kOrder, fo.Order);
-          GetRegUInt32(fk, kBlockSize, fo.BlockLogSize);
-          GetRegUInt32(fk, kNumThreads, fo.NumThreads);
+          Key_Get_UInt32(fk, kLevel, fo.Level);
+          Key_Get_UInt32(fk, kDictionary, fo.Dictionary);
+          Key_Get_UInt32(fk, kOrder, fo.Order);
+          Key_Get_UInt32(fk, kBlockSize, fo.BlockLogSize);
+          Key_Get_UInt32(fk, kNumThreads, fo.NumThreads);
+
+          Key_Get_UInt32(fk, kTimePrec, fo.TimePrec);
+          Key_Get_BoolPair(fk, kMTime, fo.MTime);
+          Key_Get_BoolPair(fk, kATime, fo.ATime);
+          Key_Get_BoolPair(fk, kCTime, fo.CTime);
+          Key_Get_BoolPair(fk, kSetArcMTime, fo.SetArcMTime);
 
           Formats.Add(fo);
         }
@@ -311,6 +349,116 @@ void CInfo::Load()
   key.GetValue_IfOk(kShowPassword, ShowPassword);
   key.GetValue_IfOk(kEncryptHeaders, EncryptHeaders);
 }
+
+
+static bool ParseMemUse(const wchar_t *s, CMemUse &mu)
+{
+  mu.Clear();
+
+  bool percentMode = false;
+  {
+    const wchar_t c = *s;
+    if (MyCharLower_Ascii(c) == 'p')
+    {
+      percentMode = true;
+      s++;
+    }
+  }
+  const wchar_t *end;
+  UInt64 number = ConvertStringToUInt64(s, &end);
+  if (end == s)
+    return false;
+  
+  wchar_t c = *end;
+
+  if (percentMode)
+  {
+    if (c != 0)
+      return false;
+    mu.IsPercent = true;
+    mu.Val = number;
+    return true;
+  }
+
+  if (c == 0)
+  {
+    mu.Val = number;
+    return true;
+  }
+
+  c = MyCharLower_Ascii(c);
+
+  const wchar_t c1 = end[1];
+  
+  if (c == '%')
+  {
+    if (c1 != 0)
+      return false;
+    mu.IsPercent = true;
+    mu.Val = number;
+    return true;
+  }
+
+  if (c == 'b')
+  {
+    if (c1 != 0)
+      return false;
+    mu.Val = number;
+    return true;
+  }
+  
+  if (c1 != 0)
+    if (MyCharLower_Ascii(c1) != 'b' || end[2] != 0)
+      return false;
+  
+  unsigned numBits;
+  switch (c)
+  {
+    case 'k': numBits = 10; break;
+    case 'm': numBits = 20; break;
+    case 'g': numBits = 30; break;
+    case 't': numBits = 40; break;
+    default: return false;
+  }
+  if (number >= ((UInt64)1 << (64 - numBits)))
+    return false;
+  mu.Val = number << numBits;
+  return true;
+}
+
+
+void CMemUse::Parse(const UString &s)
+{
+  IsDefined = ParseMemUse(s, *this);
+}
+
+/*
+void MemLimit_Save(const UString &s)
+{
+  CS_LOCK
+  CKey key;
+  CreateMainKey(key, kKeyName);
+  SetRegString(key, kMemUse, s);
+}
+
+bool MemLimit_Load(NCompression::CMemUse &mu)
+{
+  mu.Clear();
+  UString a;
+  {
+    CS_LOCK
+    CKey key;
+    if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
+      return false;
+    if (key.QueryValue(kMemUse, a) != ERROR_SUCCESS)
+      return false;
+  }
+  if (a.IsEmpty())
+    return false;
+  mu.Parse(a);
+  return mu.IsDefined;
+}
+*/
 
 }
 
@@ -370,6 +518,7 @@ static LPCTSTR const kCascadedMenu = TEXT("CascadedMenu");
 static LPCTSTR const kContextMenu = TEXT("ContextMenu");
 static LPCTSTR const kMenuIcons = TEXT("MenuIcons");
 static LPCTSTR const kElimDup = TEXT("ElimDupExtract");
+static LPCTSTR const kWriteZoneId = TEXT("WriteZoneIdExtract");
 
 void CContextMenuInfo::Save() const
 {
@@ -380,6 +529,8 @@ void CContextMenuInfo::Save() const
   Key_Set_BoolPair(key, kCascadedMenu, Cascaded);
   Key_Set_BoolPair(key, kMenuIcons, MenuIcons);
   Key_Set_BoolPair(key, kElimDup, ElimDup);
+
+  Key_Set_UInt32(key, kWriteZoneId, WriteZone);
   
   if (Flags_Def)
     key.SetValue(kContextMenu, Flags);
@@ -396,6 +547,8 @@ void CContextMenuInfo::Load()
   ElimDup.Val = true;
   ElimDup.Def = false;
 
+  WriteZone = (UInt32)(Int32)-1;
+
   Flags = (UInt32)(Int32)-1;
   Flags_Def = false;
   
@@ -408,6 +561,8 @@ void CContextMenuInfo::Load()
   Key_Get_BoolPair_true(key, kCascadedMenu, Cascaded);
   Key_Get_BoolPair_true(key, kElimDup, ElimDup);
   Key_Get_BoolPair(key, kMenuIcons, MenuIcons);
+
+  Key_Get_UInt32(key, kWriteZoneId, WriteZone);
 
   Flags_Def = (key.GetValue_IfOk(kContextMenu, Flags) == ERROR_SUCCESS);
 }

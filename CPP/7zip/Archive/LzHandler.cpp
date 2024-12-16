@@ -451,7 +451,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 }
 
 REGISTER_ARC_I(
-  "lzip", "lz tlz", "* .tar", 0xC4,
+  "lzip", "lz tlz", "* .tar", 0x12,
   k_Signature,
   0,
   NArcInfoFlags::kKeepName,

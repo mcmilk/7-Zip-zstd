@@ -5,6 +5,7 @@
 
 #ifndef _WIN32
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
 #include <unistd.h>
@@ -16,7 +17,6 @@
 
 #include "../Common/StringConvert.h"
 #include "../Common/C_FileIO.h"
-#include "TimeUtils.h"
 #endif
 
 #include "FileDir.h"
@@ -30,6 +30,30 @@ extern bool g_IsNT;
 using namespace NWindows;
 using namespace NFile;
 using namespace NName;
+
+#ifndef _WIN32
+
+static bool FiTime_To_timespec(const CFiTime *ft, timespec &ts)
+{
+  if (ft)
+  {
+    ts = *ft;
+    return true;
+  }
+  // else
+  {
+    ts.tv_sec = 0;
+    ts.tv_nsec =
+    #ifdef UTIME_OMIT
+      UTIME_OMIT; // -2 keep old timesptamp
+    #else
+      // UTIME_NOW; -1 // set to the current time
+      0;
+    #endif
+    return false;
+  }
+}
+#endif
 
 namespace NWindows {
 namespace NFile {
@@ -85,7 +109,7 @@ bool GetSystemDir(FString &path)
 #endif // UNDER_CE
 
 
-bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime)
+bool SetDirTime(CFSTR path, const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime)
 {
   #ifndef _UNICODE
   if (!g_IsNT)
@@ -887,43 +911,43 @@ bool GetCurrentDir(FString &path)
 
   char s[MY__PATH_MAX + 1];
   char *res = getcwd(s, MY__PATH_MAX);
-  if (!res)
+  if (res)
   {
-    // if (errno != ERANGE)
-      return false;
+    path = fas2fs(s);
+    return true;
   }
-  path = fas2fs(s);
-  return true;
-}
-
-
-static void FILETME_To_timespec(const FILETIME *ft, timespec &ts)
-{
-  if (ft)
   {
-    const Int64 sec = NTime::FileTimeToUnixTime64(*ft);
-    // time_t is long
-    const time_t sec2 = (time_t)sec;
-    if (sec2 == sec)
+    // if (errno != ERANGE) return false;
+    #if defined(__GLIBC__) || defined(__APPLE__)
+    /* As an extension to the POSIX.1-2001 standard, glibc's getcwd()
+       allocates the buffer dynamically using malloc(3) if buf is NULL. */
+    res = getcwd(NULL, 0);
+    if (res)
     {
-      ts.tv_sec = sec2;
-      const UInt64 winTime = (((UInt64)ft->dwHighDateTime) << 32) + ft->dwLowDateTime;
-      ts.tv_nsec = (long)((winTime % 10000000) * 100);
-      return;
+      path = fas2fs(res);
+      ::free(res);
+      return true;
     }
-  }
-  // else
-  {
-    ts.tv_sec = 0;
-    // ts.tv_nsec = UTIME_NOW; // set to the current time
-    ts.tv_nsec = UTIME_OMIT; // keep old timesptamp
+    #endif
+    return false;
   }
 }
 
 
 
+// #undef UTIME_OMIT // to debug
 
-bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const FILETIME *mTime)
+#ifndef UTIME_OMIT
+  /* we can define UTIME_OMIT for debian and another systems.
+     Is it OK to define UTIME_OMIT to -2 here, if UTIME_OMIT is not defined? */
+  // #define UTIME_OMIT -2
+#endif
+
+
+
+
+
+bool SetDirTime(CFSTR path, const CFiTime *cTime, const CFiTime *aTime, const CFiTime *mTime)
 {
   // need testing
   /*
@@ -968,9 +992,19 @@ bool SetDirTime(CFSTR path, const FILETIME *cTime, const FILETIME *aTime, const 
   struct timespec times[2];
   UNUSED_VAR(cTime)
   
-  FILETME_To_timespec(aTime, times[0]);
-  FILETME_To_timespec(mTime, times[1]);
+  bool needChange;
+  needChange  = FiTime_To_timespec(aTime, times[0]);
+  needChange |= FiTime_To_timespec(mTime, times[1]);
 
+  /*
+  if (mTime)
+  {
+    printf("\n time = %ld.%9ld\n", mTime->tv_sec, mTime->tv_nsec);
+  }
+  */
+
+  if (!needChange)
+    return true;
   const int flags = 0; // follow link
     // = AT_SYMLINK_NOFOLLOW; // don't follow link
   return utimensat(AT_FDCWD, path, times, flags) == 0;
@@ -1006,6 +1040,10 @@ static C_umask g_umask;
 #define TRACE_chmod(s, mode) \
   PRF(printf("\n chmod(%s, %o)\n", (const char *)path, (unsigned)(mode)));
 
+int my_chown(CFSTR path, uid_t owner, gid_t group)
+{
+  return chown(path, owner, group);
+}
 
 bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib)
 {
@@ -1021,6 +1059,7 @@ bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib)
       TRACE_SetFileAttrib("bad lstat()");
       return false;
     }
+    // TRACE_chmod("lstat", st.st_mode);
   }
   else
   {
@@ -1033,6 +1072,7 @@ bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib)
   
   if (attrib & FILE_ATTRIBUTE_UNIX_EXTENSION)
   {
+    TRACE_SetFileAttrib("attrib & FILE_ATTRIBUTE_UNIX_EXTENSION");
     st.st_mode = attrib >> 16;
     if (S_ISDIR(st.st_mode))
     {
@@ -1044,12 +1084,15 @@ bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib)
   }
   else if (S_ISLNK(st.st_mode))
   {
-    // change it
-    SetLastError(ENOSYS);
-    return false;
+    /* for most systems: permissions for symlinks are fixed to rwxrwxrwx.
+       so we don't need chmod() for symlinks. */
+    return true;
+    // SetLastError(ENOSYS);
+    // return false;
   }
   else
   {
+    TRACE_SetFileAttrib("Only Windows Attributes");
     // Only Windows Attributes
     if (S_ISDIR(st.st_mode)
         || (attrib & FILE_ATTRIBUTE_READONLY) == 0)
@@ -1057,10 +1100,23 @@ bool SetFileAttrib_PosixHighDetect(CFSTR path, DWORD attrib)
     st.st_mode &= ~(mode_t)(S_IWUSR | S_IWGRP | S_IWOTH); // octal: ~0222; // disable write permissions
   }
 
-  TRACE_chmod(path, (st.st_mode) & g_umask.mask);
-  int res = chmod(path, (st.st_mode) & g_umask.mask);
-
-  // TRACE_SetFileAttrib("OK")
+  int res;
+  /*
+  if (S_ISLNK(st.st_mode))
+  {
+    printf("\nfchmodat()\n");
+    TRACE_chmod(path, (st.st_mode) & g_umask.mask);
+    // AT_SYMLINK_NOFOLLOW is not implemted still in Linux.
+    res = fchmodat(AT_FDCWD, path, (st.st_mode) & g_umask.mask,
+        S_ISLNK(st.st_mode) ? AT_SYMLINK_NOFOLLOW : 0);
+  }
+  else
+  */
+  {
+    TRACE_chmod(path, (st.st_mode) & g_umask.mask);
+    res = chmod(path, (st.st_mode) & g_umask.mask);
+  }
+  // TRACE_SetFileAttrib("End")
   return (res == 0);
 }
 

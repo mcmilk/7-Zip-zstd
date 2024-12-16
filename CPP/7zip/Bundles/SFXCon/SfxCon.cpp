@@ -208,7 +208,7 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
   if (!IsWildcardFilePathLegal(name))
     return false;
   */
-  bool isWildcard = DoesNameContainWildcard(name);
+  const bool isWildcard = DoesNameContainWildcard(name);
   bool recursed = false;
 
   switch (type)
@@ -223,7 +223,10 @@ static bool AddNameToCensor(NWildcard::CCensor &wildcardCensor,
       recursed = false;
       break;
   }
-  wildcardCensor.AddPreItem(include, name, recursed, true);
+
+  NWildcard::CCensorPathProps props;
+  props.Recursive = recursed;
+  wildcardCensor.AddPreItem(include, name, props);
   return true;
 }
 

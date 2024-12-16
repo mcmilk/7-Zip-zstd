@@ -1,7 +1,7 @@
-// Common/String.h
+// Common/MyString.h
 
-#ifndef __COMMON_STRING_H
-#define __COMMON_STRING_H
+#ifndef __COMMON_MY_STRING_H
+#define __COMMON_MY_STRING_H
 
 #include <string.h>
 
@@ -13,6 +13,17 @@
 #include "MyWindows.h"
 #include "MyTypes.h"
 #include "MyVector.h"
+
+
+/* if (DEBUG_FSTRING_INHERITS_ASTRING is defined), then
+     FString inherits from AString, so we can find bugs related to FString at compile time.
+   DON'T define DEBUG_FSTRING_INHERITS_ASTRING in release code */
+   
+// #define DEBUG_FSTRING_INHERITS_ASTRING
+
+#ifdef DEBUG_FSTRING_INHERITS_ASTRING
+class FString;
+#endif
 
 
 #ifdef _MSC_VER
@@ -198,6 +209,7 @@ bool StringsAreEqualNoCase(const wchar_t *s1, const wchar_t *s2) throw();
 bool IsString1PrefixedByString2(const char *s1, const char *s2) throw();
 bool IsString1PrefixedByString2(const wchar_t *s1, const wchar_t *s2) throw();
 bool IsString1PrefixedByString2(const wchar_t *s1, const char *s2) throw();
+bool IsString1PrefixedByString2_NoCase_Ascii(const char *s1, const char *s2) throw();
 bool IsString1PrefixedByString2_NoCase_Ascii(const wchar_t *u, const char *a) throw();
 bool IsString1PrefixedByString2_NoCase(const wchar_t *s1, const wchar_t *s2) throw();
 
@@ -289,6 +301,12 @@ class AString
   FORBID_STRING_OPS_AString(long)
   FORBID_STRING_OPS_AString(unsigned long)
 
+ #ifdef DEBUG_FSTRING_INHERITS_ASTRING
+  AString(const FString &s);
+  AString &operator=(const FString &s);
+  AString &operator+=(const FString &s);
+ #endif
+
 public:
   explicit AString();
   explicit AString(char c);
@@ -360,19 +378,21 @@ public:
   void Add_Space_if_NotEmpty();
   void Add_OptSpaced(const char *s);
   void Add_LF();
+  void Add_Slash();
   void Add_PathSepar() { operator+=(CHAR_PATH_SEPARATOR); }
 
   AString &operator+=(const char *s);
   AString &operator+=(const AString &s);
 
   void Add_UInt32(UInt32 v);
+  void Add_UInt64(UInt64 v);
 
+  void AddFrom(const char *s, unsigned len); // no check
   void SetFrom(const char *s, unsigned len); // no check
   void SetFrom_CalcLen(const char *s, unsigned len);
 
   AString Mid(unsigned startIndex, unsigned count) const { return AString(count, _chars + startIndex); }
   AString Left(unsigned count) const { return AString(count, *this); }
-
   // void MakeUpper() { MyStringUpper(_chars); }
   // void MakeLower() { MyStringLower(_chars); }
   void MakeLower_Ascii() { MyStringLower_Ascii(_chars); }
@@ -548,12 +568,18 @@ class UString
 
   FORBID_STRING_OPS_2(UString, char)
 
+ #ifdef DEBUG_FSTRING_INHERITS_ASTRING
+  UString(const FString &s);
+  UString &operator=(const FString &s);
+  UString &operator+=(const FString &s);
+ #endif
+
 public:
   UString();
   explicit UString(wchar_t c);
   explicit UString(char c);
   explicit UString(const char *s);
-  // UString(const AString &s);
+  explicit UString(const AString &s);
   UString(const wchar_t *s);
   UString(const UString &s);
   ~UString() { MY_STRING_DELETE(_chars); }
@@ -632,6 +658,7 @@ public:
   UString &operator+=(const AString &s) { return operator+=(s.Ptr()); }
 
   void Add_UInt32(UInt32 v);
+  void Add_UInt64(UInt64 v);
 
   UString Mid(unsigned startIndex, unsigned count) const { return UString(count, _chars + startIndex); }
   UString Left(unsigned count) const { return UString(count, *this); }
@@ -792,7 +819,16 @@ class UString2
   FORBID_STRING_OPS_UString2(short)
 
   UString2 &operator=(wchar_t c);
-  UString2(wchar_t c);
+
+  UString2(const AString &s);
+  UString2 &operator=(const AString &s);
+  UString2 &operator+=(const AString &s);
+
+ #ifdef DEBUG_FSTRING_INHERITS_ASTRING
+  UString2(const FString &s);
+  UString2 &operator=(const FString &s);
+  UString2 &operator+=(const FString &s);
+ #endif
 
 public:
   UString2(): _chars(NULL), _len(0) {}
@@ -868,8 +904,10 @@ typedef CObjectVector<CSysString> CSysStringVector;
 
 // ---------- FString ----------
 
+#ifndef DEBUG_FSTRING_INHERITS_ASTRING
 #ifdef _WIN32
   #define USE_UNICODE_FSTRING
+#endif
 #endif
 
 #ifdef USE_UNICODE_FSTRING
@@ -890,12 +928,55 @@ typedef CObjectVector<CSysString> CSysStringVector;
   #define __FTEXT(quote) quote
 
   typedef char FChar;
+
+ #ifdef DEBUG_FSTRING_INHERITS_ASTRING
+
+  class FString: public AString
+  {
+    // FString &operator=(const char *s);
+    FString &operator=(const AString &s);
+    // FString &operator+=(const AString &s);
+  public:
+    FString(const AString &s): AString(s.Ptr()) {}
+    FString(const FString &s): AString(s.Ptr()) {}
+    FString(const char *s): AString(s) {}
+    FString() {}
+    FString &operator=(const FString &s)  { AString::operator=((const AString &)s); return *this; }
+    FString &operator=(char c) { AString::operator=(c); return *this; }
+    FString &operator+=(char c) { AString::operator+=(c); return *this; }
+    FString &operator+=(const FString &s) { AString::operator+=((const AString &)s); return *this; }
+    FString Left(unsigned count) const  { return FString(AString::Left(count)); }
+  };
+  void operator+(const AString &s1, const FString &s2);
+  void operator+(const FString &s1, const AString &s2);
+
+  inline FString operator+(const FString &s1, const FString &s2)
+  {
+    AString s =(const AString &)s1 + (const AString &)s2;
+    return FString(s.Ptr());
+    // return FString((const AString &)s1 + (const AString &)s2);
+  }
+  inline FString operator+(const FString &s1, const FChar *s2)
+  {
+    return s1 + (FString)s2;
+  }
+  /*
+  inline FString operator+(const FChar *s1, const FString &s2)
+  {
+    return (FString)s1 + s2;
+  }
+  */
+
+  inline FString fas2fs(const char *s)  { return FString(s); }
+
+ #else // DEBUG_FSTRING_INHERITS_ASTRING
   typedef AString FString;
+  #define fas2fs(_x_) (_x_)
+ #endif // DEBUG_FSTRING_INHERITS_ASTRING
 
   UString fs2us(const FChar *s);
   UString fs2us(const FString &s);
   FString us2fs(const wchar_t *s);
-  #define fas2fs(_x_) (_x_)
   #define fs2fas(_x_) (_x_)
 
 #endif

@@ -70,6 +70,9 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     const UInt32 *indices, UInt32 numItems,
     IProgress *progress)
 {
+  if (moveMode && _agentSpec->_isHashHandler)
+    return E_NOTIMPL;
+
   if (!_agentSpec->CanUpdate())
     return E_NOTIMPL;
 
@@ -207,7 +210,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     FOR_VECTOR (i, pathParts)
     {
       int next = _proxy->FindSubDir(_proxyDirIndex, pathParts[i]);
-      if (next < 0)
+      if (next == -1)
         break;
       _proxyDirIndex = next;
     }
@@ -223,7 +226,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
     {
       bool dirOnly = (i + 1 < pathParts.Size() || !isAltStreamFolder);
       int index = _proxy2->FindItem(_proxyDirIndex, pathParts[i], dirOnly);
-      if (index < 0)
+      if (index == -1)
         break;
       
       const CProxyFile2 &file = _proxy2->Files[_proxy2->Dirs[_proxyDirIndex].Items[index]];
@@ -232,7 +235,7 @@ HRESULT CAgentFolder::CommonUpdateOperation(
         _proxyDirIndex = file.DirIndex;
       else
       {
-        if (file.AltDirIndex >= 0)
+        if (file.AltDirIndex != -1)
           _proxyDirIndex = file.AltDirIndex;
         break;
       }
@@ -348,7 +351,7 @@ STDMETHODIMP CAgentFolder::CreateFolder(const wchar_t *name, IProgress *progress
   }
   else
   {
-    if (_proxy->FindSubDir(_proxyDirIndex, name) >= 0)
+    if (_proxy->FindSubDir(_proxyDirIndex, name) != -1)
       return ERROR_ALREADY_EXISTS;
   }
   
