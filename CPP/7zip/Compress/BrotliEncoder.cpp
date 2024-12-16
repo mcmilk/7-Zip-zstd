@@ -119,10 +119,7 @@ Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream,
   Rd.processedOut = &_processedOut;
 
   struct BrotliStream Wr;
-//  if (_processedIn == 0)
   Wr.progress = progress;
-//  else
-//    Wr.progress = 0;
   Wr.inStream = inStream;
   Wr.outStream = outStream;
   Wr.processedIn = &_processedIn;

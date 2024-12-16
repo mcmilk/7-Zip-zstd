@@ -266,7 +266,6 @@ static const EMethodID g_ZipMethods[] =
   kPPMdZip,
   kZSTD,
   kCopy
-  // , kZSTD
 };
 
 static const EMethodID g_GZipMethods[] =
@@ -1732,6 +1731,8 @@ void CCompressDialog::SetLevel2()
       s += L" (";
       s += LangString(g_Levels[langID]);
       s += L")";
+      int index = (int)m_Level.AddString(s);
+      m_Level.SetItemData(index, i);
       langID++;
     } else {
       UString s = t;

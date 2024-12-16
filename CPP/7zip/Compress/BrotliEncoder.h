@@ -48,6 +48,7 @@ public:
 
   Int32 _Long;
   Int32 _WindowLog;
+  UInt64 unpackSize;
 
   BROTLIMT_CCtx *_ctx;
 
@@ -59,9 +60,6 @@ public:
   Z7_COM_ADDREF_RELEASE
 
 public:
-
-  UInt64 unpackSize;
-
   Z7_IFACE_COM7_IMP(ICompressCoder)
   Z7_IFACE_COM7_IMP(ICompressWriteCoderProperties)
   Z7_IFACE_COM7_IMP(ICompressSetCoderMt)
