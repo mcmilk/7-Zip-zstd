@@ -1,19 +1,17 @@
 // Agent/Agent.h
 
-#ifndef __AGENT_AGENT_H
-#define __AGENT_AGENT_H
+#ifndef ZIP7_INC_AGENT_AGENT_H
+#define ZIP7_INC_AGENT_AGENT_H
 
 #include "../../../Common/MyCom.h"
 
 #include "../../../Windows/PropVariant.h"
 
+#include "../Common/LoadCodecs.h"
 #include "../Common/OpenArchive.h"
 #include "../Common/UpdateAction.h"
 
-#ifdef NEW_FOLDER_INTERFACE
 #include "../FileManager/IFolder.h"
-#include "../Common/LoadCodecs.h"
-#endif
 
 #include "AgentProxy.h"
 #include "IFolderArchive.h"
@@ -24,10 +22,13 @@ void FreeGlobalCodecs();
 
 class CAgentFolder;
 
-DECL_INTERFACE(IArchiveFolderInternal, 0x01, 0xC)
-{
-  STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder) PURE;
-};
+Z7_PURE_INTERFACES_BEGIN
+
+#define Z7_IFACEM_IArchiveFolderInternal(x) \
+  x(GetAgentFolder(CAgentFolder **agentFolder))
+Z7_IFACE_CONSTR_FOLDERARC(IArchiveFolderInternal, 0xC)
+
+Z7_PURE_INTERFACES_END
 
 struct CProxyItem
 {
@@ -47,7 +48,7 @@ enum AGENT_OP
   AGENT_OP_Comment
 };
 
-class CAgentFolder:
+class CAgentFolder Z7_final:
   public IFolderFolder,
   public IFolderAltStreams,
   public IFolderProperties,
@@ -59,64 +60,50 @@ class CAgentFolder:
   public IArchiveFolderInternal,
   public IInArchiveGetStream,
   public IFolderSetZoneIdMode,
-#ifdef NEW_FOLDER_INTERFACE
   public IFolderOperations,
   public IFolderSetFlatMode,
-#endif
   public CMyUnknownImp
 {
-  void LoadFolder(unsigned proxyDirIndex);
+  Z7_COM_QI_BEGIN2(IFolderFolder)
+    Z7_COM_QI_ENTRY(IFolderAltStreams)
+    Z7_COM_QI_ENTRY(IFolderProperties)
+    Z7_COM_QI_ENTRY(IArchiveGetRawProps)
+    Z7_COM_QI_ENTRY(IGetFolderArcProps)
+    Z7_COM_QI_ENTRY(IFolderCompare)
+    Z7_COM_QI_ENTRY(IFolderGetItemName)
+    Z7_COM_QI_ENTRY(IArchiveFolder)
+    Z7_COM_QI_ENTRY(IArchiveFolderInternal)
+    Z7_COM_QI_ENTRY(IInArchiveGetStream)
+    Z7_COM_QI_ENTRY(IFolderSetZoneIdMode)
+    Z7_COM_QI_ENTRY(IFolderOperations)
+    Z7_COM_QI_ENTRY(IFolderSetFlatMode)
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
+
+  Z7_IFACE_COM7_IMP(IFolderFolder)
+  Z7_IFACE_COM7_IMP(IFolderAltStreams)
+  Z7_IFACE_COM7_IMP(IFolderProperties)
+  Z7_IFACE_COM7_IMP(IArchiveGetRawProps)
+  Z7_IFACE_COM7_IMP(IGetFolderArcProps)
+  Z7_IFACE_COM7_IMP(IFolderCompare)
+  Z7_IFACE_COM7_IMP(IFolderGetItemName)
+  Z7_IFACE_COM7_IMP(IArchiveFolder)
+  Z7_IFACE_COM7_IMP(IArchiveFolderInternal)
+  Z7_IFACE_COM7_IMP(IInArchiveGetStream)
+  Z7_IFACE_COM7_IMP(IFolderSetZoneIdMode)
+  Z7_IFACE_COM7_IMP(IFolderOperations)
+  Z7_IFACE_COM7_IMP(IFolderSetFlatMode)
+
+   void LoadFolder(unsigned proxyDirIndex);
 public:
-
-  MY_QUERYINTERFACE_BEGIN2(IFolderFolder)
-    MY_QUERYINTERFACE_ENTRY(IFolderAltStreams)
-    MY_QUERYINTERFACE_ENTRY(IFolderProperties)
-    MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
-    MY_QUERYINTERFACE_ENTRY(IGetFolderArcProps)
-    MY_QUERYINTERFACE_ENTRY(IFolderCompare)
-    MY_QUERYINTERFACE_ENTRY(IFolderGetItemName)
-    MY_QUERYINTERFACE_ENTRY(IArchiveFolder)
-    MY_QUERYINTERFACE_ENTRY(IArchiveFolderInternal)
-    MY_QUERYINTERFACE_ENTRY(IInArchiveGetStream)
-    MY_QUERYINTERFACE_ENTRY(IFolderSetZoneIdMode)
-  #ifdef NEW_FOLDER_INTERFACE
-    MY_QUERYINTERFACE_ENTRY(IFolderOperations)
-    MY_QUERYINTERFACE_ENTRY(IFolderSetFlatMode)
-  #endif
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
-
   HRESULT BindToFolder_Internal(unsigned proxyDirIndex, IFolderFolder **resultFolder);
   HRESULT BindToAltStreams_Internal(unsigned proxyDirIndex, IFolderFolder **resultFolder);
   int GetRealIndex(unsigned index) const;
   void GetRealIndices(const UInt32 *indices, UInt32 numItems,
       bool includeAltStreams, bool includeFolderSubItemsInFlatMode, CUIntVector &realIndices) const;
 
-  INTERFACE_IFolderSetZoneIdMode(;)
-
-  INTERFACE_FolderFolder(;)
-  INTERFACE_FolderAltStreams(;)
-  INTERFACE_FolderProperties(;)
-  INTERFACE_IArchiveGetRawProps(;)
-  INTERFACE_IFolderGetItemName(;)
-
-  STDMETHOD(GetFolderArcProps)(IFolderArcProps **object);
-  STDMETHOD_(Int32, CompareItems)(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw);
   int CompareItems3(UInt32 index1, UInt32 index2, PROPID propID);
   int CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw);
-
-  // IArchiveFolder
-  INTERFACE_IArchiveFolder(;)
-  
-  STDMETHOD(GetAgentFolder)(CAgentFolder **agentFolder);
-
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
-
-  #ifdef NEW_FOLDER_INTERFACE
-  INTERFACE_FolderOperations(;)
-
-  STDMETHOD(SetFlatMode)(Int32 flatMode);
-  #endif
 
   CAgentFolder():
       _proxyDirIndex(0),
@@ -173,32 +160,32 @@ public:
   NExtract::NZoneIdMode::EEnum _zoneMode;
 };
 
-class CAgent:
+class CAgent Z7_final:
   public IInFolderArchive,
   public IFolderArcProps,
-  #ifndef EXTRACT_ONLY
+ #ifndef Z7_EXTRACT_ONLY
   public IOutFolderArchive,
   public ISetProperties,
-  #endif
+ #endif
   public CMyUnknownImp
 {
+  Z7_COM_QI_BEGIN2(IInFolderArchive)
+    Z7_COM_QI_ENTRY(IFolderArcProps)
+ #ifndef Z7_EXTRACT_ONLY
+    Z7_COM_QI_ENTRY(IOutFolderArchive)
+    Z7_COM_QI_ENTRY(ISetProperties)
+ #endif
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
+
+  Z7_IFACE_COM7_IMP(IInFolderArchive)
+  Z7_IFACE_COM7_IMP(IFolderArcProps)
+
+ #ifndef Z7_EXTRACT_ONLY
+  Z7_IFACE_COM7_IMP(ISetProperties)
+
 public:
-
-  MY_QUERYINTERFACE_BEGIN2(IInFolderArchive)
-    MY_QUERYINTERFACE_ENTRY(IFolderArcProps)
-  #ifndef EXTRACT_ONLY
-    MY_QUERYINTERFACE_ENTRY(IOutFolderArchive)
-    MY_QUERYINTERFACE_ENTRY(ISetProperties)
-  #endif
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
-
-  INTERFACE_IInFolderArchive(;)
-  INTERFACE_IFolderArcProps(;)
-
-  #ifndef EXTRACT_ONLY
-  INTERFACE_IOutFolderArchive(;)
-
+  Z7_IFACE_COM7_IMP(IOutFolderArchive)
   HRESULT CommonUpdate(ISequentialOutStream *outArchiveStream,
       unsigned numUpdateItems, IArchiveUpdateCallback *updateCallback);
   
@@ -216,15 +203,11 @@ public:
   HRESULT UpdateOneFile(ISequentialOutStream *outArchiveStream,
       const UInt32 *indices, UInt32 numItems, const wchar_t *diskFilePath,
       IFolderArchiveUpdateCallback *updateCallback100);
+ #endif
 
-  // ISetProperties
-  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
-  #endif
-
-  CAgent();
-  ~CAgent();
 private:
   HRESULT ReadItems();
+
 public:
   CProxyArc *_proxy;
   CProxyArc2 *_proxy2;
@@ -248,13 +231,16 @@ public:
   bool _isHashHandler;
   FString _hashBaseFolderPrefix;
 
-  #ifndef EXTRACT_ONLY
+ #ifndef Z7_EXTRACT_ONLY
   CObjectVector<UString> m_PropNames;
   CObjectVector<NWindows::NCOM::CPropVariant> m_PropValues;
-  #endif
+ #endif
+
+  CAgent();
+  ~CAgent();
 
   const CArc &GetArc() const { return _archiveLink.Arcs.Back(); }
-  IInArchive *GetArchive() const { if ( _archiveLink.Arcs.IsEmpty()) return 0; return GetArc().Archive; }
+  IInArchive *GetArchive() const { if ( _archiveLink.Arcs.IsEmpty()) return NULL; return GetArc().Archive; }
   bool CanUpdate() const;
 
   bool Is_Attrib_ReadOnly() const
@@ -285,7 +271,7 @@ public:
   UString GetErrorMessage() const
   {
     UString s;
-    for (int i = _archiveLink.Arcs.Size() - 1; i >= 0; i--)
+    for (int i = (int)_archiveLink.Arcs.Size() - 1; i >= 0; i--)
     {
       const CArc &arc = _archiveLink.Arcs[i];
 
@@ -326,23 +312,42 @@ public:
   }
 
   void KeepModeForNextOpen() { _archiveLink.KeepModeForNextOpen(); }
-
 };
 
 
-#ifdef NEW_FOLDER_INTERFACE
+// #ifdef NEW_FOLDER_INTERFACE
 
-class CArchiveFolderManager:
-  public IFolderManager,
-  public CMyUnknownImp
+struct CCodecIcons
 {
-  void LoadFormats();
-  int FindFormat(const UString &type);
-public:
-  MY_UNKNOWN_IMP1(IFolderManager)
-  INTERFACE_IFolderManager(;)
+  struct CIconPair
+  {
+    UString Ext;
+    int IconIndex;
+  };
+  CObjectVector<CIconPair> IconPairs;
+
+  // void Clear() { IconPairs.Clear(); }
+  void LoadIcons(HMODULE m);
+  bool FindIconIndex(const UString &ext, int &iconIndex) const;
 };
 
-#endif
+
+Z7_CLASS_IMP_COM_1(
+  CArchiveFolderManager
+  , IFolderManager
+)
+  CObjectVector<CCodecIcons> CodecIconsVector;
+  CCodecIcons InternalIcons;
+  bool WasLoaded;
+
+  void LoadFormats();
+  // int FindFormat(const UString &type);
+public:
+  CArchiveFolderManager():
+      WasLoaded(false)
+      {}
+};
+
+// #endif
 
 #endif

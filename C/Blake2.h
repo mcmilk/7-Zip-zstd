@@ -1,9 +1,9 @@
 /* Blake2.h -- BLAKE2 Hash
-2015-06-30 : Igor Pavlov : Public domain
+2023-03-04 : Igor Pavlov : Public domain
 2015 : Samuel Neves : Public domain */
 
-#ifndef __BLAKE2_H
-#define __BLAKE2_H
+#ifndef ZIP7_INC_BLAKE2_H
+#define ZIP7_INC_BLAKE2_H
 
 #include "7zTypes.h"
 

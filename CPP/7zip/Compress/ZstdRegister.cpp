@@ -6,7 +6,7 @@
 
 #include "ZstdDecoder.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 #include "ZstdEncoder.h"
 #endif
 

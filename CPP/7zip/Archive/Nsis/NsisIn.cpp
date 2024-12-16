@@ -6,7 +6,6 @@
 #include "../../../Common/StringToInt.h"
 
 #include "../../Common/LimitedStreams.h"
-#include "../../Common/StreamUtils.h"
 
 #include "NsisIn.h"
 
@@ -32,7 +31,7 @@ static const unsigned kCmdSize = 4 + kNumCommandParams * 4;
 
 static const char * const kErrorStr = "$_ERROR_STR_";
 
-#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
+#define RINOZ(x) { int _tt_ = (x); if (_tt_ != 0) return _tt_; }
 
 
 /* There are several versions of NSIS:
@@ -466,8 +465,8 @@ void CInArchive::AddLicense(UInt32 param, Int32 langID)
   }
   strUsed[param] = 1;
 
-  UInt32 start = _stringsPos + (IsUnicode ? param * 2 : param);
-  UInt32 offset = start + (IsUnicode ? 2 : 1);
+  const UInt32 start = _stringsPos + (IsUnicode ? param * 2 : param);
+  const UInt32 offset = start + (IsUnicode ? 2 : 1);
   {
     FOR_VECTOR (i, LicenseFiles)
     {
@@ -484,16 +483,16 @@ void CInArchive::AddLicense(UInt32 param, Int32 langID)
   {
     fileName += "\\license-";
     // LangId_To_String(fileName, langID);
-    UIntToString(fileName, langID);
+    UIntToString(fileName, (UInt32)langID);
   }
   else if (++_numRootLicenses > 1)
   {
-    fileName += '-';
+    fileName.Add_Minus();
     UIntToString(fileName, _numRootLicenses);
   }
   const Byte *sz = (_data + start);
-  unsigned marker = IsUnicode ? Get16(sz) : *sz;
-  bool isRTF = (marker == 2);
+  const unsigned marker = IsUnicode ? Get16(sz) : *sz;
+  const bool isRTF = (marker == 2);
   fileName += isRTF ? ".rtf" : ".txt"; // if (*sz == 1) it's text;
   Script += fileName;
 
@@ -505,7 +504,7 @@ void CInArchive::AddLicense(UInt32 param, Int32 langID)
   else
   {
     sz += 2;
-    UInt32 len = GetUi16Str_Len(sz);
+    const UInt32 len = GetUi16Str_Len(sz);
     lic.Size = len * 2;
     if (isRTF)
     {
@@ -523,6 +522,26 @@ void CInArchive::AddLicense(UInt32 param, Int32 langID)
   }
 }
 
+#endif
+
+
+#ifdef NSIS_SCRIPT
+#define Z7_NSIS_WIN_GENERIC_READ    ((UInt32)1 << 31)
+#endif
+#define Z7_NSIS_WIN_GENERIC_WRITE   ((UInt32)1 << 30)
+#ifdef NSIS_SCRIPT
+#define Z7_NSIS_WIN_GENERIC_EXECUTE ((UInt32)1 << 29)
+#define Z7_NSIS_WIN_GENERIC_ALL     ((UInt32)1 << 28)
+#endif
+
+#ifdef NSIS_SCRIPT
+#define Z7_NSIS_WIN_CREATE_NEW        1
+#endif
+#define Z7_NSIS_WIN_CREATE_ALWAYS     2
+#ifdef NSIS_SCRIPT
+#define Z7_NSIS_WIN_OPEN_EXISTING     3
+#define Z7_NSIS_WIN_OPEN_ALWAYS       4
+#define Z7_NSIS_WIN_TRUNCATE_EXISTING 5
 #endif
 
 
@@ -562,9 +581,9 @@ static const char * const kVarStrings[] =
   , "_OUTDIR"   // NSIS 2.04+
 };
 
-static const unsigned kNumInternalVars = 20 + ARRAY_SIZE(kVarStrings);
+static const unsigned kNumInternalVars = 20 + Z7_ARRAY_SIZE(kVarStrings);
 
-#define GET_NUM_INTERNAL_VARS (IsNsis200 ? kNumInternalVars - 3 : IsNsis225 ? kNumInternalVars - 2 : kNumInternalVars);
+#define GET_NUM_INTERNAL_VARS (IsNsis200 ? kNumInternalVars - 3 : IsNsis225 ? kNumInternalVars - 2 : kNumInternalVars)
 
 void CInArchive::GetVar2(AString &res, UInt32 index)
 {
@@ -643,7 +662,7 @@ void CInArchive::AddParam_UInt(UInt32 value)
 #define IS_NS_SPEC_CHAR(c) ((c) >= NS_CODE_SKIP)
 #define IS_PARK_SPEC_CHAR(c) ((c) >= PARK_CODE_SKIP && (c) <= PARK_CODE_LANG)
 
-#define DECODE_NUMBER_FROM_2_CHARS(c0, c1) (((c0) & 0x7F) | (((unsigned)((c1) & 0x7F)) << 7))
+#define DECODE_NUMBER_FROM_2_CHARS(c0, c1) (((unsigned)(c0) & 0x7F) | (((unsigned)((c1) & 0x7F)) << 7))
 #define CONVERT_NUMBER_NS_3_UNICODE(n) n = ((n & 0x7F) | (((n >> 8) & 0x7F) << 7))
 #define CONVERT_NUMBER_PARK(n) n &= 0x7FFF
 
@@ -738,7 +757,7 @@ void CInArchive::GetShellString(AString &s, unsigned index1, unsigned index2)
   }
 
   s += '$';
-  if (index1 < ARRAY_SIZE(kShellStrings))
+  if (index1 < Z7_ARRAY_SIZE(kShellStrings))
   {
     const char *sz = kShellStrings[index1];
     if (sz)
@@ -747,7 +766,7 @@ void CInArchive::GetShellString(AString &s, unsigned index1, unsigned index2)
       return;
     }
   }
-  if (index2 < ARRAY_SIZE(kShellStrings))
+  if (index2 < Z7_ARRAY_SIZE(kShellStrings))
   {
     const char *sz = kShellStrings[index2];
     if (sz)
@@ -1151,7 +1170,7 @@ void CInArchive::ReadString2_Raw(UInt32 pos)
   Raw_AString.Empty();
   Raw_UString.Empty();
   if ((Int32)pos < 0)
-    Add_LangStr(Raw_AString, -((Int32)pos + 1));
+    Add_LangStr(Raw_AString, (UInt32)-((Int32)pos + 1));
   else if (pos >= NumStringChars)
   {
     Raw_AString += kErrorStr;
@@ -1361,7 +1380,7 @@ void CInArchive::ReadString2(AString &s, UInt32 pos)
 {
   if ((Int32)pos < 0)
   {
-    Add_LangStr(s, -((Int32)pos + 1));
+    Add_LangStr(s, (UInt32)-((Int32)pos + 1));
     return;
   }
 
@@ -1537,7 +1556,7 @@ static const UInt32 CMD_REF_Leave   = (1 << 4);
 static const UInt32 CMD_REF_OnFunc  = (1 << 5);
 static const UInt32 CMD_REF_Section = (1 << 6);
 static const UInt32 CMD_REF_InitPluginDir = (1 << 7);
-// static const UInt32 CMD_REF_Creator = (1 << 5); // _Pre is used instead
+// static const UInt32 CMD_REF_Creator = (1 << 5); // CMD_REF_Pre is used instead
 static const unsigned CMD_REF_OnFunc_NumShifts = 28; // it uses for onFunc too
 static const unsigned CMD_REF_Page_NumShifts = 16; // it uses for onFunc too
 static const UInt32 CMD_REF_Page_Mask   = 0x0FFF0000;
@@ -1617,7 +1636,7 @@ void CInArchive::Add_GotoVar(UInt32 param)
 {
   Space();
   if ((Int32)param < 0)
-    Add_Var(-((Int32)param + 1));
+    Add_Var((UInt32)-((Int32)param + 1));
   else
     Add_LabelName(param - 1);
 }
@@ -1647,8 +1666,8 @@ static bool NoLabels(const UInt32 *labels, UInt32 num)
 
 static const char * const k_REBOOTOK = " /REBOOTOK";
 
-#define MY__MB_ABORTRETRYIGNORE 2
-#define MY__MB_RETRYCANCEL      5
+#define Z7_NSIS_WIN_MB_ABORTRETRYIGNORE 2
+#define Z7_NSIS_WIN_MB_RETRYCANCEL      5
 
 static const char * const k_MB_Buttons[] =
 {
@@ -1661,7 +1680,7 @@ static const char * const k_MB_Buttons[] =
   , "CANCELTRYCONTINUE"
 };
 
-#define MY__MB_ICONSTOP   (1 << 4)
+#define Z7_NSIS_WIN_MB_ICONSTOP   (1 << 4)
 
 static const char * const k_MB_Icons[] =
 {
@@ -1684,8 +1703,8 @@ static const char * const k_MB_Flags[] =
   // , "SERVICE_NOTIFICATION" // unsupported. That bit is used for NSIS purposes
 };
 
-#define MY__IDCANCEL 2
-#define MY__IDIGNORE 5
+#define Z7_NSIS_WIN_IDCANCEL 2
+#define Z7_NSIS_WIN_IDIGNORE 5
 
 static const char * const k_Button_IDs[] =
 {
@@ -1706,7 +1725,7 @@ static const char * const k_Button_IDs[] =
 void CInArchive::Add_ButtonID(UInt32 buttonID)
 {
   Space();
-  if (buttonID < ARRAY_SIZE(k_Button_IDs))
+  if (buttonID < Z7_ARRAY_SIZE(k_Button_IDs))
     Script += k_Button_IDs[buttonID];
   else
   {
@@ -1774,19 +1793,8 @@ void CNsis_CtlColors::Parse(const Byte *p, bool is64)
 }
 
 // Win32 constants
-#define MY__TRANSPARENT 1
-// #define MY__OPAQUE      2
-
-#define MY__GENERIC_READ    ((UInt32)1 << 31)
-#define MY__GENERIC_WRITE   ((UInt32)1 << 30)
-#define MY__GENERIC_EXECUTE ((UInt32)1 << 29)
-#define MY__GENERIC_ALL     ((UInt32)1 << 28)
-
-#define MY__CREATE_NEW        1
-#define MY__CREATE_ALWAYS     2
-#define MY__OPEN_EXISTING     3
-#define MY__OPEN_ALWAYS       4
-#define MY__TRUNCATE_EXISTING 5
+#define Z7_NSIS_WIN_TRANSPARENT 1
+// #define Z7_NSIS_WIN_OPAQUE      2
 
 // text/bg colors
 #define kColorsFlags_TEXT     1
@@ -1821,12 +1829,12 @@ void CInArchive::Add_Color(UInt32 v)
   Add_Color2(v);
 }
 
-#define MY__SW_HIDE 0
-#define MY__SW_SHOWNORMAL 1
+#define Z7_NSIS_WIN_SW_HIDE 0
+#define Z7_NSIS_WIN_SW_SHOWNORMAL 1
 
-#define MY__SW_SHOWMINIMIZED 2
-#define MY__SW_SHOWMINNOACTIVE 7
-#define MY__SW_SHOWNA 8
+#define Z7_NSIS_WIN_SW_SHOWMINIMIZED 2
+#define Z7_NSIS_WIN_SW_SHOWMINNOACTIVE 7
+#define Z7_NSIS_WIN_SW_SHOWNA 8
 
 static const char * const kShowWindow_Commands[] =
 {
@@ -1846,7 +1854,7 @@ static const char * const kShowWindow_Commands[] =
 
 static void Add_ShowWindow_Cmd_2(AString &s, UInt32 cmd)
 {
-  if (cmd < ARRAY_SIZE(kShowWindow_Commands))
+  if (cmd < Z7_ARRAY_SIZE(kShowWindow_Commands))
   {
     s += "SW_";
     s += kShowWindow_Commands[cmd];
@@ -1857,7 +1865,7 @@ static void Add_ShowWindow_Cmd_2(AString &s, UInt32 cmd)
 
 void CInArchive::Add_ShowWindow_Cmd(UInt32 cmd)
 {
-  if (cmd < ARRAY_SIZE(kShowWindow_Commands))
+  if (cmd < Z7_ARRAY_SIZE(kShowWindow_Commands))
   {
     Script += "SW_";
     Script += kShowWindow_Commands[cmd];
@@ -1877,7 +1885,7 @@ void CInArchive::Add_TypeFromList(const char * const *table, unsigned tableSize,
   }
 }
 
-#define ADD_TYPE_FROM_LIST(table, type) Add_TypeFromList(table, ARRAY_SIZE(table), type)
+#define ADD_TYPE_FROM_LIST(table, type) Add_TypeFromList(table, Z7_ARRAY_SIZE(table), type)
 
 enum
 {
@@ -1894,7 +1902,7 @@ enum
   k_ExecFlags_rtl,
   k_ExecFlags_ErrorLevel,
   k_ExecFlags_RegView,
-  k_ExecFlags_DetailsPrint = 13,
+  k_ExecFlags_DetailsPrint = 13
 };
 
 // Names for NSIS exec_flags_t structure vars
@@ -2097,7 +2105,7 @@ void CSection::Parse(const Byte *p)
   StartCmdIndex = Get32(p + 12);
   NumCommands = Get32(p + 16);
   SizeKB = Get32(p + 20);
-};
+}
 
 // used for section->flags
 #define SF_SELECTED   (1 << 0)
@@ -2182,7 +2190,7 @@ bool CInArchive::PrintSectionBegin(const CSection &sect, unsigned index)
   {
     TabString("SectionIn");
     UInt32 instTypes = sect.InstallTypes;
-    for (int i = 0; i < 32; i++, instTypes >>= 1)
+    for (unsigned i = 0; i < 32; i++, instTypes >>= 1)
       if ((instTypes & 1) != 0)
       {
         AddParam_UInt(i + 1);
@@ -2270,7 +2278,7 @@ void CInArchive::MessageBox_MB_Part(UInt32 param)
   {
     UInt32 v = param & 0xF;
     Script += " MB_";
-    if (v < ARRAY_SIZE(k_MB_Buttons))
+    if (v < Z7_ARRAY_SIZE(k_MB_Buttons))
       Script += k_MB_Buttons[v];
     else
     {
@@ -2283,7 +2291,7 @@ void CInArchive::MessageBox_MB_Part(UInt32 param)
     if (icon != 0)
     {
       Script += "|MB_";
-      if (icon < ARRAY_SIZE(k_MB_Icons) && k_MB_Icons[icon] != 0)
+      if (icon < Z7_ARRAY_SIZE(k_MB_Icons) && k_MB_Icons[icon])
         Script += k_MB_Icons[icon];
       else
       {
@@ -2308,7 +2316,7 @@ void CInArchive::MessageBox_MB_Part(UInt32 param)
     else if (modal == 2) Script += "|MB_TASKMODAL";
     else if (modal == 3) Script += "|0x3000";
     UInt32 flags = (param >> 14);
-    for (unsigned i = 0; i < ARRAY_SIZE(k_MB_Flags); i++)
+    for (unsigned i = 0; i < Z7_ARRAY_SIZE(k_MB_Flags); i++)
       if ((flags & (1 << i)) != 0)
       {
         Script += "|MB_";
@@ -2381,7 +2389,7 @@ AString CInArchive::GetFormatDescription() const
   if (BadCmd >= 0)
   {
     AddString(s, "BadCmd=");
-    UIntToString(s, BadCmd);
+    UIntToString(s, (UInt32)BadCmd);
   }
   return s;
 }
@@ -2455,7 +2463,7 @@ void CInArchive::FindBadCmd(const CBlockHeader &bh, const Byte *p)
   
   for (UInt32 kkk = 0; kkk < bh.Num; kkk++, p += kCmdSize)
   {
-    UInt32 id = GetCmd(Get32(p));
+    const UInt32 id = GetCmd(Get32(p));
     if (id >= kNumCmds)
       continue;
     if (BadCmd >= 0 && id >= (unsigned)BadCmd)
@@ -2465,7 +2473,7 @@ void CInArchive::FindBadCmd(const CBlockHeader &bh, const Byte *p)
     {
       if (id == EW_RESERVEDOPCODE)
       {
-        BadCmd = id;
+        BadCmd = (int)id;
         continue;
       }
     }
@@ -2474,23 +2482,23 @@ void CInArchive::FindBadCmd(const CBlockHeader &bh, const Byte *p)
       // if (id == EW_GETLABELADDR || id == EW_GETFUNCTIONADDR)
       if (id == EW_RESERVEDOPCODE || id == EW_GETOSINFO)
       {
-        BadCmd = id;
+        BadCmd = (int)id;
         continue;
       }
     }
     for (i = 6; i != 0; i--)
     {
-      UInt32 param = Get32(p + i * 4);
+      const UInt32 param = Get32(p + i * 4);
       if (param != 0)
         break;
     }
     if (id == EW_FINDPROC && i == 0)
     {
-      BadCmd = id;
+      BadCmd = (int)id;
       continue;
     }
     if (k_Commands[id].NumParams < i)
-      BadCmd = id;
+      BadCmd = (int)id;
   }
 }
 
@@ -2770,13 +2778,13 @@ Int32 CInArchive::GetVarIndex(UInt32 strPos) const
   else if (c != NS_CODE_VAR)
     return -1;
 
-  unsigned c0 = p[1];
+  const unsigned c0 = p[1];
   if (c0 == 0)
     return -1;
-  unsigned c1 = p[2];
+  const unsigned c1 = p[2];
   if (c1 == 0)
     return -1;
-  return DECODE_NUMBER_FROM_2_CHARS(c0, c1);
+  return (Int32)DECODE_NUMBER_FROM_2_CHARS(c0, c1);
 }
 
 Int32 CInArchive::GetVarIndex(UInt32 strPos, UInt32 &resOffset) const
@@ -2870,18 +2878,18 @@ static bool IsAbsolutePath(const char *s)
 void CInArchive::SetItemName(CItem &item, UInt32 strPos)
 {
   ReadString2_Raw(strPos);
-  bool isAbs = IsAbsolutePathVar(strPos);
+  const bool isAbs = IsAbsolutePathVar(strPos);
   if (IsUnicode)
   {
     item.NameU = Raw_UString;
     if (!isAbs && !IsAbsolutePath(Raw_UString))
-      item.Prefix = UPrefixes.Size() - 1;
+      item.Prefix = (int)UPrefixes.Size() - 1;
   }
   else
   {
     item.NameA = Raw_AString;
     if (!isAbs && !IsAbsolutePath(Raw_AString))
-      item.Prefix = APrefixes.Size() - 1;
+      item.Prefix = (int)APrefixes.Size() - 1;
   }
 }
 
@@ -2949,9 +2957,9 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       for (int i = 0; i < 5; i++)
         params[i] = Get32(p + 44 + 4 * i);
 
-      SET_FUNC_REF(preFunc, CMD_REF_Pre);
-      SET_FUNC_REF(showFunc, CMD_REF_Show);
-      SET_FUNC_REF(leaveFunc, CMD_REF_Leave);
+      SET_FUNC_REF(preFunc, CMD_REF_Pre)
+      SET_FUNC_REF(showFunc, CMD_REF_Show)
+      SET_FUNC_REF(leaveFunc, CMD_REF_Leave)
 
       if (wndProcID == PWP_COMPLETED)
         CommentOpen();
@@ -2969,7 +2977,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       else
         s += IsInstaller ? "Page " : "UninstPage ";
 
-      if (wndProcID < ARRAY_SIZE(kPageTypes))
+      if (wndProcID < Z7_ARRAY_SIZE(kPageTypes))
         s += kPageTypes[wndProcID];
       else
         Add_UInt(wndProcID);
@@ -3189,11 +3197,11 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
     }
     */
     if (IsFunc(flg)
-        && bh.Num - kkk >= ARRAY_SIZE(k_InitPluginDir_Commands)
-        && CompareCommands(p, k_InitPluginDir_Commands, ARRAY_SIZE(k_InitPluginDir_Commands)))
+        && bh.Num - kkk >= Z7_ARRAY_SIZE(k_InitPluginDir_Commands)
+        && CompareCommands(p, k_InitPluginDir_Commands, Z7_ARRAY_SIZE(k_InitPluginDir_Commands)))
     {
-      InitPluginsDir_Start = kkk;
-      InitPluginsDir_End = (int)(kkk + ARRAY_SIZE(k_InitPluginDir_Commands));
+      InitPluginsDir_Start = (int)kkk;
+      InitPluginsDir_End = (int)(kkk + Z7_ARRAY_SIZE(k_InitPluginDir_Commands));
       labels[kkk] |= CMD_REF_InitPluginDir;
       break;
     }
@@ -3356,7 +3364,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 
     unsigned numSkipParams = 0;
 
-    if (commandId < ARRAY_SIZE(k_Commands) && commandId < numSupportedCommands)
+    if (commandId < Z7_ARRAY_SIZE(k_Commands) && commandId < numSupportedCommands)
     {
       numSkipParams = k_Commands[commandId].NumParams;
       const char *sz = k_CommandNames[commandId];
@@ -3505,9 +3513,9 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
             UInt32 b1 = nsisMB >> 21;  // NSIS 2.06+
             UInt32 b2 = nsisMB >> 20;  // NSIS old
             Int32 asf = (Int32)nsisMB;
-            if (mb == (MY__MB_ABORTRETRYIGNORE | MY__MB_ICONSTOP) && (b1 == MY__IDIGNORE || b2 == MY__IDIGNORE))
+            if (mb == (Z7_NSIS_WIN_MB_ABORTRETRYIGNORE | Z7_NSIS_WIN_MB_ICONSTOP) && (b1 == Z7_NSIS_WIN_IDIGNORE || b2 == Z7_NSIS_WIN_IDIGNORE))
               asf = -1;
-            else if (mb == (MY__MB_RETRYCANCEL | MY__MB_ICONSTOP) && (b1 == MY__IDCANCEL || b2 == MY__IDCANCEL))
+            else if (mb == (Z7_NSIS_WIN_MB_RETRYCANCEL | Z7_NSIS_WIN_MB_ICONSTOP) && (b1 == Z7_NSIS_WIN_IDCANCEL || b2 == Z7_NSIS_WIN_IDCANCEL))
               asf = -2;
             else
             {
@@ -3591,7 +3599,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         #ifdef NSIS_SCRIPT
         AddParam(params[0]);
         Space();
-        FlagsToString2(s, g_WinAttrib, ARRAY_SIZE(g_WinAttrib), params[1]);
+        FlagsToString2(s, g_WinAttrib, Z7_ARRAY_SIZE(g_WinAttrib), params[1]);
         #endif
         break;
       }
@@ -3603,7 +3611,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
            NSIS installer uses alternative path, if main path
            from params[0] is not absolute path */
 
-        bool pathOk = (params[0] > 0) && IsGoodString(params[0]);
+        const bool pathOk = (params[0] > 0) && IsGoodString(params[0]);
 
         if (!pathOk)
         {
@@ -3613,9 +3621,11 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           break;
         }
 
+      #ifdef NSIS_SCRIPT
+
         bool altPathOk = true;
 
-        UInt32 altParam = params[3];
+        const UInt32 altParam = params[3];
         if (altParam != 0)
         {
           altPathOk = false;
@@ -3623,9 +3633,6 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           if (GetVarIndexFinished(altParam, '\\', additional) == kVar_INSTDIR)
             altPathOk = AreTwoParamStringsEqual(altParam + additional, params[0]);
         }
-
-
-        #ifdef NSIS_SCRIPT
 
         AddParam(params[0]);
 
@@ -3640,8 +3647,6 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           AddParam(params[3]);
         }
         
-        #endif
-
         if (!altPathOk)
         {
           #ifdef NSIS_SCRIPT
@@ -3649,9 +3654,11 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           #endif
         }
 
+      #endif
+
         if (BadCmd >= 0 && BadCmd <= EW_WRITEUNINSTALLER)
         {
-          /* We don't cases with incorrect installer commands.
+          /* We don't support cases with incorrect installer commands.
              Such bad installer item can break unpacking for other items. */
           #ifdef NSIS_SCRIPT
           AddError("SKIP possible BadCmd");
@@ -3659,13 +3666,23 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           break;
         }
 
-        CItem &item = Items.AddNew();;
+        CItem &item = Items.AddNew();
 
         SetItemName(item, params[0]);
 
         item.Pos = params[1];
         item.PatchSize = params[2];
         item.IsUninstaller = true;
+        const UInt32 param3 = params[3];
+        if (param3 != 0 && item.Prefix != -1)
+        {
+          /* (item.Prefix != -1) case means that param[0] path was not absolute.
+              So we use params[3] in that case, as original nsis */
+          SetItemName(item, param3);
+        }
+        /* UNINSTALLER file doesn't use directory prefixes.
+           So we remove prefix: */
+        item.Prefix = -1;
         
         /*
         // we can add second time to test the code
@@ -3834,12 +3851,12 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         
         s += "Call ";
         if ((Int32)params[0] < 0)
-          Add_Var(-((Int32)params[0] + 1));
+          Add_Var((UInt32)-((Int32)params[0] + 1));
         else if (params[0] == 0)
           s += '0';
         else
         {
-          UInt32 val = params[0] - 1;
+          const UInt32 val = params[0] - 1;
           if (params[1] == 1) // it's Call :Label
           {
             s += ':';
@@ -3860,8 +3877,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       
       case EW_CHDETAILSVIEW:
       {
-             if (params[0] == MY__SW_SHOWNA && params[1] == MY__SW_HIDE) s += " show";
-        else if (params[1] == MY__SW_SHOWNA && params[0] == MY__SW_HIDE) s += " hide";
+             if (params[0] == Z7_NSIS_WIN_SW_SHOWNA && params[1] == Z7_NSIS_WIN_SW_HIDE) s += " show";
+        else if (params[1] == Z7_NSIS_WIN_SW_SHOWNA && params[0] == Z7_NSIS_WIN_SW_HIDE) s += " hide";
         else
           for (int i = 0; i < 2; i++)
           {
@@ -3935,7 +3952,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         Add_ExecFlags(params[2]);
         Add_GotoVars2(&params[0]);
         /*
-        static const unsigned kIfErrors = 2;
+        const unsigned kIfErrors = 2;
         if (params[2] != kIfErrors && params[3] != 0xFFFFFFFF ||
             params[2] == kIfErrors && params[3] != 0)
         {
@@ -4244,7 +4261,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         
         AString bk;
         bool bkc = false;
-        if (colors.bkmode == MY__TRANSPARENT)
+        if (colors.bkmode == Z7_NSIS_WIN_TRANSPARENT)
           bk += " transparent";
         else if (colors.flags & kColorsFlags_BKB)
         {
@@ -4305,7 +4322,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           bool valDefined = false;
           if (StringToUInt32(sw, val))
           {
-            if (val < ARRAY_SIZE(kShowWindow_Commands))
+            if (val < Z7_ARRAY_SIZE(kShowWindow_Commands))
             {
               sw.Empty();
               sw += "${";
@@ -4338,10 +4355,10 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
       case EW_SHELLEXEC:
       {
         AddParams(params, 2);
-        if (params[2] != 0 || params[3] != MY__SW_SHOWNORMAL)
+        if (params[2] != 0 || params[3] != Z7_NSIS_WIN_SW_SHOWNORMAL)
         {
           AddParam(params[2]);
-          if (params[3] != MY__SW_SHOWNORMAL)
+          if (params[3] != Z7_NSIS_WIN_SW_SHOWNORMAL)
           {
             Space();
             Add_ShowWindow_Cmd(params[3]);
@@ -4442,8 +4459,8 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         UInt32 sw = (spec >> sw_shift) & sw_mask;
         Space();
         // NSIS encoder replaces these names:
-        if (sw == MY__SW_SHOWMINNOACTIVE)
-          sw = MY__SW_SHOWMINIMIZED;
+        if (sw == Z7_NSIS_WIN_SW_SHOWMINNOACTIVE)
+          sw = Z7_NSIS_WIN_SW_SHOWMINIMIZED;
         if (sw == 0)
           AddQuotes();
         else
@@ -4467,7 +4484,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           if (modKey & 4) s += "ALT|";
           if (modKey & 8) s += "EXT|";
           
-          static const unsigned kMy_VK_F1 = 0x70;
+          const unsigned kMy_VK_F1 = 0x70;
           if (key >= kMy_VK_F1 && key <= kMy_VK_F1 + 23)
           {
             s += 'F';
@@ -4559,7 +4576,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 
       case EW_WRITEREG:
       {
-        const char *s2 = 0;
+        const char *s2 = NULL;
         switch (params[4])
         {
           case 1: s2 = "Str"; break;
@@ -4642,20 +4659,42 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         break;
       }
 
+    #endif
+
       case EW_FOPEN:
       {
+        /*
+          the pattern for empty files is following:
+          FileOpen $0 "file_name" w
+          FileClose $0
+        */
+
+        const UInt32 acc = params[1]; // dwDesiredAccess
+        const UInt32 creat = params[2]; // dwCreationDisposition
+        if (creat == Z7_NSIS_WIN_CREATE_ALWAYS && acc == Z7_NSIS_WIN_GENERIC_WRITE)
+        {
+          if (kkk + 1 < bh.Num)
+          if (Get32(p + kCmdSize) == EW_FCLOSE)
+          if (Get32(p + kCmdSize + 4) == params[0])
+          {
+            CItem &item = Items.AddNew();
+            item.IsEmptyFile = true;
+            SetItemName(item, params[3]);
+          }
+        }
+
+      #ifdef NSIS_SCRIPT
+
         AddParam_Var(params[0]);
         AddParam(params[3]);
-        UInt32 acc = params[1]; // dwDesiredAccess
-        UInt32 creat = params[2]; // dwCreationDisposition
         if (acc == 0 && creat == 0)
           break;
         char cc = 0;
-        if (acc == MY__GENERIC_READ && creat == OPEN_EXISTING)
+             if (creat == Z7_NSIS_WIN_OPEN_EXISTING && acc == Z7_NSIS_WIN_GENERIC_READ)
           cc = 'r';
-        else if (creat == CREATE_ALWAYS && acc == MY__GENERIC_WRITE)
+        else if (creat == Z7_NSIS_WIN_CREATE_ALWAYS && acc == Z7_NSIS_WIN_GENERIC_WRITE)
           cc = 'w';
-        else if (creat == OPEN_ALWAYS && (acc == (MY__GENERIC_WRITE | MY__GENERIC_READ)))
+        else if (creat == Z7_NSIS_WIN_OPEN_ALWAYS && (acc == (Z7_NSIS_WIN_GENERIC_WRITE | Z7_NSIS_WIN_GENERIC_READ)))
           cc = 'a';
         // cc = 0;
         if (cc != 0)
@@ -4665,28 +4704,32 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
           break;
         }
 
-        if (acc & MY__GENERIC_READ)     s += " GENERIC_READ";
-        if (acc & MY__GENERIC_WRITE)    s += " GENERIC_WRITE";
-        if (acc & MY__GENERIC_EXECUTE)  s += " GENERIC_EXECUTE";
-        if (acc & MY__GENERIC_ALL)      s += " GENERIC_ALL";
+        if (acc & Z7_NSIS_WIN_GENERIC_READ)     s += " GENERIC_READ";
+        if (acc & Z7_NSIS_WIN_GENERIC_WRITE)    s += " GENERIC_WRITE";
+        if (acc & Z7_NSIS_WIN_GENERIC_EXECUTE)  s += " GENERIC_EXECUTE";
+        if (acc & Z7_NSIS_WIN_GENERIC_ALL)      s += " GENERIC_ALL";
         
         const char *s2 = NULL;
         switch (creat)
         {
-          case MY__CREATE_NEW:        s2 = "CREATE_NEW"; break;
-          case MY__CREATE_ALWAYS:     s2 = "CREATE_ALWAYS"; break;
-          case MY__OPEN_EXISTING:     s2 = "OPEN_EXISTING"; break;
-          case MY__OPEN_ALWAYS:       s2 = "OPEN_ALWAYS"; break;
-          case MY__TRUNCATE_EXISTING: s2 = "TRUNCATE_EXISTING"; break;
+          case Z7_NSIS_WIN_CREATE_NEW:        s2 = "CREATE_NEW"; break;
+          case Z7_NSIS_WIN_CREATE_ALWAYS:     s2 = "CREATE_ALWAYS"; break;
+          case Z7_NSIS_WIN_OPEN_EXISTING:     s2 = "OPEN_EXISTING"; break;
+          case Z7_NSIS_WIN_OPEN_ALWAYS:       s2 = "OPEN_ALWAYS"; break;
+          case Z7_NSIS_WIN_TRUNCATE_EXISTING: s2 = "TRUNCATE_EXISTING"; break;
         }
         Space();
         if (s2)
           s += s2;
         else
           Add_UInt(creat);
+      #endif
+
         break;
       }
 
+    #ifdef NSIS_SCRIPT
+      
       case EW_FPUTS:
       case EW_FPUTWS:
       {
@@ -4780,7 +4823,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         else
         {
           s += "Set";
-          UInt32 t = -(Int32)params[2] - 1;
+          const UInt32 t = (UInt32)(-(Int32)params[2] - 1);
           Add_SectOp(t);
           AddParam(params[0]);
           AddParam(params[t == 0 ? 4 : 1]);
@@ -4793,7 +4836,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
 
       case EW_INSTTYPESET:
       {
-        int numQwParams = 0;
+        unsigned numQwParams = 0;
         const char *s2;
         if (params[3] == 0)
         {
@@ -4952,7 +4995,18 @@ static int CompareItems(void *const *p1, void *const *p2, void *param)
 {
   const CItem &i1 = **(const CItem *const *)p1;
   const CItem &i2 = **(const CItem *const *)p2;
-  RINOZ(MyCompare(i1.Pos, i2.Pos));
+  RINOZ(MyCompare(i1.Pos, i2.Pos))
+
+  /* In another code we check CItem::Pos after each solid item.
+     So here we place empty files before all non empty files */
+  if (i1.IsEmptyFile)
+  {
+    if (!i2.IsEmptyFile)
+      return -1;
+  }
+  else if (i2.IsEmptyFile)
+    return 1;
+
   const CInArchive *inArchive = (const CInArchive *)param;
   if (inArchive->IsUnicode)
   {
@@ -4962,9 +5016,9 @@ static int CompareItems(void *const *p1, void *const *p2, void *param)
       if (i2.Prefix < 0) return 1;
       RINOZ(
           inArchive->UPrefixes[i1.Prefix].Compare(
-          inArchive->UPrefixes[i2.Prefix]));
+          inArchive->UPrefixes[i2.Prefix]))
     }
-    RINOZ(i1.NameU.Compare(i2.NameU));
+    RINOZ(i1.NameU.Compare(i2.NameU))
   }
   else
   {
@@ -4974,9 +5028,9 @@ static int CompareItems(void *const *p1, void *const *p2, void *param)
       if (i2.Prefix < 0) return 1;
       RINOZ(strcmp(
           inArchive->APrefixes[i1.Prefix],
-          inArchive->APrefixes[i2.Prefix]));
+          inArchive->APrefixes[i2.Prefix]))
     }
-    RINOZ(strcmp(i1.NameA, i2.NameA));
+    RINOZ(strcmp(i1.NameA, i2.NameA))
   }
   return 0;
 }
@@ -4990,6 +5044,8 @@ HRESULT CInArchive::SortItems()
     for (i = 0; i + 1 < Items.Size(); i++)
     {
       const CItem &i1 = Items[i];
+      if (i1.IsEmptyFile)
+        continue;
       const CItem &i2 = Items[i + 1];
       if (i1.Pos != i2.Pos)
         continue;
@@ -5019,10 +5075,14 @@ HRESULT CInArchive::SortItems()
     for (i = 0; i < Items.Size(); i++)
     {
       CItem &item = Items[i];
-      UInt32 curPos = item.Pos + 4;
+      if (item.IsEmptyFile)
+        continue;
+      const UInt32 curPos = item.Pos + 4;
       for (unsigned nextIndex = i + 1; nextIndex < Items.Size(); nextIndex++)
       {
-        UInt32 nextPos = Items[nextIndex].Pos;
+        const CItem &nextItem = Items[nextIndex];
+        // if (nextItem.IsEmptyFile) continue;
+        const UInt32 nextPos = nextItem.Pos;
         if (curPos <= nextPos)
         {
           item.EstimatedSize_Defined = true;
@@ -5037,11 +5097,13 @@ HRESULT CInArchive::SortItems()
       for (i = 0; i < Items.Size(); i++)
       {
         CItem &item = Items[i];
-        RINOK(SeekToNonSolidItem(i));
+        if (item.IsEmptyFile)
+          continue;
+        RINOK(SeekToNonSolidItem(i))
         const UInt32 kSigSize = 4 + 1 + 1 + 4; // size,[flag],prop,dict
         BYTE sig[kSigSize];
         size_t processedSize = kSigSize;
-        RINOK(ReadStream(_stream, sig, &processedSize));
+        RINOK(ReadStream(_stream, sig, &processedSize))
         if (processedSize < 4)
           return S_FALSE;
         UInt32 size = Get32(sig);
@@ -5218,7 +5280,7 @@ HRESULT CInArchive::Parse()
   if (Method != NMethodType::kCopy)
   {
     const char *m = NULL;
-    switch (Method)
+    switch ((int)Method)
     {
       case NMethodType::kDeflate: m = "zlib"; break;
       case NMethodType::kBZip2: m = "bzip2"; break;
@@ -5451,7 +5513,7 @@ HRESULT CInArchive::Parse()
         if (val != 0)
         {
           Script += "LicenseLangString ";
-          Add_LangStr_Simple(licenseLangIndex);
+          Add_LangStr_Simple((UInt32)licenseLangIndex);
           AddParam_UInt(langID);
           AddLicense(val, langID);
           noParseStringIndexes.AddToUniqueSorted(val);
@@ -5470,7 +5532,7 @@ HRESULT CInArchive::Parse()
       const UInt16 langID = Get16(p);
       if (i == 0 || langID == 1033)
         _mainLang = p + 10;
-      for (unsigned k = 0; k < ARRAY_SIZE(names) && k < numStrings; k++)
+      for (unsigned k = 0; k < Z7_ARRAY_SIZE(names) && k < numStrings; k++)
       {
         UInt32 v = Get32(p + 10 + k * 4);
         if (v != 0 && (langID == 1033 || names[k] == 0))
@@ -5567,7 +5629,7 @@ HRESULT CInArchive::Parse()
   }
 
   onFuncOffset = paramsOffset + 40;
-  numOnFunc = ARRAY_SIZE(kOnFunc);
+  numOnFunc = Z7_ARRAY_SIZE(kOnFunc);
   if (bhPages.Offset == 276)
     numOnFunc--;
   p2 += 40 + numOnFunc * 4;
@@ -5629,7 +5691,7 @@ HRESULT CInArchive::Parse()
 
   #endif
 
-  RINOK(ReadEntries(bhEntries));
+  RINOK(ReadEntries(bhEntries))
 
   #ifdef NSIS_SCRIPT
 
@@ -5747,14 +5809,14 @@ HRESULT CInArchive::Open2(const Byte *sig, size_t size)
 
   if (IsSolid)
   {
-    RINOK(SeekTo_DataStreamOffset());
+    RINOK(SeekTo_DataStreamOffset())
   }
   else
   {
     _headerIsCompressed = ((compressedHeaderSize & kMask_IsCompressed) != 0);
     compressedHeaderSize &= ~kMask_IsCompressed;
     _nonSolidStartOffset = compressedHeaderSize;
-    RINOK(SeekTo(DataStreamOffset + 4));
+    RINOK(SeekTo(DataStreamOffset + 4))
   }
 
   if (FirstHeader.HeaderSize == 0)
@@ -5775,12 +5837,12 @@ HRESULT CInArchive::Open2(const Byte *sig, size_t size)
 
   if (_headerIsCompressed)
   {
-    RINOK(Decoder.Init(_stream, UseFilter));
+    RINOK(Decoder.Init(_stream, UseFilter))
     if (IsSolid)
     {
       size_t processedSize = 4;
       Byte buf[4];
-      RINOK(Decoder.Read(buf, &processedSize));
+      RINOK(Decoder.Read(buf, &processedSize))
       if (processedSize != 4)
         return S_FALSE;
       if (Get32((const Byte *)buf) != FirstHeader.HeaderSize)
@@ -5788,7 +5850,7 @@ HRESULT CInArchive::Open2(const Byte *sig, size_t size)
     }
     {
       size_t processedSize = FirstHeader.HeaderSize;
-      RINOK(Decoder.Read(_data, &processedSize));
+      RINOK(Decoder.Read(_data, &processedSize))
       if (processedSize != FirstHeader.HeaderSize)
         return S_FALSE;
     }
@@ -5800,7 +5862,7 @@ HRESULT CInArchive::Open2(const Byte *sig, size_t size)
       AfterHeaderSize = (1 << 12);
       _afterHeader.Alloc(AfterHeaderSize);
       size_t processedSize = AfterHeaderSize;
-      RINOK(Decoder.Read(_afterHeader, &processedSize));
+      RINOK(Decoder.Read(_afterHeader, &processedSize))
       AfterHeaderSize = (UInt32)processedSize;
     }
     #endif
@@ -5808,7 +5870,7 @@ HRESULT CInArchive::Open2(const Byte *sig, size_t size)
   else
   {
     size_t processedSize = FirstHeader.HeaderSize;
-    RINOK(ReadStream(_stream, (Byte *)_data, &processedSize));
+    RINOK(ReadStream(_stream, (Byte *)_data, &processedSize))
     if (processedSize < FirstHeader.HeaderSize)
       return S_FALSE;
   }
@@ -5892,7 +5954,7 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
 {
   Clear();
   
-  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &StartOffset));
+  RINOK(InStream_GetPos(inStream, StartOffset))
   
   const UInt32 kStartHeaderSize = 4 * 7;
   const unsigned kStep = 512; // nsis start is aligned for 512
@@ -5904,7 +5966,7 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
   for (;;)
   {
     bufSize = kStep;
-    RINOK(ReadStream(inStream, buf, &bufSize));
+    RINOK(ReadStream(inStream, buf, &bufSize))
     if (bufSize < kStartHeaderSize)
       return S_FALSE;
     if (memcmp(buf + 4, kSignature, kSignatureSize) == 0)
@@ -5936,8 +5998,8 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
       if (pos - posCur > (1 << 20))
         break;
       bufSize = kStep;
-      RINOK(inStream->Seek(posCur, STREAM_SEEK_SET, NULL));
-      RINOK(ReadStream(inStream, buf, &bufSize));
+      RINOK(InStream_SeekSet(inStream, posCur))
+      RINOK(ReadStream(inStream, buf, &bufSize))
       if (bufSize < kStep)
         break;
       if (IsArc_Pe(buf, bufSize))
@@ -5949,8 +6011,8 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
 
     // restore buf to nsis header
     bufSize = kStep;
-    RINOK(inStream->Seek(pos, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream(inStream, buf, &bufSize));
+    RINOK(InStream_SeekSet(inStream, pos))
+    RINOK(ReadStream(inStream, buf, &bufSize))
     if (bufSize < kStartHeaderSize)
       return S_FALSE;
   }
@@ -5990,15 +6052,15 @@ HRESULT CInArchive::Open(IInStream *inStream, const UInt64 *maxCheckStartPositio
   }
   */
   
-  RINOK(inStream->Seek(0, STREAM_SEEK_END, &_fileSize));
+  RINOK(InStream_GetSize_SeekToEnd(inStream, _fileSize))
 
   IsArc = true;
 
   if (peSize != 0)
   {
     ExeStub.Alloc(peSize);
-    RINOK(inStream->Seek(pePos, STREAM_SEEK_SET, NULL));
-    RINOK(ReadStream_FALSE(inStream, ExeStub, peSize));
+    RINOK(InStream_SeekSet(inStream, pePos))
+    RINOK(ReadStream_FALSE(inStream, ExeStub, peSize))
   }
 
   HRESULT res = S_FALSE;

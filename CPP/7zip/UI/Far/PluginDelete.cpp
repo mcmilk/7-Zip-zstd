@@ -13,7 +13,7 @@
 
 using namespace NFar;
 
-int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
+int CPlugin::DeleteFiles(PluginPanelItem *panelItems, unsigned numItems, int opMode)
 {
   if (numItems == 0)
     return FALSE;
@@ -63,7 +63,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
       // sprintf(msg, g_StartupInfo.GetMsgString(NMessageID::kDeleteNumberOfFiles), numItems);
       // msgItems[1] = msg;
     }
-    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems, ARRAY_SIZE(msgItems), 2) != 0)
+    if (g_StartupInfo.ShowMessage(FMSG_WARNING, NULL, msgItems, Z7_ARRAY_SIZE(msgItems), 2) != 0)
       return (FALSE);
   }
 
@@ -87,7 +87,7 @@ int CPlugin::DeleteFiles(PluginPanelItem *panelItems, int numItems, int opMode)
   */
 
   CObjArray<UInt32> indices(numItems);
-  int i;
+  unsigned i;
   for (i = 0; i < numItems; i++)
     indices[i] = (UInt32)panelItems[i].UserData;
 

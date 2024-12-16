@@ -171,14 +171,14 @@ enum
 static const char *FindExt(const Byte *p, size_t size)
 {
   unsigned i;
-  for (i = 0; i < ARRAY_SIZE(g_Sigs); i++)
+  for (i = 0; i < Z7_ARRAY_SIZE(g_Sigs); i++)
   {
     const CSigExtPair &pair = g_Sigs[i];
     if (size >= pair.sigSize)
       if (memcmp(p, pair.sig, pair.sigSize) == 0)
         break;
   }
-  if (i == ARRAY_SIZE(g_Sigs))
+  if (i == Z7_ARRAY_SIZE(g_Sigs))
     return NULL;
   switch (i)
   {
@@ -212,9 +212,9 @@ static bool AreGuidsEq(const Byte *p1, const Byte *p2)
 
 static int FindGuid(const Byte *p)
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(kGuids); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(kGuids); i++)
     if (AreGuidsEq(p, kGuids[i]))
-      return i;
+      return (int)i;
   return -1;
 }
  
@@ -222,7 +222,7 @@ static bool IsFfs(const Byte *p)
 {
   if (Get32(p + 0x28) != kFvSignature)
     return false;
-  for (unsigned i = 0; i < ARRAY_SIZE(k_Guids_FS); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(k_Guids_FS); i++)
     if (AreGuidsEq(p + kFfsGuidOffset, k_Guids_FS[i]))
       return true;
   return false;
@@ -396,7 +396,7 @@ static bool ParseDepedencyExpression(const Byte *p, UInt32 size, AString &res)
   for (UInt32 i = 0; i < size;)
   {
     unsigned command = p[i++];
-    if (command > ARRAY_SIZE(kExpressionCommands))
+    if (command > Z7_ARRAY_SIZE(kExpressionCommands))
       return false;
     res += kExpressionCommands[command];
     if (command < 3)
@@ -437,9 +437,9 @@ static bool ParseUtf16zString2(const Byte *p, UInt32 size, AString &res)
   return true;
 }
 
-#define FLAGS_TO_STRING(pairs, value) FlagsToString(pairs, ARRAY_SIZE(pairs), value)
-#define TYPE_TO_STRING(table, value) TypeToString(table, ARRAY_SIZE(table), value)
-#define TYPE_PAIR_TO_STRING(table, value) TypePairToString(table, ARRAY_SIZE(table), value)
+#define FLAGS_TO_STRING(pairs, value) FlagsToString(pairs, Z7_ARRAY_SIZE(pairs), value)
+#define TYPE_TO_STRING(table, value) TypeToString(table, Z7_ARRAY_SIZE(table), value)
+#define TYPE_PAIR_TO_STRING(table, value) TypePairToString(table, Z7_ARRAY_SIZE(table), value)
 
 static const UInt32 kFileHeaderSize = 24;
 
@@ -559,8 +559,8 @@ public:
   }
 };
 
-#define G32(_offs_, dest) dest = Get32(p + (_offs_));
-#define G16(_offs_, dest) dest = Get16(p + (_offs_));
+#define G32(_offs_, dest) dest = Get32(p + (_offs_))
+#define G16(_offs_, dest) dest = Get16(p + (_offs_))
 
 struct CCapsuleHeader
 {
@@ -632,14 +632,14 @@ struct CItem
   int Parent;
   int Method;
   int NameIndex;
-  int NumChilds;
+  unsigned NumChilds;
   bool IsDir;
   bool Skip;
   bool ThereAreSubDirs;
   bool ThereIsUniqueName;
   bool KeepName;
 
-  int BufIndex;
+  unsigned BufIndex;
   UInt32 Offset;
   UInt32 Size;
 
@@ -668,14 +668,14 @@ AString CItem::GetName(int numChildsInParent) const
     return Name;
   char sz[32];
   char sz2[32];
-  ConvertUInt32ToString(NameIndex, sz);
-  ConvertUInt32ToString(numChildsInParent - 1, sz2);
-  int numZeros = (int)strlen(sz2) - (int)strlen(sz);
+  ConvertUInt32ToString((unsigned)NameIndex, sz);
+  ConvertUInt32ToString((unsigned)numChildsInParent - 1, sz2);
+  const int numZeros = (int)strlen(sz2) - (int)strlen(sz);
   AString res;
   for (int i = 0; i < numZeros; i++)
     res += '0';
   res += sz;
-  res += '.';
+  res.Add_Dot();
   res += Name;
   return res;
 }
@@ -684,17 +684,16 @@ struct CItem2
 {
   AString Name;
   AString Characts;
-  int MainIndex;
+  unsigned MainIndex;
   int Parent;
 
   CItem2(): Parent(-1) {}
 };
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
-{
+
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+    IInArchiveGetStream
+)
   CObjectVector<CItem> _items;
   CObjectVector<CItem2> _items2;
   CObjectVector<CByteBuffer> _bufs;
@@ -708,20 +707,23 @@ class CHandler:
   UInt64 _phySize;
 
   void AddCommentString(const char *name, UInt32 pos);
-  int AddItem(const CItem &item);
-  int AddFileItemWithIndex(CItem &item);
-  int AddDirItem(CItem &item);
+  unsigned AddItem(const CItem &item);
+  unsigned AddFileItemWithIndex(CItem &item);
+  unsigned AddDirItem(CItem &item);
   unsigned AddBuf(size_t size);
 
   HRESULT DecodeLzma(const Byte *data, size_t inputSize);
 
-  HRESULT ParseSections(int bufIndex, UInt32 pos, UInt32 size, int parent, int method, unsigned level, bool &error);
+  HRESULT ParseSections(unsigned bufIndex, UInt32 pos,
+      UInt32 size,
+      int parent, int method, unsigned level,
+      bool &error);
   
-  HRESULT ParseIntelMe(int bufIndex, UInt32 posBase,
+  HRESULT ParseIntelMe(unsigned bufIndex, UInt32 posBase,
       UInt32 exactSize, UInt32 limitSize,
       int parent, int method, unsigned level);
 
-  HRESULT ParseVolume(int bufIndex, UInt32 posBase,
+  HRESULT ParseVolume(unsigned bufIndex, UInt32 posBase,
       UInt32 exactSize, UInt32 limitSize,
       int parent, int method, unsigned level);
 
@@ -730,10 +732,8 @@ class CHandler:
   HRESULT Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback);
 public:
   CHandler(bool capsuleMode): _capsuleMode(capsuleMode) {}
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
+
 
 static const Byte kProps[] =
 {
@@ -755,7 +755,7 @@ static const Byte kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -823,7 +823,7 @@ void CHandler::AddCommentString(const char *name, UInt32 pos)
   _comment += s;
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -875,23 +875,23 @@ static void MyPrint(UInt32 posBase, UInt32 size, unsigned level, const char *nam
 
 
 
-int CHandler::AddItem(const CItem &item)
+unsigned CHandler::AddItem(const CItem &item)
 {
   if (_items.Size() >= kNumFilesMax)
     throw 2;
   return _items.Add(item);
 }
 
-int CHandler::AddFileItemWithIndex(CItem &item)
+unsigned CHandler::AddFileItemWithIndex(CItem &item)
 {
-  int nameIndex = _items.Size();
+  unsigned nameIndex = _items.Size();
   if (item.Parent >= 0)
     nameIndex = _items[item.Parent].NumChilds++;
-  item.NameIndex = nameIndex;
+  item.NameIndex = (int)nameIndex;
   return AddItem(item);
 }
 
-int CHandler::AddDirItem(CItem &item)
+unsigned CHandler::AddDirItem(CItem &item)
 {
   if (item.Parent >= 0)
     _items[item.Parent].ThereAreSubDirs = true;
@@ -936,7 +936,7 @@ HRESULT CHandler::DecodeLzma(const Byte *data, size_t inputSize)
 }
 
 
-HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int parent, int method, unsigned level, bool &error)
+HRESULT CHandler::ParseSections(unsigned bufIndex, UInt32 posBase, UInt32 size, int parent, int method, unsigned level, bool &error)
 {
   error = false;
 
@@ -1010,14 +1010,14 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
         if (compressionType == COMPRESSION_TYPE_NONE)
         {
           bool error2;
-          RINOK(ParseSections(bufIndex, newOffset, newSectSize, parent, method, level, error2));
+          RINOK(ParseSections(bufIndex, newOffset, newSectSize, parent, method, level, error2))
         }
         else if (compressionType == COMPRESSION_TYPE_LZH)
         {
           unsigned newBufIndex = AddBuf(uncompressedSize);
           CByteBuffer &buf = _bufs[newBufIndex];
 
-          NCompress::NLzh::NDecoder::CCoder *lzhDecoderSpec = 0;
+          NCompress::NLzh::NDecoder::CCoder *lzhDecoderSpec = NULL;
           CMyComPtr<ICompressCoder> lzhDecoder;
  
           lzhDecoderSpec = new NCompress::NLzh::NDecoder::CCoder;
@@ -1066,11 +1066,11 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
               if (res == S_OK)
                 break;
             }
-            RINOK(res);
+            RINOK(res)
           }
 
           bool error2;
-          RINOK(ParseSections(newBufIndex, 0, uncompressedSize, parent, compressionType, level, error2));
+          RINOK(ParseSections(newBufIndex, 0, uncompressedSize, parent, compressionType, level, error2))
         }
         else
         {
@@ -1091,13 +1091,13 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
           }
           pStart += addSize;
 
-          RINOK(DecodeLzma(pStart, newSectSize - addSize));
+          RINOK(DecodeLzma(pStart, newSectSize - addSize))
           const size_t lzmaUncompressedSize = _bufs.Back().Size();
           // if (lzmaUncompressedSize != uncompressedSize)
           if (lzmaUncompressedSize < uncompressedSize)
             return S_FALSE;
           bool error2;
-          RINOK(ParseSections(_bufs.Size() - 1, 0, (UInt32)lzmaUncompressedSize, parent, compressionType, level, error2));
+          RINOK(ParseSections(_bufs.Size() - 1, 0, (UInt32)lzmaUncompressedSize, parent, compressionType, level, error2))
         }
         _methodsMask |= (1 << compressionType);
       }
@@ -1108,15 +1108,15 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
       if (sectSize < kHeaderSize)
         return S_FALSE;
       item.SetGuid(p + 4);
-      UInt32 dataOffset = Get16(p + 4 + kGuidSize);
-      UInt32 attrib = Get16(p + 4 + kGuidSize + 2);
+      const UInt32 dataOffset = Get16(p + 4 + kGuidSize);
+      const UInt32 attrib = Get16(p + 4 + kGuidSize + 2);
       if (dataOffset > sectSize || dataOffset < kHeaderSize)
         return S_FALSE;
       UInt32 newSectSize = sectSize - dataOffset;
       item.Size = newSectSize;
       UInt32 newOffset = posBase + pos + dataOffset;
       item.Offset = newOffset;
-      UInt32 propsSize = dataOffset - kHeaderSize;
+      const UInt32 propsSize = dataOffset - kHeaderSize;
       AddSpaceAndString(item.Characts, FLAGS_TO_STRING(g_GUIDED_SECTION_ATTRIBUTES, attrib));
 
       bool needDir = true;
@@ -1129,7 +1129,7 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
         // AddItem(item);
         const Byte *pStart = bufData + newOffset;
         // do we need correct pStart here for lzma steram offset?
-        RINOK(DecodeLzma(pStart, newSectSize));
+        RINOK(DecodeLzma(pStart, newSectSize))
         _methodsMask |= (1 << COMPRESSION_TYPE_LZMA);
         newBufIndex = _bufs.Size() - 1;
         newOffset = 0;
@@ -1157,18 +1157,18 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
 
       int newParent = parent;
       if (needDir)
-        newParent = AddDirItem(item);
+        newParent = (int)AddDirItem(item);
       bool error2;
-      RINOK(ParseSections(newBufIndex, newOffset, newSectSize, newParent, newMethod, level, error2));
+      RINOK(ParseSections(newBufIndex, newOffset, newSectSize, newParent, newMethod, level, error2))
     }
     else if (type == SECTION_FIRMWARE_VOLUME_IMAGE)
     {
       item.KeepName = false;
-      int newParent = AddDirItem(item);
+      const int newParent = (int)AddDirItem(item);
       RINOK(ParseVolume(bufIndex, posBase + pos + 4,
           sectSize - 4,
           sectSize - 4,
-          newParent, method, level));
+          newParent, method, level))
     }
     else
     {
@@ -1185,11 +1185,11 @@ HRESULT CHandler::ParseSections(int bufIndex, UInt32 posBase, UInt32 size, int p
             {
               needAdd = false;
               item.Name = "vol";
-              int newParent = AddDirItem(item);
+              const unsigned newParent = AddDirItem(item);
               RINOK(ParseVolume(bufIndex, posBase + pos + 4 + kInsydeOffset,
                   sectDataSize - kInsydeOffset,
                   sectDataSize - kInsydeOffset,
-                  newParent, method, level));
+                  (int)newParent, method, level))
             }
             
             if (needAdd)
@@ -1306,11 +1306,11 @@ bool CVolFfsHeader::Parse(const Byte *p)
   if (HeaderLen < kFvHeaderSize || (HeaderLen & 0x7) != 0 || VolSize < HeaderLen)
     return false;
   return true;
-};
+}
 
 
 HRESULT CHandler::ParseVolume(
-    int bufIndex, UInt32 posBase,
+    unsigned bufIndex, UInt32 posBase,
     UInt32 exactSize, UInt32 limitSize,
     int parent, int method, unsigned level)
 {
@@ -1382,7 +1382,7 @@ HRESULT CHandler::ParseVolume(
     UInt32 rem = (UInt32)ffsHeader.VolSize - pos;
     if (rem < kFileHeaderSize)
       break;
-    pos = (pos + 7) & ~7;
+    pos = (pos + 7) & ~7u;
     rem = (UInt32)ffsHeader.VolSize - pos;
     if (rem < kFileHeaderSize)
       break;
@@ -1457,11 +1457,11 @@ HRESULT CHandler::ParseVolume(
       }
       if (isVolume)
       {
-        int newParent = AddDirItem(item);
-        UInt32 limSize = fh.GetDataSize2(rem);
+        const unsigned newParent = AddDirItem(item);
+        const UInt32 limSize = fh.GetDataSize2(rem);
         // volume.VolSize > fh.Size for some UEFI archives (is it correct UEFI?)
         // so we will check VolSize for limitSize instead.
-        RINOK(ParseVolume(bufIndex, offset, sectSize, limSize, newParent, method, level));
+        RINOK(ParseVolume(bufIndex, offset, sectSize, limSize, (int)newParent, method, level))
       }
       else
         AddItem(item);
@@ -1477,9 +1477,9 @@ HRESULT CHandler::ParseVolume(
       else
       */
       {
-        int newParent = AddDirItem(item);
+        const unsigned newParent = AddDirItem(item);
         bool error2;
-        RINOK(ParseSections(bufIndex, offset, sectSize, newParent, method, level + 1, error2));
+        RINOK(ParseSections(bufIndex, offset, sectSize, (int)newParent, method, level + 1, error2))
         if (error2)
         {
           // in intel bio example: one FV_FILETYPE_FREEFORM file is wav file (not sections)
@@ -1510,12 +1510,13 @@ static const char * const kRegionName[] =
 
 
 HRESULT CHandler::ParseIntelMe(
-    int bufIndex, UInt32 posBase,
+    unsigned bufIndex, UInt32 posBase,
     UInt32 exactSize, UInt32 limitSize,
-    int parent, int method, unsigned level)
+    int parent, int method, unsigned /* level */)
 {
   UNUSED_VAR(limitSize)
-  level++;
+  // level++;
+
   const Byte *p = _bufs[bufIndex] + posBase;
   if (exactSize < 16 + 16)
     return S_FALSE;
@@ -1581,7 +1582,7 @@ HRESULT CHandler::OpenCapsule(IInStream *stream)
 {
   const unsigned kHeaderSize = 80;
   Byte buf[kHeaderSize];
-  RINOK(ReadStream_FALSE(stream, buf, kHeaderSize));
+  RINOK(ReadStream_FALSE(stream, buf, kHeaderSize))
   if (!_h.Parse(buf))
     return S_FALSE;
   if (_h.CapsuleImageSize < kHeaderSize
@@ -1619,7 +1620,7 @@ HRESULT CHandler::OpenCapsule(IInStream *stream)
 HRESULT CHandler::OpenFv(IInStream *stream, const UInt64 * /* maxCheckStartPosition */, IArchiveOpenCallback * /* callback */)
 {
   Byte buf[kFvHeaderSize];
-  RINOK(ReadStream_FALSE(stream, buf, kFvHeaderSize));
+  RINOK(ReadStream_FALSE(stream, buf, kFvHeaderSize))
   if (!IsFfs(buf))
     return S_FALSE;
   CVolFfsHeader ffsHeader;
@@ -1628,10 +1629,10 @@ HRESULT CHandler::OpenFv(IInStream *stream, const UInt64 * /* maxCheckStartPosit
   if (ffsHeader.VolSize > ((UInt32)1 << 30))
     return S_FALSE;
   _phySize = ffsHeader.VolSize;
-  RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+  RINOK(InStream_SeekToBegin(stream))
   UInt32 fvSize32 = (UInt32)ffsHeader.VolSize;
   unsigned bufIndex = AddBuf(fvSize32);
-  RINOK(ReadStream_FALSE(stream, _bufs[bufIndex], fvSize32));
+  RINOK(ReadStream_FALSE(stream, _bufs[bufIndex], fvSize32))
   return ParseVolume(bufIndex, 0, fvSize32, fvSize32, -1, -1, 0);
 }
 
@@ -1640,14 +1641,14 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
 {
   if (_capsuleMode)
   {
-    RINOK(OpenCapsule(stream));
+    RINOK(OpenCapsule(stream))
   }
   else
   {
-    RINOK(OpenFv(stream, maxCheckStartPosition, callback));
+    RINOK(OpenFv(stream, maxCheckStartPosition, callback))
   }
 
-  unsigned num = _items.Size();
+  const unsigned num = _items.Size();
   CIntArr numChilds(num);
   
   unsigned i;
@@ -1657,7 +1658,7 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
   
   for (i = 0; i < num; i++)
   {
-    int parent = _items[i].Parent;
+    const int parent = _items[i].Parent;
     if (parent >= 0)
       numChilds[(unsigned)parent]++;
   }
@@ -1665,7 +1666,7 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
   for (i = 0; i < num; i++)
   {
     const CItem &item = _items[i];
-    int parent = item.Parent;
+    const int parent = item.Parent;
     if (parent >= 0)
     {
       CItem &parentItem = _items[(unsigned)parent];
@@ -1718,7 +1719,7 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
     item2.Name = name;
     item2.Characts = characts2;
     if (parent >= 0)
-      item2.Parent = mainToReduced[(unsigned)parent];
+      item2.Parent = (int)mainToReduced[(unsigned)parent];
     _items2.Add(item2);
     /*
     CItem2 item2;
@@ -1732,9 +1733,9 @@ HRESULT CHandler::Open2(IInStream *stream, const UInt64 *maxCheckStartPosition, 
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream,
+Z7_COM7F_IMF(CHandler::Open(IInStream *inStream,
     const UInt64 *maxCheckStartPosition,
-    IArchiveOpenCallback *callback)
+    IArchiveOpenCallback *callback))
 {
   COM_TRY_BEGIN
   Close();
@@ -1747,7 +1748,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _phySize = 0;
   _totalBufsSize = 0;
@@ -1761,17 +1762,17 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _items2.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items2.Size();
   if (numItems == 0)
@@ -1794,22 +1795,22 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     lps->InSize = lps->OutSize = currentTotalSize;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    UInt32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CItem &item = _items[_items2[index].MainIndex];
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode))
     currentTotalSize += item.Size;
     
     if (!testMode && !realOutStream)
       continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
     if (testMode || item.IsDir)
     {
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
       continue;
     }
     int res = NExtract::NOperationResult::kDataError;
@@ -1817,18 +1818,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     GetStream(index, &inStream);
     if (inStream)
     {
-      RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+      RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress))
       if (copyCoderSpec->TotalSize == item.Size)
         res = NExtract::NOperationResult::kOK;
     }
     realOutStream.Release();
-    RINOK(extractCallback->SetOperationResult(res));
+    RINOK(extractCallback->SetOperationResult(res))
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 index, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
   const CItem &item = _items[_items2[index].MainIndex];
@@ -1860,7 +1861,7 @@ static const Byte k_Capsule_Signatures[] =
 
 REGISTER_ARC_I_CLS(
   CHandler(true),
-  "UEFIc", "scap", 0, 0xD0,
+  "UEFIc", "scap", NULL, 0xD0,
   k_Capsule_Signatures,
   0,
   NArcInfoFlags::kMultiSignature |
@@ -1880,7 +1881,7 @@ static const Byte k_FFS_Signatures[] =
 
 REGISTER_ARC_I_CLS(
   CHandler(false),
-  "UEFIf", "uefif", 0, 0xD1,
+  "UEFIf", "uefif", NULL, 0xD1,
   k_FFS_Signatures,
   kFfsGuidOffset,
   NArcInfoFlags::kMultiSignature |

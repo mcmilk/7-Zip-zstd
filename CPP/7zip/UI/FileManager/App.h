@@ -1,7 +1,7 @@
 // App.h
 
-#ifndef __APP_H
-#define __APP_H
+#ifndef ZIP7_INC_APP_H
+#define ZIP7_INC_APP_H
 
 #include "../../../Windows/Control/CommandBar.h"
 #include "../../../Windows/Control/ImageList.h"
@@ -30,7 +30,7 @@ enum
   kMenuCmdID_Toolbar_End
 };
 
-class CPanelCallbackImp: public CPanelCallback
+class CPanelCallbackImp Z7_final: public CPanelCallback
 {
   CApp *_app;
   unsigned _index;
@@ -40,79 +40,26 @@ public:
     _app = app;
     _index = index;
   }
-  virtual void OnTab();
-  virtual void SetFocusToPath(unsigned index);
-  virtual void OnCopy(bool move, bool copyToSame);
-  virtual void OnSetSameFolder();
-  virtual void OnSetSubFolder();
-  virtual void PanelWasFocused();
-  virtual void DragBegin();
-  virtual void DragEnd();
-  virtual void RefreshTitle(bool always);
+  virtual void OnTab() Z7_override;
+  virtual void SetFocusToPath(unsigned index) Z7_override;
+  virtual void OnCopy(bool move, bool copyToSame) Z7_override;
+  virtual void OnSetSameFolder() Z7_override;
+  virtual void OnSetSubFolder() Z7_override;
+  virtual void PanelWasFocused() Z7_override;
+  virtual void DragBegin() Z7_override;
+  virtual void DragEnd() Z7_override;
+  virtual void RefreshTitle(bool always) Z7_override;
 };
 
-class CApp;
 
-class CDropTarget:
-  public IDropTarget,
-  public CMyUnknownImp
-{
-  CMyComPtr<IDataObject> m_DataObject;
-  UStringVector m_SourcePaths;
-  int m_SelectionIndex;
-  bool m_DropIsAllowed;      // = true, if data contain fillist
-  bool m_PanelDropIsAllowed; // = false, if current target_panel is source_panel.
-                             // check it only if m_DropIsAllowed == true
-  int m_SubFolderIndex;
-  UString m_SubFolderName;
-
-  CPanel *m_Panel;
-  bool m_IsAppTarget;        // true, if we want to drop to app window (not to panel).
-
-  bool m_SetPathIsOK;
-
-  bool IsItSameDrive() const;
-
-  void QueryGetData(IDataObject *dataObject);
-  bool IsFsFolderPath() const;
-  DWORD GetEffect(DWORD keyState, POINTL pt, DWORD allowedEffect);
-  void RemoveSelection();
-  void PositionCursor(POINTL ptl);
-  UString GetTargetPath() const;
-  bool SetPath(bool enablePath) const;
-  bool SetPath();
-
-public:
-  MY_UNKNOWN_IMP1_MT(IDropTarget)
-  STDMETHOD(DragEnter)(IDataObject * dataObject, DWORD keyState, POINTL pt, DWORD *effect);
-  STDMETHOD(DragOver)(DWORD keyState, POINTL pt, DWORD * effect);
-  STDMETHOD(DragLeave)();
-  STDMETHOD(Drop)(IDataObject * dataObject, DWORD keyState, POINTL pt, DWORD *effect);
-
-  CDropTarget():
-      m_SelectionIndex(-1),
-      m_DropIsAllowed(false),
-      m_PanelDropIsAllowed(false),
-      m_SubFolderIndex(-1),
-      m_Panel(NULL),
-      m_IsAppTarget(false),
-      m_SetPathIsOK(false),
-      App(NULL),
-      SrcPanelIndex(-1),
-      TargetPanelIndex(-1)
-      {}
-
-  CApp *App;
-  int SrcPanelIndex;              // index of D&D source_panel
-  int TargetPanelIndex;           // what panel to use as target_panel of Application
-};
-
+class CDropTarget;
 
 class CApp
 {
 public:
   NWindows::CWindow _window;
   bool ShowSystemMenu;
+  bool AutoRefresh_Mode;
   // bool ShowDeletedFiles;
   unsigned NumPanels;
   unsigned LastFocusedPanel;
@@ -138,45 +85,27 @@ public:
 
   UString LangString_N_SELECTED_ITEMS;
   
-  void ReloadLang();
+  void ReloadLangItems();
 
-  CApp(): _window(0), NumPanels(2), LastFocusedPanel(0),
-    AutoRefresh_Mode(true)
+  CApp():
+    _window(NULL),
+    AutoRefresh_Mode(true),
+    NumPanels(2),
+    LastFocusedPanel(0)
   {
     SetPanels_AutoRefresh_Mode();
   }
 
-  void CreateDragTarget()
-  {
-    _dropTargetSpec = new CDropTarget();
-    _dropTarget = _dropTargetSpec;
-    _dropTargetSpec->App = (this);
-  }
-
-  void SetFocusedPanel(unsigned index)
-  {
-    LastFocusedPanel = index;
-    _dropTargetSpec->TargetPanelIndex = LastFocusedPanel;
-  }
-
-  void DragBegin(unsigned panelIndex)
-  {
-    _dropTargetSpec->TargetPanelIndex = (NumPanels > 1) ? 1 - panelIndex : panelIndex;
-    _dropTargetSpec->SrcPanelIndex = panelIndex;
-  }
-
-  void DragEnd()
-  {
-    _dropTargetSpec->TargetPanelIndex = LastFocusedPanel;
-    _dropTargetSpec->SrcPanelIndex = -1;
-  }
-
+  void CreateDragTarget();
+  void SetFocusedPanel(unsigned index);
+  void DragBegin(unsigned panelIndex);
+  void DragEnd();
   
-  void OnCopy(bool move, bool copyToSame, int srcPanelIndex);
-  void OnSetSameFolder(int srcPanelIndex);
-  void OnSetSubFolder(int srcPanelIndex);
+  void OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex);
+  void OnSetSameFolder(unsigned srcPanelIndex);
+  void OnSetSubFolder(unsigned srcPanelIndex);
 
-  HRESULT CreateOnePanel(int panelIndex, const UString &mainPath, const UString &arcFormat, bool needOpenArc, COpenResult &openRes);
+  HRESULT CreateOnePanel(unsigned panelIndex, const UString &mainPath, const UString &arcFormat, bool needOpenArc, COpenResult &openRes);
   HRESULT Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, COpenResult &openRes);
   void Read();
   void Save();
@@ -290,7 +219,6 @@ public:
   // void Change_ShowNtfsStrems_Mode() { Panels[LastFocusedPanel].Change_ShowNtfsStrems_Mode(); }
   // void Change_ShowDeleted() { ShowDeletedFiles = !ShowDeletedFiles; }
 
-  bool AutoRefresh_Mode;
   bool Get_AutoRefresh_Mode()
   {
     // return Panels[LastFocusedPanel].Get_ShowNtfsStrems_Mode();
@@ -307,13 +235,13 @@ public:
       Panels[i].Set_AutoRefresh_Mode(AutoRefresh_Mode);
   }
 
-  void OpenBookmark(int index) { GetFocusedPanel().OpenBookmark(index); }
-  void SetBookmark(int index) { GetFocusedPanel().SetBookmark(index); }
+  void OpenBookmark(unsigned index) { GetFocusedPanel().OpenBookmark(index); }
+  void SetBookmark(unsigned index) { GetFocusedPanel().SetBookmark(index); }
 
   void ReloadToolbars();
   void ReadToolbar()
   {
-    UInt32 mask = ReadToolbarsMask();
+    const UInt32 mask = ReadToolbarsMask();
     if (mask & ((UInt32)1 << 31))
     {
       ShowButtonsLables = !g_IsSmallScreen;

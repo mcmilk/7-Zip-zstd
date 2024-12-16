@@ -1,9 +1,10 @@
 // Windows/Net.h
 
-#ifndef __WINDOWS_NET_H
-#define __WINDOWS_NET_H
+#ifndef ZIP7_INC_WINDOWS_NET_H
+#define ZIP7_INC_WINDOWS_NET_H
 
 #include "../Common/MyString.h"
+#include "../Common/MyWindows.h"
 
 namespace NWindows {
 namespace NNet {

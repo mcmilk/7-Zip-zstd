@@ -2,10 +2,32 @@
 
 #include "StdAfx.h"
 
+#ifdef __MINGW32_VERSION
+// #if !defined(_MSC_VER) && (__GNUC__) && (__GNUC__ < 10)
+// for old mingw
+#include <ddk/ntddk.h>
+#else
+#ifndef Z7_OLD_WIN_SDK
+  #if !defined(_M_IA64)
+    #include <winternl.h>
+  #endif
+#else
+typedef LONG NTSTATUS;
+typedef struct _IO_STATUS_BLOCK {
+    union {
+        NTSTATUS Status;
+        PVOID Pointer;
+    };
+    ULONG_PTR Information;
+} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+#endif
+#endif
+
 #include "../../../Common/ComTry.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/Wildcard.h"
 
+#include "../../../Windows/DLL.h"
 #include "../../../Windows/ErrorMsg.h"
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileIO.h"
@@ -54,7 +76,7 @@ static unsigned GetFsParentPrefixSize(const FString &path)
 {
   if (IsNetworkShareRootPath(path))
     return 0;
-  unsigned prefixSize = GetRootPrefixSize(path);
+  const unsigned prefixSize = GetRootPrefixSize(path);
   if (prefixSize == 0 || prefixSize >= path.Len())
     return 0;
   FString parentPath = path;
@@ -70,7 +92,7 @@ static unsigned GetFsParentPrefixSize(const FString &path)
   }
   if ((unsigned)pos + 1 < prefixSize)
     return 0;
-  return pos + 1;
+  return (unsigned)pos + 1;
 }
 
 HRESULT CAltStreamsFolder::Init(const FString &path /* , IFolderFolder *parentFolder */)
@@ -115,7 +137,7 @@ HRESULT CAltStreamsFolder::Init(const FString &path /* , IFolderFolder *parentFo
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::LoadItems()
+Z7_COM7F_IMF(CAltStreamsFolder::LoadItems())
 {
   Int32 dummy;
   WasChanged(&dummy);
@@ -152,7 +174,7 @@ STDMETHODIMP CAltStreamsFolder::LoadItems()
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CAltStreamsFolder::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = Streams.Size();
   return S_OK;
@@ -160,16 +182,16 @@ STDMETHODIMP CAltStreamsFolder::GetNumberOfItems(UInt32 *numItems)
 
 #ifdef USE_UNICODE_FSTRING
 
-STDMETHODIMP CAltStreamsFolder::GetItemPrefix(UInt32 /* index */, const wchar_t **name, unsigned *len)
+Z7_COM7F_IMF(CAltStreamsFolder::GetItemPrefix(UInt32 /* index */, const wchar_t **name, unsigned *len))
 {
-  *name = 0;
+  *name = NULL;
   *len = 0;
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::GetItemName(UInt32 index, const wchar_t **name, unsigned *len)
+Z7_COM7F_IMF(CAltStreamsFolder::GetItemName(UInt32 index, const wchar_t **name, unsigned *len))
 {
-  *name = 0;
+  *name = NULL;
   *len = 0;
   {
     const CAltStream &ss = Streams[index];
@@ -179,7 +201,7 @@ STDMETHODIMP CAltStreamsFolder::GetItemName(UInt32 index, const wchar_t **name, 
   return S_OK;
 }
 
-STDMETHODIMP_(UInt64) CAltStreamsFolder::GetItemSize(UInt32 index)
+Z7_COM7F_IMF2(UInt64, CAltStreamsFolder::GetItemSize(UInt32 index))
 {
   return Streams[index].Size;
 }
@@ -187,7 +209,7 @@ STDMETHODIMP_(UInt64) CAltStreamsFolder::GetItemSize(UInt32 index)
 #endif
 
 
-STDMETHODIMP CAltStreamsFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CAltStreamsFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   NCOM::CPropVariant prop;
   {
@@ -223,11 +245,11 @@ STDMETHODIMP CAltStreamsFolder::GetProperty(UInt32 index, PROPID propID, PROPVAR
 
 static inline const wchar_t *GetExtensionPtr(const UString &name)
 {
-  int dotPos = name.ReverseFind_Dot();
-  return name.Ptr((dotPos < 0) ? name.Len() : dotPos);
+  const int dotPos = name.ReverseFind_Dot();
+  return name.Ptr(dotPos < 0 ? name.Len() : (unsigned)dotPos);
 }
 
-STDMETHODIMP_(Int32) CAltStreamsFolder::CompareItems(UInt32 index1, UInt32 index2, PROPID propID, Int32 /* propIsRaw */)
+Z7_COM7F_IMF2(Int32, CAltStreamsFolder::CompareItems(UInt32 index1, UInt32 index2, PROPID propID, Int32 /* propIsRaw */))
 {
   const CAltStream &ss1 = Streams[index1];
   const CAltStream &ss2 = Streams[index2];
@@ -262,23 +284,23 @@ STDMETHODIMP_(Int32) CAltStreamsFolder::CompareItems(UInt32 index1, UInt32 index
   return 0;
 }
 
-STDMETHODIMP CAltStreamsFolder::BindToFolder(UInt32 /* index */, IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CAltStreamsFolder::BindToFolder(UInt32 /* index */, IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   return E_INVALIDARG;
 }
 
-STDMETHODIMP CAltStreamsFolder::BindToFolder(const wchar_t * /* name */, IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CAltStreamsFolder::BindToFolder(const wchar_t * /* name */, IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   return E_INVALIDARG;
 }
 
 // static CFSTR const kSuperPrefix = FTEXT("\\\\?\\");
 
-STDMETHODIMP CAltStreamsFolder::BindToParentFolder(IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CAltStreamsFolder::BindToParentFolder(IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   /*
   if (_parentFolder)
   {
@@ -338,15 +360,9 @@ STDMETHODIMP CAltStreamsFolder::BindToParentFolder(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::GetNumberOfProperties(UInt32 *numProperties)
-{
-  *numProperties = ARRAY_SIZE(kProps);
-  return S_OK;
-}
+IMP_IFolderFolder_Props(CAltStreamsFolder)
 
-STDMETHODIMP CAltStreamsFolder::GetPropertyInfo IMP_IFolderFolder_GetProp(kProps)
-
-STDMETHODIMP CAltStreamsFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CAltStreamsFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -360,7 +376,7 @@ STDMETHODIMP CAltStreamsFolder::GetFolderProperty(PROPID propID, PROPVARIANT *va
   COM_TRY_END
 }
 
-STDMETHODIMP CAltStreamsFolder::WasChanged(Int32 *wasChanged)
+Z7_COM7F_IMF(CAltStreamsFolder::WasChanged(Int32 *wasChanged))
 {
   bool wasChangedMain = false;
   for (;;)
@@ -385,7 +401,7 @@ STDMETHODIMP CAltStreamsFolder::WasChanged(Int32 *wasChanged)
   return S_OK;
 }
  
-STDMETHODIMP CAltStreamsFolder::Clone(IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CAltStreamsFolder::Clone(IFolderFolder **resultFolder))
 {
   CAltStreamsFolder *folderSpec = new CAltStreamsFolder;
   CMyComPtr<IFolderFolder> folderNew = folderSpec;
@@ -436,39 +452,31 @@ static HRESULT SendMessageError(IFolderArchiveUpdateCallback *callback,
 }
 */
 
-STDMETHODIMP CAltStreamsFolder::CreateFolder(const wchar_t * /* name */, IProgress * /* progress */)
+Z7_COM7F_IMF(CAltStreamsFolder::CreateFolder(const wchar_t * /* name */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CAltStreamsFolder::CreateFile(const wchar_t *name, IProgress * /* progress */)
+Z7_COM7F_IMF(CAltStreamsFolder::CreateFile(const wchar_t *name, IProgress * /* progress */))
 {
   FString absPath;
   GetAbsPath(name, absPath);
   NIO::COutFile outFile;
   if (!outFile.Create(absPath, false))
-    return ::GetLastError();
+    return GetLastError_noZero_HRESULT();
   return S_OK;
-}
-
-static DWORD Return_LastError_or_FAIL()
-{
-  DWORD errorCode = GetLastError();
-  if (errorCode == 0)
-    errorCode = (DWORD)E_FAIL;
-  return errorCode;
 }
 
 static UString GetLastErrorMessage()
 {
-  return NError::MyFormatMessage(Return_LastError_or_FAIL());
+  return NError::MyFormatMessage(GetLastError_noZero_HRESULT());
 }
 
 static HRESULT UpdateFile(NFsFolder::CCopyStateIO &state, CFSTR inPath, CFSTR outPath, IFolderArchiveUpdateCallback *callback)
 {
   if (NFind::DoesFileOrDirExist(outPath))
   {
-    RINOK(SendMessageError(callback, NError::MyFormatMessage(ERROR_ALREADY_EXISTS), FString(outPath)));
+    RINOK(SendMessageError(callback, NError::MyFormatMessage(ERROR_ALREADY_EXISTS), FString(outPath)))
     CFileInfo fi;
     if (fi.Find(inPath))
     {
@@ -480,8 +488,8 @@ static HRESULT UpdateFile(NFsFolder::CCopyStateIO &state, CFSTR inPath, CFSTR ou
 
   {
     if (callback)
-      RINOK(callback->CompressOperation(fs2us(inPath)));
-    RINOK(state.MyCopyFile(inPath, outPath));
+      RINOK(callback->CompressOperation(fs2us(inPath)))
+    RINOK(state.MyCopyFile(inPath, outPath))
     if (state.ErrorFileIndex >= 0)
     {
       if (state.ErrorMessage.IsEmpty())
@@ -492,31 +500,136 @@ static HRESULT UpdateFile(NFsFolder::CCopyStateIO &state, CFSTR inPath, CFSTR ou
       else
         errorName = outPath;
       if (callback)
-        RINOK(SendMessageError(callback, state.ErrorMessage, errorName));
+        RINOK(SendMessageError(callback, state.ErrorMessage, errorName))
     }
     if (callback)
-      RINOK(callback->OperationResult(0));
+      RINOK(callback->OperationResult(0))
   }
 
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *progress)
+EXTERN_C_BEGIN
+
+typedef enum
 {
+  Z7_WIN_FileRenameInformation = 10
+}
+Z7_WIN_FILE_INFORMATION_CLASS;
+
+
+typedef struct
+{
+  // #if (_WIN32_WINNT >= _WIN32_WINNT_WIN10_RS1)
+  union
+  {
+    BOOLEAN ReplaceIfExists;  // FileRenameInformation
+    ULONG Flags;              // FileRenameInformationEx
+  } DUMMYUNIONNAME;
+  // #else
+  // BOOLEAN ReplaceIfExists;
+  // #endif
+  HANDLE RootDirectory;
+  ULONG FileNameLength;
+  WCHAR FileName[1];
+} Z7_WIN_FILE_RENAME_INFORMATION;
+
+#if (_WIN32_WINNT >= 0x0500) && !defined(_M_IA64)
+#define Z7_WIN_NTSTATUS  NTSTATUS
+#define Z7_WIN_IO_STATUS_BLOCK  IO_STATUS_BLOCK
+#else
+typedef LONG Z7_WIN_NTSTATUS;
+typedef struct
+{
+  union
+  {
+    Z7_WIN_NTSTATUS Status;
+    PVOID Pointer;
+  } DUMMYUNIONNAME;
+  ULONG_PTR Information;
+} Z7_WIN_IO_STATUS_BLOCK;
+#endif
+
+typedef Z7_WIN_NTSTATUS (WINAPI *Func_NtSetInformationFile)(
+    HANDLE FileHandle,
+    Z7_WIN_IO_STATUS_BLOCK *IoStatusBlock,
+    PVOID FileInformation,
+    ULONG Length,
+    Z7_WIN_FILE_INFORMATION_CLASS FileInformationClass);
+
+// NTAPI
+typedef ULONG (WINAPI *Func_RtlNtStatusToDosError)(Z7_WIN_NTSTATUS Status);
+
+#define MY_STATUS_SUCCESS 0
+
+EXTERN_C_END
+
+// static Func_NtSetInformationFile f_NtSetInformationFile;
+// static bool g_NtSetInformationFile_WasRequested = false;
+
+
+Z7_COM7F_IMF(CAltStreamsFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *progress))
+{
+  const CAltStream &ss = Streams[index];
+  const FString srcPath = _pathPrefix + us2fs(ss.Name);
+
+  const HMODULE ntdll = ::GetModuleHandleW(L"ntdll.dll");
+  // if (!g_NtSetInformationFile_WasRequested) {
+  // g_NtSetInformationFile_WasRequested = true;
+  const
+   Func_NtSetInformationFile
+      f_NtSetInformationFile = Z7_GET_PROC_ADDRESS(
+   Func_NtSetInformationFile, ntdll,
+       "NtSetInformationFile");
+  if (f_NtSetInformationFile)
+  {
+    NIO::CInFile inFile;
+    if (inFile.Open_for_FileRenameInformation(srcPath))
+    {
+      UString destPath (':');
+      destPath += newName;
+      const ULONG len = (ULONG)sizeof(wchar_t) * destPath.Len();
+      CByteBuffer buffer(sizeof(Z7_WIN_FILE_RENAME_INFORMATION) + len);
+      // buffer is 4 bytes larger than required.
+      Z7_WIN_FILE_RENAME_INFORMATION *fri = (Z7_WIN_FILE_RENAME_INFORMATION *)(void *)(Byte *)buffer;
+      memset(fri, 0, sizeof(Z7_WIN_FILE_RENAME_INFORMATION));
+      /* DOCS: If ReplaceIfExists is set to TRUE, the rename operation will succeed only
+         if a stream with the same name does not exist or is a zero-length data stream. */
+      fri->ReplaceIfExists = FALSE;
+      fri->RootDirectory = NULL;
+      fri->FileNameLength = len;
+      memcpy(fri->FileName, destPath.Ptr(), len);
+      Z7_WIN_IO_STATUS_BLOCK iosb;
+      const Z7_WIN_NTSTATUS status = f_NtSetInformationFile (inFile.GetHandle(),
+          &iosb, fri, (ULONG)buffer.Size(), Z7_WIN_FileRenameInformation);
+      if (status != MY_STATUS_SUCCESS)
+      {
+        const
+         Func_RtlNtStatusToDosError
+            f_RtlNtStatusToDosError = Z7_GET_PROC_ADDRESS(
+         Func_RtlNtStatusToDosError, ntdll,
+             "RtlNtStatusToDosError");
+        if (f_RtlNtStatusToDosError)
+        {
+          const ULONG res = f_RtlNtStatusToDosError(status);
+          if (res != ERROR_MR_MID_NOT_FOUND)
+            return HRESULT_FROM_WIN32(res);
+        }
+      }
+      return status;
+    }
+  }
+
   CMyComPtr<IFolderArchiveUpdateCallback> callback;
   if (progress)
   {
-    RINOK(progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&callback));
+    RINOK(progress->QueryInterface(IID_IFolderArchiveUpdateCallback, (void **)&callback))
   }
-
-  FString destPath = _pathPrefix + us2fs(newName);
-
-  const CAltStream &ss = Streams[index];
 
   if (callback)
   {
-    RINOK(callback->SetNumFiles(1));
-    RINOK(callback->SetTotal(ss.Size));
+    RINOK(callback->SetNumFiles(1))
+    RINOK(callback->SetTotal(ss.Size))
   }
 
   NFsFolder::CCopyStateIO state;
@@ -524,32 +637,33 @@ STDMETHODIMP CAltStreamsFolder::Rename(UInt32 index, const wchar_t *newName, IPr
   state.TotalSize = 0;
   state.DeleteSrcFile = true;
 
-  return UpdateFile(state, _pathPrefix + us2fs(ss.Name), destPath, callback);
+  const FString destPath = _pathPrefix + us2fs(newName);
+  return UpdateFile(state, srcPath, destPath, callback);
 }
 
-STDMETHODIMP CAltStreamsFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress *progress)
+Z7_COM7F_IMF(CAltStreamsFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress *progress))
 {
-  RINOK(progress->SetTotal(numItems));
+  RINOK(progress->SetTotal(numItems))
   for (UInt32 i = 0; i < numItems; i++)
   {
     const CAltStream &ss = Streams[indices[i]];
     const FString fullPath = _pathPrefix + us2fs(ss.Name);
-    bool result = DeleteFileAlways(fullPath);
+    const bool result = DeleteFileAlways(fullPath);
     if (!result)
-      return Return_LastError_or_FAIL();
-    UInt64 completed = i;
-    RINOK(progress->SetCompleted(&completed));
+      return GetLastError_noZero_HRESULT();
+    const UInt64 completed = i;
+    RINOK(progress->SetCompleted(&completed))
   }
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::SetProperty(UInt32 /* index */, PROPID /* propID */,
-    const PROPVARIANT * /* value */, IProgress * /* progress */)
+Z7_COM7F_IMF(CAltStreamsFolder::SetProperty(UInt32 /* index */, PROPID /* propID */,
+    const PROPVARIANT * /* value */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CAltStreamsFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
+Z7_COM7F_IMF(CAltStreamsFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex))
 {
   const CAltStream &ss = Streams[index];
   *iconIndex = 0;
@@ -561,30 +675,28 @@ STDMETHODIMP CAltStreamsFolder::GetSystemIconIndex(UInt32 index, Int32 *iconInde
     *iconIndex = iconIndexTemp;
     return S_OK;
   }
-  return Return_LastError_or_FAIL();
+  return GetLastError_noZero_HRESULT();
 }
 
 /*
-class CGetProp:
-  public IGetProp,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CGetProp
+  , IGetProp
+)
 public:
   // const CArc *Arc;
   // UInt32 IndexInArc;
   UString Name; // relative path
   UInt64 Size;
-
-  MY_UNKNOWN_IMP1(IGetProp)
-  INTERFACE_IGetProp(;)
 };
 
-STDMETHODIMP CGetProp::GetProp(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CGetProp::GetProp(PROPID propID, PROPVARIANT *value))
 {
   if (propID == kpidName)
   {
     COM_TRY_BEGIN
-    NCOM::CPropVariant prop = Name;
+    NCOM::CPropVariant prop;
+    prop = Name;
     prop.Detach(value);
     return S_OK;
     COM_TRY_END
@@ -612,7 +724,7 @@ static HRESULT CopyStream(
   FString destPath = destPathSpec;
   if (CompareFileNames(destPath, srcPath) == 0)
   {
-    RINOK(SendMessageError(callback, "Cannot copy file onto itself", destPath));
+    RINOK(SendMessageError(callback, "Cannot copy file onto itself", destPath))
     return E_ABORT;
   }
 
@@ -624,13 +736,13 @@ static HRESULT CopyStream(
       &srcFileInfo.MTime, &srcAltStream.Size,
       fs2us(destPath),
       &destPathResult,
-      &writeAskResult));
+      &writeAskResult))
 
   if (IntToBool(writeAskResult))
   {
-    RINOK(callback->SetCurrentFilePath(fs2us(srcPath)));
+    RINOK(callback->SetCurrentFilePath(fs2us(srcPath)))
     FString destPathNew (us2fs((LPCOLESTR)destPathResult));
-    RINOK(state.MyCopyFile(srcPath, destPathNew));
+    RINOK(state.MyCopyFile(srcPath, destPathNew))
     if (state.ErrorFileIndex >= 0)
     {
       if (state.ErrorMessage.IsEmpty())
@@ -640,7 +752,7 @@ static HRESULT CopyStream(
         errorName = srcPath;
       else
         errorName = destPathNew;
-      RINOK(SendMessageError(callback, state.ErrorMessage, errorName));
+      RINOK(SendMessageError(callback, state.ErrorMessage, errorName))
       return E_ABORT;
     }
     state.StartPos += state.CurrentSize;
@@ -650,22 +762,23 @@ static HRESULT CopyStream(
     if (state.TotalSize >= srcAltStream.Size)
     {
       state.TotalSize -= srcAltStream.Size;
-      RINOK(state.Progress->SetTotal(state.TotalSize));
+      RINOK(state.Progress->SetTotal(state.TotalSize))
     }
   }
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 numItems,
+Z7_COM7F_IMF(CAltStreamsFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 numItems,
     Int32 /* includeAltStreams */, Int32 /* replaceAltStreamColon */,
-    const wchar_t *path, IFolderOperationsExtractCallback *callback)
+    const wchar_t *path, IFolderOperationsExtractCallback *callback))
 {
   if (numItems == 0)
     return S_OK;
 
   /*
-  CMyComPtr<IFolderExtractToStreamCallback> ExtractToStreamCallback;
-  RINOK(callback->QueryInterface(IID_IFolderExtractToStreamCallback, (void **)&ExtractToStreamCallback));
+  Z7_DECL_CMyComPtr_QI_FROM(
+      IFolderExtractToStreamCallback,
+      ExtractToStreamCallback, callback)
   if (ExtractToStreamCallback)
   {
     Int32 useStreams = 0;
@@ -683,8 +796,8 @@ STDMETHODIMP CAltStreamsFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UI
     {
       totalSize += Streams[indices[i]].Size;
     }
-    RINOK(callback->SetTotal(totalSize));
-    RINOK(callback->SetNumFiles(numItems));
+    RINOK(callback->SetTotal(totalSize))
+    RINOK(callback->SetNumFiles(numItems))
   }
 
   /*
@@ -716,8 +829,8 @@ STDMETHODIMP CAltStreamsFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UI
   if (destPath.IsEmpty() /* && !ExtractToStreamCallback */)
     return E_INVALIDARG;
 
-  bool isAltDest = NName::IsAltPathPrefix(destPath);
-  bool isDirectPath = (!isAltDest && !IsPathSepar(destPath.Back()));
+  const bool isAltDest = NName::IsAltPathPrefix(destPath);
+  const bool isDirectPath = (!isAltDest && !IsPathSepar(destPath.Back()));
 
   if (isDirectPath)
   {
@@ -727,7 +840,7 @@ STDMETHODIMP CAltStreamsFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UI
 
   CFileInfo fi;
   if (!fi.Find(_pathBaseFile))
-    return GetLastError();
+    return GetLastError_noZero_HRESULT();
 
   NFsFolder::CCopyStateIO state;
   state.Progress = callback;
@@ -736,21 +849,21 @@ STDMETHODIMP CAltStreamsFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UI
 
   for (UInt32 i = 0; i < numItems; i++)
   {
-    UInt32 index = indices[i];
+    const UInt32 index = indices[i];
     const CAltStream &ss = Streams[index];
     FString destPath2 = destPath;
     if (!isDirectPath)
       destPath2 += us2fs(Get_Correct_FsFile_Name(ss.Name));
     FString srcPath;
     GetFullPath(ss, srcPath);
-    RINOK(CopyStream(state, srcPath, fi, ss, destPath2, callback));
+    RINOK(CopyStream(state, srcPath, fi, ss, destPath2, callback))
   }
 
   return S_OK;
 }
 
-STDMETHODIMP CAltStreamsFolder::CopyFrom(Int32 /* moveMode */, const wchar_t * /* fromFolderPath */,
-    const wchar_t * const * /* itemsPaths */, UInt32 /* numItems */, IProgress * /* progress */)
+Z7_COM7F_IMF(CAltStreamsFolder::CopyFrom(Int32 /* moveMode */, const wchar_t * /* fromFolderPath */,
+    const wchar_t * const * /* itemsPaths */, UInt32 /* numItems */, IProgress * /* progress */))
 {
   /*
   if (numItems == 0)
@@ -831,7 +944,7 @@ STDMETHODIMP CAltStreamsFolder::CopyFrom(Int32 /* moveMode */, const wchar_t * /
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CAltStreamsFolder::CopyFromFile(UInt32 /* index */, const wchar_t * /* fullFilePath */, IProgress * /* progress */)
+Z7_COM7F_IMF(CAltStreamsFolder::CopyFromFile(UInt32 /* index */, const wchar_t * /* fullFilePath */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }

@@ -14,13 +14,41 @@
 extern bool g_IsNT;
 #endif
 
+extern "C"
+{
+#if !defined(WNetGetResourceParent)
+// #if defined(Z7_OLD_WIN_SDK)
+// #if (WINVER >= 0x0400)
+DWORD APIENTRY WNetGetResourceParentA(IN LPNETRESOURCEA lpNetResource,
+    OUT LPVOID lpBuffer, IN OUT LPDWORD lpcbBuffer);
+DWORD APIENTRY WNetGetResourceParentW(IN LPNETRESOURCEW lpNetResource,
+    OUT LPVOID lpBuffer, IN OUT LPDWORD lpcbBuffer);
+#ifdef UNICODE
+#define WNetGetResourceParent  WNetGetResourceParentW
+#else
+#define WNetGetResourceParent  WNetGetResourceParentA
+#endif
+
+DWORD APIENTRY WNetGetResourceInformationA(IN LPNETRESOURCEA lpNetResource,
+    OUT LPVOID lpBuffer, IN OUT LPDWORD lpcbBuffer, OUT LPSTR *lplpSystem);
+DWORD APIENTRY WNetGetResourceInformationW(IN LPNETRESOURCEW lpNetResource,
+    OUT LPVOID lpBuffer, IN OUT LPDWORD lpcbBuffer, OUT LPWSTR *lplpSystem);
+#ifdef UNICODE
+#define WNetGetResourceInformation  WNetGetResourceInformationW
+#else
+#define WNetGetResourceInformation  WNetGetResourceInformationA
+#endif
+// #endif // (WINVER >= 0x0400)
+#endif
+}
+
 namespace NWindows {
 namespace NNet {
 
 DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCE netResource)
 {
   Close();
-  DWORD result = ::WNetOpenEnum(scope, type, usage, netResource, &_handle);
+  const DWORD result = ::WNetOpenEnum(scope, type, usage, netResource, &_handle);
   _handleAllocated = (result == NO_ERROR);
   return result;
 }
@@ -29,7 +57,7 @@ DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCE netResourc
 DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCEW netResource)
 {
   Close();
-  DWORD result = ::WNetOpenEnumW(scope, type, usage, netResource, &_handle);
+  const DWORD result = ::WNetOpenEnumW(scope, type, usage, netResource, &_handle);
   _handleAllocated = (result == NO_ERROR);
   return result;
 }
@@ -37,7 +65,7 @@ DWORD CEnum::Open(DWORD scope, DWORD type, DWORD usage, LPNETRESOURCEW netResour
 
 static void SetComplexString(bool &defined, CSysString &destString, LPCTSTR srcString)
 {
-  defined = (srcString != 0);
+  defined = (srcString != NULL);
   if (defined)
     destString = srcString;
   else
@@ -179,7 +207,7 @@ DWORD CEnum::Close()
 {
   if (!_handleAllocated)
     return NO_ERROR;
-  DWORD result = ::WNetCloseEnum(_handle);
+  const DWORD result = ::WNetCloseEnum(_handle);
   _handleAllocated = (result != NO_ERROR);
   return result;
 }
@@ -204,7 +232,7 @@ DWORD CEnum::Next(CResource &resource)
   ZeroMemory(lpnrLocal, kBufferSize);
   DWORD bufferSize = kBufferSize;
   DWORD numEntries = 1;
-  DWORD result = Next(&numEntries, lpnrLocal, &bufferSize);
+  const DWORD result = Next(&numEntries, lpnrLocal, &bufferSize);
   if (result != NO_ERROR)
     return result;
   if (numEntries != 1)
@@ -224,7 +252,7 @@ DWORD CEnum::Next(CResourceW &resource)
     ZeroMemory(lpnrLocal, kBufferSize);
     DWORD bufferSize = kBufferSize;
     DWORD numEntries = 1;
-    DWORD result = NextW(&numEntries, lpnrLocal, &bufferSize);
+    const DWORD result = NextW(&numEntries, lpnrLocal, &bufferSize);
     if (result != NO_ERROR)
       return result;
     if (numEntries != 1)
@@ -233,7 +261,7 @@ DWORD CEnum::Next(CResourceW &resource)
     return result;
   }
   CResource resourceA;
-  DWORD result = Next(resourceA);
+  const DWORD result = Next(resourceA);
   ConvertResourceToResourceW(resourceA, resource);
   return result;
 }
@@ -249,7 +277,7 @@ DWORD GetResourceParent(const CResource &resource, CResource &parentResource)
   DWORD bufferSize = kBufferSize;
   NETRESOURCE netResource;
   ConvertCResourceToNETRESOURCE(resource, netResource);
-  DWORD result = ::WNetGetResourceParent(&netResource, lpnrLocal, &bufferSize);
+  const DWORD result = ::WNetGetResourceParent(&netResource, lpnrLocal, &bufferSize);
   if (result != NO_ERROR)
     return result;
   ConvertNETRESOURCEToCResource(lpnrLocal[0], parentResource);
@@ -268,7 +296,7 @@ DWORD GetResourceParent(const CResourceW &resource, CResourceW &parentResource)
     DWORD bufferSize = kBufferSize;
     NETRESOURCEW netResource;
     ConvertCResourceToNETRESOURCE(resource, netResource);
-    DWORD result = ::WNetGetResourceParentW(&netResource, lpnrLocal, &bufferSize);
+    const DWORD result = ::WNetGetResourceParentW(&netResource, lpnrLocal, &bufferSize);
     if (result != NO_ERROR)
       return result;
     ConvertNETRESOURCEToCResource(lpnrLocal[0], parentResource);
@@ -276,7 +304,7 @@ DWORD GetResourceParent(const CResourceW &resource, CResourceW &parentResource)
   }
   CResource resourceA, parentResourceA;
   ConvertResourceWToResource(resource, resourceA);
-  DWORD result = GetResourceParent(resourceA, parentResourceA);
+  const DWORD result = GetResourceParent(resourceA, parentResourceA);
   ConvertResourceToResourceW(parentResourceA, parentResource);
   return result;
 }
@@ -293,11 +321,11 @@ DWORD GetResourceInformation(const CResource &resource,
   NETRESOURCE netResource;
   ConvertCResourceToNETRESOURCE(resource, netResource);
   LPTSTR lplpSystem;
-  DWORD result = ::WNetGetResourceInformation(&netResource,
+  const DWORD result = ::WNetGetResourceInformation(&netResource,
       lpnrLocal, &bufferSize, &lplpSystem);
   if (result != NO_ERROR)
     return result;
-  if (lplpSystem != 0)
+  if (lplpSystem != NULL)
     systemPathPart = lplpSystem;
   ConvertNETRESOURCEToCResource(lpnrLocal[0], destResource);
   return result;
@@ -317,7 +345,7 @@ DWORD GetResourceInformation(const CResourceW &resource,
     NETRESOURCEW netResource;
     ConvertCResourceToNETRESOURCE(resource, netResource);
     LPWSTR lplpSystem;
-    DWORD result = ::WNetGetResourceInformationW(&netResource,
+    const DWORD result = ::WNetGetResourceInformationW(&netResource,
       lpnrLocal, &bufferSize, &lplpSystem);
     if (result != NO_ERROR)
       return result;
@@ -329,7 +357,7 @@ DWORD GetResourceInformation(const CResourceW &resource,
   CResource resourceA, destResourceA;
   ConvertResourceWToResource(resource, resourceA);
   AString systemPathPartA;
-  DWORD result = GetResourceInformation(resourceA, destResourceA, systemPathPartA);
+  const DWORD result = GetResourceInformation(resourceA, destResourceA, systemPathPartA);
   ConvertResourceToResourceW(destResourceA, destResource);
   systemPathPart = GetUnicodeString(systemPathPartA);
   return result;

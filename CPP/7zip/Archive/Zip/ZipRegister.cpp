@@ -17,7 +17,7 @@ static const Byte k_Signature[] = {
     6, 0x50, 0x4B, 0x30, 0x30, 0x50, 0x4B }; // NoSpan
 
 REGISTER_ARC_IO(
-  "zip", "zip z01 zipx jar xpi odt ods docx xlsx epub ipa apk appx", 0, 1,
+  "zip", "zip z01 zipx jar xpi odt ods docx xlsx epub ipa apk appx", NULL, 1,
   k_Signature,
   0,
     NArcInfoFlags::kFindSignature

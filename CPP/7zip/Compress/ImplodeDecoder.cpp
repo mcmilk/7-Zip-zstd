@@ -49,7 +49,7 @@ bool CHuffmanDecoder::Build(const Byte *lens, unsigned numSymbols) throw()
 
   for (sym = 0; sym < numSymbols; sym++)
   {
-    unsigned len = lens[sym];
+    const unsigned len = lens[sym];
     if (len != 0)
       _symbols[--counts[len]] = (Byte)sym;
   }
@@ -60,10 +60,10 @@ bool CHuffmanDecoder::Build(const Byte *lens, unsigned numSymbols) throw()
 
 UInt32 CHuffmanDecoder::Decode(CInBit *inStream) const throw()
 {
-  UInt32 val = inStream->GetValue(kNumHuffmanBits);
+  const UInt32 val = inStream->GetValue(kNumHuffmanBits);
   unsigned numBits;
   for (numBits = 1; val < _limits[numBits]; numBits++);
-  UInt32 sym = _symbols[_poses[numBits] + ((val - _limits[numBits]) >> (kNumHuffmanBits - numBits))];
+  const UInt32 sym = _symbols[_poses[numBits] + ((val - _limits[numBits]) >> (kNumHuffmanBits - numBits))];
   inStream->MovePos(numBits);
   return sym;
 }
@@ -95,9 +95,9 @@ bool CCoder::BuildHuff(CHuffmanDecoder &decoder, unsigned numSymbols)
   unsigned index = 0;
   do
   {
-    unsigned b = (unsigned)_inBitStream.ReadAlignedByte();
-    Byte level = (Byte)((b & 0xF) + 1);
-    unsigned rep = ((unsigned)b >> 4) + 1;
+    const unsigned b = (unsigned)_inBitStream.ReadAlignedByte();
+    const Byte level = (Byte)((b & 0xF) + 1);
+    const unsigned rep = ((unsigned)b >> 4) + 1;
     if (index + rep > numSymbols)
       return false;
     for (unsigned j = 0; j < rep; j++)
@@ -149,7 +149,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
     if (progress && (pos - prevProgress) >= (1 << 18))
     {
       const UInt64 packSize = _inBitStream.GetProcessedSize();
-      RINOK(progress->SetRatioInfo(&packSize, &pos));
+      RINOK(progress->SetRatioInfo(&packSize, &pos))
       prevProgress = pos;
     }
 
@@ -158,7 +158,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
       Byte b;
       if (literalsOn)
       {
-        UInt32 sym = _litDecoder.Decode(&_inBitStream);
+        const UInt32 sym = _litDecoder.Decode(&_inBitStream);
         // if (sym >= kLitTableSize) break;
         b = (Byte)sym;
       }
@@ -169,7 +169,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
     }
     else
     {
-      UInt32 lowDistBits = _inBitStream.ReadBits(numDistDirectBits);
+      const UInt32 lowDistBits = _inBitStream.ReadBits(numDistDirectBits);
       UInt32 dist = _distDecoder.Decode(&_inBitStream);
       // if (dist >= kDistTableSize) break;
       dist = (dist << numDistDirectBits) + lowDistBits;
@@ -222,8 +222,8 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
 }
 
 
-STDMETHODIMP CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress);  }
   // catch(const CInBufferException &e)  { return e.ErrorCode; }
@@ -233,7 +233,7 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *o
 }
 
 
-STDMETHODIMP CCoder::SetDecoderProperties2(const Byte *data, UInt32 size)
+Z7_COM7F_IMF(CCoder::SetDecoderProperties2(const Byte *data, UInt32 size))
 {
   if (size == 0)
     return E_NOTIMPL;
@@ -242,14 +242,14 @@ STDMETHODIMP CCoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 }
 
 
-STDMETHODIMP CCoder::SetFinishMode(UInt32 finishMode)
+Z7_COM7F_IMF(CCoder::SetFinishMode(UInt32 finishMode))
 {
   _fullStreamMode = (finishMode != 0);
   return S_OK;
 }
 
 
-STDMETHODIMP CCoder::GetInStreamProcessedSize(UInt64 *value)
+Z7_COM7F_IMF(CCoder::GetInStreamProcessedSize(UInt64 *value))
 {
   *value = _inBitStream.GetProcessedSize();
   return S_OK;

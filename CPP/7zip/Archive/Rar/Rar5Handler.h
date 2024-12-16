@@ -1,7 +1,7 @@
 // Rar5Handler.h
 
-#ifndef __RAR5_HANDLER_H
-#define __RAR5_HANDLER_H
+#ifndef ZIP7_INC_RAR5_HANDLER_H
+#define ZIP7_INC_RAR5_HANDLER_H
 
 #include "../../../../C/Blake2.h"
 
@@ -374,12 +374,22 @@ struct CArc
 };
 
 
-class CHandler:
+class CHandler Z7_final:
   public IInArchive,
   public IArchiveGetRawProps,
-  PUBLIC_ISetCompressCodecsInfo
+  Z7_PUBLIC_ISetCompressCodecsInfo_IFEC
   public CMyUnknownImp
 {
+  Z7_COM_QI_BEGIN2(IInArchive)
+  Z7_COM_QI_ENTRY(IArchiveGetRawProps)
+  Z7_COM_QI_ENTRY_ISetCompressCodecsInfo_IFEC
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
+  
+  Z7_IFACE_COM7_IMP(IInArchive)
+  Z7_IFACE_COM7_IMP(IArchiveGetRawProps)
+  DECL_ISetCompressCodecsInfo
+
 public:
   CRecordVector<CRefItem> _refs;
   CObjectVector<CItem> _items;
@@ -402,18 +412,6 @@ private:
   HRESULT Open2(IInStream *stream,
       const UInt64 *maxCheckStartPosition,
       IArchiveOpenCallback *openCallback);
-
-public:
-  MY_QUERYINTERFACE_BEGIN2(IInArchive)
-  MY_QUERYINTERFACE_ENTRY(IArchiveGetRawProps)
-  QUERY_ENTRY_ISetCompressCodecsInfo
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
-  
-  INTERFACE_IInArchive(;)
-  INTERFACE_IArchiveGetRawProps(;)
-
-  DECL_ISetCompressCodecsInfo
 };
 
 }}

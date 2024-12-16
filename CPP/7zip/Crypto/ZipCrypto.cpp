@@ -20,14 +20,14 @@ namespace NZip {
 #define DECRYPT_BYTE_1 UInt32 temp = key2 | 2;
 #define DECRYPT_BYTE_2 ((Byte)((temp * (temp ^ 1)) >> 8))
 
-STDMETHODIMP CCipher::CryptoSetPassword(const Byte *data, UInt32 size)
+Z7_COM7F_IMF(CCipher::CryptoSetPassword(const Byte *data, UInt32 size))
 {
   UInt32 key0 = 0x12345678;
   UInt32 key1 = 0x23456789;
   UInt32 key2 = 0x34567890;
   
   for (UInt32 i = 0; i < size; i++)
-    UPDATE_KEYS(data[i]);
+    UPDATE_KEYS(data[i])
 
   KeyMem0 = key0;
   KeyMem1 = key1;
@@ -36,7 +36,7 @@ STDMETHODIMP CCipher::CryptoSetPassword(const Byte *data, UInt32 size)
   return S_OK;
 }
 
-STDMETHODIMP CCipher::Init()
+Z7_COM7F_IMF(CCipher::Init())
 {
   return S_OK;
 }
@@ -58,7 +58,7 @@ HRESULT CEncoder::WriteHeader_Check16(ISequentialOutStream *outStream, UInt16 cr
   return WriteStream(outStream, h, kHeaderSize);
 }
 
-STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
+Z7_COM7F_IMF2(UInt32, CEncoder::Filter(Byte *data, UInt32 size))
 {
   UInt32 key0 = this->Key0;
   UInt32 key1 = this->Key1;
@@ -69,7 +69,7 @@ STDMETHODIMP_(UInt32) CEncoder::Filter(Byte *data, UInt32 size)
     Byte b = data[i];
     DECRYPT_BYTE_1
     data[i] = (Byte)(b ^ DECRYPT_BYTE_2);
-    UPDATE_KEYS(b);
+    UPDATE_KEYS(b)
   }
 
   this->Key0 = key0;
@@ -90,7 +90,7 @@ void CDecoder::Init_BeforeDecode()
   Filter(_header, kHeaderSize);
 }
 
-STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
+Z7_COM7F_IMF2(UInt32, CDecoder::Filter(Byte *data, UInt32 size))
 {
   UInt32 key0 = this->Key0;
   UInt32 key1 = this->Key1;
@@ -100,7 +100,7 @@ STDMETHODIMP_(UInt32) CDecoder::Filter(Byte *data, UInt32 size)
   {
     DECRYPT_BYTE_1
     Byte b = (Byte)(data[i] ^ DECRYPT_BYTE_2);
-    UPDATE_KEYS(b);
+    UPDATE_KEYS(b)
     data[i] = b;
   }
   

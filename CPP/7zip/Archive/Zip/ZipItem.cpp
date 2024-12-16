@@ -45,7 +45,7 @@ static const CUInt32PCharPair g_ExtraTypes[] =
 
 void CExtraSubBlock::PrintInfo(AString &s) const
 {
-  for (unsigned i = 0; i < ARRAY_SIZE(g_ExtraTypes); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_ExtraTypes); i++)
   {
     const CUInt32PCharPair &pair = g_ExtraTypes[i];
     if (pair.Value == ID)

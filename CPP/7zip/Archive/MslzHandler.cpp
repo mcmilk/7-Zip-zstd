@@ -21,11 +21,9 @@ namespace NMslz {
 
 static const UInt32 kUnpackSizeMax = 0xFFFFFFE0;
 
-class CHandler:
-  public IInArchive,
-  public IArchiveOpenSeq,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+  IArchiveOpenSeq
+)
   CMyComPtr<IInStream> _inStream;
   CMyComPtr<ISequentialInStream> _seqStream;
 
@@ -43,10 +41,6 @@ class CHandler:
   UString _name;
 
   void ParseName(Byte replaceByte, IArchiveOpenCallback *callback);
-public:
-  MY_UNKNOWN_IMP2(IInArchive, IArchiveOpenSeq)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(OpenSeq)(ISequentialInStream *stream);
 };
 
 static const Byte kProps[] =
@@ -59,13 +53,13 @@ static const Byte kProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_NO_Table
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = 1;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -77,7 +71,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidErrorFlags:
     {
       UInt32 v = 0;
-      if (!_isArc) v |= kpv_ErrorFlags_IsNotArc;;
+      if (!_isArc) v |= kpv_ErrorFlags_IsNotArc;
       if (_needMoreInput) v |= kpv_ErrorFlags_UnexpectedEnd;
       if (_dataAfterEnd) v |= kpv_ErrorFlags_DataAfterEnd;
       prop = v;
@@ -89,7 +83,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -125,8 +119,7 @@ void CHandler::ParseName(Byte replaceByte, IArchiveOpenCallback *callback)
 {
   if (!callback)
     return;
-  CMyComPtr<IArchiveOpenVolumeCallback> volumeCallback;
-  callback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&volumeCallback);
+  Z7_DECL_CMyComPtr_QI_FROM(IArchiveOpenVolumeCallback, volumeCallback, callback)
   if (!volumeCallback)
     return;
 
@@ -146,13 +139,13 @@ void CHandler::ParseName(Byte replaceByte, IArchiveOpenCallback *callback)
   {
     if (s.Len() < 3 || s[s.Len() - 3] != '.')
       return;
-    for (unsigned i = 0; i < ARRAY_SIZE(g_Exts); i++)
+    for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_Exts); i++)
     {
       const char *ext = g_Exts[i];
       if (s[s.Len() - 2] == (Byte)ext[0] &&
           s[s.Len() - 1] == (Byte)ext[1])
       {
-        replaceByte = ext[2];
+        replaceByte = (Byte)ext[2];
         break;
       }
     }
@@ -162,21 +155,21 @@ void CHandler::ParseName(Byte replaceByte, IArchiveOpenCallback *callback)
     _name += (char)replaceByte;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback *callback)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 * /* maxCheckStartPosition */,
+    IArchiveOpenCallback *callback))
 {
   COM_TRY_BEGIN
   {
     Close();
     _needSeekToStart = true;
     Byte buffer[kHeaderSize];
-    RINOK(ReadStream_FALSE(stream, buffer, kHeaderSize));
+    RINOK(ReadStream_FALSE(stream, buffer, kHeaderSize))
     if (memcmp(buffer, kSignature, kSignatureSize) != 0)
       return S_FALSE;
     _unpackSize = GetUi32(buffer + 10);
     if (_unpackSize > kUnpackSizeMax)
       return S_FALSE;
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &_originalFileSize));
+    RINOK(InStream_GetSize_SeekToEnd(stream, _originalFileSize))
     _packSize = _originalFileSize;
 
     ParseName(buffer[kSignatureSize], callback);
@@ -190,7 +183,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 * /* maxCheckStartPo
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _originalFileSize = 0;
   _packSize = 0;
@@ -276,11 +269,11 @@ static HRESULT MslzDec(CInBuffer &inStream, ISequentialOutStream *outStream, UIn
   }
   
   if (outStream)
-    RINOK(WriteStream(outStream, buf, dest & kMask));
+    RINOK(WriteStream(outStream, buf, dest & kMask))
   return S_OK;
 }
 
-STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
+Z7_COM7F_IMF(CHandler::OpenSeq(ISequentialInStream *stream))
 {
   COM_TRY_BEGIN
   Close();
@@ -290,8 +283,8 @@ STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
   if (numItems == 0)
@@ -302,10 +295,10 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   // extractCallback->SetTotal(_unpackSize);
 
   CMyComPtr<ISequentialOutStream> realOutStream;
-  Int32 askMode = testMode ?
+  const Int32 askMode = testMode ?
       NExtract::NAskMode::kTest :
       NExtract::NAskMode::kExtract;
-  RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
+  RINOK(extractCallback->GetStream(0, &realOutStream, askMode))
   if (!testMode && !realOutStream)
     return S_OK;
 
@@ -325,7 +318,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
     if (!_inStream)
       return E_FAIL;
-    RINOK(_inStream->Seek(0, STREAM_SEEK_SET, NULL));
+    RINOK(InStream_SeekToBegin(_inStream))
   }
   else
     _needSeekToStart = true;
@@ -388,7 +381,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 }
 
 REGISTER_ARC_I(
-  "MsLZ", "mslz", 0, 0xD5,
+  "MsLZ", "mslz", NULL, 0xD5,
   kSignature,
   0,
   0,

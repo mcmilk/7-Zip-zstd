@@ -1,8 +1,8 @@
 // LzmsDecoder.h
 // The code is based on LZMS description from wimlib code
 
-#ifndef __LZMS_DECODER_H
-#define __LZMS_DECODER_H
+#ifndef ZIP7_INC_LZMS_DECODER_H
+#define ZIP7_INC_LZMS_DECODER_H
 
 // #define SHOW_DEBUG_INFO
 
@@ -158,7 +158,7 @@ struct CProbEntry
 
   void Update(unsigned bit) throw()
   {
-    Prob += (Int32)(Hist >> (k_ProbLimit - 1)) - (Int32)bit;
+    Prob += (UInt32)((Int32)(Hist >> (k_ProbLimit - 1)) - (Int32)bit);
     Hist = (Hist << 1) | bit;
   }
 };

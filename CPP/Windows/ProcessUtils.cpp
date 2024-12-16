@@ -36,9 +36,9 @@ WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
       #endif
       params;
   #ifdef UNDER_CE
-  curDir = 0;
+  curDir = NULL;
   #else
-  imageName = 0;
+  imageName = NULL;
   #endif
   PROCESS_INFORMATION pi;
   BOOL result;
@@ -47,12 +47,12 @@ WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
   {
     STARTUPINFOA si;
     si.cb = sizeof(si);
-    si.lpReserved = 0;
-    si.lpDesktop = 0;
-    si.lpTitle = 0;
+    si.lpReserved = NULL;
+    si.lpDesktop = NULL;
+    si.lpTitle = NULL;
     si.dwFlags = 0;
     si.cbReserved2 = 0;
-    si.lpReserved2 = 0;
+    si.lpReserved2 = NULL;
     
     CSysString curDirA;
     if (curDir != 0)
@@ -66,12 +66,12 @@ WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
   {
     STARTUPINFOW si;
     si.cb = sizeof(si);
-    si.lpReserved = 0;
-    si.lpDesktop = 0;
-    si.lpTitle = 0;
+    si.lpReserved = NULL;
+    si.lpDesktop = NULL;
+    si.lpTitle = NULL;
     si.dwFlags = 0;
     si.cbReserved2 = 0;
-    si.lpReserved2 = 0;
+    si.lpReserved2 = NULL;
     
     result = CreateProcessW(imageName, params2.Ptr_non_const(),
         NULL, NULL, FALSE, 0, NULL, curDir, &si, &pi);
@@ -86,7 +86,7 @@ WRes CProcess::Create(LPCWSTR imageName, const UString &params, LPCWSTR curDir)
 WRes MyCreateProcess(LPCWSTR imageName, const UString &params)
 {
   CProcess process;
-  return process.Create(imageName, params, 0);
+  return process.Create(imageName, params, NULL);
 }
 
 }

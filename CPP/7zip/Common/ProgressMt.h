@@ -1,7 +1,7 @@
 // ProgressMt.h
 
-#ifndef __PROGRESSMT_H
-#define __PROGRESSMT_H
+#ifndef ZIP7_INC_PROGRESSMT_H
+#define ZIP7_INC_PROGRESSMT_H
 
 #include "../../Common/MyCom.h"
 #include "../../Common/MyVector.h"
@@ -24,12 +24,13 @@ public:
   HRESULT SetRatioInfo(unsigned index, const UInt64 *inSize, const UInt64 *outSize);
 };
 
-class CMtCompressProgress:
-  public ICompressProgressInfo,
-  public CMyUnknownImp
-{
-  CMtCompressProgressMixer *_progress;
+
+Z7_CLASS_IMP_NOQIB_1(
+  CMtCompressProgress
+  , ICompressProgressInfo
+)
   unsigned _index;
+  CMtCompressProgressMixer *_progress;
 public:
   void Init(CMtCompressProgressMixer *progress, unsigned index)
   {
@@ -37,10 +38,6 @@ public:
     _index = index;
   }
   void Reinit() { _progress->Reinit(_index); }
-
-  MY_UNKNOWN_IMP
-
-  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
 };
 
 #endif

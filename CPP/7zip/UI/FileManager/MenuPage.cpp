@@ -26,6 +26,7 @@
 using namespace NWindows;
 using namespace NContextMenuFlags;
 
+#ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
   IDX_SYSTEM_INTEGRATE_TO_MENU,
@@ -35,12 +36,13 @@ static const UInt32 kLangIDs[] =
   IDT_SYSTEM_ZONE,
   IDT_SYSTEM_CONTEXT_MENU_ITEMS
 };
+#endif
 
 #define kMenuTopic "fm/options.htm#sevenZip"
 
 struct CContextMenuItem
 {
-  int ControlID;
+  unsigned ControlID;
   UInt32 Flag;
 };
 
@@ -97,7 +99,9 @@ bool CMenuPage::OnInit()
 
   Clear_MenuChanged();
   
-  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+#ifdef Z7_LANG
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
+#endif
 
   #ifdef UNDER_CE
 
@@ -219,7 +223,7 @@ bool CMenuPage::OnInit()
       if (i == 0)
         s.Insert(0, L"* ");
       const int index = (int)_zoneCombo.AddString(s);
-      _zoneCombo.SetItemData(index, val);
+      _zoneCombo.SetItemData(index, (LPARAM)val);
       if (val == wz)
         _zoneCombo.SetCurSel(index);
     }
@@ -231,7 +235,7 @@ bool CMenuPage::OnInit()
 
   _listView.InsertColumn(0, L"", 200);
 
-  for (unsigned i = 0; i < ARRAY_SIZE(kMenuItems); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(kMenuItems); i++)
   {
     const CContextMenuItem &menuItem = kMenuItems[i];
 
@@ -272,8 +276,8 @@ bool CMenuPage::OnInit()
       }
     }
 
-    int itemIndex = _listView.InsertItem(i, s);
-    _listView.SetCheckState(itemIndex, ((ci.Flags & menuItem.Flag) != 0));
+    const int itemIndex = _listView.InsertItem(i, s);
+    _listView.SetCheckState((unsigned)itemIndex, ((ci.Flags & menuItem.Flag) != 0));
   }
 
   _listView.SetColumnWidthAuto(0);
@@ -303,8 +307,8 @@ LONG CMenuPage::OnApply()
     CShellDll &dll = _dlls[d];
     if (dll.wasChanged && !dll.Path.IsEmpty())
     {
-      bool newVal = IsButtonCheckedBool(dll.ctrl);
-      LONG res = SetContextMenuHandler(newVal, fs2us(dll.Path), dll.wow);
+      const bool newVal = IsButtonCheckedBool(dll.ctrl);
+      const LONG res = SetContextMenuHandler(newVal, fs2us(dll.Path), dll.wow);
       if (res != ERROR_SUCCESS && (dll.prevValue != newVal || newVal))
         ShowMenuErrorMessage(NError::MyFormatMessage(res), *this);
       dll.prevValue = CheckContextMenuHandler(fs2us(dll.Path), dll.wow);
@@ -340,7 +344,7 @@ LONG CMenuPage::OnApply()
 
     ci.Flags = 0;
     
-    for (unsigned i = 0; i < ARRAY_SIZE(kMenuItems); i++)
+    for (unsigned i = 0; i < Z7_ARRAY_SIZE(kMenuItems); i++)
       if (_listView.GetCheckState(i))
         ci.Flags |= kMenuItems[i].Flag;
     
@@ -360,7 +364,7 @@ void CMenuPage::OnNotifyHelp()
   ShowHelpWindow(kMenuTopic);
 }
 
-bool CMenuPage::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CMenuPage::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {
@@ -392,7 +396,7 @@ bool CMenuPage::OnButtonClicked(int buttonID, HWND buttonHWND)
 }
 
 
-bool CMenuPage::OnCommand(int code, int itemID, LPARAM param)
+bool CMenuPage::OnCommand(unsigned code, unsigned itemID, LPARAM param)
 {
   if (code == CBN_SELCHANGE && itemID == IDC_SYSTEM_ZONE)
   {

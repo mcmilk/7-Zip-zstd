@@ -6,7 +6,7 @@
 
 #include "LizardDecoder.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 #include "LizardEncoder.h"
 #endif
 

@@ -19,7 +19,8 @@ extern bool g_IsNT;
 
 UString g_LangID;
 
-static CLang g_Lang;
+// static
+CLang g_Lang;
 static bool g_Loaded = false;
 static NSynchronization::CCriticalSection g_CriticalSection;
 
@@ -33,6 +34,8 @@ FString GetLangDirPrefix()
 {
   return NDLL::GetModuleDirPrefix() + FTEXT("Lang") FSTRING_PATH_SEPARATOR;
 }
+
+#ifdef Z7_LANG
 
 void LoadLangOneTime()
 {
@@ -48,7 +51,7 @@ void LangSetDlgItemText(HWND dialog, UInt32 controlID, UInt32 langID)
   const wchar_t *s = g_Lang.Get(langID);
   if (s)
   {
-    CWindow window(GetDlgItem(dialog, controlID));
+    CWindow window(GetDlgItem(dialog, (int)controlID));
     window.SetText(s);
   }
 }
@@ -67,10 +70,10 @@ static const CIDLangPair kLangPairs[] =
 void LangSetDlgItems(HWND dialog, const UInt32 *ids, unsigned numItems)
 {
   unsigned i;
-  for (i = 0; i < ARRAY_SIZE(kLangPairs); i++)
+  for (i = 0; i < Z7_ARRAY_SIZE(kLangPairs); i++)
   {
     const CIDLangPair &pair = kLangPairs[i];
-    CWindow window(GetDlgItem(dialog, pair.ControlID));
+    CWindow window(GetDlgItem(dialog, (int)pair.ControlID));
     if (window)
     {
       const wchar_t *s = g_Lang.Get(pair.LangID);
@@ -81,7 +84,7 @@ void LangSetDlgItems(HWND dialog, const UInt32 *ids, unsigned numItems)
 
   for (i = 0; i < numItems; i++)
   {
-    UInt32 id = ids[i];
+    const UInt32 id = ids[i];
     LangSetDlgItemText(dialog, id, id);
   }
 }
@@ -90,13 +93,30 @@ void LangSetDlgItems_Colon(HWND dialog, const UInt32 *ids, unsigned numItems)
 {
   for (unsigned i = 0; i < numItems; i++)
   {
-    UInt32 id = ids[i];
+    const UInt32 id = ids[i];
     const wchar_t *s = g_Lang.Get(id);
     if (s)
     {
-      CWindow window(GetDlgItem(dialog, id));
+      CWindow window(GetDlgItem(dialog, (int)id));
       UString s2 = s;
       s2 += ':';
+      window.SetText(s2);
+    }
+  }
+}
+
+void LangSetDlgItems_RemoveColon(HWND dialog, const UInt32 *ids, unsigned numItems)
+{
+  for (unsigned i = 0; i < numItems; i++)
+  {
+    const UInt32 id = ids[i];
+    const wchar_t *s = g_Lang.Get(id);
+    if (s)
+    {
+      CWindow window(GetDlgItem(dialog, (int)id));
+      UString s2 = s;
+      if (!s2.IsEmpty() && s2.Back() == ':')
+        s2.DeleteBack();
       window.SetText(s2);
     }
   }
@@ -214,14 +234,18 @@ static struct CC1Lang
 
 // typedef LANGID (WINAPI *GetUserDefaultUILanguageP)();
 
-static void OpenDefaultLang()
+void Lang_GetShortNames_for_DefaultLang(AStringVector &names, unsigned &subLang)
 {
-  LANGID sysLang = GetSystemDefaultLangID(); // "Language for non-Unicode programs" in XP64
-  LANGID userLang = GetUserDefaultLangID(); // "Standards and formats" language in XP64
+  names.Clear();
+  subLang = 0;
+  const LANGID sysLang = GetSystemDefaultLangID(); // "Language for non-Unicode programs" in XP64
+  const LANGID userLang = GetUserDefaultLangID(); // "Standards and formats" language in XP64
 
   if (sysLang != userLang)
     return;
-  LANGID langID = userLang;
+  const LANGID langID = userLang;
+
+  // const LANGID langID = MAKELANGID(0x1a, 1); // for debug
   
   /*
   LANGID sysUILang; // english  in XP64
@@ -237,15 +261,22 @@ static void OpenDefaultLang()
     sysUILang = fn();
   */
 
-  WORD primLang = (WORD)(PRIMARYLANGID(langID));
-  WORD subLang = (WORD)(SUBLANGID(langID));
+  const WORD primLang = (WORD)(PRIMARYLANGID(langID));
+  subLang = SUBLANGID(langID);
+  FindShortNames(primLang, names);
+}
+
+
+static void OpenDefaultLang()
+{
+  AStringVector names;
+  unsigned subLang;
+  Lang_GetShortNames_for_DefaultLang(names, subLang);
   {
-    AStringVector names;
-    FindShortNames(primLang, names);
     const FString dirPrefix (GetLangDirPrefix());
     for (unsigned i = 0; i < 2; i++)
     {
-      unsigned index = (i == 0 ? subLang : 0);
+      const unsigned index = (i == 0 ? subLang : 0);
       if (index < names.Size())
       {
         const AString &name = names[index];
@@ -282,12 +313,14 @@ void ReloadLang()
   if (g_LangID.Len() > 1 || g_LangID[0] != L'-')
   {
     FString s = us2fs(g_LangID);
-    if (s.Find(FCHAR_PATH_SEPARATOR) < 0)
+    if (s.ReverseFind_PathSepar() < 0)
     {
-      if (s.Find(FTEXT('.')) < 0)
+      if (s.ReverseFind_Dot() < 0)
         s += ".txt";
       s.Insert(0, GetLangDirPrefix());
+      LangOpen(g_Lang, s);
     }
-    LangOpen(g_Lang, s);
   }
 }
+
+#endif

@@ -31,13 +31,13 @@ HRESULT CMtCompressProgressMixer::SetRatioInfo(unsigned index, const UInt64 *inS
   NWindows::NSynchronization::CCriticalSectionLock lock(CriticalSection);
   if (inSize)
   {
-    UInt64 diff = *inSize - InSizes[index];
+    const UInt64 diff = *inSize - InSizes[index];
     InSizes[index] = *inSize;
     TotalInSize += diff;
   }
   if (outSize)
   {
-    UInt64 diff = *outSize - OutSizes[index];
+    const UInt64 diff = *outSize - OutSizes[index];
     OutSizes[index] = *outSize;
     TotalOutSize += diff;
   }
@@ -47,7 +47,7 @@ HRESULT CMtCompressProgressMixer::SetRatioInfo(unsigned index, const UInt64 *inS
 }
 
 
-STDMETHODIMP CMtCompressProgress::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize)
+Z7_COM7F_IMF(CMtCompressProgress::SetRatioInfo(const UInt64 *inSize, const UInt64 *outSize))
 {
   return _progress->SetRatioInfo(_index, inSize, outSize);
 }

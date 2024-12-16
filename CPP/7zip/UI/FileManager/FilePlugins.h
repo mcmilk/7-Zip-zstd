@@ -1,15 +1,15 @@
 // FilePlugins.h
 
-#ifndef __FILE_PLUGINS_H
-#define __FILE_PLUGINS_H
+#ifndef ZIP7_INC_FILE_PLUGINS_H
+#define ZIP7_INC_FILE_PLUGINS_H
 
 #include "RegistryPlugins.h"
 
 struct CPluginToIcon
 {
-  int PluginIndex;
-  UString IconPath;
+  // unsigned PluginIndex;
   int IconIndex;
+  UString IconPath;
   
   CPluginToIcon(): IconIndex(-1) {}
 };
@@ -22,10 +22,10 @@ struct CExtPlugins
 
 class CExtDatabase
 {
-  int FindExt(const UString &ext);
+  int FindExt(const UString &ext) const;
 public:
   CObjectVector<CExtPlugins> Exts;
-  CObjectVector<CPluginInfo> Plugins;
+  // CObjectVector<CPluginInfo> Plugins;
   
   void Read();
 };

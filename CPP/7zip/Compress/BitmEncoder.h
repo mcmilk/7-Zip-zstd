@@ -1,7 +1,7 @@
 // BitmEncoder.h -- the Most Significant Bit of byte is First
 
-#ifndef __BITM_ENCODER_H
-#define __BITM_ENCODER_H
+#ifndef ZIP7_INC_BITM_ENCODER_H
+#define ZIP7_INC_BITM_ENCODER_H
 
 #include "../IStream.h"
 

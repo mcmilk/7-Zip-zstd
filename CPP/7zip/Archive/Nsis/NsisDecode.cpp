@@ -40,7 +40,7 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
   
   if (!_codecInStream)
   {
-    switch (Method)
+    switch ((int)Method)
     {
       // case NMethodType::kCopy: return E_NOTIMPL;
       case NMethodType::kDeflate:
@@ -65,7 +65,7 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
   if (FilterFlag)
   {
     Byte flag;
-    RINOK(ReadStream_FALSE(inStream, &flag, 1));
+    RINOK(ReadStream_FALSE(inStream, &flag, 1))
     if (flag > 1)
       return E_NOTIMPL;
     useFilter = (flag != 0);
@@ -79,9 +79,9 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
     {
       _filter = new CFilterCoder(false);
       _filterInStream = _filter;
-      _filter->Filter = new NCompress::NBcj::CCoder(false);
+      _filter->Filter = new NCompress::NBcj::CCoder2(z7_BranchConvSt_X86_Dec);
     }
-    RINOK(_filter->SetInStream(_codecInStream));
+    RINOK(_filter->SetInStream(_codecInStream))
     _decoderInStream = _filterInStream;
   }
 
@@ -89,8 +89,8 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
   {
     const unsigned kPropsSize = LZMA_PROPS_SIZE;
     Byte props[kPropsSize];
-    RINOK(ReadStream_FALSE(inStream, props, kPropsSize));
-    RINOK(_lzmaDecoder->SetDecoderProperties2((const Byte *)props, kPropsSize));
+    RINOK(ReadStream_FALSE(inStream, props, kPropsSize))
+    RINOK(_lzmaDecoder->SetDecoderProperties2((const Byte *)props, kPropsSize))
   }
 
   {
@@ -98,7 +98,7 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
     _codecInStream.QueryInterface(IID_ICompressSetInStream, &setInStream);
     if (!setInStream)
       return E_NOTIMPL;
-    RINOK(setInStream->SetInStream(inStream));
+    RINOK(setInStream->SetInStream(inStream))
   }
 
   {
@@ -106,12 +106,12 @@ HRESULT CDecoder::Init(ISequentialInStream *inStream, bool &useFilter)
     _codecInStream.QueryInterface(IID_ICompressSetOutStreamSize, &setOutStreamSize);
     if (!setOutStreamSize)
       return E_NOTIMPL;
-    RINOK(setOutStreamSize->SetOutStreamSize(NULL));
+    RINOK(setOutStreamSize->SetOutStreamSize(NULL))
   }
 
   if (useFilter)
   {
-    RINOK(_filter->SetOutStreamSize(NULL));
+    RINOK(_filter->SetOutStreamSize(NULL))
   }
 
   return S_OK;
@@ -130,14 +130,14 @@ HRESULT CDecoder::SetToPos(UInt64 pos, ICompressProgressInfo *progress)
   while (StreamPos < pos)
   {
     size_t size = (size_t)MyMin(pos - StreamPos, (UInt64)Buffer.Size());
-    RINOK(Read(Buffer, &size));
+    RINOK(Read(Buffer, &size))
     if (size == 0)
       return S_FALSE;
     StreamPos += size;
     offset += size;
 
     const UInt64 inSize = GetInputProcessedSize() - inSizeStart;
-    RINOK(progress->SetRatioInfo(&inSize, &offset));
+    RINOK(progress->SetRatioInfo(&inSize, &offset))
   }
   return S_OK;
 }
@@ -156,7 +156,7 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
   {
     Byte temp[4];
     size_t processedSize = 4;
-    RINOK(Read(temp, &processedSize));
+    RINOK(Read(temp, &processedSize))
     StreamPos += processedSize;
     if (processedSize != 4)
       return S_FALSE;
@@ -171,7 +171,7 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
     Byte temp[4];
     {
       size_t processedSize = 4;
-      RINOK(ReadStream(InputStream, temp, &processedSize));
+      RINOK(ReadStream(InputStream, temp, &processedSize))
       StreamPos += processedSize;
       if (processedSize != 4)
         return S_FALSE;
@@ -192,7 +192,7 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
       {
         UInt32 curSize = (UInt32)MyMin((size_t)size, Buffer.Size());
         UInt32 processedSize;
-        RINOK(InputStream->Read(Buffer, curSize, &processedSize));
+        RINOK(InputStream->Read(Buffer, curSize, &processedSize))
         if (processedSize == 0)
           return S_FALSE;
         if (outBuf)
@@ -202,8 +202,8 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
         StreamPos += processedSize;
         unpackSizeRes += processedSize;
         if (realOutStream)
-          RINOK(WriteStream(realOutStream, Buffer, processedSize));
-        RINOK(progress->SetRatioInfo(&offset, &offset));
+          RINOK(WriteStream(realOutStream, Buffer, processedSize))
+        RINOK(progress->SetRatioInfo(&offset, &offset))
       }
 
       return S_OK;
@@ -217,7 +217,7 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
     limitedStreamSpec->Init(size);
     {
       bool useFilter;
-      RINOK(Init(limitedStream, useFilter));
+      RINOK(Init(limitedStream, useFilter))
     }
   }
   
@@ -244,7 +244,7 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
     size_t size = Buffer.Size();
     if (size > rem)
       size = rem;
-    RINOK(Read(Buffer, &size));
+    RINOK(Read(Buffer, &size))
     if (size == 0)
     {
       if (unpackSizeDefined)
@@ -277,7 +277,7 @@ HRESULT CDecoder::Decode(CByteBuffer *outBuf, bool unpackSizeDefined, UInt32 unp
     unpackSizeRes += (UInt32)size;
     
     UInt64 outSize = offset;
-    RINOK(progress->SetRatioInfo(&inSize, &outSize));
+    RINOK(progress->SetRatioInfo(&inSize, &outSize))
     if (realOutStream)
     {
       res = WriteStream(realOutStream, Buffer, size);

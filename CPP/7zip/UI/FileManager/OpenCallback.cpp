@@ -17,9 +17,11 @@
 
 using namespace NWindows;
 
-STDMETHODIMP COpenArchiveCallback::SetTotal(const UInt64 *numFiles, const UInt64 *numBytes)
+HRESULT COpenArchiveCallback::Open_SetTotal(const UInt64 *numFiles, const UInt64 *numBytes)
+// Z7_COM7F_IMF(COpenArchiveCallback::SetTotal(const UInt64 *numFiles, const UInt64 *numBytes))
 {
-  RINOK(ProgressDialog.Sync.CheckStop());
+  // COM_TRY_BEGIN
+  RINOK(ProgressDialog.Sync.CheckStop())
   {
     // NSynchronization::CCriticalSectionLock lock(_criticalSection);
     ProgressDialog.Sync.Set_NumFilesTotal(numFiles ? *numFiles : (UInt64)(Int64)-1);
@@ -31,83 +33,37 @@ STDMETHODIMP COpenArchiveCallback::SetTotal(const UInt64 *numFiles, const UInt64
       ProgressDialog.Sync.Set_NumBytesTotal(*numBytes);
   }
   return S_OK;
+  // COM_TRY_END
 }
 
-STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 *numFiles, const UInt64 *numBytes)
+HRESULT COpenArchiveCallback::Open_SetCompleted(const UInt64 *numFiles, const UInt64 *numBytes)
+// Z7_COM7F_IMF(COpenArchiveCallback::SetCompleted(const UInt64 *numFiles, const UInt64 *numBytes))
 {
+  // COM_TRY_BEGIN
   // NSynchronization::CCriticalSectionLock lock(_criticalSection);
   if (numFiles)
     ProgressDialog.Sync.Set_NumFilesCur(*numFiles);
   if (numBytes)
     ProgressDialog.Sync.Set_NumBytesCur(*numBytes);
   return ProgressDialog.Sync.CheckStop();
+  // COM_TRY_END
 }
 
-STDMETHODIMP COpenArchiveCallback::SetTotal(const UInt64 total)
+HRESULT COpenArchiveCallback::Open_CheckBreak()
 {
-  RINOK(ProgressDialog.Sync.CheckStop());
-  ProgressDialog.Sync.Set_NumBytesTotal(total);
-  return S_OK;
+  return ProgressDialog.Sync.CheckStop();
 }
 
-STDMETHODIMP COpenArchiveCallback::SetCompleted(const UInt64 *completed)
+HRESULT COpenArchiveCallback::Open_Finished()
 {
-  return ProgressDialog.Sync.Set_NumBytesCur(completed);
+  return ProgressDialog.Sync.CheckStop();
 }
 
-STDMETHODIMP COpenArchiveCallback::GetProperty(PROPID propID, PROPVARIANT *value)
+#ifndef Z7_NO_CRYPTO
+HRESULT COpenArchiveCallback::Open_CryptoGetTextPassword(BSTR *password)
+// Z7_COM7F_IMF(COpenArchiveCallback::CryptoGetTextPassword(BSTR *password))
 {
-  NCOM::CPropVariant prop;
-  if (_subArchiveMode)
-  {
-    switch (propID)
-    {
-      case kpidName: prop = _subArchiveName; break;
-    }
-  }
-  else
-  {
-    switch (propID)
-    {
-      case kpidName:  prop = fs2us(_fileInfo.Name); break;
-      case kpidIsDir:  prop = _fileInfo.IsDir(); break;
-      case kpidSize:  prop = _fileInfo.Size; break;
-      case kpidAttrib:  prop = (UInt32)_fileInfo.Attrib; break;
-      case kpidCTime:  prop = _fileInfo.CTime; break;
-      case kpidATime:  prop = _fileInfo.ATime; break;
-      case kpidMTime:  prop = _fileInfo.MTime; break;
-    }
-  }
-  prop.Detach(value);
-  return S_OK;
-}
-
-STDMETHODIMP COpenArchiveCallback::GetStream(const wchar_t *name, IInStream **inStream)
-{
-  COM_TRY_BEGIN
-  *inStream = NULL;
-  if (_subArchiveMode)
-    return S_FALSE;
-
-  FString fullPath;
-  if (!NFile::NName::GetFullPath(_folderPrefix, us2fs(name), fullPath))
-    return S_FALSE;
-  if (!_fileInfo.Find_FollowLink(fullPath))
-    return S_FALSE;
-  if (_fileInfo.IsDir())
-    return S_FALSE;
-  CInFileStream *inFile = new CInFileStream;
-  CMyComPtr<IInStream> inStreamTemp = inFile;
-  if (!inFile->Open(fullPath))
-    return ::GetLastError();
-  *inStream = inStreamTemp.Detach();
-  return S_OK;
-  COM_TRY_END
-}
-
-STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
-{
-  COM_TRY_BEGIN
+  // COM_TRY_BEGIN
   PasswordWasAsked = true;
   if (!PasswordIsDefined)
   {
@@ -125,5 +81,6 @@ STDMETHODIMP COpenArchiveCallback::CryptoGetTextPassword(BSTR *password)
       NExtract::Save_ShowPassword(dialog.ShowPassword);
   }
   return StringToBstr(Password, password);
-  COM_TRY_END
+  // COM_TRY_END
 }
+#endif

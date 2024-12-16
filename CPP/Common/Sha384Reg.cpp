@@ -12,31 +12,28 @@ EXTERN_C_END
 #include "../7zip/Common/RegisterCodec.h"
 
 // SHA384
-class CSHA384Hasher:
-  public IHasher,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CSHA384Hasher
+  , IHasher
+)
   SHA384_CTX _ctx;
   Byte mtDummy[1 << 7];
 
 public:
   CSHA384Hasher() { SHA384_Init(&_ctx); }
-
-  MY_UNKNOWN_IMP1(IHasher)
-  INTERFACE_IHasher(;)
 };
 
-STDMETHODIMP_(void) CSHA384Hasher::Init() throw()
+Z7_COM7F_IMF2(void, CSHA384Hasher::Init())
 {
   SHA384_Init(&_ctx);
 }
 
-STDMETHODIMP_(void) CSHA384Hasher::Update(const void *data, UInt32 size) throw()
+Z7_COM7F_IMF2(void, CSHA384Hasher::Update(const void *data, UInt32 size))
 {
   SHA384_Update(&_ctx, (const Byte *)data, size);
 }
 
-STDMETHODIMP_(void) CSHA384Hasher::Final(Byte *digest) throw()
+Z7_COM7F_IMF2(void, CSHA384Hasher::Final(Byte *digest))
 {
   SHA384_Final(digest, &_ctx);
 }

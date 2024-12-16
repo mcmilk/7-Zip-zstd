@@ -1,7 +1,7 @@
 // Crypto/RarAes.h
 
-#ifndef __CRYPTO_RAR_AES_H
-#define __CRYPTO_RAR_AES_H
+#ifndef ZIP7_INC_CRYPTO_RAR_AES_H
+#define ZIP7_INC_CRYPTO_RAR_AES_H
 
 #include "../../../C/Aes.h"
 
@@ -16,10 +16,8 @@ namespace NRar3 {
 
 const unsigned kAesKeySize = 16;
 
-class CDecoder:
+class CDecoder Z7_final:
   public CAesCbcDecoder
-  // public ICompressSetDecoderProperties2,
-  // public ICryptoSetPassword
 {
   Byte _salt[8];
   bool _thereIsSalt;
@@ -33,25 +31,20 @@ class CDecoder:
 
   void CalcKey();
 public:
-  /*
-  MY_UNKNOWN_IMP1(
-    ICryptoSetPassword
-    // ICompressSetDecoderProperties2
-  */
-  STDMETHOD(Init)();
+  Z7_COM7F_IMP(Init())
   
   void SetPassword(const Byte *data, unsigned size);
   HRESULT SetDecoderProperties2(const Byte *data, UInt32 size);
 
   CDecoder();
 
-  ~CDecoder() { Wipe(); }
+  ~CDecoder() Z7_DESTRUCTOR_override { Wipe(); }
   void Wipe()
   {
     _password.Wipe();
-    MY_memset_0_ARRAY(_salt);
-    MY_memset_0_ARRAY(_key);
-    MY_memset_0_ARRAY(_iv);
+    Z7_memset_0_ARRAY(_salt);
+    Z7_memset_0_ARRAY(_key);
+    Z7_memset_0_ARRAY(_iv);
   }
   // void SetRar350Mode(bool rar350Mode) { _rar350Mode = rar350Mode; }
 };

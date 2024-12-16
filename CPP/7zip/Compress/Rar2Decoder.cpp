@@ -13,30 +13,32 @@ namespace NRar2 {
 
 namespace NMultimedia {
 
+#define my_abs(x) (unsigned)abs(x)
+
 Byte CFilter::Decode(int &channelDelta, Byte deltaByte)
 {
   D4 = D3;
   D3 = D2;
   D2 = LastDelta - D1;
   D1 = LastDelta;
-  int predictedValue = ((8 * LastChar + K1 * D1 + K2 * D2 + K3 * D3 + K4 * D4 + K5 * channelDelta) >> 3);
+  const int predictedValue = ((8 * LastChar + K1 * D1 + K2 * D2 + K3 * D3 + K4 * D4 + K5 * channelDelta) >> 3);
 
-  Byte realValue = (Byte)(predictedValue - deltaByte);
+  const Byte realValue = (Byte)(predictedValue - deltaByte);
   
   {
-    int i = ((int)(signed char)deltaByte) << 3;
+    const int i = ((int)(signed char)deltaByte) << 3;
 
-    Dif[0] += abs(i);
-    Dif[1] += abs(i - D1);
-    Dif[2] += abs(i + D1);
-    Dif[3] += abs(i - D2);
-    Dif[4] += abs(i + D2);
-    Dif[5] += abs(i - D3);
-    Dif[6] += abs(i + D3);
-    Dif[7] += abs(i - D4);
-    Dif[8] += abs(i + D4);
-    Dif[9] += abs(i - channelDelta);
-    Dif[10] += abs(i + channelDelta);
+    Dif[0] += my_abs(i);
+    Dif[1] += my_abs(i - D1);
+    Dif[2] += my_abs(i + D1);
+    Dif[3] += my_abs(i - D2);
+    Dif[4] += my_abs(i + D2);
+    Dif[5] += my_abs(i - D3);
+    Dif[6] += my_abs(i + D3);
+    Dif[7] += my_abs(i - D4);
+    Dif[8] += my_abs(i + D4);
+    Dif[9] += my_abs(i - channelDelta);
+    Dif[10] += my_abs(i + channelDelta);
   }
 
   channelDelta = LastDelta = (signed char)(realValue - LastChar);
@@ -48,7 +50,7 @@ Byte CFilter::Decode(int &channelDelta, Byte deltaByte)
     UInt32 numMinDif = 0;
     Dif[0] = 0;
     
-    for (unsigned i = 1; i < ARRAY_SIZE(Dif); i++)
+    for (unsigned i = 1; i < Z7_ARRAY_SIZE(Dif); i++)
     {
       if (Dif[i] < minDif)
       {
@@ -129,13 +131,13 @@ bool CDecoder::ReadTables(void)
   unsigned i;
   for (i = 0; i < kLevelTableSize; i++)
     levelLevels[i] = (Byte)ReadBits(4);
-  RIF(m_LevelDecoder.Build(levelLevels));
+  RIF(m_LevelDecoder.Build(levelLevels))
   
   i = 0;
   
   do
   {
-    UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream);
+    const UInt32 sym = m_LevelDecoder.Decode(&m_InBitStream);
     if (sym < kTableDirectLevels)
     {
       lens[i] = (Byte)((sym + m_LastLevels[i]) & kLevelMask);
@@ -154,7 +156,7 @@ bool CDecoder::ReadTables(void)
           // return false;
           num = numLevels; // original unRAR
         }
-        Byte v = lens[(size_t)i - 1];
+        const Byte v = lens[(size_t)i - 1];
         do
           lens[i++] = v;
         while (i < num);
@@ -188,13 +190,13 @@ bool CDecoder::ReadTables(void)
   if (m_AudioMode)
     for (i = 0; i < m_NumChannels; i++)
     {
-      RIF(m_MMDecoders[i].Build(&lens[i * kMMTableSize]));
+      RIF(m_MMDecoders[i].Build(&lens[i * kMMTableSize]))
     }
   else
   {
-    RIF(m_MainDecoder.Build(&lens[0]));
-    RIF(m_DistDecoder.Build(&lens[kMainTableSize]));
-    RIF(m_LenDecoder.Build(&lens[kMainTableSize + kDistTableSize]));
+    RIF(m_MainDecoder.Build(&lens[0]))
+    RIF(m_DistDecoder.Build(&lens[kMainTableSize]))
+    RIF(m_LenDecoder.Build(&lens[kMainTableSize + kDistTableSize]))
   }
   
   memcpy(m_LastLevels, lens, kMaxTableSize);
@@ -214,7 +216,7 @@ bool CDecoder::ReadLastTables()
   {
     if (m_AudioMode)
     {
-      UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
+      const UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
       if (symbol == 256)
         return ReadTables();
       if (symbol >= kMMTableSize)
@@ -222,7 +224,7 @@ bool CDecoder::ReadLastTables()
     }
     else
     {
-      UInt32 sym = m_MainDecoder.Decode(&m_InBitStream);
+      const UInt32 sym = m_MainDecoder.Decode(&m_InBitStream);
       if (sym == kReadTableNumber)
         return ReadTables();
       if (sym >= kMainTableSize)
@@ -237,7 +239,7 @@ bool CDecoder::DecodeMm(UInt32 pos)
 {
   while (pos-- != 0)
   {
-    UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
+    const UInt32 symbol = m_MMDecoders[m_MmFilter.CurrentChannel].Decode(&m_InBitStream);
     if (m_InBitStream.ExtraBitsWereRead())
       return false;
     if (symbol >= 256)
@@ -247,7 +249,7 @@ bool CDecoder::DecodeMm(UInt32 pos)
     Byte byReal = (Byte)(byPredict - (Byte)symbol);
     m_Predictor.Update(byReal, byPredict);
     */
-    Byte byReal = m_MmFilter.Decode((Byte)symbol);
+    const Byte byReal = m_MmFilter.Decode((Byte)symbol);
     m_OutWindowStream.PutByte(byReal);
     if (++m_MmFilter.CurrentChannel == m_NumChannels)
       m_MmFilter.CurrentChannel = 0;
@@ -375,7 +377,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   if (!m_TablesOK)
     return S_FALSE;
 
-  UInt64 startPos = m_OutWindowStream.GetProcessedSize();
+  const UInt64 startPos = m_OutWindowStream.GetProcessedSize();
   while (pos < unPackSize)
   {
     UInt32 blockSize = 1 << 20;
@@ -396,7 +398,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     if (m_InBitStream.ExtraBitsWereRead())
       return S_FALSE;
 
-    UInt64 globalPos = m_OutWindowStream.GetProcessedSize();
+    const UInt64 globalPos = m_OutWindowStream.GetProcessedSize();
     pos = globalPos - blockStartPos;
     if (pos < blockSize)
       if (!ReadTables())
@@ -405,7 +407,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     if (progress)
     {
       const UInt64 packSize = m_InBitStream.GetProcessedSize();
-      RINOK(progress->SetRatioInfo(&packSize, &pos));
+      RINOK(progress->SetRatioInfo(&packSize, &pos))
     }
   }
   if (pos > unPackSize)
@@ -419,8 +421,8 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   return m_OutWindowStream.Flush();
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
   catch(const CInBufferException &e) { return e.ErrorCode; }
@@ -428,7 +430,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   catch(...) { return S_FALSE; }
 }
 
-STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
+Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
 {
   if (size < 1)
     return E_INVALIDARG;

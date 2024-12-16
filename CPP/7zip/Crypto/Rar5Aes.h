@@ -1,7 +1,7 @@
 // Crypto/Rar5Aes.h
 
-#ifndef __CRYPTO_RAR5_AES_H
-#define __CRYPTO_RAR5_AES_H
+#ifndef ZIP7_INC_CRYPTO_RAR5_AES_H
+#define ZIP7_INC_CRYPTO_RAR5_AES_H
 
 #include "../../../C/Sha256.h"
 
@@ -53,17 +53,21 @@ struct CKey
   void Wipe()
   {
     _password.Wipe();
-    MY_memset_0_ARRAY(_salt);
-    MY_memset_0_ARRAY(_key);
-    MY_memset_0_ARRAY(_check_Calced);
-    MY_memset_0_ARRAY(_hashKey);
+    Z7_memset_0_ARRAY(_salt);
+    Z7_memset_0_ARRAY(_key);
+    Z7_memset_0_ARRAY(_check_Calced);
+    Z7_memset_0_ARRAY(_hashKey);
   }
 
+#ifdef Z7_CPP_IS_SUPPORTED_default
+  // CKey(const CKey &) = default;
+  CKey& operator =(const CKey &) = default;
+#endif
   ~CKey() { Wipe(); }
 };
 
 
-class CDecoder:
+class CDecoder Z7_final:
   public CAesCbcDecoder,
   public CKey
 {
@@ -77,7 +81,7 @@ public:
   
   CDecoder();
 
-  STDMETHOD(Init)();
+  Z7_COM7F_IMP(Init())
 
   void SetPassword(const Byte *data, size_t size);
   HRESULT SetDecoderProps(const Byte *data, unsigned size, bool includeIV, bool isService);

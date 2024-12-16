@@ -27,10 +27,9 @@ struct CBlock
   UInt32 Offset;
 };
 
-class CHandler:
-  public IInArchive,
-  public CMyUnknownImp
-{
+
+Z7_CLASS_IMP_CHandler_IInArchive_0
+
   bool _isArc;
   bool _needMoreInput;
   bool _dataError;
@@ -38,9 +37,6 @@ class CHandler:
   UInt64 _phySize;
 
   CObjectVector<CBlock> _blocks;
-public:
-  MY_UNKNOWN_IMP1(IInArchive)
-  INTERFACE_IInArchive(;)
 };
 
 static const Byte kProps[] =
@@ -53,13 +49,13 @@ static const Byte kProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps_NO_Table
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _blocks.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   NWindows::NCOM::CPropVariant prop;
   switch (propID)
@@ -68,7 +64,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidErrorFlags:
     {
       UInt32 v = 0;
-      if (!_isArc) v |= kpv_ErrorFlags_IsNotArc;;
+      if (!_isArc) v |= kpv_ErrorFlags_IsNotArc;
       if (_needMoreInput) v |= kpv_ErrorFlags_UnexpectedEnd;
       if (_dataError) v |= kpv_ErrorFlags_DataError;
       prop = v;
@@ -78,7 +74,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -105,16 +101,16 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
 static inline int HexToByte(unsigned c)
 {
-  if (c >= '0' && c <= '9') return c - '0';
-  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= '0' && c <= '9') return (int)(c - '0');
+  if (c >= 'A' && c <= 'F') return (int)(c - 'A' + 10);
+  if (c >= 'a' && c <= 'f') return (int)(c - 'a' + 10);
   return -1;
 }
 
 static int Parse(const Byte *p)
 {
-  int c1 = HexToByte(p[0]); if (c1 < 0) return -1;
-  int c2 = HexToByte(p[1]); if (c2 < 0) return -1;
+  const int c1 = HexToByte(p[0]); if (c1 < 0) return -1;
+  const int c2 = HexToByte(p[1]); if (c2 < 0) return -1;
   return (c1 << 4) | c2;
 }
   
@@ -207,7 +203,7 @@ API_FUNC_static_IsArc IsArc_Ihex(const Byte *p, size_t size)
     {
       if (size == 0)
         return k_IsArc_Res_NEED_MORE;
-      char b = *p++;
+      const Byte b = *p++;
       size--;
       if (IS_LINE_DELIMITER(b))
         continue;
@@ -221,7 +217,7 @@ API_FUNC_static_IsArc IsArc_Ihex(const Byte *p, size_t size)
 }
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *))
 {
   COM_TRY_BEGIN
   {
@@ -232,7 +228,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
     Byte temp[kStartSize];
     {
       size_t size = kStartSize;
-      RINOK(ReadStream(stream, temp, &size));
+      RINOK(ReadStream(stream, temp, &size))
       UInt32 isArcRes = IsArc_Ihex(temp, size);
       if (isArcRes == k_IsArc_Res_NO)
         return S_FALSE;
@@ -241,7 +237,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
     }
     _isArc = true;
 
-    RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+    RINOK(InStream_SeekToBegin(stream))
     CInBuffer s;
     if (!s.Create(1 << 15))
       return E_OUTOFMEMORY;
@@ -271,7 +267,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
         _needMoreInput = true;
         return S_FALSE;
       }
-      int num = Parse(temp);
+      const int num = Parse(temp);
       if (num < 0)
       {
         _dataError = true;
@@ -287,17 +283,17 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
           return S_FALSE;
         }
         
-        unsigned sum = num;
+        unsigned sum = (unsigned)num;
         for (size_t i = 0; i < numPairs; i++)
         {
-          int a = Parse(temp + i * 2);
+          const int a = Parse(temp + i * 2);
           if (a < 0)
           {
             _dataError = true;
             return S_FALSE;
           }
           temp[i] = (Byte)a;
-          sum += a;
+          sum += (unsigned)a;
         }
         if ((sum & 0xFF) != 0)
         {
@@ -413,7 +409,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _phySize = 0;
   
@@ -426,11 +422,11 @@ STDMETHODIMP CHandler::Close()
 }
 
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _blocks.Size();
   if (numItems == 0)
@@ -453,18 +449,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
     currentItemSize = 0;
     lps->InSize = lps->OutSize = currentTotalSize;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
 
-    UInt32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CByteDynamicBuffer &data = _blocks[index].Data;
     currentItemSize = data.GetPos();
     
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
     
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode))
     
     if (!testMode && !realOutStream)
       continue;
@@ -473,11 +469,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     
     if (realOutStream)
     {
-      RINOK(WriteStream(realOutStream, (const Byte *)data, data.GetPos()));
+      RINOK(WriteStream(realOutStream, (const Byte *)data, data.GetPos()))
     }
   
     realOutStream.Release();
-    RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+    RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
   }
   
   lps->InSize = lps->OutSize = currentTotalSize;
@@ -489,7 +485,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 // k_Signature: { ':', '1' }
 
 REGISTER_ARC_I_NO_SIG(
-  "IHex", "ihex", 0, 0xCD,
+  "IHex", "ihex", NULL, 0xCD,
   0,
   NArcInfoFlags::kStartOpen,
   IsArc_Ihex)

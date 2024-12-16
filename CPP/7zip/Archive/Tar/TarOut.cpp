@@ -60,7 +60,7 @@ static void WriteOctal_12(char *s, UInt64 val)
   }
 }
 
-static void WriteOctal_12_Signed(char *s, Int64 val)
+static void WriteOctal_12_Signed(char *s, const Int64 val)
 {
   if (val >= 0)
   {
@@ -68,10 +68,10 @@ static void WriteOctal_12_Signed(char *s, Int64 val)
     return;
   }
   s[0] = s[1] = s[2] = s[3] = (char)(Byte)0xFF;
-  WriteBin_64bit(s + 4, val);
+  WriteBin_64bit(s + 4, (UInt64)val);
 }
 
-static void CopyString(char *dest, const AString &src, unsigned maxSize)
+static void CopyString(char *dest, const AString &src, const unsigned maxSize)
 {
   unsigned len = src.Len();
   if (len == 0)
@@ -119,11 +119,11 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item, bool isPax
 
   COPY_STRING_CHECK (cur,
       (!isPax && !Glob_Name.IsEmpty()) ? Glob_Name : item.Name,
-      kNameSize);
+      kNameSize)
 
-  WRITE_OCTAL_8_CHECK (cur, item.Mode);  cur += 8; // & k_7_oct_digits_Val_Max
-  WRITE_OCTAL_8_CHECK (cur, item.UID);   cur += 8;
-  WRITE_OCTAL_8_CHECK (cur, item.GID);   cur += 8;
+  WRITE_OCTAL_8_CHECK (cur, item.Mode)  cur += 8; // & k_7_oct_digits_Val_Max
+  WRITE_OCTAL_8_CHECK (cur, item.UID)   cur += 8;
+  WRITE_OCTAL_8_CHECK (cur, item.GID)   cur += 8;
 
   WriteOctal_12 (cur, /* zero_PackSize ? 0 : */ item.PackSize); cur += 12;
   WriteOctal_12_Signed (cur, /* zero_MTime ? 0 : */ item.MTime); cur += 12;
@@ -135,13 +135,13 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item, bool isPax
 
   *cur++ = item.LinkFlag;
 
-  COPY_STRING_CHECK (cur, item.LinkName, kNameSize);
+  COPY_STRING_CHECK (cur, item.LinkName, kNameSize)
 
   memcpy(cur, item.Magic, 8);
   cur += 8;
 
-  COPY_STRING_CHECK (cur, item.User, kUserNameSize);
-  COPY_STRING_CHECK (cur, item.Group, kGroupNameSize);
+  COPY_STRING_CHECK (cur, item.User, kUserNameSize)
+  COPY_STRING_CHECK (cur, item.Group, kGroupNameSize)
 
   const bool needDevice = (IsPosixMode && !isPax);
   
@@ -159,7 +159,7 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item, bool isPax
 
   if (!isPax && !Prefix.IsEmpty())
   {
-    COPY_STRING_CHECK (cur, Prefix, kPrefixSize);
+    COPY_STRING_CHECK (cur, Prefix, kPrefixSize)
   }
 
   if (item.Is_Sparse())
@@ -194,7 +194,7 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item, bool isPax
     record[148 + 7] = ' '; // we need it, if we use binary init
   }
 
-  RINOK(Write_Data(record, kRecordSize));
+  RINOK(Write_Data(record, kRecordSize))
 
   if (item.Is_Sparse())
   {
@@ -209,7 +209,7 @@ HRESULT COutArchive::WriteHeaderReal(const CItem &item, bool isPax
         WriteOctal_12(p + 12, sb.Size);
       }
       record[21 * 24] = (char)(i < item.SparseBlocks.Size() ? 1 : 0);
-      RINOK(Write_Data(record, kRecordSize));
+      RINOK(Write_Data(record, kRecordSize))
     }
   }
 
@@ -237,11 +237,11 @@ static void AddPaxLine(AString &s, const char *name, const AString &val)
   s.Add_LF();
 }
 
-
+// pt is defined : (pt.NumDigits >= 0)
 static void AddPaxTime(AString &s, const char *name, const CPaxTime &pt,
     const CTimeOptions &options)
 {
-  unsigned numDigits = pt.NumDigits;
+  unsigned numDigits = (unsigned)pt.NumDigits;
   if (numDigits > options.NumDigitsMax)
     numDigits = options.NumDigitsMax;
 
@@ -265,14 +265,14 @@ static void AddPaxTime(AString &s, const char *name, const CPaxTime &pt,
     if (pt.Sec < 0)
     {
       sec = -sec;
-      v += '-';
+      v.Add_Minus();
       if (ns != 0)
       {
         ns = 1000*1000*1000 - ns;
         sec--;
       }
     }
-    v.Add_UInt64(sec);
+    v.Add_UInt64((UInt64)sec);
   }
   
   if (needNs)
@@ -291,7 +291,7 @@ static void AddPaxTime(AString &s, const char *name, const CPaxTime &pt,
 
     if (!d.IsEmpty())
     {
-      v += '.';
+      v.Add_Dot();
       v += d;
       // v += "1234567009999"; // for debug
       // for (int y = 0; y < 1000; y++) v += '8'; // for debug
@@ -467,8 +467,8 @@ HRESULT COutArchive::WriteHeader(const CItem &item)
       // mi.LinkFlag = 'Z'; // for debug
       mi.PackSize = paxSize;
       // for (unsigned y = 0; y < 1; y++) { // for debug
-      RINOK(WriteHeaderReal(mi, true)); // isPax
-      RINOK(Write_Data_And_Residual(s, paxSize));
+      RINOK(WriteHeaderReal(mi, true)) // isPax
+      RINOK(Write_Data_And_Residual(s, paxSize))
       // } // for debug
       /*
         we can send (zero_MTime) for compatibility with gnu tar output.
@@ -538,8 +538,8 @@ HRESULT COutArchive::WriteHeader(const CItem &item)
       const unsigned nameStreamSize = name->Len() + 1;
       mi.PackSize = nameStreamSize;
       // for (unsigned y = 0; y < 3; y++) { // for debug
-      RINOK(WriteHeaderReal(mi));
-      RINOK(Write_Data_And_Residual(name->Ptr(), nameStreamSize));
+      RINOK(WriteHeaderReal(mi))
+      RINOK(Write_Data_And_Residual(name->Ptr(), nameStreamSize))
       // }
       
       // for debug
@@ -615,7 +615,7 @@ HRESULT COutArchive::Write_AfterDataResidual(UInt64 dataSize)
 
 HRESULT COutArchive::Write_Data_And_Residual(const void *data, unsigned size)
 {
-  RINOK(Write_Data(data, size));
+  RINOK(Write_Data(data, size))
   return Write_AfterDataResidual(size);
 }
 
@@ -636,7 +636,7 @@ HRESULT COutArchive::WriteFinishHeader()
   
   for (unsigned i = 0; i < kNumFinishRecords; i++)
   {
-    RINOK(Write_Data(record, kRecordSize));
+    RINOK(Write_Data(record, kRecordSize))
   }
   return S_OK;
 }

@@ -16,7 +16,7 @@ HRESULT FindSignatureInStream(ISequentialInStream *stream,
 {
   resPos = 0;
   CByteBuffer byteBuffer2(signatureSize);
-  RINOK(ReadStream_FALSE(stream, byteBuffer2, signatureSize));
+  RINOK(ReadStream_FALSE(stream, byteBuffer2, signatureSize))
 
   if (memcmp(byteBuffer2, signature, signatureSize) == 0)
     return S_OK;
@@ -29,23 +29,23 @@ HRESULT FindSignatureInStream(ISequentialInStream *stream,
   resPos = 1;
   for (;;)
   {
-    if (limit != NULL)
+    if (limit)
       if (resPos > *limit)
         return S_FALSE;
     do
     {
-      UInt32 numReadBytes = kBufferSize - numPrevBytes;
+      const UInt32 numReadBytes = kBufferSize - numPrevBytes;
       UInt32 processedSize;
-      RINOK(stream->Read(buffer + numPrevBytes, numReadBytes, &processedSize));
+      RINOK(stream->Read(buffer + numPrevBytes, numReadBytes, &processedSize))
       numPrevBytes += processedSize;
       if (processedSize == 0)
         return S_FALSE;
     }
     while (numPrevBytes < signatureSize);
-    UInt32 numTests = numPrevBytes - signatureSize + 1;
+    const UInt32 numTests = numPrevBytes - signatureSize + 1;
     for (UInt32 pos = 0; pos < numTests; pos++)
     {
-      Byte b = signature[0];
+      const Byte b = signature[0];
       for (; buffer[pos] != b && pos < numTests; pos++);
       if (pos == numTests)
         break;

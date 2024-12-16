@@ -1,13 +1,13 @@
 PROG = 7zG.exe
 CFLAGS = $(CFLAGS) \
-  -DLANG \
-  -DEXTERNAL_CODECS \
+  -DZ7_LANG \
+  -DZ7_EXTERNAL_CODECS \
 
 !IFDEF UNDER_CE
 LIBS = $(LIBS) ceshell.lib Commctrl.lib
 !ELSE
 LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib gdi32.lib
-CFLAGS = $(CFLAGS) -DWIN_LONG_PATH -DSUPPORT_DEVICE_FILE -D_7ZIP_LARGE_PAGES
+CFLAGS = $(CFLAGS) -DZ7_LONG_PATH -DZ7_LARGE_PAGES -DZ7_DEVICE_FILE
 !ENDIF
 
 GUI_OBJS = \
@@ -72,6 +72,7 @@ WIN_CTRL_OBJS = \
   $O\FilterCoder.obj \
   $O\LimitedStreams.obj \
   $O\MethodProps.obj \
+  $O\MultiOutStream.obj \
   $O\ProgressUtils.obj \
   $O\PropId.obj \
   $O\StreamObjects.obj \

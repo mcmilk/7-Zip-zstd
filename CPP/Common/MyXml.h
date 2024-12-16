@@ -1,7 +1,7 @@
 // MyXml.h
 
-#ifndef __MY_XML_H
-#define __MY_XML_H
+#ifndef ZIP7_INC_MY_XML_H
+#define ZIP7_INC_MY_XML_H
 
 #include "MyString.h"
 

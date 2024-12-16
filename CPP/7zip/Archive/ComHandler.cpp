@@ -26,8 +26,8 @@
 namespace NArchive {
 namespace NCom {
 
-#define SIGNATURE { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 }
-static const Byte kSignature[] = SIGNATURE;
+static const Byte kSignature[] =
+  { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 };
 
 enum EType
 {
@@ -120,6 +120,7 @@ public:
   Int32 MainSubfile;
 
   UInt64 PhySize;
+  UInt64 PhySize_Aligned;
   EType Type;
 
   bool IsNotArcType() const
@@ -129,10 +130,12 @@ public:
       Type != k_Type_Msp;
   }
 
-  void UpdatePhySize(UInt64 val)
+  void UpdatePhySize(UInt64 val, UInt64 val_Aligned)
   {
     if (PhySize < val)
       PhySize = val;
+    if (PhySize_Aligned < val_Aligned)
+      PhySize_Aligned = val_Aligned;
   }
   HRESULT ReadSector(IInStream *inStream, Byte *buf, unsigned sectorSizeBits, UInt32 sid);
   HRESULT ReadIDs(IInStream *inStream, Byte *buf, unsigned sectorSizeBits, UInt32 sid, UInt32 *dest);
@@ -165,14 +168,15 @@ public:
 
 HRESULT CDatabase::ReadSector(IInStream *inStream, Byte *buf, unsigned sectorSizeBits, UInt32 sid)
 {
-  UpdatePhySize(((UInt64)sid + 2) << sectorSizeBits);
-  RINOK(inStream->Seek((((UInt64)sid + 1) << sectorSizeBits), STREAM_SEEK_SET, NULL));
+  const UInt64 end = ((UInt64)sid + 2) << sectorSizeBits;
+  UpdatePhySize(end, end);
+  RINOK(InStream_SeekSet(inStream, (((UInt64)sid + 1) << sectorSizeBits)))
   return ReadStream_FALSE(inStream, buf, (size_t)1 << sectorSizeBits);
 }
 
 HRESULT CDatabase::ReadIDs(IInStream *inStream, Byte *buf, unsigned sectorSizeBits, UInt32 sid, UInt32 *dest)
 {
-  RINOK(ReadSector(inStream, buf, sectorSizeBits, sid));
+  RINOK(ReadSector(inStream, buf, sectorSizeBits, sid))
   UInt32 sectorSize = (UInt32)1 << sectorSizeBits;
   for (UInt32 t = 0; t < sectorSize; t += 4)
     *dest++ = Get32(buf + t);
@@ -205,6 +209,7 @@ void CItem::Parse(const Byte *p, bool mode64bit)
 void CDatabase::Clear()
 {
   PhySize = 0;
+  PhySize_Aligned = 0;
 
   Fat.Free();
   MiniSids.Free();
@@ -227,14 +232,14 @@ HRESULT CDatabase::AddNode(int parent, UInt32 did)
   CRef ref;
   ref.Parent = parent;
   ref.Did = did;
-  int index = Refs.Add(ref);
+  const unsigned index = Refs.Add(ref);
   if (Refs.Size() > Items.Size())
     return S_FALSE;
-  RINOK(AddNode(parent, item.LeftDid));
-  RINOK(AddNode(parent, item.RightDid));
+  RINOK(AddNode(parent, item.LeftDid))
+  RINOK(AddNode(parent, item.RightDid))
   if (item.IsDir())
   {
-    RINOK(AddNode(index, item.SonDid));
+    RINOK(AddNode((int)index, item.SonDid))
   }
   return S_OK;
 }
@@ -244,11 +249,11 @@ static UString CompoundNameToFileName(const UString &s)
   UString res;
   for (unsigned i = 0; i < s.Len(); i++)
   {
-    wchar_t c = s[i];
-    if (c < 0x20)
+    const wchar_t c = s[i];
+    if ((unsigned)(int)c < 0x20)
     {
       res += '[';
-      res.Add_UInt32(c);
+      res.Add_UInt32((UInt32)(unsigned)(int)c);
       res += ']';
     }
     else
@@ -360,7 +365,7 @@ UString CDatabase::GetItemPath(UInt32 index) const
     if (!s.IsEmpty())
       s.InsertAtFront(WCHAR_PATH_SEPARATOR);
     s.Insert(0, ConvertName(item.Name));
-    index = ref.Parent;
+    index = (unsigned)ref.Parent;
   }
   return s;
 }
@@ -371,11 +376,11 @@ HRESULT CDatabase::Update_PhySize_WithItem(unsigned index)
   bool isLargeStream = (index == 0 || IsLargeStream(item.Size));
   if (!isLargeStream)
     return S_OK;
-  unsigned bsLog = isLargeStream ? SectorSizeBits : MiniSectorSizeBits;
+  const unsigned bsLog = isLargeStream ? SectorSizeBits : MiniSectorSizeBits;
   // streamSpec->Size = item.Size;
   
-  UInt32 clusterSize = (UInt32)1 << bsLog;
-  UInt64 numClusters64 = (item.Size + clusterSize - 1) >> bsLog;
+  const UInt32 clusterSize = (UInt32)1 << bsLog;
+  const UInt64 numClusters64 = (item.Size + clusterSize - 1) >> bsLog;
   if (numClusters64 >= ((UInt32)1 << 31))
     return S_FALSE;
   UInt32 sid = item.Sid;
@@ -389,7 +394,13 @@ HRESULT CDatabase::Update_PhySize_WithItem(unsigned index)
       {
         if (sid >= FatSize)
           return S_FALSE;
-        UpdatePhySize(((UInt64)sid + 2) << bsLog);
+        UInt64 end = ((UInt64)sid + 1) << bsLog;
+        const UInt64 end_Aligned = end + clusterSize;
+        if (size < clusterSize)
+          end += size;
+        else
+          end = end_Aligned;
+        UpdatePhySize(end, end_Aligned);
         sid = Fat[sid];
       }
       if (size <= clusterSize)
@@ -415,8 +426,8 @@ HRESULT CDatabase::Open(IInStream *inStream)
   const UInt32 kHeaderSize = 512;
   Byte p[kHeaderSize];
   PhySize = kHeaderSize;
-  RINOK(ReadStream_FALSE(inStream, p, kHeaderSize));
-  if (memcmp(p, kSignature, ARRAY_SIZE(kSignature)) != 0)
+  RINOK(ReadStream_FALSE(inStream, p, kHeaderSize))
+  if (memcmp(p, kSignature, Z7_ARRAY_SIZE(kSignature)) != 0)
     return S_FALSE;
   if (Get16(p + 0x1A) > 4) // majorVer
     return S_FALSE;
@@ -461,7 +472,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
     UInt32 sid = Get32(p + 0x44);
     for (UInt32 s = 0; s < numSectorsForBat; s++)
     {
-      RINOK(ReadIDs(inStream, sect, sectorSizeBits, sid, bat + i));
+      RINOK(ReadIDs(inStream, sect, sectorSizeBits, sid, bat + i))
       i += numSidsInSec - 1;
       sid = bat[i];
     }
@@ -474,7 +485,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
     {
       if (j >= numBatItems)
         return S_FALSE;
-      RINOK(ReadIDs(inStream, sect, sectorSizeBits, bat[j], Fat + i));
+      RINOK(ReadIDs(inStream, sect, sectorSizeBits, bat[j], Fat + i))
     }
     FatSize = numFatItems = i;
   }
@@ -490,7 +501,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
     UInt32 sid = Get32(p + 0x3C); // short-sector table SID
     for (i = 0; i < numMatItems; i += numSidsInSec)
     {
-      RINOK(ReadIDs(inStream, sect, sectorSizeBits, sid, Mat + i));
+      RINOK(ReadIDs(inStream, sect, sectorSizeBits, sid, Mat + i))
       if (sid >= numFatItems)
         return S_FALSE;
       sid = Fat[sid];
@@ -511,7 +522,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
       if (used[sid])
         return S_FALSE;
       used[sid] = 1;
-      RINOK(ReadSector(inStream, sect, sectorSizeBits, sid));
+      RINOK(ReadSector(inStream, sect, sectorSizeBits, sid))
       for (UInt32 i = 0; i < sectSize; i += 128)
       {
         CItem item;
@@ -563,7 +574,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
     }
   }
 
-  RINOK(AddNode(-1, root.SonDid));
+  RINOK(AddNode(-1, root.SonDid))
   
   unsigned numCabs = 0;
   
@@ -584,7 +595,7 @@ HRESULT CDatabase::Open(IInStream *inStream)
           )
       {
         numCabs++;
-        MainSubfile = i;
+        MainSubfile = (int)i;
       }
     }
   }
@@ -596,6 +607,17 @@ HRESULT CDatabase::Open(IInStream *inStream)
     FOR_VECTOR (t, Items)
     {
       Update_PhySize_WithItem(t);
+    }
+  }
+  {
+    if (PhySize != PhySize_Aligned)
+    {
+      /* some msi (in rare cases) have unaligned size of archive,
+         where there is no padding data after payload data in last cluster of archive */
+      UInt64 fileSize;
+      RINOK(InStream_GetSize_SeekToEnd(inStream, fileSize))
+      if (PhySize != fileSize)
+        PhySize = PhySize_Aligned;
     }
   }
   {
@@ -634,17 +656,11 @@ HRESULT CDatabase::Open(IInStream *inStream)
   return S_OK;
 }
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+  IInArchiveGetStream
+)
   CMyComPtr<IInStream> _stream;
   CDatabase _db;
-public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
 static const Byte kProps[] =
@@ -666,7 +682,7 @@ static const Byte kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -684,7 +700,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -705,9 +721,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream,
+Z7_COM7F_IMF(CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback * /* openArchiveCallback */)
+    IArchiveOpenCallback * /* openArchiveCallback */))
 {
   COM_TRY_BEGIN
   Close();
@@ -722,18 +738,18 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _db.Clear();
   _stream.Release();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _db.Refs.Size();
   if (numItems == 0)
@@ -746,7 +762,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (!item.IsDir())
       totalSize += item.Size;
   }
-  RINOK(extractCallback->SetTotal(totalSize));
+  RINOK(extractCallback->SetTotal(totalSize))
 
   UInt64 totalPackSize;
   totalSize = totalPackSize = 0;
@@ -762,20 +778,20 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
     lps->InSize = totalPackSize;
     lps->OutSize = totalSize;
-    RINOK(lps->SetCur());
-    Int32 index = allFilesMode ? i : indices[i];
+    RINOK(lps->SetCur())
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CItem &item = _db.Items[_db.Refs[index].Did];
 
     CMyComPtr<ISequentialOutStream> outStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    RINOK(extractCallback->GetStream(index, &outStream, askMode));
+    RINOK(extractCallback->GetStream(index, &outStream, askMode))
 
     if (item.IsDir())
     {
-      RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->PrepareOperation(askMode))
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
       continue;
     }
 
@@ -784,7 +800,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     
     if (!testMode && !outStream)
       continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
     Int32 res = NExtract::NOperationResult::kDataError;
     CMyComPtr<ISequentialInStream> inStream;
     HRESULT hres = GetStream(index, &inStream);
@@ -794,45 +810,45 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       res = NExtract::NOperationResult::kUnsupportedMethod;
     else
     {
-      RINOK(hres);
+      RINOK(hres)
       if (inStream)
       {
-        RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+        RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress))
         if (copyCoderSpec->TotalSize == item.Size)
           res = NExtract::NOperationResult::kOK;
       }
     }
     outStream.Release();
-    RINOK(extractCallback->SetOperationResult(res));
+    RINOK(extractCallback->SetOperationResult(res))
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _db.Refs.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 index, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
-  *stream = 0;
-  UInt32 itemIndex = _db.Refs[index].Did;
+  *stream = NULL;
+  const UInt32 itemIndex = _db.Refs[index].Did;
   const CItem &item = _db.Items[itemIndex];
   CClusterInStream *streamSpec = new CClusterInStream;
   CMyComPtr<ISequentialInStream> streamTemp = streamSpec;
   streamSpec->Stream = _stream;
   streamSpec->StartOffset = 0;
 
-  bool isLargeStream = (itemIndex == 0 || _db.IsLargeStream(item.Size));
-  int bsLog = isLargeStream ? _db.SectorSizeBits : _db.MiniSectorSizeBits;
+  const bool isLargeStream = (itemIndex == 0 || _db.IsLargeStream(item.Size));
+  const unsigned bsLog = isLargeStream ? _db.SectorSizeBits : _db.MiniSectorSizeBits;
   streamSpec->BlockSizeLog = bsLog;
   streamSpec->Size = item.Size;
 
-  UInt32 clusterSize = (UInt32)1 << bsLog;
-  UInt64 numClusters64 = (item.Size + clusterSize - 1) >> bsLog;
+  const UInt32 clusterSize = (UInt32)1 << bsLog;
+  const UInt64 numClusters64 = (item.Size + clusterSize - 1) >> bsLog;
   if (numClusters64 >= ((UInt32)1 << 31))
     return E_NOTIMPL;
   streamSpec->Vector.ClearAndReserve((unsigned)numClusters64);
@@ -864,14 +880,14 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   }
   if (sid != NFatID::kEndOfChain)
     return S_FALSE;
-  RINOK(streamSpec->InitAndSeek());
+  RINOK(streamSpec->InitAndSeek())
   *stream = streamTemp.Detach();
   return S_OK;
   COM_TRY_END
 }
 
 REGISTER_ARC_I(
-  "Compound", "msi msp doc xls ppt", 0, 0xE5,
+  "Compound", "msi msp doc xls ppt", NULL, 0xE5,
   kSignature,
   0,
   0,

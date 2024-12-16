@@ -149,7 +149,7 @@ void CApp::VerCtrl(unsigned id)
   }
 
   CRecordVector<UInt32> indices;
-  panel.GetSelectedItemsIndices(indices);
+  panel.Get_ItemIndices_Selected(indices);
 
   if (indices.Size() != 1)
   {
@@ -223,7 +223,7 @@ void CApp::VerCtrl(unsigned id)
           if (!ParseNumberString(fi.Name, val))
             continue;
           if ((Int32)val > maxVal)
-            maxVal = val;
+            maxVal = (Int32)val;
         }
 
         UInt32 next = (UInt32)maxVal + 1;
@@ -320,7 +320,7 @@ void CApp::VerCtrl(unsigned id)
       const UInt64 k_Ntfs_prec = 10000000;
       UInt64 timeStamp = timeStampOriginal;
       const UInt32 k_precs[] = { 60 * 60, 60, 2, 1 };
-      for (unsigned i = 0; i < ARRAY_SIZE(k_precs); i++)
+      for (unsigned i = 0; i < Z7_ARRAY_SIZE(k_precs); i++)
       {
         timeStamp = timeStampOriginal;
         const UInt64 prec = k_Ntfs_prec * k_precs[i];

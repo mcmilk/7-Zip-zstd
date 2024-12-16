@@ -10,6 +10,7 @@
 #include "../../../Common/UTFConvert.h"
 
 #include "../../Common/LimitedStreams.h"
+#include "../../Common/StreamUtils.h"
 
 #include "ChmIn.h"
 
@@ -217,7 +218,7 @@ void CInArchive::ReadUString(unsigned size, UString &s)
 
 HRESULT CInArchive::ReadChunk(IInStream *inStream, UInt64 pos, UInt64 size)
 {
-  RINOK(inStream->Seek(pos, STREAM_SEEK_SET, NULL));
+  RINOK(InStream_SeekSet(inStream, pos))
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
   CMyComPtr<ISequentialInStream> limitedStream(streamSpec);
   streamSpec->SetStream(inStream);
@@ -350,7 +351,7 @@ HRESULT CInArchive::OpenChm(IInStream *inStream, CDatabase &database)
           return S_FALSE;
         if (offset == offsetLimit)
           break;
-        RINOK(ReadDirEntry(database));
+        RINOK(ReadDirEntry(database))
         numItems++;
       }
       
@@ -570,7 +571,7 @@ HRESULT CInArchive::OpenHelp2(IInStream *inStream, CDatabase &database)
         }
         else
         {
-          RINOK(ReadDirEntry(database));
+          RINOK(ReadDirEntry(database))
         }
         numItems++;
       }
@@ -616,7 +617,7 @@ static AString GetSectionPrefix(const AString &name)
   return s;
 }
 
-#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
+#define RINOZ(x) { int _tt_ = (x); if (_tt_ != 0) return _tt_; }
 
 static int CompareFiles(const unsigned *p1, const unsigned *p2, void *param)
 {
@@ -634,9 +635,9 @@ static int CompareFiles(const unsigned *p1, const unsigned *p2, void *param)
   }
   else
   {
-    RINOZ(MyCompare(item1.Section, item2.Section));
-    RINOZ(MyCompare(item1.Offset, item2.Offset));
-    RINOZ(MyCompare(item1.Size, item2.Size));
+    RINOZ(MyCompare(item1.Section, item2.Section))
+    RINOZ(MyCompare(item1.Offset, item2.Offset))
+    RINOZ(MyCompare(item1.Size, item2.Size))
   }
   return MyCompare(*p1, *p2);
 }
@@ -705,7 +706,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
 {
   {
     // The NameList file
-    RINOK(DecompressStream(inStream, database, (AString)kNameList));
+    RINOK(DecompressStream(inStream, database, (AString)kNameList))
     /* UInt16 length = */ ReadUInt16();
     UInt16 numSections = ReadUInt16();
     for (unsigned i = 0; i < numSections; i++)
@@ -740,7 +741,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
     if (database.Help2Format)
     {
       // Transform List
-      RINOK(DecompressStream(inStream, database, transformPrefix + kTransformList));
+      RINOK(DecompressStream(inStream, database, transformPrefix + kTransformList))
       if ((_chunkSize & 0xF) != 0)
         return S_FALSE;
       unsigned numGuids = (unsigned)(_chunkSize / 0x10);
@@ -762,7 +763,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
 
     {
       // Control Data
-      RINOK(DecompressStream(inStream, database, sectionPrefix + kControlData));
+      RINOK(DecompressStream(inStream, database, sectionPrefix + kControlData))
       
       FOR_VECTOR (mi, section.Methods)
       {
@@ -781,19 +782,19 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
           
           {
             // There is bug in VC6, if we use function call as parameter for inline function
-            UInt32 val32 = ReadUInt32();
-            int n = GetLog(val32);
+            const UInt32 val32 = ReadUInt32();
+            const int n = GetLog(val32);
             if (n < 0 || n > 16)
               return S_FALSE;
-            li.ResetIntervalBits = n;
+            li.ResetIntervalBits = (unsigned)n;
           }
           
           {
-            UInt32 val32 = ReadUInt32();
-            int n = GetLog(val32);
+            const UInt32 val32 = ReadUInt32();
+            const int n = GetLog(val32);
             if (n < 0 || n > 16)
               return S_FALSE;
-            li.WindowSizeBits = n;
+            li.WindowSizeBits = (unsigned)n;
           }
 
           li.CacheSize = ReadUInt32();
@@ -812,7 +813,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
 
     {
       // SpanInfo
-      RINOK(DecompressStream(inStream, database, sectionPrefix + kSpanInfo));
+      RINOK(DecompressStream(inStream, database, sectionPrefix + kSpanInfo))
       section.UncompressedSize = ReadUInt64();
     }
 
@@ -824,7 +825,7 @@ HRESULT CInArchive::OpenHighLevel(IInStream *inStream, CFilesDatabase &database)
       {
         // ResetTable;
         RINOK(DecompressStream(inStream, database, transformPrefix +
-            method.GetGuidString() + kResetTable));
+            method.GetGuidString() + kResetTable))
         CResetTable &rt = method.LzxInfo.ResetTable;
         
         if (_chunkSize < 4)
@@ -906,7 +907,7 @@ HRESULT CInArchive::Open2(IInStream *inStream,
   database.Help2Format = _help2;
   const UInt32 chmVersion = 3;
 
-  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &database.StartPosition));
+  RINOK(InStream_GetPos(inStream, database.StartPosition))
 
   if (!_inBuffer.Create(1 << 14))
     return E_OUTOFMEMORY;
@@ -942,7 +943,7 @@ HRESULT CInArchive::Open2(IInStream *inStream,
     }
     
     database.StartPosition += _inBuffer.GetProcessedSize() - kSignatureSize;
-    RINOK(OpenHelp2(inStream, database));
+    RINOK(OpenHelp2(inStream, database))
     if (database.NewFormat)
       return S_OK;
   }
@@ -952,7 +953,7 @@ HRESULT CInArchive::Open2(IInStream *inStream,
       return S_FALSE;
     if (ReadUInt32() != chmVersion)
       return S_FALSE;
-    RINOK(OpenChm(inStream, database));
+    RINOK(OpenChm(inStream, database))
   }
 
 
@@ -969,7 +970,7 @@ HRESULT CInArchive::Open2(IInStream *inStream,
         database.HighLevelClear();
         return S_OK;
       }
-      RINOK(res);
+      RINOK(res)
       if (!database.CheckSectionRefs())
         HeadersError = true;
       database.LowLevel = false;

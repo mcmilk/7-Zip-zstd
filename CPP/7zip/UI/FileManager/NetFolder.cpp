@@ -55,9 +55,9 @@ void CNetFolder::Init(const UString &path)
   UString systemPathPart;
   DWORD result = GetResourceInformation(resource, destResource, systemPathPart);
   if (result == NO_ERROR)
-    Init(&destResource, 0, path);
+    Init(&destResource, NULL, path);
   else
-    Init(0, 0 , L"");
+    Init(NULL, NULL , L"");
   return;
 }
 
@@ -65,8 +65,8 @@ void CNetFolder::Init(const NWindows::NNet::CResourceW *netResource,
       IFolderFolder *parentFolder, const UString &path)
 {
   _path = path;
-  if (netResource == 0)
-    _netResourcePointer = 0;
+  if (!netResource)
+    _netResourcePointer = NULL;
   else
   {
     _netResource = *netResource;
@@ -86,7 +86,7 @@ void CNetFolder::Init(const NWindows::NNet::CResourceW *netResource,
   _parentFolder = parentFolder;
 }
 
-STDMETHODIMP CNetFolder::LoadItems()
+Z7_COM7F_IMF(CNetFolder::LoadItems())
 {
   _items.Clear();
   CEnum enumerator;
@@ -102,35 +102,35 @@ STDMETHODIMP CNetFolder::LoadItems()
     if (result == NO_ERROR)
       break;
     if (result != ERROR_ACCESS_DENIED)
-      return result;
-    if (_netResourcePointer != 0)
+      return HRESULT_FROM_WIN32(result);
+    if (_netResourcePointer)
     result = AddConnection2(_netResource,
-        0, 0, CONNECT_INTERACTIVE);
+        NULL, NULL, CONNECT_INTERACTIVE);
     if (result != NO_ERROR)
-      return result;
+      return HRESULT_FROM_WIN32(result);
   }
 
   for (;;)
   {
     CResourceEx resource;
-    DWORD result = enumerator.Next(resource);
+    const DWORD result = enumerator.Next(resource);
     if (result == NO_ERROR)
     {
       if (!resource.RemoteNameIsDefined) // For Win 98, I don't know what's wrong
         resource.RemoteName = resource.Comment;
       resource.Name = resource.RemoteName;
-      int pos = resource.Name.ReverseFind_PathSepar();
+      const int pos = resource.Name.ReverseFind_PathSepar();
       if (pos >= 0)
       {
         // _path = resource.Name.Left(pos + 1);
-        resource.Name.DeleteFrontal(pos + 1);
+        resource.Name.DeleteFrontal((unsigned)pos + 1);
       }
       _items.Add(resource);
     }
     else if (result == ERROR_NO_MORE_ITEMS)
       break;
     else
-      return result;
+      return HRESULT_FROM_WIN32(result);
   }
 
   /*
@@ -160,13 +160,13 @@ STDMETHODIMP CNetFolder::LoadItems()
 }
 
 
-STDMETHODIMP CNetFolder::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CNetFolder::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CNetFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value))
 {
   NCOM::CPropVariant prop;
   const CResourceEx &item = _items[itemIndex];
@@ -185,16 +185,16 @@ STDMETHODIMP CNetFolder::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIAN
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   const CResourceEx &resource = _items[index];
   if (resource.Usage == RESOURCEUSAGE_CONNECTABLE ||
       resource.DisplayType == RESOURCEDISPLAYTYPE_SHARE)
   {
     NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
     CMyComPtr<IFolderFolder> subFolder = fsFolderSpec;
-    RINOK(fsFolderSpec->Init(us2fs(resource.RemoteName + WCHAR_PATH_SEPARATOR))); // , this
+    RINOK(fsFolderSpec->Init(us2fs(resource.RemoteName + WCHAR_PATH_SEPARATOR))) // , this
     *resultFolder = subFolder.Detach();
   }
   else
@@ -207,32 +207,32 @@ STDMETHODIMP CNetFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::BindToFolder(const wchar_t * /* name */, IFolderFolder ** /* resultFolder */)
+Z7_COM7F_IMF(CNetFolder::BindToFolder(const wchar_t * /* name */, IFolderFolder ** /* resultFolder */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CNetFolder::BindToParentFolder(IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CNetFolder::BindToParentFolder(IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   if (_parentFolder)
   {
     CMyComPtr<IFolderFolder> parentFolder = _parentFolder;
     *resultFolder = parentFolder.Detach();
     return S_OK;
   }
-  if (_netResourcePointer != 0)
+  if (_netResourcePointer)
   {
     CResourceW resourceParent;
-    DWORD result = GetResourceParent(_netResource, resourceParent);
+    const DWORD result = GetResourceParent(_netResource, resourceParent);
     if (result != NO_ERROR)
-      return result;
+      return HRESULT_FROM_WIN32(result);
     if (!_netResource.RemoteNameIsDefined)
       return S_OK;
 
     CNetFolder *netFolder = new CNetFolder;
     CMyComPtr<IFolderFolder> subFolder = netFolder;
-    netFolder->Init(&resourceParent, 0, WSTRING_PATH_SEPARATOR);
+    netFolder->Init(&resourceParent, NULL, WSTRING_PATH_SEPARATOR);
     *resultFolder = subFolder.Detach();
   }
   return S_OK;
@@ -240,7 +240,7 @@ STDMETHODIMP CNetFolder::BindToParentFolder(IFolderFolder **resultFolder)
 
 IMP_IFolderFolder_Props(CNetFolder)
 
-STDMETHODIMP CNetFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CNetFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value))
 {
   NWindows::NCOM::CPropVariant prop;
   switch (propID)
@@ -252,7 +252,7 @@ STDMETHODIMP CNetFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
+Z7_COM7F_IMF(CNetFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex))
 {
   if (index >= (UInt32)_items.Size())
     return E_INVALIDARG;
@@ -277,5 +277,5 @@ STDMETHODIMP CNetFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
     }
     // *anIconIndex = GetRealIconIndex(0, L"\\\\HOME");
   }
-  return GetLastError();
+  return GetLastError_noZero_HRESULT();
 }

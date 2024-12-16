@@ -1,7 +1,7 @@
 // FarUtils.h
 
-#ifndef __FAR_UTILS_H
-#define __FAR_UTILS_H
+#ifndef ZIP7_INC_FAR_UTILS_H
+#define ZIP7_INC_FAR_UTILS_H
 
 #include "FarPlugin.h"
 
@@ -61,8 +61,8 @@ public:
   const char *GetMsgString(int messageId);
   
   int ShowMessage(unsigned int flags, const char *helpTopic,
-      const char **items, int numItems, int numButtons);
-  int ShowWarningWithOk(const char **items, int numItems);
+      const char **items, unsigned numItems, int numButtons);
+  int ShowWarningWithOk(const char **items, unsigned numItems);
  
   void SetErrorTitle(AString &s);
   int ShowErrorMessage(const char *message);
@@ -71,12 +71,12 @@ public:
   int ShowMessage(int messageId);
 
   int ShowDialog(int X1, int Y1, int X2, int Y2,
-      const char *helpTopic, struct FarDialogItem *items, int numItems);
+      const char *helpTopic, struct FarDialogItem *items, unsigned numItems);
   int ShowDialog(int sizeX, int sizeY,
-      const char *helpTopic, struct FarDialogItem *items, int numItems);
+      const char *helpTopic, struct FarDialogItem *items, unsigned numItems);
 
   void InitDialogItems(const CInitDialogItem *srcItems,
-      FarDialogItem *destItems, int numItems);
+      FarDialogItem *destItems, unsigned numItems);
   
   HANDLE SaveScreen(int X1, int Y1, int X2, int Y2);
   HANDLE SaveScreen();
@@ -119,13 +119,13 @@ public:
       int *breakKeys,
       int *breakCode,
       FarMenuItem *items,
-      int numItems);
+      unsigned numItems);
   int Menu(
       unsigned int flags,
       const char *title,
       const char *helpTopic,
       FarMenuItem *items,
-      int numItems);
+      unsigned numItems);
 
   int Menu(
       unsigned int flags,
@@ -136,14 +136,14 @@ public:
 
   int Editor(const char *fileName, const char *title,
       int X1, int Y1, int X2, int Y2, DWORD flags, int startLine, int startChar)
-      { return m_Data.Editor((char *)fileName, (char *)title, X1, Y1, X2, Y2,
+      { return m_Data.Editor(const_cast<char *>(fileName), const_cast<char *>(title), X1, Y1, X2, Y2,
         flags, startLine, startChar); }
   int Editor(const char *fileName)
       { return Editor(fileName, NULL, 0, 0, -1, -1, 0, -1, -1); }
 
   int Viewer(const char *fileName, const char *title,
       int X1, int Y1, int X2, int Y2, DWORD flags)
-      { return m_Data.Viewer((char *)fileName, (char *)title, X1, Y1, X2, Y2, flags); }
+      { return m_Data.Viewer(const_cast<char *>(fileName), const_cast<char *>(title), X1, Y1, X2, Y2, flags); }
   int Viewer(const char *fileName)
       { return Viewer(fileName, NULL, 0, 0, -1, -1, VF_NONMODAL); }
 
@@ -154,7 +154,7 @@ class CScreenRestorer
   bool m_Saved;
   HANDLE m_HANDLE;
 public:
-  CScreenRestorer(): m_Saved(false){};
+  CScreenRestorer(): m_Saved(false) {}
   ~CScreenRestorer();
   void Save();
   void Restore();
@@ -184,9 +184,15 @@ int PrintErrorMessage(const char *message, const wchar_t *name, unsigned maxLen 
   catch(const wchar_t *s) { PrintErrorMessage(x, s); return y; }\
   catch(...) { g_StartupInfo.ShowErrorMessage(x); return y; }
 
+
 int ShowSysErrorMessage(DWORD errorCode);
 int ShowSysErrorMessage(DWORD errorCode, const wchar_t *name);
 int ShowLastErrorMessage();
+
+inline int ShowSysErrorMessage(HRESULT errorCode)
+  { return ShowSysErrorMessage((DWORD)errorCode); }
+inline int ShowSysErrorMessage(HRESULT errorCode, const wchar_t *name)
+  { return ShowSysErrorMessage((DWORD)errorCode, name); }
 
 bool WasEscPressed();
 

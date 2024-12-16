@@ -1,6 +1,6 @@
 PROG = 7zFM.exe
 CFLAGS = $(CFLAGS) \
-  -DEXTERNAL_CODECS \
+  -DZ7_EXTERNAL_CODECS \
 
 !include "FM.mak"
 
@@ -85,6 +85,7 @@ UI_COMMON_OBJS = \
 
 EXPLORER_OBJS = \
   $O\ContextMenu.obj \
+  $O\MyMessages.obj \
   $O\RegistryContextMenu.obj \
 
 GUI_OBJS = \

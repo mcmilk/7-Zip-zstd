@@ -78,7 +78,7 @@ static HRESULT Call7zGui(const UString &params,
   const WRes wres = process.Create(imageName, params, NULL); // curDir);
   if (wres != 0)
   {
-    HRESULT hres = HRESULT_FROM_WIN32(wres);
+    const HRESULT hres = HRESULT_FROM_WIN32(wres);
     ErrorMessageHRESULT(hres, imageName);
     return hres;
   }
@@ -87,7 +87,7 @@ static HRESULT Call7zGui(const UString &params,
   else if (event != NULL)
   {
     HANDLE handles[] = { process, *event };
-    ::WaitForMultipleObjects(ARRAY_SIZE(handles), handles, FALSE, INFINITE);
+    ::WaitForMultipleObjects(Z7_ARRAY_SIZE(handles), handles, FALSE, INFINITE);
   }
   return S_OK;
 }
@@ -170,7 +170,7 @@ static HRESULT CreateMap(const UStringVector &names,
     FOR_VECTOR (i, names)
     {
       const UString &s = names[i];
-      unsigned len = s.Len() + 1;
+      const unsigned len = s.Len() + 1;
       wmemcpy(cur, (const wchar_t *)s, len);
       cur += len;
     }
@@ -215,7 +215,7 @@ HRESULT CompressFiles(
   CFileMapping fileMapping;
   NSynchronization::CManualResetEvent event;
   params += kIncludeSwitch;
-  RINOK(CreateMap(names, fileMapping, event, params));
+  RINOK(CreateMap(names, fileMapping, event, params))
 
   if (!arcType.IsEmpty() && arcType == L"7z")
   {
@@ -410,7 +410,7 @@ void Benchmark(bool totalMode)
   if (totalMode)
     params += " -mm=*";
   AddLagePagesSwitch(params);
-  HRESULT result = Call7zGui(params, false, NULL);
+  const HRESULT result = Call7zGui(params, false, NULL);
   if (result != S_OK)
     ErrorMessageHRESULT(result);
   MY_TRY_FINISH_VOID

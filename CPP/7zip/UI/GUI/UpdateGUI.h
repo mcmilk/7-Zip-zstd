@@ -1,7 +1,7 @@
 // GUI/UpdateGUI.h
 
-#ifndef __UPDATE_GUI_H
-#define __UPDATE_GUI_H
+#ifndef ZIP7_INC_UPDATE_GUI_H
+#define ZIP7_INC_UPDATE_GUI_H
 
 #include "../Common/Update.h"
 

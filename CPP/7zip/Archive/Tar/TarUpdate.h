@@ -1,7 +1,7 @@
 // TarUpdate.h
 
-#ifndef __TAR_UPDATE_H
-#define __TAR_UPDATE_H
+#ifndef ZIP7_INC_TAR_UPDATE_H
+#define ZIP7_INC_TAR_UPDATE_H
 
 #include "../IArchive.h"
 

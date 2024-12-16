@@ -1,7 +1,7 @@
 // TextPairs.h
 
-#ifndef __FM_TEXT_PAIRS_H
-#define __FM_TEXT_PAIRS_H
+#ifndef ZIP7_INC_FM_TEXT_PAIRS_H
+#define ZIP7_INC_FM_TEXT_PAIRS_H
 
 #include "../../../Common/MyString.h"
 
@@ -15,7 +15,7 @@ class CPairsStorage
 {
   CObjectVector<CTextPair> Pairs;
   
-  int FindID(const UString &id, int &insertPos) const;
+  int FindID(const UString &id, unsigned &insertPos) const;
   int FindID(const UString &id) const;
   void Sort();
 public:

@@ -1,7 +1,9 @@
 // XpressDecoder.h
 
-#ifndef __XPRESS_DECODER_H
-#define __XPRESS_DECODER_H
+#ifndef ZIP7_INC_XPRESS_DECODER_H
+#define ZIP7_INC_XPRESS_DECODER_H
+
+#include "../../Common/MyWindows.h"
 
 namespace NCompress {
 namespace NXpress {

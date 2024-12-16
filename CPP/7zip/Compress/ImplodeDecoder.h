@@ -1,7 +1,7 @@
 // ImplodeDecoder.h
 
-#ifndef __COMPRESS_IMPLODE_DECODER_H
-#define __COMPRESS_IMPLODE_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_IMPLODE_DECODER_H
+#define ZIP7_INC_COMPRESS_IMPLODE_DECODER_H
 
 #include "../../Common/MyCom.h"
 
@@ -32,13 +32,13 @@ public:
 };
 
 
-class CCoder:
-  public ICompressCoder,
-  public ICompressSetDecoderProperties2,
-  public ICompressSetFinishMode,
-  public ICompressGetInStreamProcessedSize,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_4(
+  CCoder
+  , ICompressCoder
+  , ICompressSetDecoderProperties2
+  , ICompressSetFinishMode
+  , ICompressGetInStreamProcessedSize
+)
   CLzOutWindow _outWindowStream;
   CInBit _inBitStream;
   
@@ -52,19 +52,7 @@ class CCoder:
   bool BuildHuff(CHuffmanDecoder &table, unsigned numSymbols);
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
 public:
-  MY_UNKNOWN_IMP3(
-      ICompressSetDecoderProperties2,
-      ICompressSetFinishMode,
-      ICompressGetInStreamProcessedSize)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
-  STDMETHOD(SetFinishMode)(UInt32 finishMode);
-  STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
-
   CCoder();
 };
 

@@ -1,7 +1,7 @@
 // ViewSettings.h
 
-#ifndef __VIEW_SETTINGS_H
-#define __VIEW_SETTINGS_H
+#ifndef ZIP7_INC_VIEW_SETTINGS_H
+#define ZIP7_INC_VIEW_SETTINGS_H
 
 #include "../../../Common/MyTypes.h"
 #include "../../../Common/MyString.h"

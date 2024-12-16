@@ -2,26 +2,96 @@
 
 #include "StdAfx.h"
 
+// #ifdef NEW_FOLDER_INTERFACE
+
+#include "../../../Common/StringToInt.h"
 #include "../../../Windows/DLL.h"
+#include "../../../Windows/ResourceString.h"
 
 #include "Agent.h"
 
-void CArchiveFolderManager::LoadFormats()
+extern HINSTANCE g_hInstance;
+static const UINT kIconTypesResId = 100;
+
+void CCodecIcons::LoadIcons(HMODULE m)
 {
-  LoadGlobalCodecs();
+  IconPairs.Clear();
+  UString iconTypes;
+  NWindows::MyLoadString(m, kIconTypesResId, iconTypes);
+  UStringVector pairs;
+  SplitString(iconTypes, pairs);
+  FOR_VECTOR (i, pairs)
+  {
+    const UString &s = pairs[i];
+    int pos = s.Find(L':');
+    CIconPair iconPair;
+    iconPair.IconIndex = -1;
+    if (pos < 0)
+      pos = (int)s.Len();
+    else
+    {
+      const UString num = s.Ptr((unsigned)pos + 1);
+      if (!num.IsEmpty())
+      {
+        const wchar_t *end;
+        iconPair.IconIndex = (int)ConvertStringToUInt32(num, &end);
+        if (*end != 0)
+          continue;
+      }
+    }
+    iconPair.Ext = s.Left((unsigned)pos);
+    IconPairs.Add(iconPair);
+  }
 }
 
+bool CCodecIcons::FindIconIndex(const UString &ext, int &iconIndex) const
+{
+  iconIndex = -1;
+  FOR_VECTOR (i, IconPairs)
+  {
+    const CIconPair &pair = IconPairs[i];
+    if (ext.IsEqualTo_NoCase(pair.Ext))
+    {
+      iconIndex = pair.IconIndex;
+      return true;
+    }
+  }
+  return false;
+}
+
+
+void CArchiveFolderManager::LoadFormats()
+{
+  if (WasLoaded)
+    return;
+
+  LoadGlobalCodecs();
+
+  #ifdef Z7_EXTERNAL_CODECS
+  CodecIconsVector.Clear();
+  FOR_VECTOR (i, g_CodecsObj->Libs)
+  {
+    CCodecIcons &ci = CodecIconsVector.AddNew();
+    ci.LoadIcons(g_CodecsObj->Libs[i].Lib.Get_HMODULE());
+  }
+  #endif
+  InternalIcons.LoadIcons(g_hInstance);
+  WasLoaded = true;
+}
+
+/*
 int CArchiveFolderManager::FindFormat(const UString &type)
 {
   FOR_VECTOR (i, g_CodecsObj->Formats)
     if (type.IsEqualTo_NoCase(g_CodecsObj->Formats[i].Name))
-      return i;
+      return (int)i;
   return -1;
 }
+*/
 
-STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream,
+Z7_COM7F_IMF(CArchiveFolderManager::OpenFolderFile(IInStream *inStream,
     const wchar_t *filePath, const wchar_t *arcFormat,
-    IFolderFolder **resultFolder, IProgress *progress)
+    IFolderFolder **resultFolder, IProgress *progress))
 {
   CMyComPtr<IArchiveOpenCallback> openArchiveCallback;
   if (progress)
@@ -32,7 +102,7 @@ STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream,
   CAgent *agent = new CAgent();
   CMyComPtr<IInFolderArchive> archive = agent;
   
-  HRESULT res = agent->Open(inStream, filePath, arcFormat, NULL, openArchiveCallback);
+  const HRESULT res = archive->Open(inStream, filePath, arcFormat, NULL, openArchiveCallback);
   
   if (res != S_OK)
   {
@@ -44,7 +114,7 @@ STDMETHODIMP CArchiveFolderManager::OpenFolderFile(IInStream *inStream,
       return res;
   }
   
-  RINOK(agent->BindToRootFolder(resultFolder));
+  RINOK(archive->BindToRootFolder(resultFolder))
   return res;
 }
 
@@ -58,7 +128,7 @@ HRESULT CAgent::FolderReOpen(
 
 
 /*
-STDMETHODIMP CArchiveFolderManager::GetExtensions(const wchar_t *type, BSTR *extensions)
+Z7_COM7F_IMF(CArchiveFolderManager::GetExtensions(const wchar_t *type, BSTR *extensions))
 {
   *extensions = 0;
   int formatIndex = FindFormat(type);
@@ -78,47 +148,52 @@ static void AddIconExt(const CCodecIcons &lib, UString &dest)
   }
 }
 
-STDMETHODIMP CArchiveFolderManager::GetExtensions(BSTR *extensions)
+
+Z7_COM7F_IMF(CArchiveFolderManager::GetExtensions(BSTR *extensions))
 {
+  *extensions = NULL;
   LoadFormats();
-  *extensions = 0;
   UString res;
   
-  #ifdef EXTERNAL_CODECS
-  
+  #ifdef Z7_EXTERNAL_CODECS
+  /*
   FOR_VECTOR (i, g_CodecsObj->Libs)
-    AddIconExt(g_CodecsObj->Libs[i], res);
-  
+    AddIconExt(g_CodecsObj->Libs[i].CodecIcons, res);
+  */
+  FOR_VECTOR (i, CodecIconsVector)
+    AddIconExt(CodecIconsVector[i], res);
   #endif
   
-  AddIconExt(g_CodecsObj->InternalIcons, res);
+  AddIconExt(
+      // g_CodecsObj->
+      InternalIcons, res);
+
   return StringToBstr(res, extensions);
 }
 
-STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex)
-{
-  *iconPath = 0;
-  *iconIndex = 0;
 
+Z7_COM7F_IMF(CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPath, Int32 *iconIndex))
+{
+  *iconPath = NULL;
+  *iconIndex = 0;
   LoadFormats();
 
-  #ifdef EXTERNAL_CODECS
-
-  FOR_VECTOR (i, g_CodecsObj->Libs)
+  #ifdef Z7_EXTERNAL_CODECS
+  // FOR_VECTOR (i, g_CodecsObj->Libs)
+  FOR_VECTOR (i, CodecIconsVector)
   {
-    const CCodecLib &lib = g_CodecsObj->Libs[i];
     int ii;
-    if (lib.FindIconIndex(ext, ii))
+    if (CodecIconsVector[i].FindIconIndex(ext, ii))
     {
+      const CCodecLib &lib = g_CodecsObj->Libs[i];
       *iconIndex = ii;
       return StringToBstr(fs2us(lib.Path), iconPath);
     }
   }
-  
   #endif
 
   int ii;
-  if (g_CodecsObj->InternalIcons.FindIconIndex(ext, ii))
+  if (InternalIcons.FindIconIndex(ext, ii))
   {
     FString path;
     if (NWindows::NDLL::MyGetModuleFileName(path))
@@ -131,7 +206,7 @@ STDMETHODIMP CArchiveFolderManager::GetIconPath(const wchar_t *ext, BSTR *iconPa
 }
 
 /*
-STDMETHODIMP CArchiveFolderManager::GetTypes(BSTR *types)
+Z7_COM7F_IMF(CArchiveFolderManager::GetTypes(BSTR *types))
 {
   LoadFormats();
   UString typesStrings;
@@ -146,9 +221,11 @@ STDMETHODIMP CArchiveFolderManager::GetTypes(BSTR *types)
   }
   return StringToBstr(typesStrings, types);
 }
-STDMETHODIMP CArchiveFolderManager::CreateFolderFile(const wchar_t * type,
-    const wchar_t * filePath, IProgress progress)
+Z7_COM7F_IMF(CArchiveFolderManager::CreateFolderFile(const wchar_t * type,
+    const wchar_t * filePath, IProgress progress))
 {
   return E_NOTIMPL;
 }
 */
+
+// #endif

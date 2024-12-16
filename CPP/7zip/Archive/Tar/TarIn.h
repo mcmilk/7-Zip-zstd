@@ -1,7 +1,7 @@
 // TarIn.h
 
-#ifndef __ARCHIVE_TAR_IN_H
-#define __ARCHIVE_TAR_IN_H
+#ifndef ZIP7_INC_ARCHIVE_TAR_IN_H
+#define ZIP7_INC_ARCHIVE_TAR_IN_H
 
 #include "../IArchive.h"
 

@@ -56,10 +56,8 @@ BSD (Mac OS X) variant:
 */
 
 static const unsigned kSignatureLen = 8;
-  
-#define SIGNATURE { '!', '<', 'a', 'r', 'c', 'h', '>', 0x0A }
-  
-static const Byte kSignature[kSignatureLen] = SIGNATURE;
+static const Byte kSignature[kSignatureLen] =
+  { '!', '<', 'a', 'r', 'c', 'h', '>', 0x0A };
 
 static const unsigned kNameSize = 16;
 static const unsigned kTimeSize = 12;
@@ -136,16 +134,16 @@ public:
   HRESULT Open(IInStream *inStream);
   HRESULT SkipData(UInt64 dataSize)
   {
-    return m_Stream->Seek(dataSize + (dataSize & 1), STREAM_SEEK_CUR, &Position);
+    return m_Stream->Seek((Int64)(dataSize + (dataSize & 1)), STREAM_SEEK_CUR, &Position);
   }
 };
 
 HRESULT CInArchive::Open(IInStream *inStream)
 {
   SubType = kSubType_None;
-  RINOK(inStream->Seek(0, STREAM_SEEK_CUR, &Position));
+  RINOK(InStream_GetPos(inStream, Position))
   char signature[kSignatureLen];
-  RINOK(ReadStream_FALSE(inStream, signature, kSignatureLen));
+  RINOK(ReadStream_FALSE(inStream, signature, kSignatureLen))
   Position += kSignatureLen;
   if (memcmp(signature, kSignature, kSignatureLen) != 0)
     return S_FALSE;
@@ -215,7 +213,7 @@ HRESULT CInArchive::GetNextItem(CItem &item, bool &filled)
     size_t processedSize = sizeof(header);
     item.HeaderPos = Position;
     item.HeaderSize = kHeaderSize;
-    RINOK(ReadStream(m_Stream, header, &processedSize));
+    RINOK(ReadStream(m_Stream, header, &processedSize))
     if (processedSize != sizeof(header))
       return S_OK;
     if (header[kHeaderSize - 2] != 0x60 ||
@@ -235,7 +233,7 @@ HRESULT CInArchive::GetNextItem(CItem &item, bool &filled)
       cur[3] != 0)
   {
     // BSD variant
-    RIF(DecimalToNumber32(cur + 3, kNameSize - 3 , longNameLen));
+    RIF(DecimalToNumber32(cur + 3, kNameSize - 3 , longNameLen))
     if (longNameLen >= (1 << 12))
       longNameLen = 0;
   }
@@ -247,11 +245,11 @@ HRESULT CInArchive::GetNextItem(CItem &item, bool &filled)
   }
   cur += kNameSize;
 
-  RIF(DecimalToNumber32(cur, kTimeSize, item.MTime)); cur += kTimeSize;
-  RIF(DecimalToNumber32(cur, kUserSize, item.User)); cur += kUserSize;
-  RIF(DecimalToNumber32(cur, kUserSize, item.Group)); cur += kUserSize;
-  RIF(OctalToNumber32(cur, kModeSize, item.Mode)); cur += kModeSize;
-  RIF(DecimalToNumber(cur, kSizeSize, item.Size)); cur += kSizeSize;
+  RIF(DecimalToNumber32(cur, kTimeSize, item.MTime)) cur += kTimeSize;
+  RIF(DecimalToNumber32(cur, kUserSize, item.User)) cur += kUserSize;
+  RIF(DecimalToNumber32(cur, kUserSize, item.Group)) cur += kUserSize;
+  RIF(OctalToNumber32(cur, kModeSize, item.Mode)) cur += kModeSize;
+  RIF(DecimalToNumber(cur, kSizeSize, item.Size)) cur += kSizeSize;
 
   if (longNameLen != 0 && longNameLen <= item.Size)
   {
@@ -260,7 +258,7 @@ HRESULT CInArchive::GetNextItem(CItem &item, bool &filled)
     char *s = item.Name.GetBuf(longNameLen);
     HRESULT res = ReadStream(m_Stream, s, &processedSize);
     item.Name.ReleaseBuf_CalcLen(longNameLen);
-    RINOK(res);
+    RINOK(res)
     if (processedSize != longNameLen)
       return S_OK;
     item.Size -= longNameLen;
@@ -272,11 +270,10 @@ HRESULT CInArchive::GetNextItem(CItem &item, bool &filled)
   return S_OK;
 }
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
-{
+
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+  IInArchiveGetStream
+)
   CObjectVector<CItem> _items;
   CMyComPtr<IInStream> _stream;
   Int32 _mainSubfile;
@@ -289,7 +286,6 @@ class CHandler:
   unsigned _numLibFiles;
   AString _errorMessage;
   bool _isArc;
-  
 
   void UpdateErrorMessage(const char *s);
   
@@ -298,10 +294,6 @@ class CHandler:
   int FindItem(UInt32 offset) const;
   HRESULT AddFunc(UInt32 offset, const Byte *data, size_t size, size_t &pos);
   HRESULT ParseLibSymbols(IInStream *stream, unsigned fileIndex);
-public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
 void CHandler::UpdateErrorMessage(const char *s)
@@ -342,11 +334,11 @@ HRESULT CHandler::ParseLongNames(IInStream *stream)
   const CItem &item = _items[fileIndex];
   if (item.Size > ((UInt32)1 << 30))
     return S_FALSE;
-  RINOK(stream->Seek(item.GetDataPos(), STREAM_SEEK_SET, NULL));
+  RINOK(InStream_SeekSet(stream, item.GetDataPos()))
   const size_t size = (size_t)item.Size;
 
   CByteArr p(size);
-  RINOK(ReadStream_FALSE(stream, p, size));
+  RINOK(ReadStream_FALSE(stream, p, size))
   
   for (i = 0; i < _items.Size(); i++)
   {
@@ -365,15 +357,15 @@ HRESULT CHandler::ParseLongNames(IInStream *stream)
     {
       if (pos >= size)
         return S_FALSE;
-      char c = p[pos];
+      const Byte c = p[pos];
       if (c == 0 || c == 0x0A)
         break;
       pos++;
     }
-    item2.Name.SetFrom((const char *)(p + start), pos - start);
+    item2.Name.SetFrom((const char *)(p + start), (unsigned)(pos - start));
   }
   
-  _longNames_FileIndex = fileIndex;
+  _longNames_FileIndex = (int)fileIndex;
   return S_OK;
 }
 
@@ -399,7 +391,7 @@ void CHandler::ChangeDuplicateNames()
     if (item.SameNameIndex < 0)
       continue;
     char sz[32];
-    ConvertUInt32ToString(item.SameNameIndex + 1, sz);
+    ConvertUInt32ToString((unsigned)item.SameNameIndex + 1, sz);
     unsigned len = MyStringLen(sz);
     sz[len++] = '.';
     sz[len] = 0;
@@ -412,10 +404,10 @@ int CHandler::FindItem(UInt32 offset) const
   unsigned left = 0, right = _items.Size();
   while (left != right)
   {
-    unsigned mid = (left + right) / 2;
-    UInt64 midVal = _items[mid].HeaderPos;
+    const unsigned mid = (left + right) / 2;
+    const UInt64 midVal = _items[mid].HeaderPos;
     if (offset == midVal)
-      return mid;
+      return (int)mid;
     if (offset < midVal)
       right = mid;
     else
@@ -426,7 +418,7 @@ int CHandler::FindItem(UInt32 offset) const
 
 HRESULT CHandler::AddFunc(UInt32 offset, const Byte *data, size_t size, size_t &pos)
 {
-  int fileIndex = FindItem(offset);
+  const int fileIndex = FindItem(offset);
   if (fileIndex < (int)0)
     return S_FALSE;
 
@@ -439,7 +431,7 @@ HRESULT CHandler::AddFunc(UInt32 offset, const Byte *data, size_t size, size_t &
   while (data[i++] != 0);
   
   AString &s = _libFiles[_numLibFiles];
-  const AString &name = _items[fileIndex].Name;
+  const AString &name = _items[(unsigned)fileIndex].Name;
   s += name;
   if (!name.IsEmpty() && name.Back() == '/')
     s.DeleteBack();
@@ -463,35 +455,35 @@ HRESULT CHandler::ParseLibSymbols(IInStream *stream, unsigned fileIndex)
   if (item.Size > ((UInt32)1 << 30) ||
       item.Size < 4)
     return S_OK;
-  RINOK(stream->Seek(item.GetDataPos(), STREAM_SEEK_SET, NULL));
+  RINOK(InStream_SeekSet(stream, item.GetDataPos()))
   size_t size = (size_t)item.Size;
   CByteArr p(size);
-  RINOK(ReadStream_FALSE(stream, p, size));
+  RINOK(ReadStream_FALSE(stream, p, size))
  
   size_t pos = 0;
 
   if (item.Name != "/")
   {
-    // __.SYMDEF parsing (BSD)
+    // "__.SYMDEF" parsing (BSD)
     unsigned be;
     for (be = 0; be < 2; be++)
     {
-      UInt32 tableSize = Get32(p, be);
+      const UInt32 tableSize = Get32(p, be);
       pos = 4;
       if (size - pos < tableSize || (tableSize & 7) != 0)
         continue;
       size_t namesStart = pos + tableSize;
-      UInt32 namesSize = Get32(p + namesStart, be);
+      const UInt32 namesSize = Get32(p + namesStart, be);
       namesStart += 4;
       if (namesStart > size || namesStart + namesSize != size)
         continue;
       
-      UInt32 numSymbols = tableSize >> 3;
+      const UInt32 numSymbols = tableSize >> 3;
       UInt32 i;
       for (i = 0; i < numSymbols; i++, pos += 8)
       {
         size_t namePos = Get32(p + pos, be);
-        UInt32 offset = Get32(p + pos + 4, be);
+        const UInt32 offset = Get32(p + pos + 4, be);
         if (AddFunc(offset, p + namesStart, namesSize, namePos) != S_OK)
           break;
       }
@@ -509,7 +501,7 @@ HRESULT CHandler::ParseLibSymbols(IInStream *stream, unsigned fileIndex)
   else if (_numLibFiles == 0)
   {
     // archive symbol table (GNU)
-    UInt32 numSymbols = GetBe32(p);
+    const UInt32 numSymbols = GetBe32(p);
     pos = 4;
     if (numSymbols > (size - pos) / 4)
       return S_FALSE;
@@ -517,15 +509,15 @@ HRESULT CHandler::ParseLibSymbols(IInStream *stream, unsigned fileIndex)
     
     for (UInt32 i = 0; i < numSymbols; i++)
     {
-      UInt32 offset = GetBe32(p + 4 + i * 4);
-      RINOK(AddFunc(offset, p, size, pos));
+      const UInt32 offset = GetBe32(p + 4 + i * 4);
+      RINOK(AddFunc(offset, p, size, pos))
     }
     _type = kType_ALib;
   }
   else
   {
     // Second linker file (Microsoft .lib)
-    UInt32 numMembers = GetUi32(p);
+    const UInt32 numMembers = GetUi32(p);
     pos = 4;
     if (numMembers > (size - pos) / 4)
       return S_FALSE;
@@ -533,7 +525,7 @@ HRESULT CHandler::ParseLibSymbols(IInStream *stream, unsigned fileIndex)
     
     if (size - pos < 4)
       return S_FALSE;
-    UInt32 numSymbols = GetUi32(p + pos);
+    const UInt32 numSymbols = GetUi32(p + pos);
     pos += 4;
     if (numSymbols > (size - pos) / 2)
       return S_FALSE;
@@ -543,48 +535,47 @@ HRESULT CHandler::ParseLibSymbols(IInStream *stream, unsigned fileIndex)
     for (UInt32 i = 0; i < numSymbols; i++)
     {
       // index is 1-based. So 32-bit numSymbols field works as item[0]
-      UInt32 index = GetUi16(p + indexStart + i * 2);
+      const UInt32 index = GetUi16(p + indexStart + i * 2);
       if (index == 0 || index > numMembers)
         return S_FALSE;
-      UInt32 offset = GetUi32(p + index * 4);
-      RINOK(AddFunc(offset, p, size, pos));
+      const UInt32 offset = GetUi32(p + index * 4);
+      RINOK(AddFunc(offset, p, size, pos))
     }
     _type = kType_Lib;
   }
   // size can be 2-byte aligned in linux files
   if (pos != size && pos + (pos & 1) != size)
     return S_FALSE;
-  item.TextFileIndex = _numLibFiles++;
+  item.TextFileIndex = (int)(_numLibFiles++);
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream,
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback *callback)
+    IArchiveOpenCallback *callback))
 {
   COM_TRY_BEGIN
   {
     Close();
 
-    UInt64 fileSize = 0;
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &fileSize));
-    RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+    UInt64 fileSize;
+    RINOK(InStream_AtBegin_GetSize(stream, fileSize))
 
     CInArchive arc;
-    RINOK(arc.Open(stream));
+    RINOK(arc.Open(stream))
 
     if (callback)
     {
-      RINOK(callback->SetTotal(NULL, &fileSize));
-      UInt64 numFiles = _items.Size();
-      RINOK(callback->SetCompleted(&numFiles, &arc.Position));
+      RINOK(callback->SetTotal(NULL, &fileSize))
+      const UInt64 numFiles = _items.Size();
+      RINOK(callback->SetCompleted(&numFiles, &arc.Position))
     }
 
     CItem item;
     for (;;)
     {
       bool filled;
-      RINOK(arc.GetNextItem(item, filled));
+      RINOK(arc.GetNextItem(item, filled))
       if (!filled)
         break;
       _items.Add(item);
@@ -592,7 +583,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
       if (callback && (_items.Size() & 0xFF) == 0)
       {
         UInt64 numFiles = _items.Size();
-        RINOK(callback->SetCompleted(&numFiles, &arc.Position));
+        RINOK(callback->SetCompleted(&numFiles, &arc.Position))
       }
     }
 
@@ -610,7 +601,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
     if (ParseLongNames(stream) != S_OK)
       UpdateErrorMessage("Long file names parsing error");
     if (_longNames_FileIndex >= 0)
-      _items.Delete(_longNames_FileIndex);
+      _items.Delete((unsigned)_longNames_FileIndex);
 
     if (!_items.IsEmpty() && _items[0].Name == "debian-binary")
     {
@@ -651,7 +642,7 @@ STDMETHODIMP CHandler::Open(IInStream *stream,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _isArc = false;
   _phySize = 0;
@@ -672,13 +663,13 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _items.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -711,7 +702,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -749,11 +740,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _items.Size();
   if (numItems == 0)
@@ -785,23 +776,23 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++)
   {
     lps->InSize = lps->OutSize = currentTotalSize;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    Int32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CItem &item = _items[index];
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode))
     currentTotalSize += (item.TextFileIndex >= 0) ?
         (UInt64)_libFiles[(unsigned)item.TextFileIndex].Len() : item.Size;
     
     if (!testMode && !realOutStream)
       continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
     if (testMode)
     {
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
       continue;
     }
     bool isOk = true;
@@ -809,25 +800,25 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     {
       const AString &f = _libFiles[(unsigned)item.TextFileIndex];
       if (realOutStream)
-        RINOK(WriteStream(realOutStream, f, f.Len()));
+        RINOK(WriteStream(realOutStream, f, f.Len()))
     }
     else
     {
-      RINOK(_stream->Seek(item.GetDataPos(), STREAM_SEEK_SET, NULL));
+      RINOK(InStream_SeekSet(_stream, item.GetDataPos()))
       streamSpec->Init(item.Size);
-      RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress));
+      RINOK(copyCoder->Code(inStream, realOutStream, NULL, NULL, progress))
       isOk = (copyCoderSpec->TotalSize == item.Size);
     }
     realOutStream.Release();
     RINOK(extractCallback->SetOperationResult(isOk ?
         NExtract::NOperationResult::kOK:
-        NExtract::NOperationResult::kDataError));
+        NExtract::NOperationResult::kDataError))
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 index, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
   const CItem &item = _items[index];
@@ -843,7 +834,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
 }
 
 REGISTER_ARC_I(
-  "Ar", "ar a deb udeb lib", 0, 0xEC,
+  "Ar", "ar a deb udeb lib", NULL, 0xEC,
   kSignature,
   0,
   0,

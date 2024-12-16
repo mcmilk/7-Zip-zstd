@@ -4,9 +4,7 @@
 
 #include "../../../Windows/FileName.h"
 
-#ifdef LANG
 #include "LangUtils.h"
-#endif
 
 #include "BrowseDialog.h"
 #include "CopyDialogRes.h"
@@ -16,7 +14,7 @@
 
 using namespace NWindows;
 
-#ifdef LANG
+#ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
   IDT_SPLIT_PATH,
@@ -27,9 +25,9 @@ static const UInt32 kLangIDs[] =
 
 bool CSplitDialog::OnInit()
 {
-  #ifdef LANG
+  #ifdef Z7_LANG
   LangSetWindowText(*this, IDD_SPLIT);
-  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
   #endif
   _pathCombo.Attach(GetItem(IDC_SPLIT_PATH));
   _volumeCombo.Attach(GetItem(IDC_SPLIT_VOLUME));
@@ -75,7 +73,7 @@ bool CSplitDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   return false;
 }
 
-bool CSplitDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CSplitDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {
@@ -91,7 +89,7 @@ void CSplitDialog::OnButtonSetPath()
   UString currentPath;
   _pathCombo.GetText(currentPath);
   // UString title = "Specify a location for output folder";
-  UString title = LangString(IDS_SET_FOLDER);
+  const UString title = LangString(IDS_SET_FOLDER);
 
   UString resultPath;
   if (!MyBrowseForFolder(*this, title, currentPath, resultPath))

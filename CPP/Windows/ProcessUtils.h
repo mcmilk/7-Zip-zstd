@@ -1,9 +1,41 @@
 // Windows/ProcessUtils.h
 
-#ifndef __WINDOWS_PROCESS_UTILS_H
-#define __WINDOWS_PROCESS_UTILS_H
+#ifndef ZIP7_INC_WINDOWS_PROCESS_UTILS_H
+#define ZIP7_INC_WINDOWS_PROCESS_UTILS_H
 
+#include "../Common/MyWindows.h"
+
+#ifndef Z7_OLD_WIN_SDK
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <psapi.h>
+#else
 #include <Psapi.h>
+#endif
+
+#else // Z7_OLD_WIN_SDK
+
+typedef struct _MODULEINFO {
+    LPVOID lpBaseOfDll;
+    DWORD SizeOfImage;
+    LPVOID EntryPoint;
+} MODULEINFO, *LPMODULEINFO;
+
+typedef struct _PROCESS_MEMORY_COUNTERS {
+    DWORD cb;
+    DWORD PageFaultCount;
+    SIZE_T PeakWorkingSetSize;
+    SIZE_T WorkingSetSize;
+    SIZE_T QuotaPeakPagedPoolUsage;
+    SIZE_T QuotaPagedPoolUsage;
+    SIZE_T QuotaPeakNonPagedPoolUsage;
+    SIZE_T QuotaNonPagedPoolUsage;
+    SIZE_T PagefileUsage;
+    SIZE_T PeakPagefileUsage;
+} PROCESS_MEMORY_COUNTERS;
+typedef PROCESS_MEMORY_COUNTERS *PPROCESS_MEMORY_COUNTERS;
+
+#endif // Z7_OLD_WIN_SDK
 
 #include "../Common/MyString.h"
 
@@ -18,7 +50,7 @@ public:
   bool Open(DWORD desiredAccess, bool inheritHandle, DWORD processId)
   {
     _handle = ::OpenProcess(desiredAccess, inheritHandle, processId);
-    return (_handle != 0);
+    return (_handle != NULL);
   }
 
   #ifndef UNDER_CE
@@ -43,9 +75,14 @@ public:
     { return BOOLToBool(::ReadProcessMemory(_handle, baseAddress, buffer, size, numberOfBytesRead));  }
 
   bool WriteMemory(LPVOID baseAddress, LPCVOID buffer, SIZE_T size, SIZE_T* numberOfBytesWritten)
-    { return BOOLToBool(::WriteProcessMemory(_handle, baseAddress, buffer, size, numberOfBytesWritten)); }
+    { return BOOLToBool(::WriteProcessMemory(_handle, baseAddress,
+      #ifdef Z7_OLD_WIN_SDK
+        (LPVOID)
+      #endif
+      buffer,
+      size, numberOfBytesWritten)); }
 
-  bool FlushInstructionCache(LPCVOID baseAddress = 0, SIZE_T size = 0)
+  bool FlushInstructionCache(LPCVOID baseAddress = NULL, SIZE_T size = 0)
     { return BOOLToBool(::FlushInstructionCache(_handle, baseAddress, size)); }
 
   LPVOID VirtualAlloc(LPVOID address, SIZE_T size, DWORD allocationType, DWORD protect)
@@ -56,17 +93,17 @@ public:
 
   // Process Status API (PSAPI)
 
+  /*
   bool EmptyWorkingSet()
     { return BOOLToBool(::EmptyWorkingSet(_handle)); }
   bool EnumModules(HMODULE *hModules, DWORD arraySizeInBytes, LPDWORD receivedBytes)
     { return BOOLToBool(::EnumProcessModules(_handle, hModules, arraySizeInBytes, receivedBytes)); }
-
   DWORD MyGetModuleBaseName(HMODULE hModule, LPTSTR baseName, DWORD size)
     { return ::GetModuleBaseName(_handle, hModule, baseName, size); }
   bool MyGetModuleBaseName(HMODULE hModule, CSysString &name)
   {
     const unsigned len = MAX_PATH + 100;
-    DWORD resultLen = MyGetModuleBaseName(hModule, name.GetBuf(len), len);
+    const DWORD resultLen = MyGetModuleBaseName(hModule, name.GetBuf(len), len);
     name.ReleaseBuf_CalcLen(len);
     return (resultLen != 0);
   }
@@ -76,7 +113,7 @@ public:
   bool MyGetModuleFileNameEx(HMODULE hModule, CSysString &name)
   {
     const unsigned len = MAX_PATH + 100;
-    DWORD resultLen = MyGetModuleFileNameEx(hModule, name.GetBuf(len), len);
+    const DWORD resultLen = MyGetModuleFileNameEx(hModule, name.GetBuf(len), len);
     name.ReleaseBuf_CalcLen(len);
     return (resultLen != 0);
   }
@@ -85,6 +122,7 @@ public:
     { return BOOLToBool(::GetModuleInformation(_handle, hModule, moduleInfo, sizeof(MODULEINFO))); }
   bool GetMemoryInfo(PPROCESS_MEMORY_COUNTERS memCounters)
     { return BOOLToBool(::GetProcessMemoryInfo(_handle, memCounters, sizeof(PROCESS_MEMORY_COUNTERS))); }
+  */
 
   #endif
 

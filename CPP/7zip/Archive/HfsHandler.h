@@ -1,7 +1,7 @@
 // HfsHandler.h
 
-#ifndef __HFS_HANDLER_H
-#define __HFS_HANDLER_H
+#ifndef ZIP7_INC_HFS_HANDLER_H
+#define ZIP7_INC_HFS_HANDLER_H
 
 #include "../../Windows/PropVariant.h"
 
@@ -63,6 +63,11 @@ class CDecoder
       UInt64 progressStart, IArchiveExtractCallback *extractCallback);
 
   HRESULT ExtractResourceFork_LZFSE(
+      ISequentialInStream *inStream, ISequentialOutStream *realOutStream,
+      UInt64 forkSize, UInt64 unpackSize,
+      UInt64 progressStart, IArchiveExtractCallback *extractCallback);
+
+  HRESULT ExtractResourceFork_ZBM(
       ISequentialInStream *inStream, ISequentialOutStream *realOutStream,
       UInt64 forkSize, UInt64 unpackSize,
       UInt64 progressStart, IArchiveExtractCallback *extractCallback);

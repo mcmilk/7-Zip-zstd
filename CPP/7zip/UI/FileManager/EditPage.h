@@ -1,7 +1,7 @@
 // EditPage.h
  
-#ifndef __EDIT_PAGE_H
-#define __EDIT_PAGE_H
+#ifndef ZIP7_INC_EDIT_PAGE_H
+#define ZIP7_INC_EDIT_PAGE_H
 
 #include "../../../Windows/Control/PropertyPage.h"
 #include "../../../Windows/Control/Edit.h"
@@ -10,8 +10,8 @@ struct CEditPageCtrl
 {
   NWindows::NControl::CEdit Edit;
   bool WasChanged;
-  int Ctrl;
-  int Button;
+  unsigned Ctrl;
+  unsigned Button;
 };
 
 class CEditPage: public NWindows::NControl::CPropertyPage
@@ -20,11 +20,11 @@ class CEditPage: public NWindows::NControl::CPropertyPage
 
   bool _initMode;
 public:
-  virtual bool OnInit();
-  virtual void OnNotifyHelp();
-  virtual bool OnCommand(int code, int itemID, LPARAM param);
-  virtual LONG OnApply();
-  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
+  virtual bool OnInit() Z7_override;
+  virtual void OnNotifyHelp() Z7_override;
+  virtual bool OnCommand(unsigned code, unsigned itemID, LPARAM param) Z7_override;
+  virtual LONG OnApply() Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
 };
 
 #endif

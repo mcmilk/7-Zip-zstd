@@ -1,7 +1,7 @@
 // MyMap.h
 
-#ifndef __COMMON_MYMAP_H
-#define __COMMON_MYMAP_H
+#ifndef ZIP7_INC_COMMON_MY_MAP_H
+#define ZIP7_INC_COMMON_MY_MAP_H
 
 #include "MyTypes.h"
 #include "MyVector.h"

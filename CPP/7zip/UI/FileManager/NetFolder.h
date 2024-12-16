@@ -1,7 +1,7 @@
 // NetFolder.h
 
-#ifndef __NET_FOLDER_H
-#define __NET_FOLDER_H
+#ifndef ZIP7_INC_NET_FOLDER_H
+#define ZIP7_INC_NET_FOLDER_H
 
 #include "../../../Common/MyCom.h"
 
@@ -14,11 +14,11 @@ struct CResourceEx: public NWindows::NNet::CResourceW
   UString Name;
 };
 
-class CNetFolder:
-  public IFolderFolder,
-  public IFolderGetSystemIconIndex,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_2(
+  CNetFolder
+  , IFolderFolder
+  , IFolderGetSystemIconIndex
+)
   NWindows::NNet::CResourceW _netResource;
   NWindows::NNet::CResourceW *_netResourcePointer;
 
@@ -27,11 +27,7 @@ class CNetFolder:
   CMyComPtr<IFolderFolder> _parentFolder;
   UString _path;
 public:
-  MY_UNKNOWN_IMP1(IFolderGetSystemIconIndex)
-  INTERFACE_FolderFolder(;)
-  STDMETHOD(GetSystemIconIndex)(UInt32 index, Int32 *iconIndex);
-
-  CNetFolder(): _netResourcePointer(0) {}
+  CNetFolder(): _netResourcePointer(NULL) {}
   void Init(const UString &path);
   void Init(const NWindows::NNet::CResourceW *netResource,
       IFolderFolder *parentFolder, const UString &path);

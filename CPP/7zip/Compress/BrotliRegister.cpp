@@ -6,7 +6,7 @@
 
 #include "BrotliDecoder.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 #include "BrotliEncoder.h"
 #endif
 
