@@ -1,5 +1,5 @@
 /* Ppmd8Enc.c -- Ppmd8 (PPMdI) Encoder
-2021-04-13 : Igor Pavlov : Public domain
+2023-04-02 : Igor Pavlov : Public domain
 This code is based on:
   PPMd var.I (2002): Dmitry Shkarin : Public domain
   Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
@@ -8,8 +8,8 @@ This code is based on:
 
 #include "Ppmd8.h"
 
-#define kTop (1 << 24)
-#define kBot (1 << 15)
+#define kTop ((UInt32)1 << 24)
+#define kBot ((UInt32)1 << 15)
 
 #define WRITE_BYTE(p) IByteOut_Write(p->Stream.Out, (Byte)(p->Low >> 24))
 
@@ -54,13 +54,13 @@ void Ppmd8_Flush_RangeEnc(CPpmd8 *p)
 
 
 
-MY_FORCE_INLINE
-// MY_NO_INLINE
-static void RangeEnc_Encode(CPpmd8 *p, UInt32 start, UInt32 size, UInt32 total)
+Z7_FORCE_INLINE
+// Z7_NO_INLINE
+static void Ppmd8_RangeEnc_Encode(CPpmd8 *p, UInt32 start, UInt32 size, UInt32 total)
 {
   R->Low += start * (R->Range /= total);
   R->Range *= size;
-  RC_NORM_LOCAL(R);
+  RC_NORM_LOCAL(R)
 }
 
 
@@ -72,19 +72,19 @@ static void RangeEnc_Encode(CPpmd8 *p, UInt32 start, UInt32 size, UInt32 total)
 
 
 
-#define RC_Encode(start, size, total) RangeEnc_Encode(p, start, size, total);
-#define RC_EncodeFinal(start, size, total) RC_Encode(start, size, total); RC_NORM_REMOTE(p);
+#define RC_Encode(start, size, total)  Ppmd8_RangeEnc_Encode(p, start, size, total);
+#define RC_EncodeFinal(start, size, total)  RC_Encode(start, size, total)  RC_NORM_REMOTE(p)
 
 #define CTX(ref) ((CPpmd8_Context *)Ppmd8_GetContext(p, ref))
 
-typedef CPpmd8_Context * CTX_PTR;
+// typedef CPpmd8_Context * CTX_PTR;
 #define SUCCESSOR(p) Ppmd_GET_SUCCESSOR(p)
 
 void Ppmd8_UpdateModel(CPpmd8 *p);
 
 #define MASK(sym) ((unsigned char *)charMask)[sym]
 
-// MY_FORCE_INLINE
+// Z7_FORCE_INLINE
 // static
 void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
 {
@@ -104,7 +104,7 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
     if (s->Symbol == symbol)
     {
 
-      RC_EncodeFinal(0, s->Freq, summFreq);
+      RC_EncodeFinal(0, s->Freq, summFreq)
       p->FoundState = s;
       Ppmd8_Update1_0(p);
       return;
@@ -117,7 +117,7 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
       if ((++s)->Symbol == symbol)
       {
 
-        RC_EncodeFinal(sum, s->Freq, summFreq);
+        RC_EncodeFinal(sum, s->Freq, summFreq)
         p->FoundState = s;
         Ppmd8_Update1(p);
         return;
@@ -127,10 +127,10 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
     while (--i);
     
     
-    RC_Encode(sum, summFreq - sum, summFreq);
+    RC_Encode(sum, summFreq - sum, summFreq)
     
     
-    PPMD_SetAllBitsIn256Bytes(charMask);
+    PPMD_SetAllBitsIn256Bytes(charMask)
     // MASK(s->Symbol) = 0;
     // i = p->MinContext->NumStats;
     // do { MASK((--s)->Symbol) = 0; } while (--i);
@@ -153,20 +153,20 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
     UInt16 *prob = Ppmd8_GetBinSumm(p);
     CPpmd_State *s = Ppmd8Context_OneState(p->MinContext);
     UInt32 pr = *prob;
-    UInt32 bound = (R->Range >> 14) * pr;
+    const UInt32 bound = (R->Range >> 14) * pr;
     pr = PPMD_UPDATE_PROB_1(pr);
     if (s->Symbol == symbol)
     {
       *prob = (UInt16)(pr + (1 << PPMD_INT_BITS));
       // RangeEnc_EncodeBit_0(p, bound);
       R->Range = bound;
-      RC_NORM(R);
+      RC_NORM(R)
 
       // p->FoundState = s;
       // Ppmd8_UpdateBin(p);
       {
-        unsigned freq = s->Freq;
-        CTX_PTR c = CTX(SUCCESSOR(s));
+        const unsigned freq = s->Freq;
+        CPpmd8_Context *c = CTX(SUCCESSOR(s));
         p->FoundState = s;
         p->PrevSuccess = 1;
         p->RunLength++;
@@ -187,7 +187,7 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
     R->Range = (R->Range & ~((UInt32)PPMD_BIN_SCALE - 1)) - bound;
     RC_NORM_LOCAL(R)
 
-    PPMD_SetAllBitsIn256Bytes(charMask);
+    PPMD_SetAllBitsIn256Bytes(charMask)
     MASK(s->Symbol) = 0;
     p->PrevSuccess = 0;
   }
@@ -248,14 +248,14 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
 
     do
     {
-      unsigned cur = s->Symbol;
+      const unsigned cur = s->Symbol;
       if ((int)cur == symbol)
       {
-        UInt32 low = sum;
-        UInt32 freq = s->Freq;
+        const UInt32 low = sum;
+        const UInt32 freq = s->Freq;
         unsigned num2;
 
-        Ppmd_See_Update(see);
+        Ppmd_See_UPDATE(see)
         p->FoundState = s;
         sum += escFreq;
 
@@ -277,9 +277,9 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
           }
         }
 
-        PPMD8_CORRECT_SUM_RANGE(p, sum);
+        PPMD8_CORRECT_SUM_RANGE(p, sum)
 
-        RC_EncodeFinal(low, freq, sum);
+        RC_EncodeFinal(low, freq, sum)
         Ppmd8_Update2(p);
         return;
       }
@@ -291,19 +291,19 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
     {
       UInt32 total = sum + escFreq;
       see->Summ = (UInt16)(see->Summ + total);
-      PPMD8_CORRECT_SUM_RANGE(p, total);
+      PPMD8_CORRECT_SUM_RANGE(p, total)
 
-      RC_Encode(sum, total - sum, total);
+      RC_Encode(sum, total - sum, total)
     }
 
     {
-      CPpmd_State *s2 = Ppmd8_GetStats(p, p->MinContext);
+      const CPpmd_State *s2 = Ppmd8_GetStats(p, p->MinContext);
       s--;
       MASK(s->Symbol) = 0;
       do
       {
-        unsigned sym0 = s2[0].Symbol;
-        unsigned sym1 = s2[1].Symbol;
+        const unsigned sym0 = s2[0].Symbol;
+        const unsigned sym1 = s2[1].Symbol;
         s2 += 2;
         MASK(sym0) = 0;
         MASK(sym1) = 0;
@@ -312,3 +312,27 @@ void Ppmd8_EncodeSymbol(CPpmd8 *p, int symbol)
     }
   }
 }
+
+
+
+
+
+
+
+
+
+#undef kTop
+#undef kBot
+#undef WRITE_BYTE
+#undef RC_NORM_BASE
+#undef RC_NORM_1
+#undef RC_NORM
+#undef RC_NORM_LOCAL
+#undef RC_NORM_REMOTE
+#undef R
+#undef RC_Encode
+#undef RC_EncodeFinal
+
+#undef CTX
+#undef SUCCESSOR
+#undef MASK

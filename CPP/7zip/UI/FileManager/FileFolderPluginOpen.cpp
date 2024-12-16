@@ -26,8 +26,15 @@ struct CThreadArchiveOpen
   UString ArcFormat;
   CMyComPtr<IInStream> InStream;
   CMyComPtr<IFolderManager> FolderManager;
-  CMyComPtr<IProgress> OpenCallback;
+  CMyComPtr<IProgress> OpenCallbackProgress;
+  
   COpenArchiveCallback *OpenCallbackSpec;
+  /*
+  CMyComPtr<IUnknown>
+  // CMyComPtr<IProgress>
+  // CMyComPtr<IArchiveOpenCallback>
+    OpenCallbackSpec_Ref;
+  */
 
   CMyComPtr<IFolderFolder> Folder;
   HRESULT Result;
@@ -37,7 +44,7 @@ struct CThreadArchiveOpen
     try
     {
       CProgressCloser closer(OpenCallbackSpec->ProgressDialog);
-      Result = FolderManager->OpenFolderFile(InStream, Path, ArcFormat, &Folder, OpenCallback);
+      Result = FolderManager->OpenFolderFile(InStream, Path, ArcFormat, &Folder, OpenCallbackProgress);
     }
     catch(...) { Result = E_FAIL; }
   }
@@ -62,7 +69,7 @@ static int FindPlugin(const CObjectVector<CPluginInfo> &plugins, const UString &
 static void SplitNameToPureNameAndExtension(const FString &fullName,
     FString &pureName, FString &extensionDelimiter, FString &extension)
 {
-  int index = fullName.ReverseFind_Dot();
+  const int index = fullName.ReverseFind_Dot();
   if (index < 0)
   {
     pureName = fullName;
@@ -71,7 +78,7 @@ static void SplitNameToPureNameAndExtension(const FString &fullName,
   }
   else
   {
-    pureName.SetFrom(fullName, index);
+    pureName.SetFrom(fullName, (unsigned)index);
     extensionDelimiter = '.';
     extension = fullName.Ptr((unsigned)index + 1);
   }
@@ -229,16 +236,21 @@ static void GetFolderError(CMyComPtr<IFolderFolder> &folder, UString &open_Error
   }
 }
 
+#ifdef _MSC_VER
+#pragma warning(error : 4702) // unreachable code
+#endif
 
 HRESULT CFfpOpen::OpenFileFolderPlugin(IInStream *inStream,
     const FString &path, const UString &arcFormat, HWND parentWindow)
 {
+  /*
   CObjectVector<CPluginInfo> plugins;
   ReadFileFolderPluginInfoList(plugins);
+  */
 
   FString extension, name, pureName, dot;
 
-  int slashPos = path.ReverseFind_PathSepar();
+  const int slashPos = path.ReverseFind_PathSepar();
   FString dirPrefix;
   FString fileName;
   if (slashPos >= 0)
@@ -273,31 +285,48 @@ HRESULT CFfpOpen::OpenFileFolderPlugin(IInStream *inStream,
 
   ErrorMessage.Empty();
 
-  FOR_VECTOR (i, plugins)
-  {
+  // FOR_VECTOR (i, plugins)
+  // {
+    /*
     const CPluginInfo &plugin = plugins[i];
-    if (!plugin.ClassIDDefined)
+    if (!plugin.ClassID_Defined && !plugin.FilePath.IsEmpty())
       continue;
+    */
     CPluginLibrary library;
 
     CThreadArchiveOpen t;
 
-    if (plugin.FilePath.IsEmpty())
+    // if (plugin.FilePath.IsEmpty())
       t.FolderManager = new CArchiveFolderManager;
+    /*
     else if (library.LoadAndCreateManager(plugin.FilePath, plugin.ClassID, &t.FolderManager) != S_OK)
       continue;
+    */
 
+    COpenArchiveCallback OpenCallbackSpec_loc;
+    t.OpenCallbackSpec = &OpenCallbackSpec_loc;
+    /*
     t.OpenCallbackSpec = new COpenArchiveCallback;
-    t.OpenCallback = t.OpenCallbackSpec;
+    t.OpenCallbackSpec_Ref = t.OpenCallbackSpec;
+    */
     t.OpenCallbackSpec->PasswordIsDefined = Encrypted;
     t.OpenCallbackSpec->Password = Password;
     t.OpenCallbackSpec->ParentWindow = parentWindow;
 
+    /* COpenCallbackImp object will exist after Open stage for multivolume archives */
+    COpenCallbackImp *openCallbackSpec = new COpenCallbackImp;
+    t.OpenCallbackProgress = openCallbackSpec;
+    // openCallbackSpec->Callback_Ref = t.OpenCallbackSpec;
+    // we set pointer without reference counter:
+    openCallbackSpec->Callback =
+    // openCallbackSpec->ReOpenCallback =
+      t.OpenCallbackSpec;
+
     if (inStream)
-      t.OpenCallbackSpec->SetSubArchiveName(fs2us(fileName));
+      openCallbackSpec->SetSubArchiveName(fs2us(fileName));
     else
     {
-      RINOK(t.OpenCallbackSpec->LoadFileInfo2(dirPrefix, fileName));
+      RINOK(openCallbackSpec->Init2(dirPrefix, fileName))
     }
 
     t.InStream = inStream;
@@ -315,9 +344,19 @@ HRESULT CFfpOpen::OpenFileFolderPlugin(IInStream *inStream,
 
     {
       NWindows::CThread thread;
-      RINOK(thread.Create(CThreadArchiveOpen::MyThreadFunction, &t));
+      const WRes wres = thread.Create(CThreadArchiveOpen::MyThreadFunction, &t);
+      if (wres != 0)
+        return HRESULT_FROM_WIN32(wres);
       t.OpenCallbackSpec->StartProgressDialog(progressTitle, thread);
     }
+
+    /*
+      if archive is multivolume:
+      COpenCallbackImp object will exist after Open stage.
+      COpenCallbackImp object will be deleted when last reference
+      from each volume object (CInFileStreamVol) will be closed (when archive will be closed).
+    */
+    t.OpenCallbackProgress.Release();
 
     if (t.Result != S_FALSE && t.Result != S_OK)
       return t.Result;
@@ -351,7 +390,5 @@ HRESULT CFfpOpen::OpenFileFolderPlugin(IInStream *inStream,
     }
     
     return t.Result;
-  }
-
-  return S_FALSE;
+  // }
 }

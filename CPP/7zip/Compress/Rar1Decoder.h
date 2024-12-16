@@ -2,8 +2,8 @@
 // According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
-#ifndef __COMPRESS_RAR1_DECODER_H
-#define __COMPRESS_RAR1_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_RAR1_DECODER_H
+#define ZIP7_INC_COMPRESS_RAR1_DECODER_H
 
 #include "../../Common/MyCom.h"
 
@@ -20,11 +20,11 @@ namespace NRar1 {
 
 const UInt32 kNumRepDists = 4;
 
-class CDecoder :
-  public ICompressCoder,
-  public ICompressSetDecoderProperties2,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_2(
+  CDecoder
+  , ICompressCoder
+  , ICompressSetDecoderProperties2
+)
   CLzOutWindow m_OutWindowStream;
   NBitm::CDecoder<CInBuffer> m_InBitStream;
 
@@ -64,14 +64,6 @@ class CDecoder :
 
 public:
   CDecoder();
-
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
-
 };
 
 }}

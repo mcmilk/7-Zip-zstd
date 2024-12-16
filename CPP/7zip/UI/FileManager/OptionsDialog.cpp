@@ -51,25 +51,27 @@ void OptionsDialog(HWND hwndOwner, HINSTANCE /* hInstance */)
 
   NControl::CPropertyPage *pagePointers[] = { &systemPage,  &menuPage, &foldersPage, &editPage, &settingsPage, &langPage };
   
-  for (unsigned i = 0; i < ARRAY_SIZE(pageIDs); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(pageIDs); i++)
   {
     NControl::CPageInfo &page = pages.AddNew();
     page.ID = pageIDs[i];
+    #ifdef Z7_LANG
     LangString_OnlyFromLangFile(page.ID, page.Title);
+    #endif
     page.Page = pagePointers[i];
   }
 
-  INT_PTR res = NControl::MyPropertySheet(pages, hwndOwner, LangString(IDS_OPTIONS));
+  const INT_PTR res = NControl::MyPropertySheet(pages, hwndOwner, LangString(IDS_OPTIONS));
   
   if (res != -1 && res != 0)
   {
     if (langPage.LangWasChanged)
     {
       // g_App._window.SetText(LangString(IDS_APP_TITLE, 0x03000000));
-      MyLoadMenu();
+      MyLoadMenu(true); // needResetMenu
       g_App.ReloadToolbars();
       g_App.MoveSubWindows(); // we need it to change list window aafter _toolBar.AutoSize();
-      g_App.ReloadLang();
+      g_App.ReloadLangItems();
     }
   
     /*

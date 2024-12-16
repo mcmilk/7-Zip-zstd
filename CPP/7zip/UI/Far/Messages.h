@@ -1,13 +1,13 @@
 // Far/Messages.h
 
-#ifndef __7ZIP_FAR_MESSAGES_H
-#define __7ZIP_FAR_MESSAGES_H
+#ifndef ZIP7_INC_FAR_MESSAGES_H
+#define ZIP7_INC_FAR_MESSAGES_H
 
 #include "../../PropID.h"
 
 namespace NMessageID {
 
-const unsigned k_Last_PropId_supported_by_plugin = kpidCopyLink;
+const unsigned k_Last_PropId_supported_by_plugin = kpidDevMinor;
 
 enum EEnum
 {

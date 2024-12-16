@@ -13,6 +13,7 @@
 
 #include "../FileManager/RegistryUtils.h"
 
+// #include "../Explorer/ContextMenuFlags.h"
 #include "ZipRegistry.h"
 
 using namespace NWindows;
@@ -197,6 +198,7 @@ static LPCTSTR const kOptionsKeyName = TEXT("Options");
 
 static LPCTSTR const kLevel = TEXT("Level");
 static LPCTSTR const kDictionary = TEXT("Dictionary");
+// static LPCTSTR const kDictionaryChain = TEXT("DictionaryChain");
 static LPCTSTR const kOrder = TEXT("Order");
 static LPCTSTR const kBlockSize = TEXT("BlockSize");
 static LPCTSTR const kNumThreads = TEXT("NumThreads");
@@ -280,6 +282,7 @@ void CInfo::Save() const
 
       Key_Set_UInt32(fk, kLevel, fo.Level);
       Key_Set_UInt32(fk, kDictionary, fo.Dictionary);
+      // Key_Set_UInt32(fk, kDictionaryChain, fo.DictionaryChain);
       Key_Set_UInt32(fk, kOrder, fo.Order);
       Key_Set_UInt32(fk, kBlockSize, fo.BlockLogSize);
       Key_Set_UInt32(fk, kNumThreads, fo.NumThreads);
@@ -337,6 +340,7 @@ void CInfo::Load()
 
           Key_Get_UInt32(fk, kLevel, fo.Level);
           Key_Get_UInt32(fk, kDictionary, fo.Dictionary);
+          // Key_Get_UInt32(fk, kDictionaryChain, fo.DictionaryChain);
           Key_Get_UInt32(fk, kOrder, fo.Order);
           Key_Get_UInt32(fk, kBlockSize, fo.BlockLogSize);
           Key_Get_UInt32(fk, kNumThreads, fo.NumThreads);
@@ -560,7 +564,15 @@ void CContextMenuInfo::Load()
 
   WriteZone = (UInt32)(Int32)-1;
 
-  Flags = (UInt32)(Int32)-1;
+  /* we can disable email items by default,
+     because email code doesn't work in some systems */
+  Flags = (UInt32)(Int32)-1
+      /*
+      & ~NContextMenuFlags::kCompressEmail
+      & ~NContextMenuFlags::kCompressTo7zEmail
+      & ~NContextMenuFlags::kCompressToZipEmail
+      */
+      ;
   Flags_Def = false;
   
   CS_LOCK

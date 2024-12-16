@@ -36,10 +36,10 @@ const char *CStartupInfo::GetMsgString(int messageId)
 }
 
 int CStartupInfo::ShowMessage(unsigned int flags,
-    const char *helpTopic, const char **items, int numItems, int numButtons)
+    const char *helpTopic, const char **items, unsigned numItems, int numButtons)
 {
   return m_Data.Message(m_Data.ModuleNumber, flags, helpTopic,
-      items, numItems, numButtons);
+      items, (int)numItems, numButtons);
 }
 
 namespace NMessageID
@@ -53,7 +53,7 @@ namespace NMessageID
   };
 }
 
-int CStartupInfo::ShowWarningWithOk(const char **items, int numItems)
+int CStartupInfo::ShowWarningWithOk(const char **items, unsigned numItems)
 {
   return ShowMessage(FMSG_WARNING | FMSG_MB_OK, NULL, items, numItems, 0);
 }
@@ -76,7 +76,7 @@ int CStartupInfo::ShowErrorMessage(const char *message)
   AString s;
   SetErrorTitle(s);
   const char *items[]= { s, message };
-  return ShowWarningWithOk(items, ARRAY_SIZE(items));
+  return ShowWarningWithOk(items, Z7_ARRAY_SIZE(items));
 }
 */
 
@@ -85,7 +85,7 @@ int CStartupInfo::ShowErrorMessage2(const char *m1, const char *m2)
   AString s;
   SetErrorTitle(s);
   const char *items[]= { s, m1, m2 };
-  return ShowWarningWithOk(items, ARRAY_SIZE(items));
+  return ShowWarningWithOk(items, Z7_ARRAY_SIZE(items));
 }
 
 static void SplitString(const AString &src, AStringVector &destStrings)
@@ -145,14 +145,14 @@ int CStartupInfo::ShowMessage(int messageId)
 }
 
 int CStartupInfo::ShowDialog(int X1, int Y1, int X2, int Y2,
-    const char *helpTopic, struct FarDialogItem *items, int numItems)
+    const char *helpTopic, struct FarDialogItem *items, unsigned numItems)
 {
-  return m_Data.Dialog(m_Data.ModuleNumber, X1, Y1, X2, Y2, (char *)helpTopic,
-      items, numItems);
+  return m_Data.Dialog(m_Data.ModuleNumber, X1, Y1, X2, Y2, const_cast<char *>(helpTopic),
+      items, (int)numItems);
 }
 
 int CStartupInfo::ShowDialog(int sizeX, int sizeY,
-    const char *helpTopic, struct FarDialogItem *items, int numItems)
+    const char *helpTopic, struct FarDialogItem *items, unsigned numItems)
 {
   return ShowDialog(-1, -1, sizeX, sizeY, helpTopic, items, numItems);
 }
@@ -160,9 +160,9 @@ int CStartupInfo::ShowDialog(int sizeX, int sizeY,
 inline static BOOL GetBOOLValue(bool v) { return (v? TRUE: FALSE); }
 
 void CStartupInfo::InitDialogItems(const CInitDialogItem  *srcItems,
-    FarDialogItem *destItems, int numItems)
+    FarDialogItem *destItems, unsigned numItems)
 {
-  for (int i = 0; i < numItems; i++)
+  for (unsigned i = 0; i < numItems; i++)
   {
     const CInitDialogItem &srcItem = srcItems[i];
     FarDialogItem &destItem = destItems[i];
@@ -356,7 +356,7 @@ bool CStartupInfo::ControlClearPanelSelection()
   if (!ControlGetActivePanelInfo(panelInfo))
     return false;
   for (int i = 0; i < panelInfo.ItemsNumber; i++)
-    panelInfo.PanelItems[i].Flags &= ~PPIF_SELECTED;
+    panelInfo.PanelItems[i].Flags &= ~(DWORD)PPIF_SELECTED;
   return ControlSetSelection(panelInfo);
 }
 
@@ -374,10 +374,13 @@ int CStartupInfo::Menu(
     int *breakKeys,
     int *breakCode,
     struct FarMenuItem *items,
-    int numItems)
+    unsigned numItems)
 {
-  return m_Data.Menu(m_Data.ModuleNumber, x, y, maxHeight, flags, (char *)title,
-      (char *)aBottom, (char *)helpTopic, breakKeys, breakCode, items, numItems);
+  return m_Data.Menu(m_Data.ModuleNumber, x, y, maxHeight, flags,
+      const_cast<char *>(title),
+      const_cast<char *>(aBottom),
+      const_cast<char *>(helpTopic),
+      breakKeys, breakCode, items, (int)numItems);
 }
 
 int CStartupInfo::Menu(
@@ -385,7 +388,7 @@ int CStartupInfo::Menu(
     const char *title,
     const char *helpTopic,
     struct FarMenuItem *items,
-    int numItems)
+    unsigned numItems)
 {
   return Menu(-1, -1, 0, flags, title, NULL, helpTopic, NULL,
       NULL, items, numItems);
@@ -405,7 +408,7 @@ int CStartupInfo::Menu(
     item.Checked = 0;
     item.Separator = 0;
     item.Selected = ((int)i == selectedItem);
-    const AString reducedString (items[i].Left(ARRAY_SIZE(item.Text) - 1));
+    const AString reducedString (items[i].Left(Z7_ARRAY_SIZE(item.Text) - 1));
     MyStringCopy(item.Text, reducedString);
     farMenuItems.Add(item);
   }
@@ -435,7 +438,7 @@ void CScreenRestorer::Restore()
     g_StartupInfo.RestoreScreen(m_HANDLE);
     m_Saved = false;
   }
-};
+}
 
 int PrintErrorMessage(const char *message, unsigned code)
 {
@@ -471,7 +474,7 @@ int PrintErrorMessage(const char *message, const wchar_t *name, unsigned maxLen)
 
 int ShowSysErrorMessage(DWORD errorCode)
 {
-  UString message = NError::MyFormatMessage(errorCode);
+  const UString message = NError::MyFormatMessage(errorCode);
   return g_StartupInfo.ShowErrorMessage(UnicodeStringToMultiByte(message, CP_OEMCP));
 }
 

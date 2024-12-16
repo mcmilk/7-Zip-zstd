@@ -61,22 +61,19 @@ IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
 
-static AString UInt32ToString(UInt32 val)
+static void AddDictProp(AString &s, UInt32 val)
 {
-  char s[16];
-  ConvertUInt32ToString(val, s);
-  return (AString)s;
-}
-
-static AString GetStringForSizeValue(UInt32 val)
-{
-  for (int i = 31; i >= 0; i--)
+  for (unsigned i = 0; i < 32; i++)
     if (((UInt32)1 << i) == val)
-      return UInt32ToString(i);
+    {
+      s.Add_UInt32(i);
+      return;
+    }
   char c = 'b';
   if      ((val & ((1 << 20) - 1)) == 0) { val >>= 20; c = 'm'; }
   else if ((val & ((1 << 10) - 1)) == 0) { val >>= 10; c = 'k'; }
-  return UInt32ToString(val) + c;
+  s.Add_UInt32(val);
+  s += c;
 }
 
 static AString GetMethod(bool useFilter, NMethodType::EEnum method, UInt32 dict)
@@ -87,11 +84,11 @@ static AString GetMethod(bool useFilter, NMethodType::EEnum method, UInt32 dict)
     s += kBcjMethod;
     s.Add_Space();
   }
-  s += ((unsigned)method < ARRAY_SIZE(kMethods)) ? kMethods[(unsigned)method] : kUnknownMethod;
+  s += ((unsigned)method < Z7_ARRAY_SIZE(kMethods)) ? kMethods[(unsigned)method] : kUnknownMethod;
   if (method == NMethodType::kLZMA)
   {
     s += ':';
-    s += GetStringForSizeValue(dict);
+    AddDictProp(s, dict);
   }
   return s;
 }
@@ -105,7 +102,7 @@ AString CHandler::GetMethod(NMethodType::EEnum method, bool useItemFilter, UInt3
     s += kBcjMethod;
     s.Add_Space();
   }
-  s += (method < ARRAY_SIZE(kMethods)) ? kMethods[method] : kUnknownMethod;
+  s += (method < Z7_ARRAY_SIZE(kMethods)) ? kMethods[method] : kUnknownMethod;
   if (method == NMethodType::kLZMA)
   {
     s += ':';
@@ -115,7 +112,7 @@ AString CHandler::GetMethod(NMethodType::EEnum method, bool useItemFilter, UInt3
 }
 */
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -162,7 +159,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         if (!_archive.IsInstaller)
         {
           if (!s.IsEmpty())
-            s += '.';
+            s.Add_Dot();
           s += "Uninstall";
         }
       #endif
@@ -190,7 +187,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *maxCheckStartPosition, IArchiveOpenCallback * /* openArchiveCallback */))
 {
   COM_TRY_BEGIN
   Close();
@@ -215,18 +212,18 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *maxCheckStartPositi
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _archive.Clear();
   _archive.Release();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _archive.Items.Size()
   #ifdef NSIS_SCRIPT
-    + 1 + _archive.LicenseFiles.Size();
+    + 1 + _archive.LicenseFiles.Size()
   #endif
   ;
   return S_OK;
@@ -240,7 +237,7 @@ bool CHandler::GetUncompressedSize(unsigned index, UInt32 &size) const
     size = item.Size;
   else if (_archive.IsSolid && item.EstimatedSize_Defined)
     size = item.EstimatedSize;
-  else
+  else if (!item.IsEmptyFile)
     return false;
   return true;
 }
@@ -272,7 +269,7 @@ bool CHandler::GetCompressedSize(unsigned index, UInt32 &size) const
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -360,21 +357,21 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 }
 
 
-static bool UninstallerPatch(const Byte *p, size_t size, CByteBuffer &dest)
+static bool UninstallerPatch(const Byte *p, size_t size, Byte *dest, size_t destSize)
 {
   for (;;)
   {
     if (size < 4)
       return false;
-    UInt32 len = Get32(p);
+    const UInt32 len = Get32(p);
     if (len == 0)
       return size == 4;
     if (size < 8)
       return false;
-    UInt32 offs = Get32(p + 4);
+    const UInt32 offs = Get32(p + 4);
     p += 8;
     size -= 8;
-    if (size < len || offs > dest.Size() || len > dest.Size() - offs)
+    if (size < len || offs > destSize || len > destSize - offs)
       return false;
     memcpy(dest + offs, p, len);
     p += len;
@@ -383,11 +380,11 @@ static bool UninstallerPatch(const Byte *p, size_t size, CByteBuffer &dest)
 }
 
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     GetNumberOfItems(&numItems);
   if (numItems == 0)
@@ -399,7 +396,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   UInt32 i;
   for (i = 0; i < numItems; i++)
   {
-    UInt32 index = (allFilesMode ? i : indices[i]);
+    const UInt32 index = (allFilesMode ? i : indices[i]);
     
     #ifdef NSIS_SCRIPT
     if (index >= _archive.Items.Size())
@@ -436,8 +433,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   if (_archive.IsSolid)
   {
-    RINOK(_archive.SeekTo_DataStreamOffset());
-    RINOK(_archive.InitDecoder());
+    RINOK(_archive.SeekTo_DataStreamOffset())
+    RINOK(_archive.InitDecoder())
     _archive.Decoder.StreamPos = 0;
   }
 
@@ -476,16 +473,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     curPacked = 0;
     curUnpacked = 0;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
 
-    // RINOK(extractCallback->SetCompleted(&currentTotalSize));
+    // RINOK(extractCallback->SetCompleted(&currentTotalSize))
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
     const UInt32 index = allFilesMode ? i : indices[i];
 
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode))
 
     bool dataError = false;
 
@@ -511,9 +508,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       curUnpacked = size;
       if (!testMode && !realOutStream)
         continue;
-      RINOK(extractCallback->PrepareOperation(askMode));
+      RINOK(extractCallback->PrepareOperation(askMode))
       if (realOutStream)
-        RINOK(WriteStream(realOutStream, data, size));
+        RINOK(WriteStream(realOutStream, data, size))
     }
     else
     #endif
@@ -526,15 +523,20 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       if (!testMode && !realOutStream)
         continue;
       
-      RINOK(extractCallback->PrepareOperation(askMode));
+      RINOK(extractCallback->PrepareOperation(askMode))
       
       dataError = solidDataError;
 
-      bool needDecompress = !solidDataError;
-      if (needDecompress)
+      bool needDecompress = false;
+      
+      if (!item.IsEmptyFile)
       {
-        if (testMode && _archive.IsSolid && _archive.GetPosOfSolidItem(index) == prevPos)
-          needDecompress = false;
+        needDecompress = !solidDataError;
+        if (needDecompress)
+        {
+          if (testMode && _archive.IsSolid && _archive.GetPosOfSolidItem(index) == prevPos)
+            needDecompress = false;
+        }
       }
 
       if (needDecompress)
@@ -544,7 +546,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
         if (!_archive.IsSolid)
         {
-          RINOK(_archive.SeekToNonSolidItem(index));
+          RINOK(_archive.SeekToNonSolidItem(index))
         }
         else
         {
@@ -566,10 +568,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
             }
             else if (!testMode && i + 1 < numItems)
             {
-              UInt32 next = allFilesMode ? i + 1 : indices[i + 1];
+              const UInt32 next = allFilesMode ? i + 1 : indices[i + 1];
               if (next < _archive.Items.Size())
               {
-                UInt64 nextPos = _archive.GetPosOfSolidItem(next);
+                // next cannot be IsEmptyFile
+                const UInt64 nextPos = _archive.GetPosOfSolidItem(next);
                 if (nextPos == pos)
                 {
                   writeToTemp = true;
@@ -581,12 +584,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           prevPos = pos;
         }
 
+        /* nsis 3.08 can use (PatchSize == 0) for uninstaller without patched section */
+
+        const bool is_PatchedUninstaller = item.Is_PatchedUninstaller();
+       
         if (!dataError)
         {
           // UInt32 unpackSize = 0;
           // bool unpackSize_Defined = false;
           bool writeToTemp1 = writeToTemp;
-          if (item.IsUninstaller)
+          if (is_PatchedUninstaller)
           {
             // unpackSize = item.PatchSize;
             // unpackSize_Defined = true;
@@ -603,16 +610,16 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
           if (readFromTemp)
           {
-            if (realOutStream && !item.IsUninstaller)
-              RINOK(WriteStream(realOutStream, tempBuf, tempBuf.Size()));
+            if (realOutStream && !is_PatchedUninstaller)
+              RINOK(WriteStream(realOutStream, tempBuf, tempBuf.Size()))
           }
           else
           {
             UInt32 curUnpacked32 = 0;
-            HRESULT res = _archive.Decoder.Decode(
+            const HRESULT res = _archive.Decoder.Decode(
                 writeToTemp1 ? &tempBuf : NULL,
-                item.IsUninstaller, item.PatchSize,
-                item.IsUninstaller ? NULL : (ISequentialOutStream *)realOutStream,
+                is_PatchedUninstaller, item.PatchSize,
+                is_PatchedUninstaller ? NULL : (ISequentialOutStream *)realOutStream,
                 progress,
                 curPacked, curUnpacked32);
             curUnpacked = curUnpacked32;
@@ -629,21 +636,20 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
           }
         }
         
-        if (!dataError && item.IsUninstaller)
+        if (!dataError && is_PatchedUninstaller)
         {
           if (_archive.ExeStub.Size() != 0)
           {
             CByteBuffer destBuf = _archive.ExeStub;
-            dataError = !UninstallerPatch(tempBuf, tempBuf.Size(), destBuf);
-           
+            dataError = !UninstallerPatch(tempBuf, tempBuf.Size(), destBuf, destBuf.Size());
             if (realOutStream)
-              RINOK(WriteStream(realOutStream, destBuf, destBuf.Size()));
+              RINOK(WriteStream(realOutStream, destBuf, destBuf.Size()))
           }
           
           if (readFromTemp)
           {
             if (realOutStream)
-              RINOK(WriteStream(realOutStream, tempBuf2, tempBuf2.Size()));
+              RINOK(WriteStream(realOutStream, tempBuf2, tempBuf2.Size()))
           }
           else
           {
@@ -652,10 +658,10 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
             if (!_archive.IsSolid)
             {
-              RINOK(_archive.SeekTo(_archive.GetPosOfNonSolidItem(index) + 4 + curPacked ));
+              RINOK(_archive.SeekTo(_archive.GetPosOfNonSolidItem(index) + 4 + curPacked ))
             }
 
-            HRESULT res = _archive.Decoder.Decode(
+            const HRESULT res = _archive.Decoder.Decode(
                 writeToTemp ? &tempBuf2 : NULL,
                 false, 0,
                 realOutStream,
@@ -679,7 +685,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     realOutStream.Release();
     RINOK(extractCallback->SetOperationResult(dataError ?
         NExtract::NOperationResult::kDataError :
-        NExtract::NOperationResult::kOK));
+        NExtract::NOperationResult::kOK))
   }
   return S_OK;
   COM_TRY_END

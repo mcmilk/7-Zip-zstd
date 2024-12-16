@@ -15,7 +15,7 @@ static bool CheckCodeLens(const Byte *lens, unsigned num)
   UInt32 sum = 0;
   for (unsigned i = 0; i < num; i++)
   {
-    unsigned len = lens[i];
+    const unsigned len = lens[i];
     if (len != 0)
       sum += ((UInt32)1 << (NUM_CODE_BITS - len));
   }
@@ -26,11 +26,12 @@ bool CCoder::ReadTP(unsigned num, unsigned numBits, int spec)
 {
   _symbolT = -1;
 
-  UInt32 n = _inBitStream.ReadBits(numBits);
+  const UInt32 n = _inBitStream.ReadBits(numBits);
   if (n == 0)
   {
-    _symbolT = _inBitStream.ReadBits(numBits);
-    return ((unsigned)_symbolT < num);
+    const unsigned s = _inBitStream.ReadBits(numBits);
+    _symbolT = (int)s;
+    return (s < num);
   }
 
   if (n > num)
@@ -46,7 +47,7 @@ bool CCoder::ReadTP(unsigned num, unsigned numBits, int spec)
     
     do
     {
-      UInt32 val = _inBitStream.GetValue(16);
+      const UInt32 val = _inBitStream.GetValue(16);
       unsigned c = val >> 13;
       
       if (c == 7)
@@ -85,8 +86,9 @@ bool CCoder::ReadC()
   
   if (n == 0)
   {
-    _symbolC = _inBitStream.ReadBits(NUM_C_BITS);
-    return ((unsigned)_symbolC < NC);
+    const unsigned s = _inBitStream.ReadBits(NUM_C_BITS);
+    _symbolC = (int)s;
+    return (s < NC);
   }
 
   if (n > NC)
@@ -135,7 +137,7 @@ bool CCoder::ReadC()
 
 HRESULT CCoder::CodeReal(UInt64 rem, ICompressProgressInfo *progress)
 {
-  unsigned pbit = (DictSize <= (1 << 14) ? 4 : 5);
+  const unsigned pbit = (DictSize <= (1 << 14) ? 4 : 5);
 
   UInt32 blockSize = 0;
 
@@ -148,9 +150,9 @@ HRESULT CCoder::CodeReal(UInt64 rem, ICompressProgressInfo *progress)
 
       if (progress)
       {
-        UInt64 packSize = _inBitStream.GetProcessedSize();
-        UInt64 pos = _outWindow.GetProcessedSize();
-        RINOK(progress->SetRatioInfo(&packSize, &pos));
+        const UInt64 packSize = _inBitStream.GetProcessedSize();
+        const UInt64 pos = _outWindow.GetProcessedSize();
+        RINOK(progress->SetRatioInfo(&packSize, &pos))
       }
       
       blockSize = _inBitStream.ReadBits(16);
@@ -217,8 +219,8 @@ HRESULT CCoder::CodeReal(UInt64 rem, ICompressProgressInfo *progress)
 }
 
 
-STDMETHODIMP CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   try
   {
@@ -237,7 +239,7 @@ STDMETHODIMP CCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *o
     
     CCoderReleaser coderReleaser(this);
     
-    RINOK(CodeReal(*outSize, progress));
+    RINOK(CodeReal(*outSize, progress))
 
     coderReleaser.Disable();
     return _outWindow.Flush();

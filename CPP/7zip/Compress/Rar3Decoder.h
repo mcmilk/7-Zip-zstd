@@ -4,8 +4,8 @@
 
 /* This code uses Carryless rangecoder (1999): Dmitry Subbotin : Public domain */
 
-#ifndef __COMPRESS_RAR3_DECODER_H
-#define __COMPRESS_RAR3_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_RAR3_DECODER_H
+#define ZIP7_INC_COMPRESS_RAR3_DECODER_H
 
 #include "../../../C/Ppmd7.h"
 
@@ -156,11 +156,11 @@ struct CTempFilter: public NVm::CProgramInitState
 
 const unsigned kNumHuffmanBits = 15;
 
-class CDecoder:
-  public ICompressCoder,
-  public ICompressSetDecoderProperties2,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_2(
+  CDecoder
+  , ICompressCoder
+  , ICompressSetDecoderProperties2
+)
   CByteIn m_InBitStream;
   Byte *_window;
   UInt32 _winPos;
@@ -231,17 +231,6 @@ class CDecoder:
   bool InputEofError() const { return m_InBitStream.BitDecoder.ExtraBitsWereRead(); }
   bool InputEofError_Fast() const { return (m_InBitStream.BitDecoder.Stream.NumExtraBytes > 2); }
 
-public:
-  CDecoder();
-  ~CDecoder();
-
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
-
   void CopyBlock(UInt32 dist, UInt32 len)
   {
     _lzSize += len;
@@ -270,11 +259,15 @@ public:
   
   void PutByte(Byte b)
   {
-    UInt32 wp = _winPos;
+    const UInt32 wp = _winPos;
     _window[wp] = b;
     _winPos = (wp + 1) & kWindowMask;
     _lzSize++;
   }
+
+public:
+  CDecoder();
+  ~CDecoder();
 };
 
 }}

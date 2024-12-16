@@ -1,7 +1,7 @@
 // IFolderArchive.h
 
-#ifndef __IFOLDER_ARCHIVE_H
-#define __IFOLDER_ARCHIVE_H
+#ifndef ZIP7_INC_IFOLDER_ARCHIVE_H
+#define ZIP7_INC_IFOLDER_ARCHIVE_H
 
 #include "../../../Common/MyString.h"
 
@@ -12,8 +12,7 @@
 #include "../Common/ExtractMode.h"
 #include "../Common/IFileExtractCallback.h"
 
-#define FOLDER_ARCHIVE_INTERFACE_SUB(i, base, x) DECL_INTERFACE_SUB(i, base, 0x01, x)
-#define FOLDER_ARCHIVE_INTERFACE(i, x) FOLDER_ARCHIVE_INTERFACE_SUB(i, IUnknown, x)
+Z7_PURE_INTERFACES_BEGIN
 
 /* ---------- IArchiveFolder ----------
 IArchiveFolder is implemented by CAgentFolder (Agent/Agent.h)
@@ -24,19 +23,16 @@ IArchiveFolder is used by:
       CPlugin::ExtractFiles
 */
 
-#define INTERFACE_IArchiveFolder(x) \
-  STDMETHOD(Extract)(const UInt32 *indices, UInt32 numItems, \
+#define Z7_IFACEM_IArchiveFolder(x) \
+  x(Extract(const UInt32 *indices, UInt32 numItems, \
       Int32 includeAltStreams, \
       Int32 replaceAltStreamCharsMode, \
       NExtract::NPathMode::EEnum pathMode, \
       NExtract::NOverwriteMode::EEnum overwriteMode, \
       const wchar_t *path, Int32 testMode, \
-      IFolderArchiveExtractCallback *extractCallback2) x; \
+      IFolderArchiveExtractCallback *extractCallback2)) \
 
-FOLDER_ARCHIVE_INTERFACE(IArchiveFolder, 0x0D)
-{
-  INTERFACE_IArchiveFolder(PURE)
-};
+Z7_IFACE_CONSTR_FOLDERARC(IArchiveFolder, 0x0D)
 
 
 /* ---------- IInFolderArchive ----------
@@ -44,85 +40,68 @@ IInFolderArchive is implemented by CAgent (Agent/Agent.h)
 IInFolderArchive Is used by FAR/Plugin
 */
 
-#define INTERFACE_IInFolderArchive(x) \
-  STDMETHOD(Open)(IInStream *inStream, const wchar_t *filePath, const wchar_t *arcFormat, BSTR *archiveTypeRes, IArchiveOpenCallback *openArchiveCallback) x; \
-  STDMETHOD(ReOpen)(IArchiveOpenCallback *openArchiveCallback) x; \
-  STDMETHOD(Close)() x; \
-  STDMETHOD(GetNumberOfProperties)(UInt32 *numProperties) x; \
-  STDMETHOD(GetPropertyInfo)(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType) x; \
-  STDMETHOD(BindToRootFolder)(IFolderFolder **resultFolder) x; \
-  STDMETHOD(Extract)(NExtract::NPathMode::EEnum pathMode, \
+#define Z7_IFACEM_IInFolderArchive(x) \
+  x(Open(IInStream *inStream, const wchar_t *filePath, const wchar_t *arcFormat, BSTR *archiveTypeRes, IArchiveOpenCallback *openArchiveCallback)) \
+  x(ReOpen(IArchiveOpenCallback *openArchiveCallback)) \
+  x(Close()) \
+  x(GetNumberOfProperties(UInt32 *numProperties)) \
+  x(GetPropertyInfo(UInt32 index, BSTR *name, PROPID *propID, VARTYPE *varType)) \
+  x(BindToRootFolder(IFolderFolder **resultFolder)) \
+  x(Extract(NExtract::NPathMode::EEnum pathMode, \
       NExtract::NOverwriteMode::EEnum overwriteMode, const wchar_t *path, \
-      Int32 testMode, IFolderArchiveExtractCallback *extractCallback2) x; \
+      Int32 testMode, IFolderArchiveExtractCallback *extractCallback2)) \
 
-FOLDER_ARCHIVE_INTERFACE(IInFolderArchive, 0x0E)
-{
-  INTERFACE_IInFolderArchive(PURE)
-};
+Z7_IFACE_CONSTR_FOLDERARC(IInFolderArchive, 0x0E)
 
-#define INTERFACE_IFolderArchiveUpdateCallback(x) \
-  STDMETHOD(CompressOperation)(const wchar_t *name) x; \
-  STDMETHOD(DeleteOperation)(const wchar_t *name) x; \
-  STDMETHOD(OperationResult)(Int32 opRes) x; \
-  STDMETHOD(UpdateErrorMessage)(const wchar_t *message) x; \
-  STDMETHOD(SetNumFiles)(UInt64 numFiles) x; \
+#define Z7_IFACEM_IFolderArchiveUpdateCallback(x) \
+  x(CompressOperation(const wchar_t *name)) \
+  x(DeleteOperation(const wchar_t *name)) \
+  x(OperationResult(Int32 opRes)) \
+  x(UpdateErrorMessage(const wchar_t *message)) \
+  x(SetNumFiles(UInt64 numFiles)) \
 
-FOLDER_ARCHIVE_INTERFACE_SUB(IFolderArchiveUpdateCallback, IProgress, 0x0B)
-{
-  INTERFACE_IFolderArchiveUpdateCallback(PURE)
-};
+Z7_IFACE_CONSTR_FOLDERARC_SUB(IFolderArchiveUpdateCallback, IProgress, 0x0B)
 
-#define INTERFACE_IOutFolderArchive(x) \
-  STDMETHOD(SetFolder)(IFolderFolder *folder) x; \
-  STDMETHOD(SetFiles)(const wchar_t *folderPrefix, const wchar_t * const *names, UInt32 numNames) x; \
-  STDMETHOD(DeleteItems)(ISequentialOutStream *outArchiveStream, \
-      const UInt32 *indices, UInt32 numItems, IFolderArchiveUpdateCallback *updateCallback) x; \
-  STDMETHOD(DoOperation)( \
+#define Z7_IFACEM_IOutFolderArchive(x) \
+  x(SetFolder(IFolderFolder *folder)) \
+  x(SetFiles(const wchar_t *folderPrefix, const wchar_t * const *names, UInt32 numNames)) \
+  x(DeleteItems(ISequentialOutStream *outArchiveStream, \
+      const UInt32 *indices, UInt32 numItems, IFolderArchiveUpdateCallback *updateCallback)) \
+  x(DoOperation( \
       FStringVector *requestedPaths, \
       FStringVector *processedPaths, \
       CCodecs *codecs, int index, \
       ISequentialOutStream *outArchiveStream, const Byte *stateActions, const wchar_t *sfxModule, \
-      IFolderArchiveUpdateCallback *updateCallback) x; \
-  STDMETHOD(DoOperation2)( \
+      IFolderArchiveUpdateCallback *updateCallback)) \
+  x(DoOperation2( \
       FStringVector *requestedPaths, \
       FStringVector *processedPaths, \
       ISequentialOutStream *outArchiveStream, const Byte *stateActions, const wchar_t *sfxModule, \
-      IFolderArchiveUpdateCallback *updateCallback) x; \
+      IFolderArchiveUpdateCallback *updateCallback)) \
 
-FOLDER_ARCHIVE_INTERFACE(IOutFolderArchive, 0x0F)
-{
-  INTERFACE_IOutFolderArchive(PURE)
-};
+Z7_IFACE_CONSTR_FOLDERARC(IOutFolderArchive, 0x0F)
 
 
-#define INTERFACE_IFolderArchiveUpdateCallback2(x) \
-  STDMETHOD(OpenFileError)(const wchar_t *path, HRESULT errorCode) x; \
-  STDMETHOD(ReadingFileError)(const wchar_t *path, HRESULT errorCode) x; \
-  STDMETHOD(ReportExtractResult)(Int32 opRes, Int32 isEncrypted, const wchar_t *path) x; \
-  STDMETHOD(ReportUpdateOperation)(UInt32 notifyOp, const wchar_t *path, Int32 isDir) x; \
+#define Z7_IFACEM_IFolderArchiveUpdateCallback2(x) \
+  x(OpenFileError(const wchar_t *path, HRESULT errorCode)) \
+  x(ReadingFileError(const wchar_t *path, HRESULT errorCode)) \
+  x(ReportExtractResult(Int32 opRes, Int32 isEncrypted, const wchar_t *path)) \
+  x(ReportUpdateOperation(UInt32 notifyOp, const wchar_t *path, Int32 isDir)) \
 
-FOLDER_ARCHIVE_INTERFACE(IFolderArchiveUpdateCallback2, 0x10)
-{
-  INTERFACE_IFolderArchiveUpdateCallback2(PURE)
-};
+Z7_IFACE_CONSTR_FOLDERARC(IFolderArchiveUpdateCallback2, 0x10)
 
 
-#define INTERFACE_IFolderScanProgress(x) \
-  STDMETHOD(ScanError)(const wchar_t *path, HRESULT errorCode) x; \
-  STDMETHOD(ScanProgress)(UInt64 numFolders, UInt64 numFiles, UInt64 totalSize, const wchar_t *path, Int32 isDir) x; \
+#define Z7_IFACEM_IFolderScanProgress(x) \
+  x(ScanError(const wchar_t *path, HRESULT errorCode)) \
+  x(ScanProgress(UInt64 numFolders, UInt64 numFiles, UInt64 totalSize, const wchar_t *path, Int32 isDir)) \
 
-FOLDER_ARCHIVE_INTERFACE(IFolderScanProgress, 0x11)
-{
-  INTERFACE_IFolderScanProgress(PURE)
-};
+Z7_IFACE_CONSTR_FOLDERARC(IFolderScanProgress, 0x11)
 
 
-#define INTERFACE_IFolderSetZoneIdMode(x) \
-  STDMETHOD(SetZoneIdMode)(NExtract::NZoneIdMode::EEnum zoneMode) x; \
+#define Z7_IFACEM_IFolderSetZoneIdMode(x) \
+  x(SetZoneIdMode(NExtract::NZoneIdMode::EEnum zoneMode)) \
 
-FOLDER_ARCHIVE_INTERFACE(IFolderSetZoneIdMode, 0x12)
-{
-  INTERFACE_IFolderSetZoneIdMode(PURE)
-};
+Z7_IFACE_CONSTR_FOLDERARC(IFolderSetZoneIdMode, 0x12)
 
+Z7_PURE_INTERFACES_END
 #endif

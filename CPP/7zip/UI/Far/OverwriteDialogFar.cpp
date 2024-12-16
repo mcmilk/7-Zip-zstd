@@ -35,7 +35,7 @@ static void SetFileInfoStrings(const CFileInfo &fileInfo,
   {
     ConvertUInt64ToString(fileInfo.Size, buffer);
     fileInfoStrings.Size = buffer;
-    fileInfoStrings.Size += ' ';
+    fileInfoStrings.Size.Add_Space();
     fileInfoStrings.Size += g_StartupInfo.GetMsgString(NMessageID::kOverwriteBytes);
   }
   else
@@ -49,7 +49,7 @@ static void SetFileInfoStrings(const CFileInfo &fileInfo,
     char timeString[32];
     ConvertUtcFileTimeToString(fileInfo.Time, timeString);
     fileInfoStrings.Time = g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn);
-    fileInfoStrings.Time += ' ';
+    fileInfoStrings.Time.Add_Space();
     fileInfoStrings.Time += timeString;
   }
 }
@@ -96,12 +96,12 @@ NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInf
     ReduceString2(name2, maxNameLen - kNameOffset);
   }
 
-  AString pref1A (UnicodeStringToMultiByte(pref1, CP_OEMCP));
-  AString pref2A (UnicodeStringToMultiByte(pref2, CP_OEMCP));
-  AString name1A (UnicodeStringToMultiByte(name1, CP_OEMCP));
-  AString name2A (UnicodeStringToMultiByte(name2, CP_OEMCP));
+  const AString pref1A (UnicodeStringToMultiByte(pref1, CP_OEMCP));
+  const AString pref2A (UnicodeStringToMultiByte(pref2, CP_OEMCP));
+  const AString name1A (UnicodeStringToMultiByte(name1, CP_OEMCP));
+  const AString name2A (UnicodeStringToMultiByte(name2, CP_OEMCP));
 
-  struct CInitDialogItem initItems[]={
+  const struct CInitDialogItem initItems[]={
     { DI_DOUBLEBOX, 3, 1, kXSize - 4, kYSize - 2, false, false, 0, false, NMessageID::kOverwriteTitle, NULL, NULL },
     { DI_TEXT, 5, 2, 0, 0, false, false, 0, false, NMessageID::kOverwriteMessage1, NULL, NULL },
     
@@ -131,10 +131,10 @@ NResult::EEnum Execute(const CFileInfo &oldFileInfo, const CFileInfo &newFileInf
     { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kOverwriteCancel, NULL, NULL  }
   };
   
-  const int kNumDialogItems = ARRAY_SIZE(initItems);
+  const int kNumDialogItems = Z7_ARRAY_SIZE(initItems);
   FarDialogItem aDialogItems[kNumDialogItems];
   g_StartupInfo.InitDialogItems(initItems, aDialogItems, kNumDialogItems);
-  int anAskCode = g_StartupInfo.ShowDialog(kXSize, kYSize,
+  const int anAskCode = g_StartupInfo.ShowDialog(kXSize, kYSize,
       NULL, aDialogItems, kNumDialogItems);
   const int kButtonStartPos = kNumDialogItems - 6;
   if (anAskCode >= kButtonStartPos && anAskCode < kNumDialogItems)

@@ -1,7 +1,7 @@
 // Archive/TarOut.h
 
-#ifndef __ARCHIVE_TAR_OUT_H
-#define __ARCHIVE_TAR_OUT_H
+#ifndef ZIP7_INC_ARCHIVE_TAR_OUT_H
+#define ZIP7_INC_ARCHIVE_TAR_OUT_H
 
 #include "../../../Common/MyCom.h"
 

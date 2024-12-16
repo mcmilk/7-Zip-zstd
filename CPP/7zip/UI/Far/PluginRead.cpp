@@ -86,14 +86,14 @@ HRESULT CPlugin::ExtractFiles(
 }
 
 NFileOperationReturnCode::EEnum CPlugin::GetFiles(struct PluginPanelItem *panelItems,
-    int itemsNumber, int move, char *destPath, int opMode)
+    unsigned itemsNumber, int move, char *destPath, int opMode)
 {
   return GetFilesReal(panelItems, itemsNumber, move,
       destPath, opMode, (opMode & OPM_SILENT) == 0);
 }
 
 NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *panelItems,
-    int itemsNumber, int move, const char *destPathLoc, int opMode, bool showBox)
+    unsigned itemsNumber, int move, const char *destPathLoc, int opMode, bool showBox)
 {
   if (move != 0)
   {
@@ -112,7 +112,7 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
   extractionInfo.PathMode = NExtract::NPathMode::kCurPaths;
   extractionInfo.OverwriteMode = NExtract::NOverwriteMode::kOverwrite;
 
-  bool silent = (opMode & OPM_SILENT) != 0;
+  const bool silent = (opMode & OPM_SILENT) != 0;
   bool decompressAllItems = false;
   UString password = Password;
   bool passwordIsDefined = PasswordIsDefined;
@@ -184,9 +184,9 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
       { DI_BUTTON, 0, kYSize - 3, 0, 0, false, false, DIF_CENTERGROUP, false, NMessageID::kExtractCancel, NULL, NULL  }
     };
    
-    const int kNumDialogItems = ARRAY_SIZE(initItems);
-    const int kOkButtonIndex = kNumDialogItems - 2;
-    const int kPasswordIndex = kNumDialogItems - 4;
+    const unsigned kNumDialogItems = Z7_ARRAY_SIZE(initItems);
+    const unsigned kOkButtonIndex = kNumDialogItems - 2;
+    const unsigned kPasswordIndex = kNumDialogItems - 4;
 
     FarDialogItem dialogItems[kNumDialogItems];
     g_StartupInfo.InitDialogItems(initItems, dialogItems, kNumDialogItems);
@@ -275,10 +275,10 @@ NFileOperationReturnCode::EEnum CPlugin::GetFilesReal(struct PluginPanelItem *pa
     GetRealIndexes(panelItems, itemsNumber, realIndices);
   */
   CObjArray<UInt32> indices(itemsNumber);
-  for (int i = 0; i < itemsNumber; i++)
+  for (unsigned i = 0; i < itemsNumber; i++)
     indices[i] = (UInt32)panelItems[i].UserData;
 
-  HRESULT result = ExtractFiles(decompressAllItems, indices, itemsNumber,
+  const HRESULT result = ExtractFiles(decompressAllItems, indices, itemsNumber,
       !showBox, extractionInfo.PathMode, extractionInfo.OverwriteMode,
       destPathU,
       passwordIsDefined, password);

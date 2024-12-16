@@ -1,7 +1,7 @@
 // ContextMenuFlags.h
 
-#ifndef __CONTEXT_MENU_FLAGS_H
-#define __CONTEXT_MENU_FLAGS_H
+#ifndef ZIP7_INC_CONTEXT_MENU_FLAGS_H
+#define ZIP7_INC_CONTEXT_MENU_FLAGS_H
 
 namespace NContextMenuFlags
 {

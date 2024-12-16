@@ -8,7 +8,7 @@ void CLzOutWindow::Init(bool solid) throw()
 {
   if (!solid)
     COutBuffer::Init();
-  #ifdef _NO_EXCEPTIONS
+  #ifdef Z7_NO_EXCEPTIONS
   ErrorCode = S_OK;
   #endif
 }

@@ -1,7 +1,7 @@
 // ZDecoder.h
 
-#ifndef __COMPRESS_Z_DECODER_H
-#define __COMPRESS_Z_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_Z_DECODER_H
+#define ZIP7_INC_COMPRESS_Z_DECODER_H
 
 #include "../../Common/MyCom.h"
 
@@ -12,27 +12,22 @@ namespace NZ {
 
 // Z decoder decodes Z data stream, including 3 bytes of header.
   
-class CDecoder:
-  public ICompressCoder,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CDecoder
+  , ICompressCoder
+)
   UInt16 *_parents;
   Byte *_suffixes;
   Byte *_stack;
   unsigned _numMaxBits;
 
 public:
-  CDecoder(): _parents(0), _suffixes(0), _stack(0), /* _prop(0), */ _numMaxBits(0) {};
+  CDecoder(): _parents(NULL), _suffixes(NULL), _stack(NULL), /* _prop(0), */ _numMaxBits(0) {}
   ~CDecoder();
   void Free();
   UInt64 PackSize;
 
-  MY_UNKNOWN_IMP1(ICompressCoder)
-
   HRESULT CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
       const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 };
 

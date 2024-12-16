@@ -1,7 +1,7 @@
 // NsisDecode.h
 
-#ifndef __NSIS_DECODE_H
-#define __NSIS_DECODE_H
+#ifndef ZIP7_INC_NSIS_DECODE_H
+#define ZIP7_INC_NSIS_DECODE_H
 
 #include "../../../Common/MyBuffer.h"
 
@@ -82,7 +82,7 @@ public:
 
   HRESULT Read(void *data, size_t *processedSize)
   {
-    return ReadStream(_decoderInStream, data, processedSize);;
+    return ReadStream(_decoderInStream, data, processedSize);
   }
 
 

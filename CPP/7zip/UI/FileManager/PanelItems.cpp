@@ -41,7 +41,7 @@ static bool GetColumnVisible(PROPID propID, bool isFsFolder)
   return true;
 }
 
-static int GetColumnWidth(PROPID propID, VARTYPE /* varType */)
+static unsigned GetColumnWidth(PROPID propID, VARTYPE /* varType */)
 {
   switch (propID)
   {
@@ -216,7 +216,7 @@ HRESULT CPanel::InitColumns()
       item.IsVisible = isVisible;
       item.Width = columnInfo.Width;
       if (isVisible)
-        item.Order = order++;
+        item.Order = (int)(order++);
       continue;
     }
   }
@@ -225,14 +225,14 @@ HRESULT CPanel::InitColumns()
   {
     CPropColumn &item = _columns[i];
     if (item.IsVisible && item.Order < 0)
-      item.Order = order++;
+      item.Order = (int)(order++);
   }
   
   for (i = 0; i < _columns.Size(); i++)
   {
     CPropColumn &item = _columns[i];
     if (item.Order < 0)
-      item.Order = order++;
+      item.Order = (int)(order++);
   }
 
   CPropColumns newColumns;
@@ -285,14 +285,14 @@ HRESULT CPanel::InitColumns()
   {
     const CPropColumn &prop = newColumns[i];
     if (prop.Order < (int)newColumns.Size() && columns[prop.Order] == -1)
-      columns[prop.Order] = i;
+      columns[prop.Order] = (int)i;
     else
       orderError = true;
   }
 
   for (;;)
   {
-    unsigned numColumns = _visibleColumns.Size();
+    const unsigned numColumns = _visibleColumns.Size();
     if (numColumns == 0)
       break;
     DeleteColumn(numColumns - 1);
@@ -319,14 +319,14 @@ void CPanel::DeleteColumn(unsigned index)
 
 void CPanel::AddColumn(const CPropColumn &prop)
 {
-  const int index = _visibleColumns.Size();
+  const unsigned index = _visibleColumns.Size();
   
   LV_COLUMNW column;
   column.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM | LVCF_ORDER;
-  column.cx = prop.Width;
+  column.cx = (int)prop.Width;
   column.fmt = GetColumnAlign(prop.ID, prop.Type);
-  column.iOrder = index; // must be <= _listView.ItemCount
-  column.iSubItem = index; // must be <= _listView.ItemCount
+  column.iOrder = (int)index; // must be <= _listView.ItemCount
+  column.iSubItem = (int)index; // must be <= _listView.ItemCount
   column.pszText = const_cast<wchar_t *>((const wchar_t *)prop.Name);
 
   _visibleColumns.Add(prop);
@@ -346,7 +346,7 @@ int CALLBACK CompareItems(LPARAM lParam1, LPARAM lParam2, LPARAM lpData);
 void CPanel::GetSelectedNames(UStringVector &selectedNames)
 {
   CRecordVector<UInt32> indices;
-  GetSelectedItemsIndices(indices);
+  Get_ItemIndices_Selected(indices);
   selectedNames.ClearAndReserve(indices.Size());
   FOR_VECTOR (i, indices)
     selectedNames.AddInReserved(GetItemRelPath(indices[i]));
@@ -364,7 +364,7 @@ void CPanel::GetSelectedNames(UStringVector &selectedNames)
     item.mask = LVIF_TEXT | LVIF_PARAM;
     if (!_listView.GetItem(&item))
       continue;
-    int realIndex = GetRealIndex(item);
+    const unsigned realIndex = GetRealIndex(item);
     if (realIndex == kParentIndex)
       continue;
     if (_selectedStatusVector[realIndex])
@@ -384,7 +384,7 @@ void CPanel::SaveSelectedState(CSelectedState &s)
   {
     if (s.FocusedItem >= 0)
     {
-      int realIndex = GetRealItemIndex(s.FocusedItem);
+      const unsigned realIndex = GetRealItemIndex(s.FocusedItem);
       if (realIndex != kParentIndex)
       {
         s.FocusedName = GetItemRelPath(realIndex);
@@ -422,10 +422,11 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &s)
 }
 */
 
-HRESULT CPanel::RefreshListCtrl_SaveFocused()
+HRESULT CPanel::RefreshListCtrl_SaveFocused(bool onTimer)
 {
   CSelectedState state;
   SaveSelectedState(state);
+  state.CalledFromTimer = onTimer;
   return RefreshListCtrl(state);
 }
 
@@ -437,7 +438,7 @@ void CPanel::SetFocusedSelectedItem(int index, bool select)
   _listView.SetItemState(index, state, state);
   if (!_mySelectMode && select)
   {
-    int realIndex = GetRealItemIndex(index);
+    const unsigned realIndex = GetRealItemIndex(index);
     if (realIndex != kParentIndex)
       _selectedStatusVector[realIndex] = true;
   }
@@ -464,6 +465,9 @@ extern UInt32 g_NumMessages;
 
 HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
 {
+  m_DropHighlighted_SelectionIndex = -1;
+  m_DropHighlighted_SubFolderName.Empty();
+
   if (!_folder)
     return S_OK;
 
@@ -474,7 +478,8 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
   */
 
   _dontShowMode = false;
-  LoadFullPathAndShow();
+  if (!state.CalledFromTimer)
+    LoadFullPathAndShow();
   // OutputDebugStringA("=======\n");
   // OutputDebugStringA("s1 \n");
   CDisableTimerProcessing timerProcessing(*this);
@@ -506,11 +511,13 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
   
   // m_Files.Clear();
 
+  /*
   if (!_folder)
   {
     // throw 1;
     SetToRootFolder();
   }
+  */
   
   _headerToolBar.EnableButton(kParentFolderID, !IsRootFolder());
 
@@ -530,16 +537,44 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
   }
   */
 
+  _isDirVector.Clear();
   // DWORD tickCount1 = GetTickCount();
-  RINOK(_folder->LoadItems());
+  IFolderFolder *folder = _folder;
+  RINOK(_folder->LoadItems())
   // DWORD tickCount2 = GetTickCount();
-  RINOK(InitColumns());
-
   // OutputDebugString(TEXT("Start Dir\n"));
+  RINOK(InitColumns())
+
   UInt32 numItems;
   _folder->GetNumberOfItems(&numItems);
+  {
+    NCOM::CPropVariant prop;
+    _isDirVector.ClearAndSetSize(numItems);
+    bool *vec = (bool *)&_isDirVector.Front();
+    HRESULT hres = S_OK;
+    unsigned i;
+    for (i = 0; i < numItems; i++)
+    {
+      hres = folder->GetProperty(i, kpidIsDir, &prop);
+      if (hres != S_OK)
+        break;
+      bool v = false;
+      if (prop.vt == VT_BOOL)
+        v = VARIANT_BOOLToBool(prop.boolVal);
+      else if (prop.vt != VT_EMPTY)
+        break;
+      vec[i] = v;
+    }
+    if (i != numItems)
+    {
+      _isDirVector.Clear();
+      if (hres == S_OK)
+        hres = E_FAIL;
+    }
+    RINOK(hres)
+  }
 
-  bool showDots = _showDots && !IsRootFolder();
+  const bool showDots = _showDots && !IsRootFolder();
 
   _listView.SetItemCount(numItems + (showDots ? 1 : 0));
 
@@ -582,20 +617,20 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
 
   if (showDots)
   {
-    UString itemName ("..");
+    const UString itemName ("..");
     item.iItem = listViewItemCount;
     if (itemName == state.FocusedName)
       cursorIndex = listViewItemCount;
     item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
     int subItem = 0;
     item.iSubItem = subItem++;
-    item.lParam = kParentIndex;
+    item.lParam = (LPARAM)(int)kParentIndex;
     #ifdef USE_EMBED_ITEM
     item.pszText = const_cast<wchar_t *>((const wchar_t *)itemName);
     #else
     item.pszText = LPSTR_TEXTCALLBACKW;
     #endif
-    UInt32 attrib = FILE_ATTRIBUTE_DIRECTORY;
+    const UInt32 attrib = FILE_ATTRIBUTE_DIRECTORY;
     item.iImage = _extToIconMap.GetIconIndex(attrib, itemName);
     if (item.iImage < 0)
       item.iImage = 0;
@@ -671,7 +706,7 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
     item.iItem = listViewItemCount;
     
     item.iSubItem = subItem++;
-    item.lParam = i;
+    item.lParam = (LPARAM)i;
     
     /*
     int finish = nameLen - 4;
@@ -731,7 +766,7 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
       UInt32 attrib = 0;
       {
         NCOM::CPropVariant prop;
-        RINOK(_folder->GetProperty(i, kpidAttrib, &prop));
+        RINOK(_folder->GetProperty(i, kpidAttrib, &prop))
         if (prop.vt == VT_UI4)
           attrib = prop.ulVal;
       }
@@ -844,7 +879,7 @@ HRESULT CPanel::RefreshListCtrl(const CSelectedState &state)
 }
 
 
-void CPanel::GetSelectedItemsIndices(CRecordVector<UInt32> &indices) const
+void CPanel::Get_ItemIndices_Selected(CRecordVector<UInt32> &indices) const
 {
   indices.Clear();
   /*
@@ -858,46 +893,49 @@ void CPanel::GetSelectedItemsIndices(CRecordVector<UInt32> &indices) const
   HeapSort(&indices.Front(), indices.Size());
   */
   const bool *v = &_selectedStatusVector.Front();
-  unsigned size = _selectedStatusVector.Size();
+  const unsigned size = _selectedStatusVector.Size();
   for (unsigned i = 0; i < size; i++)
     if (v[i])
       indices.Add(i);
 }
 
 
-void CPanel::GetOperatedItemIndices(CRecordVector<UInt32> &indices) const
+void CPanel::Get_ItemIndices_Operated(CRecordVector<UInt32> &indices) const
 {
-  GetSelectedItemsIndices(indices);
+  Get_ItemIndices_Selected(indices);
   if (!indices.IsEmpty())
     return;
   if (_listView.GetSelectedCount() == 0)
     return;
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem >= 0)
   {
     if (_listView.IsItemSelected(focusedItem))
     {
-      int realIndex = GetRealItemIndex(focusedItem);
+      const unsigned realIndex = GetRealItemIndex(focusedItem);
       if (realIndex != kParentIndex)
         indices.Add(realIndex);
     }
   }
 }
 
-void CPanel::GetAllItemIndices(CRecordVector<UInt32> &indices) const
+void CPanel::Get_ItemIndices_All(CRecordVector<UInt32> &indices) const
 {
   indices.Clear();
   UInt32 numItems;
-  if (_folder->GetNumberOfItems(&numItems) == S_OK)
-    for (UInt32 i = 0; i < numItems; i++)
-      indices.Add(i);
+  if (_folder->GetNumberOfItems(&numItems) != S_OK)
+    return;
+  indices.ClearAndSetSize(numItems);
+  UInt32 *vec = (UInt32 *)&indices.Front();
+  for (UInt32 i = 0; i < numItems; i++)
+    vec[i] = i;
 }
 
-void CPanel::GetOperatedIndicesSmart(CRecordVector<UInt32> &indices) const
+void CPanel::Get_ItemIndices_OperSmart(CRecordVector<UInt32> &indices) const
 {
-  GetOperatedItemIndices(indices);
+  Get_ItemIndices_Operated(indices);
   if (indices.IsEmpty() || (indices.Size() == 1 && indices[0] == (UInt32)(Int32)-1))
-    GetAllItemIndices(indices);
+    Get_ItemIndices_All(indices);
 }
 
 /*
@@ -907,14 +945,14 @@ void CPanel::GetOperatedListViewIndices(CRecordVector<UInt32> &indices) const
   int numItems = _listView.GetItemCount();
   for (int i = 0; i < numItems; i++)
   {
-    int realIndex = GetRealItemIndex(i);
+    const unsigned realIndex = GetRealItemIndex(i);
     if (realIndex >= 0)
       if (_selectedStatusVector[realIndex])
         indices.Add(i);
   }
   if (indices.IsEmpty())
   {
-    int focusedItem = _listView.GetFocusedItem();
+    const int focusedItem = _listView.GetFocusedItem();
       if (focusedItem >= 0)
         indices.Add(focusedItem);
   }
@@ -931,7 +969,7 @@ void CPanel::EditItem(bool useEditor)
     {
       bool needRefresh = false;
       CRecordVector<UInt32> indices;
-      GetOperatedItemIndices(indices);
+      Get_ItemIndices_Operated(indices);
       FOR_VECTOR (i, indices)
       {
         UInt32 index = indices[i];
@@ -952,10 +990,10 @@ void CPanel::EditItem(bool useEditor)
   }
 
 
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int realIndex = GetRealItemIndex(focusedItem);
+  const unsigned realIndex = GetRealItemIndex(focusedItem);
   if (realIndex == kParentIndex)
     return;
   if (!IsItem_Folder(realIndex))
@@ -964,10 +1002,10 @@ void CPanel::EditItem(bool useEditor)
 
 void CPanel::OpenFocusedItemAsInternal(const wchar_t *type)
 {
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem < 0)
     return;
-  int realIndex = GetRealItemIndex(focusedItem);
+  const unsigned realIndex = GetRealItemIndex(focusedItem);
   if (IsItem_Folder(realIndex))
     OpenFolder(realIndex);
   else
@@ -977,17 +1015,17 @@ void CPanel::OpenFocusedItemAsInternal(const wchar_t *type)
 void CPanel::OpenSelectedItems(bool tryInternal)
 {
   CRecordVector<UInt32> indices;
-  GetOperatedItemIndices(indices);
+  Get_ItemIndices_Operated(indices);
   if (indices.Size() > 20)
   {
     MessageBox_Error_LangID(IDS_TOO_MANY_ITEMS);
     return;
   }
   
-  int focusedItem = _listView.GetFocusedItem();
+  const int focusedItem = _listView.GetFocusedItem();
   if (focusedItem >= 0)
   {
-    int realIndex = GetRealItemIndex(focusedItem);
+    const unsigned realIndex = GetRealItemIndex(focusedItem);
     if (realIndex == kParentIndex && (tryInternal || indices.Size() == 0) && _listView.IsItemSelected(focusedItem))
       indices.Insert(0, realIndex);
   }
@@ -1016,7 +1054,7 @@ void CPanel::OpenSelectedItems(bool tryInternal)
   }
 }
 
-UString CPanel::GetItemName(int itemIndex) const
+UString CPanel::GetItemName(unsigned itemIndex) const
 {
   if (itemIndex == kParentIndex)
     return L"..";
@@ -1028,7 +1066,7 @@ UString CPanel::GetItemName(int itemIndex) const
   return prop.bstrVal;
 }
 
-UString CPanel::GetItemName_for_Copy(int itemIndex) const
+UString CPanel::GetItemName_for_Copy(unsigned itemIndex) const
 {
   if (itemIndex == kParentIndex)
     return L"..";
@@ -1048,7 +1086,7 @@ UString CPanel::GetItemName_for_Copy(int itemIndex) const
   return Get_Correct_FsFile_Name(s);
 }
 
-void CPanel::GetItemName(int itemIndex, UString &s) const
+void CPanel::GetItemName(unsigned itemIndex, UString &s) const
 {
   if (itemIndex == kParentIndex)
   {
@@ -1063,7 +1101,7 @@ void CPanel::GetItemName(int itemIndex, UString &s) const
   s.SetFromBstr(prop.bstrVal);
 }
 
-UString CPanel::GetItemPrefix(int itemIndex) const
+UString CPanel::GetItemPrefix(unsigned itemIndex) const
 {
   if (itemIndex == kParentIndex)
     return UString();
@@ -1076,12 +1114,12 @@ UString CPanel::GetItemPrefix(int itemIndex) const
   return prefix;
 }
 
-UString CPanel::GetItemRelPath(int itemIndex) const
+UString CPanel::GetItemRelPath(unsigned itemIndex) const
 {
   return GetItemPrefix(itemIndex) + GetItemName(itemIndex);
 }
 
-UString CPanel::GetItemRelPath2(int itemIndex) const
+UString CPanel::GetItemRelPath2(unsigned itemIndex) const
 {
   UString s = GetItemRelPath(itemIndex);
   #if defined(_WIN32) && !defined(UNDER_CE)
@@ -1094,7 +1132,50 @@ UString CPanel::GetItemRelPath2(int itemIndex) const
   return s;
 }
 
-UString CPanel::GetItemFullPath(int itemIndex) const
+
+void CPanel::Add_ItemRelPath2_To_String(unsigned itemIndex, UString &s) const
+{
+  if (itemIndex == kParentIndex)
+  {
+    s += "..";
+    return;
+  }
+
+  const unsigned start = s.Len();
+  NCOM::CPropVariant prop;
+  if (_folder->GetProperty(itemIndex, kpidPrefix, &prop) != S_OK)
+    throw 2723400;
+  if (prop.vt == VT_BSTR)
+    s += prop.bstrVal;
+
+  const wchar_t *name = NULL;
+  unsigned nameLen = 0;
+    
+  if (_folderGetItemName)
+    _folderGetItemName->GetItemName(itemIndex, &name, &nameLen);
+  if (name)
+    s += name;
+  else
+  {
+    prop.Clear();
+    if (_folder->GetProperty(itemIndex, kpidName, &prop) != S_OK)
+      throw 2723400;
+    if (prop.vt != VT_BSTR)
+      throw 2723401;
+    s += prop.bstrVal;
+  }
+
+  #if defined(_WIN32) && !defined(UNDER_CE)
+    if (s.Len() - start == 2 && NFile::NName::IsDrivePath2(s.Ptr(start)))
+    {
+      if (IsFSDrivesFolder() && !IsDeviceDrivesPrefix())
+        s.Add_PathSepar();
+    }
+  #endif
+}
+
+
+UString CPanel::GetItemFullPath(unsigned itemIndex) const
 {
   return GetFsPath() + GetItemRelPath2(itemIndex);
 }
@@ -1111,28 +1192,30 @@ bool CPanel::GetItem_BoolProp(UInt32 itemIndex, PROPID propID) const
   throw 2723401;
 }
 
-bool CPanel::IsItem_Deleted(int itemIndex) const
+bool CPanel::IsItem_Deleted(unsigned itemIndex) const
 {
   if (itemIndex == kParentIndex)
     return false;
   return GetItem_BoolProp(itemIndex, kpidIsDeleted);
 }
 
-bool CPanel::IsItem_Folder(int itemIndex) const
+bool CPanel::IsItem_Folder(unsigned itemIndex) const
 {
   if (itemIndex == kParentIndex)
     return true;
+  if (itemIndex < _isDirVector.Size())
+    return _isDirVector[itemIndex];
   return GetItem_BoolProp(itemIndex, kpidIsDir);
 }
 
-bool CPanel::IsItem_AltStream(int itemIndex) const
+bool CPanel::IsItem_AltStream(unsigned itemIndex) const
 {
   if (itemIndex == kParentIndex)
     return false;
   return GetItem_BoolProp(itemIndex, kpidIsAltStream);
 }
 
-UInt64 CPanel::GetItem_UInt64Prop(int itemIndex, PROPID propID) const
+UInt64 CPanel::GetItem_UInt64Prop(unsigned itemIndex, PROPID propID) const
 {
   if (itemIndex == kParentIndex)
     return 0;
@@ -1145,7 +1228,7 @@ UInt64 CPanel::GetItem_UInt64Prop(int itemIndex, PROPID propID) const
   return 0;
 }
 
-UInt64 CPanel::GetItemSize(int itemIndex) const
+UInt64 CPanel::GetItemSize(unsigned itemIndex) const
 {
   if (itemIndex == kParentIndex)
     return 0;
@@ -1169,7 +1252,7 @@ void CPanel::SaveListViewInfo()
     if (!_listView.GetColumn(i, &winColumnInfo))
       throw 1;
     prop.Order = winColumnInfo.iOrder;
-    prop.Width = winColumnInfo.cx;
+    prop.Width = (UInt32)(Int32)winColumnInfo.cx;
   }
 
   CListViewInfo viewInfo;
@@ -1247,22 +1330,22 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
     menu.AppendItem(flags, kCommandStart + i, prop.Name);
   }
   
-  int menuResult = menu.Track(TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY, x, y, _listView);
+  const int menuResult = menu.Track(TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY, x, y, _listView);
   
   if (menuResult >= kCommandStart && menuResult <= kCommandStart + (int)_columns.Size())
   {
-    int index = menuResult - kCommandStart;
+    const unsigned index = (unsigned)(menuResult - kCommandStart);
     CPropColumn &prop = _columns[index];
     prop.IsVisible = !prop.IsVisible;
 
     if (prop.IsVisible)
     {
-      prop.Order = _visibleColumns.Size();
+      prop.Order = (int)_visibleColumns.Size();
       AddColumn(prop);
     }
     else
     {
-      int visibleIndex = _visibleColumns.FindItem_for_PropID(prop.ID);
+      const int visibleIndex = _visibleColumns.FindItem_for_PropID(prop.ID);
       if (visibleIndex >= 0)
       {
         /*
@@ -1277,15 +1360,15 @@ void CPanel::ShowColumnsContextMenu(int x, int y)
           _sortID = kpidName;
           _ascending = true;
         }
-        DeleteColumn(visibleIndex);
+        DeleteColumn((unsigned)visibleIndex);
       }
     }
   }
 }
 
-void CPanel::OnReload()
+void CPanel::OnReload(bool onTimer)
 {
-  HRESULT res = RefreshListCtrl_SaveFocused();
+  const HRESULT res = RefreshListCtrl_SaveFocused(onTimer);
   if (res != S_OK)
     MessageBox_Error_HRESULT(res);
 }
@@ -1304,5 +1387,5 @@ void CPanel::OnTimer()
     return;
   if (wasChanged == 0)
     return;
-  OnReload();
+  OnReload(true); // onTimer
 }

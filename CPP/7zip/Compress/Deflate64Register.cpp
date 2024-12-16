@@ -5,8 +5,7 @@
 #include "../Common/RegisterCodec.h"
 
 #include "DeflateDecoder.h"
-
-#if !defined(EXTRACT_ONLY) && !defined(DEFLATE_EXTRACT_ONLY)
+#if !defined(Z7_EXTRACT_ONLY) && !defined(Z7_DEFLATE_EXTRACT_ONLY)
 #include "DeflateEncoder.h"
 #endif
 
@@ -15,7 +14,7 @@ namespace NDeflate {
 
 REGISTER_CODEC_CREATE(CreateDec, NDecoder::CCOMCoder64())
 
-#if !defined(EXTRACT_ONLY) && !defined(DEFLATE_EXTRACT_ONLY)
+#if !defined(Z7_EXTRACT_ONLY) && !defined(Z7_DEFLATE_EXTRACT_ONLY)
 REGISTER_CODEC_CREATE(CreateEnc, NEncoder::CCOMCoder64())
 #else
 #define CreateEnc NULL

@@ -59,36 +59,51 @@ void CKeyInfo::SetPassword(const Byte *data, UInt32 size)
   DeriveKey(sha, MasterKey);
 }
 
-STDMETHODIMP CBaseCoder::CryptoSetPassword(const Byte *data, UInt32 size)
+
+
+CDecoder::CDecoder()
+{
+  CAesCbcDecoder *d = new CAesCbcDecoder();
+  _cbcDecoder = d;
+  _aesFilter = d;
+}
+
+Z7_COM7F_IMF(CDecoder::CryptoSetPassword(const Byte *data, UInt32 size))
 {
   _key.SetPassword(data, size);
   return S_OK;
 }
 
-STDMETHODIMP CBaseCoder::Init()
+Z7_COM7F_IMF(CDecoder::Init())
 {
   return S_OK;
 }
 
+Z7_COM7F_IMF2(UInt32, CDecoder::Filter(Byte *data, UInt32 size))
+{
+  return _aesFilter->Filter(data, size);
+}
+
+
 HRESULT CDecoder::ReadHeader(ISequentialInStream *inStream, UInt32 crc, UInt64 unpackSize)
 {
   Byte temp[4];
-  RINOK(ReadStream_FALSE(inStream, temp, 2));
+  RINOK(ReadStream_FALSE(inStream, temp, 2))
   _ivSize = GetUi16(temp);
   if (_ivSize == 0)
   {
     memset(_iv, 0, 16);
-    SetUi32(_iv + 0, crc);
-    SetUi64(_iv + 4, unpackSize);
+    SetUi32(_iv + 0, crc)
+    SetUi64(_iv + 4, unpackSize)
     _ivSize = 12;
   }
   else if (_ivSize == 16)
   {
-    RINOK(ReadStream_FALSE(inStream, _iv, _ivSize));
+    RINOK(ReadStream_FALSE(inStream, _iv, _ivSize))
   }
   else
     return E_NOTIMPL;
-  RINOK(ReadStream_FALSE(inStream, temp, 4));
+  RINOK(ReadStream_FALSE(inStream, temp, 4))
   _remSize = GetUi32(temp);
   // const UInt32 kAlign = 16;
   if (_remSize < 16 || _remSize > (1 << 18))
@@ -208,9 +223,10 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
     return E_NOTIMPL;
 
   {
-    RINOK(SetKey(_key.MasterKey, _key.KeySize));
-    RINOK(SetInitVector(_iv, 16));
-    RINOK(Init());
+    RINOK(_cbcDecoder->SetKey(_key.MasterKey, _key.KeySize))
+    RINOK(_cbcDecoder->SetInitVector(_iv, 16))
+    // SetInitVector() calls also Init()
+    RINOK(_cbcDecoder->Init()) // it's optional
     Filter(p, rdSize);
 
     rdSize -= kPadSize;
@@ -228,9 +244,10 @@ HRESULT CDecoder::Init_and_CheckPassword(bool &passwOK)
   sha.Update(p, rdSize);
   DeriveKey(sha, fileKey);
   
-  RINOK(SetKey(fileKey, _key.KeySize));
-  RINOK(SetInitVector(_iv, 16));
-  Init();
+  RINOK(_cbcDecoder->SetKey(fileKey, _key.KeySize))
+  RINOK(_cbcDecoder->SetInitVector(_iv, 16))
+  // SetInitVector() calls also Init()
+  RINOK(_cbcDecoder->Init()) // it's optional
 
   memmove(p, p + validOffset, validSize);
   Filter(p, validSize);

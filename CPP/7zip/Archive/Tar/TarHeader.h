@@ -1,7 +1,7 @@
 // Archive/TarHeader.h
 
-#ifndef __ARCHIVE_TAR_HEADER_H
-#define __ARCHIVE_TAR_HEADER_H
+#ifndef ZIP7_INC_ARCHIVE_TAR_HEADER_H
+#define ZIP7_INC_ARCHIVE_TAR_HEADER_H
 
 #include "../../../Common/MyTypes.h"
 
@@ -81,7 +81,7 @@ namespace NFileHeader
     // extern const char * const kGNUTar; //  = "GNUtar "; // 7 chars and a null
     // extern const char * const kEmpty;  //  = "\0\0\0\0\0\0\0\0"
     extern const char k_Posix_ustar_00[8];
-    extern const char k_GNU_ustar__[8];
+    extern const char k_GNU_ustar[8];
   }
 }
 

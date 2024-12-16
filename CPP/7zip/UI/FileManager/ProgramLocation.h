@@ -1,6 +1,6 @@
 // ProgramLocation.h
 
-#ifndef __PROGRAM_LOCATION_H
-#define __PROGRAM_LOCATION_H
+#ifndef ZIP7_INC_PROGRAM_LOCATION_H
+#define ZIP7_INC_PROGRAM_LOCATION_H
 
 #endif

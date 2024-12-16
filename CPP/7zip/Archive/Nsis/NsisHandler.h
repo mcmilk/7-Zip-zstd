@@ -1,7 +1,7 @@
 // NSisHandler.h
 
-#ifndef __NSIS_HANDLER_H
-#define __NSIS_HANDLER_H
+#ifndef ZIP7_INC_NSIS_HANDLER_H
+#define ZIP7_INC_NSIS_HANDLER_H
 
 #include "../../../Common/MyCom.h"
 
@@ -14,10 +14,8 @@
 namespace NArchive {
 namespace NNsis {
 
-class CHandler:
-  public IInArchive,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_0
+
   CInArchive _archive;
   AString _methodString;
 
@@ -25,10 +23,6 @@ class CHandler:
   bool GetCompressedSize(unsigned index, UInt32 &size) const;
 
   // AString GetMethod(NMethodType::EEnum method, bool useItemFilter, UInt32 dictionary) const;
-public:
-  MY_UNKNOWN_IMP1(IInArchive)
-
-  INTERFACE_IInArchive(;)
 };
 
 }}

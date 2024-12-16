@@ -250,7 +250,6 @@ COMPRESS_OBJS = \
   $O\ZlibEncoder.obj \
   $O\ZDecoder.obj \
 
-
 CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
@@ -306,6 +305,7 @@ C_OBJS = \
   $O\Ppmd8Dec.obj \
   $O\Ppmd8Enc.obj \
   $O\Sort.obj \
+  $O\SwapBytes.obj \
   $O\Threads.obj \
   $O\Xz.obj \
   $O\XzDec.obj \

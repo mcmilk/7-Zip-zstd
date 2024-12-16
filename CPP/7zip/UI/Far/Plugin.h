@@ -1,7 +1,7 @@
 // 7zip/Far/Plugin.h
 
-#ifndef __7ZIP_FAR_PLUGIN_H
-#define __7ZIP_FAR_PLUGIN_H
+#ifndef ZIP7_INC_7ZIP_FAR_PLUGIN_H
+#define ZIP7_INC_7ZIP_FAR_PLUGIN_H
 
 #include "../../../Common/MyCom.h"
 
@@ -40,7 +40,7 @@ class CPlugin
 
   AString PanelModeColumnTypes;
   AString PanelModeColumnWidths;
-  // PanelMode _PanelMode;
+  // PanelMode _panelMode;
   void AddColumn(PROPID aPropID);
 
   void EnterToDirectory(const UString &dirName);
@@ -62,7 +62,7 @@ public:
   void FreeFindData(PluginPanelItem *panelItem,int ItemsNumber);
   int SetDirectory(const char *aszDir, int opMode);
   void GetOpenPluginInfo(struct OpenPluginInfo *info);
-  int DeleteFiles(PluginPanelItem *panelItems, int itemsNumber, int opMode);
+  int DeleteFiles(PluginPanelItem *panelItems, unsigned itemsNumber, int opMode);
 
   HRESULT ExtractFiles(
       bool decompressAllItems,
@@ -74,13 +74,13 @@ public:
       const UString &destPath,
       bool passwordIsDefined, const UString &password);
 
-  NFar::NFileOperationReturnCode::EEnum GetFiles(struct PluginPanelItem *panelItem, int itemsNumber,
+  NFar::NFileOperationReturnCode::EEnum GetFiles(struct PluginPanelItem *panelItem, unsigned itemsNumber,
       int move, char *destPath, int opMode);
   
   NFar::NFileOperationReturnCode::EEnum GetFilesReal(struct PluginPanelItem *panelItems,
-      int itemsNumber, int move, const char *_aDestPath, int opMode, bool showBox);
+      unsigned itemsNumber, int move, const char *_aDestPath, int opMode, bool showBox);
 
-  NFar::NFileOperationReturnCode::EEnum PutFiles(struct PluginPanelItem *panelItems, int itemsNumber,
+  NFar::NFileOperationReturnCode::EEnum PutFiles(struct PluginPanelItem *panelItems, unsigned itemsNumber,
       int move, int opMode);
   HRESULT CreateFolder();
 

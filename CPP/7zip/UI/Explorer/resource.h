@@ -10,4 +10,6 @@
 #define IDS_CONTEXT_COMPRESS_EMAIL      2329
 #define IDS_CONTEXT_COMPRESS_TO_EMAIL   2330
 
+#define IDS_SELECT_FILES                3015
+
 #define IDB_MENU_LOGO  190

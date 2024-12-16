@@ -65,18 +65,18 @@ bool CShellExtInfo::ReadFromRegistry(HKEY hkey, const CSysString &ext)
       UString value;
       if (iconKey.QueryValue(NULL, value) == ERROR_SUCCESS)
       {
-        int pos = value.ReverseFind(L',');
+        const int pos = value.ReverseFind(L',');
         IconPath = value;
         if (pos >= 0)
         {
           const wchar_t *end;
-          Int32 index = ConvertStringToInt32((const wchar_t *)value + pos + 1, &end);
+          const Int32 index = ConvertStringToInt32((const wchar_t *)value + pos + 1, &end);
           if (*end == 0)
           {
             // 9.31: if there is no icon index, we use -1. Is it OK?
             if (pos != (int)value.Len() - 1)
               IconIndex = (int)index;
-            IconPath.SetFrom(value, pos);
+            IconPath.SetFrom(value, (unsigned)pos);
           }
         }
       }

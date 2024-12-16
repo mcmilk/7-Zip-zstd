@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../C/CpuArch.h"
+
 #include "../Common/StreamUtils.h"
 
 #include "ZlibDecoder.h"
@@ -22,7 +24,7 @@ UInt32 Adler32_Update(UInt32 adler, const Byte *buf, size_t size)
   UInt32 b = (adler >> 16) & 0xFFFF;
   while (size > 0)
   {
-    unsigned curSize = (size > ADLER_LOOP_MAX) ? ADLER_LOOP_MAX : (unsigned )size;
+    const unsigned curSize = (size > ADLER_LOOP_MAX) ? ADLER_LOOP_MAX : (unsigned )size;
     unsigned i;
     for (i = 0; i < curSize; i++)
     {
@@ -37,7 +39,7 @@ UInt32 Adler32_Update(UInt32 adler, const Byte *buf, size_t size)
   return (b << 16) + a;
 }
 
-STDMETHODIMP COutStreamWithAdler::Write(const void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(COutStreamWithAdler::Write(const void *data, UInt32 size, UInt32 *processedSize))
 {
   HRESULT result = S_OK;
   if (_stream)
@@ -49,8 +51,8 @@ STDMETHODIMP COutStreamWithAdler::Write(const void *data, UInt32 size, UInt32 *p
   return result;
 }
 
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   DEFLATE_TRY_BEGIN
   if (!AdlerStream)
@@ -65,7 +67,7 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   if (inSize && *inSize < 2)
     return S_FALSE;
   Byte buf[2];
-  RINOK(ReadStream_FALSE(inStream, buf, 2));
+  RINOK(ReadStream_FALSE(inStream, buf, 2))
   if (!IsZlib(buf))
     return S_FALSE;
 
@@ -76,13 +78,13 @@ STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   if (inSize)
     inSize2 = *inSize - 2;
 
-  HRESULT res = DeflateDecoder->Code(inStream, AdlerStream, inSize ? &inSize2 : NULL, outSize, progress);
+  const HRESULT res = DeflateDecoder->Code(inStream, AdlerStream, inSize ? &inSize2 : NULL, outSize, progress);
   AdlerSpec->ReleaseStream();
 
   if (res == S_OK)
   {
     const Byte *p = DeflateDecoderSpec->ZlibFooter;
-    UInt32 adler = ((UInt32)p[0] << 24) | ((UInt32)p[1] << 16) | ((UInt32)p[2] << 8) | p[3];
+    const UInt32 adler = GetBe32(p);
     if (adler != AdlerSpec->GetAdler())
       return S_FALSE;
   }

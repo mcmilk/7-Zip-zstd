@@ -1,7 +1,7 @@
 // LzhDecoder.h
 
-#ifndef __COMPRESS_LZH_DECODER_H
-#define __COMPRESS_LZH_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_LZH_DECODER_H
+#define ZIP7_INC_COMPRESS_LZH_DECODER_H
 
 #include "../../Common/MyCom.h"
 
@@ -26,10 +26,10 @@ const unsigned NT = (NUM_CODE_BITS + 3);
 const unsigned NP = (NUM_DIC_BITS_MAX + 1);
 const unsigned NPT = NP; // Max(NT, NP)
 
-class CCoder:
-  public ICompressCoder,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_1(
+  CCoder
+  , ICompressCoder
+)
   CLzOutWindow _outWindow;
   NBitm::CDecoder<CInBuffer> _inBitStream;
 
@@ -54,13 +54,8 @@ class CCoder:
 
   HRESULT CodeReal(UInt64 outSize, ICompressProgressInfo *progress);
 public:
-  MY_UNKNOWN_IMP
-
   UInt32 DictSize;
   bool FinishMode;
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
 
   void SetDictSize(unsigned dictSize) { DictSize = dictSize; }
   

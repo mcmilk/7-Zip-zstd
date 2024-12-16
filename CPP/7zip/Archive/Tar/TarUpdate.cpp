@@ -8,6 +8,7 @@
 
 #include "../../Common/LimitedStreams.h"
 #include "../../Common/ProgressUtils.h"
+#include "../../Common/StreamUtils.h"
 
 #include "../../Compress/CopyCoder.h"
 
@@ -44,7 +45,7 @@ HRESULT Prop_To_PaxTime(const NWindows::NCOM::CPropVariant &prop, CPaxTime &pt)
     const unsigned prec = prop.wReserved1;
     if (prec >= k_PropVar_TimePrec_Base)
     {
-      pt.NumDigits = prec - k_PropVar_TimePrec_Base;
+      pt.NumDigits = (int)(prec - k_PropVar_TimePrec_Base);
       if (prop.wReserved2 < 100)
         ns += prop.wReserved2;
     }
@@ -58,7 +59,7 @@ static HRESULT GetTime(IStreamGetProp *getProp, UInt32 pid, CPaxTime &pt)
 {
   pt.Clear();
   NWindows::NCOM::CPropVariant prop;
-  RINOK(getProp->GetProperty(pid, &prop));
+  RINOK(getProp->GetProperty(pid, &prop))
   return Prop_To_PaxTime(prop, pt);
 }
 
@@ -73,7 +74,7 @@ static HRESULT GetUser(IStreamGetProp *getProp,
   bool isSet = false;
   {
     NWindows::NCOM::CPropVariant prop;
-    RINOK(getProp->GetProperty(pidId, &prop));
+    RINOK(getProp->GetProperty(pidId, &prop))
     if (prop.vt == VT_UI4)
     {
       isSet = true;
@@ -85,7 +86,7 @@ static HRESULT GetUser(IStreamGetProp *getProp,
   }
   {
     NWindows::NCOM::CPropVariant prop;
-    RINOK(getProp->GetProperty(pidName, &prop));
+    RINOK(getProp->GetProperty(pidName, &prop))
     if (prop.vt == VT_BSTR)
     {
       const UString s = prop.bstrVal;
@@ -133,7 +134,7 @@ static HRESULT GetDevice(IStreamGetProp *getProp,
 {
   defined = false;
   NWindows::NCOM::CPropVariant prop;
-  RINOK(getProp->GetProperty(pid, &prop));
+  RINOK(getProp->GetProperty(pid, &prop))
   if (prop.vt == VT_EMPTY)
     return S_OK;
   if (prop.vt == VT_UI4)
@@ -158,8 +159,10 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
   outArchive.IsPosixMode = options.PosixMode;
   outArchive.TimeOptions = options.TimeOptions;
 
-  CMyComPtr<IOutStream> outSeekStream;
-  outStream->QueryInterface(IID_IOutStream, (void **)&outSeekStream);
+  Z7_DECL_CMyComPtr_QI_FROM(IOutStream, outSeekStream, outStream)
+  Z7_DECL_CMyComPtr_QI_FROM(IStreamSetRestriction, setRestriction, outStream)
+  Z7_DECL_CMyComPtr_QI_FROM(IArchiveUpdateCallbackFile, opCallback, outStream)
+
   if (outSeekStream)
   {
     /*
@@ -169,12 +172,10 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     RINOK(outStream->Write(buf, sizeof(buf), NULL));
     */
     // we need real outArchive.Pos, if outSeekStream->SetSize() will be used.
-    RINOK(outSeekStream->Seek(0, STREAM_SEEK_CUR, &outArchive.Pos));
+    RINOK(outSeekStream->Seek(0, STREAM_SEEK_CUR, &outArchive.Pos))
   }
-
-
-  CMyComPtr<IArchiveUpdateCallbackFile> opCallback;
-  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackFile, (void **)&opCallback);
+  if (setRestriction)
+    RINOK(setRestriction->SetRestriction(0, 0))
 
   UInt64 complexity = 0;
 
@@ -188,7 +189,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       complexity += inputItems[(unsigned)ui.IndexInArc].Get_FullSize_Aligned();
   }
 
-  RINOK(updateCallback->SetTotal(complexity));
+  RINOK(updateCallback->SetTotal(complexity))
 
   NCompress::CCopyCoder *copyCoderSpec = new NCompress::CCopyCoder;
   CMyComPtr<ICompressCoder> copyCoder = copyCoderSpec;
@@ -198,7 +199,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
   lps->Init(updateCallback, true);
 
   CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
-  CMyComPtr<CLimitedSequentialInStream> inStreamLimited(streamSpec);
+  CMyComPtr<ISequentialInStream> inStreamLimited(streamSpec);
   streamSpec->SetStream(inStream);
 
   complexity = 0;
@@ -208,10 +209,14 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
   for (i = 0;; i++)
   {
     lps->InSize = lps->OutSize = complexity;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
 
     if (i == updateItems.Size())
+    {
+      if (outSeekStream && setRestriction)
+        RINOK(setRestriction->SetRestriction(0, 0))
       return outArchive.WriteFinishHeader();
+    }
 
     const CUpdateItem &ui = updateItems[i];
     CItem item;
@@ -253,7 +258,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
     if (ui.NewData || ui.NewProps)
     {
       RINOK(GetPropString(updateCallback, ui.IndexInClient, kpidSymLink, symLink,
-          options.CodePage, options.UtfFlags, true));
+          options.CodePage, options.UtfFlags, true))
       if (!symLink.IsEmpty())
       {
         item.LinkFlag = NFileHeader::NLinkFlag::kSymLink;
@@ -286,7 +291,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
           needWrite = false;
         else
         {
-          RINOK(res);
+          RINOK(res)
           
           if (!fileInStream)
           {
@@ -295,9 +300,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
           }
           else
           {
-            CMyComPtr<IStreamGetProps> getProps;
-            CMyComPtr<IStreamGetProp> getProp;
-            fileInStream->QueryInterface(IID_IStreamGetProp, (void **)&getProp);
+            Z7_DECL_CMyComPtr_QI_FROM(IStreamGetProp, getProp, fileInStream)
             if (getProp)
             {
               if (options.Write_MTime.Val) RINOK(GetTime(getProp, kpidMTime, item.PaxTimes.MTime))
@@ -312,23 +315,23 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
                 */
                 bool defined = false;
                 UInt32 val = 0;
-                RINOK(GetDevice(getProp, kpidDeviceMajor, val, defined));
+                RINOK(GetDevice(getProp, kpidDeviceMajor, val, defined))
                 if (defined)
                 {
                   item.DeviceMajor = val;
                   item.DeviceMajor_Defined = true;
                   item.DeviceMinor = 0;
                   item.DeviceMinor_Defined = false;
-                  RINOK(GetDevice(getProp, kpidDeviceMinor, item.DeviceMinor, item.DeviceMinor_Defined));
+                  RINOK(GetDevice(getProp, kpidDeviceMinor, item.DeviceMinor, item.DeviceMinor_Defined))
                 }
               }
 
-              RINOK(GetUser(getProp, kpidUser,  kpidUserId,  item.User,  item.UID, options.CodePage, options.UtfFlags));
-              RINOK(GetUser(getProp, kpidGroup, kpidGroupId, item.Group, item.GID, options.CodePage, options.UtfFlags));
+              RINOK(GetUser(getProp, kpidUser,  kpidUserId,  item.User,  item.UID, options.CodePage, options.UtfFlags))
+              RINOK(GetUser(getProp, kpidGroup, kpidGroupId, item.Group, item.GID, options.CodePage, options.UtfFlags))
 
               {
                 NWindows::NCOM::CPropVariant prop;
-                RINOK(getProp->GetProperty(kpidPosixAttrib, &prop));
+                RINOK(getProp->GetProperty(kpidPosixAttrib, &prop))
                 if (prop.vt == VT_EMPTY)
                   item.Mode =
                     MY_LIN_S_IRWXO
@@ -346,7 +349,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
 
               {
                 NWindows::NCOM::CPropVariant prop;
-                RINOK(getProp->GetProperty(kpidSize, &prop));
+                RINOK(getProp->GetProperty(kpidSize, &prop))
                 if (prop.vt != VT_UI8)
                   return E_INVALIDARG;
                 const UInt64 size = prop.uhVal.QuadPart;
@@ -361,7 +364,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
             }
             else
             {
-              fileInStream->QueryInterface(IID_IStreamGetProps, (void **)&getProps);
+              Z7_DECL_CMyComPtr_QI_FROM(IStreamGetProps, getProps, fileInStream)
               if (getProps)
               {
                 FILETIME mTime, aTime, cTime;
@@ -386,7 +389,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
             // we must request kpidHardLink after updateCallback->GetStream()
             AString hardLink;
             RINOK(GetPropString(updateCallback, ui.IndexInClient, kpidHardLink, hardLink,
-                options.CodePage, options.UtfFlags, true));
+                options.CodePage, options.UtfFlags, true))
             if (!hardLink.IsEmpty())
             {
               item.LinkFlag = NFileHeader::NLinkFlag::kHardLink;
@@ -408,7 +411,11 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       {
         const UInt64 headerPos = outArchive.Pos;
         // item.PackSize = ((UInt64)1 << 33); // for debug
-        RINOK(outArchive.WriteHeader(item));
+
+        if (outSeekStream && setRestriction)
+          RINOK(setRestriction->SetRestriction(outArchive.Pos, (UInt64)(Int64)-1))
+
+        RINOK(outArchive.WriteHeader(item))
         if (fileInStream)
         {
           for (unsigned numPasses = 0;; numPasses++)
@@ -424,9 +431,9 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
             }
             
             const UInt64 dataPos = outArchive.Pos;
-            RINOK(copyCoder->Code(fileInStream, outStream, NULL, NULL, progress));
+            RINOK(copyCoder->Code(fileInStream, outStream, NULL, NULL, progress))
             outArchive.Pos += copyCoderSpec->TotalSize;
-            RINOK(outArchive.Write_AfterDataResidual(copyCoderSpec->TotalSize));
+            RINOK(outArchive.Write_AfterDataResidual(copyCoderSpec->TotalSize))
             
             // if (numPasses >= 10) // for debug
             if (copyCoderSpec->TotalSize == item.PackSize)
@@ -442,11 +449,11 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
             if (!outSeekStream)
               return E_FAIL;
             const UInt64 nextPos = outArchive.Pos;
-            RINOK(outSeekStream->Seek(-(Int64)(nextPos - headerPos), STREAM_SEEK_CUR, NULL));
+            RINOK(outSeekStream->Seek(-(Int64)(nextPos - headerPos), STREAM_SEEK_CUR, NULL))
             outArchive.Pos = headerPos;
             item.PackSize = copyCoderSpec->TotalSize;
             
-            RINOK(outArchive.WriteHeader(item));
+            RINOK(outArchive.WriteHeader(item))
             
             // if (numPasses >= 10) // for debug
             if (outArchive.Pos == dataPos)
@@ -454,7 +461,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
               const UInt64 alignedSize = nextPos - dataPos;
               if (alignedSize != 0)
               {
-                RINOK(outSeekStream->Seek(alignedSize, STREAM_SEEK_CUR, NULL));
+                RINOK(outSeekStream->Seek((Int64)alignedSize, STREAM_SEEK_CUR, NULL))
                 outArchive.Pos += alignedSize;
               }
               break;
@@ -462,12 +469,11 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
             
             // size of header was changed.
             // we remove data after header and try new attempt, if required
-            CMyComPtr<IInStream> fileSeekStream;
-            fileInStream->QueryInterface(IID_IInStream, (void **)&fileSeekStream);
+            Z7_DECL_CMyComPtr_QI_FROM(IInStream, fileSeekStream, fileInStream)
             if (!fileSeekStream)
               return E_FAIL;
-            RINOK(fileSeekStream->Seek(0, STREAM_SEEK_SET, NULL));
-            RINOK(outSeekStream->SetSize(outArchive.Pos));
+            RINOK(InStream_SeekToBegin(fileSeekStream))
+            RINOK(outSeekStream->SetSize(outArchive.Pos))
             if (item.PackSize == 0)
               break;
           }
@@ -476,7 +482,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
       
       complexity += item.PackSize;
       fileInStream.Release();
-      RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK));
+      RINOK(updateCallback->SetOperationResult(NArchive::NUpdate::NOperationResult::kOK))
     }
     else
     {
@@ -518,7 +524,7 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
         item.UID = existItem.UID;
         item.GID = existItem.GID;
         
-        RINOK(outArchive.WriteHeader(item));
+        RINOK(outArchive.WriteHeader(item))
         size = existItem.Get_PackSize_Aligned();
         pos = existItem.Get_DataPos();
       }
@@ -530,10 +536,12 @@ HRESULT UpdateArchive(IInStream *inStream, ISequentialOutStream *outStream,
 
       if (size != 0)
       {
-        RINOK(inStream->Seek((Int64)pos, STREAM_SEEK_SET, NULL));
+        RINOK(InStream_SeekSet(inStream, pos))
         streamSpec->Init(size);
+        if (outSeekStream && setRestriction)
+          RINOK(setRestriction->SetRestriction(0, 0))
         // 22.00 : we copy Residual data from old archive to new archive instead of zeroing
-        RINOK(copyCoder->Code(inStreamLimited, outStream, NULL, NULL, progress));
+        RINOK(copyCoder->Code(inStreamLimited, outStream, NULL, NULL, progress))
         if (copyCoderSpec->TotalSize != size)
           return E_FAIL;
         outArchive.Pos += size;

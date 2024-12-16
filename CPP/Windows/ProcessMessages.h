@@ -1,7 +1,7 @@
 // Windows/ProcessMessages.h
 
-#ifndef __WINDOWS_PROCESSMESSAGES_H
-#define __WINDOWS_PROCESSMESSAGES_H
+#ifndef ZIP7_INC_WINDOWS_PROCESS_MESSAGES_H
+#define ZIP7_INC_WINDOWS_PROCESS_MESSAGES_H
 
 namespace NWindows {
 

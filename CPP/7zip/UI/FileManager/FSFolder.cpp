@@ -2,15 +2,24 @@
 
 #include "StdAfx.h"
 
-#if defined(_MSC_VER)
-#include <winternl.h>
+#ifdef __MINGW32_VERSION
+// #if !defined(_MSC_VER) && (__GNUC__) && (__GNUC__ < 10)
+// for old mingw
+#include <ddk/ntddk.h>
 #else
-#if defined(__GNUC__) && (__GNUC__ >= 10)
-    // new mingw:
+#ifndef Z7_OLD_WIN_SDK
+  #if !defined(_M_IA64)
     #include <winternl.h>
+  #endif
 #else
-    // old mingw:
-    #include <ddk/winddk.h>
+typedef LONG NTSTATUS;
+typedef struct _IO_STATUS_BLOCK {
+    union {
+        NTSTATUS Status;
+        PVOID Pointer;
+    };
+    ULONG_PTR Information;
+} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 #endif
 #endif
 
@@ -106,7 +115,7 @@ HRESULT CFSFolder::Init(const FString &path /* , IFolderFolder *parentFolder */)
 
   if (!_findChangeNotification.IsHandleAllocated())
   {
-    DWORD lastError = GetLastError();
+    const HRESULT lastError = GetLastError_noZero_HRESULT();
     CFindFile findFile;
     CFileInfo fi;
     FString path2 = _path;
@@ -125,7 +134,7 @@ HRESULT CFsFolderStat::Enumerate()
 {
   if (Progress)
   {
-    RINOK(Progress->SetCompleted(NULL));
+    RINOK(Progress->SetCompleted(NULL))
   }
   Path.Add_PathSepar();
   const unsigned len = Path.Len();
@@ -139,7 +148,7 @@ HRESULT CFsFolderStat::Enumerate()
       NumFolders++;
       Path.DeleteFrom(len);
       Path += fi.Name;
-      RINOK(Enumerate());
+      RINOK(Enumerate())
     }
     else
     {
@@ -166,7 +175,7 @@ bool MyGetCompressedFileSizeW(CFSTR path, UInt64 &size)
       return true;
     }
   }
-  #ifdef WIN_LONG_PATH
+  #ifdef Z7_LONG_PATH
   if (USE_SUPER_PATH)
   {
     UString superPath;
@@ -285,16 +294,16 @@ HRESULT CFSFolder::LoadSubItems(int dirItem, const FString &relPrefix)
 
   const unsigned endIndex = Folders.Size();
   for (unsigned i = startIndex; i < endIndex; i++)
-    LoadSubItems(i, Folders[i]);
+    LoadSubItems((int)i, Folders[i]);
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::LoadItems()
+Z7_COM7F_IMF(CFSFolder::LoadItems())
 {
   Int32 dummy;
   WasChanged(&dummy);
   Clear();
-  RINOK(LoadSubItems(-1, FString()));
+  RINOK(LoadSubItems(-1, FString()))
   _commentsAreLoaded = false;
   return S_OK;
 }
@@ -356,7 +365,7 @@ bool CFSFolder::SaveComments()
   return true;
 }
 
-STDMETHODIMP CFSFolder::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CFSFolder::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = Files.Size() /* + Streams.Size() */;
   return S_OK;
@@ -364,9 +373,9 @@ STDMETHODIMP CFSFolder::GetNumberOfItems(UInt32 *numItems)
 
 #ifdef USE_UNICODE_FSTRING
 
-STDMETHODIMP CFSFolder::GetItemPrefix(UInt32 index, const wchar_t **name, unsigned *len)
+Z7_COM7F_IMF(CFSFolder::GetItemPrefix(UInt32 index, const wchar_t **name, unsigned *len))
 {
-  *name = 0;
+  *name = NULL;
   *len = 0;
   /*
   if (index >= Files.Size())
@@ -383,9 +392,9 @@ STDMETHODIMP CFSFolder::GetItemPrefix(UInt32 index, const wchar_t **name, unsign
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetItemName(UInt32 index, const wchar_t **name, unsigned *len)
+Z7_COM7F_IMF(CFSFolder::GetItemName(UInt32 index, const wchar_t **name, unsigned *len))
 {
-  *name = 0;
+  *name = NULL;
   *len = 0;
   if (index < Files.Size())
   {
@@ -405,7 +414,7 @@ STDMETHODIMP CFSFolder::GetItemName(UInt32 index, const wchar_t **name, unsigned
   return S_OK;
 }
 
-STDMETHODIMP_(UInt64) CFSFolder::GetItemSize(UInt32 index)
+Z7_COM7F_IMF2(UInt64, CFSFolder::GetItemSize(UInt32 index))
 {
   /*
   if (index >= Files.Size())
@@ -434,6 +443,8 @@ bool CFSFolder::ReadFileInfo(CDirItem &di)
 }
 
 
+EXTERN_C_BEGIN
+
 typedef struct
 {
   LARGE_INTEGER CreationTime;
@@ -443,27 +454,47 @@ typedef struct
   ULONG FileAttributes;
   UInt32 Reserved; // it's expected for alignment
 }
-MY__FILE_BASIC_INFORMATION;
+Z7_WIN_FILE_BASIC_INFORMATION;
 
 
 typedef enum
 {
-  MY__FileDirectoryInformation = 1,
-  MY__FileFullDirectoryInformation,
-  MY__FileBothDirectoryInformation,
-  MY__FileBasicInformation
+  Z7_WIN_FileDirectoryInformation = 1,
+  Z7_WIN_FileFullDirectoryInformation,
+  Z7_WIN_FileBothDirectoryInformation,
+  Z7_WIN_FileBasicInformation
 }
-MY__FILE_INFORMATION_CLASS;
+Z7_WIN_FILE_INFORMATION_CLASS;
 
 
-typedef NTSTATUS (WINAPI * Func_NtQueryInformationFile)(
-    HANDLE handle, IO_STATUS_BLOCK *io,
-    void *ptr, LONG len, MY__FILE_INFORMATION_CLASS cls);
+#if (_WIN32_WINNT >= 0x0500) && !defined(_M_IA64)
+#define Z7_WIN_NTSTATUS  NTSTATUS
+#define Z7_WIN_IO_STATUS_BLOCK  IO_STATUS_BLOCK
+#else
+typedef LONG Z7_WIN_NTSTATUS;
+typedef struct
+{
+  union
+  {
+    Z7_WIN_NTSTATUS Status;
+    PVOID Pointer;
+  } DUMMYUNIONNAME;
+  ULONG_PTR Information;
+} Z7_WIN_IO_STATUS_BLOCK;
+#endif
 
-#define MY__STATUS_SUCCESS 0
+
+typedef Z7_WIN_NTSTATUS (WINAPI * Func_NtQueryInformationFile)(
+    HANDLE handle, Z7_WIN_IO_STATUS_BLOCK *io,
+    void *ptr, LONG len, Z7_WIN_FILE_INFORMATION_CLASS cls);
+
+#define MY_STATUS_SUCCESS 0
+
+EXTERN_C_END
 
 static Func_NtQueryInformationFile f_NtQueryInformationFile;
 static bool g_NtQueryInformationFile_WasRequested = false;
+
 
 void CFSFolder::ReadChangeTime(CDirItem &di)
 {
@@ -471,9 +502,9 @@ void CFSFolder::ReadChangeTime(CDirItem &di)
 
   if (!g_NtQueryInformationFile_WasRequested)
   {
-    g_NtQueryInformationFile_WasRequested = true;
-    f_NtQueryInformationFile = (Func_NtQueryInformationFile)
-        My_GetProcAddress(::GetModuleHandleW(L"ntdll.dll"),
+       g_NtQueryInformationFile_WasRequested = true;
+       f_NtQueryInformationFile = Z7_GET_PROC_ADDRESS(
+    Func_NtQueryInformationFile, ::GetModuleHandleW(L"ntdll.dll"),
         "NtQueryInformationFile");
   }
   if (!f_NtQueryInformationFile)
@@ -482,23 +513,23 @@ void CFSFolder::ReadChangeTime(CDirItem &di)
   NIO::CInFile file;
   if (!file.Open_for_ReadAttributes(_path + GetRelPath(di)))
     return;
-  MY__FILE_BASIC_INFORMATION fbi;
-  IO_STATUS_BLOCK IoStatusBlock;
-  const NTSTATUS status = f_NtQueryInformationFile(file.GetHandle(), &IoStatusBlock,
-      &fbi, sizeof(fbi), MY__FileBasicInformation);
-  if (status != MY__STATUS_SUCCESS)
+  Z7_WIN_FILE_BASIC_INFORMATION fbi;
+  Z7_WIN_IO_STATUS_BLOCK IoStatusBlock;
+  const Z7_WIN_NTSTATUS status = f_NtQueryInformationFile(file.GetHandle(), &IoStatusBlock,
+      &fbi, sizeof(fbi), Z7_WIN_FileBasicInformation);
+  if (status != MY_STATUS_SUCCESS)
     return;
   if (IoStatusBlock.Information != sizeof(fbi))
     return;
   di.ChangeTime.dwLowDateTime = fbi.ChangeTime.u.LowPart;
-  di.ChangeTime.dwHighDateTime = fbi.ChangeTime.u.HighPart;
+  di.ChangeTime.dwHighDateTime = (DWORD)fbi.ChangeTime.u.HighPart;
   di.ChangeTime_Defined = true;
 }
 
 #endif // FS_SHOW_LINKS_INFO
 
 
-STDMETHODIMP CFSFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CFSFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   NCOM::CPropVariant prop;
   /*
@@ -622,34 +653,32 @@ STDMETHODIMP CFSFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *va
 // ---------- IArchiveGetRawProps ----------
 
 
-STDMETHODIMP CFSFolder::GetNumRawProps(UInt32 *numProps)
+Z7_COM7F_IMF(CFSFolder::GetNumRawProps(UInt32 *numProps))
 {
   *numProps = 1;
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetRawPropInfo(UInt32 /* index */, BSTR *name, PROPID *propID)
+Z7_COM7F_IMF(CFSFolder::GetRawPropInfo(UInt32 /* index */, BSTR *name, PROPID *propID))
 {
   *name = NULL;
   *propID = kpidNtReparse;
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetParent(UInt32 /* index */, UInt32 * /* parent */, UInt32 * /* parentType */)
+Z7_COM7F_IMF(CFSFolder::GetParent(UInt32 /* index */, UInt32 * /* parent */, UInt32 * /* parentType */))
 {
   return E_FAIL;
 }
 
-STDMETHODIMP CFSFolder::GetRawProp(UInt32
-  #ifndef UNDER_CE
-  index
-  #endif
-  , PROPID
-  #ifndef UNDER_CE
-  propID
-  #endif
-  , const void **data, UInt32 *dataSize, UInt32 *propType)
+Z7_COM7F_IMF(CFSFolder::GetRawProp(UInt32 index, PROPID propID,
+    const void **data, UInt32 *dataSize, UInt32 *propType))
 {
+  #ifdef UNDER_CE
+  UNUSED(index)
+  UNUSED(propID)
+  #endif
+
   *data = NULL;
   *dataSize = 0;
   *propType = 0;
@@ -676,11 +705,11 @@ STDMETHODIMP CFSFolder::GetRawProp(UInt32
 
 static inline CFSTR GetExtensionPtr(const FString &name)
 {
-  int dotPos = name.ReverseFind_Dot();
-  return name.Ptr((dotPos < 0) ? name.Len() : dotPos);
+  const int dotPos = name.ReverseFind_Dot();
+  return name.Ptr((dotPos < 0) ? name.Len() : (unsigned)dotPos);
 }
 
-STDMETHODIMP_(Int32) CFSFolder::CompareItems(UInt32 index1, UInt32 index2, PROPID propID, Int32 /* propIsRaw */)
+Z7_COM7F_IMF2(Int32, CFSFolder::CompareItems(UInt32 index1, UInt32 index2, PROPID propID, Int32 /* propIsRaw */))
 {
   /*
   const CAltStream *ss1 = NULL;
@@ -695,7 +724,7 @@ STDMETHODIMP_(Int32) CFSFolder::CompareItems(UInt32 index1, UInt32 index2, PROPI
   {
     case kpidName:
     {
-      int comp = CompareFileNames_ForFolderList(fi1.Name, fi2.Name);
+      const int comp = CompareFileNames_ForFolderList(fi1.Name, fi2.Name);
       /*
       if (comp != 0)
         return comp;
@@ -783,10 +812,10 @@ STDMETHODIMP_(Int32) CFSFolder::CompareItems(UInt32 index1, UInt32 index2, PROPI
 
 HRESULT CFSFolder::BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder)
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   CFSFolder *folderSpec = new CFSFolder;
   CMyComPtr<IFolderFolder> subFolder = folderSpec;
-  RINOK(folderSpec->Init(_path + name + FCHAR_PATH_SEPARATOR));
+  RINOK(folderSpec->Init(_path + name + FCHAR_PATH_SEPARATOR))
   *resultFolder = subFolder.Detach();
   return S_OK;
 }
@@ -836,23 +865,23 @@ FString CFSFolder::GetRelPath(const CDirItem &item) const
   return Folders[item.Parent] + item.Name;
 }
 
-STDMETHODIMP CFSFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CFSFolder::BindToFolder(UInt32 index, IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   const CDirItem &fi = Files[index];
   if (!fi.IsDir())
     return E_INVALIDARG;
   return BindToFolderSpec(GetRelPath(fi), resultFolder);
 }
 
-STDMETHODIMP CFSFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CFSFolder::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder))
 {
   return BindToFolderSpec(us2fs(name), resultFolder);
 }
 
-STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CFSFolder::BindToParentFolder(IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   /*
   if (_parentFolder)
   {
@@ -914,17 +943,17 @@ STDMETHODIMP CFSFolder::BindToParentFolder(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetNumberOfProperties(UInt32 *numProperties)
+Z7_COM7F_IMF(CFSFolder::GetNumberOfProperties(UInt32 *numProperties))
 {
-  *numProperties = ARRAY_SIZE(kProps);
+  *numProperties = Z7_ARRAY_SIZE(kProps);
   if (!_flatMode)
     (*numProperties)--;
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetPropertyInfo IMP_IFolderFolder_GetProp(kProps)
+IMP_IFolderFolder_GetProp(CFSFolder::GetPropertyInfo, kProps)
 
-STDMETHODIMP CFSFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CFSFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -938,7 +967,7 @@ STDMETHODIMP CFSFolder::GetFolderProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-STDMETHODIMP CFSFolder::WasChanged(Int32 *wasChanged)
+Z7_COM7F_IMF(CFSFolder::WasChanged(Int32 *wasChanged))
 {
   bool wasChangedMain = false;
 
@@ -961,7 +990,7 @@ STDMETHODIMP CFSFolder::WasChanged(Int32 *wasChanged)
   return S_OK;
 }
  
-STDMETHODIMP CFSFolder::Clone(IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CFSFolder::Clone(IFolderFolder **resultFolder))
 {
   CFSFolder *fsFolderSpec = new CFSFolder;
   CMyComPtr<IFolderFolder> folderNew = fsFolderSpec;
@@ -970,35 +999,6 @@ STDMETHODIMP CFSFolder::Clone(IFolderFolder **resultFolder)
   return S_OK;
 }
 
-HRESULT CFSFolder::GetItemsFullSize(const UInt32 *indices, UInt32 numItems, CFsFolderStat &stat)
-{
-  for (UInt32 i = 0; i < numItems; i++)
-  {
-    UInt32 index = indices[i];
-    /*
-    if (index >= Files.Size())
-    {
-      size += Streams[index - Files.Size()].Size;
-      // numFiles++;
-      continue;
-    }
-    */
-    const CDirItem &fi = Files[index];
-    if (fi.IsDir())
-    {
-      stat.Path = _path;
-      stat.Path += GetRelPath(fi);
-      RINOK(stat.Enumerate());
-      stat.NumFolders++;
-    }
-    else
-    {
-      stat.NumFiles++;
-      stat.Size += fi.Size;
-    }
-  }
-  return S_OK;
-}
 
 /*
 HRESULT CFSFolder::GetItemFullSize(unsigned index, UInt64 &size, IProgress *progress)
@@ -1019,7 +1019,7 @@ HRESULT CFSFolder::GetItemFullSize(unsigned index, UInt64 &size, IProgress *prog
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgress *progress)
+Z7_COM7F_IMF(CFSFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgress *progress)
 {
   NCOM::CPropVariant prop;
   UInt64 size = 0;
@@ -1030,7 +1030,7 @@ STDMETHODIMP CFSFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgr
 }
 */
 
-STDMETHODIMP CFSFolder::CalcItemFullSize(UInt32 index, IProgress *progress)
+Z7_COM7F_IMF(CFSFolder::CalcItemFullSize(UInt32 index, IProgress *progress))
 {
   if (index >= (UInt32)Files.Size())
     return S_OK;
@@ -1038,7 +1038,7 @@ STDMETHODIMP CFSFolder::CalcItemFullSize(UInt32 index, IProgress *progress)
   if (!fi.IsDir())
     return S_OK;
   CFsFolderStat stat(_path + GetRelPath(fi), progress);
-  RINOK(stat.Enumerate());
+  RINOK(stat.Enumerate())
   fi.Size = stat.Size;
   fi.NumFolders = stat.NumFolders;
   fi.NumFiles = stat.NumFiles;
@@ -1054,30 +1054,29 @@ void CFSFolder::GetAbsPath(const wchar_t *name, FString &absPath)
   absPath += us2fs(name);
 }
 
-STDMETHODIMP CFSFolder::CreateFolder(const wchar_t *name, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSFolder::CreateFolder(const wchar_t *name, IProgress * /* progress */))
 {
   FString absPath;
   GetAbsPath(name, absPath);
   if (CreateDir(absPath))
     return S_OK;
-  if (::GetLastError() == ERROR_ALREADY_EXISTS)
-    return ::GetLastError();
-  if (!CreateComplexDir(absPath))
-    return ::GetLastError();
-  return S_OK;
+  if (::GetLastError() != ERROR_ALREADY_EXISTS)
+    if (CreateComplexDir(absPath))
+      return S_OK;
+  return GetLastError_noZero_HRESULT();
 }
 
-STDMETHODIMP CFSFolder::CreateFile(const wchar_t *name, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSFolder::CreateFile(const wchar_t *name, IProgress * /* progress */))
 {
   FString absPath;
   GetAbsPath(name, absPath);
   NIO::COutFile outFile;
   if (!outFile.Create(absPath, false))
-    return ::GetLastError();
+    return GetLastError_noZero_HRESULT();
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress * /* progress */))
 {
   if (index >= (UInt32)Files.Size())
     return E_NOTIMPL;
@@ -1088,13 +1087,13 @@ STDMETHODIMP CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *
   if (fi.Parent >= 0)
     fullPrefix += Folders[fi.Parent];
   if (!MyMoveFile(fullPrefix + fi.Name, fullPrefix + us2fs(newName)))
-    return GetLastError();
+    return GetLastError_noZero_HRESULT();
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress *progress)
+Z7_COM7F_IMF(CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress *progress))
 {
-  RINOK(progress->SetTotal(numItems));
+  RINOK(progress->SetTotal(numItems))
   // int prevDeletedFileIndex = -1;
   for (UInt32 i = 0; i < numItems; i++)
   {
@@ -1123,15 +1122,15 @@ STDMETHODIMP CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress 
         result = DeleteFileAlways(fullPath);
     }
     if (!result)
-      return GetLastError();
-    UInt64 completed = i;
-    RINOK(progress->SetCompleted(&completed));
+      return GetLastError_noZero_HRESULT();
+    const UInt64 completed = i;
+    RINOK(progress->SetCompleted(&completed))
   }
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::SetProperty(UInt32 index, PROPID propID,
-    const PROPVARIANT *value, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSFolder::SetProperty(UInt32 index, PROPID propID,
+    const PROPVARIANT *value, IProgress * /* progress */))
 {
   if (index >= (UInt32)Files.Size())
     return E_INVALIDARG;
@@ -1169,7 +1168,7 @@ STDMETHODIMP CFSFolder::SetProperty(UInt32 index, PROPID propID,
   return S_OK;
 }
 
-STDMETHODIMP CFSFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
+Z7_COM7F_IMF(CFSFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex))
 {
   if (index >= (UInt32)Files.Size())
     return E_INVALIDARG;
@@ -1181,17 +1180,17 @@ STDMETHODIMP CFSFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
     *iconIndex = iconIndexTemp;
     return S_OK;
   }
-  return GetLastError();
+  return GetLastError_noZero_HRESULT();
 }
 
-STDMETHODIMP CFSFolder::SetFlatMode(Int32 flatMode)
+Z7_COM7F_IMF(CFSFolder::SetFlatMode(Int32 flatMode))
 {
   _flatMode = IntToBool(flatMode);
   return S_OK;
 }
 
 /*
-STDMETHODIMP CFSFolder::SetShowNtfsStreamsMode(Int32 showStreamsMode)
+Z7_COM7F_IMF(CFSFolder::SetShowNtfsStreamsMode(Int32 showStreamsMode)
 {
   _scanAltStreams = IntToBool(showStreamsMode);
   return S_OK;

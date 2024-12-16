@@ -1,7 +1,7 @@
 // Archive/ZipItem.h
 
-#ifndef __ARCHIVE_ZIP_ITEM_H
-#define __ARCHIVE_ZIP_ITEM_H
+#ifndef ZIP7_INC_ARCHIVE_ZIP_ITEM_H
+#define ZIP7_INC_ARCHIVE_ZIP_ITEM_H
 
 #include "../../../../C/CpuArch.h"
 

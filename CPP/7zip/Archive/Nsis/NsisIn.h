@@ -1,7 +1,7 @@
 // NsisIn.h
 
-#ifndef __ARCHIVE_NSIS_IN_H
-#define __ARCHIVE_NSIS_IN_H
+#ifndef ZIP7_INC_ARCHIVE_NSIS_IN_H
+#define ZIP7_INC_ARCHIVE_NSIS_IN_H
 
 #include "../../../../C/CpuArch.h"
 
@@ -10,6 +10,8 @@
 #include "../../../Common/MyCom.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/UTFConvert.h"
+
+#include "../../Common/StreamUtils.h"
 
 #include "NsisDecode.h"
 
@@ -68,6 +70,7 @@ struct CBlockHeader
 
 struct CItem
 {
+  bool IsEmptyFile;
   bool IsCompressed;
   bool Size_Defined;
   bool CompressedSize_Defined;
@@ -77,7 +80,7 @@ struct CItem
   // bool UseFilter;
   
   UInt32 Attrib;
-  UInt32 Pos;
+  UInt32 Pos;       // = 0, if (IsEmptyFile == true)
   UInt32 Size;
   UInt32 CompressedSize;
   UInt32 EstimatedSize;
@@ -89,7 +92,10 @@ struct CItem
   AString NameA;
   UString NameU;
   
+  bool Is_PatchedUninstaller() const { return PatchSize != 0; }
+  
   CItem():
+      IsEmptyFile(false),
       IsCompressed(true),
       Size_Defined(false),
       CompressedSize_Defined(false),
@@ -354,7 +360,7 @@ public:
 
   HRESULT SeekTo(UInt64 pos)
   {
-    return _stream->Seek(pos, STREAM_SEEK_SET, NULL);
+    return InStream_SeekSet(_stream, pos);
   }
 
   HRESULT SeekTo_DataStreamOffset()
@@ -433,7 +439,7 @@ public:
       if (s[0] == L'\\')
         s.DeleteFrontal(1);
     }
-    if (item.IsUninstaller && ExeStub.Size() == 0)
+    if (item.Is_PatchedUninstaller() && ExeStub.Size() == 0)
       s += ".nsis";
     return s;
   }

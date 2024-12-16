@@ -1,7 +1,7 @@
 // CabBlockInStream.h
 
-#ifndef __CAB_BLOCK_IN_STREAM_H
-#define __CAB_BLOCK_IN_STREAM_H
+#ifndef ZIP7_INC_CAB_BLOCK_IN_STREAM_H
+#define ZIP7_INC_CAB_BLOCK_IN_STREAM_H
 
 #include "../../../Common/MyCom.h"
 #include "../../IStream.h"
@@ -9,10 +9,10 @@
 namespace NArchive {
 namespace NCab {
 
-class CCabBlockInStream:
-  public ISequentialInStream,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_1(
+  CCabBlockInStream
+  , ISequentialInStream
+)
   Byte *_buf;
   UInt32 _size;
   UInt32 _pos;
@@ -21,9 +21,7 @@ public:
   UInt32 ReservedSize; // < 256
   bool MsZip;
 
-  MY_UNKNOWN_IMP
-
-  CCabBlockInStream(): _buf(0), ReservedSize(0), MsZip(false) {}
+  CCabBlockInStream(): _buf(NULL), ReservedSize(0), MsZip(false) {}
   ~CCabBlockInStream();
   
   bool Create();
@@ -34,8 +32,6 @@ public:
 
   UInt32 GetPackSizeAvail() const { return _size - _pos; }
   const Byte *GetData() const { return _buf + _pos; }
-
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 }}

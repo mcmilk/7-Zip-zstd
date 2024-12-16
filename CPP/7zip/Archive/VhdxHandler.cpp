@@ -20,8 +20,8 @@
 #define Get32(p) GetUi32(p)
 #define Get64(p) GetUi64(p)
 
-#define G32(_offs_, dest) dest = Get32(p + (_offs_));
-#define G64(_offs_, dest) dest = Get64(p + (_offs_));
+#define G32(_offs_, dest) dest = Get32(p + (_offs_))
+#define G64(_offs_, dest) dest = Get64(p + (_offs_))
 
 using namespace NWindows;
 
@@ -33,7 +33,7 @@ EXTERN_C_BEGIN
 
 static UInt32 g_Crc32c_Table[256];
 
-static void MY_FAST_CALL Crc32c_GenerateTable()
+static void Z7_FASTCALL Crc32c_GenerateTable()
 {
   UInt32 i;
   for (i = 0; i < 256; i++)
@@ -46,13 +46,24 @@ static void MY_FAST_CALL Crc32c_GenerateTable()
   }
 }
 
-UInt32 MY_FAST_CALL CrcUpdateT1(UInt32 v, const void *data, size_t size, const UInt32 *table);
 
 #define CRC32C_INIT_VAL 0xFFFFFFFF
 
-static UInt32 MY_FAST_CALL Crc32c_Calc(const void *data, size_t size)
+#define CRC_UPDATE_BYTE_2(crc, b) (table[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
+
+// UInt32 Z7_FASTCALL CrcUpdateT1(UInt32 v, const void *data, size_t size, const UInt32 *table);
+static UInt32 Z7_FASTCALL CrcUpdateT1_vhdx(UInt32 v, const void *data, size_t size, const UInt32 *table)
 {
-  return CrcUpdateT1(CRC32C_INIT_VAL, data, size, g_Crc32c_Table) ^ CRC32C_INIT_VAL;
+  const Byte *p = (const Byte *)data;
+  const Byte *pEnd = p + size;
+  for (; p != pEnd; p++)
+    v = CRC_UPDATE_BYTE_2(v, *p);
+  return v;
+}
+
+static UInt32 Z7_FASTCALL Crc32c_Calc(const void *data, size_t size)
+{
+  return CrcUpdateT1_vhdx(CRC32C_INIT_VAL, data, size, g_Crc32c_Table) ^ CRC32C_INIT_VAL;
 }
 
 EXTERN_C_END
@@ -61,12 +72,11 @@ EXTERN_C_END
 namespace NArchive {
 namespace NVhdx {
 
-static struct C_CRC32c_TableInit { C_CRC32c_TableInit() { Crc32c_GenerateTable(); } } g__CRC32c_TableInit;
+static struct C_CRC32c_TableInit { C_CRC32c_TableInit() { Crc32c_GenerateTable(); } } g_CRC32c_TableInit;
 
-#define SIGNATURE { 'v', 'h', 'd', 'x', 'f', 'i', 'l', 'e' }
-  
 static const unsigned kSignatureSize = 8;
-static const Byte kSignature[kSignatureSize] = SIGNATURE;
+static const Byte kSignature[kSignatureSize] =
+  { 'v', 'h', 'd', 'x', 'f', 'i', 'l', 'e' };
 
 static const unsigned kBitmapSize_Log = 20;
 static const size_t kBitmapSize = (size_t)1 << kBitmapSize_Log;
@@ -105,7 +115,7 @@ static int DecodeFrom2HexChars(const wchar_t *s)
 {
   const int v0 = HexToVal(s[0]);  if (v0 < 0)  return -1;
   const int v1 = HexToVal(s[1]);  if (v1 < 0)  return -1;
-  return ((unsigned)v0 << 4) | (unsigned)v1;
+  return (int)(((unsigned)v0 << 4) | (unsigned)v1);
 }
 
 
@@ -183,7 +193,7 @@ struct CHeader
       if (!Guids[i].IsEqualTo(h.Guids[i]))
         return false;
     return true;
-  };
+  }
 
   bool Parse(Byte *p);
 };
@@ -195,7 +205,7 @@ bool CHeader::Parse(Byte *p)
   if (Get32(p) != 0x64616568) // "head"
     return false;
   const UInt32 crc = Get32(p + 4);
-  SetUi32(p + 4, 0);
+  SetUi32(p + 4, 0)
   if (Crc32c_Calc(p, kHeader2Size) != crc)
     return false;
   G64(8, SequenceNumber);
@@ -277,7 +287,7 @@ bool CRegion::Parse(Byte *p)
   if (Get32(p) != 0x69676572) // "regi"
     return false;
   const UInt32 crc = Get32(p + 4);
-  SetUi32(p + 4, 0);
+  SetUi32(p + 4, 0)
   const UInt32 crc_calced = Crc32c_Calc(p, kRegionSize);
   if (crc_calced != crc)
     return false;
@@ -372,7 +382,7 @@ bool CMetaEntry::Parse(const Byte *p)
   if ((Flags1 & 3) != 0) // Reserved2
     return false;
   return true;
-};
+}
   
 
 struct CParentPair
@@ -406,7 +416,7 @@ struct CMetaHeader
     {
       const CParentPair &pair = ParentPairs[i];
       if (pair.Key.IsEqualTo(name))
-        return i;
+        return (int)i;
     }
     return -1;
   }
@@ -628,7 +638,7 @@ struct CBat
 
 
 
-class CHandler: public CHandlerImg
+Z7_class_CHandler_final: public CHandlerImg
 {
   UInt64 _phySize;
 
@@ -657,11 +667,11 @@ class CHandler: public CHandlerImg
   CMyComPtr<IInStream> ParentStream;
   CHandler *Parent;
   UString _errorMessage;
-  UString _Creator;
+  UString _creator;
 
   bool _nonEmptyLog;
   bool _isDataContiguous;
-  // bool _BatOverlap;
+  // bool _batOverlap;
 
   CGuid _parentGuid;
   bool _parentGuid_IsDefined;
@@ -756,15 +766,15 @@ class CHandler: public CHandlerImg
   bool CheckBat();
 
   HRESULT Open3();
-  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openArchiveCallback);
+  HRESULT Open2(IInStream *stream, IArchiveOpenCallback *openArchiveCallback) Z7_override;
   HRESULT OpenParent(IArchiveOpenCallback *openArchiveCallback, bool &_parentFileWasOpen);
-  virtual void CloseAtError();
+  virtual void CloseAtError() Z7_override;
 
 public:
-  INTERFACE_IInArchive_Img(;)
+  Z7_IFACE_COM7_IMP(IInArchive_Img)
 
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+  Z7_IFACE_COM7_IMP(IInArchiveGetStream)
+  Z7_IFACE_COM7_IMP(ISequentialInStream)
 
   CHandler():
     _child(NULL),
@@ -777,7 +787,7 @@ public:
 
 HRESULT CHandler::Seek2(UInt64 offset)
 {
-  return Stream->Seek(offset, STREAM_SEEK_SET, NULL);
+  return InStream_SeekSet(Stream, offset);
 }
 
 
@@ -833,8 +843,8 @@ HRESULT CHandler::ReadPhy(UInt64 offset, void *data, UInt32 size, UInt32 &proces
 #define SB_BLOCK_NOT_PRESENT 0
 #define SB_BLOCK_PRESENT     6
 
-#define BAT_GET_OFFSET(v) ((v) & ~(UInt64)0xFFFFF);
-#define BAT_GET_STATE(v)  ((UInt32)(v) & 7);
+#define BAT_GET_OFFSET(v) ((v) & ~(UInt64)0xFFFFF)
+#define BAT_GET_STATE(v)  ((UInt32)(v) & 7)
 
 /* The log contains only   updates to metadata, bat and region tables
    The log doesn't contain updates to start header, and 2 headers (first 192 KB of file).
@@ -1154,10 +1164,10 @@ bool CHandler::CheckBat()
 HRESULT CHandler::Open3()
 {
   {
-    static const unsigned kHeaderSize = 512; // + 8
+    const unsigned kHeaderSize = 512; // + 8
     Byte header[kHeaderSize];
     
-    RINOK(Read_FALSE(header, kHeaderSize));
+    RINOK(Read_FALSE(header, kHeaderSize))
 
     if (memcmp(header, kSignature, kSignatureSize) != 0)
       return S_FALSE;
@@ -1168,7 +1178,7 @@ HRESULT CHandler::Open3()
       const wchar_t c = Get16(p + i);
       if (c < 0x20 || c > 0x7F)
         break;
-      _Creator += c;
+      _creator += c;
     }
   }
 
@@ -1178,8 +1188,8 @@ HRESULT CHandler::Open3()
     Byte header[kHeader2Size];
     for (unsigned i = 0; i < 2; i++)
     {
-      RINOK(Seek2((1 << 16) * (1 + i)));
-      RINOK(Read_FALSE(header, kHeader2Size));
+      RINOK(Seek2((1 << 16) * (1 + i)))
+      RINOK(Read_FALSE(header, kHeader2Size))
       bool headerIsOK = headers[i].Parse(header);
       if (!headerIsOK)
         return S_FALSE;
@@ -1233,8 +1243,8 @@ HRESULT CHandler::Open3()
   {
     CByteBuffer temp;
     temp.Alloc(kRegionSize * 2);
-    RINOK(Seek2((1 << 16) * 3));
-    RINOK(Read_FALSE(temp, kRegionSize * 2));
+    RINOK(Seek2((1 << 16) * 3))
+    RINOK(Read_FALSE(temp, kRegionSize * 2))
     unsigned numTables = 1;
     if (memcmp(temp, temp + kRegionSize, kRegionSize) != 0)
     {
@@ -1249,7 +1259,7 @@ HRESULT CHandler::Open3()
       if (regions[i].Parse(temp))
       {
         if (correctRegionIndex < 0)
-          correctRegionIndex = i;
+          correctRegionIndex = (int)i;
       }
       else
       {
@@ -1281,8 +1291,8 @@ HRESULT CHandler::Open3()
         // static const kMetaTableSize = 1 << 16;
         CByteBuffer temp;
         {
-          RINOK(Seek2(e.Offset));
-          RINOK(ReadToBuf_FALSE(temp, e.Len));
+          RINOK(Seek2(e.Offset))
+          RINOK(ReadToBuf_FALSE(temp, e.Len))
         }
         if (!Meta.Parse(temp, temp.Size()))
           return S_FALSE;
@@ -1297,15 +1307,15 @@ HRESULT CHandler::Open3()
         return S_FALSE;
       // UpdatePhySize(e.GetEndPos());
       {
-        RINOK(Seek2(e.Offset));
-        RINOK(ReadToBuf_FALSE(Bat.Data, e.Len));
+        RINOK(Seek2(e.Offset))
+        RINOK(ReadToBuf_FALSE(Bat.Data, e.Len))
       }
       if (!ParseBat())
         return S_FALSE;
       if (!CheckBat())
       {
         AddErrorMessage("BAT overlap");
-        // _BatOverlap = true;
+        // _batOverlap = true;
         // return S_FALSE;
       }
     }
@@ -1327,13 +1337,13 @@ HRESULT CHandler::Open3()
   {
     // absolute paths for parent stream can be rejected later in client callback
     // the order of check by specification:
-    static const char * const g_ParentKeys[] =
+    const char * const g_ParentKeys[] =
     {
         "relative_path"       // "..\..\path2\sub3\parent.vhdx"
       , "volume_path"         // "\\?\Volume{26A21BDA-A627-11D7-9931-806E6F6E6963}\path2\sub3\parent.vhdx")
       , "absolute_win32_path" // "d:\path2\sub3\parent.vhdx"
     };
-    for (unsigned i = 0; i < ARRAY_SIZE(g_ParentKeys); i++)
+    for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_ParentKeys); i++)
     {
       const int index = Meta.FindParentKey(g_ParentKeys[i]);
       if (index < 0)
@@ -1368,7 +1378,7 @@ HRESULT CHandler::Open3()
 
   // _posInArc = 0;
   // Reset_PosInArc();
-  // RINOK(Stream->Seek(0, STREAM_SEEK_SET, NULL));
+  // RINOK(InStream_SeekToBegin(Stream))
 
   return S_OK;
 }
@@ -1384,7 +1394,7 @@ static struct CCounter { ~CCounter()
 } } g_Counter;
 */
 
-STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CHandler::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   // g_NumCalls++;
   if (processedSize)
@@ -1489,7 +1499,7 @@ STDMETHODIMP CHandler::Read(void *data, UInt32 size, UInt32 *processedSize)
       return S_FALSE;
     // if (ParentStream)
     {
-      RINOK(ParentStream->Seek(_virtPos, STREAM_SEEK_SET, NULL));
+      RINOK(InStream_SeekSet(ParentStream, _virtPos))
       size_t processed = size;
       res = ReadStream(ParentStream, (Byte *)data, &processed);
       size = (UInt32)processed;
@@ -1668,7 +1678,7 @@ void CHandler::AddComment(UString &s) const
 
 
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -1735,8 +1745,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     }
     case kpidCreatorApp:
     {
-      if (!_Creator.IsEmpty())
-        prop = _Creator;
+      if (!_creator.IsEmpty())
+        prop = _creator;
       break;
     }
     case kpidId:
@@ -1808,7 +1818,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openArchiveCall
   if (_level >= (1 << 20))
     return S_FALSE;
 
-  RINOK(Open3());
+  RINOK(Open3())
 
   NumLevels = 1;
   PackSize_Total = GetPackSize();
@@ -1882,12 +1892,11 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *openArchiveCall
 HRESULT CHandler::OpenParent(IArchiveOpenCallback *openArchiveCallback, bool &_parentFileWasOpen)
 {
   _parentFileWasOpen = false;
-  CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
-  openArchiveCallback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
-
+  Z7_DECL_CMyComPtr_QI_FROM(
+      IArchiveOpenVolumeCallback,
+      openVolumeCallback, openArchiveCallback)
   if (!openVolumeCallback)
     return S_FALSE;
-
   {
     CMyComPtr<IInStream> nextStream;
     HRESULT res = S_FALSE;
@@ -1961,7 +1970,7 @@ HRESULT CHandler::OpenParent(IArchiveOpenCallback *openArchiveCallback, bool &_p
       UInt64 numBytes = (UInt64)NumUsedBitMaps << kBitmapSize_Log;
       if (openArchiveCallback && numBytes != 0)
       {
-        RINOK(openArchiveCallback->SetTotal(NULL, &numBytes));
+        RINOK(openArchiveCallback->SetTotal(NULL, &numBytes))
       }
       numBytes = 0;
       for (size_t i = ChunkRatio; i < TotalBatEntries; i += ChunkRatio + 1)
@@ -1975,12 +1984,12 @@ HRESULT CHandler::OpenParent(IArchiveOpenCallback *openArchiveCallback, bool &_p
         {
           if (openArchiveCallback)
           {
-            RINOK(openArchiveCallback->SetCompleted(NULL, &numBytes));
+            RINOK(openArchiveCallback->SetCompleted(NULL, &numBytes))
           }
           numBytes += kBitmapSize;
           buf.Alloc(kBitmapSize);
-          RINOK(Seek2(offset));
-          RINOK(Read_FALSE(buf, kBitmapSize));
+          RINOK(Seek2(offset))
+          RINOK(Read_FALSE(buf, kBitmapSize))
           /*
           for (unsigned i = 0; i < (1 << 20); i+=4)
           {
@@ -2018,11 +2027,11 @@ void CHandler::CloseAtError()
   Parent = NULL;
   ParentStream.Release();
   _errorMessage.Empty();
-  _Creator.Empty();
+  _creator.Empty();
   _nonEmptyLog = false;
   _parentGuid_IsDefined = false;
   _isDataContiguous = false;
-  // _BatOverlap = false;
+  // _batOverlap = false;
 
   ParentNames.Clear();
   ParentName_Used.Empty();
@@ -2039,14 +2048,14 @@ void CHandler::CloseAtError()
   _isCyclic_or_CyclicParent = false;
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   CloseAtError();
   return S_OK;
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -2064,7 +2073,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
 }
 
 
-STDMETHODIMP CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 /* index */, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
   *stream = NULL;

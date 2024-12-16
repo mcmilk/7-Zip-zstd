@@ -1,7 +1,7 @@
 // EditDialog.h
 
-#ifndef __EDIT_DIALOG_H
-#define __EDIT_DIALOG_H
+#ifndef ZIP7_INC_EDIT_DIALOG_H
+#define ZIP7_INC_EDIT_DIALOG_H
 
 #include "../../../Windows/Control/Dialog.h"
 #include "../../../Windows/Control/Edit.h"
@@ -11,13 +11,13 @@
 class CEditDialog: public NWindows::NControl::CModalDialog
 {
   NWindows::NControl::CEdit _edit;
-  virtual bool OnInit();
-  virtual bool OnSize(WPARAM wParam, int xSize, int ySize);
+  virtual bool OnInit() Z7_override;
+  virtual bool OnSize(WPARAM wParam, int xSize, int ySize) Z7_override;
 public:
   UString Title;
   UString Text;
 
-  INT_PTR Create(HWND wndParent = 0) { return CModalDialog::Create(IDD_EDIT_DLG, wndParent); }
+  INT_PTR Create(HWND wndParent = NULL) { return CModalDialog::Create(IDD_EDIT_DLG, wndParent); }
 
   CEditDialog() {}
 };

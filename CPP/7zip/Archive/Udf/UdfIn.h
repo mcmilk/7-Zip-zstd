@@ -1,7 +1,7 @@
 // Archive/UdfIn.h -- UDF / ECMA-167
 
-#ifndef __ARCHIVE_UDF_IN_H
-#define __ARCHIVE_UDF_IN_H
+#ifndef ZIP7_INC_ARCHIVE_UDF_IN_H
+#define ZIP7_INC_ARCHIVE_UDF_IN_H
 
 #include "../../../Common/IntToString.h"
 #include "../../../Common/MyBuffer.h"
@@ -72,7 +72,7 @@ struct CRegId
 {
   Byte Flags;
   char Id[23];
-  char Suffix[8];
+  Byte Suffix[8];
 
   void Parse(const Byte *buf);
   void AddCommentTo(UString &s) const;
@@ -281,9 +281,15 @@ struct CIcbTag
   void Parse(const Byte *p);
 };
 
+
 // ECMA 4/14.4.3
+// UDF 2.3.4.2 FileCharacteristics
+
 // const Byte FILEID_CHARACS_Existance = (1 << 0);
-const Byte FILEID_CHARACS_Parent = (1 << 3);
+const Byte FILEID_CHARACS_Dir     = (1 << 1);
+const Byte FILEID_CHARACS_Deleted = (1 << 2);
+const Byte FILEID_CHARACS_Parent  = (1 << 3);
+// const Byte FILEID_CHARACS_Metadata = (1 << 4);
 
 struct CFile
 {
@@ -423,13 +429,14 @@ struct CLogVol
 };
 
 
-
-struct CProgressVirt
+Z7_PURE_INTERFACES_BEGIN
+struct Z7_DECLSPEC_NOVTABLE CProgressVirt
 {
-  virtual HRESULT SetTotal(UInt64 numBytes) PURE;
-  virtual HRESULT SetCompleted(UInt64 numFiles, UInt64 numBytes) PURE;
-  virtual HRESULT SetCompleted() PURE;
+  virtual HRESULT SetTotal(UInt64 numBytes) =0; \
+  virtual HRESULT SetCompleted(UInt64 numFiles, UInt64 numBytes) =0; \
+  virtual HRESULT SetCompleted() =0; \
 };
+Z7_PURE_INTERFACES_END
 
 class CInArchive
 {
@@ -467,8 +474,8 @@ private:
   HRESULT ReadLad(unsigned volIndex, const CLongAllocDesc &lad, Byte *buf);
   HRESULT ReadFromFile(unsigned volIndex, const CItem &item, CByteBuffer &buf);
 
-  HRESULT ReadFileItem(unsigned volIndex, unsigned fsIndex, const CLongAllocDesc &lad, int numRecurseAllowed);
-  HRESULT ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDesc &lad, int numRecurseAllowed);
+  HRESULT ReadFileItem(unsigned volIndex, unsigned fsIndex, const CLongAllocDesc &lad, bool isDir, int numRecurseAllowed);
+  HRESULT ReadItem(unsigned volIndex, int fsIndex, const CLongAllocDesc &lad, bool isDir, int numRecurseAllowed);
 
   HRESULT Open2();
   HRESULT FillRefs(CFileSet &fs, unsigned fileIndex, int parent, int numRecurseAllowed);

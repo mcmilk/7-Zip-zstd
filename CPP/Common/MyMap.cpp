@@ -76,7 +76,7 @@ bool CMap32::Set(UInt32 key, UInt32 value)
       unsigned i = kNumBitsMax - 1;
       for (; GetSubBit(key, i) == GetSubBit(n.Key, i); i--);
       n.Len = (UInt16)(kNumBitsMax - (1 + i));
-      unsigned newBit = GetSubBit(key, i);
+      const unsigned newBit = GetSubBit(key, i);
       n.Values[newBit] = value;
       n.Keys[newBit] = key;
       return false;
@@ -91,7 +91,7 @@ bool CMap32::Set(UInt32 key, UInt32 value)
     bitPos -= n.Len;
     if (GetSubBits(key, bitPos, n.Len) != GetSubBits(n.Key, bitPos, n.Len))
     {
-      unsigned i = n.Len - 1;
+      unsigned i = (unsigned)n.Len - 1;
       for (; GetSubBit(key, bitPos + i) == GetSubBit(n.Key, bitPos + i); i--);
       
       CNode e2(n);
@@ -107,7 +107,7 @@ bool CMap32::Set(UInt32 key, UInt32 value)
       Nodes.Add(e2);
       return false;
     }
-    unsigned bit = GetSubBit(key, --bitPos);
+    const unsigned bit = GetSubBit(key, --bitPos);
 
     if (n.IsLeaf[bit])
     {
@@ -121,7 +121,7 @@ bool CMap32::Set(UInt32 key, UInt32 value)
      
       CNode e2;
       
-      unsigned newBit = GetSubBit(key, i);
+      const unsigned newBit = GetSubBit(key, i);
       e2.Values[newBit] = value;
       e2.Values[1 - newBit] = n.Values[bit];
       e2.IsLeaf[newBit] = e2.IsLeaf[1 - newBit] = 1;

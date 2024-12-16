@@ -22,7 +22,7 @@ using namespace NWindows;
 
 
 
-class CHashCallbackGUI: public CProgressThreadVirt, public IHashCallbackUI
+class CHashCallbackGUI Z7_final: public CProgressThreadVirt, public IHashCallbackUI
 {
   UInt64 NumFiles;
   bool _curIsFolder;
@@ -31,21 +31,25 @@ class CHashCallbackGUI: public CProgressThreadVirt, public IHashCallbackUI
 
   CPropNameValPairs PropNameValPairs;
 
-  HRESULT ProcessVirt();
-  virtual void ProcessWasFinished_GuiVirt();
+  HRESULT ProcessVirt() Z7_override;
+  virtual void ProcessWasFinished_GuiVirt() Z7_override;
 
 public:
   const NWildcard::CCensor *censor;
   const CHashOptions *options;
 
-  DECL_EXTERNAL_CODECS_LOC_VARS2;
+  DECL_EXTERNAL_CODECS_LOC_VARS_DECL
 
-  CHashCallbackGUI() {}
-  ~CHashCallbackGUI() { }
+  Z7_IFACE_IMP(IDirItemsCallback)
+  Z7_IFACE_IMP(IHashCallbackUI)
 
-  INTERFACE_IHashCallbackUI(;)
-
+  /*
   void AddErrorMessage(DWORD systemError, const wchar_t *name)
+  {
+    Sync.AddError_Code_Name(systemError, name);
+  }
+  */
+  void AddErrorMessage(HRESULT systemError, const wchar_t *name)
   {
     Sync.AddError_Code_Name(systemError, name);
   }
@@ -106,13 +110,13 @@ HRESULT CHashCallbackGUI::ScanProgress(const CDirItemsStat &st, const FString &p
 
 HRESULT CHashCallbackGUI::ScanError(const FString &path, DWORD systemError)
 {
-  AddErrorMessage(systemError, fs2us(path));
+  AddErrorMessage(HRESULT_FROM_WIN32(systemError), fs2us(path));
   return CheckBreak();
 }
 
 HRESULT CHashCallbackGUI::FinishScanning(const CDirItemsStat &st)
 {
-  return ScanProgress(st, FString(), false);
+  return ScanProgress(st, FString(), false); // isDir
 }
 
 HRESULT CHashCallbackGUI::CheckBreak()
@@ -158,7 +162,7 @@ HRESULT CHashCallbackGUI::OpenFileError(const FString &path, DWORD systemError)
 {
   // if (systemError == ERROR_SHARING_VIOLATION)
   {
-    AddErrorMessage(systemError, fs2us(path));
+    AddErrorMessage(HRESULT_FROM_WIN32(systemError), fs2us(path));
     return S_FALSE;
   }
   // return systemError;
@@ -305,8 +309,8 @@ HRESULT HashCalcGUI(
     bool &messageWasDisplayed)
 {
   CHashCallbackGUI t;
-  #ifdef EXTERNAL_CODECS
-  t.__externalCodecs = __externalCodecs;
+  #ifdef Z7_EXTERNAL_CODECS
+  t._externalCodecs = _externalCodecs;
   #endif
   t.censor = &censor;
   t.options = &options;
@@ -319,7 +323,7 @@ HRESULT HashCalcGUI(
   t.MainAddTitle = title;
   t.MainAddTitle.Add_Space();
 
-  RINOK(t.Create(title));
+  RINOK(t.Create(title))
   messageWasDisplayed = t.ThreadFinishedOK && t.MessagesDisplayed;
   return S_OK;
 }
@@ -352,8 +356,8 @@ void ShowHashResults(const CHashBundle &hb, HWND hwnd)
   ShowHashResults(propPairs, hwnd);
 }
 
-
 void CHashCallbackGUI::ProcessWasFinished_GuiVirt()
 {
-  ShowHashResults(PropNameValPairs, *this);
+  if (Result != E_ABORT)
+    ShowHashResults(PropNameValPairs, *this);
 }

@@ -4,7 +4,11 @@
 
 #include "../../../Common/MyWindows.h"
 
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <shlobj.h>
+#else
 #include <ShlObj.h>
+#endif
 
 #include "../../../Common/Defs.h"
 #include "../../../Common/StringConvert.h"
@@ -25,10 +29,12 @@ using namespace NWindows;
 extern bool g_IsNT;
 #endif
 
+#ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
   IDT_SYSTEM_ASSOCIATE
 };
+#endif
 
 #define kSystemTopic "FM/options.htm#system"
 
@@ -44,7 +50,7 @@ CSysString CModifiedExtInfo::GetString() const
   else
     return ProgramKey;
   return CSysString (s);
-};
+}
 
 
 int CSystemPage::AddIcon(const UString &iconPath, int iconIndex)
@@ -62,19 +68,19 @@ int CSystemPage::AddIcon(const UString &iconPath, int iconIndex)
   #else
   // we expand path from REG_EXPAND_SZ registry item.
   UString path;
-  DWORD size = MAX_PATH + 10;
-  DWORD needLen = ::ExpandEnvironmentStringsW(iconPath, path.GetBuf(size + 2), size);
+  const DWORD size = MAX_PATH + 10;
+  const DWORD needLen = ::ExpandEnvironmentStringsW(iconPath, path.GetBuf(size + 2), size);
   path.ReleaseBuf_CalcLen(size);
   if (needLen == 0 || needLen >= size)
     path = iconPath;
-  int num = ExtractIconExW(path, iconIndex, NULL, &hicon, 1);
+  const UINT num = ExtractIconExW(path, iconIndex, NULL, &hicon, 1);
   if (num != 1 || !hicon)
   #endif
     return -1;
   
   _imageList.AddIcon(hicon);
   DestroyIcon(hicon);
-  return _numIcons++;
+  return (int)(_numIcons++);
 }
 
 
@@ -84,7 +90,7 @@ void CSystemPage::RefreshListItem(unsigned group, unsigned listIndex)
   _listView.SetSubItem(listIndex, group + 1, assoc.Pair[group].GetString());
   LVITEMW newItem;
   memset(&newItem, 0, sizeof(newItem));
-  newItem.iItem = listIndex;
+  newItem.iItem = (int)listIndex;
   newItem.mask = LVIF_IMAGE;
   newItem.iImage = assoc.GetIconIndex();
   _listView.SetItem(&newItem);
@@ -151,7 +157,9 @@ bool CSystemPage::OnInit()
 {
   _needSave = false;
 
-  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+#ifdef Z7_LANG
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
+#endif
 
   _listView.Attach(GetItem(IDL_SYSTEM_ASSOCIATE));
   _listView.SetUnicodeFormat();
@@ -221,9 +229,9 @@ bool CSystemPage::OnInit()
     const CExtPlugins &extInfo = _extDB.Exts[i];
 
     LVITEMW item;
-    item.iItem = i;
+    item.iItem = (int)i;
     item.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
-    item.lParam = i;
+    item.lParam = (LPARAM)i;
     item.iSubItem = 0;
     // ListView always uses internal iImage that is 0 by default?
     // so we always use LVIF_IMAGE.
@@ -245,9 +253,9 @@ bool CSystemPage::OnInit()
       texts[g] = mi.GetString();
     }
     item.iImage = assoc.GetIconIndex();
-    int itemIndex = _listView.InsertItem(&item);
+    const int itemIndex = _listView.InsertItem(&item);
     for (g = 0; g < NUM_EXT_GROUPS; g++)
-      _listView.SetSubItem(itemIndex, 1 + g, texts[g]);
+      _listView.SetSubItem((unsigned)itemIndex, 1 + g, texts[g]);
     _items.Add(assoc);
   }
   
@@ -334,7 +342,7 @@ void CSystemPage::OnNotifyHelp()
 }
 
 
-bool CSystemPage::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CSystemPage::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {
@@ -379,7 +387,7 @@ bool CSystemPage::OnNotify(UINT controlID, LPNMHDR lParam)
             if (item->iSubItem >= 1 && item->iSubItem <= 2)
             {
               CUIntVector indices;
-              indices.Add(item->iItem);
+              indices.Add((unsigned)item->iItem);
               ChangeState(item->iSubItem < 2 ? 0 : 1, indices);
             }
           }
@@ -414,7 +422,7 @@ void CSystemPage::ChangeState(unsigned group)
   
   int itemIndex = -1;
   while ((itemIndex = _listView.GetNextSelectedItem(itemIndex)) != -1)
-    indices.Add(itemIndex);
+    indices.Add((unsigned)itemIndex);
   
   if (indices.IsEmpty())
     FOR_VECTOR (i, _items)

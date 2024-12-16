@@ -1,7 +1,7 @@
 // RegistryAssociations.h
 
-#ifndef __REGISTRY_ASSOCIATIONS_H
-#define __REGISTRY_ASSOCIATIONS_H
+#ifndef ZIP7_INC_REGISTRY_ASSOCIATIONS_H
+#define ZIP7_INC_REGISTRY_ASSOCIATIONS_H
 
 #include "../../../Common/MyString.h"
 

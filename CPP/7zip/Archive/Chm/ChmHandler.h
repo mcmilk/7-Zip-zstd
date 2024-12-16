@@ -1,7 +1,7 @@
 // ChmHandler.h
 
-#ifndef __ARCHIVE_CHM_HANDLER_H
-#define __ARCHIVE_CHM_HANDLER_H
+#ifndef ZIP7_INC_ARCHIVE_CHM_HANDLER_H
+#define ZIP7_INC_ARCHIVE_CHM_HANDLER_H
 
 #include "../../../Common/MyCom.h"
 
@@ -12,22 +12,14 @@
 namespace NArchive {
 namespace NChm {
 
-class CHandler:
-  public IInArchive,
-  public CMyUnknownImp
-{
-public:
-  MY_UNKNOWN_IMP1(IInArchive)
+Z7_CLASS_IMP_CHandler_IInArchive_0
 
-  INTERFACE_IInArchive(;)
-
-  bool _help2;
-  CHandler(bool help2): _help2(help2) {}
-
-private:
   CFilesDatabase m_Database;
   CMyComPtr<IInStream> m_Stream;
+  bool _help2;
   UInt32 m_ErrorFlags;
+public:
+  CHandler(bool help2): _help2(help2) {}
 };
 
 }}
