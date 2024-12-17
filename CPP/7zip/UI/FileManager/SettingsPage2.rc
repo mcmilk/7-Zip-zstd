@@ -12,17 +12,11 @@ BEGIN
   MY_CONTROL_CHECKBOX ( "&Full row select",      IDX_SETTINGS_FULL_ROW,             m, 36, xc)
   MY_CONTROL_CHECKBOX ( "Show &grid lines",      IDX_SETTINGS_SHOW_GRID,            m, 50, xc)
   MY_CONTROL_CHECKBOX ( "&Single-click to open an item", IDX_SETTINGS_SINGLE_CLICK, m, 64, xc)
-
   MY_CONTROL_CHECKBOX ( "&Alternative selection mode", IDX_SETTINGS_ALTERNATIVE_SELECTION, m, 80, xc)
-  MY_CONTROL_CHECKBOX ( "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     m, 96, xc)
-  MY_CONTROL_CHECKBOX ( "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        m, 112, xc)
 
-  MY_CONTROL_CHECKBOX ( "Want ArcHistory",    IDX_SETTINGS_WANT_ARC_HISTORY,        m, 130, xc)
-  MY_CONTROL_CHECKBOX ( "Want PathHistory",   IDX_SETTINGS_WANT_PATH_HISTORY,       m, 144, xc)
-  MY_CONTROL_CHECKBOX ( "Want CopyHistory",   IDX_SETTINGS_WANT_COPY_HISTORY,       m, 158, xc)
-  MY_CONTROL_CHECKBOX ( "Want FolderHistory", IDX_SETTINGS_WANT_FOLDER_HISTORY,     m, 172, xc)
-  MY_CONTROL_CHECKBOX ( "Use Lowercase Hashes", IDX_SETTINGS_LOWERCASE_HASHES,      m, 186, xc)
+  MY_CONTROL_CHECKBOX ( "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     m, 100, xc)
 
+  MY_CONTROL_CHECKBOX ( "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        m, 122, xc)
 
   LTEXT "Maximum amount of RAM memory usage allowed to unpack archives:",
         IDT_MEM_USAGE_EXTRACT, m, save_y, xc, 8
@@ -36,6 +30,13 @@ BEGIN
   // LTEXT     "Memory usage for Compressing:", IDT_COMPRESS_MEMORY, m, 140, xc, 8
   // COMBOBOX  IDC_SETTINGS_MEM, m , 152, g1xs, yc - 152, MY_COMBO
   // LTEXT     "/ RAM", IDT_SETTINGS_MEM_RAM, m + g1xs + m, 154, xc - g1xs - m, MY_TEXT_NOPREFIX
+
+  MY_CONTROL_CHECKBOX ( "Want ArcHistory",    IDX_SETTINGS_WANT_ARC_HISTORY,        m, 172, xc)
+  MY_CONTROL_CHECKBOX ( "Want PathHistory",   IDX_SETTINGS_WANT_PATH_HISTORY,       m, 184, xc)
+  MY_CONTROL_CHECKBOX ( "Want CopyHistory",   IDX_SETTINGS_WANT_COPY_HISTORY,       m, 196, xc)
+  MY_CONTROL_CHECKBOX ( "Want FolderHistory", IDX_SETTINGS_WANT_FOLDER_HISTORY,     m, 208, xc)
+  MY_CONTROL_CHECKBOX ( "Use Lowercase Hashes", IDX_SETTINGS_LOWERCASE_HASHES,      m, 220, xc)
+
 END
 
 #undef save_y
