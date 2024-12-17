@@ -145,7 +145,7 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms, unsi
   for (unsigned i = 0; i < numSwitches; i++)
   {
     const char * const key = switchForms[i].Key;
-    unsigned switchLen = MyStringLen(key);
+    const unsigned switchLen = MyStringLen(key);
     if ((int)switchLen <= maxLen || pos + switchLen > s.Len())
       continue;
     if (IsString1PrefixedByString2_NoCase_Ascii((const wchar_t *)s + pos, key))
@@ -200,7 +200,7 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms, unsi
     case NSwitchType::kChar:
       if (rem == 1)
       {
-        wchar_t c = s[pos];
+        const wchar_t c = s[pos];
         if (c <= 0x7F)
         {
           sw.PostCharIndex = FindCharPosInString(form.PostCharSet, (char)c);
@@ -217,6 +217,8 @@ bool CParser::ParseString(const UString &s, const CSwitchForm *switchForms, unsi
       sw.PostStrings.Add(s.Ptr(pos));
       return true;
     }
+    // case NSwitchType::kSimple:
+    default: break;
   }
 
   if (pos != s.Len())

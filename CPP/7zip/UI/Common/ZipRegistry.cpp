@@ -100,6 +100,7 @@ static LPCTSTR const kSplitDest = TEXT("SplitDest");
 static LPCTSTR const kElimDup = TEXT("ElimDup");
 // static LPCTSTR const kAltStreams = TEXT("AltStreams");
 static LPCTSTR const kNtSecur = TEXT("Security");
+static LPCTSTR const kMemLimit = TEXT("MemLimit");
 
 void CInfo::Save() const
 {
@@ -132,6 +133,14 @@ void Save_ShowPassword(bool showPassword)
   CKey key;
   CreateMainKey(key, kKeyName);
   key.SetValue(kShowPassword, showPassword);
+}
+
+void Save_LimitGB(UInt32 limit_GB)
+{
+  CS_LOCK
+  CKey key;
+  CreateMainKey(key, kKeyName);
+  Key_Set_UInt32(key, kMemLimit, limit_GB);
 }
 
 void CInfo::Load()
@@ -180,6 +189,19 @@ bool Read_ShowPassword()
     return showPassword;
   key.GetValue_IfOk(kShowPassword, showPassword);
   return showPassword;
+}
+
+UInt32 Read_LimitGB()
+{
+  CS_LOCK
+  CKey key;
+  if (OpenMainKey(key, kKeyName) == ERROR_SUCCESS)
+  {
+    UInt32 v;
+    if (key.QueryValue(kMemLimit, v) == ERROR_SUCCESS)
+      return v;
+  }
+  return (UInt32)(Int32)-1;
 }
 
 }

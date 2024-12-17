@@ -1,8 +1,8 @@
 #include "EditPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 240
-#define yc 80
+#define xc OPTIONS_PAGE_XC_SIZE
+#define yc 100
 
 IDD_EDIT  MY_PAGE
 #include "EditPage2.rc"

@@ -7,13 +7,15 @@
 
 #include "IFolder.h"
 
+Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
+
 class CPluginLibrary: public NWindows::NDLL::CLibrary
 {
 public:
   HRESULT CreateManager(REFGUID clsID, IFolderManager **manager)
   {
     const
-    Func_CreateObject createObject =  Z7_GET_PROC_ADDRESS(
+    Func_CreateObject createObject = Z7_GET_PROC_ADDRESS(
     Func_CreateObject, Get_HMODULE(),
         "CreateObject");
     if (!createObject)

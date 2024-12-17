@@ -86,7 +86,7 @@ public:
 
   HRESULT ShowAttributesWindow();
 
-  int ProcessKey(int key, unsigned int controlState);
+  int ProcessKey(int key, unsigned controlState);
 };
 
 HRESULT CompressFiles(const CObjectVector<PluginPanelItem> &pluginPanelItems);

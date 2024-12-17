@@ -907,7 +907,7 @@ void CPanel::OpenAltStreams()
         path.DeleteBack();
   }
 
-  path += ':';
+  path.Add_Colon();
   BindToPathAndRefresh(path);
   #endif
 }

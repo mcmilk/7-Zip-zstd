@@ -150,6 +150,8 @@ BEGIN
   #ifdef UNDER_CE
     MENUITEM "Benchmark 2",                 IDM_BENCHMARK2
   #endif
+    MY_MENUITEM_SEPARATOR
+    MENUITEM "Delete Temporary Files...",   IDM_TEMP_DIR
   #ifndef UNDER_CE
   END
   POPUP "&Help" MY_MENUITEM_ID(IDM_HELP)
@@ -272,6 +274,7 @@ END
 
 #include "AboutDialog.rc"
 #include "BrowseDialog.rc"
+#include "BrowseDialog2.rc"
 #include "ComboDialog.rc"
 #include "CopyDialog.rc"
 #include "EditDialog.rc"
@@ -280,6 +283,7 @@ END
 #include "LangPage.rc"
 #include "LinkDialog.rc"
 #include "ListViewDialog.rc"
+#include "MemDialog.rc"
 #include "MenuPage.rc"
 #include "MessagesDialog.rc"
 #include "OverwriteDialog.rc"

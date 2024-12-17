@@ -225,6 +225,8 @@ BEGIN
 
     IDS_COMPRESS_SEC "sec"
     IDS_COMPRESS_NS "ns"
+
+    IDS_MEM_OPERATION_BLOCKED  "The operation was blocked by 7-Zip."
 END
 
 

@@ -143,7 +143,7 @@ LONG AddShellExtensionInfo(HKEY hkey,
       iconIndex = 0;
     // if (iconIndex >= 0)
     {
-      iconPathFull += ',';
+      iconPathFull.Add_Char(',');
       iconPathFull.Add_UInt32((UInt32)iconIndex);
     }
     iconKey.Create(programKey, kDefaultIconKeyName);

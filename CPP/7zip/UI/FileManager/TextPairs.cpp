@@ -181,13 +181,13 @@ void CPairsStorage::SaveToString(UString &text) const
     const CTextPair &pair = Pairs[i];
     bool multiWord = (pair.ID.Find(L' ') >= 0);
     if (multiWord)
-      text += '\"';
+      text.Add_Char('\"');
     text += pair.ID;
     if (multiWord)
-      text += '\"';
+      text.Add_Char('\"');
     text.Add_Space();
     text += pair.Value;
-    text += '\x0D';
+    text.Add_Char('\x0D');
     text.Add_LF();
   }
 }

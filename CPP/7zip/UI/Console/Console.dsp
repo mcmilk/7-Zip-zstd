@@ -397,6 +397,10 @@ SOURCE=..\..\..\Common\Common.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Common0.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\ComTry.h
 # End Source File
 # Begin Source File
@@ -869,6 +873,10 @@ SOURCE=..\..\..\..\C\7zTypes.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zVersion.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\7zWindows.h
 # End Source File
 # Begin Source File
@@ -901,6 +909,10 @@ SOURCE=..\..\..\..\C\DllSecur.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\DllSecur.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Precomp.h
 # End Source File
 # Begin Source File
 

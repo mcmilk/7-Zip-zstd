@@ -1,8 +1,8 @@
 #include "SettingsPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 240
-#define yc 250
+#define xc OPTIONS_PAGE_XC_SIZE
+#define yc OPTIONS_PAGE_YC_SIZE
 
 IDD_SETTINGS  MY_PAGE
 #include "SettingsPage2.rc"

@@ -146,7 +146,7 @@ void CProxyArc::AddRealIndices(unsigned dirIndex, CUIntVector &realIndices) cons
 int CProxyArc::GetRealIndex(unsigned dirIndex, unsigned index) const
 {
   const CProxyDir &dir = Dirs[dirIndex];
-  unsigned numDirItems = dir.SubDirs.Size();
+  const unsigned numDirItems = dir.SubDirs.Size();
   if (index < numDirItems)
   {
     const CProxyDir &f = Dirs[dir.SubDirs[index]];
@@ -163,14 +163,14 @@ void CProxyArc::GetRealIndices(unsigned dirIndex, const UInt32 *indices, UInt32 
   realIndices.Clear();
   for (UInt32 i = 0; i < numItems; i++)
   {
-    UInt32 index = indices[i];
-    unsigned numDirItems = dir.SubDirs.Size();
+    const UInt32 index = indices[i];
+    const unsigned numDirItems = dir.SubDirs.Size();
     if (index < numDirItems)
       AddRealIndices(dir.SubDirs[index], realIndices);
     else
       realIndices.Add(dir.SubFiles[index - numDirItems]);
   }
-  HeapSort(&realIndices.Front(), realIndices.Size());
+  HeapSort(realIndices.NonConstData(), realIndices.Size());
 }
 
 ///////////////////////////////////////////////
@@ -198,9 +198,9 @@ void CProxyArc::CalculateSizes(unsigned dirIndex, IInArchive *archive)
   
   for (i = 0; i < dir.SubFiles.Size(); i++)
   {
-    UInt32 index = (UInt32)dir.SubFiles[i];
+    const UInt32 index = (UInt32)dir.SubFiles[i];
     UInt64 size, packSize;
-    bool sizeDefined = GetSize(archive, index, kpidSize, size);
+    const bool sizeDefined = GetSize(archive, index, kpidSize, size);
     dir.Size += size;
     GetSize(archive, index, kpidPackSize, packSize);
     dir.PackSize += packSize;
@@ -495,7 +495,7 @@ void CProxyArc2::GetRealIndices(unsigned dirIndex, const UInt32 *indices, UInt32
   {
     AddRealIndices_of_ArcItem(dir.Items[indices[i]], includeAltStreams, realIndices);
   }
-  HeapSort(&realIndices.Front(), realIndices.Size());
+  HeapSort(realIndices.NonConstData(), realIndices.Size());
 }
 
 void CProxyArc2::CalculateSizes(unsigned dirIndex, IInArchive *archive)
@@ -511,7 +511,7 @@ void CProxyArc2::CalculateSizes(unsigned dirIndex, IInArchive *archive)
   {
     UInt32 index = dir.Items[i];
     UInt64 size, packSize;
-    bool sizeDefined = GetSize(archive, index, kpidSize, size);
+    const bool sizeDefined = GetSize(archive, index, kpidSize, size);
     dir.Size += size;
     GetSize(archive, index, kpidPackSize, packSize);
     dir.PackSize += packSize;

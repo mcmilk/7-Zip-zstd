@@ -38,7 +38,7 @@ struct CVolSeqName
     while (numVolumes > 999)
     {
       numVolumes /= 10;
-      ChangedPart += '0';
+      ChangedPart.Add_Char('0');
     }
   }
 
@@ -192,7 +192,7 @@ HRESULT CThreadSplit::ProcessVirt()
       name.Add_Dot();
       name += us2fs(seqName.GetNextName());
       sync.Set_FilePath(fs2us(name));
-      if (!outFile.File.Create(name, false))
+      if (!outFile.File.Create_NEW(name))
       {
         const HRESULT res = GetLastError_noZero_HRESULT();
         AddErrorPath(name);
@@ -277,7 +277,7 @@ void CApp::Split()
     srcPanel.MessageBox_Error(L"Cannot find file");
     return;
   }
-  if (fileInfo.Size <= splitDialog.VolumeSizes.Front())
+  if (fileInfo.Size <= splitDialog.VolumeSizes.FrontItem())
   {
     srcPanel.MessageBox_Error_LangID(IDS_SPLIT_VOL_MUST_BE_SMALLER);
     return;
@@ -355,7 +355,7 @@ public:
 HRESULT CThreadCombine::ProcessVirt()
 {
   NIO::COutFile outFile;
-  if (!outFile.Create(OutputPath, false))
+  if (!outFile.Create_NEW(OutputPath))
   {
     const HRESULT res = GetLastError_noZero_HRESULT();
     AddErrorPath(OutputPath);

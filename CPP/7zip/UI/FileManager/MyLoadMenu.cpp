@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 
+#include "../../../Windows/FileDir.h"
 #include "../../../Windows/Menu.h"
 #include "../../../Windows/TimeUtils.h"
 #include "../../../Windows/Control/Dialog.h"
@@ -12,6 +13,7 @@
 
 #include "AboutDialog.h"
 #include "App.h"
+#include "BrowseDialog2.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
 #include "MyLoadMenu.h"
@@ -26,6 +28,10 @@ static const UINT k_MenuID_OpenBookmark = 830;
 static const UINT k_MenuID_SetBookmark = 810;
 static const UINT k_MenuID_TimePopup = IDM_VIEW_TIME_POPUP;
 static const UINT k_MenuID_Time = IDM_VIEW_TIME;
+
+#if 0
+// static const UINT k_MenuID_Bookmark_Temp = 850;
+#endif
 
 extern HINSTANCE g_hInstance;
 
@@ -493,6 +499,9 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
         }
         if (selectedCommand != 0)
           menu.CheckRadioItem(k_MenuID_Time, last, selectedCommand, MF_BYCOMMAND);
+
+        if (subMenu.AppendItem(MF_STRING, IDM_VIEW_TIME_UTC, L"UTC"))
+          subMenu.CheckItemByID(IDM_VIEW_TIME_UTC, g_Timestamp_Show_UTC);
       }
     }
   }
@@ -511,9 +520,9 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
       UString s = LangString(IDS_BOOKMARK);
       s.Add_Space();
       const char c = (char)(L'0' + i);
-      s += c;
+      s.Add_Char(c);
       s += "\tAlt+Shift+";
-      s += c;
+      s.Add_Char(c);
       subMenu.AppendItem(MF_STRING, k_MenuID_SetBookmark + i, s);
     }
 
@@ -532,9 +541,22 @@ void OnMenuActivating(HWND /* hWnd */, HMENU hMenu, int position)
       if (s.IsEmpty())
         s = '-';
       s += "\tAlt+";
-      s += (char)('0' + i);
+      s.Add_Char((char)('0' + i));
       menu.AppendItem(MF_STRING, k_MenuID_OpenBookmark + i, s);
     }
+#if 0
+    {
+      FString tempPathF;
+      if (NFile::NDir::MyGetTempPath(tempPathF))
+      {
+        menu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)NULL);
+        UString s;
+        s = "Temp : ";
+        s  += fs2us(tempPathF);
+        menu.AppendItem(MF_STRING, k_MenuID_Bookmark_Temp, s);
+  }
+    }
+#endif
   }
 }
 
@@ -752,7 +774,7 @@ bool ExecuteFileCommand(unsigned id)
     case IDM_SHA512: g_App.CalculateCrc("SHA512"); break;
     case IDM_BLAKE2sp: g_App.CalculateCrc("BLAKE2sp"); break;
     case IDM_BLAKE3: g_App.CalculateCrc("BLAKE3"); break;
-
+    
     case IDM_DIFF: g_App.DiffFiles(); break;
 
     case IDM_VER_EDIT:
@@ -887,6 +909,11 @@ bool OnMenuCommand(HWND hWnd, unsigned id)
     case IDM_VIEW_TOOLBARS_SHOW_BUTTONS_TEXT: g_App.SwitchButtonsLables(); break;
     case IDM_VIEW_TOOLBARS_LARGE_BUTTONS:     g_App.SwitchLargeButtons(); break;
 
+    case IDM_VIEW_TIME_UTC:
+      g_Timestamp_Show_UTC = !g_Timestamp_Show_UTC;
+      g_App.RedrawListItems_InPanels();
+      break;
+
     // Tools
     case IDM_OPTIONS: OptionsDialog(hWnd, g_hInstance); break;
           
@@ -903,6 +930,19 @@ bool OnMenuCommand(HWND hWnd, unsigned id)
       dialog.Create(hWnd);
       break;
     }
+
+    case IDM_TEMP_DIR:
+    {
+      /*
+      CPanel &panel = g_App.GetFocusedPanel();
+      FString tempPathF;
+      if (NFile::NDir::MyGetTempPath(tempPathF))
+        panel.BindToPathAndRefresh(tempPathF);
+      */
+      MyBrowseForTempFolder(g_HWND);
+      break;
+    }
+
     default:
     {
       if (id >= k_MenuID_OpenBookmark && id <= k_MenuID_OpenBookmark + 9)

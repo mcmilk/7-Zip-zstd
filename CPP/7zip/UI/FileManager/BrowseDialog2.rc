@@ -1,0 +1,32 @@
+#include "BrowseDialog2Res.h"
+#include "../../GuiCommon.rc"
+// #include "resource.h"
+
+#define xc 450
+#define yc 328
+
+#define k_BROWSE2_y_CtrlSize 14
+
+#define k_BROWSE2_y_List  40
+
+IDD_BROWSE2  DIALOG 0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
+CAPTION "7-Zip: Browse Temp Files"
+{
+//  EDITTEXT  IDE_BROWSE_PATH,   m, by - m - k_BROWSE_y_CtrlSize - k_BROWSE_y_CtrlSize - m, xc, k_BROWSE_y_CtrlSize, ES_AUTOHSCROLL
+  COMBOBOX  IDC_BROWSE2_FILTER, m, by - m - k_BROWSE2_y_CtrlSize, xc, 30, MY_COMBO
+
+// DON'T USE DEFPUSHBUTTON here, because we use IDOK as default action for Enter key.
+  PUSHBUTTON  "Close",  IDCLOSE,  bx2, by, bxs, bys, WS_GROUP
+  PUSHBUTTON  "Help",   IDHELP,   bx1, by, bxs, bys
+
+  PUSHBUTTON  "Delete",  IDS_BUTTON_DELETE, m , m, 64, bys
+  PUSHBUTTON  "Refresh",  IDM_VIEW_REFRESH, m + 64 + 8, m, 64, bys
+
+  PUSHBUTTON  "<--", IDB_BROWSE2_PARENT, m, m + 21, 24, bys
+//  LTEXT    "", IDT_BROWSE_FOLDER, m + 30, m + 24, xc - 30, 8
+  EDITTEXT   IDT_BROWSE2_FOLDER, m + 28, m + 22, xc - 28, 14, ES_AUTOHSCROLL | ES_READONLY
+
+  CONTROL  "List1", IDL_BROWSE2, "SysListView32",
+           LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | WS_BORDER | WS_TABSTOP,
+           m, m + k_BROWSE2_y_List, xc, yc - bys - m - k_BROWSE2_y_List - k_BROWSE2_y_CtrlSize - m
+}

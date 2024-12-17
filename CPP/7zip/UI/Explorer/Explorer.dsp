@@ -589,6 +589,14 @@ SOURCE=..\..\..\Windows\Synchronization.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Windows\TimeUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\TimeUtils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Windows\Window.cpp
 # End Source File
 # Begin Source File

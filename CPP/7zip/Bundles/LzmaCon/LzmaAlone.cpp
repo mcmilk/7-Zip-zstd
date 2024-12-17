@@ -501,7 +501,7 @@ static int main2(int numArgs, const char *args[])
     const UString &outputName = params[paramIndex++];
     outStreamSpec = new COutFileStream;
     outStream = outStreamSpec;
-    if (!outStreamSpec->Create(us2fs(outputName), true))
+    if (!outStreamSpec->Create_ALWAYS(us2fs(outputName)))
     {
       PrintError2("Cannot open output file", outputName);
       return 1;

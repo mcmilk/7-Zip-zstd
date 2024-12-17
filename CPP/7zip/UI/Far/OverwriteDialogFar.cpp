@@ -46,7 +46,7 @@ static void SetFileInfoStrings(const CFileInfo &fileInfo,
   fileInfoStrings.Time.Empty();
   if (fileInfo.TimeIsDefined)
   {
-    char timeString[32];
+    char timeString[64];
     ConvertUtcFileTimeToString(fileInfo.Time, timeString);
     fileInfoStrings.Time = g_StartupInfo.GetMsgString(NMessageID::kOverwriteModifiedOn);
     fileInfoStrings.Time.Add_Space();

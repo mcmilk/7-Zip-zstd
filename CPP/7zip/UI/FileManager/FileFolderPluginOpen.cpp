@@ -166,7 +166,7 @@ static UString GetBracedType(const wchar_t *type)
 {
   UString s ('[');
   s += type;
-  s += ']';
+  s.Add_Char(']');
   return s;
 }
 

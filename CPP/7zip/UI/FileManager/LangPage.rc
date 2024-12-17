@@ -1,12 +1,12 @@
 #include "LangPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 240
-#define yc 252
+#define xc OPTIONS_PAGE_XC_SIZE
+#define yc OPTIONS_PAGE_YC_SIZE
 
 #define y 32
 
-IDD_LANG  DIALOG  0, 0, xs, ys  MY_PAGE_STYLE  MY_FONT
+IDD_LANG  DIALOG  MY_PAGE_POSTFIX
 CAPTION "Language"
 {
   LTEXT     "Language:", IDT_LANG_LANG, m, m, xc, 8

@@ -35,7 +35,6 @@
 #define IDM_BLAKE2sp             113
 #define IDM_BLAKE3               114
 
-
 #define IDM_FILE                 500
 #define IDM_EDIT                 501
 #define IDM_VIEW                 502
@@ -109,6 +108,7 @@
 
 #define IDM_VIEW_TIME_POPUP      760
 #define IDM_VIEW_TIME            761
+#define IDM_VIEW_TIME_UTC        799
 
 #define IDM_ADD_TO_FAVORITES     800
 #define IDS_BOOKMARK             801
@@ -116,6 +116,7 @@
 #define IDM_OPTIONS              900
 #define IDM_BENCHMARK            901
 #define IDM_BENCHMARK2           902
+#define IDM_TEMP_DIR             910
 
 #define IDM_HELP_CONTENTS        960
 #define IDM_ABOUT                961

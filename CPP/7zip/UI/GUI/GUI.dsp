@@ -449,6 +449,14 @@ SOURCE=..\FileManager\ListViewDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\FileManager\MemDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\MemDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\FileManager\OverwriteDialog.cpp
 # End Source File
 # Begin Source File
@@ -781,6 +789,10 @@ SOURCE=..\..\..\..\C\7zTypes.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zVersion.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\7zWindows.h
 # End Source File
 # Begin Source File
@@ -791,6 +803,10 @@ SOURCE=..\..\..\..\C\Alloc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compiler.h
 # End Source File
 # Begin Source File
 
@@ -828,6 +844,10 @@ SOURCE=..\..\..\..\C\DllSecur.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\DllSecur.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Precomp.h
 # End Source File
 # Begin Source File
 
@@ -881,10 +901,6 @@ SOURCE=..\..\..\Common\CommandLineParser.h
 # Begin Source File
 
 SOURCE=..\..\..\Common\Common.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\C\Compiler.h
 # End Source File
 # Begin Source File
 

@@ -94,6 +94,8 @@
   04  IArchiveKeepModeForNextOpen
   05  IArchiveAllowTail
 
+  09  IArchiveRequestMemoryUseCallback
+
   10  IArchiveOpenCallback
   
   20  IArchiveExtractCallback
@@ -182,6 +184,7 @@ Handler GUIDs:
   11 liz
   12 Lzip
 
+  BF LVM
   C0 AVB
   C1 LP
   C2 Sparse

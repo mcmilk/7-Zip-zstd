@@ -93,7 +93,7 @@ static bool ParseNumberString(const FString &s, UInt32 &number)
 static void WriteFile(const FString &path, bool createAlways, const CFileDataInfo &fdi, const CPanel &panel)
 {
   NIO::COutFile outFile;
-  if (!outFile.Create(path, createAlways)) // (createAlways = false) means CREATE_NEW
+  if (!outFile.Create_ALWAYS_or_NEW(path, createAlways)) // (createAlways = false) means CREATE_NEW
   {
     panel.MessageBox_LastError();
     return;
@@ -339,7 +339,7 @@ void CApp::VerCtrl(unsigned id)
         // NDir::SetFileAttrib(path, 0);
         {
           NIO::COutFile outFile;
-          if (!outFile.Open(path, OPEN_EXISTING))
+          if (!outFile.Open_EXISTING(path))
           {
             panel.MessageBox_LastError();
             return;

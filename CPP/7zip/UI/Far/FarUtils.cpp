@@ -35,7 +35,7 @@ const char *CStartupInfo::GetMsgString(int messageId)
   return (const char*)m_Data.GetMsg(m_Data.ModuleNumber, messageId);
 }
 
-int CStartupInfo::ShowMessage(unsigned int flags,
+int CStartupInfo::ShowMessage(UInt32 flags,
     const char *helpTopic, const char **items, unsigned numItems, int numButtons)
 {
   return m_Data.Message(m_Data.ModuleNumber, flags, helpTopic,
@@ -186,8 +186,8 @@ void CStartupInfo::InitDialogItems(const CInitDialogItem  *srcItems,
       MyStringCopy(destItem.Data, GetMsgString(srcItem.DataMessageId));
 
     /*
-    if ((unsigned int)Init[i].Data < 0xFFF)
-      MyStringCopy(destItem.Data, GetMsg((unsigned int)srcItem.Data));
+    if ((unsigned)Init[i].Data < 0xFFF)
+      MyStringCopy(destItem.Data, GetMsg((unsigned)srcItem.Data));
     else
       MyStringCopy(destItem.Data,srcItem.Data);
     */
@@ -367,7 +367,7 @@ int CStartupInfo::Menu(
     int x,
     int y,
     int maxHeight,
-    unsigned int flags,
+    unsigned flags,
     const char *title,
     const char *aBottom,
     const char *helpTopic,
@@ -384,7 +384,7 @@ int CStartupInfo::Menu(
 }
 
 int CStartupInfo::Menu(
-    unsigned int flags,
+    unsigned flags,
     const char *title,
     const char *helpTopic,
     struct FarMenuItem *items,
@@ -395,7 +395,7 @@ int CStartupInfo::Menu(
 }
 
 int CStartupInfo::Menu(
-    unsigned int flags,
+    unsigned flags,
     const char *title,
     const char *helpTopic,
     const AStringVector &items,
@@ -412,7 +412,7 @@ int CStartupInfo::Menu(
     MyStringCopy(item.Text, reducedString);
     farMenuItems.Add(item);
   }
-  return Menu(flags, title, helpTopic, &farMenuItems.Front(), farMenuItems.Size());
+  return Menu(flags, title, helpTopic, farMenuItems.NonConstData(), farMenuItems.Size());
 }
 
 

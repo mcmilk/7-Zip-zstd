@@ -270,6 +270,10 @@ SOURCE=..\..\..\Common\Common.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\Common0.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\ComTry.h
 # End Source File
 # Begin Source File
@@ -342,6 +346,10 @@ SOURCE=..\..\..\Common\MyInitGuid.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\Common\MyLinux.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\Common\MyString.cpp
 # End Source File
 # Begin Source File
@@ -363,6 +371,10 @@ SOURCE=..\..\..\Common\MyVector.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\MyVersion.h
 # End Source File
 # Begin Source File
 
@@ -563,6 +575,10 @@ SOURCE=..\..\..\Windows\Registry.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Windows\Registry.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\SecurityUtils.h
 # End Source File
 # Begin Source File
 
@@ -1130,6 +1146,10 @@ SOURCE=..\..\UI\Common\DefaultName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\UI\Common\DirItem.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\UI\Common\EnumDirItems.cpp
 # End Source File
 # Begin Source File
@@ -1493,6 +1513,10 @@ SOURCE=..\..\..\..\C\7zTypes.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zVersion.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\7zWindows.h
 # End Source File
 # Begin Source File
@@ -1611,7 +1635,26 @@ SOURCE=..\..\..\..\C\Bcj2Enc.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Bra.c
+
+!IF  "$(CFG)" == "Alone - Win32 Release"
+
+# ADD CPP /O2
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 Debug"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 ReleaseU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Alone - Win32 DebugU"
+
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1927,6 +1970,10 @@ SOURCE=..\..\..\..\C\MtDec.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\MtDec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Precomp.h
 # End Source File
 # Begin Source File
 

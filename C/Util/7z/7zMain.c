@@ -1,19 +1,10 @@
 /* 7zMain.c - Test application for 7z Decoder
-2023-04-04 : Igor Pavlov : Public domain */
+2024-02-28 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
 #include <stdio.h>
 #include <string.h>
-
-#include "../../CpuArch.h"
-
-#include "../../7z.h"
-#include "../../7zAlloc.h"
-#include "../../7zBuf.h"
-#include "../../7zCrc.h"
-#include "../../7zFile.h"
-#include "../../7zVersion.h"
 
 #ifndef USE_WINDOWS_FILE
 /* for mkdir */
@@ -31,6 +22,15 @@
 #include <errno.h>
 #endif
 #endif
+
+#include "../../7zFile.h"
+#include "../../7z.h"
+#include "../../7zAlloc.h"
+#include "../../7zBuf.h"
+#include "../../7zCrc.h"
+#include "../../7zVersion.h"
+
+#include "../../CpuArch.h"
 
 #define kInputBufSize ((size_t)1 << 18)
 
@@ -168,12 +168,12 @@ static SRes Utf16_To_Char(CBuf *buf, const UInt16 *s
     #endif
     )
 {
-  unsigned len = 0;
+  size_t len = 0;
   for (len = 0; s[len] != 0; len++) {}
 
   #ifndef MY_USE_UTF8
   {
-    const unsigned size = len * 3 + 100;
+    const size_t size = len * 3 + 100;
     if (!Buf_EnsureSize(buf, size))
       return SZ_ERROR_MEM;
     {
@@ -320,21 +320,20 @@ static void UIntToStr_2(char *s, unsigned value)
 // typedef long BOOL;
 typedef int BOOL;
 
-typedef struct _FILETIME
+typedef struct
 {
   DWORD dwLowDateTime;
   DWORD dwHighDateTime;
 } FILETIME;
 
-static LONG TIME_GetBias()
+static LONG TIME_GetBias(void)
 {
   const time_t utc = time(NULL);
   struct tm *ptm = localtime(&utc);
   const int localdaylight = ptm->tm_isdst; /* daylight for local timezone */
   ptm = gmtime(&utc);
   ptm->tm_isdst = localdaylight; /* use local daylight, not that of Greenwich */
-  const LONG bias = (int)(mktime(ptm) - utc);
-  return bias;
+  return (int)(mktime(ptm) - utc);
 }
 
 #define TICKS_PER_SEC 10000000
@@ -359,11 +358,11 @@ static BOOL WINAPI FileTimeToLocalFileTime(const FILETIME *fileTime, FILETIME *l
 static const UInt32 kNumTimeQuantumsInSecond = 10000000;
 static const UInt32 kFileTimeStartYear = 1601;
 static const UInt32 kUnixTimeStartYear = 1970;
-static const UInt64 kUnixTimeOffset =
-    (UInt64)60 * 60 * 24 * (89 + 365 * (kUnixTimeStartYear - kFileTimeStartYear));
 
 static Int64 Time_FileTimeToUnixTime64(const FILETIME *ft)
 {
+  const UInt64 kUnixTimeOffset =
+      (UInt64)60 * 60 * 24 * (89 + 365 * (kUnixTimeStartYear - kFileTimeStartYear));
   const UInt64 winTime = GET_TIME_64(ft);
   return (Int64)(winTime / kNumTimeQuantumsInSecond) - (Int64)kUnixTimeOffset;
 }
@@ -384,8 +383,10 @@ static void FILETIME_To_timespec(const FILETIME *ft, struct MY_ST_TIMESPEC *ts)
     if (sec2 == sec)
     {
       ts->tv_sec = sec2;
-      const UInt64 winTime = GET_TIME_64(ft);
-      ts->tv_nsec = (long)((winTime % 10000000) * 100);
+      {
+        const UInt64 winTime = GET_TIME_64(ft);
+        ts->tv_nsec = (long)((winTime % 10000000) * 100);
+      }
       return;
     }
   }
@@ -429,7 +430,7 @@ static void ConvertFileTimeToString(const CNtfsFileTime *nTime, char *s)
 {
   unsigned year, mon, hour, min, sec;
   Byte ms[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-  unsigned t;
+  UInt32 t;
   UInt32 v;
   // UInt64 v64 = nt->Low | ((UInt64)nt->High << 32);
   UInt64 v64;
@@ -461,7 +462,7 @@ static void ConvertFileTimeToString(const CNtfsFileTime *nTime, char *s)
     ms[1] = 29;
   for (mon = 0;; mon++)
   {
-    const unsigned d = ms[mon];
+    const UInt32 d = ms[mon];
     if (v < d)
       break;
     v -= d;

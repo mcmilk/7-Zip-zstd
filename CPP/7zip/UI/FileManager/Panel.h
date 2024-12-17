@@ -60,6 +60,11 @@ const UInt32 kParentIndex_UInt32 = (UInt32)(Int32)kParentIndex;
 #define ROOT_FS_FOLDER L"C:\\"
 #endif
 
+#if !defined(Z7_WIN32_WINNT_MIN) || Z7_WIN32_WINNT_MIN < 0x0500  // < win2000
+#define Z7_USE_DYN_ComCtl32Version
+extern DWORD g_ComCtl32Version;
+#endif
+
 Z7_PURE_INTERFACES_BEGIN
 
 DECLARE_INTERFACE(CPanelCallback)

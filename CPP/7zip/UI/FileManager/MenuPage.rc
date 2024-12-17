@@ -1,8 +1,8 @@
 #include "MenuPageRes.h"
 #include "../../GuiCommon.rc"
 
-#define xc 240
-#define yc 252
+#define xc OPTIONS_PAGE_XC_SIZE
+#define yc OPTIONS_PAGE_YC_SIZE
 
 IDD_MENU  MY_PAGE
 #include "MenuPage2.rc"

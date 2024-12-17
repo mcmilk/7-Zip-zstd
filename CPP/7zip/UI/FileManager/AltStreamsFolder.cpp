@@ -462,7 +462,7 @@ Z7_COM7F_IMF(CAltStreamsFolder::CreateFile(const wchar_t *name, IProgress * /* p
   FString absPath;
   GetAbsPath(name, absPath);
   NIO::COutFile outFile;
-  if (!outFile.Create(absPath, false))
+  if (!outFile.Create_NEW(absPath))
     return GetLastError_noZero_HRESULT();
   return S_OK;
 }
@@ -566,7 +566,7 @@ EXTERN_C_END
 
 // static Func_NtSetInformationFile f_NtSetInformationFile;
 // static bool g_NtSetInformationFile_WasRequested = false;
-
+Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
 
 Z7_COM7F_IMF(CAltStreamsFolder::Rename(UInt32 index, const wchar_t *newName, IProgress *progress))
 {

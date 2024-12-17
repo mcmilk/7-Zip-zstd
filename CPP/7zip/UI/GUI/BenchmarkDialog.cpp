@@ -23,6 +23,7 @@
 #include "../FileManager/DialogSize.h"
 #include "../FileManager/HelpUtils.h"
 #include "../FileManager/LangUtils.h"
+#include "../FileManager/resourceGui.h"
 
 #include "../../MyVersion.h"
 
@@ -884,9 +885,15 @@ void CBenchmarkDialog::StartBenchmark()
       false); // totalBench
   if (!IsMemoryUsageOK(memUsage))
   {
-    UString s2 = LangString(IDT_BENCH_MEMORY);
+    UString s2;
+    LangString_OnlyFromLangFile(IDS_MEM_REQUIRED_MEM_SIZE, s2);
     if (s2.IsEmpty())
-      GetItemText(IDT_BENCH_MEMORY, s2);
+    {
+      s2 = LangString(IDT_BENCH_MEMORY);
+      if (s2.IsEmpty())
+        GetItemText(IDT_BENCH_MEMORY, s2);
+      s2.RemoveChar(L':');
+    }
     UString s;
     SetErrorMessage_MemUsage(s, memUsage, RamSize, RamSize_Limit, s2);
     MessageBoxError_Status(s);
@@ -1081,7 +1088,7 @@ static void Add_Dot3String(UString &s, UInt64 val)
 static void AddRatingString(UString &s, const CTotalBenchRes &info)
 {
   // AddUsageString(s, info);
-  // s += " ";
+  // s.Add_Space();
   // s.Add_UInt32(GetRating(info));
   Add_Dot3String(s, GetRating(info));
 }
@@ -1093,7 +1100,7 @@ static void AddRatingsLine(UString &s, const CTotalBenchRes &enc, const CTotalBe
     #endif
     )
 {
-  // AddUsageString(s, enc); s += " ";
+  // AddUsageString(s, enc); s.Add_Space();
 
   AddRatingString(s, enc);
   s += "  ";
@@ -1105,11 +1112,11 @@ static void AddRatingsLine(UString &s, const CTotalBenchRes &enc, const CTotalBe
   s += "  ";
   AddRatingString(s, tot_BenchRes);
   
-  s += " "; AddUsageString(s, tot_BenchRes);
+  s.Add_Space();  AddUsageString(s, tot_BenchRes);
 
   
   #ifdef PRINT_ITER_TIME
-  s += " ";
+  s.Add_Space();
   {
     Add_Dot3String(s, ticks;
     s += " s";
@@ -1342,7 +1349,7 @@ void CBenchmarkDialog::UpdateGui()
       /*
         s += "g:"; s.Add_UInt32((UInt32)pair.EncInfo.GlobalTime);
         s += " u:"; s.Add_UInt32((UInt32)pair.EncInfo.UserTime);
-        s += " ";
+        s.Add_Space();
       */
       AddRatingsLine(s, pair.Enc, pair.Dec
             #ifdef PRINT_ITER_TIME
@@ -1547,11 +1554,11 @@ HRESULT CFreqCallback::AddCpuFreq(unsigned numThreads, UInt64 freq, UInt64 usage
       s += "T Frequency (MHz):";
       s.Add_LF();
     }
-    s += " ";
+    s.Add_Space();
     if (numThreads != 1)
     {
       s.Add_UInt64(GetUsagePercents(usage));
-      s += '%';
+      s.Add_Char('%');
       s.Add_Space();
     }
     s.Add_UInt64(GetMips(freq));
@@ -1668,7 +1675,7 @@ HRESULT CThreadBenchmark::Process()
             CProperty prop;
             prop.Name = 'd';
             prop.Name.Add_UInt32((UInt32)(dictionarySize >> 10));
-            prop.Name += 'k';
+            prop.Name.Add_Char('k');
             props.Add(prop);
           }
         }
@@ -1879,7 +1886,7 @@ HRESULT Benchmark(
   {
     // bd.Bench2Text.Empty();
     bd.Bench2Text = "7-Zip " MY_VERSION_CPU;
-    bd.Bench2Text += (char)0xD;
+    // bd.Bench2Text.Add_Char((char)0xD);
     bd.Bench2Text.Add_LF();
   }
 

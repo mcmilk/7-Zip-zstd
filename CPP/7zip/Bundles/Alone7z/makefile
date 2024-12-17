@@ -2,8 +2,13 @@ PROG = 7zr.exe
 
 # USE_C_AES = 1
 # USE_C_SHA = 1
+# USE_C_CRC64 = 1
+# USE_C_CRC = 1
+# NO_ASM_GNU=1
+# NO_ASM=1
 
 CFLAGS = $(CFLAGS) -DZ7_PROG_VARIANT_R
+# CONSOLE_VARIANT_FLAGS=-DZ7_PROG_VARIANT_R
 
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
