@@ -1,6 +1,11 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+24.06          2024-05-26
+-------------------------
+- The bug was fixed: 7-Zip could not unpack some ZSTD archives.
+ 
+
 24.05          2024-05-14
 -------------------------
 - New switch -myv={MMNN} to set decoder compatibility version for 7z archive creating.
