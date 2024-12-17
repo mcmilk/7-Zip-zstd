@@ -45,7 +45,8 @@ struct CPhysTempBuffer
   ~CPhysTempBuffer() { MidFree(buffer); }
 };
 
-static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt64 fileSize,
+static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath,
+    bool writeToDisk, UInt64 fileSize,
     UInt32 bufferSize, UInt64 progressStart, IProgress *progress)
 {
   NIO::CInFile inFile;
@@ -74,9 +75,11 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
  
   for (UInt64 pos = 0; pos < fileSize;)
   {
-    UInt64 progressCur = progressStart + pos;
-    RINOK(progress->SetCompleted(&progressCur))
-    UInt64 rem = fileSize - pos;
+    {
+      const UInt64 progressCur = progressStart + pos;
+      RINOK(progress->SetCompleted(&progressCur))
+    }
+    const UInt64 rem = fileSize - pos;
     UInt32 curSize = (UInt32)MyMin(rem, (UInt64)bufferSize);
     UInt32 processedSize;
     if (!inFile.Read(tempBuffer.buffer, curSize, processedSize))
@@ -91,7 +94,6 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
       if (curSize > bufferSize)
         return E_FAIL;
     }
-
     if (!outFile.Write(tempBuffer.buffer, curSize, processedSize))
       return GetLastError_noZero_HRESULT();
     if (curSize != processedSize)
@@ -135,9 +137,7 @@ Z7_COM7F_IMF(CFSDrives::LoadItems())
   FOR_VECTOR (i, driveStrings)
   {
     CDriveInfo di;
-
     const FString &driveName = driveStrings[i];
-
     di.FullSystemName = driveName;
     if (!driveName.IsEmpty())
       di.Name.SetFrom(driveName, driveName.Len() - 1);
@@ -183,25 +183,24 @@ Z7_COM7F_IMF(CFSDrives::LoadItems())
     {
       FString name ("PhysicalDrive");
       name.Add_UInt32(n);
-      
       FString fullPath (kVolPrefix);
       fullPath += name;
-
       CFileInfo fi;
       if (!fi.Find(fullPath))
         continue;
 
       CDriveInfo di;
       di.Name = name;
-      di.FullSystemName = fullPath;
+      // if (_volumeMode == true) we use CDriveInfo::FullSystemName only in GetSystemIconIndex().
+      // And we need name without "\\\\.\\" prefix in GetSystemIconIndex().
+      // So we don't set di.FullSystemName = fullPath;
+      di.FullSystemName = name;
       di.ClusterSize = 0;
       di.DriveSize = fi.Size;
       di.FreeSpace = 0;
       di.DriveType = 0;
-
       di.IsPhysicalDrive = true;
       di.KnownSize = true;
-      
       _drives.Add(di);
     }
   }
@@ -217,7 +216,7 @@ Z7_COM7F_IMF(CFSDrives::GetNumberOfItems(UInt32 *numItems))
 
 Z7_COM7F_IMF(CFSDrives::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value))
 {
-  if (itemIndex >= (UInt32)_drives.Size())
+  if (itemIndex >= _drives.Size())
     return E_INVALIDARG;
   NCOM::CPropVariant prop;
   const CDriveInfo &di = _drives[itemIndex];
@@ -268,7 +267,7 @@ HRESULT CFSDrives::BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder)
 Z7_COM7F_IMF(CFSDrives::BindToFolder(UInt32 index, IFolderFolder **resultFolder))
 {
   *resultFolder = NULL;
-  if (index >= (UInt32)_drives.Size())
+  if (index >= _drives.Size())
     return E_INVALIDARG;
   const CDriveInfo &di = _drives[index];
   /*
@@ -322,17 +321,14 @@ Z7_COM7F_IMF(CFSDrives::GetFolderProperty(PROPID propID, PROPVARIANT *value))
 
 Z7_COM7F_IMF(CFSDrives::GetSystemIconIndex(UInt32 index, Int32 *iconIndex))
 {
-  *iconIndex = 0;
+  *iconIndex = -1;
   const CDriveInfo &di = _drives[index];
-  if (di.IsPhysicalDrive)
-    return S_OK;
-  int iconIndexTemp;
-  if (GetRealIconIndex(di.FullSystemName, 0, iconIndexTemp) != 0)
-  {
-    *iconIndex = iconIndexTemp;
-    return S_OK;
-  }
-  return GetLastError_noZero_HRESULT();
+  return Shell_GetFileInfo_SysIconIndex_for_Path_return_HRESULT(
+      di.FullSystemName,
+      _volumeMode ?
+          FILE_ATTRIBUTE_ARCHIVE:
+          FILE_ATTRIBUTE_DIRECTORY,
+      iconIndex);
 }
 
 void CFSDrives::AddExt(FString &s, unsigned index) const
@@ -393,10 +389,8 @@ Z7_COM7F_IMF(CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
 {
   if (numItems == 0)
     return S_OK;
-  
   if (moveMode)
     return E_NOTIMPL;
-
   if (!_volumeMode)
     return E_NOTIMPL;
 
@@ -411,12 +405,12 @@ Z7_COM7F_IMF(CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
   RINOK(callback->SetTotal(totalSize))
   RINOK(callback->SetNumFiles(numItems))
   
-  FString destPath = us2fs(path);
+  const FString destPath = us2fs(path);
   if (destPath.IsEmpty())
     return E_INVALIDARG;
 
-  bool isAltDest = NName::IsAltPathPrefix(destPath);
-  bool isDirectPath = (!isAltDest && !IsPathSepar(destPath.Back()));
+  const bool isAltDest = NName::IsAltPathPrefix(destPath);
+  const bool isDirectPath = (!isAltDest && !IsPathSepar(destPath.Back()));
   
   if (isDirectPath)
   {
@@ -428,7 +422,7 @@ Z7_COM7F_IMF(CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
   RINOK(callback->SetCompleted(&completedSize))
   for (i = 0; i < numItems; i++)
   {
-    unsigned index = indices[i];
+    const unsigned index = indices[i];
     const CDriveInfo &di = _drives[index];
     FString destPath2 = destPath;
 
@@ -443,7 +437,7 @@ Z7_COM7F_IMF(CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
       destPath2 += destName;
     }
     
-    FString srcPath = di.GetDeviceFileIoName();
+    const FString srcPath = di.GetDeviceFileIoName();
 
     UInt64 fileSize = 0;
     if (GetFileSize(index, fileSize) != S_OK)

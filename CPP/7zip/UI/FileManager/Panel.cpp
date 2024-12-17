@@ -420,8 +420,8 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
   _listView._panel = this;
   _listView.SetWindowProc();
 
-  _listView.SetImageList(GetSysImageList(true), LVSIL_SMALL);
-  _listView.SetImageList(GetSysImageList(false), LVSIL_NORMAL);
+  _listView.SetImageList(Shell_Get_SysImageList_smallIcons(true), LVSIL_SMALL);
+  _listView.SetImageList(Shell_Get_SysImageList_smallIcons(false), LVSIL_NORMAL);
 
   // _exStyle |= LVS_EX_HEADERDRAGDROP;
   // DWORD extendedStyle = _listView.GetExtendedListViewStyle();
@@ -506,17 +506,15 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
       #endif
       , NULL,
     WS_BORDER | WS_VISIBLE |WS_CHILD | CBS_DROPDOWN | CBS_AUTOHSCROLL,
-      0, 0, 100, 520,
+      0, 0, 100, 620,
       (_headerReBar ? _headerToolBar : (HWND)*this),
       (HMENU)(UINT_PTR)(_comboBoxID),
       g_hInstance, NULL);
-  #ifndef UNDER_CE
+
+#ifndef UNDER_CE
   _headerComboBox.SetUnicodeFormat(true);
-
-  _headerComboBox.SetImageList(GetSysImageList(true));
-
+  _headerComboBox.SetImageList(Shell_Get_SysImageList_smallIcons(true));
   _headerComboBox.SetExtendedStyle(CBES_EX_PATHWORDBREAKPROC, CBES_EX_PATHWORDBREAKPROC);
-
   /*
   _headerComboBox.SetUserDataLongPtr(LONG_PTR(&_headerComboBox));
   _headerComboBox._panel = this;
@@ -525,9 +523,7 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
       LONG_PTR(ComboBoxSubclassProc));
   */
   _comboBoxEdit.Attach(_headerComboBox.GetEditControl());
-
   // _comboBoxEdit.SendMessage(CCM_SETUNICODEFORMAT, (WPARAM)(BOOL)TRUE, 0);
-
   _comboBoxEdit.SetUserDataLongPtr(LONG_PTR(&_comboBoxEdit));
   _comboBoxEdit._panel = this;
    #ifndef _UNICODE
@@ -538,8 +534,7 @@ bool CPanel::OnCreate(CREATESTRUCT * /* createStruct */)
    #endif
      _comboBoxEdit._origWindowProc =
       (WNDPROC)_comboBoxEdit.SetLongPtr(GWLP_WNDPROC, LONG_PTR(ComboBoxEditSubclassProc));
-
-  #endif
+#endif
 
   if (_headerReBar)
   {

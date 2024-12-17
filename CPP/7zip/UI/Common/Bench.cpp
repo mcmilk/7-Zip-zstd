@@ -3713,7 +3713,7 @@ HRESULT Bench(
   }
   */
   
-  bool ramSize_Defined = NSystem::GetRamSize(ramSize);
+  const bool ramSize_Defined = NSystem::GetRamSize(ramSize);
 
   UInt32 numThreadsSpecified = numCPUs;
   bool needSetComplexity = false;
@@ -4002,16 +4002,29 @@ HRESULT Bench(
     }
   }
 
-  if (numThreadsSpecified >= 2)
   if (printCallback || freqCallback)
+  for (unsigned test = 0; test < 3; test++)
   {
+    if (numThreadsSpecified < 2)
+    {
+      // if (test == 1)
+      break;
+    }
+    if (test == 2 && numThreadsSpecified <= numCPUs)
+      break;
     if (printCallback)
       printCallback->NewLine();
 
-    /* it can show incorrect frequency for HT threads.
-       so we reduce freq test to (numCPUs / 2) */
+    /* it can show incorrect frequency for HT threads. */
 
-    UInt32 numThreads = (numThreadsSpecified >= numCPUs / 2 ? numCPUs / 2 : numThreadsSpecified);
+    UInt32 numThreads = numThreadsSpecified;
+    if (test < 2)
+    {
+      if (numThreads >= numCPUs)
+        numThreads = numCPUs;
+      if (test == 0)
+        numThreads /= 2;
+    }
     if (numThreads < 1)
       numThreads = 1;
    

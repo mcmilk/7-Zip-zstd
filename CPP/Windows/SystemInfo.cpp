@@ -5,6 +5,7 @@
 #include "../../C/CpuArch.h"
 
 #include "../Common/IntToString.h"
+#include "../Common/StringConvert.h"
 
 #ifdef _WIN32
 
@@ -511,8 +512,6 @@ void GetSysInfo(AString &s1, AString &s2)
 }
 
 
-void GetCpuName(AString &s);
-
 static void AddBracedString(AString &dest, AString &src)
 {
   if (!src.IsEmpty())
@@ -554,9 +553,7 @@ void CCpuName::Fill()
   #ifdef MY_CPU_X86_OR_AMD64
   {
     #if !defined(MY_CPU_AMD64)
-    if (!z7_x86_cpuid_GetMaxFunc())
-      s += "x86";
-    else
+    if (z7_x86_cpuid_GetMaxFunc())
     #endif
     {
       x86cpuid_to_String(s);
@@ -583,43 +580,26 @@ void CCpuName::Fill()
   #endif
 
 
-  if (s.IsEmpty())
-  {
-    #ifdef MY_CPU_LE
-      s += "LE";
-    #elif defined(MY_CPU_BE)
-      s += "BE";
-    #endif
-  }
-  
-  #ifdef __APPLE__
-  {
-    AString s2;
-    UInt32 v = 0;
-    if (z7_sysctlbyname_Get_UInt32("machdep.cpu.core_count", &v) == 0)
-    {
-      s2.Add_UInt32(v);
-      s2 += 'C';
-    }
-    if (z7_sysctlbyname_Get_UInt32("machdep.cpu.thread_count", &v) == 0)
-    {
-      s2.Add_UInt32(v);
-      s2 += 'T';
-    }
-    if (!s2.IsEmpty())
-    {
-      s.Add_Space_if_NotEmpty();
-      s += s2;
-    }
-  }
-  #endif
-
-  
-  #ifdef _WIN32
+#ifdef _WIN32
   {
     NRegistry::CKey key;
     if (key.Open(HKEY_LOCAL_MACHINE, TEXT("HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0"), KEY_READ) == ERROR_SUCCESS)
     {
+      // s.Empty(); // for debug
+      {
+        CSysString name;
+        if (s.IsEmpty())
+        if (key.QueryValue(TEXT("ProcessorNameString"), name) == ERROR_SUCCESS)
+        {
+          s += GetAnsiString(name);
+        }
+        if (key.QueryValue(TEXT("Identifier"), name) == ERROR_SUCCESS)
+        {
+          if (!Revision.IsEmpty())
+            Revision += " : ";
+          Revision += GetAnsiString(name);
+        }
+      }
       LONG res[2];
       CByteBuffer bufs[2];
       {
@@ -627,8 +607,9 @@ void CCpuName::Fill()
         {
           UInt32 size = 0;
           res[i] = key.QueryValue(i == 0 ?
-            TEXT("Previous Update Revision") :
-            TEXT("Update Revision"), bufs[i], size);
+              TEXT("Previous Update Revision") :
+              TEXT("Update Revision"),
+              bufs[i], size);
           if (res[i] == ERROR_SUCCESS)
             if (size != bufs[i].Size())
               res[i] = ERROR_SUCCESS + 1;
@@ -657,8 +638,36 @@ void CCpuName::Fill()
       }
     }
   }
-  #endif
+#endif
 
+  if (s.IsEmpty())
+  {
+    #ifdef MY_CPU_NAME
+      s += MY_CPU_NAME;
+    #endif
+  }
+  
+  #ifdef __APPLE__
+  {
+    AString s2;
+    UInt32 v = 0;
+    if (z7_sysctlbyname_Get_UInt32("machdep.cpu.core_count", &v) == 0)
+    {
+      s2.Add_UInt32(v);
+      s2.Add_Char('C');
+    }
+    if (z7_sysctlbyname_Get_UInt32("machdep.cpu.thread_count", &v) == 0)
+    {
+      s2.Add_UInt32(v);
+      s2.Add_Char('T');
+    }
+    if (!s2.IsEmpty())
+    {
+      s.Add_Space_if_NotEmpty();
+      s += s2;
+    }
+  }
+  #endif
 
   #ifdef Z7_LARGE_PAGES
   Add_LargePages_String(LargePages);
@@ -900,7 +909,7 @@ void GetSystemInfoText(AString &sRes)
     }
     {
       AString s;
-      GetCpuName(s);
+      GetCpuName_MultiLine(s);
       if (!s.IsEmpty())
       {
         sRes += s;
@@ -920,18 +929,6 @@ void GetSystemInfoText(AString &sRes)
     }
     #endif
     */
-}
-
-
-void GetCpuName(AString &s);
-void GetCpuName(AString &s)
-{
-  CCpuName cpuName;
-  cpuName.Fill();
-  s = cpuName.CpuName;
-  AString s2;
-  cpuName.Get_Revision_Microcode_LargePages(s2);
-  s.Add_OptSpaced(s2);
 }
 
 

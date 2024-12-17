@@ -387,8 +387,8 @@ Z7_COM7F_IMF(CAltStreamsFolder::WasChanged(Int32 *wasChanged))
       return S_OK;
     }
 
-    DWORD waitResult = ::WaitForSingleObject(_findChangeNotification, 0);
-    bool wasChangedLoc = (waitResult == WAIT_OBJECT_0);
+    const DWORD waitResult = ::WaitForSingleObject(_findChangeNotification, 0);
+    const bool wasChangedLoc = (waitResult == WAIT_OBJECT_0);
     if (wasChangedLoc)
     {
       _findChangeNotification.FindNext();
@@ -666,16 +666,10 @@ Z7_COM7F_IMF(CAltStreamsFolder::SetProperty(UInt32 /* index */, PROPID /* propID
 Z7_COM7F_IMF(CAltStreamsFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex))
 {
   const CAltStream &ss = Streams[index];
-  *iconIndex = 0;
-  int iconIndexTemp;
-  if (GetRealIconIndex(_pathPrefix + us2fs(ss.Name),
-    0 // fi.Attrib
-    , iconIndexTemp) != 0)
-  {
-    *iconIndex = iconIndexTemp;
-    return S_OK;
-  }
-  return GetLastError_noZero_HRESULT();
+  return Shell_GetFileInfo_SysIconIndex_for_Path_return_HRESULT(
+      _pathPrefix + us2fs(ss.Name),
+      FILE_ATTRIBUTE_ARCHIVE,
+      iconIndex);
 }
 
 /*

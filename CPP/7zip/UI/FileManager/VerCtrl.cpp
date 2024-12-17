@@ -387,13 +387,13 @@ void CApp::VerCtrl(unsigned id)
         */
         COverwriteDialog dialog;
         
-        dialog.OldFileInfo.SetTime(&fdi.Info.ftLastWriteTime);
+        dialog.OldFileInfo.SetTime(fdi.Info.ftLastWriteTime);
         dialog.OldFileInfo.SetSize(fdi.GetSize());
-        dialog.OldFileInfo.Name = fs2us(path);
+        dialog.OldFileInfo.Path = fs2us(path);
         
-        dialog.NewFileInfo.SetTime(&fdi2.Info.ftLastWriteTime);
+        dialog.NewFileInfo.SetTime(fdi2.Info.ftLastWriteTime);
         dialog.NewFileInfo.SetSize(fdi2.GetSize());
-        dialog.NewFileInfo.Name = fs2us(path2);
+        dialog.NewFileInfo.Path = fs2us(path2);
 
         dialog.ShowExtraButtons = false;
         dialog.DefaultButton_is_NO = true;

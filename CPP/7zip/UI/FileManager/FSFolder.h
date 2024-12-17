@@ -22,11 +22,11 @@ class CFSFolder;
 
 struct CDirItem: public NWindows::NFile::NFind::CFileInfo
 {
-  #ifndef UNDER_CE
+#ifndef UNDER_CE
   UInt64 PackSize;
-  #endif
+#endif
 
-  #ifdef FS_SHOW_LINKS_INFO
+#ifdef FS_SHOW_LINKS_INFO
   FILETIME ChangeTime;
   UInt64 FileIndex;
   UInt32 NumLinks;
@@ -34,22 +34,21 @@ struct CDirItem: public NWindows::NFile::NFind::CFileInfo
   bool FileInfo_WasRequested;
   bool ChangeTime_Defined;
   bool ChangeTime_WasRequested;
-  #endif
+#endif
 
-  #ifndef UNDER_CE
+#ifndef UNDER_CE
   bool PackSize_Defined;
-  #endif
+#endif
 
   bool FolderStat_Defined;
+  int Parent;
 
-  #ifndef UNDER_CE
+#ifndef UNDER_CE
   CByteBuffer Reparse;
-  #endif
+#endif
   
   UInt64 NumFolders;
   UInt64 NumFiles;
-  
-  int Parent;
 };
 
 /*
@@ -126,19 +125,17 @@ class CFSFolder Z7_final:
   Z7_IFACE_COM7_IMP(IFolderSetFlatMode)
   // Z7_IFACE_COM7_IMP(IFolderSetShowNtfsStreamsMode)
 
-private:
+  bool _flatMode;
+  bool _commentsAreLoaded;
+  // bool _scanAltStreams;
+
   FString _path;
-  
   CObjectVector<CDirItem> Files;
   FStringVector Folders;
   // CObjectVector<CAltStream> Streams;
   // CMyComPtr<IFolderFolder> _parentFolder;
 
-  bool _commentsAreLoaded;
   CPairsStorage _comments;
-
-  // bool _scanAltStreams;
-  bool _flatMode;
 
   #ifdef _WIN32
   NWindows::NFile::NFind::CFindChangeNotification _findChangeNotification;
@@ -163,9 +160,11 @@ public:
   HRESULT InitToRoot() { return Init((FString) FSTRING_PATH_SEPARATOR /* , NULL */); }
   #endif
 
-  CFSFolder() : _flatMode(false)
+  CFSFolder():
+    _flatMode(false),
+    _commentsAreLoaded(false)
     // , _scanAltStreams(false)
-  {}
+    {}
 
   void GetFullPath(const CDirItem &item, FString &path) const
   {

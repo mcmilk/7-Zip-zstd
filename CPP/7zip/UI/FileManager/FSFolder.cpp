@@ -535,7 +535,7 @@ Z7_COM7F_IMF(CFSFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *va
 {
   NCOM::CPropVariant prop;
   /*
-  if (index >= (UInt32)Files.Size())
+  if (index >= Files.Size())
   {
     CAltStream &ss = Streams[index - Files.Size()];
     CDirItem &fi = Files[ss.Parent];
@@ -561,7 +561,7 @@ Z7_COM7F_IMF(CFSFolder::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *va
       case kpidComment: break;
       default: index = ss.Parent;
     }
-    if (index >= (UInt32)Files.Size())
+    if (index >= Files.Size())
     {
       prop.Detach(value);
       return S_OK;
@@ -716,8 +716,8 @@ Z7_COM7F_IMF2(Int32, CFSFolder::CompareItems(UInt32 index1, UInt32 index2, PROPI
   /*
   const CAltStream *ss1 = NULL;
   const CAltStream *ss2 = NULL;
-  if (index1 >= (UInt32)Files.Size()) { ss1 = &Streams[index1 - Files.Size()]; index1 = ss1->Parent; }
-  if (index2 >= (UInt32)Files.Size()) { ss2 = &Streams[index2 - Files.Size()]; index2 = ss2->Parent; }
+  if (index1 >= Files.Size()) { ss1 = &Streams[index1 - Files.Size()]; index1 = ss1->Parent; }
+  if (index2 >= Files.Size()) { ss2 = &Streams[index2 - Files.Size()]; index2 = ss2->Parent; }
   */
   CDirItem &fi1 = Files[index1];
   CDirItem &fi2 = Files[index2];
@@ -1034,7 +1034,7 @@ Z7_COM7F_IMF(CFSFolder::GetItemFullSize(UInt32 index, PROPVARIANT *value, IProgr
 
 Z7_COM7F_IMF(CFSFolder::CalcItemFullSize(UInt32 index, IProgress *progress))
 {
-  if (index >= (UInt32)Files.Size())
+  if (index >= Files.Size())
     return S_OK;
   CDirItem &fi = Files[index];
   if (!fi.IsDir())
@@ -1080,7 +1080,7 @@ Z7_COM7F_IMF(CFSFolder::CreateFile(const wchar_t *name, IProgress * /* progress 
 
 Z7_COM7F_IMF(CFSFolder::Rename(UInt32 index, const wchar_t *newName, IProgress * /* progress */))
 {
-  if (index >= (UInt32)Files.Size())
+  if (index >= Files.Size())
     return E_NOTIMPL;
   const CDirItem &fi = Files[index];
   // FString prefix;
@@ -1103,9 +1103,9 @@ Z7_COM7F_IMF(CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress 
     UInt32 index = indices[i];
     bool result = true;
     /*
-    if (index >= (UInt32)Files.Size())
+    if (index >= Files.Size())
     {
-      const CAltStream &ss = Streams[index - (UInt32)Files.Size()];
+      const CAltStream &ss = Streams[index - Files.Size()];
       if (prevDeletedFileIndex != ss.Parent)
       {
         const CDirItem &fi = Files[ss.Parent];
@@ -1134,7 +1134,7 @@ Z7_COM7F_IMF(CFSFolder::Delete(const UInt32 *indices, UInt32 numItems,IProgress 
 Z7_COM7F_IMF(CFSFolder::SetProperty(UInt32 index, PROPID propID,
     const PROPVARIANT *value, IProgress * /* progress */))
 {
-  if (index >= (UInt32)Files.Size())
+  if (index >= Files.Size())
     return E_INVALIDARG;
   CDirItem &fi = Files[index];
   if (fi.Parent >= 0)
@@ -1172,17 +1172,12 @@ Z7_COM7F_IMF(CFSFolder::SetProperty(UInt32 index, PROPID propID,
 
 Z7_COM7F_IMF(CFSFolder::GetSystemIconIndex(UInt32 index, Int32 *iconIndex))
 {
-  if (index >= (UInt32)Files.Size())
+  *iconIndex = -1;
+  if (index >= Files.Size())
     return E_INVALIDARG;
   const CDirItem &fi = Files[index];
-  *iconIndex = 0;
-  int iconIndexTemp;
-  if (GetRealIconIndex(_path + GetRelPath(fi), fi.Attrib, iconIndexTemp) != 0)
-  {
-    *iconIndex = iconIndexTemp;
-    return S_OK;
-  }
-  return GetLastError_noZero_HRESULT();
+  return Shell_GetFileInfo_SysIconIndex_for_Path_return_HRESULT(
+      _path + GetRelPath(fi), fi.Attrib, iconIndex);
 }
 
 Z7_COM7F_IMF(CFSFolder::SetFlatMode(Int32 flatMode))

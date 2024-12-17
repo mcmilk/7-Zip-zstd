@@ -220,6 +220,9 @@ endif
 
 all: $(O) $(PROGPATH) $(STATIC_TARGET)
 
+# we need $(O) as order-only-prerequisites:
+$(OBJS): | $(O)
+
 $(O):
 	$(MY_MKDIR) $(O)
 
