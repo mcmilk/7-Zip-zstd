@@ -247,9 +247,9 @@ static const CHashCommand g_HashCommands[] =
   { CZipContextMenu::kHash_SHA512,   "SHA2-512", "SHA512" },
   { CZipContextMenu::kHash_BLAKE2sp, "BLAKE2sp", "BLAKE2sp" },
   { CZipContextMenu::kHash_BLAKE3,   "BLAKE3",   "BLAKE3" },
-  { CZipContextMenu::kHash_SHA256,   "SHA3-256", "SHA3-256" },
-  { CZipContextMenu::kHash_SHA384,   "SHA3-384", "SHA3-384" },
-  { CZipContextMenu::kHash_SHA512,   "SHA3-512", "SHA3-512" },
+  { CZipContextMenu::kHash_SHA3_256, "SHA3-256", "SHA3-256" },
+  { CZipContextMenu::kHash_SHA3_384, "SHA3-384", "SHA3-384" },
+  { CZipContextMenu::kHash_SHA3_512, "SHA3-512", "SHA3-512" },
   { CZipContextMenu::kHash_All,      "*",        "*" },
   { CZipContextMenu::kHash_Generate_SHA256, "SHA2-256 -> file.sha256", "SHA256" },
   { CZipContextMenu::kHash_TestArc, "Checksum : Test", "Hash" }
