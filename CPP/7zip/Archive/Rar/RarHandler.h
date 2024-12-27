@@ -1,7 +1,7 @@
 // RarHandler.h
 
-#ifndef __RAR_HANDLER_H
-#define __RAR_HANDLER_H
+#ifndef ZIP7_INC_RAR_HANDLER_H
+#define ZIP7_INC_RAR_HANDLER_H
 
 #include "../IArchive.h"
 
@@ -67,11 +67,21 @@ struct CRefItem
   unsigned NumItems;
 };
 
-class CHandler:
+class CHandler Z7_final:
   public IInArchive,
-  PUBLIC_ISetCompressCodecsInfo
+  Z7_PUBLIC_ISetCompressCodecsInfo_IFEC
   public CMyUnknownImp
 {
+  Z7_COM_QI_BEGIN2(IInArchive)
+  Z7_COM_QI_ENTRY_ISetCompressCodecsInfo_IFEC
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
+  
+  Z7_IFACE_COM7_IMP(IInArchive)
+  DECL_ISetCompressCodecsInfo
+
+  bool _isArc;
+
   CRecordVector<CRefItem> _refItems;
   CObjectVector<CItem> _items;
   CObjectVector<CArc> _arcs;
@@ -79,7 +89,6 @@ class CHandler:
   // AString _errorMessage;
   UInt32 _errorFlags;
   UInt32 _warningFlags;
-  bool _isArc;
   UString _missingVolName;
 
   DECL_EXTERNAL_CODECS_VARS
@@ -91,7 +100,7 @@ class CHandler:
   void AddErrorMessage(const AString &s)
   {
     if (!_errorMessage.IsEmpty())
-      _errorMessage += '\n';
+      _errorMessage.Add_LF();
     _errorMessage += s;
   }
   */
@@ -99,16 +108,6 @@ class CHandler:
   HRESULT Open2(IInStream *stream,
       const UInt64 *maxCheckStartPosition,
       IArchiveOpenCallback *openCallback);
-
-public:
-  MY_QUERYINTERFACE_BEGIN2(IInArchive)
-  QUERY_ENTRY_ISetCompressCodecsInfo
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
-  
-  INTERFACE_IInArchive(;)
-
-  DECL_ISetCompressCodecsInfo
 };
 
 }}

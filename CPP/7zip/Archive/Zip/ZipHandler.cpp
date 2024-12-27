@@ -18,17 +18,9 @@
 #include "../../Common/StreamUtils.h"
 
 #include "../../Compress/CopyCoder.h"
-
-#ifdef EXTERNAL_CODECS
-#ifndef SUPPORT_LZFSE
-#define SUPPORT_LZFSE
-#endif
-#endif
-
-#ifdef SUPPORT_LZFSE
+#ifndef Z7_ZIP_LZFSE_DISABLE
 #include "../../Compress/LzfseDecoder.h"
 #endif
-
 #include "../../Compress/LzmaDecoder.h"
 #include "../../Compress/ImplodeDecoder.h"
 #include "../../Compress/PpmdZip.h"
@@ -93,12 +85,14 @@ const char * const kMethodNames1[kNumMethodNames1] =
   , "BZip2"
   , NULL
   , "LZMA"
+  /*
   , NULL
   , NULL
   , NULL
   , NULL
   , NULL
-  , "zstd-pk"
+  , "zstd-pk" // deprecated
+  */
 };
 
 
@@ -130,6 +124,7 @@ static const CUInt32PCharPair g_HeaderCharacts[] =
 {
   { 0, "Encrypt" },
   { 3, "Descriptor" },
+  // { 4, "Enhanced" },
   // { 5, "Patched" },
   { 6, kMethod_StrongCrypto },
   { 11, "UTF8" },
@@ -222,7 +217,7 @@ static AString BytesToString(const CByteBuffer &data)
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -339,12 +334,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     }
 
     // case kpidIsAltStream: prop = true; break;
+    default: break;
   }
   return prop.Detach(value);
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = m_Items.Size();
   return S_OK;
@@ -378,7 +374,7 @@ static bool NtfsUnixTimeToProp(bool fromCentral,
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -522,7 +518,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         if (extra.GetWzAes(aesField))
         {
           m += kMethod_AES;
-          m += '-';
+          m.Add_Minus();
           m.Add_UInt32(((unsigned)aesField.Strength + 1) * 64);
           id = aesField.Method;
           isWzAes = true;
@@ -538,13 +534,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           f.AlgId = 0;
           if (extra.GetStrongCrypto(f))
           {
-            const char *s = FindNameForId(k_StrongCryptoPairs, ARRAY_SIZE(k_StrongCryptoPairs), f.AlgId);
+            const char *s = FindNameForId(k_StrongCryptoPairs, Z7_ARRAY_SIZE(k_StrongCryptoPairs), f.AlgId);
             if (s)
               m += s;
             else
             {
               m += kMethod_StrongCrypto;
-              m += ':';
+              m.Add_Colon();
               m.Add_UInt32(f.AlgId);
             }
             if (f.CertificateIsUsed())
@@ -565,7 +561,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           s = kMethodNames1[id];
         else
         {
-          int id2 = (int)id - (int)kMethodNames2Start;
+          const int id2 = (int)id - (int)kMethodNames2Start;
           if (id2 >= 0 && (unsigned)id2 < kNumMethodNames2)
             s = kMethodNames2[id2];
         }
@@ -586,7 +582,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
           }
           else if (id == NFileHeader::NCompressionMethod::kDeflate)
           {
-            m += ':';
+            m.Add_Colon();
             m += kDeflateLevels[level];
             level = 0;
           }
@@ -630,7 +626,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
       if (flags != 0)
       {
-        AString s2 = FlagsToString(g_HeaderCharacts, ARRAY_SIZE(g_HeaderCharacts), flags);
+        const AString s2 = FlagsToString(g_HeaderCharacts, Z7_ARRAY_SIZE(g_HeaderCharacts), flags);
         if (!s2.IsEmpty())
         {
           if (!s.IsEmpty())
@@ -682,6 +678,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
       break;
     */
+    default: break;
   }
   
   return prop.Detach(value);
@@ -691,13 +688,13 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
 
 /*
-STDMETHODIMP CHandler::GetNumRawProps(UInt32 *numProps)
+Z7_COM7F_IMF(CHandler::GetNumRawProps(UInt32 *numProps)
 {
   *numProps = 0;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetRawPropInfo(UInt32 index, BSTR *name, PROPID *propID)
+Z7_COM7F_IMF(CHandler::GetRawPropInfo(UInt32 index, BSTR *name, PROPID *propID)
 {
   UNUSED_VAR(index);
   *propID = 0;
@@ -705,7 +702,7 @@ STDMETHODIMP CHandler::GetRawPropInfo(UInt32 index, BSTR *name, PROPID *propID)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetParent(UInt32 index, UInt32 *parent, UInt32 *parentType)
+Z7_COM7F_IMF(CHandler::GetParent(UInt32 index, UInt32 *parent, UInt32 *parentType)
 {
   *parentType = NParentType::kDir;
   *parent = (UInt32)(Int32)-1;
@@ -721,7 +718,7 @@ STDMETHODIMP CHandler::GetParent(UInt32 index, UInt32 *parent, UInt32 *parentTyp
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data, UInt32 *dataSize, UInt32 *propType)
+Z7_COM7F_IMF(CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data, UInt32 *dataSize, UInt32 *propType)
 {
   UNUSED_VAR(index);
   UNUSED_VAR(propID);
@@ -768,13 +765,16 @@ void CHandler::MarkAltStreams(CObjectVector<CItemEx> &items)
 }
 */
 
-STDMETHODIMP CHandler::Open(IInStream *inStream,
-    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback)
+Z7_COM7F_IMF(CHandler::Open(IInStream *inStream,
+    const UInt64 *maxCheckStartPosition, IArchiveOpenCallback *callback))
 {
   COM_TRY_BEGIN
   try
   {
     Close();
+    m_Archive.Force_ReadLocals_Mode = _force_OpenSeq;
+    // m_Archive.Disable_VolsRead = _force_OpenSeq;
+    // m_Archive.Disable_FindMarker = _force_OpenSeq;
     HRESULT res = m_Archive.Open(inStream, maxCheckStartPosition, callback, m_Items);
     if (res != S_OK)
     {
@@ -788,78 +788,34 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   m_Items.Clear();
   m_Archive.Close();
   return S_OK;
 }
 
-class CZstdDecoder:
-  public ICompressCoder,
-  public CMyUnknownImp
-{
-  NCompress::NZSTD::CDecoder *DecoderSpec;
-  CMyComPtr<ICompressCoder> Decoder;
+
+Z7_CLASS_IMP_NOQIB_3(
+  CLzmaDecoder
+  , ICompressCoder
+  , ICompressSetFinishMode
+  , ICompressGetInStreamProcessedSize
+)
 public:
-  CZstdDecoder();
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  MY_UNKNOWN_IMP
+  CMyComPtr2_Create<ICompressCoder, NCompress::NLzma::CDecoder> Decoder;
 };
-
-CZstdDecoder::CZstdDecoder()
-{
-  DecoderSpec = new NCompress::NZSTD::CDecoder;
-  Decoder = DecoderSpec;
-}
-
-HRESULT CZstdDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 *outSize, ICompressProgressInfo *progress)
-{
-  return Decoder->Code(inStream, outStream, NULL, outSize, progress);
-}
-
-
-class CLzmaDecoder:
-  public ICompressCoder,
-  public ICompressSetFinishMode,
-  public ICompressGetInStreamProcessedSize,
-  public CMyUnknownImp
-{
-public:
-  NCompress::NLzma::CDecoder *DecoderSpec;
-  CMyComPtr<ICompressCoder> Decoder;
-
-  MY_UNKNOWN_IMP2(
-      ICompressSetFinishMode,
-      ICompressGetInStreamProcessedSize)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  STDMETHOD(SetFinishMode)(UInt32 finishMode);
-  STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
-
-  CLzmaDecoder();
-};
-
-CLzmaDecoder::CLzmaDecoder()
-{
-  DecoderSpec = new NCompress::NLzma::CDecoder;
-  Decoder = DecoderSpec;
-}
 
 static const unsigned kZipLzmaPropsSize = 4 + LZMA_PROPS_SIZE;
 
-HRESULT CLzmaDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CLzmaDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
 {
   Byte buf[kZipLzmaPropsSize];
-  RINOK(ReadStream_FALSE(inStream, buf, kZipLzmaPropsSize));
+  RINOK(ReadStream_FALSE(inStream, buf, kZipLzmaPropsSize))
   if (buf[2] != LZMA_PROPS_SIZE || buf[3] != 0)
     return E_NOTIMPL;
-  RINOK(DecoderSpec->SetDecoderProperties2(buf + 4, LZMA_PROPS_SIZE));
+  RINOK(Decoder->SetDecoderProperties2(buf + 4, LZMA_PROPS_SIZE))
   UInt64 inSize2 = 0;
   if (inSize)
   {
@@ -868,18 +824,18 @@ HRESULT CLzmaDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *
       return S_FALSE;
     inSize2 -= kZipLzmaPropsSize;
   }
-  return Decoder->Code(inStream, outStream, inSize ? &inSize2 : NULL, outSize, progress);
+  return Decoder.Interface()->Code(inStream, outStream, inSize ? &inSize2 : NULL, outSize, progress);
 }
 
-STDMETHODIMP CLzmaDecoder::SetFinishMode(UInt32 finishMode)
+Z7_COM7F_IMF(CLzmaDecoder::SetFinishMode(UInt32 finishMode))
 {
-  DecoderSpec->FinishStream = (finishMode != 0);
+  Decoder->FinishStream = (finishMode != 0);
   return S_OK;
 }
 
-STDMETHODIMP CLzmaDecoder::GetInStreamProcessedSize(UInt64 *value)
+Z7_COM7F_IMF(CLzmaDecoder::GetInStreamProcessedSize(UInt64 *value))
 {
-  *value = DecoderSpec->GetInputProcessedSize() + kZipLzmaPropsSize;
+  *value = Decoder->GetInputProcessedSize() + kZipLzmaPropsSize;
   return S_OK;
 }
 
@@ -899,27 +855,18 @@ struct CMethodItem
 
 class CZipDecoder
 {
-  NCrypto::NZip::CDecoder *_zipCryptoDecoderSpec;
-  NCrypto::NZipStrong::CDecoder *_pkAesDecoderSpec;
-  NCrypto::NWzAes::CDecoder *_wzAesDecoderSpec;
+  CMyComPtr2<ICompressFilter, NCrypto::NZip::CDecoder> _zipCryptoDecoder;
+  CMyComPtr2<ICompressFilter, NCrypto::NZipStrong::CDecoder> _pkAesDecoder;
+  CMyComPtr2<ICompressFilter, NCrypto::NWzAes::CDecoder> _wzAesDecoder;
 
-  CMyComPtr<ICompressFilter> _zipCryptoDecoder;
-  CMyComPtr<ICompressFilter> _pkAesDecoder;
-  CMyComPtr<ICompressFilter> _wzAesDecoder;
-
-  CFilterCoder *filterStreamSpec;
-  CMyComPtr<ISequentialInStream> filterStream;
+  CMyComPtr2<ISequentialInStream, CFilterCoder> filterStream;
   CMyComPtr<ICryptoGetTextPassword> getTextPassword;
   CObjectVector<CMethodItem> methodItems;
 
   CLzmaDecoder *lzmaDecoderSpec;
 public:
   CZipDecoder():
-      _zipCryptoDecoderSpec(0),
-      _pkAesDecoderSpec(0),
-      _wzAesDecoderSpec(0),
-      filterStreamSpec(0),
-      lzmaDecoderSpec(0)
+      lzmaDecoderSpec(NULL)
     {}
 
   HRESULT Decode(
@@ -928,7 +875,7 @@ public:
     ISequentialOutStream *realOutStream,
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
-    #ifndef _7ZIP_ST
+    #ifndef Z7_ST
     UInt32 numThreads, UInt64 memUsage,
     #endif
     Int32 &res);
@@ -946,7 +893,7 @@ static HRESULT SkipStreamData(ISequentialInStream *stream,
   for (;;)
   {
     size_t size = kBufSize;
-    RINOK(ReadStream(stream, buf, &size));
+    RINOK(ReadStream(stream, buf, &size))
     if (size == 0)
       return S_OK;
     thereAreData = true;
@@ -954,25 +901,23 @@ static HRESULT SkipStreamData(ISequentialInStream *stream,
     if ((packSize - prev) >= (1 << 22))
     {
       prev = packSize;
-      RINOK(progress->SetRatioInfo(&packSize, &unpackSize));
+      RINOK(progress->SetRatioInfo(&packSize, &unpackSize))
     }
   }
 }
 
 
 
-class COutStreamWithPadPKCS7:
-  public ISequentialOutStream,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_NOQIB_1(
+  COutStreamWithPadPKCS7
+  , ISequentialOutStream
+)
   CMyComPtr<ISequentialOutStream> _stream;
   UInt64 _size;
   UInt64 _padPos;
   UInt32 _padSize;
   bool _padFailure;
 public:
-  MY_UNKNOWN_IMP
-  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
   void SetStream(ISequentialOutStream *stream) { _stream = stream; }
   void ReleaseStream() { _stream.Release(); }
 
@@ -989,7 +934,7 @@ public:
 };
 
 
-STDMETHODIMP COutStreamWithPadPKCS7::Write(const void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(COutStreamWithPadPKCS7::Write(const void *data, UInt32 size, UInt32 *processedSize))
 {
   UInt32 written = 0;
   HRESULT result = S_OK;
@@ -1030,7 +975,7 @@ HRESULT CZipDecoder::Decode(
     ISequentialOutStream *realOutStream,
     IArchiveExtractCallback *extractCallback,
     ICompressProgressInfo *compressProgress,
-    #ifndef _7ZIP_ST
+    #ifndef Z7_ST
     UInt32 numThreads, UInt64 memUsage,
     #endif
     Int32 &res)
@@ -1083,15 +1028,12 @@ HRESULT CZipDecoder::Decode(
     }
   }
 
-  COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
-  CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-  outStreamSpec->SetStream(realOutStream);
-  outStreamSpec->Init(needCRC);
+  CMyComPtr2_Create<ISequentialOutStream, COutStreamWithCRC> outStream;
+  outStream->SetStream(realOutStream);
+  outStream->Init(needCRC);
   
   CMyComPtr<ISequentialInStream> packStream;
-
-  CLimitedSequentialInStream *limitedStreamSpec = new CLimitedSequentialInStream;
-  CMyComPtr<ISequentialInStream> inStream(limitedStreamSpec);
+  CMyComPtr2_Create<ISequentialInStream, CLimitedSequentialInStream> inStream;
 
   {
     UInt64 packSize = item.PackSize;
@@ -1101,14 +1043,14 @@ HRESULT CZipDecoder::Decode(
         return S_OK;
       packSize -= NCrypto::NWzAes::kMacSize;
     }
-    RINOK(archive.GetItemStream(item, true, packStream));
+    RINOK(archive.GetItemStream(item, true, packStream))
     if (!packStream)
     {
       res = NExtract::NOperationResult::kUnavailable;
       return S_OK;
     }
-    limitedStreamSpec->SetStream(packStream);
-    limitedStreamSpec->Init(packSize);
+    inStream->SetStream(packStream);
+    inStream->Init(packSize);
   }
 
   
@@ -1121,13 +1063,9 @@ HRESULT CZipDecoder::Decode(
     if (wzAesMode)
     {
       id = aesField.Method;
-      if (!_wzAesDecoder)
-      {
-        _wzAesDecoderSpec = new NCrypto::NWzAes::CDecoder;
-        _wzAesDecoder = _wzAesDecoderSpec;
-      }
+      _wzAesDecoder.Create_if_Empty();
       cryptoFilter = _wzAesDecoder;
-      if (!_wzAesDecoderSpec->SetKeyMode(aesField.Strength))
+      if (!_wzAesDecoder->SetKeyMode(aesField.Strength))
       {
         res = NExtract::NOperationResult::kUnsupportedMethod;
         return S_OK;
@@ -1135,25 +1073,17 @@ HRESULT CZipDecoder::Decode(
     }
     else if (pkAesMode)
     {
-      if (!_pkAesDecoder)
-      {
-        _pkAesDecoderSpec = new NCrypto::NZipStrong::CDecoder;
-        _pkAesDecoder = _pkAesDecoderSpec;
-      }
+      _pkAesDecoder.Create_if_Empty();
       cryptoFilter = _pkAesDecoder;
     }
     else
     {
-      if (!_zipCryptoDecoder)
-      {
-        _zipCryptoDecoderSpec = new NCrypto::NZip::CDecoder;
-        _zipCryptoDecoder = _zipCryptoDecoderSpec;
-      }
+      _zipCryptoDecoder.Create_if_Empty();
       cryptoFilter = _zipCryptoDecoder;
     }
     
     CMyComPtr<ICryptoSetPassword> cryptoSetPassword;
-    RINOK(cryptoFilter.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword));
+    RINOK(cryptoFilter.QueryInterface(IID_ICryptoSetPassword, &cryptoSetPassword))
     if (!cryptoSetPassword)
       return E_FAIL;
     
@@ -1163,19 +1093,21 @@ HRESULT CZipDecoder::Decode(
     if (getTextPassword)
     {
       CMyComBSTR_Wipe password;
-      RINOK(getTextPassword->CryptoGetTextPassword(&password));
+      RINOK(getTextPassword->CryptoGetTextPassword(&password))
       AString_Wipe charPassword;
       if (password)
       {
-        /*
-        // 22.00: do we need UTF-8 passwords here ? 
-        if (item.IsUtf8()) // 22.00
+#if 0 && defined(_WIN32)
+        // do we need UTF-8 passwords here ?
+        if (item.GetHostOS() == NFileHeader::NHostOS::kUnix // 24.05
+            // || item.IsUtf8() // 22.00
+            )
         {
           // throw 1;
           ConvertUnicodeToUTF8((LPCOLESTR)password, charPassword);
         }
         else
-        */
+#endif
         {
           UnicodeStringToMultiByte2(charPassword, (LPCOLESTR)password, CP_ACP);
         }
@@ -1230,18 +1162,16 @@ HRESULT CZipDecoder::Decode(
       lzmaDecoderSpec = new CLzmaDecoder;
       mi.Coder = lzmaDecoderSpec;
     }
-    else if (id ==NFileHeader::NCompressionMethod::kZstd)
-      mi.Coder = new CZstdDecoder();
-    else if (id ==NFileHeader::NCompressionMethod::kZstdPk)
-      mi.Coder = new CZstdDecoder();
     else if (id == NFileHeader::NCompressionMethod::kXz)
       mi.Coder = new NCompress::NXz::CComDecoder;
     else if (id == NFileHeader::NCompressionMethod::kPPMd)
       mi.Coder = new NCompress::NPpmdZip::CDecoder(true);
-    #ifdef SUPPORT_LZFSE
+    else if (id == NFileHeader::NCompressionMethod::kZstd)
+      mi.Coder = new NCompress::NZSTD::CDecoder();
+#ifndef Z7_ZIP_LZFSE_DISABLE
     else if (id == NFileHeader::NCompressionMethod::kWzAES)
       mi.Coder = new NCompress::NLzfse::CDecoder;
-    #endif
+#endif
     else
     {
       CMethodId szMethodID;
@@ -1257,7 +1187,7 @@ HRESULT CZipDecoder::Decode(
         szMethodID = kMethodId_ZipBase + (Byte)id;
       }
 
-      RINOK(CreateCoder_Id(EXTERNAL_CODECS_LOC_VARS szMethodID, false, mi.Coder));
+      RINOK(CreateCoder_Id(EXTERNAL_CODECS_LOC_VARS szMethodID, false, mi.Coder))
 
       if (!mi.Coder)
       {
@@ -1272,13 +1202,13 @@ HRESULT CZipDecoder::Decode(
   ICompressCoder *coder = mi.Coder;
 
   
-  #ifndef _7ZIP_ST
+  #ifndef Z7_ST
   {
     CMyComPtr<ICompressSetCoderMt> setCoderMt;
     coder->QueryInterface(IID_ICompressSetCoderMt, (void **)&setCoderMt);
     if (setCoderMt)
     {
-      RINOK(setCoderMt->SetNumberOfThreads(numThreads));
+      RINOK(setCoderMt->SetNumberOfThreads(numThreads))
     }
   }
   // if (memUsage != 0)
@@ -1287,7 +1217,7 @@ HRESULT CZipDecoder::Decode(
     coder->QueryInterface(IID_ICompressSetMemLimit, (void **)&setMemLimit);
     if (setMemLimit)
     {
-      RINOK(setMemLimit->SetMemLimit(memUsage));
+      RINOK(setMemLimit->SetMemLimit(memUsage))
     }
   }
   #endif
@@ -1298,7 +1228,7 @@ HRESULT CZipDecoder::Decode(
     if (setDecoderProperties)
     {
       Byte properties = (Byte)item.Flags;
-      RINOK(setDecoderProperties->SetDecoderProperties2(&properties, 1));
+      RINOK(setDecoderProperties->SetDecoderProperties2(&properties, 1))
     }
   }
   
@@ -1324,21 +1254,18 @@ HRESULT CZipDecoder::Decode(
     HRESULT result = S_OK;
     if (item.IsEncrypted())
     {
-      if (!filterStream)
-      {
-        filterStreamSpec = new CFilterCoder(false);
-        filterStream = filterStreamSpec;
-      }
+      if (!filterStream.IsDefined())
+        filterStream.SetFromCls(new CFilterCoder(false));
      
-      filterReleaser.FilterCoder = filterStreamSpec;
-      filterStreamSpec->Filter = cryptoFilter;
+      filterReleaser.FilterCoder = filterStream.ClsPtr();
+      filterStream->Filter = cryptoFilter;
       
       if (wzAesMode)
       {
-        result = _wzAesDecoderSpec->ReadHeader(inStream);
+        result = _wzAesDecoder->ReadHeader(inStream);
         if (result == S_OK)
         {
-          if (!_wzAesDecoderSpec->Init_and_CheckPassword())
+          if (!_wzAesDecoder->Init_and_CheckPassword())
           {
             res = NExtract::NOperationResult::kWrongPassword;
             return S_OK;
@@ -1348,11 +1275,11 @@ HRESULT CZipDecoder::Decode(
       else if (pkAesMode)
       {
         isFullStreamExpected = false;
-        result =_pkAesDecoderSpec->ReadHeader(inStream, item.Crc, item.Size);
+        result = _pkAesDecoder->ReadHeader(inStream, item.Crc, item.Size);
         if (result == S_OK)
         {
           bool passwOK;
-          result = _pkAesDecoderSpec->Init_and_CheckPassword(passwOK);
+          result = _pkAesDecoder->Init_and_CheckPassword(passwOK);
           if (result == S_OK && !passwOK)
           {
             res = NExtract::NOperationResult::kWrongPassword;
@@ -1362,10 +1289,10 @@ HRESULT CZipDecoder::Decode(
       }
       else
       {
-        result = _zipCryptoDecoderSpec->ReadHeader(inStream);
+        result = _zipCryptoDecoder->ReadHeader(inStream);
         if (result == S_OK)
         {
-          _zipCryptoDecoderSpec->Init_BeforeDecode();
+          _zipCryptoDecoder->Init_BeforeDecode();
           
           /* Info-ZIP modification to ZipCrypto format:
                if bit 3 of the general purpose bit flag is set,
@@ -1373,10 +1300,10 @@ HRESULT CZipDecoder::Decode(
              Info-ZIP code probably writes 2 bytes of File Time.
              We check only 1 byte. */
 
-          // UInt32 v1 = GetUi16(_zipCryptoDecoderSpec->_header + NCrypto::NZip::kHeaderSize - 2);
+          // UInt32 v1 = GetUi16(_zipCryptoDecoder->_header + NCrypto::NZip::kHeaderSize - 2);
           // UInt32 v2 = (item.HasDescriptor() ? (item.Time & 0xFFFF) : (item.Crc >> 16));
 
-          Byte v1 = _zipCryptoDecoderSpec->_header[NCrypto::NZip::kHeaderSize - 1];
+          Byte v1 = _zipCryptoDecoder->_header[NCrypto::NZip::kHeaderSize - 1];
           Byte v2 = (Byte)(item.HasDescriptor() ? (item.Time >> 8) : (item.Crc >> 24));
 
           if (v1 != v2)
@@ -1394,10 +1321,10 @@ HRESULT CZipDecoder::Decode(
       coder->QueryInterface(IID_ICompressSetFinishMode, (void **)&setFinishMode);
       if (setFinishMode)
       {
-        RINOK(setFinishMode->SetFinishMode(BoolToUInt(true)));
+        RINOK(setFinishMode->SetFinishMode(BoolToUInt(true)))
       }
       
-      const UInt64 coderPackSize = limitedStreamSpec->GetRem();
+      const UInt64 coderPackSize = inStream->GetRem();
 
       if (id == NFileHeader::NCompressionMethod::kStore && item.IsEncrypted())
       {
@@ -1413,7 +1340,7 @@ HRESULT CZipDecoder::Decode(
         {
           padStreamSpec = new COutStreamWithPadPKCS7;
           padStream = padStreamSpec;
-          padSize = _pkAesDecoderSpec->GetPadSize((UInt32)item.Size);
+          padSize = _pkAesDecoder->GetPadSize((UInt32)item.Size);
           padStreamSpec->SetStream(outStream);
           padStreamSpec->Init(item.Size, padSize);
         }
@@ -1430,12 +1357,12 @@ HRESULT CZipDecoder::Decode(
             size = expectedSize;
         }
 
-        result = filterStreamSpec->Code(inStream, padStream ?
-            (ISequentialOutStream *)padStream :
-            (ISequentialOutStream *)outStream,
+        result = filterStream->Code(inStream, padStream ?
+            padStream.Interface() :
+            outStream.Interface(),
             NULL, &size, compressProgress);
 
-        if (outStreamSpec->GetSize() != item.Size)
+        if (outStream->GetSize() != item.Size)
           truncatedError = true;
 
         if (pkAesMode)
@@ -1451,20 +1378,20 @@ HRESULT CZipDecoder::Decode(
         if (item.IsEncrypted())
         {
           readFromFilter = true;
-          inStreamReleaser.FilterCoder = filterStreamSpec;
-          RINOK(filterStreamSpec->SetInStream(inStream));
+          inStreamReleaser.FilterCoder = filterStream.ClsPtr();
+          RINOK(filterStream->SetInStream(inStream))
           
           /* IFilter::Init() does nothing in all zip crypto filters.
           So we can call any Initialize function in CFilterCoder. */
           
-          RINOK(filterStreamSpec->Init_NoSubFilterInit());
-          // RINOK(filterStreamSpec->SetOutStreamSize(NULL));
+          RINOK(filterStream->Init_NoSubFilterInit())
+          // RINOK(filterStream->SetOutStreamSize(NULL));
         }
 
         try {
         result = coder->Code(readFromFilter ?
-              (ISequentialInStream *)filterStream :
-              (ISequentialInStream *)inStream,
+              filterStream.Interface() :
+              inStream.Interface(),
             outStream,
             isFullStreamExpected ? &coderPackSize : NULL,
             // NULL,
@@ -1479,12 +1406,12 @@ HRESULT CZipDecoder::Decode(
         if (getInStreamProcessedSize && setFinishMode)
         {
           UInt64 processed;
-          RINOK(getInStreamProcessedSize->GetInStreamProcessedSize(&processed));
+          RINOK(getInStreamProcessedSize->GetInStreamProcessedSize(&processed))
           if (processed != (UInt64)(Int64)-1)
           {
             if (pkAesMode)
             {
-              const UInt32 padSize = _pkAesDecoderSpec->GetPadSize((UInt32)processed);
+              const UInt32 padSize = _pkAesDecoder->GetPadSize((UInt32)processed);
               if (processed + padSize > coderPackSize)
                 truncatedError = true;
               else if (processed + padSize < coderPackSize)
@@ -1505,7 +1432,7 @@ HRESULT CZipDecoder::Decode(
                     UInt32 processedSize = 0;
                     if (readInStream)
                     {
-                      RINOK(readInStream->ReadUnusedFromInBuf(buf, kBufSize, &processedSize));
+                      RINOK(readInStream->ReadUnusedFromInBuf(buf, kBufSize, &processedSize))
                     }
                     if (processedSize > padSize)
                       dataAfterEnd = true;
@@ -1550,7 +1477,7 @@ HRESULT CZipDecoder::Decode(
       }
 
       if (result == S_OK && id == NFileHeader::NCompressionMethod::kLZMA)
-        if (!lzmaDecoderSpec->DecoderSpec->CheckFinishStatus(item.IsLzmaEOS()))
+        if (!lzmaDecoderSpec->Decoder->CheckFinishStatus(item.IsLzmaEOS()))
           lzmaEosError = true;
     }
     
@@ -1563,38 +1490,38 @@ HRESULT CZipDecoder::Decode(
       return S_OK;
     }
 
-    RINOK(result);
+    RINOK(result)
   }
 
   bool crcOK = true;
   bool authOk = true;
   if (needCRC)
-    crcOK = (outStreamSpec->GetCRC() == item.Crc);
+    crcOK = (outStream->GetCRC() == item.Crc);
 
   if (useUnpackLimit)
-    if (outStreamSpec->GetSize() != item.Size)
+    if (outStream->GetSize() != item.Size)
       truncatedError = true;
   
   if (wzAesMode)
   {
-    const UInt64 unpackSize = outStreamSpec->GetSize();
-    const UInt64 packSize = limitedStreamSpec->GetSize();
+    const UInt64 unpackSize = outStream->GetSize();
+    const UInt64 packSize = inStream->GetSize();
     bool thereAreData = false;
     // read to the end from filter or from packed stream
     if (SkipStreamData(readFromFilter ?
-          (ISequentialInStream *)filterStream :
-          (ISequentialInStream *)inStream,
+          filterStream.Interface() :
+          inStream.Interface(),
         compressProgress, packSize, unpackSize, thereAreData) != S_OK)
       authOk = false;
     if (needReminderCheck && thereAreData)
       dataAfterEnd = true;
 
-    if (limitedStreamSpec->GetRem() != 0)
+    if (inStream->GetRem() != 0)
       truncatedError = true;
     else
     {
-      limitedStreamSpec->Init(NCrypto::NWzAes::kMacSize);
-      if (_wzAesDecoderSpec->CheckMac(inStream, authOk) != S_OK)
+      inStream->Init(NCrypto::NWzAes::kMacSize);
+      if (_wzAesDecoder->CheckMac(inStream, authOk) != S_OK)
         authOk = false;
     }
   }
@@ -1631,66 +1558,60 @@ HRESULT CZipDecoder::Decode(
 }
 
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  CZipDecoder myDecoder;
-  UInt64 totalUnPacked = 0, totalPacked = 0;
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = m_Items.Size();
   if (numItems == 0)
     return S_OK;
+  UInt64 total = 0; // , totalPacked = 0;
   UInt32 i;
   for (i = 0; i < numItems; i++)
   {
     const CItemEx &item = m_Items[allFilesMode ? i : indices[i]];
-    totalUnPacked += item.Size;
-    totalPacked += item.PackSize;
+    total += item.Size;
+    // totalPacked += item.PackSize;
   }
-  RINOK(extractCallback->SetTotal(totalUnPacked));
+  RINOK(extractCallback->SetTotal(total))
 
-  UInt64 currentTotalUnPacked = 0, currentTotalPacked = 0;
-  UInt64 currentItemUnPacked, currentItemPacked;
+  CZipDecoder myDecoder;
+  UInt64 cur_Unpacked, cur_Packed;
   
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
+  CMyComPtr2_Create<ICompressProgressInfo, CLocalProgress> lps;
   lps->Init(extractCallback, false);
 
-  for (i = 0; i < numItems; i++,
-      currentTotalUnPacked += currentItemUnPacked,
-      currentTotalPacked += currentItemPacked)
+  for (i = 0;; i++,
+      lps->OutSize += cur_Unpacked,
+      lps->InSize += cur_Packed)
   {
-    currentItemUnPacked = 0;
-    currentItemPacked = 0;
+    RINOK(lps->SetCur())
+    if (i >= numItems)
+      return S_OK;
+    const UInt32 index = allFilesMode ? i : indices[i];
+    CItemEx item = m_Items[index];
+    cur_Unpacked = item.Size;
+    cur_Packed = item.PackSize;
 
-    lps->InSize = currentTotalPacked;
-    lps->OutSize = currentTotalUnPacked;
-    RINOK(lps->SetCur());
-
-    CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
+    const bool isLocalOffsetOK = m_Archive.IsLocalOffsetOK(item);
+    const bool skip = !isLocalOffsetOK && !item.IsDir();
+    const Int32 askMode = skip ?
+        NExtract::NAskMode::kSkip : testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    UInt32 index = allFilesMode ? i : indices[i];
 
-    CItemEx item = m_Items[index];
-    bool isLocalOffsetOK = m_Archive.IsLocalOffsetOK(item);
-    bool skip = !isLocalOffsetOK && !item.IsDir();
-    if (skip)
-      askMode = NExtract::NAskMode::kSkip;
-
-    currentItemUnPacked = item.Size;
-    currentItemPacked = item.PackSize;
-
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    Int32 opRes;
+    {
+    CMyComPtr<ISequentialOutStream> realOutStream;
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode))
 
     if (!isLocalOffsetOK)
     {
-      RINOK(extractCallback->PrepareOperation(askMode));
+      RINOK(extractCallback->PrepareOperation(askMode))
       realOutStream.Release();
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnavailable));
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kUnavailable))
       continue;
     }
 
@@ -1699,30 +1620,30 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (!item.FromLocal)
     {
       bool isAvail = true;
-      HRESULT res = m_Archive.ReadLocalItemAfterCdItem(item, isAvail, headersError);
-      if (res == S_FALSE)
+      const HRESULT hres = m_Archive.Read_LocalItem_After_CdItem(item, isAvail, headersError);
+      if (hres == S_FALSE)
       {
         if (item.IsDir() || realOutStream || testMode)
         {
-          RINOK(extractCallback->PrepareOperation(askMode));
+          RINOK(extractCallback->PrepareOperation(askMode))
           realOutStream.Release();
           RINOK(extractCallback->SetOperationResult(
               isAvail ?
                 NExtract::NOperationResult::kHeadersError :
-                NExtract::NOperationResult::kUnavailable));
+                NExtract::NOperationResult::kUnavailable))
         }
         continue;
       }
-      RINOK(res);
+      RINOK(hres)
     }
 
     if (item.IsDir())
     {
       // if (!testMode)
       {
-        RINOK(extractCallback->PrepareOperation(askMode));
+        RINOK(extractCallback->PrepareOperation(askMode))
         realOutStream.Release();
-        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+        RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
       }
       continue;
     }
@@ -1730,30 +1651,26 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (!testMode && !realOutStream)
       continue;
 
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
 
-    Int32 res;
-    HRESULT hres = myDecoder.Decode(
+    const HRESULT hres = myDecoder.Decode(
         EXTERNAL_CODECS_VARS
         m_Archive, item, realOutStream, extractCallback,
-        progress,
-        #ifndef _7ZIP_ST
+        lps,
+        #ifndef Z7_ST
         _props._numThreads, _props._memUsage_Decompress,
         #endif
-        res);
+        opRes);
     
-    RINOK(hres);
-    realOutStream.Release();
+    RINOK(hres)
+    // realOutStream.Release();
     
-    if (res == NExtract::NOperationResult::kOK && headersError)
-      res = NExtract::NOperationResult::kHeadersError;
-
-    RINOK(extractCallback->SetOperationResult(res))
+    if (opRes == NExtract::NOperationResult::kOK && headersError)
+      opRes = NExtract::NOperationResult::kHeadersError;
+    }
+    RINOK(extractCallback->SetOperationResult(opRes))
   }
-  
-  lps->InSize = currentTotalPacked;
-  lps->OutSize = currentTotalUnPacked;
-  return lps->SetCur();
+
   COM_TRY_END
 }
 

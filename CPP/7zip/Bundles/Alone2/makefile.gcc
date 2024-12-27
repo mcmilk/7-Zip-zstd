@@ -1,10 +1,10 @@
 PROG = 7zz
 
+CONSOLE_VARIANT_FLAGS=-DZ7_PROG_VARIANT_Z
+
 # IS_X64 = 1
 # USE_ASM = 1
 # ST_MODE = 1
-
-CONSOLE_VARIANT_FLAGS=-DPROG_VARIANT_Z
 
 include ../Format7zF/Arc_gcc.mak
 
@@ -17,12 +17,15 @@ IS_MINGW = 1
 endif
 endif
 
+LOCAL_FLAGS_SYS =
+
 ifdef IS_MINGW
 
 LOCAL_FLAGS_SYS = \
-  -D_7ZIP_LARGE_PAGES \
-  -DWIN_LONG_PATH \
-  -DSUPPORT_DEVICE_FILE \
+  -DZ7_DEVICE_FILE \
+
+#  -DZ7_LONG_PATH \
+#  -DZ7_DEVICE_FILE \
 
 SYS_OBJS = \
   $O/FileSystem.o \
@@ -67,7 +70,6 @@ UI_COMMON_OBJS = \
   $O/UpdatePair.o \
   $O/UpdateProduce.o \
 
-
 CONSOLE_OBJS = \
   $O/BenchCon.o \
   $O/ConsoleClose.o \
@@ -95,6 +97,7 @@ WIN_OBJS_2 = \
 7ZIP_COMMON_OBJS_2 = \
   $O/FilePathAutoRename.o \
   $O/FileStreams.o \
+  $O/MultiOutStream.o \
 
 OBJS = \
   $(ARC_OBJS) \

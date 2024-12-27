@@ -20,7 +20,7 @@ namespace NFileHeader {
     // 7-Zip used kUsTar_00 before 21.07:
     const char k_Posix_ustar_00[8]  = { 'u', 's', 't', 'a', 'r', 0, '0', '0' } ;
     // GNU TAR uses such header:
-    const char k_GNU_ustar__[8] = { 'u', 's', 't', 'a', 'r', ' ', ' ', 0 } ;
+    const char k_GNU_ustar[8] = { 'u', 's', 't', 'a', 'r', ' ', ' ', 0 } ;
   }
 
 /*

@@ -48,9 +48,9 @@ bool CBootInitialEntry::Parse(const Byte *p)
 AString CBootInitialEntry::GetName() const
 {
   AString s (Bootable ? "Boot" : "NotBoot");
-  s += '-';
+  s.Add_Minus();
   
-  if (BootMediaType < ARRAY_SIZE(kMediaTypes))
+  if (BootMediaType < Z7_ARRAY_SIZE(kMediaTypes))
     s += kMediaTypes[BootMediaType];
   else
     s.Add_UInt32(BootMediaType);
@@ -65,10 +65,10 @@ AString CBootInitialEntry::GetName() const
         break;
     if (i == sizeof(VendorSpec))
     {
-      s += '-';
+      s.Add_Minus();
       for (i = 1; i < sizeof(VendorSpec); i++)
       {
-        char c = VendorSpec[i];
+        char c = (char)VendorSpec[i];
         if (c == 0)
           break;
         if (c == '\\' || c == '/')
@@ -134,7 +134,7 @@ UInt16 CInArchive::ReadUInt16()
   {
     if (b[i] != b[3 - i])
       IncorrectBigEndian = true;
-    val |= ((UInt16)(b[i]) << (8 * i));
+    val |= ((UInt32)(b[i]) << (8 * i));
   }
   return (UInt16)val;
 }
@@ -287,11 +287,17 @@ void CInArchive::ReadVolumeDescriptor(CVolumeDescriptor &d)
   ReadDateTime(d.MTime);
   ReadDateTime(d.ExpirationTime);
   ReadDateTime(d.EffectiveTime);
-  d.FileStructureVersion = ReadByte(); // = 1
-  SkipZeros(1);
+  const Byte fileStructureVersion = ReadByte();
+  // d.FileStructureVersion = fileStructureVersion;
+  if (fileStructureVersion != 1 &&  // ECMA-119
+      fileStructureVersion != 2)    // some ISO files have fileStructureVersion == 2.
+  {
+    // v24.05: we ignore that field, because we don't know what exact values are allowed there
+    // throw CHeaderErrorException();
+  }
+  SkipZeros(1); // (Reserved for future standardization)
   ReadBytes(d.ApplicationUse, sizeof(d.ApplicationUse));
-
-  // Most ISO contains zeros in the following field (reserved for future standardization).
+  // Most ISO contain zeros in the following field (reserved for future standardization).
   // But some ISO programs write some data to that area.
   // So we disable check for zeros.
   Skip(653); // SkipZeros(653);
@@ -316,7 +322,9 @@ static inline bool CheckSignature(const Byte *sig, const Byte *data)
 
 void CInArchive::SeekToBlock(UInt32 blockIndex)
 {
-  HRESULT res = _stream->Seek((UInt64)blockIndex * VolDescs[MainVolDescIndex].LogicalBlockSize, STREAM_SEEK_SET, &_position);
+  const HRESULT res = _stream->Seek(
+      (Int64)((UInt64)blockIndex * VolDescs[MainVolDescIndex].LogicalBlockSize),
+      STREAM_SEEK_SET, &_position);
   if (res != S_OK)
     throw CSystemException(res);
   m_BufferPos = 0;
@@ -506,10 +514,10 @@ void CInArchive::ReadBootInfo()
 HRESULT CInArchive::Open2()
 {
   _position = 0;
-  RINOK(_stream->Seek(0, STREAM_SEEK_END, &_fileSize));
+  RINOK(InStream_GetSize_SeekToEnd(_stream, _fileSize))
   if (_fileSize < kStartPos)
     return S_FALSE;
-  RINOK(_stream->Seek(kStartPos, STREAM_SEEK_SET, &_position));
+  RINOK(_stream->Seek(kStartPos, STREAM_SEEK_SET, &_position))
 
   PhySize = _position;
   m_BufferPos = 0;
@@ -584,7 +592,7 @@ HRESULT CInArchive::Open2()
   
   if (VolDescs.IsEmpty())
     return S_FALSE;
-  for (MainVolDescIndex = VolDescs.Size() - 1; MainVolDescIndex > 0; MainVolDescIndex--)
+  for (MainVolDescIndex = (int)VolDescs.Size() - 1; MainVolDescIndex > 0; MainVolDescIndex--)
     if (VolDescs[MainVolDescIndex].IsJoliet())
       break;
   /* FIXME: some volume can contain Rock Ridge, that is better than
@@ -593,7 +601,16 @@ HRESULT CInArchive::Open2()
   const CVolumeDescriptor &vd = VolDescs[MainVolDescIndex];
   if (vd.LogicalBlockSize != kBlockSize)
     return S_FALSE;
-  
+
+  {
+    FOR_VECTOR (i, VolDescs)
+    {
+      const CVolumeDescriptor &vd2 = VolDescs[i];
+      UpdatePhySize(0, vd2.Get_VolumeSpaceSize_inBytes());
+    }
+  }
+
+ 
   IsArc = true;
 
   (CDirRecord &)_rootDir = vd.RootDirRecord;
@@ -613,6 +630,21 @@ HRESULT CInArchive::Open2()
       }
     }
   }
+
+  {
+    // find boot item for expand:
+    // UEFI Specification : 13.3.2.1. ISO-9660 and El Torito
+    _expand_BootEntries_index = -1;
+    FOR_VECTOR (i, BootEntries)
+    {
+      const CBootInitialEntry &be = BootEntries[i];
+      if (be.SectorCount <= 1 && be.BootMediaType == NBootMediaType::kNoEmulation)
+        if (_expand_BootEntries_index == -1
+          || be.LoadRBA >= BootEntries[_expand_BootEntries_index].LoadRBA)
+        _expand_BootEntries_index = (int)i;
+    }
+  }
+
   {
     FOR_VECTOR (i, BootEntries)
     {
@@ -627,10 +659,10 @@ HRESULT CInArchive::Open2()
     const UInt64 kRemMax = 1 << 21;
     if (rem <= kRemMax)
     {
-      RINOK(_stream->Seek(PhySize, STREAM_SEEK_SET, NULL));
+      RINOK(InStream_SeekSet(_stream, PhySize))
       bool areThereNonZeros = false;
       UInt64 numZeros = 0;
-      RINOK(ReadZeroTail(_stream, areThereNonZeros, numZeros, kRemMax));
+      RINOK(ReadZeroTail(_stream, areThereNonZeros, numZeros, kRemMax))
       if (!areThereNonZeros)
         PhySize += numZeros;
     }
@@ -668,6 +700,36 @@ void CInArchive::Clear()
   BootEntries.Clear();
   SuspSkipSize = 0;
   IsSusp = false;
+
+  _expand_BootEntries_index = -1;
+}
+
+
+UInt64 CInArchive::GetBootItemSize(unsigned index) const
+{
+  const CBootInitialEntry &be = BootEntries[index];
+  UInt64 size = be.GetSize();
+       if (be.BootMediaType == NBootMediaType::k1d2Floppy)  size = 1200 << 10;
+  else if (be.BootMediaType == NBootMediaType::k1d44Floppy) size = 1440 << 10;
+  else if (be.BootMediaType == NBootMediaType::k2d88Floppy) size = 2880 << 10;
+  const UInt64 startPos = (UInt64)be.LoadRBA * kBlockSize;
+  if (startPos < _fileSize)
+  {
+    const UInt64 rem = _fileSize - startPos;
+    /*
+       UEFI modification to ISO specification:
+       because SectorCount is 16-bit, size is limited by (32 MB).
+       UEFI Specification :
+        13.3.2.1. ISO-9660 and El Torito
+        If the value of Sector Count is set to 0 or 1,
+        EFI will assume the system partition consumes the space
+        from the beginning of the "no emulation" image to the end of the CD-ROM.
+    */
+    //
+    if ((int)index == _expand_BootEntries_index || rem < size)
+      size = rem;
+  }
+  return size;
 }
 
 }}

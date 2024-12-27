@@ -6,3 +6,4 @@
 
 #define IDT_LANG_LANG   2102
 #define IDC_LANG_LANG    100
+#define IDT_LANG_INFO    101

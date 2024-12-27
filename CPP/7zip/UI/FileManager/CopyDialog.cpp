@@ -8,16 +8,13 @@
 
 #include "BrowseDialog.h"
 #include "CopyDialog.h"
-
-#ifdef LANG
 #include "LangUtils.h"
-#endif
 
 using namespace NWindows;
 
 bool CCopyDialog::OnInit()
 {
-  #ifdef LANG
+  #ifdef Z7_LANG
   LangSetDlgItems(*this, NULL, 0);
   #endif
   _path.Attach(GetItem(IDC_COPY));
@@ -45,15 +42,15 @@ bool CCopyDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   int bx1, bx2, by;
   GetItemSizes(IDCANCEL, bx1, by);
   GetItemSizes(IDOK, bx2, by);
-  int y = ySize - my - by;
-  int x = xSize - mx - bx1;
+  const int y = ySize - my - by;
+  const int x = xSize - mx - bx1;
 
   InvalidateRect(NULL);
 
   {
     RECT r;
     GetClientRectOfItem(IDB_COPY_SET_PATH, r);
-    int bx = RECT_SIZE_X(r);
+    const int bx = RECT_SIZE_X(r);
     MoveItem(IDB_COPY_SET_PATH, xSize - mx - bx, r.top, bx, RECT_SIZE_Y(r));
     ChangeSubWindowSizeX(_path, xSize - mx - mx - bx - mx);
   }
@@ -63,7 +60,7 @@ bool CCopyDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
     GetClientRectOfItem(IDT_COPY_INFO, r);
     NControl::CStatic staticContol;
     staticContol.Attach(GetItem(IDT_COPY_INFO));
-    int yPos = r.top;
+    const int yPos = r.top;
     staticContol.Move(mx, yPos, xSize - mx * 2, y - 2 - yPos);
   }
 
@@ -73,7 +70,7 @@ bool CCopyDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   return false;
 }
 
-bool CCopyDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CCopyDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {

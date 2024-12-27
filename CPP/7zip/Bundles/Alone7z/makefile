@@ -1,8 +1,14 @@
 PROG = 7zr.exe
 
 # USE_C_AES = 1
+# USE_C_SHA = 1
+# USE_C_CRC64 = 1
+# USE_C_CRC = 1
+# NO_ASM_GNU=1
+# NO_ASM=1
 
-CFLAGS = $(CFLAGS) -DPROG_VARIANT_R
+CFLAGS = $(CFLAGS) -DZ7_PROG_VARIANT_R
+# CONSOLE_VARIANT_FLAGS=-DZ7_PROG_VARIANT_R
 
 COMMON_OBJS = \
   $O\CommandLineParser.obj \
@@ -38,7 +44,6 @@ WIN_OBJS = \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
   $O\Registry.obj \
-  $O\Synchronization.obj \
   $O\System.obj \
   $O\SystemInfo.obj \
   $O\TimeUtils.obj \
@@ -54,6 +59,7 @@ WIN_OBJS = \
   $O\LimitedStreams.obj \
   $O\MethodId.obj \
   $O\MethodProps.obj \
+  $O\MultiOutStream.obj \
   $O\OffsetStream.obj \
   $O\OutBuffer.obj \
   $O\ProgressUtils.obj \
@@ -143,6 +149,7 @@ C_OBJS = \
   $O\MtCoder.obj \
   $O\MtDec.obj \
   $O\Sort.obj \
+  $O\SwapBytes.obj \
   $O\Threads.obj \
   $O\Xz.obj \
   $O\XzDec.obj \

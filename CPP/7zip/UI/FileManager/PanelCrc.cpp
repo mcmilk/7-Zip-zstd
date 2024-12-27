@@ -20,7 +20,7 @@
 using namespace NWindows;
 using namespace NFile;
 
-#ifdef EXTERNAL_CODECS
+#ifdef Z7_EXTERNAL_CODECS
 extern CExternalCodecs g_ExternalCodecs;
 HRESULT LoadGlobalCodecs();
 #endif
@@ -38,7 +38,7 @@ struct CDirEnumerator
   FStringVector Prefixes;
   unsigned Index;
 
-  CDirEnumerator(): EnterToDirs(false), Index(0) {};
+  CDirEnumerator(): EnterToDirs(false), Index(0) {}
 
   void Init();
   DWORD GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &resPath);
@@ -53,8 +53,8 @@ void CDirEnumerator::Init()
 
 static DWORD GetNormalizedError()
 {
-  DWORD error = GetLastError();
-  return (error == 0) ? E_FAIL : error;
+  const DWORD error = GetLastError();
+  return (error == 0) ? (DWORD)E_FAIL : error;
 }
 
 DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &resPath)
@@ -73,9 +73,9 @@ DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &r
       if (Index >= FilePaths.Size())
         return S_OK;
       const FString &path = FilePaths[Index++];
-      int pos = path.ReverseFind_PathSepar();
+      const int pos = path.ReverseFind_PathSepar();
       if (pos >= 0)
-        resPath.SetFrom(path, pos + 1);
+        resPath.SetFrom(path, (unsigned)pos + 1);
 
       #if defined(_WIN32) && !defined(UNDER_CE)
       if (isRootPrefix && path.Len() == 2 && NName::IsDrivePath2(path))
@@ -90,7 +90,7 @@ DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &r
       #endif
       if (!fi.Find(BasePrefix + path))
       {
-        DWORD error = GetNormalizedError();
+        const DWORD error = GetNormalizedError();
         resPath = path;
         return error;
       }
@@ -110,7 +110,7 @@ DWORD CDirEnumerator::GetNextFile(NFind::CFileInfo &fi, bool &filled, FString &r
     }
     else
     {
-      DWORD error = GetNormalizedError();
+      const DWORD error = GetNormalizedError();
       resPath = Prefixes.Back();
       Enumerators.DeleteBack();
       Prefixes.DeleteBack();
@@ -142,8 +142,8 @@ class CThreadCrc: public CProgressThreadVirt
   bool ResultsWereShown;
   bool WasFinished;
 
-  HRESULT ProcessVirt();
-  virtual void ProcessWasFinished_GuiVirt();
+  HRESULT ProcessVirt() Z7_override;
+  virtual void ProcessWasFinished_GuiVirt() Z7_override;
 public:
   CDirEnumerator Enumerator;
   CHashBundle Hash;
@@ -176,7 +176,7 @@ void CThreadCrc::ProcessWasFinished_GuiVirt()
 
 void CThreadCrc::AddErrorMessage(DWORD systemError, const FChar *name)
 {
-  Sync.AddError_Code_Name(systemError, fs2us(Enumerator.BasePrefix + name));
+  Sync.AddError_Code_Name(HRESULT_FROM_WIN32(systemError), fs2us(Enumerator.BasePrefix + name));
   Hash.NumErrors++;
 }
 
@@ -214,7 +214,7 @@ HRESULT CThreadCrc::ProcessVirt()
   for (;;)
   {
     bool filled;
-    DWORD error = Enumerator.GetNextFile(fi, filled, path);
+    const DWORD error = Enumerator.GetNextFile(fi, filled, path);
     if (error != 0)
     {
       AddErrorMessage(error, path);
@@ -246,10 +246,10 @@ HRESULT CThreadCrc::ProcessVirt()
     */
     if (needPrint)
     {
-      RINOK(sync.ScanProgress(numFiles, totalSize, path, fi.IsDir()));
+      RINOK(sync.ScanProgress(numFiles, totalSize, path, fi.IsDir()))
     }
   }
-  RINOK(sync.ScanProgress(numFiles, totalSize, FString(), false));
+  RINOK(sync.ScanProgress(numFiles, totalSize, FString(), false))
   // sync.SetNumFilesTotal(numFiles);
   // sync.SetProgress(totalSize, 0);
   // SetStatus(LangString(IDS_CHECKSUM_CALCULATING));
@@ -312,16 +312,16 @@ HRESULT CThreadCrc::ProcessVirt()
         Hash.Update(buf, size);
         if (Hash.CurSize - progress_Prev >= ((UInt32)1 << 21))
         {
-          RINOK(sync.Set_NumBytesCur(errorsFilesSize + Hash.FilesSize + Hash.CurSize));
+          RINOK(sync.Set_NumBytesCur(errorsFilesSize + Hash.FilesSize + Hash.CurSize))
           progress_Prev = Hash.CurSize;
         }
       }
     }
     if (error == 0)
       Hash.Final(fi.IsDir(), false, fs2us(path));
-    RINOK(sync.Set_NumBytesCur(errorsFilesSize + Hash.FilesSize));
+    RINOK(sync.Set_NumBytesCur(errorsFilesSize + Hash.FilesSize))
   }
-  RINOK(sync.Set_NumBytesCur(errorsFilesSize + Hash.FilesSize));
+  RINOK(sync.Set_NumBytesCur(errorsFilesSize + Hash.FilesSize))
   sync.Set_NumFilesCur(Hash.NumFiles);
   if (Hash.NumFiles != 1)
     sync.Set_FilePath(L"");
@@ -341,7 +341,7 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
   CPanel &srcPanel = Panels[srcPanelIndex];
 
   CRecordVector<UInt32> indices;
-  srcPanel.GetOperatedIndicesSmart(indices);
+  srcPanel.Get_ItemIndices_OperSmart(indices);
   if (indices.IsEmpty())
     return S_OK;
 
@@ -357,7 +357,7 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
     return srcPanel.CopyTo(options, indices, &messages);
   }
 
-  #ifdef EXTERNAL_CODECS
+  #ifdef Z7_EXTERNAL_CODECS
 
   LoadGlobalCodecs();
     
@@ -369,7 +369,7 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
     {
       UStringVector methods;
       methods.Add(methodName);
-      RINOK(t.Hash.SetMethods(EXTERNAL_CODECS_VARS_G methods));
+      RINOK(t.Hash.SetMethods(EXTERNAL_CODECS_VARS_G methods))
     }
     
     FOR_VECTOR (i, indices)
@@ -382,7 +382,7 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
     UString basePrefix2 = basePrefix;
     if (basePrefix2.Back() == ':')
     {
-      int pos = basePrefix2.ReverseFind_PathSepar();
+      const int pos = basePrefix2.ReverseFind_PathSepar();
       if (pos >= 0)
         basePrefix2.DeleteFrom((unsigned)(pos + 1));
     }
@@ -394,14 +394,14 @@ HRESULT CApp::CalculateCrc2(const UString &methodName)
     
     t.ShowCompressionInfo = false;
     
-    UString title = LangString(IDS_CHECKSUM_CALCULATING);
+    const UString title = LangString(IDS_CHECKSUM_CALCULATING);
     
     t.MainWindow = _window;
     t.MainTitle = "7-Zip"; // LangString(IDS_APP_TITLE);
     t.MainAddTitle = title;
     t.MainAddTitle.Add_Space();
     
-    RINOK(t.Create(title, _window));
+    RINOK(t.Create(title, _window))
 
     t.ShowFinalResults(_window);
   }

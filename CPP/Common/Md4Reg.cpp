@@ -12,31 +12,28 @@ EXTERN_C_END
 #include "../7zip/Common/RegisterCodec.h"
 
 // MD4
-class CMD4Hasher:
-  public IHasher,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CMD4Hasher
+  , IHasher
+)
   MD4_CTX _ctx;
   Byte mtDummy[1 << 7];
 
 public:
   CMD4Hasher() { MD4_Init(&_ctx); }
-
-  MY_UNKNOWN_IMP1(IHasher)
-  INTERFACE_IHasher(;)
 };
 
-STDMETHODIMP_(void) CMD4Hasher::Init() throw()
+Z7_COM7F_IMF2(void, CMD4Hasher::Init())
 {
   MD4_Init(&_ctx);
 }
 
-STDMETHODIMP_(void) CMD4Hasher::Update(const void *data, UInt32 size) throw()
+Z7_COM7F_IMF2(void, CMD4Hasher::Update(const void *data, UInt32 size))
 {
   MD4_Update(&_ctx, (const Byte *)data, size);
 }
 
-STDMETHODIMP_(void) CMD4Hasher::Final(Byte *digest) throw()
+Z7_COM7F_IMF2(void, CMD4Hasher::Final(Byte *digest))
 {
   MD4_Final(digest, &_ctx);
 }

@@ -1,7 +1,7 @@
 // Windows/Console.h
 
-#ifndef __WINDOWS_CONSOLE_H
-#define __WINDOWS_CONSOLE_H
+#ifndef ZIP7_INC_WINDOWS_CONSOLE_H
+#define ZIP7_INC_WINDOWS_CONSOLE_H
 
 #include "Defs.h"
 

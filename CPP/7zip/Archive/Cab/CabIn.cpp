@@ -76,21 +76,20 @@ struct CSignatureFinder
   const Byte *Signature;
   UInt32 SignatureSize;
   
-  UInt32 _HeaderSize;
-  UInt32 _AlignSize;
-  UInt32 _BufUseCapacity;
+  UInt32 _headerSize;
+  UInt32 _alignSize;
+  UInt32 _bufUseCapacity;
 
+  const UInt64 *SearchLimit;
   ISequentialInStream *Stream;
   UInt64 Processed; // Global offset of start of Buf
 
-  const UInt64 *SearchLimit;
-
   UInt32 GetTotalCapacity(UInt32 basicSize, UInt32 headerSize)
   {
-    _HeaderSize = headerSize;
-    for (_AlignSize = (1 << 5); _AlignSize < _HeaderSize; _AlignSize <<= 1);
-    _BufUseCapacity = basicSize + _AlignSize;
-    return _BufUseCapacity + 16;
+    _headerSize = headerSize;
+    for (_alignSize = (1 << 5); _alignSize < _headerSize; _alignSize <<= 1);
+    _bufUseCapacity = basicSize + _alignSize;
+    return _bufUseCapacity + 16;
   }
 
   /*
@@ -108,19 +107,19 @@ HRESULT CSignatureFinder::Find()
   {
     Buf[End] = Signature[0]; // it's for fast search;
 
-    while (End - Pos >= _HeaderSize)
+    while (End - Pos >= _headerSize)
     {
       const Byte *p = Buf + Pos;
-      Byte b = Signature[0];
+      const Byte b = Signature[0];
       for (;;)
       {
         if (*p == b) { break; }  p++;
         if (*p == b) { break; }  p++;
       }
       Pos = (UInt32)(p - Buf);
-      if (End - Pos < _HeaderSize)
+      if (End - Pos < _headerSize)
       {
-        Pos = End - _HeaderSize + 1;
+        Pos = End - _headerSize + 1;
         break;
       }
       UInt32 i;
@@ -130,28 +129,28 @@ HRESULT CSignatureFinder::Find()
       Pos++;
     }
 
-    if (Pos >= _AlignSize)
+    if (Pos >= _alignSize)
     {
-      UInt32 num = (Pos & ~(_AlignSize - 1));
+      const UInt32 num = (Pos & ~(_alignSize - 1));
       Processed += num;
       Pos -= num;
       End -= num;
       memmove(Buf, Buf + num, End);
     }
-    UInt32 rem = _BufUseCapacity - End;
+    UInt32 rem = _bufUseCapacity - End;
     if (SearchLimit)
     {
       if (Processed + Pos > *SearchLimit)
         return S_FALSE;
-      UInt64 rem2 = *SearchLimit - (Processed + End) + _HeaderSize;
+      const UInt64 rem2 = *SearchLimit - (Processed + End) + _headerSize;
       if (rem > rem2)
         rem = (UInt32)rem2;
     }
     
     UInt32 processedSize;
-    if (Processed == 0 && rem == _BufUseCapacity - _HeaderSize)
-      rem -= _AlignSize; // to make reads more aligned.
-    RINOK(Stream->Read(Buf + End, rem, &processedSize));
+    if (Processed == 0 && rem == _bufUseCapacity - _headerSize)
+      rem -= _alignSize; // to make reads more aligned.
+    RINOK(Stream->Read(Buf + End, rem, &processedSize))
     if (processedSize == 0)
       return S_FALSE;
     End += processedSize;
@@ -189,7 +188,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
   HeaderError = false;
 
   db.Clear();
-  RINOK(db.Stream->Seek(0, STREAM_SEEK_CUR, &db.StartPosition));
+  RINOK(InStream_GetPos(db.Stream, db.StartPosition))
   // UInt64 temp = db.StartPosition;
 
   CByteBuffer buffer;
@@ -201,12 +200,12 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
 
   // for (int iii = 0; iii < 10000; iii++)
   {
-    // db.StartPosition = temp; RINOK(db.Stream->Seek(db.StartPosition, STREAM_SEEK_SET, NULL));
+    // db.StartPosition = temp; RINOK(InStream_SeekSet(db.Stream, db.StartPosition))
     
     const UInt32 kMainHeaderSize = 32;
     Byte header[kMainHeaderSize];
     const UInt32 kBufSize = 1 << 15;
-    RINOK(ReadStream_FALSE(db.Stream, header, kMainHeaderSize));
+    RINOK(ReadStream_FALSE(db.Stream, header, kMainHeaderSize))
     if (memcmp(header, NHeader::kMarker, NHeader::kMarkerSize) == 0 && ai.Parse(header))
     {
       limitedStreamSpec = new CLimitedSequentialInStream;
@@ -216,7 +215,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
       buffer.Alloc(kBufSize);
       memcpy(buffer, header, kMainHeaderSize);
       UInt32 numProcessedBytes;
-      RINOK(limitedStream->Read(buffer + kMainHeaderSize, kBufSize - kMainHeaderSize, &numProcessedBytes));
+      RINOK(limitedStream->Read(buffer + kMainHeaderSize, kBufSize - kMainHeaderSize, &numProcessedBytes))
       _inBuffer.SetBuf(buffer, (UInt32)kBufSize, kMainHeaderSize + numProcessedBytes, kMainHeaderSize);
     }
     else
@@ -241,14 +240,14 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
   
       for (;;)
       {
-        RINOK(finder.Find());
+        RINOK(finder.Find())
         if (ai.Parse(finder.Buf + finder.Pos))
         {
           db.StartPosition = finder.Processed + finder.Pos;
           limitedStreamSpec = new CLimitedSequentialInStream;
           limitedStreamSpec->SetStream(db.Stream);
           limitedStream = limitedStreamSpec;
-          UInt32 remInFinder = finder.End - finder.Pos;
+          const UInt32 remInFinder = finder.End - finder.Pos;
           if (ai.Size <= remInFinder)
           {
             limitedStreamSpec->Init(0);
@@ -273,7 +272,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
     _tempBuf.Alloc(1 << 12);
 
   Byte p[16];
-  unsigned nextSize = 4 + (ai.ReserveBlockPresent() ? 4 : 0);
+  const unsigned nextSize = 4 + (ai.ReserveBlockPresent() ? 4 : 0);
   Read(p, nextSize);
   ai.SetID = Get16(p);
   ai.CabinetNumber = Get16(p + 2);
@@ -311,7 +310,7 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
   {
     // printf("\n!!! Seek Error !!!!\n");
     // fflush(stdout);
-    RINOK(db.Stream->Seek((Int64)(db.StartPosition + ai.FileHeadersOffset), STREAM_SEEK_SET, NULL));
+    RINOK(InStream_SeekSet(db.Stream, db.StartPosition + ai.FileHeadersOffset))
     limitedStreamSpec->Init(ai.Size - ai.FileHeadersOffset);
     _inBuffer.Init();
   }
@@ -325,8 +324,8 @@ HRESULT CInArchive::Open2(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
     item.Size = Get32(p);
     item.Offset = Get32(p + 4);
     item.FolderIndex = Get16(p + 8);
-    UInt16 pureDate = Get16(p + 10);
-    UInt16 pureTime = Get16(p + 12);
+    const UInt16 pureDate = Get16(p + 10);
+    const UInt16 pureTime = Get16(p + 12);
     item.Time = (((UInt32)pureDate << 16)) | pureTime;
     item.Attributes = Get16(p + 14);
 
@@ -357,7 +356,7 @@ HRESULT CInArchive::Open(CDatabaseEx &db, const UInt64 *searchHeaderSizeLimit)
 
 
 
-#define RINOZ(x) { int __tt = (x); if (__tt != 0) return __tt; }
+#define RINOZ(x) { int _tt_ = (x); if (_tt_ != 0) return _tt_; }
 
 static int CompareMvItems(const CMvItem *p1, const CMvItem *p2, void *param)
 {
@@ -365,17 +364,17 @@ static int CompareMvItems(const CMvItem *p1, const CMvItem *p2, void *param)
   const CDatabaseEx &db1 = mvDb.Volumes[p1->VolumeIndex];
   const CDatabaseEx &db2 = mvDb.Volumes[p2->VolumeIndex];
   const CItem &item1 = db1.Items[p1->ItemIndex];
-  const CItem &item2 = db2.Items[p2->ItemIndex];;
-  bool isDir1 = item1.IsDir();
-  bool isDir2 = item2.IsDir();
+  const CItem &item2 = db2.Items[p2->ItemIndex];
+  const bool isDir1 = item1.IsDir();
+  const bool isDir2 = item2.IsDir();
   if (isDir1 && !isDir2) return -1;
   if (isDir2 && !isDir1) return 1;
-  int f1 = mvDb.GetFolderIndex(p1);
-  int f2 = mvDb.GetFolderIndex(p2);
-  RINOZ(MyCompare(f1, f2));
-  RINOZ(MyCompare(item1.Offset, item2.Offset));
-  RINOZ(MyCompare(item1.Size, item2.Size));
-  RINOZ(MyCompare(p1->VolumeIndex, p2->VolumeIndex));
+  const int f1 = mvDb.GetFolderIndex(p1);
+  const int f2 = mvDb.GetFolderIndex(p2);
+  RINOZ(MyCompare(f1, f2))
+  RINOZ(MyCompare(item1.Offset, item2.Offset))
+  RINOZ(MyCompare(item1.Size, item2.Size))
+  RINOZ(MyCompare(p1->VolumeIndex, p2->VolumeIndex))
   return MyCompare(p1->ItemIndex, p2->ItemIndex);
 }
 
@@ -387,7 +386,7 @@ bool CMvDatabaseEx::AreItemsEqual(unsigned i1, unsigned i2)
   const CDatabaseEx &db1 = Volumes[p1->VolumeIndex];
   const CDatabaseEx &db2 = Volumes[p2->VolumeIndex];
   const CItem &item1 = db1.Items[p1->ItemIndex];
-  const CItem &item2 = db2.Items[p2->ItemIndex];;
+  const CItem &item2 = db2.Items[p2->ItemIndex];
   return GetFolderIndex(p1) == GetFolderIndex(p2)
       && item1.Offset == item2.Offset
       && item1.Size == item2.Size
@@ -434,7 +433,7 @@ void CMvDatabaseEx::FillSortAndShrink()
 
   FOR_VECTOR (i, Items)
   {
-    int folderIndex = GetFolderIndex(&Items[i]);
+    const int folderIndex = GetFolderIndex(&Items[i]);
     while (folderIndex >= (int)FolderStartFileIndex.Size())
       FolderStartFileIndex.Add(i);
   }
@@ -452,7 +451,7 @@ bool CMvDatabaseEx::Check()
       if (db0.Folders.IsEmpty() || db1.Folders.IsEmpty())
         return false;
       const CFolder &f0 = db0.Folders.Back();
-      const CFolder &f1 = db1.Folders.Front();
+      const CFolder &f1 = db1.Folders.FrontItem();
       if (f0.MethodMajor != f1.MethodMajor ||
           f0.MethodMinor != f1.MethodMinor)
         return false;
@@ -466,14 +465,14 @@ bool CMvDatabaseEx::Check()
   FOR_VECTOR (i, Items)
   {
     const CMvItem &mvItem = Items[i];
-    int fIndex = GetFolderIndex(&mvItem);
+    const int fIndex = GetFolderIndex(&mvItem);
     if (fIndex >= (int)FolderStartFileIndex.Size())
       return false;
     const CItem &item = Volumes[mvItem.VolumeIndex].Items[mvItem.ItemIndex];
     if (item.IsDir())
       continue;
     
-    int folderIndex = GetFolderIndex(&mvItem);
+    const int folderIndex = GetFolderIndex(&mvItem);
   
     if (folderIndex != prevFolder)
       prevFolder = folderIndex;

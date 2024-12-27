@@ -31,7 +31,7 @@ void CUpdateCallbackGUI2::Init()
 
   _lang_Removing = LangString(IDS_PROGRESS_REMOVE);
   _lang_Ops.Clear();
-  for (unsigned i = 0; i < ARRAY_SIZE(k_UpdNotifyLangs); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(k_UpdNotifyLangs); i++)
     _lang_Ops.Add(LangString(k_UpdNotifyLangs[i]));
 }
 

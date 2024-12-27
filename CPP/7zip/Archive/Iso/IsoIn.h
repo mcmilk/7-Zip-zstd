@@ -1,7 +1,7 @@
 // Archive/IsoIn.h
 
-#ifndef __ARCHIVE_ISO_IN_H
-#define __ARCHIVE_ISO_IN_H
+#ifndef ZIP7_INC_ARCHIVE_ISO_IN_H
+#define ZIP7_INC_ARCHIVE_ISO_IN_H
 
 #include "../../../Common/MyCom.h"
 
@@ -20,7 +20,7 @@ struct CDir: public CDirRecord
 
   void Clear()
   {
-    Parent = 0;
+    Parent = NULL;
     _subItems.Clear();
   }
   
@@ -133,7 +133,7 @@ struct CDateTime
     const bool res = NWindows::NTime::GetSecondsSince1601(Year, Month, Day, Hour, Minute, Second, v);
     if (res)
     {
-      v -= (Int64)((Int32)GmtOffset * 15 * 60);
+      v = (UInt64)((Int64)v - (Int64)((Int32)GmtOffset * 15 * 60));
       v *= 10000000;
       if (Hundredths < 100)
         v += (UInt32)Hundredths * 100000;
@@ -214,17 +214,19 @@ struct CVolumeDescriptor
   CDateTime MTime;
   CDateTime ExpirationTime;
   CDateTime EffectiveTime;
-  Byte FileStructureVersion; // = 1;
+  // Byte FileStructureVersion; // = 1;
   Byte ApplicationUse[512];
 
   bool IsJoliet() const
   {
     if ((VolFlags & 1) != 0)
       return false;
-    Byte b = EscapeSequence[2];
+    const Byte b = EscapeSequence[2];
     return (EscapeSequence[0] == 0x25 && EscapeSequence[1] == 0x2F &&
       (b == 0x40 || b == 0x43 || b == 0x45));
   }
+
+  UInt64 Get_VolumeSpaceSize_inBytes() const { return (UInt64)VolumeSpaceSize * LogicalBlockSize; }
 };
 
 struct CRef
@@ -244,10 +246,6 @@ class CInArchive
 
   UInt32 m_BufferPos;
   
-  CDir _rootDir;
-  bool _bootIsDefined;
-  CBootRecordDescriptor _bootDesc;
-
   void Skip(size_t size);
   void SkipZeros(size_t size);
   Byte ReadByte();
@@ -285,17 +283,23 @@ public:
   // UInt32 BlockSize;
   CObjectVector<CBootInitialEntry> BootEntries;
 
+private:
+  bool _bootIsDefined;
+public:
   bool IsArc;
   bool UnexpectedEnd;
   bool HeadersError;
   bool IncorrectBigEndian;
   bool TooDeepDirs;
   bool SelfLinkedDirs;
+  bool IsSusp;
+  unsigned SuspSkipSize;
+
+  int _expand_BootEntries_index;
+
   CRecordVector<UInt32> UniqStartLocations;
 
-  Byte m_Buffer[kBlockSize];
-
-  void UpdatePhySize(UInt32 blockIndex, UInt64 size)
+  void UpdatePhySize(const UInt32 blockIndex, const UInt64 size)
   {
     const UInt64 alignedSize = (size + kBlockSize - 1) & ~((UInt64)kBlockSize - 1);
     const UInt64 end = (UInt64)blockIndex * kBlockSize + alignedSize;
@@ -305,27 +309,12 @@ public:
 
   bool IsJoliet() const { return VolDescs[MainVolDescIndex].IsJoliet(); }
 
-  UInt64 GetBootItemSize(int index) const
-  {
-    const CBootInitialEntry &be = BootEntries[index];
-    UInt64 size = be.GetSize();
-    if (be.BootMediaType == NBootMediaType::k1d2Floppy)
-      size = (1200 << 10);
-    else if (be.BootMediaType == NBootMediaType::k1d44Floppy)
-      size = (1440 << 10);
-    else if (be.BootMediaType == NBootMediaType::k2d88Floppy)
-      size = (2880 << 10);
-    UInt64 startPos = (UInt64)be.LoadRBA * kBlockSize;
-    if (startPos < _fileSize)
-    {
-      if (_fileSize - startPos < size)
-        size = _fileSize - startPos;
-    }
-    return size;
-  }
+  UInt64 GetBootItemSize(unsigned index) const;
 
-  bool IsSusp;
-  unsigned SuspSkipSize;
+private:
+  CDir _rootDir;
+  Byte m_Buffer[kBlockSize];
+  CBootRecordDescriptor _bootDesc;
 };
   
 }}

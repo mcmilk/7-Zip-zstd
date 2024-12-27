@@ -12,85 +12,95 @@ void CLang::Clear() throw()
 {
   _ids.Clear();
   _offsets.Clear();
+  Comments.Clear();
   delete []_text;
-  _text = 0;
+  _text = NULL;
 }
 
-static const char * const kLangSignature = ";!@Lang2@!UTF-8!";
+static const char * const kLangSignature = ";!@Lang2@!UTF-8!\n";
 
 bool CLang::OpenFromString(const AString &s2)
 {
-  UString s;
-  if (!ConvertUTF8ToUnicode(s2, s))
+  UString su;
+  if (!ConvertUTF8ToUnicode(s2, su))
     return false;
-  unsigned i = 0;
-  if (s.IsEmpty())
+  if (su.IsEmpty())
     return false;
-  if (s[0] == 0xFEFF)
-    i++;
-
-  for (const char *p = kLangSignature;; i++)
+  const wchar_t *s = su;
+  const wchar_t *sLim = s + su.Len();
+  if (*s == 0xFEFF)
+    s++;
+  for (const char *p = kLangSignature;; s++)
   {
-    Byte c = (Byte)(*p++);
+    const Byte c = (Byte)(*p++);
     if (c == 0)
       break;
-    if (s[i] != c)
+    if (*s != c)
       return false;
   }
 
-  _text = new wchar_t[s.Len() - i + 1];
-  wchar_t *text = _text;
+  wchar_t *text = new wchar_t[(size_t)(sLim - s) + 1];
+  _text = text;
 
-  Int32 id = -100;
-  UInt32 pos = 0;
+  UString comment;
+  Int32 id = -1024;
+  unsigned pos = 0;
 
-  while (i < s.Len())
+  while (s != sLim)
   {
-    unsigned start = pos;
+    const unsigned start = pos;
     do
     {
-      wchar_t c = s[i++];
+      wchar_t c = *s++;
       if (c == '\n')
         break;
       if (c == '\\')
       {
-        if (i == s.Len())
+        if (s == sLim)
           return false;
-        c = s[i++];
+        c = *s++;
         switch (c)
         {
           case '\n': return false;
           case 'n': c = '\n'; break;
           case 't': c = '\t'; break;
-          case '\\': c = '\\'; break;
+          case '\\': /* c = '\\'; */ break;
           default: text[pos++] = L'\\'; break;
         }
       }
       text[pos++] = c;
     }
-    while (i < s.Len());
+    while (s != sLim);
 
     {
       unsigned j = start;
       for (; j < pos; j++)
-        if (text[j] != ' ')
+        if (text[j] != ' ' && text[j] != '\t')
           break;
       if (j == pos)
       {
         id++;
+        pos = start;
         continue;
       }
     }
+
+    // start != pos
+    text[pos++] = 0;
+
     if (text[start] == ';')
     {
-      pos = start;
+      comment = text + start;
+      comment.TrimRight();
+      if (comment.Len() != 1)
+        Comments.Add(comment);
       id++;
+      pos = start;
       continue;
     }
-    
-    text[pos++] = 0;
+
     const wchar_t *end;
-    UInt32 id32 = ConvertStringToUInt32(text + start, &end);
+    const UInt32 id32 = ConvertStringToUInt32(text + start, &end);
     if (*end == 0)
     {
       if (id32 > ((UInt32)1 << 30) || (Int32)id32 < id)
@@ -134,7 +144,7 @@ bool CLang::Open(CFSTR fileName, const char *id)
   char *p2 = p;
   for (unsigned i = 0; i < len; i++)
   {
-    char c = p[i];
+    const char c = p[i];
     if (c == 0)
       break;
     if (c != 0x0D)
@@ -156,7 +166,7 @@ bool CLang::Open(CFSTR fileName, const char *id)
 
 const wchar_t *CLang::Get(UInt32 id) const throw()
 {
-  int index = _ids.FindInSorted(id);
+  const int index = _ids.FindInSorted(id);
   if (index < 0)
     return NULL;
   return _text + (size_t)_offsets[(unsigned)index];

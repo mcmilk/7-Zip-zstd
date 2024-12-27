@@ -1,5 +1,5 @@
 /* HuffEnc.c -- functions for Huffman encoding
-2021-02-09 : Igor Pavlov : Public domain */
+2023-09-07 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -8,7 +8,7 @@
 
 #define kMaxLen 16
 #define NUM_BITS 10
-#define MASK (((unsigned)1 << NUM_BITS) - 1)
+#define MASK ((1u << NUM_BITS) - 1)
 
 #define NUM_COUNTERS 64
 
@@ -106,7 +106,7 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
       
       p[--e] &= MASK;
       lenCounters[1] = 2;
-      while (e > 0)
+      while (e != 0)
       {
         UInt32 len = (p[p[--e] >> NUM_BITS] >> NUM_BITS) + 1;
         p[e] = (p[e] & MASK) | (len << NUM_BITS);
@@ -146,3 +146,9 @@ void Huffman_Generate(const UInt32 *freqs, UInt32 *p, Byte *lens, UInt32 numSymb
     }
   }
 }
+
+#undef kMaxLen
+#undef NUM_BITS
+#undef MASK
+#undef NUM_COUNTERS
+#undef HUFFMAN_SPEED_OPT

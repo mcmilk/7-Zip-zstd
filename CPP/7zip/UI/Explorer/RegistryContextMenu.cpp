@@ -48,17 +48,16 @@ static const bool k_shellex_Statuses[2][4] =
 };
 
 
-// can we use static RegDeleteKeyExW in _WIN64 mode?
-// is it supported by Windows 2003 x64?
+// RegDeleteKeyExW is supported starting from win2003sp1/xp-pro-x64
+// Z7_WIN32_WINNT_MIN < 0x0600  // Vista
+#if !defined(Z7_WIN32_WINNT_MIN) \
+    || Z7_WIN32_WINNT_MIN  < 0x0502  /* < win2003 */ \
+    || Z7_WIN32_WINNT_MIN == 0x0502 && !defined(_M_AMD64)
+#define Z7_USE_DYN_RegDeleteKeyExW
+#endif
 
-/*
-#ifdef _WIN64
-
-#define INIT_REG_WOW
-
-#else
-*/
-
+#ifdef Z7_USE_DYN_RegDeleteKeyExW
+Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
 typedef
 // WINADVAPI
 LONG (APIENTRY *Func_RegDeleteKeyExW)(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved);
@@ -67,28 +66,28 @@ static Func_RegDeleteKeyExW func_RegDeleteKeyExW;
 static void Init_RegDeleteKeyExW()
 {
   if (!func_RegDeleteKeyExW)
-    func_RegDeleteKeyExW = (Func_RegDeleteKeyExW)
-      (void *)GetProcAddress(GetModuleHandleW(L"advapi32.dll"), "RegDeleteKeyExW");
+    func_RegDeleteKeyExW = Z7_GET_PROC_ADDRESS(
+    Func_RegDeleteKeyExW, GetModuleHandleW(L"advapi32.dll"),
+        "RegDeleteKeyExW");
 }
-
 #define INIT_REG_WOW if (wow != 0) Init_RegDeleteKeyExW();
+#else
+#define INIT_REG_WOW
+#endif
 
-// #endif
 
 static LONG MyRegistry_DeleteKey(HKEY parentKey, LPCTSTR name, UInt32 wow)
 {
   if (wow == 0)
     return RegDeleteKey(parentKey, name);
-  
-  /*
-  #ifdef _WIN64
-  return RegDeleteKeyExW
-  #else
-  */
+
+#ifdef Z7_USE_DYN_RegDeleteKeyExW
   if (!func_RegDeleteKeyExW)
     return E_NOTIMPL;
   return func_RegDeleteKeyExW
-  // #endif
+#else
+  return RegDeleteKeyExW
+#endif
       (parentKey, GetUnicodeString(name), wow, 0);
 }
 
@@ -205,7 +204,7 @@ LONG SetContextMenuHandler(bool setMode, const UString &path, UInt32 wow)
   if (setMode)
   for (unsigned i = 0; i < 2; i++)
   {
-    for (unsigned k = 0; k < ARRAY_SIZE(k_shellex_Prefixes); k++)
+    for (unsigned k = 0; k < Z7_ARRAY_SIZE(k_shellex_Prefixes); k++)
     {
       CSysString s (k_shellex_Prefixes[k]);
       s += (i == 0 ? k_KeyPostfix_ContextMenu : k_KeyPostfix_DragDrop);

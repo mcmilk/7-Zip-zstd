@@ -41,31 +41,32 @@ FString CDriveInfo::GetDeviceFileIoName() const
 struct CPhysTempBuffer
 {
   void *buffer;
-  CPhysTempBuffer(): buffer(0) {}
+  CPhysTempBuffer(): buffer(NULL) {}
   ~CPhysTempBuffer() { MidFree(buffer); }
 };
 
-static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt64 fileSize,
+static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath,
+    bool writeToDisk, UInt64 fileSize,
     UInt32 bufferSize, UInt64 progressStart, IProgress *progress)
 {
   NIO::CInFile inFile;
   if (!inFile.Open(fromPath))
-    return GetLastError();
+    return GetLastError_noZero_HRESULT();
   if (fileSize == (UInt64)(Int64)-1)
   {
     if (!inFile.GetLength(fileSize))
-      ::GetLastError();
+      return GetLastError_noZero_HRESULT();
   }
   
   NIO::COutFile outFile;
   if (writeToDisk)
   {
     if (!outFile.Open(toPath, FILE_SHARE_WRITE, OPEN_EXISTING, 0))
-      return GetLastError();
+      return GetLastError_noZero_HRESULT();
   }
   else
-    if (!outFile.Create(toPath, true))
-      return GetLastError();
+    if (!outFile.Create_ALWAYS(toPath))
+      return GetLastError_noZero_HRESULT();
   
   CPhysTempBuffer tempBuffer;
   tempBuffer.buffer = MidAlloc(bufferSize);
@@ -74,13 +75,15 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
  
   for (UInt64 pos = 0; pos < fileSize;)
   {
-    UInt64 progressCur = progressStart + pos;
-    RINOK(progress->SetCompleted(&progressCur));
-    UInt64 rem = fileSize - pos;
+    {
+      const UInt64 progressCur = progressStart + pos;
+      RINOK(progress->SetCompleted(&progressCur))
+    }
+    const UInt64 rem = fileSize - pos;
     UInt32 curSize = (UInt32)MyMin(rem, (UInt64)bufferSize);
     UInt32 processedSize;
     if (!inFile.Read(tempBuffer.buffer, curSize, processedSize))
-      return GetLastError();
+      return GetLastError_noZero_HRESULT();
     if (processedSize == 0)
       break;
     curSize = processedSize;
@@ -91,9 +94,8 @@ static HRESULT CopyFileSpec(CFSTR fromPath, CFSTR toPath, bool writeToDisk, UInt
       if (curSize > bufferSize)
         return E_FAIL;
     }
-
     if (!outFile.Write(tempBuffer.buffer, curSize, processedSize))
-      return GetLastError();
+      return GetLastError_noZero_HRESULT();
     if (curSize != processedSize)
       return E_FAIL;
     pos += curSize;
@@ -125,7 +127,7 @@ static const char * const kDriveTypes[] =
   , "RAM disk"
 };
 
-STDMETHODIMP CFSDrives::LoadItems()
+Z7_COM7F_IMF(CFSDrives::LoadItems())
 {
   _drives.Clear();
 
@@ -135,9 +137,7 @@ STDMETHODIMP CFSDrives::LoadItems()
   FOR_VECTOR (i, driveStrings)
   {
     CDriveInfo di;
-
     const FString &driveName = driveStrings[i];
-
     di.FullSystemName = driveName;
     if (!driveName.IsEmpty())
       di.Name.SetFrom(driveName, driveName.Len() - 1);
@@ -183,25 +183,24 @@ STDMETHODIMP CFSDrives::LoadItems()
     {
       FString name ("PhysicalDrive");
       name.Add_UInt32(n);
-      
       FString fullPath (kVolPrefix);
       fullPath += name;
-
       CFileInfo fi;
       if (!fi.Find(fullPath))
         continue;
 
       CDriveInfo di;
       di.Name = name;
-      di.FullSystemName = fullPath;
+      // if (_volumeMode == true) we use CDriveInfo::FullSystemName only in GetSystemIconIndex().
+      // And we need name without "\\\\.\\" prefix in GetSystemIconIndex().
+      // So we don't set di.FullSystemName = fullPath;
+      di.FullSystemName = name;
       di.ClusterSize = 0;
       di.DriveSize = fi.Size;
       di.FreeSpace = 0;
       di.DriveType = 0;
-
       di.IsPhysicalDrive = true;
       di.KnownSize = true;
-      
       _drives.Add(di);
     }
   }
@@ -209,15 +208,15 @@ STDMETHODIMP CFSDrives::LoadItems()
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CFSDrives::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _drives.Size();
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CFSDrives::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT *value))
 {
-  if (itemIndex >= (UInt32)_drives.Size())
+  if (itemIndex >= _drives.Size())
     return E_INVALIDARG;
   NCOM::CPropVariant prop;
   const CDriveInfo &di = _drives[itemIndex];
@@ -239,7 +238,7 @@ STDMETHODIMP CFSDrives::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT
     case kpidFreeSpace:   if (di.KnownSizes) prop = di.FreeSpace; break;
     case kpidClusterSize: if (di.KnownSizes) prop = di.ClusterSize; break;
     case kpidType:
-      if (di.DriveType < ARRAY_SIZE(kDriveTypes))
+      if (di.DriveType < Z7_ARRAY_SIZE(kDriveTypes))
         prop = kDriveTypes[di.DriveType];
       break;
     case kpidVolumeName:  prop = di.VolumeName; break;
@@ -251,7 +250,7 @@ STDMETHODIMP CFSDrives::GetProperty(UInt32 itemIndex, PROPID propID, PROPVARIANT
 
 HRESULT CFSDrives::BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder)
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   if (_volumeMode)
     return S_OK;
   NFsFolder::CFSFolder *fsFolderSpec = new NFsFolder::CFSFolder;
@@ -260,15 +259,15 @@ HRESULT CFSDrives::BindToFolderSpec(CFSTR name, IFolderFolder **resultFolder)
   if (_superMode)
     path = kSuperPrefix;
   path += name;
-  RINOK(fsFolderSpec->Init(path));
+  RINOK(fsFolderSpec->Init(path))
   *resultFolder = subFolder.Detach();
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CFSDrives::BindToFolder(UInt32 index, IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
-  if (index >= (UInt32)_drives.Size())
+  *resultFolder = NULL;
+  if (index >= _drives.Size())
     return E_INVALIDARG;
   const CDriveInfo &di = _drives[index];
   /*
@@ -285,20 +284,20 @@ STDMETHODIMP CFSDrives::BindToFolder(UInt32 index, IFolderFolder **resultFolder)
   return BindToFolderSpec(di.FullSystemName, resultFolder);
 }
 
-STDMETHODIMP CFSDrives::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CFSDrives::BindToFolder(const wchar_t *name, IFolderFolder **resultFolder))
 {
   return BindToFolderSpec(us2fs(name), resultFolder);
 }
 
-STDMETHODIMP CFSDrives::BindToParentFolder(IFolderFolder **resultFolder)
+Z7_COM7F_IMF(CFSDrives::BindToParentFolder(IFolderFolder **resultFolder))
 {
-  *resultFolder = 0;
+  *resultFolder = NULL;
   return S_OK;
 }
 
 IMP_IFolderFolder_Props(CFSDrives)
 
-STDMETHODIMP CFSDrives::GetFolderProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CFSDrives::GetFolderProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -320,58 +319,78 @@ STDMETHODIMP CFSDrives::GetFolderProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CFSDrives::GetSystemIconIndex(UInt32 index, Int32 *iconIndex)
+Z7_COM7F_IMF(CFSDrives::GetSystemIconIndex(UInt32 index, Int32 *iconIndex))
 {
-  *iconIndex = 0;
+  *iconIndex = -1;
   const CDriveInfo &di = _drives[index];
-  if (di.IsPhysicalDrive)
-    return S_OK;
-  int iconIndexTemp;
-  if (GetRealIconIndex(di.FullSystemName, 0, iconIndexTemp) != 0)
-  {
-    *iconIndex = iconIndexTemp;
-    return S_OK;
-  }
-  return GetLastError();
+  return Shell_GetFileInfo_SysIconIndex_for_Path_return_HRESULT(
+      di.FullSystemName,
+      _volumeMode ?
+          FILE_ATTRIBUTE_ARCHIVE:
+          FILE_ATTRIBUTE_DIRECTORY,
+      iconIndex);
 }
 
 void CFSDrives::AddExt(FString &s, unsigned index) const
 {
-  s += '.';
+  s.Add_Dot();
   const CDriveInfo &di = _drives[index];
+  UString n = di.FileSystemName;
+  n.MakeLower_Ascii();
   const char *ext;
   if (di.DriveType == DRIVE_CDROM)
     ext = "iso";
-  else if (di.FileSystemName.IsPrefixedBy_Ascii_NoCase("NTFS"))
-    ext = "ntfs";
-  else if (di.FileSystemName.IsPrefixedBy_Ascii_NoCase("FAT"))
-    ext = "fat";
   else
+  {
+    unsigned i;
+    for (i = 0; i < n.Len(); i++)
+    {
+      const wchar_t c = n[i];
+      if (c < 'a' || c > 'z')
+        break;
+    }
+    if (i != 0)
+    {
+      n.DeleteFrom(i);
+      s += us2fs(n);
+      return;
+    }
     ext = "img";
+  }
+  /*
+       if (n.IsPrefixedBy_Ascii_NoCase("NTFS")) ext = "ntfs";
+  else if (n.IsPrefixedBy_Ascii_NoCase("UDF")) ext = "udf";
+  else if (n.IsPrefixedBy_Ascii_NoCase("exFAT")) ext = "exfat";
+  */
   s += ext;
 }
 
-HRESULT CFSDrives::GetFileSize(unsigned index, UInt64 &fileSize) const
+HRESULT CFSDrives::GetFileSize(unsigned index, UInt64& fileSize) const
 {
+#ifdef Z7_DEVICE_FILE
   NIO::CInFile inFile;
   if (!inFile.Open(_drives[index].GetDeviceFileIoName()))
-    return GetLastError();
-  if (!inFile.SizeDefined)
-    return E_FAIL;
-  fileSize = inFile.Size;
-  return S_OK;
+    return GetLastError_noZero_HRESULT();
+  if (inFile.SizeDefined)
+  {
+    fileSize = inFile.Size;
+    return S_OK;
+  }
+#else
+  UNUSED_VAR(index)
+#endif
+  fileSize = 0;
+  return E_FAIL;
 }
 
-STDMETHODIMP CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 numItems,
+Z7_COM7F_IMF(CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 numItems,
     Int32 /* includeAltStreams */, Int32 /* replaceAltStreamColon */,
-    const wchar_t *path, IFolderOperationsExtractCallback *callback)
+    const wchar_t *path, IFolderOperationsExtractCallback *callback))
 {
   if (numItems == 0)
     return S_OK;
-  
   if (moveMode)
     return E_NOTIMPL;
-
   if (!_volumeMode)
     return E_NOTIMPL;
 
@@ -383,15 +402,15 @@ STDMETHODIMP CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
     if (di.KnownSize)
       totalSize += di.DriveSize;
   }
-  RINOK(callback->SetTotal(totalSize));
-  RINOK(callback->SetNumFiles(numItems));
+  RINOK(callback->SetTotal(totalSize))
+  RINOK(callback->SetNumFiles(numItems))
   
-  FString destPath = us2fs(path);
+  const FString destPath = us2fs(path);
   if (destPath.IsEmpty())
     return E_INVALIDARG;
 
-  bool isAltDest = NName::IsAltPathPrefix(destPath);
-  bool isDirectPath = (!isAltDest && !IsPathSepar(destPath.Back()));
+  const bool isAltDest = NName::IsAltPathPrefix(destPath);
+  const bool isDirectPath = (!isAltDest && !IsPathSepar(destPath.Back()));
   
   if (isDirectPath)
   {
@@ -400,11 +419,10 @@ STDMETHODIMP CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
   }
 
   UInt64 completedSize = 0;
-  RINOK(callback->SetCompleted(&completedSize));
-  
+  RINOK(callback->SetCompleted(&completedSize))
   for (i = 0; i < numItems; i++)
   {
-    unsigned index = indices[i];
+    const unsigned index = indices[i];
     const CDriveInfo &di = _drives[index];
     FString destPath2 = destPath;
 
@@ -419,7 +437,7 @@ STDMETHODIMP CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
       destPath2 += destName;
     }
     
-    FString srcPath = di.GetDeviceFileIoName();
+    const FString srcPath = di.GetDeviceFileIoName();
 
     UInt64 fileSize = 0;
     if (GetFileSize(index, fileSize) != S_OK)
@@ -429,66 +447,66 @@ STDMETHODIMP CFSDrives::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 num
     if (!di.KnownSize)
     {
       totalSize += fileSize;
-      RINOK(callback->SetTotal(totalSize));
+      RINOK(callback->SetTotal(totalSize))
     }
     
     Int32 writeAskResult;
     CMyComBSTR destPathResult;
     RINOK(callback->AskWrite(fs2us(srcPath), BoolToInt(false), NULL, &fileSize,
-        fs2us(destPath2), &destPathResult, &writeAskResult));
+        fs2us(destPath2), &destPathResult, &writeAskResult))
 
     if (!IntToBool(writeAskResult))
     {
       if (totalSize >= fileSize)
         totalSize -= fileSize;
-      RINOK(callback->SetTotal(totalSize));
+      RINOK(callback->SetTotal(totalSize))
       continue;
     }
     
-    RINOK(callback->SetCurrentFilePath(fs2us(srcPath)));
+    RINOK(callback->SetCurrentFilePath(fs2us(srcPath)))
     
-    static const UInt32 kBufferSize = (4 << 20);
-    UInt32 bufferSize = (di.DriveType == DRIVE_REMOVABLE) ? (18 << 10) * 4 : kBufferSize;
-    RINOK(CopyFileSpec(srcPath, us2fs(destPathResult), false, fileSize, bufferSize, completedSize, callback));
+    const UInt32 kBufferSize = (4 << 20);
+    const UInt32 bufferSize = (di.DriveType == DRIVE_REMOVABLE) ? (18 << 10) * 4 : kBufferSize;
+    RINOK(CopyFileSpec(srcPath, us2fs(destPathResult), false, fileSize, bufferSize, completedSize, callback))
     completedSize += fileSize;
   }
 
   return S_OK;
 }
 
-STDMETHODIMP CFSDrives::CopyFrom(Int32 /* moveMode */, const wchar_t * /* fromFolderPath */,
-    const wchar_t * const * /* itemsPaths */, UInt32 /* numItems */, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSDrives::CopyFrom(Int32 /* moveMode */, const wchar_t * /* fromFolderPath */,
+    const wchar_t * const * /* itemsPaths */, UInt32 /* numItems */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CFSDrives::CopyFromFile(UInt32 /* index */, const wchar_t * /* fullFilePath */, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSDrives::CopyFromFile(UInt32 /* index */, const wchar_t * /* fullFilePath */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CFSDrives::CreateFolder(const wchar_t * /* name */, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSDrives::CreateFolder(const wchar_t * /* name */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CFSDrives::CreateFile(const wchar_t * /* name */, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSDrives::CreateFile(const wchar_t * /* name */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CFSDrives::Rename(UInt32 /* index */, const wchar_t * /* newName */, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSDrives::Rename(UInt32 /* index */, const wchar_t * /* newName */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CFSDrives::Delete(const UInt32 * /* indices */, UInt32 /* numItems */, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSDrives::Delete(const UInt32 * /* indices */, UInt32 /* numItems */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }
 
-STDMETHODIMP CFSDrives::SetProperty(UInt32 /* index */, PROPID /* propID */,
-    const PROPVARIANT * /* value */, IProgress * /* progress */)
+Z7_COM7F_IMF(CFSDrives::SetProperty(UInt32 /* index */, PROPID /* propID */,
+    const PROPVARIANT * /* value */, IProgress * /* progress */))
 {
   return E_NOTIMPL;
 }

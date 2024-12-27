@@ -1,37 +1,28 @@
 // OpenCallback.h
 
-#ifndef __OPEN_CALLBACK_H
-#define __OPEN_CALLBACK_H
+#ifndef ZIP7_INC_OPEN_CALLBACK_H
+#define ZIP7_INC_OPEN_CALLBACK_H
 
-#include "../../../Common/MyCom.h"
+#include "../Common/ArchiveOpenCallback.h"
 
-#include "../../../Windows/FileFind.h"
-
-#include "../../IPassword.h"
-
-#include "../../Archive/IArchive.h"
-
-#ifdef _SFX
+#ifdef Z7_SFX
 #include "ProgressDialog.h"
 #else
 #include "ProgressDialog2.h"
 #endif
 
+/* we can use IArchiveOpenCallback or IOpenCallbackUI here */
 
-class COpenArchiveCallback:
+class COpenArchiveCallback Z7_final:
+  /*
   public IArchiveOpenCallback,
-  public IArchiveOpenVolumeCallback,
-  public IArchiveOpenSetSubArchiveName,
   public IProgress,
   public ICryptoGetTextPassword,
   public CMyUnknownImp
+  */
+  public IOpenCallbackUI
 {
-  FString _folderPrefix;
-  NWindows::NFile::NFind::CFileInfo _fileInfo;
   // NWindows::NSynchronization::CCriticalSection _criticalSection;
-  bool _subArchiveMode;
-  UString _subArchiveName;
-
 public:
   bool PasswordIsDefined;
   bool PasswordWasAsked;
@@ -39,31 +30,25 @@ public:
   HWND ParentWindow;
   CProgressDialog ProgressDialog;
 
-  MY_UNKNOWN_IMP5(
-    IArchiveOpenCallback,
+  /*
+  Z7_COM_UNKNOWN_IMP_3(
     IArchiveOpenVolumeCallback,
-    IArchiveOpenSetSubArchiveName,
-    IProgress,
-    ICryptoGetTextPassword)
+    IProgress
+    ICryptoGetTextPassword
+    )
 
-  INTERFACE_IProgress(;)
-  INTERFACE_IArchiveOpenCallback(;)
-  INTERFACE_IArchiveOpenVolumeCallback(;)
-
+  Z7_IFACE_COM7_IMP(IProgress)
+  Z7_IFACE_COM7_IMP(IArchiveOpenCallback)
   // ICryptoGetTextPassword
-  STDMETHOD(CryptoGetTextPassword)(BSTR *password);
+  Z7_COM7F_IMP(CryptoGetTextPassword(BSTR *password))
+  */
 
-  STDMETHOD(SetSubArchiveName(const wchar_t *name))
-  {
-    _subArchiveMode = true;
-    _subArchiveName = name;
-    return S_OK;
-  }
+  Z7_IFACE_IMP(IOpenCallbackUI)
 
   COpenArchiveCallback():
-    ParentWindow(0)
+      ParentWindow(NULL)
   {
-    _subArchiveMode = false;
+    // _subArchiveMode = false;
     PasswordIsDefined = false;
     PasswordWasAsked = false;
   }
@@ -75,18 +60,6 @@ public:
   }
   */
   
-  HRESULT LoadFileInfo2(const FString &folderPrefix, const FString &fileName)
-  {
-    _folderPrefix = folderPrefix;
-    if (!_fileInfo.Find_FollowLink(_folderPrefix + fileName))
-    {
-      return GetLastError_noZero_HRESULT();
-    }
-    return S_OK;
-  }
-
-  void ShowMessage(const UInt64 *completed);
-
   INT_PTR StartProgressDialog(const UString &title, NWindows::CThread &thread)
   {
     return ProgressDialog.Create(title, thread, ParentWindow);

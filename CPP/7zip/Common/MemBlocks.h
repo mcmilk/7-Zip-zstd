@@ -1,7 +1,7 @@
 // MemBlocks.h
 
-#ifndef __MEM_BLOCKS_H
-#define __MEM_BLOCKS_H
+#ifndef ZIP7_INC_MEM_BLOCKS_H
+#define ZIP7_INC_MEM_BLOCKS_H
 
 #include "../../Common/MyVector.h"
 
@@ -30,14 +30,14 @@ class CMemBlockManagerMt: public CMemBlockManager
 {
   NWindows::NSynchronization::CCriticalSection _criticalSection;
 public:
-  SYNC_OBJ_DECL(Synchro);
+  SYNC_OBJ_DECL(Synchro)
   NWindows::NSynchronization::CSemaphore_WFMO Semaphore;
 
   CMemBlockManagerMt(size_t blockSize = (1 << 20)): CMemBlockManager(blockSize) {}
   ~CMemBlockManagerMt() { FreeSpace(); }
 
-  HRes AllocateSpace(size_t numBlocks, size_t numNoLockBlocks);
-  HRes AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks = 0);
+  HRESULT AllocateSpace(size_t numBlocks, size_t numNoLockBlocks);
+  HRESULT AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks = 0);
   void FreeSpace();
   void *AllocateBlock();
   void FreeBlock(void *p, bool lockMode = true);
@@ -62,10 +62,10 @@ struct CMemLockBlocks: public CMemBlocks
 {
   bool LockMode;
 
-  CMemLockBlocks(): LockMode(true) {};
+  CMemLockBlocks(): LockMode(true) {}
   void Free(CMemBlockManagerMt *memManager);
   void FreeBlock(unsigned index, CMemBlockManagerMt *memManager);
-  // HRes SwitchToNoLockMode(CMemBlockManagerMt *memManager);
+  // HRESULT SwitchToNoLockMode(CMemBlockManagerMt *memManager);
   void Detach(CMemLockBlocks &blocks, CMemBlockManagerMt *memManager);
 };
 

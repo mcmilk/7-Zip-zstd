@@ -11,7 +11,7 @@
 #include "../ICoder.h"
 #include "../Common/StreamUtils.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 namespace NCompress {
 namespace NBROTLI {
 
@@ -31,13 +31,14 @@ struct CProps
   Byte _level;
 };
 
-class CEncoder:
+class CEncoder Z7_final:
   public ICompressCoder,
+  public ICompressWriteCoderProperties,
   public ICompressSetCoderMt,
   public ICompressSetCoderProperties,
-  public ICompressWriteCoderProperties,
   public CMyUnknownImp
 {
+public:
   CProps _props;
 
   UInt64 _processedIn;
@@ -47,27 +48,24 @@ class CEncoder:
 
   Int32 _Long;
   Int32 _WindowLog;
+  UInt64 unpackSize;
 
   BROTLIMT_CCtx *_ctx;
 
+  Z7_COM_QI_BEGIN2(ICompressCoder)
+  Z7_COM_QI_ENTRY(ICompressWriteCoderProperties)
+  Z7_COM_QI_ENTRY(ICompressSetCoderMt)
+  Z7_COM_QI_ENTRY(ICompressSetCoderProperties)
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
+
 public:
-
-  UInt64 unpackSize;
-
-  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
-  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
-  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderProperties)
-  MY_QUERYINTERFACE_ENTRY(ICompressWriteCoderProperties)
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
-
-  STDMETHOD (Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  STDMETHOD (SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
-  STDMETHOD (WriteCoderProperties)(ISequentialOutStream *outStream);
-  STDMETHOD (SetNumberOfThreads)(UInt32 numThreads);
-
+  Z7_IFACE_COM7_IMP(ICompressCoder)
+  Z7_IFACE_COM7_IMP(ICompressWriteCoderProperties)
+  Z7_IFACE_COM7_IMP(ICompressSetCoderMt)
+  Z7_IFACE_COM7_IMP(ICompressSetCoderProperties)
   CEncoder();
-  virtual ~CEncoder();
+  ~CEncoder();
 };
 
 }}

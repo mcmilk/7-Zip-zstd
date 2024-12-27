@@ -1,7 +1,7 @@
 // BenchmarkDialog.h
 
-#ifndef __BENCHMARK_DIALOG_H
-#define __BENCHMARK_DIALOG_H
+#ifndef ZIP7_INC_BENCHMARK_DIALOG_H
+#define ZIP7_INC_BENCHMARK_DIALOG_H
 
 #include "../../Common/CreateCoder.h"
 #include "../../UI/Common/Property.h"

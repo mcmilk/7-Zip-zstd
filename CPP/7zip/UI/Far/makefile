@@ -1,11 +1,11 @@
 PROG = 7-ZipFar.dll
 DEF_FILE = Far.def
 CFLAGS = $(CFLAGS)  \
-  -DEXTERNAL_CODECS \
-  -DNEW_FOLDER_INTERFACE
+  -DZ7_EXTERNAL_CODECS \
 
 !IFNDEF UNDER_CE
-CFLAGS = $(CFLAGS) -DWIN_LONG_PATH
+# CFLAGS = $(CFLAGS) -DZ7_LONG_PATH
+# -DZ7_NO_LARGE_PAGES
 !ENDIF
 
 CURRENT_OBJS = \
@@ -40,11 +40,13 @@ WIN_OBJS = \
   $O\FileIO.obj \
   $O\FileLink.obj \
   $O\FileName.obj \
+  $O\FileSystem.obj \
   $O\PropVariant.obj \
   $O\PropVariantConv.obj \
   $O\Registry.obj \
   $O\ResourceString.obj \
   $O\Synchronization.obj \
+  $O\System.obj \
   $O\TimeUtils.obj \
 
 7ZIP_COMMON_OBJS = \
@@ -88,7 +90,6 @@ AGENT_OBJS = \
   $O\AgentOut.obj \
   $O\AgentProxy.obj \
   $O\ArchiveFolder.obj \
-  $O\ArchiveFolderOpen.obj \
   $O\ArchiveFolderOut.obj \
   $O\UpdateCallbackAgent.obj \
 

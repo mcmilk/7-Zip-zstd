@@ -1,7 +1,7 @@
 // LzhDecoder.h
 
-#ifndef __COMPRESS_LZH_DECODER_H
-#define __COMPRESS_LZH_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_LZH_DECODER_H
+#define ZIP7_INC_COMPRESS_LZH_DECODER_H
 
 #include "../../Common/MyCom.h"
 
@@ -19,25 +19,25 @@ namespace NDecoder {
 
 const unsigned kMatchMinLen = 3;
 const unsigned kMatchMaxLen = 256;
-const unsigned NC = (256 + kMatchMaxLen - kMatchMinLen + 1);
+const unsigned NC = 256 + kMatchMaxLen - kMatchMinLen + 1;
 const unsigned NUM_CODE_BITS = 16;
 const unsigned NUM_DIC_BITS_MAX = 25;
-const unsigned NT = (NUM_CODE_BITS + 3);
-const unsigned NP = (NUM_DIC_BITS_MAX + 1);
+const unsigned NT = NUM_CODE_BITS + 3;
+const unsigned NP = NUM_DIC_BITS_MAX + 1;
 const unsigned NPT = NP; // Max(NT, NP)
 
-class CCoder:
-  public ICompressCoder,
-  public CMyUnknownImp
+class CCoder
 {
   CLzOutWindow _outWindow;
   NBitm::CDecoder<CInBuffer> _inBitStream;
 
   int _symbolT;
   int _symbolC;
+  UInt32 DictSize;
+  // bool FinishMode;
 
-  NHuffman::CDecoder<NUM_CODE_BITS, NPT> _decoderT;
-  NHuffman::CDecoder<NUM_CODE_BITS, NC> _decoderC;
+  NHuffman::CDecoder256<NUM_CODE_BITS, NPT, 7> _decoderT;
+  NHuffman::CDecoder<NUM_CODE_BITS, NC, 10> _decoderC;
 
   class CCoderReleaser
   {
@@ -52,21 +52,15 @@ class CCoder:
   bool ReadTP(unsigned num, unsigned numBits, int spec);
   bool ReadC();
 
-  HRESULT CodeReal(UInt64 outSize, ICompressProgressInfo *progress);
+  HRESULT CodeReal(UInt32 outSize, ICompressProgressInfo *progress);
 public:
-  MY_UNKNOWN_IMP
-
-  UInt32 DictSize;
-  bool FinishMode;
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  void SetDictSize(unsigned dictSize) { DictSize = dictSize; }
-  
-  CCoder(): DictSize(1 << 16), FinishMode(false) {}
-
+  CCoder(): DictSize(1 << 16)
+      // , FinishMode(true)
+      {}
+  void SetDictSize(UInt32 dictSize) { DictSize = dictSize; }
   UInt64 GetInputProcessedSize() const { return _inBitStream.GetProcessedSize(); }
+  HRESULT Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+      UInt32 outSize, ICompressProgressInfo *progress);
 };
 
 }}}

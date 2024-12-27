@@ -5,14 +5,14 @@ OBJS = \
   $(WIN_OBJS) \
   $(WIN_CTRL_OBJS) \
   $(7ZIP_COMMON_OBJS) \
-  $(AR_OBJS) \
-  $(AR_COMMON_OBJS) \
   $(UI_COMMON_OBJS) \
   $(AGENT_OBJS) \
   $(CONSOLE_OBJS) \
   $(EXPLORER_OBJS) \
   $(FM_OBJS) \
   $(GUI_OBJS) \
+  $(AR_COMMON_OBJS) \
+  $(AR_OBJS) \
   $(7Z_OBJS) \
   $(CAB_OBJS) \
   $(CHM_OBJS) \
@@ -132,7 +132,7 @@ $(WIM_OBJS): ../../Archive/Wim/$(*B).cpp
 
 !IFDEF ZIP_OBJS
 $(ZIP_OBJS): ../../Archive/Zip/$(*B).cpp
-	$(COMPL)
+	$(COMPL) $(ZIP_FLAGS)
 !ENDIF
 
 !IFDEF COMPRESS_OBJS
@@ -157,7 +157,7 @@ $(AGENT_OBJS): ../../UI/Agent/$(*B).cpp
 
 !IFDEF CONSOLE_OBJS
 $(CONSOLE_OBJS): ../../UI/Console/$(*B).cpp
-	$(COMPL)
+	$(COMPL) $(CONSOLE_VARIANT_FLAGS)
 !ENDIF
 
 !IFDEF EXPLORER_OBJS
@@ -234,7 +234,7 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 {../../UI/Agent}.cpp{$O}.obj::
 	$(COMPLB)
 {../../UI/Console}.cpp{$O}.obj::
-	$(COMPLB)
+	$(COMPLB) $(CONSOLE_VARIANT_FLAGS)
 {../../UI/Explorer}.cpp{$O}.obj::
 	$(COMPLB)
 {../../UI/FileManager}.cpp{$O}.obj::
@@ -269,7 +269,7 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 {../../Archive/Wim}.cpp{$O}.obj::
 	$(COMPLB)
 {../../Archive/Zip}.cpp{$O}.obj::
-	$(COMPLB)
+	$(COMPLB) $(ZIP_FLAGS)
 
 {../../Compress}.cpp{$O}.obj::
 	$(COMPLB)

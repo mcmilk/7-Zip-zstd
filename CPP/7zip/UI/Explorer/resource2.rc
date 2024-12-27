@@ -13,6 +13,7 @@ BEGIN
   IDS_CONTEXT_COMPRESS_TO "Add to {0}"
   IDS_CONTEXT_COMPRESS_EMAIL "Compress and email..."
   IDS_CONTEXT_COMPRESS_TO_EMAIL "Compress to {0} and email"
+  IDS_SELECT_FILES         "You must select one or more files"
 END
 
 IDB_MENU_LOGO  BITMAP  "../../UI/Explorer/MenuLogo.bmp"

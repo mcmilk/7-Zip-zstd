@@ -1,11 +1,11 @@
 // LzOutWindow.h
 
-#ifndef __LZ_OUT_WINDOW_H
-#define __LZ_OUT_WINDOW_H
+#ifndef ZIP7_INC_LZ_OUT_WINDOW_H
+#define ZIP7_INC_LZ_OUT_WINDOW_H
 
 #include "../Common/OutBuffer.h"
 
-#ifndef _NO_EXCEPTIONS
+#ifndef Z7_NO_EXCEPTIONS
 typedef COutBufferException CLzOutWindowException;
 #endif
 

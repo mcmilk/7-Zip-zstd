@@ -1,7 +1,7 @@
 // Crypto/ZipCrypto.h
 
-#ifndef __CRYPTO_ZIP_CRYPTO_H
-#define __CRYPTO_ZIP_CRYPTO_H
+#ifndef ZIP7_INC_CRYPTO_ZIP_CRYPTO_H
+#define ZIP7_INC_CRYPTO_ZIP_CRYPTO_H
 
 #include "../../Common/MyCom.h"
 
@@ -30,6 +30,10 @@ class CCipher:
   public ICryptoSetPassword,
   public CMyUnknownImp
 {
+  Z7_COM_UNKNOWN_IMP_1(ICryptoSetPassword)
+  Z7_COM7F_IMP(Init())
+public:
+  Z7_IFACE_COM7_IMP(ICryptoSetPassword)
 protected:
   UInt32 Key0;
   UInt32 Key1;
@@ -47,10 +51,6 @@ protected:
   }
 
 public:
-  MY_UNKNOWN_IMP1(ICryptoSetPassword)
-  STDMETHOD(Init)();
-  STDMETHOD(CryptoSetPassword)(const Byte *data, UInt32 size);
-  
   virtual ~CCipher()
   {
     Key0 = KeyMem0 =
@@ -59,18 +59,18 @@ public:
   }
 };
 
-class CEncoder: public CCipher
+class CEncoder Z7_final: public CCipher
 {
+  Z7_COM7F_IMP2(UInt32, Filter(Byte *data, UInt32 size))
 public:
-  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
   HRESULT WriteHeader_Check16(ISequentialOutStream *outStream, UInt16 crc);
 };
 
-class CDecoder: public CCipher
+class CDecoder Z7_final: public CCipher
 {
+  Z7_COM7F_IMP2(UInt32, Filter(Byte *data, UInt32 size))
 public:
   Byte _header[kHeaderSize];
-  STDMETHOD_(UInt32, Filter)(Byte *data, UInt32 size);
   HRESULT ReadHeader(ISequentialInStream *inStream);
   void Init_BeforeDecode();
 };

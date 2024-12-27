@@ -1,8 +1,8 @@
 // HmacSha256.h
 // Implements HMAC-SHA-256 (RFC2104, FIPS-198)
 
-#ifndef __CRYPTO_HMAC_SHA256_H
-#define __CRYPTO_HMAC_SHA256_H
+#ifndef ZIP7_INC_CRYPTO_HMAC_SHA256_H
+#define ZIP7_INC_CRYPTO_HMAC_SHA256_H
 
 #include "../../../C/Sha256.h"
 

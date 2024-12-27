@@ -95,6 +95,13 @@ static const char * const g_SectTypes[] =
   , "GB_ZEROFILL"
   , "INTERPOSING"
   , "16BYTE_LITERALS"
+  , "DTRACE_DOF"
+  , "LAZY_DYLIB_SYMBOL_POINTERS"
+  , "THREAD_LOCAL_REGULAR"
+  , "THREAD_LOCAL_ZEROFILL"
+  , "THREAD_LOCAL_VARIABLES"
+  , "THREAD_LOCAL_VARIABLE_POINTERS"
+  , "THREAD_LOCAL_INIT_FUNCTION_POINTERS"
 };
 
 enum EFileType
@@ -157,7 +164,7 @@ static const char * const g_ArcFlags[] =
 };
 
 
-static const CUInt32PCharPair g_Flags[] =
+static const CUInt32PCharPair g_SectFlags[] =
 {
   { 31, "PURE_INSTRUCTIONS" },
   { 30, "NO_TOC" },
@@ -171,25 +178,54 @@ static const CUInt32PCharPair g_Flags[] =
   {  8, "LOC_RELOC" }
 };
 
+
+// VM_PROT_*
+static const char * const g_SegmentProt[] =
+{
+    "READ"
+  , "WRITE"
+  , "EXECUTE"
+  /*
+  , "NO_CHANGE"
+  , "COPY"
+  , "TRUSTED"
+  , "IS_MASK"
+  */
+};
+
+// SG_*
+
+static const char * const g_SegmentFlags[] =
+{
+    "SG_HIGHVM"
+  , "SG_FVMLIB"
+  , "SG_NORELOC"
+  , "SG_PROTECTED_VERSION_1"
+  , "SG_READ_ONLY"
+};
+
 static const unsigned kNameSize = 16;
 
 struct CSegment
 {
   char Name[kNameSize];
+  UInt32 MaxProt;
+  UInt32 InitProt;
+  UInt32 Flags;
 };
 
 struct CSection
 {
   char Name[kNameSize];
-  char SegName[kNameSize];
+  // char SegName[kNameSize];
   UInt64 Va;
   UInt64 Pa;
   UInt64 VSize;
   UInt64 PSize;
 
+  UInt32 Align;
   UInt32 Flags;
-  int SegmentIndex;
-
+  unsigned SegmentIndex;
   bool IsDummy;
 
   CSection(): IsDummy(false) {}
@@ -198,11 +234,9 @@ struct CSection
 };
 
 
-class CHandler:
-  public IInArchive,
-  public IArchiveAllowTail,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+  IArchiveAllowTail
+)
   CMyComPtr<IInStream> _inStream;
   CObjectVector<CSegment> _segments;
   CObjectVector<CSection> _sections;
@@ -218,9 +252,6 @@ class CHandler:
 
   HRESULT Open2(ISequentialInStream *stream);
 public:
-  MY_UNKNOWN_IMP2(IInArchive, IArchiveAllowTail)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(AllowTail)(Int32 allowTail);
   CHandler(): _allowTail(false) {}
 };
 
@@ -240,13 +271,14 @@ static const Byte kProps[] =
   kpidPackSize,
   kpidCharacts,
   kpidOffset,
-  kpidVa
+  kpidVa,
+  kpidClusterSize // Align
 };
 
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   CPropVariant prop;
@@ -256,35 +288,28 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidCpu:
     {
       AString s;
-      char temp[16];
-      UInt32 cpu = _cpuType & ~(UInt32)CPU_ARCH_ABI64;
+      const UInt32 cpu = _cpuType & ~(UInt32)CPU_ARCH_ABI64;
       UInt32 flag64 = _cpuType & (UInt32)CPU_ARCH_ABI64;
       {
-        const char *n = NULL;
-        for (unsigned i = 0; i < ARRAY_SIZE(g_CpuPairs); i++)
+        s.Add_UInt32(cpu);
+        for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_CpuPairs); i++)
         {
           const CUInt32PCharPair &pair = g_CpuPairs[i];
           if (pair.Value == cpu || pair.Value == _cpuType)
           {
             if (pair.Value == _cpuType)
               flag64 = 0;
-            n = pair.Name;
+            s = pair.Name;
             break;
           }
         }
-        if (!n)
-        {
-          ConvertUInt32ToString(cpu, temp);
-          n = temp;
-        }
-        s = n;
        
         if (flag64 != 0)
-          s += " 64-bit";
+          s.Add_OptSpaced("64-bit");
         else if ((_cpuSubType & CPU_SUBTYPE_LIB64) && _cpuType != CPU_TYPE_AMD64)
-          s += " 64-bit-lib";
+          s.Add_OptSpaced("64-bit-lib");
       }
-      UInt32 t = _cpuSubType & ~(UInt32)CPU_SUBTYPE_LIB64;
+      const UInt32 t = _cpuSubType & ~(UInt32)CPU_SUBTYPE_LIB64;
       if (t != 0 && (t != CPU_SUBTYPE_I386_ALL || cpu != CPU_TYPE_386))
       {
         const char *n = NULL;
@@ -292,16 +317,14 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         {
           if (t == CPU_SUBTYPE_POWERPC_970)
             n = "970";
-          else if (t < ARRAY_SIZE(k_PowerPc_SubTypes))
+          else if (t < Z7_ARRAY_SIZE(k_PowerPc_SubTypes))
             n = k_PowerPc_SubTypes[t];
         }
-        if (!n)
-        {
-          ConvertUInt32ToString(t, temp);
-          n = temp;
-        }
         s.Add_Space();
-        s += n;
+        if (n)
+          s += n;
+        else
+          s.Add_UInt32(t);
       }
       prop = s;
       break;
@@ -309,8 +332,8 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     case kpidCharacts:
     {
       // TYPE_TO_PROP(g_FileTypes, _type, prop); break;
-      AString res (TypeToString(g_FileTypes, ARRAY_SIZE(g_FileTypes), _type));
-      AString s (FlagsToString(g_ArcFlags, ARRAY_SIZE(g_ArcFlags), _flags));
+      AString res (TypeToString(g_FileTypes, Z7_ARRAY_SIZE(g_FileTypes), _type));
+      const AString s (FlagsToString(g_ArcFlags, Z7_ARRAY_SIZE(g_ArcFlags), _flags));
       if (!s.IsEmpty())
       {
         res.Add_Space();
@@ -343,16 +366,16 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-static AString GetName(const char *name)
+static void AddName(AString &s, const char *name)
 {
-  char res[kNameSize + 1];
-  memcpy(res, name, kNameSize);
-  res[kNameSize] = 0;
-  return (AString)res;
+  char temp[kNameSize + 1];
+  memcpy(temp, name, kNameSize);
+  temp[kNameSize] = 0;
+  s += temp;
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   CPropVariant prop;
@@ -361,29 +384,75 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   {
     case kpidPath:
     {
-      AString s (GetName(_segments[item.SegmentIndex].Name));
+      AString s;
+      AddName(s, _segments[item.SegmentIndex].Name);
       if (!item.IsDummy)
-        s += GetName(item.Name);
+      {
+        // CSection::SegName and CSegment::Name are same in real cases.
+        // AddName(s, item.SegName);
+        AddName(s, item.Name);
+      }
       prop = MultiByteToUnicodeString(s);
       break;
     }
     case kpidSize:  /* prop = (UInt64)item.VSize; break; */
     case kpidPackSize:  prop = (UInt64)item.GetPackSize(); break;
     case kpidCharacts:
-      if (!item.IsDummy)
+    {
+      AString res;
       {
-        AString res (TypeToString(g_SectTypes, ARRAY_SIZE(g_SectTypes), item.Flags & SECT_TYPE_MASK));
-        AString s (FlagsToString(g_Flags, ARRAY_SIZE(g_Flags), item.Flags & SECT_ATTR_MASK));
-        if (!s.IsEmpty())
+        if (!item.IsDummy)
         {
-          res.Add_Space();
-          res += s;
+          {
+            const AString s (TypeToString(g_SectTypes, Z7_ARRAY_SIZE(g_SectTypes), item.Flags & SECT_TYPE_MASK));
+            if (!s.IsEmpty())
+            {
+              res.Add_OptSpaced("sect_type:");
+              res.Add_OptSpaced(s);
+            }
+          }
+          {
+            const AString s (FlagsToString(g_SectFlags, Z7_ARRAY_SIZE(g_SectFlags), item.Flags & SECT_ATTR_MASK));
+            if (!s.IsEmpty())
+            {
+              res.Add_OptSpaced("sect_flags:");
+              res.Add_OptSpaced(s);
+            }
+          }
         }
-        prop = res;
+        const CSegment &seg = _segments[item.SegmentIndex];
+        {
+          const AString s (FlagsToString(g_SegmentFlags, Z7_ARRAY_SIZE(g_SegmentFlags), seg.Flags));
+          if (!s.IsEmpty())
+          {
+            res.Add_OptSpaced("seg_flags:");
+            res.Add_OptSpaced(s);
+          }
+        }
+        {
+          const AString s (FlagsToString(g_SegmentProt, Z7_ARRAY_SIZE(g_SegmentProt), seg.MaxProt));
+          if (!s.IsEmpty())
+          {
+            res.Add_OptSpaced("max_prot:");
+            res.Add_OptSpaced(s);
+          }
+        }
+        {
+          const AString s (FlagsToString(g_SegmentProt, Z7_ARRAY_SIZE(g_SegmentProt), seg.InitProt));
+          if (!s.IsEmpty())
+          {
+            res.Add_OptSpaced("init_prot:");
+            res.Add_OptSpaced(s);
+          }
+        }
       }
+      if (!res.IsEmpty())
+        prop = res;
       break;
+    }
     case kpidOffset:  prop = item.Pa; break;
     case kpidVa:  prop = item.Va; break;
+    case kpidClusterSize:  prop = (UInt32)1 << item.Align; break;
   }
   prop.Detach(value);
   return S_OK;
@@ -396,7 +465,7 @@ HRESULT CHandler::Open2(ISequentialInStream *stream)
   const UInt32 kStartHeaderSize = 7 * 4;
 
   Byte header[kStartHeaderSize];
-  RINOK(ReadStream_FALSE(stream, header, kStartHeaderSize));
+  RINOK(ReadStream_FALSE(stream, header, kStartHeaderSize))
   bool be, mode64;
   switch (GetUi32(header))
   {
@@ -410,8 +479,8 @@ HRESULT CHandler::Open2(ISequentialInStream *stream)
   _mode64 = mode64;
   _be = be;
 
-  UInt32 numCommands = Get32(header + 0x10, be);
-  UInt32 commandsSize = Get32(header + 0x14, be);
+  const UInt32 numCommands = Get32(header + 0x10, be);
+  const UInt32 commandsSize = Get32(header + 0x14, be);
 
   if (numCommands == 0)
     return S_FALSE;
@@ -443,7 +512,7 @@ HRESULT CHandler::Open2(ISequentialInStream *stream)
   _headersSize = startHeaderSize + commandsSize;
   _totalSize = _headersSize;
   CByteArr buffer(_headersSize);
-  RINOK(ReadStream_FALSE(stream, buffer + kStartHeaderSize, _headersSize - kStartHeaderSize));
+  RINOK(ReadStream_FALSE(stream, buffer + kStartHeaderSize, _headersSize - kStartHeaderSize))
   const Byte *buf = buffer + startHeaderSize;
   size_t size = _headersSize - startHeaderSize;
   for (UInt32 cmdIndex = 0; cmdIndex < numCommands; cmdIndex++)
@@ -489,6 +558,9 @@ HRESULT CHandler::Open2(ISequentialInStream *stream)
       }
       
       CSegment seg;
+      seg.MaxProt = Get32(buf + offs - 16, be);
+      seg.InitProt = Get32(buf + offs - 12, be);
+      seg.Flags = Get32(buf + offs - 4, be);
       memcpy(seg.Name, buf + 8, kNameSize);
       _segments.Add(seg);
 
@@ -505,11 +577,12 @@ HRESULT CHandler::Open2(ISequentialInStream *stream)
         sect.PSize = phSize;
         sect.VSize = vmSize;
         sect.Pa = phAddr;
+        sect.Align = 0;
         sect.Flags = 0;
       }
       else do
       {
-        UInt32 headSize = (cmd == CMD_SEGMENT_64) ? 0x50 : 0x44;
+        const UInt32 headSize = (cmd == CMD_SEGMENT_64) ? 0x50 : 0x44;
         const Byte *p = buf + offs;
         if (cmdSize - offs < headSize)
           break;
@@ -528,13 +601,16 @@ HRESULT CHandler::Open2(ISequentialInStream *stream)
           f32Offset = 0x28;
         }
         sect.Pa    = Get32(p + f32Offset, be);
-        sect.Flags = Get32(p + f32Offset + 10, be);
-        if (sect.Flags == SECT_ATTR_ZEROFILL)
+        sect.Align = Get32(p + f32Offset + 4, be);
+        // sect.reloff = Get32(p + f32Offset + 8, be);
+        // sect.nreloc = Get32(p + f32Offset + 12, be);
+        sect.Flags = Get32(p + f32Offset + 16, be);
+        if ((sect.Flags & SECT_TYPE_MASK) == SECT_ATTR_ZEROFILL)
           sect.PSize = 0;
         else
           sect.PSize = sect.VSize;
         memcpy(sect.Name, p, kNameSize);
-        memcpy(sect.SegName, p + kNameSize, kNameSize);
+        // memcpy(sect.SegName, p + kNameSize, kNameSize);
         sect.SegmentIndex = _segments.Size() - 1;
         offs += headSize;
       }
@@ -553,17 +629,17 @@ HRESULT CHandler::Open2(ISequentialInStream *stream)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *inStream,
+Z7_COM7F_IMF(CHandler::Open(IInStream *inStream,
     const UInt64 * /* maxCheckStartPosition */,
-    IArchiveOpenCallback * /* openArchiveCallback */)
+    IArchiveOpenCallback * /* openArchiveCallback */))
 {
   COM_TRY_BEGIN
   Close();
-  RINOK(Open2(inStream));
+  RINOK(Open2(inStream))
   if (!_allowTail)
   {
     UInt64 fileSize;
-    RINOK(inStream->Seek(0, STREAM_SEEK_END, &fileSize));
+    RINOK(InStream_GetSize_SeekToEnd(inStream, fileSize))
     if (fileSize > _totalSize)
       return S_FALSE;
   }
@@ -572,7 +648,7 @@ STDMETHODIMP CHandler::Open(IInStream *inStream,
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _totalSize = 0;
   _inStream.Release();
@@ -581,17 +657,17 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = _sections.Size();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = _sections.Size();
   if (numItems == 0)
@@ -619,33 +695,33 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   for (i = 0; i < numItems; i++, currentTotalSize += currentItemSize)
   {
     lps->InSize = lps->OutSize = currentTotalSize;
-    RINOK(lps->SetCur());
-    Int32 askMode = testMode ?
+    RINOK(lps->SetCur())
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    UInt32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CSection &item = _sections[index];
     currentItemSize = item.GetPackSize();
 
     CMyComPtr<ISequentialOutStream> outStream;
-    RINOK(extractCallback->GetStream(index, &outStream, askMode));
+    RINOK(extractCallback->GetStream(index, &outStream, askMode))
     if (!testMode && !outStream)
       continue;
     
-    RINOK(extractCallback->PrepareOperation(askMode));
-    RINOK(_inStream->Seek(item.Pa, STREAM_SEEK_SET, NULL));
+    RINOK(extractCallback->PrepareOperation(askMode))
+    RINOK(InStream_SeekSet(_inStream, item.Pa))
     streamSpec->Init(currentItemSize);
-    RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+    RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress))
     outStream.Release();
     RINOK(extractCallback->SetOperationResult(copyCoderSpec->TotalSize == currentItemSize ?
         NExtract::NOperationResult::kOK:
-        NExtract::NOperationResult::kDataError));
+        NExtract::NOperationResult::kDataError))
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::AllowTail(Int32 allowTail)
+Z7_COM7F_IMF(CHandler::AllowTail(Int32 allowTail))
 {
   _allowTail = IntToBool(allowTail);
   return S_OK;
@@ -658,7 +734,7 @@ static const Byte k_Signature[] = {
   4, 0xFE, 0xED, 0xFA, 0xCF };
 
 REGISTER_ARC_I(
-  "MachO", "macho", 0, 0xDF,
+  "MachO", "macho", NULL, 0xDF,
   k_Signature,
   0,
   NArcInfoFlags::kMultiSignature |

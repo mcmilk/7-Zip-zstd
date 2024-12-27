@@ -1,11 +1,12 @@
 // Archive/ZipIn.h
 
-#ifndef __ZIP_IN_H
-#define __ZIP_IN_H
+#ifndef ZIP7_INC_ZIP_IN_H
+#define ZIP7_INC_ZIP_IN_H
 
 #include "../../../Common/MyBuffer2.h"
 #include "../../../Common/MyCom.h"
 
+#include "../../Common/StreamUtils.h"
 #include "../../IStream.h"
 
 #include "ZipHeader.h"
@@ -154,7 +155,7 @@ struct CVols
     CMyComPtr<IInStream> Stream;
     UInt64 Size;
 
-    HRESULT SeekToStart() const { return Stream->Seek(0, STREAM_SEEK_SET, NULL); }
+    HRESULT SeekToStart() const { return InStream_SeekToBegin(Stream); }
 
     CSubStreamInfo(): Size(0) {}
   };
@@ -233,16 +234,12 @@ struct CVols
 };
 
 
-class CVolStream:
-  public ISequentialInStream,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CVolStream
+  , ISequentialInStream
+)
 public:
   CVols *Vols;
-  
-  MY_UNKNOWN_IMP1(ISequentialInStream)
-
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
 };
 
 
@@ -268,6 +265,8 @@ class CInArchive
     _bufPos += skip;
     _cnt += skip;
   }
+
+  HRESULT AllocateBuffer(size_t size);
 
   UInt64 GetVirtStreamPos() { return _streamPos - _bufCached + _bufPos; }
 
@@ -353,12 +352,19 @@ public:
   UInt32 EcdVolIndex;
 
   CVols Vols;
+
+  bool Force_ReadLocals_Mode;
+  bool Disable_VolsRead;
+  bool Disable_FindMarker;
  
   CInArchive():
       IsArcOpen(false),
       Stream(NULL),
       StartStream(NULL),
-      Callback(NULL)
+      Callback(NULL),
+      Force_ReadLocals_Mode(false),
+      Disable_VolsRead(false),
+      Disable_FindMarker(false)
       {}
 
   UInt64 GetPhySize() const
@@ -412,8 +418,8 @@ public:
 
 
   HRESULT CheckDescriptor(const CItemEx &item);
-  HRESULT ReadLocalItemAfterCdItem(CItemEx &item, bool &isAvail, bool &headersError);
-  HRESULT ReadLocalItemAfterCdItemFull(CItemEx &item);
+  HRESULT Read_LocalItem_After_CdItem(CItemEx &item, bool &isAvail, bool &headersError);
+  HRESULT Read_LocalItem_After_CdItem_Full(CItemEx &item);
 
   HRESULT GetItemStream(const CItemEx &item, bool seekPackData, CMyComPtr<ISequentialInStream> &stream);
 

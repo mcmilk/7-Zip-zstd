@@ -13,6 +13,7 @@
 
 #include "../FileManager/RegistryUtils.h"
 
+// #include "../Explorer/ContextMenuFlags.h"
 #include "ZipRegistry.h"
 
 using namespace NWindows;
@@ -99,6 +100,7 @@ static LPCTSTR const kSplitDest = TEXT("SplitDest");
 static LPCTSTR const kElimDup = TEXT("ElimDup");
 // static LPCTSTR const kAltStreams = TEXT("AltStreams");
 static LPCTSTR const kNtSecur = TEXT("Security");
+static LPCTSTR const kMemLimit = TEXT("MemLimit");
 
 void CInfo::Save() const
 {
@@ -131,6 +133,14 @@ void Save_ShowPassword(bool showPassword)
   CKey key;
   CreateMainKey(key, kKeyName);
   key.SetValue(kShowPassword, showPassword);
+}
+
+void Save_LimitGB(UInt32 limit_GB)
+{
+  CS_LOCK
+  CKey key;
+  CreateMainKey(key, kKeyName);
+  Key_Set_UInt32(key, kMemLimit, limit_GB);
 }
 
 void CInfo::Load()
@@ -181,6 +191,19 @@ bool Read_ShowPassword()
   return showPassword;
 }
 
+UInt32 Read_LimitGB()
+{
+  CS_LOCK
+  CKey key;
+  if (OpenMainKey(key, kKeyName) == ERROR_SUCCESS)
+  {
+    UInt32 v;
+    if (key.QueryValue(kMemLimit, v) == ERROR_SUCCESS)
+      return v;
+  }
+  return (UInt32)(Int32)-1;
+}
+
 }
 
 namespace NCompression
@@ -197,6 +220,7 @@ static LPCTSTR const kOptionsKeyName = TEXT("Options");
 
 static LPCTSTR const kLevel = TEXT("Level");
 static LPCTSTR const kDictionary = TEXT("Dictionary");
+// static LPCTSTR const kDictionaryChain = TEXT("DictionaryChain");
 static LPCTSTR const kOrder = TEXT("Order");
 static LPCTSTR const kBlockSize = TEXT("BlockSize");
 static LPCTSTR const kNumThreads = TEXT("NumThreads");
@@ -280,6 +304,7 @@ void CInfo::Save() const
 
       Key_Set_UInt32(fk, kLevel, fo.Level);
       Key_Set_UInt32(fk, kDictionary, fo.Dictionary);
+      // Key_Set_UInt32(fk, kDictionaryChain, fo.DictionaryChain);
       Key_Set_UInt32(fk, kOrder, fo.Order);
       Key_Set_UInt32(fk, kBlockSize, fo.BlockLogSize);
       Key_Set_UInt32(fk, kNumThreads, fo.NumThreads);
@@ -337,6 +362,7 @@ void CInfo::Load()
 
           Key_Get_UInt32(fk, kLevel, fo.Level);
           Key_Get_UInt32(fk, kDictionary, fo.Dictionary);
+          // Key_Get_UInt32(fk, kDictionaryChain, fo.DictionaryChain);
           Key_Get_UInt32(fk, kOrder, fo.Order);
           Key_Get_UInt32(fk, kBlockSize, fo.BlockLogSize);
           Key_Get_UInt32(fk, kNumThreads, fo.NumThreads);
@@ -560,7 +586,15 @@ void CContextMenuInfo::Load()
 
   WriteZone = (UInt32)(Int32)-1;
 
-  Flags = (UInt32)(Int32)-1;
+  /* we can disable email items by default,
+     because email code doesn't work in some systems */
+  Flags = (UInt32)(Int32)-1
+      /*
+      & ~NContextMenuFlags::kCompressEmail
+      & ~NContextMenuFlags::kCompressTo7zEmail
+      & ~NContextMenuFlags::kCompressToZipEmail
+      */
+      ;
   Flags_Def = false;
   
   CS_LOCK

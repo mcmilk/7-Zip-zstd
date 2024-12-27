@@ -22,9 +22,8 @@
 
 #include "../FileManager/DialogSize.h"
 #include "../FileManager/HelpUtils.h"
-#ifdef LANG
 #include "../FileManager/LangUtils.h"
-#endif
+#include "../FileManager/resourceGui.h"
 
 #include "../../MyVersion.h"
 
@@ -156,7 +155,7 @@ void CSyncData::Init()
     NeedPrint_Dec_1 =
     NeedPrint_Dec   =
     NeedPrint_Tot   = false;
-};
+}
 
 
 struct CBenchProgressSync
@@ -243,7 +242,7 @@ class CBenchmarkDialog;
 struct CThreadBenchmark
 {
   CBenchmarkDialog *BenchmarkDialog;
-  DECL_EXTERNAL_CODECS_LOC_VARS2;
+  DECL_EXTERNAL_CODECS_LOC_VARS_DECL
   // HRESULT Result;
 
   HRESULT Process();
@@ -290,15 +289,15 @@ class CBenchmarkDialog:
     Sync.Init();
   }
 
-  virtual bool OnInit();
-  virtual bool OnDestroy();
-  virtual bool OnSize(WPARAM /* wParam */, int xSize, int ySize);
-  virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
-  virtual bool OnCommand(int code, int itemID, LPARAM lParam);
-  virtual void OnHelp();
-  virtual void OnCancel();
-  virtual bool OnTimer(WPARAM timerID, LPARAM callback);
-  virtual bool OnButtonClicked(int buttonID, HWND buttonHWND);
+  virtual bool OnInit() Z7_override;
+  virtual bool OnDestroy() Z7_override;
+  virtual bool OnSize(WPARAM /* wParam */, int xSize, int ySize) Z7_override;
+  virtual bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam) Z7_override;
+  virtual bool OnCommand(unsigned code, unsigned itemID, LPARAM lParam) Z7_override;
+  virtual void OnHelp() Z7_override;
+  virtual void OnCancel() Z7_override;
+  virtual bool OnTimer(WPARAM timerID, LPARAM callback) Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
 
   void Disable_Stop_Button();
   void OnStopButton();
@@ -315,7 +314,7 @@ class CBenchmarkDialog:
   UInt32 GetNumberOfThreads();
   size_t OnChangeDictionary();
 
-  void SetItemText_Number(int itemID, UInt64 val, LPCTSTR post = NULL);
+  void SetItemText_Number(unsigned itemID, UInt64 val, LPCTSTR post = NULL);
   void Print_MemUsage(UString &s, UInt64 memUsage) const;
   bool IsMemoryUsageOK(UInt64 memUsage) const
     { return memUsage + (1 << 20) <= RamSize_Limit; }
@@ -347,17 +346,17 @@ public:
       TotalMode(false)
       {}
 
-  ~CBenchmarkDialog();
+  ~CBenchmarkDialog() Z7_DESTRUCTOR_override;
 
-  bool PostMsg_Finish(LPARAM param)
+  bool PostMsg_Finish(WPARAM wparam)
   {
     if ((HWND)*this)
-      return PostMsg(k_Message_Finished, param);
+      return PostMsg(k_Message_Finished, wparam);
     // the (HWND)*this is NULL only for some internal code failure
     return true;
   }
 
-  INT_PTR Create(HWND wndParent = 0)
+  INT_PTR Create(HWND wndParent = NULL)
   {
     BIG_DIALOG_SIZE(332, 228);
     return CModalDialog::Create(TotalMode ? IDD_BENCH_TOTAL : SIZED_DIALOG(IDD_BENCH), wndParent);
@@ -385,13 +384,13 @@ public:
 
 UString HResultToMessage(HRESULT errorCode);
 
-#ifdef LANG
+#ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
   IDT_BENCH_DICTIONARY,
   IDT_BENCH_MEMORY,
   IDT_BENCH_NUM_THREADS,
-  IDT_BENCH_SPEED,
+  IDT_BENCH_SIZE,
   IDT_BENCH_RATING_LABEL,
   IDT_BENCH_USAGE_LABEL,
   IDT_BENCH_RPU_LABEL,
@@ -406,9 +405,9 @@ static const UInt32 kLangIDs[] =
   IDB_RESTART
 };
 
-static const UInt32 kLangIDs_Colon[] =
+static const UInt32 kLangIDs_RemoveColon[] =
 {
-  IDT_BENCH_SIZE
+  IDT_BENCH_SPEED
 };
 
 #endif
@@ -439,18 +438,18 @@ static int ComboBox_Add_UInt32(NWindows::NControl::CComboBox &cb, UInt32 v)
 {
   TCHAR s[16];
   ConvertUInt32ToString(v, s);
-  int index = (int)cb.AddString(s);
-  cb.SetItemData(index, v);
+  const int index = (int)cb.AddString(s);
+  cb.SetItemData(index, (LPARAM)v);
   return index;
 }
 
 
 bool CBenchmarkDialog::OnInit()
 {
-  #ifdef LANG
+  #ifdef Z7_LANG
   LangSetWindowText(*this, IDD_BENCH);
-  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
-  // LangSetDlgItems_Colon(*this, kLangIDs_Colon, ARRAY_SIZE(kLangIDs_Colon));
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
+  LangSetDlgItems_RemoveColon(*this, kLangIDs_RemoveColon, Z7_ARRAY_SIZE(kLangIDs_RemoveColon));
   LangSetDlgItemText(*this, IDT_BENCH_CURRENT2, IDT_BENCH_CURRENT);
   LangSetDlgItemText(*this, IDT_BENCH_RESULTING2, IDT_BENCH_RESULTING);
   #endif
@@ -486,7 +485,7 @@ bool CBenchmarkDialog::OnInit()
     NSystem::CProcessAffinity threadsInfo;
     threadsInfo.InitST();
 
-    #ifndef _7ZIP_ST
+    #ifndef Z7_ST
     if (threadsInfo.Get() && threadsInfo.processAffinityMask != 0)
       numCPUs = threadsInfo.GetNumProcessThreads();
     else
@@ -531,7 +530,7 @@ bool CBenchmarkDialog::OnInit()
   if (numThreads == (UInt32)(Int32)-1)
     numThreads = numCPUs;
   if (numThreads > 1)
-    numThreads &= ~1;
+    numThreads &= ~(UInt32)1;
   const UInt32 kNumThreadsMax = (1 << 12);
   if (numThreads > kNumThreadsMax)
     numThreads = kNumThreadsMax;
@@ -603,7 +602,7 @@ bool CBenchmarkDialog::OnInit()
       ConvertUInt32ToString(d, s);
       lstrcat(s, post);
       const int index = (int)m_Dictionary.AddString(s);
-      m_Dictionary.SetItemData(index, dict);
+      m_Dictionary.SetItemData(index, (LPARAM)dict);
       if (dict <= Sync.DictSize)
         cur = index;
       if (dict >= kMaxDicSize)
@@ -711,18 +710,18 @@ UInt32 CBenchmarkDialog::GetNumberOfThreads()
   s[0] = (wchar_t)('0' + (val) / 100); \
   s[1] = (wchar_t)('0' + (val) % 100 / 10); \
   s[2] = (wchar_t)('0' + (val) % 10); \
-  s[3] = 0; }
+  s += 3; s[0] = 0; }
 
-static void NumberToDot3(UInt64 val, WCHAR *s)
+static WCHAR *NumberToDot3(UInt64 val, WCHAR *s)
 {
-  ConvertUInt64ToString(val / 1000, s);
+  s = ConvertUInt64ToString(val / 1000, s);
   const UInt32 rem = (UInt32)(val % 1000);
-  s += MyStringLen(s);
   *s++ = '.';
-  UINT_TO_STR_3(s, rem);
+  UINT_TO_STR_3(s, rem)
+  return s;
 }
 
-void CBenchmarkDialog::SetItemText_Number(int itemID, UInt64 val, LPCTSTR post)
+void CBenchmarkDialog::SetItemText_Number(unsigned itemID, UInt64 val, LPCTSTR post)
 {
   TCHAR s[64];
   ConvertUInt64ToString(val, s);
@@ -758,7 +757,7 @@ size_t CBenchmarkDialog::OnChangeDictionary()
   UString s;
   Print_MemUsage(s, memUsage);
 
-  #ifdef _7ZIP_LARGE_PAGES
+  #ifdef Z7_LARGE_PAGES
   {
     AString s2;
     Add_LargePages_String(s2);
@@ -875,7 +874,7 @@ void CBenchmarkDialog::StartBenchmark()
   const UInt32 numThreads = GetNumberOfThreads();
   const UInt32 numPasses = (UInt32)m_NumPasses.GetItemData_of_CurSel();
 
-  for (unsigned i = 0; i < ARRAY_SIZE(g_IDs); i++)
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(g_IDs); i++)
     SetItemText(g_IDs[i], kProcessingString);
 
   SetItemText_Empty(IDT_BENCH_LOG);
@@ -886,9 +885,15 @@ void CBenchmarkDialog::StartBenchmark()
       false); // totalBench
   if (!IsMemoryUsageOK(memUsage))
   {
-    UString s2 = LangString(IDT_BENCH_MEMORY);
+    UString s2;
+    LangString_OnlyFromLangFile(IDS_MEM_REQUIRED_MEM_SIZE, s2);
     if (s2.IsEmpty())
-      GetItemText(IDT_BENCH_MEMORY, s2);
+    {
+      s2 = LangString(IDT_BENCH_MEMORY);
+      if (s2.IsEmpty())
+        GetItemText(IDT_BENCH_MEMORY, s2);
+      s2.RemoveChar(L':');
+    }
     UString s;
     SetErrorMessage_MemUsage(s, memUsage, RamSize, RamSize_Limit, s2);
     MessageBoxError_Status(s);
@@ -916,7 +921,7 @@ void CBenchmarkDialog::StartBenchmark()
   {
     MyKillTimer();
     MessageBoxError_Status(L"Can't create thread");
-  };
+  }
   return;
 }
 
@@ -1000,19 +1005,17 @@ void CBenchmarkDialog::PrintTime()
 
   WCHAR s[64];
 
-  // GetTimeString(elapsedTime / 1000, s);
-  ConvertUInt32ToString(elapsedTime / 1000, s);
+  WCHAR *p = ConvertUInt32ToString(elapsedTime / 1000, s);
 
   if (_finishTime_WasSet)
   {
-    WCHAR *p = s + MyStringLen(s);
     *p++ = '.';
-    UINT_TO_STR_3(p, elapsedTime % 1000);
+    UINT_TO_STR_3(p, elapsedTime % 1000)
   }
 
-  // NumberToDot3((UInt64)elapsedTime, s);
+  // p = NumberToDot3((UInt64)elapsedTime, s);
 
-  wcscat(s, L" s");
+  MyStringCopy(p, L" s");
 
   // if (WasStopped_in_GUI) wcscat(s, L" X"); // for debug
 
@@ -1051,7 +1054,7 @@ static UInt32 GetRating(const CTotalBenchRes &info)
   if (rating32 != rating64)
     rating32 = (UInt32)(Int32)-1;
   return rating32;
-};
+}
 
 
 static void AddUsageString(UString &s, const CTotalBenchRes &info)
@@ -1085,10 +1088,10 @@ static void Add_Dot3String(UString &s, UInt64 val)
 static void AddRatingString(UString &s, const CTotalBenchRes &info)
 {
   // AddUsageString(s, info);
-  // s += " ";
+  // s.Add_Space();
   // s.Add_UInt32(GetRating(info));
   Add_Dot3String(s, GetRating(info));
-};
+}
 
 
 static void AddRatingsLine(UString &s, const CTotalBenchRes &enc, const CTotalBenchRes &dec
@@ -1097,7 +1100,7 @@ static void AddRatingsLine(UString &s, const CTotalBenchRes &enc, const CTotalBe
     #endif
     )
 {
-  // AddUsageString(s, enc); s += " ";
+  // AddUsageString(s, enc); s.Add_Space();
 
   AddRatingString(s, enc);
   s += "  ";
@@ -1109,11 +1112,11 @@ static void AddRatingsLine(UString &s, const CTotalBenchRes &enc, const CTotalBe
   s += "  ";
   AddRatingString(s, tot_BenchRes);
   
-  s += " "; AddUsageString(s, tot_BenchRes);
+  s.Add_Space();  AddUsageString(s, tot_BenchRes);
 
   
   #ifdef PRINT_ITER_TIME
-  s += " ";
+  s.Add_Space();
   {
     Add_Dot3String(s, ticks;
     s += " s";
@@ -1127,8 +1130,7 @@ void CBenchmarkDialog::PrintRating(UInt64 rating, UINT controlID)
 {
   // SetItemText_Number(controlID, GetMips(rating), kMIPS);
   WCHAR s[64];
-  NumberToDot3(GetMips(rating), s);
-  MyStringCat(s, L" GIPS");
+  MyStringCopy(NumberToDot3(GetMips(rating), s), L" GIPS");
   SetItemText(controlID, s);
 }
 
@@ -1347,7 +1349,7 @@ void CBenchmarkDialog::UpdateGui()
       /*
         s += "g:"; s.Add_UInt32((UInt32)pair.EncInfo.GlobalTime);
         s += " u:"; s.Add_UInt32((UInt32)pair.EncInfo.UserTime);
-        s += " ";
+        s.Add_Space();
       */
       AddRatingsLine(s, pair.Enc, pair.Dec
             #ifdef PRINT_ITER_TIME
@@ -1391,7 +1393,7 @@ void CBenchmarkDialog::UpdateGui()
 }
 
 
-bool CBenchmarkDialog::OnCommand(int code, int itemID, LPARAM lParam)
+bool CBenchmarkDialog::OnCommand(unsigned code, unsigned itemID, LPARAM lParam)
 {
   if (code == CBN_SELCHANGE &&
       (itemID == IDC_BENCH_DICTIONARY ||
@@ -1405,7 +1407,7 @@ bool CBenchmarkDialog::OnCommand(int code, int itemID, LPARAM lParam)
 }
 
 
-bool CBenchmarkDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CBenchmarkDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {
@@ -1425,14 +1427,14 @@ bool CBenchmarkDialog::OnButtonClicked(int buttonID, HWND buttonHWND)
 
 // ---------- Benchmark Thread ----------
 
-struct CBenchCallback: public IBenchCallback
+struct CBenchCallback Z7_final: public IBenchCallback
 {
   UInt64 dictionarySize;
   CBenchProgressSync *Sync;
   CBenchmarkDialog *BenchmarkDialog;
   
-  HRESULT SetEncodeResult(const CBenchInfo &info, bool final);
-  HRESULT SetDecodeResult(const CBenchInfo &info, bool final);
+  HRESULT SetEncodeResult(const CBenchInfo &info, bool final) Z7_override;
+  HRESULT SetDecodeResult(const CBenchInfo &info, bool final) Z7_override;
 };
 
 HRESULT CBenchCallback::SetEncodeResult(const CBenchInfo &info, bool final)
@@ -1494,14 +1496,14 @@ HRESULT CBenchCallback::SetDecodeResult(const CBenchInfo &info, bool final)
 }
 
 
-struct CBenchCallback2: public IBenchPrintCallback
+struct CBenchCallback2 Z7_final: public IBenchPrintCallback
 {
   CBenchProgressSync *Sync;
   bool TotalMode;
 
-  void Print(const char *s);
-  void NewLine();
-  HRESULT CheckBreak();
+  void Print(const char *s) Z7_override;
+  void NewLine() Z7_override;
+  HRESULT CheckBreak() Z7_override;
 };
 
 void CBenchCallback2::Print(const char *s)
@@ -1528,12 +1530,12 @@ HRESULT CBenchCallback2::CheckBreak()
 
 
 
-struct CFreqCallback: public IBenchFreqCallback
+struct CFreqCallback Z7_final: public IBenchFreqCallback
 {
   CBenchmarkDialog *BenchmarkDialog;
 
-  virtual HRESULT AddCpuFreq(unsigned numThreads, UInt64 freq, UInt64 usage);
-  virtual HRESULT FreqsFinished(unsigned numThreads);
+  virtual HRESULT AddCpuFreq(unsigned numThreads, UInt64 freq, UInt64 usage) Z7_override;
+  virtual HRESULT FreqsFinished(unsigned numThreads) Z7_override;
 };
 
 HRESULT CFreqCallback::AddCpuFreq(unsigned numThreads, UInt64 freq, UInt64 usage)
@@ -1552,11 +1554,11 @@ HRESULT CFreqCallback::AddCpuFreq(unsigned numThreads, UInt64 freq, UInt64 usage
       s += "T Frequency (MHz):";
       s.Add_LF();
     }
-    s += " ";
+    s.Add_Space();
     if (numThreads != 1)
     {
       s.Add_UInt64(GetUsagePercents(usage));
-      s += '%';
+      s.Add_Char('%');
       s.Add_Space();
     }
     s.Add_UInt64(GetMips(freq));
@@ -1673,7 +1675,7 @@ HRESULT CThreadBenchmark::Process()
             CProperty prop;
             prop.Name = 'd';
             prop.Name.Add_UInt32((UInt32)(dictionarySize >> 10));
-            prop.Name += 'k';
+            prop.Name.Add_Char('k');
             props.Add(prop);
           }
         }
@@ -1839,7 +1841,7 @@ HRESULT Benchmark(
   COneMethodInfo method;
 
   UInt32 numCPUs = 1;
-  #ifndef _7ZIP_ST
+  #ifndef Z7_ST
   numCPUs = NSystem::GetNumberOfProcessors();
   #endif
   UInt32 numThreads = numCPUs;
@@ -1860,8 +1862,8 @@ HRESULT Benchmark(
       ParseNumberString(prop.Value, propVariant);
     if (name.IsPrefixedBy(L"mt"))
     {
-      #ifndef _7ZIP_ST
-      RINOK(ParseMtProp(name.Ptr(2), propVariant, numCPUs, numThreads));
+      #ifndef Z7_ST
+      RINOK(ParseMtProp(name.Ptr(2), propVariant, numCPUs, numThreads))
       if (numThreads != numCPUs)
         bd.Sync.NumThreads = numThreads;
       #endif
@@ -1884,7 +1886,7 @@ HRESULT Benchmark(
   {
     // bd.Bench2Text.Empty();
     bd.Bench2Text = "7-Zip " MY_VERSION_CPU;
-    bd.Bench2Text += (char)0xD;
+    // bd.Bench2Text.Add_Char((char)0xD);
     bd.Bench2Text.Add_LF();
   }
 
@@ -1893,14 +1895,14 @@ HRESULT Benchmark(
     if (method.Get_DicSize(dict))
       bd.Sync.DictSize = dict;
   }
-  bd.Sync.Level = method.GetLevel();
+  bd.Sync.Level = (int)method.GetLevel();
 
   // Dummy(1000 * 1000 * 1);
 
   {
     CThreadBenchmark &benchmarker = bd._threadBenchmark;
-    #ifdef EXTERNAL_CODECS
-    benchmarker.__externalCodecs = __externalCodecs;
+    #ifdef Z7_EXTERNAL_CODECS
+    benchmarker._externalCodecs = _externalCodecs;
     #endif
     benchmarker.BenchmarkDialog = &bd;
   }

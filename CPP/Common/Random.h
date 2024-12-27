@@ -1,13 +1,13 @@
 // Common/Random.h
 
-#ifndef __COMMON_RANDOM_H
-#define __COMMON_RANDOM_H
+#ifndef ZIP7_INC_COMMON_RANDOM_H
+#define ZIP7_INC_COMMON_RANDOM_H
 
 class CRandom
 {
 public:
   void Init();
-  void Init(unsigned int seed);
+  void Init(unsigned seed);
   int Generate() const;
 };
 

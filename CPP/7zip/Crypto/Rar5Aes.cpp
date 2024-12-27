@@ -4,7 +4,7 @@
 
 #include "../../../C/CpuArch.h"
 
-#ifndef _7ZIP_ST
+#ifndef Z7_ST
 #include "../../Windows/Synchronization.h"
 #endif
 
@@ -129,11 +129,11 @@ void CDecoder::SetPassword(const Byte *data, size_t size)
 }
 
 
-STDMETHODIMP CDecoder::Init()
+Z7_COM7F_IMF(CDecoder::Init())
 {
   CalcKey_and_CheckPassword();
-  RINOK(SetKey(_key, kAesKeySize));
-  RINOK(SetInitVector(_iv, AES_BLOCK_SIZE));
+  RINOK(SetKey(_key, kAesKeySize))
+  RINOK(SetInitVector(_iv, AES_BLOCK_SIZE))
   return CAesCoder::Init();
 }
 
@@ -144,7 +144,7 @@ UInt32 CDecoder::Hmac_Convert_Crc32(UInt32 crc) const
   NSha256::CHmac ctx;
   ctx.SetKey(_hashKey, NSha256::kDigestSize);
   UInt32 v;
-  SetUi32(&v, crc);
+  SetUi32(&v, crc)
   ctx.Update((const Byte *)&v, 4);
   MY_ALIGN (16)
   UInt32 h[SHA256_NUM_DIGEST_WORDS];
@@ -153,7 +153,7 @@ UInt32 CDecoder::Hmac_Convert_Crc32(UInt32 crc) const
   for (unsigned i = 0; i < SHA256_NUM_DIGEST_WORDS; i++)
     crc ^= (UInt32)GetUi32(h + i);
   return crc;
-};
+}
 
 
 void CDecoder::Hmac_Convert_32Bytes(Byte *data) const
@@ -163,12 +163,12 @@ void CDecoder::Hmac_Convert_32Bytes(Byte *data) const
   ctx.SetKey(_hashKey, NSha256::kDigestSize);
   ctx.Update(data, NSha256::kDigestSize);
   ctx.Final(data);
-};
+}
 
 
 static CKey g_Key;
 
-#ifndef _7ZIP_ST
+#ifndef Z7_ST
   static NWindows::NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
   #define MT_LOCK NWindows::NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
 #else

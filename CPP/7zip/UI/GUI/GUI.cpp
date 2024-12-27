@@ -7,8 +7,11 @@
 #endif
 
 #include "../../../Common/MyWindows.h"
-
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <shlwapi.h>
+#else
 #include <Shlwapi.h>
+#endif
 
 #include "../../../Common/MyInitGuid.h"
 
@@ -23,7 +26,7 @@
 #include "../Common/ExitCode.h"
 
 #include "../FileManager/StringUtils.h"
-#include "../FileManager/MyWindowsNew.h"
+#include "../FileManager/LangUtils.h"
 
 #include "BenchmarkDialog.h"
 #include "ExtractGUI.h"
@@ -34,15 +37,27 @@
 
 using namespace NWindows;
 
-#ifdef EXTERNAL_CODECS
+#ifdef Z7_EXTERNAL_CODECS
+extern
+const CExternalCodecs *g_ExternalCodecs_Ptr;
 const CExternalCodecs *g_ExternalCodecs_Ptr;
 #endif
 
 extern
 HINSTANCE g_hInstance;
 HINSTANCE g_hInstance;
+extern
+bool g_DisableUserQuestions;
+bool g_DisableUserQuestions;
 
 #ifndef UNDER_CE
+
+#if !defined(Z7_WIN32_WINNT_MIN) || Z7_WIN32_WINNT_MIN < 0x0500  // win2000
+#define Z7_USE_DYN_ComCtl32Version
+#endif
+
+#ifdef Z7_USE_DYN_ComCtl32Version
+Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
 
 extern
 DWORD g_ComCtl32Version;
@@ -51,24 +66,28 @@ DWORD g_ComCtl32Version;
 static DWORD GetDllVersion(LPCTSTR dllName)
 {
   DWORD dwVersion = 0;
-  HINSTANCE hinstDll = LoadLibrary(dllName);
-  if (hinstDll)
+  const HMODULE hmodule = LoadLibrary(dllName);
+  if (hmodule)
   {
-    DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)(void *)GetProcAddress(hinstDll, "DllGetVersion");
-    if (pDllGetVersion)
+    const
+     DLLGETVERSIONPROC f_DllGetVersion = Z7_GET_PROC_ADDRESS(
+     DLLGETVERSIONPROC, hmodule,
+    "DllGetVersion");
+    if (f_DllGetVersion)
     {
       DLLVERSIONINFO dvi;
       ZeroMemory(&dvi, sizeof(dvi));
       dvi.cbSize = sizeof(dvi);
-      HRESULT hr = (*pDllGetVersion)(&dvi);
+      const HRESULT hr = (*f_DllGetVersion)(&dvi);
       if (SUCCEEDED(hr))
-        dwVersion = MAKELONG(dvi.dwMinorVersion, dvi.dwMajorVersion);
+        dwVersion = (DWORD)MAKELONG(dvi.dwMinorVersion, dvi.dwMajorVersion);
     }
-    FreeLibrary(hinstDll);
+    FreeLibrary(hmodule);
   }
   return dwVersion;
 }
 
+#endif
 #endif
 
 extern
@@ -79,7 +98,8 @@ DECLARE_AND_SET_CLIENT_VERSION_VAR
 
 static void ErrorMessage(LPCWSTR message)
 {
-  MessageBoxW(NULL, message, L"7-Zip ZS", MB_ICONERROR | MB_OK);
+  if (!g_DisableUserQuestions)
+    MessageBoxW(NULL, message, L"7-Zip ZS", MB_ICONERROR | MB_OK);
 }
 
 static void ErrorMessage(const char *s)
@@ -100,9 +120,9 @@ static int ShowMemErrorMessage()
   return NExitCode::kMemoryError;
 }
 
-static int ShowSysErrorMessage(DWORD errorCode)
+static int ShowSysErrorMessage(HRESULT errorCode)
 {
-  if ((HRESULT)errorCode == E_OUTOFMEMORY)
+  if (errorCode == E_OUTOFMEMORY)
     return ShowMemErrorMessage();
   ErrorMessage(HResultToMessage(errorCode));
   return NExitCode::kFatalError;
@@ -125,7 +145,7 @@ static int Main2()
   #endif
   if (commandStrings.Size() == 0)
   {
-    MessageBoxW(0, L"Specify command", L"7-Zip ZS", 0);
+    MessageBoxW(NULL, L"Specify command", L"7-Zip ZS", 0);
     return 0;
   }
 
@@ -133,6 +153,7 @@ static int Main2()
   CArcCmdLineParser parser;
 
   parser.Parse1(commandStrings, options);
+  g_DisableUserQuestions = options.YesToAll;
   parser.Parse2(options);
 
   CREATE_CODECS_OBJECT
@@ -142,14 +163,15 @@ static int Main2()
   ThrowException_if_Error(codecs->Load());
   Codecs_AddHashArcHandler(codecs);
  
-  #ifdef EXTERNAL_CODECS
+  #ifdef Z7_EXTERNAL_CODECS
   {
-    g_ExternalCodecs_Ptr = &__externalCodecs;
+    g_ExternalCodecs_Ptr = &_externalCodecs;
     UString s;
     codecs->GetCodecsErrorMessage(s);
     if (!s.IsEmpty())
     {
-      MessageBoxW(0, s, L"7-Zip", MB_ICONERROR);
+      if (!g_DisableUserQuestions)
+      MessageBoxW(NULL, s, L"7-Zip", MB_ICONERROR);
     }
   
   }
@@ -162,7 +184,7 @@ static int Main2()
         
         || options.Command.IsFromUpdateGroup()))
   {
-    #ifdef EXTERNAL_CODECS
+    #ifdef Z7_EXTERNAL_CODECS
     if (!codecs->MainDll_ErrorPath.IsEmpty())
     {
       UString s ("7-Zip cannot load module: ");
@@ -194,12 +216,12 @@ static int Main2()
     // excludedFormats.Sort();
   }
 
-  #ifdef EXTERNAL_CODECS
+  #ifdef Z7_EXTERNAL_CODECS
   if (isExtractGroupCommand
       || options.Command.IsFromUpdateGroup()
       || options.Command.CommandType == NCommandType::kHash
       || options.Command.CommandType == NCommandType::kBenchmark)
-    ThrowException_if_Error(__externalCodecs.Load());
+    ThrowException_if_Error(_externalCodecs.Load());
   #endif
   
   if (options.Command.CommandType == NCommandType::kBenchmark)
@@ -227,7 +249,7 @@ static int Main2()
     CExtractCallbackImp *ecs = new CExtractCallbackImp;
     CMyComPtr<IFolderArchiveExtractCallback> extractCallback = ecs;
 
-    #ifndef _NO_CRYPTO
+    #ifndef Z7_NO_CRYPTO
     ecs->PasswordIsDefined = options.PasswordEnabled;
     ecs->Password = options.Password;
     #endif
@@ -239,15 +261,17 @@ static int Main2()
     eo.StdInMode = options.StdInMode;
     eo.StdOutMode = options.StdOutMode;
     eo.YesToAll = options.YesToAll;
+    ecs->YesToAll = options.YesToAll;
     eo.TestMode = options.Command.IsTestCommand();
+    ecs->TestMode = eo.TestMode;
 
-    #ifndef _SFX
+    #ifndef Z7_SFX
     eo.Properties = options.Properties;
     #endif
 
     bool messageWasDisplayed = false;
 
-    #ifndef _SFX
+    #ifndef Z7_SFX
     CHashBundle hb;
     CHashBundle *hb_ptr = NULL;
     
@@ -289,7 +313,7 @@ static int Main2()
           ArchivePathsFullSorted,
           options.Censor.Pairs.Front().Head,
           eo,
-          #ifndef _SFX
+          #ifndef Z7_SFX
           hb_ptr,
           #endif
           options.ShowDialog, messageWasDisplayed, ecs);
@@ -304,14 +328,14 @@ static int Main2()
   }
   else if (options.Command.IsFromUpdateGroup())
   {
-    #ifndef _NO_CRYPTO
+    #ifndef Z7_NO_CRYPTO
     bool passwordIsDefined = options.PasswordEnabled && !options.Password.IsEmpty();
     #endif
 
     CUpdateCallbackGUI callback;
     // callback.EnablePercents = options.EnablePercents;
 
-    #ifndef _NO_CRYPTO
+    #ifndef Z7_NO_CRYPTO
     callback.PasswordIsDefined = passwordIsDefined;
     callback.AskPassword = options.PasswordEnabled && options.Password.IsEmpty();
     callback.Password = options.Password;
@@ -397,17 +421,19 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
 
   InitCommonControls();
 
-  #ifndef UNDER_CE
+#ifdef Z7_USE_DYN_ComCtl32Version
   g_ComCtl32Version = ::GetDllVersion(TEXT("comctl32.dll"));
   g_LVN_ITEMACTIVATE_Support = (g_ComCtl32Version >= MAKELONG(71, 4));
-  #endif
+#endif
 
   // OleInitialize is required for ProgressBar in TaskBar.
   #ifndef UNDER_CE
   OleInitialize(NULL);
   #endif
 
+  #ifdef Z7_LANG
   LoadLangOneTime();
+  #endif
 
   // setlocale(LC_COLLATE, ".ACP");
   try
@@ -456,7 +482,7 @@ int APIENTRY WinMain(HINSTANCE  hInstance, HINSTANCE /* hPrevInstance */,
   catch(int v)
   {
     AString e ("Error: ");
-    e.Add_UInt32(v);
+    e.Add_UInt32((unsigned)v);
     ErrorMessage(e);
     return NExitCode::kFatalError;
   }

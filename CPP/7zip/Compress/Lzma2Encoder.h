@@ -1,7 +1,7 @@
 // Lzma2Encoder.h
 
-#ifndef __LZMA2_ENCODER_H
-#define __LZMA2_ENCODER_H
+#ifndef ZIP7_INC_LZMA2_ENCODER_H
+#define ZIP7_INC_LZMA2_ENCODER_H
 
 #include "../../../C/Lzma2Enc.h"
 #include "../../../C/fast-lzma2/fast-lzma2.h"
@@ -14,37 +14,36 @@
 namespace NCompress {
 namespace NLzma2 {
 
-class CEncoder:
-  public ICompressCoder,
-  public ICompressSetCoderProperties,
-  public ICompressWriteCoderProperties,
-  public ICompressSetCoderPropertiesOpt,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_4(
+  CEncoder
+  , ICompressCoder
+  , ICompressSetCoderProperties
+  , ICompressWriteCoderProperties
+  , ICompressSetCoderPropertiesOpt
+)
   CLzma2EncHandle _encoder;
-public:
-  MY_UNKNOWN_IMP4(
-    ICompressCoder,
-    ICompressSetCoderProperties,
-    ICompressWriteCoderProperties,
-    ICompressSetCoderPropertiesOpt)
- 
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
-  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
-  STDMETHOD(SetCoderPropertiesOpt)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
 
+public:
   CEncoder();
-  virtual ~CEncoder();
+  ~CEncoder();
 };
 
-class CFastEncoder :
+class CFastEncoder Z7_final:
   public ICompressCoder,
   public ICompressSetCoderProperties,
   public ICompressWriteCoderProperties,
   public CMyUnknownImp
 {
+  Z7_COM_UNKNOWN_IMP_3(
+      ICompressCoder,
+      ICompressSetCoderProperties,
+      ICompressWriteCoderProperties)
+
+  Z7_IFACE_COM7_IMP(ICompressCoder)
+  Z7_IFACE_COM7_IMP(ICompressSetCoderProperties)
+  Z7_IFACE_COM7_IMP(ICompressWriteCoderProperties)
+
+public:
   class FastLzma2
   {
   public:
@@ -72,20 +71,6 @@ class CFastEncoder :
   };
 
   FastLzma2 _encoder;
-
-public:
-  MY_UNKNOWN_IMP3(
-    ICompressCoder,
-    ICompressSetCoderProperties,
-    ICompressWriteCoderProperties)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  STDMETHOD(SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
-  STDMETHOD(WriteCoderProperties)(ISequentialOutStream *outStream);
-
-  CFastEncoder();
-  virtual ~CFastEncoder();
 };
 
 }}

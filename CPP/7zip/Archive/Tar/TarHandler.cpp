@@ -39,6 +39,9 @@ static const Byte kProps[] =
   kpidCTime,
   kpidATime,
   kpidPosixAttrib,
+#if 0
+  kpidAttrib,
+#endif
   kpidUser,
   kpidGroup,
   kpidUserId,
@@ -67,7 +70,7 @@ static const char *k_Characts_Prefix = "PREFIX";
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   NCOM::CPropVariant prop;
   switch (propID)
@@ -79,12 +82,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       UInt32 flags = 0;
       if (!_isArc)
         flags |= kpv_ErrorFlags_IsNotArc;
-      else switch (_arc._error)
+      else switch ((int)_arc._error)
       {
         case k_ErrorType_UnexpectedEnd: flags = kpv_ErrorFlags_UnexpectedEnd; break;
         case k_ErrorType_Corrupted: flags = kpv_ErrorFlags_HeadersError; break;
         // case k_ErrorType_OK: break;
         // case k_ErrorType_Warning: break;
+        // case k_ErrorType_OK:
         default: break;
       }
       if (flags != 0)
@@ -107,6 +111,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       {
         case CP_OEMCP: name = "OEM"; break;
         case CP_UTF8: name = "UTF-8"; break;
+        default: break;
       }
       if (!name)
       {
@@ -132,6 +137,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       if (_arc._are_mtime) s.Add_OptSpaced("mtime");
       if (_arc._are_atime) s.Add_OptSpaced("atime");
       if (_arc._are_ctime) s.Add_OptSpaced("ctime");
+      if (_arc._are_SCHILY_fflags) s.Add_OptSpaced("SCHILY.fflags");
       if (_arc._is_PaxGlobal_Error) s.Add_OptSpaced("PAX_GLOBAL_ERROR");
       s.Add_OptSpaced(_encodingCharacts.GetCharactsString());
       prop = s;
@@ -149,6 +155,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
       }
       break;
     }
+    default: break;
   }
   prop.Detach(value);
   return S_OK;
@@ -206,10 +213,9 @@ AString CEncodingCharacts::GetCharactsString() const
 
 HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 {
-  UInt64 endPos = 0;
+  UInt64 endPos;
   {
-    RINOK(stream->Seek(0, STREAM_SEEK_END, &endPos));
-    RINOK(stream->Seek(0, STREAM_SEEK_SET, NULL));
+    RINOK(InStream_AtBegin_GetSize(stream, endPos))
   }
   
   _arc._phySize_Defined = true;
@@ -224,7 +230,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   for (;;)
   {
     _arc.NumFiles = _items.Size();
-    RINOK(_arc.ReadItem(item));
+    RINOK(_arc.ReadItem(item))
     if (!_arc.filled)
       break;
 
@@ -245,7 +251,7 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
 
     _items.Add(item);
 
-    RINOK(stream->Seek((Int64)item.Get_PackSize_Aligned(), STREAM_SEEK_CUR, &_arc._phySize));
+    RINOK(stream->Seek((Int64)item.Get_PackSize_Aligned(), STREAM_SEEK_CUR, &_arc._phySize))
     if (_arc._phySize > endPos)
     {
       _arc._error = k_ErrorType_UnexpectedEnd;
@@ -290,10 +296,11 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
       _isArc = false;
       return S_FALSE;
     }
-    CMyComPtr<IArchiveOpenVolumeCallback> openVolumeCallback;
     if (!callback)
       return S_FALSE;
-    callback->QueryInterface(IID_IArchiveOpenVolumeCallback, (void **)&openVolumeCallback);
+    Z7_DECL_CMyComPtr_QI_FROM(
+        IArchiveOpenVolumeCallback,
+        openVolumeCallback, callback)
     if (!openVolumeCallback)
       return S_FALSE;
     NCOM::CPropVariant prop;
@@ -310,20 +317,20 @@ HRESULT CHandler::Open2(IInStream *stream, IArchiveOpenCallback *callback)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *openArchiveCallback)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *openArchiveCallback))
 {
   COM_TRY_BEGIN
   // for (int i = 0; i < 10; i++) // for debug
   {
     Close();
-    RINOK(Open2(stream, openArchiveCallback));
+    RINOK(Open2(stream, openArchiveCallback))
     _stream = stream;
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
+Z7_COM7F_IMF(CHandler::OpenSeq(ISequentialInStream *stream))
 {
   Close();
   _seqStream = stream;
@@ -331,7 +338,7 @@ STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _isArc = false;
 
@@ -346,7 +353,7 @@ STDMETHODIMP CHandler::Close()
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = (_stream ? _items.Size() : (UInt32)(Int32)-1);
   return S_OK;
@@ -354,8 +361,8 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 
 CHandler::CHandler()
 {
-  copyCoderSpec = new NCompress::CCopyCoder();
-  copyCoder = copyCoderSpec;
+  // copyCoder = new NCompress::CCopyCoder();
+  // copyCoder = copyCoder;
   _openCodePage = CP_UTF8;
   Init();
 }
@@ -367,9 +374,9 @@ HRESULT CHandler::SkipTo(UInt32 index)
     if (_latestIsRead)
     {
       const UInt64 packSize = _latestItem.Get_PackSize_Aligned();
-      RINOK(copyCoderSpec->Code(_seqStream, NULL, &packSize, &packSize, NULL));
-      _arc._phySize += copyCoderSpec->TotalSize;
-      if (copyCoderSpec->TotalSize != packSize)
+      RINOK(copyCoder.Interface()->Code(_seqStream, NULL, &packSize, &packSize, NULL))
+      _arc._phySize += copyCoder->TotalSize;
+      if (copyCoder->TotalSize != packSize)
       {
         _arc._error = k_ErrorType_UnexpectedEnd;
         return S_FALSE;
@@ -381,7 +388,7 @@ HRESULT CHandler::SkipTo(UInt32 index)
     {
       _arc.SeqStream = _seqStream;
       _arc.InStream = NULL;
-      RINOK(_arc.ReadItem(_latestItem));
+      RINOK(_arc.ReadItem(_latestItem))
       if (!_arc.filled)
       {
         _arc._phySize_Defined = true;
@@ -407,6 +414,7 @@ void CHandler::TarStringToUnicode(const AString &s, NWindows::NCOM::CPropVariant
 }
 
 
+// CPaxTime is defined (NumDigits >= 0)
 static void PaxTimeToProp(const CPaxTime &pt, NWindows::NCOM::CPropVariant &prop)
 {
   UInt64 v;
@@ -418,31 +426,21 @@ static void PaxTimeToProp(const CPaxTime &pt, NWindows::NCOM::CPropVariant &prop
   ft.dwLowDateTime = (DWORD)v;
   ft.dwHighDateTime = (DWORD)(v >> 32);
   prop.SetAsTimeFrom_FT_Prec_Ns100(ft,
-      k_PropVar_TimePrec_Base + pt.NumDigits, pt.Ns % 100);
+      k_PropVar_TimePrec_Base + (unsigned)pt.NumDigits, pt.Ns % 100);
 }
 
-
-#define ValToHex(t) ((char)(((t) < 10) ? ('0' + (t)) : ('a' + ((t) - 10))))
-
-static void AddByteToHex2(unsigned val, AString &s)
-{
-  unsigned t;
-  t = val >> 4;
-  s += ValToHex(t);
-  t = val & 0xF;
-  s += ValToHex(t);
-}
 
 static void AddSpecCharToString(const char c, AString &s)
 {
   if ((Byte)c <= 0x20 || (Byte)c > 127)
   {
-    s += '[';
-    AddByteToHex2((Byte)(c), s);
-    s += ']';
+    s.Add_Char('[');
+    s.Add_Char(GET_HEX_CHAR_LOWER((Byte)c >> 4));
+    s.Add_Char(GET_HEX_CHAR_LOWER(c & 15));
+    s.Add_Char(']');
   }
   else
-    s += c;
+    s.Add_Char(c);
 }
 
 static void AddSpecUInt64(AString &s, const char *name, UInt64 v)
@@ -452,7 +450,7 @@ static void AddSpecUInt64(AString &s, const char *name, UInt64 v)
     s.Add_OptSpaced(name);
     if (v > 1)
     {
-      s += ':';
+      s.Add_Colon();
       s.Add_UInt64(v);
     }
   }
@@ -464,12 +462,37 @@ static void AddSpecBools(AString &s, const char *name, bool b1, bool b2)
   {
     s.Add_OptSpaced(name);
     if (b2)
-      s += '*';
+      s.Add_Char('*');
   }
 }
 
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+#if 0
+static bool Parse_Attrib_from_SCHILY_fflags(const AString &s, UInt32 &attribRes)
+{
+  UInt32 attrib = 0;
+  attribRes = attrib;
+  unsigned pos = 0;
+  while (pos < s.Len())
+  {
+    int pos2 = s.Find(',', pos);
+    if (pos2 < 0)
+      pos2 = (int)s.Len();
+    const AString str = s.Mid(pos, (unsigned)pos2 - pos);
+          if (str.IsEqualTo("hidden"))  attrib |= FILE_ATTRIBUTE_HIDDEN;
+    else  if (str.IsEqualTo("rdonly"))  attrib |= FILE_ATTRIBUTE_READONLY;
+    else  if (str.IsEqualTo("system"))  attrib |= FILE_ATTRIBUTE_SYSTEM;
+    else
+      return false;
+    pos = (unsigned)pos2 + 1;
+  }
+  attribRes = attrib;
+  return true;
+}
+#endif
+
+
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -483,7 +506,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       return E_INVALIDARG;
     else
     {
-      RINOK(SkipTo(index));
+      RINOK(SkipTo(index))
       item = &_latestItem;
     }
   }
@@ -534,7 +557,30 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         PaxTimeToProp(item->PaxTimes.CTime, prop);
       break;
     case kpidPosixAttrib: prop = item->Get_Combined_Mode(); break;
-    
+
+    // kpidAttrib has priority over kpidPosixAttrib in 7-Zip.
+    // but if we want kpidPosixAttrib priority for TAR, we disable kpidAttrib.
+#if 0
+    case kpidAttrib:
+    {
+      if (!item->SCHILY_fflags.IsEmpty())
+      {
+        UInt32 attrib = 0;
+        if (Parse_Attrib_from_SCHILY_fflags(item->SCHILY_fflags, attrib))
+        {
+          if (attrib != 0)
+          {
+            if (item->IsDir())
+              attrib |= FILE_ATTRIBUTE_DIRECTORY;
+            attrib |= ((UInt32)item->Get_Combined_Mode() << 16) | 0x8000; // FILE_ATTRIBUTE_UNIX_EXTENSION;
+            prop = attrib;
+          }
+        }
+      }
+      break;
+    }
+#endif
+      
     case kpidUser:
       if (!item->User.IsEmpty())
         TarStringToUnicode(item->User, prop);
@@ -633,7 +679,11 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
         s.Add_OptSpaced("pax_linkpath");
       if (item->pax_size_WasUsed)
         s.Add_OptSpaced("pax_size");
-
+      if (!item->SCHILY_fflags.IsEmpty())
+      {
+        s.Add_OptSpaced("SCHILY.fflags=");
+        s += item->SCHILY_fflags;
+      }
       if (item->IsThereWarning())
         s.Add_OptSpaced("WARNING");
       if (item->HeaderError)
@@ -658,6 +708,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     }
     // case kpidHeadersSize: prop = item->HeaderSize; break; // for debug
     // case kpidOffset: prop = item->HeaderPos; break; // for debug
+    default: break;
   }
   prop.Detach(value);
   return S_OK;
@@ -665,8 +716,8 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 }
 
 
-HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
   ISequentialInStream *stream = _seqStream;
@@ -683,52 +734,50 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   UInt32 i;
   for (i = 0; i < numItems; i++)
     totalSize += _items[allFilesMode ? i : indices[i]].Get_UnpackSize();
-  extractCallback->SetTotal(totalSize);
+  RINOK(extractCallback->SetTotal(totalSize))
 
   UInt64 totalPackSize;
   totalSize = totalPackSize = 0;
   
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
+  CMyComPtr2_Create<ICompressProgressInfo, CLocalProgress> lps;
   lps->Init(extractCallback, false);
+  CMyComPtr2_Create<ISequentialInStream, CLimitedSequentialInStream> inStream;
+  inStream->SetStream(stream);
+  CMyComPtr2_Create<ISequentialOutStream, CLimitedSequentialOutStream> outStreamSpec;
 
-  CLimitedSequentialInStream *streamSpec = new CLimitedSequentialInStream;
-  CMyComPtr<ISequentialInStream> inStream(streamSpec);
-  streamSpec->SetStream(stream);
-
-  CLimitedSequentialOutStream *outStreamSpec = new CLimitedSequentialOutStream;
-  CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-
-  for (i = 0; i < numItems || seqMode; i++)
+  for (i = 0; ; i++)
   {
     lps->InSize = totalPackSize;
     lps->OutSize = totalSize;
-    RINOK(lps->SetCur());
-    CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
-        NExtract::NAskMode::kTest :
-        NExtract::NAskMode::kExtract;
+    RINOK(lps->SetCur())
+    if (i >= numItems && !seqMode)
+      break;
     const UInt32 index = allFilesMode ? i : indices[i];
     const CItemEx *item;
     if (seqMode)
     {
-      HRESULT res = SkipTo(index);
+      const HRESULT res = SkipTo(index);
       if (res == E_INVALIDARG)
         break;
-      RINOK(res);
+      RINOK(res)
       item = &_latestItem;
     }
     else
       item = &_items[index];
 
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    Int32 askMode = testMode ?
+        NExtract::NAskMode::kTest :
+        NExtract::NAskMode::kExtract;
+    CMyComPtr<ISequentialOutStream> realOutStream;
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode))
     const UInt64 unpackSize = item->Get_UnpackSize();
     totalSize += unpackSize;
     totalPackSize += item->Get_PackSize_Aligned();
     if (item->IsDir())
     {
-      RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->PrepareOperation(askMode))
+      // realOutStream.Release();
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
       continue;
     }
     bool skipMode = false;
@@ -737,12 +786,13 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       if (!seqMode)
       {
         /*
-        // probably we must show extracting info it callback handler instead
-        if (item->IsHardLink() ||
-            item->IsSymLink())
+        // GetStream() creates link.
+        // so we can show extracting info in GetStream() instead
+        if (item->Is_HardLink() ||
+            item->Is_SymLink())
         {
-          RINOK(extractCallback->PrepareOperation(askMode));
-          RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+          RINOK(extractCallback->PrepareOperation(askMode))
+          RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
         }
         */
         continue;
@@ -750,7 +800,7 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       skipMode = true;
       askMode = NExtract::NAskMode::kSkip;
     }
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
 
     outStreamSpec->SetStream(realOutStream);
     realOutStream.Release();
@@ -770,16 +820,16 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     {
       if (item->Is_SymLink())
       {
-        RINOK(WriteStream(outStreamSpec, (const char *)item->LinkName, item->LinkName.Len()));
+        RINOK(WriteStream(outStreamSpec, (const char *)item->LinkName, item->LinkName.Len()))
       }
       else
       {
         if (!seqMode)
         {
-          RINOK(_stream->Seek((Int64)item->Get_DataPos(), STREAM_SEEK_SET, NULL));
+          RINOK(InStream_SeekSet(_stream, item->Get_DataPos()))
         }
-        streamSpec->Init(item->Get_PackSize_Aligned());
-        RINOK(copyCoder->Code(inStream2, outStream, NULL, NULL, progress));
+        inStream->Init(item->Get_PackSize_Aligned());
+        RINOK(copyCoder.Interface()->Code(inStream2, outStreamSpec, NULL, NULL, lps))
       }
       if (outStreamSpec->GetRem() != 0)
         opRes = NExtract::NOperationResult::kDataError;
@@ -790,16 +840,16 @@ HRESULT CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       _curIndex++;
     }
     outStreamSpec->ReleaseStream();
-    RINOK(extractCallback->SetOperationResult(opRes));
+    RINOK(extractCallback->SetOperationResult(opRes))
   }
   return S_OK;
   COM_TRY_END
 }
 
-class CSparseStream:
-  public IInStream,
-  public CMyUnknownImp
-{
+
+Z7_CLASS_IMP_IInStream(
+  CSparseStream
+)
   UInt64 _phyPos;
   UInt64 _virtPos;
   bool _needStartSeek;
@@ -810,10 +860,6 @@ public:
   unsigned ItemIndex;
   CRecordVector<UInt64> PhyOffsets;
 
-  MY_UNKNOWN_IMP2(ISequentialInStream, IInStream)
-  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-  STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
-
   void Init()
   {
     _virtPos = 0;
@@ -823,7 +869,7 @@ public:
 };
 
 
-STDMETHODIMP CSparseStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(CSparseStream::Read(void *data, UInt32 size, UInt32 *processedSize))
 {
   if (processedSize)
     *processedSize = 0;
@@ -867,7 +913,7 @@ STDMETHODIMP CSparseStream::Read(void *data, UInt32 size, UInt32 *processedSize)
       UInt64 phyPos = PhyOffsets[left] + relat;
       if (_needStartSeek || _phyPos != phyPos)
       {
-        RINOK(Handler->_stream->Seek((Int64)(item.Get_DataPos() + phyPos), STREAM_SEEK_SET, NULL));
+        RINOK(InStream_SeekSet(Handler->_stream, (item.Get_DataPos() + phyPos)))
         _needStartSeek = false;
         _phyPos = phyPos;
       }
@@ -894,7 +940,7 @@ STDMETHODIMP CSparseStream::Read(void *data, UInt32 size, UInt32 *processedSize)
   return res;
 }
 
-STDMETHODIMP CSparseStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+Z7_COM7F_IMF(CSparseStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition))
 {
   switch (seekOrigin)
   {
@@ -911,7 +957,7 @@ STDMETHODIMP CSparseStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPos
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 index, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
   
@@ -961,7 +1007,7 @@ void CHandler::Init()
 }
 
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
+Z7_COM7F_IMF(CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps))
 {
   Init();
 
@@ -978,12 +1024,12 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
     {
       // some clients write 'x' property. So we support it
       UInt32 level = 0;
-      RINOK(ParsePropToUInt32(name.Ptr(1), prop, level));
+      RINOK(ParsePropToUInt32(name.Ptr(1), prop, level))
     }
     else if (name.IsEqualTo("cp"))
     {
       UInt32 cp = CP_OEMCP;
-      RINOK(ParsePropToUInt32(L"", prop, cp));
+      RINOK(ParsePropToUInt32(L"", prop, cp))
       _forceCodePage = true;
       _curCodePage = _specifiedCodePage = cp;
     }
@@ -1036,7 +1082,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
       }
       */
       bool processed = false;
-      RINOK(_handlerTimeOptions.Parse(name, prop, processed));
+      RINOK(_handlerTimeOptions.Parse(name, prop, processed))
       if (processed)
         continue;
       return E_INVALIDARG;

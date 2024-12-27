@@ -4,7 +4,7 @@
 
 #include "HelpUtils.h"
 
-#if defined(UNDER_CE) || !defined(_WIN32) /* || !defined(_MSC_VER) */
+#if defined(UNDER_CE) || defined(__MINGW32_VERSION)
 
 void ShowHelpWindow(LPCSTR)
 {
@@ -12,10 +12,14 @@ void ShowHelpWindow(LPCSTR)
 
 #else
 
-// #define USE_EXTERNAL_HELP
+/* USE_EXTERNAL_HELP creates new help process window for each HtmlHelp() call.
+   HtmlHelp() call uses one window. */
 
-#if defined(_MSC_VER)
+#if defined(__MINGW32_VERSION) /* || defined(Z7_OLD_WIN_SDK) */
+#define USE_EXTERNAL_HELP
 #endif
+
+// #define USE_EXTERNAL_HELP
 
 #ifdef USE_EXTERNAL_HELP
 

@@ -34,8 +34,8 @@ bool CMemBlockManager::AllocateSpace_bool(size_t numBlocks)
 void CMemBlockManager::FreeSpace()
 {
   ::MidFree(_data);
-  _data = 0;
-  _headFree= 0;
+  _data = NULL;
+  _headFree= NULL;
 }
 
 void *CMemBlockManager::AllocateBlock()
@@ -57,7 +57,7 @@ void CMemBlockManager::FreeBlock(void *p)
 
 // #include <stdio.h>
 
-HRes CMemBlockManagerMt::AllocateSpace(size_t numBlocks, size_t numNoLockBlocks)
+HRESULT CMemBlockManagerMt::AllocateSpace(size_t numBlocks, size_t numNoLockBlocks)
 {
   if (numNoLockBlocks > numBlocks)
     return E_INVALIDARG;
@@ -87,7 +87,7 @@ HRes CMemBlockManagerMt::AllocateSpace(size_t numBlocks, size_t numNoLockBlocks)
 }
 
 
-HRes CMemBlockManagerMt::AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks)
+HRESULT CMemBlockManagerMt::AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_t numNoLockBlocks)
 {
   // desiredNumberOfBlocks = 0; // for debug
   if (numNoLockBlocks > desiredNumberOfBlocks)
@@ -95,7 +95,7 @@ HRes CMemBlockManagerMt::AllocateSpaceAlways(size_t desiredNumberOfBlocks, size_
   for (;;)
   {
     // if (desiredNumberOfBlocks == 0) return E_OUTOFMEMORY;
-    HRes hres = AllocateSpace(desiredNumberOfBlocks, numNoLockBlocks);
+    const HRESULT hres = AllocateSpace(desiredNumberOfBlocks, numNoLockBlocks);
     if (hres != E_OUTOFMEMORY)
       return hres;
     if (desiredNumberOfBlocks == numNoLockBlocks)
@@ -157,7 +157,7 @@ HRESULT CMemBlocks::WriteToStream(size_t blockSize, ISequentialOutStream *outStr
       curSize = (size_t)totalSize;
     if (blockIndex >= Blocks.Size())
       return E_FAIL;
-    RINOK(WriteStream(outStream, Blocks[blockIndex], curSize));
+    RINOK(WriteStream(outStream, Blocks[blockIndex], curSize))
     totalSize -= curSize;
   }
   return S_OK;
@@ -207,7 +207,7 @@ void CMemLockBlocks::Detach(CMemLockBlocks &blocks, CMemBlockManagerMt *memManag
       blocks.Blocks.Add(Blocks[i]);
     else
       FreeBlock(i, memManager);
-    Blocks[i] = 0;
+    Blocks[i] = NULL;
     totalSize += blockSize;
   }
   blocks.TotalSize = TotalSize;

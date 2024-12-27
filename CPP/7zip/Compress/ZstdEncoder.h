@@ -10,7 +10,7 @@
 #include "../ICoder.h"
 #include "../Common/StreamUtils.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 namespace NCompress {
 namespace NZSTD {
 
@@ -31,13 +31,14 @@ struct CProps
   Byte _reserved[2];
 };
 
-class CEncoder:
-  public ICompressCoder,
-  public ICompressSetCoderMt,
-  public ICompressSetCoderProperties,
-  public ICompressWriteCoderProperties,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_4(
+  CEncoder,
+  ICompressCoder,
+  ICompressSetCoderMt,
+  ICompressSetCoderProperties,
+  ICompressWriteCoderProperties
+)
+public:
   CProps _props;
 
   ZSTD_CCtx* _ctx;
@@ -66,26 +67,12 @@ class CEncoder:
   Int32 _LdmBucketSizeLog;
   Int32 _LdmHashRateLog;
 
-public:
-
   int dictIDFlag;
   int checksumFlag;
   UInt64 unpackSize;
 
-  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
-  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
-  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderProperties)
-  MY_QUERYINTERFACE_ENTRY(ICompressWriteCoderProperties)
-  MY_QUERYINTERFACE_END
-  MY_ADDREF_RELEASE
-
-  STDMETHOD (Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  STDMETHOD (SetCoderProperties)(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps);
-  STDMETHOD (WriteCoderProperties)(ISequentialOutStream *outStream);
-  STDMETHOD (SetNumberOfThreads)(UInt32 numThreads);
-
   CEncoder();
-  virtual ~CEncoder();
+  ~CEncoder();
 };
 
 }}

@@ -1,7 +1,7 @@
 // Common/MyString.h
 
-#ifndef __COMMON_MY_STRING_H
-#define __COMMON_MY_STRING_H
+#ifndef ZIP7_INC_COMMON_MY_STRING_H
+#define ZIP7_INC_COMMON_MY_STRING_H
 
 #include <string.h>
 
@@ -10,6 +10,7 @@
 #include <wchar.h>
 #endif
 
+#include "Common.h"
 #include "MyWindows.h"
 #include "MyTypes.h"
 #include "MyVector.h"
@@ -70,13 +71,20 @@ inline char *MyStpCpy(char *dest, const char *src)
 {
   for (;;)
   {
-    char c = *src;
+    const char c = *src;
     *dest = c;
     if (c == 0)
       return dest;
     src++;
     dest++;
   }
+}
+
+inline void MyStringCat(char *dest, const char *src)
+{
+  for (; *dest != 0; dest++);
+  while ((*dest++ = *src++) != 0);
+  // MyStringCopy(dest + MyStringLen(dest), src);
 }
 
 inline unsigned MyStringLen(const wchar_t *s)
@@ -93,7 +101,9 @@ inline void MyStringCopy(wchar_t *dest, const wchar_t *src)
 
 inline void MyStringCat(wchar_t *dest, const wchar_t *src)
 {
-  MyStringCopy(dest + MyStringLen(dest), src);
+  for (; *dest != 0; dest++);
+  while ((*dest++ = *src++) != 0);
+  // MyStringCopy(dest + MyStringLen(dest), src);
 }
 
 
@@ -102,7 +112,7 @@ inline wchar_t *MyWcpCpy(wchar_t *dest, const wchar_t *src)
 {
   for (;;)
   {
-    wchar_t c = *src;
+    const wchar_t c = *src;
     *dest = c;
     if (c == 0)
       return dest;
@@ -225,7 +235,7 @@ bool StringsAreEqualNoCase_Ascii(const char *s1, const char *s2) throw();
 bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const char *s2) throw();
 bool StringsAreEqualNoCase_Ascii(const wchar_t *s1, const wchar_t *s2) throw();
 
-#define MY_STRING_DELETE(_p_) delete []_p_;
+#define MY_STRING_DELETE(_p_) { delete [](_p_); }
 // #define MY_STRING_DELETE(_p_) my_delete(_p_);
 
 
@@ -271,6 +281,8 @@ class AString
   void ReAlloc(unsigned newLimit);
   void ReAlloc2(unsigned newLimit);
   void SetStartLen(unsigned len);
+  
+  Z7_NO_INLINE
   void Grow_1();
   void Grow(unsigned n);
 
@@ -312,7 +324,7 @@ public:
   explicit AString(char c);
   explicit AString(const char *s);
   AString(const AString &s);
-  ~AString() { MY_STRING_DELETE(_chars); }
+  ~AString() { MY_STRING_DELETE(_chars) }
 
   unsigned Len() const { return _len; }
   bool IsEmpty() const { return _len == 0; }
@@ -322,6 +334,7 @@ public:
   char *Ptr_non_const() const { return _chars; }
   const char *Ptr() const { return _chars; }
   const char *Ptr(unsigned pos) const { return _chars + pos; }
+  const char *Ptr(int pos) const { return _chars + (unsigned)pos; }
   const char *RightPtr(unsigned num) const { return _chars + _len - num; }
   char Back() const { return _chars[(size_t)_len - 1]; }
 
@@ -362,6 +375,8 @@ public:
   void SetFromWStr_if_Ascii(const wchar_t *s);
   // void SetFromBstr_if_Ascii(BSTR s);
 
+// private:
+  Z7_FORCE_INLINE
   AString &operator+=(char c)
   {
     if (_limit == _len)
@@ -373,12 +388,16 @@ public:
     _len = len;
     return *this;
   }
-  
+public:
   void Add_Space();
   void Add_Space_if_NotEmpty();
   void Add_OptSpaced(const char *s);
+  void Add_Char(char c);
   void Add_LF();
   void Add_Slash();
+  void Add_Dot();
+  void Add_Minus();
+  void Add_Colon();
   void Add_PathSepar() { operator+=(CHAR_PATH_SEPARATOR); }
 
   AString &operator+=(const char *s);
@@ -389,6 +408,11 @@ public:
 
   void AddFrom(const char *s, unsigned len); // no check
   void SetFrom(const char *s, unsigned len); // no check
+  void SetFrom_Chars_SizeT(const char* s, size_t len); // no check
+  void SetFrom(const char* s, int len) // no check
+  {
+    SetFrom(s, (unsigned)len); // no check
+  }
   void SetFrom_CalcLen(const char *s, unsigned len);
 
   AString Mid(unsigned startIndex, unsigned count) const { return AString(count, _chars + startIndex); }
@@ -419,8 +443,12 @@ public:
   int Find(char c) const { return FindCharPosInString(_chars, c); }
   int Find(char c, unsigned startIndex) const
   {
-    int pos = FindCharPosInString(_chars + startIndex, c);
+    const int pos = FindCharPosInString(_chars + startIndex, c);
     return pos < 0 ? -1 : (int)startIndex + pos;
+  }
+  int Find(char c, int startIndex) const
+  {
+    return Find(c, (unsigned)startIndex);
   }
   
   int ReverseFind(char c) const throw();
@@ -460,6 +488,11 @@ public:
       _chars[index] = 0;
     }
   }
+  void DeleteFrom(int index)
+  {
+    DeleteFrom((unsigned)index);
+  }
+
   
   void Wipe_and_Empty()
   {
@@ -474,7 +507,7 @@ public:
 
 class AString_Wipe: public AString
 {
-  CLASS_NO_COPY(AString_Wipe)
+  Z7_CLASS_NO_COPY(AString_Wipe)
 public:
   AString_Wipe(): AString() {}
   // AString_Wipe(const AString &s): AString(s) {}
@@ -582,7 +615,7 @@ public:
   explicit UString(const AString &s);
   UString(const wchar_t *s);
   UString(const UString &s);
-  ~UString() { MY_STRING_DELETE(_chars); }
+  ~UString() { MY_STRING_DELETE(_chars) }
 
   unsigned Len() const { return _len; }
   bool IsEmpty() const { return _len == 0; }
@@ -591,6 +624,7 @@ public:
   operator const wchar_t *() const { return _chars; }
   wchar_t *Ptr_non_const() const { return _chars; }
   const wchar_t *Ptr() const { return _chars; }
+  const wchar_t *Ptr(int pos) const { return _chars + (unsigned)pos; }
   const wchar_t *Ptr(unsigned pos) const { return _chars + pos; }
   const wchar_t *RightPtr(unsigned num) const { return _chars + _len - num; }
   wchar_t Back() const { return _chars[(size_t)_len - 1]; }
@@ -598,6 +632,14 @@ public:
   void ReplaceOneCharAtPos(unsigned pos, wchar_t c) { _chars[pos] = c; }
 
   wchar_t *GetBuf() { return _chars; }
+
+  /*
+  wchar_t *GetBuf_GetMaxAvail(unsigned &availBufLen)
+  {
+    availBufLen = _limit;
+    return _chars;
+  }
+  */
 
   wchar_t *GetBuf(unsigned minLen)
   {
@@ -634,6 +676,8 @@ public:
   UString &operator=(const char *s);
   UString &operator=(const AString &s) { return operator=(s.Ptr()); }
 
+// private:
+  Z7_FORCE_INLINE
   UString &operator+=(wchar_t c)
   {
     if (_limit == _len)
@@ -646,11 +690,17 @@ public:
     return *this;
   }
 
-  UString &operator+=(char c) { return (*this)+=((wchar_t)(unsigned char)c); }
-
+private:
+  UString &operator+=(char c); //  { return (*this)+=((wchar_t)(unsigned char)c); }
+public:
+  void Add_Char(char c);
+  // void Add_WChar(wchar_t c);
   void Add_Space();
   void Add_Space_if_NotEmpty();
   void Add_LF();
+  void Add_Dot();
+  void Add_Minus();
+  void Add_Colon();
   void Add_PathSepar() { operator+=(WCHAR_PATH_SEPARATOR); }
 
   UString &operator+=(const wchar_t *s);
@@ -663,6 +713,7 @@ public:
 
   UString Mid(unsigned startIndex, unsigned count) const { return UString(count, _chars + startIndex); }
   UString Left(unsigned count) const { return UString(count, *this); }
+  UString Left(int count) const { return Left((unsigned)count); }
 
   // void MakeUpper() { MyStringUpper(_chars); }
   // void MakeUpper() { MyStringUpper_Ascii(_chars); }
@@ -721,10 +772,12 @@ public:
   void Replace(wchar_t oldChar, wchar_t newChar) throw();
   void Replace(const UString &oldString, const UString &newString);
 
+  void Delete(int index) throw() { Delete((unsigned)index); }
   void Delete(unsigned index) throw();
   void Delete(unsigned index, unsigned count) throw();
   void DeleteFrontal(unsigned num) throw();
   void DeleteBack() { _chars[--_len] = 0; }
+  void DeleteFrom(int index) { DeleteFrom((unsigned)index); }
   void DeleteFrom(unsigned index)
   {
     if (index < _len)
@@ -747,7 +800,7 @@ public:
 
 class UString_Wipe: public UString
 {
-  CLASS_NO_COPY(UString_Wipe)
+  Z7_CLASS_NO_COPY(UString_Wipe)
 public:
   UString_Wipe(): UString() {}
   // UString_Wipe(const UString &s): UString(s) {}
@@ -835,7 +888,7 @@ public:
   UString2(): _chars(NULL), _len(0) {}
   UString2(const wchar_t *s);
   UString2(const UString2 &s);
-  ~UString2() { if (_chars) MY_STRING_DELETE(_chars); }
+  ~UString2() { if (_chars) { MY_STRING_DELETE(_chars) } }
 
   unsigned Len() const { return _len; }
   bool IsEmpty() const { return _len == 0; }
@@ -913,7 +966,7 @@ typedef CObjectVector<CSysString> CSysStringVector;
 
 #ifdef USE_UNICODE_FSTRING
 
-  #define __FTEXT(quote) L##quote
+  #define MY_FTEXT(quote) L##quote
 
   typedef wchar_t FChar;
   typedef UString FString;
@@ -924,9 +977,9 @@ typedef CObjectVector<CSysString> CSysStringVector;
   FString fas2fs(const AString &s);
   AString fs2fas(const FChar *s);
 
-#else
+#else // USE_UNICODE_FSTRING
 
-  #define __FTEXT(quote) quote
+  #define MY_FTEXT(quote) quote
 
   typedef char FChar;
 
@@ -980,9 +1033,9 @@ typedef CObjectVector<CSysString> CSysStringVector;
   FString us2fs(const wchar_t *s);
   #define fs2fas(_x_) (_x_)
 
-#endif
+#endif // USE_UNICODE_FSTRING
 
-#define FTEXT(quote) __FTEXT(quote)
+#define FTEXT(quote) MY_FTEXT(quote)
 
 #define FCHAR_PATH_SEPARATOR FTEXT(CHAR_PATH_SEPARATOR)
 #define FSTRING_PATH_SEPARATOR FTEXT(STRING_PATH_SEPARATOR)
@@ -995,13 +1048,25 @@ typedef const FChar *CFSTR;
 typedef CObjectVector<FString> FStringVector;
 
 
+class CStringFinder
+{
+  AString _temp;
+public:
+  // list - is list of low case Ascii strings separated by space " ".
+  // the function returns true, if it can find exact word (str) in (list).
+  bool FindWord_In_LowCaseAsciiList_NoCase(const char *list, const wchar_t *str);
+};
+
+void SplitString(const UString &srcString, UStringVector &destStrings);
+
+
 #if defined(_WIN32)
   // #include <wchar.h>
   // WCHAR_MAX is defined as ((wchar_t)-1)
-  #define _WCHART_IS_16BIT 1
+  #define Z7_WCHART_IS_16BIT 1
 #elif (defined(WCHAR_MAX) && (WCHAR_MAX <= 0xffff)) \
    || (defined(__SIZEOF_WCHAR_T__) && (__SIZEOF_WCHAR_T__ == 2))
-  #define _WCHART_IS_16BIT 1
+  #define Z7_WCHART_IS_16BIT 1
 #endif
 
 #if WCHAR_PATH_SEPARATOR == L'\\'

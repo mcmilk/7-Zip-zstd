@@ -4,7 +4,7 @@
 
 #include "OutStreamWithSha1.h"
 
-STDMETHODIMP COutStreamWithSha1::Write(const void *data, UInt32 size, UInt32 *processedSize)
+Z7_COM7F_IMF(COutStreamWithSha1::Write(const void *data, UInt32 size, UInt32 *processedSize))
 {
   HRESULT result = S_OK;
   if (_stream)
@@ -14,5 +14,16 @@ STDMETHODIMP COutStreamWithSha1::Write(const void *data, UInt32 size, UInt32 *pr
   _size += size;
   if (processedSize)
     *processedSize = size;
+  return result;
+}
+
+Z7_COM7F_IMF(CInStreamWithSha1::Read(void *data, UInt32 size, UInt32 *processedSize))
+{
+  UInt32 realProcessedSize;
+  const HRESULT result = _stream->Read(data, size, &realProcessedSize);
+  _size += realProcessedSize;
+  Sha1_Update(Sha(), (const Byte *)data, realProcessedSize);
+  if (processedSize)
+    *processedSize = realProcessedSize;
   return result;
 }

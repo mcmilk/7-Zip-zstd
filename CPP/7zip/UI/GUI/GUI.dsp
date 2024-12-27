@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gr /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /D "_7ZIP_LARGE_PAGES" /FAcs /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gr /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "Z7_LANG" /D "Z7_LONG_PATH" /D "Z7_EXTERNAL_CODECS" /D "Z7_DEVICE_FILE" /D "Z7_LARGE_PAGES" /FAcs /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gr /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /D "_7ZIP_LARGE_PAGES" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "Z7_LANG" /D "Z7_LONG_PATH" /D "Z7_EXTERNAL_CODECS" /D "Z7_DEVICE_FILE" /D "Z7_LARGE_PAGES" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -99,7 +99,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /Gr /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /D "_7ZIP_LARGE_PAGES" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /Gr /MD /W4 /WX /GX /O1 /D "NDEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "Z7_LANG" /D "Z7_LONG_PATH" /D "Z7_EXTERNAL_CODECS" /D "Z7_DEVICE_FILE" /D "Z7_LARGE_PAGES" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -127,7 +127,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /Gr /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "LANG" /D "WIN_LONG_PATH" /D "EXTERNAL_CODECS" /D "SUPPORT_DEVICE_FILE" /D "_7ZIP_LARGE_PAGES" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /Gr /MDd /W4 /WX /Gm /GX /ZI /Od /D "_DEBUG" /D "_UNICODE" /D "UNICODE" /D "WIN32" /D "_WINDOWS" /D "Z7_LANG" /D "Z7_LONG_PATH" /D "Z7_EXTERNAL_CODECS" /D "Z7_DEVICE_FILE" /D "Z7_LARGE_PAGES" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -449,6 +449,14 @@ SOURCE=..\FileManager\ListViewDialog.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\FileManager\MemDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\FileManager\MemDialog.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\FileManager\OverwriteDialog.cpp
 # End Source File
 # Begin Source File
@@ -482,10 +490,6 @@ SOURCE=..\FileManager\ExtractCallback.cpp
 # Begin Source File
 
 SOURCE=..\FileManager\ExtractCallback.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\FileManager\FolderInterface.h
 # End Source File
 # Begin Source File
 
@@ -669,6 +673,14 @@ SOURCE=..\..\Common\MethodProps.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Common\MultiOutStream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Common\MultiOutStream.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Common\ProgressUtils.cpp
 # End Source File
 # Begin Source File
@@ -777,12 +789,24 @@ SOURCE=..\..\..\..\C\7zTypes.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\C\7zVersion.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\7zWindows.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\C\Alloc.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\C\Alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Compiler.h
 # End Source File
 # Begin Source File
 
@@ -820,6 +844,10 @@ SOURCE=..\..\..\..\C\DllSecur.c
 # Begin Source File
 
 SOURCE=..\..\..\..\C\DllSecur.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Precomp.h
 # End Source File
 # Begin Source File
 
@@ -869,6 +897,10 @@ SOURCE=..\..\..\Common\CommandLineParser.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\CommandLineParser.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Common.h
 # End Source File
 # Begin Source File
 
@@ -925,6 +957,10 @@ SOURCE=..\..\..\Common\MyVector.cpp
 # Begin Source File
 
 SOURCE=..\..\..\Common\MyVector.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\MyWindows.h
 # End Source File
 # Begin Source File
 
@@ -1225,6 +1261,14 @@ SOURCE=..\..\Archive\IArchive.h
 # Begin Source File
 
 SOURCE=..\..\ICoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IDecl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IStream.h
 # End Source File
 # End Group
 # End Target

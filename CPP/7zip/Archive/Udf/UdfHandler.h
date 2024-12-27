@@ -1,7 +1,7 @@
 // UdfHandler.h
 
-#ifndef __UDF_HANDLER_H
-#define __UDF_HANDLER_H
+#ifndef ZIP7_INC_UDF_HANDLER_H
+#define ZIP7_INC_UDF_HANDLER_H
 
 #include "../../../Common/MyCom.h"
 
@@ -19,18 +19,12 @@ struct CRef2
   unsigned Ref;
 };
 
-class CHandler:
-  public IInArchive,
-  public IInArchiveGetStream,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_1(
+  IInArchiveGetStream
+)
   CRecordVector<CRef2> _refs2;
   CMyComPtr<IInStream> _inStream;
   CInArchive _archive;
-public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
 };
 
 }}

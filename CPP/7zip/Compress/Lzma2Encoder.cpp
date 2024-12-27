@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 
 #include "../../../C/Alloc.h"
-
+#include "../../../C/Lzma2Enc.h"
 #include "../../../C/fast-lzma2/fl2_errors.h"
 
 #include "../Common/CWrappers.h"
@@ -58,33 +58,33 @@ HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzm
       lzma2Props.numTotalThreads = (int)(prop.ulVal);
       break;
     default:
-      RINOK(NLzma::SetLzmaProp(propID, prop, lzma2Props.lzmaProps));
+      RINOK(NLzma::SetLzmaProp(propID, prop, lzma2Props.lzmaProps))
   }
   return S_OK;
 }
 
 
-STDMETHODIMP CEncoder::SetCoderProperties(const PROPID *propIDs,
-    const PROPVARIANT *coderProps, UInt32 numProps)
+Z7_COM7F_IMF(CEncoder::SetCoderProperties(const PROPID *propIDs,
+    const PROPVARIANT *coderProps, UInt32 numProps))
 {
   CLzma2EncProps lzma2Props;
   Lzma2EncProps_Init(&lzma2Props);
 
   for (UInt32 i = 0; i < numProps; i++)
   {
-    RINOK(SetLzma2Prop(propIDs[i], coderProps[i], lzma2Props));
+    RINOK(SetLzma2Prop(propIDs[i], coderProps[i], lzma2Props))
   }
   return SResToHRESULT(Lzma2Enc_SetProps(_encoder, &lzma2Props));
 }
 
 
-STDMETHODIMP CEncoder::SetCoderPropertiesOpt(const PROPID *propIDs,
-    const PROPVARIANT *coderProps, UInt32 numProps)
+Z7_COM7F_IMF(CEncoder::SetCoderPropertiesOpt(const PROPID *propIDs,
+    const PROPVARIANT *coderProps, UInt32 numProps))
 {
   for (UInt32 i = 0; i < numProps; i++)
   {
     const PROPVARIANT &prop = coderProps[i];
-    PROPID propID = propIDs[i];
+    const PROPID propID = propIDs[i];
     if (propID == NCoderPropID::kExpectedDataSize)
       if (prop.vt == VT_UI8)
         Lzma2Enc_SetDataSize(_encoder, prop.uhVal.QuadPart);
@@ -93,9 +93,9 @@ STDMETHODIMP CEncoder::SetCoderPropertiesOpt(const PROPID *propIDs,
 }
 
 
-STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
+Z7_COM7F_IMF(CEncoder::WriteCoderProperties(ISequentialOutStream *outStream))
 {
-  Byte prop = Lzma2Enc_WriteProperties(_encoder);
+  const Byte prop = Lzma2Enc_WriteProperties(_encoder);
   return WriteStream(outStream, &prop, 1);
 }
 
@@ -103,8 +103,8 @@ STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 #define RET_IF_WRAP_ERROR(wrapRes, sRes, sResErrorCode) \
   if (wrapRes != S_OK /* && (sRes == SZ_OK || sRes == sResErrorCode) */) return wrapRes;
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress))
 {
   CSeqInStreamWrap inWrap;
   CSeqOutStreamWrap outWrap;
@@ -126,10 +126,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream 
   return SResToHRESULT(res);
 }
 
-
 // Fast LZMA2 encoder
-
-
 static HRESULT TranslateError(size_t res)
 {
   if (FL2_getErrorCode(res) == FL2_error_memory_allocation)
@@ -213,7 +210,7 @@ HRESULT CFastEncoder::FastLzma2::SetCoderProperties(const PROPID *propIDs, const
     CHECK_P(FL2_CCtx_setParameter(fcs, FL2_p_posBits, lzma2Props.lzmaProps.pb));
   if (lzma2Props.blockSize == 0)
     lzma2Props.blockSize = min(max(MIN_BLOCK_SIZE, dictSize * 4U), MAX_BLOCK_SIZE);
-  else if (lzma2Props.blockSize == LZMA2_ENC_PROPS__BLOCK_SIZE__SOLID)
+  else if (lzma2Props.blockSize == LZMA2_ENC_PROPS_BLOCK_SIZE_SOLID)
     lzma2Props.blockSize = 0;
   unsigned r = 0;
   if (lzma2Props.blockSize != 0) {
@@ -334,25 +331,14 @@ void CFastEncoder::FastLzma2::Cancel()
   FL2_cancelCStream(fcs);
 }
 
-CFastEncoder::CFastEncoder()
-{
-}
-
-CFastEncoder::~CFastEncoder()
-{
-}
-
-
-STDMETHODIMP CFastEncoder::SetCoderProperties(const PROPID *propIDs,
-  const PROPVARIANT *coderProps, UInt32 numProps)
+Z7_COM7F_IMF(CFastEncoder::SetCoderProperties(const PROPID *propIDs,
+  const PROPVARIANT *coderProps, UInt32 numProps))
 {
   return _encoder.SetCoderProperties(propIDs, coderProps, numProps);
 }
 
-
 #define LZMA2_DIC_SIZE_FROM_PROP(p) (((UInt32)2 | ((p) & 1)) << ((p) / 2 + 11))
-
-STDMETHODIMP CFastEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
+Z7_COM7F_IMF(CFastEncoder::WriteCoderProperties(ISequentialOutStream *outStream))
 {
   Byte prop;
   unsigned i;
@@ -365,8 +351,8 @@ STDMETHODIMP CFastEncoder::WriteCoderProperties(ISequentialOutStream *outStream)
 }
 
 
-STDMETHODIMP CFastEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-  const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CFastEncoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+  const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress))
 {
   CHECK_H(_encoder.Begin());
   size_t inSize;

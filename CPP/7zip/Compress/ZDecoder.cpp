@@ -14,7 +14,7 @@
 namespace NCompress {
 namespace NZ {
 
-static const UInt32 kBufferSize = (1 << 20);
+static const size_t kBufferSize = 1 << 20;
 static const Byte kNumBitsMask = 0x1F;
 static const Byte kBlockModeMask = 0x80;
 static const unsigned kNumMinBits = 9;
@@ -22,21 +22,22 @@ static const unsigned kNumMaxBits = 16;
 
 void CDecoder::Free()
 {
-  MyFree(_parents); _parents = 0;
-  MyFree(_suffixes); _suffixes = 0;
-  MyFree(_stack); _stack = 0;
+  MyFree(_parents); _parents = NULL;
+  MyFree(_suffixes); _suffixes = NULL;
+  MyFree(_stack); _stack = NULL;
 }
 
 CDecoder::~CDecoder() { Free(); }
 
-HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 * /* inSize */, const UInt64 * /* outSize */, ICompressProgressInfo *progress)
+HRESULT CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    ICompressProgressInfo *progress)
 {
+  try {
+  // PackSize = 0;
+
   CInBuffer inBuffer;
   COutBuffer outBuffer;
 
-  PackSize = 0;
-  
   if (!inBuffer.Create(kBufferSize))
     return E_OUTOFMEMORY;
   inBuffer.SetStream(inStream);
@@ -52,29 +53,29 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     if (inBuffer.ReadBytes(buf, 3) < 3)
       return S_FALSE;
     if (buf[0] != 0x1F || buf[1] != 0x9D)
-      return S_FALSE;;
+      return S_FALSE;
   }
-  Byte prop = buf[2];
+  const Byte prop = buf[2];
 
   if ((prop & 0x60) != 0)
     return S_FALSE;
-  unsigned maxbits = prop & kNumBitsMask;
+  const unsigned maxbits = prop & kNumBitsMask;
   if (maxbits < kNumMinBits || maxbits > kNumMaxBits)
     return S_FALSE;
-  UInt32 numItems = 1 << maxbits;
+  const UInt32 numItems = (UInt32)1 << maxbits;
   // Speed optimization: blockSymbol can contain unused velue.
 
-  if (maxbits != _numMaxBits || _parents == 0 || _suffixes == 0 || _stack == 0)
+  if (maxbits != _numMaxBits || !_parents || !_suffixes || !_stack)
   {
     Free();
-    _parents = (UInt16 *)MyAlloc(numItems * sizeof(UInt16)); if (_parents == 0) return E_OUTOFMEMORY;
-    _suffixes = (Byte *)MyAlloc(numItems * sizeof(Byte)); if (_suffixes == 0) return E_OUTOFMEMORY;
-    _stack = (Byte *)MyAlloc(numItems * sizeof(Byte)); if (_stack == 0) return E_OUTOFMEMORY;
+    _parents = (UInt16 *)MyAlloc(numItems * sizeof(UInt16)); if (!_parents) return E_OUTOFMEMORY;
+    _suffixes = (Byte *)MyAlloc(numItems * sizeof(Byte)); if (!_suffixes) return E_OUTOFMEMORY;
+    _stack = (Byte *)MyAlloc(numItems * sizeof(Byte)); if (!_stack) return E_OUTOFMEMORY;
     _numMaxBits = maxbits;
   }
 
   UInt64 prevPos = 0;
-  UInt32 blockSymbol = ((prop & kBlockModeMask) != 0) ? 256 : ((UInt32)1 << kNumMaxBits);
+  const UInt32 blockSymbol = ((prop & kBlockModeMask) != 0) ? 256 : ((UInt32)1 << kNumMaxBits);
   unsigned numBits = kNumMinBits;
   UInt32 head = (blockSymbol == 256) ? 257 : 256;
   bool needPrev = false;
@@ -91,18 +92,18 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     {
       numBufBits = (unsigned)inBuffer.ReadBytes(buf, numBits) * 8;
       bitPos = 0;
-      UInt64 nowPos = outBuffer.GetProcessedSize();
+      const UInt64 nowPos = outBuffer.GetProcessedSize();
       if (progress && nowPos - prevPos >= (1 << 13))
       {
         prevPos = nowPos;
-        UInt64 packSize = inBuffer.GetProcessedSize();
-        RINOK(progress->SetRatioInfo(&packSize, &nowPos));
+        const UInt64 packSize = inBuffer.GetProcessedSize();
+        RINOK(progress->SetRatioInfo(&packSize, &nowPos))
       }
     }
-    unsigned bytePos = bitPos >> 3;
+    const unsigned bytePos = bitPos >> 3;
     UInt32 symbol = buf[bytePos] | ((UInt32)buf[(size_t)bytePos + 1] << 8) | ((UInt32)buf[(size_t)bytePos + 2] << 16);
     symbol >>= (bitPos & 7);
-    symbol &= (1 << numBits) - 1;
+    symbol &= ((UInt32)1 << numBits) - 1;
     bitPos += numBits;
     if (bitPos > numBufBits)
       break;
@@ -152,19 +153,16 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
     else
       needPrev = false;
   }
-  PackSize = inBuffer.GetProcessedSize();
-  HRESULT res2 = outBuffer.Flush();
+  // PackSize = inBuffer.GetProcessedSize();
+  const HRESULT res2 = outBuffer.Flush();
   return (res == S_OK) ? res2 : res;
-}
-
-STDMETHODIMP CDecoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
-{
-  try { return CodeReal(inStream, outStream, inSize, outSize, progress); }
+ 
+  }
   catch(const CInBufferException &e) { return e.ErrorCode; }
   catch(const COutBufferException &e) { return e.ErrorCode; }
   catch(...) { return S_FALSE; }
 }
+
 
 bool CheckStream(const Byte *data, size_t size)
 {
@@ -172,14 +170,14 @@ bool CheckStream(const Byte *data, size_t size)
     return false;
   if (data[0] != 0x1F || data[1] != 0x9D)
     return false;
-  Byte prop = data[2];
+  const Byte prop = data[2];
   if ((prop & 0x60) != 0)
     return false;
-  unsigned maxbits = prop & kNumBitsMask;
+  const unsigned maxbits = prop & kNumBitsMask;
   if (maxbits < kNumMinBits || maxbits > kNumMaxBits)
     return false;
-  UInt32 numItems = 1 << maxbits;
-  UInt32 blockSymbol = ((prop & kBlockModeMask) != 0) ? 256 : ((UInt32)1 << kNumMaxBits);
+  const UInt32 numItems = (UInt32)1 << maxbits;
+  const UInt32 blockSymbol = ((prop & kBlockModeMask) != 0) ? 256 : ((UInt32)1 << kNumMaxBits);
   unsigned numBits = kNumMinBits;
   UInt32 head = (blockSymbol == 256) ? 257 : 256;
   unsigned bitPos = 0;
@@ -192,17 +190,17 @@ bool CheckStream(const Byte *data, size_t size)
   {
     if (numBufBits == bitPos)
     {
-      unsigned num = (numBits < size) ? numBits : (unsigned)size;
+      const unsigned num = (numBits < size) ? numBits : (unsigned)size;
       memcpy(buf, data, num);
       data += num;
       size -= num;
       numBufBits = num * 8;
       bitPos = 0;
     }
-    unsigned bytePos = bitPos >> 3;
+    const unsigned bytePos = bitPos >> 3;
     UInt32 symbol = buf[bytePos] | ((UInt32)buf[bytePos + 1] << 8) | ((UInt32)buf[bytePos + 2] << 16);
     symbol >>= (bitPos & 7);
-    symbol &= (1 << numBits) - 1;
+    symbol &= ((UInt32)1 << numBits) - 1;
     bitPos += numBits;
     if (bitPos > numBufBits)
     {

@@ -2,15 +2,21 @@
 
 #include "StdAfx.h"
 
+#include <CommCtrl.h>
+
 // #include "../../../Common/IntToString.h"
 // #include "../../../Common/StringConvert.h"
+#include "../../../Common/StringToInt.h"
 
 #ifndef UNDER_CE
+#include "../../../Windows/ErrorMsg.h"
 #include "../../../Windows/MemoryLock.h"
-// #include "../../../Windows/System.h"
+#include "../../../Windows/System.h"
 #endif
 
-// #include "../Common/ZipRegistry.h"
+#include "../Explorer/MyMessages.h"
+
+#include "../Common/ZipRegistry.h"
 
 #include "HelpUtils.h"
 #include "LangUtils.h"
@@ -20,6 +26,7 @@
 
 using namespace NWindows;
 
+#ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
   IDX_SETTINGS_SHOW_DOTS,
@@ -34,9 +41,11 @@ static const UInt32 kLangIDs[] =
   IDX_SETTINGS_WANT_PATH_HISTORY,
   IDX_SETTINGS_WANT_COPY_HISTORY,
   IDX_SETTINGS_WANT_FOLDER_HISTORY,
-  IDX_SETTINGS_LOWERCASE_HASHES
+  IDX_SETTINGS_LOWERCASE_HASHES,
+  IDT_MEM_USAGE_EXTRACT
   // , IDT_COMPRESS_MEMORY
 };
+#endif
 
 #define kSettingsTopic "FM/options.htm#settings"
 
@@ -109,15 +118,19 @@ int CSettingsPage::AddMemComboItem(UInt64 size, UInt64 percents, bool isDefault)
 
 bool CSettingsPage::OnInit()
 {
+  _initMode = true;
   _wasChanged = false;
   _largePages_wasChanged = false;
+  _memx_wasChanged = false;
   /*
   _wasChanged_MemLimit = false;
   _memLimitStrings.Clear();
   _memCombo.Attach(GetItem(IDC_SETTINGS_MEM));
   */
 
-  LangSetDlgItems(*this, kLangIDs, ARRAY_SIZE(kLangIDs));
+#ifdef Z7_LANG
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
+#endif
 
   CFmSettings st;
   st.Load();
@@ -193,8 +206,63 @@ bool CSettingsPage::OnInit()
   CheckButton(IDX_SETTINGS_LOWERCASE_HASHES, st.LowercaseHashes);
   // EnableSubItems();
 
+
+  {
+    UInt64 ramSize = (UInt64)sizeof(size_t) << 29;
+    const bool ramSize_defined = NWindows::NSystem::GetRamSize(ramSize);
+    // ramSize *= 10; // for debug
+    UInt64 ramSize_GB = (ramSize + (1u << 29)) >> 30;
+    if (ramSize_GB == 0)
+      ramSize_GB = 1;
+    UString s ("GB");
+    if (ramSize_defined)
+    {
+      s += " / ";
+      s.Add_UInt64(ramSize_GB);
+      s += " GB (RAM)";
+    }
+    SetItemText(IDT_SETTINGS_MEM_GB, s);
+
+    const UINT valMin = 1;
+    UINT valMax = 64; // 64GB for RAR7
+    if (ramSize_defined /* && ramSize_GB > valMax */)
+    {
+      const UINT k_max_val = 1u << 14;
+      if (ramSize_GB >= k_max_val)
+        valMax = k_max_val;
+      else if (ramSize_GB > 1)
+        valMax = (UINT)ramSize_GB - 1;
+      else
+        valMax = 1;
+    }
+    
+    UInt32 limit = NExtract::Read_LimitGB();
+    if (limit != 0 && limit != (UInt32)(Int32)-1)
+      CheckButton(IDX_SETTINGS_MEM_SET, true);
+    else
+    {
+      limit = 4;
+      EnableSpin(false);
+    }
+    SendItemMessage(IDC_SETTINGS_MEM_SPIN, UDM_SETRANGE, 0, MAKELPARAM(valMax, valMin)); // Sets the controls direction
+    // UDM_SETPOS doesn't set value larger than max value (valMax) of range:
+    SendItemMessage(IDC_SETTINGS_MEM_SPIN, UDM_SETPOS, 0, limit);
+    s.Empty();
+    s.Add_UInt32(limit);
+    SetItemText(IDE_SETTINGS_MEM_SPIN_EDIT, s);
+  }
+
+  _initMode = false;
   return CPropertyPage::OnInit();
 }
+
+
+void CSettingsPage::EnableSpin(bool enable)
+{
+  EnableItem(IDC_SETTINGS_MEM_SPIN, enable);
+  EnableItem(IDE_SETTINGS_MEM_SPIN_EDIT, enable);
+}
+
 
 /*
 void CSettingsPage::EnableSubItems()
@@ -240,13 +308,33 @@ LONG CSettingsPage::OnApply()
   {
     if (IsLargePageSupported())
     {
-      bool enable = IsButtonCheckedBool(IDX_SETTINGS_LARGE_PAGES);
+      const bool enable = IsButtonCheckedBool(IDX_SETTINGS_LARGE_PAGES);
       NSecurity::EnablePrivilege_LockMemory(enable);
       SaveLockMemoryEnable(enable);
     }
     _largePages_wasChanged = false;
   }
   #endif
+
+  if (_memx_wasChanged)
+  {
+    UInt32 val = (UInt32)(Int32)-1;
+    if (IsButtonCheckedBool(IDX_SETTINGS_MEM_SET))
+    {
+      UString s;
+      GetItemText(IDE_SETTINGS_MEM_SPIN_EDIT, s);
+      const wchar_t *end;
+      val = ConvertStringToUInt32(s.Ptr(), &end);
+      if (s.IsEmpty() || *end != 0 || val > (1u << 30))
+      {
+        // L"Incorrect value"
+        ShowErrorMessage(*this, NError::MyFormatMessage(E_INVALIDARG));
+        return PSNRET_INVALID;
+      }
+    }
+    NExtract::Save_LimitGB(val);
+    _memx_wasChanged = false;
+  }
 
   /*
   if (_wasChanged_MemLimit)
@@ -315,9 +403,16 @@ void CSettingsPage::OnNotifyHelp()
   ShowHelpWindow(kSettingsTopic);
 }
 
-/*
-bool CSettingsPage::OnCommand(int code, int itemID, LPARAM param)
+bool CSettingsPage::OnCommand(unsigned code, unsigned itemID, LPARAM param)
 {
+  if (!_initMode)
+  {
+    if (code == EN_CHANGE && itemID == IDE_SETTINGS_MEM_SPIN_EDIT)
+    {
+      _memx_wasChanged = true;
+      Changed();
+    }
+    /*
   if (code == CBN_SELCHANGE)
   {
     switch (itemID)
@@ -330,11 +425,12 @@ bool CSettingsPage::OnCommand(int code, int itemID, LPARAM param)
       }
     }
   }
+    */
+  }
   return CPropertyPage::OnCommand(code, itemID, param);
 }
-*/
 
-bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
+bool CSettingsPage::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
   switch (buttonID)
   {
@@ -360,6 +456,13 @@ bool CSettingsPage::OnButtonClicked(int buttonID, HWND buttonHWND)
     case IDX_SETTINGS_LARGE_PAGES:
       _largePages_wasChanged = true;
       break;
+
+    case IDX_SETTINGS_MEM_SET:
+    {
+      _memx_wasChanged = true;
+      EnableSpin(IsButtonCheckedBool(IDX_SETTINGS_MEM_SET));
+      break;
+    }
 
     default:
       return CPropertyPage::OnButtonClicked(buttonID, buttonHWND);

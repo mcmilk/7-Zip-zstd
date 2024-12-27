@@ -26,6 +26,8 @@
 
 #define Get16(p) GetUi16(p)
 #define Get32(p) GetUi32(p)
+#define Get16a(p) GetUi16a(p)
+#define Get32a(p) GetUi32a(p)
 
 #define PRF(x) /* x */
 
@@ -57,6 +59,7 @@ struct CHeader
   UInt32 NumHiddenSectors;
 
   bool VolFieldsDefined;
+  bool HeadersWarning;
   
   UInt32 VolId;
   // Byte VolName[11];
@@ -125,6 +128,8 @@ bool CHeader::Parse(const Byte *p)
   if (p[0x1FE] != 0x55 || p[0x1FF] != 0xAA)
     return false;
 
+  HeadersWarning = false;
+
   int codeOffset = 0;
   switch (p[0])
   {
@@ -134,15 +139,15 @@ bool CHeader::Parse(const Byte *p)
   }
   {
     {
-      UInt32 val32 = Get16(p + 11);
-      int s = GetLog(val32);
+      const UInt32 val32 = Get16(p + 11);
+      const int s = GetLog(val32);
       if (s < 9 || s > 12)
         return false;
       SectorSizeLog = (Byte)s;
     }
     {
-      UInt32 val32 = p[13];
-      int s = GetLog(val32);
+      const UInt32 val32 = p[13];
+      const int s = GetLog(val32);
       if (s < 0)
         return false;
       SectorsPerClusterLog = (Byte)s;
@@ -161,10 +166,10 @@ bool CHeader::Parse(const Byte *p)
     return false;
 
   // we also support images that contain 0 in offset field.
-  bool isOkOffset = (codeOffset == 0)
+  const bool isOkOffset = (codeOffset == 0)
       || (codeOffset == (p[0] == 0xEB ? 2 : 3));
 
-  UInt16 numRootDirEntries = Get16(p + 17);
+  const UInt16 numRootDirEntries = Get16(p + 17);
   if (numRootDirEntries == 0)
   {
     if (codeOffset < 90 && !isOkOffset)
@@ -178,7 +183,7 @@ bool CHeader::Parse(const Byte *p)
     if (codeOffset < 62 - 24 && !isOkOffset)
       return false;
     NumFatBits = 0;
-    UInt32 mask = (1 << (SectorSizeLog - 5)) - 1;
+    const UInt32 mask = (1 << (SectorSizeLog - 5)) - 1;
     if ((numRootDirEntries & mask) != 0)
       return false;
     NumRootDirSectors = (numRootDirEntries + mask) >> (SectorSizeLog - 5);
@@ -187,8 +192,12 @@ bool CHeader::Parse(const Byte *p)
   NumSectors = Get16(p + 19);
   if (NumSectors == 0)
     NumSectors = Get32(p + 32);
+  /*
+  // mkfs.fat could create fat32 image with 16-bit number of sectors.
+  // v23: we allow 16-bit value for number of sectors in fat32.
   else if (IsFat32())
     return false;
+  */
 
   MediaType = p[21];
   NumFatSectors = Get16(p + 22);
@@ -241,23 +250,36 @@ bool CHeader::Parse(const Byte *p)
   DataSector = RootDirSector + NumRootDirSectors;
   if (NumSectors < DataSector)
     return false;
-  UInt32 numDataSectors = NumSectors - DataSector;
-  UInt32 numClusters = numDataSectors >> SectorsPerClusterLog;
+  const UInt32 numDataSectors = NumSectors - DataSector;
+  const UInt32 numClusters = numDataSectors >> SectorsPerClusterLog;
   
   BadCluster = 0x0FFFFFF7;
-  if (numClusters < 0xFFF5)
+  // v23: we support unusual (< 0xFFF5) numClusters values in fat32 systems
+  if (NumFatBits != 32)
   {
-    if (NumFatBits == 32)
+    if (numClusters >= 0xFFF5)
       return false;
     NumFatBits = (Byte)(numClusters < 0xFF5 ? 12 : 16);
     BadCluster &= ((1 << NumFatBits) - 1);
   }
-  else if (NumFatBits != 32)
-    return false;
 
   FatSize = numClusters + 2;
-  if (FatSize > BadCluster || CalcFatSizeInSectors() > NumFatSectors)
+  if (FatSize > BadCluster)
     return false;
+  if (CalcFatSizeInSectors() > NumFatSectors)
+  {
+    /* some third-party program can create such FAT image, where
+       size of FAT table (NumFatSectors from headers) is smaller than
+       required value that is calculated from calculated (FatSize) value.
+       Another FAT unpackers probably ignore that error.
+       v23.02: we also ignore that error, and
+       we recalculate (FatSize) value from (NumFatSectors).
+       New (FatSize) will be smaller than original "full" (FatSize) value.
+       So we will have some unused clusters at the end of archive.
+    */
+    FatSize = (UInt32)(((UInt64)NumFatSectors << (3 + SectorSizeLog)) / NumFatBits);
+    HeadersWarning = true;
+  }
   return true;
 }
 
@@ -358,7 +380,7 @@ struct CDatabase
 
   UInt64 PhySize;
 
-  CDatabase(): Fat(0) {}
+  CDatabase(): Fat(NULL) {}
   ~CDatabase() { ClearAndClose(); }
 
   void Clear();
@@ -366,7 +388,7 @@ struct CDatabase
   HRESULT OpenProgressFat(bool changeTotal = true);
   HRESULT OpenProgress();
 
-  UString GetItemPath(Int32 index) const;
+  UString GetItemPath(UInt32 index) const;
   HRESULT Open();
   HRESULT ReadDir(Int32 parent, UInt32 cluster, unsigned level);
 
@@ -380,7 +402,7 @@ struct CDatabase
 
 HRESULT CDatabase::SeekToSector(UInt32 sector)
 {
-  return InStream->Seek((UInt64)sector << Header.SectorSizeLog, STREAM_SEEK_SET, NULL);
+  return InStream_SeekSet(InStream, (UInt64)sector << Header.SectorSizeLog);
 }
 
 void CDatabase::Clear()
@@ -392,7 +414,7 @@ void CDatabase::Clear()
 
   Items.Clear();
   delete []Fat;
-  Fat = 0;
+  Fat = NULL;
 }
 
 void CDatabase::ClearAndClose()
@@ -407,9 +429,9 @@ HRESULT CDatabase::OpenProgressFat(bool changeTotal)
     return S_OK;
   if (changeTotal)
   {
-    UInt64 numTotalBytes = (Header.CalcFatSizeInSectors() << Header.SectorSizeLog) +
+    const UInt64 numTotalBytes = (Header.CalcFatSizeInSectors() << Header.SectorSizeLog) +
         ((UInt64)(Header.FatSize - NumFreeClusters) << Header.ClusterSizeLog);
-    RINOK(OpenCallback->SetTotal(NULL, &numTotalBytes));
+    RINOK(OpenCallback->SetTotal(NULL, &numTotalBytes))
   }
   return OpenCallback->SetCompleted(NULL, &NumCurUsedBytes);
 }
@@ -422,14 +444,14 @@ HRESULT CDatabase::OpenProgress()
   return OpenCallback->SetCompleted(&numItems, &NumCurUsedBytes);
 }
 
-UString CDatabase::GetItemPath(Int32 index) const
+UString CDatabase::GetItemPath(UInt32 index) const
 {
   const CItem *item = &Items[index];
   UString name = item->GetName();
   for (;;)
   {
-    index = item->Parent;
-    if (index < 0)
+    index = (UInt32)item->Parent;
+    if (item->Parent < 0)
       return name;
     item = &Items[index];
     name.InsertAtFront(WCHAR_PATH_SEPARATOR);
@@ -464,7 +486,7 @@ HRESULT CDatabase::ReadDir(Int32 parent, UInt32 cluster, unsigned level)
   if (!clusterMode)
   {
     blockSize = Header.SectorSize();
-    RINOK(SeekToSector(Header.RootDirSector));
+    RINOK(SeekToSector(Header.RootDirSector))
   }
 
   ByteBuf.Alloc(blockSize);
@@ -480,7 +502,7 @@ HRESULT CDatabase::ReadDir(Int32 parent, UInt32 cluster, unsigned level)
 
       if ((NumDirClusters & 0xFF) == 0)
       {
-        RINOK(OpenProgress());
+        RINOK(OpenProgress())
       }
 
       if (clusterMode)
@@ -490,8 +512,8 @@ HRESULT CDatabase::ReadDir(Int32 parent, UInt32 cluster, unsigned level)
         if (!Header.IsValidCluster(cluster))
           return S_FALSE;
         PRF(printf("\nCluster = %4X", cluster));
-        RINOK(SeekToCluster(cluster));
-        UInt32 newCluster = Fat[cluster];
+        RINOK(SeekToCluster(cluster))
+        const UInt32 newCluster = Fat[cluster];
         if ((newCluster & kFatItemUsedByDirMask) != 0)
           return S_FALSE;
         Fat[cluster] |= kFatItemUsedByDirMask;
@@ -502,7 +524,7 @@ HRESULT CDatabase::ReadDir(Int32 parent, UInt32 cluster, unsigned level)
       else if (sectorIndex++ >= Header.NumRootDirSectors)
         break;
       
-      RINOK(ReadStream_FALSE(InStream, ByteBuf, blockSize));
+      RINOK(ReadStream_FALSE(InStream, ByteBuf, blockSize))
     }
   
     const Byte *p = ByteBuf + pos;
@@ -621,7 +643,7 @@ HRESULT CDatabase::ReadDir(Int32 parent, UInt32 cluster, unsigned level)
     if (item.IsDir())
     {
       PRF(printf("\n%S", GetItemPath(i)));
-      RINOK(CDatabase::ReadDir(i, item.Cluster, level + 1));
+      RINOK(CDatabase::ReadDir((int)i, item.Cluster, level + 1))
     }
   }
   return S_OK;
@@ -633,11 +655,11 @@ HRESULT CDatabase::Open()
   bool numFreeClustersDefined = false;
   {
     Byte buf[kHeaderSize];
-    RINOK(ReadStream_FALSE(InStream, buf, kHeaderSize));
+    RINOK(ReadStream_FALSE(InStream, buf, kHeaderSize))
     if (!Header.Parse(buf))
       return S_FALSE;
     UInt64 fileSize;
-    RINOK(InStream->Seek(0, STREAM_SEEK_END, &fileSize));
+    RINOK(InStream_GetSize_SeekToEnd(InStream, fileSize))
 
     /* we comment that check to support truncated images */
     /*
@@ -647,15 +669,18 @@ HRESULT CDatabase::Open()
 
     if (Header.IsFat32())
     {
-      SeekToSector(Header.FsInfoSector);
-      RINOK(ReadStream_FALSE(InStream, buf, kHeaderSize));
-      if (buf[0x1FE] != 0x55 || buf[0x1FF] != 0xAA)
-        return S_FALSE;
-      if (Get32(buf) == 0x41615252 && Get32(buf + 484) == 0x61417272)
+      if (((UInt32)Header.FsInfoSector << Header.SectorSizeLog) + kHeaderSize <= fileSize
+          && SeekToSector(Header.FsInfoSector) == S_OK
+          && ReadStream_FALSE(InStream, buf, kHeaderSize) == S_OK
+          && 0xaa550000 == Get32(buf + 508)
+          && 0x41615252 == Get32(buf)
+          && 0x61417272 == Get32(buf + 484))
       {
         NumFreeClusters = Get32(buf + 488);
         numFreeClustersDefined = (NumFreeClusters <= Header.FatSize);
       }
+      else
+        Header.HeadersWarning = true;
     }
   }
 
@@ -666,42 +691,47 @@ HRESULT CDatabase::Open()
   CByteBuffer byteBuf;
   Fat = new UInt32[Header.FatSize];
 
-  RINOK(OpenProgressFat());
-  RINOK(SeekToSector(Header.GetFatSector()));
+  RINOK(OpenProgressFat())
+  RINOK(SeekToSector(Header.GetFatSector()))
   if (Header.NumFatBits == 32)
   {
     const UInt32 kBufSize = (1 << 15);
     byteBuf.Alloc(kBufSize);
-    for (UInt32 i = 0; i < Header.FatSize;)
+    for (UInt32 i = 0;;)
     {
       UInt32 size = Header.FatSize - i;
+      if (size == 0)
+        break;
       const UInt32 kBufSize32 = kBufSize / 4;
       if (size > kBufSize32)
         size = kBufSize32;
-      UInt32 readSize = Header.SizeToSectors(size * 4) << Header.SectorSizeLog;
-      RINOK(ReadStream_FALSE(InStream, byteBuf, readSize));
+      const UInt32 readSize = Header.SizeToSectors(size * 4) << Header.SectorSizeLog;
+      RINOK(ReadStream_FALSE(InStream, byteBuf, readSize))
       NumCurUsedBytes += readSize;
 
       const UInt32 *src = (const UInt32 *)(const void *)(const Byte *)byteBuf;
       UInt32 *dest = Fat + i;
+      const UInt32 *srcLim = src + size;
       if (numFreeClustersDefined)
-        for (UInt32 j = 0; j < size; j++)
-          dest[j] = Get32(src + j) & 0x0FFFFFFF;
+        do
+          *dest++ = Get32a(src) & 0x0FFFFFFF;
+        while (++src != srcLim);
       else
       {
         UInt32 numFreeClusters = 0;
-        for (UInt32 j = 0; j < size; j++)
+        do
         {
-          UInt32 v = Get32(src + j) & 0x0FFFFFFF;
+          const UInt32 v = Get32a(src) & 0x0FFFFFFF;
+          *dest++ = v;
           numFreeClusters += (UInt32)(v - 1) >> 31;
-          dest[j] = v;
         }
+        while (++src != srcLim);
         NumFreeClusters += numFreeClusters;
       }
       i += size;
       if ((i & 0xFFFFF) == 0)
       {
-        RINOK(OpenProgressFat(!numFreeClustersDefined));
+        RINOK(OpenProgressFat(!numFreeClustersDefined))
       }
     }
   }
@@ -711,12 +741,12 @@ HRESULT CDatabase::Open()
     NumCurUsedBytes += kBufSize;
     byteBuf.Alloc(kBufSize);
     Byte *p = byteBuf;
-    RINOK(ReadStream_FALSE(InStream, p, kBufSize));
-    UInt32 fatSize = Header.FatSize;
+    RINOK(ReadStream_FALSE(InStream, p, kBufSize))
+    const UInt32 fatSize = Header.FatSize;
     UInt32 *fat = &Fat[0];
     if (Header.NumFatBits == 16)
       for (UInt32 j = 0; j < fatSize; j++)
-        fat[j] = Get16(p + j * 2);
+        fat[j] = Get16a(p + j * 2);
     else
       for (UInt32 j = 0; j < fatSize; j++)
         fat[j] = (Get16(p + j * 3 / 2) >> ((j & 1) << 2)) & 0xFFF;
@@ -730,7 +760,7 @@ HRESULT CDatabase::Open()
     }
   }
 
-  RINOK(OpenProgressFat());
+  RINOK(OpenProgressFat())
 
   if ((Fat[0] & 0xFF) != Header.MediaType)
   {
@@ -741,28 +771,27 @@ HRESULT CDatabase::Open()
       return S_FALSE;
   }
 
-  RINOK(ReadDir(-1, Header.RootCluster, 0));
+  RINOK(ReadDir(-1, Header.RootCluster, 0))
 
   PhySize = Header.GetPhySize();
   return S_OK;
 }
 
-class CHandler:
+
+
+Z7_class_CHandler_final:
   public IInArchive,
   public IInArchiveGetStream,
   public CMyUnknownImp,
   CDatabase
 {
-public:
-  MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
-  INTERFACE_IInArchive(;)
-  STDMETHOD(GetStream)(UInt32 index, ISequentialInStream **stream);
+  Z7_IFACES_IMP_UNK_2(IInArchive, IInArchiveGetStream)
 };
 
-STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
+Z7_COM7F_IMF(CHandler::GetStream(UInt32 index, ISequentialInStream **stream))
 {
   COM_TRY_BEGIN
-  *stream = 0;
+  *stream = NULL;
   const CItem &item = Items[index];
   CClusterInStream *streamSpec = new CClusterInStream;
   CMyComPtr<ISequentialInStream> streamTemp = streamSpec;
@@ -771,7 +800,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   streamSpec->BlockSizeLog = Header.ClusterSizeLog;
   streamSpec->Size = item.Size;
 
-  UInt32 numClusters = Header.GetNumClusters(item.Size);
+  const UInt32 numClusters = Header.GetNumClusters(item.Size);
   streamSpec->Vector.ClearAndReserve(numClusters);
   UInt32 cluster = item.Cluster;
   UInt32 size = item.Size;
@@ -783,7 +812,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
   }
   else
   {
-    UInt32 clusterSize = Header.ClusterSize();
+    const UInt32 clusterSize = Header.ClusterSize();
     for (;; size -= clusterSize)
     {
       if (!Header.IsValidCluster(cluster))
@@ -796,7 +825,7 @@ STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)
     if (!Header.IsEocAndUnused(cluster))
       return S_FALSE;
   }
-  RINOK(streamSpec->InitAndSeek());
+  RINOK(streamSpec->InitAndSeek())
   *stream = streamTemp.Detach();
   return S_OK;
   COM_TRY_END
@@ -873,7 +902,7 @@ static void StringToProp(const Byte *src, unsigned size, NWindows::NCOM::CPropVa
 #define STRING_TO_PROP(s, p) StringToProp(s, sizeof(s), prop)
 */
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -905,13 +934,21 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     // case kpidVolName: if (Header.VolFieldsDefined) STRING_TO_PROP(Header.VolName, prop); break;
     // case kpidFileSysType: if (Header.VolFieldsDefined) STRING_TO_PROP(Header.FileSys, prop); break;
     // case kpidHiddenSectors: prop = Header.NumHiddenSectors; break;
+    case kpidWarningFlags:
+    {
+      UInt32 v = 0;
+      if (Header.HeadersWarning) v |= kpv_ErrorFlags_HeadersError;
+      if (v != 0)
+        prop = v;
+      break;
+    }
   }
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NWindows::NCOM::CPropVariant prop;
@@ -933,7 +970,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *callback)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *callback))
 {
   COM_TRY_BEGIN
   {
@@ -957,17 +994,17 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   ClearAndClose();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
-  bool allFilesMode = (numItems == (UInt32)(Int32)-1);
+  const bool allFilesMode = (numItems == (UInt32)(Int32)-1);
   if (allFilesMode)
     numItems = Items.Size();
   if (numItems == 0)
@@ -980,7 +1017,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (!item.IsDir())
       totalSize += item.Size;
   }
-  RINOK(extractCallback->SetTotal(totalSize));
+  RINOK(extractCallback->SetTotal(totalSize))
 
   UInt64 totalPackSize;
   totalSize = totalPackSize = 0;
@@ -995,23 +1032,25 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   CDummyOutStream *outStreamSpec = new CDummyOutStream;
   CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
 
-  for (i = 0; i < numItems; i++)
+  for (i = 0;; i++)
   {
     lps->InSize = totalPackSize;
     lps->OutSize = totalSize;
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
+    if (i == numItems)
+      break;
     CMyComPtr<ISequentialOutStream> realOutStream;
-    Int32 askMode = testMode ?
+    const Int32 askMode = testMode ?
         NExtract::NAskMode::kTest :
         NExtract::NAskMode::kExtract;
-    Int32 index = allFilesMode ? i : indices[i];
+    const UInt32 index = allFilesMode ? i : indices[i];
     const CItem &item = Items[index];
-    RINOK(extractCallback->GetStream(index, &realOutStream, askMode));
+    RINOK(extractCallback->GetStream(index, &realOutStream, askMode))
 
     if (item.IsDir())
     {
-      RINOK(extractCallback->PrepareOperation(askMode));
-      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK));
+      RINOK(extractCallback->PrepareOperation(askMode))
+      RINOK(extractCallback->SetOperationResult(NExtract::NOperationResult::kOK))
       continue;
     }
 
@@ -1020,7 +1059,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     if (!testMode && !realOutStream)
       continue;
-    RINOK(extractCallback->PrepareOperation(askMode));
+    RINOK(extractCallback->PrepareOperation(askMode))
 
     outStreamSpec->SetStream(realOutStream);
     realOutStream.Release();
@@ -1031,22 +1070,22 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     HRESULT hres = GetStream(index, &inStream);
     if (hres != S_FALSE)
     {
-      RINOK(hres);
+      RINOK(hres)
       if (inStream)
       {
-        RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress));
+        RINOK(copyCoder->Code(inStream, outStream, NULL, NULL, progress))
         if (copyCoderSpec->TotalSize == item.Size)
           res = NExtract::NOperationResult::kOK;
       }
     }
     outStreamSpec->ReleaseStream();
-    RINOK(extractCallback->SetOperationResult(res));
+    RINOK(extractCallback->SetOperationResult(res))
   }
   return S_OK;
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = Items.Size();
   return S_OK;
@@ -1055,7 +1094,7 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 static const Byte k_Signature[] = { 0x55, 0xAA };
 
 REGISTER_ARC_I(
-  "FAT", "fat img", 0, 0xDA,
+  "FAT", "fat img", NULL, 0xDA,
   k_Signature,
   0x1FE,
   0,

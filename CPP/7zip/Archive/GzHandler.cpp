@@ -10,7 +10,6 @@
 #include "../../Common/Defs.h"
 #include "../../Common/StringConvert.h"
 
-#include "../../Windows/PropVariant.h"
 #include "../../Windows/PropVariantUtils.h"
 #include "../../Windows/TimeUtils.h"
 
@@ -206,13 +205,13 @@ static HRESULT ReadString(NDecoder::CCOMCoder *stream, AString &s, size_t limit 
   s.Empty();
   for (size_t i = 0; i < limit; i++)
   {
-    Byte b = stream->ReadAlignedByte();
+    const Byte b = stream->ReadAlignedByte();
     if (stream->InputEofError())
       return S_FALSE;
     // crc = CRC_UPDATE_BYTE(crc, b);
     if (b == 0)
       return S_OK;
-    s += (char)b;
+    s.Add_Char((char)b);
   }
   return S_FALSE;
 }
@@ -229,7 +228,7 @@ static UInt32 Is_Deflate(const Byte *p, size_t size)
     return k_IsArc_Res_NO;
   if (type == 0)
   {
-     // Stored (uncompreessed data)
+    // Stored (uncompreessed data)
     if ((b >> 3) != 0)
       return k_IsArc_Res_NO;
     if (size < 4)
@@ -261,11 +260,11 @@ API_FUNC_static_IsArc IsArc_Gz(const Byte *p, size_t size)
       p[2] != kSignature_2)
     return k_IsArc_Res_NO;
 
-  Byte flags = p[3];
+  const Byte flags = p[3];
   if ((flags & NFlags::kReserved) != 0)
     return k_IsArc_Res_NO;
 
-  Byte extraFlags = p[8];
+  const Byte extraFlags = p[8];
   // maybe that flag can have another values for some gz archives?
   if (extraFlags != 0 &&
       extraFlags != NExtraFlags::kMaximum &&
@@ -288,7 +287,7 @@ API_FUNC_static_IsArc IsArc_Gz(const Byte *p, size_t size)
         return k_IsArc_Res_NO;
       if (size < 4)
         return k_IsArc_Res_NEED_MORE;
-      unsigned len = GetUi16(p + 2);
+      const unsigned len = GetUi16(p + 2);
       size -= 4;
       xlen -= 4;
       p += 4;
@@ -354,7 +353,7 @@ HRESULT CItem::ReadHeader(NDecoder::CCOMCoder *stream)
   // UInt32 crc = CRC_INIT_VAL;
   Byte buf[10];
 
-  RINOK(ReadBytes(stream, buf, 10));
+  RINOK(ReadBytes(stream, buf, 10))
   
   if (buf[0] != kSignature_0 ||
       buf[1] != kSignature_1 ||
@@ -374,22 +373,22 @@ HRESULT CItem::ReadHeader(NDecoder::CCOMCoder *stream)
   if (ExtraFieldIsPresent())
   {
     UInt32 xlen;
-    RINOK(ReadUInt16(stream, xlen /* , crc */));
-    RINOK(SkipBytes(stream, xlen));
+    RINOK(ReadUInt16(stream, xlen /* , crc */))
+    RINOK(SkipBytes(stream, xlen))
     // Extra.SetCapacity(xlen);
     // RINOK(ReadStream_FALSE(stream, Extra, xlen));
     // crc = CrcUpdate(crc, Extra, xlen);
   }
   if (NameIsPresent())
-    RINOK(ReadString(stream, Name, kNameMaxLen /* , crc */));
+    RINOK(ReadString(stream, Name, kNameMaxLen /* , crc */))
   if (CommentIsPresent())
-    RINOK(ReadString(stream, Comment, kCommentMaxLen /* , crc */));
+    RINOK(ReadString(stream, Comment, kCommentMaxLen /* , crc */))
 
   if (HeaderCrcIsPresent())
   {
     UInt32 headerCRC;
     // UInt32 dummy = 0;
-    RINOK(ReadUInt16(stream, headerCRC /* , dummy */));
+    RINOK(ReadUInt16(stream, headerCRC /* , dummy */))
     /*
     if ((UInt16)CRC_GET_DIGEST(crc) != headerCRC)
       return S_FALSE;
@@ -401,7 +400,7 @@ HRESULT CItem::ReadHeader(NDecoder::CCOMCoder *stream)
 HRESULT CItem::ReadFooter1(NDecoder::CCOMCoder *stream)
 {
   Byte buf[8];
-  RINOK(ReadBytes(stream, buf, 8));
+  RINOK(ReadBytes(stream, buf, 8))
   Crc = Get32(buf);
   Size32 = Get32(buf + 4);
   return stream->InputEofError() ? S_FALSE : S_OK;
@@ -410,7 +409,7 @@ HRESULT CItem::ReadFooter1(NDecoder::CCOMCoder *stream)
 HRESULT CItem::ReadFooter2(ISequentialInStream *stream)
 {
   Byte buf[8];
-  RINOK(ReadStream_FALSE(stream, buf, 8));
+  RINOK(ReadStream_FALSE(stream, buf, 8))
   Crc = Get32(buf);
   Size32 = Get32(buf + 4);
   return S_OK;
@@ -424,15 +423,15 @@ HRESULT CItem::WriteHeader(ISequentialOutStream *stream)
   buf[2] = kSignature_2;
   buf[3] = (Byte)(Flags & NFlags::kName);
   // buf[3] |= NFlags::kCrc;
-  SetUi32(buf + 4, Time);
+  SetUi32(buf + 4, Time)
   buf[8] = ExtraFlags;
   buf[9] = HostOS;
-  RINOK(WriteStream(stream, buf, 10));
+  RINOK(WriteStream(stream, buf, 10))
   // crc = CrcUpdate(CRC_INIT_VAL, buf, 10);
   if (NameIsPresent())
   {
     // crc = CrcUpdate(crc, (const char *)Name, Name.Len() + 1);
-    RINOK(WriteStream(stream, (const char *)Name, Name.Len() + 1));
+    RINOK(WriteStream(stream, (const char *)Name, Name.Len() + 1))
   }
   // SetUi16(buf, (UInt16)CRC_GET_DIGEST(crc));
   // RINOK(WriteStream(stream, buf, 2));
@@ -442,18 +441,16 @@ HRESULT CItem::WriteHeader(ISequentialOutStream *stream)
 HRESULT CItem::WriteFooter(ISequentialOutStream *stream)
 {
   Byte buf[8];
-  SetUi32(buf, Crc);
-  SetUi32(buf + 4, Size32);
+  SetUi32(buf, Crc)
+  SetUi32(buf + 4, Size32)
   return WriteStream(stream, buf, 8);
 }
 
-class CHandler:
-  public IInArchive,
-  public IArchiveOpenSeq,
-  public IOutArchive,
-  public ISetProperties,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_CHandler_IInArchive_3(
+  IArchiveOpenSeq,
+  IOutArchive,
+  ISetProperties
+)
   CItem _item;
 
   bool _isArc;
@@ -471,34 +468,19 @@ class CHandler:
   UInt64 _headerSize; // only start header (without footer)
   
   CMyComPtr<IInStream> _stream;
-  CMyComPtr<ICompressCoder> _decoder;
-  NDecoder::CCOMCoder *_decoderSpec;
+  CMyComPtr2<ICompressCoder, NDecoder::CCOMCoder> _decoder;
 
   CSingleMethodProps _props;
   CHandlerTimeOptions _timeOptions;
 
 public:
-  MY_UNKNOWN_IMP4(
-      IInArchive,
-      IArchiveOpenSeq,
-      IOutArchive,
-      ISetProperties)
-  INTERFACE_IInArchive(;)
-  INTERFACE_IOutArchive(;)
-  STDMETHOD(OpenSeq)(ISequentialInStream *stream);
-  STDMETHOD(SetProperties)(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps);
-
   CHandler():
-      _isArc(false),
-      _decoderSpec(NULL)
+      _isArc(false)
       {}
   
   void CreateDecoder()
   {
-    if (_decoder)
-      return;
-    _decoderSpec = new NDecoder::CCOMCoder;
-    _decoder = _decoderSpec;
+    _decoder.Create_if_Empty();
   }
 };
 
@@ -523,7 +505,7 @@ static const Byte kArcProps[] =
 IMP_IInArchive_Props
 IMP_IInArchive_ArcProps
 
-STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -550,6 +532,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
         prop = s;
       }
       break;
+    default: break;
   }
   prop.Detach(value);
   return S_OK;
@@ -557,13 +540,13 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 }
 
 
-STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
+Z7_COM7F_IMF(CHandler::GetNumberOfItems(UInt32 *numItems))
 {
   *numItems = 1;
   return S_OK;
 }
 
-STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value)
+Z7_COM7F_IMF(CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIANT *value))
 {
   COM_TRY_BEGIN
   NCOM::CPropVariant prop;
@@ -599,25 +582,24 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID, PROPVARIAN
     }
     case kpidHostOS: TYPE_TO_PROP(kHostOSes, _item.HostOS, prop); break;
     case kpidCRC: if (_stream) prop = _item.Crc; break;
+    default: break;
   }
   prop.Detach(value);
   return S_OK;
   COM_TRY_END
 }
 
-class CCompressProgressInfoImp:
-  public ICompressProgressInfo,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_1(
+  CCompressProgressInfoImp,
+  ICompressProgressInfo
+)
   CMyComPtr<IArchiveOpenCallback> Callback;
 public:
   UInt64 Offset;
-  MY_UNKNOWN_IMP1(ICompressProgressInfo)
-  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize);
   void Init(IArchiveOpenCallback *callback) { Callback = callback; }
 };
 
-STDMETHODIMP CCompressProgressInfoImp::SetRatioInfo(const UInt64 *inSize, const UInt64 * /* outSize */)
+Z7_COM7F_IMF(CCompressProgressInfoImp::SetRatioInfo(const UInt64 *inSize, const UInt64 * /* outSize */))
 {
   if (Callback)
   {
@@ -631,15 +613,15 @@ STDMETHODIMP CCompressProgressInfoImp::SetRatioInfo(const UInt64 *inSize, const 
 /*
 */
 
-STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *)
+Z7_COM7F_IMF(CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallback *))
 {
   COM_TRY_BEGIN
-  RINOK(OpenSeq(stream));
+  RINOK(OpenSeq(stream))
   _isArc = false;
   UInt64 endPos;
-  RINOK(stream->Seek(-8, STREAM_SEEK_END, &endPos));
+  RINOK(stream->Seek(-8, STREAM_SEEK_END, &endPos))
   _packSize = endPos + 8;
-  RINOK(_item.ReadFooter2(stream));
+  RINOK(_item.ReadFooter2(stream))
   _stream = stream;
   _isArc = true;
   _needSeekToStart = true;
@@ -647,19 +629,19 @@ STDMETHODIMP CHandler::Open(IInStream *stream, const UInt64 *, IArchiveOpenCallb
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
+Z7_COM7F_IMF(CHandler::OpenSeq(ISequentialInStream *stream))
 {
   COM_TRY_BEGIN
   try
   {
     Close();
     CreateDecoder();
-    _decoderSpec->SetInStream(stream);
-    _decoderSpec->InitInStream(true);
-    RINOK(_item.ReadHeader(_decoderSpec));
-    if (_decoderSpec->InputEofError())
+    _decoder->SetInStream(stream);
+    _decoder->InitInStream(true);
+    RINOK(_item.ReadHeader(_decoder.ClsPtr()))
+    if (_decoder->InputEofError())
       return S_FALSE;
-    _headerSize = _decoderSpec->GetInputProcessedSize();
+    _headerSize = _decoder->GetInputProcessedSize();
     _isArc = true;
     return S_OK;
   }
@@ -667,7 +649,7 @@ STDMETHODIMP CHandler::OpenSeq(ISequentialInStream *stream)
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::Close()
+Z7_COM7F_IMF(CHandler::Close())
 {
   _isArc = false;
   _needSeekToStart = false;
@@ -683,12 +665,12 @@ STDMETHODIMP CHandler::Close()
   
   _stream.Release();
   if (_decoder)
-    _decoderSpec->ReleaseInStream();
+    _decoder->ReleaseInStream();
   return S_OK;
 }
 
-STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
-    Int32 testMode, IArchiveExtractCallback *extractCallback)
+Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
+    Int32 testMode, IArchiveExtractCallback *extractCallback))
 {
   COM_TRY_BEGIN
   if (numItems == 0)
@@ -697,29 +679,29 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     return E_INVALIDARG;
 
   if (_packSize_Defined)
-    extractCallback->SetTotal(_packSize);
+    RINOK(extractCallback->SetTotal(_packSize))
   // UInt64 currentTotalPacked = 0;
   // RINOK(extractCallback->SetCompleted(&currentTotalPacked));
+  Int32 retResult;
+ {
   CMyComPtr<ISequentialOutStream> realOutStream;
-  Int32 askMode = testMode ?
+  const Int32 askMode = testMode ?
       NExtract::NAskMode::kTest :
       NExtract::NAskMode::kExtract;
-  RINOK(extractCallback->GetStream(0, &realOutStream, askMode));
+  RINOK(extractCallback->GetStream(0, &realOutStream, askMode))
   if (!testMode && !realOutStream)
     return S_OK;
 
-  extractCallback->PrepareOperation(askMode);
+  RINOK(extractCallback->PrepareOperation(askMode))
 
   CreateDecoder();
 
-  COutStreamWithCRC *outStreamSpec = new COutStreamWithCRC;
-  CMyComPtr<ISequentialOutStream> outStream(outStreamSpec);
-  outStreamSpec->SetStream(realOutStream);
-  outStreamSpec->Init();
-  realOutStream.Release();
+  CMyComPtr2_Create<ISequentialOutStream, COutStreamWithCRC> outStream;
+  outStream->SetStream(realOutStream);
+  outStream->Init();
+  // realOutStream.Release();
 
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
+  CMyComPtr2_Create<ICompressProgressInfo, CLocalProgress> lps;
   lps->Init(extractCallback, true);
 
   bool needReadFirstItem = _needSeekToStart;
@@ -728,8 +710,8 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
     if (!_stream)
       return E_FAIL;
-    RINOK(_stream->Seek(0, STREAM_SEEK_SET, NULL));
-    _decoderSpec->InitInStream(true);
+    RINOK(InStream_SeekToBegin(_stream))
+    _decoder->InitInStream(true);
     // printf("\nSeek");
   }
   else
@@ -737,7 +719,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   bool firstItem = true;
 
-  UInt64 packSize = _decoderSpec->GetInputProcessedSize();
+  UInt64 packSize = _decoder->GetInputProcessedSize();
   // printf("\npackSize = %d", (unsigned)packSize);
 
   UInt64 unpackedSize = 0;
@@ -754,18 +736,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     lps->InSize = packSize;
     lps->OutSize = unpackedSize;
 
-    RINOK(lps->SetCur());
+    RINOK(lps->SetCur())
 
     CItem item;
     
     if (!firstItem || needReadFirstItem)
     {
-      result = item.ReadHeader(_decoderSpec);
+      result = item.ReadHeader(_decoder.ClsPtr());
 
       if (result != S_OK && result != S_FALSE)
         return result;
     
-      if (_decoderSpec->InputEofError())
+      if (_decoder->InputEofError())
         result = S_FALSE;
 
       if (result != S_OK && firstItem)
@@ -774,7 +756,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
         break;
       }
 
-      if (packSize == _decoderSpec->GetStreamSize())
+      if (packSize == _decoder->GetStreamSize())
       {
         result = S_OK;
         break;
@@ -790,20 +772,20 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     numStreams++;
     firstItem = false;
 
-    UInt64 startOffset = outStreamSpec->GetSize();
-    outStreamSpec->InitCRC();
+    const UInt64 startOffset = outStream->GetSize();
+    outStream->InitCRC();
 
-    result = _decoderSpec->CodeResume(outStream, NULL, progress);
+    result = _decoder->CodeResume(outStream, NULL, lps);
 
-    packSize = _decoderSpec->GetInputProcessedSize();
-    unpackedSize = outStreamSpec->GetSize();
+    packSize = _decoder->GetInputProcessedSize();
+    unpackedSize = outStream->GetSize();
 
     if (result != S_OK && result != S_FALSE)
       return result;
 
-    if (_decoderSpec->InputEofError())
+    if (_decoder->InputEofError())
     {
-      packSize = _decoderSpec->GetStreamSize();
+      packSize = _decoder->GetStreamSize();
       _needMoreInput = true;
       result = S_FALSE;
     }
@@ -811,18 +793,18 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     if (result != S_OK)
       break;
 
-    _decoderSpec->AlignToByte();
+    _decoder->AlignToByte();
     
-    result = item.ReadFooter1(_decoderSpec);
+    result = item.ReadFooter1(_decoder.ClsPtr());
 
-    packSize = _decoderSpec->GetInputProcessedSize();
+    packSize = _decoder->GetInputProcessedSize();
 
     if (result != S_OK && result != S_FALSE)
       return result;
 
     if (result != S_OK)
     {
-      if (_decoderSpec->InputEofError())
+      if (_decoder->InputEofError())
       {
         _needMoreInput = true;
         result = S_FALSE;
@@ -830,7 +812,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       break;
     }
 
-    if (item.Crc != outStreamSpec->GetCRC() ||
+    if (item.Crc != outStream->GetCRC() ||
         item.Size32 != (UInt32)(unpackedSize - startOffset))
     {
       crcError = true;
@@ -854,9 +836,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     _numStreams_Defined = true;
   }
 
-  outStream.Release();
+  // outStream.Release();
 
-  Int32 retResult = NExtract::NOperationResult::kDataError;
+  retResult = NExtract::NOperationResult::kDataError;
 
   if (!_isArc)
     retResult = NExtract::NOperationResult::kIsNotArc;
@@ -872,10 +854,9 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     retResult = NExtract::NOperationResult::kOK;
   else
     return result;
+ }
 
   return extractCallback->SetOperationResult(retResult);
-
-
   COM_TRY_END
 }
 
@@ -954,14 +935,15 @@ static HRESULT UpdateArchive(
   {
   CMyComPtr<ISequentialInStream> fileInStream;
 
-  RINOK(updateCallback->GetStream(0, &fileInStream));
+  RINOK(updateCallback->GetStream(0, &fileInStream))
 
   if (!fileInStream)
     return S_FALSE;
 
   {
-    CMyComPtr<IStreamGetProps> getProps;
-    fileInStream->QueryInterface(IID_IStreamGetProps, (void **)&getProps);
+    Z7_DECL_CMyComPtr_QI_FROM(
+        IStreamGetProps,
+        getProps, fileInStream)
     if (getProps)
     {
       FILETIME mTime;
@@ -976,16 +958,14 @@ static HRESULT UpdateArchive(
   }
 
   UInt64 complexity = 0;
-  RINOK(updateCallback->SetTotal(unpackSize));
-  RINOK(updateCallback->SetCompleted(&complexity));
+  RINOK(updateCallback->SetTotal(unpackSize))
+  RINOK(updateCallback->SetCompleted(&complexity))
 
-  CSequentialInStreamWithCRC *inStreamSpec = new CSequentialInStreamWithCRC;
-  CMyComPtr<ISequentialInStream> crcStream(inStreamSpec);
-  inStreamSpec->SetStream(fileInStream);
-  inStreamSpec->Init();
+  CMyComPtr2_Create<ISequentialInStream, CSequentialInStreamWithCRC> crcStream;
+  crcStream->SetStream(fileInStream);
+  crcStream->Init();
 
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
+  CMyComPtr2_Create<ICompressProgressInfo, CLocalProgress> lps;
   lps->Init(updateCallback, true);
   
   item.ExtraFlags = props.GetLevel() >= 7 ?
@@ -994,17 +974,17 @@ static HRESULT UpdateArchive(
 
   item.HostOS = kHostOS;
 
-  RINOK(item.WriteHeader(outStream));
+  RINOK(item.WriteHeader(outStream))
 
-  NEncoder::CCOMCoder *deflateEncoderSpec = new NEncoder::CCOMCoder;
-  CMyComPtr<ICompressCoder> deflateEncoder = deflateEncoderSpec;
-  RINOK(props.SetCoderProps(deflateEncoderSpec, NULL));
-  RINOK(deflateEncoder->Code(crcStream, outStream, NULL, NULL, progress));
+  CMyComPtr2_Create<ICompressCoder, NEncoder::CCOMCoder> deflateEncoder;
 
-  item.Crc = inStreamSpec->GetCRC();
-  unpackSizeReal = inStreamSpec->GetSize();
+  RINOK(props.SetCoderProps(deflateEncoder.ClsPtr(), NULL))
+  RINOK(deflateEncoder.Interface()->Code(crcStream, outStream, NULL, NULL, lps))
+
+  item.Crc = crcStream->GetCRC();
+  unpackSizeReal = crcStream->GetSize();
   item.Size32 = (UInt32)unpackSizeReal;
-  RINOK(item.WriteFooter(outStream));
+  RINOK(item.WriteFooter(outStream))
   }
   /*
   if (reportArcProp)
@@ -1020,7 +1000,7 @@ static HRESULT UpdateArchive(
 }
 
 
-STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
+Z7_COM7F_IMF(CHandler::GetFileTimeType(UInt32 *timeType))
 {
   /*
     if (_item.Time != 0)
@@ -1049,24 +1029,29 @@ STDMETHODIMP CHandler::GetFileTimeType(UInt32 *timeType)
   return S_OK;
 }
 
-STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
-    IArchiveUpdateCallback *updateCallback)
+Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
+    IArchiveUpdateCallback *updateCallback))
 {
   COM_TRY_BEGIN
 
   if (numItems != 1)
     return E_INVALIDARG;
 
+  {
+    Z7_DECL_CMyComPtr_QI_FROM(
+        IStreamSetRestriction,
+        setRestriction, outStream)
+    if (setRestriction)
+      RINOK(setRestriction->SetRestriction(0, 0))
+  }
+
   Int32 newData, newProps;
   UInt32 indexInArchive;
   if (!updateCallback)
     return E_FAIL;
-  RINOK(updateCallback->GetUpdateItemInfo(0, &newData, &newProps, &indexInArchive));
+  RINOK(updateCallback->GetUpdateItemInfo(0, &newData, &newProps, &indexInArchive))
 
-  /*
-  CMyComPtr<IArchiveUpdateCallbackArcProp> reportArcProp;
-  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackArcProp, (void **)&reportArcProp);
-  */
+  // Z7_DECL_CMyComPtr_QI_FROM(IArchiveUpdateCallbackArcProp, reportArcProp, updateCallback)
 
   CItem newItem;
   
@@ -1080,7 +1065,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     if (_timeOptions.Write_MTime.Val)
     {
       NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(0, kpidMTime, &prop));
+      RINOK(updateCallback->GetProperty(0, kpidMTime, &prop))
       if (prop.vt == VT_FILETIME)
         NTime::FileTime_To_UnixTime(prop.filetime, newItem.Time);
       else if (prop.vt == VT_EMPTY)
@@ -1090,7 +1075,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
     {
       NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(0, kpidPath, &prop));
+      RINOK(updateCallback->GetProperty(0, kpidPath, &prop))
       if (prop.vt == VT_BSTR)
       {
         UString name = prop.bstrVal;
@@ -1106,7 +1091,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     }
     {
       NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(0, kpidIsDir, &prop));
+      RINOK(updateCallback->GetProperty(0, kpidIsDir, &prop))
       if (prop.vt != VT_EMPTY)
         if (prop.vt != VT_BOOL || prop.boolVal != VARIANT_FALSE)
           return E_INVALIDARG;
@@ -1118,7 +1103,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     UInt64 size;
     {
       NCOM::CPropVariant prop;
-      RINOK(updateCallback->GetProperty(0, kpidSize, &prop));
+      RINOK(updateCallback->GetProperty(0, kpidSize, &prop))
       if (prop.vt != VT_UI8)
         return E_INVALIDARG;
       size = prop.uhVal.QuadPart;
@@ -1132,12 +1117,12 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   if (!_stream)
     return E_NOTIMPL;
 
-  CLocalProgress *lps = new CLocalProgress;
-  CMyComPtr<ICompressProgressInfo> progress = lps;
+  CMyComPtr2_Create<ICompressProgressInfo, CLocalProgress> lps;
   lps->Init(updateCallback, true);
 
-  CMyComPtr<IArchiveUpdateCallbackFile> opCallback;
-  updateCallback->QueryInterface(IID_IArchiveUpdateCallbackFile, (void **)&opCallback);
+  Z7_DECL_CMyComPtr_QI_FROM(
+      IArchiveUpdateCallbackFile,
+      opCallback, updateCallback)
   if (opCallback)
   {
     RINOK(opCallback->ReportOperation(
@@ -1153,7 +1138,7 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     newItem.WriteHeader(outStream);
     offset += _headerSize;
   }
-  RINOK(_stream->Seek((Int64)offset, STREAM_SEEK_SET, NULL));
+  RINOK(InStream_SeekSet(_stream, offset))
 
   /*
   if (reportArcProp)
@@ -1163,12 +1148,12 @@ STDMETHODIMP CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         NULL); // unpacksize
   */
 
-  return NCompress::CopyStream(_stream, outStream, progress);
+  return NCompress::CopyStream(_stream, outStream, lps);
 
   COM_TRY_END
 }
 
-STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
+Z7_COM7F_IMF(CHandler::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps))
 {
   _timeOptions.Init();
   _props.Init();
@@ -1182,7 +1167,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
     const PROPVARIANT &value = values[i];
     {
       bool processed = false;
-      RINOK(_timeOptions.Parse(name, value, processed));
+      RINOK(_timeOptions.Parse(name, value, processed))
       if (processed)
       {
         if (_timeOptions.Write_CTime.Val ||
@@ -1197,7 +1182,7 @@ STDMETHODIMP CHandler::SetProperties(const wchar_t * const *names, const PROPVAR
         continue;
       }
     }
-    RINOK(_props.SetProperty(name, value));
+    RINOK(_props.SetProperty(name, value))
   }
   return S_OK;
 }

@@ -4,7 +4,7 @@
 #include "ZstdEncoder.h"
 #include "ZstdDecoder.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 namespace NCompress {
 namespace NZSTD {
 
@@ -47,7 +47,7 @@ CEncoder::~CEncoder()
   }
 }
 
-STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps)
+Z7_COM7F_IMF(CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARIANT * coderProps, UInt32 numProps))
 {
   _props.clear();
 
@@ -212,14 +212,14 @@ STDMETHODIMP CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
   return S_OK;
 }
 
-STDMETHODIMP CEncoder::WriteCoderProperties(ISequentialOutStream * outStream)
+Z7_COM7F_IMF(CEncoder::WriteCoderProperties(ISequentialOutStream * outStream))
 {
   return WriteStream(outStream, &_props, sizeof (_props));
 }
 
-STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
+Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream,
   ISequentialOutStream *outStream, const UInt64 * /*inSize*/ ,
-  const UInt64 * /*outSize */, ICompressProgressInfo *progress)
+  const UInt64 * /*outSize */, ICompressProgressInfo *progress))
 {
   ZSTD_EndDirective ZSTD_todo = ZSTD_e_continue;
   ZSTD_outBuffer outBuff;
@@ -349,7 +349,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
     /* read input */
     srcSize = _srcBufSize;
-    RINOK(ReadStream(inStream, _srcBuf, &srcSize));
+    RINOK(ReadStream(inStream, _srcBuf, &srcSize))
 
     /* eof */
     if (srcSize == 0)
@@ -393,12 +393,12 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
 
       /* write output */
       if (outBuff.pos) {
-        RINOK(WriteStream(outStream, _dstBuf, outBuff.pos));
+        RINOK(WriteStream(outStream, _dstBuf, outBuff.pos))
         _processedOut += outBuff.pos;
       }
 
       if (progress)
-        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut));
+        RINOK(progress->SetRatioInfo(&_processedIn, &_processedOut))
 
       /* done */
       if (ZSTD_todo == ZSTD_e_end && err == 0)
@@ -411,7 +411,7 @@ STDMETHODIMP CEncoder::Code(ISequentialInStream *inStream,
   }
 }
 
-STDMETHODIMP CEncoder::SetNumberOfThreads(UInt32 numThreads)
+Z7_COM7F_IMF(CEncoder::SetNumberOfThreads(UInt32 numThreads))
 {
   const UInt32 kNumThreadsMax = ZSTD_THREAD_MAX;
   if (numThreads < 1) numThreads = 1;

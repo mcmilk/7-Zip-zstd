@@ -1,7 +1,9 @@
 // Lzx.h
 
-#ifndef __COMPRESS_LZX_H
-#define __COMPRESS_LZX_H
+#ifndef ZIP7_INC_COMPRESS_LZX_H
+#define ZIP7_INC_COMPRESS_LZX_H
+
+#include "../../Common/MyTypes.h"
 
 namespace NCompress {
 namespace NLzx {
@@ -50,7 +52,9 @@ const unsigned kNumDictBits_Max = 21;
 const UInt32 kDictSize_Max = (UInt32)1 << kNumDictBits_Max;
 
 const unsigned kNumLinearPosSlotBits = 17;
-const unsigned kNumPowerPosSlots = 38;
+// const unsigned kNumPowerPosSlots = 38;
+// const unsigned kNumPowerPosSlots = (kNumLinearPosSlotBits + 1) * 2; // non-including two first linear slots.
+const unsigned kNumPowerPosSlots = (kNumLinearPosSlotBits + 2) * 2; // including two first linear slots.
 
 }}
 

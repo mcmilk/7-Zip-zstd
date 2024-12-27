@@ -6,7 +6,7 @@
 
 #include "Lz5Decoder.h"
 
-#ifndef EXTRACT_ONLY
+#ifndef Z7_EXTRACT_ONLY
 #include "Lz5Encoder.h"
 #endif
 

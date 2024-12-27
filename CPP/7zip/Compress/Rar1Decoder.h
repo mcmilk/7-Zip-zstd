@@ -2,8 +2,8 @@
 // According to unRAR license, this code may not be used to develop
 // a program that creates RAR archives
 
-#ifndef __COMPRESS_RAR1_DECODER_H
-#define __COMPRESS_RAR1_DECODER_H
+#ifndef ZIP7_INC_COMPRESS_RAR1_DECODER_H
+#define ZIP7_INC_COMPRESS_RAR1_DECODER_H
 
 #include "../../Common/MyCom.h"
 
@@ -12,19 +12,22 @@
 #include "../Common/InBuffer.h"
 
 #include "BitmDecoder.h"
-#include "HuffmanDecoder.h"
 #include "LzOutWindow.h"
 
 namespace NCompress {
 namespace NRar1 {
 
-const UInt32 kNumRepDists = 4;
+const unsigned kNumRepDists = 4;
 
-class CDecoder :
-  public ICompressCoder,
-  public ICompressSetDecoderProperties2,
-  public CMyUnknownImp
-{
+Z7_CLASS_IMP_COM_2(
+  CDecoder
+  , ICompressCoder
+  , ICompressSetDecoderProperties2
+)
+  bool _isSolid;
+  bool _solidAllowed;
+  bool StMode;
+
   CLzOutWindow m_OutWindowStream;
   NBitm::CDecoder<CInBuffer> m_InBitStream;
 
@@ -36,10 +39,6 @@ class CDecoder :
   UInt32 m_RepDistPtr;
   UInt32 m_RepDists[kNumRepDists];
 
-  bool _isSolid;
-  bool _solidAllowed;
-
-  bool StMode;
   int FlagsCnt;
   UInt32 FlagBuf, AvrPlc, AvrPlcB, AvrLn1, AvrLn2, AvrLn3;
   unsigned Buf60, NumHuf, LCount;
@@ -64,14 +63,6 @@ class CDecoder :
 
 public:
   CDecoder();
-
-  MY_UNKNOWN_IMP1(ICompressSetDecoderProperties2)
-
-  STDMETHOD(Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-      const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-
-  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
-
 };
 
 }}

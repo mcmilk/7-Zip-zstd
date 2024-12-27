@@ -1,5 +1,5 @@
 /* BwtSort.c -- BWT block sorting
-2021-04-01 : Igor Pavlov : Public domain */
+2023-04-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"
 
@@ -7,8 +7,6 @@
 #include "Sort.h"
 
 /* #define BLOCK_SORT_USE_HEAP_SORT */
-
-#define NO_INLINE MY_FAST_CALL
 
 /* Don't change it !!! */
 #define kNumHashBytes 2
@@ -60,7 +58,10 @@ SortGroup - is recursive Range-Sort function with HeapSort optimization for smal
 returns: 1 - if there are groups, 0 - no more groups
 */
 
-static UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 groupOffset, UInt32 groupSize, int NumRefBits, UInt32 *Indices
+static
+UInt32
+Z7_FASTCALL
+SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt32 groupOffset, UInt32 groupSize, int NumRefBits, UInt32 *Indices
   #ifndef BLOCK_SORT_USE_HEAP_SORT
   , UInt32 left, UInt32 range
   #endif
@@ -72,7 +73,7 @@ static UInt32 NO_INLINE SortGroup(UInt32 BlockSize, UInt32 NumSortedBytes, UInt3
   {
     /*
     #ifndef BLOCK_SORT_EXTERNAL_FLAGS
-    SetFinishedGroupSize(ind2, 1);
+    SetFinishedGroupSize(ind2, 1)
     #endif
     */
     return 0;
@@ -463,7 +464,7 @@ UInt32 BlockSort(UInt32 *Indices, const Byte *data, UInt32 blockSize)
           Indices[(size_t)(i - finishedGroupSize) + 1] &= kIndexMask;
         {
         UInt32 newGroupSize = groupSize + finishedGroupSize;
-        SetFinishedGroupSize(Indices + i - finishedGroupSize, newGroupSize);
+        SetFinishedGroupSize(Indices + i - finishedGroupSize, newGroupSize)
         finishedGroupSize = newGroupSize;
         }
         i += groupSize;

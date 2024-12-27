@@ -14,7 +14,7 @@
 #undef NO_INLINE
 
 #ifdef _MSC_VER
-#define NO_INLINE MY_NO_INLINE
+#define NO_INLINE Z7_NO_INLINE
 #else
 #define NO_INLINE
 #endif
@@ -43,9 +43,11 @@ static const Byte kNoLiteralStatPrice = 11;
 static const Byte kNoLenStatPrice = 11;
 static const Byte kNoPosStatPrice = 6;
 
+MY_ALIGN(64)
 static Byte g_LenSlots[kNumLenSymbolsMax];
 
 #define kNumLogBits 9    // do not change it
+MY_ALIGN(64)
 static Byte g_FastPos[1 << kNumLogBits];
 
 class CFastPosInit
@@ -57,7 +59,7 @@ public:
     for (i = 0; i < kNumLenSlots; i++)
     {
       unsigned c = kLenStart32[i];
-      unsigned j = 1 << kLenDirectBits32[i];
+      const unsigned j = 1u << kLenDirectBits32[i];
       for (unsigned k = 0; k < j; k++, c++)
         g_LenSlots[c] = (Byte)i;
     }
@@ -66,8 +68,8 @@ public:
     unsigned c = 0;
     for (Byte slotFast = 0; slotFast < kFastSlots; slotFast++)
     {
-      UInt32 k = (1 << kDistDirectBits[slotFast]);
-      for (UInt32 j = 0; j < k; j++, c++)
+      const unsigned k = 1u << kDistDirectBits[slotFast];
+      for (unsigned j = 0; j < k; j++, c++)
         g_FastPos[c] = slotFast;
     }
   }
@@ -158,34 +160,34 @@ CCoder::CCoder(bool deflate64Mode):
 HRESULT CCoder::Create()
 {
   // COM_TRY_BEGIN
-  if (m_Values == 0)
+  if (!m_Values)
   {
     m_Values = (CCodeValue *)MyAlloc((kMaxUncompressedBlockSize) * sizeof(CCodeValue));
-    if (m_Values == 0)
+    if (!m_Values)
       return E_OUTOFMEMORY;
   }
-  if (m_Tables == 0)
+  if (!m_Tables)
   {
     m_Tables = (CTables *)MyAlloc((kNumTables) * sizeof(CTables));
-    if (m_Tables == 0)
+    if (!m_Tables)
       return E_OUTOFMEMORY;
   }
 
   if (m_IsMultiPass)
   {
-    if (m_OnePosMatchesMemory == 0)
+    if (!m_OnePosMatchesMemory)
     {
       m_OnePosMatchesMemory = (UInt16 *)::MidAlloc(kMatchArraySize * sizeof(UInt16));
-      if (m_OnePosMatchesMemory == 0)
+      if (!m_OnePosMatchesMemory)
         return E_OUTOFMEMORY;
     }
   }
   else
   {
-    if (m_DistanceMemory == 0)
+    if (!m_DistanceMemory)
     {
       m_DistanceMemory = (UInt16 *)MyAlloc((kMatchMaxLen + 2) * 2 * sizeof(UInt16));
-      if (m_DistanceMemory == 0)
+      if (!m_DistanceMemory)
         return E_OUTOFMEMORY;
       m_MatchDistances = m_DistanceMemory;
     }
@@ -195,10 +197,11 @@ HRESULT CCoder::Create()
   {
     _lzInWindow.btMode = (Byte)(_btMode ? 1 : 0);
     _lzInWindow.numHashBytes = 3;
+    _lzInWindow.numHashBytes_Min = 3;
     if (!MatchFinder_Create(&_lzInWindow,
         m_Deflate64Mode ? kHistorySize64 : kHistorySize32,
         kNumOpts + kMaxUncompressedBlockSize,
-        m_NumFastBytes, m_MatchMaxLen - m_NumFastBytes, &g_Alloc))
+        m_NumFastBytes, m_MatchMaxLen - m_NumFastBytes, &g_AlignedAlloc))
       return E_OUTOFMEMORY;
     if (!m_OutStream.Create(1 << 20))
       return E_OUTOFMEMORY;
@@ -239,16 +242,16 @@ HRESULT CCoder::BaseSetEncoderProperties2(const PROPID *propIDs, const PROPVARIA
   
 void CCoder::Free()
 {
-  ::MidFree(m_OnePosMatchesMemory); m_OnePosMatchesMemory = 0;
-  ::MyFree(m_DistanceMemory); m_DistanceMemory = 0;
-  ::MyFree(m_Values); m_Values = 0;
-  ::MyFree(m_Tables); m_Tables = 0;
+  ::MidFree(m_OnePosMatchesMemory); m_OnePosMatchesMemory = NULL;
+  ::MyFree(m_DistanceMemory); m_DistanceMemory = NULL;
+  ::MyFree(m_Values); m_Values = NULL;
+  ::MyFree(m_Tables); m_Tables = NULL;
 }
 
 CCoder::~CCoder()
 {
   Free();
-  MatchFinder_Free(&_lzInWindow, &g_Alloc);
+  MatchFinder_Free(&_lzInWindow, &g_AlignedAlloc);
 }
 
 NO_INLINE void CCoder::GetMatches()
@@ -945,17 +948,19 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
   m_CheckStatic = (m_NumPasses != 1 || m_NumDivPasses != 1);
   m_IsMultiPass = (m_CheckStatic || (m_NumPasses != 1 || m_NumDivPasses != 1));
 
-  RINOK(Create());
+  /* we can set stream mode before MatchFinder_Create
+    if default MatchFinder mode was not STREAM_MODE) */
+  // MatchFinder_SET_STREAM_MODE(&_lzInWindow);
+
+  CSeqInStreamWrap _seqInStream;
+  _seqInStream.Init(inStream);
+  MatchFinder_SET_STREAM(&_lzInWindow, &_seqInStream.vt)
+
+  RINOK(Create())
 
   m_ValueBlockSize = (7 << 10) + (1 << 12) * m_NumDivPasses;
 
   UInt64 nowPos = 0;
-
-  CSeqInStreamWrap _seqInStream;
-  
-  _seqInStream.Init(inStream);
-
-  _lzInWindow.stream = &_seqInStream.vt;
 
   MatchFinder_Init(&_lzInWindow);
   m_OutStream.SetStream(outStream);
@@ -978,7 +983,7 @@ HRESULT CCoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *ou
     if (progress != NULL)
     {
       UInt64 packSize = m_OutStream.GetProcessedSize();
-      RINOK(progress->SetRatioInfo(&nowPos, &packSize));
+      RINOK(progress->SetRatioInfo(&nowPos, &packSize))
     }
   }
   while (Inline_MatchFinder_GetNumAvailableBytes(&_lzInWindow) != 0);
@@ -999,18 +1004,18 @@ HRESULT CCoder::BaseCode(ISequentialInStream *inStream, ISequentialOutStream *ou
   catch(...) { return E_FAIL; }
 }
 
-STDMETHODIMP CCOMCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CCOMCoder::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
   { return BaseCode(inStream, outStream, inSize, outSize, progress); }
 
-STDMETHODIMP CCOMCoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps)
+Z7_COM7F_IMF(CCOMCoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps))
   { return BaseSetEncoderProperties2(propIDs, props, numProps); }
 
-STDMETHODIMP CCOMCoder64::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
-    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress)
+Z7_COM7F_IMF(CCOMCoder64::Code(ISequentialInStream *inStream, ISequentialOutStream *outStream,
+    const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress))
   { return BaseCode(inStream, outStream, inSize, outSize, progress); }
 
-STDMETHODIMP CCOMCoder64::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps)
+Z7_COM7F_IMF(CCOMCoder64::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps))
   { return BaseSetEncoderProperties2(propIDs, props, numProps); }
 
 }}}

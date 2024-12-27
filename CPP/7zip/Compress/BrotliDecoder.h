@@ -44,13 +44,16 @@ struct DProps
   Byte _level;
 };
 
-class CDecoder:public ICompressCoder,
+class CDecoder Z7_final:
+  public ICompressCoder,
   public ICompressSetDecoderProperties2,
   public ICompressSetCoderMt,
+  public ICompressSetInStream,
   public CMyUnknownImp
 {
   CMyComPtr < ISequentialInStream > _inStream;
 
+public:
   DProps _props;
 
   UInt64 _processedIn;
@@ -59,31 +62,29 @@ class CDecoder:public ICompressCoder,
   UInt32 _numThreads;
 
   HRESULT CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress);
+  HRESULT CodeResume(ISequentialOutStream * outStream, const UInt64 * outSize, ICompressProgressInfo * progress);
   HRESULT SetOutStreamSizeResume(const UInt64 *outSize);
 
-public:
-
-  MY_QUERYINTERFACE_BEGIN2(ICompressCoder)
-  MY_QUERYINTERFACE_ENTRY(ICompressSetDecoderProperties2)
-#ifndef NO_READ_FROM_CODER
-  MY_QUERYINTERFACE_ENTRY(ICompressSetInStream)
+  Z7_COM_QI_BEGIN2(ICompressCoder)
+  Z7_COM_QI_ENTRY(ICompressSetDecoderProperties2)
+  Z7_COM_QI_ENTRY(ICompressSetCoderMt)
+#ifndef Z7_NO_READ_FROM_CODER
+  Z7_COM_QI_ENTRY(ICompressSetInStream)
 #endif
-  MY_QUERYINTERFACE_ENTRY(ICompressSetCoderMt)
-  MY_QUERYINTERFACE_END
+  Z7_COM_QI_END
+  Z7_COM_ADDREF_RELEASE
 
-  MY_ADDREF_RELEASE
-  STDMETHOD (Code)(ISequentialInStream *inStream, ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize, ICompressProgressInfo *progress);
-  STDMETHOD (SetDecoderProperties2)(const Byte *data, UInt32 size);
-  STDMETHOD (SetOutStreamSize)(const UInt64 *outSize);
-  STDMETHOD (SetNumberOfThreads)(UInt32 numThreads);
-
-#ifndef NO_READ_FROM_CODER
-  STDMETHOD (SetInStream)(ISequentialInStream *inStream);
-  STDMETHOD (ReleaseInStream)();
+  Z7_IFACE_COM7_IMP(ICompressCoder)
+  Z7_IFACE_COM7_IMP(ICompressSetDecoderProperties2)
+public:
+  Z7_IFACE_COM7_IMP(ICompressSetCoderMt)
+  Z7_COM7F_IMF(SetOutStreamSize(const UInt64 *outSize));
+#ifndef Z7_NO_READ_FROM_CODER
+  Z7_IFACE_COM7_IMP(ICompressSetInStream)
   UInt64 GetInputProcessedSize() const { return _processedIn; }
 #endif
-  HRESULT CodeResume(ISequentialOutStream *outStream, const UInt64 *outSize, ICompressProgressInfo *progress);
 
+public:
   CDecoder();
   virtual ~CDecoder();
 };

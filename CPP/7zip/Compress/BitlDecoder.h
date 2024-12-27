@@ -1,7 +1,9 @@
 // BitlDecoder.h -- the Least Significant Bit of byte is First
 
-#ifndef __BITL_DECODER_H
-#define __BITL_DECODER_H
+#ifndef ZIP7_INC_BITL_DECODER_H
+#define ZIP7_INC_BITL_DECODER_H
+
+#include "../../../C/CpuArch.h"
 
 #include "../IStream.h"
 
@@ -10,10 +12,50 @@ namespace NBitl {
 const unsigned kNumBigValueBits = 8 * 4;
 const unsigned kNumValueBytes = 3;
 const unsigned kNumValueBits = 8 * kNumValueBytes;
-
 const UInt32 kMask = (1 << kNumValueBits) - 1;
 
-extern Byte kInvertTable[256];
+#if !defined(Z7_BITL_USE_REVERSE_BITS_TABLE)
+#if 1 && defined(MY_CPU_ARM_OR_ARM64) \
+    && (defined(MY_CPU_ARM64) || defined(__ARM_ARCH_6T2__) \
+       || defined(__ARM_ARCH) && (__ARM_ARCH >= 7)) \
+    && (defined(__GNUC__) && (__GNUC__ >= 4) \
+       || defined(__clang__) && (__clang_major__ >= 4))
+  #define Z7_BITL_USE_REVERSE_BITS_INSTRUCTION
+#elif 1
+  #define Z7_BITL_USE_REVERSE_BITS_TABLE
+#endif
+#endif
+
+#if defined(Z7_BITL_USE_REVERSE_BITS_TABLE)
+extern Byte kReverseTable[256];
+#endif
+
+inline unsigned ReverseBits8(unsigned i)
+{
+#if defined(Z7_BITL_USE_REVERSE_BITS_TABLE)
+  return kReverseTable[i];
+#elif defined(Z7_BITL_USE_REVERSE_BITS_INSTRUCTION)
+  // rbit is available in ARMv6T2 and above
+  asm ("rbit "
+#if defined(MY_CPU_ARM)
+    "%0,%0"   // it uses default register size,
+              // but we need 32-bit register here.
+              // we must use it only if default register size is 32-bit.
+              // it will work incorrectly for ARM64.
+#else
+    "%w0,%w0" // it uses 32-bit registers in ARM64.
+              // compiler for (MY_CPU_ARM) can't compile it.
+#endif
+    : "+r" (i));
+  return i >> 24;
+#else
+  unsigned
+      x = ((i & 0x55) << 1) | ((i >> 1) & 0x55);
+      x = ((x & 0x33) << 2) | ((x >> 2) & 0x33);
+  return  ((x & 0x0f) << 4) |  (x >> 4);
+#endif
+}
+
 
 /* TInByte must support "Extra Bytes" (bytes that can be read after the end of stream
    TInByte::ReadByte() returns 0xFF after the end of stream
@@ -31,6 +73,7 @@ protected:
 public:
   bool Create(UInt32 bufSize) { return _stream.Create(bufSize); }
   void SetStream(ISequentialInStream *inStream) { _stream.SetStream(inStream); }
+  void ClearStreamPtr() { _stream.ClearStreamPtr(); }
   void Init()
   {
     _stream.Init();
@@ -54,14 +97,14 @@ public:
 
   bool ThereAreDataInBitsBuffer() const { return this->_bitPos != kNumBigValueBits; }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   void Normalize()
   {
     for (; _bitPos >= 8; _bitPos -= 8)
       _value = ((UInt32)_stream.ReadByte() << (kNumBigValueBits - _bitPos)) | _value;
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
@@ -102,32 +145,39 @@ public:
     _normalValue = 0;
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   void Normalize()
   {
     for (; this->_bitPos >= 8; this->_bitPos -= 8)
     {
-      Byte b = this->_stream.ReadByte();
+      const unsigned b = this->_stream.ReadByte();
       _normalValue = ((UInt32)b << (kNumBigValueBits - this->_bitPos)) | _normalValue;
-      this->_value = (this->_value << 8) | kInvertTable[b];
+      this->_value = (this->_value << 8) | ReverseBits8(b);
     }
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 GetValue(unsigned numBits)
   {
     Normalize();
     return ((this->_value >> (8 - this->_bitPos)) & kMask) >> (kNumValueBits - numBits);
   }
-  
-  MY_FORCE_INLINE
-  void MovePos(unsigned numBits)
+
+  Z7_FORCE_INLINE
+  UInt32 GetValue_InHigh32bits()
   {
-    this->_bitPos += numBits;
+    Normalize();
+    return this->_value << this->_bitPos;
+  }
+  
+  Z7_FORCE_INLINE
+  void MovePos(size_t numBits)
+  {
+    this->_bitPos += (unsigned)numBits;
     _normalValue >>= numBits;
   }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   UInt32 ReadBits(unsigned numBits)
   {
     Normalize();
@@ -138,10 +188,13 @@ public:
 
   void AlignToByte() { MovePos((32 - this->_bitPos) & 7); }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   Byte ReadDirectByte() { return this->_stream.ReadByte(); }
+
+  Z7_FORCE_INLINE
+  size_t ReadDirectBytesPart(Byte *buf, size_t size) { return this->_stream.ReadBytesPart(buf, size); }
   
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   Byte ReadAlignedByte()
   {
     if (this->_bitPos == kNumBigValueBits)
@@ -152,7 +205,7 @@ public:
   }
 
   // call it only if the object is aligned for byte.
-  MY_FORCE_INLINE
+  Z7_FORCE_INLINE
   bool ReadAlignedByte_FromBuf(Byte &b)
   {
     if (this->_stream.NumExtraBytes != 0)

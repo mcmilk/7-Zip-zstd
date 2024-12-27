@@ -1,16 +1,18 @@
 // SettingsPage.h
  
-#ifndef __SETTINGS_PAGE_H
-#define __SETTINGS_PAGE_H
+#ifndef ZIP7_INC_SETTINGS_PAGE_H
+#define ZIP7_INC_SETTINGS_PAGE_H
 
 #include "../../../Windows/Control/PropertyPage.h"
-#include "../../../Windows/Control/ComboBox.h"
+// #include "../../../Windows/Control/ComboBox.h"
 #include "../../../Windows/Control/Edit.h"
 
 class CSettingsPage: public NWindows::NControl::CPropertyPage
 {
   bool _wasChanged;
   bool _largePages_wasChanged;
+  bool _memx_wasChanged;
+  bool _initMode;
   /*
   bool _wasChanged_MemLimit;
   NWindows::NControl::CComboBox _memCombo;
@@ -22,11 +24,13 @@ class CSettingsPage: public NWindows::NControl::CPropertyPage
   */
 
   // void EnableSubItems();
-  // bool OnCommand(int code, int itemID, LPARAM param);
-  bool OnButtonClicked(int buttonID, HWND buttonHWND);
-  virtual bool OnInit();
-  virtual void OnNotifyHelp();
-  virtual LONG OnApply();
+  bool OnCommand(unsigned code, unsigned itemID, LPARAM param) Z7_override;
+  virtual bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
+  virtual bool OnInit() Z7_override;
+  virtual void OnNotifyHelp() Z7_override;
+  virtual LONG OnApply() Z7_override;
+
+  void EnableSpin(bool enable);
 public:
 };
 

@@ -17,57 +17,60 @@
 #define ntSizeY 72
 #define timePosY (ntPosY + ntSizeY + 20)
 
-#define ceSize 18
-#define ceString ":"
-
 
 IDD_COMPRESS_OPTIONS DIALOG  0, 0, xs, ys  MY_MODAL_DIALOG_STYLE  MY_FONT
 CAPTION "Options"
 BEGIN
   GROUPBOX  "NTFS", IDG_COMPRESS_NTFS, g5x, ntPosY, g5xs, ntSizeY
 
-  CONTROL   "Store symbolic links", IDX_COMPRESS_NT_SYM_LINKS, MY_CHECKBOX,
-            ntPosX, ntPosY + 12, ntSizeX, 10
-  CONTROL   "Store hard links", IDX_COMPRESS_NT_HARD_LINKS, MY_CHECKBOX,
-            ntPosX, ntPosY + 26, ntSizeX, 10
-  CONTROL   "Store alternate data streams", IDX_COMPRESS_NT_ALT_STREAMS, MY_CHECKBOX,
-            ntPosX, ntPosY + 40, ntSizeX, 10
-  CONTROL   "Store file security", IDX_COMPRESS_NT_SECUR, MY_CHECKBOX,
-            ntPosX, ntPosY + 54, ntSizeX, 10
+  MY_CONTROL_CHECKBOX ("Store symbolic links", IDX_COMPRESS_NT_SYM_LINKS,
+            ntPosX, ntPosY + 12, ntSizeX)
+  MY_CONTROL_CHECKBOX ("Store hard links", IDX_COMPRESS_NT_HARD_LINKS,
+            ntPosX, ntPosY + 26, ntSizeX)
+  MY_CONTROL_CHECKBOX ("Store alternate data streams", IDX_COMPRESS_NT_ALT_STREAMS,
+            ntPosX, ntPosY + 40, ntSizeX)
+  MY_CONTROL_CHECKBOX ("Store file security", IDX_COMPRESS_NT_SECUR,
+            ntPosX, ntPosY + 54, ntSizeX)
 
   LTEXT     "", IDT_COMPRESS_TIME_INFO, g5x, timePosY - 14, g5xs, 8
 
   
   GROUPBOX  "Time", IDG_COMPRESS_TIME, g5x, timePosY, g5xs, 112
   
-//   CONTROL   "Default", IDX_COMPRESS_TIME_DEFAULT, MY_CHECKBOX,
-//             ntPosX, timePosY + 10, ntSizeX, 16
+//   MY_CONTROL_CHECKBOX ("Default", IDX_COMPRESS_TIME_DEFAULT,
+//             ntPosX, timePosY + 10, ntSizeX)
 
-  CONTROL   ceString, IDX_COMPRESS_PREC_SET, MY_CHECKBOX, ntPosX, timePosY + 14, ceSize, 10
+  MY_CONTROL_CHECKBOX_COLON (IDX_COMPRESS_PREC_SET, ntPosX, timePosY + 14)
   LTEXT     "Timestamp precision:", IDT_COMPRESS_TIME_PREC,
-            ntPosX + ceSize, timePosY + 14, ntSizeX - precSizeX - ceSize, 8
+            ntPosX + cboxColonSize, timePosY + 14, ntSizeX - precSizeX - cboxColonSize, 8
   COMBOBOX  IDC_COMPRESS_TIME_PREC, ntPosX + ntSizeX - precSizeX, timePosY + 12, precSizeX, 70, MY_COMBO
 
   // PUSHBUTTON  "Default", IDB_COMPRESS_TIME_DEFAULT, ntPosX + ntSizeX - bxs, timePosY + 22, bxs, bys, WS_GROUP
 
-  CONTROL   ceString, IDX_COMPRESS_MTIME_SET, MY_CHECKBOX, ntPosX, timePosY + 28, ceSize, 10
-  CONTROL   "Store modification time", IDX_COMPRESS_MTIME, MY_CHECKBOX,
-            ntPosX + ceSize, timePosY + 28, ntSizeX - ceSize, 10
+  MY_CONTROL_CHECKBOX_COLON (IDX_COMPRESS_MTIME_SET, ntPosX, timePosY + 28)
+  MY_CONTROL_CHECKBOX ("Store modification time", IDX_COMPRESS_MTIME,
+            ntPosX + cboxColonSize, timePosY + 28, ntSizeX - cboxColonSize)
 
-  CONTROL   ceString, IDX_COMPRESS_CTIME_SET, MY_CHECKBOX, ntPosX, timePosY + 42, ceSize, 10
-  CONTROL   "Store creation time", IDX_COMPRESS_CTIME, MY_CHECKBOX,
-            ntPosX + ceSize, timePosY + 42, ntSizeX - ceSize, 10
+  MY_CONTROL_CHECKBOX_COLON (IDX_COMPRESS_CTIME_SET, ntPosX, timePosY + 42)
+  MY_CONTROL_CHECKBOX ("Store creation time", IDX_COMPRESS_CTIME,
+            ntPosX + cboxColonSize, timePosY + 42, ntSizeX - cboxColonSize)
 
-  CONTROL   ceString, IDX_COMPRESS_ATIME_SET, MY_CHECKBOX, ntPosX, timePosY + 56, ceSize, 10
-  CONTROL   "Store last access time", IDX_COMPRESS_ATIME, MY_CHECKBOX,
-            ntPosX + ceSize, timePosY + 56, ntSizeX - ceSize, 10
+  MY_CONTROL_CHECKBOX_COLON (IDX_COMPRESS_ATIME_SET, ntPosX, timePosY + 56)
+  MY_CONTROL_CHECKBOX ("Store last access time", IDX_COMPRESS_ATIME,
+            ntPosX + cboxColonSize, timePosY + 56, ntSizeX - cboxColonSize)
 
-  CONTROL   ceString, IDX_COMPRESS_ZTIME_SET, MY_CHECKBOX | BS_MULTILINE, ntPosX, timePosY + 72, ceSize, 16
-  CONTROL   "Set archive time to latest file time", IDX_COMPRESS_ZTIME, MY_CHECKBOX | BS_MULTILINE,
-            ntPosX + ceSize, timePosY + 72, ntSizeX - ceSize, 16
+  MY_CONTROL_CHECKBOX_2LINES(colonString,
+      IDX_COMPRESS_ZTIME_SET,
+      ntPosX, timePosY + 72, cboxColonSize)
+  MY_CONTROL_CHECKBOX_2LINES(
+      "Set archive time to latest file time",
+      IDX_COMPRESS_ZTIME,
+      ntPosX + cboxColonSize, timePosY + 72, ntSizeX - cboxColonSize)
 
-  CONTROL   "Do not change source files last access time", IDX_COMPRESS_PRESERVE_ATIME, MY_CHECKBOX | BS_MULTILINE,
-            ntPosX, timePosY + 92, ntSizeX, 16
+  MY_CONTROL_CHECKBOX_2LINES(
+    "Do not change source files last access time",
+    IDX_COMPRESS_PRESERVE_ATIME,
+    ntPosX, timePosY + 92, ntSizeX)
   
   
   DEFPUSHBUTTON  "OK",     IDOK,     bx3, by, bxs, bys, WS_GROUP
