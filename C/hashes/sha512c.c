@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  */
 
-#include "sha512.h"
+#include "sha512c.h"
 
 #define Ch(x,y,z) (((x) & (y)) ^ ((~(x)) & (z)))
 #define Maj(x,y,z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))

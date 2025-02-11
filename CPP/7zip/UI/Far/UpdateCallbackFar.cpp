@@ -210,6 +210,96 @@ Z7_COM7F_IMF(CUpdateCallback100Imp::ReportUpdateOperation(UInt32 op, const wchar
 }
 
 
+HRESULT CUpdateCallback100Imp::MoveArc_UpdateStatus()
+{
+  MT_LOCK
+
+  if (_percent)
+  {
+    AString s;
+    s.Add_UInt64(_arcMoving_percents);
+    // status.Add_Space();
+    s.Add_Char('%');
+    const bool totalDefined = (_arcMoving_total != 0 && _arcMoving_total != (UInt64)(Int64)-1);
+    if (_arcMoving_current != 0 || totalDefined)
+    {
+      s += " : ";
+      s.Add_UInt64(_arcMoving_current >> 20);
+      s += " MiB";
+    }
+    if (totalDefined)
+    {
+      s += " / ";
+      s.Add_UInt64((_arcMoving_total + ((1 << 20) - 1)) >> 20);
+      s += " MiB";
+    }
+    s += " : temporary archive moving ...";
+    _percent->Command =  s;
+    _percent->Print();
+  }
+
+  return CheckBreak2();
+}
+
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::MoveArc_Start(const wchar_t *srcTempPath, const wchar_t * /* destFinalPath */ , UInt64 size, Int32 /* updateMode */))
+{
+  MT_LOCK
+
+  _arcMoving_total = size;
+  _arcMoving_current = 0;
+  _arcMoving_percents = 0;
+  // _arcMoving_updateMode = updateMode;
+  // _name2 = fs2us(destFinalPath);
+  if (_percent)
+    _percent->FileName = srcTempPath;
+  return MoveArc_UpdateStatus();
+}
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::MoveArc_Progress(UInt64 totalSize, UInt64 currentSize))
+{
+  UInt64 percents = 0;
+  if (totalSize != 0)
+  {
+    if (totalSize < ((UInt64)1 << 57))
+      percents = currentSize * 100 / totalSize;
+    else
+      percents = currentSize / (totalSize / 100);
+  }
+
+#ifdef _WIN32
+  // Sleep(300); // for debug
+#endif
+  if (percents == _arcMoving_percents)
+    return CheckBreak2();
+  _arcMoving_total = totalSize;
+  _arcMoving_current = currentSize;
+  _arcMoving_percents = percents;
+  // if (_arcMoving_percents > 100) return E_FAIL;
+  return MoveArc_UpdateStatus();
+}
+
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::MoveArc_Finish())
+{
+  // _arcMoving_percents = 0;
+  if (_percent)
+  {
+    _percent->Command.Empty();
+    _percent->FileName.Empty();
+    _percent->Print();
+  }
+  return CheckBreak2();
+}
+
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::Before_ArcReopen())
+{
+  // fixme: we can use Clear_Stop_Status() here
+  return CheckBreak2();
+}
+
+
 extern HRESULT GetPassword(UString &password);
 
 Z7_COM7F_IMF(CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password))

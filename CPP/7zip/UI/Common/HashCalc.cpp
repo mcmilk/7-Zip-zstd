@@ -784,10 +784,26 @@ static const char *SkipWhite(const char *s)
 
 static const char * const k_CsumMethodNames[] =
 {
- "sha3-512", "sha3-384", "sha3-256",
- "sha512", "sha384", "sha256", "sha224",
- "sha1", "md5", "blake2b",
- "crc32", "crc64" , "cksum"
+    "sha256"
+  , "sha224"
+//  , "sha512-224"
+//  , "sha512-256"
+  , "sha384"
+  , "sha512"
+//  , "sha3-224"
+  , "sha3-256"
+  , "sha3-384"
+  , "sha3-512"
+//  , "shake128"
+//  , "shake256"
+  , "sha1"
+  , "md5"
+  , "blake2sp"
+  , "blake2b"
+  , "xxh64"
+  , "crc64"
+  , "crc32"
+  , "cksum"
 };
 
 static UString GetMethod_from_FileName(const UString &name)
@@ -2082,11 +2098,27 @@ void Codecs_AddHashArcHandler(CCodecs *codecs)
   
     // ubuntu uses "SHA256SUMS" file
     item.AddExts(UString (
-        "sha3-512 sha3-384 sha3-256 "
-        "sha512 sha384 sha256 sha224 "
-        "sha1 sha md5 "
-        "crc32 crc64 "
-        "asc cksum"
+        "sha256"
+        " sha512"
+        " sha384"
+        " sha224"
+        // " sha512-224"
+        // " sha512-256"
+        // " sha3-224"
+        " sha3-256"
+        " sha3-384"
+        " sha3-512"
+        // " shake128"
+        // " shake256"
+        " sha1"
+        " sha"
+        " md5"
+        " blake2sp"
+        " xxh64"
+        " crc32 crc64"
+        " asc"
+        " cksum"
+        // " b2sum"
         ),
         UString());
 

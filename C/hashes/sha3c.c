@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "sha3.h"
+#include "sha3c.h"
 
 #define SHA3_ASSERT( x )
 

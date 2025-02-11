@@ -80,7 +80,7 @@ HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progr
 
   UpdateCallbackSpec->Init();
 
-  if (panel._parentFolders.Size() > 0)
+  if (!panel._parentFolders.IsEmpty())
   {
     const CFolderLink &fl = panel._parentFolders.Back();
     UpdateCallbackSpec->PasswordIsDefined = fl.UsePassword;

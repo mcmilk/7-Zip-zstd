@@ -7,8 +7,8 @@
 #include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 
-#include "../../../Windows/FileName.h"
 #include "../../../Windows/ErrorMsg.h"
+#include "../../../Windows/FileName.h"
 #include "../../../Windows/PropVariant.h"
 #include "../../../Windows/Thread.h"
 
@@ -49,8 +49,9 @@ static DWORD kStyles[4] = { LVS_ICON, LVS_SMALLICON, LVS_LIST, LVS_REPORT };
 
 extern HINSTANCE g_hInstance;
 
-void CPanel::Release()
+void CPanel::ReleasePanel()
 {
+  Disable_Processing_Timer_Notify_StatusBar();
   // It's for unloading COM dll's: don't change it.
   CloseOpenFolders();
   _sevenZipContextMenu.Release();
@@ -893,7 +894,7 @@ void CPanel::SetListViewMode(UInt32 index)
 void CPanel::ChangeFlatMode()
 {
   _flatMode = !_flatMode;
-  if (_parentFolders.Size() > 0)
+  if (!_parentFolders.IsEmpty())
     _flatModeForArc = _flatMode;
   else
     _flatModeForDisk = _flatMode;
@@ -904,7 +905,7 @@ void CPanel::ChangeFlatMode()
 void CPanel::Change_ShowNtfsStrems_Mode()
 {
   _showNtfsStrems_Mode = !_showNtfsStrems_Mode;
-  if (_parentFolders.Size() > 0)
+  if (!_parentFolders.IsEmpty())
     _showNtfsStrems_ModeForArc = _showNtfsStrems_Mode;
   else
     _showNtfsStrems_ModeForDisk = _showNtfsStrems_Mode;
@@ -1006,7 +1007,7 @@ void CPanel::GetFilePaths(const CRecordVector<UInt32> &operatedIndices, UStringV
 
 void CPanel::ExtractArchives()
 {
-  if (_parentFolders.Size() > 0)
+  if (!_parentFolders.IsEmpty())
   {
     _panelCallback->OnCopy(false, false);
     return;

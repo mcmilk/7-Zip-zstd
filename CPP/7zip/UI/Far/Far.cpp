@@ -116,14 +116,15 @@ Z7_CLASS_IMP_COM_3(
   // DWORD m_StartTickValue;
   bool m_MessageBoxIsShown;
 
-  CProgressBox _progressBox;
-
   bool _numFilesTotalDefined;
   bool _numBytesTotalDefined;
-
 public:
   bool PasswordIsDefined;
   UString Password;
+
+private:
+  CProgressBox _progressBox;
+public:
 
   COpenArchiveCallback()
     {}

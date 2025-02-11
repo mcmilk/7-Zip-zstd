@@ -291,11 +291,13 @@ static const EMethodID g_ZstdMethods[] =
 };
 */
 
+/*
 static const EMethodID g_SwfcMethods[] =
 {
   kDeflate
   // kLZMA
 };
+*/
 
 static const EMethodID g_TarMethods[] =
 {
@@ -358,7 +360,8 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "7z",
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    // (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    (1 << 10) - 1,
     METHODS_PAIR(g_7zMethods),
     kFF_Filter | kFF_Solid | kFF_MultiThread | kFF_Encrypt |
     kFF_EncryptFileNames | kFF_MemUse | kFF_SFX
@@ -386,7 +389,8 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "xz",
-    (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    // (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    (1 << 10) - 1 - (1 << 0), // store (1 << 0) is not supported
     METHODS_PAIR(g_XzMethods),
     kFF_Solid | kFF_MultiThread | kFF_MemUse
   },
@@ -396,6 +400,7 @@ static const CFormatInfo g_Formats[] =
     METHODS_PAIR(g_ZstdMethods),
     kFF_MultiThread
   },
+/*
   {
     "Brotli",
     (1 << 0) | (1 << 1) | (1 << 3) | (1 << 6) | (1 << 9) | (1 << 11),
@@ -426,6 +431,7 @@ static const CFormatInfo g_Formats[] =
     METHODS_PAIR(g_SwfcMethods),
     0
   },
+*/
   {
     "Tar",
     (1 << 0),
@@ -539,22 +545,23 @@ bool CCompressDialog::OnInit()
   #endif
 
   {
-    UInt64 size = (UInt64)(sizeof(size_t)) << 29;
+    size_t size = (size_t)sizeof(size_t) << 29;
     _ramSize_Defined = NSystem::GetRamSize(size);
     // size = (UInt64)3 << 62; // for debug only;
-    _ramSize = size;
-    const UInt64 kMinUseSize = (1 << 26);
-    if (size < kMinUseSize)
-      size = kMinUseSize;
-
-    unsigned bits = sizeof(size_t) * 8;
-    if (bits == 32)
     {
-      const UInt32 limit2 = (UInt32)7 << 28;
-      if (size > limit2)
-        size = limit2;
+      // we use reduced limit for 32-bit version:
+      unsigned bits = sizeof(size_t) * 8;
+      if (bits == 32)
+      {
+        const UInt32 limit2 = (UInt32)7 << 28;
+        if (size > limit2)
+            size = limit2;
+      }
     }
-
+    _ramSize = size;
+    const size_t kMinUseSize = 1 << 26;
+    if (size < kMinUseSize)
+        size = kMinUseSize;
     _ramSize_Reduced = size;
 
     // 80% - is auto usage limit in handlers
@@ -2107,11 +2114,11 @@ void CCompressDialog::SetDictionary2()
     case kLZMA2:
     {
       {
-        _auto_Dict =
-            ( level <= 3 ? ((UInt32)1 << (level * 2 + 16)) :
-            ( level <= 6 ? ((UInt32)1 << (level + 19)) :
-            ( level <= 7 ? ((UInt32)1 << 25) : ((UInt32)1 << 26)
-            )));
+        _auto_Dict = level <= 4 ?
+            (UInt32)1 << (level * 2 + 16) :
+            level <= sizeof(size_t) / 2 + 4 ?
+              (UInt32)1 << (level + 20) :
+              (UInt32)1 << (sizeof(size_t) / 2 + 24);
       }
 
       // we use threshold 3.75 GiB to switch to kLzmaMaxDictSize.
