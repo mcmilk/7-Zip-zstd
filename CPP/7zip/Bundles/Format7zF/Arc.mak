@@ -274,7 +274,7 @@ HASHES_OBJS = \
   $O\blake3.obj \
   $O\md2.obj \
   $O\md4.obj \
-  $O\md5.obj \
+  $O\md5c.obj \
   $O\sha3c.obj \
   $O\sha512c.obj \
 
