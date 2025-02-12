@@ -16,10 +16,8 @@ COMMON_OBJS = \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
   $O\Sha3Reg.obj \
-  $O\Sha384Reg.obj \
   $O\Sha512Reg.obj \
   $O\Sha512Prepare.obj \
-  $O\Sha3-256Reg.obj \
   $O\Sha3-384Reg.obj \
   $O\Sha3-512Reg.obj \
   $O\StringConvert.obj \
