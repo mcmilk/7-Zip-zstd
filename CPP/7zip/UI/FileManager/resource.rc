@@ -62,7 +62,6 @@ BEGIN
       MENUITEM "MD2",                       IDM_MD2
       MENUITEM "MD4",                       IDM_MD4
       MENUITEM "MD5",                       IDM_MD5
-      MENUITEM "MD5",                       IDM_MD5
       MENUITEM "SHA-1",                     IDM_SHA1
       MENUITEM "SHA-256",                   IDM_SHA256
       MENUITEM "SHA-384",                   IDM_SHA384
