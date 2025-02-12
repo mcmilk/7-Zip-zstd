@@ -159,15 +159,20 @@ jobs:
           copy %WDIR%\.github\workflows\do-release.cmd %WDIR%\build\do-release.cmd
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}\build\**\*
+          name: binary-${{ matrix.arch }}
 
   do-release:
     runs-on: windows-2019
     needs: build
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
+      with:
+        path: artifact
+        pattern: binary-*
+        merge-multiple: true    
 
     - name: Generate binaries for release
       shell: cmd
@@ -175,11 +180,11 @@ jobs:
         cd artifact
         do-release.cmd
 
-    - uses: geekyeggo/delete-artifact@v2
+    - uses: geekyeggo/delete-artifact@v5
       with:
-          name: artifact
+          name: binary-*
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: 7-Zip ZS Release binaries
         path: |
