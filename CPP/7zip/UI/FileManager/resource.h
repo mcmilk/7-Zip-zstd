@@ -140,7 +140,7 @@
 #define IDS_COPY_TO                     6002
 #define IDS_MOVE_TO                     6003
 #define IDS_COPYING                     6004
-#define IDS_MOVING                      6005
+// #define IDS_MOVING                      6005
 #define IDS_RENAMING                    6006
 
 #define IDS_OPERATION_IS_NOT_SUPPORTED  6008

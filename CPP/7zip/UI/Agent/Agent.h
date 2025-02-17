@@ -60,6 +60,7 @@ class CAgentFolder Z7_final:
   public IArchiveFolderInternal,
   public IInArchiveGetStream,
   public IFolderSetZoneIdMode,
+  public IFolderSetZoneIdFile,
   public IFolderOperations,
   public IFolderSetFlatMode,
   public CMyUnknownImp
@@ -75,6 +76,7 @@ class CAgentFolder Z7_final:
     Z7_COM_QI_ENTRY(IArchiveFolderInternal)
     Z7_COM_QI_ENTRY(IInArchiveGetStream)
     Z7_COM_QI_ENTRY(IFolderSetZoneIdMode)
+    Z7_COM_QI_ENTRY(IFolderSetZoneIdFile)
     Z7_COM_QI_ENTRY(IFolderOperations)
     Z7_COM_QI_ENTRY(IFolderSetFlatMode)
   Z7_COM_QI_END
@@ -91,6 +93,7 @@ class CAgentFolder Z7_final:
   Z7_IFACE_COM7_IMP(IArchiveFolderInternal)
   Z7_IFACE_COM7_IMP(IInArchiveGetStream)
   Z7_IFACE_COM7_IMP(IFolderSetZoneIdMode)
+  Z7_IFACE_COM7_IMP(IFolderSetZoneIdFile)
   Z7_IFACE_COM7_IMP(IFolderOperations)
   Z7_IFACE_COM7_IMP(IFolderSetFlatMode)
 
@@ -106,11 +109,11 @@ public:
   int CompareItems2(UInt32 index1, UInt32 index2, PROPID propID, Int32 propIsRaw);
 
   CAgentFolder():
-      _proxyDirIndex(0),
       _isAltStreamFolder(false),
       _flatMode(false),
-      _loadAltStreams(false) // _loadAltStreams alt streams works in flat mode, but we don't use it now
-      , _zoneMode(NExtract::NZoneIdMode::kNone)
+      _loadAltStreams(false), // _loadAltStreams alt streams works in flat mode, but we don't use it now
+      _proxyDirIndex(0),
+      _zoneMode(NExtract::NZoneIdMode::kNone)
       /* , _replaceAltStreamCharsMode(0) */
       {}
 
@@ -145,20 +148,22 @@ public:
   UString GetFullPrefix(UInt32 index) const; // relative too root folder of archive
 
 public:
+  bool _isAltStreamFolder;
+  bool _flatMode;
+  bool _loadAltStreams; // in Flat mode
   const CProxyArc *_proxy;
   const CProxyArc2 *_proxy2;
   unsigned _proxyDirIndex;
-  bool _isAltStreamFolder;
+  NExtract::NZoneIdMode::EEnum _zoneMode;
+  CByteBuffer _zoneBuf;
+  // Int32 _replaceAltStreamCharsMode;
   // CMyComPtr<IFolderFolder> _parentFolder;
   CMyComPtr<IInFolderArchive> _agent;
   CAgent *_agentSpec;
-
   CRecordVector<CProxyItem> _items;
-  bool _flatMode;
-  bool _loadAltStreams; // in Flat mode
-  // Int32 _replaceAltStreamCharsMode;
-  NExtract::NZoneIdMode::EEnum _zoneMode;
 };
+
+
 
 class CAgent Z7_final:
   public IInFolderArchive,
@@ -213,22 +218,22 @@ public:
   CProxyArc2 *_proxy2;
   CArchiveLink _archiveLink;
 
-  bool ThereIsPathProp;
-  // bool ThereIsAltStreamProp;
-
   UString ArchiveType;
 
   FStringVector _names;
   FString _folderPrefix; // for new files from disk
 
-  bool _updatePathPrefix_is_AltFolder;
   UString _updatePathPrefix;
   CAgentFolder *_agentFolder;
 
-  UString _archiveFilePath;
+  UString _archiveFilePath; // it can be path of non-existing file if file is virtual
+  
   DWORD _attrib;
+  bool _updatePathPrefix_is_AltFolder;
+  bool ThereIsPathProp;
   bool _isDeviceFile;
   bool _isHashHandler;
+  
   FString _hashBaseFolderPrefix;
 
  #ifndef Z7_EXTRACT_ONLY

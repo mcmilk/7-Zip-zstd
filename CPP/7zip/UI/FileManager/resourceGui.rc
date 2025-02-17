@@ -6,6 +6,8 @@ BEGIN
 
   IDS_PROGRESS_TESTING      "Testing"
 
+  IDS_MOVING    "Moving..."
+
   IDS_CHECKSUM_CALCULATING    "Checksum calculating..."
   IDS_CHECKSUM_INFORMATION    "Checksum information"
   IDS_CHECKSUM_CRC_DATA       "CRC checksum for data:"

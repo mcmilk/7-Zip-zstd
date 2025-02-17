@@ -62,6 +62,33 @@ static bool Delete_EmptyFolder_And_EmptySubFolders(const FString &path)
   return RemoveDir(path);
 }
 
+
+
+struct C_CopyFileProgress_to_FolderCallback_MoveArc Z7_final:
+  public ICopyFileProgress
+{
+  IFolderArchiveUpdateCallback_MoveArc *Callback;
+  HRESULT CallbackResult;
+
+  virtual DWORD CopyFileProgress(UInt64 total, UInt64 current) Z7_override
+  {
+    HRESULT res = Callback->MoveArc_Progress(total, current);
+    CallbackResult = res;
+    // we can ignore E_ABORT here, because we update archive,
+    // and we want to get correct archive after updating
+    if (res == E_ABORT)
+      res = S_OK;
+    return res == S_OK ? PROGRESS_CONTINUE : PROGRESS_CANCEL;
+  }
+
+  C_CopyFileProgress_to_FolderCallback_MoveArc(
+      IFolderArchiveUpdateCallback_MoveArc *callback) :
+    Callback(callback),
+    CallbackResult(S_OK)
+    {}
+};
+
+
 HRESULT CAgentFolder::CommonUpdateOperation(
     AGENT_OP operation,
     bool moveMode,
@@ -159,8 +186,51 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   // now: we reopen archive after close
 
   // m_FolderItem = NULL;
+  _items.Clear();
+  _proxyDirIndex = k_Proxy_RootDirIndex;
+
+  CMyComPtr<IFolderArchiveUpdateCallback_MoveArc> updateCallback_MoveArc;
+  if (progress)
+    progress->QueryInterface(IID_IFolderArchiveUpdateCallback_MoveArc, (void **)&updateCallback_MoveArc);
   
-  const HRESULT res = tempFile.MoveToOriginal(true);
+  HRESULT res;
+  if (updateCallback_MoveArc)
+  {
+    const FString &tempFilePath = tempFile.Get_TempFilePath();
+    UInt64 totalSize = 0;
+    {
+      NFind::CFileInfo fi;
+      if (fi.Find(tempFilePath))
+        totalSize = fi.Size;
+    }
+    RINOK(updateCallback_MoveArc->MoveArc_Start(
+        fs2us(tempFilePath),
+        fs2us(tempFile.Get_OriginalFilePath()),
+        totalSize,
+        1)) // updateMode
+
+    C_CopyFileProgress_to_FolderCallback_MoveArc prox(updateCallback_MoveArc);
+    res = tempFile.MoveToOriginal(
+        true, // deleteOriginal
+        &prox);
+    if (res == S_OK)
+    {
+      res = updateCallback_MoveArc->MoveArc_Finish();
+      // we don't return after E_ABORT here, because
+      // we want to reopen new archive still.
+    }
+    else if (prox.CallbackResult != S_OK)
+      res = prox.CallbackResult;
+
+    // if updating callback returned E_ABORT,
+    // then openCallback still can return E_ABORT also.
+    // So ReOpen() will return with E_ABORT.
+    // But we want to open archive still.
+    // And Before_ArcReopen() call will clear user break status in that case.
+    RINOK(updateCallback_MoveArc->Before_ArcReopen())
+  }
+  else
+    res = tempFile.MoveToOriginal(true); // deleteOriginal
 
   // RINOK(res);
   if (res == S_OK)
@@ -189,10 +259,10 @@ HRESULT CAgentFolder::CommonUpdateOperation(
   }
    
   // CAgent::ReOpen() deletes _proxy and _proxy2
-  _items.Clear();
+  // _items.Clear();
   _proxy = NULL;
   _proxy2 = NULL;
-  _proxyDirIndex = k_Proxy_RootDirIndex;
+  // _proxyDirIndex = k_Proxy_RootDirIndex;
   _isAltStreamFolder = false;
   
   

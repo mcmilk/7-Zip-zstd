@@ -402,11 +402,17 @@ void CApp::Save()
   // Save_ShowDeleted(ShowDeletedFiles);
 }
 
-void CApp::Release()
+void CApp::ReleaseApp()
 {
+  // 24.09: ReleasePanel() will stop panel timer processing.
+  // but we want to stop timer processing for all panels
+  // before ReleasePanel() calling.
+  unsigned i;
+  for (i = 0; i < kNumPanelsMax; i++)
+    Panels[i].Disable_Processing_Timer_Notify_StatusBar();
   // It's for unloading COM dll's: don't change it.
-  for (unsigned i = 0; i < kNumPanelsMax; i++)
-    Panels[i].Release();
+  for (i = 0; i < kNumPanelsMax; i++)
+    Panels[i].ReleasePanel();
 }
 
 // reduces path to part that exists on disk (or root prefix of path)
@@ -644,7 +650,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
     destPath += correctName;
 
     #if defined(_WIN32) && !defined(UNDER_CE)
-    if (destPath.Len() > 0 && destPath[0] == '\\')
+    if (destPath.Len() != 0 && destPath[0] == '\\')
       if (destPath.Len() == 1 || destPath[1] != '\\')
       {
         srcPanel.MessageBox_Error_UnsupportOperation();

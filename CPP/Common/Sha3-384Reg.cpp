@@ -5,7 +5,7 @@
 #include "../../C/CpuArch.h"
 
 EXTERN_C_BEGIN
-#include "../../C/hashes/sha3.h"
+#include "../../C/hashes/sha3c.h"
 EXTERN_C_END
 
 #include "../Common/MyCom.h"
@@ -37,4 +37,4 @@ Z7_COM7F_IMF2(void, CSHA3_384Hasher::Final(Byte *digest))
 {
   SHA3_Final(digest, &_ctx);
 }
-REGISTER_HASHER(CSHA3_384Hasher, 0x20b, "SHA3-384", SHA3_384_DIGEST_LENGTH)
+REGISTER_HASHER(CSHA3_384Hasher, 0x232, "SHA3-384", SHA3_384_DIGEST_LENGTH)

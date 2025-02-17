@@ -1,40 +1,83 @@
-// Sha512Reg.cpp /TR 2018-11-02
+// Sha512Reg.cpp
 
 #include "StdAfx.h"
 
-#include "../../C/CpuArch.h"
+#include "../../C/Sha512.h"
 
-EXTERN_C_BEGIN
-#include "../../C/hashes/sha512.h"
-EXTERN_C_END
-
+#include "../Common/MyBuffer2.h"
 #include "../Common/MyCom.h"
+
 #include "../7zip/Common/RegisterCodec.h"
 
-// SHA512
-Z7_CLASS_IMP_COM_1(
-  CSHA512Hasher
+Z7_CLASS_IMP_COM_2(
+  CSha512Hasher
   , IHasher
+  , ICompressSetCoderProperties
 )
-  SHA512_CTX _ctx;
-  Byte mtDummy[1 << 7];
-
+  unsigned _digestSize;
+  CAlignedBuffer1 _buf;
 public:
-  CSHA512Hasher() { SHA512_Init(&_ctx); }
+  Byte _mtDummy[1 << 7];
+
+  CSha512 *Sha() { return (CSha512 *)(void *)(Byte *)_buf; }
+public:
+  CSha512Hasher(unsigned digestSize):
+     _digestSize(digestSize),
+    _buf(sizeof(CSha512))
+  {
+    Sha512_SetFunction(Sha(), 0);
+    Sha512_InitState(Sha(), _digestSize);
+  }
 };
 
-Z7_COM7F_IMF2(void, CSHA512Hasher::Init())
+Z7_COM7F_IMF2(void, CSha512Hasher::Init())
 {
-  SHA512_Init(&_ctx);
+  Sha512_InitState(Sha(), _digestSize);
 }
 
-Z7_COM7F_IMF2(void, CSHA512Hasher::Update(const void *data, UInt32 size))
+Z7_COM7F_IMF2(void, CSha512Hasher::Update(const void *data, UInt32 size))
 {
-  SHA512_Update(&_ctx, (const Byte *)data, size);
+  Sha512_Update(Sha(), (const Byte *)data, size);
 }
 
-Z7_COM7F_IMF2(void, CSHA512Hasher::Final(Byte *digest))
+Z7_COM7F_IMF2(void, CSha512Hasher::Final(Byte *digest))
 {
-  SHA512_Final(digest, &_ctx);
+  Sha512_Final(Sha(), digest, _digestSize);
 }
-REGISTER_HASHER(CSHA512Hasher, 0x209, "SHA512", SHA512_DIGEST_LENGTH)
+
+Z7_COM7F_IMF2(UInt32, CSha512Hasher::GetDigestSize())
+{
+  return (UInt32)_digestSize;
+}
+
+Z7_COM7F_IMF(CSha512Hasher::SetCoderProperties(const PROPID *propIDs, const PROPVARIANT *coderProps, UInt32 numProps))
+{
+  unsigned algo = 0;
+  for (UInt32 i = 0; i < numProps; i++)
+  {
+    if (propIDs[i] == NCoderPropID::kDefaultProp)
+    {
+      const PROPVARIANT &prop = coderProps[i];
+      if (prop.vt != VT_UI4)
+        return E_INVALIDARG;
+      if (prop.ulVal > 2)
+        return E_NOTIMPL;
+      algo = (unsigned)prop.ulVal;
+    }
+  }
+  if (!Sha512_SetFunction(Sha(), algo))
+    return E_NOTIMPL;
+  return S_OK;
+}
+
+#define REGISTER_SHA512_HASHER(cls, id, name, size) \
+  namespace N ## cls { \
+  static IHasher *CreateHasherSpec() { return new CSha512Hasher(size); } \
+  static const CHasherInfo g_HasherInfo = { CreateHasherSpec, id, name, size }; \
+  struct REGISTER_HASHER_NAME(cls) { REGISTER_HASHER_NAME(cls)() { RegisterHasher(&g_HasherInfo); }}; \
+  static REGISTER_HASHER_NAME(cls) g_RegisterHasher; }
+
+// REGISTER_SHA512_HASHER (Sha512_224_Hasher, 0x220, "SHA512-224", SHA512_224_DIGEST_SIZE)
+// REGISTER_SHA512_HASHER (Sha512_256_Hasher, 0x221, "SHA512-256", SHA512_256_DIGEST_SIZE)
+REGISTER_SHA512_HASHER (Sha384Hasher,      0x222, "SHA384",     SHA512_384_DIGEST_SIZE)
+REGISTER_SHA512_HASHER (Sha512Hasher,      0x223, "SHA512",     SHA512_DIGEST_SIZE)

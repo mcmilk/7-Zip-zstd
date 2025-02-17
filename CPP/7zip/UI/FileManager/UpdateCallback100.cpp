@@ -113,6 +113,29 @@ Z7_COM7F_IMF(CUpdateCallback100Imp::SetCompleted(const UInt64 * /* files */, con
   return ProgressDialog->Sync.CheckStop();
 }
 
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::MoveArc_Start(const wchar_t *srcTempPath, const wchar_t *destFinalPath, UInt64 size, Int32 updateMode))
+{
+  return MoveArc_Start_Base(srcTempPath, destFinalPath, size, updateMode);
+}
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::MoveArc_Progress(UInt64 totalSize, UInt64 currentSize))
+{
+  return MoveArc_Progress_Base(totalSize, currentSize);
+}
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::MoveArc_Finish())
+{
+  return MoveArc_Finish_Base();
+}
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::Before_ArcReopen())
+{
+  ProgressDialog->Sync.Clear_Stop_Status();
+  return S_OK;
+}
+
+
 Z7_COM7F_IMF(CUpdateCallback100Imp::CryptoGetTextPassword(BSTR *password))
 {
   *password = NULL;

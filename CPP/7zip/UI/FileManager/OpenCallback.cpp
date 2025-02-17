@@ -27,7 +27,7 @@ HRESULT COpenArchiveCallback::Open_SetTotal(const UInt64 *numFiles, const UInt64
     ProgressDialog.Sync.Set_NumFilesTotal(numFiles ? *numFiles : (UInt64)(Int64)-1);
     // if (numFiles)
     {
-      ProgressDialog.Sync.Set_BytesProgressMode(numFiles == NULL);
+      ProgressDialog.Sync.Set_FilesProgressMode(numFiles != NULL);
     }
     if (numBytes)
       ProgressDialog.Sync.Set_NumBytesTotal(*numBytes);

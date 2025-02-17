@@ -1,4 +1,4 @@
-7-Zip 24.07 Sources
+7-Zip 24.09 Sources
 -------------------
 
 7-Zip is a file archiver for Windows. 
@@ -100,12 +100,14 @@ So if you compile the version with Assembeler code, you will get faster 7-Zip bi
 7-Zip's assembler code uses the following syntax for different platforms:
 
 1) x86 and x86-64 (AMD64): MASM syntax. 
-   There are 2 programs that supports MASM syntax in Linux.
-'    'Asmc Macro Assembler and JWasm. But JWasm now doesn't support some 
+   Now there are 3 programs that supports MASM syntax in Linux.
+'    'Asmc Macro Assembler, JWasm, and UASM. Note that JWasm now doesn't support some 
       cpu instructions used in 7-Zip.
-   So you must install Asmc Macro Assembler in Linux, if you want to compile fastest version
-   of 7-Zip  x86 and x86-64:
+   So you must install Asmc Macro Assembler in Linux or UASM, if you want to compile 
+   fastest version of 7-Zip  x86 and x86-64:
      https://github.com/nidud/asmc
+     https://github.com/Terraspace/UASM
+
 
 2) arm64: GNU assembler for ARM64 with preprocessor. 
    That systax is supported by GCC and CLANG for ARM64.
@@ -154,6 +156,13 @@ USE_JWASM=1
   use JWasm assembler instead of Asmc.
   Note that JWasm doesn't support AES instructions. So AES code from C version AesOpt.c 
   will be used instead of assembler code from AesOpt.asm.
+
+If you want to use UASM for x86-64 compiling, you can change 7zip_gcc.mak, 
+or send IS_X64=1 USE_ASM=1 MY_ASM="$UASM" to make command calling:
+  UASM="$PWD/GccUnixR/uasm"
+  cd "7zip-src/CPP/7zip/Bundles/Alone2"
+  make -f makefile.gcc -j IS_X64=1 USE_ASM=1 MY_ASM="$UASM"
+
 
 DISABLE_RAR=1
   removes whole RAR related code from compilation.

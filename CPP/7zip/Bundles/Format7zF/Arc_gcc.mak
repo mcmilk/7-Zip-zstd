@@ -45,6 +45,7 @@ COMMON_OBJS = \
   $O/DynLimBuf.o \
   $O/IntToString.o \
   $O/LzFindPrepare.o \
+  $O/Md5Reg.o \
   $O/MyMap.o \
   $O/MyString.o \
   $O/MyVector.o \
@@ -54,6 +55,9 @@ COMMON_OBJS = \
   $O/Sha1Reg.o \
   $O/Sha256Prepare.o \
   $O/Sha256Reg.o \
+  $O/Sha3Reg.o \
+  $O/Sha512Prepare.o \
+  $O/Sha512Reg.o \
   $O/StringConvert.o \
   $O/StringToInt.o \
   $O/UTFConvert.o \
@@ -337,6 +341,7 @@ C_OBJS = \
   $O/Lzma2Enc.o \
   $O/LzmaDec.o \
   $O/LzmaEnc.o \
+  $O/Md5.o \
   $O/MtCoder.o \
   $O/MtDec.o \
   $O/Ppmd7.o \
@@ -350,6 +355,9 @@ C_OBJS = \
   $O/Sha1Opt.o \
   $O/Sha256.o \
   $O/Sha256Opt.o \
+  $O/Sha3.o \
+  $O/Sha512.o \
+  $O/Sha512Opt.o \
   $O/Sort.o \
   $O/SwapBytes.o \
   $O/Xxh64.o \

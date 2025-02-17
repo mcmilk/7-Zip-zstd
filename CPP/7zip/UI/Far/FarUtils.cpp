@@ -281,7 +281,7 @@ UInt32 CStartupInfo::QueryRegKeyValue(HKEY parentKey, const char *keyName,
     return valueDefault;
   
   UInt32 value;
-  if (regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
+  if (regKey.GetValue_UInt32_IfOk(valueName, value) != ERROR_SUCCESS)
     return valueDefault;
   
   return value;
@@ -295,7 +295,7 @@ bool CStartupInfo::QueryRegKeyValue(HKEY parentKey, const char *keyName,
     return valueDefault;
   
   bool value;
-  if (regKey.QueryValue(valueName, value) != ERROR_SUCCESS)
+  if (regKey.GetValue_bool_IfOk(valueName, value) != ERROR_SUCCESS)
     return valueDefault;
   
   return value;

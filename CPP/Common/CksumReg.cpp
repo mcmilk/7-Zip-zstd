@@ -52,4 +52,4 @@ Z7_COM7F_IMF2(void, CCksumHasher::Final(Byte *digest))
   SetUi32(digest, val)
 }
 
-REGISTER_HASHER(CCksumHasher, 0x202, "CKSUM", 4)
+REGISTER_HASHER(CCksumHasher, 0x203, "CKSUM", 4)

@@ -209,7 +209,7 @@ BEGIN
   IDS_COPY_TO   "Copy to:"
   IDS_MOVE_TO   "Move to:"
   IDS_COPYING   "Copying..."
-  IDS_MOVING    "Moving..."
+//  IDS_MOVING    "Moving..."
   IDS_RENAMING  "Renaming..."
 
   IDS_OPERATION_IS_NOT_SUPPORTED  "Operation is not supported."

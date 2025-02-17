@@ -15,9 +15,9 @@ COMMON_OBJS = \
   $O\NewHandler.obj \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
-  $O\Sha384Reg.obj \
+  $O\Sha3Reg.obj \
   $O\Sha512Reg.obj \
-  $O\Sha3-256Reg.obj \
+  $O\Sha512Prepare.obj \
   $O\Sha3-384Reg.obj \
   $O\Sha3-512Reg.obj \
   $O\StringConvert.obj \
@@ -272,9 +272,9 @@ HASHES_OBJS = \
   $O\blake3.obj \
   $O\md2.obj \
   $O\md4.obj \
-  $O\md5.obj \
-  $O\sha3.obj \
-  $O\sha512.obj \
+  $O\md5c.obj \
+  $O\sha3c.obj \
+  $O\sha512c.obj \
 
 C_OBJS = \
   $O\7zBuf2.obj \
@@ -297,6 +297,7 @@ C_OBJS = \
   $O\Lzma2Enc.obj \
   $O\LzmaDec.obj \
   $O\LzmaEnc.obj \
+  $O\Md5.obj \
   $O\MtCoder.obj \
   $O\MtDec.obj \
   $O\Ppmd7.obj \
@@ -306,6 +307,9 @@ C_OBJS = \
   $O\Ppmd8.obj \
   $O\Ppmd8Dec.obj \
   $O\Ppmd8Enc.obj \
+  $O\Sha3.obj \
+  $O\Sha512.obj \
+  $O\Sha512Opt.obj \
   $O\Sort.obj \
   $O\SwapBytes.obj \
   $O\Threads.obj \

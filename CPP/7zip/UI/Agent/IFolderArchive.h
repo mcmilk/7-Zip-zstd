@@ -103,5 +103,21 @@ Z7_IFACE_CONSTR_FOLDERARC(IFolderScanProgress, 0x11)
 
 Z7_IFACE_CONSTR_FOLDERARC(IFolderSetZoneIdMode, 0x12)
 
+#define Z7_IFACEM_IFolderSetZoneIdFile(x) \
+  x(SetZoneIdFile(const Byte *data, UInt32 size)) \
+
+Z7_IFACE_CONSTR_FOLDERARC(IFolderSetZoneIdFile, 0x13)
+
+
+// if the caller calls Before_ArcReopen(), the callee must
+// clear user break status, because the caller want to open archive still.
+#define Z7_IFACEM_IFolderArchiveUpdateCallback_MoveArc(x) \
+  x(MoveArc_Start(const wchar_t *srcTempPath, const wchar_t *destFinalPath, UInt64 size, Int32 updateMode)) \
+  x(MoveArc_Progress(UInt64 totalSize, UInt64 currentSize)) \
+  x(MoveArc_Finish()) \
+  x(Before_ArcReopen()) \
+
+Z7_IFACE_CONSTR_FOLDERARC(IFolderArchiveUpdateCallback_MoveArc, 0x14)
+
 Z7_PURE_INTERFACES_END
 #endif

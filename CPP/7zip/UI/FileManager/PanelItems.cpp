@@ -1438,13 +1438,16 @@ void CPanel::OnTimer()
     return;
   if (!AutoRefresh_Mode)
     return;
-  CMyComPtr<IFolderWasChanged> folderWasChanged;
-  if (_folder.QueryInterface(IID_IFolderWasChanged, &folderWasChanged) != S_OK)
+  if (!_folder) // it's unexpected case, but we use it as additional protection.
     return;
-  Int32 wasChanged;
-  if (folderWasChanged->WasChanged(&wasChanged) != S_OK)
-    return;
-  if (wasChanged == 0)
-    return;
+  {
+    CMyComPtr<IFolderWasChanged> folderWasChanged;
+    _folder.QueryInterface(IID_IFolderWasChanged, &folderWasChanged);
+    if (!folderWasChanged)
+      return;
+    Int32 wasChanged;
+    if (folderWasChanged->WasChanged(&wasChanged) != S_OK || wasChanged == 0)
+      return;
+  }
   OnReload(true); // onTimer
 }

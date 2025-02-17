@@ -55,13 +55,13 @@ static void AddSize_GB(UString &s, UInt32 size_GB, UInt32 id)
   AddLangString(s, id);
 }
 
-void CMemDialog::AddInfoMessage_To_String(UString &s, UInt64 *ramSize_GB)
+void CMemDialog::AddInfoMessage_To_String(UString &s, const UInt32 *ramSize_GB)
 {
   AddLangString(s, IDS_MEM_REQUIRES_BIG_MEM);
   AddSize_GB(s, Required_GB, IDS_MEM_REQUIRED_MEM_SIZE);
   AddSize_GB(s, Limit_GB, IDS_MEM_CURRENT_MEM_LIMIT);
   if (ramSize_GB)
-    AddSize_GB(s, (UInt32)*ramSize_GB, IDS_MEM_RAM_SIZE);
+    AddSize_GB(s, *ramSize_GB, IDS_MEM_RAM_SIZE);
   if (!FilePath.IsEmpty())
   {
     s.Add_LF();
@@ -88,11 +88,11 @@ bool CMemDialog::OnInit()
 
   // m_Action.Attach(GetItem(IDC_MEM_ACTION));
 
-  UInt64 ramSize = (UInt64)sizeof(size_t) << 29;
+  size_t ramSize = (size_t)sizeof(size_t) << 29;
   const bool ramSize_defined = NWindows::NSystem::GetRamSize(ramSize);
   // ramSize *= 10; // for debug
 
-  UInt64 ramSize_GB = (ramSize + (1u << 29)) >> 30;
+  UInt32 ramSize_GB = (UInt32)(((UInt64)ramSize + (1u << 29)) >> 30);
   if (ramSize_GB == 0)
     ramSize_GB = 1;
 
@@ -121,7 +121,7 @@ bool CMemDialog::OnInit()
     if (ramSize_defined)
     {
       s += " / ";
-      s.Add_UInt64(ramSize_GB);
+      s.Add_UInt32(ramSize_GB);
       s += " GB (RAM)";
     }
     SetItemText(IDT_MEM_GB, s);

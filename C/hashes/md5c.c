@@ -35,7 +35,7 @@
  */
 
 #include "hash.h"
-#include "md5.h"
+#include "md5c.h"
 
 #define A m->counter[0]
 #define B m->counter[1]

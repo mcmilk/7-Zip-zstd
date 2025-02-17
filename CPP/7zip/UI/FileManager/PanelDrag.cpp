@@ -2614,11 +2614,11 @@ Z7_COMWF_B CDropTarget::Drop(IDataObject *dataObject, DWORD keyState,
     UString s = LangString(cmdEffect == DROPEFFECT_MOVE ?
         IDS_MOVE_TO : IDS_COPY_TO);
     s.Add_LF();
-    s += "\'";
+    // s += "\'";
     s += m_Panel->_currentFolderPrefix;
-    s += "\'";
+    // s += "\'";
     s.Add_LF();
-    s += LangString(IDS_WANT_TO_COPY_FILES);
+    AddLangString(s, IDS_WANT_TO_COPY_FILES);
     s += " ?";
     const int res = ::MessageBoxW(*m_Panel, s, title, MB_YESNOCANCEL | MB_ICONQUESTION);
     if (res != IDYES)
@@ -2954,7 +2954,7 @@ static unsigned Drag_OnContextMenu(int xPos, int yPos, UInt32 cmdFlags)
       name = MyFormatNew(name, destPath);
       */
       name.Add_Space();
-      name += LangString(IDS_CONTEXT_ARCHIVE);
+      AddLangString(name, IDS_CONTEXT_ARCHIVE);
     }
     if (cmdId == NDragMenu::k_Cancel)
       menu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)NULL);
