@@ -3,7 +3,7 @@ REM Build some release of 7-Zip ZS
 
 SET COPYCMD=/Y /B
 SET COPTS=-m0=lzma -mx9 -ms=on -mf=bcj2
-SET URL=https://www.7-zip.org/a/7z2201.exe
+SET URL=https://www.7-zip.org/a/7z2409.exe
 SET VERSION=24.09
 SET SZIP="C:\Program Files\7-Zip\7z.exe"
 SET LURL=https://raw.githubusercontent.com/mcmilk/7-Zip-zstd/master/CPP/7zip/Bundles
@@ -14,8 +14,9 @@ SET SKEL=%WD%\skel
 REM Download our skeleton files
 mkdir %SKEL%
 cd %SKEL%
-curl %URL% --output 7-Zip.exe
+curl %URL% -L -o 7-Zip.exe
 %SZIP% x 7-Zip.exe
+del 7-Zip.exe
 mkdir %WD%\totalcmd
 goto start
 
