@@ -699,6 +699,7 @@ static const char * const k_Names =
   " 7z.exe"
   " 7za.exe"
   " 7za.dll"
+  " 7zxa.dll"
   " 7zG.exe"
   " 7z.dll"
   " 7zFM.exe"
