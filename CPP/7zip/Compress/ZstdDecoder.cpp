@@ -32,6 +32,9 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size))
   DProps *pProps = (DProps *)prop;
 
   switch (size) {
+  case 1:
+    memcpy(&_props, pProps, 1);
+    return S_OK;
   case 3:
     memcpy(&_props, pProps, 3);
     return S_OK;
