@@ -31,19 +31,11 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size))
 {
   DProps *pProps = (DProps *)prop;
 
-  switch (size) {
-  case 1:
-    memcpy(&_props, pProps, 1);
+  if (size >= 1 && size <= sizeof(DProps)) {
+    memcpy(&_props, pProps, size);
     return S_OK;
-  case 3:
-    memcpy(&_props, pProps, 3);
-    return S_OK;
-  case 5:
-    memcpy(&_props, pProps, 5);
-    return S_OK;
-  default:
-    return E_NOTIMPL;
   }
+  return E_NOTIMPL;
 }
 
 HRESULT CDecoder::SetOutStreamSizeResume(const UInt64 * /*outSize*/)
