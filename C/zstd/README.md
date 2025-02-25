@@ -1,237 +1,237 @@
-Zstandard library files
-================================
+<p align="center"><img src="https://raw.githubusercontent.com/facebook/zstd/dev/doc/images/zstd_logo86.png" alt="Zstandard"></p>
 
-The __lib__ directory is split into several sub-directories,
-in order to make it easier to select or exclude features.
+__Zstandard__, or `zstd` as short version, is a fast lossless compression algorithm,
+targeting real-time compression scenarios at zlib-level and better compression ratios.
+It's backed by a very fast entropy stage, provided by [Huff0 and FSE library](https://github.com/Cyan4973/FiniteStateEntropy).
+
+Zstandard's format is stable and documented in [RFC8878](https://datatracker.ietf.org/doc/html/rfc8878). Multiple independent implementations are already available.
+This repository represents the reference implementation, provided as an open-source dual [BSD](LICENSE) OR [GPLv2](COPYING) licensed **C** library,
+and a command line utility producing and decoding `.zst`, `.gz`, `.xz` and `.lz4` files.
+Should your project require another programming language,
+a list of known ports and bindings is provided on [Zstandard homepage](https://facebook.github.io/zstd/#other-languages).
+
+**Development branch status:**
+
+[![Build Status][travisDevBadge]][travisLink]
+[![Build status][CircleDevBadge]][CircleLink]
+[![Build status][CirrusDevBadge]][CirrusLink]
+[![Fuzzing Status][OSSFuzzBadge]][OSSFuzzLink]
+
+[travisDevBadge]: https://api.travis-ci.com/facebook/zstd.svg?branch=dev "Continuous Integration test suite"
+[travisLink]: https://travis-ci.com/facebook/zstd
+[CircleDevBadge]: https://circleci.com/gh/facebook/zstd/tree/dev.svg?style=shield "Short test suite"
+[CircleLink]: https://circleci.com/gh/facebook/zstd
+[CirrusDevBadge]: https://api.cirrus-ci.com/github/facebook/zstd.svg?branch=dev
+[CirrusLink]: https://cirrus-ci.com/github/facebook/zstd
+[OSSFuzzBadge]: https://oss-fuzz-build-logs.storage.googleapis.com/badges/zstd.svg
+[OSSFuzzLink]: https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:zstd
+
+## Benchmarks
+
+For reference, several fast compression algorithms were tested and compared
+on a desktop featuring a Core i7-9700K CPU @ 4.9GHz
+and running Ubuntu 20.04 (`Linux ubu20 5.15.0-101-generic`),
+using [lzbench], an open-source in-memory benchmark by @inikep
+compiled with [gcc] 9.4.0,
+on the [Silesia compression corpus].
+
+[lzbench]: https://github.com/inikep/lzbench
+[Silesia compression corpus]: https://sun.aei.polsl.pl//~sdeor/index.php?page=silesia
+[gcc]: https://gcc.gnu.org/
+
+| Compressor name         | Ratio | Compression| Decompress.|
+| ---------------         | ------| -----------| ---------- |
+| **zstd 1.5.6 -1**       | 2.887 |   510 MB/s |  1580 MB/s |
+| [zlib] 1.2.11 -1        | 2.743 |    95 MB/s |   400 MB/s |
+| brotli 1.0.9 -0         | 2.702 |   395 MB/s |   430 MB/s |
+| **zstd 1.5.6 --fast=1** | 2.437 |   545 MB/s |  1890 MB/s |
+| **zstd 1.5.6 --fast=3** | 2.239 |   650 MB/s |  2000 MB/s |
+| quicklz 1.5.0 -1        | 2.238 |   525 MB/s |   750 MB/s |
+| lzo1x 2.10 -1           | 2.106 |   650 MB/s |   825 MB/s |
+| [lz4] 1.9.4             | 2.101 |   700 MB/s |  4000 MB/s |
+| lzf 3.6 -1              | 2.077 |   420 MB/s |   830 MB/s |
+| snappy 1.1.9            | 2.073 |   530 MB/s |  1660 MB/s |
+
+[zlib]: https://www.zlib.net/
+[lz4]: https://lz4.github.io/lz4/
+
+The negative compression levels, specified with `--fast=#`,
+offer faster compression and decompression speed
+at the cost of compression ratio.
+
+Zstd can also offer stronger compression ratios at the cost of compression speed.
+Speed vs Compression trade-off is configurable by small increments.
+Decompression speed is preserved and remains roughly the same at all settings,
+a property shared by most LZ compression algorithms, such as [zlib] or lzma.
+
+The following tests were run
+on a server running Linux Debian (`Linux version 4.14.0-3-amd64`)
+with a Core i7-6700K CPU @ 4.0GHz,
+using [lzbench], an open-source in-memory benchmark by @inikep
+compiled with [gcc] 7.3.0,
+on the [Silesia compression corpus].
+
+Compression Speed vs Ratio | Decompression Speed
+---------------------------|--------------------
+![Compression Speed vs Ratio](doc/images/CSpeed2.png "Compression Speed vs Ratio") | ![Decompression Speed](doc/images/DSpeed3.png "Decompression Speed")
+
+A few other algorithms can produce higher compression ratios at slower speeds, falling outside of the graph.
+For a larger picture including slow modes, [click on this link](doc/images/DCspeed5.png).
 
 
-#### Building
+## The case for Small Data compression
 
-`Makefile` script is provided, supporting [Makefile conventions](https://www.gnu.org/prep/standards/html_node/Makefile-Conventions.html#Makefile-Conventions),
-including commands variables, staged install, directory variables and standard targets.
-- `make` : generates both static and dynamic libraries
-- `make install` : install libraries and headers in target system directories
+Previous charts provide results applicable to typical file and stream scenarios (several MB). Small data comes with different perspectives.
 
-`libzstd` default scope is pretty large, including compression, decompression, dictionary builder,
-and support for decoding legacy formats >= v0.5.0.
-The scope can be reduced on demand (see paragraph _modular build_).
+The smaller the amount of data to compress, the more difficult it is to compress. This problem is common to all compression algorithms, and reason is, compression algorithms learn from past data how to compress future data. But at the beginning of a new data set, there is no "past" to build upon.
 
+To solve this situation, Zstd offers a __training mode__, which can be used to tune the algorithm for a selected type of data.
+Training Zstandard is achieved by providing it with a few samples (one file per sample). The result of this training is stored in a file called "dictionary", which must be loaded before compression and decompression.
+Using this dictionary, the compression ratio achievable on small data improves dramatically.
 
-#### Multithreading support
+The following example uses the `github-users` [sample set](https://github.com/facebook/zstd/releases/tag/v1.1.3), created from [github public API](https://developer.github.com/v3/users/#get-all-users).
+It consists of roughly 10K records weighing about 1KB each.
 
-When building with `make`, by default the dynamic library is multithreaded and static library is single-threaded (for compatibility reasons).
-
-Enabling multithreading requires 2 conditions :
-- set build macro `ZSTD_MULTITHREAD` (`-DZSTD_MULTITHREAD` for `gcc`)
-- for POSIX systems : compile with pthread (`-pthread` compilation flag for `gcc`)
-
-For convenience, we provide a build target to generate multi and single threaded libraries:
-- Force enable multithreading on both dynamic and static libraries by appending `-mt` to the target, e.g. `make lib-mt`.
-- Force disable multithreading on both dynamic and static libraries by appending `-nomt` to the target, e.g. `make lib-nomt`.
-- By default, as mentioned before, dynamic library is multithreaded, and static library is single-threaded, e.g. `make lib`.
-
-When linking a POSIX program with a multithreaded version of `libzstd`,
-note that it's necessary to invoke the `-pthread` flag during link stage.
-
-Multithreading capabilities are exposed
-via the [advanced API defined in `lib/zstd.h`](https://github.com/facebook/zstd/blob/v1.4.3/lib/zstd.h#L351).
+Compression Ratio | Compression Speed | Decompression Speed
+------------------|-------------------|--------------------
+![Compression Ratio](doc/images/dict-cr.png "Compression Ratio") | ![Compression Speed](doc/images/dict-cs.png "Compression Speed") | ![Decompression Speed](doc/images/dict-ds.png "Decompression Speed")
 
 
-#### API
+These compression gains are achieved while simultaneously providing _faster_ compression and decompression speeds.
 
-Zstandard's stable API is exposed within [lib/zstd.h](zstd.h).
+Training works if there is some correlation in a family of small data samples. The more data-specific a dictionary is, the more efficient it is (there is no _universal dictionary_).
+Hence, deploying one dictionary per type of data will provide the greatest benefits.
+Dictionary gains are mostly effective in the first few KB. Then, the compression algorithm will gradually use previously decoded content to better compress the rest of the file.
+
+### Dictionary compression How To:
+
+1. Create the dictionary
+
+   `zstd --train FullPathToTrainingSet/* -o dictionaryName`
+
+2. Compress with dictionary
+
+   `zstd -D dictionaryName FILE`
+
+3. Decompress with dictionary
+
+   `zstd -D dictionaryName --decompress FILE.zst`
 
 
-#### Advanced API
+## Build instructions
 
-Optional advanced features are exposed via :
+`make` is the officially maintained build system of this project.
+All other build systems are "compatible" and 3rd-party maintained,
+they may feature small differences in advanced options.
+When your system allows it, prefer using `make` to build `zstd` and `libzstd`.
 
-- `lib/zstd_errors.h` : translates `size_t` function results
-                        into a `ZSTD_ErrorCode`, for accurate error handling.
+### Makefile
 
-- `ZSTD_STATIC_LINKING_ONLY` : if this macro is defined _before_ including `zstd.h`,
-                          it unlocks access to the experimental API,
-                          exposed in the second part of `zstd.h`.
-                          All definitions in the experimental APIs are unstable,
-                          they may still change in the future, or even be removed.
-                          As a consequence, experimental definitions shall ___never be used with dynamic library___ !
-                          Only static linking is allowed.
+If your system is compatible with standard `make` (or `gmake`),
+invoking `make` in root directory will generate `zstd` cli in root directory.
+It will also create `libzstd` into `lib/`.
 
+Other available options include:
+- `make install` : create and install zstd cli, library and man pages
+- `make check` : create and run `zstd`, test its behavior on local platform
 
-#### Modular build
+The `Makefile` follows the [GNU Standard Makefile conventions](https://www.gnu.org/prep/standards/html_node/Makefile-Conventions.html),
+allowing staged install, standard flags, directory variables and command variables.
 
-It's possible to compile only a limited set of features within `libzstd`.
-The file structure is designed to make this selection manually achievable for any build system :
+For advanced use cases, specialized compilation flags which control binary generation
+are documented in [`lib/README.md`](lib/README.md#modular-build) for the `libzstd` library
+and in [`programs/README.md`](programs/README.md#compilation-variables) for the `zstd` CLI.
 
-- Directory `lib/common` is always required, for all variants.
+### cmake
 
-- Compression source code lies in `lib/compress`
+A `cmake` project generator is provided within `build/cmake`.
+It can generate Makefiles or other build scripts
+to create `zstd` binary, and `libzstd` dynamic and static libraries.
 
-- Decompression source code lies in `lib/decompress`
+By default, `CMAKE_BUILD_TYPE` is set to `Release`.
 
-- It's possible to include only `compress` or only `decompress`, they don't depend on each other.
+#### Support for Fat (Universal2) Output
 
-- `lib/dictBuilder` : makes it possible to generate dictionaries from a set of samples.
-        The API is exposed in `lib/dictBuilder/zdict.h`.
-        This module depends on both `lib/common` and `lib/compress` .
+`zstd` can be built and installed with support for both Apple Silicon (M1/M2) as well as Intel by using CMake's Universal2 support.
+To perform a Fat/Universal2 build and install use the following commands:
 
-- `lib/legacy` : makes it possible to decompress legacy zstd formats, starting from `v0.1.0`.
-        This module depends on `lib/common` and `lib/decompress`.
-        To enable this feature, define `ZSTD_LEGACY_SUPPORT` during compilation.
-        Specifying a number limits versions supported to that version onward.
-        For example, `ZSTD_LEGACY_SUPPORT=2` means : "support legacy formats >= v0.2.0".
-        Conversely, `ZSTD_LEGACY_SUPPORT=0` means "do __not__ support legacy formats".
-        By default, this build macro is set as `ZSTD_LEGACY_SUPPORT=5`.
-        Decoding supported legacy format is a transparent capability triggered within decompression functions.
-        It's also allowed to invoke legacy API directly, exposed in `lib/legacy/zstd_legacy.h`.
-        Each version does also provide its own set of advanced API.
-        For example, advanced API for version `v0.4` is exposed in `lib/legacy/zstd_v04.h` .
-
-- While invoking `make libzstd`, it's possible to define build macros
-        `ZSTD_LIB_COMPRESSION`, `ZSTD_LIB_DECOMPRESSION`, `ZSTD_LIB_DICTBUILDER`,
-        and `ZSTD_LIB_DEPRECATED` as `0` to forgo compilation of the
-        corresponding features. This will also disable compilation of all
-        dependencies (e.g. `ZSTD_LIB_COMPRESSION=0` will also disable
-        dictBuilder).
-
-- There are a number of options that can help minimize the binary size of
-  `libzstd`.
-
-  The first step is to select the components needed (using the above-described
-  `ZSTD_LIB_COMPRESSION` etc.).
-
-  The next step is to set `ZSTD_LIB_MINIFY` to `1` when invoking `make`. This
-  disables various optional components and changes the compilation flags to
-  prioritize space-saving.
-
-  Detailed options: Zstandard's code and build environment is set up by default
-  to optimize above all else for performance. In pursuit of this goal, Zstandard
-  makes significant trade-offs in code size. For example, Zstandard often has
-  more than one implementation of a particular component, with each
-  implementation optimized for different scenarios. For example, the Huffman
-  decoder has complementary implementations that decode the stream one symbol at
-  a time or two symbols at a time. Zstd normally includes both (and dispatches
-  between them at runtime), but by defining `HUF_FORCE_DECOMPRESS_X1` or
-  `HUF_FORCE_DECOMPRESS_X2`, you can force the use of one or the other, avoiding
-  compilation of the other. Similarly, `ZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT`
-  and `ZSTD_FORCE_DECOMPRESS_SEQUENCES_LONG` force the compilation and use of
-  only one or the other of two decompression implementations. The smallest
-  binary is achieved by using `HUF_FORCE_DECOMPRESS_X1` and
-  `ZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT` (implied by `ZSTD_LIB_MINIFY`).
-
-  On the compressor side, Zstd's compression levels map to several internal
-  strategies. In environments where the higher compression levels aren't used,
-  it is possible to exclude all but the fastest strategy with
-  `ZSTD_LIB_EXCLUDE_COMPRESSORS_DFAST_AND_UP=1`. (Note that this will change
-  the behavior of the default compression level.) Or if you want to retain the
-  default compressor as well, you can set
-  `ZSTD_LIB_EXCLUDE_COMPRESSORS_GREEDY_AND_UP=1`, at the cost of an additional
-  ~20KB or so.
-
-  For squeezing the last ounce of size out, you can also define
-  `ZSTD_NO_INLINE`, which disables inlining, and `ZSTD_STRIP_ERROR_STRINGS`,
-  which removes the error messages that are otherwise returned by
-  `ZSTD_getErrorName` (implied by `ZSTD_LIB_MINIFY`).
-
-  Finally, when integrating into your application, make sure you're doing link-
-  time optimization and unused symbol garbage collection (via some combination of,
-  e.g., `-flto`, `-ffat-lto-objects`, `-fuse-linker-plugin`,
-  `-ffunction-sections`, `-fdata-sections`, `-fmerge-all-constants`,
-  `-Wl,--gc-sections`, `-Wl,-z,norelro`, and an archiver that understands
-  the compiler's intermediate representation, e.g., `AR=gcc-ar`). Consult your
-  compiler's documentation.
-
-- While invoking `make libzstd`, the build macro `ZSTD_LEGACY_MULTITHREADED_API=1`
-  will expose the deprecated `ZSTDMT` API exposed by `zstdmt_compress.h` in
-  the shared library, which is now hidden by default.
-
-- The build macro `DYNAMIC_BMI2` can be set to 1 or 0 in order to generate binaries
-  which can detect at runtime the presence of BMI2 instructions, and use them only if present.
-  These instructions contribute to better performance, notably on the decoder side.
-  By default, this feature is automatically enabled on detecting
-  the right instruction set (x64) and compiler (clang or gcc >= 5).
-  It's obviously disabled for different cpus,
-  or when BMI2 instruction set is _required_ by the compiler command line
-  (in this case, only the BMI2 code path is generated).
-  Setting this macro will either force to generate the BMI2 dispatcher (1)
-  or prevent it (0). It overrides automatic detection.
-
-- The build macro `ZSTD_NO_UNUSED_FUNCTIONS` can be defined to hide the definitions of functions
-  that zstd does not use. Not all unused functions are hidden, but they can be if needed.
-  Currently, this macro will hide function definitions in FSE and HUF that use an excessive
-  amount of stack space.
-
-- The build macro `ZSTD_NO_INTRINSICS` can be defined to disable all explicit intrinsics.
-  Compiler builtins are still used.
-
-- The build macro `ZSTD_DECODER_INTERNAL_BUFFER` can be set to control
-  the amount of extra memory used during decompression to store literals.
-  This defaults to 64kB.  Reducing this value reduces the memory footprint of
-  `ZSTD_DCtx` decompression contexts,
-  but might also result in a small decompression speed cost.
-
-- The C compiler macros `ZSTDLIB_VISIBLE`, `ZSTDERRORLIB_VISIBLE` and `ZDICTLIB_VISIBLE`
-  can be overridden to control the visibility of zstd's API. Additionally,
-  `ZSTDLIB_STATIC_API` and `ZDICTLIB_STATIC_API` can be overridden to control the visibility
-  of zstd's static API. Specifically, it can be set to `ZSTDLIB_HIDDEN` to hide the symbols
-  from the shared library. These macros default to `ZSTDLIB_VISIBILITY`,
-  `ZSTDERRORLIB_VSIBILITY`, and `ZDICTLIB_VISIBILITY` if unset, for backwards compatibility
-  with the old macro names.
-
-- The C compiler macro `HUF_DISABLE_FAST_DECODE` disables the newer Huffman fast C
-  and assembly decoding loops. You may want to use this macro if these loops are
-  slower on your platform.
-
-#### Windows : using MinGW+MSYS to create DLL
-
-DLL can be created using MinGW+MSYS with the `make libzstd` command.
-This command creates `dll\libzstd.dll` and the import library `dll\libzstd.lib`.
-The import library is only required with Visual C++.
-The header file `zstd.h` and the dynamic library `dll\libzstd.dll` are required to
-compile a project using gcc/MinGW.
-The dynamic library has to be added to linking options.
-It means that if a project that uses ZSTD consists of a single `test-dll.c`
-file it should be linked with `dll\libzstd.dll`. For example:
+```bash
+cmake -B build-cmake-debug -S build/cmake -G Ninja -DCMAKE_OSX_ARCHITECTURES="x86_64;x86_64h;arm64"
+cd build-cmake-debug
+ninja
+sudo ninja install
 ```
-    gcc $(CFLAGS) -Iinclude/ test-dll.c -o test-dll dll\libzstd.dll
+
+### Meson
+
+A Meson project is provided within [`build/meson`](build/meson). Follow
+build instructions in that directory.
+
+You can also take a look at [`.travis.yml`](.travis.yml) file for an
+example about how Meson is used to build this project.
+
+Note that default build type is **release**.
+
+### VCPKG
+You can build and install zstd [vcpkg](https://github.com/Microsoft/vcpkg/) dependency manager:
+
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg integrate install
+    ./vcpkg install zstd
+
+The zstd port in vcpkg is kept up to date by Microsoft team members and community contributors.
+If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
+
+### Conan
+
+You can install pre-built binaries for zstd or build it from source using [Conan](https://conan.io/). Use the following command:
+
+```bash
+conan install --requires="zstd/[*]" --build=missing
 ```
-The compiled executable will require ZSTD DLL which is available at `dll\libzstd.dll`.
 
+The zstd Conan recipe is kept up to date by Conan maintainers and community contributors.
+If the version is out of date, please [create an issue or pull request](https://github.com/conan-io/conan-center-index) on the ConanCenterIndex repository.
 
-#### Advanced Build options
+### Visual Studio (Windows)
 
-The build system requires a hash function in order to
-separate object files created with different compilation flags.
-By default, it tries to use `md5sum` or equivalent.
-The hash function can be manually switched by setting the `HASH` variable.
-For example : `make HASH=xxhsum`
-The hash function needs to generate at least 64-bit using hexadecimal format.
-When no hash function is found,
-the Makefile just generates all object files into the same default directory,
-irrespective of compilation flags.
-This functionality only matters if `libzstd` is compiled multiple times
-with different build flags.
+Going into `build` directory, you will find additional possibilities:
+- Projects for Visual Studio 2005, 2008 and 2010.
+  + VS2010 project is compatible with VS2012, VS2013, VS2015 and VS2017.
+- Automated build scripts for Visual compiler by [@KrzysFR](https://github.com/KrzysFR), in `build/VS_scripts`,
+  which will build `zstd` cli and `libzstd` library without any need to open Visual Studio solution.
 
-The build directory, where object files are stored
-can also be manually controlled using variable `BUILD_DIR`,
-for example `make BUILD_DIR=objectDir/v1`.
-In which case, the hash function doesn't matter.
+### Buck
 
+You can build the zstd binary via buck by executing: `buck build programs:zstd` from the root of the repo.
+The output binary will be in `buck-out/gen/programs/`.
 
-#### Deprecated API
+### Bazel
 
-Obsolete API on their way out are stored in directory `lib/deprecated`.
-At this stage, it contains older streaming prototypes, in `lib/deprecated/zbuff.h`.
-These prototypes will be removed in some future version.
-Consider migrating code towards supported streaming API exposed in `zstd.h`.
+You easily can integrate zstd into your Bazel project by using the module hosted on the [Bazel Central Repository](https://registry.bazel.build/modules/zstd).
 
+## Testing
 
-#### Miscellaneous
+You can run quick local smoke tests by running `make check`.
+If you can't use `make`, execute the `playTest.sh` script from the `src/tests` directory.
+Two env variables `$ZSTD_BIN` and `$DATAGEN_BIN` are needed for the test script to locate the `zstd` and `datagen` binary.
+For information on CI testing, please refer to `TESTING.md`.
 
-The other files are not source code. There are :
+## Status
 
- - `BUCK` : support for `buck` build system (https://buckbuild.com/)
- - `Makefile` : `make` script to build and install zstd library (static and dynamic)
- - `README.md` : this file
- - `dll/` : resources directory for Windows compilation
- - `libzstd.pc.in` : script for `pkg-config` (used in `make install`)
+Zstandard is currently deployed within Facebook and many other large cloud infrastructures.
+It is run continuously to compress large amounts of data in multiple formats and use cases.
+Zstandard is considered safe for production environments.
+
+## License
+
+Zstandard is dual-licensed under [BSD](LICENSE) OR [GPLv2](COPYING).
+
+## Contributing
+
+The `dev` branch is the one where all contributions are merged before reaching `release`.
+If you plan to propose a patch, please commit into the `dev` branch, or its own feature branch.
+Direct commit to `release` are not permitted.
+For more information, please read [CONTRIBUTING](CONTRIBUTING.md).

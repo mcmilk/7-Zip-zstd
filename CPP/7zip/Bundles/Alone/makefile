@@ -334,6 +334,7 @@ ZSTD_OBJS = \
   $O\zstd_ldm.obj \
   $O\zstdmt_compress.obj \
   $O\zstd_opt.obj \
+  $O\zstd_preSplit.obj \
   $O\zstd_v01.obj \
   $O\zstd_v02.obj \
   $O\zstd_v03.obj \
