@@ -9,7 +9,6 @@ You can install it in two ways:
 
 # Status
 
-[![Build status](https://ci.appveyor.com/api/projects/status/j9cwlxqe1g21c4dj?svg=true)](https://ci.appveyor.com/project/mcmilk/7-zip-zstd)
 [![Latest stable release](https://img.shields.io/github/release/mcmilk/7-Zip-zstd.svg)](https://github.com/mcmilk/7-Zip-zstd/releases)
 [![PayPal.me](https://img.shields.io/badge/PayPal-me-blue.svg?maxAge=2592000)](https://www.paypal.me/TinoReichardt)
 
