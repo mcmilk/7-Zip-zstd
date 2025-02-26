@@ -2335,7 +2335,7 @@ static const Byte k_Signature[] = {
     4, 'q', 's', 'h', 's' };
 
 REGISTER_ARC_I(
-  "SquashFS", "squashfs", NULL, 0xD2,
+  "SquashFS", "sfs squashfs", NULL, 0xD2,
   k_Signature,
   0,
   NArcInfoFlags::kMultiSignature,
