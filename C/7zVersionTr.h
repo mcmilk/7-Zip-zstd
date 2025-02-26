@@ -5,7 +5,7 @@
 #define MY_AUTHOR_NAME  "Tino Reichardt"
 
 #undef  MY_COPYRIGHT
-#define MY_COPYRIGHT    "Copyright (c) 2016 - 2023 Tino Reichardt"
+#define MY_COPYRIGHT    "Copyright (c) 2016 - 2025 Tino Reichardt"
 
 #undef  MY_COPYRIGHT_DATE
 #define MY_COPYRIGHT_DATE MY_COPYRIGHT " : " MY_DATE

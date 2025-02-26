@@ -2,7 +2,7 @@
 #include "../../GuiCommon.rc"
 #include "../../MyVersion.h"
 
-#define xc 216
+#define xc 316
 #define yc 144
 
 #define y 93
