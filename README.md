@@ -297,9 +297,8 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ4] Version 1.9.4
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.6
-  - [BLAKE3] Version 0.3.7
 
-/TR 2023-06-18
+/TR 2025-02-26
 
 ## Notes
 
