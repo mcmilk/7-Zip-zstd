@@ -29,14 +29,17 @@ CDecoder::~CDecoder()
 
 Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size))
 {
-  DProps *pProps = (DProps *)prop;
-
   switch (size) {
-  case 3:
-    memcpy(&_props, pProps, 3);
+  case 1:
+    _props._flags = *prop;
+    // flags currently unused, todo: maybe some handling is necessary if set to not 0
+    // if (_props._flags != 0) ...
     return S_OK;
+  // for backwards compatibility only:
+  // size 3 or 5 was accepted in previous versions, so allow it here too
+  // (since the old props members _ver/_level seemed to be unused anyway)
+  case 3:
   case 5:
-    memcpy(&_props, pProps, 5);
     return S_OK;
   default:
     return E_NOTIMPL;

@@ -36,16 +36,10 @@ struct DProps
   DProps() { clear (); }
   void clear ()
   {
-    memset(this, 0, sizeof (*this));
-    _ver_major = ZSTD_VERSION_MAJOR;
-    _ver_minor = ZSTD_VERSION_MINOR;
-    _level = 3;
+    _flags = 0; // the needs are currently unknown (unused)
   }
 
-  Byte _ver_major;
-  Byte _ver_minor;
-  Byte _level;
-  Byte _reserved[2];
+  Byte _flags;
 };
 
 class CDecoder Z7_final:
