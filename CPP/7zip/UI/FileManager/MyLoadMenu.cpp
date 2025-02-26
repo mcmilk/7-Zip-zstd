@@ -769,11 +769,14 @@ bool ExecuteFileCommand(unsigned id)
     case IDM_MD4:   g_App.CalculateCrc("MD4"); break;
     case IDM_MD5:   g_App.CalculateCrc("MD5"); break;
     case IDM_SHA1:  g_App.CalculateCrc("SHA1"); break;
-    case IDM_SHA256: g_App.CalculateCrc("SHA256"); break;
-    case IDM_SHA384: g_App.CalculateCrc("SHA384"); break;
-    case IDM_SHA512: g_App.CalculateCrc("SHA512"); break;
+    case IDM_SHA2_256: g_App.CalculateCrc("SHA256"); break;
+    case IDM_SHA2_384: g_App.CalculateCrc("SHA384"); break;
+    case IDM_SHA2_512: g_App.CalculateCrc("SHA512"); break;
     case IDM_BLAKE2sp: g_App.CalculateCrc("BLAKE2sp"); break;
     case IDM_BLAKE3: g_App.CalculateCrc("BLAKE3"); break;
+    case IDM_SHA3_256: g_App.CalculateCrc("SHA3-256"); break;
+    case IDM_SHA3_384: g_App.CalculateCrc("SHA3-384"); break;
+    case IDM_SHA3_512: g_App.CalculateCrc("SHA3-512"); break;
     
     case IDM_DIFF: g_App.DiffFiles(); break;
 

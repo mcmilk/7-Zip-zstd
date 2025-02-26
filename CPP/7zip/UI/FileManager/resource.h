@@ -29,11 +29,14 @@
 #define IDM_MD4                  107
 #define IDM_MD5                  108
 #define IDM_SHA1                 109
-#define IDM_SHA256               110
-#define IDM_SHA384               111
-#define IDM_SHA512               112
+#define IDM_SHA2_256             110
+#define IDM_SHA2_384             111
+#define IDM_SHA2_512             112
 #define IDM_BLAKE2sp             113
 #define IDM_BLAKE3               114
+#define IDM_SHA3_256             115
+#define IDM_SHA3_384             116
+#define IDM_SHA3_512             117
 
 #define IDM_FILE                 500
 #define IDM_EDIT                 501
