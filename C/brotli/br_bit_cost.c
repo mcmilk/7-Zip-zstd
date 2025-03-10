@@ -8,9 +8,10 @@
 
 #include "./enc/bit_cost.h"
 
+#include "types.h"
+
 #include "./common//constants.h"
 #include "./common//platform.h"
-#include "types.h"
 #include "./enc/fast_log.h"
 #include "./enc/histogram.h"
 

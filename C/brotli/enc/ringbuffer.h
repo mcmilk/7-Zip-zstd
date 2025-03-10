@@ -11,10 +11,11 @@
 
 #include <string.h>  /* memcpy */
 
-#include "../common/platform.h"
 #include "../types.h"
-#include "./memory.h"
-#include "./quality.h"
+
+#include "../common/platform.h"
+#include "memory.h"
+#include "quality.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {

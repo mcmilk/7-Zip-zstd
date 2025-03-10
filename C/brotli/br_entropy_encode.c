@@ -10,9 +10,10 @@
 
 #include <string.h>  /* memset */
 
+#include "types.h"
+
 #include "./common//constants.h"
 #include "./common//platform.h"
-#include "types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
