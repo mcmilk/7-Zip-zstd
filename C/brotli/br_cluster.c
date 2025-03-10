@@ -8,8 +8,9 @@
 
 #include "./enc/cluster.h"
 
-#include "./common//platform.h"
 #include "types.h"
+
+#include "./common//platform.h"
 #include "./enc/bit_cost.h"  /* BrotliPopulationCost */
 #include "./enc/fast_log.h"
 #include "./enc/histogram.h"
