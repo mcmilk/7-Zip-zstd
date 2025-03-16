@@ -54,4 +54,8 @@ typedef UInt64 uint64_t;
 #define min(a,b) (((a)>(b))?(b):(a))
 #endif
 
+#ifndef max
+#define max(a,b) (((b)>(a))?(b):(a))
+#endif
+
 #endif /* __hash_h__ */

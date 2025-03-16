@@ -14,8 +14,10 @@ static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
   dest.Empty();
 
   // skip spaces:
-  while (isblank(*s)) { s++; };
+  while (iswblank(*s)) { s++; };
   b = f = s;
+
+#pragma GCC diagnostic push "-Wimplicit-fallthrough"
 
   while ((c = *s++) != 0)
   {
@@ -66,7 +68,7 @@ static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
           // end of argument:
           dest.AddFrom(f, (unsigned)(s - f - 1)); f = s;
           // skip to the next one:
-          while (isblank(*s)) { s++; };
+          while (iswblank(*s)) { s++; };
           bcount = 0;
           goto done;
         }
@@ -78,6 +80,9 @@ static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
   }
   s--; // back to NTS-zero char
   dest.AddFrom(f, (unsigned)(s - f));
+
+#pragma GCC diagnostic pop "-Wimplicit-fallthrough"
+
 done:
   // remaining part if argument was found, otherwise NULL:
   return (dest.Len() || *b) ? s : NULL;
