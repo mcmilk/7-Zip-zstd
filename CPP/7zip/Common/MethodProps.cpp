@@ -709,8 +709,14 @@ HRESULT COneMethodInfo::ParseMethodFromString(const UString &s)
 
 HRESULT COneMethodInfo::ParseMethodFromPROPVARIANT(const UString &realName, const PROPVARIANT &value)
 {
-  if (!realName.IsEmpty() && !StringsAreEqualNoCase_Ascii(realName, "m"))
+  if (!realName.IsEmpty() && !StringsAreEqualNoCase_Ascii(realName, "m")) {
+    if (value.vt == VT_BSTR && StringsAreEqualNoCase_Ascii(realName, "memuse")) {
+      // not implemented here (see one of the ParseSizeString variants), 
+      // but don't throw error - just return without to restrict mem-usage (handler may do that).
+      return S_OK;
+    }
     return ParseParamsFromPROPVARIANT(realName, value);
+  }
   // -m{N}=method
   if (value.vt != VT_BSTR)
     return E_INVALIDARG;

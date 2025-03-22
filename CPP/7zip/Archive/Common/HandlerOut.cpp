@@ -82,7 +82,7 @@ bool ParseSizeString(const wchar_t *s, const PROPVARIANT &prop, UInt64 percentsB
   return true;
 }
 
-bool CCommonMethodProps::SetCommonProperty(const UString &name, const PROPVARIANT &value, HRESULT &hres)
+int CCommonMethodProps::SetCommonProperty(const UString &name, const PROPVARIANT &value, HRESULT &hres)
 {
   hres = S_OK;
 
@@ -94,7 +94,7 @@ bool CCommonMethodProps::SetCommonProperty(const UString &name, const PROPVARIAN
     hres = ParseMtProp2(name.Ptr(2), value, _numThreads, _numThreads_WasForced);
     // "mt" means "_numThreads_WasForced = false" here
     #endif
-    return true;
+    return -1; /* OK, but no return - could be also set by handler itself later */
   }
   
   if (name.IsPrefixedBy_Ascii_NoCase("memuse"))
@@ -105,10 +105,10 @@ bool CCommonMethodProps::SetCommonProperty(const UString &name, const PROPVARIAN
     _memUsage_Decompress = v;
     _memUsage_Compress = v;
     _memUsage_WasSet = true;
-    return true;
+    return 1;
   }
 
-  return false;
+  return 0;
 }
 
 
@@ -203,9 +203,10 @@ HRESULT CMultiMethodProps::SetProperty(const wchar_t *nameSpec, const PROPVARIAN
 
   {
     HRESULT hres;
-    SetCommonProperty(name, value, hres);
-    /* don't return here, since many handlers set common properties (e. g. kNumThreads)
+    /* don't return by -1, since many handlers set common properties (e. g. kNumThreads)
        with SetCoderProperties, so add it also as prop by its ID from name below */
+    if (SetCommonProperty(name, value, hres) > 0)
+      return hres;
   }
   
   UInt32 number;
@@ -259,9 +260,10 @@ HRESULT CSingleMethodProps::SetProperty(const wchar_t *name2, const PROPVARIANT 
   }
   {
     HRESULT hres;
-    SetCommonProperty(name, value, hres);
-    /* don't return here, since many handlers set common properties (e. g. kNumThreads)
+    /* don't return by -1, since many handlers set common properties (e. g. kNumThreads)
        with SetCoderProperties, so add it also as prop by its ID from name below */
+    if (SetCommonProperty(name, value, hres) > 0)
+      return hres;
   }
   RINOK(ParseMethodFromPROPVARIANT(name, value))
   return S_OK;

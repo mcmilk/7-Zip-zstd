@@ -57,7 +57,7 @@ public:
   UInt64 _memUsage_Decompress;
   size_t _memAvail;
 
-  bool SetCommonProperty(const UString &name, const PROPVARIANT &value, HRESULT &hres);
+  int SetCommonProperty(const UString &name, const PROPVARIANT &value, HRESULT &hres);
 
   CCommonMethodProps() { InitCommon(); }
 };
