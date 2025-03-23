@@ -150,7 +150,6 @@ private:
   HRESULT PropsMethod_To_FullMethod(CMethodFull &dest, const COneMethodInfo &m);
   HRESULT SetHeaderMethod(CCompressionMethodMode &headerMethod);
   HRESULT SetMainMethod(CCompressionMethodMode &method);
-  void _TryToObtainMethodFromItem(int itemIdx, IArchiveUpdateCallback *updateCallback);
 
   #endif
 
@@ -160,6 +159,7 @@ private:
   CRecordVector<UInt64> _fileInfoPopIDs;
   void FillPopIDs();
   void AddMethodName(AString &s, UInt64 id);
+  bool ObtainMethodFromBlocks(AString &methName, int &level) const;
   HRESULT SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const;
 
   #endif

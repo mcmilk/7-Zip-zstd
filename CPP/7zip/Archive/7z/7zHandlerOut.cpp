@@ -38,28 +38,6 @@ static const UInt32 k_Dictionary_ForHeaders =
   1 << 20;
   #endif
 
-struct C_Id_Name_pair
-{
-  UInt32 Id;
-  const wchar_t *Name;
-};
-
-static const C_Id_Name_pair g_filter_pairs[] =
-{
-  { k_Delta, L"Delta" },
-  { k_ARM64, L"ARM64" },
-  { k_RISCV, L"RISCV" },
-  { k_SWAP2, L"SWAP2" },
-  { k_SWAP4, L"SWAP4" },
-  { k_BCJ,   L"BCJ" },
-  { k_BCJ2 , L"BCJ2" },
-  { k_PPC,   L"PPC" },
-  { k_IA64,  L"IA64" },
-  { k_ARM,   L"ARM" },
-  { k_ARMT,  L"ARMT" },
-  { k_SPARC, L"SPARC" }
-};
-
 Z7_COM7F_IMF(CHandler::GetFileTimeType(UInt32 *type))
 {
   *type = NFileTimeType::kWindows;
@@ -410,59 +388,6 @@ static int AddFolder(CObjectVector<CTreeFolder> &treeFolders, int cur, const USt
 }
 */
 
-void CHandler::_TryToObtainMethodFromItem(int itemIdx, IArchiveUpdateCallback *updateCallback)
-{
-  NCOM::CPropVariant prop;
-  if (updateCallback->GetProperty(itemIdx, kpidMethod, &prop) != S_OK) return;
-  if (prop.vt != VT_BSTR) return;
-  //if(deb) printf("************ get-item-meth %ls\n", prop.bstrVal);
-  const wchar_t *s = NULL, *p = prop.bstrVal;
-  // bypass filter methods (BCJ, etc):
-  do {
-    for (unsigned k = 0; k < Z7_ARRAY_SIZE(g_filter_pairs); k++)
-    {
-      const C_Id_Name_pair &pair = g_filter_pairs[k];
-      if ((s = wcsstr(p, pair.Name)) && (s = wcsstr(s+1, L" "))) {
-        p = s+1;
-        break;
-      }
-    }
-    // check next
-  } while (s);
-  // p points on first not-filtered method...
-  // search end:
-  s = wcspbrk(p, L":, ");
-  UString methStr;
-  if (s) {
-    methStr.AddFrom(p, (unsigned)(s-p));
-  } else {
-    methStr = p;
-  }
-  //if(deb) printf("************ fnd-item-meth %ls\n", methStr.Ptr());
-  // try to get default level from item, if it was not specified via options:
-  if (_level == -1 && s) {
-    //if(deb) printf("************ fnd level %ls\n", s);
-    do {
-      p = s+1;
-      if (p[0] == L'l' && p[1] >= L'0' && p[1] <= L'9') {
-        p++;
-        UInt32 lev = ConvertStringToUInt32(p, &s);
-        if (lev > 0 && lev <= 25) {
-          //if(deb) printf("************ fnd-item-lev %u\n", lev);
-          // overwrite global level:
-          _level = lev;
-        }
-        break;
-      }
-      s = wcspbrk(p, L":, ");
-    } while(s);
-  }
-  // set as default method (also _methods is not empty now, so this shall not be invoked anymore):
-  COneMethodInfo &m = _methods.AddNew();
-  m.MethodName.SetFromWStr_if_Ascii(methStr);
-}
-
-
 Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numItems,
     IArchiveUpdateCallback *updateCallback))
 {
@@ -517,6 +442,24 @@ Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
     if (!Write_Attrib.Def) need_Attrib = !db->Attrib.Defs.IsEmpty();
   }
 
+  // if no methods specified in options (and not pure copy) - try to obtain it from archived item,
+  // (at the moment only once for 1st item block, because otherwise we'd need to rewrite every interface to set codecs per item):
+  if (_methods.IsEmpty() && _level != 0) {
+    AString blkMethName;
+    int blkLev;
+    if (ObtainMethodFromBlocks(blkMethName, blkLev)) {
+      //printf("************ fnd-block-method: %s, lev: %d\n", blkMethName.Ptr(), blkLev);
+      // set as default method (also _methods is not empty now, so this shall not be invoked anymore):
+      if (!blkMethName.IsEmpty()) {
+        COneMethodInfo &m = _methods.AddNew();
+        m.MethodName = blkMethName;
+        if ((_level == -1) && (blkLev != -1)) {
+          _level = blkLev;
+        }
+      }
+    }
+  }
+
   // UString s;
   UString name;
 
@@ -556,12 +499,6 @@ Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
         ui.CTimeDefined = db->CTime.GetItem((unsigned)ui.IndexInArchive, ui.CTime);
         ui.ATimeDefined = db->ATime.GetItem((unsigned)ui.IndexInArchive, ui.ATime);
         ui.MTimeDefined = db->MTime.GetItem((unsigned)ui.IndexInArchive, ui.MTime);
-      }
-
-      // if no methods specified in options (and not pure copy) - try to obtain it from archived item,
-      // (at the moment only once for 1st item, because otherwise we'd need to rewrite every interface to set codecs per item):
-      if (_methods.IsEmpty() && _level != 0) {
-        _TryToObtainMethodFromItem(i, updateCallback);
       }
     }
 
@@ -1036,6 +973,29 @@ static HRESULT PROPVARIANT_to_BoolPair(const PROPVARIANT &prop, CBoolPair &dest)
   dest.Def = true;
   return S_OK;
 }
+
+struct C_Id_Name_pair
+{
+  UInt32 Id;
+  const char *Name;
+};
+
+static const C_Id_Name_pair g_filter_pairs[] =
+{
+  { k_Delta, "Delta" },
+  { k_ARM64, "ARM64" },
+  { k_RISCV, "RISCV" },
+  { k_SWAP2, "SWAP2" },
+  { k_SWAP4, "SWAP4" },
+  { k_BCJ,   "BCJ" },
+  { k_BCJ2 , "BCJ2" },
+  { k_PPC,   "PPC" },
+  { k_IA64,  "IA64" },
+  { k_ARM,   "ARM" },
+  { k_ARMT,  "ARMT" },
+  { k_SPARC, "SPARC" }
+};
+
 
 HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &value)
 {

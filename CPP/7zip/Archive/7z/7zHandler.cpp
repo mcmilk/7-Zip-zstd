@@ -384,6 +384,163 @@ Z7_COM7F_IMF(CHandler::GetRawProp(UInt32 index, PROPID propID, const void **data
 
 #ifndef Z7_SFX
 
+/*
+   Used to obtain the method with level from first archived item block where it would be able to retrieve them
+   (and will set this method (and if found also the level) in the caller (only if no methods are specified
+   in command-line arguments or supplied from UI);
+   The filtered methods (BCJ, etc) and encryption (7zAES) will be ignored, so first not filtered method of 
+   first block will win.
+   Current restrictions (todo's):
+   - complex compressed archives, e. g. using multiple codecs per item (first method will win) or different 
+     methods across items groups (method of first item will win);
+   - not all methods allow to obtain levels (e. g. LZMA, LZMA2, PPMD)
+   - ZSTD fast levels will be not set to codec at the moment (and resulting to level 1); also other parameters
+     like windowLog are not supported currently by recompression.
+ */
+bool CHandler::ObtainMethodFromBlocks(AString &methName, int &level) const
+{
+  // no blocks - no methods can be found:
+  if (!_db.NumFolders) return false;
+  // for every block:
+  CNum folderIndex;
+  for (folderIndex = 0; folderIndex < _db.NumFolders; folderIndex++) {
+    const size_t startPos = _db.FoCodersDataOffset[folderIndex];
+    const Byte *p = _db.CodersData.ConstData() + startPos;
+    const size_t size = _db.FoCodersDataOffset[folderIndex + 1] - startPos;
+    CInByte2 inByte;
+    inByte.Init(p, size);
+
+    // numCoders == 0 ???
+    CNum numCoders = inByte.ReadNum();
+    for (; numCoders != 0; numCoders--)
+    {
+      const Byte mainByte = inByte.ReadByte();
+      UInt64 id64 = 0;
+      const unsigned idSize = (mainByte & 0xF);
+      const Byte *longID = inByte.GetPtr();
+      for (unsigned j = 0; j < idSize; j++)
+        id64 = ((id64 << 8) | longID[j]);
+      inByte.SkipDataNoCheck(idSize);
+
+      if ((mainByte & 0x10) != 0)
+      {
+        inByte.ReadNum(); // NumInStreams
+        inByte.ReadNum(); // NumOutStreams
+      }
+    
+      CNum propsSize = 0;
+      const Byte *props = NULL;
+      if ((mainByte & 0x20) != 0)
+      {
+        propsSize = inByte.ReadNum();
+        props = inByte.GetPtr();
+        inByte.SkipDataNoCheck(propsSize);
+      }
+      
+      const char *name = NULL;
+      int lev = (int)-1;
+      if (id64 <= (UInt32)0xFFFFFFFF)
+      {
+        const UInt32 id = (UInt32)id64;
+        switch (id) {
+        case k_LZMA:
+          name = "LZMA";
+          break;
+        case k_LZMA2:
+          name = "LZMA2";
+          break;
+        case k_PPMD:
+          name = "PPMD";
+          break;
+        case k_LZHAM:
+          name = "LZHAM";
+          if (propsSize == 5)
+          {
+            lev = props[2];
+          }
+          break;
+        case k_BROTLI:
+          name = "Brotli";
+          if (propsSize == 3)
+          {
+            lev = props[2];
+          }
+          break;
+        case k_LIZARD:
+          name = "Lizard";
+          if (propsSize == 3)
+          {
+            lev = props[2];
+          }
+          break;
+        case k_LZ4:
+          name = "LZ4";
+          if (propsSize == 3 || propsSize == 5)
+          {
+            lev = props[2];
+          }
+          break;
+        case k_LZ5:
+          name = "LZ5";
+          if (propsSize == 3 || propsSize == 5)
+          {
+            lev = props[2];
+          }
+          break;
+        case k_ZSTD:
+          name = "ZSTD";
+          if (propsSize == 3 || propsSize == 5)
+          {
+            UInt32 l = props[2];
+            if (l <= 22) {
+              lev = l;
+            } else {
+              // todo: need parameter to set fast mode (to NCoderPropID::kFast)
+              // fast = 1;
+              // l -= 32;
+              lev = 1; // use fastest positive level at the moment;
+            }
+          }
+          break;
+        // ignore filtered methods:
+        case k_Delta:
+        case k_ARM64:
+        case k_RISCV:
+        case k_SWAP2:
+        case k_SWAP4:
+        case k_BCJ:
+        case k_BCJ2:
+        case k_PPC:
+        case k_IA64:
+        case k_ARM:
+        case k_ARMT:
+        case k_SPARC:
+        // and encryption:
+        case k_AES:
+          name = "";
+          break;
+        }
+      }
+      //printf("******* %d/%d %s - %d\n", folderIndex, numCoders, name, lev);
+
+      if (name)
+      {
+        methName = name;
+      }
+      else
+      {
+        FindMethod(EXTERNAL_CODECS_VARS id64, methName);
+      }
+      // found 1st useable for compression method, use it for now:
+      if (!methName.IsEmpty()) {
+        level = lev;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 HRESULT CHandler::SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const
 {
   PropVariant_Clear(prop);
