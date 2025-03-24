@@ -99,10 +99,9 @@ static bool Read7ZipOption(LPCTSTR value, bool defaultValue)
   return defaultValue;
 }
 
-static bool ReadFMOption(LPCTSTR value)
+static bool ReadFMOption(LPCTSTR value, bool enabled=false)
 {
   CKey key;
-  bool enabled = false;
   if (key.Open(HKEY_CURRENT_USER, kCU_FMPath, KEY_READ) == ERROR_SUCCESS)
   {
     if (key.QueryValue(value, enabled) == ERROR_SUCCESS)
@@ -168,10 +167,10 @@ void CFmSettings::Load()
   ShowGrid = false;
   SingleClick = false;
   AlternativeSelection = false;
-  ArcHistory = false;
-  PathHistory = false;
-  CopyHistory = false;
-  FolderHistory = false;
+  ArcHistory = true;
+  PathHistory = true;
+  CopyHistory = true;
+  FolderHistory = true;
   LowercaseHashes = false;
   // Underline = false;
 
@@ -204,10 +203,10 @@ void CFmSettings::Load()
 void SaveLockMemoryEnable(bool enable) { Save7ZipOption(kLargePages, enable); }
 bool ReadLockMemoryEnable() { return Read7ZipOption(kLargePages, false); }
 
-bool WantArcHistory() { return ReadFMOption(kArcHistory); }
-bool WantPathHistory() { return ReadFMOption(kPathHistory); }
-bool WantCopyHistory() { return ReadFMOption(kCopyHistory); }
-bool WantFolderHistory() { return ReadFMOption(kFolderHistory); }
+bool WantArcHistory() { return ReadFMOption(kArcHistory, true); }
+bool WantPathHistory() { return ReadFMOption(kPathHistory, true); }
+bool WantCopyHistory() { return ReadFMOption(kCopyHistory, true); }
+bool WantFolderHistory() { return ReadFMOption(kFolderHistory, true); }
 bool WantLowercaseHashes() { return ReadFMOption(kLowercaseHashes); }
 
 static CSysString GetFlatViewName(UInt32 panelIndex)
