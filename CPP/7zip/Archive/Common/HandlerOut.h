@@ -67,10 +67,12 @@ public:
 
 class CMultiMethodProps: public CCommonMethodProps
 {
+  void InitMulti();
+
+protected:
   UInt32 _level;
   int _analysisLevel;
 
-  void InitMulti();
 public:
   UInt32 _crcSize;
   CObjectVector<COneMethodInfo> _methods;
