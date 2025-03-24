@@ -8,6 +8,7 @@
 
 #include "../Common/CWrappers.h"
 #include "../Common/StreamUtils.h"
+#include "../../Windows/System.h"
 
 #include "Lzma2Encoder.h"
 #pragma warning(disable : 4127)
@@ -55,7 +56,10 @@ HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzm
     case NCoderPropID::kNumThreads:
       if (prop.vt != VT_UI4)
         return E_INVALIDARG;
-      lzma2Props.numTotalThreads = (int)(prop.ulVal);
+      lzma2Props.numTotalThreads = (
+        ((int)(prop.ulVal) > 0) ?
+        (int)(prop.ulVal) : NWindows::NSystem::GetNumberOfProcessors()
+      );
       break;
     default:
       RINOK(NLzma::SetLzmaProp(propID, prop, lzma2Props.lzmaProps))
