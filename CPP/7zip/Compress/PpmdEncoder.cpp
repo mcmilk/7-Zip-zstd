@@ -117,6 +117,7 @@ Z7_COM7F_IMF(CEncoder::SetCoderProperties(const PROPID *propIDs, const PROPVARIA
           return E_INVALIDARG;
         props.Order = (Byte)v;
         break;
+      case NCoderPropID::kDictionarySize:
       case NCoderPropID::kNumThreads: break;
       case NCoderPropID::kLevel: level = (int)v; break;
       default: return E_INVALIDARG;
