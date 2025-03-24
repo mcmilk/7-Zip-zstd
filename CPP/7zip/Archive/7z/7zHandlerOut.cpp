@@ -445,16 +445,15 @@ Z7_COM7F_IMF(CHandler::UpdateItems(ISequentialOutStream *outStream, UInt32 numIt
   // if no methods specified in options (and not pure copy) - try to obtain it from archived item,
   // (at the moment only once for 1st item block, because otherwise we'd need to rewrite every interface to set codecs per item):
   if (_methods.IsEmpty() && _level != 0) {
-    AString blkMethName;
-    int blkLev;
-    if (ObtainMethodFromBlocks(blkMethName, blkLev)) {
-      //printf("************ fnd-block-method: %s, lev: %d\n", blkMethName.Ptr(), blkLev);
+    CHandler::MethodInfo mInfo;
+    if (ObtainMethodFromBlocks(&mInfo)) {
+      //printf("************ fnd-block-method: %s, lev: %d\n", mInfo.methName.Ptr(), mInfo.level);
       // set as default method (also _methods is not empty now, so this shall not be invoked anymore):
-      if (!blkMethName.IsEmpty()) {
+      if (!mInfo.methName.IsEmpty()) {
         COneMethodInfo &m = _methods.AddNew();
-        m.MethodName = blkMethName;
-        if ((_level == -1) && (blkLev != -1)) {
-          _level = blkLev;
+        m.MethodName = mInfo.methName;
+        if ((_level == -1) && (mInfo.level != -1)) {
+          _level = mInfo.level;
         }
       }
     }

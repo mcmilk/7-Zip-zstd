@@ -159,7 +159,13 @@ private:
   CRecordVector<UInt64> _fileInfoPopIDs;
   void FillPopIDs();
   void AddMethodName(AString &s, UInt64 id);
-  bool ObtainMethodFromBlocks(AString &methName, int &level) const;
+
+  typedef struct MethodInfo {
+    AString methName;
+    int level;
+  } MethodInfo;
+  bool ObtainMethodFromBlocks(MethodInfo *info) const;
+  HRESULT ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, MethodInfo *info) const;
   HRESULT SetMethodToProp(CNum folderIndex, PROPVARIANT *prop) const;
 
   #endif
