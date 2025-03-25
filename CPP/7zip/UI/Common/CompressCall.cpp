@@ -217,7 +217,7 @@ HRESULT CompressFiles(
   params += kIncludeSwitch;
   RINOK(CreateMap(names, fileMapping, event, params))
 
-  if (!arcType.IsEmpty() && arcType == L"7z")
+  if (!arcType.IsEmpty() && ((arcType == L"7z") || (arcType == L"zip")))
   {
     int index;
     params += kArchiveTypeSwitch;
@@ -231,7 +231,7 @@ HRESULT CompressFiles(
 
       if (!fo.Method.IsEmpty())
       {
-        params += " -m0=";
+        params += (arcType == L"7z") ? " -m0=" : " -mm=";
         params += fo.Method;
       }
 
@@ -242,7 +242,7 @@ HRESULT CompressFiles(
         params += temp;
       }
 
-      if (fo.Dictionary)
+      if (fo.Dictionary && (arcType == L"7z"))
       {
         params += " -md=";
         ConvertUInt32ToString(fo.Dictionary, temp);
@@ -250,7 +250,7 @@ HRESULT CompressFiles(
         params += "b";
       }
 
-      if (fo.BlockLogSize)
+      if (fo.BlockLogSize && (arcType == L"7z"))
       {
         params += " -ms=";
         ConvertUInt64ToString(1ULL << fo.BlockLogSize, temp);
@@ -258,7 +258,7 @@ HRESULT CompressFiles(
         params += "b";
       }
 
-      if (fo.NumThreads)
+      if (fo.NumThreads && fo.NumThreads != -1)
       {
         params += " -mmt=";
         ConvertUInt32ToString(fo.NumThreads, temp);
