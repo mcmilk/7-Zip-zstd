@@ -18,3 +18,8 @@
 *.inf text eol=crlf
 *.nsi text eol=crlf
 *.wxs text eol=crlf
+
+# archives in regression tests
+*.br
+*.zstd
+*.7z

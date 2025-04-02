@@ -1,0 +1,32 @@
+# main.test --
+#
+# Part of 7-zip ZS test suite.
+#
+# Copyright (c) 2025- by Sergey G. Brester aka sebres
+
+if {[namespace which -command "::7z"] eq ""} {
+  source [file join [file dirname [info script]] 7z.tcl]
+}
+
+test main--formats {7z version, formats} {
+	7z i
+	assertLogged {^\s*7-Zip \d+.\d+ ZS} {\szstd\s+zst zstd tzst} {\sbrotli\s+br brotli tbr}
+	assertLogged \
+		{\n\s*0\s+ED\s+4F71102 BROTLI\s} \
+		{\n\s*0\s+ED\s+4F71104 LZ4\s} \
+		{\n\s*0\s+ED\s+4F71106 LIZARD\s} \
+		{\n\s*0\s+ED\s+4F71105 LZ5\s} \
+		{\n\s*0\s+ED\s+4F71101 ZSTD\s} \
+		{\n\s*0\s+ED\s+21 FLZMA2\s}
+
+	set _ OK
+} OK
+
+test main--usage {7z version, formats} {
+	7z
+	assertLogged {^\s*7-Zip \d+.\d+ ZS} {\n\s*--srv-mode : Start in interactive server mode}
+
+	set _ OK
+} OK
+
+::tcltest::cleanupTests

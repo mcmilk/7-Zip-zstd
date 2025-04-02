@@ -1,0 +1,69 @@
+# regression.test --
+#
+# Regressions tests for archives compressed with previous version
+# Part of 7-zip ZS test suite.
+#
+# Copyright (c) 2025- by Sergey G. Brester aka sebres
+
+if {[namespace which -command "::7z"] eq ""} {
+  source [file join [file dirname [info script]] 7z.tcl]
+}
+
+test regression--test-all {7z regression test for with previous versions encrypted files, test with checksum} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+		set res [7z t -scrcSHA256 -- $p]
+		set res [lrange [regexp -inline -expanded {
+			\n(Path)\s*=\s*[^\n]*[\\/]([^\\/\n]+)
+			\n(Type)\s*=\s*(\S*)
+			(?:
+				(?:\n(?!Method)[^\n]*){1,3}
+			  (?:\n(Method)\s*=\s*(\S+))?
+			)?
+			(?:\n(?!Everything)[^\n]*){1,5}
+			\nEverything\s+is\s+Ok
+			(?:\n(?!Size)[^\n]*){1,5}
+			\n(Size):\s*(\d+)
+			(?:\n(?!SHA256)[^\n]*){1,5}
+			\n(SHA256)\s+for\s+data:\s+(\S+)
+		} $res] 1 end]
+		lappend ret [file tail $p] $res
+	}
+	lappend ret OK
+	join $ret \n
+} [join {
+	test.txt.br
+	{Path test.txt.br Type brotli {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+	test.txt.br.7z
+	{Path test.txt.br.7z Type 7z Method BROTLI Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+	test.txt.zstd
+	{Path test.txt.zstd Type zstd {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+	test.txt.zstd.7z
+	{Path test.txt.zstd.7z Type 7z Method ZSTD Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+	OK
+} \n]
+
+test regression--decompress {7z regression test for with previous versions encrypted files, decompression} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	set regr_arc_data "TEST\n[string repeat { } 999990]\nEND."
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+		set res [7z e -so -- $p]
+		lappend ret [file tail $p] [string equal [string trimright $res] $regr_arc_data]
+	}
+	set ret
+} [list {*}{
+	test.txt.br      1
+	test.txt.br.7z   1
+	test.txt.zstd    1
+	test.txt.zstd.7z 1
+}]
+
+::tcltest::cleanupTests
+
+
+# (?:\n[^\n]*)*
+# \n(Size):\s*(\d+)
+# (?:\n[^\n]*)*
+# \n(SHA256)\s+for\s+data:\s+(\S+)
