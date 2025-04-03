@@ -41,4 +41,95 @@ test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
 	set _ OK
 } OK
 
+test main--encrypt-decrypt {7z encryption, decription} -setup {
+	set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
+	file mkdir $tmpdir
+} -body {
+	variable 7Z_PATH
+  variable 7Z_PWD
+	set v "test zstd & brotli 0123456789-ABCEFGHIJKLMNOPQRSTUVWXYZ?_*."
+	foreach {m l} {zstd 9 brotli 5 LZMA2 1} {
+		set arcpath [file join $tmpdir encr-test.$m.7z]
+		if {[catch {
+			# compress with encryption:
+			7z a -t7z -m0=$m:x$l -sitest.txt -p$7Z_PWD -- $arcpath . << "$v"
+			assertLogged {\nCreating archive} \
+				{\nAdd new data to archive: 1 file, 59 bytes} \
+				{\nEverything is Ok}
+			# test:
+			7z t -p$7Z_PWD -- $arcpath
+			assertLogged {\nEverything is Ok}
+			# decompress with decryption:
+			set v2 [7z e -so -p$7Z_PWD -- $arcpath]
+			#puts $v2
+			if {$v2 ne $v} {
+				error "retrieved $v2 instead of original"
+			}
+		} res]} {
+			error "Test of -m0=$m on \"$v\" failed: $res"
+		}
+  }
+  set _ OK
+} -cleanup {
+	file delete -force $tmpdir
+} -result OK
+
+test main--file-hashes {7z hashes of file} {
+	variable 7Z_REGR_TEST_DIR
+	set fn [file join $7Z_REGR_TEST_DIR test.txt.zstd]
+	set res [7z h -scrc* $fn]
+	#puts $res
+	set ret {}
+	foreach {_ n v} [regexp -inline -all -line {^(\S+)\s+for\s+data:\s+(\S+)} $res] {
+		lappend ret $n [string tolower $v]
+	}
+	lsort -dictionary -nocase -stride 2 $ret
+} [list {*}{
+	BLAKE2sp aa4999836d9e6e86438d9251980882c58213f82dcdc7ee4a97ee15cfbb7972aa
+	BLAKE3 e7c8d0658eab97ee7d800bca4e78f6962e51a7b18e7f8f7f702fb40031f260d9
+	CRC32 e7d705d3
+	CRC64 8ee8329f1ffd5768
+	MD2 d190c8d4f3ea806a3f476d77ac1a6a1b
+	MD4 3406bf9c189c0fcbd4b77c8af3e788b5
+	MD5 456bcdaa4f76b86a51ae5b6083838247
+	SHA1 5bf5b3692acb152f054d8d5fa4f38b46f177e32f
+	SHA3-256 5458494ae13d3517528ba9bd9aa538ba1195dd6a657cde562f1806a87169e866
+	SHA3-384 147b48f8f9eedc33621c8b14bb19d85deed019c2e7a7541a0483defc75a9ddfca82f15aa3f8059968ce6e2c798d7f058
+	SHA3-512 be70c4b1c8e58e5385591b68440cad053ef8aca3e25a17a6046268421d78f9deab42fd44ac70900a67edbcb39c7add7d2f3a46a635aa51f19524d522f4a0d5d9
+	SHA256 8a3acd73ebb6f9afbf9fd57f4b4cb35a2ff1f18d2b45b422003fdd0287b21f80
+	SHA384 363894b4075c73957ecb5c1acd1d2892fbbe9e8c494e75a9be1151415c58f29bfa4cb829ab044a1abeec9ed67d12d3ee
+	SHA512 c1c0ba6434962a99ca5da2d24ebfb358f1381e1f116a88d3e2417863523d051604803ee1acd5965ea5139de61a89e0e5c39e2ad8eabc5bbb76557a1c0966335b
+	XXH32 cc475190
+	XXH64 f11f617df84a1339
+}]
+
+test main--content-hashes {7z hashes of archive content} {
+	variable 7Z_REGR_TEST_DIR
+	set fn [file join $7Z_REGR_TEST_DIR test.txt.zstd]
+	set res [7z t -scrc* $fn]
+	#puts $res
+	set ret {}
+	foreach {_ n v} [regexp -inline -all -line {^(\S+)\s+for\s+data:\s+(\S+)} $res] {
+		lappend ret $n [string tolower $v]
+	}
+	lsort -dictionary -nocase -stride 2 $ret
+} [list {*}{
+	BLAKE2sp cb6d9d698273360d7d19100d28b8f7d9d42ce5d110a2f1c7a28bd137f469d364
+	BLAKE3 b7e9f7f105e6c40cbd1cfa959f8968c6dd702735508aecb268548205541ef7c3
+	CRC32 c601982a
+	CRC64 cd7bea76c167bcac
+	MD2 3b01edaa2e8de58bd7e15e50a5c26c00
+	MD4 1472a98f5c6d54dc5aecfa297b3ee831
+	MD5 8ddc6f30bb831efdb382fb40c1f0ce09
+	SHA1 6a86865444b02b83657b3e477c23301caee157b6
+	SHA3-256 9c0e5cf855ad2271662553a45e058152415b7064e20e520fabba74a6ee043efa
+	SHA3-384 6748d99f55806fc77490b452e3459fec1252520790dac5528e517f647010394eaa7656a7938dbf23f2a3d2a65ec7ded9
+	SHA3-512 d39e07c769f946d9ed13e0e3014c757c3986d174c6228b0fe1d62fee8e1edd7f6dd3acd62c8ddcc3e7a5635f389472ce811848e2572fe311e0b3b2750c44fbdb
+	SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97
+	SHA384 51c5370ba3bff1ee113dfcf58d80e5f007e202013d2467957e3171f4537dfd93c2acd9657a6f140e4b3b38dc3e98bfb3
+	SHA512 edfa4d5886412c19e976d09b5a85e683ff41761f341122e35a781d36a44c8aa473a53cc9c2d7be5745557b407e42301835de60f06368d3d3f48126eef3ff7c23
+	XXH32 e2858574
+	XXH64 6ad2d3e5bcc63918
+}]
+
 ::tcltest::cleanupTests
