@@ -9,7 +9,7 @@ if {[namespace which -command "::7z"] eq ""} {
   source [file join [file dirname [info script]] 7z.tcl]
 }
 
-test regression--test-all {7z regression test for with previous versions encrypted files, test with checksum} {
+test regression--test-all {7z regression test for with previous versions compressed files, test with checksum} {
 	variable 7Z_REGR_TEST_DIR
 	set ret {}
 	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
@@ -18,14 +18,14 @@ test regression--test-all {7z regression test for with previous versions encrypt
 			\n(Path)\s*=\s*[^\n]*[\\/]([^\\/\n]+)
 			\n(Type)\s*=\s*(\S*)
 			(?:
-				(?:\n(?!Method)[^\n]*){1,3}
+				(?:\n(?!Method)[^\n]*){0,3}
 			  (?:\n(Method)\s*=\s*(\S+))?
 			)?
-			(?:\n(?!Everything)[^\n]*){1,5}
+			(?:\n(?!Everything)[^\n]*){0,5}
 			\nEverything\s+is\s+Ok
-			(?:\n(?!Size)[^\n]*){1,5}
+			(?:\n(?!Size)[^\n]*){0,5}
 			\n(Size):\s*(\d+)
-			(?:\n(?!SHA256)[^\n]*){1,5}
+			(?:\n(?!SHA256)[^\n]*){0,5}
 			\n(SHA256)\s+for\s+data:\s+(\S+)
 		} $res] 1 end]
 		lappend ret [file tail $p] $res
@@ -33,18 +33,73 @@ test regression--test-all {7z regression test for with previous versions encrypt
 	lappend ret OK
 	join $ret \n
 } [join {
+	test.7z
+		{Path test.7z Type 7z Method LZMA2:20 Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.br
-	{Path test.txt.br Type brotli {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+		{Path test.txt.br Type brotli {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.br.7z
-	{Path test.txt.br.7z Type 7z Method BROTLI Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+		{Path test.txt.br.7z Type 7z Method BROTLI Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.zstd
-	{Path test.txt.zstd Type zstd {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+		{Path test.txt.zstd Type zstd {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.zstd.7z
-	{Path test.txt.zstd.7z Type 7z Method ZSTD Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+		{Path test.txt.zstd.7z Type 7z Method ZSTD Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	OK
 } \n]
 
-test regression--decompress {7z regression test for with previous versions encrypted files, decompression} {
+test regression--list-tech-info {7z regression test for with previous versions compressed files, list with technical info} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+		set res [7z l -slt -- $p]
+		set res [lrange [regexp -inline -expanded {
+      \n(Path)\s*=\s*[^\n]*[\\/]([^\\/\n]+)
+      \n(Type)\s*=\s*(\S*)
+      (?:
+        (?:\n(?!Path)[^\n]*){0,10}
+        (?:\n(Path)\s*=\s*(\S+))?
+      )?
+      (?:
+        (?:\n(?!Size)[^\n]*){0,10}
+        (?:\n(Size)\s*=\s*(\S+))?
+      )?
+      (?:
+        (?:\n(?!Modified)[^\n]*){0,10}
+        (?:\n(Modified)\s*=\s*([^\n]+))?
+      )?
+      (?:
+        (?:\n(?!CRC)[^\n]*){0,10}
+        (?:\n(CRC)\s*=\s*(\S+))?
+      )?
+      (?:
+        (?:\n(?!Method)[^\n]*){0,10}
+        (?:\n(Method)\s*=\s*(\S+))?
+      )?
+    } $res] 1 end]
+    set i [lsearch -exact $res Modified]
+    if {$i != -1} {
+    	incr i
+    	lset res $i [clock scan [regsub {\.\d+$} [lindex $res $i] {}]]; # to unix time (UTC, TZ independend)
+    }
+		lappend ret [file tail $p] $res
+	}
+	lappend ret OK
+	join $ret \n
+} [join {
+	test.7z
+		{Path test.7z Type 7z Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method LZMA2:20}
+	test.txt.br
+		{Path test.txt.br Type brotli {} {} {} {} {} {} {} {} {} {}}
+	test.txt.br.7z
+		{Path test.txt.br.7z Type 7z Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method Brotli:v1.0,l9}
+	test.txt.zstd
+		{Path test.txt.zstd Type zstd {} {} {} {} {} {} {} {} {} {}}
+	test.txt.zstd.7z
+		{Path test.txt.zstd.7z Type 7z Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:v1.5,l17}
+	OK
+} \n]
+
+
+test regression--decompress {7z regression test for with previous versions compressed files, decompression} {
 	variable 7Z_REGR_TEST_DIR
 	set ret {}
 	set regr_arc_data "TEST\n[string repeat { } 999990]\nEND."
@@ -54,6 +109,7 @@ test regression--decompress {7z regression test for with previous versions encry
 	}
 	set ret
 } [list {*}{
+	test.7z          1
 	test.txt.br      1
 	test.txt.br.7z   1
 	test.txt.zstd    1

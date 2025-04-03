@@ -163,7 +163,7 @@ jobs:
         run: |
           set PLATFORM=${{matrix.platform}}
           set 7Z_PATH=build\bin-%PLATFORM%\7z.exe
-          tclsh tests\7z-test.tcl
+          tclsh tests\7z-test.tcl -verbose tpsem
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4

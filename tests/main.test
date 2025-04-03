@@ -8,6 +8,12 @@ if {[namespace which -command "::7z"] eq ""} {
   source [file join [file dirname [info script]] 7z.tcl]
 }
 
+test main--usage {7z version, usage} {
+	7z
+	assertLogged {^\s*7-Zip \d+.\d+ ZS} {<Commands>} {<Switches>}
+	set _ OK
+} OK
+
 test main--formats {7z version, formats} {
 	7z i
 	assertLogged {^\s*7-Zip \d+.\d+ ZS} {\szstd\s+zst zstd tzst} {\sbrotli\s+br brotli tbr}
@@ -22,10 +28,16 @@ test main--formats {7z version, formats} {
 	set _ OK
 } OK
 
-test main--usage {7z version, formats} {
-	7z
-	assertLogged {^\s*7-Zip \d+.\d+ ZS} {\n\s*--srv-mode : Start in interactive server mode}
-
+test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
+	variable 7Z_PATH
+	foreach t {zstd brotli bzip2 xz gzip lz4 lz5} {
+		if {[catch {
+			7z a -t$t -mx3 -si -so << "$t: This is a test string passed to stdin" . | $7Z_PATH e -t$t -si -so
+		} res]} {
+			error "Test of -t$t failed: $res"
+		}
+		assertLogged "^$t: This is a test string passed to stdin$"
+	}
 	set _ OK
 } OK
 
