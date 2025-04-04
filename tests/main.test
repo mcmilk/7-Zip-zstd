@@ -28,6 +28,40 @@ test main--formats {7z version, formats} {
 	set _ OK
 } OK
 
+test main--e-inv-cmd {error, unsupported command} -body {
+	7z inv ...
+} -returnCodes error -match glob -result "*Command Line Error:\nUnsupported command:\ninv*"
+
+test main--e-inv-arg {error, unknown switch} -body {
+	7z a -tzstd --xxx-unknown-arg -mx3 -si -so << "Dummy stdin" .
+} -returnCodes error -match glob -result "*Command Line Error:\nUnknown switch:\n--xxx-unknown-arg*"
+
+foreach t {{-t7z -m0=zstd:x1} {-tzstd -mx1} {-tzip -mx1}} {
+test main--compress[lindex $t 0]-no-file {error, compress no such file} -body {
+  set tmpfn [file join [temporaryDirectory] 7z-test-no-such-file-xxx.txt]
+  7z a {*}$t -- NUL: $tmpfn
+} -returnCodes error -match glob -result "*Scan WARNINGS for files and folders:*The system cannot find the file specified.*"
+}
+
+# this file shall be present and open for writing by svchost WpnUserService (but protect the tests by constraint):
+set lckd_test_file {}
+testConstraint lckd_test_file [expr {
+	[info exists ::env(LOCALAPPDATA)] &&
+	[file exists [set lckd_test_file [file join $::env(LOCALAPPDATA) {Microsoft\Windows\Notifications\wpndatabase.db-wal}]]]
+}]
+foreach t {{-t7z -m0=zstd:x1} {-tzstd -mx1}} {
+test main--compress[lindex $t 0]-lckd-no-ssw {error, compress file open for writing without -ssw option} -constraints lckd_test_file -body {
+	variable lckd_test_file
+	# attempt to compress (without -ssw) file opened for write by other process shall generate an error:
+	7z a {*}$t -- NUL: $lckd_test_file
+} -returnCodes error -match glob -result "*WARNING: The process cannot access the file because it is being used by another process.*"
+test main--compress[lindex $t 0]-lckd-w-ssw {no error, compress file open for writing with -ssw option} -constraints lckd_test_file -body {
+	variable lckd_test_file
+	# attempt to compress (without -ssw) file opened for write by other process shall generate an error:
+	7z a {*}$t -ssw -- NUL: $lckd_test_file
+} -returnCodes ok -match glob -result "*Everything is Ok*"
+}
+
 test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
 	variable 7Z_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5} {
