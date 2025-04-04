@@ -1,121 +1,71 @@
 @echo off
 
-set ROOT=%cd%\7zip
-set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%
-set ERRFILE=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%.log
-set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
-set > %APPVEYOR_BUILD_FOLDER%\env-%VC%-%PLATFORM%.txt
-mkdir %OUTDIR%
+IF not "%~1" == "-no-init" (
+  set ROOT=%cd%\7zip
+  set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%
+  set ERRFILE=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%.log
+  set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
+  set > %APPVEYOR_BUILD_FOLDER%\env-%VC%-%PLATFORM%.txt
+)
+if "%SUBSYS%" == "" (
+  echo ERROR: Variable SUBSYS is not set.
+  exit /b 1
+)
+if "%STOP_ON_ERROR%" == "" (
+  set STOP_ON_ERROR=0
+)
+echo ** Build %PLATFORM% to %OUTDIR% ...
+IF not exist %OUTDIR% mkdir %OUTDIR%
 
-cd %ROOT%\Bundles\Format7zExtract
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7zxa.dll" >> %ERRFILE%
-copy %PLATFORM%\7zxa.dll %OUTDIR%\7zxa.dll
+set ERR_COUNT=0
 
-cd %ROOT%\Bundles\Format7z
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7za.dll" >> %ERRFILE%
-copy %PLATFORM%\7za.dll %OUTDIR%\7za.dll
-
-cd %ROOT%\Bundles\Format7zF
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7z.dll" >> %ERRFILE%
-copy %PLATFORM%\7z.dll %OUTDIR%\7z.dll
-
-cd %ROOT%\UI\FileManager
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7zFM.exe" >> %ERRFILE%
-copy %PLATFORM%\7zFM.exe %OUTDIR%\7zFM.exe
-
-cd %ROOT%\UI\GUI
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7zG.exe" >> %ERRFILE%
-copy %PLATFORM%\7zG.exe %OUTDIR%\7zG.exe
-
-cd %ROOT%\UI\Explorer
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7-zip.dll" >> %ERRFILE%
-copy %PLATFORM%\7-zip.dll %OUTDIR%\7-zip.dll
-
-cd %ROOT%\Bundles\SFXWin
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7z.sfx" >> %ERRFILE%
-copy %PLATFORM%\7z.sfx %OUTDIR%\7z.sfx
-
-cd %ROOT%\Bundles\Codec_brotli
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ brotli.dll" >> %ERRFILE%
-copy %PLATFORM%\brotli.dll %OUTDIR%\brotli.dll
-
-cd %ROOT%\Bundles\Codec_lizard
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ lizard.dll" >> %ERRFILE%
-copy %PLATFORM%\lizard.dll %OUTDIR%\lizard.dll
-
-cd %ROOT%\Bundles\Codec_lz4
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ lz4.dll" >> %ERRFILE%
-copy %PLATFORM%\lz4.dll %OUTDIR%\lz4.dll
-
-cd %ROOT%\Bundles\Codec_lz5
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ lz5.dll" >> %ERRFILE%
-copy %PLATFORM%\lz5.dll %OUTDIR%\lz5.dll
-
-cd %ROOT%\Bundles\Codec_zstd
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ zstd.dll" >> %ERRFILE%
-copy %PLATFORM%\zstd.dll %OUTDIR%\zstd.dll
-
-cd %ROOT%\Bundles\Codec_flzma2
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ flzma2.dll" >> %ERRFILE%
-copy %PLATFORM%\flzma2.dll %OUTDIR%\flzma2.dll
-
-cd %ROOT%\..\..\C\Util\7zipInstall
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ Install.exe" >> %ERRFILE%
-copy %PLATFORM%\7zipInstall.exe %OUTDIR%\Install.exe
-
-cd %ROOT%\..\..\C\Util\7zipUninstall
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ Uninstall.exe" >> %ERRFILE%
-copy %PLATFORM%\7zipUninstall.exe %OUTDIR%\Uninstall.exe
+call :build Bundles\Format7zExtract     7zxa.dll
+call :build Bundles\Format7z            7za.dll
+call :build Bundles\Format7zF           7z.dll
+call :build UI\FileManager              7zFM.exe
+call :build UI\GUI                      7zG.exe
+call :build UI\Explorer                 7-zip.dll
+call :build Bundles\SFXWin              7z.sfx
+call :build Bundles\Codec_brotli        brotli.dll
+call :build Bundles\Codec_lizard        lizard.dll
+call :build Bundles\Codec_lz4           lz4.dll
+call :build Bundles\Codec_lz5           lz5.dll
+call :build Bundles\Codec_zstd          zstd.dll
+call :build Bundles\Codec_flzma2        flzma2.dll
+call :build ..\..\C\Util\7zipInstall    7zipInstall.exe    Install.exe
+call :build ..\..\C\Util\7zipUninstall  7zipUninstall.exe  Uninstall.exe
 
 set LFLAGS=/SUBSYSTEM:CONSOLE,%SUBSYS%
-cd %ROOT%\UI\Console
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7z.exe" >> %ERRFILE%
-copy %PLATFORM%\7z.exe %OUTDIR%\7z.exe
 
-cd %ROOT%\Bundles\SFXCon
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7zCon.sfx" >> %ERRFILE%
-copy %PLATFORM%\7zCon.sfx %OUTDIR%\7zCon.sfx
-
-cd %ROOT%\Bundles\Alone
-echo == Build %cd% ==
-nmake /NOLOGO %OPTS%
-IF %errorlevel% NEQ 0 echo "Error @ 7za.exe" >> %ERRFILE%
-copy %PLATFORM%\7za.exe %OUTDIR%\7za.exe
+call :build UI\Console                  7z.exe
+call :build Bundles\SFXCon              7zCon.sfx
+call :build Bundles\Alone               7za.exe
 
 :ende
 cd %ROOT%\..
+if %ERR_COUNT% NEQ 0 (
+  echo !! Build fails with %ERR_COUNT% errors. 
+  exit /b 1
+)
+echo ** Build is OK.
+exit /b 0
 
+@rem build function ...
+:build
+cd %ROOT%\%~1
+set out=%~3
+if "%out%" == "" set out=%~2
+echo   == Build %out% (%~1) ==
+nmake /NOLOGO %OPTS%
+IF %errorlevel% NEQ 0 (
+  IF not "%ERRFILE%" == "" (echo "Error @ %out%" >> "%ERRFILE%")
+  set /A ERR_COUNT=ERR_COUNT+1
+  IF %STOP_ON_ERROR% NEQ 0 EXIT 1
+  exit /b 1
+)
+copy %PLATFORM%\%~2 %OUTDIR%\%out%
+IF %errorlevel% NEQ 0 (
+  IF %STOP_ON_ERROR% NEQ 0 EXIT 1
+  exit /b 1
+)
+goto :eof
