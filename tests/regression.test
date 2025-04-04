@@ -128,4 +128,231 @@ test regression--decompress {7z regression test for with previous versions compr
 	xenc-pwd-sol.zstd.7z 1
 }]
 
+set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
+file mkdir $tmpdir
+
+test regression--preserve-method-non-solid {7z add/del file in non-solid archive (preserve compression method, bug #340)} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
+	lappend ret ===add===
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test.txt*.7z]] {
+		file copy $p [set p [file join $tmpdir [file tail $p]]]
+		7z a -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 1 file, 1000000 bytes} {\nAdd new data to archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+	}
+	# delete:
+	lappend ret ===del===
+	foreach p [lsort -dictionary [glob -directory $tmpdir test.txt*.7z]] {
+		7z d -- $p abcd.txt
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 1 file, 1000000 bytes} {\nDelete data from archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+		file delete $p
+	}
+	join $ret \n
+} [join {
+	===add===
+	test.txt.7z
+		{Solid - test.txt LZMA2:20 abcd.txt LZMA2:12}
+	test.txt.br.7z
+		{Solid - test.txt Brotli:v1.0,l9 abcd.txt Brotli:v1.0,l9}
+	test.txt.zstd.7z
+		{Solid - test.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l17}
+	===del===
+	test.txt.7z
+		{Solid - test.txt LZMA2:20}
+	test.txt.br.7z
+		{Solid - test.txt Brotli:v1.0,l9}
+	test.txt.zstd.7z
+		{Solid - test.txt ZSTD:v1.5,l17}
+} \n]
+
+test regression--preserve-method-non-solid2 {7z add/del file in non-solid archive (preserve compression method, bug #340)} {
+	# same as regression--preserve-method-non-solid, but compress added file using new method:level (from cmd-line):
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
+	lappend ret ===add===
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test.txt*.7z]] {
+		file copy $p [set p [file join $tmpdir [file tail $p]]]
+		7z u -m0=zstd:x1 -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 1 file, 1000000 bytes} {\nAdd new data to archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+	}
+	# delete:
+	lappend ret ===del===
+	foreach p [lsort -dictionary [glob -directory $tmpdir test.txt*.7z]] {
+		7z d -ms=off -- $p abcd.txt
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 1 file, 1000000 bytes} {\nDelete data from archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+		file delete $p
+	}
+	join $ret \n
+} [join {
+	===add===
+	test.txt.7z
+		{Solid - test.txt LZMA2:20 abcd.txt ZSTD:v1.5,l1}
+	test.txt.br.7z
+		{Solid - test.txt Brotli:v1.0,l9 abcd.txt ZSTD:v1.5,l1}
+	test.txt.zstd.7z
+		{Solid - test.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l1}
+	===del===
+	test.txt.7z
+		{Solid - test.txt LZMA2:20}
+	test.txt.br.7z
+		{Solid - test.txt Brotli:v1.0,l9}
+	test.txt.zstd.7z
+		{Solid - test.txt ZSTD:v1.5,l17}
+} \n]
+
+test regression--preserve-method-solid {7z add/del file in solid archive (preserve compression method, bug #340)} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
+	lappend ret ===add===
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test-sol*.7z]] {
+		file copy $p [set p [file join $tmpdir [file tail $p]]]
+		7z a -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 2 files, 1100000 bytes} {\nAdd new data to archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+	}
+	# delete:
+	lappend ret ===del===
+	foreach p [lsort -dictionary [glob -directory $tmpdir test-sol*.7z]] {
+		7z d -- $p abcd.txt
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 2 files, 1100000 bytes} {\nDelete data from archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+		file delete $p
+	}
+	join $ret \n
+} [join {
+	===add===
+	test-sol.7z
+		{Solid + test.txt LZMA2:1536k tesx.txt LZMA2:1536k abcd.txt LZMA2:12}
+	test-sol.br.7z
+		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9 abcd.txt Brotli:v1.0,l9}
+	test-sol.zstd.7z
+		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l17}
+	===del===
+	test-sol.7z
+		{Solid + test.txt LZMA2:1536k tesx.txt LZMA2:1536k}
+	test-sol.br.7z
+		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9}
+	test-sol.zstd.7z
+		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17}
+} \n]
+
+test regression--preserve-method-solid2 {7z add/del file in solid archive (preserve compression method, bug #340)} {
+	# same as regression--preserve-method-solid, but recompress solid block using new method:level (from cmd-line):
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
+	lappend ret ===add===
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test-sol*.7z]] {
+		file copy $p [set p [file join $tmpdir [file tail $p]]]
+		7z a -m0=zstd:x1 -ms=on -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 2 files, 1100000 bytes} {\nAdd new data to archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+	}
+	# delete (new file and one file from solid block, so it'd be recompressed and method given by cmd-line shall win):
+	lappend ret ===del===
+	foreach p [lsort -dictionary [glob -directory $tmpdir test-sol*.7z]] {
+		7z d -m0=brotli:x1 -- $p abcd.txt test.txt
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 1 file, 100000 bytes} {\nDelete data from archive: 2 files, 1004040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+		file delete $p
+	}
+	join $ret \n
+} [join {
+	===add===
+	test-sol.7z
+		{Solid + test.txt LZMA2:1536k tesx.txt LZMA2:1536k abcd.txt ZSTD:v1.5,l1}
+	test-sol.br.7z
+		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9 abcd.txt ZSTD:v1.5,l1}
+	test-sol.zstd.7z
+		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l1}
+	===del===
+	test-sol.7z
+		{Solid - tesx.txt Brotli:v1.0,l1}
+	test-sol.br.7z
+		{Solid - tesx.txt Brotli:v1.0,l1}
+	test-sol.zstd.7z
+		{Solid - tesx.txt Brotli:v1.0,l1}
+} \n]
+
+file delete -force $tmpdir
+
 ::tcltest::cleanupTests
