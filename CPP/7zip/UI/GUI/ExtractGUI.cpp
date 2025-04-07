@@ -87,6 +87,10 @@ public:
   UString Title;
 
   CPropNameValPairs Pairs;
+
+#ifndef Z7_SFX
+  FString FirstExtractedPath;
+#endif
 };
 
 
@@ -128,6 +132,7 @@ HRESULT CThreadExtracting::ProcessVirt()
   #ifndef Z7_SFX
   if (res == S_OK && ExtractCallbackSpec->IsOK())
   {
+    FirstExtractedPath = Stat.FirstExtractedPath;
     if (HashBundle)
     {
       AddValuePair(Pairs, IDS_ARCHIVES_COLON, Stat.NumArchives);
@@ -162,7 +167,28 @@ HRESULT CThreadExtracting::ProcessVirt()
   return res;
 }
 
-
+#ifndef Z7_SFX
+#include <shlobj_core.h>
+static void BrowseToPath(
+    bool explore,
+    UString &path)
+{
+  if (explore /* || (GetFileAttributes(path.Ptr()) & FILE_ATTRIBUTE_DIRECTORY)*/) {
+    ShellExecute(NULL, L"explore", path.Ptr(), NULL, NULL, SW_SHOW);
+  } else {
+  #if (NTDDI_VERSION >= NTDDI_WINXP)
+    LPITEMIDLIST pidl = ILCreateFromPath(path.Ptr());
+    if (pidl) {
+      SHOpenFolderAndSelectItems(pidl,0,0,0);
+      ILFree(pidl);
+    }
+  #else
+    UString args = L"/n,/select,\"" + path + L"\"";
+    ShellExecute(NULL, L"open", L"explorer.exe", args.Ptr(), NULL, SW_SHOW);
+  #endif
+  }
+}
+#endif
 
 HRESULT ExtractGUI(
     // DECL_EXTERNAL_CODECS_LOC_VARS
@@ -193,6 +219,9 @@ HRESULT ExtractGUI(
   extracter.FormatIndices = &formatIndices;
   extracter.ExcludedFormatIndices = &excludedFormatIndices;
 
+#ifndef Z7_SFX
+  bool OpnTrgFold = false;
+#endif
   if (!options.TestMode)
   {
     FString outputDir = options.OutputDir;
@@ -240,12 +269,22 @@ HRESULT ExtractGUI(
       options.ElimDup = dialog.ElimDup;
       
       #ifndef Z7_SFX
+      OpnTrgFold = dialog.OpnTrgFold.Val;
       // options.NtOptions.AltStreams = dialog.AltStreams;
       options.NtOptions.NtSecurity = dialog.NtSecurity;
       extractCallback->Password = dialog.Password;
       extractCallback->PasswordIsDefined = !dialog.Password.IsEmpty();
       #endif
     }
+    #ifndef Z7_SFX
+    else if (!options.OutputDir.IsEmpty()) // don't open target folder if extract here
+    {
+      // load setting "open target folder" from registry saved by previous dialog
+      NExtract::CInfo _info;
+      _info.Load();
+      OpnTrgFold = _info.OpnTrgFold.Val;
+    }
+    #endif
     if (!MyGetFullPathName(outputDir, options.OutputDir))
     {
       ShowErrorMessage(kIncorrectOutDir);
@@ -293,5 +332,33 @@ HRESULT ExtractGUI(
 
   RINOK(extracter.Create(title, hwndParent))
   messageWasDisplayed = extracter.ThreadFinishedOK && extracter.MessagesDisplayed;
+
+#ifndef Z7_SFX
+  // browse/navigate to target path:
+  if (OpnTrgFold && extracter.Result == S_OK) {
+    // obtain path (directory or file) from first extracted:
+    UString extrPath = extracter.FirstExtractedPath;
+    if (extrPath.IsEmpty()) {
+      extrPath = options.OutputDir;
+    }
+    else
+    if (!options.OutputDir.IsEmpty()) {
+      // first subpath relative selected in dialog or given by options.OutputDir:
+      UString outDir = options.OutputDir;
+      if (outDir.Back() != WCHAR_PATH_SEPARATOR)
+        outDir += WCHAR_PATH_SEPARATOR;
+      extrPath = extracter.FirstExtractedPath;
+      if (extrPath.IsPrefixedBy(outDir)) {
+        int subIdx = extrPath.Find(WCHAR_PATH_SEPARATOR, outDir.Len());
+        if (subIdx != -1) {
+          extrPath = extrPath.Left(subIdx-1);
+        }
+      }
+    }
+    if (!extrPath.IsEmpty()) {
+      BrowseToPath(0 /* showDialog */, extrPath);
+    }
+  }
+#endif
   return extracter.Result;
 }

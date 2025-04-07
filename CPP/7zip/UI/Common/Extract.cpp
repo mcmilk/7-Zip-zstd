@@ -571,5 +571,6 @@ HRESULT Extract(
   st.AltStreams_UnpackSize = ecs->AltStreams_UnpackSize;
   st.NumArchives = arcPaths.Size();
   st.PackSize = ecs->LocalProgressSpec->InSize;
+  st.FirstExtractedPath = ecs->FirstExtractedPath;
   return S_OK;
 }

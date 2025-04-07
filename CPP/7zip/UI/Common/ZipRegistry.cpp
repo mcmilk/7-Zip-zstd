@@ -95,6 +95,7 @@ static LPCTSTR const kKeyName = TEXT("Extraction");
 static LPCTSTR const kExtractMode = TEXT("ExtractMode");
 static LPCTSTR const kOverwriteMode = TEXT("OverwriteMode");
 static LPCTSTR const kShowPassword = TEXT("ShowPassword");
+static LPCTSTR const kOpnTrgFold = TEXT("OpnTrgFold");
 static LPCTSTR const kPathHistory = TEXT("PathHistory");
 static LPCTSTR const kSplitDest = TEXT("SplitDest");
 static LPCTSTR const kElimDup = TEXT("ElimDup");
@@ -119,6 +120,7 @@ void CInfo::Save() const
   // Key_Set_BoolPair(key, kAltStreams, AltStreams);
   Key_Set_BoolPair(key, kNtSecur, NtSecurity);
   Key_Set_BoolPair(key, kShowPassword, ShowPassword);
+  Key_Set_BoolPair(key, kOpnTrgFold, OpnTrgFold);
 
   key.RecurseDeleteKey(kPathHistory);
   if (WantPathHistory())
@@ -178,6 +180,7 @@ void CInfo::Load()
   // Key_Get_BoolPair(key, kAltStreams, AltStreams);
   Key_Get_BoolPair(key, kNtSecur, NtSecurity);
   Key_Get_BoolPair(key, kShowPassword, ShowPassword);
+  Key_Get_BoolPair(key, kOpnTrgFold, OpnTrgFold);
 }
 
 bool Read_ShowPassword()

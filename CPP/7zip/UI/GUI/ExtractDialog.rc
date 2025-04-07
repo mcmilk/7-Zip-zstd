@@ -44,15 +44,17 @@ BEGIN
   LTEXT     "Overwrite mode:", IDT_EXTRACT_OVERWRITE_MODE, m, m + 104, g1xs, 8
   COMBOBOX  IDC_EXTRACT_OVERWRITE_MODE, m, m + 116, g1xs, 140, MY_COMBO
 
+  CONTROL   "Open target folder", IDX_EXTRACT_OPEN_TRG_FLD, MY_CHECKBOX,
+            g2x, m + 34, g2xs, 10
 
-  GROUPBOX  "Password", IDG_PASSWORD, g2x, m + 36, g2xs, GROUP_Y_SIZE
-  EDITTEXT  IDE_EXTRACT_PASSWORD, g2x2, m + 50, g2xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL
-  CONTROL   "Show Password", IDX_PASSWORD_SHOW, MY_CHECKBOX, g2x2, m + 72, g2xs2, 10
+  GROUPBOX  "Password", IDG_PASSWORD, g2x, m + 50, g2xs, GROUP_Y_SIZE
+  EDITTEXT  IDE_EXTRACT_PASSWORD, g2x2, m + 64, g2xs2, 14, ES_PASSWORD | ES_AUTOHSCROLL
+  CONTROL   "Show Password", IDX_PASSWORD_SHOW, MY_CHECKBOX, g2x2, m +  86, g2xs2, 10
 
 //  CONTROL   "Restore alternate data streams", IDX_EXTRACT_ALT_STREAMS, MY_CHECKBOX,
-//            g2x, m + 104, g2xs, 10
+//            g2x, m + 114, g2xs, 10
   CONTROL   "Restore file security", IDX_EXTRACT_NT_SECUR, MY_CHECKBOX,
-            g2x, m + 104, g2xs, 10
+            g2x, m + 114, g2xs, 10
   
   DEFPUSHBUTTON  "OK",     IDOK,     bx3, by, bxs, bys, WS_GROUP
   PUSHBUTTON     "Cancel", IDCANCEL, bx2, by, bxs, bys

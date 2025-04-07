@@ -491,7 +491,9 @@ public:
   UInt64 NumAltStreams;
   UInt64 UnpackSize;
   UInt64 AltStreams_UnpackSize;
-  
+
+  FString FirstExtractedPath;
+
   FString DirPathPrefix_for_HashFiles;
 
   CArchiveExtractCallback();

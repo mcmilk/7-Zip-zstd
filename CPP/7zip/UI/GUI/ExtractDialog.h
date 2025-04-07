@@ -87,6 +87,7 @@ public:
   #ifndef Z7_SFX
   // CBoolPair AltStreams;
   CBoolPair NtSecurity;
+  CBoolPair OpnTrgFold;
   #endif
 
   CBoolPair ElimDup;

@@ -35,6 +35,8 @@ namespace NExtract
     CBoolPair NtSecurity;
     CBoolPair ShowPassword;
 
+    CBoolPair OpnTrgFold;
+
     UStringVector Paths;
 
     void Save() const;
