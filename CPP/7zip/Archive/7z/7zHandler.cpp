@@ -604,7 +604,7 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
         {
           UInt32 l = props[2];
           if (info) {
-            if (l <= 22) {
+            if (l <= 22 || l == Z7_ZSTD_ADVMAX_AS_LEV) {
               lev = l;
             } else {
               // todo: need parameter to set fast mode (to NCoderPropID::kFast)
@@ -625,6 +625,11 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
           if (l <= 22) {
             *dest++ = 'l';
             ConvertUInt32ToString(l, dest);
+          } else if (l == Z7_ZSTD_ADVMAX_AS_LEV) { // special level (128) for zstd --max (advanced ultra) 
+            *dest++ = 'm';
+            *dest++ = 'a';
+            *dest++ = 'x';
+            *dest = '\0';
           } else {
             *dest++ = 'f';
             *dest++ = 'l';
