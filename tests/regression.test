@@ -9,6 +9,16 @@ if {[namespace which -command "::7z"] eq ""} {
   source [file join [file dirname [info script]] 7z.tcl]
 }
 
+testConstraint freeMem9G [expr {[apply {{} {
+		if {![catch {exec wmic OS get FreePhysicalMemory} res]} {
+			if {[regexp {^FreePhysicalMemory\s+(\d+)} $res {} res]} {
+				return $res
+			}
+		}
+		return -1
+	}}] >= 8.5*1024*1024
+}]
+
 test regression--test-all {7z regression test for with previous versions compressed files, test with checksum} {
 	variable 7Z_REGR_TEST_DIR
 	variable 7Z_PWD
@@ -46,6 +56,8 @@ test regression--test-all {7z regression test for with previous versions compres
 		{Path test-sol.br.7z Type 7z Method BROTLI Size 1100000 SHA256 975929a8472f0c34f13f187152b8d6aa021cbb39ef3c470eb892ab64424c8dbe-00000000 SHA256 bfe35415b7f77943de92e477da109c0ef7748bd41ff6a01a6215905860b694a0-00000000}
 	test-sol.zstd.7z
 		{Path test-sol.zstd.7z Type 7z Method ZSTD Size 1100000 SHA256 975929a8472f0c34f13f187152b8d6aa021cbb39ef3c470eb892ab64424c8dbe-00000000 SHA256 bfe35415b7f77943de92e477da109c0ef7748bd41ff6a01a6215905860b694a0-00000000}
+	test-sol.zstd.max.7z
+		{Path test-sol.zstd.max.7z Type 7z Method ZSTD Size 1100000 SHA256 975929a8472f0c34f13f187152b8d6aa021cbb39ef3c470eb892ab64424c8dbe-00000000 SHA256 bfe35415b7f77943de92e477da109c0ef7748bd41ff6a01a6215905860b694a0-00000000}
 	test.txt.7z
 		{Path test.txt.7z Type 7z Method LZMA2:20 Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.br
@@ -81,6 +93,8 @@ test regression--list-tech-info {7z regression test for with previous versions c
 		{Path test-sol.br.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method Brotli:v1.0,l9} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method Brotli:v1.0,l9}}}
 	test-sol.zstd.7z
 		{Path test-sol.zstd.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:v1.5,l17} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:v1.5,l17}}}
+	test-sol.zstd.max.7z
+		{Path test-sol.zstd.max.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:v1.5,max} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:v1.5,max}}}
 	test.txt.7z
 		{Path test.txt.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method LZMA2:20}}}
 	test.txt.br
@@ -120,6 +134,7 @@ test regression--decompress {7z regression test for with previous versions compr
 	test-sol.7z      1
 	test-sol.br.7z   1
 	test-sol.zstd.7z 1
+	test-sol.zstd.max.7z 1
 	test.txt.7z      1
 	test.txt.br      1
 	test.txt.br.7z   1
@@ -248,6 +263,7 @@ test regression--preserve-method-solid {7z add/del file in solid archive (preser
 	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
 	lappend ret ===add===
 	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test-sol*.7z]] {
+		if {[string match *.max.7z $p]} continue; # may be too memory greedy
 		file copy $p [set p [file join $tmpdir [file tail $p]]]
 		7z a -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
 		assertLogged {\nUpdating archive} \
@@ -265,6 +281,7 @@ test regression--preserve-method-solid {7z add/del file in solid archive (preser
 	# delete:
 	lappend ret ===del===
 	foreach p [lsort -dictionary [glob -directory $tmpdir test-sol*.7z]] {
+		if {[string match *.max.7z $p]} continue; # may be too memory greedy
 		7z d -- $p abcd.txt
 		assertLogged {\nUpdating archive} \
 			{\nKeep old data in archive: 2 files, 1100000 bytes} {\nDelete data from archive: 1 file, 4040 bytes} \
@@ -295,6 +312,53 @@ test regression--preserve-method-solid {7z add/del file in solid archive (preser
 		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9}
 	test-sol.zstd.7z
 		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17}
+} \n]
+
+test regression--preserve-method-solid-max {7z add/del file in solid (max) archive} -constraints {freeMem9G && !fast} -body {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
+	lappend ret ===add===
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test-sol*.max.7z]] {
+		file copy $p [set p [file join $tmpdir [file tail $p]]]
+		7z a -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 2 files, 1100000 bytes} {\nAdd new data to archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+	}
+	# delete:
+	lappend ret ===del===
+	foreach p [lsort -dictionary [glob -directory $tmpdir test-sol*.max.7z]] {
+		7z d -- $p abcd.txt
+		assertLogged {\nUpdating archive} \
+			{\nKeep old data in archive: 2 files, 1100000 bytes} {\nDelete data from archive: 1 file, 4040 bytes} \
+			{\nEverything is Ok}
+		#puts [7z l -slt -- $p]
+		set res [7z_get_info -- $p] 
+		set lst {}
+		lappend lst Solid [dict get $res Solid]
+		foreach fi [dict get $res Files] {
+			lappend lst [dict get $fi Path] [dict get $fi Method]
+		}
+		lappend ret [file tail $p] $lst
+		file delete $p
+	}
+	join $ret \n
+} -result [join {
+	===add===
+	test-sol.zstd.max.7z
+		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max abcd.txt ZSTD:v1.5,max}
+	===del===
+	test-sol.zstd.max.7z
+		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max}
 } \n]
 
 test regression--preserve-method-solid2 {7z add/del file in solid archive (preserve compression method, bug #340)} {
@@ -344,12 +408,16 @@ test regression--preserve-method-solid2 {7z add/del file in solid archive (prese
 		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9 abcd.txt ZSTD:v1.5,l1}
 	test-sol.zstd.7z
 		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l1}
+	test-sol.zstd.max.7z
+		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max abcd.txt ZSTD:v1.5,l1}
 	===del===
 	test-sol.7z
 		{Solid - tesx.txt Brotli:v1.0,l1}
 	test-sol.br.7z
 		{Solid - tesx.txt Brotli:v1.0,l1}
 	test-sol.zstd.7z
+		{Solid - tesx.txt Brotli:v1.0,l1}
+	test-sol.zstd.max.7z
 		{Solid - tesx.txt Brotli:v1.0,l1}
 } \n]
 
