@@ -36,6 +36,7 @@ class CEncoder Z7_final:
   public ICompressWriteCoderProperties,
   public ICompressSetCoderMt,
   public ICompressSetCoderProperties,
+  public ICompressSetCoderPropertiesOpt,
   public CMyUnknownImp
 {
 public:
@@ -56,6 +57,7 @@ public:
   Z7_COM_QI_ENTRY(ICompressWriteCoderProperties)
   Z7_COM_QI_ENTRY(ICompressSetCoderMt)
   Z7_COM_QI_ENTRY(ICompressSetCoderProperties)
+  Z7_COM_QI_ENTRY(ICompressSetCoderPropertiesOpt)
   Z7_COM_QI_END
   Z7_COM_ADDREF_RELEASE
 
@@ -64,6 +66,7 @@ public:
   Z7_IFACE_COM7_IMP(ICompressWriteCoderProperties)
   Z7_IFACE_COM7_IMP(ICompressSetCoderMt)
   Z7_IFACE_COM7_IMP(ICompressSetCoderProperties)
+  Z7_IFACE_COM7_IMP(ICompressSetCoderPropertiesOpt)
   CEncoder();
   ~CEncoder();
 };

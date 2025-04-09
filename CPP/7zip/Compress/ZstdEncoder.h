@@ -31,11 +31,12 @@ struct CProps
   Byte _reserved[2];
 };
 
-Z7_CLASS_IMP_COM_4(
+Z7_CLASS_IMP_COM_5(
   CEncoder,
   ICompressCoder,
   ICompressSetCoderMt,
   ICompressSetCoderProperties,
+  ICompressSetCoderPropertiesOpt,
   ICompressWriteCoderProperties
 )
 public:
