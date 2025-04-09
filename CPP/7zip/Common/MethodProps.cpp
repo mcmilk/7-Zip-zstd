@@ -369,7 +369,8 @@ unsigned CMethodProps::GetLevel() const
   if (Props[(unsigned)i].Value.vt != VT_UI4)
     return 9;
   UInt32 level = Props[(unsigned)i].Value.ulVal;
-  return level > 9 ? 9 : (unsigned)level;
+  // return level > 9 ? 9 : (unsigned)level;
+  return level;
 }
 
 struct CNameToPropID
@@ -582,9 +583,22 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
     }
     if (!ConvertProperty(propValue, nameToPropID.VarType, prop.Value))
       return E_INVALIDARG;
+    if (prop.Id == NCoderPropID::kAdvMax && prop.Value.boolVal) {
+      setMaxCompression();
+    }
   }
   Props.Add(prop);
   return S_OK;
+}
+
+void CMethodProps::setMaxCompression()
+{
+  // adjust level (zstd --max), set it to the highest level too (e. g. setting of options.MaxFilter for BCJ2 etc)
+  CProp prop;
+  prop.Id = (unsigned)NCoderPropID::kLevel;
+  prop.Value.vt = VT_UI4;
+  prop.Value.ulVal = Z7_ZSTD_ADVMAX_AS_LEV;
+  Props.Add(prop);
 }
 
 HRESULT CMethodProps::ParseParamsFromString(const UString &srcString)
@@ -632,6 +646,9 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
   {
     if (!ConvertProperty(value, nameToPropID.VarType, prop.Value))
       return E_INVALIDARG;
+    if (prop.Id == NCoderPropID::kAdvMax && prop.Value.boolVal) {
+      setMaxCompression();
+    }
   }
   Props.Add(prop);
   return S_OK;

@@ -86,6 +86,7 @@ struct CProps
 class CMethodProps: public CProps
 {
   HRESULT SetParam(const UString &name, const UString &value);
+  void setMaxCompression();
 public:
   unsigned GetLevel() const;
   int Get_NumThreads() const
