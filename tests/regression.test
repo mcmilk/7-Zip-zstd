@@ -9,7 +9,8 @@ if {[namespace which -command "::7z"] eq ""} {
   source [file join [file dirname [info script]] 7z.tcl]
 }
 
-testConstraint freeMem9G [expr {[apply {{} {
+testConstraint x64_7z [regexp -nocase {\((?:x|arm)64\)} [7z --version]]; # like 7-Zip 24.09 ZS ... (x64)
+testConstraint freeMem9G [expr {[testConstraint x64_7z] && [apply {{} {
 		if {![catch {exec wmic OS get FreePhysicalMemory} res]} {
 			if {[regexp {^FreePhysicalMemory\s+(\d+)} $res {} res]} {
 				return $res
