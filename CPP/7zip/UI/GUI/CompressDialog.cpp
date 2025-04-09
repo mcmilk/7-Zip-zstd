@@ -285,13 +285,6 @@ static const EMethodID g_XzMethods[] =
 };
 
 /*
-static const EMethodID g_ZstdMethods[] =
-{
-  kZSTD
-};
-*/
-
-/*
 static const EMethodID g_SwfcMethods[] =
 {
   kDeflate
@@ -1673,11 +1666,12 @@ void CCompressDialog::SetLevel2()
   UInt32 LevelsMask = fi.LevelsMask;
   UInt32 LevelsStart = 1;
   UInt32 LevelsEnd = 9;
+  int id = -1;
   if (ai.LevelsMask != 0xFFFFFFFF)
     LevelsMask = ai.LevelsMask;
   else
   {
-    int id = GetMethodID();
+    id = GetMethodID();
     if (id == kCopy) {
       LevelsStart = 0;
       LevelsEnd = 0;
@@ -1699,12 +1693,14 @@ void CCompressDialog::SetLevel2()
     }
   }
   UInt32 level = m_Level.GetCount() > 0 ? (UInt32)m_Level.GetItemData_of_CurSel() : (LevelsEnd - LevelsStart + 1) / 2;
+  UInt32 readLevel = (UInt32)-1;
   m_Level.ResetContent();
   {
     int index = FindRegistryFormat(ai.Name);
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      readLevel = fo.Level;
       if (fo.Level <= LevelsEnd)
         level = fo.Level;
       else if (fo.Level == (UInt32)(Int32)-1)
@@ -1735,7 +1731,7 @@ void CCompressDialog::SetLevel2()
     {
       UString s = t;
       s.Add_UInt32(i);
-      s += L" (";
+      s += L" "; if (i <= 9) s += L" "; s += L"(";
       s += LangString(g_Levels[langID]);
       s += L")";
       int index = (int)m_Level.AddString(s);
@@ -1747,6 +1743,15 @@ void CCompressDialog::SetLevel2()
       int index = (int)m_Level.AddString(s);
       m_Level.SetItemData(index, i);
     }
+  }
+  if (id == kZSTD) { // --max
+  #if INTPTR_MAX == INT64_MAX // only allowed for 64-bit
+      int index = (int)m_Level.AddString(L"--max  (Advanced ultra)");
+      m_Level.SetItemData(index, Z7_ZSTD_ADVMAX_AS_LEV);
+      if (readLevel == Z7_ZSTD_ADVMAX_AS_LEV) { // exception, restore read from registry, zstd --max
+        level = readLevel;
+      }
+  #endif
   }
   SetNearestSelectComboBox(m_Level, level);
 }

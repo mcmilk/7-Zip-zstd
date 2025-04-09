@@ -422,7 +422,8 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_UI4, "ldmhlog" },
   { VT_UI4, "ldmslen" },
   { VT_UI4, "ldmblog" },
-  { VT_UI4, "ldmhevery" }
+  { VT_UI4, "ldmhevery" },
+  { VT_BOOL, "max" }
 };
 
 #if defined(static_assert) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)) || (_MSC_VER >= 1900)

@@ -152,9 +152,13 @@ namespace NCoderPropID
     kLdmSearchLength,   // VT_UI4 The minimum ldmslen is 4 and the maximum is 4096 (default: 64).
     kLdmBucketSizeLog,  // VT_UI4 The minimum ldmblog is 0 and the maximum is 8 (default: 3).
     kLdmHashRateLog,    // VT_UI4 The default value is wlog - ldmhlog.
+    kAdvMax,            // VT_BOOL 1=ZSTD --max (advanced max compression)
     k_NUM_DEFINED
   };
 }
+
+/* artificial level used to specify ZSTD advanced max compression (equivalent --max) */
+#define Z7_ZSTD_ADVMAX_AS_LEV 255
 
 #define Z7_IFACEM_ICompressSetCoderPropertiesOpt(x) \
   x(SetCoderPropertiesOpt(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps))
