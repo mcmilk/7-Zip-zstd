@@ -160,6 +160,10 @@ namespace NCoderPropID
 /* artificial level used to specify ZSTD advanced max compression (equivalent --max) */
 #define Z7_ZSTD_ADVMAX_AS_LEV 255
 
+#if !defined (Z7_ZSTD_ADVMAX_ALLOWED) && INTPTR_MAX == INT64_MAX // allowed for 64-bit only
+#define Z7_ZSTD_ADVMAX_ALLOWED 1
+#endif
+
 #define Z7_IFACEM_ICompressSetCoderPropertiesOpt(x) \
   x(SetCoderPropertiesOpt(const PROPID *propIDs, const PROPVARIANT *props, UInt32 numProps))
 Z7_IFACE_CONSTR_CODER(ICompressSetCoderPropertiesOpt, 0x1F)

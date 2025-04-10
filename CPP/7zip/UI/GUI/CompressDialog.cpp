@@ -1745,7 +1745,7 @@ void CCompressDialog::SetLevel2()
     }
   }
   if (id == kZSTD) { // --max
-  #if INTPTR_MAX == INT64_MAX // only allowed for 64-bit
+  #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
       int index = (int)m_Level.AddString(L"--max  (Advanced ultra)");
       m_Level.SetItemData(index, Z7_ZSTD_ADVMAX_AS_LEV);
       if (readLevel == Z7_ZSTD_ADVMAX_AS_LEV) { // exception, restore read from registry, zstd --max
