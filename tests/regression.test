@@ -9,8 +9,8 @@ if {[namespace which -command "::7z"] eq ""} {
   source [file join [file dirname [info script]] 7z.tcl]
 }
 
-testConstraint x64_7z [regexp -nocase {\((?:x|arm)64\)} [7z --version]]; # like 7-Zip 24.09 ZS ... (x64)
-testConstraint freeMem9G [expr {[testConstraint x64_7z] && [apply {{} {
+testConstraint 64bit7z [regexp -nocase {\((?:x|arm)64\)} [7z --version]]; # like 7-Zip 24.09 ZS ... (x64)
+testConstraint freeMem9G [expr {[apply {{} {
 		if {![catch {exec wmic OS get FreePhysicalMemory} res]} {
 			if {[regexp {^FreePhysicalMemory\s+(\d+)} $res {} res]} {
 				return $res
@@ -143,6 +143,12 @@ test regression--decompress {7z regression test for with previous versions compr
 	test.txt.zstd.7z 1
 	xenc-pwd-sol.zstd.7z 1
 }]
+
+test regression--compress-zstd-max-disallowed {zstd compression for 64-bit only} -constraints {!64bit7z} -body {
+	variable 7Z_REGR_TEST_DIR
+	# this shall fail in 32-bit:
+	7z a -m0=zstd:max -- NUL: [file join $7Z_REGR_TEST_DIR ../7z.tcl]
+} -returnCodes error -match glob -result "*The parameter is incorrect*"
 
 set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 file mkdir $tmpdir
@@ -353,14 +359,16 @@ test regression--preserve-method-solid-max {7z add/del file in solid (max) archi
 		file delete $p
 	}
 	join $ret \n
-} -result [join {
+	# note that result for 32-bit is a bit different - because max is disallowed for 32-bit,
+	# new file abcd.txt will be compressed with l22 instead of max...
+} -result [join [subst {
 	===add===
 	test-sol.zstd.max.7z
-		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max abcd.txt ZSTD:v1.5,max}
+		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max abcd.txt ZSTD:v1.5,[expr {[testConstraint 64bit7z] ? "max":"l22"}]}
 	===del===
 	test-sol.zstd.max.7z
 		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max}
-} \n]
+}] \n]
 
 test regression--preserve-method-solid2 {7z add/del file in solid archive (preserve compression method, bug #340)} {
 	# same as regression--preserve-method-solid, but recompress solid block using new method:level (from cmd-line):
