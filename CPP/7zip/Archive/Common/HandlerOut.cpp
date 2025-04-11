@@ -184,7 +184,6 @@ HRESULT CMultiMethodProps::SetProperty(const wchar_t *nameSpec, const PROPVARIAN
     _level = 9;
     return ParsePropToUInt32(name, value, _level);
   }
-#if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
   if (name == L"max")
   {
     bool _max;
@@ -195,7 +194,6 @@ HRESULT CMultiMethodProps::SetProperty(const wchar_t *nameSpec, const PROPVARIAN
     }
     return res;
   }
-#endif
 
   if (name.IsPrefixedBy_Ascii_NoCase("yx"))
   {

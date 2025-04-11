@@ -144,14 +144,31 @@ test regression--decompress {7z regression test for with previous versions compr
 	xenc-pwd-sol.zstd.7z 1
 }]
 
-test regression--compress-zstd-max-disallowed {zstd compression for 64-bit only} -constraints {!64bit7z} -body {
-	variable 7Z_REGR_TEST_DIR
-	# this shall fail in 32-bit:
-	7z a -m0=zstd:max -- NUL: [file join $7Z_REGR_TEST_DIR ../7z.tcl]
-} -returnCodes error -match glob -result "*The parameter is incorrect*"
-
 set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 file mkdir $tmpdir
+
+test regression--compress-zstd-max-allowed {zstd compression for 64-bit only, fallback to highest level} -constraints {!64bit7z} -body {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	foreach m {zstd brotli lz5} {
+		set p [file join $tmpdir test-advmax-compress.7z]; file delete $p
+		# this shall switch to l22 in 32-bit for zstd (no max by 32-bit), and to l11 for brotli and to l15 for lz5:
+		7z a -m0=${m}:max -- $p [file join $7Z_REGR_TEST_DIR ../7z-test.tcl]
+		assertLogged {Everything is Ok}
+		set res [7z_get_info -- $p]
+		foreach fi [dict get $res Files] {
+			# compression method and method:level:
+			lappend ret $m [dict get $fi Method]
+		}
+	}
+	set ret
+} -cleanup {
+	file delete $p
+} -result [list {*}{
+	zstd    ZSTD:v1.5,l22
+	brotli  Brotli:v1.0,l11
+	lz5     LZ5:v1.5,l15
+}]
 
 test regression--preserve-method-non-solid {7z add/del file in non-solid archive (preserve compression method, bug #340)} {
 	variable 7Z_REGR_TEST_DIR

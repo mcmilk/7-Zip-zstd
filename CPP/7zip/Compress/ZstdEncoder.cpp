@@ -71,13 +71,13 @@ Z7_COM7F_IMF(CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         _Strategy = v;
         break;
       }
-  #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
     case NCoderPropID::kAdvMax:
       if (!v)
         break;
+    #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
       _Max = true;
+    #endif
       v = Z7_ZSTD_ADVMAX_AS_LEV;
-  #endif
     case NCoderPropID::kLevel:
       {
         _Level = !_Max ? v : Z7_ZSTD_ADVMAX_AS_LEV;

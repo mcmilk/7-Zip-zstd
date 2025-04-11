@@ -584,11 +584,7 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
     if (!ConvertProperty(propValue, nameToPropID.VarType, prop.Value))
       return E_INVALIDARG;
     if (prop.Id == NCoderPropID::kAdvMax && prop.Value.boolVal) {
-    #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
       setMaxCompression();
-    #else
-      return E_INVALIDARG;
-    #endif
     }
   }
   Props.Add(prop);
@@ -651,11 +647,7 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
     if (!ConvertProperty(value, nameToPropID.VarType, prop.Value))
       return E_INVALIDARG;
     if (prop.Id == NCoderPropID::kAdvMax && prop.Value.boolVal) {
-    #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
       setMaxCompression();
-    #else
-      return E_INVALIDARG;
-    #endif
     }
   }
   Props.Add(prop);
