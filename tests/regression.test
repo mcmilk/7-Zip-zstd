@@ -91,23 +91,23 @@ test regression--list-tech-info {7z regression test for with previous versions c
 	test-sol.7z
 		{Path test-sol.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method LZMA2:1536k} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method LZMA2:1536k}}}
 	test-sol.br.7z
-		{Path test-sol.br.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method Brotli:v1.0,l9} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method Brotli:v1.0,l9}}}
+		{Path test-sol.br.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method Brotli:l9} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method Brotli:l9}}}
 	test-sol.zstd.7z
-		{Path test-sol.zstd.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:v1.5,l17} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:v1.5,l17}}}
+		{Path test-sol.zstd.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:l17} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:l17}}}
 	test-sol.zstd.max.7z
-		{Path test-sol.zstd.max.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:v1.5,max} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:v1.5,max}}}
+		{Path test-sol.zstd.max.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:max} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:max}}}
 	test.txt.7z
 		{Path test.txt.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method LZMA2:20}}}
 	test.txt.br
 		{Path test.txt.br Type brotli}
 	test.txt.br.7z
-		{Path test.txt.br.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method Brotli:v1.0,l9}}}
+		{Path test.txt.br.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method Brotli:l9}}}
 	test.txt.zstd
 		{Path test.txt.zstd Type zstd}
 	test.txt.zstd.7z
-		{Path test.txt.zstd.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:v1.5,l17}}}
+		{Path test.txt.zstd.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:l17}}}
 	xenc-pwd-sol.zstd.7z
-		{Path xenc-pwd-sol.zstd.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:v1.5,l17} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:v1.5,l17}}}
+		{Path xenc-pwd-sol.zstd.7z Type 7z Solid + Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method ZSTD:l17} {Path tesx.txt Size 100000 Modified 1743709207 CRC 7ECE9EBC Method ZSTD:l17}}}
 	OK
 } \n]
 
@@ -165,9 +165,9 @@ test regression--compress-zstd-max-allowed {zstd compression for 64-bit only, fa
 } -cleanup {
 	file delete $p
 } -result [list {*}{
-	zstd    ZSTD:v1.5,l22
-	brotli  Brotli:v1.0,l11
-	lz5     LZ5:v1.5,l15
+	zstd    ZSTD:l22
+	brotli  Brotli:l11
+	lz5     LZ5:l15
 }]
 
 test regression--preserve-method-non-solid {7z add/del file in non-solid archive (preserve compression method, bug #340)} {
@@ -213,16 +213,16 @@ test regression--preserve-method-non-solid {7z add/del file in non-solid archive
 	test.txt.7z
 		{Solid - test.txt LZMA2:20 abcd.txt LZMA2:12}
 	test.txt.br.7z
-		{Solid - test.txt Brotli:v1.0,l9 abcd.txt Brotli:v1.0,l9}
+		{Solid - test.txt Brotli:l9 abcd.txt Brotli:l9}
 	test.txt.zstd.7z
-		{Solid - test.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l17}
+		{Solid - test.txt ZSTD:l17 abcd.txt ZSTD:l17}
 	===del===
 	test.txt.7z
 		{Solid - test.txt LZMA2:20}
 	test.txt.br.7z
-		{Solid - test.txt Brotli:v1.0,l9}
+		{Solid - test.txt Brotli:l9}
 	test.txt.zstd.7z
-		{Solid - test.txt ZSTD:v1.5,l17}
+		{Solid - test.txt ZSTD:l17}
 } \n]
 
 test regression--preserve-method-non-solid2 {7z add/del file in non-solid archive (preserve compression method, bug #340)} {
@@ -267,18 +267,18 @@ test regression--preserve-method-non-solid2 {7z add/del file in non-solid archiv
 } [join {
 	===add===
 	test.txt.7z
-		{Solid - test.txt LZMA2:20 abcd.txt ZSTD:v1.5,l1}
+		{Solid - test.txt LZMA2:20 abcd.txt ZSTD:l1}
 	test.txt.br.7z
-		{Solid - test.txt Brotli:v1.0,l9 abcd.txt ZSTD:v1.5,l1}
+		{Solid - test.txt Brotli:l9 abcd.txt ZSTD:l1}
 	test.txt.zstd.7z
-		{Solid - test.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l1}
+		{Solid - test.txt ZSTD:l17 abcd.txt ZSTD:l1}
 	===del===
 	test.txt.7z
 		{Solid - test.txt LZMA2:20}
 	test.txt.br.7z
-		{Solid - test.txt Brotli:v1.0,l9}
+		{Solid - test.txt Brotli:l9}
 	test.txt.zstd.7z
-		{Solid - test.txt ZSTD:v1.5,l17}
+		{Solid - test.txt ZSTD:l17}
 } \n]
 
 test regression--preserve-method-solid {7z add/del file in solid archive (preserve compression method, bug #340)} {
@@ -326,16 +326,16 @@ test regression--preserve-method-solid {7z add/del file in solid archive (preser
 	test-sol.7z
 		{Solid + test.txt LZMA2:1536k tesx.txt LZMA2:1536k abcd.txt LZMA2:12}
 	test-sol.br.7z
-		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9 abcd.txt Brotli:v1.0,l9}
+		{Solid + test.txt Brotli:l9 tesx.txt Brotli:l9 abcd.txt Brotli:l9}
 	test-sol.zstd.7z
-		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l17}
+		{Solid + test.txt ZSTD:l17 tesx.txt ZSTD:l17 abcd.txt ZSTD:l17}
 	===del===
 	test-sol.7z
 		{Solid + test.txt LZMA2:1536k tesx.txt LZMA2:1536k}
 	test-sol.br.7z
-		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9}
+		{Solid + test.txt Brotli:l9 tesx.txt Brotli:l9}
 	test-sol.zstd.7z
-		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17}
+		{Solid + test.txt ZSTD:l17 tesx.txt ZSTD:l17}
 } \n]
 
 test regression--preserve-method-solid-max {7z add/del file in solid (max) archive} -constraints {freeMem9G && !fast} -body {
@@ -381,10 +381,10 @@ test regression--preserve-method-solid-max {7z add/del file in solid (max) archi
 } -result [join [subst {
 	===add===
 	test-sol.zstd.max.7z
-		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max abcd.txt ZSTD:v1.5,[expr {[testConstraint 64bit7z] ? "max":"l22"}]}
+		{Solid + test.txt ZSTD:max tesx.txt ZSTD:max abcd.txt ZSTD:[expr {[testConstraint 64bit7z] ? "max":"l22"}]}
 	===del===
 	test-sol.zstd.max.7z
-		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max}
+		{Solid + test.txt ZSTD:max tesx.txt ZSTD:max}
 }] \n]
 
 test regression--preserve-method-solid2 {7z add/del file in solid archive (preserve compression method, bug #340)} {
@@ -429,22 +429,22 @@ test regression--preserve-method-solid2 {7z add/del file in solid archive (prese
 } [join {
 	===add===
 	test-sol.7z
-		{Solid + test.txt LZMA2:1536k tesx.txt LZMA2:1536k abcd.txt ZSTD:v1.5,l1}
+		{Solid + test.txt LZMA2:1536k tesx.txt LZMA2:1536k abcd.txt ZSTD:l1}
 	test-sol.br.7z
-		{Solid + test.txt Brotli:v1.0,l9 tesx.txt Brotli:v1.0,l9 abcd.txt ZSTD:v1.5,l1}
+		{Solid + test.txt Brotli:l9 tesx.txt Brotli:l9 abcd.txt ZSTD:l1}
 	test-sol.zstd.7z
-		{Solid + test.txt ZSTD:v1.5,l17 tesx.txt ZSTD:v1.5,l17 abcd.txt ZSTD:v1.5,l1}
+		{Solid + test.txt ZSTD:l17 tesx.txt ZSTD:l17 abcd.txt ZSTD:l1}
 	test-sol.zstd.max.7z
-		{Solid + test.txt ZSTD:v1.5,max tesx.txt ZSTD:v1.5,max abcd.txt ZSTD:v1.5,l1}
+		{Solid + test.txt ZSTD:max tesx.txt ZSTD:max abcd.txt ZSTD:l1}
 	===del===
 	test-sol.7z
-		{Solid - tesx.txt Brotli:v1.0,l1}
+		{Solid - tesx.txt Brotli:l1}
 	test-sol.br.7z
-		{Solid - tesx.txt Brotli:v1.0,l1}
+		{Solid - tesx.txt Brotli:l1}
 	test-sol.zstd.7z
-		{Solid - tesx.txt Brotli:v1.0,l1}
+		{Solid - tesx.txt Brotli:l1}
 	test-sol.zstd.max.7z
-		{Solid - tesx.txt Brotli:v1.0,l1}
+		{Solid - tesx.txt Brotli:l1}
 } \n]
 
 file delete -force $tmpdir
