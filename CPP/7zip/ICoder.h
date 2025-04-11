@@ -157,8 +157,8 @@ namespace NCoderPropID
   };
 }
 
-/* artificial level used to specify ZSTD advanced max compression (equivalent --max) */
-#define Z7_ZSTD_ADVMAX_AS_LEV 255
+/* artificial level used to specify max possible level (for ZSTD advanced max compression, equivalent of --max) */
+#define Z7_ZSTD_ULTIMATE_LEV  255
 
 #if !defined (Z7_ZSTD_ADVMAX_ALLOWED) && INTPTR_MAX == INT64_MAX // allowed for 64-bit only
 #define Z7_ZSTD_ADVMAX_ALLOWED 1

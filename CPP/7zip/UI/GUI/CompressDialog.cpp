@@ -1744,14 +1744,12 @@ void CCompressDialog::SetLevel2()
       m_Level.SetItemData(index, i);
     }
   }
-  if (id == kZSTD) { // --max
-  #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
-      int index = (int)m_Level.AddString(L"--max  (Advanced ultra)");
-      m_Level.SetItemData(index, Z7_ZSTD_ADVMAX_AS_LEV);
-      if (readLevel == Z7_ZSTD_ADVMAX_AS_LEV) { // exception, restore read from registry, zstd --max
-        level = readLevel;
-      }
-  #endif
+  if (1) { // ultimate level (max possible or zstd --max if allowed)
+    int index = (int)m_Level.AddString(L"-mmax  (Ultimate)");
+    m_Level.SetItemData(index, Z7_ZSTD_ULTIMATE_LEV);
+    if (readLevel == Z7_ZSTD_ULTIMATE_LEV) { // exception (available for any method), restore read from registry
+      level = readLevel;
+    }
   }
   SetNearestSelectComboBox(m_Level, level);
 }

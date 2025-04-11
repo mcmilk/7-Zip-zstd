@@ -190,7 +190,7 @@ HRESULT CMultiMethodProps::SetProperty(const wchar_t *nameSpec, const PROPVARIAN
     const HRESULT res = PROPVARIANT_to_bool(value, _max);
     if (res == S_OK && _max) {
       // adjust level (zstd --max), set it to the highest level too (e. g. setting of options.MaxFilter for BCJ2 etc)
-      _level = Z7_ZSTD_ADVMAX_AS_LEV;
+      _level = Z7_ZSTD_ULTIMATE_LEV;
     }
     return res;
   }

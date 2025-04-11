@@ -597,7 +597,7 @@ void CMethodProps::setMaxCompression()
   CProp prop;
   prop.Id = (unsigned)NCoderPropID::kLevel;
   prop.Value.vt = VT_UI4;
-  prop.Value.ulVal = Z7_ZSTD_ADVMAX_AS_LEV;
+  prop.Value.ulVal = Z7_ZSTD_ULTIMATE_LEV;
   Props.Add(prop);
 }
 
