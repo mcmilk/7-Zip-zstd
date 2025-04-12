@@ -625,7 +625,7 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
           if (l <= 22) {
             *dest++ = 'l';
             ConvertUInt32ToString(l, dest);
-          } else if (l == Z7_ZSTD_ULTIMATE_LEV) { // special level (128) for zstd --max (advanced ultra) 
+          } else if (l == Z7_ZSTD_ULTIMATE_LEV) { // special level for zstd --max (advanced ultra) 
             *dest++ = 'm';
             *dest++ = 'a';
             *dest++ = 'x';
