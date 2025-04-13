@@ -83,6 +83,10 @@ proc 7z_get_info {args} {
 				# to unix time (UTC, TZ independend)
 				set v [clock scan [regsub {\.\d+$} $v {}]]
 			}
+			if {$n eq "Method"} {
+				# remove version from method (unneeded and expecting adjustment of all tests by later version upgrades):
+				regsub -all {v\d+\.\d+,?} $v {} v
+			}
 			lappend fi $n $v
 		}
 		if {[llength $fi]} { lappend flst $fi }

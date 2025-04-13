@@ -17,6 +17,7 @@ CEncoder::CEncoder():
   _processedIn(0),
   _processedOut(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
+  _Max(false),
   _Long(-1),
   _Level(ZSTD_CLEVEL_DEFAULT),
   _Strategy(-1),
@@ -70,22 +71,33 @@ Z7_COM7F_IMF(CEncoder::SetCoderProperties(const PROPID * propIDs, const PROPVARI
         _Strategy = v;
         break;
       }
+    case NCoderPropID::kAdvMax:
+      if (!v)
+        break;
+    #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
+      _Max = true;
+    #endif
+      v = Z7_ZSTD_ULTIMATE_LEV;
     case NCoderPropID::kLevel:
       {
-        _Level = v;
+        _Level = !_Max ? v : Z7_ZSTD_ULTIMATE_LEV;
         if (v < 1) {
           _Level = 1;
         } else if ((Int32)v > ZSTD_maxCLevel()) {
+        #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
+          _Max = (_Level == Z7_ZSTD_ULTIMATE_LEV); // special case (level from GUI)
+        #endif
           _Level = ZSTD_maxCLevel();
         }
 
         /**
-         * zstd default levels: _Level => 1..ZSTD_maxCLevel()
+         * zstd default levels: _Level => 1..ZSTD_maxCLevel(), Z7_ZSTD_ULTIMATE_LEV (128) == --max
          */
-        _props._level = static_cast < Byte > (_Level);
+        _props._level = static_cast < Byte > (!_Max ? _Level : Z7_ZSTD_ULTIMATE_LEV);
         break;
       }
     case NCoderPropID::kFast:
+      if (!_Max)
       {
         /* like --fast in zstd cli program */
         UInt32 _Fast = v;
@@ -255,6 +267,26 @@ Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream,
     _dstBuf = MyAlloc(_dstBufSize);
     if (!_dstBuf)
       return E_OUTOFMEMORY;
+
+  #if Z7_ZSTD_ADVMAX_ALLOWED // 64-bit only
+    // params from setMaxCompression(), https://github.com/facebook/zstd/blob/v1.5.7/programs/zstdcli.c#L642 :
+    if (_Max) {
+      _Long = 1;
+      _WindowLog = ZSTD_WINDOWLOG_MAX;
+      _ChainLog = ZSTD_CHAINLOG_MAX;
+      _HashLog = ZSTD_HASHLOG_MAX;
+      _SearchLog = ZSTD_SEARCHLOG_MAX;
+      _MinMatch = ZSTD_MINMATCH_MIN;
+      _TargetLen = ZSTD_TARGETLENGTH_MAX;
+      _Strategy = ZSTD_STRATEGY_MAX;
+      _OverlapLog = ZSTD_OVERLAPLOG_MAX;
+      _LdmHashLog = ZSTD_LDM_HASHLOG_MAX;
+      _LdmHashRateLog = 0; /* automatically derived */
+      _LdmMinMatch = 16; /* heuristic */
+      _LdmBucketSizeLog = ZSTD_LDM_BUCKETSIZELOG_MAX;
+      _Level = ZSTD_maxCLevel();
+    }
+  #endif
 
     /* setup level */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_compressionLevel, (UInt32)_Level);
