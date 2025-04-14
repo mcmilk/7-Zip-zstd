@@ -89,10 +89,9 @@ int CCommonMethodProps::SetCommonProperty(const UString &name, const PROPVARIANT
   if (name.IsPrefixedBy_Ascii_NoCase("mt"))
   {
     #ifndef Z7_ST
-    _numThreads = _numProcessors;
-    _numThreads_WasForced = false;
-    hres = ParseMtProp2(name.Ptr(2), value, _numThreads, _numThreads_WasForced);
-    // "mt" means "_numThreads_WasForced = false" here
+    hres = ParseMtProp(name.Ptr(2), value, _numProcessors, _numThreads);
+    // parameter "mt" specified, so it means "_numThreads_WasForced = true"
+    _numThreads_WasForced = true;
     #endif
     return -1; /* OK, but no return - could be also set by handler itself later */
   }

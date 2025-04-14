@@ -98,12 +98,12 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size))
 Z7_COM7F_IMF(CDecoder::SetNumberOfThreads(UInt32 numThreads))
 {
   const UInt32 kNumThreadsMax = BROTLIMT_THREAD_MAX;
-  if (numThreads < 0) numThreads = 0;
-  if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   // if single-threaded, retain artificial number set in BrotliHandler (always prefer .br format):
-  if (_numThreads == 0 && numThreads == 1) {
+  if ((int)numThreads < 1) {
     numThreads = 0;
   }
+  else
+  if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
   _numThreads = numThreads;
   return S_OK;
 }

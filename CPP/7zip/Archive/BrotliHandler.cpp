@@ -157,10 +157,13 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
   {
 
   NCompress::NBROTLI::CDecoder *decoderSpec = new NCompress::NBROTLI::CDecoder;
-  decoderSpec->SetNumberOfThreads(0); /* .br - single threaded processing (without header/mt-frames) */
-  if (_props._numThreads_WasForced) {
-    decoderSpec->SetNumberOfThreads(_props._numThreads); // translate to decoder (important for -mmt>=2 to use brotli-mt)
-  }
+  /*
+   * Brotli stream doesn't contain info about threads and it is normally
+   * single-threaded by default (.br files without header/mt-frames),
+   * so force it here as 0 for brotli-st, unless it's specified (e. g. was compressed
+   * also multi-threaded, important for -mmt>=1 to use brotli-mt instead of brotli-st)
+   */
+  decoderSpec->SetNumberOfThreads(!_props._numThreads_WasForced ? 0 : _props._numThreads);
   CMyComPtr<ICompressCoder> decoder = decoderSpec;
   decoderSpec->SetInStream(_seqStream);
 

@@ -75,6 +75,21 @@ test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
 	set _ OK
 } OK
 
+test main--mmt-option {7z force multi-threaded & single-threaded compression / decompression} {
+	variable 7Z_PATH
+	foreach mt {=on =off =1 =2 d2 d-2 p25u1 p1+1} {
+		foreach t {zstd brotli bzip2} {
+			if {[catch {
+				7z a -t$t -mmt$mt -mx3 -si -so << "$t,mt$mt This is a test string passed to stdin" . | $7Z_PATH e -t$t -mmt$mt -si -so
+			} res]} {
+				error "Test of -t$t -mmt$mt failed: $res"
+			}
+			assertLogged "^$t,mt[string map {+ \\+} $mt] This is a test string passed to stdin$"
+		}
+	}
+	set _ OK
+} OK
+
 test main--encrypt-decrypt {7z encryption, decription} -setup {
 	set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 	file mkdir $tmpdir
