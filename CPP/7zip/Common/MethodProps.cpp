@@ -789,9 +789,8 @@ HRESULT COneMethodInfo::ParseMethodFromPROPVARIANT(const UString &realName, cons
     return ParseParamsFromPROPVARIANT(realName, value);
   }
   // -m{N}=method
-  if (value.vt != VT_BSTR) {
+  if (value.vt != VT_BSTR)
     return E_INVALIDARG;
-  }
   UString s;
   s = value.bstrVal;
   return ParseMethodFromString(s);
