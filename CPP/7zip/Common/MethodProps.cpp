@@ -145,17 +145,24 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs
 
   s.MakeLower_Ascii();
   const wchar_t *start = s;
+  if (*start == '=') start++;
+  if (*start == 'o') {
+    if (wcscmp(start, L"on") == 0) {
+      numThreads = numCPUs; // force on
+      return S_OK;
+    } else if (wcscmp(start, L"off") == 0) {
+      numThreads = 0; // force off
+      return S_OK;
+    }
+  }
   /* we force up, if threads number specified
      only `d` will force it down */
   int numTh = (int)numThreads;
-  for (;;)
+  while (*start)
   {
     int forceUD = 0;
     bool isPercent = false;
-    const wchar_t c = *start;
-    if (!c)
-      break;
-    switch (c) {
+    switch (*start) {
       case '-':
         if (!*(start+1)) {
           numThreads = 0; // force off
