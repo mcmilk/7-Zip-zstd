@@ -160,7 +160,7 @@ HRESULT SetLzmaProp(PROPID propID, const PROPVARIANT &prop, CLzmaEncProps &ep)
     SET_PROP_32(kLitPosBits, lp)
     SET_PROP_32(kLitContextBits, lc)
     case NCoderPropID::kNumThreads:
-      ep.numThreads = (int)v > 0 ? (int)v : NWindows::NSystem::GetNumberOfProcessors(); break;
+      ep.numThreads = (int)v >= 0 ? (int)(v ? v : 1) : NWindows::NSystem::GetNumberOfProcessors(); break;
     default: return E_INVALIDARG;
   }
   return S_OK;

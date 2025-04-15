@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 
+#include "../../Windows/System.h"
 #include "../../Common/StringToInt.h"
 
 #include "MethodProps.h"
@@ -107,29 +108,26 @@ HRESULT ParsePropToUInt32(const UString &name, const PROPVARIANT &prop, UInt32 &
 
 
 
-HRESULT ParseMtProp2(const UString &name, const PROPVARIANT &prop, UInt32 &numThreads, bool &force)
+HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs, UInt32 &numThreads)
 {
-  force = false;
   UString s;
+  numThreads = numCPUs < INT_MAX ? numCPUs : NWindows::NSystem::GetNumberOfProcessors();
   if (name.IsEmpty())
   {
     if (prop.vt == VT_UI4)
     {
       numThreads = prop.ulVal;
-      force = true;
+      if (numThreads > numCPUs) numThreads = numCPUs;
       return S_OK;
     }
     bool val;
     HRESULT res = PROPVARIANT_to_bool(prop, val);
     if (res == S_OK)
     {
-      if (!val)
-      {
-        numThreads = 1;
-        force = true;
+      // -mmt=off, -mmt-
+      if (!val) {
+        numThreads = 0; /* 0 - single threaded, to differentiate from 1 by encoder like brotli-mt with single CPU */
       }
-      // force = true; for debug
-      // "(VT_BOOL = VARIANT_TRUE)" set "force = false" and doesn't change numThreads
       return S_OK;
     }
     if (prop.vt != VT_BSTR)
@@ -147,45 +145,74 @@ HRESULT ParseMtProp2(const UString &name, const PROPVARIANT &prop, UInt32 &numTh
 
   s.MakeLower_Ascii();
   const wchar_t *start = s;
-  UInt32 v = numThreads;
-
+  if (*start == '=') start++;
+  if (*start == 'o') {
+    if (wcscmp(start, L"on") == 0) {
+      numThreads = numCPUs; // force on
+      return S_OK;
+    } else if (wcscmp(start, L"off") == 0) {
+      numThreads = 0; // force off
+      return S_OK;
+    }
+  }
   /* we force up, if threads number specified
      only `d` will force it down */
-  bool force_loc = true;
-  for (;;)
+  int numTh = (int)numThreads;
+  while (*start)
   {
-    const wchar_t c = *start;
-    if (!c)
-      break;
-    if (c == 'd')
-    {
-      force_loc = false;  // force down
-      start++;
-      continue;
-    }
-    if (c == 'u')
-    {
-      force_loc = true;   // force up
-      start++;
-      continue;
-    }
+    int forceUD = 0;
     bool isPercent = false;
-    if (c == 'p')
-    {
-      isPercent = true;
-      start++;
+    switch (*start) {
+      case '-':
+        if (!*(start+1)) {
+          numThreads = 0; // force off
+          return S_OK;
+        }
+        // otherwise force down
+      case 'd':
+        forceUD = -1;  // force down
+        start++;
+        if (*start == 'p') goto percent;
+        break;
+      case '+':
+        if (!*(start+1)) {
+          numThreads = numCPUs; // force on
+          return S_OK;
+        }
+        // otherwise force up
+      case 'u':
+        forceUD = +1;   // force up
+        start++;
+        if (*start == 'p') goto percent;
+        break;
+      case 'p':
+      percent:
+        isPercent = true;
+        start++;
+        break;
     }
     const wchar_t *end;
+    UInt32 v;
     v = ConvertStringToUInt32(start, &end);
-    if (end == start)
-      return E_INVALIDARG;
-    if (isPercent)
+    if (end == start) {
+      if (!forceUD) {
+        return E_INVALIDARG;
+      }
+      v = 1; // d or u not followed by number (simply -1 or +1)
+    }
+    if (isPercent) {
       v = numThreads * v / 100;
+    }
+    if (forceUD) {
+      numTh += forceUD * v;
+    } else {
+      numTh = v;
+    }
     start = end;
   }
-
-  numThreads = v;
-  force = force_loc;
+  if (numTh <= 0) numTh = 1;
+  if (numTh > (int)numCPUs) numTh = (int)numCPUs;
+  numThreads = numTh;
   return S_OK;
 }
 
@@ -440,17 +467,29 @@ static int FindPropIdExact(const UString &name)
   return -1;
 }
 
-static bool ConvertProperty(const PROPVARIANT &srcProp, VARTYPE varType, NCOM::CPropVariant &destProp)
+static bool ConvertProperty(const UString &name, const PROPVARIANT &srcProp, VARTYPE varType, CProp &destProp)
 {
+  if (varType != srcProp.vt) {
+    // try to convert property from other source type:
+    switch (destProp.Id) {
+      case NCoderPropID::kNumThreads: // on, off or {N}
+        UInt32 val;
+        if (ParseMtProp(name.Ptr(2), srcProp, INT_MAX, val) != S_OK)
+          return false;
+        destProp.Value.ulVal = val;
+        return true;
+      break;
+    }
+  }
   if (varType == srcProp.vt)
   {
-    destProp = srcProp;
+    destProp.Value = srcProp;
     return true;
   }
 
   if (varType == VT_UI8 && srcProp.vt == VT_UI4)
   {
-    destProp = (UInt64)srcProp.ulVal;
+    destProp.Value = (UInt64)srcProp.ulVal;
     return true;
   }
 
@@ -459,12 +498,12 @@ static bool ConvertProperty(const PROPVARIANT &srcProp, VARTYPE varType, NCOM::C
     bool res;
     if (PROPVARIANT_to_bool(srcProp, res) != S_OK)
       return false;
-    destProp = res;
+    destProp.Value = res;
     return true;
   }
   if (srcProp.vt == VT_EMPTY)
   {
-    destProp = srcProp;
+    destProp.Value = srcProp;
     return true;
   }
   return false;
@@ -537,7 +576,7 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
   {
     // 'b' was used as NCoderPropID::kBlockSize2 before v23
     if (!name.IsEqualTo_Ascii_NoCase("b") || value.Find(L':') >= 0)
-    return E_INVALIDARG;
+      return E_INVALIDARG;
     index = NCoderPropID::kBlockSize2;
   }
   const CNameToPropID &nameToPropID = g_NameToPropID[(unsigned)index];
@@ -581,7 +620,7 @@ HRESULT CMethodProps::SetParam(const UString &name, const UString &value)
       else
         propValue = value;
     }
-    if (!ConvertProperty(propValue, nameToPropID.VarType, prop.Value))
+    if (!ConvertProperty(name, propValue, nameToPropID.VarType, prop))
       return E_INVALIDARG;
     if (prop.Id == NCoderPropID::kAdvMax && prop.Value.boolVal) {
       setMaxCompression();
@@ -609,6 +648,14 @@ HRESULT CMethodProps::ParseParamsFromString(const UString &srcString)
   {
     const UString &param = params[i];
     UString name, value;
+    if (param.IsPrefixedBy_Ascii_NoCase("mt")) { // special handler for mt (to parse correct -mmt-, -mmtd2, -mmtp50u2, etc)
+      UInt32 val;
+      CProp prop;
+      prop.Value.vt = VT_EMPTY;
+      RINOK(ParseMtProp(param.Ptr(2), prop.Value, INT_MAX, val))
+      AddProp32(NCoderPropID::kNumThreads, val);
+      continue;
+    }
     SplitParam(param, name, value);
     RINOK(SetParam(name, value))
   }
@@ -621,6 +668,12 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
   {
     // [empty]=method
     return E_INVALIDARG;
+  }
+  if (realName.IsPrefixedBy_Ascii_NoCase("mt")) { // special handler for mt (to parse correct -mmt-, -mmtd2, -mmtp50u2, etc)
+    UInt32 val;
+    RINOK(ParseMtProp(realName.Ptr(2), value, INT_MAX, val))
+    AddProp32(NCoderPropID::kNumThreads, val);
+    return S_OK;
   }
   if (value.vt == VT_EMPTY)
   {
@@ -644,7 +697,7 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
   }
   else
   {
-    if (!ConvertProperty(value, nameToPropID.VarType, prop.Value))
+    if (!ConvertProperty(realName, value, nameToPropID.VarType, prop))
       return E_INVALIDARG;
     if (prop.Id == NCoderPropID::kAdvMax && prop.Value.boolVal) {
       setMaxCompression();

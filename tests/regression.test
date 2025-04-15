@@ -25,9 +25,13 @@ test regression--test-all {7z regression test for with previous versions compres
 	variable 7Z_PWD
 	set ret {}
 	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+		set fn [file tail $p]
 		set opt {}
-		if {[string match xenc-* [file tail $p]]} { # encrypted with password
-			set opt -p$7Z_PWD
+		if {[string match xenc-* $fn]} { # encrypted with password
+			lappend opt -p$7Z_PWD
+		}
+		if {[string match *.br-mt.* $fn]} { # brotli-mt (not default, expected -mmt+ switch)
+			lappend opt -mmt+
 		}
 		set res [7z t -scrcSHA256 {*}$opt -- $p]
 		set res [lrange [regexp -inline -expanded {
@@ -46,7 +50,7 @@ test regression--test-all {7z regression test for with previous versions compres
 			(?:\n(SHA256)\s+for\s+data\s+and\s+names:\s+(\S+))?
 		} $res] 1 end]
 		if {[lindex $res end] eq {}} {set res [lreplace $res end-1 end]}; # CRC with names is only for archives with multiple files
-		lappend ret [file tail $p] $res
+		lappend ret $fn $res
 	}
 	lappend ret OK
 	join $ret \n
@@ -63,6 +67,8 @@ test regression--test-all {7z regression test for with previous versions compres
 		{Path test.txt.7z Type 7z Method LZMA2:20 Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.br
 		{Path test.txt.br Type brotli {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
+	test.txt.br-mt.br
+		{Path test.txt.br-mt.br Type brotli {} {} Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.br.7z
 		{Path test.txt.br.7z Type 7z Method BROTLI Size 1000000 SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}
 	test.txt.zstd
@@ -72,6 +78,53 @@ test regression--test-all {7z regression test for with previous versions compres
 	xenc-pwd-sol.zstd.7z
 		{Path xenc-pwd-sol.zstd.7z Type 7z {} {} Size 1100000 SHA256 975929a8472f0c34f13f187152b8d6aa021cbb39ef3c470eb892ab64424c8dbe-00000000 SHA256 bfe35415b7f77943de92e477da109c0ef7748bd41ff6a01a6215905860b694a0-00000000}
 	OK
+} \n]
+
+test regression--test-brotli-st {7z regression test for with previous versions compressed files (brotli-st, brotli default compression)} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	set p [file join $7Z_REGR_TEST_DIR test.txt.br]
+	# by default mt is off and 3 other variants of switches to force mt-off via cmd-line:
+	foreach opt {{} -mmt- -mmt=off -mmt=0} {
+		7z t -scrcSHA256 {*}$opt -- $p
+		assertLogged "Everything is Ok"
+		lappend ret 1
+	}
+	set ret
+} [lrepeat 4 1]
+
+test regression--test-brotli-mt {7z regression test for with previous versions compressed files (brotli-mt non-default compression)} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	set p [file join $7Z_REGR_TEST_DIR test.txt.br-mt.br]
+	# by default mt is off, cover all possible variants of switches to force mt-on via cmd-line,
+	# especially with -mmt=1, -mmtd100 (-100) and -mmtp1d1 (1%-1) shall use brotli-mt decompression (even by single CPU to process):
+	foreach opt {-mmt -mmt+ -mmt=on -mmt=1 -mmtp100 -mmtu100 -mmtd100 -mmtp1d1} {
+		7z t -scrcSHA256 {*}$opt -- $p
+		assertLogged "Everything is Ok"
+		lappend ret 1
+	}
+	set ret
+} [lrepeat 8 1]
+
+test regression--test-mt-option {7z regression test for with previous versions compressed files (7z, different mmt switches)} {
+	variable 7Z_REGR_TEST_DIR
+	set ret {}
+	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test.txt.*]] {
+		if {![regexp {\.txt(?:\.(?:br|zstd))?\.7z$} $p]} continue
+		set i 0
+		foreach opt {-m0=:mt- -m0=:mtoff -m0=:mt0 -m0=:mt -m0=:mt+ -m0=:mton -m0=:mt1 -m0=:mtp100 -m0=:mt0u100 -m0=:mtd2 -m0=:mtp1+1} {
+			7z t {*}$opt -- $p
+			assertLogged "Everything is Ok"
+			incr i
+		}
+		lappend ret [list [file tail $p] $i]
+	}
+	join $ret \n
+} [join {
+	{test.txt.7z 11}
+	{test.txt.br.7z 11}
+	{test.txt.zstd.7z 11}
 } \n]
 
 test regression--list-tech-info {7z regression test for with previous versions compressed files, list with technical info} {
@@ -100,6 +153,8 @@ test regression--list-tech-info {7z regression test for with previous versions c
 		{Path test.txt.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method LZMA2:20}}}
 	test.txt.br
 		{Path test.txt.br Type brotli}
+	test.txt.br-mt.br
+		{Path test.txt.br-mt.br Type brotli}
 	test.txt.br.7z
 		{Path test.txt.br.7z Type 7z Solid - Files {{Path test.txt Size 1000000 Modified 1743632719 CRC C601982A Method Brotli:l9}}}
 	test.txt.zstd
@@ -118,17 +173,21 @@ test regression--decompress {7z regression test for with previous versions compr
 	set regr_arc_data(txt) "TEST\n[string repeat { } 999990]\nEND."
 	set regr_arc_data(sol) "$regr_arc_data(txt)1234\n[string repeat { } 99990]\n5678"
 	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+		set fn [file tail $p]
 		set opt {}
-		if {[string match xenc-* [file tail $p]]} { # encrypted with password
-			set opt -p$7Z_PWD
+		if {[string match xenc-* $fn]} { # encrypted with password
+			lappend opt -p$7Z_PWD
+		}
+		if {[string match *.br-mt.* $fn]} { # brotli-mt (not default, expected -mmt+ switch)
+			lappend opt -mmt+
 		}
 		set res [7z e -so {*}$opt -- $p]
-		if {![string match "*-sol*" [file tail $p]]} {
+		if {![string match "*-sol*" $fn]} {
 			set v [string equal [string trimright $res] $regr_arc_data(txt)]
 		} else {
 			set v [string equal [string trimright $res] $regr_arc_data(sol)]
 		}
-		lappend ret [file tail $p] $v
+		lappend ret $fn $v
 	}
 	set ret
 } [list {*}{
@@ -138,6 +197,7 @@ test regression--decompress {7z regression test for with previous versions compr
 	test-sol.zstd.max.7z 1
 	test.txt.7z      1
 	test.txt.br      1
+	test.txt.br-mt.br 1
 	test.txt.br.7z   1
 	test.txt.zstd    1
 	test.txt.zstd.7z 1

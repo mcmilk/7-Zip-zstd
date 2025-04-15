@@ -136,7 +136,7 @@ Z7_COM7F_IMF(CComDecoder::GetInStreamProcessedSize(UInt64 *value))
 
 Z7_COM7F_IMF(CComDecoder::SetNumberOfThreads(UInt32 numThreads))
 {
-  _numThreads = numThreads;
+  _numThreads = numThreads > 1 ? numThreads : 1;
   return S_OK;
 }
 

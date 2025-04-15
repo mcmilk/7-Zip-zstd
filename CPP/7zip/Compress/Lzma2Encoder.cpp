@@ -38,7 +38,6 @@ CEncoder::~CEncoder()
 }
 
 
-HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzma2Props);
 HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzma2Props)
 {
   switch (propID)
@@ -54,13 +53,13 @@ HRESULT SetLzma2Prop(PROPID propID, const PROPVARIANT &prop, CLzma2EncProps &lzm
       break;
     }
     case NCoderPropID::kNumThreads:
+    {
       if (prop.vt != VT_UI4)
         return E_INVALIDARG;
-      lzma2Props.numTotalThreads = (
-        ((int)(prop.ulVal) > 0) ?
-        (int)(prop.ulVal) : NWindows::NSystem::GetNumberOfProcessors()
-      );
+      int v = (int)prop.ulVal;
+      lzma2Props.numTotalThreads = v >= 0 ? (v ? v : 1) : NWindows::NSystem::GetNumberOfProcessors();;
       break;
+    }
     default:
       RINOK(NLzma::SetLzmaProp(propID, prop, lzma2Props.lzmaProps))
   }
