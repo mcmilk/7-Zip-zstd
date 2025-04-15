@@ -201,7 +201,7 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs
       v = 1; // d or u not followed by number (simply -1 or +1)
     }
     if (isPercent) {
-      v = numTh * v / 100;
+      v = numThreads * v / 100;
     }
     if (forceUD) {
       numTh += forceUD * v;
