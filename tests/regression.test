@@ -86,16 +86,12 @@ test regression--test-brotli-st {7z regression test for with previous versions c
 	set p [file join $7Z_REGR_TEST_DIR test.txt.br]
 	# by default mt is off and 3 other variants of switches to force mt-off via cmd-line:
 	foreach opt {{} -mmt- -mmt=off -mmt=0} {
-		set res [7z t -scrcSHA256 {*}$opt -- $p]
-		set res [lrange [regexp -inline -expanded {
-			\nEverything\s+is\s+Ok
-			(?:\n(?!SHA256)[^\n]*){0,20}
-			\n(SHA256)\s+for\s+data:\s+(\S+)
-		} $res] 1 end]
-		lappend ret $res
+		7z t -scrcSHA256 {*}$opt -- $p
+		assertLogged "Everything is Ok"
+		lappend ret 1
 	}
 	set ret
-} [lrepeat 4 {SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}]
+} [lrepeat 4 1]
 
 test regression--test-brotli-mt {7z regression test for with previous versions compressed files (brotli-mt non-default compression)} {
 	variable 7Z_REGR_TEST_DIR
@@ -104,43 +100,32 @@ test regression--test-brotli-mt {7z regression test for with previous versions c
 	# by default mt is off, cover all possible variants of switches to force mt-on via cmd-line,
 	# especially with -mmt=1, -mmtd100 (-100) and -mmtp1d1 (1%-1) shall use brotli-mt decompression (even by single CPU to process):
 	foreach opt {-mmt -mmt+ -mmt=on -mmt=1 -mmtp100 -mmtu100 -mmtd100 -mmtp1d1} {
-		set res [7z t -scrcSHA256 {*}$opt -- $p]
-		set res [lrange [regexp -inline -expanded {
-			\nEverything\s+is\s+Ok
-			(?:\n(?!SHA256)[^\n]*){0,20}
-			\n(SHA256)\s+for\s+data:\s+(\S+)
-		} $res] 1 end]
-		lappend ret $res
+		7z t -scrcSHA256 {*}$opt -- $p
+		assertLogged "Everything is Ok"
+		lappend ret 1
 	}
 	set ret
-} [lrepeat 8 {SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}]
+} [lrepeat 8 1]
 
 test regression--test-mt-option {7z regression test for with previous versions compressed files (7z, different mmt switches)} {
 	variable 7Z_REGR_TEST_DIR
 	set ret {}
 	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test.txt.*]] {
 		if {![regexp {\.txt(?:\.(?:br|zstd))?\.7z$} $p]} continue
-		set lst {}
-		foreach opt {-m0=:mt- -m0=:mt0 -m0=:mt -m0=:mt+ -m0=:mt1 -m0=:mtp100 -m0=:mt0u100 -m0=:mtd2 -m0=:mtp1+1} {
-			set res [7z t -scrcSHA256 {*}$opt -- $p]
-			set res [lrange [regexp -inline -expanded {
-				\nEverything\s+is\s+Ok
-				(?:\n(?!SHA256)[^\n]*){0,20}
-				\n(SHA256)\s+for\s+data:\s+(\S+)
-			} $res] 1 end]
-			lappend lst $res
+		set i 0
+		foreach opt {-m0=:mt- -m0=:mtoff -m0=:mt0 -m0=:mt -m0=:mt+ -m0=:mton -m0=:mt1 -m0=:mtp100 -m0=:mt0u100 -m0=:mtd2 -m0=:mtp1+1} {
+			7z t {*}$opt -- $p
+			assertLogged "Everything is Ok"
+			incr i
 		}
-		lappend ret [file tail $p] $lst
+		lappend ret [list [file tail $p] $i]
 	}
 	join $ret \n
-} [join [subst {
-	test.txt.7z
-		{[lrepeat 9 {SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}]}
-	test.txt.br.7z
-		{[lrepeat 9 {SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}]}
-	test.txt.zstd.7z
-		{[lrepeat 9 {SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97}]}
-}] \n]
+} [join {
+	{test.txt.7z 11}
+	{test.txt.br.7z 11}
+	{test.txt.zstd.7z 11}
+} \n]
 
 test regression--list-tech-info {7z regression test for with previous versions compressed files, list with technical info} {
 	variable 7Z_REGR_TEST_DIR
