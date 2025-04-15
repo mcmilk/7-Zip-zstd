@@ -147,7 +147,7 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs
   const wchar_t *start = s;
   /* we force up, if threads number specified
      only `d` will force it down */
-  int numTh = numThreads;
+  int numTh = (int)numThreads;
   for (;;)
   {
     int forceUD = 0;
@@ -165,6 +165,7 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs
       case 'd':
         forceUD = -1;  // force down
         start++;
+        if (*start == 'p') goto percent;
         break;
       case '+':
         if (!*(start+1)) {
@@ -175,8 +176,10 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs
       case 'u':
         forceUD = +1;   // force up
         start++;
+        if (*start == 'p') goto percent;
         break;
       case 'p':
+      percent:
         isPercent = true;
         start++;
         break;
@@ -191,8 +194,9 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs
       v = 1; // d or u not followed by number (simply -1 or +1)
     }
     if (isPercent) {
-      numTh = numTh * v / 100;
-    } else if (forceUD) {
+      v = numTh * v / 100;
+    }
+    if (forceUD) {
       numTh += forceUD * v;
     } else {
       numTh = v;
@@ -200,7 +204,7 @@ HRESULT ParseMtProp(const UString &name, const PROPVARIANT &prop, UInt32 numCPUs
     start = end;
   }
   if (numTh <= 0) numTh = 1;
-  if (numTh > (int)numCPUs) numTh = numCPUs;
+  if (numTh > (int)numCPUs) numTh = (int)numCPUs;
   numThreads = numTh;
   return S_OK;
 }
@@ -642,10 +646,7 @@ HRESULT CMethodProps::ParseParamsFromString(const UString &srcString)
       CProp prop;
       prop.Value.vt = VT_EMPTY;
       RINOK(ParseMtProp(param.Ptr(2), prop.Value, INT_MAX, val))
-      prop.Id = NCoderPropID::kNumThreads;
-      prop.Value.vt = VT_UI4;
-      prop.Value.ulVal = val;
-      Props.Add(prop);
+      AddProp32(NCoderPropID::kNumThreads, val);
       continue;
     }
     SplitParam(param, name, value);
@@ -664,11 +665,7 @@ HRESULT CMethodProps::ParseParamsFromPROPVARIANT(const UString &realName, const 
   if (realName.IsPrefixedBy_Ascii_NoCase("mt")) { // special handler for mt (to parse correct -mmt-, -mmtd2, -mmtp50u2, etc)
     UInt32 val;
     RINOK(ParseMtProp(realName.Ptr(2), value, INT_MAX, val))
-    CProp prop;
-    prop.Id = NCoderPropID::kNumThreads;
-    prop.Value.vt = VT_UI4;
-    prop.Value.ulVal = val;
-    Props.Add(prop);
+    AddProp32(NCoderPropID::kNumThreads, val);
     return S_OK;
   }
   if (value.vt == VT_EMPTY)
