@@ -63,17 +63,46 @@ EXTERN_C_END
 
 #else
 
-// #define MY_isatty_fileno(x) (isatty(fileno(x)))
-// #define MY_IS_TERMINAL(x) (MY_isatty_fileno(x) != 0);
-static inline bool MY_IS_TERMINAL(FILE *x)
+static bool MY_IS_TERMINAL(FILE *x)
 {
-  return (
-    #if defined(_MSC_VER) && (_MSC_VER >= 1400)
-      _isatty(_fileno(x))
-    #else
-      isatty(fileno(x))
-    #endif
-      != 0);
+#ifdef _WIN32
+  /*
+crt/stdio.h:
+typedef struct _iobuf FILE;
+#define stdin  (&_iob[0])
+#define stdout (&_iob[1])
+#define stderr (&_iob[2])
+*/
+  // fprintf(stderr, "\nMY_IS_TERMINAL = %p", x);
+  const int fd = _fileno(x);
+  /* (fd) is 0, 1 or 2 in console program.
+     docs: If stdout or stderr is not associated with
+     an output stream (for example, in a Windows application
+     without a console window), the file descriptor returned is -2.
+     In previous versions, the file descriptor returned was -1.
+  */
+  if (fd < 0) // is not associated with an output stream application (without a console window)
+    return false;
+  // fprintf(stderr, "\n\nstderr _fileno(%p) = %d", x, fd);
+  if (!_isatty(fd))
+    return false;
+  // fprintf(stderr, "\nisatty_val = true");
+  const HANDLE h = (HANDLE)_get_osfhandle(fd);
+  /* _get_osfhandle() returns intptr_t in new SDK, or long in MSVC6.
+     Also it can return (INVALID_HANDLE_VALUE).
+     docs: _get_osfhandle also returns the special value -2 when
+     the file descriptor is not associated with a stream
+     in old msvcrt.dll: it returns (-1) for incorrect value
+  */
+  // fprintf(stderr, "\n_get_osfhandle() = %p", (void *)h);
+  if (h == NULL || h == INVALID_HANDLE_VALUE)
+    return false;
+  DWORD st;
+  // fprintf(stderr, "\nGetConsoleMode() = %u", (unsigned)GetConsoleMode(h, &st));
+  return GetConsoleMode(h, &st) != 0;
+#else
+  return isatty(fileno(x)) != 0;
+#endif
 }
 
 #endif
@@ -1088,7 +1117,7 @@ void CArcCmdLineParser::Parse1(const UStringVector &commandStrings,
     const UString &s = parser[NKey::kLargePages].PostStrings[0];
     if (s.IsEmpty())
       slp = 1;
-    else if (s != L"-")
+    else if (!s.IsEqualTo("-"))
     {
       if (!StringToUInt32(s, slp))
         throw CArcCmdLineException("Unsupported switch postfix for -slp", s);
@@ -1338,7 +1367,7 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
     const UString &s = parser[NKey::kFullPathMode].PostStrings[0];
     if (!s.IsEmpty())
     {
-      if (s == L"2")
+      if (s.IsEqualTo("2"))
         censorPathMode = NWildcard::k_FullPath;
       else
         throw CArcCmdLineException("Unsupported -spf:", s);
@@ -1400,6 +1429,7 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
   const bool isExtractGroupCommand = options.Command.IsFromExtractGroup();
   const bool isExtractOrList = isExtractGroupCommand || options.Command.CommandType == NCommandType::kList;
   const bool isRename = options.Command.CommandType == NCommandType::kRename;
+  options.UpdateOptions.RenameMode = isRename;
 
   if ((isExtractOrList || isRename) && options.StdInMode)
     thereIsArchiveName = false;
@@ -1516,9 +1546,9 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
       const UString &s = parser[NKey::kZoneFile].PostStrings[0];
       if (!s.IsEmpty())
       {
-             if (s == L"0") eo.ZoneMode = NExtract::NZoneIdMode::kNone;
-        else if (s == L"1") eo.ZoneMode = NExtract::NZoneIdMode::kAll;
-        else if (s == L"2") eo.ZoneMode = NExtract::NZoneIdMode::kOffice;
+             if (s.IsEqualTo("0")) eo.ZoneMode = NExtract::NZoneIdMode::kNone;
+        else if (s.IsEqualTo("1")) eo.ZoneMode = NExtract::NZoneIdMode::kAll;
+        else if (s.IsEqualTo("2")) eo.ZoneMode = NExtract::NZoneIdMode::kOffice;
         else
           throw CArcCmdLineException("Unsupported -snz:", s);
       }

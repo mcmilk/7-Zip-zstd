@@ -291,7 +291,6 @@ C_OBJS = \
   $O\Sha3.obj \
   $O\Sha512.obj \
   $O\Sha512Opt.obj \
-  $O\Sort.obj \
   $O\SwapBytes.obj \
   $O\Threads.obj \
   $O\Xxh64.obj \
@@ -308,3 +307,4 @@ C_OBJS = \
 !include "../../LzmaDec.mak"
 !include "../../Sha1.mak"
 !include "../../Sha256.mak"
+!include "../../Sort.mak"

@@ -45,28 +45,24 @@ static bool GetSymLink(CFSTR path, CReparseAttr &attr, UString &errorMessage)
   CByteBuffer buf;
   if (!NIO::GetReparseData(path, buf, NULL))
     return false;
-  
   if (!attr.Parse(buf, buf.Size()))
   {
     SetLastError(attr.ErrorCode);
     return false;
   }
-
   CByteBuffer data2;
-  if (!FillLinkData(data2, attr.GetPath(),
-      !attr.IsMountPoint(), attr.IsSymLink_WSL()))
+  FillLinkData(data2, attr.GetPath(),
+      !attr.IsMountPoint(), attr.IsSymLink_WSL());
+  if (data2.Size() == 0)
   {
     errorMessage = "Cannot reproduce reparse point";
     return false;
   }
-    
-  if (data2.Size() != buf.Size() ||
-      memcmp(data2, buf, buf.Size()) != 0)
+  if (data2 != buf)
   {
     errorMessage = "mismatch for reproduced reparse point";
     return false;
   }
-
   return true;
 }
 
@@ -113,8 +109,8 @@ bool CLinkDialog::OnInit()
         const bool res = GetSymLink(us2fs(FilePath), attr, error);
         if (!res && error.IsEmpty())
         {
-          DWORD lastError = GetLastError();
-          if (lastError != 0)
+          const DWORD lastError = GetLastError();
+          if (lastError)
             error = NError::MyFormatMessage(lastError);
         }
         
@@ -319,10 +315,10 @@ void CLinkDialog::OnButton_Link()
       return;
     }
 
-    const bool isSymLink = (idb != IDR_LINK_TYPE_JUNCTION);
-    
     CByteBuffer data;
-    if (!FillLinkData(data, to, isSymLink, isWSL))
+    const bool isSymLink = (idb != IDR_LINK_TYPE_JUNCTION);
+    FillLinkData(data, to, isSymLink, isWSL);
+    if (data.Size() == 0)
     {
       ShowError(L"Incorrect link");
       return;
@@ -386,6 +382,9 @@ void CApp::Link()
         path = destPanel.GetFsPath();
   }
 
+  CSelectedState srcSelState;
+  srcPanel.SaveSelectedState(srcSelState);
+
   CLinkDialog dlg;
   dlg.CurDirPrefix = fsPrefix;
   dlg.FilePath = srcPath + itemName;
@@ -394,7 +393,10 @@ void CApp::Link()
   if (dlg.Create(srcPanel.GetParent()) != IDOK)
     return;
 
-  // fix it: we should refresh panel with changed link
+  // we refresh srcPanel to show changes in "Link" (kpidNtReparse) column.
+  // maybe we should refresh another panel also?
+  if (srcPanel._visibleColumns.FindItem_for_PropID(kpidNtReparse) >= 0)
+    srcPanel.RefreshListCtrl(srcSelState);
 
   RefreshTitleAlways();
 }

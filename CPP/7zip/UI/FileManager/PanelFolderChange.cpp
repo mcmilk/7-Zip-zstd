@@ -428,7 +428,7 @@ void CPanel::LoadFullPathAndShow()
       UString name_Computer = RootFolder_GetName_Computer(iconIndex);
       name_Computer.Add_PathSepar();
       if (path == name_Computer
-          || path == L"\\\\?\\")
+          || path.IsEqualTo("\\\\?\\"))
         item.iImage = iconIndex;
       else
       {
@@ -639,7 +639,7 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
       unsigned indent = 0;
       {
         UString path = _currentFolderPrefix;
-        // path = L"\\\\.\\y:\\"; // for debug
+        // path = "\\\\.\\y:\\"; // for debug
         UString prefix0;
         if (path.IsPrefixedBy_Ascii_NoCase("\\\\"))
         {
@@ -702,7 +702,7 @@ bool CPanel::OnComboBoxCommand(UINT code, LPARAM /* param */, LRESULT &result)
       int iconIndex_Computer;
       const UString name_Computer = RootFolder_GetName_Computer(iconIndex_Computer);
 
-      // const bool is_devicePrefix = (sumPath == L"\\\\.\\");
+      // const bool is_devicePrefix = (sumPath.IsEqualTo("\\\\.\\"));
 
       if (pathParts.Size() > 1)
       if (!sumPath.IsEmpty()
@@ -901,8 +901,8 @@ UString CPanel::GetParentDirPrefix() const
     {
       s = _currentFolderPrefix;
       s.DeleteBack();
-      if (s != L"\\\\." &&
-          s != L"\\\\?")
+      if (!s.IsEqualTo("\\\\.") &&
+          !s.IsEqualTo("\\\\?"))
       {
         int pos = s.ReverseFind_PathSepar();
         if (pos >= 0)
@@ -935,8 +935,8 @@ void CPanel::OpenParentFolder()
       }
       else
       */
-      if (focusedName != L"\\\\." &&
-          focusedName != L"\\\\?")
+      if (!focusedName.IsEqualTo("\\\\.") &&
+          !focusedName.IsEqualTo("\\\\?"))
       {
         const int pos = focusedName.ReverseFind_PathSepar();
         if (pos >= 0)

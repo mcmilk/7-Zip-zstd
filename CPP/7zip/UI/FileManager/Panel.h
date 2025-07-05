@@ -711,8 +711,8 @@ public:
   }
 
   // bool IsFsOrDrivesFolder() const { return IsFSFolder() || IsFSDrivesFolder(); }
-  bool IsDeviceDrivesPrefix() const { return _currentFolderPrefix == L"\\\\.\\"; }
-  bool IsSuperDrivesPrefix() const { return _currentFolderPrefix == L"\\\\?\\"; }
+  bool IsDeviceDrivesPrefix() const { return _currentFolderPrefix.IsEqualTo("\\\\.\\"); }
+  bool IsSuperDrivesPrefix() const { return _currentFolderPrefix.IsEqualTo("\\\\?\\"); }
   
   /*
     c:\Dir

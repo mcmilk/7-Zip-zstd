@@ -1245,8 +1245,6 @@ $O/Sha512.o: ../../../../C/Sha512.c
 	$(CC) $(CFLAGS) $<
 $O/Sha512Opt.o: ../../../../C/Sha512Opt.c
 	$(CC) $(CFLAGS) $<
-$O/Sort.o: ../../../../C/Sort.c
-	$(CC) $(CFLAGS) $<
 $O/SwapBytes.o: ../../../../C/SwapBytes.c
 	$(CC) $(CFLAGS) $<
 $O/Xxh64.o: ../../../../C/Xxh64.c
@@ -1285,6 +1283,8 @@ $O/Sha1Opt.o: ../../../../Asm/x86/Sha1Opt.asm
 	$(MY_ASM) $(AFLAGS) $<
 $O/Sha256Opt.o: ../../../../Asm/x86/Sha256Opt.asm
 	$(MY_ASM) $(AFLAGS) $<
+$O/Sort.o: ../../../../Asm/x86/Sort.asm
+	$(MY_ASM) $(AFLAGS) $<
 
 ifndef USE_JWASM
 USE_X86_ASM_AES=1
@@ -1298,6 +1298,8 @@ $O/XzCrc64Opt.o: ../../../../C/XzCrc64Opt.c
 $O/Sha1Opt.o: ../../../../C/Sha1Opt.c
 	$(CC) $(CFLAGS) $<
 $O/Sha256Opt.o: ../../../../C/Sha256Opt.c
+	$(CC) $(CFLAGS) $<
+$O/Sort.o: ../../../../C/Sort.c
 	$(CC) $(CFLAGS) $<
 endif
 

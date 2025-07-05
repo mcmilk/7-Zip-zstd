@@ -72,7 +72,7 @@ FM_OBJS = \
 
 C_OBJS = \
   $O\CpuArch.obj \
-  $O\Sort.obj \
   $O\Threads.obj \
 
+!include "../../Sort.mak"
 !include "../../7zip.mak"

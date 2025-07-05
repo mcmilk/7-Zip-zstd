@@ -249,7 +249,7 @@ Z7_COM7F_IMF(CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
       AreEqualNames(name2, L"Documents"))
     return BindToFolder((UInt32)ROOT_INDEX_DOCUMENTS, resultFolder);
   #else
-  if (name2 == WSTRING_PATH_SEPARATOR)
+  if (name2.IsEqualTo(STRING_PATH_SEPARATOR))
     return BindToFolder((UInt32)ROOT_INDEX_COMPUTER, resultFolder);
   #endif
   
@@ -257,7 +257,7 @@ Z7_COM7F_IMF(CRootFolder::BindToFolder(const wchar_t *name, IFolderFolder **resu
       AreEqualNames(name2, L"Computer"))
     return BindToFolder((UInt32)ROOT_INDEX_COMPUTER, resultFolder);
   
-  if (name2 == WSTRING_PATH_SEPARATOR)
+  if (name2.IsEqualTo(STRING_PATH_SEPARATOR))
   {
     CMyComPtr<IFolderFolder> subFolder = this;
     *resultFolder = subFolder.Detach();

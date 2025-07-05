@@ -284,7 +284,7 @@ HRESULT CPanel::CopyTo(CCopyToOptions &options,
       if (options.hashMethods.Size() == 1)
       {
         const UString &s = options.hashMethods[0];
-        if (s != L"*")
+        if (!s.IsEqualTo("*"))
           title = s;
       }
     }

@@ -135,7 +135,6 @@ C_OBJS = \
   $O\Ppmd7.obj \
   $O\Ppmd7Dec.obj \
   $O\Ppmd7Enc.obj \
-  $O\Sort.obj \
   $O\SwapBytes.obj \
   $O\Threads.obj \
 
@@ -144,5 +143,6 @@ C_OBJS = \
 !include "../../LzFindOpt.mak"
 !include "../../LzmaDec.mak"
 !include "../../Sha256.mak"
+!include "../../Sort.mak"
 
 !include "../../7zip.mak"

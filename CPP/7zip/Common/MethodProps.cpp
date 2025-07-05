@@ -324,15 +324,22 @@ void CCoderProps::AddProp(const CProp &prop)
 
 HRESULT CProps::SetCoderProps(ICompressSetCoderProperties *scp, const UInt64 *dataSizeReduce) const
 {
-  return SetCoderProps_DSReduce_Aff(scp, dataSizeReduce, NULL);
+  return SetCoderProps_DSReduce_Aff(scp, dataSizeReduce, NULL, NULL, NULL);
 }
 
 HRESULT CProps::SetCoderProps_DSReduce_Aff(
     ICompressSetCoderProperties *scp,
     const UInt64 *dataSizeReduce,
-    const UInt64 *affinity) const
+    const UInt64 *affinity,
+    const UInt32 *affinityGroup,
+    const UInt64 *affinityInGroup) const
 {
-  CCoderProps coderProps(Props.Size() + (dataSizeReduce ? 1 : 0) + (affinity ? 1 : 0) );
+  CCoderProps coderProps(Props.Size()
+      + (dataSizeReduce ? 1 : 0)
+      + (affinity ? 1 : 0)
+      + (affinityGroup ? 1 : 0)
+      + (affinityInGroup ? 1 : 0)
+      );
   FOR_VECTOR (i, Props)
     coderProps.AddProp(Props[i]);
   if (dataSizeReduce)
@@ -347,6 +354,20 @@ HRESULT CProps::SetCoderProps_DSReduce_Aff(
     CProp prop;
     prop.Id = NCoderPropID::kAffinity;
     prop.Value = *affinity;
+    coderProps.AddProp(prop);
+  }
+  if (affinityGroup)
+  {
+    CProp prop;
+    prop.Id = NCoderPropID::kThreadGroup;
+    prop.Value = *affinityGroup;
+    coderProps.AddProp(prop);
+  }
+  if (affinityInGroup)
+  {
+    CProp prop;
+    prop.Id = NCoderPropID::kAffinityInGroup;
+    prop.Value = *affinityInGroup;
     coderProps.AddProp(prop);
   }
   return coderProps.SetProps(scp);
@@ -408,6 +429,11 @@ static const CNameToPropID g_NameToPropID[] =
   { VT_UI8, "aff" },
   { VT_UI4, "offset" },
   { VT_UI4, "zhb" }
+  /*
+  , { VT_UI4, "tgn" }, // kNumThreadGroups
+  , { VT_UI4, "tgi" }, // kThreadGroup
+  , { VT_UI8, "tga" }, // kAffinityInGroup
+  */
   /*
   ,
   // { VT_UI4, "zhc" },

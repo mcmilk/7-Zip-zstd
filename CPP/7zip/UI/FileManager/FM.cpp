@@ -651,7 +651,7 @@ static int WINAPI WinMain2(int nCmdShow)
   SplitStringToTwoStrings(commandsString, paramString, tailString);
   paramString.Trim();
   tailString.Trim();
-  if (tailString.IsPrefixedBy(L"-t"))
+  if (tailString.IsPrefixedBy("-t"))
     g_ArcFormat = tailString.Ptr(2);
 
   /*

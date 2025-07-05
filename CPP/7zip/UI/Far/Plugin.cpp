@@ -61,7 +61,6 @@ static void MyGetFileTime(IFolderFolder *folder, UInt32 itemIndex,
 }
 
 #define kDotsReplaceString "[[..]]"
-#define kDotsReplaceStringU L"[[..]]"
   
 static void CopyStrLimited(char *dest, const AString &src, unsigned len)
 {
@@ -84,7 +83,7 @@ void CPlugin::ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex)
     throw 272340;
 
   AString oemString (UnicodeStringToMultiByte(prop.bstrVal, CP_OEMCP));
-  if (oemString == "..")
+  if (oemString.IsEqualTo(".."))
     oemString = kDotsReplaceString;
 
   COPY_STR_LIMITED(panelItem.FindData.cFileName, oemString);
@@ -193,7 +192,7 @@ void CPlugin::EnterToDirectory(const UString &dirName)
 {
   CMyComPtr<IFolderFolder> newFolder;
   UString s = dirName;
-  if (dirName == kDotsReplaceStringU)
+  if (dirName.IsEqualTo(kDotsReplaceString))
     s = "..";
   _folder->BindToFolder(s, &newFolder);
   if (!newFolder)
@@ -209,12 +208,12 @@ void CPlugin::EnterToDirectory(const UString &dirName)
 int CPlugin::SetDirectory(const char *aszDir, int /* opMode */)
 {
   UString path = MultiByteToUnicodeString(aszDir, CP_OEMCP);
-  if (path == WSTRING_PATH_SEPARATOR)
+  if (path.IsEqualTo(STRING_PATH_SEPARATOR))
   {
     _folder.Release();
     m_ArchiveHandler->BindToRootFolder(&_folder);
   }
-  else if (path == L"..")
+  else if (path.IsEqualTo(".."))
   {
     CMyComPtr<IFolderFolder> newFolder;
     _folder->BindToParentFolder(&newFolder);

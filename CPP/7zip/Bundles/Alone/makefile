@@ -5,6 +5,7 @@ CFLAGS = $(CFLAGS) -DZ7_ZIP_LZFSE_DISABLE
 # CONSOLE_VARIANT_FLAGS=-DZ7_PROG_VARIANT_A
 # ZIP_FLAGS=-DZ7_ZIP_LZFSE_DISABLE
 
+# USE_C_SORT=1
 # USE_C_AES = 1
 # USE_C_SHA = 1
 # USE_C_LZFINDOPT = 1
@@ -221,7 +222,6 @@ C_OBJS = \
   $O\Ppmd8.obj \
   $O\Ppmd8Dec.obj \
   $O\Ppmd8Enc.obj \
-  $O\Sort.obj \
   $O\SwapBytes.obj \
   $O\Threads.obj \
   $O\Xxh64.obj \
@@ -240,5 +240,6 @@ C_OBJS = \
 !include "../../LzmaDec.mak"
 !include "../../Sha1.mak"
 !include "../../Sha256.mak"
+!include "../../Sort.mak"
 
 !include "../../7zip.mak"

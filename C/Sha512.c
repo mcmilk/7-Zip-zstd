@@ -439,26 +439,78 @@ void Sha512_Final(CSha512 *p, Byte *digest, unsigned digestSize)
 
 
 
+// #define Z7_SHA512_PROBE_DEBUG // for debug
 
-#if defined(_WIN32) && defined(Z7_COMPILER_SHA512_SUPPORTED) \
-    && defined(MY_CPU_ARM64)  // we can disable this check to debug in x64
+#if defined(Z7_SHA512_PROBE_DEBUG) || defined(Z7_COMPILER_SHA512_SUPPORTED)
 
-#if 1  // 0 for debug
-
-#include "7zWindows.h"
-// #include <stdio.h>
-#if 0 && defined(MY_CPU_X86_OR_AMD64)
-#include <intrin.h> // for debug : for __ud2()
+#if defined(Z7_SHA512_PROBE_DEBUG) \
+    || defined(_WIN32) && defined(MY_CPU_ARM64)
+#ifndef Z7_SHA512_USE_PROBE
+#define Z7_SHA512_USE_PROBE
+#endif
 #endif
 
-BoolInt CPU_IsSupported_SHA512(void)
+#ifdef Z7_SHA512_USE_PROBE
+
+#ifdef Z7_SHA512_PROBE_DEBUG
+#include <stdio.h>
+#define PRF(x) x
+#else
+#define PRF(x)
+#endif
+
+#if 0 || !defined(_MSC_VER) // 1 || : for debug LONGJMP mode
+// MINGW doesn't support __try. So we use signal() / longjmp().
+// Note: signal() / longjmp() probably is not thread-safe.
+// So we must call Sha512Prepare() from main thread at program start.
+#ifndef Z7_SHA512_USE_LONGJMP
+#define Z7_SHA512_USE_LONGJMP
+#endif
+#endif
+
+#ifdef Z7_SHA512_USE_LONGJMP
+#include <signal.h>
+#include <setjmp.h>
+static jmp_buf g_Sha512_jmp_buf;
+// static int g_Sha512_Unsupported;
+
+#if defined(__GNUC__) && (__GNUC__ >= 8) \
+    || defined(__clang__) && (__clang_major__ >= 3)
+  __attribute__((noreturn))
+#endif
+static void Z7_CDECL Sha512_signal_Handler(int v)
 {
+  PRF(printf("======== Sha512_signal_Handler = %x\n", (unsigned)v);)
+  // g_Sha512_Unsupported = 1;
+  longjmp(g_Sha512_jmp_buf, 1);
+}
+#endif // Z7_SHA512_USE_LONGJMP
+
+
+#if defined(_WIN32)
+#include "7zWindows.h"
+#endif
+
 #if defined(MY_CPU_ARM64)
+// #define Z7_SHA512_USE_SIMPLIFIED_PROBE // for debug
+#endif
+
+#ifdef Z7_SHA512_USE_SIMPLIFIED_PROBE
+#include <arm_neon.h>
+#if defined(__clang__)
+  __attribute__((__target__("sha3")))
+#elif !defined(_MSC_VER)
+  __attribute__((__target__("arch=armv8.2-a+sha3")))
+#endif
+#endif
+static BoolInt CPU_IsSupported_SHA512_Probe(void)
+{
+  PRF(printf("\n== CPU_IsSupported_SHA512_Probe\n");)
+#if defined(_WIN32) && defined(MY_CPU_ARM64)
   // we have no SHA512 flag for IsProcessorFeaturePresent() still.
   if (!CPU_IsSupported_CRYPTO())
     return False;
-#endif
-  // printf("\nCPU_IsSupported_SHA512\n");
+  PRF(printf("==== Registry check\n");)
   {
     // we can't read ID_AA64ISAR0_EL1 register from application.
     // but ID_AA64ISAR0_EL1 register is mapped to "CP 4030" registry value.
@@ -486,6 +538,7 @@ BoolInt CPU_IsSupported_SHA512(void)
       //   2 : SHA256 and SHA512 implemented
     }
   }
+#endif // defined(_WIN32) && defined(MY_CPU_ARM64)
 
 
 #if 1  // 0 for debug to disable SHA512 PROBE code
@@ -509,59 +562,97 @@ Does this PROBE code work in native Windows-arm64 (with/without sha512 hw instru
 Are there any ways to fix the problems with arm64-wine and x64-SDE cases?
 */
 
-  // printf("\n========== CPU_IsSupported_SHA512 PROBE ========\n");
+  PRF(printf("==== CPU_IsSupported_SHA512 PROBE\n");)
   {
+    BoolInt isSupported = False;
+#ifdef Z7_SHA512_USE_LONGJMP
+    void (Z7_CDECL *signal_prev)(int);
+    /*
+    if (g_Sha512_Unsupported)
+    {
+      PRF(printf("==== g_Sha512_Unsupported\n");)
+      return False;
+    }
+    */
+    printf("====== signal(SIGILL)\n");
+    signal_prev = signal(SIGILL, Sha512_signal_Handler);
+    if (signal_prev == SIG_ERR)
+    {
+      PRF(printf("====== signal fail\n");)
+      return False;
+    }
+    // PRF(printf("==== signal_prev = %p\n", (void *)signal_prev);)
+    // docs: Before the specified function is executed,
+    // the value of func is set to SIG_DFL.
+    // So we can exit if (setjmp(g_Sha512_jmp_buf) != 0).
+    PRF(printf("====== setjmp\n");)
+    if (!setjmp(g_Sha512_jmp_buf))
+#else //  Z7_SHA512_USE_LONGJMP
+
+#ifdef _MSC_VER
 #ifdef __clang_major__
   #pragma GCC diagnostic ignored "-Wlanguage-extension-token"
 #endif
     __try
+#endif
+#endif //  Z7_SHA512_USE_LONGJMP
+
     {
-#if 0 // 1 : for debug (reduced version to detect sha512)
+#if defined(Z7_COMPILER_SHA512_SUPPORTED)
+#ifdef Z7_SHA512_USE_SIMPLIFIED_PROBE
+      // simplified sha512 check for arm64:
       const uint64x2_t a = vdupq_n_u64(1);
       const uint64x2_t b = vsha512hq_u64(a, a, a);
+      PRF(printf("======== vsha512hq_u64 probe\n");)
       if ((UInt32)vgetq_lane_u64(b, 0) == 0x11800002)
-        return True;
 #else
       MY_ALIGN(16)
       UInt64 temp[SHA512_NUM_DIGEST_WORDS + SHA512_NUM_BLOCK_WORDS];
       memset(temp, 0x5a, sizeof(temp));
-#if 0 && defined(MY_CPU_X86_OR_AMD64)
-      __ud2(); // for debug : that exception is not problem for SDE
-#endif
-#if 1
+      PRF(printf("======== Sha512_UpdateBlocks_HW\n");)
       Sha512_UpdateBlocks_HW(temp,
           (const Byte *)(const void *)(temp + SHA512_NUM_DIGEST_WORDS), 1);
-      // printf("\n==== t = %x\n", (UInt32)temp[0]);
+      // PRF(printf("======== t = %x\n", (UInt32)temp[0]);)
       if ((UInt32)temp[0] == 0xa33cfdf7)
+#endif
       {
-        // printf("\n=== PROBE SHA512: SHA512 supported\n");
-        return True;
+        PRF(printf("======== PROBE SHA512: SHA512 is supported\n");)
+        isSupported = True;
       }
+#else // Z7_COMPILER_SHA512_SUPPORTED
+      // for debug : we generate bad instrction or raise exception.
+      // __except() doesn't catch raise() calls.
+#ifdef Z7_SHA512_USE_LONGJMP
+      PRF(printf("====== raise(SIGILL)\n");)
+      raise(SIGILL);
+#else
+#if defined(_MSC_VER) && defined(MY_CPU_X86)
+      __asm  ud2
 #endif
-#endif
+#endif // Z7_SHA512_USE_LONGJMP
+#endif // Z7_COMPILER_SHA512_SUPPORTED
     }
+
+#ifdef Z7_SHA512_USE_LONGJMP
+    PRF(printf("====== restore signal SIGILL\n");)
+    signal(SIGILL, signal_prev);
+#elif _MSC_VER
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-      // printf("\n==== CPU_IsSupported_SHA512 EXCEPTION_EXECUTE_HANDLER\n");
+      PRF(printf("==== CPU_IsSupported_SHA512 __except(EXCEPTION_EXECUTE_HANDLER)\n");)
     }
+#endif
+    PRF(printf("== return (sha512 supported) = %d\n", isSupported);)
+    return isSupported;
   }
-  return False;
 #else
   // without SHA512 PROBE code
   return True;
 #endif
-
 }
 
-#else
-
-BoolInt CPU_IsSupported_SHA512(void)
-{
-  return False;
-}
-
-#endif
-#endif // WIN32 arm64
+#endif // Z7_SHA512_USE_PROBE
+#endif // defined(Z7_SHA512_PROBE_DEBUG) || defined(Z7_COMPILER_SHA512_SUPPORTED)
 
 
 void Sha512Prepare(void)
@@ -570,10 +661,10 @@ void Sha512Prepare(void)
   SHA512_FUNC_UPDATE_BLOCKS f, f_hw;
   f = Sha512_UpdateBlocks;
   f_hw = NULL;
-#ifdef MY_CPU_X86_OR_AMD64
-  if (CPU_IsSupported_SHA512()
-      && CPU_IsSupported_AVX2()
-      )
+#ifdef Z7_SHA512_USE_PROBE
+  if (CPU_IsSupported_SHA512_Probe())
+#elif defined(MY_CPU_X86_OR_AMD64)
+  if (CPU_IsSupported_SHA512() && CPU_IsSupported_AVX2())
 #else
   if (CPU_IsSupported_SHA512())
 #endif
@@ -583,6 +674,8 @@ void Sha512Prepare(void)
   }
   g_SHA512_FUNC_UPDATE_BLOCKS    = f;
   g_SHA512_FUNC_UPDATE_BLOCKS_HW = f_hw;
+#elif defined(Z7_SHA512_PROBE_DEBUG)
+  CPU_IsSupported_SHA512_Probe(); // for debug
 #endif
 }
 

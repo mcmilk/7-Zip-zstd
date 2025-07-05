@@ -1,6 +1,18 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+25.00          2025-07-05
+-------------------------
+- 7-Zip for Windows can now use more than 64 CPU threads for compression
+  to zip/7z/xz archives and for the 7-Zip benchmark.
+  If there are more than one processor group in Windows (on systems with more than
+  64 cpu threads), 7-Zip distributes running CPU threads across different processor groups.
+- bzip2 compression speed was increased by 15-40%.
+- deflate (zip/gz) compression speed was increased by 1-3%.
+- improved support for zip, cpio and fat archives.
+- fixed some bugs and vulnerabilities.
+
+
 24.09          2024-11-29
 -------------------------
 - The default dictionary size values for LZMA/LZMA2 compression methods were increased:

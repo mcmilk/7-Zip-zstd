@@ -1,9 +1,9 @@
-7-Zip 24.09 Sources
+7-Zip 25.00 Sources
 -------------------
 
 7-Zip is a file archiver for Windows. 
 
-7-Zip Copyright (C) 1999-2024 Igor Pavlov.
+7-Zip Copyright (C) 1999-2025 Igor Pavlov.
 
 
 License Info
@@ -73,8 +73,8 @@ All final 7-Zip binaries are compiled via makefiles, that provide best
 optimization options.
 
 
-How to compile with makefile
-----------------------------
+How to compile with makefile in Windows
+---------------------------------------
 
 Some macronames can be defined for compiling with makefile:
 
@@ -88,6 +88,23 @@ MY_DYNAMIC_LINK
   for dynamic linking to the run-time library (msvcrt.dll). 
   The default makefile option is static linking to the run-time library.
 
+To compile all 7-Zip files for x64 with Visual Studio 2022,
+use the following command sequence:
+
+  cd SRC\CPP\7zip
+  %comspec% /k "C:\Program Files\VS2022\VC\Auxiliary\Build\vcvars64.bat"
+  nmake
+
+You can use another "vcvars*.bat" files from "VS2022\VC\Auxiliary\Build" directory
+to compile for other platforms:
+  vcvars64.bat
+  vcvarsamd64_arm64.bat
+  vcvarsamd64_x86.bat
+
+Also you can compile single binary from directory with related project.
+For example, to compile 7za.exe, use the following command sequence:
+  cd SRC\CPP\7zip\Bundles\Alone\
+  nmake
 
 
 Compiling 7-Zip for Unix/Linux

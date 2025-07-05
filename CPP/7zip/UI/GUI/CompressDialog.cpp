@@ -2600,11 +2600,17 @@ void CCompressDialog::SetNumThreads2()
   UInt32 numAlgoThreadsMax = numHardwareThreads * 2;
   const int methodID = GetMethodID();
 
-  switch (methodID)
+  const bool isZip = IsZipFormat();
+  if (isZip)
+    numAlgoThreadsMax =
+        8 << (sizeof(size_t) / 2); // 32 threads for 32-bit : 128 threads for 64-bit
+  else if (IsXzFormat())
+    numAlgoThreadsMax = 256 * 2;
+  else switch (methodID)
   {
     case kLZMA: numAlgoThreadsMax = 2; break;
     case kLZMA2: numAlgoThreadsMax = 256; break;
-    case kBZip2: numAlgoThreadsMax = 32; break;
+    case kBZip2: numAlgoThreadsMax = 64; break;
     // case kZSTD: numAlgoThreadsMax = num_ZSTD_threads_MAX; break;
     case kCopy:
     case kPPMd:
@@ -2613,17 +2619,6 @@ void CCompressDialog::SetNumThreads2()
     case kPPMdZip:
       numAlgoThreadsMax = 1;
   }
-  const bool isZip = IsZipFormat();
-  if (isZip)
-  {
-    numAlgoThreadsMax =
-      #ifdef _WIN32
-        64; // _WIN32 supports only 64 threads in one group. So no need for more threads here
-      #else
-        128;
-      #endif
-  }
-
   UInt32 autoThreads = numHardwareThreads;
   if (autoThreads > numAlgoThreadsMax)
     autoThreads = numAlgoThreadsMax;
@@ -3008,7 +3003,7 @@ UInt64 CCompressDialog::GetMemoryUsage_Threads_Dict_DecompMem(UInt32 numThreads,
       else
       {
         size += numBlockThreads * (size1 + chunkSize);
-        UInt32 numPackChunks = numBlockThreads + (numBlockThreads / 8) + 1;
+        const UInt32 numPackChunks = numBlockThreads + (numBlockThreads / 8) + 1;
         if (chunkSize < ((UInt32)1 << 26)) numBlockThreads++;
         if (chunkSize < ((UInt32)1 << 24)) numBlockThreads++;
         if (chunkSize < ((UInt32)1 << 22)) numBlockThreads++;
