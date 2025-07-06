@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [ amd64, amd64_x86, amd64_arm, amd64_arm64 ]
+        arch: [ amd64, amd64_x86, amd64_arm64 ]
         include:
           - arch: amd64_x86
             subsys: "5.01"
@@ -27,9 +27,6 @@ jobs:
           - arch: amd64
             subsys: "5.02"
             platform: "x64"
-          - arch: amd64_arm
-            subsys: "6.02"
-            platform: "arm"
           - arch: amd64_arm64
             subsys: "6.02"
             platform: "arm64"
@@ -84,7 +81,7 @@ jobs:
           name: binary-${{ matrix.arch }}
 
   do-release:
-    runs-on: windows-2019
+    runs-on: windows-latest
     needs: build
     steps:
     - uses: actions/download-artifact@v4
