@@ -1856,7 +1856,7 @@ HRESULT Benchmark(
     const CProperty &prop = props[i];
     UString name = prop.Name;
     name.MakeLower_Ascii();
-    if (name.IsEqualTo_Ascii_NoCase("m") && prop.Value == L"*")
+    if (name.IsEqualTo_Ascii_NoCase("m") && prop.Value.IsEqualTo("*"))
     {
       bd.TotalMode = true;
       continue;
@@ -1865,7 +1865,7 @@ HRESULT Benchmark(
     NCOM::CPropVariant propVariant;
     if (!prop.Value.IsEmpty())
       ParseNumberString(prop.Value, propVariant);
-    if (name.IsPrefixedBy(L"mt"))
+    if (name.IsPrefixedBy("mt"))
     {
       #ifndef Z7_ST
       RINOK(ParseMtProp(name.Ptr(2), propVariant, numCPUs, numThreads))

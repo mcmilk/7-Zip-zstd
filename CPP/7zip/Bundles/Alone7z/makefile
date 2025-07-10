@@ -148,7 +148,6 @@ C_OBJS = \
   $O\LzmaEnc.obj \
   $O\MtCoder.obj \
   $O\MtDec.obj \
-  $O\Sort.obj \
   $O\SwapBytes.obj \
   $O\Threads.obj \
   $O\Xz.obj \
@@ -164,5 +163,6 @@ C_OBJS = \
 !include "../../LzFindOpt.mak"
 !include "../../LzmaDec.mak"
 !include "../../Sha256.mak"
+!include "../../Sort.mak"
 
 !include "../../7zip.mak"

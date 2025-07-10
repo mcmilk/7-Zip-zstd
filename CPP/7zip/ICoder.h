@@ -136,7 +136,9 @@ namespace NCoderPropID
     kAffinity,          // VT_UI8
     kBranchOffset,      // VT_UI4
     kHashBits,          // VT_UI4
-
+    kNumThreadGroups,   // VT_UI4
+    kThreadGroup,       // VT_UI4
+    kAffinityInGroup,   // VT_UI8
     /* zstd props */
     kStrategy,          // VT_UI4 1=ZSTD_fast, 2=ZSTD_dfast, 3=ZSTD_greedy, 4=ZSTD_lazy, 5=ZSTD_lazy2, 6=ZSTD_btlazy2, 7=ZSTD_btopt, 8=ZSTD_btultra
     kFast,              // VT_UI4 The minimum fast is 1 and the maximum is 64 (default: unused)

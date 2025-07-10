@@ -99,9 +99,9 @@ COMPRESS_OBJS = \
 C_OBJS = \
   $O\Alloc.obj \
   $O\CpuArch.obj \
-  $O\Sort.obj \
   $O\Threads.obj \
 
 !include "../../Crc.mak"
+!include "../../Sort.mak"
 
 !include "../../7zip.mak"

@@ -104,7 +104,7 @@ AR_COMMON_OBJS = \
 C_OBJS = $(C_OBJS) \
   $O\Alloc.obj \
   $O\CpuArch.obj \
-  $O\Sort.obj \
   $O\Threads.obj \
 
+!include "../../Sort.mak"
 !include "../../7zip.mak"

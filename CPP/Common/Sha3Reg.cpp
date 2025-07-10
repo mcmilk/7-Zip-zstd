@@ -58,7 +58,7 @@ Z7_COM7F_IMF2(UInt32, CSha3Hasher::GetDigestSize())
   static IHasher *CreateHasherSpec() \
     { return new CSha3Hasher(digestSize / 8, isShake, \
         SHA3_BLOCK_SIZE_FROM_DIGEST_SIZE(digestSize_for_blockSize / 8)); } \
-  static const CHasherInfo g_HasherInfo = { CreateHasherSpec, id, name, digestSize }; \
+  static const CHasherInfo g_HasherInfo = { CreateHasherSpec, id, name, digestSize / 8 }; \
   struct REGISTER_HASHER_NAME(cls) { REGISTER_HASHER_NAME(cls)() { RegisterHasher(&g_HasherInfo); }}; \
   static REGISTER_HASHER_NAME(cls) g_RegisterHasher; }
 

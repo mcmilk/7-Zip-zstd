@@ -275,8 +275,8 @@ static bool IsCorrectFsName(const UString &name)
 {
   const UString lastPart = name.Ptr((unsigned)(name.ReverseFind_PathSepar() + 1));
   return
-      lastPart != L"." &&
-      lastPart != L"..";
+      !lastPart.IsEqualTo(".") &&
+      !lastPart.IsEqualTo("..");
 }
 
 bool CorrectFsPath(const UString &relBase, const UString &path, UString &result);
