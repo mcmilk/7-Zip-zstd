@@ -44,7 +44,6 @@ jobs:
       - name: Compiling ${{ matrix.arch }}
         shell: cmd
         run: |
-          set
           set WDIR=%cd%
           set PLATFORM=${{matrix.platform}}
           set SUBSYS=${{matrix.subsys}}
@@ -52,7 +51,7 @@ jobs:
           set OUTDIR=%WDIR%\build\bin-%PLATFORM%
           set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
           set ERRFILE=
-          set STOP_ON_ERROR=0
+          set STOP_ON_ERROR=1
 
           echo "********"
           echo "Working Dir: %WDIR%"
