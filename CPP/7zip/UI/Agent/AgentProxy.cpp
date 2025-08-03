@@ -636,7 +636,7 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
       file.Name = (const wchar_t *)p;
       file.NameLen = 0;
       if (size >= sizeof(wchar_t))
-        file.NameLen = size / sizeof(wchar_t) - 1;
+        file.NameLen = size / (unsigned)sizeof(wchar_t) - 1;
     }
     else
     #endif
