@@ -24,7 +24,6 @@ else
 
 SYS_OBJS = \
   $O/MyWindows.o \
-  $O/TimeUtils.o \
 
 endif
 
@@ -53,6 +52,7 @@ WIN_OBJS = \
   $O/FileName.o \
   $O/PropVariant.o \
   $O/PropVariantConv.o \
+  $O/TimeUtils.o \
 
 7ZIP_COMMON_OBJS = \
   $O/FileStreams.o \

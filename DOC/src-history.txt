@@ -1,6 +1,14 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+25.01          2025-08-03
+-------------------------
+- The code for handling symbolic links has been changed 
+  to provide greater security when extracting files from archives.
+  Command line switch -snld20 can be used to bypass default security 
+  checks when creating symbolic links.
+
+
 25.00          2025-07-05
 -------------------------
 - 7-Zip for Windows can now use more than 64 CPU threads for compression
@@ -11,6 +19,8 @@ HISTORY of the 7-Zip source code
 - deflate (zip/gz) compression speed was increased by 1-3%.
 - improved support for zip, cpio and fat archives.
 - fixed some bugs and vulnerabilities.
+- the bug was fixed : CVE-2025-53816 : 7-Zip could work incorrectly for some incorrect RAR archives. 
+- the bug was fixed : CVE-2025-53817 : 7-Zip could crash for some incorrect COM (Compound File) archives. 
 
 
 24.09          2024-11-29

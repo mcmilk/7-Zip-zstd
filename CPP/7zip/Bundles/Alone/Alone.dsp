@@ -1148,26 +1148,6 @@ SOURCE=..\..\Compress\PpmdZip.cpp
 SOURCE=..\..\Compress\PpmdZip.h
 # End Source File
 # End Group
-# Begin Group "RangeCoder"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\Compress\RangeCoder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\RangeCoderBit.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\RangeCoderBitTree.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Compress\RangeCoderOpt.h
-# End Source File
-# End Group
 # Begin Group "Shrink"
 
 # PROP Default_Filter ""
