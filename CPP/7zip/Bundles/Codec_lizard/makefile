@@ -29,7 +29,6 @@ LIZARD_OBJS = \
   $O\liz_entropy_common.obj \
   $O\liz_fse_compress.obj \
   $O\liz_fse_decompress.obj \
-  $O\liz_hist.obj \
   $O\liz_huf_compress.obj \
   $O\liz_huf_decompress.obj \
   $O\liz_xxhash.obj \
