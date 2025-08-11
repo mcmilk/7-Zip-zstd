@@ -50,13 +50,13 @@ void RC_reset(RC_encoder* const rc);
 
 void RC_setOutputBuffer(RC_encoder* const rc, BYTE *const out_buffer);
 
-void _FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc);
+void RC_shiftLow(RC_encoder* const rc);
 
 void RC_encodeBitTree(RC_encoder* const rc, LZMA2_prob *const probs, unsigned bit_count, unsigned symbol);
 
 void RC_encodeBitTreeReverse(RC_encoder* const rc, LZMA2_prob *const probs, unsigned bit_count, unsigned symbol);
 
-void _FORCE_NOINLINE RC_encodeDirect(RC_encoder* const rc, unsigned value, unsigned bit_count);
+void RC_encodeDirect(RC_encoder* const rc, unsigned value, unsigned bit_count);
 
 HINT_INLINE
 void RC_encodeBit0(RC_encoder* const rc, LZMA2_prob *const rprob)

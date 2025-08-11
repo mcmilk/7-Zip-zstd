@@ -1,4 +1,4 @@
 /* 
- * Because of code deduplication we'll use lizard/mem.h here
+ * Because of code deduplication we'll use zstd/compiler.h here
  */
-#include "../lizard/compiler.h"
+#include "../zstd/compiler.h"
