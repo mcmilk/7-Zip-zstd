@@ -1,6 +1,7 @@
 /* ******************************************************************
-   Error codes list
-   Copyright (C) 2016, Yann Collet
+   debug
+   Part of FSE library
+   Copyright (C) 2013-present, Yann Collet.
 
    BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 
@@ -29,37 +30,15 @@
 
    You can contact the author at :
    - Source repository : https://github.com/Cyan4973/FiniteStateEntropy
-   - Public forum : https://groups.google.com/forum/#!forum/lz4c
 ****************************************************************** */
-#ifndef ERROR_PUBLIC_H_MODULE
-#define ERROR_PUBLIC_H_MODULE
-
-#if defined (__cplusplus)
-extern "C" {
-#endif
 
 
-/* *****************************************
- *  error codes list
- ******************************************/
-typedef enum {
-  FSE_error_no_error,
-  FSE_error_GENERIC,
-  FSE_error_dstSize_tooSmall,
-  FSE_error_srcSize_wrong,
-  FSE_error_corruption_detected,
-  FSE_error_tableLog_tooLarge,
-  FSE_error_maxSymbolValue_tooLarge,
-  FSE_error_maxSymbolValue_tooSmall,
-  FSE_error_workSpace_tooSmall,
-  FSE_error_maxCode
-} FSE_ErrorCode;
+/*
+ * This module only hosts one global variable
+ * which can be used to dynamically influence the verbosity of traces,
+ * such as DEBUGLOG and RAWLOG
+ */
 
-/* note : compare with size_t function results using FSE_getError() */
+#include "debug.h"
 
-
-#if defined (__cplusplus)
-}
-#endif
-
-#endif /* ERROR_PUBLIC_H_MODULE */
+int g_debuglevel = DEBUGLEVEL;
