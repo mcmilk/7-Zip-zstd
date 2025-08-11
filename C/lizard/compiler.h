@@ -81,14 +81,17 @@
 
 /* force no inlining */
 #ifdef _MSC_VER
-#  define FORCE_NOINLINE static __declspec(noinline)
+#  define _FORCE_NOINLINE __declspec(noinline)
 #else
 #  if defined(__GNUC__) || defined(__ICCARM__)
-#    define FORCE_NOINLINE static __attribute__((__noinline__))
+#    define _FORCE_NOINLINE __attribute__((__noinline__))
 #  else
-#    define FORCE_NOINLINE static
+#    define _FORCE_NOINLINE
 #  endif
 #endif
+
+/* force no inlining + static */
+#define FORCE_NOINLINE static _FORCE_NOINLINE
 
 /* target attribute */
 #ifndef __has_attribute

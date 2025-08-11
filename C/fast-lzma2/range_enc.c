@@ -120,7 +120,7 @@ void RC_reset(RC_encoder* const rc)
 
 #ifdef __64BIT__
 
-void FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc)
+void _FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc)
 {
     U64 low = rc->low;
     rc->low = (U32)(low << 8);
@@ -143,7 +143,7 @@ void FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc)
 
 #else
 
-void FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc)
+void _FORCE_NOINLINE RC_shiftLow(RC_encoder* const rc)
 {
     U32 low = (U32)rc->low;
     unsigned high = (unsigned)(rc->low >> 32);
@@ -194,7 +194,7 @@ void RC_encodeBitTreeReverse(RC_encoder* const rc, LZMA2_prob *const probs, unsi
 	}
 }
 
-void FORCE_NOINLINE RC_encodeDirect(RC_encoder* const rc, unsigned value, unsigned bit_count)
+void _FORCE_NOINLINE RC_encodeDirect(RC_encoder* const rc, unsigned value, unsigned bit_count)
 {
 	assert(bit_count > 0);
 	do {
