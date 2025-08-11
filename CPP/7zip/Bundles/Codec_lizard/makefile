@@ -25,9 +25,11 @@ LIZARD_OBJS = \
   $O\lizard_compress.obj \
   $O\lizard_decompress.obj \
   $O\lizard_frame.obj \
+  $O\liz_debug.obj \
   $O\liz_entropy_common.obj \
   $O\liz_fse_compress.obj \
   $O\liz_fse_decompress.obj \
+  $O\liz_hist.obj \
   $O\liz_huf_compress.obj \
   $O\liz_huf_decompress.obj \
   $O\liz_xxhash.obj \

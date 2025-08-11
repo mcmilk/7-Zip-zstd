@@ -65,7 +65,7 @@
 **************************************/
 int Lizard_versionNumber (void) { return LIZARD_VERSION_NUMBER; }
 int Lizard_compressBound(int isize)  { return LIZARD_COMPRESSBOUND(isize); }
-int Lizard_sizeofState_MinLevel() { return Lizard_sizeofState(LIZARD_MIN_CLEVEL); }
+int Lizard_sizeofState_MinLevel(void) { return Lizard_sizeofState(LIZARD_MIN_CLEVEL); }
 
 
 

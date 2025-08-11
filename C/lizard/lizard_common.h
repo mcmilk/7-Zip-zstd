@@ -305,6 +305,12 @@ static const Lizard_parameters Lizard_defaultParameters[LIZARD_MAX_CLEVEL+1-LIZA
 #  endif   /* __STDC_VERSION__ */
 #endif  /* _MSC_VER */
 
+#ifdef __clang__
+#define NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
+#else
+#define NO_SANITIZE_MEMORY
+#endif
+
 #define LIZARD_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #if (LIZARD_GCC_VERSION >= 302) || (__INTEL_COMPILER >= 800) || defined(__clang__)
 #  define expect(expr,value)    (__builtin_expect ((expr),(value)) )
@@ -388,7 +394,7 @@ MEM_STATIC void Lizard_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd
 /* **************************************
 *  Function body to include for inlining
 ****************************************/
-MEM_STATIC U32 Lizard_highbit32(U32 val)
+MEM_STATIC U32 Lizard_highbit32(U32 val) NO_SANITIZE_MEMORY
 {
 #   if defined(_MSC_VER)   /* Visual */
     unsigned long r=0;
@@ -414,7 +420,7 @@ MEM_STATIC U32 Lizard_highbit32(U32 val)
 /*-************************************
 *  Common functions
 **************************************/
-MEM_STATIC unsigned Lizard_NbCommonBytes (register size_t val)
+MEM_STATIC unsigned Lizard_NbCommonBytes (size_t val)
 {
     if (MEM_isLittleEndian()) {
         if (MEM_64bits()) {

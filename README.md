@@ -26,7 +26,7 @@ You can install it in two ways:
 4. [LZ5] v1.5 is a modification of LZ4 which was meant for a better ratio at cost of slower compression and decompression. It's superseded by [Lizard] now.
    - Levels: 1..15
 
-5. [Lizard] v1.0 is an efficient compressor with fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
+5. [Lizard] v2.1 is an efficient compressor with fast decompression. It achieves compression ratio that is comparable to zip/zlib and zstd/brotli (at low and medium compression levels) at decompression speed of 1000 MB/s and faster.
    - Levels 10..19 (fastLZ4) are designed to give about 10% better decompression speed than LZ4
    - Levels 20..29 (LIZv1) are designed to give better ratio than LZ4 keeping 75% decompression speed
    - Levels 30..39 (fastLZ4 + Huffman) adds Huffman coding to fastLZ4
@@ -292,7 +292,7 @@ You find this project useful, maybe you consider a donation ;-)
 - 7-Zip ZS Version 25.01
   - [Brotli] Version 1.1.0
   - [Fast LZMA2] Version 1.0.1
-  - [Lizard] Version 1.0
+  - [Lizard] Version 2.1
   - [LZ4] Version 1.9.4
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
