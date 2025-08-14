@@ -1661,7 +1661,7 @@ void CCompressDialog::SetLevel2()
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   const CArcInfoEx &ai = Get_ArcInfoEx();
   UInt32 LevelsMask = fi.LevelsMask;
-  UInt32 LevelsStart = 1;
+  UInt32 LevelsStart = (LevelsMask & 1) ? 0 : 1;
   UInt32 LevelsEnd = 9;
   int id = -1;
   if (ai.LevelsMask != 0xFFFFFFFF)
