@@ -345,16 +345,13 @@ static const CFormatInfo g_Formats[] =
 {
   {
     "",
-    // (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
-    ((UInt32)1 << 10) - 1,
-    // (UInt32)(Int32)-1,
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     0, NULL,
     kFF_MultiThread | kFF_MemUse
   },
   {
     "7z",
-    // (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
-    (1 << 10) - 1,
+    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_7zMethods),
     kFF_Filter | kFF_Solid | kFF_MultiThread | kFF_Encrypt |
     kFF_EncryptFileNames | kFF_MemUse | kFF_SFX
@@ -382,8 +379,8 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "xz",
-    // (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
-    (1 << 10) - 1 - (1 << 0), // store (1 << 0) is not supported
+    // store (1 << 0) is not supported
+    (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_XzMethods),
     kFF_Solid | kFF_MultiThread | kFF_MemUse
   },
