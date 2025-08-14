@@ -1726,6 +1726,8 @@ void CCompressDialog::SetLevel2()
 
     if ((LevelsMask & (1 << ir)) != 0 && langID < Z7_ARRAY_SIZE(g_Levels))
     {
+      // skip level 0 (store) if not supported
+      if (langID == 0 && ir > 0) langID = 1;
       UString s = t;
       s.Add_UInt32(i);
       s += L" "; if (i <= 9) s += L" "; s += L"(";
