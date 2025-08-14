@@ -7,6 +7,7 @@ IF not "%~1" == "-no-init" (
   set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
   set > %APPVEYOR_BUILD_FOLDER%\env-%VC%-%PLATFORM%.txt
 )
+set BUILD_TYPE=%~1
 if "%SUBSYS%" == "" (
   echo ERROR: Variable SUBSYS is not set.
   exit /b 1
@@ -52,9 +53,14 @@ exit /b 0
 
 @rem build function ...
 :build
-cd %ROOT%\%~1
 set out=%~3
 if "%out%" == "" set out=%~2
+IF "%BUILD_TYPE%" == "clean" (
+  echo   == Clean %out% ^(%~1^) ==
+  del /s /q %ROOT%\%~1\%PLATFORM% > NUL:
+  goto :eof
+)
+cd %ROOT%\%~1
 echo   == Build %out% ^(%~1^) ==
 nmake /NOLOGO %OPTS%
 IF %errorlevel% NEQ 0 (
