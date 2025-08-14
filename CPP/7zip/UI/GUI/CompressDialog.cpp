@@ -1708,13 +1708,13 @@ void CCompressDialog::SetLevel2()
   }
 
   const WCHAR t[] = L"Level ";
-  for (UInt32 i = LevelsStart, ir, langID = 0; i <= LevelsEnd; i++)
+  for (UInt32 i = LevelsStart, ir, j = 0; i <= LevelsEnd; i++)
   {
 
     // lizard needs extra handling
     if (GetMethodID() >= kLIZARD_M1 && GetMethodID() <= kLIZARD_M4) {
       ir = i;
-      if (ir % 10 == 0) langID = 0;
+      if (ir % 10 == 0) j = 0;
       while (ir > 19) { ir -= 10; }
     } else {
       ir = i;
@@ -1724,18 +1724,18 @@ void CCompressDialog::SetLevel2()
     if (LevelsMask < (UInt32)(1 << ir))
       break;
 
-    if ((LevelsMask & (1 << ir)) != 0 && langID < Z7_ARRAY_SIZE(g_Levels))
+    if ((LevelsMask & (1 << ir)) != 0 && j < Z7_ARRAY_SIZE(g_Levels))
     {
       // skip level 0 (store) if not supported
-      if (langID == 0 && ir > 0) langID = 1;
+      if (j == 0 && ir > 0) j = 1;
       UString s = t;
       s.Add_UInt32(i);
       s += L" "; if (i <= 9) s += L" "; s += L"(";
-      s += LangString(g_Levels[langID]);
+      s += LangString(g_Levels[j]);
       s += L")";
       int index = (int)m_Level.AddString(s);
       m_Level.SetItemData(index, i);
-      langID++;
+      j++;
     } else {
       UString s = t;
       s.Add_UInt32(i);
