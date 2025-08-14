@@ -1724,7 +1724,7 @@ void CCompressDialog::SetLevel2()
     if (LevelsMask < (UInt32)(1 << ir))
       break;
 
-    if ((LevelsMask & (1 << ir)) != 0)
+    if ((LevelsMask & (1 << ir)) != 0 && langID < Z7_ARRAY_SIZE(g_Levels))
     {
       UString s = t;
       s.Add_UInt32(i);
