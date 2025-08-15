@@ -1455,6 +1455,7 @@ bool CCompressDialog::OnCommand(unsigned code, unsigned itemID, LPARAM lParam)
       
       case IDC_COMPRESS_METHOD:
       {
+        ComprMethodChanged();
         MethodChanged();
         SetLevel2();
         EnableMultiCombo(IDC_COMPRESS_LEVEL);
@@ -1855,7 +1856,7 @@ void CCompressDialog::SetMethod2(int keepMethodId)
     if ((defaultMethod.IsEqualTo_Ascii_NoCase(method) || m == 0) && !weUseSameMethod)
       m_Method.SetCurSel(itemIndex);
   }
-  
+
   if (!weUseSameMethod) {
     // Lizard :/
     if (defaultMethod.IsEqualTo_Ascii_NoCase("lizard") && keepMethodId == -1) {
@@ -1867,10 +1868,26 @@ void CCompressDialog::SetMethod2(int keepMethodId)
       else
       if (defaultLevel >= 40 && defaultLevel <= 49) SetNearestSelectComboBox(m_Method, kLIZARD_M4);
     }
+    ComprMethodChanged();
     MethodChanged();
+  }
 }
 
-
+void CCompressDialog::ComprMethodChanged()
+{
+  const CArcInfoEx &ai = Get_ArcInfoEx();
+  const int index = FindRegistryFormat(ai.Name);
+  if (index >= 0)
+  {
+    UString compMeth;
+    GetMethodSpec(compMeth);
+    NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+    if (!compMeth.IsEqualTo_NoCase(fo.Method)) {
+      fo.Method = compMeth;
+      m_RegistryInfo.LoadAndUpdateFormatByMethod(fo);
+    }
+  }
+}
 
 bool CCompressDialog::IsZipFormat()
 {
@@ -3550,7 +3567,7 @@ void CCompressDialog::SaveOptionsInMem()
   */
 
   fo.Order = GetOrderSpec();
-  fo.Method = GetMethodSpec();
+  GetMethodSpec(fo.Method);
   fo.EncryptionMethod = GetEncryptionMethodSpec();
   fo.NumThreads = GetNumThreadsSpec();
   fo.BlockLogSize = GetBlockSizeSpec();

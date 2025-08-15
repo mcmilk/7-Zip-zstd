@@ -230,6 +230,7 @@ public:
     EnableMultiCombo(IDC_COMPRESS_METHOD);
   }
 
+  void ComprMethodChanged();
   void MethodChanged()
   {
     SetDictionary2();
