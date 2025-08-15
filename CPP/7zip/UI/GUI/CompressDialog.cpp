@@ -1730,7 +1730,7 @@ void CCompressDialog::SetLevel2()
       if (j == 0 && ir > 0) j = 1;
       UString s = t;
       s.Add_UInt32(i);
-      s += L" "; if (i <= 9) s += L" "; s += L"(";
+      s += L" (";
       s += LangString(g_Levels[j]);
       s += L")";
       int index = (int)m_Level.AddString(s);
