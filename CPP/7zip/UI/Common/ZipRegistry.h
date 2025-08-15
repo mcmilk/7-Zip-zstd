@@ -153,6 +153,7 @@ namespace NCompression
 
     void Save() const;
     void Load();
+    void LoadAndUpdateFormatByMethod(CFormatOptions &fo);
   };
 }
 
