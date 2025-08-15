@@ -386,7 +386,7 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "zstd",
-    (1 << 1) | (1 << 3) | (1 << 5) | (1 << 11) | (1 << 17) | (1 << 22),
+    (1 << 1) | (1 << 3) | (1 << 11) | (1 << 19) | (1 << 22),
     METHODS_PAIR(g_ZstdMethods),
     kFF_MultiThread
   },
@@ -398,7 +398,7 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "Lizard",
-    (1 << 10) | (1 << 11) | (1 << 13) | (1 << 15) | (1 << 17) | (1 << 19),
+    (1 << 10) | (1 << 13) | (1 << 15) | (1 << 17) | (1 << 19),
     METHODS_PAIR(g_LizardMethods),
     kFF_MultiThread
   },
