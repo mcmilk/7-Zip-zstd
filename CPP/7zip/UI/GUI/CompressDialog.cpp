@@ -1646,12 +1646,21 @@ unsigned CCompressDialog::GetStaticFormatIndex()
 
 void CCompressDialog::SetNearestSelectComboBox(NControl::CComboBox &comboBox, UInt32 value)
 {
+  // exact:
+  for (int i = comboBox.GetCount() - 1; i >= 0; i--)
+    if ((UInt32)comboBox.GetItemData(i) == value)
+    {
+      comboBox.SetCurSel(i);
+      return;
+    }
+  // nearest:
   for (int i = comboBox.GetCount() - 1; i >= 0; i--)
     if ((UInt32)comboBox.GetItemData(i) <= value)
     {
       comboBox.SetCurSel(i);
       return;
     }
+  // fallback:
   if (comboBox.GetCount() > 0)
     comboBox.SetCurSel(0);
 }
@@ -1848,19 +1857,21 @@ void CCompressDialog::SetMethod2(int keepMethodId)
       continue;
     }
 
-    // Lizard :/
-    if (defaultMethod.IsEqualTo_Ascii_NoCase("lizard") && keepMethodId == -1) {
-      if (defaultLevel >= 10 && defaultLevel <= 19) m_Method.SetCurSel(kLIZARD_M1 - 1);
-      if (defaultLevel >= 20 && defaultLevel <= 29) m_Method.SetCurSel(kLIZARD_M2 - 1);
-      if (defaultLevel >= 30 && defaultLevel <= 39) m_Method.SetCurSel(kLIZARD_M3 - 1);
-      if (defaultLevel >= 40 && defaultLevel <= 49) m_Method.SetCurSel(kLIZARD_M4 - 1);
-    }
-
     if ((defaultMethod.IsEqualTo_Ascii_NoCase(method) || m == 0) && !weUseSameMethod)
       m_Method.SetCurSel(itemIndex);
   }
   
-  if (!weUseSameMethod)
+  if (!weUseSameMethod) {
+    // Lizard :/
+    if (defaultMethod.IsEqualTo_Ascii_NoCase("lizard") && keepMethodId == -1) {
+      if (defaultLevel >= 10 && defaultLevel <= 19) SetNearestSelectComboBox(m_Method, kLIZARD_M1);
+      else
+      if (defaultLevel >= 20 && defaultLevel <= 29) SetNearestSelectComboBox(m_Method, kLIZARD_M2);
+      else
+      if (defaultLevel >= 30 && defaultLevel <= 39) SetNearestSelectComboBox(m_Method, kLIZARD_M3);
+      else
+      if (defaultLevel >= 40 && defaultLevel <= 49) SetNearestSelectComboBox(m_Method, kLIZARD_M4);
+    }
     MethodChanged();
 }
 
