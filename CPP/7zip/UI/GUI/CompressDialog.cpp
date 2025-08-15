@@ -1699,15 +1699,13 @@ void CCompressDialog::SetLevel2()
     }
   }
   UInt32 level = m_Level.GetCount() > 0 ? (UInt32)m_Level.GetItemData_of_CurSel() : (LevelsEnd - LevelsStart + 1) / 2;
-  UInt32 readLevel = (UInt32)-1;
   m_Level.ResetContent();
   {
     int index = FindRegistryFormat(ai.Name);
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      readLevel = fo.Level;
-      if (fo.Level <= LevelsEnd)
+      if (fo.Level <= LevelsEnd || (id != kCopy && fo.Level == Z7_ZSTD_ULTIMATE_LEV))
         level = fo.Level;
       else if (fo.Level == (UInt32)(Int32)-1)
         level = (LevelsEnd - LevelsStart + 1) / 2;
@@ -1752,7 +1750,7 @@ void CCompressDialog::SetLevel2()
       m_Level.SetItemData(index, i);
     }
   }
-  if (1) { // ultimate level (max possible or zstd --max if allowed)
+  if (id != kCopy) { // ultimate level (max possible or zstd --max if allowed)
     UString s;
     if (id == kZSTD) {
       s = LangString(IDS_METHOD_ADV_MAX);
@@ -1762,9 +1760,6 @@ void CCompressDialog::SetLevel2()
     if (s.IsEmpty()) s = "Highest (Ultimate) [-mmax]"; // for the case it is not localized (e. g. old dict).
     int index = (int)m_Level.AddString(s);
     m_Level.SetItemData(index, Z7_ZSTD_ULTIMATE_LEV);
-    if (readLevel == Z7_ZSTD_ULTIMATE_LEV) { // exception (available for any method), restore read from registry
-      level = readLevel;
-    }
   }
   SetNearestSelectComboBox(m_Level, level);
 }
