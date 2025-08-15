@@ -80,6 +80,9 @@
 #define IDS_METHOD_MAXIMUM              4054
 #define IDS_METHOD_ULTRA                4055
 
+#define IDS_METHOD_HIGHEST              4058
+#define IDS_METHOD_ADV_MAX              4059
+
 #define IDS_COMPRESS_UPDATE_MODE_ADD    4060
 #define IDS_COMPRESS_UPDATE_MODE_UPDATE 4061
 #define IDS_COMPRESS_UPDATE_MODE_FRESH  4062

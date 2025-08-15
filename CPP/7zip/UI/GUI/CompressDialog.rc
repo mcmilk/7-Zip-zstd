@@ -209,6 +209,8 @@ BEGIN
     IDS_METHOD_NORMAL   "Normal"
     IDS_METHOD_MAXIMUM  "Maximum"
     IDS_METHOD_ULTRA    "Ultra"
+    IDS_METHOD_HIGHEST  "Highest (Ultimate) [-mmax]"
+    IDS_METHOD_ADV_MAX  "Adv.Max (Ultimate) [-mmax]"
 
     IDS_COMPRESS_UPDATE_MODE_ADD    "Add and replace files"
     IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"

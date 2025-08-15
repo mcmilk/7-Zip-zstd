@@ -1744,7 +1744,14 @@ void CCompressDialog::SetLevel2()
     }
   }
   if (1) { // ultimate level (max possible or zstd --max if allowed)
-    int index = (int)m_Level.AddString(L"-mmax  (Ultimate)");
+    UString s;
+    if (id == kZSTD) {
+      s = LangString(IDS_METHOD_ADV_MAX);
+    } else {
+      s = LangString(IDS_METHOD_HIGHEST);
+    }
+    if (s.IsEmpty()) s = "Highest (Ultimate) [-mmax]"; // for the case it is not localized (e. g. old dict).
+    int index = (int)m_Level.AddString(s);
     m_Level.SetItemData(index, Z7_ZSTD_ULTIMATE_LEV);
     if (readLevel == Z7_ZSTD_ULTIMATE_LEV) { // exception (available for any method), restore read from registry
       level = readLevel;
