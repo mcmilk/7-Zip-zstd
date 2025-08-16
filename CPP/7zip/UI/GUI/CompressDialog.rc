@@ -203,6 +203,9 @@ BEGIN
     IDS_PASSWORD_USE_ASCII  "Use only English letters, numbers and special characters (!, #, $, ...) for password."
     IDS_PASSWORD_TOO_LONG   "Password is too long"
 
+    IDS_METHOD_ULTIMATEFAST "Ultimate-Fast"
+    IDS_METHOD_ULTRAFAST    "Ultra-Fast"
+    IDS_METHOD_SUPERFAST    "Super-Fast"
     IDS_METHOD_STORE    "Store"
     IDS_METHOD_FASTEST  "Fastest"
     IDS_METHOD_FAST     "Fast"

@@ -386,7 +386,7 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "zstd",
-    (1 << 1) | (1 << 3) | (1 << 11) | (1 << 19) | (1 << 22),
+    (1 << 1) | (1 << 3) | (1 << 11) | (1 << 19) | (1 << 20),
     METHODS_PAIR(g_ZstdMethods),
     kFF_MultiThread
   },
@@ -445,7 +445,7 @@ static const CFormatInfo g_Formats[] =
 };
 
 static const signed char g_LevelRanges[][2] = {
-  { 1, 22 }, // zstd
+  { -64, 22 }, // zstd
   { 0, 11 }, // brotli
   { 1, 12 }, // lz4
   { 1, 15 }, // lz5
@@ -1671,8 +1671,9 @@ void CCompressDialog::SetLevel2()
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   const CArcInfoEx &ai = Get_ArcInfoEx();
   UInt32 LevelsMask = fi.LevelsMask;
-  UInt32 LevelsStart = (LevelsMask & 1) ? 0 : 1;
-  UInt32 LevelsEnd = 9;
+  Int32 LevelsStart = (LevelsMask & 1) ? 0 : 1;
+  Int32 LevelsEnd = 9;
+  bool LevelsEndByMask = true;
   int id = -1;
   if (ai.LevelsMask != 0xFFFFFFFF)
     LevelsMask = ai.LevelsMask;
@@ -1682,14 +1683,16 @@ void CCompressDialog::SetLevel2()
     if (id == kCopy) {
       LevelsStart = 0;
       LevelsEnd = 0;
+      LevelsEndByMask = false;
       LevelsMask = 0;
     } else if (id >= kZSTD && id <= kLIZARD_M4) {
       auto& r = g_LevelRanges[id - kZSTD];
       LevelsStart = r[0];
       LevelsEnd = r[1];
-      if (id == kZSTD)
+      LevelsEndByMask = false;
+      if (id == kZSTD) {
         LevelsMask = g_Formats[6].LevelsMask;
-      else if (id == kBROTLI)
+      } else if (id == kBROTLI)
         LevelsMask = g_Formats[7].LevelsMask;
       else if (id >= kLIZARD_M1 && id <= kLIZARD_M4)
         LevelsMask = g_Formats[8].LevelsMask;
@@ -1706,18 +1709,21 @@ void CCompressDialog::SetLevel2()
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      if (fo.Level <= LevelsEnd || (id != kCopy && fo.Level == Z7_ZSTD_ULTIMATE_LEV))
-        level = fo.Level;
-      else if (fo.Level == (UInt32)(Int32)-1)
-        level = (LevelsEnd - LevelsStart + 1) / 2;
-      else
-        level = LevelsEnd;
+      if ( (fo.Level <= (UInt32)LevelsEnd) || (id != kCopy && fo.Level == Z7_ZSTD_ULTIMATE_LEV)
+        || (id == kZSTD && fo.Level > Z7_ZSTD_FAST_LEV_INC && fo.Level <= Z7_ZSTD_FAST_LEV_INC + 64)
+      ) {
+        level = (Int32)fo.Level;
+      } else {
+        level = (Int32)(LevelsEnd - (LevelsStart > 0 ? LevelsStart : 0) + 1) / 2;
+      }
     }
   }
 
   const WCHAR t[] = L"Level ";
-  for (UInt32 i = LevelsStart, ir, j = 0; i <= LevelsEnd; i++)
+  const WCHAR tf[] = L"Fast ";
+  for (Int32 i = LevelsStart, ir, j = 0; i <= LevelsEnd; i++)
   {
+    if (!i && id == kZSTD) continue;
 
     // lizard needs extra handling
     if (GetMethodID() >= kLIZARD_M1 && GetMethodID() <= kLIZARD_M4) {
@@ -1729,36 +1735,45 @@ void CCompressDialog::SetLevel2()
     }
 
     // max reached
-    if (LevelsMask < (UInt32)(1 << ir))
+    if (LevelsEndByMask && LevelsMask < (UInt32)(1 << ir))
       break;
 
-    if ((LevelsMask & (1 << ir)) != 0 && j < Z7_ARRAY_SIZE(g_Levels))
+    char buf[20+1];
+    UString s = i >= 0 ? t : tf;
+    ConvertInt64ToString(i, buf);
+    s += buf;
+    if (ir < 0 && id == kZSTD) {
+      int lid = 0;
+      switch (-ir) {
+        case 64: lid = IDS_METHOD_ULTIMATEFAST; break;
+        case  7: lid = IDS_METHOD_ULTRAFAST;    break;
+        case  1: lid = IDS_METHOD_SUPERFAST;    break;
+      }
+      if (lid) {
+        s += L" (";
+        s += LangString(lid);
+        s += L")";
+      }
+    }
+    else
+    if (ir >= 0 && (LevelsMask & (1 << ir)) && j < Z7_ARRAY_SIZE(g_Levels))
     {
       // skip level 0 (store) if not supported
-      if (j == 0 && ir > 0) j = 1;
-      UString s = t;
-      s.Add_UInt32(i);
+      if (j == 0 && ir != 0) j = 1;
       s += L" (";
-      s += LangString(g_Levels[j]);
+      s += LangString(g_Levels[j++]);
       s += L")";
-      int index = (int)m_Level.AddString(s);
-      m_Level.SetItemData(index, i);
-      j++;
-    } else {
-      UString s = t;
-      s.Add_UInt32(i);
-      int index = (int)m_Level.AddString(s);
-      m_Level.SetItemData(index, i);
     }
+    int index = (int)m_Level.AddString(s);
+    m_Level.SetItemData(index, i >= 0 ? i : Z7_ZSTD_FAST_LEV_INC - i);
   }
-  if (id != kCopy) { // ultimate level (max possible or zstd --max if allowed)
+  if (m_Level.GetCount() > 1) { // ultimate level (max possible or zstd --max if allowed)
     UString s;
     if (id == kZSTD) {
       s = LangString(IDS_METHOD_ADV_MAX);
     } else {
       s = LangString(IDS_METHOD_HIGHEST);
     }
-    if (s.IsEmpty()) s = "Highest (Ultimate) [-mmax]"; // for the case it is not localized (e. g. old dict).
     int index = (int)m_Level.AddString(s);
     m_Level.SetItemData(index, Z7_ZSTD_ULTIMATE_LEV);
   }

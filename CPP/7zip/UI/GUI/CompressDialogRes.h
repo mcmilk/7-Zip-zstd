@@ -73,6 +73,9 @@
 #define IDX_COMPRESS_NT_ALT_STREAMS     4042
 #define IDX_COMPRESS_NT_SECUR           4043
 
+#define IDS_METHOD_ULTIMATEFAST         4047
+#define IDS_METHOD_ULTRAFAST            4048
+#define IDS_METHOD_SUPERFAST            4049
 #define IDS_METHOD_STORE                4050
 #define IDS_METHOD_FASTEST              4051
 #define IDS_METHOD_FAST                 4052
