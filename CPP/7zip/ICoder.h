@@ -159,6 +159,9 @@ namespace NCoderPropID
   };
 }
 
+/* level inverter used to wrap to/from fast levels */
+#define Z7_ZSTD_FAST_LEV_INC  32
+
 /* artificial level used to specify max possible level (for ZSTD advanced max compression, equivalent of --max) */
 #define Z7_ZSTD_ULTIMATE_LEV  255
 
