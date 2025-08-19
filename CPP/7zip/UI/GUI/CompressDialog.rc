@@ -66,11 +66,11 @@ BEGIN
   LTEXT     "Archive &format:", IDT_COMPRESS_FORMAT,      m,  41, g0xs, 8
   COMBOBOX  IDC_COMPRESS_FORMAT, g1x, 39, g1xs, 80, MY_COMBO | CBS_SORT
   
-  LTEXT     "Compression &level:", IDT_COMPRESS_LEVEL,    m,  62, g0xs, 8
-  COMBOBOX  IDC_COMPRESS_LEVEL,  g1x, 60, g1xs, 80, MY_COMBO
-  
-  LTEXT     "Compression &method:", IDT_COMPRESS_METHOD,  m,  83, g0xs, 8
-  COMBOBOX  IDC_COMPRESS_METHOD, g1x, 81, g1xs, 80, MY_COMBO
+  LTEXT     "Compression &method:", IDT_COMPRESS_METHOD,  m,  62, g0xs, 8
+  COMBOBOX  IDC_COMPRESS_METHOD, g1x, 60, g1xs, 80, MY_COMBO
+
+  LTEXT     "Compression &level:", IDT_COMPRESS_LEVEL,    m,  83, g0xs, 8
+  COMBOBOX  IDC_COMPRESS_LEVEL,  g1x-15, 81, g1xs+15, 80, MY_COMBO
 
   LTEXT     "&Dictionary size:", IDT_COMPRESS_DICTIONARY, m, 104, g0xs, 8
   COMBOBOX  IDC_COMPRESS_DICTIONARY, g1x, 102, g1xs, 167, MY_COMBO
@@ -203,12 +203,17 @@ BEGIN
     IDS_PASSWORD_USE_ASCII  "Use only English letters, numbers and special characters (!, #, $, ...) for password."
     IDS_PASSWORD_TOO_LONG   "Password is too long"
 
+    IDS_METHOD_ULTIMATEFAST "Ultimate-Fast"
+    IDS_METHOD_ULTRAFAST    "Ultra-Fast"
+    IDS_METHOD_SUPERFAST    "Super-Fast"
     IDS_METHOD_STORE    "Store"
     IDS_METHOD_FASTEST  "Fastest"
     IDS_METHOD_FAST     "Fast"
     IDS_METHOD_NORMAL   "Normal"
     IDS_METHOD_MAXIMUM  "Maximum"
     IDS_METHOD_ULTRA    "Ultra"
+    IDS_METHOD_HIGHEST  "Highest (Ultimate) [-mmax]"
+    IDS_METHOD_ADV_MAX  "Adv.Max (Ultimate) [-mmax]"
 
     IDS_COMPRESS_UPDATE_MODE_ADD    "Add and replace files"
     IDS_COMPRESS_UPDATE_MODE_UPDATE "Update and add files"
