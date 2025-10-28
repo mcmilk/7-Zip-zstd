@@ -8,7 +8,7 @@
 
 #include "./enc/utf8_util.h"
 
-#include "types.h"
+#include "./common//platform.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {

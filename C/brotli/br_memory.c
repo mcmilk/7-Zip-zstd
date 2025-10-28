@@ -9,11 +9,6 @@
 
 #include "./enc/memory.h"
 
-#include <stdlib.h>  /* exit, free, malloc */
-#include <string.h>  /* memcpy */
-
-#include "types.h"
-
 #include "./common//platform.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)

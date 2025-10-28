@@ -6,17 +6,19 @@
 
 #include "./enc/encoder_dict.h"
 
-#include <stdlib.h>  /* malloc, free */
-
 #include "./common//dictionary.h"
 #include "./common//platform.h"
+#include "shared_dictionary.h"
 #include "./common//shared_dictionary_internal.h"
 #include "./common//transform.h"
+#include "encode.h"
 #include "./enc/compound_dictionary.h"
 #include "./enc/dictionary_hash.h"
+#include "./enc/hash_base.h"
+#include "./enc/hash.h"
 #include "./enc/memory.h"
 #include "./enc/quality.h"
-#include "./enc/hash.h"
+#include "./enc/static_dict_lut.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -118,8 +120,8 @@ static uint32_t BrotliTrieAlloc(MemoryManager* m, size_t num, BrotliTrie* trie,
     keep_index = (uint32_t)(*keep - trie->pool);
   }
   if (trie->pool_size == 0) {
-    /* Have a dummy node in the front. We do not want the result to be 0, it
-    must be at least 1, 0 represents "null pointer" */
+    /* Have a placeholder node in the front. We do not want the result to be 0,
+       it must be at least 1, 0 represents "null pointer" */
     trie->pool_size = 1;
   }
   BROTLI_ENSURE_CAPACITY(m, BrotliTrieNode, trie->pool, trie->pool_capacity,
@@ -629,8 +631,8 @@ void BrotliDestroyManagedDictionary(ManagedDictionary* dictionary) {
 
 /* Escalate internal functions visibility; for testing purposes only. */
 #if defined(BROTLI_TEST)
-void InitEncoderDictionaryForTest(BrotliEncoderDictionary*);
-void InitEncoderDictionaryForTest(BrotliEncoderDictionary* d) {
+void BrotliInitEncoderDictionaryForTest(BrotliEncoderDictionary*);
+void BrotliInitEncoderDictionaryForTest(BrotliEncoderDictionary* d) {
   InitEncoderDictionary(d);
 }
 #endif
