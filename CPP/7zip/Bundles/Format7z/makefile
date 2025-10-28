@@ -9,6 +9,7 @@ COMMON_OBJS = \
   $O\LzFindPrepare.obj \
   $O\NewHandler.obj \
   $O\MyString.obj \
+  $O\MyWindows.obj \
   $O\Sha256Reg.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \

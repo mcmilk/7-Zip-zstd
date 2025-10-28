@@ -142,7 +142,7 @@ bool UtcFileTime_To_LocalDosTime(const FILETIME &utc, UInt32 &dosTime) throw()
   const UInt64 kDelta = ((UInt64)1 << 41); // it's larger than quantums in 1 sec.
   if (u1 >= kDelta)
   {
-    if (!FileTimeToLocalFileTime(&utc, &loc))
+    if (!FileTimeToLocalFileTime2(&utc, &loc))
       loc = utc;
     else
     {

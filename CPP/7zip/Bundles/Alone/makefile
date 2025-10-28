@@ -29,10 +29,11 @@ COMMON_OBJS = \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
   $O\MyString.obj \
+  $O\MyVector.obj \
+  $O\MyWindows.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
-  $O\MyVector.obj \
   $O\Wildcard.obj \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \

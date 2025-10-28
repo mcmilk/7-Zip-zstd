@@ -1025,7 +1025,7 @@ static void FatTimeToProp(UInt32 dosTime, UInt32 ms10, NWindows::NCOM::CPropVari
 {
   FILETIME localFileTime, utc;
   if (NWindows::NTime::DosTime_To_FileTime(dosTime, localFileTime))
-    if (LocalFileTimeToFileTime(&localFileTime, &utc))
+    if (LocalFileTimeToFileTime2(&localFileTime, &utc))
     {
       UInt64 t64 = (((UInt64)utc.dwHighDateTime) << 32) + utc.dwLowDateTime;
       t64 += ms10 * 100000;

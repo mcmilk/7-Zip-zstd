@@ -12,6 +12,7 @@ COMMON_OBJS = \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \
   $O\MyString.obj \
+  $O\MyWindows.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \

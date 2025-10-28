@@ -290,3 +290,27 @@ BOOL WINAPI FileTimeToSystemTime(const FILETIME *ft, SYSTEMTIME *st)
 }
 
 #endif
+
+bool FileTimeToLocalFileTime2(const FILETIME *fileTime, FILETIME *localFileTime)
+{
+#ifdef _WIN32
+  SYSTEMTIME sysTime, locSysTime;
+  if (!FileTimeToSystemTime(fileTime, &sysTime)) return 0;
+  if (!SystemTimeToTzSpecificLocalTime(NULL, &sysTime, &locSysTime)) return 0;
+  return SystemTimeToFileTime(&locSysTime, localFileTime);
+#else
+  return FileTimeToLocalFileTime(fileTime, localFileTime);
+#endif
+}
+
+bool LocalFileTimeToFileTime2(const FILETIME *localFileTime, FILETIME *fileTime)
+{
+#ifdef _WIN32
+  SYSTEMTIME sysTime, locSysTime;
+  if (!FileTimeToSystemTime(localFileTime, &sysTime)) return 0;
+  if (!TzSpecificLocalTimeToSystemTime(NULL, &sysTime, &locSysTime)) return 0;
+  return SystemTimeToFileTime(&locSysTime, fileTime);
+#else
+  return LocalFileTimeToFileTime2(localFileTime, fileTime);
+#endif
+}

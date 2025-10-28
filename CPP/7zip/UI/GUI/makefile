@@ -31,6 +31,7 @@ COMMON_OBJS = \
   $O\ListFileUtils.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
+  $O\MyWindows.obj \
   $O\NewHandler.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \

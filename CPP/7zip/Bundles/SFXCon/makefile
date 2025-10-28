@@ -27,6 +27,7 @@ COMMON_OBJS = \
   $O\IntToString.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
+  $O\MyWindows.obj \
   $O\NewHandler.obj \
   $O\StdInStream.obj \
   $O\StdOutStream.obj \

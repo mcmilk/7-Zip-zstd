@@ -1640,7 +1640,7 @@ Z7_COM7F_IMF(CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value))
       {
         FILETIME localFt, ft;
         HfsTimeToFileTime(Header.CTime, localFt);
-        if (LocalFileTimeToFileTime(&localFt, &ft))
+        if (LocalFileTimeToFileTime2(&localFt, &ft))
           prop.SetAsTimeFrom_FT_Prec(ft, k_PropVar_TimePrec_Base);
       }
       break;

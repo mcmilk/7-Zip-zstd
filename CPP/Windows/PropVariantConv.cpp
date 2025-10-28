@@ -37,7 +37,7 @@ bool ConvertUtcFileTimeToString2(const FILETIME &utc, unsigned ns100, char *s, i
     ft = utc;
   else
   {
-    if (!FileTimeToLocalFileTime(&utc, &ft))
+    if (!FileTimeToLocalFileTime2(&utc, &ft))
       return false;
 #if 0
     if (g_Timestamp_Show_ZoneOffset)
