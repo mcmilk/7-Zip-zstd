@@ -60,6 +60,9 @@ proc 7z_get_info {args} {
 		(?:\n(Solid)\s*=\s*(\S+))?
 	} $res] 1 end]
 	if {[lindex $ret end] eq {}} {set ret [lreplace $ret end-1 end]}
+	# 7z seems to have TZ issue (e. g. it shows +1 hour offset by switch from CET to CEST of current time),
+	# so we'll use current zone-offset as TZ to convert string timestamp to posix unix time:
+	set 7z_TZ [clock format [clock seconds] -format "%z"]
 	# info of content files:
 	set i 0
 	set sepRE {\n-{5,}}
@@ -81,7 +84,7 @@ proc 7z_get_info {args} {
 			if {$n eq ""} continue
 			if {$n eq "Modified"} {
 				# to unix time (UTC, TZ independend)
-				set v [clock scan [regsub {\.\d+$} $v {}]]
+				set v [clock scan [regsub {\.\d+$} $v {}] -timezone $7z_TZ]
 			}
 			if {$n eq "Method"} {
 				# remove version from method (unneeded and expecting adjustment of all tests by later version upgrades):
