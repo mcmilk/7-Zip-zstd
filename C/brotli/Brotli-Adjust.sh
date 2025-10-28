@@ -18,12 +18,14 @@ cd ../dec
 sed -i 's|include "./|include "./dec/|g' *.c
 sed -i 's|include "\([a-z]\)|include "./dec/\1|g' *.c
 sed -i 's|include "../common|include "./common|g' *.c
+mv static_init.c ../br_static_init_dec.c
 for f in *.c; do mv $f ../br_$f; done
 
 cd ../enc
 sed -i 's|include "./|include "./enc/|g' *.c
 sed -i 's|include "\([a-z]\)|include "./enc/\1|g' *.c
 sed -i 's|include "../common|include "./common/|g' *.c
+mv static_init.c ../br_static_init_enc.c
 for f in *.c; do mv $f ../br_$f; done
 
 cd ../
