@@ -48,9 +48,13 @@ BROTLI_OBJS = \
   $O/br_memory.obj \
   $O/br_metablock.obj \
   $O/br_platform.obj \
+  $O/br_prefix.obj \
   $O/br_shared_dictionary.obj \
   $O/br_state.obj \
   $O/br_static_dict.obj \
+  $O/br_static_dict_lut.obj \
+  $O/br_static_init_dec.obj \
+  $O/br_static_init_enc.obj \
   $O/br_transform.obj \
   $O/br_utf8_util.obj \
 
