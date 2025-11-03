@@ -10,9 +10,9 @@
 #define BROTLI_COMMON_SHARED_DICTIONARY_INTERNAL_H_
 
 #include "../shared_dictionary.h"
-#include "../types.h"
 
 #include "dictionary.h"
+#include "platform.h"
 #include "transform.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)

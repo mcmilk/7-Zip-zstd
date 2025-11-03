@@ -14,7 +14,7 @@
 
 #include "port.h"
 #include "shared_dictionary.h"
-#include "types.h"
+#include "types.h"  /* IWYU pragma: export */
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {

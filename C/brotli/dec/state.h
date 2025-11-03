@@ -9,14 +9,10 @@
 #ifndef BROTLI_DEC_STATE_H_
 #define BROTLI_DEC_STATE_H_
 
-#include "../decode.h"
-#include "../shared_dictionary.h"
-#include "../types.h"
-
 #include "../common/constants.h"
-#include "../common/dictionary.h"
 #include "../common/platform.h"
-#include "../common/transform.h"
+#include "../shared_dictionary.h"
+#include "../decode.h"
 #include "bit_reader.h"
 #include "huffman.h"
 
