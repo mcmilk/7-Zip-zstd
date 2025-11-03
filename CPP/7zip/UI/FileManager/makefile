@@ -12,6 +12,7 @@ COMMON_OBJS = \
   $O\Lang.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
+  $O\MyWindows.obj \
   $O\NewHandler.obj \
   $O\Random.obj \
   $O\StringConvert.obj \

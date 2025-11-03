@@ -957,7 +957,7 @@ static void RarTimeToProp(const CRarTime &rarTime, NCOM::CPropVariant &prop)
 {
   FILETIME localFileTime, utc;
   if (RarTimeToFileTime(rarTime, localFileTime)
-      && LocalFileTimeToFileTime(&localFileTime, &utc))
+      && LocalFileTimeToFileTime2(&localFileTime, &utc))
     prop.SetAsTimeFrom_FT_Prec(utc, k_PropVar_TimePrec_100ns);
   /*
   else

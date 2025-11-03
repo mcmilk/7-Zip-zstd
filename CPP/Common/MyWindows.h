@@ -322,4 +322,7 @@ DWORD GetTickCount();
 
 #endif // _WIN32
 
+bool FileTimeToLocalFileTime2(const FILETIME *fileTime, FILETIME *localFileTime);
+bool LocalFileTimeToFileTime2(const FILETIME *localFileTime, FILETIME *fileTime);
+
 #endif

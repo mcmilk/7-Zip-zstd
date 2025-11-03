@@ -674,7 +674,7 @@ static void VhdTimeToFileTime(UInt32 vhdTime, NCOM::CPropVariant &prop)
   ft.dwLowDateTime = (DWORD)v;
   ft.dwHighDateTime = (DWORD)(v >> 32);
   // specification says that it's UTC time, but Virtual PC 6 writes local time. Why?
-  LocalFileTimeToFileTime(&ft, &utc);
+  LocalFileTimeToFileTime2(&ft, &utc);
   prop = utc;
 }
 

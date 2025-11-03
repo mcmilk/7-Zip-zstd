@@ -11,6 +11,7 @@ COMMON_OBJS = \
   $O\MyMap.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
+  $O\MyWindows.obj \
   $O\MyXml.obj \
   $O\NewHandler.obj \
   $O\Sha1Reg.obj \
