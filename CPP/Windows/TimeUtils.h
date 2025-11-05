@@ -137,7 +137,7 @@ inline bool PropVariant_SetFrom_DosTime(NWindows::NCOM::CPropVariant &prop, UInt
   FILETIME localFileTime, utc;
   if (!NWindows::NTime::DosTime_To_FileTime(dosTime, localFileTime))
     return false;
-  if (!LocalFileTimeToFileTime(&localFileTime, &utc))
+  if (!LocalFileTimeToFileTime2(&localFileTime, &utc))
     return false;
   prop.SetAsTimeFrom_FT_Prec(utc, k_PropVar_TimePrec_DOS);
   return true;
