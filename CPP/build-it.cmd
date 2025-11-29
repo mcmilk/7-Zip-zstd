@@ -1,11 +1,17 @@
 @echo off
 
-IF not "%~1" == "-no-init" (
+IF "%~1" == "-no-init" (
+  shift
+) else (
   set ROOT=%cd%\7zip
   set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%
   set ERRFILE=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%.log
   set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
   set > %APPVEYOR_BUILD_FOLDER%\env-%VC%-%PLATFORM%.txt
+)
+IF "%~1" == "-with-sfx-setup" (
+  set BUILD_EXTR=%~1
+  shift
 )
 set BUILD_TYPE=%~1
 if "%SUBSYS%" == "" (
@@ -35,6 +41,16 @@ call :build Bundles\Codec_zstd          zstd.dll                           || (I
 call :build Bundles\Codec_flzma2        flzma2.dll                         || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 call :build ..\..\C\Util\7zipInstall    7zipInstall.exe    Install.exe     || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 call :build ..\..\C\Util\7zipUninstall  7zipUninstall.exe  Uninstall.exe   || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+
+IF "%BUILD_EXTR%" == "-with-sfx-setup" (
+  del /s /q %ROOT%\Bundles\SFXSetup\%PLATFORM% > NUL:
+  call :build Bundles\SFXSetup          7zS.sfx                            || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+  set MY_DYNAMIC_LINK=1
+  set LFLAGS=%LFLAGS% /LTCG /NODEFAULTLIB:libucrt.lib ucrt.lib
+  del /s /q %ROOT%\Bundles\SFXSetup\%PLATFORM% > NUL:
+  call :build Bundles\SFXSetup          7zS.sfx            7zSD.sfx        || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+  set "MY_DYNAMIC_LINK="
+)
 
 set LFLAGS=/SUBSYSTEM:CONSOLE,%SUBSYS%
 
