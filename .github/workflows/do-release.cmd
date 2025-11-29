@@ -80,6 +80,15 @@ call :doit x64-ndm   "%WD%\bin-x86-ndm\7-zip.dll"  "%WD%\bin-x64-ndm"   "tc7z64.
 call :doit arm64     ""                            "%WD%\bin-arm64"     "tc7zArm64.dll"
 call :doit arm64-ndm ""                            "%WD%\bin-arm64-ndm" "tc7zArm64.dll"
 
+REM SFX-Setup Files
+mkdir sfx-setup-%ARCH%
+FOR %%f IN (7zS 7zSD) DO (
+  copy %BIN%\%%f.sfx sfx-setup-%ARCH%\%%f.sfx
+)
+cd sfx-setup-%ARCH%
+%SZIP% a ..\Sfx-Setup-%ARCH%.7z %COPTS%
+cd %WD% && rd /S /Q sfx-setup-%ARCH%
+
 REM Total Commander DLL
 cd %WD%\totalcmd
 curl %LURL%/TotalCMD/LICENSE --output LICENSE
