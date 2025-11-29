@@ -60,7 +60,7 @@ jobs:
 
           @echo off
 
-          call CPP\build-it.cmd -no-init
+          call CPP\build-it.cmd -no-init -with-sfx-setup
           IF %errorlevel% NEQ 0 EXIT 1
 
           REM Will be by the do-release action

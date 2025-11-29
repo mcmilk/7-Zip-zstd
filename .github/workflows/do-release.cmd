@@ -46,6 +46,15 @@ curl %LURL%/Codecs/README.md --output README.md
 %SZIP% a ..\Codecs-%ARCH%.7z %COPTS%
 cd %WD% && rd /S /Q Codecs-%ARCH%
 
+REM SFX-Setup Files
+mkdir sfx-setup-%ARCH%
+FOR %%f IN (7zS 7zSD) DO (
+  copy %BIN%\%%f.sfx sfx-setup-%ARCH%\%%f.sfx
+)
+cd sfx-setup-%ARCH%
+%SZIP% a ..\Sfx-Setup-%ARCH%.7z %COPTS%
+cd %WD% && rd /S /Q sfx-setup-%ARCH%
+
 REM Total Commander DLL
 cd %WD%\totalcmd
 copy %BIN%\7zxa.dll %TCDLL%
