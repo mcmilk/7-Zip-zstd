@@ -21,10 +21,11 @@ COMMON_OBJS = \
   $O\IntToString.obj \
   $O\NewHandler.obj \
   $O\MyString.obj \
+  $O\MyVector.obj \
+  $O\MyWindows.obj \
   $O\StringConvert.obj \
   $O\TextConfig.obj \
   $O\UTFConvert.obj \
-  $O\MyVector.obj \
   $O\Wildcard.obj \
 
 WIN_OBJS = \
