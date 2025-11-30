@@ -10,6 +10,9 @@
 
 #include "Dialog.h"
 
+#if !defined(Z7_SFX)
+#include "../../7zip/UI/FileManager/RegistryUtils.h"
+#endif
 #include "../../../DarkMode/src/DarkModeSubclass.h"
 
 extern HINSTANCE g_hInstance;
@@ -40,6 +43,32 @@ DialogProcedure(HWND dialogHWND, UINT message, WPARAM wParam, LPARAM lParam)
       dialog->Attach(dialogHWND);
 #if defined(Z7_LANG)
       DarkMode::initDarkModeEx(L"7zDark");
+#endif
+#if !defined(Z7_SFX)
+      if (!DarkMode::doesConfigFileExist())
+      {
+        switch (Read_ClrMode())
+        {
+          case 0:
+          {
+            DarkMode::setDarkModeConfigEx(static_cast<UINT>(DarkMode::DarkModeType::classic));
+            break;
+          }
+
+          case 2:
+          {
+            DarkMode::setDarkModeConfig();
+            break;
+          }
+
+          //case 1:
+          default:
+          {
+            break;
+          }
+        }
+        DarkMode::setDefaultColors(false);
+      }
 #endif
       DarkMode::setDarkWndNotifySafeEx(*dialog, true, true);
     }

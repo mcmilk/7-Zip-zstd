@@ -110,6 +110,31 @@ void CApp::SetListSettings()
     panel._listView.SetStyle(style);
     panel.SetExtendedStyle();
   }
+
+  if (!DarkMode::doesConfigFileExist())
+  {
+    switch (Read_ClrMode())
+    {
+      case 0:
+      {
+        DarkMode::setDarkModeConfigEx(static_cast<UINT>(DarkMode::DarkModeType::classic));
+        break;
+      }
+
+      case 2:
+      {
+        DarkMode::setDarkModeConfig();
+        break;
+      }
+
+      //case 1:
+      default:
+      {
+        return;
+      }
+    }
+    DarkMode::setDefaultColors(false);
+  }
 }
 
 #ifndef ILC_COLOR32

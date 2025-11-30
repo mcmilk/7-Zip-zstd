@@ -58,4 +58,7 @@ void Save_ShowDeleted(bool enable);
 bool Read_ShowDeleted();
 */
 
+void Save_ClrMode(UInt32 clrMode);
+UInt32 Read_ClrMode();
+
 #endif
