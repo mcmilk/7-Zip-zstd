@@ -1,6 +1,7 @@
 #include "AboutDialogRes.h"
 #include "../../GuiCommon.rc"
 #include "../../MyVersion.h"
+#include "../../../../DarkMode/src/Version.h"
 
 #define xc 316
 #define yc 144
@@ -24,4 +25,6 @@ CAPTION "About 7-Zip"
   LTEXT  "", IDT_ABOUT_DATE, m, 67, xc, 8
   LTEXT  MY_COPYRIGHT_CR, -1, m, 80, xc, 8
   LTEXT  "7-Zip is free software", IDT_ABOUT_INFO, m, y, xc, (by - y - 1)
+  LTEXT  DM_VERSION, -1, m, 106, xc, 8
+  LTEXT  DM_COPYRIGHT, -1, m, 119, xc, 8
 }
