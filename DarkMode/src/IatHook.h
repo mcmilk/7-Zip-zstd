@@ -34,13 +34,13 @@
 namespace iat_hook
 {
 	template <typename T, typename T1, typename T2>
-	inline constexpr T RVA2VA(T1 base, T2 rva) noexcept
+	constexpr auto RVA2VA(T1 base, T2 rva) noexcept -> T
 	{
 		return reinterpret_cast<T>(reinterpret_cast<ULONG_PTR>(base) + rva);
 	}
 
 	template <typename T>
-	inline constexpr T DataDirectoryFromModuleBase(void* moduleBase, size_t entryID) noexcept
+	constexpr auto DataDirectoryFromModuleBase(void* moduleBase, size_t entryID) noexcept -> T
 	{
 		const auto* dosHdr = static_cast<PIMAGE_DOS_HEADER>(moduleBase);
 		const auto* ntHdr = RVA2VA<PIMAGE_NT_HEADERS>(moduleBase, static_cast<DWORD>(dosHdr->e_lfanew));
@@ -57,8 +57,8 @@ namespace iat_hook
 				continue;
 			}
 
-			const auto* import = RVA2VA<PIMAGE_IMPORT_BY_NAME>(moduleBase, impName->u1.AddressOfData);
-			if (std::strcmp(reinterpret_cast<const char*>(import->Name), funcName) != 0)
+			if (const auto* imgImport = RVA2VA<PIMAGE_IMPORT_BY_NAME>(moduleBase, impName->u1.AddressOfData);
+				std::strcmp(reinterpret_cast<const char*>(imgImport->Name), funcName) != 0)
 			{
 				continue;
 			}
@@ -67,7 +67,7 @@ namespace iat_hook
 		return nullptr;
 	}
 
-	inline PIMAGE_THUNK_DATA FindAddressByOrdinal(void* /*moduleBase*/, PIMAGE_THUNK_DATA impName, PIMAGE_THUNK_DATA impAddr, uint16_t ordinal) noexcept
+	inline PIMAGE_THUNK_DATA FindAddressByOrdinal([[maybe_unused]] void* /*moduleBase*/, PIMAGE_THUNK_DATA impName, PIMAGE_THUNK_DATA impAddr, uint16_t ordinal) noexcept
 	{
 		for (; impName->u1.Ordinal != 0; ++impName, ++impAddr)
 		{
@@ -81,7 +81,7 @@ namespace iat_hook
 
 	inline PIMAGE_THUNK_DATA FindIatThunkInModule(void* moduleBase, const char* dllName, const char* funcName) noexcept
 	{
-		auto* imports = DataDirectoryFromModuleBase<PIMAGE_IMPORT_DESCRIPTOR>(moduleBase, IMAGE_DIRECTORY_ENTRY_IMPORT);
+		const auto* imports = DataDirectoryFromModuleBase<PIMAGE_IMPORT_DESCRIPTOR>(moduleBase, IMAGE_DIRECTORY_ENTRY_IMPORT);
 		for (; imports->Name != 0; ++imports)
 		{
 			if (_stricmp(RVA2VA<LPCSTR>(moduleBase, imports->Name), dllName) != 0)
@@ -98,7 +98,7 @@ namespace iat_hook
 
 	inline PIMAGE_THUNK_DATA FindDelayLoadThunkInModule(void* moduleBase, const char* dllName, const char* funcName) noexcept
 	{
-		auto* imports = DataDirectoryFromModuleBase<PIMAGE_DELAYLOAD_DESCRIPTOR>(moduleBase, IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT);
+		const auto* imports = DataDirectoryFromModuleBase<PIMAGE_DELAYLOAD_DESCRIPTOR>(moduleBase, IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT);
 		for (; imports->DllNameRVA != 0; ++imports)
 		{
 			if (_stricmp(RVA2VA<LPCSTR>(moduleBase, imports->DllNameRVA), dllName) != 0)
@@ -115,7 +115,7 @@ namespace iat_hook
 
 	inline PIMAGE_THUNK_DATA FindDelayLoadThunkInModule(void* moduleBase, const char* dllName, uint16_t ordinal) noexcept
 	{
-		auto* imports = DataDirectoryFromModuleBase<PIMAGE_DELAYLOAD_DESCRIPTOR>(moduleBase, IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT);
+		const auto* imports = DataDirectoryFromModuleBase<PIMAGE_DELAYLOAD_DESCRIPTOR>(moduleBase, IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT);
 		for (; imports->DllNameRVA != 0; ++imports)
 		{
 			if (_stricmp(RVA2VA<LPCSTR>(moduleBase, imports->DllNameRVA), dllName) != 0)

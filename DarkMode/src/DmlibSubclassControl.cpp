@@ -123,8 +123,9 @@ static void renderButton(
 	}
 
 	const auto uiState = static_cast<DWORD>(::SendMessage(hWnd, WM_QUERYUISTATE, 0, 0));
-	const bool hidePrefix = (uiState & UISF_HIDEACCEL) == UISF_HIDEACCEL;
-	if (hidePrefix)
+
+	// hide prefix
+	if ((uiState & UISF_HIDEACCEL) == UISF_HIDEACCEL)
 	{
 		dtFlags |= DT_HIDEPREFIX;
 	}
@@ -787,7 +788,7 @@ static void paintUpDown(HWND hWnd, HDC hdc, dmlib_subclass::UpDownData& upDownDa
 
 		// Glyph part
 
-		auto getGlyphColor = [&](bool isHot) noexcept -> COLORREF
+		auto getGlyphColor = [&isDisabled](bool isHot) noexcept -> COLORREF
 		{
 			if (isDisabled)
 			{
@@ -811,7 +812,7 @@ static void paintUpDown(HWND hWnd, HDC hdc, dmlib_subclass::UpDownData& upDownDa
 			static constexpr std::array<POINTFLOAT, 3> ptsArrowDown{ { {0.0F, 0.0F}, {0.5F, 1.0F}, {1.0F, 0.0F} } };
 
 			static constexpr auto scaleFactor = 3L;
-			static constexpr auto offsetSize = static_cast<LONG>(scaleFactor) % 2;
+			static constexpr auto offsetSize = scaleFactor % 2;
 			const auto baseSize = static_cast<float>(dmlib_dpi::scale(((size.cy - offsetSize) / scaleFactor) + offsetSize, ::GetParent(hWnd)));
 
 			auto paintArrow = [&](const RECT& rect, bool isHot, bool isPrev) noexcept -> void
@@ -1076,8 +1077,7 @@ static void paintTab(HWND hWnd, HDC hdc, const RECT& rect)
 		RECT rcItem{};
 		TabCtrl_GetItemRect(hWnd, i, &rcItem);
 
-		RECT rcIntersect{};
-		if (::IntersectRect(&rcIntersect, &rect, &rcItem) == FALSE)
+		if (RECT rcIntersect{}; ::IntersectRect(&rcIntersect, &rect, &rcItem) == FALSE)
 		{
 			continue; // Skip to the next iteration when there is no intersection
 		}
@@ -1106,9 +1106,8 @@ static void paintTab(HWND hWnd, HDC hdc, const RECT& rect)
 
 		RECT rcText{ rcItem };
 
-		const auto nStyle = ::GetWindowLongPtr(hWnd, GWL_STYLE);
-		const bool isBtn = (nStyle & TCS_BUTTONS) == TCS_BUTTONS;
-		if (isBtn)
+		if (const auto nStyle = ::GetWindowLongPtr(hWnd, GWL_STYLE);
+			(nStyle & TCS_BUTTONS) == TCS_BUTTONS) // is button
 		{
 			const bool isHighlighted = (tci.dwState & TCIS_HIGHLIGHTED) == TCIS_HIGHLIGHTED;
 			::FillRect(hdc, &rcItem, isHighlighted ? DarkMode::getHotBackgroundBrush() : DarkMode::getDlgBackgroundBrush());
@@ -1592,8 +1591,8 @@ static void paintCombobox(HWND hWnd, HDC hdc, dmlib_subclass::ComboBoxData& comb
 		// erase background on item change
 		::FillRect(hdc, &rcClient, hBrush);
 
-		const auto index = static_cast<int>(::SendMessage(hWnd, CB_GETCURSEL, 0, 0));
-		if (index != CB_ERR)
+		if (const auto index = static_cast<int>(::SendMessage(hWnd, CB_GETCURSEL, 0, 0));
+			index != CB_ERR)
 		{
 			const auto bufferLen = static_cast<size_t>(::SendMessage(hWnd, CB_GETLBTEXTLEN, static_cast<WPARAM>(index), 0));
 			std::wstring buffer(bufferLen + 1, L'\0');
@@ -2110,8 +2109,8 @@ static void paintHeader(HWND hWnd, HDC hdc, dmlib_subclass::HeaderData& headerDa
 
 	// Font part
 
-	LOGFONT lf{};
-	if (!fontData.hasFont()
+	if (LOGFONT lf{};
+		!fontData.hasFont()
 		&& hasTheme
 		&& SUCCEEDED(::GetThemeFont(hTheme, hdc, HP_HEADERITEM, HIS_NORMAL, TMT_FONT, &lf)))
 	{

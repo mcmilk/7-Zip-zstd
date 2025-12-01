@@ -76,8 +76,6 @@ namespace DarkMode
 		COLORREF headerEdge = 0;
 	};
 
-	// unsigned char == std::uint8_t
-
 	/**
 	 * @brief Represents tooltip from different controls.
 	 */

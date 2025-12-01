@@ -357,8 +357,8 @@ LRESULT CALLBACK dmlib_subclass::WindowCtlColorSubclass(
 	tbi.cbSize = sizeof(TBBUTTONINFOW);
 	tbi.dwMask = TBIF_IMAGE;
 	::SendMessage(lptbcd->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, lptbcd->nmcd.dwItemSpec, reinterpret_cast<LPARAM>(&tbi));
-	const bool isIcon = tbi.iImage != I_IMAGENONE;
-	if (!isIcon)
+
+	if (tbi.iImage == I_IMAGENONE)
 	{
 		return CDRF_DODEFAULT;
 	}
@@ -404,9 +404,8 @@ LRESULT CALLBACK dmlib_subclass::WindowCtlColorSubclass(
 	LPARAM lParam
 ) noexcept
 {
-	auto* lptbcd = reinterpret_cast<LPNMTBCUSTOMDRAW>(lParam);
-
-	switch (lptbcd->nmcd.dwDrawStage)
+	switch (auto* lptbcd = reinterpret_cast<LPNMTBCUSTOMDRAW>(lParam);
+		lptbcd->nmcd.dwDrawStage)
 	{
 		case CDDS_PREPAINT:
 		{
@@ -671,9 +670,8 @@ static void postpaintTreeViewItem(const LPNMTVCUSTOMDRAW& lptvcd) noexcept
 	LPARAM lParam
 ) noexcept
 {
-	auto* lptvcd = reinterpret_cast<LPNMTVCUSTOMDRAW>(lParam);
-
-	switch (lptvcd->nmcd.dwDrawStage)
+	switch (auto* lptvcd = reinterpret_cast<LPNMTVCUSTOMDRAW>(lParam);
+		lptvcd->nmcd.dwDrawStage)
 	{
 		case CDDS_PREPAINT:
 		{
@@ -785,9 +783,8 @@ static void postpaintTreeViewItem(const LPNMTVCUSTOMDRAW& lptvcd) noexcept
 	LPARAM lParam
 ) noexcept
 {
-	auto* lpnmcd = reinterpret_cast<LPNMCUSTOMDRAW>(lParam);
-
-	switch (lpnmcd->dwDrawStage)
+	switch (auto* lpnmcd = reinterpret_cast<LPNMCUSTOMDRAW>(lParam);
+		lpnmcd->dwDrawStage)
 	{
 		case CDDS_PREPAINT:
 		{
@@ -906,8 +903,8 @@ static void postpaintTreeViewItem(const LPNMTVCUSTOMDRAW& lptvcd) noexcept
 	LPARAM lParam
 ) noexcept
 {
-	auto* lpnmcd = reinterpret_cast<LPNMCUSTOMDRAW>(lParam);
-	if (lpnmcd->dwDrawStage == CDDS_PREPAINT)
+	if (auto* lpnmcd = reinterpret_cast<LPNMCUSTOMDRAW>(lParam);
+		lpnmcd->dwDrawStage == CDDS_PREPAINT)
 	{
 		return prepaintRebar(lpnmcd);
 	}
@@ -930,8 +927,8 @@ static void postpaintTreeViewItem(const LPNMTVCUSTOMDRAW& lptvcd) noexcept
  */
 static LRESULT onNotifyCustomDraw(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	auto* lpnmhdr = reinterpret_cast<LPNMHDR>(lParam);
-	if (lpnmhdr->code == NM_CUSTOMDRAW)
+	if (auto* lpnmhdr = reinterpret_cast<LPNMHDR>(lParam);
+		lpnmhdr->code == NM_CUSTOMDRAW)
 	{
 		const std::wstring className = dmlib_subclass::getWndClassName(lpnmhdr->hwndFrom);
 
@@ -1534,8 +1531,7 @@ static BOOL CALLBACK DarkTaskEnumChildProc(HWND hWnd, [[maybe_unused]] LPARAM lP
 
 	if (className == WC_BUTTON)
 	{
-		const auto nBtnStyle = (::GetWindowLongPtr(hWnd, GWL_STYLE) & BS_TYPEMASK);
-		switch (nBtnStyle)
+		switch (::GetWindowLongPtr(hWnd, GWL_STYLE) & BS_TYPEMASK) // button style
 		{
 			case BS_RADIOBUTTON:
 			case BS_AUTORADIOBUTTON:

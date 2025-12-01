@@ -65,8 +65,7 @@
  */
 int DarkMode::getLibInfo(int libInfoType)
 {
-	const auto infoType = static_cast<LibInfo>(libInfoType);
-	switch (infoType)
+	switch (static_cast<LibInfo>(libInfoType))
 	{
 		case LibInfo::maxValue:
 		case LibInfo::featureCheck:
@@ -907,14 +906,12 @@ bool DarkMode::handleSettingChange(LPARAM lParam)
 		&& dmlib_win32api::IsColorSchemeChangeMessage(lParam))
 	{
 		// fnShouldAppsUseDarkMode (ordinal 132) is not reliable on 1903+, use DarkMode::isDarkModeReg() instead
-		const bool isDarkModeUsed = (DarkMode::isDarkModeReg() && !dmlib_win32api::IsHighContrast());
-		if (DarkMode::isExperimentalActive() != isDarkModeUsed)
+		if (const bool isDarkModeUsed = (DarkMode::isDarkModeReg() && !dmlib_win32api::IsHighContrast());
+			DarkMode::isExperimentalActive() != isDarkModeUsed
+			&& g_dmCfg.m_isInit)
 		{
-			if (g_dmCfg.m_isInit)
-			{
-				g_dmCfg.m_isInit = false;
-				DarkMode::initDarkMode();
-			}
+			g_dmCfg.m_isInit = false;
+			DarkMode::initDarkMode();
 		}
 		return true;
 	}
@@ -1451,24 +1448,23 @@ static void setComboBoxCtrlSubclassAndTheme(HWND hWnd, DarkModeParams p)
 	{
 		COMBOBOXINFO cbi{};
 		cbi.cbSize = sizeof(COMBOBOXINFO);
-		if (::GetComboBoxInfo(hWnd, &cbi) == TRUE)
+		if (::GetComboBoxInfo(hWnd, &cbi) == TRUE
+			&& p.m_theme
+			&& cbi.hwndList != nullptr)
 		{
-			if (p.m_theme && cbi.hwndList != nullptr)
+			if (isCbSimple)
 			{
-				if (isCbSimple)
-				{
-					DarkMode::replaceClientEdgeWithBorderSafe(cbi.hwndList);
-				}
-
-				// dark scroll bar for list box of combo box
-				::SetWindowTheme(cbi.hwndList, p.m_themeClassName, nullptr);
+				DarkMode::replaceClientEdgeWithBorderSafe(cbi.hwndList);
 			}
+
+			// dark scroll bar for list box of combo box
+			::SetWindowTheme(cbi.hwndList, p.m_themeClassName, nullptr);
 		}
 
 		if (!dmlib_subclass::isThemePrefered() && p.m_subclass)
 		{
-			HWND hParent = ::GetParent(hWnd);
-			if ((hParent == nullptr || dmlib_subclass::getWndClassName(hParent) != WC_COMBOBOXEX))
+			if (HWND hParent = ::GetParent(hWnd);
+				(hParent == nullptr || dmlib_subclass::getWndClassName(hParent) != WC_COMBOBOXEX))
 			{
 				DarkMode::setComboBoxCtrlSubclass(hWnd);
 			}
@@ -2800,8 +2796,8 @@ void DarkMode::setDarkListViewCheckboxes(HWND hWnd)
 		return;
 	}
 
-	const auto lvExStyle = ListView_GetExtendedListViewStyle(hWnd);
-	if ((lvExStyle & LVS_EX_CHECKBOXES) != LVS_EX_CHECKBOXES)
+	if (const auto lvExStyle = ListView_GetExtendedListViewStyle(hWnd);
+		(lvExStyle & LVS_EX_CHECKBOXES) != LVS_EX_CHECKBOXES)
 	{
 		return;
 	}
@@ -3119,9 +3115,9 @@ static void setTreeViewStyle(DarkMode::TreeViewStyle tvStyle) noexcept
 void DarkMode::calculateTreeViewStyle()
 {
 	static constexpr double middle = 50.0;
-	const COLORREF bgColor = DarkMode::getViewBackgroundColor();
 
-	if (g_dmCfg.m_tvBackground != bgColor || g_dmCfg.m_lightness == middle)
+	if (const COLORREF bgColor = DarkMode::getViewBackgroundColor();
+		g_dmCfg.m_tvBackground != bgColor || g_dmCfg.m_lightness == middle)
 	{
 		g_dmCfg.m_lightness = DarkMode::calculatePerceivedLightness(bgColor);
 		g_dmCfg.m_tvBackground = bgColor;
@@ -3316,9 +3312,9 @@ static int setWindowLongPtrStyle(HWND hWnd, bool setFlag, LONG_PTR dwFlag, int g
 	}
 
 	auto nStyle = ::GetWindowLongPtrW(hWnd, gwlIdx);
-	const bool hasFlag = (nStyle & dwFlag) == dwFlag;
 
-	if (setFlag != hasFlag)
+	if (const bool hasFlag = (nStyle & dwFlag) == dwFlag;
+		setFlag != hasFlag)
 	{
 		nStyle ^= dwFlag;
 		::SetWindowLongPtrW(hWnd, gwlIdx, nStyle);
@@ -3635,9 +3631,9 @@ LRESULT DarkMode::onCtlColorListbox(WPARAM wParam, LPARAM lParam)
 	auto hdc = reinterpret_cast<HDC>(wParam);
 	auto hWnd = reinterpret_cast<HWND>(lParam);
 
-	const auto nStyle = ::GetWindowLongPtr(hWnd, GWL_STYLE);
-	const bool isComboBox = (nStyle & LBS_COMBOBOX) == LBS_COMBOBOX;
-	if ((!isComboBox || !DarkMode::isExperimentalActive()))
+	if (const auto nStyle = ::GetWindowLongPtr(hWnd, GWL_STYLE);
+		((nStyle & LBS_COMBOBOX) != LBS_COMBOBOX) // is not child of combo box
+		|| !DarkMode::isExperimentalActive())
 	{
 		if (::IsWindowEnabled(hWnd) == TRUE)
 		{

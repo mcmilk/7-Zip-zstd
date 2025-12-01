@@ -19,12 +19,12 @@
 namespace dmlib_color
 {
 	/// Converts 0xRRGGBB to COLORREF (0xBBGGRR) for GDI usage.
-	inline constexpr COLORREF HEXRGB(DWORD rrggbb)
+	constexpr COLORREF HEXRGB(DWORD rrggbb)
 	{
 		return
-			((rrggbb & 0xFF0000) >> 16) |
-			((rrggbb & 0x00FF00)) |
-			((rrggbb & 0x0000FF) << 16);
+			((rrggbb & 0xFF0000) >> 16)
+			| (rrggbb & 0x00FF00)
+			| ((rrggbb & 0x0000FF) << 16);
 	}
 
 	/// Black tone (default)
@@ -305,9 +305,9 @@ namespace dmlib_color
 			m_pens.updatePens(m_colors);
 		}
 
-		void updateTheme(DarkMode::Colors colors) noexcept
+		void updateTheme(const DarkMode::Colors& colors) noexcept
 		{
-			m_colors = colors;
+			m_colors = DarkMode::Colors{ colors };
 			Theme::updateTheme();
 		}
 
@@ -508,9 +508,9 @@ namespace dmlib_color
 			m_hbrPnView.update(m_clrView);
 		}
 
-		void updateView(DarkMode::ColorsView colors) noexcept
+		void updateView(const DarkMode::ColorsView& colors) noexcept
 		{
-			m_clrView = colors;
+			m_clrView = DarkMode::ColorsView{ colors };
 			ThemeView::updateView();
 		}
 

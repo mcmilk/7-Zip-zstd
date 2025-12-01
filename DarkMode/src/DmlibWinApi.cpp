@@ -34,7 +34,7 @@ namespace dmlib_hook
 #endif
 
 
-enum IMMERSIVE_HC_CACHE_MODE
+enum class IMMERSIVE_HC_CACHE_MODE
 {
 	IHCM_USE_CACHED_VALUE,
 	IHCM_REFRESH
@@ -97,6 +97,7 @@ using fnRtlGetNtVersionNumbers = void (WINAPI*)(LPDWORD major, LPDWORD minor, LP
 #if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
 using fnSetWindowCompositionAttribute = auto (WINAPI*)(HWND hWnd, WINDOWCOMPOSITIONATTRIBDATA*) -> BOOL;
 #endif
+
 // 1809 17763
 #if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
 using fnShouldAppsUseDarkMode = auto (WINAPI*)() -> bool; // ordinal 132, is not reliable on 1903+
@@ -111,10 +112,9 @@ using fnIsDarkModeAllowedForWindow = auto (WINAPI*)(HWND hWnd) -> bool; // ordin
 #endif
 using fnRefreshImmersiveColorPolicyState = void (WINAPI*)(); // ordinal 104
 using fnGetIsImmersiveColorUsingHighContrast = auto (WINAPI*)(IMMERSIVE_HC_CACHE_MODE mode) -> bool; // ordinal 106
+
 // 1903 18362
-//using fnShouldSystemUseDarkMode = auto (WINAPI*)() -> bool; // ordinal 138
-using fnSetPreferredAppMode = auto (WINAPI*)(PreferredAppMode appMode) -> PreferredAppMode; // ordinal 135, in 1903
-//using fnIsDarkModeAllowedForApp = auto (WINAPI*)() -> bool; // ordinal 139
+using fnSetPreferredAppMode = auto (WINAPI*)(PreferredAppMode appMode)->PreferredAppMode; // ordinal 135, in 1903
 
 #if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
 static fnSetWindowCompositionAttribute pfSetWindowCompositionAttribute = nullptr;
@@ -130,8 +130,8 @@ static fnIsDarkModeAllowedForWindow pfIsDarkModeAllowedForWindow = nullptr;
 #endif
 static fnRefreshImmersiveColorPolicyState pfRefreshImmersiveColorPolicyState = nullptr;
 static fnGetIsImmersiveColorUsingHighContrast pfGetIsImmersiveColorUsingHighContrast = nullptr;
+
 // 1903 18362
-//static fnShouldSystemUseDarkMode pfShouldSystemUseDarkMode = nullptr;
 static fnSetPreferredAppMode pfSetPreferredAppMode = nullptr;
 
 static bool g_darkModeSupported = false;
@@ -198,7 +198,7 @@ static void SetTitleBarThemeColor(HWND hWnd, BOOL dark)
 	}
 	else if (pfSetWindowCompositionAttribute != nullptr)
 	{
-		WINDOWCOMPOSITIONATTRIBDATA data{ WCA_USEDARKMODECOLORS, &dark, sizeof(dark) };
+		WINDOWCOMPOSITIONATTRIBDATA data{ WINDOWCOMPOSITIONATTRIB::WCA_USEDARKMODECOLORS, &dark, sizeof(dark) };
 		pfSetWindowCompositionAttribute(hWnd, &data);
 	}
 }
@@ -250,7 +250,7 @@ bool dmlib_win32api::IsColorSchemeChangeMessage(LPARAM lParam) noexcept
 
 		if (pfGetIsImmersiveColorUsingHighContrast != nullptr)
 		{
-			pfGetIsImmersiveColorUsingHighContrast(IHCM_REFRESH);
+			pfGetIsImmersiveColorUsingHighContrast(IMMERSIVE_HC_CACHE_MODE::IHCM_REFRESH);
 		}
 	}
 
@@ -393,66 +393,71 @@ void dmlib_win32api::InitDarkMode()
 	}
 
 	fnRtlGetNtVersionNumbers RtlGetNtVersionNumbers = nullptr;
-	HMODULE hNtdll = ::GetModuleHandleW(L"ntdll.dll");
-	if (hNtdll != nullptr && dmlib_module::LoadFn(hNtdll, RtlGetNtVersionNumbers, "RtlGetNtVersionNumbers"))
+	
+	if (HMODULE hNtdll = ::GetModuleHandleW(L"ntdll.dll");
+		hNtdll == nullptr
+		|| !dmlib_module::LoadFn(hNtdll, RtlGetNtVersionNumbers, "RtlGetNtVersionNumbers"))
 	{
-		DWORD major = 0;
-		DWORD minor = 0;
-		RtlGetNtVersionNumbers(&major, &minor, &g_buildNumber);
-		g_buildNumber &= ~0xF0000000;
-		if (major == 10 && minor == 0 && CheckBuildNumber(g_buildNumber))
+		return;
+	}
+
+	DWORD major = 0;
+	DWORD minor = 0;
+	RtlGetNtVersionNumbers(&major, &minor, &g_buildNumber);
+	g_buildNumber &= ~0xF0000000;
+	if (major != 10 || minor != 0 || !CheckBuildNumber(g_buildNumber))
+	{
+		return;
+	}
+
+	if (const dmlib_module::ModuleHandle moduleUxtheme(L"uxtheme.dll");
+		moduleUxtheme.isLoaded())
+	{
+		const HMODULE& hUxtheme = moduleUxtheme.get();
+
+		bool ptrFnOrd135NotNullptr = false;
+#if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
+		bool ptrFnOrd132NotNullptr = true;
+		if (g_buildNumber < g_win10Build1903)
 		{
-			const dmlib_module::ModuleHandle moduleUxtheme(L"uxtheme.dll");
-			if (moduleUxtheme.isLoaded())
-			{
-				const HMODULE& hUxtheme = moduleUxtheme.get();
-
-				bool ptrFnOrd135NotNullptr = false;
-#if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
-				bool ptrFnOrd132NotNullptr = true;
-				if (g_buildNumber < g_win10Build1903)
-				{
-					ptrFnOrd132NotNullptr = LoadFn(hUxtheme, pfShouldAppsUseDarkMode, 132);
-					ptrFnOrd135NotNullptr = LoadFn(hUxtheme, pfAllowDarkModeForApp, 135);
-				}
-				else
+			ptrFnOrd132NotNullptr = LoadFn(hUxtheme, pfShouldAppsUseDarkMode, 132);
+			ptrFnOrd135NotNullptr = LoadFn(hUxtheme, pfAllowDarkModeForApp, 135);
+		}
+		else
 #endif
-				{
-					ptrFnOrd135NotNullptr = dmlib_module::LoadFn(hUxtheme, pfSetPreferredAppMode, 135);
-				}
+		{
+			ptrFnOrd135NotNullptr = dmlib_module::LoadFn(hUxtheme, pfSetPreferredAppMode, 135);
+		}
 
-				if (ptrFnOrd135NotNullptr
+		if (ptrFnOrd135NotNullptr
 #if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
-					&& ptrFnOrd132NotNullptr
+			&& ptrFnOrd132NotNullptr
 #endif
 #if defined(_DARKMODELIB_USE_SCROLLBAR_FIX) && (_DARKMODELIB_USE_SCROLLBAR_FIX > 0)
-					&& dmlib_hook::loadOpenNcThemeData(hUxtheme)
+			&& dmlib_hook::loadOpenNcThemeData(hUxtheme)
 #endif
-					&& dmlib_module::LoadFn(hUxtheme, pfRefreshImmersiveColorPolicyState, 104)
-					&& dmlib_module::LoadFn(hUxtheme, pfAllowDarkModeForWindow, 133)
-					&& dmlib_module::LoadFn(hUxtheme, pfFlushMenuThemes, 136))
-				{
-					g_darkModeSupported = true;
-				}
+			&& dmlib_module::LoadFn(hUxtheme, pfRefreshImmersiveColorPolicyState, 104)
+			&& dmlib_module::LoadFn(hUxtheme, pfAllowDarkModeForWindow, 133)
+			&& dmlib_module::LoadFn(hUxtheme, pfFlushMenuThemes, 136))
+		{
+			g_darkModeSupported = true;
+		}
 
-				dmlib_module::LoadFn(hUxtheme, pfGetIsImmersiveColorUsingHighContrast, 106);
+		dmlib_module::LoadFn(hUxtheme, pfGetIsImmersiveColorUsingHighContrast, 106);
 #if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
-				static constexpr DWORD build2004 = 19041;
-				if (g_buildNumber < build2004 && g_darkModeSupported)
-				{
-					if (dmlib_module::LoadFn(hUxtheme, pfIsDarkModeAllowedForWindow, 137))
-					{
-						HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
-						if (hUser32 != nullptr)
-						{
-							dmlib_module::LoadFn(hUser32, pfSetWindowCompositionAttribute, "SetWindowCompositionAttribute");
-						}
-					}
-				}
-#endif
-				isInit = true;
+		if (static constexpr DWORD build2004 = 19041;
+			g_buildNumber < build2004
+			&& g_darkModeSupported
+			&& dmlib_module::LoadFn(hUxtheme, pfIsDarkModeAllowedForWindow, 137))
+		{
+			if (HMODULE hUser32 = ::GetModuleHandleW(L"user32.dll");
+				hUser32 != nullptr)
+			{
+				dmlib_module::LoadFn(hUser32, pfSetWindowCompositionAttribute, "SetWindowCompositionAttribute");
 			}
 		}
+#endif
+		isInit = true;
 	}
 }
 

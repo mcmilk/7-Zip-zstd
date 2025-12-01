@@ -67,11 +67,11 @@ namespace dmlib_subclass
 	template <typename T, typename Param>
 	inline auto SetSubclass(HWND hWnd, SUBCLASSPROC subclassProc, SubclassID subID, const Param& param) -> int
 	{
-		const auto subclassID = static_cast<UINT_PTR>(subID);
-		if (::GetWindowSubclass(hWnd, subclassProc, subclassID, nullptr) == FALSE)
+		if (const auto subclassID = static_cast<UINT_PTR>(subID);
+			::GetWindowSubclass(hWnd, subclassProc, subclassID, nullptr) == FALSE)
 		{
-			auto pData = std::make_unique<T>(param);
-			if (::SetWindowSubclass(hWnd, subclassProc, subclassID, reinterpret_cast<DWORD_PTR>(pData.get())) == TRUE)
+			if (auto pData = std::make_unique<T>(param);
+				::SetWindowSubclass(hWnd, subclassProc, subclassID, reinterpret_cast<DWORD_PTR>(pData.get())) == TRUE)
 			{
 				pData.release();
 				return TRUE;
@@ -95,11 +95,11 @@ namespace dmlib_subclass
 	template <typename T>
 	inline auto SetSubclass(HWND hWnd, SUBCLASSPROC subclassProc, SubclassID subID) -> int
 	{
-		const auto subclassID = static_cast<UINT_PTR>(subID);
-		if (::GetWindowSubclass(hWnd, subclassProc, subclassID, nullptr) == FALSE)
+		if (const auto subclassID = static_cast<UINT_PTR>(subID);
+			::GetWindowSubclass(hWnd, subclassProc, subclassID, nullptr) == FALSE)
 		{
-			auto pData = std::make_unique<T>();
-			if (::SetWindowSubclass(hWnd, subclassProc, subclassID, reinterpret_cast<DWORD_PTR>(pData.get())) == TRUE)
+			if (auto pData = std::make_unique<T>();
+				::SetWindowSubclass(hWnd, subclassProc, subclassID, reinterpret_cast<DWORD_PTR>(pData.get())) == TRUE)
 			{
 				pData.release();
 				return TRUE;
@@ -121,8 +121,8 @@ namespace dmlib_subclass
 	 */
 	inline int SetSubclass(HWND hWnd, SUBCLASSPROC subclassProc, SubclassID subID) noexcept
 	{
-		const auto subclassID = static_cast<UINT_PTR>(subID);
-		if (::GetWindowSubclass(hWnd, subclassProc, subclassID, nullptr) == FALSE)
+		if (const auto subclassID = static_cast<UINT_PTR>(subID);
+			::GetWindowSubclass(hWnd, subclassProc, subclassID, nullptr) == FALSE)
 		{
 			return ::SetWindowSubclass(hWnd, subclassProc, subclassID, 0);
 		}
@@ -145,8 +145,8 @@ namespace dmlib_subclass
 	inline auto RemoveSubclass(HWND hWnd, SUBCLASSPROC subclassProc, SubclassID subID) noexcept -> int
 	{
 		T* pData = nullptr;
-		const auto subclassID = static_cast<UINT_PTR>(subID);
-		if (::GetWindowSubclass(hWnd, subclassProc, subclassID, reinterpret_cast<DWORD_PTR*>(&pData)) == TRUE)
+		if (const auto subclassID = static_cast<UINT_PTR>(subID);
+			::GetWindowSubclass(hWnd, subclassProc, subclassID, reinterpret_cast<DWORD_PTR*>(&pData)) == TRUE)
 		{
 			if constexpr (!std::is_void_v<T>)
 			{
