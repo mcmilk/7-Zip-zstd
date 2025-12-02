@@ -152,8 +152,7 @@ namespace dmlib_subclass
 			{
 				if (pData != nullptr)
 				{
-					delete pData;
-					pData = nullptr;
+					std::unique_ptr<T> ptrData(pData);
 				}
 			}
 			return ::RemoveWindowSubclass(hWnd, subclassProc, subclassID);

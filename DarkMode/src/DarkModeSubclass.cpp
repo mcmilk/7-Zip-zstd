@@ -1363,9 +1363,9 @@ static void setCustomBorderForListBoxOrEditCtrlSubclassAndTheme(HWND hWnd, DarkM
 
 		const auto nExStyle = ::GetWindowLongPtr(hWnd, GWL_EXSTYLE);
 		const bool hasClientEdge = (nExStyle & WS_EX_CLIENTEDGE) == WS_EX_CLIENTEDGE;
-		const bool isCBoxListBox = isListBox && (nStyle & LBS_COMBOBOX) == LBS_COMBOBOX;
 
-		if (p.m_subclass && hasClientEdge && !isCBoxListBox)
+		if (const bool isCBoxListBox = isListBox && (nStyle & LBS_COMBOBOX) == LBS_COMBOBOX;
+			p.m_subclass && hasClientEdge && !isCBoxListBox)
 		{
 			DarkMode::setCustomBorderForListBoxOrEditCtrlSubclass(hWnd);
 		}
@@ -1464,7 +1464,8 @@ static void setComboBoxCtrlSubclassAndTheme(HWND hWnd, DarkModeParams p)
 		if (!dmlib_subclass::isThemePrefered() && p.m_subclass)
 		{
 			if (HWND hParent = ::GetParent(hWnd);
-				(hParent == nullptr || dmlib_subclass::getWndClassName(hParent) != WC_COMBOBOXEX))
+				hParent == nullptr
+				|| dmlib_subclass::getWndClassName(hParent) != WC_COMBOBOXEX)
 			{
 				DarkMode::setComboBoxCtrlSubclass(hWnd);
 			}
@@ -1581,7 +1582,7 @@ void DarkMode::removeListViewCtrlSubclass(HWND hWnd)
  */
 static void setListViewCtrlSubclassAndTheme(HWND hWnd, DarkModeParams p) noexcept
 {
-	HWND hHeader = ListView_GetHeader(hWnd);
+	auto* hHeader = ListView_GetHeader(hWnd);
 
 	if (p.m_theme)
 	{
@@ -3160,60 +3161,62 @@ void DarkMode::calculateTreeViewStyle()
  */
 void DarkMode::setTreeViewWindowThemeEx(HWND hWnd, bool force)
 {
-	if (force || DarkMode::getPrevTreeViewStyle() != DarkMode::getTreeViewStyle())
+	if (!force && DarkMode::getPrevTreeViewStyle() == DarkMode::getTreeViewStyle())
 	{
-		auto nStyle = ::GetWindowLongPtr(hWnd, GWL_STYLE);
-		const bool hasHotStyle = (nStyle & TVS_TRACKSELECT) == TVS_TRACKSELECT;
-		bool change = false;
-		std::wstring strSubAppName;
+		return;
+	}
 
-		switch (static_cast<TreeViewStyle>(DarkMode::getTreeViewStyle()))
+	auto nStyle = ::GetWindowLongPtr(hWnd, GWL_STYLE);
+	const bool hasHotStyle = (nStyle & TVS_TRACKSELECT) == TVS_TRACKSELECT;
+	bool change = false;
+	std::wstring strSubAppName;
+
+	switch (static_cast<TreeViewStyle>(DarkMode::getTreeViewStyle()))
+	{
+		case TreeViewStyle::light:
 		{
-			case TreeViewStyle::light:
+			if (!hasHotStyle)
+			{
+				nStyle |= TVS_TRACKSELECT;
+				change = true;
+			}
+			strSubAppName = L"Explorer";
+			break;
+		}
+
+		case TreeViewStyle::dark:
+		{
+			if (DarkMode::isExperimentalSupported())
 			{
 				if (!hasHotStyle)
 				{
 					nStyle |= TVS_TRACKSELECT;
 					change = true;
 				}
-				strSubAppName = L"Explorer";
+				strSubAppName = L"DarkMode_Explorer";
 				break;
 			}
-
-			case TreeViewStyle::dark:
-			{
-				if (DarkMode::isExperimentalSupported())
-				{
-					if (!hasHotStyle)
-					{
-						nStyle |= TVS_TRACKSELECT;
-						change = true;
-					}
-					strSubAppName = L"DarkMode_Explorer";
-					break;
-				}
-				[[fallthrough]];
-			}
-
-			case TreeViewStyle::classic:
-			{
-				if (hasHotStyle)
-				{
-					nStyle &= ~TVS_TRACKSELECT;
-					change = true;
-				}
-				strSubAppName = L"";
-				break;
-			}
+			[[fallthrough]];
 		}
 
-		if (change)
+		case TreeViewStyle::classic:
 		{
-			::SetWindowLongPtr(hWnd, GWL_STYLE, nStyle);
+			if (hasHotStyle)
+			{
+				nStyle &= ~TVS_TRACKSELECT;
+				change = true;
+			}
+			strSubAppName = L"";
+			break;
 		}
-
-		::SetWindowTheme(hWnd, strSubAppName.empty() ? nullptr : strSubAppName.c_str(), nullptr);
 	}
+
+	if (change)
+	{
+		::SetWindowLongPtr(hWnd, GWL_STYLE, nStyle);
+	}
+
+	::SetWindowTheme(hWnd, strSubAppName.empty() ? nullptr : strSubAppName.c_str(), nullptr);
 }
 
 /**

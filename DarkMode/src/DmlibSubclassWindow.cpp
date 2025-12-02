@@ -21,6 +21,7 @@
 #include <vssym32.h>
 
 #include <array>
+#include <memory>
 #include <string>
 
 #include "DarkModeSubclass.h"
@@ -112,8 +113,8 @@ static LRESULT onCtlColorStaticHelper(LPARAM lParam, WPARAM wParam)
 		return DarkMode::onCtlColorDlgLinkText(hdc, isChildEnabled);
 	}
 
-	DWORD_PTR dwRefDataStaticText = 0;
-	if (::GetWindowSubclass(hChild, dmlib_subclass::StaticTextSubclass, static_cast<UINT_PTR>(dmlib_subclass::SubclassID::staticText), &dwRefDataStaticText) == TRUE)
+	if (DWORD_PTR dwRefDataStaticText = 0;
+		::GetWindowSubclass(hChild, dmlib_subclass::StaticTextSubclass, static_cast<UINT_PTR>(dmlib_subclass::SubclassID::staticText), &dwRefDataStaticText) == TRUE)
 	{
 		const bool isTextEnabled = (reinterpret_cast<dmlib_subclass::StaticTextData*>(dwRefDataStaticText))->m_isEnabled;
 		return DarkMode::onCtlColorDlgStaticText(hdc, isTextEnabled);
@@ -478,8 +479,8 @@ static void prepaintListViewItem(LPNMLVCUSTOMDRAW& lplvcd, bool isReport, bool h
 		}
 		else
 		{
-			HWND hHeader = ListView_GetHeader(hList);
-			const int nCol = Header_GetItemCount(hHeader);
+			auto* hHeader = ListView_GetHeader(hList);
+			const auto nCol = Header_GetItemCount(hHeader);
 			const LONG paddingLeft = DarkMode::isThemeDark() ? 1 : 0;
 			const LONG paddingRight = DarkMode::isThemeDark() ? 2 : 1;
 
@@ -1243,7 +1244,7 @@ LRESULT CALLBACK dmlib_subclass::WindowMenuBarSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, WindowMenuBarSubclass, uIdSubclass);
-			delete pMenuThemeData;
+			std::unique_ptr<ThemeData> ptrData(pMenuThemeData);
 			break;
 		}
 
@@ -1455,7 +1456,7 @@ static LRESULT CALLBACK DarkTaskDlgSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, DarkTaskDlgSubclass, uIdSubclass);
-			delete pTaskDlgData;
+			std::unique_ptr<TaskDlgData> ptrData(pTaskDlgData);
 			break;
 		}
 
