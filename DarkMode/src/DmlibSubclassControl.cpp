@@ -64,7 +64,7 @@ static void renderButton(
 	HTHEME hTheme,
 	int iPartID,
 	int iStateID
-)
+) noexcept
 {
 	// Font part
 
@@ -197,7 +197,7 @@ static void renderButton(
  *
  * @see renderButton()
  */
-static void paintButton(HWND hWnd, HDC hdc, dmlib_subclass::ButtonData& buttonData)
+static void paintButton(HWND hWnd, HDC hdc, dmlib_subclass::ButtonData& buttonData) noexcept
 {
 	const auto& hTheme = buttonData.m_themeData.getHTheme();
 
@@ -407,7 +407,8 @@ LRESULT CALLBACK dmlib_subclass::ButtonSubclass(
 			themeData.closeTheme();
 			if (pButtonData->m_isSizeSet)
 			{
-				if (SIZE szBtn{}; Button_GetIdealSize(hWnd, &szBtn) == TRUE)
+				if (SIZE szBtn{};
+					Button_GetIdealSize(hWnd, &szBtn) == TRUE)
 				{
 					const UINT dpi = dmlib_dpi::GetDpiForParent(hWnd);
 					const int cx = std::min<LONG>(szBtn.cx, dmlib_dpi::scale(pButtonData->m_szBtn.cx, dpi));
@@ -484,7 +485,7 @@ LRESULT CALLBACK dmlib_subclass::ButtonSubclass(
  *
  * @see DarkMode::paintRoundFrameRect()
  */
-static void paintGroupbox(HWND hWnd, HDC hdc, const dmlib_subclass::ButtonData& buttonData)
+static void paintGroupbox(HWND hWnd, HDC hdc, const dmlib_subclass::ButtonData& buttonData) noexcept
 {
 	const auto& hTheme = buttonData.m_themeData.getHTheme();
 
@@ -782,7 +783,13 @@ static HPEN getEdgePenFromState(bool isDisabled, bool isHot) noexcept
  * @param[in]   isDisabled  Boolean indicating if the button is in a disabled state.
  * @param[in]   isHot       Boolean indicating if the button is in a hot state.
  */
-static void paintUpDownBtn(HDC hdc, const RECT& rect, bool isDisabled, bool isHot, int roundness) noexcept
+static void paintUpDownBtn(
+	HDC hdc,
+	const RECT& rect,
+	bool isDisabled,
+	bool isHot,
+	int roundness
+) noexcept
 {
 	HBRUSH hBrush = nullptr;
 	HPEN hPen = nullptr;
@@ -815,18 +822,25 @@ static void paintUpDownBtn(HDC hdc, const RECT& rect, bool isDisabled, bool isHo
  *
  * @param[in]   hdc         Handle to the device context used for painting.
  * @param[in]   hWnd        Handle to the control for dpi calculation.
- * @param[in]   hTheme      Handle to the theme used for the arrow's appearance.
+ * @param[in]   upDownData  Reference to layout and state information (segments, orientation, corner radius).
  * @param[in]   rect        Rectangle that defines the area in which to paint the arrow.
  * @param[in]   isHot       Boolean indicating if the arrow should appear hot (hovered).
  * @param[in]   isPrev      Boolean indicating the direction of the arrow:
  *                          true for "previous" (left/up) and false for "next" (right/down).
- * @param[in]   isHorz      Boolean indicating if the arrow is horizontal (left/right).
  * @param[in]   isDisabled  Boolean indicating if the arrow is in a disabled state.
  */
-static void paintArrow(HDC hdc, HWND hWnd, const HTHEME& hTheme, const RECT& rect, bool isHot, bool isPrev, bool isHorz, bool isDisabled) noexcept
+static void paintArrow(
+	HDC hdc,
+	HWND hWnd,
+	dmlib_subclass::UpDownData& upDownData,
+	const RECT& rect,
+	bool isHot,
+	bool isPrev,
+	bool isDisabled
+) noexcept
 {
 	SIZE size{};
-	::GetThemePartSize(hTheme, nullptr, SPNP_UP, UPS_NORMAL, nullptr, TS_TRUE, &size);
+	::GetThemePartSize(upDownData.m_themeData.getHTheme(), nullptr, SPNP_UP, UPS_NORMAL, nullptr, TS_TRUE, &size);
 
 	static constexpr std::array<POINTFLOAT, 3> ptsArrowLeft{ { {1.0F, 0.0F}, {0.0F, 0.5F}, {1.0F, 1.0F} } };
 	static constexpr std::array<POINTFLOAT, 3> ptsArrowRight{ { {0.0F, 0.0F}, {1.0F, 0.5F}, {0.0F, 1.0F} } };
@@ -841,7 +855,7 @@ static void paintArrow(HDC hdc, HWND hWnd, const HTHEME& hTheme, const RECT& rec
 	auto offsetPosX = 0.0F;
 	auto offsetPosY = 0.0F;
 	std::array<POINTFLOAT, 3> ptsArrowSelected{};
-	if (isHorz)
+	if (upDownData.m_isHorizontal)
 	{
 		if (isPrev)
 		{
@@ -973,8 +987,8 @@ static void paintUpDown(HWND hWnd, HDC hdc, dmlib_subclass::UpDownData& upDownDa
 
 		if (hasTheme)
 		{
-			paintArrow(hdc, hWnd, hTheme, upDownData.m_rcPrev, isHotPrev, true, isHorz, isDisabled);
-			paintArrow(hdc, hWnd, hTheme, upDownData.m_rcNext, isHotNext, false, isHorz, isDisabled);
+			paintArrow(hdc, hWnd, upDownData, upDownData.m_rcPrev, isHotPrev, true, isDisabled);
+			paintArrow(hdc, hWnd, upDownData, upDownData.m_rcNext, isHotNext, false, isDisabled);
 		}
 		else
 		{
@@ -1146,20 +1160,21 @@ LRESULT CALLBACK dmlib_subclass::UpDownSubclass(
  * @param[in]   iSelTab         Index of the currently selected tab.
  * @param[in]   nTabs           Total number of tabs in the tab control.
  * @param[in]   ptCursor        Point representing the current cursor position.
- * @param[in]   hasFocusRect    Boolean indicating if the focus rectangle should be drawn.
- * @param[in]   holdClip        Handle to the current clipping region for restoring later.
  */
-static void paintTabItem(HDC hdc, HWND hWnd, RECT& rcItem, int i, int iSelTab, int nTabs, const POINT& ptCursor, bool hasFocusRect, HRGN holdClip)
+static void paintTabItem(
+	HDC hdc,
+	HWND hWnd,
+	RECT& rcItem,
+	int i,
+	int iSelTab,
+	int nTabs,
+	const POINT& ptCursor
+) noexcept
 {
 	RECT rcFrame{ rcItem };
 
 	const bool isHot = ::PtInRect(&rcItem, ptCursor) == TRUE;
 	const bool isSelectedTab = (i == iSelTab);
-
-	::SetBkMode(hdc, TRANSPARENT);
-
-	HRGN hClip = ::CreateRectRgnIndirect(&rcItem);
-	::SelectClipRgn(hdc, hClip);
 
 	::InflateRect(&rcItem, -1, -1);
 	rcItem.right += 1;
@@ -1221,14 +1236,15 @@ static void paintTabItem(HDC hdc, HWND hWnd, RECT& rcItem, int i, int iSelTab, i
 	::FrameRect(hdc, &rcFrame, DarkMode::getEdgeBrush());
 
 	// Draw focus keyboard cue
-	if (isSelectedTab && hasFocusRect)
+	if (isSelectedTab && ::GetFocus() == hWnd)
 	{
-		::InflateRect(&rcFrame, -2, -1);
-		::DrawFocusRect(hdc, &rcFrame);
+		if (const auto uiState = static_cast<DWORD>(::SendMessage(hWnd, WM_QUERYUISTATE, 0, 0));
+			(uiState & UISF_HIDEFOCUS) != UISF_HIDEFOCUS)
+		{
+			::InflateRect(&rcFrame, -2, -1);
+			::DrawFocusRect(hdc, &rcFrame);
+		}
 	}
-
-	::SelectClipRgn(hdc, holdClip);
-	::DeleteObject(hClip);
 }
 
 /**
@@ -1251,7 +1267,7 @@ static void paintTabItem(HDC hdc, HWND hWnd, RECT& rcItem, int i, int iSelTab, i
  * @param[in]   hdc     Device context to draw into.
  * @param[in]   rect    Tab control rectangle.
  */
-static void paintTab(HWND hWnd, HDC hdc, const RECT& rect)
+static void paintTab(HWND hWnd, HDC hdc, const RECT& rect) noexcept
 {
 	::FillRect(hdc, &rect, DarkMode::getDlgBackgroundBrush());
 
@@ -1269,12 +1285,7 @@ static void paintTab(HWND hWnd, HDC hdc, const RECT& rect)
 	::GetCursorPos(&ptCursor);
 	::ScreenToClient(hWnd, &ptCursor);
 
-	bool hasFocusRect = false;
-	if (::GetFocus() == hWnd)
-	{
-		const auto uiState = static_cast<DWORD>(::SendMessage(hWnd, WM_QUERYUISTATE, 0, 0));
-		hasFocusRect = ((uiState & UISF_HIDEFOCUS) != UISF_HIDEFOCUS);
-	}
+	::SetBkMode(hdc, TRANSPARENT);
 
 	const auto iSelTab = TabCtrl_GetCurSel(hWnd);
 	const auto nTabs = TabCtrl_GetItemCount(hWnd);
@@ -1283,12 +1294,19 @@ static void paintTab(HWND hWnd, HDC hdc, const RECT& rect)
 		RECT rcItem{};
 		TabCtrl_GetItemRect(hWnd, i, &rcItem);
 
-		if (RECT rcIntersect{}; ::IntersectRect(&rcIntersect, &rect, &rcItem) == FALSE)
+		if (RECT rcIntersect{};
+			::IntersectRect(&rcIntersect, &rect, &rcItem) == FALSE)
 		{
 			continue; // Skip to the next iteration when there is no intersection
 		}
 
-		paintTabItem(hdc, hWnd, rcItem, i, iSelTab, nTabs, ptCursor, hasFocusRect, holdClip);
+		HRGN hClip = ::CreateRectRgnIndirect(&rcItem);
+		::SelectClipRgn(hdc, hClip);
+
+		paintTabItem(hdc, hWnd, rcItem, i, iSelTab, nTabs, ptCursor);
+
+		::SelectClipRgn(hdc, holdClip);
+		::DeleteObject(hClip);
 	}
 
 	::SelectClipRgn(hdc, holdClip);
@@ -1654,7 +1672,7 @@ LRESULT CALLBACK dmlib_subclass::CustomBorderSubclass(
  *
  * @see ComboBoxData
  */
-static void paintCombobox(HWND hWnd, HDC hdc, dmlib_subclass::ComboBoxData& comboBoxData)
+static void paintCombobox(HWND hWnd, HDC hdc, dmlib_subclass::ComboBoxData& comboBoxData) noexcept
 {
 	auto& themeData = comboBoxData.m_themeData;
 	const auto& hTheme = themeData.getHTheme();
@@ -2167,7 +2185,7 @@ LRESULT CALLBACK dmlib_subclass::ListViewSubclass(
  *
  * @see HeaderData
  */
-static void paintHeader(HWND hWnd, HDC hdc, dmlib_subclass::HeaderData& headerData)
+static void paintHeader(HWND hWnd, HDC hdc, dmlib_subclass::HeaderData& headerData) noexcept
 {
 	auto& themeData = headerData.m_themeData;
 	const auto& hTheme = themeData.getHTheme();
@@ -2492,7 +2510,7 @@ LRESULT CALLBACK dmlib_subclass::HeaderSubclass(
  *
  * @see StatusBarData
  */
-static void paintStatusBar(HWND hWnd, HDC hdc, dmlib_subclass::StatusBarData& statusBarData)
+static void paintStatusBar(HWND hWnd, HDC hdc, dmlib_subclass::StatusBarData& statusBarData) noexcept
 {
 	struct
 	{

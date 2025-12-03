@@ -315,7 +315,7 @@ namespace DarkMode
 	DMLIB_API COLORREF setHotEdgeColor(COLORREF clrNew);
 	DMLIB_API COLORREF setDisabledEdgeColor(COLORREF clrNew);
 
-	DMLIB_API void setThemeColors(Colors colors);
+	DMLIB_API void setThemeColors(Colors* colors);
 	DMLIB_API void updateThemeBrushesAndPens();
 
 	[[nodiscard]] DMLIB_API COLORREF getBackgroundColor();
@@ -357,7 +357,7 @@ namespace DarkMode
 	DMLIB_API COLORREF setHeaderTextColor(COLORREF clrNew);
 	DMLIB_API COLORREF setHeaderEdgeColor(COLORREF clrNew);
 
-	DMLIB_API void setViewColors(ColorsView colors);
+	DMLIB_API void setViewColors(ColorsView* colors);
 	DMLIB_API void updateViewBrushesAndPens();
 
 	[[nodiscard]] DMLIB_API COLORREF getViewBackgroundColor();

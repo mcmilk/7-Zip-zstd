@@ -171,6 +171,13 @@ namespace dmlib_color
 
 	DarkMode::Colors getLightColors();
 
+	inline COLORREF setNewColor(COLORREF& clrOld, COLORREF clrNew) noexcept
+	{
+		const auto clrTmp = COLORREF{ clrOld };
+		clrOld = clrNew;
+		return clrTmp;
+	}
+
 	struct Brushes
 	{
 		HBRUSH m_background = nullptr;
@@ -305,10 +312,13 @@ namespace dmlib_color
 			m_pens.updatePens(m_colors);
 		}
 
-		void updateTheme(const DarkMode::Colors& colors) noexcept
+		void updateTheme(const DarkMode::Colors& colors, bool update = true) noexcept
 		{
 			m_colors = DarkMode::Colors{ colors };
-			Theme::updateTheme();
+			if (update)
+			{
+				Theme::updateTheme();
+			}
 		}
 
 		[[nodiscard]] DarkMode::Colors getToneColors() const noexcept
@@ -407,11 +417,87 @@ namespace dmlib_color
 			Theme::updateTheme();
 		}
 
-		void setToneColors() noexcept
+		void setToneColors(bool update = false) noexcept
 		{
-			m_colors = Theme::getToneColors();
-			Theme::updateTheme();
+			updateTheme(getToneColors(), update);
 		}
+
+		void setLightColors(bool update = false) noexcept
+		{
+			updateTheme(dmlib_color::getLightColors(), update);
+		}
+
+		COLORREF setColorBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.background, newClr);
+		}
+
+		COLORREF setColorCtrlBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.ctrlBackground, newClr);
+		}
+
+		COLORREF setColorHotBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.hotBackground, newClr);
+		}
+
+		COLORREF setColorDlgBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.dlgBackground, newClr);
+		}
+
+		COLORREF setColorErrorBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.errorBackground, newClr);
+		}
+
+		COLORREF setColorText(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.text, newClr);
+		}
+
+		COLORREF setColorDarkerText(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.darkerText, newClr);
+		}
+
+		COLORREF setColorDisabledText(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.disabledText, newClr);
+		}
+
+		COLORREF setColorLinkText(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.linkText, newClr);
+		}
+
+		COLORREF setColorEdge(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.edge, newClr);
+		}
+
+		COLORREF setColorHotEdge(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.hotEdge, newClr);
+		}
+
+		COLORREF setColorDisabledEdge(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_colors.disabledEdge, newClr);
+		}
+
+		[[nodiscard]] const DarkMode::Colors& getColors() const noexcept
+		{
+			return m_colors;
+		}
+
+#if !defined(_DARKMODELIB_NO_INI_CONFIG)
+		[[nodiscard]] DarkMode::Colors& getToSetColors() noexcept
+		{
+			return m_colors;
+		}
+#endif
 
 		[[nodiscard]] const Brushes& getBrushes() const noexcept
 		{
@@ -428,9 +514,8 @@ namespace dmlib_color
 			return m_tone;
 		}
 
-		DarkMode::Colors m_colors;
-
 	private:
+		DarkMode::Colors m_colors;
 		Brushes m_brushes;
 		Pens m_pens;
 		DarkMode::ColorTone m_tone = DarkMode::ColorTone::black;
@@ -508,29 +593,76 @@ namespace dmlib_color
 			m_hbrPnView.update(m_clrView);
 		}
 
-		void updateView(const DarkMode::ColorsView& colors) noexcept
+		void updateView(const DarkMode::ColorsView& colors, bool update = true) noexcept
 		{
 			m_clrView = DarkMode::ColorsView{ colors };
-			ThemeView::updateView();
+			if (update)
+			{
+				ThemeView::updateView();
+			}
 		}
+
+		[[nodiscard]] const DarkMode::ColorsView& getColors() const noexcept
+		{
+			return m_clrView;
+		}
+
+#if !defined(_DARKMODELIB_NO_INI_CONFIG)
+		[[nodiscard]] DarkMode::ColorsView& getToSetColors() noexcept
+		{
+			return m_clrView;
+		}
+#endif
 
 		[[nodiscard]] const BrushesAndPensView& getViewBrushesAndPens() const noexcept
 		{
 			return m_hbrPnView;
 		}
 
-		DarkMode::ColorsView m_clrView;
+		void resetColors(bool isDark) noexcept
+		{
+			m_clrView = isDark ? dmlib_color::kDarkColorsView : dmlib_color::kLightColorsView;
+		}
+
+		COLORREF setColorBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_clrView.background, newClr);
+		}
+
+		COLORREF setColorText(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_clrView.text, newClr);
+		}
+
+		COLORREF setColorGridlines(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_clrView.gridlines, newClr);
+		}
+
+		COLORREF setColorHeaderBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_clrView.headerBackground, newClr);
+		}
+
+		COLORREF setColorHeaderHotBackground(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_clrView.headerHotBackground, newClr);
+		}
+
+		COLORREF setColorHeaderText(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_clrView.headerText, newClr);
+		}
+
+		COLORREF setColorHeaderEdge(COLORREF newClr) noexcept
+		{
+			return setNewColor(m_clrView.headerEdge, newClr);
+		}
 
 	private:
+		DarkMode::ColorsView m_clrView;
 		BrushesAndPensView m_hbrPnView;
 	};
-
-	inline COLORREF setNewColor(COLORREF& clrOld, COLORREF clrNew) noexcept
-	{
-		const auto clrTmp = COLORREF{ clrOld };
-		clrOld = clrNew;
-		return clrTmp;
-	}
 
 	/// Calculates perceptual lightness of a COLORREF color.
 	[[nodiscard]] double calculatePerceivedLightness(COLORREF clr) noexcept;

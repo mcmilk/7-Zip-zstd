@@ -238,22 +238,25 @@ static dmlib_color::ThemeView& getThemeView() noexcept
 	return tView;
 }
 
-COLORREF DarkMode::setBackgroundColor(COLORREF clrNew)      { return dmlib_color::setNewColor(getTheme().m_colors.background, clrNew); }
-COLORREF DarkMode::setCtrlBackgroundColor(COLORREF clrNew)  { return dmlib_color::setNewColor(getTheme().m_colors.ctrlBackground, clrNew); }
-COLORREF DarkMode::setHotBackgroundColor(COLORREF clrNew)   { return dmlib_color::setNewColor(getTheme().m_colors.hotBackground, clrNew); }
-COLORREF DarkMode::setDlgBackgroundColor(COLORREF clrNew)   { return dmlib_color::setNewColor(getTheme().m_colors.dlgBackground, clrNew); }
-COLORREF DarkMode::setErrorBackgroundColor(COLORREF clrNew) { return dmlib_color::setNewColor(getTheme().m_colors.errorBackground, clrNew); }
-COLORREF DarkMode::setTextColor(COLORREF clrNew)            { return dmlib_color::setNewColor(getTheme().m_colors.text, clrNew); }
-COLORREF DarkMode::setDarkerTextColor(COLORREF clrNew)      { return dmlib_color::setNewColor(getTheme().m_colors.darkerText, clrNew); }
-COLORREF DarkMode::setDisabledTextColor(COLORREF clrNew)    { return dmlib_color::setNewColor(getTheme().m_colors.disabledText, clrNew); }
-COLORREF DarkMode::setLinkTextColor(COLORREF clrNew)        { return dmlib_color::setNewColor(getTheme().m_colors.linkText, clrNew); }
-COLORREF DarkMode::setEdgeColor(COLORREF clrNew)            { return dmlib_color::setNewColor(getTheme().m_colors.edge, clrNew); }
-COLORREF DarkMode::setHotEdgeColor(COLORREF clrNew)         { return dmlib_color::setNewColor(getTheme().m_colors.hotEdge, clrNew); }
-COLORREF DarkMode::setDisabledEdgeColor(COLORREF clrNew)    { return dmlib_color::setNewColor(getTheme().m_colors.disabledEdge, clrNew); }
+COLORREF DarkMode::setBackgroundColor(COLORREF clrNew)      { return getTheme().setColorBackground(clrNew); }
+COLORREF DarkMode::setCtrlBackgroundColor(COLORREF clrNew)  { return getTheme().setColorCtrlBackground(clrNew); }
+COLORREF DarkMode::setHotBackgroundColor(COLORREF clrNew)   { return getTheme().setColorHotBackground(clrNew); }
+COLORREF DarkMode::setDlgBackgroundColor(COLORREF clrNew)   { return getTheme().setColorDlgBackground(clrNew); }
+COLORREF DarkMode::setErrorBackgroundColor(COLORREF clrNew) { return getTheme().setColorErrorBackground(clrNew); }
+COLORREF DarkMode::setTextColor(COLORREF clrNew)            { return getTheme().setColorText(clrNew); }
+COLORREF DarkMode::setDarkerTextColor(COLORREF clrNew)      { return getTheme().setColorDarkerText(clrNew); }
+COLORREF DarkMode::setDisabledTextColor(COLORREF clrNew)    { return getTheme().setColorDisabledText(clrNew); }
+COLORREF DarkMode::setLinkTextColor(COLORREF clrNew)        { return getTheme().setColorLinkText(clrNew); }
+COLORREF DarkMode::setEdgeColor(COLORREF clrNew)            { return getTheme().setColorEdge(clrNew); }
+COLORREF DarkMode::setHotEdgeColor(COLORREF clrNew)         { return getTheme().setColorHotEdge(clrNew); }
+COLORREF DarkMode::setDisabledEdgeColor(COLORREF clrNew)    { return getTheme().setColorDisabledEdge(clrNew); }
 
-void DarkMode::setThemeColors(Colors colors)
+void DarkMode::setThemeColors(Colors* colors)
 {
-	getTheme().updateTheme(colors);
+	if (colors != nullptr)
+	{
+		getTheme().updateTheme(*colors);
+	}
 }
 
 void DarkMode::updateThemeBrushesAndPens()
@@ -261,18 +264,18 @@ void DarkMode::updateThemeBrushesAndPens()
 	getTheme().updateTheme();
 }
 
-COLORREF DarkMode::getBackgroundColor()         { return getTheme().m_colors.background; }
-COLORREF DarkMode::getCtrlBackgroundColor()     { return getTheme().m_colors.ctrlBackground; }
-COLORREF DarkMode::getHotBackgroundColor()      { return getTheme().m_colors.hotBackground; }
-COLORREF DarkMode::getDlgBackgroundColor()      { return getTheme().m_colors.dlgBackground; }
-COLORREF DarkMode::getErrorBackgroundColor()    { return getTheme().m_colors.errorBackground; }
-COLORREF DarkMode::getTextColor()               { return getTheme().m_colors.text; }
-COLORREF DarkMode::getDarkerTextColor()         { return getTheme().m_colors.darkerText; }
-COLORREF DarkMode::getDisabledTextColor()       { return getTheme().m_colors.disabledText; }
-COLORREF DarkMode::getLinkTextColor()           { return getTheme().m_colors.linkText; }
-COLORREF DarkMode::getEdgeColor()               { return getTheme().m_colors.edge; }
-COLORREF DarkMode::getHotEdgeColor()            { return getTheme().m_colors.hotEdge; }
-COLORREF DarkMode::getDisabledEdgeColor()       { return getTheme().m_colors.disabledEdge; }
+COLORREF DarkMode::getBackgroundColor()         { return getTheme().getColors().background; }
+COLORREF DarkMode::getCtrlBackgroundColor()     { return getTheme().getColors().ctrlBackground; }
+COLORREF DarkMode::getHotBackgroundColor()      { return getTheme().getColors().hotBackground; }
+COLORREF DarkMode::getDlgBackgroundColor()      { return getTheme().getColors().dlgBackground; }
+COLORREF DarkMode::getErrorBackgroundColor()    { return getTheme().getColors().errorBackground; }
+COLORREF DarkMode::getTextColor()               { return getTheme().getColors().text; }
+COLORREF DarkMode::getDarkerTextColor()         { return getTheme().getColors().darkerText; }
+COLORREF DarkMode::getDisabledTextColor()       { return getTheme().getColors().disabledText; }
+COLORREF DarkMode::getLinkTextColor()           { return getTheme().getColors().linkText; }
+COLORREF DarkMode::getEdgeColor()               { return getTheme().getColors().edge; }
+COLORREF DarkMode::getHotEdgeColor()            { return getTheme().getColors().hotEdge; }
+COLORREF DarkMode::getDisabledEdgeColor()       { return getTheme().getColors().disabledEdge; }
 
 HBRUSH DarkMode::getBackgroundBrush()           { return getTheme().getBrushes().m_background; }
 HBRUSH DarkMode::getCtrlBackgroundBrush()       { return getTheme().getBrushes().m_ctrlBackground; }
@@ -289,18 +292,21 @@ HPEN DarkMode::getEdgePen()                     { return getTheme().getPens().m_
 HPEN DarkMode::getHotEdgePen()                  { return getTheme().getPens().m_hotEdge; }
 HPEN DarkMode::getDisabledEdgePen()             { return getTheme().getPens().m_disabledEdge; }
 
-COLORREF DarkMode::setViewBackgroundColor(COLORREF clrNew)      { return dmlib_color::setNewColor(getThemeView().m_clrView.background, clrNew); }
-COLORREF DarkMode::setViewTextColor(COLORREF clrNew)            { return dmlib_color::setNewColor(getThemeView().m_clrView.text, clrNew); }
-COLORREF DarkMode::setViewGridlinesColor(COLORREF clrNew)       { return dmlib_color::setNewColor(getThemeView().m_clrView.gridlines, clrNew); }
+COLORREF DarkMode::setViewBackgroundColor(COLORREF clrNew)      { return getThemeView().setColorBackground(clrNew); }
+COLORREF DarkMode::setViewTextColor(COLORREF clrNew)            { return getThemeView().setColorText(clrNew); }
+COLORREF DarkMode::setViewGridlinesColor(COLORREF clrNew)       { return getThemeView().setColorGridlines(clrNew); }
 
-COLORREF DarkMode::setHeaderBackgroundColor(COLORREF clrNew)    { return dmlib_color::setNewColor(getThemeView().m_clrView.headerBackground, clrNew); }
-COLORREF DarkMode::setHeaderHotBackgroundColor(COLORREF clrNew) { return dmlib_color::setNewColor(getThemeView().m_clrView.headerHotBackground, clrNew); }
-COLORREF DarkMode::setHeaderTextColor(COLORREF clrNew)          { return dmlib_color::setNewColor(getThemeView().m_clrView.headerText, clrNew); }
-COLORREF DarkMode::setHeaderEdgeColor(COLORREF clrNew)          { return dmlib_color::setNewColor(getThemeView().m_clrView.headerEdge, clrNew); }
+COLORREF DarkMode::setHeaderBackgroundColor(COLORREF clrNew)    { return getThemeView().setColorHeaderBackground(clrNew); }
+COLORREF DarkMode::setHeaderHotBackgroundColor(COLORREF clrNew) { return getThemeView().setColorHeaderHotBackground(clrNew); }
+COLORREF DarkMode::setHeaderTextColor(COLORREF clrNew)          { return getThemeView().setColorHeaderText(clrNew); }
+COLORREF DarkMode::setHeaderEdgeColor(COLORREF clrNew)          { return getThemeView().setColorHeaderEdge(clrNew); }
 
-void DarkMode::setViewColors(ColorsView colors)
+void DarkMode::setViewColors(ColorsView* colors)
 {
-	getThemeView().updateView(colors);
+	if (colors != nullptr)
+	{
+		getThemeView().updateView(*colors);
+	}
 }
 
 void DarkMode::updateViewBrushesAndPens()
@@ -308,14 +314,14 @@ void DarkMode::updateViewBrushesAndPens()
 	getThemeView().updateView();
 }
 
-COLORREF DarkMode::getViewBackgroundColor()         { return getThemeView().m_clrView.background; }
-COLORREF DarkMode::getViewTextColor()               { return getThemeView().m_clrView.text; }
-COLORREF DarkMode::getViewGridlinesColor()          { return getThemeView().m_clrView.gridlines; }
+COLORREF DarkMode::getViewBackgroundColor()         { return getThemeView().getColors().background; }
+COLORREF DarkMode::getViewTextColor()               { return getThemeView().getColors().text; }
+COLORREF DarkMode::getViewGridlinesColor()          { return getThemeView().getColors().gridlines; }
 
-COLORREF DarkMode::getHeaderBackgroundColor()       { return getThemeView().m_clrView.headerBackground; }
-COLORREF DarkMode::getHeaderHotBackgroundColor()    { return getThemeView().m_clrView.headerHotBackground; }
-COLORREF DarkMode::getHeaderTextColor()             { return getThemeView().m_clrView.headerText; }
-COLORREF DarkMode::getHeaderEdgeColor()             { return getThemeView().m_clrView.headerEdge; }
+COLORREF DarkMode::getHeaderBackgroundColor()       { return getThemeView().getColors().headerBackground; }
+COLORREF DarkMode::getHeaderHotBackgroundColor()    { return getThemeView().getColors().headerHotBackground; }
+COLORREF DarkMode::getHeaderTextColor()             { return getThemeView().getColors().headerText; }
+COLORREF DarkMode::getHeaderEdgeColor()             { return getThemeView().getColors().headerEdge; }
 
 HBRUSH DarkMode::getViewBackgroundBrush()           { return getThemeView().getViewBrushesAndPens().m_background; }
 HBRUSH DarkMode::getViewGridlinesBrush()            { return getThemeView().getViewBrushesAndPens().m_gridlines; }
@@ -349,14 +355,14 @@ void DarkMode::setDefaultColors(bool updateBrushesAndOther)
 		case DarkModeType::dark:
 		{
 			getTheme().setToneColors();
-			getThemeView().m_clrView = dmlib_color::kDarkColorsView;
+			getThemeView().resetColors(true);
 			break;
 		}
 
 		case DarkModeType::light:
 		{
-			getTheme().m_colors = dmlib_color::getLightColors();
-			getThemeView().m_clrView = dmlib_color::kLightColorsView;
+			getTheme().setLightColors();
+			getThemeView().resetColors(false);
 			break;
 		}
 
@@ -591,6 +597,8 @@ static void initOptions(const std::wstring& iniName)
 			g_dmCfg.m_borderColor = DWMWA_COLOR_DEFAULT;
 		}
 
+		getThemeView().resetColors(useDark);
+
 		if (useDark)
 		{
 			UINT tone = ::GetPrivateProfileIntW(sectionBase.c_str(), L"tone", 0, iniPath.c_str());
@@ -600,10 +608,9 @@ static void initOptions(const std::wstring& iniName)
 			}
 
 			getTheme().setToneColors(static_cast<DarkMode::ColorTone>(tone));
-			getThemeView().m_clrView = dmlib_color::kDarkColorsView;
-			getThemeView().m_clrView.headerBackground = getTheme().m_colors.background;
-			getThemeView().m_clrView.headerHotBackground = getTheme().m_colors.hotBackground;
-			getThemeView().m_clrView.headerText = getTheme().m_colors.darkerText;
+			getThemeView().setColorHeaderBackground(getTheme().getColors().background);
+			getThemeView().setColorHeaderHotBackground(getTheme().getColors().hotBackground);
+			getThemeView().setColorHeaderText(getTheme().getColors().darkerText);
 
 			if (!DarkMode::isWindowsModeEnabled())
 			{
@@ -612,8 +619,7 @@ static void initOptions(const std::wstring& iniName)
 		}
 		else
 		{
-			getTheme().m_colors = dmlib_color::getLightColors();
-			getThemeView().m_clrView = dmlib_color::kLightColorsView;
+			getTheme().setLightColors();
 		}
 
 		struct ColorEntry
@@ -624,29 +630,29 @@ static void initOptions(const std::wstring& iniName)
 
 		static constexpr size_t nColorsViewMembers = 7;
 		const std::array<ColorEntry, nColorsViewMembers> viewColors{ {
-			{L"backgroundView", &getThemeView().m_clrView.background},
-			{L"textView", &getThemeView().m_clrView.text},
-			{L"gridlines", &getThemeView().m_clrView.gridlines},
-			{L"backgroundHeader", &getThemeView().m_clrView.headerBackground},
-			{L"backgroundHotHeader", &getThemeView().m_clrView.headerHotBackground},
-			{L"textHeader", &getThemeView().m_clrView.headerText},
-			{L"edgeHeader", &getThemeView().m_clrView.headerEdge}
+			{L"backgroundView", &getThemeView().getToSetColors().background},
+			{L"textView", &getThemeView().getToSetColors().text},
+			{L"gridlines", &getThemeView().getToSetColors().gridlines},
+			{L"backgroundHeader", &getThemeView().getToSetColors().headerBackground},
+			{L"backgroundHotHeader", &getThemeView().getToSetColors().headerHotBackground},
+			{L"textHeader", &getThemeView().getToSetColors().headerText},
+			{L"edgeHeader", &getThemeView().getToSetColors().headerEdge}
 		} };
 
 		static constexpr size_t nColorsMembers = 12;
 		const std::array<ColorEntry, nColorsMembers> baseColors{ {
-			{L"background", &getTheme().m_colors.background},
-			{L"backgroundCtrl", &getTheme().m_colors.ctrlBackground},
-			{L"backgroundHot", &getTheme().m_colors.hotBackground},
-			{L"backgroundDlg", &getTheme().m_colors.dlgBackground},
-			{L"backgroundError", &getTheme().m_colors.errorBackground},
-			{L"text", &getTheme().m_colors.text},
-			{L"textItem", &getTheme().m_colors.darkerText},
-			{L"textDisabled", &getTheme().m_colors.disabledText},
-			{L"textLink", &getTheme().m_colors.linkText},
-			{L"edge", &getTheme().m_colors.edge},
-			{L"edgeHot", &getTheme().m_colors.hotEdge},
-			{L"edgeDisabled", &getTheme().m_colors.disabledEdge}
+			{L"background", &getTheme().getToSetColors().background},
+			{L"backgroundCtrl", &getTheme().getToSetColors().ctrlBackground},
+			{L"backgroundHot", &getTheme().getToSetColors().hotBackground},
+			{L"backgroundDlg", &getTheme().getToSetColors().dlgBackground},
+			{L"backgroundError", &getTheme().getToSetColors().errorBackground},
+			{L"text", &getTheme().getToSetColors().text},
+			{L"textItem", &getTheme().getToSetColors().darkerText},
+			{L"textDisabled", &getTheme().getToSetColors().disabledText},
+			{L"textLink", &getTheme().getToSetColors().linkText},
+			{L"edge", &getTheme().getToSetColors().edge},
+			{L"edgeHot", &getTheme().getToSetColors().hotEdge},
+			{L"edgeDisabled", &getTheme().getToSetColors().disabledEdge}
 		} };
 
 		for (const auto& entry : viewColors)

@@ -272,7 +272,7 @@ LRESULT CALLBACK dmlib_subclass::WindowCtlColorSubclass(
 	::SendMessage(lptbcd->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, lptbcd->nmcd.dwItemSpec, reinterpret_cast<LPARAM>(&tbi));
 
 	const bool isIcon = tbi.iImage != I_IMAGENONE;
-	const bool isDropDown = ((tbi.fsStyle & BTNS_DROPDOWN) == BTNS_DROPDOWN) && isIcon; // has 2 "buttons"
+	const bool isDropDown = ((WORD{ tbi.fsStyle } & BTNS_DROPDOWN) == BTNS_DROPDOWN) && isIcon; // has 2 "buttons"
 	if (isDropDown)
 	{
 		const auto idx = ::SendMessage(lptbcd->nmcd.hdr.hwndFrom, TB_COMMANDTOINDEX, lptbcd->nmcd.dwItemSpec, 0);
@@ -484,7 +484,7 @@ static void prepaintListViewItem(LPNMLVCUSTOMDRAW& lplvcd, bool isReport, bool h
 			const LONG paddingLeft = DarkMode::isThemeDark() ? 1 : 0;
 			const LONG paddingRight = DarkMode::isThemeDark() ? 2 : 1;
 
-			auto lvii = LVITEMINDEX{ static_cast<int>(lplvcd->nmcd.dwItemSpec), 0 };
+			const auto lvii = LVITEMINDEX{ static_cast<int>(lplvcd->nmcd.dwItemSpec), 0 };
 			RECT rcSubitem{
 				lplvcd->nmcd.rc.left
 				, lplvcd->nmcd.rc.top

@@ -58,7 +58,7 @@ DarkMode::Colors dmlib_color::getLightColors()
  */
 double dmlib_color::calculatePerceivedLightness(COLORREF clr) noexcept
 {
-	auto linearValue = [](double colorChannel) noexcept -> double
+	auto linearValue = [](double colorChannel) noexcept
 	{
 		colorChannel /= 255.0;
 
