@@ -50,11 +50,6 @@ bool WantCopyHistory();
 bool WantFolderHistory();
 bool WantLowercaseHashes();
 
-bool WantArcHistory();
-bool WantPathHistory();
-bool WantCopyHistory();
-bool WantFolderHistory();
-
 void SaveFlatView(UInt32 panelIndex, bool enable);
 bool ReadFlatView(UInt32 panelIndex);
 
@@ -62,5 +57,8 @@ bool ReadFlatView(UInt32 panelIndex);
 void Save_ShowDeleted(bool enable);
 bool Read_ShowDeleted();
 */
+
+void Save_ClrMode(UInt32 clrMode);
+UInt32 Read_ClrMode();
 
 #endif

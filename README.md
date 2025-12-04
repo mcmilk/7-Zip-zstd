@@ -267,6 +267,7 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 - FileManager Toolbar Icon Theme: Glyfz 2016 by AlexGal [homepage](https://www.deviantart.com/alexgal23)
 - File Types Icon Theme: Windows 10 by masamunecyrus [homepage](https://www.deviantart.com/masamunecyrus)
 - Additional icons file types created by Mr4Mike4 [homepage](https://github.com/Mr4Mike4)
+- Dark mode support via darkmodelib (v0.41.0) by ozone10 [homepage](https://github.com/ozone10)
 
 ## License and Redistribution
 

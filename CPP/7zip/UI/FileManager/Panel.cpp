@@ -33,6 +33,8 @@
 
 #include "PropertyNameRes.h"
 
+#include "../../../../DarkMode/src/DarkModeSubclass.h"
+
 using namespace NWindows;
 using namespace NControl;
 
@@ -1174,4 +1176,93 @@ void CPanel::TestArchives()
     return;
   }
   ::TestArchives(paths);
+}
+
+LRESULT CALLBACK CPanel::ListNotifySubclass(
+  HWND hWnd,
+  UINT uMsg,
+  WPARAM wParam,
+  LPARAM lParam,
+  UINT_PTR uIdSubclass,
+  DWORD_PTR dwRefData
+)
+{
+  auto* pPanelData = reinterpret_cast<CPanel*>(dwRefData);
+
+  switch (uMsg)
+  {
+    case WM_NCDESTROY:
+    {
+      ::RemoveWindowSubclass(hWnd, CPanel::ListNotifySubclass, uIdSubclass);
+      break;
+    }
+
+    case WM_NOTIFY:
+    {
+      if (!DarkMode::isEnabled()
+        || (!pPanelData->_mySelectMode
+          && (!pPanelData->_markDeletedItems
+            || !pPanelData->_thereAreDeletedItems)))
+      {
+        break;
+      }
+
+      auto* lplvcd = reinterpret_cast<LPNMLVCUSTOMDRAW>(lParam);
+      if (lplvcd->nmcd.hdr.hwndFrom != static_cast<HWND>(pPanelData->_listView)
+        || lplvcd->nmcd.hdr.code != NM_CUSTOMDRAW)
+      {
+        break;
+      }
+
+      switch (lplvcd->nmcd.dwDrawStage)
+      {
+        case CDDS_PREPAINT:
+        {
+          return CDRF_NOTIFYITEMDRAW | ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        }
+
+        case CDDS_ITEMPREPAINT:
+        {
+          const auto resVal = ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+          const auto realIndex = static_cast<unsigned>(lplvcd->nmcd.lItemlParam);
+          lplvcd->clrTextBk = pPanelData->_listView.GetBkColor();
+          if (pPanelData->_mySelectMode
+              && realIndex != kParentIndex
+              && pPanelData->_selectedStatusVector[realIndex])
+          {
+            lplvcd->clrTextBk = DarkMode::getHeaderHotBackgroundColor();
+          }
+
+          if (pPanelData->_markDeletedItems
+            && pPanelData->_thereAreDeletedItems
+            && pPanelData->IsItem_Deleted(realIndex))
+          {
+            lplvcd->clrText = DarkMode::getLinkTextColor();
+          }
+          return resVal;
+        }
+
+        default:
+        {
+          break;
+        }
+      }
+      break;
+    }
+
+    default:
+    {
+      break;
+    }
+  }
+  return ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+void CPanel::setSubclassListNotify()
+{
+  static constexpr UINT_PTR uIdSubclass = 42;
+  if (::GetWindowSubclass(_window, ListNotifySubclass, uIdSubclass, nullptr) == FALSE)
+  {
+    ::SetWindowSubclass(_window, ListNotifySubclass, uIdSubclass, reinterpret_cast<DWORD_PTR>(this));
+  }
 }
