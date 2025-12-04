@@ -832,7 +832,7 @@ static void paintUpDownBtn(
 static void paintArrow(
 	HDC hdc,
 	HWND hWnd,
-	dmlib_subclass::UpDownData& upDownData,
+	const dmlib_subclass::UpDownData& upDownData,
 	const RECT& rect,
 	bool isHot,
 	bool isPrev,

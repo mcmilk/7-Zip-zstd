@@ -251,7 +251,7 @@ COLORREF DarkMode::setEdgeColor(COLORREF clrNew)            { return getTheme().
 COLORREF DarkMode::setHotEdgeColor(COLORREF clrNew)         { return getTheme().setColorHotEdge(clrNew); }
 COLORREF DarkMode::setDisabledEdgeColor(COLORREF clrNew)    { return getTheme().setColorDisabledEdge(clrNew); }
 
-void DarkMode::setThemeColors(Colors* colors)
+void DarkMode::setThemeColors(const Colors* colors)
 {
 	if (colors != nullptr)
 	{
@@ -301,7 +301,7 @@ COLORREF DarkMode::setHeaderHotBackgroundColor(COLORREF clrNew) { return getThem
 COLORREF DarkMode::setHeaderTextColor(COLORREF clrNew)          { return getThemeView().setColorHeaderText(clrNew); }
 COLORREF DarkMode::setHeaderEdgeColor(COLORREF clrNew)          { return getThemeView().setColorHeaderEdge(clrNew); }
 
-void DarkMode::setViewColors(ColorsView* colors)
+void DarkMode::setViewColors(const ColorsView* colors)
 {
 	if (colors != nullptr)
 	{

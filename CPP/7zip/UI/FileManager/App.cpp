@@ -175,6 +175,8 @@ HRESULT CApp::CreateOnePanel(unsigned panelIndex, const UString &mainPath, const
     DarkMode::setWindowEraseBgSubclass(Panels[panelIndex]._headerReBar);
     DarkMode::setWindowCtlColorSubclass(Panels[panelIndex]._headerReBar);
 
+    Panels[panelIndex].setSubclassListNotify();
+
     DarkMode::redrawWindowFrame(Panels[panelIndex]._headerComboBox);
   }
 
