@@ -384,7 +384,7 @@ bool dmlib_win32api::IsDarkModeActive() noexcept
 /**
  * @brief Initializes undocumented dark mode API.
  */
-void dmlib_win32api::InitDarkMode()
+void dmlib_win32api::InitDarkMode() noexcept
 {
 	static bool isInit = false;
 	if (isInit)
@@ -469,7 +469,7 @@ void dmlib_win32api::InitDarkMode()
  * @param[in]   useDark             Enable dark mode when `true`, disable when `false`.
  * @param[in]   applyScrollBarFix   Apply scroll bar fix if `true`.
  */
-void dmlib_win32api::SetDarkMode(bool useDark, [[maybe_unused]] bool applyScrollBarFix)
+void dmlib_win32api::SetDarkMode(bool useDark, [[maybe_unused]] bool applyScrollBarFix) noexcept
 {
 	if (g_darkModeSupported)
 	{

@@ -41,48 +41,51 @@ static fnIsValidDpiAwarenessContext pfIsValidDpiAwarenessContext = nullptr;
 static fnSetThreadDpiAwarenessContext pfSetThreadDpiAwarenessContext = nullptr;
 static fnOpenThemeDataForDpi pfOpenThemeDataForDpi = nullptr;
 
-static UINT WINAPI DummyGetDpiForSystem() noexcept
+extern "C"
 {
-	UINT dpi = USER_DEFAULT_SCREEN_DPI;
-	if (HDC hdc = ::GetDC(nullptr); hdc != nullptr)
+	static UINT WINAPI DummyGetDpiForSystem() noexcept
 	{
-		dpi = static_cast<UINT>(::GetDeviceCaps(hdc, LOGPIXELSX));
-		::ReleaseDC(nullptr, hdc);
+		UINT dpi = USER_DEFAULT_SCREEN_DPI;
+		if (HDC hdc = ::GetDC(nullptr); hdc != nullptr)
+		{
+			dpi = static_cast<UINT>(::GetDeviceCaps(hdc, LOGPIXELSX));
+			::ReleaseDC(nullptr, hdc);
+		}
+		return dpi;
 	}
-	return dpi;
+
+	static UINT WINAPI DummyGetDpiForWindow([[maybe_unused]] HWND hwnd) noexcept
+	{
+		return DummyGetDpiForSystem();
+	}
+
+	static int WINAPI DummyGetSystemMetricsForDpi(int nIndex, UINT dpi) noexcept
+	{
+		return dmlib_dpi::scale(::GetSystemMetrics(nIndex), dpi);
+	}
+
+	static BOOL WINAPI DummySystemParametersInfoForDpi(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni, [[maybe_unused]] UINT dpi) noexcept
+	{
+		return ::SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
+	}
+
+	[[nodiscard]] static BOOL WINAPI DummyIsValidDpiAwarenessContext([[maybe_unused]] DPI_AWARENESS_CONTEXT value) noexcept
+	{
+		return FALSE;
+	}
+
+	static DPI_AWARENESS_CONTEXT WINAPI DummySetThreadDpiAwarenessContext([[maybe_unused]] DPI_AWARENESS_CONTEXT dpiContext) noexcept
+	{
+		return nullptr;
+	}
+
+	static HTHEME WINAPI DummyOpenThemeDataForDpi(HWND hwnd, LPCWSTR pszClassList, [[maybe_unused]] UINT dpi) noexcept
+	{
+		return ::OpenThemeData(hwnd, pszClassList);
+	}
 }
 
-static UINT WINAPI DummyGetDpiForWindow([[maybe_unused]] HWND hwnd) noexcept
-{
-	return DummyGetDpiForSystem();
-}
-
-static int WINAPI DummyGetSystemMetricsForDpi(int nIndex, UINT dpi) noexcept
-{
-	return dmlib_dpi::scale(::GetSystemMetrics(nIndex), dpi);
-}
-
-static BOOL WINAPI DummySystemParametersInfoForDpi(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni, [[maybe_unused]] UINT dpi) noexcept
-{
-	return ::SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
-}
-
-[[nodiscard]] static BOOL WINAPI DummyIsValidDpiAwarenessContext([[maybe_unused]] DPI_AWARENESS_CONTEXT value) noexcept
-{
-	return FALSE;
-}
-
-static DPI_AWARENESS_CONTEXT WINAPI DummySetThreadDpiAwarenessContext([[maybe_unused]] DPI_AWARENESS_CONTEXT dpiContext) noexcept
-{
-	return nullptr;
-}
-
-static HTHEME WINAPI DummyOpenThemeDataForDpi(HWND hwnd, LPCWSTR pszClassList, [[maybe_unused]] UINT dpi) noexcept
-{
-	return ::OpenThemeData(hwnd, pszClassList);
-}
-
-bool dmlib_dpi::InitDpiAPI()
+bool dmlib_dpi::InitDpiAPI() noexcept
 {
 	if (HMODULE hUser32 = ::GetModuleHandleW(L"user32.dll"); hUser32 != nullptr)
 	{

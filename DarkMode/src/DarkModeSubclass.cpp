@@ -1202,7 +1202,7 @@ static void setTabCtrlPaintSubclass(HWND hWnd)
  * @see dmlib_subclass::TabPaintSubclass()
  * @see setTabCtrlPaintSubclass()
  */
-static void removeTabCtrlPaintSubclass(HWND hWnd)
+static void removeTabCtrlPaintSubclass(HWND hWnd) noexcept
 {
 	dmlib_subclass::RemoveSubclass<dmlib_subclass::TabData>(hWnd, dmlib_subclass::TabPaintSubclass, dmlib_subclass::SubclassID::tabPaint);
 }
@@ -2516,39 +2516,11 @@ void DarkMode::enableSysLinkCtrlCtlColor(HWND hWnd)
  */
 void DarkMode::setDarkTitleBarEx(HWND hWnd, bool useWin11Features)
 {
-	static constexpr DWORD win10Build2004 = 19041;
-	static constexpr DWORD win11Mica = 22621;
-	if (DarkMode::getWindowsBuildNumber() >= win10Build2004)
+	if (static constexpr DWORD win10Build2004 = 19041;
+		DarkMode::getWindowsBuildNumber() >= win10Build2004)
 	{
 		const BOOL useDark = DarkMode::isExperimentalActive() ? TRUE : FALSE;
 		::DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDark, sizeof(useDark));
-
-		if (useWin11Features && DarkMode::isAtLeastWindows11())
-		{
-			::DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &g_dmCfg.m_roundCorner, sizeof(g_dmCfg.m_roundCorner));
-			::DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &g_dmCfg.m_borderColor, sizeof(g_dmCfg.m_borderColor));
-
-			bool canColorizeTitleBar = true;
-
-			if (DarkMode::getWindowsBuildNumber() >= win11Mica)
-			{
-				if (g_dmCfg.m_micaExtend && g_dmCfg.m_mica != DWMSBT_AUTO && !DarkMode::isWindowsModeEnabled() && (g_dmCfg.m_dmType == DarkModeType::dark))
-				{
-					static constexpr MARGINS margins{ -1, 0, 0, 0 };
-					::DwmExtendFrameIntoClientArea(hWnd, &margins);
-				}
-
-				::DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &g_dmCfg.m_mica, sizeof(g_dmCfg.m_mica));
-
-				canColorizeTitleBar = !g_dmCfg.m_micaExtend;
-			}
-
-			canColorizeTitleBar = g_dmCfg.m_colorizeTitleBar && canColorizeTitleBar && DarkMode::isEnabled();
-			const COLORREF clrDlg = canColorizeTitleBar ? DarkMode::getDlgBackgroundColor() : DWMWA_COLOR_DEFAULT;
-			const COLORREF clrText = canColorizeTitleBar ? DarkMode::getTextColor() : DWMWA_COLOR_DEFAULT;
-			::DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &clrDlg, sizeof(clrDlg));
-			::DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &clrText, sizeof(clrText));
-		}
 	}
 #if defined(_DARKMODELIB_ALLOW_OLD_OS) && (_DARKMODELIB_ALLOW_OLD_OS > 0)
 	else
@@ -2557,13 +2529,50 @@ void DarkMode::setDarkTitleBarEx(HWND hWnd, bool useWin11Features)
 		dmlib_win32api::RefreshTitleBarThemeColor(hWnd);
 	}
 #endif
-		// on Windows 10 title bar needs refresh when changing colors
-	if (DarkMode::isAtLeastWindows10() && !DarkMode::isAtLeastWindows11())
+
+	if (!DarkMode::isAtLeastWindows11())
 	{
-		const bool isActive = (hWnd == ::GetActiveWindow()) && (hWnd == ::GetForegroundWindow());
-		::SendMessage(hWnd, WM_NCACTIVATE, static_cast<WPARAM>(!isActive), 0);
-		::SendMessage(hWnd, WM_NCACTIVATE, static_cast<WPARAM>(isActive), 0);
+		// on Windows 10 title bar needs refresh when changing colors
+		if (DarkMode::isAtLeastWindows10())
+		{
+			const bool isActive = (hWnd == ::GetActiveWindow()) && (hWnd == ::GetForegroundWindow());
+			::SendMessage(hWnd, WM_NCACTIVATE, static_cast<WPARAM>(!isActive), 0);
+			::SendMessage(hWnd, WM_NCACTIVATE, static_cast<WPARAM>(isActive), 0);
+		}
+		return;
 	}
+
+	if (!useWin11Features)
+	{
+		return;
+	}
+
+	::DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &g_dmCfg.m_roundCorner, sizeof(g_dmCfg.m_roundCorner));
+	::DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &g_dmCfg.m_borderColor, sizeof(g_dmCfg.m_borderColor));
+
+	bool canColorizeTitleBar = true;
+
+	if (static constexpr DWORD win11Mica = 22621;
+		DarkMode::getWindowsBuildNumber() >= win11Mica)
+	{
+		if (g_dmCfg.m_micaExtend && g_dmCfg.m_mica != DWMSBT_AUTO
+			&& !DarkMode::isWindowsModeEnabled()
+			&& (g_dmCfg.m_dmType == DarkModeType::dark))
+		{
+			static constexpr MARGINS margins{ -1, 0, 0, 0 };
+			::DwmExtendFrameIntoClientArea(hWnd, &margins);
+		}
+
+		::DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &g_dmCfg.m_mica, sizeof(g_dmCfg.m_mica));
+
+		canColorizeTitleBar = !g_dmCfg.m_micaExtend;
+	}
+
+	canColorizeTitleBar = g_dmCfg.m_colorizeTitleBar && canColorizeTitleBar && DarkMode::isEnabled();
+	const COLORREF clrDlg = canColorizeTitleBar ? DarkMode::getDlgBackgroundColor() : DWMWA_COLOR_DEFAULT;
+	const COLORREF clrText = canColorizeTitleBar ? DarkMode::getTextColor() : DWMWA_COLOR_DEFAULT;
+	::DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &clrDlg, sizeof(clrDlg));
+	::DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &clrText, sizeof(clrText));
 }
 
 /**

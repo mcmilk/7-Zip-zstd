@@ -21,19 +21,19 @@
 
 #if defined(__GNUC__) || (WINVER < _WIN32_WINNT_WIN7)
 	#ifndef WM_DPICHANGED
-	#define WM_DPICHANGED 0x02E0
+		#define WM_DPICHANGED 0x02E0
 	#endif
 
 	#ifndef WM_DPICHANGED_BEFOREPARENT
-	#define WM_DPICHANGED_BEFOREPARENT 0x02E2
+		#define WM_DPICHANGED_BEFOREPARENT 0x02E2
 	#endif
 
 	#ifndef WM_DPICHANGED_AFTERPARENT
-	#define WM_DPICHANGED_AFTERPARENT 0x02E3
+		#define WM_DPICHANGED_AFTERPARENT 0x02E3
 	#endif
 
 	#ifndef WM_GETDPISCALEDSIZE
-	#define WM_GETDPISCALEDSIZE 0x02E4
+		#define WM_GETDPISCALEDSIZE 0x02E4
 	#endif
 #endif
 
@@ -51,7 +51,7 @@ namespace dmlib_dpi
 	inline constexpr UINT kDefaultFontDpi = 72;
 	inline constexpr UINT kDefaultFontScaleFactor = 100;
 
-	bool InitDpiAPI();
+	bool InitDpiAPI() noexcept;
 
 	[[nodiscard]] UINT GetDpiForSystem() noexcept;
 	[[nodiscard]] UINT GetDpiForWindow(HWND hWnd) noexcept;

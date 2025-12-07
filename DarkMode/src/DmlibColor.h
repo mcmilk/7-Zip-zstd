@@ -19,7 +19,7 @@
 namespace dmlib_color
 {
 	/// Converts 0xRRGGBB to COLORREF (0xBBGGRR) for GDI usage.
-	constexpr COLORREF HEXRGB(DWORD rrggbb)
+	constexpr COLORREF HEXRGB(DWORD rrggbb) noexcept
 	{
 		return
 			((rrggbb & 0xFF0000) >> 16)
@@ -169,7 +169,7 @@ namespace dmlib_color
 		dmlib_color::HEXRGB(0xE5E5E5)    // header divider
 	};
 
-	DarkMode::Colors getLightColors();
+	DarkMode::Colors getLightColors() noexcept;
 
 	inline COLORREF setNewColor(COLORREF& clrOld, COLORREF clrNew) noexcept
 	{

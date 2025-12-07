@@ -247,7 +247,7 @@ void Save_ClrMode(UInt32 clrMode)
 UInt32 Read_ClrMode()
 {
   CKey key;
-  UInt32 v = 0;
+  UInt32 v = 2;
   if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) == ERROR_SUCCESS)
     key.GetValue_UInt32_IfOk(kClrMode, v);
   return v;

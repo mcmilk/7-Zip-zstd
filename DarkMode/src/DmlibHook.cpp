@@ -329,7 +329,7 @@ static DWORD WINAPI MyGetSysColor(int nIndex) noexcept
  *
  * @return `true` if the hook was installed successfully.
  */
-bool dmlib_hook::hookSysColor()
+bool dmlib_hook::hookSysColor() noexcept
 {
 	return HookFunction<fnGetSysColor>(
 		g_hookDataGetSysColor,
@@ -346,7 +346,7 @@ bool dmlib_hook::hookSysColor()
  * It ensures that system colors return to normal without requiring
  * prior state checks.
  */
-void dmlib_hook::unhookSysColor()
+void dmlib_hook::unhookSysColor() noexcept
 {
 	UnhookFunction<fnGetSysColor>(g_hookDataGetSysColor);
 }
@@ -461,7 +461,7 @@ static HRESULT WINAPI MyDrawThemeBackgroundEx(
  *
  * @return `true` if the hook was installed successfully.
  */
-bool dmlib_hook::hookThemeColor()
+bool dmlib_hook::hookThemeColor() noexcept
 {
 	COLORREF clrMain = kMainPaneBgClr;
 	COLORREF clrFooter = kFooterBgClr;
@@ -513,7 +513,7 @@ bool dmlib_hook::hookThemeColor()
  * It ensures that theme colors return to normal without requiring
  * prior state checks.
  */
-void dmlib_hook::unhookThemeColor()
+void dmlib_hook::unhookThemeColor() noexcept
 {
 	UnhookFunction<fnGetThemeColor>(g_hookDataGetThemeColor);
 	UnhookFunction<fnDrawThemeBackgroundEx>(g_hookDataDrawThemeBackgroundEx);

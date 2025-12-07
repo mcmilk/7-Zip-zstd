@@ -28,7 +28,7 @@ namespace dmlib_win32api
 	[[nodiscard]] bool IsDarkModeActive() noexcept;
 }
 
-DarkMode::Colors dmlib_color::getLightColors()
+DarkMode::Colors dmlib_color::getLightColors() noexcept
 {
 	return DarkMode::Colors{
 		::GetSysColor(COLOR_3DFACE),        // background

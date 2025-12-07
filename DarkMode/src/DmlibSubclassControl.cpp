@@ -364,7 +364,8 @@ LRESULT CALLBACK dmlib_subclass::ButtonSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, ButtonSubclass, uIdSubclass);
-			std::unique_ptr<ButtonData> ptrData(pButtonData);
+			std::unique_ptr<ButtonData> u_u_ptrData(pButtonData);
+			u_u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -617,7 +618,8 @@ LRESULT CALLBACK dmlib_subclass::GroupboxSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, GroupboxSubclass, uIdSubclass);
-			std::unique_ptr<ButtonData> ptrData(pButtonData);
+			std::unique_ptr<ButtonData> u_ptrData(pButtonData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -1041,7 +1043,8 @@ LRESULT CALLBACK dmlib_subclass::UpDownSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, UpDownSubclass, uIdSubclass);
-			std::unique_ptr<UpDownData> ptrData(pUpDownData);
+			std::unique_ptr<UpDownData> u_ptrData(pUpDownData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -1356,7 +1359,8 @@ LRESULT CALLBACK dmlib_subclass::TabPaintSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, TabPaintSubclass, uIdSubclass);
-			std::unique_ptr<TabData> ptrData(pTabData);
+			std::unique_ptr<TabData> u_ptrData(pTabData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -1550,7 +1554,8 @@ LRESULT CALLBACK dmlib_subclass::CustomBorderSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, CustomBorderSubclass, uIdSubclass);
-			std::unique_ptr<BorderMetricsData> ptrData(pBorderMetricsData);
+			std::unique_ptr<BorderMetricsData> u_ptrData(pBorderMetricsData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -1847,7 +1852,8 @@ LRESULT CALLBACK dmlib_subclass::ComboBoxSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, ComboBoxSubclass, uIdSubclass);
-			std::unique_ptr<ComboBoxData> ptrData(pComboboxData);
+			std::unique_ptr<ComboBoxData> u_ptrData(pComboboxData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -2166,24 +2172,146 @@ LRESULT CALLBACK dmlib_subclass::ListViewSubclass(
 }
 
 /**
+ * @brief Paints a single header control item (column header).
+ *
+ * Draws the item background (including hot/pressed visuals), optional sort arrow,
+ * vertical separator edge, and item text. Uses visual styles (HTHEME) when available;
+ * falls back to classic GDI text drawing otherwise.
+ *
+ * Paint logic:
+ * - Draws sort arrows if `HDF_SORTUP` or `HDF_SORTDOWN` is set.
+ * - Draws a vertical separator line with alignment between items.
+ * - Draws the item text with alignment and pressed offset adjustments.
+ * - Uses `DrawThemeTextEx` for themed text drawing, or `DrawText` otherwise.
+ *
+ * @param[in]   hWnd            Handle to the header control.
+ * @param[in]   hdc             Device context to draw into.
+ * @param[in]   headerData      Reference to the header's theme, state, and style data.
+ * @param[in]   i               Zero-based index of the header item to paint.
+ * @param[in]   rcItem          Rect used by Header_GetItemRect.
+ * @param[in]   hasGridlines    True when parent ListView displays gridlines.
+ * @param[in]   dtto            DTTOPTS for DrawThemeTextEx.
+ */
+static void paintHeaderItem(
+	HWND hWnd,
+	HDC hdc,
+	const dmlib_subclass::HeaderData& headerData,
+	int i,
+	RECT& rcItem,
+	bool hasGridlines,
+	const DTTOPTS& dtto
+) noexcept
+{
+	const HTHEME& hTheme = headerData.m_themeData.getHTheme();
+
+	Header_GetItemRect(hWnd, i, &rcItem);
+	const bool isOnItem = ::PtInRect(&rcItem, headerData.m_pt) == TRUE;
+
+	// Different visual styles have different vertical alignments.
+	// This part is for header item rectangle.
+	if (headerData.m_hasBtnStyle && isOnItem)
+	{
+		RECT rcTmp{ rcItem };
+		if (hasGridlines)
+		{
+			::OffsetRect(&rcTmp, 1, 0);
+		}
+		else if (DarkMode::isExperimentalActive())
+		{
+			::OffsetRect(&rcTmp, -1, 0);
+		}
+		::FillRect(hdc, &rcTmp, DarkMode::getHeaderHotBackgroundBrush());
+	}
+
+	std::wstring buffer(MAX_PATH, L'\0');
+	HDITEM hdi{};
+	hdi.mask = HDI_TEXT | HDI_FORMAT;
+	hdi.pszText = buffer.data();
+	hdi.cchTextMax = MAX_PATH - 1;
+
+	Header_GetItem(hWnd, i, &hdi);
+
+	// Sort arrows
+	if (hTheme != nullptr
+		&& ((hdi.fmt & HDF_SORTUP) == HDF_SORTUP
+			|| (hdi.fmt & HDF_SORTDOWN) == HDF_SORTDOWN))
+	{
+		const int iStateID = ((hdi.fmt & HDF_SORTUP) == HDF_SORTUP) ? HSAS_SORTEDUP : HSAS_SORTEDDOWN;
+		RECT rcArrow{ rcItem };
+		SIZE szArrow{};
+		if (SUCCEEDED(::GetThemePartSize(hTheme, hdc, HP_HEADERSORTARROW, iStateID, nullptr, TS_DRAW, &szArrow)))
+		{
+			rcArrow.bottom = szArrow.cy;
+		}
+
+		::DrawThemeBackground(hTheme, hdc, HP_HEADERSORTARROW, iStateID, &rcArrow, nullptr);
+	}
+
+	// Aligment for border
+	LONG edgeX = rcItem.right;
+	if (!hasGridlines)
+	{
+		--edgeX;
+		if (DarkMode::isExperimentalActive())
+		{
+			--edgeX;
+		}
+	}
+
+	const std::array<POINT, 2> edge{ {
+		{ edgeX, rcItem.top },
+		{ edgeX, rcItem.bottom }
+	} };
+	::Polyline(hdc, edge.data(), static_cast<int>(edge.size()));
+
+	// Text draw part
+
+	DWORD dtFlags = DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_HIDEPREFIX;
+	if ((hdi.fmt & HDF_RIGHT) == HDF_RIGHT)
+	{
+		dtFlags |= DT_RIGHT;
+	}
+	else if ((hdi.fmt & HDF_CENTER) == HDF_CENTER)
+	{
+		dtFlags |= DT_CENTER;
+	}
+
+	static constexpr LONG lOffset = 6;
+	static constexpr LONG rOffset = 8;
+
+	rcItem.left += lOffset;
+	rcItem.right -= rOffset;
+
+	if (headerData.m_isPressed && isOnItem)
+	{
+		::OffsetRect(&rcItem, 1, 1);
+	}
+
+	if (hTheme != nullptr)
+	{
+		::DrawThemeTextEx(hTheme, hdc, HP_HEADERITEM, HIS_NORMAL, hdi.pszText, -1, dtFlags, &rcItem, &dtto);
+	}
+	else
+	{
+		::DrawText(hdc, hdi.pszText, -1, &rcItem, dtFlags);
+	}
+}
+
+/**
  * @brief Custom paints a header control.
  *
- * Draws the background, text, hot/pressed states, and optional sort arrows
- * for each header item, adapting to custom colors and theming.
+ * Initializes variables for @ref paintHeaderItem.
  *
  * Paint logic:
  * - Determines if the parent list view is in report mode and has gridlines.
- * - Iterates over all header items:
- *   - Draws sort arrows if `HDF_SORTUP` or `HDF_SORTDOWN` is set.
- *   - Draws a vertical separator line with alignment between items.
- *   - Draws the item text with alignment and pressed offset adjustments.
- * - Uses `DrawThemeTextEx` for themed text drawing, or `DrawText` otherwise.
+ * - Iterates over all header items
  *
  * @param[in]       hWnd        Handle to the header control.
  * @param[in]       hdc         Device context to draw into.
  * @param[in,out]   headerData  Reference to the header's theme, state, and style data.
  *
  * @see HeaderData
+ * @see paintHeaderItem()
  */
 static void paintHeader(HWND hWnd, HDC hdc, dmlib_subclass::HeaderData& headerData) noexcept
 {
@@ -2216,9 +2344,9 @@ static void paintHeader(HWND hWnd, HDC hdc, dmlib_subclass::HeaderData& headerDa
 	};
 
 	DTTOPTS dtto{};
+	dtto.dwSize = sizeof(DTTOPTS);
 	if (hasTheme)
 	{
-		dtto.dwSize = sizeof(DTTOPTS);
 		dtto.dwFlags = DTT_TEXTCOLOR;
 		dtto.crText = DarkMode::getHeaderTextColor();
 	}
@@ -2230,9 +2358,9 @@ static void paintHeader(HWND hWnd, HDC hdc, dmlib_subclass::HeaderData& headerDa
 	// Special handling with gridlines
 
 	HWND hList = ::GetParent(hWnd);
-	const auto lvStyle = ::GetWindowLongPtr(hList, GWL_STYLE) & LVS_TYPEMASK;
 	bool hasGridlines = false;
-	if (lvStyle == LVS_REPORT)
+	if (const auto lvStyle = ::GetWindowLongPtr(hList, GWL_STYLE) & LVS_TYPEMASK;
+		lvStyle == LVS_REPORT)
 	{
 		const auto lvExStyle = ListView_GetExtendedListViewStyle(hList);
 		hasGridlines = (lvExStyle & LVS_EX_GRIDLINES) == LVS_EX_GRIDLINES;
@@ -2242,97 +2370,7 @@ static void paintHeader(HWND hWnd, HDC hdc, dmlib_subclass::HeaderData& headerDa
 	RECT rcItem{};
 	for (int i = 0; i < count; i++)
 	{
-		Header_GetItemRect(hWnd, i, &rcItem);
-		const bool isOnItem = ::PtInRect(&rcItem, headerData.m_pt) == TRUE;
-
-		// Different visual styles have different vertical alignments.
-		// This part is for header item rectangle.
-		if (headerData.m_hasBtnStyle && isOnItem)
-		{
-			RECT rcTmp{ rcItem };
-			if (hasGridlines)
-			{
-				::OffsetRect(&rcTmp, 1, 0);
-			}
-			else if (DarkMode::isExperimentalActive())
-			{
-				::OffsetRect(&rcTmp, -1, 0);
-			}
-			::FillRect(hdc, &rcTmp, DarkMode::getHeaderHotBackgroundBrush());
-		}
-
-		std::wstring buffer(MAX_PATH, L'\0');
-		HDITEM hdi{};
-		hdi.mask = HDI_TEXT | HDI_FORMAT;
-		hdi.pszText = buffer.data();
-		hdi.cchTextMax = MAX_PATH - 1;
-
-		Header_GetItem(hWnd, i, &hdi);
-
-		// Sort arrows
-		if (hasTheme
-			&& ((hdi.fmt & HDF_SORTUP) == HDF_SORTUP
-				|| (hdi.fmt & HDF_SORTDOWN) == HDF_SORTDOWN))
-		{
-			const int iStateID = ((hdi.fmt & HDF_SORTUP) == HDF_SORTUP) ? HSAS_SORTEDUP : HSAS_SORTEDDOWN;
-			RECT rcArrow{ rcItem };
-			SIZE szArrow{};
-			if (SUCCEEDED(::GetThemePartSize(hTheme, hdc, HP_HEADERSORTARROW, iStateID, nullptr, TS_DRAW, &szArrow)))
-			{
-				rcArrow.bottom = szArrow.cy;
-			}
-
-			::DrawThemeBackground(hTheme, hdc, HP_HEADERSORTARROW, iStateID, &rcArrow, nullptr);
-		}
-
-		// Aligment for border
-		LONG edgeX = rcItem.right;
-		if (!hasGridlines)
-		{
-			--edgeX;
-			if (DarkMode::isExperimentalActive())
-			{
-				--edgeX;
-			}
-		}
-
-		const std::array<POINT, 2> edge{ {
-			{ edgeX, rcItem.top },
-			{ edgeX, rcItem.bottom }
-		} };
-		::Polyline(hdc, edge.data(), static_cast<int>(edge.size()));
-
-		// Text draw part
-
-		DWORD dtFlags = DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_HIDEPREFIX;
-		if ((hdi.fmt & HDF_RIGHT) == HDF_RIGHT)
-		{
-			dtFlags |= DT_RIGHT;
-		}
-		else if ((hdi.fmt & HDF_CENTER) == HDF_CENTER)
-		{
-			dtFlags |= DT_CENTER;
-		}
-
-		static constexpr LONG lOffset = 6;
-		static constexpr LONG rOffset = 8;
-
-		rcItem.left += lOffset;
-		rcItem.right -= rOffset;
-
-		if (headerData.m_isPressed && isOnItem)
-		{
-			::OffsetRect(&rcItem, 1, 1);
-		}
-
-		if (hasTheme)
-		{
-			::DrawThemeTextEx(hTheme, hdc, HP_HEADERITEM, HIS_NORMAL, hdi.pszText, -1, dtFlags, &rcItem, &dtto);
-		}
-		else
-		{
-			::DrawText(hdc, hdi.pszText, -1, &rcItem, dtFlags);
-		}
+		paintHeaderItem(hWnd, hdc, headerData, i, rcItem, hasGridlines, dtto);
 	}
 }
 
@@ -2368,7 +2406,8 @@ LRESULT CALLBACK dmlib_subclass::HeaderSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, HeaderSubclass, uIdSubclass);
-			std::unique_ptr<HeaderData> ptrData(pHeaderData);
+			std::unique_ptr<HeaderData> u_ptrData(pHeaderData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -2650,7 +2689,8 @@ LRESULT CALLBACK dmlib_subclass::StatusBarSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, StatusBarSubclass, uIdSubclass);
-			std::unique_ptr<StatusBarData> ptrData(pStatusBarData);
+			std::unique_ptr<StatusBarData> u_ptrData(pStatusBarData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -2850,7 +2890,8 @@ LRESULT CALLBACK dmlib_subclass::ProgressBarSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, ProgressBarSubclass, uIdSubclass);
-			std::unique_ptr<ProgressBarData> ptrData(pProgressBarData);
+			std::unique_ptr<ProgressBarData> u_ptrData(pProgressBarData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 
@@ -2948,7 +2989,8 @@ LRESULT CALLBACK dmlib_subclass::StaticTextSubclass(
 		case WM_NCDESTROY:
 		{
 			::RemoveWindowSubclass(hWnd, StaticTextSubclass, uIdSubclass);
-			std::unique_ptr<StaticTextData> ptrData(pStaticTextData);
+			std::unique_ptr<StaticTextData> u_ptrData(pStaticTextData);
+			u_ptrData.reset(nullptr);
 			break;
 		}
 

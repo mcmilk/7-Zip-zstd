@@ -26,12 +26,12 @@ namespace dmlib_hook
 	/// Overrides a specific system color with a custom color.
 	void setMySysColor(int nIndex, COLORREF clr) noexcept;
 	/// Hooks system color to support runtime customization.
-	bool hookSysColor();
+	bool hookSysColor() noexcept;
 	/// Unhooks system color overrides and restores default color behavior.
-	void unhookSysColor();
+	void unhookSysColor() noexcept;
 
 	/// Hooks `GetThemeColor` and `DrawThemeBackgroundEx` to support dark colors.
-	bool hookThemeColor();
+	bool hookThemeColor() noexcept;
 	/// Unhooks `GetThemeColor` and `DrawThemeBackgroundEx` overrides and restores default color behavior.
-	void unhookThemeColor();
+	void unhookThemeColor() noexcept;
 } // namespace dmlib_hook

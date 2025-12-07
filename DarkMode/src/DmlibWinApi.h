@@ -38,9 +38,9 @@ namespace dmlib_win32api
 	[[nodiscard]] bool IsColorSchemeChangeMessage(UINT uMsg, LPARAM lParam) noexcept;
 
 	/// Initializes undocumented dark mode API.
-	void InitDarkMode();
+	void InitDarkMode() noexcept;
 	/// Enables or disables dark mode using undocumented API.
-	void SetDarkMode(bool useDark, bool applyScrollBarFix);
+	void SetDarkMode(bool useDark, bool applyScrollBarFix) noexcept;
 
 	/// Checks if the host OS is at least Windows 10.
 	[[nodiscard]] bool IsWindows10() noexcept;

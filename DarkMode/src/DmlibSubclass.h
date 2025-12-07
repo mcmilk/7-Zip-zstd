@@ -152,7 +152,8 @@ namespace dmlib_subclass
 			{
 				if (pData != nullptr)
 				{
-					std::unique_ptr<T> ptrData(pData);
+					std::unique_ptr<T> u_ptrData(pData);
+					u_ptrData.reset(nullptr);
 				}
 			}
 			return ::RemoveWindowSubclass(hWnd, subclassProc, subclassID);
@@ -256,10 +257,10 @@ namespace dmlib_subclass
 
 		bool ensureBuffer(HDC hdc, const RECT& rcClient) noexcept
 		{
-			const int width = rcClient.right - rcClient.left;
-			const int height = rcClient.bottom - rcClient.top;
-
-			if (m_szBuffer.cx != width || m_szBuffer.cy != height)
+			if (const int width = rcClient.right - rcClient.left,
+				height = rcClient.bottom - rcClient.top;
+				m_szBuffer.cx != width
+				|| m_szBuffer.cy != height)
 			{
 				releaseBuffer();
 				m_hMemDC = ::CreateCompatibleDC(hdc);
