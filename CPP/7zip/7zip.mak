@@ -38,9 +38,13 @@ OBJS = \
   $(ASM_OBJS) \
   $O\resource.res \
 
+!include "../../../../DarkMode/7zRes/7zDarkObj.mak"
+
 !include "../../../Build.mak"
 
 # MAK_SINGLE_FILE = 1
+
+!include "../../../../DarkMode/7zRes/7zDark.mak"
 
 !IFDEF MAK_SINGLE_FILE
 

@@ -4,7 +4,7 @@
 #define ZIP7_INC_SETTINGS_PAGE_H
 
 #include "../../../Windows/Control/PropertyPage.h"
-// #include "../../../Windows/Control/ComboBox.h"
+#include "../../../Windows/Control/ComboBox.h"
 #include "../../../Windows/Control/Edit.h"
 
 class CSettingsPage: public NWindows::NControl::CPropertyPage
@@ -13,6 +13,11 @@ class CSettingsPage: public NWindows::NControl::CPropertyPage
   bool _largePages_wasChanged;
   bool _memx_wasChanged;
   bool _initMode;
+
+  bool _clrMode_wasChanged;
+  int _curClrMode;
+  NWindows::NControl::CComboBox _clrModeCombo;
+
   /*
   bool _wasChanged_MemLimit;
   NWindows::NControl::CComboBox _memCombo;

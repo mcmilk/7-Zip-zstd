@@ -47,6 +47,8 @@ static LPCTSTR const kLowercaseHashes = TEXT("LowercaseHashes");
 static LPCTSTR const kFlatViewName = TEXT("FlatViewArc");
 // static LPCTSTR const kShowDeletedFiles = TEXT("ShowDeleted");
 
+static LPCTSTR const kClrMode = TEXT("ColorMode");
+
 static void SaveCuString(LPCTSTR keyPath, LPCWSTR valuePath, LPCWSTR value)
 {
   CKey key;
@@ -231,3 +233,22 @@ bool ReadFlatView(UInt32 panelIndex)
 void Save_ShowDeleted(bool enable) { SaveOption(kShowDeletedFiles, enable); }
 bool Read_ShowDeleted() { return ReadOption(kShowDeletedFiles, false); }
 */
+
+void Save_ClrMode(UInt32 clrMode)
+{
+  CKey key;
+  key.Create(HKEY_CURRENT_USER, kCUBasePath);
+  if (clrMode > 2)
+    key.DeleteValue(kClrMode);
+  else
+    key.SetValue(kClrMode, clrMode);
+}
+
+UInt32 Read_ClrMode()
+{
+  CKey key;
+  UInt32 v = 2;
+  if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) == ERROR_SUCCESS)
+    key.GetValue_UInt32_IfOk(kClrMode, v);
+  return v;
+}

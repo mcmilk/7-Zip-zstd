@@ -29,6 +29,8 @@
 
 #include "PropertyNameRes.h"
 
+#include "../../../../DarkMode/src/DarkModeSubclass.h"
+
 using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
@@ -108,6 +110,31 @@ void CApp::SetListSettings()
     panel._listView.SetStyle(style);
     panel.SetExtendedStyle();
   }
+
+  if (!DarkMode::doesConfigFileExist())
+  {
+    switch (Read_ClrMode())
+    {
+      case 0:
+      {
+        DarkMode::setDarkModeConfigEx(static_cast<UINT>(DarkMode::DarkModeType::classic));
+        break;
+      }
+
+      case 2:
+      {
+        DarkMode::setDarkModeConfig();
+        break;
+      }
+
+      //case 1:
+      default:
+      {
+        return;
+      }
+    }
+    DarkMode::setDefaultColors(false);
+  }
 }
 
 #ifndef ILC_COLOR32
@@ -134,10 +161,26 @@ HRESULT CApp::CreateOnePanel(unsigned panelIndex, const UString &mainPath, const
   
   const unsigned id = 1000 + 100 * panelIndex; // check it
 
-  return Panels[panelIndex].Create(_window, _window,
+  const auto resVal = Panels[panelIndex].Create(_window, _window,
       id, path, arcFormat, &m_PanelCallbackImp[panelIndex], &AppState,
       needOpenArc,
       openRes);
+
+  if (Panels[panelIndex].PanelCreated)
+  {
+    DarkMode::setChildCtrlsSubclassAndTheme(Panels[panelIndex]);
+    DarkMode::setWindowEraseBgSubclass(Panels[panelIndex]);
+    DarkMode::setWindowCtlColorSubclass(Panels[panelIndex]);
+    DarkMode::setWindowNotifyCustomDrawSubclass(Panels[panelIndex]);
+    DarkMode::setWindowEraseBgSubclass(Panels[panelIndex]._headerReBar);
+    DarkMode::setWindowCtlColorSubclass(Panels[panelIndex]._headerReBar);
+
+    Panels[panelIndex].setSubclassListNotify();
+
+    DarkMode::redrawWindowFrame(Panels[panelIndex]._headerComboBox);
+  }
+
+  return resVal;
 }
 
 
@@ -269,6 +312,9 @@ void CApp::ReloadToolbars()
       for (i = 0; i < Z7_ARRAY_SIZE(g_StandardButtons); i++)
         AddButton(_buttonsImageList, _toolBar, g_StandardButtons[i], ShowButtonsLables, LargeButtons);
 
+    DarkMode::setDarkLineAbovePanelToolbar(_toolBar);
+    DarkMode::setDarkTooltips(_toolBar, static_cast<int>(DarkMode::ToolTipsType::toolbar));
+
     _toolBar.AutoSize();
   }
 }
@@ -284,6 +330,8 @@ void CApp::SaveToolbarChanges()
 HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcFormat, int xSizes[2], bool needOpenArc, COpenResult &openRes)
 {
   _window.Attach(hwnd);
+
+  DarkMode::initDarkModeEx(L"7zDark");
 
   #ifdef UNDER_CE
   _commandBar.Create(g_hInstance, hwnd, 1);
@@ -350,7 +398,11 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
       }
     }
   }
-  
+
+  DarkMode::setWindowEraseBgSubclass(hwnd);
+  DarkMode::setDarkWndNotifySafeEx(hwnd, true, true);
+  DarkMode::setWindowMenuBarSubclass(hwnd);
+
   SetFocusedPanel(LastFocusedPanel);
   Panels[LastFocusedPanel].SetFocusToList();
   return S_OK;
