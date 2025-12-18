@@ -9,6 +9,7 @@ IF "%~1" == "-no-init" (
   set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
   set > %APPVEYOR_BUILD_FOLDER%\env-%VC%-%PLATFORM%.txt
 )
+set BUILD_EXTR=
 IF "%~1" == "-with-sfx-setup" (
   set BUILD_EXTR=%~1
   shift
