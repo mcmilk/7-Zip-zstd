@@ -1,7 +1,7 @@
 #include "AboutDialogRes.h"
 #include "../../GuiCommon.rc"
 #include "../../MyVersion.h"
-#include "../../../../DarkMode/src/Version.h"
+#include "../../../../DarkMode/lib/src/Version.h"
 
 #define xc 316
 #define yc 144
