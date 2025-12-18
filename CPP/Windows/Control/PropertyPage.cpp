@@ -8,7 +8,7 @@
 
 #include "PropertyPage.h"
 
-#include "../../../DarkMode/src/DarkModeSubclass.h"
+#include "../../../DarkMode/lib/include/DarkModeSubclass.h"
 
 extern HINSTANCE g_hInstance;
 #ifndef _UNICODE
