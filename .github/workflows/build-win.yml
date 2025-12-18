@@ -41,6 +41,20 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
 
+      - name: Pre-requirements
+        shell: cmd
+        run: |
+          @if exist DarkMode\lib\src (
+            @echo use DarkMode/lib (available)
+          ) else (
+            @echo checkout darkmodelib module ...
+            git submodule update --init --recursive DarkMode/lib
+            if %errorlevel% neq 0 (
+              @echo checkout module failed, clone ...
+              git clone https://github.com/ozone10/darkmodelib.git DarkMode/lib
+            )
+          )
+
       - name: Compiling ${{ matrix.arch }}
         shell: cmd
         run: |

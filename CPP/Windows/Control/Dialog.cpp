@@ -13,7 +13,7 @@
 #if !defined(Z7_SFX)
 #include "../../7zip/UI/FileManager/RegistryUtils.h"
 #endif
-#include "../../../DarkMode/src/DarkModeSubclass.h"
+#include "../../../DarkMode/lib/include/DarkModeSubclass.h"
 
 extern HINSTANCE g_hInstance;
 #ifndef _UNICODE

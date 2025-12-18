@@ -24,7 +24,7 @@
 #include "SettingsPage.h"
 #include "SettingsPageRes.h"
 
-#include "../../../../DarkMode/src/DarkModeSubclass.h"
+#include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
 
 using namespace NWindows;
 

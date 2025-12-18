@@ -22,7 +22,7 @@
 #include "MenuPage.h"
 #include "MenuPageRes.h"
 
-#include "../../../../DarkMode/src/DarkModeSubclass.h"
+#include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
 
 using namespace NWindows;
 using namespace NContextMenuFlags;
