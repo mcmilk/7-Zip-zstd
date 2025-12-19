@@ -73,7 +73,7 @@ CFLAGS_WARN_LEVEL = -Wall
 # CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ $(CFLAGS_WARN_LEVEL) -WX -EHsc -Gy -MT -MP -GR- -GL -Gw
 CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -W4 -WX -EHsc -Gy -MP -GR- -GL -Gw
 !IF "$(ZIP7_DARKMODE)" == "1"
-CFLAGS = $(CFLAGS) -DZIP7_DARKMODE=1 -std:c++20
+CFLAGS = $(CFLAGS) -DZIP7_DARKMODE=1 -std:c++20 -Zc:enumTypes
 RFLAGS = $(RFLAGS) -dZIP7_DARKMODE=1
 !ENDIF
 

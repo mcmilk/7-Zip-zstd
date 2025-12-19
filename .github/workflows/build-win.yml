@@ -84,8 +84,15 @@ jobs:
 
           @echo off
 
+          if not exist "%WDIR%\tmp\" mkdir "%WDIR%\tmp"
+          move "%WDIR%\DarkMode\lib\src\StdAfx.h" "%WDIR%\tmp"
+          copy "%WDIR%\DarkMode\7zRes\StdAfx.h" "%WDIR%\DarkMode\lib\src"
+
           call CPP\build-it.cmd -no-init
           IF %errorlevel% NEQ 0 EXIT 1
+
+          copy /y "%WDIR%\tmp\StdAfx.h" "%WDIR%\DarkMode\lib\src"
+          rmdir /S /Q "%WDIR%\tmp"
 
           REM Will be by the do-release action
           copy %WDIR%\.github\workflows\do-release.cmd %WDIR%\build\do-release.cmd
@@ -100,7 +107,7 @@ jobs:
           tclsh tests\7z-test.tcl -verbose tpsem
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           path: ${{ github.workspace }}\build\**\*
           name: binary-${{ matrix.arch }}-${{ matrix.darkmode }}
@@ -109,7 +116,7 @@ jobs:
     runs-on: windows-latest
     needs: build
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v7
       with:
         path: artifact
         pattern: binary-*
@@ -125,7 +132,7 @@ jobs:
       with:
           name: binary-*
 
-    - uses: actions/upload-artifact@v5
+    - uses: actions/upload-artifact@v6
       with:
         name: 7-Zip ZS Release binaries
         path: |
