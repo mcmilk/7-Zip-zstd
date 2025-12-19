@@ -21,7 +21,9 @@
     _UNICODE 1
 */
 
+#ifdef ZIP7_DARKMODE
 #define Z7_WIN32_WINNT_MIN  0x0600
+#endif
 
 #include "Compiler.h"
 

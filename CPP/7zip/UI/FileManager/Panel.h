@@ -355,10 +355,14 @@ public:
   CMyListView _listView;
   CPanelCallback *_panelCallback;
 
+#ifdef ZIP7_DARKMODE
   void setSubclassListNotify();
+#endif
 
 private:
+#ifdef ZIP7_DARKMODE
   static LRESULT CALLBACK ListNotifySubclass(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
+#endif
 
   // CExtToIconMap _extToIconMap;
   UINT _baseID;
