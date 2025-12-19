@@ -37,8 +37,10 @@ BEGIN
   MY_CONTROL_CHECKBOX ( "Want FolderHistory", IDX_SETTINGS_WANT_FOLDER_HISTORY,     m, 208, xc)
   MY_CONTROL_CHECKBOX ( "Use Lowercase Hashes", IDX_SETTINGS_LOWERCASE_HASHES,      m, 220, xc)
 
+#ifdef ZIP7_DARKMODE
   LTEXT "Color Mode:", IDT_COLOR_MODE, m, save_y + 22 + 76, xc, 8
   COMBOBOX IDC_COLOR_MODE, m, spin_y + 22 + 76, spin_x_size, 60, MY_COMBO
+#endif
 END
 
 #undef save_y

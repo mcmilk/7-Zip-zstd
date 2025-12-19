@@ -47,7 +47,9 @@ static LPCTSTR const kLowercaseHashes = TEXT("LowercaseHashes");
 static LPCTSTR const kFlatViewName = TEXT("FlatViewArc");
 // static LPCTSTR const kShowDeletedFiles = TEXT("ShowDeleted");
 
+#ifdef ZIP7_DARKMODE
 static LPCTSTR const kClrMode = TEXT("ColorMode");
+#endif
 
 static void SaveCuString(LPCTSTR keyPath, LPCWSTR valuePath, LPCWSTR value)
 {
@@ -234,6 +236,7 @@ void Save_ShowDeleted(bool enable) { SaveOption(kShowDeletedFiles, enable); }
 bool Read_ShowDeleted() { return ReadOption(kShowDeletedFiles, false); }
 */
 
+#ifdef ZIP7_DARKMODE
 void Save_ClrMode(UInt32 clrMode)
 {
   CKey key;
@@ -252,3 +255,4 @@ UInt32 Read_ClrMode()
     key.GetValue_UInt32_IfOk(kClrMode, v);
   return v;
 }
+#endif

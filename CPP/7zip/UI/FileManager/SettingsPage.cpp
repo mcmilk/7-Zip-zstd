@@ -24,7 +24,9 @@
 #include "SettingsPage.h"
 #include "SettingsPageRes.h"
 
+#ifdef ZIP7_DARKMODE
 #include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
+#endif
 
 using namespace NWindows;
 
@@ -125,7 +127,9 @@ bool CSettingsPage::OnInit()
   _largePages_wasChanged = false;
   _memx_wasChanged = false;
 
+#ifdef ZIP7_DARKMODE
   _clrMode_wasChanged = false;
+#endif
 
   /*
   _wasChanged_MemLimit = false;
@@ -257,6 +261,7 @@ bool CSettingsPage::OnInit()
     SetItemText(IDE_SETTINGS_MEM_SPIN_EDIT, s);
   }
 
+#ifdef ZIP7_DARKMODE
   {
     const bool isININotUsed = !DarkMode::doesConfigFileExist();
     EnableItem(IDC_COLOR_MODE, isININotUsed);
@@ -280,6 +285,7 @@ bool CSettingsPage::OnInit()
       _clrModeCombo.SetCurSel(0);
     }
   }
+#endif
 
   _initMode = false;
   return CPropertyPage::OnInit();
@@ -365,6 +371,7 @@ LONG CSettingsPage::OnApply()
     _memx_wasChanged = false;
   }
 
+#ifdef ZIP7_DARKMODE
   if (_clrMode_wasChanged)
   {
     _curClrMode = _clrModeCombo.GetCurSel();
@@ -405,6 +412,7 @@ LONG CSettingsPage::OnApply()
 
     _clrMode_wasChanged = false;
   }
+#endif
 
   /*
   if (_wasChanged_MemLimit)
@@ -483,11 +491,13 @@ bool CSettingsPage::OnCommand(unsigned code, unsigned itemID, LPARAM param)
       Changed();
     }
 
+#ifdef ZIP7_DARKMODE
     if (code == CBN_SELCHANGE && itemID == IDC_COLOR_MODE)
     {
       _clrMode_wasChanged = true;
       Changed();
     }
+#endif
 
     /*
   if (code == CBN_SELCHANGE)
