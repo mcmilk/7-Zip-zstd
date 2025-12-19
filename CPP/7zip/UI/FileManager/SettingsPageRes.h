@@ -22,8 +22,10 @@
 #define IDC_SETTINGS_MEM_SPIN      102
 #define IDT_SETTINGS_MEM_GB        103
 
+#ifdef ZIP7_DARKMODE
 #define IDT_COLOR_MODE             3104
 #define IDC_COLOR_MODE             3105
+#endif
 
 // #define IDT_SETTINGS_MEM     100
 // #define IDC_SETTINGS_MEM     101

@@ -4,7 +4,9 @@
 #define ZIP7_INC_SETTINGS_PAGE_H
 
 #include "../../../Windows/Control/PropertyPage.h"
+#ifdef ZIP7_DARKMODE
 #include "../../../Windows/Control/ComboBox.h"
+#endif
 #include "../../../Windows/Control/Edit.h"
 
 class CSettingsPage: public NWindows::NControl::CPropertyPage
@@ -14,9 +16,11 @@ class CSettingsPage: public NWindows::NControl::CPropertyPage
   bool _memx_wasChanged;
   bool _initMode;
 
+#ifdef ZIP7_DARKMODE
   bool _clrMode_wasChanged;
   int _curClrMode;
   NWindows::NControl::CComboBox _clrModeCombo;
+#endif
 
   /*
   bool _wasChanged_MemLimit;
