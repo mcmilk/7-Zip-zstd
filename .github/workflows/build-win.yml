@@ -84,15 +84,8 @@ jobs:
 
           @echo off
 
-          if not exist "%WDIR%\tmp\" mkdir "%WDIR%\tmp"
-          move "%WDIR%\DarkMode\lib\src\StdAfx.h" "%WDIR%\tmp"
-          copy "%WDIR%\DarkMode\7zRes\StdAfx.h" "%WDIR%\DarkMode\lib\src"
-
           call CPP\build-it.cmd -no-init
           IF %errorlevel% NEQ 0 EXIT 1
-
-          copy /y "%WDIR%\tmp\StdAfx.h" "%WDIR%\DarkMode\lib\src"
-          rmdir /S /Q "%WDIR%\tmp"
 
           REM Will be by the do-release action
           copy %WDIR%\.github\workflows\do-release.cmd %WDIR%\build\do-release.cmd

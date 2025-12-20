@@ -12,17 +12,8 @@
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-
 #if defined(_MSC_VER) && _MSC_VER >= 1800
 #pragma warning(disable : 4464) // relative include path contains '..'
 #endif
+#include "../lib/src/StdAfx.h"
 #include "../../../CPP/Common/Common.h"
