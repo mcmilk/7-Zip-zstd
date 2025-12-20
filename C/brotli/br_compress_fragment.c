@@ -14,8 +14,8 @@
 
 #include "./enc/compress_fragment.h"
 
-#include "./common//constants.h"
-#include "./common//platform.h"
+#include "./common/constants.h"
+#include "./common/platform.h"
 #include "./enc/brotli_bit_stream.h"
 #include "./enc/entropy_encode.h"
 #include "./enc/fast_log.h"

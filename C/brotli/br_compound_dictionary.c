@@ -6,7 +6,7 @@
 
 #include "./enc/compound_dictionary.h"
 
-#include "./common//platform.h"
+#include "./common/platform.h"
 #include "shared_dictionary.h"
 #include "./enc/memory.h"
 

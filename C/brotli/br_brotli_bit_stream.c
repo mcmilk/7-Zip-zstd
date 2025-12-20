@@ -10,9 +10,9 @@
 
 #include "./enc/brotli_bit_stream.h"
 
-#include "./common//constants.h"
-#include "./common//context.h"
-#include "./common//platform.h"
+#include "./common/constants.h"
+#include "./common/context.h"
+#include "./common/platform.h"
 #include "./enc/entropy_encode.h"
 #include "./enc/entropy_encode_static.h"
 #include "./enc/fast_log.h"

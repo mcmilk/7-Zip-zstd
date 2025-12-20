@@ -6,11 +6,11 @@
 
 #include "./enc/encoder_dict.h"
 
-#include "./common//dictionary.h"
-#include "./common//platform.h"
+#include "./common/dictionary.h"
+#include "./common/platform.h"
 #include "shared_dictionary.h"
-#include "./common//shared_dictionary_internal.h"
-#include "./common//transform.h"
+#include "./common/shared_dictionary_internal.h"
+#include "./common/transform.h"
 #include "encode.h"
 #include "./enc/compound_dictionary.h"
 #include "./enc/dictionary_hash.h"
