@@ -29,7 +29,9 @@
 
 #include "PropertyNameRes.h"
 
-#include "../../../../DarkMode/src/DarkModeSubclass.h"
+#ifdef ZIP7_DARKMODE
+#include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
+#endif
 
 using namespace NWindows;
 using namespace NFile;
@@ -110,7 +112,7 @@ void CApp::SetListSettings()
     panel._listView.SetStyle(style);
     panel.SetExtendedStyle();
   }
-
+#ifdef ZIP7_DARKMODE
   if (!DarkMode::doesConfigFileExist())
   {
     switch (Read_ClrMode())
@@ -135,6 +137,7 @@ void CApp::SetListSettings()
     }
     DarkMode::setDefaultColors(false);
   }
+#endif
 }
 
 #ifndef ILC_COLOR32
@@ -161,12 +164,13 @@ HRESULT CApp::CreateOnePanel(unsigned panelIndex, const UString &mainPath, const
   
   const unsigned id = 1000 + 100 * panelIndex; // check it
 
-  const auto resVal = Panels[panelIndex].Create(_window, _window,
+  HRESULT resVal = Panels[panelIndex].Create(_window, _window,
       id, path, arcFormat, &m_PanelCallbackImp[panelIndex], &AppState,
       needOpenArc,
       openRes);
 
-  if (Panels[panelIndex].PanelCreated)
+#ifdef ZIP7_DARKMODE
+  if (resVal == S_OK && Panels[panelIndex].PanelCreated)
   {
     DarkMode::setChildCtrlsSubclassAndTheme(Panels[panelIndex]);
     DarkMode::setWindowEraseBgSubclass(Panels[panelIndex]);
@@ -179,6 +183,7 @@ HRESULT CApp::CreateOnePanel(unsigned panelIndex, const UString &mainPath, const
 
     DarkMode::redrawWindowFrame(Panels[panelIndex]._headerComboBox);
   }
+#endif
 
   return resVal;
 }
@@ -312,8 +317,10 @@ void CApp::ReloadToolbars()
       for (i = 0; i < Z7_ARRAY_SIZE(g_StandardButtons); i++)
         AddButton(_buttonsImageList, _toolBar, g_StandardButtons[i], ShowButtonsLables, LargeButtons);
 
+#ifdef ZIP7_DARKMODE
     DarkMode::setDarkLineAbovePanelToolbar(_toolBar);
     DarkMode::setDarkTooltips(_toolBar, static_cast<int>(DarkMode::ToolTipsType::toolbar));
+#endif
 
     _toolBar.AutoSize();
   }
@@ -331,7 +338,9 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
 {
   _window.Attach(hwnd);
 
+#ifdef ZIP7_DARKMODE
   DarkMode::initDarkModeEx(L"7zDark");
+#endif
 
   #ifdef UNDER_CE
   _commandBar.Create(g_hInstance, hwnd, 1);
@@ -399,9 +408,11 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
     }
   }
 
+#ifdef ZIP7_DARKMODE
   DarkMode::setWindowEraseBgSubclass(hwnd);
   DarkMode::setDarkWndNotifySafeEx(hwnd, true, true);
   DarkMode::setWindowMenuBarSubclass(hwnd);
+#endif
 
   SetFocusedPanel(LastFocusedPanel);
   Panels[LastFocusedPanel].SetFocusToList();

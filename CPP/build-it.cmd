@@ -7,8 +7,10 @@ IF "%~1" == "-no-init" (
   set OUTDIR=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%
   set ERRFILE=%APPVEYOR_BUILD_FOLDER%\bin-%VC%-%PLATFORM%.log
   set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
+  IF "%ZIP7_DARKMODE%" == "" set ZIP7_DARKMODE=1
   set > %APPVEYOR_BUILD_FOLDER%\env-%VC%-%PLATFORM%.txt
 )
+set BUILD_EXTR=
 IF "%~1" == "-with-sfx-setup" (
   set BUILD_EXTR=%~1
   shift

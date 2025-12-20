@@ -33,7 +33,9 @@
 
 #include "PropertyNameRes.h"
 
-#include "../../../../DarkMode/src/DarkModeSubclass.h"
+#ifdef ZIP7_DARKMODE
+#include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
+#endif
 
 using namespace NWindows;
 using namespace NControl;
@@ -1178,6 +1180,7 @@ void CPanel::TestArchives()
   ::TestArchives(paths);
 }
 
+#ifdef ZIP7_DARKMODE
 LRESULT CALLBACK CPanel::ListNotifySubclass(
   HWND hWnd,
   UINT uMsg,
@@ -1266,3 +1269,4 @@ void CPanel::setSubclassListNotify()
     ::SetWindowSubclass(_window, ListNotifySubclass, uIdSubclass, reinterpret_cast<DWORD_PTR>(this));
   }
 }
+#endif
