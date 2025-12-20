@@ -45,7 +45,7 @@ You can install it in two ways:
 
 The output should look like this:
 ```
-7-Zip 25.01 ZS v1.5.7 R2 : Copyright (c) 1999- Igor Pavlov, 2016- Tino Reichardt, 2022- Sergey G. Brester : 2025-12-15
+7-Zip 25.01 ZS v1.5.7 R2 : Copyright (c) 1999- Igor Pavlov, 2016- Tino Reichardt, 2022- Sergey G. Brester : 2025-12-20
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -298,7 +298,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
 
-/TR 2025-12-15
+/TR 2025-12-20
 
 ## Notes
 
