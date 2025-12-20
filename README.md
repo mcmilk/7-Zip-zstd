@@ -290,7 +290,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 25.01 - Release 3
+- 7-Zip ZS Version 25.01 - Release 4
   - [Brotli] Version 1.2.0
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 2.1
