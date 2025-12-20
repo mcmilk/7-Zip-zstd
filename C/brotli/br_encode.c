@@ -8,11 +8,11 @@
 
 #include "encode.h"
 
-#include "./common//constants.h"
-#include "./common//context.h"
-#include "./common//platform.h"
+#include "./common/constants.h"
+#include "./common/context.h"
+#include "./common/platform.h"
 #include "shared_dictionary.h"
-#include "./common//version.h"
+#include "./common/version.h"
 #include "./enc/backward_references_hq.h"
 #include "./enc/backward_references.h"
 #include "./enc/bit_cost.h"

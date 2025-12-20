@@ -8,7 +8,7 @@
 
 #include "./enc/bit_cost.h"
 
-#include "./common//platform.h"
+#include "./common/platform.h"
 #include "./enc/fast_log.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
