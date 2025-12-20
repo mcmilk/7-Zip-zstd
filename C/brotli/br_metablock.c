@@ -9,9 +9,9 @@
 
 #include "./enc/metablock.h"
 
-#include "./common//constants.h"
-#include "./common//context.h"
-#include "./common//platform.h"
+#include "./common/constants.h"
+#include "./common/context.h"
+#include "./common/platform.h"
 #include "./enc/bit_cost.h"
 #include "./enc/block_splitter.h"
 #include "./enc/cluster.h"

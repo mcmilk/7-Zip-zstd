@@ -9,7 +9,7 @@
 
 #include "./enc/literal_cost.h"
 
-#include "./common//platform.h"
+#include "./common/platform.h"
 #include "./enc/fast_log.h"
 #include "./enc/utf8_util.h"
 

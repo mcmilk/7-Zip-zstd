@@ -8,9 +8,9 @@
 
 #include "./enc/backward_references.h"
 
-#include "./common//constants.h"
-#include "./common//context.h"
-#include "./common//platform.h"
+#include "./common/constants.h"
+#include "./common/context.h"
+#include "./common/platform.h"
 #include "./enc/command.h"
 #include "./enc/compound_dictionary.h"
 #include "./enc/encoder_dict.h"
