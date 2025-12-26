@@ -648,6 +648,7 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
       case k_ARM64:
         if (info) continue;
         name = "ARM64";
+        break;
       case k_RISCV:
         if (info) continue;
         if (id == k_RISCV) name = "RISCV";
