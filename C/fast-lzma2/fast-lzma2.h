@@ -18,6 +18,7 @@ extern "C" {
 /* ======   Dependency   ======*/
 #include <stddef.h>   /* size_t */
 
+#include "../7zTypes.h" /* UINT64 */
 
 /* =====   FL2LIB_API : control library symbols visibility   ===== */
 #ifndef FL2LIB_VISIBILITY
@@ -327,7 +328,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_getNextCompressedBuffer(FL2_CStream* fcs, FL2_
  *  Returns the number of bytes processed since the stream was initialized. This is a synthetic
  *  estimate because the match finder does not proceed sequentially through the data. If
  *  outputSize is not NULL, returns the number of bytes of compressed data generated. */
-FL2LIB_API unsigned long long FL2LIB_CALL FL2_getCStreamProgress(const FL2_CStream * fcs, unsigned long long *outputSize);
+FL2LIB_API UInt64 FL2LIB_CALL FL2_getCStreamProgress(const FL2_CStream * fcs, UInt64 *outputSize);
 
 /*! FL2_waitCStream() :
  *  Waits for compression to end. This function returns after the timeout set using

@@ -1078,7 +1078,7 @@ FL2LIB_API size_t FL2LIB_CALL FL2_getNextCompressedBuffer(FL2_CStream* fcs, FL2_
     return cbuf->size;
 }
 
-FL2LIB_API unsigned long long FL2LIB_CALL FL2_getCStreamProgress(const FL2_CStream * fcs, unsigned long long *outputSize)
+FL2LIB_API UInt64 FL2LIB_CALL FL2_getCStreamProgress(const FL2_CStream * fcs, UInt64 *outputSize)
 {
     if (outputSize != NULL)
         *outputSize = fcs->streamCsize + fcs->progressOut;
