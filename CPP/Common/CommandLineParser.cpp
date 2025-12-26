@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include <ctype.h> // isblank()
+
 #include "CommandLineParser.h"
 
 namespace NCommandLineParser {
@@ -57,8 +59,9 @@ static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
         f = s;
         if (qcount == 2)
           qcount = 0;
-      break;
+        break;
       case L' ':
+        // fall through
       case L'\t':
         // a space (end of arg or regular char):
         if (!qcount)
@@ -70,6 +73,7 @@ static const wchar_t * _SplitCommandLine(const wchar_t* s, UString &dest)
           bcount = 0;
           goto done;
         }
+        // fall through
       // no break - a space as regular char:
       default:
         // a regular character, reset backslash counter
