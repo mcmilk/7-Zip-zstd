@@ -78,19 +78,19 @@ CArchiveUpdateCallback::CArchiveUpdateCallback():
     */
     Need_LatestMTime(false),
     LatestMTime_Defined(false),
-    
+
+    Callback(NULL),
+
+    DirItems(NULL),
+    ParentDirItem(NULL),
+
+    Arc(NULL),
+    ArcItems(NULL),
+    UpdatePairs(NULL),
 
     VolNumberAfterExt(false),
     DigitCount(2),
 
-    Callback(NULL),
-  
-    DirItems(NULL),
-    ParentDirItem(NULL),
-    
-    Arc(NULL),
-    ArcItems(NULL),
-    UpdatePairs(NULL),
     NewNames(NULL),
     Comment(NULL),
     CommentIndex(-1),
