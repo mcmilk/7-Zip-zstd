@@ -171,7 +171,7 @@ static int Main2()
     if (!s.IsEmpty())
     {
       if (!g_DisableUserQuestions)
-      MessageBoxW(NULL, s, L"7-Zip", MB_ICONERROR);
+        MessageBoxW(NULL, s, L"7-Zip", MB_ICONERROR);
     }
   
   }
