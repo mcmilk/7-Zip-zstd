@@ -99,6 +99,33 @@ WIN_OBJS_2 = \
   $O/FileStreams.o \
   $O/MultiOutStream.o \
 
+# 7-Zip ZS
+COMPRESS_OBJS += \
+  $O/BrotliDecoder.o \
+  $O/BrotliEncoder.o \
+  $O/BrotliRegister.o \
+  $O/Lz4Decoder.o \
+  $O/Lz4Encoder.o \
+  $O/Lz4Register.o \
+  $O/LizardDecoder.o \
+  $O/LizardEncoder.o \
+  $O/LizardRegister.o \
+  $O/Lz5Decoder.o \
+  $O/Lz5Encoder.o \
+  $O/Lz5Register.o \
+  $O/ZstdEncoder.o \
+  $O/ZstdRegister.o \
+  $O/FastLzma2Register.o \
+
+HASHES_OBJS = $(patsubst ../../../../C/hashes/%.c,$O/%.o,$(wildcard ../../../../C/hashes/*.c))
+BROTLI_OBJS = $(patsubst ../../../../C/brotli/%.c,$O/%.o,$(wildcard ../../../../C/brotli/*.c))
+LIZARD_OBJS = $(patsubst ../../../../C/lizard/%.c,$O/%.o,$(wildcard ../../../../C/lizard/*.c))
+LZ4_OBJS = $(patsubst ../../../../C/lz4/%.c,$O/%.o,$(wildcard ../../../../C/lz4/*.c))
+LZ5_OBJS = $(patsubst ../../../../C/lz5/%.c,$O/%.o,$(wildcard ../../../../C/lz5/*.c))
+ZSTD_OBJS = $(patsubst ../../../../C/zstd/%.c,$O/%.o,$(wildcard ../../../../C/zstd/*.c))
+ZSTDMT_OBJS = $(patsubst ../../../../C/zstdmt/%.c,$O/%.o,$(wildcard ../../../../C/zstdmt/*.c))
+FASTLZMA2_OBJS = $(patsubst ../../../../C/fast-lzma2/%.c,$O/%.o,$(wildcard ../../../../C/fast-lzma2/*.c))
+
 OBJS = \
   $(ARC_OBJS) \
   $(SYS_OBJS) \
@@ -107,5 +134,13 @@ OBJS = \
   $(7ZIP_COMMON_OBJS_2) \
   $(UI_COMMON_OBJS) \
   $(CONSOLE_OBJS) \
+  $(HASHES_OBJS) \
+  $(BROTLI_OBJS) \
+  $(LIZARD_OBJS) \
+  $(LZ4_OBJS) \
+  $(LZ5_OBJS) \
+  $(ZSTD_OBJS) \
+  $(ZSTDMT_OBJS) \
+  $(FASTLZMA2_OBJS) \
 
 include ../../7zip_gcc.mak

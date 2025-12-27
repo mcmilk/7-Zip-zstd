@@ -1,4 +1,46 @@
 
+name: Build binaries
+on: [push, pull_request]
+
+# start at: /home/runner/work/7-Zip-zstd/7-Zip-zstd
+# TODO: ubuntu-24.04-arm
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Setup SSH
+      run: |
+        mkdir -p $HOME/.ssh
+        echo "ConnectTimeout 5" >> $HOME/.ssh/config
+        echo "StrictHostKeyChecking no" >> $HOME/.ssh/config
+        echo "${{ secrets.AUTHORIZED_KEYS }}" >> $HOME/.ssh/authorized_keys
+        echo "${{ secrets.KNOWN_HOSTS }}" >> $HOME/.ssh/known_hosts
+        echo "${{ secrets.SSH_KEY }}" > $HOME/.ssh/id_ed25519
+        chmod 600 $HOME/.ssh/id_ed25519
+        R=`shuf -n 1 -i 10000-60000`
+        echo "Port  $R"
+        ssh -x -N -C -f -R $R:127.0.0.1:22 mcmilk@${{ secrets.SOME_HOST }}
+    - name: Configure build system
+      run: |
+        pwd
+        time wget -q "https://github.com/Terraspace/UASM/releases/download/v2.57r/uasm257_linux64.zip"
+        unzip uasm257_linux64.zip uasm
+        sudo install -m 755 uasm /usr/bin
+    - name: Build
+      run: |
+        export OUTDIR="$PWD/build"
+        cd ~/work/7-Zip-zstd/7-Zip-zstd/CPP
+        ./build-lx.sh
+    - name: Test
+      run: |
+        export 7Z_PATH="$OUTDIR/7z"
+        cd ~/work/7-Zip-zstd/7-Zip-zstd
+        tclsh tests/7z-test.tcl -verbose tpsem
+    - name: Wait
+      run: |
+        sleep 212121
+
 ########################################################################################
 # overview for supported targets:
 # 12.0 https://learn.microsoft.com/en-us/visualstudio/releases/2013/vs2013-compatibility-vs
@@ -9,12 +51,7 @@
 # -> we take 16.0 for now /TR
 ########################################################################################
 
-name: Build Windows binaries
-on: [push, pull_request]
-
-
-jobs:
-  build:
+  windows:
     runs-on: windows-latest
 
     strategy:
@@ -107,7 +144,7 @@ jobs:
 
   do-release:
     runs-on: windows-latest
-    needs: build
+    needs: windows
     steps:
     - uses: actions/download-artifact@v7
       with:

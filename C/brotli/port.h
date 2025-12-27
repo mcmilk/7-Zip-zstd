@@ -10,7 +10,7 @@
 #define BROTLI_COMMON_PORT_H_
 
 /* disable some warnings /TR */
-#ifdef _WIN32
+#ifdef _MSC_VER /* Visual Studio */
 #pragma warning(disable : 4100)
 #pragma warning(disable : 4127)
 #pragma warning(disable : 4189)

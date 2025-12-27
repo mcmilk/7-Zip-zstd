@@ -19,8 +19,6 @@ COMMON_OBJS = \
   $O\Sha3Reg.obj \
   $O\Sha512Reg.obj \
   $O\Sha512Prepare.obj \
-  $O\Sha3-384Reg.obj \
-  $O\Sha3-512Reg.obj \
   $O\StringConvert.obj \
   $O\StringToInt.obj \
   $O\UTFConvert.obj \
@@ -273,9 +271,6 @@ HASHES_OBJS = \
   $O\blake3.obj \
   $O\md2.obj \
   $O\md4.obj \
-  $O\md5c.obj \
-  $O\sha3c.obj \
-  $O\sha512c.obj \
 
 C_OBJS = \
   $O\7zBuf2.obj \
