@@ -34,7 +34,7 @@ jobs:
         ./build-lx.sh
     - name: Test
       run: |
-        export 7Z_PATH="$OUTDIR/7z"
+        export Z7_PATH="$OUTDIR/7z"
         cd ~/work/7-Zip-zstd/7-Zip-zstd
         tclsh tests/7z-test.tcl -verbose tpsem
     - name: Wait
