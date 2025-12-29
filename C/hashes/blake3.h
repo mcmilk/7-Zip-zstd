@@ -30,7 +30,9 @@ extern "C" {
 #define BLAKE3_MAX_DEPTH 54
 
 /* disable some warnings /TR */
+#ifdef _MSC_VER
 #pragma warning(disable : 4244)
+#endif
 
 // This struct is a private implementation detail. It has to be here because
 // it's part of blake3_hasher below.
