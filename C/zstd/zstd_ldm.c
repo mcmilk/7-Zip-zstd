@@ -8,10 +8,10 @@
  * You may select, at your option, one of the above-listed licenses.
  */
 
-#include "zstd_ldm.h"
+#include "../hashes/xxhash.h"
 
+#include "zstd_ldm.h"
 #include "debug.h"
-#include "xxhash.h"
 #include "zstd_fast.h"          /* ZSTD_fillHashTable() */
 #include "zstd_double_fast.h"   /* ZSTD_fillDoubleHashTable() */
 #include "zstd_ldm_geartab.h"

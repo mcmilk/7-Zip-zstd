@@ -5,7 +5,7 @@
 #include "../../C/CpuArch.h"
 
 #define XXH_STATIC_LINKING_ONLY
-#include "../../C/zstd/xxhash.h"
+#include "../../C/hashes/xxhash.h"
 
 #include "../Common/MyCom.h"
 #include "../7zip/Common/RegisterCodec.h"
@@ -16,7 +16,6 @@ Z7_CLASS_IMP_COM_1(
   , IHasher
 )
   XXH32_state_t *_ctx;
-  Byte mtDummy[1 << 7];
 
 public:
   CXXH32Hasher() { _ctx = XXH32_createState(); }
@@ -39,4 +38,4 @@ Z7_COM7F_IMF2(void, CXXH32Hasher::Final(Byte *digest))
   SetUi32(digest, val);
 }
 
-REGISTER_HASHER(CXXH32Hasher, 0x20d, "XXH32", 4)
+REGISTER_HASHER(CXXH32Hasher, 0x210, "XXH32", 4)

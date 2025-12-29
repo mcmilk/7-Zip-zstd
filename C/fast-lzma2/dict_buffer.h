@@ -12,7 +12,7 @@
 #include "mem.h"
 #include "data_block.h"
 #ifndef NO_XXHASH
-#  include "xxhash.h"
+#include "../hashes/xxhash.h"
 #endif
 
 #ifndef FL2_DICT_BUFFER_H_

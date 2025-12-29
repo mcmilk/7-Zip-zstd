@@ -37,6 +37,7 @@ You can contact the author at :
 *  All related operations, including memory management, are handled by the library.
 * */
 
+#include <stdio.h>
 
 /*-************************************
 *  Compiler Options
@@ -44,8 +45,6 @@ You can contact the author at :
 #ifdef _MSC_VER    /* Visual Studio */
 #  pragma warning(disable : 4127)        /* disable: C4127: conditional expression is constant */
 #endif
-
-
 
 /*-************************************
 *  Includes
@@ -55,10 +54,7 @@ You can contact the author at :
 #include "lizard_decompress.h"
 #include "lizard_common.h"  /* LIZARD_DICT_SIZE */
 #define XXH_STATIC_LINKING_ONLY
-#include "xxhash.h"
-#include <stdio.h>
-
-
+#include "../hashes/xxhash.h"
 
 /* unoptimized version; solves endianess & alignment issues */
 static U32 LizardF_readLE32 (const void* src)

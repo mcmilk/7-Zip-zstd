@@ -24,7 +24,7 @@
 #include "fl2_pool.h"
 #include "dict_buffer.h"
 #ifndef NO_XXHASH
-#  include "xxhash.h"
+#include "../hashes/xxhash.h"
 #endif
 
 #if defined (__cplusplus)
