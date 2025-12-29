@@ -1,7 +1,7 @@
 # regression.test --
 #
 # Regressions tests for archives compressed with previous version
-# Part of 7-zip ZS test suite.
+# Part of 7-Zip ZS test suite.
 #
 # Copyright (c) 2025- by Sergey G. Brester aka sebres
 
@@ -21,14 +21,14 @@ testConstraint freeMem9G [expr {[apply {{} {
 }]
 
 test regression--test-all {7z regression test for with previous versions compressed files, test with checksum} {
-	variable 7Z_REGR_TEST_DIR
-	variable 7Z_PWD
+	variable Z7_REGR_TEST_DIR
+	variable Z7_PWD
 	set ret {}
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR *.*]] {
 		set fn [file tail $p]
 		set opt {}
 		if {[string match xenc-* $fn]} { # encrypted with password
-			lappend opt -p$7Z_PWD
+			lappend opt -p$Z7_PWD
 		}
 		if {[string match *.br-mt.* $fn]} { # brotli-mt (not default, expected -mmt+ switch)
 			lappend opt -mmt+
@@ -81,9 +81,9 @@ test regression--test-all {7z regression test for with previous versions compres
 } \n]
 
 test regression--test-brotli-st {7z regression test for with previous versions compressed files (brotli-st, brotli default compression)} {
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
-	set p [file join $7Z_REGR_TEST_DIR test.txt.br]
+	set p [file join $Z7_REGR_TEST_DIR test.txt.br]
 	# by default mt is off and 3 other variants of switches to force mt-off via cmd-line:
 	foreach opt {{} -mmt- -mmt=off -mmt=0} {
 		7z t -scrcSHA256 {*}$opt -- $p
@@ -94,9 +94,9 @@ test regression--test-brotli-st {7z regression test for with previous versions c
 } [lrepeat 4 1]
 
 test regression--test-brotli-mt {7z regression test for with previous versions compressed files (brotli-mt non-default compression)} {
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
-	set p [file join $7Z_REGR_TEST_DIR test.txt.br-mt.br]
+	set p [file join $Z7_REGR_TEST_DIR test.txt.br-mt.br]
 	# by default mt is off, cover all possible variants of switches to force mt-on via cmd-line,
 	# especially with -mmt=1, -mmtd100 (-100) and -mmtp1d1 (1%-1) shall use brotli-mt decompression (even by single CPU to process):
 	foreach opt {-mmt -mmt+ -mmt=on -mmt=1 -mmtp100 -mmtu100 -mmtd100 -mmtp1d1} {
@@ -108,9 +108,9 @@ test regression--test-brotli-mt {7z regression test for with previous versions c
 } [lrepeat 8 1]
 
 test regression--test-mt-option {7z regression test for with previous versions compressed files (7z, different mmt switches)} {
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test.txt.*]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR test.txt.*]] {
 		if {![regexp {\.txt(?:\.(?:br|zstd))?\.7z$} $p]} continue
 		set i 0
 		foreach opt {-m0=:mt- -m0=:mtoff -m0=:mt0 -m0=:mt -m0=:mt+ -m0=:mton -m0=:mt1 -m0=:mtp100 -m0=:mt0u100 -m0=:mtd2 -m0=:mtp1+1} {
@@ -128,13 +128,13 @@ test regression--test-mt-option {7z regression test for with previous versions c
 } \n]
 
 test regression--list-tech-info {7z regression test for with previous versions compressed files, list with technical info} {
-	variable 7Z_REGR_TEST_DIR
-	variable 7Z_PWD
+	variable Z7_REGR_TEST_DIR
+	variable Z7_PWD
 	set ret {}
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR *.*]] {
 		set opt {}
 		if {[string match xenc-* [file tail $p]]} { # encrypted with password
-			set opt -p$7Z_PWD
+			set opt -p$Z7_PWD
 		}
 		lappend ret [file tail $p] [7z_get_info {*}$opt -- $p]
 	}
@@ -167,16 +167,16 @@ test regression--list-tech-info {7z regression test for with previous versions c
 } \n]
 
 test regression--decompress {7z regression test for with previous versions compressed files, decompression} {
-	variable 7Z_REGR_TEST_DIR
-	variable 7Z_PWD
+	variable Z7_REGR_TEST_DIR
+	variable Z7_PWD
 	set ret {}
 	set regr_arc_data(txt) "TEST\n[string repeat { } 999990]\nEND."
 	set regr_arc_data(sol) "$regr_arc_data(txt)1234\n[string repeat { } 99990]\n5678"
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR *.*]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR *.*]] {
 		set fn [file tail $p]
 		set opt {}
 		if {[string match xenc-* $fn]} { # encrypted with password
-			lappend opt -p$7Z_PWD
+			lappend opt -p$Z7_PWD
 		}
 		if {[string match *.br-mt.* $fn]} { # brotli-mt (not default, expected -mmt+ switch)
 			lappend opt -mmt+
@@ -208,12 +208,12 @@ set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock m
 file mkdir $tmpdir
 
 test regression--compress-zstd-max-allowed {zstd compression for 64-bit only, fallback to highest level} -constraints {!64bit7z} -body {
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
 	foreach m {zstd brotli lz5} {
 		set p [file join $tmpdir test-advmax-compress.7z]; file delete $p
 		# this shall switch to l22 in 32-bit for zstd (no max by 32-bit), and to l11 for brotli and to l15 for lz5:
-		7z a -m0=${m}:max -- $p [file join $7Z_REGR_TEST_DIR ../7z-test.tcl]
+		7z a -m0=${m}:max -- $p [file join $Z7_REGR_TEST_DIR ../7z-test.tcl]
 		assertLogged {Everything is Ok}
 		set res [7z_get_info -- $p]
 		foreach fi [dict get $res Files] {
@@ -231,11 +231,11 @@ test regression--compress-zstd-max-allowed {zstd compression for 64-bit only, fa
 }]
 
 test regression--preserve-method-non-solid {7z add/del file in non-solid archive (preserve compression method, bug #340)} {
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
 	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
 	lappend ret ===add===
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test.txt*.7z]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR test.txt*.7z]] {
 		file copy $p [set p [file join $tmpdir [file tail $p]]]
 		7z a -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
 		assertLogged {\nUpdating archive} \
@@ -287,11 +287,11 @@ test regression--preserve-method-non-solid {7z add/del file in non-solid archive
 
 test regression--preserve-method-non-solid2 {7z add/del file in non-solid archive (preserve compression method, bug #340)} {
 	# same as regression--preserve-method-non-solid, but compress added file using new method:level (from cmd-line):
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
 	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
 	lappend ret ===add===
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test.txt*.7z]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR test.txt*.7z]] {
 		file copy $p [set p [file join $tmpdir [file tail $p]]]
 		7z u -m0=zstd:x1 -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
 		assertLogged {\nUpdating archive} \
@@ -342,11 +342,11 @@ test regression--preserve-method-non-solid2 {7z add/del file in non-solid archiv
 } \n]
 
 test regression--preserve-method-solid {7z add/del file in solid archive (preserve compression method, bug #340)} {
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
 	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
 	lappend ret ===add===
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test-sol*.7z]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR test-sol*.7z]] {
 		if {[string match *.max.7z $p]} continue; # may be too memory greedy
 		file copy $p [set p [file join $tmpdir [file tail $p]]]
 		7z a -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
@@ -399,11 +399,11 @@ test regression--preserve-method-solid {7z add/del file in solid archive (preser
 } \n]
 
 test regression--preserve-method-solid-max {7z add/del file in solid (max) archive} -constraints {freeMem9G && !fast} -body {
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
 	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
 	lappend ret ===add===
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test-sol*.max.7z]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR test-sol*.max.7z]] {
 		file copy $p [set p [file join $tmpdir [file tail $p]]]
 		7z a -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
 		assertLogged {\nUpdating archive} \
@@ -449,11 +449,11 @@ test regression--preserve-method-solid-max {7z add/del file in solid (max) archi
 
 test regression--preserve-method-solid2 {7z add/del file in solid archive (preserve compression method, bug #340)} {
 	# same as regression--preserve-method-solid, but recompress solid block using new method:level (from cmd-line):
-	variable 7Z_REGR_TEST_DIR
+	variable Z7_REGR_TEST_DIR
 	set ret {}
 	# add (note that by LZMA2 it'd be unable to get the level from archive and fallback to default):
 	lappend ret ===add===
-	foreach p [lsort -dictionary [glob -directory $7Z_REGR_TEST_DIR test-sol*.7z]] {
+	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR test-sol*.7z]] {
 		file copy $p [set p [file join $tmpdir [file tail $p]]]
 		7z a -m0=zstd:x1 -ms=on -siabcd.txt -- $p << "This is a test string passed via stdin: [string repeat abcd 1000]"
 		assertLogged {\nUpdating archive} \

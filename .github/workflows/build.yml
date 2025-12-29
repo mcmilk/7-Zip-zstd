@@ -1,4 +1,39 @@
 
+name: Build binaries
+on: [push, pull_request]
+
+jobs:
+  linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Configure build system
+      run: |
+        time wget -q "https://github.com/Terraspace/UASM/releases/download/v2.57r/uasm257_linux64.zip"
+        unzip uasm257_linux64.zip uasm
+        sudo install -m 755 uasm /usr/bin
+    - name: Build
+      run: |
+        cd ~/work/7-Zip-zstd/7-Zip-zstd/CPP
+        ./build-lx.sh
+    - name: Test
+      run: |
+        cd ~/work/7-Zip-zstd/7-Zip-zstd/tests
+         ./test-lx.sh
+
+  linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@v6
+    - name: Build
+      run: |
+        cd ~/work/7-Zip-zstd/7-Zip-zstd/CPP
+        ./build-lx.sh
+    - name: Test
+      run: |
+        cd ~/work/7-Zip-zstd/7-Zip-zstd/tests
+         ./test-lx.sh
+
 ########################################################################################
 # overview for supported targets:
 # 12.0 https://learn.microsoft.com/en-us/visualstudio/releases/2013/vs2013-compatibility-vs
@@ -9,12 +44,7 @@
 # -> we take 16.0 for now /TR
 ########################################################################################
 
-name: Build Windows binaries
-on: [push, pull_request]
-
-
-jobs:
-  build:
+  windows:
     runs-on: windows-latest
 
     strategy:
@@ -96,7 +126,7 @@ jobs:
           set PLATFORM=${{matrix.platform}}
           set OUTDIR=build\bin-%PLATFORM%
           if "${{matrix.darkmode}}" == "" set OUTDIR=%OUTDIR%-ndm
-          set 7Z_PATH=%OUTDIR%\7z.exe
+          set Z7_PATH=%OUTDIR%\7z.exe
           tclsh tests\7z-test.tcl -verbose tpsem
 
       - name: Upload a Build Artifact
@@ -107,7 +137,7 @@ jobs:
 
   do-release:
     runs-on: windows-latest
-    needs: build
+    needs: windows
     steps:
     - uses: actions/download-artifact@v7
       with:

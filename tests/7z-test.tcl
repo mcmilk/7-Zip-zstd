@@ -2,7 +2,7 @@
 
 # 7z-test.tcl --
 #
-# Test suite to test 7-zip ZS.
+# Test suite to test 7-Zip ZS.
 #
 # Copyright (c) 2025- by Sergey G. Brester aka sebres
 

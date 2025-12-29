@@ -1,6 +1,6 @@
 # main.test --
 #
-# Part of 7-zip ZS test suite.
+# Part of 7-Zip ZS test suite.
 #
 # Copyright (c) 2025- by Sergey G. Brester aka sebres
 
@@ -36,10 +36,12 @@ test main--e-inv-arg {error, unknown switch} -body {
 	7z a -tzstd --xxx-unknown-arg -mx3 -si -so << "Dummy stdin" .
 } -returnCodes error -match glob -result "*Command Line Error:\nUnknown switch:\n--xxx-unknown-arg*"
 
+# windows specific tests (they use NUL: or depend on special files)
+if {$tcl_platform(platform) eq "windows"} {
 foreach t {{-t7z -m0=zstd:x1} {-tzstd -mx1} {-tzip -mx1}} {
 test main--compress[lindex $t 0]-no-file {error, compress no such file} -body {
-  set tmpfn [file join [temporaryDirectory] 7z-test-no-such-file-xxx.txt]
-  7z a {*}$t -- NUL: $tmpfn
+	set tmpfn [file join [temporaryDirectory] 7z-test-no-such-file-xxx.txt]
+	7z a {*}$t -- NUL: $tmpfn
 } -returnCodes error -match glob -result "*Scan WARNINGS for files and folders:*The system cannot find the file specified.*"
 }
 
@@ -61,12 +63,13 @@ test main--compress[lindex $t 0]-lckd-w-ssw {no error, compress file open for wr
 	7z a {*}$t -ssw -- NUL: $lckd_test_file
 } -returnCodes ok -match glob -result "*Everything is Ok*"
 }
+}
 
 test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
-	variable 7Z_PATH
+	variable Z7_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5} {
 		if {[catch {
-			7z a -t$t -mx3 -si -so << "$t: This is a test string passed to stdin" . | $7Z_PATH e -t$t -si -so
+			7z a -t$t -mx3 -si -so << "$t: This is a test string passed to stdin" . | $Z7_PATH e -t$t -si -so
 		} res]} {
 			error "Test of -t$t failed: $res"
 		}
@@ -76,11 +79,11 @@ test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
 } OK
 
 test main--mmt-option {7z force multi-threaded & single-threaded compression / decompression} {
-	variable 7Z_PATH
+	variable Z7_PATH
 	foreach mt {=on =off =1 =2 d2 d-2 p25u1 p1+1} {
 		foreach t {zstd brotli bzip2} {
 			if {[catch {
-				7z a -t$t -mmt$mt -mx3 -si -so << "$t,mt$mt This is a test string passed to stdin" . | $7Z_PATH e -t$t -mmt$mt -si -so
+				7z a -t$t -mmt$mt -mx3 -si -so << "$t,mt$mt This is a test string passed to stdin" . | $Z7_PATH e -t$t -mmt$mt -si -so
 			} res]} {
 				error "Test of -t$t -mmt$mt failed: $res"
 			}
@@ -94,22 +97,22 @@ test main--encrypt-decrypt {7z encryption, decription} -setup {
 	set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 	file mkdir $tmpdir
 } -body {
-	variable 7Z_PATH
-  variable 7Z_PWD
+	variable Z7_PATH
+  variable Z7_PWD
 	set v "test zstd & brotli 0123456789-ABCEFGHIJKLMNOPQRSTUVWXYZ?_*."
 	foreach {m l} {zstd 9 brotli 5 LZMA2 1} {
 		set arcpath [file join $tmpdir encr-test.$m.7z]
 		if {[catch {
 			# compress with encryption:
-			7z a -t7z -m0=$m:x$l -sitest.txt -p$7Z_PWD -- $arcpath . << "$v"
+			7z a -t7z -m0=$m:x$l -sitest.txt -p$Z7_PWD -- $arcpath . << "$v"
 			assertLogged {\nCreating archive} \
 				{\nAdd new data to archive: 1 file, 59 bytes} \
 				{\nEverything is Ok}
 			# test:
-			7z t -p$7Z_PWD -- $arcpath
+			7z t -p$Z7_PWD -- $arcpath
 			assertLogged {\nEverything is Ok}
 			# decompress with decryption:
-			set v2 [7z e -so -p$7Z_PWD -- $arcpath]
+			set v2 [7z e -so -p$Z7_PWD -- $arcpath]
 			#puts $v2
 			if {$v2 ne $v} {
 				error "retrieved $v2 instead of original"
@@ -124,8 +127,8 @@ test main--encrypt-decrypt {7z encryption, decription} -setup {
 } -result OK
 
 test main--file-hashes {7z hashes of file} {
-	variable 7Z_REGR_TEST_DIR
-	set fn [file join $7Z_REGR_TEST_DIR test.txt.zstd]
+	variable Z7_REGR_TEST_DIR
+	set fn [file join $Z7_REGR_TEST_DIR test.txt.zstd]
 	set res [7z h -scrc* $fn]
 	#puts $res
 	set ret {}
@@ -142,19 +145,24 @@ test main--file-hashes {7z hashes of file} {
 	MD4 3406bf9c189c0fcbd4b77c8af3e788b5
 	MD5 456bcdaa4f76b86a51ae5b6083838247
 	SHA1 5bf5b3692acb152f054d8d5fa4f38b46f177e32f
+	SHA3-224 ae6ef93f912616435951511f0d94e8d71be9f26001ad4c1505eb4102
 	SHA3-256 5458494ae13d3517528ba9bd9aa538ba1195dd6a657cde562f1806a87169e866
 	SHA3-384 147b48f8f9eedc33621c8b14bb19d85deed019c2e7a7541a0483defc75a9ddfca82f15aa3f8059968ce6e2c798d7f058
 	SHA3-512 be70c4b1c8e58e5385591b68440cad053ef8aca3e25a17a6046268421d78f9deab42fd44ac70900a67edbcb39c7add7d2f3a46a635aa51f19524d522f4a0d5d9
 	SHA256 8a3acd73ebb6f9afbf9fd57f4b4cb35a2ff1f18d2b45b422003fdd0287b21f80
 	SHA384 363894b4075c73957ecb5c1acd1d2892fbbe9e8c494e75a9be1151415c58f29bfa4cb829ab044a1abeec9ed67d12d3ee
 	SHA512 c1c0ba6434962a99ca5da2d24ebfb358f1381e1f116a88d3e2417863523d051604803ee1acd5965ea5139de61a89e0e5c39e2ad8eabc5bbb76557a1c0966335b
+	SHA512-224 f0cd5952385bc2554e3f2b758159df0eb13dfff26d3d630b2af1c9ba
+	SHA512-256 205496bc0a15b09800f48fda3922b8fdbfdda38d74298821964b43ef9c5a1689
+	XXH3-64 4f9f7b31eeabde5c
+	XXH3-128 f472cc766128446435a21c3146ca41d5
 	XXH32 cc475190
 	XXH64 f11f617df84a1339
 }]
 
 test main--content-hashes {7z hashes of archive content} {
-	variable 7Z_REGR_TEST_DIR
-	set fn [file join $7Z_REGR_TEST_DIR test.txt.zstd]
+	variable Z7_REGR_TEST_DIR
+	set fn [file join $Z7_REGR_TEST_DIR test.txt.zstd]
 	set res [7z t -scrc* $fn]
 	#puts $res
 	set ret {}
@@ -171,12 +179,17 @@ test main--content-hashes {7z hashes of archive content} {
 	MD4 1472a98f5c6d54dc5aecfa297b3ee831
 	MD5 8ddc6f30bb831efdb382fb40c1f0ce09
 	SHA1 6a86865444b02b83657b3e477c23301caee157b6
+	SHA3-224 048d4270893bafdcfc32f2b3807513ba108097a540b0ea5358d02a73
 	SHA3-256 9c0e5cf855ad2271662553a45e058152415b7064e20e520fabba74a6ee043efa
 	SHA3-384 6748d99f55806fc77490b452e3459fec1252520790dac5528e517f647010394eaa7656a7938dbf23f2a3d2a65ec7ded9
 	SHA3-512 d39e07c769f946d9ed13e0e3014c757c3986d174c6228b0fe1d62fee8e1edd7f6dd3acd62c8ddcc3e7a5635f389472ce811848e2572fe311e0b3b2750c44fbdb
 	SHA256 aeda0f81c8376d1678af53927a08cf641cafab8b68aef509c881eb0be0bc3c97
 	SHA384 51c5370ba3bff1ee113dfcf58d80e5f007e202013d2467957e3171f4537dfd93c2acd9657a6f140e4b3b38dc3e98bfb3
 	SHA512 edfa4d5886412c19e976d09b5a85e683ff41761f341122e35a781d36a44c8aa473a53cc9c2d7be5745557b407e42301835de60f06368d3d3f48126eef3ff7c23
+	SHA512-224 fa3a6be9e974ec9dea86c59de1585b1ba784cc808795314928ad51a9
+	SHA512-256 98440252fb7e18cd8d307d9aae6272c368cf5e3984cadf5c06e849d003b71039
+	XXH3-64 076d0c4180b377de
+	XXH3-128 80bf39a132157907de77b380410c6d07
 	XXH32 e2858574
 	XXH64 6ad2d3e5bcc63918
 }]
