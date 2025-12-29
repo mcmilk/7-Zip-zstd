@@ -55,32 +55,6 @@ extern "C" {
 
 #define FL2_STATIC_ASSERT(c) { enum { FL2_static_assert = 1/(int)(!!(c)) }; }
 
-#if defined(FL2_DEBUG) && (FL2_DEBUG>=2)
-#  include <stdio.h>
-extern int g_debuglog_enable;
-/* recommended values for FL2_DEBUG display levels :
- * 1 : no display, enables assert() only
- * 2 : reserved for currently active debugging path
- * 3 : events once per object lifetime (CCtx, CDict)
- * 4 : events once per frame
- * 5 : events once per block
- * 6 : events once per sequence (*very* verbose) */
-#  define RAWLOG(l, ...) {                                 \
-                if ((g_debuglog_enable) & (l<=FL2_DEBUG)) { \
-                    fprintf(stderr, __VA_ARGS__);            \
-            }   }
-#  define DEBUGLOG(l, ...) {                                 \
-                if ((g_debuglog_enable) & (l<=FL2_DEBUG)) { \
-                    fprintf(stderr, __FILE__ ": ");          \
-                    fprintf(stderr, __VA_ARGS__);            \
-                    fprintf(stderr, " \n");                  \
-            }   }
-#else
-#  define RAWLOG(l, ...)      {}    /* disabled */
-#  define DEBUGLOG(l, ...)    {}    /* disabled */
-#endif
-
-
 /*-*************************************
 *  shared macros
 ***************************************/
