@@ -12,7 +12,6 @@ You can install it in two ways:
 [![Latest stable release](https://img.shields.io/github/release/mcmilk/7-Zip-zstd.svg)](https://github.com/mcmilk/7-Zip-zstd/releases)
 [![PayPal.me](https://img.shields.io/badge/PayPal-me-blue.svg?maxAge=2592000)](https://www.paypal.me/TinoReichardt)
 
-
 ## Codec overview
 1. [Zstandard] v1.5.7 is a real-time compression algorithm, providing high compression ratios. It offers a very wide range of compression / speed trade-off, while being backed by a very fast decoder.
    - Levels: 1..22
@@ -34,6 +33,18 @@ You can install it in two ways:
 
 6. [Fast LZMA2] v1.0.1 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
    - Levels: 1..9
+
+### 7-Zip ZS CLI variants
+
+7z and 7zz provide largely the same core 7‑Zip functionality, but they are built/distributed
+differently (plugin-capable vs. standalone), which can affect available formats/codecs.
+
+| Binary | Description |
+|--------|-------------|
+| `7z`   | Full 7‑Zip command-line tool which loads it's modules/codecs via 7z.so. |
+| `7zz`  | Official standalone 7‑Zip binary used on Linux/macOS packages - no external plugins via 7z.so. |
+| `7za`  | Standalone executable which supports fewer archive formats than `7z`. (Minimal + LZ4 and Hashes) |
+| `7zr`  | Minimal "light" standalone executable focused on the 7z format. (FLZMA2, Zstd) |
 
 ## 7-Zip Zstandard Edition (full setup, with GUI and Explorer integration)
 
@@ -261,7 +272,6 @@ For the benchmarks I am using Windows 7 64bit on my Laptop which has the followi
 ![Memory at Compression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemCompr.png "Memory usage at Compression")
 ![Memory at Decompression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemDecomp.png "Memory usage at Decompression")
 
-
 ## Themes
 
 - FileManager Toolbar Icon Theme: Glyfz 2016 by AlexGal [homepage](https://www.deviantart.com/alexgal23)
@@ -298,7 +308,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
 
-/TR 2025-12-20
+/TR 2025-12-29
 
 ## Notes
 
