@@ -1,3 +1,4 @@
+
 OBJS = \
   $O\StdAfx.obj \
   $(CURRENT_OBJS) \

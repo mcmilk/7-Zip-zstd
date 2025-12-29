@@ -2,6 +2,7 @@ PROG = 7zxa.dll
 DEF_FILE = ../../Archive/Archive2.def
 CFLAGS = $(CFLAGS) \
   -DZ7_EXTRACT_ONLY \
+  -DZSTD_LEGACY_SUPPORT -DZSTD_MULTITHREAD
 
 COMMON_OBJS = \
   $O\CRC.obj \
@@ -57,7 +58,6 @@ AR_COMMON_OBJS = \
   $O\7zProperties.obj \
   $O\7zRegister.obj \
 
-
 COMPRESS_OBJS = \
   $O\CodecExports.obj \
   $O\Bcj2Coder.obj \
@@ -108,24 +108,32 @@ C_OBJS = \
   $O\SwapBytes.obj \
   $O\Threads.obj \
 
-COMPRESS_OBJS = $(COMPRESS_OBJS) \
+COMPRESS_OBJS = \
+  $(COMPRESS_OBJS) \
   $O\BrotliDecoder.obj \
   $O\BrotliRegister.obj \
   $O\Lz4Decoder.obj \
   $O\Lz4Register.obj \
   $O\LizardDecoder.obj \
   $O\LizardRegister.obj \
-  $O\liz_debug.obj \
-  $O\liz_entropy_common.obj \
-  $O\liz_fse_compress.obj \
-  $O\liz_fse_decompress.obj \
-  $O\liz_huf_compress.obj \
-  $O\liz_huf_decompress.obj \
-  $O\liz_xxhash.obj \
   $O\Lz5Decoder.obj \
   $O\Lz5Register.obj \
   $O\ZstdDecoder.obj \
   $O\ZstdRegister.obj \
+
+COMMON_OBJS = \
+  $(COMMON_OBJS) \
+  $O/XXH32Reg.obj \
+  $O/XXH64Reg.obj \
+
+HASHES_OBJS = \
+  $O\xxhash.obj \
+
+!IF "$(PLATFORM)" == "x64" || "$(PLATFORM)" == "x86"
+HASHES_OBJS = \
+  $(HASHES_OBJS) \
+  $O\xxh_x86dispatch.obj \
+!ENDIF
 
 BROTLI_OBJS = \
   $O/br_backward_references.obj \
@@ -168,6 +176,11 @@ LIZARD_OBJS = \
   $O/lizard_compress.obj \
   $O/lizard_decompress.obj \
   $O/lizard_frame.obj \
+  $O\liz_entropy_common.obj \
+  $O\liz_fse_compress.obj \
+  $O\liz_fse_decompress.obj \
+  $O\liz_huf_compress.obj \
+  $O\liz_huf_decompress.obj \
 
 LZ4_OBJS = \
   $O\lz4.obj \
@@ -190,7 +203,6 @@ ZSTD_OBJS = \
   $O\huf_decompress.obj \
   $O\pool.obj \
   $O\threading.obj \
-  $O\xxhash.obj \
   $O\zstd_common.obj \
   $O\zstd_compress.obj \
   $O\zstd_compress_literals.obj \

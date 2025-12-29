@@ -37,7 +37,6 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
   $O\Sha1Reg.obj \
   $O\Sha256Reg.obj \
-  $O\Xxh64Reg.obj \
   $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
 
@@ -89,7 +88,6 @@ AR_OBJS = \
   $O\Bz2Handler.obj \
   $O\DeflateProps.obj \
   $O\GzHandler.obj \
-  $O\LzHandler.obj \
   $O\LzmaHandler.obj \
   $O\SplitHandler.obj \
   $O\XzHandler.obj \
@@ -233,87 +231,16 @@ C_OBJS = \
   $O\Ppmd8Enc.obj \
   $O\SwapBytes.obj \
   $O\Threads.obj \
-  $O\Xxh64.obj \
   $O\Xz.obj \
   $O\XzDec.obj \
   $O\XzEnc.obj \
   $O\XzIn.obj \
 
-COMPRESS_OBJS = $(COMPRESS_OBJS) \
-  $O\BrotliDecoder.obj \
-  $O\BrotliEncoder.obj \
-  $O\BrotliRegister.obj \
-  $O\Lz4Decoder.obj \
-  $O\Lz4Encoder.obj \
-  $O\Lz4Register.obj \
-  $O\LizardDecoder.obj \
-  $O\LizardEncoder.obj \
-  $O\LizardRegister.obj \
-  $O\liz_debug.obj \
-  $O\liz_entropy_common.obj \
-  $O\liz_fse_compress.obj \
-  $O\liz_fse_decompress.obj \
-  $O\liz_huf_compress.obj \
-  $O\liz_huf_decompress.obj \
-  $O\liz_xxhash.obj \
-  $O\Lz5Decoder.obj \
-  $O\Lz5Encoder.obj \
-  $O\Lz5Register.obj \
-  $O\ZstdEncoder.obj \
-  $O\ZstdRegister.obj \
-  $O\FastLzma2Register.obj \
-
-BROTLI_OBJS = \
-  $O/br_backward_references.obj \
-  $O/br_backward_references_hq.obj \
-  $O/br_bit_cost.obj \
-  $O/br_bit_reader.obj \
-  $O/br_block_splitter.obj \
-  $O/br_brotli_bit_stream.obj \
-  $O/br_cluster.obj \
-  $O/br_command.obj \
-  $O/br_compound_dictionary.obj \
-  $O/br_compress_fragment.obj \
-  $O/br_compress_fragment_two_pass.obj \
-  $O/br_constants.obj \
-  $O/br_context.obj \
-  $O/br_decode.obj \
-  $O/br_dictionary.obj \
-  $O/br_dictionary_hash.obj \
-  $O/br_encode.obj \
-  $O/br_encoder_dict.obj \
-  $O/br_entropy_encode.obj \
-  $O/br_fast_log.obj \
-  $O/br_histogram.obj \
-  $O/br_huffman.obj \
-  $O/br_literal_cost.obj \
-  $O/br_memory.obj \
-  $O/br_metablock.obj \
-  $O/br_platform.obj \
-  $O/br_prefix.obj \
-  $O/br_shared_dictionary.obj \
-  $O/br_state.obj \
-  $O/br_static_dict.obj \
-  $O/br_static_dict_lut.obj \
-  $O/br_static_init_dec.obj \
-  $O/br_static_init_enc.obj \
-  $O/br_transform.obj \
-  $O/br_utf8_util.obj \
-
-LIZARD_OBJS = \
-  $O/lizard_compress.obj \
-  $O/lizard_decompress.obj \
-  $O/lizard_frame.obj \
-
+# 7-Zip ZS (most used)
 LZ4_OBJS = \
   $O\lz4.obj \
   $O\lz4frame.obj \
   $O\lz4hc.obj \
-
-LZ5_OBJS = \
-  $O\lz5.obj \
-  $O\lz5frame.obj \
-  $O\lz5hc.obj \
 
 ZSTD_OBJS = \
   $O\debug.obj \
@@ -326,7 +253,6 @@ ZSTD_OBJS = \
   $O\huf_decompress.obj \
   $O\pool.obj \
   $O\threading.obj \
-  $O\xxhash.obj \
   $O\zstd_common.obj \
   $O\zstd_compress.obj \
   $O\zstd_compress_literals.obj \
@@ -339,9 +265,8 @@ ZSTD_OBJS = \
   $O\zstd_fast.obj \
   $O\zstd_lazy.obj \
   $O\zstd_ldm.obj \
-  $O\zstdmt_compress.obj \
-  $O\zstd_opt.obj \
   $O\zstd_preSplit.obj \
+  $O\zstd_opt.obj \
   $O\zstd_v01.obj \
   $O\zstd_v02.obj \
   $O\zstd_v03.obj \
@@ -349,20 +274,12 @@ ZSTD_OBJS = \
   $O\zstd_v05.obj \
   $O\zstd_v06.obj \
   $O\zstd_v07.obj \
+  $O\zstdmt_compress.obj \
 
 ZSTDMT_OBJS = \
-  $O\brotli-mt_common.obj \
-  $O\brotli-mt_compress.obj \
-  $O\brotli-mt_decompress.obj \
-  $O\lizard-mt_common.obj \
-  $O\lizard-mt_compress.obj \
-  $O\lizard-mt_decompress.obj \
   $O\lz4-mt_common.obj \
   $O\lz4-mt_compress.obj \
   $O\lz4-mt_decompress.obj \
-  $O\lz5-mt_common.obj \
-  $O\lz5-mt_compress.obj \
-  $O\lz5-mt_decompress.obj \
   $O\zstd-mt_threading.obj \
 
 FASTLZMA2_OBJS = \
@@ -377,6 +294,43 @@ FASTLZMA2_OBJS = \
   $O\radix_struct.obj \
   $O\range_enc.obj \
   $O\util.obj \
+
+C_OBJS = \
+  $(C_OBJS) \
+  $(LZ4_OBJS) \
+  $(ZSTD_OBJS) \
+  $(ZSTDMT_OBJS) \
+  $(FASTLZMA2_OBJS) \
+
+COMMON_OBJS = \
+  $(COMMON_OBJS) \
+  $O/XXH32Reg.obj \
+  $O/XXH64Reg.obj \
+  $O/XXH3-64Reg.obj \
+  $O/XXH3-128Reg.obj \
+
+HASHES_OBJS = \
+  $O\xxhash.obj \
+
+!IF "$(PLATFORM)" == "x64" || "$(PLATFORM)" == "x86"
+HASHES_OBJS = \
+  $(HASHES_OBJS) \
+  $O\xxh_x86dispatch.obj \
+!ENDIF
+
+AR_OBJS = \
+  $(AR_OBJS) \
+  $O\LzHandler.obj \
+  $O\Lz4Handler.obj \
+
+COMPRESS_OBJS = \
+  $(COMPRESS_OBJS) \
+  $O\Lz4Decoder.obj \
+  $O\Lz4Encoder.obj \
+  $O\Lz4Register.obj \
+  $O\ZstdEncoder.obj \
+  $O\ZstdRegister.obj \
+  $O\FastLzma2Register.obj \
 
 !include "../../UI/Console/Console.mak"
 

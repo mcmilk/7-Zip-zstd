@@ -119,7 +119,6 @@ C_OBJS = \
 !include "../../Crc.mak"
 !include "../../LzmaDec.mak"
 
-
 COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\ZstdDecoder.obj \
   $O\ZstdRegister.obj \
@@ -132,11 +131,18 @@ ZSTD_OBJS = \
   $O\huf_decompress.obj \
   $O\pool.obj \
   $O\threading.obj \
-  $O\xxhash.obj \
   $O\zstd_common.obj \
   $O\zstd_ddict.obj \
   $O\zstd_decompress_block.obj \
   $O\zstd_decompress.obj \
-  
+
+HASHES_OBJS = \
+  $O\xxhash.obj \
+
+!IF "$(PLATFORM)" == "x64" || "$(PLATFORM)" == "x86"
+HASHES_OBJS = \
+  $(HASHES_OBJS) \
+  $O\xxh_x86dispatch.obj \
+!ENDIF
 
 !include "../../7zip.mak"

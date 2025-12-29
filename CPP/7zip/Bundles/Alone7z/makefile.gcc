@@ -41,13 +41,7 @@ MT_OBJS = \
   $O/StreamBinder.o \
   $O/VirtThread.o \
 
-
-
-
-
 endif
-
-
 
 LOCAL_FLAGS_SYS =
 
@@ -259,6 +253,25 @@ C_OBJS = \
   $O/XzCrc64.o \
   $O/XzCrc64Opt.o \
 
+# 7-Zip ZS (most used)
+XXH_OBJS = $(patsubst ../../../../C/hashes/%.c,$O/%.o,$(wildcard ../../../../C/hashes/xxh*.c))
+ZSTD_OBJS = $(patsubst ../../../../C/zstd/%.c,$O/%.o,$(wildcard ../../../../C/zstd/*.c))
+FASTLZMA2_OBJS = $(patsubst ../../../../C/fast-lzma2/%.c,$O/%.o,$(wildcard ../../../../C/fast-lzma2/*.c))
+
+C_OBJS += \
+  $(XXH_OBJS) \
+  $(ZSTD_OBJS) \
+  $(FASTLZMA2_OBJS) \
+
+COMMON_OBJS += \
+  $O/XXH32Reg.o \
+  $O/XXH64Reg.o \
+
+COMPRESS_OBJS += \
+  $O/ZstdDecoder.o \
+  $O/ZstdEncoder.o \
+  $O/ZstdRegister.o \
+  $O/FastLzma2Register.o \
 
 OBJS = \
   $(LZMA_DEC_OPT_OBJS) \

@@ -155,6 +155,21 @@ C_OBJS = \
   $O\XzEnc.obj \
   $O\XzIn.obj \
 
+COMMON_OBJS = \
+  $(COMMON_OBJS) \
+  $O/XXH32Reg.o \
+  $O/XXH64Reg.o \
+
+HASHES_OBJS = \
+  $O\xxh_x86dispatch.obj \
+  $O\xxhash.obj \
+
+!IF "$(PLATFORM)" == "x64" || "$(PLATFORM)" == "x86"
+HASHES_OBJS = \
+  $(HASHES_OBJS) \
+  $O\xxh_x86dispatch.obj \
+!ENDIF
+
 !include "../../UI/Console/Console.mak"
 
 !include "../../Aes.mak"

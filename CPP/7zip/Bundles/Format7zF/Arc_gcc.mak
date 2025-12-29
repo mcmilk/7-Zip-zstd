@@ -62,7 +62,6 @@ COMMON_OBJS = \
   $O/StringToInt.o \
   $O/UTFConvert.o \
   $O/Wildcard.o \
-  $O/Xxh64Reg.o \
   $O/XzCrc64Init.o \
   $O/XzCrc64Reg.o \
 
@@ -360,13 +359,63 @@ C_OBJS = \
   $O/Sha512Opt.o \
   $O/Sort.o \
   $O/SwapBytes.o \
-  $O/Xxh64.o \
   $O/Xz.o \
   $O/XzDec.o \
   $O/XzEnc.o \
   $O/XzIn.o \
   $O/XzCrc64.o \
   $O/XzCrc64Opt.o \
+
+# 7-Zip ZS
+HASHES_OBJS = $(patsubst ../../../../C/hashes/%.c,$O/%.o,$(wildcard ../../../../C/hashes/*.c))
+BROTLI_OBJS = $(patsubst ../../../../C/brotli/%.c,$O/%.o,$(wildcard ../../../../C/brotli/*.c))
+LIZARD_OBJS = $(patsubst ../../../../C/lizard/%.c,$O/%.o,$(wildcard ../../../../C/lizard/*.c))
+LZ4_OBJS = $(patsubst ../../../../C/lz4/%.c,$O/%.o,$(wildcard ../../../../C/lz4/*.c))
+LZ5_OBJS = $(patsubst ../../../../C/lz5/%.c,$O/%.o,$(wildcard ../../../../C/lz5/*.c))
+ZSTD_OBJS = $(patsubst ../../../../C/zstd/%.c,$O/%.o,$(wildcard ../../../../C/zstd/*.c))
+ZSTDMT_OBJS = $(patsubst ../../../../C/zstdmt/%.c,$O/%.o,$(wildcard ../../../../C/zstdmt/*.c))
+FASTLZMA2_OBJS = $(patsubst ../../../../C/fast-lzma2/%.c,$O/%.o,$(wildcard ../../../../C/fast-lzma2/*.c))
+
+C_OBJS += \
+  $(HASHES_OBJS) \
+  $(BROTLI_OBJS) \
+  $(LIZARD_OBJS) \
+  $(LZ4_OBJS) \
+  $(LZ5_OBJS) \
+  $(ZSTD_OBJS) \
+  $(ZSTDMT_OBJS) \
+  $(FASTLZMA2_OBJS) \
+
+AR_OBJS += \
+  $O/Blake3Reg.o \
+  $O/BrotliHandler.o \
+  $O/Md2Reg.o \
+  $O/Md4Reg.o \
+  $O/LzHandler.o \
+  $O/Lz4Handler.o \
+  $O/Lz5Handler.o \
+  $O/LizardHandler.o \
+  $O/XXH32Reg.o \
+  $O/XXH64Reg.o \
+  $O/XXH3-64Reg.o \
+  $O/XXH3-128Reg.o \
+
+COMPRESS_OBJS += \
+  $O/BrotliDecoder.o \
+  $O/BrotliEncoder.o \
+  $O/BrotliRegister.o \
+  $O/Lz4Decoder.o \
+  $O/Lz4Encoder.o \
+  $O/Lz4Register.o \
+  $O/LizardDecoder.o \
+  $O/LizardEncoder.o \
+  $O/LizardRegister.o \
+  $O/Lz5Decoder.o \
+  $O/Lz5Encoder.o \
+  $O/Lz5Register.o \
+  $O/ZstdEncoder.o \
+  $O/ZstdRegister.o \
+  $O/FastLzma2Register.o \
 
 ARC_OBJS = \
   $(LZMA_DEC_OPT_OBJS) \

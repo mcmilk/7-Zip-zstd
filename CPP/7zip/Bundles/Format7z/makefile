@@ -156,13 +156,6 @@ COMPRESS_OBJS = $(COMPRESS_OBJS) \
   $O\LizardDecoder.obj \
   $O\LizardEncoder.obj \
   $O\LizardRegister.obj \
-  $O\liz_debug.obj \
-  $O\liz_entropy_common.obj \
-  $O\liz_fse_compress.obj \
-  $O\liz_fse_decompress.obj \
-  $O\liz_huf_compress.obj \
-  $O\liz_huf_decompress.obj \
-  $O\liz_xxhash.obj \
   $O\Lz5Decoder.obj \
   $O\Lz5Encoder.obj \
   $O\Lz5Register.obj \
@@ -212,6 +205,11 @@ LIZARD_OBJS = \
   $O/lizard_compress.obj \
   $O/lizard_decompress.obj \
   $O/lizard_frame.obj \
+  $O\liz_entropy_common.obj \
+  $O\liz_fse_compress.obj \
+  $O\liz_fse_decompress.obj \
+  $O\liz_huf_compress.obj \
+  $O\liz_huf_decompress.obj \
 
 LZ4_OBJS = \
   $O\lz4.obj \
@@ -285,7 +283,5 @@ FASTLZMA2_OBJS = \
   $O\radix_struct.obj \
   $O\range_enc.obj \
   $O\util.obj \
-
-
 
 !include "../../7zip.mak"
