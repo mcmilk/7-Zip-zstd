@@ -57,17 +57,21 @@ BEGIN
     BEGIN
       MENUITEM "CRC-32",                    IDM_CRC32
       MENUITEM "CRC-64",                    IDM_CRC64
-      MENUITEM "XXH-32",                    IDM_XXH32
-      MENUITEM "XXH-64",                    IDM_XXH64
+      MENUITEM "XXH32",                     IDM_XXH32
+      MENUITEM "XXH64",                     IDM_XXH64
+      MENUITEM "XXH3-64",                   IDM_XXH3_64
+      MENUITEM "XXH3-128",                  IDM_XXH3_128
       MENUITEM "MD2",                       IDM_MD2
       MENUITEM "MD4",                       IDM_MD4
       MENUITEM "MD5",                       IDM_MD5
       MENUITEM "SHA-1",                     IDM_SHA1
+      MENUITEM "SHA2-224",                  IDM_SHA2_224
       MENUITEM "SHA2-256",                  IDM_SHA2_256
       MENUITEM "SHA2-384",                  IDM_SHA2_384
       MENUITEM "SHA2-512",                  IDM_SHA2_512
       MENUITEM "BLAKE2sp",                  IDM_BLAKE2sp
       MENUITEM "BLAKE3",                    IDM_BLAKE3
+      MENUITEM "SHA3-224",                  IDM_SHA3_224
       MENUITEM "SHA3-256",                  IDM_SHA3_256
       MENUITEM "SHA3-384",                  IDM_SHA3_384
       MENUITEM "SHA3-512",                  IDM_SHA3_512
