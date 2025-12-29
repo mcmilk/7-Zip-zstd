@@ -1,4 +1,4 @@
-/* 
+/*
  * Because of code deduplication we'll use zstd/bitstream.h here
  */
 #include "../zstd/zstd_deps.h"   /* ZSTD_memset */
