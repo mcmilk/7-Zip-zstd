@@ -23,6 +23,8 @@ function build() {
       ;;
   esac
 
+  # strip down for releases
+  strip _o/$1
   cp _o/$1 "$OUTDIR"
   popd
 }

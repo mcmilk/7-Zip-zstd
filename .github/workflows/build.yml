@@ -20,6 +20,11 @@ jobs:
       run: |
         cd ~/work/7-Zip-zstd/7-Zip-zstd
         Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        path: ${{ github.workspace }}/CPP/build/*
+        name: linux-x64
 
   linux-arm64:
     runs-on: ubuntu-24.04-arm
@@ -33,6 +38,11 @@ jobs:
       run: |
         cd ~/work/7-Zip-zstd/7-Zip-zstd
         Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        path: ${{ github.workspace }}/CPP/build/*
+        name: linux-arm64
 
 ########################################################################################
 # overview for supported targets:
