@@ -15,10 +15,7 @@ Z7_CLASS_IMP_COM_1(
 )
   CAlignedBuffer1 _buf;
 public:
-  Byte _mtDummy[1 << 7];
-
   CMd5 *Md5() { return (CMd5 *)(void *)(Byte *)_buf; }
-public:
   CMd5Hasher():
     _buf(sizeof(CMd5))
   {

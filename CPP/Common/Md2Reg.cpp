@@ -17,7 +17,6 @@ Z7_CLASS_IMP_COM_1(
   , IHasher
 )
   MD2_CTX _ctx;
-  Byte mtDummy[1 << 7];
 
 public:
   CMD2Hasher() { MD2_Init(&_ctx); }

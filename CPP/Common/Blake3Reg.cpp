@@ -17,7 +17,6 @@ Z7_CLASS_IMP_COM_1(
   , IHasher
 )
   blake3_hasher _ctx;
-  Byte mtDummy[1 << 7];
 
 public:
   CBLAKE3Hasher() { blake3_hasher_init(&_ctx); }

@@ -65,10 +65,10 @@ Z7_COM7F_IMF2(UInt32, CSha3Hasher::GetDigestSize())
 #define REGISTER_SHA3_HASHER(  cls, id, name, size, isShake) \
         REGISTER_SHA3_HASHER_2(cls, id, name, size, isShake, size)
 
-// REGISTER_SHA3_HASHER (Sha3_224_Hasher, 0x230, "SHA3-224", 224, false)
+REGISTER_SHA3_HASHER (Sha3_224_Hasher, 0x230, "SHA3-224", 224, false)
 REGISTER_SHA3_HASHER (Sha3_256_Hasher, 0x231, "SHA3-256", 256, false)
-// REGISTER_SHA3_HASHER (Sha3_386_Hasher, 0x232, "SHA3-384", 384, false)
-// REGISTER_SHA3_HASHER (Sha3_512_Hasher, 0x233, "SHA3-512", 512, false)
+REGISTER_SHA3_HASHER (Sha3_386_Hasher, 0x232, "SHA3-384", 384, false)
+REGISTER_SHA3_HASHER (Sha3_512_Hasher, 0x233, "SHA3-512", 512, false)
 // REGISTER_SHA3_HASHER (Shake128_Hasher, 0x240, "SHAKE128", 128, true)
 // REGISTER_SHA3_HASHER (Shake256_Hasher, 0x241, "SHAKE256", 256, true)
 // REGISTER_SHA3_HASHER_2 (Shake128_512_Hasher, 0x248, "SHAKE128-256", 256, true, 128) // -1344 (max)
