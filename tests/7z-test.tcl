@@ -13,6 +13,8 @@ if {[namespace which -command "::7z"] eq ""} {
   source [file join [file dirname [info script]] 7z.tcl]
 }
 
+if {![info exists ::env(TEMP)]} {set ::env(TEMP) /tmp}
+
 configure -testdir [file normalize [file dirname [info script]]] -singleproc 1 -tmpdir $::env(TEMP) {*}$argv
 
 if {[runAllTests]} {return -code error "FAILED"}

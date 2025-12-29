@@ -11,9 +11,17 @@ if {[namespace which -command "::7z"] eq ""} {
 
 testConstraint 64bit7z [regexp -nocase {\((?:x|arm)64\)} [7z --version]]; # like 7-Zip 24.09 ZS ... (x64)
 testConstraint freeMem9G [expr {[apply {{} {
-		if {![catch {exec wmic OS get FreePhysicalMemory} res]} {
-			if {[regexp {^FreePhysicalMemory\s+(\d+)} $res {} res]} {
-				return $res
+		if {$::tcl_platform(platform) eq "windows"} {
+			if {![catch {exec wmic OS get FreePhysicalMemory} res]} {
+				if {[regexp {^FreePhysicalMemory\s+(\d+)} $res {} res]} {
+					return $res
+				}
+			}
+		} else {
+			if {![catch {exec cat /proc/meminfo} res]} {
+				if {[regexp -line {^MemAvailable:\s*(\d+)\s+kB} $res {} res]} {
+					return $res
+				}
 			}
 		}
 		return -1

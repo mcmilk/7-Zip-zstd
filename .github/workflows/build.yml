@@ -18,8 +18,8 @@ jobs:
         ./build-lx.sh
     - name: Test
       run: |
-        cd ~/work/7-Zip-zstd/7-Zip-zstd/tests
-         ./test-lx.sh
+        cd ~/work/7-Zip-zstd/7-Zip-zstd
+        Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
 
   linux-arm64:
     runs-on: ubuntu-24.04-arm
@@ -31,8 +31,8 @@ jobs:
         ./build-lx.sh
     - name: Test
       run: |
-        cd ~/work/7-Zip-zstd/7-Zip-zstd/tests
-         ./test-lx.sh
+        cd ~/work/7-Zip-zstd/7-Zip-zstd
+        Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
 
 ########################################################################################
 # overview for supported targets:
