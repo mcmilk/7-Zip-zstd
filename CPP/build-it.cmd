@@ -59,6 +59,7 @@ set LFLAGS=/SUBSYSTEM:CONSOLE,%SUBSYS%
 call :build UI\Console                  7z.exe                             || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 call :build Bundles\SFXCon              7zCon.sfx                          || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 call :build Bundles\Alone               7za.exe                            || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+call :build Bundles\Alone2              7zz.exe                            || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 
 :ende
 cd %ROOT%\..
