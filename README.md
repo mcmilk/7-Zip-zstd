@@ -259,18 +259,29 @@ Codecs:
 
 ## Benchmarks
 
-For the benchmarks I am using Windows 7 64bit on my Laptop which has the following Hardware:
-- Intel i7-3632QM, limited to 2,2GHz, 16GB RAM, disabled swap space
-- the compression benchmark is read / written to an 4 GiB [ImDisk]
-- the decompression benchmark is also done in RAM via: `7z t archiv.7z`
-- the tool for measuring the times is [wtime](https://github.com/mcmilk/wtime), together with some [scripts](https://github.com/mcmilk/7-Zip-Benchmarking)
-- the testfile is generated via [generate-mcorpus](https://github.com/mcmilk/7-Zip-Benchmarking/blob/master/generate-mcorpus)
-- please note, that the benchmarks are outdated now (new one will come, but it needs some time)
+For benchmarking, I started using the Linux binary `7zz` in 2026.
 
-![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/compr-v120.png "Compression Speed vs Ratio")
-![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/decomp-v120.png "Decompression Speed per Level")
-![Memory at Compression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemCompr.png "Memory usage at Compression")
-![Memory at Decompression](https://mcmilk.de/projects/7-Zip-zstd/dl/MemDecomp.png "Memory usage at Decompression")
+The test system is an idle Dell PowerEdge R6615 with the following hardware:
+- **CPU:** AMD EPYC 9354P (32 cores)
+- **Memory:** 128 GB DDR5 (8x 16GB)
+- **OS:** AlmaLinux 9 (x86_64)
+
+For the tests, the [Silesia compression corpus](https://sun.aei.polsl.pl/~sdeor/index.php?page=silesia) is used.
+
+Compression tests are performed by running a single-threaded compression for each method: `7z a test.7z -mmt=1 -m0=MethodX`.
+
+Decompression is tested on the freshly created archive using: `7z t test.7z`.
+Memory usage and execution times are measured using a [modified GNU time](https://github.com/mcmilk/7-Zip-Benchmarking/blob/master/linux/time-1.9.tr.diff).
+The benchmarks themselves are executed via a [shell script](https://github.com/mcmilk/7-Zip-Benchmarking/blob/master/linux/runtests.sh).
+
+Results:
+
+![Compression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/2026-01-03/01-ratio-vs-compr.png "Compression Speed vs Ratio")
+![Decompression Speed vs Ratio](https://mcmilk.de/projects/7-Zip-zstd/dl/2026-01-03/02-ratio-vs-decompr.png "Decompression Speed vs Ratio")
+![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/2026-01-03/03-compr-per-level.png "Compression Speed per Level")
+![Decompression Speed](https://mcmilk.de/projects/7-Zip-zstd/dl/2026-01-03/04-decompr-per-level.png "Decompression Speed per Level")
+![Memory at Compression](https://mcmilk.de/projects/7-Zip-zstd/dl/2026-01-03/05-mem-compr.png "Memory usage at Compression")
+![Memory at Decompression](https://mcmilk.de/projects/7-Zip-zstd/dl/2026-01-03/06-mem-decompr.png "Memory usage at Decompression")
 
 ## Themes
 
@@ -308,7 +319,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
 
-/TR 2025-12-29
+/TR 2026-01-03
 
 ## Notes
 
