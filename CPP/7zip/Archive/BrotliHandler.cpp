@@ -107,23 +107,36 @@ API_FUNC_static_IsArc IsArc_Brotli(const Byte *p, size_t size)
   BrotliDecoderState *st = BrotliDecoderCreateInstance(NULL, NULL, NULL);
   if (!st)
     return k_IsArc_Res_NO;
+  BrotliDecoderSetParameter(st, BROTLI_DECODER_PARAM_LARGE_WINDOW, 1);
   const uint8_t *next_in = p;
   size_t avail_in = size;
-  uint8_t out[256];
+  uint8_t out[1024];
   uint8_t *x = out;
   size_t avail_out = sizeof(out);
+  UInt32 res;
   BrotliDecoderResult r;
   r = BrotliDecoderDecompressStream(st, &avail_in, &next_in, &avail_out, &x, NULL);
+  do {
+    switch (r) {
+      case BROTLI_DECODER_RESULT_ERROR:
+        res = k_IsArc_Res_NO; goto done;
+      case BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT:
+        // repeat with next output buffer:
+        continue;
+      case BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT:
+        // 10K shall be enough to estimate the archive is brotli or not:
+        if (size < 10240) {
+          res = k_IsArc_Res_NEED_MORE; goto done;
+        }
+        // very probably we have brotli here, thus return with yes
+      //case BROTLI_DECODER_RESULT_SUCCESS:
+      default:
+        res = k_IsArc_Res_YES; goto done;
+    }
+  } while (1);
+done:
   BrotliDecoderDestroyInstance(st);
-  if (r == BROTLI_DECODER_RESULT_ERROR)
-    return k_IsArc_Res_NO;
-  if (r == BROTLI_DECODER_RESULT_SUCCESS)
-    return k_IsArc_Res_YES;
-  if (r == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT)
-    return k_IsArc_Res_NEED_MORE;
-  if (r == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT)
-    return k_IsArc_Res_NEED_MORE;
-  return k_IsArc_Res_YES;
+  return res;
 }
 }
 
