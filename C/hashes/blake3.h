@@ -107,16 +107,9 @@ enum blake3_flags {
 #include <immintrin.h>
 #endif
 
-#if defined(IS_X86)
-#define MAX_SIMD_DEGREE 16
-#elif defined(BLAKE3_USE_NEON)
-#define MAX_SIMD_DEGREE 4
-#else
-#define MAX_SIMD_DEGREE 1
-#endif
-
 // There are some places where we want a static size that's equal to the
 // MAX_SIMD_DEGREE, but also at least 2.
+#define MAX_SIMD_DEGREE 4
 #define MAX_SIMD_DEGREE_OR_2 (MAX_SIMD_DEGREE > 2 ? MAX_SIMD_DEGREE : 2)
 
 static const uint32_t IV[8] = {0x6A09E667UL, 0xBB67AE85UL, 0x3C6EF372UL,

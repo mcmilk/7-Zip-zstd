@@ -144,6 +144,9 @@ typedef struct
 #  define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #  if defined (__cplusplus) || defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
 #    ifdef __GNUC__
+#      ifndef __clang__
+#        pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#      endif
 #      define FORCE_INLINE static inline __attribute__((always_inline))
 #    else
 #      define FORCE_INLINE static inline

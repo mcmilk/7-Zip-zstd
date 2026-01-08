@@ -1097,7 +1097,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                 dctxPtr->tmpInTarget = minFHSize;   /* minimum to attempt decode */
                 dctxPtr->dStage = dstage_storeHeader;
             }
-
+            /* fall through */
         case dstage_storeHeader:
             {
                 size_t sizeToCopy = dctxPtr->tmpInTarget - dctxPtr->tmpInSize;

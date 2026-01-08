@@ -295,13 +295,6 @@ FASTLZMA2_OBJS = \
   $O\range_enc.obj \
   $O\util.obj \
 
-C_OBJS = \
-  $(C_OBJS) \
-  $(LZ4_OBJS) \
-  $(ZSTD_OBJS) \
-  $(ZSTDMT_OBJS) \
-  $(FASTLZMA2_OBJS) \
-
 COMMON_OBJS = \
   $(COMMON_OBJS) \
   $O/XXH32Reg.obj \

@@ -31,12 +31,15 @@ function build() {
 
 export OUTDIR="$PWD/build"
 export ARCH=$(arch)
+mkdir -p "$OUTDIR"
+
+# use gcc/g++
 export CC="gcc"
 export CXX="g++"
 
+# use clang
 export CC="clang"
 export CXX="clang++"
-mkdir -p "$OUTDIR"
 
 # standalone, minimalistic (flzma2, zstd)
 build 7zr   Bundles/Alone7z
