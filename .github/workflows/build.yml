@@ -20,11 +20,16 @@ jobs:
       run: |
         cd ~/work/7-Zip-zstd/7-Zip-zstd
         Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
-    - name: Upload a Build Artifact
+    - name: Upload gcc Build Artifact
       uses: actions/upload-artifact@v6
       with:
-        path: ${{ github.workspace }}/CPP/build/*
-        name: linux-x64
+        path: ${{ github.workspace }}/CPP/build-gcc/*
+        name: linux-gcc-x64
+    - name: Upload clang Build Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        path: ${{ github.workspace }}/CPP/build-clang/*
+        name: linux-clang-x64
 
   linux-arm64:
     runs-on: ubuntu-24.04-arm
@@ -38,11 +43,16 @@ jobs:
       run: |
         cd ~/work/7-Zip-zstd/7-Zip-zstd
         Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
-    - name: Upload a Build Artifact
+    - name: Upload gcc Build Artifact
       uses: actions/upload-artifact@v6
       with:
-        path: ${{ github.workspace }}/CPP/build/*
-        name: linux-arm64
+        path: ${{ github.workspace }}/CPP/build-gcc/*
+        name: linux-gcc-arm64
+    - name: Upload clang Build Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        path: ${{ github.workspace }}/CPP/build-clang/*
+        name: linux-clang-arm64
 
 ########################################################################################
 # overview for supported targets:
