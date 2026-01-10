@@ -22,10 +22,10 @@ jobs:
         CC="gcc" CXX="g++" OUTDIR="$PWD/build-gcc" ./build-lx.sh
     - name: Test with clang binary
       run: |
-        Z7_PATH="CPP/build-clang/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-clang/7z" tclsh tests/7z-test.tcl -verbose tpsem
     - name: Test with gcc binary
       run: |
-        Z7_PATH="CPP/build-gcc/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-gcc/7z" tclsh tests/7z-test.tcl -verbose tpsem
     - name: Upload Build Artifacts (gcc)
       uses: actions/upload-artifact@v6
       with:
@@ -51,10 +51,10 @@ jobs:
         CC="gcc" CXX="g++" OUTDIR="$PWD/build-gcc" ./build-lx.sh
     - name: Test with clang binary
       run: |
-        Z7_PATH="CPP/build-clang/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-clang/7z" tclsh tests/7z-test.tcl -verbose tpsem
     - name: Test with gcc binary
       run: |
-        Z7_PATH="CPP/build-gcc/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-gcc/7z" tclsh tests/7z-test.tcl -verbose tpsem
     - name: Upload Build Artifacts (gcc)
       uses: actions/upload-artifact@v6
       with:
