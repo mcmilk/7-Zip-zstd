@@ -107,6 +107,7 @@ API_FUNC_static_IsArc IsArc_Brotli(const Byte *p, size_t size)
   BrotliDecoderState *st = BrotliDecoderCreateInstance(NULL, NULL, NULL);
   if (!st)
     return k_IsArc_Res_NO;
+
   const uint8_t *next_in = p;
   size_t avail_in = size;
   uint8_t out[256];
@@ -117,12 +118,11 @@ API_FUNC_static_IsArc IsArc_Brotli(const Byte *p, size_t size)
   BrotliDecoderDestroyInstance(st);
   if (r == BROTLI_DECODER_RESULT_ERROR)
     return k_IsArc_Res_NO;
-  if (r == BROTLI_DECODER_RESULT_SUCCESS)
-    return k_IsArc_Res_YES;
-  if (r == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT)
-    return k_IsArc_Res_NEED_MORE;
-  if (r == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT)
-    return k_IsArc_Res_NEED_MORE;
+
+  // when we get here, the begin of some brotli stream was detected:
+  // - BROTLI_DECODER_RESULT_SUCCESS
+  // - BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT
+  // - BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
   return k_IsArc_Res_YES;
 }
 }
