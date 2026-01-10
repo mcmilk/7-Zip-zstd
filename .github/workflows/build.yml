@@ -14,11 +14,10 @@ jobs:
         sudo install -m 755 uasm /usr/bin
     - name: Build
       run: |
-        cd ~/work/7-Zip-zstd/7-Zip-zstd/CPP
+        cd ${{ github.workspace }}/CPP
         ./build-lx.sh
     - name: Test
       run: |
-        cd ~/work/7-Zip-zstd/7-Zip-zstd
         Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
     - name: Upload gcc Build Artifact
       uses: actions/upload-artifact@v6
@@ -37,11 +36,10 @@ jobs:
     - uses: actions/checkout@v6
     - name: Build
       run: |
-        cd ~/work/7-Zip-zstd/7-Zip-zstd/CPP
+        cd ${{ github.workspace }}/CPP
         ./build-lx.sh
     - name: Test
       run: |
-        cd ~/work/7-Zip-zstd/7-Zip-zstd
         Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
     - name: Upload gcc Build Artifact
       uses: actions/upload-artifact@v6
