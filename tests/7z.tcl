@@ -26,10 +26,16 @@ if {![info exists Z7_PATH]} {
 	}}
 }
 puts "Test 7z-path: $Z7_PATH"
-if {[catch {exec $Z7_PATH} res]} {
-	puts "Cannot test using \"$Z7_PATH\" (invalid platform?): $res"
-	exit 0
-}
+
+# ensure we can test using executable from $Z7_PATH (valid platform, e. g. bypass cross-platform build):
+apply {{} {
+	variable Z7_PATH
+	if {[catch {exec $Z7_PATH} res opt]} {
+		puts "Cannot test using \"$Z7_PATH\" (invalid platform?): $res"
+		# 0 - by "invalid argument" (invalid platform), 1 - by other (unexpected) error
+		exit [expr {![string match {POSIX EINVAL *} [dict get $opt -errorcode]]}]
+	}
+}}
 
 proc 7z {args} {
 	variable Z7_PATH
