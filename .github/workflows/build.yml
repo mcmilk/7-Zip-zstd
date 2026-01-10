@@ -12,19 +12,26 @@ jobs:
         time wget -q "https://github.com/Terraspace/UASM/releases/download/v2.57r/uasm257_linux64.zip"
         unzip uasm257_linux64.zip uasm
         sudo install -m 755 uasm /usr/bin
-    - name: Build
+    - name: Build via clang
       run: |
         cd ${{ github.workspace }}/CPP
-        ./build-lx.sh
-    - name: Test
+        CC="clang" CXX="clang++" OUTDIR="$PWD/build-clang" ./build-lx.sh
+    - name: Build via gcc
       run: |
-        Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
-    - name: Upload gcc Build Artifact
+        cd ${{ github.workspace }}/CPP
+        CC="gcc" CXX="g++" OUTDIR="$PWD/build-gcc" ./build-lx.sh
+    - name: Test with clang binary
+      run: |
+        Z7_PATH="CPP/build-clang/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+    - name: Test with gcc binary
+      run: |
+        Z7_PATH="CPP/build-gcc/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+    - name: Upload Build Artifacts (gcc)
       uses: actions/upload-artifact@v6
       with:
         path: ${{ github.workspace }}/CPP/build-gcc/*
         name: linux-gcc-x64
-    - name: Upload clang Build Artifact
+    - name: Upload Build Artifacts (clang)
       uses: actions/upload-artifact@v6
       with:
         path: ${{ github.workspace }}/CPP/build-clang/*
@@ -34,19 +41,26 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@v6
-    - name: Build
+    - name: Build via clang
       run: |
         cd ${{ github.workspace }}/CPP
-        ./build-lx.sh
-    - name: Test
+        CC="clang" CXX="clang++" OUTDIR="$PWD/build-clang" ./build-lx.sh
+    - name: Build via gcc
       run: |
-        Z7_PATH="CPP/build/7z" tclsh tests/7z-test.tcl -verbose tpsem
-    - name: Upload gcc Build Artifact
+        cd ${{ github.workspace }}/CPP
+        CC="gcc" CXX="g++" OUTDIR="$PWD/build-gcc" ./build-lx.sh
+    - name: Test with clang binary
+      run: |
+        Z7_PATH="CPP/build-clang/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+    - name: Test with gcc binary
+      run: |
+        Z7_PATH="CPP/build-gcc/7zz" tclsh tests/7z-test.tcl -verbose tpsem
+    - name: Upload Build Artifacts (gcc)
       uses: actions/upload-artifact@v6
       with:
         path: ${{ github.workspace }}/CPP/build-gcc/*
         name: linux-gcc-arm64
-    - name: Upload clang Build Artifact
+    - name: Upload Build Artifacts (clang)
       uses: actions/upload-artifact@v6
       with:
         path: ${{ github.workspace }}/CPP/build-clang/*

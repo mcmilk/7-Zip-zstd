@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 function build() {
   pushd 7zip/$2
@@ -30,30 +30,6 @@ function build() {
 }
 
 export ARCH=$(arch)
-
-# use gcc/g++
-export CC="gcc"
-export CXX="g++"
-export OUTDIR="$PWD/build-gcc"
-mkdir -p "$OUTDIR"
-
-# standalone, minimalistic (flzma2, zstd)
-build 7zr   Bundles/Alone7z
-
-# standalone, small (flzma2, zstd, lz4, hashes)
-build 7za   Bundles/Alone
-
-# standalone, full featured
-build 7zz   Bundles/Alone2
-
-# full featured via plugin loading (7z.so)
-build 7z    UI/Console
-build 7z.so Bundles/Format7zF
-
-# use clang
-export CC="clang"
-export CXX="clang++"
-export OUTDIR="$PWD/build-clang"
 mkdir -p "$OUTDIR"
 
 # standalone, minimalistic (flzma2, zstd)
