@@ -109,7 +109,11 @@ enum blake3_flags {
 
 // There are some places where we want a static size that's equal to the
 // MAX_SIMD_DEGREE, but also at least 2.
+#ifdef IS_X86_64
+#define MAX_SIMD_DEGREE 8
+#else
 #define MAX_SIMD_DEGREE 4
+#endif
 #define MAX_SIMD_DEGREE_OR_2 (MAX_SIMD_DEGREE > 2 ? MAX_SIMD_DEGREE : 2)
 
 static const uint32_t IV[8] = {0x6A09E667UL, 0xBB67AE85UL, 0x3C6EF372UL,
