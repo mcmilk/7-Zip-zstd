@@ -17,7 +17,6 @@ cd %SKEL%
 curl %URL% -L -o 7-Zip.exe
 %SZIP% x 7-Zip.exe
 del 7-Zip.exe
-mkdir %WD%\totalcmd
 goto start
 
 @rem doit function ...
@@ -25,7 +24,6 @@ goto start
 SET ARCH=%~1
 SET ZIP32=%~2
 SET BIN=%~3
-SET TCDLL=%~4
 echo Doing %ARCH% in SOURCE=%BIN%
 
 REM 7-Zip Files
@@ -51,34 +49,21 @@ curl %LURL%/Codecs/README.md --output README.md
 %SZIP% a ..\Codecs-%ARCH%.7z %COPTS%
 cd %WD% && rd /S /Q Codecs-%ARCH%
 
-REM Total Commander DLL
-cd %WD%\totalcmd
-copy %BIN%\7zxa.dll %TCDLL%
-curl %LURL%/TotalCMD/LICENSE --output LICENSE
-curl %LURL%/TotalCMD/README.md --output README.md
 goto :eof
 @rem end of doit function.
 
 REM Currently we build 3 architectures as 6 targets with and without darkmode (ndm suffix)
 :start
 
-call :doit x32       ""                            "%WD%\bin-x86"       tc7z.dll
-call :doit x32-ndm   ""                            "%WD%\bin-x86-ndm"   tc7z.dll
+call :doit x32       ""                            "%WD%\bin-x86"
+call :doit x32-ndm   ""                            "%WD%\bin-x86-ndm"
 
-call :doit x64       "%WD%\bin-x86\7-zip.dll"      "%WD%\bin-x64"       tc7z64.dll
-call :doit x64-ndm   "%WD%\bin-x86-ndm\7-zip.dll"  "%WD%\bin-x64-ndm"   tc7z64-ndm.dll
+call :doit x64       "%WD%\bin-x86\7-zip.dll"      "%WD%\bin-x64"
+call :doit x64-ndm   "%WD%\bin-x86-ndm\7-zip.dll"  "%WD%\bin-x64-ndm"
 
-REM Build of 32-bit ARM is disabled now, since Windows SDK 10.0.26100.0 its support is dropped
-@REM call :doit arm       ""                            "%WD%\bin-arm"       tc7zarm.dll
-@REM call :doit arm-ndm   ""                            "%WD%\bin-arm-ndm"   tc7zarm-ndm.dll
-
-call :doit arm64     "%WD%\bin-arm\7-zip.dll"      "%WD%\bin-arm64"     tc7zarm64.dll
-call :doit arm64-ndm "%WD%\bin-arm-ndm\7-zip.dll"  "%WD%\bin-arm64-ndm" tc7zarm64-ndm.dll
-
-cd %WD%\totalcmd
-%SZIP% a ..\TotalCmd.7z %COPTS%
+call :doit arm64     "%WD%\bin-arm\7-zip.dll"      "%WD%\bin-arm64"
+call :doit arm64-ndm "%WD%\bin-arm-ndm\7-zip.dll"  "%WD%\bin-arm64-ndm"
 
 REM cleanup
 cd %WD%
 rd /S /Q %SKEL%
-rd /S /Q %WD%\totalcmd

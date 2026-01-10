@@ -247,11 +247,9 @@ Codecs:
 ```
 
 ## Codec Plugin for Total Commander
-- download [TotalCmd.7z]
-- install it, by replacing the files `tc7z.dll` and `tc7z64.dll` with the new ones
-- you can check the Total Commander Forum for more information about this [DLL Files](https://ghisler.ch/board/viewtopic.php?p=319216)
-- decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] ot the 7-Zip `.7z` format
-  will work out of the box with Total Commander now :-)
+
+There is no dedicated plugin for [Total Commander](https://www.ghisler.com/) anymore,
+and it seems that the files `tc7z.dll` and `tc7z64.dll` cannot simply be replaced at the moment.
 
 ## Codec Plugin for Far Manager
 - copy the `7z.dll` file from `C:\Program Files\7-Zip-Zstandard\7z.dll` to `C:\Program Files\Far Manager\Plugins\ArcLite\7z.dll`
@@ -319,7 +317,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
 
-/TR 2026-01-03
+/TR 2026-01-10
 
 ## Notes
 
