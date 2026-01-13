@@ -77,22 +77,30 @@ jobs:
 ########################################################################################
 
   windows:
-    runs-on: windows-latest
 
     strategy:
       matrix:
-        arch: [ amd64, amd64_x86, amd64_arm64 ]
+        arch: [ amd64, amd64_x86, arm64 ]
         darkmode: [darkmode, '']
         include:
           - arch: amd64_x86
+            #is_arm: false
+            runner: windows-latest
             subsys: "5.01"
             platform: "x86"
           - arch: amd64
+            #is_arm: false
+            runner: windows-latest
             subsys: "5.02"
             platform: "x64"
-          - arch: amd64_arm64
+          - arch: arm64
+            #is_arm: true
+            runner: windows-11-arm
             subsys: "6.02"
             platform: "arm64"
+
+    runs-on: ${{ matrix.runner }}
+
     steps:
       - uses: actions/checkout@v6
 
