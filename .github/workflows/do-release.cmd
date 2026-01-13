@@ -55,8 +55,8 @@ goto :eof
 REM Currently we build 3 architectures as 6 targets with and without darkmode (ndm suffix)
 :start
 
-call :doit x32       ""                            "%WD%\bin-x86"
-call :doit x32-ndm   ""                            "%WD%\bin-x86-ndm"
+call :doit x86       ""                            "%WD%\bin-x86"
+call :doit x86-ndm   ""                            "%WD%\bin-x86-ndm"
 
 call :doit x64       "%WD%\bin-x86\7-zip.dll"      "%WD%\bin-x64"
 call :doit x64-ndm   "%WD%\bin-x86-ndm\7-zip.dll"  "%WD%\bin-x64-ndm"
