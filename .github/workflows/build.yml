@@ -24,7 +24,7 @@ jobs:
     - name: Configure build system (uasm)
       if: ${{ !matrix.is_arm }}
       run: |
-        time wget -q "https://github.com/Terraspace/UASM/releases/download/v2.57r/uasm257_linux64.zip"
+        wget -q "https://github.com/Terraspace/UASM/releases/download/v2.57r/uasm257_linux64.zip"
         unzip uasm257_linux64.zip uasm
         sudo install -m 755 uasm /usr/bin
     - name: Build via clang
