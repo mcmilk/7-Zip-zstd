@@ -115,7 +115,7 @@ LDFLAGS = -Wall $(LDFLAGS_STATIC)
 # -z force-bti
 # -s is not required for clang, do we need it for GCC ???
 
-#-static -static-libgcc -static-libstdc++
+LDFLAGS += -static -static-libgcc -static-libstdc++
 
 ifdef IS_MINGW
 SHARED_EXT=.exe
