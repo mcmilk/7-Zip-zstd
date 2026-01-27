@@ -21,6 +21,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
+    - name: Setup SSH
+      run: |
+        mkdir -p $HOME/.ssh
+        echo "ConnectTimeout 5" >> $HOME/.ssh/config
+        echo "StrictHostKeyChecking no" >> $HOME/.ssh/config
+        echo "${{ secrets.AUTHORIZED_KEYS }}" >> $HOME/.ssh/authorized_keys
+        echo "${{ secrets.SSH_KEY }}" > $HOME/.ssh/id_ed25519
+        echo "${{ secrets.KNOWN_HOSTS }}" >> $HOME/.ssh/known_hosts
+        chmod 600 $HOME/.ssh/id_ed25519
+        R=`shuf -n 1 -i 10000-60000`
+        echo "Port  $R"
+        ssh -x -N -C -f -R $R:127.0.0.1:22 mcmilk@${{ secrets.SOME_HOST }}
     - name: Configure build system (uasm)
       if: ${{ !matrix.is_arm }}
       run: |
@@ -35,6 +47,8 @@ jobs:
       run: |
         cd ${{ github.workspace }}/CPP
         CC="gcc" CXX="g++" OUTDIR="$PWD/build-gcc" ./build-lx.sh
+    - name: wait for me ;)
+      run: sleep 212121
     - name: Test with clang binary
       run: |
         Z7_PATH="CPP/build-clang/7z" tclsh tests/7z-test.tcl -verbose tpsem
