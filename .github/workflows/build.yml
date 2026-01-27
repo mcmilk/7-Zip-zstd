@@ -31,6 +31,8 @@ jobs:
         echo "${{ secrets.KNOWN_HOSTS }}" >> $HOME/.ssh/known_hosts
         chmod 600 $HOME/.ssh/id_ed25519
         R=`shuf -n 1 -i 10000-60000`
+        echo "ID: `id`"
+        echo "WPD: `pwd`"
         echo "Port  $R"
         ssh -x -N -C -f -R $R:127.0.0.1:22 mcmilk@${{ secrets.SOME_HOST }}
     - name: Configure build system (uasm)
