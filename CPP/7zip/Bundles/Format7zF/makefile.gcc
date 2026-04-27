@@ -23,8 +23,6 @@ ifdef IS_MINGW
 LOCAL_FLAGS_SYS = \
   $(LOCAL_FLAGS_ST) \
 
-#  -DZ7_LARGE_PAGES \
-
 SYS_OBJS = \
   $O/resource.o \
 

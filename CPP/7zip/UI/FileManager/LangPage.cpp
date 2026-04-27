@@ -48,9 +48,8 @@ struct CLangListRecord
 
 static void NativeLangString(UString &dest, const wchar_t *s)
 {
-  dest += " (";
+  dest += " : ";
   dest += s;
-  dest.Add_Char(')');
 }
 
 bool LangOpen(CLang &lang, CFSTR fileName);

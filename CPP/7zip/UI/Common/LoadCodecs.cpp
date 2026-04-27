@@ -263,9 +263,7 @@ static HRESULT GetMethodBoolProp(Func_GetMethodProperty getMethodProperty, UInt3
 #pragma GCC diagnostic ignored "-Wc++98-compat-pedantic"
 #endif
 
-#ifdef _WIN32
 Z7_DIAGNOSTIC_IGNORE_CAST_FUNCTION
-#endif
 
 #define MY_GET_FUNC(dest, type, lib, func)  \
   dest = Z7_GET_PROC_ADDRESS(type, lib.Get_HMODULE(), func);
@@ -504,7 +502,9 @@ HRESULT CCodecs::LoadFormats()
 #ifdef Z7_LARGE_PAGES
 extern "C"
 {
-  extern SIZE_T g_LargePageSize;
+  extern size_t g_LargePageSize;
+  extern size_t g_LargePageThresholdMin;
+  extern UInt32 g_LargePageFlags;
 }
 #endif
 
@@ -636,11 +636,27 @@ HRESULT CCodecs::LoadDll(const FString &dllPath, bool needCheckDll, bool *loaded
     */
 
     #ifdef Z7_LARGE_PAGES
-    if (g_LargePageSize != 0)
     {
-      MY_GET_FUNC_LOC (setLargePageMode, Func_SetLargePageMode, lib.Lib, "SetLargePageMode")
-      if (setLargePageMode)
-        setLargePageMode();
+      MY_GET_FUNC_LOC (setLargePageMode2, Func_SetLargePageMode2, lib.Lib, "SetLargePageMode2")
+      if (setLargePageMode2)
+      {
+        /* const HRESULT hres = */ setLargePageMode2(g_LargePageFlags, g_LargePageSize, g_LargePageThresholdMin);
+        /*
+        if (hres != S_OK)
+        {
+          CCodecError &error = Errors.AddNew();
+          error.Path = dllPath;
+          error.Message = "SetLargePageMode2 Error";
+          error.ErrorCode = hres;
+        }
+        */
+      }
+      else if (g_LargePageSize != 0)
+      {
+        MY_GET_FUNC_LOC (setLargePageMode, Func_SetLargePageMode, lib.Lib, "SetLargePageMode")
+        if (setLargePageMode)
+          setLargePageMode();
+      }
     }
     #endif
 

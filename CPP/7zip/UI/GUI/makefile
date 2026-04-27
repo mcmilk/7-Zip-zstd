@@ -8,7 +8,6 @@ LIBS = $(LIBS) ceshell.lib Commctrl.lib
 !ELSE
 LIBS = $(LIBS) comctl32.lib htmlhelp.lib comdlg32.lib gdi32.lib
 CFLAGS = $(CFLAGS) -DZ7_DEVICE_FILE
-# -DZ7_LONG_PATH -DZ7_LARGE_PAGES
 !ENDIF
 
 GUI_OBJS = \

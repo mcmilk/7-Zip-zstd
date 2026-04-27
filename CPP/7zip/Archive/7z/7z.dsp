@@ -580,6 +580,14 @@ SOURCE=..\..\..\Windows\System.h
 
 SOURCE=..\..\..\Windows\Thread.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\TimeUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Windows\TimeUtils.h
+# End Source File
 # End Group
 # Begin Group "Compress"
 
@@ -634,5 +642,9 @@ SOURCE=..\..\..\..\C\Threads.c
 SOURCE=..\..\..\..\C\Threads.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\Icons\7z.ico
+# End Source File
 # End Target
 # End Project

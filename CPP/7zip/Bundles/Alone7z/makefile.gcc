@@ -56,9 +56,6 @@ ifdef IS_MINGW
 LOCAL_FLAGS_SYS = \
   -DZ7_DEVICE_FILE \
 
-#  -DZ7_LARGE_PAGES \
-#  -DZ7_LONG_PATH \
-
 SYS_OBJS = \
   $O/FileSystem.o \
   $O/Registry.o \

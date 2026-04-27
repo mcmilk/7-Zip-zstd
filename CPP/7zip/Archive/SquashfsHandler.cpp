@@ -819,7 +819,7 @@ struct CData
 {
   CByteBuffer Data;
   CRecordVector<UInt32> PackPos;
-  CRecordVector<UInt32> UnpackPos; // additional item at the end contains TotalUnpackSize
+  CRecordVector<UInt32> UnpackPos;
   
   UInt32 GetNumBlocks() const { return PackPos.Size(); }
   void Clear()
@@ -846,7 +846,6 @@ Z7_CLASS_IMP_CHandler_IInArchive_1(
   CRecordVector<CItem> _items;
   CRecordVector<CNode> _nodes;
   CRecordVector<UInt32> _nodesPos;
-  CRecordVector<UInt32> _blockToNode;
   CData _inodesData;
   CData _dirs;
   CRecordVector<CFrag> _frags;
@@ -1320,6 +1319,9 @@ HRESULT CHandler::Decompress(ISequentialOutStream *outStream, Byte *outBuf, bool
   return S_OK;
 }
 
+// in  : packSize : allowed packSize limit
+// out : packSize : real packSize in block
+// out(packSize) <= in(packSize)
 HRESULT CHandler::ReadMetadataBlock(UInt32 &packSize)
 {
   Byte temp[3];
@@ -1333,10 +1335,12 @@ HRESULT CHandler::ReadMetadataBlock(UInt32 &packSize)
   const bool isCompressed = ((size & kNotCompressedBit16) == 0);
   if (size != kNotCompressedBit16)
     size &= ~kNotCompressedBit16;
-
-  if (size > kMetadataBlockSize || offset + size > packSize)
+  if (size > kMetadataBlockSize)
     return S_FALSE;
-  packSize = offset + size;
+  const UInt32 packSize2 = offset + size;
+  if (packSize2 > packSize)
+    return S_FALSE;
+  packSize = packSize2;
   if (isCompressed)
   {
     _limitedInStream->Init(size);
@@ -1364,9 +1368,12 @@ HRESULT CHandler::ReadMetadataBlock2()
 
 HRESULT CHandler::ReadData(CData &data, UInt64 start, UInt64 end)
 {
-  if (end < start || end - start >= ((UInt64)1 << 32))
+  if (end < start)
     return S_FALSE;
-  const UInt32 size = (UInt32)(end - start);
+  const UInt64 size64 = end - start;
+  if (size64 >= ((UInt64)1 << 32))
+    return S_FALSE;
+  const UInt32 size = (UInt32)size64;
   RINOK(Seek2(start))
   _dynOutStream->Init();
   UInt32 packPos = 0;
@@ -1374,8 +1381,6 @@ HRESULT CHandler::ReadData(CData &data, UInt64 start, UInt64 end)
   {
     data.PackPos.Add(packPos);
     data.UnpackPos.Add((UInt32)_dynOutStream->GetSize());
-    if (packPos > size)
-      return S_FALSE;
     UInt32 packSize = size - packPos;
     RINOK(ReadMetadataBlock(packSize))
     {
@@ -1385,7 +1390,6 @@ HRESULT CHandler::ReadData(CData &data, UInt64 start, UInt64 end)
     }
     packPos += packSize;
   }
-  data.UnpackPos.Add((UInt32)_dynOutStream->GetSize());
   _dynOutStream->CopyToBuffer(data.Data);
   return S_OK;
 }
@@ -1411,14 +1415,15 @@ HRESULT CHandler::OpenDir(int parent, UInt32 startBlock, UInt32 offset, unsigned
   if (unpackPos < offset)
     return S_FALSE;
 
-  nodeIndex = _nodesPos.FindInSorted(unpackPos, _blockToNode[blockIndex], _blockToNode[blockIndex + 1]);
-  // nodeIndex = _nodesPos.FindInSorted(unpackPos);
+  nodeIndex = _nodesPos.FindInSorted(unpackPos);
   if (nodeIndex < 0)
     return S_FALSE;
   
   const CNode &n = _nodes[nodeIndex];
   if (!n.IsDir())
     return S_OK;
+  if ((UInt32)n.StartBlock != n.StartBlock)
+    return S_FALSE;
   blockIndex = _dirs.PackPos.FindInSorted((UInt32)n.StartBlock);
   if (blockIndex < 0)
     return S_FALSE;
@@ -1658,20 +1663,17 @@ HRESULT CHandler::Open2(IInStream *inStream)
   RINOK(ReadData(_inodesData, _h.InodeTable, _h.DirTable))
   RINOK(ReadData(_dirs, _h.DirTable, _h.FragTable))
 
-  UInt64 absOffset = _h.RootInode >> 16;
+  const UInt64 absOffset = _h.RootInode >> 16;
   if (absOffset >= ((UInt64)1 << 32))
     return S_FALSE;
   {
-    UInt32 pos = 0;
-    UInt32 totalSize = (UInt32)_inodesData.Data.Size();
+    const UInt32 totalSize = (UInt32)_inodesData.Data.Size();
     const unsigned kMinNodeParseSize = 4;
     if (_h.NumInodes > totalSize / kMinNodeParseSize)
       return S_FALSE;
     _nodesPos.ClearAndReserve(_h.NumInodes);
     _nodes.ClearAndReserve(_h.NumInodes);
-    // we use _blockToNode for binary search seed optimizations
-    _blockToNode.ClearAndReserve(_inodesData.GetNumBlocks() + 1);
-    unsigned curBlock = 0;
+    UInt32 pos = 0;
     for (UInt32 i = 0; i < _h.NumInodes; i++)
     {
       CNode n;
@@ -1687,16 +1689,10 @@ HRESULT CHandler::Open2(IInStream *inStream)
       }
       if (size == 0)
         return S_FALSE;
-      while (pos >= _inodesData.UnpackPos[curBlock])
-      {
-        _blockToNode.Add(_nodesPos.Size());
-        curBlock++;
-      }
       _nodesPos.AddInReserved(pos);
       _nodes.AddInReserved(n);
       pos += size;
     }
-    _blockToNode.Add(_nodesPos.Size());
     if (pos != totalSize)
       return S_FALSE;
   }
@@ -1834,7 +1830,6 @@ Z7_COM7F_IMF(CHandler::Close())
   _items.Clear();
   _nodes.Clear();
   _nodesPos.Clear();
-  _blockToNode.Clear();
   _frags.Clear();
   _inodesData.Clear();
   _dirs.Clear();
@@ -2151,6 +2146,8 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
       return S_FALSE;
     const CFrag &frag = _frags[node.Frag];
     offsetInBlock = node.Offset;
+    if (offsetInBlock > _h.BlockSize)
+      return S_FALSE;
     blockOffset = frag.StartBlock;
     packBlockSize = GET_COMPRESSED_BLOCK_SIZE(frag.Size);
     compressed = IS_COMPRESSED_BLOCK(frag.Size);
@@ -2192,7 +2189,9 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
     _cachedBlockStartPos = blockOffset;
     _cachedPackBlockSize = packBlockSize;
   }
-  if (offsetInBlock + blockSize > _cachedUnpackBlockSize)
+
+  if (_cachedUnpackBlockSize < offsetInBlock ||
+      _cachedUnpackBlockSize - offsetInBlock < blockSize)
     return S_FALSE;
   if (blockSize != 0)
     memcpy(dest, _cachedBlock + offsetInBlock, blockSize);
