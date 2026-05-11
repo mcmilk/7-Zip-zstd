@@ -58,15 +58,15 @@ jobs:
 
     strategy:
       matrix:
-        arch: [ amd64, amd64_x86, arm64 ]
+        arch: [ x64, x86, arm64 ]
         darkmode: [darkmode, '']
         include:
-          - arch: amd64_x86
+          - arch: x86
             #is_arm: false
             runner: windows-latest
             subsys: "5.01"
             platform: "x86"
-          - arch: amd64
+          - arch: x64
             #is_arm: false
             runner: windows-latest
             subsys: "5.02"
@@ -84,11 +84,15 @@ jobs:
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v3
-
-      - name: Enable Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1.13.0
         with:
-          arch: ${{ matrix.arch }}
+          msbuild-architecture: ${{ matrix.arch }}
+
+      - name: Find vcvarsall path (to init Developer Command Prompt at compile phase)
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`vswhere -latest -property installationPath`) do (
+            echo VCVARSALL_PATH=%%i\VC\Auxiliary\Build\vcvarsall.bat >> %GITHUB_ENV%
+          )
 
       - name: Pre-requirements
         shell: cmd
@@ -109,6 +113,7 @@ jobs:
       - name: Compiling ${{ matrix.arch }}
         shell: cmd
         run: |
+          call "%VCVARSALL_PATH%" ${{ matrix.arch }}
           set WDIR=%cd%
           set PLATFORM=${{matrix.platform}}
           set SUBSYS=${{matrix.subsys}}
