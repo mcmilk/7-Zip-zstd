@@ -61,12 +61,12 @@ jobs:
         include:
           - arch: x86
             #is_arm: false
-            runner: windows-latest
+            runner: windows-2025-vs2026
             subsys: "5.01"
             platform: "x86"
           - arch: x64
             #is_arm: false
-            runner: windows-latest
+            runner: windows-2025-vs2026
             subsys: "5.02"
             platform: "x64"
           - arch: arm64
