@@ -27,7 +27,7 @@ class CCopyDialog: public NWindows::NControl::CModalDialog
   void ShowPathFreeSpace(UString & strPath);
 
 public:
-  CCopyDialog() {}
+  CCopyDialog() = default;
 
   UString Title;
   UString Static;

@@ -648,14 +648,10 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   _elimDup = ci.ElimDup;
   _writeZone = ci.WriteZone;
 
-  HBITMAP bitmap = NULL;
-  if (ci.MenuIcons.Val)
-  {
-    ODS("### 45")
-    if (!_bitmap)
-      _bitmap = ::LoadBitmap(g_hInstance, MAKEINTRESOURCE(IDB_MENU_LOGO));
-    bitmap = _bitmap;
-  }
+  ODS("### 45")
+  if (!_bitmap)
+    _bitmap = ::LoadBitmap(g_hInstance, MAKEINTRESOURCE(IDB_MENU_LOGO));
+  HBITMAP bitmap = _bitmap;
 
   UINT subIndex = indexMenu;
 

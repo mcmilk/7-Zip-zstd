@@ -3,6 +3,8 @@
 #ifndef ZIP7_INC_PROGRESS_DIALOG_2_H
 #define ZIP7_INC_PROGRESS_DIALOG_2_H
 
+#include <array>
+
 #include "../../../Common/MyCom.h"
 
 #include "../../../Windows/ErrorMsg.h"
@@ -103,6 +105,26 @@ public:
 };
 
 
+void ProgressDialog_SetError(bool error);
+bool ProgressDialog_HadError();
+
+
+struct CSysTray
+{
+  static const int kNumIcons = 15;
+  static const int kPercentPerIcon = 7;
+
+  std::array<HICON, kNumIcons> Icons{};
+  int IconArrayId = -1;
+  HMENU Menu = nullptr;
+
+  CSysTray() = default;
+  bool LoadIcons(HINSTANCE hInst, int firstResId);
+  void UpdateIcon(HWND dlg, UInt64 percentValue, bool addIcon, bool updateTip);
+  bool BuildPopupMenu(LPCWSTR foregroundText, LPCWSTR pauseOrContinueText, LPCWSTR cancelText);
+};
+
+
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
   bool _isDir;
@@ -144,11 +166,7 @@ private:
 
   UString _title;
 
-  static const int kNumTrayIcons = 15;
-  static const int kTrayPercentPerIcon = 7;
-  HICON _iconSysTrayArray[kNumTrayIcons];
-  int _sysTrayIconArrayId;
-  HMENU _sysTrayMenu;
+  CSysTray _sysTray;
 
   class CU64ToI32Converter
   {
@@ -272,10 +290,6 @@ public:
   }
 
   INT_PTR Create(const UString &title, NWindows::CThread &thread, HWND wndParent = NULL);
-
-  bool CreateSysTrayMenu();
-  bool LoadSysTrayIcons();
-  void UpdateSysTrayIcon(bool addIcon, bool updateTip);
 
   /* how it works:
      1) the working thread calls ProcessWasFinished()

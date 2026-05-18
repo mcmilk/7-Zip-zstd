@@ -84,7 +84,7 @@ public:
   #ifndef Z7_SFX
   UString Password;
   #endif
-  bool PathMode_Force;
+  bool PathMode_Force = false;
   bool OverwriteMode_Force = false;
   NExtract::NPathMode::EEnum PathMode;
   NExtract::NOverwriteMode::EEnum OverwriteMode;
@@ -109,8 +109,7 @@ public:
     return CModalDialog::Create(SIZED_DIALOG(IDD_EXTRACT), aWndParent);
   }
 
-  CExtractDialog():
-    PathMode_Force(false)
+  CExtractDialog()
   {
     ElimDup.Val = true;
   }

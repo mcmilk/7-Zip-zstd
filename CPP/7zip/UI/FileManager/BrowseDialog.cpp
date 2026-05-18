@@ -1,6 +1,8 @@
 // BrowseDialog.cpp
- 
+
 #include "StdAfx.h"
+
+#include <array>
 
 #include "../../../Common/MyWindows.h"
 
@@ -613,7 +615,7 @@ void FormatPathFreeSpace(UString &strPath, UString &strText)
   strPath.Trim();
   for (;;)
   {
-    const DWORD attr = GetFileAttributesW(strPath);
+    const DWORD attr = GetFileAttributesW(strPath);  // NOSONAR cpp:S6004 — FM build is pre-C++17, init-statement not available
     if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
       break;
     const int n = strPath.ReverseFind(L'\\');
@@ -628,13 +630,13 @@ void FormatPathFreeSpace(UString &strPath, UString &strText)
   if (!GetDiskFreeSpaceExW(strPath, &freeBytes, &totalBytes, &totalFree))
     return;
 
-  wchar_t szFree[40];
-  wchar_t szTotal[40];
-  FreeSpace_ConvertSizeToString(totalFree.QuadPart, szFree);
-  FreeSpace_ConvertSizeToString(totalBytes.QuadPart, szTotal);
-  strText = szFree;
+  std::array<wchar_t, 40> szFree;
+  std::array<wchar_t, 40> szTotal;
+  FreeSpace_ConvertSizeToString(totalFree.QuadPart, szFree.data());
+  FreeSpace_ConvertSizeToString(totalBytes.QuadPart, szTotal.data());
+  strText = szFree.data();
   strText += L" Free (Total: ";
-  strText += szTotal;
+  strText += szTotal.data();
   strText += L")";
 }
 

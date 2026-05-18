@@ -41,8 +41,6 @@ using namespace NName;
 
 extern HINSTANCE g_hInstance;
 
-extern bool g_bProcessError;
-
 #define kTempDirPrefix FTEXT("7zE")
 
 // Walk up, delete found archive.
@@ -52,7 +50,7 @@ static void DeleteSourceArchive_WalkUp(CPanel &srcPanel, UString srcFilePath)
   {
     if (srcFilePath.Back() == L'\\')
       srcFilePath.DeleteBack();
-    const DWORD dwAttr = GetFileAttributesW(srcFilePath);
+    const DWORD dwAttr = GetFileAttributesW(srcFilePath);  // NOSONAR cpp:S6004 — FM build is pre-C++17, init-statement not available
 
     if (dwAttr != INVALID_FILE_ATTRIBUTES)
     {
@@ -853,7 +851,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
     SaveCopyHistory(copyFolders);
   }
 
-  g_bProcessError = false;
+  ProgressDialog_SetError(false);
 
   bool useSrcPanel = !useDestPanel || !srcPanel.Is_IO_FS_Folder();
 
@@ -952,7 +950,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
   disableNotify2.Restore();
   srcPanel.SetFocusToList();
 
-  if (!g_bProcessError && result == S_OK)
+  if (!ProgressDialog_HadError() && result == S_OK)
   {
     if (openOutputFolder && NFind::DoesDirExist_FollowLink(us2fs(destPath)))
     {

@@ -646,7 +646,7 @@ void CContextMenuInfo::Load()
   
   Key_Get_BoolPair_true(key, kCascadedMenu, Cascaded);
   Key_Get_BoolPair_true(key, kElimDup, ElimDup);
-  Key_Get_BoolPair(key, kMenuIcons, MenuIcons);
+  Key_Get_BoolPair_true(key, kMenuIcons, MenuIcons);
 
   Key_Get_UInt32(key, kWriteZoneId, WriteZone);
 

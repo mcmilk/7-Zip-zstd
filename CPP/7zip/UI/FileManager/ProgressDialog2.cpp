@@ -26,8 +26,17 @@ using namespace NWindows;
 
 extern HINSTANCE g_hInstance;
 extern bool g_DisableUserQuestions;
-// Set true by CProgressDialog when error messages occur.
-bool g_bProcessError = false;
+
+namespace {
+  bool& ProcessErrorRef()
+  {
+    static bool s_error = false;
+    return s_error;
+  }
+}
+
+void ProgressDialog_SetError(bool error) { ProcessErrorRef() = error; }
+bool ProgressDialog_HadError()           { return ProcessErrorRef(); }
 
 static const UINT WM_TRAY_ICON_NOTIFY = WM_APP + 10;
 static const UINT ID_SYSTRAY_ICON     = 100;
@@ -52,7 +61,7 @@ static BOOL SetSysTray(HWND dlg,
 
   if (tip != nullptr && *tip != 0)
   {
-    ::lstrcpynW(data.szTip, tip, sizeof(data.szTip) / sizeof(WCHAR));
+    ::lstrcpynW(data.szTip, tip, static_cast<int>(std::size(data.szTip)));
   }
 
   return Shell_NotifyIconW(message, &data);
@@ -303,11 +312,6 @@ CProgressDialog::CProgressDialog():
     IconID(-1),
     MainWindow(NULL)
 {
-  for (int i = 0; i < kNumTrayIcons; i++)
-    _iconSysTrayArray[i] = nullptr;
-  _sysTrayIconArrayId = -1;
-  _sysTrayMenu = nullptr;
-
   if (_dialogCreatedEvent.Create() != S_OK)
     throw 1334987;
   if (_createDialogEvent.Create() != S_OK)
@@ -888,14 +892,14 @@ void CProgressDialog::UpdateStatInfo(bool showAll)
         _prevPercentValue = percent;
         needSetTitle = true;
 
-        wchar_t szPercent[32];
-        wchar_t *p = ConvertUInt64ToString(percent, szPercent);
+        std::array<wchar_t, 32> szPercent;
+        wchar_t *p = ConvertUInt64ToString(percent, szPercent.data());
         *p++ = L'%';
         *p = 0;
-        SetItemText(IDC_PROGRESS_PERCENT, szPercent);
+        SetItemText(IDC_PROGRESS_PERCENT, szPercent.data());
 
-        if (_background && _iconSysTrayArray[0] != nullptr)
-          UpdateSysTrayIcon(false, true);
+        if (_background && _sysTray.Icons[0] != nullptr)
+          _sysTray.UpdateIcon(_window, _prevPercentValue, false, true);
       }
     }
 
@@ -1131,18 +1135,18 @@ bool CProgressDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
         if (MainWindow != nullptr)
           ShowWindow(MainWindow, SW_SHOW);
       }
-      if (_iconSysTrayArray[0] != nullptr)
+      if (_sysTray.Icons[0] != nullptr)
       {
-        for (int i = 0; i < kNumTrayIcons; i++)
+        for (auto &icon : _sysTray.Icons)
         {
-          DestroyIcon(_iconSysTrayArray[i]);
-          _iconSysTrayArray[i] = nullptr;
+          DestroyIcon(icon);
+          icon = nullptr;
         }
       }
-      if (_sysTrayMenu != nullptr)
+      if (_sysTray.Menu != nullptr)
       {
-        ::DestroyMenu(_sysTrayMenu);
-        _sysTrayMenu = nullptr;
+        ::DestroyMenu(_sysTray.Menu);
+        _sysTray.Menu = nullptr;
       }
       return OnExternalCloseMessage();
     }
@@ -1204,8 +1208,8 @@ void CProgressDialog::SetPauseText()
   SetItemText(IDB_PAUSE, pszText);
   SetTitleText();
 
-  if (_sysTrayMenu != nullptr)
-    ModifyMenuW(_sysTrayMenu, IDB_PAUSE, MF_BYCOMMAND, IDB_PAUSE, pszText);
+  if (_sysTray.Menu != nullptr)
+    ModifyMenuW(_sysTray.Menu, IDB_PAUSE, MF_BYCOMMAND, IDB_PAUSE, pszText);
 }
 
 void CProgressDialog::OnPauseButton()
@@ -1235,7 +1239,7 @@ void CProgressDialog::OnPriorityButton()
   SetPriorityClass(GetCurrentProcess(), _background ? IDLE_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS);
   if (!_background) // foreground
   {
-    if (_iconSysTrayArray[0] != nullptr)
+    if (_sysTray.Icons[0] != nullptr)
     {
       if (MainWindow != nullptr)
         ShowWindow(MainWindow, SW_SHOW);
@@ -1245,12 +1249,12 @@ void CProgressDialog::OnPriorityButton()
   }
   else
   {
-    if (LoadSysTrayIcons())
+    if (_sysTray.LoadIcons(g_hInstance, IDI_SYSTRAY_0))
     {
       if (MainWindow != nullptr)
         ShowWindow(MainWindow, SW_HIDE);
       Show(SW_HIDE);
-      UpdateSysTrayIcon(true, true);
+      _sysTray.UpdateIcon(_window, _prevPercentValue, true, true);
     }
   }
   #endif
@@ -1316,7 +1320,7 @@ void CProgressDialog::UpdateMessagesDialog()
   }
   if (!messages.IsEmpty())
   {
-    g_bProcessError = true;
+    ProgressDialog_SetError(true);
 
     FOR_VECTOR (i, messages)
       AddMessage(messages[i]);
@@ -1499,28 +1503,29 @@ void CProgressDialog::CopyToClipboard()
 }
 
 
-bool CProgressDialog::LoadSysTrayIcons()
+bool CSysTray::LoadIcons(HINSTANCE hInst, int firstResId)
 {
-  if (_iconSysTrayArray[0] != nullptr) return true;
+  if (Icons[0] != nullptr) return true;
 
-  int id = IDI_SYSTRAY_0;
-  for (int n = 0; n < kNumTrayIcons; n++, id++)
+  int id = firstResId;
+  for (auto &icon : Icons)
   {
-    _iconSysTrayArray[n] = (HICON)LoadImage(g_hInstance, MAKEINTRESOURCE(id), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    icon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(id), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    id++;
   }
 
-  return _iconSysTrayArray[0] != nullptr;
+  return Icons[0] != nullptr;
 }
 
-void CProgressDialog::UpdateSysTrayIcon(bool addIcon, bool updateTip)
+void CSysTray::UpdateIcon(HWND dlg, UInt64 percentValue, bool addIcon, bool updateTip)
 {
-  int newIconId = (_prevPercentValue / kTrayPercentPerIcon) % kNumTrayIcons;
-  bool updateIcon = newIconId > _sysTrayIconArrayId;
+  const auto newIconId = static_cast<int>((percentValue / kPercentPerIcon) % kNumIcons);
+  const bool updateIcon = newIconId > IconArrayId;
 
   if (updateIcon || updateTip || addIcon)
   {
-    wchar_t tip[64];
-    wchar_t *p = ConvertUInt64ToString(_prevPercentValue, tip);
+    std::array<wchar_t, 64> tip;
+    wchar_t *p = ConvertUInt64ToString(percentValue, tip.data());
     *p++ = L'%';
     *p = 0;
 
@@ -1528,26 +1533,26 @@ void CProgressDialog::UpdateSysTrayIcon(bool addIcon, bool updateTip)
     if (updateIcon)
       flags |= NIF_ICON;
 
-    if (!SetSysTray(_window, NIM_MODIFY, ID_SYSTRAY_ICON, flags, 0, _iconSysTrayArray[newIconId], tip))
+    if (!SetSysTray(dlg, NIM_MODIFY, ID_SYSTRAY_ICON, flags, 0, Icons[newIconId], tip.data()))
     {
-      SetSysTray(_window, NIM_DELETE, ID_SYSTRAY_ICON, 0, 0, nullptr, nullptr);
-      SetSysTray(_window, NIM_ADD, ID_SYSTRAY_ICON, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_TRAY_ICON_NOTIFY,
-          _iconSysTrayArray[newIconId], tip);
+      SetSysTray(dlg, NIM_DELETE, ID_SYSTRAY_ICON, 0, 0, nullptr, nullptr);
+      SetSysTray(dlg, NIM_ADD, ID_SYSTRAY_ICON, NIF_ICON | NIF_MESSAGE | NIF_TIP, WM_TRAY_ICON_NOTIFY,
+          Icons[newIconId], tip.data());
     }
 
-    _sysTrayIconArrayId = newIconId;
+    IconArrayId = newIconId;
   }
 }
 
-bool CProgressDialog::CreateSysTrayMenu()
+bool CSysTray::BuildPopupMenu(LPCWSTR foregroundText, LPCWSTR pauseOrContinueText, LPCWSTR cancelText)
 {
-  if (_sysTrayMenu != nullptr) return true;
+  if (Menu != nullptr) return true;
 
-  _sysTrayMenu = CreatePopupMenu();
-  AppendMenuW(_sysTrayMenu, MF_STRING, IDB_PROGRESS_BACKGROUND, _foreground_String);
-  AppendMenuW(_sysTrayMenu, MF_STRING, IDB_PAUSE, Sync.Get_Paused() ? _continue_String : _pause_String);
-  AppendMenuW(_sysTrayMenu, MF_STRING, IDCANCEL, cancelString);
-  return _sysTrayMenu != nullptr;
+  Menu = CreatePopupMenu();
+  AppendMenuW(Menu, MF_STRING, IDB_PROGRESS_BACKGROUND, foregroundText);
+  AppendMenuW(Menu, MF_STRING, IDB_PAUSE, pauseOrContinueText);
+  AppendMenuW(Menu, MF_STRING, IDCANCEL, cancelText);
+  return Menu != nullptr;
 }
 
 bool CProgressDialog::OnTrayNotification(LPARAM lParam)
@@ -1555,11 +1560,13 @@ bool CProgressDialog::OnTrayNotification(LPARAM lParam)
   switch (lParam)
   {
     case WM_RBUTTONUP:
-      if (CreateSysTrayMenu())
+      if (_sysTray.BuildPopupMenu(_foreground_String,
+              Sync.Get_Paused() ? _continue_String : _pause_String,
+              cancelString))
       {
         POINT point;
         ::GetCursorPos(&point);
-        ::TrackPopupMenu(_sysTrayMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, point.x, point.y, 0, _window, nullptr);
+        ::TrackPopupMenu(_sysTray.Menu, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, point.x, point.y, 0, _window, nullptr);
         // BUGFIX: see "PRB: Menus for Notification Icons Don't Work Correctly"
         ::PostMessage(_window, WM_NULL, 0, 0);
       }
