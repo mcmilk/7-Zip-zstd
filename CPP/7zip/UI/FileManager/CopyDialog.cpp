@@ -9,6 +9,8 @@
 
 #include "../../../Windows/Control/Static.h"
 
+#include "../Common/ZipRegistry.h"
+
 #include "BrowseDialog.h"
 #include "CopyDialog.h"
 #include "FormatUtils.h"
@@ -78,7 +80,7 @@ bool CCopyDialog::OnInit()
   _path.SetText(Value);
   ShowPathFreeSpace(Value);
 
-  OpenOutputFolder = Read_OpenOutputFolder();
+  OpenOutputFolder = NExtract::Read_OpnTrgFold();
   Close7Zip = Read_Close7Zip();
 
   CheckButton(IDC_CHECK_OPEN_OUTPUT_FOLDER, OpenOutputFolder);
@@ -197,7 +199,7 @@ void CCopyDialog::OnButtonSetPath()
 
 void CCopyDialog::OnOK()
 {
-  Save_OpenOutputFolder(OpenOutputFolder);
+  NExtract::Save_OpnTrgFold(OpenOutputFolder);
   Save_Close7Zip(Close7Zip);
 
   _path.GetText(Value);

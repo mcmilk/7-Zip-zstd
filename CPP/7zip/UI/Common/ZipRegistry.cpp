@@ -141,6 +141,14 @@ void Save_ShowPassword(bool showPassword)
   key.SetValue(kShowPassword, showPassword);
 }
 
+void Save_OpnTrgFold(bool open)
+{
+  CS_LOCK
+  CKey key;
+  CreateMainKey(key, kKeyName);
+  key.SetValue(kOpnTrgFold, open);
+}
+
 void Save_LimitGB(UInt32 limit_GB)
 {
   CS_LOCK
@@ -204,6 +212,17 @@ bool Read_ShowPassword()
     return showPassword;
   key.GetValue_bool_IfOk(kShowPassword, showPassword);
   return showPassword;
+}
+
+bool Read_OpnTrgFold()
+{
+  CS_LOCK
+  CKey key;
+  bool open = false;
+  if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
+    return open;
+  key.GetValue_bool_IfOk(kOpnTrgFold, open);
+  return open;
 }
 
 UInt32 Read_LimitGB()

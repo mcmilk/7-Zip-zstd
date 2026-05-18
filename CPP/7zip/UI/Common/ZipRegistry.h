@@ -46,6 +46,9 @@ namespace NExtract
   void Save_ShowPassword(bool showPassword);
   bool Read_ShowPassword();
 
+  void Save_OpnTrgFold(bool open);
+  bool Read_OpnTrgFold();
+
   void Save_LimitGB(UInt32 limit_GB);
   UInt32 Read_LimitGB();
 }

@@ -32,7 +32,6 @@ static LPCTSTR const kFolderHistoryValueName = TEXT("FolderHistory");
 static LPCTSTR const kFastFoldersValueName = TEXT("FolderShortcuts");
 static LPCTSTR const kCopyHistoryValueName = TEXT("CopyHistory");
 
-static LPCTSTR const kOpenOutputFolderValueName = TEXT("OpenOutputFolder");
 static LPCTSTR const kClose7ZipValueName = TEXT("Close7Zip");
 
 static NSynchronization::CCriticalSection g_CS;
@@ -347,19 +346,6 @@ void AddUniqueStringToHeadOfList(UStringVector &list, const UString &s)
     else
       i++;
   list.Insert(0, s);
-}
-
-void Save_OpenOutputFolder(bool open)
-{
-  SaveBoolVal(kOpenOutputFolderValueName, open);
-}
-
-bool Read_OpenOutputFolder()
-{
-  bool b;
-  if (!ReadBoolVal(kOpenOutputFolderValueName, b))
-    return false;
-  return b;
 }
 
 void Save_Close7Zip(bool close7Zip)
