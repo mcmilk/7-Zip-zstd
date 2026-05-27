@@ -501,8 +501,8 @@ size_t CFileId::Parse(const Byte *p, size_t size)
   Id.Parse(p + processed, idLen);
   processed += idLen;
   // const size_t processed2 = processed;
-  for (;(processed & 3) != 0; processed++)
-    if (p[processed] != 0)
+  for (; processed & 3; processed++)
+    if (processed >= size || p[processed])
       return 0;
   // some program can create non-standard UDF file where CrcLen doesn't include Padding data
   if ((size_t)tag.CrcLen + 16 != processed
