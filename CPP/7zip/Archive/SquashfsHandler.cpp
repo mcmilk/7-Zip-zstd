@@ -2125,6 +2125,8 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
       return S_FALSE;
     const CFrag &frag = _frags[node.Frag];
     offsetInBlock = node.Offset;
+    if (offsetInBlock > _h.BlockSize)
+      return S_FALSE;
     blockOffset = frag.StartBlock;
     packBlockSize = GET_COMPRESSED_BLOCK_SIZE(frag.Size);
     compressed = IS_COMPRESSED_BLOCK(frag.Size);
@@ -2166,7 +2168,8 @@ HRESULT CHandler::ReadBlock(UInt64 blockIndex, Byte *dest, size_t blockSize)
     _cachedBlockStartPos = blockOffset;
     _cachedPackBlockSize = packBlockSize;
   }
-  if (offsetInBlock + blockSize > _cachedUnpackBlockSize)
+  if (_cachedUnpackBlockSize < offsetInBlock ||
+      _cachedUnpackBlockSize - offsetInBlock < blockSize)
     return S_FALSE;
   if (blockSize != 0)
     memcpy(dest, _cachedBlock + offsetInBlock, blockSize);
