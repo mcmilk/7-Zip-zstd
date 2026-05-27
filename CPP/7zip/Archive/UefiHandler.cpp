@@ -396,8 +396,8 @@ static bool ParseDepedencyExpression(const Byte *p, UInt32 size, AString &res)
   res.Empty();
   for (UInt32 i = 0; i < size;)
   {
-    unsigned command = p[i++];
-    if (command > Z7_ARRAY_SIZE(kExpressionCommands))
+    const unsigned command = p[i++];
+    if (command >= Z7_ARRAY_SIZE(kExpressionCommands))
       return false;
     res += kExpressionCommands[command];
     if (command < 3)
