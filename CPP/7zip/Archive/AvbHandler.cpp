@@ -408,19 +408,19 @@ HRESULT CHandler::Open2(IInStream *stream)
         ht.Parse(buf + offset);
         unsigned pos = k_Hashtree_Size_Min;
 
-        if (pos + ht.partition_name_len > descSize)
+        if (ht.partition_name_len > descSize - pos)
           return S_FALSE;
         Name.Empty(); // UTF-8
         AddNameToString(Name, buf + offset + pos, ht.partition_name_len, false);
         pos += ht.partition_name_len;
-        
-        if (pos + ht.salt_len > descSize)
+
+        if (ht.salt_len > descSize - pos)
           return S_FALSE;
         CByteBuffer salt;
         salt.CopyFrom(buf + offset + pos, ht.salt_len);
         pos += ht.salt_len;
-        
-        if (pos + ht.root_digest_len > descSize)
+
+        if (ht.root_digest_len > descSize - pos)
           return S_FALSE;
         CByteBuffer digest;
         digest.CopyFrom(buf + offset + pos, ht.root_digest_len);
@@ -434,7 +434,7 @@ HRESULT CHandler::Open2(IInStream *stream)
         AvbPropertyDescriptor pt;
         pt.Parse(buf + offset);
         unsigned pos = k_PropertyDescriptor_Size_Min;
-        
+
         if (pt.key_num_bytes > descSize - pos - 1)
           return S_FALSE;
         AString key; // UTF-8
