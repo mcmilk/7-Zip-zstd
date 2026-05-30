@@ -606,7 +606,7 @@ static int WINAPI WinMain2(int nCmdShow)
 
   NT_CHECK
   #ifdef Z7_LARGE_PAGES
-  SetLargePageSize();
+  z7_LargePage_Set(0, 0, 0);
   #endif
 
   #endif

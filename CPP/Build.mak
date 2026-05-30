@@ -163,6 +163,15 @@ LFLAGS = $(LFLAGS) -DLL -DEF:$(DEF_FILE)
 # we can get better compression ratio with ARM64 filter if we change alignment to 4096
 # LFLAGS = $(LFLAGS) /FILEALIGN:4096
 !ENDIF
+
+!IFNDEF DEF_FILE
+!IF "$(PLATFORM)" == "x86" || "$(PLATFORM)" == "arm"
+LFLAGS = $(LFLAGS) /STACK:2097152
+!ELSE IF "$(PLATFORM)" == "x64" || "$(PLATFORM)" == "arm64" || "$(PLATFORM)" == "ia64"
+LFLAGS = $(LFLAGS) /STACK:8388608
+!ENDIF
+!ENDIF
+
 !IFDEF SUB_SYS_VER
 
 !IF "$(ZIP7_DARKMODE)" == "1"
