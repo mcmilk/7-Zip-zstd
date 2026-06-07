@@ -25,7 +25,7 @@
 #include "SettingsPageRes.h"
 
 #ifdef ZIP7_DARKMODE
-#include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
+#include "../../../../DarkMode/lib/include/Darkmodelib.h"
 #endif
 
 using namespace NWindows;
@@ -263,7 +263,7 @@ bool CSettingsPage::OnInit()
 
 #ifdef ZIP7_DARKMODE
   {
-    const bool isININotUsed = !DarkMode::doesConfigFileExist() && DarkMode::isAtLeastWindows10();
+    const bool isININotUsed = !dmlib::doesConfigFileExist() && dmlib::isAtLeastWindows10();
     EnableItem(IDC_COLOR_MODE, isININotUsed);
 
     _clrModeCombo.Attach(GetItem(IDC_COLOR_MODE));
@@ -280,7 +280,7 @@ bool CSettingsPage::OnInit()
     }
     else
     {
-      const wchar_t* mode = DarkMode::isAtLeastWindows10() ? L"INI used" : L"Old OS";
+      const wchar_t* mode = dmlib::isAtLeastWindows10() ? L"INI used" : L"Old OS";
       _clrModeCombo.AddString(mode);
       _clrModeCombo.SetCurSel(0);
     }
@@ -380,34 +380,34 @@ LONG CSettingsPage::OnApply()
     {
       case 0:
       {
-        DarkMode::setDarkModeConfigEx(static_cast<UINT>(DarkMode::DarkModeType::classic));
+        dmlib::setDarkModeConfigEx(static_cast<UINT>(dmlib::DarkModeType::classic));
         break;
       }
 
       case 2:
       {
-        DarkMode::setDarkModeConfig();
+        dmlib::setDarkModeConfig();
         break;
       }
 
       //case 1:
       default:
       {
-        DarkMode::setDarkModeConfigEx(static_cast<UINT>(DarkMode::DarkModeType::dark));
+        dmlib::setDarkModeConfigEx(static_cast<UINT>(dmlib::DarkModeType::dark));
         break;
       }
     }
 
-    DarkMode::setDefaultColors(true);
+    dmlib::setDefaultColors(true);
 
     HWND hOption = GetParent();
-    DarkMode::setChildCtrlsTheme(hOption);
-    DarkMode::setDarkTitleBarEx(hOption, true);
+    dmlib::setChildCtrlsTheme(hOption);
+    dmlib::setDarkTitleBarEx(hOption, true);
     RedrawWindow(hOption, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW | RDW_FRAME);
 
     HWND hMain = ::GetParent(GetParent());
-    DarkMode::setChildCtrlsTheme(hMain);
-    DarkMode::setDarkTitleBarEx(hMain, true);
+    dmlib::setChildCtrlsTheme(hMain);
+    dmlib::setDarkTitleBarEx(hMain, true);
     RedrawWindow(hMain, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW | RDW_FRAME);
 
     _clrMode_wasChanged = false;

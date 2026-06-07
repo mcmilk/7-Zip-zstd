@@ -1,6 +1,6 @@
 !IFDEF WIN_CTRL_OBJS
 DARK_MODE_OBJS = \
-  $O\DarkModeSubclass.obj \
+  $O\Darkmodelib.obj \
   $O\DmlibColor.obj \
   $O\DmlibDpi.obj \
   $O\DmlibHook.obj \

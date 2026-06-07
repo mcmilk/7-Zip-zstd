@@ -20,6 +20,10 @@
 #include "ProgressDialog2.h"
 #include "ProgressDialog2Res.h"
 
+#ifdef ZIP7_DARKMODE
+#include "../../../../DarkMode/lib/include/Darkmodelib.h"
+#endif
+
 using namespace NWindows;
 
 extern HINSTANCE g_hInstance;
@@ -984,7 +988,13 @@ INT_PTR CProgressDialog::Create(const UString &title, NWindows::CThread &thread,
   thread.Wait_Close();
   if (!MessagesDisplayed)
   if (!g_DisableUserQuestions)
+  {
+#ifdef ZIP7_DARKMODE
+    dmlib::darkMessageBoxW(wndParent, L"Progress Error", L"7-Zip", MB_ICONERROR);
+#else
     MessageBoxW(wndParent, L"Progress Error", L"7-Zip", MB_ICONERROR);
+#endif
+  }
   return res;
 }
 
@@ -1020,7 +1030,13 @@ bool CProgressDialog::OnExternalCloseMessage()
     if (fm.ErrorMessage.Title.IsEmpty())
       fm.ErrorMessage.Title = "7-Zip";
     if (!g_DisableUserQuestions)
+    { 
+#ifdef ZIP7_DARKMODE
+      dmlib::darkMessageBoxW(*this, fm.ErrorMessage.Message, fm.ErrorMessage.Title, MB_ICONERROR);
+#else
       MessageBoxW(*this, fm.ErrorMessage.Message, fm.ErrorMessage.Title, MB_ICONERROR);
+#endif
+    }
   }
   else if (!thereAreMessages)
   {
@@ -1031,7 +1047,13 @@ bool CProgressDialog::OnExternalCloseMessage()
       if (fm.OkMessage.Title.IsEmpty())
         fm.OkMessage.Title = "7-Zip";
       if (!g_DisableUserQuestions)
+      {
+#ifdef ZIP7_DARKMODE
+        dmlib::darkMessageBoxW(*this, fm.OkMessage.Message, fm.OkMessage.Title, MB_OK);
+#else
         MessageBoxW(*this, fm.OkMessage.Message, fm.OkMessage.Title, MB_OK);
+#endif
+      }
     }
   }
 
@@ -1256,7 +1278,11 @@ bool CProgressDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
       }
 
       _inCancelMessageBox = true;
+#ifdef ZIP7_DARKMODE
+      const int res = dmlib::darkMessageBoxW(*this, LangString(IDS_PROGRESS_ASK_CANCEL), _title, MB_YESNOCANCEL);
+#else
       const int res = ::MessageBoxW(*this, LangString(IDS_PROGRESS_ASK_CANCEL), _title, MB_YESNOCANCEL);
+#endif
       _inCancelMessageBox = false;
       if (res == IDYES)
         _cancelWasPressed = true;
