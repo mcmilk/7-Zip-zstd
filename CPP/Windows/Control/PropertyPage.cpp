@@ -9,7 +9,7 @@
 #include "PropertyPage.h"
 
 #ifdef ZIP7_DARKMODE
-#include "../../../DarkMode/lib/include/DarkModeSubclass.h"
+#include "../../../DarkMode/lib/include/Darkmodelib.h"
 #endif
 
 extern HINSTANCE g_hInstance;
@@ -38,10 +38,10 @@ APIENTRY MyProperyPageProcedure(HWND dialogHWND, UINT message, WPARAM wParam, LP
   {
     dialog->Attach(dialogHWND);
 #ifdef ZIP7_DARKMODE
-    DarkMode::setDarkWndNotifySafeEx(::GetParent(*dialog), true, true);
-    DarkMode::setWindowCtlColorSubclass(*dialog);
-    DarkMode::setWindowNotifyCustomDrawSubclass(*dialog);
-    DarkMode::setChildCtrlsSubclassAndTheme(*dialog);
+    dmlib::setDarkWndNotifySafeEx(::GetParent(*dialog), true, true);
+    dmlib::setWindowCtlColorSubclass(*dialog);
+    dmlib::setWindowNotifyCustomDrawSubclass(*dialog);
+    dmlib::setChildCtrlsSubclassAndTheme(*dialog);
 #endif
   }
   try { return BoolToBOOL(dialog->OnMessage(message, wParam, lParam)); }

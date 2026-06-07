@@ -23,7 +23,7 @@
 #include "MenuPageRes.h"
 
 #ifdef ZIP7_DARKMODE
-#include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
+#include "../../../../DarkMode/lib/include/Darkmodelib.h"
 #endif
 
 using namespace NWindows;
@@ -286,7 +286,7 @@ bool CMenuPage::OnInit()
   _initMode = false;
 
 #ifdef ZIP7_DARKMODE
-  DarkMode::setDarkListViewCheckboxes(_listView);
+  dmlib::setDarkListViewCheckboxes(_listView);
 #endif
 
   return CPropertyPage::OnInit();

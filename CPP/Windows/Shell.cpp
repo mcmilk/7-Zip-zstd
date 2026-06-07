@@ -11,7 +11,7 @@
 #include "Shell.h"
 
 #ifdef ZIP7_DARKMODE
-#include "../../DarkMode/lib/include/DarkModeSubclass.h"
+#include "../../DarkMode/lib/include/Darkmodelib.h"
 #endif
 
 #ifndef _UNICODE
@@ -688,7 +688,7 @@ static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lp */, LP
     case BFFM_INITIALIZED:
     {
 #ifdef ZIP7_DARKMODE
-      DarkMode::setDarkWndSafeEx(hwnd, false);
+      dmlib::setDarkWndSafeEx(hwnd, false);
 #endif
       SendMessage(hwnd, BFFM_SETSELECTION, TRUE, data);
       break;

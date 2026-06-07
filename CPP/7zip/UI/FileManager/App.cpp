@@ -30,7 +30,7 @@
 #include "PropertyNameRes.h"
 
 #ifdef ZIP7_DARKMODE
-#include "../../../../DarkMode/lib/include/DarkModeSubclass.h"
+#include "../../../../DarkMode/lib/include/Darkmodelib.h"
 #endif
 
 using namespace NWindows;
@@ -113,19 +113,19 @@ void CApp::SetListSettings()
     panel.SetExtendedStyle();
   }
 #ifdef ZIP7_DARKMODE
-  if (!DarkMode::doesConfigFileExist())
+  if (!dmlib::doesConfigFileExist())
   {
     switch (Read_ClrMode())
     {
       case 0:
       {
-        DarkMode::setDarkModeConfigEx(static_cast<UINT>(DarkMode::DarkModeType::classic));
+        dmlib::setDarkModeConfigEx(static_cast<UINT>(dmlib::DarkModeType::classic));
         break;
       }
 
       case 2:
       {
-        DarkMode::setDarkModeConfig();
+        dmlib::setDarkModeConfig();
         break;
       }
 
@@ -135,7 +135,7 @@ void CApp::SetListSettings()
         return;
       }
     }
-    DarkMode::setDefaultColors(false);
+    dmlib::setDefaultColors(false);
   }
 #endif
 }
@@ -172,16 +172,16 @@ HRESULT CApp::CreateOnePanel(unsigned panelIndex, const UString &mainPath, const
 #ifdef ZIP7_DARKMODE
   if (resVal == S_OK && Panels[panelIndex].PanelCreated)
   {
-    DarkMode::setChildCtrlsSubclassAndTheme(Panels[panelIndex]);
-    DarkMode::setWindowEraseBgSubclass(Panels[panelIndex]);
-    DarkMode::setWindowCtlColorSubclass(Panels[panelIndex]);
-    DarkMode::setWindowNotifyCustomDrawSubclass(Panels[panelIndex]);
-    DarkMode::setWindowEraseBgSubclass(Panels[panelIndex]._headerReBar);
-    DarkMode::setWindowCtlColorSubclass(Panels[panelIndex]._headerReBar);
+    dmlib::setChildCtrlsSubclassAndTheme(Panels[panelIndex]);
+    dmlib::setWindowEraseBgSubclass(Panels[panelIndex]);
+    dmlib::setWindowCtlColorSubclass(Panels[panelIndex]);
+    dmlib::setWindowNotifyCustomDrawSubclass(Panels[panelIndex]);
+    dmlib::setWindowEraseBgSubclass(Panels[panelIndex]._headerReBar);
+    dmlib::setWindowCtlColorSubclass(Panels[panelIndex]._headerReBar);
 
     Panels[panelIndex].setSubclassListNotify();
 
-    DarkMode::redrawWindowFrame(Panels[panelIndex]._headerComboBox);
+    dmlib::redrawWindowFrame(Panels[panelIndex]._headerComboBox);
   }
 #endif
 
@@ -318,8 +318,8 @@ void CApp::ReloadToolbars()
         AddButton(_buttonsImageList, _toolBar, g_StandardButtons[i], ShowButtonsLables, LargeButtons);
 
 #ifdef ZIP7_DARKMODE
-    DarkMode::setDarkLineAbovePanelToolbar(_toolBar);
-    DarkMode::setDarkTooltips(_toolBar, static_cast<int>(DarkMode::ToolTipsType::toolbar));
+    dmlib::setDarkLineAbovePanelToolbar(_toolBar);
+    dmlib::setDarkTooltips(_toolBar, static_cast<int>(dmlib::ToolTipsType::toolbar));
 #endif
 
     _toolBar.AutoSize();
@@ -339,7 +339,7 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
   _window.Attach(hwnd);
 
 #ifdef ZIP7_DARKMODE
-  DarkMode::initDarkModeEx(L"7zDark");
+  dmlib::initDarkModeEx(L"7zDark");
 #endif
 
   #ifdef UNDER_CE
@@ -409,9 +409,9 @@ HRESULT CApp::Create(HWND hwnd, const UString &mainPath, const UString &arcForma
   }
 
 #ifdef ZIP7_DARKMODE
-  DarkMode::setWindowEraseBgSubclass(hwnd);
-  DarkMode::setDarkWndNotifySafeEx(hwnd, true, true);
-  DarkMode::setWindowMenuBarSubclass(hwnd);
+  dmlib::setWindowEraseBgSubclass(hwnd);
+  dmlib::setDarkWndNotifySafeEx(hwnd, true, true);
+  dmlib::setWindowMenuBarSubclass(hwnd);
 #endif
 
   SetFocusedPanel(LastFocusedPanel);
