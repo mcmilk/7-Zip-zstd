@@ -376,6 +376,64 @@ ZSTD_OBJS = $(patsubst ../../../../C/zstd/%.c,$O/%.o,$(wildcard ../../../../C/zs
 ZSTDMT_OBJS = $(patsubst ../../../../C/zstdmt/%.c,$O/%.o,$(wildcard ../../../../C/zstdmt/*.c))
 FASTLZMA2_OBJS = $(patsubst ../../../../C/fast-lzma2/%.c,$O/%.o,$(wildcard ../../../../C/fast-lzma2/*.c))
 
+KANZI_ROOT_OBJS = \
+  $O/Global.o \
+  $O/Event.o \
+
+KANZI_UTIL_OBJS = \
+  $O/WallTimer.o \
+
+KANZI_IO_OBJS = \
+  $O/CompressedInputStream.o \
+  $O/CompressedOutputStream.o \
+
+KANZI_BITSTREAM_OBJS = \
+  $O/DefaultInputBitStream.o \
+  $O/DefaultOutputBitStream.o \
+
+KANZI_ENTROPY_OBJS = \
+  $O/EntropyUtils.o \
+  $O/HuffmanCommon.o \
+  $O/CMPredictor.o \
+  $O/TPAQPredictor.o \
+  $O/ANSRangeDecoder.o \
+  $O/ANSRangeEncoder.o \
+  $O/BinaryEntropyDecoder.o \
+  $O/BinaryEntropyEncoder.o \
+  $O/ExpGolombDecoder.o \
+  $O/ExpGolombEncoder.o \
+  $O/FPAQDecoder.o \
+  $O/FPAQEncoder.o \
+  $O/HuffmanDecoder.o \
+  $O/HuffmanEncoder.o \
+  $O/RangeDecoder.o \
+  $O/RangeEncoder.o \
+
+KANZI_TRANSFORM_OBJS = \
+  $O/AliasCodec.o \
+  $O/BWT.o \
+  $O/BWTS.o \
+  $O/DivSufSort.o \
+  $O/SBRT.o \
+  $O/BWTBlockCodec.o \
+  $O/LZCodec.o \
+  $O/FSDCodec.o \
+  $O/ROLZCodec.o \
+  $O/RLT.o \
+  $O/SRT.o \
+  $O/TextCodec.o \
+  $O/UTFCodec.o \
+  $O/EXECodec.o \
+  $O/ZRLT.o \
+
+KANZI_OBJS = \
+  $(KANZI_ROOT_OBJS) \
+  $(KANZI_UTIL_OBJS) \
+  $(KANZI_IO_OBJS) \
+  $(KANZI_BITSTREAM_OBJS) \
+  $(KANZI_ENTROPY_OBJS) \
+  $(KANZI_TRANSFORM_OBJS) \
+
 C_OBJS += \
   $(HASHES_OBJS) \
   $(BROTLI_OBJS) \
@@ -416,6 +474,11 @@ COMPRESS_OBJS += \
   $O/ZstdEncoder.o \
   $O/ZstdRegister.o \
   $O/FastLzma2Register.o \
+  $O/KanziCommon.o \
+  $O/KanziStreams.o \
+  $O/KanziDecoder.o \
+  $O/KanziEncoder.o \
+  $O/KanziRegister.o \
 
 ARC_OBJS = \
   $(LZMA_DEC_OPT_OBJS) \
@@ -438,6 +501,7 @@ ARC_OBJS = \
   $(WIM_OBJS) \
   $(ZIP_OBJS) \
   $(COMPRESS_OBJS) \
+  $(KANZI_OBJS) \
   $(CRYPTO_OBJS) \
 
 # we need empty line after last line above

@@ -211,6 +211,7 @@ CXX_WARN_FLAGS =
 #-Wno-reorder
 
 CXXFLAGS = $(MY_ARCH_2) $(LOCAL_FLAGS) $(CXXFLAGS_BASE2) $(CFLAGS_BASE) $(FLAGS_FLTO) $(CXXFLAGS_EXTRA) $(CC_SHARED) $(CXX_WARN_FLAGS) $(CXX_STD_FLAGS) $(CXX_INCLUDE_FLAGS) -o $@
+KANZI_CXXFLAGS = $(CXXFLAGS) -std=c++17
 
 STATIC_TARGET=
 ifdef COMPL_STATIC
@@ -1626,6 +1627,29 @@ $O/ZstdDecoder.o: ../../Compress/ZstdDecoder.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/ZstdRegister.o: ../../Compress/ZstdRegister.cpp
 	$(CXX) $(CXXFLAGS) $<
+$O/KanziCommon.o: ../../Compress/KanziCommon.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/KanziStreams.o: ../../Compress/KanziStreams.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/KanziDecoder.o: ../../Compress/KanziDecoder.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/KanziEncoder.o: ../../Compress/KanziEncoder.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/KanziRegister.o: ../../Compress/KanziRegister.cpp
+	$(CXX) $(CXXFLAGS) $<
+
+$O/%.o: ../../../../C/kanzi/src/%.cpp
+	$(CXX) $(KANZI_CXXFLAGS) $<
+$O/%.o: ../../../../C/kanzi/src/util/%.cpp
+	$(CXX) $(KANZI_CXXFLAGS) $<
+$O/%.o: ../../../../C/kanzi/src/io/%.cpp
+	$(CXX) $(KANZI_CXXFLAGS) $<
+$O/%.o: ../../../../C/kanzi/src/bitstream/%.cpp
+	$(CXX) $(KANZI_CXXFLAGS) $<
+$O/%.o: ../../../../C/kanzi/src/entropy/%.cpp
+	$(CXX) $(KANZI_CXXFLAGS) $<
+$O/%.o: ../../../../C/kanzi/src/transform/%.cpp
+	$(CXX) $(KANZI_CXXFLAGS) $<
 
 $O/7zMain.o: ../../../../C/Util/7z/7zMain.c
 	$(CC) $(CFLAGS) $<

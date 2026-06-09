@@ -36,6 +36,7 @@ OBJS = \
   $(ZSTD_OBJS) \
   $(ZSTDMT_OBJS) \
   $(FASTLZMA2_OBJS) \
+  $(KANZI_OBJS) \
   $(ASM_OBJS) \
   $O\resource.res \
 
@@ -46,6 +47,8 @@ OBJS = \
 !include "../../../Build.mak"
 
 # MAK_SINGLE_FILE = 1
+
+KANZI_CXX_FLAGS = -wd4244
 
 !IF "$(ZIP7_DARKMODE)" == "1"
 !include "../../../../DarkMode/7zRes/7zDark.mak"
@@ -224,6 +227,36 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 	$(COMPL_O2) -DNO_XXHASH -DFL2_7ZIP_BUILD
 !ENDIF
 
+!IFDEF KANZI_ROOT_OBJS
+$(KANZI_ROOT_OBJS): ../../../../C/kanzi/src/$(*B).cpp
+	$(COMPL_O2) $(KANZI_CXX_FLAGS)
+!ENDIF
+
+!IFDEF KANZI_UTIL_OBJS
+$(KANZI_UTIL_OBJS): ../../../../C/kanzi/src/util/$(*B).cpp
+	$(COMPL_O2) $(KANZI_CXX_FLAGS)
+!ENDIF
+
+!IFDEF KANZI_IO_OBJS
+$(KANZI_IO_OBJS): ../../../../C/kanzi/src/io/$(*B).cpp
+	$(COMPL_O2) $(KANZI_CXX_FLAGS)
+!ENDIF
+
+!IFDEF KANZI_BITSTREAM_OBJS
+$(KANZI_BITSTREAM_OBJS): ../../../../C/kanzi/src/bitstream/$(*B).cpp
+	$(COMPL_O2) $(KANZI_CXX_FLAGS)
+!ENDIF
+
+!IFDEF KANZI_ENTROPY_OBJS
+$(KANZI_ENTROPY_OBJS): ../../../../C/kanzi/src/entropy/$(*B).cpp
+	$(COMPL_O2) $(KANZI_CXX_FLAGS)
+!ENDIF
+
+!IFDEF KANZI_TRANSFORM_OBJS
+$(KANZI_TRANSFORM_OBJS): ../../../../C/kanzi/src/transform/$(*B).cpp
+	$(COMPL_O2) $(KANZI_CXX_FLAGS)
+!ENDIF
+
 
 !ELSE
 
@@ -308,6 +341,18 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 	-I ../../../../C/zstd
 {../../../../C/fast-lzma2}.c{$O}.obj::
 	$(CCOMPLB) -DNO_XXHASH -DFL2_7ZIP_BUILD
+{../../../../C/kanzi/src}.cpp{$O}.obj::
+	$(COMPLB_O2) $(KANZI_CXX_FLAGS)
+{../../../../C/kanzi/src/util}.cpp{$O}.obj::
+	$(COMPLB_O2) $(KANZI_CXX_FLAGS)
+{../../../../C/kanzi/src/io}.cpp{$O}.obj::
+	$(COMPLB_O2) $(KANZI_CXX_FLAGS)
+{../../../../C/kanzi/src/bitstream}.cpp{$O}.obj::
+	$(COMPLB_O2) $(KANZI_CXX_FLAGS)
+{../../../../C/kanzi/src/entropy}.cpp{$O}.obj::
+	$(COMPLB_O2) $(KANZI_CXX_FLAGS)
+{../../../../C/kanzi/src/transform}.cpp{$O}.obj::
+	$(COMPLB_O2) $(KANZI_CXX_FLAGS)
 
 !ENDIF
 

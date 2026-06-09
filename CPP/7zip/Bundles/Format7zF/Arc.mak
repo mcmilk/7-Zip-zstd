@@ -348,6 +348,11 @@ COMPRESS_OBJS = \
   $O\ZstdEncoder.obj \
   $O\ZstdRegister.obj \
   $O\FastLzma2Register.obj \
+  $O\KanziCommon.obj \
+  $O\KanziStreams.obj \
+  $O\KanziDecoder.obj \
+  $O\KanziEncoder.obj \
+  $O\KanziRegister.obj \
 
 BROTLI_OBJS = \
   $O/br_backward_references.obj \
@@ -462,6 +467,64 @@ FASTLZMA2_OBJS = \
   $O\radix_struct.obj \
   $O\range_enc.obj \
   $O\util.obj \
+
+KANZI_ROOT_OBJS = \
+  $O\Global.obj \
+  $O\Event.obj \
+
+KANZI_UTIL_OBJS = \
+  $O\WallTimer.obj \
+
+KANZI_IO_OBJS = \
+  $O\CompressedInputStream.obj \
+  $O\CompressedOutputStream.obj \
+
+KANZI_BITSTREAM_OBJS = \
+  $O\DefaultInputBitStream.obj \
+  $O\DefaultOutputBitStream.obj \
+
+KANZI_ENTROPY_OBJS = \
+  $O\EntropyUtils.obj \
+  $O\HuffmanCommon.obj \
+  $O\CMPredictor.obj \
+  $O\TPAQPredictor.obj \
+  $O\ANSRangeDecoder.obj \
+  $O\ANSRangeEncoder.obj \
+  $O\BinaryEntropyDecoder.obj \
+  $O\BinaryEntropyEncoder.obj \
+  $O\ExpGolombDecoder.obj \
+  $O\ExpGolombEncoder.obj \
+  $O\FPAQDecoder.obj \
+  $O\FPAQEncoder.obj \
+  $O\HuffmanDecoder.obj \
+  $O\HuffmanEncoder.obj \
+  $O\RangeDecoder.obj \
+  $O\RangeEncoder.obj \
+
+KANZI_TRANSFORM_OBJS = \
+  $O\AliasCodec.obj \
+  $O\BWT.obj \
+  $O\BWTS.obj \
+  $O\DivSufSort.obj \
+  $O\SBRT.obj \
+  $O\BWTBlockCodec.obj \
+  $O\LZCodec.obj \
+  $O\FSDCodec.obj \
+  $O\ROLZCodec.obj \
+  $O\RLT.obj \
+  $O\SRT.obj \
+  $O\TextCodec.obj \
+  $O\UTFCodec.obj \
+  $O\EXECodec.obj \
+  $O\ZRLT.obj \
+
+KANZI_OBJS = \
+  $(KANZI_ROOT_OBJS) \
+  $(KANZI_UTIL_OBJS) \
+  $(KANZI_IO_OBJS) \
+  $(KANZI_BITSTREAM_OBJS) \
+  $(KANZI_ENTROPY_OBJS) \
+  $(KANZI_TRANSFORM_OBJS) \
 
 !include "../../Aes.mak"
 !include "../../Crc.mak"

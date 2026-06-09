@@ -10,6 +10,7 @@
     - CPP/7zip/Compress/Rar* files: the "GNU LGPL" with "unRAR license restriction"
     - CPP/7zip/Compress/LzfseDecoder.cpp: the "BSD 3-clause License"
     - C/Xxh64.c: the "BSD 2-clause License"
+    - C/kanzi/*: the "Apache License 2.0"
     - Some files are "public domain" files, if "public domain" status is stated in source file.
     - the "GNU LGPL" for all other files. If there is no license information in 
        some source file, that file is under the "GNU LGPL".
@@ -125,6 +126,17 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+---
+
+
+Apache License 2.0 in 7-Zip-zstd code
+-------------------------------------
+
+  The "Apache License 2.0" is used for the Kanzi C++ source code in C/kanzi/*.
+
+  Kanzi was developed by Frederic Langlet.
+  The full text of the Apache License 2.0 is provided in C/kanzi/LICENSE.
 
 ---
 

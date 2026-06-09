@@ -34,6 +34,9 @@ You can install it in two ways:
 6. [Fast LZMA2] v1.0.1 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
    - Levels: 1..9
 
+7. [Kanzi] v2.5.3 is a modular lossless data compressor with configurable transforms, entropy codecs and block-level multithreading.
+   - Levels: 0..9
+
 ### 7-Zip ZS CLI variants
 
 7z and 7zz provide largely the same core 7‑Zip functionality, but they are built/distributed
@@ -140,7 +143,7 @@ Please don’t open a new issue. Instead, contact the antivirus vendor and ask t
 
 ### Usage and features of the full installation
 
-- compression and decompression for [Brotli], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
+- compression and decompression for [Brotli], [Kanzi], [Lizard], [LZ4], [LZ5] and [Zstandard] within the [7-Zip] container format
 - compression and decompression of [Brotli] (`.br`), [Lizard] (`.liz`), [LZ4] (`.lz4`), [LZ5] (`.lz5`) and [Zstandard] (`.zst`) files
 - handling of ZIP files with [Zstandard] compression
 - included [lzip] decompression support, patch from: https://download.savannah.gnu.org/releases/lzip/7zip/
@@ -169,6 +172,10 @@ Please don’t open a new issue. Instead, contact the antivirus vendor and ask t
 7z a archiv.7z -m0=flzma2 -mx1   Fast LZMA2 Fastest mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=flzma2 -mx..  ...
 7z a archiv.7z -m0=flzma2 -mx9   Fast LZMA2 Ultra Mode, with BCJ preprocessor on executables
+
+7z a archiv.7z -m0=kanzi -mx0   Kanzi fastest mode
+7z a archiv.7z -m0=kanzi -mx..  ...
+7z a archiv.7z -m0=kanzi -mx9   Kanzi strongest mode
 
 7z x -so test.tar.zst | 7z l -si -ttar
 -> show contents of zstd compressed tar archive test.tar.zst
@@ -336,6 +343,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ4] Version 1.10.0
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
+  - [Kanzi] Version 2.5.3
 
 /TR 2026-05-30
 
@@ -351,6 +359,7 @@ You find this project useful, maybe you consider a donation ;-)
 [LZ5]:https://github.com/inikep/lz5/
 [Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
+[Kanzi]:https://github.com/flanglet/kanzi-cpp/
 [ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/
 [Fast LZMA2]:https://github.com/conor42/fast-lzma2
 [Codecs.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
