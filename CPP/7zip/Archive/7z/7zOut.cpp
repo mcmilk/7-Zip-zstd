@@ -933,6 +933,7 @@ HRESULT COutArchive::WriteDatabase(
       CCompressionMethodMode encryptOptions;
       encryptOptions.PasswordIsDefined = options->PasswordIsDefined;
       encryptOptions.Password = options->Password;
+      encryptOptions.EncryptionMethodId = options->EncryptionMethodId;
       CEncoder encoder(headerOptions.CompressMainHeader ? *options : encryptOptions);
       CRecordVector<UInt64> packSizes;
       CObjectVector<CFolder> folders;

@@ -60,6 +60,7 @@ public:
   UInt32 _decoderCompatibilityVersion;
   CUIntVector _enabledFilters;
   CUIntVector _disabledFilters;
+  CMethodId _encryptionMethodId;
   
   void InitSolidFiles() { _numSolidFiles = (UInt64)(Int64)(-1); }
   void InitSolidSize()  { _numSolidBytes = (UInt64)(Int64)(-1); }
