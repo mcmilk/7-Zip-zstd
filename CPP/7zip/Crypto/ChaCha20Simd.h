@@ -260,7 +260,13 @@ Z7_FORCE_INLINE __m256i RotateLeft_AVX2<16>(const __m256i val)
   b = _mm256_xor_si256(b, c); \
   b = RotateLeft_AVX2<7>(b);
 
-Z7_NO_INLINE void ChaCha20_OperateKeystream_AVX2(
+#if defined(__GNUC__) || defined(__clang__)
+#define Z7_AVX2_TARGET_ATTR __attribute__((target("avx2")))
+#else
+#define Z7_AVX2_TARGET_ATTR
+#endif
+
+Z7_AVX2_TARGET_ATTR Z7_NO_INLINE void ChaCha20_OperateKeystream_AVX2(
     const UInt32 *state,
     const Byte *input,
     Byte *output)
