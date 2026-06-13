@@ -65,10 +65,12 @@ void CPoly1305::SetKey(const Byte *key)
   memcpy(_s, key + 16, 16);
 }
 
-#if defined(__SIZEOF_INT128__) && (__SIZEOF_INT128__ >= 16)
-  #define Z7_POLY1305_128BIT
-#elif defined(_M_AMD64)
-  #include <intrin.h>
+#if defined(MY_CPU_AMD64)
+  #ifdef _MSC_VER
+    #include <intrin.h>
+  #else
+    #include <x86intrin.h>
+  #endif
   #define Z7_POLY1305_128BIT
 #endif
 
@@ -91,51 +93,7 @@ static void Poly1305_ProcessBlock_128(Byte h[16], const Byte r[16], const Byte b
   UInt64 r0 = GetUi64(r);
   UInt64 r1 = GetUi64(r + 8);
 
-#if defined(__SIZEOF_INT128__) && (__SIZEOF_INT128__ >= 16)
-  typedef unsigned __int128 U128;
-
-  U128 hv = (U128)m0 | ((U128)m1 << 26) | ((U128)m2 << 52) | ((U128)m3 << 78) | ((U128)m4 << 104);
-  U128 msg = (U128)msg_lo | ((U128)msg_hi << 64);
-  if (hasHighBit)
-    msg |= (U128)1 << 128;
-  hv += msg;
-
-  U128 rv = (U128)r0 | ((U128)r1 << 64);
-
-  U128 product = hv * rv;
-
-  UInt64 a0 = (UInt64)product;
-  UInt64 a1 = (UInt64)(product >> 64);
-  UInt64 a2 = (UInt64)(product >> 128);
-  UInt64 a3 = (UInt64)(product >> 192);
-
-  U128 p_lo = (U128)a0 | ((U128)a1 << 64) | ((U128)(a2 & 3) << 128);
-  U128 p_hi = (a2 >> 2) | ((U128)a3 << 62);
-
-  U128 res = p_lo + p_hi * 5;
-
-  U128 overflow = res >> 130;
-  while (overflow)
-  {
-    res = (res & (((U128)1 << 130) - 1)) + overflow * 5;
-    overflow = res >> 130;
-  }
-
-  UInt64 lo = (UInt64)res;
-  UInt64 hi = (UInt64)(res >> 64);
-  UInt32 top = (UInt32)(res >> 128);
-
-  UInt64 limb0 = lo & 0x3FFFFFF;
-  UInt64 limb1 = (lo >> 26) & 0x3FFFFFF;
-  UInt64 limb2 = ((lo >> 52) | ((hi & 0x3FFF) << 12)) & 0x3FFFFFF;
-  UInt64 limb3 = (hi >> 14) & 0x3FFFFFF;
-  UInt64 limb4 = ((hi >> 40) | ((UInt64)top << 24)) & 0x3FFFFFF;
-
-  SetUi32(h, (UInt32)(limb0 | (limb1 << 26)));
-  SetUi32(h + 4, (UInt32)((limb1 >> 6) | (limb2 << 20)));
-  SetUi32(h + 8, (UInt32)((limb2 >> 12) | (limb3 << 14)));
-  SetUi32(h + 12, (UInt32)((limb3 >> 18) | (limb4 << 8)));
-#elif defined(_M_AMD64)
+#if defined(_M_AMD64) || defined(MY_CPU_AMD64)
   {
     UInt64 hv0 = m0 | (m1 << 26) | ((m2 & 0xFFF) << 52);
     UInt64 hv1 = (m2 >> 12) | (m3 << 14) | (m4 << 40);

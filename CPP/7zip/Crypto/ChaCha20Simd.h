@@ -222,14 +222,20 @@ Z7_NO_INLINE void ChaCha20_OperateKeystream_SSE2(
 
 #ifdef MY_CPU_AMD64
 
+#if defined(__GNUC__) || defined(__clang__)
+#define Z7_AVX2_TARGET_ATTR __attribute__((target("avx2")))
+#else
+#define Z7_AVX2_TARGET_ATTR
+#endif
+
 template <unsigned int R>
-Z7_FORCE_INLINE __m256i RotateLeft_AVX2(const __m256i val)
+Z7_AVX2_TARGET_ATTR Z7_FORCE_INLINE __m256i RotateLeft_AVX2(const __m256i val)
 {
   return _mm256_or_si256(_mm256_slli_epi32(val, R), _mm256_srli_epi32(val, 32 - R));
 }
 
 template <>
-Z7_FORCE_INLINE __m256i RotateLeft_AVX2<8>(const __m256i val)
+Z7_AVX2_TARGET_ATTR Z7_FORCE_INLINE __m256i RotateLeft_AVX2<8>(const __m256i val)
 {
   const __m256i mask = _mm256_set_epi8(
     14,13,12,15, 10,9,8,11, 6,5,4,7, 2,1,0,3,
@@ -238,7 +244,7 @@ Z7_FORCE_INLINE __m256i RotateLeft_AVX2<8>(const __m256i val)
 }
 
 template <>
-Z7_FORCE_INLINE __m256i RotateLeft_AVX2<16>(const __m256i val)
+Z7_AVX2_TARGET_ATTR Z7_FORCE_INLINE __m256i RotateLeft_AVX2<16>(const __m256i val)
 {
   const __m256i mask = _mm256_set_epi8(
     13,12,15,14, 9,8,11,10, 5,4,7,6, 1,0,3,2,
@@ -259,12 +265,6 @@ Z7_FORCE_INLINE __m256i RotateLeft_AVX2<16>(const __m256i val)
   c = _mm256_add_epi32(c, d); \
   b = _mm256_xor_si256(b, c); \
   b = RotateLeft_AVX2<7>(b);
-
-#if defined(__GNUC__) || defined(__clang__)
-#define Z7_AVX2_TARGET_ATTR __attribute__((target("avx2")))
-#else
-#define Z7_AVX2_TARGET_ATTR
-#endif
 
 Z7_AVX2_TARGET_ATTR Z7_NO_INLINE void ChaCha20_OperateKeystream_AVX2(
     const UInt32 *state,
