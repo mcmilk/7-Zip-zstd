@@ -173,6 +173,7 @@ Please don’t open a new issue. Instead, contact the antivirus vendor and ask t
 - squashfs files with LZ4 or Zstandard compression can be handled
 - several history settings aren't stored by default, look [here](https://sourceforge.net/p/sevenzip/discussion/45797/thread/dc2ac53d/?limit=25) for some info about that, you can restore original 7-Zip behavior via `tools->options->settings`
 - these hashes can be calculated: CRC32, CRC64, MD2, MD4, MD5, SHA1, SHA256, SHA384, SHA512, SHA3-256, SHA3-384, SHA3-512, XXH32, XXH64, BLAKE2sp, BLAKE3 (lowercase or uppercase)
+- Support for encryption with header encryption (`-mhe=on`), as well as multiple newly added encryption modes: XChaCha20, XChaCha20-Poly1305, AES+XChaCha20-Poly1305, and AES+XChaCha20+Ascon.
 
 ```bash
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor

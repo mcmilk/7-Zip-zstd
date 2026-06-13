@@ -17,8 +17,11 @@ namespace NAscon {
 #ifdef MY_CPU_X86_OR_AMD64
 
 extern bool g_SSE2Enabled;
-extern bool g_AVX512Enabled;
 extern bool g_SIMDInitialized;
+
+#ifdef MY_CPU_AMD64
+extern bool g_AVX512Enabled;
+#endif
 
 void InitSIMD();
 

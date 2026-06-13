@@ -481,8 +481,10 @@ Z7_NO_INLINE void ChaCha20_OperateKeystream_AVX2(
 }
 
 static bool g_SSE2Enabled = false;
-static bool g_AVX2Enabled = false;
 static bool g_SIMDInitialized = false;
+#ifdef MY_CPU_AMD64
+static bool g_AVX2Enabled = false;
+#endif
 
 static void InitSIMD()
 {

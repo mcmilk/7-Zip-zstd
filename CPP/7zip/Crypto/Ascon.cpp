@@ -15,10 +15,11 @@ namespace NAscon {
 #ifdef MY_CPU_X86_OR_AMD64
 
 bool g_SSE2Enabled = false;
-bool g_AVX512Enabled = false;
 bool g_SIMDInitialized = false;
 
 #ifdef MY_CPU_AMD64
+bool g_AVX512Enabled = false;
+
 static UInt64 Ascon_xgetbv(UInt32 num)
 {
 #if defined(_MSC_VER)
@@ -27,6 +28,8 @@ static UInt64 Ascon_xgetbv(UInt32 num)
   UInt32 a, d;
   __asm__ __volatile__("xgetbv" : "=a"(a), "=d"(d) : "c"(num) : "cc");
   return ((UInt64)d << 32) | a;
+#else
+  return 0;
 #endif
 }
 #endif

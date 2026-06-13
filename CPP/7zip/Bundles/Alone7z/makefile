@@ -126,17 +126,27 @@ CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
   $O\7zKeyDerivation.obj \
+  $O\Ascon.obj \
+  $O\Cascade.obj \
+  $O\CascadeRegister.obj \
+  $O\HkdfBlake2sp.obj \
+  $O\HmacSha256.obj \
   $O\HmacSha512.obj \
-  $O\Pbkdf2HmacSha512.obj \
   $O\MyAes.obj \
   $O\MyAesReg.obj \
+  $O\Pbkdf2HmacSha512.obj \
   $O\RandGen.obj \
+  $O\XChaCha20.obj \
+  $O\XChaCha20Register.obj \
+  $O\XChaCha20Poly1305.obj \
+  $O\XChaCha20Poly1305Register.obj \
 
 C_OBJS = \
   $O\7zStream.obj \
   $O\Alloc.obj \
   $O\Bcj2.obj \
   $O\Bcj2Enc.obj \
+  $O\Blake2s.obj \
   $O\Bra.obj \
   $O\Bra86.obj \
   $O\BraIA64.obj \
