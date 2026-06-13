@@ -337,11 +337,11 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
 
-/TR 2026-05-30
+/TR 2026-06-13
 
 ## Notes
 
-- if you want an code signed installer, you need to donate sth.
+We are planning a to use a code signed installer again, https://github.com/mcmilk/7-Zip-zstd/issues/473
 
 [7-Zip]:https://www.7-zip.org/
 [lzip]:https://www.nongnu.org/lzip/
@@ -351,7 +351,6 @@ You find this project useful, maybe you consider a donation ;-)
 [LZ5]:https://github.com/inikep/lz5/
 [Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
-[ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/
 [Fast LZMA2]:https://github.com/conor42/fast-lzma2
 [Codecs.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
 [TotalCmd.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
