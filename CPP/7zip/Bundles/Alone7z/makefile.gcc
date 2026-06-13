@@ -118,6 +118,8 @@ COMMON_OBJS = \
   $O/NewHandler.o \
   $O/Sha256Prepare.o \
   $O/Sha256Reg.o \
+  $O/Sha512Prepare.o \
+  $O/Sha512Reg.o \
   $O/StdInStream.o \
   $O/StdOutStream.o \
   $O/StringConvert.o \
@@ -214,6 +216,9 @@ COMPRESS_OBJS = \
 CRYPTO_OBJS = \
   $O/7zAes.o \
   $O/7zAesRegister.o \
+  $O/7zKeyDerivation.o \
+  $O/HmacSha512.o \
+  $O/Pbkdf2HmacSha512.o \
   $O/MyAes.o \
   $O/MyAesReg.o \
   $O/RandGen.o \
@@ -242,6 +247,8 @@ C_OBJS = \
   $O/MtDec.o \
   $O/Sha256.o \
   $O/Sha256Opt.o \
+  $O/Sha512.o \
+  $O/Sha512Opt.o \
   $O/SwapBytes.o \
   $O/Xz.o \
   $O/XzDec.o \

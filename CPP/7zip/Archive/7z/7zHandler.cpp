@@ -307,7 +307,11 @@ bool CHandler::IsFolderEncrypted(CNum folderIndex) const
     for (unsigned j = 0; j < idSize; j++)
       id64 = ((id64 << 8) | longID[j]);
     inByte.SkipDataNoCheck(idSize);
-    if (id64 == k_AES)
+    if (id64 == k_AES
+        || id64 == k_XCHACHA20
+        || id64 == k_XCHACHA20_POLY1305
+        || id64 == k_AES_XCHACHA20_POLY1305
+        || id64 == k_AES_XCHACHA20_ASCON)
       return true;
     if ((mainByte & 0x20) != 0)
       inByte.SkipDataNoCheck(inByte.ReadNum());
@@ -699,6 +703,46 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
       case k_AES:
         if (info) continue;
         name = "7zAES";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_XCHACHA20:
+        if (info) continue;
+        name = "XChaCha20";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_XCHACHA20_POLY1305:
+        if (info) continue;
+        name = "XChaCha20-Poly1305";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_AES_XCHACHA20_ASCON:
+        if (info) continue;
+        name = "AES+XChaCha20+Ascon";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_AES_XCHACHA20_POLY1305:
+        if (info) continue;
+        name = "AES+XChaCha20-Poly1305";
         if (propsSize >= 1)
         {
           const Byte firstByte = props[0];

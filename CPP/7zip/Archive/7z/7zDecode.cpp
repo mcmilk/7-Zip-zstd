@@ -584,9 +584,27 @@ HRESULT CDecoder::Decode(
       progress2 = new CDecProgress(compressProgress);
 
     ISequentialOutStream *outStreamPointer = outStream;
-    return _mixer->Code(inStreamPointers, &outStreamPointer,
+    const HRESULT codeResult = _mixer->Code(inStreamPointers, &outStreamPointer,
         progress2 ? (ICompressProgressInfo *)progress2 : compressProgress,
         dataAfterEnd_Error);
+
+    if (codeResult == S_OK)
+    {
+      for (i = 0; i < folderInfo.Coders.Size(); i++)
+      {
+        Z7_DECL_CMyComPtr_QI_FROM(
+            ICryptoAuthVerify,
+            authVerify, _mixer->GetCoder(i).GetUnknown())
+        if (authVerify)
+        {
+          Int32 authResult = 0;
+          RINOK(authVerify->CryptoAuthVerify(&authResult))
+          if (authResult != 0)
+            return E_FAIL;
+        }
+      }
+    }
+    return codeResult;
   }
   
   #ifdef USE_MIXER_ST

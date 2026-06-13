@@ -562,7 +562,7 @@ HRESULT CEncoder::EncoderConstr()
       throw 1;
 
     CMethodFull method;
-    method.Id = k_AES;
+    method.Id = _options.EncryptionMethodId;
     method.NumStreams = 1;
     _options.Methods.Add(method);
 
@@ -687,7 +687,7 @@ HRESULT CEncoder::EncoderConstr()
     {
       CMethodFull method;
       method.NumStreams = 1;
-      method.Id = k_AES;
+      method.Id = _options.EncryptionMethodId;
       _options.Methods.Add(method);
 
       NCoderMixer2::CCoderStreamsInfo cod;
