@@ -392,7 +392,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Notes
 
-- We are planning a to use a code signed installer again, https://github.com/mcmilk/7-Zip-zstd/issues/473
+We are planning a to use a code signed installer again, https://github.com/mcmilk/7-Zip-zstd/issues/473
 
 [7-Zip]:https://www.7-zip.org/
 [lzip]:https://www.nongnu.org/lzip/
