@@ -1,6 +1,8 @@
 #include "ProgressDialog2Res.h"
 #include "../../GuiCommon.rc"
 
+#include "ProgressDialog2Icon.rc"
+
 #undef DIALOG_ID
 #define DIALOG_ID  IDD_PROGRESS
 #define xc 360
@@ -37,4 +39,5 @@ STRINGTABLE DISCARDABLE
   IDS_CONTINUE            "&Continue"
   IDS_PROGRESS_ASK_CANCEL "Are you sure you want to cancel?"
   IDS_CLOSE "&Close"
+  IDS_CANCEL "&Cancel"
 }

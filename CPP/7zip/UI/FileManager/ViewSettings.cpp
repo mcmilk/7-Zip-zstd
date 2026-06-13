@@ -32,6 +32,8 @@ static LPCTSTR const kFolderHistoryValueName = TEXT("FolderHistory");
 static LPCTSTR const kFastFoldersValueName = TEXT("FolderShortcuts");
 static LPCTSTR const kCopyHistoryValueName = TEXT("CopyHistory");
 
+static LPCTSTR const kClose7ZipValueName = TEXT("Close7Zip");
+
 static NSynchronization::CCriticalSection g_CS;
 
 #define Set32(p, v) SetUi32(((Byte *)p), v)
@@ -211,6 +213,21 @@ static bool ReadUi32Val(const TCHAR *name, UInt32 &value)
   return key.GetValue_UInt32_IfOk(name, value) == ERROR_SUCCESS;
 }
 
+static void SaveBoolVal(const TCHAR *name, bool value)
+{
+  CKey key;
+  key.Create(HKEY_CURRENT_USER, kCUBasePath);
+  key.SetValue(name, value);
+}
+
+static bool ReadBoolVal(const TCHAR *name, bool &value)
+{
+  CKey key;
+  if (key.Open(HKEY_CURRENT_USER, kCUBasePath, KEY_READ) != ERROR_SUCCESS)
+    return false;
+  return key.GetValue_bool_IfOk(name, value) == ERROR_SUCCESS;
+}
+
 void SaveToolbarsMask(UInt32 toolbarMask)
 {
   SaveUi32Val(kToolbars, toolbarMask);
@@ -329,4 +346,17 @@ void AddUniqueStringToHeadOfList(UStringVector &list, const UString &s)
     else
       i++;
   list.Insert(0, s);
+}
+
+void Save_Close7Zip(bool close7Zip)
+{
+  SaveBoolVal(kClose7ZipValueName, close7Zip);
+}
+
+bool Read_Close7Zip()
+{
+  bool b;
+  if (!ReadBoolVal(kClose7ZipValueName, b))
+    return false;
+  return b;
 }

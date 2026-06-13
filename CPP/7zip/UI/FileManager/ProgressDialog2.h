@@ -3,6 +3,8 @@
 #ifndef ZIP7_INC_PROGRESS_DIALOG_2_H
 #define ZIP7_INC_PROGRESS_DIALOG_2_H
 
+#include <array>
+
 #include "../../../Common/MyCom.h"
 
 #include "../../../Windows/ErrorMsg.h"
@@ -103,6 +105,26 @@ public:
 };
 
 
+void ProgressDialog_SetError(bool error);
+bool ProgressDialog_HadError();
+
+
+struct CSysTray
+{
+  static const int kNumIcons = 15;
+  static const int kPercentPerIcon = 7;
+
+  std::array<HICON, kNumIcons> Icons{};
+  int IconArrayId = -1;
+  HMENU Menu = nullptr;
+
+  CSysTray() = default;
+  bool LoadIcons(HINSTANCE hInst, int firstResId);
+  void UpdateIcon(HWND dlg, UInt64 percentValue, bool addIcon, bool updateTip);
+  bool BuildPopupMenu(LPCWSTR foregroundText, LPCWSTR pauseOrContinueText, LPCWSTR cancelText);
+};
+
+
 class CProgressDialog: public NWindows::NControl::CModalDialog
 {
   bool _isDir;
@@ -135,6 +157,7 @@ private:
   UString _pause_String;
   UString _continue_String;
   UString _paused_String;
+  UString cancelString;
 
   int _buttonSizeX;
   int _buttonSizeY;
@@ -142,6 +165,8 @@ private:
   UINT_PTR _timer;
 
   UString _title;
+
+  CSysTray _sysTray;
 
   class CU64ToI32Converter
   {
@@ -230,6 +255,7 @@ private:
   void OnPriorityButton();
   bool OnButtonClicked(unsigned buttonID, HWND buttonHWND) Z7_override;
   bool OnMessage(UINT message, WPARAM wParam, LPARAM lParam) Z7_override;
+  bool OnTrayNotification(LPARAM lParam);
 
   void SetTitleText();
   void ShowSize(unsigned id, UInt64 val, UInt64 &prev);
@@ -264,7 +290,6 @@ public:
   }
 
   INT_PTR Create(const UString &title, NWindows::CThread &thread, HWND wndParent = NULL);
-
 
   /* how it works:
      1) the working thread calls ProcessWasFinished()

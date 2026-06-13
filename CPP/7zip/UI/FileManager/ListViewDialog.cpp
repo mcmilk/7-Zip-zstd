@@ -126,6 +126,8 @@ bool CListViewDialog::OnInit()
     _listView.SetColumnWidthAuto(1);
   StringsWereChanged = false;
 
+  Set_MinTrackSize_FromCurrent(3, 4, 3, 4);
+
   NormalizeSize();
   return CModalDialog::OnInit();
 }
@@ -146,15 +148,14 @@ bool CListViewDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   rect.top = y - my;
   InvalidateRect(&rect);
   */
-  InvalidateRect(NULL);
-
-  MoveItem(IDCANCEL, x, y, bx1, by);
-  MoveItem(IDOK, x - mx - bx2, y, bx2, by);
+  MoveItem(IDCANCEL, x, y, bx1, by, false);
+  MoveItem(IDOK, x - mx - bx2, y, bx2, by, false);
   /*
   if (wParam == SIZE_MAXSHOW || wParam == SIZE_MAXIMIZED || wParam == SIZE_MAXHIDE)
     mx = 0;
   */
-  _listView.Move(mx, my, xSize - mx * 2, y - my * 2);
+  _listView.Move(mx, my, xSize - mx * 2, y - my * 2, false);
+  InvalidateRect(NULL);
   return false;
 }
 
@@ -319,3 +320,4 @@ void CListViewDialog::OnOK()
   FocusedItemIndex = _listView.GetFocusedItem();
   CModalDialog::OnOK();
 }
+

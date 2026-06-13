@@ -602,6 +602,15 @@ bool DeleteFileAlways(CFSTR path)
 }
 
 
+bool DeleteFileIfArchive(CFSTR path)
+{
+  const DWORD attrib = NFind::GetFileAttrib(path);
+  if (attrib == INVALID_FILE_ATTRIBUTES
+      || (attrib & FILE_ATTRIBUTE_ARCHIVE) == 0)
+    return false;
+  return DeleteFileAlways(path);
+}
+
 
 bool RemoveDirWithSubItems(const FString &path)
 {
@@ -1129,6 +1138,12 @@ static bool CreateDir2(CFSTR path)
 bool DeleteFileAlways(CFSTR path)
 {
   return (remove(path) == 0);
+}
+
+bool DeleteFileIfArchive(CFSTR path)
+{
+  // POSIX has no ARCHIVE attribute; treat all regular files as candidates.
+  return DeleteFileAlways(path);
 }
 
 bool SetCurrentDir(CFSTR path)

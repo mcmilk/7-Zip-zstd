@@ -43,6 +43,30 @@ extern HINSTANCE g_hInstance;
 
 #define kTempDirPrefix FTEXT("7zE")
 
+// Walk up, delete found archive.
+static void DeleteSourceArchive_WalkUp(CPanel &srcPanel, UString srcFilePath)
+{
+  while (!srcFilePath.IsEmpty())
+  {
+    if (srcFilePath.Back() == L'\\')
+      srcFilePath.DeleteBack();
+    const DWORD dwAttr = GetFileAttributesW(srcFilePath);  // NOSONAR cpp:S6004 — FM build is pre-C++17, init-statement not available
+
+    if (dwAttr != INVALID_FILE_ATTRIBUTES)
+    {
+      if (dwAttr & FILE_ATTRIBUTE_ARCHIVE)
+        NDir::DeleteFileIfArchive(us2fs(srcFilePath));
+      return;
+    }
+
+    const int n = srcFilePath.ReverseFind(L'\\');
+    if (n == -1)
+      return;
+    srcPanel.OpenParentFolder();
+    srcFilePath.ReleaseBuf_SetEnd(n);
+  }
+}
+
 void CPanelCallbackImp::OnTab()
 {
   if (g_App.NumPanels != 1)
@@ -591,7 +615,7 @@ UString CPanel::GetItemsInfoString(const CRecordVector<UInt32> &indices)
   
   info.Add_LF();
   info += _currentFolderPrefix;
-  
+
   for (i = 0; i < indices.Size() && (int)i < (int)kCopyDialog_NumInfoLines - 6; i++)
   {
     info.Add_LF();
@@ -610,7 +634,6 @@ UString CPanel::GetItemsInfoString(const CRecordVector<UInt32> &indices)
 }
 
 bool IsCorrectFsName(const UString &name);
-
 
 
 /* Returns true, if path is path that can be used as path for File System functions
@@ -647,6 +670,9 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
 
   CRecordVector<UInt32> indices;
   UString destPath;
+  bool openOutputFolder = false;
+  bool deleteSourceFile = false;
+  bool close7Zip = false;
   bool useDestPanel = false;
 
   {
@@ -685,9 +711,14 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
     LangString(move ? IDS_MOVE : IDS_COPY, copyDialog.Title);
     LangString(move ? IDS_MOVE_TO : IDS_COPY_TO, copyDialog.Static);
     copyDialog.Info = srcPanel.GetItemsInfoString(indices);
+    copyDialog.CurrentFolderPrefix = srcPanel._currentFolderPrefix;
 
     if (copyDialog.Create(srcPanel.GetParent()) != IDOK)
       return;
+
+    openOutputFolder = copyDialog.OpenOutputFolder;
+    deleteSourceFile = copyDialog.DeleteSourceFile;
+    close7Zip = copyDialog.Close7Zip;
 
     destPath = copyDialog.Value;
   }
@@ -820,6 +851,8 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
     SaveCopyHistory(copyFolders);
   }
 
+  ProgressDialog_SetError(false);
+
   bool useSrcPanel = !useDestPanel || !srcPanel.Is_IO_FS_Folder();
 
   bool useTemp = useSrcPanel && useDestPanel;
@@ -916,6 +949,24 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
   disableNotify1.Restore();
   disableNotify2.Restore();
   srcPanel.SetFocusToList();
+
+  if (!ProgressDialog_HadError() && result == S_OK)
+  {
+    if (openOutputFolder && NFind::DoesDirExist_FollowLink(us2fs(destPath)))
+    {
+      StartApplicationDontWait(destPath, destPath, _window);
+    }
+    if (deleteSourceFile)
+    {
+      UString srcFilePath(srcPanel._currentFolderPrefix);
+      srcPanel.OpenParentFolder();
+      DeleteSourceArchive_WalkUp(srcPanel, srcFilePath);
+    }
+    if (close7Zip)
+    {
+      PostMessage(_window, WM_CLOSE, 0, 0);
+    }
+  }
 }
 
 void CApp::OnSetSameFolder(unsigned srcPanelIndex)

@@ -88,6 +88,7 @@ bool CreateDir(CFSTR path);
 bool CreateComplexDir(CFSTR path);
 
 bool DeleteFileAlways(CFSTR name);
+bool DeleteFileIfArchive(CFSTR path);
 bool RemoveDirWithSubItems(const FString &path);
 #ifdef _WIN32
 bool RemoveDirAlways_if_Empty(const FString &path);
