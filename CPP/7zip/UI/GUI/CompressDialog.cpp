@@ -1920,8 +1920,33 @@ void CCompressDialog::SetEncryptionMethod()
   const CArcInfoEx &ai = Get_ArcInfoEx();
   if (ai.Is_7z())
   {
+    const int index = FindRegistryFormat(ai.Name);
+    UString encryptionMethod;
+    if (index >= 0)
+    {
+      const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
+      encryptionMethod = fo.EncryptionMethod;
+      encryptionMethod.RemoveChar(L'-');
+      encryptionMethod.RemoveChar(L'+');
+      encryptionMethod.MakeLower_Ascii();
+    }
     ComboBox_AddStringAscii(_encryptionMethod, "AES-256");
-    _encryptionMethod.SetCurSel(0);
+    ComboBox_AddStringAscii(_encryptionMethod, "XChaCha20");
+    ComboBox_AddStringAscii(_encryptionMethod, "XChaCha20-Poly1305");
+    ComboBox_AddStringAscii(_encryptionMethod, "AES+XChaCha20-Poly1305");
+    ComboBox_AddStringAscii(_encryptionMethod, "AES+XChaCha20+Ascon");
+    int sel = 0;
+    if (encryptionMethod.IsEqualTo_Ascii_NoCase("xchacha20poly1305"))
+      sel = 2;
+    else if (encryptionMethod.IsEqualTo_Ascii_NoCase("xchacha20"))
+      sel = 1;
+    else if (encryptionMethod.IsEqualTo_Ascii_NoCase("aesxchacha20poly1305") || encryptionMethod.IsEqualTo_Ascii_NoCase("axp"))
+      sel = 3;
+    else if (encryptionMethod.IsEqualTo_Ascii_NoCase("aesxchacha20ascon") || encryptionMethod.IsEqualTo_Ascii_NoCase("axa"))
+      sel = 4;
+    else if (encryptionMethod.IsEqualTo_Ascii_NoCase("aes256"))
+      sel = 0;
+    _encryptionMethod.SetCurSel(sel);
     _default_encryptionMethod_Index = 0;
   }
   else if (ai.Is_Zip())
@@ -2010,6 +2035,7 @@ UString CCompressDialog::GetEncryptionMethodSpec()
   {
     _encryptionMethod.GetText(s);
     s.RemoveChar(L'-');
+    s.RemoveChar(L'+');
   }
   return s;
 }

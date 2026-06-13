@@ -34,6 +34,27 @@ You can install it in two ways:
 6. [Fast LZMA2] v1.0.1 is a LZMA2 compression algorithm, 20% to 100% faster than normal LZMA2 at levels 5 and above, but with a slightly lower compression ratio. It uses a parallel buffered radix matchfinder and some optimizations from Zstandard. The codec uses much less additional memory per thread than standard LZMA2.
    - Levels: 1..9
 
+### Encryption overview
+1. [7zAES] is the default encryption method of 7-Zip, using AES-256 in CBC mode with SHA-256 based key derivation.
+   - Key derivation: SHA-256 iterative hashing
+   - Authentication: none
+
+2. [XChaCha20] is an extended-nonce variant of the ChaCha20 stream cipher, designed by Daniel J. Bernstein. It provides high-speed encryption with a 256-bit key and 192-bit nonce, offering better security margins than the original ChaCha20.
+   - Key derivation: SHA-256 iterative hashing
+   - Authentication: none
+
+3. [XChaCha20-Poly1305] combines the XChaCha20 stream cipher with the Poly1305 message authentication code, providing both encryption and authenticated encryption (AEAD). This ensures data integrity and authenticity in addition to confidentiality.
+   - Key derivation: SHA-256 iterative hashing
+   - Authentication: Poly1305 MAC
+
+4. [AES+XChaCha20-Poly1305] (AXP) is a cascade cipher that applies AES-256-CTR and XChaCha20 sequentially, with Poly1305 providing authentication.
+   - Key derivation: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
+   - Authentication: Poly1305 MAC
+
+5. [AES+XChaCha20+Ascon] (AXA) is a cascade cipher that applies AES-256-CTR and XChaCha20 sequentially, with Ascon-128a providing authentication. Ascon is the winner of the NIST Lightweight Cryptography standardization project.
+   - Key derivation: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
+   - Authentication: Ascon-128a tag
+
 ### 7-Zip ZS CLI variants
 
 7z and 7zz provide largely the same core 7‑Zip functionality, but they are built/distributed
@@ -100,6 +121,10 @@ Codecs:
  0  ED        21 FLZMA2
  0  EDF  6F10701 7zAES
  0  EDF  6F00181 AES256CBC
+ 0  EDF  6F10702 XChaCha20
+ 0  EDF  6F10703 XChaCha20-Poly1305
+ 0  EDF  6F10704 AES256CTR+XChaCha20-Poly1305
+ 0  EDF  6F10705 AES256CTR+XChaCha20+Ascon
 
 Hashers:
  0   32      202 BLAKE2sp
@@ -148,8 +173,9 @@ Please don’t open a new issue. Instead, contact the antivirus vendor and ask t
 - squashfs files with LZ4 or Zstandard compression can be handled
 - several history settings aren't stored by default, look [here](https://sourceforge.net/p/sevenzip/discussion/45797/thread/dc2ac53d/?limit=25) for some info about that, you can restore original 7-Zip behavior via `tools->options->settings`
 - these hashes can be calculated: CRC32, CRC64, MD2, MD4, MD5, SHA1, SHA256, SHA384, SHA512, SHA3-256, SHA3-384, SHA3-512, XXH32, XXH64, BLAKE2sp, BLAKE3 (lowercase or uppercase)
+- Support for encryption with header encryption (`-mhe=on`), as well as multiple newly added encryption modes: XChaCha20, XChaCha20-Poly1305, AES+XChaCha20-Poly1305, and AES+XChaCha20+Ascon.
 
-```
+```bash
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
 7z a archiv.7z -m0=zstd -mx1   Zstandard Fast mode, with BCJ preprocessor on executables
 7z a archiv.7z -m0=zstd -mx..  ...
@@ -175,6 +201,28 @@ Please don’t open a new issue. Instead, contact the antivirus vendor and ask t
 
 7z x -so test.tar.lz | 7z l -si -ttar
 -> show contents of lzip compressed tar archive test.tar.lz
+
+# AES-256
+7z a archive.7z -ppassword -mhe=on
+7z a archive.7z -ppassword -mhe=on -mem=aes256
+7z a archive.7z -ppassword -mhe=on -mem=aes-256
+
+# XChaCha20
+7z a archive.7z -ppassword -mhe=on -mem=xchacha20
+
+# XChaCha20-Poly1305
+7z a archive.7z -ppassword -mhe=on -mem=xchacha20poly1305
+7z a archive.7z -ppassword -mhe=on -mem=xchacha20-poly1305
+
+# AES+XChaCha20-Poly1305
+7z a archive.7z -ppassword -mhe=on -mem=axp
+7z a archive.7z -ppassword -mhe=on -mem=aesxchacha20poly1305
+7z a archive.7z -ppassword -mhe=on -mem=aes+xchacha20-poly1305
+
+# AES+XChaCha20+Ascon
+7z a archive.7z -ppassword -mhe=on -mem=axa
+7z a archive.7z -ppassword -mhe=on -mem=aesxchacha20ascon
+7z a archive.7z -ppassword -mhe=on -mem=aes+xchacha20+ascon
 ```
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archive Dialog with ZSTD options")
@@ -336,12 +384,15 @@ You find this project useful, maybe you consider a donation ;-)
   - [LZ4] Version 1.10.0
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
+  - [XChaCha20/XChaCha20-Poly1305] Version 1.0.0
+  - [AES+XChaCha20-Poly1305] (AXP) cascade cipher, Version 1.0.0
+  - [AES+XChaCha20+Ascon] (AXA) cascade cipher, Version 1.0.0, Ascon Version 1.3
 
-/TR 2026-05-30
+/TR 2026-06-13
 
 ## Notes
 
-- if you want an code signed installer, you need to donate sth.
+- We are planning a to use a code signed installer again, https://github.com/mcmilk/7-Zip-zstd/issues/473
 
 [7-Zip]:https://www.7-zip.org/
 [lzip]:https://www.nongnu.org/lzip/
@@ -351,7 +402,7 @@ You find this project useful, maybe you consider a donation ;-)
 [LZ5]:https://github.com/inikep/lz5/
 [Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
-[ImDisk]:https://sourceforge.net/projects/imdisk-toolkit/
 [Fast LZMA2]:https://github.com/conor42/fast-lzma2
+[XChaCha20/XChaCha20-Poly1305/AES+XChaCha20-Poly1305/AES+XChaCha20+Ascon]:https://github.com/fzxx/7-Zip-zstd-crypto
 [Codecs.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
 [TotalCmd.7z]:https://github.com/mcmilk/7-Zip-zstd/releases

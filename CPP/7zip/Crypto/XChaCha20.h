@@ -1,7 +1,9 @@
-// 7zAes.h
+// XChaCha20.h
+// Copyright (C) fzxx   Contributor: https://github.com/fzxx
+// License: GNU LGPL v2.1+
 
-#ifndef ZIP7_INC_CRYPTO_7Z_AES_H
-#define ZIP7_INC_CRYPTO_7Z_AES_H
+#ifndef ZIP7_INC_CRYPTO_XCHACHA20_H
+#define ZIP7_INC_CRYPTO_XCHACHA20_H
 
 #include "../../Common/MyCom.h"
 
@@ -11,28 +13,32 @@
 #include "7zKeyDerivation.h"
 
 namespace NCrypto {
-namespace N7z {
+namespace NXChaCha20 {
 
 using CKeyInfo = N7zKeyDerivation::CKeyInfo;
 using CKeyInfoCache = N7zKeyDerivation::CKeyInfoCache;
 
 using N7zKeyDerivation::kKeySize;
 
-const unsigned kIvSizeMax = 16;
+const unsigned kNonceSize = 24;
+const unsigned k_NumCyclesPower_Supported_MAX = 24;
+
+void XChaCha20Block_Core(Byte *output, const Byte *key, const Byte *nonce, UInt64 counter);
+void XHChaCha20Block_Core(Byte *output, const Byte *key, const Byte *nonce);
 
 class CBase
 {
   CKeyInfoCache _cachedKeys;
 protected:
   CKeyInfo _key;
-  Byte _iv[kIvSizeMax];
-  unsigned _ivSize;
+  Byte _nonce[kNonceSize];
+  UInt64 _counter;
   
   void PrepareKey();
   CBase();
   ~CBase()
   {
-    Z7_memset_0_ARRAY(_iv);
+    Z7_memset_0_ARRAY(_nonce);
   }
 };
 
@@ -42,11 +48,23 @@ class CBaseCoder:
   public CMyUnknownImp,
   public CBase
 {
-  Z7_IFACE_COM7_IMP(ICompressFilter)
-  Z7_IFACE_COM7_IMP(ICryptoSetPassword)
+  Z7_IFACE_COM7_IMP_NONFINAL(ICompressFilter)
+  Z7_IFACE_COM7_IMP_NONFINAL(ICryptoSetPassword)
 protected:
-  virtual ~CBaseCoder() {}
-  CMyComPtr<ICompressFilter> _aesFilter;
+  virtual ~CBaseCoder()
+  {
+    Z7_memset_0_ARRAY(_block);
+    Z7_memset_0_ARRAY(_derivedKey);
+  }
+  
+  static const unsigned kBlockSize = 64;
+  Byte _block[kBlockSize];
+  unsigned _blockPos;
+  Byte _derivedKey[kKeySize];
+  bool _derivedKeyValid;
+  
+  void ProcessData(Byte *data, UInt32 size);
+  virtual void DeriveKey();
 };
 
 #ifndef Z7_EXTRACT_ONLY

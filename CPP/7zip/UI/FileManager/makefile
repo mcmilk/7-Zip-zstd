@@ -109,3 +109,7 @@ C_OBJS = $(C_OBJS) \
 
 !include "../../Sort.mak"
 !include "../../7zip.mak"
+
+# explicit rule to override UI_COMMON_OBJS pattern for CompressCall
+$O\CompressCall.obj: ../../UI/Common/CompressCall.cpp
+	$(COMPL_O1) -FI"StdAfx.h"

@@ -10,12 +10,12 @@
   #define MY_VERSION_CPU MY_VERSION
 #endif
 
-#define MY_DATE "2026-04-27"
+#define MY_DATE "2026-06-12"
 #undef MY_COPYRIGHT
 #undef MY_VERSION_COPYRIGHT_DATE
-#define MY_AUTHOR_NAME "Igor Pavlov, Tino Reichardt, Sergey G. Brester"
+#define MY_AUTHOR_NAME "Igor Pavlov, Tino Reichardt, Sergey G. Brester, fzxx"
 #define MY_COPYRIGHT_PD "Igor Pavlov : Public domain"
-#define MY_COPYRIGHT_CR "Copyright (c) 1999- Igor Pavlov, 2016- Tino Reichardt, 2022- Sergey G. Brester"
+#define MY_COPYRIGHT_CR "Copyright (c) 1999- Igor Pavlov, 2016- Tino Reichardt, 2022- Sergey G. Brester, 2026- fzxx"
 
 #ifdef USE_COPYRIGHT_CR
   #define MY_COPYRIGHT MY_COPYRIGHT_CR
