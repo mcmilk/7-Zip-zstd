@@ -61,7 +61,7 @@ protected:
   Byte _aad[2 + 16 + kNonceSize];
   unsigned _aadSize;
 
-  void DeriveKey();
+  void DeriveKey() override;
   void ComputePolyKey();
 };
 

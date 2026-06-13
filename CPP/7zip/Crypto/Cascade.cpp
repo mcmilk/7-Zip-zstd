@@ -661,9 +661,9 @@ void CBaseCoder::ProcessEnc(Byte *data, UInt32 size)
 {
 #ifdef MY_CPU_X86_OR_AMD64
   NAscon::InitSIMD();
+#endif
+#ifdef MY_CPU_SSE2
   const bool useSSE2 = ASCON_USE_SSE2;
-#else
-  const bool useSSE2 = false;
 #endif
   if (!_keyDerived)
   {
@@ -740,9 +740,9 @@ void CBaseCoder::ProcessDec(Byte *data, UInt32 size)
 {
 #ifdef MY_CPU_X86_OR_AMD64
   NAscon::InitSIMD();
+#endif
+#ifdef MY_CPU_SSE2
   const bool useSSE2 = ASCON_USE_SSE2;
-#else
-  const bool useSSE2 = false;
 #endif
   if (!_keyDerived)
   {

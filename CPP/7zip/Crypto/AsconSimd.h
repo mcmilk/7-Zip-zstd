@@ -54,7 +54,13 @@ static Z7_FORCE_INLINE void AsconDecBlock_SSE2(UInt64 state[5], Byte *data)
 
 #include <immintrin.h>
 
-static Z7_FORCE_INLINE void AsconRound_AVX512(UInt64 *st, UInt64 C)
+#if defined(__GNUC__) || defined(__clang__)
+#define Z7_AVX512_TARGET __attribute__((target("avx512f")))
+#else
+#define Z7_AVX512_TARGET
+#endif
+
+static Z7_AVX512_TARGET void AsconRound_AVX512(UInt64 *st, UInt64 C)
 {
   const UInt64 z = 0;
   const __mmask8 mxor1 = 0x15;
@@ -88,7 +94,7 @@ static Z7_FORCE_INLINE void AsconRound_AVX512(UInt64 *st, UInt64 C)
   _mm512_storeu_si512((void*)st, s);
 }
 
-static Z7_FORCE_INLINE void AsconP12_AVX512(UInt64 state[5])
+static Z7_AVX512_TARGET void AsconP12_AVX512(UInt64 state[5])
 {
   AsconRound_AVX512(state, 0xf0);  AsconRound_AVX512(state, 0xe1);
   AsconRound_AVX512(state, 0xd2);  AsconRound_AVX512(state, 0xc3);
@@ -98,7 +104,7 @@ static Z7_FORCE_INLINE void AsconP12_AVX512(UInt64 state[5])
   AsconRound_AVX512(state, 0x5a);  AsconRound_AVX512(state, 0x4b);
 }
 
-static Z7_FORCE_INLINE void AsconP8_AVX512(UInt64 state[5])
+static Z7_AVX512_TARGET void AsconP8_AVX512(UInt64 state[5])
 {
   AsconRound_AVX512(state, 0xb4);  AsconRound_AVX512(state, 0xa5);
   AsconRound_AVX512(state, 0x96);  AsconRound_AVX512(state, 0x87);

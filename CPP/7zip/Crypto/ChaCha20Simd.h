@@ -515,10 +515,10 @@ Z7_FORCE_INLINE uint32x4_t RotateLeft_NEON(const uint32x4_t val)
 template <>
 Z7_FORCE_INLINE uint32x4_t RotateLeft_NEON<8>(const uint32x4_t val)
 {
-  #if defined(_MSC_VER)
-  const uint8x16_t mask = {{3,0,1,2, 7,4,5,6, 11,8,9,10, 15,12,13,14}};
-  #else
+  #if defined(__clang__) || !defined(_MSC_VER)
   const uint8x16_t mask = {3,0,1,2, 7,4,5,6, 11,8,9,10, 15,12,13,14};
+  #else
+  const uint8x16_t mask = {{3,0,1,2, 7,4,5,6, 11,8,9,10, 15,12,13,14}};
   #endif
   return vreinterpretq_u32_u8(vqtbl1q_u8(vreinterpretq_u8_u32(val), mask));
 }
