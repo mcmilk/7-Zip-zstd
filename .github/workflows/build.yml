@@ -7,6 +7,7 @@ jobs:
   linux:
 
     strategy:
+      fail-fast: false
       matrix:
         arch: [ x64, arm64 ]
         include:
@@ -55,6 +56,7 @@ jobs:
   windows:
 
     strategy:
+      fail-fast: false
       matrix:
         arch: [ x64, x86, arm64 ]
         darkmode: [darkmode, '']
@@ -182,3 +184,25 @@ jobs:
         path: |
           artifact\*.exe
           artifact\*.7z
+
+  kanzi-codec-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: Configure build system (uasm)
+      run: |
+        wget -q "https://github.com/Terraspace/UASM/releases/download/v2.57r/uasm257_linux64.zip"
+        unzip uasm257_linux64.zip uasm
+        sudo install -m 755 uasm /usr/bin
+    - name: Build test binary
+      run: |
+        cd ${{ github.workspace }}/CPP
+        CC="gcc" CXX="g++" OUTDIR="$PWD/build-kanzi-quality" ./build-lx.sh
+    - name: Kanzi quality matrix
+      run: |
+        chmod +x CPP/build-kanzi-quality/7z
+        python3 tests/kanzi-quality.py \
+          --sevenzip CPP/build-kanzi-quality/7z \
+          --output "$RUNNER_TEMP/kanzi-codec-quality" \
+          --jobs auto

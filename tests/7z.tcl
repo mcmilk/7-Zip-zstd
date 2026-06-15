@@ -25,6 +25,7 @@ if {![info exists Z7_PATH]} {
 		}
 	}}
 }
+set Z7_PATH [file normalize $Z7_PATH]
 puts "Test 7z-path: $Z7_PATH"
 
 # ensure we can test using executable from $Z7_PATH (valid platform, e. g. bypass cross-platform build):

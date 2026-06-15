@@ -6,6 +6,7 @@ History of this document
 ------------------------
 
 - see https://github.com/mcmilk/7-Zip-zstd/commits/master/DOC/Methods-Extern.md
+- Kanzi addition/source line: https://github.com/BICHENG/7-Zip-zstd
 
 
 Overview of defined ID ranges
@@ -20,6 +21,7 @@ F7 11 02 | Brotli, Google               | Tino Reichardt
 F7 11 04 | LZ4, Yann Collet             | Tino Reichardt
 F7 11 05 | LZ5, Przemyslaw Skibinski    | Tino Reichardt
 F7 11 06 | Lizard, Przemyslaw Skibinski | Tino Reichardt
+F7 11 07 | Kanzi, Frederic Langlet      | BICHENG
 
 
 Range F7 10 xx - LZHAM
@@ -304,3 +306,47 @@ Modes:
 
 Versions:
 The 7-Zip Lizard codec will be kept in sync with the current releases of Lizard.
+
+Range F7 11 07, Kanzi
+---------------------
+
+Description:
+Kanzi is a lossless data compressor. It supports several transforms and entropy
+codecs, including BWT, context modeling and content-aware transforms, and
+block-level multithreading.
+
+License:
+Kanzi is provided as open source software using the Apache License 2.0.
+
+7-Zip Container Header:
+This header is mandatory and must be exact 8 bytes. The data within that header
+is for informational purposes and for restoring the selected 7-Zip method
+settings. The Kanzi bitstream header still owns the transform, entropy, block
+and checksum metadata needed by the decoder.
+``` C
+ Byte   _ver_major;     // currently 2
+ Byte   _ver_minor;     // currently 5
+ Byte   _level;         // 0..9
+ Byte   _checksum_bits; // 0, 32 or 64
+ UInt32 _block_size;    // little endian
+```
+
+Algorithm author: Frederic Langlet
+- Integration source: https://github.com/BICHENG/kanzi-cpp
+
+Codec plugin author: BICHENG
+- Source:   https://github.com/BICHENG/7-Zip-zstd
+
+Modes:
+- threading is supported by Kanzi block processing
+- levels 0..9 are mapped to Kanzi transform and entropy presets
+
+Versions:
+The 7-Zip Kanzi codec imports Kanzi C++ v2.5.3 from BICHENG/kanzi-cpp
+master at commit
+3420e938874b5f3a4058e76ce6926968c10402e1.
+
+This import includes the upstream TPAQ large-block buffer fix, ROLZ inverse
+overread fix, and 64-job output stream block fix. The known TPAQX/CM
+cross-implementation bitstream compatibility issue remains upstream and does not
+affect 7-Zip self round trips with this C++ codec.
