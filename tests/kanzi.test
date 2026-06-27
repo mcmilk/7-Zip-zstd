@@ -1,0 +1,308 @@
+# kanzi.test --
+#
+# Part of 7-Zip ZS test suite.
+#
+# Copyright (c) 2026- by Bicheng
+
+if {[namespace which -command "::7z"] eq ""} {
+	source [file join [file dirname [info script]] 7z.tcl]
+}
+
+testConstraint 64bit7z [regexp -nocase {\((?:x|arm)64\)} [7z --version]]
+
+proc kanzi_write_text {path text repeat} {
+	file mkdir [file dirname $path]
+	set f [open $path w]
+	fconfigure $f -encoding utf-8 -translation lf
+	try {
+		for {set i 0} {$i < $repeat} {incr i} {
+			puts $f $text
+		}
+	} finally {
+		close $f
+	}
+}
+
+proc kanzi_write_pattern_blocks {path repeat} {
+	file mkdir [file dirname $path]
+	set f [open $path wb]
+	fconfigure $f -translation binary
+	try {
+		set block [binary format H* [string repeat 00112233445566778899aabbccddeeff 512]]
+		for {set i 0} {$i < $repeat} {incr i} {
+			puts -nonewline $f $block
+		}
+	} finally {
+		close $f
+	}
+}
+
+proc kanzi_write_pattern {path} {
+	kanzi_write_pattern_blocks $path 1
+}
+
+proc kanzi_write_tpaq_packable {path} {
+	file mkdir [file dirname $path]
+	set tokens [list \
+		[binary format H* d79a3c95] \
+		[binary format H* 3b7ef0e9] \
+		[binary format H* 8f52641d] \
+		[binary format H* 4386d8b1]]
+	set state 1
+	set f [open $path wb]
+	fconfigure $f -translation binary
+	try {
+		set buffer ""
+		for {set i 0} {$i < 16777216} {incr i} {
+			set state [expr {($state * 1103515245 + 12345) & 0x7fffffff}]
+			append buffer [lindex $tokens [expr {($state >> 16) & 3}]]
+			if {[string length $buffer] >= 1048576} {
+				puts -nonewline $f $buffer
+				set buffer ""
+			}
+		}
+		if {[string length $buffer] > 0} {
+			puts -nonewline $f $buffer
+		}
+	} finally {
+		close $f
+	}
+}
+
+proc kanzi_read_binary {path} {
+	set f [open $path rb]
+	fconfigure $f -translation binary
+	try {
+		return [read $f]
+	} finally {
+		close $f
+	}
+}
+
+proc kanzi_assert_same_file {expected actual} {
+	if {[kanzi_read_binary $expected] ne [kanzi_read_binary $actual]} {
+		error "extracted file differs: $actual"
+	}
+}
+
+proc kanzi_assert_logged_tokens {tokens} {
+	variable Last7zLog
+	foreach token $tokens {
+		if {[string first $token $Last7zLog] < 0} {
+			error "$token cannot be found in last std-output:\n[string repeat = 40]\n$Last7zLog\n[string repeat = 40]\n"
+		}
+	}
+}
+
+test kanzi--method-visible {Kanzi method is listed} {
+	7z i
+	assertLogged {\n\s*(?:0\s+)?ED\s+4F71107 KANZI\s}
+	set _ OK
+} OK
+
+test kanzi--roundtrip-tree {Kanzi 7z archive round trip for a small file tree} {
+	set tmpdir [file join [temporaryDirectory] kanzi-test-[format %x-%lx [pid] [clock microseconds]]]
+	set srcdir [file join $tmpdir src]
+	set outdir [file join $tmpdir out]
+	file mkdir [file join $srcdir sub]
+	kanzi_write_text [file join $srcdir alpha.txt] "kanzi round trip alpha" 256
+	kanzi_write_pattern [file join $srcdir pattern.bin]
+	kanzi_write_text [file join $srcdir sub nested.txt] "nested kanzi data" 128
+
+	try {
+		set arc [file join $tmpdir tree.7z]
+		set cwd [pwd]
+		cd $srcdir
+		try {
+			7z a -t7z -m0=kanzi -mx3 -- $arc alpha.txt pattern.bin sub
+		} finally {
+			cd $cwd
+		}
+		assertLogged {\nEverything is Ok}
+
+		7z l -slt -- $arc
+		kanzi_assert_logged_tokens {KANZI l3}
+
+		7z t -- $arc
+		assertLogged {\nEverything is Ok}
+
+		7z x "-o$outdir" -y -- $arc
+		assertLogged {\nEverything is Ok}
+		foreach rel {alpha.txt pattern.bin sub/nested.txt} {
+			kanzi_assert_same_file [file join $srcdir $rel] [file join $outdir $rel]
+		}
+		set _ OK
+	} finally {
+		file delete -force $tmpdir
+	}
+} OK
+
+test kanzi--quick-level-matrix {Kanzi quick level matrix round trips} {
+	set tmpdir [file join [temporaryDirectory] kanzi-matrix-[format %x-%lx [pid] [clock microseconds]]]
+	set srcdir [file join $tmpdir src]
+	file mkdir $srcdir
+	set input [file join $srcdir matrix.bin]
+	kanzi_write_pattern $input
+
+	try {
+		for {set level 0} {$level <= 9} {incr level} {
+			set outdir [file join $tmpdir out-$level]
+			set arc [file join $tmpdir mx$level.7z]
+			set cwd [pwd]
+			cd $srcdir
+			try {
+				7z a -t7z -m0=kanzi -mx$level -- $arc matrix.bin
+			} finally {
+				cd $cwd
+			}
+			assertLogged {\nEverything is Ok}
+
+			7z l -slt -- $arc
+			kanzi_assert_logged_tokens [list KANZI l$level]
+
+			7z t -- $arc
+			assertLogged {\nEverything is Ok}
+
+			7z x "-o$outdir" -y -- $arc
+			assertLogged {\nEverything is Ok}
+			kanzi_assert_same_file $input [file join $outdir matrix.bin]
+		}
+		set _ OK
+	} finally {
+		file delete -force $tmpdir
+	}
+} OK
+
+test kanzi--high-level-default-decode {Kanzi high levels decode with default thread count} {
+	set tmpdir [file join [temporaryDirectory] kanzi-default-decode-[format %x-%lx [pid] [clock microseconds]]]
+	set srcdir [file join $tmpdir src]
+	file mkdir $srcdir
+	set input [file join $srcdir high.txt]
+	kanzi_write_text $input "kanzi high level default decode path" 4096
+
+	try {
+		foreach level {8 9} {
+			set outdir [file join $tmpdir out-$level]
+			set arc [file join $tmpdir mx$level-default-decode.7z]
+			set cwd [pwd]
+			cd $srcdir
+			try {
+				7z a -t7z -m0=kanzi -mx$level -mmt=1 -- $arc high.txt
+			} finally {
+				cd $cwd
+			}
+			assertLogged {\nEverything is Ok}
+
+			7z l -slt -- $arc
+			kanzi_assert_logged_tokens [list KANZI l$level]
+
+			7z t -- $arc
+			assertLogged {\nEverything is Ok}
+
+			7z x "-o$outdir" -y -- $arc
+			assertLogged {\nEverything is Ok}
+			kanzi_assert_same_file $input [file join $outdir high.txt]
+		}
+		set _ OK
+	} finally {
+		file delete -force $tmpdir
+	}
+} OK
+
+test kanzi--tpaq-large-block-roundtrip {Kanzi TPAQ large block round trip} -constraints 64bit7z -body {
+	set tmpdir [file join [temporaryDirectory] kanzi-tpaq-large-[format %x-%lx [pid] [clock microseconds]]]
+	file mkdir $tmpdir
+	set input [file join $tmpdir packable-64m.bin]
+	kanzi_write_tpaq_packable $input
+
+	try {
+		set outdir [file join $tmpdir out]
+		set arc [file join $tmpdir tpaq-large.7z]
+		set cwd [pwd]
+		cd $tmpdir
+		try {
+			7z a -t7z -m0=kanzi:b64m -mx8 -mmt=1 -- $arc packable-64m.bin
+		} finally {
+			cd $cwd
+		}
+		assertLogged {\nEverything is Ok}
+
+		7z l -slt -- $arc
+		kanzi_assert_logged_tokens {KANZI l8 b26}
+
+		7z t -- $arc
+		assertLogged {\nEverything is Ok}
+
+		7z x "-o$outdir" -y -- $arc
+		assertLogged {\nEverything is Ok}
+		kanzi_assert_same_file $input [file join $outdir packable-64m.bin]
+		set _ OK
+	} finally {
+		file delete -force $tmpdir
+	}
+} -result OK
+
+test kanzi--small-block-high-thread {Kanzi small blocks with high thread count} {
+	set tmpdir [file join [temporaryDirectory] kanzi-small-block-thread-[format %x-%lx [pid] [clock microseconds]]]
+	set srcdir [file join $tmpdir src]
+	file mkdir $srcdir
+	set input [file join $srcdir small-block.bin]
+	kanzi_write_pattern_blocks $input 16
+
+	try {
+		foreach level {5 6 7} {
+			set outdir [file join $tmpdir out-$level]
+			set arc [file join $tmpdir small-block-mx$level.7z]
+			set cwd [pwd]
+			cd $srcdir
+			try {
+				7z a -t7z -m0=kanzi:b1k -mx$level -mmt=64 -- $arc small-block.bin
+			} finally {
+				cd $cwd
+			}
+			assertLogged {\nEverything is Ok}
+
+			7z l -slt -- $arc
+			kanzi_assert_logged_tokens [list KANZI l$level b10]
+
+			7z t -- $arc
+			assertLogged {\nEverything is Ok}
+
+			7z x "-o$outdir" -y -- $arc
+			assertLogged {\nEverything is Ok}
+			kanzi_assert_same_file $input [file join $outdir small-block.bin]
+		}
+		set _ OK
+	} finally {
+		file delete -force $tmpdir
+	}
+} OK
+
+test kanzi--method-properties {Kanzi level, checksum, and block properties are recorded} {
+	set tmpdir [file join [temporaryDirectory] kanzi-props-[format %x-%lx [pid] [clock microseconds]]]
+	file mkdir $tmpdir
+	set input [file join $tmpdir input.txt]
+	kanzi_write_text $input "kanzi properties" 128
+
+	try {
+		foreach {name switches tokens} {
+			default {-m0=kanzi} {KANZI l3 b22}
+			mx0 {-m0=kanzi -mx0} {KANZI l0}
+			mx9 {-m0=kanzi -mx9} {KANZI l9 b25}
+			check32 {-m0=kanzi:b1m:check32 -mx3} {KANZI l3 c32 b20}
+		} {
+			set arc [file join $tmpdir $name.7z]
+			7z a -t7z {*}$switches -- $arc $input
+			assertLogged {\nEverything is Ok}
+
+			7z l -slt -- $arc
+			kanzi_assert_logged_tokens $tokens
+
+			7z t -- $arc
+			assertLogged {\nEverything is Ok}
+		}
+		set _ OK
+	} finally {
+		file delete -force $tmpdir
+	}
+} OK

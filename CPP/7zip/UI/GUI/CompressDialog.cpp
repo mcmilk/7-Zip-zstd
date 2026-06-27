@@ -12,6 +12,7 @@
 #include "../../../Windows/System.h"
 
 #include "../../Common/MethodProps.h"
+#include "../../Compress/KanziCommon.h"
 
 #include "../FileManager/BrowseDialog.h"
 #include "../FileManager/FormatUtils.h"
@@ -131,6 +132,7 @@ enum EMethodID
   kPPMdZip,
   kFLZMA2,
   kZSTD,
+  kKANZI,
   kBROTLI,
   kLZ4,
   kLZ5,
@@ -158,6 +160,7 @@ static LPCSTR const kMethodsNames[] =
   , "PPMd"
   , "FLZMA2"
   , "zstd"
+  , "Kanzi"
   , "Brotli"
   , "LZ4"
   , "LZ5"
@@ -185,6 +188,7 @@ static LPCSTR const kMethodsNamesLong[] =
   , "PPMd [std]"
   , "LZMA2, Fast [std]"
   , "Zstandard"
+  , "Kanzi"
   , "Brotli"
   , "LZ4"
   , "LZ5"
@@ -237,6 +241,7 @@ static const EMethodID g_7zMethods[] =
   , kDeflate
   , kDeflate64
   , kZSTD
+  , kKANZI
   , kBROTLI
   , kLZ4
   , kLZ5
@@ -446,6 +451,7 @@ static const CFormatInfo g_Formats[] =
 
 static const signed char g_LevelRanges[][2] = {
   { -64, 22 }, // zstd
+  { 0, 9 }, // kanzi
   { 0, 11 }, // brotli
   { 1, 12 }, // lz4
   { 1, 15 }, // lz5
@@ -1680,12 +1686,13 @@ void CCompressDialog::SetLevel2()
   Int32 LevelsStart = (LevelsMask & 1) ? 0 : 1;
   Int32 LevelsEnd = 9;
   bool LevelsEndByMask = true;
-  int id = -1;
+  const int id = GetMethodID();
+#ifdef Z7_EXTERNAL_CODECS
   if (ai.LevelsMask != 0xFFFFFFFF)
     LevelsMask = ai.LevelsMask;
   else
+#endif
   {
-    id = GetMethodID();
     if (id == kCopy) {
       LevelsStart = 0;
       LevelsEnd = 0;
@@ -1715,7 +1722,9 @@ void CCompressDialog::SetLevel2()
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
-      if ( (fo.Level <= (UInt32)LevelsEnd) || (id != kCopy && fo.Level == Z7_ZSTD_ULTIMATE_LEV)
+      if (id == kKANZI && !IsMethodEqualTo(fo.Method))
+        level = NCompress::NKANZI::kKanziDefaultLevel;
+      else if ( (fo.Level <= (UInt32)LevelsEnd) || (id != kCopy && fo.Level == Z7_ZSTD_ULTIMATE_LEV)
         || (id == kZSTD && fo.Level > Z7_ZSTD_FAST_LEV_INC && fo.Level <= Z7_ZSTD_FAST_LEV_INC + 64)
       ) {
         level = (Int32)fo.Level;
@@ -1723,6 +1732,8 @@ void CCompressDialog::SetLevel2()
         level = (Int32)(LevelsEnd - (LevelsStart > 0 ? LevelsStart : 0) + 1) / 2;
       }
     }
+    else if (id == kKANZI)
+      level = NCompress::NKANZI::kKanziDefaultLevel;
   }
 
   const WCHAR t[] = L"Level ";
@@ -1732,7 +1743,7 @@ void CCompressDialog::SetLevel2()
     if (!i && id == kZSTD) continue;
 
     // lizard needs extra handling
-    if (GetMethodID() >= kLIZARD_M1 && GetMethodID() <= kLIZARD_M4) {
+    if (id >= kLIZARD_M1 && id <= kLIZARD_M4) {
       ir = i;
       if (ir % 10 == 0) j = 0;
       while (ir > 19) { ir -= 10; }
@@ -1772,7 +1783,7 @@ void CCompressDialog::SetLevel2()
     }
     m_Level.AddString_SetItemData(s, (LPARAM)(i >= 0 ? i : Z7_ZSTD_FAST_LEV_INC - i));
   }
-  if (m_Level.GetCount() > 1) { // ultimate level (max possible or zstd --max if allowed)
+  if (m_Level.GetCount() > 1 && id != kKANZI) { // ultimate level (max possible or zstd --max if allowed)
     UString s;
     if (id == kZSTD) {
       s = LangString(IDS_METHOD_ADV_MAX);
@@ -2872,6 +2883,7 @@ void CCompressDialog::SetNumThreads2()
   else switch (methodID)
   {
     case kZSTD: numAlgoThreadsMax = 128; break;
+    case kKANZI: numAlgoThreadsMax = 64; break;
     case kBROTLI: numAlgoThreadsMax = 128; break;
     case kLZ4: numAlgoThreadsMax = 128; break;
     case kLZ5: numAlgoThreadsMax = 128; break;

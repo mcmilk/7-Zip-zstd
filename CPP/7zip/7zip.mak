@@ -36,6 +36,7 @@ OBJS = \
   $(ZSTD_OBJS) \
   $(ZSTDMT_OBJS) \
   $(FASTLZMA2_OBJS) \
+  $(KANZI_OBJS) \
   $(ASM_OBJS) \
   $O\resource.res \
 
@@ -46,6 +47,10 @@ OBJS = \
 !include "../../../Build.mak"
 
 # MAK_SINGLE_FILE = 1
+
+KANZI_CXX_FLAGS = -wd4244 -wd4100 -wd4127 -wd4063
+KANZI_COMPL_O2 = $(CC) $(CFLAGS_O2) $(KANZI_CXX_FLAGS) $**
+KANZI_COMPLB_O2 = $(CC) $(CFLAGS_O2) $(KANZI_CXX_FLAGS) $<
 
 !IF "$(ZIP7_DARKMODE)" == "1"
 !include "../../../../DarkMode/7zRes/7zDark.mak"
@@ -149,6 +154,11 @@ $(COMPRESS_OBJS): ../../Compress/$(*B).cpp
 	$(COMPL_O2)
 !ENDIF
 
+!IFDEF KANZI_WRAPPER_OBJS
+$(KANZI_WRAPPER_OBJS): ../../Compress/$(*B).cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
+
 !IFDEF CRYPTO_OBJS
 $(CRYPTO_OBJS): ../../Crypto/$(*B).cpp
 	$(COMPL_O2)
@@ -224,6 +234,36 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 	$(COMPL_O2) -DNO_XXHASH -DFL2_7ZIP_BUILD
 !ENDIF
 
+!IFDEF KANZI_ROOT_OBJS
+$(KANZI_ROOT_OBJS): ../../../../C/kanzi/src/$(*B).cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
+
+!IFDEF KANZI_UTIL_OBJS
+$(KANZI_UTIL_OBJS): ../../../../C/kanzi/src/util/$(*B).cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
+
+!IFDEF KANZI_IO_OBJS
+$(KANZI_IO_OBJS): ../../../../C/kanzi/src/io/$(*B).cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
+
+!IFDEF KANZI_BITSTREAM_OBJS
+$(KANZI_BITSTREAM_OBJS): ../../../../C/kanzi/src/bitstream/$(*B).cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
+
+!IFDEF KANZI_ENTROPY_OBJS
+$(KANZI_ENTROPY_OBJS): ../../../../C/kanzi/src/entropy/$(*B).cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
+
+!IFDEF KANZI_TRANSFORM_OBJS
+$(KANZI_TRANSFORM_OBJS): ../../../../C/kanzi/src/transform/$(*B).cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
+
 
 !ELSE
 
@@ -282,6 +322,18 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 
 {../../Compress}.cpp{$O}.obj::
 	$(COMPLB)
+!IFDEF KANZI_WRAPPER_OBJS
+$O\KanziCommon.obj: ../../Compress/KanziCommon.cpp
+	$(KANZI_COMPL_O2)
+$O\KanziStreams.obj: ../../Compress/KanziStreams.cpp
+	$(KANZI_COMPL_O2)
+$O\KanziDecoder.obj: ../../Compress/KanziDecoder.cpp
+	$(KANZI_COMPL_O2)
+$O\KanziEncoder.obj: ../../Compress/KanziEncoder.cpp
+	$(KANZI_COMPL_O2)
+$O\KanziRegister.obj: ../../Compress/KanziRegister.cpp
+	$(KANZI_COMPL_O2)
+!ENDIF
 {../../Crypto}.cpp{$O}.obj::
 	$(CCOMPLB)
 {../../../../C}.c{$O}.obj::
@@ -308,6 +360,18 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 	-I ../../../../C/zstd
 {../../../../C/fast-lzma2}.c{$O}.obj::
 	$(CCOMPLB) -DNO_XXHASH -DFL2_7ZIP_BUILD
+{../../../../C/kanzi/src}.cpp{$O}.obj::
+	$(KANZI_COMPLB_O2)
+{../../../../C/kanzi/src/util}.cpp{$O}.obj::
+	$(KANZI_COMPLB_O2)
+{../../../../C/kanzi/src/io}.cpp{$O}.obj::
+	$(KANZI_COMPLB_O2)
+{../../../../C/kanzi/src/bitstream}.cpp{$O}.obj::
+	$(KANZI_COMPLB_O2)
+{../../../../C/kanzi/src/entropy}.cpp{$O}.obj::
+	$(KANZI_COMPLB_O2)
+{../../../../C/kanzi/src/transform}.cpp{$O}.obj::
+	$(KANZI_COMPLB_O2)
 
 !ENDIF
 

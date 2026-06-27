@@ -598,6 +598,34 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
           dest += MyStringLen(dest);
         }
         break;
+      case k_KANZI:
+        name = "KANZI";
+        if (propsSize == 8)
+        {
+          if (info) {lev = props[2]; goto obtainInfo;}
+          char *dest = s;
+          *dest++ = 'v';
+          ConvertUInt32ToString(props[0], dest);
+          dest += MyStringLen(dest);
+          *dest++ = '.';
+          ConvertUInt32ToString(props[1], dest);
+          dest += MyStringLen(dest);
+          *dest++ = ',';
+          *dest++ = 'l';
+          ConvertUInt32ToString(props[2], dest);
+          dest += MyStringLen(dest);
+          if (props[3] != 0)
+          {
+            *dest++ = ',';
+            *dest++ = 'c';
+            ConvertUInt32ToString(props[3], dest);
+            dest += MyStringLen(dest);
+          }
+          *dest++ = ',';
+          *dest++ = 'b';
+          GetStringForSizeValue(dest, GetUi32(props + 4));
+        }
+        break;
       case k_ZSTD:
         name = "ZSTD";
         if (propsSize == 3 || propsSize == 5)
