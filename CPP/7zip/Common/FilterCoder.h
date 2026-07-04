@@ -45,6 +45,7 @@ class CFilterCoder Z7_final :
   #ifndef Z7_NO_CRYPTO
   public ICryptoSetPassword,
   public ICryptoProperties,
+  public ICryptoAuthVerify,
   #endif
   
   #ifndef Z7_EXTRACT_ONLY
@@ -92,6 +93,7 @@ class CFilterCoder Z7_final :
   #ifndef Z7_NO_CRYPTO
   CMyComPtr<ICryptoSetPassword> _setPassword;
   CMyComPtr<ICryptoProperties> _cryptoProperties;
+  CMyComPtr<ICryptoAuthVerify> _cryptoAuthVerify;
   #endif
 
   #ifndef Z7_EXTRACT_ONLY
@@ -148,6 +150,7 @@ private:
     #ifndef Z7_NO_CRYPTO
     Z7_COM_QI_ENTRY_AG(ICryptoSetPassword, Filter, _setPassword)
     Z7_COM_QI_ENTRY_AG(ICryptoProperties, Filter, _cryptoProperties)
+    Z7_COM_QI_ENTRY_AG(ICryptoAuthVerify, Filter, _cryptoAuthVerify)
     #endif
 
     #ifndef Z7_EXTRACT_ONLY
@@ -182,6 +185,7 @@ private:
   #ifndef Z7_NO_CRYPTO
   Z7_IFACE_COM7_IMP(ICryptoSetPassword)
   Z7_IFACE_COM7_IMP(ICryptoProperties)
+  Z7_IFACE_COM7_IMP(ICryptoAuthVerify)
   #endif
   
   #ifndef Z7_EXTRACT_ONLY

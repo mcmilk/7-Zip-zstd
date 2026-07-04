@@ -3,10 +3,8 @@
 #include "StdAfx.h"
 
 #include "../../../C/CpuArch.h"
-#include "../../../C/Sha256.h"
 
 #include "../../Common/ComTry.h"
-#include "../../Common/MyBuffer2.h"
 
 #ifndef Z7_ST
 #include "../../Windows/Synchronization.h"
@@ -25,132 +23,6 @@ namespace NCrypto {
 namespace N7z {
 
 static const unsigned k_NumCyclesPower_Supported_MAX = 24;
-
-bool CKeyInfo::IsEqualTo(const CKeyInfo &a) const
-{
-  if (SaltSize != a.SaltSize || NumCyclesPower != a.NumCyclesPower)
-    return false;
-  for (unsigned i = 0; i < SaltSize; i++)
-    if (Salt[i] != a.Salt[i])
-      return false;
-  return (Password == a.Password);
-}
-
-void CKeyInfo::CalcKey()
-{
-  if (NumCyclesPower == 0x3F)
-  {
-    unsigned pos;
-    for (pos = 0; pos < SaltSize; pos++)
-      Key[pos] = Salt[pos];
-    for (unsigned i = 0; i < Password.Size() && pos < kKeySize; i++)
-      Key[pos++] = Password[i];
-    for (; pos < kKeySize; pos++)
-      Key[pos] = 0;
-  }
-  else
-  {
-    const unsigned kUnrPow = 6;
-    const UInt32 numUnroll = (UInt32)1 << (NumCyclesPower <= kUnrPow ? (unsigned)NumCyclesPower : kUnrPow);
-
-    const size_t bufSize = 8 + SaltSize + Password.Size();
-    const size_t unrollSize = bufSize * numUnroll;
-
-    // MY_ALIGN (16)
-    // CSha256 sha;
-    const size_t shaAllocSize = sizeof(CSha256) + unrollSize + bufSize * 2;
-    CAlignedBuffer1 sha(shaAllocSize);
-    Byte *buf = sha + sizeof(CSha256);
-
-    memcpy(buf, Salt, SaltSize);
-    memcpy(buf + SaltSize, Password, Password.Size());
-    memset(buf + bufSize - 8, 0, 8);
-    
-    Sha256_Init((CSha256 *)(void *)(Byte *)sha);
-    
-    {
-      {
-        Byte *dest = buf;
-        for (UInt32 i = 1; i < numUnroll; i++)
-        {
-          dest += bufSize;
-          memcpy(dest, buf, bufSize);
-        }
-      }
-
-      const UInt32 numRounds = (UInt32)1 << NumCyclesPower;
-      UInt32 r = 0;
-      do
-      {
-        Byte *dest = buf + bufSize - 8;
-        UInt32 i = r;
-        r += numUnroll;
-        do
-        {
-          SetUi32(dest, i)  i++; dest += bufSize;
-          // SetUi32(dest, i)  i++; dest += bufSize;
-        }
-        while (i < r);
-        Sha256_Update((CSha256 *)(void *)(Byte *)sha, buf, unrollSize);
-      }
-      while (r < numRounds);
-    }
-    /*
-    UInt64 numRounds = (UInt64)1 << NumCyclesPower;
-
-    do
-    {
-      Sha256_Update((CSha256 *)(Byte *)sha, buf, bufSize);
-      for (unsigned i = 0; i < 8; i++)
-        if (++(ctr[i]) != 0)
-          break;
-    }
-    while (--numRounds != 0);
-    */
-
-    Sha256_Final((CSha256 *)(void *)(Byte *)sha, Key);
-    memset(sha, 0, shaAllocSize);
-  }
-}
-
-bool CKeyInfoCache::GetKey(CKeyInfo &key)
-{
-  FOR_VECTOR (i, Keys)
-  {
-    const CKeyInfo &cached = Keys[i];
-    if (key.IsEqualTo(cached))
-    {
-      for (unsigned j = 0; j < kKeySize; j++)
-        key.Key[j] = cached.Key[j];
-      if (i != 0)
-        Keys.MoveToFront(i);
-      return true;
-    }
-  }
-  return false;
-}
-
-void CKeyInfoCache::FindAndAdd(const CKeyInfo &key)
-{
-  FOR_VECTOR (i, Keys)
-  {
-    const CKeyInfo &cached = Keys[i];
-    if (key.IsEqualTo(cached))
-    {
-      if (i != 0)
-        Keys.MoveToFront(i);
-      return;
-    }
-  }
-  Add(key);
-}
-
-void CKeyInfoCache::Add(const CKeyInfo &key)
-{
-  if (Keys.Size() >= Size)
-    Keys.DeleteBack();
-  Keys.Insert(0, key);
-}
 
 static CKeyInfoCache g_GlobalKeyCache(32);
 
@@ -171,7 +43,6 @@ CBase::CBase():
 
 void CBase::PrepareKey()
 {
-  // BCJ2 threads use same password. So we use long lock.
   MT_LOCK
   
   bool finded = false;
@@ -187,15 +58,6 @@ void CBase::PrepareKey()
 }
 
 #ifndef Z7_EXTRACT_ONLY
-
-/*
-Z7_COM7F_IMF(CEncoder::ResetSalt())
-{
-  _key.SaltSize = 4;
-  g_RandomGenerator.Generate(_key.Salt, _key.SaltSize);
-  return S_OK;
-}
-*/
 
 Z7_COM7F_IMF(CEncoder::ResetInitVector())
 {
@@ -231,8 +93,6 @@ Z7_COM7F_IMF(CEncoder::WriteCoderProperties(ISequentialOutStream *outStream))
 
 CEncoder::CEncoder()
 {
-  // _key.SaltSize = 4; g_RandomGenerator.Generate(_key.Salt, _key.SaltSize);
-  // _key.NumCyclesPower = 0x3F;
   _key.NumCyclesPower = 19;
   _aesFilter = new CAesCbcEncoder(kKeySize);
 }

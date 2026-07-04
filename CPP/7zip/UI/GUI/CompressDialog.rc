@@ -136,8 +136,8 @@ BEGIN
   CONTROL   "Show Password", IDX_PASSWORD_SHOW, MY_CHECKBOX,
             g4x2, yPsw + 79, g4xs2, 10
 
-  LTEXT     "&Encryption method:", IDT_COMPRESS_ENCRYPTION_METHOD, g4x2, yPsw + 95, 100, 8
-  COMBOBOX  IDC_COMPRESS_ENCRYPTION_METHOD, g4x2 + 100, yPsw + 93, g4xs2 - 100,  198, MY_COMBO
+  LTEXT     "&Encryption method:", IDT_COMPRESS_ENCRYPTION_METHOD, g4x2, yPsw + 95, 70, 8
+  COMBOBOX  IDC_COMPRESS_ENCRYPTION_METHOD, g4x2 + 70, yPsw + 93, g4xs2 - 70,  198, MY_COMBO
 
   CONTROL   "Encrypt file &names", IDX_COMPRESS_ENCRYPT_FILE_NAMES, MY_CHECKBOX,
             g4x2, yPsw + 111, g4xs2, 10

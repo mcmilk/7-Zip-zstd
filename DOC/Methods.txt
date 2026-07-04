@@ -1,8 +1,8 @@
 7-Zip method IDs for 7z and xz archives
 ---------------------------------------
 
-Version: 24.02
-Date: 2024-03-22
+Version: 26.01
+Date: 2026-06-12
 
 Each compression or crypto method in 7z is associated with unique binary value (ID).
 The length of ID in bytes is arbitrary but it can not exceed 63 bits (8 bytes).
@@ -170,7 +170,11 @@ List of defined IDs
          03 - Rar29AES (AES-128 + modified SHA-1)
 
       07 - [7z]
-         01 - 7zAES (AES-256 + SHA-256)
+         01 - 7zAES (AES-256-CBC + SHA-256)
+         02 - XChaCha20 (SHA-256)
+         03 - XChaCha20-Poly1305 (SHA-256)
+         04 - AES-256-CTR + XChaCha20-Poly1305 (PBKDF2-SHA512 + HKDF-BLAKE2sp)
+         05 - AES-256-CTR + XChaCha20 + Ascon (PBKDF2-SHA512 + HKDF-BLAKE2sp)
 
 
 ---
