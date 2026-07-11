@@ -103,6 +103,8 @@ static LPCTSTR const kElimDup = TEXT("ElimDup");
 static LPCTSTR const kNtSecur = TEXT("Security");
 static LPCTSTR const kMemLimit = TEXT("MemLimit");
 
+static LPCTSTR const kFMCopyHistoryValueName = TEXT("CopyHistory");
+
 void CInfo::Save() const
 {
   CS_LOCK
@@ -122,11 +124,13 @@ void CInfo::Save() const
   Key_Set_BoolPair(key, kShowPassword, ShowPassword);
   Key_Set_BoolPair(key, kOpnTrgFold, OpnTrgFold);
 
-  key.RecurseDeleteKey(kPathHistory);
-  if (WantPathHistory())
-    key.SetValue_Strings(kPathHistory, Paths);
-  else
-    key.SetValue_Strings(kPathHistory, Empty);
+  // Store path history in shared FM key (cross-dialog: Extract GUI + FM context menu)
+  key.Close();
+  if (key.Create(HKEY_CURRENT_USER, GetKeyPath(TEXT("FM"))) == ERROR_SUCCESS)
+  {
+    key.SetValue_Strings(kFMCopyHistoryValueName, Paths);
+    key.Close();
+  }
 }
 
 void Save_ShowPassword(bool showPassword)
@@ -135,6 +139,14 @@ void Save_ShowPassword(bool showPassword)
   CKey key;
   CreateMainKey(key, kKeyName);
   key.SetValue(kShowPassword, showPassword);
+}
+
+void Save_OpnTrgFold(bool open)
+{
+  CS_LOCK
+  CKey key;
+  CreateMainKey(key, kKeyName);
+  key.SetValue(kOpnTrgFold, open);
 }
 
 void Save_LimitGB(UInt32 limit_GB)
@@ -158,29 +170,37 @@ void CInfo::Load()
 
   CS_LOCK
   CKey key;
-  if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
-    return;
-  
-  key.GetValue_Strings(kPathHistory, Paths);
-  UInt32 v;
-  if (key.GetValue_UInt32_IfOk(kExtractMode, v) == ERROR_SUCCESS && v <= NPathMode::kAbsPaths)
+
+  // Resilient against missing Extraction key; load paths from shared FM key
+  if (OpenMainKey(key, kKeyName) == ERROR_SUCCESS)
   {
-    PathMode = (NPathMode::EEnum)v;
-    PathMode_Force = true;
-  }
-  if (key.GetValue_UInt32_IfOk(kOverwriteMode, v) == ERROR_SUCCESS && v <= NOverwriteMode::kRenameExisting)
-  {
-    OverwriteMode = (NOverwriteMode::EEnum)v;
-    OverwriteMode_Force = true;
+    UInt32 v;
+    if (key.GetValue_UInt32_IfOk(kExtractMode, v) == ERROR_SUCCESS && v <= NPathMode::kAbsPaths)
+    {
+      PathMode = (NPathMode::EEnum)v;
+      PathMode_Force = true;
+    }
+    if (key.GetValue_UInt32_IfOk(kOverwriteMode, v) == ERROR_SUCCESS && v <= NOverwriteMode::kRenameExisting)
+    {
+      OverwriteMode = (NOverwriteMode::EEnum)v;
+      OverwriteMode_Force = true;
+    }
+
+    Key_Get_BoolPair_true(key, kSplitDest, SplitDest);
+
+    Key_Get_BoolPair(key, kElimDup, ElimDup);
+    // Key_Get_BoolPair(key, kAltStreams, AltStreams);
+    Key_Get_BoolPair(key, kNtSecur, NtSecurity);
+    Key_Get_BoolPair(key, kShowPassword, ShowPassword);
+    Key_Get_BoolPair(key, kOpnTrgFold, OpnTrgFold);
+    key.Close();
   }
 
-  Key_Get_BoolPair_true(key, kSplitDest, SplitDest);
-
-  Key_Get_BoolPair(key, kElimDup, ElimDup);
-  // Key_Get_BoolPair(key, kAltStreams, AltStreams);
-  Key_Get_BoolPair(key, kNtSecur, NtSecurity);
-  Key_Get_BoolPair(key, kShowPassword, ShowPassword);
-  Key_Get_BoolPair(key, kOpnTrgFold, OpnTrgFold);
+  if (key.Open(HKEY_CURRENT_USER, GetKeyPath(TEXT("FM")), KEY_READ) == ERROR_SUCCESS)
+  {
+    key.GetValue_Strings(kFMCopyHistoryValueName, Paths);
+    key.Close();
+  }
 }
 
 bool Read_ShowPassword()
@@ -192,6 +212,17 @@ bool Read_ShowPassword()
     return showPassword;
   key.GetValue_bool_IfOk(kShowPassword, showPassword);
   return showPassword;
+}
+
+bool Read_OpnTrgFold()
+{
+  CS_LOCK
+  CKey key;
+  bool open = false;
+  if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
+    return open;
+  key.GetValue_bool_IfOk(kOpnTrgFold, open);
+  return open;
 }
 
 UInt32 Read_LimitGB()
@@ -607,7 +638,7 @@ void CContextMenuInfo::Load()
   Cascaded.Val = true;
   Cascaded.Def = false;
 
-  MenuIcons.Val = false;
+  MenuIcons.Val = true;
   MenuIcons.Def = false;
 
   ElimDup.Val = true;
@@ -634,7 +665,7 @@ void CContextMenuInfo::Load()
   
   Key_Get_BoolPair_true(key, kCascadedMenu, Cascaded);
   Key_Get_BoolPair_true(key, kElimDup, ElimDup);
-  Key_Get_BoolPair(key, kMenuIcons, MenuIcons);
+  Key_Get_BoolPair_true(key, kMenuIcons, MenuIcons);
 
   Key_Get_UInt32(key, kWriteZoneId, WriteZone);
 

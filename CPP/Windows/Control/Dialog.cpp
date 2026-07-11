@@ -97,6 +97,7 @@ bool CDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
     case WM_NOTIFY: return OnNotify((UINT)wParam, (LPNMHDR) lParam);
     case WM_TIMER: return OnTimer(wParam, lParam);
     case WM_SIZE: return OnSize(wParam, LOWORD(lParam), HIWORD(lParam));
+    case WM_GETMINMAXINFO: return OnGetMinMaxInfo((PMINMAXINFO)lParam);
     case WM_DESTROY: return OnDestroy();
     case WM_HELP: OnHelp(); return true;
     /*
@@ -139,6 +140,14 @@ bool CDialog::OnButtonClicked(unsigned buttonID, HWND /* buttonHWND */)
     default: return false;
   }
   return true;
+}
+
+void CDialog::Set_MinTrackSize_FromCurrent(int numX, int denX, int numY, int denY)
+{
+  RECT rc;
+  GetWindowRect(&rc);
+  _minTrackSize.cx = RECT_SIZE_X(rc) * numX / denX;
+  _minTrackSize.cy = RECT_SIZE_Y(rc) * numY / denY;
 }
 
 #ifndef UNDER_CE

@@ -5,6 +5,7 @@
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/Wildcard.h"
 
+#include "../../../Windows/FileFind.h"
 #include "../../../Windows/FileName.h"
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/ResourceString.h"
@@ -15,12 +16,17 @@
 
 
 #include "../FileManager/BrowseDialog.h"
+#include "../FileManager/FormatUtils.h"
 #include "../FileManager/LangUtils.h"
 #include "../FileManager/resourceGui.h"
+
+#include "../FileManager/ViewSettings.h"
 
 #include "ExtractDialog.h"
 #include "ExtractDialogRes.h"
 #include "ExtractRes.h"
+
+extern void FormatPathFreeSpace(UString &strPath, UString &strText);
 
 using namespace NWindows;
 using namespace NFile;
@@ -135,6 +141,21 @@ void CExtractDialog::GetButton_Bools(UINT id, CBoolPair &b1, CBoolPair &b2)
 
 #endif
 
+static void StartApplication(const UString &dir, const UString &path)
+{
+  SHELLEXECUTEINFOW execInfo;
+  ZeroMemory(&execInfo, sizeof(execInfo));
+  execInfo.cbSize = sizeof(execInfo);
+  execInfo.fMask = SEE_MASK_FLAG_DDEWAIT;
+  execInfo.hwnd = NULL;
+  execInfo.lpVerb = NULL;
+  execInfo.lpFile = path;
+  execInfo.lpParameters = NULL;
+  execInfo.lpDirectory = dir.IsEmpty() ? NULL : (LPCWSTR)dir;
+  execInfo.nShow = SW_SHOWNORMAL;
+  ShellExecuteExW(&execInfo);
+}
+
 bool CExtractDialog::OnInit()
 {
   #ifdef Z7_LANG
@@ -160,6 +181,9 @@ bool CExtractDialog::OnInit()
   _passwordControl.SetPasswordChar(TEXT('*'));
   _pathName.Attach(GetItem(IDE_EXTRACT_NAME));
   #endif
+
+  _freeSpace.Attach(GetItem(IDC_STATIC_EXTRACT_FREE_SPACE));
+  _freeSpace.SetText(L"");
 
   #ifdef Z7_NO_REGISTRY
   
@@ -210,6 +234,7 @@ bool CExtractDialog::OnInit()
   #endif
 
   _path.SetText(pathPrefix);
+  ShowPathFreeSpace(pathPrefix);
 
   #ifndef Z7_NO_REGISTRY
   for (unsigned i = 0; i < _info.Paths.Size() && i < kHistorySize; i++)
@@ -261,6 +286,17 @@ bool CExtractDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
     case IDB_EXTRACT_SET_PATH:
       OnButtonSetPath();
       return true;
+
+    case IDC_EXTRACT_BUTTON_OPEN_PATH:
+      OnButtonOpenPath();
+      return true;
+
+#ifndef Z7_SFX
+    case IDC_CHECK_DELETE_SOURCE_FILE:
+      DeleteSourceFile = IsButtonCheckedBool(IDC_CHECK_DELETE_SOURCE_FILE);
+      return true;
+#endif
+
     #ifndef Z7_SFX
     case IDX_EXTRACT_NAME_ENABLE:
       ShowItem_Bool(IDE_EXTRACT_NAME, IsButtonCheckedBool(IDX_EXTRACT_NAME_ENABLE));
@@ -287,6 +323,7 @@ void CExtractDialog::OnButtonSetPath()
   _path.SetCurSel(-1);
   #endif
   _path.SetText(resultPath);
+  ShowPathFreeSpace(resultPath);
 }
 
 void AddUniqueString(UStringVector &list, const UString &s);
@@ -420,3 +457,62 @@ void CExtractDialog::OnHelp()
   CModalDialog::OnHelp();
 }
 #endif
+
+
+void CExtractDialog::OnButtonOpenPath()
+{
+  UString currentPath;
+  _path.GetText(currentPath);
+
+  if (NFind::DoesDirExist_FollowLink(us2fs(currentPath)))
+  {
+    StartApplication(currentPath, currentPath);
+  }
+  else
+  {
+    const UString msg = MyFormatNew(
+        L"Folder \"{0}\" is not available yet.\n\n"
+        L"Note: the program will create the folder automatically when extracting.",
+        currentPath);
+    MessageBoxW(*this, msg, L"7-Zip", MB_ICONEXCLAMATION);
+  }
+}
+
+void CExtractDialog::ShowPathFreeSpace(UString & strPath)
+{
+  UString strText;
+  FormatPathFreeSpace(strPath, strText);
+  _freeSpace.SetText(strText);
+}
+
+bool CExtractDialog::OnCommand(unsigned code, unsigned itemID, LPARAM lParam)
+{
+  if (itemID == IDC_EXTRACT_PATH)
+  {
+#ifdef Z7_NO_REGISTRY
+    if (code == EN_CHANGE)
+#else
+    if (code == CBN_EDITCHANGE)
+#endif
+    {
+      UString strPath;
+      _path.GetText(strPath);
+      ShowPathFreeSpace(strPath);
+      return true;
+    }
+#ifndef Z7_NO_REGISTRY
+    else if (code == CBN_SELCHANGE)
+    {
+      int nSel = _path.GetCurSel();
+      if (nSel != CB_ERR)
+      {
+        UString strPath;
+        _path.GetLBText(nSel, strPath);
+        ShowPathFreeSpace(strPath);
+      }
+      return true;
+    }
+#endif
+  }
+  return CModalDialog::OnCommand(code, itemID, lParam);
+}

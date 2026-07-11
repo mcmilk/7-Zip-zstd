@@ -8,6 +8,12 @@
 
 #define IDX_EXTRACT_OPEN_TRG_FLD     104
 
+// Win32 resource IDs — must remain #define for rc.exe (cpp:S5028 N/A).
+#define IDC_EXTRACT_BUTTON_OPEN_PATH            105  // NOSONAR
+#define IDC_STATIC_EXTRACT_FREE_SPACE           107  // NOSONAR
+#define IDC_CHECK_DELETE_SOURCE_FILE            108  // NOSONAR
+#define IDC_GUI_AFTER_EXTRACT                   109  // NOSONAR
+
 #define IDE_EXTRACT_PASSWORD         120
 
 #define IDE_EXTRACT_NAME             130

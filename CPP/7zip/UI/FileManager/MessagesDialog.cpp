@@ -55,6 +55,9 @@ bool CMessagesDialog::OnInit()
 
   _messageList.SetColumnWidthAuto(0);
   _messageList.SetColumnWidthAuto(1);
+
+  Set_MinTrackSize_FromCurrent(3, 4, 3, 4);
+
   NormalizeSize();
   return CModalDialog::OnInit();
 }
@@ -68,9 +71,10 @@ bool CMessagesDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
   int y = ySize - my - by;
   int x = xSize - mx - bx;
 
-  InvalidateRect(NULL);
 
-  MoveItem(IDOK, x, y, bx, by);
-  _messageList.Move(mx, my, xSize - mx * 2, y - my * 2);
+  MoveItem(IDOK, x, y, bx, by, false);
+  _messageList.Move(mx, my, xSize - mx * 2, y - my * 2, false);
+  InvalidateRect(NULL);
   return false;
 }
+

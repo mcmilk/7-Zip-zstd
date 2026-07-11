@@ -18,7 +18,7 @@ class CMessagesDialog: public NWindows::NControl::CModalDialog
   virtual bool OnSize(WPARAM wParam, int xSize, int ySize) Z7_override;
 public:
   const UStringVector *Messages;
-  
+
   INT_PTR Create(HWND parent = NULL) { return CModalDialog::Create(IDD_MESSAGES, parent); }
 };
 

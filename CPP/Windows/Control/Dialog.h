@@ -15,9 +15,13 @@ namespace NControl {
 class CDialog: public CWindow
 {
   // Z7_CLASS_NO_COPY(CDialog)
+private:
+  SIZE _minTrackSize;
 public:
-  CDialog(HWND wnd = NULL): CWindow(wnd) {}
+  explicit CDialog(HWND wnd = nullptr): CWindow(wnd) { _minTrackSize.cx = 0; _minTrackSize.cy = 0; }
   virtual ~CDialog() {}
+
+  void Set_MinTrackSize_FromCurrent(int numX, int denX, int numY, int denY);
 
   HWND GetItem(unsigned itemID) const
     { return GetDlgItem(_window, (int)itemID); }
@@ -129,6 +133,12 @@ public:
   // virtual bool OnCommand2(WPARAM wParam, LPARAM lParam);
   virtual bool OnCommand(unsigned code, unsigned itemID, LPARAM lParam);
   virtual bool OnSize(WPARAM /* wParam */, int /* xSize */, int /* ySize */) { return false; }
+  virtual bool OnGetMinMaxInfo(PMINMAXINFO pMMI)
+  {
+    if (_minTrackSize.cx > 0) pMMI->ptMinTrackSize.x = _minTrackSize.cx;
+    if (_minTrackSize.cy > 0) pMMI->ptMinTrackSize.y = _minTrackSize.cy;
+    return false;
+  }
   virtual bool OnDestroy() { return false; }
 
   /*

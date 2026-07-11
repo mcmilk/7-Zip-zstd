@@ -207,7 +207,10 @@ HRESULT ExtractGUI(
     CExtractCallbackImp *extractCallback,
     HWND hwndParent)
 {
+  bool deleteSourceFile = false;
+
   messageWasDisplayed = false;
+  ProgressDialog_SetError(false);
 
   CThreadExtracting extracter;
   /*
@@ -267,7 +270,9 @@ HRESULT ExtractGUI(
       options.OverwriteMode = dialog.OverwriteMode;
       options.PathMode = dialog.PathMode;
       options.ElimDup = dialog.ElimDup;
-      
+
+      deleteSourceFile = dialog.DeleteSourceFile;
+
       #ifndef Z7_SFX
       OpnTrgFold = dialog.OpnTrgFold.Val;
       // options.NtOptions.AltStreams = dialog.AltStreams;
@@ -332,6 +337,12 @@ HRESULT ExtractGUI(
 
   RINOK(extracter.Create(title, hwndParent))
   messageWasDisplayed = extracter.ThreadFinishedOK && extracter.MessagesDisplayed;
+
+  if (extracter.ThreadFinishedOK && !ProgressDialog_HadError() && deleteSourceFile)
+  {
+    for (unsigned i = 0; i < archivePathsFull.Size(); i++)
+      DeleteFileIfArchive(us2fs(archivePathsFull[i]));
+  }
 
 #ifndef Z7_SFX
   // browse/navigate to target path:

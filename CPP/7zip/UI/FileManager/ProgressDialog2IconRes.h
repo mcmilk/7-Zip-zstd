@@ -1,0 +1,18 @@
+// Win32 resource IDs — must remain #define for rc.exe (cpp:S5028 N/A).
+#define IDI_SYSTRAY_0  310  // NOSONAR
+#define IDI_SYSTRAY_1  311  // NOSONAR
+#define IDI_SYSTRAY_2  312  // NOSONAR
+#define IDI_SYSTRAY_3  313  // NOSONAR
+#define IDI_SYSTRAY_4  314  // NOSONAR
+#define IDI_SYSTRAY_5  315  // NOSONAR
+#define IDI_SYSTRAY_6  316  // NOSONAR
+#define IDI_SYSTRAY_7  317  // NOSONAR
+#define IDI_SYSTRAY_8  318  // NOSONAR
+#define IDI_SYSTRAY_9  319  // NOSONAR
+#define IDI_SYSTRAY_10 320  // NOSONAR
+#define IDI_SYSTRAY_11 321  // NOSONAR
+#define IDI_SYSTRAY_12 322  // NOSONAR
+#define IDI_SYSTRAY_13 323  // NOSONAR
+#define IDI_SYSTRAY_14 324  // NOSONAR
+//#define IDI_SYSTRAY_15 325
+//#define IDI_SYSTRAY_16 326

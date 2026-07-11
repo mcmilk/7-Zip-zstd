@@ -210,6 +210,7 @@ enum MyMessages
 };
 
 UString GetFolderPath(IFolderFolder *folder);
+void StartApplicationDontWait(const UString &dir, const UString &path, HWND window);
 
 class CPanel;
 

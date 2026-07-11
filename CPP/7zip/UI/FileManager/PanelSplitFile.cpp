@@ -493,7 +493,10 @@ void CApp::Combine()
       AddInfoFileName(info, L"...");
     AddInfoFileName(info, fs2us(combiner.Names.Back()));
   }
-  
+
+  bool openOutputFolder = false;
+  bool deleteSourceFile = false;
+  bool close7Zip = false;
   {
     CCopyDialog copyDialog;
     copyDialog.Value = path;
@@ -502,9 +505,13 @@ void CApp::Combine()
     copyDialog.Title += srcPanel.GetItemRelPath(index);
     LangString(IDS_COMBINE_TO, copyDialog.Static);
     copyDialog.Info = info;
+    copyDialog.CurrentFolderPrefix = srcPanel.GetItemFullPath(index);
     if (copyDialog.Create(srcPanel.GetParent()) != IDOK)
       return;
     path = copyDialog.Value;
+    openOutputFolder = copyDialog.OpenOutputFolder;
+    deleteSourceFile = copyDialog.DeleteSourceFile;
+    close7Zip = copyDialog.Close7Zip;
   }
 
   NName::NormalizeDirPathPrefix(path);
@@ -552,6 +559,20 @@ void CApp::Combine()
     
     if (combiner.Create(title, _window) != 0)
       return;
+
+    if (openOutputFolder && NFind::DoesDirExist_FollowLink(us2fs(path)))
+    {
+      StartApplicationDontWait(path, path, _window);
+    }
+    if (deleteSourceFile)
+    {
+      for (i = 0; i < combiner.Names.Size(); i++)
+        NDir::DeleteFileIfArchive(us2fs(srcPath) + combiner.Names[i]);
+    }
+    if (close7Zip)
+    {
+      PostMessage(_window, WM_CLOSE, 0, 0);
+    }
   }
   RefreshTitleAlways();
 
