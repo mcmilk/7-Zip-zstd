@@ -338,6 +338,15 @@ size_t LZ5MT_compressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr)
 			retval_of_thread = p;
 	}
 
+	/* move remaining done/busy entries to free list */
+	while (!list_empty(&ctx->writelist_done)) {
+		struct list_head *entry = list_first(&ctx->writelist_done);
+		list_move(entry, &ctx->writelist_free);
+	}
+	while (!list_empty(&ctx->writelist_busy)) {
+		struct list_head* entry = list_first(&ctx->writelist_busy);
+		list_move(entry, &ctx->writelist_free);
+	}
 	/* clean up lists */
 	while (!list_empty(&ctx->writelist_free)) {
 		struct writelist *wl;
