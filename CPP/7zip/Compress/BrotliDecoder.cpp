@@ -151,14 +151,16 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
 
   /* 3) decompress */
   result = BROTLIMT_decompressDCtx(ctx, &rdwr);
+
+  /* 4) free resources */
+  BROTLIMT_freeDCtx(ctx);
+
   if (BROTLIMT_isError(result)) {
     if (result == (size_t)-BROTLIMT_error_canceled)
       return E_ABORT;
     return E_FAIL;
   }
 
-  /* 4) free resources */
-  BROTLIMT_freeDCtx(ctx);
   return res;
 }
 

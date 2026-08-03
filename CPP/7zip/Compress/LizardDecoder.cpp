@@ -146,14 +146,16 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
 
   /* 3) decompress */
   result = LIZARDMT_decompressDCtx(ctx, &rdwr);
+
+  /* 4) free resources */
+  LIZARDMT_freeDCtx(ctx);
+
   if (LIZARDMT_isError(result)) {
     if (result == (size_t)-LIZARDMT_error_canceled)
       return E_ABORT;
     return E_FAIL;
   }
 
-  /* 4) free resources */
-  LIZARDMT_freeDCtx(ctx);
   return res;
 }
 
