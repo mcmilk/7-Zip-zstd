@@ -479,6 +479,13 @@ static size_t st_decompress(void *arg)
 			break;
 	}
 
+	/* input ended, but current frame is not fully decoded yet */
+	if (result != 0) {
+		free(out->buf);
+		free(in->buf);
+		return ERROR(frame_decompress);
+	}
+
 	/* no error */
 	free(out->buf);
 	free(in->buf);
