@@ -235,7 +235,7 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     UInt64 streamSize = decoderSpec->GetInputProcessedSize();
 
     if (result != S_FALSE && result != S_OK)
-      return result;
+      break;
 
     if (unpackedSize == 0)
       break;
@@ -247,15 +247,11 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
       break;
     }
 
-    if (packSize > streamSize)
-      return E_FAIL;
-
-    if (result != S_OK)
+    if (packSize > streamSize) {
+      result = E_FAIL;
       break;
+    }
   }
-
-  decoderSpec->ReleaseInStream();
-  outStream.Release();
 
   if (!_isArc)
     opRes = NExtract::NOperationResult::kIsNotArc;
@@ -270,7 +266,10 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     _unpackSize_Defined = true;
     opRes = NExtract::NOperationResult::kOK;
   } else
-    return result;
+    opRes = result;
+
+  decoderSpec->ReleaseInStream();
+  outStream.Release();
 
   }
 
