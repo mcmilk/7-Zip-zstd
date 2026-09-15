@@ -168,6 +168,7 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
       case MT_ERROR(end_of_data):
         return ERROR_HANDLE_EOF;
       case MT_ERROR(data_error):
+      case MT_ERROR(compression_library):
         return ERROR_INVALID_DATA;
       default:
         return E_FAIL;

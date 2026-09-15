@@ -267,7 +267,7 @@ test main--decompress-currupt-archive {7z simple compression / decompression, de
 				assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
 
 				# make the file broken (add 5 wrong bytes):
-				set f [open $arcpath "r+b"]; ::puts -nonewline $f 12345; close $f
+				set f [open $arcpath "ab"]; ::puts -nonewline $f 12345; close $f
 				# test (shall fail):
 				if {![catch { 7z t {*}$m -- $arcpath } res]} {
 					error "test doesn't fail: $res"
