@@ -158,6 +158,8 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   if (LZ5MT_isError(result)) {
     if (result == (size_t)-LZ5MT_error_canceled)
       return E_ABORT;
+    if (result == (size_t)-LZ5MT_error_end_of_data)
+      return ERROR_HANDLE_EOF;
     return E_FAIL;
   }
 
