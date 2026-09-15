@@ -93,7 +93,6 @@ test main--compress-mx0 {7z simple compression / decompression, level 0} -setup 
 	set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 	file mkdir $tmpdir
 } -body {
-	variable Z7_PATH
 	foreach t {zstd brotli LZMA2 lz4 lz5 lizard} {
 		set arcpath [file join $tmpdir test.$t.7z]
 		set v "$t: This is a test string passed to stdin"
@@ -140,7 +139,6 @@ test main--encrypt-decrypt {7z encryption, decription} -setup {
 	set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 	file mkdir $tmpdir
 } -body {
-	variable Z7_PATH
   variable Z7_PWD
 	set v "test zstd & brotli 0123456789-ABCEFGHIJKLMNOPQRSTUVWXYZ?_*."
 	foreach {m l} {zstd 9 brotli 5 LZMA2 1} {
@@ -236,5 +234,59 @@ test main--content-hashes {7z hashes of archive content} {
 	XXH32 e2858574
 	XXH64 6ad2d3e5bcc63918
 }]
+
+test main--decompress-currupt-archive {7z simple compression / decompression, detection of currupt archive} -setup {
+	set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
+	file mkdir $tmpdir
+} -body {
+	foreach t {zstd brotli LZMA2 lz4 lz5 lizard} {
+		set v "$t: This is a test string passed to stdin [string repeat "test " 50]"
+		foreach m [list [list -t7z -m0=$t] -t$t] {
+			if {$t eq "LZMA2" && $m eq "-t$t"} continue
+			set arcpath [file join $tmpdir test.$t]
+			if {$m ne "-t$t"} {append arcpath .7z}
+			if {[catch {
+				# compress:
+				7z a {*}$m -mx1 -sitest.txt -- $arcpath . << "$v"
+				assertLogged {\nCreating archive} \
+					{\nAdd new data to archive: 1 file} \
+					{\nEverything is Ok}
+
+				# make the file shorter (remove 5 last bytes):
+				set f [open $arcpath "r+b"]; chan seek $f -5 end; chan truncate $f; close $f
+				# test (shall fail):
+				if {![catch { 7z t {*}$m -- $arcpath } res]} {
+					error "test doesn't fail: $res"
+				}
+				assertNotLogged {(?n)^Everything is Ok}
+				assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
+				# decompress (shall fail):
+				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : "NUL:"}] } res]} {
+					error "decompress doesn't fail: $res"
+				}
+				assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
+
+				# make the file broken (add 5 wrong bytes):
+				set f [open $arcpath "r+b"]; ::puts -nonewline $f 12345; close $f
+				# test (shall fail):
+				if {![catch { 7z t {*}$m -- $arcpath } res]} {
+					error "test doesn't fail: $res"
+				}
+				assertNotLogged {(?n)^Everything is Ok}
+				assertLogged {(?n)^(?:(?:Open )?ERROR: )?(?:Cannot open the file as \[\w+\] archive|Data Error|Unexpected end of (?:archive|data))}
+				# decompress (shall fail):
+				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : "NUL:"}] } res]} {
+					error "decompress doesn't fail: $res"
+				}
+				assertLogged {(?n)^(?:(?:Open )?ERROR: )?(?:Cannot open the file as \[\w+\] archive|Data Error|Unexpected end of (?:archive|data))}
+			} res]} {
+				error "Test of -t$t failed: $res"
+			}
+		}
+	}
+	set _ OK
+} -cleanup {
+	file delete -force $tmpdir
+} -result OK
 
 ::tcltest::cleanupTests

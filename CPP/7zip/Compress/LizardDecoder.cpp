@@ -156,9 +156,16 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   LIZARDMT_freeDCtx(ctx);
 
   if (LIZARDMT_isError(result)) {
-    if (result == (size_t)-LIZARDMT_error_canceled)
-      return E_ABORT;
-    return E_FAIL;
+    switch (result) {
+      case ERROR(canceled):
+        return E_ABORT;
+      case ERROR(end_of_data):
+        return ERROR_HANDLE_EOF;
+      case ERROR(data_error):
+        return ERROR_INVALID_DATA;
+      default:
+        return E_FAIL;
+    }
   }
 
   return res;

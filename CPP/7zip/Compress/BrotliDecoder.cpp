@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 #include "BrotliDecoder.h"
+#include <stdio.h>
 
 int BrotliRead(void *arg, BROTLIMT_Buffer * in)
 {
@@ -162,9 +163,16 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   BROTLIMT_freeDCtx(ctx);
 
   if (BROTLIMT_isError(result)) {
-    if (result == (size_t)-BROTLIMT_error_canceled)
-      return E_ABORT;
-    return E_FAIL;
+    switch (result) {
+      case MT_ERROR(canceled):
+        return E_ABORT;
+      case MT_ERROR(end_of_data):
+        return ERROR_HANDLE_EOF;
+      case MT_ERROR(data_error):
+        return ERROR_INVALID_DATA;
+      default:
+        return E_FAIL;
+    }
   }
 
   return res;

@@ -32,7 +32,6 @@ Z7_CLASS_IMP_CHandler_IInArchive_3(
 
   bool _isArc;
   bool _dataAfterEnd;
-  bool _needMoreInput;
 
   bool _packSize_Defined;
   bool _unpackSize_Defined;
@@ -135,7 +134,6 @@ Z7_COM7F_IMF(CHandler::Close())
 {
   _isArc = false;
   _dataAfterEnd = false;
-  _needMoreInput = false;
 
   _packSize_Defined = false;
   _unpackSize_Defined = false;
@@ -226,11 +224,11 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
   if (!_isArc)
     opRes = NExtract::NOperationResult::kIsNotArc;
-  else if (_needMoreInput)
+  else if (result == ERROR_HANDLE_EOF)
     opRes = NExtract::NOperationResult::kUnexpectedEnd;
   else if (_dataAfterEnd)
     opRes = NExtract::NOperationResult::kDataAfterEnd;
-  else if (result == S_FALSE)
+  else if (result == ERROR_INVALID_DATA || result == S_FALSE)
     opRes = NExtract::NOperationResult::kDataError;
   else if (result == S_OK) {
     _unpackSize = outStreamSpec->GetSize();

@@ -115,6 +115,10 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
       if (ZSTD_isError(result)) {
         switch (ZSTD_getErrorCode(result)) {
           /* @Igor: would be nice, if we have an API to store the errmsg */
+          case ZSTD_error_corruption_detected:
+          case ZSTD_error_checksum_wrong:
+          case ZSTD_error_prefix_unknown:
+            return ERROR_INVALID_DATA;
           case ZSTD_error_memory_allocation:
             return E_OUTOFMEMORY;
           case ZSTD_error_frameParameter_unsupported:
@@ -140,8 +144,12 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
       }
 
       /* finished with buffer */
-      if (zIn.pos == zIn.size)
+      if (zIn.pos == zIn.size) {
+        if (result != 0) { /* frame not completed - more data expected - error */
+          return ERROR_HANDLE_EOF;
+        }
         break;
+      }
 
       /* end of frame */
       if (result == 0) {
