@@ -257,7 +257,7 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     opRes = NExtract::NOperationResult::kUnexpectedEnd;
   else if (_dataAfterEnd)
     opRes = NExtract::NOperationResult::kDataAfterEnd;
-  else if (result == S_FALSE)
+  else if (result == ERROR_INVALID_DATA || result == S_FALSE)
     opRes = NExtract::NOperationResult::kDataError;
   else if (result == S_OK) {
     _unpackSize = outStreamSpec->GetSize();
