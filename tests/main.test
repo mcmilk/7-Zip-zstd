@@ -273,4 +273,40 @@ test main--decompress-broken-7z {7z simple compression / decompression, check th
 	file delete -force $tmpdir
 } -result OK
 
+test main--decompress-broken-arc {7z direct compression / decompression, check the handler errors} -setup {
+	set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
+	file mkdir $tmpdir
+} -body {
+	variable Z7_PATH
+	foreach t {zstd brotli lz4 lz5 lizard} {
+		set arcpath [file join $tmpdir test.$t]
+		set v "$t: This is a test string passed to stdin [string repeat "test " 150]"
+		if {[catch {
+			# compress:
+			7z a -t$t -mx1 -sitest.txt -- $arcpath . << "$v"
+			assertLogged {\nCreating archive} \
+				{\nAdd new data to archive: 1 file} \
+				{\nEverything is Ok}
+			# make the file broken (remove 5 last bytes):
+			set f [open $arcpath "r+b"]; chan seek $f -5 end; chan truncate $f; close $f
+			# test (shall fail):
+			if {![catch { 7z t -t$t -- $arcpath } res]} {
+				error "test doesn't fail: $res"
+			}
+			assertNotLogged {(?n)^Everything is Ok}
+			assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
+			# decompress (shall fail):
+			if {![catch { 7z e -t$t -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : "NUL:"}] } res]} {
+				error "decompress doesn't fail: $res"
+			}
+			assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
+		} res]} {
+			error "Test of -t$t failed: $res"
+		}
+	}
+	set _ OK
+} -cleanup {
+	file delete -force $tmpdir
+} -result OK
+
 ::tcltest::cleanupTests
