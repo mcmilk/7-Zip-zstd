@@ -2,7 +2,6 @@
 
 #include "StdAfx.h"
 #include "BrotliDecoder.h"
-#include <stdio.h>
 
 int BrotliRead(void *arg, BROTLIMT_Buffer * in)
 {
