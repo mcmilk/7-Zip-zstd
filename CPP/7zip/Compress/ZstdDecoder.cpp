@@ -145,9 +145,6 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
 
       /* finished with buffer */
       if (zIn.pos == zIn.size) {
-        if (result != 0) { /* frame not completed - more data expected - error */
-          return ERROR_HANDLE_EOF;
-        }
         break;
       }
 
@@ -172,8 +169,12 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
     _processedIn += srcBufLen;
 
     /* finished */
-    if (srcBufLen == 0)
+    if (srcBufLen == 0) {
+      if (result != 0) { /* frame not completed - more data expected - error */
+        return ERROR_HANDLE_EOF;
+      }
       return S_OK;
+    }
 
     zIn.size = srcBufLen;
     zIn.pos = 0;
