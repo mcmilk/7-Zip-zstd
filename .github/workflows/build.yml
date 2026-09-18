@@ -37,10 +37,10 @@ jobs:
         CC="gcc" CXX="g++" OUTDIR="$PWD/build-gcc" ./build-lx.sh
     - name: Test with clang binary
       run: |
-        Z7_PATH="CPP/build-clang/7z" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-clang/7z" tclsh tests/7z-test.tcl -verbose tsem
     - name: Test with gcc binary
       run: |
-        Z7_PATH="CPP/build-gcc/7z" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-gcc/7z" tclsh tests/7z-test.tcl -verbose tsem
     - name: Upload Build Artifacts (gcc)
       uses: actions/upload-artifact@v6
       with:
@@ -148,7 +148,7 @@ jobs:
           set OUTDIR=build\bin-%PLATFORM%
           if "${{matrix.darkmode}}" == "" set OUTDIR=%OUTDIR%-ndm
           set Z7_PATH=%OUTDIR%\7z.exe
-          tclsh tests\7z-test.tcl -verbose tpsem
+          tclsh tests\7z-test.tcl -verbose tsem
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v6

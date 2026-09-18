@@ -120,6 +120,35 @@ test main--compress-mx0 {7z simple compression / decompression, level 0} -setup 
 	file delete -force $tmpdir
 } -result OK
 
+set BASEPATH [file dirname [file dirname [info script]]]
+set res [lsort [glob -directory [file join $BASEPATH C] -tails *z*]]
+foreach {t m} {zip {zstd Deflate} 7z {zstd brotli lz4 lz5 lizard}} {
+	foreach m $m {
+		test main--compress-mult-$t-$m {7z/zip simple compression / decompression multiple files} -setup {
+			set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
+			file mkdir $tmpdir
+		} -body {
+			set arcpath [file join $tmpdir test.$m.[expr {$t eq "zip" ? "zip" : "7z"}]]
+			# compress:
+			7z a -t$t -m0=$m:x0 -- $arcpath [file join $BASEPATH C *z*]
+			assertLogged {\nCreating archive} \
+				{\nAdd new data to archive: \d+ folders, \d{2,} files, \d{7,} bytes} \
+				{\nEverything is Ok}
+			# test:
+			7z t -- $arcpath
+			assertLogged {\nEverything is Ok}
+			# decompress:
+			7z x -o[file join $tmpdir extracted] -- $arcpath
+			assertLogged {\nEverything is Ok}
+			# compare content of extracted destination folder with original list (see glob above):
+			lsort [glob -directory [file join $tmpdir extracted] -tails *]
+		} -cleanup {
+			file delete -force $tmpdir
+		} -result $res
+	}
+}
+set res {}
+
 test main--mmt-option {7z force multi-threaded & single-threaded compression / decompression} {
 	variable Z7_PATH
 	foreach mt {=on =off =1 =2 d2 d-2 p25u1 p1+1} {
