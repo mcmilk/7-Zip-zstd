@@ -20,6 +20,10 @@ F7 11 02 | Brotli, Google               | Tino Reichardt
 F7 11 04 | LZ4, Yann Collet             | Tino Reichardt
 F7 11 05 | LZ5, Przemyslaw Skibinski    | Tino Reichardt
 F7 11 06 | Lizard, Przemyslaw Skibinski | Tino Reichardt
+6F 10 702 | XChaCha20, Daniel J. Bernstein | [fzxx](https://github.com/fzxx) 
+6F 10 703 | XChaCha20-Poly1305, Daniel J. Bernstein | [fzxx](https://github.com/fzxx) 
+6F 10 704 | AES+XChaCha20-Poly1305, fzxx  | [fzxx](https://github.com/fzxx) 
+6F 10 705 | AES+XChaCha20+Ascon, fzxx     | [fzxx](https://github.com/fzxx) 
 
 
 Range F7 10 xx - LZHAM
@@ -304,3 +308,178 @@ Modes:
 
 Versions:
 The 7-Zip Lizard codec will be kept in sync with the current releases of Lizard.
+
+
+Range 6F 10 702, XChaCha20
+---------------------------
+
+Description:
+XChaCha20 is an extended-nonce variant of the ChaCha20 stream cipher, designed by
+Daniel J. Bernstein. It uses a 256-bit key and a 192-bit nonce, providing a larger
+nonce space than the original ChaCha20 (which uses a 96-bit nonce). This makes it
+safe to generate nonces randomly without risking nonce reuse. XChaCha20 is defined
+in RFC 8439 (formerly draft-irtf-cfrg-xchacha).
+
+License:
+The XChaCha20 implementation is provided as open source software using the
+GNU LGPL v2.1+ license.
+
+7-Zip Container Header:
+This header is mandatory and must be exact 2 bytes. The data within that header
+is for informational purposes only and not used by the decoder. If the header
+is not there, or has another size, the decoder will not decompress the content.
+``` C
+ Byte _derivation_mode;  // 0 = SHA-256 iterative
+ Byte _num_cycles_power; // key derivation iterations = 2^value
+```
+- _derivation_mode specifies the key derivation function used
+  - 0: SHA-256 iterative hashing (same as 7zAES)
+- _num_cycles_power specifies the number of iterations for key derivation
+  - the actual iteration count is 2^_num_cycles_power
+
+Encryption Integrator: fzxx
+- Homepage: https://github.com/fzxx
+- Source:   https://github.com/fzxx/7-Zip-zstd-crypto
+
+Modes:
+- key derivation uses SHA-256 iterative hashing, compatible with 7zAES
+- no authentication (encryption only)
+- SIMD acceleration: SSE2, AVX2, ARM NEON
+- one ID should be okay for this codec
+
+
+Range 6F 10 703, XChaCha20-Poly1305
+------------------------------------
+
+Description:
+XChaCha20-Poly1305 is an Authenticated Encryption with Associated Data (AEAD)
+cipher combining the XChaCha20 stream cipher with the Poly1305 message
+authentication code. It provides both confidentiality and data integrity
+verification. The Poly1305 MAC generates a 16-byte authentication tag that
+is verified during decryption to ensure the data has not been tampered with.
+
+License:
+The XChaCha20-Poly1305 implementation is provided as open source software using
+the GNU LGPL v2.1+ license.
+
+7-Zip Container Header:
+This header is mandatory and must be exact 2 bytes. The data within that header
+is for informational purposes only and not used by the decoder. If the header
+is not there, or has another size, the decoder will not decompress the content.
+``` C
+ Byte _derivation_mode;  // 0 = SHA-256 iterative
+ Byte _num_cycles_power; // key derivation iterations = 2^value
+```
+- _derivation_mode specifies the key derivation function used
+  - 0: SHA-256 iterative hashing (same as 7zAES)
+- _num_cycles_power specifies the number of iterations for key derivation
+  - the actual iteration count is 2^_num_cycles_power
+
+Encryption Integrator: fzxx
+- Homepage: https://github.com/fzxx
+- Source:   https://github.com/fzxx/7-Zip-zstd-crypto
+
+Modes:
+- key derivation uses SHA-256 iterative hashing, compatible with 7zAES
+- authentication via Poly1305 MAC (16-byte tag)
+- decryption verifies the authentication tag and reports error on mismatch
+- SIMD acceleration: SSE2, AVX2, ARM NEON
+- one ID should be okay for this codec
+
+
+Range 6F 10 704, AES+XChaCha20-Poly1305 (AXP)
+----------------------------------------------
+
+Description:
+AES+XChaCha20-Poly1305 (AXP) is a cascade cipher that applies AES-256-CTR and
+XChaCha20 sequentially, with Poly1305 providing authentication. The cascade
+construction uses three independent subkeys derived from the user's password:
+a 32-byte AES key, a 32-byte XChaCha20 key, and a 32-byte Poly1305 one-time
+key (derived from XChaCha20). The 96-byte cascade key is derived using
+PBKDF2-HMAC-SHA512 and then split into individual subkeys via HKDF-BLAKE2sp.
+
+License:
+The AES+XChaCha20-Poly1305 implementation is provided as open source software
+using the GNU LGPL v2.1+ license.
+
+7-Zip Container Header:
+This header is mandatory and must be exact 2 bytes. The data within that header
+is for informational purposes only and not used by the decoder. If the header
+is not there, or has another size, the decoder will not decompress the content.
+``` C
+ Byte _derivation_mode;  // 1 = PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
+ Byte _num_cycles_power; // key derivation iterations = 2^value
+```
+- _derivation_mode specifies the key derivation function used
+  - 1: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (cascade mode)
+- _num_cycles_power specifies the number of iterations for key derivation
+  - the actual iteration count is 2^_num_cycles_power
+
+Algorithm author: fzxx (cascade design)
+- AES-256: NIST FIPS-197
+- XChaCha20: Daniel J. Bernstein
+- Poly1305: Daniel J. Bernstein
+- PBKDF2: RSA Laboratories (RFC 8018)
+- HKDF: Hugo Krawczyk (RFC 5869)
+
+Encryption Integrator: fzxx
+- Homepage: https://github.com/fzxx
+- Source:   https://github.com/fzxx/7-Zip-zstd-crypto
+
+Modes:
+- key derivation uses PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (96-byte cascade key)
+- the cascade key is split into three 32-byte subkeys for AES, XChaCha20, and Poly1305
+- encryption: data is first encrypted with AES-256-CTR, then with XChaCha20
+- authentication via Poly1305 MAC (16-byte tag)
+- decryption verifies the authentication tag and reports error on mismatch
+- AES hardware acceleration (AES-NI) is used when available
+- XChaCha20 SIMD acceleration: SSE2, AVX2, ARM NEON
+- one ID should be okay for this codec
+
+
+Range 6F 10 705, AES+XChaCha20+Ascon (AXA)
+-------------------------------------------
+
+Description:
+AES+XChaCha20+Ascon (AXA) is a cascade cipher that applies AES-256-CTR and
+XChaCha20 sequentially, with Ascon-128a providing authentication. Ascon is the
+winner of the NIST Lightweight Cryptography standardization project (February
+2023). It provides lightweight authenticated encryption suitable for constrained
+environments. The cascade construction uses three independent subkeys derived
+from the user's password: a 32-byte AES key, a 32-byte XChaCha20 key, and a
+16-byte Ascon key. The 96-byte cascade key is derived using PBKDF2-HMAC-SHA512
+and then split into individual subkeys via HKDF-BLAKE2sp.
+
+License:
+The AES+XChaCha20+Ascon implementation is provided as open source software
+using the GNU LGPL v2.1+ license.
+
+7-Zip Container Header:
+This header is mandatory and must be exact 2 bytes. The data within that header
+is for informational purposes only and not used by the decoder. If the header
+is not there, or has another size, the decoder will not decompress the content.
+``` C
+ Byte _derivation_mode;  // 1 = PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
+ Byte _num_cycles_power; // key derivation iterations = 2^value
+```
+- _derivation_mode specifies the key derivation function used
+  - 1: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (cascade mode)
+- _num_cycles_power specifies the number of iterations for key derivation
+  - the actual iteration count is 2^_num_cycles_power
+
+Algorithm author: fzxx (cascade design)
+- AES-256: NIST FIPS-197
+- XChaCha20: Daniel J. Bernstein
+- Ascon: Christoph Dobraunig et al. (Graz University of Technology)
+- PBKDF2: RSA Laboratories (RFC 8018)
+- HKDF: Hugo Krawczyk (RFC 5869)
+
+Encryption Integrator: fzxx
+- Homepage: https://github.com/fzxx
+- Source:   https://github.com/fzxx/7-Zip-zstd-crypto
+
+Cascade Modes:
+- key derivation uses PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (96-byte cascade key), subkeys are independently derived from the cascade key via HKDF-BLAKE2sp with unique info strings.
+- AES hardware acceleration (AES-NI) is used when available
+- XChaCha20 SIMD acceleration: SSE2, AVX2, ARM NEON
+- Ascon SIMD acceleration: SSE2, AVX-512, ARM NEON

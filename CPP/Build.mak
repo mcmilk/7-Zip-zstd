@@ -79,7 +79,11 @@ CFLAGS_WARN_LEVEL = -Wall
 !ENDIF
 
 # CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ $(CFLAGS_WARN_LEVEL) -WX -EHsc -Gy -MT -MP -GR- -GL -Gw
-CFLAGS = $(CFLAGS) -nologo  $(CFLAGS_c_switch) -W4 -WX -EHsc -Gy -MP -GR- -GF -GL -Gw
+!IF "$(PLATFORM)" == "arm64"
+CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -W4 -WX -EHsc -Gy -MP -GR- -Gw
+!ELSE
+CFLAGS = $(CFLAGS) -nologo -c -Fo$O/ -W4 -WX -EHsc -Gy -MP -GR- -GL -Gw
+!ENDIF
 !IF "$(ZIP7_DARKMODE)" == "1"
 CFLAGS = $(CFLAGS) -DZIP7_DARKMODE=1 -std:c++20 -Zc:enumTypes
 RFLAGS = $(RFLAGS) -dZIP7_DARKMODE=1
@@ -150,7 +154,11 @@ CFLAGS_O2 = $(CFLAGS) -O2 /Ob3
 LFLAGS = $(LFLAGS) -nologo -OPT:REF -OPT:ICF -INCREMENTAL:NO
 
 !IFNDEF UNDER_CE
+!IF "$(PLATFORM)" == "arm64"
+LFLAGS = $(LFLAGS) /LARGEADDRESSAWARE
+!ELSE
 LFLAGS = $(LFLAGS) /LTCG /LARGEADDRESSAWARE
+!ENDIF
 !IF "$(ZIP7_DARKMODE)" == "1"
 LFLAGS = $(LFLAGS) /DEPENDENTLOADFLAG:0x800
 !ENDIF
@@ -240,7 +248,10 @@ $O/asm:
 !ENDIF
 
 $(PROGPATH): $O $O/asm $(OBJS) $(DEF_FILE)
-	link $(LFLAGS) -out:$(PROGPATH) $(OBJS) $(LIBS)
+	link $(LFLAGS) -out:$(PROGPATH) @<<
+$(OBJS)
+$(LIBS)
+<<
 
 !IFNDEF NO_DEFAULT_RES
 $O\resource.res: $(*B).rc

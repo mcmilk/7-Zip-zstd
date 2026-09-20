@@ -828,15 +828,29 @@ $O/7zAes.o: ../../Crypto/7zAes.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/7zAesRegister.o: ../../Crypto/7zAesRegister.cpp
 	$(CXX) $(CXXFLAGS) $<
+$O/7zKeyDerivation.o: ../../Crypto/7zKeyDerivation.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/Ascon.o: ../../Crypto/Ascon.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/Cascade.o: ../../Crypto/Cascade.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/CascadeRegister.o: ../../Crypto/CascadeRegister.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/HkdfBlake2sp.o: ../../Crypto/HkdfBlake2sp.cpp
+	$(CXX) $(CXXFLAGS) $<
 $O/HmacSha1.o: ../../Crypto/HmacSha1.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/HmacSha256.o: ../../Crypto/HmacSha256.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/HmacSha512.o: ../../Crypto/HmacSha512.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/MyAes.o: ../../Crypto/MyAes.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/MyAesReg.o: ../../Crypto/MyAesReg.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/Pbkdf2HmacSha1.o: ../../Crypto/Pbkdf2HmacSha1.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/Pbkdf2HmacSha512.o: ../../Crypto/Pbkdf2HmacSha512.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/RandGen.o: ../../Crypto/RandGen.cpp
 	$(CXX) $(CXXFLAGS) $<
@@ -847,6 +861,14 @@ $O/Rar5Aes.o: ../../Crypto/Rar5Aes.cpp
 $O/RarAes.o: ../../Crypto/RarAes.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/WzAes.o: ../../Crypto/WzAes.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/XChaCha20.o: ../../Crypto/XChaCha20.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/XChaCha20Register.o: ../../Crypto/XChaCha20Register.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/XChaCha20Poly1305.o: ../../Crypto/XChaCha20Poly1305.cpp
+	$(CXX) $(CXXFLAGS) $<
+$O/XChaCha20Poly1305Register.o: ../../Crypto/XChaCha20Poly1305Register.cpp
 	$(CXX) $(CXXFLAGS) $<
 $O/ZipCrypto.o: ../../Crypto/ZipCrypto.cpp
 	$(CXX) $(CXXFLAGS) $<

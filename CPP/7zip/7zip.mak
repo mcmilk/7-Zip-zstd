@@ -283,7 +283,7 @@ $(FASTLZMA2_OBJS): ../../../../C/fast-lzma2/$(*B).c
 {../../Compress}.cpp{$O}.obj::
 	$(COMPLB)
 {../../Crypto}.cpp{$O}.obj::
-	$(CCOMPLB)
+	$(COMPLB_O2)
 {../../../../C}.c{$O}.obj::
 	$(CCOMPLB)
 {../../../../C/brotli}.c{$O}.obj::

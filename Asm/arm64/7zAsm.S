@@ -3,7 +3,7 @@
 
 #if defined(__clang_major__) && __clang_major__ >= 20
   // clang21 : error: identifier 'and' conflicts with a C++ keyword [-Wc++-keyword]
-  // #pragma GCC diagnostic ignored "-Wc++-keyword" // clang 21
+  #pragma GCC diagnostic ignored "-Wc++-keyword" // clang 21+
   #pragma GCC diagnostic ignored "-Wc++-compat"  // clang 12+
 #endif
 
