@@ -33,6 +33,11 @@ Igor Pavlov : Public domain */
 #define RPC_NO_WINDOWS_H
 #endif
 
+#if !defined(NOMINMAX) && !defined(__MINGW32__) && !defined(__MINGW64__)
+// NOMINMAX prevents min()/max() macros from conflicting with std::min/std::max
+#define NOMINMAX
+#endif
+
 #if defined(__MINGW32__) || defined(__MINGW64__)
 // #if defined(__GNUC__) && !defined(__clang__)
 #include <windows.h>

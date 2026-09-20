@@ -546,6 +546,9 @@ Z7_COM7F_IMF(CFilterCoder::SetKey(const Byte *data, UInt32 size))
 Z7_COM7F_IMF(CFilterCoder::SetInitVector(const Byte *data, UInt32 size))
   { return _cryptoProperties->SetInitVector(data, size); }
 
+Z7_COM7F_IMF(CFilterCoder::CryptoAuthVerify(Int32 *result))
+  { return _cryptoAuthVerify->CryptoAuthVerify(result); }
+
 #endif
 
 

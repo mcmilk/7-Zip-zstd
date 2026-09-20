@@ -6,6 +6,8 @@
 #include "../../Common/MethodId.h"
 #include "../../Common/MethodProps.h"
 
+#include "7zHeader.h"
+
 namespace NArchive {
 namespace N7z {
 
@@ -64,6 +66,7 @@ struct CCompressionMethodMode
 
   UString Password; // _Wipe
   UInt64 MemoryUsageLimit;
+  CMethodId EncryptionMethodId;
  
   bool IsEmpty() const { return (Methods.IsEmpty() && !PasswordIsDefined); }
   CCompressionMethodMode():
@@ -78,6 +81,7 @@ struct CCompressionMethodMode
       , NumThreadGroups(0)
       #endif
       , MemoryUsageLimit((UInt64)1 << 30)
+      , EncryptionMethodId(k_AES)
   {}
 
 #ifdef Z7_CPP_IS_SUPPORTED_default

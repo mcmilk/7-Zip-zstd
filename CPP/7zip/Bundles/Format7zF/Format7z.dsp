@@ -1133,6 +1133,24 @@ SOURCE=..\..\Crypto\7zAes.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Crypto\7zKeyDerivation.cpp
+
+!IF  "$(CFG)" == "7z - Win32 Release"
+
+# ADD CPP /O2
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "7z - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zKeyDerivation.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Crypto\7zAesRegister.cpp
 
 !IF  "$(CFG)" == "7z - Win32 Release"
