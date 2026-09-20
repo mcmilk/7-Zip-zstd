@@ -18,6 +18,10 @@
 #include "../Common/C_FileIO.h"
 #include "../Common/MyBuffer2.h"
 #include "../Common/StringConvert.h"
+
+#  ifndef ACCESSPERMS
+#  define ACCESSPERMS (S_IRWXU | S_IRWXG | S_IRWXO)
+#  endif
 #endif
 
 #include "FileDir.h"
