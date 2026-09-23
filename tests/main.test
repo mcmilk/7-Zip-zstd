@@ -39,7 +39,7 @@ test main--e-inv-arg {error, unknown switch} -body {
 foreach t {{-t7z -m0=zstd:x1} {-tzstd -mx1} {-tzip -mx1}} {
 test main--compress[lindex $t 0]-no-file {error, compress no such file} -constraints winOnly -body {
 	set tmpfn [file join [temporaryDirectory] 7z-test-no-such-file-xxx.txt]
-	7z a {*}$t -- NUL: $tmpfn
+	7z a {*}$t -sae -- {\\.\NUL} $tmpfn
 } -returnCodes error -match glob -result "*Scan WARNINGS for files and folders:*The system cannot find the file specified.*"
 }
 
@@ -50,16 +50,16 @@ testConstraint lckd_test_file [expr {
 	[info exists ::env(LOCALAPPDATA)] &&
 	[file exists [set lckd_test_file [file join $::env(LOCALAPPDATA) {Microsoft\Windows\Notifications\wpndatabase.db-wal}]]]
 }]
-foreach t {{-t7z -m0=zstd:x1} {-tzstd -mx1}} {
+foreach t {{-t7z -m0=zstd:x1} {-tzstd -mx1} {-tzip -mx1}} {
 test main--compress[lindex $t 0]-lckd-no-ssw {error, compress file open for writing without -ssw option} -constraints lckd_test_file -body {
 	variable lckd_test_file
 	# attempt to compress (without -ssw) file opened for write by other process shall generate an error:
-	7z a {*}$t -- NUL: $lckd_test_file
+	7z a {*}$t -sae -- {\\.\NUL} $lckd_test_file
 } -returnCodes error -match glob -result "*WARNING: The process cannot access the file because it is being used by another process.*"
 test main--compress[lindex $t 0]-lckd-w-ssw {no error, compress file open for writing with -ssw option} -constraints lckd_test_file -body {
 	variable lckd_test_file
 	# attempt to compress (without -ssw) file opened for write by other process shall generate an error:
-	7z a {*}$t -ssw -- NUL: $lckd_test_file
+	7z a {*}$t -ssw -sae -- {\\.\NUL} $lckd_test_file
 } -returnCodes ok -match glob -result "*Everything is Ok*"
 }
 
@@ -290,7 +290,7 @@ test main--decompress-currupt-archive {7z simple compression / decompression, de
 				assertNotLogged {(?n)^Everything is Ok}
 				assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
 				# decompress (shall fail):
-				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : "NUL:"}] } res]} {
+				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : {\\.\NUL}}] } res]} {
 					error "decompress doesn't fail: $res"
 				}
 				assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
@@ -304,7 +304,7 @@ test main--decompress-currupt-archive {7z simple compression / decompression, de
 				assertNotLogged {(?n)^Everything is Ok}
 				assertLogged {(?n)^(?:(?:Open )?ERROR: )?(?:Cannot open the file as \[\w+\] archive|Data Error|Unexpected end of (?:archive|data))}
 				# decompress (shall fail):
-				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : "NUL:"}] } res]} {
+				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : {\\.\NUL}}] } res]} {
 					error "decompress doesn't fail: $res"
 				}
 				assertLogged {(?n)^(?:(?:Open )?ERROR: )?(?:Cannot open the file as \[\w+\] archive|Data Error|Unexpected end of (?:archive|data))}
