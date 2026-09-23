@@ -1,5 +1,7 @@
 PROG = 7zFM.exe
 
+CFLAGS = $(CFLAGS) -DZ7_EXTERNAL_CODECS
+
 !include "../Format7zF/Arc.mak"
 
 !include "../../UI/FileManager/FM.mak"
@@ -43,6 +45,7 @@ UI_COMMON_OBJS = \
   $O\ArchiveName.obj \
   $O\ArchiveOpenCallback.obj \
   $O\Bench.obj \
+  $O\CompressCall.obj \
   $O\CompressCall2.obj \
   $O\DefaultName.obj \
   $O\EnumDirItems.obj \

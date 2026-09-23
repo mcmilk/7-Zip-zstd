@@ -357,11 +357,95 @@ SOURCE=..\..\Crypto\7zAesRegister.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Crypto\7zKeyDerivation.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\7zKeyDerivation.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\HmacSha512.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\HmacSha512.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Pbkdf2HmacSha512.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Pbkdf2HmacSha512.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Crypto\MyAes.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Crypto\MyAes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\XChaCha20.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\XChaCha20.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\XChaCha20Register.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\XChaCha20Poly1305.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\XChaCha20Poly1305.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\XChaCha20Poly1305Register.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Cascade.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Cascade.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\CascadeRegister.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Ascon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Ascon.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\AsconSimd.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\ChaCha20Simd.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\HkdfBlake2sp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\HkdfBlake2sp.h
 # End Source File
 # End Group
 # Begin Group "Windows"
@@ -526,6 +610,10 @@ SOURCE=..\..\..\Common\NewHandler.h
 # Begin Source File
 
 SOURCE=..\..\..\Common\Sha256Prepare.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Sha512Prepare.cpp
 # End Source File
 # Begin Source File
 
@@ -970,6 +1058,29 @@ SOURCE=..\..\..\..\C\Sha256.h
 
 SOURCE=..\..\..\..\C\Sha256Opt.c
 # SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha512.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha512.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Sha512Opt.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Blake2s.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\C\Blake2.h
 # End Source File
 # Begin Source File
 

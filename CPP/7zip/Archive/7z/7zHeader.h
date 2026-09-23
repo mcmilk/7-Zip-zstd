@@ -129,7 +129,11 @@ const UInt32 k_LZ4   = 0x4F71104;
 const UInt32 k_LZ5   = 0x4F71105;
 const UInt32 k_LIZARD= 0x4F71106;
 
-const UInt32 k_AES   = 0x6F10701;
+const UInt32 k_AES                      = 0x6F10701;
+const UInt32 k_XCHACHA20                = 0x6F10702;
+const UInt32 k_XCHACHA20_POLY1305       = 0x6F10703;
+const UInt32 k_AES_XCHACHA20_POLY1305   = 0x6F10704;
+const UInt32 k_AES_XCHACHA20_ASCON      = 0x6F10705;
 
 // const UInt32 k_ZSTD = 0x4015D; // winzip zstd
 // 0x4F71101, 7z-zstd
