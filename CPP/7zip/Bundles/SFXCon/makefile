@@ -111,6 +111,7 @@ CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
   $O\7zKeyDerivation.obj \
+  $O\Aegis256.obj \
   $O\HkdfBlake2sp.obj \
   $O\HmacSha512.obj \
   $O\Pbkdf2HmacSha512.obj \

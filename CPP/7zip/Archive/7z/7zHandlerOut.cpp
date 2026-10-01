@@ -1062,6 +1062,8 @@ HRESULT COutHandler::SetProperty(const wchar_t *nameSpec, const PROPVARIANT &val
         _encryptionMethodId = k_AES_XCHACHA20_ASCON;
       else if (m.IsEqualTo("axp") || m.IsEqualTo("aesxchacha20poly1305"))
         _encryptionMethodId = k_AES_XCHACHA20_POLY1305;
+      else if (m.IsEqualTo("xaa") || m.IsEqualTo("xchacha20aesaegis"))
+        _encryptionMethodId = k_XCHACHA20_AES_AEGIS256;
       else
         return E_INVALIDARG;
       return S_OK;

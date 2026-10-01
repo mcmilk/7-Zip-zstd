@@ -1930,6 +1930,7 @@ void CCompressDialog::SetEncryptionMethod()
     ComboBox_AddStringAscii(_encryptionMethod, "XChaCha20-Poly1305");
     ComboBox_AddStringAscii(_encryptionMethod, "AES+XChaCha20-Poly1305");
     ComboBox_AddStringAscii(_encryptionMethod, "AES+XChaCha20+Ascon");
+    ComboBox_AddStringAscii(_encryptionMethod, "XChaCha20+AES+AEGIS");
     int sel = 0;
     if (encryptionMethod.IsEqualTo_Ascii_NoCase("xchacha20poly1305"))
       sel = 2;
@@ -1939,6 +1940,8 @@ void CCompressDialog::SetEncryptionMethod()
       sel = 3;
     else if (encryptionMethod.IsEqualTo_Ascii_NoCase("aesxchacha20ascon") || encryptionMethod.IsEqualTo_Ascii_NoCase("axa"))
       sel = 4;
+    else if (encryptionMethod.IsEqualTo_Ascii_NoCase("xchacha20aesaegis") || encryptionMethod.IsEqualTo_Ascii_NoCase("xaa"))
+      sel = 5;
     else if (encryptionMethod.IsEqualTo_Ascii_NoCase("aes256"))
       sel = 0;
     _encryptionMethod.SetCurSel(sel);

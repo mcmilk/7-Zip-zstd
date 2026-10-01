@@ -437,6 +437,18 @@ SOURCE=..\..\Crypto\AsconSimd.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Crypto\Aegis256.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Aegis256.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Crypto\Aegis256Simd.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Crypto\ChaCha20Simd.h
 # End Source File
 # Begin Source File

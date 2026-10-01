@@ -173,6 +173,7 @@ CRYPTO_OBJS = \
   $O/7zAes.o \
   $O/7zAesRegister.o \
   $O/7zKeyDerivation.o \
+  $O/Aegis256.o \
   $O/Ascon.o \
   $O/Cascade.o \
   $O/CascadeRegister.o \

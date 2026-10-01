@@ -27,3 +27,13 @@ REGISTER_FILTER_E(AXA,
     0x6F10705, "AES+XChaCha20+Ascon")
 
 }}
+
+namespace NCrypto {
+namespace NAXECascade {
+
+REGISTER_FILTER_E(XAE,
+    CDecoder,
+    CEncoder,
+    0x6F10706, "XChaCha20+AES+AEGIS")
+
+}}
