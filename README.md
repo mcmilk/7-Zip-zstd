@@ -55,6 +55,10 @@ You can install it in two ways:
    - Key derivation: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
    - Authentication: Ascon-128a tag
 
+6. [XChaCha20+AES+AEGIS] (XAA) is a cascade cipher that applies XChaCha20, AES-256-CTR and AEGIS-256 sequentially, with AEGIS-256 providing authentication. AEGIS-256 is specified in RFC 10032 and is built from the AES round function.
+   - Key derivation: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
+   - Authentication: AEGIS-256 tag (256-bit)
+
 ### 7-Zip ZS CLI variants
 
 7z and 7zz provide largely the same core 7‑Zip functionality, but they are built/distributed
@@ -125,6 +129,7 @@ Codecs:
  0  EDF  6F10703 XChaCha20-Poly1305
  0  EDF  6F10704 AES256CTR+XChaCha20-Poly1305
  0  EDF  6F10705 AES256CTR+XChaCha20+Ascon
+ 0  EDF  6F10706 XChaCha20+AES+AEGIS
 
 Hashers:
  0   32      202 BLAKE2sp
@@ -173,7 +178,7 @@ Please don’t open a new issue. Instead, contact the antivirus vendor and ask t
 - squashfs files with LZ4 or Zstandard compression can be handled
 - several history settings aren't stored by default, look [here](https://sourceforge.net/p/sevenzip/discussion/45797/thread/dc2ac53d/?limit=25) for some info about that, you can restore original 7-Zip behavior via `tools->options->settings`
 - these hashes can be calculated: CRC32, CRC64, MD2, MD4, MD5, SHA1, SHA256, SHA384, SHA512, SHA3-256, SHA3-384, SHA3-512, XXH32, XXH64, BLAKE2sp, BLAKE3 (lowercase or uppercase)
-- Support for encryption with header encryption (`-mhe=on`), as well as multiple newly added encryption modes: XChaCha20, XChaCha20-Poly1305, AES+XChaCha20-Poly1305, and AES+XChaCha20+Ascon.
+- Support for encryption with header encryption (`-mhe=on`), as well as multiple newly added encryption modes: XChaCha20, XChaCha20-Poly1305, AES+XChaCha20-Poly1305, AES+XChaCha20+Ascon, and XChaCha20+AES+AEGIS.
 
 ```bash
 7z a archiv.7z -m0=zstd -mx0   Zstandard Fastest Mode, without BCJ preprocessor
@@ -223,6 +228,11 @@ Please don’t open a new issue. Instead, contact the antivirus vendor and ask t
 7z a archive.7z -ppassword -mhe=on -mem=axa
 7z a archive.7z -ppassword -mhe=on -mem=aesxchacha20ascon
 7z a archive.7z -ppassword -mhe=on -mem=aes+xchacha20+ascon
+
+# XChaCha20+AES+AEGIS
+7z a archive.7z -ppassword -mhe=on -mem=xaa
+7z a archive.7z -ppassword -mhe=on -mem=xchacha20aesaegis
+7z a archive.7z -ppassword -mhe=on -mem=xchacha20+aes+aegis
 ```
 
 ![Explorer inegration](https://mcmilk.de/projects/7-Zip-zstd/Add-To-Archive.png "Add to Archive Dialog with ZSTD options")
@@ -387,8 +397,9 @@ You find this project useful, maybe you consider a donation ;-)
   - [XChaCha20/XChaCha20-Poly1305] Version 1.0.0
   - [AES+XChaCha20-Poly1305] (AXP) cascade cipher, Version 1.0.0
   - [AES+XChaCha20+Ascon] (AXA) cascade cipher, Version 1.0.0, Ascon Version 1.3
+  - [XChaCha20+AES+AEGIS] (XAA) cascade cipher, Version 1.0.0
 
-/TR 2026-07-09
+/TR 2026-10-01
 
 ## Notes
 
@@ -403,6 +414,10 @@ We are planning a to use a code signed installer again, https://github.com/mcmil
 [Zstandard]:https://github.com/facebook/zstd/
 [Lizard]:https://github.com/inikep/lizard/
 [Fast LZMA2]:https://github.com/conor42/fast-lzma2
-[XChaCha20/XChaCha20-Poly1305/AES+XChaCha20-Poly1305/AES+XChaCha20+Ascon]:https://github.com/fzxx/7-Zip-zstd-crypto
+[XChaCha20/XChaCha20-Poly1305]:https://github.com/fzxx/7-Zip-zstd-crypto
+[AES+XChaCha20-Poly1305]:https://github.com/fzxx/7-Zip-zstd-crypto
+[AES+XChaCha20+Ascon]:https://github.com/fzxx/7-Zip-zstd-crypto
+[XChaCha20+AES+AEGIS]:https://github.com/fzxx/7-Zip-zstd-crypto
 [Codecs.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
 [TotalCmd.7z]:https://github.com/mcmilk/7-Zip-zstd/releases
+

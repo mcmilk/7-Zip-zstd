@@ -245,6 +245,7 @@ CRYPTO_OBJS = \
   $O\7zAes.obj \
   $O\7zAesRegister.obj \
   $O\7zKeyDerivation.obj \
+  $O\Aegis256.obj \
   $O\Ascon.obj \
   $O\Cascade.obj \
   $O\CascadeRegister.obj \

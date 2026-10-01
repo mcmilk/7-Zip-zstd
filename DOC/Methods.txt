@@ -175,6 +175,7 @@ List of defined IDs
          03 - XChaCha20-Poly1305 (SHA-256)
          04 - AES-256-CTR + XChaCha20-Poly1305 (PBKDF2-SHA512 + HKDF-BLAKE2sp)
          05 - AES-256-CTR + XChaCha20 + Ascon (PBKDF2-SHA512 + HKDF-BLAKE2sp)
+         06 - XChaCha20 + AES-256-CTR + AEGIS-256 (PBKDF2-SHA512 + HKDF-BLAKE2sp)
 
 
 ---

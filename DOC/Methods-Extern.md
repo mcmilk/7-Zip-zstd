@@ -24,6 +24,7 @@ F7 11 06 | Lizard, Przemyslaw Skibinski | Tino Reichardt
 6F 10 703 | XChaCha20-Poly1305, Daniel J. Bernstein | [fzxx](https://github.com/fzxx) 
 6F 10 704 | AES+XChaCha20-Poly1305, fzxx  | [fzxx](https://github.com/fzxx) 
 6F 10 705 | AES+XChaCha20+Ascon, fzxx     | [fzxx](https://github.com/fzxx) 
+6F 10 706 | XChaCha20+AES+AEGIS, fzxx    | [fzxx](https://github.com/fzxx) 
 
 
 Range F7 10 xx - LZHAM
@@ -483,3 +484,59 @@ Cascade Modes:
 - AES hardware acceleration (AES-NI) is used when available
 - XChaCha20 SIMD acceleration: SSE2, AVX2, ARM NEON
 - Ascon SIMD acceleration: SSE2, AVX-512, ARM NEON
+
+
+Range 6F 10 706, XChaCha20+AES+AEGIS (XAA)
+-----------------------------------------
+
+Description:
+XChaCha20+AES+AEGIS (XAA) is a cascade cipher that applies XChaCha20,
+AES-256-CTR and AEGIS-256 sequentially, with AEGIS-256 providing
+authentication. AEGIS-256 is one of the AEGIS authenticated encryption
+algorithms specified in RFC 10032 (September 2026), a finalist of the CAESAR
+competition and based on the AES round function. It provides 256-bit security
+against plaintext and state recovery, and allows random nonces without
+practical usage limits. The cascade construction uses three independent
+subkeys derived from the user's password: a 32-byte XChaCha20 key, a 32-byte
+AES key and a 32-byte AEGIS-256 key. The 96-byte cascade key is derived using
+PBKDF2-HMAC-SHA512 and then split into individual subkeys via HKDF-BLAKE2sp.
+
+License:
+The XChaCha20+AES+AEGIS implementation is provided as open source software
+using the GNU LGPL v2.1+ license.
+
+7-Zip Container Header:
+The header contains the key derivation parameters, the nonces of the three
+layers and the authentication tag:
+``` C
+ Byte _b0;              // NumCyclesPower | 0x80 (salt present) | 0x40 (long nonce)
+ Byte _b1;              // ((salt_size - 1) << 3) & 0xF8
+ Byte _salt[32];        // random salt
+ Byte _xc_nonce[24];    // XChaCha20 nonce
+ Byte _aes_iv[16];      // AES-256-CTR initial vector
+ Byte _aegis_nonce[32]; // AEGIS-256 nonce
+ Byte _tag[32];         // AEGIS-256 256-bit authentication tag
+```
+- _b0 specifies the number of iterations (bits 0..5) for key derivation
+- the salt and all nonces are randomly generated for every folder
+- the authentication tag is calculated after the folder data was processed
+
+Algorithm author: fzxx (cascade design)
+- XChaCha20: Daniel J. Bernstein
+- AES-256: NIST FIPS-197
+- AEGIS-256: Hongjun Wu and Bart Preneel (RFC 10032)
+- PBKDF2: RSA Laboratories (RFC 8018)
+- HKDF: Hugo Krawczyk (RFC 5869)
+
+Encryption Integrator: fzxx
+- Homepage: https://github.com/fzxx
+- Source:   https://github.com/fzxx/7-Zip-zstd-crypto
+
+Cascade Modes:
+- key derivation uses PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (96-byte cascade key), subkeys are independently derived from the cascade key via HKDF-BLAKE2sp with unique info strings.
+- encryption: data is first encrypted with XChaCha20, then with AES-256-CTR, then with AEGIS-256
+- decryption: data is first decrypted with AEGIS-256, then with AES-256-CTR, then with XChaCha20
+- the AEGIS-256 layer absorbs the cipher parameters as associated data and outputs a 32-byte authentication tag
+- AES hardware acceleration (AES-NI) is used when available
+- XChaCha20 SIMD acceleration: SSE2, AVX2, ARM NEON
+- AEGIS-256 AES round acceleration: AES-NI (x86/x64), ARMv8 Crypto Extensions (ARM32/ARM64), with a portable software fallback

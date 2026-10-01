@@ -12,6 +12,7 @@
 #include "../IPassword.h"
 
 #include "7zKeyDerivation.h"
+#include "Aegis256.h"
 #include "Ascon.h"
 
 #define AES_BLOCK_SIZE 16
@@ -54,7 +55,6 @@ protected:
 
   void PrepareKey();
   void DeriveCascadeKeys();
-  void AesCtrXorData(Byte *data, UInt32 size);
   void XChaCha20XorData(Byte *data, UInt32 size);
   CBase();
   ~CBase()
@@ -63,7 +63,7 @@ protected:
     Z7_memset_0_ARRAY(_keyAscon);
     Z7_memset_0_ARRAY(_keyAes);
     Z7_memset_0_ARRAY(_aesIv);
-    memset(_aesKeys, 0, AES_NUM_IVMRK_WORDS * sizeof(UInt32));
+    memset(_aesKeys, 0, AES_NUM_IVMRK_WORDS * sizeof(UInt32) + AES_BLOCK_SIZE);
     Z7_memset_0_ARRAY(_keyXChaCha20);
     Z7_memset_0_ARRAY(_xcNonce);
     Z7_memset_0_ARRAY(_xcDerivedKey);
@@ -192,7 +192,6 @@ protected:
   void PrepareKey();
   void DeriveAXPKeys();
   void ComputePolyKey();
-  void AesCtrXorData(Byte *data, UInt32 size);
   void XChaCha20XorData(Byte *data, UInt32 size);
 
   CAXPBase();
@@ -200,7 +199,7 @@ protected:
   {
     Z7_memset_0_ARRAY(_keyAes);
     Z7_memset_0_ARRAY(_aesIv);
-    memset(_aesKeys, 0, AES_NUM_IVMRK_WORDS * sizeof(UInt32));
+    memset(_aesKeys, 0, AES_NUM_IVMRK_WORDS * sizeof(UInt32) + AES_BLOCK_SIZE);
     Z7_memset_0_ARRAY(_keyXChaCha20);
     Z7_memset_0_ARRAY(_xcNonce);
     Z7_memset_0_ARRAY(_xcDerivedKey);
@@ -266,6 +265,128 @@ class CAXPDecoder Z7_final:
   Z7_COM7F_IMP2(UInt32, Filter(Byte *data, UInt32 size))
 public:
   CAXPDecoder();
+};
+
+}}
+
+namespace NCrypto {
+namespace NAXECascade {
+
+using NAXACascade::CKeyInfo;
+using NAXACascade::CKeyInfoCache;
+using NAXACascade::k_NumCyclesPower_Supported_MAX;
+using NAXACascade::kCascadeKeySize;
+using NAXACascade::kXcBlockSize;
+
+using NAegis256::kTagSize;
+
+const unsigned kAesIvSize = 16;
+const unsigned kXcNonceSize = 24;
+
+class CBase
+{
+  CKeyInfoCache _cachedKeys;
+protected:
+  CKeyInfo _key;
+  bool _keyDerived;
+
+  Byte _keyAes[32];
+  Byte _aesIv[kAesIvSize];
+  CAlignedBuffer1 _aesKeys;
+
+  Byte _keyXChaCha20[32];
+  Byte _xcNonce[kXcNonceSize];
+  Byte _xcDerivedKey[32];
+  Byte _xcBlock[kXcBlockSize];
+  unsigned _xcBlockPos;
+  UInt64 _xcCounter;
+
+  Byte _keyAegis[NAegis256::kKeySize];
+  Byte _aegisNonce[NAegis256::kNonceSize];
+  NAegis256::CCipher _cipher;
+  Byte _aad[2 + 32 + kAesIvSize + kXcNonceSize + NAegis256::kNonceSize];
+  unsigned _aadSize;
+
+  UInt32 *AesKeys() { return (UInt32 *)(void *)(Byte *)_aesKeys; }
+
+  void PrepareKey();
+  void DeriveKeys();
+  void XChaCha20XorData(Byte *data, UInt32 size);
+
+  CBase();
+  ~CBase()
+  {
+    Z7_memset_0_ARRAY(_keyAes);
+    Z7_memset_0_ARRAY(_aesIv);
+    memset(_aesKeys, 0, AES_NUM_IVMRK_WORDS * sizeof(UInt32) + AES_BLOCK_SIZE);
+    Z7_memset_0_ARRAY(_keyXChaCha20);
+    Z7_memset_0_ARRAY(_xcNonce);
+    Z7_memset_0_ARRAY(_xcDerivedKey);
+    Z7_memset_0_ARRAY(_xcBlock);
+    Z7_memset_0_ARRAY(_keyAegis);
+    Z7_memset_0_ARRAY(_aegisNonce);
+    Z7_memset_0_ARRAY(_aad);
+  }
+};
+
+class CBaseCoder:
+  public ICompressFilter,
+  public ICryptoSetPassword,
+  public CMyUnknownImp,
+  public CBase
+{
+  Z7_IFACE_COM7_IMP_NONFINAL(ICompressFilter)
+  Z7_IFACE_COM7_IMP_NONFINAL(ICryptoSetPassword)
+protected:
+  virtual ~CBaseCoder() {}
+  void ProcessEnc(Byte *data, UInt32 size);
+  void ProcessDec(Byte *data, UInt32 size);
+};
+
+#ifndef Z7_EXTRACT_ONLY
+
+class CEncoder Z7_final:
+  public CBaseCoder,
+  public ICompressWriteCoderProperties,
+  public ICryptoResetInitVector
+{
+  Z7_COM_UNKNOWN_IMP_4(
+      ICompressFilter,
+      ICryptoSetPassword,
+      ICompressWriteCoderProperties,
+      ICryptoResetInitVector)
+  Z7_IFACE_COM7_IMP(ICompressWriteCoderProperties)
+  Z7_IFACE_COM7_IMP(ICryptoResetInitVector)
+
+  Byte _computedTag[kTagSize];
+  bool _tagReady;
+  bool _propsWritten;
+  Z7_COM7F_IMP2(UInt32, Filter(Byte *data, UInt32 size))
+public:
+  CEncoder();
+};
+
+#endif
+
+class CDecoder Z7_final:
+  public CBaseCoder,
+  public ICompressSetDecoderProperties2,
+  public ICryptoAuthVerify
+{
+  Z7_COM_UNKNOWN_IMP_4(
+      ICompressFilter,
+      ICryptoSetPassword,
+      ICompressSetDecoderProperties2,
+      ICryptoAuthVerify)
+  Z7_IFACE_COM7_IMP(ICompressSetDecoderProperties2)
+  Z7_IFACE_COM7_IMP(ICryptoAuthVerify)
+
+  Byte _expectedTag[kTagSize];
+  bool _authChecked;
+  Int32 _authResult;
+  Z7_COM7F_IMP2(UInt32, Filter(Byte *data, UInt32 size))
+public:
+  CDecoder();
 };
 
 }}

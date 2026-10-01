@@ -311,7 +311,8 @@ bool CHandler::IsFolderEncrypted(CNum folderIndex) const
         || id64 == k_XCHACHA20
         || id64 == k_XCHACHA20_POLY1305
         || id64 == k_AES_XCHACHA20_POLY1305
-        || id64 == k_AES_XCHACHA20_ASCON)
+        || id64 == k_AES_XCHACHA20_ASCON
+        || id64 == k_XCHACHA20_AES_AEGIS256)
       return true;
     if ((mainByte & 0x10) != 0)
     {
@@ -748,6 +749,16 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
       case k_AES_XCHACHA20_POLY1305:
         if (info) continue;
         name = "AES+XChaCha20-Poly1305";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_XCHACHA20_AES_AEGIS256:
+        if (info) continue;
+        name = "XChaCha20+AES+AEGIS";
         if (propsSize >= 1)
         {
           const Byte firstByte = props[0];
