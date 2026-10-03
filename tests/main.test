@@ -67,6 +67,7 @@ test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
 	variable Z7_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5} {
 		if {[catch {
+			puts ----debug--$t--:\n[7z a -t$t -mx3 -si -so . << "$t: This is a test string passed to stdin" | xxd -p]\n---/debug----
 			7z a -t$t -mx3 -si -so . << "$t: This is a test string passed to stdin" | $Z7_PATH e -t$t -si -so
 		} res]} {
 			error "Test of -t$t failed: $res"
@@ -80,6 +81,7 @@ test main--pipe-a-to-e-mx0 {7z simple compression / decompression via std-pipes,
 	variable Z7_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5 lizard} {
 		if {[catch {
+			puts ----debug--$t--:\n[7z a -t$t -mx0 -si -so . << "$t: This is a test string passed to stdin" | xxd -p]\n---/debug----
 			7z a -t$t -mx0 -si -so . << "$t: This is a test string passed to stdin" | $Z7_PATH e -t$t -si -so
 		} res]} {
 			error "Test of -t$t failed: $res"
