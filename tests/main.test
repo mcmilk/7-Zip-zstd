@@ -33,7 +33,7 @@ test main--e-inv-cmd {error, unsupported command} -body {
 } -returnCodes error -match glob -result "*Command Line Error:\nUnsupported command:\ninv*"
 
 test main--e-inv-arg {error, unknown switch} -body {
-	7z a -tzstd --xxx-unknown-arg -mx3 -si -so << "Dummy stdin" .
+	7z a -tzstd --xxx-unknown-arg -mx3 -si -so . << "Dummy stdin"
 } -returnCodes error -match glob -result "*Command Line Error:\nUnknown switch:\n--xxx-unknown-arg*"
 
 foreach t {{-t7z -m0=zstd:x1} {-tzstd -mx1} {-tzip -mx1}} {
@@ -67,7 +67,7 @@ test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
 	variable Z7_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5} {
 		if {[catch {
-			7z a -t$t -mx3 -si -so << "$t: This is a test string passed to stdin" . | $Z7_PATH e -t$t -si -so
+			7z a -t$t -mx3 -si -so . << "$t: This is a test string passed to stdin" | $Z7_PATH e -t$t -si -so
 		} res]} {
 			error "Test of -t$t failed: $res"
 		}
@@ -80,7 +80,7 @@ test main--pipe-a-to-e-mx0 {7z simple compression / decompression via std-pipes,
 	variable Z7_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5 lizard} {
 		if {[catch {
-			7z a -t$t -mx0 -si -so << "$t: This is a test string passed to stdin" . | $Z7_PATH e -t$t -si -so
+			7z a -t$t -mx0 -si -so . << "$t: This is a test string passed to stdin" | $Z7_PATH e -t$t -si -so
 		} res]} {
 			error "Test of -t$t failed: $res"
 		}
@@ -154,7 +154,7 @@ test main--mmt-option {7z force multi-threaded & single-threaded compression / d
 	foreach mt {=on =off =1 =2 d2 d-2 p25u1 p1+1} {
 		foreach t {zstd brotli bzip2} {
 			if {[catch {
-				7z a -t$t -mmt$mt -mx3 -si -so << "$t,mt$mt This is a test string passed to stdin" . | $Z7_PATH e -t$t -mmt$mt -si -so
+				7z a -t$t -mmt$mt -mx3 -si -so . << "$t,mt$mt This is a test string passed to stdin" | $Z7_PATH e -t$t -mmt$mt -si -so
 			} res]} {
 				error "Test of -t$t -mmt$mt failed: $res"
 			}
