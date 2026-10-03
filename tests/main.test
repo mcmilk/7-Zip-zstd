@@ -67,10 +67,10 @@ test main--pipe-a-to-e {7z simple compression / decompression via std-pipes} {
 	variable Z7_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5} {
 		if {[catch {
-			puts ----debug--$t--:\n[7z a -t$t -mx3 -si -so . << "$t: This is a test string passed to stdin" | xxd -p]\n---/debug----
+			tcltest::DebugDo 1 { catch { puts \t----debug--$t--:\n[7z a -t$t -mx3 -si -so . << "$t: This is a test string passed to stdin" | xxd -p]\n\t---/debug---- } }
 			7z a -t$t -mx3 -si -so . << "$t: This is a test string passed to stdin" | $Z7_PATH e -t$t -si -so
 		} res]} {
-			error "Test of -t$t failed: $res"
+			return -code error "Test of -t$t failed: $res"
 		}
 		assertLogged "^$t: This is a test string passed to stdin$"
 	}
@@ -81,10 +81,10 @@ test main--pipe-a-to-e-mx0 {7z simple compression / decompression via std-pipes,
 	variable Z7_PATH
 	foreach t {zstd brotli bzip2 xz gzip lz4 lz5 lizard} {
 		if {[catch {
-			puts ----debug--$t--:\n[7z a -t$t -mx0 -si -so . << "$t: This is a test string passed to stdin" | xxd -p]\n---/debug----
+			tcltest::DebugDo 1 { catch { puts \t----debug--$t--:\n[7z a -t$t -mx0 -si -so . << "$t: This is a test string passed to stdin" | xxd -p]\n\t---/debug---- } }
 			7z a -t$t -mx0 -si -so . << "$t: This is a test string passed to stdin" | $Z7_PATH e -t$t -si -so
 		} res]} {
-			error "Test of -t$t failed: $res"
+			return -code error "Test of -t$t failed: $res"
 		}
 		assertLogged "^$t: This is a test string passed to stdin$"
 	}
@@ -111,10 +111,10 @@ test main--compress-mx0 {7z simple compression / decompression, level 0} -setup 
 			set v2 [7z e -so -- $arcpath]
 			#puts $v2
 			if {$v2 ne $v} {
-				error "retrieved $v2 instead of original"
+				return -code error "retrieved $v2 instead of original"
 			}
 		} res]} {
-			error "Test of -t$t failed: $res"
+			return -code error "Test of -t$t failed: $res"
 		}
 	}
 	set _ OK
@@ -158,7 +158,7 @@ test main--mmt-option {7z force multi-threaded & single-threaded compression / d
 			if {[catch {
 				7z a -t$t -mmt$mt -mx3 -si -so . << "$t,mt$mt This is a test string passed to stdin" | $Z7_PATH e -t$t -mmt$mt -si -so
 			} res]} {
-				error "Test of -t$t -mmt$mt failed: $res"
+				return -code error "Test of -t$t -mmt$mt failed: $res"
 			}
 			assertLogged "^$t,mt[string map {+ \\+} $mt] This is a test string passed to stdin$"
 		}
@@ -187,10 +187,10 @@ test main--encrypt-decrypt {7z encryption, decription} -setup {
 			set v2 [7z e -so -p$Z7_PWD -- $arcpath]
 			#puts $v2
 			if {$v2 ne $v} {
-				error "retrieved $v2 instead of original"
+				return -code error "retrieved $v2 instead of original"
 			}
 		} res]} {
-			error "Test of -m0=$m on \"$v\" failed: $res"
+			return -code error "Test of -m0=$m on \"$v\" failed: $res"
 		}
   }
   set _ OK
@@ -287,13 +287,13 @@ test main--decompress-currupt-archive {7z simple compression / decompression, de
 				set f [open $arcpath "r+b"]; chan seek $f -5 end; chan truncate $f; close $f
 				# test (shall fail):
 				if {![catch { 7z t {*}$m -- $arcpath } res]} {
-					error "test doesn't fail: $res"
+					return -code error "test doesn't fail: $res"
 				}
 				assertNotLogged {(?n)^Everything is Ok}
 				assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
 				# decompress (shall fail):
 				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : {\\.\NUL}}] } res]} {
-					error "decompress doesn't fail: $res"
+					return -code error "decompress doesn't fail: $res"
 				}
 				assertLogged {(?n)^(?:ERROR: )?Unexpected end of (?:archive|data)}
 
@@ -301,17 +301,17 @@ test main--decompress-currupt-archive {7z simple compression / decompression, de
 				set f [open $arcpath "ab"]; ::puts -nonewline $f 12345; close $f
 				# test (shall fail):
 				if {![catch { 7z t {*}$m -- $arcpath } res]} {
-					error "test doesn't fail: $res"
+					return -code error "test doesn't fail: $res"
 				}
 				assertNotLogged {(?n)^Everything is Ok}
 				assertLogged {(?n)^(?:(?:Open )?ERROR: )?(?:Cannot open the file as \[\w+\] archive|Data Error|Unexpected end of (?:archive|data))}
 				# decompress (shall fail):
 				if {![catch { 7z e {*}$m -so -- $arcpath > [expr {$::tcl_platform(platform) eq "unix" ? "/dev/null" : {\\.\NUL}}] } res]} {
-					error "decompress doesn't fail: $res"
+					return -code error "decompress doesn't fail: $res"
 				}
 				assertLogged {(?n)^(?:(?:Open )?ERROR: )?(?:Cannot open the file as \[\w+\] archive|Data Error|Unexpected end of (?:archive|data))}
 			} res]} {
-				error "Test of -t$t failed: $res"
+				return -code error "Test of -t$t failed: $res"
 			}
 		}
 	}
