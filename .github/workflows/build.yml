@@ -85,7 +85,8 @@ jobs:
         with:
           msbuild-architecture: ${{ matrix.arch }}
 
-      - name: Find vcvarsall path (to init Developer Command Prompt at compile phase)
+      - name: Find vcvarsall path
+        # init Developer Command Prompt at compile phase:
         shell: cmd
         run: |
           for /f "usebackq tokens=*" %%i in (`vswhere -latest -property installationPath`) do (
@@ -111,7 +112,13 @@ jobs:
       - name: Compiling ${{ matrix.arch }}
         shell: cmd
         run: |
-          call "%VCVARSALL_PATH%" ${{ matrix.arch }}
+          :: fallback to VS2022 for arm64 due to bug in VS2026
+          if not "${{ matrix.arch }}" == "arm64" (
+            call "%VCVARSALL_PATH%" ${{ matrix.arch }}
+          ) else (
+            echo [INFO] ARM64 target detected. Forcing Visual Studio 2022 toolset workaround...
+            call "%VCVARSALL_PATH%" ${{ matrix.arch }} -vcvars_ver=14.4
+          )
           set WDIR=%cd%
           set PLATFORM=${{matrix.platform}}
           set SUBSYS=${{matrix.subsys}}
