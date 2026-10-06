@@ -613,7 +613,7 @@ struct CArchiveExtractCallback_Closer
 {
   CArchiveExtractCallback *_ref;
   
-  CArchiveExtractCallback_Closer(CArchiveExtractCallback *ref): _ref(ref) {}
+  CArchiveExtractCallback_Closer(CArchiveExtractCallback *ref Z7_lifetimebound): _ref(ref) {}
   
   HRESULT Close()
   {

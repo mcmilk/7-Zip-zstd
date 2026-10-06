@@ -31,6 +31,12 @@ class CPlugin
   NWindows::NFile::NFind::CFileInfo m_FileInfo;
 
   UString _archiveTypeName;
+
+public:
+
+  bool PasswordIsDefined;
+  UString Password;
+private:
   
   InfoPanelLine m_InfoLines[kNumInfoLinesMax];
 
@@ -38,8 +44,8 @@ class CPlugin
   char m_CurrentDirBuffer[1024];
   char m_PannelTitleBuffer[1024];
 
-  AString PanelModeColumnTypes;
-  AString PanelModeColumnWidths;
+  // AString PanelModeColumnTypes;
+  // AString PanelModeColumnWidths;
   // PanelMode _panelMode;
   void AddColumn(PROPID aPropID);
 
@@ -50,10 +56,7 @@ class CPlugin
 
 public:
 
-  bool PasswordIsDefined;
-  UString Password;
-
-  CPlugin(const FString &fileName, CAgent *agent, UString archiveTypeName);
+  CPlugin(const FString &fileName, CAgent *agent Z7_lifetimebound, UString archiveTypeName);
   ~CPlugin();
 
   void ReadPluginPanelItem(PluginPanelItem &panelItem, UInt32 itemIndex);

@@ -71,7 +71,7 @@ struct CFsFolderStat
   FString Path;
 
   CFsFolderStat(): NumFolders(0), NumFiles(0), Size(0), Progress(NULL) {}
-  CFsFolderStat(const FString &path, IProgress *progress = NULL):
+  CFsFolderStat(const FString &path, IProgress *progress Z7_lifetimebound = NULL):
       NumFolders(0), NumFiles(0), Size(0), Progress(progress), Path(path) {}
 
   HRESULT Enumerate();

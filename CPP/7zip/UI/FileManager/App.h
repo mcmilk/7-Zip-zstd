@@ -115,7 +115,7 @@ public:
   void SetFocusToLastItem() { Panels[LastFocusedPanel].SetFocusToLastRememberedItem(); }
   unsigned GetFocusedPanelIndex() const { return LastFocusedPanel; }
   bool IsPanelVisible(unsigned index) const { return (NumPanels > 1 || index == LastFocusedPanel); }
-  CPanel &GetFocusedPanel() { return Panels[GetFocusedPanelIndex()]; }
+  CPanel &GetFocusedPanel() Z7_lifetimebound { return Panels[GetFocusedPanelIndex()]; }
 
   // File Menu
   void OpenItem() { GetFocusedPanel().OpenSelectedItems(true); }

@@ -98,6 +98,7 @@ struct CProxyFile2
   bool NeedDeleteName;
   bool Ignore;  // = false always
   bool IsAltStream;
+  bool IsAux;
   
   int GetDirIndex(bool forAltStreams) const { return forAltStreams ? AltDirIndex : DirIndex; }
 
@@ -113,6 +114,7 @@ struct CProxyFile2
     NeedDeleteName = false;
     Ignore = false;
     IsAltStream = false;
+    IsAux = false;
   }
 };
 
