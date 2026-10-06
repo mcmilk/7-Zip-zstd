@@ -236,7 +236,7 @@ bool CSettingsPage::OnInit()
     }
     SendItemMessage(IDC_SETTINGS_MEM_SPIN, UDM_SETRANGE, 0, MAKELPARAM(valMax, valMin)); // Sets the controls direction
     // UDM_SETPOS doesn't set value larger than max value (valMax) of range:
-    SendItemMessage(IDC_SETTINGS_MEM_SPIN, UDM_SETPOS, 0, limit);
+    SendItemMessage(IDC_SETTINGS_MEM_SPIN, UDM_SETPOS, 0, (LPARAM)limit);
     s.Empty();
     s.Add_UInt32(limit);
     SetItemText(IDE_SETTINGS_MEM_SPIN_EDIT, s);

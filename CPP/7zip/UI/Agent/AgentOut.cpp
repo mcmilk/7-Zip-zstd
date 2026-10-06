@@ -200,8 +200,9 @@ struct CAgUpCallbackImp Z7_final: public IUpdateProduceCallback
   const CObjectVector<CArcItem> *_arcItems;
   IFolderArchiveUpdateCallback *_callback;
   
-  CAgUpCallbackImp(const CObjectVector<CArcItem> *a,
-      IFolderArchiveUpdateCallback *callback): _arcItems(a), _callback(callback) {}
+  CAgUpCallbackImp(const CObjectVector<CArcItem> *a Z7_lifetimebound,
+      IFolderArchiveUpdateCallback *callback Z7_lifetimebound):
+    _arcItems(a), _callback(callback) {}
   HRESULT ShowDeleteFile(unsigned arcIndex) Z7_override;
 };
 

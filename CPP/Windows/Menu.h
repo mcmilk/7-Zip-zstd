@@ -158,7 +158,7 @@ class CMenuDestroyer
 {
   CMenu *_menu;
 public:
-  CMenuDestroyer(CMenu &menu): _menu(&menu) {}
+  CMenuDestroyer(CMenu &menu Z7_lifetimebound): _menu(&menu) {}
   CMenuDestroyer(): _menu(NULL) {}
   ~CMenuDestroyer() { if (_menu) _menu->Destroy(); }
   void Attach(CMenu &menu) { _menu = &menu; }

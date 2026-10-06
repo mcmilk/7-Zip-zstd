@@ -1495,7 +1495,7 @@ class CCoTaskWSTR
 public:
   CCoTaskWSTR(): m_str(NULL) {}
   ~CCoTaskWSTR() { ::CoTaskMemFree(m_str); }
-  LPWSTR* operator&() { return &m_str; }
+  LPWSTR* operator&() Z7_lifetimebound { return &m_str; }
   operator LPCWSTR () const { return m_str; }
   // operator LPCOLESTR() const { return m_str; }
   operator bool() const { return m_str != NULL; }

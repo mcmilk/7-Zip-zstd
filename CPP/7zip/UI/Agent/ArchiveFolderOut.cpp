@@ -83,7 +83,7 @@ struct C_CopyFileProgress_to_FolderCallback_MoveArc Z7_final:
   }
 
   C_CopyFileProgress_to_FolderCallback_MoveArc(
-      IFolderArchiveUpdateCallback_MoveArc *callback) :
+      IFolderArchiveUpdateCallback_MoveArc *callback Z7_lifetimebound) :
     Callback(callback),
     CallbackResult(S_OK)
     {}

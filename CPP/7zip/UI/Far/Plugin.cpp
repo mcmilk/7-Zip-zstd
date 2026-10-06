@@ -652,8 +652,8 @@ void CPlugin::GetOpenPluginInfo(struct OpenPluginInfo *info)
   info->DescrFiles = NULL;
   info->DescrFilesNumber = 0;
 
-  PanelModeColumnTypes.Empty();
-  PanelModeColumnWidths.Empty();
+  // PanelModeColumnTypes.Empty();
+  // PanelModeColumnWidths.Empty();
 
   /*
   AddColumn(kpidName);

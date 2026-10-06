@@ -1104,7 +1104,6 @@ int Z7_CDECL main(int numargs, char *args[])
             {
               PrintError_WRes("cannot write output file", wres);
               res = SZ_ERROR_FAIL;
-              break;
             }
           }
 
@@ -1117,6 +1116,8 @@ int Z7_CDECL main(int numargs, char *args[])
             FILETIME *ctimePtr = NULL;
             #endif
 
+            if (res == SZ_OK)
+            {
             if (SzBitWithVals_Check(&db.MTime, i))
             {
               const CNtfsFileTime *t = &db.MTime.Vals[i];
@@ -1137,6 +1138,7 @@ int Z7_CDECL main(int numargs, char *args[])
             if (mtimePtr || ctimePtr)
               SetFileTime(outFile.handle, ctimePtr, NULL, mtimePtr);
             #endif
+            }
           
             {
               const WRes wres = File_Close(&outFile);
@@ -1144,9 +1146,10 @@ int Z7_CDECL main(int numargs, char *args[])
               {
                 PrintError_WRes("cannot close output file", wres);
                 res = SZ_ERROR_FAIL;
-                break;
               }
             }
+            if (res != SZ_OK)
+              break;
 
             #ifndef USE_WINDOWS_FILE
             #ifdef _WIN32

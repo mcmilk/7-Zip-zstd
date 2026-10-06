@@ -58,7 +58,7 @@ struct CFrameHeader
   unsigned Get_DictionaryId_Flag() const  { return DESCRIPTOR_Get_DictionaryId_Flag(Descriptor); }
   unsigned Get_ContentSize_Flag3() const  { return DESCRIPTOR_Get_ContentSize_Flag3(Descriptor); }
   
-  const Byte *Parse(const Byte *p, int size)
+  const Byte *Parse(const Byte *p Z7_lifetimebound, int size)
   {
     if ((unsigned)size < 2)
       return NULL;
@@ -470,7 +470,7 @@ struct CStreamBuffer
       StreamOffset(0)
       {}
   unsigned Avail() const { return lim - pos; }
-  const Byte *GetPtr() const { return &buf[pos]; }
+  const Byte *GetPtr() const Z7_lifetimebound { return &buf[pos]; }
   UInt64 GetCurOffset() const { return StreamOffset - Avail(); }
   void SkipInBuf(UInt32 size) { pos += size; }
   HRESULT Skip(UInt32 size);

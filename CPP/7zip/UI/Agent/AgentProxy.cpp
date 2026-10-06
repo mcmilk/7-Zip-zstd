@@ -684,8 +684,9 @@ void CProxyArc2::AddRealIndices_of_ArcItem(const unsigned arcIndex,
     const bool includeAltStreams, const bool includeDirSubItems,
     CUIntVector &realIndices) const
 {
-  realIndices.Add(arcIndex);
   const CProxyFile2 &file = Files[arcIndex];
+  if (!file.IsAux)
+    realIndices.Add(arcIndex);
   if (includeDirSubItems && file.DirIndex != -1)
     AddRealIndices_of_Dir((unsigned)file.DirIndex, includeAltStreams, realIndices);
   if (includeAltStreams && file.AltDirIndex != -1)
@@ -715,8 +716,9 @@ void CProxyArc2::AddRealIndices_of_Dir(unsigned dirIndex,
 
     const unsigned arcIndex = dir.Items[i];
     i++;
-    realIndices.Add(arcIndex);
     const CProxyFile2 &file = Files[arcIndex];
+    if (!file.IsAux)
+      realIndices.Add(arcIndex);
     if (includeAltStreams && file.AltDirIndex != -1)
       AddRealIndices_of_Dir((unsigned)file.AltDirIndex, includeAltStreams, realIndices);
     if (file.DirIndex != -1)
@@ -959,7 +961,7 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
     UInt32 propType;
     RINOK(arc.GetRawProps->GetRawProp(i, kpidName, &p, &size, &propType))
     
-#ifdef MY_CPU_LE_
+#ifdef MY_CPU_LE
     if (p && propType == PROP_DATA_TYPE_wchar_t_PTR_Z_LE)
     {
       file.Name = (const wchar_t *)p;
@@ -1021,6 +1023,10 @@ HRESULT CProxyArc2::Load(const CArc &arc, IProgress *progress)
     if (arc.Ask_AltStream)
       RINOK(Archive_IsItem_AltStream(archive, i, file.IsAltStream))
     // if (file.IsAltStream) file.Parent = -1; // for debug
+#if 1 // 1 to use AUX: v24.06 : we will ignore AUX items for AddRealIndices_of_ArcItem() : for CRC calculation.
+    if (arc.Ask_Aux)
+      RINOK(Archive_IsItem_Aux(archive, i, file.IsAux))
+#endif
   }
 
   for (i = 0; i < numItems; i++)
