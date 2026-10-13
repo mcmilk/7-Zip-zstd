@@ -37,6 +37,10 @@ FOR %%f IN (7z.dll 7z.exe 7z.sfx 7za.dll 7za.exe 7zCon.sfx 7zFM.exe 7zG.exe 7-zi
   copy %BIN%\%%f %%f
   IF %errorlevel% NEQ 0 EXIT 1
 )
+copy %BIN%\License.txt License.txt
+IF %errorlevel% NEQ 0 EXIT 1
+copy %BIN%\Kanzi-LICENSE.txt Kanzi-LICENSE.txt
+IF %errorlevel% NEQ 0 EXIT 1
 IF NOT "%ZIP32%" == "" (
   copy %ZIP32% 7-zip32.dll
   IF %errorlevel% NEQ 0 EXIT 1
@@ -81,6 +85,8 @@ call :doit arm64-ndm ""                            "%WD%\bin-arm64-ndm" "tc7zArm
 REM Total Commander DLL
 cd %WD%\totalcmd
 curl %LURL%/TotalCMD/LICENSE --output LICENSE
+IF %errorlevel% NEQ 0 EXIT 1
+copy %WD%\bin-x86\Kanzi-LICENSE.txt Kanzi-LICENSE.txt
 IF %errorlevel% NEQ 0 EXIT 1
 curl %LURL%/TotalCMD/README.md --output README.md
 IF %errorlevel% NEQ 0 EXIT 1

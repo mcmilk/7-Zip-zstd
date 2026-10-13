@@ -20,6 +20,7 @@ F7 11 02 | Brotli, Google               | Tino Reichardt
 F7 11 04 | LZ4, Yann Collet             | Tino Reichardt
 F7 11 05 | LZ5, Przemyslaw Skibinski    | Tino Reichardt
 F7 11 06 | Lizard, Przemyslaw Skibinski | Tino Reichardt
+F7 11 07 | Kanzi, Frederic Langlet      | BICHENG
 6F 10 702 | XChaCha20, Daniel J. Bernstein | [fzxx](https://github.com/fzxx) 
 6F 10 703 | XChaCha20-Poly1305, Daniel J. Bernstein | [fzxx](https://github.com/fzxx) 
 6F 10 704 | AES+XChaCha20-Poly1305, fzxx  | [fzxx](https://github.com/fzxx) 
@@ -309,6 +310,61 @@ Modes:
 
 Versions:
 The 7-Zip Lizard codec will be kept in sync with the current releases of Lizard.
+
+
+Range F7 11 07, Kanzi
+---------------------
+
+Description:
+Kanzi is a lossless data compressor. It supports several transforms and entropy
+codecs, including BWT, context modeling and content-aware transforms, and
+block-level multithreading.
+
+License:
+Kanzi is provided as open source software using the Apache License 2.0.
+
+7-Zip Container Header:
+This header is mandatory and must be exact 8 bytes. It records the selected
+7-Zip method settings. The Kanzi bitstream header owns the transform, entropy,
+block and checksum metadata needed by the decoder. On 32-bit x86, the stored
+level also selects a conservative decoder thread limit.
+``` C
+ Byte   _ver_major;     // currently 2
+ Byte   _ver_minor;     // currently 6
+ Byte   _level;         // 0..9
+ Byte   _checksum_bits; // 0, 32 or 64
+ UInt32 _block_size;    // little endian
+```
+
+Algorithm author: Frederic Langlet
+- Integration source: https://github.com/flanglet/kanzi-cpp
+
+Codec plugin author: BICHENG
+- Source:   https://github.com/mcmilk/7-Zip-zstd
+
+Modes:
+- threading is supported by Kanzi block processing
+- levels 0..9 are mapped to Kanzi transform and entropy presets
+- `b` selects the Kanzi codec block size (`b1m` through `b1g`); the default
+  is level dependent. `check32` and `check64` enable the optional block
+  checksum.
+- Example: `7z a archive.7z -m0=kanzi:b4m:check32 -mx5 -mmt=4`
+- In 7zFM, enter the same `b...` and `check...` values in the Parameters
+  field. The Solid Block size control remains the 7z archive grouping size;
+  it does not change the Kanzi codec block size.
+- 7zFM does not report a Kanzi memory estimate; the codec allocates
+  level-specific predictor and transform tables at run time.
+
+Versions:
+The 7-Zip Kanzi codec imports the upstream Kanzi C++ 2.6.0 release at commit
+1330414143be82209e0a0860d2b9f8ab567c94b5.
+
+Kanzi 2.6 writes bitstream version 7 and decodes versions 6 and 7. Version 7
+archives require this 2.6 integration or a newer decoder.
+
+The 7-Zip method uses the Kanzi C++ implementation for both encoding and
+decoding. The upstream Java/C++ TPAQX and CM cross-implementation issue remains
+outside this integration.
 
 
 Range 6F 10 702, XChaCha20
