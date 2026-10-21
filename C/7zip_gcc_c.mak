@@ -105,13 +105,11 @@ MY_MKDIR=mkdir
 DEL_OBJ_EXE = -$(RM) $(O)\*.o $(O)\$(PROG).exe $(O)\$(PROG).dll
 endif
 
-
 LIB2 = -lole32 -loleaut32 -luuid -ladvapi32 -luser32 -lshell32
 
 CFLAGS_EXTRA = -DUNICODE -D_UNICODE
 # -Wno-delete-non-virtual-dtor
 
- 
 else
 
 RM = rm -f
@@ -157,7 +155,15 @@ ifneq ($(CC), $(CROSS_COMPILE)clang)
 LFLAGS_STRIP = -s
 endif
 
-LFLAGS_ALL = $(LFLAGS_STRIP) $(MY_ARCH_2) $(LDFLAGS) $(FLAGS_FLTO) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
+ifdef MACOS_MODE
+VERSION_HDR = ../../7zVersion.h
+SRC_VER_MAJOR := $(shell awk '/\#define MY_VER_MAJOR/ {print $$3}' $(VERSION_HDR))
+SRC_VER_MINOR := $(shell awk '/\#define MY_VER_MINOR/ {print $$3}' $(VERSION_HDR))
+SRC_VER := $(SRC_VER_MAJOR).$(SRC_VER_MINOR)
+LFLAGS_SRC_VER := -Wl,-source_version,$(SRC_VER)
+endif
+
+LFLAGS_ALL = $(LFLAGS_STRIP) $(MY_ARCH_2) $(LDFLAGS) $(FLAGS_FLTO) $(LD_arch) $(LFLAGS_SRC_VER) $(OBJS) $(MY_LIBS) $(LIB2)
 $(PROGPATH): $(OBJS)
 	$(CC) -o $(PROGPATH) $(LFLAGS_ALL)
 

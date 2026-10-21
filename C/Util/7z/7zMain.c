@@ -238,7 +238,7 @@ BoolInt IsString1PrefixedByString2_NoCase_Ascii(const UInt16 *s1, const char *s2
 {
   for (;;)
   {
-    wchar_t c1;
+    UInt16 c1;
     const char c2 = *s2++; if (c2 == 0) return True;
     c1 = *s1++;
     if (c1 != (unsigned char)c2 && MyCharLower_Ascii(c1) != MyCharLower_Ascii((unsigned char)c2))
@@ -506,7 +506,7 @@ static WRes OutFile_OpenUtf16(CSzFile *p, const UInt16 *name)
 }
 
 
-static Z7_FORCE_INLINE BoolInt IsDangerousTerminalChar(wchar_t c)
+static Z7_FORCE_INLINE BoolInt IsDangerousTerminalChar(UInt16 c)
 {
   // if (c < 0) return False; // it's not expected case
   if (c < 0x20) return True;
