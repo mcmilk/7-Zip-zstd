@@ -50,6 +50,7 @@ git add --renormalize .
 sed -i 's|#define BROTLI_COMMON_PORT_H_|#define BROTLI_COMMON_PORT_H_\
 \
 /* disable some warnings /TR */\
+#ifdef _MSC_VER /* Visual Studio */\
 #pragma warning(disable : 4100)\
 #pragma warning(disable : 4127)\
 #pragma warning(disable : 4189)\
@@ -57,4 +58,5 @@ sed -i 's|#define BROTLI_COMMON_PORT_H_|#define BROTLI_COMMON_PORT_H_\
 #pragma warning(disable : 4295)\
 #pragma warning(disable : 4334)\
 #pragma warning(disable : 4389)\
-#pragma warning(disable : 4701)|' 'port.h'
+#pragma warning(disable : 4701)\
+#endif|' 'port.h'
