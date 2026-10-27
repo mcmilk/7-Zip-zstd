@@ -80,7 +80,7 @@ differently (plugin-capable vs. standalone), which can affect available formats/
 
 The output should look like this:
 ```
-7-Zip 26.04 ZS v1.5.7 R1 : Copyright (c) 1999- Igor Pavlov, 2016- Tino Reichardt, 2022- Sergey G. Brester : 2026-10-06
+7-Zip 26.05 ZS v1.5.7 R1 : Copyright (c) 1999- Igor Pavlov, 2016- Tino Reichardt, 2022- Sergey G. Brester : 2026-10-06
 
 Libs:
  0  c:\Program Files\7-Zip-Zstandard\7z.dll
@@ -387,7 +387,7 @@ You find this project useful, maybe you consider a donation ;-)
 
 ## Version Information
 
-- 7-Zip ZS Version 26.04 - Release 1
+- 7-Zip ZS Version 26.05 - Release 1
   - [Brotli] Version 1.2.1
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 2.1
@@ -399,7 +399,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [AES+XChaCha20+Ascon] (AXA) cascade cipher, Version 1.0.0, Ascon Version 1.3
   - [XChaCha20+AES+AEGIS] (XAA) cascade cipher, Version 1.0.0
 
-/TR 2026-10-06
+/TR 2026-10-27
 
 ## Notes
 
