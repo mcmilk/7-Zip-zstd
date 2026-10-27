@@ -1,6 +1,12 @@
 HISTORY of the 7-Zip source code
 --------------------------------
 
+26.05          2026-10-21
+-------------------------
+- Improved code for unpacking Z archives and Mach-O files.
+- Some bugs and vulnerabilities were fixed.
+
+
 26.04          2026-10-05
 -------------------------
 - Some bugs and vulnerabilities were fixed.
