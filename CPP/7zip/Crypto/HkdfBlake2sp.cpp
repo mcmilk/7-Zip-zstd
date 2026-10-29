@@ -42,6 +42,7 @@ void Derive(const Byte *prk, unsigned prkSize,
     Blake2sp_SetFunction(blake2spHash, 0);
     Blake2sp_Update(blake2spHash, prk, prkSize);
     Blake2sp_Final(blake2spHash, processedKey);
+    memset(blake2spHash, 0, sizeof(CBlake2sp));
 
     effectiveKey = processedKey;
     effectiveKeySize = Z7_BLAKE2S_DIGEST_SIZE;
@@ -116,6 +117,12 @@ void Derive(const Byte *prk, unsigned prkSize,
     Z7_memset_0_ARRAY(ti);
     Z7_memset_0_ARRAY(innerHash);
   }
+
+  // the inner states hold BLAKE2sp values keyed with the PRK
+  memset(innerState, 0, sizeof(CBlake2sp));
+  memset(outerState, 0, sizeof(CBlake2sp));
+  memset(innerTmp, 0, sizeof(CBlake2sp));
+  memset(outerTmp, 0, sizeof(CBlake2sp));
 
   Z7_memset_0_ARRAY(prevT);
   Z7_memset_0_ARRAY(ipad);

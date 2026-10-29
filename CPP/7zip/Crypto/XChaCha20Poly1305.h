@@ -39,6 +39,15 @@ class CPoly1305
   void ProcessBlocks(Byte *buf, unsigned &bufPos, UInt64 &len, const Byte *data, UInt32 size);
 public:
   CPoly1305();
+  ~CPoly1305()
+  {
+    Z7_memset_0_ARRAY(_r);
+    Z7_memset_0_ARRAY(_s);
+    Z7_memset_0_ARRAY(_h);
+    Z7_memset_0_ARRAY(_n);
+    Z7_memset_0_ARRAY(_block);
+    Z7_memset_0_ARRAY(_aadBlock);
+  }
   void SetKey(const Byte *key);
   void Update(const Byte *data, UInt32 size);
   void UpdateAad(const Byte *data, UInt32 size);
@@ -59,7 +68,7 @@ protected:
 
   Byte _polyKey[kPolyKeySize];
   CPoly1305 _poly1305;
-  Byte _aad[2 + 16 + kNonceSize];
+  Byte _aad[2 + N7zKeyDerivation::kSaltSizeMax + kNonceSize];
   unsigned _aadSize;
 
   void DeriveKey() override;

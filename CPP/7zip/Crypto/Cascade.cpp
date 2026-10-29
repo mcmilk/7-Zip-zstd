@@ -466,9 +466,10 @@ Z7_COM7F_IMF(CAXPDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
 
 Z7_COM7F_IMF(CAXPDecoder::CryptoAuthVerify(Int32 *result))
 {
-  if (_authOk)
+  // the tag is computed once: repeated calls return the stored result
+  if (_finalized)
   {
-    *result = 0;
+    *result = _authOk ? 0 : 1;
     return S_OK;
   }
 
@@ -487,7 +488,11 @@ Z7_COM7F_IMF(CAXPDecoder::CryptoAuthVerify(Int32 *result))
     _authOk = (diff == 0);
   }
 
-  Z7_memset_0_ARRAY(computedTag);
+  {
+    volatile Byte *p = (volatile Byte *)(void *)computedTag;
+    for (unsigned i = 0; i < kTagSize; i++)
+      p[i] = 0;
+  }
 
   return S_OK;
 }
@@ -506,16 +511,67 @@ static CKeyInfoCache g_GlobalKeyCache(32);
   #define MT_LOCK
 #endif
 
+/*
+  The rate of the Ascon state is the first 16 bytes of the state, and the
+  bytes are ordered from the lowest byte of _state[0]. These two functions
+  address it by byte position, so the byte order of the CPU doesn't matter.
+*/
+static void SetStateRateBytes(UInt64 *state, unsigned pos, const Byte *data, unsigned size)
+{
+  for (; size != 0;)
+  {
+    const unsigned shift = (pos & 7) * 8;
+    unsigned num = 8 - (pos & 7);
+    if (num > size)
+      num = size;
+    UInt64 value = 0;
+    for (unsigned i = 0; i < num; i++)
+      value |= (UInt64)data[i] << (i * 8);
+    value <<= shift;
+    UInt64 &w = state[pos >> 3];
+    if (num == 8)
+      w = value;
+    else
+    {
+      const UInt64 mask = (((UInt64)1 << (num * 8)) - 1) << shift;
+      w = (w & ~mask) | value;
+    }
+    pos += num;
+    data += num;
+    size -= num;
+  }
+}
+
+static void XorStateRateBytes(UInt64 *state, unsigned pos, const Byte *data, unsigned size)
+{
+  for (; size != 0;)
+  {
+    const unsigned shift = (pos & 7) * 8;
+    unsigned num = 8 - (pos & 7);
+    if (num > size)
+      num = size;
+    UInt64 value = 0;
+    for (unsigned i = 0; i < num; i++)
+      value |= (UInt64)data[i] << (i * 8);
+    state[pos >> 3] ^= value << shift;
+    pos += num;
+    data += num;
+    size -= num;
+  }
+}
+
 #ifdef MY_CPU_X86_OR_AMD64
 #define ASCON_USE_SSE2 (NAscon::g_SSE2Enabled)
 #else
 #define ASCON_USE_SSE2 false
 #endif
 
-#ifdef MY_CPU_ARM_OR_ARM64
-#define ASCON_USE_NEON (NAscon::g_NEONEnabled)
+#if defined(MY_CPU_ARM_OR_ARM64) && defined(MY_CPU_LE)
+  // the NEON block functions use the little endian state layout
+  #define ASCON_USE_NEON (NAscon::g_NEONEnabled)
+  #define ASCON_NEON_BLOCKS
 #else
-#define ASCON_USE_NEON false
+  #define ASCON_USE_NEON false
 #endif
 
 CBase::CBase():
@@ -630,21 +686,13 @@ void CBaseCoder::ProcessAad(const Byte *aad, UInt64 aadLen)
       _state[0] ^= GetUi64(p);
       _state[1] ^= ((UInt64)0x01 << ((remaining - 8) * 8));
       if (remaining > 8)
-      {
-        UInt64 partial = 0;
-        memcpy(&partial, p + 8, (unsigned)(remaining - 8));
-        _state[1] ^= partial;
-      }
+        XorStateRateBytes(_state, 8, p + 8, (unsigned)(remaining - 8));
     }
     else
     {
       _state[0] ^= ((UInt64)0x01 << (remaining * 8));
       if (remaining > 0)
-      {
-        UInt64 partial = 0;
-        memcpy(&partial, p, (unsigned)remaining);
-        _state[0] ^= partial;
-      }
+        XorStateRateBytes(_state, 0, p, (unsigned)remaining);
     }
     NAscon::AsconP8(_state);
   }
@@ -662,6 +710,8 @@ void CBaseCoder::ProcessEnc(Byte *data, UInt32 size)
 #endif
 #ifdef MY_CPU_ARM_OR_ARM64
   NAscon::InitSIMD();
+#endif
+#ifdef ASCON_NEON_BLOCKS
   const bool useNEON = ASCON_USE_NEON;
 #endif
   if (!_keyDerived)
@@ -683,7 +733,7 @@ void CBaseCoder::ProcessEnc(Byte *data, UInt32 size)
 
     XorBytes(p, _stateBuf + _stateBufPos, toProcess);
     memcpy(_stateBuf + _stateBufPos, p, toProcess);
-    memcpy((Byte *)_state + _stateBufPos, _stateBuf + _stateBufPos, toProcess);
+    SetStateRateBytes(_state, _stateBufPos, _stateBuf + _stateBufPos, toProcess);
 
     _stateBufPos += toProcess;
     p += toProcess;
@@ -712,7 +762,7 @@ void CBaseCoder::ProcessEnc(Byte *data, UInt32 size)
     }
     else
 #endif
-#ifdef MY_CPU_ARM_OR_ARM64
+#ifdef ASCON_NEON_BLOCKS
     if (useNEON)
     {
       do {
@@ -743,7 +793,7 @@ void CBaseCoder::ProcessEnc(Byte *data, UInt32 size)
     SetUi64(_stateBuf + 8, _state[1]);
     XorBytes(p, _stateBuf, remaining);
     memcpy(_stateBuf, p, remaining);
-    memcpy(_state, _stateBuf, remaining);
+    SetStateRateBytes(_state, 0, _stateBuf, remaining);
     _stateBufPos = remaining;
   }
 }
@@ -758,6 +808,8 @@ void CBaseCoder::ProcessDec(Byte *data, UInt32 size)
 #endif
 #ifdef MY_CPU_ARM_OR_ARM64
   NAscon::InitSIMD();
+#endif
+#ifdef ASCON_NEON_BLOCKS
   const bool useNEON = ASCON_USE_NEON;
 #endif
   if (!_keyDerived)
@@ -806,7 +858,7 @@ void CBaseCoder::ProcessDec(Byte *data, UInt32 size)
         }
       }
 
-      memcpy((Byte *)_state + _stateBufPos, _stateBuf + _stateBufPos, toProcess);
+      SetStateRateBytes(_state, _stateBufPos, _stateBuf + _stateBufPos, toProcess);
 
       _stateBufPos += toProcess;
       p += toProcess;
@@ -833,7 +885,7 @@ void CBaseCoder::ProcessDec(Byte *data, UInt32 size)
       }
       else
 #endif
-#ifdef MY_CPU_ARM_OR_ARM64
+#ifdef ASCON_NEON_BLOCKS
       if (useNEON)
       {
         do {
@@ -896,7 +948,7 @@ void CBaseCoder::ProcessDec(Byte *data, UInt32 size)
         }
       }
 
-      memcpy(_state, _stateBuf, remaining);
+      SetStateRateBytes(_state, 0, _stateBuf, remaining);
       _stateBufPos = remaining;
     }
   }
@@ -1148,11 +1200,16 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
   if (size <= 1)
     return E_INVALIDARG;
 
+  // the Ascon nonce is stored with its full size
+  if (nonceType != 0)
+    return E_INVALIDARG;
+
   const unsigned b1 = data[1];
   const unsigned saltSize = saltPresent ? (((b1 >> 3) & 0x1F) + 1) : 0;
   const unsigned nonceSize = (nonceType == 0) ? 16 : 24;
 
-  const unsigned minSize = 2 + saltSize + nonceSize + 16 + 24;
+  // layout: salt | AES IV(16) | XChaCha20 nonce(24) | Ascon nonce(kNonceSize)
+  const unsigned minSize = 2 + saltSize + 16 + 24 + NAscon::kNonceSize;
   if (size < minSize)
     return E_INVALIDARG;
 
@@ -1209,9 +1266,10 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
 
 Z7_COM7F_IMF(CDecoder::CryptoAuthVerify(Int32 *result))
 {
-  if (_authOk)
+  // the tag is computed once: repeated calls return the stored result
+  if (_finalized)
   {
-    *result = 0;
+    *result = _authOk ? 0 : 1;
     return S_OK;
   }
 
@@ -1232,7 +1290,11 @@ Z7_COM7F_IMF(CDecoder::CryptoAuthVerify(Int32 *result))
     _authOk = (diff == 0);
   }
 
-  Z7_memset_0_ARRAY(computedTag);
+  {
+    volatile Byte *p = (volatile Byte *)(void *)computedTag;
+    for (unsigned i = 0; i < NAscon::kTagSize; i++)
+      p[i] = 0;
+  }
 
   return S_OK;
 }
@@ -1623,7 +1685,11 @@ Z7_COM7F_IMF(CDecoder::CryptoAuthVerify(Int32 *result))
   }
   *result = _authResult;
 
-  Z7_memset_0_ARRAY(computedTag);
+  {
+    volatile Byte *p = (volatile Byte *)(void *)computedTag;
+    for (unsigned i = 0; i < kTagSize; i++)
+      p[i] = 0;
+  }
 
   return S_OK;
 }

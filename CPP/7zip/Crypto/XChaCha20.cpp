@@ -461,6 +461,8 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
   const unsigned saltSize = ((b0 >> 7) & 1) + (b1 >> 4);
   const unsigned nonceSizeMinus1 = ((b0 >> 6) & 1) * 16 + (b1 & 0x0F);
   const unsigned nonceSize = nonceSizeMinus1 + 1;
+  if (nonceSize > kNonceSize)
+    return E_INVALIDARG;
   
   if (size != 2 + saltSize + nonceSize)
     return E_INVALIDARG;
@@ -468,7 +470,7 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
   data += 2;
   for (i = 0; i < saltSize; i++)
     _key.Salt[i] = *data++;
-  for (i = 0; i < nonceSize && i < kNonceSize; i++)
+  for (i = 0; i < nonceSize; i++)
     _nonce[i] = *data++;
   
   return (_key.NumCyclesPower <= k_NumCyclesPower_Supported_MAX

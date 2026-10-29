@@ -63,7 +63,7 @@ static Z7_FORCE_INLINE void AsconDecBlock_SSE2(UInt64 state[5], Byte *data)
 
 #endif
 
-#ifdef MY_CPU_ARM_OR_ARM64
+#if defined(MY_CPU_ARM_OR_ARM64) && defined(MY_CPU_LE)
 
 static Z7_FORCE_INLINE void AsconEncBlock_NEON(UInt64 state[5], Byte *data)
 {
