@@ -42,6 +42,8 @@ void CHmac::SetKey(const Byte *key, size_t keySize)
 
   Sha512_Init(&_sha2, SHA512_DIGEST_SIZE);
   Sha512_Update(&_sha2, (const Byte *)temp, kBlockSize);
+
+  memset(temp, 0, sizeof(temp));
 }
 
 

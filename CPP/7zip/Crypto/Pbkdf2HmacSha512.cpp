@@ -14,6 +14,14 @@
 namespace NCrypto {
 namespace NSha512 {
 
+// wipes derived key bytes; volatile access keeps the stores alive
+static void WipeBytes(Byte *data, size_t size)
+{
+  volatile Byte *p = data;
+  while (size--)
+    *p++ = 0;
+}
+
 void Pbkdf2Hmac(const Byte *pwd, size_t pwdSize,
     const Byte *salt, size_t saltSize,
     UInt32 numIterations,
@@ -57,6 +65,9 @@ void Pbkdf2Hmac(const Byte *pwd, size_t pwdSize,
     memcpy(key, t, curSize);
     key += curSize;
     keySize -= curSize;
+
+    WipeBytes(u, kDigestSize);
+    WipeBytes(t, kDigestSize);
   }
 }
 

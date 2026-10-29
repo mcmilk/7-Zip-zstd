@@ -19,6 +19,12 @@ class CHmac
   CSha512 _sha;
   CSha512 _sha2;
 public:
+  CHmac() {}
+  ~CHmac()
+  {
+    memset(&_sha, 0, sizeof(_sha));
+    memset(&_sha2, 0, sizeof(_sha2));
+  }
   void SetKey(const Byte *key, size_t keySize);
   void Update(const Byte *data, size_t dataSize) { Sha512_Update(&_sha, data, dataSize); }
   void Final(Byte *mac);
