@@ -44,6 +44,7 @@ extern "C" {
 *  Dependencies
 ******************************************/
 #include <stddef.h>        /* size_t */
+#include "compiler.h"
 #include "error_public.h"  /* enum list */
 
 
@@ -83,6 +84,20 @@ ERR_STATIC ERR_enum ERR_getErrorCode(size_t code) { if (!ERR_isError(code)) retu
 /* check and forward error code */
 #define CHECK_V_F(e, f) size_t const e = f; if (ERR_isError(e)) return e
 #define CHECK_F(f)   { CHECK_V_F(_var_err__, f); }
+
+/**
+ * Ignore: this is an internal helper.
+ *
+ * This is a helper function to help force C99-correctness during compilation.
+ * Under strict compilation modes, variadic macro arguments can't be empty.
+ * However, variadic function arguments can be. Using a function therefore lets
+ * us statically check that at least one (string) argument was passed,
+ * independent of the compilation flags.
+ */
+static INLINE_KEYWORD UNUSED_ATTR
+void _force_has_format_string(const char *format, ...) {
+  (void)format;
+}
 
 /**
  * Ignore: this is an internal helper.
