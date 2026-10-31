@@ -84,6 +84,7 @@ protected:
   {
     Z7_memset_0_ARRAY(_aad);
     Z7_memset_0_ARRAY(_state);
+    Z7_memset_0_ARRAY(_stateBuf);
   }
 
   Byte _aad[2 + 32 + NAscon::kNonceSize + 16 + 24];

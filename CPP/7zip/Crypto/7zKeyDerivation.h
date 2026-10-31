@@ -47,6 +47,8 @@ public:
     DerivMode = kDeriv_Single;
     for (unsigned i = 0; i < sizeof(Salt); i++)
       Salt[i] = 0;
+    Z7_memset_0_ARRAY(Key);
+    Z7_memset_0_ARRAY(CascadeKey);
   }
 
   void Wipe()

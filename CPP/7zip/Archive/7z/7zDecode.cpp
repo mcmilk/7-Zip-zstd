@@ -206,6 +206,60 @@ Z7_COM7F_IMF(CLockedSequentialInStreamST::Read(void *data, UInt32 size, UInt32 *
   return res;
 }
 
+
+/*
+  Wrapper for the main unpack stream returned by ST-mixer.
+  ST-mixer decodes data lazily, so the authentication tag of
+  AEAD coders can be verified only after the stream is fully read.
+  The verification runs once at the end of the stream.
+*/
+Z7_CLASS_IMP_COM_1(
+  CAuthVerifyInStream
+  , ISequentialInStream
+)
+  CMyComPtr<ISequentialInStream> _stream;
+  CMyComPtr<IUnknown> _mixerRef;
+  NCoderMixer2::CMixer *_mixer;
+  unsigned _numCoders;
+  bool _authChecked;
+public:
+  void Init(ISequentialInStream *stream, IUnknown *mixerRef,
+      NCoderMixer2::CMixer *mixer, unsigned numCoders)
+  {
+    _stream = stream;
+    _mixerRef = mixerRef;
+    _mixer = mixer;
+    _numCoders = numCoders;
+    _authChecked = false;
+  }
+};
+
+Z7_COM7F_IMF(CAuthVerifyInStream::Read(void *data, UInt32 size, UInt32 *processedSize))
+{
+  UInt32 realProcessedSize = 0;
+  const HRESULT res = _stream->Read(data, size, &realProcessedSize);
+  if (processedSize)
+    *processedSize = realProcessedSize;
+  if (res == S_OK && size != 0 && realProcessedSize == 0 && !_authChecked)
+  {
+    _authChecked = true;
+    for (unsigned i = 0; i < _numCoders; i++)
+    {
+      Z7_DECL_CMyComPtr_QI_FROM(
+          ICryptoAuthVerify,
+          authVerify, _mixer->GetCoder(i).GetUnknown())
+      if (authVerify)
+      {
+        Int32 authResult = 0;
+        RINOK(authVerify->CryptoAuthVerify(&authResult))
+        if (authResult != 0)
+          return S_FALSE;
+      }
+    }
+  }
+  return res;
+}
+
 #endif
 
 
@@ -588,7 +642,9 @@ HRESULT CDecoder::Decode(
         progress2 ? (ICompressProgressInfo *)progress2 : compressProgress,
         dataAfterEnd_Error);
 
-    if (codeResult == S_OK)
+    /* For partial unpacking the decoder processes only a prefix of the
+       solid block, so AEAD tags can't be checked: skip them like CRC. */
+    if (codeResult == S_OK && fullUnpack)
     {
       for (i = 0; i < folderInfo.Coders.Size(); i++)
       {
@@ -608,7 +664,15 @@ HRESULT CDecoder::Decode(
   }
   
   #ifdef USE_MIXER_ST
-    return _mixerST->GetMainUnpackStream(inStreamPointers, inStreamMainRes);
+  {
+    CMyComPtr<ISequentialInStream> decodedStream;
+    RINOK(_mixerST->GetMainUnpackStream(inStreamPointers, &decodedStream))
+    CAuthVerifyInStream *authSpec = new CAuthVerifyInStream;
+    CMyComPtr<ISequentialInStream> authStream = authSpec;
+    authSpec->Init(decodedStream, _mixerRef, _mixer, folderInfo.Coders.Size());
+    *inStreamMainRes = authStream.Detach();
+  }
+  return S_OK;
   #else
     return E_FAIL;
   #endif
