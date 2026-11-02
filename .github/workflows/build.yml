@@ -15,7 +15,7 @@ jobs:
             runner: ubuntu-latest
           - arch: arm64
             is_arm: true
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
 
     runs-on: ${{ matrix.runner }}
 
