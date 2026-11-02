@@ -3,7 +3,9 @@ REM Build some release of 7-Zip ZS
 
 SET COPYCMD=/Y /B
 SET COPTS=-m0=lzma -mx9 -ms=on -mf=bcj2
-SET URL=https://www.7-zip.org/a/7z2605.exe
+@REM use GH mirror instead of https://www.7-zip.org/a/7z2605.exe (may be unresolvable) ...
+SET URL=https://github.com/ip7z/7zip/releases/download/26.05/7z2605.exe
+
 SET VERSION=26.05
 SET SZIP="C:\Program Files\7-Zip\7z.exe"
 SET LURL=https://raw.githubusercontent.com/mcmilk/7-Zip-zstd/master/CPP/7zip/Bundles
