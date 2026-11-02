@@ -588,6 +588,7 @@ HRESULT CDecoder::Decode(
         progress2 ? (ICompressProgressInfo *)progress2 : compressProgress,
         dataAfterEnd_Error);
 
+  #ifndef Z7_NO_CRYPTO
     if (codeResult == S_OK)
     {
       for (i = 0; i < folderInfo.Coders.Size(); i++)
@@ -604,6 +605,7 @@ HRESULT CDecoder::Decode(
         }
       }
     }
+  #endif
     return codeResult;
   }
   
