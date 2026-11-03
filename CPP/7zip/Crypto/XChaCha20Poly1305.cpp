@@ -481,7 +481,11 @@ Z7_COM7F_IMF(CDecoder::CryptoAuthVerify(Int32 *result))
   }
   *result = _authResult;
 
-  Z7_memset_0_ARRAY(computedTag);
+  {
+    volatile Byte *p = (volatile Byte *)(void *)computedTag;
+    for (unsigned i = 0; i < kTagSize; i++)
+      p[i] = 0;
+  }
   return S_OK;
 }
 
