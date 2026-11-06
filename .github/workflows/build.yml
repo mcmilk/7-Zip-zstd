@@ -1,4 +1,4 @@
-name: "C++ Compilation Pipeline"
+name: "macOS Build"
 
 on:
   workflow_dispatch:
@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get 7-Zip Version
         id: version
@@ -55,7 +55,7 @@ jobs:
 
       - name: Upload build log (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: log-macos-clang-${{ matrix.target }}
           path: ${{ env.BUNDLE_PATH }}/build.log
