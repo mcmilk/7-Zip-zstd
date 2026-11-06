@@ -76,7 +76,7 @@ jobs:
       - name: Test binary
         run: |
           chmod +x "${{ steps.locate.outputs.path }}"
-          "${{ steps.locate.outputs.path }}" b -md22 -mtic=31 -mmt4 -bt
+          "${{ steps.locate.outputs.path }}" b -md22 -mtic=31 -mmt2 -bt
 
       - name: Package binary
         id: package
@@ -90,7 +90,7 @@ jobs:
           echo "package=${PKG_NAME}.tar.xz" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: 7z${{ steps.version.outputs.version }}-mac-${{ matrix.target }}
           path: ${{ steps.package.outputs.package }}
