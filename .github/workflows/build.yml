@@ -36,14 +36,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Get 7-Zip Version
-        id: version
-        shell: bash
-        run: |
-          VERSION=$(sed -n 's/.*#define MY_VERSION_NUMBERS[[:space:]]*"\([^"]*\)".*/\1/p' C/7zVersion.h | head -1)
-          VERSION=${VERSION//./}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Normalize line endings
         run: find . -name "*.mak" -exec sed -i '' 's/\r$//' {} \;
 
@@ -81,8 +73,7 @@ jobs:
       - name: Package binary
         id: package
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          PKG_NAME="7z${VERSION}-mac-${{ matrix.target }}"
+          PKG_NAME="7z-zstd-mac-${{ matrix.target }}"
           mkdir -p package
           cp "${{ steps.locate.outputs.path }}" package/7zz
           chmod +x package/7zz
@@ -92,7 +83,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: 7z${{ steps.version.outputs.version }}-mac-${{ matrix.target }}
+          name: 7z-zstd-mac-${{ matrix.target }}
           path: ${{ steps.package.outputs.package }}
           if-no-files-found: error
           retention-days: 7
