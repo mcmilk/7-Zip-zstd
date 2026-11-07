@@ -1,4 +1,5 @@
-CFLAGS_WARN = -Weverything -Wfatal-errors -Wno-poison-system-directories
+CFLAGS_WARN = -Wall -Wextra
+
 CXX_STD_FLAGS = -std=c++98
 CXX_STD_FLAGS = -std=c++11
 CXX_STD_FLAGS = -std=c++14

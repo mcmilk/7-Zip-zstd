@@ -43,11 +43,12 @@ INLINE size_t chunk_state_len(const blake3_chunk_state *self) {
 
 INLINE size_t chunk_state_fill_buf(blake3_chunk_state *self,
                                    const uint8_t *input, size_t input_len) {
+  uint8_t *dest;
   size_t take = BLAKE3_BLOCK_LEN - ((size_t)self->buf_len);
   if (take > input_len) {
     take = input_len;
   }
-  uint8_t *dest = self->buf + ((size_t)self->buf_len);
+  dest = self->buf + ((size_t)self->buf_len);
   memcpy(dest, input, take);
   self->buf_len += (uint8_t)take;
   return take;
@@ -99,13 +100,12 @@ INLINE void output_chaining_value(const output_t *self, uint8_t cv[32]) {
 INLINE void output_root_bytes(const output_t *self, uint64_t seek, uint8_t *out,
                               size_t out_len) {
   uint64_t output_block_counter = seek / 64;
-  size_t offset_within_block = seek % 64;
+  size_t offset_within_block = seek % 64, available_bytes, memcpy_len;
   uint8_t wide_buf[64];
   while (out_len > 0) {
     blake3_compress_xof(self->input_cv, self->block, self->block_len,
                         output_block_counter, self->flags | ROOT, wide_buf);
-    size_t available_bytes = 64 - offset_within_block;
-    size_t memcpy_len;
+    available_bytes = 64 - offset_within_block;
     if (out_len > available_bytes) {
       memcpy_len = available_bytes;
     } else {
@@ -121,8 +121,10 @@ INLINE void output_root_bytes(const output_t *self, uint64_t seek, uint8_t *out,
 
 INLINE void chunk_state_update(blake3_chunk_state *self, const uint8_t *input,
                                size_t input_len) {
+  size_t take;
+
   if (self->buf_len > 0) {
-    size_t take = chunk_state_fill_buf(self, input, input_len);
+    take = chunk_state_fill_buf(self, input, input_len);
     input += take;
     input_len -= take;
     if (input_len > 0) {
@@ -144,7 +146,7 @@ INLINE void chunk_state_update(blake3_chunk_state *self, const uint8_t *input,
     input_len -= BLAKE3_BLOCK_LEN;
   }
 
-  size_t take = chunk_state_fill_buf(self, input, input_len);
+  take = chunk_state_fill_buf(self, input, input_len);
   input += take;
   input_len -= take;
 }

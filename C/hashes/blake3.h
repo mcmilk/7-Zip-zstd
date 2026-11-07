@@ -134,7 +134,7 @@ static const uint8_t MSG_SCHEDULE[7][16] = {
 /* x is assumed to be nonzero.       */
 static unsigned int highest_one(uint64_t x) {
 #if defined(__GNUC__) || defined(__clang__)
-  return 63 ^ __builtin_clzll(x);
+  return (unsigned int)(63 ^ __builtin_clzll(x));
 #elif defined(_MSC_VER) && defined(IS_X86_64)
   unsigned long index;
   _BitScanReverse64(&index, x);
@@ -164,7 +164,7 @@ static unsigned int highest_one(uint64_t x) {
 // Count the number of 1 bits.
 INLINE unsigned int popcnt(uint64_t x) {
 #if defined(__GNUC__) || defined(__clang__)
-  return __builtin_popcountll(x);
+  return (unsigned int)__builtin_popcountll(x);
 #else
   unsigned int count = 0;
   while (x != 0) {

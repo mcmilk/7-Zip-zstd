@@ -68,7 +68,7 @@ static void
 calc(struct md2 *m, const void *v)
 {
     unsigned char x[48], L;
-    const unsigned char *p = v;
+    const unsigned char *p = (const unsigned char *)v;
     int i, j, t;
 
     L = m->checksum[15];
@@ -96,7 +96,7 @@ void
 MD2_Update (struct md2 *m, const void *v, size_t len)
 {
     size_t idx = m->len & 0xf;
-    const unsigned char *p = v;
+    const unsigned char *p = (const unsigned char *)v;
 
     m->len += len;
     if (len + idx >= 16) {
