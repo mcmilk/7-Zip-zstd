@@ -1,0 +1,99 @@
+name: "macOS Build"
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  BUNDLE_PATH: "CPP/7zip/Bundles/Alone2"
+
+jobs:
+  macos-clang:
+    name: macOS Clang ${{ matrix.target }} (${{ matrix.asm_name }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: arm64
+            runner: macos-latest
+            makefile: cmpl_mac_arm64.mak
+            asm_name: Clang as
+            output_dir: m_arm64
+          - target: x64
+            runner: macos-latest
+            makefile: cmpl_mac_x64.mak
+            asm_name: Clang as
+            output_dir: m_x64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Get 7-Zip Version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(sed -n 's/.*#define MY_VERSION_NUMBERS[[:space:]]*"\([^"]*\)".*/\1/p' C/7zVersion.h | head -1)
+          VERSION=${VERSION//./}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Normalize line endings
+        run: find . -name "*.mak" -exec sed -i '' 's/\r$//' {} \;
+
+      - name: Build
+        run: |
+          cd ${{ env.BUNDLE_PATH }}
+          make_args=(-j$(sysctl -n hw.ncpu) -f ../../${{ matrix.makefile }})
+          make "${make_args[@]}" > build.log 2>&1 || { tail -100 build.log; exit 1; }
+
+      - name: Upload build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: log-macos-clang-${{ matrix.target }}
+          path: ${{ env.BUNDLE_PATH }}/build.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Locate binary
+        id: locate
+        run: |
+          BIN_PATH="${{ env.BUNDLE_PATH }}/b/${{ matrix.output_dir }}/7zz"
+          if [ ! -f "$BIN_PATH" ]; then
+            echo "Error: Binary not found at $BIN_PATH"
+            tail -50 ${{ env.BUNDLE_PATH }}/build.log
+            exit 1
+          fi
+          echo "path=$(pwd)/$BIN_PATH" >> $GITHUB_OUTPUT
+
+      - name: Test binary
+        run: |
+          chmod +x "${{ steps.locate.outputs.path }}"
+          "${{ steps.locate.outputs.path }}" b -md22 -mtic=31 -mmt2 -bt
+
+      - name: Package binary
+        id: package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PKG_NAME="7z${VERSION}-mac-${{ matrix.target }}"
+          mkdir -p package
+          cp "${{ steps.locate.outputs.path }}" package/7zz
+          chmod +x package/7zz
+          tar -cJf "${PKG_NAME}.tar.xz" -C package 7zz
+          echo "package=${PKG_NAME}.tar.xz" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: 7z${{ steps.version.outputs.version }}-mac-${{ matrix.target }}
+          path: ${{ steps.package.outputs.package }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
