@@ -7,6 +7,8 @@
 #include "../../../Windows/ErrorMsg.h"
 #include "../../../Windows/FileName.h"
 
+#include "../../Archive/Common/MultiStream.h"
+
 #include "../GUI/ExtractRes.h"
 
 #include "resource.h"
@@ -28,54 +30,37 @@ static const char * const g_Message_FileWriteError = "File write error";
 
 struct CVolSeqName
 {
-  UString UnchangedPart;
-  UString ChangedPart;
-  CVolSeqName(): ChangedPart("000") {}
-
-  void SetNumDigits(UInt64 numVolumes)
+  FString Extension;
+  
+  CVolSeqName(UInt64 numVolumes)
   {
-    ChangedPart = "000";
-    while (numVolumes > 999)
+    Extension = "00";
+    do
     {
+      Extension.Add_Char('0');
       numVolumes /= 10;
-      ChangedPart.Add_Char('0');
     }
+    while (numVolumes > 99);
   }
-
-  bool ParseName(const UString &name)
+  
+  void PrepareNextName()
   {
-    if (name.Len() < 2)
-      return false;
-    if (name.Back() != L'1' || name[name.Len() - 2] != L'0')
-      return false;
-
-    unsigned pos = name.Len() - 2;
-    for (; pos > 0 && name[pos - 1] == '0'; pos--);
-    UnchangedPart.SetFrom(name, pos);
-    ChangedPart = name.Ptr(pos);
-    return true;
+    unsigned i = Extension.Len();
+    do
+    {
+      const FChar c = Extension[--i];
+      if (c != '9')
+      {
+        Extension.ReplaceOneCharAtPos(i, (FChar)(c + 1));
+        return;
+      }
+      Extension.ReplaceOneCharAtPos(i, '0');
+    }
+    while (i);
+    Extension.InsertAtFront((FChar)'1');
   }
-
-  UString GetNextName();
 };
 
-
-UString CVolSeqName::GetNextName()
-{
-  for (int i = (int)ChangedPart.Len() - 1; i >= 0; i--)
-  {
-    const wchar_t c = ChangedPart[i];
-    if (c != L'9')
-    {
-      ChangedPart.ReplaceOneCharAtPos((unsigned)i, (wchar_t)(c + 1));
-      break;
-    }
-    ChangedPart.ReplaceOneCharAtPos((unsigned)i, L'0');
-    if (i == 0)
-      ChangedPart.InsertAtFront(L'1');
-  }
-  return UnchangedPart + ChangedPart;
-}
 
 class CThreadSplit: public CProgressThreadVirt
 {
@@ -84,7 +69,7 @@ public:
   FString FilePath;
   FString VolBasePath;
   UInt64 NumVolumes;
-  CRecordVector<UInt64> VolumeSizes;
+  CRecordVector<UInt64> VolumeSizes; // VolumeSizes.Size() > 0
 };
 
 
@@ -92,8 +77,8 @@ class CPreAllocOutFile
 {
   UInt64 _preAllocSize;
 public:
-  NIO::COutFile File;
   UInt64 Written;
+  NIO::COutFile File;
   
   CPreAllocOutFile(): _preAllocSize(0), Written(0) {}
   
@@ -120,8 +105,8 @@ public:
   void Close()
   {
     SetCorrectFileLength();
-    Written = 0;
     _preAllocSize = 0;
+    Written = 0;
     File.Close();
   }
 
@@ -150,47 +135,43 @@ HRESULT CThreadSplit::ProcessVirt()
   if (!buffer.Allocate(kBufSize))
     return E_OUTOFMEMORY;
   
-  CVolSeqName seqName;
-  seqName.SetNumDigits(NumVolumes);
+  CVolSeqName seq(NumVolumes);
   
   UInt64 length;
   if (!inFile.GetLength(length))
     return GetLastError_noZero_HRESULT();
   
   CProgressSync &sync = Sync;
+  sync.Set_NumFilesTotal(NumVolumes);
   sync.Set_NumBytesTotal(length);
   
-  UInt64 pos = 0;
-  UInt64 prev = 0;
-  UInt64 numFiles = 0;
+  UInt64 pos = 0, prev = 0, numFiles = 0;
   unsigned volIndex = 0;
 
   for (;;)
   {
-    UInt64 volSize;
-    if (volIndex < VolumeSizes.Size())
-      volSize = VolumeSizes[volIndex];
-    else
-      volSize = VolumeSizes.Back();
-    
+    const UInt64 volSize = VolumeSizes[volIndex];
     UInt32 needSize = kBufSize;
     {
       const UInt64 rem = volSize - outFile.Written;
       if (needSize > rem)
         needSize = (UInt32)rem;
     }
-    UInt32 processedSize;
-    if (!inFile.Read(buffer, needSize, processedSize))
-      return GetLastError_noZero_HRESULT();
-    if (processedSize == 0)
-      return S_OK;
-    needSize = processedSize;
+    {
+      UInt32 processedSize = 0;
+      if (!inFile.Read(buffer, needSize, processedSize))
+        return GetLastError_noZero_HRESULT();
+      if (processedSize == 0)
+        break;
+      needSize = processedSize;
+    }
   
     if (outFile.Written == 0)
     {
       FString name = VolBasePath;
       name.Add_Dot();
-      name += us2fs(seqName.GetNextName());
+      seq.PrepareNextName();
+      name += seq.Extension;
       sync.Set_FilePath(fs2us(name));
       if (!outFile.File.Create_NEW(name))
       {
@@ -207,30 +188,56 @@ HRESULT CThreadSplit::ProcessVirt()
       }
       outFile.PreAlloc(expectSize);
     }
-    
-    if (!outFile.Write(buffer, needSize, processedSize))
-      return GetLastError_noZero_HRESULT();
-    if (needSize != processedSize)
-      throw g_Message_FileWriteError;
-    
-    pos += processedSize;
+
+    {
+      UInt32 processedSize = 0;
+      if (!outFile.Write(buffer, needSize, processedSize))
+        return GetLastError_noZero_HRESULT();
+      if (needSize != processedSize)
+        throw g_Message_FileWriteError;
+      pos += processedSize;
+    }
     
     if (outFile.Written == volSize)
     {
       outFile.Close();
       sync.Set_NumFilesCur(++numFiles);
-      if (volIndex < VolumeSizes.Size())
+      if (volIndex + 1 < VolumeSizes.Size())
         volIndex++;
     }
 
     if (pos - prev >= ((UInt32)1 << 22) || outFile.Written == 0)
     {
-      RINOK(sync.Set_NumBytesCur(pos))
       prev = pos;
+      RINOK(sync.Set_NumBytesCur(pos))
     }
   }
+
+  return S_OK;
 }
 
+
+// volSizes.Size() > 0
+inline UInt64 GetNumberOfVolumes(UInt64 size, const CRecordVector<UInt64> &volSizes)
+{
+  const unsigned numVols = volSizes.Size();
+  if (numVols == 0) // optional check
+    return 1;
+  const UInt64 *volSizesPtr = volSizes.ConstData();
+  UInt64 volSize;
+  unsigned i = 0;
+  do
+  {
+    volSize = volSizesPtr[i++];
+    if (volSize >= size)
+      return i;
+    size -= volSize;
+  }
+  while (i < numVols);
+  if (volSize == 0)
+    return (UInt64)(Int64)-1;
+  return numVols + (size - 1) / volSize + 1;
+}
 
 void CApp::Split()
 {
@@ -277,12 +284,12 @@ void CApp::Split()
     srcPanel.MessageBox_Error(L"Cannot find file");
     return;
   }
-  if (fileInfo.Size <= splitDialog.VolumeSizes.FrontItem())
+  const UInt64 numVolumes = GetNumberOfVolumes(fileInfo.Size, splitDialog.VolumeSizes);
+  if (numVolumes <= 1)
   {
     srcPanel.MessageBox_Error_LangID(IDS_SPLIT_VOL_MUST_BE_SMALLER);
     return;
   }
-  const UInt64 numVolumes = GetNumberOfVolumes(fileInfo.Size, splitDialog.VolumeSizes);
   if (numVolumes >= 100)
   {
     wchar_t s[32];
@@ -291,6 +298,11 @@ void CApp::Split()
         LangString(IDS_SPLIT_CONFIRM_TITLE),
         MB_YESNOCANCEL | MB_ICONQUESTION) != IDYES)
       return;
+    if (numVolumes >= 1u << 29)
+    {
+      srcPanel.MessageBox_Error(L"too big number of parts");
+      return;
+    }
   }
 
   path = splitDialog.Path;
@@ -364,6 +376,7 @@ HRESULT CThreadCombine::ProcessVirt()
   
   CProgressSync &sync = Sync;
   sync.Set_NumBytesTotal(TotalSize);
+  sync.Set_NumFilesTotal(Names.Size());
   
   CMyBuffer bufferObject;
   if (!bufferObject.Allocate(kBufSize))
@@ -374,13 +387,14 @@ HRESULT CThreadCombine::ProcessVirt()
   {
     NIO::CInFile inFile;
     const FString nextName = InputDirPrefix + Names[i];
+    sync.Set_NumFilesCur(i);
+    sync.Set_FilePath(fs2us(nextName));
     if (!inFile.Open(nextName))
     {
       const HRESULT res = GetLastError_noZero_HRESULT();
       AddErrorPath(nextName);
       return res;
     }
-    sync.Set_FilePath(fs2us(nextName));
     for (;;)
     {
       UInt32 processedSize;
@@ -419,7 +433,7 @@ static void AddInfoFileName(UString &dest, const UString &name)
 void CApp::Combine()
 {
   const unsigned srcPanelIndex = GetFocusedPanelIndex();
-  CPanel &srcPanel = Panels[srcPanelIndex];
+  const CPanel &srcPanel = Panels[srcPanelIndex];
   if (!srcPanel.IsFSFolder())
   {
     srcPanel.MessageBox_Error_LangID(IDS_OPERATION_IS_NOT_SUPPORTED);
@@ -435,36 +449,51 @@ void CApp::Combine()
     srcPanel.MessageBox_Error_LangID(IDS_COMBINE_SELECT_ONE_FILE);
     return;
   }
-  const UString itemName = srcPanel.GetItemName(index);
 
-  UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
+  const UString srcPath = srcPanel.GetFsPath() + srcPanel.GetItemPrefix(index);
   UString path = srcPath;
-  unsigned destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
-  CPanel &destPanel = Panels[destPanelIndex];
-  if (NumPanels > 1)
-    if (destPanel.IsFSFolder())
-      path = destPanel.GetFsPath();
+  const unsigned destPanelIndex = (NumPanels <= 1) ? srcPanelIndex : (1 - srcPanelIndex);
+  const CPanel &destPanel = Panels[destPanelIndex];
+  if (NumPanels > 1 && destPanel.IsFSFolder())
+    path = destPanel.GetFsPath();
 
-  CVolSeqName volSeqName;
-  if (!volSeqName.ParseName(itemName))
+  CSplitVolName seq;
+  seq.Name = srcPanel.GetItemName(index);
+  if (!seq.ParseName())
   {
     srcPanel.MessageBox_Error_LangID(IDS_COMBINE_CANT_DETECT_SPLIT_FILE);
     return;
   }
+  UString subName;
+  seq.Generate_SubName(subName);
   
   {
   CThreadCombine combiner;
   
-  UString nextName = itemName;
   combiner.TotalSize = 0;
+
+  UString curPath = srcPath;
   for (;;)
   {
+    seq.GenerateName();
     NFind::CFileInfo fileInfo;
-    if (!fileInfo.Find(us2fs(srcPath + nextName)) || fileInfo.IsDir())
-      break;
-    combiner.Names.Add(us2fs(nextName));
+    curPath.DeleteFrom(srcPath.Len());
+    curPath += seq.Name;
+    if (!fileInfo.Find(us2fs(curPath)) || fileInfo.IsDir())
+    {
+      if (!seq.IsComplicated)
+        break;
+      seq.AddPostfix_2Chars();
+      seq.GenerateName();
+      curPath.DeleteFrom(srcPath.Len());
+      curPath += seq.Name;
+      if (!fileInfo.Find(us2fs(curPath)) || fileInfo.IsDir())
+        break;
+    }
+    combiner.Names.Add(us2fs(seq.Name));
     combiner.TotalSize += fileInfo.Size;
-    nextName = volSeqName.GetNextName();
+    if (!seq.GetNextName())
+      break;
   }
   if (combiner.Names.Size() == 1)
   {
@@ -479,8 +508,10 @@ void CApp::Combine()
   }
   
   UString info;
+  info += subName;
+  info.Add_LF();
+  info.Add_LF();
   AddValuePair2(info, IDS_PROP_FILES, combiner.Names.Size(), combiner.TotalSize);
-  
   info.Add_LF();
   info += srcPath;
   
@@ -515,18 +546,8 @@ void CApp::Combine()
     return;
   }
   
-  UString outName = volSeqName.UnchangedPart;
-  while (!outName.IsEmpty())
-  {
-    if (outName.Back() != L'.')
-      break;
-    outName.DeleteBack();
-  }
-  if (outName.IsEmpty())
-    outName = "file";
-  
   NFind::CFileInfo fileInfo;
-  UString destFilePath = path + outName;
+  const UString destFilePath = path + subName;
   combiner.OutputPath = us2fs(destFilePath);
   if (fileInfo.Find(combiner.OutputPath))
   {

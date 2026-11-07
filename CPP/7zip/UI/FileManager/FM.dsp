@@ -1570,6 +1570,10 @@ SOURCE=..\..\Archive\Common\ItemNameUtils.cpp
 
 SOURCE=..\..\Archive\Common\ItemNameUtils.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\Archive\Common\MultiStream.h
+# End Source File
 # End Group
 # Begin Source File
 

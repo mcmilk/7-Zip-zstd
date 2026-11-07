@@ -16,7 +16,7 @@ jobs:
   macos-clang:
     name: macOS Clang ${{ matrix.target }} (${{ matrix.asm_name }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -55,7 +55,7 @@ jobs:
 
       - name: Upload build log (on failure)
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: log-macos-clang-${{ matrix.target }}
           path: ${{ env.BUNDLE_PATH }}/build.log
@@ -90,7 +90,7 @@ jobs:
           echo "package=${PKG_NAME}.tar.xz" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: 7z${{ steps.version.outputs.version }}-mac-${{ matrix.target }}
           path: ${{ steps.package.outputs.package }}
