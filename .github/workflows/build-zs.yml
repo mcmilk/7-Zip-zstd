@@ -106,6 +106,12 @@ jobs:
           fi
           echo "path=$(pwd)/$BIN_PATH" >> $GITHUB_OUTPUT
 
+      - name: Test prerequirements (Tcl 8.6)
+        run: |
+          brew install tcl-tk
+          BREW_TCL_BIN="$(brew --prefix tcl-tk)/bin"
+          echo "$BREW_TCL_BIN" >> $GITHUB_PATH
+
       - name: Test
         run: |
           chmod +x "${{ steps.locate.outputs.path }}"
