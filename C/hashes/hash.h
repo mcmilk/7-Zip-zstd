@@ -35,8 +35,8 @@
 
 /* stuff in common between md4, md5, and sha1 */
 
-#ifndef __hash_h__
-#define __hash_h__
+#ifndef HASH_H
+#define HASH_H
 
 #include <string.h>
 
@@ -54,4 +54,4 @@ typedef UInt64 uint64_t;
 #define min(a,b) (((a)>(b))?(b):(a))
 #endif
 
-#endif /* __hash_h__ */
+#endif /* HASH_H */

@@ -193,7 +193,7 @@ struct x32{
 void
 MD4_Update (struct md4 *m, const void *v, size_t len)
 {
-    const unsigned char *p = v;
+    const unsigned char *p = (const unsigned char *)v;
     size_t old_sz = m->sz[0];
     size_t offset;
 
@@ -218,7 +218,7 @@ MD4_Update (struct md4 *m, const void *v, size_t len)
 	    }
 	    calc(m, current);
 #else
-	    calc(m, (uint32_t*)m->save);
+	    calc(m, (uint32_t*)(void*)m->save);
 #endif
 	    offset = 0;
 	}
