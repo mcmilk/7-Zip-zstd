@@ -391,7 +391,7 @@ You find this project useful, maybe you consider a donation ;-)
   - [Brotli] Version 1.2.1
   - [Fast LZMA2] Version 1.0.1
   - [Lizard] Version 2.1
-  - [LZ4] Version 1.11.0
+  - [LZ4] Version 1.11.1
   - [LZ5] Version 1.5
   - [Zstandard] Version 1.5.7
   - [XChaCha20/XChaCha20-Poly1305] Version 1.0.0
