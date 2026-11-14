@@ -51,6 +51,9 @@ protected:
   unsigned _xcBlockPos;
   UInt64 _xcCounter;
 
+  Byte _aesBlock[AES_BLOCK_SIZE];
+  unsigned _aesBlockPos;
+
   UInt32 *AesKeys() { return (UInt32 *)(void *)(Byte *)_aesKeys; }
 
   void PrepareKey();
@@ -84,6 +87,7 @@ protected:
   {
     Z7_memset_0_ARRAY(_aad);
     Z7_memset_0_ARRAY(_state);
+    Z7_memset_0_ARRAY(_stateBuf);
   }
 
   Byte _aad[2 + 32 + NAscon::kNonceSize + 16 + 24];
@@ -179,6 +183,9 @@ protected:
   Byte _xcBlock[64];
   unsigned _xcBlockPos;
   UInt64 _xcCounter;
+
+  Byte _aesBlock[AES_BLOCK_SIZE];
+  unsigned _aesBlockPos;
 
   Byte _polyKey[kPolyKeySize];
   NXChaCha20Poly1305::CPoly1305 _poly1305;
@@ -300,6 +307,9 @@ protected:
   Byte _xcBlock[kXcBlockSize];
   unsigned _xcBlockPos;
   UInt64 _xcCounter;
+
+  Byte _aesBlock[AES_BLOCK_SIZE];
+  unsigned _aesBlockPos;
 
   Byte _keyAegis[NAegis256::kKeySize];
   Byte _aegisNonce[NAegis256::kNonceSize];

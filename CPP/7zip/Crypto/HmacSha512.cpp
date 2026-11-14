@@ -42,6 +42,12 @@ void CHmac::SetKey(const Byte *key, size_t keySize)
 
   Sha512_Init(&_sha2, SHA512_DIGEST_SIZE);
   Sha512_Update(&_sha2, (const Byte *)temp, kBlockSize);
+
+  {
+    volatile UInt64 *p = (volatile UInt64 *)(void *)temp;
+    for (i = 0; i < SHA512_NUM_BLOCK_WORDS; i++)
+      p[i] = 0;
+  }
 }
 
 

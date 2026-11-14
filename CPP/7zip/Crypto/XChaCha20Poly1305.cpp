@@ -20,15 +20,6 @@
 #include "RandGen.h"
 #endif
 
-#if defined(MY_CPU_AMD64)
-  #ifdef _MSC_VER
-    #include <intrin.h>
-  #else
-    #include <x86intrin.h>
-  #endif
-  #define Z7_POLY1305_128BIT
-#endif
-
 namespace NCrypto {
 namespace NXChaCha20Poly1305 {
 
@@ -280,28 +271,14 @@ Z7_COM7F_IMF(CEncoder::ResetInitVector())
   _derivedKeyValid = false;
   _poly1305.Reset();
 
-  _aadSize = 1;
   const unsigned nonceSizeMinus1 = kNonceSize - 1;
   const unsigned nonceHigh = (nonceSizeMinus1 >= 16) ? (1 << 6) : 0;
   const unsigned nonceLow = nonceSizeMinus1 & 0x0F;
-  _aad[0] = (Byte)(_key.NumCyclesPower
-      | (_key.SaltSize == 0 ? 0 : (1 << 7))
-      | nonceHigh);
-  if (_key.SaltSize != 0)
-  {
-    _aad[1] = (Byte)(((_key.SaltSize - 1) << 4) | nonceLow);
-    memcpy(_aad + 2, _key.Salt, _key.SaltSize);
-    _aadSize = 2 + _key.SaltSize;
-    memcpy(_aad + _aadSize, _nonce, kNonceSize);
-    _aadSize += kNonceSize;
-  }
-  else
-  {
-    _aad[1] = (Byte)(nonceLow);
-    _aadSize = 2;
-    memcpy(_aad + _aadSize, _nonce, kNonceSize);
-    _aadSize += kNonceSize;
-  }
+  _aad[0] = (Byte)(_key.NumCyclesPower | nonceHigh);
+  _aad[1] = (Byte)(nonceLow);
+  _aadSize = 2;
+  memcpy(_aad + _aadSize, _nonce, kNonceSize);
+  _aadSize += kNonceSize;
 
   _tagReady = false;
   _propsWritten = false;
@@ -318,34 +295,18 @@ Z7_COM7F_IMF2(UInt32, CEncoder::Filter(Byte *data, UInt32 size))
 
 Z7_COM7F_IMF(CEncoder::WriteCoderProperties(ISequentialOutStream *outStream))
 {
-  Byte props[2 + sizeof(_key.Salt) + kNonceSize + kTagSize];
+  Byte props[2 + kNonceSize + kTagSize];
   unsigned propsSize = 1;
 
   const unsigned nonceSizeMinus1 = kNonceSize - 1;
   const unsigned nonceHigh = (nonceSizeMinus1 >= 16) ? (1 << 6) : 0;
   const unsigned nonceLow = nonceSizeMinus1 & 0x0F;
 
-  props[0] = (Byte)(_key.NumCyclesPower
-      | (_key.SaltSize == 0 ? 0 : (1 << 7))
-      | nonceHigh);
-
-  if (_key.SaltSize != 0)
-  {
-    props[1] = (Byte)(
-        ((_key.SaltSize - 1) << 4)
-        | nonceLow);
-    memcpy(props + 2, _key.Salt, _key.SaltSize);
-    propsSize = 2 + _key.SaltSize;
-    memcpy(props + propsSize, _nonce, kNonceSize);
-    propsSize += kNonceSize;
-  }
-  else
-  {
-    props[1] = (Byte)(nonceLow);
-    propsSize = 2;
-    memcpy(props + propsSize, _nonce, kNonceSize);
-    propsSize += kNonceSize;
-  }
+  props[0] = (Byte)(_key.NumCyclesPower | nonceHigh);
+  props[1] = (Byte)(nonceLow);
+  propsSize = 2;
+  memcpy(props + propsSize, _nonce, kNonceSize);
+  propsSize += kNonceSize;
 
   if (!_tagReady)
   {
@@ -481,7 +442,11 @@ Z7_COM7F_IMF(CDecoder::CryptoAuthVerify(Int32 *result))
   }
   *result = _authResult;
 
-  Z7_memset_0_ARRAY(computedTag);
+  {
+    volatile Byte *p = (volatile Byte *)(void *)computedTag;
+    for (unsigned i = 0; i < kTagSize; i++)
+      p[i] = 0;
+  }
   return S_OK;
 }
 

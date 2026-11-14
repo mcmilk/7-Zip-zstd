@@ -387,34 +387,18 @@ Z7_COM7F_IMF(CEncoder::ResetInitVector())
 
 Z7_COM7F_IMF(CEncoder::WriteCoderProperties(ISequentialOutStream *outStream))
 {
-  Byte props[2 + sizeof(_key.Salt) + kNonceSize];
+  Byte props[2 + kNonceSize];
   unsigned propsSize = 1;
 
   const unsigned nonceSizeMinus1 = kNonceSize - 1;
   const unsigned nonceHigh = (nonceSizeMinus1 >= 16) ? (1 << 6) : 0;
   const unsigned nonceLow = nonceSizeMinus1 & 0x0F;
 
-  props[0] = (Byte)(_key.NumCyclesPower
-      | (_key.SaltSize == 0 ? 0 : (1 << 7))
-      | nonceHigh);
-
-  if (_key.SaltSize != 0)
-  {
-    props[1] = (Byte)(
-        ((_key.SaltSize - 1) << 4)
-        | nonceLow);
-    memcpy(props + 2, _key.Salt, _key.SaltSize);
-    propsSize = 2 + _key.SaltSize;
-    memcpy(props + propsSize, _nonce, kNonceSize);
-    propsSize += kNonceSize;
-  }
-  else
-  {
-    props[1] = (Byte)(nonceLow);
-    propsSize = 2;
-    memcpy(props + propsSize, _nonce, kNonceSize);
-    propsSize += kNonceSize;
-  }
+  props[0] = (Byte)(_key.NumCyclesPower | nonceHigh);
+  props[1] = (Byte)(nonceLow);
+  propsSize = 2;
+  memcpy(props + propsSize, _nonce, kNonceSize);
+  propsSize += kNonceSize;
 
   return WriteStream(outStream, props, propsSize);
 }
@@ -461,6 +445,8 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
   const unsigned saltSize = ((b0 >> 7) & 1) + (b1 >> 4);
   const unsigned nonceSizeMinus1 = ((b0 >> 6) & 1) * 16 + (b1 & 0x0F);
   const unsigned nonceSize = nonceSizeMinus1 + 1;
+  if (nonceSize > kNonceSize)
+    return E_INVALIDARG;
   
   if (size != 2 + saltSize + nonceSize)
     return E_INVALIDARG;
@@ -468,7 +454,7 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size))
   data += 2;
   for (i = 0; i < saltSize; i++)
     _key.Salt[i] = *data++;
-  for (i = 0; i < nonceSize && i < kNonceSize; i++)
+  for (i = 0; i < nonceSize; i++)
     _nonce[i] = *data++;
   
   return (_key.NumCyclesPower <= k_NumCyclesPower_Supported_MAX
