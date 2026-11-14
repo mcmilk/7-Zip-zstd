@@ -326,17 +326,18 @@ The XChaCha20 implementation is provided as open source software using the
 GNU LGPL v2.1+ license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 2 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
 ``` C
- Byte _derivation_mode;  // 0 = SHA-256 iterative
- Byte _num_cycles_power; // key derivation iterations = 2^value
+ Byte _b0;                // NumCyclesPower | (salt ? 0x80 : 0) | (nonce_size-1 >= 16 ? 0x40 : 0)
+ Byte _b1;                // ((salt_size - 1) << 4) | ((nonce_size - 1) & 0x0F)
+ Byte _salt[salt_size];   // salt_size = 0 .. 16
+ Byte _nonce[nonce_size]; // nonce_size = 1 .. 24
 ```
-- _derivation_mode specifies the key derivation function used
-  - 0: SHA-256 iterative hashing (same as 7zAES)
-- _num_cycles_power specifies the number of iterations for key derivation
-  - the actual iteration count is 2^_num_cycles_power
+- bits 0..5 of _b0: key derivation iterations = 2^value (0x3F disables the KDF)
+- bit 7 of _b0: a salt is present, salt_size - 1 is stored in bits 4..7 of _b1
+- bit 6 of _b0 is the high bit of (nonce_size - 1), the low 4 bits are in _b1
+- the decoder rejects nonce sizes larger than 24
+- the encoder writes no salt and a 24-byte nonce, so its properties are 26 bytes:
+  _b0 = NumCyclesPower | 0x40, _b1 = 0x07, nonce[24]
 
 Encryption Integrator: fzxx
 - Homepage: https://github.com/fzxx
@@ -364,17 +365,23 @@ The XChaCha20-Poly1305 implementation is provided as open source software using
 the GNU LGPL v2.1+ license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 2 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
 ``` C
- Byte _derivation_mode;  // 0 = SHA-256 iterative
- Byte _num_cycles_power; // key derivation iterations = 2^value
+ Byte _b0;                // NumCyclesPower | (salt ? 0x80 : 0) | (nonce_size-1 >= 16 ? 0x40 : 0)
+ Byte _b1;                // ((salt_size - 1) << 4) | ((nonce_size - 1) & 0x0F)
+ Byte _salt[salt_size];   // salt_size = 0 .. 16
+ Byte _nonce[nonce_size]; // nonce_size = 1 .. 24
+ Byte _tag[16];           // Poly1305 authentication tag
 ```
-- _derivation_mode specifies the key derivation function used
-  - 0: SHA-256 iterative hashing (same as 7zAES)
-- _num_cycles_power specifies the number of iterations for key derivation
-  - the actual iteration count is 2^_num_cycles_power
+- the layout of _b0, _b1, salt and nonce is the same as for XChaCha20 (0x6F10702)
+- the encoder writes no salt and a 24-byte nonce, so its properties are 42 bytes:
+  _b0 = NumCyclesPower | 0x40, _b1 = 0x07, nonce[24], tag[16]
+- the Poly1305 one-time key is the first 32 bytes of the XChaCha20 block with
+  counter 0 (subkey, nonce[16..23]); the data is encrypted from counter 1
+- the tag authenticates the properties without the tag (_b0, _b1, salt, nonce)
+  and the ciphertext; the Poly1305 input is:
+    AAD full blocks || ciphertext full blocks ||
+    pad1(AAD tail) || pad1(ciphertext tail) || LE64(|AAD|) || LE64(|ciphertext|)
+  where pad1 appends 0x01 followed by zeros up to 16 bytes
 
 Encryption Integrator: fzxx
 - Homepage: https://github.com/fzxx
@@ -394,27 +401,33 @@ Range 6F 10 704, AES+XChaCha20-Poly1305 (AXP)
 Description:
 AES+XChaCha20-Poly1305 (AXP) is a cascade cipher that applies AES-256-CTR and
 XChaCha20 sequentially, with Poly1305 providing authentication. The cascade
-construction uses three independent subkeys derived from the user's password:
-a 32-byte AES key, a 32-byte XChaCha20 key, and a 32-byte Poly1305 one-time
-key (derived from XChaCha20). The 96-byte cascade key is derived using
-PBKDF2-HMAC-SHA512 and then split into individual subkeys via HKDF-BLAKE2sp.
+construction uses two subkeys derived from the user's password via
+HKDF-BLAKE2sp: a 32-byte AES key and a 32-byte XChaCha20 key. The 32-byte
+Poly1305 one-time key is the first 32 bytes of the XChaCha20 block with
+counter 0. The 96-byte cascade key is derived using PBKDF2-HMAC-SHA512.
 
 License:
 The AES+XChaCha20-Poly1305 implementation is provided as open source software
 using the GNU LGPL v2.1+ license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 2 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
 ``` C
- Byte _derivation_mode;  // 1 = PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
- Byte _num_cycles_power; // key derivation iterations = 2^value
+ Byte _b0;              // NumCyclesPower | 0x80 (salt present) | 0x40 (long nonce)
+ Byte _b1;              // ((salt_size - 1) << 3) & 0xF8
+ Byte _salt[32];        // random salt
+ Byte _aes_iv[16];      // AES-256-CTR initial vector
+ Byte _xc_nonce[24];    // XChaCha20 nonce
+ Byte _tag[16];         // Poly1305 authentication tag
 ```
-- _derivation_mode specifies the key derivation function used
-  - 1: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (cascade mode)
-- _num_cycles_power specifies the number of iterations for key derivation
-  - the actual iteration count is 2^_num_cycles_power
+- bits 0..5 of _b0: key derivation iterations = 2^value (0x3F disables the KDF)
+- salt_size = ((_b1 >> 3) & 0x1F) + 1 (the encoder writes 32)
+- the Poly1305 one-time key is the first 32 bytes of the XChaCha20 block with
+  counter 0 (subkey, xc_nonce[16..23]); the data is encrypted from counter 1
+- the tag authenticates the properties without the tag (_b0, _b1, salt,
+  aes_iv, xc_nonce) and the ciphertext; the Poly1305 input is:
+    AAD full blocks || ciphertext full blocks ||
+    pad1(AAD tail) || pad1(ciphertext tail) || LE64(|AAD|) || LE64(|ciphertext|)
+  where pad1 appends 0x01 followed by zeros up to 16 bytes
 
 Algorithm author: fzxx (cascade design)
 - AES-256: NIST FIPS-197
@@ -429,7 +442,8 @@ Encryption Integrator: fzxx
 
 Modes:
 - key derivation uses PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (96-byte cascade key)
-- the cascade key is split into three 32-byte subkeys for AES, XChaCha20, and Poly1305
+- the cascade key is split into 32-byte AES and XChaCha20 subkeys via HKDF-BLAKE2sp
+- the Poly1305 one-time key is the first 32 bytes of the XChaCha20 keystream block 0
 - encryption: data is first encrypted with AES-256-CTR, then with XChaCha20
 - authentication via Poly1305 MAC (16-byte tag)
 - decryption verifies the authentication tag and reports error on mismatch
@@ -443,30 +457,33 @@ Range 6F 10 705, AES+XChaCha20+Ascon (AXA)
 
 Description:
 AES+XChaCha20+Ascon (AXA) is a cascade cipher that applies AES-256-CTR and
-XChaCha20 sequentially, with Ascon-128a providing authentication. Ascon is the
-winner of the NIST Lightweight Cryptography standardization project (February
-2023). It provides lightweight authenticated encryption suitable for constrained
-environments. The cascade construction uses three independent subkeys derived
-from the user's password: a 32-byte AES key, a 32-byte XChaCha20 key, and a
-16-byte Ascon key. The 96-byte cascade key is derived using PBKDF2-HMAC-SHA512
-and then split into individual subkeys via HKDF-BLAKE2sp.
+XChaCha20 sequentially, with Ascon providing authentication. The Ascon layer is
+Ascon-AEAD128 from NIST SP 800-232 (the NIST Lightweight Cryptography standard),
+using a 128-bit key, a 128-bit nonce and a 128-bit tag. The cascade construction
+uses a 32-byte AES key, a 32-byte XChaCha20 key and a 16-byte Ascon key derived
+from the user's password. The 96-byte cascade key is derived using
+PBKDF2-HMAC-SHA512 and then split into individual subkeys via HKDF-BLAKE2sp.
 
 License:
 The AES+XChaCha20+Ascon implementation is provided as open source software
 using the GNU LGPL v2.1+ license.
 
 7-Zip Container Header:
-This header is mandatory and must be exact 2 bytes. The data within that header
-is for informational purposes only and not used by the decoder. If the header
-is not there, or has another size, the decoder will not decompress the content.
 ``` C
- Byte _derivation_mode;  // 1 = PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp
- Byte _num_cycles_power; // key derivation iterations = 2^value
+ Byte _b0;                // NumCyclesPower | 0x80 (salt present) | (nonce_type << 6)
+ Byte _b1;                // ((salt_size - 1) << 3) & 0xF8
+ Byte _salt[32];          // random salt
+ Byte _aes_iv[16];        // AES-256-CTR initial vector
+ Byte _xc_nonce[24];      // XChaCha20 nonce
+ Byte _ascon_nonce[16];   // Ascon nonce
+ Byte _tag[16];           // Ascon authentication tag
 ```
-- _derivation_mode specifies the key derivation function used
-  - 1: PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (cascade mode)
-- _num_cycles_power specifies the number of iterations for key derivation
-  - the actual iteration count is 2^_num_cycles_power
+- bits 0..5 of _b0: key derivation iterations = 2^value (0x3F disables the KDF)
+- salt_size = ((_b1 >> 3) & 0x1F) + 1 (the encoder writes 32)
+- nonce_type (bit 6 of _b0) must be 0, the Ascon nonce is always 16 bytes
+- the Ascon layer uses the Ascon-AEAD128 IV 0x00001000808C0001 and absorbs the
+  properties (without the tag) as associated data before the data
+- the tag authenticates the properties (without the tag) and the ciphertext
 
 Algorithm author: fzxx (cascade design)
 - AES-256: NIST FIPS-197
@@ -483,6 +500,8 @@ Cascade Modes:
 - key derivation uses PBKDF2-HMAC-SHA512 + HKDF-BLAKE2sp (96-byte cascade key), subkeys are independently derived from the cascade key via HKDF-BLAKE2sp with unique info strings.
 - AES hardware acceleration (AES-NI) is used when available
 - XChaCha20 SIMD acceleration: SSE2, AVX2, ARM NEON
+- encryption: data is first encrypted with AES-256-CTR, then with XChaCha20, then with Ascon
+- decryption: the layers are removed in the reverse order
 - Ascon SIMD acceleration: SSE2, AVX-512, ARM NEON
 
 

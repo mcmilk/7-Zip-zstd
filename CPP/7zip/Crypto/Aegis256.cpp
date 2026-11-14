@@ -17,10 +17,6 @@
 namespace NCrypto {
 namespace NAegis256 {
 
-AEGIS256_UPDATE_FUNC g_Aegis256_Update = NULL;
-AEGIS256_BLOCKS_FUNC g_Aegis256_EncBlocks = NULL;
-AEGIS256_BLOCKS_FUNC g_Aegis256_DecBlocks = NULL;
-
 // AEGIS constants C0 and C1
 static const Byte kC0[kBlockSize] =
   { 0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d, 0x15, 0x22, 0x37, 0x59, 0x90, 0xe9, 0x79, 0x62 };
@@ -141,15 +137,17 @@ static void Z7_FASTCALL Aegis256_DecryptBlocks_Soft(Byte *state, Byte *data, siz
   while (--numBlocks);
 }
 
-void Aegis256_InitFuncs(void)
+/*
+  The portable AES round is correct on any CPU, so these pointers are
+  initialized statically and are never NULL. Aegis256_InitFuncs() can only
+  replace them with the hardware versions.
+*/
+AEGIS256_UPDATE_FUNC g_Aegis256_Update = Aegis256_UpdateBlock_Soft;
+AEGIS256_BLOCKS_FUNC g_Aegis256_EncBlocks = Aegis256_EncryptBlocks_Soft;
+AEGIS256_BLOCKS_FUNC g_Aegis256_DecBlocks = Aegis256_DecryptBlocks_Soft;
+
+static bool Aegis256_InitHW()
 {
-  if (g_Aegis256_Update)
-    return;
-
-  g_Aegis256_Update = Aegis256_UpdateBlock_Soft;
-  g_Aegis256_EncBlocks = Aegis256_EncryptBlocks_Soft;
-  g_Aegis256_DecBlocks = Aegis256_DecryptBlocks_Soft;
-
 #ifdef AEGIS256_USE_HW_AES
   if (CPU_IsSupported_AES())
   {
@@ -158,6 +156,14 @@ void Aegis256_InitFuncs(void)
     g_Aegis256_DecBlocks = Aegis256_DecryptBlocks_HW;
   }
 #endif
+  return true;
+}
+
+void Aegis256_InitFuncs(void)
+{
+  // the hardware detection is done once
+  static const bool initialized = Aegis256_InitHW();
+  UNUSED_VAR(initialized)
 }
 
 // ---------- cipher ----------

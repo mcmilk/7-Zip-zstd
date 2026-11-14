@@ -37,8 +37,25 @@ class CPoly1305
 
   void PadAndProcessBlock(Byte *buf, unsigned bufPos);
   void ProcessBlocks(Byte *buf, unsigned &bufPos, UInt64 &len, const Byte *data, UInt32 size);
+
+  // wipes key material; volatile access keeps the stores alive
+  static void WipeBytes(void *data, size_t size)
+  {
+    volatile Byte *p = (volatile Byte *)(void *)data;
+    for (size_t i = 0; i < size; i++)
+      p[i] = 0;
+  }
 public:
   CPoly1305();
+  ~CPoly1305()
+  {
+    WipeBytes(_r, sizeof(_r));
+    WipeBytes(_s, sizeof(_s));
+    WipeBytes(_h, sizeof(_h));
+    WipeBytes(_n, sizeof(_n));
+    WipeBytes(_block, sizeof(_block));
+    WipeBytes(_aadBlock, sizeof(_aadBlock));
+  }
   void SetKey(const Byte *key);
   void Update(const Byte *data, UInt32 size);
   void UpdateAad(const Byte *data, UInt32 size);
@@ -59,7 +76,7 @@ protected:
 
   Byte _polyKey[kPolyKeySize];
   CPoly1305 _poly1305;
-  Byte _aad[2 + 16 + kNonceSize];
+  Byte _aad[2 + N7zKeyDerivation::kSaltSizeMax + kNonceSize];
   unsigned _aadSize;
 
   void DeriveKey() override;
