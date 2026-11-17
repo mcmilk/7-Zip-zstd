@@ -250,12 +250,12 @@ static const EMethodID g_7zMethods[] =
 
 static const EMethodID g_7zSfxMethods[] =
 {
-  kCopy,
   kLZMA,
   kLZMA2,
   kPPMd,
   kFLZMA2,
-  kZSTD
+  kZSTD,
+  kCopy
 };
 
 static const EMethodID g_ZipMethods[] =
@@ -1450,7 +1450,7 @@ bool CCompressDialog::OnCommand(unsigned code, unsigned itemID, LPARAM lParam)
       {
         Get_FormatOptions().ResetForLevelChange();
 
-        //SetMethod();
+        SetMethod(GetMethodID());
         MethodChanged();
         SetSolidBlockSize();
         SetNumThreads();
@@ -1798,6 +1798,21 @@ void CCompressDialog::SetMethod2(int keepMethodId)
   _auto_MethodId = -1;
   const CFormatInfo &fi = g_Formats[GetStaticFormatIndex()];
   const CArcInfoEx &ai = Get_ArcInfoEx();
+  // if level 0 - switch to raw copy method (if containers allows):
+  if (GetLevel() == 0 && !ai.Flags_HashHandler())
+  {
+    if ((ai.Is_7z() || ai.Is_Zip())) {
+      // if level 0 of method is not supported natively:
+      int m = keepMethodId != -1 ? keepMethodId : GetMethodID();
+      switch (m) {
+        case kBROTLI: // brotli has level 0 too
+        case -1:      // unknown (would be loaded from registry)
+        break;
+        default:
+          keepMethodId = kCopy;
+      }
+    }
+  }
   UString defaultMethod;
   int defaultLevel = 5;
   {
@@ -1823,12 +1838,7 @@ void CCompressDialog::SetMethod2(int keepMethodId)
       methodID = fi.MethodIDs[m];
       method = kMethodsNames[methodID];
       methodLong = kMethodsNamesLong[methodID];
-      if (is7z)
-      if (methodID == kCopy
-          || methodID == kDeflate
-          || methodID == kDeflate64
-          )
-        continue;
+      if (is7z && (methodID == kDeflate || methodID == kDeflate64)) continue;
     }
     else
     {
@@ -1879,6 +1889,9 @@ void CCompressDialog::SetMethod2(int keepMethodId)
     }
     ComprMethodChanged();
     MethodChanged();
+  }
+  if (GetMethodID() == kCopy) {
+    SetLevel(false);
   }
 }
 

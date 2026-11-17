@@ -216,11 +216,11 @@ public:
   void SetNearestSelectComboBox(NWindows::NControl::CComboBox &comboBox, UInt32 value);
 
   void SetLevel2();
-  void SetLevel()
+  void SetLevel(bool withMethod=true)
   {
     SetLevel2();
     EnableMultiCombo(IDC_COMPRESS_LEVEL);
-    SetMethod();
+    if (withMethod) SetMethod();
   }
   
   void SetMethod2(int keepMethodId);
