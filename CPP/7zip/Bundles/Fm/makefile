@@ -1,4 +1,4 @@
-PROG = 7zFM.exe
+PROG = 7zFMa.exe
 
 CFLAGS = $(CFLAGS) -DZ7_EXTERNAL_CODECS
 

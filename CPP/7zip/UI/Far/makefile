@@ -19,9 +19,13 @@ CURRENT_OBJS = \
   $O\ProgressBox.obj \
   $O\UpdateCallbackFar.obj \
 
+FM_OBJS = \
+  $O\RegistryUtils.obj \
+
 COMMON_OBJS = \
   $O\DynLimBuf.obj \
   $O\IntToString.obj \
+  $O\MyWindows.obj \
   $O\NewHandler.obj \
   $O\MyString.obj \
   $O\StringConvert.obj \

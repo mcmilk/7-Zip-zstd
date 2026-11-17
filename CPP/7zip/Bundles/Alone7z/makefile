@@ -15,6 +15,7 @@ COMMON_OBJS = \
   $O\CRC.obj \
   $O\CrcReg.obj \
   $O\DynLimBuf.obj \
+  $O\MyWindows.obj \
   $O\IntToString.obj \
   $O\ListFileUtils.obj \
   $O\LzFindPrepare.obj \
@@ -30,6 +31,19 @@ COMMON_OBJS = \
   $O\Wildcard.obj \
   $O\XzCrc64Init.obj \
   $O\XzCrc64Reg.obj \
+  
+FASTLZMA2_OBJS = \
+  $O\dict_buffer.obj \
+  $O\fl2_common.obj \
+  $O\fl2_compress.obj \
+  $O\fl2_pool.obj \
+  $O\fl2_threading.obj \
+  $O\lzma2_enc.obj \
+  $O\radix_bitpack.obj \
+  $O\radix_mf.obj \
+  $O\radix_struct.obj \
+  $O\range_enc.obj \
+  $O\util.obj \
 
 WIN_OBJS = \
   $O\DLL.obj \
@@ -171,8 +185,8 @@ C_OBJS = \
 
 COMMON_OBJS = \
   $(COMMON_OBJS) \
-  $O/XXH32Reg.o \
-  $O/XXH64Reg.o \
+  $O/XXH32Reg.obj \
+  $O/XXH64Reg.obj \
 
 HASHES_OBJS = \
   $O\xxh_x86dispatch.obj \

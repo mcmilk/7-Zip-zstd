@@ -10,9 +10,13 @@ IF "%~1" == "-no-init" (
   IF "%ZIP7_DARKMODE%" == "" set ZIP7_DARKMODE=1
   set > %APPVEYOR_BUILD_FOLDER%\env-%VC%-%PLATFORM%.txt
 )
-set BUILD_EXTR=
+set BUILD_EXTR=0
 IF "%~1" == "-with-sfx-setup" (
-  set BUILD_EXTR=%~1
+  set BUILD_EXTR=1
+  shift
+)
+IF "%~1" == "-all" (
+  set BUILD_EXTR=2
   shift
 )
 set BUILD_TYPE=%~1
@@ -44,7 +48,13 @@ call :build Bundles\Codec_flzma2        flzma2.dll                         || (I
 call :build ..\..\C\Util\7zipInstall    7zipInstall.exe    Install.exe     || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 call :build ..\..\C\Util\7zipUninstall  7zipUninstall.exe  Uninstall.exe   || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 
-IF "%BUILD_EXTR%" == "-with-sfx-setup" (
+IF %BUILD_EXTR% GEQ 2 (
+  call :build Bundles\Format7zR         7zra.dll                           || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+  call :build UI\Far                    7-ZipFar.dll                       || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+  call :build Bundles\Fm                7zFMa.exe                          || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+)
+
+IF %BUILD_EXTR% GEQ 1 (
   del /s /q %ROOT%\Bundles\SFXSetup\%PLATFORM% > NUL:
   call :build Bundles\SFXSetup          7zS.sfx                            || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
   set MY_DYNAMIC_LINK=1
@@ -60,6 +70,11 @@ call :build UI\Console                  7z.exe                             || (I
 call :build Bundles\SFXCon              7zCon.sfx                          || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 call :build Bundles\Alone               7za.exe                            || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
 call :build Bundles\Alone2              7zz.exe                            || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+
+IF %BUILD_EXTR% GEQ 2 (
+  call :build UI\Client7z               7zcl.exe                           || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+  call :build Bundles\Alone7z           7zr.exe                            || (IF %STOP_ON_ERROR% NEQ 0 goto ende)
+)
 
 :ende
 cd %ROOT%\..

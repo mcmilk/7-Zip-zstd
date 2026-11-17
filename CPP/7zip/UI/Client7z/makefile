@@ -6,6 +6,7 @@ CURRENT_OBJS = \
 
 COMMON_OBJS = \
   $O\IntToString.obj \
+  $O\MyWindows.obj \
   $O\NewHandler.obj \
   $O\MyString.obj \
   $O\MyVector.obj \
