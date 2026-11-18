@@ -1,7 +1,8 @@
+// Modified 2026-11-18: optional opening of dropped .7z archives.
 // #define g1xs 60
 // #include "MemDialogRes.h"
 
-#define save_y 144
+#define save_y 164
 #define spin_y (save_y + 12)
 #define spin_x_size 50
 
@@ -16,7 +17,9 @@ BEGIN
 
   MY_CONTROL_CHECKBOX ( "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     m, 100, xc)
 
-  MY_CONTROL_CHECKBOX ( "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        m, 122, xc)
+  MY_CONTROL_CHECKBOX ( "Open dropped .7z archives for &editing", IDX_SETTINGS_OPEN_7Z_ON_DROP, m, 114, xc)
+  MY_CONTROL_CHECKBOX ( "Grant Linux e&xecute permission (ELF and .sh)", IDX_SETTINGS_LINUX_EXECUTABLES, m, 128, xc)
+  MY_CONTROL_CHECKBOX ( "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        m, 142, xc)
 
   LTEXT "Maximum amount of RAM memory usage allowed to unpack archives:",
         IDT_MEM_USAGE_EXTRACT, m, save_y, xc, 8
@@ -31,11 +34,11 @@ BEGIN
   // COMBOBOX  IDC_SETTINGS_MEM, m , 152, g1xs, yc - 152, MY_COMBO
   // LTEXT     "/ RAM", IDT_SETTINGS_MEM_RAM, m + g1xs + m, 154, xc - g1xs - m, MY_TEXT_NOPREFIX
 
-  MY_CONTROL_CHECKBOX ( "Want ArcHistory",    IDX_SETTINGS_WANT_ARC_HISTORY,        m, 172, xc)
-  MY_CONTROL_CHECKBOX ( "Want PathHistory",   IDX_SETTINGS_WANT_PATH_HISTORY,       m, 184, xc)
-  MY_CONTROL_CHECKBOX ( "Want CopyHistory",   IDX_SETTINGS_WANT_COPY_HISTORY,       m, 196, xc)
-  MY_CONTROL_CHECKBOX ( "Want FolderHistory", IDX_SETTINGS_WANT_FOLDER_HISTORY,     m, 208, xc)
-  MY_CONTROL_CHECKBOX ( "Use Lowercase Hashes", IDX_SETTINGS_LOWERCASE_HASHES,      m, 220, xc)
+  MY_CONTROL_CHECKBOX ( "Want ArcHistory",    IDX_SETTINGS_WANT_ARC_HISTORY,        m, 192, xc)
+  MY_CONTROL_CHECKBOX ( "Want PathHistory",   IDX_SETTINGS_WANT_PATH_HISTORY,       m, 204, xc)
+  MY_CONTROL_CHECKBOX ( "Want CopyHistory",   IDX_SETTINGS_WANT_COPY_HISTORY,       m, 216, xc)
+  MY_CONTROL_CHECKBOX ( "Want FolderHistory", IDX_SETTINGS_WANT_FOLDER_HISTORY,     m, 228, xc)
+  MY_CONTROL_CHECKBOX ( "Use Lowercase Hashes", IDX_SETTINGS_LOWERCASE_HASHES,      m, 240, xc)
 
 #ifdef ZIP7_DARKMODE
   LTEXT "Color Mode:", IDT_COLOR_MODE, m, save_y + 22 + 76, xc, 8

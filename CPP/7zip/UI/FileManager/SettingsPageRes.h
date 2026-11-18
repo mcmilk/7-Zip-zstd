@@ -1,3 +1,4 @@
+// Modified 2026-11-18: optional opening of dropped .7z archives.
 #define IDD_SETTINGS     2500
 #define IDD_SETTINGS_2  12500
 
@@ -14,6 +15,8 @@
 #define IDX_SETTINGS_WANT_COPY_HISTORY      2511
 #define IDX_SETTINGS_WANT_FOLDER_HISTORY    2512
 #define IDX_SETTINGS_LOWERCASE_HASHES       2513
+#define IDX_SETTINGS_OPEN_7Z_ON_DROP         2514
+#define IDX_SETTINGS_LINUX_EXECUTABLES       2515
 
 #define IDT_MEM_USAGE_EXTRACT               7816
 

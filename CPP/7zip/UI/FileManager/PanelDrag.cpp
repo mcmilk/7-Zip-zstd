@@ -1,4 +1,5 @@
 // PanelDrag.cpp
+// Modified 2026-11-18: optional opening of dropped .7z archives.
 
 #include "StdAfx.h"
 
@@ -16,6 +17,7 @@
 #include "../../../Windows/MemoryGlobal.h"
 #include "../../../Windows/Menu.h"
 #include "../../../Windows/FileDir.h"
+#include "../../../Windows/FileFind.h"
 #include "../../../Windows/FileName.h"
 #include "../../../Windows/Shell.h"
 
@@ -29,6 +31,7 @@
 #include "EnumFormatEtc.h"
 #include "FormatUtils.h"
 #include "LangUtils.h"
+#include "RegistryUtils.h"
 
 #include "resource.h"
 #include "../Explorer/resource.h"
@@ -399,6 +402,7 @@ class CDropTarget Z7_final:
   bool m_PanelDropIsAllowed; // = false, if current target_panel is source_panel.
                              // check it only if m_DropIsAllowed == true
                              // we use it to show icon effect that drop is not allowed here.
+  bool m_Open7zOnDrop;
   
   CMyComPtr<IDataObject> m_DataObject; // we set it in DragEnter()
   UStringVector m_SourcePaths;
@@ -1810,6 +1814,7 @@ CDropTarget::CDropTarget():
       m_GetTransfer_WasSuccess(false),
       m_DropIsAllowed(false),
       m_PanelDropIsAllowed(false),
+      m_Open7zOnDrop(false),
       // m_DropHighlighted_SelectionIndex(-1),
       // m_SubFolderIndex(-1),
       m_Panel(NULL),
@@ -1835,6 +1840,7 @@ void CDropTarget::ClearState()
 {
   m_DataObject.Release();
   m_SourcePaths.Clear();
+  m_Open7zOnDrop = false;
 
   m_IsRightButton = false;
 
@@ -2150,6 +2156,8 @@ DWORD CDropTarget::GetEffect(DWORD keyState, POINTL /* pt */, DWORD allowedEffec
   // (DROPEFFECT_NONE == 0)
   if (!m_DropIsAllowed || !m_PanelDropIsAllowed)
     return 0;
+  if (m_Open7zOnDrop && m_Panel && !m_IsRightButton && !m_TargetPath_WasSent_ToDataObject)
+    return allowedEffect & DROPEFFECT_COPY;
   if (!IsFsFolderPath() || !m_TargetPath_WasSent_ToDataObject)
   {
     // we don't allow MOVE, if Target is archive or Source is not 7-Zip
@@ -2384,6 +2392,23 @@ void CDropTarget::LoadNames_From_DataObject(IDataObject *dataObject)
 {
   // "\\\\.\\" prefix is possible for long names
   m_DropIsAllowed = NShell::DataObject_GetData_HDROP_or_IDLIST_Names(dataObject, m_SourcePaths) == S_OK;
+  m_Open7zOnDrop = false;
+  if (m_DropIsAllowed && m_SourcePaths.Size() == 1)
+  {
+    const UString &path = m_SourcePaths[0];
+    const unsigned len = path.Len();
+    if (len >= 3 && path[len - 3] == L'.' && path[len - 2] == L'7'
+        && (path[len - 1] == L'z' || path[len - 1] == L'Z'))
+    {
+      CFmSettings settings;
+      settings.Load();
+      if (settings.Open7zOnDrop)
+      {
+        NFind::CFileInfo info;
+        m_Open7zOnDrop = info.Find(us2fs(path)) && !info.IsDir();
+      }
+    }
+  }
 }
 
 
@@ -2526,6 +2551,20 @@ Z7_COMWF_B CDropTarget::Drop(IDataObject *dataObject, DWORD keyState,
   
   CPanel::CDisableTimerProcessing2 disableTimerProcessing(m_Panel);
   // CDisableNotify disableNotify2(m_Panel);
+
+  if (m_Open7zOnDrop && m_Panel && m_PanelDropIsAllowed
+      && !m_IsRightButton && !m_TargetPath_WasSent_ToDataObject
+      && (*effect & DROPEFFECT_COPY))
+  {
+    RemoveSelection();
+    hres = m_Panel->BindToPathAndRefresh(m_SourcePaths[0]);
+    if (hres == S_OK)
+      m_Panel->SetFocusToList();
+    // Never report MOVE: Explorer can delete the original archive after Drop().
+    *effect = hres == S_OK ? DROPEFFECT_COPY : DROPEFFECT_NONE;
+    ClearState();
+    return hres;
+  }
 
   UInt32 cmd = NDragMenu::k_None;
   UInt32 cmdEffect = DROPEFFECT_NONE;

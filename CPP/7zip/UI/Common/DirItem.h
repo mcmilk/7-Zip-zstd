@@ -1,4 +1,5 @@
 // DirItem.h
+// Modified 2026-11-18: optional POSIX permission metadata for Windows GUI archives.
 
 #ifndef ZIP7_INC_DIR_ITEM_H
 #define ZIP7_INC_DIR_ITEM_H
@@ -248,6 +249,9 @@ struct CDirItem: public NWindows::NFile::NFind::CFileInfoBase
   void Copy_From_FileInfoBase(const NWindows::NFile::NFind::CFileInfoBase &fi)
   {
     (NWindows::NFile::NFind::CFileInfoBase &)*this = fi;
+   #ifdef _WIN32
+    PosixModeOverride = 0;
+   #endif
   }
 
   int PhyParent;
@@ -255,6 +259,19 @@ struct CDirItem: public NWindows::NFile::NFind::CFileInfoBase
   int SecureIndex;
 
  #ifdef _WIN32
+  UInt32 PosixModeOverride;
+
+  UInt32 GetWinAttrib() const
+  {
+    const UInt32 attrib = CFileInfoBase::GetWinAttrib();
+    // 7z stores a POSIX mode in the high word, with the Unix-extension marker.
+    return PosixModeOverride ? (attrib & 0xFFFF) | 0x8000 | (PosixModeOverride << 16) : attrib;
+  }
+
+  UInt32 GetPosixAttrib() const
+  {
+    return PosixModeOverride ? PosixModeOverride : CFileInfoBase::GetPosixAttrib();
+  }
  #else
   int OwnerNameIndex;
   int OwnerGroupIndex;
@@ -267,6 +284,7 @@ struct CDirItem: public NWindows::NFile::NFind::CFileInfoBase
     , LogParent(-1)
     , SecureIndex(-1)
    #ifdef _WIN32
+    , PosixModeOverride(0)
    #else
     , OwnerNameIndex(-1)
     , OwnerGroupIndex(-1)
@@ -287,6 +305,7 @@ struct CDirItem: public NWindows::NFile::NFind::CFileInfoBase
     , LogParent(logParent)
     , SecureIndex(secureIndex)
    #ifdef _WIN32
+    , PosixModeOverride(0)
    #else
     , OwnerNameIndex(-1)
     , OwnerGroupIndex(-1)

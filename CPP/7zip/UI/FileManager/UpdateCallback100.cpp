@@ -1,4 +1,5 @@
 // UpdateCallback100.cpp
+// Modified 2026-11-18: optional Linux executable permissions for GUI archives.
 
 #include "StdAfx.h"
 
@@ -7,7 +8,18 @@
 #include "../GUI/resource3.h"
 
 #include "LangUtils.h"
+#include "RegistryUtils.h"
 #include "UpdateCallback100.h"
+
+Z7_COM7F_IMF(CUpdateCallback100Imp::GetLinuxExecutablePermissions(Int32 *enabled))
+{
+  if (!enabled)
+    return E_POINTER;
+  CFmSettings settings;
+  settings.Load();
+  *enabled = settings.LinuxExecutablePermissions ? 1 : 0;
+  return S_OK;
+}
 
 Z7_COM7F_IMF(CUpdateCallback100Imp::ScanProgress(UInt64 /* numFolders */, UInt64 numFiles, UInt64 totalSize, const wchar_t *path, Int32 /* isDir */))
 {

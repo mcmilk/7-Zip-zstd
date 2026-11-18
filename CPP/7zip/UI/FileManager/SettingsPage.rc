@@ -1,8 +1,9 @@
 #include "SettingsPageRes.h"
+// Modified 2026-11-18: optional Linux executable permissions for GUI archives.
 #include "../../GuiCommon.rc"
 
 #define xc OPTIONS_PAGE_XC_SIZE
-#define yc OPTIONS_PAGE_YC_SIZE
+#define yc (OPTIONS_PAGE_YC_SIZE + 16)
 
 IDD_SETTINGS  MY_PAGE
 #include "SettingsPage2.rc"

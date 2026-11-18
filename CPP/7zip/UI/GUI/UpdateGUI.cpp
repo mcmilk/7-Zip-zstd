@@ -1,4 +1,5 @@
 // UpdateGUI.cpp
+// Modified 2026-11-18: load the optional Linux executable permission setting.
 
 #include "StdAfx.h"
 
@@ -16,6 +17,7 @@
 #include "../Explorer/MyMessages.h"
 
 #include "../FileManager/LangUtils.h"
+#include "../FileManager/RegistryUtils.h"
 #include "../FileManager/StringUtils.h"
 #include "../FileManager/resourceGui.h"
 
@@ -552,6 +554,9 @@ HRESULT UpdateGUI(
     HWND hwndParent)
 {
   messageWasDisplayed = false;
+  CFmSettings fmSettings;
+  fmSettings.Load();
+  options.LinuxExecutablePermissions = fmSettings.LinuxExecutablePermissions;
   bool needSetPath  = true;
   if (showDialog)
   {

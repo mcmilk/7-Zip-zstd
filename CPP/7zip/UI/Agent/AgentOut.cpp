@@ -1,4 +1,5 @@
 // AgentOut.cpp
+// Modified 2026-11-18: optional Linux executable permissions for GUI archives.
 
 #include "StdAfx.h"
 
@@ -16,6 +17,7 @@
 
 #include "Agent.h"
 #include "UpdateCallbackAgent.h"
+#include "../Common/LinuxExecutable.h"
 
 using namespace NWindows;
 using namespace NCOM;
@@ -384,6 +386,21 @@ Z7_COM7F_IMF(CAgent::DoOperation(
   
   CUpdateCallbackAgent updateCallbackAgent;
   updateCallbackAgent.SetCallback(updateCallback100);
+ #if defined(_WIN32) && !defined(UNDER_CE)
+  if (updateCallback100 && NLinuxPermissions::IsSupportedFormat(
+      GetArchive() ? ArchiveType : codecs->Formats[formatIndex].Name))
+  {
+    Z7_DECL_CMyComPtr_QI_FROM(IFolderArchiveUpdateCallback_LinuxPermissions,
+        linuxOptions, updateCallback100)
+    if (linuxOptions)
+    {
+      Int32 enabled = 0;
+      RINOK(linuxOptions->GetLinuxExecutablePermissions(&enabled))
+      if (enabled)
+        RINOK(NLinuxPermissions::SetForItems(dirItems, &updateCallbackAgent, updateCallback100))
+    }
+  }
+ #endif
   CMyComPtr2_Create<IArchiveUpdateCallback, CArchiveUpdateCallback> updateCallback;
 
   updateCallback->DirItems = &dirItems;
