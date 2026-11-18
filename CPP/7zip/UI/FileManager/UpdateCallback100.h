@@ -1,4 +1,5 @@
 // UpdateCallback100.h
+// Modified 2026-11-18: optional Linux executable permissions for GUI archives.
 
 #ifndef ZIP7_INC_UPDATE_CALLBACK100_H
 #define ZIP7_INC_UPDATE_CALLBACK100_H
@@ -17,6 +18,7 @@ class CUpdateCallback100Imp Z7_final:
   public IFolderArchiveUpdateCallback,
   public IFolderArchiveUpdateCallback2,
   public IFolderArchiveUpdateCallback_MoveArc,
+  public IFolderArchiveUpdateCallback_LinuxPermissions,
   public IFolderScanProgress,
   public ICryptoGetTextPassword2,
   public ICryptoGetTextPassword,
@@ -25,20 +27,23 @@ class CUpdateCallback100Imp Z7_final:
   public CUpdateCallbackGUI2,
   public CMyUnknownImp
 {
-  Z7_COM_UNKNOWN_IMP_8(
-    IFolderArchiveUpdateCallback,
-    IFolderArchiveUpdateCallback2,
-    IFolderArchiveUpdateCallback_MoveArc,
-    IFolderScanProgress,
-    ICryptoGetTextPassword2,
-    ICryptoGetTextPassword,
-    IArchiveOpenCallback,
-    ICompressProgressInfo)
+  Z7_COM_UNKNOWN_IMP_SPEC(
+    Z7_COM_QI_ENTRY_UNKNOWN(IFolderArchiveUpdateCallback)
+    Z7_COM_QI_ENTRY(IFolderArchiveUpdateCallback)
+    Z7_COM_QI_ENTRY(IFolderArchiveUpdateCallback2)
+    Z7_COM_QI_ENTRY(IFolderArchiveUpdateCallback_MoveArc)
+    Z7_COM_QI_ENTRY(IFolderArchiveUpdateCallback_LinuxPermissions)
+    Z7_COM_QI_ENTRY(IFolderScanProgress)
+    Z7_COM_QI_ENTRY(ICryptoGetTextPassword2)
+    Z7_COM_QI_ENTRY(ICryptoGetTextPassword)
+    Z7_COM_QI_ENTRY(IArchiveOpenCallback)
+    Z7_COM_QI_ENTRY(ICompressProgressInfo))
 
   Z7_IFACE_COM7_IMP(IProgress)
   Z7_IFACE_COM7_IMP(IFolderArchiveUpdateCallback)
   Z7_IFACE_COM7_IMP(IFolderArchiveUpdateCallback2)
   Z7_IFACE_COM7_IMP(IFolderArchiveUpdateCallback_MoveArc)
+  Z7_IFACE_COM7_IMP(IFolderArchiveUpdateCallback_LinuxPermissions)
   Z7_IFACE_COM7_IMP(IFolderScanProgress)
   Z7_IFACE_COM7_IMP(ICryptoGetTextPassword2)
   Z7_IFACE_COM7_IMP(ICryptoGetTextPassword)

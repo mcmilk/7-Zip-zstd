@@ -1,4 +1,5 @@
 // FileStreams.h
+// Modified 2026-11-18: optional POSIX attribute override for Windows archive input.
 
 #ifndef ZIP7_INC_FILE_STREAMS_H
 #define ZIP7_INC_FILE_STREAMS_H
@@ -82,6 +83,13 @@ public:
 
  #ifdef _WIN32
   BY_HANDLE_FILE_INFORMATION _info;
+  UInt32 PosixModeOverride;
+
+  UInt32 GetWinAttribForArchive() const
+  {
+    const UInt32 attrib = _info.dwFileAttributes;
+    return PosixModeOverride ? (attrib & 0xFFFF) | 0x8000 | (PosixModeOverride << 16) : attrib;
+  }
  #else
   struct stat _info;
   uid_t _uid; // uid_t can be unsigned or signed int

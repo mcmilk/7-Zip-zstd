@@ -1,4 +1,5 @@
 // IFolderArchive.h
+// Modified 2026-11-18: optional Linux executable permissions for GUI archives.
 
 #ifndef ZIP7_INC_IFOLDER_ARCHIVE_H
 #define ZIP7_INC_IFOLDER_ARCHIVE_H
@@ -118,6 +119,12 @@ Z7_IFACE_CONSTR_FOLDERARC(IFolderSetZoneIdFile, 0x13)
   x(Before_ArcReopen()) \
 
 Z7_IFACE_CONSTR_FOLDERARC(IFolderArchiveUpdateCallback_MoveArc, 0x14)
+
+// Optional GUI policy; callers that do not expose it retain native metadata.
+#define Z7_IFACEM_IFolderArchiveUpdateCallback_LinuxPermissions(x) \
+  x(GetLinuxExecutablePermissions(Int32 *enabled)) \
+
+Z7_IFACE_CONSTR_FOLDERARC(IFolderArchiveUpdateCallback_LinuxPermissions, 0x15)
 
 Z7_PURE_INTERFACES_END
 #endif

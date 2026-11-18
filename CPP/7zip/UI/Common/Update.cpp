@@ -1,4 +1,5 @@
 // Update.cpp
+// Modified 2026-11-18: optional Linux permission metadata for GUI compression.
 
 #include "StdAfx.h"
 
@@ -32,6 +33,7 @@
 #include "SetProperties.h"
 #include "TempFiles.h"
 #include "UpdateCallback.h"
+#include "LinuxExecutable.h"
 
 static const char * const kUpdateIsNotSupoorted =
   "update operations are not supported for this archive";
@@ -44,6 +46,7 @@ using namespace NCOM;
 using namespace NFile;
 using namespace NDir;
 using namespace NName;
+
 
 #ifdef _WIN32
 static CFSTR const kTempFolderPrefix = FTEXT("7zE");
@@ -1440,6 +1443,11 @@ HRESULT UpdateArchive(
   }
 
   FString tempDirPrefix;
+ #if defined(_WIN32) && !defined(UNDER_CE)
+  if (options.LinuxExecutablePermissions && !options.StdInMode
+      && NLinuxPermissions::IsSupportedFormat(codecs->Formats[options.MethodMode.Type.FormatIndex].Name))
+    RINOK(NLinuxPermissions::SetForItems(dirItems, callback))
+ #endif
   bool usesTempDir = false;
   
   #ifdef _WIN32

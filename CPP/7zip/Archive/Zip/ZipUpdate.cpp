@@ -1,4 +1,5 @@
 // ZipUpdate.cpp
+// Modified 2026-11-18: retain opt-in POSIX modes supplied by Windows GUI callers.
 
 #include "StdAfx.h"
 
@@ -112,6 +113,17 @@ static void SetFileHeader(
   */
 
   item.MadeByVersion.HostOS = kMadeByHostOS;
+ #ifdef _WIN32
+  // The shared Windows input callbacks mark explicitly supplied POSIX modes.
+  // Other Windows entries retain the native FAT host and attribute handling.
+  const UInt32 posixType = (ui.Attrib >> 16) & 0170000;
+  if (ui.NewProps && (ui.Attrib & 0x8000) != 0
+      && (posixType == 0100000 || posixType == 0040000))
+  {
+    item.MadeByVersion.HostOS = NFileHeader::NHostOS::kUnix;
+    item.ExternalAttrib &= ~((UInt32)0x8000);
+  }
+ #endif
   item.MadeByVersion.Version = NFileHeader::NCompressionMethod::kMadeByProgramVersion;
   
   item.ExtractVersion.HostOS = kExtractHostOS;

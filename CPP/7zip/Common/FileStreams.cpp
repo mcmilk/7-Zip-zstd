@@ -1,4 +1,5 @@
 // FileStreams.cpp
+// Modified 2026-11-18: optional POSIX attribute override for Windows archive input.
 
 #include "StdAfx.h"
 
@@ -72,7 +73,9 @@ CInFileStream::CInFileStream():
   Buf(NULL),
   BufSize(0),
  #endif
- #ifndef _WIN32
+ #ifdef _WIN32
+  PosixModeOverride(0),
+ #else
   _uid(0),
   _gid(0),
   StoreOwnerId(false),
@@ -439,7 +442,7 @@ Z7_COM7F_IMF(CInFileStream::GetProps(UInt64 *size, FILETIME *cTime, FILETIME *aT
     if (cTime) *cTime = info.ftCreationTime;
     if (aTime) *aTime = info.ftLastAccessTime;
     if (mTime) *mTime = info.ftLastWriteTime;
-    if (attrib) *attrib = info.dwFileAttributes;
+    if (attrib) *attrib = GetWinAttribForArchive();
     return S_OK;
   }
 }
@@ -462,7 +465,7 @@ Z7_COM7F_IMF(CInFileStream::GetProps2(CStreamFileProps *props))
     props->FileID_Low = (((UInt64)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
     props->FileID_High = 0;
     props->NumLinks = SupportHardLinks ? info.nNumberOfLinks : 1;
-    props->Attrib = info.dwFileAttributes;
+    props->Attrib = GetWinAttribForArchive();
     props->CTime = info.ftCreationTime;
     props->ATime = info.ftLastAccessTime;
     props->MTime = info.ftLastWriteTime;
@@ -522,12 +525,12 @@ Z7_COM7F_IMF(CInFileStream::GetProperty(PROPID propID, PROPVARIANT *value))
         prop = size;
         break;
       }
-      case kpidAttrib:  prop = (UInt32)_info.dwFileAttributes; break;
+      case kpidAttrib:  prop = GetWinAttribForArchive(); break;
       case kpidCTime:  PropVariant_SetFrom_FiTime(prop, _info.ftCreationTime); break;
       case kpidATime:  PropVariant_SetFrom_FiTime(prop, _info.ftLastAccessTime); break;
       case kpidMTime:  PropVariant_SetFrom_FiTime(prop, _info.ftLastWriteTime); break;
       case kpidPosixAttrib:
-        prop = (UInt32)NWindows::NFile::NFind::NAttributes::
+        prop = PosixModeOverride ? PosixModeOverride : (UInt32)NWindows::NFile::NFind::NAttributes::
             Get_PosixMode_From_WinAttrib(_info.dwFileAttributes);
             // | (UInt32)(1 << 21); // for debug
         break;
