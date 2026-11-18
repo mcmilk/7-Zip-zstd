@@ -1,5 +1,5 @@
 // SettingsPage.cpp
-// Modified 2026-11-18: optional opening of dropped .7z archives.
+// Modified 2026-11-18: optional opening of dropped writable archives.
 
 #include "StdAfx.h"
 
@@ -47,7 +47,7 @@ static const UInt32 kLangIDs[] =
   IDX_SETTINGS_WANT_COPY_HISTORY,
   IDX_SETTINGS_WANT_FOLDER_HISTORY,
   IDX_SETTINGS_LOWERCASE_HASHES,
-  IDX_SETTINGS_OPEN_7Z_ON_DROP,
+  IDX_SETTINGS_OPEN_ARCHIVES_ON_DROP,
   IDX_SETTINGS_LINUX_EXECUTABLES,
   IDT_MEM_USAGE_EXTRACT
   // , IDT_COMPRESS_MEMORY
@@ -156,7 +156,7 @@ bool CSettingsPage::OnInit()
   // CheckButton(IDX_SETTINGS_UNDERLINE, st.Underline);
 
   CheckButton(IDX_SETTINGS_SHOW_SYSTEM_MENU, st.ShowSystemMenu);
-  CheckButton(IDX_SETTINGS_OPEN_7Z_ON_DROP, st.Open7zOnDrop);
+  CheckButton(IDX_SETTINGS_OPEN_ARCHIVES_ON_DROP, st.OpenArchivesOnDrop);
   CheckButton(IDX_SETTINGS_LINUX_EXECUTABLES, st.LinuxExecutablePermissions);
   
   if (IsLargePageSupported())
@@ -338,7 +338,7 @@ LONG CSettingsPage::OnApply()
     // st.Underline = IsButtonCheckedBool(IDX_SETTINGS_UNDERLINE);
     
     st.ShowSystemMenu = IsButtonCheckedBool(IDX_SETTINGS_SHOW_SYSTEM_MENU);
-    st.Open7zOnDrop = IsButtonCheckedBool(IDX_SETTINGS_OPEN_7Z_ON_DROP);
+    st.OpenArchivesOnDrop = IsButtonCheckedBool(IDX_SETTINGS_OPEN_ARCHIVES_ON_DROP);
     st.LinuxExecutablePermissions = IsButtonCheckedBool(IDX_SETTINGS_LINUX_EXECUTABLES);
 
     st.Save();
@@ -544,7 +544,7 @@ bool CSettingsPage::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
     case IDX_SETTINGS_WANT_COPY_HISTORY:
     case IDX_SETTINGS_WANT_FOLDER_HISTORY:
     case IDX_SETTINGS_LOWERCASE_HASHES:
-    case IDX_SETTINGS_OPEN_7Z_ON_DROP:
+    case IDX_SETTINGS_OPEN_ARCHIVES_ON_DROP:
     case IDX_SETTINGS_LINUX_EXECUTABLES:
       _wasChanged = true;
       break;

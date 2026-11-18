@@ -1,4 +1,4 @@
-// Modified 2026-11-18: optional opening of dropped .7z archives.
+// Modified 2026-11-18: optional opening of dropped writable archives.
 // #define g1xs 60
 // #include "MemDialogRes.h"
 
@@ -17,7 +17,7 @@ BEGIN
 
   MY_CONTROL_CHECKBOX ( "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     m, 100, xc)
 
-  MY_CONTROL_CHECKBOX ( "Open dropped .7z archives for &editing", IDX_SETTINGS_OPEN_7Z_ON_DROP, m, 114, xc)
+  MY_CONTROL_CHECKBOX ( "Open dropped archives for &editing", IDX_SETTINGS_OPEN_ARCHIVES_ON_DROP, m, 114, xc)
   MY_CONTROL_CHECKBOX ( "Grant Linux e&xecute permission (ELF and .sh)", IDX_SETTINGS_LINUX_EXECUTABLES, m, 128, xc)
   MY_CONTROL_CHECKBOX ( "Use &large memory pages", IDX_SETTINGS_LARGE_PAGES,        m, 142, xc)
 

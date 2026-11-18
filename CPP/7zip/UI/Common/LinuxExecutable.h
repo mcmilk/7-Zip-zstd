@@ -11,7 +11,8 @@ namespace NLinuxPermissions
 {
 inline bool IsSupportedFormat(const UString &name)
 {
-  return name.IsEqualTo_Ascii_NoCase("7z") || name.IsEqualTo_Ascii_NoCase("tar");
+  return name.IsEqualTo_Ascii_NoCase("7z") || name.IsEqualTo_Ascii_NoCase("tar")
+      || name.IsEqualTo_Ascii_NoCase("zip");
 }
 
 inline UInt64 ReadElfInteger(const Byte *p, unsigned size, bool littleEndian)

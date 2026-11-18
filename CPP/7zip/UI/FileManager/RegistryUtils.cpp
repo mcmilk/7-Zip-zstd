@@ -1,5 +1,5 @@
 // RegistryUtils.cpp
-// Modified 2026-11-18: optional opening of dropped .7z archives.
+// Modified 2026-11-18: optional opening of dropped writable archives.
 
 #include "StdAfx.h"
 
@@ -34,7 +34,8 @@ static LPCTSTR const kAlternativeSelection = TEXT("AlternativeSelection");
 // static LPCTSTR const kUnderline = TEXT("Underline");
 
 static LPCTSTR const kShowSystemMenu = TEXT("ShowSystemMenu");
-static LPCTSTR const kOpen7zOnDrop = TEXT("Open7zOnDrop");
+static LPCTSTR const kOpenArchivesOnDrop = TEXT("OpenArchivesOnDrop");
+static LPCTSTR const kLegacyOpen7zOnDrop = TEXT("Open7zOnDrop");
 static LPCTSTR const kLinuxExecutablePermissions = TEXT("LinuxExecutablePermissions");
 
 // static LPCTSTR const kLockMemoryAdd = TEXT("LockMemoryAdd");
@@ -159,7 +160,7 @@ void CFmSettings::Save() const
   // SaveOption(kUnderline, Underline);
 
   SaveOption(kShowSystemMenu, ShowSystemMenu);
-  SaveOption(kOpen7zOnDrop, Open7zOnDrop);
+  SaveOption(kOpenArchivesOnDrop, OpenArchivesOnDrop);
   SaveOption(kLinuxExecutablePermissions, LinuxExecutablePermissions);
 }
 
@@ -184,7 +185,7 @@ void CFmSettings::Load()
   // Underline = false;
 
   ShowSystemMenu = false;
-  Open7zOnDrop = false;
+  OpenArchivesOnDrop = false;
   LinuxExecutablePermissions = false;
 
   CKey key;
@@ -204,7 +205,8 @@ void CFmSettings::Load()
     // ReadOption(key, kUnderline, Underline);
 
     ReadOption(key, kShowSystemMenu, ShowSystemMenu );
-    ReadOption(key, kOpen7zOnDrop, Open7zOnDrop);
+    ReadOption(key, kLegacyOpen7zOnDrop, OpenArchivesOnDrop);
+    ReadOption(key, kOpenArchivesOnDrop, OpenArchivesOnDrop);
     ReadOption(key, kLinuxExecutablePermissions, LinuxExecutablePermissions);
   }
 }

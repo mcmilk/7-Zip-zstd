@@ -1,5 +1,5 @@
 // RegistryUtils.h
-// Modified 2026-11-18: optional opening of dropped .7z archives.
+// Modified 2026-11-18: optional opening of dropped writable archives.
 
 #ifndef ZIP7_INC_REGISTRY_UTILS_H
 #define ZIP7_INC_REGISTRY_UTILS_H
@@ -34,7 +34,7 @@ struct CFmSettings
   // bool Underline;
 
   bool ShowSystemMenu;
-  bool Open7zOnDrop;
+  bool OpenArchivesOnDrop;
   bool LinuxExecutablePermissions;
 
   void Save() const;

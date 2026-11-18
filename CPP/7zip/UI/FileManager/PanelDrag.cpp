@@ -1,5 +1,5 @@
 // PanelDrag.cpp
-// Modified 2026-11-18: optional opening of dropped .7z archives.
+// Modified 2026-11-18: optional opening of dropped writable archives.
 
 #include "StdAfx.h"
 
@@ -24,6 +24,7 @@
 #include "../Common/ArchiveName.h"
 #include "../Common/CompressCall.h"
 #include "../Common/ExtractingFilePath.h"
+#include "../Common/LoadCodecs.h"
 
 #include "MessagesDialog.h"
 
@@ -39,6 +40,8 @@
 using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
+
+extern CCodecs *g_CodecsObj;
 
 #ifndef _UNICODE
 extern bool g_IsNT;
@@ -402,7 +405,7 @@ class CDropTarget Z7_final:
   bool m_PanelDropIsAllowed; // = false, if current target_panel is source_panel.
                              // check it only if m_DropIsAllowed == true
                              // we use it to show icon effect that drop is not allowed here.
-  bool m_Open7zOnDrop;
+  bool m_OpenArchivesOnDrop;
   
   CMyComPtr<IDataObject> m_DataObject; // we set it in DragEnter()
   UStringVector m_SourcePaths;
@@ -1814,7 +1817,7 @@ CDropTarget::CDropTarget():
       m_GetTransfer_WasSuccess(false),
       m_DropIsAllowed(false),
       m_PanelDropIsAllowed(false),
-      m_Open7zOnDrop(false),
+      m_OpenArchivesOnDrop(false),
       // m_DropHighlighted_SelectionIndex(-1),
       // m_SubFolderIndex(-1),
       m_Panel(NULL),
@@ -1840,7 +1843,7 @@ void CDropTarget::ClearState()
 {
   m_DataObject.Release();
   m_SourcePaths.Clear();
-  m_Open7zOnDrop = false;
+  m_OpenArchivesOnDrop = false;
 
   m_IsRightButton = false;
 
@@ -2156,7 +2159,7 @@ DWORD CDropTarget::GetEffect(DWORD keyState, POINTL /* pt */, DWORD allowedEffec
   // (DROPEFFECT_NONE == 0)
   if (!m_DropIsAllowed || !m_PanelDropIsAllowed)
     return 0;
-  if (m_Open7zOnDrop && m_Panel && !m_IsRightButton && !m_TargetPath_WasSent_ToDataObject)
+  if (m_OpenArchivesOnDrop && m_Panel && !m_IsRightButton && !m_TargetPath_WasSent_ToDataObject)
     return allowedEffect & DROPEFFECT_COPY;
   if (!IsFsFolderPath() || !m_TargetPath_WasSent_ToDataObject)
   {
@@ -2392,20 +2395,30 @@ void CDropTarget::LoadNames_From_DataObject(IDataObject *dataObject)
 {
   // "\\\\.\\" prefix is possible for long names
   m_DropIsAllowed = NShell::DataObject_GetData_HDROP_or_IDLIST_Names(dataObject, m_SourcePaths) == S_OK;
-  m_Open7zOnDrop = false;
+  m_OpenArchivesOnDrop = false;
   if (m_DropIsAllowed && m_SourcePaths.Size() == 1)
   {
     const UString &path = m_SourcePaths[0];
-    const unsigned len = path.Len();
-    if (len >= 3 && path[len - 3] == L'.' && path[len - 2] == L'7'
-        && (path[len - 1] == L'z' || path[len - 1] == L'Z'))
+    CFmSettings settings;
+    settings.Load();
+    if (settings.OpenArchivesOnDrop && g_CodecsObj)
     {
-      CFmSettings settings;
-      settings.Load();
-      if (settings.Open7zOnDrop)
+      const int dotPos = path.ReverseFind_Dot();
+      if (dotPos > path.ReverseFind_PathSepar())
       {
-        NFind::CFileInfo info;
-        m_Open7zOnDrop = info.Find(us2fs(path)) && !info.IsDir();
+        const UString ext = path.Ptr((unsigned)(dotPos + 1));
+        if (!ext.IsEmpty())
+        FOR_VECTOR (i, g_CodecsObj->Formats)
+        {
+          const CArcInfoEx &format = g_CodecsObj->Formats[i];
+          if (format.UpdateEnabled && !format.Flags_HashHandler()
+              && format.FindExtension(ext) >= 0)
+          {
+            NFind::CFileInfo info;
+            m_OpenArchivesOnDrop = info.Find(us2fs(path)) && !info.IsDir();
+            break;
+          }
+        }
       }
     }
   }
@@ -2552,7 +2565,7 @@ Z7_COMWF_B CDropTarget::Drop(IDataObject *dataObject, DWORD keyState,
   CPanel::CDisableTimerProcessing2 disableTimerProcessing(m_Panel);
   // CDisableNotify disableNotify2(m_Panel);
 
-  if (m_Open7zOnDrop && m_Panel && m_PanelDropIsAllowed
+  if (m_OpenArchivesOnDrop && m_Panel && m_PanelDropIsAllowed
       && !m_IsRightButton && !m_TargetPath_WasSent_ToDataObject
       && (*effect & DROPEFFECT_COPY))
   {
