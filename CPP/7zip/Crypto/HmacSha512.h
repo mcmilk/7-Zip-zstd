@@ -18,7 +18,25 @@ class CHmac
 {
   CSha512 _sha;
   CSha512 _sha2;
+
+  // wipes key material; volatile access keeps the stores alive
+  static void WipeObj(CSha512 &s)
+  {
+    volatile Byte *p = (volatile Byte *)(void *)&s;
+    for (size_t i = 0; i < sizeof(s); i++)
+      p[i] = 0;
+  }
 public:
+  CHmac() {}
+#ifdef Z7_CPP_IS_SUPPORTED_default
+  CHmac(const CHmac &) = default;
+  CHmac &operator=(const CHmac &) = default;
+#endif
+  ~CHmac()
+  {
+    WipeObj(_sha);
+    WipeObj(_sha2);
+  }
   void SetKey(const Byte *key, size_t keySize);
   void Update(const Byte *data, size_t dataSize) { Sha512_Update(&_sha, data, dataSize); }
   void Final(Byte *mac);
