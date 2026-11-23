@@ -297,8 +297,10 @@ Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream,
     if (ZSTD_isError(err)) return E_INVALIDARG;
 
     /* setup thread count */
+    #ifdef ZSTD_MULTITHREAD
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_nbWorkers, _numThreads);
     if (ZSTD_isError(err)) return E_INVALIDARG;
+    #endif
 
     /* set the content size flag */
     err = ZSTD_CCtx_setParameter(_ctx, ZSTD_c_contentSizeFlag, 1);
