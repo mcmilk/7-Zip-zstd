@@ -184,6 +184,15 @@ HRESULT CFastEncoder::FastLzma2::SetCoderProperties(const PROPID *propIDs, const
   {
     RINOK(SetLzma2Prop(propIDs[i], coderProps[i], lzma2Props));
   }
+  // -mmt=on arrives as INT_MAX ("use all CPUs"). Fast LZMA2 clamps that to
+  // FL2_MAXTHREADS (200) and allocates a full per-thread encoder context for
+  // each, using far more memory than intended. Normalize like stock LZMA2:
+  // auto/absurd thread counts -> one thread per CPU.
+  if (lzma2Props.numTotalThreads == -1
+      || lzma2Props.numTotalThreads > (int)FL2_MAXTHREADS)
+    lzma2Props.numTotalThreads = (int)NWindows::NSystem::GetNumberOfProcessors();
+  if (lzma2Props.numTotalThreads == 0)
+    lzma2Props.numTotalThreads = 1;
   if (fcs == NULL) {
     fcs = FL2_createCStreamMt(lzma2Props.numTotalThreads, 1);
     if (fcs == NULL)
@@ -207,6 +216,12 @@ HRESULT CFastEncoder::FastLzma2::SetCoderProperties(const PROPID *propIDs, const
   reduceSize += (reduceSize < (size_t)-1); /* prevent extra buffer shift after read */
   dictSize = Z7_min(dictSize, reduceSize);
   dictSize = Z7_max(dictSize, (size_t)FL2_DICTSIZE_MIN);
+  // The wrapper bumps reduceSize by one to avoid an extra buffer shift at EOF.
+  // A stream of at least FL2_DICTSIZE_MAX bytes with a larger requested
+  // dictionary then produces a dictSize one byte above the library maximum,
+  // which Fast LZMA2 rejects (E_INVALIDARG). Clamp to the library maximum:
+  // 1 GiB on 64-bit, 128 MiB on 32-bit.
+  dictSize = Z7_min(dictSize, (size_t)FL2_DICTSIZE_MAX);
   CHECK_P(FL2_CCtx_setParameter(fcs, FL2_p_dictionarySize, dictSize));
   if (lzma2Props.lzmaProps.algo >= 0) {
     CHECK_P(FL2_CCtx_setParameter(fcs, FL2_p_strategy, (unsigned)lzma2Props.lzmaProps.algo));
