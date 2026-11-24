@@ -184,15 +184,15 @@ HRESULT CFastEncoder::FastLzma2::SetCoderProperties(const PROPID *propIDs, const
   {
     RINOK(SetLzma2Prop(propIDs[i], coderProps[i], lzma2Props));
   }
-  // -mmt=on arrives as INT_MAX ("use all CPUs"). Fast LZMA2 clamps that to
-  // FL2_MAXTHREADS (200) and allocates a full per-thread encoder context for
-  // each, using far more memory than intended. Normalize like stock LZMA2:
-  // auto/absurd thread counts -> one thread per CPU.
-  if (lzma2Props.numTotalThreads == -1
-      || lzma2Props.numTotalThreads > (int)FL2_MAXTHREADS)
+  // Fast LZMA2 rejects (or silently caps at) FL2_MAXTHREADS (200) threads.
+  // The -1 default (no kNumThreads property, e.g. compressed without a dialog)
+  // means "auto": one thread per CPU, like stock LZMA2. An explicit request
+  // above the limit is clamped to the library maximum instead of being reduced
+  // to the CPU count - the user asked for the threads, so honor it.
+  if (lzma2Props.numTotalThreads == -1)
     lzma2Props.numTotalThreads = (int)NWindows::NSystem::GetNumberOfProcessors();
-  if (lzma2Props.numTotalThreads == 0)
-    lzma2Props.numTotalThreads = 1;
+  if (lzma2Props.numTotalThreads > (int)FL2_MAXTHREADS)
+    lzma2Props.numTotalThreads = (int)FL2_MAXTHREADS;
   if (fcs == NULL) {
     fcs = FL2_createCStreamMt(lzma2Props.numTotalThreads, 1);
     if (fcs == NULL)
