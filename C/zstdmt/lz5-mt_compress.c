@@ -330,6 +330,12 @@ size_t LZ5MT_compressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr)
 	ctx->arg_write = rdwr->arg_write;
 
 	/* start all workers */
+	if (ctx->threads == 1) {
+		/* single worker: run it inline instead of spawning a thread */
+		void *p = pt_compress(&ctx->cwork[0]);
+		if (p)
+			retval_of_thread = p;
+	} else {
 	for (t = 0; t < ctx->threads; t++) {
 		cwork_t *w = &ctx->cwork[t];
 		pthread_create(&w->pthread, NULL, pt_compress, w);
@@ -342,6 +348,7 @@ size_t LZ5MT_compressCCtx(LZ5MT_CCtx * ctx, LZ5MT_RdWr_t * rdwr)
 		pthread_join(w->pthread, &p);
 		if (p)
 			retval_of_thread = p;
+	}
 	}
 
 	/* move remaining done/busy entries to free list */
