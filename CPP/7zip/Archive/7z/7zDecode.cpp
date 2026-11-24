@@ -206,6 +206,116 @@ Z7_COM7F_IMF(CLockedSequentialInStreamST::Read(void *data, UInt32 size, UInt32 *
   return res;
 }
 
+
+/*
+  Wrapper for the main unpack stream returned by ST-mixer.
+  ST-mixer decodes data lazily, so the authentication tag of
+  AEAD coders can be verified only after the stream is fully read.
+  The verification runs once at the end of the stream: when the
+  stream reports the end, or when all expected bytes are returned.
+  The tag covers the whole folder, so the verification is disabled
+  for partial unpacking.
+*/
+Z7_CLASS_IMP_COM_1(
+  CAuthVerifyInStream
+  , ISequentialInStream
+)
+  CMyComPtr<ISequentialInStream> _stream;
+  CMyComPtr<IUnknown> _mixerRef;
+  NCoderMixer2::CMixer *_mixer;
+  unsigned _numCoders;
+  UInt64 _expectedSize;
+  UInt64 _processedSize;
+  bool _verifyAuth;
+  bool _authChecked;
+  Byte _pendingByte;
+  bool _hasPendingByte;
+public:
+  void Init(ISequentialInStream *stream, IUnknown *mixerRef,
+      NCoderMixer2::CMixer *mixer, unsigned numCoders,
+      UInt64 expectedSize, bool verifyAuth)
+  {
+    _stream = stream;
+    _mixerRef = mixerRef;
+    _mixer = mixer;
+    _numCoders = numCoders;
+    _expectedSize = expectedSize;
+    _processedSize = 0;
+    _verifyAuth = verifyAuth;
+    _authChecked = false;
+    _pendingByte = 0;
+    _hasPendingByte = false;
+  }
+};
+
+Z7_COM7F_IMF(CAuthVerifyInStream::Read(void *data, UInt32 size, UInt32 *processedSize))
+{
+  UInt32 realProcessedSize = 0;
+  HRESULT res = S_OK;
+  const bool fromPending = _hasPendingByte;
+
+  if (fromPending)
+  {
+    // the byte read by the probe is returned to the caller on the next read
+    if (size != 0)
+    {
+      *(Byte *)data = _pendingByte;
+      _hasPendingByte = false;
+      realProcessedSize = 1;
+    }
+  }
+  else
+    res = _stream->Read(data, size, &realProcessedSize);
+
+  _processedSize += realProcessedSize;
+  if (processedSize)
+    *processedSize = realProcessedSize;
+
+  if (res == S_OK && _verifyAuth && !_authChecked && !fromPending)
+  {
+    bool isEnd = (size != 0 && realProcessedSize == 0);
+    if (!isEnd && _expectedSize != 0 && _processedSize >= _expectedSize)
+    {
+      /*
+        All expected bytes are returned, but the lazy decoder can finish
+        only after one more read. This read reaches the end of the stream,
+        so the AEAD coders process all their input before verification.
+        A returned byte is kept for the next read.
+      */
+      UInt32 n = 0;
+      RINOK(_stream->Read(&_pendingByte, 1, &n))
+      if (n == 0)
+        isEnd = true;
+      else
+      {
+        _hasPendingByte = true;
+        _processedSize++;
+      }
+    }
+    if (isEnd)
+    {
+      for (unsigned i = 0; i < _numCoders; i++)
+      {
+        Z7_DECL_CMyComPtr_QI_FROM(
+            ICryptoAuthVerify,
+            authVerify, _mixer->GetCoder(i).GetUnknown())
+        if (authVerify)
+        {
+          Int32 authResult = 0;
+          RINOK(authVerify->CryptoAuthVerify(&authResult))
+          if (authResult != 0)
+          {
+            _authChecked = true;
+            return S_FALSE;
+          }
+        }
+      }
+      _authChecked = true;
+    }
+  }
+  return res;
+}
+
 #endif
 
 
@@ -589,7 +699,9 @@ HRESULT CDecoder::Decode(
         dataAfterEnd_Error);
 
   #ifndef Z7_NO_CRYPTO
-    if (codeResult == S_OK)
+    /* For partial unpacking the decoder processes only a prefix of the
+       solid block, so AEAD tags can't be checked: skip them like CRC. */
+    if (codeResult == S_OK && fullUnpack)
     {
       for (i = 0; i < folderInfo.Coders.Size(); i++)
       {
@@ -610,7 +722,16 @@ HRESULT CDecoder::Decode(
   }
   
   #ifdef USE_MIXER_ST
-    return _mixerST->GetMainUnpackStream(inStreamPointers, inStreamMainRes);
+  {
+    CMyComPtr<ISequentialInStream> decodedStream;
+    RINOK(_mixerST->GetMainUnpackStream(inStreamPointers, &decodedStream))
+    CAuthVerifyInStream *authSpec = new CAuthVerifyInStream;
+    CMyComPtr<ISequentialInStream> authStream = authSpec;
+    authSpec->Init(decodedStream, _mixerRef, _mixer,
+        folderInfo.Coders.Size(), folderUnpackSize, fullUnpack);
+    *inStreamMainRes = authStream.Detach();
+  }
+  return S_OK;
   #else
     return E_FAIL;
   #endif

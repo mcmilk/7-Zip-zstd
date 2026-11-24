@@ -23,6 +23,14 @@ static void CloneBlake2spState(CBlake2sp *dest, const CBlake2sp *src)
   memcpy(dest, src, sizeof(CBlake2sp));
 }
 
+// wipes key material; volatile access keeps the stores alive
+static void WipeBytes(void *data, size_t size)
+{
+  volatile Byte *p = (volatile Byte *)(void *)data;
+  for (size_t i = 0; i < size; i++)
+    p[i] = 0;
+}
+
 void Derive(const Byte *prk, unsigned prkSize,
     const char *info, unsigned infoLen,
     Byte *output, unsigned outSize)
@@ -42,6 +50,7 @@ void Derive(const Byte *prk, unsigned prkSize,
     Blake2sp_SetFunction(blake2spHash, 0);
     Blake2sp_Update(blake2spHash, prk, prkSize);
     Blake2sp_Final(blake2spHash, processedKey);
+    WipeBytes(blake2spHash, sizeof(CBlake2sp));
 
     effectiveKey = processedKey;
     effectiveKeySize = Z7_BLAKE2S_DIGEST_SIZE;
@@ -116,6 +125,12 @@ void Derive(const Byte *prk, unsigned prkSize,
     Z7_memset_0_ARRAY(ti);
     Z7_memset_0_ARRAY(innerHash);
   }
+
+  // the inner states hold BLAKE2sp values keyed with the PRK
+  WipeBytes(innerState, sizeof(CBlake2sp));
+  WipeBytes(outerState, sizeof(CBlake2sp));
+  WipeBytes(innerTmp, sizeof(CBlake2sp));
+  WipeBytes(outerTmp, sizeof(CBlake2sp));
 
   Z7_memset_0_ARRAY(prevT);
   Z7_memset_0_ARRAY(ipad);
