@@ -1,4 +1,5 @@
 // UpdateCallback.cpp
+// Modified 2026-11-18: retain GUI-supplied POSIX attributes on input streams.
 
 #include "StdAfx.h"
 
@@ -787,6 +788,10 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream2(UInt32 index, ISequentialInStrea
     }
     // #endif
 
+   #ifdef Z7_FILE_STREAMS_USE_WIN_FILE
+    // 7z and TAR refresh attributes from stream properties while writing.
+    inStreamSpec->PosixModeOverride = di.PosixModeOverride;
+   #endif
     UpdateProcessedItemStatus((unsigned)up.DirIndex);
     *inStream = inStreamLoc.Detach();
   }

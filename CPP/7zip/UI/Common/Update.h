@@ -1,4 +1,5 @@
 // Update.h
+// Modified 2026-11-18: optional Linux executable permissions for GUI archives.
 
 #ifndef ZIP7_INC_COMMON_UPDATE_H
 #define ZIP7_INC_COMMON_UPDATE_H
@@ -84,6 +85,7 @@ struct CUpdateOptions
 
   bool PreserveATime;
   bool OpenShareForWrite;
+  bool LinuxExecutablePermissions;
   bool StopAfterOpenError;
 
   bool StdInMode;
@@ -130,6 +132,7 @@ struct CUpdateOptions
 
     PreserveATime(false),
     OpenShareForWrite(false),
+    LinuxExecutablePermissions(false),
     StopAfterOpenError(false),
 
     StdInMode(false),

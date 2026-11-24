@@ -1,4 +1,5 @@
 // RegistryUtils.cpp
+// Modified 2026-11-18: optional opening of dropped writable archives.
 
 #include "StdAfx.h"
 
@@ -33,6 +34,9 @@ static LPCTSTR const kAlternativeSelection = TEXT("AlternativeSelection");
 // static LPCTSTR const kUnderline = TEXT("Underline");
 
 static LPCTSTR const kShowSystemMenu = TEXT("ShowSystemMenu");
+static LPCTSTR const kOpenArchivesOnDrop = TEXT("OpenArchivesOnDrop");
+static LPCTSTR const kLegacyOpen7zOnDrop = TEXT("Open7zOnDrop");
+static LPCTSTR const kLinuxExecutablePermissions = TEXT("LinuxExecutablePermissions");
 
 // static LPCTSTR const kLockMemoryAdd = TEXT("LockMemoryAdd");
 static LPCTSTR const kLargePages = TEXT("LargePages");
@@ -156,6 +160,8 @@ void CFmSettings::Save() const
   // SaveOption(kUnderline, Underline);
 
   SaveOption(kShowSystemMenu, ShowSystemMenu);
+  SaveOption(kOpenArchivesOnDrop, OpenArchivesOnDrop);
+  SaveOption(kLinuxExecutablePermissions, LinuxExecutablePermissions);
 }
 
 void CFmSettings::Load()
@@ -179,6 +185,8 @@ void CFmSettings::Load()
   // Underline = false;
 
   ShowSystemMenu = false;
+  OpenArchivesOnDrop = false;
+  LinuxExecutablePermissions = false;
 
   CKey key;
   if (key.Open(HKEY_CURRENT_USER, kCU_FMPath, KEY_READ) == ERROR_SUCCESS)
@@ -197,6 +205,9 @@ void CFmSettings::Load()
     // ReadOption(key, kUnderline, Underline);
 
     ReadOption(key, kShowSystemMenu, ShowSystemMenu );
+    ReadOption(key, kLegacyOpen7zOnDrop, OpenArchivesOnDrop);
+    ReadOption(key, kOpenArchivesOnDrop, OpenArchivesOnDrop);
+    ReadOption(key, kLinuxExecutablePermissions, LinuxExecutablePermissions);
   }
 }
 
